@@ -1,7 +1,7 @@
 namespace TemplateDesigner.Services;
 
 /// <summary>
-/// Abstrakce View vrstvy pro ViewModel (pravidlo R4 — ViewModel bez WPF referencí): modální dialogy,
+/// Abstrakce View vrstvy pro ViewModel (pravidlo R4 - ViewModel bez WPF referencí): modální dialogy,
 /// souborové dialogy a systémová schránka. Drží `Window`/`ShowDialog`/`OpenFileDialog`/`Clipboard`
 /// mimo <see cref="TemplateDesignerViewModel"/> → VM je unit-testovatelný (mock této služby).
 /// Implementace žije ve View vrstvě (<see cref="WpfDesignerDialogService"/>, drží owner okno).

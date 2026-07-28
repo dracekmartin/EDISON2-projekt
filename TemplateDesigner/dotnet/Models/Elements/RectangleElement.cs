@@ -19,7 +19,7 @@ public class RectangleElement : TemplateElement
         if (Width <= 0) return;
         var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
 
-        // Výplň (BackgroundColor) kreslí base RenderBackgroundPass před obsahem — respektuje rohy.
+        // Výplň (BackgroundColor) kreslí base RenderBackgroundPass před obsahem - respektuje rohy.
         // Zde jen okraj tvaru; DrawElementShape aplikuje CornerStyle (ostré/zaoblené/zkosené).
         if (StrokeWidth > 0 && SkStrokeColor.Alpha > 0)
         {

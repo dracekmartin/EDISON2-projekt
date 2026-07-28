@@ -16,7 +16,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Skupina linek — filtr (searchable). Výběr přenačte seznam instancí níže.
+        <!-- Skupina linek - filtr (searchable). Výběr přenačte seznam instancí níže.
              Viditelnost + naplnění řeší code-behind (jen agendy se skupinami). -->
         <Grid Grid.Row="0" x:Name="SkupinaRow" Margin="0,0,0,10" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -30,7 +30,7 @@
                       MaxDropDownHeight="360" DisplayMemberPath="Display"/>
         </Grid>
 
-        <!-- EDList — server data + multi-select + persist sloupců + client-side search -->
+        <!-- EDList - server data + multi-select + persist sloupců + client-side search -->
         <el:EDList x:Name="TheList" Grid.Row="1"
                    CacheClass="ALVA.TemplateDesigner.EDList.Instance"
                    HostId="TemplateDesigner.InstancePicker"

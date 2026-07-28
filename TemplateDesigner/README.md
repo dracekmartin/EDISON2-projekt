@@ -1,6 +1,6 @@
-# Template Designer — Uživatelská příručka
+# Template Designer - Uživatelská příručka
 
-**Template Designer** je vizuální nástroj pro tvorbu šablon tiskových sestav. Šablona popisuje rozvržení stránky — sekce, elementy, formátování. Výstupem je JSON soubor, který Print Engine (samostatný projekt) spojí s daty a vygeneruje PDF.
+**Template Designer** je vizuální nástroj pro tvorbu šablon tiskových sestav. Šablona popisuje rozvržení stránky - sekce, elementy, formátování. Výstupem je JSON soubor, který Print Engine (samostatný projekt) spojí s daty a vygeneruje PDF.
 
 Pro vývojářskou dokumentaci viz [CLAUDE.md](CLAUDE.md).
 
@@ -17,7 +17,7 @@ Pro vývojářskou dokumentaci viz [CLAUDE.md](CLAUDE.md).
 ├──────────────────┬──────────────────────────────────────────────────┤
 │  Panel sekcí     │                                                  │
 │  (vlevo, 200px)  │   Editační canvas                               │
-│                  │   — sem se kliká a táhne                        │
+│                  │   - sem se kliká a táhne                        │
 │  Seznam sekcí    │                                                  │
 │  šablony         │                       ┌─────────────────────┐   │
 │                  │                       │ Vlastnosti: Text    │   │
@@ -26,14 +26,14 @@ Pro vývojářskou dokumentaci viz [CLAUDE.md](CLAUDE.md).
 │                  │                       │ [OK]  [Zrušit]      │   │
 │                  │                       └─────────────────────┘   │
 ├──────────────────┴──────────────────────────────────────────────────┤
-│  Status bar — info o vybrané sekci / elementu                       │
+│  Status bar - info o vybrané sekci / elementu                       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Panel sekcí vlevo** — seznam všech sekcí šablony; kliknutím se sekce aktivuje (do aktivní sekce se přidávají nové elementy)
-- **Editační canvas uprostřed** — hlavní pracovní plocha; sekce a elementy jsou vidět přímo zde; sem se elementy přidávají, přesouvají, mění velikost
-- **Plovoucí dialog vlastností** — otevře se po dvojkliku nebo Enteru na vybraný element; zobrazuje editovatelné vlastnosti; zavírá se tlačítkem OK / Zrušit
-- **Status bar dole** — jednořádkový přehled (aktivní sekce, vybraný element, počet vybraných)
+- **Panel sekcí vlevo** - seznam všech sekcí šablony; kliknutím se sekce aktivuje (do aktivní sekce se přidávají nové elementy)
+- **Editační canvas uprostřed** - hlavní pracovní plocha; sekce a elementy jsou vidět přímo zde; sem se elementy přidávají, přesouvají, mění velikost
+- **Plovoucí dialog vlastností** - otevře se po dvojkliku nebo Enteru na vybraný element; zobrazuje editovatelné vlastnosti; zavírá se tlačítkem OK / Zrušit
+- **Status bar dole** - jednořádkový přehled (aktivní sekce, vybraný element, počet vybraných)
 
 Panel sekcí lze skrýt přes menu **Zobrazit**.
 
@@ -45,7 +45,7 @@ Panel sekcí lze skrýt přes menu **Zobrazit**.
 Šablona = definice stránky. Obsahuje rozměry stránky, okraje a seznam sekcí.
 
 ### Sekce
-Stránka je tvořena vertikálním sledem sekcí — každá sekce je vodorovný pruh stránky. Sekce nelze umístit volně; přidávají se vždy za ostatní.
+Stránka je tvořena vertikálním sledem sekcí - každá sekce je vodorovný pruh stránky. Sekce nelze umístit volně; přidávají se vždy za ostatní.
 
 Přidáváte je přes **[+ Přidat sekci ▾]** s presety:
 
@@ -62,7 +62,7 @@ Přidáváte je přes **[+ Přidat sekci ▾]** s presety:
 Uložené šablony sekcí se zobrazí v tomtéž menu (viz sekce o Custom šablonách sekcí).
 
 ### Element
-Uvnitř sekce lze volně umísťovat elementy — text, obdélník, čáru, obrázek nebo tabulku. Pozice elementů jsou absolutní v rámci sekce (v mm).
+Uvnitř sekce lze volně umísťovat elementy - text, obdélník, čáru, obrázek nebo tabulku. Pozice elementů jsou absolutní v rámci sekce (v mm).
 
 | Typ | Editovatelné vlastnosti |
 |---|---|
@@ -85,30 +85,30 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - Sekce se zobrazí se záhlavím (modrý pruh s názvem)
 
 ### Elementy
-- **Přidat element tažením z palety** — v druhém řádku toolbaru jsou ikony typů elementů (Text, Obdélník, Čára, Obrázek, Tabulka, QR, Code128); stiskněte ikonu a táhněte na canvas → element se vytvoří na pozici puštění myši v cílové sekci; při tažení se zobrazí ghost preview (čárkovaný obrys) a zvýrazní se cílová sekce
-- **Přidat element přes menu** — tlačítko **+ Element** v toolbaru → klik na typ → element na pozici 5×5 mm (fallback)
-- **Přetáhnout pole agendy na canvas** — z panelu "Pole agendy" táhněte pole přímo na canvas → vytvoří TextElement s `{POLE}` na pozici kurzoru; pokud pole pustíte na existující TextElement, `{POLE}` se připojí k jeho textu
+- **Přidat element tažením z palety** - v druhém řádku toolbaru jsou ikony typů elementů (Text, Obdélník, Čára, Obrázek, Tabulka, QR, Code128); stiskněte ikonu a táhněte na canvas → element se vytvoří na pozici puštění myši v cílové sekci; při tažení se zobrazí ghost preview (čárkovaný obrys) a zvýrazní se cílová sekce
+- **Přidat element přes menu** - tlačítko **+ Element** v toolbaru → klik na typ → element na pozici 5×5 mm (fallback)
+- **Přetáhnout pole agendy na canvas** - z panelu "Pole agendy" táhněte pole přímo na canvas → vytvoří TextElement s `{POLE}` na pozici kurzoru; pokud pole pustíte na existující TextElement, `{POLE}` se připojí k jeho textu
 
 ### Výběr elementů
-- **Klik** — vybere element (modré dashed ohraničení + 8 resize handles)
-- **Ctrl+klik** — přidá / odebere element z výběru (multi-select)
-- **Ctrl+A** — vybere všechny elementy aktivní sekce
-- **Escape** — zavře dialog vlastností (pokud je otevřený), jinak zruší výběr
-- Klik na prázdné místo — zruší výběr
+- **Klik** - vybere element (modré dashed ohraničení + 8 resize handles)
+- **Ctrl+klik** - přidá / odebere element z výběru (multi-select)
+- **Ctrl+A** - vybere všechny elementy aktivní sekce
+- **Escape** - zavře dialog vlastností (pokud je otevřený), jinak zruší výběr
+- Klik na prázdné místo - zruší výběr
 
 ### Context menu (pravý klik na canvasu)
-- **Klik na element** — Vyjmout, Kopírovat, Vložit, Smazat, Z-pořadí, Vlastnosti elementu
-- **Klik na prázdné místo** — Vložit, Vybrat vše
+- **Klik na element** - Vyjmout, Kopírovat, Vložit, Smazat, Z-pořadí, Vlastnosti elementu
+- **Klik na prázdné místo** - Vložit, Vybrat vše
 - Pokud klik padne do sekce, menu vždy obsahuje i **Vlastnosti sekce, Přesunout, Smazat sekci**
 
 ### Editace vlastností elementu
-- **Dvojklik** na element — otevře plovoucí dialog vlastností
-- **Enter** — otevře dialog pro aktuálně vybraný element
+- **Dvojklik** na element - otevře plovoucí dialog vlastností
+- **Enter** - otevře dialog pro aktuálně vybraný element
 - Dialog zobrazuje skupiny vlastností (Obsah, Font, Zarovnání, Vzhled, Pozice)
 - Změny se aplikují živě na canvas s plnou podporou undo/redo
-- **OK** — zavře dialog, změny zůstanou
-- **Zrušit** — vrátí veškeré změny provedené od otevření dialogu
-- Tlačítko **X** — schová dialog, změny zůstanou (jako OK)
+- **OK** - zavře dialog, změny zůstanou
+- **Zrušit** - vrátí veškeré změny provedené od otevření dialogu
+- Tlačítko **X** - schová dialog, změny zůstanou (jako OK)
 - Pokud je dialog otevřený a klikneš na jiný element, dialog se aktualizuje
 
 ### Editor tabulky (TableElement)
@@ -118,12 +118,12 @@ Dvojklikem na tabulkový element se otevře **TableEditorDialog** se dvěma zál
 **Záložka Sloupce:**
 - Přidat / odebrat / přesunout sloupec nahoru nebo dolů
 - Pro každý sloupec: záhlaví, šířka (mm nebo %), zarovnání, datové pole, formát, viditelnost
-- Pole "Datové pole" se validuje proti schématu agendy — neplatné pole je zvýrazněno červeně
+- Pole "Datové pole" se validuje proti schématu agendy - neplatné pole je zvýrazněno červeně
 
 **Záložka Řádky** (jen pro pevný mód):
 - Přidat / odebrat / přesunout řádek
-- Editace obsahu buněk přímo v tabulce — statický text nebo `{POLE}`
-- **Viditelnost řádku** — pole pro výraz podmíněné viditelnosti (např. `{TISK_SIPKY}`, `{POCET} > 0`); řádky s nesplněnou podmínkou se při tisku přeskočí; prázdné = vždy viditelný; ⚑ příznak v seznamu signalizuje, že má řádek nastavenou podmínku
+- Editace obsahu buněk přímo v tabulce - statický text nebo `{POLE}`
+- **Viditelnost řádku** - pole pro výraz podmíněné viditelnosti (např. `{TISK_SIPKY}`, `{POCET} > 0`); řádky s nesplněnou podmínkou se při tisku přeskočí; prázdné = vždy viditelný; ⚑ příznak v seznamu signalizuje, že má řádek nastavenou podmínku
 
 **Záložka Souhrn** (zápatí tabulky s agregacemi):
 - Přidání souhrnných řádků zobrazených pod datovými řádky
@@ -133,11 +133,11 @@ Dvojklikem na tabulkový element se otevře **TableEditorDialog** se dvěma zál
 - Souhrnné řádky mají šedé pozadí a tučné písmo
 
 **Dva módy tabulky:**
-- **Pevná (Fixed)** — počet řádků je pevný, definovaný v šabloně; buňky obsahují statický text nebo placeholdery
-  - Tlačítko **Ze šablony...** — načte předdefinované rozvržení tabulky z Caché (sloupce + řádky předvyplněny) jedním klikem
-- **Dynamická (Dynamic)** — sloupce jsou z designeru, řádky se generují za běhu z dat
-  - **Datový zdroj** — filtrovatelný ComboBox nabízí datové kolekce ze schématu agendy (např. "ZASTAVKY", "SPOJE")
-  - **Datové pole sloupce** — ComboBox nabízí pole dostupná v dané kolekci; lze i ručně zadat
+- **Pevná (Fixed)** - počet řádků je pevný, definovaný v šabloně; buňky obsahují statický text nebo placeholdery
+  - Tlačítko **Ze šablony...** - načte předdefinované rozvržení tabulky z Caché (sloupce + řádky předvyplněny) jedním klikem
+- **Dynamická (Dynamic)** - sloupce jsou z designeru, řádky se generují za běhu z dat
+  - **Datový zdroj** - filtrovatelný ComboBox nabízí datové kolekce ze schématu agendy (např. "ZASTAVKY", "SPOJE")
+  - **Datové pole sloupce** - ComboBox nabízí pole dostupná v dané kolekci; lze i ručně zadat
   - Při prvním otevření editoru bez sloupců se sloupce automaticky předvyplní z vybrané datové kolekce
 
 **Ze šablony... (Fixed mód):**
@@ -149,7 +149,7 @@ Tlačítko "Ze šablony..." v záložce Sloupce umožňuje načíst celé rozvr�
 3. Klikněte na **Ze šablony...**
 4. Vyberte šablonu ze seznamu (např. "Záhlaví linky", "Platnost a dopravce") → **Použít**
 
-Šablona nahradí aktuální sloupce i řádky. Obsah buněk může obsahovat placeholdery (`{CISLO_LINKY}`, `{DATUM_OD}` apod.) — Print Engine je za běhu nahradí skutečnými daty.
+Šablona nahradí aktuální sloupce i řádky. Obsah buněk může obsahovat placeholdery (`{CISLO_LINKY}`, `{DATUM_OD}` apod.) - Print Engine je za běhu nahradí skutečnými daty.
 
 > Dostupné šablony jsou definovány v Caché metodou `GetTableTemplates` příslušné agendy. Tlačítko se zobrazí jen pokud je Caché připojeno.
 
@@ -159,20 +159,20 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 - **Obsah**: statický text nebo `{POLE}` placeholder
 - **Typ**: QR kód (čtvercový) nebo Code128 (lineární čárový kód)
 - Barvy popředí a pozadí
-- V designeru se zobrazuje reálný kód — ne jen placeholder
+- V designeru se zobrazuje reálný kód - ne jen placeholder
 
 ### Přesun elementů
-- **Tažení myší** — přesune vybraný element
+- **Tažení myší** - přesune vybraný element
 - Při multi-selectu se pohybují **všechny vybrané elementy** najednou
-- Elementy nelze přetáhnout mimo hranici sekce — skupina se zastaví, jakmile první element narazí na okraj
+- Elementy nelze přetáhnout mimo hranici sekce - skupina se zastaví, jakmile první element narazí na okraj
 - Se zapnutým Snap se elementy zarovnávají na mřížku
 
 ### Přichytávání k elementům (Smart Snap)
-- **Snap elem.** (tlačítko v toolbaru nebo Zobrazit → Přichytit k elementům) — zapne přichytávání k ostatním elementům v sekci
+- **Snap elem.** (tlačítko v toolbaru nebo Zobrazit → Přichytit k elementům) - zapne přichytávání k ostatním elementům v sekci
 - Při tažení element automaticky přiskočí k hranám, středům nebo mezerám jiných elementů
-- **Edge↔Edge** — levá/pravá/horní/dolní hrana se zarovná k odpovídající hraně souseda
-- **Center↔Center** — střed elementu se zarovná na střed jiného elementu
-- **Gap snap** — element se zastaví ve vzdálenosti 4 mm od souseda; v mezeře se zobrazí krátká černá čárka
+- **Edge↔Edge** - levá/pravá/horní/dolní hrana se zarovná k odpovídající hraně souseda
+- **Center↔Center** - střed elementu se zarovná na střed jiného elementu
+- **Gap snap** - element se zastaví ve vzdálenosti 4 mm od souseda; v mezeře se zobrazí krátká černá čárka
 - Cílový element je zvýrazněn jemným šedým dashed rámečkem
 - Přichytávání k elementům má přednost před mřížkou; na každé ose (X, Y) se rozhoduje nezávisle
 - Výchozí: zapnuto
@@ -181,36 +181,36 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 - Dostupná pro **jeden vybraný element** (8 bílých čtverečků na okrajích)
 - Tažení za rohový handle → změna šířky i výšky
 - Tažení za boční handle → změna jen jednoho rozměru
-- Element nepřesáhne hranice sekce — resize se automaticky omezí
+- Element nepřesáhne hranice sekce - resize se automaticky omezí
 - Kurzor se mění podle směru resize (↔ ↕ ↗ ↘)
 - Minimální rozměry: 3 mm šířka, 2 mm výška
 
 ### Výběr obdélníkem (rubber band)
-- **Tažení myší na prázdném místě** — kreslí modrý výběrový obdélník
+- **Tažení myší na prázdném místě** - kreslí modrý výběrový obdélník
 - Po uvolnění myši se vyberou všechny elementy, jejichž plocha se obdélníkem překrývá
 - Výběr je omezen na aktivní sekci
 - Ctrl+tažení přidá výběr k již vybraným elementům
 
 ### Kopírování / vkládání
-- **Ctrl+C** — zkopíruje vybrané elementy do schránky
-- **Ctrl+X** — vyjme vybrané elementy (kopie + smazání)
-- **Ctrl+V** — vloží zkopírované elementy do aktivní sekce (s offsetem +5 mm)
-- **Ctrl+D** — duplikuje vybrané elementy (+5 mm offset); neovlivňuje clipboard
-- **Ctrl+D, šipka** — směrové duplikování: kopie se umístí přesně vedle originálu s 4 mm mezerou (↓ pod, ↑ nad, → vpravo, ← vlevo)
+- **Ctrl+C** - zkopíruje vybrané elementy do schránky
+- **Ctrl+X** - vyjme vybrané elementy (kopie + smazání)
+- **Ctrl+V** - vloží zkopírované elementy do aktivní sekce (s offsetem +5 mm)
+- **Ctrl+D** - duplikuje vybrané elementy (+5 mm offset); neovlivňuje clipboard
+- **Ctrl+D, šipka** - směrové duplikování: kopie se umístí přesně vedle originálu s 4 mm mezerou (↓ pod, ↑ nad, → vpravo, ← vlevo)
 - Vložené elementy jsou ihned vybrány; operace je undo-able
 
 ### Editace vlastností sekce
-- **Dvojklik na sekci** v levém panelu — otevře dialog vlastností sekce
+- **Dvojklik na sekci** v levém panelu - otevře dialog vlastností sekce
 - Editovatelné: Název, Výška (jen pro sekce s pevnou výškou), Umístění (Obsah/Hlavička/Patička), PrintBehavior, OverflowBehavior
-- Stejný dialog jako pro elementy — OK zachová, Zrušit vrátí změny
+- Stejný dialog jako pro elementy - OK zachová, Zrušit vrátí změny
 
 ### Správa sekcí
-- **Přeřadit sekci tažením** — v levém panelu stiskněte sekci a táhněte na novou pozici; vizuální indikátor ukazuje kam se sekce vloží; plný undo/redo
-- **Přesunout sekci** — tlačítka ▲▼ v levém panelu, pravé tlačítko myši → Přesunout, nebo **Ctrl+Shift+↑↓**
-- **Smazat sekci** — pravé tlačítko myši na sekci → Smazat sekci (šablona musí mít alespoň jednu sekci)
+- **Přeřadit sekci tažením** - v levém panelu stiskněte sekci a táhněte na novou pozici; vizuální indikátor ukazuje kam se sekce vloží; plný undo/redo
+- **Přesunout sekci** - tlačítka ▲▼ v levém panelu, pravé tlačítko myši → Přesunout, nebo **Ctrl+Shift+↑↓**
+- **Smazat sekci** - pravé tlačítko myši na sekci → Smazat sekci (šablona musí mít alespoň jednu sekci)
 - Přesun a smazání jsou undo-able
 
-### AI Assistant — generování šablon z popisu
+### AI Assistant - generování šablon z popisu
 
 AI Assistant automaticky vygeneruje kompletní šablonu podle textového popisu. Stačí popsat, co chcete vytisknout, a AI vytvoří sekce, elementy, formátování a datové vazby.
 
@@ -224,16 +224,16 @@ AI Assistant automaticky vygeneruje kompletní šablonu podle textového popisu.
    Vytvoř fakturu s hlavičkou obsahující logo a název firmy,
    tabulkou položek (popis, množství, cena) a zápatím s celkovou částkou.
    ```
-2. Vyberte agendu (volitelné) — pokud vyberete "Jízdní řád" nebo "Faktury", AI použije skutečná pole z Caché
+2. Vyberte agendu (volitelné) - pokud vyberete "Jízdní řád" nebo "Faktury", AI použije skutečná pole z Caché
 3. Klikněte **Vygenerovat**
-4. AI vrátí hotovou šablonu — ta se okamžitě otevře v designeru
+4. AI vrátí hotovou šablonu - ta se okamžitě otevře v designeru
 
-**Schema injection — AI zná vaše databázová pole:**
+**Schema injection - AI zná vaše databázová pole:**
 
 Pokud vyberete agendu, AI dostane seznam dostupných polí ze schématu:
-- **Skalární pole** — např. `CISLO_FAKTURY`, `DATUM_VYSTAVENI`, `NAZEV_DODAVATELE`
-- **Kolekce** — např. `POLOZKY` (pro Dynamic tabulky s poli `POPIS`, `MNOZSTVI`, `CENA`)
-- **Parametry** — např. `TISK_POZNAMKY`, `FORMAT_CASTKY`
+- **Skalární pole** - např. `CISLO_FAKTURY`, `DATUM_VYSTAVENI`, `NAZEV_DODAVATELE`
+- **Kolekce** - např. `POLOZKY` (pro Dynamic tabulky s poli `POPIS`, `MNOZSTVI`, `CENA`)
+- **Parametry** - např. `TISK_POZNAMKY`, `FORMAT_CASTKY`
 
 AI používá **pouze skutečná pole** z vašeho systému, nevymýšlí si názvy. Tabulky mají správné `dataSource`, placeholdery odpovídají skutečným DB sloupcům.
 
@@ -241,7 +241,7 @@ AI používá **pouze skutečná pole** z vašeho systému, nevymýšlí si náz
 
 AI Assistant vyžaduje **Anthropic API klíč** (Claude). Nastavit lze dvěma způsoby:
 
-1. **Lokální config soubor** (doporučeno) — neverzuje se do gitu:
+1. **Lokální config soubor** (doporučeno) - neverzuje se do gitu:
    ```json
    // dotnet/appsettings.local.json
    {
@@ -251,7 +251,7 @@ AI Assistant vyžaduje **Anthropic API klíč** (Claude). Nastavit lze dvěma zp
    }
    ```
 
-2. **Dialog při spuštění** — pokud není klíč nakonfigurovaný, můžete ho zadat ručně do pole "Anthropic API klíč"
+2. **Dialog při spuštění** - pokud není klíč nakonfigurovaný, můžete ho zadat ručně do pole "Anthropic API klíč"
 
 **Získání API klíče:**
 - Registrace na https://console.anthropic.com/
@@ -278,9 +278,9 @@ V `templatedesigner.appsettings.json`:
 - Buďte specifičtí: "tabulka s 3 sloupci (název, cena, množství)" → AI vytvoří přesně to
 - Zmíňte agendu v popisu: "Vytvoř šablonu pro jízdní řád s tabulkou zastávek" → AI použije pole z JR schématu
 - AI respektuje typografii: "velký tučný titulek" → FontSize 18, FontWeight Bold
-- Kontrolujte výsledek: AI je chytré, ale může udělat chybu — vždy zkontrolujte generovanou šablonu
+- Kontrolujte výsledek: AI je chytré, ale může udělat chybu - vždy zkontrolujte generovanou šablonu
 
-**Příklad — faktura s FAKTURY agendou:**
+**Příklad - faktura s FAKTURY agendou:**
 
 ```
 Popis:
@@ -314,9 +314,9 @@ Existující PDF soubor lze automaticky převést na editovatelnou šablonu. Imp
 
 **Nastavení importu:**
 
-1. **Vyberte PDF soubor** — tlačítko "Procházet..." nebo zadejte cestu ručně
-2. **Stránky** — import všech stránek nebo zadaný rozsah (např. "1-3")
-3. **Režim sloučení grafiky** — jak naložit s čarami a obdélníky:
+1. **Vyberte PDF soubor** - tlačítko "Procházet..." nebo zadejte cestu ručně
+2. **Stránky** - import všech stránek nebo zadaný rozsah (např. "1-3")
+3. **Režim sloučení grafiky** - jak naložit s čarami a obdélníky:
 
 | Režim | Popis |
 |---|---|
@@ -327,28 +327,28 @@ Existující PDF soubor lze automaticky převést na editovatelnou šablonu. Imp
 4. Klikněte **Importovat** → šablona se vygeneruje a otevře v designeru
 
 **Co se importuje:**
-- **Texty** — pozice, font, velikost, barva, zarovnání; blízká slova se automaticky seskupí do bloků
-- **Čáry** — horizontální i vertikální; styl (plná, čárkovaná, tečkovaná), tloušťka, barva
-- **Obdélníky** — výplň, okraj, zaoblení
-- **Obrázky** — vložené bitmapy z PDF
+- **Texty** - pozice, font, velikost, barva, zarovnání; blízká slova se automaticky seskupí do bloků
+- **Čáry** - horizontální i vertikální; styl (plná, čárkovaná, tečkovaná), tloušťka, barva
+- **Obdélníky** - výplň, okraj, zaoblení
+- **Obrázky** - vložené bitmapy z PDF
 
 **Automatické skupiny:**
-Importované grafické elementy se automaticky seskupí (viz Seskupování elementů) — lze s nimi pohybovat jako s celkem. Texty zůstávají bez skupiny pro snadnou editaci.
+Importované grafické elementy se automaticky seskupí (viz Seskupování elementů) - lze s nimi pohybovat jako s celkem. Texty zůstávají bez skupiny pro snadnou editaci.
 
 **Tipy:**
-- Začněte s režimem "Pouze čáry" — nejlepší poměr editovatelnosti a věrnosti
+- Začněte s režimem "Pouze čáry" - nejlepší poměr editovatelnosti a věrnosti
 - Po importu nahraďte statické texty za `{POLE}` placeholdery pro dynamická data
-- Importovaná šablona je plně editovatelná — lze přidávat/mazat/přesouvat elementy
+- Importovaná šablona je plně editovatelná - lze přidávat/mazat/přesouvat elementy
 
 ---
 
 ### Seskupování elementů
 
-Elementy lze seskupit do logických celků — kliknutí na člen skupiny vybere celou skupinu, drag přesune všechny členy najednou.
+Elementy lze seskupit do logických celků - kliknutí na člen skupiny vybere celou skupinu, drag přesune všechny členy najednou.
 
-- **Ctrl+G** — seskupí vybrané elementy (min 2)
-- **Ctrl+Shift+G** — rozeskupí vybrané elementy
-- **Alt+klik** na člen skupiny — vybere jen ten jeden element (vstup "dovnitř" skupiny)
+- **Ctrl+G** - seskupí vybrané elementy (min 2)
+- **Ctrl+Shift+G** - rozeskupí vybrané elementy
+- **Alt+klik** na člen skupiny - vybere jen ten jeden element (vstup "dovnitř" skupiny)
 - Skupiny jsou vizuálně označeny barevným badge v rohu elementu a tečkovaným bounding boxem při výběru
 - Ve stromu šablony se skupiny zobrazují jako sbalitelné uzly
 - Copy/Paste/Duplicate zachovává skupiny (klony dostanou nový GroupId)
@@ -407,7 +407,7 @@ Soubory jsou čitelné v textovém editoru a lze je **ručně upravit**.
 
 **Sdílení šablon s kolegy:**
 - Kopírování složky `section-templates/` z jednoho PC na druhý
-- Nebo uložit šablony na sdílený síťový disk — pak mají přístup všichni uživatelé
+- Nebo uložit šablony na sdílený síťový disk - pak mají přístup všichni uživatelé
 
 **Tipy:**
 - Používejte popisné názvy: "Záhlaví DPO officiální" místo "Template1"
@@ -415,20 +415,20 @@ Soubory jsou čitelné v textovém editoru a lze je **ručně upravit**.
 - Složku `section-templates/` zálohujte spolu s ostatními daty aplikace
 
 ### Vlastnosti stránky
-- **Soubor → Vlastnosti stránky…** nebo **Ctrl+Shift+P** — otevře dialog pro editaci rozměrů a okrajů
+- **Soubor → Vlastnosti stránky…** nebo **Ctrl+Shift+P** - otevře dialog pro editaci rozměrů a okrajů
 - Editovatelné: Šířka, Výška (mm), okraje Nahoře / Dole / Vlevo / Vpravo (mm), kód agendy, formát čísel a datumů
 - Canvas se okamžitě překreslí po každé změně, Zrušit vrátí vše zpět
 - Výchozí formát: A4 na výšku (210 × 297 mm, okraje 10 mm)
 
 ### Live preview
 
-Pravý panel zobrazuje **náhled šablony s mock daty** — takto bude šablona vypadat při tisku.
+Pravý panel zobrazuje **náhled šablony s mock daty** - takto bude šablona vypadat při tisku.
 
 - Otevřít / zavřít přes menu **Zobrazit → Live preview** nebo tlačítko v toolbaru
 - Automaticky se aktualizuje při každé změně šablony
-- **Multi-page preview** — pokud se obsah nevejde na jednu stránku, zobrazí se všechny stránky pod sebou se stíny a rámečky; hlavičky/patičky se opakují podle nastavení sekce
-- **{PAGE} a {TOTAL_PAGES}** — čísla stránek se automaticky doplňují do placeholderů
-- **Mock data ze systému** — pokud agenda implementuje `GetMockData` v Caché, preview zobrazuje reálná ukázková data (skutečné hodnoty polí, reálné řádky tabulek)
+- **Multi-page preview** - pokud se obsah nevejde na jednu stránku, zobrazí se všechny stránky pod sebou se stíny a rámečky; hlavičky/patičky se opakují podle nastavení sekce
+- **{PAGE} a {TOTAL_PAGES}** - čísla stránek se automaticky doplňují do placeholderů
+- **Mock data ze systému** - pokud agenda implementuje `GetMockData` v Caché, preview zobrazuje reálná ukázková data (skutečné hodnoty polí, reálné řádky tabulek)
 - Fallback: hodnoty ze schématu agendy (pole `example`) nebo generické zástupce
 - Dynamic tabulky zobrazují všechny mock řádky vrácené z `GetMockData`
 
@@ -445,13 +445,13 @@ Pokud agenda definuje parametry (přes Caché `GetParameters`), zobrazí se v z�
 │  [stránka náhledu]                                                 │
 ```
 
-- **CheckBox** pro parametry typu `bool` — zaškrtnutí/odškrtnutí okamžitě aktualizuje preview
-- **ComboBox** pro parametry typu `enum` — výběr z předdefinovaných možností
-- **TextBox** pro ostatní typy — ručně zadaná hodnota
+- **CheckBox** pro parametry typu `bool` - zaškrtnutí/odškrtnutí okamžitě aktualizuje preview
+- **ComboBox** pro parametry typu `enum` - výběr z předdefinovaných možností
+- **TextBox** pro ostatní typy - ručně zadaná hodnota
 
 Hodnoty parametrů jsou dostupné jako `{NAZEV_PARAMETRU}` v libovolném TextElementu nebo buňce tabulky (stejná syntaxe jako datová pole). Parametry jsou rovněž zobrazeny v **Pickeru polí** s příznakem "(parametr)" pro snadné vložení do textu.
 
-> Parametry definuje programátor agendy v Caché metodou `GetParameters`. Uživatel nastavuje jejich hodnoty v preview panelu; při ostrém tisku je Print Engine dostane standardní cestou (print dialog — budoucí funkce).
+> Parametry definuje programátor agendy v Caché metodou `GetParameters`. Uživatel nastavuje jejich hodnoty v preview panelu; při ostrém tisku je Print Engine dostane standardní cestou (print dialog - budoucí funkce).
 
 ### Podmíněná viditelnost elementů a sekcí
 
@@ -485,11 +485,11 @@ Každý element a každá sekce má vlastnost **Viditelnost** (v dialogu vlastno
 
 ### Export náhledu do PDF
 
-Aktuální live preview lze exportovat přímo do PDF souboru — se stejnými mock daty, která jsou vidět v náhledu.
+Aktuální live preview lze exportovat přímo do PDF souboru - se stejnými mock daty, která jsou vidět v náhledu.
 
-- **Soubor → Exportovat náhled jako PDF...** — otevře dialog pro uložení souboru
-- **Tlačítko PDF** v záhlaví live preview panelu — stejná funkce, rychlejší přístup
-- Výstup je **multi-page PDF** — každá stránka layoutu = jedna stránka PDF; rozměry odpovídají šabloně (šířka × výška v mm)
+- **Soubor → Exportovat náhled jako PDF...** - otevře dialog pro uložení souboru
+- **Tlačítko PDF** v záhlaví live preview panelu - stejná funkce, rychlejší přístup
+- Výstup je **multi-page PDF** - každá stránka layoutu = jedna stránka PDF; rozměry odpovídají šabloně (šířka × výška v mm)
 - Hlavičky a patičky se automaticky opakují na každé stránce podle nastavení `PrintBehavior`
 - Okraje šablony jsou zachovány; stránka má bílé pozadí
 - Data v PDF jsou identická s preview (Caché mock nebo schema fallback)
@@ -498,12 +498,12 @@ Aktuální live preview lze exportovat přímo do PDF souboru — se stejnými m
 
 ### Zoom
 - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru
-- **Ctrl+scroll** na canvasu — přiblížení / oddálení
+- **Ctrl+scroll** na canvasu - přiblížení / oddálení
 
 ### Mřížka a přichytávání
-- **Grid** (tlačítko nebo Zobrazit → Mřížka) — zobrazí přímky mřížky na canvasu
-- **Snap** — přichytávání elementů na mřížku při pohybu a resize
-- **Snap elem.** — přichytávání k ostatním elementům (viz sekce Přichytávání k elementům)
+- **Grid** (tlačítko nebo Zobrazit → Mřížka) - zobrazí přímky mřížky na canvasu
+- **Snap** - přichytávání elementů na mřížku při pohybu a resize
+- **Snap elem.** - přichytávání k ostatním elementům (viz sekce Přichytávání k elementům)
 - Velikost mřížky: 5 mm (výchozí)
 
 ### Zarovnání elementů
@@ -511,37 +511,37 @@ Funguje pro **multi-select** (min 2 vybrané elementy; Rozložit min 3). Vše un
 
 | Tlačítko | Akce |
 |---|---|
-| ⬅ | Zarovnat vlevo — všechny na nejlevější X |
-| ➡ | Zarovnat vpravo — všechny na nejpravější pravý okraj |
+| ⬅ | Zarovnat vlevo - všechny na nejlevější X |
+| ➡ | Zarovnat vpravo - všechny na nejpravější pravý okraj |
 | ↔ | Zarovnat na střed vodorovně |
-| ⬆ | Zarovnat nahoru — všechny na nejhornější Y |
-| ⬇ | Zarovnat dolů — všechny na nejspodnější dolní okraj |
+| ⬆ | Zarovnat nahoru - všechny na nejhornější Y |
+| ⬇ | Zarovnat dolů - všechny na nejspodnější dolní okraj |
 | ↕ | Zarovnat na střed svisle |
 | ⬌ | Rozložit rovnoměrně vodorovně (min 3) |
 | ⬍ | Rozložit rovnoměrně svisle (min 3) |
 
 Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu **Upravit**.
 
-### ZIndex — pořadí překrývání
-- **Ctrl+PgUp** — přenést dopředu (ZIndex +1)
-- **Ctrl+PgDn** — odeslat dozadu (ZIndex −1, min 0)
-- **Ctrl+Shift+PgUp** — přenést zcela dopředu (nad všechny ostatní v sekci)
-- **Ctrl+Shift+PgDn** — odeslat zcela dozadu (pod všechny ostatní)
+### ZIndex - pořadí překrývání
+- **Ctrl+PgUp** - přenést dopředu (ZIndex +1)
+- **Ctrl+PgDn** - odeslat dozadu (ZIndex −1, min 0)
+- **Ctrl+Shift+PgUp** - přenést zcela dopředu (nad všechny ostatní v sekci)
+- **Ctrl+Shift+PgDn** - odeslat zcela dozadu (pod všechny ostatní)
 - Stejné operace v menu **Upravit** a tlačítka ↑Z ↓Z ⤒Z ⤓Z v toolbaru
 - Funguje i pro multi-select (všechny vybrané elementy se posunou najednou)
 - Efekt je viditelný jen když se elementy **překrývají** (např. obdélník jako pozadí za textem)
 - Vše undo-able
 
 ### Undo / Redo
-- **Ctrl+Z** — vrátit poslední akci
-- **Ctrl+Y** — zopakovat vrácenou akci
+- **Ctrl+Z** - vrátit poslední akci
+- **Ctrl+Y** - zopakovat vrácenou akci
 - Undoable akce: přesun, resize, změna vlastností, přidání/smazání elementu, přidání/smazání/přesun sekce, změna vlastností stránky
 
 ### Uložení a otevření
 - **Ctrl+S** / menu Soubor → Uložit
-- **Soubor → Uložit jako** — zvolí umístění
-- **Soubor → Otevřít** — načte existující šablonu
-- **Soubor → Exportovat náhled jako PDF...** — uloží aktuální náhled jako PDF
+- **Soubor → Uložit jako** - zvolí umístění
+- **Soubor → Otevřít** - načte existující šablonu
+- **Soubor → Exportovat náhled jako PDF...** - uloží aktuální náhled jako PDF
 - Soubory šablon mají příponu `.json` a jsou čitelné v libovolném textovém editoru
 
 ---
@@ -585,7 +585,7 @@ Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu **Upravit**.
 ## Datové vazby (placeholders)
 
 Text elementů může obsahovat datové zástupné symboly ve formátu `{NAZEV_POLE}`, například:
-- `Jízdní řád — {NAZEV_LINKY}`
+- `Jízdní řád - {NAZEV_LINKY}`
 - `Strana {STRANA} / {CELKEM_STRAN}`
 - `Datum: {DATUM}`
 
@@ -600,17 +600,17 @@ Placeholdery podporují formátovací instrukce za dvojtečkou: `{POLE:formát}`
 - `{DATUM:dd.MM.yyyy}` → `01.01.2024`
 - `{CAS:HH:mm}` → `08:00`
 
-Formát čísel a datumů závisí na **kultuře šablony** — nastavitelné ve vlastnostech stránky (výchozí cs-CZ). Například `{CENA:N2}` zobrazí `12 000,00` v češtině, ale `12,000.00` v angličtině.
+Formát čísel a datumů závisí na **kultuře šablony** - nastavitelné ve vlastnostech stránky (výchozí cs-CZ). Například `{CENA:N2}` zobrazí `12 000,00` v češtině, ale `12,000.00` v angličtině.
 
 **Řetězcové funkce:**
-- `{POLE:UPPER}` / `{POLE:LOWER}` — velikost písmen
-- `{POLE:LEFT(4)}` / `{POLE:RIGHT(4)}` — první/poslední N znaků
-- `{POLE:PADLEFT(3,'0')}` — doplnění na délku (např. `42` → `042`)
-- `{POLE:TRIM}` — oříznutí mezer
+- `{POLE:UPPER}` / `{POLE:LOWER}` - velikost písmen
+- `{POLE:LEFT(4)}` / `{POLE:RIGHT(4)}` - první/poslední N znaků
+- `{POLE:PADLEFT(3,'0')}` - doplnění na délku (např. `42` → `042`)
+- `{POLE:TRIM}` - oříznutí mezer
 
 Formátování funguje v TextElementech, buňkách tabulky i v souhrnných řádcích.
 
-### Pole agendy — dostupná databázová pole
+### Pole agendy - dostupná databázová pole
 
 Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda definuje, která databázová pole jsou k dispozici pro použití v `{POLE}` placeholderech. Pole, kolekce a parametry se zobrazují v panelu vlevo záložka **Pole agendy** jako strom se třemi skupinami:
 
@@ -640,13 +640,13 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
 └──────────────────────────────────┘
 ```
 
-- **Skalární pole** — jednorázové hodnoty pro celou sestavu (číslo linky, datum, …)
-- **Kolekce** — tabulkové zdroje dat pro Dynamic TableElement; pole uvnitř kolekce jsou dostupná v řádcích tabulky
-- **Parametry** — interaktivní přepínače viditelné v preview panelu; jsou označeny příznakem "(parametr)"
+- **Skalární pole** - jednorázové hodnoty pro celou sestavu (číslo linky, datum, …)
+- **Kolekce** - tabulkové zdroje dat pro Dynamic TableElement; pole uvnitř kolekce jsou dostupná v řádcích tabulky
+- **Parametry** - interaktivní přepínače viditelné v preview panelu; jsou označeny příznakem "(parametr)"
 - Dvojklik na **pole nebo parametr** → vloží `{NAZEV_POLE}` do textu vybraného TextElementu
 - Pokud není vybrán TextElement → zkopíruje `{NAZEV_POLE}` do schránky
 - Skupinové uzly (📋 / 📊 / ⚙) a záhlaví kolekcí dvojklikem nic nedělají
-- Pole lze použít v **libovolném** TextElementu — designer neomezuje kde
+- Pole lze použít v **libovolném** TextElementu - designer neomezuje kde
 
 ---
 
@@ -667,7 +667,7 @@ Specializované elementy pro tisk zastávkových jízdních řádů MHD. Tři el
 - Konfigurovatelná šířka sloupce hodin, velikost fontu minut
 
 **Legenda poznámek (NotesLegendElement):**
-- Legenda pod odjezdy — vysvětlivky k symbolům a anotacím
+- Legenda pod odjezdy - vysvětlivky k symbolům a anotacím
 - Tři typy poznámek: textové, negativní značky (invertované barvy), speciální znaky (Unicode)
 
 **Přidání do šablony:** [+ Element ▾] → Zastávky JŘ / Odjezdy JŘ / Poznámky JŘ
@@ -684,21 +684,21 @@ Specializované elementy pro tisk zastávkových jízdních řádů MHD. Tři el
 
 ### Tabulky a JR
 
-- **Zastávkový JŘ — FullTime mód** — meziměstský formát: matice zastávky × spoje (aktuálně implementován pouze MinutesOnly mód pro MHD)
-- **Vozový JŘ (VehicleScheduleElement)** — denní plán jednoho vozidla: sekvence spojů, přestávky, výjezd/příjezd do depa
-- **Knižní JŘ (BookScheduleElement)** — kompletní jízdní řád celé linky (oba směry, všechny zastávky × spoje)
-- **Grouping v Dynamic tabulkách** — Group Header/Footer řádky mezi daty
+- **Zastávkový JŘ - FullTime mód** - meziměstský formát: matice zastávky × spoje (aktuálně implementován pouze MinutesOnly mód pro MHD)
+- **Vozový JŘ (VehicleScheduleElement)** - denní plán jednoho vozidla: sekvence spojů, přestávky, výjezd/příjezd do depa
+- **Knižní JŘ (BookScheduleElement)** - kompletní jízdní řád celé linky (oba směry, všechny zastávky × spoje)
+- **Grouping v Dynamic tabulkách** - Group Header/Footer řádky mezi daty
 
 ### Podmíněnost a parametry
 
-- ✅ **Print dialog s parametry** — hotovo: parametry, export mock i reálných dat z Caché
+- ✅ **Print dialog s parametry** - hotovo: parametry, export mock i reálných dat z Caché
 - Chybí: ukládání hodnot parametrů do JSON šablony, offline fallback bez Caché
 
 ### Formátování
 
-- ✅ **Základní formátování placeholderů** — `{POLE:N2}`, `{POLE:dd.MM.yyyy}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}` (implementováno)
+- ✅ **Základní formátování placeholderů** - `{POLE:N2}`, `{POLE:dd.MM.yyyy}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}` (implementováno)
 - **Rozšíření:** další řetězcové funkce, podmíněné formátování dle hodnoty
 
 ### Ostatní
 
-- **Zamčení elementu** — toggle zámku přes klávesovou zkratku nebo toolbar (IsLocked je v modelu, UI chybí)
+- **Zamčení elementu** - toggle zámku přes klávesovou zkratku nebo toolbar (IsLocked je v modelu, UI chybí)

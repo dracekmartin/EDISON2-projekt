@@ -10,7 +10,7 @@ namespace TemplateDesigner;
 // ─── ViewModel pro řádek sloupce linkového JŘ ────────────────────────────────
 
 /// <summary>
-/// Řádek sloupce v editoru linkového JŘ — sdílí model <see cref="StopColumn"/> i UI infrastrukturu
+/// Řádek sloupce v editoru linkového JŘ - sdílí model <see cref="StopColumn"/> i UI infrastrukturu
 /// (<see cref="Controls.ColumnListEditor"/> + <see cref="Controls.CellStyleEditor"/>) se StopList.
 /// Zarovnání se prosazuje přes HAlign v CellStyleEditor; <see cref="Alignment"/> je jen passthrough
 /// per-column default (StopName vlevo, ostatní na střed).
@@ -35,7 +35,7 @@ public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
         set => Width = Controls.ColumnWidthText.Parse(value);
     }
 
-    // IColumnRowVM — čitelný název dle klíče (Header je tištěná zkratka)
+    // IColumnRowVM - čitelný název dle klíče (Header je tištěná zkratka)
     public string DisplayName => FriendlyName(_key, _header);
     public float? ColumnWidth => Width;
 
@@ -113,7 +113,7 @@ public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 
 class LineTableColumnsEditorDialogViewModel : EDViewModel
 {
-    // Tab 1 „Obecné" = embedded EDInputForm (LineTableElementEdit.cls) — řeší code-behind.
+    // Tab 1 „Obecné" = embedded EDInputForm (LineTableElementEdit.cls) - řeší code-behind.
     // VM drží jen per-sloupec editaci (tab 2).
 
     public ObservableCollection<LineTableColumnVM> ColumnVMs { get; } = [];
@@ -175,7 +175,7 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
         foreach (var col in columns)
             ColumnVMs.Add(LineTableColumnVM.FromModel(col, headerInherited, dataInherited));
 
-        // Doplň chybějící známé sloupce (uložená šablona může mít podmnožinu) — ať uživatel vidí
+        // Doplň chybějící známé sloupce (uložená šablona může mít podmnožinu) - ať uživatel vidí
         // všechny dostupné sloupce a může je zapnout checkboxem. Doplněné jsou skryté.
         var presentKeys = columns.Select(c => c.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var def in LineTableElement.GetDefaultColumns())

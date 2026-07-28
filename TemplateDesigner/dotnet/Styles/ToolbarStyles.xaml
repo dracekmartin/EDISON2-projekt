@@ -117,7 +117,7 @@
         </Setter>
     </Style>
 
-    <!-- ToolbarGroupLabel: popisek pod skupinou (Caption — čitelnější než Small) -->
+    <!-- ToolbarGroupLabel: popisek pod skupinou (Caption - čitelnější než Small) -->
     <Style x:Key="ToolbarGroupLabel" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Caption}"/>
         <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Muted}"/>

@@ -5,7 +5,7 @@ using TemplateDesigner.Models.Layout;
 namespace TemplateDesigner.Tests.Layout;
 
 /// <summary>
-/// Testy PageLayoutEngine — čistá logika (Template + DataContext → stránky),
+/// Testy PageLayoutEngine - čistá logika (Template + DataContext → stránky),
 /// výšky elementů dodává FixedHeightCalculator (žádný SkiaSharp).
 /// A4 bez okrajů → tisková plocha 297 mm na výšku.
 /// </summary>
@@ -72,7 +72,7 @@ public class PageLayoutEngineTests
     [Fact]
     public void KeepTogether_SekceVyssiNezStranka_ZustaneNaPrazdneStrance()
     {
-        // Sekce 400 mm se nikam nevejde — nesmí vzniknout prázdná úvodní stránka ani smyčka
+        // Sekce 400 mm se nikam nevejde - nesmí vzniknout prázdná úvodní stránka ani smyčka
         var result = Engine().Layout(A4Template(BodySection(400)), null);
 
         Assert.Equal(1, result.TotalPages);

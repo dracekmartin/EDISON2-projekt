@@ -56,7 +56,7 @@ public class ZastavkaData
     /// „Řádek pro každý označník" (KOVED #13048 bod 4).</summary>
     public List<string> NastupisteVariant { get; set; } = [];
 
-    /// <summary>Zdrojový řádek dat této zastávky — pro vyhodnocení řádkových podmínek (zvýraznění)
+    /// <summary>Zdrojový řádek dat této zastávky - pro vyhodnocení řádkových podmínek (zvýraznění)
     /// nad poli řádku. Neserializuje se.</summary>
     [JsonIgnore] public DataContext? SourceRow { get; set; }
 }
@@ -76,7 +76,7 @@ public class PoznamkaZastavkyData
     public string Text { get; set; } = "";
 }
 
-/// <summary>Skupina dnů (typ provozu — pracovní dny, soboty, neděle...).</summary>
+/// <summary>Skupina dnů (typ provozu - pracovní dny, soboty, neděle...).</summary>
 public class SkupinaDnuData
 {
     public string Id { get; set; } = "";
@@ -166,7 +166,7 @@ public class StopColumn
     public string Key { get; set; } = "";
     public string Header { get; set; } = "";
     /// <summary>Pevná šířka v mm. Null = auto (rovnoměrně sdílí zbývající šířku elementu po pevných sloupcích).
-    /// Default null (ne 10f) — jinak by se auto (null) po uložení ztratilo (serializer WhenWritingNull
+    /// Default null (ne 10f) - jinak by se auto (null) po uložení ztratilo (serializer WhenWritingNull
     /// vynechá klíč → po reloadu by initializer vrátil 10f). Výchozí sloupce nastavují Width explicitně.</summary>
     public float? Width { get; set; }
     public bool Visible { get; set; } = true;

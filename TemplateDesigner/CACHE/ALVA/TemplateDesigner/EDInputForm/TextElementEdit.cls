@@ -4,16 +4,16 @@ Include (GENERAL, EDInputForm)
 ///
 /// Field key = property path na C# TextElement (dot notation pro nested,
 /// např. "Style.FontSize"). Generický ElementEditDialog čte/zapisuje hodnoty
-/// přes reflexi (ElementPropertyAccessor). Init proto NEpotřebuje IN params —
+/// přes reflexi (ElementPropertyAccessor). Init proto NEpotřebuje IN params -
 /// jen definuje strukturu + default hodnoty (fallback pro null properties).
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace:
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace:
 /// Tato class je MANUAL MIRROR PropertyDescriptors v `TextElement.cs`. Stejné schema
 /// existuje na 2 místech (C# data model + Caché form def) kvůli Caché patchovatelnosti
 /// (server-side change bez .exe redeploy). Při přidání/přejmenování property MUST update
 /// obojí. Viz memory `project_edinputform_schema_duplication.md`.
 ///
-/// Save je no-op — TextElement je in-memory .NET model, host aplikuje hodnoty sám.
+/// Save je no-op - TextElement je in-memory .NET model, host aplikuje hodnoty sám.
 Class ALVA.TemplateDesigner.EDInputForm.TextElementEdit Extends %RegisteredObject
 {
 
@@ -33,10 +33,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Font" ────────────────────────────────────────────────
         d form.AddGroup("font", "Font")
 
-        // ComboBox (editovatelný + autocomplete) s prázdným seznamem — klient ho naplní nainstalovanými
+        // ComboBox (editovatelný + autocomplete) s prázdným seznamem - klient ho naplní nainstalovanými
         // fonty (ElementFormBinder.PopulateFontFields z SKFontManager). Prázdné = dědí výchozí font šablony.
         d form.AddFieldToLastGroup("Style.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
-        // Řez (váha) — items plní klient dynamicky dle vybrané rodiny (ElementFormBinder.PopulateFontWeightFields,
+        // Řez (váha) - items plní klient dynamicky dle vybrané rodiny (ElementFormBinder.PopulateFontWeightFields,
         // z reálných řezů nainstalovaného fontu). Prázdná položka (nepovinné pole) = auto dle Tučně.
         d form.AddFieldToLastGroup("Style.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
@@ -98,7 +98,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Podmínky" ───────────────────────────────────────────
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

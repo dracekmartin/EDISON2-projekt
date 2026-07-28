@@ -29,15 +29,15 @@ public partial class DynamicTableEditorDialog : Window
     // Držíme ho tady a po každém Prefillu znovu aplikujeme, ať výběr přežije přepínání tabů.
     private string? _selectedDataSource;
 
-    /// <summary>Výsledné sloupce po OK — pass-through z VM.</summary>
+    /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
     public List<TableColumn> ResultColumns => _vm.ResultColumns;
 
-    /// <summary>Command z tabu „Obecné" (EDInputForm) — null pokud se nic nezměnilo.
+    /// <summary>Command z tabu „Obecné" (EDInputForm) - null pokud se nic nezměnilo.
     /// Caller vykoná spolu se ResultColumns.</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
 
     /// <summary>Pravidla zvýraznění po editaci (button „Zvýraznění řádků…"). Aplikuje caller až na OK
-    /// dialogu (deferred — Storno columns dialogu změnu zahodí). <see cref="HighlightEdited"/> = bylo upraveno.</summary>
+    /// dialogu (deferred - Storno columns dialogu změnu zahodí). <see cref="HighlightEdited"/> = bylo upraveno.</summary>
     public List<HighlightRule>? ResultHighlightRules { get; private set; }
     public bool HighlightEdited { get; private set; }
 
@@ -81,7 +81,7 @@ public partial class DynamicTableEditorDialog : Window
         }
     }
 
-    // Běží při KAŽDÉM (re-)Initu formuláře — tj. i po návratu na tab Obecné (Loaded auto-Init).
+    // Běží při KAŽDÉM (re-)Initu formuláře - tj. i po návratu na tab Obecné (Loaded auto-Init).
     private void OnGeneralFormInitialized()
     {
         ElementFormBinder.PopulateFontFields(GeneralForm);
@@ -108,7 +108,7 @@ public partial class DynamicTableEditorDialog : Window
         field.ListItems = _collections.Select(c => new ListItem(c.CollectionKey, c.Name)).ToList();
     }
 
-    /// <summary>Přímý odchyt výběru v ComboBoxu pole „Zdroj dat" — čte SelectedValue živě, uloží do
+    /// <summary>Přímý odchyt výběru v ComboBoxu pole „Zdroj dat" - čte SelectedValue živě, uloží do
     /// transient stavu i modelu a hned naseeduje sloupce.</summary>
     private void OnFormSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -131,12 +131,12 @@ public partial class DynamicTableEditorDialog : Window
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {
-        // Zajisti aktuální zdroj v poli (ComboBox ho mohl při přepnutí tabu vynulovat) — ať Save/
+        // Zajisti aktuální zdroj v poli (ComboBox ho mohl při přepnutí tabu vynulovat) - ať Save/
         // ExtractCommands uloží zvolený zdroj, i když uživatel nebyl naposledy na tabu Obecné.
         if (_dataSourceField is not null && _selectedDataSource is not null)
             _dataSourceField.Value = _selectedDataSource;
 
-        // EDInputForm validace „Obecné" — při chybě zůstat v dialogu.
+        // EDInputForm validace „Obecné" - při chybě zůstat v dialogu.
         if (!GeneralForm.Save()) return;
 
         // Pojistka: kdyby uživatel vybral zdroj, ale nepřepnul na tab Sloupce, naseeduj teď.

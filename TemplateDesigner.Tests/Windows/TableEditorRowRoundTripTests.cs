@@ -6,7 +6,7 @@ namespace TemplateDesigner.Tests.Windows;
 
 /// <summary>
 /// Dialog sloupců pevné tabulky needituje per-buňkový formát ani styl (styl se dělá per sloupec),
-/// ale musí je <b>přenést</b>. Historicky je open+OK tiše smazal — nejvíc bolelo u tabulek načtených
+/// ale musí je <b>přenést</b>. Historicky je open+OK tiše smazal - nejvíc bolelo u tabulek načtených
 /// ze šablony agendy (Caché posílá <c>format</c>/<c>textColor</c> per buňku).
 /// </summary>
 public class TableEditorRowRoundTripTests
@@ -53,7 +53,7 @@ public class TableEditorRowRoundTripTests
         Assert.Equal("Platnost od", vysledek.Cells[0].Content);
     }
 
-    /// <summary>Styl se musí klonovat, ne sdílet — jinak by editace klonu měnila původní řádek (a naopak).</summary>
+    /// <summary>Styl se musí klonovat, ne sdílet - jinak by editace klonu měnila původní řádek (a naopak).</summary>
     [Fact]
     public void RoundTrip_StylJeKopie_NeSdilenaInstance()
     {

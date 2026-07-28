@@ -15,11 +15,11 @@ namespace TemplateDesigner.Tests.Serialization;
 /// Test parsuje .cls soubory přímo z repa (offline, bez Caché serveru), vytáhne field keys
 /// a reflexí ověří, že každá property path na cílovém C# typu existuje. Bloky
 /// <c>StyleFields.Add(form, "Prefix", …)</c> expanduje podle suffixů vyčtených ze
-/// <c>StyleFields.cls</c> — při přidání pole stylu se test aktualizuje sám.
+/// <c>StyleFields.cls</c> - při přidání pole stylu se test aktualizuje sám.
 /// </summary>
 public class EDInputFormSchemaDriftTests
 {
-    /// <summary>Mapa .cls souboru na cílový C# typ — mirror `EDInputFormSchema` switche v MainWindow
+    /// <summary>Mapa .cls souboru na cílový C# typ - mirror `EDInputFormSchema` switche v MainWindow
     /// + dialogy StopList/DepartureGrid (tab Obecné) + Section/Page dialogy.</summary>
     public static TheoryData<string, Type> SchemaMap => new()
     {
@@ -44,7 +44,7 @@ public class EDInputFormSchemaDriftTests
         ["PageEdit.cls"] = ["Format", "Orientation"],
     };
 
-    // Field key = 1. string argument Add* metod (AddGroup má jako 1. arg group id — vynechat)
+    // Field key = 1. string argument Add* metod (AddGroup má jako 1. arg group id - vynechat)
     private static readonly Regex DirectKeyRx = new(
         @"form\.Add(?:Text|Bool|Number|Decimal|FieldToLastGroup)\(\s*""([^""]+)""",
         RegexOptions.Compiled);
@@ -82,10 +82,10 @@ public class EDInputFormSchemaDriftTests
     [Fact]
     public void StyleFieldsSuffixy_SeNaparsovaly()
     {
-        // Pojistka regexu — StyleFields.cls definuje balíček polí stylu (FontFamily, FontSize, …)
+        // Pojistka regexu - StyleFields.cls definuje balíček polí stylu (FontFamily, FontSize, …)
         var suffixes = StyleFieldsSuffixes();
 
-        Assert.True(suffixes.Count >= 10, $"Načteno jen {suffixes.Count} suffixů — regex nesedí na StyleFields.cls?");
+        Assert.True(suffixes.Count >= 10, $"Načteno jen {suffixes.Count} suffixů - regex nesedí na StyleFields.cls?");
         Assert.Contains("FontSize", suffixes);
         Assert.Contains("TextColor", suffixes);
     }
@@ -96,7 +96,7 @@ public class EDInputFormSchemaDriftTests
     [Fact]
     public void VsechnyEditClsFormy_JsouPokryteNeboVyjimka()
     {
-        // Ne-elementové formy — needitují property elementu/sekce/šablony:
+        // Ne-elementové formy - needitují property elementu/sekce/šablony:
         //   StyleEdit = pod-formulář stylu (jeho pole ověřuje StyleFields expanze v rodičích).
         var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "StyleEdit.cls" };
 
@@ -146,6 +146,7 @@ public class EDInputFormSchemaDriftTests
         "nástupiště",       // → označník
         "Nástupiště",       // → Označník
         "stanoviště",       // → označník (výjimka legacy legendy je mimo EDInputForm)
+        "—",           // em dash → běžná pomlčka "-" (rozhodnutí Jan 2026-07-28)
     ];
 
     private static readonly Regex LabeledFieldRx = new(
@@ -166,9 +167,9 @@ public class EDInputFormSchemaDriftTests
     [Fact]
     public void StejnyFieldKey_MaVsudeStejnyLabel()
     {
-        // Legitimní rozdíly labelu téhož klíče mezi formuláři (kontextové upřesnění) — vědomé výjimky:
-        //   Height     — DynamicTable má nápovědu „(prázdné = auto)" (dynamická výška), statické elementy ne
-        //   StrokeWidth — u čáry je to „Tloušťka" (čáry samotné), u obdélníku „Tloušťka okraje"
+        // Legitimní rozdíly labelu téhož klíče mezi formuláři (kontextové upřesnění) - vědomé výjimky:
+        //   Height     - DynamicTable má nápovědu „(prázdné = auto)" (dynamická výška), statické elementy ne
+        //   StrokeWidth - u čáry je to „Tloušťka" (čáry samotné), u obdélníku „Tloušťka okraje"
         var exempt = new HashSet<string>(StringComparer.Ordinal) { "Height", "StrokeWidth" };
 
         var labelsPerKey = new Dictionary<string, Dictionary<string, List<string>>>();
@@ -190,7 +191,7 @@ public class EDInputFormSchemaDriftTests
             .ToList();
 
         Assert.True(drift.Count == 0,
-            "Tentýž field key má v různých .cls různý label — sjednoť (kanon ux-conventions §8):\n" +
+            "Tentýž field key má v různých .cls různý label - sjednoť (kanon ux-conventions §8):\n" +
             string.Join("\n", drift));
     }
 
@@ -272,7 +273,7 @@ public class EDInputFormSchemaDriftTests
         dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
 
         Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) — drift testy potřebují zdrojáky .cls");
+            "Nenalezen root repa (EDISON2.sln) - drift testy potřebují zdrojáky .cls");
         return Path.Combine(dir.FullName,
             "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "EDInputForm");
     }

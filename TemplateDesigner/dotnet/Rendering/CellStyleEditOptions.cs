@@ -2,7 +2,7 @@ namespace TemplateDesigner.Rendering;
 
 /// <summary>
 /// UX omezení editace stylu buňky. Dialog zobrazí/skryje/zakáže UI podle těchto flagů.
-/// Neaplikuje se na renderer — omezení je čistě UX, ne business rule.
+/// Neaplikuje se na renderer - omezení je čistě UX, ne business rule.
 /// </summary>
 public record CellStyleEditOptions
 {
@@ -18,6 +18,6 @@ public record CellStyleEditOptions
     public bool AllowVAlign           { get; init; } = true;
     public bool AllowPadding          { get; init; } = true;
 
-    /// <summary>Vše povolené — výchozí chování.</summary>
+    /// <summary>Vše povolené - výchozí chování.</summary>
     public static readonly CellStyleEditOptions AllEnabled = new();
 }

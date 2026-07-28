@@ -5,7 +5,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Rendering;
 
 /// <summary>
-/// Čistá geometrie pozicování textu buňky — bez SkiaSharp canvasu, deterministická a testovatelná.
+/// Čistá geometrie pozicování textu buňky - bez SkiaSharp canvasu, deterministická a testovatelná.
 /// Sdílí ji <see cref="CellRenderer"/> (jediné místo vykreslení buňky). Sem patří přesně ta logika,
 /// kde historicky vznikají tiché regrese: padding shrink, H/V zarovnání a clamp proti ořezu.
 /// </summary>
@@ -13,7 +13,7 @@ public static class CellLayout
 {
     /// <summary>
     /// Rozdělí text buňky na řádky. Zlom lze zapsat dvěma způsoby: skutečným zalomením (Enter v poli)
-    /// nebo autorskou zkratkou <c>\n</c> (literální zpětné lomítko + n) — jednoduchá inline syntaxe
+    /// nebo autorskou zkratkou <c>\n</c> (literální zpětné lomítko + n) - jednoduchá inline syntaxe
     /// pro dvojjazyčné záhlaví, např. <c>Zastávka\nStation</c>. Normalizuje i <c>\r\n</c> / <c>\r</c>
     /// (WPF TextBox). Prázdný text → jeden prázdný řádek. Sdíleno rendererem i výpočtem výšky, aby
     /// měl počet řádků shodný při kreslení i měření.

@@ -11,7 +11,7 @@ public class TextElement : TemplateElement
     /// </summary>
     public string Text { get; set; } = "";
 
-    /// <summary>Styl textu — font, barvy, zarovnání, řádkování, padding.</summary>
+    /// <summary>Styl textu - font, barvy, zarovnání, řádkování, padding.</summary>
     public TextStyle Style { get; set; } = TextStyle.CreateDefault();
 
     public bool WordWrap { get; set; } = true;
@@ -43,7 +43,7 @@ public class TextElement : TemplateElement
         }
 
         // V designeru (bez dat) omezit velikost fontu, aby placeholdery typu {NAZEV_POLE}
-        // nepřetékaly — zobrazit čitelně místo ve skutečné velikosti.
+        // nepřetékaly - zobrazit čitelně místo ve skutečné velikosti.
         float effectiveFontSize = ctx.Data is null ? Math.Min(rs.FontSize, 10f) : rs.FontSize;
         float fontSizePx = ctx.Px(effectiveFontSize * ResolvedTextStyle.PtToMm);
 
@@ -86,7 +86,7 @@ public class TextElement : TemplateElement
         }
         else
         {
-            // Jednořádkový režim — s horizontálním a vertikálním zarovnáním
+            // Jednořádkový režim - s horizontálním a vertikálním zarovnáním
             float textWidth = font.MeasureText(resolvedText);
             float xPx = rs.HAlign switch
             {
@@ -107,7 +107,7 @@ public class TextElement : TemplateElement
         ctx.Canvas.Restore();
     }
 
-    /// <summary>Skutečná výška textu (dynamická) pro ořez na tvar rohů — shodně s výpočtem v Render.</summary>
+    /// <summary>Skutečná výška textu (dynamická) pro ořez na tvar rohů - shodně s výpočtem v Render.</summary>
     public override SKRect GetContentClipRect(RenderContext ctx)
     {
         var resolved = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
@@ -119,7 +119,7 @@ public class TextElement : TemplateElement
     {
         base.ApplyScale(scale);
         if (Style.FontSize is not null) Style.FontSize *= scale;
-        // LineSpacing je bezrozměrný násobitel (1.2 = 120 %) — neškáluje se
+        // LineSpacing je bezrozměrný násobitel (1.2 = 120 %) - neškáluje se
     }
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
@@ -135,7 +135,7 @@ public class TextElement : TemplateElement
         new BoolPropertyDescriptor   { Label = "Zalamování",    Group = "Font",      Get = () => WordWrap,                     Set = v => WordWrap = v },
         new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => Style.LineSpacing ?? 1.2f,    Set = v => Style.LineSpacing = v,               Min = 0.8f, Max = 3f, Format = "0.0#" },
 
-        // HAlign rozšířený o Justify — inline (sdílené HAlignOptions Justify nemají, cell elementy ho v rendereru ignorují)
+        // HAlign rozšířený o Justify - inline (sdílené HAlignOptions Justify nemají, cell elementy ho v rendereru ignorují)
         new EnumPropertyDescriptor   { Label = "Vodorovně", Group = "Zarovnání", Get = () => Style.HAlign ?? TextHorizontalAlignment.Left, Set = v => Style.HAlign = (TextHorizontalAlignment)v,
             Options = [..EnumPropertyDescriptor.HAlignOptions, ("Do bloku", TextHorizontalAlignment.Justify)] },
         new EnumPropertyDescriptor   { Label = "Svisle",    Group = "Zarovnání", Get = () => Style.VAlign ?? TextVerticalAlignment.Top,  Set = v => Style.VAlign = (TextVerticalAlignment)v,  Options = EnumPropertyDescriptor.VAlignOptions },

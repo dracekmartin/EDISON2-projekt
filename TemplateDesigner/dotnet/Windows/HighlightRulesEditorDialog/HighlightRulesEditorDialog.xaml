@@ -22,7 +22,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{DynamicResource EDTheme.Text.Secondary}">
-            Pravidla se vyhodnocují shora dolů — <Bold>první splněné vyhrává</Bold>. Podmínka je výraz nad poli
+            Pravidla se vyhodnocují shora dolů - <Bold>první splněné vyhrává</Bold>. Podmínka je výraz nad poli
             řádku, např. <Run FontFamily="Consolas">{STAV}=="STORNO"</Run> nebo <Run FontFamily="Consolas">{CENA} &gt; 1000</Run>.
         </TextBlock>
 

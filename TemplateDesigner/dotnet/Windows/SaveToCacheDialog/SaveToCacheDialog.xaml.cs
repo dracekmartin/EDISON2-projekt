@@ -16,14 +16,14 @@ public partial class SaveToCacheDialog : Window
         DataContext = vm;
         InitializeComponent();
 
-        // Pre-fill initial values do Caché Init přes IN params — formulář se otevře
+        // Pre-fill initial values do Caché Init přes IN params - formulář se otevře
         // s aktuálním Name + AgendaCode šablony.
         var init = new CVar();
         init["name"]       = new CVar(vm.InitialName ?? "");
         init["agendaCode"] = new CVar(vm.InitialAgendaCode ?? "");
         TheForm.InitParams = init;
 
-        // Tlačítko „Uložit" je nedostupné, dokud není vyplněné jméno — místo popupu při kliku
+        // Tlačítko „Uložit" je nedostupné, dokud není vyplněné jméno - místo popupu při kliku
         // na prázdné jméno (přívětivější). Popup ze Save() zůstává jako záloha pro ostatní validace.
         TheForm.Initialized += UpdateSaveEnabled;
         TheForm.FieldChanged += _ => UpdateSaveEnabled();

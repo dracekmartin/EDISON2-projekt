@@ -4,7 +4,7 @@ namespace TemplateDesigner.Serialization;
 
 /// <summary>
 /// Načítá schéma agendy z Caché databáze přes delegate.
-/// TemplateDesigner neodkazuje přímo na ALWA.SYS — volající předá Func, která
+/// TemplateDesigner neodkazuje přímo na ALWA.SYS - volající předá Func, která
 /// zavolá MLRest.Query a vrátí seznam názvů polí pro danou agendu.
 /// </summary>
 public class CacheDataSchemaProvider : IDataSchemaProvider

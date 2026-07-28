@@ -1,6 +1,6 @@
 Include GENERAL
 
-/// Seznam tiskových šablon uložených v TemplateDesigneru — metadata všech šablon
+/// Seznam tiskových šablon uložených v TemplateDesigneru - metadata všech šablon
 /// per aktuální IDFa (firmu).
 ///
 /// Šablona = uložený layout tiskové sestavy (zastávkový JŘ MHD, faktura, ...) s odkazem
@@ -19,7 +19,7 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
     try {
         $$$FillParams
 
-        // Agenda + Varianta jako dvojice hned za názvem — pár drží pohromadě ve výchozím layoutu.
+        // Agenda + Varianta jako dvojice hned za názvem - pár drží pohromadě ve výchozím layoutu.
         s list = ##class(ALVA.EDControls.EDList.List).%New()
         d list.AddColumn("name",       "Název",        "TEXT",     190, "", 1)
         d list.AddColumn("agenda",     "Agenda",       "TEXT",     110, "", 1)
@@ -44,7 +44,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
         s filterAgenda = $g(^||ML("IN","filter","agendaCode"))
         s list = ##class(ALVA.EDControls.EDList.List).%New()
 
-        // Systémové (MLINE) první — sdílené šablony od M-line, na klientovi read-only.
+        // Systémové (MLINE) první - sdílené šablony od M-line, na klientovi read-only.
         // Nezdvojovat, když session firma sama je MLINE (autorování systémových).
         if IdFa '= "MLINE" d ..AddBranchRows(list, "MLINE", filterAgenda, 1)
         // Vlastní (firma)
@@ -93,7 +93,7 @@ ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, IdFa As %String,
 }
 
 /// Rozloží kombinovaný kód (metadata AgendaCode) na zobrazovací dvojici Agenda + Varianta
-/// dle parametrů agenda třídy (dvouosý model). Cache per request v ^||TDSablonyAgendy —
+/// dle parametrů agenda třídy (dvouosý model). Cache per request v ^||TDSablonyAgendy -
 /// GetClassForCode dělá SQL scan, per-řádkové volání by bylo zbytečně drahé.
 /// Neznámý kód (třída neexistuje) → agenda = syrový kód, varianta prázdná; GENERAL → "Obecná".
 ClassMethod ResolveAgendaVariant(code As %String, ByRef agendaLabel As %String, ByRef variantaText As %String)

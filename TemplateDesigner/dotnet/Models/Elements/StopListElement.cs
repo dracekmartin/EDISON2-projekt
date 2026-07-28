@@ -14,7 +14,7 @@ namespace TemplateDesigner.Models.Elements;
 public class StopListElement : StopScheduleElementBase, IRowHighlightable
 {
     // ═══════════════════════════════════════════
-    // Sloupce — konfigurovatelné pořadí, šířky, záhlaví
+    // Sloupce - konfigurovatelné pořadí, šířky, záhlaví
     // ═══════════════════════════════════════════
     public List<StopColumn> Columns { get; set; } = GetDefaultColumns();
 
@@ -107,17 +107,17 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     // ─── Render ─────────────────────────────────────────────────────────────
 
-    /// <summary>Odsazení vertikální čáry šipky od pravého okraje sloupce zastávek (mm) — pro Vpravo.</summary>
+    /// <summary>Odsazení vertikální čáry šipky od pravého okraje sloupce zastávek (mm) - pro Vpravo.</summary>
     private const float ArrowInsetFromEdgeMm = 0.6f;
 
-    /// <summary>Délka horizontálního bracketu šipky pro Vpravo (mm) — bracket míří doleva do sloupce.</summary>
+    /// <summary>Délka horizontálního bracketu šipky pro Vpravo (mm) - bracket míří doleva do sloupce.</summary>
     private const float ArrowBracketLengthMm = 1.5f;
 
-    /// <summary>Odsazení vertikální čáry šipky doleva mimo sloupec zastávek (mm) — pro Vlevo.</summary>
+    /// <summary>Odsazení vertikální čáry šipky doleva mimo sloupec zastávek (mm) - pro Vlevo.</summary>
     /// <remarks>Šipka pro Vlevo jde mimo sloupec, aby se nepřekrývala s left-aligned textem. Bracket pak vede k levé hraně sloupce.</remarks>
     private const float ArrowOutsideOffsetMm = 1.5f;
 
-    /// <summary>Padding sub-cell značek kolem textu — pro vizuální vzdušnost vlevo i vpravo (mm celkem).</summary>
+    /// <summary>Padding sub-cell značek kolem textu - pro vizuální vzdušnost vlevo i vpravo (mm celkem).</summary>
     private const float MarkersSubCellPaddingMm = 1.0f;
 
     public override void Render(RenderContext ctx)
@@ -137,7 +137,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         float effectiveFontSize = baseFontSize * scale;
         float effectiveHeaderFontSize = baseHeaderFontSize * scale;
 
-        // TR4: fixed-then-shrink — pevná DataRowHeight se taky zmenší při přetečení (sdílený helper, jako DepartureGrid).
+        // TR4: fixed-then-shrink - pevná DataRowHeight se taky zmenší při přetečení (sdílený helper, jako DepartureGrid).
         float rowH = ScaledDataRowHeight(MaxResolvedDataFontPt(), scale);
         float headerH = ComputeHeaderH(effectiveHeaderFontSize) * MaxHeaderLines();
 
@@ -156,7 +156,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", ShowDirectionArrow);
         bool arrowLeft = showArrow && DirectionArrowPosition == DirectionArrowSide.Left;
 
-        // Šipka se vykresluje UVNITŘ sloupce zastávek (Key = NAZEV_ZASTAVKY) — vertikální čára je
+        // Šipka se vykresluje UVNITŘ sloupce zastávek (Key = NAZEV_ZASTAVKY) - vertikální čára je
         // kousek od vnitřního okraje sloupce, bracket horizontálně směřuje do sloupce.
         // Nepřičítá se nic k šířce layoutu → element a sloupce zachovávají Width.
         // Pro běžně krátké názvy zastávek se text se šipkou nepřekrývá.
@@ -171,14 +171,14 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Symbolový font pro piktogramové značky (MHD „na znamení" = drátový kód „D" → piktogram).
         var symbolFace = GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture));
 
-        // Šířka sub-cell pro značky (BeforeName) — auto-fit podle nejširšího marker textu v datech.
+        // Šířka sub-cell pro značky (BeforeName) - auto-fit podle nejširšího marker textu v datech.
         float markersSubCellWidth = MarkersPosition == StopMarkersSide.BeforeName
             ? ComputeMarkersSubCellWidth(zastavky, effectiveFontSize, ctx.MmToPx, symbolFace)
             : 0f;
 
         // Asymetrická pozice šipky:
-        //   Vpravo: šipka UVNITŘ sloupce u pravé hrany — text je left-aligned, k pravé hraně obvykle nezasahuje.
-        //   Vlevo:  šipka MIMO sloupec (vlevo od jeho levé hrany) — left-aligned text by jinak kolidoval.
+        //   Vpravo: šipka UVNITŘ sloupce u pravé hrany - text je left-aligned, k pravé hraně obvykle nezasahuje.
+        //   Vlevo:  šipka MIMO sloupec (vlevo od jeho levé hrany) - left-aligned text by jinak kolidoval.
         //           Bracket pak vede zpět až k levé hraně sloupce (do prázdné padding-right oblasti předchozího sloupce).
         float arrowLineXMm = arrowLeft
             ? stopNameLeftMm - ArrowOutsideOffsetMm
@@ -187,7 +187,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ? stopNameLeftMm                         // bracket od šipky doprava až k levé hraně sloupce zastávek
             : arrowLineXMm - ArrowBracketLengthMm;   // bracket od šipky doleva do sloupce
 
-        // Clip na hranice elementu — chrání před přesahem, pokud součet šířek sloupců
+        // Clip na hranice elementu - chrání před přesahem, pokud součet šířek sloupců
         // přesahuje Width (nekonzistentní konfigurace). Konzistentní s DepartureGridElement.
         var clipRect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
         ctx.Canvas.Save();
@@ -206,7 +206,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 float arrowEndY = -1f;
 
                 // Rezerva „Přizpůsobit buňce" pro sloupec názvů: při šipce vpravo nesmí zmenšený text
-                // podlézt její vodorovnou část (svislice + bracket míří do sloupce) — cíl končí před ní.
+                // podlézt její vodorovnou část (svislice + bracket míří do sloupce) - cíl končí před ní.
                 float nameShrinkReserveMm = (showArrow && !arrowLeft)
                     ? ArrowInsetFromEdgeMm + ArrowBracketLengthMm + 0.5f
                     : CellRenderer.DefaultShrinkReserveMm;
@@ -268,7 +268,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     currentY += rowH;
                 }
 
-                // Šipka směru jízdy v rezervovaném gutteru — ┌─▼ (vlevo) nebo ─┐▼ (vpravo)
+                // Šipka směru jízdy v rezervovaném gutteru - ┌─▼ (vlevo) nebo ─┐▼ (vpravo)
                 if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
                     RenderDirectionArrow(ctx, arrowLineXMm, bracketColumnsSideMm, arrowStartY, arrowEndY, rowH);
             }
@@ -313,10 +313,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     // ─── Style resolution (kaskáda column → element → CellDefaults) ─────────
 
-    /// <summary>Parent kaskády pro per-column header override — co sloupec dědí, když vlastní styl nemá.</summary>
+    /// <summary>Parent kaskády pro per-column header override - co sloupec dědí, když vlastní styl nemá.</summary>
     public ResolvedTextStyle ResolveColumnHeaderParent() => HeaderStyle.Resolve(ScheduleHeaderDefaults);
 
-    /// <summary>Parent kaskády pro per-column data override — co sloupec dědí, když vlastní styl nemá.</summary>
+    /// <summary>Parent kaskády pro per-column data override - co sloupec dědí, když vlastní styl nemá.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
     /// <summary>Vyřeší styl záhlaví sloupce přes sdílené jádro (kaskáda column → element → baked +
@@ -397,7 +397,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             {
                 var nameStyle = ResolveRowStyle(col, isCurrent, isPassed);
                 var markerStyle = nameStyle with { HAlign = TextHorizontalAlignment.Right };
-                // Text značek prázdný — kreslí je DrawStopMarkers zvlášť (per-run font). Sub-cell drží jen šířku a pozadí.
+                // Text značek prázdný - kreslí je DrawStopMarkers zvlášť (per-run font). Sub-cell drží jen šířku a pozadí.
                 result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", markerStyle);
                 result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key), nameStyle, nameShrinkReserveMm, nameTrailingMm);
             }
@@ -467,7 +467,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             StrokeCap = SKStrokeCap.Round
         };
 
-        // Souřadnice v px — start uprostřed písmen aktuální zastávky, konec u spodní hrany poslední zastávky
+        // Souřadnice v px - start uprostřed písmen aktuální zastávky, konec u spodní hrany poslední zastávky
         float topY = startY + rowH * 0.5f;       // uprostřed písmen aktuální zastávky
         float bottomY = endY + rowH * 0.8f;       // kousek nad spodní hranou řádku poslední zastávky
         var lineTop = ctx.ToCanvas(lineXMm, topY);
@@ -478,7 +478,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         ctx.Canvas.DrawLine(bracketColumnsSide, lineTop, paint);
         ctx.Canvas.DrawLine(lineTop, lineBottom, paint);
 
-        // ▼ — šipka na konci
+        // ▼ - šipka na konci
         float arrowSize = 1.2f * ctx.MmToPx;
         using var arrowPaint = new SKPaint
         {
@@ -515,7 +515,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         }
         else
         {
-            // Aktivní podmínka viditelnosti — spočítat řádky přesně jako v Render (parita výška↔render).
+            // Aktivní podmínka viditelnosti - spočítat řádky přesně jako v Render (parita výška↔render).
             visibleStops = 0;
             bool foundCurrent = false;
             foreach (var z in zastavky)
@@ -527,7 +527,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             }
         }
 
-        // Stejný zdroj fontu jako v Render() — max resolved per-column, ať scale/overflow sedí.
+        // Stejný zdroj fontu jako v Render() - max resolved per-column, ať scale/overflow sedí.
         float headerH = ShowHeader ? ComputeHeaderH(MaxResolvedHeaderFontPt()) * MaxHeaderLines() : 0f;
         float rowH = DataRowHeight ?? ComputeRowH(MaxResolvedDataFontPt());
         return headerH + visibleStops * rowH;
@@ -548,7 +548,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return result;
     }
 
-    /// <summary>Největší resolved font záhlaví napříč viditelnými sloupci (pt) — vč. per-column overridů.
+    /// <summary>Největší resolved font záhlaví napříč viditelnými sloupci (pt) - vč. per-column overridů.
     /// Výška záhlaví se počítá z této hodnoty, aby odpovídala reálně vykreslenému textu.</summary>
     private float MaxResolvedHeaderFontPt()
     {
@@ -556,7 +556,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return cols.Count > 0 ? cols.Max(c => ResolveHeaderStyle(c).FontSize) : (HeaderStyle.FontSize ?? 9f);
     }
 
-    /// <summary>Nejvyšší počet řádků záhlaví napříč viditelnými sloupci — dvouřádkové záhlaví přes \n
+    /// <summary>Nejvyšší počet řádků záhlaví napříč viditelnými sloupci - dvouřádkové záhlaví přes \n
     /// (např. „Zastávka" / „Stop"). Výška záhlaví se násobí tímto počtem, ať se text vejde.</summary>
     private int MaxHeaderLines()
     {
@@ -567,7 +567,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return max;
     }
 
-    /// <summary>Největší resolved font datové buňky napříč viditelnými sloupci (pt) — vč. per-column overridů.</summary>
+    /// <summary>Největší resolved font datové buňky napříč viditelnými sloupci (pt) - vč. per-column overridů.</summary>
     private float MaxResolvedDataFontPt()
     {
         var cols = GetVisibleColumns();
@@ -629,7 +629,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return result;
     }
 
-    /// <summary>Cached excluded set — vytvořen jednou per render pass.</summary>
+    /// <summary>Cached excluded set - vytvořen jednou per render pass.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     private HashSet<string>? _excludedSet;
     [System.Text.Json.Serialization.JsonIgnore]
@@ -677,7 +677,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// <summary>
     /// Značky zastávky (na znamení, atributy, poznámky) rozdělené na úseky podle fontu.
     /// Piktogramové symboly (jednoznakový SpecZnak, který není textové „x/y/z") jdou symbolovým
-    /// Timetable fontem — bez toho MHD „na znamení" (kód „D") vykreslí surové písmeno „D".
+    /// Timetable fontem - bez toho MHD „na znamení" (kód „D") vykreslí surové písmeno „D".
     /// Textové značky a poznámky jdou normálním fontem (AD „x" zůstává „x"). Úseky navzájem
     /// oddělené mezerou (shodně s dřívějším spojeným textem).
     /// </summary>
@@ -686,11 +686,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         var runs = new List<MarkerRun>();
         void Separator() { if (runs.Count > 0) runs.Add(new MarkerRun(" ", false)); }
 
-        // „Na znamení" přes dedikované pole (mock data) — zobrazovací symbol, normální font.
+        // „Na znamení" přes dedikované pole (mock data) - zobrazovací symbol, normální font.
         if (ShowSignalStopIndicator && z.NaZnameni)
             runs.Add(new MarkerRun(SignalStopSymbol, false));
 
-        // Atributy — každý vlastní úsek (piktogram, pokud jednoznakový a ne textové „x/y/z").
+        // Atributy - každý vlastní úsek (piktogram, pokud jednoznakový a ne textové „x/y/z").
         if (z.Atributy.Count > 0)
         {
             var excluded = GetExcludedSet();
@@ -708,7 +708,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             }
         }
 
-        // Poznámky zastávky — textové značky (legenda je má jako „text"), normální font.
+        // Poznámky zastávky - textové značky (legenda je má jako „text"), normální font.
         if (ShowStopNotes && z.PoznamkyZastavky.Count > 0)
         {
             var noteSymbols = string.Join("", z.PoznamkyZastavky.Select(p => p.Znak));
@@ -742,7 +742,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         }
         else
         {
-            // AfterName: za názvem — odměř šířku názvu ve stejném fontu a začni značky za ní.
+            // AfterName: za názvem - odměř šířku názvu ve stejném fontu a začni značky za ní.
             // Při „Přizpůsobit buňce" musí měření i značky použít TUTÉŽ efektivní škálu jako
             // CellRenderer (stejné vstupy vč. rezervy a šířky značek), jinak se pozice rozjedou.
             var cellMm = new SKRect(stopNameLeftMm, rowTopMm, stopNameLeftMm + nameColWidthMm, rowTopMm + rowH);
@@ -762,7 +762,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         }
     }
 
-    /// <summary>Šířka bloku značek za názvem (oddělovací mezera + úseky) v mm při dané škále —
+    /// <summary>Šířka bloku značek za názvem (oddělovací mezera + úseky) v mm při dané škále -
     /// vstup pro „Přizpůsobit buňce": o ni se název zmenšuje navíc, aby se za něj značky vešly.</summary>
     private float MeasureMarkersTrailingMm(RenderContext ctx, List<MarkerRun> runs,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
@@ -803,13 +803,13 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     }
 
     /// <summary>Je atribut zastávky „na znamení"? AD i MHD ho posílají jako atribut (ne přes pole
-    /// NaZnameni), symbol se liší podle číselníku firmy (AD „x", MHD např. „D") — rozpoznáváme ho
+    /// NaZnameni), symbol se liší podle číselníku firmy (AD „x", MHD např. „D") - rozpoznáváme ho
     /// proto podle popisu (CZ „na znamení" / SK „na znamenie"), aby ho řídil přepínač „Na znamení".</summary>
     private static bool IsNaZnameniAttr(AtributData a) =>
         a.Popis.StartsWith("na znamen", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Je atribut zastávky přestup na jiný druh dopravy? V1: vlak „L" / autobus „A"
-    /// (číselník 16). Řídí ho přepínač „Přestupy" — nad rámec legacy StopListu.</summary>
+    /// (číselník 16). Řídí ho přepínač „Přestupy" - nad rámec legacy StopListu.</summary>
     private static bool IsTransferAttr(AtributData a) =>
         a.Znak is "A" or "L";
 
@@ -821,14 +821,14 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public List<ZastavkaData> ExpandPlatformRows(List<ZastavkaData> stops)
     {
         if (MultiPlatformMode != MultiPlatformDisplay.RowPerPlatform) return stops;
-        // Rozpad řádků má smysl jen s variantními časovými sloupci — bez nich by duplikáty nesly
+        // Rozpad řádků má smysl jen s variantními časovými sloupci - bez nich by duplikáty nesly
         // identický jediný čas (CasJizdy základní trasy) a vypadaly jako chyba.
         if (!ShowAllRouteVariants) return stops;
 
         var result = new List<ZastavkaData>(stops.Count);
         foreach (var z in stops)
         {
-            // Odlišná stanoviště variant, které zde staví — v pořadí prvního výskytu (bez třídění).
+            // Odlišná stanoviště variant, které zde staví - v pořadí prvního výskytu (bez třídění).
             // Jen indexy v rozsahu TrasaMin (obojí server drží stejně dlouhé; guard proti fantom řádku).
             var platforms = new List<string>();
             int pocetSloupcu = Math.Min(z.NastupisteVariant.Count, z.TrasaMin.Count);
@@ -869,7 +869,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             if (nv == platform)
                 trasa.Add(val);                           // čas varianty jedoucí z tohoto stanoviště
             else if (keepMarkers && val == "<")
-                trasa.Add(val);                           // „projíždí" (mimo stanoviště) — 1× na prvním řádku
+                trasa.Add(val);                           // „projíždí" (mimo stanoviště) - 1× na prvním řádku
             else
                 trasa.Add("");
         }
@@ -900,7 +900,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             name = new string(' ', z.Odsazeni) + name;
 
         // Značky (na znamení / atributy / poznámky) kreslí DrawStopMarkers zvlášť po úsecích
-        // (per-run font) — v obou režimech (Before/AfterName). Buňka názvu nese jen název.
+        // (per-run font) - v obou režimech (Before/AfterName). Buňka názvu nese jen název.
         return name;
     }
 
@@ -953,7 +953,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             Label = "Pozice šipky", Group = "Směr jízdy",
             Get = () => DirectionArrowPosition,
             Set = v => DirectionArrowPosition = (DirectionArrowSide)v,
-            // „u okraje elementu" v labelu záměrně — šipka se kreslí na hraně elementu, ne u sloupců;
+            // „u okraje elementu" v labelu záměrně - šipka se kreslí na hraně elementu, ne u sloupců;
             // u širokého elementu je tedy daleko vpravo a uživateli se zdálo, že se „nic nezměnilo".
             Options =
             [
@@ -1037,7 +1037,7 @@ public enum DirectionArrowSide
 /// <summary>Zdroj sloupce „Označník" při více označnících u zastávky (KOVED #13048 bod 4).</summary>
 public enum MultiPlatformDisplay
 {
-    /// <summary>Z trasy linky (J-věta) — dnešní chování, default.</summary>
+    /// <summary>Z trasy linky (J-věta) - dnešní chování, default.</summary>
     FromRoute,
     /// <summary>Označník, odkud jede nejvíc spojů (per-spoj hodnota má přednost před trasou).</summary>
     MostFrequent,

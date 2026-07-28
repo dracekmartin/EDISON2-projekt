@@ -16,7 +16,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
 {
     /// <summary>
     /// Symboly, které se dle konvence JŘ tisknou jako <b>prostý text</b>, ne jako piktogram
-    /// ze symbolového Timetable fontu — „na znamení" (`x` a časové varianty `y`/`z`). Ostatní
+    /// ze symbolového Timetable fontu - „na znamení" (`x` a časové varianty `y`/`z`). Ostatní
     /// jednoznakové symboly (bezbariér `H`/`F`…) jdou přes symbolový font.
     /// Viz <c>.claude/docs/elementy-architektura.md</c> (render-mód „text" vs „font-glyf").
     /// </summary>
@@ -39,7 +39,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
     [JsonIgnore] private Dictionary<string, Dictionary<int, List<OdjezdData>>>? _cachedOdjezdy;
     [JsonIgnore] private List<PoznamkaData>? _cachedPoznamky;
 
-    /// <summary>Invaliduje cache — volat při změně DataSource klíčů.</summary>
+    /// <summary>Invaliduje cache - volat při změně DataSource klíčů.</summary>
     protected void InvalidateCache() => _cachedDataRef = null;
 
     private bool IsCacheValid(DataContext? data) =>
@@ -89,7 +89,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                 SourceRow     = row,
             };
 
-            // Vnořená pole — z JsonArray
+            // Vnořená pole - z JsonArray
             if (row.GetValue(StopFields.Zone) is JsonArray zonyArr)
                 z.Zony = zonyArr.Select(n => n?.ToString() ?? "").Where(s => s.Length > 0).ToList();
 
@@ -112,11 +112,11 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                         Text = n!["TEXT"]?.ToString() ?? ""
                     }).ToList();
 
-            // časy per varianta trasy (dynamické TrasaMin) — číslo / „<" / "" jako string
+            // časy per varianta trasy (dynamické TrasaMin) - číslo / „<" / "" jako string
             if (row.GetValue("TRASA_MIN") is JsonArray tmArr)
                 z.TrasaMin = tmArr.Select(n => n?.ToString() ?? "").ToList();
 
-            // označník každé varianty (zarovnané s TrasaMin) — pro režim „Řádek pro každý označník"
+            // označník každé varianty (zarovnané s TrasaMin) - pro režim „Řádek pro každý označník"
             if (row.GetValue("NASTUPISTE_VARIANT") is JsonArray nvArr)
                 z.NastupisteVariant = nvArr.Select(n => n?.ToString() ?? "").ToList();
 
@@ -169,7 +169,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                 BackColor               = NullIfEmpty(row.GetString("BACK_COLOR")),
             };
 
-            // Anotace — vnořené pole
+            // Anotace - vnořené pole
             if (row.GetValue("ANOTACE") is JsonArray anotArr)
                 odjezd.Anotace = anotArr
                     .Where(n => n is not null)
@@ -226,7 +226,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
         return result;
     }
 
-    // ─── Parse helpery (typy poznámek/anotací — zastávkové POCO) ────────────
+    // ─── Parse helpery (typy poznámek/anotací - zastávkové POCO) ────────────
 
     protected static TypPoznamky ParseTypPoznamky(string? s) => s?.ToLowerInvariant() switch
     {

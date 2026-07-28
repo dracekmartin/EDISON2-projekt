@@ -4,10 +4,10 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Rendering;
 
 /// <summary>
-/// Sdílené řádkové tabulkové jádro (R1) — algoritmy společné všem řádkovým tabulkovým elementům
+/// Sdílené řádkové tabulkové jádro (R1) - algoritmy společné všem řádkovým tabulkovým elementům
 /// (StopList, DynamicTable, LineTable). Stojí NAD <see cref="CellRenderer"/> / <see cref="ColumnRenderer"/>.
 ///
-/// **Záměrně nesjednocuje datovou třídu sloupce** — StopColumn i TableColumn zůstávají (odlišná
+/// **Záměrně nesjednocuje datovou třídu sloupce** - StopColumn i TableColumn zůstávají (odlišná
 /// serializace, odlišné potřeby). Elementy sem jen promítnou neutrální tvar (<see cref="ColWidth"/>,
 /// per-column TextStyle). Tím je nulové riziko pro uložené šablony. DepartureGrid je mimo (pivot).
 ///
@@ -24,7 +24,7 @@ public static class TableLayout
     /// elementu), auto (null) si rovným dílem rozdělí zbytek po pevných sloupcích. Nikdy záporné.
     ///
     /// Sjednocuje `StopListElement.ResolveColumnWidths` (mm, auto = null) a
-    /// `DynamicTableElement.ComputeColumnWidths` (mm/%, auto = Width&lt;=0) do jednoho vzorce —
+    /// `DynamicTableElement.ComputeColumnWidths` (mm/%, auto = Width&lt;=0) do jednoho vzorce -
     /// behavior-preserving pro oba (auto sentinel se převádí na hranici v projekci elementu).
     /// </summary>
     public static float[] ResolveWidths(IReadOnlyList<ColWidth> cols, float elementWidthMm)

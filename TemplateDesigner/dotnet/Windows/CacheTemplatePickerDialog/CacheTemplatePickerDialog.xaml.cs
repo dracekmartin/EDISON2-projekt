@@ -15,10 +15,10 @@ public partial class CacheTemplatePickerDialog : Window
         TheList.SelectionChanged += (_, _) => _vm.Selected = TheList.SelectedRow;
         TheList.RowDoubleClicked += (_, _) => { if (_vm.OpenCommand.CanExecute(null)) _vm.OpenCommand.Execute(null); };
 
-        // VM žádá reload (po Delete / Rename) — sebere current filter a znovu načte
+        // VM žádá reload (po Delete / Rename) - sebere current filter a znovu načte
         _vm.RequestReload = () => TheFilter.Refresh();
 
-        // VM žádá nový název pro rename — otevře dialog (WPF drží View)
+        // VM žádá nový název pro rename - otevře dialog (WPF drží View)
         _vm.RequestRenameInput = oldName =>
         {
             var dvm = new SaveSectionTemplateDialogViewModel(oldName);

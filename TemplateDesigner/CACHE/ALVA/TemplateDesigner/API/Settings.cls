@@ -3,7 +3,7 @@ Include GENERAL
 /// Obecné nastavení TemplateDesigneru uložené v Caché (per firma).
 ///
 /// Globál: ^ALVA.TemplateDesigner.Config(IdFa, sekce, klíč) = hodnota.
-/// Pattern: vestavěné defaulty + override z globálu — accessor vrátí hodnotu z globálu,
+/// Pattern: vestavěné defaulty + override z globálu - accessor vrátí hodnotu z globálu,
 /// a když chybí, vestavěný default. Zero-config tedy funguje bez seed migrace a firma
 /// může přepsat. První konzument = formáty stránky (PageEdit); další TD config reusne.
 Class ALVA.TemplateDesigner.API.Settings Extends %RegisteredObject

@@ -1,7 +1,7 @@
 Include %occInclude
 
 /// Gold pojistka „vůči starému": zóny per zastávka z našeho `ZastavkoveJrAd.GetData` vs LEGACY
-/// `ALVA.TISKMHD.Data.LoadData` (VolanoZ=JRMAIN) — tentýž generátor, který krmil starý modul.
+/// `ALVA.TISKMHD.Data.LoadData` (VolanoZ=JRMAIN) - tentýž generátor, který krmil starý modul.
 /// Ověřuje 1:1 shodu zón na reprezentativních linkách napříč firmami (kde zóny reálně jsou).
 ///
 /// ⚠️ Vázané na per-firma namespace (CB_GWBUS / KV_DP). Namespace / legacy třída chybí → skip
@@ -26,7 +26,7 @@ Method TestPrestupyEmit()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přestupy přeskočeny")
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přestupy přeskočeny")
 		quit
 	}
 	set pocetA = ..PrestupovyPocet(db, 1, "0330510", "A")
@@ -39,7 +39,7 @@ Method TestSplitPerOznacnik()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přeskočeno")
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -54,20 +54,20 @@ Method TestNastupisteVariantEmit()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přeskočeno")
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	set pocet = ..PocetDownstreamMultiStanovist(db, 1, "0330510")
 	do $$$AssertTrue(pocet > 0, "≥2 stanoviště variant u downstream zastávky na 0330510 (nalezeno "_pocet_")")
 }
 
-/// KOVED #13048 bod 5: režim písmen variant — hlavičky = písmena (první bez písmene), u minut
+/// KOVED #13048 bod 5: režim písmen variant - hlavičky = písmena (první bez písmene), u minut
 /// anotace „varianta-trasy" a rozdílové poznámky potlačené. Data-lock 0330510 (11 variant tras).
 Method TestPismenaVariant()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přeskočeno")
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -94,12 +94,12 @@ Method TestPismenaVariant()
 }
 
 /// #8828 dotažení: rozdělená stránka nese označník v titulku (POPIS_ZASTAVKA) i v řádku vývěskové
-/// zastávky (NASTUPISTE) — bez toho stránky označníků 11/22 na 0320680 vypadají identicky.
+/// zastávky (NASTUPISTE) - bez toho stránky označníků 11/22 na 0320680 vypadají identicky.
 Method TestSplitTitulekARadek()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přeskočeno")
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -121,16 +121,16 @@ Method TestSplitTitulekARadek()
 Method AssertZony(db As %String, sku As %String, lin As %String, page As %Integer)
 {
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru — zóny "_lin_" přeskočeny")
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - zóny "_lin_" přeskočeny")
 		quit
 	}
 	if '##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") {
-		do $$$AssertTrue(1, "legacy ALVA.TISKMHD.Data není na serveru — zóny "_lin_" přeskočeny")
+		do $$$AssertTrue(1, "legacy ALVA.TISKMHD.Data není na serveru - zóny "_lin_" přeskočeny")
 		quit
 	}
 	set leg = ..LegacyZony(db, sku, lin, page)
 	if leg = "" {
-		do $$$AssertTrue(1, "legacy zóny prázdné pro "_lin_" (firma zóny nemá) — přeskočeno")
+		do $$$AssertTrue(1, "legacy zóny prázdné pro "_lin_" (firma zóny nemá) - přeskočeno")
 		quit
 	}
 	set our = ..OurZony(db, sku, lin, page)
@@ -147,7 +147,7 @@ ClassMethod LegacyZony(db As %String, sku As %String, lin As %String, page As %I
 	set ^||ML("IN","2") = "SESTAVA~1"
 	set ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
 	do ##class(ALVA.TISKMHD.Data).LoadData(.sys)
-	// OUT nemá count node — iterovat přes $order; každý uzel je řetězec "KLÍČ~HODNOTA".
+	// OUT nemá count node - iterovat přes $order; každý uzel je řetězec "KLÍČ~HODNOTA".
 	set i = "", zony = ""
 	for {
 		set i = $order(^||ML("OUT",i)) quit:i=""
@@ -250,7 +250,7 @@ ClassMethod SetupSysFor(ByRef sys, db As %String)
 	set sys("U","MLP") = "1"
 	set sys("U","loginName") = "test"
 	set sys("U","fullName") = "test"
-	// Legacy $$$MakroGlobal přepíná IN/OUT globál dle App — bez toho čte ^CacheTempMLSrv místo ^||ML.
+	// Legacy $$$MakroGlobal přepíná IN/OUT globál dle App - bez toho čte ^CacheTempMLSrv místo ^||ML.
 	set sys("C","App") = "ALWA.SYS.MLRest"
 }
 
@@ -287,7 +287,7 @@ ClassMethod AttrProbe(ByRef sys As %String) As %Status
 			while ai.%GetNext(.k2, .a) { set znak = a.%Get("ZNAK")  set cnt(znak) = $get(cnt(znak)) + 1 }
 		}
 	}
-	// RAW: zastávky linky, jejichž dta2 má A/L (nezávisle na emisi) — pro dohledání identity.
+	// RAW: zastávky linky, jejichž dta2 má A/L (nezávisle na emisi) - pro dohledání identity.
 	set raw = "", poradi = ""
 	for {
 		set poradi = $order(^[db]JRL(sku,lin,"J",poradi)) quit:poradi=""

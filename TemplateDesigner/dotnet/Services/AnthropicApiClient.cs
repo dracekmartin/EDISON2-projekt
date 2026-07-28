@@ -19,7 +19,7 @@ public class AnthropicApiClient
     private const string ApiEndpoint = "https://api.anthropic.com/v1/messages";
     private const string ApiVersion = "2023-06-01";
 
-    /// <summary>Model pro pomocníka + generátor šablon — konfigurovatelný (AiAssistant.AssistantModel).
+    /// <summary>Model pro pomocníka + generátor šablon - konfigurovatelný (AiAssistant.AssistantModel).
     /// Default claude-sonnet-5: nepřijímá temperature (400) a vynechání `thinking` = adaptivní
     /// myšlení ZAPNUTÉ → odpověď může začínat thinking blokem (viz ExtractText) a myšlení se
     /// počítá do max_tokens.</summary>
@@ -76,16 +76,16 @@ Každá sekce má:
 ```
 
 ### PrintBehavior hodnoty:
-- `Once` — vytiskne se jednou (výchozí)
-- `OnEveryPage` — každá stránka (hlavička/patička)
-- `OnFirstPageOnly` — jen první stránka
-- `OnLastPageOnly` — jen poslední stránka
-- `OnEveryPageExceptFirst` — všechny kromě první
+- `Once` - vytiskne se jednou (výchozí)
+- `OnEveryPage` - každá stránka (hlavička/patička)
+- `OnFirstPageOnly` - jen první stránka
+- `OnLastPageOnly` - jen poslední stránka
+- `OnEveryPageExceptFirst` - všechny kromě první
 
 ### OverflowBehavior hodnoty:
-- `KeepTogether` — nepřerušovat
-- `SplitAcrossPages` — rozdělí se přes stránky
-- `AllowSplit` — rozdělení povoleno ale ne preferováno
+- `KeepTogether` - nepřerušovat
+- `SplitAcrossPages` - rozdělí se přes stránky
+- `AllowSplit` - rozdělení povoleno ale ne preferováno
 
 ## Elements (typy)
 
@@ -120,7 +120,7 @@ Formátování textu je VŽDY ve vnořeném objektu `style` (žádné ploché fo
 **style.bold / italic / underline:** true/false
 Vlastnosti ve `style`, které nechceš měnit, prostě vynech (dědí se defaulty).
 
-**ŠPATNĚ (ploché properties se tiše zahodí — text vyjde bez formátování):**
+**ŠPATNĚ (ploché properties se tiše zahodí - text vyjde bez formátování):**
 ```json
 { ""type"": ""TextElement"", ""text"": ""..."", ""fontSize"": 14, ""fontWeight"": ""Bold"", ""textColor"": ""#FF000000"" }
 ```
@@ -140,7 +140,7 @@ Vlastnosti ve `style`, které nechceš měnit, prostě vynech (dědí se default
 }
 ```
 
-**backgroundColor** = výplň obdélníku (NE `fillColor` — ta property neexistuje).
+**backgroundColor** = výplň obdélníku (NE `fillColor` - ta property neexistuje).
 
 **cornerRadius:** Zaoblení rohů v mm (0 = ostré rohy, typicky 2-5 mm pro zaoblené)
 
@@ -164,7 +164,7 @@ Vlastnosti ve `style`, které nechceš měnit, prostě vynech (dědí se default
 
 ### DynamicTableElement
 
-Jediný živý typ tabulky — řádky se generují z datové kolekce za běhu. Typ `TableElement`
+Jediný živý typ tabulky - řádky se generují z datové kolekce za běhu. Typ `TableElement`
 NEPOUŽÍVEJ (je zastaralý a v aplikaci nejde editovat). Pevné bloky „popisek + hodnota“
 skládej z jednotlivých TextElementů s rámečky, ne z tabulky.
 
@@ -200,11 +200,11 @@ skládej z jednotlivých TextElementů s rámečky, ne z tabulky.
 }
 ```
 
-- **`dataSource`** = klíč datové kolekce (POVINNÉ). Tabulka NEMÁ `rows` — řádky přijdou z dat.
+- **`dataSource`** = klíč datové kolekce (POVINNÉ). Tabulka NEMÁ `rows` - řádky přijdou z dat.
 - **Pozadí/font záhlaví** = vnořený `headerStyle` (stejný tvar jako `style` u TextElementu);
   datové buňky obdobně `dataStyle`. Property `headerBackgroundColor` NEEXISTUJE.
-- Volitelné: `minRows` (doplní prázdné řádky do minima — pevná výška boxu, např. faktura),
-  `maxRows` (ořízne), `rowVisibilityExpression` (výraz nad daty řádku, např. `{POCET} > 0` —
+- Volitelné: `minRows` (doplní prázdné řádky do minima - pevná výška boxu, např. faktura),
+  `maxRows` (ořízne), `rowVisibilityExpression` (výraz nad daty řádku, např. `{POCET} > 0` -
   nesplněné řádky se netisknou), počítaný sloupec přes `""expression"": ""{CENA}*{POCET}""`
   místo `field`.
 
@@ -256,14 +256,14 @@ skládej z jednotlivých TextElementů s rámečky, ne z tabulky.
    - Černá: `#FF000000`, Bílá: `#FFFFFFFF`, Průhledná: `#00FFFFFF`
 
 2a. **Tabulka vs pevný blok:**
-   - **DynamicTableElement** — proměnný počet řádků z dat (položky faktury, seznamy). Vždy s `dataSource`.
-   - **Pevný blok** (popisek | hodnota, 2–6 řádků) — poskládej z TextElementů s rámečky
+   - **DynamicTableElement** - proměnný počet řádků z dat (položky faktury, seznamy). Vždy s `dataSource`.
+   - **Pevný blok** (popisek | hodnota, 2–6 řádků) - poskládej z TextElementů s rámečky
      (`borderColor`/`borderWidth` na elementu), NE z tabulky.
 
 2b. **AgendaCode:**
    - Pokud uživatel specifikuje agendu (např. ""faktura""), nastav `agendaCode` (např. `""FAKTURY""`)
    - Pokud není specifikováno nebo je šablona obecná, VYNECHEJ agendaCode property úplně (ne null, ne prázdný string)
-   - Jízdněřádové šablony negeneruj od nuly — pro ně existují distribuční šablony; odkaž se na ně v name/description a vytvoř jen obecnou kostru
+   - Jízdněřádové šablony negeneruj od nuly - pro ně existují distribuční šablony; odkaž se na ně v name/description a vytvoř jen obecnou kostru
 
 3. **Běžné sekce:**
    - Záhlaví: `PrintBehavior=OnEveryPage`, výška 20-30 mm
@@ -408,7 +408,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
 
     public async Task<Template?> GenerateTemplateAsync(string description, string? agendaCode, DataSchema? schema, string apiKey)
     {
-        // Adaptivní myšlení necháváme zapnuté (Sonnet 5 default) — jednorázová delší úloha,
+        // Adaptivní myšlení necháváme zapnuté (Sonnet 5 default) - jednorázová delší úloha,
         // rozmyšlení struktury JSON reálně zlepší; temperature na Sonnetu 5 poslat nelze.
         var userPrompt = BuildUserPrompt(description, agendaCode, schema);
         var responseText = await CallApiAsync(apiKey, SystemPrompt, userPrompt, AssistantModel, MaxTokens);
@@ -432,10 +432,10 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
     /// Sdílená metoda pro volání Anthropic Messages API.
     /// Vrací textovou odpověď (bez markdown code bloků).
     /// </summary>
-    /// <param name="temperature">Null = neposílat. Sonnet 5 nedefaultní temperature ODMÍTÁ (400) —
+    /// <param name="temperature">Null = neposílat. Sonnet 5 nedefaultní temperature ODMÍTÁ (400) -
     /// posílat jen u starších modelů (Haiku enricher).</param>
     /// <param name="disableThinking">True = explicitně vypnout myšlení (`thinking: disabled`).
-    /// Na Sonnetu 5 je vynechání parametru = adaptivní myšlení ZAPNUTÉ — pro rychlé Q&A
+    /// Na Sonnetu 5 je vynechání parametru = adaptivní myšlení ZAPNUTÉ - pro rychlé Q&A
     /// (pomocník) chceme vypnout, pro generování nechat adaptivní.</param>
     public static async Task<string?> CallApiAsync(
         string apiKey, string systemPrompt, string userPrompt,
@@ -485,7 +485,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
 
     /// <summary>
     /// Vytáhne textovou odpověď z content pole. S adaptivním myšlením (Sonnet 5 default)
-    /// může content začínat thinking blokem — bere se první NEPRÁZDNÝ blok typu "text",
+    /// může content začínat thinking blokem - bere se první NEPRÁZDNÝ blok typu "text",
     /// ne content[0].
     /// </summary>
     private static string? ExtractText(JsonDocument responseDoc)
@@ -506,7 +506,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
     }
 
     /// <summary>Modely odmítající nedefaultní temperature (400): Sonnet 5, Fable/Mythos 5.
-    /// Guard pro konfigurovatelné modely (VisionModel) — starší modely temperature přijímají.</summary>
+    /// Guard pro konfigurovatelné modely (VisionModel) - starší modely temperature přijímají.</summary>
     public static bool ModelSupportsTemperature(string model) =>
         !(model.Contains("sonnet-5") || model.Contains("fable") || model.Contains("mythos"));
 
@@ -592,7 +592,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
 
     private static string SaveDebugFile(string jsonText)
     {
-        // Temp, ne instalační adresář — v C:\Edison\ by zápis tiše selhal / zaneřáďoval složku.
+        // Temp, ne instalační adresář - v C:\Edison\ by zápis tiše selhal / zaneřáďoval složku.
         var debugPath = Path.Combine(Path.GetTempPath(), DebugFileName);
         try
         {
@@ -643,7 +643,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
                     if (field.DataType != FieldDataType.Text)
                         prompt += $" ({field.DataType.ToString().ToLower()})";
                     if (!string.IsNullOrEmpty(field.Label))
-                        prompt += $" — {field.Label}";
+                        prompt += $" - {field.Label}";
                     if (!string.IsNullOrEmpty(field.Example))
                         prompt += $", např. \"{field.Example}\"";
                     prompt += "\n";
@@ -658,7 +658,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
                 {
                     prompt += $"- {collection.CollectionKey} (použij jako dataSource=\"{collection.CollectionKey}\")";
                     if (!string.IsNullOrEmpty(collection.Name))
-                        prompt += $" — {collection.Name}";
+                        prompt += $" - {collection.Name}";
                     prompt += ":\n";
                     foreach (var field in collection.Fields)
                     {
@@ -666,7 +666,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
                         if (field.DataType != FieldDataType.Text)
                             prompt += $" ({field.DataType.ToString().ToLower()})";
                         if (!string.IsNullOrEmpty(field.Label))
-                            prompt += $" — {field.Label}";
+                            prompt += $" - {field.Label}";
                         prompt += "\n";
                     }
                 }

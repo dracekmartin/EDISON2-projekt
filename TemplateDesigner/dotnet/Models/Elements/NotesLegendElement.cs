@@ -67,7 +67,7 @@ public class NotesLegendElement : StopScheduleElementBase
         var headerResolved = HeaderStyle.FontFamily is null && DataStyle.FontFamily is not null
             ? HeaderStyle.Resolve(ScheduleHeaderDefaults) with { FontFamily = dataResolved.FontFamily }
             : HeaderStyle.Resolve(ScheduleHeaderDefaults);
-        // Zvýrazněný text poznámky (značka / symbol) — tučně jen jako default; explicitní volba
+        // Zvýrazněný text poznámky (značka / symbol) - tučně jen jako default; explicitní volba
         // uživatele v DataStyle (vč. vypnutého tučného) má přednost (anti-pattern scalar override).
         var boldResolved = DataStyle.Bold is null ? dataResolved with { Bold = true } : dataResolved;
 
@@ -77,14 +77,14 @@ public class NotesLegendElement : StopScheduleElementBase
         float scaledNoteLineH = NoteLineHeight * scale;
 
         using var paints = CreateStandardPaints(ctx);
-        // Barva textu poznámek = „Barva textu buněk" (DataStyle) — legenda kreslí text přímo tímto
+        // Barva textu poznámek = „Barva textu buněk" (DataStyle) - legenda kreslí text přímo tímto
         // paintem (ne přes CellRenderer), takže sdílenou natvrdo-barvu ze SchedulePaints přebíjíme.
         paints.Text.Color = SKColor.Parse(DataStyle.TextColor ?? ScheduleDataDefaults.TextColor);
 
         using var noteFont = new SKFont(GetTypeface(dataResolved), noteFontPx);
         using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
         using var boldFont = new SKFont(GetTypeface(boldResolved), noteFontPx);
-        // Symbolový JŘ font pro jednoznakové piktogramy (H=vozíček, F, x, {…) — dle jazyka šablony.
+        // Symbolový JŘ font pro jednoznakové piktogramy (H=vozíček, F, x, {…) - dle jazyka šablony.
         using var symbolFont = new SKFont(GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), noteFontPx);
 
         // Záhlaví
@@ -93,7 +93,7 @@ public class NotesLegendElement : StopScheduleElementBase
 
         if (!hasData)
         {
-            // Placeholder se ukazuje jen v designeru (bez DataContext) — print s prázdnými
+            // Placeholder se ukazuje jen v designeru (bez DataContext) - print s prázdnými
             // poznámkami nesmí vykreslovat fake řádky.
             if (ctx.Data is null)
             {
@@ -115,7 +115,7 @@ public class NotesLegendElement : StopScheduleElementBase
             float markerCell = MarkerSirka * scale;   // 0 = inline (jako dnes)
             float headerBottom = currentY;
 
-            // Y kurzor per sloupec — poznámky mohou být víceřádkové (text se zalamuje na šířku
+            // Y kurzor per sloupec - poznámky mohou být víceřádkové (text se zalamuje na šířku
             // sloupce), proto výšku akumulujeme místo pevné mřížky řádků.
             var colY = new float[cols];
             for (int c = 0; c < cols; c++) colY[c] = headerBottom;
@@ -179,7 +179,7 @@ public class NotesLegendElement : StopScheduleElementBase
 
         lineX += znakW + 1f;
 
-        // Text za značkou — zalomený na šířku sloupce; zarovnaný na marker buňku (textStartX) nebo za znakem.
+        // Text za značkou - zalomený na šířku sloupce; zarovnaný na marker buňku (textStartX) nebo za znakem.
         float textX = textStartX ?? lineX;
         return DrawWrappedBody(ctx, pozn.Text, textX, currentY, colRight, noteFont, textPaint, lineH);
     }
@@ -188,14 +188,14 @@ public class NotesLegendElement : StopScheduleElementBase
     /// Vykreslí symbol (znak) ve volitelné barvě z DB (<c>pozn.ForeColor</c>),
     /// následovaný textem v default barvě (<c>textPaint</c>).
     /// <paramref name="suffixSeparator"/>=true → mezi symbolem a textem se vloží <c>NoteSeparator</c>.
-    /// BackColor zatím **ignorován** — rezervováno pro budoucí rozšíření (klient zatím chce jen barvu znaku).
+    /// BackColor zatím **ignorován** - rezervováno pro budoucí rozšíření (klient zatím chce jen barvu znaku).
     /// </summary>
     private int RenderSymbolWithText(RenderContext ctx, PoznamkaData pozn,
         ref float lineX, float currentY, float lineH,
         SKFont symbolFont, SKFont textFont, SKPaint textPaint, bool suffixSeparator,
         float colRight, float? textStartX = null)
     {
-        // Symbol — pokud má pozn.ForeColor z DB, použij ji; jinak default textPaint barva.
+        // Symbol - pokud má pozn.ForeColor z DB, použij ji; jinak default textPaint barva.
         SKPaint symbolPaint = textPaint;
         SKPaint? customSymbolPaint = null;
         if (!string.IsNullOrEmpty(pozn.ForeColor))
@@ -210,7 +210,7 @@ public class NotesLegendElement : StopScheduleElementBase
             ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
             lineX += symbolFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
 
-            // Text — vždy default barva (klient výslovně chce barvit jen znak).
+            // Text - vždy default barva (klient výslovně chce barvit jen znak).
             // Při pevné marker buňce (textStartX) text zarovnán; jinak hned za znakem (bez separátoru).
             float textX = textStartX ?? lineX;
             string displayText = (suffixSeparator && textStartX is null) ? $"{NoteSeparator}{pozn.Text}" : pozn.Text;
@@ -257,7 +257,7 @@ public class NotesLegendElement : StopScheduleElementBase
         float colW = Width / cols;
 
         const float refMmToPx = 96f / 25.4f;
-        // Měření musí trefit stejný font jako render (vč. řezu) — jinak se počet zalomených řádků rozejde.
+        // Měření musí trefit stejný font jako render (vč. řezu) - jinak se počet zalomených řádků rozejde.
         var typeface = GetTypeface(DataStyle.Resolve(ScheduleDataDefaults));
         using var font = new SKFont(typeface, NoteFontSize * ResolvedTextStyle.PtToMm * refMmToPx);
         float availMm = colW - (MarkerSirka > 0 ? MarkerSirka : 2f) - 0.5f;
@@ -288,7 +288,7 @@ public class NotesLegendElement : StopScheduleElementBase
         ).ToList();
     }
 
-    /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní — v rámci tieru/pořadí zachová pořadí z dat).</summary>
+    /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní - v rámci tieru/pořadí zachová pořadí z dat).</summary>
     private List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) => Razeni switch
     {
         LegendRazeni.DleTypu           => notes.OrderBy(TypPriorita).ToList(),

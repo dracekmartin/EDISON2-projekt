@@ -19,7 +19,7 @@ public class ExpressionEvaluatorTests
         Assert.True(ExpressionEvaluator.IsVisible(expression, null));
     }
 
-    // ── Aritmetika (počítaná pole) — EvaluateToString ────────────────────────
+    // ── Aritmetika (počítaná pole) - EvaluateToString ────────────────────────
 
     [Fact]
     public void Aritmetika_ZakladniOperace()

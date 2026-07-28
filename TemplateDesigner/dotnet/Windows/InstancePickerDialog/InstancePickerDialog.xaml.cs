@@ -36,13 +36,13 @@ public partial class InstancePickerDialog : Window
         if (_vm.HasSkupiny) SetupSkupinaFilter();
 
         // Init list po načtení okna. Agenda + zvolená skupina jdou do EDList filtru pod
-        // ^||ML("IN","filter",...) — dispatch je přečte a předá do GetAvailableInstances.
+        // ^||ML("IN","filter",...) - dispatch je přečte a předá do GetAvailableInstances.
         Loaded += (_, _) =>
         {
             TheList.InitializeList();
             ReloadInstances();
 
-            // Po načtení dat — předoznačit initially selected
+            // Po načtení dat - předoznačit initially selected
             foreach (var id in _vm.InitiallySelectedValues)
                 TheList.SetChecked(id, true);
 
@@ -106,11 +106,11 @@ public partial class InstancePickerDialog : Window
         {
             var row = TheList.Rows.FirstOrDefault(r => r.Id == id);
             if (row is null) continue;
-            // Chip ukazuje „číslo — název"; sloupce v pickeru jsou oddělené (cislo/nazev).
+            // Chip ukazuje „číslo - název"; sloupce v pickeru jsou oddělené (cislo/nazev).
             var cislo = row["cislo"];
             var nazev = row["nazev"];
             var display = !string.IsNullOrEmpty(nazev)
-                ? (string.IsNullOrEmpty(cislo) ? nazev : $"{cislo} — {nazev}")
+                ? (string.IsNullOrEmpty(cislo) ? nazev : $"{cislo} - {nazev}")
                 : (string.IsNullOrEmpty(cislo) ? id : cislo);
             var subtitle = row["subtitle"];
             result.Add(new AgendaInstance(id, display, subtitle));

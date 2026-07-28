@@ -32,7 +32,7 @@ public abstract class ScheduleElementBase : TemplateElement
 
     /// <summary>
     /// Výchozí baked-in styl záhlaví pro JŘ elementy (Arial 9pt, Bold, šedé pozadí, černý text).
-    /// Poslední vrstva kaskády před CellDefaults — user může kterýkoli atribut přepsat v
+    /// Poslední vrstva kaskády před CellDefaults - user může kterýkoli atribut přepsat v
     /// element.HeaderStyle nebo per-column, nebo kliknout „×" a vrátit se sem.
     /// </summary>
     // Getter (ne static readonly) + bez explicitního FontFamily → font dědí z CellDefaults.Default,
@@ -83,15 +83,15 @@ public abstract class ScheduleElementBase : TemplateElement
         return ratio >= 1f ? 1f : ratio;
     }
 
-    /// <summary>Výška datového řádku v mm po aplikaci scale — pravidlo „fixed-then-shrink": pevná
+    /// <summary>Výška datového řádku v mm po aplikaci scale - pravidlo „fixed-then-shrink": pevná
     /// <see cref="DataRowHeight"/> (jinak font-driven auto) je VŽDY násobená <paramref name="factor"/>,
     /// takže se při přetečení pevné výšky elementu <b>zmenší do fitu</b> (ne přeteče/ořízne). Jediné místo
-    /// pravidla — sdíleno StopListem i DepartureGridem, ať se render výšky řádku nerozejde (drift z B2).
+    /// pravidla - sdíleno StopListem i DepartureGridem, ať se render výšky řádku nerozejde (drift z B2).
     /// <paramref name="factor"/> = scale (u DepartureGridu scale × grow). Full row-layout unifikace = krok C.</summary>
     protected float ScaledDataRowHeight(float dataFontPt, float factor)
         => (DataRowHeight ?? ComputeRowH(dataFontPt)) * factor;
 
-    /// <summary>Přirozená (neořezaná) výška obsahu v mm — počítá konkrétní JŘ element.</summary>
+    /// <summary>Přirozená (neořezaná) výška obsahu v mm - počítá konkrétní JŘ element.</summary>
     public abstract float CalculateHeightFromData(DataContext? data);
 
     /// <summary>
@@ -108,7 +108,7 @@ public abstract class ScheduleElementBase : TemplateElement
 
     // ─── Parameter override helpery ──────────────────────────────────────────
     // Parametry z tiskového dialogu se mergují do DataContext.
-    // Element přečte parametr jako override své property — šablona = default, parametr = override.
+    // Element přečte parametr jako override své property - šablona = default, parametr = override.
 
     /// <summary>Přečte bool parametr z DataContext, nebo vrátí výchozí hodnotu z property.</summary>
     protected static bool GetBoolParam(DataContext? data, string key, bool defaultValue)
@@ -142,12 +142,12 @@ public abstract class ScheduleElementBase : TemplateElement
 
     // ─── Typeface cache ─────────────────────────────────────────────────────
 
-    // SKTypeface loading (HarfBuzz) je drahý — per frame se volá 10+×.
+    // SKTypeface loading (HarfBuzz) je drahý - per frame se volá 10+×.
     // SKFont nevlastní typeface (reference, ne owned), sdílení je bezpečné.
     private static readonly ConcurrentDictionary<(string Family, int Weight, int Width, SKFontStyleSlant Slant), SKTypeface> _typefaceCache = new();
 
     /// <summary>
-    /// Vrátí sdílený SKTypeface pro vyřešený styl — rodina i řez (váha/sklon) jdou z kaskády.
+    /// Vrátí sdílený SKTypeface pro vyřešený styl - rodina i řez (váha/sklon) jdou z kaskády.
     /// Ruční cesty (měření, placeholdery) musí volat tuhle variantu, aby nepadly zpět na Normal/Bold
     /// a nezahodily uživatelův řez písma.
     /// </summary>
@@ -261,9 +261,9 @@ public abstract class ScheduleElementBase : TemplateElement
     ];
 
     /// <summary>
-    /// Sjednocený descriptor pro <see cref="DataRowHeight"/> — výška datového řádku v mm.
+    /// Sjednocený descriptor pro <see cref="DataRowHeight"/> - výška datového řádku v mm.
     /// Get vrací reálnou hodnotu (explicit nebo auto-vypočtenou z fontu),
-    /// Set rozpozná „auto" zpětně přes epsilon comparison — uživatel po editaci nemusí vědět magickou hodnotu.
+    /// Set rozpozná „auto" zpětně přes epsilon comparison - uživatel po editaci nemusí vědět magickou hodnotu.
     /// </summary>
     protected FloatPropertyDescriptor GetDataRowHeightDescriptor(string group = "Řádky") => new()
     {
@@ -279,7 +279,7 @@ public abstract class ScheduleElementBase : TemplateElement
     };
 
     /// <summary>
-    /// Element-level základní barvy pro zóny Header a Data — bg + text v properties panelu.
+    /// Element-level základní barvy pro zóny Header a Data - bg + text v properties panelu.
     /// Sjednocuje rychlou cestu k nejčastějším úpravám napříč JŘ elementy
     /// (StopList, DepartureGrid, NotesLegend) bez nutnosti otevírat dialog sloupců.
     /// Detailní cascade (font, alignment, padding) zůstává v dialogu kde má per-column granularitu.

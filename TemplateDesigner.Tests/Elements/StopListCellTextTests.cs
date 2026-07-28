@@ -5,7 +5,7 @@ namespace TemplateDesigner.Tests.Elements;
 
 /// <summary>
 /// Režimy sloupce „Označník" (<see cref="StopListElement.GetCellText"/>, KOVED #13048 bod 4):
-/// Z trasy linky / Nejčetnější dle spojů / Výčet všech — včetně fallbacku na hodnotu z trasy,
+/// Z trasy linky / Nejčetnější dle spojů / Výčet všech - včetně fallbacku na hodnotu z trasy,
 /// když per-spoj data chybí.
 /// </summary>
 public class StopListCellTextTests

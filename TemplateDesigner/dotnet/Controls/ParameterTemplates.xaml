@@ -52,8 +52,8 @@
         </StackPanel>
     </DataTemplate>
 
-    <!-- Selector — používá se s ItemTemplateSelector v ItemsControl.
-         CommitStringTemplate je optional (PrintDialog ho nepoužívá — set-and-OK flow). -->
+    <!-- Selector - používá se s ItemTemplateSelector v ItemsControl.
+         CommitStringTemplate je optional (PrintDialog ho nepoužívá - set-and-OK flow). -->
     <controls:ParameterTemplateSelector x:Key="ParamTemplateSelector"
         BoolTemplate="{StaticResource ParamBoolTemplate}"
         EnumTemplate="{StaticResource ParamEnumTemplate}"

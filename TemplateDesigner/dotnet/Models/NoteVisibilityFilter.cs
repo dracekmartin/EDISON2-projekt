@@ -5,13 +5,13 @@ namespace TemplateDesigner.Models;
 /// <summary>
 /// Render-time filtr viditelnosti poznámek zastávkového JŘ (AD). Caché emituje nadmnožinu
 /// (všechny anotace u minut i řádky legendy, otagované <c>KATEGORIE</c> + <c>V_ROZSAHU_NEPOZNAMKOVAT</c>);
-/// tady se podle nastavení šablony schová příslušná kategorie — ale jen u anotací, které spadají do
+/// tady se podle nastavení šablony schová příslušná kategorie - ale jen u anotací, které spadají do
 /// rozsahu „Spoje, nepoznámkovat" (<c>V_ROZSAHU_NEPOZNAMKOVAT=1</c>).
 ///
 /// Legenda se prořezává podle kategorie + přítomnosti znaku: řádek legendy se odebere jen když jeho
 /// kategorie patří mezi schovávané A jeho znak už není u žádné viditelné anotace (sdílené znaky, které
 /// zůstaly mimo rozsah, se zachovají). Kategorie navíc chrání řádky bez anotace u minut (např.
-/// „x — na znamení"), aby se neprořezaly omylem.
+/// „x - na znamení"), aby se neprořezaly omylem.
 ///
 /// Filtr je agenda-agnostický: anotace bez těchto tagů (MHD) se nikdy neschovají.
 /// </summary>
@@ -23,7 +23,7 @@ public static class NoteVisibilityFilter
     /// <summary>Název parametru sestavy (GetParameters), který řídí filtr rozsahu „nepoznámkovat".</summary>
     public const string ParamName = "SCHOVAT_V_ROZSAHU";
 
-    /// <summary>Parametr — skrýt agregátní poznámku „všechny spoje bezbariérové" (#7161 D6).</summary>
+    /// <summary>Parametr - skrýt agregátní poznámku „všechny spoje bezbariérové" (#7161 D6).</summary>
     public const string ParamAggBezbarier = "SCHOVAT_AGREGAT_BEZBARIER";
 
     /// <summary>Kategorie legendy pro agregátní bezbariér poznámku (Caché tag).</summary>
@@ -45,7 +45,7 @@ public static class NoteVisibilityFilter
         paramValue?.ToString()?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
-    /// #7161 D5 — má se skrýt legenda „× na znamení"? Ano, když šablona MÁ StopList, ale žádný z nich
+    /// #7161 D5 - má se skrýt legenda „× na znamení"? Ano, když šablona MÁ StopList, ale žádný z nich
     /// netiskne značku na znamení (<c>ShowSignalStopIndicator</c>). Legenda následuje viditelnost značky.
     /// Bez StopListu nevíme záměr → neskrývat.
     /// </summary>
@@ -75,12 +75,12 @@ public static class NoteVisibilityFilter
         var surviving = new HashSet<string>(StringComparer.Ordinal);
         var newRows = new Dictionary<string, IReadOnlyList<DataContext>>(StringComparer.OrdinalIgnoreCase);
 
-        // 1) ODJEZDY — odfiltruj schované anotace a posbírej znaky těch, které zůstaly viditelné.
+        // 1) ODJEZDY - odfiltruj schované anotace a posbírej znaky těch, které zůstaly viditelné.
         foreach (var (key, rows) in page.Rows)
             if (key.Equals(OdjezdyKey, StringComparison.OrdinalIgnoreCase))
                 newRows[key] = rows.Select(r => FilterOdjezd(r, hide, surviving)).ToList();
 
-        // 2) POZNAMKY — prořež legendu (potřebuje surviving z kroku 1).
+        // 2) POZNAMKY - prořež legendu (potřebuje surviving z kroku 1).
         foreach (var (key, rows) in page.Rows)
             if (key.Equals(PoznamkyKey, StringComparison.OrdinalIgnoreCase))
                 newRows[key] = rows.Where(r => KeepPoznamka(r, hide, surviving, hideAggBezbarier, hideNaZnameni)).ToList();
@@ -116,11 +116,11 @@ public static class NoteVisibilityFilter
     private static bool KeepPoznamka(DataContext poznamka, HashSet<string> hide, HashSet<string> surviving, bool hideAggBezbarier, bool hideNaZnameni)
     {
         var kategorie = poznamka.GetString("KATEGORIE");
-        if (hideAggBezbarier && kategorie == AggBezbarierKat) return false;   // #7161 D6 — skrýt agregát bezbariér
-        if (hideNaZnameni && kategorie == AtributZastavkyKat) return false;   // #7161 D5 — StopList netiskne značku „×"
-        if (!hide.Contains(kategorie)) return true;        // jiná kategorie — nech být
+        if (hideAggBezbarier && kategorie == AggBezbarierKat) return false;   // #7161 D6 - skrýt agregát bezbariér
+        if (hideNaZnameni && kategorie == AtributZastavkyKat) return false;   // #7161 D5 - StopList netiskne značku „×"
+        if (!hide.Contains(kategorie)) return true;        // jiná kategorie - nech být
         var znak = poznamka.GetString("ZNAK");
-        if (znak == "") return true;                        // text bez znaku (směrové) — nech být
+        if (znak == "") return true;                        // text bez znaku (směrové) - nech být
         return surviving.Contains(znak);                    // nech jen pokud znak ještě někde svítí
     }
 

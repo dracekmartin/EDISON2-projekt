@@ -13,7 +13,7 @@ Diff: !`git diff HEAD~1 HEAD`
 
 ## Co aktualizovat
 
-### 1. `CLAUDE.md` — sekce "Aktuální stav projektu"
+### 1. `CLAUDE.md` - sekce "Aktuální stav projektu"
 
 - **Datum poslední aktualizace** → nastav na dnešní datum
 - **"✅ Co máme"** → přidej nové dokončené věci z commitu (stručně, bullet)
@@ -22,11 +22,11 @@ Diff: !`git diff HEAD~1 HEAD`
 - **"🐛 Známé problémy"** → odeber problémy které commit řeší; přidej nové pokud commit
   něco zavádí (nebo ponech "(žádné aktivní)" pokud je vše čisté)
 
-### 2. `.claude/docs/changelog.md` — přidej nový záznam na začátek
+### 2. `.claude/docs/changelog.md` - přidej nový záznam na začátek
 
 Formát záznamu:
 ```
-**YYYY-MM-DD — <název commitu>:**
+**YYYY-MM-DD - <název commitu>:**
 - ✅ Popis změny 1
 - ✅ Popis změny 2
 - ✅ Bug fix: popis pokud relevantní
@@ -38,7 +38,7 @@ Pravidla:
 - Popis změn piš česky, stručně ale výstižně
 - Pokud commit opravuje bug z "Známé problémy", uveď to explicitně
 
-### 3. `.claude/docs/roadmap.md` — pokud commit implementoval roadmap položku
+### 3. `.claude/docs/roadmap.md` - pokud commit implementoval roadmap položku
 
 - Najdi odpovídající položku v roadmapě
 - Přidej k ní `✅ hotovo (YYYY-MM-DD)` nebo ji přesuň do sekce "Implementováno"
@@ -50,6 +50,6 @@ Pravidla:
 
 ## Důležité
 
-- Nepiš žádný výstup uživateli — jen proveď změny v souborech
+- Nepiš žádný výstup uživateli - jen proveď změny v souborech
 - Pokud diff není jednoznačný, raději buď konzervativní (méně změn než příliš)
 - Zachovej stávající strukturu a formátování všech souborů

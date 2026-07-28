@@ -24,7 +24,7 @@ public class FontResolverTests
     {
         var a = FontResolver.Resolve("Arial", SKFontStyle.Normal);
         var b = FontResolver.Resolve("Arial", SKFontStyle.Normal);
-        Assert.Same(a, b);   // sdílený singleton — nedisposovat
+        Assert.Same(a, b);   // sdílený singleton - nedisposovat
     }
 
     [Fact]

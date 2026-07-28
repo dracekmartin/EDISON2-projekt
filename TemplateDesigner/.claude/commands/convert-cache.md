@@ -7,7 +7,7 @@ allowed-tools: Read, Edit, Write, Bash(grep *), Bash(ls *), Glob, Grep
 Přepiš legacy Caché kód "$ARGUMENTS" do nové třídy v CACHE/ v moderní syntaxi.
 Zachovej business logiku, kompletně přepiš strukturu a syntaxi.
 
-## Kontext — přečti před zahájením
+## Kontext - přečti před zahájením
 
 Konvence a pravidla: !`cat .claude/rules/cache-api.md`
 Business logika (JŘ kontext): !`cat .claude/rules/cache-business-logic.md`
@@ -30,7 +30,7 @@ Použij `Glob("CACHE/**/$ARGUMENTS")` nebo `Glob("CACHE/**/*.cls")` pro nalezen�
 
 ### Co zachovat
 - [ ] Veškerá business logika (výpočty, dotazy, podmínky)
-- [ ] Funkční chování — výstup musí být identický
+- [ ] Funkční chování - výstup musí být identický
 
 ### Co změnit
 
@@ -42,23 +42,23 @@ Použij `Glob("CACHE/**/$ARGUMENTS")` nebo `Glob("CACHE/**/*.cls")` pro nalezen�
 - [ ] Zkratky proměnných → čitelné názvy (čím globálnější, tím důležitější)
 - [ ] `_` v názvech proměnných → camelCase (ObjectScript `_` = concat)
 - [ ] Obecné iterátory (`mycnt`, `cnt`, `ii`, `jj`) → pojmenované (`bodIdx`, `spojIdx`, `zastavkaIdx`)
-- [ ] **Jazyk:** business logika česky (`pocetZastavek`, `aktualniSmer`), obecné programátorské vzory anglicky — "czechglish" (`GetData`, `SetTrasa`, `BuildOdjezdy`, ne `ZiskatData`, `NastavitTrasu`)
+- [ ] **Jazyk:** business logika česky (`pocetZastavek`, `aktualniSmer`), obecné programátorské vzory anglicky - "czechglish" (`GetData`, `SetTrasa`, `BuildOdjezdy`, ne `ZiskatData`, `NastavitTrasu`)
 
 #### Globály a reference
 - [ ] `@indirection@(...)` → přímé reference `^||NazevGlobalu(...)`
 - [ ] Tajemné číselné indexy → pojmenované klíče
 - [ ] Debug globals (`^jm`, `^zz`) → smazat (v produkci čisté; debug přes `^jm` jen při ladění)
-- [ ] **SMOID** — zastaralý koncept. Pokud legacy kód používá `SMOID` nebo `SMO`, zkonzultovat s uživatelem a nahradit přímým `TypProvozuID`
+- [ ] **SMOID** - zastaralý koncept. Pokud legacy kód používá `SMOID` nebo `SMO`, zkonzultovat s uživatelem a nahradit přímým `TypProvozuID`
 
 #### Dot-notation
 - [ ] `obj.KEY_NAME = v` → `obj.%Set("KEY_NAME", v)` (podtržítko v dot-notation nefunguje)
 
 #### Struktura
 - [ ] Routiny, makra, legacy konstrukty → třídy + ClassMethody
-- [ ] API metody (s `ByRef sys`): `s err = ""` + `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` (bez `$$$Init`, ne `ret 1`; `s err = ""` na prvním řádku je povinné — `$$$CatchErrRest` čte `err`, `$$$FillParams` ho nenastavuje)
+- [ ] API metody (s `ByRef sys`): `s err = ""` + `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` (bez `$$$Init`, ne `ret 1`; `s err = ""` na prvním řádku je povinné - `$$$CatchErrRest` čte `err`, `$$$FillParams` ho nenastavuje)
 - [ ] Vstup přes `$g(^||ML("IN","key"))`, výstup přes `^||ML("OUT",...)`
 - [ ] `$$$FillParams` místo předávání IdFa/dataDB mezi metodami
-- [ ] Logicky členěný do metod — ne jedna mega-metoda
+- [ ] Logicky členěný do metod - ne jedna mega-metoda
 
 #### Výstupní formát
 - [ ] JSON výstup přes `%DynamicObject` / `%DynamicArray` (ne delimited stringy)
@@ -66,23 +66,23 @@ Použij `Glob("CACHE/**/$ARGUMENTS")` nebo `Glob("CACHE/**/*.cls")` pro nalezen�
 - [ ] Žádné `#`/`^`/`&`-delimited stringy
 
 #### Komentáře
-- [ ] Komentovat **neočividná business rozhodnutí** — proč se něco dělá takhle, ne jinak
-- [ ] **KRITICKÉ: Komentáře VÝHRADNĚ uvnitř třídy** — NIC mimo blok `Class ... { }`. Žádné `///` komentáře před `Class`, žádné `//` komentáře za uzavírací `}`. Komentáře k třídě patří dovnitř bloku.
-- [ ] **Víceřádkové komentáře mimo metody** (class-level dokumentace) psát jako `///` blok bez prázdných řádků — Caché/IRIS u `//` komentářů vkládá prázdné řádky mezi každý řádek při formátování. `///` blok zůstane souvislý.
+- [ ] Komentovat **neočividná business rozhodnutí** - proč se něco dělá takhle, ne jinak
+- [ ] **KRITICKÉ: Komentáře VÝHRADNĚ uvnitř třídy** - NIC mimo blok `Class ... { }`. Žádné `///` komentáře před `Class`, žádné `//` komentáře za uzavírací `}`. Komentáře k třídě patří dovnitř bloku.
+- [ ] **Víceřádkové komentáře mimo metody** (class-level dokumentace) psát jako `///` blok bez prázdných řádků - Caché/IRIS u `//` komentářů vkládá prázdné řádky mezi každý řádek při formátování. `///` blok zůstane souvislý.
 
 #### Kvalita kódu (priorita = udržitelnost, ne performance)
-- [ ] **Duplikace** — opakující se bloky extrahovat do helper metod
-- [ ] **Mrtvý kód** — nepoužívané metody, proměnné, větve podmínek → nepřebírat
-- [ ] **Jasnost** — složité podmínky rozdělit do pojmenovaných proměnných; magické konstanty pojmenovat
-- [ ] **Dlouhé metody** — rozdělit na menší s jasnými názvy (každá dělá jednu věc)
-- [ ] **Zbytečná složitost** — zjednodušit kde to jde, i za cenu mírně delšího kódu
+- [ ] **Duplikace** - opakující se bloky extrahovat do helper metod
+- [ ] **Mrtvý kód** - nepoužívané metody, proměnné, větve podmínek → nepřebírat
+- [ ] **Jasnost** - složité podmínky rozdělit do pojmenovaných proměnných; magické konstanty pojmenovat
+- [ ] **Dlouhé metody** - rozdělit na menší s jasnými názvy (každá dělá jednu věc)
+- [ ] **Zbytečná složitost** - zjednodušit kde to jde, i za cenu mírně delšího kódu
 
 #### Čištění
 - [ ] Zakomentovaný kód → smazat
 - [ ] `isZdendaPC` / `isDebug` bloky → smazat
 - [ ] Zkratky `s`, `d`, `i`, `q`, `f` jsou OK (firemní standard)
 
-#### For cykly — povinný formát
+#### For cykly - povinný formát
 - [ ] Iterující proměnná na **vlastním řádku**, pojmenovaná podle toho, přes co se iteruje (žádné `cnt`, `ii`, `jj`)
 - [ ] `f {` na **vlastním řádku**
 - [ ] Iterace + ukončovací podmínka na **jednom řádku** přes **postcondition** `q:var=""`
@@ -103,21 +103,21 @@ s BodID = "" f {
 
 #### **HLAVNÍ PRIORITA: Klarita a udržitelnost kódu**
 
-Cílem konverze je **maximální čitelnost a udržitelnost**. Vše ostatní (performance, stručnost) je sekundární. Pojmenování proměnných, metod a klíčů je nejdůležitější aspekt — kód se čte 10× víc než se píše. Pokud je kód čitelný a pochopitelný i pro někoho, kdo ho vidí poprvé, konverze splnila svůj účel.
+Cílem konverze je **maximální čitelnost a udržitelnost**. Vše ostatní (performance, stručnost) je sekundární. Pojmenování proměnných, metod a klíčů je nejdůležitější aspekt - kód se čte 10× víc než se píše. Pokud je kód čitelný a pochopitelný i pro někoho, kdo ho vidí poprvé, konverze splnila svůj účel.
 
 ## Postup
 
-1. **Přečti celý legacy soubor** — porozuměj business logice, identifikuj vstupy/výstupy
-2. **Navrhni strukturu nové třídy** — název, metody, rozdělení logiky; zeptej se uživatele
-3. **Vypiš rozdíly** — co se zachová, co se přepíše, co se smaže
-4. **Vytvoř novou třídu** — kompletní .cls soubor
-5. **Finální validace** — po vytvoření přečti výsledný soubor a projdi KAŽDÝ bod checklistu. Ověř zejména:
+1. **Přečti celý legacy soubor** - porozuměj business logice, identifikuj vstupy/výstupy
+2. **Navrhni strukturu nové třídy** - název, metody, rozdělení logiky; zeptej se uživatele
+3. **Vypiš rozdíly** - co se zachová, co se přepíše, co se smaže
+4. **Vytvoř novou třídu** - kompletní .cls soubor
+5. **Finální validace** - po vytvoření přečti výsledný soubor a projdi KAŽDÝ bod checklistu. Ověř zejména:
    - Žádné komentáře mimo `Class ... { }` (ani `///` před Class, ani `//` za `}`)
-   - Žádný `$$$Init` — místo něj `s err = ""` na prvním řádku + vracet `$$$OK`
+   - Žádný `$$$Init` - místo něj `s err = ""` na prvním řádku + vracet `$$$OK`
    - Žádné `IdFa`/`dataDB` v parametrech helper metod
    - Žádné mrtvé proměnné
    Pokud najdeš problém, oprav ho PŘED shrnutím.
-6. **Shrnutí** — co je nové, co odpovídá legacy, na co dát pozor při testování
+6. **Shrnutí** - co je nové, co odpovídá legacy, na co dát pozor při testování
 
 ## Po dokončení
 

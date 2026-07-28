@@ -7,7 +7,7 @@ using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner;
 
-// ─── DepartureGroupColumnVM — per-column ViewModel ──────────────────────────
+// ─── DepartureGroupColumnVM - per-column ViewModel ──────────────────────────
 
 public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 {
@@ -35,7 +35,7 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRo
         set => WidthOverride = Controls.ColumnWidthText.Parse(value);
     }
 
-    // IColumnRowVM — sdílený seznam sloupců (efektivní záhlaví = override, jinak zdroj; šířka pin/auto)
+    // IColumnRowVM - sdílený seznam sloupců (efektivní záhlaví = override, jinak zdroj; šířka pin/auto)
     public string DisplayName => string.IsNullOrWhiteSpace(HeaderOverride) ? Name : HeaderOverride;
     public float? ColumnWidth => WidthOverride;
 
@@ -108,14 +108,14 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 {
     private readonly DepartureGridElement _element;
 
-    // Tab „Obecné" = embedded EDInputForm (DepartureGridElementEdit.cls) — řeší code-behind přes
+    // Tab „Obecné" = embedded EDInputForm (DepartureGridElementEdit.cls) - řeší code-behind přes
     // ElementFormBinder (reflexe). VM drží jen Tab „Sloupce" (per-skupina/sloupec styly).
 
     // ── Tab 2: Sloupce ──────────────────────────────────────────────────
 
     public ObservableCollection<DepartureGroupColumnVM> GroupVMs { get; } = [];
 
-    // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────
+    // ── UI omezení editace - co CellStyleEditor zobrazí per zóna ─────────
     public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
     public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
 
@@ -172,7 +172,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         var groupHeaderInherited = element.ResolveGroupHeaderParent();
         var groupDataInherited   = element.ResolveGroupMinuteParent();
 
-        // Sloupec hodin — vždy první v seznamu
+        // Sloupec hodin - vždy první v seznamu
         GroupVMs.Add(new DepartureGroupColumnVM
         {
             SkupinaDnuId = HourColumnId,
@@ -207,13 +207,13 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
         if (GroupVMs.Count > 0) SelectedGroupVM = GroupVMs[0];
 
-        // Color picker commands — záhlaví
+        // Color picker commands - záhlaví
         PickHeaderTextColorCommand  = Command(() => PickColor(g => g.Header.TextColor, (g, c) => g.Header.TextColor = c));
         PickHeaderBgColorCommand    = Command(() => PickColor(g => g.Header.BgColor,   (g, c) => g.Header.BgColor   = c));
         ClearHeaderTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Header.TextColor = null; });
         ClearHeaderBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Header.BgColor   = null; });
 
-        // Color picker commands — data
+        // Color picker commands - data
         PickDataTextColorCommand  = Command(() => PickColor(g => g.Data.TextColor, (g, c) => g.Data.TextColor = c));
         PickDataBgColorCommand    = Command(() => PickColor(g => g.Data.BgColor,   (g, c) => g.Data.BgColor   = c));
         ClearDataTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.TextColor = null; });
@@ -227,7 +227,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             SelectedGroupVM.Data.Reset();
         });
 
-        // Reset všech sloupců — smaže per-column overrides, všechny sloupce budou dědit z Obecné
+        // Reset všech sloupců - smaže per-column overrides, všechny sloupce budou dědit z Obecné
         ResetAllColumnStylesCommand = Command(() =>
         {
             foreach (var vm in GroupVMs)
@@ -285,7 +285,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             .ToList();
 
         // Pozn.: per-column typografii záhlaví (font/velikost/řez) ignoruje render
-        // (DepartureGridElement.WithParentHeaderTypography) — element-level je autoritativní.
+        // (DepartureGridElement.WithParentHeaderTypography) - element-level je autoritativní.
         // Per-column nese jen barvy a zarovnání. Není potřeba nic mazat.
 
         CloseDialog(true);

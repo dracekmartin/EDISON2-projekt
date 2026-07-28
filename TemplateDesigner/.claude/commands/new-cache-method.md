@@ -5,9 +5,9 @@ allowed-tools: Read, Edit, Write, Bash(grep *)
 ---
 
 Vytvoř novou Caché metodu "$ARGUMENTS" a odpovídající C# volání.
-Vždy používej CVar formát — nikdy object[].
+Vždy používej CVar formát - nikdy object[].
 
-## Kontext — přečti před zahájením
+## Kontext - přečti před zahájením
 
 Existující Caché třídy: !`ls CACHE/ALVA/TemplateDesigner/API/`
 Vzorová Caché třída: !`cat CACHE/ALVA/TemplateDesigner/API/AgendaAPI.cls`
@@ -34,11 +34,11 @@ ClassMethod $ARGUMENTS(ByRef sys As %String) As %Status
         // Business logika
         // ...
 
-        // Výstup — pojmenované klíče (čte se jako output["klic"] v C#)
+        // Výstup - pojmenované klíče (čte se jako output["klic"] v C#)
         s ^||ML("OUT","result") = "ok"
         s ^||ML("OUT","data") = $lb("TypeA","value1","value2")
 
-        // Výstup — indexované řádky (iteruje se foreach v C#)
+        // Výstup - indexované řádky (iteruje se foreach v C#)
         // s i = 0
         // s ^||ML("OUT",$i(i)) = $lb("ROW","a","b")
     }
@@ -94,15 +94,15 @@ public List<SomeType> $ARGUMENTS(string paramA)
 }
 ```
 
-## Pravidla — vždy dodržovat
+## Pravidla - vždy dodržovat
 
-- **CVar** pro input i output — nikdy `object[]` v novém kódu
+- **CVar** pro input i output - nikdy `object[]` v novém kódu
 - `$g(^||ML("IN","key"))` pro čtení vstupu (bezpečné i když klíč chybí)
-- `s err = ""` + `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` — povinná kostra. **Bez `$$$Init`** (TD konvence, cache-api rule 14); `s err = ""` na prvním řádku je povinné, protože `$$$CatchErrRest` čte `err` a `$$$FillParams` ho nenastavuje
-- **ObjectScript**: nikdy `_` v dot-notation — `_` je operátor konkatenace!
+- `s err = ""` + `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` - povinná kostra. **Bez `$$$Init`** (TD konvence, cache-api rule 14); `s err = ""` na prvním řádku je povinné, protože `$$$CatchErrRest` čte `err` a `$$$FillParams` ho nenastavuje
+- **ObjectScript**: nikdy `_` v dot-notation - `_` je operátor konkatenace!
   - ❌ `obj.KEY_NAME = v`  → způsobí chybu (concatenates KEY, NAME)
   - ✅ `obj.%Set("KEY_NAME", v)` → správně
-- `QueryOrThrow` automaticky vyhodí výjimku při chybě — neřeš `RestStatus` zvlášť
+- `QueryOrThrow` automaticky vyhodí výjimku při chybě - neřeš `RestStatus` zvlášť
 - Pokud potřebuješ graceful degradation (pokračovat i při chybě), použij `Query` + `RestStatus.IsError`
 
 ## Po dokončení

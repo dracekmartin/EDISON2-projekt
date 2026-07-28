@@ -6,7 +6,7 @@ namespace TemplateDesigner.Services;
 /// <summary>
 /// Sestaví znalostní bázi pro pasivního AI průvodce.
 ///
-/// Hybrid přístup: ručně psaný obecný úvod (co je nástroj, jak se ovládá — stabilní,
+/// Hybrid přístup: ručně psaný obecný úvod (co je nástroj, jak se ovládá - stabilní,
 /// nemění se) + auto-generovaný katalog vlastností elementů z <c>GetPropertyDescriptors()</c>
 /// (nikdy nedriftuje od kódu).
 ///
@@ -18,7 +18,7 @@ public static class CapabilityCatalog
 {
     // ─── Obecný úvod (ručně psaný, stabilní) ──────────────────────────────────
 
-    public const string GeneralIntro = @"# TemplateDesigner — co to je
+    public const string GeneralIntro = @"# TemplateDesigner - co to je
 
 TemplateDesigner je WPF nástroj pro vizuální návrh tiskových šablon (sestav).
 Šablona = stránka rozdělená na sekce, v sekcích jsou elementy (text, obrázek,
@@ -26,38 +26,38 @@ tabulka, čára, kód, specializované jízdněřádové elementy). Při tisku s
 s daty z agendy → PDF.
 
 ## Základní pojmy
-- Šablona — kořenový dokument: velikost stránky, okraje, kultura (cs-CZ…), sekce.
+- Šablona - kořenový dokument: velikost stránky, okraje, kultura (cs-CZ…), sekce.
   Ukládá se do DATABÁZE (Ctrl+S / Ctrl+O); soubor JSON je jen import/export.
-- Sekce — vodorovný pruh stránky. Má chování tisku (jednou / na každé stránce /
+- Sekce - vodorovný pruh stránky. Má chování tisku (jednou / na každé stránce /
   jen první / jen poslední) a chování při přetečení (nezalamovat / rozdělit přes stránky).
   Role: záhlaví / tělo / patička.
-- Element — konkrétní obsah v sekci. Pozice jsou v milimetrech, relativně
+- Element - konkrétní obsah v sekci. Pozice jsou v milimetrech, relativně
   k levému hornímu rohu sekce. Výška = auto znamená, že se dopočítá z obsahu.
-- Placeholder — {NAZEV_POLE} se při tisku nahradí hodnotou z dat agendy.
-- Agenda a Varianta — agenda říká, JAKOU sestavu dělám (Zastávkový JŘ, Faktury…),
+- Placeholder - {NAZEV_POLE} se při tisku nahradí hodnotou z dat agendy.
+- Agenda a Varianta - agenda říká, JAKOU sestavu dělám (Zastávkový JŘ, Faktury…),
   varianta říká zdroj dat (AD = linková doprava, MHD). Šablona je vázaná na konkrétní
   kombinaci; zobrazuje ji zelený chip ve status baru a titulek okna.
-- Instance — konkrétní záznam, nad kterým se tiskne (u JŘ = linka). Vybírá se
-  modrým chipem ve status baru — chip je popsaný podle agendy (u jízdních řádů 'Linka');
+- Instance - konkrétní záznam, nad kterým se tiskne (u JŘ = linka). Vybírá se
+  modrým chipem ve status baru - chip je popsaný podle agendy (u jízdních řádů 'Linka');
   klik = výběr více linek, ◀▶ = listování.
 
 ## Výrazový jazyk (v placeholderech a podmínkách)
 - Formátování: {CENA:N2} (2 desetinná místa), {TEXT:UPPER}, {POLE:LEFT(4)}.
-- Aritmetika: {CENA}*{POCET}, závorky a priorita fungují — použitelné v počítaných
+- Aritmetika: {CENA}*{POCET}, závorky a priorita fungují - použitelné v počítaných
   sloupcích tabulky (Expression) a v agregacích.
-- Podmínky: {POCET} > 0, {TYP} == 'A', kombinace přes && a || — použitelné ve
+- Podmínky: {POCET} > 0, {TYP} == 'A', kombinace přes && a || - použitelné ve
   viditelnosti elementu/sekce (VisibilityExpression), viditelnosti řádku tabulky
   a v pravidlech zvýraznění řádku.
 - Agregace v souhrnných řádcích tabulky: SUM({CENA}*{POCET}), COUNT, AVG, MIN, MAX.
 
-## UI mapa — kde co najdu (Co → Kde)
+## UI mapa - kde co najdu (Co → Kde)
 ### Chci tisknout / exportovat
 - Tisk s reálnými daty: Ctrl+P → dialog tisku (parametry sestavy + tlačítka exportu).
   Aliasy: 'vytisknout linku', 'PDF se skutečnými daty'.
 - Více vývěsek na jeden list / tisk 2×A5 na A4 / řezání (imposice): Ctrl+P → skupina
   'Export' → pole 'Uspořádání na list' (Vypnuto / A4 / A3 × výška/šířka) + 'Mřížka listu'
   + 'Každá stránka na celý list (pro řezání)' + 'Ořezové značky'. Volba se pamatuje
-  per agenda — 1 stránka = 1 list vrátíš volbou 'Vypnuto'.
+  per agenda - 1 stránka = 1 list vrátíš volbou 'Vypnuto'.
 - Rozdělení výstupu do více souborů: Ctrl+P → 'Členění výstupu' (vše do jednoho /
   per linka / per zastávka×směr) + 'Název souboru' s {POLE} tokeny.
 - Rychlý export náhledu bez dialogu: toolbar PDF/PNG (exportuje aktuální instance).
@@ -72,12 +72,12 @@ s daty z agendy → PDF.
   → výběr se search boxem; ◀▶ listuje, ↻ (nebo F5) znovu načte data.
 - Pole agendy: záložka 'Pole agendy' v levém panelu; pole lze táhnout na canvas
   (vytvoří text) nebo na existující text (přidá placeholder); dvojklik = do schránky.
-- Parametry sestavy: lišta parametrů nad náhledem (živě mění náhled) — tytéž
+- Parametry sestavy: lišta parametrů nad náhledem (živě mění náhled) - tytéž
   hodnoty jsou v dialogu tisku.
 
 ### Chci upravit vzhled
 - Výchozí (globální) font celé šablony: Ctrl+Shift+P (Vlastnosti stránky) → pole
-  'Výchozí font'. Je to kořen kaskády — zdědí ho všechny elementy, které nemají
+  'Výchozí font'. Je to kořen kaskády - zdědí ho všechny elementy, které nemají
   vlastní font nastavený. Prázdné = vestavěný default (Arial).
 - Rychlé vlastnosti: záložka 'Vlastnosti' v levém panelu (aktualizuje se dle výběru).
 - Kompletní nastavení: Enter nebo dvojklik na element → dialog; u tabulkových
@@ -100,27 +100,27 @@ s daty z agendy → PDF.
 
 ### Navigace a zobrazení
 - Zoom: Ctrl+kolečko (k kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
-- Mřížka a přichytávání: toolbar — zobrazit mřížku, snap na mřížku (velikost 0,2–10 mm),
+- Mřížka a přichytávání: toolbar - zobrazit mřížku, snap na mřížku (velikost 0,2–10 mm),
   snap na elementy; Ctrl+Shift+N normalizuje pozice existujících elementů.
 - Levý panel: záložky Sekce / Pole agendy / Vlastnosti / Strom / Pomocník; Ctrl+B sbalí.
-- Strom šablony: záložka 'Strom' — hierarchie sekce → skupiny → elementy.
+- Strom šablony: záložka 'Strom' - hierarchie sekce → skupiny → elementy.
 
 ## Klávesové zkratky (kompletní)
-- Ctrl+Z / Ctrl+Y — zpět / vpřed
-- Ctrl+X / Ctrl+C / Ctrl+V — vyjmout / kopírovat / vložit; Ctrl+A — vybrat vše v sekci
-- Ctrl+D — duplikovat (+šipka = kopie vedle s mezerou)
-- Ctrl+Shift+C / Ctrl+Shift+V — kopírovat / vložit styl
-- Ctrl+G / Ctrl+Shift+G — seskupit / rozeskupit; Alt+klik — jeden prvek ze skupiny
-- Ctrl+Shift+H / Ctrl+Shift+J — rozdělit element vodorovně / svisle
-- Ctrl+Shift+N — normalizovat pozice na mřížku
-- Šipky — posun elementu (Shift = velký krok, Ctrl = jemný)
-- Ctrl+Shift+↑/↓ — přesun aktivní sekce nahoru / dolů
-- Ctrl+PageUp / Ctrl+PageDown — pořadí ve vrstvě (Z-order); +Shift = úplně dopředu/dozadu
-- Ctrl+N / Ctrl+O / Ctrl+S — nová / otevřít z databáze / uložit ('Uložit jako' zkratku NEMÁ)
-- Ctrl+P — tisk; Ctrl+Shift+P — vlastnosti stránky; Ctrl+Shift+A — změnit agendu
-- Ctrl+0 — přizpůsobit stránce; Ctrl+1 — 100 %; Ctrl+B — sbalit levý panel
-- F2 — inline editace textu; Enter — vlastnosti výběru; Delete — smazat
-- F5 — obnovit data z databáze; F1 — nápověda; Esc — zrušit probíhající akci
+- Ctrl+Z / Ctrl+Y - zpět / vpřed
+- Ctrl+X / Ctrl+C / Ctrl+V - vyjmout / kopírovat / vložit; Ctrl+A - vybrat vše v sekci
+- Ctrl+D - duplikovat (+šipka = kopie vedle s mezerou)
+- Ctrl+Shift+C / Ctrl+Shift+V - kopírovat / vložit styl
+- Ctrl+G / Ctrl+Shift+G - seskupit / rozeskupit; Alt+klik - jeden prvek ze skupiny
+- Ctrl+Shift+H / Ctrl+Shift+J - rozdělit element vodorovně / svisle
+- Ctrl+Shift+N - normalizovat pozice na mřížku
+- Šipky - posun elementu (Shift = velký krok, Ctrl = jemný)
+- Ctrl+Shift+↑/↓ - přesun aktivní sekce nahoru / dolů
+- Ctrl+PageUp / Ctrl+PageDown - pořadí ve vrstvě (Z-order); +Shift = úplně dopředu/dozadu
+- Ctrl+N / Ctrl+O / Ctrl+S - nová / otevřít z databáze / uložit ('Uložit jako' zkratku NEMÁ)
+- Ctrl+P - tisk; Ctrl+Shift+P - vlastnosti stránky; Ctrl+Shift+A - změnit agendu
+- Ctrl+0 - přizpůsobit stránce; Ctrl+1 - 100 %; Ctrl+B - sbalit levý panel
+- F2 - inline editace textu; Enter - vlastnosti výběru; Delete - smazat
+- F5 - obnovit data z databáze; F1 - nápověda; Esc - zrušit probíhající akci
 
 ## Menu Nástroje
 Změnit agendu, Šablony v databázi (správce), AI Asistent šablon (vygeneruje šablonu
@@ -135,7 +135,7 @@ vestavěné rodiny).";
     // ─── Pokyny pro model (jak má odpovídat) ──────────────────────────────────
 
     public const string SystemRole = @"Jsi vestavěný průvodce aplikací TemplateDesigner. Radíš uživateli, kde co najde
-a jak něco nastavit. Jsi pasivní — sám nic neměníš, jen navádíš.
+a jak něco nastavit. Jsi pasivní - sám nic neměníš, jen navádíš.
 
 Styl odpovědí (DŮLEŽITÉ):
 - Odpovídej VÝHRADNĚ na to, na co se uživatel ptá. Žádné pozdravy, žádné úvodní fráze
@@ -148,13 +148,13 @@ Pravidla obsahu (ZÁVAZNÁ):
 - Opírej se VÝHRADNĚ o znalosti níže (popis aplikace + UI mapa + katalog elementů).
 - KAŽDÝ krok návodu musí citovat přesnou cestu z těchto znalostí: název menu/tlačítka,
   klávesovou zkratku, dialog nebo skupinu vlastností. Nikdy nepiš krok, jehož umístění
-  neumíš doložit z podkladů — vlastnosti, tlačítka ani zkratky si NEVYMÝŠLEJ.
+  neumíš doložit z podkladů - vlastnosti, tlačítka ani zkratky si NEVYMÝŠLEJ.
 - Tři stavy jistoty:
   1. Funkce JE v podkladech → poraď s přesnou cestou.
   2. VÍŠ, že funkce chybí (v podkladech je uvedená jako neexistující, nebo jde o zjevně
      jinou aplikaci) → řekni jednou větou, že to aplikace zatím neumí.
   3. NEJSI SI JISTÝ (v podkladech to není, ale mohlo by existovat) → řekni 'Tím si nejsem
-     jistý — mrkněte do nápovědy (F1) nebo na podporu M-line.' NEtvrď, že to neexistuje.
+     jistý - mrkněte do nápovědy (F1) nebo na podporu M-line.' NEtvrď, že to neexistuje.
 - Nejednoznačný dotaz → krátká doplňující otázka.";
 
     // ─── Auto-generovaný katalog elementů ─────────────────────────────────────
@@ -257,7 +257,7 @@ Pravidla obsahu (ZÁVAZNÁ):
 
     /// <summary>
     /// Které typy elementů poslat modelu. Obecné vždy; JŘ elementy podle druhu agendy
-    /// (ElementKind z registru) přes <see cref="AgendaCapabilities"/> — jediný zdroj pravdy,
+    /// (ElementKind z registru) přes <see cref="AgendaCapabilities"/> - jediný zdroj pravdy,
     /// shodný s paletou/menu (žádná duplicitní heuristika z kódu agendy).
     /// </summary>
     private static IEnumerable<string> RelevantElementTypes(string? elementKind)

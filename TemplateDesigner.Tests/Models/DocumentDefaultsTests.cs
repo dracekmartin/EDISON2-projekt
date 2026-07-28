@@ -79,7 +79,7 @@ public class DocumentDefaultsTests
     }
 
     /// <summary>
-    /// H4: Style je AsyncLocal — export na Task.Run threadpoolu si nastaví vlastní hodnotu, která
+    /// H4: Style je AsyncLocal - export na Task.Run threadpoolu si nastaví vlastní hodnotu, která
     /// se NESMÍ propsat zpět do UI flow (jinak by živý preview a export sdílely jeden statik → race,
     /// export by mohl vykreslit s živým defaultem). S prostým statikem by tento test spadl.
     /// </summary>

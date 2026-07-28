@@ -8,7 +8,7 @@ class Template {
     Guid Id
     string Name
     string Description
-    string? AgendaCode        // kód agendy pro databázová pole: "JR", "FAKTURY" — null = obecná šablona
+    string? AgendaCode        // kód agendy pro databázová pole: "JR", "FAKTURY" - null = obecná šablona
     PageSize PageSize
     List<Section> Sections
 }
@@ -34,7 +34,7 @@ class Section {
     SectionOverflowBehavior OverflowBehavior // určuje chování při přetečení stránky
 
     // Rozměry
-    float? DesignerHeight                   // výška v mm pro designer — null u dynamických sekcí
+    float? DesignerHeight                   // výška v mm pro designer - null u dynamických sekcí
 
     // Pokročilé
     string? VisibilityExpression            // podmínka viditelnosti, např. "{PAGE} > 1"
@@ -54,7 +54,7 @@ enum SectionPrintBehavior {
     OnFirstPageOnly,              // jen první stránka
     OnLastPageOnly,               // jen poslední stránka
     OnEveryPageExceptFirst,       // všechny kromě první
-    PerDataRow                    // LEGACY — logika opakování patří do elementů (TableElement), ne sekcí
+    PerDataRow                    // LEGACY - logika opakování patří do elementů (TableElement), ne sekcí
 }
 
 enum SectionOverflowBehavior {
@@ -65,8 +65,8 @@ enum SectionOverflowBehavior {
 ```
 
 **Poznámky:**
-- Section je **univerzální třída** — chování určují properties (PrintBehavior, OverflowBehavior), ne typ třídy
-- `DesignerHeight = null` → dynamická sekce — designer zobrazí placeholder výšku, print engine ji počítá z obsahu
+- Section je **univerzální třída** - chování určují properties (PrintBehavior, OverflowBehavior), ne typ třídy
+- `DesignerHeight = null` → dynamická sekce - designer zobrazí placeholder výšku, print engine ji počítá z obsahu
 
 ### Běžné případy použití sekcí
 
@@ -96,7 +96,7 @@ Uživatel si může uložit často používané sekce jako šablony a znovu je p
 - Funguje offline (file-based)
 
 **V1 implementace (nyní):**
-- `SectionTemplateManager` — file-based provider
+- `SectionTemplateManager` - file-based provider
 - Ukládá do složky vedle .exe: `bin/Debug/net9.0-windows/section-templates/`
 - Portable (lze zkopírovat složku jinam)
 
@@ -111,7 +111,7 @@ abstract class TemplateElement {
     Guid Id
     float X, Y               // pozice v mm, relativně k sekci (levý horní roh)
     float Width              // šířka v mm
-    float? Height            // výška v mm — null u dynamických elementů (TableElement atd.)
+    float? Height            // výška v mm - null u dynamických elementů (TableElement atd.)
     int ZIndex
     bool IsLocked            // uzamčený element nelze přesunout ani změnit velikost
     string? VisibilityExpression  // podmíněná viditelnost, např. "{POCET} > 0", null = vždy viditelný
@@ -119,11 +119,11 @@ abstract class TemplateElement {
 }
 ```
 
-**Pozicování — klíčová pravidla:**
+**Pozicování - klíčová pravidla:**
 - Všechny souřadnice jsou v **milimetrech**, relativní k levému hornímu rohu sekce
-- `Height` je `null` u dynamických elementů (TableElement, InfiniteText) — výšku vypočítá print engine za běhu podle dat
+- `Height` je `null` u dynamických elementů (TableElement, InfiniteText) - výšku vypočítá print engine za běhu podle dat
 - Statické elementy (TextElement, RectangleElement, ImageElement, LineElement) mají vždy pevnou výšku
-- Print engine bere pozice jak jsou uloženy v JSON — nepočítá žádný layout kromě dynamických výšek
+- Print engine bere pozice jak jsou uloženy v JSON - nepočítá žádný layout kromě dynamických výšek
 - Konverze mm → px probíhá až při renderování (designer i print engine zvlášť podle svého DPI/zoomu)
 
 ### Typy elementů
@@ -134,46 +134,46 @@ abstract class TemplateElement {
 | `RectangleElement` | Obdélník / pozadí |
 | `LineElement` | Čára / oddělovač |
 | `BarcodeElement` | QR kód nebo Code128 čárový kód (ZXing.Net) |
-| `TableElement` | Tabulka Fixed/Dynamic — sloupce + UI editor, DataSource z Caché |
+| `TableElement` | Tabulka Fixed/Dynamic - sloupce + UI editor, DataSource z Caché |
 
-Systém musí být **rozšiřitelný** — nové typy elementů i sekcí přidáváme podtřídami.
+Systém musí být **rozšiřitelný** - nové typy elementů i sekcí přidáváme podtřídami.
 
-### DataSchema (schéma dostupných DB polí — pouze design time)
+### DataSchema (schéma dostupných DB polí - pouze design time)
 ```csharp
 class DataSchema {
-    string AgendaCode                      // "JR", "FAKTURY" — odpovídá Template.AgendaCode
-    string AgendaName                      // "Jízdní řád" — pro UI
-    List<DataField> Fields                 // skalární pole — každá hodnota existuje jednou na sestavu
-    List<DataFieldCollection> FieldCollections  // tabulkové kolekce — zdroje řádků pro Dynamic tabulky; volitelné V2+
+    string AgendaCode                      // "JR", "FAKTURY" - odpovídá Template.AgendaCode
+    string AgendaName                      // "Jízdní řád" - pro UI
+    List<DataField> Fields                 // skalární pole - každá hodnota existuje jednou na sestavu
+    List<DataFieldCollection> FieldCollections  // tabulkové kolekce - zdroje řádků pro Dynamic tabulky; volitelné V2+
 }
 
 class DataField {
     string FieldName              // "CISLO_LINKY" → uživatel píše {CISLO_LINKY}
-    string Label                  // "Číslo linky" — zobrazuje se v UI browseru
+    string Label                  // "Číslo linky" - zobrazuje se v UI browseru
     FieldDataType DataType        // Text | Number | Date | Time | DateTime | Boolean (metadata pro UI)
-    string? Example               // "42" — ukázka hodnoty v browseru
+    string? Example               // "42" - ukázka hodnoty v browseru
     string? Description           // volitelný delší popis pro uživatele
 }
 
-class DataFieldCollection {      // volitelné — tabulkový datový zdroj pro V2+
-    string Name                   // "Zastávky" — zobrazovací název
+class DataFieldCollection {      // volitelné - tabulkový datový zdroj pro V2+
+    string Name                   // "Zastávky" - zobrazovací název
     string CollectionKey          // klíč kolekce (odpovídá collectionKey v JSON a DataSource na TableElement)
     List<DataField> Fields        // pole dostupná v každém řádku kolekce
 }
 ```
 
 **Klíčová pravidla:**
-- DataSchema je **pouze metadata pro designer** — print engine ji nepotřebuje a nepoužívá
-- `{FIELD_NAME}` placeholder lze použít v libovolném TextElementu kdekoliv v šabloně — schema neeviduje omezení
+- DataSchema je **pouze metadata pro designer** - print engine ji nepotřebuje a nepoužívá
+- `{FIELD_NAME}` placeholder lze použít v libovolném TextElementu kdekoliv v šabloně - schema neeviduje omezení
 - Grouping (Scalar/Table scope) je **organizační hint pro UI**, nikoliv tvrdé omezení na použití placeholderu
-- Schema je **oddělená od šablony** — Template ukládá jen `AgendaCode` (string reference), schema samotná je v `schemas/JR.schema.json`
+- Schema je **oddělená od šablony** - Template ukládá jen `AgendaCode` (string reference), schema samotná je v `schemas/JR.schema.json`
 - Flat `Fields` (V1) a hierarchické `Groups` (V2) mohou koexistovat v jednom souboru; UI zobrazí skupiny pokud jsou definované, jinak flat list
 
 **Dva typy JSON souborů v systému:**
-- `*.json` — šablona (Template) — definuje layout stránky, sekce, elementy
-- `*.schema.json` — schéma agendy (DataSchema) — definuje dostupná DB pole, uloženo ve složce `schemas/`
+- `*.json` - šablona (Template) - definuje layout stránky, sekce, elementy
+- `*.schema.json` - schéma agendy (DataSchema) - definuje dostupná DB pole, uloženo ve složce `schemas/`
 
-**IDataSchemaProvider** — rozhraní pro načítání schémat:
+**IDataSchemaProvider** - rozhraní pro načítání schémat:
 ```csharp
 interface IDataSchemaProvider {
     IReadOnlyList<AgendaInfo> GetAvailableAgendas()   // seznam dostupných agend
@@ -182,9 +182,9 @@ interface IDataSchemaProvider {
 ```
 
 Implementace:
-- `JsonFileDataSchemaProvider` — načítá `schemas/*.schema.json` ze složky aplikace (offline fallback)
-- `CacheAgendaProvider` — volá Caché `AgendaAPI.GetSchema()` přes MLRest; implementuje i `ITableTemplateProvider`
-- `CompositeDataSchemaProvider` — Caché primary + JSON fallback; vrátí výsledek prvního úspěšného
+- `JsonFileDataSchemaProvider` - načítá `schemas/*.schema.json` ze složky aplikace (offline fallback)
+- `CacheAgendaProvider` - volá Caché `AgendaAPI.GetSchema()` přes MLRest; implementuje i `ITableTemplateProvider`
+- `CompositeDataSchemaProvider` - Caché primary + JSON fallback; vrátí výsledek prvního úspěšného
 - Wiring: `Config/CacheSchemaWiring.TryCreate(AppSettings)` → vrátí null pokud Caché není nakonfigurováno
 
 ---

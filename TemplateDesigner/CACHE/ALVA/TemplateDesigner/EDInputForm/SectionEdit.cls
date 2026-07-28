@@ -3,14 +3,14 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro editaci vlastností sekce (dialog "Vlastnosti sekce").
 ///
 /// Field key = property path na C# Section. Generický ElementEditDialog čte/zapisuje
-/// hodnoty přes reflexi (ElementPropertyAccessor) — Init jen definuje strukturu + defaults.
+/// hodnoty přes reflexi (ElementPropertyAccessor) - Init jen definuje strukturu + defaults.
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptorů z
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptorů z
 /// `BuildSectionDescriptors` v `ElementPropertiesWindowViewModel.cs`. Viz memory
 /// `project_edinputform_schema_duplication.md`.
 ///
 /// Pozn.: legacy panel zobrazoval "Datový zdroj" + "Výška řádku" jen pro PrintBehavior=PerDataRow
-/// (podmíněně). EDInputForm nemá conditional fields a PerDataRow je legacy — proto se tyto dvě
+/// (podmíněně). EDInputForm nemá conditional fields a PerDataRow je legacy - proto se tyto dvě
 /// pole vynechávají (běžné sekce vypadají 1:1 jako dřív).
 Class ALVA.TemplateDesigner.EDInputForm.SectionEdit Extends %RegisteredObject
 {
@@ -65,7 +65,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("conditions", "Podmínky")
 
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {PAGE} > 1 — sekce se vytiskne jen když podmínka platí"
+        s f.helpText = "Např. {PAGE} > 1 - sekce se vytiskne jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

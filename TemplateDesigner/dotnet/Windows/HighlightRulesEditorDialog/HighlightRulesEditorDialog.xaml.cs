@@ -12,7 +12,7 @@ public partial class HighlightRulesEditorDialog : Window
 {
     private readonly HighlightRulesEditorDialogViewModel _vm;
 
-    /// <summary>Výsledná pravidla po OK — pass-through z VM.</summary>
+    /// <summary>Výsledná pravidla po OK - pass-through z VM.</summary>
     public List<HighlightRule> ResultRules => _vm.ResultRules;
 
     public HighlightRulesEditorDialog(IReadOnlyList<HighlightRule>? rules)

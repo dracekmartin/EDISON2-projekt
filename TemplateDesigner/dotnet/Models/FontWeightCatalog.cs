@@ -9,7 +9,7 @@ namespace TemplateDesigner.Models;
 /// Jediný zdroj pravdy „jaké řezy (váhy) rodina reálně má" + názvosloví vah. Sdílené oběma
 /// editačními cestami fontu: EDInputForm klient (<c>ElementFormBinder.PopulateFontWeightFields</c>)
 /// i WPF <c>CellStyleEditor</c>. Váhy se čtou z nainstalovaného fontu přes <see cref="SKFontManager"/>
-/// (OS věc — Caché je nezná), takže se nabídnou jen skutečné řezy (ne fixní seznam).
+/// (OS věc - Caché je nezná), takže se nabídnou jen skutečné řezy (ne fixní seznam).
 /// </summary>
 public static class FontWeightCatalog
 {
@@ -51,7 +51,7 @@ public static class FontWeightCatalog
         return weights.ToList();
     }
 
-    /// <summary>Váhy rodiny jako (číslo, popisek) — pro naplnění dropdownů.</summary>
+    /// <summary>Váhy rodiny jako (číslo, popisek) - pro naplnění dropdownů.</summary>
     public static IReadOnlyList<(int Weight, string Label)> Items(string? family) =>
         Weights(family).Select(w => (w, Label(w))).ToList();
 }

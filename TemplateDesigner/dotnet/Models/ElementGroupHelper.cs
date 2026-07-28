@@ -10,7 +10,7 @@ public static class ElementGroupHelper
     /// <summary>Generuje nový unikátní GroupId.</summary>
     public static string NewGroupId() => Guid.NewGuid().ToString("N")[..8];
 
-    // Předgenerované barvy pro skupiny — dostatečně odlišné, poloprůhledné
+    // Předgenerované barvy pro skupiny - dostatečně odlišné, poloprůhledné
     private static readonly SKColor[] GroupColors =
     [
         new(0xFF4CAF50), // zelená

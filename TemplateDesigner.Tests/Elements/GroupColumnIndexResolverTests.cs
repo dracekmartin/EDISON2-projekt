@@ -5,7 +5,7 @@ namespace TemplateDesigner.Tests.Elements;
 
 /// <summary>
 /// Resolve pozičních klíčů <c>__INDEX_N</c> per-sloupcových stylů skupin dnů na skutečná ID
-/// (<see cref="GroupColumnIndexResolver"/>) — poziční klíče vznikají při AI importu, kdy runtime
+/// (<see cref="GroupColumnIndexResolver"/>) - poziční klíče vznikají při AI importu, kdy runtime
 /// ID skupin ještě nejsou známá.
 /// </summary>
 public class GroupColumnIndexResolverTests
@@ -30,7 +30,7 @@ public class GroupColumnIndexResolverTests
     [Fact]
     public void SkutecneId_MaPrednostPredIndexovym()
     {
-        // Skupina "20" má vlastní styl — poziční záznam ji nesmí přepsat.
+        // Skupina "20" má vlastní styl - poziční záznam ji nesmí přepsat.
         var lookup = GroupColumnIndexResolver.BuildStyleLookup(
             [Gc("20", 8f), Gc("__INDEX_0", 14f)],
             ["20"]);

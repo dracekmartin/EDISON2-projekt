@@ -32,7 +32,7 @@
             <Button Grid.Column="4" Content="{StaticResource EDStrings.Cancel}"  IsCancel="True" Width="80"/>
         </Grid>
 
-        <!-- Filter — deklarativní přes EDFilter komponentu -->
+        <!-- Filter - deklarativní přes EDFilter komponentu -->
         <edf:EDFilter x:Name="TheFilter" DockPanel.Dock="Top" Target="{Binding ElementName=TheList}" Margin="0,0,0,8">
             <edf:FilterCombo Key="agendaCode" Label="Agenda"
                              ItemsSource="{Binding AgendaFilters}"
@@ -41,7 +41,7 @@
                              MinWidth="250"/>
         </edf:EDFilter>
 
-        <!-- List šablon (Caché-driven přes EDList) — konfigurace v XAML -->
+        <!-- List šablon (Caché-driven přes EDList) - konfigurace v XAML -->
         <el:EDList x:Name="TheList"
                    CacheClass="ALVA.TemplateDesigner.EDList.Sablony"
                    HostId="TemplateDesigner.TemplatePicker"

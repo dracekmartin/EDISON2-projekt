@@ -29,7 +29,7 @@ public class TemplateSerializerRoundTripTests
         ElementTypes.StopList      => new StopListElement(),
         ElementTypes.DepartureGrid => new DepartureGridElement(),
         ElementTypes.NotesLegend   => new NotesLegendElement(),
-        _ => throw new ArgumentException($"Neznámý typ elementu '{type}' — doplň do testu.", nameof(type))
+        _ => throw new ArgumentException($"Neznámý typ elementu '{type}' - doplň do testu.", nameof(type))
     };
 
     private static Template TemplateWith(TemplateElement element)
@@ -66,7 +66,7 @@ public class TemplateSerializerRoundTripTests
     [Fact]
     public void JsonSNeznamouProperty_SeNactoBezChyby()
     {
-        // Forward tolerance — šablona z novější verze s neznámým polem nesmí spadnout
+        // Forward tolerance - šablona z novější verze s neznámým polem nesmí spadnout
         var template = TemplateWith(new TextElement { Text = "x" });
         string json = TemplateSerializer.Serialize(template);
         json = json.Replace("\"name\": \"RoundTrip\"",
@@ -112,7 +112,7 @@ public class TemplateSerializerRoundTripTests
         ((TextElement)clone.Sections[0].Elements[0]).Text = "změněný";
         clone.Sections[0].Name = "jiná sekce";
 
-        // Snapshot je nezávislý — editace klonu (= živé šablony při exportu) originál nemění
+        // Snapshot je nezávislý - editace klonu (= živé šablony při exportu) originál nemění
         Assert.Equal("původní", ((TextElement)original.Sections[0].Elements[0]).Text);
         Assert.Equal("Test", original.Sections[0].Name);
         Assert.Equal(original.Id, clone.Id);

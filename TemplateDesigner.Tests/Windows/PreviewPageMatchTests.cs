@@ -7,7 +7,7 @@ namespace TemplateDesigner.Tests.Windows;
 /// Držení logické stránky náhledu při re-fetchi dat
 /// (<see cref="TemplateDesignerViewModel.FindMatchingPageIndex"/>): po změně server parametru
 /// (např. „Samostatná stránka pro každý označník") se má zůstat na téže zastávce×směru, ne na
-/// pořadovém čísle — rozdělení posouvá čísla stránek.
+/// pořadovém čísle - rozdělení posouvá čísla stránek.
 /// </summary>
 public class PreviewPageMatchTests
 {
@@ -22,7 +22,7 @@ public class PreviewPageMatchTests
     [Fact]
     public void PosunutaCisla_NajdeTutezZastavku()
     {
-        // Před: [ČB, Dasný]; po rozdělení: [ČB-11, ČB-22, Dasný] — Dasný z indexu 1 na 2.
+        // Před: [ČB, Dasný]; po rozdělení: [ČB-11, ČB-22, Dasný] - Dasný z indexu 1 na 2.
         var current = Page("100", "T");
         var nove = new List<DataContext> { Page("50", "T", "11"), Page("50", "T", "22"), Page("100", "T") };
         Assert.Equal(2, TemplateDesignerViewModel.FindMatchingPageIndex(nove, current, oldIndex: 1));

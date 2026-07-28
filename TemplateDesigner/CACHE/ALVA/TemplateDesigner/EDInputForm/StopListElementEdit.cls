@@ -2,7 +2,7 @@ Include (GENERAL, EDInputForm)
 
 /// EDInputForm schema pro tab „Obecné" editoru StopListElement (zastávkový seznam).
 /// Field key = property path na C# StopListElement. Embeduje se do StopColumnsEditorDialog
-/// vedle custom editoru sloupců (tab „Sloupce"). Validate jen echo — žádná cross-field logika.
+/// vedle custom editoru sloupců (tab „Sloupce"). Validate jen echo - žádná cross-field logika.
 ///
 /// Element-level styl záhlaví/buněk je zde jako prostá pole (element je báze kaskády, tri-state
 /// „dědit" tu netřeba); per-sloupec override řeší CellStyleEditor v tabu „Sloupce".
@@ -38,8 +38,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "#FFE0E0E0")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "#00FFFFFF")
 
-        // ── Zastávky — specifické (značky, směr, zvýraznění) ──────────────
-        d form.AddGroup("stops", "Zastávky — specifické")
+        // ── Zastávky - specifické (značky, směr, zvýraznění) ──────────────
+        d form.AddGroup("stops", "Zastávky - specifické")
         d form.AddBool("ShowStopIndentation", "Odsazení", 1)
         d form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
@@ -81,7 +81,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Podmínky ──────────────────────────────────────────────────────
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
         s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí. Pole řádku: POPIS, TC, CAS_JIZDY, PORADI, JE_AKTUALNI. Např. {JE_AKTUALNI} == 1"
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)

@@ -34,7 +34,7 @@ public class MigrationUnifyStopColumns : ITemplateMigration
         ["JeAktualni"] = "AKTUALNI_ZASTAVKA",
     };
 
-    // StopList sloupce, které v novém kontraktu neexistují — z uložené šablony se odstraní.
+    // StopList sloupce, které v novém kontraktu neexistují - z uložené šablony se odstraní.
     private static readonly HashSet<string> DroppedStopKeys = new(StringComparer.Ordinal)
     {
         "Tc", "RouteLetters", "BaseRoute",

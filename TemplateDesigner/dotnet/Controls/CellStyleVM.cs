@@ -12,7 +12,7 @@ namespace TemplateDesigner;
 /// ViewModel pro jednu TextStyle zónu (záhlaví NEBO data) v dialozích sloupců.
 ///
 /// Všechny editovatelné vlastnosti jsou nullable (null = dědit z rodiče v kaskádě).
-/// <see cref="Inherited"/> drží vyřešený rodičovský styl — UI ho zobrazuje jako placeholder/default
+/// <see cref="Inherited"/> drží vyřešený rodičovský styl - UI ho zobrazuje jako placeholder/default
 /// u každé vlastnosti, aby uživatel viděl, co bude skutečně platit, když nic nepřepíše.
 ///
 /// Sdíleno všemi dialogy sloupců (DepartureGrid / StopList / TableElement).
@@ -84,20 +84,20 @@ public class CellStyleVM : INotifyPropertyChanged
         _paddingTop is not null || _paddingRight is not null ||
         _paddingBottom is not null || _paddingLeft is not null;
 
-    // ── Rodičovský (zděděný) styl — read-only, pro placeholder zobrazení ──
+    // ── Rodičovský (zděděný) styl - read-only, pro placeholder zobrazení ──
 
     /// <summary>
     /// Vyřešený rodičovský styl (element-level resolved). UI ho ukazuje jako
-    /// placeholder u prázdných polí — uživatel vidí, co bude platit, když nic nepřepíše.
+    /// placeholder u prázdných polí - uživatel vidí, co bude platit, když nic nepřepíše.
     /// </summary>
     public ResolvedTextStyle Inherited { get; }
 
-    // ── Řez (váha) — dynamická nabídka reálných řezů fontu ────────────────
+    // ── Řez (váha) - dynamická nabídka reálných řezů fontu ────────────────
 
     /// <summary>Jedna položka nabídky řezu. Value=null → „dědit" (auto dle Tučné).</summary>
     public sealed record WeightOption(int? Value, string Label);
 
-    /// <summary>Nabídka řezů pro combobox — přepočítává se dle efektivní rodiny (explicit ?? zděděná).
+    /// <summary>Nabídka řezů pro combobox - přepočítává se dle efektivní rodiny (explicit ?? zděděná).
     /// První položka = „Automaticky (dědit)".</summary>
     public IReadOnlyList<WeightOption> WeightOptions { get; private set; } = [];
 

@@ -5,7 +5,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Models;
 
 /// <summary>
-/// Univerzální styl textu — znovupoužitelný kdekoliv kde se vyskytuje text.
+/// Univerzální styl textu - znovupoužitelný kdekoliv kde se vyskytuje text.
 /// Nullable properties = "zdědí od rodiče" (element default, column default, ...).
 /// CSS-like cascade: TextStyle.Resolve(parent) → ResolvedTextStyle.
 /// </summary>
@@ -67,7 +67,7 @@ public class TextStyle
 
         return new ResolvedTextStyle
         {
-            // Trim — uživatel může do free-text font pole napsat mezeru navíc / jiný case;
+            // Trim - uživatel může do free-text font pole napsat mezeru navíc / jiný case;
             // SKTypeface.FromFamilyName je case-insensitive, ale mezery na okrajích by tiše spadly
             // na default font. Ořez to udělá shovívavé.
             FontFamily = (FontFamily ?? parent.FontFamily).Trim(),
@@ -109,7 +109,7 @@ public class TextStyle
 }
 
 /// <summary>
-/// Vyřešený styl textu — všechny hodnoty non-null, připravený pro SkiaSharp rendering.
+/// Vyřešený styl textu - všechny hodnoty non-null, připravený pro SkiaSharp rendering.
 /// Vytváří se přes TextStyle.Resolve(parent).
 /// </summary>
 public struct ResolvedTextStyle
@@ -135,7 +135,7 @@ public struct ResolvedTextStyle
     /// <summary>Konverze bodů (pt) na milimetry: 1pt = 25.4/72 mm.</summary>
     public const float PtToMm = 0.3528f;
 
-    // Kořen kaskády — přes DocumentDefaults.Apply se sem propíše výchozí styl šablony (font…).
+    // Kořen kaskády - přes DocumentDefaults.Apply se sem propíše výchozí styl šablony (font…).
     public static ResolvedTextStyle Default => DocumentDefaults.Apply(new()
     {
         FontFamily = "Arial",

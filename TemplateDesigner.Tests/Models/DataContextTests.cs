@@ -4,7 +4,7 @@ using TemplateDesigner.Models;
 namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
-/// DataContext.GetString — mj. spojení vnořeného skalárního pole (ZONY) do stringu, ať ho umí
+/// DataContext.GetString - mj. spojení vnořeného skalárního pole (ZONY) do stringu, ať ho umí
 /// zobrazit i plochá buňka DynamicTable (specializované elementy si pole parsují samy).
 /// </summary>
 public class DataContextTests
@@ -21,7 +21,7 @@ public class DataContextTests
     {
         var ctx = new DataContext(new Dictionary<string, object?>());
         Assert.Equal("", ctx.GetString("NEEXISTUJE"));
-        Assert.Equal("—", ctx.GetString("NEEXISTUJE", "—"));
+        Assert.Equal("-", ctx.GetString("NEEXISTUJE", "-"));
     }
 
     [Fact]

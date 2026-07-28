@@ -133,7 +133,7 @@ public class RowVM : INotifyPropertyChanged
 
     public ObservableCollection<CellVM> Cells { get; } = [];
 
-    /// <summary>Barva pozadí řádku — dialog ji needituje, ale musí ji přenést (jinak open+OK smaže).</summary>
+    /// <summary>Barva pozadí řádku - dialog ji needituje, ale musí ji přenést (jinak open+OK smaže).</summary>
     public string? BackgroundColor { get; set; }
 
     public string? VisibilityExpression
@@ -196,10 +196,10 @@ public class CellVM : INotifyPropertyChanged
     public string ColumnHeader { get; set; } = "";
     public string Content      { get => _content; set { _content = value; OnChanged(); } }
 
-    /// <summary>Formát buňky (přebíjí formát sloupce). Dialog needituje — přenáší se, ať se neztratí.</summary>
+    /// <summary>Formát buňky (přebíjí formát sloupce). Dialog needituje - přenáší se, ať se neztratí.</summary>
     public string? Format { get; set; }
 
-    /// <summary>Per-buňkový styl. Dialog needituje (styl se edituje per sloupec) — přenáší se, ať se neztratí.</summary>
+    /// <summary>Per-buňkový styl. Dialog needituje (styl se edituje per sloupec) - přenáší se, ať se neztratí.</summary>
     public TextStyle? Style { get; set; }
 
     public TableCell ToModel() => new()
@@ -252,17 +252,17 @@ class TableEditorDialogViewModel : EDViewModel
     /// <summary>Výchozí styl datových buněk tabulky (kaskáda: per-column → tento → TableDataParent).</summary>
     public CellStyleVM ElementDataStyle { get; }
 
-    // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────
+    // ── UI omezení editace - co CellStyleEditor zobrazí per zóna ─────────
     public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
     public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
 
-    /// <summary>Výsledné sloupce po OK — čteny volajícím.</summary>
+    /// <summary>Výsledné sloupce po OK - čteny volajícím.</summary>
     public List<TableColumn> ResultColumns { get; private set; } = [];
 
-    /// <summary>Výsledné řádky po OK — null pro Dynamic mód.</summary>
+    /// <summary>Výsledné řádky po OK - null pro Dynamic mód.</summary>
     public List<TableRow>? ResultRows { get; private set; }
 
-    /// <summary>Výsledné souhrnné řádky po OK — null pokud žádné.</summary>
+    /// <summary>Výsledné souhrnné řádky po OK - null pokud žádné.</summary>
     public List<TableRow>? ResultSummaryRows { get; private set; }
 
     // ── Výběr ────────────────────────────────────────────────────────────────
@@ -307,7 +307,7 @@ class TableEditorDialogViewModel : EDViewModel
     public Func<string, string?>? RequestColorPicker { get; set; }
 
     /// <summary>Callback: zobraz picker šablon tabulky, vrať klíč zvolené šablony (nebo null při Storno).
-    /// View-only operace (WPF dialog) — drží ji code-behind, VM zná jen výsledek (R4).</summary>
+    /// View-only operace (WPF dialog) - drží ji code-behind, VM zná jen výsledek (R4).</summary>
     public Func<IReadOnlyList<TableTemplateInfo>, string?>? RequestPickTableTemplate { get; set; }
 
     // ── Commands ──────────────────────────────────────────────────────────────
@@ -365,7 +365,7 @@ class TableEditorDialogViewModel : EDViewModel
         _headerInherited  = element.ResolveColumnHeaderParent();
         _dataInherited    = element.ResolveColumnDataParent();
 
-        // Element-level CellStyleVM (tab Obecné) — parent je TableHeaderParent/TableDataParent (baked defaults)
+        // Element-level CellStyleVM (tab Obecné) - parent je TableHeaderParent/TableDataParent (baked defaults)
         ElementHeaderStyle = CellStyleVM.FromModel(element.HeaderStyle, element.ResolveElementHeaderParent());
         ElementDataStyle   = CellStyleVM.FromModel(element.DataStyle,   element.ResolveElementDataParent());
 
@@ -374,7 +374,7 @@ class TableEditorDialogViewModel : EDViewModel
             ? new HashSet<string>(FieldNameOptions, StringComparer.OrdinalIgnoreCase)
             : null;
 
-        // Naplnění sloupců — pro Dynamic tabulku bez sloupců předvyplnit ze schématu
+        // Naplnění sloupců - pro Dynamic tabulku bez sloupců předvyplnit ze schématu
         var sourceCols = element.Columns.Count == 0
                          && element.Mode == TableMode.Dynamic
                          && collectionFields is { Count: > 0 }
@@ -393,7 +393,7 @@ class TableEditorDialogViewModel : EDViewModel
                 RowVMs.Add(RowVM.FromModel(row, cols));
         }
 
-        // Souhrnné řádky — načíst existující
+        // Souhrnné řádky - načíst existující
         foreach (var row in element.SummaryRows ?? [])
             SummaryVMs.Add(RowVM.FromModel(row, element.Columns));
 
@@ -412,7 +412,7 @@ class TableEditorDialogViewModel : EDViewModel
 
         LoadTemplateCommand   = Command(LoadTemplate);
 
-        // Color picker commands — cascade od SelectedColumnVM.HeaderStyle / DataStyle
+        // Color picker commands - cascade od SelectedColumnVM.HeaderStyle / DataStyle
         PickHeaderTextColorCommand  = Command(() => PickColor(c => c.HeaderStyle.TextColor, (c, v) => c.HeaderStyle.TextColor = v));
         PickHeaderBgColorCommand    = Command(() => PickColor(c => c.HeaderStyle.BgColor,   (c, v) => c.HeaderStyle.BgColor   = v));
         PickDataTextColorCommand    = Command(() => PickColor(c => c.DataStyle.TextColor,   (c, v) => c.DataStyle.TextColor   = v));
@@ -439,7 +439,7 @@ class TableEditorDialogViewModel : EDViewModel
             }
         });
 
-        // Přizpůsobit sloupce k šířce elementu — proporcionální scale (zachová mód Mm/%)
+        // Přizpůsobit sloupce k šířce elementu - proporcionální scale (zachová mód Mm/%)
         FitColumnsToWidthCommand = Command(() =>
         {
             var visible = ColumnVMs.Where(c => c.Visible).ToList();
@@ -451,7 +451,7 @@ class TableEditorDialogViewModel : EDViewModel
                 vm.Width = (float)Math.Round(vm.Width * scale, 2);
         });
 
-        // Subscribe na Width / Visible / WidthMode — refresh overflow warning
+        // Subscribe na Width / Visible / WidthMode - refresh overflow warning
         foreach (var vm in ColumnVMs)
             vm.PropertyChanged += OnColumnChanged;
 
@@ -653,7 +653,7 @@ class TableEditorDialogViewModel : EDViewModel
     {
         RequestCommitEdits?.Invoke();
 
-        // Element-level styl — zápis zpět do elementu (TableElement.HeaderStyle/DataStyle jsou nullable)
+        // Element-level styl - zápis zpět do elementu (TableElement.HeaderStyle/DataStyle jsou nullable)
         _element.HeaderStyle = ElementHeaderStyle.ToModel();
         _element.DataStyle   = ElementDataStyle.ToModel();
 

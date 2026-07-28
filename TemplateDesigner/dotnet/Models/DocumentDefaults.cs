@@ -1,10 +1,10 @@
 namespace TemplateDesigner.Models;
 
 /// <summary>
-/// Ambient (dokumentový) výchozí styl textu — kořen kaskády stylů celé šablony.
+/// Ambient (dokumentový) výchozí styl textu - kořen kaskády stylů celé šablony.
 /// Nastavuje se při změně aktuální šablony (load / new / edit defaultu); čtou ho „dno" kaskády
 /// (<see cref="ResolvedTextStyle.Default"/>, <c>CellDefaults.Default</c> a odvození rodiče), takže
-/// se template default propíše do všech elementů, které styl nepřepíší — bez threadingu přes
+/// se template default propíše do všech elementů, které styl nepřepíší - bez threadingu přes
 /// desítky <c>Resolve()</c> call-sites.
 ///
 /// <para><b>Vlákna:</b> hodnota je <see cref="AsyncLocal{T}"/>, ne prostý statik. Async PDF/PNG
@@ -14,7 +14,7 @@ namespace TemplateDesigner.Models;
 /// defaultem). Ambient návrh (kořen kaskády bez threadingu přes Resolve) zůstává. Při přepnutí
 /// šablony se MUSÍ přenastavit (i na null), jinak by font z předchozí šablony „přetekl".</para>
 ///
-/// <para>Drží celý <see cref="TextStyle"/> (ne jen font) — rozšíření o velikost/barvu/… je pak
+/// <para>Drží celý <see cref="TextStyle"/> (ne jen font) - rozšíření o velikost/barvu/… je pak
 /// jen přidání pole do UI, bez změny této infrastruktury.</para>
 /// </summary>
 public static class DocumentDefaults
@@ -22,7 +22,7 @@ public static class DocumentDefaults
     private static readonly AsyncLocal<TextStyle?> _style = new();
 
     /// <summary>Výchozí styl aktuální šablony. Null = žádný override (zapečené defaulty).
-    /// Per async-flow (AsyncLocal) — export na threadpoolu má vlastní izolovanou hodnotu.</summary>
+    /// Per async-flow (AsyncLocal) - export na threadpoolu má vlastní izolovanou hodnotu.</summary>
     public static TextStyle? Style
     {
         get => _style.Value;

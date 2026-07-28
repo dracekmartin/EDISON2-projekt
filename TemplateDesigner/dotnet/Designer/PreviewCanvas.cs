@@ -8,7 +8,7 @@ using TemplateDesigner.Models.Layout;
 namespace TemplateDesigner.Designer;
 
 /// <summary>
-/// Renderuje šablonu pro live preview — bez designerového chrome (záhlaví sekcí,
+/// Renderuje šablonu pro live preview - bez designerového chrome (záhlaví sekcí,
 /// handles, badgů, mřížky). Elementy s visibilityExpression="false" se nezobrazí.
 /// Zoom se počítá automaticky podle šířky dostupného canvasu (fit-to-width).
 ///
@@ -55,7 +55,7 @@ public class PreviewCanvas
         return Math.Clamp(fitZoom, 0.2f, 10.0f);
     }
 
-    /// <summary>Šířka SKElementu v px pro daný zoom — zahrnuje PagePadding na obou stranách.</summary>
+    /// <summary>Šířka SKElementu v px pro daný zoom - zahrnuje PagePadding na obou stranách.</summary>
     public float ComputePageWidthPx(float zoom)
     {
         float pageW = _state.CurrentTemplate.PageSize.Width;
@@ -64,7 +64,7 @@ public class PreviewCanvas
 
     /// <summary>Spustí layout engine a zároveň synchronizuje ambient výchozí styl (font) na aktuální
     /// šablonu. Tím všechny font-resolve cesty (preview render, PDF/PNG export, měření přetečení/výšky)
-    /// používají správný font i bez předchozího paintu — font se mění přes EDInputForm reflexí, takže se
+    /// používají správný font i bez předchozího paintu - font se mění přes EDInputForm reflexí, takže se
     /// na něj nedá spolehnout přes RebuildSections/Render. Jediný chokepoint místo per-metoda syncu.</summary>
     private LayoutResult Layout(DataContext? data) => Layout(data, _state.CurrentTemplate);
 
@@ -74,7 +74,7 @@ public class PreviewCanvas
         return _engine.Layout(template, data);
     }
 
-    /// <summary>Výška všech stránek v px při daném zoomu — pro nastavení výšky SKElement.</summary>
+    /// <summary>Výška všech stránek v px při daném zoomu - pro nastavení výšky SKElement.</summary>
     public float CalculatePageHeightPx(float zoom, DataContext? data = null)
     {
         var layout = Layout(data);
@@ -83,7 +83,7 @@ public class PreviewCanvas
         return PageTopPaddingPx + pageCount * pageH + (pageCount - 1) * PageGapPx + PagePaddingPx;
     }
 
-    /// <summary>Výška stránek — zpětná kompatibilita (bez dat = jedna stránka).</summary>
+    /// <summary>Výška stránek - zpětná kompatibilita (bez dat = jedna stránka).</summary>
     public float CalculatePageHeightPxLegacy(float zoom)
     {
         float mmToPx = BaseMmToPx * zoom;
@@ -106,10 +106,10 @@ public class PreviewCanvas
         RenderMultiDataToPdf(filePath, [data!], sheetLayout: sheetLayout);
 
     /// <summary>
-    /// Exportuje šablonu s více sadami dat do PDF — každý DataContext = kompletní průchod šablonou.
+    /// Exportuje šablonu s více sadami dat do PDF - každý DataContext = kompletní průchod šablonou.
     /// Pro JŘ: každý DataContext = jedna zastávka/směr → 1+ PDF stránek.
     /// </summary>
-    /// <param name="template">Šablona k renderování — snapshot pro export na pozadí
+    /// <param name="template">Šablona k renderování - snapshot pro export na pozadí
     /// (uživatel může mezitím editovat živou šablonu). Null = aktuální šablona ze State.</param>
     /// <param name="progress">Per datová stránka: (hotovo, celkem).</param>
     /// <param name="sheetLayout">Imposice: skládání logických stránek na fyzické listy (N-up).
@@ -217,7 +217,7 @@ public class PreviewCanvas
     /// <param name="filePath">Cílová cesta. Při více stránkách se před příponu vloží "_NNN".</param>
     /// <param name="dataPages">Datové sady pro renderování.</param>
     /// <param name="dpi">Rozlišení (default 150 = print quality, 96 = screen).</param>
-    /// <param name="template">Šablona k renderování — snapshot pro export na pozadí. Null = aktuální ze State.</param>
+    /// <param name="template">Šablona k renderování - snapshot pro export na pozadí. Null = aktuální ze State.</param>
     /// <param name="progress">Per výstupní stránka: (hotovo, celkem).</param>
     public int RenderMultiDataToPng(string filePath, IReadOnlyList<DataContext> dataPages, float dpi = 150f,
         Template? template = null, IProgress<(int done, int total)>? progress = null)
@@ -264,7 +264,7 @@ public class PreviewCanvas
     }
 
     /// <summary>
-    /// Spočítá přetékající stránky napříč všemi dodanými datovými sadami — **layout-only, bez renderu**.
+    /// Spočítá přetékající stránky napříč všemi dodanými datovými sadami - **layout-only, bez renderu**.
     /// Použito v tisku pro agregovanou kontrolu přes všechny instance: data už jsou fetchnutá z Caché,
     /// takže projetí layoutem + <see cref="PageOverflows"/> je levné. Vrací počet přetékajících a celkový
     /// počet stránek.
@@ -303,7 +303,7 @@ public class PreviewCanvas
         var overflowPages = layout.Pages.Select(p => PageOverflows(p, ps)).ToList();
         OverflowChanged?.Invoke(overflowPages.Any(x => x));
 
-        // Jen obrazovkový náhled — export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
+        // Jen obrazovkový náhled - export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
         canvas.Clear(CanvasTheme.Background);
         if (layout.TotalPages == 0) return;
 
@@ -320,7 +320,7 @@ public class PreviewCanvas
     }
 
     /// <summary>
-    /// Vejde se obsah stránky? Hlásí **jen reálné geometrické přetečení** — element přesahuje spodní hranu
+    /// Vejde se obsah stránky? Hlásí **jen reálné geometrické přetečení** - element přesahuje spodní hranu
     /// své sekce (dynamický element, který narostl, nebo pevný box větší než sekce). NEhlásí situaci, kdy
     /// JŘ element s pevnou výškou musel auto-scalem zmenšit písmo: ten se do svého boxu vejde, takže stránka
     /// nepřetéká (viz <see cref="ScheduleElementBase.ContentOverflows"/> = „box je menší než obsah", což není
@@ -376,7 +376,7 @@ public class PreviewCanvas
         canvas.DrawRect(new SKRect(x, y, x + w, y + h), p);
     }
 
-    /// <summary>Renderuje jednu stránku LayoutResult. Preview zrcadlí výstup (PDF/PNG/tisk) 1:1 —
+    /// <summary>Renderuje jednu stránku LayoutResult. Preview zrcadlí výstup (PDF/PNG/tisk) 1:1 -
     /// žádné orientační pomůcky navíc; hranice sekcí ukazuje jen editační plátno (DesignerCanvas).</summary>
     private static void RenderPage(SKCanvas canvas, PageSize ps, float mmToPx,
         float pageX, float pageY, Page page)
@@ -424,12 +424,12 @@ public class PreviewCanvas
                     var (cx, cy) = el.GetCenterPx(ctx);
                     canvas.RotateDegrees(el.Rotation, cx, cy);
                 }
-                el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) — jedno místo pro všechny
+                el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) - jedno místo pro všechny
                 el.Render(ctx);
                 canvas.Restore();
             }
 
-            // Rámeček sekce (volitelný — ShowBorder property)
+            // Rámeček sekce (volitelný - ShowBorder property)
             if (placed.Source.ShowBorder)
             {
                 using var borderPaint = new SKPaint
@@ -444,7 +444,7 @@ public class PreviewCanvas
 
             canvas.Restore();
 
-            // Druhý průchod — rámečky mimo TĚSNÝ section-clip (ať jsou vidět i na hranici sekce),
+            // Druhý průchod - rámečky mimo TĚSNÝ section-clip (ať jsou vidět i na hranici sekce),
             // ale stále v rámci STRÁNKY. Bez toho by se u rozdělené (split) sekce rámečky elementů
             // z jiného chunku vykreslily i sem: posun originu o ClipTop je odsune mimo stránku, ale
             // bez clipu by přesto prosákly (viz „dvojité vykreslení" u sekce vyšší než stránka).

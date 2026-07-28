@@ -3,9 +3,9 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro editaci RectangleElement properties.
 ///
 /// Field key = property path na C# RectangleElement. Generický ElementEditDialog
-/// čte/zapisuje hodnoty přes reflexi — Init jen definuje strukturu + defaults.
+/// čte/zapisuje hodnoty přes reflexi - Init jen definuje strukturu + defaults.
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptors v
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `RectangleElement.cs`. Viz memory `project_edinputform_schema_duplication.md`.
 Class ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit Extends %RegisteredObject
 {
@@ -56,7 +56,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Podmínky" ───────────────────────────────────────────
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

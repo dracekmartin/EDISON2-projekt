@@ -151,6 +151,12 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
 - Caché testy potřebují dev server `192.168.16.1:57770` (VPN); user z `$env:USERNAME`
   (override `$env:CACHE_USER`).
 
+## Typografie
+
+**Nepoužívat dlouhou pomlčku (em dash „—")** - v kódu, komentářích, UI textech, dokumentaci
+i odpovědích vždy běžná pomlčka „-". (Rozhodnutí Jan 2026-07-28; v TemplateDesigneru hlídají
+UI labely drift testy.)
+
 ## Komentáře
 
 Komentáře v `EDISONMAIN2/` a `EDControls/` jsou **česky** (výjimka: stock VS šablony).

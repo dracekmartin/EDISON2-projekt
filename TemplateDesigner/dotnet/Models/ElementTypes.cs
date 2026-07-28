@@ -3,7 +3,7 @@ namespace TemplateDesigner.Models;
 /// <summary>
 /// String identifikátory typů elementů používané v JSON serializaci (JsonDerivedType discriminator),
 /// paletě/toolbaru, drag&amp;drop payloadu a switch výrazech v `CreateElementByType` / `GetDefaultElementSize`.
-/// Hodnoty musí odpovídat JSON wire formátu (šablony v DB/souborech) — neměnit bez migrace.
+/// Hodnoty musí odpovídat JSON wire formátu (šablony v DB/souborech) - neměnit bez migrace.
 /// </summary>
 public static class ElementTypes
 {

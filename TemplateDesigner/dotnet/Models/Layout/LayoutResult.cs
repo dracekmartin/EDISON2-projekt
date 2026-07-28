@@ -1,7 +1,7 @@
 namespace TemplateDesigner.Models.Layout;
 
 /// <summary>
-/// Výstup PageLayoutEngine — kompletní rozložení šablony na stránky.
+/// Výstup PageLayoutEngine - kompletní rozložení šablony na stránky.
 /// Renderer (preview/PDF) jen kreslí hotový layout.
 /// </summary>
 public class LayoutResult

@@ -7,7 +7,7 @@ using TemplateDesigner.Models.Expressions;
 namespace TemplateDesigner;
 
 /// <summary>
-/// Řádek editoru pravidel zvýraznění — podmínka + barva pozadí. WPF-free (R4); barvu na swatch
+/// Řádek editoru pravidel zvýraznění - podmínka + barva pozadí. WPF-free (R4); barvu na swatch
 /// překládá converter v XAML.
 /// </summary>
 public class HighlightRuleVM : INotifyPropertyChanged
@@ -37,7 +37,7 @@ public class HighlightRuleVM : INotifyPropertyChanged
     {
         Condition = string.IsNullOrWhiteSpace(Condition) ? null : Condition.Trim(),
         BackgroundColor = string.IsNullOrWhiteSpace(BackgroundColor) ? null : BackgroundColor,
-        // TargetColumn zatím needitujeme (per-sloupec render až #2) — u nových pravidel null
+        // TargetColumn zatím needitujeme (per-sloupec render až #2) - u nových pravidel null
     };
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -46,7 +46,7 @@ public class HighlightRuleVM : INotifyPropertyChanged
 }
 
 /// <summary>
-/// Editor seznamu pravidel podmíněného zvýraznění řádku (varianta 3 — custom dialog jako editor
+/// Editor seznamu pravidel podmíněného zvýraznění řádku (varianta 3 - custom dialog jako editor
 /// sloupců). Sdílený DynamicTable/StopList/LineTable. Jen podmínka + barva pozadí; pořadí = priorita
 /// (první splněné vyhrává). Barva se edituje na vybraném pravidle (jako color pickery v editoru sloupců).
 /// </summary>
@@ -124,7 +124,7 @@ public class HighlightRulesEditorDialogViewModel : EDViewModel
 
     protected override void OnOk()
     {
-        // Pravidlo bez podmínky nemá smysl — vyřaď (prázdné řádky z editoru)
+        // Pravidlo bez podmínky nemá smysl - vyřaď (prázdné řádky z editoru)
         ResultRules = Rules.Select(r => r.ToModel())
                            .Where(r => !string.IsNullOrWhiteSpace(r.Condition))
                            .ToList();

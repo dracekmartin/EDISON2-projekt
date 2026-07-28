@@ -9,7 +9,7 @@ public class TableTemplateInfo
     public string  Label { get; set; } = "";
 }
 
-/// <summary>Kompletní definice Fixed šablony — sloupce + řádky.</summary>
+/// <summary>Kompletní definice Fixed šablony - sloupce + řádky.</summary>
 public class TableTemplateDefinition
 {
     public List<TableColumn> Columns { get; set; } = [];

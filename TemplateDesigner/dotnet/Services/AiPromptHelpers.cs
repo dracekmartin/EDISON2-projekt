@@ -4,7 +4,7 @@ using TemplateDesigner.Models.Schema;
 namespace TemplateDesigner.Services;
 
 /// <summary>
-/// Sdílené kusy promptů AI importu (AiImportEnricher + AiVisionImportService) —
+/// Sdílené kusy promptů AI importu (AiImportEnricher + AiVisionImportService) -
 /// jeden zdroj formátování DataSchema, aby oba prompty nedriftovaly.
 /// </summary>
 internal static class AiPromptHelpers
@@ -17,11 +17,11 @@ internal static class AiPromptHelpers
     {
         if (schema is null)
         {
-            sb.AppendLine("DATASCHEMA: není k dispozici — texty ponech bez mapování (dbField=null).");
+            sb.AppendLine("DATASCHEMA: není k dispozici - texty ponech bez mapování (dbField=null).");
             return;
         }
 
-        sb.AppendLine($"DATASCHEMA (agenda: {schema.AgendaCode} — {schema.AgendaName}):");
+        sb.AppendLine($"DATASCHEMA (agenda: {schema.AgendaCode} - {schema.AgendaName}):");
 
         if (schema.Fields.Count > 0)
         {
@@ -30,7 +30,7 @@ internal static class AiPromptHelpers
             {
                 sb.Append($"  - {f.FieldName}");
                 if (f.DataType != FieldDataType.Text) sb.Append($" ({f.DataType.ToString().ToLower()})");
-                if (!string.IsNullOrEmpty(f.Label)) sb.Append($" — {f.Label}");
+                if (!string.IsNullOrEmpty(f.Label)) sb.Append($" - {f.Label}");
                 if (!string.IsNullOrEmpty(f.Example)) sb.Append($", např. \"{f.Example}\"");
                 sb.AppendLine();
             }
@@ -41,11 +41,11 @@ internal static class AiPromptHelpers
             sb.AppendLine("Kolekce (tabulková data):");
             foreach (var c in schema.FieldCollections)
             {
-                sb.AppendLine($"  - {c.CollectionKey} — {c.Name}:");
+                sb.AppendLine($"  - {c.CollectionKey} - {c.Name}:");
                 foreach (var f in c.Fields)
                 {
                     sb.Append($"    - {f.FieldName}");
-                    if (!string.IsNullOrEmpty(f.Label)) sb.Append($" — {f.Label}");
+                    if (!string.IsNullOrEmpty(f.Label)) sb.Append($" - {f.Label}");
                     sb.AppendLine();
                 }
             }

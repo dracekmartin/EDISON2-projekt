@@ -1,12 +1,12 @@
 namespace TemplateDesigner.Models;
 
 /// <summary>
-/// Parametr sestavy — renderovací rozhodnutí, které uživatel může nastavit před tiskem.
+/// Parametr sestavy - renderovací rozhodnutí, které uživatel může nastavit před tiskem.
 /// Definice žije v JSON šabloně; aktuální hodnoty jsou dočasné (paměť aplikace).
 /// </summary>
 public class TemplateParameter
 {
-    /// <summary>Interní název — použitelný jako placeholder {NAZEV} v šabloně.</summary>
+    /// <summary>Interní název - použitelný jako placeholder {NAZEV} v šabloně.</summary>
     public string Name { get; set; } = "";
 
     /// <summary>Popis zobrazený uživateli v preview panelu.</summary>
@@ -22,13 +22,13 @@ public class TemplateParameter
     public List<string>? Options { get; set; }
 
     /// <summary>Skupina pro vizuální seskupení v UI (např. „Obsah", „Sloupce a časová osa").
-    /// Null/prázdné = bez skupiny. Aditivní klíč kontraktu (R3) — starší server ho neposílá.</summary>
+    /// Null/prázdné = bez skupiny. Aditivní klíč kontraktu (R3) - starší server ho neposílá.</summary>
     public string? Group { get; set; }
 
     /// <summary>
     /// Podmínka viditelnosti parametru. Formát „NázevParametru=Hodnota".
     /// Null nebo prázdný = vždy viditelný. Vyhodnocuje se proti aktuálním hodnotám ostatních parametrů.
-    /// Příklad: „CASOVA_OSA=Vlastní rozsah" — HODINY_OD/DO jsou viditelné jen v Range módu.
+    /// Příklad: „CASOVA_OSA=Vlastní rozsah" - HODINY_OD/DO jsou viditelné jen v Range módu.
     /// </summary>
     public string? VisibleWhen { get; set; }
 
@@ -43,7 +43,7 @@ public class TemplateParameter
     /// <summary>
     /// Vyhodnotí <see cref="VisibleWhen"/> ("POLE=hodnota") proti aktuálním hodnotám parametrů.
     /// Prázdné / neplatné pravidlo = vždy viditelný. Jediný zdroj pravdy pro viditelnost parametru
-    /// (preview lišta i tiskový dialog) — porovnání case-insensitive.
+    /// (preview lišta i tiskový dialog) - porovnání case-insensitive.
     /// </summary>
     public bool IsVisible(IReadOnlyDictionary<string, object?> values)
     {

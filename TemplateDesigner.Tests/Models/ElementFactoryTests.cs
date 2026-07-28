@@ -6,9 +6,9 @@ namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
 /// Zámek továrny elementů. Hlídá zejména <b>spící Fixed tabulku</b> (<see cref="TableElement"/>):
-/// nesmí jít vytvořit z UI/továrny — živá je <see cref="DynamicTableElement"/>. Když někdo Fixed
+/// nesmí jít vytvořit z UI/továrny - živá je <see cref="DynamicTableElement"/>. Když někdo Fixed
 /// tabulku oživí (vrátí větev do <c>CreateElementByType</c>), tento test spadne a připomene, že
-/// vědomě odmrazuje typ (schéma musí být záměrné) — viz TableElement docstring.
+/// vědomě odmrazuje typ (schéma musí být záměrné) - viz TableElement docstring.
 /// </summary>
 public class ElementFactoryTests
 {

@@ -75,14 +75,14 @@ public class MigrationUnifyStopColumnsTests
         var root = JsonNode.Parse("""
         {
           "sections": [ { "elements": [
-            { "type": "TextElement", "text": "{POPIS} — {POPIS:UPPER} — {POPIS_DOPRAVCE}",
+            { "type": "TextElement", "text": "{POPIS} - {POPIS:UPPER} - {POPIS_DOPRAVCE}",
               "visibilityExpression": "{JE_AKTUALNI} == true", "content": "č. {TC} zast." }
           ] } ]
         }
         """)!;
 
         var el = Migrate(root)["sections"]![0]!["elements"]![0]!;
-        Assert.Equal("{NAZEV_ZASTAVKY} — {NAZEV_ZASTAVKY:UPPER} — {POPIS_DOPRAVCE}", el["text"]!.GetValue<string>());
+        Assert.Equal("{NAZEV_ZASTAVKY} - {NAZEV_ZASTAVKY:UPPER} - {POPIS_DOPRAVCE}", el["text"]!.GetValue<string>());
         Assert.Equal("{AKTUALNI_ZASTAVKA} == true", el["visibilityExpression"]!.GetValue<string>());
         Assert.Equal("č.  zast.", el["content"]!.GetValue<string>());
     }

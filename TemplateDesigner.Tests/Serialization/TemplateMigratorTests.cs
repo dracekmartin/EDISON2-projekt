@@ -140,7 +140,7 @@ public class TemplateMigratorTests
     [Fact]
     public void NovejsiVerze_SeOdmitneSrozumitelnouChybou()
     {
-        // Šablona z novější verze aplikace se NESMÍ tiše přerazítkovat dolů —
+        // Šablona z novější verze aplikace se NESMÍ tiše přerazítkovat dolů -
         // starší build by neznámé properties zahodil a uložením nenávratně smazal.
         var ex = Assert.Throws<TemplateDeserializationException>(
             () => new TemplateMigrator().Migrate(Json("99.0.0")));
@@ -203,7 +203,7 @@ public class TemplateMigratorTests
     [Fact]
     public void SelhaniMigrace_VyhodiChybuMistoTichehoPokracovani()
     {
-        // Částečně zmigrovaná šablona se nesmí tiše otevřít (a následně uložit) —
+        // Částečně zmigrovaná šablona se nesmí tiše otevřít (a následně uložit) -
         // dřívější chování (Debug.WriteLine + continue) = poškození dat bez vysvětlení.
         var migrator = new TemplateMigrator([
             new FakeMigration("0.9.0", _ => throw new InvalidOperationException("rozbité pole X"))

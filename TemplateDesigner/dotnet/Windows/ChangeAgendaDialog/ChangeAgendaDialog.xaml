@@ -23,7 +23,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="Vyber agendu pro novou šablonu. Po potvrzení dojde k vytvoření nové prázdné šablony — případnou rozdělanou práci budeš nejdřív vyzván uložit nebo zahodit."
+                   Text="Vyber agendu pro novou šablonu. Po potvrzení dojde k vytvoření nové prázdné šablony - případnou rozdělanou práci budeš nejdřív vyzván uložit nebo zahodit."
                    TextWrapping="Wrap" Margin="0,0,0,10" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
 
         <ListBox Grid.Row="1"

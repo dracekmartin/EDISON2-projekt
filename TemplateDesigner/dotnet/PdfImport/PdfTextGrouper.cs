@@ -126,7 +126,7 @@ public static class PdfTextGrouper
 
                 float verticalGap = candidate.Y - (last.Y + last.Height);
                 // Spojovat řádky pouze pokud jsou těsně pod sebou (standardní řádkování).
-                // Faktor 0.8 = mezera menší než výška řádku — zabraňuje
+                // Faktor 0.8 = mezera menší než výška řádku - zabraňuje
                 // agresivnímu slučování vizuálně oddělených bloků.
                 float maxVerticalGap = last.Height * 0.8f;
 

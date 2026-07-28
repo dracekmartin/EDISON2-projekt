@@ -3,7 +3,7 @@ using System.Linq;
 namespace TemplateDesigner.Models.Layout;
 
 /// <summary>
-/// Konfigurace imposice — skládání logických stránek šablony na fyzické listy (N-up).
+/// Konfigurace imposice - skládání logických stránek šablony na fyzické listy (N-up).
 /// Vlastnost VÝSTUPU, ne šablony: šablona zůstává např. A5, teprve tisk/export skládá
 /// 2×A5 na A4 naležato. Stránky se umisťují 1:1 (bez zmenšování), blok se na listu centruje.
 /// </summary>
@@ -43,7 +43,7 @@ public sealed record SheetLayoutOptions
     /// <summary>Y počátek bloku stránek (centrovaný) v mm.</summary>
     public float BlockOriginY => (SheetHeight - Rows * PageHeight) / 2f;
 
-    /// <summary>Krátký popis pro status hlášky exportu — ať je vidět, že se skládalo na listy
+    /// <summary>Krátký popis pro status hlášky exportu - ať je vidět, že se skládalo na listy
     /// (per-agenda persistovaná imposice jinak uživatele překvapí „proč mám půlku stránek").</summary>
     public string ShortLabel => $"imposice {Rows}×{Cols} na list {SheetWidth:0}×{SheetHeight:0} mm";
 
@@ -61,7 +61,7 @@ public sealed record PlacedPage(Page Page, float OffsetX, float OffsetY);
 public sealed record Sheet(IReadOnlyList<PlacedPage> Pages);
 
 /// <summary>
-/// Klíče a hodnoty exportních polí imposice — wire kontrakt s Caché
+/// Klíče a hodnoty exportních polí imposice - wire kontrakt s Caché
 /// <c>ALVA.TemplateDesigner.EDInputForm.AgendaParams.AddExportFields</c>. Stabilní stringy (parsuje C#).
 /// </summary>
 public static class SheetLayoutKeys
@@ -74,13 +74,13 @@ public static class SheetLayoutKeys
     public const string SheetNone = "NONE";
     public const string GridAuto = "AUTO";
 
-    /// <summary>Všechny klíče — pro persistence restore (nejsou mezi agenda parametry).</summary>
+    /// <summary>Všechny klíče - pro persistence restore (nejsou mezi agenda parametry).</summary>
     public static readonly string[] All = [Sheet, Grid, Repeat, Marks];
 }
 
 /// <summary>
 /// Čistá logika imposice: parsování konfigurace z exportních polí + skládání stránek na listy.
-/// Bez SkiaSharp/WPF — testovatelné, sdílené PrintDialogem i exportem z hlavního okna.
+/// Bez SkiaSharp/WPF - testovatelné, sdílené PrintDialogem i exportem z hlavního okna.
 /// </summary>
 public static class SheetComposer
 {

@@ -2,7 +2,7 @@ namespace TemplateDesigner.Commands.Implementations;
 
 /// <summary>
 /// Undoable změna jedné vlastnosti elementu.
-/// Generický — funguje pro string, float, bool, barvu i enum.
+/// Generický - funguje pro string, float, bool, barvu i enum.
 /// </summary>
 public class SetPropertyCommand : IDesignerCommand
 {

@@ -4,7 +4,7 @@ Include (GENERAL, EDInputForm)
 ///
 /// Field key = property path na C# Template:
 ///   PageSize.Width / .Height / .MarginTop/Bottom/Left/Right, CultureCode.
-/// „Format" a „Orientation" jsou VIRTUÁLNÍ driver pole — nemají property na Template
+/// „Format" a „Orientation" jsou VIRTUÁLNÍ driver pole - nemají property na Template
 /// (ElementPropertyAccessor je bezpečně ignoruje při apply). Slouží jen k řízení výpočtu
 /// rozměrů ve Validate: změna formátu/orientace → server dopočítá Width/Height a echem je vrátí.
 ///
@@ -57,11 +57,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("de-DE", "Němčina")
 
         // ── Skupina "Výchozí styl" ────────────────────────────────────────
-        // Výchozí font celé šablony — kořen kaskády (dědí ho elementy bez vlastního fontu).
+        // Výchozí font celé šablony - kořen kaskády (dědí ho elementy bez vlastního fontu).
         // Prázdné = zapečený default (Arial). Key = property path → Template.DefaultTextStyle.FontFamily
         // (accessor lazy alokuje DefaultTextStyle). Ostatní style property zatím vědomě nevystaveny.
         //
-        // ComboBox (editovatelný + autocomplete) s PRÁZDNÝM seznamem — Caché fonty klienta nezná.
+        // ComboBox (editovatelný + autocomplete) s PRÁZDNÝM seznamem - Caché fonty klienta nezná.
         // Seznam nainstalovaných fontů naplní C# klient po načtení schématu (ElementEditDialog
         // .OnFormInitialized z SKFontManager). Editovatelný = uživatel může i napsat vlastní font.
         d form.AddGroup("style", "Výchozí styl")
@@ -84,7 +84,7 @@ ClassMethod Validate(ByRef sys As %String) As %Status
         s fW = form.GetField("PageSize.Width")
         s fH = form.GetField("PageSize.Height")
 
-        // Guard — kdyby některé pole chybělo (GetField vrací ""), jen echo bez výpočtu.
+        // Guard - kdyby některé pole chybělo (GetField vrací ""), jen echo bez výpočtu.
         i (fFmt'="")&&(fOri'="")&&(fW'="")&&(fH'="") {
             s ck = form.changedKey
             i form.HasChangedField()&&((ck="Format")||(ck="Orientation")) {

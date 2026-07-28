@@ -1,22 +1,22 @@
 Include (ALVAMHD, GENERAL)
 
-/// Agenda MHD — zastávkové jízdní řády městské hromadné dopravy.
+/// Agenda MHD - zastávkové jízdní řády městské hromadné dopravy.
 ///
 /// Data:
 /// - **Skalární pole linky**: číslo (licenční + veřejné), název, platnost od/do,
 ///   QR kód, typ JŘ (návrh/výlukový/normální), dopravce atd.
 /// - **Tabulkové kolekce per stránka**: ZASTAVKY (zastávka + tarifní číslo + čas jízdy + atributy),
-///   SKUPINY_DNU (typy provozu — pracovní den/sobota/neděle/...), ODJEZDY (čas + anotace),
+///   SKUPINY_DNU (typy provozu - pracovní den/sobota/neděle/...), ODJEZDY (čas + anotace),
 ///   POZNAMKY (legenda symbolů a omezení).
 ///
 /// Multi-page výstup: jedna stránka = jedna zastávka × jeden směr. Linka má typicky desítky
 /// až stovky stránek (např. 50 zastávek × 2 směry = 100 stránek).
 ///
 /// Zdrojová data v Caché:
-/// - `^[dataDB]ALVA.MHD.LSO` — linky, spoje, trasy
-/// - `^[dataDB]ALVA.MHD.ZST` — zastávky
-/// - `^[dataDB]ALVA.MHD.CHR` — chronometráže (doby jízdy)
-/// - `^[dataDB]ALVA.MHD.ENUMS` — atributy, typy provozu, poznámky
+/// - `^[dataDB]ALVA.MHD.LSO` - linky, spoje, trasy
+/// - `^[dataDB]ALVA.MHD.ZST` - zastávky
+/// - `^[dataDB]ALVA.MHD.CHR` - chronometráže (doby jízdy)
+/// - `^[dataDB]ALVA.MHD.ENUMS` - atributy, typy provozu, poznámky
 /// - Helper třídy: `ALVA.MHD.LinkyFce`, `SpojeFce`, `ZastavkyFce`, `KalendarFce`, `ChronometrazeFce`
 ///
 /// Implementace = 6-fázový tiskový engine v procesně-privátním globálu ^||TiskMHD
@@ -114,7 +114,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
     s arr = ##class(%DynamicArray).%New()
 
-    // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) — viz GetAvailableInstances.
+    // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) - viz GetAvailableInstances.
     // GetData dostává LINKA_ID z pickeru, ne z těchto parametrů.
     d ..AddStandardJRParameters(arr)
 
@@ -123,7 +123,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 }
 
 /// Vrátí seznam linek pro Instance Picker.
-/// Skupiny linek pro filtr Instance Pickeru — ENUMS "SkupinyLinek" mimo Blocked.
+/// Skupiny linek pro filtr Instance Pickeru - ENUMS "SkupinyLinek" mimo Blocked.
 /// OUT["1"] = JSON pole [{ "value": id, "label": název }].
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
@@ -150,11 +150,11 @@ ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// IN["search"] = volitelný substring filtr (case-insensitive na display = "Cislo — Nazev")
+/// IN["search"] = volitelný substring filtr (case-insensitive na display = "Cislo - Nazev")
 /// IN["limit"]  = max počet řádků (default 50)
 /// IN["SKUPINA_LINEK_ID"] = ID skupiny linek (volitelné; default = první nezblokovaná);
 ///                          v budoucnu bude předáváno z Edisona jako kontext
-/// OUT["1"] = JSON pole { "value": LinkaID, "display": "Cislo — Nazev", "subtitle": "Platnost ..." }
+/// OUT["1"] = JSON pole { "value": LinkaID, "display": "Cislo - Nazev", "subtitle": "Platnost ..." }
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
     s err = ""   // $$$CatchErrRest čte err; bez init by catch (např. firma bez MHD dat → throw) padl na <UNDEFINED>err
@@ -175,13 +175,13 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
         // Bez aktivní skupiny linek (typicky firma bez MHD dat, např. čistě AD firma) → prázdný
         // picker, NE chyba: přepnutí na agendu MHD u takové firmy nemá vyhazovat popup. Smyčka níže
         // se SkupinaLinekID=0 nenajde v indexu žádnou linku a vrátí prázdné pole.
-        // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID) — jen linky skupiny.
+        // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID) - jen linky skupiny.
         s LinkaID = ""
         for {
             s LinkaID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID))
             q:LinkaID=""
 
-            // Přeskočit linky bez nastavené trasy — orphan / nedokončené záznamy,
+            // Přeskočit linky bez nastavené trasy - orphan / nedokončené záznamy,
             // GetData by na nich padl na <SUBSCRIPT> v PripravitTrasu.
             s TrasaID = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, LinkaID)
             if TrasaID = "" continue
@@ -194,12 +194,12 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 
             s display = cislo
             if nazev '= "" {
-                if display '= "" s display = display_" — "_nazev
+                if display '= "" s display = display_" - "_nazev
                 else  s display = nazev
             }
             if display = "" s display = "Linka "_LinkaID
 
-            // Filtr — substring match case-insensitive na display
+            // Filtr - substring match case-insensitive na display
             if search '= "" {
                 if '$f($zcvt(display, "L"), search) continue
             }
@@ -211,7 +211,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             }
 
             s obj = ##class(%DynamicObject).%New()
-            // "string" type — .NET čte přes GetString(); bez toho číselné cislo/LinkaID → JSON number → chyba
+            // "string" type - .NET čte přes GetString(); bez toho číselné cislo/LinkaID → JSON number → chyba
             d obj.%Set("value",    LinkaID, "string")
             d obj.%Set("cislo",    cislo, "string")
             d obj.%Set("nazev",    nazev, "string")
@@ -229,7 +229,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// GetData — hlavní metoda pro tisk
+/// GetData - hlavní metoda pro tisk
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Vrátí kompletní data pro tisk zastávkového MHD JŘ.
 /// Vstup:  IN["LINKA_ID"] = ID linky
@@ -299,8 +299,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s platnostDoHrl = $zdh(platnostDo, 3)
         s PlatnostChronometrazeID = ##class(ALVA.MHD.ChronometrazeFce).GetPlatnostChronometrazeID(IdFa, dataDB, VariantaChronometrazeID, platnostOdHrl)
 
-        // Linka bez nastavené trasy — fáze 1 by padla na <SUBSCRIPT>. Vyhodit srozumitelnou chybu.
-        if TrasaID = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_LinkaID_" nemá nastavenou trasu — nelze tisknout"))
+        // Linka bez nastavené trasy - fáze 1 by padla na <SUBSCRIPT>. Vyhodit srozumitelnou chybu.
+        if TrasaID = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_LinkaID_" nemá nastavenou trasu - nelze tisknout"))
 
         // Nastavení auto-poznámkování
         s AutoPoznamkyRozdilTrasy = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpoju"))
@@ -323,7 +323,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Navrh")) s TypJR = "NÁVRH"
         i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Vyluka")) s TypJR = "VÝLUKOVÝ"
 
-        // Uložit konfiguraci do working globálu — helper metody čtou odtud
+        // Uložit konfiguraci do working globálu - helper metody čtou odtud
         s ^||TiskMHD("config","LinkaID") = LinkaID
         s ^||TiskMHD("config","TrasaID") = TrasaID
         s ^||TiskMHD("config","platnostOdHrl") = platnostOdHrl
@@ -374,7 +374,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         d ..VypocitatBitmapyObsluhy()
 
         // ═══════════════════════════════════════════════════════════════════
-        // FÁZE 6: Sestavení JSON výstupu — pole stránek
+        // FÁZE 6: Sestavení JSON výstupu - pole stránek
         // ═══════════════════════════════════════════════════════════════════
         d ..SestavitStranky(.sys)
     }
@@ -427,7 +427,7 @@ ClassMethod PripravitTrasu(ByRef sys As %String)
             s KategorieZastavekID = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",ZastavkaID,"DTA",1,"KategorieZastavekID"))
             i KategorieZastavekID '= 1001 continue
 
-            // Per-bod příznak „netisknout na zastávkovém JŘ" (default tisknout) — KV_DP jím skrývá
+            // Per-bod příznak „netisknout na zastávkovém JŘ" (default tisknout) - KV_DP jím skrývá
             // variantní větve trasy; legacy „MH pro KV_DP" (LinkyPrintFormatMHD:713-720)
             s klicTisk = $s(SmerID=0:"TisknoutZastavkovyTam", 1:"TisknoutZastavkovyZpet")
             i '$g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",BodID,"Val",klicTisk),1) {
@@ -521,7 +521,7 @@ ClassMethod NacistPoznamkyAAtributyZastavek(ByRef sys As %String)
                     s PopisPoznamky = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"PopisPoznamky"))
                     i pouzeZnacku s PopisPoznamky = ""
                     i Text = "" continue
-                    // Barvy (volitelné — sdíleno s vozovým JŘ; prázdné → default rendering)
+                    // Barvy (volitelné - sdíleno s vozovým JŘ; prázdné → default rendering)
                     s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaZnakuRGB")))
                     s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaPozadiRGB")))
                     // Textová poznámka (TypPoznamkyID=0)
@@ -615,7 +615,7 @@ ClassMethod SmoSloupec(dataDB As %String, IdFa As %String, TypProvozuID As %Stri
     q $case($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"SMOID")), "SMO1":1, "SMO2":2, "SMO3":3, "SMO4":4, :"")
 }
 
-/// Značky sloučených skupin dnů: víc typů provozu v jednom SMO sloupci (kolize v číselníku —
+/// Značky sloučených skupin dnů: víc typů provozu v jednom SMO sloupci (kolize v číselníku -
 /// legacy ji tiskla ztrátovým přepisem) → nadpis sloupce dostane dominantní typ (nejvíc spojů)
 /// a každý ostatní typ automatickou značku + legendu („jede jen 31.12."). Značka jde stejným NZ
 /// kanálem jako ruční negativní značky; ruční NegativniZnacka typu z číselníku má přednost.
@@ -678,7 +678,7 @@ ClassMethod PriraditZnackySmoSkupin(ByRef sys As %String)
         }
 
         // Nadpis sloučeného sloupce: 1. řádek = dominantní typ, 2. řádek = výčet ostatních
-        // („24.12., 25.12. a 1.1., 31.12.") — čtenář vidí, co sloupec pokrývá; per šablona
+        // („24.12., 25.12. a 1.1., 31.12.") - čtenář vidí, co sloupec pokrývá; per šablona
         // přepsatelné přes override nadpisu v dialogu sloupců
         s domNadpis1 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMOPrvni"))
         s domNadpis2 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMODruhy"))
@@ -704,7 +704,7 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
         s SpojID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,LinkaID,SpojID)) q:SpojID=""
         s SmerID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",SpojID,"DTA",1,"SmerID"))
         s TypProvozuID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",SpojID,"DTA",1,"TypProvozuID"))
-        // Spoj bez skupiny dnů / směru nelze zařadit do mřížky — přeskoč. Prázdný subscript
+        // Spoj bez skupiny dnů / směru nelze zařadit do mřížky - přeskoč. Prázdný subscript
         // v ^|| working globálu = <SUBSCRIPT> a shodil by tisk celé linky.
         i (TypProvozuID="")||(SmerID="") continue
         // Sekce minut odjezdu = tiskový sloupec (1-4) dle SMOID číselníku typů provozu. Legacy takto
@@ -919,7 +919,7 @@ ClassMethod VypocitatBitmapyObsluhy()
                     }
                 }
                 s ^||TiskMHD("obsluhaKonec",SmerID,BodID,SpojID) = konecnyBod
-                // Trasa spoje z bodu — včetně konečného bodu (jako legacy)
+                // Trasa spoje z bodu - včetně konečného bodu (jako legacy)
                 s TrasaSpojZBodu = ""
                 s dalsiBod = BodID f {
                     s dalsiBod = $o(^||TiskMHD("trasa",SmerID,dalsiBod), smerKrok) i dalsiBod = "" q
@@ -1089,7 +1089,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     s ObsluhaBitmap = $g(^||TiskMHD("obsluha",SmerID,aktualniZastBodID))
 
     // Tisknutá bitmapa = obsluha bez bodů s příznakem „netisknout" (bit aktuální zastávky
-    // zůstává — legacy čistí jen mycnt'=cnt). Vstup pro porovnání tras (alg. 1001).
+    // zůstává - legacy čistí jen mycnt'=cnt). Vstup pro porovnání tras (alg. 1001).
     s TisknutaTrasaBitmap = ObsluhaBitmap
     s skrytyBod = ""
     f {
@@ -1113,7 +1113,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("POPIS_ZASTAVKA",         NazevZastavky)
     d vals.%Set("CISLO_ZASTAVKA",         CisloZastavky_"-"_Oznacnik)
     // TITULEK / POZNAMKA_POD_DOPRAVCE / INFORMACE: MHD pro ně nemá zdroj → nejsou ve schématu (viz AD, které je má z JRMAIN)
-    // PRVNI_POSLEDNI_SPOJ (text prvního/posledního spoje) odstraněno 2026-07-20 — nepoužívané a drahé:
+    // PRVNI_POSLEDNI_SPOJ (text prvního/posledního spoje) odstraněno 2026-07-20 - nepoužívané a drahé:
     // legacy MHD2 CalculatePrvniAndPosledniSpojeText se počítalo per stránka (~6,8 s z 7 s na velké lince,
     // full sken spojů + den-po-dni platnost). Kdyby ho někdo chtěl, reimplementovat nad daty fáze 4 v ^||TiskMHD.
     d page.%Set("values", vals)
@@ -1121,7 +1121,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // ── Kolekce ──────────────────────────────────────────────────────────
     s rows = ##class(%DynamicObject).%New()
 
-    // ZASTAVKY — vždy všechny v daném směru, s příznakem JE_AKTUALNI
+    // ZASTAVKY - vždy všechny v daném směru, s příznakem JE_AKTUALNI
     s zastavky = ##class(%DynamicArray).%New()
     s poradiZast = 0
     s konecnaNazev = ""                       // poslední zastávka ve směru = konečná (→ POPIS_SMER, A1)
@@ -1197,8 +1197,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d rows.%Set("ZASTAVKY", zastavky)
     d vals.%Set("POPIS_SMER", konecnaNazev)   // A1: konečná směru (dřív T/Z, to je teď v SMER)
 
-    // SKUPINY_DNU — z typů provozu. Struktura sloupců je per LINKA (všechny SMO sloupce linky),
-    // ne per zastávka — sloupec bez odjezdů na této stránce se tiskne prázdný se záhlavím, aby
+    // SKUPINY_DNU - z typů provozu. Struktura sloupců je per LINKA (všechny SMO sloupce linky),
+    // ne per zastávka - sloupec bez odjezdů na této stránce se tiskne prázdný se záhlavím, aby
     // layout seděl napříč stránkami i se SMO nastavením (jako legacy, „doplním TypProvozuID").
     s skupiny = ##class(%DynamicArray).%New()
     s smoCol = ""
@@ -1215,7 +1215,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // Lokální sběr poznámek pro tuto stránku
     k strankovePoznamky
 
-    // Pořadí iterace = legacy (typ provozu vzestupně, pak hodina/minuta/spoj) — na pořadí
+    // Pořadí iterace = legacy (typ provozu vzestupně, pak hodina/minuta/spoj) - na pořadí
     // závisí přidělování písmen rozdílových poznámek (alg. 1001); po sloupcích by písmena
     // vyšla jinak než na legacy vývěsce. Výstupní pořadí řádků element neřeší (řadí si sám).
     k typyNaStrance
@@ -1250,7 +1250,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                 s SpojID = ""
                 f {
                     s SpojID = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh,mm,SpojID)) q:SpojID=""
-                    // Sloupec může sdílet víc typů provozu — v tomto průchodu jen aktuální typ
+                    // Sloupec může sdílet víc typů provozu - v tomto průchodu jen aktuální typ
                     i $g(^||TiskMHD("spojTyp",SpojID)) '= tpid continue
 
                     s odj = ..BuildOdjezd(aktualniZastBodID, smoCol, hh, mm)
@@ -1263,7 +1263,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         s denZnak = $e(tydPlatnost, denIdx)
                         i denZnak = "" continue
                         // Značka dne = číslice 1-7 / + / X (kroužkový glyf symbolového fontu, 1:1 legacy
-                        // GSId id 8-16), NE textová zkratka „Po" — konzistentní s legendou (specialni + číslice).
+                        // GSId id 8-16), NE textová zkratka „Po" - konzistentní s legendou (specialni + číslice).
                         d ..AddAnotace(odj, "specialni", denZnak)
                         // Poznámka pro den
                         s denText = ..GetDenVTydnuText(denZnak)
@@ -1315,7 +1315,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                     s atributID = ""
                     f {
                         s atributID = $o(^||TiskMHD("spojAtributy",SpojID,"arr",1,atributID)) q:atributID=""
-                        // SpecZnak z GetAtributySpoj může obsahovat interní ID — přečíst displayový znak z ENUMS
+                        // SpecZnak z GetAtributySpoj může obsahovat interní ID - přečíst displayový znak z ENUMS
                         s specZnak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atributID,"SpecZnak"))
                         i specZnak = "" continue
                         s specZnak = ..ConvertSpecialniZnak(specZnak)
@@ -1324,7 +1324,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         s strankovePoznamky(specZnak) = $lb(Popis, 2)
                     }
 
-                    // Auto-poznámkování tras (alg. 1001) — porovnává se TISKNUTÁ bitmapa (bez
+                    // Auto-poznámkování tras (alg. 1001) - porovnává se TISKNUTÁ bitmapa (bez
                     // skrytých bodů), jinak by každý spoj přes skrytou větev generoval falešnou poznámku
                     i AutoPoznamkyRozdilTrasy && (AutoPoznamkyRozdilTrasyAlgoritmus = 1001) {
                         d ..DoplnitPoznamkuRozdilTrasy1001(.sys, odj, SmerID, aktualniZastBodID, SpojID, .strankovePoznamky, TisknutaTrasaBitmap)
@@ -1363,10 +1363,10 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     }
     d rows.%Set("ODJEZDY", odjezdy)
 
-    // POZNAMKY — seřazené: znaky (text) → NZ → speciální
+    // POZNAMKY - seřazené: znaky (text) → NZ → speciální
     s poznamky = ##class(%DynamicArray).%New()
 
-    // Znaky z trasy (textové poznámky) — formát $lb(text, 0, foreColor, backColor)
+    // Znaky z trasy (textové poznámky) - formát $lb(text, 0, foreColor, backColor)
     s znakPoznamky = ""
     f {
         s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky)) q:znakPoznamky=""
@@ -1374,7 +1374,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         d poznamky.%Push(..BuildPoznamka("text", znakPoznamky, $lg(pozVal,1), $lg(pozVal,3), $lg(pozVal,4)))
     }
 
-    // Poznámky ze stránky (odjezdy) — formát $lb(text, typeCode, znakOrEmpty, foreColor, backColor)
+    // Poznámky ze stránky (odjezdy) - formát $lb(text, typeCode, znakOrEmpty, foreColor, backColor)
     // NZ má znak v poli 3 a žádnou barvu (4,5 prázdné); text/specialni má 3 prázdné a barvy v 4,5.
     s znak = ""
     f {
@@ -1387,7 +1387,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         d poznamky.%Push(..BuildPoznamka(pTyp, pZnak, pText, $lg(pVal,4), $lg(pVal,5)))
     }
 
-    // Atributy zastávky jako poznámky — ze VŠECH zobrazených zastávek (ne jen aktuální)
+    // Atributy zastávky jako poznámky - ze VŠECH zobrazených zastávek (ne jen aktuální)
     // Deduplikace přes poznamkyAtribut(SpecZnak) aby se stejný atribut nevypsal víckrát
     k poznamkyAtribut
     s bodIterator = ""
@@ -1546,13 +1546,13 @@ ClassMethod GetDenVTydnuText(denZnak As %String) As %String
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// JŘ helpery — stavba JSON objektů
+/// JŘ helpery - stavba JSON objektů
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Vytvoří %DynamicObject zastávky s inicializovanými vnořenými poli.
 ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %Integer = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
 {
     s zastavka = ##class(%DynamicObject).%New()
-    // Čitelná field ID (SLOVO_SLOVO) — sdílený kontrakt sloupců StopList↔DynamicTable.
+    // Čitelná field ID (SLOVO_SLOVO) - sdílený kontrakt sloupců StopList↔DynamicTable.
     // TC (číslo zastávky z CIS) vědomě nevystaveno; poziční potřebu pokrývá PORADI.
     d zastavka.%Set("ID", id)                          // interní join klíč (ODJEZDY.ZASTAVKA_ID), ne ve schématu
     d zastavka.%Set("NAZEV_ZASTAVKY", popis)
@@ -1747,12 +1747,12 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 /// Přidá standardní JŘ parametry do pole parametrů.
 ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
-    // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč — starší klient ignoruje).
+    // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč - starší klient ignoruje).
     // Konvence: skupina = UI název elementu, který parametr ovlivňuje; celo-šablonové → „Obecné".
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
 
-    // Časová osa odjezdů — popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
+    // Časová osa odjezdů - popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
     s param = ##class(%DynamicObject).%New()
     s param.name         = "CASOVA_OSA"
     s param.label        = "Časová osa odjezdů"
@@ -1766,7 +1766,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s param.options = opts
     d arr.%Push(param)
 
-    // Hodiny od/do — viditelné jen pro Vlastní rozsah; podporují wrap přes půlnoc (např. 22-5).
+    // Hodiny od/do - viditelné jen pro Vlastní rozsah; podporují wrap přes půlnoc (např. 22-5).
     s pOd = ##class(%DynamicObject).%New()
     s pOd.name         = "HODINY_OD"
     s pOd.label        = "Hodiny od"
@@ -1791,11 +1791,11 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// GetMockData — ukázková data pro preview
+/// GetMockData - ukázková data pro preview
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Reálný dopravce linky (1:1 vzor MHD2 `Export.cls`): `DruhDopravceID` → vlastní firma
 /// (`$$gIdFa^MlJFapi`, obchodní jméno) / cizí dopravce (`$$gDopFa^JRapi`). Firemní data žijí v
-/// systémovém NS (`sys("U","SystemDB")`), ne v datovém. Defensivní — selhání legacy volání → prázdno.
+/// systémovém NS (`sys("U","SystemDB")`), ne v datovém. Defensivní - selhání legacy volání → prázdno.
 ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String) As %String
 {
     s nazev = ""
@@ -1943,7 +1943,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 
 /// Vrátí ID první nezblokované skupiny linek pro danou IdFa.
 /// Vrátí 0 pokud žádná aktivní skupina není.
-/// Použito jako default pro Instance Picker — v budoucnu nahrazeno parametrem z Edisona.
+/// Použito jako default pro Instance Picker - v budoucnu nahrazeno parametrem z Edisona.
 ClassMethod GetDefaultSkupinaLinekID(IdFa As %String, dataDB As %String) As %Integer
 {
     s id = ""

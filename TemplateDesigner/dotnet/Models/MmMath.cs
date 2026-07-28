@@ -1,7 +1,7 @@
 namespace TemplateDesigner.Models;
 
 /// <summary>
-/// Pomocné metody pro mm aritmetiku — eliminuje IEEE-754 float artefakty
+/// Pomocné metody pro mm aritmetiku - eliminuje IEEE-754 float artefakty
 /// (např. 10.0 * 1.05 = 10.500001) při zachování záměrně zadaných sub-mm hodnot.
 /// </summary>
 public static class MmMath

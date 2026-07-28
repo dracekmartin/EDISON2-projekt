@@ -8,24 +8,24 @@ namespace TemplateDesigner.Rendering;
 /// Jediné místo v aplikaci, kde se pozicuje a vykresluje text buňky tabulky.
 /// Vstup: obdélník v mm + text + ResolvedTextStyle (všechny hodnoty non-null).
 /// Výstup: vykreslené pozadí, text zarovnaný dle HAlign+VAlign+Padding, decorations.
-/// Neví nic o sloupcích ani elementech — dělá jednu buňku.
+/// Neví nic o sloupcích ani elementech - dělá jednu buňku.
 ///
 /// Vestavěné chování: text širší než buňka se proporcionálně ZMENŠÍ, aby se vešel
-/// (à la Excel „přizpůsobit buňce") — přetečení pod sousední buňku (useknutá půlka
+/// (à la Excel „přizpůsobit buňce") - přetečení pod sousední buňku (useknutá půlka
 /// slova) není nikdy záměr. Bez konfigurace; případný opt-out doplnit až na poptávku.
 /// </summary>
 public static class CellRenderer
 {
     /// <summary>Rezerva zmenšení (mm): cíl je šířka buňky minus rezerva, aby zmenšený text nekončil
     /// nalepený na mřížce. Element může předat větší (StopList kvůli šipce směru). Zmenšuje se
-    /// AŽ při skutečném přetečení — přesně vešlý text (auto šířky sloupců) se nemění.</summary>
+    /// AŽ při skutečném přetečení - přesně vešlý text (auto šířky sloupců) se nemění.</summary>
     public const float DefaultShrinkReserveMm = 0.6f;
 
     /// <summary>
     /// Efektivní škála fontu po přizpůsobení buňce: <paramref name="fontScale"/> zmenšené tak, aby se
-    /// text (u víceřádkového nejširší řádek — jednotná velikost) + volitelný trailing obsah vešly.
+    /// text (u víceřádkového nejširší řádek - jednotná velikost) + volitelný trailing obsah vešly.
     /// Sdíleno DrawCell a elementy, které si za text dokreslují vlastní obsah stejnou škálou
-    /// (značky StopListu) — obě strany musí volat se STEJNÝMI vstupy, jinak se pozice rozjedou.
+    /// (značky StopListu) - obě strany musí volat se STEJNÝMI vstupy, jinak se pozice rozjedou.
     /// </summary>
     public static float ComputeShrinkScale(
         ResolvedTextStyle style, string[] lines, float contentWidthMm,
@@ -35,7 +35,7 @@ public static class CellRenderer
         return ComputeShrinkScale(probe, lines, contentWidthMm, mmToPx, fontScale, shrinkReserveMm, trailingWidthMm);
     }
 
-    /// <summary>Jádro výpočtu zmenšení s existujícím fontem (bez alokace) — hot path DrawCell.
+    /// <summary>Jádro výpočtu zmenšení s existujícím fontem (bez alokace) - hot path DrawCell.
     /// <paramref name="probeAtFontScale"/> musí být vytvořený při <paramref name="fontScale"/>.</summary>
     public static float ComputeShrinkScale(
         SKFont probeAtFontScale, string[] lines, float contentWidthMm,
@@ -63,7 +63,7 @@ public static class CellRenderer
     /// <param name="fontScale">Škála fontu (pro auto-scale při přetečení, 1 = přirozené).</param>
     /// <param name="shrinkReserveMm">Rezerva pro „Přizpůsobit buňce" (viz <see cref="DefaultShrinkReserveMm"/>).</param>
     /// <param name="trailingWidthMm">Šířka obsahu, který element dokresluje ZA text (značky StopListu)
-    /// a škáluje se s ním — zmenšení počítá s tím, aby se vešel text i tento obsah.</param>
+    /// a škáluje se s ním - zmenšení počítá s tím, aby se vešel text i tento obsah.</param>
     public static void DrawCell(
         RenderContext ctx, SKRect rectMm, string text,
         ResolvedTextStyle style, float fontScale = 1f, float shrinkReserveMm = DefaultShrinkReserveMm,
@@ -81,7 +81,7 @@ public static class CellRenderer
 
         if (string.IsNullOrEmpty(text)) return;
 
-        // 2. Padding — zmenšit content box (mm). Čistá geometrie viz CellLayout.
+        // 2. Padding - zmenšit content box (mm). Čistá geometrie viz CellLayout.
         SKRect contentMm = CellLayout.ApplyPadding(rectMm, style);
 
         // Víceřádkový text přes \n (např. dvojjazyčné záhlaví „Zastávka" / „Stop").
@@ -89,7 +89,7 @@ public static class CellRenderer
         string[] lines = CellLayout.SplitLines(text);
 
         // 3. Font + paint. Přetékající text se zmenší na šířku buňky (vestavěné chování,
-        // viz class doc); sedící buňky beze změny — font se pak nevytváří podruhé.
+        // viz class doc); sedící buňky beze změny - font se pak nevytváří podruhé.
         var baseFont = style.CreateFont(fontScale, ctx.MmToPx);
         float effScale = ComputeShrinkScale(baseFont, lines, contentMm.Width, ctx.MmToPx, fontScale, shrinkReserveMm, trailingWidthMm);
         if (effScale != fontScale)

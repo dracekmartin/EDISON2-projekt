@@ -6,19 +6,19 @@ using EDControls;
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
-/// Caché-backed implementace <see cref="IAgendaRegistry"/> — volá
+/// Caché-backed implementace <see cref="IAgendaRegistry"/> - volá
 /// `ALVA.TemplateDesigner.API.AgendyRegistr.ListAgendy` přes MLRest.
 ///
 /// MLRest call je sync (HTTP); wrap v <see cref="Task.Run(System.Action)"/> uvolní
 /// UI thread (R1). Při chybě (Caché nedostupné, class neexistuje, ...) vrátí jen
-/// GENERAL agendu — TD startuje funkčně i bez registru, jen bez Caché-driven agend.
+/// GENERAL agendu - TD startuje funkčně i bez registru, jen bez Caché-driven agend.
 /// </summary>
 public class CacheAgendaRegistry : IAgendaRegistry
 {
     public const string CacheClass = "ALVA.TemplateDesigner.API.AgendyRegistr";
 
     /// <summary>
-    /// GENERAL agenda — šablona bez DB vazby. Nemá Caché class, je vždy dostupná.
+    /// GENERAL agenda - šablona bez DB vazby. Nemá Caché class, je vždy dostupná.
     /// Injektována syntheticky, ne vyhledávána z auto-discovery.
     /// </summary>
     private static readonly AgendaRegistryEntry GeneralAgenda =

@@ -8,7 +8,7 @@ namespace TemplateDesigner.Services;
 /// <summary>
 /// AI obohacení heuristické detekce JŘ z PDF.
 /// Validuje detekci, mapuje nezařazené texty na DB pole, koriguje záhlaví skupin dnů.
-/// Kontextový system prompt per typ JŘ — každý typ má specifické informace o elementech.
+/// Kontextový system prompt per typ JŘ - každý typ má specifické informace o elementech.
 /// </summary>
 public class AiImportEnricher
 {
@@ -34,7 +34,7 @@ public class AiImportEnricher
         var userPrompt = BuildUserPrompt(detection, page, schema);
 
         log.AppendLine("╔══════════════════════════════════════════════════════════════╗");
-        log.AppendLine("║              AI IMPORT ENRICHMENT — DEBUG LOG               ║");
+        log.AppendLine("║              AI IMPORT ENRICHMENT - DEBUG LOG               ║");
         log.AppendLine("╚══════════════════════════════════════════════════════════════╝");
         log.AppendLine();
         log.AppendLine($"Model: claude-haiku-4-5");
@@ -163,11 +163,11 @@ public class AiImportEnricher
 
 KONTEXT: Heuristický detektor analyzoval PDF stránku a identifikoval geometrii zastávkového JŘ.
 Detekované elementy:
-- StopListElement — tabulka zastávek (vlevo): sloupce Jízdní doba, Tarifní číslo, Název zastávky, Zóna
-- DepartureGridElement — minutová mřížka (vpravo): hodiny × skupiny dnů, buňky = minuty odjezdů s anotacemi
-- NotesLegendElement — legenda poznámek (pod mřížkou): symboly a jejich vysvětlení
+- StopListElement - tabulka zastávek (vlevo): sloupce Jízdní doba, Tarifní číslo, Název zastávky, Zóna
+- DepartureGridElement - minutová mřížka (vpravo): hodiny × skupiny dnů, buňky = minuty odjezdů s anotacemi
+- NotesLegendElement - legenda poznámek (pod mřížkou): symboly a jejich vysvětlení
 
-Tvůj úkol je doplnit SÉMANTIKU — validovat detekci a namapovat texty na databázová pole.
+Tvůj úkol je doplnit SÉMANTIKU - validovat detekci a namapovat texty na databázová pole.
 
 PRAVIDLA:
 1. VALIDACE oblastí:
@@ -190,7 +190,7 @@ PRAVIDLA:
    - Pokud text je čistě statický (dekorace, URL, copyright): dbField=null, placeholderText=null.
    - Pokud si NEJSI JISTÁ → dbField: null, placeholderText: null. Raději nechat prázdné než špatně mapovat.
    - Confidence: 0.9+ = jistá shoda s DB polem, 0.7–0.9 = pravděpodobná, pod 0.7 → nastav dbField i placeholderText na null.
-   - Texty které jsou evidentně součástí JŘ mřížky (hodiny, minuty, jízdní doby) nebo patří do záhlaví skupin dnů PŘESKOČ — nastav role=""decoration"" nebo ""unknown"", dbField=null.
+   - Texty které jsou evidentně součástí JŘ mřížky (hodiny, minuty, jízdní doby) nebo patří do záhlaví skupin dnů PŘESKOČ - nastav role=""decoration"" nebo ""unknown"", dbField=null.
 
 4. Použij POUZE pole z dodaného DataSchema. NIKDY nevymýšlej vlastní názvy polí.
 
@@ -225,7 +225,7 @@ VÝSTUP: Vrať POUZE validní JSON objekt (bez markdown, bez komentářů) s tou
     private const string SystemPromptGeneric = @"Jsi expert na rozpoznávání tiskových sestav jízdních řádů veřejné dopravy.
 
 KONTEXT: Heuristický detektor analyzoval PDF stránku a identifikoval geometrii jízdního řádu.
-Tvůj úkol je doplnit sémantiku — namapovat nezařazené texty na databázová pole.
+Tvůj úkol je doplnit sémantiku - namapovat nezařazené texty na databázová pole.
 
 PRAVIDLA:
 1. Pro každý nezařazený text urči sémantickou roli: header, title, validity, company, route, decoration, footnote, unknown.
@@ -273,7 +273,7 @@ VÝSTUP: Vrať POUZE validní JSON objekt (bez markdown) se strukturou:
         // Nezařazené texty
         if (detection.UnmappedTexts.Count > 0)
         {
-            sb.AppendLine("NEZAŘAZENÉ TEXTY (mimo JŘ oblasti — potřebují mapování):");
+            sb.AppendLine("NEZAŘAZENÉ TEXTY (mimo JŘ oblasti - potřebují mapování):");
             for (int i = 0; i < detection.UnmappedTexts.Count; i++)
             {
                 var t = detection.UnmappedTexts[i];

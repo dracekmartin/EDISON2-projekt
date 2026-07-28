@@ -32,7 +32,7 @@ public class TemplateMigrator
 
     public TemplateMigrator() : this(null) { }
 
-    /// <summary>Explicitní seznam migrací — pro testy pipeline; produkce používá default.</summary>
+    /// <summary>Explicitní seznam migrací - pro testy pipeline; produkce používá default.</summary>
     public TemplateMigrator(IEnumerable<ITemplateMigration>? migrations)
     {
         _migrations = migrations?.ToList() ?? [
@@ -55,7 +55,7 @@ public class TemplateMigrator
     /// </para>
     /// </summary>
     /// <exception cref="TemplateDeserializationException">
-    /// Verze šablony je novější než <see cref="CurrentVersion"/> (forward-compat guard, R5 —
+    /// Verze šablony je novější než <see cref="CurrentVersion"/> (forward-compat guard, R5 -
     /// tiché přerazítkování dolů by ztratilo data novější verze), nebo některá migrace selhala
     /// (částečně zmigrovaná šablona se nesmí tiše otevřít).
     /// </exception>
@@ -64,7 +64,7 @@ public class TemplateMigrator
         string fromVersion = ReadVersion(root);
         string targetVersion = CurrentVersion;
 
-        // Sémantické porovnání (VersionComparer): "1.0" == "1.0.0" — string equality by
+        // Sémantické porovnání (VersionComparer): "1.0" == "1.0.0" - string equality by
         // kosmeticky odlišnou verzi zbytečně hnala přes pipeline a hlásila migraci.
         int cmp = VersionComparer.Instance.Compare(fromVersion, targetVersion);
 
@@ -136,7 +136,7 @@ public interface ITemplateMigration
 
 /// <summary>
 /// Comparer pro semver-like verze ("1.0.0", "1.1.0", "2.0.0").
-/// Tolerantní — chybějící componenty traktuje jako 0, non-numeric komponent → 0.
+/// Tolerantní - chybějící componenty traktuje jako 0, non-numeric komponent → 0.
 /// </summary>
 internal class VersionComparer : IComparer<string>
 {

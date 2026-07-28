@@ -38,7 +38,7 @@ public class DynamicTableElementTests
         Assert.Equal(2, cols.Count);
         Assert.Equal("Název zastávky", cols[0].Header);
         Assert.Equal("POPIS", cols[0].Field);
-        Assert.Equal(0f, cols[0].Width);                       // auto — rozdělí šířku za běhu
+        Assert.Equal(0f, cols[0].Width);                       // auto - rozdělí šířku za běhu
         Assert.Equal(ColumnWidthMode.Mm, cols[0].WidthMode);
         Assert.True(cols[0].Visible);
         Assert.Equal("TC", cols[1].Field);

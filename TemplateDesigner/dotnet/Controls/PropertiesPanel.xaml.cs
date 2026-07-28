@@ -42,7 +42,7 @@ public partial class PropertiesPanel : UserControl
     }
 
     /// <summary>
-    /// Zobrazí libovolný seznam deskriptorů — umožňuje editaci i objektů,
+    /// Zobrazí libovolný seznam deskriptorů - umožňuje editaci i objektů,
     /// které nejsou TemplateElement (sekce, stránka apod.).
     /// </summary>
     public void ShowDescriptors(IReadOnlyList<PropertyDescriptor> descriptors)
@@ -222,7 +222,7 @@ public partial class PropertiesPanel : UserControl
                     || val.Contains(text, StringComparison.OrdinalIgnoreCase)
                     || lbl.Contains(text, StringComparison.OrdinalIgnoreCase);
                 if (!match) continue;
-                var display = string.IsNullOrEmpty(lbl) || lbl == val ? val : $"{val}  —  {lbl}";
+                var display = string.IsNullOrEmpty(lbl) || lbl == val ? val : $"{val}  -  {lbl}";
                 combo.Items.Add(new ComboBoxItem { Content = display, Tag = val });
             }
         }
@@ -231,7 +231,7 @@ public partial class PropertiesPanel : UserControl
 
         // Refiltrujeme jen při stisku klávesy (ne při interní změně WPF způsobené výběrem položky).
         // Pokud bychom filtrovali i při SelectionChanged→TextChanged, Refilter() smaže Items
-        // a SelectedItem se stane null — DropDownClosed pak nemá co číst.
+        // a SelectedItem se stane null - DropDownClosed pak nemá co číst.
         bool userIsTyping = false;
         combo.PreviewKeyDown += (_, _) => userIsTyping = true;
         combo.PreviewKeyUp   += (_, _) => userIsTyping = false;
@@ -244,7 +244,7 @@ public partial class PropertiesPanel : UserControl
                 if (combo.Items.Count > 0) combo.IsDropDownOpen = true;
             }));
 
-        // DropDownClosed: WPF nastavil Text na Content (display string) — přepíšeme na Tag (hodnotu).
+        // DropDownClosed: WPF nastavil Text na Content (display string) - přepíšeme na Tag (hodnotu).
         // SelectedItem je zachován, protože Refilter() se při výběru nespustil.
         combo.DropDownClosed += (_, _) =>
         {
@@ -298,7 +298,7 @@ public partial class PropertiesPanel : UserControl
         };
 
 
-        // Picker tlačítko — pouze pokud máme schéma
+        // Picker tlačítko - pouze pokud máme schéma
         if (tpd.AvailableFields is { Count: > 0 } fields)
         {
             var btn = new Button
@@ -318,7 +318,7 @@ public partial class PropertiesPanel : UserControl
                 var menu = new ContextMenu();
                 foreach (var field in fields)
                 {
-                    var item = new MenuItem { Header = $"{field.FieldName}  —  {field.Label}" };
+                    var item = new MenuItem { Header = $"{field.FieldName}  -  {field.Label}" };
                     item.Click += (_, _) =>
                     {
                         string oldText = tpd.Get();
@@ -465,7 +465,7 @@ public partial class PropertiesPanel : UserControl
         DockPanel.SetDock(label, Dock.Left);
         panel.Children.Add(label);
 
-        // Barevný čtvereček — klik otevře color dialog
+        // Barevný čtvereček - klik otevře color dialog
         var swatch = new Button
         {
             Width      = 22,
@@ -601,7 +601,7 @@ public partial class PropertiesPanel : UserControl
     {
         _execute?.Invoke(new SetPropertyCommand(label, oldVal, newVal, apply));
 
-        // Pokud má panel deskriptory s VisibleWhen, rebuildni — změna jedné hodnoty
+        // Pokud má panel deskriptory s VisibleWhen, rebuildni - změna jedné hodnoty
         // mohla ovlivnit viditelnost jiných řádků (např. HodinyOd/Do závisí na TimeAxisMode).
         if (_hasVisibleWhen && _currentDescriptors is not null)
             Dispatcher.BeginInvoke(new Action(() => ShowDescriptors(_currentDescriptors)));

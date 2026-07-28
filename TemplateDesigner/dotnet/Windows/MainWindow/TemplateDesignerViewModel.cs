@@ -32,7 +32,7 @@ public enum DuplicateDirection { Up, Down, Left, Right }
 
 public class TemplateDesignerViewModel : EDViewModel
 {
-    // ── Designer state (public — code-behind accesses canvas/resize directly) ─
+    // ── Designer state (public - code-behind accesses canvas/resize directly) ─
     public DesignerState State { get; } = new();
 
     // ── File & path ───────────────────────────────────────────────────────────
@@ -67,12 +67,12 @@ public class TemplateDesignerViewModel : EDViewModel
     private string?                             _lastParamsAgendaCode;
 
     // ── Active instances (linky pro MHD, faktury pro FAKTURY, ...) ────────────
-    // Mimo Template — session state vázané na aktuální agendu. Preview rendruje vždy
+    // Mimo Template - session state vázané na aktuální agendu. Preview rendruje vždy
     // jednu (aktivní index), tisk batch projíždí všechny.
     private List<AgendaInstance> _activeInstances = [];
     public IReadOnlyList<AgendaInstance> ActiveInstances => _activeInstances;
 
-    /// <summary>Zvolená skupina linek (SKUPINA_LINEK_ID) — filtr instancí. Null = server default
+    /// <summary>Zvolená skupina linek (SKUPINA_LINEK_ID) - filtr instancí. Null = server default
     /// (první nezablokovaná). Session scope (mimo Template), reset při změně agendy. Propaguje se
     /// do pickeru i do GetData (aby se linka fetchla ze správné skupiny).</summary>
     private string? _activeSkupinaId;
@@ -103,7 +103,7 @@ public class TemplateDesignerViewModel : EDViewModel
         get
         {
             var lbl = CapitalizeFirst(CurrentInstanceLabel);
-            if (_activeInstances.Count == 0) return $"{lbl}: — (klikni pro výběr)";
+            if (_activeInstances.Count == 0) return $"{lbl}: - (klikni pro výběr)";
             var cur = CurrentActiveInstance;
             return _activeInstances.Count == 1
                 ? $"{lbl}: {cur?.Display}"
@@ -116,13 +116,13 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Popisek zvolené skupiny linek pro status (prázdné = default/žádná skupina).</summary>
     private string? _activeSkupinaLabel;
 
-    /// <summary>Status chip skupiny — viditelný jen když je skupina zvolená.</summary>
+    /// <summary>Status chip skupiny - viditelný jen když je skupina zvolená.</summary>
     public string ActiveSkupinaText => string.IsNullOrEmpty(_activeSkupinaLabel)
         ? "" : $"Skupina: {_activeSkupinaLabel}";
 
     public bool HasActiveSkupina => !string.IsNullOrEmpty(_activeSkupinaLabel);
 
-    /// <summary>Vyčistí aktivní instance — volá se při změně agendy / načtení šablony s jinou agendou.</summary>
+    /// <summary>Vyčistí aktivní instance - volá se při změně agendy / načtení šablony s jinou agendou.</summary>
     private void ClearActiveInstances()
     {
         _activeInstances = [];
@@ -132,19 +132,19 @@ public class TemplateDesignerViewModel : EDViewModel
         OnPropertyChanged(nameof(HasActiveSkupina));
         _activeInstanceIndex = 0;
         // reloadData:true záměrně i když instance byly prázdné: vyčistí i _realPreviewData
-        // (vázaná na starou instanci/agendu — jinak se stará data renderují přes novou
+        // (vázaná na starou instanci/agendu - jinak se stará data renderují přes novou
         // šablonu = "zmizelé" preview) a bumpne generaci → invaliduje in-flight refresh.
         // RefreshDataForCurrentInstanceAsync sám hned vrátí (žádná aktivní instance).
         OnActiveInstancesChanged(reloadData: true);
     }
 
-    /// <summary>Generace preview dat — chrání proti dosednutí zastaralého async GetData
+    /// <summary>Generace preview dat - chrání proti dosednutí zastaralého async GetData
     /// (přepnu agendu/instanci, zatímco běží předchozí fetch staré). Bump při každé změně.</summary>
     private int _previewDataGeneration;
 
-    /// <param name="clearRealData">true (změna agendy/šablony) = stará data vyčistit hned — patří jiné
+    /// <param name="clearRealData">true (změna agendy/šablony) = stará data vyčistit hned - patří jiné
     /// šabloně, jinak by se kreslila přes novou (náhled do dosednutí ukáže mock). false (přepnutí instance
-    /// v téže šabloně) = nechat předchozí data zobrazená, dokud nedosedne nová z GetData — jinak by náhled
+    /// v téže šabloně) = nechat předchozí data zobrazená, dokud nedosedne nová z GetData - jinak by náhled
     /// u pomalejšího MHD (2-3 s) „blikal" na hardcoded mock. Swap na nová data dělá RefreshDataForCurrentInstanceAsync.</param>
     private void OnActiveInstancesChanged(bool reloadData, bool clearRealData = true)
     {
@@ -168,7 +168,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Caché GetData pro aktuální instanci → _realPreviewData. Async, fire-and-forget.</summary>
     /// <summary>„Obnovit data" (F5 / tlačítko ↻ u instance chipu): vyčistí cache provideru a znovu
-    /// načte schéma, parametry i tisková data aktuální instance — data změněná na serveru (značky,
+    /// načte schéma, parametry i tisková data aktuální instance - data změněná na serveru (značky,
     /// poznámky) se projeví bez restartu.</summary>
     private void RefreshData()
     {
@@ -182,14 +182,14 @@ public class TemplateDesignerViewModel : EDViewModel
     // Jen pro vývojáře (gate v UI = lokální dev klíč, stejně jako AI asistent). Umožní
     // testovat agendy proti více firmám bez editace appsettings a restartu. Pro tyto firmy
     // platí Idfa == datový namespace (ověřeno). Bez licenčního verify (na rozdíl od EDISON
-    // shellu) — dev nástroj, ne produkční přepnutí firmy.
+    // shellu) - dev nástroj, ne produkční přepnutí firmy.
 
     /// <summary>Pevný dev seznam firem, se kterými se běžně pracuje. Idfa i datový namespace = kód.</summary>
     public static readonly IReadOnlyList<(string Code, string Label)> DevFirms =
     [
-        ("CB_CSADAD", "CB_CSADAD — ČSAD Autobusy (AD)"),
-        ("CB_GWBUS",  "CB_GWBUS — GW BUS (AD)"),
-        ("KV_DP",     "KV_DP — DP Karlovy Vary (MHD)"),
+        ("CB_CSADAD", "CB_CSADAD - ČSAD Autobusy (AD)"),
+        ("CB_GWBUS",  "CB_GWBUS - GW BUS (AD)"),
+        ("KV_DP",     "KV_DP - DP Karlovy Vary (MHD)"),
     ];
 
     /// <summary>Aktuální datová firma (Idfa). Null bez připojení k databázi.</summary>
@@ -218,7 +218,7 @@ public class TemplateDesignerViewModel : EDViewModel
         StatusText = $"[DEV] Přepnuto na firmu {code}.";
     }
 
-    /// <summary>Najde v nových stránkách tu odpovídající aktuálně zobrazené — dle zastávky×směru
+    /// <summary>Najde v nových stránkách tu odpovídající aktuálně zobrazené - dle zastávky×směru
     /// (přesná shoda vč. označníku má přednost; bez ní první stránka téže zastávky). Agendy bez
     /// identifikačních polí (faktury…) padají na původní pořadové číslo (clamp). Public kvůli testům.</summary>
     public static int FindMatchingPageIndex(List<DataContext> newPages, DataContext? current, int oldIndex)
@@ -243,7 +243,7 @@ public class TemplateDesignerViewModel : EDViewModel
         return Math.Clamp(oldIndex, 0, Math.Max(0, newPages.Count - 1));
     }
 
-    /// <param name="keepPage">true = zachovat aktuálně zobrazenou stránku dat (re-fetch téže instance —
+    /// <param name="keepPage">true = zachovat aktuálně zobrazenou stránku dat (re-fetch téže instance -
     /// změna server parametru, F5); false = skočit na první (přepnutí instance/agendy).</param>
     private async Task RefreshDataForCurrentInstanceAsync(bool keepPage = false)
     {
@@ -262,7 +262,7 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 [paramName] = instance.Value
             };
-            // Skupina linek musí do GetData — u AD je linka klíčovaná (skupina, linka), jinak by se
+            // Skupina linek musí do GetData - u AD je linka klíčovaná (skupina, linka), jinak by se
             // fetchla z jiné/default skupiny než z které byla vybraná.
             if (!string.IsNullOrEmpty(_activeSkupinaId)) getDataParams["SKUPINA_LINEK_ID"] = _activeSkupinaId;
             var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
@@ -280,7 +280,7 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 var culture = GetTemplateCulture();
                 var newData = pages.Select(d => d.WithCulture(culture)).ToList();
-                // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo —
+                // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
                 // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
                 var currentPage = (keepPage && _realPreviewData is not null
                                    && _realPreviewIndex >= 0 && _realPreviewIndex < _realPreviewData.Count)
@@ -299,21 +299,21 @@ public class TemplateDesignerViewModel : EDViewModel
         }
     }
 
-    /// <summary>Registr agend (capability metadata z Caché) — lookup InstanceParamName / ElementKind dle kódu.</summary>
+    /// <summary>Registr agend (capability metadata z Caché) - lookup InstanceParamName / ElementKind dle kódu.</summary>
     private readonly IReadOnlyList<AgendaRegistryEntry> _agendaEntries;
 
     private AgendaRegistryEntry? AgendaEntry(string? agendaCode) =>
         string.IsNullOrEmpty(agendaCode) ? null
         : _agendaEntries.FirstOrDefault(a => a.Code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>Jméno IN parametru GetData pro danou agendu (z registru; default INSTANCE_ID) —
+    /// <summary>Jméno IN parametru GetData pro danou agendu (z registru; default INSTANCE_ID) -
     /// místo hardcoded větvení podle názvu agendy.</summary>
     private string InstanceParamName(string agendaCode) => AgendaEntry(agendaCode)?.InstanceParamName ?? "INSTANCE_ID";
 
-    /// <summary>Instance-param aktuální agendy (LINKA_ID / INSTANCE_ID) — čte code-behind (PrintDialog).</summary>
+    /// <summary>Instance-param aktuální agendy (LINKA_ID / INSTANCE_ID) - čte code-behind (PrintDialog).</summary>
     public string CurrentInstanceParamName => InstanceParamName(State.CurrentTemplate.AgendaCode ?? "");
 
-    /// <summary>Druh JŘ elementů aktuální agendy (STOP/LINE/"") — řídí kontextové menu + paletu okna.</summary>
+    /// <summary>Druh JŘ elementů aktuální agendy (STOP/LINE/"") - řídí kontextové menu + paletu okna.</summary>
     public string CurrentAgendaElementKind => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind ?? "";
 
     /// <summary>Zobrazovací název aktuální konfigurace „Agenda · Varianta" (např. „Zastávkový JŘ · AD");
@@ -322,14 +322,14 @@ public class TemplateDesignerViewModel : EDViewModel
         AgendaEntry(State.CurrentTemplate.AgendaCode)?.DisplayName ?? State.CurrentTemplate.AgendaCode ?? "";
 
     /// <summary>User-facing název „instance" aktuální agendy (JŘ = „linka", faktury = „faktura",
-    /// jinak „instance") — z registru agend. Okno ho zobrazí místo obecného „instance".</summary>
+    /// jinak „instance") - z registru agend. Okno ho zobrazí místo obecného „instance".</summary>
     public string CurrentInstanceLabel       => AgendaEntry(State.CurrentTemplate.AgendaCode)?.InstanceLabel ?? "instance";
     public string CurrentInstanceLabelPlural => AgendaEntry(State.CurrentTemplate.AgendaCode)?.InstanceLabelPlural ?? "instance";
 
-    /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „…výběr — linky").</summary>
+    /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „…výběr - linky").</summary>
     public string PreviousInstanceTooltip => $"Předchozí {CurrentInstanceLabel}";
     public string NextInstanceTooltip     => $"Další {CurrentInstanceLabel}";
-    public string InstancePickerHint      => $"Klikni pro výběr — {CurrentInstanceLabelPlural}";
+    public string InstancePickerHint      => $"Klikni pro výběr - {CurrentInstanceLabelPlural}";
 
     private static string CapitalizeFirst(string s) =>
         string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
@@ -351,7 +351,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Počet dostupných stránek reálných dat (0 = mock mód).</summary>
     public int RealPreviewPageCount => _realPreviewData?.Count ?? 0;
 
-    /// <summary>Probíhá výměna položek pageru (NotifyPreviewPagesChanged) — ComboBox při výměně
+    /// <summary>Probíhá výměna položek pageru (NotifyPreviewPagesChanged) - ComboBox při výměně
     /// ItemsSource synchronně pushne SelectedIndex=-1; guard ho nenechá přepsat drženou stránku.</summary>
     private bool _previewPagesSyncing;
 
@@ -362,7 +362,7 @@ public class TemplateDesignerViewModel : EDViewModel
         set
         {
             if (_realPreviewData is null || _realPreviewData.Count == 0) return;
-            if (_previewPagesSyncing && value < 0) return;   // -1 z výměny ItemsSource — ignorovat, resync přijde po ní
+            if (_previewPagesSyncing && value < 0) return;   // -1 z výměny ItemsSource - ignorovat, resync přijde po ní
             var clamped = Math.Clamp(value, 0, _realPreviewData.Count - 1);
             if (Set(ref _realPreviewIndex, clamped))
             {
@@ -382,17 +382,17 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Text stránkování "3 / 12" pro UI.</summary>
     public string PageNavigationText => RealPreviewPageCount > 0
         ? $"{RealPreviewIndex + 1} / {RealPreviewPageCount}"
-        : "—";
+        : "-";
 
     public bool HasMultiplePages => RealPreviewPageCount > 1;
 
-    /// <summary>Viditelnost lišty stránkování dat — i pro jedinou stránku (combobox říká, CO preview
-    /// zobrazuje — zastávka × směr); skrytá jen v mock módu (žádná reálná data).</summary>
+    /// <summary>Viditelnost lišty stránkování dat - i pro jedinou stránku (combobox říká, CO preview
+    /// zobrazuje - zastávka × směr); skrytá jen v mock módu (žádná reálná data).</summary>
     public bool HasPageNavigation => RealPreviewPageCount > 0;
 
     /// <summary>
     /// Notifikace po výměně reálných preview dat. Pořadí je záměrné: <see cref="PreviewPageItems"/>
-    /// PŘED <see cref="RealPreviewIndex"/> — výměna ItemsSource comboboxu synchronně pushne
+    /// PŘED <see cref="RealPreviewIndex"/> - výměna ItemsSource comboboxu synchronně pushne
     /// SelectedIndex=-1 do VM a zpětná korekce ze setteru se během reentrantního binding update
     /// zahodí (combobox by zůstal prázdný). Následná notifikace indexu ho srovná na platnou hodnotu.
     /// </summary>
@@ -415,24 +415,24 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>Callback do code-behindu: po výměně stránek dat srovnej SelectedIndex pageru
-    /// (deferovaně přes Dispatcher) — viz komentář v NotifyPreviewPagesChanged.</summary>
+    /// (deferovaně přes Dispatcher) - viz komentář v NotifyPreviewPagesChanged.</summary>
     public Action? RequestPreviewPagerSync { get; set; }
 
-    /// <summary>Položky comboboxu stránkování dat — přímý skok na stránku bez proklikávání ◀▶.</summary>
+    /// <summary>Položky comboboxu stránkování dat - přímý skok na stránku bez proklikávání ◀▶.</summary>
     public IReadOnlyList<string> PreviewPageItems =>
         _realPreviewData is null ? []
         : _realPreviewData.Select(BuildPreviewPageLabel).ToList();
 
-    /// <summary>Popisek stránky dat pro combobox: „N — zastávka → směr" z polí stránky
-    /// (POPIS_ZASTAVKA / POPIS_SMER — zastávkový JŘ), fallback „Stránka N" pro agendy bez nich.</summary>
+    /// <summary>Popisek stránky dat pro combobox: „N - zastávka → směr" z polí stránky
+    /// (POPIS_ZASTAVKA / POPIS_SMER - zastávkový JŘ), fallback „Stránka N" pro agendy bez nich.</summary>
     public static string BuildPreviewPageLabel(DataContext page, int index)
     {
         var zastavka = page.GetString("POPIS_ZASTAVKA").Trim();
         if (zastavka.Length == 0) return $"Stránka {index + 1}";
         var smer = page.GetString("POPIS_SMER").Trim();
         return smer.Length == 0
-            ? $"{index + 1} — {zastavka}"
-            : $"{index + 1} — {zastavka} → {smer}";
+            ? $"{index + 1} - {zastavka}"
+            : $"{index + 1} - {zastavka} → {smer}";
     }
 
     private RelayCommand? _prevPage, _nextPage;
@@ -467,7 +467,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool   ParamsBarCollapsed  => !_paramsBarExpanded;
     public string ParamsBarToggleText => _paramsBarExpanded ? "⚙ Parametry ▴" : "⚙ Parametry ▾";
 
-    /// <summary>Souhrn hodnot odchylných od defaultu pro sbalenou lištu — uživatel vidí na první
+    /// <summary>Souhrn hodnot odchylných od defaultu pro sbalenou lištu - uživatel vidí na první
     /// pohled, že má něco přepnuté, aniž by lištu rozbaloval. Prázdný výběr = „výchozí nastavení".</summary>
     public string ParamsSummaryText
     {
@@ -522,7 +522,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private string _statusText = "";
     /// <summary>Transientní „akce/progres" zóna status baru (uloženo / chyba / export N/N / migrace).
-    /// Odděleno od <see cref="SelectionStatusText"/>, aby se navzájem nepřepisovaly — akční hláška
+    /// Odděleno od <see cref="SelectionStatusText"/>, aby se navzájem nepřepisovaly - akční hláška
     /// zůstane viditelná i když uživatel mezitím klikne jinam a změní se stav výběru.</summary>
     public string StatusText
     {
@@ -547,7 +547,7 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _hasPreviewOverflow, value);
     }
 
-    private string _agendaNameText = "Agenda: —";
+    private string _agendaNameText = "Agenda: -";
     public string AgendaNameText
     {
         get => _agendaNameText;
@@ -654,7 +654,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Constructor ───────────────────────────────────────────────────────────
     /// <summary>
     /// Per-user state (zoom, grid, splittery, recent files, instance defaults).
-    /// Null v testech / standalone bez Caché — get pro UI binding loaded files menu;
+    /// Null v testech / standalone bez Caché - get pro UI binding loaded files menu;
     /// service interní fallback na defaults i bez Caché.
     /// </summary>
     public TdPreferencesService? Preferences { get; }
@@ -692,7 +692,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate = CreateSampleTemplate();
 
-        // Startovní agenda — priorita: (1) EDISONMAIN2 kontrakt (inputParam "Agenda=<kód>" dle
+        // Startovní agenda - priorita: (1) EDISONMAIN2 kontrakt (inputParam "Agenda=<kód>" dle
         // uzlu stromu shellu / MHD2 tlačítka), (2) poslední použitá agenda uživatele (per-user
         // prefs), (3) fallback ze CreateSampleTemplate. Neznámý kód se přeskočí.
         string? ResolveKnown(string? code) => code is null ? null
@@ -723,7 +723,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>
     /// Aplikuje MainStatePref z <see cref="Preferences"/> na DesignerState + bindovatelné VM properties.
-    /// Volá se v konstruktoru a znovu po dokončení LoadAsync (event Loaded) — pro cold-start scénář
+    /// Volá se v konstruktoru a znovu po dokončení LoadAsync (event Loaded) - pro cold-start scénář
     /// kdy LoadAsync nestihl dokončit před Show().
     /// </summary>
     public void ApplyLoadedPreferences()
@@ -817,7 +817,7 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
-    /// <summary>Zvýraznění řádků (seznam pravidel) — jeden undoable krok. Prázdný seznam → null (čistý JSON).</summary>
+    /// <summary>Zvýraznění řádků (seznam pravidel) - jeden undoable krok. Prázdný seznam → null (čistý JSON).</summary>
     public void ApplyHighlightRulesEdit(IRowHighlightable element, List<HighlightRule> resultRules)
     {
         List<HighlightRule>? newVal = resultRules.Count > 0 ? resultRules : null;
@@ -932,7 +932,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         var commands = new List<IDesignerCommand>();
 
-        // Uvolnit místo pro novou sekci — zmenšit existující fixed-height sekce
+        // Uvolnit místo pro novou sekci - zmenšit existující fixed-height sekce
         float needed = section.DesignerHeight ?? 30f;
         var resizable = State.CurrentTemplate.Sections
             .Where(s => s.DesignerHeight.HasValue && s.DesignerHeight.Value > 5f)
@@ -1078,7 +1078,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var t = new Template();
         if (agendaCode is not null) t.AgendaCode = agendaCode;
         // Volitelná konfigurace před přidáním výchozí sekce (např. převzetí velikosti/okrajů
-        // stránky při resetu z editoru vlastností stránky) — sekce se přidá až s finální PageSize.
+        // stránky při resetu z editoru vlastností stránky) - sekce se přidá až s finální PageSize.
         configure?.Invoke(t);
         State.CurrentTemplate = t;
         // Výchozí sekce, ať uživatel nezačíná na prázdné šabloně bez plochy k editaci.
@@ -1086,7 +1086,7 @@ public class TemplateDesignerViewModel : EDViewModel
         CurrentFilePath = null;
         _loadedFromCache = false;
         IsDirty = false;
-        // Aktivní instance jsou agenda-specifické — při změně agendy ztrácí smysl.
+        // Aktivní instance jsou agenda-specifické - při změně agendy ztrácí smysl.
         ClearActiveInstances();
         State.SelectedElements.Clear();
         State.UndoStack.Clear();
@@ -1138,7 +1138,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (CacheProvider is null)
         {
-            PopupDisplayer.Info("Databáze není nakonfigurována — výběr instancí není dostupný.");
+            PopupDisplayer.Info("Databáze není nakonfigurována - výběr instancí není dostupný.");
             return;
         }
         var agendaCode = State.CurrentTemplate.AgendaCode;
@@ -1162,7 +1162,7 @@ public class TemplateDesignerViewModel : EDViewModel
         OnPropertyChanged(nameof(ActiveSkupinaText));
         OnPropertyChanged(nameof(HasActiveSkupina));
 
-        // Persist výběr pro tuto šablonu — při příštím otevření se předvyplní.
+        // Persist výběr pro tuto šablonu - při příštím otevření se předvyplní.
         if (Preferences is not null)
         {
             var ids = _activeInstances.Select(i => i.Value).ToList();
@@ -1172,9 +1172,9 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task ChangeAgendaAsync()
     {
-        // Registr agend (dvouosý: agenda × varianta) — dialog staví seskupený výběr jen ze
+        // Registr agend (dvouosý: agenda × varianta) - dialog staví seskupený výběr jen ze
         // ZVEŘEJNĚNÝCH agend (Released; pilotní jako Linkový JŘ / Faktury se uživatelům nenabízí).
-        // Aktuální agenda šablony se ukáže vždy — i nezveřejněná (interní/vývojová šablona).
+        // Aktuální agenda šablony se ukáže vždy - i nezveřejněná (interní/vývojová šablona).
         var current = State.CurrentTemplate.AgendaCode;
         var visible = _agendaEntries
             .Where(a => a.Released || a.Code.Equals(current, StringComparison.OrdinalIgnoreCase))
@@ -1188,7 +1188,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var vm = new ChangeAgendaDialogViewModel(visible, current);
         if (Dialogs?.ShowChangeAgenda(vm) != true || vm.ChosenCode is null) return;
 
-        // Stejná agenda — nic neměním (vyhne se zbytečnému potvrzování neuložených změn).
+        // Stejná agenda - nic neměním (vyhne se zbytečnému potvrzování neuložených změn).
         if (string.Equals(State.CurrentTemplate.AgendaCode, vm.ChosenCode, StringComparison.OrdinalIgnoreCase))
             return;
 
@@ -1215,7 +1215,7 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             var oldAgenda = State.CurrentTemplate.AgendaCode;
             State.CurrentTemplate = await TemplateSerializer.LoadAsync(filePath);
-            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance — jejich
+            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance - jejich
             // IDs patří staré agendě a v nové by GetData padl.
             if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
                 ClearActiveInstances();
@@ -1272,7 +1272,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
         catch
         {
-            // Saved instances nejsou kompatibilní s aktuálním stavem DB — ignorujeme tiše
+            // Saved instances nejsou kompatibilní s aktuálním stavem DB - ignorujeme tiše
         }
     }
 
@@ -1300,7 +1300,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (prefs.SnapToGrid     is { } sg) SnapToGrid     = sg;
         if (prefs.SnapToElements is { } se) SnapToElements = se;
         if (prefs.ShowGrid       is { } sh) ShowGrid       = sh;
-        // CmbGridSize není bindovaný (event-driven dropdown) — explicit sync přes callback.
+        // CmbGridSize není bindovaný (event-driven dropdown) - explicit sync přes callback.
         RequestGridSizeUiSync?.Invoke(State.GridSize);
     }
 
@@ -1355,12 +1355,12 @@ public class TemplateDesignerViewModel : EDViewModel
     private async Task<bool> OfferJsonExportFallbackAsync()
     {
         if (!PopupDisplayer.Confirm(
-                "Databáze není dostupná — nelze uložit do ní. Uložit šablonu jako soubor JSON?"))
+                "Databáze není dostupná - nelze uložit do ní. Uložit šablonu jako soubor JSON?"))
             return false;
         return await ExportToJsonAsync();
     }
 
-    /// <summary>Export šablony do JSON souboru. NEmění původ (šablona dál patří do DB) — je to
+    /// <summary>Export šablony do JSON souboru. NEmění původ (šablona dál patří do DB) - je to
     /// kopie ven, obdoba PDF/PNG exportu, ne „save target". Vrátí true pokud se soubor uložil.</summary>
     private async Task<bool> ExportToJsonAsync()
     {
@@ -1387,7 +1387,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (TemplateStorage is null) return;
 
-        // Confirmace neuložených změn AŽ po explicitním Otevřít — dialog funguje i jako
+        // Confirmace neuložených změn AŽ po explicitním Otevřít - dialog funguje i jako
         // správce (smazat / přejmenovat) bez intent načíst do editoru.
         var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, _agendaEntries);
         if (Dialogs?.ShowCacheTemplatePicker(vm) != true || vm.SelectedTemplateId is null) return;
@@ -1401,7 +1401,7 @@ public class TemplateDesignerViewModel : EDViewModel
             var sourceIdFa = vm.SelectedIsSystem ? Services.CacheTemplateService.MlineIdFa : null;
             var (_, template) = await TemplateStorage.LoadAsync(vm.SelectedTemplateId.Value, sourceIdFa);
             State.CurrentTemplate = template;
-            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance — jejich
+            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance - jejich
             // IDs patří staré agendě a v nové by GetData padl.
             if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
                 ClearActiveInstances();
@@ -1431,7 +1431,7 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>Uloží do DB (nová/z disku → Save As dialog). Vrátí true při úspěchu, false při
-    /// zrušení (Save As dialog) nebo chybě — volající (confirm neuložených změn) podle toho pokračuje.</summary>
+    /// zrušení (Save As dialog) nebo chybě - volající (confirm neuložených změn) podle toho pokračuje.</summary>
     private async Task<bool> SaveToCacheAsync()
     {
         if (TemplateStorage is null) return false;
@@ -1461,7 +1461,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (Dialogs?.ShowSaveToCache(vm) != true) return false;
 
         // Kolize názvu: bez kontroly by vznikla tichá duplicita (dvě šablony stejného jména,
-        // v přehledu nerozlišitelné). Best-effort — když list selže, uložení neblokujeme.
+        // v přehledu nerozlišitelné). Best-effort - když list selže, uložení neblokujeme.
         try
         {
             var existing = await TemplateStorage.ListAsync(vm.AgendaCode);
@@ -1513,7 +1513,7 @@ public class TemplateDesignerViewModel : EDViewModel
         else State.CurrentTemplate.PrintParameters = null;
     }
 
-    /// <summary>True během běžícího exportu — blokuje druhý souběžný export (PDF i PNG),
+    /// <summary>True během běžícího exportu - blokuje druhý souběžný export (PDF i PNG),
     /// jinak uživatel může dál normálně pracovat (export renderuje snapshot šablony).</summary>
     private bool _exportRunning;
 
@@ -1526,14 +1526,14 @@ public class TemplateDesignerViewModel : EDViewModel
         if (path is null) return;
         if (RenderPdfToFile is null) return;
 
-        // Imposice ze sdílených exportních polí (persistované per-agenda, editují se v PrintDialogu) —
+        // Imposice ze sdílených exportních polí (persistované per-agenda, editují se v PrintDialogu) -
         // zachytit na UI threadu spolu se snapshotem. Chybná mřížka = uživatelská konfigurace → status bar.
         SheetLayoutOptions? sheets;
         try { sheets = SheetComposer.FromParamValues(PreviewParamValues, State.CurrentTemplate.PageSize); }
         catch (ArgumentException ex) { StatusText = $"⚠ {ex.Message}"; return; }
 
         // Fetch (N× GetData přes MLRest) i render běží mimo UI thread (R1). UI zůstává
-        // plně interaktivní — render jede nad SNAPSHOTEM šablony (stav v okamžiku kliknutí),
+        // plně interaktivní - render jede nad SNAPSHOTEM šablony (stav v okamžiku kliknutí),
         // takže editace během exportu výstup neovlivní. Progress jde do status baru.
         _exportRunning = true;
         try
@@ -1553,7 +1553,7 @@ public class TemplateDesignerViewModel : EDViewModel
         finally { _exportRunning = false; }
     }
 
-    /// <summary>View vrstva (code-behind) napojí WPF implementaci — modální/souborové dialogy + schránka.
+    /// <summary>View vrstva (code-behind) napojí WPF implementaci - modální/souborové dialogy + schránka.
     /// Přes tuto abstrakci VM nereferencuje WPF (R4). Null v testech → dialogové akce se tiše přeskočí.</summary>
     public IDesignerDialogService? Dialogs { get; set; }
 
@@ -1618,7 +1618,7 @@ public class TemplateDesignerViewModel : EDViewModel
         };
     }
 
-    /// <summary>Uloží do DB (jako Ctrl+S), ne do JSON souboru — DB je primární úložiště. Bez DB →
+    /// <summary>Uloží do DB (jako Ctrl+S), ne do JSON souboru - DB je primární úložiště. Bez DB →
     /// popup s nabídkou JSON exportu (U5). Vrátí true pokud se reálně uložilo (jinak nepokračovat).</summary>
     private async Task<bool> SaveAndContinueAsync()
     {
@@ -1763,7 +1763,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 clone.Y = Math.Clamp(clone.Y, 0f, Math.Max(0f, sectionH - cloneH));
             }
 
-            // Přemapovat GroupId — klony dostanou nový společný GroupId
+            // Přemapovat GroupId - klony dostanou nový společný GroupId
             RemapGroupId(clone, groupIdMap);
 
             newElements.Add(clone);
@@ -1842,7 +1842,7 @@ public class TemplateDesignerViewModel : EDViewModel
         ElementTypes.Rectangle     => (60f, 20f),
         ElementTypes.Line          => (190f, 1f),
         ElementTypes.Image         => (40f, 30f),
-        // ElementTypes.Table (Fixed) je spící — nevytváří se z UI (viz TableElement docstring)
+        // ElementTypes.Table (Fixed) je spící - nevytváří se z UI (viz TableElement docstring)
         ElementTypes.DynamicTable  => (190f, 30f),
         ElementTypes.Barcode       => (30f, 30f),
         ElementTypes.StopList      => (60f, 60f),
@@ -1861,7 +1861,7 @@ public class TemplateDesignerViewModel : EDViewModel
             ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
             ElementTypes.Line          => new LineElement      { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Image         => new ImageElement     { X = x, Y = y, Width = w, Height = h },
-            // ElementTypes.Table (Fixed) je spící — nevytváří se z UI (viz TableElement docstring)
+            // ElementTypes.Table (Fixed) je spící - nevytváří se z UI (viz TableElement docstring)
             ElementTypes.DynamicTable  => new DynamicTableElement { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Barcode       => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
             ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
@@ -2019,7 +2019,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         var commands = new List<IDesignerCommand>();
 
-        // Zaokrouhlení na celé mm — align cílí na "čistou" hodnotu konzistentní se soft-snapem při dragu.
+        // Zaokrouhlení na celé mm - align cílí na "čistou" hodnotu konzistentní se soft-snapem při dragu.
         static float Rnd(float v) => MathF.Round(v);
 
         switch (mode)
@@ -2187,7 +2187,7 @@ public class TemplateDesignerViewModel : EDViewModel
             float sectionH = section?.EffectiveDesignerHeight ?? float.MaxValue;
             float maxDx = sectionW - el.Width - kvp.Value.X;
             float maxDy = sectionH - elH    - kvp.Value.Y;
-            // Element může být širší/vyšší než sekce (např. background image) — přeskočit clamp
+            // Element může být širší/vyšší než sekce (např. background image) - přeskočit clamp
             if (maxDx >= -kvp.Value.X)
                 clampedDx = Math.Clamp(clampedDx, -kvp.Value.X, maxDx);
             if (maxDy >= -kvp.Value.Y)
@@ -2224,14 +2224,14 @@ public class TemplateDesignerViewModel : EDViewModel
 
         if (string.IsNullOrWhiteSpace(agendaCode))
         {
-            AgendaNameText = "Agenda: — (šablona bez agendy)";
+            AgendaNameText = "Agenda: - (šablona bez agendy)";
             UpdateCacheStatus(null, null);
             LoadAgendaParameters(agendaCode);
             RebuildSchemaTree(null);
             return Task.CompletedTask;
         }
 
-        // R1: první (uncached) GetSchema je pomalý HTTP dotaz — na cold cestě odbav na pozadí
+        // R1: první (uncached) GetSchema je pomalý HTTP dotaz - na cold cestě odbav na pozadí
         // a strom polí doplň po návratu; jinak zamrzne UI při otevření šablony cizí agendy na
         // pomalé síti. Opakované (cachované) volání jde rovnou synchronně (rychlé).
         if (CacheProvider is not null && !CacheProvider.IsSchemaCached(agendaCode))
@@ -2278,7 +2278,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         // Paleta zobrazuje JEN skalární pole (draggable jako {POLE}). Kolekce (Zastávky,
         // Odjezdy, …) konzumují dedikované elementy (StopList/DepartureGrid/NotesLegend),
-        // ne ad-hoc tabulky — jako draggable pole jen matou. Parametry se nastavují
+        // ne ad-hoc tabulky - jako draggable pole jen matou. Parametry se nastavují
         // v preview liště / tiskovém dialogu, ne přetažením. (Rozhodnuto 2026-06-16.)
         var fields = schema?.Fields ?? [];
         if (fields.Count > 0)
@@ -2306,14 +2306,14 @@ public class TemplateDesignerViewModel : EDViewModel
 
         RebuildParametersPanel();
         // Reálná data řídí výhradně Instance Picker (RefreshDataForCurrentInstanceAsync).
-        // Bez vybrané instance preview používá mock data — parametry sestavy už linku neurčují.
+        // Bez vybrané instance preview používá mock data - parametry sestavy už linku neurčují.
         RequestPreviewRefresh?.Invoke();
     }
 
     /// <summary>
     /// Načte uložené PrintParams pro aktuální agendu a aplikuje je nad <see cref="_previewParams"/>.
     /// Volá se po opening šablony (po LoadAgendaParameters) a z OnPreferencesLoaded (cold-start fallback).
-    /// Idempotentní — pokud žádná saved data, nic nemění. Per-agenda granularita: nová šablona
+    /// Idempotentní - pokud žádná saved data, nic nemění. Per-agenda granularita: nová šablona
     /// v rámci stejné agendy zdědí naposledy použité hodnoty.
     /// </summary>
     public async Task LoadPrintParamsAndApplyAsync()
@@ -2343,7 +2343,7 @@ public class TemplateDesignerViewModel : EDViewModel
                     changed = true;
                 }
             }
-            catch { /* malformed value pro tento param — ponecháme default */ }
+            catch { /* malformed value pro tento param - ponecháme default */ }
         }
 
         // Export pole (členění/název souboru) nejsou agenda parametry → obnovit zvlášť (string).
@@ -2352,13 +2352,13 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             if (!saved.TryGetValue(key, out var node) || node is null) continue;
             try { _previewParams[key] = node.GetValue<string>(); }
-            catch { /* malformed — ponecháme default */ }
+            catch { /* malformed - ponecháme default */ }
         }
 
         if (changed) OnExternalParamsChanged();
     }
 
-    /// <summary>Aplikuje hodnoty obsahových parametrů uložené v šabloně (nejvyšší priorita — nad
+    /// <summary>Aplikuje hodnoty obsahových parametrů uložené v šabloně (nejvyšší priorita - nad
     /// per-agenda i defaulty). Volá se po <see cref="LoadPrintParamsAndApplyAsync"/> při otevření
     /// šablony. Nenastavuje dirty (načtení, ne uživatelská změna).</summary>
     private void ApplyTemplatePrintParamsToPreview()
@@ -2376,12 +2376,12 @@ public class TemplateDesignerViewModel : EDViewModel
             };
         }
         // Přenačtení panelu/tabu z finálních hodnot dělá otevírací flow (RefreshParamsUiAfterLoad),
-        // bezpodmínečně — per-agenda i šablona; sem to nedávat (nespustilo by se, když šablona
+        // bezpodmínečně - per-agenda i šablona; sem to nedávat (nespustilo by se, když šablona
         // nic nezměnila, protože per-agenda už tytéž hodnoty nastavila → tab by zůstal na defaultech).
     }
 
     /// <summary>Po načtení všech persistovaných hodnot parametrů (per-agenda + šablona) přenačte
-    /// lištu i EDInputForm tab z finálního <see cref="_previewParams"/>. Bezpodmínečně — hodnoty
+    /// lištu i EDInputForm tab z finálního <see cref="_previewParams"/>. Bezpodmínečně - hodnoty
     /// do dictu naskočí i bez „změny" v ApplyTemplate (per-agenda), ale tab se jinak drží defaultů,
     /// se kterými se inicializoval na začátku otevření.</summary>
     private void RefreshParamsUiAfterLoad()
@@ -2439,7 +2439,7 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestParamsFormReload?.Invoke();
     }
 
-    /// <summary>Parametry zpracovávané v Caché GetData (rozdělení sloupců, varianty tras) —
+    /// <summary>Parametry zpracovávané v Caché GetData (rozdělení sloupců, varianty tras) -
     /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
     private static readonly string[] ServerSideParams =
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK"];
@@ -2474,7 +2474,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── EDInputForm parametrů v levém tabu (AgendaParams, includeExport=0) ──────
 
-    /// <summary>IN params pro AgendaParams.Init — jen parametry sestavy (bez export skupiny).
+    /// <summary>IN params pro AgendaParams.Init - jen parametry sestavy (bez export skupiny).
     /// Zrcadlí PrintDialog.BuildInitParams, ale includeExport=0 a bez export klíčů.</summary>
     public CVar BuildAgendaParamsInitParams()
     {
@@ -2510,7 +2510,7 @@ public class TemplateDesignerViewModel : EDViewModel
         OnAgendaParamChanged();
     }
 
-    /// <summary>visibleWhen parametru proti aktuálním hodnotám (jeden zdroj — TemplateParameter.IsVisible).</summary>
+    /// <summary>visibleWhen parametru proti aktuálním hodnotám (jeden zdroj - TemplateParameter.IsVisible).</summary>
     public bool IsAgendaParamVisible(string name) =>
         _agendaParameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_previewParams) ?? true;
 
@@ -2524,13 +2524,13 @@ public class TemplateDesignerViewModel : EDViewModel
     private void UpdateCacheStatus(string? agendaCode, DataSchema? cacheSchema)
     {
         if (CacheProvider is null)
-        { StatusText = "Databáze: není nakonfigurována — pole načtena z JSON"; return; }
+        { StatusText = "Databáze: není nakonfigurována - pole načtena z JSON"; return; }
 
         if (agendaCode is null)
         { StatusText = "Databáze: nakonfigurována"; return; }
 
         StatusText = cacheSchema is not null
-            ? $"● Databáze: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
+            ? $"● Databáze: připojeno - {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
             : $"○ Databáze: pro tuto agendu nejsou databázová pole ({agendaCode})";
     }
 
@@ -2550,21 +2550,21 @@ public class TemplateDesignerViewModel : EDViewModel
     /// Volitelný parametr overrideParams nahrazuje interní _previewParams (pro PrintDialog).
     /// </summary>
     /// <summary>
-    /// Vrátí všechny dostupné DataContexty pro export — všechny reálné stránky pokud jsou
+    /// Vrátí všechny dostupné DataContexty pro export - všechny reálné stránky pokud jsou
     /// načtené, jinak jeden mock context. Použito pro PDF/PNG export, aby se exportovaly
     /// všechny zastávky/směry, ne jen aktuálně zobrazená. Fetch (N× GetData přes MLRest)
-    /// běží na threadpoolu (R1 — u velkých batchů jednotky sekund).
+    /// běží na threadpoolu (R1 - u velkých batchů jednotky sekund).
     /// </summary>
     public async Task<IReadOnlyList<DataContext>> BuildAllPreviewDataPagesAsync(IProgress<string>? progress = null)
     {
-        // VEŠKERÝ UI stav zachytit na UI threadu před přechodem na threadpool — uživatel může
+        // VEŠKERÝ UI stav zachytit na UI threadu před přechodem na threadpool - uživatel může
         // během exportu dál pracovat (měnit instance v pickeru, parametry, přepnout preview data),
         // background smyčka proto nesmí číst živé VM kolekce/pole.
         var culture         = GetTemplateCulture();
         var agendaCode      = State.CurrentTemplate.AgendaCode;
         var instances       = _activeInstances.ToList();
         var skupinaId       = _activeSkupinaId;
-        var realPreviewData = _realPreviewData;   // reference swap-only pole — lokální kopie reference stačí
+        var realPreviewData = _realPreviewData;   // reference swap-only pole - lokální kopie reference stačí
         var suppression     = CurrentNoteSuppression();
         var hideAgg         = CurrentHideAggBezbarier();
         var hideNaZnameni   = CurrentHideNaZnameniLegend();
@@ -2604,7 +2604,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 suppression, hideAgg, hideNaZnameni);
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
-        // export musí přesto projít — vrátíme prázdný DataContext, aby se vyrenderovala
+        // export musí přesto projít - vrátíme prázdný DataContext, aby se vyrenderovala
         // jedna stránka s placeholdery beze změny.
         return [BuildPreviewMockData() ?? new DataContext()];
     }
@@ -2692,11 +2692,11 @@ public class TemplateDesignerViewModel : EDViewModel
     private bool CurrentHideAggBezbarier() =>
         NoteVisibilityFilter.ParseBool(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
 
-    /// <summary>Skrýt legendu „× na znamení" když StopList netiskne značku (#7161 D5) — ze šablony.</summary>
+    /// <summary>Skrýt legendu „× na znamení" když StopList netiskne značku (#7161 D5) - ze šablony.</summary>
     private bool CurrentHideNaZnameniLegend() =>
         NoteVisibilityFilter.ShouldHideNaZnameniLegend(State.CurrentTemplate);
 
-    /// <summary>Výchozí mock hodnota podle typu pole — použije se když Example chybí.</summary>
+    /// <summary>Výchozí mock hodnota podle typu pole - použije se když Example chybí.</summary>
     private static string MockDefault(DataField f) => f.DataType switch
     {
         FieldDataType.Number   => "100",
@@ -2704,7 +2704,7 @@ public class TemplateDesignerViewModel : EDViewModel
         FieldDataType.Time     => "08:00",
         FieldDataType.DateTime => "01.01.2024 08:00",
         FieldDataType.Boolean  => "true",
-        _                      => f.Label  // text — fallback na label
+        _                      => f.Label  // text - fallback na label
     };
 
     private static string MakeMockValue(string baseValue, FieldDataType type, int rowIndex)
@@ -2765,7 +2765,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── Tree selection ──────────────────────────────────────────────────────────
 
-    /// <summary>Zpracuje výběr z template tree — element, skupina nebo sekce (dříve v code-behind).</summary>
+    /// <summary>Zpracuje výběr z template tree - element, skupina nebo sekce (dříve v code-behind).</summary>
     public void SelectFromTree(object? tag)
     {
         if (tag is TemplateElement element)
@@ -2873,7 +2873,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (fieldName is not null)
         {
             // Přes CreateElementByType, ať DB-pole dostane stejné defaulty jako element z palety
-            // (výchozí rámeček, rozměry) — dřív se tvořil holý TextElement bez rámečku.
+            // (výchozí rámeček, rozměry) - dřív se tvořil holý TextElement bez rámečku.
             var textEl = (TextElement)CreateElementByType(ElementTypes.Text, mmX, mmY);
             textEl.Text = $"{{{fieldName}}}";
             element = textEl;
@@ -2883,7 +2883,7 @@ public class TemplateDesignerViewModel : EDViewModel
             element = CreateElementByType(elementType!, mmX, mmY);
         }
 
-        // Snap i rozměrů — výchozí velikosti (80×8, 190×25…) nejsou násobky kroku mřížky,
+        // Snap i rozměrů - výchozí velikosti (80×8, 190×25…) nejsou násobky kroku mřížky,
         // takže bez tohoto spodní/pravá hrana nikdy neseděla na mřížce a element působil
         // „mimo grid" hned po přidání. Zaokrouhlení na 0 (element menší než krok) → původní rozměr.
         if (State.SnapToGrid)
@@ -2909,7 +2909,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── Hit handling (element selection logic from mouse down) ────────────────
 
-    /// <summary>Zpracuje klik na element — výběr/toggle s Ctrl/Alt/Group logikou (dříve v OnCanvasMouseDown).</summary>
+    /// <summary>Zpracuje klik na element - výběr/toggle s Ctrl/Alt/Group logikou (dříve v OnCanvasMouseDown).</summary>
     public void HandleElementHit(Section section, TemplateElement element, bool ctrl, bool alt)
     {
         if (ctrl)
@@ -2950,7 +2950,7 @@ public class TemplateDesignerViewModel : EDViewModel
         ActivateSection(section);
     }
 
-    /// <summary>Zpracuje klik do prázdné oblasti — zruší výběr (pokud ne Ctrl), aktivuje sekci.</summary>
+    /// <summary>Zpracuje klik do prázdné oblasti - zruší výběr (pokud ne Ctrl), aktivuje sekci.</summary>
     public void HandleEmptyAreaHit(Section? section, bool ctrl)
     {
         if (!ctrl)
@@ -2960,7 +2960,7 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Sample template ───────────────────────────────────────────────────────
-    /// <summary>Fallback startovní šablona — agendu typicky přepíše EDISON kontrakt nebo
+    /// <summary>Fallback startovní šablona - agendu typicky přepíše EDISON kontrakt nebo
     /// poslední použitá agenda uživatele (viz ctor); AD je default pro první spuštění.</summary>
     public static Template CreateSampleTemplate()
     {
@@ -2969,7 +2969,7 @@ public class TemplateDesignerViewModel : EDViewModel
         return t;
     }
 
-    /// <summary>Výchozí sekce „Obsah" přes celou tiskovou plochu stránky — sdílená novou i sample šablonou.</summary>
+    /// <summary>Výchozí sekce „Obsah" přes celou tiskovou plochu stránky - sdílená novou i sample šablonou.</summary>
     private static Section CreateDefaultSection(PageSize pageSize) => new()
     {
         Name = "Obsah",
@@ -3099,9 +3099,9 @@ public class ParameterControlVM : INotifyPropertyChanged
     /// </summary>
     /// <param name="target">Cílová kolekce (typicky ObservableCollection napojená na ItemsControl).</param>
     /// <param name="parameters">Definice parametrů agendy/šablony.</param>
-    /// <param name="values">Slovník hodnot — sdílený mezi VM (každá změna ho aktualizuje).</param>
+    /// <param name="values">Slovník hodnot - sdílený mezi VM (každá změna ho aktualizuje).</param>
     /// <param name="onChanged">Volitelný callback po změně hodnoty (např. invalidace cache + překreslení).</param>
-    /// <param name="commitFactory">Volitelný factory — pro každý parametr může vrátit commit akci (Načíst tlačítko).</param>
+    /// <param name="commitFactory">Volitelný factory - pro každý parametr může vrátit commit akci (Načíst tlačítko).</param>
     public static void Init(
         ICollection<ParameterControlVM>      target,
         IEnumerable<TemplateParameter>       parameters,
@@ -3112,7 +3112,7 @@ public class ParameterControlVM : INotifyPropertyChanged
         target.Clear();
         foreach (var p in parameters)
         {
-            // Auto-refresh visibility všech VM před externím callbackem — VisibleWhen rule ve VisualWhen
+            // Auto-refresh visibility všech VM před externím callbackem - VisibleWhen rule ve VisualWhen
             // se musí přepočítat dřív, než UI dostane signál k překreslení.
             Action vmOnChanged = () =>
             {
@@ -3122,7 +3122,7 @@ public class ParameterControlVM : INotifyPropertyChanged
             target.Add(new ParameterControlVM(p, values, vmOnChanged, commitFactory?.Invoke(p)));
         }
 
-        // Initial visibility check — proběhne až po naplnění kolekce, aby VisibleWhen vidělo všechny VM.
+        // Initial visibility check - proběhne až po naplnění kolekce, aby VisibleWhen vidělo všechny VM.
         foreach (var vm in target) vm.UpdateVisibility();
     }
 
@@ -3132,7 +3132,7 @@ public class ParameterControlVM : INotifyPropertyChanged
     /// <summary>Skupina pro CollectionViewSource grouping v liště parametrů (prázdné = bez skupiny).</summary>
     public string                    Group         => _param.Group ?? "";
 
-    /// <summary>Hodnota parametru — setter volá onChanged (live refresh) při každé změně.</summary>
+    /// <summary>Hodnota parametru - setter volá onChanged (live refresh) při každé změně.</summary>
     public object? Value
     {
         get => _values.TryGetValue(_param.Name, out var v) ? v : _param.GetDefaultTyped();
@@ -3141,11 +3141,11 @@ public class ParameterControlVM : INotifyPropertyChanged
 
     /// <summary>
     /// Notifikuje UI binding po externí změně <c>_values[Name]</c> (např. po loaded PrintParams).
-    /// Bez volání setteru se neaktivuje OnPropertyChanged — proto explicit notifikace.
+    /// Bez volání setteru se neaktivuje OnPropertyChanged - proto explicit notifikace.
     /// </summary>
     public void NotifyValueChanged() => OnPropertyChanged(nameof(Value));
 
-    /// <summary>Viditelnost parametru — řízena dependency rule VisibleWhen z TemplateParameter.</summary>
+    /// <summary>Viditelnost parametru - řízena dependency rule VisibleWhen z TemplateParameter.</summary>
     public bool IsVisible
     {
         get => _isVisible;
@@ -3155,7 +3155,7 @@ public class ParameterControlVM : INotifyPropertyChanged
     /// <summary>Vyhodnotí VisibleWhen rule proti aktuálním hodnotám. Volá se po každé změně libovolného parametru.</summary>
     public void UpdateVisibility() => IsVisible = _param.IsVisible(_values);
 
-    /// <summary>Má se volat při potvrzení hodnoty (Enter/LostFocus) — spustí těžší operace (reload dat).</summary>
+    /// <summary>Má se volat při potvrzení hodnoty (Enter/LostFocus) - spustí těžší operace (reload dat).</summary>
     public bool HasCommit => _onCommit is not null;
 
     private RelayCommand? _commitCmd;

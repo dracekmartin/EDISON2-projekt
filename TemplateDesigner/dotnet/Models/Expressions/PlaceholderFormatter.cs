@@ -4,7 +4,7 @@ namespace TemplateDesigner.Models.Expressions;
 
 /// <summary>
 /// Aplikuje formátovací instrukce na hodnotu placeholderu.
-/// Syntaxe: {POLE:instrukce} — vše za ':' je instrukce.
+/// Syntaxe: {POLE:instrukce} - vše za ':' je instrukce.
 ///
 /// Podporované instrukce:
 ///   .NET formát:        dd.MM.yyyy, N2, HH:mm, C2, P1 atd.

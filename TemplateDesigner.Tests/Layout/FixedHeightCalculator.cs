@@ -4,7 +4,7 @@ using TemplateDesigner.Models.Layout;
 namespace TemplateDesigner.Tests.Layout;
 
 /// <summary>
-/// Test double pro IElementHeightCalculator — bez SkiaSharp.
+/// Test double pro IElementHeightCalculator - bez SkiaSharp.
 /// Statické elementy (Height != null) vrací svou výšku; dynamické (Height == null)
 /// dostanou pevnou hodnotu z konstruktoru (default = EffectiveDesignerHeight).
 /// </summary>

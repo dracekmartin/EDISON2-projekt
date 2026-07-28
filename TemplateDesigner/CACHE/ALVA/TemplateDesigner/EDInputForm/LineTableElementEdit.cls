@@ -1,6 +1,6 @@
 Include (GENERAL, EDInputForm)
 
-/// EDInputForm dispatch třída pro editaci LineTableElement properties (knižní JŘ —
+/// EDInputForm dispatch třída pro editaci LineTableElement properties (knižní JŘ -
 /// matice zastávky × spoje).
 ///
 /// Field key = property path na C# LineTableElement (vč. nested HeaderStyle.X / DataStyle.X).
@@ -11,7 +11,7 @@ Include (GENERAL, EDInputForm)
 /// Per-column overridy (2-tab dialog se sdíleným ColumnListEditor) přijdou s R1 extrakcí
 /// tabulkového jádra.
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptors v
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `LineTableElement.cs`. Viz memory `project_edinputform_schema_duplication.md`.
 Class ALVA.TemplateDesigner.EDInputForm.LineTableElementEdit Extends %RegisteredObject
 {
@@ -86,7 +86,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddText("SpojeDataSource", "Kolekce spojů", "SPOJE")
         s f = form.AddText("SkupinyDnuDataSource", "Kolekce skupin dnů", "SKUPINY_DNU")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
         s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí (i s přípojnými řádky). Pole řádku: POPIS, TC, ZONA, MHD, TYP, PORADI, NASTUPISTE. Např. {ZONA} == ""1"""
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)

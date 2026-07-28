@@ -1,12 +1,12 @@
 Include %occInclude
 
-/// %UnitTest pro ALVA.TemplateDesigner.API.Sablony (CRUD šablon — primární úložiště TD).
+/// %UnitTest pro ALVA.TemplateDesigner.API.Sablony (CRUD šablon - primární úložiště TD).
 /// Vzor "round-trip nad vlastními daty": testy běží v izolované IdFa větvi "EDTESTING"
-/// globálu ^ALVA.TemplateDesigner.Templates — nezávislé na živých firemních datech,
+/// globálu ^ALVA.TemplateDesigner.Templates - nezávislé na živých firemních datech,
 /// cleanup před každým testem.
 ///
 /// Chybové cesty: Sablony metody vrací $$$OK i po chybě ($$$CatchErrRest plní `ret`,
-/// který zvedá až MLRest HTTP vrstva — in-process není zpráva dostupná). Chyba se proto
+/// který zvedá až MLRest HTTP vrstva - in-process není zpráva dostupná). Chyba se proto
 /// assertuje přes OBSERVABLE stav: chybějící OUT klíče + nezměněná data v globálu.
 Class ALVA.TemplateDesigner.Tests.SablonyTest Extends ALVA.EDTesting.MLTestCase
 {
@@ -19,7 +19,7 @@ Method OnBeforeOneTest(testname As %String) As %Status
 	quit $$$OK
 }
 
-/// Malý blob (1 kus) se ukládá a vrací JEDNOKLÍČOVĚ — kompatibilita se staršími klienty
+/// Malý blob (1 kus) se ukládá a vrací JEDNOKLÍČOVĚ - kompatibilita se staršími klienty
 /// bez podpory kusů (#13013: starý klient četl jen OUT("data") → chunked šablona „porušená").
 Method TestMalyBlobJednoklicovyProStarehoKlienta()
 {
@@ -74,7 +74,7 @@ Method TestSaveLoadRoundTrip()
 	set ^||ML("IN","templateId") = "TEST-RT-1"
 	do ##class(ALVA.TemplateDesigner.API.Sablony).LoadTemplate(.sys)
 	// Load vrací blob po kusech (data1..N + dataChunkCount; Save kanonizuje i legacy
-	// jednoklíčový vstup na 1 kus) — klientská strana kusy slepuje, test dtto
+	// jednoklíčový vstup na 1 kus) - klientská strana kusy slepuje, test dtto
 	set chunkCount = +$get(^||ML("OUT","dataChunkCount"))
 	set loaded = ""
 	if chunkCount {

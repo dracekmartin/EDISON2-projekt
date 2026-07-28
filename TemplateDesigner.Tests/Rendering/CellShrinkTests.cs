@@ -4,7 +4,7 @@ using TemplateDesigner.Rendering;
 namespace TemplateDesigner.Tests.Rendering;
 
 /// <summary>
-/// KOVED #13048 bod 2 — vestavěné zmenšení přetékajícího textu buňky
+/// KOVED #13048 bod 2 - vestavěné zmenšení přetékajícího textu buňky
 /// (<see cref="CellRenderer.ComputeShrinkScale(ResolvedTextStyle, string[], float, float, float, float, float)"/>).
 /// Krátký text se nemění; dlouhý se zmenší tak, aby se vešel do šířky minus rezerva; obsah kreslený
 /// za textem (značky zastávky) zmenšuje cílovou šířku dál.

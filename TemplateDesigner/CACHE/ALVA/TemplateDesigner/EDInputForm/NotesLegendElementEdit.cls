@@ -3,13 +3,13 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro editaci NotesLegendElement properties (legenda poznámek).
 ///
 /// Field key = property path na C# NotesLegendElement (vč. nested HeaderStyle.X /
-/// DataStyle.X — reflexe traverzuje). Init jen definuje strukturu + defaults;
+/// DataStyle.X - reflexe traverzuje). Init jen definuje strukturu + defaults;
 /// generický ElementEditDialog dělá pre-fill přes reflexi.
 ///
 /// Pozn.: NotesLegend NEMÁ per-column kolekci (na rozdíl od StopList/DepartureGrid),
-/// proto je čistý generic kandidát — žádný custom dialog potřeba.
+/// proto je čistý generic kandidát - žádný custom dialog potřeba.
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptors v
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `NotesLegendElement.cs`. Viz memory `project_edinputform_schema_duplication.md`.
 Class ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit Extends %RegisteredObject
 {
@@ -34,7 +34,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FFF0F0F0"
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        // ComboBox (editovatelný) — klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
+        // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("HeaderStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("HeaderStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
@@ -44,7 +44,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#00FFFFFF"
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        // ComboBox (editovatelný) — klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
+        // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("DataStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("DataStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
         s f = form.AddText("NoteSeparator", "Oddělovač", " - ")
@@ -103,7 +103,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Podmínky" ───────────────────────────────────────────
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

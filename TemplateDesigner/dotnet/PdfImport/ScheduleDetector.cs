@@ -4,14 +4,14 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.PdfImport;
 
 /// <summary>
-/// Typ importu — uživatel volí apriorně v PdfImportDialog.
+/// Typ importu - uživatel volí apriorně v PdfImportDialog.
 /// Engine ví, jakou strukturu hledá, a použije odpovídající heuristiky.
 /// </summary>
 public enum ScheduleImportType
 {
-    /// <summary>Obecný import — žádná JŘ detekce.</summary>
+    /// <summary>Obecný import - žádná JŘ detekce.</summary>
     None,
-    /// <summary>Zastávkový JŘ MHD (MinutesOnly) — StopList + DepartureGrid + NotesLegend.</summary>
+    /// <summary>Zastávkový JŘ MHD (MinutesOnly) - StopList + DepartureGrid + NotesLegend.</summary>
     ZastavkovyJrMhd
 }
 
@@ -93,7 +93,7 @@ public static class ScheduleDetector
         if (smallNumbers.Count < 10)
             return null;
 
-        // Krok 2: Najdi hodinové sloupce — vertikální sekvence čísel 0–24 na stejné X pozici.
+        // Krok 2: Najdi hodinové sloupce - vertikální sekvence čísel 0–24 na stejné X pozici.
         // JŘ typicky má 1–3 hodinové sloupce (per skupina dnů nebo sdílený).
         // Klíč: hodiny tvoří sekvenci (5,6,7,...,19) s pravidelným Y rozestupem.
         var hourColumns = FindHourColumns(smallNumbers, page.Words);
@@ -130,11 +130,11 @@ public static class ScheduleDetector
         float minuteFontSize = minuteWords.Average(w => w.FontSizePt);
         var allHourWords = hourColumns.SelectMany(c => c.words).ToList();
 
-        // Krok 6: Najdi zastávky — texty vlevo od prvního hodinového sloupce
+        // Krok 6: Najdi zastávky - texty vlevo od prvního hodinového sloupce
         var stopWords = FindStopNames(page.Words, primaryHourCol.x, minuteRows);
         // Sloupec jízdních dob (travel times): čísla vlevo od zastávek, zarovnaná s řádky mřížky
         var travelTimeWords = FindTravelTimeNumbers(page.Words, primaryHourCol.x, minuteRows);
-        // "min." label nad sloupcem jízdních dob — zahrnout do oblasti
+        // "min." label nad sloupcem jízdních dob - zahrnout do oblasti
         var minLabel = page.Words.FirstOrDefault(w =>
             w.Text.Equals("min.", StringComparison.OrdinalIgnoreCase)
             && w.X < primaryHourCol.x);
@@ -147,7 +147,7 @@ public static class ScheduleDetector
         float stopFontSize = stopWords.Count > 0
             ? stopWords.Average(w => w.FontSizePt) : 8f;
 
-        // Krok 7: Záhlaví skupin dnů — využij pozice hodinových sloupců jako kotvy
+        // Krok 7: Záhlaví skupin dnů - využij pozice hodinových sloupců jako kotvy
         var dayGroups = DetectDayGroupsFromHourColumns(page.Words, hourColumns,
             minuteAreaRight, gridTop);
 
@@ -200,7 +200,7 @@ public static class ScheduleDetector
             .Where(b => !IsInRange(b.X, b.Y, b.Width, b.Height, mappedXRange, mappedYRange))
             .ToList();
 
-        // Detekce poznámkových párů (symbol + popis) — typicky "D na znamení", "x přestup na žel."
+        // Detekce poznámkových párů (symbol + popis) - typicky "D na znamení", "x přestup na žel."
         // Tyto texty patří do NotesLegend, ne jako samostatné TextElementy.
         var noteLegendBlocks = FindNoteLegendBlocks(unmappedTexts);
         if (noteLegendBlocks.Count > 0)
@@ -252,7 +252,7 @@ public static class ScheduleDetector
     // ── Krok 1: Minutová čísla ──────────────────────────────────────────────
 
     /// <summary>
-    /// Najde slova, která jsou čísla v rozsahu 0–59 — kandidáti na minuty odjezdů.
+    /// Najde slova, která jsou čísla v rozsahu 0–59 - kandidáti na minuty odjezdů.
     /// Filtruje jen krátká čísla (max 2 cifry) a ignoruje velké fonty (záhlaví).
     /// </summary>
     private static List<ExtractedWord> FindMinuteNumbers(List<ExtractedWord> words)
@@ -273,7 +273,7 @@ public static class ScheduleDetector
     // ── Krok 2: Hodinové sloupce ──────────────────────────────────────────────
 
     /// <summary>
-    /// Najde hodinové sloupce — vertikální sekvence čísel 0–24 na podobné X pozici.
+    /// Najde hodinové sloupce - vertikální sekvence čísel 0–24 na podobné X pozici.
     /// Strategie: clusteruj čísla podle X, pro každý cluster ověř, že tvoří vertikální sekvenci hodin.
     /// Rozlišuje od sloupce jízdních dob (travel times vlevo) pomocí "hod." labelů.
     /// Vrací seznam (x, width, words) pro každý nalezený hodinový sloupec.
@@ -289,7 +289,7 @@ public static class ScheduleDetector
         if (hourCandidates.Count < 3)
             return [];
 
-        // Najdi "hod." labely — silný signál pro hodinový sloupec
+        // Najdi "hod." labely - silný signál pro hodinový sloupec
         var hodLabels = allWords
             .Where(w => w.Text.Equals("hod.", StringComparison.OrdinalIgnoreCase)
                      || w.Text.Equals("hod", StringComparison.OrdinalIgnoreCase)
@@ -508,7 +508,7 @@ public static class ScheduleDetector
                 if (w.X + w.Width > hourColumnLeft) return false;
                 // Ve vertikálním rozsahu mřížky
                 if (w.Y < gridTop || w.Y > gridBottom) return false;
-                // Ne číslo (odfiltrovat čísla jízdních dob apod. — ale "min" text nechat)
+                // Ne číslo (odfiltrovat čísla jízdních dob apod. - ale "min" text nechat)
                 if (w.Text.Length <= 2 && int.TryParse(w.Text, out _)) return false;
                 return true;
             })
@@ -533,7 +533,7 @@ public static class ScheduleDetector
                 if (w.X + w.Width > hourColumnLeft) return false;
                 // Ve vertikálním rozsahu mřížky
                 if (w.Y < gridTop || w.Y > gridBottom) return false;
-                // Musí být číslo (1-2 cifry) — jízdní doby jsou krátká čísla
+                // Musí být číslo (1-2 cifry) - jízdní doby jsou krátká čísla
                 if (w.Text.Length > 2 || !int.TryParse(w.Text, out _)) return false;
                 return true;
             })
@@ -616,7 +616,7 @@ public static class ScheduleDetector
 
             // Najdi slova v záhlaví zóně tohoto sloupce
             // X rozsah: text musí PŘEKRÝVAT oblast sloupce (ne být celý uvnitř)
-            // — záhlaví jako "Sobota, neděle a státní svátky" může přesahovat více sloupců
+            // - záhlaví jako "Sobota, neděle a státní svátky" může přesahovat více sloupců
             var headerWords = words
                 .Where(w =>
                     w.Y >= headerSearchTop && w.Y < headerSearchBottom
@@ -659,7 +659,7 @@ public static class ScheduleDetector
     private static bool IsInRange(float x, float y, float w, float h,
         (float left, float right) xRange, (float top, float bottom) yRange)
     {
-        // X: overlap — text začíná v oblasti nebo do ní zasahuje
+        // X: overlap - text začíná v oblasti nebo do ní zasahuje
         bool xOverlap = x <= xRange.right + 5f && x + w >= xRange.left;
         // Y: center point v oblasti
         float cy = y + h / 2f;
@@ -668,7 +668,7 @@ public static class ScheduleDetector
     }
 
     /// <summary>
-    /// Detekuje poznámkové páry v unmapped textech — krátký symbol (1-2 znaky: D, x, {, H, F)
+    /// Detekuje poznámkové páry v unmapped textech - krátký symbol (1-2 znaky: D, x, {, H, F)
     /// následovaný popisným textem na stejném řádku. Typicky "D" + "na znamení", "x" + "přestup na žel.".
     /// </summary>
     private static List<ExtractedTextBlock> FindNoteLegendBlocks(List<ExtractedTextBlock> unmappedTexts)
@@ -694,7 +694,7 @@ public static class ScheduleDetector
                 // Popis musí být delší než symbol
                 if (desc.Text.Length <= 2) continue;
 
-                // Stejný řádek — Y souřadnice blízko sebe (tolerance 2mm)
+                // Stejný řádek - Y souřadnice blízko sebe (tolerance 2mm)
                 float yDiff = Math.Abs(symbol.Y - desc.Y);
                 if (yDiff > 2f) continue;
 
@@ -705,7 +705,7 @@ public static class ScheduleDetector
                 // Podobná velikost fontu (tolerance 2pt)
                 if (Math.Abs(symbol.FontSizePt - desc.FontSizePt) > 2f) continue;
 
-                // Nalezený pár — obojí patří do legendy poznámek
+                // Nalezený pár - obojí patří do legendy poznámek
                 result.Add(symbol);
                 result.Add(desc);
                 used.Add(i);

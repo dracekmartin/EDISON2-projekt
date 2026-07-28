@@ -2,17 +2,17 @@ Include GENERAL
 
 /// Registr dostupných agend TemplateDesigneru (Wave 2, 2026-05-20; dvouosý model 2026-07-11).
 ///
-/// Auto-discovery z %Dictionary — najde všechny subclassy
+/// Auto-discovery z %Dictionary - najde všechny subclassy
 /// ALVA.TemplateDesigner.Agendy.BaseAgenda a vrátí jejich metadata (kombinovaný klíč
 /// AgendaVariantCode + osy Agenda/Variant + labely) jako JSON pole. Vytvoření třídy =
 /// registrace; není nutný separátní config list (eliminuje drift mezi registrem a impl).
 ///
-/// GENERAL agenda (šablona bez DB vazby) nemá Caché class — .NET strana ji
+/// GENERAL agenda (šablona bez DB vazby) nemá Caché class - .NET strana ji
 /// inject syntheticky v IAgendaRegistry implementaci.
 Class ALVA.TemplateDesigner.API.AgendyRegistr Extends %RegisteredObject
 {
 
-/// Vrátí seznam dostupných konfigurací (agenda × varianta) — auto-discovery z BaseAgenda subclasses.
+/// Vrátí seznam dostupných konfigurací (agenda × varianta) - auto-discovery z BaseAgenda subclasses.
 /// OUT["1"] = JSON pole, např.:
 ///   [
 ///     { "code": "ZASTAVKOVY_JR_AD", "label": "Zastávkový JŘ (AD)", "cacheClass": "...",
@@ -26,7 +26,7 @@ Class ALVA.TemplateDesigner.API.AgendyRegistr Extends %RegisteredObject
 /// Řazení: alfabeticky podle code (přirozený order). Pokud bude potřeba explicit
 /// order, doplnit AgendaOrder parameter do BaseAgenda + ORDER BY (TODO).
 ///
-/// Třídy bez AgendaVariantCode (= prázdný string parameter) se přeskakují — nejsou
+/// Třídy bez AgendaVariantCode (= prázdný string parameter) se přeskakují - nejsou
 /// validně registrovány (abstraktní BaseAgenda samotná ho má prázdný).
 ClassMethod ListAgendy(ByRef sys As %String) As %Status
 {
@@ -39,7 +39,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
 
         // SQL nad %Dictionary: najdi všechny přímé subclasses BaseAgenda.
         // (Pokud bude víc úrovní dědičnosti, použít %Dictionary.ClassDefinitionQuery
-        // s rekurzí — pro Wave 2 stačí přímé subclasses.)
+        // s rekurzí - pro Wave 2 stačí přímé subclasses.)
         s sql = "SELECT ID FROM %Dictionary.ClassDefinition WHERE Super = ? AND ID <> ? ORDER BY ID"
         s rs = ##class(%SQL.Statement).%ExecDirect(, sql, baseClass, baseClass)
         if rs.%SQLCODE < 0 {
@@ -59,7 +59,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
 
             s entry = ##class(%DynamicObject).%New()
             s entry.code = code
-            // Kombinovaný label pro starší klienty — historický formát "Zastávkový JŘ (AD)".
+            // Kombinovaný label pro starší klienty - historický formát "Zastávkový JŘ (AD)".
             s entry.label = agendaLabel_$s(variant'="":" ("_variant_")", 1:"")
             s entry.agenda = agenda
             s entry.agendaLabel = agendaLabel
@@ -70,7 +70,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
             s entry.elementKind = $parameter(className, "ElementKind")
             s entry.instanceLabel = $parameter(className, "InstanceLabel")
             s entry.instanceLabelPlural = $parameter(className, "InstanceLabelPlural")
-            // JSON boolean (ne 1/0) — System.Text.Json na .NET straně deserializuje do bool.
+            // JSON boolean (ne 1/0) - System.Text.Json na .NET straně deserializuje do bool.
             d entry.%Set("released", $s($parameter(className, "Released")=1:1, 1:0), "boolean")
             d arr.%Push(entry)
         }
@@ -81,7 +81,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
 }
 
 /// Vrátí FQN třídy BaseAgenda subclass s daným AgendaVariantCode (auto-discovery z %Dictionary),
-/// nebo "" když nenalezeno. Sdílený lookup — jediný zdroj mapování kód→třída (konzumuje
+/// nebo "" když nenalezeno. Sdílený lookup - jediný zdroj mapování kód→třída (konzumuje
 /// EDList.Instance; žádný hardcoded mirror). Stejná discovery cesta jako ListAgendy.
 ClassMethod GetClassForCode(agendaCode As %String) As %String
 {

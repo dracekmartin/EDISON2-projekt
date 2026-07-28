@@ -13,7 +13,7 @@ public class Section
 
     /// <summary>
     /// Výška sekce v mm pro zobrazení v designeru.
-    /// Null u dynamických sekcí (tabulka, nekonečný text) — designer zobrazí placeholder výšku.
+    /// Null u dynamických sekcí (tabulka, nekonečný text) - designer zobrazí placeholder výšku.
     /// Print engine tuto hodnotu ignoruje.
     /// </summary>
     public float? DesignerHeight { get; set; } = 30f;
@@ -25,7 +25,7 @@ public class Section
     public SectionOverflowBehavior OverflowBehavior { get; set; } = SectionOverflowBehavior.KeepTogether;
 
     /// <summary>
-    /// Role sekce na stránce — Header (nahoře), Body (střed), Footer (dole).
+    /// Role sekce na stránce - Header (nahoře), Body (střed), Footer (dole).
     /// Relevantní pro opakující se sekce (OnEveryPage, OnFirstPageOnly, ...):
     /// Header i Footer se opakují, ale Header je umístěn nahoře a Footer dole na stránce.
     /// Pro PrintBehavior=Once nemá vliv na umístění (sekce je tam kde je v pořadí).
@@ -74,7 +74,7 @@ public class Section
 
     // --- Computed properties ---
 
-    /// <summary>Skutečná výška pro designer — DesignerHeight nebo placeholder.</summary>
+    /// <summary>Skutečná výška pro designer - DesignerHeight nebo placeholder.</summary>
     [JsonIgnore]
     public float EffectiveDesignerHeight => DesignerHeight ?? DefaultPlaceholderHeight;
 
@@ -133,9 +133,9 @@ public enum SectionRole
 {
     /// <summary>Běžný obsah stránky (výchozí).</summary>
     Body,
-    /// <summary>Hlavička — umístěna nahoře na stránce.</summary>
+    /// <summary>Hlavička - umístěna nahoře na stránce.</summary>
     Header,
-    /// <summary>Patička — umístěna dole na stránce.</summary>
+    /// <summary>Patička - umístěna dole na stránce.</summary>
     Footer
 }
 
@@ -143,7 +143,7 @@ public enum SectionOverflowBehavior
 {
     /// <summary>Celá sekce přejde na další stránku pokud se nevejde.</summary>
     KeepTogether,
-    /// <summary>Sekce se rozdělí — pokračuje na další stránce (tabulky).</summary>
+    /// <summary>Sekce se rozdělí - pokračuje na další stránce (tabulky).</summary>
     SplitAcrossPages,
     /// <summary>Rozdělení povoleno ale ne preferováno (textové bloky).</summary>
     AllowSplit

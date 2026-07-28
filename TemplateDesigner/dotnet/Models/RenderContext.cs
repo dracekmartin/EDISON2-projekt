@@ -4,7 +4,7 @@ namespace TemplateDesigner.Models;
 
 /// <summary>
 /// Předává renderovacím metodám vše potřebné: canvas, měřítko, data a pozici sekce.
-/// Elementy pracují v mm relativně k sekci — RenderContext zajišťuje přepočet na px.
+/// Elementy pracují v mm relativně k sekci - RenderContext zajišťuje přepočet na px.
 /// </summary>
 public class RenderContext
 {

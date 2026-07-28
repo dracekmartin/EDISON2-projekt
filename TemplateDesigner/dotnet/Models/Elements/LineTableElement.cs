@@ -7,14 +7,14 @@ using TemplateDesigner.Rendering;
 namespace TemplateDesigner.Models.Elements;
 
 /// <summary>
-/// Linkový jízdní řád — celá linka v jedné tabulce: svislý seznam zastávek
+/// Linkový jízdní řád - celá linka v jedné tabulce: svislý seznam zastávek
 /// (tarifní čísla) × vodorovné sloupce jednotlivých spojů s časy v buňkách.
 /// Datový zdroj: agenda LINKOVY_JR_AD / LINKOVY_JR_MHD (kolekce ZASTAVKY + SPOJE + SKUPINY_DNU).
 ///
-/// Sloupce (`Columns`, model <see cref="StopColumn"/> — sdílený se StopList) definují popisové
+/// Sloupce (`Columns`, model <see cref="StopColumn"/> - sdílený se StopList) definují popisové
 /// sloupce: Zóna, Km, Tč, Zastávka, MHD + „Spoj" (řídí šířku/styl časových sloupců spojů, které
 /// vznikají z dat). Editace přes 2-tab dialog (Obecné = EDInputForm, Sloupce = sdílený
-/// `ColumnListEditor` + `CellStyleEditor`) — konzistentní se StopList/DepartureGrid.
+/// `ColumnListEditor` + `CellStyleEditor`) - konzistentní se StopList/DepartureGrid.
 ///
 /// První řez: bez 2D bin-packingu přes stránky (stránkuje PageLayoutEngine per sekce),
 /// symboly jako textový fallback (Timetable font = roadmap 42b).
@@ -22,7 +22,7 @@ namespace TemplateDesigner.Models.Elements;
 public class LineTableElement : ScheduleElementBase, IRowHighlightable
 {
     // ─── DataSource ──────────────────────────────────────────────────────────
-    // Vlastní DataSource klíče (linkový formát) — NE zastávkové z base. LineTable dědí jen
+    // Vlastní DataSource klíče (linkový formát) - NE zastávkové z base. LineTable dědí jen
     // generickou vrstvu ScheduleElementBase, zastávkový balast (StopScheduleElementBase) netahá.
 
     /// <summary>Klíč kolekce zastávek (řádky matice).</summary>
@@ -34,11 +34,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
     /// <summary>Klíč kolekce skupin dnů.</summary>
     public string SkupinyDnuDataSource { get; set; } = "SKUPINY_DNU";
 
-    // ─── Sloupce (pořadí, šířky, viditelnost, per-column styl) — sdílený StopColumn model ──
+    // ─── Sloupce (pořadí, šířky, viditelnost, per-column styl) - sdílený StopColumn model ──
 
     public List<StopColumn> Columns { get; set; } = GetDefaultColumns();
 
-    /// <summary>Klíč sloupce časů spojů — řídí šířku/styl všech spojových sloupců (vznikají z dat).</summary>
+    /// <summary>Klíč sloupce časů spojů - řídí šířku/styl všech spojových sloupců (vznikají z dat).</summary>
     public const string TripKey = ColumnKeys.Trip;
 
     public static List<StopColumn> GetDefaultColumns() =>
@@ -92,7 +92,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         public List<string> Atributy = [];
         public List<string> Km = [];
 
-        /// <summary>Zdrojový řádek dat zastávky — pro vyhodnocení řádkových podmínek (zvýraznění). Neserializuje se.</summary>
+        /// <summary>Zdrojový řádek dat zastávky - pro vyhodnocení řádkových podmínek (zvýraznění). Neserializuje se.</summary>
         public DataContext? SourceRow;
 
         public bool JePrijezdovy => Typ == "prijezd";
@@ -277,7 +277,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         return (result, tripW, nameIndex);
     }
 
-    /// <summary>Atributy trasy k zobrazení před názvem — jen významové značky pro cestujícího
+    /// <summary>Atributy trasy k zobrazení před názvem - jen významové značky pro cestujícího
     /// (x = na znamení). Řídicí atributy (T/P/S/E/…) se v prvním řezu netisknou.</summary>
     private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
 
@@ -290,7 +290,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         ShowGroupHeaders && trips.Select(t => t.Skupina).Distinct().Count() > 1
         && groups.Any(g => g.Nadpis.Length > 0);
 
-    /// <summary>Největší resolved font záhlaví/dat napříč viditelnými sloupci (vč. spoje) — pro výšky.</summary>
+    /// <summary>Největší resolved font záhlaví/dat napříč viditelnými sloupci (vč. spoje) - pro výšky.</summary>
     private float MaxHeaderFontPt() => MaxFontPt(ResolveHeaderStyle, HeaderStyle.FontSize ?? 9f);
     private float MaxDataFontPt() => MaxFontPt(ResolveDataStyle, DataStyle.FontSize ?? 8f);
 
@@ -316,7 +316,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         if (HasPlatnostRow(trips)) h += rowH;
         if (HasNzRow(trips)) h += rowH;
         // Počítá se přesně jako v Render (parita výška↔render): jen viditelné zastávky a jejich
-        // přípojné řádky (matched na Poradi zastávky — jako render). Prázdný výraz → všechny zastávky.
+        // přípojné řádky (matched na Poradi zastávky - jako render). Prázdný výraz → všechny zastávky.
         var visibleStops = RowConditions.VisibleRows(stops, s => s.SourceRow, RowVisibilityExpression);
         h += visibleStops.Count * rowH;
         if (ShowPripojeRows)
@@ -374,7 +374,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         {
             float currentY = Y;
 
-            // pás názvů skupin dnů — spojité úseky sloupců spojů stejné skupiny
+            // pás názvů skupin dnů - spojité úseky sloupců spojů stejné skupiny
             if (HasGroupHeaderBand(trips, groups))
             {
                 CellRenderer.DrawCell(ctx, new SKRect(X, currentY, X + fixedSum, currentY + headerH), "", headerResolved, scale);
@@ -394,7 +394,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
                 currentY += headerH;
             }
 
-            // řádek čísel spojů — popisové sloupce per-column styl, spoje z Trip sloupce
+            // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
             var headerSpecs = new List<ColumnRenderer.CellSpec>();
             foreach (var c in fixedCols) headerSpecs.Add(new(c.Width, c.Header, c.HeaderStyle));
             foreach (var t in trips) headerSpecs.Add(new(tripW, t.CisloSpoje, tripHeaderStyle));
@@ -434,7 +434,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
                 bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
 
-                // Podmíněné zvýraznění řádku zastávky (celá šířka, za sloupci) — sdílené s DynamicTable/StopList.
+                // Podmíněné zvýraznění řádku zastávky (celá šířka, za sloupci) - sdílené s DynamicTable/StopList.
                 string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
                 if (rowHl is not null)
                 {
@@ -506,7 +506,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
         float headerFontPx = headerResolved.FontSize * PtToMm * ctx.MmToPx;
         using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
-        float currentY = RenderSectionHeader(ctx, "Linkový JŘ — zastávky × spoje", X, Y, Width, headerH,
+        float currentY = RenderSectionHeader(ctx, "Linkový JŘ - zastávky × spoje", X, Y, Width, headerH,
             headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid);
 
         float dataFontPx = dataResolved.FontSize * PtToMm * ctx.MmToPx;

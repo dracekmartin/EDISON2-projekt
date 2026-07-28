@@ -8,7 +8,7 @@ namespace TemplateDesigner.Tests.Layout;
 /// Regrese k „dvojité vykreslení" u sekce vyšší než stránka: SplitAcrossPages sekce 400 mm se
 /// rozdělí na 2 chunky (page1 = 0–297 ClipTop=0, page2 = 297–400 ClipTop=297). Element na Y=20
 /// patří jen do 1. chunku. Engine dělí správně; artefakt byl v renderu (border-pass mimo clip
-/// kreslil rámeček i na 2. straně) — opraveno v PreviewCanvas.RenderPage (border-pass clip na stránku).
+/// kreslil rámeček i na 2. straně) - opraveno v PreviewCanvas.RenderPage (border-pass clip na stránku).
 /// </summary>
 public class SplitSectionPaginationTest
 {

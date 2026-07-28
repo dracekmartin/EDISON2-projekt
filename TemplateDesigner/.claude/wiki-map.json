@@ -1,5 +1,5 @@
 {
-  "_comment": "Allow-list linkovaných wiki článků pro tento projekt. Synchni JEN články odtud, nic jiného. Cesty seedů jsou relativní ke kořeni TemplateDesigner. Viz CLAUDE.md sekce 'Wiki — mapování a sync'.",
+  "_comment": "Allow-list linkovaných wiki článků pro tento projekt. Synchni JEN články odtud, nic jiného. Cesty seedů jsou relativní ke kořeni TemplateDesigner. Viz CLAUDE.md sekce 'Wiki - mapování a sync'.",
   "wikiBaseUrl": "https://podpora.m-line.cz/support/wiki/",
   "articles": [
     {

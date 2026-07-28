@@ -7,7 +7,7 @@ namespace TemplateDesigner.Models;
 
 /// <summary>
 /// Deskriptor jedné editovatelné vlastnosti elementu.
-/// Panel vlastností generuje UI řádky z těchto deskriptorů — přidání nové
+/// Panel vlastností generuje UI řádky z těchto deskriptorů - přidání nové
 /// vlastnosti znamená jen přidat deskriptor do GetPropertyDescriptors(),
 /// žádná změna v panelu samotném není potřeba.
 /// </summary>
@@ -21,7 +21,7 @@ public abstract class PropertyDescriptor
     /// <summary>
     /// Volitelná podmínka viditelnosti deskriptoru v panelu.
     /// Null = vždy viditelný. Vrátí false = řádek se skryje (např. závisí na jiné property).
-    /// Po commitu hodnoty v panelu se kontroluje znovu — panel se rebuildne pokud existuje aspoň jeden deskriptor s VisibleWhen.
+    /// Po commitu hodnoty v panelu se kontroluje znovu - panel se rebuildne pokud existuje aspoň jeden deskriptor s VisibleWhen.
     /// </summary>
     public Func<bool>? VisibleWhen { get; init; }
 }
@@ -36,7 +36,7 @@ public class StringPropertyDescriptor : PropertyDescriptor
     /// <summary>True = víceřádkový TextBox (pro delší texty).</summary>
     public bool MultiLine { get; init; }
 
-    /// <summary>Volitelná validace — vrátí chybovou zprávu nebo null pokud je vstup OK.</summary>
+    /// <summary>Volitelná validace - vrátí chybovou zprávu nebo null pokud je vstup OK.</summary>
     public Func<string, string?>? Validate { get; init; }
 }
 
@@ -102,28 +102,28 @@ public class EnumPropertyDescriptor : PropertyDescriptor
 public class TextWithPickerPropertyDescriptor : StringPropertyDescriptor
 {
     /// <summary>
-    /// Dostupná pole agendy — zobrazí picker tlačítko "⊞" a validaci placeholderů.
+    /// Dostupná pole agendy - zobrazí picker tlačítko "⊞" a validaci placeholderů.
     /// Null nebo prázdný seznam = chová se stejně jako StringPropertyDescriptor.
     /// </summary>
     public IReadOnlyList<DataField>? AvailableFields { get; init; }
 }
 
 /// <summary>
-/// String pole s filtrovatelným dropdownem — uživatel může psát nebo vybrat z nabídky.
+/// String pole s filtrovatelným dropdownem - uživatel může psát nebo vybrat z nabídky.
 /// Hodnoty se filtrují podle vepsaného textu (substring match).
 /// Dědí Get/Set/Label/Group ze StringPropertyDescriptor.
 /// </summary>
 public class SuggestStringPropertyDescriptor : StringPropertyDescriptor
 {
     /// <summary>
-    /// Dostupné možnosti — (Value, Label). Value se ukládá, Label se zobrazuje v dropdownu.
+    /// Dostupné možnosti - (Value, Label). Value se ukládá, Label se zobrazuje v dropdownu.
     /// Pokud je Label stejný jako Value nebo prázdný, zobrazí se jen Value.
     /// </summary>
     public required Func<IEnumerable<(string Value, string Label)>> GetSuggestions { get; init; }
 }
 
 /// <summary>
-/// Tlačítko v panelu vlastností — kliknutím spustí akci (např. otevření editoru).
+/// Tlačítko v panelu vlastností - kliknutím spustí akci (např. otevření editoru).
 /// Panel zobrazí celou šířku tlačítko v příslušné skupině.
 /// </summary>
 public class ButtonPropertyDescriptor : PropertyDescriptor
@@ -131,7 +131,7 @@ public class ButtonPropertyDescriptor : PropertyDescriptor
     public required string ButtonLabel { get; init; }
 
     /// <summary>
-    /// Strojový identifikátor akce — pro spolehlivé routování v ElementPropertiesWindowViewModel.
+    /// Strojový identifikátor akce - pro spolehlivé routování v ElementPropertiesWindowViewModel.
     /// </summary>
     public string? ActionId { get; init; }
 

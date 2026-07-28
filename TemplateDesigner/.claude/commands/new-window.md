@@ -6,25 +6,25 @@ allowed-tools: Read, Edit, Write, Bash(ls *), Bash(grep *)
 
 Přidej nové WPF okno "$ARGUMENTS" do TemplateDesigneru.
 
-## ⚠️ MVVM — závazná pravidla před zahájením
+## ⚠️ MVVM - závazná pravidla před zahájením
 
 Toto jsou TVRDÁ pravidla. Pokud si nejsi jistý, raději se zeptej než je porušit.
 
 ### Co patří do ViewModelu (VŽDY)
-- Veškerá business logika — načítání dat, validace, ukládání, výpočty
-- Stav UI který ovlivňuje logiku — vybraná položka, filtr, mode přepínač
+- Veškerá business logika - načítání dat, validace, ukládání, výpočty
+- Stav UI který ovlivňuje logiku - vybraná položka, filtr, mode přepínač
 - Commands pro všechna tlačítka a akce (`RelayCommand`)
 - Bindovatelné properties pro vše co se zobrazuje nebo edituje (`Set(ref ...)`)
 - `ObservableCollection<T>` pro seznamy (ListBox, ComboBox, DataGrid)
 - Výsledek dialogu (`public SomeType? Result { get; private set; }`)
 
-### Co patří do code-behind (VÝJIMKY — jen pokud nelze přes binding)
-- `vm.RequestClose += ...` — standardní zavření okna
-- `vm.RequestXxx = x => control.DoSomething(x)` — napojení Action callbacků
-- `DataGrid.BeginEdit()` / `CommitEdit()` — WPF interní API bez alternativy
-- SkiaSharp `PaintSurface` event — technické omezení knihovny
+### Co patří do code-behind (VÝJIMKY - jen pokud nelze přes binding)
+- `vm.RequestClose += ...` - standardní zavření okna
+- `vm.RequestXxx = x => control.DoSomething(x)` - napojení Action callbacků
+- `DataGrid.BeginEdit()` / `CommitEdit()` - WPF interní API bez alternativy
+- SkiaSharp `PaintSurface` event - technické omezení knihovny
 
-### Červené vlajky — pokud tě napadne toto, zastav se
+### Červené vlajky - pokud tě napadne toto, zastav se
 - ❌ `private void Button_Click(...)` v code-behind → použij `Command="{Binding ...}"`
 - ❌ `_vm.SomeMethod()` volané z event handleru → přesuň logiku do Command
 - ❌ `textBox.Text = ...` přímá manipulace kontrolky → použij binding property
@@ -33,7 +33,7 @@ Toto jsou TVRDÁ pravidla. Pokud si nejsi jistý, raději se zeptej než je poru
 
 ---
 
-## Kontext — přečti před zahájením
+## Kontext - přečti před zahájením
 
 Existující okna: !`ls dotnet/Windows/`
 Vzorový ViewModel: !`cat dotnet/Windows/TableEditorDialog/TableEditorDialogViewModel.cs`
@@ -52,7 +52,7 @@ dotnet/Windows/$ARGUMENTS/
 
 ---
 
-## Krok 1 — ViewModel (`$ARGUMENTSViewModel.cs`)
+## Krok 1 - ViewModel (`$ARGUMENTSViewModel.cs`)
 
 ```csharp
 using EDControls;
@@ -62,12 +62,12 @@ namespace TemplateDesigner.Windows.$ARGUMENTS;
 public class $ARGUMENTSViewModel : EDViewModel
 {
     // -------------------------------------------------------------------------
-    // Bindovatelné properties — KAŽDÁ hodnota která jde do UI musí být tady
+    // Bindovatelné properties - KAŽDÁ hodnota která jde do UI musí být tady
     // -------------------------------------------------------------------------
     private string _title = "";
     public string Title { get => _title; set => Set(ref _title, value); }
 
-    // Pro seznam položek — ObservableCollection, ne List
+    // Pro seznam položek - ObservableCollection, ne List
     // public ObservableCollection<ItemVM> Items { get; } = [];
 
     // Pro vybranou položku
@@ -75,7 +75,7 @@ public class $ARGUMENTSViewModel : EDViewModel
     // public ItemVM? SelectedItem { get => _selectedItem; set => Set(ref _selectedItem, value); }
 
     // -------------------------------------------------------------------------
-    // Commands — KAŽDÉ tlačítko nebo akce má svůj Command tady
+    // Commands - KAŽDÉ tlačítko nebo akce má svůj Command tady
     // -------------------------------------------------------------------------
     // public RelayCommand AddItemCommand { get; }
     // public RelayCommand<ItemVM> DeleteItemCommand { get; }
@@ -94,17 +94,17 @@ public class $ARGUMENTSViewModel : EDViewModel
     // -------------------------------------------------------------------------
     // Konstruktor
     // -------------------------------------------------------------------------
-    public $ARGUMENTSViewModel(/* závislosti — např. Template template */)
+    public $ARGUMENTSViewModel(/* závislosti - např. Template template */)
     {
         // Inicializace commands:
         // AddItemCommand = new RelayCommand(AddItem);
         // DeleteItemCommand = new RelayCommand<ItemVM>(DeleteItem, vm => vm != null);
 
-        // OkCommand a CancelCommand jsou zděděny z EDViewModel — nemusíš je přidávat
+        // OkCommand a CancelCommand jsou zděděny z EDViewModel - nemusíš je přidávat
     }
 
     // -------------------------------------------------------------------------
-    // Business logika — vše privátní, volané z Commands
+    // Business logika - vše privátní, volané z Commands
     // -------------------------------------------------------------------------
 
     // Příklad: Override OnOk pro validaci před zavřením
@@ -133,9 +133,9 @@ public class $ARGUMENTSViewModel : EDViewModel
 
 ---
 
-## Krok 2 — Code-behind (`$ARGUMENTS.xaml.cs`)
+## Krok 2 - Code-behind (`$ARGUMENTS.xaml.cs`)
 
-Code-behind je záměrně minimální — jen wiring, nula logiky.
+Code-behind je záměrně minimální - jen wiring, nula logiky.
 
 ```csharp
 using System.Windows;
@@ -146,17 +146,17 @@ public partial class $ARGUMENTS : Window
 {
     private readonly $ARGUMENTSViewModel _vm;
 
-    // Runtime konstruktor — ViewModel se předává zvenku (dependency injection)
+    // Runtime konstruktor - ViewModel se předává zvenku (dependency injection)
     public $ARGUMENTS($ARGUMENTSViewModel vm)
     {
         DataContext = _vm = vm;   // DataContext PŘED InitializeComponent!
         InitializeComponent();
 
-        // Napojení callbacků — jedině oprávněný kód v code-behind
+        // Napojení callbacků - jedině oprávněný kód v code-behind
         // vm.RequestFocusOnInput = () => InputTextBox.Focus();
         // vm.RequestShowMessage  = msg => MessageBox.Show(msg, Title);
 
-        // Standardní zavření — vždy přítomno
+        // Standardní zavření - vždy přítomno
         vm.RequestClose += result => { DialogResult = result; Close(); };
     }
 
@@ -171,9 +171,9 @@ public partial class $ARGUMENTS : Window
 
 ---
 
-## Krok 3 — XAML (`$ARGUMENTS.xaml`)
+## Krok 3 - XAML (`$ARGUMENTS.xaml`)
 
-Všechny interakce jdou přes `{Binding}` — žádné `Click="..."` handlery.
+Všechny interakce jdou přes `{Binding}` - žádné `Click="..."` handlery.
 
 ```xml
 <Window x:Class="TemplateDesigner.Windows.$ARGUMENTS.$ARGUMENTS"
@@ -188,25 +188,25 @@ Všechny interakce jdou přes `{Binding}` — žádné `Click="..."` handlery.
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Obsah — každý prvek bindovaný na ViewModel property -->
+        <!-- Obsah - každý prvek bindovaný na ViewModel property -->
         <StackPanel Grid.Row="0">
 
-            <!-- TextBox — TwoWay binding, aktualizuje VM při každé změně -->
+            <!-- TextBox - TwoWay binding, aktualizuje VM při každé změně -->
             <!-- <TextBox x:Name="InputTextBox"
                          Text="{Binding SomeText, UpdateSourceTrigger=PropertyChanged}"/> -->
 
-            <!-- ListBox — ItemsSource na ObservableCollection, SelectedItem TwoWay -->
+            <!-- ListBox - ItemsSource na ObservableCollection, SelectedItem TwoWay -->
             <!-- <ListBox ItemsSource="{Binding Items}"
                          SelectedItem="{Binding SelectedItem, Mode=TwoWay}"/> -->
 
-            <!-- CheckBox — IsChecked TwoWay -->
+            <!-- CheckBox - IsChecked TwoWay -->
             <!-- <CheckBox Content="Možnost" IsChecked="{Binding IsEnabled, Mode=TwoWay}"/> -->
 
-            <!-- ComboBox — ItemsSource + SelectedItem TwoWay -->
+            <!-- ComboBox - ItemsSource + SelectedItem TwoWay -->
             <!-- <ComboBox ItemsSource="{Binding Options}"
                           SelectedItem="{Binding SelectedOption, Mode=TwoWay}"/> -->
 
-            <!-- Button — vždy Command, nikdy Click handler -->
+            <!-- Button - vždy Command, nikdy Click handler -->
             <!-- <Button Content="Přidat" Command="{Binding AddItemCommand}"/> -->
 
             <!-- Button s parametrem -->
@@ -223,7 +223,7 @@ Všechny interakce jdou přes `{Binding}` — žádné `Click="..."` handlery.
                     IsDefault="True" Command="{Binding OkCommand}"/>
             <Button Content="Storno" Width="80"
                     IsCancel="True"/>
-            <!-- IsCancel="True" zavírá okno s DialogResult=false automaticky — bez kódu -->
+            <!-- IsCancel="True" zavírá okno s DialogResult=false automaticky - bez kódu -->
         </StackPanel>
     </Grid>
 </Window>
@@ -231,7 +231,7 @@ Všechny interakce jdou přes `{Binding}` — žádné `Click="..."` handlery.
 
 ---
 
-## Krok 4 — Otevření okna
+## Krok 4 - Otevření okna
 
 Otevření patří do **volajícího ViewModelu** (ne do code-behind):
 
@@ -249,7 +249,7 @@ Open$ARGUMENTSCommand = new RelayCommand(() =>
     };
     if (dlg.ShowDialog() == true)
     {
-        // Výsledek čti z vm.Result — ne z kontrolek okna
+        // Výsledek čti z vm.Result - ne z kontrolek okna
         var result = vm.Result;
         // zpracuj result...
     }

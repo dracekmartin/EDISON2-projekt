@@ -4,13 +4,13 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Models.Layout;
 
 /// <summary>
-/// Implementace IElementHeightCalculator pomocí SkiaSharp — měří text/tabulky.
+/// Implementace IElementHeightCalculator pomocí SkiaSharp - měří text/tabulky.
 /// </summary>
 public class SkiaHeightCalculator : IElementHeightCalculator
 {
     public float CalculateHeight(TemplateElement element, float availableWidthMm, DataContext? data)
     {
-        // Statické elementy — pevná výška
+        // Statické elementy - pevná výška
         if (element.Height.HasValue)
             return element.Height.Value;
 

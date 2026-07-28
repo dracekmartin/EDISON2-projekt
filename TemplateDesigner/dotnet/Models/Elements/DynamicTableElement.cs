@@ -7,15 +7,15 @@ using TemplateDesigner.Rendering;
 namespace TemplateDesigner.Models.Elements;
 
 /// <summary>
-/// Dynamická tabulka — řádky generované za běhu z <see cref="DataSource"/> (klíč do DataContext._rows,
+/// Dynamická tabulka - řádky generované za běhu z <see cref="DataSource"/> (klíč do DataContext._rows,
 /// = collectionKey agendy). Sloupce mapují datová pole (<see cref="TableColumn.Field"/>).
 ///
 /// Architektonicky konzistentní s ostatními tabulkovými elementy (StopList/DepartureGrid): sdílená
 /// styl-kaskáda `column.Style → element.HeaderStyle/DataStyle → baked defaults → CellDefaults`,
-/// render přes `Rendering/CellRenderer`. 2-tabový editor: „Obecné" (EDInputForm — DataSource + styl)
+/// render přes `Rendering/CellRenderer`. 2-tabový editor: „Obecné" (EDInputForm - DataSource + styl)
 /// + „Sloupce" (Field-mapping grid).
 ///
-/// Statická (Fixed) tabulka je dočasně mimo (třída <see cref="TableElement"/> zůstala dormant) —
+/// Statická (Fixed) tabulka je dočasně mimo (třída <see cref="TableElement"/> zůstala dormant) -
 /// doděláme ji jako samostatný element až podle poptávky.
 /// </summary>
 public class DynamicTableElement : TemplateElement, IRowHighlightable
@@ -44,7 +44,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     /// <summary>Barva střídajících se řádků (#AARRGGBB). Null = bez střídání.</summary>
     public string? AlternatingRowColor { get; set; }
 
-    /// <summary>Souhrnné řádky (zápatí) — buňky mohou obsahovat agregace SUM/COUNT/AVG/MIN/MAX. Null = žádné.</summary>
+    /// <summary>Souhrnné řádky (zápatí) - buňky mohou obsahovat agregace SUM/COUNT/AVG/MIN/MAX. Null = žádné.</summary>
     public List<TableRow>? SummaryRows { get; set; }
 
     /// <summary>
@@ -61,7 +61,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     public List<HighlightRule>? HighlightRules { get; set; }
 
     /// <summary>
-    /// Minimální počet řádků — je-li reálných datových řádků méně, tabulka se doplní prázdnými řádky
+    /// Minimální počet řádků - je-li reálných datových řádků méně, tabulka se doplní prázdnými řádky
     /// do tohoto počtu (pevná výška boxu položek, např. faktura). 0 = bez minima.
     /// </summary>
     public int MinRows { get; set; }
@@ -132,7 +132,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     {
         if (Width <= 0) return;
 
-        // Výška boxu pro clip: pevná Height, jinak (dynamická) skutečná výška z dat — NE placeholder
+        // Výška boxu pro clip: pevná Height, jinak (dynamická) skutečná výška z dat - NE placeholder
         // (EffectiveDesignerHeight ~40mm), který by ořízl většinu řádků. V návrháři (bez dat) placeholder.
         float tableHeight = Height ?? (ctx.Data is not null ? CalculateHeightFromData(ctx.Data) : EffectiveDesignerHeight);
         var tableRect = ctx.ToCanvasRect(X, Y, Width, tableHeight);
@@ -146,12 +146,12 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         var visibleColumns = Columns.Where(c => c.Visible).ToList();
         if (visibleColumns.Count == 0)
         {
-            // Prázdná tabulka (žádné sloupce) — v designeru zobraz naváděcí placeholder,
+            // Prázdná tabulka (žádné sloupce) - v designeru zobraz naváděcí placeholder,
             // ať je element vždy viditelný (dřív se tiše nevykreslilo nic).
             ctx.Canvas.DrawRect(tableRect, borderPaint);
             string hint = string.IsNullOrWhiteSpace(DataSource)
-                ? "Tabulka — vyberte zdroj dat"
-                : $"Tabulka [{DataSource}] — přidejte sloupce";
+                ? "Tabulka - vyberte zdroj dat"
+                : $"Tabulka [{DataSource}] - přidejte sloupce";
             using var hintFont  = new SKFont { Size = 3.2f * ctx.MmToPx };
             using var hintPaint = new SKPaint { Color = new SKColor(0xFF999999), IsAntialias = true };
             ctx.Canvas.DrawText(hint, tableRect.MidX, tableRect.MidY + hintFont.Size * 0.35f,
@@ -216,7 +216,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         {
             Header    = f.Label,
             Field     = f.FieldName,
-            Width     = 0f,                       // auto — rozdělí šířku elementu
+            Width     = 0f,                       // auto - rozdělí šířku elementu
             WidthMode = ColumnWidthMode.Mm,
             Visible   = true
         }).ToList();
@@ -251,7 +251,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     }
 
     /// <summary>
-    /// Přirozená výška obsahu z dat (mm) — pro dynamickou (Height == null) sekci v print enginu.
+    /// Přirozená výška obsahu z dat (mm) - pro dynamickou (Height == null) sekci v print enginu.
     /// Při pevné Height se obsah škáluje (viz Render), takže tato hodnota se použije jen pro auto-výšku.
     /// </summary>
     public float CalculateHeightFromData(DataContext? data)
@@ -274,7 +274,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
             ctx.Canvas.DrawRect(headerBgRect, headerBgPaint);
         }
 
-        // Sdílená řádková orchestrace — svislé separátory přebírá DrawRow (gridPaint).
+        // Sdílená řádková orchestrace - svislé separátory přebírá DrawRow (gridPaint).
         var specs = new ColumnRenderer.CellSpec[cols.Count];
         for (int i = 0; i < cols.Count; i++)
             specs[i] = new(colWidths[i], Rendering.ColumnHeader.Resolve(cols[i].Header, ""), headerStyles[i]);
@@ -287,7 +287,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         return startY + headerH;
     }
 
-    /// <summary>Pero svislých mřížkových čar mezi sloupci — jen u All/ColumnsOnly, jinak null (bez čar).
+    /// <summary>Pero svislých mřížkových čar mezi sloupci - jen u All/ColumnsOnly, jinak null (bez čar).
     /// Poslední (vnější) čáru DrawRow nekreslí; překryje ji vnější rámeček (kreslen jako poslední).</summary>
     private SKPaint? ColumnGridPaint(SKPaint sepPaint) =>
         BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly ? sepPaint : null;

@@ -16,14 +16,14 @@ public enum ResizeHandle
 /// </summary>
 public class DesignerCanvas
 {
-    /// <summary>Šířka levého štítku sekce v px (vlevo od stránky). Úzký pruh —
+    /// <summary>Šířka levého štítku sekce v px (vlevo od stránky). Úzký pruh -
     /// název sekce je otočený o 90° (svisle), takže šetří horizontální místo.</summary>
     public const float SectionTabWidthPx = 26f;
     /// <summary>Minimální výška štítku aby se vešlo textové označení.</summary>
     private const float SectionTabMinLabelPx = 28f;
     private const float PagePaddingPx  = 40f;
     /// <summary>
-    /// Extra prostor nad stránkou v designeru — kompenzuje vyšší chrome live preview pane
+    /// Extra prostor nad stránkou v designeru - kompenzuje vyšší chrome live preview pane
     /// (header bar + parametry sestavy + page navigation). Drží Y-zarovnání stránky mezi
     /// designerem a preview, aby vizuálně nebyly posunuté na ose Y.
     /// </summary>
@@ -68,7 +68,7 @@ public class DesignerCanvas
     /// <summary>
     /// Viditelná oblast canvas v lokálních souřadnicích (set z MainWindow podle ScrollVieweru).
     /// Default = celý canvas (zero rectangle vypne culling). Používá DrawGrid pro viewport culling
-    /// — bez něj při vysokém zoomu kreslíme tisíce linek mimo viditelnou oblast.
+    /// - bez něj při vysokém zoomu kreslíme tisíce linek mimo viditelnou oblast.
     /// </summary>
     public SKRect VisibleViewport { get; set; }
 
@@ -77,13 +77,13 @@ public class DesignerCanvas
 
     public void Render(SKCanvas canvas, float canvasWidth, float canvasHeight)
     {
-        // Ambient výchozí styl šablony (font) — kořen kaskády; sync na každý render (viz PreviewCanvas).
+        // Ambient výchozí styl šablony (font) - kořen kaskády; sync na každý render (viz PreviewCanvas).
         DocumentDefaults.Style = _state.CurrentTemplate.DefaultTextStyle;
 
-        // Viewport clip — při vyšším zoomu je SKElement velký (5000+ px), ale viditelná je
+        // Viewport clip - při vyšším zoomu je SKElement velký (5000+ px), ale viditelná je
         // jen malá část. ClipRect umožní Skia přeskočit draw operace mimo viewport
         // (canvas.Clear, page shadow s blur, sekce atd.). Nepomáhá s alokací a uploadem
-        // buffer surface — to je dáno velikostí SKElementu (viz roadmap Virtualized canvas).
+        // buffer surface - to je dáno velikostí SKElementu (viz roadmap Virtualized canvas).
         if (VisibleViewport.Width > 0 && VisibleViewport.Height > 0)
             canvas.ClipRect(VisibleViewport);
 
@@ -92,7 +92,7 @@ public class DesignerCanvas
 
         var template = _state.CurrentTemplate;
         float pageW  = template.PageSize.Width * MmToPx;
-        // „Papír" roste s obsahem (součet výšek sekcí) — návrhář už není omezen na jednu A4.
+        // „Papír" roste s obsahem (součet výšek sekcí) - návrhář už není omezen na jednu A4.
         // Zlomy stránek se vyznačí overlayem (Slice 2); tady jen souvislý papír na plnou výšku.
         float paperH = TotalPaperHeightPx();
         float pageX  = CalculatePageX(canvasWidth);
@@ -102,21 +102,21 @@ public class DesignerCanvas
         DrawPageBackground(canvas, pageX, pageY, pageW, paperH);
         DrawMarginGuides(canvas, pageX, pageY, template.PageSize, paperH);
         DrawSections(canvas, template, pageX, pageY, canvasWidth);
-        // Grid — kreslen po sekcích, aby byl vidět přes jejich pozadí (v printable area, kde se pozicují elementy).
+        // Grid - kreslen po sekcích, aby byl vidět přes jejich pozadí (v printable area, kde se pozicují elementy).
         if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, paperH, template.PageSize);
         DrawPageBorder(canvas, pageX, pageY, pageW, paperH);
         DrawPageBreakLines(canvas, pageX, pageY, pageW, paperH, template.PageSize);
 
-        // Selection handles kreslíme naposled — vždy nad elementy
+        // Selection handles kreslíme naposled - vždy nad elementy
         DrawSnapTargetHighlights(canvas, canvasWidth);
         DrawSelectionOverlay(canvas, canvasWidth);
         DrawSnapLines(canvas, canvasWidth);
         DrawSectionCenterGuide(canvas, canvasWidth);
 
-        // Pravítka — nad stránkou a vpravo, v existujícím PagePaddingPx prostoru (svislé přes celý papír)
+        // Pravítka - nad stránkou a vpravo, v existujícím PagePaddingPx prostoru (svislé přes celý papír)
         if (_state.ShowRuler) DrawRulers(canvas, pageX, pageY, pageW, paperH, canvasWidth);
 
-        // Měřící badge během dragu/resize — zcela nahoře
+        // Měřící badge během dragu/resize - zcela nahoře
         DrawDragBadge(canvas);
     }
 
@@ -248,7 +248,7 @@ public class DesignerCanvas
 
     /// <summary>
     /// Vrátí resize handles pro element. Dynamické elementy (Height==null) nemají
-    /// spodní ani horní vertikální handles — výšku počítá engine z dat.
+    /// spodní ani horní vertikální handles - výšku počítá engine z dat.
     /// Zůstávají jen MiddleLeft a MiddleRight pro změnu šířky.
     /// </summary>
     private static IEnumerable<(float hx, float hy, ResizeHandle handle)> GetHandlesForElement(
@@ -260,13 +260,13 @@ public class DesignerCanvas
 
         if (el.IsDynamic)
         {
-            // Dynamická výška — jen horizontální handles pro změnu šířky
+            // Dynamická výška - jen horizontální handles pro změnu šířky
             yield return (r.Left,  my, ResizeHandle.MiddleLeft);
             yield return (r.Right, my, ResizeHandle.MiddleRight);
         }
         else
         {
-            // Fixní výška — všech 8 handles
+            // Fixní výška - všech 8 handles
             yield return (r.Left,  r.Top,    ResizeHandle.TopLeft);
             yield return (mx,      r.Top,    ResizeHandle.TopCenter);
             yield return (r.Right, r.Top,    ResizeHandle.TopRight);
@@ -339,7 +339,7 @@ public class DesignerCanvas
         var sections = _state.CurrentTemplate.Sections;
 
         // Souvislé plátno: hlavička+tělo se skládají shora dolů ve své PRAVÉ (neclampnuté) výšce a
-        // plátno poroste (viz TotalPaperHeightPx). Žádné zahazování za přehybem — zlomy vyznačí overlay.
+        // plátno poroste (viz TotalPaperHeightPx). Žádné zahazování za přehybem - zlomy vyznačí overlay.
         foreach (var section in sections)
         {
             if (section.Role == SectionRole.Footer) continue;
@@ -347,7 +347,7 @@ public class DesignerCanvas
             currentY += SectionHeightPx(section);
         }
 
-        // Patičky kotvené ke SPODKU rostoucího papíru — u jednostránkové šablony tak sedí s preview/tiskem
+        // Patičky kotvené ke SPODKU rostoucího papíru - u jednostránkové šablony tak sedí s preview/tiskem
         // (WYSIWYG), u vysokého obsahu vyjdou hned za tělem. Per-stránkové opakování řeší preview/engine.
         float totalFooterH = 0f;
         foreach (var s in sections)
@@ -365,7 +365,7 @@ public class DesignerCanvas
     public float SectionHeightPx(Section section) => section.EffectiveDesignerHeight * MmToPx;
 
     /// <summary>
-    /// Celková výška „papíru" v px — roste s obsahem: horní okraj + součet výšek všech sekcí +
+    /// Celková výška „papíru" v px - roste s obsahem: horní okraj + součet výšek všech sekcí +
     /// spodní okraj. Minimum = jedna stránka (malá šablona ukáže plnou A4). Návrhář tím přestává
     /// být omezen na jednu stránku; plátno se přizpůsobí (viz UpdateCanvasSize).
     /// </summary>
@@ -382,7 +382,7 @@ public class DesignerCanvas
     // ─────────────────────────────────────────────────────────────────────
     // Interní renderovací metody
 
-    // Cache paint + maskfilter — `CreateBlur` je drahý, vytvářet jednou stačí.
+    // Cache paint + maskfilter - `CreateBlur` je drahý, vytvářet jednou stačí.
     private static readonly SKPaint _shadowPaint = new()
     {
         Color = new SKColor(0x35000000),
@@ -390,9 +390,9 @@ public class DesignerCanvas
     };
 
     /// <summary>
-    /// Přerušované dělící čáry stránek přes souvislé plátno — orientační vodítko „kudy půjde zlom"
+    /// Přerušované dělící čáry stránek přes souvislé plátno - orientační vodítko „kudy půjde zlom"
     /// (varianta 1: geometrické, po výšce tisknutelné oblasti). NENÍ pixel-přesné vůči preview
-    /// (nezná opakování hlaviček/patiček ani KeepTogether) — přesný stránkovaný výsledek je v preview.
+    /// (nezná opakování hlaviček/patiček ani KeepTogether) - přesný stránkovaný výsledek je v preview.
     /// Kreslí se jen když obsah přesahuje jednu stránku.
     /// </summary>
     private void DrawPageBreakLines(SKCanvas canvas, float pageX, float pageY, float pageW, float paperH, PageSize ps)
@@ -449,7 +449,7 @@ public class DesignerCanvas
         float endX   = pageX + (ps.Width  - ps.MarginRight)  * MmToPx;
         float endY   = pageY + paperH - ps.MarginBottom * MmToPx;   // grid přes celý (rostoucí) papír
 
-        // Viewport culling — vykresli jen linky uvnitř viditelné oblasti.
+        // Viewport culling - vykresli jen linky uvnitř viditelné oblasti.
         // Při vysokém zoomu jsou tisíce linek mimo viewport (uživatel je nevidí),
         // jejich vynechání výrazně zrychlí drag bez vizuální změny.
         SKRect vp = VisibleViewport;
@@ -469,7 +469,7 @@ public class DesignerCanvas
         {
             Color = ClrGrid,
             StrokeWidth = 0.5f,
-            IsAntialias = true,    // AA potřebné pro pravidelný vzor — bez AA se 0.5px linky
+            IsAntialias = true,    // AA potřebné pro pravidelný vzor - bez AA se 0.5px linky
                                    // zaokrouhlují na pixely a při non-integer kroku vznikají
                                    // nepravidelnosti. Při viewport culling je linek málo (~100),
                                    // takže AA má zanedbatelný cost.
@@ -519,12 +519,12 @@ public class DesignerCanvas
                     var (cx, cy) = el.GetCenterPx(ctx);
                     canvas.RotateDegrees(el.Rotation, cx, cy);
                 }
-                el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) — jedno místo pro všechny
+                el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) - jedno místo pro všechny
                 el.Render(ctx);
                 canvas.Restore();
             }
 
-            // Indikátory podmíněné viditelnosti a skupin — jeden průchod
+            // Indikátory podmíněné viditelnosti a skupin - jeden průchod
             foreach (var el in section.Elements)
             {
                 bool hasCondition = !string.IsNullOrWhiteSpace(el.VisibilityExpression);
@@ -546,7 +546,7 @@ public class DesignerCanvas
             }
             canvas.Restore();
 
-            // Druhý průchod — rámečky elementů MIMO clip sekce, aby byly vidět i na hranici sekce.
+            // Druhý průchod - rámečky elementů MIMO clip sekce, aby byly vidět i na hranici sekce.
             // Na sdílené hraně dvou elementů se strokes překryjí na stejném pixelu → jeden rámeček.
             foreach (var el in section.Elements.OrderBy(e => e.ZIndex))
                 el.RenderBorderPass(ctx);
@@ -575,7 +575,7 @@ public class DesignerCanvas
     private void DrawSectionTab(SKCanvas canvas, Section section, float contentOx, float contentOy,
         float sectionH, bool dynamic, bool isActive, PageSize ps)
     {
-        // Tab je přilepený k levé hraně stránky (ne k levé hraně sekce — ta je posunutá o MarginLeft).
+        // Tab je přilepený k levé hraně stránky (ne k levé hraně sekce - ta je posunutá o MarginLeft).
         float pageLeft = contentOx - ps.MarginLeft * MmToPx;
         float tabRight = pageLeft;
         float tabLeft  = tabRight - SectionTabWidthPx;
@@ -584,7 +584,7 @@ public class DesignerCanvas
         using (var bg = new SKPaint { Color = isActive ? ClrSectionActive : (dynamic ? ClrSectionHeaderDyn : ClrSectionHeader) })
             canvas.DrawRect(tabRect, bg);
 
-        // Tenký rámeček štítku — vizuální oddělení
+        // Tenký rámeček štítku - vizuální oddělení
         using (var tabBorder = new SKPaint { Color = ClrSectionBorder, IsStroke = true, StrokeWidth = 1f })
             canvas.DrawRect(tabRect, tabBorder);
 
@@ -594,7 +594,7 @@ public class DesignerCanvas
             using var font    = new SKFont(SKTypeface.Default, 11f);
             using var txtPaint = new SKPaint { Color = ClrSectionHeaderText, IsAntialias = true };
 
-            // Název sekce svisle — otočený o 90° po směru hod. ručiček. Délka textu jede
+            // Název sekce svisle - otočený o 90° po směru hod. ručiček. Délka textu jede
             // podél výšky sekce (ne šířky úzkého pruhu), takže se vejde i delší název.
             string name = section.Name ?? "";
             float maxTextH = sectionH - 16f;
@@ -607,7 +607,7 @@ public class DesignerCanvas
             canvas.DrawText(drawn, cx, startY + font.Size * 0.34f, font, txtPaint);  // baseline ~ vystředěná na šířku pruhu
             canvas.Restore();
 
-            // Indikátor Role / dynamické výšky — dole, vodorovně vystředěný (1–2 znaky se vejdou)
+            // Indikátor Role / dynamické výšky - dole, vodorovně vystředěný (1–2 znaky se vejdou)
             string badge = "";
             if (section.Role == SectionRole.Header) badge = "H";
             else if (section.Role == SectionRole.Footer) badge = "F";
@@ -639,7 +639,7 @@ public class DesignerCanvas
     {
         if (_state.SelectedElements.Count == 0) return;
 
-        // Bounding box skupiny — tečkovaný barevný rámeček kolem celé skupiny
+        // Bounding box skupiny - tečkovaný barevný rámeček kolem celé skupiny
         var groupIds = _state.SelectedElements
             .Where(e => e.GroupId is not null)
             .Select(e => e.GroupId!)
@@ -674,7 +674,7 @@ public class DesignerCanvas
             }
         }
 
-        // Ohraničení každého vybraného elementu — jantarová pro zamčené, modrá pro odemčené
+        // Ohraničení každého vybraného elementu - jantarová pro zamčené, modrá pro odemčené
         foreach (var el in _state.SelectedElements)
         {
             var rect = GetElementCanvasRect(el, canvasWidth);
@@ -701,7 +701,7 @@ public class DesignerCanvas
             }
         }
 
-        // Resize handles nebo lock badge — pouze při výběru jednoho elementu
+        // Resize handles nebo lock badge - pouze při výběru jednoho elementu
         if (_state.SelectedElements.Count != 1) return;
 
         var singleEl   = _state.SelectedElements[0];
@@ -741,7 +741,7 @@ public class DesignerCanvas
         float bx = elementRect.Right - sz - 2f;
         float by = elementRect.Top + 2f;
 
-        // Příliš malý element — badge by překryl obsah
+        // Příliš malý element - badge by překryl obsah
         if (elementRect.Width < sz + 6 || elementRect.Height < sz + 6) return;
 
         using var bg = new SKPaint { Color = ClrLocked, IsAntialias = true };
@@ -860,7 +860,7 @@ public class DesignerCanvas
 
     /// <summary>
     /// Kreslí malý barevný čtvereček v pravém dolním rohu elementu.
-    /// Barva je deterministická z GroupId — stejná skupina = stejná barva.
+    /// Barva je deterministická z GroupId - stejná skupina = stejná barva.
     /// </summary>
     private static void DrawGroupBadge(SKCanvas canvas, SKRect elementRect, string groupId)
     {
@@ -876,7 +876,7 @@ public class DesignerCanvas
     }
 
     /// <summary>
-    /// Pravítka v mm — horizontální nad stránkou, vertikální vpravo od stránky.
+    /// Pravítka v mm - horizontální nad stránkou, vertikální vpravo od stránky.
     /// 0mm = okraj stránky. Vejdou se do existujícího PagePaddingPx prostoru, žádná layout změna.
     /// Zvýrazňuje rozsah vybraného elementu (single) nebo bounding box (multi).
     /// </summary>
@@ -906,7 +906,7 @@ public class DesignerCanvas
     private void DrawRulerTicks(SKCanvas canvas, bool horizontal, float x, float y, float w, float h)
     {
         float mmToPx = MmToPx;
-        // Volba kroku číselných popisků — řídí čitelnost při různém zoomu
+        // Volba kroku číselných popisků - řídí čitelnost při různém zoomu
         int numberStep = mmToPx >= 2f ? 10 : (mmToPx >= 1f ? 20 : 50);
         bool show5mm = mmToPx >= 1.5f;
         bool show1mm = mmToPx >= 4f;
@@ -962,7 +962,7 @@ public class DesignerCanvas
                 {
                     string label = mm.ToString();
                     float tw = font.MeasureText(label);
-                    // Text rotovaný -90° — čte se zdola nahoru, šetří horizontální místo
+                    // Text rotovaný -90° - čte se zdola nahoru, šetří horizontální místo
                     float textCenterX = x + tickZone + textZone / 2f;
                     canvas.Save();
                     canvas.Translate(textCenterX, py);
@@ -1000,13 +1000,13 @@ public class DesignerCanvas
 
         using var hl = new SKPaint { Color = ClrRulerHighlight };
 
-        // Horizontální pravítko — průmět X rozsahu
+        // Horizontální pravítko - průmět X rozsahu
         float hx1 = Math.Max(pageX, minX);
         float hx2 = Math.Min(pageX + pageW, maxX);
         if (hx2 > hx1)
             canvas.DrawRect(new SKRect(hx1, topRulerY, hx2, topRulerY + RulerThicknessPx), hl);
 
-        // Vertikální pravítko — průmět Y rozsahu
+        // Vertikální pravítko - průmět Y rozsahu
         float hy1 = Math.Max(pageY, minY);
         float hy2 = Math.Min(pageY + pageH, maxY);
         if (hy2 > hy1)
@@ -1016,7 +1016,7 @@ public class DesignerCanvas
     /// <summary>
     /// Kreslí malý badge v levém horním rohu elementu s nastavenou podmínkou tisku.
     /// Fialový "?" = validní podmínka; červený "!" = nevalidní výraz (upozornění uživateli).
-    /// V designeru se podmínka nevyhodnocuje — element je vždy viditelný.
+    /// V designeru se podmínka nevyhodnocuje - element je vždy viditelný.
     /// </summary>
     private static void DrawConditionBadge(SKCanvas canvas, SKRect elementRect, bool invalid)
     {

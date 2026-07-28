@@ -3,11 +3,11 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro editaci ImageElement properties.
 ///
 /// Field key = property path na C# ImageElement. Generický ElementEditDialog
-/// čte/zapisuje hodnoty přes reflexi — Init jen definuje strukturu + defaults.
-/// Obrázek (ImageBase64) je field typu IMAGE — náhled + upload řeší EDInputForm
+/// čte/zapisuje hodnoty přes reflexi - Init jen definuje strukturu + defaults.
+/// Obrázek (ImageBase64) je field typu IMAGE - náhled + upload řeší EDInputForm
 /// přes host hook PickImageImpl (file dialog + downscale → Base64).
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptors v
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `ImageElement.cs`. Viz memory `project_edinputform_schema_duplication.md`.
 Class ALVA.TemplateDesigner.EDInputForm.ImageElementEdit Extends %RegisteredObject
 {
@@ -27,7 +27,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Nahraj obrázek ze souboru (PNG/JPG). Velké soubory se automaticky zmenší."
 
         s f = form.AddText("DataField", "Datové pole")
-        s f.helpText = "Volitelné — název pole agendy, ze kterého se obrázek načte při tisku (místo statického)"
+        s f.helpText = "Volitelné - název pole agendy, ze kterého se obrázek načte při tisku (místo statického)"
 
         s f = form.AddFieldToLastGroup("ScaleMode", "Škálování", $$$FieldTypeList, 0, 0)
         d f.AddListItem("Fit", "Vejít celý")
@@ -64,7 +64,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Podmínky" ───────────────────────────────────────────
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

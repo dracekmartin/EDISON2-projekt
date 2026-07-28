@@ -109,7 +109,7 @@
                     <Run Text="&quot;Vytvoř fakturační šablonu s hlavičkou obsahující logo a název firmy, tabulku položek s 5 sloupci (název, množství, cena, DPH, celkem) a patičku s platebními údaji.&quot;"/>
                 </TextBlock>
 
-                <!-- API Key — jen vývojářský override (zákazník klíč nemá, vyzvedává se z mlweb) -->
+                <!-- API Key - jen vývojářský override (zákazník klíč nemá, vyzvedává se z mlweb) -->
                 <StackPanel>
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -122,7 +122,7 @@
                         </Style>
                     </StackPanel.Style>
                     <TextBlock Text="Anthropic API Key (vývojářský override)" Style="{StaticResource SectionHeader}"/>
-                    <!-- PasswordBox místo TextBox — API klíč se nemá zobrazovat plaintextem.
+                    <!-- PasswordBox místo TextBox - API klíč se nemá zobrazovat plaintextem.
                          Password není bindovatelný → sync přes code-behind (PasswordChanged). -->
                     <PasswordBox x:Name="ApiKeyBox"
                                  PasswordChanged="ApiKeyBox_PasswordChanged"

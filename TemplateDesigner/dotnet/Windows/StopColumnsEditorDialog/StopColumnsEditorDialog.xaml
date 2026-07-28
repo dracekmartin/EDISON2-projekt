@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
-        Title="Zastávky — nastavení"
+        Title="Zastávky - nastavení"
         Width="680" Height="640"
         MinWidth="560" MinHeight="520"
         WindowStartupLocation="CenterOwner"
@@ -81,7 +81,7 @@
                                 <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                 <TextBox Width="160" Text="{Binding SelectedColumnVM.Header, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"
                                          AcceptsReturn="True" MaxLines="3" VerticalScrollBarVisibility="Auto"
-                                         ToolTip="Nový řádek: napiš &quot;\n&quot; nebo stiskni Enter — dvojjazyčné záhlaví (Zastávka\nStop)"/>
+                                         ToolTip="Nový řádek: napiš &quot;\n&quot; nebo stiskni Enter - dvojjazyčné záhlaví (Zastávka\nStop)"/>
                                 <TextBlock Text="Šířka (mm):" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                 <TextBox Width="50" Text="{Binding SelectedColumnVM.WidthText, UpdateSourceTrigger=LostFocus}"/>
                             </StackPanel>
@@ -123,7 +123,7 @@
                                         Padding="10,3" Margin="0,0,6,0"/>
                                 <Button Content="Resetovat všechny sloupce"
                                         Command="{Binding DataContext.ResetAllColumnStylesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Smaže per-sloupec overrides — všechny sloupce budou dědit z tabu Obecné"
+                                        ToolTip="Smaže per-sloupec overrides - všechny sloupce budou dědit z tabu Obecné"
                                         Padding="10,3"/>
                             </StackPanel>
 

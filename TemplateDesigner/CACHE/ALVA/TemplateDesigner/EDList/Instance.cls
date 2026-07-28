@@ -1,19 +1,19 @@
 Include GENERAL
 
-/// Seznam instancí pro aktuální agendu — konkrétní záznamy, nad kterými se bude tisknout
+/// Seznam instancí pro aktuální agendu - konkrétní záznamy, nad kterými se bude tisknout
 /// šablona (uživatel jednu/víc vybere v Instance Pickeru, výběr se předá do GetData).
 ///
 /// Co je "instance" závisí na agendě:
-/// - **MHD** (zastávkový JŘ)  → linky MHD (např. "42 — Praha–Brno", "15 — Linka přes centrum")
-/// - **FAKTURY**             → jednotlivé faktury (např. "2024001 — ACME s.r.o.", "2024002 — Beta a.s.")
+/// - **MHD** (zastávkový JŘ)  → linky MHD (např. "42 - Praha–Brno", "15 - Linka přes centrum")
+/// - **FAKTURY**             → jednotlivé faktury (např. "2024001 - ACME s.r.o.", "2024002 - Beta a.s.")
 /// - **Meziměstský JŘ**       → linky meziměstské dopravy (až bude implementováno)
 /// - **Vozový JŘ**            → oběhy vozidel (až bude implementováno)
 ///
 /// Sloupce seznamu: cislo, nazev, subtitle (vše viditelné). value = opaque ID předaný do GetData
-/// (= Id řádku, ne sloupec). Status chip skládá „číslo — název" na .NET z cislo+nazev (BuildSelectedInstances).
+/// (= Id řádku, ne sloupec). Status chip skládá „číslo - název" na .NET z cislo+nazev (BuildSelectedInstances).
 ///
 /// Data: routuje přes $classmethod na agenda-specifickou GetAvailableInstances
-///       v ALVA.TemplateDesigner.Agendy.<konkrétní> (každá agenda iteruje vlastní doménovou strukturu —
+///       v ALVA.TemplateDesigner.Agendy.<konkrétní> (každá agenda iteruje vlastní doménovou strukturu -
 ///       MHD: ^ALVA.MHD.LSO(IdFa,1,"IDX",...); faktury: TBD).
 /// Wire formát: CVar named IN + JSON multi-slot OUT (Styl 3 viz EDControls/DOCS/01-wire-formats.md).
 /// Konzument: InstancePickerDialog v TD (.NET)
@@ -58,7 +58,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
             s nazev    = inst.%Get("nazev")
             s subtitle = inst.%Get("subtitle")
             s row = list.AddRow(value)              // value = Id řádku (→ .NET AgendaInstance.Value)
-            // "string" type — %Get vrací kanonicky-číselné cislo → bez toho by row.%Set znovu emitoval JSON number
+            // "string" type - %Get vrací kanonicky-číselné cislo → bez toho by row.%Set znovu emitoval JSON number
             d row.%Set("cislo",    cislo, "string")
             d row.%Set("nazev",    nazev, "string")
             d row.%Set("subtitle", subtitle, "string")
@@ -68,7 +68,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Sdílený fetch — routuje na agenda-specifickou GetAvailableInstances přes $classmethod.
+/// Sdílený fetch - routuje na agenda-specifickou GetAvailableInstances přes $classmethod.
 /// Vrací %DynamicArray objektů {value, display, subtitle}.
 ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String, skupina As %String = "") As %DynamicArray
 {
@@ -76,7 +76,7 @@ ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String, skupina 
     s cacheClass = ..GetClassForAgenda(agendaCode)
     q:cacheClass="" arr
 
-    ; Volání agenda metody — sdílí stejné ^||ML globály.
+    ; Volání agenda metody - sdílí stejné ^||ML globály.
     ; Save and clear OUT, set IN params, call, parse, restore.
     s json = ""
     s ^||ML("IN","search") = ""
@@ -116,7 +116,7 @@ ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String, skupina 
 }
 
 /// Mapuje agenda kód na FQN Caché třídy implementující BaseAgenda.
-/// Deleguje na AgendyRegistr.GetClassForCode (auto-discovery z %Dictionary) — žádný
+/// Deleguje na AgendyRegistr.GetClassForCode (auto-discovery z %Dictionary) - žádný
 /// hardcoded mirror, přidání nové agendy = jen nová BaseAgenda subclass.
 ClassMethod GetClassForAgenda(agendaCode As %String) As %String
 {

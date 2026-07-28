@@ -20,7 +20,7 @@ public class TableColumn
     /// <summary>Text záhlaví sloupce.</summary>
     public string Header { get; set; } = "";
 
-    /// <summary>Šířka sloupce — v mm nebo procentech (dle WidthMode).</summary>
+    /// <summary>Šířka sloupce - v mm nebo procentech (dle WidthMode).</summary>
     public float Width { get; set; } = 30f;
 
     public ColumnWidthMode WidthMode { get; set; } = ColumnWidthMode.Mm;
@@ -32,11 +32,11 @@ public class TableColumn
     /// </summary>
     public string? Field { get; set; }
 
-    /// <summary>Formátovací řetězec — "dd.MM.yyyy", "N2", "HH:mm" apod. Null = výchozí.</summary>
+    /// <summary>Formátovací řetězec - "dd.MM.yyyy", "N2", "HH:mm" apod. Null = výchozí.</summary>
     public string? Format { get; set; }
 
     /// <summary>
-    /// Počítané pole — výraz nad daty řádku (aritmetika, např. "{CENA} * {POCET}"). Má-li hodnotu,
+    /// Počítané pole - výraz nad daty řádku (aritmetika, např. "{CENA} * {POCET}"). Má-li hodnotu,
     /// buňka se počítá z výrazu místo <see cref="Field"/> (Field se ignoruje). Číselný výsledek lze
     /// naformátovat přes <see cref="Format"/> (např. "N2"). Null/prázdné = běžný datový sloupec.
     /// </summary>
@@ -108,18 +108,18 @@ public class TableCell
 
 /// <summary>
 /// Tabulkový element podporující dva módy:
-///   Fixed   — řádky definované v šabloně, buňky obsahují statický text nebo {PLACEHOLDER}.
-///   Dynamic — řádky generované za běhu z DataSource (klíč do DataContext._rows).
+///   Fixed   - řádky definované v šabloně, buňky obsahují statický text nebo {PLACEHOLDER}.
+///   Dynamic - řádky generované za běhu z DataSource (klíč do DataContext._rows).
 ///
-/// Height je vždy null u Dynamic módu — výšku vypočítá print engine.
+/// Height je vždy null u Dynamic módu - výšku vypočítá print engine.
 /// U Fixed módu je výška odvozena automaticky z počtu řádků.
 ///
-/// <b>SPÍCÍ element (jen legacy read).</b> Živá tabulka je <see cref="DynamicTableElement"/> — tuto
+/// <b>SPÍCÍ element (jen legacy read).</b> Živá tabulka je <see cref="DynamicTableElement"/> - tuto
 /// třídu nelze z UI vytvořit (paleta ani „+Přidat" menu ji nenabízí, továrna <c>CreateElementByType</c>
 /// ji nevyrábí; zamčeno testem). Zůstává registrovaná (<c>JsonDerivedType</c>) + editovatelná
 /// (TableEditorDialog) jen kvůli otevření starých šablon. Oživení Fixed tabulky (roadmap, gated na
 /// merged cells): vrátit větev <c>ElementTypes.Table</c> do <c>CreateElementByType</c>/<c>GetDefaultElementSize</c>
-/// + položku do palety/menu. Neodstraňovat třídu ani JsonDerivedType — rozbilo by načtení legacy šablon.
+/// + položku do palety/menu. Neodstraňovat třídu ani JsonDerivedType - rozbilo by načtení legacy šablon.
 /// </summary>
 public class TableElement : TemplateElement
 {
@@ -135,7 +135,7 @@ public class TableElement : TemplateElement
 
     /// <summary>
     /// Fixed mód: definice řádků tabulky.
-    /// Dynamic mód: null — print engine generuje řádky za běhu.
+    /// Dynamic mód: null - print engine generuje řádky za běhu.
     /// </summary>
     public List<TableRow>? Rows { get; set; }
 
@@ -182,7 +182,7 @@ public class TableElement : TemplateElement
     }
 
     /// <summary>
-    /// Dynamická výška v mm z dat — pro print engine (přes <c>SkiaHeightCalculator</c>, stejně jako
+    /// Dynamická výška v mm z dat - pro print engine (přes <c>SkiaHeightCalculator</c>, stejně jako
     /// ostatní tabulkové elementy). Fixed = počet viditelných řádků, Dynamic = řádky z <see cref="DataSource"/>
     /// (bez dat ukázkové řádky jako v designeru).
     /// </summary>
@@ -207,7 +207,7 @@ public class TableElement : TemplateElement
 
     // ─── Style resolution (kaskáda column → element → table defaults → CellDefaults) ──
 
-    // Gettery (ne static readonly) — aby font dědily z aktuálního CellDefaults.Default (ambient
+    // Gettery (ne static readonly) - aby font dědily z aktuálního CellDefaults.Default (ambient
     // = výchozí font šablony). Tyhle rodiče font nepřebíjejí, jen Bold/barvy.
     /// <summary>Výchozí parent styl pro záhlaví tabulky. Bold + šedé pozadí (#FFE8E8E8) + tmavě šedý text (#FF333333).</summary>
     private static ResolvedTextStyle TableHeaderParent => CellDefaults.Default with
@@ -245,7 +245,7 @@ public class TableElement : TemplateElement
     public ResolvedTextStyle ResolveColumnDataParent() =>
         (DataStyle ?? new TextStyle()).Resolve(TableDataParent);
 
-    // Kaskáda column → element → baked delegována do sdíleného jádra (TableLayout.ResolveCascade) —
+    // Kaskáda column → element → baked delegována do sdíleného jádra (TableLayout.ResolveCascade) -
     // stejně jako DynamicTable/StopList. Legacy col.Alignment = HAlign fallback jen když ho
     // nedefinuje sloupec ani element.
     private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col) =>
@@ -279,7 +279,7 @@ public class TableElement : TemplateElement
             return;
         }
 
-        // Šířky sloupců v mm přes sdílené jádro (TableLayout.ResolveWidths) — sjednoceno s
+        // Šířky sloupců v mm přes sdílené jádro (TableLayout.ResolveWidths) - sjednoceno s
         // DynamicTable/StopList. Width <= 0 = „auto" (rovnoměrné rozdělení zbytku), jinak pevná mm/%.
         float[] colWidths = TableLayout.ResolveWidths(
             visibleColumns.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode)).ToList(),
@@ -289,7 +289,7 @@ public class TableElement : TemplateElement
         var headerStyles = visibleColumns.Select(ResolveColumnHeaderStyle).ToArray();
         var dataStyles   = visibleColumns.Select(ResolveColumnDataStyle).ToArray();
 
-        // Clip na hranice elementu — chrání před přesahem, pokud součet šířek sloupců
+        // Clip na hranice elementu - chrání před přesahem, pokud součet šířek sloupců
         // přesahuje Width (nekonzistentní konfigurace). Konzistentní s ostatními tabulkovými elementy.
         ctx.Canvas.Save();
         ctx.Canvas.ClipRect(tableRect);
@@ -324,7 +324,7 @@ public class TableElement : TemplateElement
     private float RenderHeader(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
         ResolvedTextStyle[] headerStyles, float startY, SKPaint borderPaint, SKPaint sepPaint)
     {
-        // Full-width pozadí z table-level stylu — pokryje případný přesah nebo mezery
+        // Full-width pozadí z table-level stylu - pokryje případný přesah nebo mezery
         var tableHeaderStyle = ResolveColumnHeaderParent();
         using var headerBgPaint = tableHeaderStyle.CreateBgPaint();
         if (headerBgPaint is not null)
@@ -436,7 +436,7 @@ public class TableElement : TemplateElement
         SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
 
-        // Placeholder styl pro designer — šedivý text
+        // Placeholder styl pro designer - šedivý text
         ResolvedTextStyle[] effectiveStyles = hasRows
             ? dataStyles
             : dataStyles.Select(s => s with { TextColor = "#FF999999" }).ToArray();
@@ -567,7 +567,7 @@ public class TableElement : TemplateElement
 
     // ─── PropertyDescriptors ─────────────────────────────────────────
 
-    /// <summary>Lazy init helper — HeaderStyle/DataStyle jsou nullable, setter vždy potřebuje non-null instanci.</summary>
+    /// <summary>Lazy init helper - HeaderStyle/DataStyle jsou nullable, setter vždy potřebuje non-null instanci.</summary>
     private TextStyle Header() => HeaderStyle ??= new TextStyle();
     private TextStyle Data()   => DataStyle   ??= new TextStyle();
 
@@ -641,7 +641,7 @@ public class TableElement : TemplateElement
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v
         },
 
-        // ── Záhlaví / Datové buňky — element-level základní barvy.
+        // ── Záhlaví / Datové buňky - element-level základní barvy.
         // Detailní cascade (font, alignment, padding) je v TableEditorDialog.
         new BoolPropertyDescriptor
         {

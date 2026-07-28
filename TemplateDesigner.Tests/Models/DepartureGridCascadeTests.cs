@@ -4,7 +4,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
-/// Regresní testy na anti-pattern „scalar property přebíjí kaskádu" — historicky 2× opravený bug
+/// Regresní testy na anti-pattern „scalar property přebíjí kaskádu" - historicky 2× opravený bug
 /// (viz mvvm-patterns.md §Anti-pattern: scalar property override). Pravidlo: legacy scalar fallback
 /// (MinuteFontSize, MinuteBold, SkupinaDnuHeaderLineHeight) smí platit JEN když žádná vrstva
 /// kaskády (MinuteStyle + DataStyle / HeaderStyle) hodnotu nenastavila.
@@ -55,7 +55,7 @@ public class DepartureGridCascadeTests
     [Fact]
     public void DataStyleBoldFalse_NesmiBytPrebitScalarem()
     {
-        // Explicitní false v kaskádě je hodnota, ne „dědit" — scalar MinuteBold=true nesmí vyhrát
+        // Explicitní false v kaskádě je hodnota, ne „dědit" - scalar MinuteBold=true nesmí vyhrát
         var grid = new DepartureGridElement
         {
             DataStyle = new TextStyle { Bold = false },

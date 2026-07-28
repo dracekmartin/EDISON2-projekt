@@ -44,10 +44,10 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     public AsyncRelayCommand DeleteCommand { get; }
     public AsyncRelayCommand RenameCommand { get; }
 
-    /// <summary>Code-behind napojí — VM žádá o reload EDListu (po Delete / Rename). EDFilter sebere current filter.</summary>
+    /// <summary>Code-behind napojí - VM žádá o reload EDListu (po Delete / Rename). EDFilter sebere current filter.</summary>
     public Action? RequestReload { get; set; }
 
-    /// <summary>Code-behind napojí — VM žádá o nový název (rename dialog). Vrátí název nebo null (zrušeno). VM nezná WPF.</summary>
+    /// <summary>Code-behind napojí - VM žádá o nový název (rename dialog). Vrátí název nebo null (zrušeno). VM nezná WPF.</summary>
     public Func<string, string?>? RequestRenameInput { get; set; }
 
     public CacheTemplatePickerDialogViewModel(CacheTemplateService service, IReadOnlyList<AgendaRegistryEntry> agendas)
@@ -55,13 +55,13 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         _service = service;
 
         // Dvouosé popisky seřazené po agendách (Zastávkový JŘ · AD / · MHD vedle sebe).
-        // Jen zveřejněné agendy (Released) — pilotní se ve filtru nenabízí; jejich šablony
+        // Jen zveřejněné agendy (Released) - pilotní se ve filtru nenabízí; jejich šablony
         // zůstávají dosažitelné přes „Všechny agendy".
         AgendaFilters = new List<AgendaFilterVM> { new(null, "Všechny agendy") };
         foreach (var a in agendas.Where(x => x.Released).OrderBy(x => x.EffectiveAgendaLabel).ThenBy(x => x.Variant))
             AgendaFilters.Add(new AgendaFilterVM(a.Code, a.DisplayName));
 
-        // Systémové (M-line) jsou read-only — otevřít lze, mazat/přejmenovat ne.
+        // Systémové (M-line) jsou read-only - otevřít lze, mazat/přejmenovat ne.
         OpenCommand    = Command(Open,                () => Selected is not null);
         DeleteCommand  = CommandAsync(DeleteAsync,    () => Selected is not null && !IsSelectedSystem);
         RenameCommand  = CommandAsync(RenameAsync,    () => Selected is not null && !IsSelectedSystem);

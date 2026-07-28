@@ -3,7 +3,7 @@ Include %occInclude
 /// Základní regresní pojistka: 1:1 kontrola výstupu GetData agendy ZastavkoveJrMhd proti
 /// zmrazenému "golden" digestu na pár reprezentativních MHD linkách CB_DP.
 ///
-/// ⚠️ MHD data jsou multi-tenant (^[dataDB]ALVA.MHD.LSO(IdFa,...)) — gold je přibitý na
+/// ⚠️ MHD data jsou multi-tenant (^[dataDB]ALVA.MHD.LSO(IdFa,...)) - gold je přibitý na
 /// IdFa CB_DP × namespace CB_DP (stabilní historická data 2018, nízké riziko driftu).
 /// Pre-push runner jede právě pod IdFa CB_DP → gold reálně běží (na rozdíl od AD/CB_CSADAD
 /// není per-firma exotický namespace). Jiný server bez CB_DP → legitimní skip; namespace
@@ -42,12 +42,12 @@ Method AssertLine(lin As %String, expected As %String)
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru — gold "_lin_" přeskočen")
+		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
 		quit
 	}
 	set idfa = ..#GOLDIDFA
 	if '$data(^[db]ALVA.MHD.LSO(idfa, 1, "DTA", lin, "DTA", 1, "PlatiOd")) {
-		do $$$AssertTrue(0, "gold linka "_lin_" chybí v "_db_"/"_idfa_" (namespace je, data ne) — rozbitý fixture?")
+		do $$$AssertTrue(0, "gold linka "_lin_" chybí v "_db_"/"_idfa_" (namespace je, data ne) - rozbitý fixture?")
 		quit
 	}
 

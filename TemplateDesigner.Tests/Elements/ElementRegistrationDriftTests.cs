@@ -10,11 +10,11 @@ namespace TemplateDesigner.Tests.Elements;
 /// (ElementTypes, [JsonDerivedType], CreateElementByType + GetDefaultElementSize, SkiaHeightCalculator,
 /// CapabilityCatalog, menu/paleta). Nejzrádnější je factory: <see cref="TemplateDesignerViewModel.CreateElementByType"/>
 /// má <c>_ =&gt; TextElement</c> fallback → zapomenutý case tiše vrátí TextElement místo chyby.
-/// Tenhle test to odhalí — pro každý deklarovaný <c>[JsonDerivedType]</c> ověří, že factory vrátí
+/// Tenhle test to odhalí - pro každý deklarovaný <c>[JsonDerivedType]</c> ověří, že factory vrátí
 /// přesně ten typ.
 ///
 /// Scope = factory (CreateElementByType, které volá i GetDefaultElementSize). Paleta/menu (WPF) a
-/// SkiaHeightCalculator (Skia závislost) jsou mimo — netestovatelné bez UI/Skia; factory je nejlevnější
+/// SkiaHeightCalculator (Skia závislost) jsou mimo - netestovatelné bez UI/Skia; factory je nejlevnější
 /// a nejcennější strážce (drift CapabilityCatalog / LineTable byl přesně tenhle typ chyby).
 /// </summary>
 public class ElementRegistrationDriftTests
@@ -22,7 +22,7 @@ public class ElementRegistrationDriftTests
     /// <summary>Typy záměrně serializovatelné, ale NEvytvářené z palety (load-only). Při oživení vyřaď.</summary>
     private static readonly HashSet<string> DormantDiscriminators = new(StringComparer.Ordinal)
     {
-        ElementTypes.Table,   // statická TableElement — uspaná (JsonDerivedType jen pro legacy načtení)
+        ElementTypes.Table,   // statická TableElement - uspaná (JsonDerivedType jen pro legacy načtení)
     };
 
     private static IEnumerable<(Type Type, string Discriminator)> DeclaredTypes() =>
@@ -49,7 +49,7 @@ public class ElementRegistrationDriftTests
         Assert.Equal(expectedTypeName, el.GetType().FullName);
     }
 
-    /// <summary>Allowlist uspaných typů nesmí zplesnivět — každý musí být pořád deklarovaný [JsonDerivedType].</summary>
+    /// <summary>Allowlist uspaných typů nesmí zplesnivět - každý musí být pořád deklarovaný [JsonDerivedType].</summary>
     [Fact]
     public void DormantAllowlist_JsouStaleDeklarovane()
     {

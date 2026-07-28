@@ -2,7 +2,7 @@ Include (%occInclude, GENERAL)
 
 /// Read-only sonda variant tras (KOVED #13048 bod 5): per zastávka × směr porovná počet variant
 /// dle ČASOVÉHO PROFILU (stará granularita TD) vs dle TRASY (nová = legacy `prutmbmp`; `|` = nestaví)
-/// + diagnosticky trasa VČETNĚ nástupišť (kolik sloupců by přidalo rozlišení sloupků — vědomě
+/// + diagnosticky trasa VČETNĚ nástupišť (kolik sloupců by přidalo rozlišení sloupků - vědomě
 /// nepoužité, viz BuildStrankaZastavky). Ukáže, o kolik se linka „zeštíhlí" (0330510: 33 → 2).
 ///
 /// IN:  SKUPINA_LINEK_ID (default první v ^JRL), LINKA_ID (povinné), SMER (T/Z, default T),
@@ -95,7 +95,7 @@ ClassMethod Scan(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Read-only sken NOČNÍCH linek (#9036 — časová osa přes půlnoc): projde všechny linky namespace
+/// Read-only sken NOČNÍCH linek (#9036 - časová osa přes půlnoc): projde všechny linky namespace
 /// a spočítá spoje s výchozím odjezdem 22:00–04:59. OUT = top řádky „sku~lin~nocnich=N~ukazky=HH:MM,…"
 /// seřazené dle počtu nočních spojů. Pro výběr testovací linky, nic nemění.
 ClassMethod ScanNocni(ByRef sys As %String) As %Status
@@ -157,7 +157,7 @@ ClassMethod ScanNocni(ByRef sys As %String) As %Status
 /// Zavolá OSTROU BuildStrankaZastavky pro jednu zastávku a shrne variantní výstup: hlavičky
 /// sloupců (VARIANTY_TRAS), TRASA_MIN vývěskové zastávky a rozpad anotací u minut dle kategorie.
 /// Parametry tisku (PISMENA_VARIANT / PRVNI_BEZ_PISMENE / RAZENI_VARIANT) čte engine přímo
-/// z ^||ML("IN") — sonda je jen průhledně předává.
+/// z ^||ML("IN") - sonda je jen průhledně předává.
 /// IN: SKUPINA_LINEK_ID, LINKA_ID (povinné), SMER (default T), PORADI (default první).
 ClassMethod Stranka(ByRef sys As %String) As %Status
 {
@@ -205,14 +205,14 @@ ClassMethod Stranka(ByRef sys As %String) As %Status
             s ^||ML("OUT","ANOTACE_KATEGORIE") = katCsv
             s ^||ML("OUT","PISMENA_UKAZKA") = pismenaUkazka
             s ^||ML("OUT","POCET_ODJEZDU") = odj.%Size()
-            // časy odjezdů stránky (h:mm, v pořadí emise) — diagnostika časové osy (#9036 noční spoje)
+            // časy odjezdů stránky (h:mm, v pořadí emise) - diagnostika časové osy (#9036 noční spoje)
             s casyCsv = ""
             f io=0:1:odj.%Size()-1 {
                 s oOdj = odj.%Get(io)
                 i $l(casyCsv) < 400 s casyCsv = casyCsv_$s(casyCsv="":"",1:",")_oOdj.%Get("HODINA")_":"_$e("0"_oOdj.%Get("MINUTA"),*-1,*)
             }
             s ^||ML("OUT","ODJEZDY_CASY") = casyCsv
-            // rozpad per sloupec dnů (seřazeno dle času) — skutečný provozní obraz stránky
+            // rozpad per sloupec dnů (seřazeno dle času) - skutečný provozní obraz stránky
             s skup = page.rows.%Get("SKUPINY_DNU")
             f isk=0:1:skup.%Size()-1 {
                 s skId = skup.%Get(isk).%Get("ID")

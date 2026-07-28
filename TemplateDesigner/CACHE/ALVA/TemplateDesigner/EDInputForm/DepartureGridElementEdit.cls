@@ -8,7 +8,7 @@ Include (GENERAL, EDInputForm)
 /// Element-level styl = prostá pole (element je báze kaskády); per-sloupec/skupina override řeší
 /// CellStyleEditor v tabu „Sloupce". Lazy/legacy-scalar nuance (HeaderLine2Style alokace,
 /// MinuteStyle/Anotace fallback scaláry, HeaderVerticalAlignment fallback, SetHeaderFontSize cleanup)
-/// dořeší C# host (DepartureGroupEditorDialog) v Init/OnOk — viz tam.
+/// dořeší C# host (DepartureGroupEditorDialog) v Init/OnOk - viz tam.
 ///
 /// ⚠️ Schema je manual mirror PropertyDescriptors v DepartureGridElement.cs (viz memory
 /// project_edinputform_schema_duplication.md).
@@ -34,7 +34,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "None"
         d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
         d form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
-        // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) — jediný zdroj, ať nekoliduje.
+        // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         d form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
         d form.AddDecimal("MinuteWidth", "Šířka minuty", 6, 3, 15, "mm")
@@ -46,7 +46,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         d form.AddBool("AutoExpandToFillHeight", "Roztáhnout na výšku", 0)
         // Časová osa (rozsah hodin) je parametr šablony „Časová osa odjezdů" (CASOVA_OSA/HODINY_OD/DO),
-        // sdílený a autoritativní — NEduplikovat jako property elementu (přebil by ho parametr → matoucí).
+        // sdílený a autoritativní - NEduplikovat jako property elementu (přebil by ho parametr → matoucí).
 
         // ── Styl záhlaví ──────────────────────────────────────────────────
         // PROTOTYP: styl jako tlačítko → pod-formulář (StyleEditDialog). Klíč „style:<prefix>"
@@ -63,8 +63,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ")
 
-        // ── Odjezdy — specifické (anotace = horní indexy/značky u minut) ──
-        d form.AddGroup("departure", "Odjezdy — specifické")
+        // ── Odjezdy - specifické (anotace = horní indexy/značky u minut) ──
+        d form.AddGroup("departure", "Odjezdy - specifické")
         d form.AddBool("ShowAnotace", "Zobrazit anotace", 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ")
@@ -82,7 +82,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Podmínky ──────────────────────────────────────────────────────
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

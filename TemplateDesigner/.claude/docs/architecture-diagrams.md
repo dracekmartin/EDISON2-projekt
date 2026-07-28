@@ -1,38 +1,38 @@
-# Architektonické diagramy — TemplateDesigner
+# Architektonické diagramy - TemplateDesigner
 
 > **Konceptuální diagramy** (vrstvy, datový tok, hierarchie). Cenné pro onboarding a školení.
-> Autoritativní zdroj struktury kódu je vždy `.claude/rules/architecture.md` + samotný kód — diagramy
+> Autoritativní zdroj struktury kódu je vždy `.claude/rules/architecture.md` + samotný kód - diagramy
 > mohou mírně zaostávat za detaily. Při rozporu vyhrává kód/rules.
 
 ## 1. Vrstvy systému
 
 ```mermaid
 graph TB
-    subgraph "Vrstva 5 — Aplikace"
+    subgraph "Vrstva 5 - Aplikace"
         MW["MainWindow<br/><small>WPF hlavní okno</small>"]
         Dialogs["Dialogy<br/><small>10 oken/dialogů</small>"]
         VM["ViewModely<br/><small>MainWindowViewModel + 5 dalších</small>"]
     end
 
-    subgraph "Vrstva 4 — Renderer"
+    subgraph "Vrstva 4 - Renderer"
         DC["DesignerCanvas<br/><small>editační canvas</small>"]
         PC["PreviewCanvas<br/><small>live preview + PDF export</small>"]
         SE["SnapEngine<br/><small>smart snap</small>"]
     end
 
-    subgraph "Vrstva 3 — Layout Engine"
+    subgraph "Vrstva 3 - Layout Engine"
         PLE["PageLayoutEngine<br/><small>Template + Data → List&lt;Page&gt;</small>"]
         SHC["SkiaHeightCalculator<br/><small>měření výšek elementů</small>"]
         LR["LayoutResult<br/><small>Page → PlacedSection</small>"]
     end
 
-    subgraph "Vrstva 2 — Výrazy"
+    subgraph "Vrstva 2 - Výrazy"
         EE["ExpressionEvaluator<br/><small>podmínky: &&, ||, !</small>"]
         PF["PlaceholderFormatter<br/><small>{POLE:FORMAT}</small>"]
         AR["AggregationResolver<br/><small>SUM, COUNT, AVG</small>"]
     end
 
-    subgraph "Vrstva 1 — Modely"
+    subgraph "Vrstva 1 - Modely"
         T["Template"] --> S["Section"]
         S --> TE["TemplateElement"]
         DCx["DataContext"]
