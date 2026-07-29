@@ -216,6 +216,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     ? ArrowInsetFromEdgeMm + ArrowBracketLengthMm + 0.5f
                     : CellRenderer.DefaultShrinkReserveMm;
 
+                // Řádky se sestaví jako plán a nakreslí jednou smyčkou; currentY se posouvá
+                // už při sestavování, protože Y potřebuje sledování šipky směru.
+                float rowsStartY = currentY;
+                var plan = new List<RowSpec>();
+
                 foreach (var z in zastavky)
                 {
                     if (!showPassed && !foundCurrent && !z.JeAktualni)
@@ -228,9 +233,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     // Podmíněné skrytí řádku (po určení current/passed, ať se nerozbije sledování current).
                     if (!RowConditions.IsVisible(RowVisibilityExpression, z.SourceRow)) continue;
 
-                    // Sledovat Y pro šipku směru
+                    // Sledovat Y pro šipku směru (kreslí se až za celým plánem)
                     if (isCurrent) arrowStartY = currentY;
                     arrowEndY = currentY;
+                    currentY += rowH;
 
                     // Podbarvení řádku přes celou šířku elementu (za sloupci i v gap za posledním).
                     // Priorita: podmíněné zvýraznění (uživatelský záměr) > podbarvení aktuální zastávky.
@@ -238,12 +244,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     string? rowBg =
                         RowConditions.HighlightColor(HighlightRules, z.SourceRow)
                         ?? (isCurrent ? CurrentStopBackgroundColor : null);
-                    if (rowBg is not null)
-                    {
-                        var bgRect = ctx.ToCanvasRect(X, currentY, Width, rowH);
-                        using var bgPaint = new SKPaint { Color = SKColor.Parse(rowBg) };
-                        ctx.Canvas.DrawRect(bgRect, bgPaint);
-                    }
 
                     // „Přizpůsobit buňce" + značky za názvem: zmenšení názvu počítá i s šířkou
                     // značek (škálují se spolu), aby se za zmenšený název vešly a nepodlézaly šipku.
@@ -255,23 +255,22 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     }
 
                     var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth, colW, nameShrinkReserveMm, nameTrailingMm);
-                    ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
 
-                    // Značky (na znamení / atributy / poznámky) se kreslí zvlášť po úsecích: piktogramové
-                    // symboly symbolovým Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky
-                    // normálním fontem. V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
-                    DrawStopMarkers(ctx, z, currentY, rowH, columns[stopNameIdx], stopNameLeftMm,
-                        colW[columns[stopNameIdx]], markersSubCellWidth, isCurrent, isPassed, symbolFace, scale,
-                        nameShrinkReserveMm);
-
-                    if (ShowRowSeparators)
+                    var zastavka = z;
+                    plan.Add(new(RowKind.Data, rowH, specs)
                     {
-                        var rowLineStart = ctx.ToCanvas(X, currentY + rowH);
-                        var rowLineEnd = ctx.ToCanvas(X + Width, currentY + rowH);
-                        ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
-                    }
-                    currentY += rowH;
+                        Background = rowBg is not null ? SKColor.Parse(rowBg) : null,
+                        LineBelowPaint = ShowRowSeparators ? paints.Grid : null,
+                        // Značky (na znamení / atributy / poznámky) po úsecích: piktogramy symbolovým
+                        // Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky normálním.
+                        // V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
+                        Decorate = rowY => DrawStopMarkers(ctx, zastavka, rowY, rowH, columns[stopNameIdx],
+                            stopNameLeftMm, colW[columns[stopNameIdx]], markersSubCellWidth,
+                            isCurrent, isPassed, symbolFace, scale, nameShrinkReserveMm),
+                    });
                 }
+
+                RowPlanRenderer.DrawRows(ctx, X, rowsStartY, Width, plan, scale);
 
                 // Šipka směru jízdy v rezervovaném gutteru - ┌─▼ (vlevo) nebo ─┐▼ (vpravo)
                 if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)

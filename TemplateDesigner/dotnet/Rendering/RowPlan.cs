@@ -51,6 +51,16 @@ public readonly record struct RowSpec(
     /// <summary>Pero vodorovné čáry na dolní hraně řádku. Null = bez čáry.
     /// Pera jsou per-řádek schválně - záhlaví a datové řádky používají různá (rámečkové × oddělovací).</summary>
     public SKPaint? LineBelowPaint { get; init; }
+
+    /// <summary>
+    /// Dokreslení vlastního obsahu do řádku - dostane Y horní hrany (mm). Volá se **po buňkách
+    /// a před čarami**, aby se chovalo jako obsah, ne jako dekorace nad mřížkou.
+    ///
+    /// Pro to, co buňka principiálně neumí: značky zastávky se kreslí po úsecích symbolovým
+    /// a normálním fontem, a v jedné buňce nejde míchat font. Ne pro věci, které jsou vyjádřitelné
+    /// buňkou nebo pozadím - ty patří do <see cref="Cells"/> / <see cref="Background"/>.
+    /// </summary>
+    public Action<float>? Decorate { get; init; }
 }
 
 /// <summary>
@@ -82,6 +92,8 @@ public static class RowPlanRenderer
             }
 
             ColumnRenderer.DrawRow(ctx, xMm, y, row.HeightMm, row.Cells, row.VerticalLinePaint, fontScale);
+
+            row.Decorate?.Invoke(y);
 
             if (row.LineAbovePaint is { } above)
                 DrawHorizontalLine(ctx, xMm, y, totalWidthMm, above);

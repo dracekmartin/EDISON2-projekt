@@ -23,10 +23,22 @@ výšku · buňky · pozadí celé šířky · pera vodorovných čar nahoře a 
 - **Důkaz:** odtisk linkové tabulky **bit za bitem identický** proti baseline sejmuté před zásahem
   (viz záchytná síť níže). .NET 438/438.
 
+Ve třetím kroku převeden **zastávkový seznam**. Ten si vyžádal doplnit do kontraktu **dokreslení
+vlastního obsahu do řádku** (`RowSpec.Decorate`, volá se po buňkách a před čarami): značky zastávky
+se kreslí po úsecích symbolovým a normálním fontem, protože v jedné buňce nejde míchat font. Je to
+úzká výjimka pro to, co buňka principiálně neumí - ne obecná zadní vrátka.
+
 Ve druhém kroku převedena i **dynamická tabulka** (záhlaví, datové řádky se zvýrazněním i střídáním, souhrnné řádky) - odtisk taktéž identický. Výjimka, která zůstala u elementu: **oddělovač bloku souhrnů** se kreslí pod pozadím prvního souhrnného řádku, tedy v opačném pořadí než řádkové čáry; do plánu proto nejde a je to u něj zdůvodněné.
 
-Zbývá: zastávkový seznam, pevná tabulka. **Mřížka odjezdů zůstává mimo** - je to
-pivot (sloupce = skupiny dnů, řádky = hodiny), do plánu řádků nezapadá.
+**Převedeny tři živé tabulky** (linková, dynamická, zastávkový seznam) - u všech odtisk bit za bitem
+identický. **Mřížka odjezdů zůstává mimo** (pivot: sloupce = skupiny dnů, řádky = hodiny).
+
+**Pevná tabulka vědomě nepřevedena** - dvě odchylky by změnily její výstup a nemá jak se ověřit:
+kreslí svislou čáru **za každým** sloupcem včetně vnějšího (sdílená smyčka kreslí jen mezi sloupci)
+a u pevných řádků vrství **dvě pozadí** (střídání + override řádku), což je totožné jen u plně
+neprůhledných barev. Navíc je to **uspaný element** (paleta ho nenabízí), takže ani není v odtiscích.
+Jeho oživení (Fáze B krok 1) už dorovnání kreslení na sdílenou cestu obsahuje - patří to tam, kde se
+to dá proklikat.
 
 ## 2026-07-29 - Záchytná síť na kreslení (příprava B11)
 
