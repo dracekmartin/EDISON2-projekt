@@ -1207,10 +1207,19 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Vrátí dostupné skupiny dnů z naposledy zpracovaných dat (pro dialog).</summary>
     public List<SkupinaDnuData> GetAvailableSkupinyDnu(DataContext? data) => BuildSkupinyDnu(data);
 
-    private static List<int> GetVisibleHoursFromSet(
-        HashSet<int> allHours, TimeAxisMode timeAxis, int rangeFrom, int rangeTo)
-    {
-        var hours = timeAxis switch
+    /// <summary>
+    /// Hodiny k zobrazení podle režimu časové osy. „Hodiny od/do" (`HODINY_OD`/`HODINY_DO`) platí
+    /// **jen** ve Vlastním rozsahu - jsou to jeho meze, ne globální filtr.
+    ///
+    /// Dřív zužovaly i ostatní režimy, a protože jsou v nich schované (`visibleWhen`
+    /// = „CASOVA_OSA=Vlastní rozsah"), vznikalo tiché přetrvávání: po přepnutí režimu jinam
+    /// zadaný rozsah dál řezal mřížku a nebylo ho jak vidět ani zrušit. Navíc výchozí „od" = 4
+    /// znamenalo, že se hodiny 0-3 zahazovaly i bez jakéhokoli nastavení uživatele.
+    /// Pravidlo: **schovaný ovladač nesmí ovlivňovat výstup.**
+    /// </summary>
+    internal static List<int> GetVisibleHoursFromSet(
+        HashSet<int> allHours, TimeAxisMode timeAxis, int rangeFrom, int rangeTo) =>
+        timeAxis switch
         {
             TimeAxisMode.Compact     => allHours.OrderBy(h => h).ToList(),
             TimeAxisMode.DataBounded => DataBoundedHours(allHours),
@@ -1218,19 +1227,6 @@ public class DepartureGridElement : StopScheduleElementBase
             TimeAxisMode.Full        => Enumerable.Range(0, 24).ToList(),
             _ => allHours.OrderBy(h => h).ToList()
         };
-
-        // HODINY_OD/DO filtr se aplikuje i mimo Range mode (zúžení Compact/DataBounded/Full).
-        // V Range mode už jsou hodiny generované přesně z rangeFrom..rangeTo, filtr přeskočit.
-        if (timeAxis != TimeAxisMode.Range && (rangeFrom > 0 || rangeTo < 23))
-        {
-            // Pokud to < from → wrap přes půlnoc: zahrnuje extended hours (24..to+24).
-            // Data hour 27 (= 03:00 následujícího provozního dne) projde filtrem 22→3 jako 27 ∈ [22..27].
-            int hi = rangeTo >= rangeFrom ? rangeTo : rangeTo + 24;
-            hours = hours.Where(h => h >= rangeFrom && h <= hi).ToList();
-        }
-
-        return hours;
-    }
 
     /// <summary>Souvislé hodiny od min(data) do max(data) - včetně prázdných v rozsahu.
     /// Data s extended hours (24..47) přirozeně rozšíří horní mez.</summary>

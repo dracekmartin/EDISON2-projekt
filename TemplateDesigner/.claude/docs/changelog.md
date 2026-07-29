@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-29 - Tichý filtr hodin v mřížce odjezdů (nález Jan)
+
+Meze **„Hodiny od/do"** patří režimu časové osy „Vlastní rozsah", ale kreslení je aplikovalo
+**i ve všech ostatních režimech** - a protože jsou v nich schované (podmínka viditelnosti
+`CASOVA_OSA=Vlastní rozsah`), vznikal tichý stav: uživatel zadal rozsah, přepnul osu jinam, pole
+zmizela z formuláře, ale jejich hodnoty dál řezaly mřížku a **nebylo je jak vidět ani zrušit**.
+Spravilo se to až obnovením dat, které parametry přeneslo znovu.
+
+Druhý, horší důsledek téhož: výchozí „od" = **4**, takže podmínka byla splněná **bez jakéhokoli
+nastavení uživatele** - režim „Jen hodiny s odjezdy" tiše zahazoval hodiny 0-3 (noční odjezd
+ve 3:15 v mřížce prostě nebyl).
+
+- **Oprava:** meze platí jen ve Vlastním rozsahu, kde to jsou jeho hranice, ne globální filtr.
+  Pravidlo zapsané v kódu, ať se to nevrátí: **schovaný ovladač nesmí ovlivňovat výstup.**
+- **Viditelný důsledek** (rozhodnutí Jan): v režimu „Jen hodiny s odjezdy" se nově zobrazí i hodiny
+  pod 4, pokud v nich odjezd je - což ten režim má znamenat.
+- **Jak to vzniklo:** cross-mode filtr přišel dřív (`b956ab7`), podmíněná viditelnost až v časové
+  ose B3 (`a0c17c7`) - tam se komentář jen přeformuloval a nikdo si nevšiml, že se významy dostaly
+  do rozporu.
+- Nesouvisí se seznamem `ServerSideParams` - časovou osu řeší výhradně kreslení na klientovi,
+  takže re-fetch je správně nepotřebný; přepnutí režimu se má srovnat bez F5.
+- Testy: `DepartureTimeAxisTests` (6 - tři režimy se nezužují vč. výchozího 4-23, Vlastní rozsah
+  beze změny vč. přechodu přes půlnoc). .NET 433/433.
+
 ## 2026-07-29 - Tabulka se přizpůsobí i na šířku (blok B5 / L‑1)
 
 Zmenšování při přetečení znalo jen **svislý** směr: obsah vyšší než pevná výška → jedna škála na
