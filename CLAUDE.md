@@ -11,6 +11,13 @@ pole v EDInputFormu → do produkce jde DLL + exe, který ho používá; druhý 
 nepřebuildí a novou DLL převezme). Cena: veřejné API EDControls a klíče theme resource
 měň **aditivně** — viz `EDControls/CLAUDE.md`.
 
+Týmž profilem se vydává i **EDControls samostatně** (bez buildu aplikací). U knihovny
+publish jinak vyplivne celý uzávěr závislostí (MLRest, EDLicence, EDCore, Newtonsoft), který
+by v `C:\Edison\` přepsal soubory legacy repa — proto `PublishOwnAssemblyOnly` propustí jen
+vlastní assembly a nezávislá kontrola počtu publish **shodí**, než něco zapíše.
+`C:\Edison\` je staging: do produkce jde až explicitní klik na položku v Compileru
+(`EDISONMAIN2/docs/UPDATE_FLOW.md`).
+
 Nové features pokrývej xUnit testy a Caché `%UnitTest` testy — viz sekce **Testy**.
 
 ## Struktura repozitáře
