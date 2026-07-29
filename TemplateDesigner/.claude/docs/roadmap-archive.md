@@ -2,6 +2,32 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-29 🧹 - Rozpuštěná hromada „Úklid a drobnosti" + odložené B19/B20
+
+**Sekce byla kategorie, která lhala.** Z osmi položek: jedna duplikát, jedna průběžné pravidlo,
+pět čekalo na zákazníka, zbytek nebyla „drobnost" (M–L). Kam se co podělo:
+
+- **5 položek „na poptávku"** (MHD parita rozdělení sloupců / variant tras / zdroje označníku,
+  exportní parametry per šablona, per-sloupcové zvýraznění řádků + barva textu / kurzíva pravidla)
+  → [`customer-requirements §0.5`](customer-requirements-zastavkovy-jr.md). Není to nedodělek, je to
+  práce s konkrétním zákazníkem.
+- **Postupná unifikace dialogů** → [`rules/ux-conventions.md`](../rules/ux-conventions.md) jako
+  průběžné pravidlo „sjednocuj při dotyku". Způsob práce, ne úkol.
+- **Výchozí šablony MHD/linková** → smazáno, potřetí totéž (žije v „Produkční" #3 a `C4`).
+- **Migrace `CellStyleEditor` na Caché formulář** → follow-up `B18` (bez deklarativních pravidel
+  formuláře nejde - tri-state / reaktivní logika).
+- **`B21`** varování „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S) → zůstalo v roadmapě.
+
+**Odložené rozhodnutím Jana 29. 7.** (mimo roadmapu, ne zrušené - kdyby se k nim vracelo):
+
+- **`B19` Dark mode dokončit** (M–L) - `EDThemeDark` + tokenizace hotové 13. 7., plocha plátna už
+  na tokenu; zbývalo chrome návrháře (papír, pravítka, záhlaví sekcí) + runtime přepnutí bez restartu.
+  Začíná **produktovým rozhodnutím, jak v tmavém režimu vypadá papír** (bílý list na tmavém pozadí
+  × ztmavený papír), ne kódem.
+- **`B20` Diagnostika připojení** (M) - odlišit „server nedostupný (VPN)" od „není nakonfigurováno"
+  + říct to při startu; patřilo sem i „okno naskočí až po ~3 s" při nedostupném připojení (dnes
+  uživatel vidí prázdno a čeká). Odložený UX nález 13. 7.
+
 ## 2026-07-29 ✅ - Auto-fit tabulky na šířku (B5 = L‑1) - UZAVŘENO
 
 Detail → changelog 2026-07-29. `TableLayout.ComputeWidthScale` = vodorovný protějšek výškové

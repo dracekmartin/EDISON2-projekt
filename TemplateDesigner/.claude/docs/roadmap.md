@@ -5,7 +5,7 @@
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
 > **▶ Další session:** po publishi vzít **B2** (zavírací kolo helpdesku - poslední 2 tikety + vizuál
-> zmenšování), pak vlna 2 od **B10** (nebo `B11` = R1 extrakce, už není blokovaná). Follow-upy „na vyžádání zákazníka" žijí
+> zmenšování), pak **B21** (malé) a **B11** (R1 extrakce řádkového jádra) - pořadí dle Jana 29. 7. Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
@@ -44,8 +44,6 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 | **B11** | **L‑3: row-plan vrstva** - `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | - (B5 hotov) |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | - |
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M | 2 | - |
-| **B19** | **Dark mode dokončit** - `EDThemeDark` + tokenizace hotové 13. 7., plocha plátna už na tokenu; zbývá **chrome návrháře** (papír, pravítka, záhlaví sekcí) + runtime přepnutí bez restartu. Začíná **rozhodnutím, jak v tmavém režimu vypadá papír** (bílý list na tmavém pozadí × ztmavený papír) - to je produktová volba, ne kód. | M–L | 4 | - |
-| **B20** | **Diagnostika připojení** - odlišit „server nedostupný (VPN)" od „není nakonfigurováno" + říct to při startu; sem patří i **okno naskočí až po ~3 s**, když připojení není. Dnes uživatel vidí jen prázdno a čeká. (Odložený UX nález 13. 7.) | M | 4 | - |
 | **B21** | **Varování „N skupin dnů sdílí sloupec bez rozlišovacích značek"** - v designeru; bez značek cestující nerozliší, které dny sloupec platí. (MHD SMO fáze 1) | S | 3 | - |
 
 ---
@@ -94,24 +92,6 @@ kolize. Je triviální; případně ať docs uzavírá poslední dobíhající s
 
 ---
 
-## 🧹 Rozpuštěno 29. 7. - kam se „Úklid a drobnosti" poděl
-
-Sekce byla **kategorie, která lhala**: z osmi položek byla jedna duplikát, jedna průběžné pravidlo,
-pět čekalo na zákazníka a jen zbytek byla reálná práce - a ta nebyla „drobnost" (M–L). Proto:
-
-- **5 položek „na poptávku"** (MHD parita rozdělení sloupců / variant / označníku, exportní parametry
-  per šablona, per-sloupcové zvýraznění) → [`customer-requirements §0.5`](customer-requirements-zastavkovy-jr.md).
-  Není to nedodělek, je to práce s konkrétním zákazníkem.
-- **Postupná unifikace dialogů** → [`rules/ux-conventions.md`](../rules/ux-conventions.md). Je to
-  způsob práce („sjednocuj při dotyku"), ne úkol - jako položka v roadmapě jen visela.
-- **Výchozí šablony MHD/linková** → smazáno, bylo to potřetí totéž (žije v „Produkční" #3 a `C4`).
-- **Migrace `CellStyleEditor` na Caché formulář** → připojena k `B18` jako jeho follow-up; bez
-  deklarativních pravidel formuláře ji dělat nelze (tri-state / reaktivní logika).
-- **Zbytek dostal číslo bloku** (`B19`–`B21` ve vlně 2) - viď výše. Reálná práce má být blok
-  s velikostí, ne odrážka v hromadě.
-
----
-
 ### 📥 Backlog / budoucí velké tracky
 
 > Audit stavu v1 (scan 2026-07-07) - P-A/P-B/P-C hotové, P-D rehomed do produkční sekce →
@@ -147,8 +127,6 @@ pět čekalo na zákazníka a jen zbytek byla reálná práce - a ta nebyla „d
   (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
   credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
-
-*(Dřívější hromada „Úklid a drobnosti" je rozpuštěná - viz sekce nad Backlogem.)*
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
 v [`legacy-nahrada.md §7`](legacy-nahrada.md); vyřeší se
