@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-30 - Audit úplnosti poznámek zastávkového JŘ (AD) + chyba cache W-map
+
+Poznámky jsou na vývěsce klíčové (cestující podle nich pozná, kdy spoj jede a kam), takže proběhl
+audit „dorazí každý zdroj poznámek na stránku?". Měřeno na `CB_CSADAD` (240 linek, 9693 stránek)
+sondou `Tests/AdProdlouzeniProbe.cls`.
+
+- **Nalezena chyba cache v generátoru** (jádro nálezu): W-mapa trasy se cachovala pod číslem trasy
+  **bez linky**, a číslo trasy je lokální v rámci linky → při čtení víc linek v jednom procesu si
+  linky mapy navzájem přebíjely a vznikaly **falešné rozdíly tras**. Linka je teď v klíči.
+  V produkci se to neprojevovalo (tisk jede jednu linku a cache maže), ale **znehodnotilo to celé
+  měření z 29. 7.** - proto se „chyba, že se poznámky nedostanou na stránku" nepotvrdila: dostanou.
+- **Inventura zdrojů**: každý zdroj poznámek, který v datech firmy existuje, na stránku dorazí,
+  a napříč 9693 stránkami **není ani jeden případ značky u minuty bez řádku legendy**. Ruční
+  komentáře spoje a směrové poznámky linky nešly ověřit - firma pro ně nemá žádná data.
+  Tabulka s počty je v `customer-requirements-zastavkovy-jr.md §D1`.
+- **Nový nález: kolize značky.** Písmena rozdílů tras zahrnují „H" a „F", což jsou zároveň značky
+  bezbariérových spojů → na 9 stránkách nese jeden symbol dva významy a legenda k němu má dva různé
+  řádky. Čeká na rozhodnutí (oprava změní písmena na gold lince, tedy odchýlí od legacy).
+- **Věta o prodloužení spoje zpevněna** (#7947): cíl se hledá přes nejbližší pojmenovanou zastávku
+  proti směru jízdy, a bez známého cíle se věta nenapíše (dřív mohla skončit „jede až do zast. ").
+  U prodloužení se navíc už netiskne konkurující „jede přes zast. …".
+  ⚠️ Ověřit #7947 na těchto datech **nelze** - žádná ze 480 kombinací linka×směr nemá vzorovou trasu,
+  takže větev prodloužení je strukturálně nedosažitelná. Potřebuje data TRANSDEV.
+- Caché 45/45. Zlaté digesty 0365001/0365005 **beze změny** → opravy jsou behavior-preserving,
+  přebaselinování nebylo potřeba.
+
 ## 2026-07-29 - Plán řádků: sdílená kreslicí smyčka (B11 / R1, část 1 - linková tabulka)
 
 Nízkoúrovňové tabulkové jádro (buňka, sloupec, kaskáda, šířky) bylo sdílené už dřív; chyběla

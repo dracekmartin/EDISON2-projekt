@@ -899,38 +899,42 @@ ClassMethod NastupisteCsv(ByRef cetnosti) As %String
     q csv
 }
 
-/// W-mapa `poradi → cas` pro danou trasu, cachovaná per `cisloTrasy` (`^||TiskAd("wmap",…)`).
+/// W-mapa `poradi → cas` pro danou trasu, cachovaná per (linka × `cisloTrasy`) (`^||TiskAd("wmap",…)`).
 /// Trasa je sdílená napříč spoji i stránkami → parsuje se tak jen jednou (dřív lineární `$p` sken
 /// W-stringu při každém lookupu/spoji/stránce). `cas` může být číslo, `<` (projíždí) nebo "" (mimo).
+/// ⚠️ `cisloTrasy` je číslo lokální v rámci linky (různé linky mají trasu „1") → linka MUSÍ být
+/// v klíči cache. Bez ní si linky mapy navzájem přebíjejí a vznikají falešné rozdíly tras, jakmile
+/// jeden proces čte víc linek (tisk jede jednu, ale sondy a dávkové čtení ne).
 ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef wMap)
 {
     k wMap
     i cisloTrasy = "" q                                  // spoj bez trasy → prázdná mapa (^|| nebere prázdný subscript)
-    i $d(^||TiskAd("wmap",cisloTrasy)) { m wMap = ^||TiskAd("wmap",cisloTrasy)  q }
+    i $d(^||TiskAd("wmap",dataDB,sku,lin,cisloTrasy)) { m wMap = ^||TiskAd("wmap",dataDB,sku,lin,cisloTrasy)  q }
     s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
     f i=1:1:$l(wTrasa,"#") {
         s seg = $p(wTrasa,"#",i)
         s p = $p(seg,":",1)
         i p '= "" s wMap(p) = $p(seg,":",2)
     }
-    i $d(wMap) m ^||TiskAd("wmap",cisloTrasy) = wMap     // prázdnou trasu necachovat (merge z undef = <UNDEFINED>)
+    i $d(wMap) m ^||TiskAd("wmap",dataDB,sku,lin,cisloTrasy) = wMap   // prázdnou trasu necachovat (merge z undef = <UNDEFINED>)
 }
 
-/// W-mapa `poradi → nástupiště` pro danou trasu, cachovaná per `cisloTrasy` (`^||TiskAd("wnast",…)`).
+/// W-mapa `poradi → nástupiště` pro danou trasu, cachovaná per (linka × `cisloTrasy`)
+/// (`^||TiskAd("wnast",…)`; linka v klíči je povinná - viz `WMapa`).
 /// Nástupiště = W pole 7 (⚠️ legacy `arrsp("trs",tc,8)` - indexy posunuté o +1, JRapiSp ř.234-241).
 /// Bez J-fallbacku - ten je per zastávka×směr a řeší ho volající (fallback nerozlišuje varianty).
 ClassMethod WNastupisteMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef nMap)
 {
     k nMap
     i cisloTrasy = "" q                                  // spoj bez trasy → prázdná mapa (^|| nebere prázdný subscript)
-    i $d(^||TiskAd("wnast",cisloTrasy)) { m nMap = ^||TiskAd("wnast",cisloTrasy)  q }
+    i $d(^||TiskAd("wnast",dataDB,sku,lin,cisloTrasy)) { m nMap = ^||TiskAd("wnast",dataDB,sku,lin,cisloTrasy)  q }
     s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
     f i=1:1:$l(wTrasa,"#") {
         s seg = $p(wTrasa,"#",i)
         s p = $p(seg,":",1)
         i p '= "" s nMap(p) = $p(seg,":",7)
     }
-    i $d(nMap) m ^||TiskAd("wnast",cisloTrasy) = nMap
+    i $d(nMap) m ^||TiskAd("wnast",dataDB,sku,lin,cisloTrasy) = nMap
 }
 
 /// Písmeno variantního sloupce (1-based pořadí sloupce): A–Z; `prvniBez` → první sloupec (hlavní
@@ -1127,7 +1131,7 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         // "jede jen do" - spoj končí dříve než vzorová trasa
         s tcDOk = ""
         i ((tcDo < mTarTr) && (smer = "T")) || ((tcDo > mTarTr) && (smer = "Z")) {
-            s jedeDo = ..NazZPoradi(dataDB, sku, lin, tcDo)
+            s jedeDo = ..KonecnaNazev(dataDB, sku, lin, spojTr, smer, tcDo)
             s tcDOk = tcDo
         }
 
@@ -1154,8 +1158,10 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         s pokrac = $p(pokrac, ", ", 2, $l(pokrac, ", "))
 
         // sestavení textu (pořadí: jede → neobsluhuje → jede jen do → jede až do)
+        // U prodloužení (pokrac) se „jede přes" vynechává - cíl spoje říká všechno podstatné a dvě
+        // věty vedle sebe si čtenářsky konkurovaly (rozhodnutí Jan #7947).
         s txt = ""
-        i jede '= "" s txt = "jede přes zast. "_jede
+        i (jede '= "") && (pokrac = "") s txt = "jede přes zast. "_jede
         i nejede '= "" {
             i txt = "" {
                 s txt = "neobsluhuje zast. "_nejede
@@ -1174,11 +1180,13 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         // vypíšeme cíl spoje „jede až do zast. <konečná>" (klient chce vědět KAM dojede, ne kudy).
         // Záměrná odchylka od legacy znění - legacy „pokračuje" bylo matoucí.
         i pokrac '= "" {
-            s cilNaz = ..NazZPoradi(dataDB, sku, lin, tcDo)
-            i txt = "" {
-                s txt = "jede až do zast. "_cilNaz
-            } else {
-                s $p(txt,", ",$l(txt,", ")+1) = "jede až do zast. "_cilNaz
+            s cilNaz = ..KonecnaNazev(dataDB, sku, lin, spojTr, smer, tcDo)
+            i cilNaz '= "" {                       // bez známého cíle větu nepsat (jinak „jede až do zast. ")
+                i txt = "" {
+                    s txt = "jede až do zast. "_cilNaz
+                } else {
+                    s $p(txt,", ",$l(txt,", ")+1) = "jede až do zast. "_cilNaz
+                }
             }
         }
         i txt = "" continue
@@ -1232,6 +1240,31 @@ ClassMethod NazZPoradi(dataDB As %String, sku As %String, lin As %String, poradi
     s czst = $p($p($g(^[dataDB]JRL(sku,lin,"J",poradi)),"#",1),":",1)
     i czst = "" q ""
     q ..NazevZastavky(dataDB, czst)
+}
+
+/// Název konečné zastávky spoje pro věty „jede jen do / jede až do zast. X". Primárně pozice `tcDo`;
+/// když tam zastávka pojmenovaná není (W-trasa spoje může nést pozici, kterou J-trasa nepojmenovává),
+/// vrátí nejbližší pojmenovanou obsluhovanou pozici proti směru jízdy. Bez toho vznikla věta bez cíle
+/// („jede až do zast. " s prázdným koncem). "" jen když spoj nemá pojmenovanou zastávku vůbec - pak
+/// se věta nepíše.
+ClassMethod KonecnaNazev(dataDB As %String, sku As %String, lin As %String, spojBitmapa As %String, smer As %String, tcDo As %String) As %String
+{
+    s naz = ..NazZPoradi(dataDB, sku, lin, tcDo)
+    i naz '= "" ret naz
+    i smer = "Z" {
+        f p = tcDo + 1 : 1 : $l(spojBitmapa) {
+            i '+$e(spojBitmapa, p) continue
+            s naz = ..NazZPoradi(dataDB, sku, lin, p)
+            i naz '= "" ret naz
+        }
+    } else {
+        f p = tcDo - 1 : -1 : 1 {
+            i '+$e(spojBitmapa, p) continue
+            s naz = ..NazZPoradi(dataDB, sku, lin, p)
+            i naz '= "" ret naz
+        }
+    }
+    ret ""
 }
 
 /// Vygeneruje písmeno markeru z písmenné sady; když dojdou písmena (cnt > délka), zdvojí je

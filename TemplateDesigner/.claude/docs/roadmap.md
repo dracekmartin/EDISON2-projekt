@@ -142,7 +142,7 @@ při scope té fáze, ne teď.
 
 | Tiket | Uzavírací podmínka (co ověřit, aby se dal zavřít) |
 |---|---|
-| #7947 | linka se spojem za základní trasu (0365005) → legenda „jede až do zast. X" |
+| #7947 | ⛔ **na CB_CSADAD ověřit NELZE** (změřeno 30. 7.): žádná ze 480 kombinací linka×směr nemá vzorovou trasu → větev prodloužení je nedosažitelná, „jede až do" nevznikne ani jednou. Kód je hotový a zpevněný; chce data TRANSDEV (876401/876402) nebo umělou vzorovou trasu. Detail → `customer-requirements §D1` |
 | #7955 | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí |
 | #13048 bod 2 | finální vizuál zmenšování textu (názvy zastávek, zóny, rezerva u šipky směru) |
 
@@ -159,6 +159,18 @@ při scope té fáze, ne teď.
 ### Reálná zbývající práce
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
+
+**`B14` Kolize značky poznámky - čeká na tvoje rozhodnutí** (S, zóna 5; z auditu 30. 7.)
+Písmena rozdílů tras zahrnují „H" a „F" = zároveň značky bezbariérových spojů, takže jeden symbol
+u minuty nese dva významy a legenda má pod ním dva různé řádky. Změřeno na **9 stránkách**
+(0365005, 0365006). MHD tuto chybu nemá - bere písmeno ze sdíleného poolu stránky a obsazený znak
+přeskočí; AD by to udělal stejně (malá změna). **Rozhodnutí:** opravit = odchýlit se od legacy
+a přebaselinovat zlatý digest 0365005, nebo nechat legacy-shodné. Detail → `customer-requirements §D1`.
+
+**`B15` Podmíněná viditelnost parametrů v náhledové liště** (S, zóna 5; nález 30. 7.)
+V parametrové liště nad náhledem jsou vidět „Hodiny od/do", i když časová osa není „Vlastní rozsah" -
+lišta neaplikuje podmíněnou viditelnost parametru (v tiskovém dialogu se to chová možná jinak, chce
+ověřit obě cesty). Kosmetika, ale mate.
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
 

@@ -74,7 +74,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | - (zavřeno) | §E1 |
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
-| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ⛔ **NEZAVÍRAT** (29. 7. změřeno) - poznámky rozdílů tras se nedostanou na stránku vůbec + věta bez cíle | Viz §D1 „Změřený stav 29. 7." | §D1 |
+| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ⛔ **NEZAVÍRAT** - kód hotový a zpevněný, ale v CB_CSADAD **nelze ověřit** (žádná linka nemá vzorovou trasu → větev prodloužení nedosažitelná). Chce data TRANSDEV (876401/876402). | Viz §D1 „Změřený stav 30. 7." | §D1 |
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD · ▶ **ready-to-close** | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do resolve poznámka, řešit jinde | §D4 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** - ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | - | §B3 |
@@ -271,27 +271,62 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
   je nedotkla. „jede až do" se projeví na lince, kde spoj reálně jede za vzor.
 - **⬜ Zbývá pro MHD agendu** (`ZastavkoveJrMhd`) - stejná úprava neportována (až bude potřeba).
 
-#### ⛔ Změřený stav 29. 7. - tiket NENÍ hotový (sonda `Tests/AdProdlouzeniProbe.cls`)
+#### Změřený stav 30. 7. - měření z 29. 7. bylo neplatné (sonda `Tests/AdProdlouzeniProbe.cls`)
 
-Ověřováno na `CB_CSADAD`, skupina 1. **Případ v datech existuje**: linka **0365003 směr T**, poznámka
-vzniká na 8 zastávkách (Hradiště, Ke Střelnici, Na Rozhledně, U autobusového nádraží, Nádražní,
-Budovcova, Harantova, Žižkova) - 98 výskytů napříč 240 linkami, tj. vzácné, ale reálné.
+Ověřováno na `CB_CSADAD`, skupina 1 (240 linek, 9693 stránek).
 
-**Tři vady, seřazené dle závažnosti:**
+**Měření z 29. 7. bylo kontaminované chybou cache v samotném generátoru.** `WMapa` /
+`WNastupisteMapa` cachovaly W-mapu pod klíčem `^||TiskAd("wmap",cisloTrasy)` **bez linky** -
+a `cisloTrasy` je číslo lokální v rámci linky. Sonda čte víc linek v jednom procesu, takže si linky
+mapy navzájem přebíjely → cizí trasy vyráběly falešné rozdíly tras. **Opraveno** (linka je v klíči);
+v produkci se to neprojevovalo, protože `GetData` jede jednu linku a cache na začátku maže.
 
-1. **Poznámky rozdílů tras se vůbec nedostanou na stránku.** `GetData` pro 0365003 / Hradiště / T
-   vrací 5 poznámek (2× nz, 3× specialni) - **žádnou textovou poznámku rozdílu trasy**, a to je 1:1
-   to, co vidí uživatel v aplikaci. Render tedy nic nezahazuje; ztrácí se to **v generování dat**
-   mezi `RozdilyTras` (řádek ~550) a sestavením kolekce `POZNAMKY`. Primární podezření: vazba na
-   písmena spojů u odjezdů - u minut nejsou vidět žádná písmena. **Toto je vážnější než původní tiket.**
-2. **Věta „jede až do zast. " nemá cíl** - končí mezerou. Konečná zastávka se odvozuje z délky bitmapy
-   trasy (`$l(spojTr)`), což míří na pozici bez názvu zastávky.
-3. **Stará formulace nezmizela** - „jede přes zast. X" se tiskne **současně** s „jede až do", takže
-   výstup je horší než legacy. U prodloužení má zůstat jen „jede až do" (+ případné „neobsluhuje").
+Co z toho plyne pro tři „vady" evidované 29. 7.:
 
-**Vyvráceno měřením** (nebyly to příčiny): parametr „Písmena variant u odjezdů" (vypnutý), parametr
-„V rozsahu nepoznámkovat schovat" (na výchozím „Ruční komentáře"), nastavení legendy (textové
-poznámky zapnuté).
+1. **Poznámky rozdílů tras se na stránku DOSTANOU** - původní vada 1 neexistuje. Doloženo:
+   0365005 / Smrkovice / T má 6 textových poznámek (B, C, E, F, G, H), 0365001 / Vlakové nádraží / T
+   jednu (B). Linka 0365003 z původní reprodukce žádné rozdíly tras nemá (po opravě cache
+   `legendCelkem=0`) - „ztrácení" byl artefakt.
+2. **Věta „jede až do zast. " bez cíle** byl týž artefakt (cizí bitmapa ukázala na pozici, kterou
+   J-trasa nepojmenovává). Přesto **zpevněno**: nový `KonecnaNazev` vezme nejbližší pojmenovanou
+   obsluhovanou pozici proti směru jízdy a bez známého cíle se věta nenapíše.
+3. **„jede přes zast. X" + „jede až do" současně** - u prodloužení se „jede přes" už nevypisuje
+   (dle dohody). Premisa byla rovněž z kontaminovaného měření, změna je ale drobná a vratná.
+
+**„jede až do" nelze v CB_CSADAD ověřit vůbec** - a je to vlastnost dat, ne kódu: **žádná** ze 480
+kombinací linka×směr nemá vzorovou trasu v J-větě (#10 základní ani #7 tištěná), takže `RozdilyTras`
+vždy padá na fallback „union obsluhy". Proti unionu nemůže žádný spoj jet *za* vzor → větev
+prodloužení je strukturálně nedosažitelná (0 nálezů napříč 240 linkami). Tiket #7947 tedy jde uzavřít
+jen na datech firmy, která základní trasu plní (TRANSDEV, linky 876401/876402) - nebo umělým vzorem.
+Auto-poznámkování rozdílů tras je vůbec zapnuté jen u **5 linek z 240**.
+
+**Nový nález z auditu - kolize značky (nezavírat s tiketem):** písmenná sada rozdílů tras (default
+`BCEFGHIJOQRWeijqsvwxz`) obsahuje **H** a **F**, což jsou zároveň značky bezbariérových spojů →
+na stránce se stejný symbol objeví ve dvou významech a legenda má dva různé řádky pod jedním znakem.
+Změřeno na **9 stránkách** (0365005, 0365006), např. „H = spoj má bezbariérově přístupné vozidlo"
++ „H = neobsluhuje zast. Obchodní, jede jen do zast. Autobusové nádraží". MHD tuto třídu chyb nemá -
+přiděluje písmena ze sdíleného poolu stránky a už použitý znak přeskočí. Oprava v AD je snadná
+(vynechat obsazené znaky), ale **změní písmena na gold lince 0365005** → čeká na rozhodnutí, jestli
+jít proti legacy paritě a přebaselinovat.
+
+**Inventura zdrojů poznámek (240 linek / 9693 stránek, po opravě cache):**
+
+| Zdroj (kategorie) | Značky u minut | Řádky legendy | Dorazí? |
+|---|---|---|---|
+| Datumová omezení (`omezeni`) | 24 062 | 14 924 | ✅ |
+| Bezbariér spoje (`bezbarier`) | 17 490 | 4 546 | ✅ |
+| Týdenní platnost (`tydenni-platnost`) | 12 299 | 7 536 | ✅ |
+| Rozdíly tras (`rozdil-trasy`) | 946 | 190 | ✅ (jen 5 linek) |
+| Atributy zastávek (`atribut-zastavky`) | 0 (záměr - symbol u zastávky) | 3 788 | ✅ |
+| Bezbariér souhrnně (`bezbarier-agregat`) | 0 (záměr - bez značky) | 1 058 | ✅ |
+| Ruční komentáře spoje (`rucni-komentar`) | 0 | 0 | ⬜ nelze ověřit - firma nemá data (0 linek s `SeT_SpeC`/`MhD_SpeC`) |
+| Směrové poznámky linky (`smerove`) | 0 | 0 | ⬜ nelze ověřit - 0 linek s `SeT_MhD` `>`/`<`/`<>` |
+| Písmena variant tras (`varianta-trasy`) | 0 | - | ⬜ opt-in parametr, default vypnutý |
+
+**Křížová kontrola úplnosti prošla:** 0 případů „značka u minuty bez řádku legendy" napříč všemi
+9693 stránkami. Rozsah „Spoje, nepoznámkovat" (`MHDSPNPZN`) nemá v této firmě data → parametr
+„V rozsahu nepoznámkovat schovat" je zde no-op (proto signál o schovaných poznámkách počítá
+skutečně skryté položky, ne zapnutý parametr).
 
 ### D2. Vlastní komentář spoje musí přebít auto-poznámku (ne paralelně tisknout)
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
