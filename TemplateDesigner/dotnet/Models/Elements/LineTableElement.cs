@@ -388,113 +388,128 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         ctx.Canvas.ClipRect(clipRect);
         try
         {
-            float currentY = Y;
+            var plan = BuildRowPlan(stops, trips, groups, fixedCols, tripW, nameIndex, fixedSum,
+                headerH, rowH, paints.Grid, headerResolved, headerCentered, tripHeaderStyle, tripDataStyle);
 
-            // pás názvů skupin dnů - spojité úseky sloupců spojů stejné skupiny
-            if (HasGroupHeaderBand(trips, groups))
-            {
-                CellRenderer.DrawCell(ctx, new SKRect(X, currentY, X + fixedSum, currentY + headerH), "", headerResolved, scale);
-                float gx = X + fixedSum;
-                int i = 0;
-                while (i < trips.Count)
-                {
-                    int start = i;
-                    int skupina = trips[i].Skupina;
-                    while (i < trips.Count && trips[i].Skupina == skupina) i++;
-                    float w = (i - start) * tripW;
-                    string nadpis = groups.FirstOrDefault(g => g.Id == skupina)?.Nadpis ?? "";
-                    CellRenderer.DrawCell(ctx, new SKRect(gx, currentY, gx + w, currentY + headerH), nadpis, headerCentered, scale);
-                    gx += w;
-                }
-                DrawRowLine(ctx, currentY + headerH, paints);
-                currentY += headerH;
-            }
-
-            // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
-            var headerSpecs = new List<ColumnRenderer.CellSpec>();
-            foreach (var c in fixedCols) headerSpecs.Add(new(c.Width, c.Header, c.HeaderStyle));
-            foreach (var t in trips) headerSpecs.Add(new(tripW, t.CisloSpoje, tripHeaderStyle));
-            ColumnRenderer.DrawRow(ctx, X, currentY, headerH, headerSpecs, paints.Grid, scale);
-            DrawRowLine(ctx, currentY + headerH, paints);
-            currentY += headerH;
-
-            // řádek platnosti (znaky X/6/7/+ nad spojem)
-            if (HasPlatnostRow(trips))
-            {
-                var specs = new List<ColumnRenderer.CellSpec>();
-                foreach (var c in fixedCols) specs.Add(new(c.Width, "", c.DataStyle));
-                foreach (var t in trips) specs.Add(new(tripW, string.Join(" ", t.Platnost), tripDataStyle));
-                ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, paints.Grid, scale);
-                currentY += rowH;
-            }
-
-            // řádek NZ (negativní značky)
-            if (HasNzRow(trips))
-            {
-                var specs = new List<ColumnRenderer.CellSpec>();
-                foreach (var c in fixedCols) specs.Add(new(c.Width, "", c.DataStyle));
-                foreach (var t in trips) specs.Add(new(tripW, t.Nz, tripDataStyle));
-                ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, paints.Grid, scale);
-                DrawRowLine(ctx, currentY + rowH, paints);
-                currentY += rowH;
-            }
-
-            // řádky zastávek (+ vložené přípojné řádky)
-            for (int si = 0; si < stops.Count; si++)
-            {
-                var stop = stops[si];
-
-                // Podmíněné skrytí řádku zastávky (i s jejími přípojnými řádky). Iterujeme přes plný
-                // index si → zarovnání časů spojů (Casy[si]) zůstane zachováno; jen tuto zastávku nekreslíme.
-                if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
-
-                bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
-
-                // Podmíněné zvýraznění řádku zastávky (celá šířka, za sloupci) - sdílené s DynamicTable/StopList.
-                string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
-                if (rowHl is not null)
-                {
-                    using var hlPaint = new SKPaint { Color = SKColor.Parse(rowHl) };
-                    ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), hlPaint);
-                }
-
-                var specs = new List<ColumnRenderer.CellSpec>();
-                foreach (var c in fixedCols)
-                    specs.Add(new(c.Width, c.Value(stop), OddTc(c.DataStyle, oddTc)));
-                var tripCellStyle = OddTc(tripDataStyle, oddTc);
-                foreach (var t in trips)
-                    specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", tripCellStyle));
-                ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, paints.Grid, scale);
-                currentY += rowH;
-
-                // přípojné řádky (vyčká/navazuje) za touto zastávkou
-                if (ShowPripojeRows)
-                {
-                    foreach (var t in trips)
-                    {
-                        foreach (var pr in t.Pripoje.Where(p => p.Radek && p.Poradi == stop.Poradi))
-                        {
-                            var prSpecs = new List<ColumnRenderer.CellSpec>();
-                            for (int ci = 0; ci < fixedCols.Count; ci++)
-                            {
-                                string txt = ci == nameIndex ? PripojText(pr) : "";
-                                prSpecs.Add(new(fixedCols[ci].Width, txt, fixedCols[ci].DataStyle));
-                            }
-                            foreach (var t2 in trips)
-                                prSpecs.Add(new(tripW, ReferenceEquals(t2, t) ? pr.Cas : "", tripDataStyle));
-                            ColumnRenderer.DrawRow(ctx, X, currentY, rowH, prSpecs, paints.Grid, scale);
-                            DrawRowLine(ctx, currentY, paints);
-                            DrawRowLine(ctx, currentY + rowH, paints);
-                            currentY += rowH;
-                        }
-                    }
-                }
-            }
+            RowPlanRenderer.DrawRows(ctx, X, Y, Width, plan, scale);
         }
         finally
         {
             ctx.Canvas.Restore();
         }
+    }
+
+    /// <summary>
+    /// Popíše tabulku jako **plán řádků** (R1 řádkové jádro) - jen tvaruje data, nic nekreslí.
+    /// Druhy řádků linkového JŘ: pás skupin dnů (sloučené sloupce) → čísla spojů → platnost →
+    /// negativní značky → zastávky (s podřádky přípojů). Vodorovné čáry a pozadí zvýraznění nese
+    /// <see cref="RowSpec"/>, samotné kreslení <see cref="RowPlanRenderer"/>.
+    /// </summary>
+    private List<RowSpec> BuildRowPlan(
+        List<LineStopData> stops, List<LineTripData> trips, List<LineSkupinaData> groups,
+        List<RenderCol> fixedCols, float tripW, int nameIndex, float fixedSum,
+        float headerH, float rowH, SKPaint gridPaint,
+        ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
+        ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle)
+    {
+        var plan = new List<RowSpec>();
+
+        // pás názvů skupin dnů - spojité úseky sloupců spojů stejné skupiny (sloučené buňky,
+        // proto bez svislých čar, které by nadpis rozsekaly)
+        if (HasGroupHeaderBand(trips, groups))
+        {
+            var band = new List<ColumnRenderer.CellSpec> { new(fixedSum, "", headerResolved) };
+            int i = 0;
+            while (i < trips.Count)
+            {
+                int start = i;
+                int skupina = trips[i].Skupina;
+                while (i < trips.Count && trips[i].Skupina == skupina) i++;
+                string nadpis = groups.FirstOrDefault(g => g.Id == skupina)?.Nadpis ?? "";
+                band.Add(new((i - start) * tripW, nadpis, headerCentered));
+            }
+            // sloucene bunky -> bez svislych car (rozsekaly by nadpis pres nekolik sloupcu spoju)
+            plan.Add(new(RowKind.GroupHeader, headerH, band) { LineBelowPaint = gridPaint });
+        }
+
+        // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
+        var headerSpecs = new List<ColumnRenderer.CellSpec>();
+        foreach (var c in fixedCols) headerSpecs.Add(new(c.Width, c.Header, c.HeaderStyle));
+        foreach (var t in trips) headerSpecs.Add(new(tripW, t.CisloSpoje, tripHeaderStyle));
+        plan.Add(new(RowKind.Header, headerH, headerSpecs)
+            { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+
+        // řádek platnosti (znaky X/6/7/+ nad spojem)
+        if (HasPlatnostRow(trips))
+            plan.Add(new(RowKind.HeaderExtra, rowH,
+                TripTextRow(fixedCols, trips, tripW, tripDataStyle, t => string.Join(" ", t.Platnost)))
+            { VerticalLinePaint = gridPaint });
+
+        // řádek NZ (negativní značky)
+        if (HasNzRow(trips))
+            plan.Add(new(RowKind.HeaderExtra, rowH,
+                TripTextRow(fixedCols, trips, tripW, tripDataStyle, t => t.Nz))
+            { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+
+        // řádky zastávek (+ vložené přípojné řádky)
+        for (int si = 0; si < stops.Count; si++)
+        {
+            var stop = stops[si];
+
+            // Podmíněné skrytí řádku zastávky (i s jejími přípojnými řádky). Iterujeme přes plný
+            // index si → zarovnání časů spojů (Casy[si]) zůstane zachováno; jen tuto zastávku nekreslíme.
+            if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
+
+            bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
+
+            var specs = new List<ColumnRenderer.CellSpec>();
+            foreach (var c in fixedCols)
+                specs.Add(new(c.Width, c.Value(stop), OddTc(c.DataStyle, oddTc)));
+            var tripCellStyle = OddTc(tripDataStyle, oddTc);
+            foreach (var t in trips)
+                specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", tripCellStyle));
+
+            // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
+            string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
+            plan.Add(new(RowKind.Data, rowH, specs)
+            {
+                Background = rowHl is not null ? SKColor.Parse(rowHl) : null,
+                VerticalLinePaint = gridPaint,
+            });
+
+            if (!ShowPripojeRows) continue;
+
+            // přípojné řádky (vyčká/navazuje) za touto zastávkou
+            foreach (var t in trips)
+            {
+                foreach (var pr in t.Pripoje.Where(p => p.Radek && p.Poradi == stop.Poradi))
+                {
+                    var prSpecs = new List<ColumnRenderer.CellSpec>();
+                    for (int ci = 0; ci < fixedCols.Count; ci++)
+                        prSpecs.Add(new(fixedCols[ci].Width,
+                            ci == nameIndex ? PripojText(pr) : "", fixedCols[ci].DataStyle));
+                    foreach (var t2 in trips)
+                        prSpecs.Add(new(tripW, ReferenceEquals(t2, t) ? pr.Cas : "", tripDataStyle));
+
+                    plan.Add(new(RowKind.SubRow, rowH, prSpecs)
+                    { VerticalLinePaint = gridPaint, LineAbovePaint = gridPaint, LineBelowPaint = gridPaint });
+                }
+            }
+        }
+
+        return plan;
+    }
+
+    /// <summary>Řádek, kde popisové sloupce jsou prázdné a spojové nesou znak z <paramref name="text"/>
+    /// (platnost, negativní značky).</summary>
+    private static List<ColumnRenderer.CellSpec> TripTextRow(
+        List<RenderCol> fixedCols, List<LineTripData> trips, float tripW,
+        ResolvedTextStyle tripDataStyle, Func<LineTripData, string> text)
+    {
+        var specs = new List<ColumnRenderer.CellSpec>();
+        foreach (var c in fixedCols) specs.Add(new(c.Width, "", c.DataStyle));
+        foreach (var t in trips) specs.Add(new(tripW, text(t), tripDataStyle));
+        return specs;
     }
 
     private ResolvedTextStyle OddTc(ResolvedTextStyle style, bool odd) =>

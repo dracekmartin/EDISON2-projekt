@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-29 - Plán řádků: sdílená kreslicí smyčka (B11 / R1, část 1 - linková tabulka)
+
+Nízkoúrovňové tabulkové jádro (buňka, sloupec, kaskáda, šířky) bylo sdílené už dřív; chyběla
+poslední vrstva - **druh řádku**. Každý tabulkový element měl vlastní svislou smyčku, takže každá
+řádková featura (seskupování, mezisoučty, sloučené buňky, rozdělení přes stránky) se musela napsat
+N×. Nově element **popíše tabulku jako plán řádků** (`RowSpec`) a kreslí ji jedna smyčka
+(`RowPlanRenderer.DrawRows`).
+
+`RowSpec` nese: **druh** (`RowKind`: Header / GroupHeader / HeaderExtra / Data / SubRow / Summary) ·
+výšku · buňky · pozadí celé šířky · pera vodorovných čar nahoře a dole · pero svislých čar.
+
+- **Druh řádku kreslení neovlivňuje** - je to nosič významu, na který se navěsí řádkové featury
+  (`B13` rozdělení přes stránky, opakování mezisoučtu). Bez něj je smyčka „nakresli N stejných
+  řádků" a featury nemají za co chytit.
+- **Dvě věci musely být v kontraktu explicitně**, jinak se rozejdou pixely: (1) **pořadí kreslení**
+  pozadí → buňky → čáry (kdyby čáry šly první, pozadí buňky je překryje); (2) **pera jsou
+  per-řádek**, protože záhlaví a datové řádky reálně používají různá (rámečkové × oddělovací).
+- **Linková tabulka převedena** (prototyp - má nejvíc druhů řádků: pás skupin dnů se sloučenými
+  buňkami → čísla spojů → platnost → negativní značky → zastávky s podřádky přípojů). Sloučený pás
+  nese příznak „bez svislých čar", aby ho nešlo omylem ztratit.
+- **Důkaz:** odtisk linkové tabulky **bit za bitem identický** proti baseline sejmuté před zásahem
+  (viz záchytná síť níže). .NET 438/438.
+
+Zbývá: zastávkový seznam, dynamická tabulka, pevná tabulka. **Mřížka odjezdů zůstává mimo** - je to
+pivot (sloupce = skupiny dnů, řádky = hodiny), do plánu řádků nezapadá.
+
 ## 2026-07-29 - Záchytná síť na kreslení (příprava B11)
 
 Před refaktorem kreslicí smyčky (`B11` / R1 extrakce řádkového jádra) vyšlo najevo, že **ani jeden
