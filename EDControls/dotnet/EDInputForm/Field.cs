@@ -42,7 +42,20 @@ namespace EDControls.EDInputForm
             Editable ? WpfVisibility.Collapsed : WpfVisibility.Visible;
 
         /// <summary>Volby pro pole typu List. U ostatních typů prázdné.</summary>
-        public List<ListItem> ListItems { get; set; } = [];
+        /// <remarks>Hlásí změnu, aby se dala nabídka vyměnit i za běhu (klient dopočítává volby,
+        /// které server nezná - např. řezy písma dle vybrané rodiny). Bez ohlášení by dropdown
+        /// zůstal na obsahu z chvíle, kdy ho WPF poprvé postavil.</remarks>
+        public List<ListItem> ListItems
+        {
+            get => _listItems;
+            set
+            {
+                _listItems = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ListItemsForDisplay));
+            }
+        }
+        private List<ListItem> _listItems = [];
 
         /// <summary>
         /// Konfigurace pro pole typu File: filtr dialogu (např. <c>"PDF (*.pdf)|*.pdf"</c>),

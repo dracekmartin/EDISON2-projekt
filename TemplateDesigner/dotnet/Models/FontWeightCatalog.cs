@@ -32,22 +32,29 @@ public static class FontWeightCatalog
     /// proto jen Upright. Prázdná/nedostupná rodina → fallback Normal+Bold.</summary>
     public static IReadOnlyList<int> Weights(string? family)
     {
+        var real = InstalledWeights(family);
+        return real.Count > 0 ? real : [400, 700];
+    }
+
+    /// <summary>Váhy rodiny **bez fallbacku** - prázdné, když rodina není nainstalovaná nebo není
+    /// zadaná. Rozlišení „řezy skutečně známe" vs „hádáme" je potřeba tam, kde se podle nich
+    /// zahazuje uživatelova hodnota - podle odhadu se zahazovat nesmí.</summary>
+    public static IReadOnlyList<int> InstalledWeights(string? family)
+    {
+        if (string.IsNullOrWhiteSpace(family)) return [];
+
         var weights = new SortedSet<int>();
-        if (!string.IsNullOrWhiteSpace(family))
+        try
         {
-            try
+            using var set = SKFontManager.Default.GetFontStyles(family.Trim());
+            for (int i = 0; i < set.Count; i++)
             {
-                using var set = SKFontManager.Default.GetFontStyles(family.Trim());
-                for (int i = 0; i < set.Count; i++)
-                {
-                    using var tf = set.CreateTypeface(i);
-                    if (tf is not null && tf.FontStyle.Slant == SKFontStyleSlant.Upright)
-                        weights.Add(tf.FontStyle.Weight);
-                }
+                using var tf = set.CreateTypeface(i);
+                if (tf is not null && tf.FontStyle.Slant == SKFontStyleSlant.Upright)
+                    weights.Add(tf.FontStyle.Weight);
             }
-            catch { /* nedostupná rodina → fallback níže */ }
         }
-        if (weights.Count == 0) { weights.Add(400); weights.Add(700); }
+        catch { /* nedostupná rodina → prázdno (volající rozhodne, co s tím) */ }
         return weights.ToList();
     }
 

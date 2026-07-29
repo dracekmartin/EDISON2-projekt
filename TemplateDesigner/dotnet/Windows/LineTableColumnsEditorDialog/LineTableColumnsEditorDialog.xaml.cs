@@ -36,6 +36,7 @@ public partial class LineTableColumnsEditorDialog : Window
 
         GeneralForm.CacheClass = GeneralSchemaClass;
         GeneralForm.Initialized += OnGeneralFormInitialized;
+        ElementFormBinder.HookFontWeightRefresh(GeneralForm);
         GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 
         _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);

@@ -40,7 +40,7 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B4** | **Sdílená base pole formulářů + deklarativní `visibleWhen`** - detail a dohodnutý směr v §B4 níže. První výhra: „Velikost rohu" se skryje při ostrém rohu čistě, bez server round-tripu. | M | 2 + 3 | - |
+| **B4** | **Sdílená base pole formulářů elementů** - konec opisování „rámeček / rohy / pozice / vrstva / podmínky" v každém elementu zvlášť (dnes 8-19 míst na jednu vlastnost), na obou stranách (Caché formuláře + C# zrcadlo). Detail v §B4 níže. | M | 2 + 3 | - |
 | **B5** | **L‑1: auto-fit fontu na šířku** u linkové tabulky (dnes je `ComputeFontScale` jen výškový) | S–M | 3 | - |
 
 **Proč B4 tak brzy:** společná vlastnost elementu (rámeček / pozice / rohy) je dnes opsaná v každém `.cls`
@@ -58,6 +58,7 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 | **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | - |
 | **B11** | **L‑3: row-plan vrstva** - `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | B5 |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | - |
+| **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. | M | 2 | - |
 
 ---
 
@@ -105,37 +106,40 @@ kolize. Je triviální; případně ať docs uzavírá poslední dobíhající s
 
 ---
 
-## 🏗️ §B4 detail - EDInputForm: sdílená base-pole + deklarativní `visibleWhen` (2026-07-24)
+## 🏗️ §B4 detail - sdílená base pole formulářů elementů
 
-> Vzešlo z tiketů KOVED (rohy elementu #12998). **Dva provázané problémy** + dohodnutý směr.
-> **Naplánováno jako blok B4 (vlna 2)** - ne samostatný velký track; kroky 1+2 jsou B4, krok 3 (rozhodnutí
-> o C# mirroru) může zůstat otevřený i po něm.
+> Vzešlo z tiketů KOVED (rohy elementu #12998). **Revize 29. 7.:** původní zápis mísil dvě nezávislé
+> věci do jednoho bloku (kapabilitu sdílené komponenty × úklid v návrháři) - rozdělené na **B4** (níže),
+> **B18** (deklarativní pravidla) a hotový fix řezů písma (→ archiv). Vazba je tenká a jednosměrná:
+> až bude B18, sdílený balíček z B4 může nést pravidlo „velikost rohu jen u nezaoblených" jedním
+> zápisem místo osmi. Není to závislost - B4 jde udělat samostatně.
 
-**Problém 1 - imperativní validace na vše.** EDInputForm má jen `Validate` (Caché, server round-trip)
-pro dynamické chování. Chybí deklarativní podmíněná viditelnost → „Velikost rohu" je vidět i při Ostré.
-**Problém 2 - duplikace schématu.** Každý element staví pole ručně v `.cls` (+ zrcadlící C#
-PropertyDescriptors, které **stále žijí** - čte je `PropertiesPanel`); base pole (rámeček/pozice/rohy)
-opsaná v každém `.cls` → společná vlastnost = editace N souborů (rohy = 8).
+**Problém - duplikace definice polí, na obou stranách.** Každý element staví base pole (rámeček,
+rohy, pozice, velikost, vrstva, uzamčeno, podmínka viditelnosti) ručně ve svém `.cls`, a tytéž
+vlastnosti jsou popsané podruhé v C# descriptorech → jedna společná vlastnost = 8-19 míst.
 
-**Dohodnutý směr (standardní vzor „deklarativní 80 % / imperativní escape hatch 20 %", jako ServiceNow
-UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
-1. **`visibleWhen` do jádra EDInputFormu** (EDControls) - `Field.visibleWhen`, klient přepočítá lokálně
-   (bez round-tripu, řeší init-state past). Začít **jen `visibleWhen`** (YAGNI). Sdílet gramatiku podmínek
-   s TD print-params - nezavádět druhý dialekt. `Validate` zůstává pro cross-field/počítané.
-2. **Sdílený Caché helper `BaseElementFields`** (vzor = `StyleFields.cls`) - base skupiny polí
-   (Rámeček+Rohy, Pozice, Pokročilé) volané z každého `.cls`. **První výhra:** rohy deklarují `visibleWhen`
-   jednou → „Velikost rohu" se skryje při Ostré čistě.
-3. **Prošetřit + rozhodnout** o C# descriptor mirroru (rozsah `PropertiesPanel` vs `.cls`-driven
-   `InlinePropertiesForm`) → retire nebo ponechat. Ne slepě mazat (dnes živý).
+**Zjištěný drift (scan 29. 7., důkaz že to není teoretické):**
+- **Tloušťka rámečku** 0-10 mm u textu × 0-5 mm u všech ostatních.
+- **Dynamická tabulka nemá base pole rámečku vůbec** (jen vlastní volbu „Rámeček") - v panelu se
+  rámeček nastavit dá, ve formuláři ne.
+- Blok rámečku je u každého elementu **v jiné skupině**: vlastní „Rámeček elementu" (5×),
+  „Barvy a rámeček" (text), namixovaný v „Obecné" (zastávky, odjezdy). **Rozhodnuto: sjednotit**
+  na vlastní skupinu (Jan 29. 7. - jednorázové přestěhování je menší zlo než trvalá nekonzistence).
+- **Výška** má rozdílný popisek → klíč `Height` je proto vyjmutý z drift testu; sdílený blok tu
+  výjimku umí zrušit.
 
-**Navázané body z řezů písma (#13006, 2026-07-24 - implementováno až na tyto), rozřazené do bloků:**
-- **→ B4** **Reaktivita EDInputForm** - „Řez" v element dialozích se plní jen **při otevření**; živý přepočet
-  při změně rodiny (bez znovuotevření) = ten `visibleWhen`/reaktivní mechanismus výše. (CellStyleEditor to už
-  má - WPF je reaktivní.)
-- **Layout editoru sloupců (`CellStyleEditor`)** - HOTOVO v B6 (28. 7., dvousloupcová mřížka ve stylu
-  EDInputFormu). Zbývá jen případná migrace na Caché-driven EDInputForm → Úklid „Vzhled/téma".
+**Postup:**
+1. **Sdílený Caché helper `BaseElementFields`** (vzor = `StyleFields.cls`, který totéž už dělá pro
+   pole stylu textu) - skupiny Rámeček+Rohy / Pozice a velikost / Podmínky, s parametry na legitimní
+   odchylky (výchozí šířka a výška per element, elementy bez rohů jako čára).
+2. **C# zrcadlo: číst base z jednoho místa** (rozhodnuto 29. 7.). Zrcadlo **nelze odstranit** -
+   ověřeno v přepínací logice panelu: formátovací lišta potřebuje descriptory vždy, úprava více
+   elementů naráz jde jen přes ně, elementy bez schématu na ně padají (dnes uspaná pevná tabulka).
+   Takže: base pole sjednotit do jednoho zdroje i tady + **zapsat zúženou roli** zrcadla
+   (lišta / multi-výběr / fallback), ať znovu nevystupuje jako druhý zdroj pravdy.
 
-(B4 samo M, dotkne se všech elementů + EDControls. Detail úvahy v changelog/commit historii session 2026-07-24.)
+**Navázaný bod:** migrace `CellStyleEditor` na Caché-driven EDInputForm → Úklid „Vzhled/téma"
+(layout už sjednocen v B6 28. 7.).
 
 ---
 

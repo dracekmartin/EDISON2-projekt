@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-07-29 - Nabídka řezů písma reaguje na změnu rodiny
+
+Ve formulářích elementů nabízelo pole **„Řez"** řezy té rodiny písma, která tam byla **při otevření
+dialogu**. Po přepnutí rodiny se nabídka nepřepočítala - nabízela řezy, které nová rodina nemá, a
+naopak chyběly ty, které má; srovnalo se to až zavřením a znovuotevřením. Horší polovina problému:
+když se řez vybral **před** změnou rodiny, zůstal v poli viset i po ní, i když ho nová rodina nemá -
+formulář vypadal platně, ale renderer při kreslení sáhl po nejbližším dostupném, takže **tisk
+nesouhlasil s tím, co bylo v dialogu napsané**, a nikde to nezakřičelo.
+
+Byly to dvě vrstvy: nabídku (a) nikdo nepřepočítával, (b) přepočítat ani nešlo - volby pole byly
+ve sdílené komponentě obyčejná property **bez ohlášení změny**, takže dosavadní kód se spoléhal na
+naplnění ještě předtím, než WPF dropdown vůbec postaví. Po vykreslení už se obsah vyměnit nedal.
+
+- **EDControls (aditivně):** `Field.ListItems` hlásí změnu (+ `ListItemsForDisplay`) → nabídku lze
+  vyměnit za běhu. Formuláře, které volby plní před vykreslením jako dosud, se chovají identicky.
+  Dorovnává to konzistenci komponenty - **viditelnost** pole svou změnu hlásila už dřív, volby ne.
+- **Návrhář:** změna rodiny přepočítá nabídku řezů sourozeneckého pole a **zahodí řez, který nová
+  rodina reálně nemá** (→ prázdno = auto dle Tučné, zapíše se jako krok zpět). Napojeno u všech
+  6 hostů formuláře (inline panel + 5 dialogů).
+- **Dvě pojistky proti tichému zahození uživatelovy hodnoty:** (1) zápis hodnoty pole hlásí změnu
+  i při **programovém plnění** formuláře - bez rozlišení by pouhé otevření dialogu řez zahodilo;
+  (2) zahazuje se jen podle **skutečně známých** řezů (nový `FontWeightCatalog.InstalledWeights`
+  bez fallbacku) - u neznámé rodiny (překlep) nebo prázdné (dědí se z šablony) je nabídka jen odhad,
+  takže hodnota zůstává.
+- Testy: `FontWeightSyncTests` (7 - přepočet, zahození neplatného, ponechání platného, obě pojistky,
+  ignorace jiných polí, ohlášení změny voleb). .NET 416/416, EDControls 448/448, EDISONMAIN2 420/420.
+
+Vzniklo z revize architektury: původní blok B4 mísil kapabilitu sdílené komponenty s úklidem
+v návrháři → rozdělen na **B4** (sdílená base pole), **B18** (deklarativní pravidla formuláře) a
+tento fix. Deklarativní cesta (`visibleWhen`) by tenhle přepočet uměla obecně, ale je to jiný
+mechanismus (skrývání × obměna obsahu) a čeká na B18.
+
 ## 2026-07-28 - Rozvržení editoru stylu buňky (blok B6)
 
 Sdílený `CellStyleEditor` (tab Sloupce/Styl ve všech 6 tabulkových dialozích) měl řádek Font/Řez/

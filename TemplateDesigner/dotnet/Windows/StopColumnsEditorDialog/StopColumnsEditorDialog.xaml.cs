@@ -39,6 +39,7 @@ public partial class StopColumnsEditorDialog : Window
         // řeší CellStyleEditor v témže tabu, sloupce tab „Sloupce".
         GeneralForm.CacheClass = GeneralSchemaClass;
         GeneralForm.Initialized += OnGeneralFormInitialized;
+        ElementFormBinder.HookFontWeightRefresh(GeneralForm);
         GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 
         _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
