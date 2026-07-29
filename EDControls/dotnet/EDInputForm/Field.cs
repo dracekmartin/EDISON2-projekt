@@ -165,9 +165,23 @@ namespace EDControls.EDInputForm
                                DateTimeStyles.None, out _) ? null : "Neplatné datum";
                 case EFieldType.Bool:
                     return _value is "0" or "1" ? null : "Musí být 0 nebo 1";
+                case EFieldType.Color:
+                    return IsHexColor(_value) ? null : "Neplatná barva - zadejte #RRGGBB nebo #AARRGGBB";
                 default:
                     return null;
             }
+        }
+
+        /// <summary>Barva ve tvaru <c>#RRGGBB</c> / <c>#AARRGGBB</c> (mřížka nepovinná) - tedy to,
+        /// co umí <see cref="HexToBrushConverter"/> i barevný dialog. Bez této kontroly by se do
+        /// hostitelské aplikace dostal libovolný text z pole a spadla by až při vykreslování barvy.</summary>
+        private static bool IsHexColor(string value)
+        {
+            var hex = value.Trim().TrimStart('#');
+            if (hex.Length != 6 && hex.Length != 8) return false;
+            foreach (var c in hex)
+                if (!Uri.IsHexDigit(c)) return false;
+            return true;
         }
 
         /// <summary>Validuje hodnotu proti <see cref="Min"/> / <see cref="Max"/>. Null = bez kontroly.</summary>
