@@ -259,7 +259,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     var zastavka = z;
                     plan.Add(new(RowKind.Data, rowH, specs)
                     {
-                        Background = rowBg is not null ? SKColor.Parse(rowBg) : null,
+                        Background = ColorHex.ParseOrNull(rowBg),
                         LineBelowPaint = ShowRowSeparators ? paints.Grid : null,
                         // Značky (na znamení / atributy / poznámky) po úsecích: piktogramy symbolovým
                         // Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky normálním.
@@ -464,7 +464,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         float strokeW = DirectionArrowBold ? 1.5f : 0.8f;
         using var paint = new SKPaint
         {
-            Color = SKColor.Parse(DirectionArrowColor),
+            Color = ColorHex.ParseOrBlack(DirectionArrowColor),
             IsStroke = true,
             StrokeWidth = strokeW,
             IsAntialias = true,

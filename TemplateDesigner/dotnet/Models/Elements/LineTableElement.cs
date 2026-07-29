@@ -473,7 +473,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
             plan.Add(new(RowKind.Data, rowH, specs)
             {
-                Background = rowHl is not null ? SKColor.Parse(rowHl) : null,
+                Background = ColorHex.ParseOrNull(rowHl),
                 VerticalLinePaint = gridPaint,
             });
 

@@ -77,10 +77,10 @@ public abstract class TemplateElement
     public bool IsRotated => MathF.Abs(Rotation) > 0.001f;
 
     [JsonIgnore]
-    public SKColor SkBackgroundColor => SKColor.Parse(BackgroundColor);
+    public SKColor SkBackgroundColor => ColorHex.ParseOrTransparent(BackgroundColor);
 
     [JsonIgnore]
-    public SKColor SkBorderColor => SKColor.Parse(BorderColor);
+    public SKColor SkBorderColor => ColorHex.ParseOrBlack(BorderColor);
 
     /// <summary>
     /// Vykreslí rámeček elementu. Volá se ve DRUHÉM průchodu renderování (po obsahu

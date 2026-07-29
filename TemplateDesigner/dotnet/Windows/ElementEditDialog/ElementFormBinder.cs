@@ -108,6 +108,21 @@ public static class ElementFormBinder
         Models.FontWeightCatalog.Items(family)
             .Select(x => new ListItem(x.Weight.ToString(), x.Label)).ToList();
 
+    // ── Barvy: kontrola vstupu ────────────────────────────────────────────────────
+    // Barva se zadává jako volný text, takže do formuláře může přijít cokoli. Neplatnou hodnotu
+    // nesmíme uložit do šablony: kreslení ji sice po opravě fail-soft přežije (viz ColorHex), ale
+    // v šabloně by zůstal nesmysl a uživatel by nevěděl, že jeho barva nikam nedošla.
+
+    // Hlášku u pole (červený rámeček) řeší typová kontrola v EDInputFormu (Field.GetTypeError) -
+    // musí být tam, protože serverová validace při ukládání přestaví seznam polí a hlášku nastavenou
+    // odsud by zahodila. Tady zůstává jen pojistka, že se neplatná hodnota nedostane do modelu.
+
+    private static bool IsColorField(Field f) => f.FieldType == EFieldType.Color;
+
+    /// <summary>Neprázdná hodnota, kterou nelze přečíst jako barvu. Prázdno = „vymazáno", ne chyba.</summary>
+    private static bool IsInvalidColor(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && !Models.ColorHex.IsValid(value);
+
     /// <summary>Snapshot aktuálních hodnot polí formuláře (bez zápisu do cíle) - pro update
     /// change-detection baseline po živém write-backu v inline panelu.</summary>
     public static Dictionary<string, string> Snapshot(EDInputForm form)
@@ -146,14 +161,31 @@ public static class ElementFormBinder
     /// </summary>
     public static List<IDesignerCommand> ExtractCommands(
         EDInputForm form, object target, Dictionary<string, string> preFilled)
+        => ExtractCommands([.. (form.Items ?? []).OfType<Field>()], target, preFilled);
+
+    /// <summary>Testovatelné jádro <see cref="ExtractCommands(EDInputForm, object, Dictionary{string, string})"/>
+    /// nad holým seznamem polí (bez WPF kontrolky).</summary>
+    internal static List<IDesignerCommand> ExtractCommands(
+        List<Field> fields, object target, Dictionary<string, string> preFilled)
     {
         var commands = new List<IDesignerCommand>();
-        foreach (var field in (form.Items ?? []).OfType<Field>())
+        foreach (var field in fields)
         {
             var path = field.Key;
-            var newVal = field.Value ?? "";
+            string? newVal = field.Value ?? "";
             if (newVal == preFilled.GetValueOrDefault(path, "")) continue;
             if (!ElementPropertyAccessor.Exists(target, path)) continue;
+
+            if (IsColorField(field))
+            {
+                // Nesmyslnou barvu do modelu nepustit (hlášku u pole hlásí EDInputForm).
+                if (IsInvalidColor(newVal)) continue;
+
+                // Vymazaná barva: u zděditelné (nullable) znamená „dědit" → null, u ostatních
+                // „nic nekreslit" → průhledná. Prázdný string by byl uložený nesmysl.
+                if (string.IsNullOrWhiteSpace(newVal))
+                    newVal = ElementPropertyAccessor.AcceptsNull(target, path) ? null : Models.ColorHex.Transparent;
+            }
 
             var oldVal = ElementPropertyAccessor.Get(target, path);
             commands.Add(new SetPropertyCommand(

@@ -188,19 +188,19 @@ public struct ResolvedTextStyle
     /// <summary>Vytvoří SKPaint pro text. Volající musí uvolnit (dispose).</summary>
     public readonly SKPaint CreateTextPaint()
     {
-        return new SKPaint { Color = SKColor.Parse(TextColor), IsAntialias = true };
+        return new SKPaint { Color = ColorHex.ParseOrBlack(TextColor), IsAntialias = true };
     }
 
     /// <summary>Vytvoří SKPaint pro pozadí. Vrátí null pokud je pozadí průhledné.</summary>
     public readonly SKPaint? CreateBgPaint()
     {
-        var color = SKColor.Parse(BackgroundColor);
+        var color = ColorHex.ParseOrTransparent(BackgroundColor);
         if (color.Alpha == 0) return null;
         return new SKPaint { Color = color, Style = SKPaintStyle.Fill };
     }
 
-    public readonly SKColor ParsedTextColor => SKColor.Parse(TextColor);
-    public readonly SKColor ParsedBackgroundColor => SKColor.Parse(BackgroundColor);
+    public readonly SKColor ParsedTextColor => ColorHex.ParseOrBlack(TextColor);
+    public readonly SKColor ParsedBackgroundColor => ColorHex.ParseOrTransparent(BackgroundColor);
 
     /// <summary>
     /// Nakreslí podtržení a/nebo přeškrtnutí pod/přes právě vykreslený text.

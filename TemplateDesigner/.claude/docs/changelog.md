@@ -49,6 +49,32 @@ sondou `Tests/AdProdlouzeniProbe.cls`.
 - Caché 45/45, .NET 446/446 (8 nových testů filtru poznámek - dosud netestovaný). Zlaté digesty
   0365001/0365005 **beze změny** → opravy jsou behavior-preserving, přebaselinování nebylo potřeba.
 
+## 2026-07-29 - Vymazaný HEX kód barvy shodil návrhář a „rozbil" šablonu (ticket 13078)
+
+Zákazník vymazal HEX kód barvy, potvrdil enterem a dostal chybovou hlášku; po uložení už šablonu
+**nešlo otevřít**.
+
+- **Příčina:** barva se čte přes `SKColor.Parse`, která na neplatné hodnotě **vyhodí výjimku**.
+  Do modelu se přitom prázdná hodnota dostala bez jediné kontroly (barevné pole formuláře typovou
+  kontrolu nemělo, `ElementPropertyAccessor` bere string „as-is"). Padalo to teprve při kreslení,
+  a protože se nesmysl uložil do šablony, padalo to i při každém dalším otevření - odtud „šablona
+  zhavarovala".
+- **Vrstva 1 - kreslení nikdy nespadne:** nový `Models/ColorHex.cs` je jediné místo, kde se
+  uživatelská barva čte; neplatná hodnota sáhne po záložní barvě (černá u textu/čar, průhledná
+  u pozadí, „jako nenastaveno" u nepovinných barev). Nahrazeno ve **všech** ~30 místech kreslení.
+  Tím se **samo opraví i už uložené šablony** (zákazníkova „IDZK poulička" se otevře).
+- **Vrstva 2 - neplatná barva se neuloží:** barevné pole formuláře nově hlásí neplatný tvar samo
+  (`Field.GetTypeError` v EDControls → červený rámeček, tooltip, uložení se zastaví - stejně jako
+  u čísla nebo datumu) a `ElementFormBinder` neplatnou hodnotu do modelu nezapíše ani při živé
+  editaci v panelu. Doplněna i kontrola v ručním HEX poli properties panelu (dřív pustilo `#ZZZZZZ`).
+- **Vymazání barvy má konečně srozumitelný význam:** u zděditelné barvy (styly buněk, styl textu)
+  znamená „dědit" → null, u ostatních „nic nekreslit" → průhledná. Dřív se uložil prázdný string,
+  který kaskádu rozbil.
+- Testy: TD 482/482 (29 nových případů), EDControls 458/458, EDISONMAIN2 420/420. Mezi nimi
+  **regrese na zákaznický případ**: šablona s rozbitými barvami projde uložením, otevřením,
+  stránkováním i vykreslením (dřív tady letěla výjimka) - takže „šablona nejde otevřít" je ověřeně
+  pryč, ne jen odvozeně.
+
 ## 2026-07-29 - Úzké varianty písma ve výběru fontu (Arial Narrow, ticket 13006)
 
 Zákazník po dodání řezů písma nahlásil, že **Arial Narrow ve výběru nevidí** - ani jako samostatné

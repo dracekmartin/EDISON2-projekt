@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Interop;
 using SkiaSharp;
+using TemplateDesigner.Models;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner.Controls;
@@ -38,15 +39,8 @@ static class ColorPickerHelper
             AnyColor = true
         };
 
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(currentHex))
-            {
-                var c = SKColor.Parse(currentHex);
-                dlg.Color = System.Drawing.Color.FromArgb(c.Red, c.Green, c.Blue);
-            }
-        }
-        catch { /* ignore parse errors */ }
+        if (ColorHex.TryParse(currentHex, out var current))
+            dlg.Color = System.Drawing.Color.FromArgb(current.Red, current.Green, current.Blue);
 
         // Populate „Custom colors" grid s recent colors uživatele (max 16 slotů).
         if (Preferences is { RecentColors.Count: > 0 } prefs)
@@ -74,12 +68,8 @@ static class ColorPickerHelper
         var result = new int[Math.Min(hexColors.Count, 16)];
         for (int i = 0; i < result.Length; i++)
         {
-            try
-            {
-                var c = SKColor.Parse(hexColors[i]);
-                result[i] = (c.Blue << 16) | (c.Green << 8) | c.Red;
-            }
-            catch { result[i] = 0xFFFFFF; /* white fallback */ }
+            var c = ColorHex.Parse(hexColors[i], SkiaSharp.SKColors.White);
+            result[i] = (c.Blue << 16) | (c.Green << 8) | c.Red;
         }
         return result;
     }

@@ -12,7 +12,7 @@ public class RectangleElement : TemplateElement
     public float StrokeWidth { get; set; } = 0.5f;
 
     [JsonIgnore]
-    public SKColor SkStrokeColor => SKColor.Parse(StrokeColor);
+    public SKColor SkStrokeColor => ColorHex.ParseOrBlack(StrokeColor);
 
     public override void Render(RenderContext ctx)
     {

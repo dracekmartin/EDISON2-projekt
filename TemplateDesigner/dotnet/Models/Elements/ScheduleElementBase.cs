@@ -178,9 +178,9 @@ public abstract class ScheduleElementBase : TemplateElement
 
     /// <summary>Vytvoří standardní sadu paintů pro JŘ elementy. Volající musí dispose.</summary>
     protected SchedulePaints CreateStandardPaints(RenderContext ctx) => new(
-        SKColor.Parse(GridColor),
-        SKColor.Parse(HeaderStyle.BackgroundColor ?? "#FFE0E0E0"),
-        SKColor.Parse(HeaderStyle.TextColor ?? "#FF000000"),
+        ColorHex.ParseOrBlack(GridColor),
+        ColorHex.Parse(HeaderStyle.BackgroundColor, "#FFE0E0E0"),
+        ColorHex.Parse(HeaderStyle.TextColor, ColorHex.Black),
         gridStrokePx: ComputeGridStrokePx(ctx));
 
     /// <summary>

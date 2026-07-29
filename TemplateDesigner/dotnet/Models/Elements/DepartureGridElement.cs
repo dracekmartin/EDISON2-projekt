@@ -588,8 +588,8 @@ public class DepartureGridElement : StopScheduleElementBase
 
         // ── Deklarace zdrojů (perf: 100+ buněk/frame) - plnění až uvnitř try ────
         // Deklarace musí být před try, aby na ně viděl finally i lokální helpery níže;
-        // samotná alokace fontů/paintů (a SKColor.Parse nad uživatelskými barvami, které
-        // mohou vyhodit) je uvnitř try, aby finally uvolnil i částečně vytvořené zdroje + clip.
+        // samotná alokace fontů/paintů je uvnitř try, aby finally uvolnil i částečně vytvořené
+        // zdroje + clip.
         var groupHeaderFonts       = new Dictionary<string, SKFont>();
         var groupHeaderTextPaints  = new Dictionary<string, SKPaint>();
         var groupHeaderBgPaints    = new Dictionary<string, SKPaint?>();
@@ -610,7 +610,7 @@ public class DepartureGridElement : StopScheduleElementBase
         SKFont?  anotTextFont  = null;
         SKPaint? anotTextPaint = null;
 
-        // Zebra - globální + per-group override (alokace v try kvůli SKColor.Parse).
+        // Zebra - globální + per-group override (alokace uvnitř try).
         SKPaint? zebraPaint = null;
         var perGroupZebraPaints = new Dictionary<string, SKPaint>();
         bool hasPerGroupZebra = false;
@@ -657,12 +657,12 @@ public class DepartureGridElement : StopScheduleElementBase
             anotTextPaint = anotTextStyle.CreateTextPaint();
 
             if (AlternatingRowColor is not null)
-                zebraPaint = new SKPaint { Color = SKColor.Parse(AlternatingRowColor) };
+                zebraPaint = new SKPaint { Color = ColorHex.ParseOrTransparent(AlternatingRowColor) };
 
             foreach (var g in layout.Groups)
             {
                 if (colStyles.TryGetValue(g.Skupina.Id, out var cs) && cs.AlternatingRowColor is not null)
-                    perGroupZebraPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(cs.AlternatingRowColor) };
+                    perGroupZebraPaints[g.Skupina.Id] = new SKPaint { Color = ColorHex.ParseOrTransparent(cs.AlternatingRowColor) };
             }
             hasPerGroupZebra = perGroupZebraPaints.Count > 0;
 
@@ -966,7 +966,7 @@ public class DepartureGridElement : StopScheduleElementBase
                     if (odj.ForeColor is not null)
                     {
                         customMinutePaint ??= new SKPaint { IsAntialias = true };
-                        customMinutePaint.Color = SKColor.Parse(odj.ForeColor);
+                        customMinutePaint.Color = ColorHex.ParseOrBlack(odj.ForeColor);
                         minutePaint = customMinutePaint;
                     }
                     else
@@ -990,8 +990,8 @@ public class DepartureGridElement : StopScheduleElementBase
                             // Negativní značka invertovaně - černý box + bílý znak (jako legacy). Vždy zapnuto.
                             if (anot.Typ == TypAnotace.NegativniZnacka)
                             {
-                                nzBgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaBackColor), IsAntialias = true };
-                                nzFgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaForeColor), IsAntialias = true };
+                                nzBgPaint ??= new SKPaint { Color = ColorHex.ParseOrBlack(NegativniZnackaBackColor), IsAntialias = true };
+                                nzFgPaint ??= new SKPaint { Color = ColorHex.Parse(NegativniZnackaForeColor, "#FFFFFFFF"), IsAntialias = true };
                                 float hpad  = aFont.Size * 0.12f;
                                 float znakW = aFont.MeasureText(anot.Znak);
                                 var m = aFont.Metrics;
@@ -1007,7 +1007,7 @@ public class DepartureGridElement : StopScheduleElementBase
                             if (anot.ForeColor is not null)
                             {
                                 customAnotPaint ??= new SKPaint { IsAntialias = true };
-                                customAnotPaint.Color = SKColor.Parse(anot.ForeColor);
+                                customAnotPaint.Color = ColorHex.ParseOrBlack(anot.ForeColor);
                                 aPaint = customAnotPaint;
                             }
 

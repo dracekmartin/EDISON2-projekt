@@ -22,7 +22,7 @@ public class LineElement : TemplateElement
     public float? CustomGapMm { get; set; }
 
     [JsonIgnore]
-    public SKColor SkColor => SKColor.Parse(Color);
+    public SKColor SkColor => ColorHex.ParseOrBlack(Color);
 
     /// <summary>Výchozí vzor čárky/mezery podle stylu.</summary>
     public static (float dash, float gap) GetDefaultDashPattern(LineStyle style) => style switch

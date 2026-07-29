@@ -312,7 +312,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         int dataN       = isDesigner ? 0 : ClampMax(rows.Count);
         int renderCount = isDesigner ? DesignerPreviewRows : (MinRows > 0 ? Math.Max(dataN, MinRows) : dataN);
 
-        SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
+        SKColor? altColor = ColorHex.ParseOrNull(AlternatingRowColor);
 
         // Šedivý placeholder styl jen pro návrhové {POLE} řádky; datové i prázdné padding = normální styl.
         ResolvedTextStyle[] effectiveStyles = isDesigner
@@ -328,8 +328,8 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
 
             // Podmíněné zvýraznění (jen reálná data) přebíjí střídání řádků; jinak zebra.
             string? hlColor = isDataRow ? ResolveRowHighlight(rows[i]) : null;
-            SKColor? background = hlColor is not null ? SKColor.Parse(hlColor)
-                : (altColor.HasValue && i % 2 == 1 ? altColor : null);
+            SKColor? background = ColorHex.ParseOrNull(hlColor)
+                ?? (altColor.HasValue && i % 2 == 1 ? altColor : null);
 
             var specs = new ColumnRenderer.CellSpec[cols.Count];
             for (int ci = 0; ci < cols.Count; ci++)
@@ -397,9 +397,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
 
         return new(RowKind.Summary, rowH, specs)
         {
-            Background = row.BackgroundColor is not null
-                ? SKColor.Parse(row.BackgroundColor)
-                : TableSummaryParent.ParsedBackgroundColor,
+            Background = ColorHex.Parse(row.BackgroundColor, TableSummaryParent.ParsedBackgroundColor),
             VerticalLinePaint = ColumnGridPaint(sepPaint),
             LineBelowPaint = BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly ? sepPaint : null,
         };

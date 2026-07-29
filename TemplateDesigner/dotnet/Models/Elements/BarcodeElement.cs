@@ -19,7 +19,7 @@ public class BarcodeElement : TemplateElement
     /// <summary>Barva modulů (popředí) ve formátu #AARRGGBB.</summary>
     public string ForeColor { get; set; } = "#FF000000";
 
-    [JsonIgnore] public SKColor SkForeColor => SKColor.Parse(ForeColor);
+    [JsonIgnore] public SKColor SkForeColor => ColorHex.ParseOrBlack(ForeColor);
 
     private static readonly Dictionary<EncodeHintType, object> _hints = new()
     {
