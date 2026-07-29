@@ -2,6 +2,28 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-29 ❌ - B21 (varování „skupiny dnů sdílí sloupec") ZAVŘEN jako nerelevantní
+
+Zadání pocházelo z doby **před** fází 2 SMO kolizí (23. 7.). Ta problém vyřešila **automaticky
+na serveru**: dominantní typ drží nadpis, každý další kolidující typ dostane značku + legendu
+„jede jen 31.12." (`PriraditZnackySmoSkupin`). „Kolize bez značek" tedy v datech nemůže nastat
+a klient nemá jak kolizi poznat (u odjezdu je jen id sloupce a značky; 2. řádek nadpisu je běžný
+druhý řádek titulku, ne příznak kolize). Doslovná implementace by chtěla nový signál na wire
+(Caché zóna, nad S) a varovala by o vyřešené věci.
+
+**Proč ani ta užší varianta ne** (rozhodnutí Jan 29. 7.): zbývající dva scénáře jsou **na straně
+šablony a v náhledu vidět** - vypnuté „Zobrazit anotace" (zmizí VŠECHNY symboly, okamžitě patrné)
+nebo chybějící legenda poznámek. To není tichá past jako dnešní opravené chyby (oříznuté spoje,
+schovaný filtr hodin); je to vědomá volba, kterou náhled ukazuje. Navíc legenda může být vynechaná
+záměrně (minimální vývěska) → plané hlášky, které lidi naučí ignorovat i užitečná varování.
+Dodávaná výchozí šablona `zastavkovy-jr-ad.json` má legendu i `showAnotace: true`, takže z krabice
+je to v pořádku.
+
+**Zapsaný zbytek:** díra, kdy dva kolidující typy mají v číselníku **tutéž ruční značku** (stejný
+symbol pro dvě platnosti + zavádějící legenda) - jediný scénář, který se opravdu nikde neprojeví.
+Je to konfigurace číselníku (JŘ, ne designer) → zaevidováno v
+[`rules/cache-business-logic.md`](../rules/cache-business-logic.md) u té metody.
+
 ## 2026-07-29 🧹 - Rozpuštěná hromada „Úklid a drobnosti" + odložené B19/B20
 
 **Sekce byla kategorie, která lhala.** Z osmi položek: jedna duplikát, jedna průběžné pravidlo,

@@ -55,6 +55,19 @@
 
 ---
 
+### Kolize skupin dnů v jednom SMO sloupci (`PriraditZnackySmoSkupin`)
+
+Víc typů provozu se může tisknout do **jednoho** sloupce (číselník KV: prázdniny / 24.12. /
+25.12.+1.1. / 31.12.). Bez rozlišení by cestující nepoznal, že „8:40" jede jen 31. 12. Řešení:
+dominantní typ (nejvíc spojů) drží nadpis, každý další dostane značku + legendu „jede jen …";
+ruční `NegativniZnacka` typu z číselníku má přednost před automatickým znakem z volné NZ řady.
+
+⚠️ **Známá díra bez pojistky:** když **dva kolidující typy mají v číselníku tutéž ruční značku**,
+dostanou oba stejný symbol a `^||TiskMHD("nzPrirazen",znak)` skončí s textem jen jednoho z nich →
+dvě různé platnosti pod jedním symbolem + zavádějící legenda. Je to chyba konfigurace číselníku
+(řeší JŘ, ne designer) a **nikde se neprojeví** - kdo sem sáhne, ať zváží kontrolu při přiřazování.
+Varování v designeru na tohle vědomě NEexistuje (rozhodnutí Jan 29. 7., detail v archivu roadmapy).
+
 ### Systém poznámek - typy a datový tok
 
 #### Anotace u minut (horní index v DepartureGrid)
