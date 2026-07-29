@@ -184,7 +184,7 @@ ClassMethod Inventura(ByRef sys As %String) As %Status
         s agenda = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 
         k statAn, statLeg, statAnStr, statLegStr, problemy
-        s (linek, stranek, bezLegendy, kolizi, problemu) = 0
+        s (linek, stranek, bezLegendy, legendaBezZnacky, kolizi, problemu) = 0
         s lin = $g(^||ML("IN","OD_LINKY"))
         f {
             s lin = $o(^[dataDB]JRL(sku,lin))
@@ -237,6 +237,25 @@ ClassMethod Inventura(ByRef sys As %String) As %Status
                     f { s kat = $o(anKat(kat))  q:kat=""  s statAn(kat) = $g(statAn(kat)) + anKat(kat), statAnStr(kat) = $g(statAnStr(kat)) + 1 }
                     s kat = ""
                     f { s kat = $o(legKat(kat))  q:kat=""  s statLeg(kat) = $g(statLeg(kat)) + legKat(kat), statLegStr(kat) = $g(statLegStr(kat)) + 1 }
+
+                    // nález 2b: řádek legendy, ke kterému na téže stránce není ani jedna značka u minuty
+                    // (vývěska je pro jednu zastávku → je to šum, případně vypadlý spoj). Kategorie bez
+                    // značky u minuty se nepočítají: symbol u zastávky, agregát, text bez znaku.
+                    s zn = ""
+                    f {
+                        s zn = $o(legZnak(zn))
+                        q:zn=""
+                        continue:$d(anZnak(zn))
+                        s katL = $o(legZnak(zn,""))
+                        continue:katL="atribut-zastavky"
+                        continue:katL="bezbarier-agregat"
+                        s legendaBezZnacky = legendaBezZnacky + 1
+                        i problemu < 20 {
+                            s problemu = problemu + 1
+                            s problemy(problemu) = "PROBLEM=legendaBezZnacky~linka="_lin_"~smer="_smer_"~poradi="_poradi
+                                _"~znak="_zn_"~kategorie="_katL_"~text="_$g(legZnak(zn,katL))
+                        }
+                    }
 
                     // nález 2: symbol u minuty, který legenda nevysvětluje (kategorie-agnosticky)
                     s zn = ""
@@ -292,7 +311,8 @@ ClassMethod Inventura(ByRef sys As %String) As %Status
         f pi=1:1:problemu s ^||ML("OUT",$i(i)) = problemy(pi)
 
         s ^||ML("OUT","SOUHRN") = "linek="_$s(linek>limit:limit,1:linek)_"~stranek="_stranek
-            _"~bezLegendy="_bezLegendy_"~kolizi="_kolizi_"~posledniLinka="_lin
+            _"~bezLegendy="_bezLegendy_"~legendaBezZnacky="_legendaBezZnacky
+            _"~kolizi="_kolizi_"~posledniLinka="_lin
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
@@ -368,6 +388,105 @@ ClassMethod RozdilyDiag(ByRef sys As %String) As %Status
             s ^||ML("OUT",$i(i)) = "poradi="_poradi_"~nazev="_naz_"~STRANKA_poznamek="_pocetPozn
                 _"~STRANKA_textovych="_textovych_"~STRANKA_odjezdu="_page.rows.%Get("ODJEZDY").%Size()
         }
+    } catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
+/// Kontrola opačným směrem než `Inventura`: **řádek legendy, ke kterému na téže stránce není ani jedna
+/// značka u minuty.** Vývěska je pro jednu zastávku, takže taková legenda je pro cestujícího šum -
+/// a může znamenat, že z mřížky vypadl spoj, který ta značka popisuje.
+/// Vypíše i spoje, kterým `RozdilyTras` přidělil značku, vs. spoje reálně přítomné v odjezdech.
+///
+/// IN:  SKUPINA_LINEK_ID, LINKA_ID, SMER (default T), PORADI (default 1)
+/// OUT[n] = "ZNACKA=..~vOdjezdech=..", "LEGENDA_BEZ_ZNACKY=..", "SPOJ_SE_ZNACKOU=..~vOdjezdech=.."
+ClassMethod StrankaZnacky(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        k ^||TiskAd
+
+        s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+        i sku = "" s sku = $o(^[dataDB]JRL(""))
+        s lin = $g(^||ML("IN","LINKA_ID"))
+        s smer = $g(^||ML("IN","SMER"))
+        i smer = "" s smer = "T"
+        s poradi = +$g(^||ML("IN","PORADI"))
+        i 'poradi s poradi = 1
+        s agenda = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+
+        s page = $classmethod(agenda,"BuildStrankaZastavky", dataDB, sku, lin, poradi, smer, "")
+        i '$isobject(page) {
+            s ^||ML("OUT",1) = "stranka se nesestavila"
+            ret $$$OK
+        }
+
+        // značky reálně použité u minut + spoje přítomné v odjezdech
+        k pouzito, spojVOdjezdech
+        s odj = page.rows.%Get("ODJEZDY")
+        s itO = odj.%GetIterator()
+        while itO.%GetNext(.ok, .ov) {
+            continue:'$isobject(ov)
+            s itA = ov.%Get("ANOTACE").%GetIterator()
+            while itA.%GetNext(.ak, .av) {
+                continue:'$isobject(av)
+                s zn = av.%Get("ZNAK")
+                i zn '= "" s pouzito(zn) = $g(pouzito(zn)) + 1
+                s spN = av.%Get("SPOJ")
+                i spN '= "" s spojVOdjezdech(spN) = ""
+            }
+        }
+
+        s i = 0
+        s ^||ML("OUT",$i(i)) = "odjezdu="_odj.%Size()_"~poznamek="_page.rows.%Get("POZNAMKY").%Size()
+            _"~skupinDnu="_page.rows.%Get("SKUPINY_DNU").%Size()
+
+        // každý odjezd i s hodinou - podle ní se pozná, jestli ho v tisku neořezává časová osa
+        s itD = odj.%GetIterator()
+        while itD.%GetNext(.dk, .dv) {
+            continue:'$isobject(dv)
+            s znaky = ""
+            s itZ = dv.%Get("ANOTACE").%GetIterator()
+            while itZ.%GetNext(.zk, .zv) {
+                continue:'$isobject(zv)
+                s znaky = znaky_$s(znaky="":"",1:"+")_zv.%Get("ZNAK")_"("_zv.%Get("KATEGORIE")_")"
+            }
+            s ^||ML("OUT",$i(i)) = "ODJEZD="_dv.%Get("HODINA")_":"_dv.%Get("MINUTA")
+                _"~skupinaDnu="_dv.%Get("SKUPINA_DNU_ID")_"~znacky="_$s(znaky="":"(zadne)",1:znaky)
+        }
+
+        // legenda vs. použité značky
+        s itP = page.rows.%Get("POZNAMKY").%GetIterator()
+        while itP.%GetNext(.pk, .pv) {
+            continue:'$isobject(pv)
+            s zn = pv.%Get("ZNAK"), kat = pv.%Get("KATEGORIE")
+            // kategorie, které značku u minuty mít nemají (symbol u zastávky / agregát / text bez znaku)
+            i (kat = "atribut-zastavky") || (kat = "bezbarier-agregat") || (zn = "") continue
+            s kolik = $g(pouzito(zn), 0)
+            i kolik {
+                s ^||ML("OUT",$i(i)) = "ZNACKA="_zn_"~kategorie="_kat_"~vOdjezdech="_kolik
+            } else {
+                s ^||ML("OUT",$i(i)) = "LEGENDA_BEZ_ZNACKY="_zn_"~kategorie="_kat_"~text="_pv.%Get("TEXT")
+            }
+        }
+
+        // spoje se značkou rozdílu trasy vs. jejich přítomnost v odjezdech
+        k pismenoSpoj, legenda
+        d $classmethod(agenda,"RozdilyTras", dataDB, sku, lin, smer, poradi, .pismenoSpoj, .legenda)
+        s sp = ""
+        f {
+            s sp = $o(pismenoSpoj(sp))
+            q:sp=""
+            s hlava = $p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1)
+            s ct = $p(hlava,":",3), plk = $p(hlava,":",7)
+            s cnz = $p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",7)
+            d $classmethod(agenda,"WMapa", dataDB, sku, lin, ct, .wMapS)
+            s casS = $classmethod(agenda,"CasHodnota", $g(wMapS(poradi)))
+            s ^||ML("OUT",$i(i)) = "SPOJ_SE_ZNACKOU="_sp_"~znacka="_pismenoSpoj(sp)
+                _"~vOdjezdech="_$s($d(spojVOdjezdech(sp)):1,1:0)_"~casNaZastavce="_$s(casS="":"NESTAVI",1:casS)
+                _"~plk="_plk_"~cnz="_cnz
+        }
+        k ^||TiskAd
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }

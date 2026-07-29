@@ -165,12 +165,17 @@ při scope té fáze, ne teď.
 Nejdůležitější otevřená věc u zastávkového JŘ: **poznámka existuje, ale cestující ji na vývěsce
 nevidí.** Dva samostatné nálezy, oba na `CB_GWBUS` 501/0000001, směr T, stránka Autobusové nádraží:
 
-1. **Bezbariérová poznámka se nevykreslí, i když v datech je** (nález ze živého buildu). `GetData`
-   vrací pro tu stránku **9** poznámek, na vývěsce je jich **8** - chybí `H - spoj má bezbariérově
-   přístupné vozidlo` (mělo by být mezi ④ a `B`). Není to souhrnná varianta, takže to neschovává
-   přepínač skrytí souhrnné bezbariérové poznámky. Kandidáti: viditelnost dle typu na prvku legendy,
-   pevná výška boxu legendy (devátý řádek se nevejde), nebo náš filtr/render. **Změřit, kde se to
-   ztrácí** (data → filtr → prvek), teprve pak opravovat.
+1. **Nevykresluje se jeden odjezd (nebo jeho značky) - a s ním padá i řádek legendy.**
+   Záchytný bod: stránka má v datech **4 odjezdy**, všechny ve sloupci Pracovní dny:
+   `8:19 B` · `9:25 B` · **`11:20 C + bezbariér`** · `13:48 ①②③④ + E + 40`.
+   V živém buildu u **11:20 není vidět ani „C", ani bezbariérový symbol** (potvrdil Jan), a v legendě
+   chybí řádek `H - spoj má bezbariérově přístupné vozidlo` (data 9 poznámek, vývěska 8).
+   Legenda „C" přítomná je, protože se staví ze serverových dat, ne z nakresleného.
+   **Vysvětluje obojí jednou příčinou:** bezbariér nemá jinou minutu, kde by se objevil, takže
+   s neviditelnou minutou zmizí i jeho vysvětlivka. Krokovat ten jeden odjezd (spoj 29, trasa 19,
+   `plk=X`, skupina dnů 1) cestou data → `NoteVisibilityFilter` → `DepartureGridElement`.
+   Data jsou ověřená čistá **v obou směrech** (`Inventura`: 0 značek bez legendy, 0 legend bez značky
+   napříč 45 stránkami), takže ztráta je na straně vykreslení, ne generování.
 2. **Chybí zdroj atributů zastávky per spoj.** Legacy má v legendě „x = zastávka pouze na znamení",
    my ne. Není to filtr ani rozsah zastávek - na té lince nemá „x" žádná zastávka v J-větě (jediné
    atributy jsou `TS`). Legacy ho bere odjinud; ve W-záznamu trasy jsou atributy **per spoj**
