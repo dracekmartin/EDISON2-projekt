@@ -13,6 +13,10 @@ public sealed record CarouselPage(string Title, Func<FrameworkElement> ContentFa
 /// <summary>Viditelná stránka pro view (sloupec: popisek + živý obsah).</summary>
 public sealed record CarouselPageView(string Title, FrameworkElement Content);
 
+/// <summary>Vzorek „uživatel je v panelu" od view — surová platformní data, politiku pauzy
+/// (kdy vyprší) drží VM.</summary>
+internal readonly record struct CarouselEngagement(bool PointerInside, bool FocusWithin, bool PointerMoved);
+
 /// <summary>
 /// Pinned karusel „Podpora M-line" — garantovaný komunikační kanál IT → uživatelé. Responzivní:
 /// podle šířky zobrazí 1–N stránek (Novinky/Wiki/Školení) vedle sebe; vejdou-li se všechny,
@@ -22,8 +26,14 @@ public sealed record CarouselPageView(string Title, FrameworkElement Content);
 /// </summary>
 public sealed class SupportCarouselMiniAppViewModel : EDMiniAppViewModel
 {
-    internal static readonly TimeSpan PageDuration = TimeSpan.FromSeconds(60);
-    private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(1);
+    /// <summary>Krátká právě proto, že odpočet stojí, když je uživatel v panelu
+    /// (<see cref="EngagementProbe"/>) — čtení stránka nepřeskočí pod rukama.</summary>
+    internal static readonly TimeSpan PageDuration = TimeSpan.FromSeconds(15);
+    internal static readonly TimeSpan TickInterval = TimeSpan.FromMilliseconds(250);
+    /// <summary>Po jak dlouhém klidu pauza vyprší. Konečná být musí (WPF fokus je „sticky" — jedno
+    /// kliknutí na šipku by cyklení zastavilo navždy), ale ne krátká: klid ≠ nezájem, čtení
+    /// kolečkem ani klávesami kurzorem nehýbe a nad HWND WebView2 ho WPF nevidí.</summary>
+    internal static readonly TimeSpan PauseIdleTimeout = TimeSpan.FromMinutes(3);
     /// <summary>Minimální šířka jednoho sloupce — pod ní se stránky stackují do cyklení.</summary>
     internal const double MinPageWidth = 420;
 
@@ -87,6 +97,15 @@ public sealed class SupportCarouselMiniAppViewModel : EDMiniAppViewModel
     /// <summary>Naplnění lišty auto-posunu, 0–1.</summary>
     public double Progress { get => _progress; private set => Set(ref _progress, value); }
 
+    /// <summary>Vzorkuje hover/fokus (plní view; VM na vizuální stav nevidí). Nenastavená = bez pauzy.</summary>
+    internal Func<CarouselEngagement>? EngagementProbe { get; set; }
+
+    private int _idleTicks;
+
+    private bool _isPaused;
+    /// <summary>Odpočet stojí, protože je uživatel v panelu; přepočítává se v <see cref="Tick"/>.</summary>
+    public bool IsPaused { get => _isPaused; private set => Set(ref _isPaused, value); }
+
     /// <summary>Přepočet počtu sloupců podle aktuální šířky panelu (volá view ze SizeChanged).</summary>
     public void UpdateViewportWidth(double width)
     {
@@ -98,6 +117,8 @@ public sealed class SupportCarouselMiniAppViewModel : EDMiniAppViewModel
         {
             CurrentIndex = 0;
             Progress = 0;
+            IsPaused = false;
+            _idleTicks = 0;
         }
         OnPropertyChanged(nameof(VisibleCount));
         OnPropertyChanged(nameof(ShowCycleControls));
@@ -118,9 +139,23 @@ public sealed class SupportCarouselMiniAppViewModel : EDMiniAppViewModel
     internal void Tick()
     {
         if (!ShowCycleControls) return;
+        if (UpdatePause()) return;   // pauza jen zmrazí lištu, nevrací ji na začátek
         double next = Progress + TickInterval / PageDuration;
         if (next >= 1) MoveBy(1);
         else Progress = next;
+    }
+
+    // Pauza při hoveru/fokusu, ale časově omezená: klid = uživatel odešel (kurzor odložený nad
+    // panelem, zapomenutý fokus po kliknutí na šipku), pak se cyklení rozjede samo.
+    private bool UpdatePause()
+    {
+        var e = EngagementProbe?.Invoke() ?? default;
+        if (!e.PointerInside && !e.FocusWithin) _idleTicks = 0;
+        else if (e.PointerInside && e.PointerMoved) _idleTicks = 0;
+        else _idleTicks++;
+
+        IsPaused = (e.PointerInside || e.FocusWithin) && _idleTicks * TickInterval < PauseIdleTimeout;
+        return IsPaused;
     }
 
     // Posun (ruční i automatický) resetuje lištu.

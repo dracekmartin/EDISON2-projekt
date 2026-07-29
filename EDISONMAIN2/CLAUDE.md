@@ -61,7 +61,11 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts` (spolu se šířkou stromu
   v `LocalPrefs.TreeWidths`, stejný lifecycle přes `AttachTreeLayout`); chybí-li uložený →
   výchozí layout = pinned karusel `Core.Podpora` (1–3 sloupce dle šířky; při plném
-  zobrazení cyklení stojí, jinak 60 s lišta; obsah lazy, drží se živý) + Oblíbené dole;
+  zobrazení cyklení stojí, jinak 15 s lišta — krátká proto, že odpočet stojí při hoveru/fokusu;
+  hover se kvůli HWND WebView2 zjišťuje pozicí kurzoru + `WindowFromPoint` (ne `IsMouseOver`,
+  a ne jen souřadnice — cizí okno shell překrývá); pauza vyprší po 3 min klidu, protože WPF fokus
+  je sticky a kliknutí na šipku by cyklení zastavilo navždy — krátký timeout tam nejde, čtení
+  kolečkem/klávesami kurzorem nehýbe; obsah lazy, drží se živý) + Oblíbené dole;
   prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
   Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,
