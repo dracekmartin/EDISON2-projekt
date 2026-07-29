@@ -74,7 +74,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | - (zavřeno) | §E1 |
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
-| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ AD · ⬜ MHD · ▶ **ready-to-close** | Linka se spojem za základní trasu → legenda „jede až do zast. X" | §D1 |
+| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ⛔ **NEZAVÍRAT** (29. 7. změřeno) - poznámky rozdílů tras se nedostanou na stránku vůbec + věta bez cíle | Viz §D1 „Změřený stav 29. 7." | §D1 |
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD · ▶ **ready-to-close** | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do resolve poznámka, řešit jinde | §D4 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** - ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | - | §B3 |
@@ -270,6 +270,28 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
   ověřeno proti CB_CSADAD 0345061/0365001 že běžné rozdíly (neobsluhuje/jede jen do) fungují 1:1 a změna
   je nedotkla. „jede až do" se projeví na lince, kde spoj reálně jede za vzor.
 - **⬜ Zbývá pro MHD agendu** (`ZastavkoveJrMhd`) - stejná úprava neportována (až bude potřeba).
+
+#### ⛔ Změřený stav 29. 7. - tiket NENÍ hotový (sonda `Tests/AdProdlouzeniProbe.cls`)
+
+Ověřováno na `CB_CSADAD`, skupina 1. **Případ v datech existuje**: linka **0365003 směr T**, poznámka
+vzniká na 8 zastávkách (Hradiště, Ke Střelnici, Na Rozhledně, U autobusového nádraží, Nádražní,
+Budovcova, Harantova, Žižkova) - 98 výskytů napříč 240 linkami, tj. vzácné, ale reálné.
+
+**Tři vady, seřazené dle závažnosti:**
+
+1. **Poznámky rozdílů tras se vůbec nedostanou na stránku.** `GetData` pro 0365003 / Hradiště / T
+   vrací 5 poznámek (2× nz, 3× specialni) - **žádnou textovou poznámku rozdílu trasy**, a to je 1:1
+   to, co vidí uživatel v aplikaci. Render tedy nic nezahazuje; ztrácí se to **v generování dat**
+   mezi `RozdilyTras` (řádek ~550) a sestavením kolekce `POZNAMKY`. Primární podezření: vazba na
+   písmena spojů u odjezdů - u minut nejsou vidět žádná písmena. **Toto je vážnější než původní tiket.**
+2. **Věta „jede až do zast. " nemá cíl** - končí mezerou. Konečná zastávka se odvozuje z délky bitmapy
+   trasy (`$l(spojTr)`), což míří na pozici bez názvu zastávky.
+3. **Stará formulace nezmizela** - „jede přes zast. X" se tiskne **současně** s „jede až do", takže
+   výstup je horší než legacy. U prodloužení má zůstat jen „jede až do" (+ případné „neobsluhuje").
+
+**Vyvráceno měřením** (nebyly to příčiny): parametr „Písmena variant u odjezdů" (vypnutý), parametr
+„V rozsahu nepoznámkovat schovat" (na výchozím „Ruční komentáře"), nastavení legendy (textové
+poznámky zapnuté).
 
 ### D2. Vlastní komentář spoje musí přebít auto-poznámku (ne paralelně tisknout)
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
