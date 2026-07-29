@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-30 (2) - Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl (`B24`)
+
+Uživatel tiskl něco jiného, než co měl v nastavení, a neměl jak na to přijít: uložené
+„Rozdělit vývěsku pro každý označník" bylo zapnuté, takže ze stránky zmizely odjezdy jiného
+označníku (chyběl konkrétní spoj i s jeho značkami), ale ovladač v UI ukazoval vypnuto.
+
+- **Příčina:** persistované hodnoty se aplikovaly **dvěma cestami**. Otevírací flow dělal celou
+  trojici (per-agenda → šablona → přenačtení UI), ale cold-start fallback (když načtení preferencí
+  doběhne až po otevření šablony) jen načetl hodnoty do dictu. Ty pak šly do `GetData`, kdežto lišta
+  i formulář parametrů zůstaly na defaultech. Cold-start navíc vůbec neaplikoval parametry uložené
+  v šabloně.
+- **Oprava:** jedna veřejná cesta `ApplyPersistedPrintParamsAsync()` (hodnoty + UI pohromadě), kterou
+  volají všechna tři místa. U `OnExternalParamsChanged` je invariant dopsaný do dokumentace, včetně
+  důvodu, proč tab neobnovuje sám (jeho `Init()` je synchronní Caché round-trip).
+- **Pojistka, aby to bylo vidět příště:** status bar hlásí nastavení, které **tiše mění obsah**
+  vývěsky - „poznámky skryté nastavením" · „rozdíly tras nahrazené písmeny variant" · „vývěska
+  rozdělená po označnících". Schované poznámky se počítají ze **skutečně** odfiltrovaných položek
+  (`NoteSuppressionCounter`), ne ze zapnutého parametru: rozsah „Spoje, nepoznámkovat" nemusí mít
+  v datech firmy záznamy a signál z parametru by lhal.
+- .NET 487/487 (13 nových: filtr poznámek + skládání hlášky).
+
+Zbývá z téhož nálezu: `B25` (rozdělená vývěska nechává v legendě značky spojů, které na ní nejsou)
+a `B26` („označník" může být z dat nesmysl - `JET,1` na CB_GWBUS).
+
 ## 2026-07-30 - Audit úplnosti poznámek zastávkového JŘ (AD) + chyba cache W-map
 
 Poznámky jsou na vývěsce klíčové (cestující podle nich pozná, kdy spoj jede a kam), takže proběhl
@@ -41,7 +65,7 @@ sondou `Tests/AdProdlouzeniProbe.cls`.
   Zlaté digesty beze změny (zlaté linky `|` nemají), CB_CSADAD beze změny.
 - **Kolize značky „H" je i v legacy** - ověřeno voláním starého modulu (`ALVA.TISKMHD.Data`,
   VolanoZ=JRMAIN) na 0365005: legenda tam nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`.
-  Rozhodnutí: necháváme legacy-shodné (blok `B14` uzavřen jako „záměrně jinak").
+  Rozhodnutí: necháváme legacy-shodné (uzavřeno jako „záměrně jinak", detail v archivu roadmapy).
 - **Signál o schovaných poznámkách** (status bar): dosud nešlo rozeznat „žádné poznámky nejsou" od
   „jsou, ale nastavení sestavy je schovalo". Počítají se **skutečně** skryté položky, ne zapnutý
   parametr - rozsah „Spoje, nepoznámkovat" v této firmě nemá data, takže signál z parametru by lhal.

@@ -2,7 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
-## 2026-07-30 ✅ - Poznámky zastávkového JŘ: audit úplnosti + #7947 dotaženo (`B14` uzavřen)
+## 2026-07-30 ✅ - `B24` Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl
+
+Detail → changelog 2026-07-30 (2). Uživatel tiskl jiné nastavení, než jaké viděl: uložené
+`ROZDELIT_PER_OZNACNIK=true` tiše rozdělovalo vývěsku, takže ze stránky zmizely odjezdy jiného
+označníku, ale ovladač v UI ukazoval vypnuto.
+
+**Příčina:** persistované hodnoty se aplikovaly **dvěma cestami**. Otevírací flow dělal celou trojici
+(per-agenda → šablona → přenačtení UI), cold-start fallback jen načetl hodnoty do dictu. Opraveno
+jednou veřejnou cestou `ApplyPersistedPrintParamsAsync()`.
+
+**Poučení:** když táž věc teče do **dat** a do **UI** dvěma voláními, jedno z nich někdo vynechá.
+Diagnostika takových případů: přečti uložený blob
+(`^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams",<AgendaCode>)`) a porovnej s UI -
+tady to rozhodlo za pět minut po dnu hádání.
+
+**Číslování bloků:** při této práci vznikly duplikátní `B14`/`B18`/`B19` (čísla už patřila jiné práci) →
+přečíslováno na `B22`–`B26` a do pravidel roadmapy přidán bod 0 (číslo je globální, grepni i archiv).
+
+## 2026-07-30 ✅ - Poznámky zastávkového JŘ: audit úplnosti + #7947 dotaženo
 
 Detail → changelog 2026-07-30, měřený stav → `customer-requirements §D1`.
 
@@ -11,7 +29,7 @@ značka „spoj v zastávce nestaví" (`|`) se počítala jako obsluhovaná (tvr
 spoj nestaví, a slévali skupiny spojů), a cache W-map se nerozlišovala podle linky (v tisku neškodné,
 ale znehodnotilo to předchozí měření). Po opravách je grouping 1:1 se starým modulem.
 
-**`B14` (znění věty o prodloužení) rozhodnut:** cíl jde na začátek věty a nese průjezd -
+**Znění věty o prodloužení rozhodnuto:** cíl jde na začátek věty a nese průjezd -
 `jede až do zast. <konečná> přes <mezizastávky>`. Důvod: cíl je informace, kvůli které tiket vznikl,
 a na konci věty ho legenda ořezávala; bez průjezdu splynou skupiny spojů lišící se jen cestou.
 Je to **jediná** vědomá odchylka od starého modulu v celém tomto bloku.

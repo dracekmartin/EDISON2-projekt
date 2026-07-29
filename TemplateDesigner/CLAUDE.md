@@ -132,6 +132,12 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 - **UI font škálování přes EDTheme/FontService** - UI fonty TD na `{DynamicResource EDTheme.FontSize.*}` / `EDTheme.FontFamily` (Small/Caption/Body/Header/Large); TD respektuje sdílenou user font preferenci z EDISONMAIN2 (`FontService` už TD inicializuje v `App.OnStartup`) a proporcionálně škáluje bez restartu. `Consolas` (výrazy/glyfy) záměrně ponecháno. Comboboxy v hlavním okně na `Width="Auto"` + `MinWidth=64` (neuřízne text, roste s fontem)
 - **Detekce přetečení = jen reálné geometrické přetečení** - `PreviewCanvas.PageOverflows` hlásí jen u **`KeepTogether`** sekcí (dělitelné `SplitAcrossPages`/`AllowSplit` engine chunkuje přes stránky → obsah se neztratí, nevaruje): (a) element přesahující spodní hranu sekce, (b) **sekce vyšší než tisková plocha** (`placed.Y + placed.Height > PrintableHeight` → nejde rozdělit, obsah se ořízne). JŘ element s pevnou výškou, který se do boxu vejde auto-scalem, nevaruje (`ScheduleElementBase.ContentOverflows` zůstává jako helper „box < obsah", neřídí varování). Tisk: `PreviewCanvas.CountOverflowingPages` (layout-only) projede všechny instance a `PrintDialog` při exportu reálných dat vypíše „⚠ X z N stránek přetéká"
 
+- **Signál o nastavení, které tiše mění obsah vývěsky** - status bar hlásí „poznámky skryté nastavením"
+  · „rozdíly tras nahrazené písmeny variant" · „vývěska rozdělená po označnících". Schované poznámky se
+  počítají ze **skutečně** odfiltrovaných položek (`NoteSuppressionCounter`), ne ze zapnutého parametru
+  (rozsah „Spoje, nepoznámkovat" nemusí mít v datech firmy záznamy → signál z parametru by lhal).
+  Persistované hodnoty parametrů se aplikují **jednou cestou** `ApplyPersistedPrintParamsAsync()`
+  (hodnoty + UI pohromadě) - dvě cesty vedly k tomu, že se tisklo jiné nastavení, než UI ukazovalo
 - **EDISONMAIN2 launch kontrakt** - `App.OnStartup` parsuje argumenty kontraktu
   (`EDControls.EdisonLaunchArgs`, zrcadlí `EDISONMAIN2API.FormToRunGetter`); při spuštění ze shellu
   se MLRest staví ze session shellu (server, rest port, namespace, IdFa, login, fullName, mlp) místo
@@ -143,16 +149,13 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 ### 🐛 Známé problémy
 
-- **Parametr sestavy se v UI tváří vypnutý, i když zapnutý je** (nález 2026-07-30, blok `B17`).
-  Uložená hodnota per agenda × uživatel (`TemplateDesigner.PrintParams`) se aplikuje na `_previewParams`
-  a jde do `GetData`, ale ovladač v UI zůstane na výchozí hodnotě → **uživatel tiskne něco jiného, než
-  co vidí v nastavení**. Konkrétně `ROZDELIT_PER_OZNACNIK=true` tiše rozdělovalo vývěsku, takže
-  ze stránky chyběly odjezdy (patřily druhému označníku). Podezření: EDInputForm se re-inicializuje
-  na `Loaded` a přebije Prefill. **Diagnostika, než se něco změní:** přečti uložený blob
-  (`^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams",<AgendaCode>)`) a porovnej
-  s tím, co ukazuje UI.
-- Navazující: `B18` (rozdělená vývěska nechává v legendě značky spojů, které na ní nejsou),
-  `B19` („označník" může být z dat nesmysl), `B16` (chybí zdroj atributů zastávky per spoj).
+- **Rozdělená vývěska po označnících** (`ROZDELIT_PER_OZNACNIK`) má dvě otevřené vady: legenda si nechá
+  značky spojů, které na té stránce nejsou (odjezdy se filtrují, rozdílové poznámky vědomě ne), a jako
+  „označník" se může vzít hodnota, která označník není (`JET` na CB_GWBUS) → bludné stránky.
+  Bloky `B25` a `B26`; `B23` = chybí zdroj atributů zastávky per spoj.
+- **Diagnostika „UI ukazuje jiné nastavení, než se tiskne"** (kdyby se to vrátilo): přečti uložený blob
+  `^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams",<AgendaCode>)` a porovnej s UI.
+  Tímhle se odhalilo tiše zapnuté rozdělení vývěsky (opraveno, `B24`).
 
 ---
 

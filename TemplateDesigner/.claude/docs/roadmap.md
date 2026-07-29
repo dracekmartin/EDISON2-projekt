@@ -4,7 +4,7 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** po zavření #7947 vzít **`B16`** (chybějící řádky legendy - poznámka je v datech,
+> **▶ Další session:** po zavření #7947 vzít **`B23`** (chybějící řádky legendy - poznámka je v datech,
 > ale na vývěsce ji cestující nevidí; priorita dle Jana 30. 7.), pak dokončit **B2** (zavírací kolo
 > helpdesku + vizuál zmenšování) a dál **B10** (symbolový font linkové části) nebo **B13** (rozřezání
 > široké tabulky). Follow-upy „na vyžádání zákazníka" žijí
@@ -22,6 +22,8 @@ Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
 zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde).
 
 **Tři pravidla, aby roadmapa znovu nenarostla:**
+0. **Číslo bloku je globální a nikdy se nerecykluje** - před založením grepni `B<č>` v roadmapě
+   **i v archivu** (jinak vznikne druhý „B18“ a review se rozejde s tím, co kdo myslel).
 1. **Nic nevstoupí bez velikosti a čísla bloku** - volný text bez velikosti je přesně to, co se nahromadilo.
 2. **Zákaznická položka má uzavírací podmínku** („co ověřit, aby se dala zavřít") - jinak zůstane „hotová, ale otevřená".
 3. **Linkový JŘ má ukazatel `L‑1…L‑4`** (Fáze C+D) - velký kus rozřezaný na slotové kroky, aby v každé vlně postoupil.
@@ -161,7 +163,7 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**`B16` ⚠️ CHYBĚJÍCÍ ŘÁDKY LEGENDY - vzít hned po zavření #7947** (M, zóna 5; nálezy 30. 7.)
+**`B23` ⚠️ CHYBĚJÍCÍ ŘÁDKY LEGENDY - vzít hned po zavření #7947** (M, zóna 5; nálezy 30. 7.)
 Nejdůležitější otevřená věc u zastávkového JŘ: **poznámka existuje, ale cestující ji na vývěsce
 nevidí.** Dva samostatné nálezy, oba na `CB_GWBUS` 501/0000001, směr T, stránka Autobusové nádraží:
 
@@ -171,7 +173,7 @@ nevidí.** Dva samostatné nálezy, oba na `CB_GWBUS` 501/0000001, směr T, str�
    Změřeno v uložených parametrech (`^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams","ZASTAVKOVY_JR_AD")`):
    `ROZDELIT_PER_OZNACNIK: true`. Server se tedy chovall správně - stránka nesla jen odjezdy svého
    označníku. **Chyba je, že UI ten parametr ukazovalo jako vypnutý** (Jan ho přeťukl a rozešlo se to).
-   Zbylé tři úkoly z toho jsou níže jako `B17`–`B19`.
+   Oprava UI → archiv (`B24`); zbytek níže jako `B25` a `B26`.
 2. **Chybí zdroj atributů zastávky per spoj.** Legacy má v legendě „x = zastávka pouze na znamení",
    my ne. Není to filtr ani rozsah zastávek - na té lince nemá „x" žádná zastávka v J-větě (jediné
    atributy jsou `TS`). Legacy ho bere odjinud; ve W-záznamu trasy jsou atributy **per spoj**
@@ -183,36 +185,26 @@ legendy") a `LegacyLegenda` (co na téže stránce vypíše starý modul).
 
 ---
 
-**`B17` ⚠️ Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl** (S/M, zóna 5; 30. 7.)
-**Nejzávažnější z téhle trojice** - uživatel tiskne něco jiného, než co v nastavení vidí, a nemá jak
-na to přijít. Uložená hodnota (per agenda × uživatel) `ROZDELIT_PER_OZNACNIK: true` se aplikuje na
-`_previewParams` (a jde do `GetData`), ale ovladač v UI zůstal na výchozí hodnotě. Podezření dle
-historie: **EDInputForm se re-inicializuje na `Loaded`** (návrat na tab), takže přebije Prefill z
-`RefreshParamsUiAfterLoad` - stejná past už je zapsaná v paměti projektu. Ověřit, kde se hodnota
-a ovladač rozcházejí, a **udělat to nerozbitně**: hodnoty a UI z jednoho zdroje, ne dvě cesty.
-Vedle toho zvážit pojistku „aktivní parametry" ve status baru (uživatel vidí, co je zapnuté) - to řeší
-i `B15` (schované „Hodiny od/do" v liště).
-
-**`B18` Rozdělená vývěska nechává v legendě značky spojů, které na ní nejsou** (S, zóna 5; 30. 7.)
+**`B25` Rozdělená vývěska nechává v legendě značky spojů, které na ní nejsou** (S, zóna 5; 30. 7.)
 Při rozdělení per označník se filtrují **odjezdy**, ale poznámky rozdílů tras ne (v kódu vědomě, aby
 byla písmena variant shodná napříč stránkami téže zastávky). Důsledek: na stránce svítí vysvětlivka
 ke značce, která na ní není u žádné minuty (změřeno: `C` v legendě, odjezd `11:20` na druhé stránce).
 Naopak legenda bezbariéru zmizí celá, protože se plní jen z vytištěných odjezdů. Rozhodnout, co je
 správné (filtrovat legendu dle stránky × nechat kvůli stabilitě písmen) a srovnat obě strany.
 
-**`B19` „Označník" může být z dat nesmysl → rozdělení vyrobí bludné stránky** (M, zóna 5; 30. 7.)
+**`B26` „Označník" může být z dat nesmysl → rozdělení vyrobí bludné stránky** (M, zóna 5; 30. 7.)
 Na `CB_GWBUS` 501/0000001 vrací `NastupisteSpoju` hodnoty **`JET,1`**; „JET" není označník, v datech
 je to obsah, který se plete s příznakem (`JET`/`JETE` je i v J-větě `#3`, odkud čteme fallback).
 Rozdělení pak vytvoří stránku „JET" a stránku „1". Na `CB_CSADAD` 0320680 přitom označníky (11/22)
 fungují - je to tedy závislé na obsahu dat, ne rozbité vždy. Ověřit, čím ten segment v AD skutečně je
 (možná posun indexu pro některé firmy), a rozdělení nespouštět nad hodnotou, která označník není.
 
-> **Rozhodnuto 30. 7. - kolize značky „H"/„F" zůstává** (bylo `B14`): ověřeno voláním starého modulu,
+> **Rozhodnuto 30. 7. - kolize značky „H"/„F" zůstává** (rozhodnutí o známkování rozdílů tras): ověřeno voláním starého modulu,
 > že tutéž kolizi má i legacy (legenda 0365005 nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`).
 > Držíme 1:1 paritu; kdyby to zákazník nahlásil, oprava je malá (převzít z MHD sdílený pool značek
 > stránky) a stojí přebaselinování zlatého digestu 0365005.
 
-**`B15` Podmíněná viditelnost parametrů v náhledové liště** (S, zóna 5; nález 30. 7.)
+**`B22` Podmíněná viditelnost parametrů v náhledové liště** (S, zóna 5; nález 30. 7.)
 V parametrové liště nad náhledem jsou vidět „Hodiny od/do", i když časová osa není „Vlastní rozsah" -
 lišta neaplikuje podmíněnou viditelnost parametru (v tiskovém dialogu se to chová možná jinak, chce
 ověřit obě cesty). Kosmetika, ale mate.

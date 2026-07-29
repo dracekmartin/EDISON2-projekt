@@ -337,13 +337,14 @@ Informačně tedy 1:1 s legacy (tytéž tři skupiny, tytéž zastávky), odchyl
 prodloužení se nemění nic** - pořadí i oddělovače (vč. legacy tvaru „ , " před „neobsluhuje") zůstávají
 byte-identické, zlaté digesty beze změny.
 
-**⚠️ Nález z živého buildu - bezbariérová poznámka se nevykreslí** (30. 7., blok `B16`, priorita
-po zavření tiketu): na téže stránce vrací `GetData` **9** poznámek, na vývěsce je jich **8** - chybí
-`H - spoj má bezbariérově přístupné vozidlo`. Není to souhrnná varianta, takže to nevysvětluje přepínač
-skrytí souhrnu. Nesouvisí s #7947 (rozdíly tras se vykreslily všechny tři), ale je to tentýž druh
-problému jako bod níže: poznámka existuje a cestující ji nevidí. Změřit cestu data → filtr → prvek.
+**✅ Vysvětleno - chybějící bezbariérová poznámka i chybějící odjezd byly tiše zapnuté „Rozdělit
+vývěsku pro každý označník"** (30. 7.): stránka nesla jen odjezdy svého označníku, takže zmizel odjezd
+`11:20` (značky `C` + bezbariér) a s ním celý řádek legendy `H` (plní se jen z vytištěných odjezdů).
+Legenda `C` zůstala, protože rozdílové poznámky se per označník nefiltrují. **Nesouvisí s #7947** -
+rozdíly tras se vykreslily všechny tři. Uložená hodnota parametru byla `true`, ale UI ukazovalo vypnuto;
+opraveno (`B24`, jedna cesta pro hodnoty i UI + signál ve status baru). Zbylé vady rozdělení → `B25`, `B26`.
 
-**⬜ Chybí zdroj atributů zastávky (tentýž blok `B16`):** na téže stránce má legacy řádek
+**⬜ Chybí zdroj atributů zastávky (tentýž blok `B23`):** na téže stránce má legacy řádek
 „x = zastávka pouze na znamení", náš výstup ne. **Doměřeno:** není to filtr ani rozsah zastávek -
 na té lince nemá „x" **žádná** zastávka v J-větě (jediné atributy jsou `TS` na nádraží). Legacy ho
 bere odjinud; ve W-záznamu trasy jsou vidět atributy **per spoj** (např. `#7:6:1::V` = jen výstup),
