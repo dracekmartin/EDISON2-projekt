@@ -1207,7 +1207,11 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
 }
 
 /// Bitmapa obsluhovaných pozic spoje z jeho trasy (cachovaná W-mapa per `cisloTrasy`).
-/// `$e(bmp,poradi)=1` kde spoj staví (cas != "<" a != ""). "" = prázdná trasa.
+/// `$e(bmp,poradi)=1` kde spoj staví. "" = prázdná trasa.
+/// Nestaví = `<` (projíždí), `|` (zastávka na trase, ale spoj v ní nestaví) nebo prázdno (mimo trasu) -
+/// stejná trojice jako `CasHodnota` a `ObsluhovanePoradi`. `|` tu dřív chybělo a rozdíly tras z toho
+/// dělaly falešné „jede přes zast. X" plus slévaly skupiny spojů, které se lišily právě jen `|`
+/// (změřeno proti starému modulu na CB_GWBUS 501/0000001/T: legacy 3 skupiny, my 2).
 ClassMethod SpojBitmapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String) As %String
 {
     d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
@@ -1215,7 +1219,7 @@ ClassMethod SpojBitmapa(dataDB As %String, sku As %String, lin As %String, cislo
     f {
         s p = $o(wMap(p), 1, cas)
         q:p=""
-        i ($isvalidnum(p)) && (cas '= "<") && (cas '= "") s $e(bmp,p) = 1
+        i ($isvalidnum(p)) && (cas '= "<") && (cas '= "") && (cas '= "|") s $e(bmp,p) = 1
     }
     q bmp
 }

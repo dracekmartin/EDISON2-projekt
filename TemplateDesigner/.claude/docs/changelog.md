@@ -26,6 +26,13 @@ sondou `Tests/AdProdlouzeniProbe.cls`.
 - **Vráceno: vynechání „jede přes zast. …" u prodloužení.** Vypadalo redundantně, ale nese jinou
   informaci než cíl - po vynechání se texty různých skupin spojů staly identickými a dedup je sloučil
   do jedné značky (legacy 3 poznámky → 1). Ponecháno legacy-shodné.
+- **Oprava: značka „spoj v zastávce nestaví" (`|`) se počítala jako obsluhovaná** (`SpojBitmapa`).
+  Jen v rozdílech tras, ale se dvěma viditelnými následky: poznámka tvrdila „jede přes zast. X"
+  u zastávky, kde spoj nestaví, a **slévala skupiny spojů**, které se lišily právě jen tímto.
+  Změřeno proti starému modulu na `CB_GWBUS` 501/0000001/T: legacy 3 skupiny, my 2, a jiné seznamy
+  zastávek. Po opravě **1:1 s legacy** (B/C/E, tytéž seznamy vč. „neobsluhuje zast. Dewetterova ul.").
+  Zbytek třídy `|` vylučoval správně (`CasHodnota`, `ObsluhovanePoradi`) - chybělo to na jednom místě.
+  Zlaté digesty beze změny (zlaté linky `|` nemají), CB_CSADAD beze změny.
 - **Kolize značky „H" je i v legacy** - ověřeno voláním starého modulu (`ALVA.TISKMHD.Data`,
   VolanoZ=JRMAIN) na 0365005: legenda tam nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`.
   Rozhodnutí: necháváme legacy-shodné (blok `B14` uzavřen jako „záměrně jinak").

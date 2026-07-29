@@ -166,11 +166,12 @@ Reprodukce #7947 nalezena (`CB_GWBUS` 501/0000001/T) a věta funguje. Legacy ale
 dvě skupiny spojů splynou v jednu značku (legacy 3 poznámky, my 2). Volba: nechat jednodušší větu,
 nebo doplnit průjezd („jede až do zast. X přes Y"). Poslední překážka zavření #7947.
 
-**`B16` Legenda atributů zastávek - které zastávky ji plní** (S, zóna 5; podezření 30. 7.)
-Na `CB_GWBUS` 501/0000001/T stránce Mikrotechna má legacy řádek „x = zastávka pouze na znamení",
-náš výstup ne - přitom kategorie `atribut-zastavky` v té firmě jinak funguje (20 řádků / 45 stránek).
-Podezření na rozdíl v tom, ze kterých zastávek se legenda plní (projeté / mimo zobrazený úsek).
-Doměřit proti legacy, teprve pak případně měnit.
+**`B16` Chybí zdroj atributů zastávky per spoj** (M, zóna 5; doměřeno 30. 7.)
+Na `CB_GWBUS` 501/0000001 má legacy v legendě „x = zastávka pouze na znamení", my ne. **Není to filtr
+ani rozsah zastávek** - na té lince nemá „x" žádná zastávka v J-větě (jediné atributy jsou `TS`).
+Legacy ho bere odjinud; ve W-záznamu trasy jsou atributy **per spoj** (např. `#7:6:1::V` = jen výstup),
+které nečteme vůbec → chybí celý zdroj. Dohledat, kde je legacy bere, pak doplnit čtení + legendu.
+Vedle toho srovnat znění: legacy „zastávka pouze na znamení" × naše „na znamení".
 
 > **Rozhodnuto 30. 7. - kolize značky „H"/„F" zůstává** (bylo `B14`): ověřeno voláním starého modulu,
 > že tutéž kolizi má i legacy (legenda 0365005 nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`).

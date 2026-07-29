@@ -372,6 +372,88 @@ ClassMethod RozdilyDiag(ByRef sys As %String) As %Status
     q $$$OK
 }
 
+/// Trasovací výpis rozdílů tras pro JEDNU stránku - podklad k porovnání se starým modulem.
+/// **Nereimplementuje logiku:** přiřazení spoj → značka i texty legendy bere z reálného
+/// `RozdilyTras`, bitmapy z reálné `SpojBitmapa`; sama jen vypisuje. Slouží k dohledání, proč se
+/// skupiny spojů liší od legacy (např. zastávka se značkou „spoj nestaví").
+///
+/// IN:  SKUPINA_LINEK_ID, LINKA_ID, SMER (default T), PORADI (default 1)
+/// OUT[n] = vzor + zastávky, per trasa bitmapa a W-hodnoty, spoj → značka, legenda
+ClassMethod RozdilyDetail(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        k ^||TiskAd
+
+        s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+        i sku = "" s sku = $o(^[dataDB]JRL(""))
+        s lin = $g(^||ML("IN","LINKA_ID"))
+        s smer = $g(^||ML("IN","SMER"))
+        i smer = "" s smer = "T"
+        s poradi = +$g(^||ML("IN","PORADI"))
+        i 'poradi s poradi = 1
+        s agenda = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+
+        s i = 0
+        s vzor10 = $classmethod(agenda,"TrasaBitmapaZPole", dataDB, sku, lin, smer, 10)
+        s vzor7 = $classmethod(agenda,"TrasaBitmapaZPole", dataDB, sku, lin, smer, 7)
+        k served
+        d $classmethod(agenda,"ObsluhovanePoradi", dataDB, sku, lin, smer, .served)
+        s unionBmp = "", p = ""
+        f { s p = $o(served(p))  q:p=""  i $isvalidnum(p) s $e(unionBmp,p) = 1 }
+        s ^||ML("OUT",$i(i)) = "vzor10="_vzor10_"~vzor7="_vzor7_"~unionObsluhy="_unionBmp
+
+        // mapa pozice → název (ať je v bitmapách vidět, o kterou zastávku jde)
+        s p = ""
+        f {
+            s p = $o(^[dataDB]JRL(sku,lin,"J",p))
+            q:p=""
+            i '$isvalidnum(p) continue
+            s naz = $classmethod(agenda,"NazZPoradi", dataDB, sku, lin, p)
+            i naz = "" continue
+            s vetaJ = $g(^[dataDB]JRL(sku,lin,"J",p))
+            s atrJ = $p($p(vetaJ,":",2),"#",1)          // atributy zastávky (znaky číselníku 16)
+            i i < 60 s ^||ML("OUT",$i(i)) = "POZICE="_p_"~nazev="_naz_"~vUnionu="_+$e(unionBmp,p)_"~atributy="_atrJ_"~J="_$e(vetaJ,1,120)
+        }
+
+        // trasy spojů stavících na této zastávce: bitmapa + W-hodnoty (vidět „|" a „<")
+        k videnaTrasa
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+            q:sp=""
+            i '$isvalidnum(sp) continue
+            s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+            i ct = "" continue
+            i $d(videnaTrasa(ct)) continue
+            s videnaTrasa(ct) = ""
+            s bmp = $classmethod(agenda,"SpojBitmapa", dataDB, sku, lin, ct)
+            s wRaw = $g(^[dataDB]JRL(sku,lin,"W",ct))
+            i i < 60 s ^||ML("OUT",$i(i)) = "TRASA="_ct_"~bitmapa="_bmp_"~W="_$e(wRaw,1,300)
+        }
+
+        // reálné přiřazení spoj → značka + legenda (z RozdilyTras, bez reimplementace)
+        k pismenoSpoj, legenda
+        d $classmethod(agenda,"RozdilyTras", dataDB, sku, lin, smer, poradi, .pismenoSpoj, .legenda)
+        s sp = ""
+        f {
+            s sp = $o(pismenoSpoj(sp))
+            q:sp=""
+            s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+            i i < 60 s ^||ML("OUT",$i(i)) = "SPOJ="_sp_"~trasa="_ct_"~znacka="_pismenoSpoj(sp)
+        }
+        s znk = ""
+        f {
+            s znk = $o(legenda(znk))
+            q:znk=""
+            i i < 60 s ^||ML("OUT",$i(i)) = "LEGENDA="_znk_"~text="_legenda(znk)
+        }
+        k ^||TiskAd
+    } catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
 /// Legenda **starého modulu** pro danou stránku (`ALVA.TISKMHD.Data.LoadData`, VolanoZ=JRMAIN) -
 /// slouží k ověření, zda kolizi značky („H" = bezbariér i rozdíl trasy) má i legacy, nebo je naše.
 /// Read-only; legacy výstup si přebere do lokálu a OUT přepíše vlastním.

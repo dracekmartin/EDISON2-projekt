@@ -312,17 +312,28 @@ Mikrotechna dorazí do legendy:
 
 Věta má cíl, dorazí na stránku, má značku i řádek legendy → **funkčnost #7947 je ověřená**.
 
-**⬜ Otevřené rozhodnutí o znění (poslední překážka zavření tiketu):** legacy má na téže stránce
-**tři** poznámky, my **dvě**. Legacy `C` a `E` se liší jen průjezdem (`pokračuje přes Autobusové
-nádraží` × `pokračuje přes Náměstí, Autobusové nádraží`); naše znění „jede až do zast. \<konečná\>"
-průjezd nenese, takže obě skupiny splynou v jednu značku. Volba: nechat (jednodušší věta, ale méně
-informace než legacy u spojů lišících se cestou), nebo doplnit průjezd („jede až do zast. X přes Y").
-Znění „jede až do" samo je dohodnuté (znění A), tohle je jen o průjezdu.
+**✅ Skupiny spojů srovnány s legacy (oprava `|`).** Nejdřív jsme na té stránce měli **dvě** rozdílové
+poznámky proti legacy **třem** a lišily se i seznamy zastávek. Příčina: `SpojBitmapa` počítala značku
+`|` („zastávka je na trase, ale spoj v ní nestaví") jako obsluhovanou, zatímco `CasHodnota`
+i `ObsluhovanePoradi` ji správně vylučují. Důsledky byly dva: falešné „jede přes zast. X" u zastávek,
+kde spoj nestaví, a slévání skupin spojů, které se lišily právě jen `|`. Po opravě je grouping **1:1
+s legacy** (B/C/E, tytéž seznamy, tatáž věta „neobsluhuje zast. Dewetterova ul.") - jediný rozdíl je
+dohodnuté znění konce věty. Zlaté digesty se nezměnily (zlaté linky `|` nemají), CB_CSADAD beze změny,
+v CB_GWBUS správně přibyly rozlišené skupiny (60 → 66 řádků legendy).
 
-**⬜ Nové podezření k doměření (samostatné):** na téže stránce má legacy řádek „x = zastávka pouze na
-znamení", náš výstup ho tam nemá - přitom kategorie `atribut-zastavky` v té firmě jinak funguje
-(20 řádků na 20 stránkách ze 45). Vypadá to na rozdíl v tom, ze kterých zastávek se legenda atributů
-plní (projeté / mimo zobrazený úsek), ne na chybějící featuru.
+**⬜ Otevřené rozhodnutí o znění (poslední překážka zavření tiketu):** legacy nese i **průjezd**
+(`pokračuje přes Náměstí, Autobusové nádraží`), naše znění „jede až do zast. \<konečná\>" jen cíl.
+Informačně jsme tedy pod legacy u spojů, které se liší cestou. Navíc je cíl **na konci věty**, takže se
+v legendě ořezává jako první - přitom je to ta informace, kvůli které tiket vznikl. Návrh: dát cíl na
+začátek a doplnit průjezd („jede až do zast. X přes Y, jede přes zast. …"). Znění „jede až do" samo je
+dohodnuté (znění A), tohle je o průjezdu a pořadí.
+
+**⬜ Chybí zdroj atributů zastávky (samostatné, blok `B16`):** na téže stránce má legacy řádek
+„x = zastávka pouze na znamení", náš výstup ne. **Doměřeno:** není to filtr ani rozsah zastávek -
+na té lince nemá „x" **žádná** zastávka v J-větě (jediné atributy jsou `TS` na nádraží). Legacy ho
+bere odjinud; ve W-záznamu trasy jsou vidět atributy **per spoj** (např. `#7:6:1::V` = jen výstup),
+které nečteme vůbec. Chybí nám tedy celý zdroj. Pozor i na znění: legacy „zastávka pouze na znamení"
+× naše „na znamení".
 
 **Nový nález z auditu - kolize značky (nezavírat s tiketem):** písmenná sada rozdílů tras (default
 `BCEFGHIJOQRWeijqsvwxz`) obsahuje **H** a **F**, což jsou zároveň značky bezbariérových spojů →
