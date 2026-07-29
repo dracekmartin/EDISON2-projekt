@@ -4,16 +4,16 @@ Include (GENERAL, EDInputForm)
 ///
 /// Field key = property path na C# TextElement (dot notation pro nested,
 /// např. "Style.FontSize"). Generický ElementEditDialog čte/zapisuje hodnoty
-/// přes reflexi (ElementPropertyAccessor). Init proto NEpotřebuje IN params —
+/// přes reflexi (ElementPropertyAccessor). Init proto NEpotřebuje IN params -
 /// jen definuje strukturu + default hodnoty (fallback pro null properties).
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace:
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace:
 /// Tato class je MANUAL MIRROR PropertyDescriptors v `TextElement.cs`. Stejné schema
 /// existuje na 2 místech (C# data model + Caché form def) kvůli Caché patchovatelnosti
 /// (server-side change bez .exe redeploy). Při přidání/přejmenování property MUST update
 /// obojí. Viz memory `project_edinputform_schema_duplication.md`.
 ///
-/// Save je no-op — TextElement je in-memory .NET model, host aplikuje hodnoty sám.
+/// Save je no-op - TextElement je in-memory .NET model, host aplikuje hodnoty sám.
 Class ALVA.TemplateDesigner.EDInputForm.TextElementEdit Extends %RegisteredObject
 {
 
@@ -33,18 +33,18 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Font" ────────────────────────────────────────────────
         d form.AddGroup("font", "Font")
 
-        // ComboBox (editovatelný + autocomplete) s prázdným seznamem — klient ho naplní nainstalovanými
+        // ComboBox (editovatelný + autocomplete) s prázdným seznamem - klient ho naplní nainstalovanými
         // fonty (ElementFormBinder.PopulateFontFields z SKFontManager). Prázdné = dědí výchozí font šablony.
         d form.AddFieldToLastGroup("Style.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
-        // Řez (váha) — items plní klient dynamicky dle vybrané rodiny (ElementFormBinder.PopulateFontWeightFields,
+        // Řez (váha) - items plní klient dynamicky dle vybrané rodiny (ElementFormBinder.PopulateFontWeightFields,
         // z reálných řezů nainstalovaného fontu). Prázdná položka (nepovinné pole) = auto dle Tučně.
         d form.AddFieldToLastGroup("Style.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
         d form.AddDecimal("Style.FontSize", "Velikost", 10, 4, 200, "pt", "0.#", 1)
-        d form.AddBool("Style.Bold", "Tučně", 0)
+        d form.AddBool("Style.Bold", "Tučné", 0)
         d form.AddBool("Style.Italic", "Kurzíva", 0)
-        d form.AddBool("Style.Underline", "Podtržené", 0)
-        d form.AddBool("Style.Strikethrough", "Přeškrtnuté", 0)
+        d form.AddBool("Style.Underline", "Podtržení", 0)
+        d form.AddBool("Style.Strikethrough", "Přeškrtnutí", 0)
         d form.AddDecimal("Style.LineSpacing", "Řádkování", 1.2, 0.8, 3, "", "0.0#")
 
         // ── Skupina "Barvy a rámeček" ─────────────────────────────────────
@@ -68,17 +68,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Zarovnání" ───────────────────────────────────────────
         d form.AddGroup("align", "Zarovnání")
 
-        s f = form.AddFieldToLastGroup("Style.HAlign", "Horizontálně", $$$FieldTypeList, 0, 1)
+        s f = form.AddFieldToLastGroup("Style.HAlign", "Vodorovně", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Left", "Vlevo")
         d f.AddListItem("Center", "Na střed")
         d f.AddListItem("Right", "Vpravo")
         d f.AddListItem("Justify", "Do bloku")
         s f.value = "Left"
 
-        s f = form.AddFieldToLastGroup("Style.VAlign", "Vertikálně", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Top", "Nahoru")
+        s f = form.AddFieldToLastGroup("Style.VAlign", "Svisle", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Top", "Nahoře")
         d f.AddListItem("Middle", "Na střed")
-        d f.AddListItem("Bottom", "Dolů")
+        d f.AddListItem("Bottom", "Dole")
         s f.value = "Middle"
 
         // ── Skupina "Pozice a velikost" ───────────────────────────────────
@@ -92,12 +92,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
         s f.helpText = "Pořadí vrstev (vyšší = nad nižším)"
 
-        // ── Skupina "Pokročilé" ───────────────────────────────────────────
-        d form.AddGroup("advanced", "Pokročilé")
         s f = form.AddBool("IsLocked", "Uzamčeno", 0)
         s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
+
+        // ── Skupina "Podmínky" ───────────────────────────────────────────
+        d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

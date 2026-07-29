@@ -5,7 +5,7 @@ namespace TemplateDesigner;
 
 /// <summary>
 /// Pod-formulář pro editaci jednoho TextStyle (zóny) přes sdílený <c>CellStyleEditor</c>
-/// (tri-state — zděděné hodnoty jako šedý placeholder). VM se vytvoří vně; po OK je v
+/// (tri-state - zděděné hodnoty jako šedý placeholder). VM se vytvoří vně; po OK je v
 /// <see cref="StyleEditDialogViewModel.ResultCommand"/> undo-able command.
 /// </summary>
 public partial class StyleEditDialog : Window

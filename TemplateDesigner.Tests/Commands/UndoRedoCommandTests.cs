@@ -6,7 +6,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Commands;
 
 /// <summary>
-/// Zámek undo/redo příkazů — čistá logika bez UI. Hlídá zejména vlastnosti, které se snadno
+/// Zámek undo/redo příkazů - čistá logika bez UI. Hlídá zejména vlastnosti, které se snadno
 /// rozbijí: CompositeCommand undo v opačném pořadí, ScaleTemplateCommand inverzní round-trip,
 /// obnovení smazaného prvku na původní index.
 /// </summary>
@@ -185,7 +185,7 @@ public class UndoRedoCommandTests
         Assert.Equal("G1", b.GroupId);
     }
 
-    // ── CompositeCommand — klíčová vlastnost: undo v OPAČNÉM pořadí ───────────
+    // ── CompositeCommand - klíčová vlastnost: undo v OPAČNÉM pořadí ───────────
     [Fact]
     public void Composite_ExecuteVPoradi_UndoVOpacnem()
     {
@@ -204,7 +204,7 @@ public class UndoRedoCommandTests
             log);
     }
 
-    // ── ScaleTemplateCommand — inverzní round-trip ───────────────────────────
+    // ── ScaleTemplateCommand - inverzní round-trip ───────────────────────────
     [Fact]
     public void ScaleTemplate_UndoVratiPuvodniRozmery()
     {

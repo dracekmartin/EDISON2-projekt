@@ -4,7 +4,7 @@ using TemplateDesigner.Models;
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
-/// 1.3.0 → 1.4.0: DepartureGrid <c>maxGroupCount</c> — starý implicitní default 3 → 0 (bez limitu).
+/// 1.3.0 → 1.4.0: DepartureGrid <c>maxGroupCount</c> - starý implicitní default 3 → 0 (bez limitu).
 /// Strop 3 chránil layout před érou SMO seskupování (sloupec per typ provozu = desítky sloupců);
 /// po zavedení SMO sloupců tiše ořezával 4. skupinu dnů v rozporu s checkboxy v dialogu sloupců
 /// i SMO nastavením. Jiné hodnoty než 3 (1, 2, 4…) = vědomé nastavení → zůstávají.

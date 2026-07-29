@@ -3,9 +3,9 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro editaci RectangleElement properties.
 ///
 /// Field key = property path na C# RectangleElement. Generický ElementEditDialog
-/// čte/zapisuje hodnoty přes reflexi — Init jen definuje strukturu + defaults.
+/// čte/zapisuje hodnoty přes reflexi - Init jen definuje strukturu + defaults.
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptors v
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `RectangleElement.cs`. Viz memory `project_edinputform_schema_duplication.md`.
 Class ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit Extends %RegisteredObject
 {
@@ -21,7 +21,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Vzhled" ──────────────────────────────────────────────
         d form.AddGroup("appearance", "Vzhled")
 
-        s f = form.AddFieldToLastGroup("BackgroundColor", "Výplň", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
 
         s f = form.AddFieldToLastGroup("StrokeColor", "Barva okraje", $$$FieldTypeColor, 0, 0)
@@ -50,12 +50,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
         s f.helpText = "Pořadí vrstev (vyšší = nad nižším)"
 
-        // ── Skupina "Pokročilé" ───────────────────────────────────────────
-        d form.AddGroup("advanced", "Pokročilé")
         s f = form.AddBool("IsLocked", "Uzamčeno", 0)
         s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
+
+        // ── Skupina "Podmínky" ───────────────────────────────────────────
+        d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

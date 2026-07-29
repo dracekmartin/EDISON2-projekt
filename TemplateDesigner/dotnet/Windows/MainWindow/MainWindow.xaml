@@ -25,7 +25,7 @@
             </Style>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-            <!-- Rozměr ikon v toolbaru/paletě — FontService škáluje token spolu s user fontem. -->
+            <!-- Rozměr ikon v toolbaru/paletě - FontService škáluje token spolu s user fontem. -->
             <Style x:Key="ToolbarIconStyle" TargetType="Image">
                 <Setter Property="Width"  Value="{DynamicResource EDTheme.IconSize.Default}"/>
                 <Setter Property="Height" Value="{DynamicResource EDTheme.IconSize.Default}"/>
@@ -86,13 +86,13 @@
                                 Margin="2,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{Binding MoveDownCommand}"
-                                ToolTip="Přesunout dolů — Ctrl+Shift+↓"/>
+                                ToolTip="Přesunout dolů - Ctrl+Shift+↓"/>
                         <Button DockPanel.Dock="Right"
                                 Content="▲" MinWidth="18" Padding="2,0" FontSize="{DynamicResource EDTheme.FontSize.Small}"
                                 Margin="2,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{Binding MoveUpCommand}"
-                                ToolTip="Přesunout nahoru — Ctrl+Shift+↑"/>
+                                ToolTip="Přesunout nahoru - Ctrl+Shift+↑"/>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Header}"
@@ -234,13 +234,13 @@
                 <!-- ── 1. Soubor ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnNew" Style="{StaticResource ToolbarButton}" ToolTip="Nová šablona — Ctrl+N" Click="MenuNew_Click">
+                        <Button x:Name="BtnNew" Style="{StaticResource ToolbarButton}" ToolTip="Nová šablona - Ctrl+N" Click="MenuNew_Click">
                             <Image Source="{StaticResource EDIcons.New}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnOpen" Style="{StaticResource ToolbarButton}" ToolTip="Otevřít — Ctrl+O" Click="MenuOpen_Click">
+                        <Button x:Name="BtnOpen" Style="{StaticResource ToolbarButton}" ToolTip="Otevřít - Ctrl+O" Click="MenuOpen_Click">
                             <Image Source="{StaticResource EDIcons.Open}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnSave" Style="{StaticResource ToolbarButton}" ToolTip="Uložit — Ctrl+S" Click="MenuSave_Click">
+                        <Button x:Name="BtnSave" Style="{StaticResource ToolbarButton}" ToolTip="Uložit - Ctrl+S" Click="MenuSave_Click">
                             <Image Source="{StaticResource EDIcons.Save}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -251,10 +251,10 @@
                 <!-- ── 2. Upravit ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnUndo" Style="{StaticResource ToolbarButton}" ToolTip="Zpět — Ctrl+Z" Command="{Binding UndoCommand}">
+                        <Button x:Name="BtnUndo" Style="{StaticResource ToolbarButton}" ToolTip="Zpět - Ctrl+Z" Command="{Binding UndoCommand}">
                             <Image Source="{StaticResource EDIcons.Undo}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnRedo" Style="{StaticResource ToolbarButton}" ToolTip="Vpřed — Ctrl+Y" Command="{Binding RedoCommand}">
+                        <Button x:Name="BtnRedo" Style="{StaticResource ToolbarButton}" ToolTip="Vpřed - Ctrl+Y" Command="{Binding RedoCommand}">
                             <Image Source="{StaticResource EDIcons.Redo}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -265,7 +265,7 @@
                 <!-- ── Stránka (nastavení dokumentu) ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button x:Name="BtnPageProps" Style="{StaticResource ToolbarButton}" ToolTip="Vlastnosti stránky — Ctrl+Shift+P" Click="MenuPageProps_Click">
+                        <Button x:Name="BtnPageProps" Style="{StaticResource ToolbarButton}" ToolTip="Vlastnosti stránky - Ctrl+Shift+P" Click="MenuPageProps_Click">
                             <Image Source="{StaticResource EDIcons.Document}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -307,12 +307,12 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (dynamická — řádky z dat)" Tag="DynamicTableElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (dynamická - řádky z dat)" Tag="DynamicTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
-                        <!-- JŘ elementy — viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
+                        <!-- JŘ elementy - viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
                         <Button x:Name="BtnPalStopList" Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
@@ -337,16 +337,16 @@
                 <!-- ── 5. Vrstva (Z-order) ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnZForward" Style="{StaticResource ToolbarButton}" ToolTip="Přenést dopředu — Ctrl+PgUp" Click="BtnZForward_Click">
+                        <Button x:Name="BtnZForward" Style="{StaticResource ToolbarButton}" ToolTip="Přenést dopředu - Ctrl+PgUp" Click="BtnZForward_Click">
                             <Image Source="{StaticResource EDIcons.ZForward}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZBackward" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat dozadu — Ctrl+PgDn" Click="BtnZBackward_Click">
+                        <Button x:Name="BtnZBackward" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat dozadu - Ctrl+PgDn" Click="BtnZBackward_Click">
                             <Image Source="{StaticResource EDIcons.ZBackward}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZFront" Style="{StaticResource ToolbarButton}" ToolTip="Přenést zcela dopředu — Ctrl+Shift+PgUp" Click="BtnZFront_Click">
+                        <Button x:Name="BtnZFront" Style="{StaticResource ToolbarButton}" ToolTip="Přenést zcela dopředu - Ctrl+Shift+PgUp" Click="BtnZFront_Click">
                             <Image Source="{StaticResource EDIcons.ZFront}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZBack" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat zcela dozadu — Ctrl+Shift+PgDn" Click="BtnZBack_Click">
+                        <Button x:Name="BtnZBack" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat zcela dozadu - Ctrl+Shift+PgDn" Click="BtnZBack_Click">
                             <Image Source="{StaticResource EDIcons.ZBack}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -450,10 +450,10 @@
                             <ComboBoxItem Content="500 %"/>
                         </ComboBox>
                         <Button x:Name="BtnFitPage" Style="{StaticResource ToolbarButton}"
-                                ToolTip="Přizpůsobit stránce — Ctrl+0"
+                                ToolTip="Přizpůsobit stránce - Ctrl+0"
                                 Click="BtnFitPage_Click" Content="Fit" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                         <Button x:Name="BtnResetView" Style="{StaticResource ToolbarButton}"
-                                ToolTip="Skutečná velikost 100 % (designer i náhled) — Ctrl+1"
+                                ToolTip="Skutečná velikost 100 % (designer i náhled) - Ctrl+1"
                                 Click="BtnResetView_Click" Content="1:1" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                         <ComboBox x:Name="CmbPreviewZoom" Width="Auto" MinWidth="64" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
                                   ToolTip="Zoom náhledu"
@@ -476,7 +476,7 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ToggleButton x:Name="BtnToggleLeftPanel" Style="{StaticResource ToolbarToggle}"
-                                      ToolTip="Skrýt/zobrazit panel sekcí — Ctrl+B"
+                                      ToolTip="Skrýt/zobrazit panel sekcí - Ctrl+B"
                                       IsChecked="True" Checked="BtnToggleLeftPanel_Changed" Unchecked="BtnToggleLeftPanel_Changed"
                                       Content="☰" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt živý náhled"
@@ -494,7 +494,7 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="BtnRefreshData" Style="{StaticResource ToolbarButton}"
                                 Command="{Binding RefreshDataCommand}"
-                                ToolTip="Obnovit data náhledu — F5"
+                                ToolTip="Obnovit data náhledu - F5"
                                 Content="↻" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
                     </StackPanel>
                     <TextBlock Text="Data" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -504,7 +504,7 @@
                 <!-- ── Export ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk — Ctrl+P" Click="MenuPrint_Click">
+                        <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk - Ctrl+P" Click="MenuPrint_Click">
                             <Image Source="{StaticResource EDIcons.Print}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnExportPdf" Style="{StaticResource ToolbarButton}"
@@ -569,7 +569,7 @@
                                             <Setter Property="Padding"         Value="0"/>
                                             <Setter Property="Margin"          Value="0"/>
                                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <!-- Remove default selection highlight — SectionVM.IsActive drives the visual -->
+                                            <!-- Remove default selection highlight - SectionVM.IsActive drives the visual -->
                                             <Setter Property="Template">
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="ListBoxItem">
@@ -592,7 +592,7 @@
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                                     Background="{DynamicResource EDTheme.Bg.Panel}" Padding="8,5"
                                     Cursor="Hand"
-                                    ToolTip="Změnit agendu — Ctrl+Shift+A">
+                                    ToolTip="Změnit agendu - Ctrl+Shift+A">
                                 <Border.InputBindings>
                                     <MouseBinding MouseAction="LeftClick"
                                                   Command="{Binding ChangeAgendaCommand}"/>
@@ -682,7 +682,7 @@
                     <TabItem x:Name="TabParams"><TabItem.Header><StackPanel Orientation="Horizontal"><Viewbox Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center"><Canvas Width="16" Height="16"><Line X1="1" Y1="4" X2="15" Y2="4" Stroke="{DynamicResource EDTheme.Text.Header}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/><Line X1="1" Y1="8" X2="15" Y2="8" Stroke="{DynamicResource EDTheme.Text.Header}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/><Line X1="1" Y1="12" X2="15" Y2="12" Stroke="{DynamicResource EDTheme.Text.Header}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/><Ellipse Canvas.Left="9" Canvas.Top="2" Width="4" Height="4" Fill="{DynamicResource EDTheme.Text.Header}"/><Ellipse Canvas.Left="3" Canvas.Top="6" Width="4" Height="4" Fill="{DynamicResource EDTheme.Text.Header}"/><Ellipse Canvas.Left="8" Canvas.Top="10" Width="4" Height="4" Fill="{DynamicResource EDTheme.Text.Header}"/></Canvas></Viewbox><TextBlock Text="Parametry" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <Grid>
                             <!-- Parametry sestavy renderuje EDInputForm z Caché (AgendaParams, includeExport=0)
-                                 — stejný stack jako tiskový dialog, jen bez export skupiny. Skupiny (Seznam
+                                 - stejný stack jako tiskový dialog, jen bez export skupiny. Skupiny (Seznam
                                  zastávek / Mřížka odjezdů / Poznámky a legenda) řídí `group` z GetParameters.
                                  CacheClass + InitParams + FieldChanged/visibleWhen wiring je v code-behindu. -->
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -729,6 +729,8 @@
                     <Canvas x:Name="InlineEditOverlay"
                             Width="{Binding ElementName=skCanvas, Path=Width}"
                             Height="{Binding ElementName=skCanvas, Path=Height}">
+                        <!-- White záměrně mimo theme: editace textu probíhá NAD papírem šablony,
+                             který je vždy bílý (tiskne se) - pozadí boxu musí splynout s papírem. -->
                         <TextBox x:Name="InlineEditBox" Visibility="Collapsed"
                                  BorderThickness="1.5" BorderBrush="{DynamicResource EDTheme.Accent.Blue}"
                                  Background="White" Padding="2"
@@ -747,7 +749,7 @@
             <Border Grid.Column="4" Grid.Row="0"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,0,0">
                 <DockPanel>
-                    <!-- Stránkování dat (pager) — pevný 34px pruh NAHOŘE, rezervovaný vždy (i bez dat),
+                    <!-- Stránkování dat (pager) - pevný 34px pruh NAHOŘE, rezervovaný vždy (i bez dat),
                          aby náhled začínal ve stejné výšce jako plátno vlevo (34 + 66 padding = 100 =
                          horní okraj stránky návrháře). Pozadí pruhu = plocha plátna → v mock režimu
                          (bez pageru) je to jen souvislý horní okraj. Obsah (◀ combo ▶) jen s daty. -->
@@ -758,10 +760,11 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Button Content="◀" Command="{Binding PreviousPageCommand}" ToolTip="Předchozí stránka"
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
-                                <!-- Přímý skok na stránku dat (zastávka × směr) — bez proklikávání ◀▶.
+                                <!-- Přímý skok na stránku dat (zastávka × směr) - bez proklikávání ◀▶.
                                      Pevná šířka: různě dlouhé názvy nesmí posouvat tlačítka ◀▶ pod myší
                                      (dropdown se obsahu přizpůsobí, zavřený box ořízne). -->
-                                <ComboBox ItemsSource="{Binding PreviewPageItems}"
+                                <ComboBox x:Name="CmbPreviewPage"
+                                          ItemsSource="{Binding PreviewPageItems}"
                                           SelectedIndex="{Binding RealPreviewIndex, Mode=TwoWay}"
                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                           VerticalAlignment="Center" Margin="8,0"
@@ -776,7 +779,7 @@
                         </Border>
                     </Grid>
 
-                    <!-- Scrollovatelný canvas náhledu — vyplní zbytek, začíná nahoře (zarovnané s návrhářem).
+                    <!-- Scrollovatelný canvas náhledu - vyplní zbytek, začíná nahoře (zarovnané s návrhářem).
                          Pozadí = tentýž token jako plocha, kterou kreslí Skia (CanvasTheme.Background),
                          aby pod kratším obsahem neprosvítala jiná barva. -->
                     <ScrollViewer x:Name="PreviewScrollViewer"
@@ -804,11 +807,11 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- 1) Agenda chip (klikatelný — ChangeAgendaCommand) -->
+                    <!-- 1) Agenda chip (klikatelný - ChangeAgendaCommand) -->
                     <Border Grid.Column="0"
                             Background="{DynamicResource EDTheme.Accent.GreenBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
-                            ToolTip="Změnit agendu — Ctrl+Shift+A">
+                            ToolTip="Změnit agendu - Ctrl+Shift+A">
                         <Border.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding ChangeAgendaCommand}"/>
                         </Border.InputBindings>
@@ -821,7 +824,7 @@
 
                     <Border Grid.Column="1" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
 
-                    <!-- 2) Instance chip (klikatelný — OpenInstancePicker) -->
+                    <!-- 2) Instance chip (klikatelný - OpenInstancePicker) -->
                     <Border Grid.Column="2"
                             Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
@@ -837,7 +840,7 @@
                                     Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                     Cursor="Hand" Margin="0,0,4,0"
                                     ToolTip="{Binding PreviousInstanceTooltip}"/>
-                            <!-- Pevná šířka jen při více instancích — různě dlouhé názvy linek jinak
+                            <!-- Pevná šířka jen při více instancích - různě dlouhé názvy linek jinak
                                  posouvají tlačítko ▶ pod myší při proklikávání. -->
                             <TextBlock Text="{Binding ActiveInstanceText}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}"
@@ -863,7 +866,7 @@
                                     Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                     Cursor="Hand" Margin="4,0,0,0"
                                     ToolTip="{Binding NextInstanceTooltip}"/>
-                            <!-- Zvolená skupina linek (filtr) — viditelná jen když je zvolená -->
+                            <!-- Zvolená skupina linek (filtr) - viditelná jen když je zvolená -->
                             <TextBlock Text="{Binding ActiveSkupinaText}"
                                        Visibility="{Binding HasActiveSkupina, Converter={StaticResource BoolToVis}}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}"
@@ -874,7 +877,7 @@
 
                     <Border Grid.Column="3" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
 
-                    <!-- 3a) Stav výběru (klidová zóna — element / sekce) -->
+                    <!-- 3a) Stav výběru (klidová zóna - element / sekce) -->
                     <TextBlock x:Name="SelectionStatusText" Grid.Column="4"
                                Text="{Binding SelectionStatusText}"
                                VerticalAlignment="Center" Margin="10,0"
@@ -882,7 +885,7 @@
                                FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
 
-                    <!-- 3b) Akce / progres (transientní zóna — uloženo / chyba / export N/N; nepřepíše se výběrem) -->
+                    <!-- 3b) Akce / progres (transientní zóna - uloženo / chyba / export N/N; nepřepíše se výběrem) -->
                     <TextBlock x:Name="StatusText" Grid.Column="5"
                                Text="{Binding StatusText}"
                                VerticalAlignment="Center" Margin="10,0"
@@ -895,7 +898,9 @@
                             Background="{DynamicResource EDTheme.Semantic.Danger}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding HasPreviewOverflow, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Obsah některé stránky se nevejde — zvětši stránku (PageSize) nebo zmenši obsah">
+                            ToolTip="Obsah některé stránky se nevejde - zvětšete stránku (Vlastnosti stránky) nebo zmenšete obsah">
+                        <!-- White záměrně mimo theme: text na Semantic.Danger pozadí (červená je
+                             v obou tématech tmavá, bílá na ní má vždy dostatečný kontrast). -->
                         <TextBlock Text="Obsah se nevejde na stránku"
                                    Foreground="White" FontWeight="SemiBold"
                                    VerticalAlignment="Center"

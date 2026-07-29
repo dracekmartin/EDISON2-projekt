@@ -9,7 +9,7 @@ namespace TemplateDesigner;
 
 /// <summary>
 /// VM pod-formuláře pro editaci jednoho TextStyle (zóny) libovolného elementu přes sdílený
-/// <c>CellStyleEditor</c> (tri-state: zděděné hodnoty jako šedý placeholder). Generický —
+/// <c>CellStyleEditor</c> (tri-state: zděděné hodnoty jako šedý placeholder). Generický -
 /// styl se čte/zapisuje přes reflexi podle <paramref name="prefix"/> (property path na elementu).
 /// </summary>
 class StyleEditDialogViewModel : EDViewModel
@@ -51,7 +51,7 @@ class StyleEditDialogViewModel : EDViewModel
         var prop = _element.GetType().GetProperty(_prefix);
         var newStyle = Style.ToModel();
         // Prázdná zóna, která byla a zůstává prázdná → žádná změna (nevytvářet command).
-        // Jinak nikdy nezapisuj null — cíl může být nenullovatelný TextStyle (HeaderStyle = new()),
+        // Jinak nikdy nezapisuj null - cíl může být nenullovatelný TextStyle (HeaderStyle = new()),
         // null by spadl při renderu. Prázdný styl = nový prázdný TextStyle (dědí default, identický výstup).
         if (prop is not null && (newStyle is not null || _original is not null))
             ResultCommand = new SetPropertyCommand(_prefix, _original, newStyle ?? new TextStyle(),

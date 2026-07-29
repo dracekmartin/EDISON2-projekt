@@ -1,7 +1,7 @@
 <!--
-    HelpDialog.xaml — Nápověda: zkratky, workflow, tipy + fulltext hledání (Ctrl+F).
+    HelpDialog.xaml - Nápověda: zkratky, workflow, tipy + fulltext hledání (Ctrl+F).
 
-    OBSAH NEPATŘÍ SEM — je datově řízený v HelpDialogViewModel.BuildContent().
+    OBSAH NEPATŘÍ SEM - je datově řízený v HelpDialogViewModel.BuildContent().
     Při přidání zkratky/featury aktualizovat tam (a ux-conventions.md tabulku).
 -->
 <Window x:Class="TemplateDesigner.HelpDialog"
@@ -87,7 +87,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Nápověda — ovládání Návrháře sestav"
+                    <TextBlock Text="Nápověda - ovládání Návrháře sestav"
                                FontSize="{DynamicResource EDTheme.FontSize.Large}"
                                FontWeight="Bold"
                                Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
@@ -136,7 +136,7 @@
             <StackPanel>
                 <ItemsControl ItemsSource="{Binding FilteredSections}"/>
 
-                <TextBlock Text="Nic nenalezeno — zkuste jiný výraz."
+                <TextBlock Text="Nic nenalezeno - zkuste jiný výraz."
                            Margin="0,24,0,0" FontStyle="Italic"
                            Foreground="{DynamicResource EDTheme.Text.Muted}">
                     <TextBlock.Style>

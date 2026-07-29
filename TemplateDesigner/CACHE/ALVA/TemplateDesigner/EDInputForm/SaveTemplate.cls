@@ -3,14 +3,14 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro SaveToCacheDialog v TemplateDesigneru.
 /// Definuje formulář pro pojmenování šablony před uložením do Caché:
 /// - name (Text, Required)
-/// - agendaCode (List, Required) — položky načteny z ALVA.TemplateDesigner.API.AgendyRegistr
+/// - agendaCode (List, Required) - položky načteny z ALVA.TemplateDesigner.API.AgendyRegistr
 ///
-/// Save metoda je no-op — vlastní Caché uložení šablony zajišťuje
+/// Save metoda je no-op - vlastní Caché uložení šablony zajišťuje
 /// `ALVA.TemplateDesigner.API.Sablony.SaveTemplate` (volaná .NET vrstvou přes
 /// `CacheTemplateService.SaveAsync` po úspěšném dialogu). Tato třída zajišťuje
 /// pouze definici a validaci formuláře.
 ///
-/// IN["name"] / IN["agendaCode"] — initial values (povinné), používá je Init aby
+/// IN["name"] / IN["agendaCode"] - initial values (povinné), používá je Init aby
 /// předvyplnil formulář.
 Class ALVA.TemplateDesigner.EDInputForm.SaveTemplate Extends %RegisteredObject
 {
@@ -57,14 +57,14 @@ ClassMethod Validate(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Save je no-op — vlastní save provede caller přes CacheTemplateService.SaveAsync
+/// Save je no-op - vlastní save provede caller přes CacheTemplateService.SaveAsync
 /// (předá Template JSON do `API.Sablony.SaveTemplate`).
 ClassMethod Save(ByRef sys As %String) As %Status
 {
     q $$$OK
 }
 
-/// Nested call do AgendyRegistr.ListAgendy — saves/clears OUT (mirror Instance.cls pattern).
+/// Nested call do AgendyRegistr.ListAgendy - saves/clears OUT (mirror Instance.cls pattern).
 /// Vrací JSON string s polem agend.
 ClassMethod FetchAgendyJson(ByRef sys As %String) As %String
 {

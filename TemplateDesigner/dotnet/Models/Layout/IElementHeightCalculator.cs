@@ -2,7 +2,7 @@ namespace TemplateDesigner.Models.Layout;
 
 /// <summary>
 /// Interface pro měření výšky dynamických elementů (Height=null).
-/// Odděluje výpočet výšky od SkiaSharp — engine je čistá logika.
+/// Odděluje výpočet výšky od SkiaSharp - engine je čistá logika.
 /// </summary>
 public interface IElementHeightCalculator
 {

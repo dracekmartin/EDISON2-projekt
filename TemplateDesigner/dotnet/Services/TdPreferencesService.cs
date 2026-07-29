@@ -13,15 +13,15 @@ namespace TemplateDesigner.Services;
 /// <para>
 /// Scope rozdělení:
 /// <list type="bullet">
-///   <item><c>"TemplateDesigner"</c> — <see cref="MainState"/> (MainStatePref), <see cref="RecentFiles"/> (List&lt;string&gt;)</item>
-///   <item><c>"TemplateDesigner.InstanceDefaults"</c> — per-template instance selection (key = template Guid)</item>
+///   <item><c>"TemplateDesigner"</c> - <see cref="MainState"/> (MainStatePref), <see cref="RecentFiles"/> (List&lt;string&gt;)</item>
+///   <item><c>"TemplateDesigner.InstanceDefaults"</c> - per-template instance selection (key = template Guid)</item>
 /// </list>
 /// </para>
 ///
 /// <para>
 /// Lifecycle: <see cref="LoadAsync"/> jednou při startu (App.OnStartup, fire-and-forget +
-/// krátký sync wait pro warm cache). Po dokončení vystřelí <see cref="Loaded"/> event —
-/// subscribery musí dispatchnout na UI thread. Save je fire-and-forget — UI nesmí padnout
+/// krátký sync wait pro warm cache). Po dokončení vystřelí <see cref="Loaded"/> event -
+/// subscribery musí dispatchnout na UI thread. Save je fire-and-forget - UI nesmí padnout
 /// kvůli Caché chybě.
 /// </para>
 /// </summary>
@@ -41,13 +41,13 @@ public class TdPreferencesService
 
     public TdPreferencesService(IUserPrefsService prefs) => _prefs = prefs;
 
-    /// <summary>Aktuální MainState — defaults dokud neproběhl <see cref="LoadAsync"/>.</summary>
+    /// <summary>Aktuální MainState - defaults dokud neproběhl <see cref="LoadAsync"/>.</summary>
     public MainStatePref MainState { get; private set; } = MainStatePref.Default;
 
-    /// <summary>Aktuální Recent Files — prázdný dokud neproběhl <see cref="LoadAsync"/>.</summary>
+    /// <summary>Aktuální Recent Files - prázdný dokud neproběhl <see cref="LoadAsync"/>.</summary>
     public List<string> RecentFiles { get; private set; } = [];
 
-    /// <summary>Aktuální Recent Colors (hex `"#AARRGGBB"`) — prázdný dokud neproběhl <see cref="LoadAsync"/>.</summary>
+    /// <summary>Aktuální Recent Colors (hex `"#AARRGGBB"`) - prázdný dokud neproběhl <see cref="LoadAsync"/>.</summary>
     public List<string> RecentColors { get; private set; } = [];
 
     /// <summary>True jakmile LoadAsync dokončí (úspěch i fallback na defaults).</summary>
@@ -57,7 +57,7 @@ public class TdPreferencesService
     private readonly object _loadedLock = new();
 
     /// <summary>
-    /// Vystřelí po dokončení <see cref="LoadAsync"/> (z threadpool threadu — subscriber
+    /// Vystřelí po dokončení <see cref="LoadAsync"/> (z threadpool threadu - subscriber
     /// MUSÍ dispatchnout na UI thread). Subscribe po dokončení loadu vyvolá handler
     /// okamžitě (synchronní fast-path pro warm-cache scénář).
     /// </summary>
@@ -107,7 +107,7 @@ public class TdPreferencesService
         }
     }
 
-    /// <summary>Uloží MainState (atomicky, celý blob). Fire-and-forget — chyby se logují, neházejí.</summary>
+    /// <summary>Uloží MainState (atomicky, celý blob). Fire-and-forget - chyby se logují, neházejí.</summary>
     public Task SaveMainStateAsync(MainStatePref state)
     {
         MainState = state;
@@ -161,7 +161,7 @@ public class TdPreferencesService
     /// Klíče v dict odpovídají <c>TemplateParameter.Name</c>; hodnoty jsou JsonNode (bool/number/string),
     /// caller je konvertuje podle <c>TemplateParameter.Type</c>.
     /// <para>
-    /// Klíč = AgendaCode (např. "MHD", "FAKTURY"). Per-agenda granularita je záměrná —
+    /// Klíč = AgendaCode (např. "MHD", "FAKTURY"). Per-agenda granularita je záměrná -
     /// params (datum, varianta JŘ, ...) jsou agenda-level concerns, nikoli template-level.
     /// Nová šablona v rámci stejné agendy zdědí poslední uživatelovy hodnoty.
     /// </para>
@@ -207,7 +207,7 @@ public class TdPreferencesService
 }
 
 /// <summary>
-/// Hlavní per-user state. Všechny pole mají default — chybějící v starém blobu → použije se default
+/// Hlavní per-user state. Všechny pole mají default - chybějící v starém blobu → použije se default
 /// (System.Text.Json + record primary ctor). Při breaking change (rename / změna typu) přidat
 /// <c>int Version</c> a migration logiku v LoadBlobAsync (viz 05-userdata-scopes.md §4).
 /// </summary>

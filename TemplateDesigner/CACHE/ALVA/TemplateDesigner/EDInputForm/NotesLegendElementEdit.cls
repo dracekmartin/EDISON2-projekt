@@ -3,13 +3,13 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro editaci NotesLegendElement properties (legenda poznámek).
 ///
 /// Field key = property path na C# NotesLegendElement (vč. nested HeaderStyle.X /
-/// DataStyle.X — reflexe traverzuje). Init jen definuje strukturu + defaults;
+/// DataStyle.X - reflexe traverzuje). Init jen definuje strukturu + defaults;
 /// generický ElementEditDialog dělá pre-fill přes reflexi.
 ///
 /// Pozn.: NotesLegend NEMÁ per-column kolekci (na rozdíl od StopList/DepartureGrid),
-/// proto je čistý generic kandidát — žádný custom dialog potřeba.
+/// proto je čistý generic kandidát - žádný custom dialog potřeba.
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptors v
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `NotesLegendElement.cs`. Viz memory `project_edinputform_schema_duplication.md`.
 Class ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit Extends %RegisteredObject
 {
@@ -34,7 +34,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FFF0F0F0"
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        // ComboBox (editovatelný) — klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
+        // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("HeaderStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("HeaderStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
@@ -44,12 +44,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#00FFFFFF"
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        // ComboBox (editovatelný) — klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
+        // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("DataStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("DataStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
         s f = form.AddText("NoteSeparator", "Oddělovač", " - ")
         s f.helpText = "Vloží se mezi značku a popis u vlastních poznámek linky. U ikonových atributů (na znamení, bezbariér) se nepoužívá."
-        d form.AddDecimal("NoteFontSize", "Velikost písma pozn.", 7, 4, 20, "pt", "0.#")
+        d form.AddDecimal("NoteFontSize", "Velikost poznámek", 7, 4, 20, "pt", "0.#")
         d form.AddDecimal("NoteLineHeight", "Výška řádku", 4, 2, 15, "mm")
 
         // ── Skupina "Rozložení" (sloupce / řazení / zarovnání markeru) ────
@@ -59,7 +59,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("PoSloupcich", "Po sloupcích"), f.AddListItem("PoRadcich", "Po řádcích")
         s f.value = "PoSloupcich"
         s f = form.AddFieldToLastGroup("Razeni", "Řazení poznámek", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("Vychozi", "Výchozí"), f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
+        // Volby 1:1 s panelem (DleTypu je default elementu - dřív v dialogu úplně chyběla)
+        d f.AddListItem("DleTypu", "Dle typu (značky → atributy → text)"), f.AddListItem("Vychozi", "Výchozí (dle dat)")
+        d f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
         s f.value = "Vychozi"
         d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
 
@@ -97,12 +99,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
         s f.helpText = "Pořadí vrstev (vyšší = nad nižším)"
 
-        // ── Skupina "Pokročilé" ───────────────────────────────────────────
-        d form.AddGroup("advanced", "Pokročilé")
         s f = form.AddBool("IsLocked", "Uzamčeno", 0)
         s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
+
+        // ── Skupina "Podmínky" ───────────────────────────────────────────
+        d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

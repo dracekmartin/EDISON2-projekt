@@ -16,14 +16,14 @@ public partial class LineTableColumnsEditorDialog : Window
     private readonly LineTableElement _element;
     private Dictionary<string, string> _preFilled = [];
 
-    /// <summary>Výsledné sloupce po OK — pass-through z VM.</summary>
+    /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
     public List<Models.Elements.StopColumn> ResultColumns => _vm.ResultColumns;
 
-    /// <summary>Command z tabu „Obecné" (EDInputForm) — null pokud se nic nezměnilo.</summary>
+    /// <summary>Command z tabu „Obecné" (EDInputForm) - null pokud se nic nezměnilo.</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
 
     /// <summary>Pravidla zvýraznění po editaci (button „Zvýraznění řádků…"). Aplikuje caller až na OK
-    /// dialogu (deferred — Storno columns dialogu změnu zahodí). <see cref="HighlightEdited"/> = bylo upraveno.</summary>
+    /// dialogu (deferred - Storno columns dialogu změnu zahodí). <see cref="HighlightEdited"/> = bylo upraveno.</summary>
     public List<HighlightRule>? ResultHighlightRules { get; private set; }
     public bool HighlightEdited { get; private set; }
 

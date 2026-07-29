@@ -5,10 +5,10 @@ namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
 /// Regresní testy na StopList-specifické cascade wiring (analogie DepartureGridCascadeTests, ale
-/// StopList má jiné rizikové konstrukce než DepartureGrid — proto vlastní testy, ne sdílené):
-///  1. feature override aktuální / projeté zastávky (ResolveRowStyle) — musí přebít styl JEN když
+/// StopList má jiné rizikové konstrukce než DepartureGrid - proto vlastní testy, ne sdílené):
+///  1. feature override aktuální / projeté zastávky (ResolveRowStyle) - musí přebít styl JEN když
 ///     je řádek current/passed (aktivováno runtime stavem, ne konfigurací),
-///  2. legacy col.Alignment fallback (ResolveHeaderStyle/DataStyle) — platí jen když kaskáda HAlign
+///  2. legacy col.Alignment fallback (ResolveHeaderStyle/DataStyle) - platí jen když kaskáda HAlign
 ///     nenastaví,
 ///  3. element-level HeaderStyle/DataStyle kaskáda.
 /// </summary>

@@ -1,6 +1,6 @@
 namespace TemplateDesigner.Commands.Implementations;
 
-/// <summary>Složený příkaz — agreguje více příkazů do jednoho undo/redo kroku.</summary>
+/// <summary>Složený příkaz - agreguje více příkazů do jednoho undo/redo kroku.</summary>
 public class CompositeCommand : IDesignerCommand
 {
     private readonly IReadOnlyList<IDesignerCommand> _commands;

@@ -7,7 +7,7 @@ namespace TemplateDesigner.Models;
 
 /// <summary>
 /// Přenáší data do elementů při renderování (print engine) nebo preview (mock data).
-/// V designeru je null — elementy renderují samy sebe bez dat.
+/// V designeru je null - elementy renderují samy sebe bez dat.
 /// </summary>
 public class DataContext
 {
@@ -31,7 +31,7 @@ public class DataContext
         _values.TryGetValue(key, out var v) ? v : null;
 
     /// <summary>Vrátí hodnotu pole jako string, nebo fallback. Vnořené skalární pole (např. ZONY)
-    /// se spojí „/" — ať ho umí zobrazit i plochá buňka (DynamicTable); objektová pole (ATRIBUTY)
+    /// se spojí „/" - ať ho umí zobrazit i plochá buňka (DynamicTable); objektová pole (ATRIBUTY)
     /// se přeskočí. Specializované elementy si vnořená pole i tak parsují samy.</summary>
     public string GetString(string key, string fallback = "") =>
         GetValue(key) switch
@@ -45,10 +45,10 @@ public class DataContext
     public IReadOnlyList<DataContext> GetRows(string dataSource) =>
         _rows.TryGetValue(dataSource, out var rows) ? rows : [];
 
-    /// <summary>Skalární hodnoty (read-only) — pro transformace nad kontextem (např. filtr poznámek).</summary>
+    /// <summary>Skalární hodnoty (read-only) - pro transformace nad kontextem (např. filtr poznámek).</summary>
     public IReadOnlyDictionary<string, object?> Values => _values;
 
-    /// <summary>Tabulkové zdroje (read-only) — pro transformace nad kontextem.</summary>
+    /// <summary>Tabulkové zdroje (read-only) - pro transformace nad kontextem.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<DataContext>> Rows => _rows;
 
     /// <summary>
@@ -63,7 +63,7 @@ public class DataContext
         {
             var field = m.Groups[1].Value;
             var value = GetString(field, m.Value);
-            if (value == m.Value) return value; // pole nenalezeno — vrátit placeholder
+            if (value == m.Value) return value; // pole nenalezeno - vrátit placeholder
             var format = m.Groups[2].Success ? m.Groups[2].Value : null;
             return PlaceholderFormatter.Format(value, format, Culture);
         });

@@ -10,20 +10,20 @@ namespace TemplateDesigner.Models;
 
 /// <summary>
 /// Centrální resolver fontů. Jediný zdroj pravdy „jaké fonty jsou k dispozici" a „jak vyřešit typeface".
-/// Přes tuto třídu teče <b>veškeré</b> řešení fontů (text, buňky tabulek, JŘ elementy) — embedding se
+/// Přes tuto třídu teče <b>veškeré</b> řešení fontů (text, buňky tabulek, JŘ elementy) - embedding se
 /// tak řeší jen tady a projeví se všude.
 ///
 /// <para><b>Embedded fonty:</b> libovolný `.ttf`/`.otf` přidaný do .csproj jako `&lt;EmbeddedResource&gt;`
 /// pod složkou <c>Fonts/</c> se automaticky načte (bez úpravy kódu) a je dostupný podle názvu rodiny
-/// — v renderu i v UI výběru fontu. Bundlují se do single-file .exe (bajty v assembly manifestu).
-/// Použij font s licencí povolující redistribuci (OFL/Apache — např. Arimo, Liberation Sans);
+/// - v renderu i v UI výběru fontu. Bundlují se do single-file .exe (bajty v assembly manifestu).
+/// Použij font s licencí povolující redistribuci (OFL/Apache - např. Arimo, Liberation Sans);
 /// komerční (Helvetica/Arial) se embednout nesmí, spoléhá se na OS.</para>
 ///
 /// <para><b>Priorita:</b> embedded rodina → OS-nainstalovaná rodina → <b>Arial</b> (předvídatelný
 /// Helvetica-like default) → Skia default. Tichá náhrada je tak aspoň konzistentní.</para>
 ///
 /// <para><b>Lifetime:</b> vyřešené typefacy jsou <b>sdílené singletony</b> (cachované, app-lifetime).
-/// Volající je <b>nesmí</b> disposovat — jen zabalit do `SKFont` (ten typeface nevlastní).</para>
+/// Volající je <b>nesmí</b> disposovat - jen zabalit do `SKFont` (ten typeface nevlastní).</para>
 /// </summary>
 public static class FontResolver
 {
@@ -61,7 +61,7 @@ public static class FontResolver
                     map[typeface.FamilyName] = variants = [];
                 variants.Add(typeface);
             }
-            catch { /* vadný font ignorovat — nesmí shodit start aplikace */ }
+            catch { /* vadný font ignorovat - nesmí shodit start aplikace */ }
         }
         return map;
     }
@@ -79,7 +79,7 @@ public static class FontResolver
 
     private static IReadOnlyList<string>? _families;
 
-    /// <summary>Dostupné font rodiny (OS-nainstalované + embedded), seřazené — pro nabídku v UI. Cachované.</summary>
+    /// <summary>Dostupné font rodiny (OS-nainstalované + embedded), seřazené - pro nabídku v UI. Cachované.</summary>
     public static IReadOnlyList<string> InstalledFamilies => _families ??=
         SKFontManager.Default.GetFontFamilies()
             .Concat(Embedded.Keys)
@@ -96,7 +96,7 @@ public static class FontResolver
 
     // ── Resolve ───────────────────────────────────────────────────────────────────
 
-    // Vyřešené typefacy sdílené a cachované (app-lifetime) — viz Lifetime v hlavičce třídy.
+    // Vyřešené typefacy sdílené a cachované (app-lifetime) - viz Lifetime v hlavičce třídy.
     private static readonly ConcurrentDictionary<(string Family, int Weight, int Width, SKFontStyleSlant Slant), SKTypeface> _cache = new();
 
     /// <summary>
@@ -112,7 +112,7 @@ public static class FontResolver
     /// <summary>
     /// Rodina symbolového JŘ fontu (piktogramy dopravy: vozíček = „H", bezbariér částečně = „F",
     /// na znamení, automat = „{"…) podle jazyka šablony. Znaky (drátové kódy z Caché) jsou pro CZ i SK
-    /// stejné, liší se jen tvary glyfů — SK má vlastní variantu. Embedded font (<c>Fonts/TimeTable2*.ttf</c>).
+    /// stejné, liší se jen tvary glyfů - SK má vlastní variantu. Embedded font (<c>Fonts/TimeTable2*.ttf</c>).
     /// </summary>
     public static string SymbolFontFamily(System.Globalization.CultureInfo? culture) =>
         string.Equals(culture?.TwoLetterISOLanguageName, "sk", StringComparison.OrdinalIgnoreCase)
@@ -121,7 +121,7 @@ public static class FontResolver
 
     private static SKTypeface ResolveUncached(string family, SKFontStyle style)
     {
-        // Embedded má přednost — deterministický výstup nezávislý na tom, co je na stroji nainstalované.
+        // Embedded má přednost - deterministický výstup nezávislý na tom, co je na stroji nainstalované.
         if (!string.IsNullOrEmpty(family) && ResolveEmbedded(family, style) is { } embedded)
             return embedded;
 

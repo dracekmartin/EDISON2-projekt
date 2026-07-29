@@ -6,14 +6,14 @@ using TemplateDesigner.Commands;
 namespace TemplateDesigner.Controls;
 
 /// <summary>
-/// Inline properties panel postavený na EDInputFormu (W4-10) — nahrazuje PropertyDescriptor rendering
+/// Inline properties panel postavený na EDInputFormu (W4-10) - nahrazuje PropertyDescriptor rendering
 /// pro editaci jednoho elementu. Sdílí *Edit.cls schéma + <see cref="ElementFormBinder"/> s modálním
 /// <see cref="ElementEditDialog"/>; navíc **živý write-back**: změna pole → SetPropertyCommand → undo.
 ///
 /// Živá editace řeší tři věci nad rámec modálu:
 ///  1. <b>write-back per změnu</b> (ne až na OK) přes EDInputForm.FieldChanged,
 ///  2. <b>re-Prefill při změně výběru</b> (stejný typ → jen Prefill; jiný typ → reload schema),
-///  3. <b>Loaded re-init past</b> — EDInputForm se re-Inituje na Loaded → Initialized znovu → re-Prefill
+///  3. <b>Loaded re-init past</b> - EDInputForm se re-Inituje na Loaded → Initialized znovu → re-Prefill
 ///     z aktuálního cíle (bez ztráty stavu).
 /// </summary>
 public partial class InlinePropertiesForm : UserControl
@@ -72,7 +72,7 @@ public partial class InlinePropertiesForm : UserControl
         {
             ElementFormBinder.PopulateFontFields(TheForm);
             _preFilled = ElementFormBinder.Prefill(TheForm, _target);
-            // Řez (váhy) — plní se z reálných řezů rodiny až po prefillu (kdy je hodnota rodiny známá).
+            // Řez (váhy) - plní se z reálných řezů rodiny až po prefillu (kdy je hodnota rodiny známá).
             ElementFormBinder.PopulateFontWeightFields(TheForm);
         }
         finally { _suppress = false; }

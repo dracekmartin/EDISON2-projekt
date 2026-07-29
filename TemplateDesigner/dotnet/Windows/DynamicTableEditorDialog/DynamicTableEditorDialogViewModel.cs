@@ -36,7 +36,7 @@ public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowV
         set => Width = Controls.ColumnWidthText.Parse(value);
     }
 
-    // IColumnRowVM — sdílený seznam sloupců
+    // IColumnRowVM - sdílený seznam sloupců
     public string DisplayName => !string.IsNullOrWhiteSpace(_header) ? _header
                                : !string.IsNullOrWhiteSpace(_field) ? "{" + _field + "}"
                                : !string.IsNullOrWhiteSpace(_expression) ? "= " + _expression
@@ -100,7 +100,7 @@ public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowV
 
 class DynamicTableEditorDialogViewModel : EDViewModel
 {
-    // Tab 1 „Obecné" = embedded EDInputForm (DynamicTableElementEdit.cls) — řeší code-behind
+    // Tab 1 „Obecné" = embedded EDInputForm (DynamicTableElementEdit.cls) - řeší code-behind
     // přes ElementFormBinder. VM drží jen per-sloupec editaci (tab 2).
 
     public ObservableCollection<DynamicTableColumnVM> ColumnVMs { get; } = [];
@@ -181,7 +181,7 @@ class DynamicTableEditorDialogViewModel : EDViewModel
         foreach (var col in element.Columns)
             ColumnVMs.Add(Wire(DynamicTableColumnVM.FromModel(col, _headerInherited, _dataInherited)));
 
-        // Nabídka polí „Pole" pro aktuální zdroj (načtený element) — jen našeptávání, neseeduje sloupce.
+        // Nabídka polí „Pole" pro aktuální zdroj (načtený element) - jen našeptávání, neseeduje sloupce.
         var current = collections.FirstOrDefault(c => c.CollectionKey == element.DataSource);
         foreach (var fld in current?.Fields ?? [])
             AvailableFields.Add(fld.FieldName);

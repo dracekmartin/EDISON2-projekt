@@ -29,7 +29,7 @@ public abstract class TemplateElement
     public float Width { get; set; }
 
     /// <summary>
-    /// Výška v mm. Null u dynamických elementů (TableElement) —
+    /// Výška v mm. Null u dynamických elementů (TableElement) -
     /// výšku vypočítá print engine za běhu, designer zobrazí placeholder.
     /// </summary>
     public float? Height { get; set; }
@@ -44,7 +44,7 @@ public abstract class TemplateElement
     public string? VisibilityExpression { get; set; }
 
     /// <summary>
-    /// Id skupiny. Elementy se stejným GroupId se chovají jako celek —
+    /// Id skupiny. Elementy se stejným GroupId se chovají jako celek -
     /// kliknutí vybere celou skupinu, drag přesune všechny členy.
     /// Null = element nepatří do žádné skupiny.
     /// </summary>
@@ -67,7 +67,7 @@ public abstract class TemplateElement
     /// <summary>Tvar rohů celého elementu (pozadí + rámeček). Výchozí Ostré (pravý úhel).</summary>
     public ElementCornerStyle CornerStyle { get; set; } = ElementCornerStyle.None;
 
-    /// <summary>Velikost rohu v mm — poloměr zaoblení / délka zkosení. Platí jen když <see cref="CornerStyle"/> ≠ Ostré.</summary>
+    /// <summary>Velikost rohu v mm - poloměr zaoblení / délka zkosení. Platí jen když <see cref="CornerStyle"/> ≠ Ostré.</summary>
     public float CornerSize { get; set; } = 0f;
 
     /// <summary>Rotace elementu ve stupních (po směru hodinových ručiček). 0 = žádná rotace.</summary>
@@ -85,7 +85,7 @@ public abstract class TemplateElement
     /// <summary>
     /// Vykreslí rámeček elementu. Volá se ve DRUHÉM průchodu renderování (po obsahu
     /// všech elementů), takže žádný fill ho nemůže překrýt. Stroke je centrovaný
-    /// na hraně — sousední elementy sdílejí stejný pixel a rámeček vypadá jednoduše.
+    /// na hraně - sousední elementy sdílejí stejný pixel a rámeček vypadá jednoduše.
     /// </summary>
     protected void RenderBorder(RenderContext ctx, SKRect rect)
     {
@@ -114,7 +114,7 @@ public abstract class TemplateElement
 
     /// <summary>Vykreslí obdélník elementu daným paintem s ohledem na <see cref="CornerStyle"/>
     /// (ostré = DrawRect, zaoblené = DrawRoundRect, zkosené = seříznuté rohy přes SKPath).
-    /// Jediné místo tvaru rohů — sdílí ho výplň pozadí i rámeček.</summary>
+    /// Jediné místo tvaru rohů - sdílí ho výplň pozadí i rámeček.</summary>
     protected void DrawElementShape(RenderContext ctx, SKRect rect, SKPaint paint)
     {
         float sizePx = CornerSize * ctx.MmToPx;
@@ -136,7 +136,7 @@ public abstract class TemplateElement
         }
     }
 
-    /// <summary>Ořízne canvas na tvar elementu dle <see cref="CornerStyle"/> — obsah (výplň, text)
+    /// <summary>Ořízne canvas na tvar elementu dle <see cref="CornerStyle"/> - obsah (výplň, text)
     /// pak nepřeteče mimo zaoblené/zkosené rohy. Volající obklopí Save()/Restore().</summary>
     protected void ClipToElementShape(RenderContext ctx, SKRect rect)
     {
@@ -164,9 +164,9 @@ public abstract class TemplateElement
     public virtual SKRect GetContentClipRect(RenderContext ctx) =>
         ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
 
-    /// <summary>Ořez obsahu elementu na tvar rohů (zaoblené/zkosené) — no-op bez rohů. Volá render loop
+    /// <summary>Ořez obsahu elementu na tvar rohů (zaoblené/zkosené) - no-op bez rohů. Volá render loop
     /// kolem obsahu (uvnitř Save/Restore), aby výplně ani obsah nepřetekly mimo zaoblení/zkosení.
-    /// Jedno místo pro VŠECHNY elementy — obdoba rámečku (<see cref="RenderBorderPass"/>).</summary>
+    /// Jedno místo pro VŠECHNY elementy - obdoba rámečku (<see cref="RenderBorderPass"/>).</summary>
     public void ApplyCornerClip(RenderContext ctx)
     {
         if (CornerStyle == ElementCornerStyle.None || CornerSize <= 0) return;
@@ -189,7 +189,7 @@ public abstract class TemplateElement
         return p;
     }
 
-    /// <summary>První průchod renderování — výplň pozadí elementu (<see cref="BackgroundColor"/>)
+    /// <summary>První průchod renderování - výplň pozadí elementu (<see cref="BackgroundColor"/>)
     /// tvarem dle <see cref="CornerStyle"/>. Volá canvas PŘED obsahem, symetricky k
     /// <see cref="RenderBorderPass"/>. Jedno místo pro pozadí celého elementu (jako rámeček).</summary>
     public virtual void RenderBackgroundPass(RenderContext ctx)
@@ -214,7 +214,7 @@ public abstract class TemplateElement
     }
 
     /// <summary>
-    /// Veřejná metoda pro druhý průchod renderování — vykreslí rámeček elementu.
+    /// Veřejná metoda pro druhý průchod renderování - vykreslí rámeček elementu.
     /// Canvas volá tuto metodu po tom, co se vykreslí obsah všech elementů.
     /// </summary>
     public virtual void RenderBorderPass(RenderContext ctx)
@@ -234,7 +234,7 @@ public abstract class TemplateElement
         }
     }
 
-    /// <summary>Střed elementu v canvas px — pivot pro rotaci.</summary>
+    /// <summary>Střed elementu v canvas px - pivot pro rotaci.</summary>
     public (float cx, float cy) GetCenterPx(RenderContext ctx) =>
         (ctx.SectionOriginX + (X + Width / 2f) * ctx.MmToPx,
          ctx.SectionOriginY + (Y + EffectiveDesignerHeight / 2f) * ctx.MmToPx);
@@ -243,7 +243,7 @@ public abstract class TemplateElement
 
     /// <summary>
     /// Vykreslí element na canvas. Volá designer, preview i print engine.
-    /// Souřadnice v ctx jsou přepočítány do px — element pracuje s vlastními mm hodnotami.
+    /// Souřadnice v ctx jsou přepočítány do px - element pracuje s vlastními mm hodnotami.
     /// </summary>
     public abstract void Render(RenderContext ctx);
 
@@ -254,12 +254,12 @@ public abstract class TemplateElement
 
     /// <summary>
     /// Vrátí seznam deskriptorů vlastností pro panel vlastností.
-    /// Panel generuje UI řádky automaticky — přidání nové vlastnosti = přidat deskriptor sem.
+    /// Panel generuje UI řádky automaticky - přidání nové vlastnosti = přidat deskriptor sem.
     /// </summary>
     public abstract IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors();
 
     /// <summary>
-    /// Helper — vrátí deskriptory společných vlastností pozice a ZIndex.
+    /// Helper - vrátí deskriptory společných vlastností pozice a ZIndex.
     /// Volej na konci GetPropertyDescriptors() pomocí spread operátoru: [.. GetPositionDescriptors()]
     /// </summary>
     protected IReadOnlyList<PropertyDescriptor> GetPositionDescriptors() =>
@@ -275,10 +275,10 @@ public abstract class TemplateElement
                 Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
         new FloatPropertyDescriptor { Label = "Rotace",  Group = "Pozice", Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
         new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
-        new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
+        new BoolPropertyDescriptor  { Label = "Uzamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
 
         new ColorPropertyDescriptor { Label = "Barva rámečku", Group = "Obecné", Get = () => BorderColor, Set = v => BorderColor = v },
-        new FloatPropertyDescriptor { Label = "Šířka rámečku", Group = "Obecné", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Tloušťka rámečku", Group = "Obecné", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
         new EnumPropertyDescriptor
         {
             Label = "Rohy", Group = "Obecné",
@@ -299,7 +299,7 @@ public abstract class TemplateElement
 
         new StringPropertyDescriptor
         {
-            Label = "Viditelnost", Group = "Podmínky",
+            Label = "Podmínka viditelnosti", Group = "Podmínky",
             // null / prázdný = vždy viditelný
             // Výrazy: "{TISK_SIPKY}", "{POCET} > 0", "{TYP} == \"JR\" && !{TISK_TARIFU}"
             Get = () => VisibilityExpression ?? "",
@@ -307,13 +307,13 @@ public abstract class TemplateElement
             Validate = Expressions.ExpressionEvaluator.Validate
         },
 
-        // GroupId — zobrazit jen pokud element patří do skupiny (readonly informace)
+        // GroupId - zobrazit jen pokud element patří do skupiny (readonly informace)
         .. (GroupId is not null
             ? [new StringPropertyDescriptor
             {
                 Label = "Skupina", Group = "Skupina",
                 Get = () => GroupId ?? "",
-                Set = _ => { }  // readonly — skupiny se mění přes Ctrl+G / Ctrl+Shift+G
+                Set = _ => { }  // readonly - skupiny se mění přes Ctrl+G / Ctrl+Shift+G
             }]
             : Array.Empty<PropertyDescriptor>()),
     ];
@@ -359,7 +359,7 @@ public abstract class TemplateElement
     [JsonIgnore]
     public bool IsDynamic => !Height.HasValue;
 
-    /// <summary>Výška pro zobrazení v designeru — Height nebo placeholder dynamické sekce.</summary>
+    /// <summary>Výška pro zobrazení v designeru - Height nebo placeholder dynamické sekce.</summary>
     [JsonIgnore]
     public float EffectiveDesignerHeight => Height ?? DesignerPlaceholderHeight;
 

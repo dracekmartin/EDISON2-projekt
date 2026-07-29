@@ -5,7 +5,7 @@ namespace TemplateDesigner.Models.Expressions;
 
 /// <summary>
 /// Vyhodnocuje výrazy VisibilityExpression vůči DataContext.
-/// Parsovaný AST je cachovaný — každý výraz se parsuje jen jednou za běh aplikace.
+/// Parsovaný AST je cachovaný - každý výraz se parsuje jen jednou za běh aplikace.
 ///
 /// Typová konverze proměnných z DataContext (vždy string):
 ///   ""            → false
@@ -23,14 +23,14 @@ public static class ExpressionEvaluator
     /// <summary>
     /// Vrátí true pokud element/sekce s daným výrazem má být viditelná.
     /// null nebo prázdný výraz → true (vždy viditelný).
-    /// Chyba parsování nebo evaluace → true (fail-open — neskrývat kvůli překlepu).
+    /// Chyba parsování nebo evaluace → true (fail-open - neskrývat kvůli překlepu).
     /// </summary>
     public static bool IsVisible(string? expression, DataContext? data)
     {
         if (string.IsNullOrWhiteSpace(expression)) return true;
 
         var ast = _cache.GetOrAdd(expression, TryParse);
-        if (ast is null) return true; // parse selhal — fail-open
+        if (ast is null) return true; // parse selhal - fail-open
 
         try   { return ToBool(Evaluate(ast, data)); }
         catch { return true; }
@@ -151,7 +151,7 @@ public static class ExpressionEvaluator
         return Str(a) + Str(b);
     }
 
-    /// <summary>Stringová reprezentace operandu pro konkatenaci — double vždy invariantně (ne CurrentCulture).</summary>
+    /// <summary>Stringová reprezentace operandu pro konkatenaci - double vždy invariantně (ne CurrentCulture).</summary>
     private static string Str(object? v) => v switch
     {
         null     => "",
@@ -166,7 +166,7 @@ public static class ExpressionEvaluator
         return da is not null && db is not null ? op(da.Value, db.Value) : null;
     }
 
-    /// <summary>Dělení — dělitel 0 nebo nečíselný operand → null (žádná výjimka, prázdná buňka).</summary>
+    /// <summary>Dělení - dělitel 0 nebo nečíselný operand → null (žádná výjimka, prázdná buňka).</summary>
     private static object? Divide(object? a, object? b)
     {
         var (da, db) = (ToDouble(a), ToDouble(b));

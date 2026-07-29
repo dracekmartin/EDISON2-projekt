@@ -102,10 +102,10 @@ public static class PdfPageExtractor
 
                 // Tenký path → čára (vertikální nebo horizontální)
                 // Detekce: jedna dimenze < 1.5mm a poměr stran > 5:1
-                const float thinThreshold = 1.5f; // mm — cokoli tenčí je čára
+                const float thinThreshold = 1.5f; // mm - cokoli tenčí je čára
                 if (ph < thinThreshold && pw > ph * 5)
                 {
-                    // Horizontální čára — tloušťka = lineWidth z PDF (ne bounding box height)
+                    // Horizontální čára - tloušťka = lineWidth z PDF (ne bounding box height)
                     string color = isStroked ? strokeColor :
                                    (hasFill && isFilledRect ? fillColor : Black);
                     result.Lines.Add(new ExtractedLine(px, py, px + pw, py,
@@ -121,7 +121,7 @@ public static class PdfPageExtractor
                 }
                 else if (pw > 0.5f && ph > 0.5f)
                 {
-                    // Obdélník — jen pokud má viditelný fill NEBO viditelný stroke
+                    // Obdélník - jen pokud má viditelný fill NEBO viditelný stroke
                     // Přeskočit černé vyplněné obdélníky překrývající text (false positive)
                     if (!isFilledRect && !isStroked) continue;
 
@@ -146,7 +146,7 @@ public static class PdfPageExtractor
         }
         catch (Exception)
         {
-            // Paths API může selhat na některých PDF — pokračujeme bez paths
+            // Paths API může selhat na některých PDF - pokračujeme bez paths
         }
     }
 
@@ -178,18 +178,18 @@ public static class PdfPageExtractor
         }
         catch (Exception)
         {
-            // Image API může selhat na některých PDF — pokračujeme bez obrázků
+            // Image API může selhat na některých PDF - pokračujeme bez obrázků
         }
     }
 
     /// <summary>
     /// Detekuje obdélníky tvořené 4 čarami (2 horizontální + 2 vertikální).
-    /// Čára může být i delší než hrana obdélníku (sdílená strana) — ta se neodstraní.
+    /// Čára může být i delší než hrana obdélníku (sdílená strana) - ta se neodstraní.
     /// Čáry, které přesně odpovídají hraně, se odstraní.
     /// </summary>
     private static void DetectRectanglesFromLines(ExtractedPage result)
     {
-        const float tol = 1.0f; // mm — tolerance pro napojení rohů
+        const float tol = 1.0f; // mm - tolerance pro napojení rohů
 
         var horizontal = new List<(int idx, ExtractedLine line, float left, float right)>();
         var vertical = new List<(int idx, ExtractedLine line, float top, float bottom)>();
@@ -219,7 +219,7 @@ public static class PdfPageExtractor
                 if (hTop.ColorHex != hBot.ColorHex || Math.Abs(hTop.StrokeWidth - hBot.StrokeWidth) > 0.2f)
                     continue;
 
-                // X rozsahy se musí překrývat — najít průnik
+                // X rozsahy se musí překrývat - najít průnik
                 float overlapLeft = Math.Max(hTopLeft, hBotLeft);
                 float overlapRight = Math.Min(hTopRight, hBotRight);
                 if (overlapRight - overlapLeft < 2f) continue; // příliš malý průnik
@@ -333,8 +333,8 @@ public static class PdfPageExtractor
     {
         if (lines.Count <= 1) return lines;
 
-        const float posTolerance = 0.5f; // mm — tolerance pro stejnou osu
-        const float gapTolerance = 0.5f; // mm — maximální mezera mezi koncem a začátkem
+        const float posTolerance = 0.5f; // mm - tolerance pro stejnou osu
+        const float gapTolerance = 0.5f; // mm - maximální mezera mezi koncem a začátkem
 
         // Rozdělit na horizontální a vertikální
         var horizontal = new List<ExtractedLine>();
@@ -456,7 +456,7 @@ public static class PdfPageExtractor
 
     /// <summary>
     /// Detekuje styl čáry z PDF dash patternu.
-    /// Vrací jen styl (Solid/Dotted/Dashed) — skutečné rozměry dash/gap z PDF nejsou
+    /// Vrací jen styl (Solid/Dotted/Dashed) - skutečné rozměry dash/gap z PDF nejsou
     /// spolehlivé (PDF může mít transformační matici, která mění měřítko).
     /// LineElement použije své výchozí hodnoty pro daný styl.
     /// </summary>
@@ -490,7 +490,7 @@ public static class PdfPageExtractor
     private static bool IsBlackish(string hex)
     {
         if (hex.Length < 9) return false;
-        // #AARRGGBB — parsovat R, G, B
+        // #AARRGGBB - parsovat R, G, B
         if (byte.TryParse(hex.AsSpan(3, 2), System.Globalization.NumberStyles.HexNumber, null, out byte r) &&
             byte.TryParse(hex.AsSpan(5, 2), System.Globalization.NumberStyles.HexNumber, null, out byte g) &&
             byte.TryParse(hex.AsSpan(7, 2), System.Globalization.NumberStyles.HexNumber, null, out byte b))

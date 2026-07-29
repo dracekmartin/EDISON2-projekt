@@ -5,21 +5,21 @@ Include (GENERAL, EDInputForm)
 /// polí stylu → každá zóna (HeaderStyle/DataStyle/MinuteStyle/…) napříč všemi elementy má
 /// identická pole ve stejném pořadí; nové pole stylu stačí přidat zde a propíše se všude.
 ///
-/// Klíče polí = property path na C# element (prefix.FontFamily, prefix.FontSize, …) — čte/zapisuje
+/// Klíče polí = property path na C# element (prefix.FontFamily, prefix.FontSize, …) - čte/zapisuje
 /// je ElementFormBinder přes reflexi. Hodnoty HAlign/VAlign = názvy enumu (Left/Center/Right…).
 Class ALVA.TemplateDesigner.EDInputForm.StyleFields
 {
 
-/// <var>newGroup</var>=0 → pole se přidají do POSLEDNÍ skupiny (ne nová) — pro víc stylových zón
+/// <var>newGroup</var>=0 → pole se přidají do POSLEDNÍ skupiny (ne nová) - pro víc stylových zón
 /// v jedné business skupině (anotace symboly/text). <var>labelPrefix</var> se předřadí labelům
 /// (např. "Symbol: ") pro odlišení zón ve stejné skupině.
 ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, groupKey As %String, groupLabel As %String, defTextColor As %String = "", defBgColor As %String = "", newGroup As %Boolean = 1, labelPrefix As %String = "")
 {
     i newGroup d form.AddGroup(groupKey, groupLabel)
-    // ComboBox (editovatelný) s prázdným seznamem — klient naplní nainstalovanými fonty
+    // ComboBox (editovatelný) s prázdným seznamem - klient naplní nainstalovanými fonty
     // (ElementFormBinder.PopulateFontFields). Prázdné = dědit z rodiče kaskády.
     d form.AddFieldToLastGroup(prefix_".FontFamily", labelPrefix_"Font", $$$FieldTypeComboBox, 0, 0)
-    // Řez (váha) — items plní klient dynamicky z reálných řezů rodiny (PopulateFontWeightFields).
+    // Řez (váha) - items plní klient dynamicky z reálných řezů rodiny (PopulateFontWeightFields).
     // Prázdná položka (nepovinné pole) = auto dle Tučné.
     d form.AddFieldToLastGroup(prefix_".FontWeight", labelPrefix_"Řez", $$$FieldTypeList, 0, 0)
     d form.AddDecimal(prefix_".FontSize", labelPrefix_"Velikost", "", 4, 200, "pt")

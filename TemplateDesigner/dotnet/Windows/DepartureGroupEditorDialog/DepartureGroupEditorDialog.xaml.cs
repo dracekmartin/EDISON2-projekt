@@ -23,7 +23,7 @@ public partial class DepartureGroupEditorDialog : Window
     public List<DepartureGroupColumnStyle> ResultGroupColumns => _vm.ResultGroupColumns;
     public ColumnVisualStyle? ResultHourColumnStyle => _vm.ResultHourColumnStyle;
 
-    /// <summary>Command z tabu „Obecné" (EDInputForm) — null pokud se nic nezměnilo.
+    /// <summary>Command z tabu „Obecné" (EDInputForm) - null pokud se nic nezměnilo.
     /// Caller (MainWindow) ho vykoná spolu se Result* (per-column styly + hour).</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
 
@@ -89,7 +89,7 @@ public partial class DepartureGroupEditorDialog : Window
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {
-        // EDInputForm validace „Obecné" — při chybě zůstat v dialogu.
+        // EDInputForm validace „Obecné" - při chybě zůstat v dialogu.
         if (!GeneralForm.Save()) return;
 
         var cmds = ElementFormBinder.ExtractCommands(GeneralForm, _element, _preFilled);

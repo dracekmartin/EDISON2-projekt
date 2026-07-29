@@ -62,7 +62,7 @@ public class TextStyleTests
     [Fact]
     public void FontFamily_SeOrezavaOdMezer()
     {
-        // Uživatel může do free-text pole napsat mezeru navíc — bez trimu by font tiše spadl na default
+        // Uživatel může do free-text pole napsat mezeru navíc - bez trimu by font tiše spadl na default
         var resolved = new TextStyle { FontFamily = "  Arial  " }.Resolve(Parent());
 
         Assert.Equal("Arial", resolved.FontFamily);

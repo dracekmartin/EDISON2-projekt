@@ -1,20 +1,20 @@
 # Glob: CACHE/**
 
-## MHD zastávkový JŘ — business logika tisku
+## MHD zastávkový JŘ - business logika tisku
 
 ### Přehled Caché tříd
 
 | Třída | Dědí z | Zodpovědnost |
 |---|---|---|
-| `AgendaAPI.cls` | — | Abstraktní základ: vynucuje kontrakt 5 metod (GetSchema/GetTableTemplates/GetTableTemplate/GetData/GetMockData) + GetParameters s default implementací + helpery (AddField, AddBoolParam, AddNumberParam, AddMockValue, WriteTemplate2Col) |
+| `AgendaAPI.cls` | - | Abstraktní základ: vynucuje kontrakt 5 metod (GetSchema/GetTableTemplates/GetTableTemplate/GetData/GetMockData) + GetParameters s default implementací + helpery (AddField, AddBoolParam, AddNumberParam, AddMockValue, WriteTemplate2Col) |
 | `ZastavkoveJrMhdAPI.cls` | `AgendaAPI` | Kompletní MHD zastávkový JŘ: 6-fázový tiskový engine + všechny helpery (BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka, AddAnotace, AddAtribut, AddPoznamkaZastavky, AddZona, ConvertSpecialniZnak) + GetSchema/GetData/GetMockData |
 | `TemplateDesignerFAKTURY.cls` | `AgendaAPI` | Fakturační agenda (separátní, nesouvisí s JŘ) |
 
-**Architektura:** Žádné mezivrstvy — každá agenda dědí přímo z `AgendaAPI`. Sdílený kód se extrahuje až když je jasné, co konkrétně sdílejí (ne dopředu).
+**Architektura:** Žádné mezivrstvy - každá agenda dědí přímo z `AgendaAPI`. Sdílený kód se extrahuje až když je jasné, co konkrétně sdílejí (ne dopředu).
 
 ---
 
-### ZastavkoveJrMhdAPI — fáze zpracování
+### ZastavkoveJrMhdAPI - fáze zpracování
 
 `GetData` zpracovává data v 6 fázích, každá zapisuje do process-private globálu `^||TiskMHD(...)`:
 
@@ -29,7 +29,7 @@
 
 ---
 
-### Working global `^||TiskMHD` — klíčové uzly
+### Working global `^||TiskMHD` - klíčové uzly
 
 ```
 ("trasa",SmerID,BodID)                                    = $lb(ZastavkaID, CasJizdy, TarifniCislo)
@@ -55,7 +55,7 @@
 
 ---
 
-### Systém poznámek — typy a datový tok
+### Systém poznámek - typy a datový tok
 
 #### Anotace u minut (horní index v DepartureGrid)
 
@@ -65,13 +65,13 @@ Generují se ve fázi 6 (`SestavitStranky`) per odjezd:
 |---|---|---|---|---|
 | 1 | Týdenní platnost | `spojTydenni(SpojID)` | Po, So, Ne | `specialni` |
 | 2 | Speciální znaky spoje | `spojPoznamky` kde `TypPoznamkyID=1` | ikonové znaky | `specialni` |
-| 3 | NZ (negativní značka) | `spojNZ(SpojID)` — auto z bitmap obsluhy | ×, ⊘ | `nz` |
+| 3 | NZ (negativní značka) | `spojNZ(SpojID)` - auto z bitmap obsluhy | ×, ⊘ | `nz` |
 | 4 | Atributy spoje | `spojAtributy` → SpecZnak z ENUMS → `$char()` | F | `specialni` |
 | 5 | Rozdíl trasy (alg. 1002) | `rozdilTrasy` bitmapy → písmena | A, B | `text` |
 | 6 | Rozdíl trasy (alg. 1001) | volá legacy `MakeOmezTrasaTxMH` | a, b, c | `text` |
 | 7 | Textové poznámky spoje | `spojPoznamky` kde `TypPoznamkyID=0` | libovolný text | `text` |
 
-#### Atributy u zastávek (StopListElement — vedle názvu)
+#### Atributy u zastávek (StopListElement - vedle názvu)
 
 | Zdroj | Příklad | Filtr |
 |---|---|---|
@@ -82,13 +82,13 @@ Generují se ve fázi 6 (`SestavitStranky`) per odjezd:
 
 Tři zdroje v tomto pořadí:
 
-1. **Poznámky zastávky** — `poznamkyZast(SmerID,aktualniZastBodID,...)`
-2. **Stránkové poznámky** — `strankovePoznamky(znak)` nasbírané z odjezdů (F, A, B, dny...)
-3. **Atributy zastávek** — ze všech zobrazených zastávek, deduplikované per SpecZnak
+1. **Poznámky zastávky** - `poznamkyZast(SmerID,aktualniZastBodID,...)`
+2. **Stránkové poznámky** - `strankovePoznamky(znak)` nasbírané z odjezdů (F, A, B, dny...)
+3. **Atributy zastávek** - ze všech zobrazených zastávek, deduplikované per SpecZnak
 
 ---
 
-### SpecZnak — konverze interního čísla na zobrazovaný znak
+### SpecZnak - konverze interního čísla na zobrazovaný znak
 
 `ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"SpecZnak")` obsahuje **ASCII kód** znaku
 ze speciálního fontu (ne zobrazovaný znak přímo).
@@ -97,7 +97,7 @@ Konverze v `ZastavkoveJrMhdAPI.ConvertSpecialniZnak()`:
 
 ```
 SpecZnak 1-7   → "Po"/"Út"/"St"/"Čt"/"Pá"/"So"/"Ne" (dny v týdnu)
-SpecZnak > 31  → $char(SpecZnak) — ASCII znak (70→F, 120→x, 123→{)
+SpecZnak > 31  → $char(SpecZnak) - ASCII znak (70→F, 120→x, 123→{)
 jinak          → beze změny
 ```
 
@@ -113,19 +113,19 @@ Příklady z číselníku CB_DP:
 
 ---
 
-### Algoritmus 1002 — rozdíly tras (A/B/C písmena)
+### Algoritmus 1002 - rozdíly tras (A/B/C písmena)
 
 Fáze 5 (`VypocitatBitmapyObsluhy`) pro každou zastávku (BodID) × směr:
 
-1. **ObsluhaBitmap** — sjednocení všech zastávek kam jedou spoje z tohoto bodu
-2. **TrasaSpojZBodu** — per-spoj bitmapa (které zastávky tento spoj obsluhuje od BodID, **včetně** konečné)
-3. **AllStopBitmap** — 1 = všechny spoje staví, 9 = jen některé
-4. **DiffBitmap** (mytyp=0) — kde spoj staví navíc (pozice s AllStopBitmap=9)
-5. **EndDiffBitmap** (mytyp=1) — spoj končí dříve než ostatní
+1. **ObsluhaBitmap** - sjednocení všech zastávek kam jedou spoje z tohoto bodu
+2. **TrasaSpojZBodu** - per-spoj bitmapa (které zastávky tento spoj obsluhuje od BodID, **včetně** konečné)
+3. **AllStopBitmap** - 1 = všechny spoje staví, 9 = jen některé
+4. **DiffBitmap** (mytyp=0) - kde spoj staví navíc (pozice s AllStopBitmap=9)
+5. **EndDiffBitmap** (mytyp=1) - spoj končí dříve než ostatní
 6. Písmena A/B/C... se přiřadí sekvenčně přes mytyp × DiffBitmap
 
 Fáze 6 čte `rozdilTrasy` per odjezd a přidá písmeno jako anotaci + text do legendy:
 - mytyp=0 → "zastávky obsluhují pouze shodně označené spoje"
 - mytyp=1 → "končí v zast. {název}"
 
-**Klíčový detail:** TrasaSpojZBodu musí zahrnovat konečný bod (jako legacy) — bez toho jsou bitmapy prázdné a A/B se nevygenerují.
+**Klíčový detail:** TrasaSpojZBodu musí zahrnovat konečný bod (jako legacy) - bez toho jsou bitmapy prázdné a A/B se nevygenerují.

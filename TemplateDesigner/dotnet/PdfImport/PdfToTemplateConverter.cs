@@ -24,7 +24,7 @@ public class PdfToTemplateConverter
     /// <summary>Režim sloučení grafiky do pozadí obrázku.</summary>
     public GraphicsMergeMode MergeMode { get; set; } = GraphicsMergeMode.None;
 
-    /// <summary>Typ JŘ importu — uživatel volí apriorně. None = obecný import.</summary>
+    /// <summary>Typ JŘ importu - uživatel volí apriorně. None = obecný import.</summary>
     public ScheduleImportType ScheduleImportType { get; set; } = ScheduleImportType.None;
 
     /// <summary>Výsledek detekce JŘ (pro debug/preview). Null pokud nebyla detekce.</summary>
@@ -106,14 +106,14 @@ public class PdfToTemplateConverter
                     }
 
                     // Použij schedule builder místo generic BuildSection
-                    // Enrichment se aplikuje později ve ViewModelu (ApplyEnrichment) — zde ještě není k dispozici
+                    // Enrichment se aplikuje později ve ViewModelu (ApplyEnrichment) - zde ještě není k dispozici
                     var scheduleElements = ScheduleElementBuilder.BuildElements(
                         detection, extracted, 0, 0); // marginy se aplikují později v AdjustElementPositions
 
                     var schedSection = new Section
                     {
                         Id = Guid.NewGuid(),
-                        Name = $"JŘ — Strana {pageNum}",
+                        Name = $"JŘ - Strana {pageNum}",
                         PrintBehavior = SectionPrintBehavior.Once,
                         OverflowBehavior = SectionOverflowBehavior.KeepTogether,
                         Elements = scheduleElements
@@ -148,7 +148,7 @@ public class PdfToTemplateConverter
             section.DesignerHeight = Math.Max(contentHeight, 10f);
 
         // Merge mode: vykreslení sloučené grafiky s offset na margin
-        // JŘ import grafiku přeskakuje — mřížku/čáry renderují JŘ elementy samy
+        // JŘ import grafiku přeskakuje - mřížku/čáry renderují JŘ elementy samy
         if (MergeMode != GraphicsMergeMode.None && ScheduleImportType == ScheduleImportType.None)
         {
             float contentWidth = pageWidthMm - marginLeft - marginRight;
@@ -258,7 +258,7 @@ public class PdfToTemplateConverter
             float height = Math.Max(block.Height, minHeight);
 
             // Kompenzace renderovacího offsetu: SkiaSharp DrawText kreslí na baseline
-            // (rect.Top + fontSizePx), ale ascent fontu je ~80% fontSize — vzniká mezera
+            // (rect.Top + fontSizePx), ale ascent fontu je ~80% fontSize - vzniká mezera
             // ~20% fontHeight nad textem. Posuneme Y nahoru aby text vizuálně seděl
             // na stejné pozici jako v PDF.
             float ascentCompensation = fontHeightMm * 0.2f;
@@ -295,7 +295,7 @@ public class PdfToTemplateConverter
         };
     }
 
-    /// <summary>Vytvoří jednotlivé grafické elementy (obdélníky, obrázky, čáry) — původní režim.</summary>
+    /// <summary>Vytvoří jednotlivé grafické elementy (obdélníky, obrázky, čáry) - původní režim.</summary>
     private static void BuildGraphicElements(ExtractedPage page, List<TemplateElement> elements, ref int zIndex)
     {
         // Obdélníky (ZIndex 0+)
@@ -512,7 +512,7 @@ public class PdfToTemplateConverter
                     foreach (var el in rects) el.GroupId = gid;
                 }
             }
-            // All: background image je jen jeden prvek — skupina nemá smysl
+            // All: background image je jen jeden prvek - skupina nemá smysl
         }
     }
 
@@ -571,7 +571,7 @@ public class PdfToTemplateConverter
 
         if (minX == float.MaxValue)
         {
-            // Žádné elementy — výchozí okraje
+            // Žádné elementy - výchozí okraje
             return (10f, 10f, 10f, 10f);
         }
 

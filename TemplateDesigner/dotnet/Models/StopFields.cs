@@ -1,14 +1,14 @@
 namespace TemplateDesigner.Models;
 
 /// <summary>
-/// Field ID plochých polí kolekce ZASTAVKY — jednotný datový/sloupcový kontrakt sdílený mezi
+/// Field ID plochých polí kolekce ZASTAVKY - jednotný datový/sloupcový kontrakt sdílený mezi
 /// <see cref="Elements.StopListElement"/> a DynamicTableElement nad zdrojem ZASTAVKY. Agenda
 /// (<c>ZastavkoveJrAd</c>/<c>ZastavkoveJrMhd</c>) vystavuje přes GetSchema identickou sadu (AD ≡ MHD)
 /// a StopList je používá přímo jako <c>StopColumn.Key</c> → sloupce StopListu jsou 1:1 s poli, která
 /// nabízí DynamicTable. Uživatel tak v podmíněném renderu / počítaných polích píše stejné ID bez
 /// ohledu na to, kterou cestou zastávky zobrazuje.
 ///
-/// <para>Hodnoty se persistují do JSON šablony (drátový klíč i <c>StopColumn.Key</c>) — <b>neměnit bez
+/// <para>Hodnoty se persistují do JSON šablony (drátový klíč i <c>StopColumn.Key</c>) - <b>neměnit bez
 /// migrace</b>. Zamčeno testem <c>StopFieldsTests</c>.</para>
 /// </summary>
 public static class StopFields
@@ -18,10 +18,10 @@ public static class StopFields
     public const string Poradi     = "PORADI";            // pořadí zastávky (zobrazovací čítač)
     public const string JeAktualni = "AKTUALNI_ZASTAVKA"; // příznak aktuální (nástupní) zastávky
     public const string Zone       = "ZONY";              // tarifní zóny (ploché „1/2")
-    public const string Nastupiste = "NASTUPISTE";        // nástupiště/označník zastávky (AD: J-věta #3; MHD: Oznacnik)
-    public const string NastupisteSpoju = "NASTUPISTE_SPOJU"; // nástupiště dle spojů (AD: W pole 8, fallback J-věta) — CSV dle četnosti, první = nejčetnější
+    public const string Nastupiste = "NASTUPISTE";        // označník zastávky (AD: J-věta #3; MHD: Oznacnik) - UI label „Označník"
+    public const string NastupisteSpoju = "NASTUPISTE_SPOJU"; // označníky dle spojů (AD: W-trasa pozice 7, fallback J-věta) - CSV dle četnosti, první = nejčetnější
 
-    /// <summary>Interní join-klíč zastávky (<c>ODJEZDY.ZASTAVKA_ID</c>) — je v datech, ale NE ve schématu
+    /// <summary>Interní join-klíč zastávky (<c>ODJEZDY.ZASTAVKA_ID</c>) - je v datech, ale NE ve schématu
     /// ani jako sloupec (uživatel s ním nepracuje).</summary>
     public const string Id = "ID";
 

@@ -64,6 +64,11 @@
     <EmbeddedResource Include="SystemTemplates\**\*.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Testy smí na internal členy — netřeba zveřejňovat helpery jen kvůli testům. -->
+    <InternalsVisibleTo Include="TemplateDesigner.Tests" />
+  </ItemGroup>
+
   <!-- Volná EDControls.dll vedle exe + strip sidecar .pdb/.xml (mj. 80MB libSkiaSharp.pdb
        z NuGetu, do C:\Edison\ nepatří). -->
   <Import Project="..\..\SingleFilePublish.targets" />

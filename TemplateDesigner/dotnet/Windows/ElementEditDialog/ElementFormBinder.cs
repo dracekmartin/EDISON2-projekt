@@ -13,7 +13,7 @@ namespace TemplateDesigner;
 /// (<see cref="ElementPropertyAccessor"/>, field key = property path).
 ///
 /// Sdílené pro samostatný <see cref="ElementEditDialog"/> i pro embedded EDInputForm v tabu
-/// „Obecné" komplexních dialogů (StopColumnsEditorDialog, DepartureGroupEditorDialog) — tam je
+/// „Obecné" komplexních dialogů (StopColumnsEditorDialog, DepartureGroupEditorDialog) - tam je
 /// EDInputForm jen část okna vedle custom editoru sloupců.
 /// </summary>
 public static class ElementFormBinder
@@ -29,7 +29,7 @@ public static class ElementFormBinder
         Models.FontResolver.InstalledFamilies.Select(s => new ListItem(s, s)).ToList();
 
     /// <summary>Klientsky naplní seznam nainstalovaných fontů do ComboBox polí (klíč končí "FontFamily").
-    /// Caché ten seznam nezná (OS věc). Volat po EDInputForm.Initialized (před/spolu s Prefill) — set
+    /// Caché ten seznam nezná (OS věc). Volat po EDInputForm.Initialized (před/spolu s Prefill) - set
     /// proběhne dřív, než WPF realizuje kontejner ComboBoxu, takže se binding chytí i bez change-notifikace.
     /// Sdílené napříč všemi hosty EDInputFormu (ElementEditDialog + embedded v komplexních dialozích).</summary>
     public static void PopulateFontFields(EDInputForm form)
@@ -57,7 +57,7 @@ public static class ElementFormBinder
         }
     }
 
-    /// <summary>Snapshot aktuálních hodnot polí formuláře (bez zápisu do cíle) — pro update
+    /// <summary>Snapshot aktuálních hodnot polí formuláře (bez zápisu do cíle) - pro update
     /// change-detection baseline po živém write-backu v inline panelu.</summary>
     public static Dictionary<string, string> Snapshot(EDInputForm form)
     {

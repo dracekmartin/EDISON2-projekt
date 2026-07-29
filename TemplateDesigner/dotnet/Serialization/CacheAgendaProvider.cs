@@ -10,13 +10,13 @@ namespace TemplateDesigner.Serialization;
 
 /// <summary>
 /// Volá Caché BaseAgenda (GetSchema, GetTableTemplates, GetTableTemplate) přes MLRest.
-/// Nahrazuje CacheDataSchemaProvider — pracuje s JSON formátem místo pipe-delimited stringů.
+/// Nahrazuje CacheDataSchemaProvider - pracuje s JSON formátem místo pipe-delimited stringů.
 ///
 /// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.Agendy.BaseAgenda,
 /// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd".
 ///
 /// ⚠️ Metody jsou ZÁMĚRNĚ SYNCHRONNÍ (`_mlRest.Query`). Pomalé operace (`GetData`, `GetAvailableInstances`,
-/// první `GetSchema`) musí volající obalit `await Task.Run(...)` — R1, jinak zamrzne UI thread.
+/// první `GetSchema`) musí volající obalit `await Task.Run(...)` - R1, jinak zamrzne UI thread.
 /// Rychlé/cachované lookupy (`GetParameters`, opakované `GetSchema`) sync OK. Nová agenda: neplánuj
 /// `GetData` přímo z UI threadu.
 /// </summary>
@@ -46,7 +46,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     public CacheAgendaProvider(MLRest mlRest, IEnumerable<(string Code, string Name, string CacheClass)> agendas)
     {
         _mlRest   = mlRest;
-        var list  = agendas.ToList();  // materializace — IEnumerable se nesmí iterovat dvakrát
+        var list  = agendas.ToList();  // materializace - IEnumerable se nesmí iterovat dvakrát
         _agendas  = list.Select(a => new AgendaInfo(a.Code, a.Name)).ToList();
         _classMap = list.ToDictionary(
             a => a.Code,
@@ -55,23 +55,23 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     }
 
     /// <summary>
-    /// Nemodální oznámení chyby ČTENÍ z Caché (schema/parametry/mock/instance) — provider chybu
+    /// Nemodální oznámení chyby ČTENÍ z Caché (schema/parametry/mock/instance) - provider chybu
     /// nechá „prázdno" (null/[]), ale zavolá tento callback, aby UI ukázalo, že data chybí kvůli
     /// selhání (typicky VPN/Caché nedostupná), ne že jsou legitimně prázdná. Volá se JEN na
     /// RestStatus.Error / výjimku, ne na legitimní prázdný výsledek. Může fírnout z background
-    /// threadu (Task.Run) — konzument si marshalne na UI thread. `GetData` chybu naopak HÁZÍ (B2).
+    /// threadu (Task.Run) - konzument si marshalne na UI thread. `GetData` chybu naopak HÁZÍ (B2).
     /// </summary>
     public Action<string>? OnReadError { get; set; }
 
     private void NotifyReadError(string context, string detail)
     {
         Debug.WriteLine($"[AgendaProvider] {context}: {detail}");
-        OnReadError?.Invoke($"⚠ Databáze — {context} selhalo: {detail}");
+        OnReadError?.Invoke($"⚠ Databáze - {context} selhalo: {detail}");
     }
 
-    /// <summary>Vyčistí všechny cache — příští čtení (schema/parametry/mock/šablony) půjde znovu
+    /// <summary>Vyčistí všechny cache - příští čtení (schema/parametry/mock/šablony) půjde znovu
     /// na Caché. Pro „Obnovit data": data změněná na serveru se projeví bez restartu aplikace.
-    /// (GetData cachovaný není — refetch řídí ViewModel voláním GetData znovu.)</summary>
+    /// (GetData cachovaný není - refetch řídí ViewModel voláním GetData znovu.)</summary>
     public void InvalidateCaches()
     {
         _schemaCache.Clear();
@@ -91,7 +91,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     public string? GetCacheClass(string agendaCode) =>
         _classMap.TryGetValue(agendaCode, out var c) && !string.IsNullOrWhiteSpace(c) ? c : null;
 
-    /// <summary>Je schéma agendy už v cache? (R1 — volající odbaví první uncached GetSchema
+    /// <summary>Je schéma agendy už v cache? (R1 - volající odbaví první uncached GetSchema
     /// na pozadí; opakované volání je pak levné a smí běžet synchronně.)</summary>
     public bool IsSchemaCached(string agendaCode) =>
         !string.IsNullOrEmpty(agendaCode) && _schemaCache.ContainsKey(agendaCode);
@@ -106,7 +106,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass))
             return null;
 
-        // Agenda bez Caché třídy (např. GENERAL) — žádné DB schema, jen statický obsah šablony
+        // Agenda bez Caché třídy (např. GENERAL) - žádné DB schema, jen statický obsah šablony
         if (string.IsNullOrWhiteSpace(cacheClass)) return null;
 
         var agenda = _agendas.FirstOrDefault(a =>
@@ -156,7 +156,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                 !code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            // Agenda bez Caché třídy (GENERAL) — žádné Fixed šablony
+            // Agenda bez Caché třídy (GENERAL) - žádné Fixed šablony
             if (string.IsNullOrWhiteSpace(cacheClass)) continue;
 
             try
@@ -194,7 +194,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         // Zkus každou třídu dokud nenajdeme šablonu
         foreach (var cacheClass in _classMap.Values)
         {
-            // Agenda bez Caché třídy (GENERAL) — žádné šablony
+            // Agenda bez Caché třídy (GENERAL) - žádné šablony
             if (string.IsNullOrWhiteSpace(cacheClass)) continue;
 
             try
@@ -239,7 +239,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (_parametersCache.TryGetValue(agendaCode, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
 
-        // Agenda bez Caché třídy (GENERAL) — žádné parametry
+        // Agenda bez Caché třídy (GENERAL) - žádné parametry
         if (string.IsNullOrWhiteSpace(cacheClass)) { _parametersCache[agendaCode] = []; return []; }
 
         try
@@ -249,7 +249,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             {
                 NotifyReadError("načtení parametrů", _mlRest.RestStatus.Message);
-                return []; // chybu NEcachovat — příští volání zkusí znovu (po zotavení Caché se params objeví bez restartu)
+                return []; // chybu NEcachovat - příští volání zkusí znovu (po zotavení Caché se params objeví bez restartu)
             }
 
             string? json = result["1"]?.Value?.ToString();
@@ -266,7 +266,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         catch (Exception ex)
         {
             NotifyReadError("načtení parametrů", ex.Message);
-            return []; // chybu NEcachovat — příští volání zkusí znovu
+            return []; // chybu NEcachovat - příští volání zkusí znovu
         }
     }
 
@@ -314,7 +314,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
     /// <summary>
     /// Volá GetAvailableInstances na Caché třídě a vrátí seznam instancí (např. linek pro MHD).
-    /// Server-side filter — předaný search se aplikuje v Caché (case-insensitive substring).
+    /// Server-side filter - předaný search se aplikuje v Caché (case-insensitive substring).
     /// Prázdný seznam = agenda nemá koncept instancí (GENERAL) nebo žádné neodpovídají filtru.
     /// </summary>
     public IReadOnlyList<AgendaInstance> GetAvailableInstances(string agendaCode, string? search = null, int limit = 50)
@@ -329,7 +329,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             inVar["search"] = new CVar(search ?? "");
             inVar["limit"]  = new CVar(limit.ToString());
             // Pozn.: filtr skupiny linek (SKUPINA_LINEK_ID) teče přes EDList dispatch (Instance.LoadList),
-            // ne přes tuto metodu — Instance Picker načítá řádky EDListem. Tady zůstává default skupina.
+            // ne přes tuto metodu - Instance Picker načítá řádky EDListem. Tady zůstává default skupina.
 
             CVar result = _mlRest.Query(cacheClass, "GetAvailableInstances", inVar);
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
@@ -411,7 +411,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     // ─── Reálná data pro tisk ───────────────────────────────────────────────
 
     /// <summary>
-    /// Volá GetData na Caché třídě s parametry a vrátí seznam DataContextů — jeden per "stránka" dat.
+    /// Volá GetData na Caché třídě s parametry a vrátí seznam DataContextů - jeden per "stránka" dat.
     /// Pro JŘ: vstup = LinkaID → výstup = pole stránek (1 per zastávka × směr).
     /// Null = metoda selhala.
     /// </summary>
@@ -420,7 +420,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (string.IsNullOrEmpty(agendaCode)) return null;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
 
-        // Agenda bez Caché třídy (GENERAL) — žádná reálná data, šablona se tiskne s parametry přímo
+        // Agenda bez Caché třídy (GENERAL) - žádná reálná data, šablona se tiskne s parametry přímo
         if (string.IsNullOrWhiteSpace(cacheClass)) return null;
 
         try
@@ -432,7 +432,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
             CVar result = _mlRest.Query(cacheClass, "GetData", inVar);
 
-            // Chyba Caché NENÍ „prázdno" — vyhodit, ať ji volající (export/tisk) pozná a nespadne
+            // Chyba Caché NENÍ „prázdno" - vyhodit, ať ji volající (export/tisk) pozná a nespadne
             // tiše na mock data. `null` níže znamená výhradně „legitimně žádná data", ne selhání.
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
                 throw new CacheAgendaException(
@@ -462,7 +462,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
         catch (CacheAgendaException)
         {
-            throw;   // už je to naše doménová chyba — nepřebalovat
+            throw;   // už je to naše doménová chyba - nepřebalovat
         }
         catch (Exception ex)
         {
@@ -478,13 +478,13 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     /// </summary>
     private static DataContext? ParseSinglePageData(JsonNode node)
     {
-        // Skalární hodnoty (+ vnořená pole/objekty jako JsonNode — např. VARIANTY_TRAS[])
+        // Skalární hodnoty (+ vnořená pole/objekty jako JsonNode - např. VARIANTY_TRAS[])
         var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         if (node["values"]?.AsObject() is { } valObj)
             foreach (var kv in valObj)
             {
                 if (kv.Value is JsonArray or JsonObject)
-                    values[kv.Key] = kv.Value;  // page-level pole/objekt (VARIANTY_TRAS) — zachovat jako JsonNode
+                    values[kv.Key] = kv.Value;  // page-level pole/objekt (VARIANTY_TRAS) - zachovat jako JsonNode
                 else
                     values[kv.Key] = GetScalarAsString(kv.Value);
             }
@@ -504,7 +504,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                     foreach (var kv in rowObj)
                     {
                         if (kv.Value is JsonArray or JsonObject)
-                            rowValues[kv.Key] = kv.Value;  // vnořená pole/objekty — uložit jako JsonNode
+                            rowValues[kv.Key] = kv.Value;  // vnořená pole/objekty - uložit jako JsonNode
                         else
                             rowValues[kv.Key] = GetScalarAsString(kv.Value);
                     }
@@ -520,8 +520,25 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     // ─── Mock data pro preview ────────────────────────────────────────────────
 
     /// <summary>
-    /// Volá GetMockData na Caché třídě a vrátí DataContext pro live preview.
-    /// Null = metoda není dostupná nebo selžala.
+    /// Cache-only lookup mock dat - NEvolá HTTP. Kreslicí cesta náhledu musí číst jen odtud,
+    /// aby první vykreslení nezablokovalo UI (GetMockData je synchronní, cold-start 2-3 s).
+    /// Vrací true = agenda už byla načtena (hodnota může být null = prázdno/selhání), false =
+    /// ještě nenačteno (volající pak sáhne po syntetických mock datech ze schématu a spustí prefetch).
+    /// GENERAL / agenda bez Caché třídy = trvale bez mock dat → true + null.
+    /// </summary>
+    public bool TryGetCachedMockData(string agendaCode, out DataContext? data)
+    {
+        data = null;
+        if (string.IsNullOrEmpty(agendaCode)) return true;
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass) || string.IsNullOrWhiteSpace(cacheClass))
+            return true;
+        return _mockDataCache.TryGetValue(agendaCode, out data);
+    }
+
+    /// <summary>
+    /// Volá GetMockData na Caché třídě a naplní cache (i negativně). SYNCHRONNÍ HTTP - volat jen
+    /// z pozadí (prefetch při změně agendy), NE z kreslicí cesty. Null = bez mock dat.
+    /// Selhání/prázdno se cachuje také (fail-soft) - čistí ho až „Obnovit data" (InvalidateCaches).
     /// </summary>
     public DataContext? GetMockData(string agendaCode)
     {
@@ -529,25 +546,24 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (_mockDataCache.TryGetValue(agendaCode, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
 
-        // Agenda bez Caché třídy (GENERAL) — žádná mock data, preview používá SampleData ze šablony
+        // Agenda bez Caché třídy (GENERAL) - žádná mock data, preview používá SampleData ze šablony
         if (string.IsNullOrWhiteSpace(cacheClass)) return null;
 
         try
         {
             CVar result = _mlRest.Query(cacheClass, "GetMockData", new CVar());
-            if (_mlRest.RestStatus.State == MLRStatus.EState.Error) { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); return null; }
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
+            { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); _mockDataCache[agendaCode] = null; return null; }
 
             string? json = result["1"]?.Value?.ToString();
-            if (string.IsNullOrEmpty(json)) return null;
-
-            var data = ParseMockData(json);
-            if (data is not null)
-                _mockDataCache[agendaCode] = data;  // necachovat null — příští pokus zkusí znovu
+            var data = string.IsNullOrEmpty(json) ? null : ParseMockData(json);
+            _mockDataCache[agendaCode] = data;   // cachovat i null - jinak render/prefetch tluče HTTP per pokus
             return data;
         }
         catch (Exception ex)
         {
             NotifyReadError("načtení mock dat", ex.Message);
+            _mockDataCache[agendaCode] = null;
             return null;
         }
     }
@@ -575,13 +591,13 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     private static string? GetScalarAsString(JsonNode? node)
     {
         if (node is not JsonValue jv) return null;
-        // String — nejčastější případ
+        // String - nejčastější případ
         if (jv.TryGetValue<string>(out var s)) return s;
-        // Čísla (int, long, double) a bool — konverze na string
+        // Čísla (int, long, double) a bool - konverze na string
         if (jv.TryGetValue<long>(out var l)) return l.ToString();
         if (jv.TryGetValue<double>(out var d)) return d.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (jv.TryGetValue<bool>(out var b)) return b ? "true" : "false";
-        // Fallback — JSON representace bez uvozovek
+        // Fallback - JSON representace bez uvozovek
         return jv.ToJsonString().Trim('"');
     }
 
@@ -611,7 +627,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                     if (field is not null) schema.Fields.Add(field);
                 }
 
-            // Tabulkové kolekce — "fieldCollections" je aktuální formát; "groups" je starší název
+            // Tabulkové kolekce - "fieldCollections" je aktuální formát; "groups" je starší název
             // pro zpětnou kompatibilitu se staršími Caché třídami, které ještě nebyly aktualizovány
             var collections = node["fieldCollections"]?.AsArray();
             if (collections is null && node["groups"] is not null)
@@ -765,7 +781,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
 /// <summary>
 /// Selhání načtení dat agendy z Caché (chyba RestStatus nebo výjimka). Odlišuje skutečnou chybu
-/// od „legitimně žádná data" (to `GetData` signalizuje <c>null</c>) — export/tisk pak na chybu
+/// od „legitimně žádná data" (to `GetData` signalizuje <c>null</c>) - export/tisk pak na chybu
 /// hlasitě upozorní místo tichého propadnutí na mock data. Zrcadlí `CacheTemplateException`.
 /// </summary>
 public class CacheAgendaException : Exception

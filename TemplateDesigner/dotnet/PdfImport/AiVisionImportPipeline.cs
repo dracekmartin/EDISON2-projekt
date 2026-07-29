@@ -8,7 +8,7 @@ namespace TemplateDesigner.PdfImport;
 
 /// <summary>
 /// Orchestruje AI Vision import: extrakce PDF → rasterizace → AI vision → engine → Template.
-/// Extrahováno z PdfImportDialogViewModel — VM volá tuto třídu, neobsahuje business logiku.
+/// Extrahováno z PdfImportDialogViewModel - VM volá tuto třídu, neobsahuje business logiku.
 /// </summary>
 public class AiVisionImportPipeline
 {
@@ -91,12 +91,12 @@ public class AiVisionImportPipeline
             AiDebugLog = visionService.DebugLog;
         }
 
-        // Klíčové JŘ elementy (StopList/DepartureGrid) model občas stochasticky vynechá —
+        // Klíčové JŘ elementy (StopList/DepartureGrid) model občas stochasticky vynechá -
         // jeden opakovaný pokus to typicky spraví. Jinak se pokračuje s viditelným varováním.
         if (visionResult is not null && scheduleType != ScheduleImportType.None
             && MissingCoreElements(visionResult) is { Length: > 0 } missingFirst)
         {
-            setStatus($"AI nevrátilo: {missingFirst} — zkouším znovu...");
+            setStatus($"AI nevrátilo: {missingFirst} - zkouším znovu...");
             try
             {
                 var retryResult = await visionService.AnalyzeAsync(
@@ -107,7 +107,7 @@ public class AiVisionImportPipeline
                         || retryResult.Elements.Count > visionResult.Elements.Count))
                     visionResult = retryResult;
             }
-            catch { /* retry je best-effort — ponechat první výsledek */ }
+            catch { /* retry je best-effort - ponechat první výsledek */ }
         }
 
         // 4. Sestavit šablonu
@@ -123,7 +123,7 @@ public class AiVisionImportPipeline
             int elCount = template.Sections.Sum(s => s.Elements.Count);
             int mappedFields = visionResult.TextMappings.Count(m => m.DbField is not null && m.Confidence >= 0.7f);
             string missingWarn = MissingCoreElements(visionResult) is { Length: > 0 } m
-                ? $" · ⚠ AI nerozpoznalo: {m} — doplňte ručně z palety"
+                ? $" · ⚠ AI nerozpoznalo: {m} - doplňte ručně z palety"
                 : "";
             setStatus($"AI Vision: {visionResult.Elements.Count} JŘ elementů, {mappedFields} polí namapováno, celkem {elCount} elementů{missingWarn}");
         }
@@ -180,7 +180,7 @@ public class AiVisionImportPipeline
         section.DesignerHeight = Math.Max(contentHeight, 10f);
 
         // Pojistka proti přetečení hned po importu: AI souřadnice můžou mírně přetéct stránku
-        // (rel. bottom > 1) — element s pevnými rozměry clampnout do tiskové plochy, jinak
+        // (rel. bottom > 1) - element s pevnými rozměry clampnout do tiskové plochy, jinak
         // šablona rovnou svítí varováním. JŘ elementy obsah do menšího boxu vejdou auto-scalem.
         float printableWidth = pageWidthMm - mLeft - mRight;
         foreach (var el in section.Elements)
@@ -235,7 +235,7 @@ public class AiVisionImportPipeline
         {
             if (knownLookup.TryGetValue(key, out var known))
             {
-                // Agenda má definici — převzít typ, label, options
+                // Agenda má definici - převzít typ, label, options
                 result.Add(new TemplateParameter
                 {
                     Name = known.Name,

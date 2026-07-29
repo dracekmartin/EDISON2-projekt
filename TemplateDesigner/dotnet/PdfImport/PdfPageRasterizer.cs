@@ -6,7 +6,7 @@ namespace TemplateDesigner.PdfImport;
 /// <summary>
 /// Rasterizuje ExtractedPage na PNG screenshot pro AI vision vstup.
 /// Kompozitní rendering: obdélníky → obrázky → čáry → text.
-/// Výstup je vizuální aproximace PDF stránky — nemusí být pixel-perfect,
+/// Výstup je vizuální aproximace PDF stránky - nemusí být pixel-perfect,
 /// AI potřebuje jen rozpoznat strukturu layoutu.
 /// </summary>
 public static class PdfPageRasterizer
@@ -98,7 +98,7 @@ public static class PdfPageRasterizer
             paint.PathEffect?.Dispose();
         }
 
-        // 4. Text — renderovat slova na správné pozice
+        // 4. Text - renderovat slova na správné pozice
         foreach (var word in page.Words)
         {
             float fontSizePx = word.FontSizePt * (dpi / 72f);
@@ -120,7 +120,7 @@ public static class PdfPageRasterizer
             };
 
             // PDF Y je top of bounding box; SkiaSharp DrawText kreslí na baseline
-            // Approximate ascent ratio — PDF Y is top of bounding box, SkiaSharp needs baseline
+            // Approximate ascent ratio - PDF Y is top of bounding box, SkiaSharp needs baseline
             float baseline = word.Y * scale + fontSizePx * 0.8f;
             canvas.DrawText(word.Text, word.X * scale, baseline, font, paint);
         }

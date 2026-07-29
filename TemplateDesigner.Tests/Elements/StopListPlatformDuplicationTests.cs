@@ -3,7 +3,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Elements;
 
 /// <summary>
-/// KOVED #13048 bod 4 — režim „Duplikace řádku per stanoviště" (<see cref="StopListElement.ExpandPlatformRows"/>).
+/// KOVED #13048 bod 4 - režim „Duplikace řádku per stanoviště" (<see cref="StopListElement.ExpandPlatformRows"/>).
 /// Zastávka obsluhovaná z více stanovišť (různá NASTUPISTE_VARIANT napříč variantami) se rozvine na N
 /// řádků; časy zůstanou jen u variant daného stanoviště; vývěska a jednostanovištní zastávka = 1 řádek.
 /// </summary>
@@ -27,6 +27,18 @@ public class StopListPlatformDuplicationTests
     {
         var stops = new List<ZastavkaData> { Stop("A", false, ["1"], ["2"]) };
         var vysledek = new StopListElement { MultiPlatformMode = MultiPlatformDisplay.All }
+            .ExpandPlatformRows(stops);
+        Assert.Same(stops, vysledek);
+    }
+
+    [Fact]
+    public void BezVariantnichSloupcu_SeNerozpada()
+    {
+        // Vypnuté „Všechny varianty tras" = jediný sloupec času (stejný na všech duplikátech)
+        // → rozpad by vypadal jako chyba; režim se pak neaplikuje.
+        var stops = new List<ZastavkaData> { Stop("A", false, ["5", "6"], ["1", "2"]) };
+        var vysledek = new StopListElement
+            { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform, ShowAllRouteVariants = false }
             .ExpandPlatformRows(stops);
         Assert.Same(stops, vysledek);
     }

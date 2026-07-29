@@ -39,7 +39,7 @@ public class MigrationHighlightRules : ITemplateMigration
         el.Remove("rowHighlightExpression");
         el.Remove("rowHighlightColor");
 
-        // Staré zvýraznění vyžadovalo podmínku I barvu (jinak nic nebarvilo) — bez obojího
+        // Staré zvýraznění vyžadovalo podmínku I barvu (jinak nic nebarvilo) - bez obojího
         // pravidlo nevytvářet (žádný „dangling" bezbarevný záznam v editoru). Idempotence:
         // existující seznam nepřepisovat.
         if (string.IsNullOrWhiteSpace(expr) || string.IsNullOrWhiteSpace(color)) return;

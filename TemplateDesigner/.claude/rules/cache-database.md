@@ -1,8 +1,8 @@
 # Glob: CACHE/**
 
-## Caché databáze — mentální model pro AI
+## Caché databáze - mentální model pro AI
 
-Caché ukládá data do hierarchických globálů (stromových struktur). Každý globál je multi-tenant — první subscript je vždy `IdFa` (identifikátor firmy/dopravce, např. `"CB_DP"`).
+Caché ukládá data do hierarchických globálů (stromových struktur). Každý globál je multi-tenant - první subscript je vždy `IdFa` (identifikátor firmy/dopravce, např. `"CB_DP"`).
 
 Přístup k datům v jiném namespace: `^[dataDB]Global(...)` kde `dataDB` je cílový namespace.
 
@@ -25,7 +25,7 @@ Přístup k datům v jiném namespace: `^[dataDB]Global(...)` kde `dataDB` je c�
 
 ## Persistentní globály
 
-### ALVA.MHD.LSO — Linky, Spoje, Organizace trasy
+### ALVA.MHD.LSO - Linky, Spoje, Organizace trasy
 
 Hlavní storage pro MHD data. Obsahuje linky (typ 1), spoje (typ 2) a trasy (typ 4).
 
@@ -61,8 +61,8 @@ Hlavní storage pro MHD data. Obsahuje linky (typ 1), spoje (typ 2) a trasy (typ
 |---|---|---|
 | `SmerID` | int | Směr: 0 = tam, 1 = zpět |
 | `TypProvozuID` | ID | Skupina dnů provozu (pracovní den, sobota, neděle...) |
-| `ProvozBitMapa` | bitstring | Bitmapa platnosti — které dny spoj jede |
-| `NegativniZnacka` | ID | Přiřazená negativní značka (NZ) — omezení trasy |
+| `ProvozBitMapa` | bitstring | Bitmapa platnosti - které dny spoj jede |
+| `NegativniZnacka` | ID | Přiřazená negativní značka (NZ) - omezení trasy |
 | `RucniZadani` | bool | 1 = ručně zadaný spoj (ne z optimalizace) |
 
 **Index spojů per linka:**
@@ -91,7 +91,7 @@ Trasa je sekvence bodů (BodID). Každý bod odpovídá jedné zastávce na tras
 
 ---
 
-### ALVA.MHD.CHR — Chronometráže (doby jízdy)
+### ALVA.MHD.CHR - Chronometráže (doby jízdy)
 
 Doba jízdy mezi dvěma zastávkami. Verze platnosti se vybírá podle data.
 
@@ -105,7 +105,7 @@ Doba jízdy mezi dvěma zastávkami. Verze platnosti se vybírá podle data.
 
 ---
 
-### ALVA.MHD.ZST — Zastávky
+### ALVA.MHD.ZST - Zastávky
 
 ```
 ^[dataDB]ALVA.MHD.ZST(IdFa, 1, "DTA", ZastavkaID, "DTA", 1, <property>)
@@ -113,7 +113,7 @@ Doba jízdy mezi dvěma zastávkami. Verze platnosti se vybírá podle data.
 
 | Property | Typ | Popis |
 |---|---|---|
-| `KategorieZastavekID` | ID | Kategorie: 1001 = reálná zastávka (filtruje se — jiné kategorie se přeskakují) |
+| `KategorieZastavekID` | ID | Kategorie: 1001 = reálná zastávka (filtruje se - jiné kategorie se přeskakují) |
 | `Cislo` | string | Číslo zastávky (tarifní číslo) |
 | `Oznacnik` | string | Označník zastávky (symbol/kód) |
 | `ZonyID`,N,`"Itm"` | ID | Zóny přiřazené zastávce (pole ZonaID) |
@@ -121,7 +121,7 @@ Doba jízdy mezi dvěma zastávkami. Verze platnosti se vybírá podle data.
 
 ---
 
-### ALVA.MHD.ENUMS — Číselníky (enumeration tables)
+### ALVA.MHD.ENUMS - Číselníky (enumeration tables)
 
 Centrální storage pro všechny číselníky MHD modulu. Klíčem je typ číselníku.
 
@@ -129,7 +129,7 @@ Centrální storage pro všechny číselníky MHD modulu. Klíčem je typ číse
 ^[dataDB]ALVA.MHD.ENUMS(IdFa, <TypCiselniku>, "DTA", <ItemID>, <property>)
 ```
 
-#### Atribut — vlastnosti zastávek a spojů
+#### Atribut - vlastnosti zastávek a spojů
 
 ```
 ^[dataDB]ALVA.MHD.ENUMS(IdFa, "Atribut", "DTA", AtributID, <property>)
@@ -154,7 +154,7 @@ Známé AtributID (z CB_DP):
 | 1007 | bezbariérově přístupné | 72 → H | 1 | 1 |
 | 1008 | částečně bezbariérové | 70 → F | 1 | 0 |
 
-#### PoznamkaSpoj — poznámky přiřaditelné ke spojům
+#### PoznamkaSpoj - poznámky přiřaditelné ke spojům
 
 ```
 ^[dataDB]ALVA.MHD.ENUMS(IdFa, "PoznamkaSpoj", "DTA", PoznamkaSpojID, <property>)
@@ -168,7 +168,7 @@ Známé AtributID (z CB_DP):
 | `Text` | Zobrazovaný znak/symbol |
 | `PopisPoznamky` | Popis pro legendu |
 
-#### TypyProvozu — skupiny dnů (pracovní den, sobota, neděle...)
+#### TypyProvozu - skupiny dnů (pracovní den, sobota, neděle...)
 
 ```
 ^[dataDB]ALVA.MHD.ENUMS(IdFa, "TypyProvozu", "DTA", TypProvozuID, <property>)
@@ -181,7 +181,7 @@ Známé AtributID (z CB_DP):
 | `Poradi` | Pořadí zobrazení (1, 2, 3...) |
 | `NegativniZnacka` | NZ přiřazená tomuto typu provozu (pro kontrolu kolizí) |
 
-#### Zony — tarifní zóny
+#### Zony - tarifní zóny
 
 ```
 ^[dataDB]ALVA.MHD.ENUMS(IdFa, "Zony", "DTA", ZonaID, "Cislo") → číslo zóny
@@ -189,7 +189,7 @@ Známé AtributID (z CB_DP):
 
 ---
 
-### ALVA.MHD.SETTINGS — Globální nastavení MHD modulu
+### ALVA.MHD.SETTINGS - Globální nastavení MHD modulu
 
 ```
 ^[dataDB]ALVA.MHD.SETTINGS(IdFa, "Obecne", "DTA", 1001, <property>)
@@ -225,7 +225,7 @@ Caché helper třídy zapouzdřují složitější operace nad daty.
 
 ### Linka → Trasa → Body → Zastávky
 
-Linka má jednu trasu (`TrasaID`). Trasa je sekvence bodů (`BodID`). Každý bod odkazuje na dvě zastávky — jednu pro směr tam (`ZastavkaTamID`) a jednu pro směr zpět (`ZastavkaZpetID`). Bod může mít `KategorieZastavekID '= 1001` — to jsou technické body (ne reálné zastávky), které se ve výstupu přeskakují.
+Linka má jednu trasu (`TrasaID`). Trasa je sekvence bodů (`BodID`). Každý bod odkazuje na dvě zastávky - jednu pro směr tam (`ZastavkaTamID`) a jednu pro směr zpět (`ZastavkaZpetID`). Bod může mít `KategorieZastavekID '= 1001` - to jsou technické body (ne reálné zastávky), které se ve výstupu přeskakují.
 
 ### Spoj
 
@@ -233,7 +233,7 @@ Konkrétní jízda vozidla po trase. Má směr (`SmerID`: 0=tam, 1=zpět), skupi
 
 ### TypProvozuID (dříve SMOID)
 
-Skupina dnů provozu — pracovní den, sobota, neděle, prázdniny... Každý typ má nadpis (např. "Pracovní den"), pořadí zobrazení, a bitmapu kalendáře. V DepartureGrid tvoří sloupce.
+Skupina dnů provozu - pracovní den, sobota, neděle, prázdniny... Každý typ má nadpis (např. "Pracovní den"), pořadí zobrazení, a bitmapu kalendáře. V DepartureGrid tvoří sloupce.
 
 ### Negativní značky (NZ)
 
@@ -241,4 +241,4 @@ Systém pro označení spojů s omezenou trasou. Když spoj nestaví na všech z
 
 ### Chronometráž
 
-Doba jízdy mezi dvěma po sobě jdoucími zastávkami. Verzovaná — platnost se vybírá podle data. Kumulativní čas od počáteční zastávky se počítá sčítáním.
+Doba jízdy mezi dvěma po sobě jdoucími zastávkami. Verzovaná - platnost se vybírá podle data. Kumulativní čas od počáteční zastávky se počítá sčítáním.

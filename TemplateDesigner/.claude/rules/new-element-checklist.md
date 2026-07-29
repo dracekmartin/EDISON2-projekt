@@ -1,13 +1,13 @@
 # Glob: dotnet/Models/Elements/**
 
-# Přidání nového typu elementu — kompletní checklist
+# Přidání nového typu elementu - kompletní checklist
 
-Tento soubor je autoritativní reference. Kroky jsou uspořádány tak, že po každém jde zkompilovat (build failuje až u prvního skutečného use-site) — lze postupovat inkrementálně.
+Tento soubor je autoritativní reference. Kroky jsou uspořádány tak, že po každém jde zkompilovat (build failuje až u prvního skutečného use-site) - lze postupovat inkrementálně.
 
 Reference implementace:
 - **Jednoduchý element:** `BarcodeElement` (pevná výška, vlastní rendering, žádný TextStyle)
 - **Textový element:** `TextElement` (TextStyle, dynamická výška přes WordWrap)
-- **Tabulkový element:** `TableElement` / `StopListElement` / `DepartureGridElement` — používají **jednotnou kaskádu** `column.Style → element.HeaderStyle/DataStyle → defaults → CellDefaults`; pozicování textu přes `Rendering/CellRenderer.DrawCell`; viz `mvvm-patterns.md §Jednotná kaskáda stylů buněk`. Pro sloupce použij sdílený `Controls/CellStyleEditor` UserControl v dialogu (nikdy neduplikuj inline XAML)
+- **Tabulkový element:** `TableElement` / `StopListElement` / `DepartureGridElement` - používají **jednotnou kaskádu** `column.Style → element.HeaderStyle/DataStyle → defaults → CellDefaults`; pozicování textu přes `Rendering/CellRenderer.DrawCell`; viz `mvvm-patterns.md §Jednotná kaskáda stylů buněk`. Pro sloupce použij sdílený `Controls/CellStyleEditor` UserControl v dialogu (nikdy neduplikuj inline XAML)
 - **Komplexní element:** `NotesLegendElement` (dědí z `ScheduleElementBase`, per-column styling, data cache)
 
 ---
@@ -42,7 +42,7 @@ public class NovyElement : TemplateElement
         .. GetPositionDescriptors()
     ];
 
-    // Volitelné — override pokud element škáluje vlastní mm/pt properties (font, padding, ...)
+    // Volitelné - override pokud element škáluje vlastní mm/pt properties (font, padding, ...)
     public override void ApplyScale(float scale)
     {
         base.ApplyScale(scale);     // X, Y, Width, Height, BorderWidth
@@ -52,7 +52,7 @@ public class NovyElement : TemplateElement
 ```
 
 Pravidla:
-- `Clone()` vždy přes `CopyBaseTo(target)` — kopíruje Id (nové Guid), pozice, border, background, rotaci, GroupId, CustomProperties.
+- `Clone()` vždy přes `CopyBaseTo(target)` - kopíruje Id (nové Guid), pozice, border, background, rotaci, GroupId, CustomProperties.
 - `GetPropertyDescriptors()` vždy končí `.. GetPositionDescriptors()` (pozice, border, viditelnost, skupina).
 - `ApplyScale(float)` override **pouze** pokud element má vlastní mm/pt properties mimo base (FontSize v pt, Padding v mm, …). Base třída škáluje X/Y/Width/Height/BorderWidth automaticky.
 
@@ -62,11 +62,11 @@ Pravidla:
 
 `Render(RenderContext ctx)` je jediná povinná metoda. Pravidla:
 - Pracuj v mm, převeď až na canvas: `var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);`
-- Placeholdery ({POLE}) resolvuj přes `ctx.Data?.ResolvePlaceholders(...)` — v designeru je `ctx.Data` null.
+- Placeholdery ({POLE}) resolvuj přes `ctx.Data?.ResolvePlaceholders(...)` - v designeru je `ctx.Data` null.
 - Pozadí: `SkBackgroundColor.Alpha > 0` check, pak fill.
-- Rámeček **nekreslit** — druhý průchod volá `RenderBorderPass` automaticky nad base `TemplateElement.RenderBorder(...)`.
+- Rámeček **nekreslit** - druhý průchod volá `RenderBorderPass` automaticky nad base `TemplateElement.RenderBorder(...)`.
 - Rotace: base `RenderBorderPass` rotaci ošetří. Pokud obsah potřebuje jinou rotaci (jiný pivot), použij `ctx.Canvas.Save()` + `RotateDegrees(Rotation, cx, cy)` + `Restore()`.
-- V designeru (`ctx.Data is null`) omez velikost fontu pro čitelnost placeholderů — viz `TextElement.cs`: `float effectiveFontSize = ctx.Data is null ? Math.Min(rs.FontSize, 10f) : rs.FontSize;`.
+- V designeru (`ctx.Data is null`) omez velikost fontu pro čitelnost placeholderů - viz `TextElement.cs`: `float effectiveFontSize = ctx.Data is null ? Math.Min(rs.FontSize, 10f) : rs.FontSize;`.
 
 ---
 
@@ -94,7 +94,7 @@ Vždy přes konstantu, nikdy literál (C# povoluje `const` expressions v atribut
 
 ---
 
-## 5. MainWindowViewModel — výchozí rozměry a factory
+## 5. MainWindowViewModel - výchozí rozměry a factory
 
 Soubor: `dotnet/Windows/MainWindow/TemplateDesignerViewModel.cs`
 
@@ -127,7 +127,7 @@ Add("Nový element", () => TemplateDesignerViewModel.CreateElementByType(Element
 Soubor: `dotnet/Windows/MainWindow/MainWindow.xaml` (sekce `PaletteButton`):
 
 ```xml
-<Button Style="{StaticResource PaletteButton}" ToolTip="Nový element — táhni na canvas" Tag="NovyElement"
+<Button Style="{StaticResource PaletteButton}" ToolTip="Nový element - táhni na canvas" Tag="NovyElement"
         PreviewMouseLeftButtonDown="PaletteButton_PreviewMouseLeftButtonDown">
     <Image Source="{StaticResource EDIcons.NovyElement}" Width="16" Height="16"/>
 </Button>
@@ -135,7 +135,7 @@ Soubor: `dotnet/Windows/MainWindow/MainWindow.xaml` (sekce `PaletteButton`):
 
 `Tag="NovyElement"` zůstává jako literál (XAML nemá `x:Static` ergonomii pro 9 tlačítek; drift odchytne první switch při drop).
 
-Ikona — `EDControls/dotnet/EDIcons/EDIcons.xaml`:
+Ikona - `EDControls/dotnet/EDIcons/EDIcons.xaml`:
 ```xml
 <BitmapImage x:Key="EDIcons.NovyElement" UriSource="pack://application:,,,/EDControls;component/EDIcons/png/noveElement.png"/>
 ```
@@ -143,7 +143,7 @@ PNG registruj v `EDControls.csproj` jako `<Resource Include="EDIcons\png\noveEle
 
 ---
 
-## 8. Dynamická výška (volitelné — pokud `Height` může být null)
+## 8. Dynamická výška (volitelné - pokud `Height` může být null)
 
 Soubor: `dotnet/Models/Layout/SkiaHeightCalculator.cs`
 
@@ -159,7 +159,7 @@ return element switch
 
 Na elementu implementovat `CalculateHeightFromData(DataContext? data)` vracející výšku v mm.
 
-Alternativně — pokud element má jen statickou dynamickou výšku (bez dat), stačí override `DesignerPlaceholderHeight` na base:
+Alternativně - pokud element má jen statickou dynamickou výšku (bez dat), stačí override `DesignerPlaceholderHeight` na base:
 
 ```csharp
 protected override float DesignerPlaceholderHeight => 8f;
@@ -167,7 +167,7 @@ protected override float DesignerPlaceholderHeight => 8f;
 
 ---
 
-## 9. Strom šablony — GetSummary
+## 9. Strom šablony - GetSummary
 
 Soubor: `dotnet/Models/TemplateElement.cs`, metoda `GetSummary` (~řádek 236):
 
@@ -181,8 +181,8 @@ Bez tohoto se v záložce „Strom" zobrazí generický fallback `(X, Y) WxH`.
 
 ## 10. Dokumentace
 
-- `.claude/docs/changelog.md` — přidat řádek do aktuálního datumu ("NovyElement — popis").
-- `CLAUDE.md` sekce `### ✅ Co máme` — doplnit element do výčtu.
+- `.claude/docs/changelog.md` - přidat řádek do aktuálního datumu ("NovyElement - popis").
+- `CLAUDE.md` sekce `### ✅ Co máme` - doplnit element do výčtu.
 - Pokud jde o ScheduleElementBase-derived element, aktualizovat i `.claude/docs/elementy-architektura.md`.
 
 ---
@@ -191,7 +191,7 @@ Bez tohoto se v záložce „Strom" zobrazí generický fallback `(X, Y) WxH`.
 
 Pokud nový element má **sloupce se samostatným stylingem záhlaví/dat** (jako `TableElement`/`StopListElement`/`DepartureGridElement`), postupuj podle 4 doplňujících kroků (detaily v `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`):
 
-**1. Model — per-column `TextStyle?`:**
+**1. Model - per-column `TextStyle?`:**
 ```csharp
 public class NovyColumn {
     public TextStyle? HeaderStyle { get; set; }  // null = dědit z elementu
@@ -200,7 +200,7 @@ public class NovyColumn {
 }
 ```
 
-**2. Element — public `Resolve<Zone>Parent()` API:**
+**2. Element - public `Resolve<Zone>Parent()` API:**
 ```csharp
 public class NovyElement : TemplateElement {
     public TextStyle? HeaderStyle { get; set; }
@@ -216,14 +216,14 @@ public class NovyElement : TemplateElement {
     public ResolvedTextStyle ResolveColumnDataParent() =>
         (DataStyle ?? new TextStyle()).Resolve(NovyDataParent);
 
-    // Private — per-column override pro render
+    // Private - per-column override pro render
     private ResolvedTextStyle ResolveColumnHeaderStyle(NovyColumn col) =>
         col.HeaderStyle is { } h ? h.Resolve(ResolveColumnHeaderParent())
                                  : ResolveColumnHeaderParent();
 }
 ```
 
-**3. Render — přes `CellRenderer.DrawCell`:**
+**3. Render - přes `CellRenderer.DrawCell`:**
 ```csharp
 public override void Render(RenderContext ctx) {
     foreach (var col in Columns) {
@@ -235,7 +235,7 @@ public override void Render(RenderContext ctx) {
 }
 ```
 
-**4. Dialog sloupců — sdílený `<CellStyleEditor>`:**
+**4. Dialog sloupců - sdílený `<CellStyleEditor>`:**
 
 Dialog (okno triad): `Windows/NovyColumnsEditorDialog/{Window,ViewModel,xaml}.cs`. VM musí:
 - V konstruktoru brát `NovyElement element` a volat `element.ResolveColumnHeaderParent()` / `ResolveColumnDataParent()`
@@ -243,7 +243,7 @@ Dialog (okno triad): `Windows/NovyColumnsEditorDialog/{Window,ViewModel,xaml}.cs
 - Exposovat 8 commands (`Pick/Clear<Header|Data><Text|Bg>ColorCommand`), `ResetStyleCommand`, `RequestColorPicker` callback
 - Exposovat `HeaderEditOptions` + `DataEditOptions` (`CellStyleEditOptions.AllEnabled` obvykle)
 
-XAML dialogu — 2× `<controls:CellStyleEditor>` (Header + Data zone):
+XAML dialogu - 2× `<controls:CellStyleEditor>` (Header + Data zone):
 ```xml
 <controls:CellStyleEditor
     DataContext="{Binding SelectedColumnVM.HeaderStyle}"
@@ -254,11 +254,11 @@ XAML dialogu — 2× `<controls:CellStyleEditor>` (Header + Data zone):
 
 **Reference implementace:** `TableEditorDialog` (Fixed+Dynamic sloupce), `StopColumnsEditorDialog` (jednoduché sloupce), `DepartureGroupEditorDialog` (skupiny dnů + sloupec hodin).
 
-**NIKDY neduplikuj inline XAML pro editaci stylu buněk** — vše přes `<CellStyleEditor>`.
+**NIKDY neduplikuj inline XAML pro editaci stylu buněk** - vše přes `<CellStyleEditor>`.
 
 ---
 
-## Shrnutí — dotčené soubory
+## Shrnutí - dotčené soubory
 
 | # | Soubor | Povinné |
 |---|---|---|

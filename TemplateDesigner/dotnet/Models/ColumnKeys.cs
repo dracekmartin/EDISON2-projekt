@@ -3,20 +3,20 @@ namespace TemplateDesigner.Models;
 /// <summary>
 /// String identifikátory sloupců <b>linkového</b> JŘ (<see cref="Elements.LineTableElement"/>,
 /// <c>StopColumn.Key</c>). Řídí, kterou renderovací logiku sloupec spustí a jak se popisuje v editoru.
-/// NENÍ to název datového pole — je to interní směrovací klíč renderu.
+/// NENÍ to název datového pole - je to interní směrovací klíč renderu.
 ///
-/// <para>Zastávkový JŘ (<see cref="Elements.StopListElement"/>) tuto sadu <b>nepoužívá</b> — jeho sloupce
+/// <para>Zastávkový JŘ (<see cref="Elements.StopListElement"/>) tuto sadu <b>nepoužívá</b> - jeho sloupce
 /// jsou klíčované přímo field ID kolekce ZASTAVKY (<see cref="StopFields"/>), aby byly 1:1 s poli, která
 /// nabízí DynamicTable. Linkový JŘ má vlastní datový tvar (km, spoje) → sdílet kontrakt se zastávkovým
 /// nemusí.</para>
 ///
-/// <para>Hodnoty se persistují do JSON šablony (<c>StopColumn.Key</c> v DB/souborech) — <b>neměnit bez
+/// <para>Hodnoty se persistují do JSON šablony (<c>StopColumn.Key</c> v DB/souborech) - <b>neměnit bez
 /// migrace</b>. Přejmenování hodnoty tiše rozbije uložené šablony. Zamčeno testem <c>ColumnKeysTests</c>.</para>
 /// </summary>
 public static class ColumnKeys
 {
     // ─── LineTableElement (linkový JŘ) ───
-    public const string StopName = "StopName";   // název zastávky (+ značky) — slepené z víc polí
+    public const string StopName = "StopName";   // název zastávky (+ značky) - slepené z víc polí
     public const string Tc       = "Tc";         // tarifní číslo
     public const string Zone     = "Zone";       // tarifní zóna/zóny
     public const string Km       = "Km";         // kilometráž (expanduje se na N sub-sloupců)

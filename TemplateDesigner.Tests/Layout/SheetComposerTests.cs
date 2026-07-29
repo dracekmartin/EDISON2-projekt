@@ -4,7 +4,7 @@ using TemplateDesigner.Models.Layout;
 namespace TemplateDesigner.Tests.Layout;
 
 /// <summary>
-/// Testy SheetComposer — čistá logika imposice (stránky → listy): parsování konfigurace
+/// Testy SheetComposer - čistá logika imposice (stránky → listy): parsování konfigurace
 /// z exportních polí, auto mřížka, sekvenční skládání, opakování stránky, centrování bloku.
 /// </summary>
 public class SheetComposerTests
@@ -108,7 +108,7 @@ public class SheetComposerTests
         Assert.True(o.DrawCutMarks);
     }
 
-    // ── Compose — skládání stránek na listy ──────────────────────────────────
+    // ── Compose - skládání stránek na listy ──────────────────────────────────
 
     [Fact]
     public void Compose_Sekvencne_DveStrankyNaList()

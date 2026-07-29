@@ -11,7 +11,7 @@ namespace TemplateDesigner.Config;
 internal static class CacheSchemaWiring
 {
     /// <summary>
-    /// Vytvoří MLRest ze session shellu (EDISONMAIN2 launch kontrakt) — přebírá server,
+    /// Vytvoří MLRest ze session shellu (EDISONMAIN2 launch kontrakt) - přebírá server,
     /// rest port, namespace, IdFa i identitu uživatele. ShellGuid se záměrně nepřebírá:
     /// TD si drží vlastní session GUID a neváže se na ACTIVITY zámek shellu.
     /// </summary>
@@ -49,7 +49,7 @@ internal static class CacheSchemaWiring
     {
         if (agendas.Count == 0) return null;
 
-        // Agenda s prázdným CacheClass (např. "GENERAL") je validní volba — bez DB polí,
+        // Agenda s prázdným CacheClass (např. "GENERAL") je validní volba - bez DB polí,
         // jen statický obsah šablony. CacheAgendaProvider pro ni vrací null schema.
         var tuples = agendas
             .Select(a => (a.Code, a.Label, a.CacheClass))

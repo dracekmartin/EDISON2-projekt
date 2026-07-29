@@ -1,36 +1,36 @@
 /// Abstraktní základ pro implementaci agendy v TemplateDesigneru.
 ///
 /// Agenda = zdroj dat a doménová logika pro konkrétní typ tiskové sestavy:
-/// - **MHD** — zastávkové jízdní řády městské hromadné dopravy (linky, zastávky, spoje)
-/// - **FAKTURY** — fakturační sestavy (faktury, položky, DPH)
+/// - **MHD** - zastávkové jízdní řády městské hromadné dopravy (linky, zastávky, spoje)
+/// - **FAKTURY** - fakturační sestavy (faktury, položky, DPH)
 /// - připravované: Meziměstský JŘ, Knižní JŘ, Vozový JŘ
 ///
 /// Každá agenda dědí z této třídy a implementuje povinné Abstract metody:
-/// - GetSchema           — definice dostupných polí (skalární + tabulkové kolekce)
-/// - GetData             — reálná data pro tisk (per IDFa, per instance)
-/// - GetMockData         — vzorová data pro live preview v designeru
-/// - GetTableTemplates   — seznam Fixed šablon tabulek (záhlaví, platnost, ...)
-/// - GetTableTemplate    — definice konkrétní Fixed šablony (sloupce + řádky)
+/// - GetSchema           - definice dostupných polí (skalární + tabulkové kolekce)
+/// - GetData             - reálná data pro tisk (per IDFa, per instance)
+/// - GetMockData         - vzorová data pro live preview v designeru
+/// - GetTableTemplates   - seznam Fixed šablon tabulek (záhlaví, platnost, ...)
+/// - GetTableTemplate    - definice konkrétní Fixed šablony (sloupce + řádky)
 ///
 /// Volitelně přepsatelné (default = prázdný seznam):
-/// - GetParameters       — parametry pro PrintDialog (zaškrtávátka, výběry, ...)
-/// - GetAvailableInstances — seznam instancí pro Instance Picker
+/// - GetParameters       - parametry pro PrintDialog (zaškrtávátka, výběry, ...)
+/// - GetAvailableInstances - seznam instancí pro Instance Picker
 ///
 /// Caché kompilátor vynucuje implementaci Abstract metod; bez nich třída neprojde compile.
 ///
 /// Registrace agendy (Wave 2, 2026-05-20; dvouosý model 2026-07-11):
-///   Agenda se registruje **deklarativně** přes class parametry — kombinovaný klíč
+///   Agenda se registruje **deklarativně** přes class parametry - kombinovaný klíč
 ///   AgendaVariantCode + osy Agenda/Variant (+ labely). ALVA.TemplateDesigner.API.AgendyRegistr
 ///   prochází %Dictionary, najde všechny subclassy BaseAgenda a vrátí jejich metadata
 ///   jako JSON list. Vytvoření třídy = registrace konfigurace (agenda × varianta).
 ///
-///   GENERAL agenda (šablona bez DB vazby) nemá Caché class — .NET strana ji inject
+///   GENERAL agenda (šablona bez DB vazby) nemá Caché class - .NET strana ji inject
 ///   syntheticky v IAgendaRegistry impl.
 Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]
 {
 
 /// Kombinovaný kód konfigurace agenda+varianta (např. "ZASTAVKOVY_JR_AD", "FAKTURY").
-/// Override v každé subclass. **Stabilní persistovaný klíč** — žije v uložených šablonách
+/// Override v každé subclass. **Stabilní persistovaný klíč** - žije v uložených šablonách
 /// (Template JSON `agendaCode`), DB indexu ByAgenda, per-uživatel preferencích a EDISON
 /// launch kontraktu (`Agenda=<kód>`); hodnoty se NIKDY nemění (jen aditivně přibývají).
 /// Konvence: <AGENDA>[_<VARIANTA>], velkými písmeny, podtržítka.
@@ -42,8 +42,8 @@ Parameter AgendaVariantCode As %String = "";
 /// budoucí RG agendy (Fakturace, MHD provozní, Mzdy…) přibudou jako další agendy bez variant.
 Parameter Agenda As %String = "";
 
-/// User-facing label AGENDY (např. "Zastávkový JŘ", "Faktury") — bez varianty.
-/// Override v každé subclass. (Do 2026-07-11 nesl kombinovaný label vč. "(AD)" —
+/// User-facing label AGENDY (např. "Zastávkový JŘ", "Faktury") - bez varianty.
+/// Override v každé subclass. (Do 2026-07-11 nesl kombinovaný label vč. "(AD)" -
 /// kombinovaný label pro starší klienty počítá AgendyRegistr do wire klíče `label`.)
 Parameter AgendaLabel As %String = "";
 
@@ -55,7 +55,7 @@ Parameter Variant As %String = "";
 Parameter VariantLabel As %String = "";
 
 /// Zveřejněná pro uživatele (1) vs interní/pilotní (0, default). Nezveřejněná agenda se
-/// nenabízí v UI výběru (Změnit agendu, filtr šablon), ale zůstává plně funkční — existující
+/// nenabízí v UI výběru (Změnit agendu, filtr šablon), ale zůstává plně funkční - existující
 /// šablony s jejím kódem se otevřou, EDISON launch funguje. Zveřejnění = vědomý krok (přepnout
 /// na 1), nová agenda „neuteče" k uživatelům omylem.
 Parameter Released As %Boolean = 0;
@@ -65,12 +65,12 @@ Parameter Released As %Boolean = 0;
 /// z registru (AgendaRegistryEntry) → žádné hardcoded větvení dle kódu agendy.
 Parameter InstanceParamName As %String = "INSTANCE_ID";
 
-/// Druh JŘ elementů, které agenda podporuje — řídí kontextové menu/paletu okna.
+/// Druh JŘ elementů, které agenda podporuje - řídí kontextové menu/paletu okna.
 /// "STOP" = zastávkové (StopList/DepartureGrid/NotesLegend), "LINE" = knižní/linkové
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.
 Parameter ElementKind As %String = "";
 
-/// User-facing název „instance" agendy (jedn./mn. č., 1. pád) — okno ho zobrazí místo
+/// User-facing název „instance" agendy (jedn./mn. č., 1. pád) - okno ho zobrazí místo
 /// obecného „instance" (JŘ = „linka"/„linky", faktury = „faktura"/„faktury"). Override
 /// v subclass. Default „instance" pro agendu bez doménového pojmu.
 Parameter InstanceLabel As %String = "instance";
@@ -115,7 +115,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ]
 }
 
 /// Vrátí parametry sestavy dostupné pro tuto agendu.
-/// Výchozí implementace vrátí prázdný seznam — přepsat v konkrétní agendě.
+/// Výchozí implementace vrátí prázdný seznam - přepsat v konkrétní agendě.
 /// OUT[1] = JSON pole:
 ///   [
 ///     { "name": "TISK_SIPKY",  "label": "Tisknout šipky",  "type": "bool",   "defaultValue": "true" },
@@ -123,7 +123,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ]
 ///       "options": ["H:mm", "HH:mm"] }
 ///   ]
 /// Typy: "bool", "enum", "string", "number", "date"
-/// defaultValue je vždy string — C# strana konvertuje dle type.
+/// defaultValue je vždy string - C# strana konvertuje dle type.
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
     s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
@@ -131,16 +131,16 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 }
 
 /// Vrátí seznam dostupných instancí agendy (např. linky pro MHD, faktury pro FAKTURY).
-/// Slouží pro Instance Picker v TD — uživatel vybere 1-N instancí, nad kterými pracuje.
+/// Slouží pro Instance Picker v TD - uživatel vybere 1-N instancí, nad kterými pracuje.
 /// 
-/// Výchozí implementace vrací prázdný seznam — agenda bez konceptu instancí (GENERAL,
+/// Výchozí implementace vrací prázdný seznam - agenda bez konceptu instancí (GENERAL,
 /// případně FAKTURY před implementací) ho nemusí přepisovat.
 /// 
 /// IN["search"] = volitelný filtr (substring, case-insensitive)
 /// IN["limit"]  = max počet řádků (default 50)
 /// OUT["1"] = JSON pole:
 ///   [
-///     { "value": "42", "display": "42 — Praha–Brno", "subtitle": "Platnost od 1.1.2024" },
+///     { "value": "42", "display": "42 - Praha–Brno", "subtitle": "Platnost od 1.1.2024" },
 ///     ...
 ///   ]
 /// 
@@ -201,16 +201,18 @@ ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, ty
 /// label      = popisek (např. "Tisknout poznámku")
 /// defaultVal = výchozí hodnota (0/1 nebo true/false)
 /// group      = volitelná skupina pro vizuální seskupení v UI (aditivní klíč kontraktu)
-ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "")
+/// desc       = volitelná nápověda (aditivní klíč `description` → helpText bublina ve formuláři)
+ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "", desc As %String = "")
 {
     s param = ##class(%DynamicObject).%New()
     s param.name  = name
     s param.label = label
     s param.type  = "bool"
-    // Call-sites předávají i string "true" — numericky je 0, holé $s(defaultVal:...) by ho vyhodnotilo
+    // Call-sites předávají i string "true" - numericky je 0, holé $s(defaultVal:...) by ho vyhodnotilo
     // jako false (historicky tichý bug: TISK_SIPKY default na wire "false" proti záměru).
     s param.defaultValue = $s((defaultVal=1)||(defaultVal="true"):"true", 1:"false")
     s:group'="" param.group = group
+    s:desc'="" param.description = desc
     d arr.%Push(param)
 }
 

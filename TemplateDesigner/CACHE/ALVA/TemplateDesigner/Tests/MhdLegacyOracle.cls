@@ -1,7 +1,7 @@
 Include %occInclude
 
 /// C1: 1:1 porovnání MHD zastávkového JŘ proti LEGACY oracle producentovi
-/// (ALVA.MHD.LinkyPrintFormatMHD.MakeData) — obchází padající formátovač ALVA.TISKMHD.Data.LoadData.
+/// (ALVA.MHD.LinkyPrintFormatMHD.MakeData) - obchází padající formátovač ALVA.TISKMHD.Data.LoadData.
 ///
 /// **Poziční** porovnání (ne line-global multiset): každý odjezd klíčován zastávkou × skupinou dnů
 /// (nadpis) × HH:MM; poznámky zastávkou × typ/znak/text; zastávky názvem. Stejná normalizace na obou
@@ -156,7 +156,7 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 
 /// Porovná dva multisety (legacy la vs náš oa) → res(cat, ...). Match = shodný počet i md5.
 /// res(cat,"covered") = 1 když KAŽDÝ legacy klíč máme aspoň v legacy počtu (naše strana smí
-/// mít navíc) — assert pro vědomé nadmnožiny (auto-značky sloučených skupin apod.).
+/// mít navíc) - assert pro vědomé nadmnožiny (auto-značky sloučených skupin apod.).
 ClassMethod Summarize(ByRef la As %String, ByRef oa As %String, ByRef res As %String, cat As %String)
 {
 	set canL = "", canO = "", legN = 0, ourN = 0, diff = "", diffN = 0, covered = 1

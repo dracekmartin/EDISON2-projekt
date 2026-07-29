@@ -37,7 +37,7 @@ public class DesignerState
         set => _zoom = Math.Clamp(value, 0.1f, 10.0f);
     }
 
-    // Defaulty (pre-version průchod 2026-07-13): SnapToGrid ZAP + jemný 1mm krok — drží čisté
+    // Defaulty (pre-version průchod 2026-07-13): SnapToGrid ZAP + jemný 1mm krok - drží čisté
     // souřadnice, aniž by omezoval (5mm krok byl hlavní zdroj pocitu „nepřesného" snapu).
     // ShowGrid vypnuto (čistý canvas). Per-template EditorPreferences tohle přepíšou.
     public bool ShowGrid { get; set; } = false;
@@ -54,7 +54,7 @@ public class DesignerState
     public float SnapGapMm { get; set; } = 2f;
     public List<GapIndicator> ActiveGapIndicators { get; } = [];
 
-    // ── Drag/resize badge — real-time pozice/rozměr během interakce ──
+    // ── Drag/resize badge - real-time pozice/rozměr během interakce ──
 
     /// <summary>Text badge zobrazovaný během dragu/resize (např. "X: 20 mm, Y: 40 mm" nebo "42 × 8 mm"). Null = skrýt.</summary>
     public string? DragBadgeText { get; set; }
@@ -106,7 +106,7 @@ public class DesignerState
         return sorted;
     }
 
-    /// <summary>Invaliduje cache seřazených elementů — volat po každé změně.</summary>
+    /// <summary>Invaliduje cache seřazených elementů - volat po každé změně.</summary>
     public void InvalidateElementCache()
     {
         _sortedByZIndexDesc.Clear();

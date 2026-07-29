@@ -6,10 +6,10 @@ using TemplateDesigner.Rendering;
 namespace TemplateDesigner.Tests.Rendering;
 
 /// <summary>
-/// Zámek pozicování textu buňky (vrstva 4 — Renderer). Testuje čistou geometrii vytaženou
-/// z <see cref="CellRenderer"/> do <see cref="CellLayout"/> — přesně tu logiku (padding shrink,
+/// Zámek pozicování textu buňky (vrstva 4 - Renderer). Testuje čistou geometrii vytaženou
+/// z <see cref="CellRenderer"/> do <see cref="CellLayout"/> - přesně tu logiku (padding shrink,
 /// H/V zarovnání, clamp), kde podle dokumentace opakovaně vznikají tiché regrese. Samotné kreslení
-/// na SKCanvas se netestuje (SkiaSharp), ale výpočet kotvy ano — deterministicky, bez fontů.
+/// na SKCanvas se netestuje (SkiaSharp), ale výpočet kotvy ano - deterministicky, bez fontů.
 /// </summary>
 public class CellLayoutTests
 {
@@ -40,7 +40,7 @@ public class CellLayoutTests
         Assert.Equal(5f, content.Right);
     }
 
-    // ── TextAnchorPx — horizontální ────────────────────────────────────────────
+    // ── TextAnchorPx - horizontální ────────────────────────────────────────────
     private static readonly SKPoint Tl = new(100, 200);
     private static readonly SKPoint Br = new(300, 260);   // box 200 × 60 px
     private const float TextW = 40f, Ascent = 15f, Descent = 5f;
@@ -64,7 +64,7 @@ public class CellLayoutTests
         Assert.Equal(100f, x, 3);
     }
 
-    // ── TextAnchorPx — vertikální ───────────────────────────────────────────────
+    // ── TextAnchorPx - vertikální ───────────────────────────────────────────────
     [Theory]
     [InlineData(TextVerticalAlignment.Top,    215f)]   // tl.Y + ascent
     [InlineData(TextVerticalAlignment.Middle, 235f)]   // 200 + (60 + 15 - 5)/2
@@ -75,7 +75,7 @@ public class CellLayoutTests
         Assert.Equal(expectedY, y, 3);
     }
 
-    // ── SplitLines / LineCount — víceřádkové záhlaví (\n, např. CZ/EN) ──────────
+    // ── SplitLines / LineCount - víceřádkové záhlaví (\n, např. CZ/EN) ──────────
     [Theory]
     [InlineData("Zastávka", 1)]
     [InlineData("Zastávka\nStop", 2)]

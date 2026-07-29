@@ -5,7 +5,7 @@ namespace TemplateDesigner.Commands.Implementations;
 /// <summary>
 /// Smaže sekci ze šablony. Undo = obnovení na původní index.
 /// Poznámka: stav ActiveSection a SelectedElements spravuje MainWindow,
-/// ne tento příkaz — command pouze mění datový model.
+/// ne tento příkaz - command pouze mění datový model.
 /// </summary>
 public class DeleteSectionCommand : IDesignerCommand
 {

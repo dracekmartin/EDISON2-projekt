@@ -19,7 +19,7 @@ Parameter GOLDDB = "CB_CSADAD";
 Method TestGold0365001()
 {
 	// Re-baseline 2026-07-27 (KOVED #13048 bod 4 duplikace): přibylo pole NASTUPISTE_VARIANT
-	// (nástupiště per varianta) do každé zastávky — počty beze změny, jen md5.
+	// (nástupiště per varianta) do každé zastávky - počty beze změny, jen md5.
 	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=110 md5=9lOYfqMLeUX/0XYq7dkgjg==")
 }
 
@@ -38,11 +38,11 @@ Method AssertLine(sku As %String, lin As %String, expected As %String)
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru — gold "_lin_" přeskočen")
+		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
 		quit
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {
-		do $$$AssertTrue(0, "gold linka "_lin_" chybí v "_db_" (namespace je, data ne) — rozbitý fixture?")
+		do $$$AssertTrue(0, "gold linka "_lin_" chybí v "_db_" (namespace je, data ne) - rozbitý fixture?")
 		quit
 	}
 

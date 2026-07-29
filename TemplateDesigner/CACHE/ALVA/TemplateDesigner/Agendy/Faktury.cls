@@ -1,4 +1,4 @@
-/// Agenda FAKTURY — fakturační sestavy.
+/// Agenda FAKTURY - fakturační sestavy.
 ///
 /// Data:
 /// - **Skalární pole faktury**: číslo, datumy (vystavení/splatnost), variabilní/konstantní/specifický symbol,
@@ -9,7 +9,7 @@
 ///
 /// Fixed šablony tabulek: shrnutí faktury (základ + DPH + celkem), platební údaje.
 ///
-/// Aktuálně **referenční implementace s mock daty** — reálné DB volání (GetData)
+/// Aktuálně **referenční implementace s mock daty** - reálné DB volání (GetData)
 /// vyžaduje napojení na konkrétní strukturu fakturačního systému (TODO).
 Class ALVA.TemplateDesigner.Agendy.Faktury Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
@@ -166,7 +166,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     q 1
 }
 
-/// Vrátí data pro tisk (runtime — implementuje reálné DB volání).
+/// Vrátí data pro tisk (runtime - implementuje reálné DB volání).
 /// Tato metoda je zodpovědností konkrétní agendy a závisí na databázové struktuře.
 ClassMethod GetData(ByRef sys As %String) As %Status
 {

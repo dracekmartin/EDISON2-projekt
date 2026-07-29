@@ -1,4 +1,4 @@
-# Architektura elementů — JŘ elementy, sdílené tabulkové jádro, symboly
+# Architektura elementů - JŘ elementy, sdílené tabulkové jádro, symboly
 
 > Sloučeno 2026-07-13 ze 3 dokumentů (schedule-elements-architecture, tabulkove-elementy-jadro,
 > symboly-jr-katalog). Tři části, původní obsah beze změn.
@@ -19,14 +19,14 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ CACHÉ — Vrstva 1: Čistá data + Business logika          │
+│ CACHÉ - Vrstva 1: Čistá data + Business logika          │
 │                                                         │
 │ GetData() vrací:                                        │
 │ - Skalární hodnoty (číslo linky, platnost, dopravce)    │
 │ - Kolekce ZASTAVKY (s atributy, zónami, poznámkami)     │
 │ - Kolekce SKUPINY_DNU (SMO metadata + nadpisy)          │
 │ - Kolekce ODJEZDY (flat: zastávka × skupina × čas)      │
-│ - Kolekce POZNAMKY (legenda — seřazená)                 │
+│ - Kolekce POZNAMKY (legenda - seřazená)                 │
 │                                                         │
 │ Business logika ZŮSTÁVÁ v Caché:                        │
 │ - Slučování zastávek za sebou                           │
@@ -39,7 +39,7 @@
 └─────────────────────┬───────────────────────────────────┘
                       │ JSON (čistá data)
 ┌─────────────────────▼───────────────────────────────────┐
-│ TEMPLATE — Vrstva 2: Layout + Vizuální nastavení        │
+│ TEMPLATE - Vrstva 2: Layout + Vizuální nastavení        │
 │                                                         │
 │ Šablona obsahuje specializované elementy:               │
 │ - StopListElement (tabulka zastávek)                    │
@@ -50,9 +50,9 @@
 └─────────────────────┬───────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────┐
-│ ENGINE + ELEMENTY — Vrstva 3: Výpočet + Vykreslení      │
+│ ENGINE + ELEMENTY - Vrstva 3: Výpočet + Vykreslení      │
 │                                                         │
-│ PageLayoutEngine: generický (sekce → stránky) — BEZE    │
+│ PageLayoutEngine: generický (sekce → stránky) - BEZE    │
 │ ZMĚN, funguje automaticky pro nové elementy              │
 │                                                         │
 │ Specializované elementy encapsulují:                    │
@@ -72,15 +72,15 @@
 ```
 TemplateElement (abstract)
 ├── TextElement, TableElement, ImageElement, ... (generické)
-└── ScheduleElementBase (abstract — společný základ JŘ elementů)
-    ├── StopListElement          — tabulka zastávek (levý sloupec)
-    ├── DepartureGridElement     — mřížka minut odjezdů (pravý sloupec)
-    └── NotesLegendElement       — legenda poznámek (pod mřížkou)
+└── ScheduleElementBase (abstract - společný základ JŘ elementů)
+    ├── StopListElement          - tabulka zastávek (levý sloupec)
+    ├── DepartureGridElement     - mřížka minut odjezdů (pravý sloupec)
+    └── NotesLegendElement       - legenda poznámek (pod mřížkou)
 ```
 
 Každý element má vlastní `Render()` a `Clone()`. Sdílí base class pro společnou logiku (DataSource klíče, Build helpery, cache, auto-scale fontu).
 
-### ScheduleElementBase — společný základ
+### ScheduleElementBase - společný základ
 
 ```
 DataSource klíče (editovatelné v šabloně):
@@ -115,18 +115,18 @@ Další properties: `ShowStopIndentation`, `ShowSignalStopIndicator`, `SignalSto
 ### DepartureGridElement
 
 Mřížka minut odjezdů. Klíčové properties:
-- `SkupinaDnuId` — filtr skupin ("" = všechny, "SMO1,SMO2" = výběr)
+- `SkupinaDnuId` - filtr skupin ("" = všechny, "SMO1,SMO2" = výběr)
 - `HourColumnWidth`, `MinuteWidth`, `MinuteFontSize`, `MinuteBold`
 - `ShowSkupinaDnuHeader`, `SkupinaDnuHeaderLineHeight`, `HeaderVerticalAlignment`
-- `TimeAxisMode` — `Compact` / `Full` / `Range` + `TimeAxisRangeFrom/To`
+- `TimeAxisMode` - `Compact` / `Full` / `Range` + `TimeAxisRangeFrom/To`
 - `GroupSeparatorWidth`, `AlternatingRowColor`, `DataRowHeight`
 - `ShowAnotace`, `AnotaceFontSize`
-- `GroupColumns: List<DepartureGroupColumnStyle>` — per-column nastavení (viditelnost, barvy, font, zarovnání, bold/italic) editovatelné přes `DepartureGroupEditorDialog`
-- `ColorRules: List<ColorRule>` — template-driven barvy
+- `GroupColumns: List<DepartureGroupColumnStyle>` - per-column nastavení (viditelnost, barvy, font, zarovnání, bold/italic) editovatelné přes `DepartureGroupEditorDialog`
+- `ColorRules: List<ColorRule>` - template-driven barvy
 
 ### Jednotná kaskáda stylů buněk
 
-Všechny tři tabulkové JŘ elementy (StopList, DepartureGrid, NotesLegend) používají spolu s `TableElement` sdílenou 4-vrstvou kaskádu `column.Style → element.HeaderStyle/DataStyle → element-specific defaults → CellDefaults`. Rendering přes `Rendering/CellRenderer.DrawCell` — jediné místo v aplikaci pozicování textu buňky (bg → padding → HAlign+VAlign → decorations). Dialogy sloupců (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`) používají sdílený `Controls/CellStyleEditor` UserControl.
+Všechny tři tabulkové JŘ elementy (StopList, DepartureGrid, NotesLegend) používají spolu s `TableElement` sdílenou 4-vrstvou kaskádu `column.Style → element.HeaderStyle/DataStyle → element-specific defaults → CellDefaults`. Rendering přes `Rendering/CellRenderer.DrawCell` - jediné místo v aplikaci pozicování textu buňky (bg → padding → HAlign+VAlign → decorations). Dialogy sloupců (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`) používají sdílený `Controls/CellStyleEditor` UserControl.
 
 Detaily patternu + element-side pattern (`Resolve*Style` helpery, pre-created per-column fonty/painty pro perf) viz `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`.
 
@@ -172,7 +172,7 @@ Legenda poznámek: `HeaderText`, `NoteSeparator`, `NoteFontSize`, `NoteLineHeigh
 Pokud Caché potřebuje říct "tato buňka má barvu" (logika příliš složitá pro expression), pošle barvu přímo v `ODJEZDY[].FORE_COLOR` / `BACK_COLOR` jako `#AARRGGBB`.
 
 **2. Template-driven barvy (ColorRules ze šablony):**
-`DepartureGridElement.ColorRules` — seznam pravidel vyhodnocovaných `ExpressionEvaluator`em:
+`DepartureGridElement.ColorRules` - seznam pravidel vyhodnocovaných `ExpressionEvaluator`em:
 
 ```json
 "colorRules": [
@@ -197,25 +197,25 @@ Caché posílá **hotové Unicode znaky** (konverze `ConvertSpecialniZnak` prob�
 
 | Logika | Starý systém | Nový systém |
 |---|---|---|
-| Slučování zastávek za sebou | Caché | **Caché** — vrací už sloučená data |
-| Bitové mapy tras | Caché | **Caché** — vrací hotové výsledky v datech |
-| Auto-poznámky k trasám (alg. 1001) | Caché (`MakeOmezTrasaTx`) | **Caché** — vrací text v `POZNAMKY[]` |
-| Auto-poznámky k trasám (alg. 1002) | Caché (písmenka) | **Caché** — vrací písmenka v `ANOTACE[]` a `POZNAMKY_ZASTAVKY[]` |
-| NZ značky z platností | Caché (bitmap porovnání) | **Caché** — vrací v `ANOTACE[]` a `POZNAMKY[]` |
-| Týdenní platnost → spec. znaky | Caché (1–7 → dny) | **Caché** — vrací Unicode v `ANOTACE[]` |
-| Atributy zastávek | Caché (číselník + trasa) | **Caché** — vrací v `ZASTAVKY[].ATRIBUTY[]` |
-| Poznámky zastávek | Caché (z trasy per bod per směr) | **Caché** — vrací v `ZASTAVKY[].POZNAMKY_ZASTAVKY[]` |
-| Konverze speciálních znaků | Caché (`ConvertSpecialniZnak`) | **Caché** — konvertuje před odesláním |
-| Řazení poznámek (spec→NZ→text) | Caché | **Caché** — pošle seřazené |
-| Grouping po typech dne | Caché (SMO1–4 jako sekce) | **Element** — seskupí podle `SKUPINA_DNU_ID` |
-| Řazení odjezdů | Caché | **Element** — řadí podle `HODINA`, `MINUTA` |
-| Formátování buněk (barvy) | Caché (inline `^ForeColor^BackColor`) | **Element** — z `FORE_COLOR`/`BACK_COLOR` nebo `ColorRules` |
-| Výběr zobrazených sloupců | Hardcoded v starém designeru | **Template** — element properties |
-| Počet minut na hodinu | Caché (`NejvetsiPocetMinut`) | **Element** — spočítá z dat |
-| Pozicování elementů | Caché (`SEKCE_START/END`) | **Designer** — uživatel umístí element |
-| Pivotování flat dat → matice | N/A (Caché posílal sloupce) | **Element** — z flat `ODJEZDY` |
-| Sestavování sekcí | Caché (per-sekce output) | **Odstraněno** — elementy jsou nezávislé celky |
-| Serializace do delimited stringů | Caché (`#`, `^`, `&` oddělovače) | **Odstraněno** — JSON |
+| Slučování zastávek za sebou | Caché | **Caché** - vrací už sloučená data |
+| Bitové mapy tras | Caché | **Caché** - vrací hotové výsledky v datech |
+| Auto-poznámky k trasám (alg. 1001) | Caché (`MakeOmezTrasaTx`) | **Caché** - vrací text v `POZNAMKY[]` |
+| Auto-poznámky k trasám (alg. 1002) | Caché (písmenka) | **Caché** - vrací písmenka v `ANOTACE[]` a `POZNAMKY_ZASTAVKY[]` |
+| NZ značky z platností | Caché (bitmap porovnání) | **Caché** - vrací v `ANOTACE[]` a `POZNAMKY[]` |
+| Týdenní platnost → spec. znaky | Caché (1–7 → dny) | **Caché** - vrací Unicode v `ANOTACE[]` |
+| Atributy zastávek | Caché (číselník + trasa) | **Caché** - vrací v `ZASTAVKY[].ATRIBUTY[]` |
+| Poznámky zastávek | Caché (z trasy per bod per směr) | **Caché** - vrací v `ZASTAVKY[].POZNAMKY_ZASTAVKY[]` |
+| Konverze speciálních znaků | Caché (`ConvertSpecialniZnak`) | **Caché** - konvertuje před odesláním |
+| Řazení poznámek (spec→NZ→text) | Caché | **Caché** - pošle seřazené |
+| Grouping po typech dne | Caché (SMO1–4 jako sekce) | **Element** - seskupí podle `SKUPINA_DNU_ID` |
+| Řazení odjezdů | Caché | **Element** - řadí podle `HODINA`, `MINUTA` |
+| Formátování buněk (barvy) | Caché (inline `^ForeColor^BackColor`) | **Element** - z `FORE_COLOR`/`BACK_COLOR` nebo `ColorRules` |
+| Výběr zobrazených sloupců | Hardcoded v starém designeru | **Template** - element properties |
+| Počet minut na hodinu | Caché (`NejvetsiPocetMinut`) | **Element** - spočítá z dat |
+| Pozicování elementů | Caché (`SEKCE_START/END`) | **Designer** - uživatel umístí element |
+| Pivotování flat dat → matice | N/A (Caché posílal sloupce) | **Element** - z flat `ODJEZDY` |
+| Sestavování sekcí | Caché (per-sekce output) | **Odstraněno** - elementy jsou nezávislé celky |
+| Serializace do delimited stringů | Caché (`#`, `^`, `&` oddělovače) | **Odstraněno** - JSON |
 
 ---
 
@@ -231,11 +231,11 @@ Caché posílá **hotové Unicode znaky** (konverze `ConvertSpecialniZnak` prob�
 # ==== ČÁST: Sdílené tabulkové jádro (co sdílet / co nesjednocovat) ====
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 
-# Tabulkové elementy — sdílené jádro vs element-specifické (architektura)
+# Tabulkové elementy - sdílené jádro vs element-specifické (architektura)
 
 > **Kdy číst:** před přidáním nového tabulkového elementu, před úpravou render/layout logiky
 > některé tabulky, nebo když se rozhoduje „mám tohle vytáhnout do jádra?". Evergreen referenční
-> dokument (stav R1 hotový 2026-07-04). Návrh/rozhodovací proces smazán — viz git historie
+> dokument (stav R1 hotový 2026-07-04). Návrh/rozhodovací proces smazán - viz git historie
 > (`r1-sdilene-tabulkove-jadro-navrh.md`).
 
 ## 0. Základní princip: dvě patra, konzistence žije na obou různě
@@ -252,12 +252,12 @@ plně konzistentní z jeho pohledu), a přitom mít vlastní render, když je je
 
 ---
 
-## 0b. Klasifikace featur — kam nová tabulková featura patří (rozhodovací pravidlo)
+## 0b. Klasifikace featur - kam nová tabulková featura patří (rozhodovací pravidlo)
 
 > **Vzniklo z diskuze 2026-07-05.** Chrání proti dvěma extrémům: (a) duplikaci téže featury ručně
 > v každém elementu, (b) cpaní generických featur do specializovaných elementů, kam nepatří.
 
-Když přidáváš tabulkovou featuru, zařaď ji do jedné ze tří kategorií — tím je rozhodnuto, kam patří:
+Když přidáváš tabulkovou featuru, zařaď ji do jedné ze tří kategorií - tím je rozhodnuto, kam patří:
 
 | Kategorie | Poznávací znak | Kam patří | Příklady |
 |---|---|---|---|
@@ -272,7 +272,7 @@ Když přidáváš tabulkovou featuru, zařaď ji do jedné ze tří kategorií 
 **Únikový východ pro data, ne pro element:** generické featury (kat. 2) jsou pro daná data
 dostupné vždy přes **`DynamicTable` napojenou na tutéž kolekci** (např. `ZASTAVKY`). Specializovaný
 element je volba „chci doménový vzhled", ne „tady featura nejde". Dva nástroje na stejná data,
-různý účel — jako Table vs Matrix v reportovacích nástrojích. Featury se **needuplikují**, žijí tam,
+různý účel - jako Table vs Matrix v reportovacích nástrojích. Featury se **needuplikují**, žijí tam,
 kam podle účelu patří.
 
 **NEslučovat** `StopColumn` a `TableColumn` do jedné třídy ani pod společné `IColumn` rozhraní
@@ -281,7 +281,7 @@ kam podle účelu patří.
 
 ---
 
-## 1. Co je SDÍLENÉ — používej, neduplikuj
+## 1. Co je SDÍLENÉ - používej, neduplikuj
 
 Vše v `dotnet/Rendering/`:
 
@@ -309,7 +309,7 @@ neduplikuje inline XAML pro editaci stylu buňky.
 
 ---
 
-## 2. Co je ZÁMĚRNĚ element-specifické — a proč
+## 2. Co je ZÁMĚRNĚ element-specifické - a proč
 
 Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho doménová odlišnost:
 
@@ -322,11 +322,11 @@ Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho d
   ze skalárů (dormant `TableElement`).
 
 **LineTable** (knižní JŘ):
-- **Výpočet šířek** (Km-expanze na N sub-sloupců dle dat + časové sloupce spojů sdílejí auto pool —
+- **Výpočet šířek** (Km-expanze na N sub-sloupců dle dat + časové sloupce spojů sdílejí auto pool -
   není to obecný per-sloupec vzorec, proto NEpoužívá `ResolveWidths`), pás skupin dnů, řádek platnosti/NZ,
   přípojné řádky (vyčká/navazuje), MHD auto-remove.
 
-**DepartureGrid** (minutová mřížka) — **celý render mimo jádro**:
+**DepartureGrid** (minutová mřížka) - **celý render mimo jádro**:
 - Je to **pivot** (2D matice hodina × skupina dnů, jedna buňka = N odjezdů), ne řádková tabulka.
   `ColumnRenderer.DrawRow` („řádek = sekvence sloupců") jeho tvar neumí vyjádřit. Vlastní: pivot layout,
   redistribuce šířek, word-wrap víceřádkových záhlaví, HourColumnPerGroup, NZ invertované minuty,
@@ -336,7 +336,7 @@ Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho d
 
 ---
 
-## 3. Nový tabulkový element — co dostaneš zdarma, co musíš dodat
+## 3. Nový tabulkový element - co dostaneš zdarma, co musíš dodat
 
 **Zdarma z jádra:** kreslení buňky, kreslení řádku, výpočet šířek (pokud tvůj model je „per-sloupec"),
 kaskáda stylů, editor sloupců + styl editor, 2-tab dialog (klon).
@@ -351,7 +351,7 @@ jiný tvar → vlastní render, ale sdílej datovou vrstvu (jako DepartureGrid).
 
 ---
 
-## 4. Co vědomě NEsjednocovat (a proč) — nevracet se k tomu bez nového důvodu
+## 4. Co vědomě NEsjednocovat (a proč) - nevracet se k tomu bez nového důvodu
 
 | Nesjednocovat | Proč |
 |---|---|
@@ -361,16 +361,16 @@ jiný tvar → vlastní render, ale sdílej datovou vrstvu (jako DepartureGrid).
 
 ---
 
-## 5. Kandidáti na budoucí extrakci (triggery — udělat, až nastane důvod)
+## 5. Kandidáti na budoucí extrakci (triggery - udělat, až nastane důvod)
 
 | Kandidát | Trigger | Poznámka |
 |---|---|---|
-| **R1a — render-loop orchestrátor** (header + řádky + separátory jako 1 metoda) | šestá tabulka, nebo ladění separátorové logiky na jednom místě | DynamicTable dnes kreslí vlastní per-buňka smyčkou místo `ColumnRenderer.DrawRow`; ~20 řádků skeletu, nízká hodnota / churn na render. |
+| **R1a - render-loop orchestrátor** (header + řádky + separátory jako 1 metoda) | šestá tabulka, nebo ladění separátorové logiky na jednom místě | DynamicTable dnes kreslí vlastní per-buňka smyčkou místo `ColumnRenderer.DrawRow`; ~20 řádků skeletu, nízká hodnota / churn na render. |
 | **Výška-z-fontu vs pevná mm** | další element s font-driven výškou | dnes StopList/LineTable počítají výšku z fontu, DynamicTable má pevné `RowHeight` mm. Sjednotit jako `RowHeight?` (null = z fontu) pokrylo by oba. |
-| **Column model sjednocení** | jen kdyby vznikl konkrétní tlak + bezpečná migrace serializace | viz §4 — dnes vědomě NE. |
+| **Column model sjednocení** | jen kdyby vznikl konkrétní tlak + bezpečná migrace serializace | viz §4 - dnes vědomě NE. |
 
 Pravidlo: extrahovat **až při 2+ konzumentech** stejné potřeby (ne dopředu). R1 se extrahoval právě
-proto, že vznikl 3. konzument (LineTable) — do té doby by přepis gold-ověřeného StopListu nesl jen riziko.
+proto, že vznikl 3. konzument (LineTable) - do té doby by přepis gold-ověřeného StopListu nesl jen riziko.
 
 
 
@@ -382,7 +382,7 @@ proto, že vznikl 3. konzument (LineTable) — do té doby by přepis gold-ově�
 
 > **Účel:** převzatá „mapa" symbolů jízdního řádu z legacy, ať ji máme **v TD** a renderujeme podle
 > ní, ne ad hoc. Sada a význam symbolů vychází z **konvence/standardu** (úprava JŘ veřejné dopravy +
-> CIS; SK má vlastní obdobu) — my (M-line) to jen **implementujeme** fontem + mapou. Uživatel TD si
+> CIS; SK má vlastní obdobu) - my (M-line) to jen **implementujeme** fontem + mapou. Uživatel TD si
 > symboly nevolí (je to systémové chování jako NZ box); volí jen zda značky tisknout.
 
 ## Zdroje (legacy, autoritativní)
@@ -398,35 +398,35 @@ proto, že vznikl 3. konzument (LineTable) — do té doby by přepis gold-ově�
 
 Rozhodl kolega (doménový vlastník legacy JR tisku). Tři kategorie značek u spoje:
 
-1. **Kroužkované jen `1`-`7` + `+` + `X`** — kroužek dělá **speciální font**, který kroužkové glyfy má
+1. **Kroužkované jen `1`-`7` + `+` + `X`** - kroužek dělá **speciální font**, který kroužkové glyfy má
    POUZE pro tyto hodnoty (`1`-`7` dny, `+` „kladiva"=pracovní dny, `X` „kříž"=neděle/svátky). GSId id 8-16.
    Jednoznakové → kroužkový glyf fontu.
-2. **NZ / datová omezení = číslo v boxu** — VŠECHNA datová omezení (i pozitivní „jede také", i „nejede"),
+2. **NZ / datová omezení = číslo v boxu** - VŠECHNA datová omezení (i pozitivní „jede také", i „nejede"),
    typicky vícemístná čísla, se tisknou jako **číslo v černém boxu** (invertovaně). Font pro ně kroužek
    NEMÁ (jen 1-7) → box. GSId typ 3.
-3. **Atributy = značky** — piktogram ve **speciálním fontu** (vozíček, na znamení…).
+3. **Atributy = značky** - piktogram ve **speciálním fontu** (vozíček, na znamení…).
 
-Legacy do tisku posílal **značku + příznak, JAK ji tisknout** (text / speciální font + kód) — to je
+Legacy do tisku posílal **značku + příznak, JAK ji tisknout** (text / speciální font + kód) - to je
 přesně `GSId` (převod) + render-dispatch níže. **Zdroj pravdy = `GSId` v `JRapiLinPrtWin`** (konvence
 odvozená z úpravy JŘ).
 
 > **Upřesnění (Jiří Bžoch, 2026-07-10):** vícemístné datové značky („36 jede také… nejede…") jsou
 > ve starém tisku TAKÉ **box**, ne kroužek. Kroužek dělá jen font pro hodnoty `1`-`7`. Dřívější domněnka,
-> že pozitivní „jede" datové omezení má být kroužkované, byla **mylná** — proto se pokus o „pozitivní
+> že pozitivní „jede" datové omezení má být kroužkované, byla **mylná** - proto se pokus o „pozitivní
 > značku = ručně kreslený kroužek" **revertoval** (datová omezení zůstávají box, což je 1:1 s legacy).
 >
-> **Zbývá (deferred):** kroužkové `1`-`7`/`+`/`X` (týdenní platnost) přes font — AD je dnes neemituje
+> **Zbývá (deferred):** kroužkové `1`-`7`/`+`/`X` (týdenní platnost) přes font - AD je dnes neemituje
 > jako jednoznakové anotace (dny řeší sloupci skupin dnů), takže je to samostatný feature, ne bug.
 
 ## Render-módy (jak se symbol kreslí)
 
-1. **Font-glyf** — znak vykreslený v **Timetable fontu** (piktogram). Legacy: `ToChar(ID)` v `iFont1TimeTable`.
+1. **Font-glyf** - znak vykreslený v **Timetable fontu** (piktogram). Legacy: `ToChar(ID)` v `iFont1TimeTable`.
    Locale: CZ `Timetable_nove`, SK `Timetable_nove_SK` (embedded `Fonts/TimeTable2*.ttf`).
-2. **Prostý text** — znak/zkratka v **normálním fontu** (ne piktogram). Legacy: `GetFont(...,"1"=Times,...)`.
+2. **Prostý text** - znak/zkratka v **normálním fontu** (ne piktogram). Legacy: `GetFont(...,"1"=Times,...)`.
    Např. `MHD`, `u`, `p`, `AMS`, `IDS`, `n`, `CLO`, `WC`, a **`x` = na znamení**.
-3. **NZ box (ruční)** — negativní značka „nejede…": černý obdélník + bílé číslo. Kreslí se **ručně**,
+3. **NZ box (ruční)** - negativní značka „nejede…": černý obdélník + bílé číslo. Kreslí se **ručně**,
    ne z fontu. **TD to už dělá** (`NotesLegendElement.RenderNegativniZnacka` + DepartureGrid inverzní box).
-4. **Kompozit (ruční)** — font-glyf + horní/dolní index nebo + text. Legacy záporná ID (-1…-19):
+4. **Kompozit (ruční)** - font-glyf + horní/dolní index nebo + text. Legacy záporná ID (-1…-19):
    paragraf `G` + horní index 1/2/3 · metro (znak 35) + dolní index A/B/C · invalida (znak 72) + „WC".
 
 ## Katalog (GSId, id 1-66)
@@ -458,7 +458,7 @@ odvozená z úpravy JŘ).
 | 26 | PCZ | zavazadla | font-glyf |
 | 27 | PJI | kola | font-glyf |
 | 28 | POS | zásilky | font-glyf |
-| 29 | RBU;r;OZO | radiobus — spoj jede na objednání | font-glyf |
+| 29 | RBU;r;OZO | radiobus - spoj jede na objednání | font-glyf |
 | 30 | SAO | samoobslužný | font-glyf |
 | 31 | `N` | jen nástup | font-glyf |
 | 32 | `V` | jen výstup | font-glyf |
@@ -499,7 +499,7 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
 
 - **`x` na znamení = prostý text, ne font-glyf.** Legacy ho v legendě tiskne jako „x" (konvence), ne
   jako piktogram. Naivní „surový znak → Timetable font" ho vykreslí jako **vláček** (glyf na pozici `x`
-  je jiný symbol) — proto musí jít přes render-mód **text**, ne font-glyf. Totéž `y`/`z`.
+  je jiný symbol) - proto musí jít přes render-mód **text**, ne font-glyf. Totéž `y`/`z`.
 - **id → znak fontu:** legacy `Case Else` kreslí `ToChar(ID)`; je třeba ověřit, jakou hodnotu nese
   datový atribut (ASCII mnemoniky `H`=72 / `x`=120 vs. GSId 1-66) a že sedí na glyf ve fontu.
 - **Font `x` = vláček** ověřeno v TimeTable2 (SkiaSharp render u uživatele) → potvrzuje, že na-znamení
@@ -507,11 +507,11 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
 
 ## Návrh implementace v TD (per konvence)
 
-Zavést **jeden zdroj pravdy** — mapu `atribut/anotace → (render-mód, hodnota)`:
+Zavést **jeden zdroj pravdy** - mapu `atribut/anotace → (render-mód, hodnota)`:
 - `font-glyf` → Timetable font (locale přes `FontResolver.SymbolFontFamily`),
 - `text` → normální font (např. `x`, `MHD`, `u`, `p`, WC-zkratky),
 - `nz-box` → stávající ruční inverzní box,
 - `kompozit` → glyf + index (později, málo časté).
 
 Konzumují ji `StopListElement` (atributy u zastávky), `DepartureGridElement` (anotace u minut),
-`NotesLegendElement` (legenda) — místo dnešního „single-char → symbol font". Katalog výše = obsah mapy.
+`NotesLegendElement` (legenda) - místo dnešního „single-char → symbol font". Katalog výše = obsah mapy.

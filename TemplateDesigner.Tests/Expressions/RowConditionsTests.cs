@@ -4,7 +4,7 @@ using TemplateDesigner.Models.Expressions;
 namespace TemplateDesigner.Tests.Expressions;
 
 /// <summary>
-/// Sdílená řádková podmínková logika (RowConditions) — viditelnost + barva zvýraznění nad daty
+/// Sdílená řádková podmínková logika (RowConditions) - viditelnost + barva zvýraznění nad daty
 /// jednoho řádku. Sdíleno DynamicTable/StopList/LineTable; DepartureGrid mimo (pivot).
 /// </summary>
 public class RowConditionsTests

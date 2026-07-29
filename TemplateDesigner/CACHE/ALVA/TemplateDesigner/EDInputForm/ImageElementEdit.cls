@@ -3,11 +3,11 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro editaci ImageElement properties.
 ///
 /// Field key = property path na C# ImageElement. Generický ElementEditDialog
-/// čte/zapisuje hodnoty přes reflexi — Init jen definuje strukturu + defaults.
-/// Obrázek (ImageBase64) je field typu IMAGE — náhled + upload řeší EDInputForm
+/// čte/zapisuje hodnoty přes reflexi - Init jen definuje strukturu + defaults.
+/// Obrázek (ImageBase64) je field typu IMAGE - náhled + upload řeší EDInputForm
 /// přes host hook PickImageImpl (file dialog + downscale → Base64).
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptors v
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `ImageElement.cs`. Viz memory `project_edinputform_schema_duplication.md`.
 Class ALVA.TemplateDesigner.EDInputForm.ImageElementEdit Extends %RegisteredObject
 {
@@ -27,7 +27,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Nahraj obrázek ze souboru (PNG/JPG). Velké soubory se automaticky zmenší."
 
         s f = form.AddText("DataField", "Datové pole")
-        s f.helpText = "Volitelné — název pole agendy, ze kterého se obrázek načte při tisku (místo statického)"
+        s f.helpText = "Volitelné - název pole agendy, ze kterého se obrázek načte při tisku (místo statického)"
 
         s f = form.AddFieldToLastGroup("ScaleMode", "Škálování", $$$FieldTypeList, 0, 0)
         d f.AddListItem("Fit", "Vejít celý")
@@ -45,7 +45,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
         s f.value = "None"
         d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
-        s f = form.AddFieldToLastGroup("BackgroundColor", "Pozadí", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
 
         // ── Skupina "Pozice a velikost" ───────────────────────────────────
@@ -58,12 +58,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
         s f.helpText = "Pořadí vrstev (vyšší = nad nižším)"
 
-        // ── Skupina "Pokročilé" ───────────────────────────────────────────
-        d form.AddGroup("advanced", "Pokročilé")
         s f = form.AddBool("IsLocked", "Uzamčeno", 0)
         s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
+
+        // ── Skupina "Podmínky" ───────────────────────────────────────────
+        d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

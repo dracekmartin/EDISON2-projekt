@@ -1,12 +1,12 @@
 Include %occInclude
 
-/// %UnitTest pro deterministické helpery ZastavkoveJrAd — čisté funkce bez čtení globálů,
+/// %UnitTest pro deterministické helpery ZastavkoveJrAd - čisté funkce bez čtení globálů,
 /// syntetické vstupy → přesné asserty. Kryje 1:1 reimplementovanou legacy logiku
 /// (KamPrt zařazení spojů, formát datumových omezení, W-mapa časy, markery).
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdHelperyTest Extends ALVA.EDTesting.MLTestCase
 {
 
-// ── NastupisteCsv — nástupiště dle spojů, řazení dle četnosti (KOVED #13048 bod 4) ──
+// ── NastupisteCsv - nástupiště dle spojů, řazení dle četnosti (KOVED #13048 bod 4) ──
 
 Method TestNastupisteCsvRazeniDleCetnosti()
 {
@@ -28,7 +28,7 @@ Method TestNastupisteCsvRazeniDleCetnosti()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NastupisteCsv(.c), "", "prázdný vstup → prázdný výstup")
 }
 
-// ── ZarazeniSpoje — sloupce dnů dle FTL × plk × NZ (1:1 KamPrt^JRapiLinPrtMhd1) ──
+// ── ZarazeniSpoje - sloupce dnů dle FTL × plk × NZ (1:1 KamPrt^JRapiLinPrtMhd1) ──
 
 Method TestZarazeniSpojeFtl0()
 {
@@ -69,7 +69,7 @@ Method TestZarazeniSpojeFtl1PrazdninoveDeleni()
 Method TestZarazeniSpojeFtl3()
 {
 	// FTL 3: Prac mimo | Prac o prázd | So | Ne+svátky
-	// ⚠️ Hrana (dokumentované, gold-ověřené chování — 0320144): s PRÁZDNOU NZ konfigurací se
+	// ⚠️ Hrana (dokumentované, gold-ověřené chování - 0320144): s PRÁZDNOU NZ konfigurací se
 	// prázdné cnz rovná prázdnému nzftl1 ("" = "") → pracovní spoj jde JEN do sloupce
 	// "mimo prázdniny" (1), ne do obou. AD-N15: MHD_NZ1_NZ2 je v praxi prázdné všude.
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).ZarazeniSpoje(3, "", "", ""), "1,3,4", "pracovní s prázdnou NZ cfg → mimo prázdniny + víkend")
@@ -133,7 +133,7 @@ Method TestFormatDatumyOmezeni()
 
 Method TestJeViditelnyAtributATextAtributu()
 {
-	// Legacy UVOD tiskne jen "na znamení" (x) — vše ostatní neviditelné
+	// Legacy UVOD tiskne jen "na znamení" (x) - vše ostatní neviditelné
 	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeViditelnyAtribut("x"), "x je viditelný")
 	do $$$AssertNotTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeViditelnyAtribut("T"), "T (tučně) není viditelný")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("x"), "na znamení", "text pro x")
@@ -163,7 +163,7 @@ Method TestZiskejMarkerDedupuje()
 
 Method TestPismenoVarianty()
 {
-	// První varianta bez písmene (default) — hlavní trasa čistá, odchylky A, B…
+	// První varianta bez písmene (default) - hlavní trasa čistá, odchylky A, B…
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(1, 1), "", "první sloupec bez písmene")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(2, 1), "A", "druhý sloupec → A")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(27, 1), "Z", "27. sloupec → Z")

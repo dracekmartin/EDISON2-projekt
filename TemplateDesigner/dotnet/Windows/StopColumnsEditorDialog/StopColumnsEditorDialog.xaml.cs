@@ -16,15 +16,15 @@ public partial class StopColumnsEditorDialog : Window
     private readonly StopListElement _element;
     private Dictionary<string, string> _preFilled = [];
 
-    /// <summary>Výsledné sloupce po OK — pass-through z VM.</summary>
+    /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
     public List<StopColumn> ResultColumns => _vm.ResultColumns;
 
-    /// <summary>Command z tabu „Obecné" (EDInputForm) — null pokud se nic nezměnilo.
+    /// <summary>Command z tabu „Obecné" (EDInputForm) - null pokud se nic nezměnilo.
     /// Caller vykoná spolu se ResultColumns.</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
 
     /// <summary>Pravidla zvýraznění po editaci (button „Zvýraznění řádků…"). Aplikuje caller až na OK
-    /// dialogu (deferred — Storno columns dialogu změnu zahodí). <see cref="HighlightEdited"/> = bylo upraveno.</summary>
+    /// dialogu (deferred - Storno columns dialogu změnu zahodí). <see cref="HighlightEdited"/> = bylo upraveno.</summary>
     public List<HighlightRule>? ResultHighlightRules { get; private set; }
     public bool HighlightEdited { get; private set; }
 
@@ -67,7 +67,7 @@ public partial class StopColumnsEditorDialog : Window
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {
-        // EDInputForm validace „Obecné" — při chybě zůstat v dialogu.
+        // EDInputForm validace „Obecné" - při chybě zůstat v dialogu.
         if (!GeneralForm.Save()) return;
 
         var cmds = ElementFormBinder.ExtractCommands(GeneralForm, _element, _preFilled);

@@ -5,8 +5,8 @@
         <Border DockPanel.Dock="Top"
                 BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                 Background="{DynamicResource EDTheme.Bg.Panel}" Padding="8,5">
-            <TextBlock Text="Strom šablony — klik = výběr, dvojklik = vlastnosti"
-                       FontSize="{DynamicResource EDTheme.FontSize.Caption}" Foreground="#555555"/>
+            <TextBlock Text="Strom šablony - klik = výběr, dvojklik = vlastnosti"
+                       FontSize="{DynamicResource EDTheme.FontSize.Caption}" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
         </Border>
         <TreeView x:Name="Tree"
                   BorderThickness="0"

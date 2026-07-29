@@ -5,7 +5,7 @@ namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
 /// Zámek wire hodnot klíčů sloupců (<see cref="ColumnKeys"/> = linkový JŘ, <see cref="StopFields"/> =
-/// zastávkový JŘ). Hodnoty se persistují do JSON šablony (<c>StopColumn.Key</c>) — přejmenování tiše
+/// zastávkový JŘ). Hodnoty se persistují do JSON šablony (<c>StopColumn.Key</c>) - přejmenování tiše
 /// rozbije uložené šablony. Když někdo změní konstantu, tento test spadne a donutí ho napsat migraci
 /// místo tiché koroze.
 /// </summary>
@@ -14,7 +14,7 @@ public class ColumnKeysTests
     [Fact]
     public void WireHodnoty_LineTable_JsouZamcene()
     {
-        // NEMĚNIT bez migrace šablon — viz ColumnKeys docstring.
+        // NEMĚNIT bez migrace šablon - viz ColumnKeys docstring.
         Assert.Equal("StopName", ColumnKeys.StopName);
         Assert.Equal("Tc", ColumnKeys.Tc);
         Assert.Equal("Zone", ColumnKeys.Zone);

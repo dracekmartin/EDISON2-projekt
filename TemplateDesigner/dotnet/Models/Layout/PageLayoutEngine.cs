@@ -4,7 +4,7 @@ using TemplateDesigner.Models.Expressions;
 namespace TemplateDesigner.Models.Layout;
 
 /// <summary>
-/// Hlavní layout engine — Template + DataContext → LayoutResult (seznam stránek).
+/// Hlavní layout engine - Template + DataContext → LayoutResult (seznam stránek).
 /// Čistá logika, žádný SkiaSharp/WPF. Renderer kreslí hotový výsledek.
 /// </summary>
 public class PageLayoutEngine
@@ -72,7 +72,7 @@ public class PageLayoutEngine
     private static void ClassifySections(List<Section> all,
         List<Section> headers, List<Section> footers, List<Section> body)
     {
-        // Najít index posledního body sekce (Once/PerDataRow) — repeating sekce
+        // Najít index posledního body sekce (Once/PerDataRow) - repeating sekce
         // za ním s Role=Body se automaticky klasifikují jako footer (pozice v šabloně)
         int lastBodyIndex = -1;
         for (int i = all.Count - 1; i >= 0; i--)
@@ -104,7 +104,7 @@ public class PageLayoutEngine
                 headers.Add(section);
             else
             {
-                // Role=Body (default) u repeating sekce — heuristika podle pozice:
+                // Role=Body (default) u repeating sekce - heuristika podle pozice:
                 // za posledním body sectionem → footer, jinak header
                 if (lastBodyIndex >= 0 && i > lastBodyIndex)
                     footers.Add(section);
@@ -248,7 +248,7 @@ public class PageLayoutEngine
             // Vejde se na stránku?
             if (cursorY + sectionH <= headerH + availableHeight)
             {
-                // Vejde se — umístit
+                // Vejde se - umístit
                 currentPage.Sections.Add(new PlacedSection
                 {
                     Source = section,
@@ -262,7 +262,7 @@ public class PageLayoutEngine
             {
                 // Posunout na novou stránku jen pokud aktuální stránka už něco obsahuje.
                 // Je-li prázdná, sekce se stejně nikam menšího nevejde (je vyšší než celá
-                // tisknutelná oblast) — umístit ji sem, ať nevzniká prázdná úvodní stránka.
+                // tisknutelná oblast) - umístit ji sem, ať nevzniká prázdná úvodní stránka.
                 if (currentPage.Sections.Count > 0)
                 {
                     currentPageNum++;
@@ -355,7 +355,7 @@ public class PageLayoutEngine
                 var rows = data?.GetRows(section.DataSource) ?? [];
                 if (rows.Count == 0)
                 {
-                    // Žádná data — přidat jednou s prázdnými daty
+                    // Žádná data - přidat jednou s prázdnými daty
                     expanded.Add((section, data));
                 }
                 else

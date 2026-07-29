@@ -1,17 +1,17 @@
 Include (GENERAL, EDInputForm)
 
-/// EDInputForm dispatch — generický formulář parametrů sestavy pro tiskový dialog.
+/// EDInputForm dispatch - generický formulář parametrů sestavy pro tiskový dialog.
 ///
 /// Schéma parametrů NEdefinuje sama: nested-callem získá JSON z agenda metody `GetParameters`
 /// (jediný zdroj definic parametrů per agenda) a převede ho na EDInputForm `Form`. Žádná
-/// per-agenda EDInputForm třída — jedna generická obsluha pro všechny agendy.
+/// per-agenda EDInputForm třída - jedna generická obsluha pro všechny agendy.
 ///
 /// IN["agendaClass"] = FQN agenda třídy (např. "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd").
 ///                     C# strana ho má v _classMap (CacheAgendaProvider).
 /// IN["values"]      = (volitelné) JSON { "PARAM_NAME": "currentStringValue", ... } pro prefill
 ///                     aktuálními hodnotami (jinak se použije defaultValue z GetParameters).
 ///
-/// `visibleWhen` (podmíněná viditelnost parametru) se zde NEvyhodnocuje — řeší ho C# host
+/// `visibleWhen` (podmíněná viditelnost parametru) se zde NEvyhodnocuje - řeší ho C# host
 /// (PrintDialog) nad EDInputForm poli: má k dispozici pravidla i hodnoty a umí přepnout
 /// Field.Visibility živě. Validate roundtrip navíc nenese InitParams (agendaClass), takže
 /// server-side evaluace by neměla kontext. Tato třída proto staví jen plochý formulář.
@@ -44,7 +44,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
             d form.AddGroup("params", "Parametry sestavy")
         }
 
-        // Universální export pole (členění výstupu + název souboru) — platí pro všechny agendy.
+        // Universální export pole (členění výstupu + název souboru) - platí pro všechny agendy.
         // NEjsou součástí GetParameters → jen v tiskovém dialogu, ne v tabu parametrů.
         i includeExport '= 0 { d ..AddExportFields(form, vals, agendaClass) }
 
@@ -57,13 +57,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
 /// s daty (více instancí) + pattern názvu souboru s {POLE} tokeny. Klíče stabilní (parsuje C#),
 /// popisky české. Viditelnost pole názvu (jen pro split) řeší C# host (PrintDialog.ApplyVisibility).
 /// Volby členění dle capability agendy: PER_LINE (per instance) jen když agenda instance má,
-/// PER_STOP (per stránka dat zastávka×směr) jen pro ElementKind=STOP — u Faktur/GENERAL by
+/// PER_STOP (per stránka dat zastávka×směr) jen pro ElementKind=STOP - u Faktur/GENERAL by
 /// nabízené volby byly nesmyslné.
 ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %DynamicObject, agendaClass As %String = "")
 {
     d form.AddGroup("export", "Export (tisk s daty)")
 
-    // Capability metadata agendy (class parametry) — defenzivně, neznámá/prázdná třída → defaults.
+    // Capability metadata agendy (class parametry) - defenzivně, neznámá/prázdná třída → defaults.
     s elementKind = ""
     s instanceLabel = ""
     i agendaClass '= "" {
@@ -90,8 +90,8 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
     i $isobject(vals) && vals.%IsDefined("__EXPORT_FILENAME") { s fname = vals.%Get("__EXPORT_FILENAME") }
     d form.AddText("__EXPORT_FILENAME", "Název souboru (tokeny {POLE})", fname)
 
-    // Imposice (N-up): skládání stránek šablony na fyzické listy — stránky 1:1, blok centrovaný.
-    // Geometrii/validaci mřížky řeší C# (SheetComposer — zná rozměr stránky šablony); tady jen volby.
+    // Imposice (N-up): skládání stránek šablony na fyzické listy - stránky 1:1, blok centrovaný.
+    // Geometrii/validaci mřížky řeší C# (SheetComposer - zná rozměr stránky šablony); tady jen volby.
     // Viditelnost detailních polí (jen při zvoleném formátu listu) řeší C# host (PrintDialog.ApplyVisibility).
     s sheet = "NONE"
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET") { s sheet = vals.%Get("__EXPORT_SHEET") }
@@ -186,7 +186,7 @@ ClassMethod Save(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Nested call na agenda `GetParameters` — vyčistí OUT okolo (mirror SaveTemplate.FetchAgendyJson).
+/// Nested call na agenda `GetParameters` - vyčistí OUT okolo (mirror SaveTemplate.FetchAgendyJson).
 /// Vrací JSON pole parametrů ("[]" pokud agenda není zadaná nebo žádné nemá).
 ClassMethod FetchParamsJson(ByRef sys As %String, agendaClass As %String) As %String
 {
@@ -220,9 +220,9 @@ ClassMethod AddParamField(form As ALVA.EDControls.EDInputForm.Form, p As %Dynami
     i $isobject(vals) && vals.%IsDefined(name) { s val = vals.%Get(name) }
 
     i type = "bool" {
-        d form.AddBool(name, label, $s((val="true")||(val=1):1, 1:0))
+        s f = form.AddBool(name, label, $s((val="true")||(val=1):1, 1:0))
     } elseif type = "number" {
-        d form.AddNumber(name, label, val)
+        s f = form.AddNumber(name, label, val)
     } elseif type = "enum" {
         // required=1 → enum musí mít vybranou hodnotu (List dropdown bez úvodního prázdného řádku)
         s f = form.AddFieldToLastGroup(name, label, $$$FieldTypeList, 0, 1)
@@ -236,8 +236,11 @@ ClassMethod AddParamField(form As ALVA.EDControls.EDInputForm.Form, p As %Dynami
         s f = form.AddFieldToLastGroup(name, label, $$$FieldTypeDate, 0, 0)
         s:val'="" f.value = val
     } else {
-        d form.AddText(name, label, $s(val="":"", 1:val))
+        s f = form.AddText(name, label, $s(val="":"", 1:val))
     }
+    // Aditivní `description` z GetParameters → nápovědná bublina pole (starší agendy ho nemají)
+    s desc = p.description
+    s:desc'="" f.helpText = desc
 }
 
 }

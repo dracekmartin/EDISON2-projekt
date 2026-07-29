@@ -10,7 +10,7 @@ namespace TemplateDesigner.Rendering;
 /// </summary>
 public static class CellDefaults
 {
-    // Getter (ne static readonly) — aby se přes DocumentDefaults.Apply propsal výchozí styl
+    // Getter (ne static readonly) - aby se přes DocumentDefaults.Apply propsal výchozí styl
     // šablony (font…) i do tabulkové kaskády. Hodnota = zapečené defaulty overlaynuté ambientem.
     public static ResolvedTextStyle Default => DocumentDefaults.Apply(new()
     {

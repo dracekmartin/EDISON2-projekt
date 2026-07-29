@@ -3,7 +3,7 @@ namespace TemplateDesigner.Models.Expressions;
 /// <summary>
 /// Jedno pravidlo podmíněného zvýraznění řádku tabulky: když <see cref="Condition"/> (výraz nad daty
 /// řádku) platí, řádek dostane pozadí <see cref="BackgroundColor"/>. Sdílené tabulkovými elementy
-/// (DynamicTable, StopList, LineTable) jako <c>List&lt;HighlightRule&gt;</c> — vyhodnocuje
+/// (DynamicTable, StopList, LineTable) jako <c>List&lt;HighlightRule&gt;</c> - vyhodnocuje
 /// <see cref="RowConditions.HighlightColor(System.Collections.Generic.IReadOnlyList{HighlightRule}, DataContext)"/>
 /// (první splněné pravidlo vyhrává).
 /// </summary>

@@ -38,7 +38,7 @@ public class TextMapping
 }
 
 /// <summary>
-/// Validace jedné skupiny dnů — AI potvrdí nebo opraví záhlaví.
+/// Validace jedné skupiny dnů - AI potvrdí nebo opraví záhlaví.
 /// </summary>
 public class DayGroupValidation
 {

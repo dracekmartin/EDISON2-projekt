@@ -53,10 +53,10 @@ public class ZastavkaData
 
     /// <summary>Nástupiště per varianta trasy (zarovnané s <see cref="TrasaMin"/>): číslo stanoviště,
     /// odkud daná varianta z této zastávky odjíždí, nebo "" (varianta zde nestaví). Zdroj pro režim
-    /// „Duplikace řádku per stanoviště" (KOVED #13048 bod 4).</summary>
+    /// „Řádek pro každý označník" (KOVED #13048 bod 4).</summary>
     public List<string> NastupisteVariant { get; set; } = [];
 
-    /// <summary>Zdrojový řádek dat této zastávky — pro vyhodnocení řádkových podmínek (zvýraznění)
+    /// <summary>Zdrojový řádek dat této zastávky - pro vyhodnocení řádkových podmínek (zvýraznění)
     /// nad poli řádku. Neserializuje se.</summary>
     [JsonIgnore] public DataContext? SourceRow { get; set; }
 }
@@ -76,7 +76,7 @@ public class PoznamkaZastavkyData
     public string Text { get; set; } = "";
 }
 
-/// <summary>Skupina dnů (typ provozu — pracovní dny, soboty, neděle...).</summary>
+/// <summary>Skupina dnů (typ provozu - pracovní dny, soboty, neděle...).</summary>
 public class SkupinaDnuData
 {
     public string Id { get; set; } = "";
@@ -154,6 +154,13 @@ public class ColumnVisualStyle
         Data = Data?.Clone()
     };
 
+    /// <summary>Naškáluje rozměry per-sloupcových stylů (font/padding) při škálování šablony.</summary>
+    public void ApplyScale(float scale)
+    {
+        Header?.ApplyScale(scale);
+        Data?.ApplyScale(scale);
+    }
+
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty => (Header is null || Header.IsEmpty) && (Data is null || Data.IsEmpty);
 }
@@ -166,7 +173,7 @@ public class StopColumn
     public string Key { get; set; } = "";
     public string Header { get; set; } = "";
     /// <summary>Pevná šířka v mm. Null = auto (rovnoměrně sdílí zbývající šířku elementu po pevných sloupcích).
-    /// Default null (ne 10f) — jinak by se auto (null) po uložení ztratilo (serializer WhenWritingNull
+    /// Default null (ne 10f) - jinak by se auto (null) po uložení ztratilo (serializer WhenWritingNull
     /// vynechá klíč → po reloadu by initializer vrátil 10f). Výchozí sloupce nastavují Width explicitně.</summary>
     public float? Width { get; set; }
     public bool Visible { get; set; } = true;

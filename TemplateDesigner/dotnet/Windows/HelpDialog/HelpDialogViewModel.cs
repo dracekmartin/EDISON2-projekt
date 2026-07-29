@@ -6,7 +6,7 @@ namespace TemplateDesigner;
 /// <summary>Jeden řádek nápovědy: akce + zkratka/umístění.</summary>
 public record HelpEntry(string Action, string Shortcut);
 
-/// <summary>Kategorie nápovědy — nadpis, řádky a volitelný tip pod tabulkou.</summary>
+/// <summary>Kategorie nápovědy - nadpis, řádky a volitelný tip pod tabulkou.</summary>
 public class HelpSection
 {
     public required string Title { get; init; }
@@ -16,8 +16,8 @@ public class HelpSection
 }
 
 /// <summary>
-/// Nápověda F1 — datově řízený obsah (zkratky, workflow, tipy) s fulltext filtrem (Ctrl+F).
-/// Obsah drž v souladu s autoritativní tabulkou zkratek v ux-conventions.md — při přidání
+/// Nápověda F1 - datově řízený obsah (zkratky, workflow, tipy) s fulltext filtrem (Ctrl+F).
+/// Obsah drž v souladu s autoritativní tabulkou zkratek v ux-conventions.md - při přidání
 /// zkratky/featury aktualizovat BuildContent().
 /// </summary>
 public class HelpDialogViewModel : EDViewModel
@@ -81,7 +81,7 @@ public class HelpDialogViewModel : EDViewModel
     private static string Fold(string s) => SearchNormalization.NormalizeForSearch(s);
 
     // ─────────────────────────────────────────────────────────────────────
-    // Obsah — zkratky dle autoritativní tabulky (ux-conventions.md)
+    // Obsah - zkratky dle autoritativní tabulky (ux-conventions.md)
     // ─────────────────────────────────────────────────────────────────────
 
     private static List<HelpSection> BuildContent() =>
@@ -95,12 +95,12 @@ public class HelpDialogViewModel : EDViewModel
                 new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", "Ctrl+Shift+A"),
                 new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "klik na štítek"),
                 new("4. Přidat sekce (tlačítko + Sekce) a elementy (táhnout z palety)", "myš"),
-                new("5. Napojit data — pole ze záložky „Pole agendy“ táhnout na plochu", "táhnout myší"),
-                new("6. Upravit vzhled — záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
+                new("5. Napojit data - pole ze záložky „Pole agendy“ táhnout na plochu", "táhnout myší"),
+                new("6. Upravit vzhled - záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
                 new("7. Uložit do databáze a vytisknout s reálnými daty", "Ctrl+S, Ctrl+P"),
             ],
             Tip = "Živý náhled vpravo ukazuje výsledek s daty vybrané instance průběžně. " +
-                  "Databáze je primární úložiště šablon — soubor JSON slouží jen pro přenos (menu Soubor → Import/Export).",
+                  "Databáze je primární úložiště šablon - soubor JSON slouží jen pro přenos (menu Soubor → Import/Export).",
         },
 
         new HelpSection
@@ -117,7 +117,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Vlastnosti stránky (formát, orientace, okraje, jazyk)", "Ctrl+Shift+P"),
                 new("Export náhledu do PDF / PNG", "lišta nástrojů / menu Soubor"),
             ],
-            Tip = "Změna formátu nebo orientace stránky založí novou prázdnou šablonu (s potvrzením) — " +
+            Tip = "Změna formátu nebo orientace stránky založí novou prázdnou šablonu (s potvrzením) - " +
                   "úprava okrajů je běžná vratná změna.",
         },
 
@@ -127,12 +127,12 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Tisk s reálnými daty z databáze", "Ctrl+P"),
-                new("Členění výstupu — vše do jednoho / po linkách / po zastávkách a směrech", "dialog tisku"),
-                new("Název souboru z dat — tokeny {CISLO_LINKY} apod.", "dialog tisku"),
-                new("Více vývěsek na list (imposice) — např. 2×A5 na A4", "dialog tisku → Uspořádání na list"),
+                new("Členění výstupu - vše do jednoho / po linkách / po zastávkách a směrech", "dialog tisku"),
+                new("Název souboru z dat - tokeny {CISLO_LINKY} apod.", "dialog tisku"),
+                new("Více vývěsek na list (imposice) - např. 2×A5 na A4", "dialog tisku → Uspořádání na list"),
                 new("Táž vývěska vícekrát na list (pro řezání)", "dialog tisku → Každá stránka na celý list"),
                 new("Ořezové značky", "dialog tisku"),
-                new("Varování přetečení — obsah se nevejde na stránku", "červený rámeček v náhledu"),
+                new("Varování přetečení - obsah se nevejde na stránku", "červený rámeček v náhledu"),
             ],
             Tip = "Volby imposice a členění si aplikace pamatuje pro každou agendu zvlášť. Návrat na 1 stránku = 1 list: " +
                   "Uspořádání na list → Vypnuto.",
@@ -153,7 +153,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Parametry sestavy (živě mění náhled)", "lišta nad náhledem"),
             ],
             Tip = "Agenda říká JAKOU sestavu děláte (Zastávkový JŘ, …), varianta odkud jsou data (AD / MHD). " +
-                  "Šablona je vázaná na konkrétní kombinaci — vidíte ji na zeleném štítku a v titulku okna.",
+                  "Šablona je vázaná na konkrétní kombinaci - vidíte ji na zeleném štítku a v titulku okna.",
         },
 
         new HelpSection
@@ -191,7 +191,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Zarovnání a rozložení vybraných elementů", "lišta nástrojů / menu Upravit"),
                 new("Normalizovat pozice (zaokrouhlit na krok)", "Ctrl+Shift+N"),
             ],
-            Tip = "Hromadná úprava: vyberte víc elementů a stiskněte Enter — dialog společných vlastností.",
+            Tip = "Hromadná úprava: vyberte víc elementů a stiskněte Enter - dialog společných vlastností.",
         },
 
         new HelpSection
@@ -230,14 +230,14 @@ public class HelpDialogViewModel : EDViewModel
             Title = "🔲 Elementy",
             Entries =
             [
-                new("Text — statický nebo s poli {NAZEV}", "paleta"),
-                new("Obrázek — ze souboru (auto zmenšení velkých)", "paleta"),
+                new("Text - statický nebo s poli {NAZEV}", "paleta"),
+                new("Obrázek - ze souboru (auto zmenšení velkých)", "paleta"),
                 new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
-                new("Kód — QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
-                new("Dynamická tabulka — řádky z kolekce dat agendy", "paleta"),
-                new("Zastávky JŘ — sloupce vč. zóny, pořadí a nástupiště", "paleta (JŘ agenda)"),
-                new("Mřížka odjezdů JŘ — minuty po skupinách dnů", "paleta (JŘ agenda)"),
-                new("Legenda poznámek JŘ — značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
+                new("Kód - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
+                new("Dynamická tabulka - řádky z kolekce dat agendy", "paleta"),
+                new("Zastávky JŘ - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
+                new("Mřížka odjezdů JŘ - minuty po skupinách dnů", "paleta (JŘ agenda)"),
+                new("Legenda poznámek JŘ - značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
             ],
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
                   "zvýraznění řádku podle výrazu, min/max počet řádků a souhrnné řádky (SUM, COUNT, AVG…). " +
@@ -256,7 +256,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Agregace v souhrnných řádcích tabulky", "SUM({CENA}*{POCET}), COUNT, AVG, MIN, MAX"),
                 new("Číslo stránky / celkem stran", "{PAGE} / {TOTAL_PAGES}"),
             ],
-            Tip = "Výraz viditelnosti se zadává ve vlastnosti „Viditelnost“ — prázdný = vždy viditelné. " +
+            Tip = "Výraz viditelnosti se zadává ve vlastnosti „Viditelnost“ - prázdný = vždy viditelné. " +
                   "Formátování čísel a datumů řídí jazyk šablony (Ctrl+Shift+P), ne nastavení Windows.",
         },
 
@@ -268,11 +268,10 @@ public class HelpDialogViewModel : EDViewModel
                 new("Proporcionální škálování celé šablony", "lišta nástrojů 50–200 %"),
                 new("Zamknout element proti posunu/změně velikosti", "vlastnost Zamčeno"),
                 new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
-                new("Sdílená hranice — tah za hranu mění i souseda", "táhnout společnou hranu"),
-                new("Výška „auto“ — element roste podle obsahu (text se zalamuje)", "Výška prázdná"),
+                new("Výška „auto“ - element roste podle obsahu (text se zalamuje)", "Výška prázdná"),
                 new("JŘ element s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),
-                new("Import PDF — AI rozpozná strukturu JŘ a namapuje pole", "menu Nástroje → Import PDF"),
-                new("AI průvodce — zeptejte se, kde co v aplikaci najdete", "záložka Pomocník"),
+                new("Import PDF - AI rozpozná strukturu JŘ a namapuje pole", "menu Nástroje → Import PDF"),
+                new("AI průvodce - zeptejte se, kde co v aplikaci najdete", "záložka Pomocník"),
             ],
         },
     ];

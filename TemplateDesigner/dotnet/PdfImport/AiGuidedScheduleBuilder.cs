@@ -300,7 +300,7 @@ public static class AiGuidedScheduleBuilder
             X = Math.Max(0, x),
             Y = Math.Max(0, y),
             Width = w,
-            // Pevný box z AI bboxu (ne null): import replikuje plakát s pevným layoutem — delší
+            // Pevný box z AI bboxu (ne null): import replikuje plakát s pevným layoutem - delší
             // legenda jiné linky se do boxu vejde auto-scalem, dynamická výška by přetekla sekci.
             Height = Math.Max(h, 10f),
             ZIndex = zIndex++,
@@ -492,7 +492,7 @@ public static class AiGuidedScheduleBuilder
         float pageH = page.HeightMm;
         var result = new List<TemplateElement>();
 
-        // 5. PdfPig obrázky — přeskočit ty které leží uvnitř schedule elementu
+        // 5. PdfPig obrázky - přeskočit ty které leží uvnitř schedule elementu
         var scheduleRegionsMm = vision.Elements.Select(el => (
             Left: el.Left * pageW, Top: el.Top * pageH,
             Right: el.Right * pageW, Bottom: el.Bottom * pageH
@@ -530,7 +530,7 @@ public static class AiGuidedScheduleBuilder
             });
         }
 
-        // 6. AI-detekované obrázky (logo, QR kód) — pokud PdfPig je nenašel
+        // 6. AI-detekované obrázky (logo, QR kód) - pokud PdfPig je nenašel
         debug.Add($"AI image mappings: {vision.ImageMappings.Count}");
         foreach (var imgMap in vision.ImageMappings)
         {
@@ -549,7 +549,7 @@ public static class AiGuidedScheduleBuilder
 
             if (matchedPdfImage is not null)
             {
-                // Dedup: obrázek z kroku 5 už v šabloně je — druhý přes něj nedávat.
+                // Dedup: obrázek z kroku 5 už v šabloně je - druhý přes něj nedávat.
                 if (!usedPdfImages.Add(matchedPdfImage))
                 {
                     debug.Add($"    → PdfPig image already added in step 5, skip (dedup)");
@@ -570,10 +570,10 @@ public static class AiGuidedScheduleBuilder
             else if (imgMap.Role == "qrCode" && imgMap.DbField is not null)
             {
                 // Anti-halucinace: QR vytvořit jen když ho potvrzuje PdfPig geometrie
-                // (shluk malých čtverečků v místě) — samotné tvrzení modelu nestačí.
+                // (shluk malých čtverečků v místě) - samotné tvrzení modelu nestačí.
                 if (!LooksLikeQrRegion(page, imgMapXMm + imgMap.W * pageW / 2, imgMapYMm + imgMap.H * pageH / 2))
                 {
-                    debug.Add($"    → qrCode NEPOTVRZEN geometrií (žádný shluk čtverečků) — skip");
+                    debug.Add($"    → qrCode NEPOTVRZEN geometrií (žádný shluk čtverečků) - skip");
                     continue;
                 }
                 result.Add(new BarcodeElement
@@ -592,13 +592,13 @@ public static class AiGuidedScheduleBuilder
             else
             {
                 // Placeholder jen když se nepřekrývá s už přidaným obrázkem (jinak „falešný
-                // element" přes logo — model občas ohlásí týž objekt dvakrát s posunem).
+                // element" přes logo - model občas ohlásí týž objekt dvakrát s posunem).
                 bool overlapsExisting = result.Any(r =>
                     imgX < r.X + r.Width + 2 && imgX + imgW > r.X - 2
                     && imgY < r.Y + (r.Height ?? 0) + 2 && imgY + imgH > r.Y - 2);
                 if (overlapsExisting)
                 {
-                    debug.Add($"    → placeholder se překrývá s existujícím obrázkem — skip");
+                    debug.Add($"    → placeholder se překrývá s existujícím obrázkem - skip");
                     continue;
                 }
                 result.Add(new RectangleElement
@@ -617,7 +617,7 @@ public static class AiGuidedScheduleBuilder
             }
         }
 
-        // 7. Detekce nepokrytých grafických oblastí — oblasti stránky kde nejsou ani texty
+        // 7. Detekce nepokrytých grafických oblastí - oblasti stránky kde nejsou ani texty
         //    ani schedule elementy, ale mohly by obsahovat vektorovou grafiku (logo, QR kód)
         {
             var coveredAreas = new List<(float Left, float Top, float Right, float Bottom)>();
@@ -630,7 +630,7 @@ public static class AiGuidedScheduleBuilder
             foreach (var te in existingElements.OfType<TextElement>())
                 coveredAreas.Add((te.X, te.Y, te.X + te.Width, te.Y + (te.Height ?? 6)));
 
-            // Obrázky/QR/placeholdery z kroků 5+6 pokrývají oblast — bez toho krok 7 položí
+            // Obrázky/QR/placeholdery z kroků 5+6 pokrývají oblast - bez toho krok 7 položí
             // prázdný placeholder přes už přidané logo (překrývající se „falešný element").
             foreach (var el in result)
                 coveredAreas.Add((el.X, el.Y, el.X + el.Width, el.Y + (el.Height ?? 6)));
@@ -659,7 +659,7 @@ public static class AiGuidedScheduleBuilder
 
                     if (!isCovered)
                     {
-                        // Nepokrytá oblast — vytvořit prázdný ImageElement placeholder
+                        // Nepokrytá oblast - vytvořit prázdný ImageElement placeholder
                         float placeholderW = colW - 4;
                         float placeholderH = Math.Min(scheduleTop - 4, placeholderW); // max čtverec
                         if (placeholderW < 8 || placeholderH < 8) continue;
@@ -672,7 +672,7 @@ public static class AiGuidedScheduleBuilder
                             Width = placeholderW,
                             Height = placeholderH,
                             ZIndex = zIndex++,
-                            ImageBase64 = null, // prázdný placeholder — uživatel nahraje obrázek
+                            ImageBase64 = null, // prázdný placeholder - uživatel nahraje obrázek
                         });
                         debug.Add($"  → Empty area ImageElement placeholder at col {c}: ({colLeft + 2:0.#},{2:0.#}) {placeholderW:0.#}×{placeholderH:0.#}mm");
                     }
@@ -699,7 +699,7 @@ public static class AiGuidedScheduleBuilder
     }
 
     /// <summary>
-    /// Natáhne StopList po spodní okraj — najde nejspodnější bod ostatních schedule elementů.
+    /// Natáhne StopList po spodní okraj - najde nejspodnější bod ostatních schedule elementů.
     /// </summary>
     private static void StretchStopList(List<TemplateElement> elements, List<string> debug)
     {
@@ -1164,7 +1164,7 @@ public static class AiGuidedScheduleBuilder
             if (bestWordMatch is not null) return bestWordMatch;
         }
 
-        // 4. Pozice — nejbližší blok k AI souřadnicím v mm (tolerance 25mm)
+        // 4. Pozice - nejbližší blok k AI souřadnicím v mm (tolerance 25mm)
         if (mappingXMm > 0 || mappingYMm > 0)
         {
             var closest = textBlocks
@@ -1177,10 +1177,10 @@ public static class AiGuidedScheduleBuilder
         return null;
     }
 
-    /// <summary>Normalizuje text: sjednotí whitespace, odstraní speciální znaky (–, —, _).</summary>
+    /// <summary>Normalizuje text: sjednotí whitespace, odstraní speciální znaky (–, -, _).</summary>
     private static string NormalizeText(string text)
     {
-        text = text.Replace('–', ' ').Replace('—', ' ').Replace('_', ' ').Replace('\t', ' ');
+        text = text.Replace('–', ' ').Replace('-', ' ').Replace('_', ' ').Replace('\t', ' ');
         while (text.Contains("  ")) text = text.Replace("  ", " ");
         return text.Trim();
     }

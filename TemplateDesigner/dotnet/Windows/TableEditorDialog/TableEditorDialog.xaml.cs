@@ -12,13 +12,13 @@ public partial class TableEditorDialog : Window
 {
     private readonly TableEditorDialogViewModel _vm;
 
-    /// <summary>Výsledné sloupce po OK — pass-through z VM.</summary>
+    /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
     public List<TableColumn> ResultColumns => _vm.ResultColumns;
 
-    /// <summary>Výsledné řádky po OK — pass-through z VM.</summary>
+    /// <summary>Výsledné řádky po OK - pass-through z VM.</summary>
     public List<TableRow>? ResultRows => _vm.ResultRows;
 
-    /// <summary>Výsledné souhrnné řádky po OK — pass-through z VM.</summary>
+    /// <summary>Výsledné souhrnné řádky po OK - pass-through z VM.</summary>
     public List<TableRow>? ResultSummaryRows => _vm.ResultSummaryRows;
 
     public TableEditorDialog(TableElement element, IReadOnlyList<DataField>? collectionFields = null,
@@ -41,7 +41,7 @@ public partial class TableEditorDialog : Window
         _vm.RequestClose += result => { DialogResult = result; Close(); };
     }
 
-    /// <summary>View-only picker šablon tabulky (WPF dialog) — VM ho volá přes callback (R4:
+    /// <summary>View-only picker šablon tabulky (WPF dialog) - VM ho volá přes callback (R4:
     /// ViewModel nesmí stavět WPF). Vrací klíč zvolené šablony, nebo null při Storno.</summary>
     private string? PickTableTemplate(IReadOnlyList<TableTemplateInfo> templates)
     {
@@ -95,7 +95,7 @@ public partial class TableEditorDialog : Window
         return (string)selected.Tag!;
     }
 
-    // Klávesová navigace v DataGridu — Enter=BeginEdit, Tab=CommitEdit
+    // Klávesová navigace v DataGridu - Enter=BeginEdit, Tab=CommitEdit
     // Musí být v code-behind: přistupuje k DataGrid.BeginEdit() / CommitEdit()
     private void Grid_PreviewKeyDown(object sender, KeyEventArgs e)
     {

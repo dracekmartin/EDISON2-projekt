@@ -63,7 +63,7 @@
                     <ControlTemplate TargetType="ItemsControl">
                         <Grid>
                             <!-- Nápověda když je prázdno -->
-                            <TextBlock Text="Zeptejte se na ovládání aplikace — např. „jak změním písmo textu“ nebo „kde nastavím sloupce tabulky“."
+                            <TextBlock Text="Zeptejte se na ovládání aplikace - např. „jak změním písmo textu“ nebo „kde nastavím sloupce tabulky“."
                                        Foreground="{DynamicResource EDTheme.Text.Muted}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}" TextWrapping="Wrap" Margin="4">
                                 <TextBlock.Style>

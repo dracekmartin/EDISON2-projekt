@@ -4,13 +4,13 @@ using TemplateDesigner.Models;
 namespace TemplateDesigner.Rendering;
 
 /// <summary>
-/// Orchestruje kreslení jednoho řádku sloupců — deleguje buňky na CellRenderer.
+/// Orchestruje kreslení jednoho řádku sloupců - deleguje buňky na CellRenderer.
 /// Tabulkový element jen popisuje: "jaké sloupce mám, jaký text v každém, jaká šířka, jaký styl".
 /// </summary>
 public static class ColumnRenderer
 {
     /// <summary>Jedna buňka řádku = šířka + text + styl. ShrinkReserveMm = rezerva pro
-    /// „Přizpůsobit buňce" (element ji zvětší, když do buňky kreslí vlastní dekoraci — šipka směru).
+    /// „Přizpůsobit buňce" (element ji zvětší, když do buňky kreslí vlastní dekoraci - šipka směru).
     /// TrailingWidthMm = šířka obsahu dokreslovaného elementem ZA text (značky), škáluje se s textem.</summary>
     public readonly record struct CellSpec(
         float WidthMm, string Text, ResolvedTextStyle Style,

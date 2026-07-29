@@ -13,7 +13,7 @@ public class PdfImportDialogViewModel : EDViewModel
     private readonly IDataSchemaProvider? _schemaProvider;
     private readonly string? _apiKey;
 
-    /// <summary>Důvod nedostupnosti AI (z EdisonAiService) — null = AI dostupné.</summary>
+    /// <summary>Důvod nedostupnosti AI (z EdisonAiService) - null = AI dostupné.</summary>
     private readonly string? _aiUnavailableReason;
 
     public PdfImportDialogViewModel(
@@ -30,7 +30,7 @@ public class PdfImportDialogViewModel : EDViewModel
             catch { /* Caché nedostupná */ }
         }
 
-        // Režim importu se odvozuje z aktuálně otevřené agendy — uživatel nevolí typ, agendu
+        // Režim importu se odvozuje z aktuálně otevřené agendy - uživatel nevolí typ, agendu
         // ani AI (JŘ import = vždy AI Vision; jiná agenda = obecný import textů a grafiky).
         SelectedAgendaCode = preferredAgendaCode is { Length: > 0 } pref
             && AvailableAgendas.Any(a => a.Code.Equals(pref, StringComparison.OrdinalIgnoreCase))
@@ -64,29 +64,29 @@ public class PdfImportDialogViewModel : EDViewModel
     public bool IsNotBusy => !IsBusy;
     public bool CanImport => !IsBusy && !string.IsNullOrEmpty(PdfFilePath) && !ImportBlocked;
 
-    /// <summary>Debug log jen pro vývojáře (lokální dev klíč v appsettings) — zákazník ho nevidí.</summary>
+    /// <summary>Debug log jen pro vývojáře (lokální dev klíč v appsettings) - zákazník ho nevidí.</summary>
     public bool IsDevMode => !string.IsNullOrEmpty(Config.AppSettings.Current?.AiAssistant.AnthropicApiKey);
 
     private bool _enableDebug;
     public bool EnableDebug { get => _enableDebug; set => Set(ref _enableDebug, value); }
 
-    // ── Režim importu — odvozen z aktuální agendy, uživatel nevolí ─────────
+    // ── Režim importu - odvozen z aktuální agendy, uživatel nevolí ─────────
 
     public ScheduleImportType ScheduleImportType { get; }
 
     public bool IsScheduleImport => ScheduleImportType != ScheduleImportType.None;
 
-    /// <summary>JŘ import bez AI nedává smysl — bez dostupného klíče je import zablokovaný.</summary>
+    /// <summary>JŘ import bez AI nedává smysl - bez dostupného klíče je import zablokovaný.</summary>
     public bool ImportBlocked => IsScheduleImport && !HasApiKey;
 
     /// <summary>Text blokace s konkrétním důvodem z mlweb (limit, chybí konfigurace…).</summary>
     public string ImportBlockedText => _aiUnavailableReason
-        ?? "AI import není dostupný — kontaktujte podporu M-line.";
+        ?? "AI import není dostupný - kontaktujte podporu M-line.";
 
     /// <summary>Popis režimu importu pro info řádek v dialogu.</summary>
     public string ImportModeInfo => IsScheduleImport
-        ? $"Zastávkový jízdní řád — AI rozpozná strukturu (zastávky, odjezdy, poznámky) a namapuje pole agendy {SelectedAgendaName}."
-        : "Obecný layout — texty a grafika se převezmou 1:1 jako elementy šablony.";
+        ? $"Zastávkový jízdní řád - AI rozpozná strukturu (zastávky, odjezdy, poznámky) a namapuje pole agendy {SelectedAgendaName}."
+        : "Obecný layout - texty a grafika se převezmou 1:1 jako elementy šablony.";
 
     private string SelectedAgendaName =>
         AvailableAgendas.FirstOrDefault(a => a.Code.Equals(SelectedAgendaCode, StringComparison.OrdinalIgnoreCase))?.Name
@@ -103,7 +103,7 @@ public class PdfImportDialogViewModel : EDViewModel
 
     public string SelectedAgendaCode { get; }
 
-    /// <summary>Sloučení grafiky u obecného importu — pevný rozumný default (bez UI volby).</summary>
+    /// <summary>Sloučení grafiky u obecného importu - pevný rozumný default (bez UI volby).</summary>
     public GraphicsMergeMode MergeMode { get; } = GraphicsMergeMode.LinesOnly;
 
     private bool _importAllPages = true;
@@ -130,7 +130,7 @@ public class PdfImportDialogViewModel : EDViewModel
 
     public Template? ImportedTemplate { get; private set; }
 
-    // Callbacky — View je napojí v konstruktoru
+    // Callbacky - View je napojí v konstruktoru
     public Func<string?>? RequestOpenFile { get; set; }
 
     private RelayCommand? _browsePdf;
@@ -178,7 +178,7 @@ public class PdfImportDialogViewModel : EDViewModel
             if (IsScheduleImport)
             {
                 // Zastávkový JŘ = vždy právě jedna stránka (jedna vývěska). U vícestránkového
-                // PDF (celá linka) volí uživatel kterou; AI dostane jen tu — bez zahlcení.
+                // PDF (celá linka) volí uživatel kterou; AI dostane jen tu - bez zahlcení.
                 pages = [Math.Clamp(PageFrom, 1, Math.Max(TotalPages, 1))];
             }
             else if (!ImportAllPages)
@@ -188,7 +188,7 @@ public class PdfImportDialogViewModel : EDViewModel
                 pages = Enumerable.Range(from, to - from + 1).ToArray();
             }
 
-            // Konverze na background threadu — UI zůstane responzivní
+            // Konverze na background threadu - UI zůstane responzivní
             string pdfPath = PdfFilePath;
             bool enableDebug = EnableDebug;
             var mergeMode = MergeMode;
@@ -242,7 +242,7 @@ public class PdfImportDialogViewModel : EDViewModel
                     "Šablona bude vytvořena se správnými rozměry stránky, ale bez elementů.");
             }
 
-            // Debug logy vedle PDF — jen se zaškrtnutým Debug (vývojář); bez popupu,
+            // Debug logy vedle PDF - jen se zaškrtnutým Debug (vývojář); bez popupu,
             // ať import nekončí hláškou navíc. Vývojář ví, kde soubory hledat.
             if (enableDebug)
             {
@@ -279,12 +279,12 @@ public class PdfImportDialogViewModel : EDViewModel
     /// a nevypadá „posunutě": (1) rozměr stránky přichytí na nejbližší standardní formát
     /// (A5/A4/A3 × orientace) v toleranci, jinak zaokrouhlí; (2) nastaví malé jednotné výchozí okraje
     /// (1 mm, clampnuté ať neořežou obsah); (3) Body sekci dopočítá na tiskovou plochu.
-    /// Page-level — prvky se nehýbou vůči sobě (posun se sekcí je uniformní).</summary>
+    /// Page-level - prvky se nehýbou vůči sobě (posun se sekcí je uniformní).</summary>
     private static void NormalizeImportedPage(Template template)
     {
         var ps = template.PageSize;
 
-        // (1) snap na standardní formát — portrait rozměry, zkoušíme obě orientace
+        // (1) snap na standardní formát - portrait rozměry, zkoušíme obě orientace
         const float tol = 5f;
         (float W, float H)[] formats = [(148f, 210f), (210f, 297f), (297f, 420f)];   // A5, A4, A3
         bool snapped = false;
@@ -297,7 +297,7 @@ public class PdfImportDialogViewModel : EDViewModel
         }
         if (!snapped) { ps.Width = MmMath.Round(ps.Width); ps.Height = MmMath.Round(ps.Height); }
 
-        // (2) výchozí okraje — malé jednotné (1 mm), ale nikdy tak velké, aby ořízly obsah
+        // (2) výchozí okraje - malé jednotné (1 mm), ale nikdy tak velké, aby ořízly obsah
         float maxRight = 0f, maxBottom = 0f;
         foreach (var section in template.Sections)
             foreach (var el in section.Elements)
@@ -318,7 +318,7 @@ public class PdfImportDialogViewModel : EDViewModel
     }
 
     /// <summary>Dorovná importovaným elementům konzistentní výchozí rámeček (černý 0,1mm) tam, kde
-    /// žádný nemají — shodně s novými elementy z palety (<c>CreateElementByType</c>). Import ho někdy
+    /// žádný nemají - shodně s novými elementy z palety (<c>CreateElementByType</c>). Import ho někdy
     /// nenastaví; rámeček detekovaný z PDF (šířka > 0) se nepřepisuje.</summary>
     private static void ApplyDefaultImportBorders(Template template)
     {

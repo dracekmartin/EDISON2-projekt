@@ -2,7 +2,7 @@ Include (%occInclude, GENERAL)
 
 /// Read-only sonda AD dat (#13048 bod 4): projde W-trasy linek v `^JRL` a hledá per-spoj
 /// nástupiště (W-segment pozice 7 = legacy `trs(8)`, „nástupiště ze spoje" JRapiExp10:1223;
-/// trs indexy jsou od W pozic posunuté o 1 — čas/čekání se rozpadá, JRapiSp:234-241). Hlásí:
+/// trs indexy jsou od W pozic posunuté o 1 - čas/čekání se rozpadá, JRapiSp:234-241). Hlásí:
 /// kolik linek pole 8 vůbec plní, a zastávky, kde se na jedné lince×směru liší hodnoty
 /// mezi trasami (= kandidát pro režimy „více nástupišť"). Nic nemění.
 Class ALVA.TemplateDesigner.Tests.AdWTrasaProbe

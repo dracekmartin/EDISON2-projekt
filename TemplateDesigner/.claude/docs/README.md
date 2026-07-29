@@ -2,7 +2,7 @@
 
 > **Hygiena složky** (revize 2026-07-13, konsolidace 26 → 14 souborů): každý dokument patří do
 > jedné kategorie níže. Jednorázová analýza se po vytěžení do roadmapy/kódu **maže** (git historie
-> stačí) — nechává se jen datová mapa/rozhodnutí, na které se dál odkazuje. Nový dokument = přidat
+> stačí) - nechává se jen datová mapa/rozhodnutí, na které se dál odkazuje. Nový dokument = přidat
 > sem řádek a rozmyslet, zda nepatří do existujícího celku; mazání = smazat řádek.
 
 ## Živé pracovní (průběžně aktualizované)
@@ -17,13 +17,13 @@
 
 | Dokument | Role |
 |---|---|
-| [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md) | R1–R7 pro škálování agend — číst před novou fází. Obsahuje i detail R2 (partial-fit kontrakt element↔engine, implementace = C3) a R6 (governance/distribuce šablon — v1 hotová, koncept kanálu v2) |
+| [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md) | R1–R7 pro škálování agend - číst před novou fází. Obsahuje i detail R2 (partial-fit kontrakt element↔engine, implementace = C3) a R6 (governance/distribuce šablon - v1 hotová, koncept kanálu v2) |
 | [`feature-design-principles.md`](feature-design-principles.md) | Rozhodovací mřížka před každým requestem |
 | [`elementy-architektura.md`](elementy-architektura.md) | Architektura elementů: JŘ elementy (wire formát, hierarchie) + sdílené tabulkové jádro (co ne/sjednocovat) + katalog symbolů (font Timetable) |
 | [`template-schema-versions.md`](template-schema-versions.md) | Verzování Template JSON + migrace |
 | [`architecture-diagrams.md`](architecture-diagrams.md) | Konceptuální diagramy pro onboarding (autorita = rules + kód) |
 
-## Datové mapy a vytěžené analýzy (referencované z roadmapy — nemazat, needitovat stavy)
+## Datové mapy a vytěžené analýzy (referencované z roadmapy - nemazat, needitovat stavy)
 
 | Dokument | Obsah |
 |---|---|
@@ -31,12 +31,12 @@
 | [`legacy-nahrada.md`](legacy-nahrada.md) | Legacy vs TD: etapy náhrady (+§7 otázky E/F) · gap matice TiskMHD · mapa legacy generátorů · evidence prezentací 2026 |
 | [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) | Knižní/linkový pilot; §11–12 odložené body (C2–C9) |
 
-## Seedy zákaznické dokumentace (wiki — post-release úkol)
+## Seedy zákaznické dokumentace (wiki - post-release úkol)
 
 | Dokument | Cíl |
 |---|---|
-| [`uzivatelska-prirucka.md`](uzivatelska-prirucka.md) | Wiki 1: uživatelská příručka — část I obecné ovládání + část II zastávkový JŘ; další agendy = nové části (aktualizováno 2026-07-13) |
-| [`plan-a-zmeny.md`](plan-a-zmeny.md) | Wiki 2: „Novinky a plány" — zákaznický changelog+roadmapa (aktualizováno 2026-07-13) |
+| [`uzivatelska-prirucka.md`](uzivatelska-prirucka.md) | Wiki 1: uživatelská příručka - část I obecné ovládání + část II zastávkový JŘ; další agendy = nové části (aktualizováno 2026-07-13) |
+| [`plan-a-zmeny.md`](plan-a-zmeny.md) | Wiki 2: „Novinky a plány" - zákaznický changelog+roadmapa (aktualizováno 2026-07-13) |
 
 ## Archivy (append-only)
 

@@ -1,8 +1,45 @@
-# 🗄️ Archiv — hotové kroky
+# 🗄️ Archiv - hotové kroky
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
-## 2026-07-27 ✅ — #8828 (TRANSDEV) vývěska per označník — UZAVŘENO (= krok 2 / B9 stanovišťového balíku)
+## 2026-07-28 ✅ - Rozvržení editoru stylu buňky (B6) - UZAVŘENO
+
+Detail → changelog 2026-07-28. `CellStyleEditor` (sdílený UserControl, tab Sloupce/Styl v 6
+dialozích) z rozbíjejícího se `WrapPanel` na dvousloupcovou mřížku ve stylu EDInputFormu (popisky
+ve sdíleném sloupci přes `SharedSizeGroup`, prvky pod sebou, per-řádek Visibility). Tri-state /
+placeholdery / reset beze změny, x:Name zachovány. Vizuálně ověřeno Janem. Budoucí krok (na poptávku):
+migrace na Caché EDInputForm - přesunut do Úklid „Vzhled/téma".
+
+## 2026-07-28 ✅ - Interní nálezy A1 (B16 + B17) - UZAVŘENO
+
+Detail → changelog 2026-07-28. **B16:** mock data náhledu prefetch na pozadí + render jen z cache
+(`TryGetCachedMockData`/`PrefetchMockDataAsync`), konec 2-3 s freeze při první kresbě, selhání
+fail-soft do F5. **B17:** `TextStyle.ApplyScale` (font+padding, ne LineSpacing) použit všude -
+schedule/table/dynamic elementy nově škálují paddingy, per-sloupcové/skupinové styly, `WidthOverride`,
+Fixed buňky; `DataRowHeight` přesunut do `ScheduleElementBase` (jednou, ne dvakrát); procenta se
+neškálují. UI/UX výjimky (`Click=`, 5 tabů TableEditoru) zapsány do `architecture.md`. Testy
+`ApplyScaleTests` (4), .NET 409/409.
+
+## 2026-07-28 ✅ - Roadmap bloky B8 + B9 uzavřeny (varianty tras + vývěska per označník)
+
+B8 (dokončení variant tras): server hotový a vizuálně ověřený 27. 7., #9036 časová osa přes půlnoc
+ověřena na 345070 (JH) a resolved 28. 7. B9 (#8828) resolved vč. titulku stránky. Zbytky přesunuty:
+MHD parita variant/označníků → roadmap „Na poptávku"; per-písmeno výběr a další follow-upy →
+customer-requirements §0.4. Pozn. o `ServerSideParams` allowlistu → `rules/cache-api.md`.
+
+## 2026-07-28 ✅ - Stanovišťový balík UZAVŘEN: #13048 i #8828 resolved, doladění a slovník
+
+Detail → changelog 2026-07-28. Odpovědi odeslány a oba tikety **resolved 28. 7.** (KOVED #13048
+všech 5 bodů; TRANSDEV #8828 vč. titulku „…, označník X" a označníku ve vývěskovém řádku rozdělené
+stránky). Doladění z Janova testování + nezávislé revize: jednotný slovník **„označník"** (kanon
+`ux-conventions §8` + `CLAUDE.md`), parametr přejmenován na „Samostatná stránka pro každý označník",
+držení logické stránky náhledu při re-fetchi + resync comboboxu, oprava bool parametrů na wire
+(„True" vs „true" - kvůli ní nikdy nezabral žádný bool parametr GetData vč. TR2), spoj bez označníku
+při rozdělení na stránku nejčetnějšího (ztráta odjezdu), gate duplikace řádků bez variantních
+sloupců. Testy: Caché 45/45 (+TestPismenaVariant, +TestSplitTitulekARadek), xUnit +10 (CellShrink,
+PreviewPageMatch, gate). Follow-upy jen na vyžádání - viz vršek roadmapy.
+
+## 2026-07-27 ✅ - #8828 (TRANSDEV) vývěska per označník - UZAVŘENO (= krok 2 / B9 stanovišťového balíku)
 
 Detail → changelog 2026-07-27. Tiskový parametr „Rozdělit vývěsku per označník" (skupina „Seznam
 zastávek", default vyp). Server (`ZastavkoveJrAd`): vývěska obsluhovaná z N označníků → N stránek,
@@ -12,16 +49,16 @@ bod 4). **Gold beze změny** (default vyp = byte-identický) + `TestSplitPerOzna
 (ČB aut.nádr. → označníky 11/22, odjezdy 5+1; 53→55 stránek). **Tím je stanovišťový balík dokončen v1.**
 Follow-up (na vyžádání): členění exportu na soubory per označník; titulek stránky s označníkem.
 
-## 2026-07-27 ✅ — B6 část (a): šev mezi plátnem a náhledem — UZAVŘENO
+## 2026-07-27 ✅ - B6 část (a): šev mezi plátnem a náhledem - UZAVŘENO
 
 Detail → changelog 2026-07-27 („Šev mezi plátnem a náhledem"). Čtyři místa se stejnou rolí (plocha
 kolem plátna / kolem náhledu / pruh stránkování / plátno kreslené Skiou) měla barvu z různých zdrojů,
-z toho tři natvrdo — sjednoceno na existující token `EDTheme.Bg.Canvas` + `Designer/CanvasTheme` jako
+z toho tři natvrdo - sjednoceno na existující token `EDTheme.Bg.Canvas` + `Designer/CanvasTheme` jako
 jediný zdroj pro Skia stranu (napojený na `ThemeService.Applied`). Děliče ztratily tečkovaný focus
 rámeček. Vizuálně ověřeno Janem. Chrome návrháře (papír, pravítka, záhlaví sekcí) vědomě ponechán
-pevný → patří do položky „dark mode". **V B6 zbývá část (b)** — rozvržení `CellStyleEditor`.
+pevný → patří do položky „dark mode". **V B6 zbývá část (b)** - rozvržení `CellStyleEditor`.
 
-## 2026-07-27 ⛔ — B1 pojistka proti přepsání systémové šablony — ZRUŠENO (není problém)
+## 2026-07-27 ⛔ - B1 pojistka proti přepsání systémové šablony - ZRUŠENO (není problém)
 
 Blok vznikl jako **domněnka** při řešení #13013, ne z nahlášeného případu: systémová šablona se
 z `.exe` nalévá do MLINE při každém startu, takže by starší `.exe` mohlo vrátit novější kurátorovanou
@@ -29,39 +66,39 @@ z `.exe` nalévá do MLINE při každém startu, takže by starší `.exe` mohlo
 zákaznické (firemní) šablony seed nikdy nesahá a nová verze jde do vydání běžným publishem, takže riziko
 nemá kde vzniknout. Publish zůstává součástí normálního vydávacího postupu, ne roadmapovou položkou.
 Kdyby se přepsání někdy reálně objevilo, správné řešení je **serverová** kontrola v `Sablony.SaveTemplate`
-(distribuční zápis) s **vlastním číslem revize obsahu** — verze formátu JSON na to nestačí, ta se při
+(distribuční zápis) s **vlastním číslem revize obsahu** - verze formátu JSON na to nestačí, ta se při
 překurátorování šablony nemění. Nezavádět klientský gate: starší `.exe` ho neobsahuje, tedy nezastaví.
 
-## 2026-07-27 ✅ — B3 drobné korektnostní nálezy — UZAVŘENO
+## 2026-07-27 ✅ - B3 drobné korektnostní nálezy - UZAVŘENO
 
 Detail → changelog 2026-07-27 („Drobné korektnostní nálezy").
 
 - **(a) Dialog pevné tabulky mazal per-buňkový `Format`/`Style` + barvu pozadí řádku** (mezi-model
-  `RowVM`/`CellVM` je nepřenášel). Bolelo u tabulek ze šablony agendy — Caché posílá `format` a barvy
+  `RowVM`/`CellVM` je nepřenášel). Bolelo u tabulek ze šablony agendy - Caché posílá `format` a barvy
   per buňku. `TableElement.Clone()` byl v pořádku už dřív (hlídá `CloneCompletenessTests`), problém byl
   jen v cestě přes dialog.
 - **(b) Ruční kreslicí/měřicí cesty JŘ elementů ignorovaly řez písma** (typeface natvrdo Normal/Bold).
-  Sjednoceno na kaskádu novým helperem `ScheduleElementBase.GetTypeface(ResolvedTextStyle)` — legenda
+  Sjednoceno na kaskádu novým helperem `ScheduleElementBase.GetTypeface(ResolvedTextStyle)` - legenda
   poznámek (vč. výpočtu výšky, kde se měření rozcházelo s renderem), měření + wrap záhlaví skupin dnů
   u odjezdů, designerové placeholdery, měření šířky značek zastávky. Legenda navíc začala respektovat
   výchozí font dokumentu.
 - 8 nových xUnit (round-trip řádku tabulky, řez z kaskády, výška legendy reagující na tučný řez).
   Blok B11 tím ztratil závislost na B3.
 
-## 2026-07-27 ✅ — KOVED #13048 stanovišťový balík krok 1: duplikace řádku per stanoviště — UZAVŘENO
+## 2026-07-27 ✅ - KOVED #13048 stanovišťový balík krok 1: duplikace řádku per stanoviště - UZAVŘENO
 
 Detail → changelog 2026-07-27. 4. volba comboboxu „Více nástupišť" (`RowPerPlatform`): zastávku
 obsluhovanou z více stanovišť rozvine na N řádků (jeden per stanoviště) na místě v trase, časy jen
 variant daného stanoviště. Klientská expanze (`ExpandPlatformRows`) nad aditivním serverovým polem
-`NASTUPISTE_VARIANT` (nástupiště per varianta, W pozice 7) — identita variant se neměnila (čistší než
+`NASTUPISTE_VARIANT` (nástupiště per varianta, W pozice 7) - identita variant se neměnila (čistší než
 původní plán, gold jen re-baseline). Vývěska/jednostanovištní = 1 řádek. Ověřeno vizuálně na 0320680
 (Autobusové nádraží → stanoviště 1 + 8). 6 xUnit + Caché `TestNastupisteVariantEmit`. Známé omezení:
 nástupiště z reprezentativního spoje varianty (plné rozlišení = stanoviště do identity variant, vědomě NE).
 **Tím jsou všechny body #13048 hotové v1; ze stanovišťového balíku zbývá #8828 (B9).**
 
-## 2026-07-23 ✅ — MHD datová parita na složitých linkách (KV_DP 1073) — UZAVŘENO
+## 2026-07-23 ✅ - MHD datová parita na složitých linkách (KV_DP 1073) - UZAVŘENO
 
-Detail → changelog 2026-07-23 (4 záznamy) + artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073".
+Detail → changelog 2026-07-23 (4 záznamy) + artifact „Skupiny dnů na vývěsce - analýza KV_DP 1073".
 Celý track od diagnostiky po ověřený stav v jednom dni; vizuálně odsouhlaseno Janem, s kolegou
 rozhodnut design „AD vzor".
 
@@ -76,7 +113,7 @@ zastávky 2× = 1317 vs 693, odjezdy +48 %, chyběly rozdílové poznámky). Gol
    (obsluha bez skrytých bodů) jde do alg. 1001 → zastávky 693=693 1:1, texty poznámek správně.
 3. **SMO kolize v datech KV** (4 typy → SMO4: prázdniny/24.12./25.12.+1.1./31.12., 210 spojů):
    legacy ztrátově přepisoval (nadpis „poslední vyhrává", minuty kolidují na pozicích) → bit-parity
-   vědomě NENÍ cíl. **Rozhodnutí (Jan + kolega): AD vzor** — auto-značky „jede jen …" z volné NZ
+   vědomě NENÍ cíl. **Rozhodnutí (Jan + kolega): AD vzor** - auto-značky „jede jen …" z volné NZ
    řady (ruční `NegativniZnacka` typu má přednost) + legenda; nadpis = dominantní typ + výčet
    ostatních na 2. řádku; TD nic neztrácí (dep 6352 vs legacy 4295 = vědomá nadmnožina).
 4. **Pořadí iterace odjezdů = legacy** (typ provozu → čas): písmena rozdílových poznámek A–K 1:1
@@ -90,13 +127,13 @@ zastávky 2× = 1317 vs 693, odjezdy +48 %, chyběly rozdílové poznámky). Gol
 
 **Trvalé pojistky:** parity test `TestParita1073KvDpSmoKolize` (zastávky 1:1 + poznámky pokrývají
 legacy [`covered`] + odjezdy nadmnožina) v pre-push; diagnostické sondy `MhdLegacyOracle.SmoProbe`/
-`StopProbe`/`NotesProbe`. Vedlejší poučení (paměť): server může mít novější kompilaci než repo —
+`StopProbe`/`NotesProbe`. Vedlejší poučení (paměť): server může mít novější kompilaci než repo -
 před kompilací needitované `.cls` změřit baseline.
 
 **Otevřené zbytky přesunuty do backlogu:** SMO fáze 1 (varování v designeru při kolizi bez značek),
-fáze 3 (parametr „Rozdělení sloupců" pro MHD — sjednocení s AD).
+fáze 3 (parametr „Rozdělení sloupců" pro MHD - sjednocení s AD).
 
-## 2026-07-23 ✅ — Ukládání velkých šablon (blob po kusech) — dokončeno + ověřeno
+## 2026-07-23 ✅ - Ukládání velkých šablon (blob po kusech) - dokončeno + ověřeno
 
 Detail → changelog 2026-07-23 (+ 2026-07-21 mechanika). Zákazník neuložil šablonu s velkým inline
 obrázkem (`500 <SYNTAX> zStreamToGlobal`). **Skutečný limit = délka řádku při příjmu (~32 656 znaků),
@@ -106,7 +143,7 @@ kusu `1 000 000 → 20 000`. Blob jde po kusech (`dataChunkCount` + `data1..N`),
 + živý probe save→load→delete). 16 unit testů vč. regresního strážce velikosti kusu. Úložná strategie
 zůstává inline Base64 (self-contained); binární úložiště přes `BinarySave`/GUID vědomě odloženo.
 
-## Session 2026-07-15 ✅ — Proces vývoje + zákaznická wiki + UX úklid
+## Session 2026-07-15 ✅ - Proces vývoje + zákaznická wiki + UX úklid
 
 Detail → changelog 2026-07-15.
 
@@ -124,18 +161,18 @@ source of truth. **Release track uzavřen** (verze v produkci, e-mail se neděl�
 pořadových šipek na ▲▼ (TableEditorDialog ↑↓ → ▲▼, zbytek appky už měl ▲▼).
 
 **Tiskové parametry per šablona (obsahové):** hodnoty obsahových parametrů (časová osa, rozdělení
-sloupců, šipky…) teď patří šabloně — sdílené mezi uživateli, priorita nad per-agenda, ukládají se
+sloupců, šipky…) teď patří šabloně - sdílené mezi uživateli, priorita nad per-agenda, ukládají se
 automaticky s šablonou (Ctrl+S, dirty na user změnu). Aditivní `Template.PrintParameters`, fallback
 na agendu u starých šablon; export pole zůstávají per agenda (odloženo). Cesta k funkčnosti si vyžádala
 opravu cold-start časování (`RefreshFieldsList` → `Task`, otevírací flow awaituje schéma) + bezpodmínečné
-přenačtení parametrového tabu po načtení hodnot (`RefreshParamsUiAfterLoad` — tab se jinak držel defaultů).
+přenačtení parametrového tabu po načtení hodnot (`RefreshParamsUiAfterLoad` - tab se jinak držel defaultů).
 
 **Vědomě NEdělat (rozhodnuto):** „jednotný resize grip" (legacy, nejasné) · toolbar text→ikony
-(písmenka záměrně ponechána — u PDF/PNG jasnější než ikona) · footer pattern dialogů (žádné
+(písmenka záměrně ponechána - u PDF/PNG jasnější než ikona) · footer pattern dialogů (žádné
 konkrétní případy) · samostatný splash (start je běžně rychlý; 3 s jen při nedostupném připojení
 → sloučeno s odloženým bodem o připojení).
 
-## Session 2026-07-11 ✅ — Dvouosý model agend: Agenda × Varianta („typ šablony vs agenda")
+## Session 2026-07-11 ✅ - Dvouosý model agend: Agenda × Varianta („typ šablony vs agenda")
 
 Rozhodnutí + implementace bodu „🧭 K rozmyšlení" (podnět kolegy). Legacy analýza (RG strom
 agenda→oblasti→sestavy; TiskMHD/TiskJR = typ jako aplikace + `VolanoZ` přepínač zdroje) →
@@ -149,18 +186,18 @@ ChangeAgendaDialog, filtr pickeru. 340/340. Detail → changelog 2026-07-11.
 
 **Uzavřeno po uživatelském testu (2026-07-11):** chip explicitně „Agenda: X · Varianta: Y";
 Ctrl+O sloupce **Agenda + Varianta** jako dvojice hned za názvem (server-side resolve labelů,
-`EDList.Sablony.ResolveAgendaVariant`). **Strom v přehledu šablon = vědomě NEdělat teď** —
+`EDList.Sablony.ResolveAgendaVariant`). **Strom v přehledu šablon = vědomě NEdělat teď** -
 dva sloupce + dvouosý filtr při současném počtu šablon stačí; strom (EDList grouping / TreeView)
 otevřít až s růstem počtu šablon (Fáze F / governance), jako novou položku.
 
-## Session 2026-07-10 ✅ — Imposice N-up (2×A5 → A4) — roadmap bod č. 1 (v1 uzavřena 2026-07-11)
+## Session 2026-07-10 ✅ - Imposice N-up (2×A5 → A4) - roadmap bod č. 1 (v1 uzavřena 2026-07-11)
 
 > **v1 uzavřena po uživatelském ověření 2026-07-11** (A5 naležato → 2×1 na A4 na výšku, N/2 listů,
 > sekvenční plnění dle očekávání). Rollout opt-in: default „Vypnuto" = dnešní chování, uživatelé
 > zkouší dobrovolně, dodělky dle zpětné vazby. Případná v2 (brožura/duplex, mezery/spadávka,
-> jiný styl značek) se otevře až s knižním JŘ nebo na poptávku — nová položka, ne reopen této.
+> jiný styl značek) se otevře až s knižním JŘ nebo na poptávku - nová položka, ne reopen této.
 
-Skládání logických stránek na fyzické listy při PDF exportu — vlastnost výstupu, ne šablony
+Skládání logických stránek na fyzické listy při PDF exportu - vlastnost výstupu, ne šablony
 (designer/náhled beze změny, šablona zůstává A5). `Models/Layout/SheetLayout.cs` (`SheetComposer`,
 čistá vrstva bez SkiaSharp) + exportní pole `__EXPORT_SHEET*` v PrintDialogu (vzor `__EXPORT_SPLIT`,
 persistence per-agenda) + imposiční větev `RenderMultiDataToPdf` (list = 1 PDF stránka, `RenderPage`
@@ -169,126 +206,126 @@ opakování stránky (táž vývěska N× pro řezání), ořezové značky. Apl
 ostrá data + split módy) i exportu z hlavního okna. 336/336 vč. PdfPig end-to-end smoke testů.
 **Odloženo na v2 (knižní JŘ):** brožura/duplex řazení stránek. Detail → changelog 2026-07-10.
 
-## Session 2026-07-10 — MHD-port zbytky uzavřeno (na poptávku / N/A)
+## Session 2026-07-10 - MHD-port zbytky uzavřeno (na poptávku / N/A)
 
 Helpdesk featury hotové pro AD agendu, ne pro self-contained MHD modul (`ZastavkoveJrMhd`, `^ALVA.MHD.*`,
-používají jen DPCB/DPKV). Odstraněno z aktivní roadmapy — žádný driver.
+používají jen DPCB/DPKV). Odstraněno z aktivní roadmapy - žádný driver.
 
-- **D1** (#7947, „jede až do zast. X") — AD ✅; MHD ⬜ **na poptávku** (jen kdyby DPCB/DPKV měli spoje za základní trasu).
-- **D5** (#7161, skrýt legendu „× na znamení" když značka vypnutá) — AD ✅; MHD ⬜ **na poptávku** DPCB/DPKV.
-- **D2/D3** (#7955, ruční komentář přebít auto / NZ bug) — **N/A pro MHD**: ruční poznámky jsou AD-only
+- **D1** (#7947, „jede až do zast. X") - AD ✅; MHD ⬜ **na poptávku** (jen kdyby DPCB/DPKV měli spoje za základní trasu).
+- **D5** (#7161, skrýt legendu „× na znamení" když značka vypnutá) - AD ✅; MHD ⬜ **na poptávku** DPCB/DPKV.
+- **D2/D3** (#7955, ruční komentář přebít auto / NZ bug) - **N/A pro MHD**: ruční poznámky jsou AD-only
   (`^JRL`), MHD modul (`^ALVA.MHD.*`) to úložiště nemá. Portovat až kdyby MHD dostal vlastní poznámky.
 - Detail: `customer-requirements-zastavkovy-jr.md §D1/D2/D3/D5`.
 
-## Session 2026-07-10 ✅ — AD-interní (legacy-analýza parita) uzavřeno
+## Session 2026-07-10 ✅ - AD-interní (legacy-analýza parita) uzavřeno
 
 Přehodnocení AD-N bodů (původ = legacy analýza dialogu „Nastavení pro tisk linky", ne helpdesk) proti kódu.
 Většina byla už hotová, jen visela stará zmínka. Podklad kde data jsou: `ad-data-mapa.md`.
 
-- **AD-N3** (řazení poznámek dle délky) ✅ — `NotesLegend.Razeni` = `DleDelkyVzestupne/Sestupne` (descriptor „Řazení").
-- **AD-N4** (omezení „nejede" na nový řádek) ✅ — legenda renderuje každou poznámku na vlastní řádek (per-row).
-- **AD-N13** (víc variant jízdních časů) ✅ — = L1 multi-varianta TrasaMin (2026-07-02, dynamické variantní sloupce, `ShowAllRouteVariants`).
-- **AD-N15** (prázdninové dělení sloupců) ✅ kód (`ROZDELENI_SLOUPCU`, FTL 1/3) — pilot-verify na datech s prázdninovými NZ.
-- **Legenda na víc sloupců** ✅ — `NotesLegend.Columns` (1–4) + `WrapSmer`.
-- **Vědomě neděláno:** AD-N5 (`MHD_NEZNZ123` — dormant, pole prázdné ve všech firmách), AD-N11 (cizojazyčné poznámky — bez poptávky).
+- **AD-N3** (řazení poznámek dle délky) ✅ - `NotesLegend.Razeni` = `DleDelkyVzestupne/Sestupne` (descriptor „Řazení").
+- **AD-N4** (omezení „nejede" na nový řádek) ✅ - legenda renderuje každou poznámku na vlastní řádek (per-row).
+- **AD-N13** (víc variant jízdních časů) ✅ - = L1 multi-varianta TrasaMin (2026-07-02, dynamické variantní sloupce, `ShowAllRouteVariants`).
+- **AD-N15** (prázdninové dělení sloupců) ✅ kód (`ROZDELENI_SLOUPCU`, FTL 1/3) - pilot-verify na datech s prázdninovými NZ.
+- **Legenda na víc sloupců** ✅ - `NotesLegend.Columns` (1–4) + `WrapSmer`.
+- **Vědomě neděláno:** AD-N5 (`MHD_NEZNZ123` - dormant, pole prázdné ve všech firmách), AD-N11 (cizojazyčné poznámky - bez poptávky).
 - (AD-N14 = přípoje → linkové JŘ, jiný bucket.)
 
-## Session 2026-07-10 ✅ — TR4: fixed-then-shrink výška řádku StopListu + sdílený helper
+## Session 2026-07-10 ✅ - TR4: fixed-then-shrink výška řádku StopListu + sdílený helper
 
 TRANSDEV 3. režim výšky řádku. Detail → changelog 2026-07-10. .NET 316/316, rendering-only.
 
 - StopList: pevná `DataRowHeight` se zmenší při přetečení (default auto beze změny) = fixed-then-shrink.
-- Sdílený helper `ScheduleElementBase.ScaledDataRowHeight(fontPt, factor)` — pravidlo v jednom místě;
+- Sdílený helper `ScheduleElementBase.ScaledDataRowHeight(fontPt, factor)` - pravidlo v jednom místě;
   StopList + DepartureGrid ho sdílí (dřív drift: B2 opravil DepartureGrid, StopList lagoval). DepartureGrid
   přepnut na helper (behavior-preserving). Malý extrakt; plná row-layout unifikace = krok C.
 
-## Session 2026-07-10 ✅ — TR3: nástupiště jako sloupec zastávky (AD + MHD)
+## Session 2026-07-10 ✅ - TR3: nástupiště jako sloupec zastávky (AD + MHD)
 
 TRANSDEV požadavek (SK legislativa). Detail → changelog 2026-07-10. Caché 33/33, .NET 316/316.
 
 - Per-zastávka `NASTUPISTE` do ZASTAVKY: AD z J-věty #3 (nastTam:nastZpet dle směru), MHD z `Oznacnik`.
 - `StopFields.Nastupiste` + StopList sloupec „Nástupiště" (opt-in, default skrytý); parse + GetCellText; zámek v ColumnKeysTests.
-- Bez mocku/hardcoded dat — prázdné kde označník není (standardně jen terminály). Ověřeno reálně 0320680 (6 zastávek).
+- Bez mocku/hardcoded dat - prázdné kde označník není (standardně jen terminály). Ověřeno reálně 0320680 (6 zastávek).
 - Gold re-baseline AD 2 + MHD 3 (counts identické, jen md5).
 
-## Session 2026-07-10 ✅ — Audit A-AD + B2 (uzavření kontraktu skalárů + overflow)
+## Session 2026-07-10 ✅ - Audit A-AD + B2 (uzavření kontraktu skalárů + overflow)
 
 Dokončení bloku A (AD strana) + B2. Detail → changelog 2026-07-10. Caché 33/33, .NET 316/316.
 
-- **A-AD** — `SMER` + `NASTUPISTE` do `ZastavkoveJrAd` GetData+schéma (AD analog A1/A2); `NEJEDOU_SPOJE`
+- **A-AD** - `SMER` + `NASTUPISTE` do `ZastavkoveJrAd` GetData+schéma (AD analog A1/A2); `NEJEDOU_SPOJE`
   deprecated. AD mock jede přes `BuildStrankaZastavky` → automaticky. AD gold re-baseline 2 linky (counts
   identické, jen md5). **Kontrakt skalárů sjednocen napříč MHD/AD/Linkový.**
-- **B2** — DepartureGrid scale i overflow ze stejné skutečné výšky řádku (vč. DataRowHeight); odstraněna
+- **B2** - DepartureGrid scale i overflow ze stejné skutečné výšky řádku (vč. DataRowHeight); odstraněna
   výjimka co nezmenšovala fonty → konzistentní auto-shrink do fit (rozhodnutí uživatele). Bez gold dopadu.
 
-## Session 2026-07-10 ✅ — Audit infra batch (B3, B4, B6, B7)
+## Session 2026-07-10 ✅ - Audit infra batch (B3, B4, B6, B7)
 
 Robustnost/extenzibilita mimo kolizní zónu paralelní práce. Detail → changelog 2026-07-10.
 Build 0 chyb, TemplateDesigner.Tests 316/316 (+11 z B4).
 
-- **B7** — první `GetSchema` (R1) na cold cestě přes `Task.Run` (warm sync), `IsSchemaCached`; `GetAvailableSkupiny` cache. Nulový caller ripple.
-- **B4** — `ElementRegistrationDriftTests`: `[JsonDerivedType]` → factory type-match, allowlist uspaných `{Table}`.
-- **B3** — `CapabilityCatalog` data-driven přes `AgendaCapabilities`/`ElementKind` (zná LineTable); `GenericTypes` Table→DynamicTable; FriendlyName +LineTable.
-- **B6** — reset stránky: sdílené konstanty property-path + log chybějícího klíče; `async void`→`async Task`+try/catch (R2).
+- **B7** - první `GetSchema` (R1) na cold cestě přes `Task.Run` (warm sync), `IsSchemaCached`; `GetAvailableSkupiny` cache. Nulový caller ripple.
+- **B4** - `ElementRegistrationDriftTests`: `[JsonDerivedType]` → factory type-match, allowlist uspaných `{Table}`.
+- **B3** - `CapabilityCatalog` data-driven přes `AgendaCapabilities`/`ElementKind` (zná LineTable); `GenericTypes` Table→DynamicTable; FriendlyName +LineTable.
+- **B6** - reset stránky: sdílené konstanty property-path + log chybějícího klíče; `async void`→`async Task`+try/catch (R2).
 
-## Session 2026-07-10 ✅ — Audit blok A: kontrakt skalárů (MHD strana)
+## Session 2026-07-10 ✅ - Audit blok A: kontrakt skalárů (MHD strana)
 
 Sjednocení skalárního kontraktu zastávkového JŘ dle vzoru linkové agendy. Detail → changelog 2026-07-10.
 MHD strana + schéma + mock hotové; AD strana (SMER, NASTUPISTE) odložená (roadmap, po `PozitivniZnacka`).
 
-- **A1 (MHD)** — `POPIS_SMER` = název konečné (dřív T/Z); nové pole `SMER` = T/Z. Konečná = poslední zastávka směru.
-- **A2 (MHD)** — nový `PRVNI_POSLEDNI_SPOJ`; `NEJEDOU_SPOJE` ponecháno duplicitně (deprecated ve schématu).
-- **A3** — MHD mock doplněn (SMER, PRVNI_POSLEDNI_SPOJ); POPIS_SMER mock je nyní pravdivý.
-- **A4** — schéma: AD deklaruje `POPIS_ZASTAVKA_CIS`/`POPIS_SMER_CIS` (AD-only); `VARIANTY_TRAS`/`TRASA_MIN` wire-only doc.
-- **MHD gold re-baseline** 3 linky (counts identické, jen md5 — struktura zachovaná). Determinismus ověřen.
+- **A1 (MHD)** - `POPIS_SMER` = název konečné (dřív T/Z); nové pole `SMER` = T/Z. Konečná = poslední zastávka směru.
+- **A2 (MHD)** - nový `PRVNI_POSLEDNI_SPOJ`; `NEJEDOU_SPOJE` ponecháno duplicitně (deprecated ve schématu).
+- **A3** - MHD mock doplněn (SMER, PRVNI_POSLEDNI_SPOJ); POPIS_SMER mock je nyní pravdivý.
+- **A4** - schéma: AD deklaruje `POPIS_ZASTAVKA_CIS`/`POPIS_SMER_CIS` (AD-only); `VARIANTY_TRAS`/`TRASA_MIN` wire-only doc.
+- **MHD gold re-baseline** 3 linky (counts identické, jen md5 - struktura zachovaná). Determinismus ověřen.
 
-## Session 2026-07-10 ✅ — Audit před produkcí: bezpečný sweep (bloky B/C/D)
+## Session 2026-07-10 ✅ - Audit před produkcí: bezpečný sweep (bloky B/C/D)
 
 Nízkorizikové nálezy auditu 2026-07-09 (behavior-preserving / aditivní / docs). Ověřeno: build 0 chyb,
 Caché 33/33, .NET 898/898. Detail → changelog 2026-07-10. Otevřený zbytek (blok A kontrakt, B2/B3/B4/B6/B7,
 C-b/C-e, C-f export filtr, D2, D3 rename) zůstává v roadmapě.
 
-- **C-a** — symetrický `k ^||TiskMHD`/`^||TiskAd` za catch (úklid working global i po chybě).
-- **C-c** — `AgendaParams.FetchParamsJson` zachovává `ERR` (save/restore okolo resetu counteru; nested chyba se už neztratí).
-- **C-d** — `GetParameters` bez zbytečného `$$$FillParams` (ZastavkoveJrAd + LinkovyJrAd).
-- **C-f (část)** — `q $$$OK` → `ret $$$OK` (ZastavkoveJrMhd + ZastavkoveJrAd).
-- **B1** — DepartureGrid layout fingerprint doplněn o 7 layout properties (mrtvé vlastnosti v náhledu opraveny).
-- **B5** — F5 refresh inkrementuje `_previewDataGeneration` (guard proti stale in-flight fetch).
-- **D3 (drobné)** — PrintDialog `EDStrings.Close`; AI API klíč `PasswordBox`; AI debug JSON do temp; komentář k prázdnému catch.
-- **D1** — tabulka zkratek: sekce = `Ctrl+Shift+↑/↓`, doplněn Shift/Ctrl krok elementu.
-- **D4** — roadmap font 42b/C2 přeformulován (zastávkový hotový, zbývá linková část).
+- **C-a** - symetrický `k ^||TiskMHD`/`^||TiskAd` za catch (úklid working global i po chybě).
+- **C-c** - `AgendaParams.FetchParamsJson` zachovává `ERR` (save/restore okolo resetu counteru; nested chyba se už neztratí).
+- **C-d** - `GetParameters` bez zbytečného `$$$FillParams` (ZastavkoveJrAd + LinkovyJrAd).
+- **C-f (část)** - `q $$$OK` → `ret $$$OK` (ZastavkoveJrMhd + ZastavkoveJrAd).
+- **B1** - DepartureGrid layout fingerprint doplněn o 7 layout properties (mrtvé vlastnosti v náhledu opraveny).
+- **B5** - F5 refresh inkrementuje `_previewDataGeneration` (guard proti stale in-flight fetch).
+- **D3 (drobné)** - PrintDialog `EDStrings.Close`; AI API klíč `PasswordBox`; AI debug JSON do temp; komentář k prázdnému catch.
+- **D1** - tabulka zkratek: sekce = `Ctrl+Shift+↑/↓`, doplněn Shift/Ctrl krok elementu.
+- **D4** - roadmap font 42b/C2 přeformulován (zastávkový hotový, zbývá linková část).
 
-## Session 2026-07-09 ✅ — Bug: změna velikosti/orientace stránky = reset s potvrzením
+## Session 2026-07-09 ✅ - Bug: změna velikosti/orientace stránky = reset s potvrzením
 
-Změna velikosti/orientace stránky se dřív snažila obsah „zachovat", ale jen napůl — přeškálovala
+Změna velikosti/orientace stránky se dřív snažila obsah „zachovat", ale jen napůl - přeškálovala
 jen výšky body sekcí, pozice/šířky elementů nechala být → elementy visely mimo stránku, překrývaly se.
 UX rozhodnutí (potvrzeno s uživatelem, živě ověřeno): změna rozměrů = **čistý reset**, konzistentní
 se změnou agendy. Detail → changelog 2026-07-09.
 
-- `ElementEditDialog.FinalValues` — snapshot hodnot polí po OK (čtení zamýšlených rozměrů bez vykonání commandu).
+- `ElementEditDialog.FinalValues` - snapshot hodnot polí po OK (čtení zamýšlených rozměrů bez vykonání commandu).
 - `OpenPropertiesForPage` detekuje změnu `PageSize.Width/Height` (epsilon 0.1 mm) → reset; jinak běžná undoable změna (okraje/kultura/font).
-- `ConfirmPageResetAsync` — vždy se ptá (i u uložené šablony → řeší tichý wipe); dirty = Save/Discard/Cancel. Confirm **před** mutací → Storno = šablona netknutá.
-- `ResetForPageChangeAsync` — čisté plátno s novou velikostí, zachová agendu, převezme velikost/okraje/kulturu/font z dialogu. `ReplaceWithBlankTemplate` + `configure` callback.
+- `ConfirmPageResetAsync` - vždy se ptá (i u uložené šablony → řeší tichý wipe); dirty = Save/Discard/Cancel. Confirm **před** mutací → Storno = šablona netknutá.
+- `ResetForPageChangeAsync` - čisté plátno s novou velikostí, zachová agendu, převezme velikost/okraje/kulturu/font z dialogu. `ReplaceWithBlankTemplate` + `configure` callback.
 
-## Session 2026-07-09 ✅ — Governance šablon v1: doručení systémové šablony (embed → MLINE → picker)
+## Session 2026-07-09 ✅ - Governance šablon v1: doručení systémové šablony (embed → MLINE → picker)
 
-Hybrid model (systémové M-line + zákaznické per-firma) — v1 způsob, jak zákazníkovi dodat výchozí šablonu,
+Hybrid model (systémové M-line + zákaznické per-firma) - v1 způsob, jak zákazníkovi dodat výchozí šablonu,
 aniž se sáhne na jeho vlastní. UX skořápka finální (nepřeučovat), backend (embed) vyměnitelný za budoucí kanál.
 
-- **Krok 1** (`4770a58`) — kurátorovaná výchozí **zastávková AD** šablona (`dotnet/SystemTemplates/zastavkovy-jr-ad.json`),
+- **Krok 1** (`4770a58`) - kurátorovaná výchozí **zastávková AD** šablona (`dotnet/SystemTemplates/zastavkovy-jr-ad.json`),
   základ z dev artefaktu, pročištěno (název/popis, stabilní id, vyprázdněné test defaulty).
-- **Krok 2** (`0a885af`) — `Sablony` API podpora větve **MLINE**: `EDList.Sablony.LoadList` sjednotí firma + MLINE
+- **Krok 2** (`0a885af`) - `Sablony` API podpora větve **MLINE**: `EDList.Sablony.LoadList` sjednotí firma + MLINE
   (sloupec „Zdroj"), `API.Sablony.LoadTemplate` bere `sourceIdFa`, `SaveTemplate` `targetIdFa`; `CacheTemplateService`
   přetížení + konstanta `MlineIdFa`.
-- **Krok 3** (`fddcea7`) — picker **2 sekce** (Zdroj = M-line/vlastní), systémové **read-only** (Přejmenovat/Smazat
+- **Krok 3** (`fddcea7`) - picker **2 sekce** (Zdroj = M-line/vlastní), systémové **read-only** (Přejmenovat/Smazat
   zakázáno); otevřít systémovou → načte z MLINE + `_loadedFromCache=false` → `Ctrl+S` = „Uložit jako" do firmy (nový GUID).
-- **Krok 4** (`78af151`) — **embed + seed**: `SystemTemplates\**\*.json` `<EmbeddedResource>` do .exe;
+- **Krok 4** (`78af151`) - **embed + seed**: `SystemTemplates\**\*.json` `<EmbeddedResource>` do .exe;
   `SystemTemplateSeeder` při startu nalije do MLINE (fire-and-forget, idempotentní přes stabilní `Template.Id`,
   deserialize projde migratorem → aktuální verze). „Poslat šablonu ve v1" = přidat JSON + rebuild/publish .exe.
-- **Zámek MLINE server-side** (`8573547`, governance bod 2) — `SaveTemplate` odmítne zápis do MLINE bez
+- **Zámek MLINE server-side** (`8573547`, governance bod 2) - `SaveTemplate` odmítne zápis do MLINE bez
   `distribution=1` (seed ho nastaví, UI ne). Read-only vynuceno serverem, ne jen klientská iluze. V1 seed běží
   klientsky → příznak je guard proti normálnímu/omylnému zápisu, ne krypto auth (to až s kanálem mimo .exe).
-- **Bugfix** (`7bde94c`) — `DesignerState` element cache (klíč = Guid sekce) se invalidovala jen při editaci;
+- **Bugfix** (`7bde94c`) - `DesignerState` element cache (klíč = Guid sekce) se invalidovala jen při editaci;
   systémová šablona s pevnými Guidy → po Uložit jako + reopen MLINE stará cache prosákla (posunutý element,
   maskováno restartem). Setter `CurrentTemplate` teď invaliduje cache na každý Open/New/Import.
 
@@ -296,85 +333,85 @@ aniž se sáhne na jeho vlastní. UX skořápka finální (nepřeučovat), backe
 MHD/linkový (C4/44b), kategorie/popis šablony v pickeru. Per-instance přiřazení + ECL právo „pouštět
 designer" se řeší jinde (mimo TD); e-mail/tisk = ad-hoc na poptávku → neevidováno.
 
-## Session 2026-07-08 ✅ — Tabulkové jádro: levné švy před v1 (pětice #1–#5)
+## Session 2026-07-08 ✅ - Tabulkové jádro: levné švy před v1 (pětice #1–#5)
 
-Z analýzy připravenosti tabulkového jádra (4 agentní dimenze) — zavřít levné seamy, ať další tabulkový
+Z analýzy připravenosti tabulkového jádra (4 agentní dimenze) - zavřít levné seamy, ať další tabulkový
 element/featura neplatí daň znovu. Detail v changelogu (2026-07-08).
 
-- **#3** (`cc11285`) — reflexní test úplnosti `Clone()` napříč všemi `TemplateElement` potomky (mutace →
+- **#3** (`cc11285`) - reflexní test úplnosti `Clone()` napříč všemi `TemplateElement` potomky (mutace →
   serialize-compare; nový element pokrytý automaticky). **Chytil reálný bug:** `CopyScheduleBaseProperties`
   nekopírovala `DataRowHeight` → ztráta při Ctrl+D/undo u LineTable/NotesLegend. Fix v base helperu.
-- **#5** (`4c3ed73`) — `SkiaHeightCalculator` deleguje výšku `TableElement` na `CalculateHeightFromData`
+- **#5** (`4c3ed73`) - `SkiaHeightCalculator` deleguje výšku `TableElement` na `CalculateHeightFromData`
   (zrušen inline special-case; nový tabulkový element už nepřidává větev do switche). Behavior-preserving.
-- **#4** (`3beee54`) — `AggregationResolver` agreguje nad **výrazem** (`SUM({CENA}*{POCET})`), ne jen holým
+- **#4** (`3beee54`) - `AggregationResolver` agreguje nad **výrazem** (`SUM({CENA}*{POCET})`), ne jen holým
   polem. Zpětně kompat.; odemyká per-group subtotaly počítaných sloupců. Zaevidováno v CLAUDE.md.
-- **#1** (`655f9d1` jádro + `23b1da3` editor + `bb1d908` review fixy) — řádkové zvýraznění z 1 pravidla na
+- **#1** (`655f9d1` jádro + `23b1da3` editor + `bb1d908` review fixy) - řádkové zvýraznění z 1 pravidla na
   **seznam** `HighlightRule[]` („první splněné vyhrává"), migrátor `1.0.0→1.1.0`, editor varianta 3
   (`HighlightRulesEditorDialog`, launch přes `__highlightRules` button v `*Edit.cls` na inline panelu i
   columns dialozích), rozhraní `IRowHighlightable`. Review fixy: section-template migrátor (H1), deferred
   apply v columns dialozích (M2), bezbarevné pravidlo (L5). `TemplateSerializer` nově razítkuje verzi při uložení.
-- **#2** (2026-07-08) — extrakce středního švu: sdílený `RowConditions.VisibleRows` (generický + DataContext
+- **#2** (2026-07-08) - extrakce středního švu: sdílený `RowConditions.VisibleRows` (generický + DataContext
   overload) + `RowConditionDescriptors.RowVisibility`. Resolve-wrappery (3a) vědomě NEextrahovány (jádro už je
   `TableLayout.ResolveCascade`, per-element metody jsou jen tenké type-adaptéry).
 - **Navazující (aktivní backlog):** per-sloupec render `HighlightRule.TargetColumn` + barva textu/kurzíva
   (aditivní, bez migrace, na poptávku).
 
-## Session 2026-07-08 ✅ — Audit stavu v1 (scan 2026-07-07) uzavřen — konsolidace jádra (P-A..P-D)
+## Session 2026-07-08 ✅ - Audit stavu v1 (scan 2026-07-07) uzavřen - konsolidace jádra (P-A..P-D)
 
-Scan stavu v1 (produkční pohled na zastávkové AD+MHD) — konsolidace čistého jádra před růstem plochy
+Scan stavu v1 (produkční pohled na zastávkové AD+MHD) - konsolidace čistého jádra před růstem plochy
 (další agendy). Žádná položka nebyla tvrdý blocker. Celý track vyřešen/rozhodnut:
 
-- **P-A (datová parita) + C1 (legacy 1:1)** — hotovo 2026-07-07 (MHD gold + legacy parita testy; viz
+- **P-A (datová parita) + C1 (legacy 1:1)** - hotovo 2026-07-07 (MHD gold + legacy parita testy; viz
   sesterský archivní záznam / changelog).
-- **P-B — zmrazení čistého jádra ✅** (4 commity, 2026-07-08, každý build + 256 testů):
-  - **B0** (`a559689`) — drift test EDInputForm `*Edit.cls` ↔ C# property: doplněny páry DynamicTable +
+- **P-B - zmrazení čistého jádra ✅** (4 commity, 2026-07-08, každý build + 256 testů):
+  - **B0** (`a559689`) - drift test EDInputForm `*Edit.cls` ↔ C# property: doplněny páry DynamicTable +
     LineTable (12 párů) + completeness pojistka (nový element neproklouzne bez testu).
-  - **B1** (`1177ccd`) — split `ScheduleElementBase` na generickou vrstvu (styly/kaskáda/typeface/render,
+  - **B1** (`1177ccd`) - split `ScheduleElementBase` na generickou vrstvu (styly/kaskáda/typeface/render,
     dědí všechny) + `StopScheduleElementBase` zastávkový mixin (DataSource klíče, cache, `Build*`); LineTable
     dědí jen generickou + vlastní klíče → netahá zastávkový balast.
-  - **B2** (`d8c3ddb`) — agenda capability metadata (`BaseAgenda` params `InstanceParamName`+`ElementKind` →
+  - **B2** (`d8c3ddb`) - agenda capability metadata (`BaseAgenda` params `InstanceParamName`+`ElementKind` →
     `AgendyRegistr` JSON → `AgendaRegistryEntry` → `AgendaCapabilities` mapa) místo `StartsWith` větvení;
     nová agenda existujícího druhu = 0 změn v UI. (Deploy: Caché + C# spolu.)
-  - **B3** (`164a04f`) — `TableElement` → sdílené `TableLayout` jádro (kaskáda + šířky); všechny 4 řádkové
+  - **B3** (`164a04f`) - `TableElement` → sdílené `TableLayout` jádro (kaskáda + šířky); všechny 4 řádkové
     tabulkové elementy sdílí low-level jádro, liší se jen daty + nádstavbami.
-- **P-C — hygiena/drift ✅** — C-a/C-c/C-d/C-f hotové (R4 dva VM, sync-guard komentář, dangling ref, docs);
+- **P-C - hygiena/drift ✅** - C-a/C-c/C-d/C-f hotové (R4 dva VM, sync-guard komentář, dangling ref, docs);
   C-e (dev artefakt `agendaCode "MHD"`) won't-do; C-b drift test → přesunut do B0.
-- **P-D — provozní (na poptávku) → rehomed** do „🚀 Produkční / provozní" v aktivní roadmapě: governance
+- **P-D - provozní (na poptávku) → rehomed** do „🚀 Produkční / provozní" v aktivní roadmapě: governance
   šablon + kurátorovaná výchozí šablona (governance Distribuce), headless tisk (A3), merge PDF + e-mail (A4),
   **fyzický tisk na tiskárnu** (nově doplněn do Provozní featury). Nic se archivací neztratilo.
 
-## Datová parita zastávkového JŘ — P-A + C1 uzavřeno (2026-07-07)
+## Datová parita zastávkového JŘ - P-A + C1 uzavřeno (2026-07-07)
 
 Z auditu stavu v1 (P-A) + spike C1. Detail → changelog. `ALVA.TemplateDesigner.Tests` 33/33.
 
-- **Gold regrese (P-A)** — `ZastavkoveJrMhdGoldTest` (MHD dřív 0 gold testů; CB_DP 1001/1003/1006),
+- **Gold regrese (P-A)** - `ZastavkoveJrMhdGoldTest` (MHD dřív 0 gold testů; CB_DP 1001/1003/1006),
   sdílený `GoldUtil.Digest` (anti-drift AD↔MHD), AD gold zpřísněn (namespace je + linka chybí → FAIL,
   ne tichá zelená). Chrání vlastní výstup před tichou regresí.
-- **Legacy 1:1 parita (C1)** — `MhdLegacyOracle` + pre-push `ZastavkoveJrMhdLegacyParityTest`: **poziční**
+- **Legacy 1:1 parita (C1)** - `MhdLegacyOracle` + pre-push `ZastavkoveJrMhdLegacyParityTest`: **poziční**
   porovnání (odjezdy zastávka×skupina-dnů×HH:MM + zastávky + poznámky) proti skutečnému legacy
   `ALVA.MHD.LinkyPrintFormatMHD.MakeData` (obchází padající `TISKMHD.Data.LoadData`). CB_DP 1001/1003/1006
   1:1, 0 rozdílů. Skip-if-legacy-absent.
 - **Zjištění:** (1) náš engine = legacy s `TiskProjetychZast=1` (projeté zastávky) → vazba na helpdesk
   A2-A6 #7959 „filtr neobsluhovaných" (legacy feature, ne bug); (2) legacy ukládá spec. znaky jako surový
-  ASCII kód, konvertuje při renderu — sjednoceno přes `ConvertSpecialniZnak` (ověřilo i náš převod = legacy).
+  ASCII kód, konvertuje při renderu - sjednoceno přes `ConvertSpecialniZnak` (ověřilo i náš převod = legacy).
 - **Zbývá nice-to-have:** víc linek do gate; AD analog (legacy oracle `$$WinTiskMhd^JRapi`, VolanoZ=JRMAIN)
-  — AD už bylo ručně 1:1 ověřené, jen by to zopakovatelnilo (≈ C9).
+  - AD už bylo ručně 1:1 ověřené, jen by to zopakovatelnilo (≈ C9).
 
-## Caché Migrace — track uzavřen (2026-07-07)
+## Caché Migrace - track uzavřen (2026-07-07)
 
-Sekce odebrána z aktivní roadmapy — nic v ní nebylo nezávisle akční:
-- **Wave 1–4** ✅ hotové (per-user state, agenda registry, template storage, form-driven UI všude) — dřívější archiv.
-- **Wave 5 (business logic per agenda)** = **absorbováno do Fáze C–E** (nové agendy použijí `AgendaAPI` pattern —
+Sekce odebrána z aktivní roadmapy - nic v ní nebylo nezávisle akční:
+- **Wave 1–4** ✅ hotové (per-user state, agenda registry, template storage, form-driven UI všude) - dřívější archiv.
+- **Wave 5 (business logic per agenda)** = **absorbováno do Fáze C–E** (nové agendy použijí `AgendaAPI` pattern -
   `GetSchema/GetData/GetMockData/GetTableTemplates/GetTableTemplate`, zdokumentováno v `cache-api.md`).
   W5-5 (extract `AgendaAPIBase` helpery až 2+ konzumenti) = totéž co **C8** (dedup Caché enginů) ve Fázi C+D.
-- **W4-11** (smazat PropertyDescriptory) = **neproveditelné/won't-do** — drží je FormatToolbar + multi-edit +
+- **W4-11** (smazat PropertyDescriptory) = **neproveditelné/won't-do** - drží je FormatToolbar + multi-edit +
   fallback modál + AI catalog (paralelní systém). **W4-12** (wire `$lb()`→JSON, collapsible groups) = volitelný
   EDControls concern, jen na poptávku.
-- **Evergreen pravidlo — kandidát na EDInputForm** (zachováno): ✅ formuláře s pevným server-definovaným
+- **Evergreen pravidlo - kandidát na EDInputForm** (zachováno): ✅ formuláře s pevným server-definovaným
   schématem; ❌ triviální 1-pole confirm, dialogy s živě počítaným náhledem, plně dynamické formy bez schématu.
-  Schema-duplikace dluh (Caché schema = manuální mirror) akceptován — memory `project_edinputform_schema_duplication`.
+  Schema-duplikace dluh (Caché schema = manuální mirror) akceptován - memory `project_edinputform_schema_duplication`.
 
-## Session 2026-07-07 ✅ — Výběr skupiny linek v Instance Pickeru (AD + MHD)
+## Session 2026-07-07 ✅ - Výběr skupiny linek v Instance Pickeru (AD + MHD)
 
 Uživatel může vybrat konkrétní skupinu linek (dřív jen default první nezablokovaná → neviděl linky
 z ostatních skupin; u MHD default často prázdná testovací). Full stack:
@@ -382,9 +419,9 @@ z ostatních skupin; u MHD default často prázdná testovací). Full stack:
 - **Caché `GetAvailableSkupiny`** (nová abstraktní metoda na `BaseAgenda`, vzor `GetAvailableInstances`,
   JSON `[{value,label}]`): AD ze subscriptů `^JRL(sku)`, label = 1. `~`-piece („Vertikála k 1.1. - ŘÁDNÉ");
   MHD z `^ALVA.MHD.ENUMS(IdFa,"SkupinyLinek")` (název `Nazev`, mimo `Blocked`); default prázdné → picker filtr skryje.
-- **`EDList.Instance`** — `LoadList`/`FetchInstances` čtou `^||ML("IN","filter","SKUPINA_LINEK_ID")` a předají
+- **`EDList.Instance`** - `LoadList`/`FetchInstances` čtou `^||ML("IN","filter","SKUPINA_LINEK_ID")` a předají
   do `GetAvailableInstances` (stejný filter-dict bod jako `agendaCode`; žádný nový mechanismus).
-- **.NET:** `AgendaSkupina(Value, Label)` + `Display` „číslo — název" (dvojí search client-side);
+- **.NET:** `AgendaSkupina(Value, Label)` + `Display` „číslo - název" (dvojí search client-side);
   `CacheAgendaProvider.GetAvailableSkupiny`; Instance Picker searchable combobox (filtr přes `ICollectionView`
   → SelectedItem přežije, žádný Items.Clear gotcha); výběr přenačte EDList s filtrem. `_activeSkupinaId`
   v `TemplateDesignerViewModel` (session scope, reset při změně agendy), propagace `SKUPINA_LINEK_ID` do
@@ -393,22 +430,22 @@ z ostatních skupin; u MHD default často prázdná testovací). Full stack:
   odstraněn probe + nepoužitý `.NET skupinaId` param. Build + 253/253. Ověřeno na KV_DP (AD i MHD).
 - **Follow-up (ne blocker):** skupiny pro knižní JŘ agendy (Fáze C+D); persistence zvolené skupiny per šablona.
 
-## Parkovaný tech dluh (2026-07-07) — YAGNI / oportunistické, mimo aktivní roadmapu
+## Parkovaný tech dluh (2026-07-07) - YAGNI / oportunistické, mimo aktivní roadmapu
 
 Vyřazeno z aktivní roadmapy (nic z toho není „udělat teď"). Revisit až se spustí konkrétní trigger:
 
-- **T4 — god-object strangler** (`MainWindow.xaml.cs` ~2800 ř. + `TemplateDesignerViewModel` ~2600 ř.).
+- **T4 - god-object strangler** (`MainWindow.xaml.cs` ~2800 ř. + `TemplateDesignerViewModel` ~2600 ř.).
   Řezy **H3** (dialogy/schránka → `IDesignerDialogService`) a **M4** (undo příkazy do VM) ✅ hotové.
-  Zbytek je inkrementální — **řeže se oportunisticky při práci v daném místě**, ne jako plánovaný big-bang
+  Zbytek je inkrementální - **řeže se oportunisticky při práci v daném místě**, ne jako plánovaný big-bang
   (např. další řez se přirozeně veze s „výběr skupiny linek", který sahá do instance-picker části).
-- **M7 — perf `WMapa`** (`ZastavkoveJrAd.cls:354`): W-mapa se kopíruje celá (`k`+`m`) per lookup, vč. uvnitř
-  smyčky zastávek×variant. Čistý YAGNI — AD je už výkonově pročištěná (memoizace), žádná naměřená pomalost.
+- **M7 - perf `WMapa`** (`ZastavkoveJrAd.cls:354`): W-mapa se kopíruje celá (`k`+`m`) per lookup, vč. uvnitř
+  smyčky zastávek×variant. Čistý YAGNI - AD je už výkonově pročištěná (memoizace), žádná naměřená pomalost.
   **Recept** (až s reálně pomalou velkou linkou): (1) předpočítat variantní mapy jednou před smyčkou zastávek;
   (2) číst `^||TiskAd("wmap",ct,poradi)` přímo místo `k`+`m` (`CasJizdyZMapy` čte 2 uzly).
-- **T1b / H2 — robustní gold test** (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do izolovaného ns): **žije v Fázi C+D
-  jako C9** — má smysl až s ostrým knižním/linkovým JŘ, ne dřív.
+- **T1b / H2 - robustní gold test** (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do izolovaného ns): **žije v Fázi C+D
+  jako C9** - má smysl až s ostrým knižním/linkovým JŘ, ne dřív.
 
-## Session 2026-07-07 ✅ — Audit před produkcí UZAVŘEN (blokery + H3–H6 + M + nízká)
+## Session 2026-07-07 ✅ - Audit před produkcí UZAVŘEN (blokery + H3–H6 + M + nízká)
 
 **Celý audit před produkcí hotový.** Blokery B1–B3 ✅, vysoká priorita H3–H6 ✅, střední M1–M5 ✅
 (M6 won't-do, M7 parkováno), nízká priorita ✅. **H1** (dedup Caché enginů) + **H2** (testy enginů +
@@ -420,14 +457,14 @@ viz sesterské archivní záznamy níže; H3–H6 zde:
 > Template CRUD chyby jdou přes `IPopupDisplayer`, DepartureGrid cascade anti-pattern NENÍ přítomen,
 > typeface caching správně, vrstvy výrazů/layoutu/serializace dobře otestované.
 
-- **H4** ✅ — statický `DocumentDefaults.Style` race při async exportu → backing field `AsyncLocal<TextStyle?>`
+- **H4** ✅ - statický `DocumentDefaults.Style` race při async exportu → backing field `AsyncLocal<TextStyle?>`
   (export na `Task.Run` má izolovanou hodnotu, UI live-preview svou). Regresní test.
-- **H5** ✅ — `CacheAgendaProvider` polykal + cachoval chyby → už NEcachuje na error; `OnReadError` callback →
+- **H5** ✅ - `CacheAgendaProvider` polykal + cachoval chyby → už NEcachuje na error; `OnReadError` callback →
   nemodální „⚠ Databáze … selhalo" ve status baru (thread-safe, R4-safe).
-- **H6** ✅ — latentní `<UNDEFINED>err` v catch napříč agenda/dispatch metodami → `s err=""` před `try`
+- **H6** ✅ - latentní `<UNDEFINED>err` v catch napříč agenda/dispatch metodami → `s err=""` před `try`
   do všech metod s `$$$CatchErrRest` (21 souborů).
 
-### H3 — ViewModel bez WPF (R4), dialogy přes službu
+### H3 - ViewModel bez WPF (R4), dialogy přes službu
 
 `TemplateDesignerViewModel`
 přímo instancoval WPF okna + `.ShowDialog()` + `OpenFileDialog`/`SaveFileDialog` + systémovou `Clipboard`
@@ -440,19 +477,19 @@ přímo instancoval WPF okna + `.ShowDialog()` + `OpenFileDialog`/`SaveFileDialo
   `_vm.Dialogs = new WpfDesignerDialogService(this)` v `MainWindow` konstruktoru.
 - VM staví dialogové **ViewModely** (VM→VM, žádné WPF) a jen je nechá zobrazit; výstup čte z dialog VM
   (`SelectedInstances`/`ChosenCode`/`SelectedTemplateId`). Souborové dialogy + clipboard přes službu.
-- `using System.Windows` z VM odstraněn (zbývá `System.Windows.Input` kvůli `Key` enum v `MoveByKey` —
+- `using System.Windows` z VM odstraněn (zbývá `System.Windows.Input` kvůli `Key` enum v `MoveByKey` -
   vstupní enum, mimo scope H3). VM je nyní testovatelný přes mock služby.
 - Build 0 chyb, 253/253 testů. Plný VM unit-test harness (EDServices/MLRest mock) = širší → T4 strangler.
 
-## Session 2026-07-07 ✅ — Audit před produkcí: nízká priorita (2. dávka)
+## Session 2026-07-07 ✅ - Audit před produkcí: nízká priorita (2. dávka)
 
-Pokračování auditu — nízko-prioritní body. Blokery **B1/B2** a vysoká priorita **H1–H5** zůstávají
+Pokračování auditu - nízko-prioritní body. Blokery **B1/B2** a vysoká priorita **H1–H5** zůstávají
 otevřené v aktivní roadmapě.
 
-- **Renderer (vrstva 4) — testy geometrie ✅.** Pozicovací matematika buňky (padding shrink, H/V
+- **Renderer (vrstva 4) - testy geometrie ✅.** Pozicovací matematika buňky (padding shrink, H/V
   zarovnání, clamp) vytažena z `CellRenderer.DrawCell` do čistého `Rendering/CellLayout` (behavior-preserving
   refaktor) + `TemplateDesigner.Tests/Rendering/CellLayoutTests.cs` (9 testů). Kreslení na SKCanvas se
-  netestuje (SkiaSharp), ale výpočet kotvy ano — deterministicky, bez fontů. **Plný běh: 252/252 zelených.**
+  netestuje (SkiaSharp), ale výpočet kotvy ano - deterministicky, bez fontů. **Plný běh: 252/252 zelených.**
 - **`App.xaml.cs OnUnhandledException` ✅.** Uživateli už jen `Exception.Message` (ne syrový stack trace),
   plný detail do `Debug.WriteLine`. `MessageBox.Show` v composition-root ponechán záměrně (last-resort net
   nesmí záviset na app službách, které můžou být tou padající věcí).
@@ -465,28 +502,28 @@ otevřené v aktivní roadmapě.
   NEpotlačovat (memory `project_mlrest_newtonsoft_debt`). `ZXing.Net 0.16.9`/`PdfPig 0.1.13` jsou staré,
   ale ne zranitelné → bump nízká hodnota + riziko API churn. Reálná náprava = rebuild MLRest (EDControls task).
 
-## Session 2026-07-07 ✅ — Audit před produkcí: střední-prioritní tech dluh (M1–M5) + rozhodnutí M6/M7
+## Session 2026-07-07 ✅ - Audit před produkcí: střední-prioritní tech dluh (M1–M5) + rozhodnutí M6/M7
 
 Z komplexního auditu kvality kódu (4 dimenze: .NET architektura, Caché/ObjectScript, produkční
 připravenost, test coverage). Blokery **B1/B2/B3** a vysoká priorita **H1–H5** zůstávají otevřené
 v aktivní roadmapě (viz „🔴 Audit před produkcí"). Střední priorita hotová/rozhodnuta:
 
-- **M1 ✅ — prázdný subscript v MHD.** Guard `i (TypProvozuID="")||(SmerID="") continue` v
-  `ZastavkoveJrMhd.PromitnutSpoje` — spoj s prázdnou skupinou dnů / směrem se přeskočí místo pádu
+- **M1 ✅ - prázdný subscript v MHD.** Guard `i (TypProvozuID="")||(SmerID="") continue` v
+  `ZastavkoveJrMhd.PromitnutSpoje` - spoj s prázdnou skupinou dnů / směrem se přeskočí místo pádu
   celé linky (`^||TiskMHD(…,"")` = `<SUBSCRIPT>`). Behavior-preserving pro validní data (0/1).
-- **M2 ✅ — try/catch kolem 3 živých `GetMockData`.** `ZastavkoveJrAd` (commit 876ada3),
-  `KnizniJrAd`, `KnizniJrMhd` — obaleno `try { $$$FillParams … } catch (ex) { $$$CatchErrRest } ret $$$OK`.
+- **M2 ✅ - try/catch kolem 3 živých `GetMockData`.** `ZastavkoveJrAd` (commit 876ada3),
+  `KnizniJrAd`, `KnizniJrMhd` - obaleno `try { $$$FillParams … } catch (ex) { $$$CatchErrRest } ret $$$OK`.
   Vadná data na první lince firmy → čistá hláška v preview místo syrového pádu. (Odložený drobný
-  follow-up: statický vzorek nezávislý na datech, `ZastavkoveJrAd.cls:1219` — nízká hodnota.)
-- **M3 ✅ — únik Skia handles v `DepartureGridElement.Render`.** Alokace fontů/paintů/zebra
+  follow-up: statický vzorek nezávislý na datech, `ZastavkoveJrAd.cls:1219` - nízká hodnota.)
+- **M3 ✅ - únik Skia handles v `DepartureGridElement.Render`.** Alokace fontů/paintů/zebra
   (`CreateFont`/`SKColor.Parse` nad uživatelskými barvami mohou vyhodit) přesunuta dovnitř `try`;
   deklarace zůstaly na method scope (helpery je zachytávají), 4 anotace fonty nullable + `?.Dispose()`.
   Řeší i neuvolněný clip při chybě setupu. Build 0 chyb / 0 nových warningů.
-- **M4 ✅ — konstrukce undo příkazů z code-behind do VM.** 4 metody
+- **M4 ✅ - konstrukce undo příkazů z code-behind do VM.** 4 metody
   `Apply{DepartureGrid,StopColumns,LineTableColumns,DynamicTable}Edit` + helper `ExecuteAsComposite`
   v `TemplateDesignerViewModel` (WPF-free, testovatelné); `OpenXxxDialog` v code-behind už jen otevírá
   dialog + volá VM. Sémantika příkazů identická. (Otevírání dialogu zůstává v code-behind → dořeší H3.)
-- **M5 ✅ — unit testy undo/redo.** `TemplateDesigner.Tests/Commands/UndoRedoCommandTests.cs` (14 testů:
+- **M5 ✅ - unit testy undo/redo.** `TemplateDesigner.Tests/Commands/UndoRedoCommandTests.cs` (14 testů:
   Set/Move/Resize/Add/Delete element+sekce, Move/Reorder sekce, Group/Ungroup, **Composite undo v opačném
   pořadí**, **ScaleTemplate inverzní round-trip**). Všech 14 zelených.
 - **M6 ⛔ akceptováno (won't-do).** Import legacy (předrefaktorového) JSON tiše zahodí styling
@@ -496,25 +533,25 @@ v aktivní roadmapě (viz „🔴 Audit před produkcí"). Střední priorita ho
   vidět). Spolehlivá detekce by false-positivila. YAGNI → neřešit.
 - **M7 ⏸️ odloženo (parkovaný perf-item).** `WMapa` kopíruje celou W-mapu (`k`+`m`) při každém lookupu,
   vč. uvnitř smyčky zastávek×variant (`ZastavkoveJrAd.cls:354`), ač `CasJizdyZMapy` čte jen 2 uzly.
-  Čistě latence, ne korektnost — výstup gold-ověřený 1:1, engine „výkonově pročištěný", žádná nahlášená
+  Čistě latence, ne korektnost - výstup gold-ověřený 1:1, engine „výkonově pročištěný", žádná nahlášená
   pomalost. Zásah = riziko parity. Recept (až se objeví pomalá velká linka): (1) předpočítat variantní
   mapy jednou před smyčkou zastávek; (2) číst `^||TiskAd("wmap",ct,poradi)` přímo místo `k`+`m`.
   Zapsáno v backlogu „Tech dluh".
 
-⚠️ **Poznámka:** Caché edity (M1, M2/KnizniJr*) čekají na compile v dev flow — MCP `cache_compile`
+⚠️ **Poznámka:** Caché edity (M1, M2/KnizniJr*) čekají na compile v dev flow - MCP `cache_compile`
 míří na `C:\DEV\EDISON`, ne na tento repo. Syntaxe standardní, shodná s `GetData` ve stejných souborech.
 
-## Session 2026-07-06/07 ✅ — Layout tabulek: „sekce vyšší" + DynamicTable varianta A (R2 zrušeno)
+## Session 2026-07-06/07 ✅ - Layout tabulek: „sekce vyšší" + DynamicTable varianta A (R2 zrušeno)
 
-**„Sekce vyšší než stránka" ✅** — designové plátno roste přes víc A4 (Slice 1) + dělící čáry stránek
+**„Sekce vyšší než stránka" ✅** - designové plátno roste přes víc A4 (Slice 1) + dělící čáry stránek
 (Slice 2) + fix dvojitého vykreslení rámečku u split sekce. Preview i PDF/PNG dělí přes stránky pixel-ořezem.
 
-**DynamicTable — rozhodnuto: varianta A (chová se jako zastávky).** `Height` = strop, obsah se vejde
+**DynamicTable - rozhodnuto: varianta A (chová se jako zastávky).** `Height` = strop, obsah se vejde
 auto-scalem, prvek se nerozrůstá přes stránky. Dynamická výška (`Height=null`) roste s obsahem. Sekce
 vyšší než stránka → pixel-ořez (jako StopList). Oprava: vnější rámeček tabulky vsazen dovnitř o půl
-tahu (`InsetForStroke`) — dřív se hrana ořezávala těsným clipem sekce.
+tahu (`InsetForStroke`) - dřív se hrana ořezávala těsným clipem sekce.
 
-**R2 (svislé řádkové stránkování + opakované záhlaví) — přidáno a zase odstraněno.** Během session
+**R2 (svislé řádkové stránkování + opakované záhlaví) - přidáno a zase odstraněno.** Během session
 vyzkoušeno (zlom po celých řádcích, opakované záhlaví, respekt Y pozice), funkčně ověřeno renderem.
 Po revizi konzistence ale **vědomě zrušeno**: „rostoucí tabulka přes stránky" je nekonzistentní se
 zbytkem návrháře (statické prvky i zastávky mají výšku = strop) a čisté „opakované záhlaví na multipagi"
@@ -523,7 +560,7 @@ poptávku**. Kód odstraněn kompletně (žádný mrtvý kód): `IRowPaginatedEl
 `PlacedSection.StartRowUnit/EndRowUnit/RepeatHeader`, `RenderRowWindow`, R2 větev v `PreviewCanvas`, testy.
 **Spec pro budoucí re-implementaci zůstává** v `architektonicka-rozhodnuti-agendy.md`. Detail: [`changelog.md`](changelog.md).
 
-## Session 2026-07-03 ✅ — Wave 4 W4-10: inline panel na EDInputForm
+## Session 2026-07-03 ✅ - Wave 4 W4-10: inline panel na EDInputForm
 
 Levý panel „Vlastnosti" nově hostuje **EDInputForm pro jeden element** (všech 9 typů přes `*Edit.cls`
 schema + `ElementFormBinder`) místo PropertyDescriptorů → sjednocený „dvojí vizuální jazyk" (panel i
@@ -532,105 +569,105 @@ modály jedou na stejném form-driven UI). Detail: [`changelog.md`](changelog.md
 - **Živý write-back:** `EDInputForm.FieldChanged` (nový event) / Enter → `ExtractCommands` → SetPropertyCommand
   (undo) → canvas. Enter v poli commitne (ne otevře dialog); bare klávesy patří poli.
 - **EDControls (additivní):** `FieldChanged` event + `CacheClass` setter zahodí controller (runtime
-  přepnutí schématu — dřív držel první třídu → StopList ukazoval text pole).
+  přepnutí schématu - dřív držel první třídu → StopList ukazoval text pole).
 - **Nový `Controls/InlinePropertiesForm`** (embedded host + live state machine: re-Prefill na výběr,
   guard proti rekurzi, ošetřený `Loaded` re-init).
 
 **Wave 4 tím funkčně uzavřena.** Zbytek NE-hotový, ale záměrně:
-- **W4-11** (smazat PropertyDescriptory) — neproveditelné: drží je FormatToolbar + multi-element edit +
+- **W4-11** (smazat PropertyDescriptory) - neproveditelné: drží je FormatToolbar + multi-element edit +
   fallback modál + AI `CapabilityCatalog`. PropertyDescriptory zůstávají jako paralelní systém.
-- **W4-12** (EDInputForm wire `$lb()`→JSON, collapsible groups) — volitelné, EDControls-framework concern.
+- **W4-12** (EDInputForm wire `$lb()`→JSON, collapsible groups) - volitelné, EDControls-framework concern.
 - **Polish (later):** undo/redo nerefreshne zobrazené hodnoty v panelu (display staleness do reselectu);
   přepnutí typu = 1 Caché reload schématu (cache per typ, když bude lagovat).
 
-## Parked known-limitation — canvas perf při vysokém zoomu (2026-07-03)
+## Parked known-limitation - canvas perf při vysokém zoomu (2026-07-03)
 
-Vyřazeno z aktivní roadmapy — na stropu 500 % funguje svižně (ověřeno). Vrátit se k tomu jen když se
+Vyřazeno z aktivní roadmapy - na stropu 500 % funguje svižně (ověřeno). Vrátit se k tomu jen když se
 ukáže reálný problém na uživatelských PC (poptávka).
 
 - **Podstata:** `SKElement` drží byte buffer celé plochy (`pageW × MmToPx`). Zoom 500 % A4 ≈ 3969×5615 px
   ≈ 89 MB; 1000 % ≈ 365 MB. Hardware-bound bottleneck SkiaSharp.Views.WPF.
 - **Workaround (aktivní):** zoom zastropován na 500 % (`ZoomLevels` max 5.0).
-- **Proper fix (~4–6 h, rizikové):** virtualizace — SKElement jen ve velikosti viewportu, obsah posouvat
+- **Proper fix (~4–6 h, rizikové):** virtualizace - SKElement jen ve velikosti viewportu, obsah posouvat
   scroll offsetem, kreslit jen viditelnou část. Riziko: `e.GetPosition(skCanvas)` je dnes absolutní px
   celé stránky → každá interakce (drag/resize/rubber band/ghost/hit-test) by potřebovala scroll-offset
   transformaci. Dělat jako samostatnou session, ne mezi cleanupy.
 
-## Session 2026-07-03 ✅ — Architektonický track: malé T kousky
+## Session 2026-07-03 ✅ - Architektonický track: malé T kousky
 
 Prošli jsme T1–T6 a odbavili všechny **malé self-contained** kusy (detail v [`changelog.md`](changelog.md)):
-- **T5a** — `EDList/Instance.GetClassForAgenda` deleguje na nový `AgendyRegistr.GetClassForCode`
+- **T5a** - `EDList/Instance.GetClassForAgenda` deleguje na nový `AgendyRegistr.GetClassForCode`
   (auto-discovery z `%Dictionary`, žádný hardcoded mirror). Ověřeno přes `ListAgendy`. **T5b přeskočeno**
   (živý AD mock ponechán záměrně).
-- **T6** — `architecture.md` doplněn o `/Services`+`/PdfImport`; per-frame `new SKPaint` posouzeno = zavřeno
+- **T6** - `architecture.md` doplněn o `/Services`+`/PdfImport`; per-frame `new SKPaint` posouzeno = zavřeno
   (nevyplatí se). Celé T6 hotové.
-- **T4 malé kousky** — R4 fix `TableEditorDialogViewModel` (inline WPF picker → code-behind přes callback,
+- **T4 malé kousky** - R4 fix `TableEditorDialogViewModel` (inline WPF picker → code-behind přes callback,
   VM 0× System.Windows) + rename `MainWindowViewModel.cs` → `TemplateDesignerViewModel.cs`.
-- **StopList kaskáda testy** — `StopListCascadeTests` (9 testů): feature override aktuální/projeté zastávky,
+- **StopList kaskáda testy** - `StopListCascadeTests` (9 testů): feature override aktuální/projeté zastávky,
   legacy `col.Alignment` fallback, per-column Style priorita, element-level HeaderStyle.
 
 **Záměrně otevřené (velké, ne blocker):** T1b-robustní (zmrazit vstup do izolovaného namespace) · plný
 T4 god-objects strangler (postupné řezy velkých tříd).
 
-## Session 2026-07-03 ✅ — Pre-pilot UX polish (Fable audit, celý blok)
+## Session 2026-07-03 ✅ - Pre-pilot UX polish (Fable audit, celý blok)
 
 Audit 19 oken proti produktové filozofii („srozumitelnost nad úplností"). **Celý P0 + akční střední/malé
 položky hotové**; detail v [`changelog.md`](changelog.md) 2026-07-03.
 
-**🔴 P0 (U1–U7) — vše hotovo:**
+**🔴 P0 (U1–U7) - vše hotovo:**
 - **U1** BUG: „Ano = uložit" v confirm neuložených změn ukládalo do JSON souboru místo DB → teď DB
   (stejná cesta jako Ctrl+S). Celý confirm/close flow převeden na async (`ConfirmUnsavedChangesAsync`,
   `SaveAndContinueAsync`) + fix pádu při zavření čistého okna (Close přes `Dispatcher.BeginInvoke`).
 - **U2** context menu „Vlastnosti elementu…" → otevře dialog (dřív jen přepnulo panel).
 - **U3** klik na paletu (bez tažení) vloží element do aktivní sekce (fallback v `EndAddingElement`).
-- **U4** dvojklik do prázdna už neotevírá vlastnosti stránky — zruší výběr.
+- **U4** dvojklik do prázdna už neotevírá vlastnosti stránky - zruší výběr.
 - **U5** Ctrl+S bez DB → popup s nabídkou JSON exportu (dřív tiché do status baru).
 - **U6** cancel sjednocen na „Storno" přes `{StaticResource EDStrings.Cancel}` (7 dialogů) + pravidlo do `ux-conventions §1`.
-- **U7** M/O snap tooltipy — už existovaly (audit stale).
+- **U7** M/O snap tooltipy - už existovaly (audit stale).
 
-**🟠 Střední — akční hotové:**
-- **Skryté featury do context menu** — Seskupit/Rozeskupit (Ctrl+G/Ctrl+Shift+G), „Rozdělit → Vodorovně/Svisle" (Ctrl+Shift+H/J), „Upravit text (F2)".
-- **Drift tabulky zkratek** — `ux-conventions §3` přepsáno 1:1 dle KeyDown handleru (Ctrl+Shift+S smazán; doplněno ~10 chybějících).
-- **Zoom tlačítko × zkratka konzistentní** — „Fit"+Ctrl+0 = přizpůsobit; „1:1"+Ctrl+1 = 100 %.
-- **StatusText segmentace** — status bar rozdělen na „stav výběru" (`SelectionStatusText`, klid) + „akce/progres" (`StatusText`, transient) → nepřepisují se.
+**🟠 Střední - akční hotové:**
+- **Skryté featury do context menu** - Seskupit/Rozeskupit (Ctrl+G/Ctrl+Shift+G), „Rozdělit → Vodorovně/Svisle" (Ctrl+Shift+H/J), „Upravit text (F2)".
+- **Drift tabulky zkratek** - `ux-conventions §3` přepsáno 1:1 dle KeyDown handleru (Ctrl+Shift+S smazán; doplněno ~10 chybějících).
+- **Zoom tlačítko × zkratka konzistentní** - „Fit"+Ctrl+0 = přizpůsobit; „1:1"+Ctrl+1 = 100 %.
+- **StatusText segmentace** - status bar rozdělen na „stav výběru" (`SelectionStatusText`, klid) + „akce/progres" (`StatusText`, transient) → nepřepisují se.
 - **Escape ruší probíhající drag/resize/rubber band** (restore z init).
 
-**🟢 UX polish (otevřené) — prošlo 2026-07-03, ověřeno proti kódu:**
-- **Stylový pod-formulář** ✅ hotové — `StyleFields.cls` (sdílený balíček) pohání stylové zóny ve všech
+**🟢 UX polish (otevřené) - prošlo 2026-07-03, ověřeno proti kódu:**
+- **Stylový pod-formulář** ✅ hotové - `StyleFields.cls` (sdílený balíček) pohání stylové zóny ve všech
   EDInputForm „Obecné" tabech (DepartureGrid Data/Minuta/Symbol/Text, DynamicTable + StopList Header/Data);
   `StyleEditDialog` používá sdílený `CellStyleEditor` (tri-state). `StyleEdit.cls` = záměrně parkovaná
   server-side varianta A (dokumentováno v hlavičce, ne mrtvý kód).
-- **Sjednotit editor sloupců** ✅ hotové — `ColumnListEditor`/`IColumnRowVM` sdílí DepartureGroup,
+- **Sjednotit editor sloupců** ✅ hotové - `ColumnListEditor`/`IColumnRowVM` sdílí DepartureGroup,
   DynamicTable, StopColumns; dormant TableElement vyňat záměrně.
 - **Font warning** + **ad-hoc overflow tlačítko** = YAGNI (přetečení se hlásí při exportu; font se vybírá
   z InstalledFamilies) → přesunuto do backlogu.
 - **Tabulkové featury** (grouping / computed fields / nested datasource) → backlog (bez customer demand).
 
 **Vědomě odloženo / parkováno:**
-- **Ikonový jazyk** (Fluent + glyfy) — necháváme, není zásadní.
-- **Rubber band napříč sekcemi** — nepotřebujeme; sahá do selection sémantiky, pilot potvrdí.
-- **Dvojí vizuální jazyk = left-panel refaktor** (PropertyDescriptor → EDInputForm, W4-10/11) — vyčleněno
+- **Ikonový jazyk** (Fluent + glyfy) - necháváme, není zásadní.
+- **Rubber band napříč sekcemi** - nepotřebujeme; sahá do selection sémantiky, pilot potvrdí.
+- **Dvojí vizuální jazyk = left-panel refaktor** (PropertyDescriptor → EDInputForm, W4-10/11) - vyčleněno
   do backlogu jako samostatný velký track (chceme do budoucna).
-- **Layout robustnost:** „sekce vyšší než stránka" (var B, největší koncepční layout dluh) — pilot-gated,
-  vytaženo do „Větší dedikované tracky" v roadmapě. „Element drag mezi sekcemi" — **zamítnuto 2026-07-03
+- **Layout robustnost:** „sekce vyšší než stránka" (var B, největší koncepční layout dluh) - pilot-gated,
+  vytaženo do „Větší dedikované tracky" v roadmapě. „Element drag mezi sekcemi" - **zamítnuto 2026-07-03
   (nepotřebujeme; cut+paste stačí).**
-- **🧭 Filozofie:** rozšířit UX mřížku o vrstvu menu/toolbar/zkratka (`feature-design-principles`) — doc, low-prio.
+- **🧭 Filozofie:** rozšířit UX mřížku o vrstvu menu/toolbar/zkratka (`feature-design-principles`) - doc, low-prio.
 
-## Session 2026-07-03 ✅ — EDISON launch integrace + úklidy
+## Session 2026-07-03 ✅ - EDISON launch integrace + úklidy
 
 **EDISON → TD launch integrace (A1 + A2, Martin Hubata, merged do main).** TD se spouští ze stromu
 starého EDISONu (uzel „Návrhář sestav (nový)" 76016 v MHD + JŘ; launcher `formTISKJRTemplateDesigner`
 + MHD2 „Linky a oběhy") přes `Process.Start TemplateDesigner.exe` s **EDISONMAIN2 arg kontraktem**:
-- **A1 session** — `EDControls.EdisonLaunchArgs` parsuje kontrakt (sentinel `EDISONMAIN2` + server,
+- **A1 session** - `EDControls.EdisonLaunchArgs` parsuje kontrakt (sentinel `EDISONMAIN2` + server,
   restPort, namespace, idfa, login, fullName, mlp [, formName, shellGuid, inputParam]); `App.OnStartup`
   staví MLRest ze session shellu (`CacheSchemaWiring.CreateMlRest`) místo z appsettings → TD běží pod
   **správnou firmou/uživatelem**. Bez argů = standalone z appsettings (fallback). `shellGuid` se
   nepřebírá (TD má vlastní session, neváže se na ACTIVITY zámek).
-- **A2 startup agenda** — `inputParam "Agenda=<kód>"` (JŘ→`ZASTAVKOVY_JR_AD`, MHD→`ZASTAVKOVY_JR_MHD`)
+- **A2 startup agenda** - `inputParam "Agenda=<kód>"` (JŘ→`ZASTAVKOVY_JR_AD`, MHD→`ZASTAVKOVY_JR_MHD`)
   → nová šablona startuje rovnou nad tou agendou. Ověřeno na devu: DPKV → linky DPKV, CB_CSADAD → linky
   CB_CSADAD. **Open-designer flow per-zákazník funguje**; pro v1 zbývá už jen ruční release deploy (D3/D4).
 
-**T1b gold regrese base** — `ZastavkoveJrAdGoldTest` (2 gold linky 0365001+0365005, digest = počty +
+**T1b gold regrese base** - `ZastavkoveJrAdGoldTest` (2 gold linky 0365001+0365005, digest = počty +
 MD5 celého GetData výstupu), v pre-push (27/27). Pevně vůči CB_CSADAD; robustní verze (zmrazit vstup)
 odložena.
 
@@ -639,14 +676,14 @@ odstraněn spolu s vestigiálním menu „Vlastnosti textu…" (dvojklik/Enter d
 hotové (`PageEdit.cls` přes generický `ElementEditDialog`). DynamicTable unit testy (6). R1a průchod
 (vnitřek čistě rozvrstvený; jediný nález = zarovnat render na sdílený `ColumnRenderer.DrawRow`, odloženo).
 
-**AD zastávkový JŘ track uzavřen** — 1:1 hotový; zbytek (vizuál legendy POZNAMKY, AD-N5 `MHD_NEZNZ123`,
+**AD zastávkový JŘ track uzavřen** - 1:1 hotový; zbytek (vizuál legendy POZNAMKY, AD-N5 `MHD_NEZNZ123`,
 AD-N15 prázdninové NZ) záměrně navázán na reálný pilot (odemyká je konkrétní zákaznická konfigurace/data,
 kterou teď nemáme). Odložené helpdesk: A2-A5 (#7937 indent), A2-A6 (#7959 filtr neobsluhovaných), A2-B4
-(#8828 per-sloupek) — datový průzkum / diskuze.
+(#8828 per-sloupek) - datový průzkum / diskuze.
 
-## Session 2026-07-02 ✅ — DynamicTableElement + AD 1:1 uzávěrka + architektonický track
+## Session 2026-07-02 ✅ - DynamicTableElement + AD 1:1 uzávěrka + architektonický track
 
-**DynamicTableElement** — rozdělení tabulek: dynamická (řádky z `DataSource` kolekce) samostatný
+**DynamicTableElement** - rozdělení tabulek: dynamická (řádky z `DataSource` kolekce) samostatný
 element + 2-tab editor (Obecné EDInputForm `DynamicTableElementEdit.cls` + Sloupce přes
 `ColumnListEditor`/`CellStyleEditor`); statická `TableElement` uspána (JsonDerivedType jen pro
 legacy načtení, z UI pryč). Auto-scale do pevné Height, auto-distribuce šířky, seed sloupců z polí
@@ -660,19 +697,19 @@ ověřeno ✅. **AD-N4/N11/N12/N14 přeřazeny do linkových JŘ** (legacy zast�
 (doplněna skutečná skalární pole, phantom NADPIS2 odstraněn). Zbývá jen vizuál legendy + N5/N15
 (blokované dormant daty).
 
-**Helpdesk A.2-D ✅** — #7947 („jede až do XY"), #7955 (custom komentář přebíjí auto + NZ bug),
+**Helpdesk A.2-D ✅** - #7947 („jede až do XY"), #7955 (custom komentář přebíjí auto + NZ bug),
 #7161 (skrytí „na znamení" + vypnutí agregátu bezbariér) zavřeno pro AD agendu. #11300 (KORID
 přípoje) přeřazeno k linkovým JŘ (není zastávkový koncept). Port na MHD agendu neproveden (až bude
 potřeba). Odložené A2-A5/A6/B4 zůstávají (datový průzkum / diskuze).
 
-**Architektonický track** — T1a C# testy (164, pre-push) ✅, T1b Caché testy (25/40) ✅ částečně
+**Architektonický track** - T1a C# testy (164, pre-push) ✅, T1b Caché testy (25/40) ✅ částečně
 (zbývá compare-gold skript), T2 async multi-instance export nad snapshotem ✅, T3 migrator guardy
 (forward-compat R5) ✅. Rozhodnutí **R1–R7** pro škálování agend zdokumentována
 ([`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md)).
 
-**Caché Migrace** — Wave 1/2/3 ✅; Wave 4 kroky W4-0..W4-9 ✅ (elementy + Image + Section + **Page**
+**Caché Migrace** - Wave 1/2/3 ✅; Wave 4 kroky W4-0..W4-9 ✅ (elementy + Image + Section + **Page**
 `PageEdit.cls` + parametry + StopList/DepartureGrid/dynamická tabulka). Zbývá jen W4-10/11 (inline
-panel migrace + PropertyDescriptor cleanup — velký refaktor, záměrně na konec).
+panel migrace + PropertyDescriptor cleanup - velký refaktor, záměrně na konec).
 
 ## Handoff session 2026-06-21 (historický záznam) ✅
 
@@ -686,15 +723,15 @@ layout legendy (sloupce 1-4 + směr wrapu + zarovnaný marker + řazení). Helpd
 
 **DEV tweaky session** (vyřešeno): AD startup šablona revertována zpět na produkční MHD+3 sekce
 (commit „revert DEV startup tweak"). Dev firma později přepnuta na **CB_CSADAD** (demo / gold linka
-0365001, commit 9ac5577) — aktivní stav viz živá roadmap „Před produkcí".
+0365001, commit 9ac5577) - aktivní stav viz živá roadmap „Před produkcí".
 
 **Doc-cleanup body z handoffu** (1 = ořez `ad-data-mapa.md §6/§10`, 2 = hlavičkové poznámky,
-3 = cross-refs, 4 = changelog archivace) — řešeno průběžně v živé roadmapě. Prezentační prep docs
+3 = cross-refs, 4 = changelog archivace) - řešeno průběžně v živé roadmapě. Prezentační prep docs
 (osnova, režie demo) konsolidovány 2026-06-30 do
 [`legacy-nahrada.md`](legacy-nahrada.md), zdrojové artefakty smazány. **Gap analýza
 legacy vs nový ponechána** jako samostatná evergreen reference (`legacy-nahrada.md`).
 
-## Wave 3 — Template storage ✅ (2026-05-25)
+## Wave 3 - Template storage ✅ (2026-05-25)
 
 Caché-driven persistent storage šablon s per-IDFa izolací + schema versioning framework pro defensive ochranu před budoucími breaking changes.
 
@@ -702,7 +739,7 @@ Caché-driven persistent storage šablon s per-IDFa izolací + schema versioning
 
 | Krok | Co | Commit |
 |---|---|---|
-| W3-1 | Caché `ALVA.TemplateDesigner.API.Sablony` — 5 CRUD metod (List, Load, Save, Delete, Rename) | `5ac9dd0` (2026-05-15) |
+| W3-1 | Caché `ALVA.TemplateDesigner.API.Sablony` - 5 CRUD metod (List, Load, Save, Delete, Rename) | `5ac9dd0` (2026-05-15) |
 | W3-2 | .NET `CacheTemplateService` async wrapper + `CacheTemplateException` | `5ac9dd0` |
 | W3-3 | `CacheTemplatePickerDialog` + `SaveToCacheDialog` UI | `5ac9dd0` (L5 migration na EDList: `9f5b165`) |
 | W3-4 Fáze 1 | Schema versioning + `TemplateMigrator` framework (H-18) | `174d169` (2026-05-25) |
@@ -717,7 +754,7 @@ Caché-driven persistent storage šablon s per-IDFa izolací + schema versioning
 **Schema versioning framework** (Fáze 1):
 - Template JSON má top-level `version` (semver `"1.0.0"`)
 - `TemplateMigrator` pipeline aplikuje sekvenci migrací při loadu
-- Žádné konkrétní migrace zatím — framework no-op, připraven na budoucí breaking changes
+- Žádné konkrétní migrace zatím - framework no-op, připraven na budoucí breaking changes
 - Convention v [`template-schema-versions.md`](template-schema-versions.md)
 
 **Vědomě skipnuté** (decision rationale):
@@ -725,26 +762,26 @@ Caché-driven persistent storage šablon s per-IDFa izolací + schema versioning
 | Item | Důvod skipu |
 |---|---|
 | Auto-snapshots history (Fáze 2) | Duplicate templates (Save As) + within-session undo pokrývají 90%+ use cases. Velké tools (Adobe, Sketch, AutoCAD) auto-snapshot taky nemají; jen massové cloud tools (Figma, Canva) ho mají jako defense in depth pro broad audience. TD scope (3-5 customers, 5-10 users/customer) tomu neodpovídá. |
-| Per-template named history (Fáze 2 β) | Save As pattern poskytuje stejnou hodnotu — verze viditelné v picker, lze porovnat paralelně |
+| Per-template named history (Fáze 2 β) | Save As pattern poskytuje stejnou hodnotu - verze viditelné v picker, lze porovnat paralelně |
 | Audit log (W3-6) | Bez user requestu. Revisit on real need (compliance, debugging) |
-| Thumbnails (W3-7) | Nice-to-have, low priority. Picker list zobrazí metadata (Name, Author, ModifiedAt) — stačí |
+| Thumbnails (W3-7) | Nice-to-have, low priority. Picker list zobrazí metadata (Name, Author, ModifiedAt) - stačí |
 | Soft-delete | Hard delete + Caché backup procedures stačí |
 | Import wizard (W3-9) | Málo legacy templates, manual Open + Save to Cache stačí |
 | Server-side migration | .NET-side migrátor v Fázi 1 stačí (single source of truth při loadu) |
 
 **Klíčová architektonická rozhodnutí:**
-- **Per-IDFa storage** — multi-tenant isolation
-- **Atomic Metadata + Data split** — list zobrazí jen metadata (rychlé), Data fetch on demand
-- **Per-agenda sekundární index** (`IDX/ByAgenda`) — efektivní filter v picker
-- **JSON wire formát (R3)** — typed records v .NET
-- **Semver versioning** — flexibilita pro budoucí major/minor distinction
-- **Idempotentní migrace** — repeated apply = same result
-- **Defensive load** — chybějící version v JSON → assume `1.0.0`, neházet exception
-- **Single-point wire-up** — `TemplateSerializer.Deserialize` routes through migrator pro file i Caché path
+- **Per-IDFa storage** - multi-tenant isolation
+- **Atomic Metadata + Data split** - list zobrazí jen metadata (rychlé), Data fetch on demand
+- **Per-agenda sekundární index** (`IDX/ByAgenda`) - efektivní filter v picker
+- **JSON wire formát (R3)** - typed records v .NET
+- **Semver versioning** - flexibilita pro budoucí major/minor distinction
+- **Idempotentní migrace** - repeated apply = same result
+- **Defensive load** - chybějící version v JSON → assume `1.0.0`, neházet exception
+- **Single-point wire-up** - `TemplateSerializer.Deserialize` routes through migrator pro file i Caché path
 
 ---
 
-## Wave 2 — Shared catalogs ✅ (2026-05-20)
+## Wave 2 - Shared catalogs ✅ (2026-05-20)
 
 **Scope** po diskusi zúžen ze 4 položek na 1 implementovanou + 3 skipnuté:
 
@@ -755,56 +792,56 @@ Caché-driven persistent storage šablon s per-IDFa izolací + schema versioning
 | W2-3 | Element defaults → Caché | ⛔ Skipnuto | Hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case |
 | W2-4 | Company palette → Caché | ⛔ Skipnuto | Wave 1.5 RecentColors pokrývá; brand palette není user request |
 
-### W2-1 Agenda registry — auto-discovery design
+### W2-1 Agenda registry - auto-discovery design
 
 **Princip:** „Třída JE registrace". Eliminuje drift mezi registrem a impl (vs JSON config list).
 
 **Caché:**
-- `BaseAgenda.cls` — 2 class parametry (`AgendaCode`, `AgendaLabel`); konvence `<TYP_SESTAVY>_<DATOVY_ZDROJ>`
-- `ZastavkoveJrMhd.cls` — `AgendaCode = "ZASTAVKOVY_JR_MHD"` (přejmenováno z `"MHD"` — MHD je datový modul, ne typ sestavy)
-- `Faktury.cls` — `AgendaCode = "FAKTURY"`
-- NEW `API/AgendyRegistr.cls` — `ListAgendy` přes `%Dictionary` SQL nad subclasses BaseAgenda, vrátí JSON pole `[{code, label, cacheClass}, ...]`
+- `BaseAgenda.cls` - 2 class parametry (`AgendaCode`, `AgendaLabel`); konvence `<TYP_SESTAVY>_<DATOVY_ZDROJ>`
+- `ZastavkoveJrMhd.cls` - `AgendaCode = "ZASTAVKOVY_JR_MHD"` (přejmenováno z `"MHD"` - MHD je datový modul, ne typ sestavy)
+- `Faktury.cls` - `AgendaCode = "FAKTURY"`
+- NEW `API/AgendyRegistr.cls` - `ListAgendy` přes `%Dictionary` SQL nad subclasses BaseAgenda, vrátí JSON pole `[{code, label, cacheClass}, ...]`
 
 **.NET:**
-- NEW `Serialization/IAgendaRegistry.cs` — interface + `AgendaRegistryEntry` record
-- NEW `Serialization/CacheAgendaRegistry.cs` — impl s Task.Run wrap (R1), synteticky prepend GENERAL agendy, fallback při chybě jen GENERAL
-- `Config/CacheSchemaWiring.cs` — `TryCreate(MLRest, IReadOnlyList<AgendaRegistryEntry>)`
-- `Config/AppSettings.cs` — odstraněna `Agendas` property + `SchemaAgendaSettings` třída
-- `App.xaml.cs` — sync load agendy ze Caché s 3s timeoutem
-- `MainWindow(MLRest?, prefs?, agendas?)` — 3. ctor param
-- `templatedesigner.appsettings.json` — smazáno `agendas[]`
+- NEW `Serialization/IAgendaRegistry.cs` - interface + `AgendaRegistryEntry` record
+- NEW `Serialization/CacheAgendaRegistry.cs` - impl s Task.Run wrap (R1), synteticky prepend GENERAL agendy, fallback při chybě jen GENERAL
+- `Config/CacheSchemaWiring.cs` - `TryCreate(MLRest, IReadOnlyList<AgendaRegistryEntry>)`
+- `Config/AppSettings.cs` - odstraněna `Agendas` property + `SchemaAgendaSettings` třída
+- `App.xaml.cs` - sync load agendy ze Caché s 3s timeoutem
+- `MainWindow(MLRest?, prefs?, agendas?)` - 3. ctor param
+- `templatedesigner.appsettings.json` - smazáno `agendas[]`
 
 **Architektonická rozhodnutí:**
-- Per-customer kontrola odložena (YAGNI — všichni zákazníci mají stejný kód)
-- AgendaOrder parameter neřešen — alfabeticky podle code
-- AgendaEnabled neřešeno — pre-release work řešen git branches
-- Naming `<TYP_SESTAVY>_<DATOVY_ZDROJ>` — budoucí JŘ: `KNIZNI_JR_MHD`, `MEZIMESTSKY_JR_MHD`, `VOZOVY_JR_MHD`
+- Per-customer kontrola odložena (YAGNI - všichni zákazníci mají stejný kód)
+- AgendaOrder parameter neřešen - alfabeticky podle code
+- AgendaEnabled neřešeno - pre-release work řešen git branches
+- Naming `<TYP_SESTAVY>_<DATOVY_ZDROJ>` - budoucí JŘ: `KNIZNI_JR_MHD`, `MEZIMESTSKY_JR_MHD`, `VOZOVY_JR_MHD`
 
 **Commits:** `7d6704a` (docs scope reduction), `de0f872` (impl).
 
 ---
 
-## Wave 1 + 1.5 — Per-user state přes Caché ✅ (2026-05-20)
+## Wave 1 + 1.5 - Per-user state přes Caché ✅ (2026-05-20)
 
-První dvě dávky Caché Migration — persistence per-user × IDFa state v `^ALVA.EDControls.UserData` přes `IUserPrefsService`. Žádné lokální JSON soubory (TD běží embedded z EDISONMAIN2). Detail dokumentace, registr scope ownerships a 3-typová taxonomie state v [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md).
+První dvě dávky Caché Migration - persistence per-user × IDFa state v `^ALVA.EDControls.UserData` přes `IUserPrefsService`. Žádné lokální JSON soubory (TD běží embedded z EDISONMAIN2). Detail dokumentace, registr scope ownerships a 3-typová taxonomie state v [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md).
 
 **Wave 1 (foundation + UX integrace):**
 
 | Krok | Co | Commit |
 |---|---|---|
 | W1-0 | `IUserPrefsService` foundation + Caché `ALVA.EDControls.UserData` (generic blob storage per IdFa × userID × scope × key) | F1 (2026-05-15) |
-| W1-1 | `TdPreferencesService` wrapper + `MainStatePref` typed record (Typ 1 — UI state, jeden blob) | 7cd39ab |
+| W1-1 | `TdPreferencesService` wrapper + `MainStatePref` typed record (Typ 1 - UI state, jeden blob) | 7cd39ab |
 | W1-2 | Wire-up: `App.xaml.cs` async load + `TdPreferencesService.Loaded` event fallback pro cold-start | 7cd39ab |
-| W1-3 | `MainWindowViewModel.ApplyLoadedPreferences` — Zoom/Grid/Snap/SnapGapMm/ShowGrid/ShowSectionHeaders/ShowRuler | 7cd39ab |
-| W1-3b | UI-side prefs — splittery (LeftPanelWidthPx, PreviewPanelWidthPx), ActiveLeftTabIndex, ShowPreviewPane | 7cd39ab |
-| W1-4 | Recent Files menu (Soubor → Otevřít poslední) + AddRecentFile při Open/SaveAs, missing-file graceful (Typ 2 — activity log) | 7cd39ab |
-| W1-6 | Instance defaults per šablona (scope `"TemplateDesigner.InstanceDefaults"`, key = template Guid, Typ 3 — per entity) | 7cd39ab |
+| W1-3 | `MainWindowViewModel.ApplyLoadedPreferences` - Zoom/Grid/Snap/SnapGapMm/ShowGrid/ShowSectionHeaders/ShowRuler | 7cd39ab |
+| W1-3b | UI-side prefs - splittery (LeftPanelWidthPx, PreviewPanelWidthPx), ActiveLeftTabIndex, ShowPreviewPane | 7cd39ab |
+| W1-4 | Recent Files menu (Soubor → Otevřít poslední) + AddRecentFile při Open/SaveAs, missing-file graceful (Typ 2 - activity log) | 7cd39ab |
+| W1-6 | Instance defaults per šablona (scope `"TemplateDesigner.InstanceDefaults"`, key = template Guid, Typ 3 - per entity) | 7cd39ab |
 
 **Wave 1.5 (Recent Colors + PrintParams):**
 
 | Krok | Co | Commit |
 |---|---|---|
-| W1.5-1 | Recent Colors — 8 last-used barev v color pickeru (`"TemplateDesigner"` / `"RecentColors"`, Typ 2). DRY refactor `ColorPickerHelper` jako single entry point — odstranění duplicitního WinForms ColorDialog kódu z `PropertiesPanel` | 06eeda2 |
+| W1.5-1 | Recent Colors - 8 last-used barev v color pickeru (`"TemplateDesigner"` / `"RecentColors"`, Typ 2). DRY refactor `ColorPickerHelper` jako single entry point - odstranění duplicitního WinForms ColorDialog kódu z `PropertiesPanel` | 06eeda2 |
 | W1.5-2 | PrintDialog params per-agenda persist + live sync s preview lištou (`"TemplateDesigner.PrintParams"` / `<agendaCode>`, Typ 3 per agenda). Sdílený dict + cross-notification callback. Crash fix (odstranění sync `.Result` blocking UI thread) + re-entrance guard pro rychlé Ctrl+P. | 06eeda2 |
 | W1.5-3 | PropertiesPanel group expanded state | ⛔ Odloženo do Wave 4 (EDInputForm migrace nahradí PropertiesPanel) |
 | W1.5-4 | Font override (analogie EDISONMAIN2 LocalPrefs.FontFamily/FontSize) | ⛔ Odloženo (žádný user request) |
@@ -813,31 +850,31 @@ První dvě dávky Caché Migration — persistence per-user × IDFa state v `^A
 
 | Commit | Obsah |
 |---|---|
-| ec654e4 | `EDControls/DOCS/05-userdata-scopes.md` — registr UserData scopes |
+| ec654e4 | `EDControls/DOCS/05-userdata-scopes.md` - registr UserData scopes |
 | ced96fa | 3 typy state taxonomy + Wave 1.5 priorities |
 
 **Klíčová architektonická rozhodnutí:**
 - **Žádné lokální JSON soubory** pro persistent state (TD běží embedded z EDISONMAIN2)
-- **Async-first pattern** — žádné sync `.Result` block na UI threadu (poučení z crash fixu)
-- **Per-agenda granularita pro PrintParams** — nová šablona stejné agendy zdědí poslední hodnoty
-- **Sdílený dict + cross-notification** — single source of truth pro params mezi PreviewLišta a PrintDialog
+- **Async-first pattern** - žádné sync `.Result` block na UI threadu (poučení z crash fixu)
+- **Per-agenda granularita pro PrintParams** - nová šablona stejné agendy zdědí poslední hodnoty
+- **Sdílený dict + cross-notification** - single source of truth pro params mezi PreviewLišta a PrintDialog
 - **3-typová taxonomie state** dokumentována jako závazná pro budoucí konzumenty (Typ 1 UI state, Typ 2 activity log, Typ 3 per entity)
-- **Schema evolution backward-compat** — všechna pole records mají defaults v primary ctoru
-- **DRY ColorPickerHelper** — jediný entry point pro color picker napříč TD
+- **Schema evolution backward-compat** - všechna pole records mají defaults v primary ctoru
+- **DRY ColorPickerHelper** - jediný entry point pro color picker napříč TD
 
 ---
 
 ## v1.0 demo balíček ✅ (2026-05-15)
 
-Tři commity tvoří kompletní release readiness pro testovací nasazení — zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md) 2026-05-15 entry.
+Tři commity tvoří kompletní release readiness pro testovací nasazení - zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md) 2026-05-15 entry.
 
 | # | Co | Commit |
 |---|---|---|
-| R1 | **Agenda + Linka picker UX** — `ChangeAgendaDialog` se 3 entry pointy (menu / Ctrl+Shift+A / klik na status chip); `InstancePickerDialog` (multi-výběr linek, search, batch); Caché `GetAvailableInstances` iteruje skupinu linek; permanentní status indikátor (zelený agenda chip + modrý instance chip s ◀▶ + window title `[MHD]` prefix) | `82b68be` + `fd25008` |
-| R2 | **Template storage v Caché** — třída `ALVA.TemplateDesigner.API.Templates` (5 metod, per-IDFa, JSON wire); `CacheTemplateService` async wrapper; `CacheTemplatePickerDialog` (správce: list + filtr + search + Open/Rename/Delete); `SaveToCacheDialog`; menu „Soubor → Otevřít z Caché... / Uložit do Caché [jako...]" + „Nástroje → Šablony v Caché..."; Caché namespace refactor `API/Agendas/Forms`; GENERAL agenda fallback | `5ac9dd0` |
-| R4 | **Polish** — status bar chips, ConfirmUnsavedChanges integrace, error reporting přes IPopupDisplayer, BuildAllPreviewDataPages bugfix pro šablony bez agendy, debug logging do `^jm` (po debugu odstraněno) | průběžně |
+| R1 | **Agenda + Linka picker UX** - `ChangeAgendaDialog` se 3 entry pointy (menu / Ctrl+Shift+A / klik na status chip); `InstancePickerDialog` (multi-výběr linek, search, batch); Caché `GetAvailableInstances` iteruje skupinu linek; permanentní status indikátor (zelený agenda chip + modrý instance chip s ◀▶ + window title `[MHD]` prefix) | `82b68be` + `fd25008` |
+| R2 | **Template storage v Caché** - třída `ALVA.TemplateDesigner.API.Templates` (5 metod, per-IDFa, JSON wire); `CacheTemplateService` async wrapper; `CacheTemplatePickerDialog` (správce: list + filtr + search + Open/Rename/Delete); `SaveToCacheDialog`; menu „Soubor → Otevřít z Caché... / Uložit do Caché [jako...]" + „Nástroje → Šablony v Caché..."; Caché namespace refactor `API/Agendas/Forms`; GENERAL agenda fallback | `5ac9dd0` |
+| R4 | **Polish** - status bar chips, ConfirmUnsavedChanges integrace, error reporting přes IPopupDisplayer, BuildAllPreviewDataPages bugfix pro šablony bez agendy, debug logging do `^jm` (po debugu odstraněno) | průběžně |
 
-**Performance:** 600 stránek MHD JŘ za ~9s (5.2s fetch + 3.6s render, ~15ms/stránka) — top decile vs commercial reporting (Crystal Reports 30-60s, SSRS 20-45s, JasperReports 15-30s).
+**Performance:** 600 stránek MHD JŘ za ~9s (5.2s fetch + 3.6s render, ~15ms/stránka) - top decile vs commercial reporting (Crystal Reports 30-60s, SSRS 20-45s, JasperReports 15-30s).
 
 **Architektonická pravidla R1–R5 (async/IPopupDisplayer/JSON/MVVM/versioning) dodržena ve všech 3 commitech.**
 
@@ -856,28 +893,28 @@ Suspended tickety od DPKV (#10660) a TRANSDEV (#7937, #7959, #9036) z helpdesku.
 | A2-B3 | #10660 + #9036 | DepartureGrid: časová osa přes půlnoc + extended hours + „Roztáhnout na výšku" | 2026-05-12 |
 | A2-C1 | #10660 | NotesLegend: DB-driven barvy poznámek (`PoznamkaSpoj.BarvaZnakuRGB/BarvaPozadiRGB`) | 2026-05-12 |
 | A2-C2 | #10660 | NotesLegend: konfigurovatelná hlavička (verifikace, již podporováno) | 2026-05-12 |
-| A2-E1 | #8772 | VisibilityExpression placeholdery — verifikace funkčnosti | 2026-05-11 |
-| A2-A5 | #7937 | ⏸️ StopList per-row indent — odloženo (chybí Caché data flow, mimo TD scope) | — |
-| A2-A6 | #7959 | 🔍 Filtr neobsluhovaných zastávek — již implementováno v Caché, vyžaduje verifikaci | — |
-| A2-B4 | #8828 | ⏸️ Per-sloupek zastávky — odloženo (Caché datový průzkum + business decision) | — |
+| A2-E1 | #8772 | VisibilityExpression placeholdery - verifikace funkčnosti | 2026-05-11 |
+| A2-A5 | #7937 | ⏸️ StopList per-row indent - odloženo (chybí Caché data flow, mimo TD scope) | - |
+| A2-A6 | #7959 | 🔍 Filtr neobsluhovaných zastávek - již implementováno v Caché, vyžaduje verifikaci | - |
+| A2-B4 | #8828 | ⏸️ Per-sloupek zastávky - odloženo (Caché datový průzkum + business decision) | - |
 
-## Fáze B0.5 — Code Hygiene Sprint
+## Fáze B0.5 - Code Hygiene Sprint
 
 | # | Co | Hotovo |
 |---|---|---|
-| H-1 | Smazat `ShowZkraceneOznaceniLinky` — ghost property v `DepartureGridElement` (nikde se nečetla) | 2026-04-21 |
+| H-1 | Smazat `ShowZkraceneOznaceniLinky` - ghost property v `DepartureGridElement` (nikde se nečetla) | 2026-04-21 |
 | H-2 | `async void` → `async Task` + `AsyncRelayCommand` (EDControls) + `CommandAsync` helper; Open/Save/SaveAs + bonus GenerateCommand | 2026-04-21 |
-| H-3 | `ElementTypes` statické konstanty v `Models/ElementTypes.cs` — nahrazeno ~30 magic strings v JsonDerivedType, `CreateElementByType`, `GetDefaultElementSize` a toolbar menu | 2026-04-21 |
-| H-4 | JSON wire format verify — průzkum potvrdil 100% čistý JSON (Caché `obj.%ToJSON()` → .NET `JsonNode.Parse`); opraven zastaralý docstring `GetData` v `AgendaAPI.cls` + `cache-api.md` + přidána sekce "Wire formát pravidlo (R3)" | 2026-04-21 |
-| H-5 | Silent catch v `PropertiesPanel.xaml.cs` color picker seed nahrazen za `SKColor.TryParse` — odstranil try/catch jako control flow | 2026-04-21 |
-| H-6 | Nový `.claude/rules/new-element-checklist.md` — 10-kroková autoritativní reference (třída, ElementTypes, JsonDerivedType, 2 switches, toolbar menu, paleta, dynamická výška, GetSummary, docs); konsolidace z `mvvm-patterns.md` | 2026-04-21 |
-| H-7 | `MessageBox.Show` → `IPopupDisplayer` — 5 VM (AiTemplateAssistant, TableEditor, ElementProperties, MainWindow, PdfImport); PdfImport odstranil 3 callback properties; YesNoCancel kept s TODO (IPopupDisplayer nemá ekvivalent); Warning → Info (WPF rozdíl byl jen ikona) | 2026-04-21 |
-| H-8 | Extract `Controls/TemplateTreePanel/` — ~150 řádků ze `MainWindow.xaml.cs` přesunuto do samostatného UserControlu; `MainWindow` jen volá `TreePanel.Rebuild()`; smazán orphan `Windows/TemplateTreeDialog/` (nikdy se neinstanciovalo) | 2026-04-21 |
-| H-9 | Extract `Windows/SaveSectionTemplateDialog/` — inline WPF konstrukce dialogu (~60 řádků StackPanel+TextBox+Button) z `MainWindowViewModel` přesunuta do Window+ViewModel+XAML dle závazného standardu; `SaveSectionTemplate(Section, string)` nyní čistá save logika | 2026-04-21 |
-| H-10 | **N/A** — `TemplatePickerDialog` v kódu neexistoval. Template picker = `OpenFileDialog` (standardní Windows), section template picker = menu položky v "Add Section" dropdown. Žádný samostatný dialog k extrakci. Uzavřeno bez změn. | 2026-04-21 |
-| H-11 | ⏭️ **Skip do potřeby** — `PropertyDescriptor.VisibleWhen` predikát. Aktuální ad-hoc skrývání v dialozích stačí, žádný blocker. | 2026-04-30 |
-| H-12 | ⏭️ **Skip do potřeby** — `SharedPropertyDescriptors` helper. Duplikace deskriptorů akceptovatelná za stávající cenu. | 2026-04-30 |
-| H-13 | ⏭️ **Skip do potřeby** — rozšíření error flow nad rámec `IPopupDisplayer`. Strukturované logování / telemetrie přidat až bude konkrétní požadavek. | 2026-04-30 |
+| H-3 | `ElementTypes` statické konstanty v `Models/ElementTypes.cs` - nahrazeno ~30 magic strings v JsonDerivedType, `CreateElementByType`, `GetDefaultElementSize` a toolbar menu | 2026-04-21 |
+| H-4 | JSON wire format verify - průzkum potvrdil 100% čistý JSON (Caché `obj.%ToJSON()` → .NET `JsonNode.Parse`); opraven zastaralý docstring `GetData` v `AgendaAPI.cls` + `cache-api.md` + přidána sekce "Wire formát pravidlo (R3)" | 2026-04-21 |
+| H-5 | Silent catch v `PropertiesPanel.xaml.cs` color picker seed nahrazen za `SKColor.TryParse` - odstranil try/catch jako control flow | 2026-04-21 |
+| H-6 | Nový `.claude/rules/new-element-checklist.md` - 10-kroková autoritativní reference (třída, ElementTypes, JsonDerivedType, 2 switches, toolbar menu, paleta, dynamická výška, GetSummary, docs); konsolidace z `mvvm-patterns.md` | 2026-04-21 |
+| H-7 | `MessageBox.Show` → `IPopupDisplayer` - 5 VM (AiTemplateAssistant, TableEditor, ElementProperties, MainWindow, PdfImport); PdfImport odstranil 3 callback properties; YesNoCancel kept s TODO (IPopupDisplayer nemá ekvivalent); Warning → Info (WPF rozdíl byl jen ikona) | 2026-04-21 |
+| H-8 | Extract `Controls/TemplateTreePanel/` - ~150 řádků ze `MainWindow.xaml.cs` přesunuto do samostatného UserControlu; `MainWindow` jen volá `TreePanel.Rebuild()`; smazán orphan `Windows/TemplateTreeDialog/` (nikdy se neinstanciovalo) | 2026-04-21 |
+| H-9 | Extract `Windows/SaveSectionTemplateDialog/` - inline WPF konstrukce dialogu (~60 řádků StackPanel+TextBox+Button) z `MainWindowViewModel` přesunuta do Window+ViewModel+XAML dle závazného standardu; `SaveSectionTemplate(Section, string)` nyní čistá save logika | 2026-04-21 |
+| H-10 | **N/A** - `TemplatePickerDialog` v kódu neexistoval. Template picker = `OpenFileDialog` (standardní Windows), section template picker = menu položky v "Add Section" dropdown. Žádný samostatný dialog k extrakci. Uzavřeno bez změn. | 2026-04-21 |
+| H-11 | ⏭️ **Skip do potřeby** - `PropertyDescriptor.VisibleWhen` predikát. Aktuální ad-hoc skrývání v dialozích stačí, žádný blocker. | 2026-04-30 |
+| H-12 | ⏭️ **Skip do potřeby** - `SharedPropertyDescriptors` helper. Duplikace deskriptorů akceptovatelná za stávající cenu. | 2026-04-30 |
+| H-13 | ⏭️ **Skip do potřeby** - rozšíření error flow nad rámec `IPopupDisplayer`. Strukturované logování / telemetrie přidat až bude konkrétní požadavek. | 2026-04-30 |
 
 ## Sjednocení patternů + UX vyladění ✅ (2026-04-30 → 2026-05-01)
 
@@ -886,26 +923,26 @@ Kontinuální polish nad rámec původního B0.5 scope, motivovaný přípravou 
 | Co | Stručný popis |
 |---|---|
 | **Sjednocené Header/Data zóny v panelu** | Princip „rychlý přístup × kompletní cascade" napříč StopList/DepartureGrid/NotesLegend/TableElement; helper `GetCellZoneBaseColorDescriptors()` |
-| **Per-template editor preferences** | `Template.EditorPreferences` (grid + snap) — designové prostředí přežije reload |
+| **Per-template editor preferences** | `Template.EditorPreferences` (grid + snap) - designové prostředí přežije reload |
 | **Click-vs-drag threshold** | Klik na element nespustí soft-snap (4px threshold) |
 | **ImageElement ScaleMode** | Renderer honoruje Fit/Fill/Stretch/None + tlačítko „Přizpůsobit poměru obrázku" |
-| **Sub-pixelové rámečky** | Adaptive `RenderBorder` — pod 1px AA fractional, nad 1px pixel-snap |
-| **Descriptor sort by group** | Stable sort v PropertiesPanel — bez duplicitních hlaviček |
+| **Sub-pixelové rámečky** | Adaptive `RenderBorder` - pod 1px AA fractional, nad 1px pixel-snap |
+| **Descriptor sort by group** | Stable sort v PropertiesPanel - bez duplicitních hlaviček |
 | **Border v „Obecné" group** | Konzistentní rychlý přístup k základním vlastnostem |
 | **DataRowHeight hoist** | Z duplicitních deklarací do `ScheduleElementBase` |
 | **Úklid mrtvého UI** | Smazán `LineSpacing` z `CellStyleEditor` (CellRenderer ho ignoroval) |
-| **Dokumentace stylingových patternů** | `mvvm-patterns.md` — Pattern 1 (single-zone) vs Pattern 2 (dual-zone) |
+| **Dokumentace stylingových patternů** | `mvvm-patterns.md` - Pattern 1 (single-zone) vs Pattern 2 (dual-zone) |
 
-## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
+## Specializované JŘ elementy - společný základ ✅ (2026-03-18)
 
 | Krok | Co |
 |---|---|
-| 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) |
-| 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` — zastávkový JŘ (MHD) |
-| 3 | Caché `ZastavkoveJrMhdAPI` — `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) |
-| 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů |
-| 5 | `PrintDialog` — parametry + export reálných dat z Caché (`GetData`) + multi-data PDF |
-| 6 | `CacheAgendaProvider` — ParseMockData vnořená pole, GetData, BuildRealData |
+| 1 | `ScheduleElementBase` - abstraktní základ (indexy, grouping, společné properties) |
+| 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` - zastávkový JŘ (MHD) |
+| 3 | Caché `ZastavkoveJrMhdAPI` - `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) |
+| 4 | `SkiaHeightCalculator` - měření výšky JŘ elementů |
+| 5 | `PrintDialog` - parametry + export reálných dat z Caché (`GetData`) + multi-data PDF |
+| 6 | `CacheAgendaProvider` - ParseMockData vnořená pole, GetData, BuildRealData |
 
 ## Fáze A: Odladění MHD zastávkového JŘ ✅ (2026-05-11)
 
@@ -917,55 +954,55 @@ Cíl: hotová první kompletní verze šablony zastávkového JŘ a její review
 |---|---|---|
 | A | Hotová 1:1 šablona zastávkového JŘ + review s kolegy → seznam úprav v `customer-requirements-zastavkovy-jr.md` (= Fáze A.2) | ✅ (2026-05-11) |
 
-### Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy
+### Poučení z implementace zastávkového JŘ - co vzít v potaz pro další JŘ typy
 
 | Téma | Popis |
 |---|---|
-| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy — lépe odpovídá filozofii designeru (uživatel skládá ze stavebních bloků). Počítat s tím od začátku u dalších JŘ typů. |
-| **Synchronní GetData** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. Viz pravidlo R1. |
-| **SKTypeface/SKPaint alokace** | ✅ Opraveno — `ScheduleElementBase` cachuje `SKTypeface` přes statický `ConcurrentDictionary<string, SKTypeface>`; `SKPaint` se vytváří a ukládá per instance cache. |
+| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy - lépe odpovídá filozofii designeru (uživatel skládá ze stavebních bloků). Počítat s tím od začátku u dalších JŘ typů. |
+| **Synchronní GetData** | `GetData` běží synchronně na UI thread - pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. Viz pravidlo R1. |
+| **SKTypeface/SKPaint alokace** | ✅ Opraveno - `ScheduleElementBase` cachuje `SKTypeface` přes statický `ConcurrentDictionary<string, SKTypeface>`; `SKPaint` se vytváří a ukládá per instance cache. |
 | **Caché business logika je rozsáhlá** | ZastavkoveJrMhdAPI má ~1200 řádků. Počítat s tím v odhadu pro další JŘ typy. |
 | **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu. |
 
-### Fáze A — hotové kroky
+### Fáze A - hotové kroky
 
 | Krok | Co | Stav |
 |---|---|---|
-| 7 | Per-column styling framework — CellStyle/ColumnVisualStyle, dva taby v DepartureGroupEditorDialog, InlineTextStyle pro minuty/anotace | ✅ (2026-03-21) |
-| 7a | StopListElement — per-column styling analogicky k DepartureGrid (CellStyle pro záhlaví/data sloupců zastávek) + generalizace shared helpers do ScheduleElementBase + ColorPickerHelper + ActionId routing | ✅ (2026-03-23) |
-| 7b | Ověření parametrů šablony — funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST, TISK_SIPKY); fix merge parametrů do real data exportu; auto-open PDF; odebrání BAREVNE_ODLISENI + TISK_TARIFU | ✅ (2026-03-23) |
-| 8a | Sjednocení textových nastavení — `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ (2026-03-24) |
-| 8b | Proporcionální škálování šablony + UX vylepšení — `ScaleTemplateCommand`, `ApplyScale()` na všech elementech, redistribuce výšek sekcí, výchozí nastavení nových elementů, `HourColumnPerGroup` | ✅ (2026-03-24) |
-| 8c | AI-enhanced PDF import — dvoustupňový pipeline (heuristiky → AI enrichment); `AiImportEnricher` s kontextovými prompty; detekce rámečků, loga placeholder, margin fix, TextElement alignment fix | ✅ (2026-03-25) |
-| 8d | AI Vision import pipeline — `AiVisionImportService` (composable prompty), `AiGuidedScheduleBuilder` (PdfPig geometrie), `AiVisionImportPipeline` (orchestrace); per-column font wrapping; section headers auto-hide; CellStyleVM font defaults; shared HttpClient | ✅ (2026-04-03) |
+| 7 | Per-column styling framework - CellStyle/ColumnVisualStyle, dva taby v DepartureGroupEditorDialog, InlineTextStyle pro minuty/anotace | ✅ (2026-03-21) |
+| 7a | StopListElement - per-column styling analogicky k DepartureGrid (CellStyle pro záhlaví/data sloupců zastávek) + generalizace shared helpers do ScheduleElementBase + ColorPickerHelper + ActionId routing | ✅ (2026-03-23) |
+| 7b | Ověření parametrů šablony - funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST, TISK_SIPKY); fix merge parametrů do real data exportu; auto-open PDF; odebrání BAREVNE_ODLISENI + TISK_TARIFU | ✅ (2026-03-23) |
+| 8a | Sjednocení textových nastavení - `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ (2026-03-24) |
+| 8b | Proporcionální škálování šablony + UX vylepšení - `ScaleTemplateCommand`, `ApplyScale()` na všech elementech, redistribuce výšek sekcí, výchozí nastavení nových elementů, `HourColumnPerGroup` | ✅ (2026-03-24) |
+| 8c | AI-enhanced PDF import - dvoustupňový pipeline (heuristiky → AI enrichment); `AiImportEnricher` s kontextovými prompty; detekce rámečků, loga placeholder, margin fix, TextElement alignment fix | ✅ (2026-03-25) |
+| 8d | AI Vision import pipeline - `AiVisionImportService` (composable prompty), `AiGuidedScheduleBuilder` (PdfPig geometrie), `AiVisionImportPipeline` (orchestrace); per-column font wrapping; section headers auto-hide; CellStyleVM font defaults; shared HttpClient | ✅ (2026-04-03) |
 
-## Fáze B0 — UX Sprint ✅ (2026-04-20)
+## Fáze B0 - UX Sprint ✅ (2026-04-20)
 
 | # | Co |
 |---|---|
 | B0-1 | Strikethrough na TextStyle + descriptor; oprava tichého nefungování Underline |
-| B0-2 | Více barcode typů — EAN-13, EAN-8, PDF417, DataMatrix; konsolidace palety |
-| B0-4 | Precision fix — `MmMath.Round(0.1mm)`; resize end, ScaleTemplate, DistributeH/V, properties panel |
-| B0-5 | DistributeH/V: přesný gap — zaokrouhlit, poslední element absorbuje zbytek |
-| B0-6 | Normalizovat pozice (Ctrl+Shift+N) — dialog s krokem, live preview, CompositeCommand undo |
-| B0-8 | Properties panel float formát — `"0.0#"` pro mm pole, round on commit |
-| B0-9 | Grid size v UI — ComboBox 1/2/5/10mm v toolbaru, DesignerState.GridSize property |
-| B0-11 | Inline validace — červený rámeček + tooltip místo textu pod polem |
-| B0-12 | Copy Style / Paste Style (Ctrl+Shift+C/V) — StyleClipboard, kopíruje TextStyle + BorderColor/Width + BackgroundColor |
-| B0-13 | Kontextový format mini-toolbar — B/I/U/S + L/C/R/J + ▲/▬/▼ nad properties panelem |
-| B0-14 | Rotation property na TemplateElement — float, stupně, JSON serializace |
-| B0-15 | Render rotace — canvas.Save/RotateDegrees(cx,cy)/Restore + IsRotated bool helper |
-| B0-16 | Hit-testing rotovaných elementů — inverzní rotace test pointu kolem středu |
+| B0-2 | Více barcode typů - EAN-13, EAN-8, PDF417, DataMatrix; konsolidace palety |
+| B0-4 | Precision fix - `MmMath.Round(0.1mm)`; resize end, ScaleTemplate, DistributeH/V, properties panel |
+| B0-5 | DistributeH/V: přesný gap - zaokrouhlit, poslední element absorbuje zbytek |
+| B0-6 | Normalizovat pozice (Ctrl+Shift+N) - dialog s krokem, live preview, CompositeCommand undo |
+| B0-8 | Properties panel float formát - `"0.0#"` pro mm pole, round on commit |
+| B0-9 | Grid size v UI - ComboBox 1/2/5/10mm v toolbaru, DesignerState.GridSize property |
+| B0-11 | Inline validace - červený rámeček + tooltip místo textu pod polem |
+| B0-12 | Copy Style / Paste Style (Ctrl+Shift+C/V) - StyleClipboard, kopíruje TextStyle + BorderColor/Width + BackgroundColor |
+| B0-13 | Kontextový format mini-toolbar - B/I/U/S + L/C/R/J + ▲/▬/▼ nad properties panelem |
+| B0-14 | Rotation property na TemplateElement - float, stupně, JSON serializace |
+| B0-15 | Render rotace - canvas.Save/RotateDegrees(cx,cy)/Restore + IsRotated bool helper |
+| B0-16 | Hit-testing rotovaných elementů - inverzní rotace test pointu kolem středu |
 | B0-17 | Resize handles zakázány pro rotované elementy + rotation badge (angle label) |
 
 ---
 
 ## Další implementované oblasti
 
-**UX audit — bezpečnost + frustrace + polish** ✅ (2026-03-18)
+**UX audit - bezpečnost + frustrace + polish** ✅ (2026-03-18)
 - Sanitizace VisibilityExpression (whitelist tokenizer + live validace v UI)
 - Canvas fixed height + section clamping (sekce nepřesáhnou stránku)
-- SectionRole (Header/Body/Footer) — patičky od spodu stránky
+- SectionRole (Header/Body/Footer) - patičky od spodu stránky
 - Ctrl+X, Ctrl+0, context menu na canvasu, bound resize, potvrzení mazání sekce
 - Nahrávání obrázků s auto-downscale (max 5 MB), SelectAll
 
@@ -986,27 +1023,27 @@ Cíl: hotová první kompletní verze šablony zastávkového JŘ a její review
 **Flow text v designeru (Word wrap + dynamická výška)** ✅ (2026-03-17)
 - TextElement: `WordWrap=true` + `Height=null` → text se zalamuje, výška se dopočítá z obsahu
 - `LineSpacing` property, vertikální zarovnání víceřádkového textu, fix `\r\n`
-- InfiniteTextElement jako samostatný typ zamítnut — jedno chování řízené properties
+- InfiniteTextElement jako samostatný typ zamítnut - jedno chování řízené properties
 
-**ElementGroup — seskupování elementů** ✅ (2026-03-12)
-- `GroupId` property na `TemplateElement` — lehká logická vazba bez nested souřadnic
+**ElementGroup - seskupování elementů** ✅ (2026-03-12)
+- `GroupId` property na `TemplateElement` - lehká logická vazba bez nested souřadnic
 - Kliknutí na člen skupiny vybere celou skupinu; Alt+klik = jen ten jeden element
-- Ctrl+G / Ctrl+Shift+G — seskupit / rozeskupit (plný undo/redo)
+- Ctrl+G / Ctrl+Shift+G - seskupit / rozeskupit (plný undo/redo)
 - Vizuální indikace: barevný badge v rohu, bounding box skupiny při výběru
 - Strom šablony zobrazuje skupiny jako sbalitelné uzly
 - Copy/Paste/Duplicate přemapují GroupId (klony nedědí skupinu originálu)
 - PDF import automaticky seskupí grafiku podle typu a merge mode
 
 **Locale / CultureInfo v šabloně** ✅ (2026-03-12)
-- `Template.CultureCode` — kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)
+- `Template.CultureCode` - kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)
 - Protéká celým pipeline: Template → DataContext.Culture → PlaceholderFormatter → TableElement
 - Dropdown ve vlastnostech stránky; null = cs-CZ (výchozí); parsování vstupů zůstává InvariantCulture
 
 **Drag & drop při přidávání elementů a sekcí** ✅ (2026-03-12)
-- Drag element z toolbaru/palety na canvas — ghost preview, drop target highlight, clamp + snap
-- Drag pole z panelu "Pole agendy" na canvas — vytvoří TextElement nebo append k existujícímu
-- Drag & drop sekcí v levém panelu — přeřazení tažením, vizuální indikátor, `ReorderSectionCommand`
-- Drag element mezi sekcemi — záměrně odloženo (nízká priorita, aktuální UX postačuje)
+- Drag element z toolbaru/palety na canvas - ghost preview, drop target highlight, clamp + snap
+- Drag pole z panelu "Pole agendy" na canvas - vytvoří TextElement nebo append k existujícímu
+- Drag & drop sekcí v levém panelu - přeřazení tažením, vizuální indikátor, `ReorderSectionCommand`
+- Drag element mezi sekcemi - záměrně odloženo (nízká priorita, aktuální UX postačuje)
 
 **Chytré duplikování elementů** ✅ (2026-03-12)
 - Ctrl+D → šipka = směrové duplikování (kopie vedle originálu s 4mm mezerou)
@@ -1014,20 +1051,20 @@ Cíl: hotová první kompletní verze šablony zastávkového JŘ a její review
 - Multi-select, clamp na bounds sekce, plný undo/redo
 
 **Přichytávání elementů k sobě (smart snap)** ✅ (2026-03-12)
-- Edge↔Edge (4 kombinace), Center↔Center, Gap snap (4mm mezera) — bez kategorické priority, vyhraje nejbližší match
+- Edge↔Edge (4 kombinace), Center↔Center, Gap snap (4mm mezera) - bez kategorické priority, vyhraje nejbližší match
 - Zvýraznění cílových elementů (šedý dashed rámeček), gap indikátor (černá čárka v mezeře)
 - Element snap má přednost před grid snapem; osy X/Y nezávisle
 - Toggle v toolbaru + menu; výchozí zapnuto
 
 **Výrazový jazyk** ✅ (2026-03-12)
-- Part 1 — podmínky a logické operátory: `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes
-- Part 2a — agregace: `SUM({CENA})`, `COUNT()`, `AVG({POLE})`, `MIN({POLE})`, `MAX({POLE})` v TableElement; SummaryRows; AggregationResolver; záložka Souhrn v TableEditorDialog
-- Part 2b — formátování placeholderů: `{POLE:N2}`, `{POLE:dd.MM.yyyy}` (.NET formáty); PlaceholderFormatter + DataContext rozšíření
-- Part 2c — řetězcové funkce: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`, `{POLE:TRIM}`
+- Part 1 - podmínky a logické operátory: `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes
+- Part 2a - agregace: `SUM({CENA})`, `COUNT()`, `AVG({POLE})`, `MIN({POLE})`, `MAX({POLE})` v TableElement; SummaryRows; AggregationResolver; záložka Souhrn v TableEditorDialog
+- Part 2b - formátování placeholderů: `{POLE:N2}`, `{POLE:dd.MM.yyyy}` (.NET formáty); PlaceholderFormatter + DataContext rozšíření
+- Part 2c - řetězcové funkce: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`, `{POLE:TRIM}`
 
-**UX polish — hotové položky**
-- **f. Side panel vlastností** ✅ základ (2026-03-21) — inline záložka "Vlastnosti" v levém panelu; modální dialog zachován jako fallback
-- **h. Ikonový toolbar** ✅ (2026-03-21) — 33 Fluent UI ikon, 7 skupin, ToolbarStyles.xaml
+**UX polish - hotové položky**
+- **f. Side panel vlastností** ✅ základ (2026-03-21) - inline záložka "Vlastnosti" v levém panelu; modální dialog zachován jako fallback
+- **h. Ikonový toolbar** ✅ (2026-03-21) - 33 Fluent UI ikon, 7 skupin, ToolbarStyles.xaml
 
 ---
 
@@ -1038,9 +1075,9 @@ Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v Template
 
 ### Vrstvy systému
 
-Viz diagram v `CLAUDE.md` (sekce "Architektura — vrstvy systému").
+Viz diagram v `CLAUDE.md` (sekce "Architektura - vrstvy systému").
 
-### PageLayoutEngine — vstup/výstup
+### PageLayoutEngine - vstup/výstup
 
 ```csharp
 class PageLayoutEngine {
@@ -1060,13 +1097,13 @@ class PlacedSection {
 
 | Krok | Co | Stav |
 |---|---|---|
-| 1 | `PageLayoutEngine` — section ordering + repeating (OnEveryPage atd.) | ✅ |
-| 2 | Stránkovaný preview — multi-page pod sebou se stíny a rámečky | ✅ |
-| 3 | Flow layout — dynamická výška elementů posouvá elementy pod nimi | ✅ |
-| 4 | Page breaking — sekce SplitAcrossPages se rozdělí přes stránky (ClipTop/ClipBottom) | ✅ |
-| 5 | PerDataRow expanze — sekce se opakuje pro každý řádek dat | ✅ |
+| 1 | `PageLayoutEngine` - section ordering + repeating (OnEveryPage atd.) | ✅ |
+| 2 | Stránkovaný preview - multi-page pod sebou se stíny a rámečky | ✅ |
+| 3 | Flow layout - dynamická výška elementů posouvá elementy pod nimi | ✅ |
+| 4 | Page breaking - sekce SplitAcrossPages se rozdělí přes stránky (ClipTop/ClipBottom) | ✅ |
+| 5 | PerDataRow expanze - sekce se opakuje pro každý řádek dat | ✅ |
 | 6 | PAGE/TOTAL_PAGES injekce + VisibilityExpression per stránku | ✅ |
-| 7 | Multi-page PDF export — každá stránka = jedna PDF stránka | ✅ |
+| 7 | Multi-page PDF export - každá stránka = jedna PDF stránka | ✅ |
 
 ### Budoucí modularizace (až bude potřeba)
 
@@ -1091,7 +1128,7 @@ Edison.PrintService.csproj        ← vrstva 5 headless tisk z EDISONu
 
 ---
 
-## Session 2026-07-04/05 ✅ — Architektonická rozhodnutí R1–R7 vyřešena
+## Session 2026-07-04/05 ✅ - Architektonická rozhodnutí R1–R7 vyřešena
 
 Celá rozhodovací tabulka R1–R7 uzavřena (přesunuto z aktivní roadmapy). Plný text principů:
 [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
@@ -1099,9 +1136,9 @@ Celá rozhodovací tabulka R1–R7 uzavřena (přesunuto z aktivní roadmapy). P
 | # | Rozhodnutí | Výsledek |
 |---|---|---|
 | R1 | Sdílené řádkové jádro | ✅ **implementováno** `Rendering/TableLayout.cs` (ResolveWidths + ResolveCascade), napojeno DynamicTable/LineTable/StopList. StopColumn/TableColumn NEsjednoceny (nulové riziko šablon), DepartureGrid mimo (pivot). 180/180 testů + render. Referenční doc `elementy-architektura.md` (návrhový doc smazán, git historie). |
-| R1a | Render-loop sjednocení | ✅ **implementováno** — DynamicTable tři ruční smyčky → `ColumnRenderer.DrawRow`. Vyšší orchestrátor záměrně NE (LineTable pásy/přípoje se nevejdou, nízká hodnota). |
+| R1a | Render-loop sjednocení | ✅ **implementováno** - DynamicTable tři ruční smyčky → `ColumnRenderer.DrawRow`. Vyšší orchestrátor záměrně NE (LineTable pásy/přípoje se nevejdou, nízká hodnota). |
 | R2 | Partial-fit kontrakt (svislá osa) | ✅ **kontrakt rozhodnut** `architektonicka-rozhodnuti-agendy.md` (`IRowPaginatedElement`); implementace až s paginačním/bin-packing trackem (svislá+vodorovná C3 spolu). |
-| R3 | Datový kontrakt / prezentační nápovědy | ✅ **rozhodnuto** `cache-api.md` — v1 = `FORE_COLOR`/`BACK_COLOR` + princip + evoluce jen-aditivně; širší seznam (ZVYRAZNENI…) na F1 dle RG usage. |
+| R3 | Datový kontrakt / prezentační nápovědy | ✅ **rozhodnuto** `cache-api.md` - v1 = `FORE_COLOR`/`BACK_COLOR` + princip + evoluce jen-aditivně; širší seznam (ZVYRAZNENI…) na F1 dle RG usage. |
 | R4 | Headless tisk | ✅ **rozhodnuto** → akční krok „tisk = shortcut z agendy bez návrháře přes PrintEngine fasádu"; impl s pilotem (blok A). |
 | R5 | Fonty embedded v .exe | ✅ **rozhodnuto** (jde: `SKTypeface.FromStream`) → akční krok/TODO (základní Helvetica/PostScript s licenční poznámkou + JŘ Timetable symboly = C2); impl s pilotem/C2. |
 | R6 | Systémové šablony s buildem | 🟡 rozhodnuto (read-only s releasem, DB jen zákaznické); impl v bloku B. **Navázaný otevřený bod:** koncept centrální správy šablon napříč agendami (viz aktivní kroky). |
@@ -1109,7 +1146,7 @@ Celá rozhodovací tabulka R1–R7 uzavřena (přesunuto z aktivní roadmapy). P
 
 ---
 
-## Session 2026-07-05 ✅ — Tabulkové featury A1–A3 + klasifikační pravidlo
+## Session 2026-07-05 ✅ - Tabulkové featury A1–A3 + klasifikační pravidlo
 
 Rychlé samostatné položky nad čerstvým sdíleným tabulkovým jádrem (R1). Vše review + testy + Caché
 schema. Commity: `ce2fffc`, `3d279c5`, `c1b878d`, `0402c39`, `9313105`, `be873c6`, `d0caccd`.
@@ -1117,19 +1154,19 @@ schema. Commity: `ce2fffc`, `3d279c5`, `c1b878d`, `0402c39`, `9313105`, `be873c6
 | # | Featura | Výsledek |
 |---|---|---|
 | A1 | Podmíněné řádkové featury | ✅ **viditelnost řádku** (`RowVisibilityExpression`) + **zvýraznění řádku** (`RowHighlightExpression`+`RowHighlightColor`, jen pozadí) přes sdílený `Models/Expressions/RowConditions` (výraz nad daty řádku, fail-open). Zvýraznění na **DynamicTable + StopList + LineTable**, viditelnost DynamicTable+StopList+LineTable. DepartureGrid mimo (pivot). Aditivní/default-off = behavior-preserving pro gold StopList i pilot LineTable. Řádkový POCO nese `SourceRow`. |
-| A2 | Počítaná pole | ✅ **aritmetika ve výrazovém jádru** (`+ - * /`, unární minus, priorita, závorky; `ExpressionEvaluator.EvaluateToString` — číslo invariantně, `FormatNumber` odstraní IEEE-754 artefakty + NaN/Inf→prázdno). **`TableColumn.Expression`** = počítaný sloupec DynamicTable (`{CENA}*{MNOZSTVI}`, přebíjí Field, formátovatelný). Bonus fix: editor sloupců dřív `Format` neukládal. |
-| A3 | Min/max řádků | ✅ **`MinRows`** doplní prázdné řádky do minima (pevná výška boxu — faktura), **`MaxRows`** ořízne. DynamicTable-only. Render 3 typy řádků (placeholder/data/padding), výška↔render parita, kombinuje s filtrem viditelnosti. |
-| — | Klasifikační pravidlo | 📐 `elementy-architektura.md §0b` — 3 kategorie featur (nad daty řádku → sdílet / struktura sloupce+počet řádků → DynamicTable / doménové render → element-specifické). Generické featury pro data dostupné přes DynamicTable na tutéž kolekci. NEslučovat StopColumn/TableColumn. |
+| A2 | Počítaná pole | ✅ **aritmetika ve výrazovém jádru** (`+ - * /`, unární minus, priorita, závorky; `ExpressionEvaluator.EvaluateToString` - číslo invariantně, `FormatNumber` odstraní IEEE-754 artefakty + NaN/Inf→prázdno). **`TableColumn.Expression`** = počítaný sloupec DynamicTable (`{CENA}*{MNOZSTVI}`, přebíjí Field, formátovatelný). Bonus fix: editor sloupců dřív `Format` neukládal. |
+| A3 | Min/max řádků | ✅ **`MinRows`** doplní prázdné řádky do minima (pevná výška boxu - faktura), **`MaxRows`** ořízne. DynamicTable-only. Render 3 typy řádků (placeholder/data/padding), výška↔render parita, kombinuje s filtrem viditelnosti. |
+| - | Klasifikační pravidlo | 📐 `elementy-architektura.md §0b` - 3 kategorie featur (nad daty řádku → sdílet / struktura sloupce+počet řádků → DynamicTable / doménové render → element-specifické). Generické featury pro data dostupné přes DynamicTable na tutéž kolekci. NEslučovat StopColumn/TableColumn. |
 
 **Vědomě odloženo (ne dluh):**
 - **Rozšíření podmíněného formátování** (seznam pravidel místo 1, barva textu, per-sloupec/buňka) →
   až dle reálné produkce (rozhodnutí uživatele 2026-07-05: „ted bych to nechal takto").
-- **A4 sloučené buňky** (`ColSpan`/`RowSpan`) — větší layout kus, zůstává v aktivní Fázi B.
-- **Grouping** (`GroupHeader`/`GroupFooter`) + **vnořené datasource** — backlog bez customer demand.
+- **A4 sloučené buňky** (`ColSpan`/`RowSpan`) - větší layout kus, zůstává v aktivní Fázi B.
+- **Grouping** (`GroupHeader`/`GroupFooter`) + **vnořené datasource** - backlog bez customer demand.
 
 ---
 
-## Session 2026-07-05 ✅ — B1: embedding fontů do .exe (mechanismus, R5)
+## Session 2026-07-05 ✅ - B1: embedding fontů do .exe (mechanismus, R5)
 
 Commit `fd7b267`. `FontResolver` refaktorován na sdílené cachované typefacy + auto-discovery embedded
 fontů z manifest resources pod `Fonts/` (glob `<EmbeddedResource>` v .csproj → single-file .exe).
@@ -1138,61 +1175,61 @@ nainstalovaných fontech. Varianty Bold/Italic = samostatné soubory. Všechny c
 (text/buňky/JŘ/legenda) už tečou přes `FontResolver.Resolve` → embedding platí všude. Testy 213/213
 (4 nové). `dotnet/Fonts/README.md` dokumentuje konvenci + licence.
 
-**Zbývá jen (až bude potřeba):** dropnout konkrétní `.ttf` do `Fonts/` — základní free bezpatkový
+**Zbývá jen (až bude potřeba):** dropnout konkrétní `.ttf` do `Fonts/` - základní free bezpatkový
 (Arimo/Liberation, NE Helvetica/Arial) a **JŘ symbolový Timetable_nove(+SK)** = C2 knižního JŘ
 (vyjasnit zdroj/licenci). Mechanismus je připraven, kód se už nemění.
 
 ---
 
-## Session 2026-07-06 ✅ — Layout: „sekce vyšší než stránka" (Slice 1+2 + fix)
+## Session 2026-07-06 ✅ - Layout: „sekce vyšší než stránka" (Slice 1+2 + fix)
 
 Návrhové plátno už není omezené na jednu A4. Commity: `a88763a` (Slice 1), `56c1837` (Slice 2),
 `12fc8d9` (fix dvojitého rámečku), `da198f3` (review fix footer WYSIWYG + mrtvý kód).
 
-- **Slice 1 — plátno roste:** `DesignerCanvas.GetSectionOrigins` skládá sekce souvisle v pravé
+- **Slice 1 - plátno roste:** `DesignerCanvas.GetSectionOrigins` skládá sekce souvisle v pravé
   (neclampnuté) výšce; `TotalPaperHeightPx` (okraje + Σ výšek sekcí, min 1 stránka); `Render` +
   `UpdateCanvasSize` + `RequestCanvasRefresh` na rostoucí výšku; `SectionHeightPx` místo clampu,
   `GetClampedSectionHeightPx`/`GetPageBottomY` odstraněny.
-- **Slice 2 — dělící čáry:** `DrawPageBreakLines` — přerušované modré čáry + „Strana N" po výšce
-  tisknutelné oblasti, jen když obsah > 1 stránka. Varianta 1 (geometrické vodítko) — vědomě ne
+- **Slice 2 - dělící čáry:** `DrawPageBreakLines` - přerušované modré čáry + „Strana N" po výšce
+  tisknutelné oblasti, jen když obsah > 1 stránka. Varianta 1 (geometrické vodítko) - vědomě ne
   pixel-přesné vůči preview; přesný stránkovaný výsledek zůstává v preview/PDF.
 - **Footer** kotven ke spodku rostoucího papíru (WYSIWYG s preview u 1 stránky).
-- **Fix (pre-existing):** split sekce (SplitAcrossPages) kreslila rámeček elementu i na 2. straně —
+- **Fix (pre-existing):** split sekce (SplitAcrossPages) kreslila rámeček elementu i na 2. straně -
   `PreviewCanvas.RenderPage` border-pass běžel bez clipu → ořezán na rámec stránky (opraveno i pro
   PDF/PNG, sdílený `RenderPage`). Regres test `SplitSectionPaginationTest`.
 - Nezávislý review: bez BLOCKER/MAJOR, bez regrese jednostránkových šablon, hit-testing konzistentní.
   Testy 214/214.
 
-**Navazuje (aktivní track):** R2 (svislé stránkování řádků — zpřesní zlomy na celé řádky) → C3 (vodorovný Strih).
+**Navazuje (aktivní track):** R2 (svislé stránkování řádků - zpřesní zlomy na celé řádky) → C3 (vodorovný Strih).
 
 ---
 
-## Session 2026-07-07 ✅ — Pre-produkční zámek struktury šablony (blok PA) + úklid roadmapy
+## Session 2026-07-07 ✅ - Pre-produkční zámek struktury šablony (blok PA) + úklid roadmapy
 
 Cíl: připravit v1 do produkce tak, aby se **nemusela měnit struktura šablony** (breaking JSON) v příští
-verzi. Grounded analýza (4 průzkumy kódu) — doc `produkce-pripravenost-2026-07-07.md` smazán po vytěžení (git historie).
+verzi. Grounded analýza (4 průzkumy kódu) - doc `produkce-pripravenost-2026-07-07.md` smazán po vytěžení (git historie).
 Blok PA vyřešen, vše behavior-preserving (uživatel nepozná, jen zamčená struktura). Commity `23e6a90`
 (analýza+checklist), `6dadb66`, `484881c`, `f1e01e9`, `cf43a56`. Testy 218 → 229.
 
-- **PA1 — klíče sloupců → konstanty.** `StopColumn.Key` (`"Zone"`/`"StopName"`/`"Trip"`…) byly
+- **PA1 - klíče sloupců → konstanty.** `StopColumn.Key` (`"Zone"`/`"StopName"`/`"Trip"`…) byly
   magic-string literály roztroušené ve switchích, ale persistují se do JSON → přejmenování by tiše
   rozbilo uložené šablony. Centralizováno do `Models/ColumnKeys.cs` (vzor `ElementTypes`) +
   `ColumnKeysTests` zamyká wire hodnoty. Klíč = interní směrovací identifikátor renderu (C#), ne
   datové pole (kontrakt Caché) → proto C#.
-- **PA2 — mrtvý `ColorRules`.** Domnělé „dva modely" zvýraznění řádku: `List<ColorRule>` na
+- **PA2 - mrtvý `ColorRules`.** Domnělé „dva modely" zvýraznění řádku: `List<ColorRule>` na
   DepartureGrid byl mrtvý kód (nikde nekonzumován) → odstraněn. Živý zůstává 1-pravidlový
   `RowHighlightExpression`, který strukturu nezamyká (multi-pravidlo lze přidat aditivně jako budoucí
   `RowColorRules`). `ColorRule` třída ponechána jako rezervovaný budoucí model.
-- **PA3 — Fixed `TableElement` zmražen.** Šel z UI vytvořit jen zdánlivě (paleta/menu = dynamická),
+- **PA3 - Fixed `TableElement` zmražen.** Šel z UI vytvořit jen zdánlivě (paleta/menu = dynamická),
   ale továrna měla mrtvou větev → odebrána; nově ho nic nevyrobí. Tripwire test (`ElementFactoryTests`)
   + docstring. Zachováno: třída, `JsonDerivedType` (legacy read), `TableEditorDialog` (legacy edit) →
   staré šablony se otevřou, Fixed tabulka připravená k oživení (pár řádků zpět).
-- **PA4 — verzování dokumentováno.** Nález: migrátor je hotový **i otestovaný** (9 testů) — obava
+- **PA4 - verzování dokumentováno.** Nález: migrátor je hotový **i otestovaný** (9 testů) - obava
   „pipeline neběžela" neopodstatněná. „Bump na 1.1.0 teď" **zamítnuto** (proti konvenci *bump jen pro
   breaking change*; navíc falešné WasMigrated). Zapsáno: historická flat→style změna jako
   nemigrovatelná + rozhodnutí NEbumpovat (`template-schema-versions.md`). Kosmetika „1.0"/„1.0.0"
   funkčně irelevantní, neřešena.
-- **PA5 — logování neznámých polí = YAGNI (zavřeno).** Zvažováno `[JsonExtensionData]` + `Debug.WriteLine`.
+- **PA5 - logování neznámých polí = YAGNI (zavřeno).** Zvažováno `[JsonExtensionData]` + `Debug.WriteLine`.
   Zamítnuto jako okrajové: forward-compat už hlídá výjimka migrátoru, budoucí breaking změny mají
   migrace, drift chytají round-trip testy. Cena (trvalá změna 3 model tříd) > přínos. Přídavek je
   ~20 min kdykoli, když vznikne reálná potřeba.
@@ -1203,30 +1240,30 @@ překrývající se produkční sekce sloučeny do jedné (PB provoz / PC govern
 
 **PB triáž 2026-07-07 (produkční provoz):** release deploy (build .exe + Caché třídy) uznán jako
 **standardní EDISON release proces**, ne TD-specifický úkol → bývalé D3/D4/PB-D1/PB-D2 odstraněny.
-`SelfContained=false` / .NET 10 (PB3) neřešíme — runtime je prerekvizita celé suity (EDISONMAIN2 taky
-`net10`). Build-vázaný-na-stroj (PB4) — kdo dělá release, má `C:\Edison`; CI je budoucí nice-to-have.
-**Hotová drobná hygiena:** PB7 doc drift (CLAUDE.md .NET 9→10, PdfPig 0.1.9→0.1.13); PB6 — `ScheduleDetectorTest.cs`
+`SelfContained=false` / .NET 10 (PB3) neřešíme - runtime je prerekvizita celé suity (EDISONMAIN2 taky
+`net10`). Build-vázaný-na-stroj (PB4) - kdo dělá release, má `C:\Edison`; CI je budoucí nice-to-have.
+**Hotová drobná hygiena:** PB7 doc drift (CLAUDE.md .NET 9→10, PdfPig 0.1.9→0.1.13); PB6 - `ScheduleDetectorTest.cs`
 už byla dávno smazaná (jen stará bin/obj artefakta), smazány mrtvé rozbité scratch soubory
-`test-detector.csproj`/`test-detector-main.cs`/`RunDetectorTest.csx`; PB1 — vyprázdněn tracked
+`test-detector.csproj`/`test-detector-main.cs`/`RunDetectorTest.csx`; PB1 - vyprázdněn tracked
 `templatedesigner.appsettings.json` (dev creds martin.hubata/MLP 167/interní IP se zapékaly do .exe),
 přesunuto do gitignored `local.json`; produkce session stejně bere z launch args, standalone dev z local.json.
 
 
 ---
 
-## Audit 2026-07-07 — Blokery (B1–B3) vyřešeny
+## Audit 2026-07-07 - Blokery (B1–B3) vyřešeny
 
 Všechny tři produkční blokery z auditu hotové (přesunuto z aktivní audit sekce).
 
-- **B1 — KV hardcode v MHD tiskové cestě.** `POPIS_DOPRAVCE` místo natvrdo „…Karlovy Vary, a.s.……."
+- **B1 - KV hardcode v MHD tiskové cestě.** `POPIS_DOPRAVCE` místo natvrdo „…Karlovy Vary, a.s.……."
   čte reálného dopravce linky z `ALVA.MHD.LSO` (helper `PopisDopravce`: `DruhDopravceID` → vlastní firma
   `$$gIdFa^MlJFapi` / cizí `$$gDopFa^JRapi`, defensivní). `NEJEDOU_SPOJE` napojen na generátor `TiskyFce`
   (gated flagem linky). `TITULEK`/`POZNAMKA_POD_DOPRAVCE`/`INFORMACE` (MHD nemá zdroj) odstraněny ze
   schématu i GetData (AD si je nechává). Schéma ověřeno živě. Commit `ddb1dfa`. Zbývá eyeball: reálné
   jméno dopravce na MHD firmě (defensivní → nejhůř prázdno). Součástí i M1 guard + oprava MHD picker crashe.
-- **B2 — export tiše nahrazoval reálná data mock daty při selhání Caché.** `GetData` na `RestStatus.Error`
+- **B2 - export tiše nahrazoval reálná data mock daty při selhání Caché.** `GetData` na `RestStatus.Error`
   /výjimku hází `CacheAgendaException` místo `null`; `null` = jen „legitimně žádná data". Chyba propadne
   přes export/preview/PrintDialog (žádné false-success PDF). 252/252 testů. (Řešeno v paralelní session.)
-- **B3 — mrtvý secret + rotace klíče.** Bludný `dotnet/appsettings.local.json` (špatný název, TD ho nečte —
+- **B3 - mrtvý secret + rotace klíče.** Bludný `dotnet/appsettings.local.json` (špatný název, TD ho nečte -
   čte prefixovaný; untracked/gitignored) smazán ručně (bez git změny). Pozor: generický `appsettings.local.json`
-  je LEGIT pro EDISONMAIN2 (SettingsLoader ho čte) — nemazat tam. Rotace API klíče = na uživateli.
+  je LEGIT pro EDISONMAIN2 (SettingsLoader ho čte) - nemazat tam. Rotace API klíče = na uživateli.

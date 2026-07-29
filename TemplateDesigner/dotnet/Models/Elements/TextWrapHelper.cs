@@ -12,7 +12,7 @@ public static class TextWrapHelper
     {
         var result = new List<string>();
 
-        // Normalizace řádkových zlomů — WPF TextBox posílá \r\n
+        // Normalizace řádkových zlomů - WPF TextBox posílá \r\n
         var paragraphs = text.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
         foreach (var paragraph in paragraphs)
         {

@@ -3,7 +3,7 @@ using System.ComponentModel;
 namespace TemplateDesigner.Controls;
 
 /// <summary>
-/// Sdílený kontrakt řádku sloupce pro <see cref="ColumnListEditor"/> — jednotné levé seznamy
+/// Sdílený kontrakt řádku sloupce pro <see cref="ColumnListEditor"/> - jednotné levé seznamy
 /// napříč tabulkovými editory (StopList, DepartureGrid; výhledově TableElement).
 /// Implementují ho per-komponentní column VM (StopColumnVM, DepartureGroupColumnVM).
 /// </summary>

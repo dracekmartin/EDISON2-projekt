@@ -2,7 +2,7 @@ using TemplateDesigner.Models;
 
 namespace TemplateDesigner.Commands.Implementations;
 
-/// <summary>Změna velikosti (a případně polohy) elementu — undoable.</summary>
+/// <summary>Změna velikosti (a případně polohy) elementu - undoable.</summary>
 public class ResizeElementCommand : IDesignerCommand
 {
     private readonly TemplateElement _element;

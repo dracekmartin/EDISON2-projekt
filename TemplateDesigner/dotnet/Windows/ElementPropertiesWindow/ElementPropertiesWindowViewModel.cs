@@ -25,7 +25,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
     // ── Exponováno do code-behind ─────────────────────────────────────────
 
-    /// <summary>Aktuálně zobrazovaný element — pro detekci nové session v ShowForElement.</summary>
+    /// <summary>Aktuálně zobrazovaný element - pro detekci nové session v ShowForElement.</summary>
     public TemplateElement? CurrentElement { get; private set; }
 
     /// <summary>Invalidace odpovídající aktuálnímu kontextu (element / sekce / stránka).</summary>
@@ -39,34 +39,34 @@ public class ElementPropertiesWindowViewModel : EDViewModel
     public string WindowTitle { get => _windowTitle; set => Set(ref _windowTitle, value); }
 
     /// <summary>
-    /// Callback: VM říká View "zobraz tyto deskriptory" — stejný pattern jako RequestCanvasRefresh
+    /// Callback: VM říká View "zobraz tyto deskriptory" - stejný pattern jako RequestCanvasRefresh
     /// v MainWindow. Používá se uvnitř EnhanceTableEditor při interní změně panelu.
     /// </summary>
     public Action<IReadOnlyList<Models.PropertyDescriptor>>? RequestShowDescriptors { get; set; }
 
-    /// <summary>Deskriptory připravené posledním voláním PrepareFor* — Window je přečte v konstruktoru.</summary>
+    /// <summary>Deskriptory připravené posledním voláním PrepareFor* - Window je přečte v konstruktoru.</summary>
     public IReadOnlyList<Models.PropertyDescriptor>? CurrentDescriptors { get; private set; }
 
     /// <summary>
     /// Callback pro otevření DepartureGroupEditorDialog z inline panelu.
-    /// Sdílí logiku s MainWindow.OpenDepartureGridDialog — jedna cesta, žádná duplikace.
+    /// Sdílí logiku s MainWindow.OpenDepartureGridDialog - jedna cesta, žádná duplikace.
     /// </summary>
     public Action<DepartureGridElement>? RequestOpenDepartureGridDialog { get; set; }
 
     /// <summary>
     /// Callback pro otevření StopColumnsEditorDialog z inline panelu.
-    /// Sdílí logiku s MainWindow.OpenStopColumnsDialog — jedna cesta, žádná duplikace.
+    /// Sdílí logiku s MainWindow.OpenStopColumnsDialog - jedna cesta, žádná duplikace.
     /// </summary>
     public Action<StopListElement>? RequestOpenStopColumnsDialog { get; set; }
 
     /// <summary>
     /// Callback pro otevření DynamicTableEditorDialog z inline panelu i modálního dialogu.
-    /// Sdílí logiku s MainWindow.OpenDynamicTableDialog — jedna cesta, žádná duplikace.
+    /// Sdílí logiku s MainWindow.OpenDynamicTableDialog - jedna cesta, žádná duplikace.
     /// </summary>
     public Action<DynamicTableElement>? RequestOpenDynamicTableDialog { get; set; }
 
     /// <summary>
-    /// Callback pro otevření TableEditorDialog (statická tabulka) — otevření + apply řeší View
+    /// Callback pro otevření TableEditorDialog (statická tabulka) - otevření + apply řeší View
     /// (MainWindow.OpenTableEditorDialog), stejně jako ostatní tabulkové editory. VM nezná WPF.
     /// </summary>
     public Action<TableElement>? RequestOpenTableEditorDialog { get; set; }
@@ -97,7 +97,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         _getAvailableGroups    = getAvailableGroups;
         _currentInvalidate     = invalidate;
 
-        // OkCommand je zděděn z EDViewModel — base.OnOk() volá CloseDialog(true), což je správně
+        // OkCommand je zděděn z EDViewModel - base.OnOk() volá CloseDialog(true), což je správně
         CancelCommand = Command(() => { CancelChanges(); CloseDialog(false); });
     }
 
@@ -203,7 +203,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         {
             if (d is Models.EnumPropertyDescriptor enumD && enumD.Label == "Režim")
             {
-                // Obalit Set — po změně módu obnovit panel (Zdroj dat se zobrazí/skryje)
+                // Obalit Set - po změně módu obnovit panel (Zdroj dat se zobrazí/skryje)
                 list.Add(new Models.EnumPropertyDescriptor
                 {
                     Label   = enumD.Label,
@@ -259,7 +259,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             if (d is Models.StringPropertyDescriptor strD && strD.Label == "Zdroj dat" && collections.Count > 0)
             {
                 // Panel jen nabídne dropdown zdrojů + nastaví ho. Generování sloupců z polí kolekce
-                // řeší editor sloupců (DynamicTableEditorDialog) — jedno místo, undoable přes příkaz.
+                // řeší editor sloupců (DynamicTableEditorDialog) - jedno místo, undoable přes příkaz.
                 list.Add(new Models.SuggestStringPropertyDescriptor
                 {
                     Label          = strD.Label,
@@ -719,7 +719,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             [
                 ("Nepřerušovat",  (object)SectionOverflowBehavior.KeepTogether),
                 ("Přes stránky",  (object)SectionOverflowBehavior.SplitAcrossPages),
-                ("Povolit split", (object)SectionOverflowBehavior.AllowSplit),
+                ("Povolit rozdělení", (object)SectionOverflowBehavior.AllowSplit),
             ]
         });
 
@@ -747,7 +747,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         list.Add(new StringPropertyDescriptor
         {
-            Label = "Viditelnost", Group = "Podmínky",
+            Label = "Podmínka viditelnosti", Group = "Podmínky",
             Get   = () => section.VisibilityExpression ?? "",
             Set   = v  => section.VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
             Validate = Models.Expressions.ExpressionEvaluator.Validate
@@ -791,7 +791,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             },
             new FloatPropertyDescriptor
             {
-                Label = "Šířka rámečku", Group = "Rámeček",
+                Label = "Tloušťka rámečku", Group = "Rámeček",
                 Get = () => first.BorderWidth,
                 Set = v => { foreach (var el in elements) el.BorderWidth = v; },
                 Min = 0, Max = 5, Unit = "mm", Format = "0.0#"
@@ -805,7 +805,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             },
             new BoolPropertyDescriptor
             {
-                Label = "Zamčeno", Group = "Pozice",
+                Label = "Uzamčeno", Group = "Pozice",
                 Get = () => first.IsLocked,
                 Set = v => { foreach (var el in elements) el.IsLocked = v; }
             },

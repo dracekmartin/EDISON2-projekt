@@ -4,7 +4,7 @@ using static TemplateDesigner.Models.MmMath;
 namespace TemplateDesigner.Commands.Implementations;
 
 /// <summary>
-/// Proporcionálně přeškáluje celou šablonu — stránku, sekce, elementy.
+/// Proporcionálně přeškáluje celou šablonu - stránku, sekce, elementy.
 /// Undo aplikuje inverzní scale (1/scale).
 /// </summary>
 public class ScaleTemplateCommand : IDesignerCommand

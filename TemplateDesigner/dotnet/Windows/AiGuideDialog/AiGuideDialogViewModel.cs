@@ -5,7 +5,7 @@ using TemplateDesigner.Services;
 
 namespace TemplateDesigner.Windows.AiGuideDialog;
 
-/// <summary>Živý kontext pro průvodce — čte se z hlavního VM při každém dotazu.</summary>
+/// <summary>Živý kontext pro průvodce - čte se z hlavního VM při každém dotazu.</summary>
 public readonly record struct AiGuideContext(
     string? AgendaCode, string? AgendaName, string? SelectedElementType, int SectionCount, string? ElementKind);
 
@@ -18,11 +18,11 @@ public class AiGuideMessage
 }
 
 /// <summary>
-/// Pasivní AI průvodce aplikací — žije jako záložka v levém panelu (non-modal).
+/// Pasivní AI průvodce aplikací - žije jako záložka v levém panelu (non-modal).
 /// Neměňuje šablonu, jen radí kde co je a jak na to. Znalosti ze <see cref="CapabilityCatalog"/>.
 /// Kontext (agenda, vybraný element, počet sekcí) se čte živě při každém dotazu přes
 /// <paramref name="contextProvider"/>. Konverzace je session-scoped (po restartu se vyčistí).
-/// Model: konfigurovatelný (AiAssistant.AssistantModel, default Sonnet 5) s VYPNUTÝM myšlením —
+/// Model: konfigurovatelný (AiAssistant.AssistantModel, default Sonnet 5) s VYPNUTÝM myšlením -
 /// lookup nad kompletním katalogem nepotřebuje reasoning a uživatel čeká okamžitou odpověď.
 /// </summary>
 public class AiGuidePanelViewModel : EDViewModel

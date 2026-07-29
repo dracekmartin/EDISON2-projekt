@@ -8,19 +8,19 @@ using TemplateDesigner.Config;
 
 namespace TemplateDesigner.Services;
 
-/// <summary>Chyba EDISONAI/mlweb integrace — Message je uživatelsky čitelná česká hláška.</summary>
+/// <summary>Chyba EDISONAI/mlweb integrace - Message je uživatelsky čitelná česká hláška.</summary>
 public class EdisonAiException(string message) : Exception(message);
 
 /// <summary>
-/// Napojení AI funkcí na mlweb (podpora.m-line.cz) — stejný kontrakt jako EDISONAI v EDISONu:
+/// Napojení AI funkcí na mlweb (podpora.m-line.cz) - stejný kontrakt jako EDISONAI v EDISONu:
 /// M-line spravuje zákazníkům API klíč a měsíční tokenové limity, aplikace si klíč vyzvedne
 /// a spotřebu hlásí zpět.
 ///
 /// Pořadí získání klíče (<see cref="GetApiKeyAsync"/>):
 ///  1. Lokální AiAssistant.AnthropicApiKey v appsettings → vývojářský bypass
-///     (mlweb se nevolá, spotřeba se nehlásí — obdoba DEV režimu EDISONu).
+///     (mlweb se nevolá, spotřeba se nehlásí - obdoba DEV režimu EDISONu).
 ///  2. Caché ALVA.EDISONAI.API.Config.GetMLWebConfig (mlweb X-API-Key, baseUrl, isDev, devApiKey);
-///     na DEV serveru se použije devApiKey přímo (spotřeba se nehlásí — DEV sdílí IdFa s produkcí).
+///     na DEV serveru se použije devApiKey přímo (spotřeba se nehlásí - DEV sdílí IdFa s produkcí).
 ///  3. POST {mlweb}/api/mline/agent/resolve {idfa, loginName} → allowed + apiKey.
 ///     FAIL-CLOSED: bez spojení / bez povolení / vyčerpaný limit AI nefunguje.
 ///     Výsledek se cachuje 60 s (limit se stejně přepočítá po každém volání přes usage).
@@ -28,9 +28,9 @@ public class EdisonAiException(string message) : Exception(message);
 /// Spotřeba (<see cref="ReportUsage"/>): POST /api/mline/usage {..., source: "templatedesigner"},
 /// best-effort na pozadí; odpověď nese aktuální 'allowed' → gate pro další volání bez round-tripu.
 ///
-/// Model zůstává v režii TD (AssistantModel/VisionModel) — resolvovaný 'model' z mlweb je
+/// Model zůstává v režii TD (AssistantModel/VisionModel) - resolvovaný 'model' z mlweb je
 /// konfigurace EDISONAI chatu; limity jsou tokenové, takže volba modelu limit neobchází.
-/// TD podporuje jen provider "claude" — jiný provider = fail-closed s hláškou.
+/// TD podporuje jen provider "claude" - jiný provider = fail-closed s hláškou.
 /// </summary>
 public static class EdisonAiService
 {
@@ -86,7 +86,7 @@ public static class EdisonAiService
 
             if (string.IsNullOrEmpty(_mlwebApiKey))
                 throw new EdisonAiException(
-                    "AI funkce nejsou nakonfigurovány — chybí lokální API klíč i klíč pro podpora.m-line.cz " +
+                    "AI funkce nejsou nakonfigurovány - chybí lokální API klíč i klíč pro podpora.m-line.cz " +
                     "(Caché ALVA.EDISONAI.Config). Kontaktujte podporu M-line.");
 
             // 3. Resolve přes mlweb (fail-closed, 60s cache).
@@ -110,7 +110,7 @@ public static class EdisonAiService
     }
 
     /// <summary>
-    /// Nahlásí spotřebu tokenů do mlweb (statistiky + limity). Best-effort na pozadí —
+    /// Nahlásí spotřebu tokenů do mlweb (statistiky + limity). Best-effort na pozadí -
     /// chyba se nikde nezobrazuje; odpověď aktualizuje 'allowed' gate pro další volání.
     /// V bypass režimu (lokální/DEV klíč) se nehlásí nic.
     /// </summary>
@@ -147,7 +147,7 @@ public static class EdisonAiService
             }
             catch
             {
-                // Best-effort — výpadek statistik neblokuje AI funkce.
+                // Best-effort - výpadek statistik neblokuje AI funkce.
             }
         });
     }
@@ -167,7 +167,7 @@ public static class EdisonAiService
     {
         var mlRest = EDServices.Current.MLRest
             ?? throw new EdisonAiException(
-                "AI funkce nejsou dostupné — aplikace není připojena k databázi a chybí lokální API klíč.");
+                "AI funkce nejsou dostupné - aplikace není připojena k databázi a chybí lokální API klíč.");
 
         CVar output;
         try
@@ -177,7 +177,7 @@ public static class EdisonAiService
         catch (Exception ex) when (ex is not EdisonAiException)
         {
             throw new EdisonAiException(
-                "AI funkce nejsou dostupné — nepodařilo se načíst konfiguraci AI ze serveru " +
+                "AI funkce nejsou dostupné - nepodařilo se načíst konfiguraci AI ze serveru " +
                 "(EDISONAI není na serveru nainstalováno?). " + ex.Message);
         }
 
@@ -205,7 +205,7 @@ public static class EdisonAiService
         {
             _lastKnownAllowed = false;
             throw new EdisonAiException(
-                "AI funkce nejsou dostupné — nepodařilo se spojit s podpora.m-line.cz. " + ex.Message);
+                "AI funkce nejsou dostupné - nepodařilo se spojit s podpora.m-line.cz. " + ex.Message);
         }
 
         JsonElement data;
@@ -214,12 +214,12 @@ public static class EdisonAiService
             using var doc = JsonDocument.Parse(responseBody);
             if (!doc.RootElement.TryGetProperty("success", out var ok) || !ok.GetBoolean()
                 || !doc.RootElement.TryGetProperty("data", out var d))
-                throw new EdisonAiException("AI funkce nejsou dostupné — neplatná odpověď z podpora.m-line.cz.");
+                throw new EdisonAiException("AI funkce nejsou dostupné - neplatná odpověď z podpora.m-line.cz.");
             data = d.Clone();
         }
         catch (JsonException)
         {
-            throw new EdisonAiException("AI funkce nejsou dostupné — neplatná odpověď z podpora.m-line.cz.");
+            throw new EdisonAiException("AI funkce nejsou dostupné - neplatná odpověď z podpora.m-line.cz.");
         }
 
         if (!(data.TryGetProperty("allowed", out var allowedProp) && allowedProp.GetBoolean()))
@@ -234,14 +234,14 @@ public static class EdisonAiService
         var provider = data.TryGetProperty("provider", out var p) ? (p.GetString() ?? "").Trim() : "";
         if (!provider.Equals("claude", StringComparison.OrdinalIgnoreCase))
             throw new EdisonAiException(
-                "AI funkce nejsou nakonfigurovány — pro tuto firmu je v mlwebu nastaven nepodporovaný AI provider " +
+                "AI funkce nejsou nakonfigurovány - pro tuto firmu je v mlwebu nastaven nepodporovaný AI provider " +
                 $"(\"{provider}\"). Návrhář šablon podporuje pouze Claude. Kontaktujte administrátora.");
 
         var hasApiKey = data.TryGetProperty("hasApiKey", out var h) && h.GetBoolean();
         var apiKey = data.TryGetProperty("apiKey", out var k) ? k.GetString() : null;
         if (!hasApiKey || string.IsNullOrEmpty(apiKey))
             throw new EdisonAiException(
-                "AI funkce nejsou nakonfigurovány — pro tuto firmu není nastaven API klíč. Kontaktujte administrátora.");
+                "AI funkce nejsou nakonfigurovány - pro tuto firmu není nastaven API klíč. Kontaktujte administrátora.");
 
         return apiKey;
     }

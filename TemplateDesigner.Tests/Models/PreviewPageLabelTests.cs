@@ -14,14 +14,14 @@ public class PreviewPageLabelTests
     public void ZastavkaSeSmerem_VratiCisloZastavkuASmer()
     {
         var page = Page(("POPIS_ZASTAVKA", "Malše, točna"), ("POPIS_SMER", "Nádraží"));
-        Assert.Equal("3 — Malše, točna → Nádraží", TemplateDesignerViewModel.BuildPreviewPageLabel(page, 2));
+        Assert.Equal("3 - Malše, točna → Nádraží", TemplateDesignerViewModel.BuildPreviewPageLabel(page, 2));
     }
 
     [Fact]
     public void ZastavkaBezSmeru_VynechaSipku()
     {
         var page = Page(("POPIS_ZASTAVKA", "Malše, točna"), ("POPIS_SMER", ""));
-        Assert.Equal("1 — Malše, točna", TemplateDesignerViewModel.BuildPreviewPageLabel(page, 0));
+        Assert.Equal("1 - Malše, točna", TemplateDesignerViewModel.BuildPreviewPageLabel(page, 0));
     }
 
     [Fact]

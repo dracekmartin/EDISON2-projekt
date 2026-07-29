@@ -15,7 +15,7 @@ namespace TemplateDesigner;
 /// Form layout (pole, skupiny, labely, validace) je definovaný server-side v Caché schema
 /// classe; klíč pole = property path na cílovém objektu (dot notation, např. "Style.FontSize").
 ///
-/// Pre-fill i extract jdou přes <see cref="ElementFormBinder"/> (reflexe) — žádný
+/// Pre-fill i extract jdou přes <see cref="ElementFormBinder"/> (reflexe) - žádný
 /// per-typ kód. Změny se zabalí do <see cref="ResultCommand"/> (CompositeCommand
 /// ze SetPropertyCommandů) pro undo/redo. Caller vykoná přes DesignerState.Execute.
 /// </summary>
@@ -23,7 +23,7 @@ public partial class ElementEditDialog : Window
 {
     private readonly object _target;
 
-    // Hodnoty nastavené při pre-fillu — change detection proti nim (ne proti raw property),
+    // Hodnoty nastavené při pre-fillu - change detection proti nim (ne proti raw property),
     // takže no-edit + OK nevytvoří žádný command (řeší nullable "inherit" props zobrazené
     // jako Caché schema default).
     private Dictionary<string, string> _preFilled = [];
@@ -35,7 +35,7 @@ public partial class ElementEditDialog : Window
     /// Null dokud nebyl dialog potvrzen.</summary>
     public IReadOnlyDictionary<string, string>? FinalValues { get; private set; }
 
-    /// <param name="target">Editovaný objekt (element, sekce, stránka — in-memory model).</param>
+    /// <param name="target">Editovaný objekt (element, sekce, stránka - in-memory model).</param>
     /// <param name="cacheClass">Caché schema class (např. "ALVA.TemplateDesigner.EDInputForm.TextElementEdit").</param>
     /// <param name="title">Titulek okna.</param>
     public ElementEditDialog(object target, string cacheClass, string title)
@@ -54,7 +54,7 @@ public partial class ElementEditDialog : Window
     {
         ElementFormBinder.PopulateFontFields(TheForm);
         _preFilled = ElementFormBinder.Prefill(TheForm, _target);
-        // Řez (váhy) z reálných řezů rodiny — nastavit PŘED Validate, aby items přežily round-trip
+        // Řez (váhy) z reálných řezů rodiny - nastavit PŘED Validate, aby items přežily round-trip
         // (Validate serializuje aktuální items a Caché je echuje zpět).
         ElementFormBinder.PopulateFontWeightFields(TheForm);
         TheForm.Validate();

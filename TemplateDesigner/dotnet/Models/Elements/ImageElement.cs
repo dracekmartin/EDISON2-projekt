@@ -148,7 +148,7 @@ public class ImageElement : TemplateElement
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new ButtonPropertyDescriptor { Label = "Obrázek", Group = "Obrázek", ButtonLabel = "Nahrát obrázek...", ActionId = ButtonPropertyDescriptor.ActionUploadImage },
+        new ButtonPropertyDescriptor { Label = "Obrázek", Group = "Obrázek", ButtonLabel = "Nahrát obrázek…", ActionId = ButtonPropertyDescriptor.ActionUploadImage },
         new ButtonPropertyDescriptor { Label = "Poměr stran", Group = "Obrázek", ButtonLabel = "Přizpůsobit poměru obrázku", ActionId = ButtonPropertyDescriptor.ActionMatchImageAspect },
         new StringPropertyDescriptor { Label = "Datové pole", Group = "Obrázek",
             Get = () => DataField ?? "",

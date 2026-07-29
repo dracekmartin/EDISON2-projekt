@@ -9,7 +9,7 @@ namespace TemplateDesigner.Services;
 
 /// <summary>
 /// Klient pro Caché class ALVA.TemplateDesigner.API.Sablony.
-/// Async wrapper nad MLRest sync voláními — MLRest.Query je sync (HTTP),
+/// Async wrapper nad MLRest sync voláními - MLRest.Query je sync (HTTP),
 /// Task.Run uvolní UI thread.
 /// </summary>
 public class CacheTemplateService
@@ -19,7 +19,7 @@ public class CacheTemplateService
     /// <summary>Speciální AgendaCode pro šablony bez vazby na konkrétní agendu.</summary>
     public const string GeneralAgendaCode = "GENERAL";
 
-    /// <summary>IdFa systémové (M-line) zásuvky — sdílené read-only šablony, cíl seedu.</summary>
+    /// <summary>IdFa systémové (M-line) zásuvky - sdílené read-only šablony, cíl seedu.</summary>
     public const string MlineIdFa = "MLINE";
 
     private readonly MLRest _mlRest;
@@ -119,7 +119,7 @@ public class CacheTemplateService
             ? GeneralAgendaCode
             : template.AgendaCode!;
 
-        // Serialize updates ModifiedAt — kanonická JSON reprezentace stejná jako file save
+        // Serialize updates ModifiedAt - kanonická JSON reprezentace stejná jako file save
         var dataJson = TemplateSerializer.Serialize(template);
 
         var inVar = new CVar();
@@ -129,7 +129,7 @@ public class CacheTemplateService
         inVar["version"]    = new CVar(template.Version);
         // Prázdné = session firma; "MLINE" pro seed systémové šablony.
         inVar["targetIdFa"] = new CVar(targetIdFa ?? "");
-        // Distribuční zápis (seed) — jen tak server povolí zápis do read-only MLINE větve.
+        // Distribuční zápis (seed) - jen tak server povolí zápis do read-only MLINE větve.
         inVar["distribution"] = new CVar(distribution ? "1" : "");
 
         // Blob posíláme po kusech pod limitem délky Caché řetězce (velký inline obrázek by jinak

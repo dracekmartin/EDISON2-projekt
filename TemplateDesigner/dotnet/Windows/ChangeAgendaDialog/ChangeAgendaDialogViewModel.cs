@@ -5,7 +5,7 @@ namespace TemplateDesigner;
 
 /// <summary>
 /// Dialog pro přepnutí konfigurace agenda × varianta. Přepnutí vytváří novou šablonu se
-/// zvolenou konfigurací — ta určuje DB schéma + typy elementů + reálná data,
+/// zvolenou konfigurací - ta určuje DB schéma + typy elementů + reálná data,
 /// proto nelze zachovat rozdělaný obsah napříč agendami.
 ///
 /// Dvouosý model: řádky se seskupují podle agendy (Zastávkový JŘ, Linkový JŘ, Faktury…),

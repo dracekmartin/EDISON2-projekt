@@ -1,6 +1,6 @@
 Include (GENERAL, EDInputForm)
 
-/// ⚠️ AKTUÁLNĚ NEPOUŽITÉ — stylový pod-formulář jede přes C# CellStyleEditor (StyleEditDialog),
+/// ⚠️ AKTUÁLNĚ NEPOUŽITÉ - stylový pod-formulář jede přes C# CellStyleEditor (StyleEditDialog),
 /// který umí tri-state „dědí" placeholdery (EDInputform ploché pole ne). Ponecháno jako server-side
 /// varianta, kdyby byla někdy potřeba (StyleFields helper je sdílený a dál se používá pro inline zóny).
 ///

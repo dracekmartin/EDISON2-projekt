@@ -26,15 +26,15 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
     }
     public bool IsNotBusy => !IsBusy;
 
-    /// <summary>Vygenerovaná šablona — čtena volajícím po ShowDialog() == true.</summary>
+    /// <summary>Vygenerovaná šablona - čtena volajícím po ShowDialog() == true.</summary>
     public Template? GeneratedTemplate { get; private set; }
 
     public AsyncRelayCommand GenerateCommand { get; }
 
-    /// <summary>Důvod nedostupnosti AI (z EdisonAiService) — null = AI dostupné.</summary>
+    /// <summary>Důvod nedostupnosti AI (z EdisonAiService) - null = AI dostupné.</summary>
     private readonly string? _aiUnavailableReason;
 
-    /// <summary>Ruční zadání klíče je jen vývojářská cesta — zákazník klíč nemá (mlweb).</summary>
+    /// <summary>Ruční zadání klíče je jen vývojářská cesta - zákazník klíč nemá (mlweb).</summary>
     public bool IsDevMode => !string.IsNullOrEmpty(Config.AppSettings.Current?.AiAssistant.AnthropicApiKey);
 
     public AiTemplateAssistantDialogViewModel(
@@ -58,7 +58,7 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
         if (string.IsNullOrWhiteSpace(ApiKey))
         {
             PopupDisplayer.Info(_aiUnavailableReason
-                ?? "AI není dostupné — kontaktujte podporu M-line.");
+                ?? "AI není dostupné - kontaktujte podporu M-line.");
             return;
         }
 
@@ -72,7 +72,7 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
 
             if (GeneratedTemplate is not null)
             {
-                PopupDisplayer.Info("Šablona byla úspěšně vygenerována a bude otevřena v designeru.");
+                PopupDisplayer.Info("Šablona byla úspěšně vygenerována a bude otevřena v návrháři.");
                 CloseDialog(true);
             }
             else

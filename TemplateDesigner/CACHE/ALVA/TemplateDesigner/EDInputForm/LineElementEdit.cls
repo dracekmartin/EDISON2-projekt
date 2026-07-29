@@ -3,14 +3,14 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro editaci LineElement properties.
 ///
 /// Field key = property path na C# LineElement. Generický ElementEditDialog
-/// čte/zapisuje hodnoty přes reflexi — Init NEpotřebuje IN params, jen definuje
+/// čte/zapisuje hodnoty přes reflexi - Init NEpotřebuje IN params, jen definuje
 /// strukturu + default hodnoty.
 ///
-/// ⚠️ TECHNICKÝ DLUH — Schema duplikace: manual mirror PropertyDescriptors v
+/// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `LineElement.cs` kvůli Caché patchovatelnosti. Viz memory
 /// `project_edinputform_schema_duplication.md`.
 ///
-/// Save je no-op — LineElement je in-memory .NET model, host aplikuje hodnoty sám.
+/// Save je no-op - LineElement je in-memory .NET model, host aplikuje hodnoty sám.
 Class ALVA.TemplateDesigner.EDInputForm.LineElementEdit Extends %RegisteredObject
 {
 
@@ -63,12 +63,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
         s f.helpText = "Pořadí vrstev (vyšší = nad nižším)"
 
-        // ── Skupina "Pokročilé" ───────────────────────────────────────────
-        d form.AddGroup("advanced", "Pokročilé")
         s f = form.AddBool("IsLocked", "Uzamčeno", 0)
         s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
+
+        // ── Skupina "Podmínky" ───────────────────────────────────────────
+        d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

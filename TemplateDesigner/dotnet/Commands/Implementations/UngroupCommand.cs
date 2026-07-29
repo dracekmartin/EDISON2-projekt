@@ -3,7 +3,7 @@ using TemplateDesigner.Models;
 namespace TemplateDesigner.Commands.Implementations;
 
 /// <summary>
-/// Undoable rozeskupení elementů — nastaví GroupId na null.
+/// Undoable rozeskupení elementů - nastaví GroupId na null.
 /// </summary>
 public class UngroupCommand : IDesignerCommand
 {

@@ -5,7 +5,7 @@ namespace TemplateDesigner.Tests.Elements;
 
 /// <summary>
 /// TextWrapHelper měří přes SKFont (headless SkiaSharp, bez WPF). Testy záměrně
-/// neassertují přesné pixelové šířky (závisí na fontech stroje) — testují chování
+/// neassertují přesné pixelové šířky (závisí na fontech stroje) - testují chování
 /// nezávislé na metrice: normalizaci zlomů, extrémní šířky, prázdný vstup.
 /// </summary>
 public class TextWrapHelperTests

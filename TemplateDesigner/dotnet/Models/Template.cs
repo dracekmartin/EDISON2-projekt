@@ -14,7 +14,7 @@ public class Template
 
     /// <summary>
     /// True pokud byla šablona auto-migrována při loadu (verze v souboru byla starší než aktuální).
-    /// Transient — neserializuje se. UI vrstva (status bar) podle toho zobrazí warning.
+    /// Transient - neserializuje se. UI vrstva (status bar) podle toho zobrazí warning.
     /// </summary>
     [JsonIgnore]
     public bool WasMigrated { get; set; }
@@ -29,7 +29,7 @@ public class Template
     /// <summary>
     /// Kombinovaný kód konfigurace agenda × varianta, např. "ZASTAVKOVY_JR_AD", "FAKTURY".
     /// Null = obecná šablona bez vazby na data. Stabilní persistovaný klíč (JSON `agendaCode`,
-    /// DB index ByAgenda, per-agenda preference, EDISON launch `Agenda=&lt;kód&gt;`) — hodnoty se
+    /// DB index ByAgenda, per-agenda preference, EDISON launch `Agenda=&lt;kód&gt;`) - hodnoty se
     /// nemění. Odpovídá Caché parametru <c>AgendaVariantCode</c>; osy Agenda/Variant a labely
     /// („Zastávkový JŘ · AD") se dohledávají z registru agend (<c>AgendaRegistryEntry</c>).
     /// </summary>
@@ -42,7 +42,7 @@ public class Template
     public Dictionary<string, string>? SampleData { get; set; }
 
     /// <summary>
-    /// Parametry sestavy — renderovací rozhodnutí vystavená uživateli před tiskem.
+    /// Parametry sestavy - renderovací rozhodnutí vystavená uživateli před tiskem.
     /// Null / prázdný seznam = šablona nemá parametry.
     /// Připraveno pro budoucí offline podporu (bez Caché) a pro přepsání Caché defaultů per šablona.
     /// Aktuálně se parametry načítají pouze z Caché AgendaAPI.GetParameters().
@@ -53,8 +53,8 @@ public class Template
     /// Hodnoty obsahových tiskových parametrů uložené pro tuto šablonu (klíč = název parametru,
     /// hodnota = string reprezentace). Sdílené mezi uživateli (jsou součástí šablony) a mají přednost
     /// před per-agenda „naposledy použité". Null = šablona vlastní hodnoty nemá → fallback na agendu.
-    /// Exportní pole (název souboru, členění, imposice) sem NEpatří — ta zůstávají per agenda.
-    /// Aditivní pole — staré šablony ho nemají (žádná migrace, fallback na agendu).
+    /// Exportní pole (název souboru, členění, imposice) sem NEpatří - ta zůstávají per agenda.
+    /// Aditivní pole - staré šablony ho nemají (žádná migrace, fallback na agendu).
     /// </summary>
     public Dictionary<string, string>? PrintParameters { get; set; }
 
@@ -65,7 +65,7 @@ public class Template
     public string? CultureCode { get; set; }
 
     /// <summary>
-    /// Výchozí styl textu pro celou šablonu — kořen kaskády (dědí ho všechny elementy/buňky,
+    /// Výchozí styl textu pro celou šablonu - kořen kaskády (dědí ho všechny elementy/buňky,
     /// které styl nepřepíší). Null = zapečené defaulty (Arial). Aktuálně se z UI nastavuje jen
     /// font (rodina); ostatní property jsou připravené pro budoucí rozšíření (velikost, barva…).
     /// Aplikuje se přes <see cref="DocumentDefaults"/> jako ambient při změně šablony.
@@ -73,7 +73,7 @@ public class Template
     public TextStyle? DefaultTextStyle { get; set; }
 
     /// <summary>
-    /// Designer kontext (grid, snap) — zachová se prostředí, ve kterém byla šablona laděná.
+    /// Designer kontext (grid, snap) - zachová se prostředí, ve kterém byla šablona laděná.
     /// Null = applikace použije globální default při otevření.
     /// </summary>
     public TemplateEditorPreferences? EditorPreferences { get; set; }
@@ -90,7 +90,7 @@ public enum NoteRangeSuppression
     /// <summary>Schovat ruční komentáře spoje (výchozí = legacy chování).</summary>
     ManualComment,
 
-    /// <summary>Schovat automatické poznámky o rozdílech tras (zůstane jen ruční komentář) — #7955.</summary>
+    /// <summary>Schovat automatické poznámky o rozdílech tras (zůstane jen ruční komentář) - #7955.</summary>
     AutoRouteNote,
 
     /// <summary>Schovat ruční komentáře i automatické rozdíly tras.</summary>

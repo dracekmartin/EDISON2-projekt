@@ -5,7 +5,7 @@ using TemplateDesigner.Services;
 namespace TemplateDesigner;
 
 /// <summary>
-/// WPF implementace <see cref="IDesignerDialogService"/> — jediné místo, kde se pro hlavní VM otevírají
+/// WPF implementace <see cref="IDesignerDialogService"/> - jediné místo, kde se pro hlavní VM otevírají
 /// okna, souborové dialogy a schránka. Drží owner okno (nastavení <c>Owner</c> pro modální dialogy).
 /// Žádná logika navíc: mapuje dialogový VM na jeho okno a vrací výsledek.
 /// </summary>

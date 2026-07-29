@@ -29,7 +29,7 @@ public partial class MainWindow : Window
     private PreviewCanvas?          _previewCanvas;
     private ElementPropertiesWindowViewModel? _propsVm;
 
-    // Zoom max omezen na 500% — při vyšším zoomu má SKElement >20 MP, což způsobuje
+    // Zoom max omezen na 500% - při vyšším zoomu má SKElement >20 MP, což způsobuje
     // pomalé buffer uploads v SkiaSharp.Views.WPF (full surface kopie každý frame).
     // Pro skutečně vysoké zoomy bude potřeba virtualizace rendering (viz roadmap).
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f];
@@ -44,7 +44,7 @@ public partial class MainWindow : Window
     // Per-axis snap state z posledního mouse move (pro soft-snap v EndDrag)
     private bool _lastSnapActiveX, _lastSnapActiveY;
     // True jakmile myš překročí click-vs-drag práh (4px). Před tím se klik chová jako selekce
-    // bez posunu — jinak by jemný cuk myší při kliku vyvolal soft-snap a rozbil pozici.
+    // bez posunu - jinak by jemný cuk myší při kliku vyvolal soft-snap a rozbil pozici.
     private bool _dragHasMoved;
     private const float DragThresholdPxSquared = 16f; // 4px
 
@@ -64,7 +64,7 @@ public partial class MainWindow : Window
 
     // ── Adding element (drag from palette / field drag) ────────────────────────
     private string? _addingElementType;
-    private string? _addingFieldName;       // e.g. "CISLO_LINKY" — mutually exclusive with _addingElementType
+    private string? _addingFieldName;       // e.g. "CISLO_LINKY" - mutually exclusive with _addingElementType
     private SKPoint _addingGhostPos;
     private Section? _addingTargetSection;
     private TemplateElement? _addingTargetElement; // TextElement under cursor (field drag append)
@@ -93,7 +93,7 @@ public partial class MainWindow : Window
     // ── Per-user preferences (per-user × IDFa state from Caché) ──
     private Services.TdPreferencesService? _preferences;
 
-    /// <summary>WPF designer constructor — do not use at runtime.</summary>
+    /// <summary>WPF designer constructor - do not use at runtime.</summary>
     public MainWindow() { InitializeComponent(); }
 
     /// <summary>Runtime constructor. mlRest = null for standalone mode; preferences = null disables persist.</summary>
@@ -107,13 +107,13 @@ public partial class MainWindow : Window
         DataContext = _vm;
         InitializeComponent();
 
-        // AI generátor šablon zatím jen pro vývojáře (lokální dev klíč) — před produkcí skrytý;
+        // AI generátor šablon zatím jen pro vývojáře (lokální dev klíč) - před produkcí skrytý;
         // Import PDF zůstává pro všechny.
         MenuAiAssistant.Visibility =
             string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey)
                 ? Visibility.Collapsed : Visibility.Visible;
 
-        // DEV přepínač firem — stejný gate jako AI generátor (lokální dev klíč). Naplní se
+        // DEV přepínač firem - stejný gate jako AI generátor (lokální dev klíč). Naplní se
         // z pevného seznamu ve VM; v produkci zůstává skrytý.
         BuildDevFirmMenu();
 
@@ -128,7 +128,7 @@ public partial class MainWindow : Window
                 _vm.HasPreviewOverflow = hasOverflow;
         };
 
-        // Wire SkiaSharp (must be code-behind — not in XAML for net9+)
+        // Wire SkiaSharp (must be code-behind - not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;
         skPreview.PaintSurface       += OnPreviewPaintSurface;
         skPreview.SizeChanged        += (_, _) => InvalidatePreview();
@@ -138,7 +138,7 @@ public partial class MainWindow : Window
         skCanvas.MouseRightButtonUp   += OnCanvasRightClick;
         CanvasScrollViewer.PreviewMouseWheel += OnCanvasScrollWheel;
         PreviewScrollViewer.PreviewMouseWheel += OnPreviewScrollWheel;
-        // Repaint canvas po scroll — viewport culling potřebuje aktuální viditelnou oblast
+        // Repaint canvas po scroll - viewport culling potřebuje aktuální viditelnou oblast
         CanvasScrollViewer.ScrollChanged += (_, _) => skCanvas.InvalidateVisual();
 
         // Plocha kolem stránky: WPF (pozadí ScrollViewerů) i Skia (canvas.Clear) musí mít
@@ -148,7 +148,7 @@ public partial class MainWindow : Window
         ThemeService.Applied += OnThemeApplied;
 
         // Wire VM callbacks
-        // UpdateCanvasSize (ne jen InvalidateVisual) — výška plátna roste s obsahem, takže po každé
+        // UpdateCanvasSize (ne jen InvalidateVisual) - výška plátna roste s obsahem, takže po každé
         // změně (přidání/smazání/resize sekce či elementu) je třeba přepočítat velikost plátna.
         _vm.RequestCanvasRefresh         = () => { UpdateCanvasSize(); InvalidatePreview(); };
         _vm.RequestPreviewRefresh        = InvalidatePreview;
@@ -157,18 +157,27 @@ public partial class MainWindow : Window
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); UpdatePaletteForAgenda(); };
         _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
         _vm.RequestGridSizeUiSync        = SyncGridSizeComboBox;
+        // Pager dat: po výměně ItemsSource WPF umí spolknout SelectedIndex z bindingu, případně
+        // nechat zobrazovací box prázdný i při formálně správném indexu → deferovaně a BEZ podmínky
+        // znovu vybrat položku přes SelectedItem (samotné porovnání indexů prázdný box neodhalí).
+        _vm.RequestPreviewPagerSync      = () => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            int idx = _vm.RealPreviewIndex;
+            if (idx >= 0 && idx < CmbPreviewPage.Items.Count)
+                CmbPreviewPage.SelectedItem = CmbPreviewPage.Items[idx];
+        }), System.Windows.Threading.DispatcherPriority.Background);
         _vm.RequestParamsFormReload      = ReloadParamsTabForm;
         // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
         _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);
         // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
-        // Callbacky běží na background threadu nad snapshot šablonou — PreviewCanvas render
+        // Callbacky běží na background threadu nad snapshot šablonou - PreviewCanvas render
         // je čistý SkiaSharp bez WPF a živá šablona se může mezitím editovat.
         _vm.RenderPdfToFile = (filePath, pages, template, progress, sheets) =>
             _previewCanvas!.RenderMultiDataToPdf(filePath, pages, template, progress, sheets);
         _vm.RenderPngToFile = (filePath, pages, template, progress) =>
             _previewCanvas!.RenderMultiDataToPng(filePath, pages, template: template, progress: progress);
 
-        // Modální/souborové dialogy + schránka — WPF drží tato služba, ne VM (R4)
+        // Modální/souborové dialogy + schránka - WPF drží tato služba, ne VM (R4)
         _vm.Dialogs = new WpfDesignerDialogService(this);
 
         // Wire section events
@@ -176,7 +185,7 @@ public partial class MainWindow : Window
         SectionVM.ShowPropertiesGlobal = s => OpenPropertiesForSection(s);
         SectionVM.SaveTemplateGlobal   = s => SaveSectionAsTemplate(s);
 
-        // Properties VM — sdílená instance, dialog se vytvoří pokaždé nový při otevření
+        // Properties VM - sdílená instance, dialog se vytvoří pokaždé nový při otevření
         _propsVm = new ElementPropertiesWindowViewModel(
             _vm.State,
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
@@ -200,13 +209,13 @@ public partial class MainWindow : Window
         // EDInputForm tlačítka v inline panelu (např. „Zvýraznění řádků…")
         InlineElementForm.ButtonClicked += OnInlineElementButtonClicked;
 
-        // Inline properties panel — SetContext s execute + invalidate callbacky
+        // Inline properties panel - SetContext s execute + invalidate callbacky
         InlinePropertiesPanel.SetContext(
             cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
         InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
 
-        // Template tree panel — SetContext
+        // Template tree panel - SetContext
         TreePanel.SetContext(
             _vm,
             OpenPropertiesForElement,
@@ -225,7 +234,7 @@ public partial class MainWindow : Window
 
         this.PreviewKeyDown += OnWindowKeyDown;
 
-        // Field drag from schema tree — Window-level events for cross-panel drag
+        // Field drag from schema tree - Window-level events for cross-panel drag
         SchemaTree.PreviewMouseLeftButtonDown += SchemaTree_PreviewMouseDown;
         SchemaTree.PreviewMouseMove           += SchemaTree_PreviewMouseMove;
         this.PreviewMouseMove                 += OnWindowPreviewMouseMove;
@@ -244,20 +253,20 @@ public partial class MainWindow : Window
 
         // Sync nebindovaných UI elementů (CmbGridSize) s loaded GridSize. VM ctor
         // už nastavil State.GridSize, ale RequestGridSizeUiSync callback v tu chvíli
-        // ještě nebyl napojený — explicit sync teď, kdy už je vše drátované.
+        // ještě nebyl napojený - explicit sync teď, kdy už je vše drátované.
         SyncGridSizeComboBox(_vm.State.GridSize);
         SyncSnapGapComboBox(_vm.State.SnapGapMm);
 
         // Pokud LoadAsync nestihl dokončit před Show() (cold-start Caché HTTP trvá 2-3s),
-        // subscribe na Loaded event — handler dispatchne re-apply na UI thread.
-        // Subscribe-after-loaded case (warm cache) řeší Loaded event accessor — invoke immediately.
+        // subscribe na Loaded event - handler dispatchne re-apply na UI thread.
+        // Subscribe-after-loaded case (warm cache) řeší Loaded event accessor - invoke immediately.
         if (_preferences is not null)
             _preferences.Loaded += OnPreferencesLoaded;
     }
 
     private void OnPreferencesLoaded()
     {
-        // Loaded event fires from threadpool — dispatch to UI thread.
+        // Loaded event fires from threadpool - dispatch to UI thread.
         Dispatcher.BeginInvoke(async () =>
         {
             if (_vm is null || _preferences is null) return;
@@ -268,7 +277,7 @@ public partial class MainWindow : Window
                 SyncGridSizeComboBox(_vm.State.GridSize);
                 SyncSnapGapComboBox(_vm.State.SnapGapMm);
                 RebuildRecentFilesMenu();
-                // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány —
+                // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány -
                 // dohnat to teď.
                 await _vm.LoadPrintParamsAndApplyAsync();
                 skCanvas.InvalidateVisual();
@@ -276,7 +285,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                // Načtení preferencí/print-params je nekritické — nespadnout přes globální handler,
+                // Načtení preferencí/print-params je nekritické - nespadnout přes globální handler,
                 // jen nenápadně dát vědět (typicky Caché nedostupná).
                 System.Diagnostics.Debug.WriteLine($"[OnPreferencesLoaded] {ex}");
                 _vm.StatusText = "⚠ Nepodařilo se načíst uložené parametry (Caché nedostupná?)";
@@ -311,7 +320,7 @@ public partial class MainWindow : Window
         if (pref.ActiveLeftTabIndex >= 0 && pref.ActiveLeftTabIndex < LeftTabControl.Items.Count)
             LeftTabControl.SelectedIndex = pref.ActiveLeftTabIndex;
 
-        // Zoom combo musí odrážet načtený State.Zoom — jinak combo ukazuje 100 %, ale plátno
+        // Zoom combo musí odrážet načtený State.Zoom - jinak combo ukazuje 100 %, ale plátno
         // rendruje na uloženém zoomu (a "1:1" to neopraví, protože index se nezmění).
         SyncZoomComboBox(_vm?.State.Zoom ?? 1f);
     }
@@ -360,7 +369,7 @@ public partial class MainWindow : Window
         int tabIndex      = LeftTabControl.SelectedIndex;
         bool showPreview  = BtnPreview.IsChecked == true;
 
-        // Fire-and-forget — closing nesmí čekat na Caché latenci. Pokud proces zhasne dřív
+        // Fire-and-forget - closing nesmí čekat na Caché latenci. Pokud proces zhasne dřív
         // než save dokončí, ztratí se poslední session změny (akceptovatelný trade-off).
         _ = _vm.SaveMainStateAsync(leftPx, previewPx, tabIndex, showPreview);
         _ = _vm.SavePrintParamsAsync();
@@ -461,7 +470,7 @@ public partial class MainWindow : Window
                     using var sectionHighlight = new SKPaint { Color = new SKColor(0x182563EB) };
                     surface.Canvas.DrawRect(sRect, sectionHighlight);
 
-                    // Ghost element — čárkovaný obdélník
+                    // Ghost element - čárkovaný obdélník
                     var (defW, defH) = TemplateDesignerViewModel.GetDefaultElementSize(_addingElementType ?? ElementTypes.Text);
                     float gx = _addingGhostPos.X - (defW * _canvas.MmToPx / 2f);
                     float gy = _addingGhostPos.Y - (defH * _canvas.MmToPx / 2f);
@@ -485,7 +494,7 @@ public partial class MainWindow : Window
     {
         if (_canvas is null || _vm is null) return;
         const float padding   = 80f;  // 40 top + 40 bottom standardní okraj kolem stránky
-        const float topBuffer = 60f;  // extra prostor nahoře — kompenzuje preview chrome (Y-zarovnání)
+        const float topBuffer = 60f;  // extra prostor nahoře - kompenzuje preview chrome (Y-zarovnání)
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
         // Výška plátna roste s obsahem (souvislé multi-page plátno), ne pevná A4.
         float paperH  = _canvas.TotalPaperHeightPx();
@@ -509,7 +518,7 @@ public partial class MainWindow : Window
         if (newIdx == CmbZoom.SelectedIndex) return;
 
         // Zoom ke kurzoru: bod obsahu pod myší má po zoomu zůstat pod myší (standard editorů).
-        // Offsety se nastaví až po layout passu (BeginInvoke Loaded) — ScrollViewer jinak clampne
+        // Offsety se nastaví až po layout passu (BeginInvoke Loaded) - ScrollViewer jinak clampne
         // na starou velikost plátna.
         var mouse = e.GetPosition(CanvasScrollViewer);
         double contentX = CanvasScrollViewer.HorizontalOffset + mouse.X;
@@ -547,7 +556,7 @@ public partial class MainWindow : Window
 
     private double _savedLeftWidth = 200;
 
-    /// <summary>Sbalí/rozbalí levý panel (sekce / pole agendy) — uvolní místo na malém monitoru.</summary>
+    /// <summary>Sbalí/rozbalí levý panel (sekce / pole agendy) - uvolní místo na malém monitoru.</summary>
     private void BtnToggleLeftPanel_Changed(object sender, RoutedEventArgs e)
     {
         if (SectionsColumn is null) return;
@@ -589,7 +598,7 @@ public partial class MainWindow : Window
         if (newIdx == CmbPreviewZoom.SelectedIndex) return;
 
         // Zoom ke kurzoru (stejně jako plátno): bod obsahu pod myší má po zoomu zůstat pod myší.
-        // Offsety se nastaví až po layout passu (BeginInvoke Loaded) — skPreview se přepočítá
+        // Offsety se nastaví až po layout passu (BeginInvoke Loaded) - skPreview se přepočítá
         // synchronně v CmbPreviewZoom_SelectionChanged → UpdatePreviewSize, ScrollViewer jinak
         // clampne na starou velikost.
         var mouse = e.GetPosition(PreviewScrollViewer);
@@ -613,10 +622,10 @@ public partial class MainWindow : Window
         InvalidatePreview();
     }
 
-    /// <summary>„1:1" — skutečná velikost 100 % (designer i náhled). Tlačítko i Ctrl+1.</summary>
+    /// <summary>„1:1" - skutečná velikost 100 % (designer i náhled). Tlačítko i Ctrl+1.</summary>
     private void BtnResetView_Click(object sender, RoutedEventArgs e) => ResetZoomTo100();
 
-    /// <summary>„Fit" — přizpůsobit designer stránce. Tlačítko i Ctrl+0.</summary>
+    /// <summary>„Fit" - přizpůsobit designer stránce. Tlačítko i Ctrl+0.</summary>
     private void BtnFitPage_Click(object sender, RoutedEventArgs e) => FitToPage();
 
     private void ResetZoomTo100()
@@ -646,7 +655,7 @@ public partial class MainWindow : Window
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Section list — selection helpers
+    // Section list - selection helpers
     // ─────────────────────────────────────────────────────────────────────────
 
     private void RestoreSectionSelection()
@@ -750,7 +759,7 @@ public partial class MainWindow : Window
             if (fromIndex >= 0 && toIndex >= 0 && fromIndex != toIndex)
             {
                 _vm.ReorderSection(_sectionDragCandidate.Section, fromIndex, toIndex);
-                // ActivateSection nevoláme — ReorderSection už volá RebuildSections
+                // ActivateSection nevoláme - ReorderSection už volá RebuildSections
                 _vm.State.ActiveSection = _sectionDragCandidate.Section;
             }
         }
@@ -875,7 +884,7 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Sync CmbSnapGap na uloženou hodnotu mezery — nebindovaný combobox (jako CmbGridSize).
+    /// <summary>Sync CmbSnapGap na uloženou hodnotu mezery - nebindovaný combobox (jako CmbGridSize).
     /// Bez toho combo po startu/loadu ukazoval default, i když State.SnapGapMm držel uloženou hodnotu.</summary>
     private void SyncSnapGapComboBox(float gapMm)
     {
@@ -945,7 +954,7 @@ public partial class MainWindow : Window
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Menu / button click handlers (thin — delegate to ViewModel)
+    // Menu / button click handlers (thin - delegate to ViewModel)
     // ─────────────────────────────────────────────────────────────────────────
 
     private void MenuNew_Click(object sender, RoutedEventArgs e)       => _vm!.NewCommand.Execute(null);
@@ -955,7 +964,7 @@ public partial class MainWindow : Window
     private void MenuExportPdf_Click(object sender, RoutedEventArgs e) => _vm!.ExportPdfCommand.Execute(null);
     private void MenuExportPng_Click(object sender, RoutedEventArgs e) => _vm!.ExportPngCommand.Execute(null);
 
-    // Re-entrance guard — modální ShowDialog otevírá vnořený dispatcher, který může
+    // Re-entrance guard - modální ShowDialog otevírá vnořený dispatcher, který může
     // doručit dříve queueované Ctrl+P. Bez guardu by druhé pressnutí během už-otevřeného
     // dialogu vyvolalo nový PrintDialog skrz Owner-set-on-closed crash.
     private bool _printDialogOpening;
@@ -972,9 +981,9 @@ public partial class MainWindow : Window
     {
         // PrintDialog operuje nad sdíleným dict s preview lištou (_vm.PreviewParamValues).
         // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
-        // takže _previewParams už obsahuje persistované hodnoty — žádný extra I/O zde.
+        // takže _previewParams už obsahuje persistované hodnoty - žádný extra I/O zde.
 
-        // Callback pro reálná data — pouze pokud je CacheProvider k dispozici
+        // Callback pro reálná data - pouze pokud je CacheProvider k dispozici
         Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null;
         if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
         {
@@ -982,7 +991,7 @@ public partial class MainWindow : Window
             var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
             buildRealData = paramValues =>
             {
-                // Merge parametrů do každého DataContextu — C# rendering je potřebuje
+                // Merge parametrů do každého DataContextu - C# rendering je potřebuje
                 // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
                 var stringParams = paramValues
                     .Where(kv => kv.Value is not null)
@@ -992,7 +1001,7 @@ public partial class MainWindow : Window
                 List<DataContext>? pages;
 
                 // Pokud má uživatel aktivní instance (vybrané přes Instance Picker), iteruj je
-                // a vygeneruj batch napříč všemi — ignoruje LINKA_ID z parametrů dialogu.
+                // a vygeneruj batch napříč všemi - ignoruje LINKA_ID z parametrů dialogu.
                 if (_vm.ActiveInstances.Count > 0)
                 {
                     var paramName = _vm.CurrentInstanceParamName;
@@ -1008,7 +1017,7 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    // Bez vybrané instance nelze tisknout reálná data — linku určuje výhradně
+                    // Bez vybrané instance nelze tisknout reálná data - linku určuje výhradně
                     // Instance Picker (parametry sestavy už LINKA_ID neobsahují). Dialog na null
                     // ukáže "Caché nevrátila žádná data".
                     pages = null;
@@ -1044,7 +1053,7 @@ public partial class MainWindow : Window
         vm.RequestRenderPdf = (filePath, data, sheets) =>
             _previewCanvas!.RenderToPdf(filePath, data, sheets);
 
-        // Render nad snapshotem šablony — VM volá callback z threadpoolu (async tisk),
+        // Render nad snapshotem šablony - VM volá callback z threadpoolu (async tisk),
         // živá šablona by závodila s preview renderem UI threadu (element cache).
         vm.RequestRenderMultiPdf = (filePath, dataPages, sheets) =>
             _previewCanvas!.RenderMultiDataToPdf(filePath, dataPages,
@@ -1057,7 +1066,7 @@ public partial class MainWindow : Window
         var dlg = new PrintDialog(vm) { Owner = this };
         dlg.ShowDialog();
 
-        // Tisk sdílí _previewParams s tabem parametrů — po zavření přenačti tab formulář,
+        // Tisk sdílí _previewParams s tabem parametrů - po zavření přenačti tab formulář,
         // aby odrážel hodnoty případně změněné v dialogu.
         ReloadParamsTabForm();
     }
@@ -1091,7 +1100,7 @@ public partial class MainWindow : Window
 
         // Init() = synchronní Caché round-trip. Voláme ho jen když je control už Loaded (přepnutí
         // agendy za běhu). Při prvním zobrazení tabu (a v konstruktoru okna) ho spustí EDInputForm
-        // Loaded auto-init s aktuálními InitParams — jinak by transientní chyba Caché propadla ven
+        // Loaded auto-init s aktuálními InitParams - jinak by transientní chyba Caché propadla ven
         // z konstruktoru okna a aplikace by se neotevřela (R1/R2). Chyba jde do status baru, ne do pádu.
         if (!ParamsTabForm.IsLoaded) return;
         try { ParamsTabForm.Init(); }
@@ -1130,7 +1139,7 @@ public partial class MainWindow : Window
         if (!_vm.IsDirty) return;   // čisté okno → nech zavřít normálně (žádný cancel, žádný async)
 
         // Dirty: uložení do DB je async → zrušit toto zavření, počkat na potvrzení, pak zavřít
-        // programově. Close() PŘES Dispatcher — až po doběhnutí Closing eventu; jinak WPF hodí
+        // programově. Close() PŘES Dispatcher - až po doběhnutí Closing eventu; jinak WPF hodí
         // „nelze volat Close při zavírání" i když confirm skončí synchronně (volba „Ne").
         e.Cancel = true;
         try
@@ -1222,14 +1231,14 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Vyzvedne AI klíč (lokální / mlweb přes EdisonAiService). Klíč null = AI nedostupné,
-    /// Reason nese uživatelský důvod (limit, chybí konfigurace…) — dialogy ho zobrazí,
+    /// Reason nese uživatelský důvod (limit, chybí konfigurace…) - dialogy ho zobrazí,
     /// ale samy fungují dál (generátor, PDF import mají AI jako podmíněný krok).
     /// Cold-start = Caché config + HTTP resolve (sekundy, timeout 60 s) → wait-cursor + status,
     /// guard proti opakovanému kliku do menu během volání.
     /// </summary>
     private async Task<(string? Key, string? Reason)> TryGetAiApiKeyAsync()
     {
-        if (_aiKeyFetchRunning) return (null, "Probíhá předchozí požadavek — chvíli strpení.");
+        if (_aiKeyFetchRunning) return (null, "Probíhá předchozí požadavek - chvíli strpení.");
         _aiKeyFetchRunning = true;
         Mouse.OverrideCursor = Cursors.Wait;
         if (_vm is not null) _vm.StatusText = "Ověřuji dostupnost AI služby…";
@@ -1451,7 +1460,7 @@ public partial class MainWindow : Window
         _fieldDragCandidate = null;
         if (e.OriginalSource is DependencyObject source)
         {
-            // FindVisualParent místo ContainerFromElement — ten vrací rodičovskou skupinu u vnořených TreeView položek
+            // FindVisualParent místo ContainerFromElement - ten vrací rodičovskou skupinu u vnořených TreeView položek
             var item = FindVisualParent<TreeViewItem>(source);
             if (item?.DataContext is SchemaFieldVM field)
             {
@@ -1480,7 +1489,7 @@ public partial class MainWindow : Window
         if (Math.Abs(pos.X - _fieldDragStartPoint.X) < 5 && Math.Abs(pos.Y - _fieldDragStartPoint.Y) < 5)
             return;
 
-        // Threshold překročen — zahájit drag
+        // Threshold překročen - zahájit drag
         _addingFieldName = _fieldDragCandidate.FieldName;
         _addingElementType = null;
         _addingTargetSection = null;
@@ -1493,7 +1502,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Window-level PreviewMouseMove — field drag přes celé okno.
+    /// Window-level PreviewMouseMove - field drag přes celé okno.
     /// TreeView přebíjí CaptureMouse na skCanvas, proto nelze spoléhat na canvas-level events.
     /// </summary>
     private void OnWindowPreviewMouseMove(object sender, MouseEventArgs e)
@@ -1516,7 +1525,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Window-level PreviewMouseLeftButtonUp — dokončí field drag.
+    /// Window-level PreviewMouseLeftButtonUp - dokončí field drag.
     /// </summary>
     private void OnWindowPreviewMouseUp(object sender, MouseButtonEventArgs e)
     {
@@ -1563,7 +1572,7 @@ public partial class MainWindow : Window
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Save section as template (UI dialog — stays in code-behind)
+    // Save section as template (UI dialog - stays in code-behind)
     // ─────────────────────────────────────────────────────────────────────────
 
     private void SaveSectionAsTemplate(Section section)
@@ -1628,7 +1637,7 @@ public partial class MainWindow : Window
             element, availableGroups, element.GroupColumns, element.HourColumnStyle)
             { Owner = this };
 
-        if (dlg.ShowDialog() != true) return;   // Cancel — nic se neaplikovalo (Obecné batchuje na OK)
+        if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)
 
         _vm.ApplyDepartureGridEdit(element, dlg.GeneralCommand, dlg.StyleCommands,
             dlg.ResultGroupColumns, availableGroups.Count > 0, dlg.ResultHourColumnStyle);
@@ -1648,11 +1657,11 @@ public partial class MainWindow : Window
         Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
         Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
         Models.Elements.ImageElement       => ("ALVA.TemplateDesigner.EDInputForm.ImageElementEdit", "Vlastnosti obrázku"),
-        // LineTable NENÍ zde — má vlastní 2-tab dialog (Obecné + Sloupce), viz OpenLineTableColumnsDialog.
+        // LineTable NENÍ zde - má vlastní 2-tab dialog (Obecné + Sloupce), viz OpenLineTableColumnsDialog.
         _ => (null, null)
     };
 
-    /// <summary>Caché *Edit.cls schéma pro inline panel (W4-10) — pokrývá i komplexní elementy
+    /// <summary>Caché *Edit.cls schéma pro inline panel (W4-10) - pokrývá i komplexní elementy
     /// (StopList/DepartureGrid/Dynamic), jejichž „Obecné" tab modálu jede na tomtéž schématu.
     /// Sloupce komplexních zůstávají jen v dvojkliku (plný 2-tab dialog).</summary>
     private static string? PanelCacheClass(TemplateElement element)
@@ -1696,7 +1705,7 @@ public partial class MainWindow : Window
         UpdatePropertiesPanel();
     }
 
-    /// <summary>EDInputForm button v inline panelu — otevře editor pravidel zvýraznění.</summary>
+    /// <summary>EDInputForm button v inline panelu - otevře editor pravidel zvýraznění.</summary>
     private void OnInlineElementButtonClicked(string key)
     {
         if (key != "__highlightRules") return;
@@ -1785,7 +1794,7 @@ public partial class MainWindow : Window
         InvalidatePreview();
     }
 
-    // Property-path klíče ve FinalValues (= ElementFormBinder.Snapshot cesta) — MUSÍ odpovídat
+    // Property-path klíče ve FinalValues (= ElementFormBinder.Snapshot cesta) - MUSÍ odpovídat
     // property cestě na Template.PageSize. Sdílená konstanta, ať detekce změny rozměru neselže tiše
     // při přejmenování pole formuláře.
     private const string PagePathWidth  = "PageSize.Width";
@@ -1812,7 +1821,7 @@ public partial class MainWindow : Window
             // Pojistka: dialog vrátil hodnoty, ale klíče rozměrů chybí → detekce resetu by tiše selhala.
             if (fv is not null && (!fv.ContainsKey(PagePathWidth) || !fv.ContainsKey(PagePathHeight)))
                 System.Diagnostics.Debug.WriteLine(
-                    $"[OpenPropertiesForPage] FinalValues bez klíče rozměrů ({PagePathWidth}/{PagePathHeight}) — reset detekce vypnutá?");
+                    $"[OpenPropertiesForPage] FinalValues bez klíče rozměrů ({PagePathWidth}/{PagePathHeight}) - reset detekce vypnutá?");
 
             bool dimsChanged = fv is not null
                 && (DiffMm(oldW, ParseMm(fv, PagePathWidth, oldW))
@@ -1918,13 +1927,13 @@ public partial class MainWindow : Window
         string origin = _vm.IsCacheBacked ? "[DB] " : "[neuloženo] ";
         string name = _vm.State.CurrentTemplate.Name;
         string dirty = _vm.IsDirty ? " *" : "";
-        Title = $"{agenda}{origin}{name}{dirty} — Návrhář sestav";
+        Title = $"{agenda}{origin}{name}{dirty} - Návrhář sestav";
     }
 
     /// <summary>
     /// Kontextová paleta JŘ elementů dle agendy šablony: zastávkové agendy ukazují
     /// StopList/DepartureGrid/NotesLegend, knižní LineTable; agenda bez JŘ kontextu (GENERAL,
-    /// fakturace) žádné — JŘ elementy patří jen ke své agendě.
+    /// fakturace) žádné - JŘ elementy patří jen ke své agendě.
     /// </summary>
     private void UpdatePaletteForAgenda()
     {
@@ -1964,14 +1973,14 @@ public partial class MainWindow : Window
     private void OnWindowKeyDown(object sender, KeyEventArgs e)
     {
         if (_vm is null) return;
-        // V inline edit modu nereagujeme na globální zkratky — TextBox si Enter/Esc obslouží sám.
+        // V inline edit modu nereagujeme na globální zkratky - TextBox si Enter/Esc obslouží sám.
         // Bez tohoto by PreviewKeyDown odchytil Enter dřív než TextBox a otevřel dialog místo commitu.
         if (_inlineEditElement is not null) return;
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
 
         // Psaní v textovém poli (inline panel EDInputForm, filtr stromu, …): Enter potvrdí pole
         // (push LostFocus binding → živý write-back), ne otevře dialog vlastností. Ostatní bare
-        // klávesy (Delete/šipky/písmena/F2) patří poli, ne globálním zkratkám — jinak by Delete
+        // klávesy (Delete/šipky/písmena/F2) patří poli, ne globálním zkratkám - jinak by Delete
         // v poli smazal vybraný element. Ctrl/Alt zkratky (Ctrl+Z/S/…) procházejí dál.
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox focusedField)
         {
@@ -2247,7 +2256,7 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
-            // U4: dvojklik do prázdna = zrušit výběr (ne otevřít vlastnosti stránky — ty jsou
+            // U4: dvojklik do prázdna = zrušit výběr (ne otevřít vlastnosti stránky - ty jsou
             // na Ctrl+Shift+P / menu Zobrazení). Dialog do prázdna je pro uživatele překvapení.
             _vm.State.SelectedElements.Clear();
             UpdatePropertiesPanel();
@@ -2331,7 +2340,7 @@ public partial class MainWindow : Window
             if (e.LeftButton != MouseButtonState.Pressed) { EndDrag(false); return; }
             if (_dragElement is null || _dragInitPositions.Count == 0) return;
 
-            // Click vs drag — dokud myš nepřekročí threshold, nehýbáme s elementem.
+            // Click vs drag - dokud myš nepřekročí threshold, nehýbáme s elementem.
             // Brání tomu, aby pouhý klik (např. pro otevření properties) zaregistroval soft-snap.
             if (!_dragHasMoved)
             {
@@ -2358,7 +2367,7 @@ public partial class MainWindow : Window
                     float threshold = 8f / _canvas.MmToPx; // ~8px
                     _snapEngine.GapMm = _vm.State.SnapGapMm;
 
-                    // Edge anchors: hrany sekce/printable area — edge-to-edge i gap snap (mezera od okraje).
+                    // Edge anchors: hrany sekce/printable area - edge-to-edge i gap snap (mezera od okraje).
                     float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
                     float sectionH = section.EffectiveDesignerHeight;
                     var edgeX = new List<float> { 0f, sectionW };
@@ -2381,7 +2390,7 @@ public partial class MainWindow : Window
                     float refElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
                     var extraY = new List<float> { (sectionH - refElH) / 2f };
 
-                    // Section center X (center-to-anchor) — pro horizontální guide line.
+                    // Section center X (center-to-anchor) - pro horizontální guide line.
                     float sectionCenterX = sectionW / 2f;
 
                     var snap = _snapEngine.Calculate(
@@ -2396,7 +2405,7 @@ public partial class MainWindow : Window
                     if (snap.X.Gap is { } gx) _vm.State.ActiveGapIndicators.Add(gx);
                     if (snap.Y.Gap is { } gy) _vm.State.ActiveGapIndicators.Add(gy);
 
-                    // Section center guide line — pokud snap právě sedí na sectionCenterX
+                    // Section center guide line - pokud snap právě sedí na sectionCenterX
                     _vm.State.ActiveSectionCenterX = snap.X.IsSectionCenter ? (float?)sectionCenterX : null;
 
                     // Zvýrazni cílové elementy
@@ -2407,7 +2416,7 @@ public partial class MainWindow : Window
                 if (_vm.State.SnapToGrid && !ctrlHeld)
                 {
                     float g = _vm.State.GridSize;
-                    // Bounds elementu v sekci — aby grid snap nepřekročil okraje (jinak by clamp odsunul element mimo grid line)
+                    // Bounds elementu v sekci - aby grid snap nepřekročil okraje (jinak by clamp odsunul element mimo grid line)
                     float boundSectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
                     var gridSection = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(_dragElement!));
                     float boundSectionH = gridSection?.EffectiveDesignerHeight ?? float.MaxValue;
@@ -2416,7 +2425,7 @@ public partial class MainWindow : Window
                     float maxGridX = MathF.Max(0, MathF.Floor((boundSectionW - boundElW) / g) * g);
                     float maxGridY = MathF.Max(0, MathF.Floor((boundSectionH - boundElH) / g) * g);
 
-                    // Grid snap má prioritu — pokud je zapnutý, zaokrouhlí i výsledek smart snapu,
+                    // Grid snap má prioritu - pokud je zapnutý, zaokrouhlí i výsledek smart snapu,
                     // takže pozice je vždy grid-aligned (očekávání uživatele: "mám grid 1mm → pozice jsou v 1mm krocích").
                     // Bez tohoto smart snap k non-grid pozicím sousedů (typicky po PDF importu) obchází grid.
                     {
@@ -2438,7 +2447,7 @@ public partial class MainWindow : Window
             foreach (var kvp in _dragInitPositions)
             { kvp.Key.X = kvp.Value.X + clampedX; kvp.Key.Y = kvp.Value.Y + clampedY; }
 
-            // Měřící badge — aktuální pozice draggovaného elementu
+            // Měřící badge - aktuální pozice draggovaného elementu
             _vm.State.DragBadgeText = $"X: {_dragElement!.X:0.#} mm   Y: {_dragElement!.Y:0.#} mm";
             _vm.State.DragBadgeX = cx;
             _vm.State.DragBadgeY = cy;
@@ -2491,7 +2500,7 @@ public partial class MainWindow : Window
                 _vm.State.SnapTargetElements.AddRange(snap.Targets);
             }
 
-            // Snap na čtverec — u rohového úchytu tvarového elementu dorovná W≈H na přesný
+            // Snap na čtverec - u rohového úchytu tvarového elementu dorovná W≈H na přesný
             // čtverec (uživatel nemusí ručně dopočítávat rovné strany). Práh v px → v mm dle zoomu;
             // Ctrl snap vypíná. Protilehlý roh (kotva) zůstává, dorovnaná strana snapuje na grid.
             bool squareSnapped = false;
@@ -2520,7 +2529,7 @@ public partial class MainWindow : Window
             _resizeElement.X = newX; _resizeElement.Y = newY;
             _resizeElement.Width = newW; _resizeElement.Height = newH;
 
-            // Měřící badge — aktuální rozměr a pozice (stejný formát jako u dragu)
+            // Měřící badge - aktuální rozměr a pozice (stejný formát jako u dragu)
             _vm.State.DragBadgeText = squareSnapped
                 ? $"{newW:0.#} × {newH:0.#} mm  ◻ čtverec   X: {newX:0.#}   Y: {newY:0.#} mm"
                 : $"{newW:0.#} × {newH:0.#} mm   X: {newX:0.#}   Y: {newY:0.#} mm";
@@ -2606,14 +2615,14 @@ public partial class MainWindow : Window
             menu.Items.Add(new MenuItem { Header = "Smazat (Del)", Command = _vm.DeleteCommand });
             menu.Items.Add(new Separator());
 
-            var zMenu = new MenuItem { Header = "Z-pořadí" };
+            var zMenu = new MenuItem { Header = "Vrstva" };
             zMenu.Items.Add(new MenuItem { Header = "Dopředu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, false); InvalidateCanvas(); }) });
             zMenu.Items.Add(new MenuItem { Header = "Dozadu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, false); InvalidateCanvas(); }) });
             zMenu.Items.Add(new MenuItem { Header = "Úplně dopředu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, true); InvalidateCanvas(); }) });
             zMenu.Items.Add(new MenuItem { Header = "Úplně dozadu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, true); InvalidateCanvas(); }) });
             menu.Items.Add(zMenu);
 
-            // Seskupení / rozdělení / editace textu — dřív jen na zkratkách, teď viditelné v menu.
+            // Seskupení / rozdělení / editace textu - dřív jen na zkratkách, teď viditelné v menu.
             menu.Items.Add(new Separator());
             if (_vm.State.SelectedElements.Count >= 2)
                 menu.Items.Add(new MenuItem { Header = "Seskupit (Ctrl+G)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.GroupSelected(); InvalidateCanvas(); }) });
@@ -2634,7 +2643,7 @@ public partial class MainWindow : Window
                 Header = "Vlastnosti elementu...",
                 Command = new EDControls.EDViewModel.RelayCommand(() =>
                 {
-                    // U2: otevřít dialog (jako dvojklik a „Vlastnosti sekce…") — dřív jen přepínalo
+                    // U2: otevřít dialog (jako dvojklik a „Vlastnosti sekce…") - dřív jen přepínalo
                     // inline panel, což u stejně pojmenované akce se sekcí bylo nekonzistentní.
                     _vm.State.SelectedElements.Clear();
                     _vm.State.SelectedElements.Add(el);
@@ -2646,7 +2655,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            // Obecné menu — vložit, vybrat vše
+            // Obecné menu - vložit, vybrat vše
             menu.Items.Add(new MenuItem { Header = "Vložit (Ctrl+V)", Command = _vm.PasteCommand });
             menu.Items.Add(new MenuItem
             {
@@ -2655,7 +2664,7 @@ public partial class MainWindow : Window
             });
         }
 
-        // Sekční položky — pokud klik je na záhlaví nebo pozadí sekce
+        // Sekční položky - pokud klik je na záhlaví nebo pozadí sekce
         var section = _canvas.HitTestSectionHeader(cx, cy, cw)
                    ?? _canvas.HitTestSection(cx, cy, cw);
         if (section is not null)
@@ -2774,14 +2783,14 @@ public partial class MainWindow : Window
 
     private void EndDrag(bool commit)
     {
-        // Bez pohybu (čistý klik) zachovat init pozice — ne commit, ne soft-snap.
+        // Bez pohybu (čistý klik) zachovat init pozice - ne commit, ne soft-snap.
         // Bez tohoto by klik na element s GridSize=5mm „strhl" jeho přesnou 0.1mm pozici na 5mm grid.
         if (commit && !_dragHasMoved) commit = false;
         if (commit && _vm is not null)
         {
             // Při vypnutém grid snapu jen očistíme zlomkové mm z draggu (3.247… → 3.2 mm) na osách,
             // kde se neuplatnil smart-snap. Kvantizace na 0.1 mm je nepostřehnutelná, ale drží čisté
-            // souřadnice pro zarovnávání klávesami — shodně s EndResize. NEsnapujeme na celý GridSize,
+            // souřadnice pro zarovnávání klávesami - shodně s EndResize. NEsnapujeme na celý GridSize,
             // jinak by vypnuté tlačítko mřížky reálně grid snapping nevyplo (jen by ho odložilo na puštění).
             bool applySoftX = !_lastSnapActiveX && !_vm.State.SnapToGrid;
             bool applySoftY = !_lastSnapActiveY && !_vm.State.SnapToGrid;
@@ -2824,7 +2833,7 @@ public partial class MainWindow : Window
         {
             if (commit)
             {
-                // Zaokrouhlit na 0.1mm před commitem — eliminuje float artefakty z dragu
+                // Zaokrouhlit na 0.1mm před commitem - eliminuje float artefakty z dragu
                 _resizeElement.X      = MmMath.Round(_resizeElement.X);
                 _resizeElement.Y      = MmMath.Round(_resizeElement.Y);
                 _resizeElement.Width  = MmMath.Round(_resizeElement.Width);
@@ -2951,7 +2960,7 @@ public partial class MainWindow : Window
         return (clampedX, clampedY);
     }
 
-    // ── Inline text edit (V0 — TextElement only, no rotation, no lock) ─────────
+    // ── Inline text edit (V0 - TextElement only, no rotation, no lock) ─────────
 
     private TextElement? _inlineEditElement;
     private string? _inlineEditOriginalText;
@@ -3009,7 +3018,7 @@ public partial class MainWindow : Window
 
     private void InlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // PreviewKeyDown — musí zachytit Enter dřív než TextBox.AcceptsReturn vloží newline.
+        // PreviewKeyDown - musí zachytit Enter dřív než TextBox.AcceptsReturn vloží newline.
         if (e.Key == Key.Escape)
         {
             ExitInlineEdit(commit: false);

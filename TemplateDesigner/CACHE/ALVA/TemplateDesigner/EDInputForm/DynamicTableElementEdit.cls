@@ -22,7 +22,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Obecné ────────────────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
-        // Zdroj dat = List pole; položky (kolekce agendy) plní klient (PopulateDataSourceField) — jsou
+        // Zdroj dat = List pole; položky (kolekce agendy) plní klient (PopulateDataSourceField) - jsou
         // dynamické per agenda, Caché je nezná. Formulář se re-Inituje při každém návratu na tab
         // (EDInputForm auto-Init na Loaded), takže dialog po Prefillu znovu aplikuje vybraný zdroj
         // z dialog-scoped stavu (viz DynamicTableEditorDialog).
@@ -35,7 +35,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("RowsOnly", "Řádky"), f.AddListItem("ColumnsOnly", "Sloupce")
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         s f = form.AddNumber("MinRows", "Min. řádků (0 = ne)", 0, 0, 200)
-        s f.helpText = "Doplní prázdné řádky do tohoto počtu — pevná výška boxu (např. faktura). 0 = bez minima"
+        s f.helpText = "Doplní prázdné řádky do tohoto počtu - pevná výška boxu (např. faktura). 0 = bez minima"
         s f = form.AddNumber("MaxRows", "Max. řádků (0 = bez limitu)", 0, 0, 500)
         s f.helpText = "Ořízne přebytečné datové řádky. 0 = bez omezení"
 
@@ -56,9 +56,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Podmínky ──────────────────────────────────────────────────────
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
-        s f.helpText = "Podmínka nad daty řádku — řádky, kde neplatí, se nevykreslí. Názvy polí = mapování ""Field"" ze sloupců (tab Sloupce). Např. {CENA} > 0"
+        s f.helpText = "Podmínka nad daty řádku - řádky, kde neplatí, se nevykreslí. Názvy polí = mapování ""Field"" ze sloupců (tab Sloupce). Např. {CENA} > 0"
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit pravidla…"
         s f.helpText = "Seznam pravidel: podmínka → barva pozadí řádku. První splněné vyhrává."

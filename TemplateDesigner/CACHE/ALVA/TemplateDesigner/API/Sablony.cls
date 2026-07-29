@@ -5,7 +5,7 @@ Include GENERAL
 /// Šablona = uložený layout tiskové sestavy (např. zastávkový JŘ MHD pro linku 42,
 /// faktura pro fakturační systém, ...) jako JSON blob + sada metadat pro identifikaci.
 ///
-/// Per-IDFa (každá firma má vlastní úložiště), sdílené napříč uživateli — autor
+/// Per-IDFa (každá firma má vlastní úložiště), sdílené napříč uživateli - autor
 /// je jen metadata, ne access control. Šablony bez vazby na agendu mají AgendaCode = "GENERAL".
 ///
 /// Operace: ListTemplates (metadata), LoadTemplate, SaveTemplate (insert nebo update),
@@ -17,13 +17,13 @@ Include GENERAL
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data", n)          = n-tý kus JSON blobu (jen velký blob)
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
 ///
-/// Blob: MALÝ (vejde se do 1 kusu) se ukládá jednoklíčově — formát čitelný i staršími klienty
-/// bez podpory kusů (#13013). VELKÝ po kusech, nikdy jako jeden řetězec — překročil by limit
+/// Blob: MALÝ (vejde se do 1 kusu) se ukládá jednoklíčově - formát čitelný i staršími klienty
+/// bez podpory kusů (#13013). VELKÝ po kusech, nikdy jako jeden řetězec - překročil by limit
 /// délky řádku na wire (příjem i odpověď). Formáty se při načtení rozliší existencí "Data",1.
 ///
 /// Metadata pole: Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version
 ///
-/// TemplateID je GUID generovaný na klientovi (Template.Id v C# modelu) — round-trip s file JSON
+/// TemplateID je GUID generovaný na klientovi (Template.Id v C# modelu) - round-trip s file JSON
 /// je beze ztráty identity.
 ///
 /// Seznam pro UI: ALVA.TemplateDesigner.EDList.Sablony (read-only čtení metadat pro picker).
@@ -147,10 +147,10 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
         i targetIdFa = "" s targetIdFa = IdFa
 
         // Zámek MLINE: systémová (M-line) větev je read-only, zápis jen distribuční cestou
-        // (seed nastaví "distribution"=1). Normální UI systémové needituje — jen kopíruje
+        // (seed nastaví "distribution"=1). Normální UI systémové needituje - jen kopíruje
         // („Uložit jako" do firmy). Vynuceno server-side, ne jen klientská iluze (governance bod 2).
         i (targetIdFa = "MLINE") && ($g(^||ML("IN","distribution")) '= "1") {
-            $$$ThrowStatus($$$ERROR($$$GeneralError, "MLINE je systémová (read-only) větev — zápis jen přes distribuci."))
+            $$$ThrowStatus($$$ERROR($$$GeneralError, "MLINE je systémová (read-only) větev - zápis jen přes distribuci."))
         }
 
         s nowIso = $zdt($h, 3)
@@ -173,9 +173,9 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedAt") = nowIso
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedBy") = userID
 
-        // Blob: malý (1 kus / legacy vstup) ulož JEDNOKLÍČOVĚ — přečte ho i starší klient bez
+        // Blob: malý (1 kus / legacy vstup) ulož JEDNOKLÍČOVĚ - přečte ho i starší klient bez
         // podpory kusů (#13013: mix nové úložiště × produkční .exe → „šablona porušená").
-        // Po kusech (Data = počet, Data(n) = kus) jen víc-kusý blob — jeden řetězec by na wire
+        // Po kusech (Data = počet, Data(n) = kus) jen víc-kusý blob - jeden řetězec by na wire
         // překročil limit délky řádku; takový starší klient stejně nikdy neuložil.
         // Nejdřív smaž starý obsah (oba formáty z předchozího uložení).
         k ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data")

@@ -25,17 +25,17 @@ public class PrintDialogViewModel : EDViewModel
 
     private string _statusText = "";
 
-    /// <summary>Výchozí pattern názvu souboru (tokeny {POLE} z dat) — odpovídá legacy
+    /// <summary>Výchozí pattern názvu souboru (tokeny {POLE} z dat) - odpovídá legacy
     /// „NázevZastávky_ČísloLinky_…". Funguje pro AD i MHD (obě emitují tato pole).</summary>
     public const string DefaultFileNamePattern = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}";
 
-    /// <summary>Klíče universálních export polí v EDInputformu (AgendaParams) — NEjsou agenda
+    /// <summary>Klíče universálních export polí v EDInputformu (AgendaParams) - NEjsou agenda
     /// parametry, jsou společné všem agendám. Hodnoty tečou přes sdílený <c>_paramValues</c>
     /// (→ persistence per-agenda zadarmo).</summary>
     public const string ExportSplitKey = "__EXPORT_SPLIT";
     public const string ExportFileNameKey = "__EXPORT_FILENAME";
 
-    /// <summary>Klíče export polí — pro restore v <c>LoadPrintParamsAndApplyAsync</c> (nejsou
+    /// <summary>Klíče export polí - pro restore v <c>LoadPrintParamsAndApplyAsync</c> (nejsou
     /// v <c>_agendaParameters</c>, takže by se jinak nenačetly).</summary>
     public static readonly string[] ExportKeys =
         [ExportSplitKey, ExportFileNameKey, .. SheetLayoutKeys.All];
@@ -59,13 +59,13 @@ public class PrintDialogViewModel : EDViewModel
     /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf. Třetí parametr = imposice (null = vypnutá).</summary>
     public Action<string, IReadOnlyList<DataContext>, SheetLayoutOptions?>? RequestRenderMultiPdf { get; set; }
 
-    /// <summary>Code-behind napojí na PreviewCanvas.CountOverflowingPages — layout-only kontrola přetečení
+    /// <summary>Code-behind napojí na PreviewCanvas.CountOverflowingPages - layout-only kontrola přetečení
     /// napříč všemi instancemi (data už fetchnutá → levné). Vrací (počet přetékajících, celkem stránek).</summary>
     public Func<IReadOnlyList<DataContext>, (int Overflowing, int Total)>? RequestOverflowCheck { get; set; }
 
     /// <summary>
     /// PrintDialog operuje nad **sdíleným** dictionary parametrů (typicky <c>MainWindowViewModel.PreviewParamValues</c>).
-    /// Tím je zaručeno že preview lišta a PrintDialog ukazují stejné hodnoty — když user změní
+    /// Tím je zaručeno že preview lišta a PrintDialog ukazují stejné hodnoty - když user změní
     /// param v PrintDialogu, preview se live aktualizuje přes <paramref name="onParamsChanged"/>
     /// callback (typicky <c>MainWindowViewModel.OnExternalParamsChanged</c>).
     /// </summary>
@@ -93,7 +93,7 @@ public class PrintDialogViewModel : EDViewModel
 
         // _paramValues přichází už naplněný (preview lišta defaults + případně saved PrintParams
         // aplikované při openu šablony). Pro chybějící klíče (nový parametr přidaný po předchozím
-        // savu) doplníme defaults — nepřepisuje existing values.
+        // savu) doplníme defaults - nepřepisuje existing values.
         // Parametry + export pole renderuje EDInputForm (CacheClass=AgendaParams) v code-behindu;
         // VM jen drží definice + sdílený dict a poskytuje konverzní/visibility helpery (viz níže).
         foreach (var p in parameters)
@@ -102,7 +102,7 @@ public class PrintDialogViewModel : EDViewModel
 
     // ── EDInputForm integrace ─────────────────────────────────────────────────
 
-    /// <summary>IN params pro AgendaParams.Init — agendaClass + JSON aktuálních hodnot pro prefill.</summary>
+    /// <summary>IN params pro AgendaParams.Init - agendaClass + JSON aktuálních hodnot pro prefill.</summary>
     public CVar BuildInitParams()
     {
         var init = new CVar();
@@ -115,7 +115,7 @@ public class PrintDialogViewModel : EDViewModel
             vals[p.Name] = ToFieldString(v, p.Type);
         }
 
-        // Export pole (universální, ne agenda parametry) — prefill posledně použitými / defaulty.
+        // Export pole (universální, ne agenda parametry) - prefill posledně použitými / defaulty.
         vals[ExportSplitKey] = CurrentSplitKey();
         vals[ExportFileNameKey] = CurrentFileNamePattern();
         vals[SheetLayoutKeys.Sheet] = (_paramValues.GetValueOrDefault(SheetLayoutKeys.Sheet) as string) is { Length: > 0 } sh ? sh : SheetLayoutKeys.SheetNone;
@@ -145,7 +145,7 @@ public class PrintDialogViewModel : EDViewModel
     }
 
     /// <summary>Vyhodnotí <c>visibleWhen</c> parametru proti aktuálním hodnotám (sdílený dict).
-    /// Logika v <see cref="TemplateParameter.IsVisible"/> — jeden zdroj pro preview lištu i tisk.</summary>
+    /// Logika v <see cref="TemplateParameter.IsVisible"/> - jeden zdroj pro preview lištu i tisk.</summary>
     public bool IsParamVisible(string name) =>
         _parameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_paramValues) ?? true;
 
@@ -158,7 +158,7 @@ public class PrintDialogViewModel : EDViewModel
 
     /// <summary>
     /// Uloží aktuální _paramValues (= shared dict s preview lištou) do prefs (fire-and-forget).
-    /// Volá se před export — perzistuje uživatelovy hodnoty pro příští session.
+    /// Volá se před export - perzistuje uživatelovy hodnoty pro příští session.
     /// MainWindow.OnWindowClosing taky uloží přes <c>SavePrintParamsAsync</c> jako safety.
     /// </summary>
     private void PersistParams()
@@ -195,7 +195,7 @@ public class PrintDialogViewModel : EDViewModel
     {
         if (_buildRealData is null) return;
 
-        // Validace imposice před výběrem cíle — chybná mřížka je uživatelská chyba konfigurace.
+        // Validace imposice před výběrem cíle - chybná mřížka je uživatelská chyba konfigurace.
         SheetLayoutOptions? sheets;
         try { sheets = BuildSheetOptions(); }
         catch (ArgumentException ex) { StatusText = $"⚠ {ex.Message}"; return; }
@@ -206,7 +206,7 @@ public class PrintDialogViewModel : EDViewModel
         // Single = vyber soubor (jako dnes); split = vyber složku, vznikne N souborů.
         string? target = splitMode == ExportSplitMode.Single
             ? ShowSaveDialog("Tisk všech vybraných do PDF")
-            : ShowFolderDialog("Tisk všech vybraných — vyber složku");
+            : ShowFolderDialog("Tisk všech vybraných - vyber složku");
         if (target is null) return;
 
         try
@@ -214,7 +214,7 @@ public class PrintDialogViewModel : EDViewModel
             PersistParams();
             StatusText = "Načítání dat z databáze…";
 
-            // Fetch na threadpoolu — batch přes všechny instance jsou HTTP volání per linka;
+            // Fetch na threadpoolu - batch přes všechny instance jsou HTTP volání per linka;
             // sync by zamrazil dialog na desítky sekund (R1). Snapshot parametrů: uživatel je
             // může během fetche v dialogu měnit (sdílený dict s preview lištou).
             var paramsSnapshot = new Dictionary<string, object?>(_paramValues);
@@ -226,7 +226,7 @@ public class PrintDialogViewModel : EDViewModel
                 return;
             }
 
-            // Kontrola přetečení na UI threadu (layout-only, levná) — sdílí element cache
+            // Kontrola přetečení na UI threadu (layout-only, levná) - sdílí element cache
             // s preview renderem, na pozadí by závodila.
             var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
 
@@ -235,7 +235,7 @@ public class PrintDialogViewModel : EDViewModel
 
             if (splitMode == ExportSplitMode.Single)
             {
-                // Render na threadpoolu — callback rendruje nad snapshotem šablony (DeepClone
+                // Render na threadpoolu - callback rendruje nad snapshotem šablony (DeepClone
                 // ve wiring), takže nekoliduje s preview renderem UI threadu.
                 await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets));
                 OpenPdf(target);
@@ -245,7 +245,7 @@ public class PrintDialogViewModel : EDViewModel
                 return;
             }
 
-            // Split — seskup instance a vyrenderuj jedno PDF per skupina (existující multi-render
+            // Split - seskup instance a vyrenderuj jedno PDF per skupina (existující multi-render
             // per cesta). Název každého souboru = pattern {POLE} vyhodnocený nad první instancí skupiny.
             int fileCount = await Task.Run(() =>
             {

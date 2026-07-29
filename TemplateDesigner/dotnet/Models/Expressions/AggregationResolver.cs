@@ -7,7 +7,7 @@ namespace TemplateDesigner.Models.Expressions;
 /// Vyhodnocuje agregační funkce v textu buňky nad kolekcí řádků.
 /// Podporované funkce: SUM(výraz), COUNT(), AVG(výraz), MIN(výraz), MAX(výraz).
 ///
-/// Argument agregace je <b>výraz</b> vyhodnocený per řádek přes <see cref="ExpressionEvaluator"/> —
+/// Argument agregace je <b>výraz</b> vyhodnocený per řádek přes <see cref="ExpressionEvaluator"/> -
 /// nejen holé pole, ale i aritmetika nad poli řádku (počítaný sloupec):
 ///   "SUM({CENA})"                → "60000"          (holé pole)
 ///   "SUM({CENA}*{POCET})"        → "72000"          (výraz nad poli řádku)
@@ -19,7 +19,7 @@ namespace TemplateDesigner.Models.Expressions;
 /// </summary>
 public static class AggregationResolver
 {
-    // Pattern: FUNC( <výraz nebo prázdno> ) — argument = vše po první „)"
+    // Pattern: FUNC( <výraz nebo prázdno> ) - argument = vše po první „)"
     private static readonly Regex AggregationPattern = new(
         @"(SUM|COUNT|AVG|MIN|MAX)\(([^)]*)\)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -50,7 +50,7 @@ public static class AggregationResolver
         var values = new List<double>();
         foreach (var row in rows)
         {
-            // Argument je výraz nad poli řádku — vyhodnotí ho evaluator (holé {POLE} = jen jeho hodnota)
+            // Argument je výraz nad poli řádku - vyhodnotí ho evaluator (holé {POLE} = jen jeho hodnota)
             var raw = ExpressionEvaluator.EvaluateToString(arg, row);
             if (!string.IsNullOrEmpty(raw) &&
                 double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))

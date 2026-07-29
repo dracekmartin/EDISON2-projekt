@@ -3,7 +3,7 @@ using TemplateDesigner.Models;
 namespace TemplateDesigner.Commands.Implementations;
 
 /// <summary>
-/// Undoable seskupení elementů — přiřadí společný GroupId.
+/// Undoable seskupení elementů - přiřadí společný GroupId.
 /// </summary>
 public class GroupCommand : IDesignerCommand
 {

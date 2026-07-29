@@ -1,24 +1,24 @@
 Include GENERAL
 
-/// Agenda: **Linkový JŘ z MHD dat** — celá linka v jednom tisku (svislý seznam zastávek
+/// Agenda: **Linkový JŘ z MHD dat** - celá linka v jednom tisku (svislý seznam zastávek
 /// × sloupce spojů), sourozenec `LinkovyJrAd`. Legacy ekvivalent: `ALVA.MHD.LinkyPrintFormatJR.MakeData`
 /// (větev `VolanoZ="MHD"` v `ALVA.TISKJR.Data.LoadData`); stejný výstupní kontrakt jako mkPLinWin.
 /// 
 /// Datový zdroj (stejný jako `ZastavkoveJrMhd`):
-/// - `^ALVA.MHD.LSO(IdFa,1/2/4,...)` — linka / spoje / trasa (ModelTrasaBodDetail)
-/// - `^ALVA.MHD.ZST(IdFa,...)`       — zastávky (Cislo, ZonyID, Atributy)
-/// - `^ALVA.MHD.ENUMS(IdFa,...)`     — číselníky (Zony, Atribut, PoznamkaSpoj, TypyProvozu)
+/// - `^ALVA.MHD.LSO(IdFa,1/2/4,...)` - linka / spoje / trasa (ModelTrasaBodDetail)
+/// - `^ALVA.MHD.ZST(IdFa,...)`       - zastávky (Cislo, ZonyID, Atributy)
+/// - `^ALVA.MHD.ENUMS(IdFa,...)`     - číselníky (Zony, Atribut, PoznamkaSpoj, TypyProvozu)
 /// - helpery `ALVA.MHD.*Fce` (GetTrasaId, GetNazevHrl, MakeTableSpoj, GetPoznamkySpoj,
 ///   GetAtributySpoj, GetJede, MakeRozpisTplProTypProvozuID, MakeOmezeniTXT)
 /// 
 /// Wire formát = shodný s `LinkovyJrAd` (konzumuje tentýž `LineTableElement`):
 /// 1 stránka per (linka × směr); SPOJE.SKUPINA = TypProvozu (řazený dle ENUMS Poradi),
 /// SKUPINY_DNU.NADPIS z TypyProvozu NadpisSMOPrvni/Druhy. Bez sloupců Km/Tč/MHD a bez
-/// vyčká/navazuje (MHD zdroj je nemá — 1:1 s legacy MakeData).
+/// vyčká/navazuje (MHD zdroj je nemá - 1:1 s legacy MakeData).
 /// 
 /// ── Rozdíly/mezery vůči legacy MakeData (první řez) ──
 /// - sloupec „OdjezdPříjezd" (typ 5, texty př/od) nahrazen ZASTAVKY.TYP="prijezd" podřádky
-/// - výběr TypProvozu/Směru (arr,11) zatím bez parametru — tiskne vše
+/// - výběr TypProvozu/Směru (arr,11) zatím bez parametru - tiskne vše
 /// - NZ auto-poznámkování rozdílů platností (GetJede vs ProvozBitMapa → MakeOmezeniTXT) 1:1;
 ///   speciální znaky spoje (SpecZnak dny) a atributy B/C v řádku platnosti
 Class ALVA.TemplateDesigner.Agendy.LinkovyJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
@@ -42,7 +42,7 @@ Parameter InstanceLabel As %String = "linka";
 
 Parameter InstanceLabelPlural As %String = "linky";
 
-/// Vrátí DataSchema — shodné s KnizniJrAd (stejný wire formát).
+/// Vrátí DataSchema - shodné s KnizniJrAd (stejný wire formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {
     $$$FillParams
@@ -109,7 +109,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Fixed šablony tabulek — knižní JŘ žádné nemá.
+/// Fixed šablony tabulek - knižní JŘ žádné nemá.
 ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
 {
     s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
@@ -122,14 +122,14 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Parametry sestavy — zatím žádné (výběr typů provozu/směrů = budoucí rozšíření dle arr,11).
+/// Parametry sestavy - zatím žádné (výběr typů provozu/směrů = budoucí rozšíření dle arr,11).
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
     s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
     q $$$OK
 }
 
-/// Vrátí seznam linek pro Instance Picker — linky aktivní skupiny linek (vzor ZastavkoveJrMhd).
+/// Vrátí seznam linek pro Instance Picker - linky aktivní skupiny linek (vzor ZastavkoveJrMhd).
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -151,7 +151,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloVerejne"))
             s nazev = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"NazevLinky"))
             s display = $s(cislo'="":cislo, 1:linkaId)
-            i nazev '= "" s display = display_" — "_nazev
+            i nazev '= "" s display = display_" - "_nazev
             i (search '= "") && ('$f($zcvt(display,"L"), search)) continue
 
             s obj = ##class(%DynamicObject).%New()
@@ -180,7 +180,7 @@ ClassMethod DefaultSkupinaLinek(IdFa As %String, dataDB As %String) As %Integer
     q +skupina
 }
 
-/// Vrátí data pro tisk: 1 stránka per (linka × směr) — směr 0 (T), pak 1 (Z).
+/// Vrátí data pro tisk: 1 stránka per (linka × směr) - směr 0 (T), pak 1 (Z).
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -202,7 +202,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Ukázková data pro live preview — první linka výchozí skupiny (DEV vzor).
+/// Ukázková data pro live preview - první linka výchozí skupiny (DEV vzor).
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -335,7 +335,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     // ── spoje směru: MakeTableSpoj → časy per řádek; skupiny = TypProvozu ──
     d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)
 
-    // seřazení: (poradiProvozu, výchozí čas, spoj) — MHD legacy řadí uvnitř bloku TypProvozu
+    // seřazení: (poradiProvozu, výchozí čas, spoj) - MHD legacy řadí uvnitř bloku TypProvozu
     k razeni
     s spojId = ""
     f {
@@ -462,7 +462,7 @@ ClassMethod BuildSpojMhd(ByRef sys As %String, IdFa As %String, dataDB As %Strin
             s text    = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznId,"Text"))
             s popis   = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznId,"PopisPoznamky"))
             i +typPozn {
-                // speciální symbol — SpecZnak 1-7 = dny (Po-Ne), jinak ASCII znak
+                // speciální symbol - SpecZnak 1-7 = dny (Po-Ne), jinak ASCII znak
                 s znak = ..ConvertSpecialniZnak($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznId,"SpecZnak")))
                 i znak '= "" {
                     d platnost.%Push(znak)
@@ -591,7 +591,7 @@ ClassMethod PridatPoznamkuSpoje(ByRef poznSpoju, ByRef pocet, druh As %Integer, 
     s poznSpoju(pocet) = ..BuildPoznamka(druh, typ, znak, text)
 }
 
-/// Poznámky druhu 2 — NZ s textem omezení (nasbírané v NzSpoje).
+/// Poznámky druhu 2 - NZ s textem omezení (nasbírané v NzSpoje).
 ClassMethod PridatPoznamkyNZMhd(IdFa As %String, dataDB As %String, poznamky As %DynamicArray, ByRef nzSeen)
 {
     s nz = ""
@@ -603,14 +603,14 @@ ClassMethod PridatPoznamkyNZMhd(IdFa As %String, dataDB As %String, poznamky As 
     }
 }
 
-/// Poznámky druhu 5 — atributy spoje (BEV/CBE).
+/// Poznámky druhu 5 - atributy spoje (BEV/CBE).
 ClassMethod PridatPoznamkyAtributuMhd(poznamky As %DynamicArray, ByRef atributSeen)
 {
     i $d(atributSeen("BEV")) d poznamky.%Push(..BuildPoznamka(5, "znak", "BEV", "spoj s bezbariérově přístupným vozidlem"))
     i $d(atributSeen("CBE")) d poznamky.%Push(..BuildPoznamka(5, "znak", "CBE", "spoj s částečne bezbariérově přístupným vozidlem, nutná dopomoc průvodce"))
 }
 
-/// Poznámky druhu 7 — markery matice.
+/// Poznámky druhu 7 - markery matice.
 ClassMethod PridatStaleZnackyMhd(poznamky As %DynamicArray, ByRef markerSeen)
 {
     i $d(markerSeen("|")) d poznamky.%Push(..BuildPoznamka(7, "znak", "|", "spoj příslušnou zastávkou projíždí"))
@@ -631,7 +631,7 @@ ClassMethod PridatAtributyZastavekMhd(IdFa As %String, dataDB As %String, ByRef 
             s atrId = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Atributy",atrCnt,"Itm"))
             i atrId = "" continue
             s znak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atrId,"Znak"))
-            i ",N,V,x,A," '[ (","_znak_",") continue     // legacy filtr — jen tyto se tisknou
+            i ",N,V,x,A," '[ (","_znak_",") continue     // legacy filtr - jen tyto se tisknou
             i $d(seen(znak)) continue
             s seen(znak) = ""
             s popis = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atrId,"Popis"))

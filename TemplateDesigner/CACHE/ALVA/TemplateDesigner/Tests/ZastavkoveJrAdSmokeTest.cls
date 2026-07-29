@@ -2,7 +2,7 @@ Include %occInclude
 
 /// Strukturální smoke test GetData agendy ZastavkoveJrAd nad ŽIVÝMI daty (^JRL v MLINE).
 /// Linku hledá dynamicky přes PrvniLinka (žádná hardcoded gold linka) a assertuje
-/// STRUKTURU wire formátu, ne konkrétní hodnoty — přežije editace JŘ dat.
+/// STRUKTURU wire formátu, ne konkrétní hodnoty - přežije editace JŘ dat.
 /// Přesné 1:1 porovnání (zmrazený digest) = ZastavkoveJrAdGoldTest (AD) / ZastavkoveJrMhdGoldTest (MHD).
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSmokeTest Extends ALVA.EDTesting.MLTestCase
 {
@@ -12,7 +12,7 @@ Method TestGetDataVraciValidniStrankyProPrvniLinku()
 	do ..SetupSys(.sys)
 	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
 	if lin = "" {
-		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL — smoke přeskočen")
+		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - smoke přeskočen")
 		quit
 	}
 

@@ -136,7 +136,7 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- Režim importu — odvozen z aktuální agendy, uživatel nevolí -->
+            <!-- Režim importu - odvozen z aktuální agendy, uživatel nevolí -->
             <TextBlock Text="Režim importu" FontWeight="SemiBold" Margin="0,12,0,6"/>
             <Border Background="{DynamicResource EDTheme.Bg.InfoBanner}"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1"
@@ -159,7 +159,7 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <!-- Debug — jen pro vývojáře (lokální dev klíč) -->
+            <!-- Debug - jen pro vývojáře (lokální dev klíč) -->
             <CheckBox Content="Debug log (uloží .import-debug.txt vedle PDF)"
                       IsChecked="{Binding EnableDebug}"
                       Margin="0,8,0,0" FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}">

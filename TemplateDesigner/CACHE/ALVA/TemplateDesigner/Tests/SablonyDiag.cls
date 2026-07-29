@@ -1,7 +1,7 @@
 Include (%occInclude, GENERAL)
 
 /// Read-only diagnostika úložiště šablon (#13013): projde všechny větve
-/// ^ALVA.TemplateDesigner.Templates a ohlásí stav blobu každé šablony —
+/// ^ALVA.TemplateDesigner.Templates a ohlásí stav blobu každé šablony -
 /// chunkovaný (počet kusů) / legacy (délka) / CHYBÍ (utržená šablona:
 /// metadata bez dat, typicky pozůstatek pádu ukládání před fixem 2026-07-23).
 /// Nic nemění ani nemaže.
@@ -10,7 +10,7 @@ Class ALVA.TemplateDesigner.Tests.SablonyDiag
 
 /// Bezeztrátový přepínač formátu blobu jedné šablony (dev nástroj pro test kompatibility
 /// klientů, #13013): jednoklíčový ↔ po kusech (1 kus). Obsah se nemění, jen tvar uložení.
-/// Vícekusý blob nepřepíná (odmítne) — slepení by mohlo překročit limit délky řetězce.
+/// Vícekusý blob nepřepíná (odmítne) - slepení by mohlo překročit limit délky řetězce.
 /// IN: IDFA, TEMPLATE_ID. OUT: STAV = výsledný formát.
 ClassMethod PrepnoutFormatBlobu(ByRef sys As %String) As %Status
 {

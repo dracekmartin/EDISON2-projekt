@@ -31,11 +31,11 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
         set => Width = Controls.ColumnWidthText.Parse(value);
     }
 
-    // IColumnRowVM — sdílený seznam sloupců. Srozumitelný název dle Key (Header zůstává tištěná zkratka).
+    // IColumnRowVM - sdílený seznam sloupců. Srozumitelný název dle Key (Header zůstává tištěná zkratka).
     public string  DisplayName => FriendlyName(_key, _header);
     public float?  ColumnWidth => Width;
 
-    /// <summary>Čitelný název sloupce do editoru — odvozený z field ID, ať uživatel nemusí luštit zkratku záhlaví.</summary>
+    /// <summary>Čitelný název sloupce do editoru - odvozený z field ID, ať uživatel nemusí luštit zkratku záhlaví.</summary>
     private static string FriendlyName(string key, string header) => key switch
     {
         StopFields.TravelTime => "Čas jízdy",
@@ -120,7 +120,7 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 
 class StopColumnsEditorDialogViewModel : EDViewModel
 {
-    // Tab 1 „Obecné" = embedded EDInputForm (StopListElementEdit.cls) — řeší code-behind
+    // Tab 1 „Obecné" = embedded EDInputForm (StopListElementEdit.cls) - řeší code-behind
     // přes ElementFormBinder. VM drží jen per-sloupec editaci (tab 2).
 
     // ── Tab 2: Sloupce ──────────────────────────────────────────────────
@@ -129,7 +129,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     public float[] FontSizeOptions { get; } = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24];
 
-    // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────
+    // ── UI omezení editace - co CellStyleEditor zobrazí per zóna ─────────
     public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
     public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
 
@@ -149,7 +149,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     public string ColumnOverflowText =>
         $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku elementu ({ElementWidth:0.#} mm). Obsah se oříže.";
 
-    /// <summary>Výsledné sloupce po OK — čteny volajícím.</summary>
+    /// <summary>Výsledné sloupce po OK - čteny volajícím.</summary>
     public List<StopColumn> ResultColumns { get; private set; } = [];
 
     // ── Výběr ──────────────────────────────────────────────────────────────
@@ -173,13 +173,13 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     public RelayCommand MoveUpCommand   { get; }
     public RelayCommand MoveDownCommand { get; }
 
-    // Color picker commands — záhlaví
+    // Color picker commands - záhlaví
     public RelayCommand PickHeaderTextColorCommand { get; }
     public RelayCommand PickHeaderBgColorCommand { get; }
     public RelayCommand ClearHeaderTextColorCommand { get; }
     public RelayCommand ClearHeaderBgColorCommand { get; }
 
-    // Color picker commands — data
+    // Color picker commands - data
     public RelayCommand PickDataTextColorCommand { get; }
     public RelayCommand PickDataBgColorCommand { get; }
     public RelayCommand ClearDataTextColorCommand { get; }
@@ -205,7 +205,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         foreach (var col in columns)
             ColumnVMs.Add(StopColumnVM.FromModel(col, headerInherited, dataInherited));
 
-        // Doplň chybějící známé sloupce (uložená šablona může mít jen podmnožinu) — ať uživatel
+        // Doplň chybějící známé sloupce (uložená šablona může mít jen podmnožinu) - ať uživatel
         // vidí VŠECHNY dostupné sloupce a může je zapnout checkboxem, místo aby zmizely z nabídky
         // a daly se vrátit jen přes "Výchozí". Doplněné jsou skryté (nezmění render, dokud je nezapne).
         var presentKeys = columns.Select(c => c.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -221,19 +221,19 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         MoveUpCommand   = Command(MoveUp);
         MoveDownCommand = Command(MoveDown);
 
-        // Color picker commands — záhlaví
+        // Color picker commands - záhlaví
         PickHeaderTextColorCommand  = Command(() => PickColor(g => g.HeaderStyle.TextColor, (g, c) => g.HeaderStyle.TextColor = c));
         PickHeaderBgColorCommand    = Command(() => PickColor(g => g.HeaderStyle.BgColor,   (g, c) => g.HeaderStyle.BgColor = c));
         ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = null; });
         ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor   = null; });
 
-        // Color picker commands — data
+        // Color picker commands - data
         PickDataTextColorCommand  = Command(() => PickColor(g => g.DataStyle.TextColor, (g, c) => g.DataStyle.TextColor = c));
         PickDataBgColorCommand    = Command(() => PickColor(g => g.DataStyle.BgColor,   (g, c) => g.DataStyle.BgColor = c));
         ClearDataTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor = null; });
         ClearDataBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor   = null; });
 
-        // Reset style — vybraný sloupec
+        // Reset style - vybraný sloupec
         ResetStyleCommand = Command(() =>
         {
             if (SelectedColumnVM is null) return;
@@ -241,7 +241,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
             SelectedColumnVM.DataStyle.Reset();
         });
 
-        // Reset všech sloupců — smaže per-column overrides
+        // Reset všech sloupců - smaže per-column overrides
         ResetAllColumnStylesCommand = Command(() =>
         {
             foreach (var vm in ColumnVMs)
@@ -251,7 +251,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
             }
         });
 
-        // Přizpůsobit šířky sloupců k šířce elementu — proporcionální scale
+        // Přizpůsobit šířky sloupců k šířce elementu - proporcionální scale
         FitColumnsToWidthCommand = Command(() =>
         {
             var visible = ColumnVMs.Where(c => c.Visible).ToList();

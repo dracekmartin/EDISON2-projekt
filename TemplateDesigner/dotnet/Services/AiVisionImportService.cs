@@ -40,7 +40,7 @@ public class AiVisionImportService
         var userPrompt = BuildUserPrompt(page, schema);
 
         log.AppendLine("╔══════════════════════════════════════════════════════════════╗");
-        log.AppendLine("║              AI VISION IMPORT — DEBUG LOG                   ║");
+        log.AppendLine("║              AI VISION IMPORT - DEBUG LOG                   ║");
         log.AppendLine("╚══════════════════════════════════════════════════════════════╝");
         log.AppendLine();
         log.AppendLine($"Model: {_visionModel}");
@@ -65,7 +65,7 @@ public class AiVisionImportService
         string? responseText;
         try
         {
-            // Sonnet 5: adaptivní myšlení necháváme ZAPNUTÉ (jednorázová percepční úloha —
+            // Sonnet 5: adaptivní myšlení necháváme ZAPNUTÉ (jednorázová percepční úloha -
             // rozmyšlení layoutu zlepší detekci) → max_tokens s rezervou (myšlení se do něj počítá).
             // Temperature 0.2 = deterministická detekce; Sonnet 5+ nedefaultní hodnoty odmítá → null.
             responseText = await AnthropicApiClient.CallApiWithImageAsync(
@@ -159,7 +159,7 @@ public class AiVisionImportService
 
     private static string Truncate(string s, int max) => s.Length <= max ? s : s[..max] + "...";
 
-    // ── System prompt — composable per agenda type ────────────────────
+    // ── System prompt - composable per agenda type ────────────────────
 
     private static string GetSystemPrompt(ScheduleImportType type)
     {
@@ -198,11 +198,11 @@ public class AiVisionImportService
 
     // ── Shared prompt sections ──────────────────────────────────────────
 
-    private const string CoordinateSystemSection = @"SOUŘADNICOVÝ SYSTÉM — RELATIVNÍ (0.0–1.0):
+    private const string CoordinateSystemSection = @"SOUŘADNICOVÝ SYSTÉM - RELATIVNÍ (0.0–1.0):
 - VŠECHNY pozice vrať jako poměr: 0.0 = levý/horní okraj, 1.0 = pravý/dolní okraj stránky.
 - Příklad: objekt uprostřed stránky → left: 0.5, top: 0.5.
 - Objekt v pravém dolním rohu → right: 1.0, bottom: 1.0.
-- NIKDY nepoužívej pixely ani milimetry — vždy poměr 0.0–1.0.";
+- NIKDY nepoužívej pixely ani milimetry - vždy poměr 0.0–1.0.";
 
     private static string BuildRulesSection(AgendaPromptContext ctx)
     {
@@ -211,7 +211,7 @@ public class AiVisionImportService
         foreach (string rule in ctx.AdditionalRules)
             sb.AppendLine(rule);
         sb.AppendLine($"{ctx.AdditionalRules.Count + 2}. Texty mimo hlavní oblast: role (title/header/validity/company/route/direction/footnote/unknown), mapování na DB pole z DataSchema. Pokud si nejsi jistý → dbField: null.");
-        sb.AppendLine($"{ctx.AdditionalRules.Count + 3}. Obrázky: pro každé logo, QR kód nebo grafický prvek MIMO hlavní oblast vrať imageMappings s pozicí a rolí (\"logo\", \"qrCode\", \"decoration\"). Pokud odpovídá DB poli → nastav dbField. Roli \"qrCode\" hlas JEN pokud QR kód skutečně vidíš na obrázku nebo je v seznamu detekovaných grafických oblastí — NIKDY ho nevymýšlej. Každý fyzický objekt hlas právě jednou.");
+        sb.AppendLine($"{ctx.AdditionalRules.Count + 3}. Obrázky: pro každé logo, QR kód nebo grafický prvek MIMO hlavní oblast vrať imageMappings s pozicí a rolí (\"logo\", \"qrCode\", \"decoration\"). Pokud odpovídá DB poli → nastav dbField. Roli \"qrCode\" hlas JEN pokud QR kód skutečně vidíš na obrázku nebo je v seznamu detekovaných grafických oblastí - NIKDY ho nevymýšlej. Každý fyzický objekt hlas právě jednou.");
         sb.AppendLine($"{ctx.AdditionalRules.Count + 4}. Použij POUZE pole z dodaného DataSchema. Nevymýšlej vlastní.");
         return sb.ToString();
     }
@@ -219,7 +219,7 @@ public class AiVisionImportService
     private static string BuildPropertiesSection(AgendaPromptContext ctx)
     {
         if (ctx.ElementProperties.Count == 0) return "";
-        var sb = new StringBuilder("VIZUÁLNÍ VLASTNOSTI ELEMENTŮ (\"properties\" — nastav podle toho co vidíš):\n");
+        var sb = new StringBuilder("VIZUÁLNÍ VLASTNOSTI ELEMENTŮ (\"properties\" - nastav podle toho co vidíš):\n");
         foreach (var (elementType, properties) in ctx.ElementProperties)
         {
             sb.AppendLine($"- {elementType}:");
@@ -231,7 +231,7 @@ public class AiVisionImportService
 
     private static string BuildTemplateParametersSection(AgendaPromptContext ctx)
     {
-        var sb = new StringBuilder("PARAMETRY ŠABLONY (\"templateParameters\" — nastav hodnoty podle toho co vidíš):\n");
+        var sb = new StringBuilder("PARAMETRY ŠABLONY (\"templateParameters\" - nastav hodnoty podle toho co vidíš):\n");
         foreach (var (key, desc) in ctx.TemplateParameters)
             sb.AppendLine($"- {key}: {desc}");
         return sb.ToString();
@@ -253,18 +253,18 @@ public class AiVisionImportService
         string JsonExample);
 
     private static AgendaPromptContext ZastavkovyJrMhdPromptContext() => new(
-        RoleIntro: "Jsi expert na rozpoznávání zastávkových jízdních řádů MHD z obrázků.\n\nÚKOL: Analyzuj screenshot PDF a vrať sémantickou strukturu — jaké elementy kde jsou.",
+        RoleIntro: "Jsi expert na rozpoznávání zastávkových jízdních řádů MHD z obrázků.\n\nÚKOL: Analyzuj screenshot PDF a vrať sémantickou strukturu - jaké elementy kde jsou.",
         StructureDescription: @"TYPICKÁ STRUKTURA MHD ZASTÁVKOVÉHO JŘ:
-1. **StopList** (vlevo) — tabulka zastávek: sloupce jízdní doba, tarifní číslo, název zastávky, zóna
-2. **DepartureGrid** (vpravo od StopList) — minutová mřížka: hodiny vlevo, minuty vpravo, skupiny dnů
-3. **NotesLegend** — legenda poznámek (symboly + vysvětlení). Může být VPRAVO vedle StopList NEBO POD mřížkou — podívej se kde skutečně je.
-4. **Texty** mimo JŘ oblast — číslo linky, název trasy, dopravce, platnost, směr
-5. **Obrázky** mimo JŘ oblast — logo dopravce, QR kód, grafické prvky",
+1. **StopList** (vlevo) - tabulka zastávek: sloupce jízdní doba, tarifní číslo, název zastávky, zóna
+2. **DepartureGrid** (vpravo od StopList) - minutová mřížka: hodiny vlevo, minuty vpravo, skupiny dnů
+3. **NotesLegend** - legenda poznámek (symboly + vysvětlení). Může být VPRAVO vedle StopList NEBO POD mřížkou - podívej se kde skutečně je.
+4. **Texty** mimo JŘ oblast - číslo linky, název trasy, dopravce, platnost, směr
+5. **Obrázky** mimo JŘ oblast - logo dopravce, QR kód, grafické prvky",
         AdditionalRules:
         [
             "2. DepartureGrid: identifikuj skupiny dnů. Rozepiš zkratky (\"Prac.\" → \"Pracovní den\").",
             "3. StopList: identifikuj sloupce (\"TravelTime\", \"TariffNumber\", \"StopName\", \"Zone\", \"Platform\" = nástupiště/stanoviště).",
-            "4. POVINNÉ: vrať VŠECHNY hlavní oblasti, které na obrázku jsou — StopList (tabulka zastávek) ani DepartureGrid (minutová mřížka) NESMÍ v odpovědi chybět, pokud jsou vidět."
+            "4. POVINNÉ: vrať VŠECHNY hlavní oblasti, které na obrázku jsou - StopList (tabulka zastávek) ani DepartureGrid (minutová mřížka) NESMÍ v odpovědi chybět, pokud jsou vidět."
         ],
         ElementProperties:
         [
@@ -374,7 +374,7 @@ public class AiVisionImportService
     private record GraphicArea(string Description, float RelLeft, float RelTop, float RelRight, float RelBottom);
 
     /// <summary>
-    /// Detekuje oblasti s hustou koncentrací obdélníků — potenciální QR kódy nebo loga.
+    /// Detekuje oblasti s hustou koncentrací obdélníků - potenciální QR kódy nebo loga.
     /// PdfPig extrahuje vektorovou grafiku jako obdélníky, ale rasterizer je nemusí vykreslit
     /// jako rozpoznatelné obrázky. Tato metoda identifikuje takové oblasti a sdělí je AI.
     /// </summary>

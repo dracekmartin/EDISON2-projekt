@@ -26,7 +26,7 @@ public record struct SnapResult(AxisSnap X, AxisSnap Y);
 ///   - Edge↔Edge (left↔left, left↔right, right↔left, right↔right)
 ///   - Center↔Center (nikdy center↔edge)
 ///   - Gap snap (hrana ref. elementu ve vzdálenosti gapMm od hrany jiného)
-/// Bez kategorické priority — vyhraje nejbližší match.
+/// Bez kategorické priority - vyhraje nejbližší match.
 /// </summary>
 public class SnapEngine
 {
@@ -160,7 +160,7 @@ public class SnapEngine
         {
             foreach (float anchor in edgeAnchors)
             {
-                // Edge alignment — element hranou přesně na okraji.
+                // Edge alignment - element hranou přesně na okraji.
                 TryAdd(candidates, refStart, anchor, threshold, null!, MatchKind.Edge);
                 TryAdd(candidates, refEnd,   anchor, threshold, null!, MatchKind.Edge);
 
@@ -192,7 +192,7 @@ public class SnapEngine
 
         float adjustedDelta = rawDelta + (snapTo - refEdge);
 
-        // Gap indikátor — krátká spojnice v mezeře
+        // Gap indikátor - krátká spojnice v mezeře
         // CrossMid se počítá z pozic cílových elementů (ty jsou stabilní).
         // Pro anchor-based gap (hrana sekce) použijeme cross střed ref elementu.
         GapIndicator? gap = null;
@@ -218,7 +218,7 @@ public class SnapEngine
     }
 
     /// <summary>
-    /// Snap pro resize — snapuje pouze hrany, které se mění.
+    /// Snap pro resize - snapuje pouze hrany, které se mění.
     /// movingLeft/Right/Top/Bottom = true pokud daný handle mění tuto hranu.
     /// Vrací snapnuté hodnoty (newX, newY, newW, newH).
     /// </summary>

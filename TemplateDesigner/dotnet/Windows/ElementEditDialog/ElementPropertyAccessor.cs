@@ -8,7 +8,7 @@ namespace TemplateDesigner;
 /// Reflexní most mezi EDInputForm Field.Value (string) a typovanými properties
 /// elementu. Klíč pole = property path (dot notation, např. "Style.FontSize").
 ///
-/// Používá generický <see cref="ElementEditDialog"/> — eliminuje per-element
+/// Používá generický <see cref="ElementEditDialog"/> - eliminuje per-element
 /// pre-fill/extract boilerplate. Type conversion: string ↔ float/double/int/bool/
 /// enum/nullable. Color je string property → as-is.
 /// </summary>
@@ -28,11 +28,11 @@ public static class ElementPropertyAccessor
     /// True pokud path ukazuje na reálnou zapisovatelnou property. False pro „virtuální"
     /// pole, která nemají property na cílovém objektu (např. driver pole „Format"/„Orientation",
     /// jejichž jediným účelem je řídit Validate logiku server-side). Volající je pak přeskočí
-    /// — neaplikují se ani nevytvoří command.
+    /// - neaplikují se ani nevytvoří command.
     /// </summary>
     public static bool Exists(object root, string path)
     {
-        // Traverzace podle TYPU, ne podle hodnoty — jinak by cesta s null mezičlánkem
+        // Traverzace podle TYPU, ne podle hodnoty - jinak by cesta s null mezičlánkem
         // (např. DefaultTextStyle == null) vrátila false a změna by se zahodila, i když je
         // property reálně zapisovatelná (Set ji při zápisu lazy alokuje). Virtuální driver pole
         // (klíč není property typu) tak dál správně vrací false.
@@ -49,7 +49,7 @@ public static class ElementPropertyAccessor
     }
 
     /// <summary>Zapíše string hodnotu do property elementu přes path (s type conversion).
-    /// Null mezičlánky na cestě se lazy alokují (např. nullable <c>HeaderLine2Style</c>) — jen při
+    /// Null mezičlánky na cestě se lazy alokují (např. nullable <c>HeaderLine2Style</c>) - jen při
     /// zápisu (Get/Exists nealokují → otevření dialogu / Cancel element nemutuje).</summary>
     public static void Set(object root, string path, string? stringValue)
     {

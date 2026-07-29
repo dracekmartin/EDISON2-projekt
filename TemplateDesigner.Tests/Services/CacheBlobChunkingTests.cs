@@ -52,7 +52,7 @@ public class CacheBlobChunkingTests
 
     /// <summary>Kus musí zůstat hluboko pod serverovým limitem délky řádku (~32 656 znaků při
     /// <c>%Stream.ReadLine()</c> ve <c>StreamToGlobal</c>). Moc velký kus (dřív 1 000 000) shodil
-    /// příjem requestu na <c>&lt;SYNTAX&gt;</c> — tenhle test chrání proti návratu té regrese.</summary>
+    /// příjem requestu na <c>&lt;SYNTAX&gt;</c> - tenhle test chrání proti návratu té regrese.</summary>
     [Fact]
     public void DefaultChunkSize_StaysSafelyBelowServerLineLimit()
     {

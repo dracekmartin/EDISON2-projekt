@@ -7,7 +7,7 @@ namespace TemplateDesigner.Config;
 /// <summary>
 /// Konfigurace aplikace.
 /// Pořadí načítání (každá další vrstva přepíše předchozí):
-///  1. Embedded resource (zabudovaný v .exe — baseline, aby aplikace fungovala self-contained)
+///  1. Embedded resource (zabudovaný v .exe - baseline, aby aplikace fungovala self-contained)
 ///  2. Externí templatedesigner.appsettings.json vedle exe (volitelný override pro celý config)
 ///  3. Externí templatedesigner.appsettings.local.json vedle exe (volitelný per-user override; gitignored)
 ///
@@ -126,10 +126,10 @@ public class CacheConnectionSettings
     /// <summary>Port MLRest serveru (výchozí 57772).</summary>
     public int    Port      { get; set; } = 57772;
 
-    /// <summary>Namespace Caché — třetí parametr konstruktoru MLRest.</summary>
+    /// <summary>Namespace Caché - třetí parametr konstruktoru MLRest.</summary>
     public string Namespace { get; set; } = "ALWA";
 
-    /// <summary>IDFA identifikátor — čtvrtý parametr konstruktoru MLRest.</summary>
+    /// <summary>IDFA identifikátor - čtvrtý parametr konstruktoru MLRest.</summary>
     public string Idfa      { get; set; } = "";
 
     /// <summary>Přihlašovací jméno (MLRest.LoginName).</summary>

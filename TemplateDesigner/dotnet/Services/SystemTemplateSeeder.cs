@@ -10,12 +10,12 @@ namespace TemplateDesigner.Services;
 /// payload, seed je „naleje do MLINE zásuvky" (budoucí „jiný kanál" jen vymění tento zdroj).
 ///
 /// <para>Idempotentní: přepíše MLINE originál obsahem z .exe (stabilní <c>Template.Id</c> →
-/// update stejného záznamu). Systémové needituje uživatel — jen tento seeder — takže overwrite
+/// update stejného záznamu). Systémové needituje uživatel - jen tento seeder - takže overwrite
 /// při každém startu je bezpečný a garantuje, že MLINE = verze z aktuálního .exe. Zákaznické
 /// (firma) větve se nikdy nedotkne.</para>
 ///
 /// <para>Volá se fire-and-forget při startu; chyby (Caché nedostupná, porušený JSON) měkce
-/// logují a přeskočí — nikdy neshodí start.</para>
+/// logují a přeskočí - nikdy neshodí start.</para>
 /// </summary>
 public static class SystemTemplateSeeder
 {

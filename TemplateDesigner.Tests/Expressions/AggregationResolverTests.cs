@@ -53,7 +53,7 @@ public class AggregationResolverTests
         Assert.Equal("60", AggregationResolver.Resolve("sum({CENA})", Rows("10", "20", "30")));
     }
 
-    // ── Agregace výrazu (#4) — argument je výraz nad poli řádku, ne jen holé pole ──
+    // ── Agregace výrazu (#4) - argument je výraz nad poli řádku, ne jen holé pole ──
 
     private static IReadOnlyList<DataContext> RowsCenaPocet(params (string cena, string pocet)[] r) =>
         r.Select(x => new DataContext(new Dictionary<string, object?>

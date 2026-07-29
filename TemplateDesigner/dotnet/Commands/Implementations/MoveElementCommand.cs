@@ -2,7 +2,7 @@ using TemplateDesigner.Models;
 
 namespace TemplateDesigner.Commands.Implementations;
 
-/// <summary>Přesun jednoho elementu — undoable.</summary>
+/// <summary>Přesun jednoho elementu - undoable.</summary>
 public class MoveElementCommand : IDesignerCommand
 {
     private readonly TemplateElement _element;
@@ -14,7 +14,7 @@ public class MoveElementCommand : IDesignerCommand
     /// <param name="element">Element jehož pozice se mění.</param>
     /// <param name="fromX">Původní X (mm).</param>
     /// <param name="fromY">Původní Y (mm).</param>
-    /// <param name="toX">Nová X (mm) — element už je na nové pozici z live dragu.</param>
+    /// <param name="toX">Nová X (mm) - element už je na nové pozici z live dragu.</param>
     /// <param name="toY">Nová Y (mm).</param>
     public MoveElementCommand(TemplateElement element, float fromX, float fromY, float toX, float toY)
     {

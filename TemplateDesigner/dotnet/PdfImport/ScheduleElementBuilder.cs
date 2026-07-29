@@ -6,13 +6,13 @@ namespace TemplateDesigner.PdfImport;
 /// <summary>
 /// Vytváří specializované JŘ elementy z výsledku ScheduleDetector.
 /// Nastavuje vizuální properties (rozměry, fonty, barvy) změřené z PDF.
-/// Data (zastávky, odjezdy) přijdou z Caché za běhu — import nastavuje jen layout.
+/// Data (zastávky, odjezdy) přijdou z Caché za běhu - import nastavuje jen layout.
 /// </summary>
 public static class ScheduleElementBuilder
 {
     /// <summary>
     /// Z detekovaného layoutu vytvoří sekci s JŘ elementy + generic TextElement pro nezařazený obsah.
-    /// Souřadnice jsou absolutní (v mm od levého horního rohu stránky) — volající posune o marginy.
+    /// Souřadnice jsou absolutní (v mm od levého horního rohu stránky) - volající posune o marginy.
     /// Pokud je k dispozici AI enrichment, aplikuje mapování textů na DB pole.
     /// </summary>
     public static List<TemplateElement> BuildElements(
@@ -92,7 +92,7 @@ public static class ScheduleElementBuilder
             elements.Add(grid);
         }
 
-        // 3. NotesLegendElement — těsně pod DepartureGrid
+        // 3. NotesLegendElement - těsně pod DepartureGrid
         if (detection.NotesRegion is { } notesReg)
         {
             float noteLineH = Math.Max(detection.DataRowHeight - 1, 3f);
@@ -108,7 +108,7 @@ public static class ScheduleElementBuilder
                 X = notesReg.X - marginLeft,
                 Y = notesY,
                 Width = notesReg.Width,
-                // Dynamická výška — print engine dopočítá z počtu poznámek
+                // Dynamická výška - print engine dopočítá z počtu poznámek
                 Height = null,
                 ZIndex = zIndex++,
                 NoteFontSize = Math.Max(detection.MinuteFontSizePt - 1, 6f),
@@ -125,7 +125,7 @@ public static class ScheduleElementBuilder
             float minHeight = fontHeightMm * 1.4f * lineCount;
 
             // AI enrichment: nahradit statický text placeholderem pokud AI navrhla mapování
-            // Texty s rolí "decoration" přeskočit — jsou to oddělovače (pomlčky apod.)
+            // Texty s rolí "decoration" přeskočit - jsou to oddělovače (pomlčky apod.)
             string displayText = block.Text;
             if (enrichment is not null)
             {
@@ -314,7 +314,7 @@ public static class ScheduleElementBuilder
     private static ExtractedRectangle? FindEnclosingRectangle(
         List<ExtractedRectangle> rectangles, ExtractedTextBlock block)
     {
-        const float tolerance = 2f; // mm tolerance — obdélník může být mírně větší než text
+        const float tolerance = 2f; // mm tolerance - obdélník může být mírně větší než text
 
         ExtractedRectangle? best = null;
         float bestArea = float.MaxValue;
@@ -330,7 +330,7 @@ public static class ScheduleElementBuilder
             if (block.X + block.Width > rect.X + rect.Width + tolerance) continue;
             if (block.Y + block.Height > rect.Y + rect.Height + tolerance) continue;
 
-            // Obdélník nesmí být příliš velký (max 20× plocha textu) — vyloučit celostránkové rámečky
+            // Obdélník nesmí být příliš velký (max 20× plocha textu) - vyloučit celostránkové rámečky
             float rectArea = rect.Width * rect.Height;
             float textArea = Math.Max(block.Width, 1f) * Math.Max(block.Height, 1f);
             if (rectArea > textArea * 20f) continue;

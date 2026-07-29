@@ -7,7 +7,7 @@ namespace TemplateDesigner.Controls;
 
 /// <summary>
 /// Sdílený helper pro zobrazení WinForms ColorDialogu z WPF oken.
-/// View concern — nativní dialog vyžaduje Window handle.
+/// View concern - nativní dialog vyžaduje Window handle.
 ///
 /// <para>
 /// Recent Colors integrace: pokud je nastavena <see cref="Preferences"/> (typicky v
@@ -19,7 +19,7 @@ namespace TemplateDesigner.Controls;
 static class ColorPickerHelper
 {
     /// <summary>
-    /// Globální reference na TdPreferencesService — nastavit jednou v App.OnStartup.
+    /// Globální reference na TdPreferencesService - nastavit jednou v App.OnStartup.
     /// Když null, color picker funguje bez recent colors integrace.
     /// </summary>
     public static TdPreferencesService? Preferences { get; set; }
@@ -59,7 +59,7 @@ static class ColorPickerHelper
         var picked = dlg.Color;
         string hex = $"#FF{picked.R:X2}{picked.G:X2}{picked.B:X2}";
 
-        // Fire-and-forget save — nesmí blokovat color picker zavření.
+        // Fire-and-forget save - nesmí blokovat color picker zavření.
         _ = Preferences?.AddRecentColorAsync(hex);
 
         return hex;

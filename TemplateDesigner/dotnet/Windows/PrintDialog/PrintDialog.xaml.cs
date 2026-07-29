@@ -17,10 +17,10 @@ public partial class PrintDialog : Window
         InitializeComponent();
         vm.RequestClose += result => { DialogResult = result; Close(); };
 
-        // Parametry sestavy + export pole renderuje EDInputForm z Caché (AgendaParams) — schéma
+        // Parametry sestavy + export pole renderuje EDInputForm z Caché (AgendaParams) - schéma
         // řídí agenda přes GetParameters, AgendaParams přidává universální skupinu „Export".
         // CacheClass + InitParams se musí nastavit před Loaded (Init běží tam). Staví se i pro agendu
-        // bez GetParameters (jen export skupina) — proto HasForm, ne HasParameters.
+        // bez GetParameters (jen export skupina) - proto HasForm, ne HasParameters.
         if (vm.HasForm)
         {
             ParamForm.InitParams = vm.BuildInitParams();
@@ -68,7 +68,7 @@ public partial class PrintDialog : Window
                 _ => _vm.IsParamVisible(field.Key),
             };
             var target = visible ? EItemVisibility.Visible : EItemVisibility.Collapsed;
-            // Guard — Item.Visibility setter nemá early-return, vyhneme se zbytečným notifikacím při každém stisku.
+            // Guard - Item.Visibility setter nemá early-return, vyhneme se zbytečným notifikacím při každém stisku.
             if (field.Visibility != target) field.Visibility = target;
         }
     }

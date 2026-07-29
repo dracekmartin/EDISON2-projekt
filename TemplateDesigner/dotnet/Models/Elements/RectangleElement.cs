@@ -19,7 +19,7 @@ public class RectangleElement : TemplateElement
         if (Width <= 0) return;
         var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
 
-        // Výplň (BackgroundColor) kreslí base RenderBackgroundPass před obsahem — respektuje rohy.
+        // Výplň (BackgroundColor) kreslí base RenderBackgroundPass před obsahem - respektuje rohy.
         // Zde jen okraj tvaru; DrawElementShape aplikuje CornerStyle (ostré/zaoblené/zkosené).
         if (StrokeWidth > 0 && SkStrokeColor.Alpha > 0)
         {
@@ -38,7 +38,7 @@ public class RectangleElement : TemplateElement
     [
         new ColorPropertyDescriptor { Label = "Výplň",       Group = "Vzhled", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
         new ColorPropertyDescriptor { Label = "Barva okraje", Group = "Vzhled", Get = () => StrokeColor,  Set = v => StrokeColor = v },
-        new FloatPropertyDescriptor { Label = "Tl. okraje",  Group = "Vzhled", Get = () => StrokeWidth,  Set = v => StrokeWidth = v,  Min = 0, Max = 10, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Tloušťka okraje",  Group = "Vzhled", Get = () => StrokeWidth,  Set = v => StrokeWidth = v,  Min = 0, Max = 10, Unit = "mm" },
         // Rohy (Ostré/Zaoblené/Zkosené + velikost) jsou společné pro všechny elementy → GetPositionDescriptors.
 
         .. GetPositionDescriptors()

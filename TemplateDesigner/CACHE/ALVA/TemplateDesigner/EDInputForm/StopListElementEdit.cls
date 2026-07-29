@@ -2,7 +2,7 @@ Include (GENERAL, EDInputForm)
 
 /// EDInputForm schema pro tab „Obecné" editoru StopListElement (zastávkový seznam).
 /// Field key = property path na C# StopListElement. Embeduje se do StopColumnsEditorDialog
-/// vedle custom editoru sloupců (tab „Sloupce"). Validate jen echo — žádná cross-field logika.
+/// vedle custom editoru sloupců (tab „Sloupce"). Validate jen echo - žádná cross-field logika.
 ///
 /// Element-level styl záhlaví/buněk je zde jako prostá pole (element je báze kaskády, tri-state
 /// „dědit" tu netřeba); per-sloupec override řeší CellStyleEditor v tabu „Sloupce".
@@ -25,7 +25,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FFD0D0D0"
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
-        d form.AddDecimal("BorderWidth", "Šířka rámečku", 0, 0, 5, "mm")
+        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
         s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
         d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
         s f.value = "None"
@@ -38,31 +38,31 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "#FFE0E0E0")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "#00FFFFFF")
 
-        // ── Zastávky — specifické (značky, směr, zvýraznění) ──────────────
-        d form.AddGroup("stops", "Zastávky — specifické")
+        // ── Zastávky - specifické (značky, směr, zvýraznění) ──────────────
+        d form.AddGroup("stops", "Zastávky - specifické")
         d form.AddBool("ShowStopIndentation", "Odsazení", 1)
         d form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
         d form.AddBool("ShowStopAttributes", "Atributy", 1)
-        s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/bus)", 0)
-        s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Legacy JŘ je netiskl."
-        s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více nástupišť", $$$FieldTypeList, 0, 1)
+        s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/autobus)", 0)
+        s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Původní JŘ je netiskl."
+        s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více označníků", $$$FieldTypeList, 0, 1)
         d f.AddListItem("FromRoute", "Z trasy linky"), f.AddListItem("MostFrequent", "Nejčetnější dle spojů"), f.AddListItem("All", "Výčet všech")
-        d f.AddListItem("RowPerPlatform", "Duplikace řádku per stanoviště")
-        s f.helpText = "Sloupec Nástupiště, když spoje jedou z různých sloupků zastávky: hodnota z trasy / sloupek s nejvíce spoji / výčet všech dle četnosti / nebo duplikace řádku (každé stanoviště zvlášť, časy jen jeho variant)."
+        d f.AddListItem("RowPerPlatform", "Řádek pro každý označník")
+        s f.helpText = "Sloupec Označník, když spoje jedou z různých označníků zastávky: hodnota z trasy / označník s nejvíce spoji / výčet všech dle četnosti / nebo řádek pro každý označník (časy jen variant daného označníku). Zapněte si k tomu sloupec Označník v tabu Sloupce; řádky vyžadují zapnuté Všechny varianty tras."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)
         d f.AddListItem("AfterName", "Za zastávkou"), f.AddListItem("BeforeName", "Před zastávkou")
         d form.AddBool("ShowDirectionArrow", "Šipka směru", 0)
         s f = form.AddFieldToLastGroup("DirectionArrowPosition", "Pozice šipky", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Right", "Vpravo"), f.AddListItem("Left", "Vlevo")
+        d f.AddListItem("Right", "Vpravo (u pravého okraje elementu)"), f.AddListItem("Left", "Vlevo (u levého okraje elementu)")
         s f = form.AddFieldToLastGroup("DirectionArrowColor", "Barva šipky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         d form.AddBool("DirectionArrowBold", "Tučná šipka", 0)
         d form.AddBool("CurrentStopUnderline", "Podtržení aktuální zast.", 1)
         d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
-        s f = form.AddDecimal("CurrentStopFontSize", "Font aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
+        s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
         s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Pozadí aktuální (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         d form.AddBool("ShowPassedStops", "Projeté zastávky", 0)
         s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Barva projetých", $$$FieldTypeColor, 0, 0)
@@ -81,7 +81,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Podmínky ──────────────────────────────────────────────────────
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
         s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí. Pole řádku: POPIS, TC, CAS_JIZDY, PORADI, JE_AKTUALNI. Např. {JE_AKTUALNI} == 1"
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)

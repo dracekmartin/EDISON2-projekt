@@ -40,7 +40,7 @@ public class CloneCompletenessTests
     /// <summary>
     /// Pojistka, že enumerace přes <c>[JsonDerivedType]</c> pokrývá přesně konkrétní ne-abstraktní
     /// potomky <see cref="TemplateElement"/>. Nový element bez registrace (nebo registrace bez
-    /// třídy) tu spadne — Clone test by ho jinak tiše nepokryl.
+    /// třídy) tu spadne - Clone test by ho jinak tiše nepokryl.
     /// </summary>
     [Fact]
     public void RegistrovaneTypy_PokryvajiVsechnyKonkretniElementy()
@@ -75,7 +75,7 @@ public class CloneCompletenessTests
 
     // ── Serializace jednoho elementu (zabaleného do minimální šablony) ─────────
 
-    // Fixní Id wrapperu — jinak by každé volání dalo nové Guid a JSON by se lišil v šumu obalu
+    // Fixní Id wrapperu - jinak by každé volání dalo nové Guid a JSON by se lišil v šumu obalu
     private static readonly Guid FixedTemplateId = new("11111111-1111-1111-1111-111111111111");
     private static readonly Guid FixedSectionId = new("22222222-2222-2222-2222-222222222222");
 
@@ -85,7 +85,7 @@ public class CloneCompletenessTests
         section.Elements.Add(element);
         var template = new Template { Id = FixedTemplateId, Name = "CloneTest", Sections = [section] };
         var node = JsonNode.Parse(TemplateSerializer.Serialize(template))!.AsObject();
-        node.Remove("modifiedAt");   // Serialize razítkuje UtcNow — z porovnání vyřadit
+        node.Remove("modifiedAt");   // Serialize razítkuje UtcNow - z porovnání vyřadit
         node.Remove("createdAt");    // razítkuje se při vzniku Template → z porovnání vyřadit
         return node.ToJsonString();
     }
@@ -100,7 +100,7 @@ public class CloneCompletenessTests
         {
             if (prop.GetIndexParameters().Length > 0) continue;
             if (prop.GetCustomAttribute<JsonIgnoreAttribute>() is not null) continue;
-            if (prop.PropertyType == typeof(Guid)) continue;   // Id — Clone ho přegeneruje záměrně
+            if (prop.PropertyType == typeof(Guid)) continue;   // Id - Clone ho přegeneruje záměrně
 
             object? current = prop.CanRead ? prop.GetValue(obj) : null;
 
@@ -153,7 +153,7 @@ public class CloneCompletenessTests
             return coll;
         }
 
-        // Vnořený POCO (TextStyle, ColumnVisualStyle, …) — vytvoř a rekurzivně zmutuj
+        // Vnořený POCO (TextStyle, ColumnVisualStyle, …) - vytvoř a rekurzivně zmutuj
         if (t.IsClass)
         {
             var nested = TryCreate(t, depth);

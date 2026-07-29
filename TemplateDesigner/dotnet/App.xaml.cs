@@ -19,14 +19,14 @@ public partial class App : Application
         base.OnStartup(e);
 
         // Globální default icon pro všechna Window v aplikaci. Implicit <Style TargetType="Window">
-        // v App.xaml se v WPF neaplikuje na derived Window classes (známý quirk) — registrace
+        // v App.xaml se v WPF neaplikuje na derived Window classes (známý quirk) - registrace
         // class handleru je spolehlivá pro všechna okna i dialogy.
         EventManager.RegisterClassHandler(typeof(Window), Window.LoadedEvent,
             new RoutedEventHandler(OnAnyWindowLoaded));
 
         EDServices.Initialize(new EDServices(null, new WindowNavigator(), new PopupDisplayer()));
 
-        // Sdílený vzhled (font + světlý/tmavý režim) — jedna registrace, sdílené storage s EDISONMAIN2
+        // Sdílený vzhled (font + světlý/tmavý režim) - jedna registrace, sdílené storage s EDISONMAIN2
         // (%APPDATA%\m-line\common\). Apply před MainWindow.Show eliminuje flicker; FileSystemWatcher
         // reaguje na změnu ze shellu (přepnutí dark v EDISONMAIN2 se projeví i tady za běhu).
         EDControls.EDAppearance.Initialize(this);
@@ -44,9 +44,9 @@ public partial class App : Application
         {
             if (EdisonLaunchArgs.IsEdisonLaunch(e.Args))
                 MessageBox.Show(
-                    "Aplikace byla spuštěna s nevalidními argumenty EDISONMAIN2 kontraktu — " +
+                    "Aplikace byla spuštěna s nevalidními argumenty EDISONMAIN2 kontraktu - " +
                     "session shellu se nepřevzala. Pokračuji ve standalone režimu (appsettings).",
-                    "Caché — neplatné argumenty spuštění",
+                    "Caché - neplatné argumenty spuštění",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
 
             WarnIfCacheMisconfigured(settings, mlRest);
@@ -63,14 +63,14 @@ public partial class App : Application
         var prefs = new TemplateDesigner.Services.TdPreferencesService(EDServices.Current.UserPrefs);
         prefs.LoadAsync().Wait(TimeSpan.FromMilliseconds(200));
 
-        // Color picker recent colors integrace — static reference, žádný explicit DI.
+        // Color picker recent colors integrace - static reference, žádný explicit DI.
         TemplateDesigner.Controls.ColorPickerHelper.Preferences = prefs;
 
-        // EDInputForm Color field — wire fancy color picker (s recent colors) místo žádného fallback.
+        // EDInputForm Color field - wire fancy color picker (s recent colors) místo žádného fallback.
         EDControls.EDInputForm.EDInputForm.PickColorImpl =
             (owner, hex) => TemplateDesigner.Controls.ColorPickerHelper.PickColor(owner, hex);
 
-        // EDInputForm Image field — file dialog + downscale → Base64. EDControls nemá obrázkové zpracování.
+        // EDInputForm Image field - file dialog + downscale → Base64. EDControls nemá obrázkové zpracování.
         EDControls.EDInputForm.EDInputForm.PickImageImpl = owner =>
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
@@ -84,11 +84,16 @@ public partial class App : Application
                 var bytes = System.IO.File.ReadAllBytes(dlg.FileName);
                 return TemplateDesigner.Models.Elements.ImageElement.EncodeAndResize(bytes);
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                // R2: dřív tichý null - uživatel nevěděl, proč se vybraný obrázek nenačetl
+                EDServices.Current.PopupDisplayer.Error(ex);
+                return null;
+            }
         };
 
-        // Wave 2 (W2-1): registr agend — Caché auto-discovery z BaseAgenda subclasses.
-        // Sync wait do 3s — pokud propadne, MainWindow startuje jen s GENERAL agendou
+        // Wave 2 (W2-1): registr agend - Caché auto-discovery z BaseAgenda subclasses.
+        // Sync wait do 3s - pokud propadne, MainWindow startuje jen s GENERAL agendou
         // (fallback v CacheAgendaRegistry). Cold-start Caché HTTP je dominantní, warm calls 50ms.
         IReadOnlyList<TemplateDesigner.Serialization.AgendaRegistryEntry> agendas = [];
         if (mlRest is not null)
@@ -100,7 +105,7 @@ public partial class App : Application
         }
         else
         {
-            // Standalone bez Caché — pouze GENERAL (synthetic injection v registru, ale registr není volaný)
+            // Standalone bez Caché - pouze GENERAL (synthetic injection v registru, ale registr není volaný)
             agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez databáze)", "")];
         }
 
@@ -121,7 +126,7 @@ public partial class App : Application
 
     /// <summary>
     /// Pokud nelze Caché vytvořit, zobrazí diagnostické varování.
-    /// Embedded config by měl vždy uspět — pokud nebyl, něco je rozbité při buildu.
+    /// Embedded config by měl vždy uspět - pokud nebyl, něco je rozbité při buildu.
     /// </summary>
     private static void WarnIfCacheMisconfigured(AppSettings settings, ALWA.SYS.MLRest? mlRest)
     {
@@ -130,11 +135,11 @@ public partial class App : Application
         var (title, message) = settings.Source switch
         {
             ConfigSource.None =>
-                ("Caché — chybějící embedded config",
+                ("Caché - chybějící embedded config",
                  "Embedded baseline config se nenačetl. Pravděpodobně chybí EmbeddedResource " +
                  "položka v csproj nebo selhalo parsování JSON. Aplikace pojede bez Caché."),
             _ =>
-                ("Caché — neplatná konfigurace",
+                ("Caché - neplatná konfigurace",
                  $"Sekce 'cache' v configu (zdroj: {settings.Source}) chybí nebo je neplatná " +
                  $"(prázdný Server / nevalidní Port). Aplikace pojede bez Caché. " +
                  $"Pro override vlož '{AppSettings.ConfigFileName}' vedle exe.")
