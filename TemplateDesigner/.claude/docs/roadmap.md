@@ -4,9 +4,10 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** po publishi vzít **B2** (zavírací kolo helpdesku - poslední 2 tikety + vizuál
-> zmenšování), pak **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky,
-> odemčené hotovým B11). Follow-upy „na vyžádání zákazníka" žijí
+> **▶ Další session:** po zavření #7947 vzít **`B16`** (chybějící řádky legendy - poznámka je v datech,
+> ale na vývěsce ji cestující nevidí; priorita dle Jana 30. 7.), pak dokončit **B2** (zavírací kolo
+> helpdesku + vizuál zmenšování) a dál **B10** (symbolový font linkové části) nebo **B13** (rozřezání
+> široké tabulky). Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
@@ -160,12 +161,24 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**`B16` Chybí zdroj atributů zastávky per spoj** (M, zóna 5; doměřeno 30. 7.)
-Na `CB_GWBUS` 501/0000001 má legacy v legendě „x = zastávka pouze na znamení", my ne. **Není to filtr
-ani rozsah zastávek** - na té lince nemá „x" žádná zastávka v J-větě (jediné atributy jsou `TS`).
-Legacy ho bere odjinud; ve W-záznamu trasy jsou atributy **per spoj** (např. `#7:6:1::V` = jen výstup),
-které nečteme vůbec → chybí celý zdroj. Dohledat, kde je legacy bere, pak doplnit čtení + legendu.
-Vedle toho srovnat znění: legacy „zastávka pouze na znamení" × naše „na znamení".
+**`B16` ⚠️ CHYBĚJÍCÍ ŘÁDKY LEGENDY - vzít hned po zavření #7947** (M, zóna 5; nálezy 30. 7.)
+Nejdůležitější otevřená věc u zastávkového JŘ: **poznámka existuje, ale cestující ji na vývěsce
+nevidí.** Dva samostatné nálezy, oba na `CB_GWBUS` 501/0000001, směr T, stránka Autobusové nádraží:
+
+1. **Bezbariérová poznámka se nevykreslí, i když v datech je** (nález ze živého buildu). `GetData`
+   vrací pro tu stránku **9** poznámek, na vývěsce je jich **8** - chybí `H - spoj má bezbariérově
+   přístupné vozidlo` (mělo by být mezi ④ a `B`). Není to souhrnná varianta, takže to neschovává
+   přepínač skrytí souhrnné bezbariérové poznámky. Kandidáti: viditelnost dle typu na prvku legendy,
+   pevná výška boxu legendy (devátý řádek se nevejde), nebo náš filtr/render. **Změřit, kde se to
+   ztrácí** (data → filtr → prvek), teprve pak opravovat.
+2. **Chybí zdroj atributů zastávky per spoj.** Legacy má v legendě „x = zastávka pouze na znamení",
+   my ne. Není to filtr ani rozsah zastávek - na té lince nemá „x" žádná zastávka v J-větě (jediné
+   atributy jsou `TS`). Legacy ho bere odjinud; ve W-záznamu trasy jsou atributy **per spoj**
+   (např. `#7:6:1::V` = jen výstup), které nečteme vůbec → chybí celý zdroj. Vedle toho srovnat
+   znění: legacy „zastávka pouze na znamení" × naše „na znamení".
+
+Nástroj na obojí je hotový: `Tests/AdProdlouzeniProbe.Inventura` (počítá i „značka u minuty bez řádku
+legendy") a `LegacyLegenda` (co na téže stránce vypíše starý modul).
 
 > **Rozhodnuto 30. 7. - kolize značky „H"/„F" zůstává** (bylo `B14`): ověřeno voláním starého modulu,
 > že tutéž kolizi má i legacy (legenda 0365005 nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`).

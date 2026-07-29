@@ -337,7 +337,13 @@ Informačně tedy 1:1 s legacy (tytéž tři skupiny, tytéž zastávky), odchyl
 prodloužení se nemění nic** - pořadí i oddělovače (vč. legacy tvaru „ , " před „neobsluhuje") zůstávají
 byte-identické, zlaté digesty beze změny.
 
-**⬜ Chybí zdroj atributů zastávky (samostatné, blok `B16`):** na téže stránce má legacy řádek
+**⚠️ Nález z živého buildu - bezbariérová poznámka se nevykreslí** (30. 7., blok `B16`, priorita
+po zavření tiketu): na téže stránce vrací `GetData` **9** poznámek, na vývěsce je jich **8** - chybí
+`H - spoj má bezbariérově přístupné vozidlo`. Není to souhrnná varianta, takže to nevysvětluje přepínač
+skrytí souhrnu. Nesouvisí s #7947 (rozdíly tras se vykreslily všechny tři), ale je to tentýž druh
+problému jako bod níže: poznámka existuje a cestující ji nevidí. Změřit cestu data → filtr → prvek.
+
+**⬜ Chybí zdroj atributů zastávky (tentýž blok `B16`):** na téže stránce má legacy řádek
 „x = zastávka pouze na znamení", náš výstup ne. **Doměřeno:** není to filtr ani rozsah zastávek -
 na té lince nemá „x" **žádná** zastávka v J-větě (jediné atributy jsou `TS` na nádraží). Legacy ho
 bere odjinud; ve W-záznamu trasy jsou vidět atributy **per spoj** (např. `#7:6:1::V` = jen výstup),

@@ -143,7 +143,12 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 ### 🐛 Známé problémy
 
-*(žádné aktivní)*
+- **Poznámka je v datech, ale na vývěsce ji cestující nevidí** (zastávkový JŘ AD, nález 2026-07-30).
+  Na `CB_GWBUS` 501/0000001/T stránce Autobusové nádraží vrací `GetData` 9 poznámek, vykreslí se 8 -
+  chybí bezbariérová „H". Není to souhrnná varianta (přepínač skrytí souhrnu to nevysvětluje).
+  Neopravovat naslepo: **nejdřív změřit, kde se ztrácí** (data → `NoteVisibilityFilter` → prvek
+  legendy; kandidát je i pevná výška boxu). Podrobně + druhý související nález (chybí zdroj atributů
+  zastávky per spoj) → `roadmap.md` blok `B16`, nástroje `Tests/AdProdlouzeniProbe`.
 
 ---
 
