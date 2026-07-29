@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using SkiaSharp;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Controls;
@@ -45,15 +46,9 @@ public sealed class FirstNonEmptyHexToBrushConverter : IMultiValueConverter
     {
         foreach (var v in values)
         {
-            if (v is string s && !string.IsNullOrWhiteSpace(s))
-            {
-                try
-                {
-                    var sk = SKColor.Parse(s);
-                    return new SolidColorBrush(Color.FromArgb(sk.Alpha, sk.Red, sk.Green, sk.Blue));
-                }
-                catch { /* neparsovatelný hex → zkus další hodnotu v kaskádě, jinak Transparent */ }
-            }
+            // Neparsovatelný hex → zkus další hodnotu v kaskádě, jinak Transparent.
+            if (v is string s && ColorHex.TryParse(s, out var sk))
+                return new SolidColorBrush(Color.FromArgb(sk.Alpha, sk.Red, sk.Green, sk.Blue));
         }
         return System.Windows.Media.Brushes.Transparent;
     }

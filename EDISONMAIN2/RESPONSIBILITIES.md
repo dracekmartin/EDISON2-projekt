@@ -1652,10 +1652,12 @@ Všechno, co se Caché týká, musí oba klienty bezešvě obsloužit.
 
 **Filesystem a single-file publish:**
 
-- EDISONMAIN v `C:\Edison\` má volné DLL. EDISONMAIN2 má `dotnet publish
-  --self-contained` s single-file výstupem — žádné volné DLL.
+- EDISONMAIN v `C:\Edison\` má volné DLL. EDISONMAIN2 jde `dotnet publish` s single-file
+  bundlem (framework-dependent, `SelfContained=false` — .NET runtime je prerekvizita) —
+  vedle exe zůstává volná jen `EDControls.dll` a nenačítané EDLibrary DLL.
 - Oba klienti mohou žít vedle sebe v `C:\Edison\` bez konfliktu DLL.
-- `MLRest.dll` je stále sdílené (oba ho referencují z `C:\Edison\`).
+- `MLRest.dll` je stále sdílené (oba ho referencují z `C:\Edison\`); `EDControls.dll`
+  sdílí EDISONMAIN2 s TemplateDesignerem (root CLAUDE.md — aditivní změny).
 
 ### 18.3 Kritéria pro "roll-out ready"
 

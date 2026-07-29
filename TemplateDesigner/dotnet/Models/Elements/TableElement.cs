@@ -370,7 +370,7 @@ public class TableElement : TemplateElement
     {
         if (Rows is null || Rows.Count == 0) return startY;
 
-        SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
+        SKColor? altColor = ColorHex.ParseOrNull(AlternatingRowColor);
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
 
         float currentY = startY;
@@ -386,7 +386,7 @@ public class TableElement : TemplateElement
             // Row-level bg override
             if (row.BackgroundColor is not null)
             {
-                using var rowBg = new SKPaint { Color = SKColor.Parse(row.BackgroundColor) };
+                using var rowBg = new SKPaint { Color = ColorHex.ParseOrTransparent(row.BackgroundColor) };
                 ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), rowBg);
             }
 
@@ -441,7 +441,7 @@ public class TableElement : TemplateElement
         bool hasRows = rows.Count > 0;
         int renderCount = hasRows ? rows.Count : DesignerPreviewRows;
 
-        SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
+        SKColor? altColor = ColorHex.ParseOrNull(AlternatingRowColor);
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
 
         // Placeholder styl pro designer - šedivý text
@@ -512,9 +512,7 @@ public class TableElement : TemplateElement
         foreach (var row in SummaryRows)
         {
             // Pozadí řádku (buď custom, nebo default ze SummaryParent)
-            var rowBgColor = row.BackgroundColor is not null
-                ? SKColor.Parse(row.BackgroundColor)
-                : TableSummaryParent.ParsedBackgroundColor;
+            var rowBgColor = ColorHex.Parse(row.BackgroundColor, TableSummaryParent.ParsedBackgroundColor);
             if (rowBgColor.Alpha > 0)
             {
                 using var sbg = new SKPaint { Color = rowBgColor };

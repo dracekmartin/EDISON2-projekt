@@ -42,7 +42,20 @@ namespace EDControls.EDInputForm
             Editable ? WpfVisibility.Collapsed : WpfVisibility.Visible;
 
         /// <summary>Volby pro pole typu List. U ostatních typů prázdné.</summary>
-        public List<ListItem> ListItems { get; set; } = [];
+        /// <remarks>Hlásí změnu, aby se dala nabídka vyměnit i za běhu (klient dopočítává volby,
+        /// které server nezná - např. řezy písma dle vybrané rodiny). Bez ohlášení by dropdown
+        /// zůstal na obsahu z chvíle, kdy ho WPF poprvé postavil.</remarks>
+        public List<ListItem> ListItems
+        {
+            get => _listItems;
+            set
+            {
+                _listItems = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ListItemsForDisplay));
+            }
+        }
+        private List<ListItem> _listItems = [];
 
         /// <summary>
         /// Konfigurace pro pole typu File: filtr dialogu (např. <c>"PDF (*.pdf)|*.pdf"</c>),
@@ -152,9 +165,23 @@ namespace EDControls.EDInputForm
                                DateTimeStyles.None, out _) ? null : "Neplatné datum";
                 case EFieldType.Bool:
                     return _value is "0" or "1" ? null : "Musí být 0 nebo 1";
+                case EFieldType.Color:
+                    return IsHexColor(_value) ? null : "Neplatná barva - zadejte #RRGGBB nebo #AARRGGBB";
                 default:
                     return null;
             }
+        }
+
+        /// <summary>Barva ve tvaru <c>#RRGGBB</c> / <c>#AARRGGBB</c> (mřížka nepovinná) - tedy to,
+        /// co umí <see cref="HexToBrushConverter"/> i barevný dialog. Bez této kontroly by se do
+        /// hostitelské aplikace dostal libovolný text z pole a spadla by až při vykreslování barvy.</summary>
+        private static bool IsHexColor(string value)
+        {
+            var hex = value.Trim().TrimStart('#');
+            if (hex.Length != 6 && hex.Length != 8) return false;
+            foreach (var c in hex)
+                if (!Uri.IsHexDigit(c)) return false;
+            return true;
         }
 
         /// <summary>Validuje hodnotu proti <see cref="Min"/> / <see cref="Max"/>. Null = bez kontroly.</summary>

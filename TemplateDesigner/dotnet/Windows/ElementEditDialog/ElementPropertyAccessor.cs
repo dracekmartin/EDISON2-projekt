@@ -50,13 +50,49 @@ public static class ElementPropertyAccessor
 
     /// <summary>Zapíše string hodnotu do property elementu přes path (s type conversion).
     /// Null mezičlánky na cestě se lazy alokují (např. nullable <c>HeaderLine2Style</c>) - jen při
-    /// zápisu (Get/Exists nealokují → otevření dialogu / Cancel element nemutuje).</summary>
+    /// zápisu (Get/Exists nealokují → otevření dialogu / Cancel element nemutuje).
+    /// <paramref name="stringValue"/> = null zapíše null, pokud to property dovolí (jinak prázdno).</summary>
     public static void Set(object root, string path, string? stringValue)
     {
         var (parent, prop) = Resolve(root, path, allocate: true);
         if (parent is null || prop is null || !prop.CanWrite) return;
+
+        // Explicitní null (ne prázdný string) - „hodnota se dědí" u nullable properties. Prázdný
+        // string je jiná věc: u stringové property je to legitimní hodnota, ne „nezadáno".
+        if (stringValue is null && AcceptsNullType(prop.PropertyType))
+        {
+            prop.SetValue(parent, null);
+            return;
+        }
         prop.SetValue(parent, FromStringValue(stringValue ?? "", prop.PropertyType));
     }
+
+    private static readonly NullabilityInfoContext NullCtx = new();
+
+    /// <summary>True pokud property na dané cestě smí být null (<c>Nullable&lt;T&gt;</c> nebo
+    /// nullable referenční typ, např. <c>string?</c>). Traverzuje podle typů, takže funguje
+    /// i s null mezičlánkem na cestě - stejný důvod jako u <see cref="Exists"/>.</summary>
+    public static bool AcceptsNull(object root, string path)
+    {
+        var parts = path.Split('.');
+        var type = root.GetType();
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            var p = type.GetProperty(parts[i]);
+            if (p is null) return false;
+            type = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+        }
+        var final = type.GetProperty(parts[^1]);
+        if (final is null || !final.CanWrite) return false;
+        if (!AcceptsNullType(final.PropertyType)) return false;
+        if (Nullable.GetUnderlyingType(final.PropertyType) is not null) return true;
+
+        // NullabilityInfoContext není thread-safe.
+        lock (NullCtx) return NullCtx.Create(final).WriteState == NullabilityState.Nullable;
+    }
+
+    private static bool AcceptsNullType(Type t) =>
+        !t.IsValueType || Nullable.GetUnderlyingType(t) is not null;
 
     /// <summary>Traverzuje path (všechny segmenty kromě posledního) → vrátí finální parent objekt + PropertyInfo.
     /// <paramref name="allocate"/>=true → null mezičlánek se vytvoří (parameterless ctor) a zapíše zpět.</summary>

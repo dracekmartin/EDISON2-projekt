@@ -18,7 +18,7 @@ Kde jsme a co dál drží **[`roadmap.md`](.claude/docs/roadmap.md)** (vršek = 
 
 ## Neodvoditelné invarianty
 
-Tři věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživateli:
+Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživateli:
 
 - **`AgendaVariantCode` je stabilní persistovaný klíč** (`ZASTAVKOVY_JR_AD`, `KNIZNI_JR_MHD`…) -
   hodnoty se **NIKDY** nemění. Visí na nich `agendaCode` v JSON šablonách, DB index `ByAgenda`,
@@ -36,6 +36,16 @@ Tři věci, které se z kódu nepoznají a jejichž porušení něco rozbije už
   neznámý kód → default. Bez argumentů běží TD standalone. Obecný kontrakt (`EdisonLaunchArgs`,
   MLRest ze session shellu) viz `EDControls/CLAUDE.md`; `shellGuid` se záměrně nepřebírá,
   TD má vlastní session GUID bez vazby na ACTIVITY zámek shellu.
+- **Persistované hodnoty parametrů sestavy se aplikují jednou cestou** -
+  `ApplyPersistedPrintParamsAsync()` nastaví hodnoty i UI pohromadě. Dvě cesty vedly k tomu,
+  že se tisklo jiné nastavení, než UI ukazovalo, a nikdo si toho nevšiml.
+- **Skryté poznámky se počítají ze skutečně odfiltrovaných položek** (`NoteSuppressionCounter`),
+  ne ze zapnutého parametru. Rozsah „Spoje, nepoznámkovat" nemusí mít v datech firmy záznamy,
+  takže signál odvozený z parametru by lhal.
+
+**Diagnostika „UI ukazuje jiné nastavení, než se tiskne"** (kdyby se to vrátilo): přečti uložený
+blob `^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams",<AgendaCode>)` a porovnej
+s UI. Tímhle se odhalilo tiše zapnuté rozdělení vývěsky.
 
 ## Technologický stack
 
@@ -156,11 +166,11 @@ Vědomá rozhodnutí, která se znovu neotevírají (ne mezery):
 Single-file `.exe` se generuje skriptem `publish.ps1` v rootu projektu:
 
 ```powershell
-cd C:\Users\miesb\source\EDISONMAIN2\TemplateDesigner
+cd c:\MLineRepos\EDISON2\TemplateDesigner
 .\publish.ps1
 ```
 
-Skript volá `dotnet publish` s profilem `SingleFileCEdison` → výstup do `C:\Edison\TemplateDesigner.exe` (~20 MB, self-extracting bundle s `templatedesigner.appsettings.json` jako embedded resource).
+Skript volá `dotnet publish` s profilem `SingleFileCEdison` → výstup do `C:\Edison\`: `TemplateDesigner.exe` (~20 MB, self-extracting bundle s `templatedesigner.appsettings.json` jako embedded resource) **+ volná `EDControls.dll`** (sdílená s EDISONMAIN2, viz root CLAUDE.md). Nasazovat se musí obojí.
 
 **Před spuštěním** - zavři běžící TemplateDesigner.exe (skript hned na začátku ověří lock a friendly errne, pokud je soubor uzamčený).
 

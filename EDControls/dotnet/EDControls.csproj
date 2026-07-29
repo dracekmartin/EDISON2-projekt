@@ -5,7 +5,12 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- EDControls se vydává samostatně (jedna volná DLL v C:\Edison\) — publish smí
+         zapsat jen její vlastní assembly, ne celý uzávěr závislostí. -->
+    <PublishOwnAssemblyOnly>true</PublishOwnAssemblyOnly>
   </PropertyGroup>
+
+  <Import Project="..\..\SingleFilePublish.targets" />
 
   <ItemGroup>
     <InternalsVisibleTo Include="EDControls.Tests" />

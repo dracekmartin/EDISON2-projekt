@@ -1,5 +1,317 @@
 # Changelog
 
+## 2026-07-30 (2) - Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl (`B24`)
+
+Uživatel tiskl něco jiného, než co měl v nastavení, a neměl jak na to přijít: uložené
+„Rozdělit vývěsku pro každý označník" bylo zapnuté, takže ze stránky zmizely odjezdy jiného
+označníku (chyběl konkrétní spoj i s jeho značkami), ale ovladač v UI ukazoval vypnuto.
+
+- **Příčina:** persistované hodnoty se aplikovaly **dvěma cestami**. Otevírací flow dělal celou
+  trojici (per-agenda → šablona → přenačtení UI), ale cold-start fallback (když načtení preferencí
+  doběhne až po otevření šablony) jen načetl hodnoty do dictu. Ty pak šly do `GetData`, kdežto lišta
+  i formulář parametrů zůstaly na defaultech. Cold-start navíc vůbec neaplikoval parametry uložené
+  v šabloně.
+- **Oprava:** jedna veřejná cesta `ApplyPersistedPrintParamsAsync()` (hodnoty + UI pohromadě), kterou
+  volají všechna tři místa. U `OnExternalParamsChanged` je invariant dopsaný do dokumentace, včetně
+  důvodu, proč tab neobnovuje sám (jeho `Init()` je synchronní Caché round-trip).
+- **Pojistka, aby to bylo vidět příště:** status bar hlásí nastavení, které **tiše mění obsah**
+  vývěsky - „poznámky skryté nastavením" · „rozdíly tras nahrazené písmeny variant" · „vývěska
+  rozdělená po označnících". Schované poznámky se počítají ze **skutečně** odfiltrovaných položek
+  (`NoteSuppressionCounter`), ne ze zapnutého parametru: rozsah „Spoje, nepoznámkovat" nemusí mít
+  v datech firmy záznamy a signál z parametru by lhal.
+- .NET 487/487 (13 nových: filtr poznámek + skládání hlášky).
+
+Zbývá z téhož nálezu: `B25` (rozdělená vývěska nechává v legendě značky spojů, které na ní nejsou)
+a `B26` („označník" může být z dat nesmysl - `JET,1` na CB_GWBUS).
+
+## 2026-07-30 - Audit úplnosti poznámek zastávkového JŘ (AD) + chyba cache W-map
+
+Poznámky jsou na vývěsce klíčové (cestující podle nich pozná, kdy spoj jede a kam), takže proběhl
+audit „dorazí každý zdroj poznámek na stránku?". Měřeno na `CB_CSADAD` (240 linek, 9693 stránek)
+sondou `Tests/AdProdlouzeniProbe.cls`.
+
+- **Nalezena chyba cache v generátoru** (jádro nálezu): W-mapa trasy se cachovala pod číslem trasy
+  **bez linky**, a číslo trasy je lokální v rámci linky → při čtení víc linek v jednom procesu si
+  linky mapy navzájem přebíjely a vznikaly **falešné rozdíly tras**. Linka je teď v klíči.
+  V produkci se to neprojevovalo (tisk jede jednu linku a cache maže), ale **znehodnotilo to celé
+  měření z 29. 7.** - proto se „chyba, že se poznámky nedostanou na stránku" nepotvrdila: dostanou.
+- **Inventura zdrojů**: každý zdroj poznámek, který v datech firmy existuje, na stránku dorazí,
+  a napříč 9693 stránkami **není ani jeden případ značky u minuty bez řádku legendy**. Ruční
+  komentáře spoje a směrové poznámky linky nešly ověřit - firma pro ně nemá žádná data.
+  Tabulka s počty je v `customer-requirements-zastavkovy-jr.md §D1`.
+- **Nový nález: kolize značky.** Písmena rozdílů tras zahrnují „H" a „F", což jsou zároveň značky
+  bezbariérových spojů → na 9 stránkách nese jeden symbol dva významy a legenda k němu má dva různé
+  řádky. Čeká na rozhodnutí (oprava změní písmena na gold lince, tedy odchýlí od legacy).
+- **Věta o prodloužení spoje zpevněna** (#7947): cíl se hledá přes nejbližší pojmenovanou zastávku
+  proti směru jízdy, a bez známého cíle se věta nenapíše (dřív mohla skončit „jede až do zast. ").
+- **Reprodukce #7947 nalezena** hledáním přes všechny skupiny a linky: `CB_GWBUS` 501/0000001/T
+  (12 výskytů). V `CB_CSADAD` případ nastat nemůže ani na jedné z 31 216 linek - buď chybí vzorová
+  trasa (62 422 kombinací), nebo je u zbylých 10 vypnuté auto-poznámkování.
+- **Vráceno: vynechání „jede přes zast. …" u prodloužení.** Vypadalo redundantně, ale nese jinou
+  informaci než cíl - po vynechání se texty různých skupin spojů staly identickými a dedup je sloučil
+  do jedné značky (legacy 3 poznámky → 1). Ponecháno legacy-shodné.
+- **#7947 dotaženo - poznámka o prodloužení spoje má cíl na začátku a nese průjezd**
+  (`jede až do zast. <konečná> přes <mezizastávky>`, pak „jede přes" / „neobsluhuje").
+  Cíl je informace, kvůli které tiket vznikl, a na konci věty ho legenda ořezávala jako první; průjezd
+  musí zůstat, jinak splynou skupiny spojů lišící se jen cestou. Informačně tím **dorovnáno legacy**
+  (tytéž tři skupiny na ověřovací stránce), odchylka je pouze ve znění. **Bez prodloužení se nemění nic** -
+  pořadí i oddělovače zůstávají byte-identické, zlaté digesty beze změny.
+- **Oprava: značka „spoj v zastávce nestaví" (`|`) se počítala jako obsluhovaná** (`SpojBitmapa`).
+  Jen v rozdílech tras, ale se dvěma viditelnými následky: poznámka tvrdila „jede přes zast. X"
+  u zastávky, kde spoj nestaví, a **slévala skupiny spojů**, které se lišily právě jen tímto.
+  Změřeno proti starému modulu na `CB_GWBUS` 501/0000001/T: legacy 3 skupiny, my 2, a jiné seznamy
+  zastávek. Po opravě **1:1 s legacy** (B/C/E, tytéž seznamy vč. „neobsluhuje zast. Dewetterova ul.").
+  Zbytek třídy `|` vylučoval správně (`CasHodnota`, `ObsluhovanePoradi`) - chybělo to na jednom místě.
+  Zlaté digesty beze změny (zlaté linky `|` nemají), CB_CSADAD beze změny.
+- **Kolize značky „H" je i v legacy** - ověřeno voláním starého modulu (`ALVA.TISKMHD.Data`,
+  VolanoZ=JRMAIN) na 0365005: legenda tam nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`.
+  Rozhodnutí: necháváme legacy-shodné (uzavřeno jako „záměrně jinak", detail v archivu roadmapy).
+- **Signál o schovaných poznámkách** (status bar): dosud nešlo rozeznat „žádné poznámky nejsou" od
+  „jsou, ale nastavení sestavy je schovalo". Počítají se **skutečně** skryté položky, ne zapnutý
+  parametr - rozsah „Spoje, nepoznámkovat" v této firmě nemá data, takže signál z parametru by lhal.
+  Písmena variant tras jsou výjimka (nahrazují rozdílové poznámky už na serveru) → hlásí se dle parametru.
+- Caché 45/45, .NET 446/446 (8 nových testů filtru poznámek - dosud netestovaný). Zlaté digesty
+  0365001/0365005 **beze změny** → opravy jsou behavior-preserving, přebaselinování nebylo potřeba.
+
+## 2026-07-29 - Vymazaný HEX kód barvy shodil návrhář a „rozbil" šablonu (ticket 13078)
+
+Zákazník vymazal HEX kód barvy, potvrdil enterem a dostal chybovou hlášku; po uložení už šablonu
+**nešlo otevřít**.
+
+- **Příčina:** barva se čte přes `SKColor.Parse`, která na neplatné hodnotě **vyhodí výjimku**.
+  Do modelu se přitom prázdná hodnota dostala bez jediné kontroly (barevné pole formuláře typovou
+  kontrolu nemělo, `ElementPropertyAccessor` bere string „as-is"). Padalo to teprve při kreslení,
+  a protože se nesmysl uložil do šablony, padalo to i při každém dalším otevření - odtud „šablona
+  zhavarovala".
+- **Vrstva 1 - kreslení nikdy nespadne:** nový `Models/ColorHex.cs` je jediné místo, kde se
+  uživatelská barva čte; neplatná hodnota sáhne po záložní barvě (černá u textu/čar, průhledná
+  u pozadí, „jako nenastaveno" u nepovinných barev). Nahrazeno ve **všech** ~30 místech kreslení.
+  Tím se **samo opraví i už uložené šablony** (zákazníkova „IDZK poulička" se otevře).
+- **Vrstva 2 - neplatná barva se neuloží:** barevné pole formuláře nově hlásí neplatný tvar samo
+  (`Field.GetTypeError` v EDControls → červený rámeček, tooltip, uložení se zastaví - stejně jako
+  u čísla nebo datumu) a `ElementFormBinder` neplatnou hodnotu do modelu nezapíše ani při živé
+  editaci v panelu. Doplněna i kontrola v ručním HEX poli properties panelu (dřív pustilo `#ZZZZZZ`).
+- **Vymazání barvy má konečně srozumitelný význam:** u zděditelné barvy (styly buněk, styl textu)
+  znamená „dědit" → null, u ostatních „nic nekreslit" → průhledná. Dřív se uložil prázdný string,
+  který kaskádu rozbil.
+- Testy: TD 482/482 (29 nových případů), EDControls 458/458, EDISONMAIN2 420/420. Mezi nimi
+  **regrese na zákaznický případ**: šablona s rozbitými barvami projde uložením, otevřením,
+  stránkováním i vykreslením (dřív tady letěla výjimka) - takže „šablona nejde otevřít" je ověřeně
+  pryč, ne jen odvozeně.
+
+## 2026-07-29 - Úzké varianty písma ve výběru fontu (Arial Narrow, ticket 13006)
+
+Zákazník po dodání řezů písma nahlásil, že **Arial Narrow ve výběru nevidí** - ani jako samostatné
+písmo, ani jako řez Arialu, přesto že ho ve Windows nainstalovaný má.
+
+- **Příčina:** Windows (DirectWrite) sdružuje rodiny po „šířka-váha-sklon", takže Arial Narrow
+  **není samostatná rodina** - je to řez rodiny Arial se šířkou Condensed a v seznamu rodin z OS
+  vůbec není. Nabídka řezů ho neukázala taky, protože vyjmenovávala jen **váhy** a úzké řezy mají
+  tutéž váhu 400/700 jako obyčejný Arial; liší se šířkou, kterou model neumí (`ToSKFontStyle`
+  posílal natvrdo normální šířku s domněnkou „Condensed řešíme rodinou").
+- **Řešení:** úzké a rozšířené varianty se do nabídky přidávají jako samostatné položky pod jménem
+  odvozeným z reálného názvu řezu v OS (`Arial Narrow`, `Tw Cen MT Condensed`, `Bahnschrift
+  SemiCondensed`, …) a `FontResolver` je při kreslení přeloží zpět na rodinu + šířku. Uživatel je
+  tak vybírá jako font, stejně jako je zvyklý z Wordu. Na běžném stroji přibylo 11 položek.
+- **Bez migrace šablon** - varianta se veze v už existujícím poli rodiny písma, JSON se nemění.
+- **Opraven i tisk starých šablon**, které Arial Narrow předepisují: jméno dosud nikdo nerozpoznal,
+  takže se tiskl obyčejný Arial (a v samotné Skii by dokonce vyšlo Segoe UI).
+- **Nabídka řezů je nově filtrovaná na šířku varianty** - u Arial Narrow tedy jen Normal a Bold,
+  ne Black, který existuje jen v normální šířce.
+- Jednošířkové rodiny (Impact, Agency FB) odvozené jméno **nedostávají** - vybere je samo jméno
+  rodiny a „Impact Condensed" by byl jen duplikát téhož fontu.
+- .NET 453/453 (7 nových testů; ověřují i zákazníkův případ vč. toho, že text je opravdu užší).
+  Testy se neopírají o konkrétní fonty stroje - varianty si najdou v tom, co OS nabízí.
+
+## 2026-07-29 - Plán řádků: sdílená kreslicí smyčka (B11 / R1, část 1 - linková tabulka)
+
+Nízkoúrovňové tabulkové jádro (buňka, sloupec, kaskáda, šířky) bylo sdílené už dřív; chyběla
+poslední vrstva - **druh řádku**. Každý tabulkový element měl vlastní svislou smyčku, takže každá
+řádková featura (seskupování, mezisoučty, sloučené buňky, rozdělení přes stránky) se musela napsat
+N×. Nově element **popíše tabulku jako plán řádků** (`RowSpec`) a kreslí ji jedna smyčka
+(`RowPlanRenderer.DrawRows`).
+
+`RowSpec` nese: **druh** (`RowKind`: Header / GroupHeader / HeaderExtra / Data / SubRow / Summary) ·
+výšku · buňky · pozadí celé šířky · pera vodorovných čar nahoře a dole · pero svislých čar.
+
+- **Druh řádku kreslení neovlivňuje** - je to nosič významu, na který se navěsí řádkové featury
+  (`B13` rozdělení přes stránky, opakování mezisoučtu). Bez něj je smyčka „nakresli N stejných
+  řádků" a featury nemají za co chytit.
+- **Dvě věci musely být v kontraktu explicitně**, jinak se rozejdou pixely: (1) **pořadí kreslení**
+  pozadí → buňky → čáry (kdyby čáry šly první, pozadí buňky je překryje); (2) **pera jsou
+  per-řádek**, protože záhlaví a datové řádky reálně používají různá (rámečkové × oddělovací).
+- **Linková tabulka převedena** (prototyp - má nejvíc druhů řádků: pás skupin dnů se sloučenými
+  buňkami → čísla spojů → platnost → negativní značky → zastávky s podřádky přípojů). Sloučený pás
+  nese příznak „bez svislých čar", aby ho nešlo omylem ztratit.
+- **Důkaz:** odtisk linkové tabulky **bit za bitem identický** proti baseline sejmuté před zásahem
+  (viz záchytná síť níže). .NET 438/438.
+
+Ve třetím kroku převeden **zastávkový seznam**. Ten si vyžádal doplnit do kontraktu **dokreslení
+vlastního obsahu do řádku** (`RowSpec.Decorate`, volá se po buňkách a před čarami): značky zastávky
+se kreslí po úsecích symbolovým a normálním fontem, protože v jedné buňce nejde míchat font. Je to
+úzká výjimka pro to, co buňka principiálně neumí - ne obecná zadní vrátka.
+
+Ve druhém kroku převedena i **dynamická tabulka** (záhlaví, datové řádky se zvýrazněním i střídáním, souhrnné řádky) - odtisk taktéž identický. Výjimka, která zůstala u elementu: **oddělovač bloku souhrnů** se kreslí pod pozadím prvního souhrnného řádku, tedy v opačném pořadí než řádkové čáry; do plánu proto nejde a je to u něj zdůvodněné.
+
+**Převedeny tři živé tabulky** (linková, dynamická, zastávkový seznam) - u všech odtisk bit za bitem
+identický. **Mřížka odjezdů zůstává mimo** (pivot: sloupce = skupiny dnů, řádky = hodiny).
+
+**Pevná tabulka vědomě nepřevedena** - dvě odchylky by změnily její výstup a nemá jak se ověřit:
+kreslí svislou čáru **za každým** sloupcem včetně vnějšího (sdílená smyčka kreslí jen mezi sloupci)
+a u pevných řádků vrství **dvě pozadí** (střídání + override řádku), což je totožné jen u plně
+neprůhledných barev. Navíc je to **uspaný element** (paleta ho nenabízí), takže ani není v odtiscích.
+Jeho oživení (Fáze B krok 1) už dorovnání kreslení na sdílenou cestu obsahuje - patří to tam, kde se
+to dá proklikat.
+
+## 2026-07-29 - Záchytná síť na kreslení (příprava B11)
+
+Před refaktorem kreslicí smyčky (`B11` / R1 extrakce řádkového jádra) vyšlo najevo, že **ani jeden
+z 433 testů nic nevykresluje** - všechno je logika, modely, kaskády. „Nic se nerozbilo" se u pěti
+elementů se zákaznickou paritou nedalo tvrdit jinak než z proklikání, které neuchytí posun
+o desetiny milimetru (a ten se pozná až u zákazníka na vývěsce).
+
+- **`RenderSnapshot`** vykreslí element mimo WPF do bitmapy (pozadí → obsah → rámeček, stejné pořadí
+  jako skutečná pipeline) a udělá z pixelů odtisk. **`ElementRenderFixtures`** = pevná data pro pět
+  elementů, schválně **heterogenní** (u linkové tabulky pás skupin dnů, čísla spojů, řádek platnosti,
+  negativní značky, příjezdový řádek), aby refaktor neprošel jen proto, že jsou všechny řádky stejné.
+- **Baseline není v gitu** - projekt nemá zabalené textové fonty (jen symbolové `TimeTable2`), takže
+  text rasterizuje Arial z OS a odtisky jsou vázané na stroj; kolegovi by commitnutá baseline padala
+  v pre-push. Ukládá se mimo repozitář, přesnímání `TD_RENDER_REBASELINE=1`. Trvalá pixelová regresní
+  sada by šla až se zabalenými textovými fonty.
+- **V gitu jsou 4 testy nezávislé na stroji** (porovnávají odtisky z téhož běhu): determinismus
+  harnessu · každý element něco nakreslí a všech pět se liší · **posun o 0,1 mm musí odtisk změnit**
+  (potřebná citlivost pro B11) · změna velikosti písma o 0,5 pt se musí projevit.
+- **Síť rovnou dvakrát zabrala:** (1) baseline se dá omylem sejmout **proti zastaralé binárce** -
+  když běží designer, build testů selže na uzamčeném `.exe` a testy jedou proti staré DLL (zapsáno
+  jako poučení v harnessu); (2) při tom se ukázalo, že dnešní `B5` změnil kreslení **právě a jen
+  u linkové tabulky** a ostatní čtyři elementy nechal bit za bitem stejné - přesně jak měl.
+- Testy: .NET 438/438 (5 nových).
+
+## 2026-07-29 - Tichý filtr hodin v mřížce odjezdů (nález Jan)
+
+Meze **„Hodiny od/do"** patří režimu časové osy „Vlastní rozsah", ale kreslení je aplikovalo
+**i ve všech ostatních režimech** - a protože jsou v nich schované (podmínka viditelnosti
+`CASOVA_OSA=Vlastní rozsah`), vznikal tichý stav: uživatel zadal rozsah, přepnul osu jinam, pole
+zmizela z formuláře, ale jejich hodnoty dál řezaly mřížku a **nebylo je jak vidět ani zrušit**.
+Spravilo se to až obnovením dat, které parametry přeneslo znovu.
+
+Druhý, horší důsledek téhož: výchozí „od" = **4**, takže podmínka byla splněná **bez jakéhokoli
+nastavení uživatele** - režim „Jen hodiny s odjezdy" tiše zahazoval hodiny 0-3 (noční odjezd
+ve 3:15 v mřížce prostě nebyl).
+
+- **Oprava:** meze platí jen ve Vlastním rozsahu, kde to jsou jeho hranice, ne globální filtr.
+  Pravidlo zapsané v kódu, ať se to nevrátí: **schovaný ovladač nesmí ovlivňovat výstup.**
+- **Viditelný důsledek** (rozhodnutí Jan): v režimu „Jen hodiny s odjezdy" se nově zobrazí i hodiny
+  pod 4, pokud v nich odjezd je - což ten režim má znamenat.
+- **Jak to vzniklo:** cross-mode filtr přišel dřív (`b956ab7`), podmíněná viditelnost až v časové
+  ose B3 (`a0c17c7`) - tam se komentář jen přeformuloval a nikdo si nevšiml, že se významy dostaly
+  do rozporu.
+- Nesouvisí se seznamem `ServerSideParams` - časovou osu řeší výhradně kreslení na klientovi,
+  takže re-fetch je správně nepotřebný; přepnutí režimu se má srovnat bez F5.
+- Testy: `DepartureTimeAxisTests` (6 - tři režimy se nezužují vč. výchozího 4-23, Vlastní rozsah
+  beze změny vč. přechodu přes půlnoc). .NET 433/433.
+
+## 2026-07-29 - Tabulka se přizpůsobí i na šířku (blok B5 / L‑1)
+
+Zmenšování při přetečení znalo jen **svislý** směr: obsah vyšší než pevná výška → jedna škála na
+fonty i výšky řádků pro celý element. Vodorovně nic takového neexistovalo, což mělo dva projevy:
+
+- **Rozházené písmo.** Na šířku reagovalo jen zmenšování textu v jednotlivé buňce (à la Excel,
+  z tiketu #13048 bodu 2). To si ale **každá buňka počítá sama**, takže u linkové tabulky, kde
+  sloupce = spoje, vycházel čas „14:35" menší než „8:05" - vedle sebe různé velikosti.
+- **Tiše zmizelé spoje.** Šířka sloupce spoje má spodní mez (pod ní je čas nečitelný); když ani při
+  ní součet nevyšel, přebytek se **oříznul** - z pravé strany chyběly odpolední spoje a **nic to
+  neřeklo**, protože varování o přetečení hlídá jen svislý směr.
+
+Nově `TableLayout.ComputeWidthScale` = vodorovný protějšek výškové škály. Element ji zkombinuje
+s výškovou (`MathF.Min` - zmenšuje ta horší strana) a použije na šířky sloupců, výšky řádků i fonty,
+takže tabulka **dosedne přesně na svou šířku** místo oříznutí. Zmenšování v buňce se tím vrací ke své
+roli **výjimky pro odchylku** (jeden nezvykle dlouhý název zastávky), ne pravidla pro všechny časy -
+skládání už bylo správné: buněčné zmenšování startuje od globální škály a zmenší jen to, co při ní
+ještě přetéká, takže nehrozí dvojí zmenšení.
+
+- **Kde:** linková tabulka (vlastní výpočet šířek → skalární varianta), zastávkový seznam a dynamická
+  tabulka (přes sdílené `ResolveWidths`). **Mřížka odjezdů záměrně mimo** - je to pivot s málo sloupci
+  a vlastní logikou roztažení. **Uspaná pevná tabulka** dostala jen zmenšení šířek (font-škálu vůbec
+  nezná, dorovná se při jejím oživení) - i tak je to proti dosavadnímu oříznutí zlepšení.
+- **Behavior-preserving:** dokud se tabulka vejde, škála je 1 a šířky jsou spočítané úplně stejně jako
+  dřív (pokryto testy, ať se nezmění uložené šablony).
+- Testy: `TableWidthFitTests` (9 - vejde se / nevejde, pevné i procentní šířky, mnoho auto sloupců na
+  minimu, minimum se neuplatní když je místo, degenerované vstupy). .NET 427/427.
+
+**Pozor na hranice:** u opravdu velké linky (100+ spojů) je zmenšování slepá ulička - písmo by bylo
+nečitelné. Správné řešení je rozřezat tabulku na stránkové bloky (`B13`); tohle je poctivý mezikrok,
+který zbaví běžné linky rozházenosti a tichého mizení a dá vzniknout signálu „tady už zmenšování
+nestačí".
+
+## 2026-07-29 - Base pole formulářů elementů z jednoho místa (blok B4)
+
+Sada polí, kterou má **každý** element (rámeček + rohy · pozice a velikost · vrstva · uzamčení ·
+podmínka viditelnosti), byla ručně opsaná v každém z **deseti** formulářů - kolem 200 řádků, které
+říkají totéž. A jak se čekalo u kopií, rozešly se:
+
+- **tloušťka rámečku** 0-10 mm u textu × 0-5 mm u zbytku (kanon = 5, souhlasí s C#),
+- **dynamická tabulka neměla pole rámečku vůbec** - v panelu se rámeček nastavit dal, ve formuláři ne,
+- **rámeček byl u každého jinde**: vlastní skupina (5×), „Barvy a rámeček" (text), namixovaný
+  v „Obecné" (zastávky, odjezdy),
+- **výška** měla rozdílný popisek, kvůli kterému byl klíč vyjmutý z hlídacího testu,
+- nápovědy u vrstvy a uzamčení někde byly, někde ne.
+
+Nově sdílený `BaseElementFields.cls` (dvojče `StyleFields`, který totéž už dělá pro pole stylu textu)
+se třemi metodami; formulář si sadu vyžádá třemi řádky a legitimní odchylky jdou parametrem, ne kopií
+(výchozí šířka/výška, dynamická výška, elementy bez rohů jako čára, nulová šířka u svislé čáry).
+**Sjednoceno i seskupení** - rámeček má u všech elementů vlastní skupinu „Rámeček elementu"
+(rozhodnutí Jan: jednorázové přestěhování je menší zlo než trvalá nekonzistence).
+
+- **Druhá strana byla už v pořádku** - oproti původnímu zápisu bloku B4 nejsou base pole v C#
+  opsaná desetkrát, ale definovaná jednou v základní třídě elementu. Reálný stav byl tedy
+  10 × Caché + 1 × C#, ne 10 × 2 → práce vyšla podstatně menší. C# jen dostal shodné názvy skupin
+  (konstanty `PositionGroup`/`BorderGroup`/`ConditionsGroup`), ať obě cesty řadí tytéž vlastnosti
+  do stejně pojmenovaných skupin.
+- **Pojistka, aby duplikace nemohla vzniknout znovu** (podstatnější než samotný úklid - nulová
+  duplikace nejde, jsou to dva běhové světy a dva jazyky, ale jedna definice na stranu + test ano):
+  - `ZadnyElementovyFormular_NeopisujeBasePoleRucne` - base klíč napsaný přímo ve formuláři = spadne,
+  - `BasePole_MajiVCsStejnyPopisekISkupinu` - rozejití popisku nebo skupiny mezi Caché a C# = spadne,
+  - stávající test „každý klíč existuje jako C# property" rozbaluje i volání sdíleného balíčku,
+    takže base pole zůstala pokrytá (jinak by kontrola po přesunu tiše přestala platit),
+  - výjimka pro klíč výšky padla.
+- U dynamické tabulky přejmenováno „Rámeček" (= mřížka mezi buňkami) na **„Čáry tabulky"**, aby se
+  to nepralo s novou skupinou rámečku elementu.
+- Testy: .NET 418/418 (2 nové), Caché 84/84. Všech pět strukturálně odlišných formulářů ověřeno
+  živě proti serveru (text, čára, zastávky, linková tabulka, dynamická tabulka).
+
+## 2026-07-29 - Nabídka řezů písma reaguje na změnu rodiny
+
+Ve formulářích elementů nabízelo pole **„Řez"** řezy té rodiny písma, která tam byla **při otevření
+dialogu**. Po přepnutí rodiny se nabídka nepřepočítala - nabízela řezy, které nová rodina nemá, a
+naopak chyběly ty, které má; srovnalo se to až zavřením a znovuotevřením. Horší polovina problému:
+když se řez vybral **před** změnou rodiny, zůstal v poli viset i po ní, i když ho nová rodina nemá -
+formulář vypadal platně, ale renderer při kreslení sáhl po nejbližším dostupném, takže **tisk
+nesouhlasil s tím, co bylo v dialogu napsané**, a nikde to nezakřičelo.
+
+Byly to dvě vrstvy: nabídku (a) nikdo nepřepočítával, (b) přepočítat ani nešlo - volby pole byly
+ve sdílené komponentě obyčejná property **bez ohlášení změny**, takže dosavadní kód se spoléhal na
+naplnění ještě předtím, než WPF dropdown vůbec postaví. Po vykreslení už se obsah vyměnit nedal.
+
+- **EDControls (aditivně):** `Field.ListItems` hlásí změnu (+ `ListItemsForDisplay`) → nabídku lze
+  vyměnit za běhu. Formuláře, které volby plní před vykreslením jako dosud, se chovají identicky.
+  Dorovnává to konzistenci komponenty - **viditelnost** pole svou změnu hlásila už dřív, volby ne.
+- **Návrhář:** změna rodiny přepočítá nabídku řezů sourozeneckého pole a **zahodí řez, který nová
+  rodina reálně nemá** (→ prázdno = auto dle Tučné, zapíše se jako krok zpět). Napojeno u všech
+  6 hostů formuláře (inline panel + 5 dialogů).
+- **Dvě pojistky proti tichému zahození uživatelovy hodnoty:** (1) zápis hodnoty pole hlásí změnu
+  i při **programovém plnění** formuláře - bez rozlišení by pouhé otevření dialogu řez zahodilo;
+  (2) zahazuje se jen podle **skutečně známých** řezů (nový `FontWeightCatalog.InstalledWeights`
+  bez fallbacku) - u neznámé rodiny (překlep) nebo prázdné (dědí se z šablony) je nabídka jen odhad,
+  takže hodnota zůstává.
+- Testy: `FontWeightSyncTests` (7 - přepočet, zahození neplatného, ponechání platného, obě pojistky,
+  ignorace jiných polí, ohlášení změny voleb). .NET 416/416, EDControls 448/448, EDISONMAIN2 420/420.
+
+Vzniklo z revize architektury: původní blok B4 mísil kapabilitu sdílené komponenty s úklidem
+v návrháři → rozdělen na **B4** (sdílená base pole), **B18** (deklarativní pravidla formuláře) a
+tento fix. Deklarativní cesta (`visibleWhen`) by tenhle přepočet uměla obecně, ale je to jiný
+mechanismus (skrývání × obměna obsahu) a čeká na B18.
+
 ## 2026-07-28 - Rozvržení editoru stylu buňky (blok B6)
 
 Sdílený `CellStyleEditor` (tab Sloupce/Styl ve všech 6 tabulkových dialozích) měl řádek Font/Řez/

@@ -588,8 +588,8 @@ public class DepartureGridElement : StopScheduleElementBase
 
         // ── Deklarace zdrojů (perf: 100+ buněk/frame) - plnění až uvnitř try ────
         // Deklarace musí být před try, aby na ně viděl finally i lokální helpery níže;
-        // samotná alokace fontů/paintů (a SKColor.Parse nad uživatelskými barvami, které
-        // mohou vyhodit) je uvnitř try, aby finally uvolnil i částečně vytvořené zdroje + clip.
+        // samotná alokace fontů/paintů je uvnitř try, aby finally uvolnil i částečně vytvořené
+        // zdroje + clip.
         var groupHeaderFonts       = new Dictionary<string, SKFont>();
         var groupHeaderTextPaints  = new Dictionary<string, SKPaint>();
         var groupHeaderBgPaints    = new Dictionary<string, SKPaint?>();
@@ -610,7 +610,7 @@ public class DepartureGridElement : StopScheduleElementBase
         SKFont?  anotTextFont  = null;
         SKPaint? anotTextPaint = null;
 
-        // Zebra - globální + per-group override (alokace v try kvůli SKColor.Parse).
+        // Zebra - globální + per-group override (alokace uvnitř try).
         SKPaint? zebraPaint = null;
         var perGroupZebraPaints = new Dictionary<string, SKPaint>();
         bool hasPerGroupZebra = false;
@@ -657,12 +657,12 @@ public class DepartureGridElement : StopScheduleElementBase
             anotTextPaint = anotTextStyle.CreateTextPaint();
 
             if (AlternatingRowColor is not null)
-                zebraPaint = new SKPaint { Color = SKColor.Parse(AlternatingRowColor) };
+                zebraPaint = new SKPaint { Color = ColorHex.ParseOrTransparent(AlternatingRowColor) };
 
             foreach (var g in layout.Groups)
             {
                 if (colStyles.TryGetValue(g.Skupina.Id, out var cs) && cs.AlternatingRowColor is not null)
-                    perGroupZebraPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(cs.AlternatingRowColor) };
+                    perGroupZebraPaints[g.Skupina.Id] = new SKPaint { Color = ColorHex.ParseOrTransparent(cs.AlternatingRowColor) };
             }
             hasPerGroupZebra = perGroupZebraPaints.Count > 0;
 
@@ -966,7 +966,7 @@ public class DepartureGridElement : StopScheduleElementBase
                     if (odj.ForeColor is not null)
                     {
                         customMinutePaint ??= new SKPaint { IsAntialias = true };
-                        customMinutePaint.Color = SKColor.Parse(odj.ForeColor);
+                        customMinutePaint.Color = ColorHex.ParseOrBlack(odj.ForeColor);
                         minutePaint = customMinutePaint;
                     }
                     else
@@ -990,8 +990,8 @@ public class DepartureGridElement : StopScheduleElementBase
                             // Negativní značka invertovaně - černý box + bílý znak (jako legacy). Vždy zapnuto.
                             if (anot.Typ == TypAnotace.NegativniZnacka)
                             {
-                                nzBgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaBackColor), IsAntialias = true };
-                                nzFgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaForeColor), IsAntialias = true };
+                                nzBgPaint ??= new SKPaint { Color = ColorHex.ParseOrBlack(NegativniZnackaBackColor), IsAntialias = true };
+                                nzFgPaint ??= new SKPaint { Color = ColorHex.Parse(NegativniZnackaForeColor, "#FFFFFFFF"), IsAntialias = true };
                                 float hpad  = aFont.Size * 0.12f;
                                 float znakW = aFont.MeasureText(anot.Znak);
                                 var m = aFont.Metrics;
@@ -1007,7 +1007,7 @@ public class DepartureGridElement : StopScheduleElementBase
                             if (anot.ForeColor is not null)
                             {
                                 customAnotPaint ??= new SKPaint { IsAntialias = true };
-                                customAnotPaint.Color = SKColor.Parse(anot.ForeColor);
+                                customAnotPaint.Color = ColorHex.ParseOrBlack(anot.ForeColor);
                                 aPaint = customAnotPaint;
                             }
 
@@ -1207,10 +1207,19 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Vrátí dostupné skupiny dnů z naposledy zpracovaných dat (pro dialog).</summary>
     public List<SkupinaDnuData> GetAvailableSkupinyDnu(DataContext? data) => BuildSkupinyDnu(data);
 
-    private static List<int> GetVisibleHoursFromSet(
-        HashSet<int> allHours, TimeAxisMode timeAxis, int rangeFrom, int rangeTo)
-    {
-        var hours = timeAxis switch
+    /// <summary>
+    /// Hodiny k zobrazení podle režimu časové osy. „Hodiny od/do" (`HODINY_OD`/`HODINY_DO`) platí
+    /// **jen** ve Vlastním rozsahu - jsou to jeho meze, ne globální filtr.
+    ///
+    /// Dřív zužovaly i ostatní režimy, a protože jsou v nich schované (`visibleWhen`
+    /// = „CASOVA_OSA=Vlastní rozsah"), vznikalo tiché přetrvávání: po přepnutí režimu jinam
+    /// zadaný rozsah dál řezal mřížku a nebylo ho jak vidět ani zrušit. Navíc výchozí „od" = 4
+    /// znamenalo, že se hodiny 0-3 zahazovaly i bez jakéhokoli nastavení uživatele.
+    /// Pravidlo: **schovaný ovladač nesmí ovlivňovat výstup.**
+    /// </summary>
+    internal static List<int> GetVisibleHoursFromSet(
+        HashSet<int> allHours, TimeAxisMode timeAxis, int rangeFrom, int rangeTo) =>
+        timeAxis switch
         {
             TimeAxisMode.Compact     => allHours.OrderBy(h => h).ToList(),
             TimeAxisMode.DataBounded => DataBoundedHours(allHours),
@@ -1218,19 +1227,6 @@ public class DepartureGridElement : StopScheduleElementBase
             TimeAxisMode.Full        => Enumerable.Range(0, 24).ToList(),
             _ => allHours.OrderBy(h => h).ToList()
         };
-
-        // HODINY_OD/DO filtr se aplikuje i mimo Range mode (zúžení Compact/DataBounded/Full).
-        // V Range mode už jsou hodiny generované přesně z rangeFrom..rangeTo, filtr přeskočit.
-        if (timeAxis != TimeAxisMode.Range && (rangeFrom > 0 || rangeTo < 23))
-        {
-            // Pokud to < from → wrap přes půlnoc: zahrnuje extended hours (24..to+24).
-            // Data hour 27 (= 03:00 následujícího provozního dne) projde filtrem 22→3 jako 27 ∈ [22..27].
-            int hi = rangeTo >= rangeFrom ? rangeTo : rangeTo + 24;
-            hours = hours.Where(h => h >= rangeFrom && h <= hi).ToList();
-        }
-
-        return hours;
-    }
 
     /// <summary>Souvislé hodiny od min(data) do max(data) - včetně prázdných v rozsahu.
     /// Data s extended hours (24..47) přirozeně rozšíří horní mez.</summary>

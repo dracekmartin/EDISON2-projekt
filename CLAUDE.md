@@ -4,7 +4,19 @@ Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP 
 
 Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se
 dostávají pouze přes `dotnet publish` s profilem „SingleFileCEdison"
-(`Properties/PublishProfiles/`) - single-file výstup bez volných DLL.
+(`Properties/PublishProfiles/`) - bundle bez volných NuGet DLL. Výjimky drží sdílený
+`SingleFilePublish.targets` v rootu (importují ho oba aplikační csproj): **`EDControls.dll`
+je vedle exe volný soubor** sdílený oběma aplikacemi, aby šla nasadit samostatně (nové
+pole v EDInputFormu → do produkce jde DLL + exe, který ho používá; druhý exe se
+nepřebuildí a novou DLL převezme). Cena: veřejné API EDControls a klíče theme resource
+měň **aditivně** - viz `EDControls/CLAUDE.md`.
+
+Týmž profilem se vydává i **EDControls samostatně** (bez buildu aplikací). U knihovny
+publish jinak vyplivne celý uzávěr závislostí (MLRest, EDLicence, EDCore, Newtonsoft), který
+by v `C:\Edison\` přepsal soubory legacy repa - proto `PublishOwnAssemblyOnly` propustí jen
+vlastní assembly a nezávislá kontrola počtu publish **shodí**, než něco zapíše.
+`C:\Edison\` je staging: do produkce jde až explicitní klik na položku v Compileru
+(`EDISONMAIN2/docs/UPDATE_FLOW.md`).
 
 Nové features pokrývej xUnit testy a Caché `%UnitTest` testy - viz sekce **Testy**.
 

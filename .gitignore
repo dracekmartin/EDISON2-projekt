@@ -4,8 +4,6 @@
 # User-specific files
 *.suo
 *.user
-!EDControls/dotnet/EDControls.csproj.user
-!ServiceGtfsRt/ServiceGtfsRt.csproj.user
 *.userosscache
 *.sln.docstates
 

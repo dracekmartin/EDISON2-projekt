@@ -79,7 +79,7 @@ public class NotesLegendElement : StopScheduleElementBase
         using var paints = CreateStandardPaints(ctx);
         // Barva textu poznámek = „Barva textu buněk" (DataStyle) - legenda kreslí text přímo tímto
         // paintem (ne přes CellRenderer), takže sdílenou natvrdo-barvu ze SchedulePaints přebíjíme.
-        paints.Text.Color = SKColor.Parse(DataStyle.TextColor ?? ScheduleDataDefaults.TextColor);
+        paints.Text.Color = ColorHex.Parse(DataStyle.TextColor, ScheduleDataDefaults.TextColor);
 
         using var noteFont = new SKFont(GetTypeface(dataResolved), noteFontPx);
         using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
@@ -161,8 +161,8 @@ public class NotesLegendElement : StopScheduleElementBase
         ref float lineX, float currentY, float lineH, SKFont noteFont, SKFont boldFont, SKPaint textPaint,
         float colRight, float? textStartX = null)
     {
-        var nzBgColor = SKColor.Parse(NegativniZnackaBackColor);
-        var nzFgColor = SKColor.Parse(NegativniZnackaForeColor);
+        var nzBgColor = ColorHex.ParseOrBlack(NegativniZnackaBackColor);
+        var nzFgColor = ColorHex.Parse(NegativniZnackaForeColor, "#FFFFFFFF");
 
         // Invertovaný obdélník se znakem
         float znakW = boldFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
@@ -200,7 +200,7 @@ public class NotesLegendElement : StopScheduleElementBase
         SKPaint? customSymbolPaint = null;
         if (!string.IsNullOrEmpty(pozn.ForeColor))
         {
-            customSymbolPaint = new SKPaint { Color = SKColor.Parse(pozn.ForeColor), IsAntialias = true };
+            customSymbolPaint = new SKPaint { Color = ColorHex.ParseOrBlack(pozn.ForeColor), IsAntialias = true };
             symbolPaint = customSymbolPaint;
         }
 

@@ -82,6 +82,11 @@ public partial class InlinePropertiesForm : UserControl
     {
         if (_suppress || _target is null || _execute is null) return;
 
+        // Změna rodiny písma → přepočítat nabídku řezů (a zahodit řez, který rodina nemá) PŘED
+        // porovnáním hodnot, jinak by se zahození řezu neprojevilo jako změna a zápis do modelu
+        // by se odložil až na příští úpravu pole.
+        ElementFormBinder.SyncFontWeightAfterFamilyChange(TheForm, key);
+
         var commands = ElementFormBinder.ExtractCommands(TheForm, _target, _preFilled);
         if (commands.Count == 0) return;
 

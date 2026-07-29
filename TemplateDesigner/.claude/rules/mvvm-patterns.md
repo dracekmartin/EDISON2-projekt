@@ -4,6 +4,22 @@
 
 Každý element implementuje `GetPropertyDescriptors()` vracející seznam deskriptorů pro Properties panel. Panel generuje editovatelné řádky dynamicky.
 
+### Zúžená role descriptorů vůči EDInputFormu (evidence 2026-07-29)
+
+Od Wave 4 je hlavní editační cestou **Caché formulář** (`*Edit.cls`): u elementu se schématem ho
+`RefreshInlineProperties` ukáže v panelu i v dialogu. Descriptory tím **nepřestaly platit** - jsou
+živé ve třech konkrétních rolích a proto je nelze odstranit:
+
+1. **Formátovací lišta** (`FormatToolbar`) je potřebuje **vždy**, i když se zobrazuje Caché formulář.
+2. **Úprava více elementů naráz** jde jen přes ně (Caché formulář edituje jeden cíl).
+3. **Fallback** pro element bez `*Edit.cls` schématu (dnes uspaná pevná tabulka).
+
+**Nejsou tedy druhý zdroj pravdy pro schéma** - u base polí je autoritou sdílený
+[`BaseElementFields.cls`](../../CACHE/ALVA/TemplateDesigner/EDInputForm/BaseElementFields.cls) a C#
+`GetPositionDescriptors()` s ním musí souhlasit v popiscích i skupinách (konstanty `PositionGroup`/
+`BorderGroup`/`ConditionsGroup`); hlídá to `EDInputFormSchemaDriftTests`. Nové base pole se přidává
+**na obou stranách v jednom commitu**, jinak test spadne.
+
 **Dostupné typy deskriptorů:**
 - `StringPropertyDescriptor` - textové pole (s volitelným `MultiLine = true`)
 - `FloatPropertyDescriptor` - numerický input s `Min`, `Max`, `Format`, `Unit`

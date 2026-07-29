@@ -1,11 +1,11 @@
 # TemplateDesigner publish skript
-# Vygeneruje single-file .exe do C:\Edison\ (cesta z publish profilu).
+# Vygeneruje single-file .exe + volnou EDControls.dll do C:\Edison\ (cesta z publish profilu).
 #
 # Použití (z rootu TemplateDesigner/):
 #   .\publish.ps1
 #
 # Skript volá `dotnet publish` s profilem "SingleFileCEdison".
-# Po dokončení vypíše cestu, velikost a čas vytvořeného .exe.
+# Po dokončení vypíše cestu, velikost a čas vytvořených souborů.
 
 #requires -Version 5.1
 $ErrorActionPreference = 'Stop'
@@ -13,18 +13,23 @@ $ErrorActionPreference = 'Stop'
 $projectDir = Join-Path $PSScriptRoot 'dotnet'
 $csproj     = Join-Path $projectDir 'TemplateDesigner.csproj'
 $targetExe  = 'C:\Edison\TemplateDesigner.exe'
+# EDControls.dll je samostatný výstupní soubor (sdílená s EDISONMAIN2, viz root CLAUDE.md).
+$targetDll  = 'C:\Edison\EDControls.dll'
+$targets    = @($targetExe, $targetDll)
 
 if (-not (Test-Path $csproj)) {
     Write-Error "Nenalezen TemplateDesigner.csproj v $projectDir"
     exit 1
 }
 
-# Pokud je v C:\Edison\ stará verze, ověř, že není uzamčená běžícím procesem.
-if (Test-Path $targetExe) {
+# Ověř, že žádný cílový soubor nedrží běžící proces. EDControls.dll zamyká KAŽDÁ m-line
+# aplikace, která ji načetla — tedy i EDISONMAIN2, ne jen TemplateDesigner.
+foreach ($t in $targets) {
+    if (-not (Test-Path $t)) { continue }
     try {
-        [System.IO.File]::Open($targetExe, 'Open', 'ReadWrite', 'None').Close()
+        [System.IO.File]::Open($t, 'Open', 'ReadWrite', 'None').Close()
     } catch {
-        Write-Error "Soubor '$targetExe' je uzamčený (pravděpodobně běží TemplateDesigner.exe). Zavři aplikaci a spusť znovu."
+        Write-Error "Soubor '$t' je uzamčený běžícím procesem. Zavři TemplateDesigner i EDISONMAIN2 a spusť znovu."
         exit 1
     }
 }
@@ -41,16 +46,16 @@ try {
     Pop-Location
 }
 
-if (-not (Test-Path $targetExe)) {
-    Write-Warning "Publish nahlásil úspěch, ale $targetExe neexistuje. Zkontroluj výstup výše."
+$missing = $targets | Where-Object { -not (Test-Path $_) }
+if ($missing) {
+    Write-Warning "Publish nahlásil úspěch, ale chybí: $($missing -join ', '). Zkontroluj výstup výše."
     exit 1
 }
 
-$info   = Get-Item $targetExe
-$sizeMb = [math]::Round($info.Length / 1MB, 1)
-
 Write-Host ""
 Write-Host "Hotovo." -ForegroundColor Green
-Write-Host "  Soubor:    $targetExe"
-Write-Host "  Velikost:  $sizeMb MB"
-Write-Host "  Vytvoreno: $($info.LastWriteTime)"
+foreach ($t in $targets) {
+    $info = Get-Item $t
+    Write-Host ("  {0,-28} {1,6} MB   {2}" -f $info.Name, [math]::Round($info.Length / 1MB, 1), $info.LastWriteTime)
+}
+Write-Host "  Nasazovat se musi OBOJI (EDControls.dll je sdilena s EDISONMAIN2)." -ForegroundColor Yellow

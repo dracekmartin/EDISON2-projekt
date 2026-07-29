@@ -513,7 +513,10 @@ public partial class PropertiesPanel : UserControl
             string newVal = box.Text.Trim();
             if (newVal == cd.Get()) return;
             if (!newVal.StartsWith('#')) newVal = '#' + newVal;
-            if (newVal.Length < 7) { box.Text = cd.Get(); return; }
+
+            // Nesmysl (vymazáno, překlep) se nezapisuje - vrátí se poslední platná barva. Bez toho
+            // se do šablony uložila hodnota, kterou pak neumí přečíst kreslení.
+            if (!ColorHex.IsValid(newVal)) { box.Text = cd.Get(); return; }
             ApplyColor(newVal);
         };
 
@@ -621,12 +624,8 @@ public partial class PropertiesPanel : UserControl
 
     private static SolidColorBrush HexToBrush(string hex)
     {
-        try
-        {
-            var c = SKColor.Parse(hex);
-            return new SolidColorBrush(Color.FromArgb(c.Alpha, c.Red, c.Green, c.Blue));
-        }
-        catch { return new SolidColorBrush(Colors.White); }
+        var c = ColorHex.Parse(hex, SkiaSharp.SKColors.White);
+        return new SolidColorBrush(Color.FromArgb(c.Alpha, c.Red, c.Green, c.Blue));
     }
 
     private static void UpdateSwatch(Button btn, string hex)

@@ -26,13 +26,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("general", "Obecné")
         s f = form.AddFieldToLastGroup("GridColor", "Barva mřížky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFD0D0D0"
-        s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
-        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
-        s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
-        s f.value = "None"
-        d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
         d form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         d form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
@@ -69,20 +62,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ")
 
-        // ── Pozice ────────────────────────────────────────────────────────
-        d form.AddGroup("position", "Pozice a velikost")
-        d form.AddDecimal("X", "X", 0, 0, "", "mm", "", 1)
-        d form.AddDecimal("Y", "Y", 0, 0, "", "mm", "", 1)
-        d form.AddDecimal("Width", "Šířka", 100, 1, "", "mm", "", 1)
-        d form.AddDecimal("Height", "Výška", 60, 1, "", "mm")
-        d form.AddDecimal("Rotation", "Rotace", 0, -360, 360, "°")
-        s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
-        d form.AddBool("IsLocked", "Uzamčeno", 0)
-
-        // ── Podmínky ──────────────────────────────────────────────────────
-        d form.AddGroup("advanced", "Podmínky")
-        s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
+        // ── Base pole ─────────────────────────────────────────────────────
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 100, 60)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

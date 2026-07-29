@@ -857,6 +857,25 @@ modelu `PoznamkaData`** - používá ji jen `NoteVisibilityFilter` (na úrovni d
 **Důležité:** TYP a KATEGORIE jsou kolmé. Např. `bezbarier` i `atribut-zastavky` jsou oba „Speciální
 znak" (TYP), ale jiná kategorie. Dnešní filtrování v elementu jede podle **TYP** (hrubé) - viz §2.
 
+Kategorie `tydenni-platnost` (kroužkované denní značky) a `varianta-trasy` (písmena variant, opt-in)
+v tabulce chybí historicky - existují v datech taky.
+
+### C) AD × MHD - čím se agendy v poznámkách liší (audit 30. 7.)
+
+Obě agendy dělají „totéž" jinak; tohle je rozdílový seznam, ne návrh práce.
+
+| Vlastnost | AD (`ZastavkoveJrAd`) | MHD (`ZastavkoveJrMhd`) |
+|---|---|---|
+| `KATEGORIE` u značek u minut | ✅ (+ `SPOJ`, `V_ROZSAHU_NEPOZNAMKOVAT`) | ❌ `AddAnotace` je nemá → **filtr viditelnosti poznámek na MHD nefunguje** (a je to záměr: `NoteVisibilityFilter` je agenda-agnostický, netagované značky nikdy neschová) |
+| Přidělení písmene rozdílu trasy | ze písmenné sady, **bez ohledu na už obsazené znaky** → kolize s „H"/„F" bezbariéru (9 stránek, blok `B14`) | ze **sdíleného poolu stránky** - obsazený znak přeskočí, kolize nemůže vzniknout |
+| Barvy poznámek (`FORE_COLOR`/`BACK_COLOR`) | vždy prázdné (dědí se styl šablony) | plní z číselníku (barevné spoje/poznámky) |
+| Textové poznámky **zastávky** | ❌ jen atributy zastávky (znaky) | ✅ `poznamkyZast` = volný text u zastávky v trase |
+| Kolize skupin dnů v jednom sloupci | ❌ (řeší se rozdělením sloupců přes FTL) | ✅ `PriraditZnackySmoSkupin` (+ známá díra u shodných ručních značek - viz `cache-business-logic.md`) |
+| Ruční komentáře spoje | ✅ `SeT_SpeC`/`MhD_SpeC` | ✅ speciální znaky spoje z číselníku `PoznamkaSpoj` |
+| Směrové poznámky linky (tam/zpět/vše) | ✅ `SeT_MhD` | ❌ |
+| Souhrnná bezbariérová poznámka | ✅ `bezbarier-agregat` | ❌ |
+| Negativní značka invertovaně u minut | ❌ záměrně (CNZ tam jen klasifikuje sloupce dnů) | ✅ |
+
 ---
 
 ## 1b. Co uměl starý návrhář (NALEZENO ve zdroji)

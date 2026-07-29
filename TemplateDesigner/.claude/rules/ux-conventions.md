@@ -12,6 +12,11 @@ Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachov
 
 **Vzor okna / dialogu (struktura souborů, ViewModel, code-behind, XAML binding, IsDefault/IsCancel, Owner, RequestClose):** viz `../docs/architecture.md` §Vzor pro každé okno. Je závazný standard, nepřepisuj sem.
 
+**Postupná unifikace dialogů - průběžné pravidlo, ne úkol** (přesunuto z roadmapy 29. 7.): dialogy se
+sjednocují **při dotyku**, ne velkým refaktorem. Když na dialogu z jiného důvodu pracuješ, posuň ho
+o krok blíž ke standardu (formulářová část na EDInputForm, tlačítka a chrome dle pravidel níže).
+Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, který platí pořád.
+
 **Co doplňuje tento doc** (UX-specifické konvence, ne kódový template):
 
 - **Labely standardních tlačítek přes `{StaticResource EDStrings.*}`** - jediný zdroj pravdy (EDStrings.xaml je mergnutý v App.xaml). Nepoužívej literály:
