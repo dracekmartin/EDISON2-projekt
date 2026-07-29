@@ -170,8 +170,11 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         // proporcionálně zmenší (stejně jako StopList/DepartureGrid). Height == null → beze scale.
         int scaleRowCount = ctx.Data is null ? DesignerPreviewRows : EffectiveRowCount(dataRows.Count);
         float naturalH = NaturalHeight(scaleRowCount);
-        float scale    = (Height.HasValue && naturalH > Height.Value && naturalH > 0)
+        float heightScale = (Height.HasValue && naturalH > Height.Value && naturalH > 0)
             ? Height.Value / naturalH : 1f;
+        // Vodorovně totéž: součet pevných šířek nad šířku elementu se dřív oříznul (bez varování).
+        // Zmenšuje se tou horší z obou stran - výšky se pak zmenší taky, takže svisle to jen pomůže.
+        float scale = MathF.Min(heightScale, ComputeWidthScale(visibleColumns));
         float headerH  = HeaderHeight * scale;
         float rowH     = RowHeight * scale;
 
@@ -203,9 +206,14 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     /// s Width &lt;= 0 = „auto" (promítne se na null = rovnoměrné rozdělení zbytku), jinak pevná mm/%.
     /// </summary>
     private float[] ComputeColumnWidths(List<TableColumn> cols) =>
-        TableLayout.ResolveWidths(
-            cols.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode)).ToList(),
-            Width);
+        TableLayout.ResolveWidths(WidthProjection(cols), Width);
+
+    /// <summary>Škála fontů, aby se tabulka vešla do šířky elementu (1 = vejde se).</summary>
+    private float ComputeWidthScale(List<TableColumn> cols) =>
+        TableLayout.ComputeWidthScale(WidthProjection(cols), Width);
+
+    private static List<TableLayout.ColWidth> WidthProjection(List<TableColumn> cols) =>
+        cols.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode)).ToList();
 
     /// <summary>
     /// Vytvoří sloupce z datových polí kolekce (Header = label, Field = název pole, auto šířka).

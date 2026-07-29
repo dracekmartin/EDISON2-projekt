@@ -5,14 +5,14 @@
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
 > **▶ Další session:** po publishi vzít **B2** (zavírací kolo helpdesku - poslední 2 tikety + vizuál
-> zmenšování), pak vlna 2 od **B5**. Follow-upy „na vyžádání zákazníka" žijí
+> zmenšování), pak vlna 3 od **B10** (nebo `B11` = R1 extrakce, už není blokovaná). Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
 
 ## 🧭 Jak podle roadmapy pracovat
 
-Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B2`, `B5`, …) seřazené do **vln**. Každý blok
+Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B2`, `B10`, …) seřazené do **vln**. Každý blok
 má **zónu** = oblast, kde si dvě sezení šlapou po prstech (viz „Paralelizace" níže).
 Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
 
@@ -38,9 +38,8 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 
 ## 🌊 Vlna 2 - zlevnit si další práci, rozjet linkový
 
-| # | Blok | Vel. | Zóna | Závisí na |
-|---|---|---|---|---|
-| **B5** | **L‑1: auto-fit fontu na šířku** u linkové tabulky (dnes je `ComputeFontScale` jen výškový) | S–M | 3 | - |
+**Dokončeno 29. 7.** - `B4` (base pole formulářů z jednoho místa) i `B5` (auto-fit tabulky na šířku,
+= `L‑1`) → archiv. Pokračuje se vlnou 3; `B11` už není blokovaný.
 
 > Výchozí šablony MHD/linková do distribuce = **krok 44b / C4** (evidováno v „Produkční/provozní" #3
 > a Fáze C+D); nemá vlastní blok, přilepí se ke kterémukoli slotu. B6/B16/B17 hotové 28. 7.,
@@ -53,7 +52,7 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
 | **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | - |
-| **B11** | **L‑3: row-plan vrstva** - `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | B5 |
+| **B11** | **L‑3: row-plan vrstva** - `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | - (B5 hotov) |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | - |
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. | M | 2 | - |
 
@@ -92,7 +91,7 @@ L‑4 nezačínat před B11 - dnes by to znamenalo napsat totéž pětkrát (per
    Bez worktree: jedno .NET sezení + libovolně „papírových" (zóna 5).
 
 **Bezpečné kombinace:**
-- ✅ **B12 + B5 + zavírání tiketů (B2)** - agenda / kreslicí jádro / papír
+- ✅ **B12 + B10 + zavírání tiketů (B2)** - agenda / fontová cesta / papír
 - ✅ **B10 + B12** - fontová cesta je izolovaná od agendy
 - ❌ **cokoli na elementech během B11/B13**
 - ❌ **B18 + jakýkoli element dialog** - B18 sahá na pole ve všech `.cls`
@@ -284,7 +283,7 @@ dokončeným; velký `L‑4` se otevírá až nad hotovým `L‑3`.
 
 | Krok | Blok | Co | Vel. | Stav |
 |---|---|---|---|---|
-| **L‑1** | `B5` | Auto-fit fontu na šířku u linkové tabulky (dnes jen výškový `ComputeFontScale`) | S–M | ⬜ |
+| **L‑1** | `B5` | Auto-fit fontu na šířku u linkové tabulky | S–M | ✅ 29. 7. → archiv |
 | **L‑2** | `B10` | Symbolový font - linková část (`ZNAK` sloupce, multichar/kompozity, `GSId` 66+) | M→S | ⬜ |
 | **L‑3** | `B11` | Row-plan vrstva = jedna sdílená kreslicí smyčka (**R1 extrakce řádkového jádra**) | M | ⬜ |
 | **L‑4** | `B13` | 2D bin-packing / `Strih` - rozřezání široké tabulky do stránkových bloků | L | ⬜ gate L‑3 |

@@ -127,8 +127,21 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         var zastavky = ExpandPlatformRows(BuildZastavky(ctx.Data));
         bool hasData = zastavky.Count > 0;
 
-        // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
-        float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
+        // Sloupce se musí znát PŘED škálou - vodorovná část škály se počítá z nich (a varianty
+        // časů jejich počet mění).
+        var columns = GetVisibleColumns();
+
+        // Multi-varianta časů tras: rozvine sloupec „CAS_JIZDY" na N variantních sub-sloupců
+        // (dynamicky dle dat, hlavičky = písmena z VARIANTY_TRAS). < 2 varianty → beze změny (jeden sloupec).
+        var variantHeaders = GetVariantHeaders(ctx.Data);
+        if (ShowAllRouteVariants && variantHeaders.Count >= 2)
+            columns = ExpandTravelTimeColumns(columns, variantHeaders);
+
+        // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font. Vodorovně totéž -
+        // součet pevných šířek sloupců nad šířku elementu se dřív oříznul (svislé varování
+        // to nezachytí). Zmenšuje se tou horší z obou stran.
+        float heightScale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
+        float scale = MathF.Min(heightScale, ComputeWidthScale(columns));
         float baseFontSize = DataStyle.FontSize ?? 8f;
         // Výška záhlaví/řádku musí odpovídat NEJVĚTŠÍMU reálně vykreslenému (per-column resolved)
         // fontu, ne jen element-level fontu. Jinak vzniká asymetrie: per-column font glyf zvětší,
@@ -142,14 +155,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         float headerH = ComputeHeaderH(effectiveHeaderFontSize) * MaxHeaderLines();
 
         using var paints = CreateStandardPaints(ctx);
-
-        var columns = GetVisibleColumns();
-
-        // Multi-varianta časů tras: rozvine sloupec „CAS_JIZDY" na N variantních sub-sloupců
-        // (dynamicky dle dat, hlavičky = písmena z VARIANTY_TRAS). < 2 varianty → beze změny (jeden sloupec).
-        var variantHeaders = GetVariantHeaders(ctx.Data);
-        if (ShowAllRouteVariants && variantHeaders.Count >= 2)
-            columns = ExpandTravelTimeColumns(columns, variantHeaders);
 
         // Parametry z tiskového dialogu přepíší element properties
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
@@ -541,12 +546,18 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// pevné (Width != null) zůstanou, auto (null) si rovnoměrně rozdělí zbytek. StopList je mm-only.</summary>
     private Dictionary<StopColumn, float> ResolveColumnWidths(List<StopColumn> visible)
     {
-        var widths = TableLayout.ResolveWidths(
-            visible.Select(c => new TableLayout.ColWidth(c.Width)).ToList(), Width);
+        var widths = TableLayout.ResolveWidths(WidthProjection(visible), Width);
         var result = new Dictionary<StopColumn, float>(visible.Count);
         for (int i = 0; i < visible.Count; i++) result[visible[i]] = widths[i];
         return result;
     }
+
+    /// <summary>Škála fontů, aby se sloupce vešly do šířky elementu (1 = vejdou se).</summary>
+    private float ComputeWidthScale(List<StopColumn> visible) =>
+        TableLayout.ComputeWidthScale(WidthProjection(visible), Width);
+
+    private static List<TableLayout.ColWidth> WidthProjection(List<StopColumn> visible) =>
+        visible.Select(c => new TableLayout.ColWidth(c.Width)).ToList();
 
     /// <summary>Největší resolved font záhlaví napříč viditelnými sloupci (pt) - vč. per-column overridů.
     /// Výška záhlaví se počítá z této hodnoty, aby odpovídala reálně vykreslenému textu.</summary>

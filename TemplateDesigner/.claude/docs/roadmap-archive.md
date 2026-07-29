@@ -2,6 +2,24 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-29 ✅ - Auto-fit tabulky na šířku (B5 = L‑1) - UZAVŘENO
+
+Detail → changelog 2026-07-29. `TableLayout.ComputeWidthScale` = vodorovný protějšek výškové
+`ComputeFontScale`; element kombinuje obě přes `MathF.Min` a aplikuje na šířky sloupců, výšky řádků
+i fonty → tabulka dosedne na svou šířku místo **tichého oříznutí** (svislé varování šířku nehlídá).
+Zbavuje zmenšování textu v buňce přetěžování (dřív jediné, co na šířku reagovalo → různé velikosti
+písma vedle sebe; nově zůstává výjimkou pro odchylku). Kde: LineTable (skalární varianta - vlastní
+výpočet šířek), StopList + DynamicTable (sdílené `ResolveWidths`), TableElement jen zmenšení šířek
+(font-škálu nezná, uspaný). **DepartureGrid záměrně mimo** (pivot, málo sloupců). Behavior-preserving
+dokud se tabulka vejde (pokryto testy). `TableWidthFitTests` (9). Proklikáno Janem.
+
+**Hranice:** u linky se 100+ spoji je zmenšování slepá ulička (nečitelné písmo) - správné řešení je
+rozřezání na stránkové bloky = `B13`. B5 byl předpoklad `B11` a poctivý mezikrok, který dá vzniknout
+signálu „tady už zmenšování nestačí".
+
+Při testování B5 vypadl **nález Jana** (tichý filtr hodin v mřížce odjezdů, opraveno týž den) -
+nesouvisel s B5, detail v changelogu.
+
 ## 2026-07-29 ✅ - Base pole formulářů z jednoho místa (B4) - UZAVŘENO
 
 Detail → changelog 2026-07-29. Sdílený `BaseElementFields.cls` (rámeček+rohy / pozice a velikost /

@@ -205,6 +205,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
     // ─── Layout ─────────────────────────────────────────────────────────────
 
     /// <summary>Vyřešený popisový sloupec připravený k renderu (šířka + styly + hodnota z dat).</summary>
+    /// <summary>Nejmenší rozumná šířka sloupce bez vlastní šířky (mm) - pod ní je čas nečitelný.
+    /// Když se při ní tabulka nevejde do <c>Width</c>, zmenší se šířky i fonty jednou škálou
+    /// (dřív se přebytek tiše oříznul, takže z pravé strany zmizely spoje).</summary>
+    private const float MinAutoColumnWidthMm = 3f;
+
     private sealed record RenderCol(float Width, string Header, ResolvedTextStyle HeaderStyle,
         ResolvedTextStyle DataStyle, Func<LineStopData, string> Value);
 
@@ -252,7 +257,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == ColumnKeys.Km ? c.Width!.Value * kmCount : c.Width!.Value);
         int autoStructural = structural.Count(c => !c.Width.HasValue);
         int autoUnits = autoStructural + (trip.Width.HasValue ? 0 : tripCount);
-        float autoEach = autoUnits > 0 ? MathF.Max(3f, (Width - fixedSum) / autoUnits) : 8f;
+        float autoEach = autoUnits > 0 ? MathF.Max(MinAutoColumnWidthMm, (Width - fixedSum) / autoUnits) : 8f;
 
         var result = new List<RenderCol>();
         int nameIndex = -1;
@@ -348,16 +353,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             return;
         }
 
-        float scale = ComputeFontScale(CalculateHeightFromData(ctx.Data));
-
         // element-level styly pro pás skupin / řádek platnosti / NZ (nejsou vázané na sloupec)
         var headerResolved = ResolveColumnHeaderParent();
         var dataResolved = ResolveColumnDataParent();
         var headerCentered = headerResolved with { HAlign = TextHorizontalAlignment.Center };
         var dataCentered = dataResolved with { HAlign = TextHorizontalAlignment.Center };
-
-        float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
-        float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
 
         int kmCount = MaxKmCount(stops);
         bool anyMhd = stops.Any(s => s.Mhd.Length > 0);
@@ -365,6 +365,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         var tripCol = TripColumn();
         var tripHeaderStyle = ResolveHeaderStyle(tripCol);
         var tripDataStyle = ResolveDataStyle(tripCol);
+
+        // Škála: svisle (pevná Height × obsah) i vodorovně (kolik šířky sloupce reálně potřebují -
+        // u linky s mnoha spoji dosednou na minimum a jejich součet přeteče Width). Bere se ta horší
+        // ze stran a platí pro šířky sloupců, výšky řádků i fonty, takže tabulka dosedne na Width
+        // místo oříznutí (dřív z pravé strany tiše zmizely spoje).
+        float widthScale = TableLayout.ComputeWidthScale(
+            fixedCols.Sum(c => c.Width) + trips.Count * tripW, Width);
+        float scale = MathF.Min(ComputeFontScale(CalculateHeightFromData(ctx.Data)), widthScale);
+        if (widthScale < 1f)
+        {
+            fixedCols = fixedCols.Select(c => c with { Width = c.Width * widthScale }).ToList();
+            tripW *= widthScale;
+        }
+
+        float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
+        float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
         float fixedSum = fixedCols.Sum(c => c.Width);
 
         var clipRect = ctx.ToCanvasRect(X, Y, Width, Height ?? CalculateHeightFromData(ctx.Data));

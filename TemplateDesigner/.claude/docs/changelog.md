@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-07-29 - Tabulka se přizpůsobí i na šířku (blok B5 / L‑1)
+
+Zmenšování při přetečení znalo jen **svislý** směr: obsah vyšší než pevná výška → jedna škála na
+fonty i výšky řádků pro celý element. Vodorovně nic takového neexistovalo, což mělo dva projevy:
+
+- **Rozházené písmo.** Na šířku reagovalo jen zmenšování textu v jednotlivé buňce (à la Excel,
+  z tiketu #13048 bodu 2). To si ale **každá buňka počítá sama**, takže u linkové tabulky, kde
+  sloupce = spoje, vycházel čas „14:35" menší než „8:05" - vedle sebe různé velikosti.
+- **Tiše zmizelé spoje.** Šířka sloupce spoje má spodní mez (pod ní je čas nečitelný); když ani při
+  ní součet nevyšel, přebytek se **oříznul** - z pravé strany chyběly odpolední spoje a **nic to
+  neřeklo**, protože varování o přetečení hlídá jen svislý směr.
+
+Nově `TableLayout.ComputeWidthScale` = vodorovný protějšek výškové škály. Element ji zkombinuje
+s výškovou (`MathF.Min` - zmenšuje ta horší strana) a použije na šířky sloupců, výšky řádků i fonty,
+takže tabulka **dosedne přesně na svou šířku** místo oříznutí. Zmenšování v buňce se tím vrací ke své
+roli **výjimky pro odchylku** (jeden nezvykle dlouhý název zastávky), ne pravidla pro všechny časy -
+skládání už bylo správné: buněčné zmenšování startuje od globální škály a zmenší jen to, co při ní
+ještě přetéká, takže nehrozí dvojí zmenšení.
+
+- **Kde:** linková tabulka (vlastní výpočet šířek → skalární varianta), zastávkový seznam a dynamická
+  tabulka (přes sdílené `ResolveWidths`). **Mřížka odjezdů záměrně mimo** - je to pivot s málo sloupci
+  a vlastní logikou roztažení. **Uspaná pevná tabulka** dostala jen zmenšení šířek (font-škálu vůbec
+  nezná, dorovná se při jejím oživení) - i tak je to proti dosavadnímu oříznutí zlepšení.
+- **Behavior-preserving:** dokud se tabulka vejde, škála je 1 a šířky jsou spočítané úplně stejně jako
+  dřív (pokryto testy, ať se nezmění uložené šablony).
+- Testy: `TableWidthFitTests` (9 - vejde se / nevejde, pevné i procentní šířky, mnoho auto sloupců na
+  minimu, minimum se neuplatní když je místo, degenerované vstupy). .NET 427/427.
+
+**Pozor na hranice:** u opravdu velké linky (100+ spojů) je zmenšování slepá ulička - písmo by bylo
+nečitelné. Správné řešení je rozřezat tabulku na stránkové bloky (`B13`); tohle je poctivý mezikrok,
+který zbaví běžné linky rozházenosti a tichého mizení a dá vzniknout signálu „tady už zmenšování
+nestačí".
+
 ## 2026-07-29 - Base pole formulářů elementů z jednoho místa (blok B4)
 
 Sada polí, kterou má **každý** element (rámeček + rohy · pozice a velikost · vrstva · uzamčení ·
