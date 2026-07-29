@@ -23,7 +23,9 @@ výšku · buňky · pozadí celé šířky · pera vodorovných čar nahoře a 
 - **Důkaz:** odtisk linkové tabulky **bit za bitem identický** proti baseline sejmuté před zásahem
   (viz záchytná síť níže). .NET 438/438.
 
-Zbývá: zastávkový seznam, dynamická tabulka, pevná tabulka. **Mřížka odjezdů zůstává mimo** - je to
+Ve druhém kroku převedena i **dynamická tabulka** (záhlaví, datové řádky se zvýrazněním i střídáním, souhrnné řádky) - odtisk taktéž identický. Výjimka, která zůstala u elementu: **oddělovač bloku souhrnů** se kreslí pod pozadím prvního souhrnného řádku, tedy v opačném pořadí než řádkové čáry; do plánu proto nejde a je to u něj zdůvodněné.
+
+Zbývá: zastávkový seznam, pevná tabulka. **Mřížka odjezdů zůstává mimo** - je to
 pivot (sloupce = skupiny dnů, řádky = hodiny), do plánu řádků nezapadá.
 
 ## 2026-07-29 - Záchytná síť na kreslení (příprava B11)
