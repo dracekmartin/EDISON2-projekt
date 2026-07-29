@@ -105,20 +105,6 @@ kolize. Je triviální; případně ať docs uzavírá poslední dobíhající s
   vnořené datasource (`_rows` v `_rows`).
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR - velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
-- **Výkon MHD tisku** - hlavní bottleneck **vyřešen 2026-07-20** (odstraněno drahé nepoužívané pole
-  „první/poslední spoj" počítané per stránka přes legacy MHD2 → ~7 s na ~0,6 s, viz changelog).
-  Původní hypotéza (memoizace `GetNazevHrl`/`PopisDopravce`) se **neukázala** - názvy byly zanedbatelné
-  (profiling: build zastávek 0,02 s). Zbytek fází ~0,5 s = zatím OK; další memoizace až kdyby reálně bolelo.
-- **Konverze legacy PostScript JŘ → TD šablona (`.json`)** (na poptávku, nejdřív průzkum) - cíl: zákazníci
-  s jízdními řády v legacy PostScriptu je nemusí přepisovat od nuly. ⚠️ **Klíčové rozlišení, od kterého se
-  musí začít:** PostScript je **vyrenderovaný výstup** (layout + zapečená konkrétní data), kdežto naše
-  `.json` je **šablona** (jen vzhled; data zvlášť z DB). Takže to **není převod dat**, ale **rekonstrukce
-  layoutu** - přesně tentýž problém jako Import PDF. Nejpravděpodobnější cesta **bez psaní vlastního PS
-  parseru**: `PS → PDF` (Ghostscript) → **stávající AI Vision import PDF** (rozpozná StopList / mřížku
-  odjezdů / legendu a namapuje pole agendy → živá editovatelná šablona, ne obrázek). Dořešit: kolik
-  zákazníků to reálně má a co přesně (samostatné `.ps` soubory? embedded v tisku?), věrnost převodu,
-  a že výstupem musí být editovatelná šablona napojená na data. Relates: sekce „Import PDF" níže + „Externí
-  datové zdroje".
 - **Externí datové zdroje** (analýza 2026-07-12, na poptávku) - architektura připravená (engine zná jen
   `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda
   (0 změn .NET) · .NET provider vedle Caché (vzor `JsonFileDataSchemaProvider` + Composite) · headless

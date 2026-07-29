@@ -2,6 +2,18 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-29 🧹 - Z backlogu vyřazeny dvě položky (rozhodnutí Jan)
+
+- **Výkon MHD tisku** - vyřešeno 20. 7. (odstraněno drahé nepoužívané pole „první/poslední spoj"
+  počítané per stránka přes legacy MHD2, ~7 s → ~0,6 s; detail v changelogu 2026-07-20). V roadmapě
+  už jen viselo. **Poučení, které stojí za zapamatování:** původní hypotéza (memoizace názvů zastávek
+  a dopravce) se **neukázala** - profiling ukázal build zastávek 0,02 s, tedy zanedbatelné. Další
+  memoizace až kdyby reálně bolelo, ne preventivně.
+- **Konverze legacy PostScript JŘ → šablona** - bude se řešit jinou cestou, teď bezpředmětné.
+  **Jediné, co si z toho stojí za odnést** (ať se to nemusí odvozovat znovu): PostScript je
+  **vyrenderovaný výstup** (layout + zapečená data), kdežto naše šablona je jen vzhled s daty zvlášť -
+  takže to nikdy nebyl převod dat, ale **rekonstrukce layoutu**, tedy tentýž problém jako import PDF.
+
 ## 2026-07-29 ✅ - Plán řádků = R1 extrakce řádkového jádra (B11 = L‑3) - UZAVŘENO
 
 Detail → changelog 2026-07-29 (tři části). Poslední chybějící vrstva sdíleného tabulkového jádra:
