@@ -5,7 +5,7 @@
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
 > **▶ Další session:** po publishi vzít **B2** (zavírací kolo helpdesku - poslední 2 tikety + vizuál
-> zmenšování), pak vlna 3 od **B10** (nebo `B11` = R1 extrakce, už není blokovaná). Follow-upy „na vyžádání zákazníka" žijí
+> zmenšování), pak vlna 2 od **B10** (nebo `B11` = R1 extrakce, už není blokovaná). Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
@@ -36,29 +36,21 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 
 ---
 
-## 🌊 Vlna 2 - zlevnit si další práci, rozjet linkový
-
-**Dokončeno 29. 7.** - `B4` (base pole formulářů z jednoho místa) i `B5` (auto-fit tabulky na šířku,
-= `L‑1`) → archiv. Pokračuje se vlnou 3; `B11` už není blokovaný.
-
-> Výchozí šablony MHD/linková do distribuce = **krok 44b / C4** (evidováno v „Produkční/provozní" #3
-> a Fáze C+D); nemá vlastní blok, přilepí se ke kterémukoli slotu. B6/B16/B17 hotové 28. 7.,
-> B4 hotový 29. 7., B15 zrušen → archiv.
-
----
-
-## 🌊 Vlna 3 - zákaznické velké + odemknout linkový
+## 🌊 Vlna 2 - zákaznické velké + odemknout linkový
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
 | **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | - |
 | **B11** | **L‑3: row-plan vrstva** - `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | - (B5 hotov) |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | - |
-| **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. | M | 2 | - |
+| **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M | 2 | - |
+| **B19** | **Dark mode dokončit** - `EDThemeDark` + tokenizace hotové 13. 7., plocha plátna už na tokenu; zbývá **chrome návrháře** (papír, pravítka, záhlaví sekcí) + runtime přepnutí bez restartu. Začíná **rozhodnutím, jak v tmavém režimu vypadá papír** (bílý list na tmavém pozadí × ztmavený papír) - to je produktová volba, ne kód. | M–L | 4 | - |
+| **B20** | **Diagnostika připojení** - odlišit „server nedostupný (VPN)" od „není nakonfigurováno" + říct to při startu; sem patří i **okno naskočí až po ~3 s**, když připojení není. Dnes uživatel vidí jen prázdno a čeká. (Odložený UX nález 13. 7.) | M | 4 | - |
+| **B21** | **Varování „N skupin dnů sdílí sloupec bez rozlišovacích značek"** - v designeru; bez značek cestující nerozliší, které dny sloupec platí. (MHD SMO fáze 1) | S | 3 | - |
 
 ---
 
-## 🌊 Vlna 4 - velký kus linkového (dedikovaně)
+## 🌊 Vlna 3 - velký kus linkového (dedikovaně)
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
@@ -102,31 +94,21 @@ kolize. Je triviální; případně ať docs uzavírá poslední dobíhající s
 
 ---
 
-## 🧹 Úklid a drobnosti - zásoba pro další vlny
+## 🧹 Rozpuštěno 29. 7. - kam se „Úklid a drobnosti" poděl
 
-> Malé věci **na jednom místě** (dřív rozseté po šesti sekcích), aby se daly brát **tematickými dávkami**
-> - jedno sezení = jedno téma, ne posbírané drobnosti napříč. Co už je naplánované, nese číslo bloku.
+Sekce byla **kategorie, která lhala**: z osmi položek byla jedna duplikát, jedna průběžné pravidlo,
+pět čekalo na zákazníka a jen zbytek byla reálná práce - a ta nebyla „drobnost" (M–L). Proto:
 
-**Provozní** - výchozí šablony MHD/linková do distribuce = krok 44b / C4 (detail v „Produkční" #3
-a Fázi C+D) · varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S, MHD SMO fáze 1)
-
-**Vzhled / téma** - **migrace `CellStyleEditor` na Caché EDInputForm** (S–M, na poptávku; layout
-už sjednocen s EDInputFormem v B6, zbývá překlopit na Caché-driven formulář - háček tri-state /
-reaktivní logika) · **dark mode** runtime swap + ověření (M–L;
-EDThemeDark + tokenizace hotové 2026-07-13, plocha plátna už na tokenu - zbývá chrome návrháře
-(papír / pravítka / záhlaví sekcí) + rozhodnutí, jak v tmavém režimu vypadá papír) · **postupná
-unifikace dialogů** (EDInputForm + sdílený „DialogChrome"; průběžně při dotyku dialogu, ne velký
-refaktor - L celkem)
-
-**Na poptávku** - tiskový parametr „Rozdělení sloupců" pro MHD (M, sjednocení s AD; MHD SMO fáze 3) ·
-parita variant tras + písmen u odjezdů pro MHD agendu (S–M; AD hotové 27. 7., až u MHD zákazníka) ·
-MHD zdroj označníku pro stránky per označník (dtto) ·
-exportní parametry per šablona (název souboru / členění / imposice dnes per agenda - S–M) ·
-per-sloupcové zvýraznění řádků (`HighlightRule.TargetColumn` - model pole nese, render barví celý řádek)
-+ barva textu / kurzíva pravidla
-
-**Odložené UX nálezy (2026-07-13)** - VPN-down rozlišit „nedostupná" od „není nakonfigurována" + varování
-při startu (M; sem patří i „okno naskočí až po ~3 s při nedostupném připojení")
+- **5 položek „na poptávku"** (MHD parita rozdělení sloupců / variant / označníku, exportní parametry
+  per šablona, per-sloupcové zvýraznění) → [`customer-requirements §0.5`](customer-requirements-zastavkovy-jr.md).
+  Není to nedodělek, je to práce s konkrétním zákazníkem.
+- **Postupná unifikace dialogů** → [`rules/ux-conventions.md`](../rules/ux-conventions.md). Je to
+  způsob práce („sjednocuj při dotyku"), ne úkol - jako položka v roadmapě jen visela.
+- **Výchozí šablony MHD/linková** → smazáno, bylo to potřetí totéž (žije v „Produkční" #3 a `C4`).
+- **Migrace `CellStyleEditor` na Caché formulář** → připojena k `B18` jako jeho follow-up; bez
+  deklarativních pravidel formuláře ji dělat nelze (tri-state / reaktivní logika).
+- **Zbytek dostal číslo bloku** (`B19`–`B21` ve vlně 2) - viď výše. Reálná práce má být blok
+  s velikostí, ne odrážka v hromadě.
 
 ---
 
@@ -166,7 +148,7 @@ při startu (M; sem patří i „okno naskočí až po ~3 s při nedostupném p�
   credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
-*(Drobnosti a odložené UX/vizuální nálezy → sekce „Úklid a drobnosti" výše.)*
+*(Dřívější hromada „Úklid a drobnosti" je rozpuštěná - viz sekce nad Backlogem.)*
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
 v [`legacy-nahrada.md §7`](legacy-nahrada.md); vyřeší se
