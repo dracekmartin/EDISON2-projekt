@@ -167,7 +167,8 @@ public struct ResolvedTextStyle
     // ── SkiaSharp helpers ─────────────────────────────────────────────────────
 
     /// <summary>SKFontStyle z řezu: explicitní <see cref="FontWeight"/> (100–900) přebíjí Bold;
-    /// 0 = odvodit z Bold (400/700). Sklon z Italic. Šířka normální (Condensed řešíme rodinou).</summary>
+    /// 0 = odvodit z Bold (400/700). Sklon z Italic. Šířka normální - úzké řezy se vybírají jménem
+    /// rodiny („Arial Narrow") a šířku dosadí <see cref="FontResolver"/>.</summary>
     public readonly SKFontStyle ToSKFontStyle()
     {
         int weight = FontWeight > 0 ? FontWeight
