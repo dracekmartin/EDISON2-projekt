@@ -29,34 +29,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         d form.AddDecimal("StrokeWidth", "Tloušťka okraje", 0.5, 0, 10, "mm")
 
-        // ── Skupina "Rámeček elementu" ────────────────────────────────────
-        // Base element border + rohy (nezávislé na vlastní výplni/okraji obdélníku výše).
-        d form.AddGroup("border", "Rámeček elementu")
-        s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
-        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
-        s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
-        s f.value = "None"
-        d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
-
-        // ── Skupina "Pozice a velikost" ───────────────────────────────────
-        d form.AddGroup("position", "Pozice a velikost")
-        d form.AddDecimal("X", "X", 0, 0, "", "mm", "", 1)
-        d form.AddDecimal("Y", "Y", 0, 0, "", "mm", "", 1)
-        d form.AddDecimal("Width", "Šířka", 50, 1, "", "mm", "", 1)
-        d form.AddDecimal("Height", "Výška", 20, 1, "", "mm", "", 1)
-        d form.AddDecimal("Rotation", "Rotace", 0, -360, 360, "°")
-        s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
-        s f.helpText = "Pořadí vrstev (vyšší = nad nižším)"
-
-        s f = form.AddBool("IsLocked", "Uzamčeno", 0)
-        s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
-
-        // ── Skupina "Podmínky" ───────────────────────────────────────────
-        d form.AddGroup("advanced", "Podmínky")
-        s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
+        // Base pole (rámeček elementu je nezávislý na vlastní výplni/okraji obdélníku výše).
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50, 20, 1)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

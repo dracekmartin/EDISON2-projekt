@@ -258,30 +258,39 @@ public abstract class TemplateElement
     /// </summary>
     public abstract IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors();
 
+    // Názvy skupin base polí - shodné se sdíleným Caché balíčkem BaseElementFields.cls,
+    // ať obě editační cesty řadí tytéž vlastnosti do stejně pojmenovaných skupin.
+    internal const string PositionGroup = "Pozice a velikost";
+    internal const string BorderGroup = "Rámeček elementu";
+    internal const string ConditionsGroup = "Podmínky";
+
     /// <summary>
     /// Helper - vrátí deskriptory společných vlastností pozice a ZIndex.
     /// Volej na konci GetPropertyDescriptors() pomocí spread operátoru: [.. GetPositionDescriptors()]
     /// </summary>
+    /// <remarks>Popisky, skupiny a rozsahy musí souhlasit se sdíleným Caché balíčkem
+    /// <c>BaseElementFields.cls</c> (druhá editační cesta téže sady polí) - hlídá
+    /// <c>EDInputFormSchemaDriftTests</c>.</remarks>
     protected IReadOnlyList<PropertyDescriptor> GetPositionDescriptors() =>
     [
-        new FloatPropertyDescriptor { Label = "X",       Group = "Pozice", Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
-        new FloatPropertyDescriptor { Label = "Y",       Group = "Pozice", Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
-        new FloatPropertyDescriptor { Label = "Šířka",   Group = "Pozice", Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "X",       Group = PositionGroup, Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Y",       Group = PositionGroup, Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Šířka",   Group = PositionGroup, Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm", Format = "0.0#" },
         .. (IsDynamic
-            ? new PropertyDescriptor[] { new StringPropertyDescriptor { Label = "Výška", Group = "Pozice",
+            ? new PropertyDescriptor[] { new StringPropertyDescriptor { Label = "Výška", Group = PositionGroup,
                 Get = () => "(dynamická)", Set = _ => { } } }
-            : new PropertyDescriptor[] { new FloatPropertyDescriptor { Label = "Výška", Group = "Pozice",
+            : new PropertyDescriptor[] { new FloatPropertyDescriptor { Label = "Výška", Group = PositionGroup,
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
                 Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
-        new FloatPropertyDescriptor { Label = "Rotace",  Group = "Pozice", Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
-        new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
-        new BoolPropertyDescriptor  { Label = "Uzamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
+        new FloatPropertyDescriptor { Label = "Rotace",  Group = PositionGroup, Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
+        new FloatPropertyDescriptor { Label = "ZIndex",  Group = PositionGroup, Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
+        new BoolPropertyDescriptor  { Label = "Uzamčeno", Group = PositionGroup, Get = () => IsLocked, Set = v => IsLocked = v },
 
-        new ColorPropertyDescriptor { Label = "Barva rámečku", Group = "Obecné", Get = () => BorderColor, Set = v => BorderColor = v },
-        new FloatPropertyDescriptor { Label = "Tloušťka rámečku", Group = "Obecné", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
+        new ColorPropertyDescriptor { Label = "Barva rámečku", Group = BorderGroup, Get = () => BorderColor, Set = v => BorderColor = v },
+        new FloatPropertyDescriptor { Label = "Tloušťka rámečku", Group = BorderGroup, Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
         new EnumPropertyDescriptor
         {
-            Label = "Rohy", Group = "Obecné",
+            Label = "Rohy", Group = BorderGroup,
             Get = () => CornerStyle, Set = v => CornerStyle = (ElementCornerStyle)v,
             Options =
             [
@@ -292,14 +301,14 @@ public abstract class TemplateElement
         },
         new FloatPropertyDescriptor
         {
-            Label = "Velikost rohu", Group = "Obecné",
+            Label = "Velikost rohu", Group = BorderGroup,
             Get = () => CornerSize, Set = v => CornerSize = v, Min = 0, Max = 50, Unit = "mm", Format = "0.0#",
             VisibleWhen = () => CornerStyle != ElementCornerStyle.None
         },
 
         new StringPropertyDescriptor
         {
-            Label = "Podmínka viditelnosti", Group = "Podmínky",
+            Label = "Podmínka viditelnosti", Group = ConditionsGroup,
             // null / prázdný = vždy viditelný
             // Výrazy: "{TISK_SIPKY}", "{POCET} > 0", "{TYP} == \"JR\" && !{TISK_TARIFU}"
             Get = () => VisibilityExpression ?? "",

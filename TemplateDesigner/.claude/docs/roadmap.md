@@ -5,14 +5,14 @@
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
 > **▶ Další session:** po publishi vzít **B2** (zavírací kolo helpdesku - poslední 2 tikety + vizuál
-> zmenšování), pak vlna 2 od **B4**. Follow-upy „na vyžádání zákazníka" žijí
+> zmenšování), pak vlna 2 od **B5**. Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
 
 ## 🧭 Jak podle roadmapy pracovat
 
-Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B2`, `B4`, …) seřazené do **vln**. Každý blok
+Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B2`, `B5`, …) seřazené do **vln**. Každý blok
 má **zónu** = oblast, kde si dvě sezení šlapou po prstech (viz „Paralelizace" níže).
 Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
 
@@ -40,14 +40,11 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B4** | **Sdílená base pole formulářů elementů** - konec opisování „rámeček / rohy / pozice / vrstva / podmínky" v každém elementu zvlášť (dnes 8-19 míst na jednu vlastnost), na obou stranách (Caché formuláře + C# zrcadlo). Detail v §B4 níže. | M | 2 + 3 | - |
 | **B5** | **L‑1: auto-fit fontu na šířku** u linkové tabulky (dnes je `ComputeFontScale` jen výškový) | S–M | 3 | - |
 
-**Proč B4 tak brzy:** společná vlastnost elementu (rámeček / pozice / rohy) je dnes opsaná v každém `.cls`
-(rohy = 8 souborů) → každá další drobnost na elementech je osmkrát dražší. Čím dřív, tím víc se vrátí.
-
 > Výchozí šablony MHD/linková do distribuce = **krok 44b / C4** (evidováno v „Produkční/provozní" #3
-> a Fáze C+D); nemá vlastní blok, přilepí se ke kterémukoli slotu. B6/B16/B17 hotové 28. 7., B15 zrušen → archiv.
+> a Fáze C+D); nemá vlastní blok, přilepí se ke kterémukoli slotu. B6/B16/B17 hotové 28. 7.,
+> B4 hotový 29. 7., B15 zrušen → archiv.
 
 ---
 
@@ -95,51 +92,14 @@ L‑4 nezačínat před B11 - dnes by to znamenalo napsat totéž pětkrát (per
    Bez worktree: jedno .NET sezení + libovolně „papírových" (zóna 5).
 
 **Bezpečné kombinace:**
-- ✅ **B12 + B4 + zavírání tiketů (B2)** - agenda / dialogy / papír
+- ✅ **B12 + B5 + zavírání tiketů (B2)** - agenda / kreslicí jádro / papír
 - ✅ **B10 + B12** - fontová cesta je izolovaná od agendy
 - ❌ **cokoli na elementech během B11/B13**
-- ❌ **B4 + jakýkoli element dialog** - B4 přepisuje pole ve všech `.cls`
+- ❌ **B18 + jakýkoli element dialog** - B18 sahá na pole ve všech `.cls`
 - ⚠️ **publish je výhradní vždy**
 
 **Dokumentace:** každé sezení dopisuje záznam na začátek changelogu → při paralelním běhu tam vznikne drobná
 kolize. Je triviální; případně ať docs uzavírá poslední dobíhající sezení.
-
----
-
-## 🏗️ §B4 detail - sdílená base pole formulářů elementů
-
-> Vzešlo z tiketů KOVED (rohy elementu #12998). **Revize 29. 7.:** původní zápis mísil dvě nezávislé
-> věci do jednoho bloku (kapabilitu sdílené komponenty × úklid v návrháři) - rozdělené na **B4** (níže),
-> **B18** (deklarativní pravidla) a hotový fix řezů písma (→ archiv). Vazba je tenká a jednosměrná:
-> až bude B18, sdílený balíček z B4 může nést pravidlo „velikost rohu jen u nezaoblených" jedním
-> zápisem místo osmi. Není to závislost - B4 jde udělat samostatně.
-
-**Problém - duplikace definice polí, na obou stranách.** Každý element staví base pole (rámeček,
-rohy, pozice, velikost, vrstva, uzamčeno, podmínka viditelnosti) ručně ve svém `.cls`, a tytéž
-vlastnosti jsou popsané podruhé v C# descriptorech → jedna společná vlastnost = 8-19 míst.
-
-**Zjištěný drift (scan 29. 7., důkaz že to není teoretické):**
-- **Tloušťka rámečku** 0-10 mm u textu × 0-5 mm u všech ostatních.
-- **Dynamická tabulka nemá base pole rámečku vůbec** (jen vlastní volbu „Rámeček") - v panelu se
-  rámeček nastavit dá, ve formuláři ne.
-- Blok rámečku je u každého elementu **v jiné skupině**: vlastní „Rámeček elementu" (5×),
-  „Barvy a rámeček" (text), namixovaný v „Obecné" (zastávky, odjezdy). **Rozhodnuto: sjednotit**
-  na vlastní skupinu (Jan 29. 7. - jednorázové přestěhování je menší zlo než trvalá nekonzistence).
-- **Výška** má rozdílný popisek → klíč `Height` je proto vyjmutý z drift testu; sdílený blok tu
-  výjimku umí zrušit.
-
-**Postup:**
-1. **Sdílený Caché helper `BaseElementFields`** (vzor = `StyleFields.cls`, který totéž už dělá pro
-   pole stylu textu) - skupiny Rámeček+Rohy / Pozice a velikost / Podmínky, s parametry na legitimní
-   odchylky (výchozí šířka a výška per element, elementy bez rohů jako čára).
-2. **C# zrcadlo: číst base z jednoho místa** (rozhodnuto 29. 7.). Zrcadlo **nelze odstranit** -
-   ověřeno v přepínací logice panelu: formátovací lišta potřebuje descriptory vždy, úprava více
-   elementů naráz jde jen přes ně, elementy bez schématu na ně padají (dnes uspaná pevná tabulka).
-   Takže: base pole sjednotit do jednoho zdroje i tady + **zapsat zúženou roli** zrcadla
-   (lišta / multi-výběr / fallback), ať znovu nevystupuje jako druhý zdroj pravdy.
-
-**Navázaný bod:** migrace `CellStyleEditor` na Caché-driven EDInputForm → Úklid „Vzhled/téma"
-(layout už sjednocen v B6 28. 7.).
 
 ---
 
@@ -312,7 +272,7 @@ symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek
 TTF + locale-aware `FontResolver.SymbolFontFamily`, single-char symboly zastávkového JŘ); pro linkovou část
 zbývá převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) na multichar/kompozity; (2) agenda
 `KnizniJrAd`; (3) `LineTableElement` + layout rozšíření (flow paketů, „dotisk poznámek z minulé stránky",
-**auto-fit fontu na šířku** - dnes je ComputeFontScale jen výškový); (4) per-linka šablony (viz B4).
+**auto-fit fontu na šířku** - dnes je ComputeFontScale jen výškový); (4) per-linka šablony (viz C4).
 
 > Pilotní část hotová (`KnizniJrAd`/`KnizniJrMhd` datové jádro, element, editor, paleta) → archiv
 > 2026-07-04 + detail `linkovy-knizni-jr-implementace-analyza.md` §11-12.

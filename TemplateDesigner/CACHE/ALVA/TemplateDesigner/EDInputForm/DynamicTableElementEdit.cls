@@ -30,7 +30,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
         d form.AddDecimal("RowHeight", "Výška řádku", 6, 2, 50, "mm")
         d form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
-        s f = form.AddFieldToLastGroup("BorderStyle", "Rámeček", $$$FieldTypeList, 0, 0)
+        // „Čáry tabulky" = mřížka mezi buňkami; rámeček celého elementu je base pole níže.
+        s f = form.AddFieldToLastGroup("BorderStyle", "Čáry tabulky", $$$FieldTypeList, 0, 0)
         d f.AddListItem("None", "Žádný"), f.AddListItem("Outer", "Vnější"), f.AddListItem("All", "Vše")
         d f.AddListItem("RowsOnly", "Řádky"), f.AddListItem("ColumnsOnly", "Sloupce")
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
@@ -43,20 +44,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF333333", "#FFE8E8E8")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF222222", "#00FFFFFF")
 
-        // ── Pozice ────────────────────────────────────────────────────────
-        d form.AddGroup("position", "Pozice a velikost")
-        d form.AddDecimal("X", "X", 0, 0, "", "mm", "", 1)
-        d form.AddDecimal("Y", "Y", 0, 0, "", "mm", "", 1)
-        d form.AddDecimal("Width", "Šířka", 50, 1, "", "mm", "", 1)
-        d form.AddDecimal("Height", "Výška (prázdné = auto)", "", 1, "", "mm")
-        d form.AddDecimal("Rotation", "Rotace", 0, -360, 360, "°")
-        s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
-        d form.AddBool("IsLocked", "Uzamčeno", 0)
+        // ── Base pole (rámeček elementu formulář dřív neměl vůbec - šel nastavit jen v panelu) ─
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 
-        // ── Podmínky ──────────────────────────────────────────────────────
-        d form.AddGroup("advanced", "Podmínky")
-        s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
         s f.helpText = "Podmínka nad daty řádku - řádky, kde neplatí, se nevykreslí. Názvy polí = mapování ""Field"" ze sloupců (tab Sloupce). Např. {CENA} > 0"
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)

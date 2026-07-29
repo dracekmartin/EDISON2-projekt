@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-07-29 - Base pole formulářů elementů z jednoho místa (blok B4)
+
+Sada polí, kterou má **každý** element (rámeček + rohy · pozice a velikost · vrstva · uzamčení ·
+podmínka viditelnosti), byla ručně opsaná v každém z **deseti** formulářů - kolem 200 řádků, které
+říkají totéž. A jak se čekalo u kopií, rozešly se:
+
+- **tloušťka rámečku** 0-10 mm u textu × 0-5 mm u zbytku (kanon = 5, souhlasí s C#),
+- **dynamická tabulka neměla pole rámečku vůbec** - v panelu se rámeček nastavit dal, ve formuláři ne,
+- **rámeček byl u každého jinde**: vlastní skupina (5×), „Barvy a rámeček" (text), namixovaný
+  v „Obecné" (zastávky, odjezdy),
+- **výška** měla rozdílný popisek, kvůli kterému byl klíč vyjmutý z hlídacího testu,
+- nápovědy u vrstvy a uzamčení někde byly, někde ne.
+
+Nově sdílený `BaseElementFields.cls` (dvojče `StyleFields`, který totéž už dělá pro pole stylu textu)
+se třemi metodami; formulář si sadu vyžádá třemi řádky a legitimní odchylky jdou parametrem, ne kopií
+(výchozí šířka/výška, dynamická výška, elementy bez rohů jako čára, nulová šířka u svislé čáry).
+**Sjednoceno i seskupení** - rámeček má u všech elementů vlastní skupinu „Rámeček elementu"
+(rozhodnutí Jan: jednorázové přestěhování je menší zlo než trvalá nekonzistence).
+
+- **Druhá strana byla už v pořádku** - oproti původnímu zápisu bloku B4 nejsou base pole v C#
+  opsaná desetkrát, ale definovaná jednou v základní třídě elementu. Reálný stav byl tedy
+  10 × Caché + 1 × C#, ne 10 × 2 → práce vyšla podstatně menší. C# jen dostal shodné názvy skupin
+  (konstanty `PositionGroup`/`BorderGroup`/`ConditionsGroup`), ať obě cesty řadí tytéž vlastnosti
+  do stejně pojmenovaných skupin.
+- **Pojistka, aby duplikace nemohla vzniknout znovu** (podstatnější než samotný úklid - nulová
+  duplikace nejde, jsou to dva běhové světy a dva jazyky, ale jedna definice na stranu + test ano):
+  - `ZadnyElementovyFormular_NeopisujeBasePoleRucne` - base klíč napsaný přímo ve formuláři = spadne,
+  - `BasePole_MajiVCsStejnyPopisekISkupinu` - rozejití popisku nebo skupiny mezi Caché a C# = spadne,
+  - stávající test „každý klíč existuje jako C# property" rozbaluje i volání sdíleného balíčku,
+    takže base pole zůstala pokrytá (jinak by kontrola po přesunu tiše přestala platit),
+  - výjimka pro klíč výšky padla.
+- U dynamické tabulky přejmenováno „Rámeček" (= mřížka mezi buňkami) na **„Čáry tabulky"**, aby se
+  to nepralo s novou skupinou rámečku elementu.
+- Testy: .NET 418/418 (2 nové), Caché 84/84. Všech pět strukturálně odlišných formulářů ověřeno
+  živě proti serveru (text, čára, zastávky, linková tabulka, dynamická tabulka).
+
 ## 2026-07-29 - Nabídka řezů písma reaguje na změnu rodiny
 
 Ve formulářích elementů nabízelo pole **„Řez"** řezy té rodiny písma, která tam byla **při otevření

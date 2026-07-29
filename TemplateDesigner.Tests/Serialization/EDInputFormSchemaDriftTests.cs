@@ -57,6 +57,19 @@ public class EDInputFormSchemaDriftTests
         @"prefix_""\.(\w+)""",
         RegexOptions.Compiled);
 
+    // BaseElementFields = sdílený balíček base polí (rámeček/rohy, pozice, podmínky). Volání
+    // v elementu se rozbalí na klíče té konkrétní metody, ať base pole zůstanou drift-testovaná
+    // i po přesunu do balíčku.
+    private static readonly Regex BaseFieldsCallRx = new(
+        @"BaseElementFields\)\.(Add\w+)\(form",
+        RegexOptions.Compiled);
+
+    private static readonly Regex BaseFieldsMethodRx = new(
+        @"ClassMethod (Add\w+)\([^)]*\)\s*\{(.*?)\n\}",
+        RegexOptions.Compiled | RegexOptions.Singleline);
+
+    private const string BaseFieldsFile = "BaseElementFields.cls";
+
     [Theory]
     [MemberData(nameof(SchemaMap))]
     public void VsechnyFieldKeys_ExistujiJakoPropertyNaCilovemTypu(string clsFile, Type targetType)
@@ -114,6 +127,57 @@ public class EDInputFormSchemaDriftTests
             "Přidej do SchemaMap (element ↔ C# typ), nebo do `excluded` (ne-elementová forma).");
     }
 
+    // ── Base pole: jedno místo na každé straně ───────────────────────────────
+    // Base sada (rámeček/rohy · pozice a velikost · podmínky) byla do 29. 7. opsaná ručně v každém
+    // z deseti formulářů → rozešly se rozsahy (tloušťka rámečku 0-10 × 0-5 mm), dynamické tabulce
+    // pole rámečku chybělo úplně a u tří elementů byl rámeček v cizí skupině. Tyhle dva testy drží
+    // stav „jedna definice na straně Caché + jedna v C#, a obě říkají totéž".
+
+    [Fact]
+    public void ZadnyElementovyFormular_NeopisujeBasePoleRucne()
+    {
+        var baseKeys = BaseFieldsKeysPerMethod().Values.SelectMany(k => k).ToHashSet(StringComparer.Ordinal);
+        Assert.NotEmpty(baseKeys);   // prázdno = regex zrezivěl, ne že je vše v pořádku
+
+        var hits = new List<string>();
+        foreach (var row in SchemaMap)
+        {
+            var file = (string)row[0]!;
+            if (!typeof(TemplateElement).IsAssignableFrom((Type)row[1]!)) continue;
+
+            string text = File.ReadAllText(Path.Combine(EDInputFormDir(), file));
+            foreach (var key in DirectKeyRx.Matches(text).Select(m => m.Groups[1].Value).Distinct())
+                if (baseKeys.Contains(key)) hits.Add($"{file}: \"{key}\"");
+        }
+
+        Assert.True(hits.Count == 0,
+            "Base pole se v elementovém formuláři definují ručně - musí jít přes sdílený "
+            + $"{BaseFieldsFile} (jinak se rozsahy a skupiny znovu rozejdou):\n{string.Join("\n", hits)}");
+    }
+
+    [Fact]
+    public void BasePole_MajiVCsStejnyPopisekISkupinu()
+    {
+        var expected = BaseFieldsLabelToGroup();
+        Assert.NotEmpty(expected);
+
+        // Obdélník = element s rohy i pevnou výškou → pokrývá celou base sadu.
+        var descriptors = new RectangleElement().GetPropertyDescriptors()
+            .Where(d => !string.IsNullOrEmpty(d.Label))
+            .ToDictionary(d => d.Label!, d => d.Group ?? "", StringComparer.Ordinal);
+
+        var problems = expected
+            .Where(kv => !descriptors.TryGetValue(kv.Key, out var group) || group != kv.Value)
+            .Select(kv => descriptors.TryGetValue(kv.Key, out var g)
+                ? $"\"{kv.Key}\": Caché skupina \"{kv.Value}\" × C# \"{g}\""
+                : $"\"{kv.Key}\": v C# deskriptorech chybí (Caché skupina \"{kv.Value}\")")
+            .ToList();
+
+        Assert.True(problems.Count == 0,
+            $"Base pole se rozešla mezi {BaseFieldsFile} a C# GetPositionDescriptors "
+            + $"(dvě editační cesty téže sady):\n{string.Join("\n", problems)}");
+    }
+
     // ── Názvoslovný drift (labely + volby) ───────────────────────────────────
     // Zamyká kanon z ux-conventions §8: tentýž field key musí mít všude tentýž label
     // a zakázané tvary termínů se nesmí objevit v labelech, volbách ani panelových deskriptorech.
@@ -168,9 +232,10 @@ public class EDInputFormSchemaDriftTests
     public void StejnyFieldKey_MaVsudeStejnyLabel()
     {
         // Legitimní rozdíly labelu téhož klíče mezi formuláři (kontextové upřesnění) - vědomé výjimky:
-        //   Height     - DynamicTable má nápovědu „(prázdné = auto)" (dynamická výška), statické elementy ne
         //   StrokeWidth - u čáry je to „Tloušťka" (čáry samotné), u obdélníku „Tloušťka okraje"
-        var exempt = new HashSet<string>(StringComparer.Ordinal) { "Height", "StrokeWidth" };
+        // („Height" tu byl do 29. 7. kvůli rozdílnému popisku výšky - sdílený BaseElementFields
+        //  ho sjednotil na „Výška" + nápovědu, takže výjimka padla.)
+        var exempt = new HashSet<string>(StringComparer.Ordinal) { "StrokeWidth" };
 
         var labelsPerKey = new Dictionary<string, Dictionary<string, List<string>>>();
         foreach (var file in AllEditClsFiles())
@@ -253,7 +318,37 @@ public class EDInputFormSchemaDriftTests
         foreach (Match m in StyleFieldsCallRx.Matches(text))
             keys.AddRange(suffixes.Select(s => $"{m.Groups[1].Value}.{s}"));
 
+        // BaseElementFields.AddPosition(form, …) → X, Y, Width, Height, Rotation, ZIndex, IsLocked
+        var baseKeys = BaseFieldsKeysPerMethod();
+        foreach (Match m in BaseFieldsCallRx.Matches(text))
+            keys.AddRange(baseKeys.GetValueOrDefault(m.Groups[1].Value, []));
+
         return keys;
+    }
+
+    /// <summary>Klíče polí, které přidává každá metoda sdíleného balíčku (AddBorder → BorderColor…).</summary>
+    private static Dictionary<string, List<string>> BaseFieldsKeysPerMethod()
+    {
+        string text = File.ReadAllText(Path.Combine(EDInputFormDir(), BaseFieldsFile));
+        return BaseFieldsMethodRx.Matches(text).ToDictionary(
+            m => m.Groups[1].Value,
+            m => DirectKeyRx.Matches(m.Groups[2].Value).Select(k => k.Groups[1].Value).Distinct().ToList());
+    }
+
+    /// <summary>Popisky base polí ze sdíleného balíčku, mapované na skupinu, do které patří
+    /// (skupinu určuje AddGroup na začátku metody).</summary>
+    private static Dictionary<string, string> BaseFieldsLabelToGroup()
+    {
+        string text = File.ReadAllText(Path.Combine(EDInputFormDir(), BaseFieldsFile));
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (Match m in BaseFieldsMethodRx.Matches(text))
+        {
+            var body = m.Groups[2].Value;
+            var group = GroupLabelRx.Match(body) is { Success: true } g ? g.Groups[1].Value : "";
+            foreach (Match f in LabeledFieldRx.Matches(body))
+                result[f.Groups[2].Value] = group;
+        }
+        return result;
     }
 
     private static List<string> StyleFieldsSuffixes()

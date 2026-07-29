@@ -2,6 +2,21 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-29 ✅ - Base pole formulářů z jednoho místa (B4) - UZAVŘENO
+
+Detail → changelog 2026-07-29. Sdílený `BaseElementFields.cls` (rámeček+rohy / pozice a velikost /
+podmínky) místo ruční kopie v deseti formulářích; odchylky parametrem (výchozí rozměry, dynamická
+výška, čára bez rohů). Spraveny nálezy: tloušťka rámečku 0-10 × 0-5 mm, **dynamická tabulka bez polí
+rámečku**, rámeček u tří elementů v cizí skupině, rozdílný popisek výšky. Seskupení sjednoceno
+(„Rámeček elementu" u všech; rozhodnutí Jan). **Korekce zadání:** C# strana byla už sdílená
+(jedna definice v základní třídě) → reálně 10 × Caché + 1 × C#, ne 10 × 2; C# jen dostal shodné
+názvy skupin. **Pojistka:** dva nové drift testy (base pole nesmí být opsaná ve formuláři · popisky
+a skupiny musí souhlasit mezi Caché a C#) + rozbalování volání balíčku ve stávajícím testu klíčů;
+výjimka pro klíč výšky padla. Ověřeno živě proti serveru na 5 strukturálně odlišných formulářích.
+
+Zbytek §B4: krok „zapsat zúženou roli C# zrcadla" (formátovací lišta / více elementů naráz /
+fallback) - zrcadlo **nelze odstranit**, ověřeno v přepínací logice panelu.
+
 ## 2026-07-28 ✅ - Rozvržení editoru stylu buňky (B6) - UZAVŘENO
 
 Detail → changelog 2026-07-28. `CellStyleEditor` (sdílený UserControl, tab Sloupce/Styl v 6
