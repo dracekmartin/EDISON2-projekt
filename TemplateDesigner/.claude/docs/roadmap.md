@@ -165,17 +165,13 @@ při scope té fáze, ne teď.
 Nejdůležitější otevřená věc u zastávkového JŘ: **poznámka existuje, ale cestující ji na vývěsce
 nevidí.** Dva samostatné nálezy, oba na `CB_GWBUS` 501/0000001, směr T, stránka Autobusové nádraží:
 
-1. **Nevykresluje se jeden odjezd (nebo jeho značky) - a s ním padá i řádek legendy.**
-   Záchytný bod: stránka má v datech **4 odjezdy**, všechny ve sloupci Pracovní dny:
-   `8:19 B` · `9:25 B` · **`11:20 C + bezbariér`** · `13:48 ①②③④ + E + 40`.
-   V živém buildu u **11:20 není vidět ani „C", ani bezbariérový symbol** (potvrdil Jan), a v legendě
-   chybí řádek `H - spoj má bezbariérově přístupné vozidlo` (data 9 poznámek, vývěska 8).
-   Legenda „C" přítomná je, protože se staví ze serverových dat, ne z nakresleného.
-   **Vysvětluje obojí jednou příčinou:** bezbariér nemá jinou minutu, kde by se objevil, takže
-   s neviditelnou minutou zmizí i jeho vysvětlivka. Krokovat ten jeden odjezd (spoj 29, trasa 19,
-   `plk=X`, skupina dnů 1) cestou data → `NoteVisibilityFilter` → `DepartureGridElement`.
-   Data jsou ověřená čistá **v obou směrech** (`Inventura`: 0 značek bez legendy, 0 legend bez značky
-   napříč 45 stránkami), takže ztráta je na straně vykreslení, ne generování.
+1. **✅ Vysvětleno (30. 7.) - nebyl to render, ale tiše zapnuté „Rozdělit vývěsku per označník".**
+   Symptom: na stránce chyběl odjezd `11:20` (se značkami `C` + bezbariér) a řádek legendy
+   `H - spoj má bezbariérově přístupné vozidlo`, zatímco legenda `C` tam byla.
+   Změřeno v uložených parametrech (`^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams","ZASTAVKOVY_JR_AD")`):
+   `ROZDELIT_PER_OZNACNIK: true`. Server se tedy chovall správně - stránka nesla jen odjezdy svého
+   označníku. **Chyba je, že UI ten parametr ukazovalo jako vypnutý** (Jan ho přeťukl a rozešlo se to).
+   Zbylé tři úkoly z toho jsou níže jako `B17`–`B19`.
 2. **Chybí zdroj atributů zastávky per spoj.** Legacy má v legendě „x = zastávka pouze na znamení",
    my ne. Není to filtr ani rozsah zastávek - na té lince nemá „x" žádná zastávka v J-větě (jediné
    atributy jsou `TS`). Legacy ho bere odjinud; ve W-záznamu trasy jsou atributy **per spoj**
@@ -184,6 +180,32 @@ nevidí.** Dva samostatné nálezy, oba na `CB_GWBUS` 501/0000001, směr T, str�
 
 Nástroj na obojí je hotový: `Tests/AdProdlouzeniProbe.Inventura` (počítá i „značka u minuty bez řádku
 legendy") a `LegacyLegenda` (co na téže stránce vypíše starý modul).
+
+---
+
+**`B17` ⚠️ Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl** (S/M, zóna 5; 30. 7.)
+**Nejzávažnější z téhle trojice** - uživatel tiskne něco jiného, než co v nastavení vidí, a nemá jak
+na to přijít. Uložená hodnota (per agenda × uživatel) `ROZDELIT_PER_OZNACNIK: true` se aplikuje na
+`_previewParams` (a jde do `GetData`), ale ovladač v UI zůstal na výchozí hodnotě. Podezření dle
+historie: **EDInputForm se re-inicializuje na `Loaded`** (návrat na tab), takže přebije Prefill z
+`RefreshParamsUiAfterLoad` - stejná past už je zapsaná v paměti projektu. Ověřit, kde se hodnota
+a ovladač rozcházejí, a **udělat to nerozbitně**: hodnoty a UI z jednoho zdroje, ne dvě cesty.
+Vedle toho zvážit pojistku „aktivní parametry" ve status baru (uživatel vidí, co je zapnuté) - to řeší
+i `B15` (schované „Hodiny od/do" v liště).
+
+**`B18` Rozdělená vývěska nechává v legendě značky spojů, které na ní nejsou** (S, zóna 5; 30. 7.)
+Při rozdělení per označník se filtrují **odjezdy**, ale poznámky rozdílů tras ne (v kódu vědomě, aby
+byla písmena variant shodná napříč stránkami téže zastávky). Důsledek: na stránce svítí vysvětlivka
+ke značce, která na ní není u žádné minuty (změřeno: `C` v legendě, odjezd `11:20` na druhé stránce).
+Naopak legenda bezbariéru zmizí celá, protože se plní jen z vytištěných odjezdů. Rozhodnout, co je
+správné (filtrovat legendu dle stránky × nechat kvůli stabilitě písmen) a srovnat obě strany.
+
+**`B19` „Označník" může být z dat nesmysl → rozdělení vyrobí bludné stránky** (M, zóna 5; 30. 7.)
+Na `CB_GWBUS` 501/0000001 vrací `NastupisteSpoju` hodnoty **`JET,1`**; „JET" není označník, v datech
+je to obsah, který se plete s příznakem (`JET`/`JETE` je i v J-větě `#3`, odkud čteme fallback).
+Rozdělení pak vytvoří stránku „JET" a stránku „1". Na `CB_CSADAD` 0320680 přitom označníky (11/22)
+fungují - je to tedy závislé na obsahu dat, ne rozbité vždy. Ověřit, čím ten segment v AD skutečně je
+(možná posun indexu pro některé firmy), a rozdělení nespouštět nad hodnotou, která označník není.
 
 > **Rozhodnuto 30. 7. - kolize značky „H"/„F" zůstává** (bylo `B14`): ověřeno voláním starého modulu,
 > že tutéž kolizi má i legacy (legenda 0365005 nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`).

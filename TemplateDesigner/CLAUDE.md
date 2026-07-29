@@ -143,12 +143,16 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 ### 🐛 Známé problémy
 
-- **Poznámka je v datech, ale na vývěsce ji cestující nevidí** (zastávkový JŘ AD, nález 2026-07-30).
-  Na `CB_GWBUS` 501/0000001/T stránce Autobusové nádraží vrací `GetData` 9 poznámek, vykreslí se 8 -
-  chybí bezbariérová „H". Není to souhrnná varianta (přepínač skrytí souhrnu to nevysvětluje).
-  Neopravovat naslepo: **nejdřív změřit, kde se ztrácí** (data → `NoteVisibilityFilter` → prvek
-  legendy; kandidát je i pevná výška boxu). Podrobně + druhý související nález (chybí zdroj atributů
-  zastávky per spoj) → `roadmap.md` blok `B16`, nástroje `Tests/AdProdlouzeniProbe`.
+- **Parametr sestavy se v UI tváří vypnutý, i když zapnutý je** (nález 2026-07-30, blok `B17`).
+  Uložená hodnota per agenda × uživatel (`TemplateDesigner.PrintParams`) se aplikuje na `_previewParams`
+  a jde do `GetData`, ale ovladač v UI zůstane na výchozí hodnotě → **uživatel tiskne něco jiného, než
+  co vidí v nastavení**. Konkrétně `ROZDELIT_PER_OZNACNIK=true` tiše rozdělovalo vývěsku, takže
+  ze stránky chyběly odjezdy (patřily druhému označníku). Podezření: EDInputForm se re-inicializuje
+  na `Loaded` a přebije Prefill. **Diagnostika, než se něco změní:** přečti uložený blob
+  (`^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams",<AgendaCode>)`) a porovnej
+  s tím, co ukazuje UI.
+- Navazující: `B18` (rozdělená vývěska nechává v legendě značky spojů, které na ní nejsou),
+  `B19` („označník" může být z dat nesmysl), `B16` (chybí zdroj atributů zastávky per spoj).
 
 ---
 

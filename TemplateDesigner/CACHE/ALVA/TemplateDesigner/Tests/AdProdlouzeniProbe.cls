@@ -415,11 +415,16 @@ ClassMethod StrankaZnacky(ByRef sys As %String) As %Status
         i 'poradi s poradi = 1
         s agenda = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 
-        s page = $classmethod(agenda,"BuildStrankaZastavky", dataDB, sku, lin, poradi, smer, "")
+        s i = 0
+        // volitelně simulovat rozdělenou vývěsku (#8828) - odjezdy se filtrují na označník, poznámky ne
+        s oznacnik = $g(^||ML("IN","OZNACNIK"))
+        s page = $classmethod(agenda,"BuildStrankaZastavky", dataDB, sku, lin, poradi, smer, oznacnik)
         i '$isobject(page) {
             s ^||ML("OUT",1) = "stranka se nesestavila"
             ret $$$OK
         }
+        s ^||ML("OUT",$i(i)) = "filtrOznacnik="_$s(oznacnik="":"(zadny)",1:oznacnik)
+            _"~oznacnikyZastavky="_$classmethod(agenda,"NastupisteSpoju", dataDB, sku, lin, smer, poradi)
 
         // značky reálně použité u minut + spoje přítomné v odjezdech
         k pouzito, spojVOdjezdech
@@ -437,7 +442,6 @@ ClassMethod StrankaZnacky(ByRef sys As %String) As %Status
             }
         }
 
-        s i = 0
         s ^||ML("OUT",$i(i)) = "odjezdu="_odj.%Size()_"~poznamek="_page.rows.%Get("POZNAMKY").%Size()
             _"~skupinDnu="_page.rows.%Get("SKUPINY_DNU").%Size()
 
