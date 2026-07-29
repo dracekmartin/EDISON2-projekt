@@ -74,7 +74,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | - (zavřeno) | §E1 |
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
-| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ⛔ **NEZAVÍRAT** - kód hotový a zpevněný, ale v CB_CSADAD **nelze ověřit** (žádná linka nemá vzorovou trasu → větev prodloužení nedosažitelná). Chce data TRANSDEV (876401/876402). | Viz §D1 „Změřený stav 30. 7." | §D1 |
+| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | 🟡 **funkčnost ověřena** na `CB_GWBUS` 501/0000001/T (12 výskytů, věta dorazí do legendy s cílem). Zbývá rozhodnout znění: legacy rozlišuje i **průjezd** („pokračuje přes Náměstí, AN"), naše znění ne → dvě skupiny spojů splynou v jednu značku (legacy 3 poznámky, my 2). | Rozhodnout průjezd v textu, pak zavřít | §D1 |
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD · ▶ **ready-to-close** | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do resolve poznámka, řešit jinde | §D4 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** - ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | - | §B3 |
@@ -290,15 +290,39 @@ Co z toho plyne pro tři „vady" evidované 29. 7.:
 2. **Věta „jede až do zast. " bez cíle** byl týž artefakt (cizí bitmapa ukázala na pozici, kterou
    J-trasa nepojmenovává). Přesto **zpevněno**: nový `KonecnaNazev` vezme nejbližší pojmenovanou
    obsluhovanou pozici proti směru jízdy a bez známého cíle se věta nenapíše.
-3. **„jede přes zast. X" + „jede až do" současně** - u prodloužení se „jede přes" už nevypisuje
-   (dle dohody). Premisa byla rovněž z kontaminovaného měření, změna je ale drobná a vratná.
+3. **„jede přes zast. X" + „jede až do" současně** - zkusili jsme „jede přes" u prodloužení vynechat,
+   ale **měření to vyvrátilo a změna byla vrácena**: obě věty nesou různou informaci a po vynechání
+   se texty různých skupin spojů staly identickými → dedup je sloučil do jedné značky. Doloženo na
+   `CB_GWBUS` 501/0000001/T (viz níže): legacy tam má tři poznámky, po vynechání zbyla jedna.
 
-**„jede až do" nelze v CB_CSADAD ověřit vůbec** - a je to vlastnost dat, ne kódu: **žádná** ze 480
-kombinací linka×směr nemá vzorovou trasu v J-větě (#10 základní ani #7 tištěná), takže `RozdilyTras`
-vždy padá na fallback „union obsluhy". Proti unionu nemůže žádný spoj jet *za* vzor → větev
-prodloužení je strukturálně nedosažitelná (0 nálezů napříč 240 linkami). Tiket #7947 tedy jde uzavřít
-jen na datech firmy, která základní trasu plní (TRANSDEV, linky 876401/876402) - nebo umělým vzorem.
-Auto-poznámkování rozdílů tras je vůbec zapnuté jen u **5 linek z 240**.
+#### ✅ Reprodukce nalezena - `CB_GWBUS`, skupina 501, linka 0000001, směr T
+
+Hledání přes **všechny** skupiny a linky (ne jen skupinu 1): v `CB_CSADAD` 309 skupin / 31 216 linek /
+62 432 kombinací linka×směr → **0 nálezů**, a to ze dvou nezávislých důvodů: 62 422 kombinací nemá
+vzorovou trasu vůbec (fallback „union obsluhy", proti němuž nelze jet *za* vzor) a u zbylých 10, které
+ji mají, je **vypnuté** auto-poznámkování. V téhle firmě tedy případ nastat nemůže.
+
+V `CB_GWBUS` (2190 linek) ale ano - **12 výskytů** na okružní lince 0000001/T. Na stránce zastávky
+Mikrotechna dorazí do legendy:
+
+- `B` = „jede přes zast. Hlinecké sídl. , neobsluhuje zast. Dewetterova ul., **jede až do zast.
+  Autobusové nádraží**"
+- `C` = „jede přes zast. Hlinecké sídl., Poliklinika , neobsluhuje zast. Dewetterova ul., **jede až do
+  zast. Autobusové nádraží**"
+
+Věta má cíl, dorazí na stránku, má značku i řádek legendy → **funkčnost #7947 je ověřená**.
+
+**⬜ Otevřené rozhodnutí o znění (poslední překážka zavření tiketu):** legacy má na téže stránce
+**tři** poznámky, my **dvě**. Legacy `C` a `E` se liší jen průjezdem (`pokračuje přes Autobusové
+nádraží` × `pokračuje přes Náměstí, Autobusové nádraží`); naše znění „jede až do zast. \<konečná\>"
+průjezd nenese, takže obě skupiny splynou v jednu značku. Volba: nechat (jednodušší věta, ale méně
+informace než legacy u spojů lišících se cestou), nebo doplnit průjezd („jede až do zast. X přes Y").
+Znění „jede až do" samo je dohodnuté (znění A), tohle je jen o průjezdu.
+
+**⬜ Nové podezření k doměření (samostatné):** na téže stránce má legacy řádek „x = zastávka pouze na
+znamení", náš výstup ho tam nemá - přitom kategorie `atribut-zastavky` v té firmě jinak funguje
+(20 řádků na 20 stránkách ze 45). Vypadá to na rozdíl v tom, ze kterých zastávek se legenda atributů
+plní (projeté / mimo zobrazený úsek), ne na chybějící featuru.
 
 **Nový nález z auditu - kolize značky (nezavírat s tiketem):** písmenná sada rozdílů tras (default
 `BCEFGHIJOQRWeijqsvwxz`) obsahuje **H** a **F**, což jsou zároveň značky bezbariérových spojů →

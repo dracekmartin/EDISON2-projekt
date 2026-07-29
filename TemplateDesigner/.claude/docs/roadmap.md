@@ -160,12 +160,22 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**`B14` Kolize značky poznámky - čeká na tvoje rozhodnutí** (S, zóna 5; z auditu 30. 7.)
-Písmena rozdílů tras zahrnují „H" a „F" = zároveň značky bezbariérových spojů, takže jeden symbol
-u minuty nese dva významy a legenda má pod ním dva různé řádky. Změřeno na **9 stránkách**
-(0365005, 0365006). MHD tuto chybu nemá - bere písmeno ze sdíleného poolu stránky a obsazený znak
-přeskočí; AD by to udělal stejně (malá změna). **Rozhodnutí:** opravit = odchýlit se od legacy
-a přebaselinovat zlatý digest 0365005, nebo nechat legacy-shodné. Detail → `customer-requirements §D1`.
+**`B14` Znění poznámky o prodloužení - průjezd v textu?** (S, zóna 5; z auditu 30. 7.)
+Reprodukce #7947 nalezena (`CB_GWBUS` 501/0000001/T) a věta funguje. Legacy ale rozlišuje i **průjezd**
+(„pokračuje přes Náměstí, AN" × „pokračuje přes AN"), naše znění „jede až do zast. \<konečná\>" ne →
+dvě skupiny spojů splynou v jednu značku (legacy 3 poznámky, my 2). Volba: nechat jednodušší větu,
+nebo doplnit průjezd („jede až do zast. X přes Y"). Poslední překážka zavření #7947.
+
+**`B16` Legenda atributů zastávek - které zastávky ji plní** (S, zóna 5; podezření 30. 7.)
+Na `CB_GWBUS` 501/0000001/T stránce Mikrotechna má legacy řádek „x = zastávka pouze na znamení",
+náš výstup ne - přitom kategorie `atribut-zastavky` v té firmě jinak funguje (20 řádků / 45 stránek).
+Podezření na rozdíl v tom, ze kterých zastávek se legenda plní (projeté / mimo zobrazený úsek).
+Doměřit proti legacy, teprve pak případně měnit.
+
+> **Rozhodnuto 30. 7. - kolize značky „H"/„F" zůstává** (bylo `B14`): ověřeno voláním starého modulu,
+> že tutéž kolizi má i legacy (legenda 0365005 nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`).
+> Držíme 1:1 paritu; kdyby to zákazník nahlásil, oprava je malá (převzít z MHD sdílený pool značek
+> stránky) a stojí přebaselinování zlatého digestu 0365005.
 
 **`B15` Podmíněná viditelnost parametrů v náhledové liště** (S, zóna 5; nález 30. 7.)
 V parametrové liště nad náhledem jsou vidět „Hodiny od/do", i když časová osa není „Vlastní rozsah" -

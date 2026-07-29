@@ -372,6 +372,58 @@ ClassMethod RozdilyDiag(ByRef sys As %String) As %Status
     q $$$OK
 }
 
+/// Legenda **starého modulu** pro danou stránku (`ALVA.TISKMHD.Data.LoadData`, VolanoZ=JRMAIN) -
+/// slouží k ověření, zda kolizi značky („H" = bezbariér i rozdíl trasy) má i legacy, nebo je naše.
+/// Read-only; legacy výstup si přebere do lokálu a OUT přepíše vlastním.
+/// IN:  SKUPINA_LINEK_ID (default 1), LINKA_ID (povinné), PAGE (default 1), FILTR (podřetězec klíče)
+/// OUT[n] = legacy řádky „KLÍČ~HODNOTA" (zkrácené), OUT["SOUHRN"] = počty
+ClassMethod LegacyLegenda(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+        i sku = "" s sku = 1
+        s lin = $g(^||ML("IN","LINKA_ID"))
+        s page = +$g(^||ML("IN","PAGE"))
+        i 'page s page = 1
+        s filtr = $g(^||ML("IN","FILTR"))
+        i filtr = "" s filtr = "Pozn"
+
+        i '##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") {
+            s ^||ML("OUT",1) = "legacy ALVA.TISKMHD.Data není na serveru"
+            ret $$$OK
+        }
+
+        // legacy LoadData čte IN jako řetězce „KLÍČ~HODNOTA" (iteruje všechny subscripty)
+        k ^||ML("IN"), ^||ML("OUT")
+        s ^||ML("IN","1") = "VOLANO_Z~JRMAIN"
+        s ^||ML("IN","2") = "SESTAVA~1"
+        s ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
+        d ##class(ALVA.TISKMHD.Data).LoadData(.sys)
+
+        k radky
+        s n = 0, j = ""
+        f {
+            s j = $o(^||ML("OUT",j))
+            q:j=""
+            s n = n + 1
+            s radky(n) = $g(^||ML("OUT",j))
+        }
+        k ^||ML("OUT")
+
+        s i = 0, vypsanych = 0
+        f k=1:1:n {
+            i '($p(radky(k),"~",1) [ filtr) continue
+            s vypsanych = vypsanych + 1
+            i i < 40 s ^||ML("OUT",$i(i)) = $e(radky(k),1,700)
+        }
+        s ^||ML("OUT","SOUHRN") = "radkuCelkem="_n_"~odpovidaFiltru="_vypsanych_"~filtr="_filtr
+    } catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
 ClassMethod Scan(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -379,8 +431,8 @@ ClassMethod Scan(ByRef sys As %String) As %Status
         $$$FillParams
         k ^||TiskAd
 
-        s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
-        i sku = "" s sku = $o(^[dataDB]JRL(""))
+        // SKUPINA_LINEK_ID prázdné nebo „*" = projít VŠECHNY skupiny linek firmy (ne jen první)
+        s zadanaSku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         s limit = +$g(^||ML("IN","LIMIT"))
         i 'limit s limit = 500
         s fraze = $g(^||ML("IN","FRAZE"))
@@ -388,69 +440,97 @@ ClassMethod Scan(ByRef sys As %String) As %Status
         s jenLinka = $g(^||ML("IN","LINKA_ID"))     // volitelně jedna linka (čistá cache = bez kontaminace mezi linkami)
 
         s agenda = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-        s (linek, smeru, zastavek, legendCelkem, nalezu, i) = 0
+        s (linek, smeru, zastavek, legendCelkem, nalezu, i, skupin) = 0
         // vzorová trasa (J-věta #10 základní / #7 tištěná): když je prázdná, RozdilyTras padá na fallback
         // „union obsluhy" - a pak žádný spoj nemůže jet ZA vzor → věta „jede až do" je nedosažitelná
-        s (vzorZakl, vzorTisk, vzorFallback, autoPoznVyp) = 0
+        s (vzorZakl, vzorTisk, vzorFallback, autoPoznVyp, kandidatu) = 0
+        k kandidati
 
-        s lin = ""
+        // seznam skupin k projití (jedna zadaná, nebo všechny)
+        k skupinyKProjiti
+        i (zadanaSku '= "") && (zadanaSku '= "*") {
+            s skupinyKProjiti(zadanaSku) = ""
+        } else {
+            s s1 = ""
+            f { s s1 = $o(^[dataDB]JRL(s1))  q:s1=""  s skupinyKProjiti(s1) = "" }
+        }
+
+        s sku = ""
         f {
-            s lin = $o(^[dataDB]JRL(sku,lin))
-            q:lin=""
-            i '$d(^[dataDB]JRL(sku,lin,"I")) continue
-            i (jenLinka '= "") && (lin '= jenLinka) continue
-            s linek = linek + 1
+            s sku = $o(skupinyKProjiti(sku))
+            q:sku=""
             q:linek>limit
+            s skupin = skupin + 1
 
-            f smerIdx=1:1:2 {
-                s smer = $s(smerIdx=1:"T", 1:"Z")
-                s smeru = smeru + 1
+            s lin = ""
+            f {
+                s lin = $o(^[dataDB]JRL(sku,lin))
+                q:lin=""
+                i '$d(^[dataDB]JRL(sku,lin,"I")) continue
+                i (jenLinka '= "") && (lin '= jenLinka) continue
+                s linek = linek + 1
+                q:linek>limit
+                k ^||TiskAd                            // cache per linka - ať mezi linkami neroste
 
-                i '+$g(^[dataDB]JRL(sku,lin,"PATCH","mhd","not")) s autoPoznVyp = autoPoznVyp + 1
-                i $classmethod(agenda,"TrasaBitmapaZPole", dataDB, sku, lin, smer, 10) '= "" {
-                    s vzorZakl = vzorZakl + 1
-                } elseif $classmethod(agenda,"TrasaBitmapaZPole", dataDB, sku, lin, smer, 7) '= "" {
-                    s vzorTisk = vzorTisk + 1
-                } else {
-                    s vzorFallback = vzorFallback + 1
-                }
+                f smerIdx=1:1:2 {
+                    s smer = $s(smerIdx=1:"T", 1:"Z")
+                    s smeru = smeru + 1
 
-                // obsluhované pozice = kandidáti na "aktuální zastávku" stránky
-                k served
-                d $classmethod(agenda,"ObsluhovanePoradi", dataDB, sku, lin, smer, .served)
+                    s autoPozn = +$g(^[dataDB]JRL(sku,lin,"PATCH","mhd","not"))
+                    i 'autoPozn s autoPoznVyp = autoPoznVyp + 1
+                    s druhVzoru = ""
+                    i $classmethod(agenda,"TrasaBitmapaZPole", dataDB, sku, lin, smer, 10) '= "" {
+                        s vzorZakl = vzorZakl + 1, druhVzoru = "zakladni"
+                    } elseif $classmethod(agenda,"TrasaBitmapaZPole", dataDB, sku, lin, smer, 7) '= "" {
+                        s vzorTisk = vzorTisk + 1, druhVzoru = "tisteny"
+                    } else {
+                        s vzorFallback = vzorFallback + 1
+                    }
+                    // linky s REÁLNOU vzorovou trasou = jediní kandidáti na větu „jede až do" (#7947)
+                    i druhVzoru '= "" {
+                        s kandidatu = kandidatu + 1
+                        s kandidati(kandidatu) = "VZOR="_druhVzoru_"~skupina="_sku_"~linka="_lin_"~smer="_smer_"~autoPoznamkovani="_autoPozn
+                    }
 
-                s poradi = ""
-                f {
-                    s poradi = $o(served(poradi))
-                    q:poradi=""
-                    i '$isvalidnum(poradi) continue
-                    s zastavek = zastavek + 1
+                    // obsluhované pozice = kandidáti na "aktuální zastávku" stránky
+                    k served
+                    d $classmethod(agenda,"ObsluhovanePoradi", dataDB, sku, lin, smer, .served)
 
-                    k pismenoSpoj, legenda
-                    d $classmethod(agenda,"RozdilyTras", dataDB, sku, lin, smer, poradi, .pismenoSpoj, .legenda)
-
-                    s key = ""
+                    s poradi = ""
                     f {
-                        s key = $o(legenda(key))
-                        q:key=""
-                        s txt = $g(legenda(key))
-                        i txt = "" continue
-                        s legendCelkem = legendCelkem + 1
-                        continue:txt'[fraze
+                        s poradi = $o(served(poradi))
+                        q:poradi=""
+                        i '$isvalidnum(poradi) continue
+                        s zastavek = zastavek + 1
 
-                        s nalezu = nalezu + 1
-                        i i < 30 {
-                            // název aktuální zastávky = stránka vývěsky, na které se poznámka objeví
-                            s nazAkt = $classmethod(agenda,"NazZPoradi", dataDB, sku, lin, poradi)
-                            s ^||ML("OUT",$i(i)) = "linka="_lin_"~smer="_smer_"~poradi="_poradi
-                                _"~zastavkaStranky="_nazAkt_"~text="_txt
+                        k pismenoSpoj, legenda
+                        d $classmethod(agenda,"RozdilyTras", dataDB, sku, lin, smer, poradi, .pismenoSpoj, .legenda)
+
+                        s key = ""
+                        f {
+                            s key = $o(legenda(key))
+                            q:key=""
+                            s txt = $g(legenda(key))
+                            i txt = "" continue
+                            s legendCelkem = legendCelkem + 1
+                            continue:txt'[fraze
+
+                            s nalezu = nalezu + 1
+                            i i < 30 {
+                                // název aktuální zastávky = stránka vývěsky, na které se poznámka objeví
+                                s nazAkt = $classmethod(agenda,"NazZPoradi", dataDB, sku, lin, poradi)
+                                s ^||ML("OUT",$i(i)) = "skupina="_sku_"~linka="_lin_"~smer="_smer_"~poradi="_poradi
+                                    _"~zastavkaStranky="_nazAkt_"~text="_txt
+                            }
                         }
                     }
                 }
             }
         }
+        k ^||TiskAd
+        f ki=1:1:kandidatu i i < 60 s ^||ML("OUT",$i(i)) = kandidati(ki)
 
-        s ^||ML("OUT","SOUHRN") = "linek="_linek_"~smeru="_smeru_"~zastavek="_zastavek
+        s ^||ML("OUT","SOUHRN") = "skupin="_skupin_"~linek="_linek_"~smeru="_smeru_"~zastavek="_zastavek
             _"~legendCelkem="_legendCelkem_"~nalezu="_nalezu
             _"~vzorZakladni="_vzorZakl_"~vzorTisteny="_vzorTisk_"~vzorFallbackUnion="_vzorFallback
             _"~autoPoznVypnuto="_autoPoznVyp

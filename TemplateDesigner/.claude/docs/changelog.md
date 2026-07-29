@@ -20,11 +20,21 @@ sondou `Tests/AdProdlouzeniProbe.cls`.
   řádky. Čeká na rozhodnutí (oprava změní písmena na gold lince, tedy odchýlí od legacy).
 - **Věta o prodloužení spoje zpevněna** (#7947): cíl se hledá přes nejbližší pojmenovanou zastávku
   proti směru jízdy, a bez známého cíle se věta nenapíše (dřív mohla skončit „jede až do zast. ").
-  U prodloužení se navíc už netiskne konkurující „jede přes zast. …".
-  ⚠️ Ověřit #7947 na těchto datech **nelze** - žádná ze 480 kombinací linka×směr nemá vzorovou trasu,
-  takže větev prodloužení je strukturálně nedosažitelná. Potřebuje data TRANSDEV.
-- Caché 45/45. Zlaté digesty 0365001/0365005 **beze změny** → opravy jsou behavior-preserving,
-  přebaselinování nebylo potřeba.
+- **Reprodukce #7947 nalezena** hledáním přes všechny skupiny a linky: `CB_GWBUS` 501/0000001/T
+  (12 výskytů). V `CB_CSADAD` případ nastat nemůže ani na jedné z 31 216 linek - buď chybí vzorová
+  trasa (62 422 kombinací), nebo je u zbylých 10 vypnuté auto-poznámkování.
+- **Vráceno: vynechání „jede přes zast. …" u prodloužení.** Vypadalo redundantně, ale nese jinou
+  informaci než cíl - po vynechání se texty různých skupin spojů staly identickými a dedup je sloučil
+  do jedné značky (legacy 3 poznámky → 1). Ponecháno legacy-shodné.
+- **Kolize značky „H" je i v legacy** - ověřeno voláním starého modulu (`ALVA.TISKMHD.Data`,
+  VolanoZ=JRMAIN) na 0365005: legenda tam nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`.
+  Rozhodnutí: necháváme legacy-shodné (blok `B14` uzavřen jako „záměrně jinak").
+- **Signál o schovaných poznámkách** (status bar): dosud nešlo rozeznat „žádné poznámky nejsou" od
+  „jsou, ale nastavení sestavy je schovalo". Počítají se **skutečně** skryté položky, ne zapnutý
+  parametr - rozsah „Spoje, nepoznámkovat" v této firmě nemá data, takže signál z parametru by lhal.
+  Písmena variant tras jsou výjimka (nahrazují rozdílové poznámky už na serveru) → hlásí se dle parametru.
+- Caché 45/45, .NET 446/446 (8 nových testů filtru poznámek - dosud netestovaný). Zlaté digesty
+  0365001/0365005 **beze změny** → opravy jsou behavior-preserving, přebaselinování nebylo potřeba.
 
 ## 2026-07-29 - Plán řádků: sdílená kreslicí smyčka (B11 / R1, část 1 - linková tabulka)
 

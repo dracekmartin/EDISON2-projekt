@@ -1158,10 +1158,12 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         s pokrac = $p(pokrac, ", ", 2, $l(pokrac, ", "))
 
         // sestavení textu (pořadí: jede → neobsluhuje → jede jen do → jede až do)
-        // U prodloužení (pokrac) se „jede přes" vynechává - cíl spoje říká všechno podstatné a dvě
-        // věty vedle sebe si čtenářsky konkurovaly (rozhodnutí Jan #7947).
+        // ⚠️ „jede přes" se u prodloužení NEVYNECHÁVÁ, i když to zní redundantně: nese JINOU informaci
+        // (kudy spoj jede navíc) než cíl, a bez něj se texty různých skupin spojů stanou identickými
+        // a dedup je sloučí do jedné značky. Změřeno na CB_GWBUS 501/0000001/T: legacy tam má tři
+        // poznámky (B/C/E lišící se zastávkou Poliklinika a průjezdem Náměstí), po vynechání zbyla jedna.
         s txt = ""
-        i (jede '= "") && (pokrac = "") s txt = "jede přes zast. "_jede
+        i jede '= "" s txt = "jede přes zast. "_jede
         i nejede '= "" {
             i txt = "" {
                 s txt = "neobsluhuje zast. "_nejede
