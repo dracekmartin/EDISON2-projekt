@@ -160,12 +160,6 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**`B14` Znění poznámky o prodloužení - průjezd v textu?** (S, zóna 5; z auditu 30. 7.)
-Reprodukce #7947 nalezena (`CB_GWBUS` 501/0000001/T) a věta funguje. Legacy ale rozlišuje i **průjezd**
-(„pokračuje přes Náměstí, AN" × „pokračuje přes AN"), naše znění „jede až do zast. \<konečná\>" ne →
-dvě skupiny spojů splynou v jednu značku (legacy 3 poznámky, my 2). Volba: nechat jednodušší větu,
-nebo doplnit průjezd („jede až do zast. X přes Y"). Poslední překážka zavření #7947.
-
 **`B16` Chybí zdroj atributů zastávky per spoj** (M, zóna 5; doměřeno 30. 7.)
 Na `CB_GWBUS` 501/0000001 má legacy v legendě „x = zastávka pouze na znamení", my ne. **Není to filtr
 ani rozsah zastávek** - na té lince nemá „x" žádná zastávka v J-větě (jediné atributy jsou `TS`).

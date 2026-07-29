@@ -26,6 +26,12 @@ sondou `Tests/AdProdlouzeniProbe.cls`.
 - **Vráceno: vynechání „jede přes zast. …" u prodloužení.** Vypadalo redundantně, ale nese jinou
   informaci než cíl - po vynechání se texty různých skupin spojů staly identickými a dedup je sloučil
   do jedné značky (legacy 3 poznámky → 1). Ponecháno legacy-shodné.
+- **#7947 dotaženo - poznámka o prodloužení spoje má cíl na začátku a nese průjezd**
+  (`jede až do zast. <konečná> přes <mezizastávky>`, pak „jede přes" / „neobsluhuje").
+  Cíl je informace, kvůli které tiket vznikl, a na konci věty ho legenda ořezávala jako první; průjezd
+  musí zůstat, jinak splynou skupiny spojů lišící se jen cestou. Informačně tím **dorovnáno legacy**
+  (tytéž tři skupiny na ověřovací stránce), odchylka je pouze ve znění. **Bez prodloužení se nemění nic** -
+  pořadí i oddělovače zůstávají byte-identické, zlaté digesty beze změny.
 - **Oprava: značka „spoj v zastávce nestaví" (`|`) se počítala jako obsluhovaná** (`SpojBitmapa`).
   Jen v rozdílech tras, ale se dvěma viditelnými následky: poznámka tvrdila „jede přes zast. X"
   u zastávky, kde spoj nestaví, a **slévala skupiny spojů**, které se lišily právě jen tímto.
@@ -42,6 +48,30 @@ sondou `Tests/AdProdlouzeniProbe.cls`.
   Písmena variant tras jsou výjimka (nahrazují rozdílové poznámky už na serveru) → hlásí se dle parametru.
 - Caché 45/45, .NET 446/446 (8 nových testů filtru poznámek - dosud netestovaný). Zlaté digesty
   0365001/0365005 **beze změny** → opravy jsou behavior-preserving, přebaselinování nebylo potřeba.
+
+## 2026-07-29 - Úzké varianty písma ve výběru fontu (Arial Narrow, ticket 13006)
+
+Zákazník po dodání řezů písma nahlásil, že **Arial Narrow ve výběru nevidí** - ani jako samostatné
+písmo, ani jako řez Arialu, přesto že ho ve Windows nainstalovaný má.
+
+- **Příčina:** Windows (DirectWrite) sdružuje rodiny po „šířka-váha-sklon", takže Arial Narrow
+  **není samostatná rodina** - je to řez rodiny Arial se šířkou Condensed a v seznamu rodin z OS
+  vůbec není. Nabídka řezů ho neukázala taky, protože vyjmenovávala jen **váhy** a úzké řezy mají
+  tutéž váhu 400/700 jako obyčejný Arial; liší se šířkou, kterou model neumí (`ToSKFontStyle`
+  posílal natvrdo normální šířku s domněnkou „Condensed řešíme rodinou").
+- **Řešení:** úzké a rozšířené varianty se do nabídky přidávají jako samostatné položky pod jménem
+  odvozeným z reálného názvu řezu v OS (`Arial Narrow`, `Tw Cen MT Condensed`, `Bahnschrift
+  SemiCondensed`, …) a `FontResolver` je při kreslení přeloží zpět na rodinu + šířku. Uživatel je
+  tak vybírá jako font, stejně jako je zvyklý z Wordu. Na běžném stroji přibylo 11 položek.
+- **Bez migrace šablon** - varianta se veze v už existujícím poli rodiny písma, JSON se nemění.
+- **Opraven i tisk starých šablon**, které Arial Narrow předepisují: jméno dosud nikdo nerozpoznal,
+  takže se tiskl obyčejný Arial (a v samotné Skii by dokonce vyšlo Segoe UI).
+- **Nabídka řezů je nově filtrovaná na šířku varianty** - u Arial Narrow tedy jen Normal a Bold,
+  ne Black, který existuje jen v normální šířce.
+- Jednošířkové rodiny (Impact, Agency FB) odvozené jméno **nedostávají** - vybere je samo jméno
+  rodiny a „Impact Condensed" by byl jen duplikát téhož fontu.
+- .NET 453/453 (7 nových testů; ověřují i zákazníkův případ vč. toho, že text je opravdu užší).
+  Testy se neopírají o konkrétní fonty stroje - varianty si najdou v tom, co OS nabízí.
 
 ## 2026-07-29 - Plán řádků: sdílená kreslicí smyčka (B11 / R1, část 1 - linková tabulka)
 

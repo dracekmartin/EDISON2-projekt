@@ -1126,7 +1126,7 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         i smer = "Z" f tmp=1:1:$l(spojTr) { i +$e(spojTr,tmp) s tcDo = tmp  q }
         i tcDo = "" continue
 
-        s (jede, nejede, jedeDo, pokrac) = ""
+        s (jede, nejede, jedeDo, pokrac, pruJezd) = ""
 
         // "jede jen do" - spoj končí dříve než vzorová trasa
         s tcDOk = ""
@@ -1142,10 +1142,12 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
             s naz = ..NazZPoradi(dataDB, sku, lin, tmpTc)
             i (smer = "T") && (tmpTc > mTarTr) && (+$e(spojTr,tmpTc)) {
                 s $p(pokrac,", ",$l(pokrac,", ")+1) = naz
+                i tmpTc '= tcDo s $p(pruJezd,", ",$l(pruJezd,", ")+1) = naz   // průjezd = bez konečné (ta je v „jede až do")
                 continue
             }
             i (smer = "Z") && (tmpTc < mTarTr) && (+$e(spojTr,tmpTc)) {
                 s $p(pokrac,", ",$l(pokrac,", ")+1) = naz
+                i tmpTc '= tcDo s $p(pruJezd,", ",$l(pruJezd,", ")+1) = naz
                 continue
             }
             i +$e(spojTr,tmpTc)  s $p(jede,", ",$l(jede,", ")+1) = naz
@@ -1153,17 +1155,37 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         }
 
         // strip vedoucího prázdného prvku (legacy $P(...,2,...))
-        s jede   = $p(jede,   ", ", 2, $l(jede,   ", "))
-        s nejede = $p(nejede, ", ", 2, $l(nejede, ", "))
-        s pokrac = $p(pokrac, ", ", 2, $l(pokrac, ", "))
+        s jede    = $p(jede,    ", ", 2, $l(jede,    ", "))
+        s nejede  = $p(nejede,  ", ", 2, $l(nejede,  ", "))
+        s pokrac  = $p(pokrac,  ", ", 2, $l(pokrac,  ", "))
+        s pruJezd = $p(pruJezd, ", ", 2, $l(pruJezd, ", "))
 
-        // sestavení textu (pořadí: jede → neobsluhuje → jede jen do → jede až do)
-        // ⚠️ „jede přes" se u prodloužení NEVYNECHÁVÁ, i když to zní redundantně: nese JINOU informaci
-        // (kudy spoj jede navíc) než cíl, a bez něj se texty různých skupin spojů stanou identickými
-        // a dedup je sloučí do jedné značky. Změřeno na CB_GWBUS 501/0000001/T: legacy tam má tři
-        // poznámky (B/C/E lišící se zastávkou Poliklinika a průjezdem Náměstí), po vynechání zbyla jedna.
-        s txt = ""
-        i jede '= "" s txt = "jede přes zast. "_jede
+        // Prodloužení za základní trasu (#7947) - JEDINÁ záměrná odchylka od legacy znění.
+        // Legacy říká „pokračuje přes <mezizastávky>, <konečná>"; klient to označil za matoucí, protože
+        // chce vědět KAM spoj dojede. Vypisujeme tedy cíl + průjezd („jede až do zast. X přes Y").
+        // Průjezd tam musí zůstat: bez něj splynou skupiny spojů, které se liší jen cestou (změřeno
+        // na CB_GWBUS 501/0000001/T - legacy 3 skupiny, bez průjezdu 2).
+        s vetaCil = ""
+        i pokrac '= "" {
+            s cilNaz = ..KonecnaNazev(dataDB, sku, lin, spojTr, smer, tcDo)
+            i cilNaz '= "" {                       // bez známého cíle větu nepsat (jinak „jede až do zast. ")
+                s vetaCil = "jede až do zast. "_cilNaz
+                i pruJezd '= "" s vetaCil = vetaCil_" přes "_pruJezd
+            }
+        }
+
+        // Sestavení textu. U prodloužení jde cíl DOPŘEDU (#7947): je to informace, kvůli které tiket
+        // vznikl, a legenda ořezává konec věty. Bez prodloužení zůstává pořadí i oddělovače 1:1 legacy
+        // (jede přes → neobsluhuje → jede jen do; „ , " před „neobsluhuje" je legacy tvar, ne překlep).
+        // „jede přes" se u prodloužení NEVYNECHÁVÁ - nese jinou informaci (kudy jede navíc) než cíl.
+        s txt = vetaCil
+        i jede '= "" {
+            i txt = "" {
+                s txt = "jede přes zast. "_jede
+            } else {
+                s $p(txt,", ",$l(txt,", ")+1) = "jede přes zast. "_jede
+            }
+        }
         i nejede '= "" {
             i txt = "" {
                 s txt = "neobsluhuje zast. "_nejede
@@ -1176,19 +1198,6 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
                 s txt = "jede jen do zast. "_jedeDo
             } else {
                 s $p(txt,", ",$l(txt,", ")+1) = "jede jen do zast. "_jedeDo
-            }
-        }
-        // Prodloužení za základní trasu (#7947): místo legacy „pokračuje přes <mezizastávky>"
-        // vypíšeme cíl spoje „jede až do zast. <konečná>" (klient chce vědět KAM dojede, ne kudy).
-        // Záměrná odchylka od legacy znění - legacy „pokračuje" bylo matoucí.
-        i pokrac '= "" {
-            s cilNaz = ..KonecnaNazev(dataDB, sku, lin, spojTr, smer, tcDo)
-            i cilNaz '= "" {                       // bez známého cíle větu nepsat (jinak „jede až do zast. ")
-                i txt = "" {
-                    s txt = "jede až do zast. "_cilNaz
-                } else {
-                    s $p(txt,", ",$l(txt,", ")+1) = "jede až do zast. "_cilNaz
-                }
             }
         }
         i txt = "" continue

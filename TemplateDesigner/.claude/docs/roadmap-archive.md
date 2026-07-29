@@ -2,6 +2,29 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-30 ✅ - Poznámky zastávkového JŘ: audit úplnosti + #7947 dotaženo (`B14` uzavřen)
+
+Detail → changelog 2026-07-30, měřený stav → `customer-requirements §D1`.
+
+**Dvě reálné chyby v generování rozdílů tras**, obě nalezené měřením proti starému modulu:
+značka „spoj v zastávce nestaví" (`|`) se počítala jako obsluhovaná (tvrdili jsme „jede přes" tam, kde
+spoj nestaví, a slévali skupiny spojů), a cache W-map se nerozlišovala podle linky (v tisku neškodné,
+ale znehodnotilo to předchozí měření). Po opravách je grouping 1:1 se starým modulem.
+
+**`B14` (znění věty o prodloužení) rozhodnut:** cíl jde na začátek věty a nese průjezd -
+`jede až do zast. <konečná> přes <mezizastávky>`. Důvod: cíl je informace, kvůli které tiket vznikl,
+a na konci věty ho legenda ořezávala; bez průjezdu splynou skupiny spojů lišící se jen cestou.
+Je to **jediná** vědomá odchylka od starého modulu v celém tomto bloku.
+
+**Kolize značky „H"** (bezbariérový spoj × rozdíl trasy) **se záměrně nechává** - ověřeno zavoláním
+starého modulu, že tutéž kolizi má i legacy. Kdyby to zákazník nahlásil, oprava je malá (převzít z MHD
+sdílený pool značek stránky) a stojí přebaselinování zlatého digestu 0365005.
+
+**Poučení, které stojí za zapamatování:** dvě „vady" evidované 29. 7. neexistovaly - měření bylo
+kontaminované vlastní chybou cache. Sonda, která čte víc linek v jednom procesu, není totéž prostředí
+jako tisk jedné linky. A zlatý test je odtisk **našeho** výstupu, ne srovnání s legacy - na parity
+otázky se musí volat starý modul (`ALVA.TISKMHD.Data`, větev JRMAIN).
+
 ## 2026-07-29 🧹 - Z backlogu vyřazeny dvě položky (rozhodnutí Jan)
 
 - **Výkon MHD tisku** - vyřešeno 20. 7. (odstraněno drahé nepoužívané pole „první/poslední spoj"

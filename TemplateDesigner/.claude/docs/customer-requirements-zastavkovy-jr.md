@@ -74,7 +74,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | - (zavřeno) | §E1 |
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
-| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | 🟡 **funkčnost ověřena** na `CB_GWBUS` 501/0000001/T (12 výskytů, věta dorazí do legendy s cílem). Zbývá rozhodnout znění: legacy rozlišuje i **průjezd** („pokračuje přes Náměstí, AN"), naše znění ne → dvě skupiny spojů splynou v jednu značku (legacy 3 poznámky, my 2). | Rozhodnout průjezd v textu, pak zavřít | §D1 |
+| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ **hotovo, připraveno k zavření** - znění dohodnuto 30. 7. (cíl na začátku věty + průjezd), ověřeno na `CB_GWBUS` 501/0000001/T proti starému modulu (tytéž 3 skupiny spojů, tytéž zastávky). | Zavřít **s výhradou**: ověřeno na naší lince, ne na datech zákazníka (876401/876402 nemáme) | §D1 |
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD · ▶ **ready-to-close** | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do resolve poznámka, řešit jinde | §D4 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** - ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | - | §B3 |
@@ -321,12 +321,21 @@ s legacy** (B/C/E, tytéž seznamy, tatáž věta „neobsluhuje zast. Dewettero
 dohodnuté znění konce věty. Zlaté digesty se nezměnily (zlaté linky `|` nemají), CB_CSADAD beze změny,
 v CB_GWBUS správně přibyly rozlišené skupiny (60 → 66 řádků legendy).
 
-**⬜ Otevřené rozhodnutí o znění (poslední překážka zavření tiketu):** legacy nese i **průjezd**
-(`pokračuje přes Náměstí, Autobusové nádraží`), naše znění „jede až do zast. \<konečná\>" jen cíl.
-Informačně jsme tedy pod legacy u spojů, které se liší cestou. Navíc je cíl **na konci věty**, takže se
-v legendě ořezává jako první - přitom je to ta informace, kvůli které tiket vznikl. Návrh: dát cíl na
-začátek a doplnit průjezd („jede až do zast. X přes Y, jede přes zast. …"). Znění „jede až do" samo je
-dohodnuté (znění A), tohle je o průjezdu a pořadí.
+**✅ Znění dohodnuto a nasazeno (rozhodnutí Jan 30. 7.):** cíl jde **na začátek věty** a nese
+**průjezd** - `jede až do zast. <konečná> přes <mezizastávky>`, pak teprve „jede přes" / „neobsluhuje".
+Dva důvody: informace, kvůli které tiket vznikl, nesmí být na konci věty (legenda ořezává konec), a bez
+průjezdu splývaly skupiny spojů lišící se jen cestou. Výsledek na ověřovací stránce:
+
+- `B` „jede až do zast. Autobusové nádraží **přes Náměstí**, jede přes zast. Hlinecké sídl., Jiráskova
+  ul., Milevská ul., Sokolovna, Poliklinika"
+- `C` „jede až do zast. Autobusové nádraží **přes Náměstí, Hlinecké sídl.**, jede přes zast. Sokolovna,
+  Poliklinika , neobsluhuje zast. Dewetterova ul."
+- `E` „jede až do zast. Autobusové nádraží **přes Náměstí**, jede přes zast. Hlinecké sídl., Jiráskova
+  ul., Sokolovna, Poliklinika"
+
+Informačně tedy 1:1 s legacy (tytéž tři skupiny, tytéž zastávky), odchylka je pouze ve znění. **Bez
+prodloužení se nemění nic** - pořadí i oddělovače (vč. legacy tvaru „ , " před „neobsluhuje") zůstávají
+byte-identické, zlaté digesty beze změny.
 
 **⬜ Chybí zdroj atributů zastávky (samostatné, blok `B16`):** na téže stránce má legacy řádek
 „x = zastávka pouze na znamení", náš výstup ne. **Doměřeno:** není to filtr ani rozsah zastávek -
