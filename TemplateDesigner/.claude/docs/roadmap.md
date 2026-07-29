@@ -5,7 +5,8 @@
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
 > **▶ Další session:** po publishi vzít **B2** (zavírací kolo helpdesku - poslední 2 tikety + vizuál
-> zmenšování), pak **B11** (R1 extrakce řádkového jádra) - dle Jana 29. 7. Follow-upy „na vyžádání zákazníka" žijí
+> zmenšování), pak **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky,
+> odemčené hotovým B11). Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
@@ -41,7 +42,6 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
 | **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | - |
-| **B11** | **L‑3: row-plan vrstva** - `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. **Záchytná síť hotová 29. 7.** (`RenderSnapshot` + fixtury 5 elementů) - postup: sejmout odtisky, refaktorovat, odtisky musí být identické. | M | 3 **výhradně** | - (B5 hotov) |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | - |
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M | 2 | - |
 
@@ -51,10 +51,11 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B13** | **L‑4: 2D bin-packing / `Strih`** - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce" | L | 3 výhradně | B11 |
+| **B13** | **L‑4: 2D bin-packing / `Strih`** - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce" | L | 3 výhradně | - (B11 hotov) |
 | **B14** | **Dedup Caché tiskových enginů (C8) + testy tiskových enginů (C9)** - doprovod ostrého knižního JŘ, detail v tabulce Fáze C+D | L + M | 1 | - |
 
-L‑4 nezačínat před B11 - dnes by to znamenalo napsat totéž pětkrát (per-element smyčky).
+L‑4 stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem
+řádků, ne pětkrát v per-element smyčkách.
 
 ---
 
@@ -66,7 +67,7 @@ L‑4 nezačínat před B11 - dnes by to znamenalo napsat totéž pětkrát (per
 |---|---|---|
 | **1** | Caché data agend (`ZastavkoveJrAd`/`Mhd`, `KnizniJr*`) | **1** |
 | **2** | Caché infrastruktura (`API.Sablony`, seed, registr agend, EDInputForm `.cls`) | **1** |
-| **3** | Kreslicí jádro + elementy (`Rendering/*`, `ScheduleElementBase`, elementy) | **1**; během B11/B13 **výhradně** - nikdo jiný na elementy |
+| **3** | Kreslicí jádro + elementy (`Rendering/*`, `ScheduleElementBase`, elementy) | **1**; během B13 **výhradně** - nikdo jiný na elementy |
 | **4** | Okna, dialogy, XAML, vzhled | 1–2, pokud jsou to jiné dialogy |
 | **5** | Dokumentace, helpdesk, ověřování v buildu (bez kódu) | libovolně |
 
@@ -82,7 +83,7 @@ L‑4 nezačínat před B11 - dnes by to znamenalo napsat totéž pětkrát (per
 **Bezpečné kombinace:**
 - ✅ **B12 + B10 + zavírání tiketů (B2)** - agenda / fontová cesta / papír
 - ✅ **B10 + B12** - fontová cesta je izolovaná od agendy
-- ❌ **cokoli na elementech během B11/B13**
+- ❌ **cokoli na elementech během B13**
 - ❌ **B18 + jakýkoli element dialog** - B18 sahá na pole ve všech `.cls`
 - ⚠️ **publish je výhradní vždy**
 
@@ -206,7 +207,9 @@ Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i o
 
 - **Krok 1 - střízlivé oživení (S–M):** paleta „Tabulka (pevná)" + factory (`Mode=Fixed`, Mode v UI
   zamčený - dynamickou dělá `DynamicTableElement`); opravy nálezů: `Clone()` zapomíná `SummaryRows`,
-  `RowVM.ToModel()` zahazuje per-cell `Format`+`Style`; render dorovnat na `ColumnRenderer.DrawRow`
+  `RowVM.ToModel()` zahazuje per-cell `Format`+`Style`; render dorovnat na **plán řádků** (`RowSpec`; `B11` ji vědomě vynechal - kreslí svislou čáru za
+  každým sloupcem včetně vnějšího a vrství dvě pozadí u pevných řádků, takže sjednocení jí výstup
+  změní a jako uspaný element není v odtiscích)
   (sjednotí mřížku, auto-scale, **předpoklad pro merge**); drift-test allowlist zúžit.
 - **Krok 2 - UX modernizace + merge (M, s poptávkou):** inline editace buněk na plátně (dvojklik,
   à la F2 na TextElementu - standardní pocit z FastReportu, řeší „5 tabů je moc"), redukce dialogu
@@ -244,8 +247,8 @@ dokončeným; velký `L‑4` se otevírá až nad hotovým `L‑3`.
 |---|---|---|---|---|
 | **L‑1** | `B5` | Auto-fit fontu na šířku u linkové tabulky | S–M | ✅ 29. 7. → archiv |
 | **L‑2** | `B10` | Symbolový font - linková část (`ZNAK` sloupce, multichar/kompozity, `GSId` 66+) | M→S | ⬜ |
-| **L‑3** | `B11` | Row-plan vrstva = jedna sdílená kreslicí smyčka (**R1 extrakce řádkového jádra**) | M | ⬜ |
-| **L‑4** | `B13` | 2D bin-packing / `Strih` - rozřezání široké tabulky do stránkových bloků | L | ⬜ gate L‑3 |
+| **L‑3** | `B11` | Row-plan vrstva = jedna sdílená kreslicí smyčka (**R1 extrakce řádkového jádra**) | M | ✅ 29. 7. → archiv |
+| **L‑4** | `B13` | 2D bin-packing / `Strih` - rozřezání široké tabulky do stránkových bloků | L | ⬜ **odemčeno** (L‑3 hotový) |
 | - | `C4` | Linková výchozí šablona do distribuce (dá se přilepit ke kterémukoli slotu) | S | ⬜ |
 
 **Mapování na staré číslování kroků:** 42b = L‑2 · 43 = L‑1 + L‑3 + L‑4 · 44b = C4.

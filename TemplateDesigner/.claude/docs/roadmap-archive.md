@@ -2,6 +2,34 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-29 ✅ - Plán řádků = R1 extrakce řádkového jádra (B11 = L‑3) - UZAVŘENO
+
+Detail → changelog 2026-07-29 (tři části). Poslední chybějící vrstva sdíleného tabulkového jádra:
+**druh řádku**. Element už nekreslí - popíše tabulku jako `List<RowSpec>` (druh · výška · buňky ·
+pozadí · pera čar) a kreslí ji jedna smyčka `RowPlanRenderer.DrawRows`. Tím řádkové featury
+(grouping, mezisoučty, rozdělení přes stránky) přestaly být per-element záležitost.
+
+**Převedeny tři živé tabulky:** linková (prototyp - nejvíc druhů řádků: pás skupin dnů se sloučenými
+buňkami, čísla spojů, platnost, negativní značky, zastávky s podřádky přípojů) · dynamická (záhlaví,
+data se zvýrazněním i střídáním, souhrny) · zastávkový seznam. **U všech odtisk bit za bitem
+identický** proti baseline sejmuté před zásahem.
+
+**Tři věci si vynutila realita, ne návrh dopředu** (všechny jsou v kontraktu zapsané, protože každá
+by se projevila až na vytištěném listu):
+1. **Pořadí kreslení** pozadí → buňky → čáry (jinak pozadí buňky překryje čáru).
+2. **Pera per-řádek** - záhlaví a datové řádky reálně používají různá (rámečkové × oddělovací).
+3. **`RowSpec.Decorate`** = dokreslení vlastního obsahu do řádku (po buňkách, před čarami) - značky
+   zastávky se kreslí po úsecích symbolovým a normálním fontem a v jedné buňce nejde míchat font
+   (#7161 MHD parita). Úzká výjimka pro to, co buňka principiálně neumí.
+
+**Vědomě mimo:** **mřížka odjezdů** (pivot - sloupce = skupiny dnů, řádky = hodiny) · **pevná
+tabulka** (uspaná; kreslí svislou čáru za každým sloupcem včetně vnějšího a vrství dvě pozadí
+u pevných řádků → sjednocení jí změní výstup, a jako uspaný element není ani v odtiscích;
+rozhodnutí Jan: dorovnat až při jejím oživení, kde bude co proklikat, a kde se stejně bude měnit design).
+
+**Odemklo `B13`** (rozřezání široké tabulky) - píše se jednou nad plánem řádků místo pětkrát
+v per-element smyčkách. Předpokladem byla **záchytná síť na kreslení** (viz vlastní záznam níže).
+
 ## 2026-07-29 ❌ - B21 (varování „skupiny dnů sdílí sloupec") ZAVŘEN jako nerelevantní
 
 Zadání pocházelo z doby **před** fází 2 SMO kolizí (23. 7.). Ta problém vyřešila **automaticky
