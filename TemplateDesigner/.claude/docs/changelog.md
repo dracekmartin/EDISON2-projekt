@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-29 - Záchytná síť na kreslení (příprava B11)
+
+Před refaktorem kreslicí smyčky (`B11` / R1 extrakce řádkového jádra) vyšlo najevo, že **ani jeden
+z 433 testů nic nevykresluje** - všechno je logika, modely, kaskády. „Nic se nerozbilo" se u pěti
+elementů se zákaznickou paritou nedalo tvrdit jinak než z proklikání, které neuchytí posun
+o desetiny milimetru (a ten se pozná až u zákazníka na vývěsce).
+
+- **`RenderSnapshot`** vykreslí element mimo WPF do bitmapy (pozadí → obsah → rámeček, stejné pořadí
+  jako skutečná pipeline) a udělá z pixelů odtisk. **`ElementRenderFixtures`** = pevná data pro pět
+  elementů, schválně **heterogenní** (u linkové tabulky pás skupin dnů, čísla spojů, řádek platnosti,
+  negativní značky, příjezdový řádek), aby refaktor neprošel jen proto, že jsou všechny řádky stejné.
+- **Baseline není v gitu** - projekt nemá zabalené textové fonty (jen symbolové `TimeTable2`), takže
+  text rasterizuje Arial z OS a odtisky jsou vázané na stroj; kolegovi by commitnutá baseline padala
+  v pre-push. Ukládá se mimo repozitář, přesnímání `TD_RENDER_REBASELINE=1`. Trvalá pixelová regresní
+  sada by šla až se zabalenými textovými fonty.
+- **V gitu jsou 4 testy nezávislé na stroji** (porovnávají odtisky z téhož běhu): determinismus
+  harnessu · každý element něco nakreslí a všech pět se liší · **posun o 0,1 mm musí odtisk změnit**
+  (potřebná citlivost pro B11) · změna velikosti písma o 0,5 pt se musí projevit.
+- **Síť rovnou dvakrát zabrala:** (1) baseline se dá omylem sejmout **proti zastaralé binárce** -
+  když běží designer, build testů selže na uzamčeném `.exe` a testy jedou proti staré DLL (zapsáno
+  jako poučení v harnessu); (2) při tom se ukázalo, že dnešní `B5` změnil kreslení **právě a jen
+  u linkové tabulky** a ostatní čtyři elementy nechal bit za bitem stejné - přesně jak měl.
+- Testy: .NET 438/438 (5 nových).
+
 ## 2026-07-29 - Tichý filtr hodin v mřížce odjezdů (nález Jan)
 
 Meze **„Hodiny od/do"** patří režimu časové osy „Vlastní rozsah", ale kreslení je aplikovalo
