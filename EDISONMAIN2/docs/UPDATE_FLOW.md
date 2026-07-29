@@ -259,5 +259,9 @@ EDISONINS, noční automatika) zůstávají legacy mechanismu beze změny. Žád
 ### Deployment prerekvizity (ops, ruční)
 
 - `EDISONMAIN2.exe` přidat do `FILES_DESCRIPTION.INF` na Cloud2 (FULL řádek) — binárka pak
-  teče k zákazníkům existující pipeline (single-file publish → jeden soubor).
+  teče k zákazníkům existující pipeline.
+- **`EDControls.dll` přidat tamtéž (FULL řádek) — prerekvizita první verze s novými
+  binárkami.** Single-file bundle ji vědomě nezapékat (root CLAUDE.md), takže bez tohoto
+  řádku dostane zákazník `EDISONMAIN2.exe` / `TemplateDesigner.exe` k chybějící DLL a
+  nespustí se. Nezměněnou DLL diff (§4 krok 4) sám přeskočí.
 - Upravený `EDUPDATE.EXE` vyjde s příští verzí přes tutéž pipeline.

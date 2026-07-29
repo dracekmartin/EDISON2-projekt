@@ -1,0 +1,50 @@
+<Project>
+
+  <!-- Sdílená publish logika aplikačních projektů (profil SingleFileCEdison).
+       Importuje EDISONMAIN2.csproj a TemplateDesigner.csproj. -->
+
+  <!-- EDControls je sdílená knihovna obou aplikací — vedle exe jako volná DLL, ať jde
+       nasadit samostatně (nové pole v EDInputFormu → do produkce stačí DLL + exe, který
+       ho používá; druhý exe se nepřebuildí a novou DLL jen převezme).
+       Cena: veřejné API a klíče theme resource se musí měnit ADITIVNĚ — starý exe načte
+       novou DLL a odebraný/přejmenovaný člen by shodil až za běhu, build to nezachytí. -->
+  <ItemGroup>
+    <LooseFromSingleFile Include="EDControls" />
+  </ItemGroup>
+
+  <!-- Hook musí být po ComputeResolvedFilesToPublishList (ne ComputeFilesToPublish — ten
+       má bundling už v dependencies, takže by změny přišly pozdě). Sidecar .pdb/.xml
+       do publish výstupu nepatří vůbec. -->
+  <Target Name="MarkLooseSingleFileAssemblies" AfterTargets="ComputeResolvedFilesToPublishList">
+    <PropertyGroup>
+      <_LooseFromSingleFileList>;@(LooseFromSingleFile);</_LooseFromSingleFileList>
+    </PropertyGroup>
+    <ItemGroup>
+      <ResolvedFileToPublish Condition="'%(Extension)' == '.dll' And $(_LooseFromSingleFileList.Contains(';%(Filename);'))">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Extension)' == '.pdb' Or '%(Extension)' == '.xml'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Knihovna vydávaná samostatně (EDControls, `PublishOwnAssemblyOnly=true`): do PublishDir
+       smí JEN její vlastní assembly. Publish knihovny jinak vyplivne celý uzávěr — MLRest,
+       EDLicence, EDCore, Newtonsoft + jejich .pdb/.xml — a v C:\Edison\ by přepsal soubory,
+       které vlastní legacy repo.
+       Filtr sám nestačí: kdyby přestal fungovat (jiný hook point, jinak plněný
+       ResolvedFileToPublish), publish by tiše zapsal víc souborů. Proto ho jistí nezávislá
+       kontrola počtu, která shodí build DŘÍV, než se cokoli zapíše. -->
+  <Target Name="PublishOwnAssemblyOnly" AfterTargets="ComputeResolvedFilesToPublishList"
+          Condition="'$(PublishOwnAssemblyOnly)' == 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Filename)%(Extension)' != '$(TargetFileName)'" />
+    </ItemGroup>
+    <Error Condition="'@(ResolvedFileToPublish->Count())' != '1'"
+           Text="Allow-list nefunguje: do '$(PublishDir)' by šlo @(ResolvedFileToPublish->Count()) souborů místo 1 ($(TargetFileName)) — @(ResolvedFileToPublish->'%(Filename)%(Extension)', ', '). Publish zastaven, aby nepřepsal cizí soubory." />
+    <Error Condition="'@(ResolvedFileToPublish->'%(Filename)%(Extension)')' != '$(TargetFileName)'"
+           Text="Allow-list nefunguje: do '$(PublishDir)' by šel '@(ResolvedFileToPublish->'%(Filename)%(Extension)')' místo '$(TargetFileName)'. Publish zastaven." />
+  </Target>
+
+</Project>

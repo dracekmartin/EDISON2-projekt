@@ -5,6 +5,11 @@ prvky, base třída ViewModelů a infrastruktura. `.NET` strana v `dotnet/`, ser
 Caché strana v `CACHE/` (ALVA projekt `ALVA_EDControls`), hlubší dokumentace
 v `DOCS/` (wire formáty → `DOCS/01-wire-formats.md`).
 
+**Veřejné API a klíče theme resource měň aditivně.** `EDControls.dll` se nasazuje jako
+jedna volná DLL vedle obou exe (viz root CLAUDE.md), takže ji načte i exe, který se
+nepřebuildil — odebraný/přejmenovaný public člen nebo resource key by shodil až za běhu,
+build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumenty.
+
 ## Nová m-line aplikace
 
 `EDAppearance.Initialize(app)` jednou před prvním oknem — napojí `FontService`

@@ -69,13 +69,8 @@
     <InternalsVisibleTo Include="TemplateDesigner.Tests" />
   </ItemGroup>
 
-  <!-- Publish má být jen single-file .exe — sidecar symboly a doc XML referencí
-       (mj. 80MB libSkiaSharp.pdb z NuGetu) do C:\Edison\ nepatří. -->
-  <Target Name="StripSymbolsAndDocsFromPublish" AfterTargets="ComputeFilesToPublish">
-    <ItemGroup>
-      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
-                             Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb' Or '%(ResolvedFileToPublish.Extension)' == '.xml'" />
-    </ItemGroup>
-  </Target>
+  <!-- Volná EDControls.dll vedle exe + strip sidecar .pdb/.xml (mj. 80MB libSkiaSharp.pdb
+       z NuGetu, do C:\Edison\ nepatří). -->
+  <Import Project="..\..\SingleFilePublish.targets" />
 
 </Project>

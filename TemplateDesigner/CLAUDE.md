@@ -300,11 +300,11 @@ Vědomá rozhodnutí, která se znovu neotevírají (ne mezery):
 Single-file `.exe` se generuje skriptem `publish.ps1` v rootu projektu:
 
 ```powershell
-cd C:\Users\miesb\source\EDISONMAIN2\TemplateDesigner
+cd c:\MLineRepos\EDISON2\TemplateDesigner
 .\publish.ps1
 ```
 
-Skript volá `dotnet publish` s profilem `SingleFileCEdison` → výstup do `C:\Edison\TemplateDesigner.exe` (~20 MB, self-extracting bundle s `templatedesigner.appsettings.json` jako embedded resource).
+Skript volá `dotnet publish` s profilem `SingleFileCEdison` → výstup do `C:\Edison\`: `TemplateDesigner.exe` (~20 MB, self-extracting bundle s `templatedesigner.appsettings.json` jako embedded resource) **+ volná `EDControls.dll`** (sdílená s EDISONMAIN2, viz root CLAUDE.md). Nasazovat se musí obojí.
 
 **Před spuštěním** - zavři běžící TemplateDesigner.exe (skript hned na začátku ověří lock a friendly errne, pokud je soubor uzamčený).
 

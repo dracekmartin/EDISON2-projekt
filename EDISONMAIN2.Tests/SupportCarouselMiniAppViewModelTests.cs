@@ -104,6 +104,99 @@ public class SupportCarouselMiniAppViewModelTests
         Assert.Equal(0, vm.Progress);
     }
 
+    // Kurzor v panelu a hýbe se = uživatel čte.
+    private static CarouselEngagement Reading => new(PointerInside: true, FocusWithin: false, PointerMoved: true);
+    private static CarouselEngagement ParkedInside => new(PointerInside: true, FocusWithin: false, PointerMoved: false);
+
+    // Ticky, po kterých pauza bez pohybu kurzoru vyprší — z konstant VM, ne magické číslo.
+    private static int IdleTicks =>
+        (int)(SupportCarouselMiniAppViewModel.PauseIdleTimeout / SupportCarouselMiniAppViewModel.TickInterval);
+
+    [Fact]
+    public void Tick_PointerInsideAndMoving_FreezesProgressIndefinitely_AndResumesWhereItStopped()
+    {
+        var vm = Build();
+        var sample = default(CarouselEngagement);
+        vm.EngagementProbe = () => sample;
+        vm.Tick();
+
+        sample = Reading;
+        // Přes celý idle timeout: pohyb kurzoru musí pauzu držet, jinak by čtení přeskočilo.
+        for (int i = 0; i < IdleTicks + 10; i++) vm.Tick();
+
+        Assert.True(vm.IsPaused);
+        Assert.Equal(1d / 60d, vm.Progress, precision: 10);
+        Assert.Equal(0, vm.CurrentIndex);
+
+        sample = default;
+        vm.Tick();
+
+        Assert.False(vm.IsPaused);
+        Assert.Equal(2d / 60d, vm.Progress, precision: 10);
+    }
+
+    [Fact]
+    public void Tick_ParkedPointer_PauseExpires_AndCyclingResumes()
+    {
+        // Kurzor odložený nad panelem (bez pohybu) nesmí cyklení zmrazit natrvalo.
+        var vm = Build();
+        vm.EngagementProbe = () => ParkedInside;
+
+        for (int i = 0; i < IdleTicks - 1; i++) vm.Tick();
+        Assert.True(vm.IsPaused);   // hranice: těsně před timeoutem pauza drží
+
+        vm.Tick();
+
+        Assert.False(vm.IsPaused);
+        Assert.True(vm.Progress > 0);
+    }
+
+    [Fact]
+    public void Tick_StickyFocusWithoutPointer_PauseExpires()
+    {
+        // WPF fokus je sticky — po kliknutí na šipku zůstane na tlačítku i po odjetí myši.
+        var vm = Build();
+        vm.EngagementProbe = () => new(PointerInside: false, FocusWithin: true, PointerMoved: true);
+
+        vm.Tick();
+        Assert.True(vm.IsPaused);
+
+        for (int i = 0; i < IdleTicks; i++) vm.Tick();
+
+        Assert.False(vm.IsPaused);
+        Assert.True(vm.Progress > 0);
+    }
+
+    [Fact]
+    public void Tick_LeavingAndReturning_RestartsFullPauseGrace()
+    {
+        var vm = Build();
+        var sample = ParkedInside;
+        vm.EngagementProbe = () => sample;
+        for (int i = 0; i <= IdleTicks; i++) vm.Tick();   // pauza vypršela
+        Assert.False(vm.IsPaused);
+
+        sample = default;            // odjezd z panelu vynuluje klid
+        vm.Tick();
+        sample = ParkedInside;
+        vm.Tick();
+
+        Assert.True(vm.IsPaused);
+    }
+
+    [Fact]
+    public void AllPagesVisible_ClearsPausedState()
+    {
+        var vm = Build();
+        vm.EngagementProbe = () => Reading;
+        vm.Tick();
+        Assert.True(vm.IsPaused);
+
+        vm.UpdateViewportWidth(3 * SupportCarouselMiniAppViewModel.MinPageWidth);
+
+        Assert.False(vm.IsPaused);
+    }
+
     [Fact]
     public void UpdateViewportWidth_ScalesVisibleCount()
     {

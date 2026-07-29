@@ -18,15 +18,27 @@
                 <TextBlock Text="&#x203A;" FontSize="{DynamicResource EDTheme.FontSize.Large}" Margin="6,-2"/>
             </Button>
             <TextBlock Text="{Binding PageIndicator}" HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                       Foreground="{DynamicResource EDTheme.Text.Muted}"
+                       ToolTip="Stránky se přepínají samy; dokud jste v panelu, odpočet stojí"/>
         </DockPanel>
 
-        <!-- Lišta auto-posunu: doběhne za 60 s → skok na další stránku. -->
+        <!-- Lišta auto-posunu: doběhne za 15 s → skok na další stránku; při hoveru/fokusu stojí (ztmavená). -->
         <ProgressBar DockPanel.Dock="Top" Height="3" BorderThickness="0"
                      Visibility="{Binding ShowCycleControls, Converter={StaticResource BoolToVis}}"
                      Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
                      Background="{DynamicResource EDTheme.Bg.Pressed}"
-                     Foreground="{DynamicResource EDTheme.Accent.Blue}"/>
+                     Foreground="{DynamicResource EDTheme.Accent.Blue}">
+            <ProgressBar.Style>
+                <!-- ProgressBar není themovaný (stock template) → lokální Style bez BasedOn. -->
+                <Style TargetType="ProgressBar">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                            <Setter Property="Opacity" Value="0.3"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ProgressBar.Style>
+        </ProgressBar>
 
         <!-- 1–N sloupců podle šířky; elementy stránek se cachují ve VM (swap bez reloadu). -->
         <ItemsControl ItemsSource="{Binding VisiblePages}" Focusable="False">
