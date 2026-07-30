@@ -190,7 +190,13 @@ public class AppBootstrapper
     {
         var nav = new WindowNavigator();
         var popup = new PopupDisplayer();
-        var services = new EDServices(null, nav, popup);
+        var services = new EDServices(null, nav, popup)
+        {
+            // Pro „Informace o verzi" (panel Podpora, menu Nápověda) — verze assembly je
+            // 1.0.0.0, jediná pravdivá je VERZE.INF vedle exe.
+            AppDisplayName = "M-line EDISON 2",
+            AppVersion = VerzeInf.Current == "" ? "nezjištěna" : VerzeInf.Current
+        };
         EDServices.Initialize(services);
 
         // EDInputForm pole Color — jako picker registrujeme prostý WinForms ColorDialog.
