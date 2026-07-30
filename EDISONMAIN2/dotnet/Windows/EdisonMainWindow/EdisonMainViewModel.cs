@@ -10,6 +10,7 @@ using Application = System.Windows.Application;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
+using EDControls.EDSupportPanel;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDControls.UserFonts;
@@ -1230,17 +1231,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
 
-        private void ShowAppInfo()
-        {
-            var asm = System.Reflection.Assembly.GetExecutingAssembly().GetName();
-            var info = $"M-line EDISON 2\n\n" +
-                       $"Verze: {asm.Version}\n" +
-                       $"Server: {MLRest!.Server}:{MLRest!.Port}\n" +
-                       $"Namespace: {MLRest!.DataNamespace}\n" +
-                       $"Firma: {MLRest!.Idfa}\n" +
-                       $"Uživatel: {MLRest!.FullName} ({MLRest!.LoginName})";
-            PopupDisplayer.Info(info);
-        }
+        // Týž text jako tlačítko „Informace o verzi" v panelu Podpora — jeden zdroj pravdy.
+        private void ShowAppInfo() =>
+            PopupDisplayer.Info(SupportActions.BuildVersionInfo(
+                MLRest, _services.AppDisplayName, _services.AppVersion));
 
         // INFO label (vpravo v menu). Stálý text bez timer refreshe — typicky se shell
         // znovu spustí denně, půlnoční rollover neřešíme. Pokud bude potřeba, přidá se

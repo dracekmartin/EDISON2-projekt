@@ -145,7 +145,22 @@ public class EDViewModel : INotifyPropertyChanged
             WindowStatePersistence.Attach(window, formId);
             HookUsageTelemetry(window, formId);
         }
+        if (ShowSupportPanel)
+        {
+            // Best-effort jako persistence a telemetrie — panel nikdy nesmí zabránit
+            // otevření okna. Vlastní vytvoření panelu je odložené a hlídá se zvlášť
+            // (viz EDSupportPanel.Create).
+            try { EDSupportPanel.EDSupportPanel.Attach(window, _services, PopupDisplayer); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine("EDSupportPanel: " + ex.Message); }
+        }
     }
+
+    /// <summary>
+    /// Pokud false, k oknu se nepřipojí vysouvací panel Podpora. Default true — panel má být
+    /// všude (obdoba legacy <c>BaseForm.ShowSideMenu</c>); vypínej jen pro okna, kde nemá
+    /// smysl (odpočty, splash).
+    /// </summary>
+    public bool ShowSupportPanel { get; protected set; } = true;
 
     /// <summary>
     /// Usage telemetrie okna (<see cref="EDUsageTelemetry"/>): OPEN + kliky na pojmenované

@@ -35,6 +35,14 @@ public class EDServices(
     public bool IsAdmin { get; set; }
 
     /// <summary>
+    /// Jméno a verze aplikace pro „Informace o verzi" (panel Podpora, menu Nápověda).
+    /// Nastavuje composition-root; EDControls na verzi nedosáhne sama (<c>VERZE.INF</c>
+    /// čte shell). Nenastaveno → fallback na entry assembly, tedy nepravdivá 1.0.0.0.
+    /// </summary>
+    public string? AppDisplayName { get; set; }
+    public string? AppVersion { get; set; }
+
+    /// <summary>
     /// Persistent per-user state (column layouty, hidden položky, ...). Default je
     /// no-op <see cref="NullUserPrefsService"/>; composition-root nastaví
     /// <see cref="CacheUserPrefsService"/> po vytvoření <see cref="MLRest"/>.

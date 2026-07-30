@@ -6,8 +6,11 @@ namespace EDISONMAIN2.MiniApps;
 /// </summary>
 internal static class WidgetUrls
 {
-    private const string Base = "https://podpora.m-line.cz/api/widgets/";
-    private const string Key = "80716cc86270f1daff6a18ad0b2ba07e9e30011eea22072c7a840604b18423c6";
+    // Base + klíč drží EDControls (používá je i panel Podpora) — jedna kopie klíče.
+    // static readonly, ne const: const by se sem inlinoval a samostatný deploy EDControls.dll
+    // by shellu klíč nezměnil.
+    private static readonly string Base = EDControls.EDSupportPanel.SupportActions.WidgetBaseUrl;
+    private static readonly string Key = EDControls.EDSupportPanel.SupportActions.WidgetKey;
 
     // Novinky/Wiki jsou auth-free (jen statický klíč) → bezpečné zobrazit i před loginem.
     internal static string Novinky => $"{Base}info?key={Key}";

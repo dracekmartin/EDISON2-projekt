@@ -177,7 +177,7 @@ public class WindowNavigator : IWindowNavigator
     public void CloseAll()
     {
         foreach (var w in Application.Current.Windows.OfType<Window>().ToList())
-            if (w != Application.Current.MainWindow) w.Close();
+            if (w != Application.Current.MainWindow && w is not IOverlayWindow) w.Close();
 
         foreach (var entry in _legacyProcesses)
         {
@@ -228,8 +228,10 @@ public class WindowNavigator : IWindowNavigator
         return [.. legacy, .. wpf];
     }
 
-    /// <summary>Skip WPF/WebView2 interních oken (AdornerWindow atd.) — uživatelská okna nejsou v MS./System./Microsoft. namespace.</summary>
-    internal static bool IsInternalWindow(Window w) => IsInternalNamespace(w.GetType().Namespace);
+    /// <summary>Skip WPF/WebView2 interních oken (AdornerWindow atd.) — uživatelská okna nejsou v MS./System./Microsoft. namespace.
+    /// Plus overlay okna EDControls (<see cref="IOverlayWindow"/>) — panel Podpora / „Akce probíhá" nejsou modul.</summary>
+    internal static bool IsInternalWindow(Window w) =>
+        w is IOverlayWindow || IsInternalNamespace(w.GetType().Namespace);
 
     internal static bool IsInternalNamespace(string? ns)
     {

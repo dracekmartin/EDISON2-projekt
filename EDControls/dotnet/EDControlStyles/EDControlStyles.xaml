@@ -1688,4 +1688,42 @@
         </Setter>
     </Style>
 
+    <!-- Barevné tlačítko panelu Podpora (EDSupportPanel). Barvu plochy dodává volající
+         z tokenů EDTheme.Support.* — hover/pressed jsou průhledné bílé overlaye nad ní,
+         takže se nemusí dopočítávat světlejší odstín pro každou barvu zvlášť. -->
+    <Style x:Key="EDTheme.SupportPanelButton" TargetType="Button">
+        <!-- MinHeight, ne Height: popisek se při user škálování fontu zalomí na víc řádků
+             a tlačítko musí povyrůst, ne text ořezat. -->
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="Padding" Value="6,3"/>
+        <Setter Property="Foreground" Value="{DynamicResource EDTheme.OnAccent.Text}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6"
+                                SnapsToDevicePixels="True"/>
+                        <Border x:Name="Overlay" CornerRadius="6" Background="Transparent"
+                                SnapsToDevicePixels="True"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Overlay" Property="Background" Value="{DynamicResource EDTheme.OnAccent.HoverOverlay}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Overlay" Property="Background" Value="{DynamicResource EDTheme.OnAccent.PressedOverlay}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>
