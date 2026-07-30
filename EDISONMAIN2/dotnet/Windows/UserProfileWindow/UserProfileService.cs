@@ -74,6 +74,8 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         /// <c>ALVA.USERS.ApiEdison.GetUserDefaultForm</c> — id výchozího okna (0 = žádný),
         /// per-uživatel × aktuální IDFa. Dedikovaná metoda pro startup-form logiku shellu.
         /// </summary>
+        // ApiEdison je nový endpoint, object[] tu tedy není vynucené legacy protokolem -
+        // kandidát na převod na CVar (spolu s Set níž a Caché stranou).
         public static int LoadDefaultWindow(IMLRest mlRest)
         {
             var output = mlRest.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", new object[] { });

@@ -251,7 +251,11 @@ namespace EDControls.EDInputForm
         /// ElementEditDialog čte hodnoty z elementu přes reflexi) a pak zavolat
         /// <see cref="Validate"/> pro re-validaci s naplněnými hodnotami.
         /// </summary>
-        public event Action? Initialized;
+        public event Action? SchemaLoaded;
+
+        /// <inheritdoc cref="SchemaLoaded"/>
+        [Obsolete("Stíní FrameworkElement.Initialized - použij SchemaLoaded.")]
+        public new event Action? Initialized;
 
         /// <summary>Klik na BUTTON pole — host dostane klíč pole a může spustit client-side akci
         /// (např. otevřít sub-dialog). Doplňuje server-side Validate (ValidateOnChange).</summary>
@@ -265,13 +269,16 @@ namespace EDControls.EDInputForm
         /// <summary>
         /// Volá Caché <c>Init</c> pro načtení definice formuláře a hned poté Init-trigger
         /// validaci pro naplnění případných výchozích chyb. Použije <see cref="InitParams"/>
-        /// pokud nastaveny. Po dokončení vyvolá <see cref="Initialized"/>.
+        /// pokud nastaveny. Po dokončení vyvolá <see cref="SchemaLoaded"/>.
         /// </summary>
         public void Init()
         {
             EnsureConfigured();
             Controller.Init(InitParams);
+            SchemaLoaded?.Invoke();
+#pragma warning disable CS0618 // deprekovaný alias - dokud existuje, musí fajrovat taky
             Initialized?.Invoke();
+#pragma warning restore CS0618
         }
 
         /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>

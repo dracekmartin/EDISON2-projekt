@@ -34,9 +34,11 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
 
 - Host hooky: color/image picker dodává host přes static `PickColorImpl` /
   `PickImageImpl` (EDControls je WPF-only, dialog nemá). Null → tlačítko nic nedělá.
-- Eventy `Initialized`, `ButtonClicked`, `FieldChanged`: `FieldChanged` fajruje při
+- Eventy `SchemaLoaded`, `ButtonClicked`, `FieldChanged`: `FieldChanged` fajruje při
   **každé** změně Value bez ohledu na `ValidateOnChange`; `ButtonClicked` při každém
-  kliku (server roundtrip jen s `ValidateOnChange=1`).
+  kliku (server roundtrip jen s `ValidateOnChange=1`). `Initialized` je deprekovaný alias
+  `SchemaLoaded` (stínil `FrameworkElement.Initialized`) - fajruje pořád, smaže se až při
+  koordinovaném publish obou aplikací.
 - Setter `CacheClass` resetuje controller — příští `Init()` načte schema novou třídou.
 - Klientská validace: type-error má prioritu před required; type-check běží hned
   při setu Value.

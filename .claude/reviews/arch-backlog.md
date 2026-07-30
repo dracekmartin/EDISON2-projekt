@@ -5,7 +5,7 @@
 Ten dokument je snapshot analýzy (evidence, dopad, návrh) a **nemění se**. Tady je plán
 a stav.
 
-**Hotovo: 0 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
+**Hotovo: 5 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
 
 ## Jak s dokumentem pracovat
 
@@ -48,7 +48,8 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R15a - CS8602 v `PeriodicRefreshMiniAppViewModel`
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-07-30) - řádky v konstruktoru prohozené dle návrhu, CS8602
+  v `EDISONMAIN2` zmizel. Bez testu: přesun je čistě warning fix, chování hlídá kompilátor.
 - **P3 · S** · Závisí na: - · Blokuje: R15b
 - **Co udělat:** Prohodit dva řádky v konstruktoru - `RefreshNowCommand = Command(RefreshNow);`
   musí být před `_timer.Tick += ...`. Za běhu je to dnes neškodné (lambda se vyhodnotí až
@@ -58,7 +59,11 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R6 - `EDInputForm.Initialized` stíní `FrameworkElement.Initialized`
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-07-30) - přidán `SchemaLoaded`, `Initialized` je `new` +
+  `[Obsolete]` a fajruje dál (invoke obalen `#pragma warning disable CS0618`).
+  Migrováno **10** call sites, ne 8: 9 v TemplateDesigneru + `UserProfileWindow`
+  v EDISONMAIN2. Bez xUnit testu - `EDInputForm` je WPF control a test assembly nemá
+  STA harness; migraci hlídá build (nulová tolerance CS0618).
 - **P2 · S** · Závisí na: - · Blokuje: R15b
 - **Co udělat:** Aditivně přidat `SchemaLoaded` (nebo `FormInitialized`), vyvolávat obojí,
   na `Initialized` dát `new` + `[Obsolete]`. Migrovat 8 call sites v TemplateDesigneru.
@@ -71,7 +76,12 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R15b - Zapnout `WarningsAsErrors`
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-07-30) - `<WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>`
+  v obou csproj, ověřeno probe souborem (nullable deref → `error CS8602`, build FAILED).
+  Nad zadání doklizeno i satelitní test projekty, aby byl stream reálně nulový:
+  5× CS8602 v `EDControls.Tests/UserPrefsTests.cs` a xUnit2031
+  v `EDISONMAIN2.Tests/EdisonMainViewModelTests.cs`. Gate je ale jen v těch dvou
+  csproj dle zadání (test projekty ho nedostaly).
 - **P3 · S** · Závisí na: **R15a, R6** · Blokuje: - (ale chrání všechny další vlny)
 - **Co udělat:** Do `EDControls.csproj` a `EDISONMAIN2.csproj` přidat
   `<WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>`. Začít úzce, `TreatWarningsAsErrors`
@@ -85,7 +95,10 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R13c - „MHD (ukázka)" placeholder v Release buildu
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-07-30) - descriptor obalen `#if DEBUG`; třída
+  `MhdSampleMiniAppViewModel` zůstává (nesmazána, jen se neregistruje). Test
+  `LegacyMiniAppProviderTests.Sample_IsDebugOnly` ověřuje obě konfigurace, Release run
+  potvrzen.
 - **P3 · S** · Závisí na: - · Blokuje: -
 - **Co udělat:** `Mhd.Sample` z `LegacyMiniAppProvider` obalit `#if DEBUG` (jako
   `DevSampleMiniApps`), nebo smazat - cross-assembly pipeline už ověřuje reálná
@@ -97,7 +110,13 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R11 - `QueryOrThrow` existuje dvakrát + neodůvodněné `object[]`
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-07-30) - (a) extension deleguje na `MLRestAdapter`, kde
+  `ThrowIfError` zůstal v jednom privátním `Checked<T>` helperu (4 opsaná těla → 1).
+  (b) Odůvodnění doplněno tam, kde chybělo: `LicenceVerifier`, `SessionLogout`,
+  `LogoutWatcher`, `WindowStatePersistence` (class-level, platí pro všechny 3 sity
+  v souboru); `AccessLoader`, `Updater`, `UserAuthenticator`, `UserProfileService` už
+  důvod měly. `ApiEdison` sity mají navíc poznámku, že jsou kandidát na `CVar`.
+  Bez testu na delegaci: extension bere konkrétní `MLRest` (síť), nejde mockovat.
 - **P3 · S** · Závisí na: - · Blokuje: -
 - **Co udělat:** (a) `MLRestExtensions.QueryOrThrow` nechat delegovat na
   `MLRestAdapter` (jedno místo pravdy pro `ThrowIfError`, dnes je tělo opsané 4×).

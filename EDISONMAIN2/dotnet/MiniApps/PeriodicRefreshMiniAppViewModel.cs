@@ -26,8 +26,8 @@ public sealed class PeriodicRefreshMiniAppViewModel : EDMiniAppViewModel, IMiniA
     public PeriodicRefreshMiniAppViewModel(EDServices services) : base(services)
     {
         _selectedInterval = Intervals.First(i => i.Duration == TimeSpan.FromMinutes(5));
-        _timer.Tick += (_, _) => RefreshNowCommand.Execute(null);
         RefreshNowCommand = Command(RefreshNow);
+        _timer.Tick += (_, _) => RefreshNowCommand.Execute(null);
     }
 
     public void AttachRefresher(Func<IReadOnlyList<string>> refreshAll) => _refreshAll = refreshAll;

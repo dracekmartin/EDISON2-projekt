@@ -22,6 +22,7 @@ internal static class SessionLogout
         if (mlRest is null) return;
         try
         {
+            // object[]: legacy endpoint bez vstupních parametrů (identita jde v sys kontextu).
             mlRest.With(cacheLocks: 0, idfa: idfa, dataNamespace: dataNamespace)
                   .QueryOrThrow("ALVA.SYS.Login", "Logout", new object[] { });
         }

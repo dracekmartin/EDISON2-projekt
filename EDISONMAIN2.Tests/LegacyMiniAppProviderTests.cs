@@ -12,4 +12,16 @@ public class LegacyMiniAppProviderTests
 
         Assert.Contains("Mhd.Dispecink", ids);
     }
+
+    [Fact]
+    public void Sample_IsDebugOnly()
+    {
+        var ids = new LegacyMiniAppProvider().GetMiniApps().Select(d => d.Id).ToList();
+
+#if DEBUG
+        Assert.Contains("Mhd.Sample", ids);
+#else
+        Assert.DoesNotContain("Mhd.Sample", ids);
+#endif
+    }
 }

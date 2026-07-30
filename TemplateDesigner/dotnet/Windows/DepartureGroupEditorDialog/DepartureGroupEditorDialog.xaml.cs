@@ -45,7 +45,7 @@ public partial class DepartureGroupEditorDialog : Window
         // Tab „Obecné": EDInputForm (DepartureGridElementEdit přes reflexi). Per-skupina/sloupec
         // override řeší CellStyleEditor v tabu „Sloupce".
         GeneralForm.CacheClass = GeneralSchemaClass;
-        GeneralForm.Initialized += OnGeneralFormInitialized;
+        GeneralForm.SchemaLoaded += OnGeneralFormInitialized;
         ElementFormBinder.HookFontWeightRefresh(GeneralForm);
         GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 

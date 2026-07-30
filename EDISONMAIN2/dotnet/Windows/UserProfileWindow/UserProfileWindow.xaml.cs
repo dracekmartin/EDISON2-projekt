@@ -21,7 +21,7 @@ public partial class UserProfileWindow : Window
         InitializeComponent();
 
         _vm.SaveRequested = SaveForm;
-        TheForm.Initialized += OnFormInitialized;
+        TheForm.SchemaLoaded += OnFormInitialized;
         TheForm.ButtonClicked += OnFormButton;
         // Auto-Init proběhne na Loaded (CacheClass je nastaven) → OnFormInitialized prefilne data.
         TheForm.CacheClass = "ALVA.EDISONMAIN2.EDInputForm.UserProfile";

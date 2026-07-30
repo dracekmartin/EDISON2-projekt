@@ -67,9 +67,10 @@ Pasti wire formátu: subscripty jsou **stringy** (`cVar["1"]` → `^||ML("IN","1
 numerické 1); `CList` ↔ `$lb()`, čte se `$li(^||ML("IN","i"), n)` (1-based); v named
 foreach přeskoč klíč `"ERR"` (MLRest metadata, ne data).
 
-`QueryOrThrow` = `Query` + `ThrowIfError()` atomicky. Existuje dvakrát: na `IMLRest`
-(ViewModely) a jako extension na konkrétním `MLRest` (legacy). Odděleně volej jen pro
-graceful degradation. Binární data: `BinarySave(bytes)` → GUID, `BinaryLoad(guid)`
+`QueryOrThrow` = `Query` + `ThrowIfError()` atomicky. Na `IMLRest` (ViewModely) i jako
+extension na konkrétním `MLRest` (legacy) - extension deleguje na `MLRestAdapter`, aby
+překlad chyby na výjimku žil na jednom místě. Odděleně volej jen pro graceful degradation.
+Binární data: `BinarySave(bytes)` → GUID, `BinaryLoad(guid)`
 (server: `$$$SYSBinary(GUID)`, automaticky se uvolní).
 
 ## Kostra Caché metody

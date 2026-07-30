@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Úzký gate místo TreatWarningsAsErrors: WPF si generuje _wpftmp projekty zvlášť
+         a umí v generovaném kódu překvapit. Rozšiřuj po kategoriích, ne naráz. -->
+    <WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>
     <!-- EDControls se vydává samostatně (jedna volná DLL v C:\Edison\) — publish smí
          zapsat jen její vlastní assembly, ne celý uzávěr závislostí. -->
     <PublishOwnAssemblyOnly>true</PublishOwnAssemblyOnly>

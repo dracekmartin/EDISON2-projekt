@@ -24,7 +24,7 @@ public partial class PrintDialog : Window
         if (vm.HasForm)
         {
             ParamForm.InitParams = vm.BuildInitParams();
-            ParamForm.Initialized += OnParamFormInitialized;
+            ParamForm.SchemaLoaded += OnParamFormInitialized;
             ParamForm.CacheClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";
         }
     }
