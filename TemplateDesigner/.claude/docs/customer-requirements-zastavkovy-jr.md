@@ -75,7 +75,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
 | #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ **ZAVŘENO 30. 7. 2026** - znění „jede až do zast. \<konečná\> přes \<zastávky\>", ověřeno proti starému modulu i v běžícím buildu na `CB_GWBUS` 501/0000001/T. Zákazníkovi odpovězeno s prosbou o vyzkoušení na 876401/876402, až bude mít nový návrhář (na jejich datech jsme ověřit nemohli). | - | §D1 |
-| #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD · ▶ **ready-to-close** | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
+| #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ **ověřeno na reálných datech 30. 7.** (CB_GWBUS 501/0000002, spoj 21) - viz tabulka v §D2 | k zavření; do odpovědi patří, že jde o **volbu** parametru (výchozí = legacy) + poznámka k D4 | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do resolve poznámka, řešit jinde | §D4 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** - ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | - | §B3 |
 | #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ · 🧪 **testování u zákazníka** | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
@@ -408,6 +408,22 @@ skutečně skryté položky, ne zapnutý parametr).
   klientův požadavek. Řešeno **modelem nadmnožina + render-time TD filtr** (`NoteVisibilityFilter`),
   ne auto-suppress v Caché - legacy sémantika „nepoznámkovat" zachovaná (default), flip je opt-in volba.
   Viz `ad-data-mapa.md §5` + `feature-design-principles.md §5.2`.
+- **✅ OVĚŘENO NA REÁLNÝCH DATECH 30. 7. 2026** (Jan v buildu + sonda na datové straně).
+  **Testovací linka:** `CB_GWBUS`, skupina **501**, linka **0000002**, směr **Tam**, stránka
+  **Autobusové nádraží**. Spoj **21** (odjezd **7:00**, negativní značka `43`) má přiřazený komentář
+  `G` („spoj pokračuje ke Gymnásiu") **a** je v rozsahu „Spoje, nepoznámkovat". Kontrolní vzorek =
+  odjezd **7:38** (spoj 27), který v rozsahu **není**. Data to potvrzují: u spoje 21 nesou příznak
+  „v rozsahu" **všechny tři** značky (`B` rozdíl trasy, `43` omezení, `G` komentář).
+
+  | Parametr „V rozsahu nepoznámkovat schovat" | 7:00 (v rozsahu) | 7:38 (mimo) |
+  |---|---|---|
+  | Ruční komentáře (výchozí = legacy) | `43` + `B`, bez `G` | `B` |
+  | **Automatické (rozdíly tras)** | `43` + `G`, **bez `B`** ← požadavek zákazníka | `B` |
+  | Obojí | jen `43` | `B` |
+
+  Kontrolní vzorek dokazuje, že filtr pracuje **per spoj**, ne per značku - nelze omylem odpoznámkovat
+  celou linku. **Tato linka je jediné místo, kde je featura testovatelná** (CB_CSADAD nemá `SeT_SpeC`
+  ani `MHDSPNPZN` na žádné z 240 linek; GWBUS má jinak jen prázdný číselník) → **nemazat nastavení**.
 - **Pozn. k MHD agendě:** tyto ruční poznámky jsou **AD-only** - `^JRL` konstrukty (`SeT_SpeC`/
   `MHDSPNPZN`/`SeT_MhD`). MHD agenda (`ZastavkoveJrMhd`) čte jiný zdroj (`^ALVA.MHD.*`) a tyto pole
   **nemá** (ověřeno 2026-06-20). Není co portovat, dokud se nepotvrdí, že MHD modul má vlastní
@@ -421,6 +437,10 @@ skutečně skryté položky, ne zapnutý parametr).
 - **✅ V AD agendě bug NEvzniká** (2026-06-20) - `NepoznamkovatSpoj` + filtr se dotýká jen kategorie
   `rucni-komentar` / `rozdil-trasy` (dle volby); `omezeni`/`bezbarier` (kam patří NZ-style značky)
   filtr nikdy neschovává. Zůstává relevantní jen pro MHD agendu (legacy datový tok).
+- **✅ OVĚŘENO NA DATECH 30. 7. 2026** - a to nejsilnějším možným způsobem: značka `43` u spoje 21
+  (testovací linka viz §D2) **je** označená jako „v rozsahu", a přesto zůstala ve **všech třech**
+  režimech parametru. Kdyby bug existoval, zmizela by. Zamčeno testem
+  `NoteVisibilityFilterTests.Apply_NegativniZnackaVRozsahu_NezmiziAniVRezimuOboji`.
 
 ### D4. Bug - výběr spoje jen prvním číslem
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955

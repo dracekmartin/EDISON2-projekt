@@ -145,7 +145,7 @@ při scope té fáze, ne teď.
 
 | Tiket | Uzavírací podmínka (co ověřit, aby se dal zavřít) |
 |---|---|
-| #7955 | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí |
+| #7955 | ✅ **ověřeno na datech 30. 7.** (CB_GWBUS 501/0000002, spoj 21) - zbývá jen odpovědět a zavřít |
 | #13048 bod 2 | finální vizuál zmenšování textu (názvy zastávek, zóny, rezerva u šipky směru) |
 
 ### Čeká na někoho jiného - postrčit, není to práce

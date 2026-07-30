@@ -75,6 +75,20 @@ public class NoteVisibilityFilterTests
     }
 
     [Fact]
+    public void Apply_NegativniZnackaVRozsahu_NezmiziAniVRezimuOboji()
+    {
+        // #7955 D3 - zákazník si stěžoval, že „Spoje, nepoznámkovat" ruší i inverzní znaménko.
+        // Datová platnost spoje (`omezeni`) není nikdy mezi schovávanými kategoriemi, takže zůstane
+        // i u spoje, který v rozsahu JE a i v nejagresivnějším režimu.
+        var page = Stranka("omezeni", "43", vRozsahu: true);
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.Both);
+
+        Assert.Equal(1, PocetAnotaci(result));
+        Assert.Single(result.Rows["POZNAMKY"]);
+    }
+
+    [Fact]
     public void Pocitadlo_PriSchovani_NapocitaAnotaciILegendu()
     {
         var page = Stranka("rozdil-trasy", "B", vRozsahu: true);

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-30 (5) - #7955 ověřen na reálných datech (potlačení auto-poznámky vlastním komentářem)
+
+Tiket byl vedený jako „hotové, ale neověřené" - featura existuje od 20. 6., ale nebylo na čem ji
+spustit: `CB_CSADAD` nemá na žádné z 240 linek ani číselník komentářů, ani rozsah „Spoje,
+nepoznámkovat". Nastavením testovacích dat v `CB_GWBUS` (skupina 501, linka 0000002, spoj 21) se
+podařilo ověřit všechny tři režimy parametru naráz - viz tabulka v `customer-requirements §D2`.
+
+- **D2 splněno:** v režimu „Automatické (rozdíly tras)" u spoje v rozsahu zmizí automatická poznámka
+  o rozdílu trasy a zůstane ruční komentář. Přesně to zákazník žádal.
+- **D3 vyvráceno jako bug:** negativní značka zůstala ve **všech** režimech, i když je u toho spoje
+  označená jako „v rozsahu". Kdyby bug existoval, zmizela by. Zamčeno novým testem.
+- **Filtr pracuje per spoj, ne per značku** - kontrolní odjezd mimo rozsah si značku podržel, takže
+  nelze omylem odpoznámkovat celou linku.
+- **Testovací linka zapsaná do dokumentace a nemazat** - je to jediné místo, kde je featura
+  testovatelná. Bez ní by se příště začínalo od nuly.
+- .NET 507/507 (+1 test na D3).
+
 ## 2026-07-30 (4) - Atributy zastávky se čtou i z registru zastávek (`B23`)
 
 Na vývěsce chybělo, že zastávka je **na znamení** - cestující tak nevěděl, že má dát řidiči znamení.

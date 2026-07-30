@@ -539,7 +539,9 @@ ClassMethod StrankaZnacky(ByRef sys As %String) As %Status
             s itZ = dv.%Get("ANOTACE").%GetIterator()
             while itZ.%GetNext(.zk, .zv) {
                 continue:'$isobject(zv)
-                s znaky = znaky_$s(znaky="":"",1:"+")_zv.%Get("ZNAK")_"("_zv.%Get("KATEGORIE")_")"
+                // ZNAK(kategorie|spoj|vRozsahu) - vRozsahu=1 znamená „TD filtr ji smí schovat"
+                s znaky = znaky_$s(znaky="":"",1:"+")_zv.%Get("ZNAK")_"("_zv.%Get("KATEGORIE")
+                    _"|sp"_zv.%Get("SPOJ")_"|r"_zv.%Get("V_ROZSAHU_NEPOZNAMKOVAT")_")"
             }
             s ^||ML("OUT",$i(i)) = "ODJEZD="_dv.%Get("HODINA")_":"_dv.%Get("MINUTA")
                 _"~skupinaDnu="_dv.%Get("SKUPINA_DNU_ID")_"~znacky="_$s(znaky="":"(zadne)",1:znaky)
