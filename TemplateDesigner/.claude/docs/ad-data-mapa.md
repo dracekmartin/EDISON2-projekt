@@ -104,6 +104,13 @@ Přístup: `^[nmsp]GLOBAL(...)`. První dva subscripty linkových dat: `sku` (sk
 **Trasa spoje `("W")`** - per zastávka: čas od počátku, čekání, tarifní/přesné km, zóna,
 nástupiště, atributy. (Analogie MHD `MakeTableSpoj`.)
 
+**Atributy zastávky** (znaky číselníku 16 - `x` na znamení, `A`/`L` přestupy, `T`/`P`/`S`…) jsou na
+**dvou místech a legacy čte obojí** (změřeno 30. 7.): v **trase linky** (J-věta `#1:2`, tedy per linka
+a směr) **∪** v **registru zastávek** `^JRZ(czst)` `$`-pole **8** (per zastávka globálně). Firmy to mají
+různě: `CB_CSADAD` má vše v trase a pole registru prázdné u všech 5728 zastávek, `CB_GWBUS` má „x"
+naopak v registru. Čtení jen jednoho zdroje = chybějící vysvětlivka na vývěsce (bylo tak do 30. 7.,
+viz `AtributyZastavky`). V registru se vyskytují jen znaky z číselníku, není to kategorie zastávky.
+
 **Označník (nástupiště)** = W pole **7** per spoj, fallback J-věta segment **#3** (`nastTam:nastZpet`)
 per zastávka a směr. Ověřeno 30. 7. na `CB_CSADAD` 0320680: J-věta nese `11`, W-trasa spoje `22` -
 tedy skutečně označníky té zastávky. ⚠️ **Obsah pole není zaručený**: na `CB_GWBUS` 501/0000001 je

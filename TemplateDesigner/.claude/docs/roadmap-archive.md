@@ -2,6 +2,19 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-30 ✅ - `B23` atributy zastávky se čtou i z registru zastávek
+
+Detail → changelog 2026-07-30 (4). Na vývěsce chybělo, že zastávka je **na znamení**. Atribut může být
+na **dvou** místech - v trase linky (J-věta) a v registru zastávek (`^JRZ`, `$`-pole 8) - a my čteli jen
+trasu. Změřeno, že **legacy čte obojí** (vypíše „x" u `CB_CSADAD` 0320680, kde je jen v trase, i u
+`CB_GWBUS` 0000001, kde je jen v registru), takže to byla faktická vada výstupu, ne jiné znění.
+`AtributyZastavky` teď vrací sjednocení; použito i v souhrnu „všechny zastávky linky jsou na znamení".
+
+**Dopad měřen PŘED zásahem** (poučení z `B26`): v CB_CSADAD je pole registru prázdné u všech 5728
+zastávek → tam se nemění nic a zlaté odtisky jsou v bezpečí; v CB_GWBUS přibyly 2 zastávky se „x"
+a stránka 0000001/T má nově 10 poznámek **stejně jako legacy**. Znění zůstává naše („na znamení");
+legacy má „zastávka pouze na znamení" - rozhodnutí Jan, neměnit.
+
 ## 2026-07-30 ✅ - `B25` legenda na rozdělené vývěsce + `B26` uzavřen jako falešný poplach
 
 **Pravidlo (rozhodnutí Jan):** vývěska je **samostatná stránka**, takže vysvětluje jen značky, které

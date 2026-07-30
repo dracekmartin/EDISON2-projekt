@@ -348,7 +348,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             s vNZ = $g(^[dataDB]JRL(sku,lin,"J",ppNZ))
             i $p(vNZ,":",1)="" continue                  // bod bez zastávky
             s naZnCnt = naZnCnt + 1
-            i '($p($p(vNZ,":",2),"#",1)["x") s souhrnNaZn = 0  q
+            i '(..AtributyZastavky(dataDB, $p(vNZ,":",1), $p($p(vNZ,":",2),"#",1))["x") s souhrnNaZn = 0  q
         }
         i 'naZnCnt s souhrnNaZn = 0
     }
@@ -458,7 +458,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s czst = $p(veta,":",1)
         i czst="" continue
         i '$d(servedPoradi(poradi)) continue                // jen obsluhované zastávky (jako legacy)
-        s atributy  = $p($p(veta,":",2),"#",1)              // dta2 - atributy zastávky (znaky číselníku 16)
+        s atributy  = ..AtributyZastavky(dataDB, czst, $p($p(veta,":",2),"#",1))   // trasa linky + registr zastávek
         s zona      = $p($p(veta,":",5),"#",2)               // "#zóna#..."
         s odsazeni  = +$p(veta,"#",5)                        // dta7 „odrazeni" - odsazení názvu o N znaků (legacy mkPLinWin/JRapiLin: 5. #-segment)
         s rawNazev = ..NazevZastavky(dataDB, czst)
@@ -1253,6 +1253,28 @@ ClassMethod TrasaBitmapaZPole(dataDB As %String, sku As %String, lin As %String,
         i +flag s $e(bmp,poradi) = 1
     }
     q bmp
+}
+
+/// Atributy zastávky = znaky z **trasy linky** (J-věta `#1:2`) ∪ znaky z **registru zastávek**
+/// (`^JRZ(czst)`, `$`-pole 8). Legacy čte obojí - změřeno 30. 7.: „x = na znamení" vypisuje jak
+/// u `CB_CSADAD` 0320680 (kde je jen v trase), tak u `CB_GWBUS` 0000001 (kde je jen v registru).
+/// Bez registru nám na vývěsce chyběla informace, že zastávka je na znamení.
+/// Pořadí: nejdřív trasa, pak znaky z registru, které v trase nejsou (dedup po znacích).
+/// Registr je per zastávka (nezávisle na směru i lince) - to je správná sémantika „tato zastávka je
+/// na znamení". Dopad měřen: v CB_CSADAD je pole registru prázdné u všech 5728 zastávek → beze změny.
+ClassMethod AtributyZastavky(dataDB As %String, czst As %String, atributyTrasy As %String) As %String
+{
+    i czst = "" ret atributyTrasy
+    s atributyRegistru = $p($g(^[dataDB]JRZ(czst)),"$",8)
+    i atributyRegistru = "" ret atributyTrasy
+    s vysledek = atributyTrasy
+    f i=1:1:$l(atributyRegistru) {
+        s znak = $e(atributyRegistru,i)
+        i znak = "" continue
+        i vysledek [ znak continue
+        s vysledek = vysledek _ znak
+    }
+    ret vysledek
 }
 
 /// Název zastávky podle pořadí v trase (přes czst z J-věty `#1:1`).

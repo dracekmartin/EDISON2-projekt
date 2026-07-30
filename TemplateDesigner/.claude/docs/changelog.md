@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-30 (4) - Atributy zastávky se čtou i z registru zastávek (`B23`)
+
+Na vývěsce chybělo, že zastávka je **na znamení** - cestující tak nevěděl, že má dát řidiči znamení.
+
+- **Kde to bylo:** atribut může být na **dvou** místech a my čteli jen jedno. Trasa linky (J-věta) ×
+  registr zastávek (`^JRZ`, `$`-pole 8). Změřeno, že **legacy čte obojí**: „x = na znamení" vypíše
+  u `CB_CSADAD` 0320680 (kde je jen v trase) i u `CB_GWBUS` 0000001 (kde je jen v registru).
+- **Oprava:** `AtributyZastavky` vrací sjednocení obou zdrojů (dedup po znacích, trasa první).
+  Registr je per zastávka nezávisle na lince a směru, což je správná sémantika „tato zastávka je
+  na znamení". Použito i v souhrnu „všechny zastávky linky jsou na znamení", ať si to neprotiřečí.
+- **Dopad měřen předem:** v CB_CSADAD je pole registru prázdné u **všech 5728 zastávek** (240 linek),
+  takže tam změna nic nemění a zlaté odtisky jsou v bezpečí. V CB_GWBUS přibyly 2 zastávky se „x"
+  (řádků legendy atributů 20 → 32 na 45 stránkách) a stránka 0000001/T má nově **10 poznámek stejně
+  jako legacy**. Caché 45/45.
+- Znění zůstává naše („na znamení"), legacy má „zastávka pouze na znamení" - vědomě neměněno.
+- Vedlejší zjištění: v registru se vyskytují jen znaky `x` a `A`, tedy znaky z číselníku atributů -
+  není to kategorie zastávky (což byla obava u „A" na autobusovém nádraží).
+
 ## 2026-07-30 (3) - Vývěska vysvětluje jen značky, které na ní jsou (`B25`)
 
 Vývěska je samostatná stránka, kterou cestující čte na jednom sloupku - takže legenda má vysvětlovat

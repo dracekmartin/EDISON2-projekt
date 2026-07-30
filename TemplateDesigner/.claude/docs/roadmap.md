@@ -4,10 +4,9 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** vzít **`B23`** (chybějící řádky legendy - poznámka je v datech,
-> ale na vývěsce ji cestující nevidí; priorita dle Jana 30. 7.), pak dokončit **B2** (zavírací kolo
-> helpdesku + vizuál zmenšování) a dál **B10** (symbolový font linkové části) nebo **B13** (rozřezání
-> široké tabulky). Follow-upy „na vyžádání zákazníka" žijí
+> **▶ Další session:** dokončit **B2** (zavírací kolo helpdesku - zbývá **#7955** + finální vizuál
+> #13048 bodu 2), pak **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky).
+> **`B22`** čeká na reprodukci od Jana (bez ní se do ní nesahá). Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
@@ -161,28 +160,6 @@ při scope té fáze, ne teď.
 ### Reálná zbývající práce
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
-
-**`B23` ⚠️ CHYBĚJÍCÍ ŘÁDKY LEGENDY** (M, zóna 5; nálezy 30. 7.)
-Nejdůležitější otevřená věc u zastávkového JŘ: **poznámka existuje, ale cestující ji na vývěsce
-nevidí.** Dva samostatné nálezy, oba na `CB_GWBUS` 501/0000001, směr T, stránka Autobusové nádraží:
-
-1. **✅ Vysvětleno (30. 7.) - nebyl to render, ale tiše zapnuté „Rozdělit vývěsku per označník".**
-   Symptom: na stránce chyběl odjezd `11:20` (se značkami `C` + bezbariér) a řádek legendy
-   `H - spoj má bezbariérově přístupné vozidlo`, zatímco legenda `C` tam byla.
-   Změřeno v uložených parametrech (`^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams","ZASTAVKOVY_JR_AD")`):
-   `ROZDELIT_PER_OZNACNIK: true`. Server se tedy chovall správně - stránka nesla jen odjezdy svého
-   označníku. **Chyba je, že UI ten parametr ukazovalo jako vypnutý** (Jan ho přeťukl a rozešlo se to).
-   Oprava UI → archiv (`B24`); zbytek níže jako `B25` a `B26`.
-2. **Chybí zdroj atributů zastávky per spoj.** Legacy má v legendě „x = zastávka pouze na znamení",
-   my ne. Není to filtr ani rozsah zastávek - na té lince nemá „x" žádná zastávka v J-větě (jediné
-   atributy jsou `TS`). Legacy ho bere odjinud; ve W-záznamu trasy jsou atributy **per spoj**
-   (např. `#7:6:1::V` = jen výstup), které nečteme vůbec → chybí celý zdroj. Vedle toho srovnat
-   znění: legacy „zastávka pouze na znamení" × naše „na znamení".
-
-Nástroj na obojí je hotový: `Tests/AdProdlouzeniProbe.Inventura` (počítá i „značka u minuty bez řádku
-legendy") a `LegacyLegenda` (co na téže stránce vypíše starý modul).
-
----
 
 > **Hotovo 30. 7. - `B25` (legenda na rozdělené vývěsce) i `B26` (údajně nesmyslný označník)** →
 > archiv roadmapy. Pravidlo dle Jana: **vývěska je samostatná stránka, takže vysvětluje jen značky,
