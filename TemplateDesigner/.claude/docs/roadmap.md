@@ -14,12 +14,11 @@
 
 ## 🧭 Jak podle roadmapy pracovat
 
-Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B2`, `B10`, …) seřazené do **vln**. Každý blok
-má **zónu** = oblast, kde si dvě sezení šlapou po prstech (viz „Paralelizace" níže).
+Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B10`, `B13`, …) seřazené do **vln**.
 Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
 
-**Nová session:** vezmi nejnižší nezablokovaný blok z nejnižší nedokončené vlny; když běží jiná session,
-zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde).
+**Nová session:** vezmi nejnižší nezablokovaný blok z nejnižší nedokončené vlny. Po dokončení:
+changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde).
 
 **Pravidla, aby roadmapa znovu nenarostla:**
 0. **Číslo bloku je globální a nikdy se nerecykluje** - před založením grepni `B<č>` v roadmapě
@@ -32,56 +31,23 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 ## 🌊 Vlna 1 - zákaznické velké + odemknout linkový
 
-| # | Blok | Vel. | Zóna | Závisí na |
-|---|---|---|---|---|
-| **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | - |
-| **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | - |
-| **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M | 2 | - |
+| # | Blok | Vel. |
+|---|---|---|
+| **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S |
+| **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M |
+| **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M |
 
 ---
 
 ## 🌊 Vlna 2 - velký kus linkového (dedikovaně)
 
-| # | Blok | Vel. | Zóna | Závisí na |
-|---|---|---|---|---|
-| **B13** | **L‑4: 2D bin-packing / `Strih`** - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce" | L | 3 výhradně | - (B11 hotov) |
-| **B14** | **Dedup Caché tiskových enginů (C8) + testy tiskových enginů (C9)** - doprovod ostrého knižního JŘ, detail v tabulce Fáze C+D | L + M | 1 | - |
+| # | Blok | Vel. |
+|---|---|---|
+| **B13** | **L‑4: 2D bin-packing / `Strih`** - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce" | L |
+| **B14** | **Dedup Caché tiskových enginů (C8) + testy tiskových enginů (C9)** - doprovod ostrého knižního JŘ, detail v tabulce Fáze C+D | L + M |
 
 L‑4 stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem
 řádků, ne pětkrát v per-element smyčkách.
-
----
-
-## 🔀 Paralelizace - zóny a pravidla
-
-**Zóna = oblast, kde si dvě sezení šlapou po prstech. Pravidlo: v jedné zóně jedno sezení.**
-
-| Zóna | Co obsahuje | Kolik sezení naráz |
-|---|---|---|
-| **1** | Caché data agend (`ZastavkoveJrAd`/`Mhd`, `KnizniJr*`) | **1** |
-| **2** | Caché infrastruktura (`API.Sablony`, seed, registr agend, EDInputForm `.cls`) | **1** |
-| **3** | Kreslicí jádro + elementy (`Rendering/*`, `ScheduleElementBase`, elementy) | **1**; během B13 **výhradně** - nikdo jiný na elementy |
-| **4** | Okna, dialogy, XAML, vzhled | 1–2, pokud jsou to jiné dialogy |
-| **5** | Dokumentace, helpdesk, ověřování v buildu (bez kódu) | libovolně |
-
-**Dva mechanické limity, které tohle nastavují:**
-
-1. **Vývojový Caché server je jeden** - kompilace tříd je globální akce; dvě kompilující sezení si přepisují
-   stav a zlaté testy dostanou falešná selhání. **Jen jedno sezení smí kompilovat Caché**, i kdyby pracovala
-   v oddělené kopii repozitáře → zóny 1 a 2 se **nedají paralelizovat, jen střídat**.
-2. **.NET paralelizovat lze, ale pracovní kopie je společná** - pro víc než jedno .NET sezení je potřeba
-   **oddělený worktree pro každé**, jinak si mění soubory pod rukama (platí i pro paralelní session kolegy).
-   Bez worktree: jedno .NET sezení + libovolně „papírových" (zóna 5).
-
-**Bezpečné kombinace:**
-- ✅ **B12 + B10 + zavírání tiketů (B2)** - agenda / fontová cesta / papír
-- ✅ **B10 + B12** - fontová cesta je izolovaná od agendy
-- ❌ **cokoli na elementech během B13**
-- ❌ **B18 + jakýkoli element dialog** - B18 sahá na pole ve všech `.cls`
-- ⚠️ **publish je výhradní vždy**
-
-**Dokumentace:** každé sezení dopisuje záznam na začátek changelogu → při paralelním běhu tam vznikne drobná
-kolize. Je triviální; případně ať docs uzavírá poslední dobíhající sezení.
 
 ---
 
