@@ -29,7 +29,7 @@ Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Cach�
 | 8772  | b62718c6-e0aa-478a-be31-bdfb8c7b9917 | **resolved 15.7.** | **TRANSDEV** (Jakub Holík) | Návrhář sestav - podmíněný tisk sekcí |
 | 7947  | 585158b0-d063-40d9-87de-eb076a236a87 | **closed 30. 7. 2026** | **TRANSDEV** (Michal Podloučka) | Logika auto-poznámky u poslední/předposlední zastávky |
 | 7959  | 45fdc840-ce70-4436-a331-c5a61732d9d6 | **resolved 20.7.** | **TRANSDEV** (Michal Podloučka) | Skrýt zastávku v seznamu, pokud z tištěné zastávky není obsluhována |
-| 7955  | dd0f7bd3-0efa-4e2d-947d-ed16559952ce | suspended | **TRANSDEV** (Michal Podloučka) | Vlastní komentář spoje má přebít auto-poznámku + 2 buga |
+| 7955  | dd0f7bd3-0efa-4e2d-947d-ed16559952ce | **closed 30. 7. 2026** | **TRANSDEV** (Michal Podloučka) | Vlastní komentář spoje má přebít auto-poznámku + 2 buga |
 | 7937  | 64fd847c-7090-47d1-bc91-bc581b0aea42 | suspended | **TRANSDEV** (Michal Podloučka) | Odsazení/odrazení zastávky per směr, jen pro zastávkové JŘ |
 | 7161  | 44e0a446-b05b-4c44-9497-3c96fbb945a2 | **resolved 15.7.** | **TRANSDEV** (Vladimír Šimko) | Vypínatelné automatické poznámky (na znamení, bezbariér.) |
 | 9036  | 02f8fcda-25c5-4a2e-8784-79bc84860811 | suspended | **TRANSDEV** (Vladimír Šimko) | Nočné spoje - časová osa cez polnoc (22-5h) → **pokryto B3** |
@@ -65,7 +65,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 ### 0.1 Tikety (helpdesk)
 
 > **Pořadí projití (2026-07-28):** ▶ **1. ready-to-close** = ověřit v buildu + resolve odpovědí zavřít
-(zbývá #7955; #9036 resolved 28. 7., #7947 zavřen 30. 7.). ▶ **2. testování u zákazníka**
+(prázdné - #9036 resolved 28. 7., #7947 i #7955 zavřeny 30. 7.). ▶ **2. testování u zákazníka**
 > (#10660 DPKV - hotové, ale nejdřív zpřístupnit + proklikat jejich obrázky). ▶ **3. feature tracky, nezavírat**
 > (#7937, #8828 - čeká práce v TD). Hotové zavřené: #8772, #7161 (15.7.), #7959 (20.7., čeká ověření klienta).
 
@@ -75,8 +75,8 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
 | #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ **ZAVŘENO 30. 7. 2026** - znění „jede až do zast. \<konečná\> přes \<zastávky\>", ověřeno proti starému modulu i v běžícím buildu na `CB_GWBUS` 501/0000001/T. Zákazníkovi odpovězeno s prosbou o vyzkoušení na 876401/876402, až bude mít nový návrhář (na jejich datech jsme ověřit nemohli). | - | §D1 |
-| #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ **ověřeno na reálných datech 30. 7.** (CB_GWBUS 501/0000002, spoj 21) - viz tabulka v §D2 | k zavření; do odpovědi patří, že jde o **volbu** parametru (výchozí = legacy) + poznámka k D4 | §D2/D3 |
-| #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do resolve poznámka, řešit jinde | §D4 |
+| #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ **ZAVŘENO 30. 7. 2026** - ověřeno na reálných datech (CB_GWBUS 501/0000002, spoj 21), viz tabulka v §D2. V odpovědi zdůrazněno, že jde o **volbu** parametru (výchozí = legacy) a že negativní značky i platnost dnů zůstávají. | - | §D2/D3 |
+| #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do odpovědi se vědomě nepsalo, řeší se jiným kanálem | §D4 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** - ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | - | §B3 |
 | #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ · 🧪 **testování u zákazníka** | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
@@ -394,7 +394,7 @@ jít proti legacy paritě a přebaselinovat.
 „V rozsahu nepoznámkovat schovat" je zde no-op (proto signál o schovaných poznámkách počítá
 skutečně skryté položky, ne zapnutý parametr).
 
-### D2. Vlastní komentář spoje musí přebít auto-poznámku (ne paralelně tisknout)
+### D2. Vlastní komentář spoje musí přebít auto-poznámku - ✅ ZAVŘENO 30. 7. 2026
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
 - **Příklad:** Linka 402, spoj 20 jede jen v části trasy. Auto generuje „spoj jede pouze do zastávky XY". Klient chce vlastní text „ze zastávky XY pokračuje jako linka X do zastávky YX".
 - **Pokus klienta:** zapnutí „Komentáře" → funguje, doplní písmeno + text. Současně ale nezmizí auto-poznámka.
@@ -429,7 +429,7 @@ skutečně skryté položky, ne zapnutý parametr).
   **nemá** (ověřeno 2026-06-20). Není co portovat, dokud se nepotvrdí, že MHD modul má vlastní
   ekvivalentní úložiště (dle kolegy pravděpodobně ne - nastavuje se jen v AD).
 
-### D3. Bug - „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ)
+### D3. Bug - „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ) - ✅ ZAVŘENO 30. 7. 2026
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
 - **Citace:** *„obecně Spoje, nepoznámkovat ruší i označení inverzním znaménkem, což nevím, zda je záměr."*
 - **Co máme dnes:** Funkce „nepoznámkovat" patrně omylem maže i `spojNZ` přidělení.

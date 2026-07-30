@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-07-30 (5) - #7955 ověřen na reálných datech (potlačení auto-poznámky vlastním komentářem)
+## 2026-07-30 (5) - #7955 UZAVŘEN - potlačení auto-poznámky vlastním komentářem ověřeno na datech
 
 Tiket byl vedený jako „hotové, ale neověřené" - featura existuje od 20. 6., ale nebylo na čem ji
 spustit: `CB_CSADAD` nemá na žádné z 240 linek ani číselník komentářů, ani rozsah „Spoje,

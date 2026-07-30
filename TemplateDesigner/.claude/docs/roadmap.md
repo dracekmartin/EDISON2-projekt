@@ -1,10 +1,10 @@
 # Roadmap
 
-> **Stav k 2026-07-30** (#7947 uzavřen, poznámky zastávkového JŘ pročištěné; verze připravena k publish).
+> **Stav k 2026-07-30** (#7947 i #7955 uzavřeny, poznámky zastávkového JŘ pročištěné; verze připravena k publish).
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** dokončit **B2** (zavírací kolo helpdesku - zbývá **#7955** + finální vizuál
+> **▶ Další session:** dokončit **B2** (zavírací kolo helpdesku - zbývá finální vizuál
 > #13048 bodu 2), pak **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky).
 > **`B22`** čeká na reprodukci od Jana (bez ní se do ní nesahá). Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
@@ -33,7 +33,7 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B2** | **Zavírací kolo helpdesku** - ověřit v buildu a zavřít **#7955** + finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
+| **B2** | **Zavírací kolo helpdesku** - finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
 
 Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + položky čekající na zákazníky.
 
@@ -145,7 +145,6 @@ při scope té fáze, ne teď.
 
 | Tiket | Uzavírací podmínka (co ověřit, aby se dal zavřít) |
 |---|---|
-| #7955 | ✅ **ověřeno na datech 30. 7.** (CB_GWBUS 501/0000002, spoj 21) - zbývá jen odpovědět a zavřít |
 | #13048 bod 2 | finální vizuál zmenšování textu (názvy zastávek, zóny, rezerva u šipky směru) |
 
 ### Čeká na někoho jiného - postrčit, není to práce
