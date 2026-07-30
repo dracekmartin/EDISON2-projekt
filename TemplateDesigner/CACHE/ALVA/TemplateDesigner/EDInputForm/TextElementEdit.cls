@@ -55,6 +55,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s f = form.AddFieldToLastGroup("Style.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
+        s f.helpText = "Lze zadat i {BARVA_LINKY} - barvu vezme z jízdního řádu (nenastavená = bílá)"
 
         // ── Skupina "Zarovnání" ───────────────────────────────────────────
         d form.AddGroup("align", "Zarovnání")

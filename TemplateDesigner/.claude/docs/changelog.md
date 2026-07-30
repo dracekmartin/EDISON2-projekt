@@ -110,6 +110,33 @@ sondou `Tests/AdProdlouzeniProbe.cls`.
 - Caché 45/45, .NET 446/446 (8 nových testů filtru poznámek - dosud netestovaný). Zlaté digesty
   0365001/0365005 **beze změny** → opravy jsou behavior-preserving, přebaselinování nebylo potřeba.
 
+## 2026-07-30 - Barva linky z databáze jako zdroj barvy v šabloně (ticket 12997, k otestování)
+
+JŘ modul umí lince přiřadit barvu; návrhář ji nově umí použít, takže se dá udělat třeba podbarvení
+hlavičky „barvou této linky" místo pevného odstínu.
+
+- **Jak se to zadává:** do barevného pole se napíše `{BARVA_LINKY}` (nápověda je u polí Barva
+  rámečku, Barva pozadí u obdélníku a u textu). Mezikrok s výběrem zdroje barvy byl vyzkoušen
+  a **zahozen** - přidával klik všem kvůli funkci pro pár prvků; výběr barvy se chová jako dřív.
+  Pokrývá to všech 32 barevných polí ve formulářích prvků i panel pro víc prvků naráz.
+  **Nepokrývá** dialogy sloupců a pravidla zvýraznění - tam barva textové pole nemá (řešení, až
+  bude potřeba: doplnit tam pole na hex, ne vracet mezikrok).
+- **V šabloně se ukládá odkaz** `{BARVA_LINKY}`, ne konkrétní odstín, takže se barva vezme aktuální
+  při každém tisku. JSON šablony se nemění (barva je pořád string) → žádná migrace.
+- **Nenastavená barva = bílá** (i v návrháři, kde data nejsou), aby podbarvení zůstalo čitelné.
+  Rozklad odkazu má jedno místo (`ColorHex`) a data se zveřejňují jen na dobu kreslení stránky.
+- **Caché:** `BARVA_LINKY` v schématu (nový typ pole `color`, aditivní) i v datech agendy
+  `ZastavkoveJrAd`; hodnotu dává JŘ modul (`GetBarvaLinky`, formát „R;G;B" → hex). Volání je
+  obalené, takže na serveru bez JŘ modulu se barva nenaplní a tisk jde dál. Ověřeno živě na
+  `CB_GWBUS`: schéma i hodnota dorazí (linka 320113 má bílou).
+- **Barevné pole se nedává do palety polí** - přetažením by vznikl text s hexem; zadává se do
+  barevného pole.
+- Barevné pole formuláře odkaz na pole nehlásí jako neplatnou barvu (jinak by se kontrola formátu
+  z 13078 bila s touto funkcí).
+- Testy: TD 506/506, EDControls 462/462, EDISONMAIN2 425/425 (30 nových případů). **Ostatní agendy
+  (linkový, knižní JŘ) záměrně zatím ne** - doplní se přidáním pole do jejich schématu, zadávání
+  je společné.
+
 ## 2026-07-29 - Vymazaný HEX kód barvy shodil návrhář a „rozbil" šablonu (ticket 13078)
 
 Zákazník vymazal HEX kód barvy, potvrdil enterem a dostal chybovou hlášku; po uložení už šablonu

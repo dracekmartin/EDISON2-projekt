@@ -180,6 +180,13 @@ při scope té fáze, ne teď.
 
 Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
 
+**Nález 2026-07-30 (S, bez poptávky nebrat):** u **zastávek a odjezdů** se pozadí a barva textu
+záhlaví/buněk nedají nastavit jinde než po jednotlivých sloupcích - pole „Pozadí záhlaví" / „Pozadí
+buněk" jim v tabu Obecné chybí (legenda poznámek i linková tabulka je mají). Podle `CLAUDE.md` mají
+být 4 základní barvy zón dostupné napříč tabulkovými prvky, takže to vypadá na drift z migrace na
+formuláře. Důsledek navíc: barvu z dat (`{BARVA_LINKY}`) tam nelze zadat vůbec, protože editor
+sloupců textový vstup na barvu nemá (rozhodnuto 30. 7. nechat - doplnit až s poptávkou).
+
 **Fixní (statická) tabulka - implementace odložena na poptávku faktur / F3.** Analýza 2026-07-12
 rozhodla „koncept implementovat" (tabulka dává reflow podmíněných řádků, auto výšku řádku a
 strukturální editaci, což skupina elementů principiálně neumí). Model i render Fixed módu jsou hotové

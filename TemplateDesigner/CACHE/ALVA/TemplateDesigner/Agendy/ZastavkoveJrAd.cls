@@ -250,13 +250,13 @@ ClassMethod GetData(ByRef sys As %String) As %Status
                     s csvOzn = ..NastupisteSpoju(dataDB, sku, lin, smer, poradi)
                     if (csvOzn '= "") && ($l(csvOzn,",") > 1) {
                         f oi=1:1:$l(csvOzn,",") {
-                            s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, $p(csvOzn,",",oi))
+                            s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, $p(csvOzn,",",oi), IdFa)
                             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
                         }
                         continue        // rozděleno → jedinou (smíchanou) stránku nevytvářet
                     }
                 }
-                s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer)
+                s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, "", IdFa)
                 i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
             }
         }
@@ -274,7 +274,9 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 /// currentPoradi = pořadí aktuální zastávky (prázdné = první). Vrací %DynamicObject nebo "".
 /// filtrOznacnik (#8828, volitelné): když neprázdné, stránka nese jen odjezdy spojů z tohoto označníku
 /// vývěskové zastávky a NASTUPISTE = tento označník. Prázdné = všechny odjezdy (dnešní chování).
-ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %String, currentPoradi As %String = "", smer As %String = "T", filtrOznacnik As %String = "") As %DynamicObject
+/// IdFa (volitelné): potřebuje ho jen barva linky - ostatní data JŘ modulu jsou vázaná na namespace,
+/// ne na firmu. Prázdné → barva linky se nenaplní (šablona pak použije bílou).
+ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %String, currentPoradi As %String = "", smer As %String = "T", filtrOznacnik As %String = "", IdFa As %String = "") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
 
@@ -303,6 +305,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("TITULEK",                titulek)
     d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
+    d vals.%Set("BARVA_LINKY",            ..BarvaLinky(IdFa, dataDB, sku, lin))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1)
     s platiDo = $p(plati,"~",2)
@@ -1682,7 +1685,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 
         // Živý náhled z první linky aktuální firmy (session dataDB) - zrcadlí reálný GetData.
         d ..PrvniLinka(dataDB, .sku, .lin)
-        s page = $s(lin'="":..BuildStrankaZastavky(dataDB, sku, lin), 1:"")
+        s page = $s(lin'="":..BuildStrankaZastavky(dataDB, sku, lin, , , , IdFa), 1:"")
 
         // Fallback - když firma nemá v ^JRL žádnou linku, ať designer nespadne.
         i page = "" {
@@ -1714,6 +1717,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
     d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+    d ..AddField(fields, "BARVA_LINKY",            "Barva linky",            "color")
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
@@ -2019,6 +2023,21 @@ ClassMethod IntToHex2(n As %Integer) As %String [ Private ]
 }
 
 /// Konvertuje RGB string "R;G;B" na SkiaSharp hex "#FFRRGGBB". Prázdný vstup → prázdný string.
+/// Barva přiřazená lince v JŘ modulu jako "#AARRGGBB"; prázdno, když linka barvu nastavenou nemá
+/// (šablona pak použije bílou). Modul ji drží jako "R;G;B".
+/// Volání je obalené záměrně: třída patří JŘ modulu (ISYJR2), takže na serveru, kde modul není,
+/// se barva prostě nenaplní a tisk jde dál - vývěska kvůli barvě spadnout nesmí.
+ClassMethod BarvaLinky(IdFa As %String = "", dataDB As %String = "", sku As %String = "", lin As %String = "") As %String
+{
+    i (IdFa = "") || (sku = "") || (lin = "") ret ""
+    s rgb = ""
+    try {
+        s rgb = ##class(ALVA.ISY.ISYJR2.API.Linky).GetBarvaLinky(IdFa, dataDB, sku, lin)
+    }
+    catch ex { s rgb = "" }
+    ret ..RgbToHex(rgb)
+}
+
 ClassMethod RgbToHex(rgb As %String) As %String
 {
     i rgb = "" q ""

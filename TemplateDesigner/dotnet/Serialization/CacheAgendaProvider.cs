@@ -603,7 +603,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
     // ─── JSON parsing ─────────────────────────────────────────────────────────
 
-    private static DataSchema? ParseSchema(string agendaCode, string agendaName, string json)
+    /// <summary>Internal kvůli testům wire kontraktu schématu (typy polí).</summary>
+    internal static DataSchema? ParseSchema(string agendaCode, string agendaName, string json)
     {
         try
         {
@@ -694,6 +695,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         "time"     => FieldDataType.Time,
         "datetime" => FieldDataType.DateTime,
         "boolean"  => FieldDataType.Boolean,
+        "color"    => FieldDataType.Color,
         _          => FieldDataType.Text
     };
 

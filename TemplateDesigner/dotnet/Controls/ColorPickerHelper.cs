@@ -31,6 +31,9 @@ static class ColorPickerHelper
     /// barvu do recent (fire-and-forget save).
     /// Vrátí novou barvu jako `"#AARRGGBB"` string, nebo null pokud uživatel zrušil.
     /// </summary>
+    /// <remarks>Barva z dat („pozadí = barva linky") se sem záměrně nemotá - zapisuje se do pole
+    /// jako <c>{BARVA_LINKY}</c>. Mezikrok s volbou zdroje by přidal klik všem uživatelům kvůli
+    /// funkci, která se použije na pár prvcích.</remarks>
     public static string? PickColor(Window owner, string currentHex)
     {
         var dlg = new System.Windows.Forms.ColorDialog
