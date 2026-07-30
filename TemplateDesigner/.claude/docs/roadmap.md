@@ -145,12 +145,11 @@ při scope té fáze, ne teď.
 
 | Tiket | Uzavírací podmínka (co ověřit, aby se dal zavřít) |
 |---|---|
-| #13048 bod 2 | finální vizuál zmenšování textu (názvy zastávek, zóny, rezerva u šipky směru) |
+| #13048 bod 2 | **vizuálně ověřit zmenšování textu v buňce** (shrink-to-fit, vestavěné od 27. 7.): dlouhý název zastávky se má zmenšit místo ořezu, značky za názvem zůstat zarovnané. **A rozhodnout spodní mez** - dnes se extrémní název zmenšuje bez limitu, takže může být nečitelný; alternativa je mez + přiznané varování o přetečení. Tiket je resolved, tohle je naše vlastní kontrola kvality. |
 
 ### Čeká na někoho jiného - postrčit, není to práce
 
 - **#10660 DPKV** - hotové, zpřístupnit build + proklikat jejich obrázky
-- **#7959** - ověření klientem na 876401/876402
 - **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení - kolega
 - **#13048 bod 4 fáze 2** (duplikace řádku u víc nástupišť) - čeká potvrzení KOVED
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne

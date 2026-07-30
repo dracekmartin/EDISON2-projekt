@@ -28,7 +28,7 @@ Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Cach�
 | 8828  | 02063e8a-e2c1-476d-a527-77e77e0f263e | suspended | **TRANSDEV** (Michal Podloučka, Jakub Holík) | Per-sloupek zastávky - samostatná vývěska |
 | 8772  | b62718c6-e0aa-478a-be31-bdfb8c7b9917 | **resolved 15.7.** | **TRANSDEV** (Jakub Holík) | Návrhář sestav - podmíněný tisk sekcí |
 | 7947  | 585158b0-d063-40d9-87de-eb076a236a87 | **closed 30. 7. 2026** | **TRANSDEV** (Michal Podloučka) | Logika auto-poznámky u poslední/předposlední zastávky |
-| 7959  | 45fdc840-ce70-4436-a331-c5a61732d9d6 | **resolved 20.7.** | **TRANSDEV** (Michal Podloučka) | Skrýt zastávku v seznamu, pokud z tištěné zastávky není obsluhována |
+| 7959  | 45fdc840-ce70-4436-a331-c5a61732d9d6 | **closed 30. 7. 2026** | **TRANSDEV** (Michal Podloučka) | Skrýt zastávku v seznamu, pokud z tištěné zastávky není obsluhována |
 | 7955  | dd0f7bd3-0efa-4e2d-947d-ed16559952ce | **closed 30. 7. 2026** | **TRANSDEV** (Michal Podloučka) | Vlastní komentář spoje má přebít auto-poznámku + 2 buga |
 | 7937  | 64fd847c-7090-47d1-bc91-bc581b0aea42 | suspended | **TRANSDEV** (Michal Podloučka) | Odsazení/odrazení zastávky per směr, jen pro zastávkové JŘ |
 | 7161  | 44e0a446-b05b-4c44-9497-3c96fbb945a2 | **resolved 15.7.** | **TRANSDEV** (Vladimír Šimko) | Vypínatelné automatické poznámky (na znamení, bezbariér.) |
@@ -67,13 +67,13 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 > **Pořadí projití (2026-07-28):** ▶ **1. ready-to-close** = ověřit v buildu + resolve odpovědí zavřít
 (prázdné - #9036 resolved 28. 7., #7947 i #7955 zavřeny 30. 7.). ▶ **2. testování u zákazníka**
 > (#10660 DPKV - hotové, ale nejdřív zpřístupnit + proklikat jejich obrázky). ▶ **3. feature tracky, nezavírat**
-> (#7937, #8828 - čeká práce v TD). Hotové zavřené: #8772, #7161 (15.7.), #7959 (20.7., čeká ověření klienta).
+> (#7937, #8828 - čeká práce v TD). Hotové zavřené: #8772, #7161 (15.7.), #7959 (20.7., zavřen 30.7.), #7947 + #7955 (30.7.).
 
 | Ticket | Zákazník | Feature | Stav | Otestovat před zavřením | Detail |
 |---|---|---|---|---|---|
 | #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | - (zavřeno) | §E1 |
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
-| #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
+| #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ **ZAVŘENO 30. 7. 2026** | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky") | §A6 |
 | #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ **ZAVŘENO 30. 7. 2026** - znění „jede až do zast. \<konečná\> přes \<zastávky\>", ověřeno proti starému modulu i v běžícím buildu na `CB_GWBUS` 501/0000001/T. Zákazníkovi odpovězeno s prosbou o vyzkoušení na 876401/876402, až bude mít nový návrhář (na jejich datech jsme ověřit nemohli). | - | §D1 |
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ **ZAVŘENO 30. 7. 2026** - ověřeno na reálných datech (CB_GWBUS 501/0000002, spoj 21), viz tabulka v §D2. V odpovědi zdůrazněno, že jde o **volbu** parametru (výchozí = legacy) a že negativní značky i platnost dnů zůstávají. | - | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do odpovědi se vědomě nepsalo, řeší se jiným kanálem | §D4 |
