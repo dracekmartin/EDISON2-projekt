@@ -81,6 +81,26 @@ public class FieldValidationTests
         Assert.Equal("Neplatná barva - zadejte #RRGGBB nebo #AARRGGBB", f.GetTypeError());
     }
 
+    [Theory]
+    [InlineData("{BARVA_LINKY}")]
+    [InlineData("  {BARVA_LINKY}  ")]
+    public void Color_FieldReferenceIsAllowed(string value)
+    {
+        // Hostitelská aplikace může barvu vázat na data (barva podle záznamu) - odkaz na pole
+        // je legitimní hodnota, ne překlep.
+        var f = new Field { FieldType = EFieldType.Color, Value = value };
+        Assert.Null(f.GetTypeError());
+    }
+
+    [Theory]
+    [InlineData("#FF33{X}")]
+    [InlineData("{A}{B}")]
+    public void Color_MixOfHexAndReferenceIsError(string value)
+    {
+        var f = new Field { FieldType = EFieldType.Color, Value = value };
+        Assert.NotNull(f.GetTypeError());
+    }
+
     [Fact]
     public void Color_EmptyIsAllowed()
     {
