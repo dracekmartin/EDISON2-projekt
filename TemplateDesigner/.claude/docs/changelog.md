@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-30 (6) - Helpdeskové kolo zastávkového JŘ dojeté
+
+Zastávkový JŘ nemá otevřený zákaznický tiket. Dnes zavřené: **#7947**, **#7955**, **#7959**
+a **#13048** - u posledního klient potvrdil, že zmenšování textu v buňce funguje, jak čekal, což byl
+jeho poslední otevřený bod. Blok `B2` tím dojel celý → archiv roadmapy.
+
+Zbylé položky helpdeskové fronty čekají na někoho jiného (zpřístupnit build DPKV, SK kódování
+na-znamení, dvě potvrzení od zákazníků), nejsou to úkoly.
+
 ## 2026-07-30 (5) - #7955 UZAVŘEN - potlačení auto-poznámky vlastním komentářem ověřeno na datech
 
 Tiket byl vedený jako „hotové, ale neověřené" - featura existuje od 20. 6., ale nebylo na čem ji

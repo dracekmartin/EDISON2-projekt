@@ -2,6 +2,17 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-30 ✅ - `B2` zavírací kolo helpdesku dojeté
+
+Zastávkový JŘ nemá otevřený zákaznický tiket. Zavřené 30. 7.: **#7947** (znění poznámky o prodloužení
+spoje), **#7955** (potlačení auto-poznámky vlastním komentářem - ověřeno na reálných datech), **#7959**
+(skrytí neobsluhované zastávky) a **#13048** (5 bodů KOVED; klient potvrdil i zmenšování textu v buňce,
+což byl poslední otevřený bod). Detail měřených stavů → `customer-requirements §0.1/§0.3/§D1/§D2`.
+
+Zbytek helpdeskové fronty jsou položky **čekající na někoho jiného**, ne práce: #10660 (zpřístupnit
+build DPKV), TR2 (SK kódování na-znamení - kolega), #13048 bod 4 fáze 2 a TR8 (obojí čeká potvrzení
+zákazníka).
+
 ## 2026-07-30 ✅ - `B23` atributy zastávky se čtou i z registru zastávek
 
 Detail → changelog 2026-07-30 (4). Na vývěsce chybělo, že zastávka je **na znamení**. Atribut může být

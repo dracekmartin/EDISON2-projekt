@@ -1,12 +1,13 @@
 # Roadmap
 
-> **Stav k 2026-07-30** (#7947 i #7955 uzavřeny, poznámky zastávkového JŘ pročištěné; verze připravena k publish).
+> **Stav k 2026-07-30** (helpdeskové kolo dojeté - #7947, #7955, #7959 i #13048 zavřené; poznámky
+> zastávkového JŘ pročištěné; verze připravena k publish).
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** dokončit **B2** (zavírací kolo helpdesku - zbývá finální vizuál
-> #13048 bodu 2), pak **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky).
-> **`B22`** čeká na reprodukci od Jana (bez ní se do ní nesahá). Follow-upy „na vyžádání zákazníka" žijí
+> **▶ Další session:** **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky) -
+> helpdeskovou frontu máme prázdnou. **`B22`** čeká na reprodukci od Jana (bez ní se do ní nesahá).
+> Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
@@ -29,19 +30,13 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 ---
 
-## 🌊 Vlna 1 - vyčistit frontu
+## 🌊 Vlna 1 - malé věci a blokované
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B2** | **Zavírací kolo helpdesku** - finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
+| **B22** | **„Hodiny od/do" viditelné, i když časová osa není „Vlastní rozsah"** ⚠️ **čeká na reprodukci od Jana, bez ní do toho nesahat**. Prohledáno 30. 7.: obě plochy (záložka Parametry i tiskový dialog) filtr `visibleWhen` aplikují včetně přepočtu při změně pole a výchozí osa je „Jen hodiny s odjezdy", takže mají být skryté. Možný projev `B24`. Potřeba vědět: která plocha, na co byla osa nastavená, co se dělo předtím | S | 4 | reprodukce |
 
-Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + položky čekající na zákazníky.
-
-**`B22` „Hodiny od/do" viditelné, i když časová osa není „Vlastní rozsah"** (S, zóna 4; nález 30. 7.)
-⚠️ **Čeká na reprodukci od Jana, bez ní do toho nesahat.** Prohledáno 30. 7.: obě plochy (záložka
-Parametry i tiskový dialog) filtr `visibleWhen` aplikují včetně přepočtu při změně pole a výchozí osa
-je „Jen hodiny s odjezdy", takže fields mají být skryté. Možný projev `B24` (viditelnost spočítaná nad
-stavem, který se pak změnil). Potřeba: která plocha, na co byla osa nastavená, co se dělo předtím.
+V zákaznické frontě zůstává jediná reálná práce (`B12`) + položky čekající na zákazníky.
 
 
 ---
@@ -140,12 +135,6 @@ při scope té fáze, ne teď.
 > **Plný stav** (hotové featury + co otestovat pro uzavření helpdesk tiketů) →
 > [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md). Zde jen **otevřená
 > akční práce**. Vel.: S = do hodiny, M = půl dne, L = víc dní.
-
-### Čeká jen na doběhnutí - blok B2
-
-| Tiket | Uzavírací podmínka (co ověřit, aby se dal zavřít) |
-|---|---|
-| #13048 bod 2 | **vizuálně ověřit zmenšování textu v buňce** (shrink-to-fit, vestavěné od 27. 7.): dlouhý název zastávky se má zmenšit místo ořezu, značky za názvem zůstat zarovnané. **A rozhodnout spodní mez** - dnes se extrémní název zmenšuje bez limitu, takže může být nečitelný; alternativa je mez + přiznané varování o přetečení. Tiket je resolved, tohle je naše vlastní kontrola kvality. |
 
 ### Čeká na někoho jiného - postrčit, není to práce
 
