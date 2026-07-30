@@ -184,19 +184,10 @@ legendy") a `LegacyLegenda` (co na téže stránce vypíše starý modul).
 
 ---
 
-**`B25` Rozdělená vývěska nechává v legendě značky spojů, které na ní nejsou** (S, zóna 5; 30. 7.)
-Při rozdělení per označník se filtrují **odjezdy**, ale poznámky rozdílů tras ne (v kódu vědomě, aby
-byla písmena variant shodná napříč stránkami téže zastávky). Důsledek: na stránce svítí vysvětlivka
-ke značce, která na ní není u žádné minuty (změřeno: `C` v legendě, odjezd `11:20` na druhé stránce).
-Naopak legenda bezbariéru zmizí celá, protože se plní jen z vytištěných odjezdů. Rozhodnout, co je
-správné (filtrovat legendu dle stránky × nechat kvůli stabilitě písmen) a srovnat obě strany.
-
-**`B26` „Označník" může být z dat nesmysl → rozdělení vyrobí bludné stránky** (M, zóna 5; 30. 7.)
-Na `CB_GWBUS` 501/0000001 vrací `NastupisteSpoju` hodnoty **`JET,1`**; „JET" není označník, v datech
-je to obsah, který se plete s příznakem (`JET`/`JETE` je i v J-větě `#3`, odkud čteme fallback).
-Rozdělení pak vytvoří stránku „JET" a stránku „1". Na `CB_CSADAD` 0320680 přitom označníky (11/22)
-fungují - je to tedy závislé na obsahu dat, ne rozbité vždy. Ověřit, čím ten segment v AD skutečně je
-(možná posun indexu pro některé firmy), a rozdělení nespouštět nad hodnotou, která označník není.
+> **Hotovo 30. 7. - `B25` (legenda na rozdělené vývěsce) i `B26` (údajně nesmyslný označník)** →
+> archiv roadmapy. Pravidlo dle Jana: **vývěska je samostatná stránka, takže vysvětluje jen značky,
+> které na ní reálně jsou.** `B26` se ukázal jako **falešný poplach** - pole čteme správně, jen v datech
+> jedné firmy je v něm text, který označník není.
 
 > **Rozhodnuto 30. 7. - kolize značky „H"/„F" zůstává** (rozhodnutí o známkování rozdílů tras): ověřeno voláním starého modulu,
 > že tutéž kolizi má i legacy (legenda 0365005 nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`).

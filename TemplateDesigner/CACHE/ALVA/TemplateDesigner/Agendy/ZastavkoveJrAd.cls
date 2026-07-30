@@ -591,6 +591,12 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) - stránku negenerovat
     i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
+    // Vývěska je samostatná stránka → legenda vysvětluje jen značky, které na TÉTO stránce reálně jsou.
+    // Ostatní kategorie to mají samo (plní se z vytištěných odjezdů), rozdíly tras ne - ty se počítají
+    // per zastávka nezávisle na tom, které odjezdy stránka nese (rozdělení per označník, spoj bez
+    // rozpoznaného sloupce dnů). Písmena se NEpřečíslovávají, jen se zahodí nepoužitá vysvětlivka -
+    // stejné písmeno tak znamená totéž na všech stránkách téže zastávky.
+    d ..ProrezatLegenduRozdilu(odjezdy, .rozdilLegenda)
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
     s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP)
 
@@ -1302,6 +1308,34 @@ ClassMethod ZiskejMarker(ByRef poznMap, txt As %String) As %String
     s poznMap("byText", txt) = n
     s poznMap("byMarker", n) = txt
     q n
+}
+
+/// Zahodí z legendy rozdílů tras písmena, která nejsou u žádného odjezdu **této stránky**.
+/// Bez toho zůstane na rozdělené vývěsce (per označník) vysvětlivka ke značce, jejíž spoj odjíždí
+/// z jiného označníku, tedy je na jiné stránce - cestující čte vysvětlení k něčemu, co nevidí.
+/// Přiřazení písmen zůstává nedotčené (nepřečíslovává se), takže táž značka znamená na všech
+/// stránkách téže zastávky totéž.
+ClassMethod ProrezatLegenduRozdilu(odjezdy As %DynamicArray, ByRef legenda)
+{
+    i '$d(legenda) q
+    k pouzite
+    s itOdj = odjezdy.%GetIterator()
+    while itOdj.%GetNext(.klicOdj, .odjezd) {
+        continue:'$isobject(odjezd)
+        s itAnot = odjezd.%Get("ANOTACE").%GetIterator()
+        while itAnot.%GetNext(.klicAnot, .anotace) {
+            continue:'$isobject(anotace)
+            continue:anotace.%Get("KATEGORIE")'="rozdil-trasy"
+            s znak = anotace.%Get("ZNAK")
+            i znak '= "" s pouzite(znak) = ""
+        }
+    }
+    s znak = ""
+    f {
+        s znak = $o(legenda(znak))
+        q:znak=""
+        i '$d(pouzite(znak)) k legenda(znak)
+    }
 }
 
 /// Sestaví legendu: atributy zastávek + atributy spoje (bezbariér) + rozdíly tras + "nejede/jede".

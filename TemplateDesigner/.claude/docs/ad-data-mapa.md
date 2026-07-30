@@ -104,6 +104,14 @@ Přístup: `^[nmsp]GLOBAL(...)`. První dva subscripty linkových dat: `sku` (sk
 **Trasa spoje `("W")`** - per zastávka: čas od počátku, čekání, tarifní/přesné km, zóna,
 nástupiště, atributy. (Analogie MHD `MakeTableSpoj`.)
 
+**Označník (nástupiště)** = W pole **7** per spoj, fallback J-věta segment **#3** (`nastTam:nastZpet`)
+per zastávka a směr. Ověřeno 30. 7. na `CB_CSADAD` 0320680: J-věta nese `11`, W-trasa spoje `22` -
+tedy skutečně označníky té zastávky. ⚠️ **Obsah pole není zaručený**: na `CB_GWBUS` 501/0000001 je
+v tomtéž poli text `JET`/`JETE` (v J-větě i ve W shodně), tedy něco, co označník není a co zatím
+doménově nevíme vysvětlit. Featura „rozdělit vývěsku pro každý označník" (#8828) proto může nad
+takovými daty vyrobit stránky „označník JET" - je opt-in a titulek stránky hodnotu zobrazuje, takže
+je to poznat na první pohled; heuristika „vypadá to jako označník" se vědomě nedělá.
+
 ### `^JRZ(czst,...)` - zastávky
 
 `czst` = číslo zastávky. Hlavní uzel je `$`-delimitovaný řetězec (~46+ polí): názvy

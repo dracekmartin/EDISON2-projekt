@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-30 (3) - Vývěska vysvětluje jen značky, které na ní jsou (`B25`)
+
+Vývěska je samostatná stránka, kterou cestující čte na jednom sloupku - takže legenda má vysvětlovat
+právě to, co na ní je. U rozdělené vývěsky (per označník) to neplatilo: odjezdy se filtrovaly, ale
+poznámky rozdílů tras ne, takže tam zůstala vysvětlivka ke značce, jejíž spoj odjíždí z jiného
+označníku, tedy je na jiné stránce.
+
+- **Oprava:** `ProrezatLegenduRozdilu` zahodí řádky legendy, ke kterým na dané stránce není žádná
+  značka. **Písmena se nepřečíslovávají** - táž značka znamená na všech stránkách téže zastávky totéž.
+  Původní obava v kódu (stabilita písmen napříč stránkami) se tím neporušuje; ukázalo se, že si
+  s prořezáním legendy neodporují.
+- **Platí obecně, ne jen při rozdělení** - stejně se ošetří i spoj, kterému se nerozpozná sloupec dnů.
+  Na nerozdělených stránkách je to **no-op** (inventura 9693 stránek vrací identická čísla).
+- Ověřeno na `CB_GWBUS` 501/0000001/T: označník „1" → 1 odjezd a legenda jen `C`+bezbariér,
+  označník „JET" → 3 odjezdy a legenda `B`,`E`,dny,omezení. Caché 45/45, zlaté digesty beze změny.
+- **`B26` uzavřen jako falešný poplach:** pole označníku čteme správně (ověřeno na `CB_CSADAD` 0320680,
+  kde nese `11`/`22`); v datech GWBUS je v něm text `JET`/`JETE`, tedy něco jiného. Heuristika se
+  nedělá - rozdělení je opt-in a titulek stránky označník ukazuje. Zbývá doménová otázka, co `JET` je.
+
 ## 2026-07-30 (2) - Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl (`B24`)
 
 Uživatel tiskl něco jiného, než co měl v nastavení, a neměl jak na to přijít: uložené

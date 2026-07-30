@@ -2,6 +2,27 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-30 ✅ - `B25` legenda na rozdělené vývěsce + `B26` uzavřen jako falešný poplach
+
+**Pravidlo (rozhodnutí Jan):** vývěska je **samostatná stránka**, takže vysvětluje jen značky, které
+na ní reálně jsou. Ostatní kategorie to měly samy (plní se z vytištěných odjezdů), rozdíly tras ne -
+počítají se per zastávka nezávisle na tom, které odjezdy stránka nese. `ProrezatLegenduRozdilu` zahodí
+nepoužité řádky; **písmena se nepřečíslovávají**, takže táž značka znamená na všech stránkách téže
+zastávky totéž (to byla původní obava v kódu - ukázalo se, že stabilita písmen a prořezání legendy si
+neodporují). Ověřeno na rozdělených stránkách `CB_GWBUS` 501/0000001/T: označník „1" → 1 odjezd
+a legenda jen `C`+bezbariér, označník „JET" → 3 odjezdy a legenda `B`,`E`,dny,omezení.
+Na nerozdělených stránkách **no-op** (čísla inventury identická, zlaté digesty beze změny).
+
+**`B26` byl falešný poplach.** Z hodnot `JET,1` jsem usoudil, že čteme špatné pole. Měření na firmě,
+kde označníky fungují (`CB_CSADAD` 0320680), to vyvrátilo: J-věta `#3` nese `11` a W-trasa spoje pole 7
+nese `22` - **pole čteme správně**. V GWBUS je v tomtéž poli text `JET`/`JETE`, tedy něco, co označník
+není. Žádná heuristika „vypadá to jako označník" se nedělá: rozdělení je opt-in, po `B24` se jeho stav
+zobrazuje pravdivě a titulek stránky nese „…, označník JET", takže je to samovysvětlující.
+⬜ **Otevřená doménová otázka:** co `JET`/`JETE` v datech GWBUS znamená (kód turnusu? příznak?).
+
+**Poučení:** „vidím v datech nesmysl" ještě neznamená „čteme špatné pole". Ověřovat na firmě, kde ta
+featura prokazatelně funguje - rozhodlo to jedním měřením.
+
 ## 2026-07-30 ✅ - `B24` Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl
 
 Detail → changelog 2026-07-30 (2). Uživatel tiskl jiné nastavení, než jaké viděl: uložené
