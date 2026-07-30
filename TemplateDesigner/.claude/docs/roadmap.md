@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Stav k 2026-07-28** (stanovišťový balík KOVED/TRANSDEV uzavřen, verze připravena k publish).
+> **Stav k 2026-07-30** (#7947 uzavřen, poznámky zastávkového JŘ pročištěné; verze připravena k publish).
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
@@ -20,7 +20,7 @@ Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
 **Nová session:** vezmi nejnižší nezablokovaný blok z nejnižší nedokončené vlny; když běží jiná session,
 zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde).
 
-**Tři pravidla, aby roadmapa znovu nenarostla:**
+**Pravidla, aby roadmapa znovu nenarostla:**
 0. **Číslo bloku je globální a nikdy se nerecykluje** - před založením grepni `B<č>` v roadmapě
    **i v archivu** (jinak vznikne druhý „B18“ a review se rozejde s tím, co kdo myslel).
 1. **Nic nevstoupí bez velikosti a čísla bloku** - volný text bez velikosti je přesně to, co se nahromadilo.
@@ -33,9 +33,16 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B2** | **Zavírací kolo helpdesku** - ověřit v buildu a zavřít **#7955** (#7947 zavřen 30. 7.) + finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
+| **B2** | **Zavírací kolo helpdesku** - ověřit v buildu a zavřít **#7955** + finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
 
 Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + položky čekající na zákazníky.
+
+**`B22` „Hodiny od/do" viditelné, i když časová osa není „Vlastní rozsah"** (S, zóna 4; nález 30. 7.)
+⚠️ **Čeká na reprodukci od Jana, bez ní do toho nesahat.** Prohledáno 30. 7.: obě plochy (záložka
+Parametry i tiskový dialog) filtr `visibleWhen` aplikují včetně přepočtu při změně pole a výchozí osa
+je „Jen hodiny s odjezdy", takže fields mají být skryté. Možný projev `B24` (viditelnost spočítaná nad
+stavem, který se pak změnil). Potřeba: která plocha, na co byla osa nastavená, co se dělo předtím.
+
 
 ---
 
@@ -96,13 +103,8 @@ kolize. Je triviální; případně ať docs uzavírá poslední dobíhající s
 
 ### 📥 Backlog / budoucí velké tracky
 
-> Audit stavu v1 (scan 2026-07-07) - P-A/P-B/P-C hotové, P-D rehomed do produkční sekce →
-> **detail v [`roadmap-archive.md`](roadmap-archive.md)** (Session 2026-07-08). Konsolidace jádra
-> hotová, plocha může růst.
-
 - **Zastávkový JŘ business** (parkované helpdesk A2-A5/A6/B4 + TRANSDEV sada) → viz sekce „Zastávkový JŘ - business logika" níže
 - **Fáze B - odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
-  (Conditional formatting seznam pravidel = HOTOVO #1, 2026-07-08.)
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
   vnořené datasource (`_rows` v `_rows`).
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR - velké
@@ -128,9 +130,8 @@ při scope té fáze, ne teď.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe - v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
 3. **Další výchozí šablony** (MHD + linkový) = **krok 44b / C4** (linková varianta v L‑tracku Fáze C+D);
    mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/`.
-4. **Zákaznická dokumentace na wiki (post-release)** - 2 dokumenty, seedy HOTOVÉ a aktuální
-   (2026-07-13): `uzivatelska-prirucka.md` (část I obecné ovládání + část II zastávkový JŘ;
-   nové agendy = nové části) + `plan-a-zmeny.md` („Novinky a plány"). Zbývá: obrázky + publikace.
+4. **Zákaznická dokumentace na wiki (post-release)** - seedy hotové (`uzivatelska-prirucka.md`,
+   `plan-a-zmeny.md`); zbývá **obrázky + publikace**.
 
 ---
 
@@ -161,51 +162,28 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-> **Hotovo 30. 7. - `B25` (legenda na rozdělené vývěsce) i `B26` (údajně nesmyslný označník)** →
-> archiv roadmapy. Pravidlo dle Jana: **vývěska je samostatná stránka, takže vysvětluje jen značky,
-> které na ní reálně jsou.** `B26` se ukázal jako **falešný poplach** - pole čteme správně, jen v datech
-> jedné firmy je v něm text, který označník není.
-
-> **Rozhodnuto 30. 7. - kolize značky „H"/„F" zůstává** (rozhodnutí o známkování rozdílů tras): ověřeno voláním starého modulu,
-> že tutéž kolizi má i legacy (legenda 0365005 nese `3#72#…bezbariérově…` i `1#H#neobsluhuje…`).
-> Držíme 1:1 paritu; kdyby to zákazník nahlásil, oprava je malá (převzít z MHD sdílený pool značek
-> stránky) a stojí přebaselinování zlatého digestu 0365005.
-
-**`B22` Podmíněná viditelnost parametrů v náhledové liště** (S, zóna 5; nález 30. 7.)
-V parametrové liště nad náhledem jsou vidět „Hodiny od/do", i když časová osa není „Vlastní rozsah" -
-lišta neaplikuje podmíněnou viditelnost parametru (v tiskovém dialogu se to chová možná jinak, chce
-ověřit obě cesty). Kosmetika, ale mate.
-
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
 
 | # | Co | Vel. | Co potřebuje |
 |---|---|---|---|
 | TR10 | Skrýt spoje o So/Ne/svátcích | S–M | Caché filtr |
-| TR7 | Výběr sloupců variant jízdních dob (per-písmeno výběr) | S–M | **zčásti vyřešeno 2026-07-27** (#13048 bod 5): varianty nově dle trasy+nástupiště s max časy (málo sloupců) + parametr „Řazení variant tras: Stabilní" = stabilní pořadí. Zbývá jen případný per-písmeno výběr, až ho TRANSDEV potvrdí nad novým chováním |
+| TR7 | Per-písmeno výběr sloupců variant jízdních dob | S–M | jen pokud TRANSDEV potvrdí nad novým chováním (varianty dle trasy+nástupiště s max časy jsou od 27. 7. hotové) |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | nový datový model |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | Caché-input (Studio JŘ) |
 | TR5 | Definice cíle - střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
 
-*(#7937 = blok `B12`. Follow-upy uzavřených tiketů „na vyžádání zákazníka" →
-[`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)*
+*(Follow-upy uzavřených tiketů „na vyžádání zákazníka" → [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)*
 
 ---
 
 ## 🟠 Fáze B: Element flexibility - jen odložené body
 
-Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony). Hotová část
-(conditional formatting, počítaná pole, min/max, versioning framework) → archiv.
+Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
 
-**Fixní (statická) tabulka - analýza + plán HOTOVY (2026-07-12), implementace odložena na poptávku faktur/F3:**
-
-> Rozhodnutí z analýzy: **koncept implementovat** (FastReport/Stimulsoft svět našich uživatelů Table
-> objekt čeká; tabulka dává logiku, kterou skupina elementů principiálně neumí - **reflow podmíněných
-> řádků** (skrytý řádek zkolabuje, díra nezůstane), **auto výška řádku** (obsah odtlačí řádky pod sebou),
-> strukturální editace (insert řádku, sloupcový resize), sémantika pro Caché distribuci + AI).
-> Pro JŘ není potřeba (bloky záhlaví = 2×3 bez podmínek) → **nedělat hned, ale s poptávkou faktur / F3**.
-> Průzkum stavu: model+render Fixed módu KOMPLETNÍ a na sdíleném jádru (kaskáda, CellRenderer,
-> ResolveWidths), 5-tab `TableEditorDialog` funkční vč. „Ze šablony…" na hotový `GetTableTemplate`
-> kontrakt (agendy už nabízejí ZAHLAVI_LINKY/PLATNOST_DOPRAVCE/FAKTURA_*).
+**Fixní (statická) tabulka - implementace odložena na poptávku faktur / F3.** Analýza 2026-07-12
+rozhodla „koncept implementovat" (tabulka dává reflow podmíněných řádků, auto výšku řádku a
+strukturální editaci, což skupina elementů principiálně neumí). Model i render Fixed módu jsou hotové
+a na sdíleném jádru; pro JŘ to potřeba není.
 
 - **Krok 1 - střízlivé oživení (S–M):** paleta „Tabulka (pevná)" + factory (`Mode=Fixed`, Mode v UI
   zamčený - dynamickou dělá `DynamicTableElement`); opravy nálezů: `Clone()` zapomíná `SummaryRows`,
@@ -231,14 +209,10 @@ sloupcová tabulka celé linky (svislý seznam zastávek × sloupce spojů s ča
 symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek). **Gold oracle `mkPLinWin`
 (ALVA.JRMAIN.MLAPI)**, metodika = čistá reimplementace à la `ZastavkoveJrAd` (~1 měsíc).
 
-**Prerekvizity (pořadí):** (1) symbolový font Timetable_nove(+SK) do Skia - **základ hotový 9.7.** (embed
-TTF + locale-aware `FontResolver.SymbolFontFamily`, single-char symboly zastávkového JŘ); pro linkovou část
-zbývá převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) na multichar/kompozity; (2) agenda
-`KnizniJrAd`; (3) `LineTableElement` + layout rozšíření (flow paketů, „dotisk poznámek z minulé stránky",
-**auto-fit fontu na šířku** - dnes je ComputeFontScale jen výškový); (4) per-linka šablony (viz C4).
-
-> Pilotní část hotová (`KnizniJrAd`/`KnizniJrMhd` datové jádro, element, editor, paleta) → archiv
-> 2026-07-04 + detail `linkovy-knizni-jr-implementace-analyza.md` §11-12.
+**Zbývající prerekvizity:** (1) symbolový font - **linková část** (`GSId` 66+ symbolů na
+multichar/kompozity, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) = `B10`; (2) layout rozšíření (flow paketů,
+„dotisk poznámek z minulé stránky") = `B13`; (3) per-linka šablony = `C4`.
+Datové jádro (`KnizniJrAd`/`KnizniJrMhd`), `LineTableElement`, plán řádků a auto-fit fontu jsou hotové.
 
 ### 🎯 Ukazatel postupu `L‑1…L‑4` - velký kus rozřezaný na slotové kroky
 
@@ -247,24 +221,18 @@ dokončeným; velký `L‑4` se otevírá až nad hotovým `L‑3`.
 
 | Krok | Blok | Co | Vel. | Stav |
 |---|---|---|---|---|
-| **L‑1** | `B5` | Auto-fit fontu na šířku u linkové tabulky | S–M | ✅ 29. 7. → archiv |
 | **L‑2** | `B10` | Symbolový font - linková část (`ZNAK` sloupce, multichar/kompozity, `GSId` 66+) | M→S | ⬜ |
-| **L‑3** | `B11` | Row-plan vrstva = jedna sdílená kreslicí smyčka (**R1 extrakce řádkového jádra**) | M | ✅ 29. 7. → archiv |
-| **L‑4** | `B13` | 2D bin-packing / `Strih` - rozřezání široké tabulky do stránkových bloků | L | ⬜ **odemčeno** (L‑3 hotový) |
+| **L‑4** | `B13` | 2D bin-packing / `Strih` - rozřezání široké tabulky do stránkových bloků | L | ⬜ **odemčeno** |
 | - | `C4` | Linková výchozí šablona do distribuce (dá se přilepit ke kterémukoli slotu) | S | ⬜ |
 
-**Mapování na staré číslování kroků:** 42b = L‑2 · 43 = L‑1 + L‑3 + L‑4 · 44b = C4.
-Odložené body C2–C9 níže zůstávají jako detailní evidence (C2 = L‑2, C3 = L‑3 + L‑4,
-C8 + C9 = `B14`).
+Odložené body `C2`–`C9` níže jsou detailní evidence týchž kroků (`C2` = L‑2, `C3` = L‑4, `C8`+`C9` = `B14`).
 
 ### Odložené body knižního/linkového JŘ (z pilotu, seřazené dle hodnoty pro ostré nasazení)
 
-> Pilot uzavřen 2026-07-04 jako „testovací v1" (detail → archiv). Dál dle priorit, ne nutně hned zde.
-
 | # | Co | Proč odloženo / dopad | Odhad |
 |---|---|---|---|
-| C2 | **Symbolový font Timetable_nove(+SK)** do Skia (krok 42b, gate R5). **Zastávkový JŘ hotový 9.7.** - embed `TimeTable2.ttf`/`TimeTable2SK.ttf`, locale-aware `FontResolver.SymbolFontFamily`, single-char `SpecialniZnak` → piktogram (NotesLegend + DepartureGrid); na-znamení `x/y/z` = text. **Zbývá linková část**: `ZNAK` sloupce LineTable (multichar/kompozitní symboly, převodní tabulka `GSId` 66+ symbolů) | vizuální parita; bez linkové části knižní/výlepový JŘ „tiše lže" u dopravních symbolů (R5) | M→S |
-| C3 | **2D bin-packing / `Strih`** (krok 43 + gate R1/R2, *přesunuto z layout tracku 2026-07-07*) - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků. Součást: **auto-fit fontu na šířku** (dnes jen výškový `ComputeFontScale`), flow paketů, „dotisk zbytku legendy na další stránce". **Zde proběhne R1 extrakce sdíleného řádkového jádra** = zavedení **row-plan vrstvy** (`List<RowSpec>`: druh řádku data/header/groupHeader/groupFooter/subrow + buňky → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow`), ať „řádkový layout" (grouping, page-spanning, per-typ-řádku, merged) přestane být per-element `Render` smyčka (dnes N míst → pak 1 datové tvarování). **LineTable = prototyp** - už heterogenní řádky skládá inline. Pozn.: sdílené low-level (buňka/sloupec/kaskáda/šířky) i řádkové podmínky (viditelnost/zvýraznění) jsou **hotové** (pětice levných švů 2026-07-08); row-plan je poslední zbývající řádková vrstva. Zastávkový JŘ to nepotřebuje (DepartureGrid = málo sloupců). | nutné pro reálný tisk MHD linek; největší kus, dělá se jednou pořádně | L |
+| C2 | **Symbolový font - linková část** (gate R5): `ZNAK` sloupce LineTable, multichar/kompozitní symboly, převodní tabulka `GSId` (66+). Zastávkový JŘ hotový. | bez toho knižní/výlepový JŘ „tiše lže" u dopravních symbolů | M→S |
+| C3 | **2D bin-packing / `Strih`** (gate R1/R2) - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce". Staví na hotovém plánu řádků, takže se píše **jednou**. Zastávkový JŘ to nepotřebuje. | nutné pro reálný tisk MHD linek; největší kus | L |
 | C4 | **Rozšíření výchozích šablon na další agendy** - mechanismus embed→MLINE hotový (governance v1, zastávková AD); přidat MHD + linkový JSON do `SystemTemplates/` | provozní; malý | S |
 | C5 | **Konfigurovatelné pořadí poznámek** (`PoznamkyPoradiDruh`) - legacy AD parametr; TD má pevné pořadí druhů | per-zákaznická variace, řešit až s poptávkou | S |
 | C6 | **Turnusy, obousměrný tisk, souhrnné JŘ (řádek zdrojové linky)** - legacy volby `in(arr,6/7)`, MHD `MakeData` je nemá | mimo scope pilotu; validovat, zda je zákazník chce, než portovat | - |
@@ -313,9 +281,6 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 ---
 
 ## 🟡 Import PDF - doladění
-
-> Pre-produkční průchod HOTOVÝ 2026-07-13 (Sonnet 5, anti-halucinace, retry, standardní dialog,
-> jednostránkový JŘ import) → changelog. Zde jen dlouhodobé ladění:
 
 | Krok | Co | Stav |
 |---|---|---|
