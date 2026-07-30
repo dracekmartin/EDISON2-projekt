@@ -4,13 +4,18 @@
 
 Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachovat **konzistenci napříč okny** při přidávání nových dialogů a featur.
 
-> **Související:** vzor okna a MVVM hranice viz `architecture.md` §Vzor pro každé okno.
+> **Související:** vzor okna a MVVM hranice viz `../docs/architecture.md` §Vzor pro každé okno.
 
 ---
 
 ## 1. Dialogová tlačítka a struktura okna
 
-**Vzor okna / dialogu (struktura souborů, ViewModel, code-behind, XAML binding, IsDefault/IsCancel, Owner, RequestClose):** viz `architecture.md §Vzor pro každé okno`. Je závazný standard, nepřepisuj sem.
+**Vzor okna / dialogu (struktura souborů, ViewModel, code-behind, XAML binding, IsDefault/IsCancel, Owner, RequestClose):** viz `../docs/architecture.md` §Vzor pro každé okno. Je závazný standard, nepřepisuj sem.
+
+**Postupná unifikace dialogů - průběžné pravidlo, ne úkol** (přesunuto z roadmapy 29. 7.): dialogy se
+sjednocují **při dotyku**, ne velkým refaktorem. Když na dialogu z jiného důvodu pracuješ, posuň ho
+o krok blíž ke standardu (formulářová část na EDInputForm, tlačítka a chrome dle pravidel níže).
+Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, který platí pořád.
 
 **Co doplňuje tento doc** (UX-specifické konvence, ne kódový template):
 

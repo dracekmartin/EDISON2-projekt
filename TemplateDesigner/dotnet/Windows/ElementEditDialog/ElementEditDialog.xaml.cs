@@ -48,6 +48,7 @@ public partial class ElementEditDialog : Window
         // Po Init (Caché schema načteno) pre-fillni Field.Value z elementu přes reflexi,
         // pak re-validuj (Init validace běžela na prázdných / default hodnotách).
         TheForm.Initialized += OnFormInitialized;
+        ElementFormBinder.HookFontWeightRefresh(TheForm);
     }
 
     private void OnFormInitialized()

@@ -2,6 +2,171 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-30 ✅ - `B24` Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl
+
+Detail → changelog 2026-07-30 (2). Uživatel tiskl jiné nastavení, než jaké viděl: uložené
+`ROZDELIT_PER_OZNACNIK=true` tiše rozdělovalo vývěsku, takže ze stránky zmizely odjezdy jiného
+označníku, ale ovladač v UI ukazoval vypnuto.
+
+**Příčina:** persistované hodnoty se aplikovaly **dvěma cestami**. Otevírací flow dělal celou trojici
+(per-agenda → šablona → přenačtení UI), cold-start fallback jen načetl hodnoty do dictu. Opraveno
+jednou veřejnou cestou `ApplyPersistedPrintParamsAsync()`.
+
+**Poučení:** když táž věc teče do **dat** a do **UI** dvěma voláními, jedno z nich někdo vynechá.
+Diagnostika takových případů: přečti uložený blob
+(`^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams",<AgendaCode>)`) a porovnej s UI -
+tady to rozhodlo za pět minut po dnu hádání.
+
+**Číslování bloků:** při této práci vznikly duplikátní `B14`/`B18`/`B19` (čísla už patřila jiné práci) →
+přečíslováno na `B22`–`B26` a do pravidel roadmapy přidán bod 0 (číslo je globální, grepni i archiv).
+
+## 2026-07-30 ✅ - Poznámky zastávkového JŘ: audit úplnosti + #7947 UZAVŘEN
+
+> Tiket #7947 zavřen u zákazníka 30. 7. 2026. Odpověď obsahuje prosbu o vyzkoušení na jejich linkách
+> (876401/876402), protože na jejich datech jsme ověřit nemohli - jen na lince, kde situace nastává.
+
+Detail → changelog 2026-07-30, měřený stav → `customer-requirements §D1`.
+
+**Dvě reálné chyby v generování rozdílů tras**, obě nalezené měřením proti starému modulu:
+značka „spoj v zastávce nestaví" (`|`) se počítala jako obsluhovaná (tvrdili jsme „jede přes" tam, kde
+spoj nestaví, a slévali skupiny spojů), a cache W-map se nerozlišovala podle linky (v tisku neškodné,
+ale znehodnotilo to předchozí měření). Po opravách je grouping 1:1 se starým modulem.
+
+**Znění věty o prodloužení rozhodnuto:** cíl jde na začátek věty a nese průjezd -
+`jede až do zast. <konečná> přes <mezizastávky>`. Důvod: cíl je informace, kvůli které tiket vznikl,
+a na konci věty ho legenda ořezávala; bez průjezdu splynou skupiny spojů lišící se jen cestou.
+Je to **jediná** vědomá odchylka od starého modulu v celém tomto bloku.
+
+**Kolize značky „H"** (bezbariérový spoj × rozdíl trasy) **se záměrně nechává** - ověřeno zavoláním
+starého modulu, že tutéž kolizi má i legacy. Kdyby to zákazník nahlásil, oprava je malá (převzít z MHD
+sdílený pool značek stránky) a stojí přebaselinování zlatého digestu 0365005.
+
+**Poučení, které stojí za zapamatování:** dvě „vady" evidované 29. 7. neexistovaly - měření bylo
+kontaminované vlastní chybou cache. Sonda, která čte víc linek v jednom procesu, není totéž prostředí
+jako tisk jedné linky. A zlatý test je odtisk **našeho** výstupu, ne srovnání s legacy - na parity
+otázky se musí volat starý modul (`ALVA.TISKMHD.Data`, větev JRMAIN).
+
+## 2026-07-29 🧹 - Z backlogu vyřazeny dvě položky (rozhodnutí Jan)
+
+- **Výkon MHD tisku** - vyřešeno 20. 7. (odstraněno drahé nepoužívané pole „první/poslední spoj"
+  počítané per stránka přes legacy MHD2, ~7 s → ~0,6 s; detail v changelogu 2026-07-20). V roadmapě
+  už jen viselo. **Poučení, které stojí za zapamatování:** původní hypotéza (memoizace názvů zastávek
+  a dopravce) se **neukázala** - profiling ukázal build zastávek 0,02 s, tedy zanedbatelné. Další
+  memoizace až kdyby reálně bolelo, ne preventivně.
+- **Konverze legacy PostScript JŘ → šablona** - bude se řešit jinou cestou, teď bezpředmětné.
+  **Jediné, co si z toho stojí za odnést** (ať se to nemusí odvozovat znovu): PostScript je
+  **vyrenderovaný výstup** (layout + zapečená data), kdežto naše šablona je jen vzhled s daty zvlášť -
+  takže to nikdy nebyl převod dat, ale **rekonstrukce layoutu**, tedy tentýž problém jako import PDF.
+
+## 2026-07-29 ✅ - Plán řádků = R1 extrakce řádkového jádra (B11 = L‑3) - UZAVŘENO
+
+Detail → changelog 2026-07-29 (tři části). Poslední chybějící vrstva sdíleného tabulkového jádra:
+**druh řádku**. Element už nekreslí - popíše tabulku jako `List<RowSpec>` (druh · výška · buňky ·
+pozadí · pera čar) a kreslí ji jedna smyčka `RowPlanRenderer.DrawRows`. Tím řádkové featury
+(grouping, mezisoučty, rozdělení přes stránky) přestaly být per-element záležitost.
+
+**Převedeny tři živé tabulky:** linková (prototyp - nejvíc druhů řádků: pás skupin dnů se sloučenými
+buňkami, čísla spojů, platnost, negativní značky, zastávky s podřádky přípojů) · dynamická (záhlaví,
+data se zvýrazněním i střídáním, souhrny) · zastávkový seznam. **U všech odtisk bit za bitem
+identický** proti baseline sejmuté před zásahem.
+
+**Tři věci si vynutila realita, ne návrh dopředu** (všechny jsou v kontraktu zapsané, protože každá
+by se projevila až na vytištěném listu):
+1. **Pořadí kreslení** pozadí → buňky → čáry (jinak pozadí buňky překryje čáru).
+2. **Pera per-řádek** - záhlaví a datové řádky reálně používají různá (rámečkové × oddělovací).
+3. **`RowSpec.Decorate`** = dokreslení vlastního obsahu do řádku (po buňkách, před čarami) - značky
+   zastávky se kreslí po úsecích symbolovým a normálním fontem a v jedné buňce nejde míchat font
+   (#7161 MHD parita). Úzká výjimka pro to, co buňka principiálně neumí.
+
+**Vědomě mimo:** **mřížka odjezdů** (pivot - sloupce = skupiny dnů, řádky = hodiny) · **pevná
+tabulka** (uspaná; kreslí svislou čáru za každým sloupcem včetně vnějšího a vrství dvě pozadí
+u pevných řádků → sjednocení jí změní výstup, a jako uspaný element není ani v odtiscích;
+rozhodnutí Jan: dorovnat až při jejím oživení, kde bude co proklikat, a kde se stejně bude měnit design).
+
+**Odemklo `B13`** (rozřezání široké tabulky) - píše se jednou nad plánem řádků místo pětkrát
+v per-element smyčkách. Předpokladem byla **záchytná síť na kreslení** (viz vlastní záznam níže).
+
+## 2026-07-29 ❌ - B21 (varování „skupiny dnů sdílí sloupec") ZAVŘEN jako nerelevantní
+
+Zadání pocházelo z doby **před** fází 2 SMO kolizí (23. 7.). Ta problém vyřešila **automaticky
+na serveru**: dominantní typ drží nadpis, každý další kolidující typ dostane značku + legendu
+„jede jen 31.12." (`PriraditZnackySmoSkupin`). „Kolize bez značek" tedy v datech nemůže nastat
+a klient nemá jak kolizi poznat (u odjezdu je jen id sloupce a značky; 2. řádek nadpisu je běžný
+druhý řádek titulku, ne příznak kolize). Doslovná implementace by chtěla nový signál na wire
+(Caché zóna, nad S) a varovala by o vyřešené věci.
+
+**Proč ani ta užší varianta ne** (rozhodnutí Jan 29. 7.): zbývající dva scénáře jsou **na straně
+šablony a v náhledu vidět** - vypnuté „Zobrazit anotace" (zmizí VŠECHNY symboly, okamžitě patrné)
+nebo chybějící legenda poznámek. To není tichá past jako dnešní opravené chyby (oříznuté spoje,
+schovaný filtr hodin); je to vědomá volba, kterou náhled ukazuje. Navíc legenda může být vynechaná
+záměrně (minimální vývěska) → plané hlášky, které lidi naučí ignorovat i užitečná varování.
+Dodávaná výchozí šablona `zastavkovy-jr-ad.json` má legendu i `showAnotace: true`, takže z krabice
+je to v pořádku.
+
+**Zapsaný zbytek:** díra, kdy dva kolidující typy mají v číselníku **tutéž ruční značku** (stejný
+symbol pro dvě platnosti + zavádějící legenda) - jediný scénář, který se opravdu nikde neprojeví.
+Je to konfigurace číselníku (JŘ, ne designer) → zaevidováno v
+[`rules/cache-business-logic.md`](../rules/cache-business-logic.md) u té metody.
+
+## 2026-07-29 🧹 - Rozpuštěná hromada „Úklid a drobnosti" + odložené B19/B20
+
+**Sekce byla kategorie, která lhala.** Z osmi položek: jedna duplikát, jedna průběžné pravidlo,
+pět čekalo na zákazníka, zbytek nebyla „drobnost" (M–L). Kam se co podělo:
+
+- **5 položek „na poptávku"** (MHD parita rozdělení sloupců / variant tras / zdroje označníku,
+  exportní parametry per šablona, per-sloupcové zvýraznění řádků + barva textu / kurzíva pravidla)
+  → [`customer-requirements §0.5`](customer-requirements-zastavkovy-jr.md). Není to nedodělek, je to
+  práce s konkrétním zákazníkem.
+- **Postupná unifikace dialogů** → [`rules/ux-conventions.md`](../rules/ux-conventions.md) jako
+  průběžné pravidlo „sjednocuj při dotyku". Způsob práce, ne úkol.
+- **Výchozí šablony MHD/linková** → smazáno, potřetí totéž (žije v „Produkční" #3 a `C4`).
+- **Migrace `CellStyleEditor` na Caché formulář** → follow-up `B18` (bez deklarativních pravidel
+  formuláře nejde - tri-state / reaktivní logika).
+- **`B21`** varování „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S) → zůstalo v roadmapě.
+
+**Odložené rozhodnutím Jana 29. 7.** (mimo roadmapu, ne zrušené - kdyby se k nim vracelo):
+
+- **`B19` Dark mode dokončit** (M–L) - `EDThemeDark` + tokenizace hotové 13. 7., plocha plátna už
+  na tokenu; zbývalo chrome návrháře (papír, pravítka, záhlaví sekcí) + runtime přepnutí bez restartu.
+  Začíná **produktovým rozhodnutím, jak v tmavém režimu vypadá papír** (bílý list na tmavém pozadí
+  × ztmavený papír), ne kódem.
+- **`B20` Diagnostika připojení** (M) - odlišit „server nedostupný (VPN)" od „není nakonfigurováno"
+  + říct to při startu; patřilo sem i „okno naskočí až po ~3 s" při nedostupném připojení (dnes
+  uživatel vidí prázdno a čeká). Odložený UX nález 13. 7.
+
+## 2026-07-29 ✅ - Auto-fit tabulky na šířku (B5 = L‑1) - UZAVŘENO
+
+Detail → changelog 2026-07-29. `TableLayout.ComputeWidthScale` = vodorovný protějšek výškové
+`ComputeFontScale`; element kombinuje obě přes `MathF.Min` a aplikuje na šířky sloupců, výšky řádků
+i fonty → tabulka dosedne na svou šířku místo **tichého oříznutí** (svislé varování šířku nehlídá).
+Zbavuje zmenšování textu v buňce přetěžování (dřív jediné, co na šířku reagovalo → různé velikosti
+písma vedle sebe; nově zůstává výjimkou pro odchylku). Kde: LineTable (skalární varianta - vlastní
+výpočet šířek), StopList + DynamicTable (sdílené `ResolveWidths`), TableElement jen zmenšení šířek
+(font-škálu nezná, uspaný). **DepartureGrid záměrně mimo** (pivot, málo sloupců). Behavior-preserving
+dokud se tabulka vejde (pokryto testy). `TableWidthFitTests` (9). Proklikáno Janem.
+
+**Hranice:** u linky se 100+ spoji je zmenšování slepá ulička (nečitelné písmo) - správné řešení je
+rozřezání na stránkové bloky = `B13`. B5 byl předpoklad `B11` a poctivý mezikrok, který dá vzniknout
+signálu „tady už zmenšování nestačí".
+
+Při testování B5 vypadl **nález Jana** (tichý filtr hodin v mřížce odjezdů, opraveno týž den) -
+nesouvisel s B5, detail v changelogu.
+
+## 2026-07-29 ✅ - Base pole formulářů z jednoho místa (B4) - UZAVŘENO
+
+Detail → changelog 2026-07-29. Sdílený `BaseElementFields.cls` (rámeček+rohy / pozice a velikost /
+podmínky) místo ruční kopie v deseti formulářích; odchylky parametrem (výchozí rozměry, dynamická
+výška, čára bez rohů). Spraveny nálezy: tloušťka rámečku 0-10 × 0-5 mm, **dynamická tabulka bez polí
+rámečku**, rámeček u tří elementů v cizí skupině, rozdílný popisek výšky. Seskupení sjednoceno
+(„Rámeček elementu" u všech; rozhodnutí Jan). **Korekce zadání:** C# strana byla už sdílená
+(jedna definice v základní třídě) → reálně 10 × Caché + 1 × C#, ne 10 × 2; C# jen dostal shodné
+názvy skupin. **Pojistka:** dva nové drift testy (base pole nesmí být opsaná ve formuláři · popisky
+a skupiny musí souhlasit mezi Caché a C#) + rozbalování volání balíčku ve stávajícím testu klíčů;
+výjimka pro klíč výšky padla. Ověřeno živě proti serveru na 5 strukturálně odlišných formulářích.
+
+Zbytek §B4: krok „zapsat zúženou roli C# zrcadla" (formátovací lišta / více elementů naráz /
+fallback) - zrcadlo **nelze odstranit**, ověřeno v přepínací logice panelu.
+
 ## 2026-07-28 ✅ - Rozvržení editoru stylu buňky (B6) - UZAVŘENO
 
 Detail → changelog 2026-07-28. `CellStyleEditor` (sdílený UserControl, tab Sloupce/Styl v 6

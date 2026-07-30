@@ -27,18 +27,24 @@ public static class TableLayout
     /// `DynamicTableElement.ComputeColumnWidths` (mm/%, auto = Width&lt;=0) do jednoho vzorce -
     /// behavior-preserving pro oba (auto sentinel se převádí na hranici v projekci elementu).
     /// </summary>
-    public static float[] ResolveWidths(IReadOnlyList<ColWidth> cols, float elementWidthMm)
+    public static float[] ResolveWidths(IReadOnlyList<ColWidth> cols, float elementWidthMm,
+        float minAutoWidthMm = 0f)
     {
-        float Fixed(ColWidth c) =>
-            c.Mode == ColumnWidthMode.Percent ? elementWidthMm * (c.WidthMm ?? 0f) / 100f : (c.WidthMm ?? 0f);
+        float Fixed(ColWidth c) => FixedWidth(c, elementWidthMm);
+        var (fixedSum, autoCount) = SplitFixedAuto(cols, elementWidthMm);
 
-        float fixedSum = 0f;
-        int autoCount = 0;
-        foreach (var c in cols)
+        // Nevejde se ani při minimálních auto sloupcích → šířky se proporcionálně zmenší, aby
+        // tabulka dosedla přesně na šířku elementu (pravidlo „fixed-then-shrink" jako u výšky).
+        // Element musí stejnou škálou zmenšit i fonty - viz ComputeWidthScale.
+        float scale = WidthScale(fixedSum, autoCount, elementWidthMm, minAutoWidthMm);
+        if (scale < 1f)
         {
-            if (c.WidthMm.HasValue) fixedSum += Fixed(c);
-            else autoCount++;
+            var shrunk = new float[cols.Count];
+            for (int i = 0; i < cols.Count; i++)
+                shrunk[i] = (cols[i].WidthMm.HasValue ? Fixed(cols[i]) : minAutoWidthMm) * scale;
+            return shrunk;
         }
+
         float autoEach = autoCount > 0 ? MathF.Max(0f, (elementWidthMm - fixedSum) / autoCount) : 0f;
 
         var result = new float[cols.Count];
@@ -46,6 +52,49 @@ public static class TableLayout
             result[i] = cols[i].WidthMm.HasValue ? Fixed(cols[i]) : autoEach;
         return result;
     }
+
+    /// <summary>
+    /// Škála, kterou musí element použít na **fonty a výšky řádků**, aby se tabulka vešla do své
+    /// šířky; 1 = vejde se, nic se nemění. Vodorovný protějšek `ComputeFontScale` (ta řeší jen výšku).
+    ///
+    /// Bez toho se tabulka, která je širší než element, **oříznula** (svislé varování ji nezachytí -
+    /// hlídá jen výšku), a jediné, co na šířku reagovalo, bylo zmenšování textu v jednotlivé buňce -
+    /// to ale každá buňka počítá sama, takže vedle sebe vycházely různé velikosti písma.
+    /// </summary>
+    /// <param name="minAutoWidthMm">Nejmenší rozumná šířka auto sloupce v mm (pod ní je obsah
+    /// nečitelný). Určuje, kdy tabulka „přeteče" - u sloupců bez vlastní šířky je to jejich minimum.</param>
+    public static float ComputeWidthScale(IReadOnlyList<ColWidth> cols, float elementWidthMm,
+        float minAutoWidthMm = 0f)
+    {
+        var (fixedSum, autoCount) = SplitFixedAuto(cols, elementWidthMm);
+        return WidthScale(fixedSum, autoCount, elementWidthMm, minAutoWidthMm);
+    }
+
+    /// <summary>Škála pro element, který si šířky sloupců počítá sám (LineTable) - z celkové
+    /// požadované šířky při škále 1.</summary>
+    public static float ComputeWidthScale(float requiredWidthMm, float elementWidthMm) =>
+        requiredWidthMm <= 0f || elementWidthMm <= 0f || requiredWidthMm <= elementWidthMm
+            ? 1f : elementWidthMm / requiredWidthMm;
+
+    private static float FixedWidth(ColWidth c, float elementWidthMm) =>
+        c.Mode == ColumnWidthMode.Percent ? elementWidthMm * (c.WidthMm ?? 0f) / 100f : (c.WidthMm ?? 0f);
+
+    private static (float FixedSum, int AutoCount) SplitFixedAuto(
+        IReadOnlyList<ColWidth> cols, float elementWidthMm)
+    {
+        float fixedSum = 0f;
+        int autoCount = 0;
+        foreach (var c in cols)
+        {
+            if (c.WidthMm.HasValue) fixedSum += FixedWidth(c, elementWidthMm);
+            else autoCount++;
+        }
+        return (fixedSum, autoCount);
+    }
+
+    private static float WidthScale(float fixedSum, int autoCount, float elementWidthMm,
+        float minAutoWidthMm) =>
+        ComputeWidthScale(fixedSum + autoCount * minAutoWidthMm, elementWidthMm);
 
     /// <summary>
     /// Vyřeší styl buňky sloupce kaskádou `column-override → element-parent → (baked v parentu)`.

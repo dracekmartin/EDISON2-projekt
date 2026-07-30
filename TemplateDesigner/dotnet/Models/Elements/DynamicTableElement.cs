@@ -170,8 +170,11 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         // proporcionálně zmenší (stejně jako StopList/DepartureGrid). Height == null → beze scale.
         int scaleRowCount = ctx.Data is null ? DesignerPreviewRows : EffectiveRowCount(dataRows.Count);
         float naturalH = NaturalHeight(scaleRowCount);
-        float scale    = (Height.HasValue && naturalH > Height.Value && naturalH > 0)
+        float heightScale = (Height.HasValue && naturalH > Height.Value && naturalH > 0)
             ? Height.Value / naturalH : 1f;
+        // Vodorovně totéž: součet pevných šířek nad šířku elementu se dřív oříznul (bez varování).
+        // Zmenšuje se tou horší z obou stran - výšky se pak zmenší taky, takže svisle to jen pomůže.
+        float scale = MathF.Min(heightScale, ComputeWidthScale(visibleColumns));
         float headerH  = HeaderHeight * scale;
         float rowH     = RowHeight * scale;
 
@@ -179,15 +182,24 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         ctx.Canvas.ClipRect(tableRect);
         try
         {
-            float currentY = Y;
-
+            // Plán řádků (R1) - element tvaruje data, kreslí sdílená smyčka.
+            var plan = new List<RowSpec>();
             if (ShowHeader)
-                currentY = RenderHeader(ctx, visibleColumns, colWidths, headerStyles, currentY, borderPaint, sepPaint, headerH, scale);
+                plan.Add(HeaderRow(visibleColumns, colWidths, headerStyles, borderPaint, sepPaint, headerH));
+            plan.AddRange(DataRows(ctx, visibleColumns, colWidths, dataStyles, sepPaint, dataRows, rowH));
 
-            currentY = RenderDynamicRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint, dataRows, rowH, scale);
+            float currentY = RowPlanRenderer.DrawRows(ctx, X, Y, Width, plan, scale);
 
             if (SummaryRows is { Count: > 0 })
-                RenderSummaryRows(ctx, visibleColumns, colWidths, currentY, borderPaint, sepPaint, dataRows, rowH, scale);
+            {
+                // Oddělovač bloku souhrnů se kreslí PŘED pozadím prvního souhrnného řádku - opačné
+                // pořadí než u řádkových čar, proto zůstává tady a nejde do plánu.
+                ctx.Canvas.DrawLine(ctx.ToCanvas(X, currentY), ctx.ToCanvas(X + Width, currentY), borderPaint);
+
+                RowPlanRenderer.DrawRows(ctx, X, currentY, Width,
+                    SummaryRows.Select(r => SummaryRow(ctx, visibleColumns, colWidths, r, dataRows, rowH, sepPaint)),
+                    scale);
+            }
 
             if (BorderStyle != TableBorderStyle.None)
                 ctx.Canvas.DrawRect(InsetForStroke(tableRect, borderPaint.StrokeWidth), borderPaint);
@@ -203,9 +215,14 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     /// s Width &lt;= 0 = „auto" (promítne se na null = rovnoměrné rozdělení zbytku), jinak pevná mm/%.
     /// </summary>
     private float[] ComputeColumnWidths(List<TableColumn> cols) =>
-        TableLayout.ResolveWidths(
-            cols.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode)).ToList(),
-            Width);
+        TableLayout.ResolveWidths(WidthProjection(cols), Width);
+
+    /// <summary>Škála fontů, aby se tabulka vešla do šířky elementu (1 = vejde se).</summary>
+    private float ComputeWidthScale(List<TableColumn> cols) =>
+        TableLayout.ComputeWidthScale(WidthProjection(cols), Width);
+
+    private static List<TableLayout.ColWidth> WidthProjection(List<TableColumn> cols) =>
+        cols.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode)).ToList();
 
     /// <summary>
     /// Vytvoří sloupce z datových polí kolekce (Header = label, Field = název pole, auto šířka).
@@ -262,29 +279,21 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         return NaturalHeight(rowCount);
     }
 
-    private float RenderHeader(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        ResolvedTextStyle[] headerStyles, float startY, SKPaint borderPaint, SKPaint sepPaint,
-        float headerH, float fontScale)
+    /// <summary>Řádek záhlaví jako <see cref="RowSpec"/> - pozadí z kaskády, dolní hrana
+    /// rámečkovým perem (datové řádky používají oddělovací, proto jsou pera per-řádek).</summary>
+    private RowSpec HeaderRow(List<TableColumn> cols, float[] colWidths,
+        ResolvedTextStyle[] headerStyles, SKPaint borderPaint, SKPaint sepPaint, float headerH)
     {
-        var tableHeaderStyle = ResolveColumnHeaderParent();
-        using var headerBgPaint = tableHeaderStyle.CreateBgPaint();
-        if (headerBgPaint is not null)
-        {
-            var headerBgRect = ctx.ToCanvasRect(X, startY, Width, headerH);
-            ctx.Canvas.DrawRect(headerBgRect, headerBgPaint);
-        }
-
-        // Sdílená řádková orchestrace - svislé separátory přebírá DrawRow (gridPaint).
         var specs = new ColumnRenderer.CellSpec[cols.Count];
         for (int i = 0; i < cols.Count; i++)
             specs[i] = new(colWidths[i], Rendering.ColumnHeader.Resolve(cols[i].Header, ""), headerStyles[i]);
-        ColumnRenderer.DrawRow(ctx, X, startY, headerH, specs, ColumnGridPaint(sepPaint), fontScale);
 
-        var lineStart = ctx.ToCanvas(X, startY + headerH);
-        var lineEnd   = ctx.ToCanvas(X + Width, startY + headerH);
-        ctx.Canvas.DrawLine(lineStart, lineEnd, borderPaint);
-
-        return startY + headerH;
+        return new(RowKind.Header, headerH, specs)
+        {
+            Background = ResolveColumnHeaderParent().ParsedBackgroundColor,
+            VerticalLinePaint = ColumnGridPaint(sepPaint),
+            LineBelowPaint = borderPaint,
+        };
     }
 
     /// <summary>Pero svislých mřížkových čar mezi sloupci - jen u All/ColumnsOnly, jinak null (bez čar).
@@ -292,9 +301,10 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     private SKPaint? ColumnGridPaint(SKPaint sepPaint) =>
         BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly ? sepPaint : null;
 
-    private float RenderDynamicRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        ResolvedTextStyle[] dataStyles, float startY, SKPaint sepPaint, IReadOnlyList<DataContext> rows,
-        float rowH, float fontScale)
+    /// <summary>Datové řádky jako plán: zvýraznění přebíjí střídání řádků, dolní čára jen
+    /// u režimů, které řádkové čáry kreslí.</summary>
+    private IEnumerable<RowSpec> DataRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+        ResolvedTextStyle[] dataStyles, SKPaint sepPaint, IReadOnlyList<DataContext> rows, float rowH)
     {
         bool isDesigner = ctx.Data is null;
         // Datové řádky po ořezu Max; celkem = + doplnění na Min (prázdné řádky). Placeholder ({POLE})
@@ -302,8 +312,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         int dataN       = isDesigner ? 0 : ClampMax(rows.Count);
         int renderCount = isDesigner ? DesignerPreviewRows : (MinRows > 0 ? Math.Max(dataN, MinRows) : dataN);
 
-        SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
-        using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
+        SKColor? altColor = ColorHex.ParseOrNull(AlternatingRowColor);
 
         // Šedivý placeholder styl jen pro návrhové {POLE} řádky; datové i prázdné padding = normální styl.
         ResolvedTextStyle[] effectiveStyles = isDesigner
@@ -311,20 +320,16 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
             : dataStyles;
 
         var gridPaint = ColumnGridPaint(sepPaint);
-        float currentY = startY;
+        var rowLinePaint = BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly ? sepPaint : null;
+
         for (int i = 0; i < renderCount; i++)
         {
             bool isDataRow = i < dataN;   // false = prázdný padding řádek (doplnění na Min)
 
             // Podmíněné zvýraznění (jen reálná data) přebíjí střídání řádků; jinak zebra.
             string? hlColor = isDataRow ? ResolveRowHighlight(rows[i]) : null;
-            if (hlColor is not null)
-            {
-                using var hlPaint = new SKPaint { Color = SKColor.Parse(hlColor) };
-                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), hlPaint);
-            }
-            else if (altBgPaint is not null && i % 2 == 1)
-                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), altBgPaint);
+            SKColor? background = ColorHex.ParseOrNull(hlColor)
+                ?? (altColor.HasValue && i % 2 == 1 ? altColor : null);
 
             var specs = new ColumnRenderer.CellSpec[cols.Count];
             for (int ci = 0; ci < cols.Count; ci++)
@@ -347,51 +352,21 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
                 }
                 specs[ci] = new(colWidths[ci], sample, effectiveStyles[ci]);
             }
-            ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, gridPaint, fontScale);
 
-            if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
+            yield return new(RowKind.Data, rowH, specs)
             {
-                var a = ctx.ToCanvas(X, currentY + rowH);
-                var b = ctx.ToCanvas(X + Width, currentY + rowH);
-                ctx.Canvas.DrawLine(a, b, sepPaint);
-            }
-
-            currentY += rowH;
-        }
-        return currentY;
-    }
-
-    private void RenderSummaryRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        float startY, SKPaint borderPaint, SKPaint sepPaint, IReadOnlyList<DataContext> dataRows,
-        float rowH, float fontScale)
-    {
-        if (SummaryRows is null || SummaryRows.Count == 0) return;
-
-        var topStart = ctx.ToCanvas(X, startY);
-        var topEnd   = ctx.ToCanvas(X + Width, startY);
-        ctx.Canvas.DrawLine(topStart, topEnd, borderPaint);
-
-        float currentY = startY;
-        foreach (var row in SummaryRows)
-        {
-            DrawSummaryRowAt(ctx, cols, colWidths, row, dataRows, currentY, rowH, sepPaint, fontScale);
-            currentY += rowH;
+                Background = background,
+                VerticalLinePaint = gridPaint,
+                LineBelowPaint = rowLinePaint,
+            };
         }
     }
 
-    /// <summary>Vykreslí jeden souhrnný řádek na dané Y (sdílené plným renderem i řádkovým oknem R2).</summary>
-    private void DrawSummaryRowAt(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        TableRow row, IReadOnlyList<DataContext> dataRows, float y, float rowH, SKPaint sepPaint, float fontScale)
+    /// <summary>Souhrnný řádek jako <see cref="RowSpec"/> - pozadí per řádek (jinak z kaskády),
+    /// obsah přes agregace (SUM/COUNT/…) nad datovými řádky.</summary>
+    private RowSpec SummaryRow(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+        TableRow row, IReadOnlyList<DataContext> dataRows, float rowH, SKPaint sepPaint)
     {
-        var rowBgColor = row.BackgroundColor is not null
-            ? SKColor.Parse(row.BackgroundColor)
-            : TableSummaryParent.ParsedBackgroundColor;
-        if (rowBgColor.Alpha > 0)
-        {
-            using var sbg = new SKPaint { Color = rowBgColor };
-            ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, y, Width, rowH), sbg);
-        }
-
         var specs = new ColumnRenderer.CellSpec[cols.Count];
         for (int colIdx = 0; colIdx < cols.Count; colIdx++)
         {
@@ -419,10 +394,13 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
 
             specs[colIdx] = new(colWidths[colIdx], content, cellStyle);
         }
-        ColumnRenderer.DrawRow(ctx, X, y, rowH, specs, ColumnGridPaint(sepPaint), fontScale);
 
-        if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
-            ctx.Canvas.DrawLine(ctx.ToCanvas(X, y + rowH), ctx.ToCanvas(X + Width, y + rowH), sepPaint);
+        return new(RowKind.Summary, rowH, specs)
+        {
+            Background = ColorHex.Parse(row.BackgroundColor, TableSummaryParent.ParsedBackgroundColor),
+            VerticalLinePaint = ColumnGridPaint(sepPaint),
+            LineBelowPaint = BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly ? sepPaint : null,
+        };
     }
 
     /// <summary>Text buňky datového řádku: Expression přebíjí Field, volitelný Format. Sdílené render cesty.</summary>

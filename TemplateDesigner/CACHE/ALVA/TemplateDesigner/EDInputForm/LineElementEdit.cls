@@ -47,29 +47,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("CustomGapMm", "Délka mezery", "", 0.1, 20, "mm")
         s f.helpText = "Prázdné = výchozí (Dashed=2mm, Dotted=1.5mm)"
 
-        // ── Skupina "Rámeček elementu" ────────────────────────────────────
-        d form.AddGroup("border", "Rámeček elementu")
-        s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
-        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
-
-        // ── Skupina "Pozice a velikost" ───────────────────────────────────
-        d form.AddGroup("position", "Pozice a velikost")
-        d form.AddDecimal("X", "X", 0, 0, "", "mm", "", 1)
-        d form.AddDecimal("Y", "Y", 0, 0, "", "mm", "", 1)
-        d form.AddDecimal("Width", "Šířka", 50, 0, "", "mm", "", 1)
-        d form.AddDecimal("Height", "Výška", "", 0, "", "mm")
-        d form.AddDecimal("Rotation", "Rotace", 0, -360, 360, "°")
-        s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
-        s f.helpText = "Pořadí vrstev (vyšší = nad nižším)"
-
-        s f = form.AddBool("IsLocked", "Uzamčeno", 0)
-        s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
-
-        // ── Skupina "Podmínky" ───────────────────────────────────────────
-        d form.AddGroup("advanced", "Podmínky")
-        s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
-        s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
+        // ── Base pole (čára nemá plochu → bez rohů; nulová šířka je u svislé legitimní) ────
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form, 0)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50, "", 0, 0)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

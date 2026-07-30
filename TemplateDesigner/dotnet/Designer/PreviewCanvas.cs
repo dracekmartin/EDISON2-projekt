@@ -434,7 +434,7 @@ public class PreviewCanvas
             {
                 using var borderPaint = new SKPaint
                 {
-                    Color = SKColor.Parse(placed.Source.BorderColor),
+                    Color = ColorHex.ParseOrBlack(placed.Source.BorderColor),
                     IsStroke = true,
                     StrokeWidth = placed.Source.BorderWidth * mmToPx,
                     IsAntialias = true

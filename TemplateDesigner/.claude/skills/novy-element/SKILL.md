@@ -1,4 +1,9 @@
-# Glob: dotnet/Models/Elements/**
+---
+name: novy-element
+description: Přidá nový typ elementu do TemplateDesigneru - třída, registrace v ElementTypes a JsonDerivedType, factory switche, toolbar, volitelně paleta a dynamická výška, strom šablony, docs. Použij při zavádění nového TYPU elementu; na novou vlastnost existujícího elementu je to zbytečné (viz sekce na konci).
+argument-hint: <NázevElementu>
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(dotnet build *), Bash(dotnet test *), Bash(grep *), Bash(ls *)
+---
 
 # Přidání nového typu elementu - kompletní checklist
 
@@ -182,8 +187,9 @@ Bez tohoto se v záložce „Strom" zobrazí generický fallback `(X, Y) WxH`.
 ## 10. Dokumentace
 
 - `.claude/docs/changelog.md` - přidat řádek do aktuálního datumu ("NovyElement - popis").
-- `CLAUDE.md` sekce `### ✅ Co máme` - doplnit element do výčtu.
 - Pokud jde o ScheduleElementBase-derived element, aktualizovat i `.claude/docs/elementy-architektura.md`.
+- **`CLAUDE.md` nechat být.** Nový element tam nepatří - výčet featur se tam nevede. Sáhni tam
+  jen tehdy, když element zavádí neodvoditelný invariant (persistovaný klíč, zpětná kompatibilita).
 
 ---
 
@@ -271,3 +277,19 @@ XAML dialogu - 2× `<controls:CellStyleEditor>` (Header + Data zone):
 | 8 | `Models/Layout/SkiaHeightCalculator.cs` | jen u dynamické výšky |
 | 9 | `Models/TemplateElement.cs` (GetSummary) | ✅ |
 | 10 | `changelog.md`, `CLAUDE.md` | ✅ |
+
+---
+
+## Brána - bez tohohle není hotovo
+
+Pořadí záleží: drift test najde chybějící registraci, kterou build neodhalí (`ElementTypes`
+konstanta bez `JsonDerivedType`, chybějící `GetSummary` větev).
+
+1. `dotnet build EDISON2.sln` - musí projít čistě
+2. `dotnet test TemplateDesigner.Tests --filter ElementRegistrationDrift` - musí projít
+3. `dotnet test TemplateDesigner.Tests --filter CloneCompleteness` - hlídá, že `Clone()`
+   nezapomněl novou property
+4. **Přečti výstup**, netvrď „mělo by to projít". Když test spadne, oprav a spusť znovu.
+
+Vizuál (jak element vypadá na canvasu a v PDF) žádný test nevidí - to musí proklikat
+uživatel. Do reportu napiš konkrétní cestu: co přidat, kam táhnout, co má být vidět.

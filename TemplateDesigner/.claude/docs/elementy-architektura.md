@@ -222,7 +222,7 @@ Caché posílá **hotové Unicode znaky** (konverze `ConvertSpecialniZnak` prob�
 ## Související dokumentace
 
 - **Wire formát (JSON příklad, GetData/GetMockData kontrakt):** viz `.claude/rules/cache-api.md`
-- **Business logika Caché (fáze zpracování, working globals):** viz `.claude/rules/cache-business-logic.md`
+- **Business logika Caché (fáze zpracování, working globals):** viz `.claude/docs/cache-business-logic.md`
 - **Changelog:** viz `.claude/docs/changelog.md`
 
 
@@ -289,7 +289,8 @@ Vše v `dotnet/Rendering/`:
 |---|---|---|
 | `CellRenderer.DrawCell` | jedna buňka: bg → padding → HAlign/VAlign → decorations. **Jediné místo pozicování textu buňky.** | všechny 4 (i DepartureGrid na hodinové buňky) |
 | `ColumnRenderer.DrawRow` + `CellSpec` | jeden vodorovný řádek = sekvence buněk + volitelné svislé čáry | StopList, LineTable, DynamicTable (R1a) |
-| `TableLayout.ResolveWidths` | šířky: pevné (mm/%) + auto-split zbytku rovným dílem | StopList, DynamicTable |
+| `TableLayout.ResolveWidths` | šířky: pevné (mm/%) + auto-split zbytku rovným dílem; **nevejde-li se, zmenší šířky na šířku elementu** (místo dřívějšího oříznutí) | StopList, DynamicTable, TableElement |
+| `TableLayout.ComputeWidthScale` | vodorovný protějšek `ComputeFontScale` - škála pro **fonty a výšky řádků**, aby se tabulka vešla do šířky. Element ji kombinuje s výškovou přes `MathF.Min` a předává do `CellRenderer` jako `fontScale`. Bez ní na šířku reagovalo jen zmenšování textu v jednotlivé buňce → vedle sebe různé velikosti písma; a přebytek se tiše oříznul (svislé varování hlídá jen výšku) | StopList, DynamicTable, LineTable (vlastní výpočet šířek → skalární varianta). **DepartureGrid mimo** = pivot, málo sloupců. **TableElement** má jen zmenšení šířek - font-škálu vůbec nezná (uspaný element, dorovná se při oživení, Fáze B krok 1) |
 | `TableLayout.ResolveCascade` | kaskáda stylu buňky `column → element → baked` + legacy alignment fallback | StopList, DynamicTable, LineTable |
 | `CellDefaults.Default` | poslední vrstva kaskády (Arial 9pt, padding 0.5mm, VAlign Middle…) | všechny |
 | `ColumnHeader.Resolve` | sémantika „override přebíjí zdroj, prázdné → zdroj" u nadpisů | všechny |

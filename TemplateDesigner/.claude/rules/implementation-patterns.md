@@ -15,9 +15,18 @@ Při přidání nového typu elementu/sekce: přidat `[JsonDerivedType]` atribut
 Barvy jsou uloženy jako string `"#AARRGGBB"` (SkiaSharp formát, **ne** WPF `#AARRGGBB`):
 ```csharp
 public string TextColor { get; set; } = "#FF000000";  // černá
-[JsonIgnore] public SKColor SkTextColor => SKColor.Parse(TextColor);
+[JsonIgnore] public SKColor SkTextColor => ColorHex.ParseOrBlack(TextColor);
 ```
-Průhledná = `"#00FFFFFF"`. SkiaSharp `SKColor.Parse()` tuto syntaxi zvládá přímo.
+Průhledná = `"#00FFFFFF"`.
+
+⚠️ **Nikdy `SKColor.Parse` nad uživatelskou hodnotou** - na neplatném vstupu **vyhodí výjimku**,
+a barvy jdou z formuláře jako volný text. Padalo to až při kreslení, a protože se nesmysl uložil
+do šablony, i při každém dalším otevření (šablona vypadala rozbitá). Vždy přes `Models/ColorHex.cs`:
+`ParseOrBlack` (text/čáry/rámečky), `ParseOrTransparent` (pozadí), `ParseOrNull` (nepovinná barva,
+kde „nenastaveno" znamená „featura se nepoužije" - střídání řádků, zvýraznění), `Parse(hex, fallback)`
+s vlastní zálohou, `TryParse`/`IsValid` pro kontrolu vstupu. `SKColor.Parse` je OK jen nad literálem
+v kódu. Vstupní kontrola je druhá vrstva: barevné pole formuláře hlásí neplatný tvar samo
+(`Field.GetTypeError` v EDControls) a `ElementFormBinder` neplatnou barvu do modelu nezapíše.
 
 ### RenderContext
 Elementy dostávají `RenderContext` místo holého `SKCanvas`. Kontext obsahuje:

@@ -9,7 +9,8 @@ namespace TemplateDesigner.Models;
 /// Jediný zdroj pravdy „jaké řezy (váhy) rodina reálně má" + názvosloví vah. Sdílené oběma
 /// editačními cestami fontu: EDInputForm klient (<c>ElementFormBinder.PopulateFontWeightFields</c>)
 /// i WPF <c>CellStyleEditor</c>. Váhy se čtou z nainstalovaného fontu přes <see cref="SKFontManager"/>
-/// (OS věc - Caché je nezná), takže se nabídnou jen skutečné řezy (ne fixní seznam).
+/// (OS věc - Caché je nezná), takže se nabídnou jen skutečné řezy (ne fixní seznam). U šířkových
+/// variant rodiny („Arial Narrow") se filtruje na jejich šířku - viz <see cref="FontResolver"/>.
 /// </summary>
 public static class FontWeightCatalog
 {
@@ -32,22 +33,35 @@ public static class FontWeightCatalog
     /// proto jen Upright. Prázdná/nedostupná rodina → fallback Normal+Bold.</summary>
     public static IReadOnlyList<int> Weights(string? family)
     {
+        var real = InstalledWeights(family);
+        return real.Count > 0 ? real : [400, 700];
+    }
+
+    /// <summary>Váhy rodiny **bez fallbacku** - prázdné, když rodina není nainstalovaná nebo není
+    /// zadaná. Rozlišení „řezy skutečně známe" vs „hádáme" je potřeba tam, kde se podle nich
+    /// zahazuje uživatelova hodnota - podle odhadu se zahazovat nesmí.</summary>
+    public static IReadOnlyList<int> InstalledWeights(string? family)
+    {
+        if (string.IsNullOrWhiteSpace(family)) return [];
+
+        // Šířková varianta („Arial Narrow") je řez rodiny Arial, ne vlastní rodina - řezy se tedy
+        // čtou z rodiny a filtrují na její šířku, jinak by nabídka obsahovala i váhy, které úzká
+        // varianta nemá (Arial má Black jen v normální šířce).
+        var (osFamily, width) = FontResolver.ResolveFamilyAndWidth(family);
+
         var weights = new SortedSet<int>();
-        if (!string.IsNullOrWhiteSpace(family))
+        try
         {
-            try
+            using var set = SKFontManager.Default.GetFontStyles(osFamily);
+            for (int i = 0; i < set.Count; i++)
             {
-                using var set = SKFontManager.Default.GetFontStyles(family.Trim());
-                for (int i = 0; i < set.Count; i++)
-                {
-                    using var tf = set.CreateTypeface(i);
-                    if (tf is not null && tf.FontStyle.Slant == SKFontStyleSlant.Upright)
-                        weights.Add(tf.FontStyle.Weight);
-                }
+                var style = set[i];
+                if (style.Slant != SKFontStyleSlant.Upright) continue;
+                if (width is int w && style.Width != w) continue;
+                weights.Add(style.Weight);
             }
-            catch { /* nedostupná rodina → fallback níže */ }
         }
-        if (weights.Count == 0) { weights.Add(400); weights.Add(700); }
+        catch { /* nedostupná rodina → prázdno (volající rozhodne, co s tím) */ }
         return weights.ToList();
     }
 

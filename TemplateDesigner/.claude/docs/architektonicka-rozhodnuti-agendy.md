@@ -107,7 +107,7 @@ P3). Když se každý vyřeší ad hoc - něco v enginu, něco v elementu, jak z
 vzniknou dva poloviční layout systémy, které si lezou do zelí, a každá další featura bude
 vyžadovat znát oba.
 
-**Co se rozhoduje.** Sepsat (stačí 1–2 stránky do `.claude/rules/architecture.md`) tři věci:
+**Co se rozhoduje.** Sepsat (stačí 1–2 stránky do `.claude/docs/architecture.md`) tři věci:
 
 1. **Co navždy patří enginu:** stránky, pořadí a dělení sekcí, hlavičky/patičky -
    a nově i imposice (P3), jako samostatná vrstva NAD enginem (bere hotové stránky

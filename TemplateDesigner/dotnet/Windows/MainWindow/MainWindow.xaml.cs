@@ -278,8 +278,9 @@ public partial class MainWindow : Window
                 SyncSnapGapComboBox(_vm.State.SnapGapMm);
                 RebuildRecentFilesMenu();
                 // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány -
-                // dohnat to teď.
-                await _vm.LoadPrintParamsAndApplyAsync();
+                // dohnat to teď. Celou trojici (per-agenda → šablona → UI), ne jen načtení hodnot:
+                // jinak jdou hodnoty do GetData, ale ovladače v UI zůstanou na defaultech.
+                await _vm.ApplyPersistedPrintParamsAsync();
                 skCanvas.InvalidateVisual();
                 InvalidatePreview();
             }

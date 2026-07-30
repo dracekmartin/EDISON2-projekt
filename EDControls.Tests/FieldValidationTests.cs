@@ -54,4 +54,53 @@ public class FieldValidationTests
         var f = new Field { FieldType = EFieldType.Bool, Value = value };
         Assert.Equal(expectedError, f.GetTypeError());
     }
+
+    // Barva je volný text, takže bez typové kontroly propadl do hostitelské aplikace libovolný
+    // vstup a spadlo to až při vykreslování té barvy (v TemplateDesigneru i po znovuotevření
+    // šablony, protože se nesmysl uložil).
+
+    [Theory]
+    [InlineData("#FF3366")]
+    [InlineData("#80FF3366")]
+    [InlineData("FF3366")]        // mřížka nepovinná
+    [InlineData("  #ff3366  ")]   // ořez okrajů, malá písmena
+    public void Color_ValidHexHasNoError(string value)
+    {
+        var f = new Field { FieldType = EFieldType.Color, Value = value };
+        Assert.Null(f.GetTypeError());
+    }
+
+    [Theory]
+    [InlineData("#ZZZZZZ")]
+    [InlineData("#FF33")]
+    [InlineData("modrá")]
+    [InlineData("#")]
+    public void Color_InvalidHexReportsError(string value)
+    {
+        var f = new Field { FieldType = EFieldType.Color, Value = value };
+        Assert.Equal("Neplatná barva - zadejte #RRGGBB nebo #AARRGGBB", f.GetTypeError());
+    }
+
+    [Fact]
+    public void Color_EmptyIsAllowed()
+    {
+        // Vymazání barvy je legitimní vstup - význam si určí hostitelská aplikace
+        // (zděděná barva / nic nekreslit), není to typová chyba.
+        var f = new Field { FieldType = EFieldType.Color, Value = "" };
+        Assert.Null(f.GetTypeError());
+    }
+
+    [Fact]
+    public void Color_InvalidHexMarksFieldAsError()
+    {
+        // Zápis do Value rovnou nastaví ValidationError → pole zčervená hned při psaní.
+        var f = new Field { FieldType = EFieldType.Color, Value = "#FF3366" };
+        Assert.False(f.HasError);
+
+        f.Value = "nesmysl";
+        Assert.True(f.HasError);
+
+        f.Value = "#FF3366";
+        Assert.False(f.HasError);
+    }
 }

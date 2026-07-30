@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
@@ -546,6 +546,20 @@ public class TemplateDesignerViewModel : EDViewModel
         get => _hasPreviewOverflow;
         set => Set(ref _hasPreviewOverflow, value);
     }
+
+    private string _noteSuppressionText = "";
+    /// <summary>
+    /// Neprázdné = nastavení sestavy část poznámek schovalo (status bar to ukáže). Bez toho nejde
+    /// rozeznat „žádné poznámky nejsou" od „jsou, ale schoval je parametr".
+    /// </summary>
+    public string NoteSuppressionText
+    {
+        get => _noteSuppressionText;
+        set { if (Set(ref _noteSuppressionText, value)) OnPropertyChanged(nameof(HasNoteSuppression)); }
+    }
+
+    /// <summary>Řídí viditelnost bloku o schovaných poznámkách ve status baru.</summary>
+    public bool HasNoteSuppression => _noteSuppressionText != "";
 
     private string _agendaNameText = "Agenda: -";
     public string AgendaNameText
@@ -1231,9 +1245,7 @@ public class TemplateDesignerViewModel : EDViewModel
             RebuildSections();
             await RefreshFieldsList();
             await TryLoadInstanceDefaultsAsync();
-            await LoadPrintParamsAndApplyAsync();
-            ApplyTemplatePrintParamsToPreview();
-            RefreshParamsUiAfterLoad();
+            await ApplyPersistedPrintParamsAsync();
             if (Preferences is not null) await Preferences.AddRecentFileAsync(filePath);
             NotifyMigrationIfNeeded();
             RequestTitleUpdate?.Invoke();
@@ -1419,9 +1431,7 @@ public class TemplateDesignerViewModel : EDViewModel
             RebuildSections();
             await RefreshFieldsList();
             await TryLoadInstanceDefaultsAsync();
-            await LoadPrintParamsAndApplyAsync();
-            ApplyTemplatePrintParamsToPreview();
-            RefreshParamsUiAfterLoad();
+            await ApplyPersistedPrintParamsAsync();
             NotifyMigrationIfNeeded();
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
@@ -2392,6 +2402,20 @@ public class TemplateDesignerViewModel : EDViewModel
         // nic nezměnila, protože per-agenda už tytéž hodnoty nastavila → tab by zůstal na defaultech).
     }
 
+    /// <summary>
+    /// Jediná cesta k aplikaci persistovaných hodnot parametrů: per-agenda → šablona → přenačtení UI.
+    /// **Volat vždy tuhle metodu, nikdy ty tři kroky zvlášť.** Když se jeden krok vynechá (dřív to
+    /// dělal cold-start fallback po dokončení načtení preferencí), hodnoty jdou do `GetData`, ale
+    /// ovladače v UI zůstanou na defaultech - uživatel pak tiskne něco jiného, než co v nastavení vidí
+    /// a nemá jak na to přijít. Přesně tak tiše rozdělovalo vývěsky `ROZDELIT_PER_OZNACNIK=true`.
+    /// </summary>
+    public async Task ApplyPersistedPrintParamsAsync()
+    {
+        await LoadPrintParamsAndApplyAsync();
+        ApplyTemplatePrintParamsToPreview();
+        RefreshParamsUiAfterLoad();
+    }
+
     /// <summary>Po načtení všech persistovaných hodnot parametrů (per-agenda + šablona) přenačte
     /// lištu i EDInputForm tab z finálního <see cref="_previewParams"/>. Bezpodmínečně - hodnoty
     /// do dictu naskočí i bez „změny" v ApplyTemplate (per-agenda), ale tab se jinak drží defaultů,
@@ -2407,6 +2431,11 @@ public class TemplateDesignerViewModel : EDViewModel
     /// Cross-notify preview lišta VMs + invalidate cache + refresh preview canvas. Bez tohoto
     /// volání preview lišta neukáže změnu, protože její <c>ParameterControlVM</c> jsou jiné instance
     /// než PrintDialogovy a vlastní PropertyChanged events se nepropagují automaticky.
+    ///
+    /// ⚠️ Neobnovuje EDInputForm tab (jeho `Init()` je synchronní Caché round-trip, nechceme ho na
+    /// každou změnu). Tab přenačítá volající: načtení persistovaných hodnot přes
+    /// <see cref="ApplyPersistedPrintParamsAsync"/>, PrintDialog po zavření. Kdo přidá další cestu,
+    /// která mění hodnoty, musí tab obnovit taky - jinak UI ukazuje jiné nastavení, než se tiskne.
     /// </summary>
     public void OnExternalParamsChanged()
     {
@@ -2696,8 +2725,45 @@ public class TemplateDesignerViewModel : EDViewModel
         var src = overrideParams ?? _previewParams;
         var suppressionMode = NoteVisibilityFilter.ParseMode(src.GetValueOrDefault(NoteVisibilityFilter.ParamName));
         var hideAgg = NoteVisibilityFilter.ParseBool(src.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
-        return mockData is null ? null : NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg, CurrentHideNaZnameniLegend());
+        if (mockData is null) return null;
+
+        var counter = new NoteSuppressionCounter();
+        var filtered = NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg, CurrentHideNaZnameniLegend(), counter);
+        UpdateNoteSuppressionText(counter, src);
+        return filtered;
     }
+
+    /// <summary>
+    /// Text signálu o nastavení, které **tiše mění obsah** vývěsky, pro status bar. Schované poznámky
+    /// se počítají ze skutečně odfiltrovaných položek náhledové stránky (parametr sám nemusí nic
+    /// schovat - rozsah „Spoje, nepoznámkovat" nemusí mít v datech firmy záznamy a signál z parametru
+    /// by lhal). Zbylé dvě věci se hlásí dle parametru, protože se aplikují už na serveru:
+    /// písmena variant nahrazují rozdílové poznámky a rozdělení po označnících vyndá ze stránky
+    /// odjezdy jiných označníků. Právě to se tiše dělo, když UI parametr ukazovalo jako vypnutý.
+    /// </summary>
+    private void UpdateNoteSuppressionText(NoteSuppressionCounter counter, IReadOnlyDictionary<string, object?> paramValues)
+    {
+        NoteSuppressionText = BuildPrintSettingsNotice(
+            counter.AnythingHidden,
+            NoteVisibilityFilter.ParseBool(paramValues.GetValueOrDefault(VariantLettersParamName)),
+            NoteVisibilityFilter.ParseBool(paramValues.GetValueOrDefault(SplitPerPlatformParamName)));
+    }
+
+    /// <summary>Složí text signálu; prázdný = nastavení obsah nemění (blok se ve status baru nezobrazí).</summary>
+    internal static string BuildPrintSettingsNotice(bool notesHidden, bool variantLetters, bool splitPerPlatform)
+    {
+        var duvody = new List<string>(3);
+        if (notesHidden) duvody.Add("poznámky skryté nastavením");
+        if (variantLetters) duvody.Add("rozdíly tras nahrazené písmeny variant");
+        if (splitPerPlatform) duvody.Add("vývěska rozdělená po označnících");
+        return duvody.Count == 0 ? "" : "Sestava: " + string.Join(" · ", duvody);
+    }
+
+    /// <summary>Parametr sestavy „Písmena variant u odjezdů" - nahrazuje automatické rozdílové poznámky.</summary>
+    private const string VariantLettersParamName = "PISMENA_VARIANT";
+
+    /// <summary>Parametr sestavy „Rozdělit vývěsku pro každý označník" - dělí stránky a filtruje odjezdy.</summary>
+    private const string SplitPerPlatformParamName = "ROZDELIT_PER_OZNACNIK";
 
     /// <summary>Režim schování poznámek v rozsahu „nepoznámkovat" z aktuálního parametru sestavy.</summary>
     private NoteRangeSuppression CurrentNoteSuppression() =>
