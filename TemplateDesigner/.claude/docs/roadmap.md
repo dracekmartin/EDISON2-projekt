@@ -6,7 +6,7 @@
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
 > **▶ Další session:** **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky) -
-> helpdeskovou frontu máme prázdnou. **`B22`** čeká na reprodukci od Jana (bez ní se do ní nesahá).
+> helpdeskovou frontu máme prázdnou, takže poprvé jde plná pozornost na linkový JŘ.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
@@ -30,18 +30,7 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 ---
 
-## 🌊 Vlna 1 - malé věci a blokované
-
-| # | Blok | Vel. | Zóna | Závisí na |
-|---|---|---|---|---|
-| **B22** | **„Hodiny od/do" viditelné, i když časová osa není „Vlastní rozsah"** ⚠️ **čeká na reprodukci od Jana, bez ní do toho nesahat**. Prohledáno 30. 7.: obě plochy (záložka Parametry i tiskový dialog) filtr `visibleWhen` aplikují včetně přepočtu při změně pole a výchozí osa je „Jen hodiny s odjezdy", takže mají být skryté. Možný projev `B24`. Potřeba vědět: která plocha, na co byla osa nastavená, co se dělo předtím | S | 4 | reprodukce |
-
-V zákaznické frontě zůstává jediná reálná práce (`B12`) + položky čekající na zákazníky.
-
-
----
-
-## 🌊 Vlna 2 - zákaznické velké + odemknout linkový
+## 🌊 Vlna 1 - zákaznické velké + odemknout linkový
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
@@ -51,7 +40,7 @@ V zákaznické frontě zůstává jediná reálná práce (`B12`) + položky če
 
 ---
 
-## 🌊 Vlna 3 - velký kus linkového (dedikovaně)
+## 🌊 Vlna 2 - velký kus linkového (dedikovaně)
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|

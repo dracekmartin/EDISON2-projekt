@@ -2,6 +2,20 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-30 ✅ - `B22` „Hodiny od/do" v parametrech - vyřešeno opravou `B24`
+
+Symptom: „Hodiny od/do" byly vidět, i když časová osa nebyla „Vlastní rozsah". Prohledání kódu ale
+ukázalo, že **oba** povrchy (záložka Parametry i tiskový dialog) filtr `visibleWhen` aplikují včetně
+přepočtu při změně pole, a výchozí osa je „Jen hodiny s odjezdy" → z kódu se to nedalo reprodukovat.
+Proto se do toho **nesahalo naslepo** a čekalo se na reprodukci.
+
+Po opravě `B24` (hodnoty a UI jedním průchodem) se problém **přestal projevovat** - Jan ověřil 30. 7.
+včetně nejtvrdšího scénáře, tedy zavřít a znovu otevřít šablonu a podívat se, aniž na cokoli klikne
+(to bylo jádro `B24`: hodnoty dorazily až po postavení formuláře). Byl to tedy projev téže příčiny.
+
+**Poučení:** dvě hlášení mohou být jeden bug. Než se opravuje druhé, stojí za to ověřit, jestli
+nezmizelo s prvním - tady to ušetřilo celou opravu.
+
 ## 2026-07-30 ✅ - `B2` zavírací kolo helpdesku dojeté
 
 Zastávkový JŘ nemá otevřený zákaznický tiket. Zavřené 30. 7.: **#7947** (znění poznámky o prodloužení

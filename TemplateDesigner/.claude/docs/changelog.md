@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-30 (7) - `B22` vyřešena opravou `B24` (dvě hlášení, jeden bug)
+
+„Hodiny od/do" se zobrazovaly, i když časová osa nebyla „Vlastní rozsah". Z kódu to nešlo
+reprodukovat (oba povrchy filtr aplikují správně, výchozí osa je „Jen hodiny s odjezdy"), takže se
+do toho nesahalo a čekalo se na reprodukci. Po opravě `B24` se problém přestal projevovat - ověřeno
+i nejtvrdším scénářem, tedy znovuotevřením šablony bez jediného kliknutí, což bylo jádro `B24`.
+
+Poučení: než se opravuje druhé hlášení, ověřit, jestli nezmizelo s prvním.
+
 ## 2026-07-30 (6) - Helpdeskové kolo zastávkového JŘ dojeté
 
 Zastávkový JŘ nemá otevřený zákaznický tiket. Dnes zavřené: **#7947**, **#7955**, **#7959**
