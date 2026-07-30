@@ -27,7 +27,7 @@ Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Cach�
 | 11300 | 653b5c65-b84f-49e8-803f-329febe5629e | suspended | **KORID** (Jaroslav Smištík) | Skrýt prázdné přípojové řádky (PD vs. víkend) |
 | 8828  | 02063e8a-e2c1-476d-a527-77e77e0f263e | suspended | **TRANSDEV** (Michal Podloučka, Jakub Holík) | Per-sloupek zastávky - samostatná vývěska |
 | 8772  | b62718c6-e0aa-478a-be31-bdfb8c7b9917 | **resolved 15.7.** | **TRANSDEV** (Jakub Holík) | Návrhář sestav - podmíněný tisk sekcí |
-| 7947  | 585158b0-d063-40d9-87de-eb076a236a87 | suspended | **TRANSDEV** (Michal Podloučka) | Logika auto-poznámky u poslední/předposlední zastávky |
+| 7947  | 585158b0-d063-40d9-87de-eb076a236a87 | **closed 30. 7. 2026** | **TRANSDEV** (Michal Podloučka) | Logika auto-poznámky u poslední/předposlední zastávky |
 | 7959  | 45fdc840-ce70-4436-a331-c5a61732d9d6 | **resolved 20.7.** | **TRANSDEV** (Michal Podloučka) | Skrýt zastávku v seznamu, pokud z tištěné zastávky není obsluhována |
 | 7955  | dd0f7bd3-0efa-4e2d-947d-ed16559952ce | suspended | **TRANSDEV** (Michal Podloučka) | Vlastní komentář spoje má přebít auto-poznámku + 2 buga |
 | 7937  | 64fd847c-7090-47d1-bc91-bc581b0aea42 | suspended | **TRANSDEV** (Michal Podloučka) | Odsazení/odrazení zastávky per směr, jen pro zastávkové JŘ |
@@ -65,7 +65,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 ### 0.1 Tikety (helpdesk)
 
 > **Pořadí projití (2026-07-28):** ▶ **1. ready-to-close** = ověřit v buildu + resolve odpovědí zavřít
-(zbývají #7947, #7955; #9036 resolved 28. 7.). ▶ **2. testování u zákazníka**
+(zbývá #7955; #9036 resolved 28. 7., #7947 zavřen 30. 7.). ▶ **2. testování u zákazníka**
 > (#10660 DPKV - hotové, ale nejdřív zpřístupnit + proklikat jejich obrázky). ▶ **3. feature tracky, nezavírat**
 > (#7937, #8828 - čeká práce v TD). Hotové zavřené: #8772, #7161 (15.7.), #7959 (20.7., čeká ověření klienta).
 
@@ -74,7 +74,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | - (zavřeno) | §E1 |
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
-| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ **hotovo, připraveno k zavření** - znění dohodnuto 30. 7. (cíl na začátku věty + průjezd), ověřeno na `CB_GWBUS` 501/0000001/T proti starému modulu (tytéž 3 skupiny spojů, tytéž zastávky). | Zavřít **s výhradou**: ověřeno na naší lince, ne na datech zákazníka (876401/876402 nemáme) | §D1 |
+| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ **ZAVŘENO 30. 7. 2026** - znění „jede až do zast. \<konečná\> přes \<zastávky\>", ověřeno proti starému modulu i v běžícím buildu na `CB_GWBUS` 501/0000001/T. Zákazníkovi odpovězeno s prosbou o vyzkoušení na 876401/876402, až bude mít nový návrhář (na jejich datech jsme ověřit nemohli). | - | §D1 |
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD · ▶ **ready-to-close** | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do resolve poznámka, řešit jinde | §D4 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** - ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | - | §B3 |
@@ -254,8 +254,17 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
 
 ## D. Generování poznámek a obsluhových údajů (Caché `ZastavkoveJrMhdAPI`)
 
-### D1. Text „spoj jede až do XY" pro spoje za základní trasu
+### D1. Text „spoj jede až do XY" pro spoje za základní trasu - ✅ ZAVŘENO 30. 7. 2026
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7947
+- **Výsledné znění:** `jede až do zast. <konečná spoje> přes <zastávky za koncem základní trasy>`,
+  pak teprve „jede přes" / „neobsluhuje". **Cíl je konečná daného spoje, ne konec základní trasy** -
+  věta vzniká právě tehdy, když spoj obsluhuje zastávky za koncem základní trasy. Zrcadlová věta
+  pro opačný případ („jede jen do zast. X") jmenuje rovněž konečnou spoje.
+- **Zdroj základní trasy:** příznak per zastávka × směr v J-větě (segment #10; fallback tištěná trasa
+  #7; když není ani ta, spočítá se jako sjednocení obsluhovaných zastávek → **pak tato věta nikdy
+  nevznikne**, což je případ 62 422 z 62 432 kombinací linka×směr v CB_CSADAD).
+- **Dosah změny:** jen větev prodloužení; ostatní poznámky byte-identické (zlaté digesty beze změny).
+  Starého tiskového modulu se netýká vůbec.
 - **Citace (zjednodušeno z dlouhého popisu):** Pro linky 876402, 876401, kde málo spojů jede až do koncové (Stonava, Nový svět / Horní Suchá, Pašůvka):
   - Pokud základní trasa končí v předposlední → spoje do poslední dostanou poznámku „jede přes zast. XY" (XY = předposlední) - **nesprávně formulováno, popisuje co bus míjí, ne kam dojede**.
   - Pokud základní trasa končí v poslední → všechny spoje se písmenkují (přebytečné info, když do koncové jezdí 2 spoje).

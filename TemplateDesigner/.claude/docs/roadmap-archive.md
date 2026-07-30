@@ -20,7 +20,10 @@ tady to rozhodlo za pět minut po dnu hádání.
 **Číslování bloků:** při této práci vznikly duplikátní `B14`/`B18`/`B19` (čísla už patřila jiné práci) →
 přečíslováno na `B22`–`B26` a do pravidel roadmapy přidán bod 0 (číslo je globální, grepni i archiv).
 
-## 2026-07-30 ✅ - Poznámky zastávkového JŘ: audit úplnosti + #7947 dotaženo
+## 2026-07-30 ✅ - Poznámky zastávkového JŘ: audit úplnosti + #7947 UZAVŘEN
+
+> Tiket #7947 zavřen u zákazníka 30. 7. 2026. Odpověď obsahuje prosbu o vyzkoušení na jejich linkách
+> (876401/876402), protože na jejich datech jsme ověřit nemohli - jen na lince, kde situace nastává.
 
 Detail → changelog 2026-07-30, měřený stav → `customer-requirements §D1`.
 

@@ -4,7 +4,7 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** po zavření #7947 vzít **`B23`** (chybějící řádky legendy - poznámka je v datech,
+> **▶ Další session:** vzít **`B23`** (chybějící řádky legendy - poznámka je v datech,
 > ale na vývěsce ji cestující nevidí; priorita dle Jana 30. 7.), pak dokončit **B2** (zavírací kolo
 > helpdesku + vizuál zmenšování) a dál **B10** (symbolový font linkové části) nebo **B13** (rozřezání
 > široké tabulky). Follow-upy „na vyžádání zákazníka" žijí
@@ -34,7 +34,7 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B2** | **Zavírací kolo helpdesku** - ověřit v buildu a zavřít **#7947, #7955** + finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
+| **B2** | **Zavírací kolo helpdesku** - ověřit v buildu a zavřít **#7955** (#7947 zavřen 30. 7.) + finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
 
 Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + položky čekající na zákazníky.
 
@@ -145,7 +145,6 @@ při scope té fáze, ne teď.
 
 | Tiket | Uzavírací podmínka (co ověřit, aby se dal zavřít) |
 |---|---|
-| #7947 | ⛔ **na CB_CSADAD ověřit NELZE** (změřeno 30. 7.): žádná ze 480 kombinací linka×směr nemá vzorovou trasu → větev prodloužení je nedosažitelná, „jede až do" nevznikne ani jednou. Kód je hotový a zpevněný; chce data TRANSDEV (876401/876402) nebo umělou vzorovou trasu. Detail → `customer-requirements §D1` |
 | #7955 | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí |
 | #13048 bod 2 | finální vizuál zmenšování textu (názvy zastávek, zóny, rezerva u šipky směru) |
 
@@ -163,7 +162,7 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**`B23` ⚠️ CHYBĚJÍCÍ ŘÁDKY LEGENDY - vzít hned po zavření #7947** (M, zóna 5; nálezy 30. 7.)
+**`B23` ⚠️ CHYBĚJÍCÍ ŘÁDKY LEGENDY** (M, zóna 5; nálezy 30. 7.)
 Nejdůležitější otevřená věc u zastávkového JŘ: **poznámka existuje, ale cestující ji na vývěsce
 nevidí.** Dva samostatné nálezy, oba na `CB_GWBUS` 501/0000001, směr T, stránka Autobusové nádraží:
 
