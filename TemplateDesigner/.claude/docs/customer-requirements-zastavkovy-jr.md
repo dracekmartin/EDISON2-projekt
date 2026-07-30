@@ -337,6 +337,12 @@ Informačně tedy 1:1 s legacy (tytéž tři skupiny, tytéž zastávky), odchyl
 prodloužení se nemění nic** - pořadí i oddělovače (vč. legacy tvaru „ , " před „neobsluhuje") zůstávají
 byte-identické, zlaté digesty beze změny.
 
+**✅ Ověřeno i v běžícím buildu** (30. 7.): na téže stránce legenda **souhlasí se sloupci časů**
+v zastávkovém seznamu - `C` říká „neobsluhuje zast. Dewetterova ul." a sloupec C tam má `<`, `E`
+nezmiňuje Milevskou a sloupec E tam má `<`, `B` ji vyjmenovává a čas tam je. Před opravou značky
+„spoj nestaví" si tohle protiřečilo. Užitečná uzavírací kontrola pro příště: **legenda × sloupce
+variantních časů se musí shodovat** - je to vidět na jednom snímku bez nástrojů.
+
 **✅ Vysvětleno - chybějící bezbariérová poznámka i chybějící odjezd byly tiše zapnuté „Rozdělit
 vývěsku pro každý označník"** (30. 7.): stránka nesla jen odjezdy svého označníku, takže zmizel odjezd
 `11:20` (značky `C` + bezbariér) a s ním celý řádek legendy `H` (plní se jen z vytištěných odjezdů).
