@@ -1,0 +1,89 @@
+<Window x:Class="EDControls.EDSupportPanel.SupportPanelWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ShowInTaskbar="False" ShowActivated="False" ResizeMode="NoResize"
+        SizeToContent="Height" Width="12" MinWidth="0"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+    <!-- Klip na hranici okna = karta „vyjíždí zpod" pravé hrany; šířku okna řídí code-behind. -->
+    <Grid ClipToBounds="True">
+        <!-- Pevná šířka odpojuje měření obsahu od (měnící se) šířky okna — bez ní by
+             SizeToContent="Height" počítal výšku pro 12px široký obsah. -->
+        <Grid x:Name="Root" Width="182" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <!-- Karta -->
+            <Border Margin="12,0,0,0"
+                    Background="{DynamicResource EDTheme.Bg.Panel}"
+                    BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                    BorderThickness="1" CornerRadius="8">
+                <StackPanel Margin="6">
+                    <TextBlock Text="PODPORA" HorizontalAlignment="Center"
+                               Margin="0,2,0,8" FontWeight="Bold"
+                               FontFamily="{DynamicResource EDTheme.FontFamily}"
+                               FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                               Foreground="{DynamicResource EDTheme.Support.Accent}"/>
+
+                    <!-- Popisek je zalamovací TextBlock, ne string: karta má pevnou šířku a při
+                         user zvětšení fontu se text musí zalomit, ne ořezat. -->
+                    <Button x:Name="FeedbackBtn"
+                            Style="{DynamicResource EDTheme.SupportPanelButton}"
+                            Background="{DynamicResource EDTheme.Support.Feedback}"
+                            Margin="0,0,0,4" Click="Feedback_Click">
+                        <TextBlock Text="Zpětná vazba" TextWrapping="Wrap" TextAlignment="Center"/>
+                    </Button>
+                    <Button x:Name="PortalBtn"
+                            Style="{DynamicResource EDTheme.SupportPanelButton}"
+                            Background="{DynamicResource EDTheme.Support.Portal}"
+                            Margin="0,0,0,4" Click="Portal_Click">
+                        <TextBlock Text="Uživatelská podpora" TextWrapping="Wrap" TextAlignment="Center"/>
+                    </Button>
+                    <Button x:Name="VersionBtn"
+                            Style="{DynamicResource EDTheme.SupportPanelButton}"
+                            Background="{DynamicResource EDTheme.Support.Version}"
+                            Margin="0,0,0,4" Click="Version_Click">
+                        <TextBlock Text="Informace o verzi" TextWrapping="Wrap" TextAlignment="Center"/>
+                    </Button>
+
+                    <TextBlock Text="M-line software" HorizontalAlignment="Center" Margin="0,2,0,2"
+                               FontFamily="{DynamicResource EDTheme.FontFamily}"
+                               FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                               Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Úchyt. Je 2px širší než TabWidth a leží NAD kartou — přesah zakryje šev
+                 s jejím levým rámečkem (mirror legacy TabFillOverlap). -->
+            <Border x:Name="Tab" Width="14" Height="60"
+                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Background="{DynamicResource EDTheme.Support.Accent}"
+                    CornerRadius="5,0,0,5" Cursor="Hand"
+                    MouseLeftButtonDown="Tab_MouseLeftButtonDown">
+                <Grid>
+                    <!-- Hover deklarativně: DynamicResource v setteru snese i hosta, který
+                         EDTheme.xaml nenamergoval (FindResource by na hover hodil výjimku). -->
+                    <Border CornerRadius="5,0,0,5">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Value="True"
+                                                 Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}">
+                                        <Setter Property="Background" Value="{DynamicResource EDTheme.OnAccent.HoverOverlay}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                    <Path Fill="{DynamicResource EDTheme.OnAccent.Text}"
+                          Data="M 6,0 L 6,12 L 0,6 Z"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <ScaleTransform x:Name="ArrowFlip"/>
+                        </Path.RenderTransform>
+                    </Path>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

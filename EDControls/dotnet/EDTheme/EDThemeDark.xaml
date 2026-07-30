@@ -83,6 +83,17 @@
     <Color x:Key="EDTheme.Brand.Color">#FFC79A5A</Color>
     <SolidColorBrush x:Key="EDTheme.Brand" Color="{StaticResource EDTheme.Brand.Color}"/>
 
+    <!-- Support panel. Accent nese bílou šipku úchytu i titulek na tmavé kartě — proto
+         středně tmavá zelená (světlejší odstín by bílou šipku utopil, kontrast < 2:1). -->
+    <Color x:Key="EDTheme.Support.Accent.Color">#FF2E9E63</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Accent" Color="{StaticResource EDTheme.Support.Accent.Color}"/>
+    <Color x:Key="EDTheme.Support.Feedback.Color">#FF2E7FD4</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Feedback" Color="{StaticResource EDTheme.Support.Feedback.Color}"/>
+    <Color x:Key="EDTheme.Support.Portal.Color">#FF3C8F40</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Portal" Color="{StaticResource EDTheme.Support.Portal.Color}"/>
+    <Color x:Key="EDTheme.Support.Version.Color">#FF8B3FA8</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Version" Color="{StaticResource EDTheme.Support.Version.Color}"/>
+
     <!-- Semantic (rozjasněné pro čitelnost na tmavém) -->
     <Color x:Key="EDTheme.Semantic.Danger.Color">#FFEF5350</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Danger" Color="{StaticResource EDTheme.Semantic.Danger.Color}"/>

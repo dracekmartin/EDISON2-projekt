@@ -7,7 +7,7 @@ Základní třída ViewModelů + okolní infrastruktura: `EDServices` (DI kontej
 ## AttachToWindow — volat PŘED Show()/ShowDialog()
 
 `WindowNavigator` ho volá automaticky; **shell okno ho v AppBootstrapperu volá ručně**.
-Dělá čtyři věci:
+Dělá pět věcí:
 
 1. **Klávesy** z `Actions` + vždy **Ctrl+Enter → OkCommand**. OK tlačítko záměrně nemá
    `IsDefault` — samotný Enter slouží EDInputFormu k navigaci mezi poli.
@@ -21,6 +21,10 @@ Dělá čtyři věci:
    (ContextMenu/Popup routed event nemusí dorazit), flush dávky do Caché při `Closed`
    (server legacy `...Telemetry.LogUsageBatch`). Vše best-effort, nikdy nehazí. Legacy
    launch trackuje `WindowNavigator.LaunchLegacy` (OPEN si hostovaná forma trackne sama).
+
+5. **Panel Podpora** — `EDSupportPanel` se připojí ke každému oknu (obdoba legacy
+   `BaseForm.AttachSideMenu`), opt-out `ShowSupportPanel = false`. Best-effort v try/catch,
+   nikdy nesmí zabránit otevření okna. Viz [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md).
 
 `PersistedFormId` default `"EDISON2.<Window>"` — prefix odděluje od legacy numerických ID
 z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
@@ -60,6 +64,10 @@ z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
 - Legacy `EDISONMAIN.exe` se spouští napřímo, ne přes host — potřebuje
   `ApplyDefaultInput` retrofit, který host neumí.
 - `CloseAll()` je záměrně jen na konkrétní třídě `WindowNavigator`, ne na interface.
+- **Owned overlay okna EDControls (`IOverlayWindow`) `CloseAll()` ani „Spuštěné moduly"
+  nevidí** — panel Podpora a „Akce probíhá" jsou top-level okna, takže by se jinak nabídly
+  jako modul a `CloseAll` by je zavřel (panel nevratně). Nové owned overlay okno tenhle
+  marker potřebuje.
 
 ## Drobné pasti
 

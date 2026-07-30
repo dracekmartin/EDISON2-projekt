@@ -159,6 +159,24 @@
     <SolidColorBrush x:Key="EDTheme.Brand" Color="{StaticResource EDTheme.Brand.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         COLORS — Support panel (EDSupportPanel)
+         Hodnoty přebírají legacy SideMenu, aby panel vypadal stejně jako
+         v EDISONu 1. Accent (úchyt, titulek) je záměrně jiná zelená než
+         Portal (tlačítko) — tak to má legacy.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="EDTheme.Support.Accent.Color">#FF16A34A</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Accent" Color="{StaticResource EDTheme.Support.Accent.Color}"/>
+
+    <Color x:Key="EDTheme.Support.Feedback.Color">#FF1E88E5</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Feedback" Color="{StaticResource EDTheme.Support.Feedback.Color}"/>
+
+    <Color x:Key="EDTheme.Support.Portal.Color">#FF43A047</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Portal" Color="{StaticResource EDTheme.Support.Portal.Color}"/>
+
+    <Color x:Key="EDTheme.Support.Version.Color">#FF8E24AA</Color>
+    <SolidColorBrush x:Key="EDTheme.Support.Version" Color="{StaticResource EDTheme.Support.Version.Color}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          COLORS — Semantic (status indikátory)
          ═══════════════════════════════════════════════════════════════════ -->
     <!-- Danger / error / delete -->

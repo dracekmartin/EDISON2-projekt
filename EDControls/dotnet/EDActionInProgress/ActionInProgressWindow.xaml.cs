@@ -17,7 +17,7 @@ namespace EDControls.EDActionInProgress;
 /// Vytváří se per akci (ne recyklace přes Hide/Show) — skryté okno by na příštím Show()
 /// na jeden frame přehrálo poslední složený obraz (sprite v půli cesty z minula).
 /// </summary>
-internal sealed partial class ActionInProgressWindow : Window
+internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOverlayWindow
 {
     // Prefix klíče spritů v Window.Resources — nový sprite stačí přidat do XAML s tímto prefixem.
     private const string SpriteKeyPrefix = "Sprite.";
