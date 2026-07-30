@@ -1,6 +1,4 @@
-# Glob: CACHE/**
-
-## MHD zastávkový JŘ - business logika tisku
+# MHD zastávkový JŘ - business logika tisku
 
 ### Přehled Caché tříd
 

@@ -13,14 +13,18 @@ Diff: !`git diff HEAD~1 HEAD`
 
 ## Co aktualizovat
 
-### 1. `CLAUDE.md` - sekce "Aktuální stav projektu"
+### 1. `CLAUDE.md` - **jen při změně invariantu**
 
-- **Datum poslední aktualizace** → nastav na dnešní datum
-- **"✅ Co máme"** → přidej nové dokončené věci z commitu (stručně, bullet)
-- **"🎯 Aktuální focus"** → uprav na základě commitu; pokud commit dokončil focus položku,
-  přesuň ji do "Co máme" a napiš nový focus (nebo ponech prázdné pokud není jasný další krok)
-- **"🐛 Známé problémy"** → odeber problémy které commit řeší; přidej nové pokud commit
-  něco zavádí (nebo ponech "(žádné aktivní)" pokud je vše čisté)
+**Stav se do `CLAUDE.md` nepíše.** Žádné datum, žádný výčet hotových featur, žádný focus -
+to všechno drží roadmapa a changelog a v `CLAUDE.md` by to stálo kontext v každé session.
+
+Sáhni tam **výhradně** tehdy, když commit změnil něco z těchhle kategorií:
+
+- **neodvoditelný invariant** (persistovaný klíč, zpětná kompatibilita šablon, kontrakt se shellem)
+- **pravidlo pro psaní kódu** nebo architektonická hranice vrstev
+- tvrzení v `CLAUDE.md`, které commit učinil **nepravdivým** - to smaž nebo oprav
+
+Jinak `CLAUDE.md` nech být. Když si nejsi jistý, jestli je to invariant nebo featura: featura.
 
 ### 2. `.claude/docs/changelog.md` - přidej nový záznam na začátek
 
@@ -36,13 +40,15 @@ Pravidla:
 - Záznam přidej **na začátek souboru** (nejnovější nahoře)
 - Zachovej stávající záznamy beze změny
 - Popis změn piš česky, stručně ale výstižně
-- Pokud commit opravuje bug z "Známé problémy", uveď to explicitně
+- Pokud commit opravuje problém evidovaný v roadmapě nebo v tiketu, uveď to explicitně
 
 ### 3. `.claude/docs/roadmap.md` - pokud commit implementoval roadmap položku
 
 - Najdi odpovídající položku v roadmapě
-- Přidej k ní `✅ hotovo (YYYY-MM-DD)` nebo ji přesuň do sekce "Implementováno"
-- Pokud commit částečně implementuje položku (Part 1 z 2), to označ jako `✅ Part 1 hotovo`
+- **Hotovou položku přesuň KOMPLETNĚ do `roadmap-archive.md`** - nikdy v roadmapě
+  nenechávej odškrtnutý „✅ hotovo" řádek. V aktivní roadmapě zůstává jen to, co se má
+  dělat (+ krátký ukazatel do archivu, kde jsou detaily). Platí i pro rozhodovací tabulky.
+- Částečně hotová položka (Part 1 z 2) v roadmapě **zůstává** - zúží se na to, co zbývá
 - Neměň položky které commit neovlivnil
 
 ### 4. ./README.md

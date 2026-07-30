@@ -9,7 +9,7 @@ Refaktoruj existující Caché třídu "$ARGUMENTS" na místě - zachovej busine
 ## Kontext - přečti před zahájením
 
 Konvence a pravidla: !`cat .claude/rules/cache-api.md`
-Business logika (JŘ kontext): !`cat .claude/rules/cache-business-logic.md`
+Business logika (JŘ kontext): !`cat .claude/docs/cache-business-logic.md`
 Referenční implementace (vzor): !`cat CACHE/ALVA/TemplateDesigner/API/ZastavkoveJrMhdAPI.cls`
 Abstraktní základ: !`cat CACHE/ALVA/TemplateDesigner/API/AgendaAPI.cls`
 

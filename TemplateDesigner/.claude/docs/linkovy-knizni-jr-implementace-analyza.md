@@ -282,7 +282,7 @@ existující roadmapové kroky 42–44:
 3. **Wire formát návrh (R3, čistě JSON)** - nová Caché agenda `KnizniJrAd` (jméno z roadmapy),
    `GetData`/`GetMockData` vrací JSON strukturu inspirovanou `columns[]`/`rows[]` (viz §5 návrh),
    ne 1:1 kopii `idobj`/`arr` legacy modelu.
-4. **`LineTableElement`** - nový element (viz `.claude/rules/new-element-checklist.md` pro
+4. **`LineTableElement`** - nový element (viz `skill `novy-element`` pro
    kompletní checklist kroků: model, JsonDerivedType, factory switche, toolbar, dynamická výška,
    GetSummary). Klíčová odlišnost od `TableElement`: podpora řádkových typů (platnost/vyčká/
    navazuje) a per-sloupec = per-spoj metadata (číslo spoje, TČ zvýraznění).

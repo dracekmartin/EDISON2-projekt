@@ -222,7 +222,7 @@ Caché posílá **hotové Unicode znaky** (konverze `ConvertSpecialniZnak` prob�
 ## Související dokumentace
 
 - **Wire formát (JSON příklad, GetData/GetMockData kontrakt):** viz `.claude/rules/cache-api.md`
-- **Business logika Caché (fáze zpracování, working globals):** viz `.claude/rules/cache-business-logic.md`
+- **Business logika Caché (fáze zpracování, working globals):** viz `.claude/docs/cache-business-logic.md`
 - **Changelog:** viz `.claude/docs/changelog.md`
 
 

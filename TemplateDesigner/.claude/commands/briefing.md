@@ -7,7 +7,7 @@ Přečti níže uvedené soubory a připrav stručný briefing pro začátek ses
 
 ## Kontext
 
-Aktuální stav projektu: !`cat CLAUDE.md`
+Poslední hotová práce: !`head -60 .claude/docs/changelog.md`
 Roadmapa: !`cat .claude/docs/roadmap.md`
 Poslední commity: !`git log --oneline -5`
 Neuložené změny: !`git diff --stat`
@@ -19,7 +19,7 @@ Odpověz v tomto formátu - stručně, žádné omáčky:
 ---
 
 ### 📍 Kde jsme
-[1-2 věty: co bylo naposledy dokončeno podle CLAUDE.md a git logu]
+[1-2 věty: co bylo naposledy dokončeno podle changelogu a git logu]
 
 ### 🔴 Top 3 priority
 1. **[název]** - [jedna věta proč je to první]
@@ -27,7 +27,7 @@ Odpověz v tomto formátu - stručně, žádné omáčky:
 3. **[název]** - [jedna věta proč]
 
 ### ⚠️ Otevřené problémy
-[seznam z "Známé problémy" - nebo "žádné" pokud je prázdné]
+[otevřené problémy z roadmapy - nebo "žádné", pokud tam žádné nevisí]
 
 ### 💡 Doporučení pro tuto session
 [1 věta: na co se zaměřit dnes s ohledem na priority a aktuální stav]

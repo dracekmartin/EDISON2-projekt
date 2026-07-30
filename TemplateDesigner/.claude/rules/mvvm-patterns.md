@@ -319,7 +319,7 @@ Všechny editovatelné vlastnosti jsou nullable (`string?`, `float?`, `bool?`, `
 
 ## Jak přidat nový typ elementu
 
-Kompletní checklist včetně dotčených souborů, factory switches, dynamické výšky a strom šablony → viz **`.claude/rules/new-element-checklist.md`**.
+Kompletní checklist včetně dotčených souborů, factory switches, dynamické výšky a strom šablony → viz **`skill `novy-element``**.
 
 Reference implementace: `BarcodeElement` (minimální), `TextElement` (TextStyle + dynamická výška), `ScheduleElementBase`-derived (komplexní s cache).
 
