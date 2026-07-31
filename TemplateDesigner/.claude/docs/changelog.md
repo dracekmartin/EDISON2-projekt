@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-31 (6) - `B41` odklizené mrtvé UI: co řídí parametr sestavy, není i v prvku
+
+Tři přepínače v prvcích **nic nedělaly** - parametr sestavy je přebíjel, a protože ho agendy JŘ
+posílají vždy, klik v prvku byl bez efektu. Přesně z téhle dvojkolejnosti vznikla dvojice hlášení
+`B22`/`B24` (Jan si toho všiml znovu při klikání 31. 7.).
+
+- Z prvků zmizely: **Šipka směru** a **Projeté zastávky** (seznam zastávek) a **Roztáhnout na výšku**
+  (mřížka odjezdů). Zapínají se v parametrech sestavy, což je jediné místo.
+- Vzhled zůstává v šabloně, kam patří: barva, tloušťka, hrot a styl čáry šipky · barva a čas
+  u projetých zastávek. U nich je nově nápověda, kde se tisk zapíná, aby to uživatel našel.
+- Z modelu odešly i tři fallbacky časové osy (`timeAxisMode`, `timeAxisRangeFrom/To`), které z panelu
+  vypadly už dřív. Nahradily je konstanty shodné s výchozími hodnotami parametrů agendy.
+- **Ověřeno, že to nic nerozbije:** všech pět parametrů posílají obě agendy JŘ (AD i MHD), a vlastnost
+  prvku se uplatnila jen bez dat - v tom stavu ale seznam kreslí zástupné řádky (šipka se nekreslí,
+  projeté nemají co filtrovat) a mřížka vrací prázdný layout.
+- **Uložené šablony bez migrace** - odebrané klíče se při čtení ignorují, hodnota se stejně
+  zahazovala. Z distribuční AD šablony jsou vyčištěné.
+- **Vedlejší nález:** distribuční šablona měla u mřížky napsanou časovou osu „Vlastní rozsah 4-22",
+  ale agenda posílá výchozí „Jen hodiny s odjezdy", takže se ten rozsah nikdy netiskl. Klíče
+  odstraněny; kdybychom ten rozsah chtěli mít v distribuci, musí se změnit výchozí hodnota parametru
+  v agendě, ne šablona.
+- **Import PDF** si přestal do šablony zapisovat detekovanou časovou osu a šipku - stejně se
+  při tisku nepoužily. Uživatel si osu nastaví v parametrech.
+
+.NET 536/536, Caché 52/52.
+
 ## 2026-07-31 (4) - denní značky se netisknou tam, kde je říká nadpis sloupce (#13045)
 
 Klient hlásil, že u spojů vidí značku „6", i když totéž říká nadpis sloupce, a že v nedělním sloupci

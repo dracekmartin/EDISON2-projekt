@@ -144,6 +144,12 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   s checkboxy dialogu; vědomé hodnoty (1, 2, 4…) zůstávají. Class default změněn na 0.
 - **1.5.0** `MigrationRectangleCorners` - rohy sjednocené na base (`cornerRadius` → `cornerStyle`
   + `cornerSize`).
+- **Bez bumpu (2026-07-31, `B41`):** z prvků odebrány klíče, které řídí parametr sestavy a prvek je
+  tedy nikdy neuplatnil - `showDirectionArrow`, `showPassedStops` (seznam zastávek), `timeAxisMode`,
+  `timeAxisRangeFrom`, `timeAxisRangeTo`, `autoExpandToFillHeight` (mřížka odjezdů). Uložené šablony
+  je nesou dál, čtení je ignoruje; podle pravidla výše je odstranění nepoužívaného pole nezlomová
+  změna, takže **bez migrace a bez bumpu**. Chování se nemění: hodnota se už dnes zahazovala,
+  protože parametr sestavy má přednost.
 - **1.6.0** `MigrationArrowWidth` (2026-07-31) - šipka směru: přepínač `directionArrowBold` zrušen
   ve prospěch tloušťky v mm (`directionArrowWidth`). Převod drží vzhled: tučná → 0,4 mm, jinak
   0,2 mm (dřívějších 1,5 / 0,8 **px**, což v tisku dávalo vláskovku). Dvě cesty k jedné vlastnosti

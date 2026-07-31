@@ -38,6 +38,28 @@ Podstatná zjištění, která z toho vypadla a platí dál:
   neproběhaná - neslibovat ji bez zkoušky.
 - Sonda pro výběr ukázkové linky se zacházkami = `AdVariantyProbe.ScanZachazky`.
 
+## 2026-07-31 ✅ - `B41` mrtvé UI odklizeno: co řídí parametr sestavy, není i v prvku
+
+Detail → changelog 2026-07-31 (6). Tři přepínače v prvcích nic nedělaly, protože je parametr sestavy
+přebíjel - a agendy JŘ ho posílají vždy. Z téhle dvojkolejnosti vznikla hlášení `B22`/`B24`.
+
+Odstraněno z prvků: **Šipka směru**, **Projeté zastávky** (seznam zastávek), **Roztáhnout na výšku**
+(mřížka odjezdů) - včetně tří fallbacků časové osy, které z panelu vypadly už dřív. Nahradily je
+konstanty shodné s výchozími hodnotami parametrů agendy. Vzhled (barva/tloušťka/hrot šipky, barva
+a čas u projetých) v šabloně zůstává a dostal nápovědu, kde se tisk zapíná.
+
+- **Bezpečnost změny doložena, ne odhadnuta:** všech pět parametrů posílají obě agendy JŘ (AD i MHD),
+  a vlastnost prvku se uplatnila jen bez dat - v tom stavu seznam kreslí zástupné řádky (šipka se
+  nekreslí, projeté nemají co filtrovat) a mřížka vrací prázdný layout.
+- **Bez migrace a bez bumpu verze** - odebrané klíče se při čtení ignorují a hodnota se stejně
+  zahazovala (zapsáno v `template-schema-versions`).
+- **Vedlejší nález:** distribuční AD šablona měla u mřížky napsanou časovou osu „Vlastní rozsah 4-22",
+  ale agenda posílá „Jen hodiny s odjezdy", takže se ten rozsah nikdy netiskl. Kdyby ho distribuce
+  měla mít, musí se změnit výchozí hodnota parametru v agendě, ne šablona.
+- **Import PDF** si přestal zapisovat detekovanou časovou osu a šipku - stejně se při tisku nepoužily.
+- **Pravidlo do budoucna:** když agenda pošle parametr, prvek tu vlastnost **nevystavuje**; vzhled
+  patří do šablony, zapínání do parametrů.
+
 ## 2026-07-31 ✅ - `B38` rozdělení seznamu zastávek na oddíly na pokračování (#13097)
 
 Detail → changelog 2026-07-31 (4). **Přeceněný blok: v roadmapě visel jako `L` gated na `B13`
