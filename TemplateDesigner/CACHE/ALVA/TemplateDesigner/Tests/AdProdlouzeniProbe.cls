@@ -392,6 +392,42 @@ ClassMethod RozdilyDiag(ByRef sys As %String) As %Status
     q $$$OK
 }
 
+/// Vypíše `values` (hlavičková pole) jedné stránky - diagnostika „změnil se digest, ale počty sedí".
+/// IN: SKUPINA_LINEK_ID, LINKA_ID, SMER (default T), PORADI (default 1). Read-only.
+ClassMethod StrankaValues(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        k ^||TiskAd
+
+        s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+        i sku = "" s sku = $o(^[dataDB]JRL(""))
+        s lin = $g(^||ML("IN","LINKA_ID"))
+        s smer = $g(^||ML("IN","SMER"))
+        i smer = "" s smer = "T"
+        s poradi = +$g(^||ML("IN","PORADI"))
+        i 'poradi s poradi = 1
+
+        s page = $classmethod("ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd","BuildStrankaZastavky", dataDB, sku, lin, poradi, smer, "")
+        i '$isobject(page) {
+            s ^||ML("OUT",1) = "stranka se nesestavila"
+            ret $$$OK
+        }
+        s i = 0
+        s it = page.values.%GetIterator()
+        while it.%GetNext(.k, .v) {
+            i $isobject(v) {
+                s ^||ML("OUT",$i(i)) = k_"=(pole/objekt)"
+            } else {
+                s ^||ML("OUT",$i(i)) = k_"="_$e(v,1,200)
+            }
+        }
+        k ^||TiskAd
+    } catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
 /// Odkud se berou atributy zastávky: **trasa linky** (J-věta `#1:2`) × **registr zastávek**
 /// (`^JRZ(czst)`, `$`-pole 8). Legacy čte obojí (změřeno), my dnes jen trasu. Sonda zjistí:
 ///   1. co v tom poli registru vlastně je (rozložení znaků - je to výčet atributů, nebo kategorie?)

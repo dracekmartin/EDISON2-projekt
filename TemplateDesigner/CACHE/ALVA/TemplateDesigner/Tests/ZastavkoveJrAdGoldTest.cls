@@ -10,6 +10,12 @@ Include %occInclude
 ///
 /// Přegenerování baseline po ZÁMĚRNÉ změně výstupu: spusť test, z hlášky „aktuální: <digest>"
 /// vezmi nový digest a přepiš konstantu Expected*.
+///
+/// ⚠️ **Kdo přidá pole do `values` nebo do řádků, musí přebaselinovat hned ve svém commitu.**
+/// Digest je MD5 celého JSON, takže **nové pole změní md5, ale ne počty** - a pád pak spadne na
+/// někoho jiného za dva dny (tak to bylo u #12997 s polem `BARVA_LINKY`). Když počty sedí a liší se
+/// jen md5, hledej **přidané/změněné pole**, ne rozbitou logiku; `AdProdlouzeniProbe.StrankaValues`
+/// vypíše `values` jedné stránky pro porovnání.
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdGoldTest Extends ALVA.EDTesting.MLTestCase
 {
 
@@ -18,16 +24,16 @@ Parameter GOLDDB = "CB_CSADAD";
 
 Method TestGold0365001()
 {
-	// Re-baseline 2026-07-27 (KOVED #13048 bod 4 duplikace): přibylo pole NASTUPISTE_VARIANT
-	// (nástupiště per varianta) do každé zastávky - počty beze změny, jen md5.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=110 md5=9lOYfqMLeUX/0XYq7dkgjg==")
+	// Re-baseline 2026-07-31 (#12997, commit 5a93f17): do `values` přibylo pole BARVA_LINKY
+	// (barva linky z JŘ modulu) - počty beze změny, jen md5. Předtím 27. 7. NASTUPISTE_VARIANT.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=110 md5=wqcHRGlFy5NgEPf+PwQ1iw==")
 }
 
 Method TestGold0365005()
 {
-	// Re-baseline 2026-07-27 (KOVED #13048 bod 4 duplikace): + pole NASTUPISTE_VARIANT per zastávka
-	// (počty beze změny). Předtím bod 5 = řazení variantních sloupců dle četnosti.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=6kDpF8QCxjLiKZpEvIUIvw==")
+	// Re-baseline 2026-07-31 (#12997, commit 5a93f17): + pole BARVA_LINKY ve `values`
+	// (počty beze změny). Předtím 27. 7. NASTUPISTE_VARIANT, před ním řazení variantních sloupců.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=DnaY+3JpewJ9fibg10cfig==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:
