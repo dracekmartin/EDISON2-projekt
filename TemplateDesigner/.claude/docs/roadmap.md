@@ -1,7 +1,7 @@
 # Roadmap
 
-> **Stav k 2026-07-30** (helpdeskové kolo dojeté - #7947, #7955, #7959 i #13048 zavřené; poznámky
-> zastávkového JŘ pročištěné; verze připravena k publish).
+> **Stav k 2026-07-31** (helpdeskové kolo dojeté - #7947, #7955, #7959, #13048 i #10660 zavřené;
+> zastávkový JŘ nemá otevřený zákaznický tiket; verze připravena k publish).
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
@@ -101,7 +101,6 @@ při scope té fáze, ne teď.
 
 ### Čeká na někoho jiného - postrčit, není to práce
 
-- **#10660 DPKV** - hotové, zpřístupnit build + proklikat jejich obrázky
 - **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení - kolega
 - **#13048 bod 4 fáze 2** (duplikace řádku u víc nástupišť) - čeká potvrzení KOVED
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne

@@ -23,7 +23,7 @@ Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Cach�
 
 | # | UUID | Stav | Zákazník (kontakt) | Téma |
 |---|---|---|---|---|
-| 10660 | f3d3a7d8-0c3d-4076-93d1-c12bb25e851d | suspended | **DPKV** (Jan Slavík) | 4 oblasti grafických připomínek po importu z legacy |
+| 10660 | f3d3a7d8-0c3d-4076-93d1-c12bb25e851d | **closed 31. 7. 2026** | **DPKV** (Jan Slavík) | 4 oblasti grafických připomínek po importu z legacy |
 | 11300 | 653b5c65-b84f-49e8-803f-329febe5629e | suspended | **KORID** (Jaroslav Smištík) | Skrýt prázdné přípojové řádky (PD vs. víkend) |
 | 8828  | 02063e8a-e2c1-476d-a527-77e77e0f263e | suspended | **TRANSDEV** (Michal Podloučka, Jakub Holík) | Per-sloupek zastávky - samostatná vývěska |
 | 8772  | b62718c6-e0aa-478a-be31-bdfb8c7b9917 | **resolved 15.7.** | **TRANSDEV** (Jakub Holík) | Návrhář sestav - podmíněný tisk sekcí |
@@ -66,7 +66,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 
 > **Pořadí projití (2026-07-28):** ▶ **1. ready-to-close** = ověřit v buildu + resolve odpovědí zavřít
 (prázdné - #9036 resolved 28. 7., #7947 i #7955 zavřeny 30. 7.). ▶ **2. testování u zákazníka**
-> (#10660 DPKV - hotové, ale nejdřív zpřístupnit + proklikat jejich obrázky). ▶ **3. feature tracky, nezavírat**
+> (prázdné - #10660 DPKV zavřen 31. 7. s návodem, kde se co nastavuje). ▶ **3. feature tracky, nezavírat**
 > (#7937, #8828 - čeká práce v TD). Hotové zavřené: #8772, #7161 (15.7.), #7959 (20.7., zavřen 30.7.), #7947 + #7955 (30.7.).
 
 | Ticket | Zákazník | Feature | Stav | Otestovat před zavřením | Detail |
@@ -78,7 +78,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ **ZAVŘENO 30. 7. 2026** - ověřeno na reálných datech (CB_GWBUS 501/0000002, spoj 21), viz tabulka v §D2. V odpovědi zdůrazněno, že jde o **volbu** parametru (výchozí = legacy) a že negativní značky i platnost dnů zůstávají. | - | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) - do odpovědi se vědomě nepsalo, řeší se jiným kanálem | §D4 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** - ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | - | §B3 |
-| #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ · 🧪 **testování u zákazníka** | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
+| #10660 | DPKV | 4 body: seznam zastávek (šipka/značky/podbarvení/font sloupce) + záhlaví mřížky (2. řádek, podtržení) + časová osa přes půlnoc + poznámky (barva znaku, nadpis) | ✅ **ZAVŘENO 31. 7. 2026** - odpověď obsahuje i **návod, kde se co nastavuje** (tři body existovaly, jen je klient nenašel) | - | §G |
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
 | #8828 | TRANSDEV | Označníky → samostatná vývěska | ✅ **RESOLVED 2026-07-28** - parametr „Samostatná stránka pro každý označník" (+ titulek „…, označník X", spoj bez označníku na stránku nejčetnějšího); odpověď odeslána, klient ověří na 876420/863383 (znovuotevření = záchytka). MHD zdroj označníku až u MHD zákazníka. | changelog 27.–28. 7. |
 | #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
@@ -541,7 +541,7 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 ## G. Hotovo / vyřízeno
 
 ### B1. Per-line font v dvouřádkovém záhlaví skupin dnů (DepartureGrid)
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Tiket:** #10660 (DPKV, Jan Slavík); **uzavřen 31. 7. 2026**.
 - **Datum:** 2026-05-12
 - **Zjištění:** Data jsou **už rozdělená na 2 řádky** napříč všemi vrstvami (Caché `NadpisSMOPrvni`/`NadpisSMODruhy` → JSON `NADPIS`/`NADPIS2` → TD `SkupinaDnuData.Nadpis`/`Nadpis2`). TD je ale dříve před wrap fází konkatenovala do single string → ztracená hranice mezi nadpisy.
 - **Implementace:**
@@ -551,12 +551,17 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
   - Height computation: per-line heights (Line 1 vs Line 2 font size), součet per group, max přes groupy.
   - Render: per-line style/font/paint selection podle `IsSecondary`; cumulative `runningY` pro různé výšky řádků; decorations (Underline/Strikethrough) per-line.
   - Pre-create `groupHeaderStyles2/Fonts2/TextPaints2` cache - vytváří se jen pokud `HeaderLine2Style != null` (žádná overhead při default).
-  - UI: nový group **„Záhlaví - 2. řádek"** v properties panelu s 4 položkami (Velikost, Tučné, Kurzíva, Barva textu). Lazy-init helper `EnsureHeaderLine2Style()`.
+  - UI (stav 31. 7. 2026): ve formuláři prvku, skupina **„Styl záhlaví"**, tlačítko **„Styl 2. řádku
+    nadpisu" → „Upravit styl…"** (velikost, tučné, kurzíva, barva jsou v pod-dialogu). Lazy-init helper
+    `EnsureHeaderLine2Style()`. ⚠️ Původně to byly 4 samostatné položky ve skupině „Záhlaví - 2. řádek"
+    v properties panelu; po migraci editace na formuláře z Caché je to tlačítko. **Kdo popisuje UI
+    zákazníkovi, ať si popisky ověří ve `*Edit.cls`, ne v tomto zápisu** - tady to jednou svedlo
+    odpověď na neexistující pole.
 - **Default chování zachované:** `HeaderLine2Style = null` → `hasLine2Override = false` → Line 2 použije stejný styl jako Line 1, žádná regrese pro existující šablony.
 - **Pattern:** plně extensible přes TextStyle cascade - uživatel může v budoucnu doplnit per-column override Line 2, HAlign, padding atd. bez schema změny.
 
 ### A2. Konfigurovatelná pozice značek u zastávek (StopList)
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended** (řešíme i CBDP layout).
+- **Tiket:** #10660 (DPKV, Jan Slavík); **uzavřen 31. 7. 2026** (layout řešen i pro CBDP).
 - **Datum:** 2026-05-12
 - **Diagnóza:** Stávající TD renderoval značky (na znamení `×`, atributy, poznámky) vždy **za názvem** zastávky (CBDP layout). DPKV chce na znamení jako **prefix** před názvem (např. „× Globus") + chtějí, aby názvy zůstaly **zarovnané** i u zastávek bez značky.
 - **Implementace:**
@@ -571,7 +576,7 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 - **Architektonický learning:** první návrh prepended markery do textu buňky (`„× Globus"`). To posouvalo názvy zastávek per řádek podle přítomnosti značky → nezarovnané. Druhá iterace s fixed 4mm sub-cell přidala vzdušnost ale byla zbytečně široká. Třetí (final) s auto-fit measure se přizpůsobí datům přesně. **Symetricky paralelní s A1 (DirectionArrowSide) - bounded enum, ne template variant.**
 
 ### A1. Konfigurovatelná pozice šipky směru jízdy (StopList)
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended** (řešíme i CBDP, kteří chtěli Vlevo).
+- **Tiket:** #10660 (DPKV, Jan Slavík); **uzavřen 31. 7. 2026** (CBDP chtěli šipku vlevo, proto je volitelná).
 - **Datum:** 2026-05-12
 - **Diagnóza:** Stávající TD šipku kreslil VŽDY vpravo (DPKV preference). CBDP a podobní zákazníci, kteří dříve používali legacy se šipkou vlevo, neměli volbu.
 - **Implementace:**
@@ -585,14 +590,14 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 - **Architektonický learning:** první návrh přidával gutter MIMO sloupec → způsobilo overflow Width elementu (clip ořezal arrow). Druhá iterace dala arrow UVNITŘ column → na Vlevo to kolidovalo s left-aligned textem. Třetí (final) iterace asymetricky - Vpravo inside, Vlevo outside - funguje bez overflow i bez kolize s textem. **Per-customer divergence řešena přes property, ne template variant** (per `feature-design-principles.md` §5 - 2 bounded hodnoty, ne kombinace settings).
 
 ### A3. CurrentStopBackgroundColor + cleanup master toggle
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Tiket:** #10660 (DPKV, Jan Slavík); **uzavřen 31. 7. 2026**.
 - **Datum:** 2026-05-12
 - **Výsledek:** ✅ `CurrentStopBackgroundColor` property + render path + properties panel descriptor („Pozadí aktuální") v group „Zvýraznění" - vše už existovalo. Customer use case (podbarvení místo podtržení) je plně podporovaný - uživatel vypne `CurrentStopUnderline` a nastaví barvu `CurrentStopBackgroundColor`.
 - **Bonus cleanup:** Odstraněn master toggle `HighlightCurrentStop` (matoucí UX - vypadal jako sourozenec sub-options, ale choval se jako rodič). Highlight se teď aktivuje implicitně podle toho, jestli je některá z highlight properties nastavená. Šipka směru jízdy teď navíc vždy ukazuje na aktuální zastávku (dřív závisela na master toggle).
 - **Minor regression:** Staré šablony s explicitně vypnutým `HighlightCurrentStop=false` po načtení dostanou defaultní Bold+Underline (protože System.Text.Json ignoruje smazaný field). Per principles („no backward compat shims") neřeším migrací.
 
 ### A4. Per-column header font ve StopList - již plně podporováno
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Tiket:** #10660 (DPKV, Jan Slavík); **uzavřen 31. 7. 2026**.
 - **Datum ověření:** 2026-05-12
 - **Výsledek:** ✅ Funkčně pokryto. Klient nenašel UI cestu - funkce existuje, jen je v `StopColumnsEditorDialog` (tab „Sloupce") přes per-column `CellStyleEditor`, ne v properties panelu.
 - **Code path:** `StopListElement.ResolveHeaderStyle(col)` aplikuje `col.Style.Header.Resolve(elementResolved)` → per-column přebíjí element-level v 4-vrstvé kaskádě. `RenderHeader` vytváří `ColumnRenderer.CellSpec` s **per-column ResolvedTextStyle**, takže každý sloupec má vlastní FontSize.
@@ -600,7 +605,7 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 - **UI test ověřeno:** dialog sloupců → per-column FontSize → různé velikosti záhlaví v náhledu.
 
 ### B2. Underline a Strikethrough v záhlaví skupin dnů (DepartureGrid)
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Tiket:** #10660 (DPKV, Jan Slavík); **uzavřen 31. 7. 2026**.
 - **Datum:** 2026-05-12
 - **Diagnóza:** V `DepartureGridElement.cs:626` se text headeru skupiny dnů renderuje přes `Canvas.DrawText` napřímo, **bez** volání `DrawTextDecorations`. Důsledek: `HeaderStyle.Underline = true` ani `Strikethrough = true` v UI nic neměnily - decorations se nevykreslovaly vůbec. Bold/Italic fungovaly, protože jdou přes SKFont.
 - **Customer complaint vs. reality:** DPKV v legacy systému viděl podtržení s nestejnou tloušťkou. V novém TD by viděli žádné podtržení. Fix pokrývá oba symptomy.
@@ -609,7 +614,7 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 - **Pozn.:** Stejný pattern (`DrawText` bez `DrawTextDecorations`) je na 5 dalších místech v souboru (minuty 780, anotace 803, hour header 899/901, designer placeholder 886/888). **Záměrně neopraveno** - nedotčeno reálným klientovým use casem; opravit až přijde konkrétní request.
 
 ### B3. Rozsah hodin přes půlnoc + sjednocené parametrové UI (DepartureGrid)
-- **Tikety:** #10660 (DPKV, Jan Slavík) + **#9036 (TRANSDEV, Vladimír Šimko - MHD Trenčín, nočné spoje 22-5h)**; oba zůstávají **suspended**.
+- **Tikety:** #10660 (DPKV, Jan Slavík; **uzavřen 31. 7. 2026**) + **#9036** (TRANSDEV, Vladimír Šimko - MHD Trenčín, nočné spoje 22-5h; resolved 28. 7.).
 - **Datum:** 2026-05-12
 - **Tiket #9036 - explicitní pokrytí:** TRANSDEV potřeboval pro MHD Trenčín (provoz cca 22-5h) časovou osu „cez polnoc" (22, 23, 0, 1, 2, 3, 4, 5). Naše implementace **přesně toto** umí - `TimeAxisMode = Range`, `HODINY_OD = 22`, `HODINY_DO = 5` → wrap přes půlnoc s extended hours (data hodina 24-29 = pokračování). Spoje se přiřazují do sloupců podle `TypProvozuID` (skupiny dnů) beze změny - což TRANSDEV výslovně přijal („v noci z piatka na sobotu spoje pred polnocou budú obsiahnuté v stĺpci pracovný deň a spoje po polnoci v stĺpci sobota, nedeľa").
 - **Diagnóza:** Stávající `RangeHoursWithWrap` clampovalo `to ≤ 23` a vůbec neumělo wrap přes půlnoc. Caché používá **extended hours konvenci** (data hour 24..47 = pokračování přes půlnoc následujícího provozního dne) - z fáze 4 `PromitnutSpoje` přicházejí kumulativní hodiny po chronometráži (např. spoj startuje 23:30, jede 90 min → poslední zastávka má `hh=25, mm=00`). Nová .NET pipeline ale očekávala 0..23 → noční odjezdy „mizely" v rozsahu 4→3.
@@ -635,7 +640,7 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 - **Architektonický learning:** první iterace (Option A: `hodina # 24` v Caché) by ztratila informaci „toto je následující den" → konflikt pokud spoj jede ve 3:00 ráno **tento den i následující den**. Final fix (Option B) zachovává raw service hour v ByHour klíči, mod-24 jen na header label → distinct columns pro distinct service hours, žádné collisions.
 
 ### C1. Barevné odlišení značky vs. text poznámky (DB-driven)
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Tiket:** #10660 (DPKV, Jan Slavík); **uzavřen 31. 7. 2026**.
 - **Datum:** 2026-05-12
 - **Citace:** *„Kdyby bylo možné barevně odlišit značku (písmeno) poznámky, zpřehlednilo by to celý zastávkový jízdní řád."*
 - **Architektonické rozhodnutí - DB-driven místo designer SymbolStyle:** Původní plán byl přidat designer-level `SymbolStyle` property (statická barva v šabloně). Při průzkumu DB se ale ukázalo, že DPKV **už má barvy uložené** per-poznámka v `^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",ID,"TiskJRMHDVozoveBarvaZnakuRGB")` (a `TiskJRMHDVozoveBarvaPozadiRGB`) - historicky pro vozové JŘ. Přeneseme stejnou barvu i do zastávkového JŘ - žádné zdvojené nastavování per-šablona.
@@ -652,7 +657,7 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 - **Auto-generované poznámky** (rozdíl tras 1001/1002 - „končí v zast. X", týdenní platnost) zůstávají default černé. Klient explicitně nepožadoval; pokud někdy přijde request, bude to drobné rozšíření (per-linka color v `LSO` nebo per-algorithm static).
 
 ### C2. Hlavička sekce poznámek (NotesLegend) - již plně podporováno
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Tiket:** #10660 (DPKV, Jan Slavík); **uzavřen 31. 7. 2026**.
 - **Datum ověření:** 2026-05-12
 - **Výsledek:** ✅ Funkčně pokryto. `NotesLegendElement` má `HeaderText` property (default „Poznámky") + volá `RenderSectionHeader` (background + text + linka pod) - stejný pattern jako StopList. UI exponuje text v properties panelu (group „Záhlaví"), barvy pozadí + textu přes `GetCellZoneBaseColorDescriptors` (skupina „Záhlaví"). Klient si může nastavit libovolný text + barvy v designeru.
 - **Diagnóza klientovy zmatky:** DPKV šablona `kv.json` má `HeaderText = "na znamení"` (omylem nastaveno z dřívější iterace, kdy NotesLegend obsahoval jen tu poznámku). Po opravě na „Poznámky" header funguje jak DPKV chtěl.

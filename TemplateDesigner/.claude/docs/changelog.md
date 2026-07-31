@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-31 - #10660 DPKV uzavřen (grafické připomínky po importu z legacy)
+
+Poslední otevřený zákaznický tiket zastávkového JŘ. Klient hlásil čtyři oblasti a u tří z nich šlo
+o funkce, které existovaly, ale nenašel je - odpověď proto obsahuje i **návod, kde se co nastavuje**.
+
+- Nově volitelné: pozice šipky směru jízdy, pozice značek u zastávek (značka před názvem se
+  zarovnanými názvy), vlastní styl 2. řádku nadpisu skupin dnů, rozsah hodin přes půlnoc
+  a roztažení řádků na výšku.
+- Opraveno: podtržení nadpisu skupin dnů se dřív nekreslilo vůbec, nyní mají oba řádky stejnou
+  tloušťku (klient si přesně na nestejnou tloušťku stěžoval z legacy).
+- Beze změny kódu, jen návod: podbarvení aktuální zastávky, font jednotlivého sloupce, nadpis sekce
+  poznámek, barva znaku poznámky (ta se bere z číselníku poznámek, ne z návrháře).
+- **Zjištěný drift v dokumentaci:** interní zápis u 2. řádku nadpisu popisoval čtyři položky
+  v properties panelu, ale dnešní UI má na tomtéž místě **tlačítko** do pod-dialogu. Kvůli tomu by
+  odpověď zákazníkovi poslala hledat neexistující pole. Opraveno.
+
 ## 2026-07-30 (7) - `B22` vyřešena opravou `B24` (dvě hlášení, jeden bug)
 
 „Hodiny od/do" se zobrazovaly, i když časová osa nebyla „Vlastní rozsah". Z kódu to nešlo
