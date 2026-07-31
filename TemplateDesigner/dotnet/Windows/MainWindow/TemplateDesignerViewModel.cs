@@ -187,6 +187,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Pevný dev seznam firem, se kterými se běžně pracuje. Idfa i datový namespace = kód.</summary>
     public static readonly IReadOnlyList<(string Code, string Label)> DevFirms =
     [
+        ("ZL_KOVED",  "ZL_KOVED - KOVED / IDZK (AD)"),
         ("CB_CSADAD", "CB_CSADAD - ČSAD Autobusy (AD)"),
         ("CB_GWBUS",  "CB_GWBUS - GW BUS (AD)"),
         ("KV_DP",     "KV_DP - DP Karlovy Vary (MHD)"),
