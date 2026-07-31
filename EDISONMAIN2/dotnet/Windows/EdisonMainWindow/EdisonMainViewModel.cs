@@ -717,6 +717,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Prázdná = chybí VERZE.INF vedle exe (typicky Release build spuštěný z VS, ne z instalace).
         public string Version   => VerzeInf.Current == "" ? "nezjištěna" : VerzeInf.Current;
 
+        /// <summary>Server a port jako jeden údaj status baru (dva popisky vedle sebe byly zbytečný šum).</summary>
+        public string ConnectionText => $"{Server}:{RestPort}";
+
+        /// <summary>Jméno v status baru; MLRest nemusí plné jméno vrátit, pak padáme na login.</summary>
+        public string UserDisplay => string.IsNullOrEmpty(FullName) ? UserName : FullName;
+
         private ReleaseNoticeResult? _releaseNotice;
         /// <summary>Výsledek notice-only porovnání s release serverem M-line (plní AppBootstrapper po startu).</summary>
         public ReleaseNoticeResult? ReleaseNotice
@@ -727,12 +733,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 if (Set(ref _releaseNotice, value))
                 {
                     OnPropertyChanged(nameof(NewVersionText));
+                    OnPropertyChanged(nameof(NewVersionTooltip));
                     OnPropertyChanged(nameof(UpToDateText));
                 }
             }
         }
+        // Krátký text drží šířku chipu v status baru; plná věta je v jeho tooltipu.
         public string NewVersionText => _releaseNotice?.Outcome == ReleaseNoticeOutcome.NewVersionAvailable
-            ? $"K dispozici je nová verze {_releaseNotice.Version}." : "";
+            ? $"Nová verze {_releaseNotice.Version}" : "";
+        public string NewVersionTooltip => _releaseNotice?.Outcome == ReleaseNoticeOutcome.NewVersionAvailable
+            ? $"K dispozici je nová verze {_releaseNotice.Version} (nainstalovaná {Version})." : "";
         public string UpToDateText => _releaseNotice?.Outcome == ReleaseNoticeOutcome.UpToDate
             ? "Jde o nejnovější verzi." : "";
 
@@ -1121,6 +1131,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     OnPropertyChanged(nameof(UserName));
                     OnPropertyChanged(nameof(FullName));
                     OnPropertyChanged(nameof(Mlp));
+                    OnPropertyChanged(nameof(UserDisplay));
                     // Admin-gated commandy (ShowUsersLocks/Activity) re-vyhodnotí CanExecute hned,
                     // ne až na první input event po switch.
                     CommandManager.InvalidateRequerySuggested();
@@ -1252,7 +1263,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     OnPropertyChanged(nameof(ChordHintText));
             }
         }
-        public string ChordHintText => IsChordWaiting ? "Stisknuto Ctrl+W — čekám na druhý stisk…" : "";
+        public string ChordHintText => IsChordWaiting ? "Stisknuto Ctrl+W - čekám na druhý stisk…" : "";
 
         public void HandleCtrlW()
         {

@@ -616,4 +616,59 @@ public class EdisonMainViewModelTests
         Assert.Equal(275, widths["CB_DP"]);
         prefs.Received().Save();
     }
+
+    [Fact]
+    public void UserDisplay_PrazdneFullName_PadaNaLogin()
+    {
+        var mlRest = MockMLRest();
+        mlRest.LoginName.Returns("mhubata");
+        mlRest.FullName.Returns("");
+
+        Assert.Equal("mhubata", CreateVM(mlRest: mlRest).UserDisplay);
+    }
+
+    [Fact]
+    public void UserDisplay_VyplneneFullName_VraciPlneJmeno()
+    {
+        var mlRest = MockMLRest();
+        mlRest.LoginName.Returns("mhubata");
+        mlRest.FullName.Returns("Martin Hubata");
+
+        Assert.Equal("Martin Hubata", CreateVM(mlRest: mlRest).UserDisplay);
+    }
+
+    [Fact]
+    public void ConnectionText_SkladaServerAPort()
+    {
+        var mlRest = MockMLRest();
+        mlRest.Server.Returns("192.168.16.1");
+        mlRest.Port.Returns(57770);
+
+        Assert.Equal("192.168.16.1:57770", CreateVM(mlRest: mlRest).ConnectionText);
+    }
+
+    [Fact]
+    public void NewVersionText_NovaVerze_KratkyTextBezTecky()
+    {
+        var vm = CreateVM();
+
+        vm.ReleaseNotice = new ReleaseNoticeResult(ReleaseNoticeOutcome.NewVersionAvailable, "20260801.1");
+
+        // Na krátkosti chipu závisí layout status baru; plná věta patří do tooltipu.
+        Assert.Contains("20260801.1", vm.NewVersionText);
+        Assert.DoesNotContain(".", vm.NewVersionText.Replace("20260801.1", ""));
+        Assert.EndsWith(".", vm.NewVersionTooltip);
+    }
+
+    [Fact]
+    public void NewVersionText_UpToDate_ZustavaPrazdny()
+    {
+        var vm = CreateVM();
+
+        vm.ReleaseNotice = new ReleaseNoticeResult(ReleaseNoticeOutcome.UpToDate);
+
+        Assert.Equal("", vm.NewVersionText);
+        Assert.Equal("", vm.NewVersionTooltip);
+        Assert.Equal("Jde o nejnovější verzi.", vm.UpToDateText);
+    }
 }

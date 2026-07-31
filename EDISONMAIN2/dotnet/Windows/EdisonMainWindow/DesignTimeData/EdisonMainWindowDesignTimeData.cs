@@ -82,5 +82,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
         public static string Namespace => "CBDB";
         public static string Idfa => "CB_DP";
         public static string WindowTitle => "M-line EDISON [CB_DP]";
+
+        public static string Version         => "4.12.3";
+        public static string ConnectionText  => "localhost:52773";
+        public static string UserDisplay     => "Design User";
+        public static string NewVersionText  => "Nová verze 4.13.0";
+        public static string NewVersionTooltip => "K dispozici je nová verze 4.13.0 (nainstalovaná 4.12.3).";
+        public static string UpToDateText    => "";
+        public static string ChordHintText   => "";
     }
 }

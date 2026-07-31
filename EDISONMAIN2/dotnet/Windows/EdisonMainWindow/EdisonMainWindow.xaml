@@ -13,6 +13,7 @@
         xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox;assembly=EDControls"
         xmlns:edib="clr-namespace:EDControls.EDInfoBar;assembly=EDControls"
         xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
+        xmlns:edct="clr-namespace:EDControls.EDComponentToolbar;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}" Height="800" Width="1200" MinHeight="600" MinWidth="900" Icon="{StaticResource EDIcons.Molecule}" WindowStartupLocation="CenterScreen" WindowState="Maximized">
@@ -30,6 +31,16 @@
         <!-- Most na VM pro bindingy mimo vizuální strom (CompositeCollection v menu Miniaplikace).
              x:Reference na TopMenu nejde — při BAML loadu skončí cyklickou závislostí. -->
         <edvm:BindingProxy x:Key="VmProxy" Data="{Binding}"/>
+        <!-- Prázdný transientní text musí segment status baru sbalit, ne nechat mezeru s dividerem. -->
+        <edct:NonEmptyStringToVisibleConverter x:Key="NonEmptyToVis"/>
+        <!-- Velikost z tokenu — FontService ji škáluje s user fontem (natvrdo 16 by nerostla). -->
+        <Style x:Key="StatusIcon" TargetType="Image">
+            <Setter Property="Width"  Value="{DynamicResource EDTheme.IconSize.Default}"/>
+            <Setter Property="Height" Value="{DynamicResource EDTheme.IconSize.Default}"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -489,23 +500,95 @@
                     HorizontalAlignment="Center" Padding="12,6"/>
         </StackPanel>
 
+        <!-- Segment = ikona + hodnota, technika (namespace, port, login, Mlp) je v ToolTipu.
+             Separator jen mezi vždy viditelnými segmenty — u sbalitelných by zůstal viset. -->
         <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
-            <TextBlock Text="{Binding Server, StringFormat='Server: {0}'}"/>
-            <TextBlock Text="{Binding RestPort, StringFormat='REST port: {0}'}"/>
-            <TextBlock Text="{Binding Namespace, StringFormat='Namespace: {0}'}"/>
-            <TextBlock Text="{Binding Idfa, StringFormat='Firma: {0}'}"/>
-            <TextBlock Text="{Binding UserName, StringFormat='Přihlašovací jméno: {0}'}"/>
-            <TextBlock Text="{Binding FullName, StringFormat='Uživatel: {0}'}"/>
-            <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
-            <TextBlock Text="{Binding Version, StringFormat='Verze: {0}'}"/>
-            <!-- Notice z release serveru M-line (nová verze / potvrzení aktuálnosti).
-                 Prázdný text = nezjištěno (offline, dev build, ...). -->
-            <TextBlock Text="{Binding NewVersionText}" FontWeight="SemiBold"
-                       Foreground="{DynamicResource EDTheme.Accent.Blue}"/>
-            <TextBlock Text="{Binding UpToDateText}"
-                       Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+            <StatusBarItem>
+                <StatusBarItem.ToolTip>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Idfa, StringFormat='Firma: {0}'}"/>
+                        <TextBlock Text="{Binding Namespace, StringFormat='Databáze: {0}'}"/>
+                    </StackPanel>
+                </StatusBarItem.ToolTip>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="{StaticResource EDIcons.Company}" Style="{StaticResource StatusIcon}"/>
+                    <TextBlock Text="{Binding Idfa}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </StatusBarItem>
+
+            <Separator/>
+
+            <StatusBarItem>
+                <StatusBarItem.ToolTip>
+                    <StackPanel>
+                        <TextBlock Text="{Binding FullName, StringFormat='Uživatel: {0}'}"/>
+                        <TextBlock Text="{Binding UserName, StringFormat='Přihlašovací jméno: {0}'}"/>
+                        <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
+                    </StackPanel>
+                </StatusBarItem.ToolTip>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="{StaticResource EDIcons.User}" Style="{StaticResource StatusIcon}"/>
+                    <TextBlock Text="{Binding UserDisplay}" VerticalAlignment="Center"
+                               MaxWidth="220" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </StatusBarItem>
+
+            <Separator/>
+
+            <StatusBarItem>
+                <StatusBarItem.ToolTip>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Server, StringFormat='Server: {0}'}"/>
+                        <TextBlock Text="{Binding RestPort, StringFormat='REST port: {0}'}"/>
+                    </StackPanel>
+                </StatusBarItem.ToolTip>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="{StaticResource EDIcons.Server}" Style="{StaticResource StatusIcon}"/>
+                    <TextBlock Text="{Binding ConnectionText}" VerticalAlignment="Center"
+                               Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                               MaxWidth="200" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </StatusBarItem>
+
+            <Separator/>
+
+            <StatusBarItem>
+                <StatusBarItem.ToolTip>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Version, StringFormat='Verze EDISONu: {0}'}"/>
+                        <!-- Potvrzení aktuálnosti z release serveru; prázdné = nezjištěno (offline, dev build). -->
+                        <TextBlock Text="{Binding UpToDateText}"
+                                   Visibility="{Binding UpToDateText, Converter={StaticResource NonEmptyToVis}}"
+                                   Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+                    </StackPanel>
+                </StatusBarItem.ToolTip>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="{StaticResource EDIcons.Info}" Style="{StaticResource StatusIcon}"/>
+                    <TextBlock Text="{Binding Version, StringFormat='Verze {0}'}" VerticalAlignment="Center"
+                               Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+                </StackPanel>
+            </StatusBarItem>
+
+            <!-- Pravá zóna: dokovaný jde k pravému okraji, další nalevo od něj. Chip je první,
+                 aby ho naskočení chord hintu neposunulo. Dock funguje jen na explicitním StatusBarItem. -->
+            <StatusBarItem DockPanel.Dock="Right"
+                           Visibility="{Binding NewVersionText, Converter={StaticResource NonEmptyToVis}}">
+                <!-- Rámeček drží chip čitelný i v light modu, kde BlueBg na Bg.Panel splývá. -->
+                <Border Background="{DynamicResource EDTheme.Accent.BlueBg}"
+                        BorderBrush="{DynamicResource EDTheme.Accent.BlueBorder}" BorderThickness="1"
+                        CornerRadius="3" Padding="8,1"
+                        ToolTip="{Binding NewVersionTooltip}">
+                    <TextBlock Text="{Binding NewVersionText}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                               MaxWidth="320" TextTrimming="CharacterEllipsis"/>
+                </Border>
+            </StatusBarItem>
             <!-- Chord hint pro Ctrl+W+W. Prázdný text = neaktivní stav. -->
-            <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"/>
+            <StatusBarItem DockPanel.Dock="Right"
+                           Visibility="{Binding ChordHintText, Converter={StaticResource NonEmptyToVis}}">
+                <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"
+                           Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+            </StatusBarItem>
         </StatusBar>
 
         <!-- Overlay „akce probíhá" (náběh spouštěného modulu) — neviditelný controller,

@@ -31,6 +31,9 @@
 
   <ItemGroup>
     <Resource Include="EDIcons\png\cube_molecule.png"/>
+    <Resource Include="EDIcons\png\office_building.png"/>
+    <Resource Include="EDIcons\png\server.png"/>
+    <Resource Include="EDIcons\png\information.png"/>
     <Resource Include="EDIcons\png\folder.png"/>
     <Resource Include="EDIcons\png\module.png"/>
     <Resource Include="EDIcons\png\user.png"/>

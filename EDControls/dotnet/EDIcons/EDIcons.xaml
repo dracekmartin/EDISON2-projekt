@@ -4,6 +4,14 @@
     <BitmapImage x:Key="EDIcons.Molecule"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/cube_molecule.png"/>
 
+    <!-- Segmenty status baru shellu (firma / spojení / verze). Ze staré sady, uživatel = EDIcons.User. -->
+    <BitmapImage x:Key="EDIcons.Company"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/office_building.png"/>
+    <BitmapImage x:Key="EDIcons.Server"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/server.png"/>
+    <BitmapImage x:Key="EDIcons.Info"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/information.png"/>
+
     <!-- Strom modulů: složka (ModuleFamily) + spustitelný modul (ExecutableModule). Ze staré sady. -->
     <BitmapImage x:Key="EDIcons.Folder"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/folder.png"/>

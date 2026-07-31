@@ -29,6 +29,11 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   editovatelnému poli uvnitř; proto je v `DockPanel` vedle Menu.
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
+- **Status bar** = segmenty ikona + hodnota, technika (namespace, port, login, Mlp) jen
+  v ToolTipu. Stojí na `LastChildFill="False"` z EDControlStyles; `DockPanel.Dock="Right"`
+  funguje **jen na explicitním** `<StatusBarItem>` (na surovém `TextBlock` se nepropíše na
+  generovaný kontejner), stejně tak `Visibility="Collapsed"` bez zbytkové mezery.
+  `<Separator/>` patří jen mezi vždy viditelné segmenty — u sbalitelného by zůstal viset.
 - **Toolbar nad stromy** (Rozbalit/Sbalit vše + oblíbené/výchozí okno nad vybraným uzlem):
   Rozbalit/Sbalit vše cílí na **aktivní** záložku (`ActiveExpandableTree` dle
   `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna obalena
