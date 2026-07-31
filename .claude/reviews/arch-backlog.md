@@ -135,7 +135,11 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R8 - Wire kodek EDInputFormu mimo WPF control
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-07-30) - pět metod + oba separátory (`ListItemSep`,
+  `ListKeyValSep`) v novém `EDInputFormWire`; `EDInputForm.xaml.cs` z 696 na 563 řádků.
+  Přesměrováno 79 volání (controller 4, `EDInputFormParsingTests` 61,
+  `ListItemsSerializationTests` 12, `EDInputFormControllerTests` 2) - testy zůstaly
+  v původních souborech, jen míří na `EDInputFormWire`.
 - **P2 · S** · Závisí na: - · Blokuje: R3 (jen jako vzor)
 - **Co udělat:** Přesunout pět `internal static` metod (`SerializeItemsCVar`, `ParseItems`,
   `ParseHelpTextMode`, `SerializeListItems`, `ParseListItems`) z `EDInputForm.xaml.cs`

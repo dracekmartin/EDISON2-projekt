@@ -53,7 +53,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     {
         if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
 
-        CVar output = mlRest.QueryOrThrow(cacheClass, "Save", EDInputForm.SerializeItemsCVar(Items));
+        CVar output = mlRest.QueryOrThrow(cacheClass, "Save", EDInputFormWire.SerializeItemsCVar(Items));
         if (HasFormItems(output)) ApplyOutput(output);
         return true;
     }
@@ -70,7 +70,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
     private bool ExecuteValidate(EValidationTrigger trigger, string? changedKey = null)
     {
-        var input = EDInputForm.SerializeItemsCVar(Items);
+        var input = EDInputFormWire.SerializeItemsCVar(Items);
         input["trigger"] = new CVar(trigger.ToString());
         input["helpTextMode"] = new CVar(HelpTextMode.ToWire());
         if (!string.IsNullOrEmpty(changedKey))
@@ -119,8 +119,8 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
             .Where(f => f.FieldType == EFieldType.Image && !string.IsNullOrEmpty(f.Value))
             .ToDictionary(f => f.Key, f => f.Value!);
 
-        Items = EDInputForm.ParseItems(output);
-        HelpTextMode = EDInputForm.ParseHelpTextMode(output);
+        Items = EDInputFormWire.ParseItems(output);
+        HelpTextMode = EDInputFormWire.ParseHelpTextMode(output);
 
         if (preservedImages.Count > 0)
             foreach (var f in Items.OfType<Field>())
