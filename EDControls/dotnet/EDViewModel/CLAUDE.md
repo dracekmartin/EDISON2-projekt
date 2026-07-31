@@ -7,7 +7,7 @@ Základní třída ViewModelů + okolní infrastruktura: `EDServices` (DI kontej
 ## AttachToWindow — volat PŘED Show()/ShowDialog()
 
 `WindowNavigator` ho volá automaticky; **shell okno ho v AppBootstrapperu volá ručně**.
-Dělá pět věcí:
+Dělá čtyři věci:
 
 1. **Klávesy** z `Actions` + vždy **Ctrl+Enter → OkCommand**. OK tlačítko záměrně nemá
    `IsDefault` — samotný Enter slouží EDInputFormu k navigaci mezi poli.
@@ -22,9 +22,9 @@ Dělá pět věcí:
    (server legacy `...Telemetry.LogUsageBatch`). Vše best-effort, nikdy nehazí. Legacy
    launch trackuje `WindowNavigator.LaunchLegacy` (OPEN si hostovaná forma trackne sama).
 
-5. **Panel Podpora** — `EDSupportPanel` se připojí ke každému oknu (obdoba legacy
-   `BaseForm.AttachSideMenu`), opt-out `ShowSupportPanel = false`. Best-effort v try/catch,
-   nikdy nesmí zabránit otevření okna. Viz [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md).
+Panel Podpora tady **není** — visí na `Window.Loaded` z `EDAppearance.Initialize`, protože
+TemplateDesigner `AttachToWindow` nevolá. `EDViewModel.ShowSupportPanel` zůstává jako opt-out,
+který ten class handler čte. Viz [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md).
 
 `PersistedFormId` default `"EDISON2.<Window>"` — prefix odděluje od legacy numerických ID
 z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).

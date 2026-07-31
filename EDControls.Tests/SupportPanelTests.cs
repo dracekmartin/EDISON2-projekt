@@ -225,45 +225,64 @@ public class SupportPanelTests
     }
 
     // ---------- Napojení na okno ----------
+    // Panel připojuje class handler na Window.Loaded (EDAppearance.Initialize); testuje se jeho
+    // rozhodnutí, ne event — zobrazovat okna v testech není potřeba.
 
     [Fact]
-    public void AttachToWindow_ByDefault_AttachesSupportPanel()
+    public void ShouldAttach_PlainWindow_True()
     {
+        RunSta(() => Assert.True(EDSupportPanel.EDSupportPanel.ShouldAttach(new Window())));
+    }
+
+    [Fact]
+    public void ShouldAttach_Suppressed_False()
+    {
+        // Opt-out pro okna bez ViewModelu (vlastní popupy EDControls, splash, odpočty).
         RunSta(() =>
         {
             var window = new Window();
-            new PanelTestViewModel(MockServices()).AttachToWindow(window);
+            EDSupportPanel.EDSupportPanel.SetSuppress(window, true);
+
+            Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(window));
+        });
+    }
+
+    [Fact]
+    public void ShouldAttach_OverlayWindow_False()
+    {
+        // Vlastní overlay okna EDControls (panel, „Akce probíhá") nesmí dostat vlastní panel.
+        RunSta(() => Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(new FakeOverlayWindow())));
+    }
+
+    [Fact]
+    public void ShouldAttach_ViewModelOptedOut_False()
+    {
+        RunSta(() =>
+        {
+            var window = new Window
+            {
+                DataContext = new PanelTestViewModel(MockServices()) { PanelEnabled = false }
+            };
+
+            Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(window));
+        });
+    }
+
+    [Fact]
+    public void ShouldAttach_AlreadyAttached_False()
+    {
+        // Druhý Loaded téhož okna (re-parent) panel nezdvojí.
+        RunSta(() =>
+        {
+            var window = new Window();
+            EDSupportPanel.EDSupportPanel.Attach(window, MockServices(), Substitute.For<IPopupDisplayer>());
 
             Assert.True(EDSupportPanel.EDSupportPanel.IsAttached(window));
+            Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(window));
         });
     }
 
-    [Fact]
-    public void AttachToWindow_OptedOut_DoesNotAttach()
-    {
-        RunSta(() =>
-        {
-            var window = new Window();
-            new PanelTestViewModel(MockServices()) { PanelEnabled = false }.AttachToWindow(window);
-
-            Assert.False(EDSupportPanel.EDSupportPanel.IsAttached(window));
-        });
-    }
-
-    [Fact]
-    public void AttachToWindow_Twice_StaysAttachedWithoutThrowing()
-    {
-        RunSta(() =>
-        {
-            var window = new Window();
-            var vm = new PanelTestViewModel(MockServices());
-
-            vm.AttachToWindow(window);
-            vm.AttachToWindow(window);
-
-            Assert.True(EDSupportPanel.EDSupportPanel.IsAttached(window));
-        });
-    }
+    private sealed class FakeOverlayWindow : Window, IOverlayWindow;
 
     private class PanelTestViewModel(EDServices services) : EDViewModel.EDViewModel(services)
     {

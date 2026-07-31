@@ -1,9 +1,11 @@
 <Window x:Class="EDControls.EDViewModel.EDPopup"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:edsp="clr-namespace:EDControls.EDSupportPanel"
         Title="" SizeToContent="WidthAndHeight"
         ResizeMode="NoResize" WindowStartupLocation="Manual"
-        ShowInTaskbar="False">
+        ShowInTaskbar="False"
+        edsp:EDSupportPanel.Suppress="True">
 
     <Border Padding="20,16,20,14"
             Background="{DynamicResource EDTheme.Bg.Surface}">

@@ -70,8 +70,9 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
 - `UserPrefs/` — `IUserPrefsService`; **default je no-op `NullUserPrefsService`** —
   dokud composition root nenastaví `CacheUserPrefsService` (po vzniku MLRest),
   preference se tiše neukládají.
-- `EDSupportPanel/` — vysouvací panel Podpora u pravého okraje okna; připojuje se sám
-  z `EDViewModel.AttachToWindow`, karta žije v owned okně (airspace). Vlastní `CLAUDE.md`.
+- `EDSupportPanel/` — vysouvací panel Podpora u pravého okraje okna; připojuje se sám ke
+  **každému** oknu (class handler z `EDAppearance.Initialize`), karta žije v owned okně
+  (airspace). Vlastní `CLAUDE.md`.
 - `MiniApps/` — framework dlaždicových widgetů shellu.
 
 ## CACHE strana
