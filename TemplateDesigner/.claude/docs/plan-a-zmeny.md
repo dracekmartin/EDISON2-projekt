@@ -50,6 +50,8 @@ Dílčí vylepšení a náměty.
 - **Barva linky z jízdního řádu i v jednotlivých sloupcích** - v editoru sloupců jde barva textu
   i pozadí zapsat textem, takže lze zadat `{BARVA_LINKY}` a barva se vezme z jízdního řádu.
   Platí pro zastávky, odjezdy i tabulky.
+- **Seznam zastávek na pokračování** - dlouhý seznam lze rozdělit na dva nebo tři oddíly vedle sebe.
+  Každý oddíl má vlastní záhlaví a všechny sloupce, jen s další částí zastávek, takže je vývěska nižší.
 - **Tarifní zóny** - když zónu nemá vyplněná trasa linky, vezme se ze **nastavení zastávky**
   (u hraniční zastávky obě zóny). Volbou u linky **„Zóny - tisk a export do JDF bez písmen"** lze
   z kódu zóny odstranit písmeno přepravního systému, takže se tiskne jen číslo zóny.

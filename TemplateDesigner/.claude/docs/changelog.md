@@ -23,6 +23,24 @@ se objevují v sobotním i nedělním sloupci a už u nich není žádná denní
 Zlaté odtisky přebaselinovány - ubyly **jen řádky legendy** (110 → 96 a 183 → 168), počty stránek,
 zastávek i odjezdů zůstaly beze změny, což je přesně očekávaný tvar změny.
 
+## 2026-07-31 (4) - `B38` seznam zastávek jde rozdělit na oddíly na pokračování (#13097)
+
+Vysoký seznam zastávek se dá rozřezat na **2 nebo 3 oddíly vedle sebe** (vzor: vývěska PID, kterou
+klient přiložil). Každý oddíl nese **celou tabulku znovu** - záhlaví i všechny sloupce, jen s další
+porcí zastávek; řádky se dělí rovnoměrně. Prvek je tím o polovinu (třetinu) nižší, což je celý smysl.
+
+- **V roadmapě to bylo přeceněné** jako `L` čekající na `B13` (rozřezání široké tabulky u linkového
+  JŘ) s tím, že je to „tentýž mechanismus". Není: `B13` řeže sloupce do stránkových bloků přes
+  stránkovací engine, tady se řádky rozlévají do oddílů uvnitř rámce prvku. Reálně **M** a nezávislé.
+- **Strop 3 oddíly** (rozhodnutí Jan 31. 7.) - každý oddíl zužuje sloupce, u čtyř a víc už by se
+  vývěska s variantními časy nedala přečíst.
+- Šipka směru mezi oddíly **pokračuje** (v oddílu s aktuální zastávkou od ní, dál od horní hrany).
+- Šířky sloupců i automatické zmenšování textu se počítají ze šířky **oddílu**; kdo má hodně sloupců,
+  musí prvek rozšířit nebo část sloupců vypnout.
+- Výchozí hodnota 1 oddíl = dosavadní vzhled, **bez migrace**.
+
+.NET 536/536 (+8), Caché 52/52.
+
 ## 2026-07-31 (3) - `B34` zóny: doportovaná logika starého modulu (#13091 bod 4)
 
 Klient hlásil dvě věci: zóna se objeví jen tehdy, když je vyplněná u trasy linky, a místo čísla zóny

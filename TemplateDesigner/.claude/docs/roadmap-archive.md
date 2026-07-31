@@ -38,6 +38,27 @@ Podstatná zjištění, která z toho vypadla a platí dál:
   neproběhaná - neslibovat ji bez zkoušky.
 - Sonda pro výběr ukázkové linky se zacházkami = `AdVariantyProbe.ScanZachazky`.
 
+## 2026-07-31 ✅ - `B38` rozdělení seznamu zastávek na oddíly na pokračování (#13097)
+
+Detail → changelog 2026-07-31 (4). **Přeceněný blok: v roadmapě visel jako `L` gated na `B13`
+s tvrzením „tentýž mechanismus". Není.** `B13` řeže **široké** sloupce linkové tabulky do
+stránkových bloků (stránkovací engine, jiný prvek), `B38` rozlévá **řádky** seznamu zastávek do
+oddílů vedle sebe **uvnitř rámce prvku** - engine do toho nemluví. Reálná velikost **M**, uděláno
+samostatně.
+
+Prvek dostal „Rozdělit na více oddílů" (1-3) a „Mezera mezi oddíly"; každý oddíl nese celou tabulku
+znovu (záhlaví + všechny sloupce), řádky se dělí rovnoměrně, výška se počítá z nejdelšího oddílu.
+Strop 3 je rozhodnutí Jan 31. 7. - víc oddílů zužuje sloupce tak, že se vývěska nedá přečíst.
+
+- **Hlavní past:** šířky sloupců a automatické zmenšování textu se musí počítat ze šířky **oddílu**,
+  ne prvku. Bez toho sloupce z oddílu vylezou (`ResolveColumnWidths`/`ComputeWidthScale` proto berou
+  šířku parametrem).
+- **Šipka směru pokračuje mezi oddíly** - v oddílu s aktuální zastávkou od ní dolů, v dalších od
+  horní hrany. Jinak by končila v půlce seznamu.
+- Vedlejší efekt refaktoru: výběr viditelných řádků (projeté, podmínka viditelnosti) a sestavení
+  řádku jsou vytažené z kreslicí smyčky do metod, takže smyčka je čitelná.
+- Aditivní vlastnost s výchozí hodnotou 1 → žádná migrace, nikomu se vzhled nemění.
+
 ## 2026-07-31 ✅ - `B34` zóny: doportovaná logika starého modulu (#13091 bod 4)
 
 Detail → changelog 2026-07-31 (3). **Klíčové zjištění analýzy: nebyla to nová featura, ale
