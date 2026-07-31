@@ -71,7 +71,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     // ═══════════════════════════════════════════
     // Šipka směru jízdy (┌─▼ od aktuální zastávky dolů)
     // ═══════════════════════════════════════════
-    public bool ShowDirectionArrow { get; set; } = true;
+    /// <summary>Zda se šipka tiskne, řídí **parametr sestavy** `TISK_SIPKY` - agendy JŘ ho posílají
+    /// vždy, takže vlastnost prvku by byla mrtvé UI (parametr ji přebije). Tady je jen výchozí
+    /// hodnota shodná s parametrem, pro kreslení bez dat.</summary>
+    private const bool DefaultShowArrow = true;
+
     public string DirectionArrowColor { get; set; } = "#FF000000";
     public DirectionArrowSide DirectionArrowPosition { get; set; } = DirectionArrowSide.Right;
 
@@ -114,7 +118,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     // ═══════════════════════════════════════════
     // Projeté zastávky
     // ═══════════════════════════════════════════
-    public bool ShowPassedStops { get; set; }
+    /// <summary>Zda se projeté zastávky tisknou, řídí **parametr sestavy** `TISK_PROJETYCH_ZAST`
+    /// (viz <see cref="DefaultShowArrow"/> - totéž pravidlo). Barva a čas u projetých níže jsou
+    /// vzhled, ten do šablony patří.</summary>
+    private const bool DefaultShowPassedStops = false;
+
     public string PassedStopsForeColor { get; set; } = "#FF999999";
 
     /// <summary>Čas jízdy u projeté zastávky. Časy jsou kumulativní od vývěskové zastávky, takže
@@ -250,8 +258,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         using var paints = CreateStandardPaints(ctx);
 
         // Parametry z tiskového dialogu přepíší element properties
-        bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
-        bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", ShowDirectionArrow);
+        bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", DefaultShowPassedStops);
+        bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", DefaultShowArrow);
         bool arrowLeft = showArrow && DirectionArrowPosition == DirectionArrowSide.Left;
 
         // Šipka se vykresluje UVNITŘ sloupce zastávek (Key = NAZEV_ZASTAVKY) - vertikální čára je
@@ -637,7 +645,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         var zastavky = ExpandPlatformRows(BuildZastavky(data));
         if (zastavky.Count == 0) return DesignerPlaceholderHeight;
 
-        bool showPassed = GetBoolParam(data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
+        bool showPassed = GetBoolParam(data, "TISK_PROJETYCH_ZAST", DefaultShowPassedStops);
         int visibleStops;
         if (string.IsNullOrWhiteSpace(RowVisibilityExpression))
         {
@@ -1114,7 +1122,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ]
         },
 
-        new BoolPropertyDescriptor  { Label = "Šipka směru",      Group = "Směr jízdy", Get = () => ShowDirectionArrow,    Set = v => ShowDirectionArrow = v },
+        // „Šipka směru" (zapnutí) tu záměrně není - řídí ji parametr sestavy TISK_SIPKY, který
+        // vlastnost prvku přebíjí. Vzhled šipky (barva, tloušťka, hrot, styl) do šablony patří.
         new EnumPropertyDescriptor
         {
             Label = "Pozice šipky", Group = "Směr jízdy",
@@ -1172,7 +1181,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor  { Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
         new FloatPropertyDescriptor { Label = "Velikost aktuální",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
         new ColorPropertyDescriptor { Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
-        new BoolPropertyDescriptor  { Label = "Projeté zastávky",    Group = "Zvýraznění", Get = () => ShowPassedStops,      Set = v => ShowPassedStops = v },
+        // „Projeté zastávky" (zapnutí) tu záměrně není - řídí ji parametr sestavy
+        // TISK_PROJETYCH_ZAST. Barva a čas u projetých jsou vzhled, ty do šablony patří.
         new ColorPropertyDescriptor { Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
         new EnumPropertyDescriptor
         {
@@ -1218,7 +1228,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             PartCount               = PartCount,
             PartGap                 = PartGap,
             Columns                 = Columns.Select(c => c.Clone()).ToList(),
-            ShowDirectionArrow      = ShowDirectionArrow,
             DirectionArrowColor     = DirectionArrowColor,
             DirectionArrowPosition  = DirectionArrowPosition,
             DirectionArrowWidth     = DirectionArrowWidth,
@@ -1234,7 +1243,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             MarkersPosition         = MarkersPosition,
             MultiPlatformMode       = MultiPlatformMode,
             CurrentStopUnderline    = CurrentStopUnderline,
-            ShowPassedStops         = ShowPassedStops,
             PassedStopsForeColor    = PassedStopsForeColor,
             PassedStopsTime         = PassedStopsTime,
             ShowAllRouteVariants    = ShowAllRouteVariants,

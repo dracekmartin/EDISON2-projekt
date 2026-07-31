@@ -37,9 +37,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
-        d form.AddBool("AutoExpandToFillHeight", "Roztáhnout na výšku", 0)
-        // Časová osa (rozsah hodin) je parametr šablony „Časová osa odjezdů" (CASOVA_OSA/HODINY_OD/DO),
-        // sdílený a autoritativní - NEduplikovat jako property elementu (přebil by ho parametr → matoucí).
+        // Časová osa (rozsah hodin) i „Roztáhnout na výšku" jsou parametry sestavy
+        // (CASOVA_OSA/HODINY_OD/DO, ROZTAHNOUT_NA_VYSKU), sdílené a autoritativní - NEduplikovat
+        // jako pole prvku, parametr by je přebil a klik by nic nedělal (hlášení B22/B24).
 
         // ── Styl záhlaví ──────────────────────────────────────────────────
         // PROTOTYP: styl jako tlačítko → pod-formulář (StyleEditDialog). Klíč „style:<prefix>"

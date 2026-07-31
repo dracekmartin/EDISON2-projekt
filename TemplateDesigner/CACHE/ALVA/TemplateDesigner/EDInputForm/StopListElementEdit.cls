@@ -56,9 +56,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("PartGap", "Mezera mezi oddíly", 3, 0, 50, "mm")
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)
         d f.AddListItem("AfterName", "Za zastávkou"), f.AddListItem("BeforeName", "Před zastávkou")
-        d form.AddBool("ShowDirectionArrow", "Šipka směru", 0)
+        // Zapnutí šipky řídí parametr sestavy TISK_SIPKY - jako pole prvku by bylo mrtvé (parametr
+        // ho přebije). Tady zůstává jen vzhled šipky.
         s f = form.AddFieldToLastGroup("DirectionArrowPosition", "Pozice šipky", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Right", "Vpravo (u pravého okraje elementu)"), f.AddListItem("Left", "Vlevo (u levého okraje elementu)")
+        s f.helpText = "Tisk šipky se zapíná v parametrech sestavy (Tisknout šipky směru)"
         s f = form.AddFieldToLastGroup("DirectionArrowColor", "Barva šipky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         d form.AddDecimal("DirectionArrowWidth", "Tloušťka šipky", 0.2, 0.05, 5, "mm")
@@ -71,9 +73,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
         s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
         s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Pozadí aktuální (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
-        d form.AddBool("ShowPassedStops", "Projeté zastávky", 0)
+        // Zapnutí tisku projetých zastávek řídí parametr sestavy TISK_PROJETYCH_ZAST; tady je vzhled.
         s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Barva projetých", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF999999"
+        s f.helpText = "Tisk projetých zastávek se zapíná v parametrech sestavy (Tisknout projeté zastávky)"
         s f = form.AddFieldToLastGroup("PassedStopsTime", "Čas u projetých", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Hide", "Nezobrazovat"), f.AddListItem("Show", "Zobrazit")
         s f.helpText = "Časy jsou počítané od vývěskové zastávky, u projetých proto vycházejí záporné"

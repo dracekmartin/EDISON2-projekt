@@ -15,8 +15,6 @@ namespace TemplateDesigner.PdfImport;
 public static class AiGuidedScheduleBuilder
 {
     // Detekční prahy (ladění přes testy na reálných PDF):
-    private const int DefaultTimeAxisFromHour = 4;      // JŘ obvykle začíná od 4:00
-    private const int DefaultTimeAxisToHour = 24;       // a končí o půlnoci
     private const int HourDigitDetectionMin = 4;        // minutové číslice v gridu jsou <4 nebo >23 → filtrujeme jen hodiny
     private const int HourDigitDetectionMax = 23;
     private const float MinHeaderSpaceAboveScheduleMm = 10f;  // pod touto výškou už nedává smysl vkládat placeholder do záhlaví
@@ -165,7 +163,6 @@ public static class AiGuidedScheduleBuilder
                 BackgroundColor = headerBg
             },
             ShowHeader = ai.HasHeader,
-            ShowDirectionArrow = GetBoolProp(sp, "showDirectionArrow", false),
             ShowRowSeparators = GetBoolProp(sp, "showRowSeparators", true),
             DataRowHeight = stopRowH,
             Columns = columns,
@@ -194,15 +191,9 @@ public static class AiGuidedScheduleBuilder
 
         var gp = ai.Properties;
 
-        // TimeAxis: AI může navrhnout rozsah hodin
-        int timeFrom = DefaultTimeAxisFromHour, timeTo = DefaultTimeAxisToHour;
-        var timeAxisMode = TimeAxisMode.Compact;
-        if (gp.TryGetValue("timeAxisRangeFrom", out var fromStr) && int.TryParse(fromStr, out var f))
-            timeFrom = f;
-        if (gp.TryGetValue("timeAxisRangeTo", out var toStr) && int.TryParse(toStr, out var t))
-            timeTo = t;
-        if (timeFrom > 0 || timeTo < 24)
-            timeAxisMode = TimeAxisMode.Range;
+        // Rozsah hodin, který AI z předlohy vyčte, se do šablony nepřenáší - časovou osu řídí
+        // parametr sestavy (CASOVA_OSA/HODINY_OD/DO), takže hodnota v prvku by se při tisku
+        // stejně nepoužila. Uživatel si osu nastaví v parametrech.
 
         // Extrahovat per-group barvy z PdfPig obdélníků
         var perGroupColors = ExtractPerGroupColors(ai, page, pageW, pageH);
@@ -266,9 +257,6 @@ public static class AiGuidedScheduleBuilder
                 Bold = true,
                 BackgroundColor = perGroupColors.Count > 0 ? null : gridHeaderBg
             },
-            TimeAxisMode = timeAxisMode,
-            TimeAxisRangeFrom = timeFrom,
-            TimeAxisRangeTo = timeTo,
         };
     }
 

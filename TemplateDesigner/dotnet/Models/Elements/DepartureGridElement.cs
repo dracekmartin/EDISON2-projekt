@@ -73,23 +73,19 @@ public class DepartureGridElement : StopScheduleElementBase
     public int MaxGroupCount { get; set; }
 
     // ═══════════════════════════════════════════
-    // Časová osa
+    // Časová osa a roztažení na výšku
     // ═══════════════════════════════════════════
-    public TimeAxisMode TimeAxisMode { get; set; } = TimeAxisMode.Compact;
-    public int TimeAxisRangeFrom { get; set; } = 4;
-    public int TimeAxisRangeTo { get; set; } = 23;
+    // Obojí řídí **parametry sestavy** (`CASOVA_OSA` + `HODINY_OD`/`DO`, `ROZTAHNOUT_NA_VYSKU`).
+    // Agendy JŘ je posílají vždy, takže vlastnost prvku by parametr přebil = mrtvé UI. Zůstávají
+    // jen výchozí hodnoty shodné s parametry, pro kreslení bez dat.
+
+    private const TimeAxisMode DefaultTimeAxis = TimeAxisMode.Compact;
+    private const int DefaultRangeFrom = 4;
+    private const int DefaultRangeTo = 23;
+    private const bool DefaultAutoExpand = false;
 
     /// <summary>
-    /// Když <see cref="TemplateElement.Height"/> je pevné a obsah je kratší (méně řádků než kapacita),
-    /// roztáhne datové řádky a jejich fonty proporcionálně tak, aby vyplnily celou výšku elementu.
-    /// Hlavička (skupiny dnů, „Hod" sloupec) zůstává původní velikost.
-    /// Override z PrintDialogu přes parametr <c>ROZTAHNOUT_NA_VYSKU</c>.
-    /// Default <c>false</c> - zachovává chování před přidáním této property (prázdné místo dole).
-    /// </summary>
-    public bool AutoExpandToFillHeight { get; set; }
-
-    /// <summary>
-    /// Strop pro <see cref="AutoExpandToFillHeight"/> - datové řádky se roztáhnou max na tento násobek
+    /// Strop pro roztažení na výšku (parametr ROZTAHNOUT_NA_VYSKU) - řádky se roztáhnou max na tento násobek
     /// přirozené výšky. Brání bizarně obřím řádkům u řídkých mřížek (např. linka jedoucí jen v 1 hodinu).
     /// </summary>
     private const float MaxAutoExpandFactor = 1.5f;
@@ -181,7 +177,9 @@ public class DepartureGridElement : StopScheduleElementBase
     private int ComputeLayoutFingerprint() => HashCode.Combine(
         HashCode.Combine(HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
             MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount, GroupColumns.Count),
-        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style, AutoExpandToFillHeight),
+        // Časová osa a roztažení na výšku sem nepatří - jsou to parametry sestavy, ne vlastnosti
+        // prvku, a cache se invaliduje změnou dat (DataContext), přes které parametry přicházejí.
+        HeaderLine2Style?.GetHashCode() ?? 0,
         HashCode.Combine(DataRowHeight, AnotaceGap, OdjezdGap, GroupSeparatorWidth, HourColumnPerGroup,
             ShowSkupinaDnuHeader, SkupinaDnuId),
         GroupHeaderOverridesHash());
@@ -269,9 +267,9 @@ public class DepartureGridElement : StopScheduleElementBase
         }
 
         // Parametry z DataContext přepíší properties elementu
-        var effectiveTimeAxis = ParseTimeAxisMode(GetStringParam(data, "CASOVA_OSA", TimeAxisMode.ToString().ToLowerInvariant()));
-        int effectiveRangeFrom = GetIntParam(data, "HODINY_OD", TimeAxisRangeFrom);
-        int effectiveRangeTo = GetIntParam(data, "HODINY_DO", TimeAxisRangeTo);
+        var effectiveTimeAxis = ParseTimeAxisMode(GetStringParam(data, "CASOVA_OSA", DefaultTimeAxis.ToString().ToLowerInvariant()));
+        int effectiveRangeFrom = GetIntParam(data, "HODINY_OD", DefaultRangeFrom);
+        int effectiveRangeTo = GetIntParam(data, "HODINY_DO", DefaultRangeTo);
 
         var allHourKeys = groupLayouts.SelectMany(g => g.ByHour.Keys).ToHashSet();
         var hours = GetVisibleHoursFromSet(allHourKeys, effectiveTimeAxis, effectiveRangeFrom, effectiveRangeTo);
@@ -525,7 +523,7 @@ public class DepartureGridElement : StopScheduleElementBase
         // Roztáhnout na výšku - pokud obsah je kratší než Height a feature je zapnutá,
         // proporcionálně zvětšit data řádky + jejich fonty (header zůstává).
         // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
-        bool effectiveAutoExpand = GetBoolParam(ctx.Data, "ROZTAHNOUT_NA_VYSKU", AutoExpandToFillHeight);
+        bool effectiveAutoExpand = GetBoolParam(ctx.Data, "ROZTAHNOUT_NA_VYSKU", DefaultAutoExpand);
         float dataGrow = 1f;
         if (effectiveAutoExpand && Height.HasValue && scale >= 1f && layout.Hours.Count > 0)
         {
@@ -705,7 +703,7 @@ public class DepartureGridElement : StopScheduleElementBase
         // Nakreslí datovou buňku sloupce hodin přes CellRenderer.
         // Hour je „service hour" (raw z dat, 0..47). Header zobrazuje clock hour = H % 24 -
         // night extension (24..) se uživateli ukáže jako 0..3 podle hodin zobrazované doby.
-        // Datová buňka → dataScale (růst při AutoExpandToFillHeight).
+        // Datová buňka → dataScale (růst při roztažení na výšku).
         void DrawHourDataCell(float hx, int hour, string? bgColorOverride = null)
         {
             var style = bgColorOverride is not null
@@ -1351,17 +1349,9 @@ public class DepartureGridElement : StopScheduleElementBase
             Options = EnumPropertyDescriptor.VAlignOptions },
         new FloatPropertyDescriptor { Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
 
-        // Časová osa (rozsah hodin) je parametr šablony „Časová osa odjezdů" (CASOVA_OSA/HODINY_OD/DO),
-        // sdílený a autoritativní - NEvystavovat jako property elementu (parametr ho přebíjí → matoucí).
-        // Property TimeAxisMode/RangeFrom/RangeTo zůstávají jen jako render fallback, když param chybí.
-
-        // Když je kratší rozsah hodin než kapacita Height, vyplnit zbylé místo (jen data řádky).
-        // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
-        new BoolPropertyDescriptor
-        {
-            Label = "Roztáhnout na výšku", Group = "Odjezdy",
-            Get = () => AutoExpandToFillHeight, Set = v => AutoExpandToFillHeight = v
-        },
+        // Časová osa (rozsah hodin) ani „Roztáhnout na výšku" tu nejsou - řídí je parametry sestavy
+        // (CASOVA_OSA/HODINY_OD/DO, ROZTAHNOUT_NA_VYSKU), které vlastnost prvku přebíjejí. Dvě cesty
+        // k jedné věci znamenaly, že klik v prvku nic nedělal (hlášení B22/B24).
 
         new BoolPropertyDescriptor  { Label = "Hodiny u každé sk.",  Group = "Odjezdy", Get = () => HourColumnPerGroup,        Set = v => HourColumnPerGroup = v },
         new FloatPropertyDescriptor { Label = "Max skupin",          Group = "Odjezdy", Get = () => MaxGroupCount,             Set = v => MaxGroupCount = (int)v, Min = 0, Max = 10, Format = "0", Unit = "(0=∞)" },
@@ -1461,10 +1451,6 @@ public class DepartureGridElement : StopScheduleElementBase
             GroupSeparatorWidth        = GroupSeparatorWidth,
             MinuteBold                 = MinuteBold,
             AlternatingRowColor        = AlternatingRowColor,
-            TimeAxisMode               = TimeAxisMode,
-            TimeAxisRangeFrom          = TimeAxisRangeFrom,
-            TimeAxisRangeTo            = TimeAxisRangeTo,
-            AutoExpandToFillHeight     = AutoExpandToFillHeight,
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
             NegativniZnackaBackColor   = NegativniZnackaBackColor,

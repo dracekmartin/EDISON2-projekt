@@ -87,7 +87,6 @@ public static class ScheduleElementBuilder
                     Bold = true,
                     BackgroundColor = "#FFE0E0E0"
                 },
-                TimeAxisMode = TimeAxisMode.Compact,
             };
             elements.Add(grid);
         }

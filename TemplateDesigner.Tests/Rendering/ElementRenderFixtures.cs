@@ -56,7 +56,6 @@ internal static class ElementRenderFixtures
         X = 5, Y = 5, Width = 90, Height = 60,
         HeaderStyle = Style(8, bold: true),
         DataStyle = Style(7),
-        ShowDirectionArrow = true,
         BorderColor = "#FF000000", BorderWidth = 0.2f,
     };
 

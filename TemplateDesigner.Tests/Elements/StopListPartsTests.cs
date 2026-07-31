@@ -35,8 +35,8 @@ public class StopListPartsTests
     public void DvaOddilySnizujiVysku()
     {
         var data = ElementRenderFixtures.StopScheduleData();   // 3 zastávky, aktuální je první
-        var jeden = new StopListElement { ShowPassedStops = true, Width = 80f };
-        var dva = new StopListElement { ShowPassedStops = true, Width = 80f, PartCount = 2 };
+        var jeden = new StopListElement { Width = 80f };
+        var dva = new StopListElement { Width = 80f, PartCount = 2 };
 
         float vyskaJeden = jeden.CalculateHeightFromData(data);
         float vyskaDva = dva.CalculateHeightFromData(data);
@@ -49,10 +49,10 @@ public class StopListPartsTests
     public void JedenOddilJeVychoziANemeniVysku()
     {
         var data = ElementRenderFixtures.StopScheduleData();
-        var vychozi = new StopListElement { ShowPassedStops = true, Width = 80f };
+        var vychozi = new StopListElement { Width = 80f };
 
         Assert.Equal(1, vychozi.PartCount);
         Assert.Equal(vychozi.CalculateHeightFromData(data),
-            new StopListElement { ShowPassedStops = true, Width = 80f, PartCount = 1 }.CalculateHeightFromData(data));
+            new StopListElement { Width = 80f, PartCount = 1 }.CalculateHeightFromData(data));
     }
 }
