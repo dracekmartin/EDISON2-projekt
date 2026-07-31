@@ -929,7 +929,8 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         StatusBar / StatusBarItem — bind fontu na user-theme tokeny
+         StatusBar / StatusBarItem / divider segmentů — font z user-theme
+         tokenů + rozestupy, aby segmenty nelepily text na text
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="StatusBar">
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Panel}"/>
@@ -938,12 +939,40 @@
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
         <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="Padding"         Value="4,1"/>
+        <!-- Stock LastChildFill=True roztáhne poslední segment přes celou lištu;
+             False drží DockPanel.Dock="Right" u pravého okraje a volné místo doprostřed. -->
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <DockPanel LastChildFill="False"/>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="StatusBarItem">
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
         <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <!-- Stock 3px = 6px mezi dvěma segmenty, texty splývají. -->
+        <Setter Property="Padding"         Value="8,3"/>
+    </Style>
+
+    <!-- Svislý divider segmentů; klíč si StatusBar přiřadí každému <Separator/> sám.
+         Stock Aero verze nečte theme tokeny (v dark modu světlá linka).
+         Height nenastavovat — zrušilo by vertikální roztažení. -->
+    <Style TargetType="Separator" x:Key="{x:Static prim:StatusBar.SeparatorStyleKey}">
+        <Setter Property="Width"      Value="1"/>
+        <Setter Property="Margin"     Value="0,4"/>
+        <Setter Property="Background" Value="{DynamicResource EDTheme.Border.Medium}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Rectangle Width="1" Fill="{TemplateBinding Background}" SnapsToDevicePixels="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════

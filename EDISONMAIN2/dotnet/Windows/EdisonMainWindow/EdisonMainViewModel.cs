@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Threading;
-// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
+// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using Application = System.Windows.Application;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
@@ -82,8 +82,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand ShowUsersLocksCommand { get; }
         public ICommand ShowUsersActivityCommand { get; }
         // Nastavení menu (+ toggle ShowWindowsAsDialogs níže jako bool property)
-        public ICommand SelectFontCommand { get; }
-        public ICommand ResetFontCommand { get; }
+        public ICommand FontSettingsCommand { get; }
         public ICommand ShowLanguageSettingsCommand { get; }
         public ICommand ResetFormsCommand { get; }
         // Nápověda menu
@@ -283,8 +282,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ShowUsersActivityCommand      = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
 
             // Nastavení menu
-            SelectFontCommand             = Command(SelectFont);
-            ResetFontCommand              = Command(ResetFont);
+            FontSettingsCommand           = Command(ShowFontSettings);
             ShowLanguageSettingsCommand   = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
             ResetFormsCommand             = Command(ResetForms);
 
@@ -719,6 +717,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Prázdná = chybí VERZE.INF vedle exe (typicky Release build spuštěný z VS, ne z instalace).
         public string Version   => VerzeInf.Current == "" ? "nezjištěna" : VerzeInf.Current;
 
+        /// <summary>Server a port jako jeden údaj status baru (dva popisky vedle sebe byly zbytečný šum).</summary>
+        public string ConnectionText => $"{Server}:{RestPort}";
+
+        /// <summary>Jméno v status baru; MLRest nemusí plné jméno vrátit, pak padáme na login.</summary>
+        public string UserDisplay => string.IsNullOrEmpty(FullName) ? UserName : FullName;
+
         private ReleaseNoticeResult? _releaseNotice;
         /// <summary>Výsledek notice-only porovnání s release serverem M-line (plní AppBootstrapper po startu).</summary>
         public ReleaseNoticeResult? ReleaseNotice
@@ -729,12 +733,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 if (Set(ref _releaseNotice, value))
                 {
                     OnPropertyChanged(nameof(NewVersionText));
+                    OnPropertyChanged(nameof(NewVersionTooltip));
                     OnPropertyChanged(nameof(UpToDateText));
                 }
             }
         }
+        // Krátký text drží šířku chipu v status baru; plná věta je v jeho tooltipu.
         public string NewVersionText => _releaseNotice?.Outcome == ReleaseNoticeOutcome.NewVersionAvailable
-            ? $"K dispozici je nová verze {_releaseNotice.Version}." : "";
+            ? $"Nová verze {_releaseNotice.Version}" : "";
+        public string NewVersionTooltip => _releaseNotice?.Outcome == ReleaseNoticeOutcome.NewVersionAvailable
+            ? $"K dispozici je nová verze {_releaseNotice.Version} (nainstalovaná {Version})." : "";
         public string UpToDateText => _releaseNotice?.Outcome == ReleaseNoticeOutcome.UpToDate
             ? "Jde o nejnovější verzi." : "";
 
@@ -1093,10 +1101,33 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 .ToList();
         }
 
+        // Jeden text pro obě cesty ukončení (menu i zavření okna), aby nedriftovaly.
+        private const string ExitConfirmMessage =
+            "Opravdu chcete ukončit aplikaci? Zavřou se všechna otevřená agendová okna.";
+
+        private bool _closeConfirmSuppressed;
+
+        /// <summary>Programové ukončení (force logout, licence, menu Ukončit) — Closing se už neptá.</summary>
+        public void SuppressCloseConfirm() => _closeConfirmSuppressed = true;
+
+        /// <summary>Closing shellu: false = zavření zrušit.</summary>
+        public bool ConfirmShellClose()
+        {
+            if (!_closeConfirmSuppressed && !PopupDisplayer.Confirm(ExitConfirmMessage)) return false;
+            PersistMiniAppLayout(Idfa);
+            return true;
+        }
+
+        private void ShutdownWithoutConfirm()
+        {
+            SuppressCloseConfirm();
+            Application.Current.Shutdown();
+        }
+
         private void ExitApplication()
         {
-            if (PopupDisplayer.Confirm("Opravdu chcete ukončit aplikaci?"))
-                Application.Current.Shutdown();
+            if (PopupDisplayer.Confirm(ExitConfirmMessage))
+                ShutdownWithoutConfirm();
         }
 
         private void LoginAsAnotherUser()
@@ -1111,10 +1142,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
                 case SwitchUserResult.LicenceRefused:
                     PopupDisplayer.Info("Pro nového uživatele byl překročen počet licencí. Aplikace bude ukončena.");
-                    Application.Current.Shutdown();
+                    ShutdownWithoutConfirm();
                     return;
                 case SwitchUserResult.LicenceCancelled:
-                    Application.Current.Shutdown();
+                    ShutdownWithoutConfirm();
                     return;
                 case SwitchUserResult.Success:
                     RebuildSessionState(outcome.Licence);
@@ -1123,6 +1154,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     OnPropertyChanged(nameof(UserName));
                     OnPropertyChanged(nameof(FullName));
                     OnPropertyChanged(nameof(Mlp));
+                    OnPropertyChanged(nameof(UserDisplay));
                     // Admin-gated commandy (ShowUsersLocks/Activity) re-vyhodnotí CanExecute hned,
                     // ne až na první input event po switch.
                     CommandManager.InvalidateRequerySuggested();
@@ -1191,40 +1223,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
 
-        // Styl → Vybrat font — WinForms FontDialog (jediný standardní picker dostupný v .NET).
-        // Výběr font rovnou aplikuje na celou aplikaci. Storage je shared font.json
-        // (EDControls.UserFonts.UserFontPreference), takže ostatní m-line tooly
-        // (TemplateDesigner) přes FileSystemWatcher okamžitě reagují na změnu.
-        private static void SelectFont()
-        {
-            using var dialog = new System.Windows.Forms.FontDialog();
-            if (!string.IsNullOrEmpty(UserFontPreference.Current.FontFamily))
-            {
-                try
-                {
-                    dialog.Font = new System.Drawing.Font(
-                        UserFontPreference.Current.FontFamily,
-                        (float)(UserFontPreference.Current.FontSize ?? 12));
-                }
-                catch { /* nepřežijeme nepoužitelný font — picker použije default */ }
-            }
-            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
-            UserFontPreference.Current.FontFamily = dialog.Font.FontFamily.Name;
-            UserFontPreference.Current.FontSize = dialog.Font.Size;
-            UserFontPreference.Current.FontApplied = true;
-            UserFontPreference.Current.Save();
-            FontService.Apply(UserFontPreference.Current);
-        }
-
-        // Styl → Výchozí font — vrátí default tokeny z EDTheme.xaml. FontFamily/FontSize
-        // v prefs zůstávají (pre-fill dialogu při příštím výběru), vypíná se jen FontApplied.
-        private static void ResetFont()
-        {
-            if (!UserFontPreference.Current.FontApplied) return;
-            UserFontPreference.Current.FontApplied = false;
-            UserFontPreference.Current.Save();
-            FontService.Apply(UserFontPreference.Current);
-        }
+        // Nastavení → Nastavení fontu — dialog v EDControls (uložení i aplikaci řeší sám).
+        // Storage je shared font.json, takže ostatní m-line tooly (TemplateDesigner) přes
+        // FileSystemWatcher okamžitě reagují na změnu.
+        private static void ShowFontSettings()
+            => FontSettingsWindow.ShowDialogFor(Application.Current?.MainWindow);
 
         private void OpenWebUrl(string url)
         {
@@ -1283,7 +1286,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     OnPropertyChanged(nameof(ChordHintText));
             }
         }
-        public string ChordHintText => IsChordWaiting ? "Stisknuto Ctrl+W — čekám na druhý stisk…" : "";
+        public string ChordHintText => IsChordWaiting ? "Stisknuto Ctrl+W - čekám na druhý stisk…" : "";
 
         public void HandleCtrlW()
         {

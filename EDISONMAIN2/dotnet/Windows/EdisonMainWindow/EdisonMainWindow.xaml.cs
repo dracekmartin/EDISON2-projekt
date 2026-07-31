@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using AvalonDock.Themes;
@@ -6,7 +7,7 @@ using EDControls.EDTheme;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
+// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using DataObject = System.Windows.DataObject;
@@ -39,7 +40,16 @@ namespace EDISONMAIN2
             DockManager.SizeChanged += MiniAppArea_SizeChanged;
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
+            Closing += OnShellClosing;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
+        }
+
+        // Zavření shellu ukončí aplikaci (ShutdownMode=OnMainWindowClose) i všechny agendy,
+        // proto se ptáme stejně jako u přepnutí firmy. Programové Shutdown si prompt potlačí ve VM.
+        private void OnShellClosing(object? sender, CancelEventArgs e)
+        {
+            if (DataContext is EdisonMainViewModel vm && !vm.ConfirmShellClose())
+                e.Cancel = true;
         }
 
         // Vestavěný generic theme AvalonDocku má chrome (taby, bordery, pozadí dokumentů) natvrdo

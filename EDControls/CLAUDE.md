@@ -23,6 +23,10 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
   přidává na konec MergedDictionaries a přebíjí klíče. Preference je cross-process
   (`%APPDATA%\m-line\common\theme.json` + FileSystemWatcher) — shell i TemplateDesigner
   se přepnou spolu. Stejný mechanismus má font (`UserFonts/`, `font.json`).
+- **Font: `font.json` je v pt, tokeny v px** — konverze (×4/3) je jen ve `FontService`,
+  nikde jinde ji nepiš. Výchozí Body 14 px drží legacy standard (Segoe UI 9,75 pt);
+  volitelné rodiny jsou **whitelist** ve `FontCatalog` (systémový výčet nabízel
+  i symbolové fonty a uživatel si tím rozbil UI včetně cesty zpět).
 - `EDControlStyles/` — implicitní styly standardních controls (Button, Menu, TabControl,
   TreeView, ScrollBar, ...) + keyed `EDTheme.ToolbarButton` (ploché ikonové tlačítko
   toolbaru, opt-in, hover/pressed z theme tokenů). **Úpravy vzhledu standardního controlu patří sem, ne do

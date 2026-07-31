@@ -94,13 +94,19 @@ Bonus tokens: pro každou barvu existují **dva** klíče:
 
 ## Typography tokens
 
+Hodnoty jsou v px (WPF `FontSize`), user preference v `font.json` je v pt — konverze
+i proporcionální škálování celého ladderu k user Body velikosti dělá `FontService`.
+
 | Token | Default | Použití |
 |---|---|---|
-| `EDTheme.FontSize.Small` | `9` | Ruler ticks, badge texts, group labels v toolbaru |
-| `EDTheme.FontSize.Caption` | `10` | Tipy, hints |
-| `EDTheme.FontSize.Body` | `11` | Defaultní velikost UI |
-| `EDTheme.FontSize.Header` | `12` | Nadpisy panelů, dialog titulky |
-| `EDTheme.FontSize.Large` | `14` | Emphasis (rare) |
+| `EDTheme.FontFamily` | `Segoe UI` | Rodina, whitelist volitelných je v `FontCatalog` |
+| `EDTheme.FontSize.Small` | `12` | Ruler ticks, badge texts, group labels v toolbaru |
+| `EDTheme.FontSize.Caption` | `13` | Tipy, hints |
+| `EDTheme.FontSize.Body` | `14` | Defaultní velikost UI (legacy standard 9,75 pt = 13 px + rezerva pro WPF) |
+| `EDTheme.FontSize.Header` | `15` | Nadpisy panelů, dialog titulky |
+| `EDTheme.FontSize.Title` | `16` | Header pruh komponent, karta „Akce probíhá" |
+| `EDTheme.FontSize.Large` | `17` | Emphasis (rare) |
+| `EDTheme.IconSize.Default` | `16` | Ikony v toolbarech a menu (škálují se s Body) |
 
 ## Spacing tokens
 

@@ -30,7 +30,9 @@ public static class WindowStatePersistence
         else
             TryRestore(window, formId);
 
-        window.Closing += (_, _) => TrySave(window, formId);
+        // Guard na e.Cancel: WPF pustí i zbylé Closing handlery, když jiný zavření zrušil
+        // (potvrzovací dialog shellu) — bez guardu by každé odmítnuté zavření platilo SaveParams.
+        window.Closing += (_, e) => { if (!e.Cancel) TrySave(window, formId); };
     }
 
     private static void TryRestore(Window window, string formId)
