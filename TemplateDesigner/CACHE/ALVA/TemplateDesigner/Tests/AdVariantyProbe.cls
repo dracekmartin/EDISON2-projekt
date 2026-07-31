@@ -287,7 +287,7 @@ ClassMethod ScanZachazky(ByRef sys As %String) As %Status
         }
 
         k vysledky
-        s (linek, kandidatu) = 0
+        s (linek, kandidatu, sVzorem, sVzoremReal) = 0
         s sku = ""
         f {
             s sku = $o(skupiny(sku))
@@ -390,7 +390,15 @@ ClassMethod ScanZachazky(ByRef sys As %String) As %Status
                     i vety["pres" s skore = skore + 15
 
                     s kandidatu = kandidatu + 1
-                    s vysledky(-skore, sku_"~"_lin_"~"_smer) = "skore="_skore_"~spoju="_spoju_"~zastavek="_zastavek
+                    // kolik kandidátů má vůbec vyplněnou vzorovou trasu (podmínka pozitivních
+                    // formulací „jede přes" / „jede až do") a kolik z nich ji má jako reálnou trasu
+                    i autoPozn && (vzorTyp '[ "fallback") {
+                        s sVzorem = sVzorem + 1
+                        i bituVzor >= (zastavek*0.6) s sVzoremReal = sVzoremReal + 1
+                    }
+                    // řazení: primárně skóre, sekundárně bohatost legendy (víc vět = lepší ukázka)
+                    s sortKey = -((skore*1000) + $s(legendPolozek>999:999, 1:legendPolozek))
+                    s vysledky(sortKey, sku_"~"_lin_"~"_smer) = "skore="_skore_"~spoju="_spoju_"~zastavek="_zastavek
                         _"~variant="_variant_"~zachazek="_zachazek_"~vzor="_vzorTyp_"~autoPozn="_autoPozn
                         _"~vety="_vety_"~legendPolozek="_legendPolozek
                         _"~zachazky="_$s(zachazky'="":zachazky, 1:"(zadna)")
@@ -414,7 +422,7 @@ ClassMethod ScanZachazky(ByRef sys As %String) As %Status
             q:radku>=top
         }
         s ^||ML("OUT","SOUHRN") = "linekProslo="_linek_"~kandidatu="_kandidatu_"~vypsano="_radku
-            _"~minSpoju="_minSpoju
+            _"~minSpoju="_minSpoju_"~sVzoremTrasy="_sVzorem_"~sVzoremRealnym="_sVzoremReal
     } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
