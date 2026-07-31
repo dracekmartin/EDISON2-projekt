@@ -581,7 +581,7 @@ i formátovač jednou `GetData` → JSON, psanou proti gold oraclu.
 | `gSetLinPrt^JRapiLin1` (ř.183) | dialog **„Nastavení pro tisk linky"** (82 polí) | `^JRL(sku,lin,"PATCH",…)` |
 
 > **Pozn. AD vs MHD modul:** ruční poznámky (Komentáře, nepoznámkovat, směrové) jsou **AD-only**
-> (`^JRL` konstrukty). Self-contained MHD modul (`^ALVA.MHD.*`, agenda `ZastavkoveJrMhd`, jen DPCB/DPKV)
+> (`^JRL` konstrukty). Self-contained MHD modul (`^ALVA.MHD.*`, agenda `ZastavkoveJrMhd`, jen DPKV)
 > je nemá. Většina dopravců (TRANSDEV ad.) jezdí AD + lokální MHD v AD datech → helpdesk „MHD" tikety
 > jsou reálně o AD agendě.
 
