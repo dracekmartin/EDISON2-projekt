@@ -20,6 +20,39 @@ Method TestZonyVsLegacyKvdp()
 	do ..AssertZony("KV_DP", 1, 410101, 1)
 }
 
+/// Záskok zóny na registr zastávek nad **živými daty** (KOVED #13091 bod 4): když trasa linky
+/// zónu nemá, musí se vzít z `^JRZ` `$`-pole 11 - to je přesně případ, na který si klient stěžoval.
+/// Očekávanou hodnotu čte test ze stejného globálu, takže nepadá na driftu zákaznických dat;
+/// dokazuje zapojení (čtení pole + záskok + odstranění písmen), ne konkrétní číslo.
+Method TestZaskokZonyNaRegistrZastavek()
+{
+	set db = "CB_GWBUS", czst = 4842
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - záskok zón přeskočen")
+		quit
+	}
+	set zonaRegistru = $piece($piece($get(^[db]JRZ(czst)),"$",11),"~",1)
+	if zonaRegistru = "" {
+		do $$$AssertTrue(1, "zastávka "_czst_" nemá v registru zónu - záskok nelze ověřit na těchto datech")
+		quit
+	}
+	// J-věta bez zóny (9. #-segment prázdný) → hodnota musí přijít z registru zastávek.
+	set vetaBezZony = czst_":x##:#1###0:0#:##0:0##:##0#"
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set zeZaskoku = $classmethod(cls, "ZonyZastavky", db, vetaBezZony, czst, 0)
+	do $$$AssertEquals(zeZaskoku, zonaRegistru, "prázdná zóna u trasy → zóna z registru: "_zonaRegistru)
+
+	// Se zapnutým odstraněním písmen zůstane jen číslo z číselníku zón.
+	set bezPismen = $classmethod(cls, "ZonyZastavky", db, vetaBezZony, czst, 1)
+	set cekano = $translate(zonaRegistru, "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm", "")
+	do $$$AssertEquals(bezPismen, cekano, "odstranění písmen: "_zonaRegistru_" → "_bezPismen)
+
+	// Zóna u trasy má přednost před registrem (legacy priorita).
+	set vetaSeZonou = czst_":x##:#1###0:0#:#101#0:0##:##0#"
+	set zTrasy = $classmethod(cls, "ZonyZastavky", db, vetaSeZonou, czst, 0)
+	do $$$AssertEquals(zTrasy, "101", "zóna u trasy linky přebíjí registr zastávek")
+}
+
 /// Přestupy: autobus „A" na terminálech linky 0330510 (ČB AN) se emituje do ATRIBUTY zastávek.
 /// Zamyká rozšíření nad legacy (server je posílá vždy; zobrazení řídí přepínač na prvku StopList).
 Method TestPrestupyEmit()

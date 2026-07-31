@@ -182,4 +182,39 @@ Method TestNormalizLinku()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NormalizLinku(""), "", "prázdné → prázdné")
 }
 
+// ── Zóny: trasa linky, záskok na registr zastávek, odstranění písmen (KOVED #13091 bod 4) ──
+// Písmeno v kódu zóny nese přepravní systém, ne zónu - klient chtěl číslo z číselníku.
+
+Method TestZonaBezPismenVKodu()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "ZonaBezPismenVKodu", "100J"), "100", "písmeno přepravního systému pryč")
+	do $$$AssertEquals($classmethod(cls, "ZonaBezPismenVKodu", "O12"), "12", "písmeno na začátku (ODIS)")
+	do $$$AssertEquals($classmethod(cls, "ZonaBezPismenVKodu", "101"), "101", "čisté číslo beze změny")
+	do $$$AssertEquals($classmethod(cls, "ZonaBezPismenVKodu", ""), "", "prázdné → prázdné")
+}
+
+/// Zóna z trasy linky (9. `#`-segment J-věty) - záskok na registr se neuplatní, takže test
+/// nečte globály. Čárka uvnitř je oddělovač zón, ne součást hodnoty (1:1 `JRapiLin` dta11).
+Method TestZonyZTrasyLinky()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	// J-věta se zónou 101 v 9. #-segmentu (reálný tvar CB_GWBUS)
+	set veta = "4842:TAS##16:#2#0##0:0#:#101#0:0##2:99##0#"
+	do $$$AssertEquals($classmethod(cls, "ZonyZastavky", "", veta, "", 0), "101", "zóna z trasy linky")
+
+	// Vícezónová (hraniční) zastávka - čárka v datech = dvě zóny
+	set vetaVice = "4842:TAS##16:#2#0##0:0#:#11,12#0:0##2:99##0#"
+	do $$$AssertEquals($classmethod(cls, "ZonyZastavky", "", vetaVice, "", 0), "11;12", "čárka = oddělovač dvou zón")
+
+	// Odstranění písmen zapnuté
+	set vetaPismeno = "4842:TAS##16:#2#0##0:0#:#100J#0:0##2:99##0#"
+	do $$$AssertEquals($classmethod(cls, "ZonyZastavky", "", vetaPismeno, "", 1), "100", "zapnuté odstranění písmen")
+	do $$$AssertEquals($classmethod(cls, "ZonyZastavky", "", vetaPismeno, "", 0), "100J", "vypnuté = hodnota jak je v datech")
+
+	// „-" u linky = zóny se netisknou vůbec
+	set vetaBez = "4842:TAS##16:#2#0##0:0#:#-#0:0##2:99##0#"
+	do $$$AssertEquals($classmethod(cls, "ZonyZastavky", "", vetaBez, "", 0), "", "pomlčka = netisknout zóny")
+}
+
 }

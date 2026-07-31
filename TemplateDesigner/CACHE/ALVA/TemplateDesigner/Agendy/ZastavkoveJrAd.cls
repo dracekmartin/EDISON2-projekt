@@ -449,6 +449,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     }
 
     // Emituj VŠECHNY zastávky směru (vč. projetých, jako MHD) - StopList je filtruje dle „tisk projetých".
+    s zonaBezPismen = ..ZonaBezPismen(dataDB, sku, lin)   // nastavení je per linka, ne per zastávka
     s poradi = ""
     s cnt = 0
     f {
@@ -462,7 +463,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         i czst="" continue
         i '$d(servedPoradi(poradi)) continue                // jen obsluhované zastávky (jako legacy)
         s atributy  = ..AtributyZastavky(dataDB, czst, $p($p(veta,":",2),"#",1))   // trasa linky + registr zastávek
-        s zona      = $p($p(veta,":",5),"#",2)               // "#zóna#..."
+        s zony      = ..ZonyZastavky(dataDB, veta, czst, zonaBezPismen)   // trasa linky + záskok na registr zastávek
         s odsazeni  = +$p(veta,"#",5)                        // dta7 „odrazeni" - odsazení názvu o N znaků (legacy mkPLinWin/JRapiLin: 5. #-segment)
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
@@ -471,7 +472,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         // „na znamení" se tiskne přes atribut „x" (níže) - legacy UVOD tiskne jen „x". NaZnameni=0,
         // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
         s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0, odsazeni)
-        i zona '= "" d ..AddZona(z, zona)
+        f zi=1:1:$l(zony,";") {
+            s zx = $p(zony,";",zi)
+            i zx '= "" d ..AddZona(z, zx)
+        }
         // atributy zastávky → symbol u názvu + řádek legendy (jen neprojeté + významové znaky; analogicky MHD).
         // Přestupy (vlak „L" / autobus „A") jdou nad rámec legacy - posílají se vždy jako data zastávky,
         // ale legendu NEplní; jejich symbol řídí přepínač „Přestupy" na prvku StopList (default vyp).
@@ -1278,6 +1282,56 @@ ClassMethod AtributyZastavky(dataDB As %String, czst As %String, atributyTrasy A
         s vysledek = vysledek _ znak
     }
     ret vysledek
+}
+
+/// Tarifní zóny zastávky, `;`-oddělené (1:1 legacy `JRapiExp10` blok „trasa").
+/// Přednost má zóna z **trasy linky** (J-věta, 9. `#`-segment - `JRapiLin` dta11; čárka uvnitř je
+/// oddělovač zón, ne součást hodnoty). Když ji trasa nemá, vezme se z **registru zastávek**
+/// (`^JRZ` `$`-pole 11 = `zóna~hranice IDS~další zóny`; druhá zóna se přidá jen u hraniční
+/// zastávky). Hodnota `-` = zóny netisknout. `zonaBezPismen` odstraní z kódu písmena.
+ClassMethod ZonyZastavky(dataDB As %String, veta As %String, czst As %String, zonaBezPismen As %Boolean = 0) As %String
+{
+    s zonyTrasy = $tr($p(veta,"#",9), ",", ";")
+    i zonyTrasy = "", czst '= "" {
+        s poleRegistru = $p($g(^[dataDB]JRZ(czst)),"$",11)
+        s zonaRegistru = $p(poleRegistru,"~",1)
+        // Hraniční zastávka (příznak) leží ve dvou zónách - druhá je v témže poli.
+        i +$p(poleRegistru,"~",2) {
+            s druhaZona = $p(poleRegistru,"~",3)
+            i druhaZona '= "" s zonaRegistru = $s(zonaRegistru="":druhaZona, 1:zonaRegistru_";"_druhaZona)
+        }
+        s zonyTrasy = zonaRegistru
+    }
+    i zonyTrasy = "-" ret ""                     // „-" u linky = zóny se netisknou
+    s vysledek = ""
+    f idx=1:1:$l(zonyTrasy,";") {
+        s zona = $p(zonyTrasy,";",idx)
+        i zonaBezPismen s zona = ..ZonaBezPismenVKodu(zona)
+        i zona = "" continue
+        s vysledek = vysledek_$s(vysledek="":"",1:";")_zona
+    }
+    ret vysledek
+}
+
+/// Odstraní z kódu zóny písmena (1:1 legacy `delZnk^JRapiLinPrtPS2`). Písmeno v kódu nese
+/// **přepravní systém** (`JRapi4hand`: ODIS → „O", IDSOK → „I"), ne číslo zóny - do tisku
+/// patří jen číslo z číselníku. Záměrně jen ASCII, jako legacy.
+ClassMethod ZonaBezPismenVKodu(zona As %String) As %String
+{
+    ret $tr(zona, "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm", "")
+}
+
+/// Má se z kódu zóny odstranit písmeno přepravního systému? Globální nastavení
+/// `^JRSET("Definice","ZonaIdsDelZnk")`, přebité nastavením tisku linky
+/// `^JRL(sku,lin,"PATCH","ZonaIdsDelZnk")` - prázdné/0 = dle programu, 1 = nechat, 2 = odstranit
+/// (1:1 legacy `JRapiExp10` + `JRapiLin1` dta77). V JŘ to je u linky pole „Zóny - tisk a export
+/// do JDF bez písmen".
+ClassMethod ZonaBezPismen(dataDB As %String, sku As %String, lin As %String) As %Boolean
+{
+    s nastaveni = +$g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk"))
+    s perLinka = +$g(^[dataDB]JRL(sku,lin,"PATCH","ZonaIdsDelZnk"))
+    i perLinka s nastaveni = perLinka - 1
+    ret ''nastaveni
 }
 
 /// Název zastávky podle pořadí v trase (přes czst z J-věty `#1:1`).
