@@ -38,6 +38,22 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 31. 7. 2026 - Vzhled seznamu zastávek a barva linky ve sloupcích
+
+- **Šipka směru jízdy** - nastavitelná tloušťka, velikost hrotu, tvar hrotu (plný / otevřený /
+  bez hrotu) a styl čáry (plná / čárkovaná / tečkovaná).
+- **Opravená tloušťka šipky v tisku** - dosud vycházela mnohem tenčí než na obrazovce.
+- **Svislé čáry mezi sloupci** seznamu zastávek. Tloušťku a styl čar mřížky (svislých i vodorovných)
+  lze nastavit u všech tabulkových prvků jízdního řádu.
+- **Časy u projetých zastávek** - u zastávek, které spoj už projel, se čas jízdy nově netiskne
+  (dosud tam vycházel záporný). Volbou **Čas u projetých** lze vrátit původní chování.
+- **Barva linky z jízdního řádu i v jednotlivých sloupcích** - v editoru sloupců jde barva textu
+  i pozadí zapsat textem, takže lze zadat `{BARVA_LINKY}` a barva se vezme z jízdního řádu.
+  Platí pro zastávky, odjezdy i tabulky.
+- **Tarifní zóny** - když zónu nemá vyplněná trasa linky, vezme se ze **nastavení zastávky**
+  (u hraniční zastávky obě zóny). Volbou u linky **„Zóny - tisk a export do JDF bez písmen"** lze
+  z kódu zóny odstranit písmeno přepravního systému, takže se tiskne jen číslo zóny.
+
 ### 28. 7. 2026 - Zastávkové jízdní řády
 
 - **Označníky** - nový sloupec **Označník** v seznamu zastávek a volba **Více označníků** pro

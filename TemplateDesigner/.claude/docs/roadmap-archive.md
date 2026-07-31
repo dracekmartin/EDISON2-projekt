@@ -2,6 +2,62 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-31 ✅ - `B34` zóny: doportovaná logika starého modulu (#13091 bod 4)
+
+Detail → changelog 2026-07-31 (3). **Klíčové zjištění analýzy: nebyla to nová featura, ale
+nedoportovaný kus starého modulu** - obě klientovy stížnosti (zóna jen z trasy linky · písmeno
+místo čísla) legacy řeší, jen jsme to nepřevzali.
+
+Doportováno 1:1 dle `JRapiExp10`: záskok na registr zastávek (`^JRZ` `$`-pole 11, u hraniční
+zastávky i druhá zóna), odstranění písmen dle nastavení (globální `^JRSET("Definice","ZonaIdsDelZnk")`
+přebité u linky `PATCH` - v JŘ pole „Zóny - tisk a export do JDF bez písmen"), hodnota `-`
+= netisknout. Oddělovač více zón srovnán na čárku (starý modul), dosud lomítko.
+
+- **Písmeno v kódu zóny nese přepravní systém**, ne zónu - do dat se předřazuje (`JRapi4hand`:
+  ODIS → „O", IDSOK → „I"), legacy ho pro tisk maže (`delZnk^JRapiLinPrtPS2`). Tím je vysvětlena
+  klientova druhá věta („písmeno místo čísla z číselníku").
+- **Riziko gold parity změřeno, ne odhadnuto:** zlaté odtisky `CB_CSADAD` se neposunuly (firma
+  zóny IDS nemá), paritní testy zón `CB_GWBUS`/`KV_DP` zůstaly zelené. Přidán test, který záskok
+  dokazuje na živých datech a čte očekávanou hodnotu ze stejného globálu, takže nepadá na driftu
+  zákaznických dat.
+- **Nedělá se, dokud klient neodpoví** (visí v „Čeká na někoho jiného"): jestli má zastávka
+  přednost i tam, kde trasa zónu má. Legacy dává přednost trase; přehození by nás rozešlo
+  s ostatními výstupy (JDF, exporty), takže to není naše rozhodnutí.
+
+## 2026-07-31 ✅ - `B30` vzhled seznamu zastávek (#13091a) + `B31` barva z dat u sloupců (#12997)
+
+Detail → changelog 2026-07-31 (2). Dva bloky fronty KOVED jedním sezením, protože sahají do téhož
+místa (seznam zastávek a nastavení jeho sloupců).
+
+**`B30`** - šipka směru jde nastavit (tloušťka, velikost a tvar hrotu, styl čáry), přibyly svislé
+čáry mezi sloupci a čas u projetých zastávek má volbu, jak se má chovat.
+
+- **Vedlejší nález, opravený:** tloušťka šipky se zadávala v **pixelech**, takže v tisku z ní byla
+  vláskovka - odtud klientovo „šipka je malá". Nově milimetry, výchozí hodnoty drží dosavadní
+  vzhled na obrazovce. Milimetrové rozměry šipky i mřížky se škálují se šablonou (test).
+- **Záporné časy u projetých zastávek** jsou důsledkem toho, že časy jsou kumulativní od vývěskové
+  zastávky. Nově se defaultně skryjí. Řešeno v prvku, ne v agendě - je to volba zobrazení, data
+  zůstala beze změny (zlaté odtisky nedotčené, 45/45).
+- Tloušťku a styl mřížky dostaly **všechny** JŘ prvky (žijí na společném základu), zapnutí svislých
+  čar jen seznam zastávek - ostatní je už měly.
+- **Review 31. 7. přineslo dvě zjednodušení:** přepínač „Tučná šipka" zrušen (dělal totéž co
+  tloušťka, jen hrubě → migrace šablon na 1.6.0) a volba u projetých časů zúžena ze tří na dvě
+  („skrýt jen záporné" se na reálných datech chovalo shodně s „nezobrazovat"). Sjednocení čar
+  a mřížky napříč **všemi** tabulkovými prvky vzniklo z téhož review jako blok `B40`.
+
+**`B31`** - barva textu i pozadí sloupce se dá **zapsat textem**, takže tam jde zadat
+`{BARVA_LINKY}`; dosud byl jen výběr barvy, který barvu z dat nabídnout neumí. Jeden sdílený editor
+sloupců → pokryty zastávky, odjezdy, linková i dynamická tabulka. Nápověda o `{BARVA_LINKY}`
+přidaná k barvám záhlaví a buněk (dosud ji měl jen rámeček, text a obdélník).
+
+- **Roadmapa tvrdila něco jiného:** nález „Fáze B" z 30. 7. říkal, že u zastávek a odjezdů pole
+  „Pozadí záhlaví / Pozadí buněk" v tabu Obecné **chybí**. Ve skutečnosti tam jsou, jen pod popisky
+  „Barva textu / Pozadí" ve skupinách „Styl záhlaví / Styl datových buněk" (sdílený balíček polí
+  stylu). Skutečná mezera byla jen ta jedna: nešlo zadat barvu **textem**. Tvrzení z roadmapy
+  smazáno, ať se podle něj nepřepisuje něco, co funguje.
+- **Zbytek `B31` je mimo návrhář** (viz roadmapa, „Čeká na někoho jiného"): dvě barvy linky
+  (zvlášť text, zvlášť pozadí) potřebují druhou hodnotu v jízdním řádu.
+
 ## 2026-07-30 ✅ - `B22` „Hodiny od/do" v parametrech - vyřešeno opravou `B24`
 
 Symptom: „Hodiny od/do" byly vidět, i když časová osa nebyla „Vlastní rozsah". Prohledání kódu ale

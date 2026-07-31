@@ -134,7 +134,7 @@ bumpne na „1.1.0" **spolu s** `ITemplateMigration`. (Kosmetický rozdíl „1.
 Caché metadat vs „1.0.0" v C# je funkčně irelevantní - `VersionComparer` je srovnává jako rovné a
 metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 
-### V1.1.0–V1.4.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
+### V1.1.0–V1.6.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
 
 - **1.1.0** `MigrationHighlightRules` - řádkové zvýraznění: skalární pár → `highlightRules[]` seznam.
 - **1.2.0** `MigrationKnizniToLinkovy` - přejmenování knižní → linkový (agenda kódy/typy).
@@ -142,6 +142,12 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 - **1.4.0** `MigrationDepartureGridMaxGroups` (2026-07-23) - DepartureGrid `maxGroupCount`: starý
   implicitní default **3 → 0** (bez limitu). Strop 3 tiše ořezával 4. SMO sloupec v rozporu
   s checkboxy dialogu; vědomé hodnoty (1, 2, 4…) zůstávají. Class default změněn na 0.
+- **1.5.0** `MigrationRectangleCorners` - rohy sjednocené na base (`cornerRadius` → `cornerStyle`
+  + `cornerSize`).
+- **1.6.0** `MigrationArrowWidth` (2026-07-31) - šipka směru: přepínač `directionArrowBold` zrušen
+  ve prospěch tloušťky v mm (`directionArrowWidth`). Převod drží vzhled: tučná → 0,4 mm, jinak
+  0,2 mm (dřívějších 1,5 / 0,8 **px**, což v tisku dávalo vláskovku). Dvě cesty k jedné vlastnosti
+  byly zbytečné a přepínač neuměl konkrétní tloušťku, kterou zákazník chce.
 
 ---
 

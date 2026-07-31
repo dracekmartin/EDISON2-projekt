@@ -1,5 +1,81 @@
 # Changelog
 
+## 2026-07-31 (3) - `B34` zóny: doportovaná logika starého modulu (#13091 bod 4)
+
+Klient hlásil dvě věci: zóna se objeví jen tehdy, když je vyplněná u trasy linky, a místo čísla zóny
+se tiskne písmeno přepravního systému. **Obojí umí starý modul a my jsme to neměli doportované** -
+není to tedy nová featura, ale chybějící kus parity.
+
+- **Záskok na nastavení zastávky:** zóna se bere z trasy linky, a když ji trasa nemá, z registru
+  zastávek (u hraniční zastávky včetně druhé zóny). Priorita zůstává jako ve starém modulu -
+  trasa vyhrává, zastávka je záskok.
+- **Písmeno přepravního systému se odstraní**, pokud je to zapnuté. Písmeno v kódu zóny označuje
+  přepravní systém (v datech se předřazuje: ODIS → „O", IDSOK → „I"), ne zónu, takže do tisku patří
+  jen číslo z číselníku. Řídí to nastavení JŘ - globálně, nebo u konkrétní linky polem
+  **„Zóny - tisk a export do JDF bez písmen"**. Nové UI netřeba, klient si to zapne sám.
+- **Hodnota `-` u zóny znamená „netisknout"** - dosud bychom vytiskli pomlčku.
+- **Víc zón u zastávky se odděluje čárkou**, ne lomítkem - shodně se starým modulem. Dosud to
+  nebylo vidět, protože víc zón přicházelo jako jedna hodnota; se záskokem začnou být samostatné.
+
+**Měřeno, ne odhadnuto:** zlaté odtisky (`CB_CSADAD`) se **neposunuly** - ta firma zóny IDS nemá,
+takže záskok tam nic nepřidal. Paritní testy zón vůči starému modulu (`CB_GWBUS`, `KV_DP`) zůstaly
+zelené. Nový test dokazuje záskok na živých datech (zastávka s prázdnou zónou u trasy a zónou
+`100J` v registru → `100J`, se zapnutým odstraněním písmen → `100`).
+
+Caché 48/48 (+3), .NET 528/528 (+2). **Zbývá dořešit s klientem** (mimo tento blok): jestli má mít
+zastávka přednost i tam, kde trasa zónu má (starý modul dává přednost trase), jaké mají nastavení
+a na které lince to vidí špatně - to poslední zároveň ověří, že jejich kód zóny je „číslo + písmeno".
+
+## 2026-07-31 (2) - `B30` + `B31`: vzhled seznamu zastávek a barva z dat u sloupců (#13091a, #12997)
+
+První dva bloky zákaznické fronty KOVED z 30. 7. Obojí sahá do téhož místa (seznam zastávek a
+nastavení jeho sloupců), proto se dělalo jedním sezením.
+
+**Šipka směru jízdy** je nastavitelná: tloušťka, velikost hrotu, tvar hrotu (plný / otevřený /
+bez hrotu) a styl čáry (plná / čárkovaná / tečkovaná).
+
+- **Zároveň opravená vláskovka v tisku:** tloušťka se zadávala v pixelech (0,8), takže na obrazovce
+  vypadala rozumně, ale v tisku (jiné rozlišení) z ní byla nitka. Nově je v milimetrech; výchozí
+  hodnota 0,2 mm odpovídá tomu, jak šipka vypadala na obrazovce při zobrazení 1:1. Přesně tohle
+  klient hlásil jako „šipka je malá".
+- **Přepínač „Tučná šipka" zrušen** (rozhodnuto při review 31. 7.) - dělal totéž co tloušťka, jen
+  hrubě. Uložené šablony převede migrace na 1.6.0 (tučná → 0,4 mm), takže vypadají stejně jako dřív.
+
+**Svislé čáry mezi sloupci** seznamu zastávek (dosud šly jen vodorovné). Tloušťka, styl i barva jsou
+společné vlastnosti mřížky prvku, takže vodorovné a svislé čáry drží stejný vzhled; tloušťku mřížky
+šlo dosud řídit jen nepřímo tloušťkou rámečku.
+
+- Uvnitř sloupce zastávek se čára nekreslí, i když je jeho obsah rozdělený na značky a název
+  (režim „značky před zastávkou") - jinak by to vypadalo jako sloupec navíc.
+
+**Čas u projetých zastávek** má volbu: nezobrazovat (nově výchozí) · zobrazit (dosavadní chování).
+
+- **Proč byly záporné:** časy jsou počítané od vývěskové zastávky, takže u zastávek, které spoj už
+  projel, vycházejí do minulosti. Klient to označil za neplatný údaj a měl pravdu.
+- **Třetí volba „skrýt jen záporné" při review vypadla** - u projeté zastávky jiný než záporný čas
+  z dat nevznikne (ani v AD, ani v MHD), takže se chovala shodně s „nezobrazovat" a byla to jen
+  volba navíc v panelu.
+- Značka „projíždí bez stání" zůstává - není to čas.
+- Řeší se v prvku, ne na serveru: je to volba zobrazení a data zůstávají beze změny (gold parita).
+
+**Barva z dat u zastávek a odjezdů (#12997).** V editoru sloupců jde barva textu i pozadí zapsat
+textem, takže tam lze zadat `{BARVA_LINKY}` - dosud byl jen výběr barvy, který barvu z dat nabídnout
+neumí. Sdílené s odjezdy, linkovou i dynamickou tabulkou (jeden editor). Nesmyslný zápis se do
+šablony nedostane, stejně jako u formulářových polí.
+
+- U barev záhlaví a buněk se v panelu nově ukazuje nápověda, že jde zadat `{BARVA_LINKY}` - dosud
+  ji měl jen rámeček, text a obdélník, takže se o té možnosti u tabulek nedalo dozvědět.
+- **Zbývá mimo návrhář:** klient chce v jízdním řádu **dvě** barvy linky (zvlášť text, zvlášť
+  pozadí). Dnes je uložená jedna (`GetBarvaLinky` → jedno RGB), takže ji lze použít buď na text,
+  nebo na pozadí. Druhá barva je práce na straně JŘ, ne návrháře.
+
+.NET 526/526 (+16), Caché 45/45. Formulář prvku ověřen proti serveru.
+
+**Návrh k rozhodnutí (z review 31. 7.):** čáry a mřížka tabulky by měly být **jedno API napříč všemi
+tabulkovými prvky** - dnes jsou dva nesourodé světy (prvky JŘ mají barvu mřížky a přepínače čar,
+pevná a dynamická tabulka mají volbu „které čáry", ale barvu i tloušťku zadrátovanou v kódu).
+Zaevidováno jako `B40`.
+
 ## 2026-07-31 - #10660 DPKV uzavřen (grafické připomínky po importu z legacy)
 
 Poslední otevřený zákaznický tiket zastávkového JŘ. Klient hlásil čtyři oblasti a u tří z nich šlo

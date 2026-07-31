@@ -5,8 +5,9 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B28** (odpověď BBSK bez vývoje) a dál Vlnou 0 - KOVED kreslí vývěsky
-> v návrháři naostro a fronta se znovu naplnila. Linkový JŘ (**B10**, **B13**) jde až po ní.
+> **▶ Další session:** **B28** (odpověď BBSK bez vývoje) nebo **B29** (ověřit ohlášený chybný
+> výstup) a dál Vlnou 0 - KOVED kreslí vývěsky v návrháři naostro a fronta se znovu naplnila.
+> `B30` + `B31` hotové 31. 7. Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
@@ -40,11 +41,8 @@ ne odbavit nejhezčí featuru.
 |---|---|---|---|
 | **B28** | **#13070 BBSK - jen odpověď, vše umíme.** Ptají se, jak do šablony dostat variantní trasy (zacházky) a jak přepnout vývěsku na výšku. ⚠️ Píšou „TISK JŘ MHD" (= městská doprava), ale data vedou v **JR/AD** (MHD modul mají jen DPCB/DPKV) → mají k dispozici: orientaci ve vlastnostech stránky · variantní sloupce časů + písmena u odjezdů (hotové 27. 7.) · automatické poznámky rozdílů tras, které se zapínají **u linky v JŘ**, ne v šabloně · výchozí zastávkovou AD šablonu v distribuci. Ta „šablona s a/b/c", kterou si pamatují, je starý modul. | S | odpověď s návodem (kde se co zapíná), případně krátký hovor → zavřít |
 | **B29** | **#13045a - ověřit ohlášený chybný výstup:** v nedělním sloupci vidí sobotní odjezdy a u spojů značku „6", i když ji nadpis sloupce už říká. Koncept vlastních skupin dnů = `B39`. | S | doložit na jejich lince (oprava, nebo vysvětlení, proč to tak je) + tiket zúžit na `B39` |
-| **B30** | **#13091a - vzhled seznamu zastávek:** nastavitelná velikost / tvar / tloušťka a přerušení šipky směru, svislé linky mezi sloupci (tloušťka, přerušení, barva), u projetých zastávek netisknout záporné časy (radši nic). | S | klient vidí ve své vývěsce |
-| **B31** | **#12997 - dotáhnout barvu linky z dat:** `{BARVA_LINKY}` půjde od příští verze do textu i pozadí, ale **u zastávek a odjezdů se barva zadat nedá** (editor sloupců nemá textový vstup na barvu) - to je nález Fáze B z 30. 7. Plus chtějí zvlášť barvu čísla linky a zvlášť pozadí. | S–M | klient obarví číslo linky hodnotou z dat |
 | **B32** | **#13089 - tvar názvu zastávky jako volba:** plný CIS tvar s dvojčárkou (technické exporty, soutěže) · bez dvojčárky · **typograficky vylepšený** („Zlín, aut. nádr." - mezera za čárkou a tečkou, pokud dál nenásleduje číslice). Plus vypnutelný alternativní MHD název. Jedno pravidlo pro všechna textová pole agendy, ne jen pro seznam zastávek. | S–M | KOVED potvrdí tvar na svých linkách |
 | **B33** | **#13008 - popis dopravce:** každý dopravce na vlastní řádek, volitelně výčet spojů, před popisem celé číslo linky dle licence, bez našeho uvozujícího „Zajišťuje". Část pro souhrnné JŘ závisí na #13099 (mimo TD). | S–M | klient si popis složí bez ručních úprav |
-| **B34** | **#13091b - zóny:** dnes se plní jen z trasy linky (ne z nastavení konkrétní zastávky) a tiskne se písmeno přepravního systému místo čísla zóny z číselníku. Zóny jsou proti legacy ověřené, tohle je jiný zdroj → nesmí rozbít gold paritu. | S–M | číslo zóny odpovídá číselníku na jejich datech |
 | **B35** | **#13088 - nová pole agendy:** CIS čísla zastávek (výchozí / aktuální / cílová) · **číslo sloupku** (pro ně jiný údaj než označník, který už máme - nejdřív s JŘ vyjasnit, co v datech je) · výlukové texty jako oddělené pole (do CIS chodí jako poznámka „Výluka: …", na vývěsce je chtějí zvlášť). | M | pole jsou v nabídce agendy a plní se |
 | **B36** | **#13093a - poznámky, snadná část:** textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec (linkový JŘ je čte) - druhý blok poznámek si klient složí sám, filtr podle typu poznámky legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků poznámek nad sebou bez ručního dopočítávání výšky |
 | **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
@@ -61,6 +59,8 @@ prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
 
 | # | Blok | Vel. |
 |---|---|---|
+| **B41** | **Jedno místo pro nastavení, které řídí parametr sestavy** (nález Jan 31. 7. při klikání `B30`). Parametr sestavy **vyhrává** nad vlastností prvku, kdykoli ho agenda posílá - a JŘ ho posílají vždy, takže checkbox na prvku je u těchto věcí **mrtvé UI**: „Projeté zastávky" (`TISK_PROJETYCH_ZAST`) · „Šipka směru" (`TISK_SIPKY`) · „Časová osa" (`CASOVA_OSA`) · „Hodiny od/do" (`HODINY_OD`/`DO`) · „Roztáhnout na výšku" (`ROZTAHNOUT_NA_VYSKU`). Z téhle dvojkolejnosti vznikla hlášení `B22`/`B24`. Vlastnost v modelu **zůstává** (výchozí hodnota + náhled bez dat); jde o editaci: buď pole v prvku **skrýt**, když ho agenda řídí parametrem (doporučeno - mapa „parametr → pole" na klientovi, který parametry agendy zná; bez změny kontraktu), nebo ho nechat a jen doplnit nápovědu. **Rozhodnout variantu.** | M |
+| **B40** | **Čáry a mřížka tabulky jako jedno API napříč tabulkovými prvky** (rozhodnuto 31. 7. při review `B30`). Dnes jsou dva nesourodé světy: prvky JŘ mají barvu mřížky + přepínače „které čáry" per prvek, kdežto pevná a dynamická tabulka mají volbu **které** čáry (žádné / vnější / vše / řádky / sloupce), ale **barvu i tloušťku zadrátovanou v kódu** (`0xFFCCCCCC`, 0,5 px) - uživatel je nezmění vůbec. Sjednotit kompozicí (jeden objekt „mřížka": které čáry · barva · tloušťka mm · styl) použitý všemi pěti tabulkovými prvky, jedno místo pro paint. Vedlejší efekt: tabulky dostanou nastavitelnou barvu a tloušťku čar. Migrace stávajících vlastností (`gridColor`, `showRowSeparators`, `borderStyle`) → nový objekt. | M |
 | **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M |
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M |
@@ -142,6 +142,16 @@ při scope té fáze, ne teď.
 
 - **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení - kolega
 - **#13048 bod 4 fáze 2** (duplikace řádku u víc nástupišť) - čeká potvrzení KOVED
+- **#13091a `B30` + #12997 `B31` implementováno 31. 7.** - čeká, až to KOVED uvidí ve své vývěsce
+  (vzhled seznamu zastávek, barva linky z dat u sloupců)
+- **#13091 bod 4 (zóny) `B34` doportováno 31. 7.** - čekají tři odpovědi od KOVED, bez nich to nemá
+  smysl dál posouvat: (1) má mít zastávka přednost i tam, kde trasa zónu má? (starý modul dává
+  přednost trase - přehození by nás rozešlo s JDF a exporty) · (2) mají u linky zapnuté „Zóny - tisk
+  a export do JDF bez písmen"? (bez toho písmeno zůstane) · (3) číslo linky a zastávky, kde to vidí
+  špatně - ověří, že jejich kód zóny je „číslo + písmeno", ne jiný identifikátor
+- **#12997 zbytek je na straně JŘ, ne návrháře:** klient chce u linky **dvě** barvy (zvlášť číslo
+  linky, zvlášť pozadí), dnes se ukládá jedna (`GetBarvaLinky` → jedno RGB). Návrhář obojí umí
+  zobrazit, jakmile data druhou barvu ponesou - postrčit Petra
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
   jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
   (který sloupec - legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
@@ -150,7 +160,8 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**Kolo KOVED z 30. 7. drží Vlna 0** (`B28`-`B37`) **+ Vlna 3** (`B38`, `B39`) - sem se nekopíruje.
+**Kolo KOVED z 30. 7. drží Vlna 0** (`B28`, `B29`, `B32`-`B37`) **+ Vlna 3** (`B38`, `B39`) - sem se
+nekopíruje. `B30` a `B31` hotové 31. 7. (archiv).
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
 
@@ -170,12 +181,9 @@ při scope té fáze, ne teď.
 
 Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
 
-**Nález 2026-07-30 (S, bez poptávky nebrat):** u **zastávek a odjezdů** se pozadí a barva textu
-záhlaví/buněk nedají nastavit jinde než po jednotlivých sloupcích - pole „Pozadí záhlaví" / „Pozadí
-buněk" jim v tabu Obecné chybí (legenda poznámek i linková tabulka je mají). Podle `CLAUDE.md` mají
-být 4 základní barvy zón dostupné napříč tabulkovými prvky, takže to vypadá na drift z migrace na
-formuláře. Důsledek navíc: barvu z dat (`{BARVA_LINKY}`) tam nelze zadat vůbec, protože editor
-sloupců textový vstup na barvu nemá (rozhodnuto 30. 7. nechat - doplnit až s poptávkou).
+*(Nález z 30. 7. o chybějících barvách zón u zastávek a odjezdů byl při `B31` (31. 7.) **vyvrácen** -
+pole tam jsou, jen pod jinými popisky; skutečná mezera byl textový zápis barvy a ta je opravená.
+Detail v archivu roadmapy.)*
 
 **Fixní (statická) tabulka - implementace odložena na poptávku faktur / F3.** Analýza 2026-07-12
 rozhodla „koncept implementovat" (tabulka dává reflow podmíněných řádků, auto výšku řádku a
