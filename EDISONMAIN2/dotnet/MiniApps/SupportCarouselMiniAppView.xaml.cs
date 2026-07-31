@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
-// Aliasy proti ambient System.Windows.Forms/Drawing (UseWindowsForms je zapnuté pro FontDialog).
+// Aliasy proti ambient System.Windows.Forms/Drawing (UseWindowsForms je zapnuté pro WinForms color picker).
 using Point = System.Windows.Point;
 using UserControl = System.Windows.Controls.UserControl;
 

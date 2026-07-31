@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using EDControls.EDViewModel;
-// Aliasy proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
+// Aliasy proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using Application = System.Windows.Application;
 
 namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;

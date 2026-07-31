@@ -7,8 +7,9 @@ using FontFamily = System.Windows.Media.FontFamily;
 namespace EDControls.UserFonts;
 
 /// <summary>
-/// Vypočtené font nastavení z user preferencí. Oba <c>null</c> = nepoužít user override,
-/// fallback na default tokeny v <c>EDTheme.xaml</c>. Internal — implementační detail pro testy.
+/// Vypočtené font nastavení z user preferencí. <c>FontSize</c> je už v px (WPF FontSize),
+/// prefs jsou v pt. Oba <c>null</c> = nepoužít user override, fallback na default tokeny
+/// v <c>EDTheme.xaml</c>. Internal — implementační detail pro testy.
 /// </summary>
 internal record FontSettings(string? FontFamily, double? FontSize);
 
@@ -35,6 +36,16 @@ public static class FontService
     private const string FontSizePrefix = "EDTheme.FontSize.";
     private const string IconSizePrefix = "EDTheme.IconSize.";
 
+    // WPF FontSize je v device-independent px (1/96"), user prefs (a legacy EDISON,
+    // a každý font picker) mluví v pt (1/72"). Konverze žije jen tady — jinde se
+    // nesmí objevit, jinak se past vrátí.
+    internal const double PtToPx = 96.0 / 72.0;
+
+    // Rozsah smysluplné Body velikosti v pt. Chrání proti ručně editovanému font.json
+    // (velikost 200 nebo 0 = nepoužitelné UI bez cesty zpět přes menu).
+    internal const double MinBodyPt = 7;
+    internal const double MaxBodyPt = 24;
+
     // Tokeny škálované proporcionálně k user Body size — font velikosti i rozměry ikon.
     // Odvozeno z EDTheme.xaml (jediný zdroj pravdy): nový FontSize.* / IconSize.* se propíše
     // bez ruční editace tady. Pořadí nehraje roli: každý klíč se škáluje nezávisle vůči Body.
@@ -47,14 +58,18 @@ public static class FontService
     /// <summary>
     /// Vypočte settings z prefs. <c>FontApplied=true</c> a non-empty <see cref="UserFontPreference.FontFamily"/>
     /// vrátí ne-null hodnoty; cokoli jiného vrátí oba null (= nepoužít user override).
+    /// Velikost se převádí z pt na px a clampuje na <see cref="MinBodyPt"/>..<see cref="MaxBodyPt"/>.
     /// Internal — implementační detail vystavený testům přes <c>InternalsVisibleTo</c>.
     /// </summary>
     internal static FontSettings ComputeFromPrefs(UserFontPreference prefs)
     {
         if (prefs.FontApplied && !string.IsNullOrEmpty(prefs.FontFamily))
-            return new FontSettings(prefs.FontFamily, prefs.FontSize);
+            return new FontSettings(prefs.FontFamily, ToPx(prefs.FontSize));
         return new FontSettings(null, null);
     }
+
+    private static double? ToPx(double? sizePt) =>
+        sizePt is { } pt ? Math.Clamp(pt, MinBodyPt, MaxBodyPt) * PtToPx : null;
 
     /// <summary>
     /// Vyvolá se po každém <see cref="Apply"/> — pokrývá in-process změnu (menu Styl)
@@ -63,11 +78,19 @@ public static class FontService
     /// </summary>
     public static event Action? Applied;
 
-    /// <summary>Aktuální efektivní Body velikost — user override, jinak default z EDTheme.xaml.</summary>
+    /// <summary>Aktuální efektivní Body velikost **v px** — user override, jinak default z EDTheme.xaml.</summary>
     public static double BodySize => ComputeBodySize(UserFontPreference.Current);
 
+    /// <summary>
+    /// Výchozí Body velikost **v pt** — odvozená z tokenu v <c>EDTheme.xaml</c>, aby se
+    /// číslo neduplikovalo v UI. Dialog nastavení fontu z ní staví popisek „(výchozí)".
+    /// </summary>
+    public static double DefaultBodyPt => DefaultBodyPx / PtToPx;
+
+    private static double DefaultBodyPx => (double)ThemeDefaults["EDTheme.FontSize.Body"];
+
     internal static double ComputeBodySize(UserFontPreference prefs) =>
-        ComputeFromPrefs(prefs).FontSize ?? (double)ThemeDefaults["EDTheme.FontSize.Body"];
+        ComputeFromPrefs(prefs).FontSize ?? DefaultBodyPx;
 
     /// <summary>
     /// Aplikuje settings z prefs overridem tokenů v <see cref="Application.Resources"/>.
@@ -88,9 +111,8 @@ public static class FontService
         {
             // Scaling: user dává Body, ostatní fonty i ikony proporcionálně (zachová UI ratio
             // dle defaultů v EDTheme.xaml — žádná duplicita konstant).
-            var defaultBody = (double)ThemeDefaults["EDTheme.FontSize.Body"];
             foreach (var key in ScaledSizeKeys)
-                resources[key] = body * (double)ThemeDefaults[key] / defaultBody;
+                resources[key] = body * (double)ThemeDefaults[key] / DefaultBodyPx;
         }
         else
         {

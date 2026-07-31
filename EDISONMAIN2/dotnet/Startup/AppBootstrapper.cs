@@ -16,7 +16,7 @@ using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
 using static ALVA.EDISONAPI.Database;
-// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
+// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using Application = System.Windows.Application;
 
 namespace EDISONMAIN2;

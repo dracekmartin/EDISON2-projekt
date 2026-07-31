@@ -6,7 +6,7 @@ using EDControls.EDTheme;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
+// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using DataObject = System.Windows.DataObject;
