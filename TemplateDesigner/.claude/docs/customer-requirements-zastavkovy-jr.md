@@ -60,11 +60,12 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 > Jedno místo: co je hotové (→ otestovat → zavřít na helpdesku), co malé/velké zbývá. Detaily v sekcích níže.
 > **Legenda:** ✅ hotovo (AD) · 🧪 hotovo, ověřit u klienta · 🟢 malé zbývá · 🟠 velké zbývá (analýza/data) ·
 > ⬜ MHD-port (AD hotové, MHD ne) · ➖ mimo TD / mimo scope.
-> ⚠️ Featury jsou vyřešené primárně pro **AD** agendu; MHD-port jen na reálnou potřebu.
-> **Self-contained MHD modul používá jen DPKV** (upřesněno Janem 31. 7. 2026) - „MHD" ve slovníku
-> zákazníka i kolegů znamená obvykle **vývěskový (zastávkový) JŘ**, ne náš MHD modul, a drtivá většina
-> zákazníků na něm nejede. Než se něco označí za MHD práci, ověř, na kterých datech zákazník jede
-> (např. #13070 BBSK psal „TISK JŘ MHD" a jde o AD).
+> ⚠️ Featury jsou vyřešené primárně pro **AD** agendu; MHD-port jen na reálnou potřebu (DPCB/DPKV).
+> **Past na routování práce** (upřesněno Janem 31. 7. 2026): self-contained MHD modul mají **jen DPCB
+> a DPKV**, všichni ostatní vedou jízdní řády v modulu **JR (= AD)** - i městskou dopravu. Zákazník
+> proto napíše „MHD", protože jde o městskou dopravu v nějakém městě, ale datově je to AD. Než se něco
+> označí za MHD práci, **ověř, ve kterém modulu zákazník data vede** (např. #13070 BBSK psal
+> „TISK JŘ MHD" a jde o AD).
 
 ### 0.1 Tikety (helpdesk)
 
@@ -197,14 +198,14 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
     Per-směr = nutná změna zdroje (per-směr pole) + editor.
   - **Per-Tč pásmo vývěsu** - neřešeno.
   - **MHD strana** - `ZastavkoveJrMhdAPI` má pořád hardcoded `s odsazeni = 0` („legacy: dta 10" v `ALVA.MHD.ZST`).
-    Relevantní jen pro self-contained MHD (DPKV), ne TRANSDEV.
+    Relevantní jen pro self-contained MHD (DPCB/DPKV), ne TRANSDEV.
 - **Render caveat:** mezery jsou proporcionální (počet mezer = počet znaků); kdyby vizuál nesedel s legacy, přepočet na pevnou šířku.
 
 ### A6. ✅ Hotovo (2026-06-20) - ověřeno na úrovni kódu pro AD; klient potvrdí na svých datech
 
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7959
 - **Upřesnění agendy:** TRANSDEV jezdí primárně **linkovou (AD)** + lokální MHD; **self-contained MHD
-  modul používá jen DPKV**. Tiket se proto týká **AD agendy** (`ZastavkoveJrAd`), ne MHD modulu.
+  modul mají jen DPCB/DPKV**. Tiket se proto týká **AD agendy** (`ZastavkoveJrAd`), ne MHD modulu.
 - **Citace:** *„Mám linku, která má druhou zastávku pro školní spoj... Ovšem z první zastávky na tuto druhou zastávku žádný spoj nepojede. Potřeboval bych, aby zastávka nebyla v seznamu zastávek, pokud není aktuální."*
 - **Stav v AD - obě chování implementovaná a aktivní:**
   - **(a) StopList filtr** - neobsluhovaná zastávka se nepřidá do seznamu: `ZastavkoveJrAd:296`
