@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-07-31 (8) - `B33` popis dopravce po řádcích, i pro souhrnný JŘ (#13008)
+
+Dosud se dopravci tiskli jako **jeden odstavec** uvozený „Zajišťuje: " a oddělený čárkami. KOVED
+potřebuje hlavičku jako na svém vzoru: řádek na dopravce, před ním číslo linky dle licence, za ním
+výčet spojů - a bez našeho uvození, protože si úvodní větu píší sami.
+
+Nové pole agendy **Dopravci souhrnného JŘ** (`DOPRAVCI_SOUHRNNY_JR`) skládá:
+
+```
+Linka 802170 | ČSAD BUS Uherské Hradiště a.s., …, provoz Uh. Hradiště, tel. …, spoje č. 1-31, 201-204
+Linka 802170 | ČSAD BUS Uherské Hradiště a.s., …, provoz Uh. Brod, tel. …, spoje č. 51
+Linka 803170 | ARRIVA autobusy a.s., …, provozovna Zlín, tel. …, spoje č. 71-75, 271-273
+```
+
+- **Čísla spojů se stlačují do rozsahů** („1-31, 201-204"); dvojice zůstává výčtem („1, 2"), čte se
+  lépe. Vypnout je lze parametrem **Výčet spojů u dopravce**.
+- **Funguje i pro souhrnný jízdní řád**, kde jednu vývěskovou linku obsluhuje víc dopravců pod
+  různými licencemi: řádky se seskupují podle **(licenční linka → dopravce → provoz)** a licenční
+  číslo se bere **od spoje** („Zdroj spoje"), ne od linky. Uložený je index linky = číslo doplněné
+  nulami na 7 znaků, převod je 1:1 s legacy (`cnvIndLin`).
+- **Na obyčejné lince se nic nezměnilo** - zdroj spoje je prázdný, takže vznikne jedna skupina
+  a platí číslo té linky. Zlaté odtisky to potvrzují: shodné počty, mění se jen md5 (nové pole).
+- `POPIS_DOPRAVCE` zůstává nedotčené, aby existující šablony nezměnily tvar.
+
+⚠️ **Souhrnná větev je ověřená jen syntetickými vstupy** - v žádné testovací firmě souhrnná linka
+není (v datech KOVED je u spojů vyplněná *návaznost*, ne zdroj spoje). První reálné potvrzení přijde
+od zákazníka.
+
+**Poučení k zlatým odtiskům:** posun digestu jsem nejdřív přečetl jako úbytek poznámek (110 → 96)
+a hodinu hledal neexistující chybu. Ta hodnota byla mezitím přebaselinovaná v #13045; skutečná změna
+byla jen md5. Do testu proto přidán postup: **nejdřív porovnat složky digestu** - shodné počty +
+jiné md5 = přidané/přejmenované pole, ne změna chování.
+
+Caché 60/60 (+9), .NET 536/536.
+
 ## 2026-07-31 (7) - `B32` tvar názvu zastávky jako volba sestavy (#13089)
 
 KOVED viděl na vývěsce „Zlín,aut.nádr." a chtěl si vybrat, jak má název vypadat. Nově jsou v

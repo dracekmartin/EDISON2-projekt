@@ -38,6 +38,25 @@ Podstatná zjištění, která z toho vypadla a platí dál:
   neproběhaná - neslibovat ji bez zkoušky.
 - Sonda pro výběr ukázkové linky se zacházkami = `AdVariantyProbe.ScanZachazky`.
 
+## 2026-07-31 ✅ - `B33` popis dopravce po řádcích, i pro souhrnný JŘ (#13008)
+
+Detail → changelog 2026-07-31 (8). Nové pole **`DOPRAVCI_SOUHRNNY_JR`**: řádek na dopravce × provoz,
+před ním licenční číslo linky, za ním výčet spojů stlačený do rozsahů; bez uvozujícího „Zajišťuje".
+`POPIS_DOPRAVCE` zůstalo nedotčené (visí na něm šablony i zlaté odtisky).
+
+- **Blok nebyl gated na #13099, jak roadmapa tvrdila.** #13099 řeší **vytváření** souhrnných linek
+  v EDISONu (dnes ručně v Excelu); tisk hlavičky na nich nezávisí. Seskupení podle
+  **(licenční linka → dopravce → provoz)** obslouží obojí jedním kódem.
+- **Licenční číslo se u souhrnné linky bere od spoje** („Zdroj spoje", `#`-pole 3 = `index~spoj`).
+  Index je číslo linky doplněné nulami na 7 znaků → převod `$e(index,2,7)`, 1:1 legacy `cnvIndLin`.
+  Bez zdroje (obyčejná linka) platí číslo té linky = dosavadní chování, zlaté odtisky beze změny.
+- ⚠️ **Souhrnná větev je ověřená jen syntetickými vstupy** - souhrnná linka v testovacích firmách
+  není; v datech KOVED je u spojů *návaznost*, ne zdroj spoje. Reálné potvrzení až od zákazníka.
+- **Jméno pole podle účelu** (rozhodnutí Jan): popisuje scénář, ne obsah. Padlo to až ve chvíli, kdy
+  byla souhrnná větev hotová - jinak by jméno slibovalo víc, než kód dělá.
+- **Poučení k zlatým odtiskům** zapsané přímo do testu: u posunu digestu nejdřív porovnat jeho
+  složky. Shodné počty + jiné md5 = přidané pole, ne změna chování (na tuhle past jsem najel).
+
 ## 2026-07-31 ✅ - `B32` tvar názvu zastávky jako volba sestavy (#13089)
 
 Detail → changelog 2026-07-31 (7). Dvě volby v **nové skupině parametrů „Obecné"**: tvar názvu

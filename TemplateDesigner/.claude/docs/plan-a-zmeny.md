@@ -50,6 +50,10 @@ Dílčí vylepšení a náměty.
 - **Barva linky z jízdního řádu i v jednotlivých sloupcích** - v editoru sloupců jde barva textu
   i pozadí zapsat textem, takže lze zadat `{BARVA_LINKY}` a barva se vezme z jízdního řádu.
   Platí pro zastávky, odjezdy i tabulky.
+- **Dopravci po řádcích** - nové pole **Dopravci souhrnného JŘ**: každý dopravce (a provoz) na
+  vlastním řádku, před ním číslo linky dle licence, za ním výčet spojů, které jezdí („spoje č. 1-31,
+  201-204"). Určené pro souhrnné jízdní řády, kde jednu linku obsluhuje více dopravců; použitelné
+  i na běžné lince. Výčet spojů lze vypnout parametrem.
 - **Tvar názvu zastávky** - nová volba v parametrech sestavy (skupina Obecné): zkrácený (dosavadní),
   typograficky upravený s mezerami za čárkou a tečkou („Zlín, aut. nádr."), plný tvar podle CIS
   s dvojčárkou, případně i s okresem - poslední dva pro technické exporty. Druhou volbou lze vypnout

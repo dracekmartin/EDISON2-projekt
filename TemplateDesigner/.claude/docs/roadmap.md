@@ -5,7 +5,7 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B33** (popis dopravce) a dál Vlnou 0 - KOVED kreslí vývěsky
+> **▶ Další session:** **B35** (nová pole agendy) a dál Vlnou 0 - KOVED kreslí vývěsky
 > v návrháři naostro a fronta se znovu naplnila. `B28`-`B31` + `B34` hotové 31. 7.
 > Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
@@ -39,14 +39,13 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B33** | **#13008 - popis dopravce:** každý dopravce na vlastní řádek, volitelně výčet spojů, před popisem celé číslo linky dle licence, bez našeho uvozujícího „Zajišťuje". Část pro souhrnné JŘ závisí na #13099 (mimo TD). | S–M | klient si popis složí bez ručních úprav |
 | **B35** | **#13088 - nová pole agendy:** CIS čísla zastávek (výchozí / aktuální / cílová) · **číslo sloupku** (pro ně jiný údaj než označník, který už máme - nejdřív s JŘ vyjasnit, co v datech je) · výlukové texty jako oddělené pole (do CIS chodí jako poznámka „Výluka: …", na vývěsce je chtějí zvlášť). | M | pole jsou v nabídce agendy a plní se |
 | **B36** | **#13093a - poznámky, snadná část:** textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec (linkový JŘ je čte) - druhý blok poznámek si klient složí sám, filtr podle typu poznámky legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků poznámek nad sebou bez ručního dopočítávání výšky |
 | **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
 
 **Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):** **#13099** souhrnné JŘ (sdružení
 linek se stejným koncovým trojčíslím pod vzorovou linku - dnes ručně skriptem v Excelu; pro KOVED
-podmínka přesunu tvorby vývěsek do EDISONu, částečně blokuje `B33`) · **#13102** virtuální
+podmínka přesunu tvorby vývěsek do EDISONu; tisk hlavičky dopravců pro souhrnné JŘ je hotový `B33`) · **#13102** virtuální
 prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
 **#13098** je můj sběrný tiket - dnes v něm visí jen odsazení zastávky per směr = `B12` / #7937.
 
@@ -169,7 +168,7 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**Kolo KOVED z 30. 7. drží Vlna 0** (`B33`, `B35`-`B37`; `B28`-`B32`, `B34` a `B38` hotové) **+ Vlna 3**
+**Kolo KOVED z 30. 7. drží Vlna 0** (`B35`-`B37`; `B28`-`B34` a `B38` hotové) **+ Vlna 3**
 (`B39`) - sem se nekopíruje.
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
