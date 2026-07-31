@@ -1,12 +1,12 @@
 # Roadmap
 
-> **Stav k 2026-07-31** (helpdeskové kolo dojeté - #7947, #7955, #7959, #13048 i #10660 zavřené;
-> zastávkový JŘ nemá otevřený zákaznický tiket; verze připravena k publish).
+> **Stav k 2026-07-31** (předchozí kolo dojeté - #7947, #7955, #7959, #13048 i #10660 zavřené;
+> **30. 7. přišlo nové kolo zpětné vazby KOVED/IDZK** - 9 tiketů, viz Vlna 0).
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky) -
-> helpdeskovou frontu máme prázdnou, takže poprvé jde plná pozornost na linkový JŘ.
+> **▶ Další session:** **B28** (odpověď BBSK bez vývoje) a dál Vlnou 0 - KOVED kreslí vývěsky
+> v návrháři naostro a fronta se znovu naplnila. Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
@@ -29,6 +29,34 @@ changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde
 
 ---
 
+## 🌊 Vlna 0 - zákaznická fronta KOVED/IDZK (kolo 30. 7. 2026)
+
+KOVED (IDZK, Lábsky) začal vývěsky kreslit v návrháři naostro a poslal zpětnou vazbu po blocích.
+Většina je doladění toho, co už tiskneme (vzhled, tvar textu, chybějící pole); dva body jsou velké
+koncepty a leží ve Vlně 3. Řazeno **od nejrychleji zavíratelného** - cíl je zmenšit počet tiketů,
+ne odbavit nejhezčí featuru.
+
+| # | Blok | Vel. | Uzavírací podmínka |
+|---|---|---|---|
+| **B28** | **#13070 BBSK - jen odpověď** (jak se v šabloně řeší variantní trasy / zacházky a jak přepnout vývěsku na výšku; obojí návrhář umí). Nula vývoje. | S | odpověď s postupem, případně krátký hovor → zavřít |
+| **B29** | **#13045a - ověřit ohlášený chybný výstup:** v nedělním sloupci vidí sobotní odjezdy a u spojů značku „6", i když ji nadpis sloupce už říká. Koncept vlastních skupin dnů = `B39`. | S | doložit na jejich lince (oprava, nebo vysvětlení, proč to tak je) + tiket zúžit na `B39` |
+| **B30** | **#13091a - vzhled seznamu zastávek:** nastavitelná velikost / tvar / tloušťka a přerušení šipky směru, svislé linky mezi sloupci (tloušťka, přerušení, barva), u projetých zastávek netisknout záporné časy (radši nic). | S | klient vidí ve své vývěsce |
+| **B31** | **#12997 - dotáhnout barvu linky z dat:** `{BARVA_LINKY}` půjde od příští verze do textu i pozadí, ale **u zastávek a odjezdů se barva zadat nedá** (editor sloupců nemá textový vstup na barvu) - to je nález Fáze B z 30. 7. Plus chtějí zvlášť barvu čísla linky a zvlášť pozadí. | S–M | klient obarví číslo linky hodnotou z dat |
+| **B32** | **#13089 - tvar názvu zastávky jako volba:** plný CIS tvar s dvojčárkou (technické exporty, soutěže) · bez dvojčárky · **typograficky vylepšený** („Zlín, aut. nádr." - mezera za čárkou a tečkou, pokud dál nenásleduje číslice). Plus vypnutelný alternativní MHD název. Jedno pravidlo pro všechna textová pole agendy, ne jen pro seznam zastávek. | S–M | KOVED potvrdí tvar na svých linkách |
+| **B33** | **#13008 - popis dopravce:** každý dopravce na vlastní řádek, volitelně výčet spojů, před popisem celé číslo linky dle licence, bez našeho uvozujícího „Zajišťuje". Část pro souhrnné JŘ závisí na #13099 (mimo TD). | S–M | klient si popis složí bez ručních úprav |
+| **B34** | **#13091b - zóny:** dnes se plní jen z trasy linky (ne z nastavení konkrétní zastávky) a tiskne se písmeno přepravního systému místo čísla zóny z číselníku. Zóny jsou proti legacy ověřené, tohle je jiný zdroj → nesmí rozbít gold paritu. | S–M | číslo zóny odpovídá číselníku na jejich datech |
+| **B35** | **#13088 - nová pole agendy:** CIS čísla zastávek (výchozí / aktuální / cílová) · **číslo sloupku** (pro ně jiný údaj než označník, který už máme - nejdřív s JŘ vyjasnit, co v datech je) · výlukové texty jako oddělené pole (do CIS chodí jako poznámka „Výluka: …", na vývěsce je chtějí zvlášť). | M | pole jsou v nabídce agendy a plní se |
+| **B36** | **#13093a - poznámky, snadná část:** textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec (linkový JŘ je čte) - druhý blok poznámek si klient složí sám, filtr podle typu poznámky legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků poznámek nad sebou bez ručního dopočítávání výšky |
+| **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
+
+**Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):** **#13099** souhrnné JŘ (sdružení
+linek se stejným koncovým trojčíslím pod vzorovou linku - dnes ručně skriptem v Excelu; pro KOVED
+podmínka přesunu tvorby vývěsek do EDISONu, částečně blokuje `B33`) · **#13102** virtuální
+prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
+**#13098** je můj sběrný tiket - dnes v něm visí jen odsazení zastávky per směr = `B12` / #7937.
+
+---
+
 ## 🌊 Vlna 1 - zákaznické velké + odemknout linkový
 
 | # | Blok | Vel. |
@@ -48,6 +76,17 @@ changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde
 
 L‑4 stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem
 řádků, ne pětkrát v per-element smyčkách.
+
+---
+
+## 🌊 Vlna 3 - velké koncepty z kola KOVED
+
+Dva body z fronty Vlny 0, které nejsou doladění - každý chce vlastní plánování.
+
+| # | Blok | Vel. | Pozn. |
+|---|---|---|---|
+| **B38** | **#13097 rozdělení seznamu zastávek na pokračování** - seznam vč. všech sloupců rozřezat do několika oddílů. Je to **tentýž mechanismus jako `B13`** (rozřezání široké tabulky u linkového JŘ) → gated na něj, ať se nepíše dvakrát. | L | dělat s `B13`, ne zvlášť |
+| **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období, a značky, které nadpis sloupce už říká, se netisknou; výjimka u spoje značku zobrazit má. Mění datový model + chce editor. | L | nejdřív `B29` (ověřit dnešní chybu), pak koncept |
 
 ---
 
@@ -110,6 +149,8 @@ při scope té fáze, ne teď.
 ### Reálná zbývající práce
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
+
+**Kolo KOVED z 30. 7. drží Vlna 0** (`B28`-`B37`) **+ Vlna 3** (`B38`, `B39`) - sem se nekopíruje.
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
 
