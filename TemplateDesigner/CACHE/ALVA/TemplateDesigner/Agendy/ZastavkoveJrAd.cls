@@ -221,6 +221,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) - fresh per request
+        d ..NactiNastaveniNazvu()         // tvar názvu zastávky + „název pro MHD" (platí pro celou sestavu)
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         // Default = první skupina v ^JRL - shodně s GetAvailableInstances. Picker posílá jen
@@ -1730,10 +1731,71 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
 /// Fallback na $2, pokud $7 chybí (nevyplněný odbav název).
 ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 {
+    i czst = "" q ""                 // prázdný subscript (^JRZ("")) = <SUBSCRIPT>
     s rec = $g(^[dataDB]JRZ(czst))
-    s nazev = $p(rec, "$", 7)
+    // Pole 7 = „upravený název pro MHD" (legacy JRapiZst dta13). Má přednost, ale parametrem
+    // sestavy ho lze vypnout - KOVED ho u některých zastávek má a na vývěsce chce CIS název.
+    s nazev = ""
+    i ..PouzitNazevProMhd() s nazev = $p(rec, "$", 7)
     i nazev = "" s nazev = $p(rec, "$", 2)
-    q $replace(nazev, ",,", ",")     // display název: "obec,,místo" → "obec,místo" (legacy collapse; _CIS pole ,, zachovává)
+    q ..FormatNazvuZastavky(nazev, $p(rec, "$", 3), ..TvarNazvuZastavky())
+}
+
+/// Tvar názvu zastávky pro tisk (KOVED #13089). Vstup je název z registru zastávek, kde je
+/// obec a místo oddělené **dvojčárkou** („Zlín,,aut.nádr."). <var>okres</var> = pole 3 registru.
+///
+/// Tvary: prázdný / „Zkrácený" = dvojčárka na jednu (dosavadní chování a výchozí hodnota) ·
+/// „Plný CIS" = dvojčárka zůstane (technické exporty, soutěže) · „Plný CIS s okresem" = a navíc
+/// okres na konci · „Typograficky upravený" = zkrácený + mezera za čárkou a tečkou.
+ClassMethod FormatNazvuZastavky(nazev As %String, okres As %String = "", tvar As %String = "") As %String
+{
+    i nazev = "" ret ""
+    i tvar = "Plný CIS" ret nazev
+    i tvar = "Plný CIS s okresem" ret nazev_$s(okres'="":","_okres, 1:"")
+    s zkraceny = $replace(nazev, ",,", ",")
+    i tvar = "Typograficky upravený" ret ..MezeryPoInterpunkci(zkraceny)
+    ret zkraceny
+}
+
+/// Doplní mezeru za čárku a tečku - „Zlín,aut.nádr." → „Zlín, aut. nádr.". Před číslicí se mezera
+/// nedoplňuje, aby zůstalo „č.1" a desetinná čísla. Záměrně jen pro **názvy zastávek**: na volný
+/// text se pustit nesmí, rozbila by webová adresa („www.idzk.cz" → „www. idzk. cz").
+ClassMethod MezeryPoInterpunkci(txt As %String) As %String
+{
+    s vysledek = ""
+    f i=1:1:$l(txt) {
+        s znak = $e(txt, i)
+        s vysledek = vysledek_znak
+        i (znak '= ",") && (znak '= ".") continue
+        s dalsi = $e(txt, i + 1)
+        i dalsi = "" continue            // konec textu
+        i dalsi = " " continue           // mezera už tam je
+        i dalsi ? 1N continue            // číslice
+        s vysledek = vysledek_" "
+    }
+    ret vysledek
+}
+
+/// Tvar názvu zastávky z parametru sestavy - per požadavek uložený do `^||TiskAd` (nastavuje
+/// `GetData`/`GetMockData`, ať se nemusí protahovat všemi voláními jména).
+ClassMethod TvarNazvuZastavky() As %String
+{
+    ret $g(^||TiskAd("nazev","tvar"))
+}
+
+/// Má se použít „upravený název pro MHD" z registru zastávek? Výchozí ano = dosavadní chování.
+ClassMethod PouzitNazevProMhd() As %Boolean
+{
+    ret $g(^||TiskAd("nazev","mhd"), 1)
+}
+
+/// Přečte nastavení názvů zastávek z parametrů sestavy do `^||TiskAd`. Volá se po úklidu cache
+/// na začátku požadavku, než se začnou skládat jména.
+ClassMethod NactiNastaveniNazvu()
+{
+    s ^||TiskAd("nazev","tvar") = $g(^||ML("IN","TVAR_NAZVU_ZASTAVKY"))
+    // Tolerantně jako ostatní bool parametry (starší klient posílal „True"); prázdné = zapnuto.
+    s ^||TiskAd("nazev","mhd") = ($zcvt($g(^||ML("IN","NAZEV_PRO_MHD")),"L") '= "false")
 }
 
 /// "Číselníkový" (CIS) název zastávky z ^JRZ `$2` - zkrácený, s `,,` zachovaným (1:1 legacy POPIS_ZASTAVKA_CIS dta20).
@@ -1755,6 +1817,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů - fresh per request
+        d ..NactiNastaveniNazvu()
 
         // Živý náhled z první linky aktuální firmy (session dataDB) - zrcadlí reálný GetData.
         d ..PrvniLinka(dataDB, .sku, .lin)
@@ -1880,6 +1943,28 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč - starší klient ignoruje).
     // Konvence: skupina = UI název elementu, který parametr ovlivňuje („Seznam zastávek" /
     // „Mřížka odjezdů" / „Poznámky a legenda"); parametry pro celou šablonu → „Obecné".
+    // „Obecné" je první schválně - je to nastavení celé sestavy, ne jednoho prvku.
+
+    // KOVED #13089: tvar názvu zastávky. Platí pro název všude, kde se objeví (seznam zastávek,
+    // nadpis vývěsky, cíl, texty poznámek), proto „Obecné" a ne „Seznam zastávek".
+    // ⚠️ Výchozí „Zkrácený" = dosavadní chování - jiná výchozí hodnota by pohnula zlatými odtisky.
+    s pTvarNaz = ##class(%DynamicObject).%New()
+    s pTvarNaz.name         = "TVAR_NAZVU_ZASTAVKY"
+    s pTvarNaz.label        = "Tvar názvu zastávky"
+    s pTvarNaz.type         = "enum"
+    s pTvarNaz.group        = "Obecné"
+    s pTvarNaz.defaultValue = "Zkrácený"
+    s pTvarNaz.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek, s okresem i jeho zkratku - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
+    s optsTN = ##class(%DynamicArray).%New()
+    d optsTN.%Push("Zkrácený")
+    d optsTN.%Push("Typograficky upravený")
+    d optsTN.%Push("Plný CIS")
+    d optsTN.%Push("Plný CIS s okresem")
+    s pTvarNaz.options = optsTN
+    d arr.%Push(pTvarNaz)
+
+    d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnutím se použije název podle CIS.")
+
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
     // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník
