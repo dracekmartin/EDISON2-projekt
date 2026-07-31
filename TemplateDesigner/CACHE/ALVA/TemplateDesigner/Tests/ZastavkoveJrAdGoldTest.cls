@@ -24,16 +24,16 @@ Parameter GOLDDB = "CB_CSADAD";
 
 Method TestGold0365001()
 {
-	// Re-baseline 2026-07-31 (#12997, commit 5a93f17): do `values` přibylo pole BARVA_LINKY
-	// (barva linky z JŘ modulu) - počty beze změny, jen md5. Předtím 27. 7. NASTUPISTE_VARIANT.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=110 md5=wqcHRGlFy5NgEPf+PwQ1iw==")
+	// Re-baseline 2026-07-31 (#13045): denní značky týdenní platnosti se přestaly tisknout tam,
+	// kde je říká nadpis sloupce → o 14 řádků legendy méně (pozn 110 → 96), odjezdy beze změny.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=96 md5=nZMVdJcalCm2//Jr3mG0Jw==")
 }
 
 Method TestGold0365005()
 {
-	// Re-baseline 2026-07-31 (#12997, commit 5a93f17): + pole BARVA_LINKY ve `values`
-	// (počty beze změny). Předtím 27. 7. NASTUPISTE_VARIANT, před ním řazení variantních sloupců.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=DnaY+3JpewJ9fibg10cfig==")
+	// Re-baseline 2026-07-31 (#13045): dtto - o 15 řádků legendy méně (pozn 183 → 168),
+	// počty stránek, zastávek i odjezdů beze změny.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=168 md5=MUdA4jeHGlrtHLYPKsovbw==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:
