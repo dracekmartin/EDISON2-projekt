@@ -2303,10 +2303,14 @@ public class TemplateDesignerViewModel : EDViewModel
         // ne ad-hoc tabulky - jako draggable pole jen matou. Parametry se nastavují
         // v preview liště / tiskovém dialogu, ne přetažením. (Rozhodnuto 2026-06-16.)
         var fields = schema?.Fields ?? [];
-        if (fields.Count > 0)
+
+        // Barevná pole se do palety nedávají - přetažením by vznikl text s hexem, což nikdo nechce.
+        // Zadávají se do barevného pole jako {POLE} (nápověda je u těch polí ve formuláři).
+        var textFields = fields.Where(f => f.DataType != FieldDataType.Color).ToList();
+        if (textFields.Count > 0)
             SchemaGroups.Add(new SchemaGroupVM(
-                $"📋 Pole agendy ({fields.Count})",
-                fields.Select(f => new SchemaFieldVM(f.FieldName, f.Label))));
+                $"📋 Pole agendy ({textFields.Count})",
+                textFields.Select(f => new SchemaFieldVM(f.FieldName, f.Label))));
 
         ShowFieldsEmptyState = SchemaGroups.Count == 0;
     }

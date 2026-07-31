@@ -409,6 +409,10 @@ public class PreviewCanvas
                 SectionOriginY = sectionTopPx + originYOffset
             };
 
+            // Barvy z dat („pozadí = barva linky") se čtou z property elementu, kam se DataContext
+            // nedostane - kreslení ho proto na tuto sekci zveřejní přes ColorHex.
+            using var colorScope = ColorHex.DataScope(placed.Data);
+
             // Renderovat viditelné elementy seřazené podle ZIndex
             var visibleElements = placed.Source.Elements
                 .Where(e => ExpressionEvaluator.IsVisible(e.VisibilityExpression, placed.Data))

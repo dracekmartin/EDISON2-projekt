@@ -1,5 +1,93 @@
 # Changelog
 
+## 2026-07-31 - #10660 DPKV uzavřen (grafické připomínky po importu z legacy)
+
+Poslední otevřený zákaznický tiket zastávkového JŘ. Klient hlásil čtyři oblasti a u tří z nich šlo
+o funkce, které existovaly, ale nenašel je - odpověď proto obsahuje i **návod, kde se co nastavuje**.
+
+- Nově volitelné: pozice šipky směru jízdy, pozice značek u zastávek (značka před názvem se
+  zarovnanými názvy), vlastní styl 2. řádku nadpisu skupin dnů, rozsah hodin přes půlnoc
+  a roztažení řádků na výšku.
+- Opraveno: podtržení nadpisu skupin dnů se dřív nekreslilo vůbec, nyní mají oba řádky stejnou
+  tloušťku (klient si přesně na nestejnou tloušťku stěžoval z legacy).
+- Beze změny kódu, jen návod: podbarvení aktuální zastávky, font jednotlivého sloupce, nadpis sekce
+  poznámek, barva znaku poznámky (ta se bere z číselníku poznámek, ne z návrháře).
+- **Zjištěný drift v dokumentaci:** interní zápis u 2. řádku nadpisu popisoval čtyři položky
+  v properties panelu, ale dnešní UI má na tomtéž místě **tlačítko** do pod-dialogu. Kvůli tomu by
+  odpověď zákazníkovi poslala hledat neexistující pole. Opraveno.
+
+## 2026-07-30 (7) - `B22` vyřešena opravou `B24` (dvě hlášení, jeden bug)
+
+„Hodiny od/do" se zobrazovaly, i když časová osa nebyla „Vlastní rozsah". Z kódu to nešlo
+reprodukovat (oba povrchy filtr aplikují správně, výchozí osa je „Jen hodiny s odjezdy"), takže se
+do toho nesahalo a čekalo se na reprodukci. Po opravě `B24` se problém přestal projevovat - ověřeno
+i nejtvrdším scénářem, tedy znovuotevřením šablony bez jediného kliknutí, což bylo jádro `B24`.
+
+Poučení: než se opravuje druhé hlášení, ověřit, jestli nezmizelo s prvním.
+
+## 2026-07-30 (6) - Helpdeskové kolo zastávkového JŘ dojeté
+
+Zastávkový JŘ nemá otevřený zákaznický tiket. Dnes zavřené: **#7947**, **#7955**, **#7959**
+a **#13048** - u posledního klient potvrdil, že zmenšování textu v buňce funguje, jak čekal, což byl
+jeho poslední otevřený bod. Blok `B2` tím dojel celý → archiv roadmapy.
+
+Zbylé položky helpdeskové fronty čekají na někoho jiného (zpřístupnit build DPKV, SK kódování
+na-znamení, dvě potvrzení od zákazníků), nejsou to úkoly.
+
+## 2026-07-30 (5) - #7955 UZAVŘEN - potlačení auto-poznámky vlastním komentářem ověřeno na datech
+
+Tiket byl vedený jako „hotové, ale neověřené" - featura existuje od 20. 6., ale nebylo na čem ji
+spustit: `CB_CSADAD` nemá na žádné z 240 linek ani číselník komentářů, ani rozsah „Spoje,
+nepoznámkovat". Nastavením testovacích dat v `CB_GWBUS` (skupina 501, linka 0000002, spoj 21) se
+podařilo ověřit všechny tři režimy parametru naráz - viz tabulka v `customer-requirements §D2`.
+
+- **D2 splněno:** v režimu „Automatické (rozdíly tras)" u spoje v rozsahu zmizí automatická poznámka
+  o rozdílu trasy a zůstane ruční komentář. Přesně to zákazník žádal.
+- **D3 vyvráceno jako bug:** negativní značka zůstala ve **všech** režimech, i když je u toho spoje
+  označená jako „v rozsahu". Kdyby bug existoval, zmizela by. Zamčeno novým testem.
+- **Filtr pracuje per spoj, ne per značku** - kontrolní odjezd mimo rozsah si značku podržel, takže
+  nelze omylem odpoznámkovat celou linku.
+- **Testovací linka zapsaná do dokumentace a nemazat** - je to jediné místo, kde je featura
+  testovatelná. Bez ní by se příště začínalo od nuly.
+- .NET 507/507 (+1 test na D3).
+
+## 2026-07-30 (4) - Atributy zastávky se čtou i z registru zastávek (`B23`)
+
+Na vývěsce chybělo, že zastávka je **na znamení** - cestující tak nevěděl, že má dát řidiči znamení.
+
+- **Kde to bylo:** atribut může být na **dvou** místech a my čteli jen jedno. Trasa linky (J-věta) ×
+  registr zastávek (`^JRZ`, `$`-pole 8). Změřeno, že **legacy čte obojí**: „x = na znamení" vypíše
+  u `CB_CSADAD` 0320680 (kde je jen v trase) i u `CB_GWBUS` 0000001 (kde je jen v registru).
+- **Oprava:** `AtributyZastavky` vrací sjednocení obou zdrojů (dedup po znacích, trasa první).
+  Registr je per zastávka nezávisle na lince a směru, což je správná sémantika „tato zastávka je
+  na znamení". Použito i v souhrnu „všechny zastávky linky jsou na znamení", ať si to neprotiřečí.
+- **Dopad měřen předem:** v CB_CSADAD je pole registru prázdné u **všech 5728 zastávek** (240 linek),
+  takže tam změna nic nemění a zlaté odtisky jsou v bezpečí. V CB_GWBUS přibyly 2 zastávky se „x"
+  (řádků legendy atributů 20 → 32 na 45 stránkách) a stránka 0000001/T má nově **10 poznámek stejně
+  jako legacy**. Caché 45/45.
+- Znění zůstává naše („na znamení"), legacy má „zastávka pouze na znamení" - vědomě neměněno.
+- Vedlejší zjištění: v registru se vyskytují jen znaky `x` a `A`, tedy znaky z číselníku atributů -
+  není to kategorie zastávky (což byla obava u „A" na autobusovém nádraží).
+
+## 2026-07-30 (3) - Vývěska vysvětluje jen značky, které na ní jsou (`B25`)
+
+Vývěska je samostatná stránka, kterou cestující čte na jednom sloupku - takže legenda má vysvětlovat
+právě to, co na ní je. U rozdělené vývěsky (per označník) to neplatilo: odjezdy se filtrovaly, ale
+poznámky rozdílů tras ne, takže tam zůstala vysvětlivka ke značce, jejíž spoj odjíždí z jiného
+označníku, tedy je na jiné stránce.
+
+- **Oprava:** `ProrezatLegenduRozdilu` zahodí řádky legendy, ke kterým na dané stránce není žádná
+  značka. **Písmena se nepřečíslovávají** - táž značka znamená na všech stránkách téže zastávky totéž.
+  Původní obava v kódu (stabilita písmen napříč stránkami) se tím neporušuje; ukázalo se, že si
+  s prořezáním legendy neodporují.
+- **Platí obecně, ne jen při rozdělení** - stejně se ošetří i spoj, kterému se nerozpozná sloupec dnů.
+  Na nerozdělených stránkách je to **no-op** (inventura 9693 stránek vrací identická čísla).
+- Ověřeno na `CB_GWBUS` 501/0000001/T: označník „1" → 1 odjezd a legenda jen `C`+bezbariér,
+  označník „JET" → 3 odjezdy a legenda `B`,`E`,dny,omezení. Caché 45/45, zlaté digesty beze změny.
+- **`B26` uzavřen jako falešný poplach:** pole označníku čteme správně (ověřeno na `CB_CSADAD` 0320680,
+  kde nese `11`/`22`); v datech GWBUS je v něm text `JET`/`JETE`, tedy něco jiného. Heuristika se
+  nedělá - rozdělení je opt-in a titulek stránky označník ukazuje. Zbývá doménová otázka, co `JET` je.
+
 ## 2026-07-30 (2) - Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl (`B24`)
 
 Uživatel tiskl něco jiného, než co měl v nastavení, a neměl jak na to přijít: uložené
@@ -72,6 +160,33 @@ sondou `Tests/AdProdlouzeniProbe.cls`.
   Písmena variant tras jsou výjimka (nahrazují rozdílové poznámky už na serveru) → hlásí se dle parametru.
 - Caché 45/45, .NET 446/446 (8 nových testů filtru poznámek - dosud netestovaný). Zlaté digesty
   0365001/0365005 **beze změny** → opravy jsou behavior-preserving, přebaselinování nebylo potřeba.
+
+## 2026-07-30 - Barva linky z databáze jako zdroj barvy v šabloně (ticket 12997, k otestování)
+
+JŘ modul umí lince přiřadit barvu; návrhář ji nově umí použít, takže se dá udělat třeba podbarvení
+hlavičky „barvou této linky" místo pevného odstínu.
+
+- **Jak se to zadává:** do barevného pole se napíše `{BARVA_LINKY}` (nápověda je u polí Barva
+  rámečku, Barva pozadí u obdélníku a u textu). Mezikrok s výběrem zdroje barvy byl vyzkoušen
+  a **zahozen** - přidával klik všem kvůli funkci pro pár prvků; výběr barvy se chová jako dřív.
+  Pokrývá to všech 32 barevných polí ve formulářích prvků i panel pro víc prvků naráz.
+  **Nepokrývá** dialogy sloupců a pravidla zvýraznění - tam barva textové pole nemá (řešení, až
+  bude potřeba: doplnit tam pole na hex, ne vracet mezikrok).
+- **V šabloně se ukládá odkaz** `{BARVA_LINKY}`, ne konkrétní odstín, takže se barva vezme aktuální
+  při každém tisku. JSON šablony se nemění (barva je pořád string) → žádná migrace.
+- **Nenastavená barva = bílá** (i v návrháři, kde data nejsou), aby podbarvení zůstalo čitelné.
+  Rozklad odkazu má jedno místo (`ColorHex`) a data se zveřejňují jen na dobu kreslení stránky.
+- **Caché:** `BARVA_LINKY` v schématu (nový typ pole `color`, aditivní) i v datech agendy
+  `ZastavkoveJrAd`; hodnotu dává JŘ modul (`GetBarvaLinky`, formát „R;G;B" → hex). Volání je
+  obalené, takže na serveru bez JŘ modulu se barva nenaplní a tisk jde dál. Ověřeno živě na
+  `CB_GWBUS`: schéma i hodnota dorazí (linka 320113 má bílou).
+- **Barevné pole se nedává do palety polí** - přetažením by vznikl text s hexem; zadává se do
+  barevného pole.
+- Barevné pole formuláře odkaz na pole nehlásí jako neplatnou barvu (jinak by se kontrola formátu
+  z 13078 bila s touto funkcí).
+- Testy: TD 506/506, EDControls 462/462, EDISONMAIN2 425/425 (30 nových případů). **Ostatní agendy
+  (linkový, knižní JŘ) záměrně zatím ne** - doplní se přidáním pole do jejich schématu, zadávání
+  je společné.
 
 ## 2026-07-29 - Vymazaný HEX kód barvy shodil návrhář a „rozbil" šablonu (ticket 13078)
 

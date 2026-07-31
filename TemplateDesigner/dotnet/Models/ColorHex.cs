@@ -27,11 +27,20 @@ public static class ColorHex
     /// <summary>Průhledná - rozumná záloha pro pozadí (nic se nenakreslí).</summary>
     public const string Transparent = "#00FFFFFF";
 
-    /// <summary>Přečte barvu; false = prázdná nebo neplatná hodnota.</summary>
+    /// <summary>Přečte barvu; false = prázdná nebo neplatná hodnota. Barvu z dat
+    /// (<see cref="IsDataBound"/>) rozloží podle dat právě kreslené stránky.</summary>
     public static bool TryParse(string? hex, out SKColor color)
     {
         color = default;
-        return !string.IsNullOrWhiteSpace(hex) && SKColor.TryParse(hex.Trim(), out color);
+        if (string.IsNullOrWhiteSpace(hex)) return false;
+
+        var value = hex.Trim();
+        if (IsDataBound(value))
+        {
+            color = ResolveDataBound(value);
+            return true;
+        }
+        return SKColor.TryParse(value, out color);
     }
 
     /// <summary>True pro hodnotu, kterou lze přečíst jako barvu (prázdná = false).</summary>
@@ -52,6 +61,57 @@ public static class ColorHex
 
     /// <summary>Barva, nebo černá u prázdné/neplatné hodnoty (text, čáry, rámečky).</summary>
     public static SKColor ParseOrBlack(string? hex) => Parse(hex, SKColors.Black);
+
+    // ── Barva z dat („barva linky") ───────────────────────────────────────────
+
+    /// <summary>Barva, na kterou padne nevyřešená barva z dat - linka barvu nastavenou nemá, nebo
+    /// se kreslí bez dat (návrhář, čtvereček v dialogu). Bílá záměrně: podbarvení tak zůstane
+    /// čitelné a nevypadá jako chyba.</summary>
+    public const string UnresolvedDataColor = "#FFFFFFFF";
+
+    /// <summary>
+    /// Hodnota, která místo barvy nese <b>jedno datové pole</b> (<c>{BARVA_LINKY}</c>) - barvu určí
+    /// až data konkrétní stránky. Schválně jen samotný token, ne text s dírou: barva je buď pevná,
+    /// nebo z dat. Míchanina (<c>#FF33{X}</c>) tak zůstane neplatnou hodnotou.
+    /// </summary>
+    public static bool IsDataBound(string? hex)
+    {
+        var value = hex?.Trim();
+        if (value is null || value.Length < 3 || value[0] != '{' || value[^1] != '}') return false;
+
+        for (int i = 1; i < value.Length - 1; i++)
+            if (value[i] is '{' or '}') return false;
+        return true;
+    }
+
+    // Data právě kreslené stránky. Barvy se čtou z property elementu bez přístupu k datům
+    // (SkBorderColor, ResolvedTextStyle…), takže je kreslení na dobu vykreslení sekce zveřejní tady.
+    // ThreadStatic kvůli exportu, který kreslí na jiném vlákně než UI.
+    [ThreadStatic] private static DataContext? _scopeData;
+
+    /// <summary>Zveřejní data pro rozklad barev z dat na dobu kreslení. Volá kreslicí cesta
+    /// (<c>PreviewCanvas.RenderPage</c>); mimo ni se barva z dat nevyřeší a padne na
+    /// <see cref="UnresolvedDataColor"/>.</summary>
+    public static IDisposable DataScope(DataContext? data) => new Scope(data);
+
+    private sealed class Scope : IDisposable
+    {
+        private readonly DataContext? _previous;
+        public Scope(DataContext? data) { _previous = _scopeData; _scopeData = data; }
+        public void Dispose() => _scopeData = _previous;
+    }
+
+    private static SKColor ResolveDataBound(string token)
+    {
+        var resolved = _scopeData?.ResolvePlaceholders(token);
+
+        // Bez dat / neznámé pole → ResolvePlaceholders vrátí token beze změny; prázdná hodnota
+        // znamená „linka barvu nemá". Oboje končí na bílé.
+        if (string.IsNullOrWhiteSpace(resolved) || resolved == token)
+            return Parse(UnresolvedDataColor, SKColors.White);
+
+        return Parse(resolved, SKColors.White);
+    }
 
     /// <summary>Barva, nebo průhledná u prázdné/neplatné hodnoty (pozadí, výplně).</summary>
     public static SKColor ParseOrTransparent(string? hex) => Parse(hex, SKColors.Transparent);

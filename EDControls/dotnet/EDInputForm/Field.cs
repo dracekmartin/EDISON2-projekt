@@ -166,7 +166,8 @@ namespace EDControls.EDInputForm
                 case EFieldType.Bool:
                     return _value is "0" or "1" ? null : "Musí být 0 nebo 1";
                 case EFieldType.Color:
-                    return IsHexColor(_value) ? null : "Neplatná barva - zadejte #RRGGBB nebo #AARRGGBB";
+                    return IsHexColor(_value) || IsFieldReference(_value)
+                        ? null : "Neplatná barva - zadejte #RRGGBB nebo #AARRGGBB";
                 default:
                     return null;
             }
@@ -181,6 +182,18 @@ namespace EDControls.EDInputForm
             if (hex.Length != 6 && hex.Length != 8) return false;
             foreach (var c in hex)
                 if (!Uri.IsHexDigit(c)) return false;
+            return true;
+        }
+
+        /// <summary>Odkaz na datové pole ve tvaru <c>{NAZEV}</c> - hodnotu dosadí hostitelská
+        /// aplikace ze svých dat (např. barva podle záznamu, ne pevná barva). Jen samotný odkaz,
+        /// ne text s odkazem uvnitř: hodnota je buď konkrétní, nebo z dat.</summary>
+        private static bool IsFieldReference(string value)
+        {
+            var v = value.Trim();
+            if (v.Length < 3 || v[0] != '{' || v[^1] != '}') return false;
+            for (int i = 1; i < v.Length - 1; i++)
+                if (v[i] is '{' or '}') return false;
             return true;
         }
 

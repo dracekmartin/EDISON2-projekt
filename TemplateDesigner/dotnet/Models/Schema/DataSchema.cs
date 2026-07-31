@@ -75,7 +75,9 @@ public enum FieldDataType
     Date,
     Time,
     DateTime,
-    Boolean
+    Boolean,
+    /// <summary>Barva (#AARRGGBB). Nabízí se ve výběru barvy jako "barva z dat", ne v textu.</summary>
+    Color
 }
 
 /// <summary>Základní info o dostupné agendě - pro výběr v UI.</summary>

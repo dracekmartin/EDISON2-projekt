@@ -2,6 +2,65 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-30 ✅ - `B22` „Hodiny od/do" v parametrech - vyřešeno opravou `B24`
+
+Symptom: „Hodiny od/do" byly vidět, i když časová osa nebyla „Vlastní rozsah". Prohledání kódu ale
+ukázalo, že **oba** povrchy (záložka Parametry i tiskový dialog) filtr `visibleWhen` aplikují včetně
+přepočtu při změně pole, a výchozí osa je „Jen hodiny s odjezdy" → z kódu se to nedalo reprodukovat.
+Proto se do toho **nesahalo naslepo** a čekalo se na reprodukci.
+
+Po opravě `B24` (hodnoty a UI jedním průchodem) se problém **přestal projevovat** - Jan ověřil 30. 7.
+včetně nejtvrdšího scénáře, tedy zavřít a znovu otevřít šablonu a podívat se, aniž na cokoli klikne
+(to bylo jádro `B24`: hodnoty dorazily až po postavení formuláře). Byl to tedy projev téže příčiny.
+
+**Poučení:** dvě hlášení mohou být jeden bug. Než se opravuje druhé, stojí za to ověřit, jestli
+nezmizelo s prvním - tady to ušetřilo celou opravu.
+
+## 2026-07-30 ✅ - `B2` zavírací kolo helpdesku dojeté
+
+Zastávkový JŘ nemá otevřený zákaznický tiket. Zavřené 30. 7.: **#7947** (znění poznámky o prodloužení
+spoje), **#7955** (potlačení auto-poznámky vlastním komentářem - ověřeno na reálných datech), **#7959**
+(skrytí neobsluhované zastávky) a **#13048** (5 bodů KOVED; klient potvrdil i zmenšování textu v buňce,
+což byl poslední otevřený bod). Detail měřených stavů → `customer-requirements §0.1/§0.3/§D1/§D2`.
+
+Zbytek helpdeskové fronty jsou položky **čekající na někoho jiného**, ne práce: #10660 (zpřístupnit
+build DPKV), TR2 (SK kódování na-znamení - kolega), #13048 bod 4 fáze 2 a TR8 (obojí čeká potvrzení
+zákazníka).
+
+## 2026-07-30 ✅ - `B23` atributy zastávky se čtou i z registru zastávek
+
+Detail → changelog 2026-07-30 (4). Na vývěsce chybělo, že zastávka je **na znamení**. Atribut může být
+na **dvou** místech - v trase linky (J-věta) a v registru zastávek (`^JRZ`, `$`-pole 8) - a my čteli jen
+trasu. Změřeno, že **legacy čte obojí** (vypíše „x" u `CB_CSADAD` 0320680, kde je jen v trase, i u
+`CB_GWBUS` 0000001, kde je jen v registru), takže to byla faktická vada výstupu, ne jiné znění.
+`AtributyZastavky` teď vrací sjednocení; použito i v souhrnu „všechny zastávky linky jsou na znamení".
+
+**Dopad měřen PŘED zásahem** (poučení z `B26`): v CB_CSADAD je pole registru prázdné u všech 5728
+zastávek → tam se nemění nic a zlaté odtisky jsou v bezpečí; v CB_GWBUS přibyly 2 zastávky se „x"
+a stránka 0000001/T má nově 10 poznámek **stejně jako legacy**. Znění zůstává naše („na znamení");
+legacy má „zastávka pouze na znamení" - rozhodnutí Jan, neměnit.
+
+## 2026-07-30 ✅ - `B25` legenda na rozdělené vývěsce + `B26` uzavřen jako falešný poplach
+
+**Pravidlo (rozhodnutí Jan):** vývěska je **samostatná stránka**, takže vysvětluje jen značky, které
+na ní reálně jsou. Ostatní kategorie to měly samy (plní se z vytištěných odjezdů), rozdíly tras ne -
+počítají se per zastávka nezávisle na tom, které odjezdy stránka nese. `ProrezatLegenduRozdilu` zahodí
+nepoužité řádky; **písmena se nepřečíslovávají**, takže táž značka znamená na všech stránkách téže
+zastávky totéž (to byla původní obava v kódu - ukázalo se, že stabilita písmen a prořezání legendy si
+neodporují). Ověřeno na rozdělených stránkách `CB_GWBUS` 501/0000001/T: označník „1" → 1 odjezd
+a legenda jen `C`+bezbariér, označník „JET" → 3 odjezdy a legenda `B`,`E`,dny,omezení.
+Na nerozdělených stránkách **no-op** (čísla inventury identická, zlaté digesty beze změny).
+
+**`B26` byl falešný poplach.** Z hodnot `JET,1` jsem usoudil, že čteme špatné pole. Měření na firmě,
+kde označníky fungují (`CB_CSADAD` 0320680), to vyvrátilo: J-věta `#3` nese `11` a W-trasa spoje pole 7
+nese `22` - **pole čteme správně**. V GWBUS je v tomtéž poli text `JET`/`JETE`, tedy něco, co označník
+není. Žádná heuristika „vypadá to jako označník" se nedělá: rozdělení je opt-in, po `B24` se jeho stav
+zobrazuje pravdivě a titulek stránky nese „…, označník JET", takže je to samovysvětlující.
+⬜ **Otevřená doménová otázka:** co `JET`/`JETE` v datech GWBUS znamená (kód turnusu? příznak?).
+
+**Poučení:** „vidím v datech nesmysl" ještě neznamená „čteme špatné pole". Ověřovat na firmě, kde ta
+featura prokazatelně funguje - rozhodlo to jedním měřením.
+
 ## 2026-07-30 ✅ - `B24` Parametr sestavy se v UI tvářil vypnutý, i když zapnutý byl
 
 Detail → changelog 2026-07-30 (2). Uživatel tiskl jiné nastavení, než jaké viděl: uložené

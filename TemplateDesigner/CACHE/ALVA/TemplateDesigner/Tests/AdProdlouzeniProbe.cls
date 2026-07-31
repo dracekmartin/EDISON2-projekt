@@ -392,6 +392,128 @@ ClassMethod RozdilyDiag(ByRef sys As %String) As %Status
     q $$$OK
 }
 
+/// Vypíše `values` (hlavičková pole) jedné stránky - diagnostika „změnil se digest, ale počty sedí".
+/// IN: SKUPINA_LINEK_ID, LINKA_ID, SMER (default T), PORADI (default 1). Read-only.
+ClassMethod StrankaValues(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        k ^||TiskAd
+
+        s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+        i sku = "" s sku = $o(^[dataDB]JRL(""))
+        s lin = $g(^||ML("IN","LINKA_ID"))
+        s smer = $g(^||ML("IN","SMER"))
+        i smer = "" s smer = "T"
+        s poradi = +$g(^||ML("IN","PORADI"))
+        i 'poradi s poradi = 1
+
+        s page = $classmethod("ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd","BuildStrankaZastavky", dataDB, sku, lin, poradi, smer, "")
+        i '$isobject(page) {
+            s ^||ML("OUT",1) = "stranka se nesestavila"
+            ret $$$OK
+        }
+        s i = 0
+        s it = page.values.%GetIterator()
+        while it.%GetNext(.k, .v) {
+            i $isobject(v) {
+                s ^||ML("OUT",$i(i)) = k_"=(pole/objekt)"
+            } else {
+                s ^||ML("OUT",$i(i)) = k_"="_$e(v,1,200)
+            }
+        }
+        k ^||TiskAd
+    } catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
+/// Odkud se berou atributy zastávky: **trasa linky** (J-věta `#1:2`) × **registr zastávek**
+/// (`^JRZ(czst)`, `$`-pole 8). Legacy čte obojí (změřeno), my dnes jen trasu. Sonda zjistí:
+///   1. co v tom poli registru vlastně je (rozložení znaků - je to výčet atributů, nebo kategorie?)
+///   2. kolik zastávek by po sloučení **nově** dostalo značku „x" (= dopad na zafixované odtisky)
+/// IN: SKUPINA_LINEK_ID („*" = všechny), LIMIT linek.  Read-only.
+ClassMethod AtributyZdroje(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s zadanaSku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+        s limit = +$g(^||ML("IN","LIMIT"))
+        i 'limit s limit = 500
+
+        k skupiny
+        i (zadanaSku '= "") && (zadanaSku '= "*") {
+            s skupiny(zadanaSku) = ""
+        } else {
+            s s1 = ""
+            f { s s1 = $o(^[dataDB]JRL(s1))  q:s1=""  s skupiny(s1) = "" }
+        }
+
+        k znakyRegistru, prikladNove
+        s (linek, zastavek, regNeprazdnych, xVTrase, xVRegistru, xJenVRegistru, xVObou, novych) = 0
+        s sku = ""
+        f {
+            s sku = $o(skupiny(sku))
+            q:sku=""
+            q:linek>limit
+            s lin = ""
+            f {
+                s lin = $o(^[dataDB]JRL(sku,lin))
+                q:lin=""
+                i '$d(^[dataDB]JRL(sku,lin,"I")) continue
+                s linek = linek + 1
+                q:linek>limit
+                s poradi = ""
+                f {
+                    s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi))
+                    q:poradi=""
+                    i '$isvalidnum(poradi) continue
+                    s veta = $g(^[dataDB]JRL(sku,lin,"J",poradi))
+                    s czst = $p(veta,":",1)
+                    i czst = "" continue
+                    s zastavek = zastavek + 1
+                    s atrTrasa = $p($p(veta,":",2),"#",1)
+                    s atrReg = $p($g(^[dataDB]JRZ(czst)),"$",8)
+                    i atrReg '= "" {
+                        s regNeprazdnych = regNeprazdnych + 1
+                        f zi=1:1:$l(atrReg) {
+                            s zn = $e(atrReg,zi)
+                            s znakyRegistru(zn) = $g(znakyRegistru(zn)) + 1
+                        }
+                    }
+                    s maXTrasa = (atrTrasa["x"), maXReg = (atrReg["x")
+                    i maXTrasa s xVTrase = xVTrase + 1
+                    i maXReg s xVRegistru = xVRegistru + 1
+                    i maXTrasa && maXReg s xVObou = xVObou + 1
+                    i maXReg && 'maXTrasa {
+                        s xJenVRegistru = xJenVRegistru + 1
+                        i novych < 8 {
+                            s novych = novych + 1
+                            s prikladNove(novych) = "linka="_lin_"~poradi="_poradi_"~czst="_czst
+                                _"~atrTrasa="_atrTrasa_"~atrRegistr="_atrReg
+                        }
+                    }
+                }
+            }
+        }
+
+        s i = 0
+        s zn = ""
+        f {
+            s zn = $o(znakyRegistru(zn))
+            q:zn=""
+            i i < 40 s ^||ML("OUT",$i(i)) = "ZNAK_V_REGISTRU="_zn_"~vyskytu="_znakyRegistru(zn)
+        }
+        f pi=1:1:novych s ^||ML("OUT",$i(i)) = "NOVE_BY_PRIBYLO~"_prikladNove(pi)
+        s ^||ML("OUT","SOUHRN") = "linek="_$s(linek>limit:limit,1:linek)_"~zastavek="_zastavek
+            _"~registrNeprazdnych="_regNeprazdnych_"~xVTrase="_xVTrase_"~xVRegistru="_xVRegistru
+            _"~xVObou="_xVObou_"~xJenVRegistru="_xJenVRegistru
+    } catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
 /// Kontrola opačným směrem než `Inventura`: **řádek legendy, ke kterému na téže stránce není ani jedna
 /// značka u minuty.** Vývěska je pro jednu zastávku, takže taková legenda je pro cestujícího šum -
 /// a může znamenat, že z mřížky vypadl spoj, který ta značka popisuje.
@@ -453,7 +575,9 @@ ClassMethod StrankaZnacky(ByRef sys As %String) As %Status
             s itZ = dv.%Get("ANOTACE").%GetIterator()
             while itZ.%GetNext(.zk, .zv) {
                 continue:'$isobject(zv)
-                s znaky = znaky_$s(znaky="":"",1:"+")_zv.%Get("ZNAK")_"("_zv.%Get("KATEGORIE")_")"
+                // ZNAK(kategorie|spoj|vRozsahu) - vRozsahu=1 znamená „TD filtr ji smí schovat"
+                s znaky = znaky_$s(znaky="":"",1:"+")_zv.%Get("ZNAK")_"("_zv.%Get("KATEGORIE")
+                    _"|sp"_zv.%Get("SPOJ")_"|r"_zv.%Get("V_ROZSAHU_NEPOZNAMKOVAT")_")"
             }
             s ^||ML("OUT",$i(i)) = "ODJEZD="_dv.%Get("HODINA")_":"_dv.%Get("MINUTA")
                 _"~skupinaDnu="_dv.%Get("SKUPINA_DNU_ID")_"~znacky="_$s(znaky="":"(zadne)",1:znaky)
