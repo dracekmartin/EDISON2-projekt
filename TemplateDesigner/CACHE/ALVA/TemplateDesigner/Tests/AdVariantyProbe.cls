@@ -258,4 +258,165 @@ ClassMethod Stranka(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Read-only hledání ukázkové linky se ZACHÁZKAMI (#13070 BBSK): městská linka, kde část spojů
+/// zajíždí mimo hlavní trasu. Skóruje kandidáty tak, aby šel zákazníkovi ukázat výstup, který
+/// odpovídá jeho zadání - tedy zapnuté poznámkování rozdílů tras + nedegenerovaná vzorová trasa
+/// (ta rozhoduje, jestli poznámka řekne „jede přes zast. X", nebo jen „neobsluhuje zast. X").
+/// IN:  SKUPINA_LINEK_ID ("" / "*" = všechny), LIMIT (kolik linek projít, default 150),
+///      TOP (kolik řádků vypsat, default 12), MIN_SPOJU (default 8)
+/// OUT[n] = "sku~lin~smer~skore=..~spoju=..~zastavek=..~variant=..~zachazek=..~vzor=..~autoPozn=..
+///           ~vety=..~zachazky=.."
+ClassMethod ScanZachazky(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        s zadanaSku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+        s limit = +$g(^||ML("IN","LIMIT"))         i 'limit s limit = 150
+        s top = +$g(^||ML("IN","TOP"))             i 'top s top = 12
+        s minSpoju = +$g(^||ML("IN","MIN_SPOJU"))  i 'minSpoju s minSpoju = 8
+        s jenAutoPozn = +$g(^||ML("IN","JEN_AUTOPOZN"))   // 1 = jen linky se zapnutým poznámkováním
+        s agenda = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+
+        k skupiny
+        i (zadanaSku '= "") && (zadanaSku '= "*") {
+            s skupiny(zadanaSku) = ""
+        } else {
+            s s1 = ""
+            f { s s1 = $o(^[dataDB]JRL(s1))  q:s1=""  i +s1 s skupiny(s1) = "" }
+        }
+
+        k vysledky
+        s (linek, kandidatu) = 0
+        s sku = ""
+        f {
+            s sku = $o(skupiny(sku))
+            q:sku=""
+            q:linek>=limit
+            s lin = ""
+            f {
+                s lin = $o(^[dataDB]JRL(sku,lin))
+                q:lin=""
+                q:linek>=limit
+                i '$d(^[dataDB]JRL(sku,lin,"I")) continue
+                s linek = linek + 1
+                k ^||TiskAd                        // cache je per linka (jinak si linky přebijí W-mapu)
+
+                // počet zastávek v trase linky
+                s zastavek = 0, p = ""
+                f { s p = $o(^[dataDB]JRL(sku,lin,"J",p))  q:p=""  i $isvalidnum(p) s zastavek = zastavek + 1 }
+                i zastavek < 3 continue
+
+                s autoPozn = +$g(^[dataDB]JRL(sku,lin,"PATCH","mhd","not"))
+                continue:jenAutoPozn&&'autoPozn
+
+                f smer = "T", "Z" {
+                    // varianty tras + kolikrát je která zastávka obsloužena
+                    k obsluha, bitmapy
+                    s (spoju, variant) = 0, sp = ""
+                    f {
+                        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+                        q:sp=""
+                        i '$isvalidnum(sp) continue
+                        s cisloTrasy = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+                        s bmp = $classmethod(agenda,"SpojBitmapa", dataDB, sku, lin, cisloTrasy)
+                        continue:bmp=""
+                        s spoju = spoju + 1
+                        i '$d(bitmapy(bmp)) s bitmapy(bmp) = "", variant = variant + 1
+                        f poz=1:1:$l(bmp) i +$e(bmp,poz) s obsluha(poz) = $g(obsluha(poz)) + 1
+                    }
+                    continue:spoju<minSpoju
+                    continue:variant<2
+
+                    // zacházka = zastávka, kterou obsluhuje menšina spojů (ne všechny, ale aspoň jeden)
+                    s zachazek = 0, zachazky = "", poz = ""
+                    f {
+                        s poz = $o(obsluha(poz))
+                        q:poz=""
+                        s pocet = obsluha(poz)
+                        continue:pocet=spoju
+                        continue:(pocet*2)>=spoju
+                        s zachazek = zachazek + 1
+                        i $l(zachazky,";") <= 2 {
+                            s zachazky = zachazky_$s(zachazky="":"",1:"; ")
+                                _$classmethod(agenda,"NazZPoradi", dataDB, sku, lin, poz)_" ("_pocet_"/"_spoju_")"
+                        }
+                    }
+
+                    // vzorová trasa: základní (#10) → tištěná (#7) → sjednocení obsluhy
+                    s vzor10 = $classmethod(agenda,"TrasaBitmapaZPole", dataDB, sku, lin, smer, 10)
+                    s vzor7  = $classmethod(agenda,"TrasaBitmapaZPole", dataDB, sku, lin, smer, 7)
+                    s bitu10 = $l(vzor10,"1") - 1
+                    s bitu7  = $l(vzor7,"1") - 1
+                    s vzorTyp = $s(vzor10'="":"zakladni("_bitu10_"/"_zastavek_")", vzor7'="":"tisteny("_bitu7_"/"_zastavek_")", 1:"fallbackUnion")
+                    s bituVzor = $s(vzor10'="":bitu10, vzor7'="":bitu7, 1:0)
+
+                    // Jaké věty na lince reálně vzniknou. Vzorkuje se víc zastávek - na první
+                    // zastávce směru poznámky často nejsou a linka by vypadala prázdná.
+                    k served  d $classmethod(agenda,"ObsluhovanePoradi", dataDB, sku, lin, smer, .served)
+                    s vety = "", legendPolozek = 0, vzorku = 0, poz = ""
+                    f {
+                        s poz = $o(served(poz))
+                        q:poz=""
+                        i '$isvalidnum(poz) continue
+                        s vzorku = vzorku + 1
+                        q:vzorku>5
+                        k pismenoSpoj, legenda
+                        d $classmethod(agenda,"RozdilyTras", dataDB, sku, lin, smer, poz, .pismenoSpoj, .legenda)
+                        s key = ""
+                        f {
+                            s key = $o(legenda(key))
+                            q:key=""
+                            s txt = $g(legenda(key))
+                            continue:txt=""
+                            s legendPolozek = legendPolozek + 1
+                            i txt["jede přes"    s vety = $s(vety["pres":vety, 1:vety_$s(vety="":"",1:",")_"pres")
+                            i txt["neobsluhuje"  s vety = $s(vety["neobsluhuje":vety, 1:vety_$s(vety="":"",1:",")_"neobsluhuje")
+                            i txt["jede jen do"  s vety = $s(vety["jenDo":vety, 1:vety_$s(vety="":"",1:",")_"jenDo")
+                            i txt["jede až do"   s vety = $s(vety["azDo":vety, 1:vety_$s(vety="":"",1:",")_"azDo")
+                        }
+                    }
+                    i vety = "" s vety = "(zadne)"
+
+                    // skóre: chceme zapnuté poznámkování, zacházku a vzorovou trasu, která je
+                    // opravdu trasa (degenerovaná vzorová trasa dělá „jede až do" u všeho)
+                    s skore = 0
+                    i autoPozn s skore = skore + 50
+                    i zachazek >= 1 s skore = skore + 30
+                    i variant >= 3 s skore = skore + 20
+                    i spoju >= 15 s skore = skore + 10
+                    i (bituVzor >= (zastavek*0.6)) s skore = skore + 25
+                    i (vzorTyp '[ "fallback") && (bituVzor <= 2) s skore = skore - 20
+                    i vety["pres" s skore = skore + 15
+
+                    s kandidatu = kandidatu + 1
+                    s vysledky(-skore, sku_"~"_lin_"~"_smer) = "skore="_skore_"~spoju="_spoju_"~zastavek="_zastavek
+                        _"~variant="_variant_"~zachazek="_zachazek_"~vzor="_vzorTyp_"~autoPozn="_autoPozn
+                        _"~vety="_vety_"~legendPolozek="_legendPolozek
+                        _"~zachazky="_$s(zachazky'="":zachazky, 1:"(zadna)")
+                }
+            }
+        }
+        k ^||TiskAd
+
+        s radku = 0, sKey = ""
+        f {
+            s sKey = $o(vysledky(sKey))
+            q:sKey=""
+            s linKey = ""
+            f {
+                s linKey = $o(vysledky(sKey,linKey))
+                q:linKey=""
+                s ^||ML("OUT",$i(^||ML("OUT"))) = linKey_"~"_vysledky(sKey,linKey)
+                s radku = radku + 1
+                q:radku>=top
+            }
+            q:radku>=top
+        }
+        s ^||ML("OUT","SOUHRN") = "linekProslo="_linek_"~kandidatu="_kandidatu_"~vypsano="_radku
+            _"~minSpoju="_minSpoju
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 }
