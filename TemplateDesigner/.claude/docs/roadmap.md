@@ -84,7 +84,7 @@ Dva body z fronty Vlny 0, které nejsou doladění - každý chce vlastní plán
 | # | Blok | Vel. | Pozn. |
 |---|---|---|---|
 | **B38** | **#13097 rozdělení seznamu zastávek na pokračování** - seznam vč. všech sloupců rozřezat do několika oddílů. Je to **tentýž mechanismus jako `B13`** (rozřezání široké tabulky u linkového JŘ) → gated na něj, ať se nepíše dvakrát. | L | dělat s `B13`, ne zvlášť |
-| **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období, a značky, které nadpis sloupce už říká, se netisknou; výjimka u spoje značku zobrazit má. Mění datový model + chce editor. | L | nejdřív `B29` (ověřit dnešní chybu), pak koncept |
+| **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období. Mění datový model + chce editor. **Zbytek tiketu po `B29`** - ohlášená chybná značka je opravená 31. 7. (`B29`, archiv), takže část „netiskni značku, kterou už říká nadpis sloupce" je hotová a pro vlastní skupiny se jen musí dodržet i u nich. | L | koncept skupin + editor; pravidlo značek už existuje (`DenniZnacky`) |
 
 ---
 
@@ -158,7 +158,7 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**Kolo KOVED z 30. 7. drží Vlna 0** (`B28`, `B29`, `B32`-`B37`) **+ Vlna 3** (`B38`, `B39`) - sem se
+**Kolo KOVED z 30. 7. drží Vlna 0** (`B32`-`B37`; `B28`-`B31` a `B34` hotové) **+ Vlna 3** (`B38`, `B39`) - sem se
 nekopíruje. `B30` a `B31` hotové 31. 7. (archiv).
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
