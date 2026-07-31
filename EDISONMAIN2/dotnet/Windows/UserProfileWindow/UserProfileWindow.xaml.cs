@@ -67,7 +67,7 @@ public partial class UserProfileWindow : Window
             return false;
         }
 
-        UserProfileService.SaveExportDir(EDServices.Current.MLRest!, use, dir);
+        UserProfileService.SaveExportDir(EDServices.Current.RequireMLRest, use, dir);
         return true;
     }
 

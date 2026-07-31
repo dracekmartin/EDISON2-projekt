@@ -459,7 +459,7 @@ public class AppBootstrapper
     /// </summary>
     public SwitchUserOutcome SwitchUser(EDServices services, Action closeAllWindows)
     {
-        var current = ((MLRestAdapter)services.MLRest!).Inner;
+        var current = ((MLRestAdapter)services.RequireMLRest).Inner;
         var login = PromptLoginForReauth(current);
         if (login == null) return new(SwitchUserResult.Cancelled, null);
 

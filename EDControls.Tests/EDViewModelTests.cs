@@ -222,9 +222,41 @@ public class EDViewModelTests
         Assert.True(vm.SetTitleReturning("B"));    // znovu změna
     }
 
+    [Fact]
+    public void Rest_ReturnsMLRest_WhenSessionExists()
+    {
+        var mlRest = Substitute.For<IMLRest>();
+        var vm = new TestViewModel(MockServices(mlRest));
+
+        Assert.Same(mlRest, vm.PublicRest);
+    }
+
+    [Fact]
+    public void Rest_Throws_BeforeLogin()
+    {
+        var vm = new TestViewModel(MockServices());
+
+        // Post-login konzument čte Rest → čitelná výjimka místo NRE z `MLRest!`.
+        Assert.Throws<InvalidOperationException>(() => vm.PublicRest);
+    }
+
+    [Fact]
+    public void RequireMLRest_SeesMLRestSwap()
+    {
+        var first = Substitute.For<IMLRest>();
+        var second = Substitute.For<IMLRest>();
+        var services = MockServices(first);
+
+        Assert.Same(first, services.RequireMLRest);
+        services.MLRest = second;   // přepnutí firmy / uživatele
+        Assert.Same(second, services.RequireMLRest);
+    }
+
     /// <summary>Konkrétní subclass která vystavuje protected členy pro testy.</summary>
     private class TestViewModel(EDServices services) : EDViewModel.EDViewModel(services)
     {
+        public IMLRest PublicRest => Rest;
+
         private string _title = "";
         public string Title
         {

@@ -260,7 +260,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ChangePasswordCommand         = Command(() =>
             {
                 bool? changed = WindowNavigator.ShowDialog(
-                    new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(MLRest!, UserName));
+                    new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(Rest, UserName));
                 // Změna hesla za běhu zneplatní zapamatované (uložené při loginu se starým heslem).
                 if (changed == true && _prefs.RememberedPassword != null)
                 {
@@ -331,7 +331,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void RebuildSessionState(Lic? licence)
         {
             _services.ActiveLicence = licence;
-            _services.AccessTable = AccessLoader.Load(MLRest!, licence, _services.IsAdmin);
+            _services.AccessTable = AccessLoader.Load(Rest, licence, _services.IsAdmin);
             LoadAndFilterTrees();
             LoadPersonalization();
             LoadStartupWindow();
@@ -348,7 +348,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // RebuildSessionState → po loginu i po přepnutí firmy (jiná firma může mít jiný default).
         private void LoadStartupWindow()
         {
-            DefaultWindowId = UserProfileService.LoadDefaultWindow(MLRest!);
+            DefaultWindowId = UserProfileService.LoadDefaultWindow(Rest);
             ApplyStartupWindowMark();
         }
 
@@ -364,7 +364,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (module is not ExecutableModule { ElementId: { Length: > 0 } elementId }) return;
             if (!int.TryParse(elementId, out var formId) || formId == 0) return;
-            UserProfileService.SetDefaultWindow(MLRest!, formId);
+            UserProfileService.SetDefaultWindow(Rest, formId);
             DefaultWindowId = formId;
             ApplyStartupWindowMark();
         }
@@ -372,7 +372,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ClearStartupWindow()
         {
             if (DefaultWindowId == 0) return;
-            UserProfileService.SetDefaultWindow(MLRest!, 0);
+            UserProfileService.SetDefaultWindow(Rest, 0);
             DefaultWindowId = 0;
             ApplyStartupWindowMark();
         }
@@ -633,7 +633,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void LoadAndFilterTree(ObservableCollection<IModule> target, string treeName)
         {
             target.Clear();
-            var tree = _treeGetter.GetModuleTree(MLRest!, treeName);
+            var tree = _treeGetter.GetModuleTree(Rest, treeName);
             foreach (var module in tree)
             {
                 if (TryFilter(module, _services.ActiveLicence, _services.AccessTable, IsMlineDomainStation) is { } filtered)
@@ -711,11 +711,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // StatusBar — Identity props z MLRest (per session konstantní).
-        public string Server    => MLRest!.Server;
-        public int    RestPort  => MLRest!.Port;
-        public string UserName  => MLRest!.LoginName;
-        public string FullName  => MLRest!.FullName;
-        public string Mlp       => MLRest!.Mlp;
+        public string Server    => Rest.Server;
+        public int    RestPort  => Rest.Port;
+        public string UserName  => Rest.LoginName;
+        public string FullName  => Rest.FullName;
+        public string Mlp       => Rest.Mlp;
         // Prázdná = chybí VERZE.INF vedle exe (typicky Release build spuštěný z VS, ne z instalace).
         public string Version   => VerzeInf.Current == "" ? "nezjištěna" : VerzeInf.Current;
 
@@ -1135,7 +1135,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (!PopupDisplayer.Confirm("Obnovit výchozí pozice a velikosti všech oken?"))
                 return;
             // Reset persistovaných pozic/velikostí oken (per MLP × IDFa) — legacy endpoint.
-            MLRest!.QueryOrThrow("ALVA.LIBRARY.Form", "ResetSettings", new CVar());
+            Rest.QueryOrThrow("ALVA.LIBRARY.Form", "ResetSettings", new CVar());
             PopupDisplayer.Info("Nastavení oken bylo obnoveno. Změna se projeví po jejich příštím otevření.");
         }
 

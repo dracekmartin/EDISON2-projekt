@@ -279,8 +279,8 @@ namespace EDControls.EDList
 
         public void InitializeList()
         {
-            EnsureConfigured();
-            var output = MLRest!.QueryOrThrow(CacheClass, "InitializeList", new CVar());
+            var mlRest = EnsureConfigured();
+            var output = mlRest.QueryOrThrow(CacheClass, "InitializeList", new CVar());
             _columns = ParseColumns(output);
             RebuildColumns();
         }
@@ -295,14 +295,14 @@ namespace EDControls.EDList
         /// </summary>
         public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {
-            EnsureConfigured();
+            var mlRest = EnsureConfigured();
             var input = new CVar();
             if (filter is not null)
             {
                 foreach (var kv in filter)
                     input["filter"][kv.Key] = new CVar(kv.Value);
             }
-            var output = MLRest!.QueryOrThrow(CacheClass, "LoadList", input);
+            var output = mlRest.QueryOrThrow(CacheClass, "LoadList", input);
             // Unsubscribe stará data — žádné spying na zaniklé řádky
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _rows.Clear();
@@ -626,10 +626,12 @@ namespace EDControls.EDList
 
         // ─── Helpers ──────────────────────────────────────────────────────────────
 
-        private void EnsureConfigured()
+        /// <summary>Stráž pro veřejné API - vrací MLRest, aby ho volající nemusel dereferencovat sám.</summary>
+        private IMLRest EnsureConfigured()
         {
             if (MLRest is null || string.IsNullOrEmpty(CacheClass))
                 throw new InvalidOperationException("EDList: MLRest a CacheClass musí být nastaveny před použitím.");
+            return MLRest;
         }
 
         // ─── Column layout persist (L2) ──────────────────────────────────────────

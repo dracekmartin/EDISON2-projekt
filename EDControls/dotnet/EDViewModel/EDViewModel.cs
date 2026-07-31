@@ -17,6 +17,12 @@ public class EDViewModel : INotifyPropertyChanged
     /// </summary>
     public IMLRest? MLRest => _services.MLRest;
 
+    /// <summary>
+    /// <see cref="MLRest"/> pro post-login kód (VM otevřená až po loginu). Chybějící session
+    /// hlásí výjimkou, takže konzument nemusí psát `MLRest!`.
+    /// </summary>
+    protected IMLRest Rest => _services.RequireMLRest;
+
     /// <summary>Navigator pro otevírání oken — <c>WindowNavigator.Show(...)</c> / <c>ShowDialog(...)</c>.</summary>
     protected IWindowNavigator WindowNavigator => _services.WindowNavigator;
 

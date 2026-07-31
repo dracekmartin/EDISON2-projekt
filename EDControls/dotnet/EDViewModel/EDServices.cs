@@ -21,6 +21,15 @@ public class EDServices(
     IPopupDisplayer popupDisplayer)
 {
     public IMLRest? MLRest { get; set; } = mlRest;
+
+    /// <summary>
+    /// <see cref="MLRest"/> pro post-login konzumenty, kteří bez session nemají co dělat -
+    /// místo `MLRest!` a NRE dá čitelnou výjimku. Controls (<c>EDList</c>, <c>EDInputForm</c>)
+    /// tohle nepoužívají, mají vlastní hlášku pro hosta v <c>EnsureConfigured</c>.
+    /// </summary>
+    public IMLRest RequireMLRest => MLRest ?? throw new InvalidOperationException(
+        "MLRest není k dispozici - přístup před loginem (EDServices.MLRest je null).");
+
     public IWindowNavigator WindowNavigator { get; } = windowNavigator;
     public IPopupDisplayer PopupDisplayer { get; } = popupDisplayer;
     public Lic? ActiveLicence { get; set; }

@@ -44,6 +44,9 @@ z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
 
 - `EDServices.MLRest` je mutable a sdílená — přepnutí firmy vidí všechny VM automaticky.
   `EDServices.Current` hází před `Initialize` (testy si vytvářejí vlastní instanci s mocky).
+- Post-login kód čte `Rest` (na VM) / `EDServices.RequireMLRest` — chybějící session dá
+  `InvalidOperationException`, ne NRE. Nullable `MLRest` je pro kód, který musí fungovat
+  i před loginem (controls mají vlastní `EnsureConfigured` s hláškou pro hosta).
 - `EDViewModel.HasAccess()` vrací `true`, když `AccessTable == null` (testy, pre-login).
 - `IMLRest.With(...)` klon pro jednorázové requesty (poll `CacheLocks=2`, logout jiné
   firmy) — nikdy nemutuj sdílenou instanci (identity copy viz EDControls CLAUDE.md).

@@ -152,7 +152,13 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R12 - `IMLRest?` nullability protéká do konzumentů (25× `!`)
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-07-30) - `EDServices.RequireMLRest` + `EDViewModel.Rest`;
+  převedeno 18 `MLRest!` (ne 25 - část zmizela už dřív jinými změnami):
+  `EdisonMainViewModel` 12, `UserProfileViewModel` 2, `AppBootstrapper` /
+  `CompanySwitcher` / `UserProfileWindow` po jednom na `RequireMLRest`.
+  **Odchylka od návrhu:** `EDList` nezůstal na `MLRest!` - jeho `EnsureConfigured()`
+  teď vrací `IMLRest` (hláška pro hosta beze změny), takže v EDISONMAIN2 i EDControls
+  je nula `MLRest!`, jak žádá „Hotovo když". Testy v `EDViewModelTests` (3).
 - **P3 · S** · Závisí na: R15b (jinak nullable warningy nikdo neuvidí) · Blokuje: -
 - **Co udělat:** Aditivně `EDServices.RequireMLRest` (throw s čitelnou hláškou) a
   v `EDViewModel` vedle `MLRest` přidat `protected IMLRest Rest => _services.RequireMLRest`.
