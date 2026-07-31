@@ -2,6 +2,42 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-31 ✅ - `B29` denní značky dle rozvržení sloupců (#13045a)
+
+Detail → changelog 2026-07-31 (4). Klient hlásil dvě věci (sobotní odjezdy v nedělním sloupci ·
+značka „6" navíc) a **byla to jedna chyba**: značku dne jsme emitovali bez ohledu na rozvržení
+sloupců dnů, takže spoj s platností „sobota a svátek" nesl „6" i v nedělním sloupci, kam patří
+kvůli svátku. **Časy byly celou dobu správně, lhala značka.**
+
+Doportováno 1:1 dle `JRapiLinPrtMhd1` (nová `DenniZnacky`): oddělený sobotní a nedělní sloupec →
+u platností 6/7/+ žádná značka · sloučený víkend → značka jen když spoj odlišuje (vylučuje se proti
+sobotě) · konkrétní pracovní dny značkované vždy. Doplněna dosud chybějící značka **„svátek"**
+(legacy symbol id 15) s legendou „jede ve svátek".
+
+Ověřeno na datech klienta `ZL_KOVED` (linka 0771251, tři sloupce dnů, spoje „6+"), kontrolní vzorek
+`CB_CSADAD` 0345067 (zmizelo 15 falešných značek). Zlaté odtisky přebaselinovány - ubyly **jen řádky
+legendy** (110 → 96, 183 → 168), počty stránek/zastávek/odjezdů beze změny.
+
+**Zbývá z tiketu #13045:** koncept vlastních skupin dnů s obdobími = `B39` (Vlna 3).
+**Otevřený nález mimo tento blok:** u téže stránky se naše písmena rozdílů tras (E, Q, H) rozcházejí
+s legacy (J, E, G, O) - samostatná věc, nespojovat s tímhle.
+
+## 2026-07-31 ✅ - `B28` odpověď BBSK #13070 (bez vývoje)
+
+Ptali se na variantní trasy (zacházky) v šabloně a na vývěsku na výšku. **Všechno umíme** - odpověď
+byla návod, kde se co zapíná, plus nabídka hovoru; tiket vyřešen bez řádku kódu.
+
+Podstatná zjištění, která z toho vypadla a platí dál:
+- **„MHD" v zadání zákazníka obvykle znamená městskou dopravu, ne náš MHD modul** (ten mají jen
+  DPCB/DPKV) - ověřovat modul evidence, viz `customer-requirements §0.1`.
+- **Poznámky o rozdílech tras se zapínají u linky v JŘ** („Nastavení k tisku" → „Odjezdník MHD" →
+  „Poznámkovat rozdíly v trase"), ne v šabloně; sada písmen je tam v poli „Volné značky".
+- **Bez vzorové trasy poznámky nezmizí** - odpadne jen věta „jede až do" (spoj nemůže jet za vzor).
+  Změřeno: napříč ~38 000 linkami tří firem nemá kombinaci „poznámkování zapnuté + vyplněná vzorová
+  trasa" **ani jedna linka**, takže pozitivní formulace („jede přes") je na reálných datech
+  neproběhaná - neslibovat ji bez zkoušky.
+- Sonda pro výběr ukázkové linky se zacházkami = `AdVariantyProbe.ScanZachazky`.
+
 ## 2026-07-31 ✅ - `B34` zóny: doportovaná logika starého modulu (#13091 bod 4)
 
 Detail → changelog 2026-07-31 (3). **Klíčové zjištění analýzy: nebyla to nová featura, ale

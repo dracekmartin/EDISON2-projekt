@@ -5,9 +5,9 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B28** (odpověď BBSK bez vývoje) nebo **B29** (ověřit ohlášený chybný
-> výstup) a dál Vlnou 0 - KOVED kreslí vývěsky v návrháři naostro a fronta se znovu naplnila.
-> `B30` + `B31` hotové 31. 7. Linkový JŘ (**B10**, **B13**) jde až po ní.
+> **▶ Další session:** **B32** (tvar názvu zastávky) a dál Vlnou 0 - KOVED kreslí vývěsky
+> v návrháři naostro a fronta se znovu naplnila. `B28`-`B31` + `B34` hotové 31. 7.
+> Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
@@ -39,8 +39,6 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B28** | **#13070 BBSK - jen odpověď, vše umíme.** Ptají se, jak do šablony dostat variantní trasy (zacházky) a jak přepnout vývěsku na výšku. ⚠️ Píšou „TISK JŘ MHD" (= městská doprava), ale data vedou v **JR/AD** (MHD modul mají jen DPCB/DPKV) → mají k dispozici: orientaci ve vlastnostech stránky · variantní sloupce časů + písmena u odjezdů (hotové 27. 7.) · automatické poznámky rozdílů tras, které se zapínají **u linky v JŘ**, ne v šabloně · výchozí zastávkovou AD šablonu v distribuci. Ta „šablona s a/b/c", kterou si pamatují, je starý modul. | S | odpověď s návodem (kde se co zapíná), případně krátký hovor → zavřít |
-| **B29** | **#13045a - ověřit ohlášený chybný výstup:** v nedělním sloupci vidí sobotní odjezdy a u spojů značku „6", i když ji nadpis sloupce už říká. Koncept vlastních skupin dnů = `B39`. | S | doložit na jejich lince (oprava, nebo vysvětlení, proč to tak je) + tiket zúžit na `B39` |
 | **B32** | **#13089 - tvar názvu zastávky jako volba:** plný CIS tvar s dvojčárkou (technické exporty, soutěže) · bez dvojčárky · **typograficky vylepšený** („Zlín, aut. nádr." - mezera za čárkou a tečkou, pokud dál nenásleduje číslice). Plus vypnutelný alternativní MHD název. Jedno pravidlo pro všechna textová pole agendy, ne jen pro seznam zastávek. | S–M | KOVED potvrdí tvar na svých linkách |
 | **B33** | **#13008 - popis dopravce:** každý dopravce na vlastní řádek, volitelně výčet spojů, před popisem celé číslo linky dle licence, bez našeho uvozujícího „Zajišťuje". Část pro souhrnné JŘ závisí na #13099 (mimo TD). | S–M | klient si popis složí bez ručních úprav |
 | **B35** | **#13088 - nová pole agendy:** CIS čísla zastávek (výchozí / aktuální / cílová) · **číslo sloupku** (pro ně jiný údaj než označník, který už máme - nejdřív s JŘ vyjasnit, co v datech je) · výlukové texty jako oddělené pole (do CIS chodí jako poznámka „Výluka: …", na vývěsce je chtějí zvlášť). | M | pole jsou v nabídce agendy a plní se |

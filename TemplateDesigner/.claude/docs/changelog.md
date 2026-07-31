@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-31 (4) - denní značky se netisknou tam, kde je říká nadpis sloupce (#13045)
+
+Klient hlásil, že u spojů vidí značku „6", i když totéž říká nadpis sloupce, a že v nedělním sloupci
+má sobotní odjezdy. **Časy byly správně, lhala značka** - a je to jeden nedoportovaný kus starého
+modulu, který způsoboval obojí.
+
+- **Značka dne se nově řídí rozvržením sloupců.** Když má sobota i neděle vlastní sloupec, u platností
+  „sobota", „neděle" a „svátek" se značka netiskne vůbec - sloupec ji říká. Když je víkend v jednom
+  sloupci, značka zůstává, ale jen když spoj skutečně odlišuje (jede jen v sobotu, jen v neděli,
+  jen ve svátek). Konkrétní pracovní dny („jede jen v pátek") se značkují jako dosud.
+- **Proč to vypadalo jako sobotní odjezdy v nedělním sloupci:** spoj s platností „sobota a svátek"
+  se do nedělního sloupce dostane oprávněně (ve svátek jede), ale nesl u sebe značku „6", takže se
+  celý sloupec čte jako sobotní. Teď je bez značky, stejně jako ve starém modulu.
+- **Nová značka „svátek"** - dosud jsme ji neumili vůbec, přitom ve sloučeném víkendovém sloupci
+  je to ta jediná, která odliší spoj jedoucí jen ve svátek od spoje jedoucího každou neděli.
+  Text do legendy „jede ve svátek".
+
+**Ověřeno na datech klienta** (`ZL_KOVED`, linka 0771251): tři sloupce dnů, spoje s platností „6+"
+se objevují v sobotním i nedělním sloupci a už u nich není žádná denní značka. Kontrolní vzorek
+`CB_CSADAD` 0345067: ze 33 odjezdů zmizelo 15 falešných značek „6" a s nimi řádek legendy.
+Zlaté odtisky přebaselinovány - ubyly **jen řádky legendy** (110 → 96 a 183 → 168), počty stránek,
+zastávek i odjezdů zůstaly beze změny, což je přesně očekávaný tvar změny.
+
 ## 2026-07-31 (3) - `B34` zóny: doportovaná logika starého modulu (#13091 bod 4)
 
 Klient hlásil dvě věci: zóna se objeví jen tehdy, když je vyplněná u trasy linky, a místo čísla zóny
