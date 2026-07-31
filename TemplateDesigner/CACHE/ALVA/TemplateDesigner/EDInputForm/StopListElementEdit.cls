@@ -51,6 +51,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Sloupec Označník, když spoje jedou z různých označníků zastávky: hodnota z trasy / označník s nejvíce spoji / výčet všech dle četnosti / nebo řádek pro každý označník (časy jen variant daného označníku). Zapněte si k tomu sloupec Označník v tabu Sloupce; řádky vyžadují zapnuté Všechny varianty tras."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
+        s f = form.AddNumber("PartCount", "Rozdělit na více oddílů", 1, 1, 3)
+        s f.helpText = "Seznam se rozřeže na tolik oddílů vedle sebe. Každý oddíl nese celou tabulku znovu (záhlaví i všechny sloupce), jen s další porcí zastávek, takže je prvek nižší. Sloupce se pak musí vejít do šířky jednoho oddílu."
+        s f = form.AddDecimal("PartGap", "Mezera mezi oddíly", 3, 0, 50, "mm")
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)
         d f.AddListItem("AfterName", "Za zastávkou"), f.AddListItem("BeforeName", "Před zastávkou")
         d form.AddBool("ShowDirectionArrow", "Šipka směru", 0)

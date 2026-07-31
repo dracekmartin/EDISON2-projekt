@@ -37,6 +37,16 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// Default vyp = dosavadní vzhled; uvnitř sloupce zastávek rozděleného na značky + název se nekreslí.</summary>
     public bool ShowColumnSeparators { get; set; }
 
+    /// <summary>Na kolik oddílů vedle sebe se seznam rozřeže (KOVED #13097), max
+    /// <see cref="MaxPartCount"/>. 1 = jeden svislý seznam (dosavadní stav). Každý oddíl nese
+    /// **celou tabulku znovu** včetně záhlaví a všech sloupců, jen s další porcí zastávek; řádky
+    /// se dělí rovnoměrně, takže prvek je nižší. Šířka sloupců i zmenšování textu se pak počítá
+    /// ze šířky oddílu, ne prvku.</summary>
+    public int PartCount { get; set; } = 1;
+
+    /// <summary>Mezera mezi oddíly v mm.</summary>
+    public float PartGap { get; set; } = 3f;
+
     // ═══════════════════════════════════════════
     // Zobrazení zastávek (nesouvisí se sloupci)
     // ═══════════════════════════════════════════
@@ -149,6 +159,54 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// <summary>Výchozí velikost hrotu šipky (mm).</summary>
     public const float DefaultArrowHeadSizeMm = 1.2f;
 
+    /// <summary>Šířka jednoho oddílu v mm - rámec prvku bez mezer, dělený počtem oddílů.</summary>
+    private float PartWidthMm()
+    {
+        int parts = EffectivePartCount;
+        return (Width - (parts - 1) * PartGap) / parts;
+    }
+
+    /// <summary>Počet oddílů omezený na rozumný rozsah (0 nebo záporné číslo z šablony = jeden).
+    /// Strop 3 je vědomý: každý oddíl zužuje sloupce, u čtyř a víc už se seznam nedá přečíst.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    private int EffectivePartCount => Math.Clamp(PartCount, 1, MaxPartCount);
+
+    /// <summary>Nejvyšší počet oddílů (rozhodnutí Jan 2026-07-31 - víc se na vývěsku nevejde).</summary>
+    public const int MaxPartCount = 3;
+
+    /// <summary>Počet řádků na oddíl - dělí se rovnoměrně, poslední oddíl může být kratší.</summary>
+    internal static int RowsPerPart(int totalRows, int parts)
+    {
+        if (parts < 1) parts = 1;
+        return (totalRows + parts - 1) / parts;
+    }
+
+    /// <summary>Jeden viditelný řádek seznamu se svým stavem - výběr řádků je společný pro
+    /// všechny oddíly, geometrie (šířky, pozice šipky) se pak řeší per oddíl.</summary>
+    private readonly record struct StopRow(ZastavkaData Z, bool IsCurrent, bool IsPassed);
+
+    /// <summary>Zastávky, které se reálně vykreslí: bez projetých (pokud se netisknou) a bez těch,
+    /// kde neplatí podmínka viditelnosti řádku.</summary>
+    private List<StopRow> CollectVisibleRows(List<ZastavkaData> zastavky, bool showPassed)
+    {
+        var rows = new List<StopRow>(zastavky.Count);
+        bool foundCurrent = false;
+        foreach (var z in zastavky)
+        {
+            if (!showPassed && !foundCurrent && !z.JeAktualni) continue;
+            if (z.JeAktualni) foundCurrent = true;
+
+            bool isCurrent = z.JeAktualni;
+            bool isPassed = !foundCurrent && !z.JeAktualni;
+
+            // Podmíněné skrytí řádku (po určení current/passed, ať se nerozbije sledování current).
+            if (!RowConditions.IsVisible(RowVisibilityExpression, z.SourceRow)) continue;
+
+            rows.Add(new StopRow(z, isCurrent, isPassed));
+        }
+        return rows;
+    }
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -169,8 +227,14 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font. Vodorovně totéž -
         // součet pevných šířek sloupců nad šířku elementu se dřív oříznul (svislé varování
         // to nezachytí). Zmenšuje se tou horší z obou stran.
+        // Šířky sloupců i vodorovná škála se počítají ze šířky ODDÍLU, ne prvku - jinak by
+        // sloupce z oddílu vylezly (rozdělení na pokračování, KOVED #13097).
+        int parts = EffectivePartCount;
+        float partWidth = PartWidthMm();
+        if (partWidth <= 0) return;
+
         float heightScale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
-        float scale = MathF.Min(heightScale, ComputeWidthScale(columns));
+        float scale = MathF.Min(heightScale, ComputeWidthScale(columns, partWidth));
         float baseFontSize = DataStyle.FontSize ?? 8f;
         // Výška záhlaví/řádku musí odpovídat NEJVĚTŠÍMU reálně vykreslenému (per-column resolved)
         // fontu, ne jen element-level fontu. Jinak vzniká asymetrie: per-column font glyf zvětší,
@@ -197,10 +261,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Fallback (žádný StopName sloupec): poslední sloupec.
         int stopNameIdx = columns.FindIndex(c => c.Key == StopFields.StopName);
         if (stopNameIdx < 0) stopNameIdx = columns.Count - 1;
-        var colW = ResolveColumnWidths(columns);
-        float stopNameLeftMm = X;
-        for (int i = 0; i < stopNameIdx && i < columns.Count; i++) stopNameLeftMm += colW[columns[i]];
-        float stopNameRightMm = stopNameLeftMm + (stopNameIdx >= 0 && stopNameIdx < columns.Count ? colW[columns[stopNameIdx]] : 0f);
+        var colW = ResolveColumnWidths(columns, partWidth);
+        // Odsazení sloupce zastávek od levé hrany oddílu (per oddíl se přičte jeho X).
+        float stopNameOffsetMm = 0f;
+        for (int i = 0; i < stopNameIdx && i < columns.Count; i++) stopNameOffsetMm += colW[columns[i]];
+        float stopNameWidthMm = stopNameIdx >= 0 && stopNameIdx < columns.Count ? colW[columns[stopNameIdx]] : 0f;
 
         // Symbolový font pro piktogramové značky (MHD „na znamení" = drátový kód „D" → piktogram).
         var symbolFace = GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture));
@@ -210,16 +275,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ? ComputeMarkersSubCellWidth(zastavky, effectiveFontSize, ctx.MmToPx, symbolFace)
             : 0f;
 
-        // Asymetrická pozice šipky:
-        //   Vpravo: šipka UVNITŘ sloupce u pravé hrany - text je left-aligned, k pravé hraně obvykle nezasahuje.
-        //   Vlevo:  šipka MIMO sloupec (vlevo od jeho levé hrany) - left-aligned text by jinak kolidoval.
-        //           Bracket pak vede zpět až k levé hraně sloupce (do prázdné padding-right oblasti předchozího sloupce).
-        float arrowLineXMm = arrowLeft
-            ? stopNameLeftMm - ArrowOutsideOffsetMm
-            : stopNameRightMm - ArrowInsetFromEdgeMm;
-        float bracketColumnsSideMm = arrowLeft
-            ? stopNameLeftMm                         // bracket od šipky doprava až k levé hraně sloupce zastávek
-            : arrowLineXMm - ArrowBracketLengthMm;   // bracket od šipky doleva do sloupce
+        // Rezerva „Přizpůsobit buňce" pro sloupec názvů: při šipce vpravo nesmí zmenšený text
+        // podlézt její vodorovnou část (svislice + bracket míří do sloupce) - cíl končí před ní.
+        float nameShrinkReserveMm = (showArrow && !arrowLeft)
+            ? ArrowInsetFromEdgeMm + ArrowBracketLengthMm + 0.5f
+            : CellRenderer.DefaultShrinkReserveMm;
 
         // Clip na hranice elementu - chrání před přesahem, pokud součet šířek sloupců
         // přesahuje Width (nekonzistentní konfigurace). Konzistentní s DepartureGridElement.
@@ -228,92 +288,74 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         ctx.Canvas.ClipRect(clipRect);
         try
         {
-            // Záhlaví sloupců
-            float currentY = ShowHeader
-                ? RenderColumnHeaders(ctx, columns, stopNameIdx, markersSubCellWidth, colW, headerH, paints, scale)
-                : Y;
+            var visibleRows = hasData ? CollectVisibleRows(zastavky, showPassed) : [];
+            int rowsPerPart = RowsPerPart(visibleRows.Count, parts);
+            bool currentInPreviousPart = false;
 
-            if (hasData)
+            for (int part = 0; part < parts; part++)
             {
-                bool foundCurrent = false;
-                float arrowStartY = -1f;
-                float arrowEndY = -1f;
+                float partX = X + part * (partWidth + PartGap);
+                float stopNameLeftMm = partX + stopNameOffsetMm;
 
-                // Rezerva „Přizpůsobit buňce" pro sloupec názvů: při šipce vpravo nesmí zmenšený text
-                // podlézt její vodorovnou část (svislice + bracket míří do sloupce) - cíl končí před ní.
-                float nameShrinkReserveMm = (showArrow && !arrowLeft)
-                    ? ArrowInsetFromEdgeMm + ArrowBracketLengthMm + 0.5f
-                    : CellRenderer.DefaultShrinkReserveMm;
+                // Asymetrická pozice šipky:
+                //   Vpravo: šipka UVNITŘ sloupce u pravé hrany - text je left-aligned, k pravé hraně obvykle nezasahuje.
+                //   Vlevo:  šipka MIMO sloupec (vlevo od jeho levé hrany) - left-aligned text by jinak kolidoval.
+                //           Bracket pak vede zpět až k levé hraně sloupce (do prázdné padding-right oblasti předchozího sloupce).
+                float arrowLineXMm = arrowLeft
+                    ? stopNameLeftMm - ArrowOutsideOffsetMm
+                    : stopNameLeftMm + stopNameWidthMm - ArrowInsetFromEdgeMm;
+                float bracketColumnsSideMm = arrowLeft
+                    ? stopNameLeftMm                         // bracket od šipky doprava až k levé hraně sloupce zastávek
+                    : arrowLineXMm - ArrowBracketLengthMm;   // bracket od šipky doleva do sloupce
 
-                // Řádky se sestaví jako plán a nakreslí jednou smyčkou; currentY se posouvá
-                // už při sestavování, protože Y potřebuje sledování šipky směru.
-                float rowsStartY = currentY;
-                var plan = new List<RowSpec>();
+                // Záhlaví sloupců se v každém oddílu zopakuje - oddíl je celá tabulka znovu.
+                float currentY = ShowHeader
+                    ? RenderColumnHeaders(ctx, columns, stopNameIdx, markersSubCellWidth, colW, headerH, paints, scale, partX, partWidth)
+                    : Y;
 
-                foreach (var z in zastavky)
+                if (visibleRows.Count > 0)
                 {
-                    if (!showPassed && !foundCurrent && !z.JeAktualni)
-                        continue;
-                    if (z.JeAktualni) foundCurrent = true;
+                    int from = part * rowsPerPart;
+                    if (from >= visibleRows.Count) break;   // méně řádků než oddílů - zbytek se nekreslí
+                    int count = Math.Min(rowsPerPart, visibleRows.Count - from);
 
-                    bool isCurrent = z.JeAktualni;
-                    bool isPassed = !foundCurrent && !z.JeAktualni;
+                    // Šipka pokračuje: v oddílu s aktuální zastávkou začíná u ní, v dalších od horní hrany.
+                    float arrowStartY = currentInPreviousPart ? currentY : -1f;
+                    float arrowEndY = -1f;
 
-                    // Podmíněné skrytí řádku (po určení current/passed, ať se nerozbije sledování current).
-                    if (!RowConditions.IsVisible(RowVisibilityExpression, z.SourceRow)) continue;
+                    float rowsStartY = currentY;
+                    var plan = new List<RowSpec>(count);
 
-                    // Sledovat Y pro šipku směru (kreslí se až za celým plánem)
-                    if (isCurrent) arrowStartY = currentY;
-                    arrowEndY = currentY;
-                    currentY += rowH;
-
-                    // Podbarvení řádku přes celou šířku elementu (za sloupci i v gap za posledním).
-                    // Priorita: podmíněné zvýraznění (uživatelský záměr) > podbarvení aktuální zastávky.
-                    // Per-column Style.Data.BackgroundColor (pokud je neprůhledná) toto lokálně přepíše.
-                    string? rowBg =
-                        RowConditions.HighlightColor(HighlightRules, z.SourceRow)
-                        ?? (isCurrent ? CurrentStopBackgroundColor : null);
-
-                    // „Přizpůsobit buňce" + značky za názvem: zmenšení názvu počítá i s šířkou
-                    // značek (škálují se spolu), aby se za zmenšený název vešly a nepodlézaly šipku.
-                    float nameTrailingMm = 0f;
-                    if (stopNameIdx >= 0 && MarkersPosition == StopMarkersSide.AfterName)
+                    for (int i = from; i < from + count; i++)
                     {
-                        var nameStyleRow = ResolveRowStyle(columns[stopNameIdx], isCurrent, isPassed);
-                        nameTrailingMm = MeasureMarkersTrailingMm(ctx, BuildStopMarkerRuns(z), nameStyleRow, symbolFace, scale);
+                        var row = visibleRows[i];
+                        if (row.IsCurrent)
+                        {
+                            arrowStartY = currentY;
+                            currentInPreviousPart = true;
+                        }
+                        arrowEndY = currentY;
+                        currentY += rowH;
+
+                        plan.Add(BuildRowSpec(ctx, row, columns, stopNameIdx, colW, markersSubCellWidth,
+                            stopNameLeftMm, rowH, scale, symbolFace, nameShrinkReserveMm, paints));
                     }
 
-                    var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth, colW, nameShrinkReserveMm, nameTrailingMm);
+                    RowPlanRenderer.DrawRows(ctx, partX, rowsStartY, partWidth, plan, scale);
 
-                    var zastavka = z;
-                    plan.Add(new(RowKind.Data, rowH, specs)
-                    {
-                        Background = ColorHex.ParseOrNull(rowBg),
-                        VerticalLinePaint = ShowColumnSeparators ? paints.Grid : null,
-                        LineBelowPaint = ShowRowSeparators ? paints.Grid : null,
-                        // Značky (na znamení / atributy / poznámky) po úsecích: piktogramy symbolovým
-                        // Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky normálním.
-                        // V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
-                        Decorate = rowY => DrawStopMarkers(ctx, zastavka, rowY, rowH, columns[stopNameIdx],
-                            stopNameLeftMm, colW[columns[stopNameIdx]], markersSubCellWidth,
-                            isCurrent, isPassed, symbolFace, scale, nameShrinkReserveMm),
-                    });
+                    // Šipka směru jízdy v rezervovaném gutteru - ┌─▼ (vlevo) nebo ─┐▼ (vpravo)
+                    if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
+                        RenderDirectionArrow(ctx, arrowLineXMm, bracketColumnsSideMm, arrowStartY, arrowEndY, rowH);
                 }
-
-                RowPlanRenderer.DrawRows(ctx, X, rowsStartY, Width, plan, scale);
-
-                // Šipka směru jízdy v rezervovaném gutteru - ┌─▼ (vlevo) nebo ─┐▼ (vpravo)
-                if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
-                    RenderDirectionArrow(ctx, arrowLineXMm, bracketColumnsSideMm, arrowStartY, arrowEndY, rowH);
-            }
-            else if (ctx.Data is null)
-            {
-                // Placeholder se ukazuje jen v designeru. Print s prázdnými daty nesmí
-                // vykreslovat fake zastávky.
-                float placeholderFontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
-                using var placeholderFont = new SKFont(GetTypeface(ResolveColumnDataParent()), placeholderFontPx);
-                currentY = RenderPlaceholderRows(ctx, 4, "Zastávka",
-                    X, currentY, Width, rowH, placeholderFont, paints.Text, paints.Grid);
+                else if (ctx.Data is null)
+                {
+                    // Placeholder se ukazuje jen v designeru. Print s prázdnými daty nesmí
+                    // vykreslovat fake zastávky.
+                    float placeholderFontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
+                    using var placeholderFont = new SKFont(GetTypeface(ResolveColumnDataParent()), placeholderFontPx);
+                    RenderPlaceholderRows(ctx, 4, "Zastávka",
+                        partX, currentY, partWidth, rowH, placeholderFont, paints.Text, paints.Grid);
+                }
             }
 
             // Outer border je řízen TemplateElement.BorderColor/BorderWidth (druhý průchod).
@@ -324,23 +366,65 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         }
     }
 
-    /// <summary>Vykreslí záhlaví sloupců přes ColumnRenderer.</summary>
+    /// <summary>Sestaví jeden datový řádek plánu - podbarvení, čáry a dokreslení značek.</summary>
+    private RowSpec BuildRowSpec(
+        RenderContext ctx, StopRow row, List<StopColumn> columns, int stopNameIdx,
+        Dictionary<StopColumn, float> colW, float markersSubCellWidth, float stopNameLeftMm,
+        float rowH, float scale, SKTypeface symbolFace, float nameShrinkReserveMm, SchedulePaints paints)
+    {
+        var z = row.Z;
+
+        // Podbarvení řádku přes celou šířku oddílu (za sloupci i v gap za posledním).
+        // Priorita: podmíněné zvýraznění (uživatelský záměr) > podbarvení aktuální zastávky.
+        // Per-column Style.Data.BackgroundColor (pokud je neprůhledná) toto lokálně přepíše.
+        string? rowBg =
+            RowConditions.HighlightColor(HighlightRules, z.SourceRow)
+            ?? (row.IsCurrent ? CurrentStopBackgroundColor : null);
+
+        // „Přizpůsobit buňce" + značky za názvem: zmenšení názvu počítá i s šířkou
+        // značek (škálují se spolu), aby se za zmenšený název vešly a nepodlézaly šipku.
+        float nameTrailingMm = 0f;
+        if (stopNameIdx >= 0 && MarkersPosition == StopMarkersSide.AfterName)
+        {
+            var nameStyleRow = ResolveRowStyle(columns[stopNameIdx], row.IsCurrent, row.IsPassed);
+            nameTrailingMm = MeasureMarkersTrailingMm(ctx, BuildStopMarkerRuns(z), nameStyleRow, symbolFace, scale);
+        }
+
+        var specs = BuildDataRowSpecs(columns, z, row.IsCurrent, row.IsPassed, stopNameIdx,
+            markersSubCellWidth, colW, nameShrinkReserveMm, nameTrailingMm);
+
+        return new RowSpec(RowKind.Data, rowH, specs)
+        {
+            Background = ColorHex.ParseOrNull(rowBg),
+            VerticalLinePaint = ShowColumnSeparators ? paints.Grid : null,
+            LineBelowPaint = ShowRowSeparators ? paints.Grid : null,
+            // Značky (na znamení / atributy / poznámky) po úsecích: piktogramy symbolovým
+            // Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky normálním.
+            // V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
+            Decorate = rowY => DrawStopMarkers(ctx, z, rowY, rowH, columns[stopNameIdx],
+                stopNameLeftMm, colW[columns[stopNameIdx]], markersSubCellWidth,
+                row.IsCurrent, row.IsPassed, symbolFace, scale, nameShrinkReserveMm),
+        };
+    }
+
+    /// <summary>Vykreslí záhlaví sloupců jednoho oddílu přes ColumnRenderer.</summary>
     private float RenderColumnHeaders(
         RenderContext ctx, List<StopColumn> columns, int stopNameIdx, float markersSubCellWidth,
-        Dictionary<StopColumn, float> widths, float headerH, SchedulePaints paints, float scale)
+        Dictionary<StopColumn, float> widths, float headerH, SchedulePaints paints, float scale,
+        float xMm, float widthMm)
     {
-        // Výchozí pozadí záhlaví (přes celou šířku elementu).
+        // Výchozí pozadí záhlaví (přes celou šířku oddílu).
         // Per-column header bg z kaskády to lokálně přepíše.
-        var headerRect = ctx.ToCanvasRect(X, Y, Width, headerH);
+        var headerRect = ctx.ToCanvasRect(xMm, Y, widthMm, headerH);
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
         var specs = BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth, widths);
-        ColumnRenderer.DrawRow(ctx, X, Y, headerH, specs,
+        ColumnRenderer.DrawRow(ctx, xMm, Y, headerH, specs,
             ShowColumnSeparators ? paints.Grid : null, fontScale: scale);
 
         // Čára pod záhlavím
-        var lineStart = ctx.ToCanvas(X, Y + headerH);
-        var lineEnd = ctx.ToCanvas(X + Width, Y + headerH);
+        var lineStart = ctx.ToCanvas(xMm, Y + headerH);
+        var lineEnd = ctx.ToCanvas(xMm + widthMm, Y + headerH);
         ctx.Canvas.DrawLine(lineStart, lineEnd, paints.Grid);
 
         return Y + headerH;
@@ -582,7 +666,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Stejný zdroj fontu jako v Render() - max resolved per-column, ať scale/overflow sedí.
         float headerH = ShowHeader ? ComputeHeaderH(MaxResolvedHeaderFontPt()) * MaxHeaderLines() : 0f;
         float rowH = DataRowHeight ?? ComputeRowH(MaxResolvedDataFontPt());
-        return headerH + visibleStops * rowH;
+        // Rozdělení na pokračování: výška je dána nejdelším oddílem, ne všemi řádky.
+        return headerH + RowsPerPart(visibleStops, EffectivePartCount) * rowH;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -590,18 +675,19 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private List<StopColumn> GetVisibleColumns() => Columns.Where(c => c.Visible).ToList();
 
     /// <summary>Vyřeší efektivní šířky sloupců přes sdílené jádro (<see cref="TableLayout.ResolveWidths"/>):
-    /// pevné (Width != null) zůstanou, auto (null) si rovnoměrně rozdělí zbytek. StopList je mm-only.</summary>
-    private Dictionary<StopColumn, float> ResolveColumnWidths(List<StopColumn> visible)
+    /// pevné (Width != null) zůstanou, auto (null) si rovnoměrně rozdělí zbytek. StopList je mm-only.
+    /// <paramref name="availableWidthMm"/> = šířka oddílu, ne prvku (rozdělení na pokračování).</summary>
+    private Dictionary<StopColumn, float> ResolveColumnWidths(List<StopColumn> visible, float availableWidthMm)
     {
-        var widths = TableLayout.ResolveWidths(WidthProjection(visible), Width);
+        var widths = TableLayout.ResolveWidths(WidthProjection(visible), availableWidthMm);
         var result = new Dictionary<StopColumn, float>(visible.Count);
         for (int i = 0; i < visible.Count; i++) result[visible[i]] = widths[i];
         return result;
     }
 
-    /// <summary>Škála fontů, aby se sloupce vešly do šířky elementu (1 = vejdou se).</summary>
-    private float ComputeWidthScale(List<StopColumn> visible) =>
-        TableLayout.ComputeWidthScale(WidthProjection(visible), Width);
+    /// <summary>Škála fontů, aby se sloupce vešly do šířky oddílu (1 = vejdou se).</summary>
+    private float ComputeWidthScale(List<StopColumn> visible, float availableWidthMm) =>
+        TableLayout.ComputeWidthScale(WidthProjection(visible), availableWidthMm);
 
     private static List<TableLayout.ColWidth> WidthProjection(List<StopColumn> visible) =>
         visible.Select(c => new TableLayout.ColWidth(c.Width)).ToList();
@@ -980,6 +1066,18 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         .. GetCellZoneBaseColorDescriptors(),
 
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce…", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
+        new FloatPropertyDescriptor
+        {
+            Label = "Rozdělit na více oddílů", Group = "Zastávky",
+            Get = () => PartCount, Set = v => PartCount = (int)MathF.Round(v),
+            Min = 1, Max = MaxPartCount, Format = "0"
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Mezera mezi oddíly", Group = "Zastávky",
+            Get = () => PartGap, Set = v => PartGap = v,
+            Min = 0, Max = 50, Unit = "mm", Format = "0.##"
+        },
         new BoolPropertyDescriptor  { Label = "Všechny varianty tras", Group = "Zastávky", Get = () => ShowAllRouteVariants, Set = v => ShowAllRouteVariants = v },
 
         GetDataRowHeightDescriptor(),
@@ -1101,6 +1199,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         if (CurrentStopFontSize is not null) CurrentStopFontSize *= scale;
         DirectionArrowWidth *= scale;
         DirectionArrowHeadSize *= scale;
+        PartGap *= scale;
         foreach (var col in Columns)
         {
             if (col.Width is float w) col.Width = w * scale;   // auto (null) se neškáluje
@@ -1116,6 +1215,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         {
             ShowRowSeparators       = ShowRowSeparators,
             ShowColumnSeparators    = ShowColumnSeparators,
+            PartCount               = PartCount,
+            PartGap                 = PartGap,
             Columns                 = Columns.Select(c => c.Clone()).ToList(),
             ShowDirectionArrow      = ShowDirectionArrow,
             DirectionArrowColor     = DirectionArrowColor,
