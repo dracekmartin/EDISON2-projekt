@@ -50,6 +50,10 @@ Dílčí vylepšení a náměty.
 - **Barva linky z jízdního řádu i v jednotlivých sloupcích** - v editoru sloupců jde barva textu
   i pozadí zapsat textem, takže lze zadat `{BARVA_LINKY}` a barva se vezme z jízdního řádu.
   Platí pro zastávky, odjezdy i tabulky.
+- **Tvar názvu zastávky** - nová volba v parametrech sestavy (skupina Obecné): zkrácený (dosavadní),
+  typograficky upravený s mezerami za čárkou a tečkou („Zlín, aut. nádr."), plný tvar podle CIS
+  s dvojčárkou, případně i s okresem - poslední dva pro technické exporty. Druhou volbou lze vypnout
+  použití upraveného názvu pro MHD, pokud jej zastávka v číselníku má.
 - **Seznam zastávek na pokračování** - dlouhý seznam lze rozdělit na dva nebo tři oddíly vedle sebe.
   Každý oddíl má vlastní záhlaví a všechny sloupce, jen s další částí zastávek, takže je vývěska nižší.
 - **Tarifní zóny** - když zónu nemá vyplněná trasa linky, vezme se ze **nastavení zastávky**

@@ -5,7 +5,7 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B32** (tvar názvu zastávky) a dál Vlnou 0 - KOVED kreslí vývěsky
+> **▶ Další session:** **B33** (popis dopravce) a dál Vlnou 0 - KOVED kreslí vývěsky
 > v návrháři naostro a fronta se znovu naplnila. `B28`-`B31` + `B34` hotové 31. 7.
 > Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
@@ -39,7 +39,6 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B32** | **#13089 - tvar názvu zastávky jako volba:** plný CIS tvar s dvojčárkou (technické exporty, soutěže) · bez dvojčárky · **typograficky vylepšený** („Zlín, aut. nádr." - mezera za čárkou a tečkou, pokud dál nenásleduje číslice). Plus vypnutelný alternativní MHD název. Jedno pravidlo pro všechna textová pole agendy, ne jen pro seznam zastávek. | S–M | KOVED potvrdí tvar na svých linkách |
 | **B33** | **#13008 - popis dopravce:** každý dopravce na vlastní řádek, volitelně výčet spojů, před popisem celé číslo linky dle licence, bez našeho uvozujícího „Zajišťuje". Část pro souhrnné JŘ závisí na #13099 (mimo TD). | S–M | klient si popis složí bez ručních úprav |
 | **B35** | **#13088 - nová pole agendy:** CIS čísla zastávek (výchozí / aktuální / cílová) · **číslo sloupku** (pro ně jiný údaj než označník, který už máme - nejdřív s JŘ vyjasnit, co v datech je) · výlukové texty jako oddělené pole (do CIS chodí jako poznámka „Výluka: …", na vývěsce je chtějí zvlášť). | M | pole jsou v nabídce agendy a plní se |
 | **B36** | **#13093a - poznámky, snadná část:** textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec (linkový JŘ je čte) - druhý blok poznámek si klient složí sám, filtr podle typu poznámky legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků poznámek nad sebou bez ručního dopočítávání výšky |
@@ -170,7 +169,7 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**Kolo KOVED z 30. 7. drží Vlna 0** (`B32`-`B37`; `B28`-`B31`, `B34` a `B38` hotové) **+ Vlna 3**
+**Kolo KOVED z 30. 7. drží Vlna 0** (`B33`, `B35`-`B37`; `B28`-`B32`, `B34` a `B38` hotové) **+ Vlna 3**
 (`B39`) - sem se nekopíruje.
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí

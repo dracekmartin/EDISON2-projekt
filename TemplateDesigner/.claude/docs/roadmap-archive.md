@@ -38,6 +38,28 @@ Podstatná zjištění, která z toho vypadla a platí dál:
   neproběhaná - neslibovat ji bez zkoušky.
 - Sonda pro výběr ukázkové linky se zacházkami = `AdVariantyProbe.ScanZachazky`.
 
+## 2026-07-31 ✅ - `B32` tvar názvu zastávky jako volba sestavy (#13089)
+
+Detail → changelog 2026-07-31 (7). Dvě volby v **nové skupině parametrů „Obecné"**: tvar názvu
+(zkrácený = výchozí · typograficky upravený · plný CIS · plný CIS s okresem) a „Použít název pro MHD".
+
+- **Kde se název skládá:** `NazevZastavky` čte `^JRZ` pole 7 („upravený název pro MHD",
+  legacy `JRapiZst` dta13) a padá na pole 2 (CIS); pole 3 je okres. Jedna metoda = pravidlo se propíše
+  i do nadpisu vývěsky, cíle a textů poznámek, protože všechny berou název odtud.
+- **Proč parametr, ne vlastnost prvku:** mění to **hodnotu dat** (skládá server), a je to volba při
+  tisku - klient chce běžně vylepšený tvar a pro export do soutěže plný CIS bez druhé šablony.
+  Skupina „Obecné" (ne „Seznam zastávek"), protože název je i v nadpisu, cíli a poznámkách; konvence
+  „skupina = prvek, parametry celé sestavy → Obecné" je zapsaná v agendě.
+- **Nastavení per požadavek** leží v `^||TiskAd("nazev",…)`, aby se nemuselo protahovat všemi
+  voláními jména (`NactiNastaveniNazvu` se volá po úklidu cache v `GetData`/`GetMockData`).
+- **Typografické pravidlo jen na názvy zastávek**, ne na volný text - mezera za tečkou rozbije
+  `www.idzk.cz`, a ten mají v poznámce k tarifu na každé lince IDZK. Před číslicí se mezera nedoplní
+  (`rozc.0.9`, `č.1`). Zamčeno testem včetně toho, že dvojčárka se stahuje **před** typografií.
+- **Oba parametry v allowlistu server-side parametrů** - jinak by změna v UI nespustila re-fetch
+  a klik by byl no-op (past z `cache-api.md`).
+- Ověřeno end-to-end na datech KOVED (`ZL_KOVED`, linka 0822995), ne jen jako čistá funkce.
+  Zlaté odtisky se nepohnuly (výchozí = dosavadní tvar).
+
 ## 2026-07-31 ✅ - `B41` mrtvé UI odklizeno: co řídí parametr sestavy, není i v prvku
 
 Detail → changelog 2026-07-31 (6). Tři přepínače v prvcích nic nedělaly, protože je parametr sestavy

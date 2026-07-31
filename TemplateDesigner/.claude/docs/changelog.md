@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-31 (7) - `B32` tvar názvu zastávky jako volba sestavy (#13089)
+
+KOVED viděl na vývěsce „Zlín,aut.nádr." a chtěl si vybrat, jak má název vypadat. Nově jsou v
+parametrech sestavy dvě volby v **nové skupině „Obecné"** (název zastávky se objevuje i v nadpisu
+vývěsky, v cíli a v textech poznámek, takže to není nastavení jednoho prvku):
+
+- **Tvar názvu zastávky:** Zkrácený („Zlín,aut.nádr.", **výchozí = dosavadní stav**) · Typograficky
+  upravený („Zlín, aut. nádr.") · Plný CIS („Zlín,,aut.nádr.") · Plný CIS s okresem
+  („Zlín,,aut.nádr.,ZL") - poslední dva pro technické exporty a soutěže.
+- **Použít název pro MHD:** zastávka může mít v číselníku vedle názvu podle CIS ještě „upravený název
+  pro MHD" a ten se tiskl přednostně. Vypnutím se použije CIS název. (Např. v CB je u autobusového
+  nádraží MHD název „České Budějovice,AN" místo „České Budějovice,,aut.nádr.".)
+
+**Proč parametr a ne vlastnost prvku:** mění to hodnotu dat, ne vzhled - skládá se na serveru. A je to
+volba při tisku: klient chce běžně vylepšený tvar a pro export do soutěže plný CIS, bez druhé šablony.
+Oba parametry jsou v allowlistu server-side parametrů, takže jejich změna spustí načtení dat.
+
+- **Typografické pravidlo je vědomě jen pro názvy zastávek**, ne pro libovolný text: mezera za tečkou
+  by rozbila webovou adresu („www.idzk.cz" → „www. idzk. cz"), a tu mají v poznámce k tarifu na každé
+  lince IDZK. Před číslicí se mezera nedoplňuje, takže „rozc.0.9" a „č.1" zůstávají.
+- Ověřeno **end-to-end na datech KOVED** (`ZL_KOVED`, linka 0822995), ne jen jako čistá funkce:
+  výchozí tvar je bez dvojčárky, typografický má mezeru za čárkou, plný CIS dvojčárku vrátí.
+- Zlaté odtisky se nepohnuly - výchozí hodnota je dosavadní tvar.
+
+Caché 57/57 (+5), .NET 536/536.
+
 ## 2026-07-31 (6) - `B41` odklizené mrtvé UI: co řídí parametr sestavy, není i v prvku
 
 Tři přepínače v prvcích **nic nedělaly** - parametr sestavy je přebíjel, a protože ho agendy JŘ
