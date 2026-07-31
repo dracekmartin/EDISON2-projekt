@@ -5,7 +5,7 @@
 Ten dokument je snapshot analýzy (evidence, dopad, návrh) a **nemění se**. Tady je plán
 a stav.
 
-**Hotovo: 5 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
+**Hotovo: 8 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
 
 ## Jak s dokumentem pracovat
 
@@ -173,7 +173,10 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R9a - WinForms color picker z `AppBootstrapper` ven
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-07-30) - přesunuto do `Startup/WinFormsColorPicker.cs`
+  (`WinFormsColorPicker.Pick`), plné kvalifikace nahradily aliasy `Forms`/`Drawing`.
+  `AppBootstrapper` z 540 na 505 řádků, wire-up v `InitializeServices` zůstal.
+  Bez testu: bez WinForms dialogu ho nejde spustit headless.
 - **P2 · S** · Závisí na: - · Blokuje: -
 - **Co udělat:** ~40 řádků (`PickColorWithWinFormsDialog` + `Win32Window` shim) přesunout
   do vlastního souboru ve `Startup/`. Čistý přesun, wire-up v `InitializeServices`
