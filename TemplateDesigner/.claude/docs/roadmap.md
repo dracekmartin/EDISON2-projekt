@@ -57,6 +57,14 @@ L‑4 stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání 
 - **Fáze B - odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
   vnořené datasource (`_rows` v `_rows`).
+- **`B27` Řazení řádků v dynamické tabulce** (S–M; podnět kolegy, bez zákaznické poptávky) - dnes se
+  řádky tisknou v pořadí, v jakém je vrátí agenda; uživatel je nemá jak přeřadit. Rozsah prvního
+  kroku: **primární sloupec + volitelně sekundární**, vzestupně/sestupně, jako vlastnost prvku
+  (aditivní JSON, bez migrace). Dvě věci rozhodnout dřív než se to začne psát: (1) řadit podle
+  **hodnoty pole**, ne podle vykreslené buňky - jinak formát a placeholdery pořadí rozhodí, a typ brát
+  ze schématu (číslo/datum/čas ≠ text); (2) **klientsky v prvku**, ne v agendě - serverové řazení by
+  se muselo dělat per agenda. Platí jen pro **dynamickou tabulku**; JŘ prvky mají pořadí dané trasou
+  a ta se řadit nesmí.
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR - velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
 - **Externí datové zdroje** (analýza 2026-07-12, na poptávku) - architektura připravená (engine zná jen
