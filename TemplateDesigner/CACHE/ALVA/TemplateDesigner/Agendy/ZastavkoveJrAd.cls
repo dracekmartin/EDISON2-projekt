@@ -743,14 +743,10 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             i komentarZnak '= "" s komentareLegenda(komentarZnak) = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_SpeC",komentarZnak))
         }
 
-        // Týdenní platnost - kroužkové denní značky (číslice 1-7 z plk = konkrétní dny, které spoj jede).
-        // Prázdné/"."/skupinové vzory (X, +) = celá skupina → bez značky (1:1 legacy: značka jen u
-        // konkrétních dnů, např. „⑤"=jede jen v pátek). Jednoznaková číslice → symbolový font ji kroužkuje.
-        s dnyZnaky = ""
-        f di=1:1:$l(plk) {
-            s dch = $e(plk, di)
-            i "1234567" '[ dch continue
-            s dnyZnaky = dnyZnaky_dch
+        // Týdenní platnost - kroužkové denní značky; sada závisí na rozvržení sloupců (viz DenniZnacky).
+        s dnyZnaky = ..DenniZnacky(ftl, plk)
+        f di=1:1:$l(dnyZnaky) {
+            s dch = $e(dnyZnaky, di)
             s dnyLegenda(dch) = ..TextDneVTydnu(dch)
         }
 
@@ -1560,10 +1556,33 @@ ClassMethod PrefixOmezeni(omzId As %String) As %String
     q $case(omzId, 11:"jede jen ", 12:"jede také ", 13:"jede ", 14:"jede jen v su. ", 15:"jede jen v li. ", 22:"nejede ", :"")
 }
 
-/// Text do legendy pro kroužkovou denní značku týdenní platnosti (číslice 1-7).
+/// Text do legendy pro kroužkovou denní značku týdenní platnosti (dny 1-7, svátek `+`).
 ClassMethod TextDneVTydnu(dch As %String) As %String
 {
-    q $case(dch, "1":"jede v pondělí", "2":"jede v úterý", "3":"jede ve středu", "4":"jede ve čtvrtek", "5":"jede v pátek", "6":"jede v sobotu", "7":"jede v neděli", :"")
+    q $case(dch, "1":"jede v pondělí", "2":"jede v úterý", "3":"jede ve středu", "4":"jede ve čtvrtek", "5":"jede v pátek", "6":"jede v sobotu", "7":"jede v neděli", "+":"jede ve svátek", :"")
+}
+
+/// Denní značky týdenní platnosti pro odjezd - závisí na **rozvržení sloupců dnů** (FTL),
+/// 1:1 legacy `JRapiLinPrtMhd1` (ř.80-83 pro FTL 0, ř.112-114 pro FTL 1, ř.128-130 pro FTL 2,
+/// ř.151-152 pro FTL 3). Značka smí nést jen informaci, kterou **nedává nadpis sloupce**:
+///   - sobota i neděle mají vlastní sloupec (FTL 0/3) → pro 6, 7 a `+` se značka netiskne vůbec
+///   - víkend je v jednom sloupci (FTL 1/2) → značka rozlišuje uvnitř sloupce, ale jen když spoj
+///     nejede i v ostatní víkendové dny („6" jen bez 7 a bez `+`, „7" a `+` jen bez 6)
+/// Konkrétní pracovní dny (1-5) se značkují vždy - sloupec pracovních dnů je nerozlišuje.
+/// Skupinový vzor `X` a prázdná/`.` platnost značku nemají (celá skupina).
+ClassMethod DenniZnacky(ftl As %String, plk As %String) As %String
+{
+    s znacky = ""
+    f di=1:1:$l(plk) {
+        s dch = $e(plk, di)
+        i "12345" '[ dch continue
+        s znacky = znacky_dch
+    }
+    i (ftl = 0) || (ftl = 3) q znacky
+    i (plk["6") && (plk'["7") && (plk'["+") s znacky = znacky_"6"
+    i (plk'["6") && (plk["7") s znacky = znacky_"7"
+    i (plk'["6") && (plk["+") s znacky = znacky_"+"
+    q znacky
 }
 
 /// Datumová část omezení - 1:1 formát zastávkového JŘ (gold `JRapiLinPrtPS3`): datumy přes `UpravDatum`
