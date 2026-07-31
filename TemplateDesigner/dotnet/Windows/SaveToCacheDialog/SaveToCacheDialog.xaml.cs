@@ -25,7 +25,7 @@ public partial class SaveToCacheDialog : Window
 
         // Tlačítko „Uložit" je nedostupné, dokud není vyplněné jméno - místo popupu při kliku
         // na prázdné jméno (přívětivější). Popup ze Save() zůstává jako záloha pro ostatní validace.
-        TheForm.Initialized += UpdateSaveEnabled;
+        TheForm.SchemaLoaded += UpdateSaveEnabled;
         TheForm.FieldChanged += _ => UpdateSaveEnabled();
     }
 

@@ -10,7 +10,8 @@ namespace EDControls;
 /// <summary>
 /// Persistence stavu WPF okna (pozice, velikost, Maximized) přes existující Caché endpoint
 /// <c>ALVA.LIBRARY.Form.SaveParams</c> / <c>LoadParams</c>. Storage je per-MLP × IDFa
-/// (server čte IDFa ze sys kontextu MLRest).
+/// (server čte IDFa ze sys kontextu MLRest). Wire je <c>object[]</c>, ne CVar - legacy endpoint
+/// posílá IN i OUT jako číslované řádky <c>"klíč{del}hodnota"</c>.
 /// </summary>
 /// <remarks>
 /// FormID se default odvozuje z názvu VM (viz <see cref="EDViewModel.PersistedFormId"/>) a

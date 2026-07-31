@@ -17,6 +17,12 @@ public class EDViewModel : INotifyPropertyChanged
     /// </summary>
     public IMLRest? MLRest => _services.MLRest;
 
+    /// <summary>
+    /// <see cref="MLRest"/> pro post-login kód (VM otevřená až po loginu). Chybějící session
+    /// hlásí výjimkou, takže konzument nemusí psát `MLRest!`.
+    /// </summary>
+    protected IMLRest Rest => _services.RequireMLRest;
+
     /// <summary>Navigator pro otevírání oken — <c>WindowNavigator.Show(...)</c> / <c>ShowDialog(...)</c>.</summary>
     protected IWindowNavigator WindowNavigator => _services.WindowNavigator;
 
@@ -145,20 +151,14 @@ public class EDViewModel : INotifyPropertyChanged
             WindowStatePersistence.Attach(window, formId);
             HookUsageTelemetry(window, formId);
         }
-        if (ShowSupportPanel)
-        {
-            // Best-effort jako persistence a telemetrie — panel nikdy nesmí zabránit
-            // otevření okna. Vlastní vytvoření panelu je odložené a hlídá se zvlášť
-            // (viz EDSupportPanel.Create).
-            try { EDSupportPanel.EDSupportPanel.Attach(window, _services, PopupDisplayer); }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine("EDSupportPanel: " + ex.Message); }
-        }
     }
 
     /// <summary>
     /// Pokud false, k oknu se nepřipojí vysouvací panel Podpora. Default true — panel má být
     /// všude (obdoba legacy <c>BaseForm.ShowSideMenu</c>); vypínej jen pro okna, kde nemá
-    /// smysl (odpočty, splash).
+    /// smysl (odpočty, splash). Připojení samo řeší class handler z <c>EDAppearance.Initialize</c>,
+    /// ne <see cref="AttachToWindow"/> — okno bez ViewModelu má opt-out
+    /// <c>EDSupportPanel.Suppress</c>.
     /// </summary>
     public bool ShowSupportPanel { get; protected set; } = true;
 

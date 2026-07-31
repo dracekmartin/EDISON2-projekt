@@ -177,7 +177,7 @@ public class UserPrefsTests
             Arg.Is<CVar>(cv =>
                 cv["scope"].Value!.ToString() == "EDControls.EDList" &&
                 cv["key"].Value!.ToString()   == "TD.X" &&
-                cv["data"].Value!.ToString().Contains("\"widths\"")));
+                cv["data"].Value!.ToString()!.Contains("\"widths\"")));
     }
 
     [Fact]
@@ -240,9 +240,9 @@ public class UserPrefsTests
         ml.Received(1).QueryOrThrow(
             Arg.Any<string>(), Arg.Any<string>(),
             Arg.Is<CVar>(cv =>
-                cv["data"].Value!.ToString().Contains("\"widths\"") &&
-                cv["data"].Value!.ToString().Contains("\"order\"") &&
-                cv["data"].Value!.ToString().Contains("\"hidden\"") &&
-                cv["data"].Value!.ToString().Contains("legacy_col")));
+                cv["data"].Value!.ToString()!.Contains("\"widths\"") &&
+                cv["data"].Value!.ToString()!.Contains("\"order\"") &&
+                cv["data"].Value!.ToString()!.Contains("\"hidden\"") &&
+                cv["data"].Value!.ToString()!.Contains("legacy_col")));
     }
 }

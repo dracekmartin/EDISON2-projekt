@@ -200,44 +200,9 @@ public class AppBootstrapper
         EDServices.Initialize(services);
 
         // EDInputForm pole Color — jako picker registrujeme prostý WinForms ColorDialog.
-        EDControls.EDInputForm.EDInputForm.PickColorImpl = PickColorWithWinFormsDialog;
+        EDControls.EDInputForm.EDInputForm.PickColorImpl = WinFormsColorPicker.Pick;
 
         return (nav, popup, services);
-    }
-
-    /// <summary>
-    /// Prostý wrapper nad WinForms ColorDialog pro EDInputForm pole Color.
-    /// EDISONMAIN2 nemá recent colors infrastrukturu (na rozdíl od TD) — baseline dialog.
-    /// </summary>
-    private static string? PickColorWithWinFormsDialog(System.Windows.Window owner, string currentHex)
-    {
-        var dlg = new System.Windows.Forms.ColorDialog { FullOpen = true, AnyColor = true };
-
-        string h = (currentHex ?? "").TrimStart('#');
-        try
-        {
-            if (h.Length == 8) h = h.Substring(2);
-            if (h.Length == 6)
-            {
-                dlg.Color = System.Drawing.Color.FromArgb(
-                    System.Convert.ToByte(h.Substring(0, 2), 16),
-                    System.Convert.ToByte(h.Substring(2, 2), 16),
-                    System.Convert.ToByte(h.Substring(4, 2), 16));
-            }
-        }
-        catch { /* parse error → použij default barvu dialogu */ }
-
-        var handle = new System.Windows.Interop.WindowInteropHelper(owner).Handle;
-        if (dlg.ShowDialog(new Win32Window(handle)) != System.Windows.Forms.DialogResult.OK)
-            return null;
-
-        var c = dlg.Color;
-        return $"#FF{c.R:X2}{c.G:X2}{c.B:X2}";
-    }
-
-    private class Win32Window(nint handle) : System.Windows.Forms.IWin32Window
-    {
-        public nint Handle { get; } = handle;
     }
 
     protected virtual ILocalPrefs LoadLocalPrefs() => LocalPrefs.Load();
@@ -459,7 +424,7 @@ public class AppBootstrapper
     /// </summary>
     public SwitchUserOutcome SwitchUser(EDServices services, Action closeAllWindows)
     {
-        var current = ((MLRestAdapter)services.MLRest!).Inner;
+        var current = ((MLRestAdapter)services.RequireMLRest).Inner;
         var login = PromptLoginForReauth(current);
         if (login == null) return new(SwitchUserResult.Cancelled, null);
 

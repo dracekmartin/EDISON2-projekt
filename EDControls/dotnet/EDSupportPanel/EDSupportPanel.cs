@@ -4,18 +4,61 @@ using EDControls.EDViewModel;
 namespace EDControls.EDSupportPanel;
 
 /// <summary>
-/// Připojuje panel Podpora k oknu. Volá se z <c>EDViewModel.AttachToWindow</c>, takže ho
-/// dostane každé okno s ViewModelem bez zásahu do svého XAML (obdoba legacy
-/// <c>BaseForm.AttachSideMenu</c>). Opt-out: <c>EDViewModel.ShowSupportPanel = false</c>.
+/// Připojuje panel Podpora k oknům aplikace. Registruje se jednou z
+/// <see cref="EDAppearance.Initialize"/> jako class handler na <c>Window.Loaded</c>, takže panel
+/// dostane **každé** okno včetně odděděných tříd a bez ohledu na to, jak se otevírá (obdoba legacy
+/// <c>BaseForm.AttachSideMenu</c>). Vypnout pro konkrétní okno: <see cref="SuppressProperty"/>,
+/// u okna s ViewModelem taky <c>EDViewModel.ShowSupportPanel = false</c>.
 /// </summary>
-internal static class EDSupportPanel
+public static class EDSupportPanel
 {
-    // Attach běží před Show() okna; druhé volání (re-attach) nesmí panel zdvojit.
+    /// <summary>
+    /// Nastav <c>True</c> na okno, které panel Podpora dostat nemá (vlastní popupy EDControls,
+    /// splash, odpočty). Okno s ViewModelem má i <c>EDViewModel.ShowSupportPanel</c>.
+    /// </summary>
+    public static readonly DependencyProperty SuppressProperty =
+        DependencyProperty.RegisterAttached("Suppress", typeof(bool), typeof(EDSupportPanel));
+
+    public static void SetSuppress(Window window, bool value) => window.SetValue(SuppressProperty, value);
+    public static bool GetSuppress(Window window) => (bool)(window.GetValue(SuppressProperty) ?? false);
+
+    // Panel se připojuje jen jednou per okno (re-Loaded při re-parentu okno nezdvojí).
     private static readonly DependencyProperty AttachedProperty =
         DependencyProperty.RegisterAttached("Attached", typeof(bool), typeof(EDSupportPanel));
 
+    private static bool _initialized;
+
     /// <summary>Je k oknu panel už připojený? (Pro testy napojení a proti dvojímu attachi.)</summary>
     internal static bool IsAttached(Window owner) => (bool)(owner.GetValue(AttachedProperty) ?? false);
+
+    /// <summary>
+    /// Jednorázová registrace class handleru. Class handler na <c>typeof(Window)</c> chytá
+    /// i odděděné třídy oken — implicitní styl `Window` v WPF ne, proto tento vzor
+    /// (stejně ho používá <c>ThemeService.Initialize</c>).
+    /// </summary>
+    internal static void AttachToAllWindows()
+    {
+        if (_initialized) return;
+        _initialized = true;
+
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
+            new RoutedEventHandler(OnWindowLoaded));
+    }
+
+    private static void OnWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Window window || !ShouldAttach(window)) return;
+        if (EDServices.CurrentOrNull is not { } services) return;   // před composition rootem
+
+        Attach(window, services, services.PopupDisplayer);
+    }
+
+    /// <summary>Má tohle okno dostat panel? (Rozhodnutí odděleno od eventu, aby šlo testovat.)</summary>
+    internal static bool ShouldAttach(Window window) =>
+        window is not IOverlayWindow                  // vlastní overlay okna EDControls
+        && !GetSuppress(window)
+        && window.DataContext is not EDViewModel.EDViewModel { ShowSupportPanel: false }
+        && !IsAttached(window);
 
     internal static void Attach(Window owner, EDServices services, IPopupDisplayer popups)
     {
@@ -28,7 +71,8 @@ internal static class EDSupportPanel
             return;
         }
 
-        // Setter Owner na nezobrazené okno hází → odlož vytvoření na první zobrazení.
+        // Pojistka pro přímé volání před Show() — setter Owner na nezobrazené okno hází.
+        // Z class handleru se nepoužije, tam je okno na Loaded už zobrazené.
         void OnVisibleChanged(object s, DependencyPropertyChangedEventArgs e)
         {
             if (!(bool)e.NewValue) return;
@@ -39,9 +83,7 @@ internal static class EDSupportPanel
         owner.IsVisibleChanged += OnVisibleChanged;
     }
 
-    // Best-effort i tady, ne jen v EDViewModel.AttachToWindow: odložená větev běží až
-    // z IsVisibleChanged, tedy mimo try/catch volajícího — výjimka by šla do
-    // DispatcherUnhandledException a vzala s sebou zobrazení okna.
+    // Best-effort: panel nikdy nesmí shodit zobrazení okna, ke kterému se připojuje.
     private static void Create(Window owner, EDServices services, IPopupDisplayer popups)
     {
         try { new SupportPanelWindow(owner, services, popups).TryShowPanel(); }

@@ -13,7 +13,7 @@ namespace TemplateDesigner.Controls;
 /// Živá editace řeší tři věci nad rámec modálu:
 ///  1. <b>write-back per změnu</b> (ne až na OK) přes EDInputForm.FieldChanged,
 ///  2. <b>re-Prefill při změně výběru</b> (stejný typ → jen Prefill; jiný typ → reload schema),
-///  3. <b>Loaded re-init past</b> - EDInputForm se re-Inituje na Loaded → Initialized znovu → re-Prefill
+///  3. <b>Loaded re-init past</b> - EDInputForm se re-Inituje na Loaded → SchemaLoaded znovu → re-Prefill
 ///     z aktuálního cíle (bez ztráty stavu).
 /// </summary>
 public partial class InlinePropertiesForm : UserControl
@@ -31,7 +31,7 @@ public partial class InlinePropertiesForm : UserControl
     public InlinePropertiesForm()
     {
         InitializeComponent();
-        TheForm.Initialized  += OnInitialized;
+        TheForm.SchemaLoaded += OnInitialized;
         TheForm.FieldChanged += OnFieldChanged;
         TheForm.ButtonClicked += key => ButtonClicked?.Invoke(key);
     }
@@ -53,7 +53,7 @@ public partial class InlinePropertiesForm : UserControl
             _currentCacheClass = cacheClass;
             TheForm.CacheClass = cacheClass;
             // CacheClass je plain property (Init jinak jede jen na Loaded) → reload schématu ručně.
-            // Init() po dokončení vyvolá Initialized → OnInitialized → Prefill z cíle.
+            // Init() po dokončení vyvolá SchemaLoaded → OnInitialized → Prefill z cíle.
             TheForm.Init();
         }
         else

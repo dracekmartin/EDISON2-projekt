@@ -35,7 +35,7 @@ public partial class LineTableColumnsEditorDialog : Window
         InitializeComponent();
 
         GeneralForm.CacheClass = GeneralSchemaClass;
-        GeneralForm.Initialized += OnGeneralFormInitialized;
+        GeneralForm.SchemaLoaded += OnGeneralFormInitialized;
         ElementFormBinder.HookFontWeightRefresh(GeneralForm);
         GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 

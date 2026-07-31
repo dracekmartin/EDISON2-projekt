@@ -10,6 +10,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- Úzký gate místo TreatWarningsAsErrors: WPF si generuje _wpftmp projekty zvlášť
+         a umí v generovaném kódu překvapit. Rozšiřuj po kategoriích, ne naráz. -->
+    <WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

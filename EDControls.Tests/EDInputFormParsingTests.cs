@@ -8,7 +8,7 @@ public class EDInputFormParsingTests
     [Fact]
     public void ParseItems_EmptyOutput_ReturnsEmptyList()
     {
-        var items = EDInputForm.EDInputForm.ParseItems(new CVar());
+        var items = EDInputForm.EDInputFormWire.ParseItems(new CVar());
 
         Assert.Empty(items);
     }
@@ -19,7 +19,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["ERR"] = new CVar("some error metadata");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         Assert.Empty(items);
     }
@@ -30,7 +30,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("GROUP", "1", "osobni", "Osobní údaje");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Equal(1, g.Number);
@@ -45,7 +45,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("GROUP", "5", "skryta", "Skrytá", "1");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Equal(5, g.Number);
@@ -58,7 +58,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("GROUP", "1", "g", "G", "3");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Equal(EItemVisibility.ProgrammerHidden, g.Visibility);
@@ -70,7 +70,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "2", "jmeno", "Jméno", "TEXT", "Jan", "0", "1");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(2, f.Number);
@@ -89,7 +89,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "3", "vek", "Věk", "NUMBER", "42", "1", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.Number, f.FieldType);
@@ -104,7 +104,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Null(f.Value);
@@ -116,7 +116,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0", "Povinné pole");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal("Povinné pole", f.ValidationError);
@@ -131,7 +131,7 @@ public class EDInputFormParsingTests
         data["2"] = new CList("FIELD", "2", "a1", "Pole A1", "TEXT", "", "0", "0");
         data["3"] = new CList("FIELD", "3", "a2", "Pole A2", "TEXT", "", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         Assert.Equal(3, items.Count);
         var f1 = Assert.IsType<Field>(items[1]);
@@ -146,7 +146,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "top", "Top", "TEXT", "val", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Null(f.ParentGroup);
@@ -162,8 +162,8 @@ public class EDInputFormParsingTests
             Value = "hello", ValidateOnChange = true, Required = true
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([group, field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([group, field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         Assert.Equal(2, parsed.Count);
 
@@ -189,7 +189,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "narozen", "Narozen", "DATE", "2024-05-15", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.Date, f.FieldType);
@@ -202,7 +202,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "plat", "Plat", "DECIMAL", "45000.50", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.Decimal, f.FieldType);
@@ -215,7 +215,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "aktivni", "Aktivní", "BOOL", "1", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.Bool, f.FieldType);
@@ -337,7 +337,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0", "", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.False(f.Editable);
@@ -358,7 +358,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.True(f.Editable);
@@ -373,8 +373,8 @@ public class EDInputFormParsingTests
             Value = "v", Editable = false
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.False(f.Editable);
@@ -383,7 +383,7 @@ public class EDInputFormParsingTests
     [Fact]
     public void SerializeItemsCVar_NullItems_ReturnsEmptyCVar()
     {
-        CVar result = EDInputForm.EDInputForm.SerializeItemsCVar(null);
+        CVar result = EDInputForm.EDInputFormWire.SerializeItemsCVar(null);
 
         int count = 0;
         foreach (var _ in result) count++;
@@ -411,7 +411,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "2");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EItemVisibility.UserHidden, f.Visibility);
@@ -423,7 +423,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "3");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EItemVisibility.ProgrammerHidden, f.Visibility);
@@ -435,7 +435,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EItemVisibility.Visible, f.Visibility);
@@ -450,8 +450,8 @@ public class EDInputFormParsingTests
             Value = "v", Visibility = EItemVisibility.ProgrammerHidden
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.Equal(EItemVisibility.ProgrammerHidden, f.Visibility);
@@ -466,8 +466,8 @@ public class EDInputFormParsingTests
             Visibility = EItemVisibility.Collapsed
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([group]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([group]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var g = Assert.IsType<Group>(Assert.Single(parsed));
         Assert.Equal(EItemVisibility.Collapsed, g.Visibility);
@@ -495,7 +495,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0", "Zadejte hodnotu");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal("Zadejte hodnotu", f.HelpText);
@@ -507,7 +507,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("GROUP", "1", "g", "Skupina", "0", "Vyplňte tuto sekci");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Equal("Vyplňte tuto sekci", g.HelpText);
@@ -519,7 +519,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Null(f.HelpText);
@@ -531,7 +531,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("GROUP", "1", "g", "Skupina", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Null(g.HelpText);
@@ -543,7 +543,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0", "");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Null(f.HelpText);
@@ -558,8 +558,8 @@ public class EDInputFormParsingTests
             Value = "v", HelpText = "Help for field"
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.Equal("Help for field", f.HelpText);
@@ -573,8 +573,8 @@ public class EDInputFormParsingTests
             Number = 1, Key = "g", GroupName = "G", HelpText = "Help for group"
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([group]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([group]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var g = Assert.IsType<Group>(Assert.Single(parsed));
         Assert.Equal("Help for group", g.HelpText);
@@ -589,8 +589,8 @@ public class EDInputFormParsingTests
             Value = "v", HelpText = null
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.Null(f.HelpText);
@@ -618,7 +618,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["helpTextMode"] = new CVar("tooltip");
 
-        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
     }
 
     [Fact]
@@ -627,7 +627,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["helpTextMode"] = new CVar("column");
 
-        Assert.Equal(EHelpTextMode.Column, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+        Assert.Equal(EHelpTextMode.Column, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
     }
 
     [Fact]
@@ -635,7 +635,7 @@ public class EDInputFormParsingTests
     {
         var data = new CVar();
 
-        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
     }
 
     [Fact]
@@ -645,7 +645,7 @@ public class EDInputFormParsingTests
         data["helpTextMode"] = new CVar("column");
         data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         Assert.Single(items);
         Assert.IsType<Field>(items[0]);
@@ -677,7 +677,7 @@ public class EDInputFormParsingTests
         data["1"] = new CList("FIELD", "1", "stav", "Stav", "LIST", "A", "0", "0", "", "1", "0", "",
             "A~Aktivní|B~Neaktivní");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.List, f.FieldType);
@@ -695,7 +695,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "stav", "Stav", "LIST", "", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.List, f.FieldType);
@@ -710,7 +710,7 @@ public class EDInputFormParsingTests
         data["1"] = new CList("FIELD", "1", "barva", "Barva", "LIST", "Červená", "0", "0", "", "1", "0", "",
             "Červená|Zelená|Modrá");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(3, f.ListItems.Count);
@@ -729,8 +729,8 @@ public class EDInputFormParsingTests
             Value = "A", ListItems = [new ListItem("A", "Aktivní"), new ListItem("N", "Neaktivní")]
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.Equal(EFieldType.List, f.FieldType);
@@ -753,7 +753,7 @@ public class EDInputFormParsingTests
         data["1"] = new CList("FIELD", "1", "soubor", "Soubor", "FILE", @"C:\test.pdf", "0", "0",
             "", "1", "0", "", "", "PDF (*.pdf)|*.pdf");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.File, f.FieldType);
@@ -768,7 +768,7 @@ public class EDInputFormParsingTests
         data["1"] = new CList("FIELD", "1", "slozka", "Složka", "FILE", @"C:\Output", "0", "0",
             "", "1", "0", "", "", "$FOLDER");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.File, f.FieldType);
@@ -782,7 +782,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["1"] = new CList("FIELD", "1", "soubor", "Soubor", "FILE", "", "0", "0");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.File, f.FieldType);
@@ -798,8 +798,8 @@ public class EDInputFormParsingTests
             Value = @"C:\test.pdf", FileFilter = "PDF (*.pdf)|*.pdf"
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.Equal(EFieldType.File, f.FieldType);
@@ -816,8 +816,8 @@ public class EDInputFormParsingTests
             Value = @"C:\Output", FileFilter = "$FOLDER"
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.Equal(EFieldType.File, f.FieldType);
@@ -975,7 +975,7 @@ public class EDInputFormParsingTests
         data["1"] = new CList("FIELD", "1", "cena", "Cena", "DECIMAL", "5.5", "0", "0",
             "", "1", "0", "", "", "", "0.5", "9.5", "N2", "mm");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(0.5m, f.Min);
@@ -993,8 +993,8 @@ public class EDInputFormParsingTests
             Value = "5.5", Min = 0.5m, Max = 9.5m, Format = "N2", Unit = "mm"
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.Equal(0.5m, f.Min);
@@ -1013,7 +1013,7 @@ public class EDInputFormParsingTests
         data["1"] = new CList("FIELD", "1", "mesto", "Město", "COMBOBOX", "Praha", "0", "0",
             "", "1", "0", "", "Praha|Brno|Ostrava");
 
-        var items = EDInputForm.EDInputForm.ParseItems(data);
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
         Assert.Equal(EFieldType.ComboBox, f.FieldType);
@@ -1032,8 +1032,8 @@ public class EDInputFormParsingTests
             Value = "Praha", ListItems = [new ListItem("Praha", "Praha"), new ListItem("Brno", "Brno")]
         };
 
-        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
-        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+        CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
         Assert.Equal(EFieldType.ComboBox, f.FieldType);

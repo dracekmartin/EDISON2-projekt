@@ -34,6 +34,7 @@ public static class LicenceVerifier
         {
             licence = licenceLoader();
             int countOfLicenses = licence?.CountsLOGIN ?? 0;
+            // object[]: VerifyLic je legacy endpoint s numerickými subscripty (IN(1), OUT(1)).
             var output = mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", new object[] { countOfLicenses });
             int result = int.Parse(output[1]?.ToString() ?? "0");
             if (result == 1) return (LicenceAcquireOutcome.Accepted, licence);

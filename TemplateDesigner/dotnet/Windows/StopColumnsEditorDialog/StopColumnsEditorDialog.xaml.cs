@@ -38,7 +38,7 @@ public partial class StopColumnsEditorDialog : Window
         // Tab „Obecné": EDInputForm (general properties přes reflexi). Styl záhlaví/buněk
         // řeší CellStyleEditor v témže tabu, sloupce tab „Sloupce".
         GeneralForm.CacheClass = GeneralSchemaClass;
-        GeneralForm.Initialized += OnGeneralFormInitialized;
+        GeneralForm.SchemaLoaded += OnGeneralFormInitialized;
         ElementFormBinder.HookFontWeightRefresh(GeneralForm);
         GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 

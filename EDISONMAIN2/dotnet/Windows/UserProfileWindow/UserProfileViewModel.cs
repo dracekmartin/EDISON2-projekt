@@ -32,7 +32,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
 
         private void OpenChangePassword()
         {
-            bool? changed = WindowNavigator.ShowDialog(new ChangePasswordWindow(MLRest!, MLRest!.LoginName));
+            bool? changed = WindowNavigator.ShowDialog(new ChangePasswordWindow(Rest, Rest.LoginName));
             if (changed == true) PopupDisplayer.Info("Heslo bylo změněno.");
         }
 

@@ -1073,7 +1073,7 @@ public partial class MainWindow : Window
     }
 
     // ── EDInputForm parametrů v levém tabu (AgendaParams, includeExport=0) ───────
-    // Vzor stejný jako PrintDialog: CacheClass + InitParams → Init → Initialized → napojení polí.
+    // Vzor stejný jako PrintDialog: CacheClass + InitParams → Init → SchemaLoaded → napojení polí.
 
     private bool _paramsTabInitHooked;
 
@@ -1094,7 +1094,7 @@ public partial class MainWindow : Window
         ParamsTabForm.InitParams = _vm.BuildAgendaParamsInitParams();
         if (!_paramsTabInitHooked)
         {
-            ParamsTabForm.Initialized += OnParamsTabInitialized;
+            ParamsTabForm.SchemaLoaded += OnParamsTabInitialized;
             _paramsTabInitHooked = true;
         }
         ParamsTabForm.CacheClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";

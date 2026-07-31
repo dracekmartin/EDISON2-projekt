@@ -63,6 +63,7 @@ public class LogoutWatcher
     /// </summary>
     public static LogoutSignal Poll(IMLRest mlRest)
     {
+        // object[]: legacy endpoint, výstup jsou číslované řádky (viz Parse).
         var output = mlRest.With(cacheLocks: 2).QueryOrThrow(PollClass, PollMethod, new object[] { });
         return Parse(output, mlRest.Delimiter);
     }

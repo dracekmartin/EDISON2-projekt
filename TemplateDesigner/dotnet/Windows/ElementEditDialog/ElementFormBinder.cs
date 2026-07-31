@@ -20,7 +20,7 @@ public static class ElementFormBinder
 {
     /// <summary>
     /// Naplní Field.Value z cílového objektu (reflexe). Vrátí snapshot pre-filled hodnot
-    /// pro pozdější change detection. Volat po EDInputForm.Initialized (schema načteno).
+    /// pro pozdější change detection. Volat po EDInputForm.SchemaLoaded (schema načteno).
     /// Pokud property nemá hodnotu, nechá Caché schema default (řeší nullable „inherit" props).
     /// </summary>
     // Nainstalované fonty (z FontResolver = SKFontManager, tentýž zdroj jako renderer). Cachované.
@@ -29,7 +29,7 @@ public static class ElementFormBinder
         Models.FontResolver.InstalledFamilies.Select(s => new ListItem(s, s)).ToList();
 
     /// <summary>Klientsky naplní seznam nainstalovaných fontů do ComboBox polí (klíč končí "FontFamily").
-    /// Caché ten seznam nezná (OS věc). Volat po EDInputForm.Initialized (před/spolu s Prefill) - set
+    /// Caché ten seznam nezná (OS věc). Volat po EDInputForm.SchemaLoaded (před/spolu s Prefill) - set
     /// proběhne dřív, než WPF realizuje kontejner ComboBoxu, takže se binding chytí i bez change-notifikace.
     /// Sdílené napříč všemi hosty EDInputFormu (ElementEditDialog + embedded v komplexních dialozích).</summary>
     public static void PopulateFontFields(EDInputForm form)

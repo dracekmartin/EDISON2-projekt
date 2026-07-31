@@ -420,7 +420,7 @@ public class EdisonMainViewModelTests
         vm.CloseMiniAppsCommand.Execute(null);
 
         Assert.True(vm.HasOpenMiniApps);
-        Assert.Equal("P#1", Assert.Single(host.Panes.Where(p => !p.IsClosed)).ContentId);
+        Assert.Equal("P#1", Assert.Single(host.Panes, p => !p.IsClosed).ContentId);
     }
 
     [Fact]

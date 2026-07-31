@@ -223,7 +223,7 @@ public class EDInputFormControllerTests
             new Field { Number = 1, Key = "btn", Label = "L", FieldType = EFieldType.Button, Value = "Go" }
         };
 
-        var cVar = EDControls.EDInputForm.EDInputForm.SerializeItemsCVar(items);
+        var cVar = EDControls.EDInputForm.EDInputFormWire.SerializeItemsCVar(items);
 
         CList entry = cVar["1"];
         Assert.Equal("BUTTON", entry.GetString(5));
@@ -546,7 +546,7 @@ public class EDInputFormControllerTests
             new Field { Number = 1, Key = "logo", Label = "L", FieldType = EFieldType.Image, Value = "imgdata" }
         };
 
-        var cVar = EDControls.EDInputForm.EDInputForm.SerializeItemsCVar(items);
+        var cVar = EDControls.EDInputForm.EDInputFormWire.SerializeItemsCVar(items);
 
         CList entry = cVar["1"];
         Assert.Equal("IMAGE", entry.GetString(5));

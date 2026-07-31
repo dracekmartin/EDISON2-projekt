@@ -21,6 +21,15 @@ public class EDServices(
     IPopupDisplayer popupDisplayer)
 {
     public IMLRest? MLRest { get; set; } = mlRest;
+
+    /// <summary>
+    /// <see cref="MLRest"/> pro post-login konzumenty, kteří bez session nemají co dělat -
+    /// místo `MLRest!` a NRE dá čitelnou výjimku. Controls (<c>EDList</c>, <c>EDInputForm</c>)
+    /// tohle nepoužívají, mají vlastní hlášku pro hosta v <c>EnsureConfigured</c>.
+    /// </summary>
+    public IMLRest RequireMLRest => MLRest ?? throw new InvalidOperationException(
+        "MLRest není k dispozici - přístup před loginem (EDServices.MLRest je null).");
+
     public IWindowNavigator WindowNavigator { get; } = windowNavigator;
     public IPopupDisplayer PopupDisplayer { get; } = popupDisplayer;
     public Lic? ActiveLicence { get; set; }
@@ -58,6 +67,12 @@ public class EDServices(
     public static EDServices Current =>
         _current ?? throw new InvalidOperationException(
             "EDServices.Initialize must be called before any EDViewModel is created.");
+
+    /// <summary>
+    /// Jako <see cref="Current"/>, ale bez výjimky. Pro infrastrukturu, která běží na každé okno
+    /// a nesmí kvůli pořadí startupu nic shodit (panel Podpora) — chybějící služby = neděláme nic.
+    /// </summary>
+    internal static EDServices? CurrentOrNull => _current;
 
     /// <summary>Volat jednou z <c>App.xaml.cs</c> při startu. Z testů se nevolá.</summary>
     public static void Initialize(EDServices services) =>

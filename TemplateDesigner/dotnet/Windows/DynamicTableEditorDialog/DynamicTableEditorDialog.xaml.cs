@@ -56,7 +56,7 @@ public partial class DynamicTableEditorDialog : Window
 
         // Tab „Obecné": EDInputForm (general properties přes reflexi). Sloupce → tab „Sloupce".
         GeneralForm.CacheClass = GeneralSchemaClass;
-        GeneralForm.Initialized += OnGeneralFormInitialized;
+        GeneralForm.SchemaLoaded += OnGeneralFormInitialized;
         ElementFormBinder.HookFontWeightRefresh(GeneralForm);
         GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 

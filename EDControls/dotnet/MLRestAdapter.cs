@@ -10,16 +10,15 @@ public class MLRestAdapter(MLRest inner) : IMLRest
 {
     public MLRest Inner { get; } = inner;
 
-    public CVar QueryOrThrow(string cacheClass, string method, CVar input)
-    {
-        var result = Inner.Query(cacheClass, method, input);
-        Inner.RestStatus.ThrowIfError();
-        return result;
-    }
+    public CVar QueryOrThrow(string cacheClass, string method, CVar input) =>
+        Checked(Inner.Query(cacheClass, method, input));
 
-    public object[] QueryOrThrow(string cacheClass, string method, object[] input)
+    public object[] QueryOrThrow(string cacheClass, string method, object[] input) =>
+        Checked(Inner.Query(cacheClass, method, input));
+
+    // Jediné místo, kde se stav requestu překlápí na výjimku - MLRestExtensions sem deleguje.
+    private T Checked<T>(T result)
     {
-        var result = Inner.Query(cacheClass, method, input);
         Inner.RestStatus.ThrowIfError();
         return result;
     }

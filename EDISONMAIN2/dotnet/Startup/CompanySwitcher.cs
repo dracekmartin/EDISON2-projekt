@@ -54,7 +54,7 @@ public class CompanySwitcher(
     /// <param name="currentLicence">Aktuální licence; null = bez verify (testy / pre-licence stav).</param>
     public SwitchOutcome Switch(string newIdfa, string newNamespace, Lic? currentLicence)
     {
-        var mlRest = services.MLRest!;
+        var mlRest = services.RequireMLRest;
         var originalIdfa = mlRest.Idfa;
         var originalNamespace = mlRest.DataNamespace;
 
