@@ -170,6 +170,9 @@ public class AppBootstrapper
 
     private Task<ReleaseNoticeResult>? _releaseNoticeTask;
 
+    /// <summary>Nastaví <see cref="BuildShellWindow"/> — viz <c>ShutdownForced</c>.</summary>
+    private Action? _suppressShellCloseConfirm;
+
     /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest).</summary>
     protected record PreLoginContext(
         MLRest LoginRest,
@@ -395,14 +398,14 @@ public class AppBootstrapper
             _application.Dispatcher.Invoke(() =>
             {
                 services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
-                _application.Shutdown();
+                ShutdownForced();
             });
         // Server per-request version gate (date+full segmenty) — viz docs/UPDATE_FLOW.md §5.
         adapter.Inner.EdisonVersionFailed += (_, _) =>
             _application.Dispatcher.Invoke(() =>
             {
                 services.PopupDisplayer.Info("Rozdílná verze Caché a verze Edison, aplikace bude ukončena.");
-                _application.Shutdown();
+                ShutdownForced();
             });
     };
 
@@ -468,6 +471,7 @@ public class AppBootstrapper
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
                                                 licence, switcher, () => SwitchUser(services, nav.CloseAll),
                                                 prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog, shortcuts);
+        _suppressShellCloseConfirm = viewModel.SuppressCloseConfirm;
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popup.DefaultOwner = wnd;
@@ -499,7 +503,15 @@ public class AppBootstrapper
     }
 
     private void ShowLogoutCountdown(int seconds) =>
-        new Windows.LogoutCountdownWindow.LogoutCountdownWindow(seconds, _application.Shutdown).Show();
+        new Windows.LogoutCountdownWindow.LogoutCountdownWindow(seconds, ShutdownForced).Show();
 
-    protected virtual void Shutdown() => _application.Shutdown();
+    protected virtual void Shutdown() => ShutdownForced();
+
+    // Vynucené ukončení nesmí vytáhnout potvrzovací dialog shellu (EdisonMainWindow.OnShellClosing) —
+    // uživatel by force logout / version gate mohl odmítnout. Před loginem je pole null (shell není).
+    private void ShutdownForced()
+    {
+        _suppressShellCloseConfirm?.Invoke();
+        _application.Shutdown();
+    }
 }

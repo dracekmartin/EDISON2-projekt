@@ -22,6 +22,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 - `LogoutWatcher` pollí `maSeUkoncit` s `CacheLocks=2`, aby poll neobnovoval
   server-side idle timer.
 - DEBUG build má verzi `999999.9` — netriggeruje update check.
+- Zavření shellu (= ukončení aplikace i všech agend) se potvrzuje v `Closing` přes
+  `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu
+  musí jít přes `AppBootstrapper.ShutdownForced` / `SuppressCloseConfirm`** — jinak force logout
+  nebo version gate uvízne na dialogu, který smí uživatel odmítnout.
 
 ## UI pasti
 

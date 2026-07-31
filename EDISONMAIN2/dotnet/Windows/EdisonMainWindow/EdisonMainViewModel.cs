@@ -1101,10 +1101,33 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 .ToList();
         }
 
+        // Jeden text pro obě cesty ukončení (menu i zavření okna), aby nedriftovaly.
+        private const string ExitConfirmMessage =
+            "Opravdu chcete ukončit aplikaci? Zavřou se všechna otevřená agendová okna.";
+
+        private bool _closeConfirmSuppressed;
+
+        /// <summary>Programové ukončení (force logout, licence, menu Ukončit) — Closing se už neptá.</summary>
+        public void SuppressCloseConfirm() => _closeConfirmSuppressed = true;
+
+        /// <summary>Closing shellu: false = zavření zrušit.</summary>
+        public bool ConfirmShellClose()
+        {
+            if (!_closeConfirmSuppressed && !PopupDisplayer.Confirm(ExitConfirmMessage)) return false;
+            PersistMiniAppLayout(Idfa);
+            return true;
+        }
+
+        private void ShutdownWithoutConfirm()
+        {
+            SuppressCloseConfirm();
+            Application.Current.Shutdown();
+        }
+
         private void ExitApplication()
         {
-            if (PopupDisplayer.Confirm("Opravdu chcete ukončit aplikaci?"))
-                Application.Current.Shutdown();
+            if (PopupDisplayer.Confirm(ExitConfirmMessage))
+                ShutdownWithoutConfirm();
         }
 
         private void LoginAsAnotherUser()
@@ -1119,10 +1142,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
                 case SwitchUserResult.LicenceRefused:
                     PopupDisplayer.Info("Pro nového uživatele byl překročen počet licencí. Aplikace bude ukončena.");
-                    Application.Current.Shutdown();
+                    ShutdownWithoutConfirm();
                     return;
                 case SwitchUserResult.LicenceCancelled:
-                    Application.Current.Shutdown();
+                    ShutdownWithoutConfirm();
                     return;
                 case SwitchUserResult.Success:
                     RebuildSessionState(outcome.Licence);

@@ -671,4 +671,66 @@ public class EdisonMainViewModelTests
         Assert.Equal("", vm.NewVersionTooltip);
         Assert.Equal("Jde o nejnovější verzi.", vm.UpToDateText);
     }
+
+    // ---------- ConfirmShellClose — potvrzení zavření shellu ----------
+
+    [Fact]
+    public void ConfirmShellClose_UserConfirms_ReturnsTrue()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var vm = CreateVM(popup: mockPopup);
+
+        Assert.True(vm.ConfirmShellClose());
+        mockPopup.Received(1).Confirm(Arg.Any<string>());
+    }
+
+    [Fact]
+    public void ConfirmShellClose_UserDeclines_ReturnsFalse_AndDoesNotPersistLayout()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.TreeWidths.Returns(new Dictionary<string, double>());
+        var vm = CreateVM(popup: mockPopup, prefs: prefs);
+
+        vm.AttachTreeLayout(() => 275, _ => { });
+        vm.AttachMiniAppHost(new NullHost());
+        prefs.ClearReceivedCalls();
+
+        Assert.False(vm.ConfirmShellClose());
+        prefs.DidNotReceive().Save();
+    }
+
+    [Fact]
+    public void ConfirmShellClose_Confirmed_PersistsMiniAppLayout()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var widths = new Dictionary<string, double>();
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.TreeWidths.Returns(widths);
+        var vm = CreateVM(popup: mockPopup, prefs: prefs);
+
+        vm.AttachTreeLayout(() => 275, _ => { });
+        vm.AttachMiniAppHost(new NullHost());
+
+        Assert.True(vm.ConfirmShellClose());
+
+        Assert.Equal(275, widths["CB_DP"]);
+        prefs.Received().Save();
+    }
+
+    // Regrese na force logout / version gate — vynucené ukončení se uživatele ptát nesmí.
+    [Fact]
+    public void ConfirmShellClose_AfterSuppress_DoesNotPrompt()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        var vm = CreateVM(popup: mockPopup);
+
+        vm.SuppressCloseConfirm();
+
+        Assert.True(vm.ConfirmShellClose());
+        mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+    }
 }

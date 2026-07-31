@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using AvalonDock.Themes;
@@ -39,7 +40,16 @@ namespace EDISONMAIN2
             DockManager.SizeChanged += MiniAppArea_SizeChanged;
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
+            Closing += OnShellClosing;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
+        }
+
+        // Zavření shellu ukončí aplikaci (ShutdownMode=OnMainWindowClose) i všechny agendy,
+        // proto se ptáme stejně jako u přepnutí firmy. Programové Shutdown si prompt potlačí ve VM.
+        private void OnShellClosing(object? sender, CancelEventArgs e)
+        {
+            if (DataContext is EdisonMainViewModel vm && !vm.ConfirmShellClose())
+                e.Cancel = true;
         }
 
         // Vestavěný generic theme AvalonDocku má chrome (taby, bordery, pozadí dokumentů) natvrdo
