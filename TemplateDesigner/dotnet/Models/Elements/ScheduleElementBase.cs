@@ -57,6 +57,12 @@ public abstract class ScheduleElementBase : TemplateElement
 
     public string GridColor { get; set; } = "#FFD0D0D0";
 
+    /// <summary>Tloušťka čar mřížky v mm. Null = z tloušťky rámečku elementu (dosavadní chování).</summary>
+    public float? GridLineWidth { get; set; }
+
+    /// <summary>Styl čar mřížky - plná (výchozí), čárkovaná, tečkovaná. Vzor sdílí s čárou (<see cref="LineElement"/>).</summary>
+    public LineStyle GridLineStyle { get; set; } = LineStyle.Solid;
+
     /// <summary>
     /// Výška jednoho datového řádku v mm. Null = auto-výpočet z fontu (<see cref="ComputeRowH"/>).
     /// Sdíleno všemi JŘ elementy (StopList, DepartureGrid, NotesLegend), které mají stejnou
@@ -177,18 +183,24 @@ public abstract class ScheduleElementBase : TemplateElement
     protected static float ComputeHeaderH(float headerFontSizePt) => headerFontSizePt * PtToMm * HeaderHeightFactor;
 
     /// <summary>Vytvoří standardní sadu paintů pro JŘ elementy. Volající musí dispose.</summary>
-    protected SchedulePaints CreateStandardPaints(RenderContext ctx) => new(
-        ColorHex.ParseOrBlack(GridColor),
-        ColorHex.Parse(HeaderStyle.BackgroundColor, "#FFE0E0E0"),
-        ColorHex.Parse(HeaderStyle.TextColor, ColorHex.Black),
-        gridStrokePx: ComputeGridStrokePx(ctx));
+    protected SchedulePaints CreateStandardPaints(RenderContext ctx)
+    {
+        var (dashMm, gapMm) = LineElement.GetDefaultDashPattern(GridLineStyle);
+        return new(
+            ColorHex.ParseOrBlack(GridColor),
+            ColorHex.Parse(HeaderStyle.BackgroundColor, "#FFE0E0E0"),
+            ColorHex.Parse(HeaderStyle.TextColor, ColorHex.Black),
+            gridStrokePx: ComputeGridStrokePx(ctx),
+            gridDashPx: ctx.Px(dashMm),
+            gridGapPx: ctx.Px(gapMm));
+    }
 
     /// <summary>
-    /// Tloušťka mřížky v px = `BorderWidth * MmToPx` (sjednocená s outer borderem),
-    /// minimum 0.5px aby byla vždy viditelná i když je border vypnutý.
+    /// Tloušťka mřížky v px = `GridLineWidth * MmToPx`; bez vlastní hodnoty `BorderWidth * MmToPx`
+    /// (sjednocená s outer borderem), minimum 0.5px aby byla vždy viditelná i když je border vypnutý.
     /// </summary>
     private float ComputeGridStrokePx(RenderContext ctx) =>
-        MathF.Max(0.5f, BorderWidth * ctx.MmToPx);
+        MathF.Max(0.5f, (GridLineWidth ?? BorderWidth) * ctx.MmToPx);
 
     /// <summary>Vykreslí záhlaví sekce: pozadí + text + horizontální čára pod záhlavím.</summary>
     protected static float RenderSectionHeader(
@@ -242,6 +254,7 @@ public abstract class ScheduleElementBase : TemplateElement
         base.ApplyScale(scale);
         DataStyle.ApplyScale(scale);     // FontSize + paddingy (dřív jen FontSize)
         HeaderStyle.ApplyScale(scale);
+        if (GridLineWidth is not null) GridLineWidth *= scale;
         if (DataRowHeight is not null) DataRowHeight *= scale;   // dřív se neškálovalo (LineTable/StopList/DepartureGrid)
     }
 
@@ -258,6 +271,27 @@ public abstract class ScheduleElementBase : TemplateElement
         {
             Label = "Barva mřížky", Group = "Obecné",
             Get = () => GridColor, Set = v => GridColor = v
+        },
+        // 0 = „dle tloušťky rámečku" (dosavadní chování) - stejný trik jako u výšky řádku,
+        // číselné pole nemá jak vyjádřit „nenastaveno".
+        new FloatPropertyDescriptor
+        {
+            Label = "Tloušťka mřížky", Group = "Obecné",
+            Get = () => GridLineWidth ?? 0f,
+            Set = v => GridLineWidth = v <= 0f ? null : v,
+            Min = 0, Max = 5, Unit = "mm"
+        },
+        new EnumPropertyDescriptor
+        {
+            Label = "Styl mřížky", Group = "Obecné",
+            Get = () => GridLineStyle,
+            Set = v => GridLineStyle = (LineStyle)v,
+            Options =
+            [
+                ("Plná", (object)LineStyle.Solid),
+                ("Čárkovaná", (object)LineStyle.Dashed),
+                ("Tečkovaná", (object)LineStyle.Dotted),
+            ]
         },
     ];
 
@@ -335,6 +369,8 @@ public abstract class ScheduleElementBase : TemplateElement
         target.DataStyle     = DataStyle.Clone();
         target.HeaderStyle   = HeaderStyle.Clone();
         target.GridColor     = GridColor;
+        target.GridLineWidth = GridLineWidth;
+        target.GridLineStyle = GridLineStyle;
         target.DataRowHeight = DataRowHeight;
     }
 }
@@ -349,11 +385,14 @@ public sealed class SchedulePaints : IDisposable
     public SKPaint Text { get; }
     public SKPaint HeaderText { get; }
 
-    public SchedulePaints(SKColor gridColor, SKColor headerBgColor, SKColor headerFgColor, float gridStrokePx = 1f)
+    public SchedulePaints(SKColor gridColor, SKColor headerBgColor, SKColor headerFgColor,
+        float gridStrokePx = 1f, float gridDashPx = 0f, float gridGapPx = 0f)
     {
         // Adaptivní stroke (stejně jako RenderBorder): sub-pixel AA pro tenké, jinak pixel-snap.
         bool thin = gridStrokePx < 1f;
         Grid       = new SKPaint { Color = gridColor, IsStroke = true, StrokeWidth = gridStrokePx, IsAntialias = thin };
+        if (gridDashPx > 0f)
+            Grid.PathEffect = SKPathEffect.CreateDash([gridDashPx, gridGapPx], 0);
         HeaderBg   = new SKPaint { Color = headerBgColor };
         Text       = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
         HeaderText = new SKPaint { Color = headerFgColor, IsAntialias = true };
@@ -361,6 +400,7 @@ public sealed class SchedulePaints : IDisposable
 
     public void Dispose()
     {
+        Grid.PathEffect?.Dispose();
         Grid.Dispose();
         HeaderBg.Dispose();
         Text.Dispose();

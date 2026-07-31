@@ -33,6 +33,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     // ═══════════════════════════════════════════
     public bool ShowRowSeparators { get; set; } = true;
 
+    /// <summary>Svislé čáry mezi sloupci (tloušťka, styl a barva = mřížka elementu).
+    /// Default vyp = dosavadní vzhled; uvnitř sloupce zastávek rozděleného na značky + název se nekreslí.</summary>
+    public bool ShowColumnSeparators { get; set; }
+
     // ═══════════════════════════════════════════
     // Zobrazení zastávek (nesouvisí se sloupci)
     // ═══════════════════════════════════════════
@@ -59,8 +63,19 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     // ═══════════════════════════════════════════
     public bool ShowDirectionArrow { get; set; } = true;
     public string DirectionArrowColor { get; set; } = "#FF000000";
-    public bool DirectionArrowBold { get; set; }
     public DirectionArrowSide DirectionArrowPosition { get; set; } = DirectionArrowSide.Right;
+
+    /// <summary>Tloušťka čáry šipky v mm.</summary>
+    public float DirectionArrowWidth { get; set; } = DefaultArrowWidthMm;
+
+    /// <summary>Velikost hrotu šipky v mm.</summary>
+    public float DirectionArrowHeadSize { get; set; } = DefaultArrowHeadSizeMm;
+
+    /// <summary>Tvar hrotu - plný trojúhelník (dosavadní), otevřené „V", nebo bez hrotu.</summary>
+    public ArrowHeadShape DirectionArrowHead { get; set; } = ArrowHeadShape.Filled;
+
+    /// <summary>Styl čáry šipky. Hrot zůstává plnou čarou i u čárkované - jinak se rozpadne na tečky.</summary>
+    public LineStyle DirectionArrowLineStyle { get; set; } = LineStyle.Solid;
 
     // ═══════════════════════════════════════════
     // Záhlaví sloupců
@@ -92,6 +107,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public bool ShowPassedStops { get; set; }
     public string PassedStopsForeColor { get; set; } = "#FF999999";
 
+    /// <summary>Čas jízdy u projeté zastávky. Časy jsou kumulativní od vývěskové zastávky, takže
+    /// u projetých vycházejí záporné (KOVED #13091: „údaj není relevantní") - default je proto skryje.
+    /// Ne-číselné značky (např. „&lt;" = projíždí) zůstávají, nejsou to časy.</summary>
+    public PassedStopsTimeDisplay PassedStopsTime { get; set; } = PassedStopsTimeDisplay.Hide;
+
     /// <summary>Multi-varianta časů tras: true = zobrazit všechny varianty (N sloupců dle dat, hlavičky = písmena),
     /// false = jen výchozí trasa (jeden sloupec „Čas jízdy" = ZakladniCisloTrasy). Default všechny (= legacy).</summary>
     public bool ShowAllRouteVariants { get; set; } = true;
@@ -119,6 +139,15 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     /// <summary>Padding sub-cell značek kolem textu - pro vizuální vzdušnost vlevo i vpravo (mm celkem).</summary>
     private const float MarkersSubCellPaddingMm = 1.0f;
+
+    /// <summary>Výchozí tloušťka čáry šipky (mm).</summary>
+    /// <remarks>Do 7/2026 se tloušťka zadávala přímo v pixelech (0.8 / 1.5 pro „tučnou") a nešla
+    /// nastavit, takže na obrazovce vypadala správně, ale v tisku (vyšší rozlišení) z ní byla
+    /// vláskovka - proto milimetry. Hodnota odpovídá dosavadnímu vzhledu při zobrazení 1:1.</remarks>
+    public const float DefaultArrowWidthMm = 0.2f;
+
+    /// <summary>Výchozí velikost hrotu šipky (mm).</summary>
+    public const float DefaultArrowHeadSizeMm = 1.2f;
 
     public override void Render(RenderContext ctx)
     {
@@ -260,6 +289,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     plan.Add(new(RowKind.Data, rowH, specs)
                     {
                         Background = ColorHex.ParseOrNull(rowBg),
+                        VerticalLinePaint = ShowColumnSeparators ? paints.Grid : null,
                         LineBelowPaint = ShowRowSeparators ? paints.Grid : null,
                         // Značky (na znamení / atributy / poznámky) po úsecích: piktogramy symbolovým
                         // Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky normálním.
@@ -305,7 +335,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
         var specs = BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth, widths);
-        ColumnRenderer.DrawRow(ctx, X, Y, headerH, specs, fontScale: scale);
+        ColumnRenderer.DrawRow(ctx, X, Y, headerH, specs,
+            ShowColumnSeparators ? paints.Grid : null, fontScale: scale);
 
         // Čára pod záhlavím
         var lineStart = ctx.ToCanvas(X, Y + headerH);
@@ -384,7 +415,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 var col = columns[i];
                 specs[i] = new ColumnRenderer.CellSpec(
                     widths[col],
-                    GetCellText(z, col.Key),
+                    GetCellText(z, col.Key, isPassed),
                     ResolveRowStyle(col, isCurrent, isPassed),
                     i == stopNameIdx ? nameShrinkReserveMm : CellRenderer.DefaultShrinkReserveMm,
                     i == stopNameIdx ? nameTrailingMm : 0f);
@@ -403,13 +434,14 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 var markerStyle = nameStyle with { HAlign = TextHorizontalAlignment.Right };
                 // Text značek prázdný - kreslí je DrawStopMarkers zvlášť (per-run font). Sub-cell drží jen šířku a pozadí.
                 result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", markerStyle);
-                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key), nameStyle, nameShrinkReserveMm, nameTrailingMm);
+                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key, isPassed), nameStyle, nameShrinkReserveMm, nameTrailingMm,
+                    SuppressLeadingLine: true);
             }
             else
             {
                 result[idx++] = new ColumnRenderer.CellSpec(
                     widths[col],
-                    GetCellText(z, col.Key),
+                    GetCellText(z, col.Key, isPassed),
                     ResolveRowStyle(col, isCurrent, isPassed));
             }
         }
@@ -443,7 +475,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             {
                 var headerStyle = ResolveHeaderStyle(col);
                 result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", headerStyle);
-                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, Rendering.ColumnHeader.Resolve(col.Header, ""), headerStyle);
+                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, Rendering.ColumnHeader.Resolve(col.Header, ""), headerStyle,
+                    SuppressLeadingLine: true);
             }
             else
             {
@@ -461,7 +494,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         RenderContext ctx, float lineXMm, float bracketColumnsSideMm,
         float startY, float endY, float rowH)
     {
-        float strokeW = DirectionArrowBold ? 1.5f : 0.8f;
+        float strokeW = MathF.Max(0.5f, ctx.Px(DirectionArrowWidth));
         using var paint = new SKPaint
         {
             Color = ColorHex.ParseOrBlack(DirectionArrowColor),
@@ -470,6 +503,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             IsAntialias = true,
             StrokeCap = SKStrokeCap.Round
         };
+        using var dash = CreateArrowDash(ctx);
+        paint.PathEffect = dash;
 
         // Souřadnice v px - start uprostřed písmen aktuální zastávky, konec u spodní hrany poslední zastávky
         float topY = startY + rowH * 0.5f;       // uprostřed písmen aktuální zastávky
@@ -482,20 +517,33 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         ctx.Canvas.DrawLine(bracketColumnsSide, lineTop, paint);
         ctx.Canvas.DrawLine(lineTop, lineBottom, paint);
 
-        // ▼ - šipka na konci
-        float arrowSize = 1.2f * ctx.MmToPx;
+        // ▼ - hrot na konci. Plný trojúhelník, otevřené „V", nebo nic. Vždy plnou čarou
+        // (bez PathEffectu) - čárkovaný hrot se rozpadne na tečky a přestane být šipkou.
+        if (DirectionArrowHead == ArrowHeadShape.None) return;
+
+        float arrowSize = ctx.Px(DirectionArrowHeadSize);
         using var arrowPaint = new SKPaint
         {
             Color = paint.Color,
-            IsStroke = false,
+            IsStroke = DirectionArrowHead == ArrowHeadShape.Open,
+            StrokeWidth = strokeW,
+            StrokeCap = SKStrokeCap.Round,
             IsAntialias = true
         };
-        var path = new SKPath();
+        using var path = new SKPath();
         path.MoveTo(lineBottom.X - arrowSize * 0.5f, lineBottom.Y - arrowSize);
-        path.LineTo(lineBottom.X + arrowSize * 0.5f, lineBottom.Y - arrowSize);
         path.LineTo(lineBottom.X, lineBottom.Y);
-        path.Close();
+        path.LineTo(lineBottom.X + arrowSize * 0.5f, lineBottom.Y - arrowSize);
+        if (DirectionArrowHead == ArrowHeadShape.Filled) path.Close();
         ctx.Canvas.DrawPath(path, arrowPaint);
+    }
+
+    /// <summary>Vzor čárkování šipky, nebo null u plné čáry. Volající vlastní (dispose).</summary>
+    private SKPathEffect? CreateArrowDash(RenderContext ctx)
+    {
+        if (DirectionArrowLineStyle == LineStyle.Solid) return null;
+        var (dashMm, gapMm) = LineElement.GetDefaultDashPattern(DirectionArrowLineStyle);
+        return SKPathEffect.CreateDash([ctx.Px(dashMm), ctx.Px(gapMm)], 0);
     }
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────
@@ -584,19 +632,21 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return cols.Count > 0 ? cols.Max(c => ResolveDataStyle(c).FontSize) : (DataStyle.FontSize ?? 8f);
     }
 
-    internal string GetCellText(ZastavkaData z, string columnKey)
+    internal string GetCellText(ZastavkaData z, string columnKey, bool isPassed = false)
     {
         // Variantní časový sub-sloupec „CAS_JIZDY#i" → z.TrasaMin[i] (číslo / „<" / "" jak přišlo z Caché)
         if (columnKey.StartsWith(StopFields.TravelTimeVariantPrefix, System.StringComparison.Ordinal))
         {
-            return int.TryParse(columnKey.AsSpan(StopFields.TravelTimeVariantPrefix.Length), out int vi)
+            string variant = int.TryParse(columnKey.AsSpan(StopFields.TravelTimeVariantPrefix.Length), out int vi)
                    && vi >= 0 && vi < z.TrasaMin.Count ? z.TrasaMin[vi] : "";
+            return FilterPassedTime(variant, isPassed);
         }
         return columnKey switch
         {
             StopFields.StopName     => BuildStopDisplayText(z),
-            StopFields.TravelTime   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
-            StopFields.Zone         => string.Join("/", z.Zony),
+            StopFields.TravelTime   => FilterPassedTime(z.CasJizdy > 0 ? z.CasJizdy.ToString() : "", isPassed),
+            // Víc zón u jedné zastávky (hraniční) odděluje čárka - shodně se starým modulem.
+            StopFields.Zone         => string.Join(",", z.Zony),
             StopFields.Nastupiste   => MultiPlatformMode switch
             {
                 // Dle spojů: první položka CSV = nejčetnější / celý výčet; bez per-spoj dat fallback na trasu
@@ -610,6 +660,14 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             StopFields.JeAktualni   => z.JeAktualni ? "1" : "",
             _                       => ""
         };
+    }
+
+    /// <summary>Čas jízdy u projeté zastávky podle volby <see cref="PassedStopsTime"/>. Ne-číselnou
+    /// hodnotu („&lt;" = projíždí) nechává - není to čas, jen značka.</summary>
+    private string FilterPassedTime(string value, bool isPassed)
+    {
+        if (!isPassed || value.Length == 0 || PassedStopsTime == PassedStopsTimeDisplay.Show) return value;
+        return int.TryParse(value, out _) ? "" : value;
     }
 
     private const float VariantColumnWidthMm = 6f;
@@ -926,6 +984,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         GetDataRowHeightDescriptor(),
         new BoolPropertyDescriptor { Label = "Oddělovací čáry",   Group = "Řádky",    Get = () => ShowRowSeparators, Set = v => ShowRowSeparators = v },
+        new BoolPropertyDescriptor { Label = "Svislé čáry mezi sloupci", Group = "Řádky", Get = () => ShowColumnSeparators, Set = v => ShowColumnSeparators = v },
 
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
@@ -972,7 +1031,42 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ]
         },
         new ColorPropertyDescriptor { Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },
-        new BoolPropertyDescriptor  { Label = "Tučná šipka",     Group = "Směr jízdy", Get = () => DirectionArrowBold,   Set = v => DirectionArrowBold = v },
+        new FloatPropertyDescriptor
+        {
+            Label = "Tloušťka šipky", Group = "Směr jízdy",
+            Get = () => DirectionArrowWidth, Set = v => DirectionArrowWidth = v,
+            Min = 0.05f, Max = 5, Unit = "mm", Format = "0.##"
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Velikost hrotu", Group = "Směr jízdy",
+            Get = () => DirectionArrowHeadSize, Set = v => DirectionArrowHeadSize = v,
+            Min = 0.5f, Max = 20, Unit = "mm", Format = "0.##"
+        },
+        new EnumPropertyDescriptor
+        {
+            Label = "Hrot šipky", Group = "Směr jízdy",
+            Get = () => DirectionArrowHead,
+            Set = v => DirectionArrowHead = (ArrowHeadShape)v,
+            Options =
+            [
+                ("Plný", (object)ArrowHeadShape.Filled),
+                ("Otevřený", (object)ArrowHeadShape.Open),
+                ("Bez hrotu", (object)ArrowHeadShape.None),
+            ]
+        },
+        new EnumPropertyDescriptor
+        {
+            Label = "Styl čáry šipky", Group = "Směr jízdy",
+            Get = () => DirectionArrowLineStyle,
+            Set = v => DirectionArrowLineStyle = (LineStyle)v,
+            Options =
+            [
+                ("Plná", (object)LineStyle.Solid),
+                ("Čárkovaná", (object)LineStyle.Dashed),
+                ("Tečkovaná", (object)LineStyle.Dotted),
+            ]
+        },
 
         new BoolPropertyDescriptor  { Label = "Záhlaví sloupců",      Group = "Záhlaví",    Get = () => ShowHeader,            Set = v => ShowHeader = v },
 
@@ -982,6 +1076,17 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new ColorPropertyDescriptor { Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         new BoolPropertyDescriptor  { Label = "Projeté zastávky",    Group = "Zvýraznění", Get = () => ShowPassedStops,      Set = v => ShowPassedStops = v },
         new ColorPropertyDescriptor { Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
+        new EnumPropertyDescriptor
+        {
+            Label = "Čas u projetých", Group = "Zvýraznění",
+            Get = () => PassedStopsTime,
+            Set = v => PassedStopsTime = (PassedStopsTimeDisplay)v,
+            Options =
+            [
+                ("Nezobrazovat", (object)PassedStopsTimeDisplay.Hide),
+                ("Zobrazit", (object)PassedStopsTimeDisplay.Show),
+            ]
+        },
 
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
 
@@ -994,6 +1099,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         base.ApplyScale(scale);   // DataRowHeight + Header/Data styl (font+padding) škáluje base
         if (CurrentStopFontSize is not null) CurrentStopFontSize *= scale;
+        DirectionArrowWidth *= scale;
+        DirectionArrowHeadSize *= scale;
         foreach (var col in Columns)
         {
             if (col.Width is float w) col.Width = w * scale;   // auto (null) se neškáluje
@@ -1008,11 +1115,15 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         var clone = new StopListElement
         {
             ShowRowSeparators       = ShowRowSeparators,
+            ShowColumnSeparators    = ShowColumnSeparators,
             Columns                 = Columns.Select(c => c.Clone()).ToList(),
             ShowDirectionArrow      = ShowDirectionArrow,
             DirectionArrowColor     = DirectionArrowColor,
-            DirectionArrowBold      = DirectionArrowBold,
             DirectionArrowPosition  = DirectionArrowPosition,
+            DirectionArrowWidth     = DirectionArrowWidth,
+            DirectionArrowHeadSize  = DirectionArrowHeadSize,
+            DirectionArrowHead      = DirectionArrowHead,
+            DirectionArrowLineStyle = DirectionArrowLineStyle,
             ShowStopIndentation     = ShowStopIndentation,
             ShowSignalStopIndicator = ShowSignalStopIndicator,
             SignalStopSymbol        = SignalStopSymbol,
@@ -1024,6 +1135,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             CurrentStopUnderline    = CurrentStopUnderline,
             ShowPassedStops         = ShowPassedStops,
             PassedStopsForeColor    = PassedStopsForeColor,
+            PassedStopsTime         = PassedStopsTime,
             ShowAllRouteVariants    = ShowAllRouteVariants,
             ExcludedAttributeIds    = [.. ExcludedAttributeIds],
             ShowHeader              = ShowHeader,
@@ -1058,6 +1170,29 @@ public enum MultiPlatformDisplay
     /// <summary>Řádek pro každý označník: zastávka obsluhovaná z více označníků se vypíše jako N řádků
     /// na svém místě v trase; časy jen variant daného označníku (KOVED #13048 bod 4).</summary>
     RowPerPlatform,
+}
+
+/// <summary>Tvar hrotu šipky směru jízdy.</summary>
+public enum ArrowHeadShape
+{
+    /// <summary>Plný trojúhelník (výchozí).</summary>
+    Filled,
+    /// <summary>Otevřené „V" ze dvou čar.</summary>
+    Open,
+    /// <summary>Bez hrotu - jen čára.</summary>
+    None,
+}
+
+/// <summary>Co se u projeté zastávky ukáže ve sloupci času jízdy.</summary>
+/// <remarks>Samostatná volba „skrýt jen záporné" tu byla a padla: časy jsou kumulativní od
+/// vývěskové zastávky, takže u projeté zastávky jiný než záporný čas nevznikne a chovala se
+/// shodně s <see cref="Hide"/>.</remarks>
+public enum PassedStopsTimeDisplay
+{
+    /// <summary>U projetých zastávek nezobrazí žádný čas (výchozí) - značka „projíždí" zůstává.</summary>
+    Hide,
+    /// <summary>Zobrazí čas tak, jak přišel z dat (chování do 7/2026, tedy i záporný).</summary>
+    Show,
 }
 
 /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>

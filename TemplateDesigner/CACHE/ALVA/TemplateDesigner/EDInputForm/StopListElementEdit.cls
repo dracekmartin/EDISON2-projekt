@@ -23,9 +23,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("general", "Obecné")
         s f = form.AddFieldToLastGroup("GridColor", "Barva mřížky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFD0D0D0"
+        s f = form.AddDecimal("GridLineWidth", "Tloušťka mřížky", "", 0, 5, "mm")
+        s f.helpText = "Prázdné = dle tloušťky rámečku elementu"
+        s f = form.AddFieldToLastGroup("GridLineStyle", "Styl mřížky", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
         d form.AddBool("ShowRowSeparators", "Oddělovací čáry", 0)
+        s f = form.AddBool("ShowColumnSeparators", "Svislé čáry mezi sloupci", 0)
+        s f.helpText = "Čáry mezi sloupci ve tvaru mřížky (barva, tloušťka a styl výše)"
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "#FFE0E0E0")
@@ -52,7 +58,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("Right", "Vpravo (u pravého okraje elementu)"), f.AddListItem("Left", "Vlevo (u levého okraje elementu)")
         s f = form.AddFieldToLastGroup("DirectionArrowColor", "Barva šipky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        d form.AddBool("DirectionArrowBold", "Tučná šipka", 0)
+        d form.AddDecimal("DirectionArrowWidth", "Tloušťka šipky", 0.2, 0.05, 5, "mm")
+        d form.AddDecimal("DirectionArrowHeadSize", "Velikost hrotu", 1.2, 0.5, 20, "mm")
+        s f = form.AddFieldToLastGroup("DirectionArrowHead", "Hrot šipky", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Filled", "Plný"), f.AddListItem("Open", "Otevřený"), f.AddListItem("None", "Bez hrotu")
+        s f = form.AddFieldToLastGroup("DirectionArrowLineStyle", "Styl čáry šipky", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
         d form.AddBool("CurrentStopUnderline", "Podtržení aktuální zast.", 1)
         d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
         s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
@@ -60,6 +71,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowPassedStops", "Projeté zastávky", 0)
         s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Barva projetých", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF999999"
+        s f = form.AddFieldToLastGroup("PassedStopsTime", "Čas u projetých", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Hide", "Nezobrazovat"), f.AddListItem("Show", "Zobrazit")
+        s f.helpText = "Časy jsou počítané od vývěskové zastávky, u projetých proto vycházejí záporné"
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
