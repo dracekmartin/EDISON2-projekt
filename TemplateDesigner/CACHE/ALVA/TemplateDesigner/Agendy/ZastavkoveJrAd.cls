@@ -306,6 +306,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("TITULEK",                titulek)
     d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
+    d vals.%Set("DOPRAVCI_SOUHRNNY_JR",         ..DopravciSouhrnnyJr(dataDB, sku, lin, ..VypsatSpojeDopravce()))
     d vals.%Set("BARVA_LINKY",            ..BarvaLinky(IdFa, dataDB, sku, lin))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1)
@@ -1696,6 +1697,115 @@ ClassMethod PopisDopravce(dataDB As %String, sku As %String, lin As %String) As 
     q "Zajišťuje: "_txt
 }
 
+/// DOPRAVCI_SOUHRNNY_JR = každý dopravce (firma × provoz) na **vlastním řádku**, bez uvození, ve tvaru
+/// „Linka &lt;licenční číslo&gt; | &lt;dopravce&gt;, spoje č. &lt;rozsahy&gt;" (KOVED #13008).
+/// Pojmenované podle účelu: skládá hlavičku **souhrnného jízdního řádu**, kde jednu vývěskovou linku
+/// obsluhuje víc dopravců pod různými licencemi. Na obyčejné lince funguje stejně (jedna licence,
+/// jedna skupina), takže se dá použít i tam.
+///
+/// Oproti `POPIS_DOPRAVCE` (jeden odstavec s „Zajišťuje: ") je to samostatné pole - staré nemůže
+/// změnit tvar, visí na něm zlaté odtisky i existující šablony.
+///
+/// Řádky se seskupují podle **(licenční linka → dopravce → provoz)**, takže souhrnná linka vyrobí
+/// řádek per licenci; licenční číslo dává <see cref="LicencniLinkaSpoje"/>.
+/// ⚠️ Souhrnná větev je ověřená jen syntetickými vstupy - v žádné testovací firmě souhrnná linka
+/// není, první reálné potvrzení přijde od zákazníka.
+ClassMethod DopravciSouhrnnyJr(dataDB As %String, sku As %String, lin As %String, vypsatSpoje As %Boolean = 1) As %String
+{
+    s cisloLinky = +lin
+    k dop, dopSpoje
+    f smer="T","Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+            q:sp=""
+            i '$isvalidnum(sp) continue
+            s spojRec = $g(^[dataDB]JRL(sku,lin,smer,sp))
+            s licencniLinka = ..LicencniLinkaSpoje(spojRec, cisloLinky)
+            s carriers = $p(spojRec, "#", 2)
+            f ci=1:1:$l(carriers,"~") {
+                s slot = $p(carriers,"~",ci)
+                i slot = "" continue
+                s fa = $p(slot,":",1)
+                i fa = "" continue
+                s pr = $p(slot,":",2)
+                s dop(licencniLinka, fa, pr) = ""
+                s dopSpoje(licencniLinka, fa, pr, +sp) = ""
+            }
+        }
+    }
+
+    k videno
+    s vysledek = "", licLin = ""
+    f {
+        s licLin = $o(dop(licLin))
+        q:licLin=""
+        s fa = ""
+        f {
+            s fa = $o(dop(licLin,fa))
+            q:fa=""
+            s pr = ""
+            f {
+                s pr = $o(dop(licLin,fa,pr))
+                q:pr=""
+                s nazev = ..NazevDopravce(dataDB, fa, pr)
+                i nazev = "" continue
+                s radek = "Linka "_licLin_" | "_nazev
+                i vypsatSpoje {
+                    // Referencí nelze předat uzel s indexy - přelít do lokálního pole (merge jen když uzel je).
+                    k spojeDop
+                    i $d(dopSpoje(licLin, fa, pr)) m spojeDop = dopSpoje(licLin, fa, pr)
+                    s rozsahy = ..RozsahyCisel(.spojeDop)
+                    i rozsahy '= "" s radek = radek_", spoje č. "_rozsahy
+                }
+                i $d(videno(radek)) continue   // tentýž dopravce i provoz v obou směrech = jeden řádek
+                s videno(radek) = ""
+                i vysledek '= "" s vysledek = vysledek_$c(10)
+                s vysledek = vysledek_radek
+            }
+        }
+    }
+    ret vysledek
+}
+
+/// Licenční číslo linky, pod kterou spoj jede. U **souhrnného JŘ** spoje pocházejí z několika
+/// licenčních linek a každý si nese „Zdroj spoje" (`#`-pole 3 = `index linky~spoj`); index je číslo
+/// linky doplněné nulami na 7 znaků, takže číslo je `$e(index,2,7)` (1:1 legacy `cnvIndLin^JRapiFce`).
+/// Bez zdroje (obyčejná linka) platí číslo té linky, na které stojíme.
+ClassMethod LicencniLinkaSpoje(spojRec As %String, cisloLinky As %String) As %String
+{
+    s zdrojIndex = $p($p(spojRec, "#", 3), "~", 1)
+    i zdrojIndex = "" ret cisloLinky
+    s cislo = +$e(zdrojIndex, 2, 7)
+    ret $s(cislo:cislo, 1:cisloLinky)
+}
+
+/// Čísla (subscripty pole) stlačená do rozsahů: „1-31, 201-204". Dvojice se vypíše jako „1, 2" -
+/// „1-2" se čte hůř než výčet. Vstup je pole s **číselnými** subscripty, iteruje se vzestupně.
+ClassMethod RozsahyCisel(ByRef cisla) As %String
+{
+    s vysledek = "", zacatek = "", predchozi = "", c = ""
+    f {
+        s c = $o(cisla(c))
+        q:c=""
+        i '$isvalidnum(c) continue
+        i zacatek = "" s zacatek = c, predchozi = c  continue
+        i c = (predchozi + 1) s predchozi = c  continue
+        s vysledek = vysledek_$s(vysledek="":"", 1:", ")_..RozsahText(zacatek, predchozi)
+        s zacatek = c, predchozi = c
+    }
+    i zacatek '= "" s vysledek = vysledek_$s(vysledek="":"", 1:", ")_..RozsahText(zacatek, predchozi)
+    ret vysledek
+}
+
+/// Jeden úsek výčtu: samostatné číslo, dvojice („1, 2") nebo rozsah („1-31").
+ClassMethod RozsahText(odC As %String, doC As %String) As %String
+{
+    i odC = doC ret odC
+    i doC = (odC + 1) ret odC_", "_doC
+    ret odC_"-"_doC
+}
+
 /// Text dopravce (fa,pr) z `^JRSET("DOP",...)` - 1:1 s `gDopMHD`/PzaJ assembly `^JRapiLinPrtMhd`:
 /// 1) je-li nastaven zkrácený MHD název (per-provoz $6 → firemní $14), použij ho SAMOSTATNĚ.
 /// 2) jinak plný tvar `<obchodní název / sídlo firmy>, <sídlo provozovny>,,tel:<telefon provozovny>`.
@@ -1789,6 +1899,12 @@ ClassMethod PouzitNazevProMhd() As %Boolean
     ret $g(^||TiskAd("nazev","mhd"), 1)
 }
 
+/// Má se u dopravce vypsat výčet spojů? Parametr sestavy, výchozí ano (tak to má zákazník na vzoru).
+ClassMethod VypsatSpojeDopravce() As %Boolean
+{
+    ret ($zcvt($g(^||ML("IN","SPOJE_U_DOPRAVCE")),"L") '= "false")
+}
+
 /// Přečte nastavení názvů zastávek z parametrů sestavy do `^||TiskAd`. Volá se po úklidu cache
 /// na začátku požadavku, než se začnou skládat jména.
 ClassMethod NactiNastaveniNazvu()
@@ -1853,6 +1969,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
     d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+    d ..AddField(fields, "DOPRAVCI_SOUHRNNY_JR",         "Dopravci souhrnného JŘ",    "text")
     d ..AddField(fields, "BARVA_LINKY",            "Barva linky",            "color")
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
@@ -1964,6 +2081,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d arr.%Push(pTvarNaz)
 
     d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnutím se použije název podle CIS.")
+    d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.")
 
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")

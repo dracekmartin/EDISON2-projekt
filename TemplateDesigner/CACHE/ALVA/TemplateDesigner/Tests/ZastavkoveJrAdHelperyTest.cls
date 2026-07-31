@@ -182,6 +182,56 @@ Method TestNormalizLinku()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NormalizLinku(""), "", "prázdné → prázdné")
 }
 
+// ── Výčet spojů u dopravce stlačený do rozsahů (KOVED #13008) ────────────────
+
+Method TestRozsahyCisel()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+
+	// Vzor od zákazníka: „spoje č. 1-31, 201-204"
+	kill c
+	for i=1:1:31 { set c(i) = "" }
+	for i=201:1:204 { set c(i) = "" }
+	do $$$AssertEquals($classmethod(cls, "RozsahyCisel", .c), "1-31, 201-204", "dva rozsahy")
+
+	// Samostatné číslo
+	kill c
+	set c(51) = ""
+	do $$$AssertEquals($classmethod(cls, "RozsahyCisel", .c), "51", "jediný spoj")
+
+	// Dvojice se vypíše výčtem - „1, 2" se čte lépe než „1-2"
+	kill c
+	set c(1) = "", c(2) = ""
+	do $$$AssertEquals($classmethod(cls, "RozsahyCisel", .c), "1, 2", "dvojice výčtem")
+
+	// Mezera v číslování rozdělí rozsahy; pořadí je vzestupné bez ohledu na vkládání
+	kill c
+	set c(7) = "", c(5) = "", c(6) = "", c(9) = ""
+	do $$$AssertEquals($classmethod(cls, "RozsahyCisel", .c), "5-7, 9", "vzestupně a s mezerou")
+
+	kill c
+	do $$$AssertEquals($classmethod(cls, "RozsahyCisel", .c), "", "bez spojů prázdné")
+}
+
+// ── Licenční linka spoje u souhrnného JŘ (KOVED #13008) ──────────────────────
+
+Method TestLicencniLinkaSpoje()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+
+	// Obyčejná linka: „Zdroj spoje" (3. #-segment) prázdný → platí číslo té linky
+	set bezZdroje = "1:46:2:460:135:R:6:1::$:0:0#611:2~~~~##103.161##"
+	do $$$AssertEquals($classmethod(cls, "LicencniLinkaSpoje", bezZdroje, 822995), 822995, "bez zdroje = číslo linky")
+
+	// Souhrnný JŘ: zdroj „0802170~15" → licenční linka 802170 (index je číslo doplněné nulami na 7)
+	set seZdrojem = "1:46:2:460:135:R:6:1::$:0:0#611:2~~~~#0802170~15#103.161##"
+	do $$$AssertEquals($classmethod(cls, "LicencniLinkaSpoje", seZdrojem, 999), 802170, "zdroj spoje → licenční linka")
+
+	// Nesmyslný zdroj nesmí vyrobit prázdné číslo - padá se na linku
+	set rozbity = "1:46:2:460:135:R:6:1::$:0:0#611:2~~~~#0000000~1#103.161##"
+	do $$$AssertEquals($classmethod(cls, "LicencniLinkaSpoje", rozbity, 822995), 822995, "nulový zdroj = číslo linky")
+}
+
 // ── Tvar názvu zastávky (KOVED #13089) ───────────────────────────────────────
 // V registru je obec a místo oddělené dvojčárkou; z toho se skládají všechny tvary.
 
