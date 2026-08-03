@@ -87,6 +87,8 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                 Nastupiste    = row.GetString(StopFields.Nastupiste),
                 NastupisteSpoju = row.GetString(StopFields.NastupisteSpoju),
                 Sloupek       = row.GetString(StopFields.Sloupek),
+                SloupekSpoju  = row.GetString(StopFields.SloupekSpoju),
+                SloupekPopis  = row.GetString(StopFields.SloupekPopis),
                 SourceRow     = row,
             };
 
@@ -120,6 +122,9 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             // označník každé varianty (zarovnané s TrasaMin) - pro režim „Řádek pro každý označník"
             if (row.GetValue("NASTUPISTE_VARIANT") is JsonArray nvArr)
                 z.NastupisteVariant = nvArr.Select(n => n?.ToString() ?? "").ToList();
+
+            if (row.GetValue("SLOUPEK_VARIANT") is JsonArray svArr)
+                z.SloupekVariant = svArr.Select(n => n?.ToString() ?? "").ToList();
 
             result.Add(z);
         }

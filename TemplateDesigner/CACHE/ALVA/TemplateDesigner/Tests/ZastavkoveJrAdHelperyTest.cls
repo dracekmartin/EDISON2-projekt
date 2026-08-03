@@ -382,6 +382,16 @@ Method TestSloupekNeniOznacnik()
 	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta, 1), "2", "sloupek (segment 12) je vyplněný")
 }
 
+/// Pozice sloupku a označníku v datech drží jedna funkce - kdyby se rozešly, agregace dle spojů
+/// by počítala jiné pole než sloupec a vývěska by tiskla dvě různá čísla pod jedním názvem.
+Method TestPoziceStanoviste()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "PoziceStanoviste", "OZN"), "7~3", "označník = W 7, J-věta 3")
+	do $$$AssertEquals($classmethod(cls, "PoziceStanoviste", "SL"), "13~12", "sloupek = W 13, J-věta 12")
+	do $$$AssertEquals($classmethod(cls, "PoziceStanoviste", ""), "7~3", "neznámý zdroj → označník (dosavadní chování)")
+}
+
 /// Linka bez evidence sloupků (kratší J-věta) nesmí spadnout ani vymyslet hodnotu.
 Method TestSloupekChybejiciSegment()
 {

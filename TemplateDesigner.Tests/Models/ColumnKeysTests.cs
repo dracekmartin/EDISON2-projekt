@@ -34,6 +34,7 @@ public class ColumnKeysTests
         Assert.Equal("ZONY", StopFields.Zone);
         Assert.Equal("NASTUPISTE", StopFields.Nastupiste);
         Assert.Equal("SLOUPEK", StopFields.Sloupek);
+        Assert.Equal("SLOUPEK_POPIS", StopFields.SloupekPopis);
         Assert.Equal("ID", StopFields.Id);
         Assert.Equal("CAS_JIZDY#", StopFields.TravelTimeVariantPrefix);
     }
@@ -49,7 +50,7 @@ public class ColumnKeysTests
     {
         string[] known = [StopFields.TravelTime, StopFields.StopName, StopFields.Zone,
                           StopFields.Poradi, StopFields.JeAktualni, StopFields.Nastupiste,
-                          StopFields.Sloupek];
+                          StopFields.Sloupek, StopFields.SloupekPopis];
         Assert.All(StopListElement.GetDefaultColumns(), c => Assert.Contains(c.Key, known));
     }
 

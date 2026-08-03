@@ -1,6 +1,27 @@
 # Changelog
 
-## 2026-08-03 - `B35a` sloupec Sloupek v seznamu zastávek (#13088, #13048 bod 3)
+## 2026-08-03 (2) - `B35b` první část: sloupek per spoj, výčet a popis (#13088, #13048 bod 4)
+
+Změřeno na 400 linkách KOVED, aby se nestavělo naslepo: **94 linek** má sloupek vyplněný i na úrovni
+spoje (označník 102) a **19 zastávek** má napříč spoji různé sloupky (označník 46). Per-spoj hodnota
+tedy reálně existuje a režimy „více hodnot" nad sloupkem mají co zobrazit.
+
+- **Pozice obou údajů drží jedna funkce** (`PoziceStanoviste`: označník = W 7 / J-věta 3,
+  sloupek = W 13 / J-věta 12). Agregace dle spojů, W-mapa i fallback z trasy si je berou odsud -
+  kdyby se rozešly, tiskly by se pod jedním názvem dvě různá čísla.
+- Agregace a W-mapa jsou tím **parametrizované zdrojem**, ne zkopírované. Cache má zdroj v klíči,
+  aby si označník a sloupek navzájem nepřebíjely spočítané hodnoty.
+- Nová pole: **Sloupek (dle spojů)** (`SLOUPEK_SPOJU`, CSV dle četnosti), **sloupek per varianta
+  trasy** (`SLOUPEK_VARIANT`) a **Popis sloupku** (`SLOUPEK_POPIS`) z číselníku zastávky
+  („směr Brno přes UH") - ten i jako skalár pro hlavičku vývěsky.
+- Nový sloupec **Popis sloupku** v seznamu zastávek (defaultně vypnutý).
+
+Zbývá druhá část `B35b`: parametr sestavy **„Číslo stanoviště podle"**, který na sloupek přepne
+režimy více hodnot, řádkové duplikování, dělení stránek (#8828) i titulek stránky.
+
+Caché 65/65 (+2), .NET 540/540 (+1). Zlaté odtisky přebaselinovány - opět shodné počty, jiné md5.
+
+## 2026-08-03 (1) - `B35a` sloupec Sloupek v seznamu zastávek (#13088, #13048 bod 3)
 
 KOVED psal, že „označník je, ale sloupek není, ten je pro nás důležitější". Ukázalo se, že to nejsou
 synonyma: **označník** (naše dosavadní pole) je volný text z trasy linky, kdežto **sloupek** je odkaz

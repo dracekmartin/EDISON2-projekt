@@ -46,6 +46,8 @@ public class ZastavkaData
     public string Nastupiste { get; set; } = "";   // nástupiště/označník zastávky (AD: J-věta #3; MHD: Oznacnik)
     public string NastupisteSpoju { get; set; } = ""; // nástupiště dle spojů (CSV dle četnosti, první = nejčetnější); "" = bez per-spoj dat
     public string Sloupek { get; set; } = "";      // sloupek z číselníku zastávky (AD: J-věta #12); "" = nevyplněný nebo MHD
+    public string SloupekSpoju { get; set; } = ""; // sloupky dle spojů (CSV dle četnosti, první = nejčetnější)
+    public string SloupekPopis { get; set; } = ""; // popis sloupku z číselníku („směr Brno přes UH")
     public List<AtributData> Atributy { get; set; } = [];
     public List<PoznamkaZastavkyData> PoznamkyZastavky { get; set; } = [];
     /// <summary>Časy jízdy per varianta trasy (dynamické „TrasaMin"): číslo, „&lt;" (projíždí) nebo "" (mimo trasu).
@@ -56,6 +58,10 @@ public class ZastavkaData
     /// odkud daná varianta z této zastávky odjíždí, nebo "" (varianta zde nestaví). Zdroj pro režim
     /// „Řádek pro každý označník" (KOVED #13048 bod 4).</summary>
     public List<string> NastupisteVariant { get; set; } = [];
+
+    /// <summary>Sloupek každé varianty trasy (zarovnané s <c>TrasaMin</c>) - obdoba
+    /// <see cref="NastupisteVariant"/> pro sloupek.</summary>
+    public List<string> SloupekVariant { get; set; } = [];
 
     /// <summary>Zdrojový řádek dat této zastávky - pro vyhodnocení řádkových podmínek (zvýraznění)
     /// nad poli řádku. Neserializuje se.</summary>

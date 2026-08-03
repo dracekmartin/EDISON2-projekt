@@ -44,6 +44,8 @@ Dílčí vylepšení a náměty.
   podle směru jízdy a je to číslo z číselníku sloupků zastávky, tedy jiný údaj než dosavadní sloupec
   **Označník** (ten nese pole „nástupiště" z trasy linky). Zapíná se v nastavení sloupců, ve stávajících
   šablonách se nabídne sám.
+- **Nový sloupec Popis sloupku** - text z číselníku zastávky, například „směr Brno přes UH". Stejný
+  údaj je k dispozici i pro hlavičku vývěsky.
 
 ### 31. 7. 2026 - Vzhled seznamu zastávek a barva linky ve sloupcích
 

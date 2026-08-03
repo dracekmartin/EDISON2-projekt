@@ -78,6 +78,20 @@ public class StopListCellTextTests
     public void Sloupek_BezDatJePrazdny()
     {
         Assert.Equal("", new StopListElement().GetCellText(Stop("11", ""), StopFields.Sloupek));
+        Assert.Equal("", new StopListElement().GetCellText(Stop("11", ""), StopFields.SloupekPopis));
+    }
+
+    /// <summary>Popis sloupku je samostatný sloupec - na vývěsce je pro cestujícího užitečnější
+    /// než samotné číslo („směr Brno přes UH").</summary>
+    [Fact]
+    public void PopisSloupku_JeVlastniSloupec()
+    {
+        var z = Stop("11", "");
+        z.Sloupek = "2";
+        z.SloupekPopis = "směr Brno přes UH";
+
+        Assert.Equal("směr Brno přes UH", new StopListElement().GetCellText(z, StopFields.SloupekPopis));
+        Assert.Equal("2", new StopListElement().GetCellText(z, StopFields.Sloupek));
     }
 
     // ── Zóny (KOVED #13091 bod 4) ─────────────────────────────────────────────

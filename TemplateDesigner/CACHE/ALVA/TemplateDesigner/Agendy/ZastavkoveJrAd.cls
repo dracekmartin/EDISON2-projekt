@@ -329,7 +329,8 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     i filtrOznacnik '= "" s nastupiste = filtrOznacnik          // #8828: stránka nese svůj označník
     d vals.%Set("NASTUPISTE",             nastupiste)         // A2: NEJEDOU_SPOJE je misnomer → NASTUPISTE
     d vals.%Set("NEJEDOU_SPOJE",          nastupiste)         // zastaralé (kompatibilita) → NASTUPISTE
-    d vals.%Set("SLOUPEK",                ..SloupekZTrasy($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)), smer '= "Z"))
+    s sloupekAkt = ..SloupekZTrasy($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)), smer '= "Z")
+    d vals.%Set("SLOUPEK",                sloupekAkt)
 
     // ── trasa → zastávky (CELÁ trasa ve směru jízdy, vč. projetých; zóny + na znamení) ──
     // Tam: vzestupně 1→N. Zpět: sestupně N→1. Aktuální = JE_AKTUALNI; projeté mají casJizdy=0 a bez
@@ -506,7 +507,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         // trasy varianty (W pole 7, fallback J-věta #3). Prázdno = varianta zde nestaví. Element z toho
         // v režimu „Řádek pro každý označník" udělá N řádků (časy jen variant daného označníku).
         s nastVar = ##class(%DynamicArray).%New()
+        s sloupekVar = ##class(%DynamicArray).%New()
         s nastJv = $p($p(veta,"#",3),":",$s(jeTam:1,1:2))    // fallback z trasy linky (J-věta dle směru)
+        s sloupekJv = ..SloupekZTrasy(veta, jeTam)
         f colX=1:1:pocetSloupcu {
             s viX = displayVar(colX)
             i $g(variantPat(viX,poradi)) = "S" {
@@ -514,11 +517,17 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
                 s nastX = $g(nMapV(poradi))
                 i nastX = "" s nastX = nastJv
                 d nastVar.%Push(nastX)
+                d ..WNastupisteMapa(dataDB, sku, lin, $g(variantCt(viX)), .nMapVS, "SL")
+                s sloupekX = $g(nMapVS(poradi))
+                i sloupekX = "" s sloupekX = sloupekJv
+                d sloupekVar.%Push(sloupekX)
             } else {
                 d nastVar.%Push("")                          // varianta zde nestaví → bez nástupiště
+                d sloupekVar.%Push("")
             }
         }
         d z.%Set("NASTUPISTE_VARIANT", nastVar)
+        d z.%Set("SLOUPEK_VARIANT", sloupekVar)
         // TR3: označník per zastávka (J-věta #3, dle směru). Na rozdělené stránce (#8828) nese
         // ŘÁDEK vývěskové zastávky označník své stránky - jinak by stránky 11/22 vypadaly identicky
         // (J-věta má jednu hodnotu pro obě).
@@ -527,7 +536,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         d z.%Set("NASTUPISTE", nastRadek)
         // KOVED #13088: sloupek zastávky (J-věta #12 dle směru) - druhý, číselníkový údaj vedle
         // označníku. Dělení stránek (#8828) dnes běží na označníku, sloupek proto nese trasu.
-        d z.%Set("SLOUPEK", ..SloupekZTrasy(veta, jeTam))
+        d z.%Set("SLOUPEK", sloupekJv)
+        d z.%Set("SLOUPEK_SPOJU", ..NastupisteSpoju(dataDB, sku, lin, smer, poradi, "SL"))
+        d z.%Set("SLOUPEK_POPIS", ..PopisSloupku(dataDB, czst, sloupekJv))
         // KOVED #13048 bod 4: nástupiště dle SPOJŮ (W pole 8, fallback J-věta) - CSV dle četnosti,
         // první = nejčetnější. Element z toho staví režimy „nejčetnější" / „výčet". Na rozdělené
         // stránce u vývěskové zastávky rovněž jen označník stránky (stránka JE o něm).
@@ -542,6 +553,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     i filtrOznacnik '= "" s aktualniNazev = aktualniNazev_", označník "_filtrOznacnik
     d vals.%Set("POPIS_ZASTAVKA",      aktualniNazev)
     d vals.%Set("CISLO_ZASTAVKA",      aktualniCzst)
+    d vals.%Set("SLOUPEK_POPIS",       ..PopisSloupku(dataDB, aktualniCzst, sloupekAkt))
     d vals.%Set("POPIS_ZASTAVKA_CIS",  ..NazevZastavkyCis(dataDB, aktualniCzst))
     d vals.%Set("SMER",                smer)                  // A1: T/Z (POPIS_SMER = konečná)
     d vals.%Set("POPIS_SMER",          posledniNazev)
@@ -850,7 +862,7 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
 /// Per-spoj přebití (W pozice 13) tento krok ještě nedělá - viz roadmapa `B35b`.
 ClassMethod SloupekZTrasy(veta As %String, jeTam As %Boolean) As %String
 {
-    ret $p($p(veta, "#", 12), ":", $s(jeTam:1, 1:2))
+    ret $p($p(veta, "#", $p(..PoziceStanoviste("SL"), "~", 2)), ":", $s(jeTam:1, 1:2))
 }
 
 /// Nástupiště zastávky posbíraná ze SPOJŮ směru - legacy pravidlo „nástupiště ze spoje,
@@ -859,20 +871,38 @@ ClassMethod SloupekZTrasy(veta As %String, jeTam As %Boolean) As %String
 /// pole (`JRapiSp` ř.234-241), takže trs indexy jsou od W pozic posunuté o 1.
 /// Vrací CSV distinct hodnot seřazených dle četnosti sestupně (shoda → menší hodnota),
 /// první položka = nejčetnější. "" když žádný spoj nástupiště nemá. KOVED #13048 bod 4.
-ClassMethod NastupisteSpoju(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String) As %String
+ClassMethod NastupisteSpoju(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, zdroj As %String = "OZN") As %String
 {
     i poradi = "" q ""
-    i '$d(^||TiskAd("nastCsv",dataDB,sku,lin,smer)) d ..NastupisteAgregace(dataDB, sku, lin, smer)
-    q $g(^||TiskAd("nastCsv",dataDB,sku,lin,smer,poradi))
+    i '$d(^||TiskAd("nastCsv",zdroj,dataDB,sku,lin,smer)) d ..NastupisteAgregace(dataDB, sku, lin, smer, zdroj)
+    q $g(^||TiskAd("nastCsv",zdroj,dataDB,sku,lin,smer,poradi))
+}
+
+/// Pozice údaje „odkud spoj odjíždí" v datech podle zdroje: `OZN` = označník (W 7 / J-věta #3),
+/// `SL` = sloupek (W 13 / J-věta #12). Vrací `wPozice~jSegment`. Jediné místo, kde jsou ta čísla -
+/// agregace, W-mapa i fallback z trasy si je berou odsud, aby se nemohly rozejít.
+ClassMethod PoziceStanoviste(zdroj As %String) As %String
+{
+    ret $s(zdroj = "SL" : "13~12", 1 : "7~3")
+}
+
+/// Popis sloupku z číselníku zastávky (`^JRZ(czst,"Sloupek",id)` `~`-pole 4, např. „směr Brno přes UH").
+/// "" když zastávka číselník nemá nebo sloupek není vyplněný.
+ClassMethod PopisSloupku(dataDB As %String, czst As %String, sloupek As %String) As %String
+{
+    i (czst = "") || (sloupek = "") ret ""
+    ret $p($g(^[dataDB]JRZ(czst, "Sloupek", sloupek)), "~", 4)
 }
 
 /// Agregace nástupišť per zastávka přes všechny spoje směru → cache `^||TiskAd("nastCsv",…)`
 /// (invariant per linka×směr; v GetData se volá per stránka). Spoj v zastávce nestaví
 /// (`<` / `|` / prázdné) → nepočítá se (stejná sémantika jako legacy `JRapiExp10` ř.272-275).
-ClassMethod NastupisteAgregace(dataDB As %String, sku As %String, lin As %String, smer As %String)
+ClassMethod NastupisteAgregace(dataDB As %String, sku As %String, lin As %String, smer As %String, zdroj As %String = "OZN")
 {
     k agg
     s jeTamSmer = (smer = "T")
+    s pozice = ..PoziceStanoviste(zdroj)
+    s wPoz = $p(pozice,"~",1), jSeg = $p(pozice,"~",2)
     s sp = ""
     f {
         s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
@@ -885,19 +915,19 @@ ClassMethod NastupisteAgregace(dataDB As %String, sku As %String, lin As %String
             s seg = $p(wTrasa,"#",i)
             s pp = $p(seg,":",1), cas = $p(seg,":",2)
             i (pp = "") || (cas = "") || (cas = "<") || (cas = "|") continue
-            s nast = $p(seg,":",7)
-            i nast = "" s nast = $p($p($g(^[dataDB]JRL(sku,lin,"J",pp)),"#",3),":",$s(jeTamSmer:1,1:2))
+            s nast = $p(seg,":",wPoz)
+            i nast = "" s nast = $p($p($g(^[dataDB]JRL(sku,lin,"J",pp)),"#",jSeg),":",$s(jeTamSmer:1,1:2))
             i nast = "" continue
             s agg(pp,nast) = $g(agg(pp,nast)) + 1
         }
     }
 
-    s ^||TiskAd("nastCsv",dataDB,sku,lin,smer) = 1     // marker „spočítáno" (i když nic nevyšlo)
+    s ^||TiskAd("nastCsv",zdroj,dataDB,sku,lin,smer) = 1     // marker „spočítáno" (i když nic nevyšlo)
     s pp = ""
     f {
         s pp = $o(agg(pp)) q:pp=""
         k cetnosti m cetnosti = agg(pp)
-        s ^||TiskAd("nastCsv",dataDB,sku,lin,smer,pp) = ..NastupisteCsv(.cetnosti)
+        s ^||TiskAd("nastCsv",zdroj,dataDB,sku,lin,smer,pp) = ..NastupisteCsv(.cetnosti)
     }
 }
 
@@ -948,18 +978,19 @@ ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy 
 /// (`^||TiskAd("wnast",…)`; linka v klíči je povinná - viz `WMapa`).
 /// Nástupiště = W pole 7 (⚠️ legacy `arrsp("trs",tc,8)` - indexy posunuté o +1, JRapiSp ř.234-241).
 /// Bez J-fallbacku - ten je per zastávka×směr a řeší ho volající (fallback nerozlišuje varianty).
-ClassMethod WNastupisteMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef nMap)
+ClassMethod WNastupisteMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef nMap, zdroj As %String = "OZN")
 {
     k nMap
     i cisloTrasy = "" q                                  // spoj bez trasy → prázdná mapa (^|| nebere prázdný subscript)
-    i $d(^||TiskAd("wnast",dataDB,sku,lin,cisloTrasy)) { m nMap = ^||TiskAd("wnast",dataDB,sku,lin,cisloTrasy)  q }
+    i $d(^||TiskAd("wnast",zdroj,dataDB,sku,lin,cisloTrasy)) { m nMap = ^||TiskAd("wnast",zdroj,dataDB,sku,lin,cisloTrasy)  q }
+    s wPoz = $p(..PoziceStanoviste(zdroj),"~",1)
     s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
     f i=1:1:$l(wTrasa,"#") {
         s seg = $p(wTrasa,"#",i)
         s p = $p(seg,":",1)
-        i p '= "" s nMap(p) = $p(seg,":",7)
+        i p '= "" s nMap(p) = $p(seg,":",wPoz)
     }
-    i $d(nMap) m ^||TiskAd("wnast",dataDB,sku,lin,cisloTrasy) = nMap
+    i $d(nMap) m ^||TiskAd("wnast",zdroj,dataDB,sku,lin,cisloTrasy) = nMap
 }
 
 /// Písmeno variantního sloupce (1-based pořadí sloupce): A–Z; `prvniBez` → první sloupec (hlavní
@@ -2001,6 +2032,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "NASTUPISTE",             "Označník",               "text")
     d ..AddField(fields, "SLOUPEK",                "Sloupek",                "text")
+    d ..AddField(fields, "SLOUPEK_POPIS",          "Popis sloupku",          "text")
     // _CIS varianty (celostátní názvy) jsou AD-specifické - MHD je zatím neprodukuje.
     // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values -
     // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.
@@ -2026,6 +2058,8 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "NASTUPISTE",        "Označník",          "text")
     d ..AddField(colZastavkyFields, "NASTUPISTE_SPOJU",  "Označník (dle spojů)", "text")
     d ..AddField(colZastavkyFields, "SLOUPEK",           "Sloupek",           "text")
+    d ..AddField(colZastavkyFields, "SLOUPEK_SPOJU",     "Sloupek (dle spojů)", "text")
+    d ..AddField(colZastavkyFields, "SLOUPEK_POPIS",     "Popis sloupku",     "text")
     // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno - nese jen J-klíč (= interní ID),
     // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
     // TRASA_MIN (pole variantních časů jízdy v každém řádku) je wire-only - pole (ne skalár),

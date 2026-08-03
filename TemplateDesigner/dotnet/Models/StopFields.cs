@@ -27,6 +27,13 @@ public static class StopFields
     /// stanovišti říká označník. Vydává jen AD agenda (v MHD je prázdný, sloupec je defaultně vypnutý).</summary>
     public const string Sloupek = "SLOUPEK";
 
+    /// <summary>Sloupky dle spojů (AD: W-trasa pozice 13, fallback J-věta #12) - CSV dle četnosti,
+    /// první = nejčetnější. Obdoba <see cref="NastupisteSpoju"/> pro sloupek.</summary>
+    public const string SloupekSpoju = "SLOUPEK_SPOJU";
+
+    /// <summary>Popis sloupku z číselníku zastávky („směr Brno přes UH").</summary>
+    public const string SloupekPopis = "SLOUPEK_POPIS";
+
     /// <summary>Interní join-klíč zastávky (<c>ODJEZDY.ZASTAVKA_ID</c>) - je v datech, ale NE ve schématu
     /// ani jako sloupec (uživatel s ním nepracuje).</summary>
     public const string Id = "ID";

@@ -27,6 +27,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new() { Key = StopFields.JeAktualni,   Header = "Akt.",      Width = 6f,  Visible = false },
         new() { Key = StopFields.Nastupiste,   Header = "Označník", Width = 12f, Visible = false },
         new() { Key = StopFields.Sloupek,      Header = "Sloupek",  Width = 12f, Visible = false },
+        new() { Key = StopFields.SloupekPopis, Header = "Popis sloupku", Width = 30f, Visible = false },
     ];
 
     // ═══════════════════════════════════════════
@@ -751,8 +752,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     ? z.NastupisteSpoju.Replace(",", ", ") : z.Nastupiste,
                 _ => z.Nastupiste,
             },
-            // Sloupek zatím jen z trasy linky - režimy „více hodnot" se na něj navěsí až s per-spoj daty (B35b)
+            // Sloupek zatím jen z trasy linky - režimy „více hodnot" na něj přepne parametr sestavy (B35b druhá část)
             StopFields.Sloupek      => z.Sloupek,
+            StopFields.SloupekPopis => z.SloupekPopis,
             StopFields.Poradi       => z.Poradi > 0 ? z.Poradi.ToString() : "",
             StopFields.JeAktualni   => z.JeAktualni ? "1" : "",
             _                       => ""
@@ -1050,6 +1052,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             Nastupiste       = platform,
             NastupisteSpoju  = z.NastupisteSpoju,
             Sloupek          = z.Sloupek,
+            SloupekSpoju     = z.SloupekSpoju,
+            SloupekPopis     = z.SloupekPopis,
+            SloupekVariant   = z.SloupekVariant,
             Zony             = z.Zony,
             Atributy         = keepMarkers ? z.Atributy : [],
             PoznamkyZastavky = keepMarkers ? z.PoznamkyZastavky : [],

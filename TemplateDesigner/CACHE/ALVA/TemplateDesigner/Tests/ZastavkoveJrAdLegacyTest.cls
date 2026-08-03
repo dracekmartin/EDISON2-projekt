@@ -53,6 +53,29 @@ Method TestZaskokZonyNaRegistrZastavek()
 	do $$$AssertEquals(zTrasy, "101", "zóna u trasy linky přebíjí registr zastávek")
 }
 
+/// Popis sloupku se čte z číselníku zastávky (KOVED #13088). Zlín, aut. nádr. (czst 41994) má
+/// sloupky s popisy směrů - ověřuje, že bereme `~`-pole 4, ne číslo nebo GPS.
+Method TestPopisSloupkuZCiselniku()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set db = "ZL_KOVED", czst = 41994
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - popis sloupku přeskočen")
+		quit
+	}
+	if '$data(^[db]JRZ(czst, "Sloupek", 2)) {
+		do $$$AssertTrue(1, "zastávka "_czst_" nemá číselník sloupků - popis sloupku přeskočen")
+		quit
+	}
+
+	set popis = $classmethod(cls, "PopisSloupku", db, czst, 2)
+	set ocekavany = $piece($get(^[db]JRZ(czst, "Sloupek", 2)), "~", 4)
+	do $$$AssertEquals(popis, ocekavany, "popis = 4. pole číselníku: "_popis)
+	do $$$AssertTrue(popis '= "", "popis sloupku není prázdný")
+	do $$$AssertTrue('$isvalidnum(popis), "popis je text, ne číslo sloupku ani GPS: "_popis)
+	do $$$AssertEquals($classmethod(cls, "PopisSloupku", db, czst, ""), "", "bez sloupku → prázdný popis")
+}
+
 /// Tvar názvu zastávky se propíše do reálných dat (KOVED #13089) - end-to-end přes `GetData`,
 /// ne jen čistá funkce. Běží na `ZL_KOVED` (data KOVED), protože právě tam mají zastávky název
 /// s dvojčárkou a tečkovanými zkratkami; výchozí tvar musí zůstat dosavadní (zkrácený).

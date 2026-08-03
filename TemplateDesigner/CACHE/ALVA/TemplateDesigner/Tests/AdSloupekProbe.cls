@@ -45,6 +45,73 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Kolik linek plní per-spoj sloupek (W pozice 13) a označník (W pozice 7) a u kolika zastávek se
+/// hodnoty mezi trasami liší (= má vůbec smysl režim „více hodnot" nad sloupkem). IN: DB, MAXLIN.
+ClassMethod ScanPerSpoj(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 500
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0, linekSl = 0, linekOzn = 0, multiSl = 0, multiOzn = 0
+		set sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku))
+			quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin))
+				quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				kill hodSl, hodOzn
+				set maSl = 0, maOzn = 0
+				set ct = ""
+				for {
+					set ct = $order(^[db]JRL(sku,lin,"W",ct))
+					quit:ct=""
+					set w = $get(^[db]JRL(sku,lin,"W",ct))
+					for i = 1:1:$length(w,"#") {
+						set seg = $piece(w,"#",i)
+						set poradi = $piece(seg,":",1)
+						continue:poradi=""
+						set sl = $piece(seg,":",13)
+						set ozn = $piece(seg,":",7)
+						if sl '= "" { set maSl = 1, hodSl(poradi,sl) = 1 }
+						if ozn '= "" { set maOzn = 1, hodOzn(poradi,ozn) = 1 }
+					}
+				}
+				set linekSl = linekSl + maSl, linekOzn = linekOzn + maOzn
+				set p = ""
+				for {
+					set p = $order(hodSl(p))
+					quit:p=""
+					set n = 0, v = "" for { set v = $order(hodSl(p,v)) quit:v=""  set n = n + 1 }
+					if n > 1 {
+						set multiSl = multiSl + 1
+						if multiSl <= 10 set ^||ML("OUT","MULTISL",multiSl) = db_" sku="_sku_" lin="_lin_" poradi="_p
+					}
+				}
+				set p = ""
+				for {
+					set p = $order(hodOzn(p))
+					quit:p=""
+					set n = 0, v = "" for { set v = $order(hodOzn(p,v)) quit:v=""  set n = n + 1 }
+					set:n>1 multiOzn = multiOzn + 1
+				}
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = db_": linek="_linek_" s per-spoj sloupkem="_linekSl_" s per-spoj označníkem="_linekOzn
+		set ^||ML("OUT","MULTI") = "zastávek s víc hodnotami: sloupek="_multiSl_" označník="_multiOzn
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Rozpad J-věty trasy linky na `#`-segmenty. IN: DB, SKU, LIN, MAX (default 8 zastávek).
 /// OUT: per zastávka jeden řádek "poradi | seg1 | seg2 | ..." pro ruční porovnání s editorem trasy.
 ClassMethod DumpJVeta(ByRef sys As %String) As %Status

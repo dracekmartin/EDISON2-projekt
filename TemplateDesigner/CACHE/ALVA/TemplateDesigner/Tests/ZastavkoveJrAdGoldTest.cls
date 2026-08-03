@@ -31,7 +31,8 @@ Method TestGold0365001()
 	// Kontrola při dalším posunu: **nejdřív porovnej složky digestu** - když sedí počty a liší se
 	// jen md5, je to přidané/přejmenované pole, ne změna chování (past, na kterou jsem 31. 7. najel).
 	// Re-baseline 2026-08-03 (#13088): přibylo pole SLOUPEK ve `values` i v řádcích ZASTAVKY → opět jen md5.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=96 md5=dufDjoe3fPmvokRVpX31hA==")
+	// Re-baseline 2026-08-03 (#13088 podruhé): + SLOUPEK_SPOJU, SLOUPEK_POPIS, SLOUPEK_VARIANT → dtto.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=96 md5=bZ+8UA8MbZdQw48AkhV1tg==")
 }
 
 Method TestGold0365005()
@@ -39,8 +40,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-07-31 (#13045): dtto - o 15 řádků legendy méně (pozn 183 → 168),
 	// počty stránek, zastávek i odjezdů beze změny.
 	// Re-baseline 2026-07-31 (#13008): + pole DOPRAVCI_SOUHRNNY_JR ve `values` → jen md5.
-	// Re-baseline 2026-08-03 (#13088): + pole SLOUPEK → dtto, jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=168 md5=lD4xkmaxs6UfscMaxy64nA==")
+	// Re-baseline 2026-08-03 (#13088): + pole SLOUPEK, pak + SLOUPEK_SPOJU/POPIS/VARIANT → dtto, jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=168 md5=L/XHwl9CjNXDONyA0TV1iQ==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:
