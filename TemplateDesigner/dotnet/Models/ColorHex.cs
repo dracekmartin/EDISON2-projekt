@@ -101,6 +101,29 @@ public static class ColorHex
         public void Dispose() => _scopeData = _previous;
     }
 
+    /// <summary>
+    /// Data pro rozklad barvy z dat **v UI** (náhledový čtvereček ve formuláři vlastností). Na rozdíl
+    /// od <see cref="DataScope"/> musí žít déle než jedno kreslení - formulář se plní mimo kreslicí
+    /// cestu, takže by scope už byl zavřený. Nastavuje kreslení náhledu (poslední vykreslená stránka),
+    /// takže čtvereček ukazuje barvu té stránky, kterou má uživatel před sebou.
+    /// </summary>
+    public static DataContext? UiData { get; set; }
+
+    /// <summary>
+    /// Vyřeší barvu z dat pro **zobrazení** (čtvereček u pole). Vrací hex, nebo <c>null</c>, když to
+    /// vyřešit nejde (bez dat, neznámé pole, linka barvu nemá).
+    /// ⚠️ Jen pro zobrazení - do hodnoty pole se **nikdy** nesmí zapsat, jinak by šablona přestala
+    /// barvu brát z dat a zamrzla na barvě linky, která byla náhodou otevřená.
+    /// </summary>
+    public static string? ResolveDataBoundForUi(string? value)
+    {
+        if (!IsDataBound(value)) return null;
+        var token = value!.Trim();
+        var resolved = UiData?.ResolvePlaceholders(token);
+        if (string.IsNullOrWhiteSpace(resolved) || resolved == token) return null;
+        return IsValid(resolved) ? resolved : null;
+    }
+
     private static SKColor ResolveDataBound(string token)
     {
         var resolved = _scopeData?.ResolvePlaceholders(token);

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-03 (10) - `B43` čtvereček ukáže barvu z dat, ne bílou (#12997)
+
+Pole s barvou z dat (`{BARVA_LINKY}`) mělo čtvereček **bílý**, takže vypadalo jako nenastavená barva -
+uživatele to mátlo (Jan při vizuální kontrole druhé barvy).
+
+- **EDControls (aditivně):** pole formuláře má novou vlastnost **`PreviewValue`** - náhledovou barvu,
+  kterou vyplní **host** (ten data má), a čtvereček se řídí `SwatchValue` = náhled, jinak hodnota.
+  Komponenta ji do hodnoty **nikdy nepřepisuje**. Konvertor navíc pozná token `{…}` a vykreslí
+  **šrafování** místo bílé, takže i bez náhledu je poznat „barva se vezme z dat".
+- **Návrhář:** `ColorHex.ResolveDataBoundForUi` vyřeší token pro zobrazení a `ElementFormBinder.Prefill`
+  (jediná cesta, kudy se formuláře plní) náhled naplní. Data pro UI drží `ColorHex.UiData`, které
+  nastavuje kreslení náhledu - čtvereček tak ukazuje barvu **té stránky, kterou má uživatel před sebou**.
+
+⚠️ **Hodnota zůstává tokenem.** Kdyby se do ní zapsala vyřešená barva, šablona přestane brát barvu
+z dat a zamrzne na barvě linky, která byla náhodou otevřená - tichá regrese, kterou by nikdo neodhalil.
+Hlídá to pět testů (`ColorHexUiPreviewTests`), včetně případů „bez dat", „linka barvu nemá" a „data
+vrátila nesmysl", kde náhled musí vrátit nic a čtvereček padne na šrafování.
+
+⚠️ **Nasazení:** změna je i v **EDControls**, takže do produkce musí jít **DLL i .exe** (viz root
+`CLAUDE.md`). Druhé aplikace se to nedotkne - vlastnost je aditivní a nikdo ji nevyplňuje.
+
+.NET 555/555 (+5), EDControls 505/505, EDISONMAIN2 435/435.
+
 ## 2026-08-03 (9) - druhá barva linky (#12997)
 
 Klient chtěl u linky **dvě barvy** - zvlášť pro číslo linky a zvlášť pro pozadí. Blokovalo to, že

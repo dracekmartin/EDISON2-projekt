@@ -276,8 +276,9 @@
                                 Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
+                                    <!-- SwatchValue = náhled od hosta (barva z dat), jinak hodnota pole. -->
                                     <Border BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1" CornerRadius="2"
-                                            Background="{Binding Value, Converter={StaticResource HexToBrush}}"/>
+                                            Background="{Binding SwatchValue, Converter={StaticResource HexToBrush}}"/>
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>

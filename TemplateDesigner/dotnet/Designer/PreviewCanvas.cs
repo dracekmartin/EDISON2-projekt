@@ -412,6 +412,9 @@ public class PreviewCanvas
             // Barvy z dat („pozadí = barva linky") se čtou z property elementu, kam se DataContext
             // nedostane - kreslení ho proto na tuto sekci zveřejní přes ColorHex.
             using var colorScope = ColorHex.DataScope(placed.Data);
+            // Formulář vlastností se plní mimo kreslení, takže si data uložíme i mimo scope -
+            // jinak by u barvy z dat neměl z čeho vzít náhledovou barvu do čtverečku.
+            if (placed.Data is not null) ColorHex.UiData = placed.Data;
 
             // Renderovat viditelné elementy seřazené podle ZIndex
             var visibleElements = placed.Source.Elements

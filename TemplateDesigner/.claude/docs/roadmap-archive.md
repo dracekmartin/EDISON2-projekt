@@ -2,6 +2,19 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-03 ✅ - `B43` čtvereček ukáže barvu z dat (#12997)
+
+Detail → changelog 2026-08-03 (10). Pole s `{BARVA_LINKY}` mělo bílý čtvereček, takže vypadalo jako
+nenastavená barva. Formulář o datech neví, hodnotu jen zobrazuje - proto **aditivní** vlastnost
+`Field.PreviewValue` v EDControls (náhledovou barvu vyplní host, komponenta ji do hodnoty nepřepisuje)
++ šrafování pro token bez náhledu. V návrháři `ColorHex.ResolveDataBoundForUi` a naplnění v
+`ElementFormBinder.Prefill`; data pro UI drží `ColorHex.UiData`, které nastavuje kreslení náhledu.
+
+**Invariant:** hodnota zůstává tokenem. Zapsat vyřešenou barvu = šablona přestane brát barvu z dat
+a zamrzne na barvě náhodně otevřené linky. Hlídá `ColorHexUiPreviewTests` (5 testů).
+
+⚠️ Nasazení: dotýká se **EDControls**, takže do produkce jde DLL i .exe.
+
 ## 2026-08-03 ✅ - `B35c` CIS čísla zastávek (#13088)
 
 Detail → changelog 2026-08-03 (4). Tři nová pole sestavy (CIS číslo zastávky · výchozí · cílová)
