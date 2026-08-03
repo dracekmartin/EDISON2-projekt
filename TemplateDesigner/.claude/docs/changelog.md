@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-08-03 (11) - poznámky zadané u linky, výluky zvlášť (#13093 bod 1, zbytek #13088)
+
+Textové poznámky z vlastností linky se do zastávkové vývěsky nedostaly **vůbec**, i když je linkový JŘ
+čte. Nově je vydává i zastávková agenda, s kategorií podle klíče (tarifní / všeobecné / radiobus;
+klíč 2 legacy přeskakuje).
+
+- **Záznam = jedna poznámka**, ne slepený blok jako legacy. Bez toho nejde výluka oddělit: KOVED má
+  v kategorii „všeobecné" tři výluky **i** text „R - k jízdence je možné zakoupit místenku".
+- **Výluky poznáme prefixem „Výluka"** (jejich konvence, tak to posílají do CIS) a dostanou vlastní
+  kategorii. Prvek poznámek má novou volbu **Výlukové poznámky: Včetně / Bez výluk / Jen výluky**,
+  takže si klient položí dva bloky nad sebe - přesně jak to popsal v tiketu.
+- **Nové pole sestavy „Výlukové texty"** (`VYLUKOVE_TEXTY`) spojuje výluky do jednoho textu. To je ta
+  „databázová položka pro návrhář" z #13088; pole je inertní, takže se negatuje parametrem.
+- Text se pro vývěsku čistí: legacy `$$` pryč, `#` (oddělovač odstavců) na mezeru, protože legenda
+  zalamuje sama.
+
+⚠️ **Výchozí vypnuto** (parametr „Poznámky zadané u linky"). Zapnutím se do legendy přidá i dlouhý
+tarifní text, takže existujícím šablonám se vzhled nesmí změnit sám. **Zlaté odtisky to potvrzují:
+počty poznámek zůstaly shodné**, md5 pohnulo jen nové pole.
+
+**Bod 4 tiketu (automatická výška bloku + zmenšení textu + druhý blok navázaný na první) je hotový
+už dnes** - ověřeno 3. 8.: prvek má `CalculateHeightFromData` i `ComputeFontScale` a `PageLayoutEngine`
+u dynamické výšky posune elementy pod ním. Není to vývoj, ale vysvětlení: první blok má mít výšku
+prázdnou.
+
+Caché 71/71 (+2), .NET 559/559 (+4).
+
 ## 2026-08-03 (10) - `B43` čtvereček ukáže barvu z dat, ne bílou (#12997)
 
 Pole s barvou z dat (`{BARVA_LINKY}`) mělo čtvereček **bílý**, takže vypadalo jako nenastavená barva -

@@ -45,6 +45,96 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Poznámky linky, jak je vydá agenda (#13093 bod 1) - kategorie a výlukové texty.
+/// IN: DB, SKU, LIN. Read-only.
+ClassMethod PoznamkyLinkyDump(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		kill ^||ML("OUT")
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set arr = ##class(%DynamicArray).%New()
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PoznamkyLinky(db, sku, lin, arr)
+		set n = 0, it = arr.%GetIterator()
+		while it.%GetNext(.k, .p) {
+			set n = n + 1
+			set ^||ML("OUT","POZNAMKA", n) = "[" _ p.%Get("KATEGORIE") _ "] " _ $extract(p.%Get("TEXT"), 1, 70)
+		}
+		set ^||ML("OUT","POCET") = n
+		set ^||ML("OUT","VYLUKOVE_TEXTY") = $extract(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).VylukoveTexty(db, sku, lin), 1, 200)
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Plní zákazník atributy spoje, které chce u odjezdů (#13093 bod 2)? Kola = hlava věty spoje pole
+/// **19** (legacy `dta20` PrepJiKola), místenkování = pole **6** (`dta6`, znak R), typ místenkování =
+/// pole **11** (`dta12`: 1 nutno, 2 možno AMS, 3 nutno AMS). Navíc návaznosti (subnode 32) pro
+/// pokračující spoje (bod 3). IN: DB, MAXLIN. Read-only.
+ClassMethod ScanAtributySpoju(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 500
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0, spoju = 0, kola = 0, misten = 0, typMisten = 0, navaz = 0, ukazek = 0
+		kill hodnKola, hodnMisten
+		set sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku))
+			quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin))
+				quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				for sm = "T", "Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,sm,sp))
+						quit:sp=""
+						continue:'$isvalidnum(sp)
+						set spoju = spoju + 1
+						set hlava = $piece($get(^[db]JRL(sku,lin,sm,sp)), "#", 1)
+						set vKola = $piece(hlava, ":", 19)
+						set vMist = $piece(hlava, ":", 6)
+						set vTyp  = $piece(hlava, ":", 11)
+						if vKola '= "" { set kola = kola + 1, hodnKola(vKola) = $get(hodnKola(vKola)) + 1 }
+						if vMist '= "" { set misten = misten + 1, hodnMisten(vMist) = $get(hodnMisten(vMist)) + 1 }
+						if vTyp '= "" { set typMisten = typMisten + 1 }
+						if $data(^[db]JRL(sku,lin,sm,sp,32)) {
+							set navaz = navaz + 1
+							if ukazek < 5 { set ukazek = ukazek + 1, ^||ML("OUT","NAVAZNOST",ukazek) = "sku="_sku_" lin="_lin_" smer="_sm_" spoj="_sp_": "_$extract($get(^[db]JRL(sku,lin,sm,sp,32)),1,90) }
+						}
+					}
+				}
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = db_" linek="_linek_" spoju="_spoju
+		set ^||ML("OUT","KOLA") = "spoju s kolem="_kola
+		set ^||ML("OUT","MISTENKOVANI") = "spoju s R="_misten_" s typem mistenkovani="_typMisten
+		set ^||ML("OUT","NAVAZNOSTI") = "spoju s navaznosti="_navaz
+		set h = "", radek = ""
+		for { set h = $order(hodnKola(h)) quit:h=""  set radek = radek_h_"("_hodnKola(h)_"x) " }
+		set:radek'="" ^||ML("OUT","KOLA_HODNOTY") = radek
+		set h = "", radek = ""
+		for { set h = $order(hodnMisten(h)) quit:h=""  set radek = radek_h_"("_hodnMisten(h)_"x) " }
+		set:radek'="" ^||ML("OUT","MISTEN_HODNOTY") = radek
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Které linky mají vůbec nastavenou barvu (#12997) - hledá `^JRL(sku,lin,"PATCH","BARVA")`.
 /// IN: DB, MAXLIN. Read-only.
 ClassMethod NajdiBarvy(ByRef sys As %String) As %Status

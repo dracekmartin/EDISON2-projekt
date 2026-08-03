@@ -13,6 +13,10 @@ public enum LegendWrap { PoSloupcich, PoRadcich }
 /// <summary>Řazení poznámek v legendě.</summary>
 public enum LegendRazeni { Vychozi, DleTypu, DleDelkyVzestupne, DleDelkySestupne }
 
+/// <summary>Jak blok legendy zachází s výlukovými poznámkami linky (#13093) - klient si pokládá dva
+/// bloky nad sebe, jeden „Bez výluk" a druhý „Jen výluky".</summary>
+public enum VylukyFiltr { Vcetne, Bez, Jen }
+
 /// <summary>
 /// Režim časové osy odjezdů v DepartureGrid. Paralelní s legacy „Časová osa odjezdů" comboboxem.
 /// </summary>
@@ -130,6 +134,10 @@ public class PoznamkaData
     public TypPoznamky Typ { get; set; }
     public string Znak { get; set; } = "";
     public string Text { get; set; } = "";
+
+    /// <summary>Kategorie z Caché („vyluka“, „poznamka-linky-tarifni“, „atribut-zastavky“…) - filtr-tag pro
+    /// prvek legendy. Prázdná u agend, které kategorie neposílají (MHD).</summary>
+    public string Kategorie { get; set; } = "";
 
     /// <summary>
     /// Volitelná barva textu znaku (hex „#FFRRGGBB", null = default render).

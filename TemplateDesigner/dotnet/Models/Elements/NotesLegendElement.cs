@@ -43,6 +43,13 @@ public class NotesLegendElement : StopScheduleElementBase
     public bool ShowSpecialniZnaky { get; set; } = true;
     public bool ShowTextovePoznamky { get; set; } = true;
 
+    /// <summary>
+    /// Jak blok zachází s **výlukovými** poznámkami linky (Caché kategorie „vyluka"). Klient je chce mít
+    /// na vývěsce zvlášť od ostatních (#13093), takže si položí dva bloky: v prvním „Bez výluk", ve druhém
+    /// „Jen výluky". Výchozní „Včetně" = dosavadní chování (jeden blok se vším).
+    /// </summary>
+    public VylukyFiltr Vyluky { get; set; } = VylukyFiltr.Vcetne;
+
     // ─── Designer ───────────────────────────────────────────────────────────
 
     protected override float DesignerPlaceholderHeight => 25f;
@@ -282,14 +289,30 @@ public class NotesLegendElement : StopScheduleElementBase
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 
+    /// <summary>Testovací vstup do filtru - render ho volá zároveň s daty, což se v testu neposkládá.</summary>
+    internal List<PoznamkaData> FiltrujPoznamkyProTest(List<PoznamkaData> poznamky) => FilterPoznamky(poznamky);
+
     private List<PoznamkaData> FilterPoznamky(List<PoznamkaData> poznamky)
     {
         return poznamky.Where(p =>
-            (p.Typ == TypPoznamky.NegativniZnacka && ShowNegativniZnacky) ||
-            (p.Typ == TypPoznamky.SpecialniZnak && ShowSpecialniZnaky) ||
-            (p.Typ == TypPoznamky.Text && ShowTextovePoznamky)
+            ((p.Typ == TypPoznamky.NegativniZnacka && ShowNegativniZnacky) ||
+             (p.Typ == TypPoznamky.SpecialniZnak && ShowSpecialniZnaky) ||
+             (p.Typ == TypPoznamky.Text && ShowTextovePoznamky))
+            && VylukaProjde(p)
         ).ToList();
     }
+
+    /// <summary>Kategorie, kterou Caché dává výlukovým poznámkám linky (text začíná „Výluka").</summary>
+    private const string VylukaKategorie = "vyluka";
+
+    /// <summary>Pustí poznámku dle <see cref="Vyluky"/>. Slouží k tomu, aby si uživatel složil dva bloky
+    /// nad sebou: jeden bez výluk, druhý jen s nimi (KOVED #13093).</summary>
+    private bool VylukaProjde(PoznamkaData p) => Vyluky switch
+    {
+        VylukyFiltr.Bez => p.Kategorie != VylukaKategorie,
+        VylukyFiltr.Jen => p.Kategorie == VylukaKategorie,
+        _               => true,
+    };
 
     /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní - v rámci tieru/pořadí zachová pořadí z dat).</summary>
     private List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) => Razeni switch
@@ -333,6 +356,17 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
         new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Filtrování", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
         new BoolPropertyDescriptor  { Label = "Textové poznámky",    Group = "Filtrování", Get = () => ShowTextovePoznamky, Set = v => ShowTextovePoznamky = v },
+        new EnumPropertyDescriptor
+        {
+            Label = "Výlukové poznámky", Group = "Filtrování",
+            Get = () => Vyluky, Set = v => Vyluky = (VylukyFiltr)v,
+            Options =
+            [
+                ("Včetně", (object)VylukyFiltr.Vcetne),
+                ("Bez výluk", (object)VylukyFiltr.Bez),
+                ("Jen výluky", (object)VylukyFiltr.Jen)
+            ]
+        },
 
         new ColorPropertyDescriptor { Label = "NZ pozadí",  Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { Label = "NZ barva",   Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
@@ -367,6 +401,7 @@ public class NotesLegendElement : StopScheduleElementBase
             NegativniZnackaBackColor = NegativniZnackaBackColor,
             NegativniZnackaForeColor = NegativniZnackaForeColor,
             ShowNegativniZnacky      = ShowNegativniZnacky,
+            Vyluky                   = Vyluky,
             ShowSpecialniZnaky       = ShowSpecialniZnaky,
             ShowTextovePoznamky      = ShowTextovePoznamky,
         };

@@ -43,7 +43,10 @@ Method TestGold0365001()
 	// objeví jen když prvek zastávek přestupy tiskne - Caché posílá nadmnožinu a prořezává ji
 	// render-time filtr (`NoteVisibilityFilter.ShouldHidePrestupLegend`).
 	// Re-baseline 2026-08-03 (#12997): + pole BARVA_LINKY_2 (druhá barva linky) → zpět jen md5.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=157 md5=dGzun1liA7igPsSLu8Y6ow==")
+	// Re-baseline 2026-08-03 (#13093 bod 1): + pole VYLUKOVE_TEXTY. **Počty poznámek se nezměnily**,
+	// což je zároveň důkaz, že nový parametr „Poznámky zadané u linky" je defaultně vypnutý a
+	// existujícím šablonám se legenda nerozrostla.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=157 md5=pP+VT9wTIqjsP+HlwE7+Eg==")
 }
 
 Method TestGold0365005()
@@ -57,7 +60,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-03 (#13048 bod 1): + řádky legendy pro přestupy → ⚠️ mění i počty
 	// (pozn 168 → 198, +30 na 38 stránek). Viz vysvětlení u gold 0365001.
 	// Re-baseline 2026-08-03 (#12997): + pole BARVA_LINKY_2 → jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=198 md5=znFy4kccxOO7VxRPJdMQbA==")
+	// Re-baseline 2026-08-03 (#13093 bod 1): + VYLUKOVE_TEXTY, počty beze změny (parametr je vypnutý).
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=198 md5=qm9FkM2qlE/mKLndoPTkwQ==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

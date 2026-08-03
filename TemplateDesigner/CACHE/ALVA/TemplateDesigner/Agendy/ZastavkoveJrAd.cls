@@ -329,6 +329,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // Poznámka nad linku (AD-N1) - legacy gPrpLin dta4 = PATCH,"Head"
     d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("INFORMACE",              informace)
+    // #13088 / #13093: výlukové texty linky jako samostatné pole - klient si je tiskne ve zvláštním
+    // poli, ne v bloku poznámek. Pole je inertní (naplní se vždy, ale zobrazí jen když si ho položí),
+    // takže na rozdíl od poznámek v legendě není potřeba ho gatovat parametrem.
+    d vals.%Set("VYLUKOVE_TEXTY",         ..VylukoveTexty(dataDB, sku, lin))
     // NEJEDOU_SPOJE je legacy misnomer - nese NÁSTUPIŠTĚ vývěskové zastávky (J-věta #3 = nastTam:nastZpet,
     // dta23 v JRapiExp10). Per směr (T=tam, Z=zpět). 1:1 gold.
     s nastupiste = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
@@ -653,6 +657,11 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
     s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP, .prestupSeen)
 
+    // #13093 bod 1: textové poznámky z vlastností linky. Do zastávkové vývěsky se dosud nedostaly
+    // vůbec, i když je linkový JŘ čte. Opt-in parametrem - bez toho by naskočily všem existujícím
+    // šablonám s blokem poznámek (u KOVED včetně dlouhého tarifního textu IDZK).
+    i ($zcvt($g(^||ML("IN","POZNAMKY_LINKY")),"L") = "true") d ..PoznamkyLinky(dataDB, sku, lin, poznamky)
+
     // směrové poznámky linky (tab MHD: poznámky tam/zpět/vše) - 1:1 legacy JRapiLinPrtMhd1 ř.440-447.
     // Tam → klíče ">" + "<>"; Zpět → "<" + "<>". Plain text bez znaku.
     s smeroveKlice = $s(smer="Z":"<,<>", 1:">,<>")
@@ -884,6 +893,73 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
         }
     }
     i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
+}
+
+/// Textové poznámky z vlastností linky (#13093 bod 1). Zdroj `^JRL(sku,lin,"C",key,idx)`, kategorie
+/// dle klíče: 1 = tarifní, 3 = všeobecné, 4 = radiobus; **klíč 2 se přeskakuje** (legacy dtto, viz
+/// `LinkovyJrAd.PridatPoznamkyLinky`).
+///
+/// **Záznam = jedna poznámka**, ne slepený blok jako legacy - jinak nejde oddělit výluka od ostatních
+/// textů téže kategorie (KOVED má ve „všeobecných" tři výluky i „R - k jízdence je možné zakoupit
+/// místenku", měřeno 3. 8.).
+ClassMethod PoznamkyLinky(dataDB As %String, sku As %String, lin As %String, poznamky As %DynamicArray)
+{
+    s key = ""
+    f {
+        s key = $o(^[dataDB]JRL(sku,lin,"C",key))
+        q:key=""
+        i key = 2 continue
+        s kategorie = $case(key, 1:"poznamka-linky-tarifni", 4:"poznamka-linky-radiobus", :"poznamka-linky-vseobecne")
+        s idx = ""
+        f {
+            s idx = $o(^[dataDB]JRL(sku,lin,"C",key,idx))
+            q:idx=""
+            s txt = ..TextPoznamkyLinky($g(^[dataDB]JRL(sku,lin,"C",key,idx)))
+            continue:txt=""
+            s kat = $s(..JeVyluka(txt):"vyluka", 1:kategorie)
+            d poznamky.%Push(..BuildPoznamka("text", "", txt, "", "", kat))
+        }
+    }
+}
+
+/// Text poznámky linky pro vývěsku: legacy značka `$$` (TrNz) pryč, `#` je oddělovač odstavců a na
+/// vývěsce z něj děláme mezeru, protože legenda text zalamuje sama.
+ClassMethod TextPoznamkyLinky(txt As %String) As %String
+{
+    s t = $replace($replace(txt, "$$", ""), "#", " ")
+    ret $zstrip(t, "<>W")
+}
+
+/// Je to výluková poznámka? Konvence zákazníka: text začíná „Výluka" - tak to posílají i do CIS
+/// (166 z 800 linek KOVED, měřeno 3. 8.). Přesná shoda je zaručená cesta, malá/velká varianta bonus.
+ClassMethod JeVyluka(txt As %String) As %Boolean
+{
+    s prefix = $e(txt, 1, 6)
+    ret (prefix = "Výluka") || ($zcvt(prefix, "L") = "výluka")
+}
+
+/// Spojené výlukové texty linky do jednoho pole (#13088 - klient žádal „databázovou položku, kterou
+/// by mohli používat v návrháři", protože si je tiskne ve zvláštním poli). Oddělovač = nový řádek,
+/// aby šly položit jako víceřádkový text. Prázdno = linka žádnou výluku nemá.
+ClassMethod VylukoveTexty(dataDB As %String, sku As %String, lin As %String) As %String
+{
+    s vysledek = ""
+    s key = ""
+    f {
+        s key = $o(^[dataDB]JRL(sku,lin,"C",key))
+        q:key=""
+        i key = 2 continue
+        s idx = ""
+        f {
+            s idx = $o(^[dataDB]JRL(sku,lin,"C",key,idx))
+            q:idx=""
+            s txt = ..TextPoznamkyLinky($g(^[dataDB]JRL(sku,lin,"C",key,idx)))
+            continue:txt=""
+            continue:'..JeVyluka(txt)
+            s vysledek = vysledek_$s(vysledek="":"", 1:$c(13,10))_txt
+        }
+    }
+    ret vysledek
 }
 
 /// Sloupek zastávky z trasy linky - J-věta `#`-segment **12** ve tvaru `sloupekTam:sloupekZpet`
@@ -2097,6 +2173,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
+    d ..AddField(fields, "VYLUKOVE_TEXTY",         "Výlukové texty",         "text")
     d ..AddField(fields, "NASTUPISTE",             "Označník",               "text")
     d ..AddField(fields, "SLOUPEK",                "Sloupek",                "text")
     d ..AddField(fields, "SLOUPEK_POPIS",          "Popis sloupku",          "text")
@@ -2311,6 +2388,10 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // TD-aplikované (filtr skryje legendu kategorie bezbarier-agregat). Default = zobrazit (legacy).
     // (Oba checkboxy „Poznámky a legenda" u sebe, enum až za nimi - konzistentní layout skupiny.)
     d ..AddBoolParam(arr, "SCHOVAT_AGREGAT_BEZBARIER", "Skrýt souhrn ""všechny spoje bezbariérové""", "false", "Poznámky a legenda")
+    // #13093 bod 1. Výchozí vypnuto schválně: zapnutím se do legendy přidají texty zadané u linky
+    // (tarifní podmínky, informace k místenkám, výluky), což je u některých linek dlouhý blok -
+    // existujícím šablonám se tak vzhled nezmění, dokud si to zákazník nezapne.
+    d ..AddBoolParam(arr, "POZNAMKY_LINKY", "Poznámky zadané u linky", "false", "Poznámky a legenda", "Přidá do bloku poznámek textové poznámky z vlastností linky (tarifní, všeobecné, radiobus). Výlukové texty (začínají ""Výluka"") jdou vlastní kategorií, takže je u prvku poznámek můžete zobrazit zvlášť nebo naopak vynechat.")
 
     // Rozsah „Spoje, nepoznámkovat" definuje legacy data (per spoj + TČ); tato volba určuje, CO se
     // v tom rozsahu v tisku schová. TD-aplikované (filtr nad nadmnožinou). Default = legacy.

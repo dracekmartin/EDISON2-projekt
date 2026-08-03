@@ -356,6 +356,32 @@ Method TestTextDneVTydnuSvatek()
 	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "6"), "jede v sobotu", "dny beze změny")
 }
 
+// ── Poznámky linky a výluky (KOVED #13093 bod 1) ──
+
+/// Výluky se poznají prefixem „Výluka" - konvence zákazníka, tak to posílají i do CIS.
+/// Kdyby detekce chytala víc, spadl by do výlukového bloku i místenkový text ze stejné kategorie.
+Method TestJeVyluka()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertTrue($classmethod(cls, "JeVyluka", "Výluka: Z důvodu uzavírky I/50…"), "prefix Výluka:")
+	do $$$AssertTrue($classmethod(cls, "JeVyluka", "Výluka bez dvojtečky taky projde"), "prefix bez dvojtečky")
+	do $$$AssertTrue('$classmethod(cls, "JeVyluka", "R - k jízdence je možné zakoupit místenku"), "místenkový text není výluka")
+	do $$$AssertTrue('$classmethod(cls, "JeVyluka", "Na lince platí Tarif IDZK"), "tarifní text není výluka")
+	do $$$AssertTrue('$classmethod(cls, "JeVyluka", "Kvůli výluce jezdí jinak"), "slovo uvnitř textu nestačí")
+	do $$$AssertTrue('$classmethod(cls, "JeVyluka", ""), "prázdný text není výluka")
+}
+
+/// Text poznámky se pro vývěsku čistí: legacy značka „$$" pryč, „#" (oddělovač odstavců) na mezeru -
+/// legenda text zalamuje sama, takže znak křížku by v ní jen svítil.
+Method TestTextPoznamkyLinky()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "Text s $$TrNz"), "Text s TrNz", "$$ se odstraní")
+	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "První#Druhý"), "První Druhý", "# je mezera")
+	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "  Text  "), "Text", "okrajové mezery pryč")
+	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "#"), "", "jen oddělovač → prázdno (poznámka se přeskočí)")
+}
+
 // ── JeViditelnyAtribut - co z číselníku 16 je informace pro cestujícího (KOVED #13048 bod 1) ──
 
 /// Znaky pro cestujícího se tisknou. Kdyby některý vypadl, tiše zmizí z vývěsky - to byla
