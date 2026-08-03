@@ -382,6 +382,15 @@ Method TestTextPoznamkyLinky()
 	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "#"), "", "jen oddělovač → prázdno (poznámka se přeskočí)")
 }
 
+/// Znak kola zatím neznáme, takže se kolo NESMÍ tisknout - jinak by u odjezdu vyjel cizí piktogram
+/// (přesně chyba, kterou jsme 3. 8. opravovali u přestupů). Až se glyf dohledá v Mapě znaků, tento
+/// test spadne a je to signál doplnit i legendu, ne pojistku obejít.
+Method TestZnakKolaZatimNeni()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "ZnakKola"), "", "dokud neznáme glyf kola, znak je prázdný a kolo se netiskne")
+}
+
 // ── JeViditelnyAtribut - co z číselníku 16 je informace pro cestujícího (KOVED #13048 bod 1) ──
 
 /// Znaky pro cestujícího se tisknou. Kdyby některý vypadl, tiše zmizí z vývěsky - to byla

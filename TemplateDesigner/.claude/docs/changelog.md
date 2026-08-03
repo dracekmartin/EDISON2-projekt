@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-03 (12) - místenky u odjezdů, kola čekají na glyf (#13093 bod 2)
+
+Klient hlásil, že se nezobrazují *„cyklobusové poznámky ani rezervace u času odjezdů (znak kola, R),
+ani v poznámkách"*. **Data pro obojí existují** (měřeno 3. 8. na 800 linkách KOVED): přeprava kol =
+19. pole věty spoje (166 spojů), místenkování = 6. pole (310 spojů); typ místenkování nevyplňují.
+Není to tedy požadavek na jízdní řády.
+
+- **Místenky hotové:** u odjezdu se vytiskne **„R"** (prostý text, tak to zapisuje i zákazník ve svých
+  poznámkách) a do legendy přijde vysvětlivka. Parametr **Místenky u odjezdů**, výchozí vypnuto.
+- **Kola: plumbing hotový, ale zatím se netisknou** - v symbolovém fontu je piktogram kola, ale
+  **neznáme jeho znak** a legacy ho na vývěsce nikdy netiskl, takže se není od čeho odrazit.
+  `ZnakKola()` vrací prázdno a kolo se přeskočí; test `TestZnakKolaZatimNeni` to drží, aby to někdo
+  nedoplnil odhadem. Po dohledání v Mapě znaků je to jednořádková změna.
+  ⚠️ Hádat znak = vykreslit cizí piktogram, přesně chyba opravovaná dnes u přestupů.
+- Legenda těchto atributů má vlastní kategorii `odjezd-atribut` a hodnota nese i **typ** (`typ~text`),
+  protože kolo je piktogram a „R" text - jeden seznam, dva render-módy.
+
+Ověřeno na ZL_KOVED 0822995 se zapnutým parametrem: v legendě přibyl řádek „R - k jízdence je možné
+zakoupit místenku". Zlaté odtisky **beze změny** (oba parametry vypnuté).
+
+Caché 72/72 (+1), .NET 559/559.
+
 ## 2026-08-03 (11) - poznámky zadané u linky, výluky zvlášť (#13093 bod 1, zbytek #13088)
 
 Textové poznámky z vlastností linky se do zastávkové vývěsky nedostaly **vůbec**, i když je linkový JŘ

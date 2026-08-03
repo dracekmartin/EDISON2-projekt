@@ -600,7 +600,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
 
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
-    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar
+    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar, odjAtrLegenda
     // Režim písmen variant (KOVED bod 5): písmeno varianty u minuty NAHRAZUJE automatické rozdílové
     // poznámky - kudy varianta jede, říká přímo sloupec („<"/prázdno). Jinak by vývěska nesla dvě
     // abecedy vedle sebe (přesně to, co jsme u legacy kritizovali). RozdilyTras se pak nepočítá vůbec.
@@ -645,7 +645,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         }
     }
     d vals.%Set("VARIANTY_TRAS", variantyTras)
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik, zdrojSt)
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik, zdrojSt, .odjAtrLegenda)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) - stránku negenerovat
     i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
     // Vývěska je samostatná stránka → legenda vysvětluje jen značky, které na TÉTO stránce reálně jsou.
@@ -655,7 +655,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // stejné písmeno tak znamená totéž na všech stránkách téže zastávky.
     d ..ProrezatLegenduRozdilu(odjezdy, .rozdilLegenda)
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
-    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP, .prestupSeen)
+    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP, .prestupSeen, .odjAtrLegenda)
 
     // #13093 bod 1: textové poznámky z vlastností linky. Do zastávkové vývěsky se dosud nedostaly
     // vůbec, i když je linkový JŘ čte. Opt-in parametrem - bez toho by naskočily všem existujícím
@@ -719,13 +719,18 @@ ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
 /// Pro každý spoj: odjezd = Odjezd spoje + offset času na aktuální zastávce (z trasy spoje "W").
 /// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "", zdrojSt As %String = "OZN") As %DynamicArray
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "", zdrojSt As %String = "OZN", ByRef odjAtrLegenda) As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
 
     // bezbariér konfig (per linka): isinv/iscbe = feature povolená, allBBP = všechny spoje bezbar.
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)
+
+    // #13093 bod 2: kola a místenkování u odjezdů. Opt-in - legacy je na vývěsce netiskl, takže
+    // zapnuté by změnily vzhled i ostatním zákazníkům.
+    s tiskKola = ($zcvt($g(^||ML("IN","TISK_KOLA")),"L") = "true")
+    s tiskMistenek = ($zcvt($g(^||ML("IN","TISK_MISTENEK")),"L") = "true")
 
     s sp = ""
     f {
@@ -788,6 +793,13 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s inv = (isinv && +$p(hlava,":",15))
         s cbe = (iscbe && +$p(hlava,":",22))
         i inv s bezbarLegenda("H") = $s(allBBP:"všechny spoje mají bezbariérově přístupné vozidlo", 1:"spoj má bezbariérově přístupné vozidlo")
+        // #13093 bod 2: přeprava kol (hlava:19, legacy dta20 PrepJiKola) a místenkování (hlava:6, dta6).
+        // U KOVED 166 spojů s kolem a 310 s R (měřeno 3. 8.). Opt-in, legacy to na vývěsce netiskl.
+        // Prázdný znak kola = glyf ještě neznáme (viz ZnakKola) → nekreslí se, ať nevyjede cizí piktogram.
+        s kolo = (tiskKola && +$p(hlava,":",19) && (..ZnakKola() '= ""))
+        s mistenka = (tiskMistenek && ($p(hlava,":",6) '= ""))
+        i kolo s odjAtrLegenda(..ZnakKola()) = "specialni~spoj přepravuje jízdní kola"
+        i mistenka s odjAtrLegenda("R") = "text~k jízdence je možné zakoupit místenku"
         i cbe s bezbarLegenda("F") = "spoj má částečne bezbariérově přístupné vozidlo, nutná dopomoc průvodce"
 
         // ruční komentáře spoje (tab MHD: Komentáře = SeT_SpeC přiřazené spoji přes MhD_SpeC).
@@ -821,6 +833,8 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             i znak  '= "" d ..AddAnotace(o, typOmez, znak, "", "", "omezeni", sp, vRozsahu)
             i inv && 'allBBP d ..AddAnotace(o, "specialni", "H", "", "", "bezbarier", sp, vRozsahu)   // u allBBP se marker netiskne, jen legenda
             i cbe d ..AddAnotace(o, "specialni", "F", "", "", "bezbarier", sp, vRozsahu)
+            i kolo d ..AddAnotace(o, "specialni", ..ZnakKola(), "", "", "odjezd-atribut", sp, vRozsahu)
+            i mistenka d ..AddAnotace(o, "text", "R", "", "", "odjezd-atribut", sp, vRozsahu)
             f indexZnaku=1:1:$l(komentarZnaky) { s komentarZnak = $e(komentarZnaky, indexZnaku)  i komentarZnak '= "" d ..AddAnotace(o, "text", komentarZnak, "", "", "rucni-komentar", sp, vRozsahu) }
             d odjezdy.%Push(o)
         }
@@ -893,6 +907,21 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
         }
     }
     i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
+}
+
+/// Znak, kterým se u odjezdu kreslí **přeprava jízdních kol** (#13093 bod 2).
+///
+/// ⚠️ **Zatím prázdný, takže se kolo netiskne.** Kolo je v symbolovém JŘ fontu piktogram, ale legacy
+/// ho na vývěsce nikdy netiskl (v `JRapiLinPrtMhd` není), takže se nemáme od čeho odrazit - a pozice
+/// glyfů se **neshodují s písmeny číselníku** (ověřeno 3. 8. u přestupů: autobus sedí na `w`, vlak
+/// na `x`). Hádat znak = vykreslit cizí piktogram, což je přesně chyba, kterou jsme dnes opravovali.
+///
+/// Doplnit po dohledání v Mapě znaků nad `Fonts/TimeTable2.ttf` (hledat kolo, vzít jeho kód) -
+/// pak je to jednořádková změna a `TestZnakKolaZatimNeni` spadne, což je záměrná pojistka.
+/// Místenkování „R" tuhle závislost nemá: kreslí se jako **prostý text** (tak ho zapisuje i zákazník).
+ClassMethod ZnakKola() As %String
+{
+    ret ""
 }
 
 /// Textové poznámky z vlastností linky (#13093 bod 1). Zdroj `^JRL(sku,lin,"C",key,idx)`, kategorie
@@ -1569,7 +1598,7 @@ ClassMethod ProrezatLegenduRozdilu(odjezdy As %DynamicArray, ByRef legenda)
 
 /// Sestaví legendu: atributy zastávek + atributy spoje (bezbariér) + rozdíly tras + "nejede/jede".
 /// Pořadí 1:1 gold (`ALVA.TISKMHD.Data`): speciální znaky → rozdíly/text → omezení.
-ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, allBBP As %Boolean = 0, ByRef prestupSeen) As %DynamicArray
+ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, allBBP As %Boolean = 0, ByRef prestupSeen, ByRef odjAtrLegenda) As %DynamicArray
 {
     s poznamky = ##class(%DynamicArray).%New()
     // týdenní platnost - kroužkové denní značky (číslice 1-7): „⑤ = jede v pátek" (specialni → font kroužkuje)
@@ -1585,6 +1614,15 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         s znak = $o(atrSeen(znak))
         q:znak=""
         d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak), "", "", "atribut-zastavky"))
+    }
+    // atributy u odjezdu (kola, místenkování) - hodnota je `typ~text`, protože kolo je piktogram
+    // a „R" prostý text. Kategorie `odjezd-atribut` = filtr-tag pro klienta.
+    s znakAtr = ""
+    f {
+        s znakAtr = $o(odjAtrLegenda(znakAtr))
+        q:znakAtr=""
+        s zapis = odjAtrLegenda(znakAtr)
+        d poznamky.%Push(..BuildPoznamka($p(zapis,"~",1), znakAtr, $p(zapis,"~",2), "", "", "odjezd-atribut"))
     }
     // přestupy - vlastní kategorie, aby si je šablona bez značky přestupu mohla schovat.
     // Text z číselníku je jen „autobus" / „vlak", pro legendu z toho udělá větu „přestup na …".
@@ -2392,6 +2430,11 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // (tarifní podmínky, informace k místenkám, výluky), což je u některých linek dlouhý blok -
     // existujícím šablonám se tak vzhled nezmění, dokud si to zákazník nezapne.
     d ..AddBoolParam(arr, "POZNAMKY_LINKY", "Poznámky zadané u linky", "false", "Poznámky a legenda", "Přidá do bloku poznámek textové poznámky z vlastností linky (tarifní, všeobecné, radiobus). Výlukové texty (začínají ""Výluka"") jdou vlastní kategorií, takže je u prvku poznámek můžete zobrazit zvlášť nebo naopak vynechat.")
+
+    // #13093 bod 2. Také vypnuté - legacy tyhle značky na vývěsku netiskl, zapnutím by se změnil
+    // vzhled i zákazníkům, kteří o ně nežádali.
+    d ..AddBoolParam(arr, "TISK_MISTENEK", "Místenky u odjezdů", "false", "Poznámky a legenda", "U spojů, ke kterým lze zakoupit místenku, se za časem odjezdu vytiskne ""R"" a do legendy se přidá vysvětlivka.")
+    d ..AddBoolParam(arr, "TISK_KOLA", "Přeprava kol u odjezdů", "false", "Poznámky a legenda", "U spojů, které přepravují jízdní kola, se za časem odjezdu vytiskne symbol kola a do legendy se přidá vysvětlivka.")
 
     // Rozsah „Spoje, nepoznámkovat" definuje legacy data (per spoj + TČ); tato volba určuje, CO se
     // v tom rozsahu v tisku schová. TD-aplikované (filtr nad nadmnožinou). Default = legacy.
