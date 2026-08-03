@@ -45,6 +45,49 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Atributy zastávek a legenda jedné stránky - kontrola, co GetData reálně vydá.
+/// IN: DB, SKU, LIN, SMER, PORADI. Read-only.
+ClassMethod StrankaAtributy(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		set smer = $get(^||ML("IN","SMER")) set:smer="" smer = "T"
+		set poradi = +$get(^||ML("IN","PORADI")) set:'poradi poradi = 1
+		kill ^||ML("OUT"), ^||TiskAd
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set page = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildStrankaZastavky(db, sku, lin, poradi, smer, "")
+		if '$isobject(page) {
+			set ^||ML("OUT","CHYBA") = "stránka se nesestavila (zastávka není obsluhovaná, nebo za ní už nic nejede)"
+			ret $$$OK
+		}
+
+		set n = 0, it = page.rows.%Get("ZASTAVKY").%GetIterator()
+		while it.%GetNext(.k, .z) {
+			set atrTxt = "", ai = ""
+			set ita = z.%Get("ATRIBUTY").%GetIterator()
+			while ita.%GetNext(.ak, .a) { set atrTxt = atrTxt _ a.%Get("ZNAK") }
+			continue:atrTxt=""
+			set n = n + 1
+			set ^||ML("OUT","ZASTAVKA",n) = z.%Get("PORADI")_" "_z.%Get("NAZEV_ZASTAVKY")_" znaky="_atrTxt
+		}
+		set ^||ML("OUT","ZASTAVEK_SE_ZNACKOU") = n
+
+		set p = 0, itp = page.rows.%Get("POZNAMKY").%GetIterator()
+		while itp.%GetNext(.pk, .pz) {
+			set p = p + 1
+			set ^||ML("OUT","POZNAMKA",p) = "["_pz.%Get("ZNAK")_"] "_pz.%Get("KATEGORIE")_": "_$extract(pz.%Get("TEXT"),1,60)
+		}
+		kill ^||TiskAd
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// „Na zavolání / na objednání" - kde je to v datech vyplněné (#13048 bod 1, dotaz zákazníka).
 /// Tři různá místa: spoj `Radiobus/jede na objednání` (hlava věty spoje pole 21 = legacy `dta30`),
 /// spoj `jede podmínečně` (pole 23 = `dta34`) a **zastávka v trase spoje** (W pozice 5 = atributy

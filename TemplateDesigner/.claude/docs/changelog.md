@@ -17,10 +17,16 @@ Filtr je teď rozdělený podle významu:
   `P` 843× jen u KOVED), takže pustit „všechno" by vývěsku zaplevelilo nesmysly.
 - Přestupy `A`/`L` zůstávají na svém přepínači.
 
-**Změna je na existujících datech neviditelná** - zlaté odtisky zůstaly **beze změny včetně md5**
-(ne jen počtů), protože žádný z doplněných znaků se v datech testovaných firem nevyskytuje.
-Jediná výjimka: u KOVED je **jeden** výskyt znaku `C` - zastávka **Střelná,,CLO** na lince 0001101
-(skupina 80), která nově dostane symbol clo. Vzhledem k jejímu názvu je to zjevně správně.
+**Změna je na existujících datech neviditelná úplně** - zlaté odtisky zůstaly **beze změny včetně
+md5** (ne jen počtů). Je to čistě pojistka do budoucna.
+
+⚠️ **Korekce mého vlastního tvrzení:** nejdřív jsem napsal, že jedinou viditelnou změnou bude symbol
+clo u zastávky **Střelná,,CLO** (jediný výskyt znaku `C` u KOVED, linka 0001101 / skupina 80).
+Není to pravda - ten bod trasy **žádný spoj neobsluhuje** (v trasách spojů má značku „projíždí"),
+takže se jako řádek neobjeví na vývěsce ani jednoho směru a symbol se nemá kde vytisknout. Vyvodil
+jsem to z existence znaku v datech, aniž bych ověřil, že je zastávka obsluhovaná. **Poučení: „znak
+je v datech" ≠ „vytiskne se"** - u atributů zastávky to musí projít ještě filtrem obsluhovaných
+zastávek (`ObsluhovanePoradi`) a projetých zastávek.
 
 **Vědomě netiskneme „jen nástup" / „jen výstup"**, i když pro cestujícího smysl mají: u KOVED je
 `V` na 235 místech a nový symbol by jim viditelně změnil vývěsku. To si má zákazník vyžádat.
