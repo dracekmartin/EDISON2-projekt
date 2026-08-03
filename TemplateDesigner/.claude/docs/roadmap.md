@@ -5,9 +5,9 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B35c** (CIS čísla, S) a pak **B36** (poznámky z linky včetně výluk, M).
-> Nic z Vlny 0 už nečeká na zákazníka - obojí se 3. 8. dohledalo v datech.
-> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`+`B35b` 3. 8.
+> **▶ Další session:** **B36** (poznámky z linky včetně výluk, M) - ⚠️ **výluky odložil Jan 3. 8.,
+> řeší je s kolegy**, takže z `B36` teď dělat jen poznámky linky + výšku bloku.
+> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`-`B35c` 3. 8. (celé #13088 hotové).
 > Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
@@ -40,8 +40,7 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B35c** | **CIS čísla zastávek** (#13088) - výchozí / aktuální / cílová. **Nic neblokuje** (3. 8. dohledáno v datech): CIS číslo = registr zastávek `^JRZ(czst)` `$`-pole **9** (legacy `dta14`, „číslo zastávky dle celostátního registru"). Šestimístný údaj v `$`-poli 5 (`419940`) je **číslo pro strojky** = CIS × koeficient (`JRapiZst` ř.62/327), ne CIS kód - dotaz na zákazníka tedy netřeba. Na jejich datech je CIS číslo shodné s czst, takže **skutečně chybí hlavně výchozí a cílová** varianta (dnes tiskneme jen aktuální zastávku a název konečné, ne její číslo). | S | pole jsou v nabídce agendy a plní se |
-| **B36** | **#13093a - poznámky z linky + výluky odděleně** (pohltilo `B35d` z #13088): textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec, i když je linkový JŘ čte (`^JRL(sku,lin,"C",key,idx)`; key 1 = tarifní, 3 = všeobecné, 4 = radiobus) · **výlukové texty vlastní kategorií** - 3. 8. změřeno na datech KOVED: 166 poznámek začíná „Výluka:" a **všechny jsou poznámky linky (key 3), ani jedna komentář spoje**, takže v datech pro ně kategorie neexistuje a rozlišují se prefixem (což je i konvence zákazníka - tak to posílají do CIS) · druhý blok poznámek si klient složí sám, filtr podle kategorie legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků nad sebou (jeden bez výluk, druhý jen výluky) bez ručního dopočítávání výšky |
+| **B36** | **#13093a - poznámky z linky** (+ výlukové texty, ale ⚠️ **výluky Jan 3. 8. odložil a řeší je s kolegy** - nedělat, dokud neřekne): textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec, i když je linkový JŘ čte (`^JRL(sku,lin,"C",key,idx)`; key 1 = tarifní, 3 = všeobecné, 4 = radiobus) · **výlukové texty vlastní kategorií** - 3. 8. změřeno na datech KOVED: 166 poznámek začíná „Výluka:" a **všechny jsou poznámky linky (key 3), ani jedna komentář spoje**, takže v datech pro ně kategorie neexistuje a rozlišují se prefixem (což je i konvence zákazníka - tak to posílají do CIS) · druhý blok poznámek si klient složí sám, filtr podle kategorie legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků nad sebou (jeden bez výluk, druhý jen výluky) bez ručního dopočítávání výšky |
 | **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
 
 **Otázky na KOVED - nic neblokují, jen se nesmí zapomenout** (3. 8.): (1) je u nich označník ještě

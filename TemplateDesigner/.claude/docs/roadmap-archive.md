@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-03 ✅ - `B35c` CIS čísla zastávek (#13088) - tím je celý tiket hotový
+
+Detail → changelog 2026-08-03 (4). Tři nová pole sestavy (CIS číslo zastávky · výchozí · cílová)
++ totéž jako pole řádku kolekce zastávek. Zdroj = registr zastávek `^JRZ(czst)` `$`-pole **9**.
+
+**Nebylo potřeba se zákazníka na nic ptát** (na což to bylo v roadmapě chybně napsané): šestimístný
+údaj v `$`-poli 5 (`419940`), který vypadá jako CIS kód, je „číslo zastávky **pro strojky**" =
+CIS × koeficient (`JRapiZst` ř.62/327). Test to hlídá, aby se ta záměna nevrátila.
+
+**Zjištění, které stojí za zapamatování:** na datech KOVED je CIS číslo **shodné s interním číslem**
+zastávky, které už tiskneme (42033 = 42033) - jejich číslování je přebrané z CIS. Z toho bodu tiketu
+jim tedy reálně chyběla hlavně **výchozí a cílová** zastávka, kde jsme uměli jen název konečné.
+U jiné firmy se ty dvě hodnoty rozejít mohou, proto pole smysl má.
+
+Sloupec seznamu zastávek se nepřidával - tiket žádal pole agendy. Přes dynamickou tabulku to jde,
+do nabídky sloupců se doplní, až o to někdo řekne (stejná úvaha jako u popisu sloupku).
+
+Ověřeno na ZL_KOVED 0822995 směr Tam (Zlín,Malenovice,ZPS): aktuální 42033, výchozí 41994, cílová 2774.
+
 ## 2026-08-03 ✅ - `B35b` logiku stanovišť lze přepnout na sloupek (#13088, #13048 bod 4)
 
 Detail → changelog 2026-08-03 (2) a (3). Režimy „více hodnot", řádkové duplikování, dělení stránek

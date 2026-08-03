@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-03 (4) - `B35c` CIS čísla zastávek (#13088)
+
+Poslední bod z „nová pole agendy". Tři nová pole sestavy: **CIS číslo zastávky** (aktuální),
+**CIS číslo výchozí zastávky** a **CIS číslo cílové zastávky**, plus totéž jako pole řádku kolekce
+zastávek (dostupné v dynamické tabulce).
+
+- Zdroj = registr zastávek `^JRZ(czst)` `$`-pole **9** (legacy `JRapiZst` ř.150 `dta14`,
+  „číslo zastávky dle celostátního registru").
+- ⚠️ **Šestimístný údaj v `$`-poli 5** (`419940`), který na první pohled vypadá jako CIS kód, je
+  „číslo zastávky **pro strojky**" = CIS × koeficient (`JRapiZst` ř.327). Nepoužívat - test to hlídá.
+- **Výchozí a cílová se berou ve směru stránky** (u směru Zpět tedy obráceně proti směru Tam) -
+  stránka je vždy o jednom směru, jinak by čísla nesouhlasila s tím, co je na ní vytištěné.
+- Na datech KOVED je CIS číslo **shodné s interním číslem zastávky**, které už tiskneme (42033 = 42033)
+  - jejich číslování je přebrané z CIS. Skutečně nová hodnota je pro ně tedy hlavně **výchozí a cílová**
+  zastávka, u kterých jsme dosud uměli jen název konečné, ne číslo.
+- **Nový sloupec seznamu zastávek nepřidán** - tiket žádal pole agendy, ne sloupec (stejná úvaha jako
+  u popisu sloupku). Přes dynamickou tabulku to jde, do nabídky sloupců se doplní, až o to někdo řekne.
+
+Ověřeno na ZL_KOVED 0822995 směr Tam, zastávka Zlín,Malenovice,ZPS: aktuální 42033, výchozí 41994
+(Zlín,aut.nádr.), cílová 2774 (Brno,ÚAN Zvonařka). Caché 66/66 (+1), .NET beze změny (server-only).
+Zlaté odtisky přebaselinovány - shodné počty, jen md5.
+
 ## 2026-08-03 (3) - `B35b` dokončeno: logiku stanovišť lze přepnout na sloupek (#13088, #13048 bod 4)
 
 Režimy „více hodnot", řádkové duplikování, dělení stránek na stanoviště i titulek takové stránky

@@ -344,7 +344,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // Tam: vzestupně 1→N. Zpět: sestupně N→1. Aktuální = JE_AKTUALNI; projeté mají casJizdy=0 a bez
     // atributů (jako MHD). StopList je defaultně skryje; „tisk projetých" je zobrazí ztlumeně.
     s zastavky = ##class(%DynamicArray).%New()
-    s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = ""
+    s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = "", prvniCzst = ""
     k atrSeen                                                   // atributy zastávek viděné na stránce (znak → text) pro legendu
     k servedPoradi
     d ..ObsluhovanePoradi(dataDB, sku, lin, smer, .servedPoradi)   // filtr projížděných zastávek
@@ -555,8 +555,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s prebitStanoviste = ((filtrOznacnik '= "") && jeAkt)
         d z.%Set("NASTUPISTE_SPOJU", $s(prebitStanoviste && 'slJakoStanoviste : filtrOznacnik, 1 : ..NastupisteSpoju(dataDB, sku, lin, smer, poradi)))
         d z.%Set("SLOUPEK_SPOJU",    $s(prebitStanoviste && slJakoStanoviste  : filtrOznacnik, 1 : ..NastupisteSpoju(dataDB, sku, lin, smer, poradi, "SL")))
+        d z.%Set("CIS_ZASTAVKA", ..CisloZastavkyCis(dataDB, czst))
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
+        i prvniCzst = "" s prvniCzst = czst              // výchozí zastávka směru = první obsluhovaná
         s posledniNazev = rawNazev, posledniCzst = czst
     }
 
@@ -570,6 +572,12 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("SMER",                smer)                  // A1: T/Z (POPIS_SMER = konečná)
     d vals.%Set("POPIS_SMER",          posledniNazev)
     d vals.%Set("POPIS_SMER_CIS",      ..NazevZastavkyCis(dataDB, posledniCzst))
+    // KOVED #13088: CIS čísla zastávek. „Výchozí" a „cílová" se berou ve SMĚRU stránky (u směru Zpět
+    // jsou tedy obrácené proti směru Tam) - stránka je vždy o jednom směru, jinak by čísla nesouhlasila
+    // s tím, co je na ní vytištěné. Aktuální = zastávka, o které stránka je.
+    d vals.%Set("CIS_ZASTAVKA",         ..CisloZastavkyCis(dataDB, aktualniCzst))
+    d vals.%Set("CIS_ZASTAVKA_VYCHOZI", ..CisloZastavkyCis(dataDB, prvniCzst))
+    d vals.%Set("CIS_ZASTAVKA_CILOVA",  ..CisloZastavkyCis(dataDB, posledniCzst))
 
     // FTL = formát sloupců mřížky (PATCH MHD_TYP_R); nzCfg = NZ konfig pro prázdninové dělení (MHD_NZ1_NZ2|MHD_NENZ1_NENZ2)
     s ftl   = +$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_TYP_R"))
@@ -1981,6 +1989,17 @@ ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
     q $p($g(^[dataDB]JRZ(czst)), "$", 2)
 }
 
+/// Číslo zastávky dle celostátního registru (CIS) - `^JRZ(czst)` `$`-pole **9** (legacy `JRapiZst`
+/// ř.150 `dta14`). KOVED #13088.
+/// ⚠️ Není to `czst`, i když se to na některých datech shoduje (firma s číslováním přebraným z CIS).
+/// ⚠️ Šestimístný údaj v `$`-poli 5 (`419940`) je **číslo pro strojky** = CIS × koeficient
+/// (`JRapiZst` ř.327), ne CIS kód - nepoužívat.
+ClassMethod CisloZastavkyCis(dataDB As %String, czst As %String) As %String
+{
+    i czst = "" ret ""        // prázdný subscript → <SUBSCRIPT>
+    ret $p($g(^[dataDB]JRZ(czst)), "$", 9)
+}
+
 /// Vrátí ukázková data pro live preview v designeru.
 ///
 /// **Vědomé rozhodnutí (2026-07-11, audit C-e - won't-do):** mock = živý `GetData` nad první
@@ -2042,6 +2061,9 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
     d ..AddField(fields, "POPIS_ZASTAVKA_CIS",     "Aktuální zastávka (CIS)","text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
+    d ..AddField(fields, "CIS_ZASTAVKA",           "CIS číslo zastávky",     "text")
+    d ..AddField(fields, "CIS_ZASTAVKA_VYCHOZI",   "CIS číslo výchozí zastávky", "text")
+    d ..AddField(fields, "CIS_ZASTAVKA_CILOVA",    "CIS číslo cílové zastávky",  "text")
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
@@ -2075,6 +2097,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "SLOUPEK",           "Sloupek",           "text")
     d ..AddField(colZastavkyFields, "SLOUPEK_SPOJU",     "Sloupek (dle spojů)", "text")
     d ..AddField(colZastavkyFields, "SLOUPEK_POPIS",     "Popis sloupku",     "text")
+    d ..AddField(colZastavkyFields, "CIS_ZASTAVKA",      "CIS číslo zastávky", "text")
     // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno - nese jen J-klíč (= interní ID),
     // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
     // TRASA_MIN (pole variantních časů jízdy v každém řádku) je wire-only - pole (ne skalár),

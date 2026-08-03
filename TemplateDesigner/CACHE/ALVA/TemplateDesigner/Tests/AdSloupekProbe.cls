@@ -45,6 +45,38 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Čísla a názvy zastávek jedné stránky - kontrola, že výchozí/cílová sedí na směr stránky.
+/// IN: DB, SKU, LIN, SMER, PORADI. Read-only.
+ClassMethod StrankaCisla(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		set smer = $get(^||ML("IN","SMER")) set:smer="" smer = "T"
+		set poradi = +$get(^||ML("IN","PORADI")) set:'poradi poradi = 1
+		kill ^||ML("OUT"), ^||TiskAd
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set page = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildStrankaZastavky(db, sku, lin, poradi, smer, "")
+		if '$isobject(page) {
+			set ^||ML("OUT","CHYBA") = "stránka se nesestavila"
+			set ^||ML("OUT","DIAG") = "db="_db_" sku="_sku_" lin="_lin_" poradi="_poradi_" I="_$data(^[db]JRL(sku,lin,"I"))
+			ret $$$OK
+		}
+		set klice = $listbuild("POPIS_ZASTAVKA", "CISLO_ZASTAVKA", "CIS_ZASTAVKA", "CIS_ZASTAVKA_VYCHOZI", "CIS_ZASTAVKA_CILOVA", "POPIS_SMER")
+		for i = 1:1:$listlength(klice) {
+			set k = $list(klice, i)
+			set ^||ML("OUT", k) = page.values.%Get(k)
+		}
+		kill ^||TiskAd
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Kde v datech leží text se zadaným vzorkem (#13088 výluky): hledá v poznámkách linky
 /// (`^JRL(sku,lin,"C",key,idx)`) i v komentářích spoje (`^JRL(sku,lin,"MhD","SeT_SpeC",znak)`).
 /// IN: DB, PATTERN, MAXLIN (default 500). OUT: počty per zdroj + ukázky.

@@ -53,6 +53,31 @@ Method TestZaskokZonyNaRegistrZastavek()
 	do $$$AssertEquals(zTrasy, "101", "zóna u trasy linky přebíjí registr zastávek")
 }
 
+/// CIS číslo zastávky je 9. pole registru, ne interní `czst` (KOVED #13088). Na datech KOVED se ty dvě
+/// hodnoty shodují (číslování přebrané z CIS), takže test hlídá **zdroj**, ne shodu s czst - jinak by
+/// prošel i kdybychom omylem vraceli czst. Šestimístné číslo pro strojky (`419940`) to být nesmí.
+Method TestCisloZastavkyCisJe9Pole()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set db = "ZL_KOVED", czst = 41994
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - CIS číslo přeskočeno")
+		quit
+	}
+	if '$data(^[db]JRZ(czst)) {
+		do $$$AssertTrue(1, "zastávka "_czst_" v "_db_" chybí - CIS číslo přeskočeno")
+		quit
+	}
+
+	set cis = $classmethod(cls, "CisloZastavkyCis", db, czst)
+	set ocekavane = $piece($get(^[db]JRZ(czst)), "$", 9)
+	set strojky = $piece($piece($get(^[db]JRZ(czst)), "$", 5), "~", 4)
+	do $$$AssertEquals(cis, ocekavane, "CIS číslo = 9. pole registru: "_cis)
+	do $$$AssertTrue(cis '= "", "CIS číslo není prázdné")
+	do $$$AssertTrue(cis '= strojky, "CIS číslo není číslo pro strojky ("_strojky_")")
+	do $$$AssertEquals($classmethod(cls, "CisloZastavkyCis", db, ""), "", "prázdný czst → prázdno")
+}
+
 /// Popis sloupku se čte z číselníku zastávky (KOVED #13088). Zlín, aut. nádr. (czst 41994) má
 /// sloupky s popisy směrů - ověřuje, že bereme `~`-pole 4, ne číslo nebo GPS.
 Method TestPopisSloupkuZCiselniku()

@@ -48,6 +48,9 @@ Dílčí vylepšení a náměty.
   z těch dvou údajů se použije tam, kde jde o „stanoviště, ze kterého spoj odjíždí": při více hodnotách
   na jedné zastávce, u samostatné stránky pro každé stanoviště i v titulku takové stránky. Výchozí
   je Označník, takže dosavadní vývěsky vypadají stejně; kdo eviduje sloupky, přepne na Sloupek.
+- **CIS čísla zastávek** - nová pole sestavy: CIS číslo zastávky, CIS číslo výchozí zastávky a CIS
+  číslo cílové zastávky (bere se ve směru, o kterém vývěska je). Stejný údaj je i u každého řádku
+  seznamu zastávek pro použití v tabulce.
 - Volby, které dřív mluvily o označníku, ale platí pro obojí, se jmenují **Více stanovišť**,
   **Řádek pro každé stanoviště** a **Samostatná stránka pro každé stanoviště**.
 
