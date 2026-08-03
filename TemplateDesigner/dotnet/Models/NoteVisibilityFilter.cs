@@ -53,6 +53,10 @@ public static class NoteVisibilityFilter
     /// <summary>Kategorie legendy pro „× na znamení" (Caché tag). Skryje se, když StopList značku netiskne (#7161 D5).</summary>
     private const string AtributZastavkyKat = "atribut-zastavky";
 
+    /// <summary>Kategorie legendy pro přestupy vlak/autobus (Caché tag). Skryje se, když je žádný
+    /// StopList netiskne - piktogram bez vysvětlení je nečitelný, vysvětlení bez piktogramu matoucí.</summary>
+    private const string PrestupKat = "prestup";
+
     /// <summary>Převede hodnotu parametru sestavy na režim. Neznámé / „Ruční komentáře" = default (legacy).</summary>
     public static NoteRangeSuppression ParseMode(object? paramValue) => paramValue?.ToString() switch
     {
@@ -80,18 +84,34 @@ public static class NoteVisibilityFilter
         return !stopLists.Any(e => e.ShowSignalStopIndicator);
     }
 
-    public static List<DataContext> Apply(IReadOnlyList<DataContext> pages, NoteRangeSuppression mode, bool hideAggregateBezbarier = false, bool hideNaZnameniLegend = false, NoteSuppressionCounter? counter = null)
+    /// <summary>
+    /// Má se skrýt legenda přestupů („přestup na vlak / autobus")? Ano, když šablona MÁ StopList, ale
+    /// žádný z nich přestupy netiskne (<c>ShowTransferAttributes</c>, default vyp). Legenda následuje
+    /// viditelnost značky - jinak by u výchozího nastavení naskočily řádky k piktogramům, které nikde
+    /// nejsou. Bez StopListu nevíme záměr → neskrývat (stejně jako u „na znamení").
+    /// </summary>
+    public static bool ShouldHidePrestupLegend(Template template)
     {
-        var hide = HideCategories(mode);
-        return pages.Select(p => Apply(p, hide, hideAggregateBezbarier, hideNaZnameniLegend, counter)).ToList();
+        var stopLists = template.Sections
+            .SelectMany(s => s.Elements)
+            .OfType<Elements.StopListElement>()
+            .ToList();
+        if (stopLists.Count == 0) return false;
+        return !stopLists.Any(e => e.ShowTransferAttributes);
     }
 
-    public static DataContext Apply(DataContext page, NoteRangeSuppression mode, bool hideAggregateBezbarier = false, bool hideNaZnameniLegend = false, NoteSuppressionCounter? counter = null) =>
-        Apply(page, HideCategories(mode), hideAggregateBezbarier, hideNaZnameniLegend, counter);
-
-    private static DataContext Apply(DataContext page, HashSet<string> hide, bool hideAggBezbarier, bool hideNaZnameni, NoteSuppressionCounter? counter)
+    public static List<DataContext> Apply(IReadOnlyList<DataContext> pages, NoteRangeSuppression mode, bool hideAggregateBezbarier = false, bool hideNaZnameniLegend = false, NoteSuppressionCounter? counter = null, bool hidePrestupLegend = false)
     {
-        if (hide.Count == 0 && !hideAggBezbarier && !hideNaZnameni) return page;
+        var hide = HideCategories(mode);
+        return pages.Select(p => Apply(p, hide, hideAggregateBezbarier, hideNaZnameniLegend, counter, hidePrestupLegend)).ToList();
+    }
+
+    public static DataContext Apply(DataContext page, NoteRangeSuppression mode, bool hideAggregateBezbarier = false, bool hideNaZnameniLegend = false, NoteSuppressionCounter? counter = null, bool hidePrestupLegend = false) =>
+        Apply(page, HideCategories(mode), hideAggregateBezbarier, hideNaZnameniLegend, counter, hidePrestupLegend);
+
+    private static DataContext Apply(DataContext page, HashSet<string> hide, bool hideAggBezbarier, bool hideNaZnameni, NoteSuppressionCounter? counter, bool hidePrestup = false)
+    {
+        if (hide.Count == 0 && !hideAggBezbarier && !hideNaZnameni && !hidePrestup) return page;
 
         var surviving = new HashSet<string>(StringComparer.Ordinal);
         var newRows = new Dictionary<string, IReadOnlyList<DataContext>>(StringComparer.OrdinalIgnoreCase);
@@ -104,7 +124,7 @@ public static class NoteVisibilityFilter
         // 2) POZNAMKY - prořež legendu (potřebuje surviving z kroku 1).
         foreach (var (key, rows) in page.Rows)
             if (key.Equals(PoznamkyKey, StringComparison.OrdinalIgnoreCase))
-                newRows[key] = rows.Where(r => KeepPoznamka(r, hide, surviving, hideAggBezbarier, hideNaZnameni, counter)).ToList();
+                newRows[key] = rows.Where(r => KeepPoznamka(r, hide, surviving, hideAggBezbarier, hideNaZnameni, counter, hidePrestup)).ToList();
 
         // 3) ostatní zdroje beze změny.
         foreach (var (key, rows) in page.Rows)
@@ -134,13 +154,15 @@ public static class NoteVisibilityFilter
         return odjezd.WithExtraValues(new Dictionary<string, object?> { ["ANOTACE"] = kept });
     }
 
-    private static bool KeepPoznamka(DataContext poznamka, HashSet<string> hide, HashSet<string> surviving, bool hideAggBezbarier, bool hideNaZnameni, NoteSuppressionCounter? counter)
+    private static bool KeepPoznamka(DataContext poznamka, HashSet<string> hide, HashSet<string> surviving, bool hideAggBezbarier, bool hideNaZnameni, NoteSuppressionCounter? counter, bool hidePrestup = false)
     {
         var kategorie = poznamka.GetString("KATEGORIE");
         if (hideAggBezbarier && kategorie == AggBezbarierKat) { counter?.CountLegendRow(); return false; }   // #7161 D6 - skrýt agregát bezbariér
         // „× na znamení" se nepočítá do signálu - neschovává ho parametr, ale nastavení StopListu
         // (legenda jen následuje viditelnost značky), takže by signál svítil u běžných šablon.
         if (hideNaZnameni && kategorie == AtributZastavkyKat) return false;   // #7161 D5 - StopList netiskne značku „×"
+        // Přestupy dtto - neschovává je parametr, ale nastavení StopListu, takže se nepočítají do signálu.
+        if (hidePrestup && kategorie == PrestupKat) return false;
         if (!hide.Contains(kategorie)) return true;        // jiná kategorie - nech být
         var znak = poznamka.GetString("ZNAK");
         if (znak == "") return true;                        // text bez znaku (směrové) - nech být

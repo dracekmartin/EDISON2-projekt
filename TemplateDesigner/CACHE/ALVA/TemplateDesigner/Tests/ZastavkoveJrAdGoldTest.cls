@@ -37,7 +37,12 @@ Method TestGold0365001()
 	// je zpětně neutrální.
 	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS čísla zastávek, pak přejmenovaná na příponu
 	// `_CIS` dle konvence agendy (CISLO_ZASTAVKA_CIS …) → dtto, jen md5.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=96 md5=bQT/Nfm0LwldvVj3Dm+Dtw==")
+	// Re-baseline 2026-08-03 (#13048 bod 1): přestupy dostaly řádek legendy (kategorie „prestup") →
+	// ⚠️ **mění se i POČTY**, ne jen md5: pozn 96 → 157 (+61 na 39 stránek, tedy max 2 řádky na
+	// stránku pro „A" a „L"). Je to záměrná změna výstupu, ne přidané pole. Na vývěsce se ty řádky
+	// objeví jen když prvek zastávek přestupy tiskne - Caché posílá nadmnožinu a prořezává ji
+	// render-time filtr (`NoteVisibilityFilter.ShouldHidePrestupLegend`).
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=157 md5=m7lDketEtjGgfnKazS0PPw==")
 }
 
 Method TestGold0365005()
@@ -48,7 +53,9 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-03 (#13088): + pole SLOUPEK, pak + SLOUPEK_SPOJU/POPIS/VARIANT
 	// a nakonec + ZDROJ_STANOVISTE → dtto, jen md5.
 	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS čísla zastávek (pak přejmenovaná) → dtto, jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=168 md5=T4E9jdd4XscrE4aB26TxtA==")
+	// Re-baseline 2026-08-03 (#13048 bod 1): + řádky legendy pro přestupy → ⚠️ mění i počty
+	// (pozn 168 → 198, +30 na 38 stránek). Viz vysvětlení u gold 0365001.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=198 md5=DN6oMpk0yN3dafYpvi7IVw==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

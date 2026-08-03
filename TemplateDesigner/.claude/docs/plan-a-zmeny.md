@@ -48,6 +48,8 @@ Dílčí vylepšení a náměty.
   z těch dvou údajů se použije tam, kde jde o „stanoviště, ze kterého spoj odjíždí": při více hodnotách
   na jedné zastávce, u samostatné stránky pro každé stanoviště i v titulku takové stránky. Výchozí
   je Označník, takže dosavadní vývěsky vypadají stejně; kdo eviduje sloupky, přepne na Sloupek.
+- **Přestupy mají vysvětlení v legendě** - k symbolu přestupu se do legendy tiskne „přestup na autobus"
+  a „přestup na vlak". Řádek se objeví jen když máte přestupy u seznamu zastávek zapnuté.
 - **Další atributy zastávky na vývěsce** - kromě „na znamení" se nově tisknou i jeho časové varianty,
   metro A/B/C, letadlo, loď, clo a paragrafy, včetně řádku legendy. Technické značky pro tisk
   (tučně, podtrženě, jen nástup / jen výstup a podobně) se jako symbol u zastávky záměrně netisknou.

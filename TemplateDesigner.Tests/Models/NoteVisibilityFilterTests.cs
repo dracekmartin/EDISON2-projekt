@@ -129,6 +129,53 @@ public class NoteVisibilityFilterTests
         Assert.False(counter.AnythingHidden);
     }
 
+    /// <summary>Rozhodnutí, jestli legendu přestupů schovat, se bere ze šablony: schová se, jen když
+    /// je žádný seznam zastávek netiskne. Bez seznamu zastávek neznáme záměr, takže se neschovává.</summary>
+    [Fact]
+    public void ShouldHidePrestup_SledujeNastaveniStopListu()
+    {
+        var bezPrestupu = new TemplateDesigner.Models.Elements.StopListElement();   // default = přestupy vyp
+        var sPrestupy   = new TemplateDesigner.Models.Elements.StopListElement { ShowTransferAttributes = true };
+
+        Assert.True(NoteVisibilityFilter.ShouldHidePrestupLegend(SablonaS(bezPrestupu)));
+        Assert.False(NoteVisibilityFilter.ShouldHidePrestupLegend(SablonaS(sPrestupy)));
+        Assert.False(NoteVisibilityFilter.ShouldHidePrestupLegend(new Template()));   // bez StopListu → neskrývat
+    }
+
+    private static Template SablonaS(TemplateElement element)
+    {
+        var t = new Template();
+        var s = new Section();
+        s.Elements.Add(element);
+        t.Sections.Add(s);
+        return t;
+    }
+
+    /// <summary>Piktogram přestupu bez vysvětlení je nečitelný, vysvětlení bez piktogramu matoucí -
+    /// legenda přestupů proto následuje viditelnost značky, ne parametr sestavy (#13048 bod 1).</summary>
+    [Fact]
+    public void PrestupLegenda_SeSkryjeKdyzStopListZnackuNetiskne()
+    {
+        var page = Stranka("prestup", "A", vRozsahu: false);
+        var counter = new NoteSuppressionCounter();
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment,
+            hidePrestupLegend: true, counter: counter);
+
+        Assert.Empty(result.Rows["POZNAMKY"]);
+        Assert.False(counter.AnythingHidden);   // není to potlačení parametrem → do signálu nepatří
+    }
+
+    [Fact]
+    public void PrestupLegenda_ZustaneKdyzStopListZnackuTiskne()
+    {
+        var page = Stranka("prestup", "A", vRozsahu: false);
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment);
+
+        Assert.Single(result.Rows["POZNAMKY"]);
+    }
+
     [Fact]
     public void Pocitadlo_AgregatBezbarier_SeDoSignaluPocita()
     {

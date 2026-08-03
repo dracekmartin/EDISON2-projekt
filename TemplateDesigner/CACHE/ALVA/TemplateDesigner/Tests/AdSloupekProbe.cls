@@ -45,6 +45,40 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Sloupky a označníky jedné stránky - kde má „výčet všech" co zobrazit (víc hodnot dle spojů).
+/// IN: DB, SKU, LIN, SMER, PORADI. Read-only.
+ClassMethod StrankaSloupky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		set smer = $get(^||ML("IN","SMER")) set:smer="" smer = "T"
+		set poradi = +$get(^||ML("IN","PORADI")) set:'poradi poradi = 1
+		kill ^||ML("OUT"), ^||TiskAd
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set page = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildStrankaZastavky(db, sku, lin, poradi, smer, "")
+		if '$isobject(page) {
+			set ^||ML("OUT","CHYBA") = "stránka se nesestavila"
+			ret $$$OK
+		}
+		set n = 0, vic = 0, it = page.rows.%Get("ZASTAVKY").%GetIterator()
+		while it.%GetNext(.k, .z) {
+			set n = n + 1
+			set spoju = z.%Get("SLOUPEK_SPOJU")
+			if $length(spoju, ",") > 1 { set vic = vic + 1 }
+			set ^||ML("OUT","ZASTAVKA",n) = z.%Get("NAZEV_ZASTAVKY")_" | sloupek="_z.%Get("SLOUPEK")_" dle spoju="_spoju_" | oznacnik="_z.%Get("NASTUPISTE")_" dle spoju="_z.%Get("NASTUPISTE_SPOJU")
+		}
+		set ^||ML("OUT","SOUHRN") = "zastavek="_n_" z toho s vice sloupky dle spoju="_vic
+		kill ^||TiskAd
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Atributy zastávek a legenda jedné stránky - kontrola, co GetData reálně vydá.
 /// IN: DB, SKU, LIN, SMER, PORADI. Read-only.
 ClassMethod StrankaAtributy(ByRef sys As %String) As %Status

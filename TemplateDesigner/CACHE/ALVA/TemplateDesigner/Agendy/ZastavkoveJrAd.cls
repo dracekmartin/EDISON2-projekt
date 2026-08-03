@@ -345,7 +345,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // atributů (jako MHD). StopList je defaultně skryje; „tisk projetých" je zobrazí ztlumeně.
     s zastavky = ##class(%DynamicArray).%New()
     s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = "", prvniCzst = ""
-    k atrSeen                                                   // atributy zastávek viděné na stránce (znak → text) pro legendu
+    k atrSeen, prestupSeen                                      // atributy zastávek viděné na stránce (znak → text) pro legendu
     k servedPoradi
     d ..ObsluhovanePoradi(dataDB, sku, lin, smer, .servedPoradi)   // filtr projížděných zastávek
     s jeTam = (smer = "T")
@@ -499,7 +499,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
                 i souhrnNaZn && (znak = "x") continue    // TR2: souhrn místo per-zastávka ×
                 s txtAtr = ..TextAtributu(znak)
                 d ..AddAtribut(z, znak, txtAtr)
-                i 'jePrestup s atrSeen(znak) = txtAtr    // přestupy do legendy nejdou (jen symbol u zastávky)
+                // Přestupy jdou do legendy zvlášť (kategorie „prestup") - piktogram autobusu/vlaku
+                // sám o sobě neřekne, co znamená. Šablona, která značku netiskne, si řádek schová
+                // render-time filtrem (stejně jako „× na znamení"), takže se nikomu neobjeví omylem.
+                i jePrestup { s prestupSeen(znak) = txtAtr } else { s atrSeen(znak) = txtAtr }
             }
         }
         // varianty časů (dynamické TrasaMin) - sloupce v pořadí displayVar, hodnota = max čas varianty
@@ -645,7 +648,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // stejné písmeno tak znamená totéž na všech stránkách téže zastávky.
     d ..ProrezatLegenduRozdilu(odjezdy, .rozdilLegenda)
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
-    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP)
+    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP, .prestupSeen)
 
     // směrové poznámky linky (tab MHD: poznámky tam/zpět/vše) - 1:1 legacy JRapiLinPrtMhd1 ř.440-447.
     // Tam → klíče ">" + "<>"; Zpět → "<" + "<>". Plain text bez znaku.
@@ -1487,7 +1490,7 @@ ClassMethod ProrezatLegenduRozdilu(odjezdy As %DynamicArray, ByRef legenda)
 
 /// Sestaví legendu: atributy zastávek + atributy spoje (bezbariér) + rozdíly tras + "nejede/jede".
 /// Pořadí 1:1 gold (`ALVA.TISKMHD.Data`): speciální znaky → rozdíly/text → omezení.
-ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, allBBP As %Boolean = 0) As %DynamicArray
+ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, allBBP As %Boolean = 0, ByRef prestupSeen) As %DynamicArray
 {
     s poznamky = ##class(%DynamicArray).%New()
     // týdenní platnost - kroužkové denní značky (číslice 1-7): „⑤ = jede v pátek" (specialni → font kroužkuje)
@@ -1503,6 +1506,14 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         s znak = $o(atrSeen(znak))
         q:znak=""
         d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak), "", "", "atribut-zastavky"))
+    }
+    // přestupy - vlastní kategorie, aby si je šablona bez značky přestupu mohla schovat.
+    // Text z číselníku je jen „autobus" / „vlak", pro legendu z toho udělá větu „přestup na …".
+    s znak = ""
+    f {
+        s znak = $o(prestupSeen(znak))
+        q:znak=""
+        d poznamky.%Push(..BuildPoznamka("specialni", znak, "přestup na "_prestupSeen(znak), "", "", "prestup"))
     }
     // atributy spoje - bezbariér (H) / částečně bezbariér (F). Při allBBP je „H" agregátní řádek
     // („všechny spoje…") → kategorie „bezbarier-agregat" (TD filtr ho umí skrýt, #7161 D6).

@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-03 (7) - přestupy mají řádek v legendě (#13048 bod 1)
+
+Značku přestupu jsme kreslili, ale nikde nevysvětlili - piktogram autobusu nebo vlaku sám cestujícímu
+neřekne, co znamená (upozornil Jan při vizuální kontrole).
+
+- Caché vydává pro přestupy řádky legendy **s vlastní kategorií `prestup`** a textem „přestup na
+  autobus" / „přestup na vlak" (samotný text číselníku je jen „autobus" / „vlak", což jako řádek
+  legendy nedává smysl).
+- **Zobrazí se jen když je prvek zastávek tiskne.** Caché posílá nadmnožinu, prořezává render-time
+  filtr - `NoteVisibilityFilter.ShouldHidePrestupLegend` skryje kategorii, když šablona má seznam
+  zastávek, ale žádný z nich nemá zapnuté Přestupy (výchozí stav). Přesně stejný mechanismus jako
+  u „× na znamení" (#7161 D5), takže žádný nový vzor.
+- Do signálu „něco je schované" se to **nepočítá** - neschovává to parametr sestavy, ale nastavení
+  prvku; jinak by kontrolka svítila u každé běžné šablony.
+
+⚠️ **Zlaté odtisky se posunuly i v POČTECH**, ne jen v md5 (pozn 96 → 157 a 168 → 198). Je to
+záměrná změna výstupu: max dva řádky na stránku pro „A" a „L". Poprvé dnes, kdy re-baseline není
+jen podpis přidaného pole - proto je to v testu explicitně rozepsané.
+
+Caché 68/68, .NET 547/547 (+3).
+
 ## 2026-08-03 (6) - fix: Newtonsoft.Json 13.0.3 (MLRest ho nenajde a spadne)
 
 Aplikace spuštěná z `bin/Debug` padala při **prvním volání serveru** (nejdřív viditelně na výběru

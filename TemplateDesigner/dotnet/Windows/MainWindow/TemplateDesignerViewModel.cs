@@ -2615,15 +2615,16 @@ public class TemplateDesignerViewModel : EDViewModel
         var suppression     = CurrentNoteSuppression();
         var hideAgg         = CurrentHideAggBezbarier();
         var hideNaZnameni   = CurrentHideNaZnameniLegend();
+        var hidePrestup     = CurrentHidePrestupLegend();
 
         return await Task.Run(() => BuildAllPreviewDataPagesCore(
-            culture, agendaCode, instances, skupinaId, realPreviewData, suppression, hideAgg, hideNaZnameni, progress));
+            culture, agendaCode, instances, skupinaId, realPreviewData, suppression, hideAgg, hideNaZnameni, hidePrestup, progress));
     }
 
     private IReadOnlyList<DataContext> BuildAllPreviewDataPagesCore(
         CultureInfo culture, string? agendaCode, List<AgendaInstance> instances, string? skupinaId,
         IReadOnlyList<DataContext?>? realPreviewData,
-        NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni,
+        NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni, bool hidePrestup,
         IProgress<string>? progress)
     {
         // Multi-instance batch: pro každou aktivní instanci fetch GetData a sloučit do flat seznamu.
@@ -2642,13 +2643,13 @@ public class TemplateDesignerViewModel : EDViewModel
                 if (pages is null) continue;
                 foreach (var p in pages) all.Add(p.WithCulture(culture));
             }
-            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, suppression, hideAgg, hideNaZnameni);
+            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, suppression, hideAgg, hideNaZnameni, hidePrestupLegend: hidePrestup);
         }
 
         if (realPreviewData is { Count: > 0 })
             return NoteVisibilityFilter.Apply(
                 realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
-                suppression, hideAgg, hideNaZnameni);
+                suppression, hideAgg, hideNaZnameni, hidePrestupLegend: hidePrestup);
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
         // export musí přesto projít - vrátíme prázdný DataContext, aby se vyrenderovala
@@ -2734,7 +2735,8 @@ public class TemplateDesignerViewModel : EDViewModel
         if (mockData is null) return null;
 
         var counter = new NoteSuppressionCounter();
-        var filtered = NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg, CurrentHideNaZnameniLegend(), counter);
+        var filtered = NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg, CurrentHideNaZnameniLegend(), counter,
+            CurrentHidePrestupLegend());
         UpdateNoteSuppressionText(counter, src);
         return filtered;
     }
@@ -2782,6 +2784,10 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Skrýt legendu „× na znamení" když StopList netiskne značku (#7161 D5) - ze šablony.</summary>
     private bool CurrentHideNaZnameniLegend() =>
         NoteVisibilityFilter.ShouldHideNaZnameniLegend(State.CurrentTemplate);
+
+    /// <summary>Skrýt legendu přestupů, když je žádný StopList netiskne - ze šablony (#13048 bod 1).</summary>
+    private bool CurrentHidePrestupLegend() =>
+        NoteVisibilityFilter.ShouldHidePrestupLegend(State.CurrentTemplate);
 
     /// <summary>Výchozí mock hodnota podle typu pole - použije se když Example chybí.</summary>
     private static string MockDefault(DataField f) => f.DataType switch
