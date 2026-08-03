@@ -45,6 +45,77 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Výskyt znaků atributů zastávky (#13048 bod 1): kolikrát se který znak objeví v registru zastávek
+/// (`$`-pole 8) a v trase linky (J-věta `#1:2`). Ukáže, které znaky číselníku 16 zákazník reálně
+/// používá - tedy jestli má smysl je tisknout. IN: DB, MAXLIN. Read-only.
+ClassMethod ScanAtributy(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 500
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		// registr zastávek (celý)
+		kill pocty
+		set czst = ""
+		for {
+			set czst = $order(^[db]JRZ(czst))
+			quit:czst=""
+			continue:'$isvalidnum(czst)
+			set atr = $piece($get(^[db]JRZ(czst)), "$", 8)
+			for i = 1:1:$length(atr) {
+				set znak = $extract(atr, i)
+				continue:znak=","
+				set pocty("REGISTR", znak) = $get(pocty("REGISTR", znak)) + 1
+			}
+		}
+
+		// trasy linek
+		set linek = 0, sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku))
+			quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin))
+				quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				set poradi = ""
+				for {
+					set poradi = $order(^[db]JRL(sku,lin,"J",poradi))
+					quit:poradi=""
+					set atr = $piece($piece($piece($get(^[db]JRL(sku,lin,"J",poradi)), "#", 1), ":", 2), "#", 1)
+					for i = 1:1:$length(atr) {
+						set znak = $extract(atr, i)
+						continue:znak=","
+						set pocty("TRASA", znak) = $get(pocty("TRASA", znak)) + 1
+					}
+				}
+			}
+		}
+
+		set zdroj = ""
+		for {
+			set zdroj = $order(pocty(zdroj))
+			quit:zdroj=""
+			set znak = "", radek = ""
+			for {
+				set znak = $order(pocty(zdroj, znak))
+				quit:znak=""
+				set radek = radek _ $select(radek="":"", 1:" · ") _ znak _ "=" _ pocty(zdroj, znak)
+			}
+			set ^||ML("OUT", zdroj) = radek
+		}
+		set ^||ML("OUT","SOUHRN") = db _ " linek=" _ linek
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Čísla a názvy zastávek jedné stránky - kontrola, že výchozí/cílová sedí na směr stránky.
 /// IN: DB, SKU, LIN, SMER, PORADI. Read-only.
 ClassMethod StrankaCisla(ByRef sys As %String) As %Status
