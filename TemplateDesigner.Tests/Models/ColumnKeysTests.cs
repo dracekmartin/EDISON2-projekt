@@ -50,7 +50,10 @@ public class ColumnKeysTests
     {
         string[] known = [StopFields.TravelTime, StopFields.StopName, StopFields.Zone,
                           StopFields.Poradi, StopFields.JeAktualni, StopFields.Nastupiste,
-                          StopFields.Sloupek, StopFields.SloupekPopis];
+                          StopFields.Sloupek];
+        // SloupekPopis tu schválně NENÍ - do nabídky sloupců nepatří, dokud si ho někdo nevyžádá
+        // (rozhodnutí Jan 2026-08-03). Kdyby ho někdo do výchozích sloupců vrátil, tento test spadne
+        // a donutí ho to rozhodnutí zopakovat.
         Assert.All(StopListElement.GetDefaultColumns(), c => Assert.Contains(c.Key, known));
     }
 

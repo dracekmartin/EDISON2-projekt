@@ -44,6 +44,12 @@ ne odbavit nejhezčí featuru.
 | **B36** | **#13093a - poznámky, snadná část:** textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec (linkový JŘ je čte) - druhý blok poznámek si klient složí sám, filtr podle typu poznámky legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků poznámek nad sebou bez ručního dopočítávání výšky |
 | **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
 
+**Otázky na KOVED, až sloupek potvrdí** (nejsou to bloky, jen se nesmí zapomenout): (1) je u nich
+označník ještě k něčemu? Kdyby ne, přepínač „Číslo stanoviště podle" může zmizet a zůstane jen sloupek
+- ale je to breaking pro zákazníka, který dělení stránek na označník používá, takže ne bez jejich
+potvrzení. (2) chtěli by **popis sloupku** („směr Brno přes UH")? Data ho nesou, sloupec je jen
+schovaný z nabídky.
+
 **Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):** **#13099** souhrnné JŘ (sdružení
 linek se stejným koncovým trojčíslím pod vzorovou linku - dnes ručně skriptem v Excelu; pro KOVED
 podmínka přesunu tvorby vývěsek do EDISONu; tisk hlavičky dopravců pro souhrnné JŘ je hotový `B33`) · **#13102** virtuální

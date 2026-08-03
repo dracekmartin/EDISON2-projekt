@@ -119,10 +119,11 @@ public class StopListCellTextTests
         Assert.Equal("", new StopListElement().GetCellText(Stop("11", ""), StopFields.SloupekPopis));
     }
 
-    /// <summary>Popis sloupku je samostatný sloupec - na vývěsce je pro cestujícího užitečnější
-    /// než samotné číslo („směr Brno přes UH").</summary>
+    /// <summary>Popis sloupku se v nabídce sloupců nenabízí (nikdo si o něj neřekl), ale data ho nesou
+    /// a vykreslí se, kdykoli se ten klíč jako sloupec použije - dynamickou tabulkou nebo až ho někdo
+    /// bude chtít zpět v nabídce.</summary>
     [Fact]
-    public void PopisSloupku_JeVlastniSloupec()
+    public void PopisSloupku_SeVykresliKdyzSePouzije()
     {
         var z = Stop("11", "");
         z.Sloupek = "2";

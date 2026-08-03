@@ -42,7 +42,10 @@ tedy reálně existuje a režimy „více hodnot" nad sloupkem mají co zobrazit
 - Nová pole: **Sloupek (dle spojů)** (`SLOUPEK_SPOJU`, CSV dle četnosti), **sloupek per varianta
   trasy** (`SLOUPEK_VARIANT`) a **Popis sloupku** (`SLOUPEK_POPIS`) z číselníku zastávky
   („směr Brno přes UH") - ten i jako skalár pro hlavičku vývěsky.
-- Nový sloupec **Popis sloupku** v seznamu zastávek (defaultně vypnutý).
+- **Popis sloupku se v nabídce sloupců záměrně nenabízí** (rozhodnutí Jan 3. 8.): nikdo si o něj
+  neřekl a texty z číselníku jsou zčásti provozní („točna", „výstup"), takže na vývěsce by spíš
+  pletly. Data ho nesou dál - jde na něj přes dynamickou tabulku i jako placeholder a do nabídky
+  sloupců se dá vrátit jedním řádkem, až o něj někdo řekne. Hlídá to test výchozích sloupců.
 
 Zbývá druhá část `B35b`: parametr sestavy **„Číslo stanoviště podle"**, který na sloupek přepne
 režimy více hodnot, řádkové duplikování, dělení stránek (#8828) i titulek stránky.

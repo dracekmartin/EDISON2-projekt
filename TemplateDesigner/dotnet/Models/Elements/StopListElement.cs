@@ -28,7 +28,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new() { Key = StopFields.JeAktualni,   Header = "Akt.",      Width = 6f,  Visible = false },
         new() { Key = StopFields.Nastupiste,   Header = "Označník", Width = 12f, Visible = false },
         new() { Key = StopFields.Sloupek,      Header = "Sloupek",  Width = 12f, Visible = false },
-        new() { Key = StopFields.SloupekPopis, Header = "Popis sloupku", Width = 30f, Visible = false },
+        // Popis sloupku (StopFields.SloupekPopis) se v nabídce sloupců ZÁMĚRNĚ neobjevuje - nikdo si
+        // o něj neřekl a texty z číselníku jsou zčásti provozní („točna", „výstup"), ne pro cestující.
+        // Data ho nesou dál, takže jde použít v dynamické tabulce i jako placeholder; do nabídky
+        // sloupců ho vrať, teprve když ho někdo bude chtít (rozhodnutí Jan 2026-08-03).
     ];
 
     // ═══════════════════════════════════════════

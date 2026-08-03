@@ -44,8 +44,6 @@ Dílčí vylepšení a náměty.
   podle směru jízdy a je to číslo z číselníku sloupků zastávky, tedy jiný údaj než dosavadní sloupec
   **Označník** (ten nese pole „nástupiště" z trasy linky). Zapíná se v nastavení sloupců, ve stávajících
   šablonách se nabídne sám.
-- **Nový sloupec Popis sloupku** - text z číselníku zastávky, například „směr Brno přes UH". Stejný
-  údaj je k dispozici i pro hlavičku vývěsky.
 - **Nová volba Číslo stanoviště podle** (Označník / Sloupek) v parametrech sestavy. Určuje, který
   z těch dvou údajů se použije tam, kde jde o „stanoviště, ze kterého spoj odjíždí": při více hodnotách
   na jedné zastávce, u samostatné stránky pro každé stanoviště i v titulku takové stránky. Výchozí
