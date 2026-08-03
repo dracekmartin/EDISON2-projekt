@@ -19,7 +19,7 @@ ClassMethod AddBorder(form As ALVA.EDControls.EDInputForm.Form, withCorners As %
     d form.AddGroup("border", "Rámeček elementu")
     s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
     s f.value = "#00FFFFFF"
-    s f.helpText = "Lze zadat i {BARVA_LINKY} - barvu vezme z jízdního řádu (nenastavená = bílá)"
+    s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
     d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
     i withCorners {
         s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)

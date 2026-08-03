@@ -166,9 +166,10 @@ při scope té fáze, ne teď.
   přednost trase - přehození by nás rozešlo s JDF a exporty) · (2) mají u linky zapnuté „Zóny - tisk
   a export do JDF bez písmen"? (bez toho písmeno zůstane) · (3) číslo linky a zastávky, kde to vidí
   špatně - ověří, že jejich kód zóny je „číslo + písmeno", ne jiný identifikátor
-- **#12997 zbytek je na straně JŘ, ne návrháře:** klient chce u linky **dvě** barvy (zvlášť číslo
-  linky, zvlášť pozadí), dnes se ukládá jedna (`GetBarvaLinky` → jedno RGB). Návrhář obojí umí
-  zobrazit, jakmile data druhou barvu ponesou - postrčit Petra
+- **#12997 druhá barva linky dodělaná 3. 8.** - Petr téhož dne rozšířil JŘ na víc barev na linku,
+  my přidali pole `BARVA_LINKY_2`. ⚠️ Čeká jediné: **nikde není linka se dvěma barvami**, takže to
+  chce nastavit v JŘ (Hromadné úpravy vlastností linky) a projít očima; pak už je co odpovědět
+  zákazníkovi (Petr o odpověď výslovně žádal, viz #12997)
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
   jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
   (který sloupec - legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.

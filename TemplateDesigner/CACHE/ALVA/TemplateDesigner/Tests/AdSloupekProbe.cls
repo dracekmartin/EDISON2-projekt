@@ -45,6 +45,71 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Které linky mají vůbec nastavenou barvu (#12997) - hledá `^JRL(sku,lin,"PATCH","BARVA")`.
+/// IN: DB, MAXLIN. Read-only.
+ClassMethod NajdiBarvy(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 500
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0, nalez = 0, sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku))
+			quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin))
+				quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				set barva = $get(^[db]JRL(sku,lin,"PATCH","BARVA"))
+				continue:barva=""
+				set nalez = nalez + 1
+				if nalez <= 10 { set ^||ML("OUT","NALEZ",nalez) = "sku="_sku_" lin="_lin_" barva="_barva }
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = db_" linek="_linek_" s barvou="_nalez
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Barvy linky po Petrově změně (#12997): co vrací JŘ API a co z toho udělá agenda.
+/// IN: DB, SKU, LIN. OUT: seznam barev, naše hodnota, kde to leží. Read-only.
+ClassMethod BarvyLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		kill ^||ML("OUT")
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set linIdx = $$cnvCsLin^JRapi(lin)
+		set ^||ML("OUT","LIN_INDEX") = linIdx
+		set ^||ML("OUT","RAW") = $get(^[db]JRL(sku, linIdx, "PATCH", "BARVA"))
+
+		set seznam = ##class(ALVA.ISY.ISYJR2.API.Linky).GetBarvyLinky(IdFa, db, sku, lin)
+		set ^||ML("OUT","POCET_BAREV") = $select(seznam="":0, 1:$listlength(seznam))
+		if seznam '= "" {
+			for i = 1:1:$listlength(seznam) {
+				set ^||ML("OUT","BARVA", i) = $listget(seznam, i)
+			}
+		}
+		// jak to dnes vidí naše agenda (volá GetBarvaLinky bez pořadí)
+		set ^||ML("OUT","AGENDA_BARVA_LINKY") = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BarvaLinky(IdFa, db, sku, lin)
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Sloupky a označníky jedné stránky - kde má „výčet všech" co zobrazit (víc hodnot dle spojů).
 /// IN: DB, SKU, LIN, SMER, PORADI. Read-only.
 ClassMethod StrankaSloupky(ByRef sys As %String) As %Status
@@ -409,6 +474,7 @@ ClassMethod ZdrojMetody(ByRef sys As %String) As %Status
 			set ^||ML("OUT","CHYBA") = "metoda " _ cls _ "::" _ met _ " na serveru neexistuje"
 			ret $$$OK
 		}
+		set ^||ML("OUT","SIGNATURA") = def.Name _ "(" _ def.FormalSpec _ ") As " _ def.ReturnType
 		set impl = def.Implementation
 		do impl.Rewind()
 		set n = 0, nalez = 0

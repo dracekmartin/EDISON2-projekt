@@ -311,6 +311,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
     d vals.%Set("DOPRAVCI_SOUHRNNY_JR",         ..DopravciSouhrnnyJr(dataDB, sku, lin, ..VypsatSpojeDopravce()))
     d vals.%Set("BARVA_LINKY",            ..BarvaLinky(IdFa, dataDB, sku, lin))
+    // #12997: JŘ umí od 3. 8. víc barev na linku. Klient je používá jako barvu textu (1.) a pozadí
+    // (2.), ale modul jim význam nedává - proto neutrální název a význam nechává na šabloně.
+    d vals.%Set("BARVA_LINKY_2",          ..BarvaLinky(IdFa, dataDB, sku, lin, 2))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1)
     s platiDo = $p(plati,"~",2)
@@ -2076,6 +2079,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
     d ..AddField(fields, "DOPRAVCI_SOUHRNNY_JR",         "Dopravci souhrnného JŘ",    "text")
     d ..AddField(fields, "BARVA_LINKY",            "Barva linky",            "color")
+    d ..AddField(fields, "BARVA_LINKY_2",          "Barva linky 2",          "color")
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
@@ -2431,17 +2435,23 @@ ClassMethod IntToHex2(n As %Integer) As %String [ Private ]
     q $e(digits, (n\16) + 1) _ $e(digits, (n#16) + 1)
 }
 
-/// Konvertuje RGB string "R;G;B" na SkiaSharp hex "#FFRRGGBB". Prázdný vstup → prázdný string.
-/// Barva přiřazená lince v JŘ modulu jako "#AARRGGBB"; prázdno, když linka barvu nastavenou nemá
-/// (šablona pak použije bílou). Modul ji drží jako "R;G;B".
+/// Barva přiřazená lince v JŘ modulu, jako "#AARRGGBB" pro SkiaSharp; prázdno, když linka barvu
+/// nastavenou nemá (šablona pak použije bílou). Modul ji drží jako "R;G;B".
+///
+/// `poradi` = kolikátá barva linky (1 = primární). JŘ umí od 3. 8. 2026 **víc barev na linku**
+/// (#12997, Petr Šmíd) - klient je používá jako „barva textu" a „barva pozadí", ale samotný modul
+/// jim význam nedává, je to jen seřazený seznam. Uloženo v `^JRL(sku,lin,"PATCH","BARVA")`, starý
+/// tvar (jedna barva jako text) i nový (`$lb`) normalizuje `Linky.BarvyLinkySeznam`, takže tady se
+/// nic neparsuje. Nenastavená n-tá barva = prázdno.
+///
 /// Volání je obalené záměrně: třída patří JŘ modulu (ISYJR2), takže na serveru, kde modul není,
 /// se barva prostě nenaplní a tisk jde dál - vývěska kvůli barvě spadnout nesmí.
-ClassMethod BarvaLinky(IdFa As %String = "", dataDB As %String = "", sku As %String = "", lin As %String = "") As %String
+ClassMethod BarvaLinky(IdFa As %String = "", dataDB As %String = "", sku As %String = "", lin As %String = "", poradi As %Integer = 1) As %String
 {
     i (IdFa = "") || (sku = "") || (lin = "") ret ""
     s rgb = ""
     try {
-        s rgb = ##class(ALVA.ISY.ISYJR2.API.Linky).GetBarvaLinky(IdFa, dataDB, sku, lin)
+        s rgb = ##class(ALVA.ISY.ISYJR2.API.Linky).GetBarvaLinky(IdFa, dataDB, sku, lin, poradi)
     }
     catch ex { s rgb = "" }
     ret ..RgbToHex(rgb)

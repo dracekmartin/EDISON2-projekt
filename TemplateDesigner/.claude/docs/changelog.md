@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-03 (9) - druhá barva linky (#12997)
+
+Klient chtěl u linky **dvě barvy** - zvlášť pro číslo linky a zvlášť pro pozadí. Blokovalo to, že
+jízdní řády umí jen jednu; **Petr to 3. 8. rozšířil** (`ALVA.ISY.ISYJR2.API.Linky`), takže blokátor
+padl a dodělali jsme návrhářskou stranu.
+
+- Nové pole agendy **Barva linky 2** (`BARVA_LINKY_2`), použitelné všude, kde jde barva zadat textem
+  (od `B31`): `{BARVA_LINKY_2}` v barvě textu, pozadí, rámečku i u obdélníku.
+- Náš helper bere **pořadí barvy**, `GetBarvaLinky(…, poradi)`. Bez pořadí = první barva, takže
+  uložené šablony a existující volání zůstávají beze změny.
+- **Neutrální pojmenování schválně.** Klient je používá jako „text" a „pozadí", ale JŘ jim význam
+  nedává - je to seřazený seznam a Petr počítá s dalšími. Význam tedy určuje šablona, ne pole.
+- Infotexty o barvě z dat (formulář prvků i tooltipy v editoru buňky, 6 míst) zmiňují **obě** pole -
+  Petr o to výslovně žádal, ptalo se na to víc lidí.
+- Klient nepotřeboval změnu: `ColorHex.IsDataBound` přijímá **jakýkoli** token `{…}`, ne pevný seznam.
+
+Ověřeno na reálných datech: gold linka `CB_CSADAD 0365001` má nastavenou jednu barvu (`149;202;100`
+→ `#FF95CA64`), druhá vychází prázdná. Test hlídá i to, že se pořadí nesmí ignorovat - jinak by obě
+pole nesla tutéž barvu a nikdo by si toho nevšiml.
+
+⚠️ **Dvě barvy naráz jsme neviděli** - v žádné testovací firmě není linka se dvěma barvami. Potřebuje
+to nastavit v JŘ (Hromadné úpravy vlastností linky) a projít očima.
+
+Caché 69/69 (+1), .NET 550/550. Zlaté odtisky přebaselinovány (jen md5, počty shodné).
+
 ## 2026-08-03 (8) - fix: přestupy kreslily cizí piktogram (#13048 bod 1)
 
 Značka přestupu vypadala náhodně (trojúhelník a kolo místo autobusu a vlaku) - všiml si Jan při

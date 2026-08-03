@@ -42,7 +42,8 @@ Method TestGold0365001()
 	// stránku pro „A" a „L"). Je to záměrná změna výstupu, ne přidané pole. Na vývěsce se ty řádky
 	// objeví jen když prvek zastávek přestupy tiskne - Caché posílá nadmnožinu a prořezává ji
 	// render-time filtr (`NoteVisibilityFilter.ShouldHidePrestupLegend`).
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=157 md5=m7lDketEtjGgfnKazS0PPw==")
+	// Re-baseline 2026-08-03 (#12997): + pole BARVA_LINKY_2 (druhá barva linky) → zpět jen md5.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=157 md5=dGzun1liA7igPsSLu8Y6ow==")
 }
 
 Method TestGold0365005()
@@ -55,7 +56,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS čísla zastávek (pak přejmenovaná) → dtto, jen md5.
 	// Re-baseline 2026-08-03 (#13048 bod 1): + řádky legendy pro přestupy → ⚠️ mění i počty
 	// (pozn 168 → 198, +30 na 38 stránek). Viz vysvětlení u gold 0365001.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=198 md5=DN6oMpk0yN3dafYpvi7IVw==")
+	// Re-baseline 2026-08-03 (#12997): + pole BARVA_LINKY_2 → jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=198 md5=znFy4kccxOO7VxRPJdMQbA==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

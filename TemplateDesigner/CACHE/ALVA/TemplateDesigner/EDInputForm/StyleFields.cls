@@ -15,7 +15,7 @@ Class ALVA.TemplateDesigner.EDInputForm.StyleFields
 /// (např. "Symbol: ") pro odlišení zón ve stejné skupině.
 ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, groupKey As %String, groupLabel As %String, defTextColor As %String = "", defBgColor As %String = "", newGroup As %Boolean = 1, labelPrefix As %String = "")
 {
-    s barvaZDat = "Lze zadat i {BARVA_LINKY} - barvu vezme z jízdního řádu (nenastavená = bílá)"
+    s barvaZDat = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
     i newGroup d form.AddGroup(groupKey, groupLabel)
     // ComboBox (editovatelný) s prázdným seznamem - klient naplní nainstalovanými fonty
     // (ElementFormBinder.PopulateFontFields). Prázdné = dědit z rodiče kaskády.
