@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-03 (6) - fix: Newtonsoft.Json 13.0.3 (MLRest ho nenajde a spadne)
+
+Aplikace spuštěná z `bin/Debug` padala při **prvním volání serveru** (nejdřív viditelně na výběru
+instance) s `Could not load file or assembly 'Newtonsoft.Json, Version=13.0.0.0'`.
+
+Příčina: `MLRest.dll` v `C:\Edison\` je přebuildovaný proti **Newtonsoft 13** (a 13.0.3 tam vedle
+něj leží), kdežto náš csproj měl přišpendlenou **7.0.1** s komentářem „MLRest očekává 7.0.0.0".
+Ten komentář byl zastaralý. Z `C:\Edison\` proto aplikace jela (našla 13 vedle sebe), z lokálního
+buildu ne (dostala naši 7.0.1).
+
+Bumpnuto na **13.0.3**, tedy přesně na to, co je nasazené. Newtonsoft sami nepoužíváme (naše
+serializace jde přes `System.Text.Json`), je tam jen pro MLRest, takže žádná změna kódu.
+**Vedlejší efekt: zmizel bezpečnostní warning NU1903** - 7.0.1 má známou zranitelnost a držel se
+jen kvůli MLRestu, ten důvod padl.
+
+⚠️ **Pravidlo:** verze musí odpovídat tomu, co leží v `C:\Edison\` vedle `MLRest.dll`. Až MLRest
+někdo znovu přebuilduje proti jiné verzi, tohle padne stejně a poznat to bude až za běhu, ne při
+buildu.
+
 ## 2026-08-03 (5) - tiskneme všechny atributy zastávky pro cestujícího (#13048 bod 1)
 
 Klient psal, že u zastávek nevidí „další atributy jako MHD a další, co umožňuje CIS (paragrafy,

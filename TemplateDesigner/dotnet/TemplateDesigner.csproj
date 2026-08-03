@@ -16,8 +16,11 @@
     <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.2" />
 <PackageReference Include="PdfPig" Version="0.1.13" />
 <PackageReference Include="ZXing.Net" Version="0.16.9" />
-    <!-- MLRest.dll očekává Newtonsoft.Json 7.0.0.0 — bez této reference CLR knihovnu neresolvne. -->
-    <PackageReference Include="Newtonsoft.Json" Version="7.0.1" />
+    <!-- MLRest.dll potřebuje Newtonsoft.Json, sami ho nepoužíváme (serializace jde System.Text.Json).
+         Verze MUSÍ odpovídat tomu, co je nasazené v C:\Edison\ vedle MLRest.dll - jinak si MLRest
+         assembly nenajde a spadne při prvním volání serveru (Could not load file or assembly).
+         13.0.3 = stav v C:\Edison\ po přebuildu MLRestu; dřív tu bylo 7.0.1 a to už neplatí. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <!-- OpenTK přitahuje SkiaSharp.Views.WPF kvůli SKGLElement (GL rendering) — TD používá
          jen CPU SKElement, takže ~5,5 MB runtime assets vyřazujeme z výstupu. -->
     <PackageReference Include="OpenTK" Version="3.3.1" ExcludeAssets="runtime" />
