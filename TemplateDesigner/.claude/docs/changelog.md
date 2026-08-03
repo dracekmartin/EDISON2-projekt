@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-08-03 (5) - tiskneme všechny atributy zastávky pro cestujícího (#13048 bod 1)
+
+Klient psal, že u zastávek nevidí „další atributy jako MHD a další, co umožňuje CIS (paragrafy,
+na zavolání atd.)". Kontrola ukázala, že filtr atributů byl **jednoznakový**: propouštěl jen
+„na znamení" (`x`), plus přestupy `A`/`L` vlastní cestou. Cokoli jiného se **tiše zahodilo** -
+ani značka, ani řádek legendy, bez jakéhokoli signálu.
+
+Filtr je teď rozdělený podle významu:
+
+- **Tiskne se** (informace pro cestujícího): na znamení `x` + varianty `y`/`z`, metro A/B/C `e`/`f`/`g`,
+  letadlo `O`, loď `D`, clo `C`, paragrafy `G`/`a`/`b`/`c`.
+- **Netiskne se** (legacy tiskové direktivy): tučně `T`, podtržení `p`/`P`/`o`, jen nástup `N`,
+  jen výstup `V`, s příjezdem a odjezdem `J`, tisk stanoviště `S`, odjezdová `>` / příjezdová `<` /
+  nácestná `E` / cílová pro tablo `H`. **Na AD datech jsou jich tisíce** (`T` 2724×, `E` 2111×,
+  `P` 843× jen u KOVED), takže pustit „všechno" by vývěsku zaplevelilo nesmysly.
+- Přestupy `A`/`L` zůstávají na svém přepínači.
+
+**Změna je na existujících datech neviditelná** - zlaté odtisky zůstaly **beze změny včetně md5**
+(ne jen počtů), protože žádný z doplněných znaků se v datech testovaných firem nevyskytuje.
+Jediná výjimka: u KOVED je **jeden** výskyt znaku `C` - zastávka **Střelná,,CLO** na lince 0001101
+(skupina 80), která nově dostane symbol clo. Vzhledem k jejímu názvu je to zjevně správně.
+
+**Vědomě netiskneme „jen nástup" / „jen výstup"**, i když pro cestujícího smysl mají: u KOVED je
+`V` na 235 místech a nový symbol by jim viditelně změnil vývěsku. To si má zákazník vyžádat.
+
+„Na zavolání", které klient jmenoval, **není atribut zastávky** - je to bitové nastavení pro
+odbavovací zařízení a u spojů typ RadioBus, tedy jiný zdroj. Do tohoto bodu nepatří.
+
+Caché 68/68 (+2 testy vyjmenovávající obě skupiny znaků), .NET beze změny (klient umí nakreslit
+libovolný atribut, který dostane - přepínač „Atributy" je zapnutý).
+
 ## 2026-08-03 (4) - `B35c` CIS čísla zastávek (#13088)
 
 Poslední bod z „nová pole agendy". Tři nová pole sestavy: **CIS číslo zastávky** (aktuální),

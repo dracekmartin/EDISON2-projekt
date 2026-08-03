@@ -45,6 +45,49 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Kde se v datech vyskytuje daný znak atributu - linka, pořadí a zastávka. Doplněk `ScanAtributy`
+/// pro vizuální kontrolu. IN: DB, ZNAK, MAXLIN. Read-only.
+ClassMethod NajdiAtribut(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set hledany = $get(^||ML("IN","ZNAK"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 500
+		kill ^||ML("OUT")
+		if (db = "") || (hledany = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a ZNAK jsou povinné"))
+
+		set linek = 0, nalez = 0, sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku))
+			quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin))
+				quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				set poradi = ""
+				for {
+					set poradi = $order(^[db]JRL(sku,lin,"J",poradi))
+					quit:poradi=""
+					set veta = $get(^[db]JRL(sku,lin,"J",poradi))
+					set atr = $piece($piece($piece(veta, "#", 1), ":", 2), "#", 1)
+					continue:'$find(atr, hledany)
+					set nalez = nalez + 1
+					continue:nalez>10
+					set czst = $piece(veta, ":", 1)
+					set ^||ML("OUT","NALEZ",nalez) = "sku="_sku_" lin="_lin_" poradi="_poradi_" czst="_czst_" atributy="_atr_" nazev="_$piece($get(^[db]JRZ(czst)), "$", 2)
+				}
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = db_" znak="_hledany_" linek="_linek_" nalezu="_nalez
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Výskyt znaků atributů zastávky (#13048 bod 1): kolikrát se který znak objeví v registru zastávek
 /// (`$`-pole 8) a v trase linky (J-věta `#1:2`). Ukáže, které znaky číselníku 16 zákazník reálně
 /// používá - tedy jestli má smysl je tisknout. IN: DB, MAXLIN. Read-only.

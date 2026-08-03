@@ -1557,13 +1557,26 @@ ClassMethod NepoznamkovatSpoj(dataDB As %String, sku As %String, lin As %String,
     q 0
 }
 
-/// Atributy zastávky tištěné v zastávkovém JŘ. Legacy `UVOD^JRapiLinPrtMhd` (ř.189-190) promítá
-/// z dta2 do StopListu **jen „na znamení" (znak `x`)** - ostatní znaky číselníku 16 (A=autobus,
-/// L=vlak, metro, nástup/výstup, formátovací…) se v TOMTO výstupu NEtisknou (ověřeno gold 0365001:
-/// Vlakové nádraží má L=vlak, U autobusového nádraží A=autobus, ale gold je v zastávkách neukazuje).
+/// Atributy zastávky, které nesou **informaci pro cestujícího** - tisknou se jako značka u zastávky
+/// a řádek legendy: na znamení a jeho varianty (`x`,`y`,`z`), metro A/B/C (`e`,`f`,`g`), letadlo (`O`),
+/// loď (`D`), clo (`C`), paragrafy (`G`,`a`,`b`,`c`).
+///
+/// Zbytek číselníku 16 jsou legacy **tiskové direktivy** (tučně `T`, podtržení `p`/`P`/`o`, jen nástup
+/// `N` / jen výstup `V`, s příjezdem a odjezdem `J`, tisk stanoviště `S`, odjezdová `>` / příjezdová `<`
+/// / nácestná `E` / cílová pro tablo `H`) - jako značka se tisknout NESMÍ, jinak na vývěsce vyskáčou
+/// nesmysly (na AD datech jsou jich tisíce: `T` 2724×, `E` 2111×, `P` 843× jen u KOVED).
+///
+/// Přestupy `A`/`L` jdou vlastní cestou - řídí je přepínač na prvku, viz `JePrestupovyAtribut`.
+///
+/// Legacy vývěska (`UVOD^JRapiLinPrtMhd` ř.189-190, `JRapiLinPrtMhd1` ř.458-472) řeší **jen `x`**;
+/// zbytek je nad rámec legacy, na výslovné přání KOVED (#13048 bod 1 - „další atributy, co umožňuje
+/// CIS"). V datech AD firem se dnes žádný z doplněných znaků kromě `C` (1×) nevyskytuje, takže
+/// změna je pro stávající vývěsky neviditelná a je to pojistka do budoucna.
+/// ⚠️ Klient nakreslí, co pošleme (přepínač „Atributy" je zapnutý) - **nedoplněný znak tiše zmizí**,
+/// a přesně to byla podstata #13048 bodu 1.
 ClassMethod JeViditelnyAtribut(znak As %String) As %Boolean
 {
-    q znak = "x"
+    ret ",x,y,z,e,f,g,O,D,C,G,a,b,c," [ (","_znak_",")
 }
 
 /// Přestupové atributy zastávky (přestup na jiný druh dopravy) - nad rámec legacy StopListu.

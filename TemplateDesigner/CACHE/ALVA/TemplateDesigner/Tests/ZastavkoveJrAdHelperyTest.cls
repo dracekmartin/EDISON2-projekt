@@ -356,6 +356,32 @@ Method TestTextDneVTydnuSvatek()
 	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "6"), "jede v sobotu", "dny beze změny")
 }
 
+// ── JeViditelnyAtribut - co z číselníku 16 je informace pro cestujícího (KOVED #13048 bod 1) ──
+
+/// Znaky pro cestujícího se tisknou. Kdyby některý vypadl, tiše zmizí z vývěsky - to byla
+/// podstata hlášení #13048 bodu 1, takže je vyjmenované v testu, ne jen v kódu.
+Method TestViditelneAtributyProCestujiciho()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	for znak = "x", "y", "z", "e", "f", "g", "O", "D", "C", "G", "a", "b", "c" {
+		do $$$AssertTrue($classmethod(cls, "JeViditelnyAtribut", znak), "atribut pro cestujícího se tiskne: "_znak)
+	}
+}
+
+/// Tiskové direktivy legacy se jako značka tisknout NESMÍ - na AD datech jsou jich tisíce
+/// (T 2724×, E 2111×, P 843× jen u KOVED), takže by vývěsku zaplevelily.
+Method TestTiskoveDirektivyNejsouZnacka()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	for znak = "T", "P", "p", "o", "N", "V", "J", "S", ">", "<", "E", "H" {
+		do $$$AssertTrue('$classmethod(cls, "JeViditelnyAtribut", znak), "tisková direktiva není značka: "_znak)
+	}
+	// Přestupy mají vlastní přepínač, takže do obecné viditelnosti nepatří.
+	do $$$AssertTrue('$classmethod(cls, "JeViditelnyAtribut", "A"), "autobus jde přes přepínač přestupů")
+	do $$$AssertTrue('$classmethod(cls, "JeViditelnyAtribut", "L"), "vlak jde přes přepínač přestupů")
+	do $$$AssertTrue('$classmethod(cls, "JeViditelnyAtribut", ""), "prázdný znak není atribut")
+}
+
 // ── SloupekZTrasy - sloupek z J-věty #12 dle směru (KOVED #13088) ──
 
 /// Vstupy jsou skutečné J-věty ze ZL_KOVED linky 0822995 (zastávky 1 a 3), aby test hlídal
