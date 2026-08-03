@@ -5,9 +5,9 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B36** (poznámky z linky včetně výluk, M) - ⚠️ **výluky odložil Jan 3. 8.,
-> řeší je s kolegy**, takže z `B36` teď dělat jen poznámky linky + výšku bloku.
-> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`-`B35c` 3. 8. (celé #13088 hotové).
+> **▶ Další session:** **B36** (poznámky z linky včetně výlukových textů, M) - odblokované,
+> cesta k výlukám je rozhodnutá (viz blok). `B28`-`B34`, `B38` a `B41` hotové 31. 7.,
+> `B35a`-`B35c` 3. 8.; **#13048 i #13088 zavřené 3. 8.**, výluky přesunuté do #13093.
 > Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
@@ -40,7 +40,7 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B36** | **#13093a - poznámky z linky** (+ výlukové texty, ale ⚠️ **výluky Jan 3. 8. odložil a řeší je s kolegy** - nedělat, dokud neřekne): textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec, i když je linkový JŘ čte (`^JRL(sku,lin,"C",key,idx)`; key 1 = tarifní, 3 = všeobecné, 4 = radiobus) · **výlukové texty vlastní kategorií** - 3. 8. změřeno na datech KOVED: 166 poznámek začíná „Výluka:" a **všechny jsou poznámky linky (key 3), ani jedna komentář spoje**, takže v datech pro ně kategorie neexistuje a rozlišují se prefixem (což je i konvence zákazníka - tak to posílají do CIS) · druhý blok poznámek si klient složí sám, filtr podle kategorie legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků nad sebou (jeden bez výluk, druhý jen výluky) bez ručního dopočítávání výšky |
+| **B36** | **#13093a poznámky z linky + výlukové texty** (pohltilo poslední bod #13088, který je proto 3. 8. zavřený). Textové poznámky zadané u linky se do zastávkové vývěsky nedostanou vůbec, i když je linkový JŘ čte: `^JRL(sku,lin,"C",key,idx)`, key 1 = tarifní, 3 = všeobecné, 4 = radiobus (key 2 legacy přeskakuje), čtení viz `LinkovyJrAd.PridatPoznamkyLinky`. **Vydat obojí:** (1) **skalární pole „Výlukové texty"** - klient žádal „novou databázovou položku, kterou by mohli používat v návrháři" a píše, že to „zobrazuje ve zvláštním poli", takže si to má jít položit jako běžný text kamkoli; (2) **řádky poznámek s kategorií** (výluka zvlášť), aby to šlo i blokem legendy s filtrem. **Emitovat záznam = jedna poznámka**, legacy je slepuje do jednoho textu a pak nejde výluky oddělit. **Výluky se poznají podle prefixu „Výluka:"** - změřeno 3. 8. na 800 linkách KOVED: 166 takových poznámek, všechny v kategorii 3, ani jedna v komentářích spoje; kategorie 3 je míchaná (je v ní i „R - k jízdence je možné zakoupit místenku"), takže zobrazit celou kategorii nestačí. **Do JRMAIN sahat netřeba** (Petr, #13098: „zatím můžou použít normální poznámku a tu zobrazit" - to už dělají); samostatné pole pro výluky v JŘ přijde s pozdější etapou JŘ a není blokující. · Druhá půlka bloku: **automatická výška bloku poznámek** se zmenšením textu při přetečení. ⚠️ Dvě otázky na klienta (v #13093, **neblokují data**): je „Výluka:" pevná konvence · chtějí i ostatní poznámky linky, nebo jen výlukové. | M | klient složí dvojici bloků nad sebou (jeden bez výluk, druhý jen výluky) bez ručního dopočítávání výšky |
 | **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
 
 **Otázka na KOVED - odeslaná 3. 8. v odpovědi na #13048, nic neblokuje:** je u nich označník ještě

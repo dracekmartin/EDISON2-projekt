@@ -2,7 +2,7 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
-## 2026-08-03 ✅ - `B35c` CIS čísla zastávek (#13088) - tím je celý tiket hotový
+## 2026-08-03 ✅ - `B35c` CIS čísla zastávek (#13088)
 
 Detail → changelog 2026-08-03 (4). Tři nová pole sestavy (CIS číslo zastávky · výchozí · cílová)
 + totéž jako pole řádku kolekce zastávek. Zdroj = registr zastávek `^JRZ(czst)` `$`-pole **9**.
@@ -20,6 +20,12 @@ Sloupec seznamu zastávek se nepřidával - tiket žádal pole agendy. Přes dyn
 do nabídky sloupců se doplní, až o to někdo řekne (stejná úvaha jako u popisu sloupku).
 
 Ověřeno na ZL_KOVED 0822995 směr Tam (Zlín,Malenovice,ZPS): aktuální 42033, výchozí 41994, cílová 2774.
+
+**#13088 zavřený 3. 8.** (Jan) - dva ze tří bodů dodány (CIS čísla, sloupek), třetí (**výlukové texty**)
+přesunutý do **#13093**, kde už poznámky z linky leží - včetně požadavku na **skalární pole**
+(„nová databázová položka pro návrhář“). Cesta je rozhodnutá a **nepotřebuje zásah do JRMAIN**:
+klient už dnes píše „Výluka: …“ do běžných poznámek linky (166 na 800 linkách), stačí je začít
+číst a oddělit podle prefixu → `B36`.
 
 ## 2026-08-03 ✅ - `B35b` logiku stanovišť lze přepnout na sloupek (#13088, #13048 bod 4)
 
