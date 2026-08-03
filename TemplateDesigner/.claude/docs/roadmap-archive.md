@@ -13,6 +13,11 @@ nenastavená barva. Formulář o datech neví, hodnotu jen zobrazuje - proto **a
 **Invariant:** hodnota zůstává tokenem. Zapsat vyřešenou barvu = šablona přestane brát barvu z dat
 a zamrzne na barvě náhodně otevřené linky. Hlídá `ColorHexUiPreviewTests` (5 testů).
 
+**Rozhodnutí (Jan 3. 8.):** cílový stav je **šrafování**, přesná barva je bonus tam, kde náhledový
+canvas kreslil stránku s daty. V návrhářském pohledu data nejsou a dohánět je nemá cenu - důležité
+bylo, aby čtvereček nevypadal jako nenastavená bílá. `UiData` se maže při každé změně dat náhledu,
+protože **cizí barva mate víc než neutrální stav**.
+
 ⚠️ Nasazení: dotýká se **EDControls**, takže do produkce jde DLL i .exe.
 
 ## 2026-08-03 ✅ - `B35c` CIS čísla zastávek (#13088)

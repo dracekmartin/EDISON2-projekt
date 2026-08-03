@@ -158,6 +158,7 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 _realPreviewIndex = 0;
+                Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
                 RequestPreviewRefresh?.Invoke();
             }
@@ -275,6 +276,7 @@ public class TemplateDesignerViewModel : EDViewModel
             if (pages is null || pages.Count == 0)
             {
                 _realPreviewData = null;
+                Models.ColorHex.UiData = null;
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
@@ -287,6 +289,7 @@ public class TemplateDesignerViewModel : EDViewModel
                                    && _realPreviewIndex >= 0 && _realPreviewIndex < _realPreviewData.Count)
                     ? _realPreviewData[_realPreviewIndex] : null;
                 _realPreviewData = newData;
+                Models.ColorHex.UiData = null;   // naplní ho až kreslení nové stránky
                 _realPreviewIndex = keepPage ? FindMatchingPageIndex(newData, currentPage, _realPreviewIndex) : 0;
                 StatusText = $"{instance.Display}: {pages.Count} stránek";
             }

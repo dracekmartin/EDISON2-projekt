@@ -21,6 +21,12 @@ vrátila nesmysl", kde náhled musí vrátit nic a čtvereček padne na šrafov�
 ⚠️ **Nasazení:** změna je i v **EDControls**, takže do produkce musí jít **DLL i .exe** (viz root
 `CLAUDE.md`). Druhé aplikace se to nedotkne - vlastnost je aditivní a nikdo ji nevyplňuje.
 
+**Rozhodnutí (Jan 3. 8.): šrafování je akceptovaný cílový stav, přesná barva je bonus.** V praxi se
+náhled naplní jen tam, kde náhledový canvas kreslil stránku s daty (v návrhářském pohledu data
+nejsou) - a doháněla by se draho. Podstatné bylo, aby to nevypadalo jako nenastavená bílá.
+`UiData` se proto **maže při každé změně dat náhledu**: lepší šrafování než barva staré instance,
+protože cizí barva mate víc než neutrální stav.
+
 .NET 555/555 (+5), EDControls 505/505, EDISONMAIN2 435/435.
 
 ## 2026-08-03 (9) - druhá barva linky (#12997)
