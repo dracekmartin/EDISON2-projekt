@@ -45,6 +45,68 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// „Na zavolání / na objednání" - kde je to v datech vyplněné (#13048 bod 1, dotaz zákazníka).
+/// Tři různá místa: spoj `Radiobus/jede na objednání` (hlava věty spoje pole 21 = legacy `dta30`),
+/// spoj `jede podmínečně` (pole 23 = `dta34`) a **zastávka v trase spoje** (W pozice 5 = atributy
+/// trasy spoje, znaky `r` = na objednání / `i` = podmínečně). IN: DB, MAXLIN. Read-only.
+ClassMethod ScanNaZavolani(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 500
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0, spoju = 0, naObj = 0, podm = 0, wrRadku = 0, ukazek = 0
+		set sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku))
+			quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin))
+				quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				for sm = "T", "Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,sm,sp))
+						quit:sp=""
+						continue:'$isvalidnum(sp)
+						set spoju = spoju + 1
+						set hlava = $piece($get(^[db]JRL(sku,lin,sm,sp)), "#", 1)
+						if $piece(hlava, ":", 21) '= "" {
+							set naObj = naObj + 1
+							if ukazek < 6 { set ukazek = ukazek + 1, ^||ML("OUT","UKAZKA",ukazek) = "SPOJ na objednani: sku="_sku_" lin="_lin_" smer="_sm_" spoj="_sp_" hodnota="_$piece(hlava,":",21) }
+						}
+						if $piece(hlava, ":", 23) '= "" { set podm = podm + 1 }
+					}
+				}
+				// atributy v trase spoje (W pozice 5) - znaky r / i
+				set ct = ""
+				for {
+					set ct = $order(^[db]JRL(sku,lin,"W",ct))
+					quit:ct=""
+					set w = $get(^[db]JRL(sku,lin,"W",ct))
+					for i = 1:1:$length(w,"#") {
+						set atr = $piece($piece(w,"#",i), ":", 5)
+						continue:atr=""
+						if '$find(atr,"r"), '$find(atr,"i") continue
+						set wrRadku = wrRadku + 1
+						if ukazek < 6 { set ukazek = ukazek + 1, ^||ML("OUT","UKAZKA",ukazek) = "ZASTAVKA V TRASE SPOJE: sku="_sku_" lin="_lin_" trasa="_ct_" atributy="_atr }
+					}
+				}
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = db_" linek="_linek_" spoju="_spoju_" | spoj na objednani="_naObj_" spoj podminecne="_podm_" zastavka v trase spoje (r/i)="_wrRadku
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Kde se v datech vyskytuje daný znak atributu - linka, pořadí a zastávka. Doplněk `ScanAtributy`
 /// pro vizuální kontrolu. IN: DB, ZNAK, MAXLIN. Read-only.
 ClassMethod NajdiAtribut(ByRef sys As %String) As %Status
