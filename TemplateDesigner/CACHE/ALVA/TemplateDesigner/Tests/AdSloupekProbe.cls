@@ -45,6 +45,41 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Řádky implementace metody na SERVERU obsahující vzorek - kontrola, že se `.cls` opravdu nasadila
+/// (editace mimo hook se na server nedostane a testy pak běží proti staré kopii).
+/// IN: CLASS, METHOD, PATTERN. OUT: nalezené řádky.
+ClassMethod ZdrojMetody(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set cls = $get(^||ML("IN","CLASS"))
+		set met = $get(^||ML("IN","METHOD"))
+		set pattern = $get(^||ML("IN","PATTERN"))
+		kill ^||ML("OUT")
+		if (cls = "") || (met = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "CLASS a METHOD jsou povinné"))
+
+		set def = ##class(%Dictionary.MethodDefinition).%OpenId(cls _ "||" _ met)
+		if '$isobject(def) {
+			set ^||ML("OUT","CHYBA") = "metoda " _ cls _ "::" _ met _ " na serveru neexistuje"
+			ret $$$OK
+		}
+		set impl = def.Implementation
+		do impl.Rewind()
+		set n = 0, nalez = 0
+		while 'impl.AtEnd {
+			set radek = impl.ReadLine()
+			set n = n + 1
+			continue:(pattern '= "")&&('$find(radek, pattern))
+			set nalez = nalez + 1
+			set ^||ML("OUT","RADEK",n) = radek
+		}
+		set ^||ML("OUT","SOUHRN") = "řádků=" _ n _ " nálezů=" _ nalez
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Kolik linek plní per-spoj sloupek (W pozice 13) a označník (W pozice 7) a u kolika zastávek se
 /// hodnoty mezi trasami liší (= má vůbec smysl režim „více hodnot" nad sloupkem). IN: DB, MAXLIN.
 ClassMethod ScanPerSpoj(ByRef sys As %String) As %Status

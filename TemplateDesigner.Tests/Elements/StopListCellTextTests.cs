@@ -59,18 +59,56 @@ public class StopListCellTextTests
         Assert.Equal("11", new StopListElement().GetCellText(z, StopFields.Nastupiste));
     }
 
-    /// <summary>Režimy „více označníků" se sloupku (zatím) netýkají - jsou postavené na per-spoj
-    /// datech označníku. Kdyby sloupek jejich hodnotu přebíral, tiskl by cizí číslo.</summary>
+    /// <summary>Režimy platí pro ten údaj, který je zvolený jako stanoviště. Když je zvolený označník,
+    /// sloupec Sloupek ukazuje prostou hodnotu z trasy - jinak by pod hlavičkou „Sloupek" vyšlo číslo
+    /// spočítané z označníků.</summary>
     [Fact]
-    public void Sloupek_NerididiSeRezimyOznacniku()
+    public void Sloupek_BezPrepnutiIgnorujeRezimy()
     {
         var z = Stop("11", "22,11");
         z.Sloupek = "2";
+        z.SloupekSpoju = "3,2";
 
         Assert.Equal("2", new StopListElement { MultiPlatformMode = MultiPlatformDisplay.MostFrequent }
             .GetCellText(z, StopFields.Sloupek));
         Assert.Equal("2", new StopListElement { MultiPlatformMode = MultiPlatformDisplay.All }
             .GetCellText(z, StopFields.Sloupek));
+    }
+
+    /// <summary>Po přepnutí parametru sestavy na Sloupek přeberou režimy sloupky a označník se naopak
+    /// přestane počítat - přepínač je jeden a platí pro oba sloupce zrcadlově (KOVED #13088).</summary>
+    [Fact]
+    public void PoPrepnutiNaSloupek_RezimyPlatiProSloupek()
+    {
+        var z = Stop("11", "22,11");
+        z.Sloupek = "2";
+        z.SloupekSpoju = "3,2";
+
+        var nejcetnejsi = new StopListElement
+        {
+            MultiPlatformMode = MultiPlatformDisplay.MostFrequent,
+            SloupekJakoStanoviste = true,
+        };
+        Assert.Equal("3", nejcetnejsi.GetCellText(z, StopFields.Sloupek));
+        Assert.Equal("11", nejcetnejsi.GetCellText(z, StopFields.Nastupiste));
+
+        var vycet = new StopListElement
+        {
+            MultiPlatformMode = MultiPlatformDisplay.All,
+            SloupekJakoStanoviste = true,
+        };
+        Assert.Equal("3, 2", vycet.GetCellText(z, StopFields.Sloupek));
+        Assert.Equal("11", vycet.GetCellText(z, StopFields.Nastupiste));
+    }
+
+    /// <summary>Zdroj stanoviště je odvozený z dat, ne uživatelské nastavení prvku - do šablony se
+    /// nesmí uložit, jinak by přebil parametr sestavy (past odklizená v `B41`).</summary>
+    [Fact]
+    public void ZdrojStanoviste_SeNeserializuje()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(new StopListElement { SloupekJakoStanoviste = true });
+
+        Assert.DoesNotContain("SloupekJakoStanoviste", json);
     }
 
     /// <summary>MHD sloupek nevydává (tam je totéž stanoviště „označník") - prázdná buňka, ne pád.</summary>

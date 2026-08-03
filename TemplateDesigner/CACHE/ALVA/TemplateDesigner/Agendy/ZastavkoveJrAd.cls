@@ -236,6 +236,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // #8828: rozdělit vývěsku per označník - vývěska obsluhovaná z N označníků → N stránek,
         // každá s odjezdy jen z toho označníku. Default vyp = jedna vývěska (odjezdy smíchané).
         s rozdelitOzn = ($zcvt($g(^||ML("IN","ROZDELIT_PER_OZNACNIK")),"L") = "true")
+        // #13088: kterým údajem se řídí stanoviště (dělení stránek, výčty). Default = označník.
+        s zdrojSt = $s($g(^||ML("IN","ZDROJ_STANOVISTE")) = "Sloupek" : "SL", 1 : "OZN")
 
         // Multi-page: jedna stránka per zastávka × směr (Tam + Zpět). Aktuální zastávka =
         // ze které se počítají odjezdy; StopList ukazuje úsek od ní ve směru jízdy.
@@ -248,16 +250,16 @@ ClassMethod GetData(ByRef sys As %String) As %Status
                 i $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1) = "" continue   // bod bez zastávky
                 // Rozdělení per označník: jen když je zapnuté a vývěska má >1 označník obsluhovaný spoji.
                 if rozdelitOzn {
-                    s csvOzn = ..NastupisteSpoju(dataDB, sku, lin, smer, poradi)
+                    s csvOzn = ..NastupisteSpoju(dataDB, sku, lin, smer, poradi, zdrojSt)
                     if (csvOzn '= "") && ($l(csvOzn,",") > 1) {
                         f oi=1:1:$l(csvOzn,",") {
-                            s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, $p(csvOzn,",",oi), IdFa)
+                            s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, $p(csvOzn,",",oi), IdFa, zdrojSt)
                             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
                         }
                         continue        // rozděleno → jedinou (smíchanou) stránku nevytvářet
                     }
                 }
-                s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, "", IdFa)
+                s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, "", IdFa, zdrojSt)
                 i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
             }
         }
@@ -277,9 +279,10 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 /// vývěskové zastávky a NASTUPISTE = tento označník. Prázdné = všechny odjezdy (dnešní chování).
 /// IdFa (volitelné): potřebuje ho jen barva linky - ostatní data JŘ modulu jsou vázaná na namespace,
 /// ne na firmu. Prázdné → barva linky se nenaplní (šablona pak použije bílou).
-ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %String, currentPoradi As %String = "", smer As %String = "T", filtrOznacnik As %String = "", IdFa As %String = "") As %DynamicObject
+ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %String, currentPoradi As %String = "", smer As %String = "T", filtrOznacnik As %String = "", IdFa As %String = "", zdrojSt As %String = "OZN") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
+    s slJakoStanoviste = (zdrojSt = "SL")            // #13088: stanoviště = sloupek, ne označník
 
     // currentPoradi nezadáno → první zastávka trasy
     i currentPoradi = "" {
@@ -326,11 +329,16 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // NEJEDOU_SPOJE je legacy misnomer - nese NÁSTUPIŠTĚ vývěskové zastávky (J-věta #3 = nastTam:nastZpet,
     // dta23 v JRapiExp10). Per směr (T=tam, Z=zpět). 1:1 gold.
     s nastupiste = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
-    i filtrOznacnik '= "" s nastupiste = filtrOznacnik          // #8828: stránka nese svůj označník
+    s sloupekAkt = ..SloupekZTrasy($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)), smer '= "Z")
+    // #8828: rozdělená stránka nese své stanoviště - do toho údaje, který stanoviště určuje
+    i filtrOznacnik '= "" {
+        i slJakoStanoviste { s sloupekAkt = filtrOznacnik } else { s nastupiste = filtrOznacnik }
+    }
     d vals.%Set("NASTUPISTE",             nastupiste)         // A2: NEJEDOU_SPOJE je misnomer → NASTUPISTE
     d vals.%Set("NEJEDOU_SPOJE",          nastupiste)         // zastaralé (kompatibilita) → NASTUPISTE
-    s sloupekAkt = ..SloupekZTrasy($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)), smer '= "Z")
     d vals.%Set("SLOUPEK",                sloupekAkt)
+    // Prvek si podle toho vybere, který údaj řídí režimy více hodnot a řádky (jeden zdroj pravdy)
+    d vals.%Set("ZDROJ_STANOVISTE",       $s(slJakoStanoviste:"Sloupek", 1:"Označník"))
 
     // ── trasa → zastávky (CELÁ trasa ve směru jízdy, vč. projetých; zóny + na znamení) ──
     // Tam: vzestupně 1→N. Zpět: sestupně N→1. Aktuální = JE_AKTUALNI; projeté mají casJizdy=0 a bez
@@ -531,18 +539,22 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         // TR3: označník per zastávka (J-věta #3, dle směru). Na rozdělené stránce (#8828) nese
         // ŘÁDEK vývěskové zastávky označník své stránky - jinak by stránky 11/22 vypadaly identicky
         // (J-věta má jednu hodnotu pro obě).
-        s nastRadek = nastJv
-        i (filtrOznacnik '= "") && jeAkt s nastRadek = filtrOznacnik
+        // TR3 / #13088: obě hodnoty z trasy dle směru. Na rozdělené stránce (#8828) nese ŘÁDEK
+        // vývěskové zastávky stanoviště své stránky - jinak by stránky 11/22 vypadaly identicky
+        // (J-věta má jednu hodnotu pro obě). Přebíjí se ten údaj, který stanoviště určuje.
+        s nastRadek = nastJv, sloupekRadek = sloupekJv
+        i (filtrOznacnik '= "") && jeAkt {
+            i slJakoStanoviste { s sloupekRadek = filtrOznacnik } else { s nastRadek = filtrOznacnik }
+        }
         d z.%Set("NASTUPISTE", nastRadek)
-        // KOVED #13088: sloupek zastávky (J-věta #12 dle směru) - druhý, číselníkový údaj vedle
-        // označníku. Dělení stránek (#8828) dnes běží na označníku, sloupek proto nese trasu.
-        d z.%Set("SLOUPEK", sloupekJv)
-        d z.%Set("SLOUPEK_SPOJU", ..NastupisteSpoju(dataDB, sku, lin, smer, poradi, "SL"))
-        d z.%Set("SLOUPEK_POPIS", ..PopisSloupku(dataDB, czst, sloupekJv))
+        d z.%Set("SLOUPEK", sloupekRadek)
+        d z.%Set("SLOUPEK_POPIS", ..PopisSloupku(dataDB, czst, sloupekRadek))
         // KOVED #13048 bod 4: nástupiště dle SPOJŮ (W pole 8, fallback J-věta) - CSV dle četnosti,
         // první = nejčetnější. Element z toho staví režimy „nejčetnější" / „výčet". Na rozdělené
         // stránce u vývěskové zastávky rovněž jen označník stránky (stránka JE o něm).
-        d z.%Set("NASTUPISTE_SPOJU", $s((filtrOznacnik'="")&&jeAkt:filtrOznacnik, 1:..NastupisteSpoju(dataDB, sku, lin, smer, poradi)))
+        s prebitStanoviste = ((filtrOznacnik '= "") && jeAkt)
+        d z.%Set("NASTUPISTE_SPOJU", $s(prebitStanoviste && 'slJakoStanoviste : filtrOznacnik, 1 : ..NastupisteSpoju(dataDB, sku, lin, smer, poradi)))
+        d z.%Set("SLOUPEK_SPOJU",    $s(prebitStanoviste && slJakoStanoviste  : filtrOznacnik, 1 : ..NastupisteSpoju(dataDB, sku, lin, smer, poradi, "SL")))
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
         s posledniNazev = rawNazev, posledniCzst = czst
@@ -550,7 +562,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
 
     // #8828: rozdělená vývěska nese označník v názvu zastávky (jako KOVED XLSX „…, sloupek 1") -
     // titulek stránky se jinak mezi rozdělenými stránkami nijak viditelně neliší. Bez rozdělení beze změny.
-    i filtrOznacnik '= "" s aktualniNazev = aktualniNazev_", označník "_filtrOznacnik
+    i filtrOznacnik '= "" s aktualniNazev = aktualniNazev_", "_$s(slJakoStanoviste:"sloupek", 1:"označník")_" "_filtrOznacnik
     d vals.%Set("POPIS_ZASTAVKA",      aktualniNazev)
     d vals.%Set("CISLO_ZASTAVKA",      aktualniCzst)
     d vals.%Set("SLOUPEK_POPIS",       ..PopisSloupku(dataDB, aktualniCzst, sloupekAkt))
@@ -613,7 +625,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         }
     }
     d vals.%Set("VARIANTY_TRAS", variantyTras)
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik)
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik, zdrojSt)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) - stránku negenerovat
     i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
     // Vývěska je samostatná stránka → legenda vysvětluje jen značky, které na TÉTO stránce reálně jsou.
@@ -682,7 +694,7 @@ ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
 /// Pro každý spoj: odjezd = Odjezd spoje + offset času na aktuální zastávce (z trasy spoje "W").
 /// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "") As %DynamicArray
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "", zdrojSt As %String = "OZN") As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
@@ -708,14 +720,17 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s offset = ..CasHodnota($g(wMap(currentPoradi)))
         i offset = "" continue            // spoj zde nestaví (`<`) / zastávka mimo trasu spoje
 
-        // #8828: filtr per označník - na stránce jen spoje odjíždějící z daného označníku vývěsky.
-        // Spoj úplně bez označníku (prázdná W-trasa i J-věta) patří na stránku NEJČETNĚJŠÍHO
-        // označníku (první v CSV) - jinak by při rozdělení zmizel ze všech stránek (ztráta odjezdu).
+        // #8828: filtr per stanoviště - na stránce jen spoje odjíždějící z daného stanoviště vývěsky.
+        // Spoj úplně bez stanoviště (prázdná W-trasa i J-věta) patří na stránku NEJČETNĚJŠÍHO
+        // (první v CSV) - jinak by při rozdělení zmizel ze všech stránek (ztráta odjezdu).
+        // #13088: `zdrojSt` říká, jestli je stanoviště označník, nebo sloupek - filtr, titulek
+        // i řádky musí brát týž údaj, jinak stránka tvrdí „sloupek 2" a filtruje podle označníku.
         if filtrOznacnik '= "" {
-            d ..WNastupisteMapa(dataDB, sku, lin, cisloTrasy, .nMapF)
+            s jSegmentStanoviste = $p(..PoziceStanoviste(zdrojSt), "~", 2)
+            d ..WNastupisteMapa(dataDB, sku, lin, cisloTrasy, .nMapF, zdrojSt)
             s spojOzn = $g(nMapF(currentPoradi))
-            i spojOzn = "" s spojOzn = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
-            i spojOzn = "" s spojOzn = $p(..NastupisteSpoju(dataDB, sku, lin, smer, currentPoradi), ",", 1)
+            i spojOzn = "" s spojOzn = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",jSegmentStanoviste),":",$s(smer="Z":2,1:1))
+            i spojOzn = "" s spojOzn = $p(..NastupisteSpoju(dataDB, sku, lin, smer, currentPoradi, zdrojSt), ",", 1)
             i spojOzn '= filtrOznacnik continue
         }
 
@@ -2138,7 +2153,26 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník
     // (odjezdy filtrované na spoje z toho označníku). Default vyp = jedna vývěska, odjezdy smíchané.
     // Label zrcadlí volbu elementu „Řádek pro každý označník" - stránka × řádek = dvě roviny téže věci
-    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Samostatná stránka pro každý označník", "false", "Seznam zastávek", "Zastávka obsluhovaná z více označníků se vytiskne jako samostatná vývěska pro každý označník, jen s odjezdy spojů, které z něj jedou. V titulku stránky pak je i číslo označníku.")
+    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Samostatná stránka pro každé stanoviště", "false", "Seznam zastávek", "Zastávka obsluhovaná z více stanovišť se vytiskne jako samostatná vývěska pro každé z nich, jen s odjezdy spojů, které z něj jedou. V titulku stránky pak je i jeho číslo. Které číslo to je, řídí volba Číslo stanoviště podle.")
+
+    // KOVED #13088: označník a sloupek jsou dvě různá pole (volný text z trasy vs. číselník sloupků
+    // zastávky) a zákazníci, kteří evidují sloupky, chtějí logiku stanovišť nad nimi. Jeden přepínač
+    // pro všechno - režimy více hodnot, řádky, dělení stránek i titulek; prvek se jím řídí a vlastní
+    // kopii nemá (dvě místa pro totéž = past odklizená v B41).
+    // ⚠️ Výchozí „Označník" = dosavadní chování; jiný default by pohnul vývěskou zákazníkovi,
+    // který dělení stránek už používá.
+    s pZdrojSt = ##class(%DynamicObject).%New()
+    s pZdrojSt.name         = "ZDROJ_STANOVISTE"
+    s pZdrojSt.label        = "Číslo stanoviště podle"
+    s pZdrojSt.type         = "enum"
+    s pZdrojSt.group        = "Seznam zastávek"
+    s pZdrojSt.defaultValue = "Označník"
+    s pZdrojSt.description  = "Který údaj z jízdního řádu se bere jako číslo stanoviště: Označník (pole nástupiště z trasy linky) nebo Sloupek (číslo z číselníku sloupků zastávky). Volba řídí Více označníků, samostatné stránky i titulek stránky. Sloupce Označník a Sloupek jdou tisknout oba nezávisle."
+    s optsZS = ##class(%DynamicArray).%New()
+    d optsZS.%Push("Označník")
+    d optsZS.%Push("Sloupek")
+    s pZdrojSt.options = optsZS
+    d arr.%Push(pZdrojSt)
 
     // Varianty tras (KOVED #13048 bod 5) - týkají se variantních sloupců seznamu zastávek.
     // Varianta = sled zastávek (legacy dedup), časy sloupce = max přes spoje varianty.

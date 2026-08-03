@@ -5,8 +5,8 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B35** (nová pole agendy) a dál Vlnou 0 - KOVED kreslí vývěsky
-> v návrháři naostro a fronta se znovu naplnila. `B28`-`B31` + `B34` hotové 31. 7.
+> **▶ Další session:** **B36** (poznámky z linky) - `B35c`/`B35d` čekají na dvě odpovědi od KOVED,
+> bez nich se nedají zavřít. `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`+`B35b` 3. 8.
 > Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
@@ -39,7 +39,6 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B35b** | **Přepnutí logiky stanovišť na sloupek** (#13088, #13048 bod 4) - data už hotová (per-spoj sloupek, výčet dle četnosti, sloupek per varianta, popis; viz changelog 2026-08-03 (2)). Zbývá **jeden parametr sestavy „Číslo stanoviště podle" (Označník / Sloupek)**, který přepne režimy více hodnot, řádkové duplikování, dělení stránek (#8828) i titulek stránky („sloupek 2" místo „označník 2"). **Default zůstává Označník** - dělení stránek si vyžádal jiný zákazník a už podle něj tiskne. Popisek režimu „Více označníků" přejmenovat, aby nelhal, když je zdrojem sloupek. Přepínač **jen na jednom místě**: parametr sestavy (dělení stránek vzniká na serveru), prvek se jím řídí a vlastní kopii nemá - viz poučení z `B41`. Nový parametr patří do allowlistu server-side parametrů, jinak jeho změna nespustí re-fetch. | S–M | KOVED přepne na sloupek a dostane stejné chování, jaké dnes umí označník |
 | **B35c** | **CIS čísla zastávek** (#13088) - výchozí / aktuální / cílová. Zdroj je ověřený: registr zastávek `^JRZ(czst)` `$`-pole **9** („číslo zastávky dle celostátního registru"). ⚠️ **Čeká na odpověď zákazníka:** na jejich datech je tato hodnota **shodná** s polem „Číslo zastávky", které už tiskneme (41994 = 41994) - je otázka, jestli nechtějí šestimístný CIS kód uzel+sloupek (u Zlína `419940`, leží v `$`-poli 5). | S | pole je v nabídce agendy a zákazník potvrdí, že je to to číslo |
 | **B35d** | **Výlukové texty odděleně** (#13088) - do CIS chodí jako poznámka „Výluka: …", na vývěsce je chtějí zvlášť. Systémově to jde bez změny dat do CIS: poznámky už nesou kategorii a legenda podle ní filtruje, takže výlukové označit vlastní kategorií a klient si položí dva bloky legendy. ⚠️ **Čeká na odpověď zákazníka, kde ten text zadává** - komentář spoje (umíme hned) vs. poznámka linky (pak to stojí na `B36`). | S–M | klient dostane výluky v samostatném bloku a v CIS se nic nezmění |
 | **B36** | **#13093a - poznámky, snadná část:** textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec (linkový JŘ je čte) - druhý blok poznámek si klient složí sám, filtr podle typu poznámky legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků poznámek nad sebou bez ručního dopočítávání výšky |

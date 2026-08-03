@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-03 (3) - `B35b` dokončeno: logiku stanovišť lze přepnout na sloupek (#13088, #13048 bod 4)
+
+Režimy „více hodnot", řádkové duplikování, dělení stránek na stanoviště i titulek takové stránky
+dosud počítaly **jen s označníkem**. U zákazníků, kteří evidují sloupky, to znamenalo, že se ta
+logika opírala o prázdnější z obou polí.
+
+- Nový parametr sestavy **Číslo stanoviště podle** (Označník / Sloupek, skupina Seznam zastávek).
+  Přepne **všechno naráz**: režimy, řádky, dělení stránek, filtr odjezdů na rozdělené stránce
+  i text titulku („…, sloupek 2" místo „…, označník 2").
+- **Přepínač je na jednom místě.** Dělení stránek vzniká na serveru, takže volba musí být parametrem
+  sestavy; prvek si výsledek přečte z dat a vlastní kopii nemá. Dvě místa pro totéž jsme odklízeli
+  v `B41`, tady se to nezopakuje (hlídá to i test - do šablony se ta hodnota neserializuje).
+- **Sloupce Označník a Sloupek zůstávají nezávislé** - režimy platí pro ten zvolený, druhý ukazuje
+  prostou hodnotu z trasy. Jinak by pod hlavičkou „Sloupek" vyšlo číslo spočítané z označníků.
+- **Výchozí hodnota Označník** = dosavadní chování; zlaté odtisky to potvrzují (kromě nového pole
+  ve výstupu se nezměnilo nic). Kdo dělení stránek už používá, nic nepozná.
+- Popisky, které mluvily o označníku, ale platí pro obojí, se přejmenovaly na **stanoviště**
+  („Více stanovišť", „Řádek pro každé stanoviště", „Samostatná stránka pro každé stanoviště").
+  „Stanoviště" tím přestalo být zakázaný tvar a je to zastřešující pojem - viz `ux-conventions §8`.
+
+**Past, na kterou jsem najel:** dvě `.cls` jsem upravil skriptem místo editorem. Skript zápisem přidal
+**BOM** na začátek souboru, upload na server tím tiše padal (hook chybu jen zapíše na stderr) a testy
+pak běžely proti staré kopii třídy. Poznat to šlo jen porovnáním zdrojáku na serveru
+(`AdSloupekProbe.ZdrojMetody`). Pravidlo je tedy tvrdší, než co je v `CLAUDE.md`: **`.cls` needitovat
+skriptem vůbec**, ne jen „pak to nedeployovat dvakrát".
+
+Caché 65/65, .NET 544/544 (+4). Zlaté odtisky přebaselinovány (jen md5).
+
 ## 2026-08-03 (2) - `B35b` první část: sloupek per spoj, výčet a popis (#13088, #13048 bod 4)
 
 Změřeno na 400 linkách KOVED, aby se nestavělo naslepo: **94 linek** má sloupek vyplněný i na úrovni

@@ -45,10 +45,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowStopAttributes", "Atributy", 1)
         s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/autobus)", 0)
         s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Původní JŘ je netiskl."
-        s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více označníků", $$$FieldTypeList, 0, 1)
+        s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více stanovišť", $$$FieldTypeList, 0, 1)
         d f.AddListItem("FromRoute", "Z trasy linky"), f.AddListItem("MostFrequent", "Nejčetnější dle spojů"), f.AddListItem("All", "Výčet všech")
-        d f.AddListItem("RowPerPlatform", "Řádek pro každý označník")
-        s f.helpText = "Sloupec Označník, když spoje jedou z různých označníků zastávky: hodnota z trasy / označník s nejvíce spoji / výčet všech dle četnosti / nebo řádek pro každý označník (časy jen variant daného označníku). Zapněte si k tomu sloupec Označník v tabu Sloupce; řádky vyžadují zapnuté Všechny varianty tras."
+        d f.AddListItem("RowPerPlatform", "Řádek pro každé stanoviště")
+        s f.helpText = "Když spoje jedou z různých stanovišť zastávky: hodnota z trasy / to s nejvíce spoji / výčet všech dle četnosti / nebo řádek pro každé (časy jen variant daného stanoviště). Platí pro údaj zvolený v parametru sestavy Číslo stanoviště podle a zapněte si k tomu jeho sloupec v tabu Sloupce; řádky vyžadují zapnuté Všechny varianty tras."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
         s f = form.AddNumber("PartCount", "Rozdělit na více oddílů", 1, 1, 3)

@@ -2489,7 +2489,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
     private static readonly string[] ServerSideParams =
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
-         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD"];
+         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE"];
 
     private string? _lastServerParamsSnapshot;
 

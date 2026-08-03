@@ -2,6 +2,33 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-03 ✅ - `B35b` logiku stanovišť lze přepnout na sloupek (#13088, #13048 bod 4)
+
+Detail → changelog 2026-08-03 (2) a (3). Režimy „více hodnot", řádkové duplikování, dělení stránek
+i titulek rozdělené stránky dosud počítaly jen s označníkem; nový parametr sestavy **Číslo stanoviště
+podle** (Označník / Sloupek) je přepne naráz. Data pod tím: per-spoj sloupek (W 13), výčet dle
+četnosti, sloupek per varianta trasy a popis sloupku z číselníku.
+
+**Změřeno před stavbou** (400 linek ZL_KOVED): 94 linek plní sloupek i na úrovni spoje, 19 zastávek
+má napříč spoji různé sloupky (u označníku 102 / 46). Bez toho měření by se stavěl přepínač, o kterém
+nevíme, jestli má nad jejich daty co zobrazit.
+
+**Rozhodnutí:**
+- **Default Označník** - dělení stránek si vyžádal jiný zákazník a už podle něj tiskne; přehození
+  defaultu by mu změnilo vývěsku bez varování. Zlaté odtisky to potvrzují (mimo nové pole beze změny).
+- **Přepínač jen na jednom místě**: parametr sestavy (dělení stránek vzniká na serveru), prvek si
+  výsledek čte z dat a vlastní kopii nemá - poučení z `B41`, hlídá to test na neserializaci.
+- **Oba sloupce zůstávají nezávislé** - režimy platí pro zvolený údaj, druhý ukazuje hodnotu z trasy.
+- **„Stanoviště" je od teď zastřešující pojem** (ne synonymum označníku) - popisky, které platí pro
+  obojí, ho používají a ban v drift testu je zrušený. Viz `ux-conventions §8`.
+
+**Pozice obou údajů drží jedna funkce** (`PoziceStanoviste`) a agregace i W-mapa jsou parametrizované
+zdrojem, ne zkopírované; cache má zdroj v klíči.
+
+**Poučení (past):** dvě `.cls` jsem upravil skriptem, ten zápisem přidal BOM, upload na server tím
+tiše padal a testy běžely proti staré kopii třídy. `.cls` neupravovat skriptem vůbec; ověřit stav
+serveru umí `AdSloupekProbe.ZdrojMetody`.
+
 ## 2026-08-03 ✅ - `B35a` sloupec Sloupek v seznamu zastávek (#13088, #13048 bod 3)
 
 Detail → changelog 2026-08-03. Půlka bloku `B35` byla založená na špatném předpokladu, že „označník"

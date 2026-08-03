@@ -46,6 +46,12 @@ Dílčí vylepšení a náměty.
   šablonách se nabídne sám.
 - **Nový sloupec Popis sloupku** - text z číselníku zastávky, například „směr Brno přes UH". Stejný
   údaj je k dispozici i pro hlavičku vývěsky.
+- **Nová volba Číslo stanoviště podle** (Označník / Sloupek) v parametrech sestavy. Určuje, který
+  z těch dvou údajů se použije tam, kde jde o „stanoviště, ze kterého spoj odjíždí": při více hodnotách
+  na jedné zastávce, u samostatné stránky pro každé stanoviště i v titulku takové stránky. Výchozí
+  je Označník, takže dosavadní vývěsky vypadají stejně; kdo eviduje sloupky, přepne na Sloupek.
+- Volby, které dřív mluvily o označníku, ale platí pro obojí, se jmenují **Více stanovišť**,
+  **Řádek pro každé stanoviště** a **Samostatná stránka pro každé stanoviště**.
 
 ### 31. 7. 2026 - Vzhled seznamu zastávek a barva linky ve sloupcích
 
