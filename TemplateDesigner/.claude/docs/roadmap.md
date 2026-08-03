@@ -127,6 +127,19 @@ při analýze 31. 7. se ukázalo, že s `B13` nemá nic společného a je to **M
   **napsat do protokolu importu** („předloha má osu 5-23, nastavte ji v parametrech"), ať se informace
   neztratí a dostane se k tomu, kdo s ní může něco udělat. Původní detekce (`timeAxisRangeFrom/To`
   v `AiGuidedScheduleBuilder`) je v gitu před commitem `B41`.
+- **`B43` Barevný čtvereček u barvy z dat** (S–M; podnět Jan 3. 8. při `#12997`). Když je v barevném
+  poli formuláře token (`{BARVA_LINKY}`), zůstane čtvereček **bílý** a vypadá jako nenastavená barva -
+  formulář o datech neví, hodnotu jen zobrazuje. Dvě varianty: **(S)** naučit `HexToBrush`
+  v `EDControls/dotnet/EDInputForm/EDInputForm.xaml` poznat token a vykreslit rozlišitelný stav
+  (šrafování „z dat") - žádná změna API, jen se přestane plést s bílou · **(M)** aditivní vlastnost
+  pole (např. `PreviewValue`), kterou host vyplní **vyřešenou** barvou z aktuálních dat, a čtvereček
+  ukáže reálnou barvu. ⚠️ Obojí je zásah do **EDControls** (sdílené, používá i EDISONMAIN2), takže
+  aditivně a s ohledem na druhou aplikaci.
+- **`B44` Nabídka datových polí při psaní `{…}`** (M–L; podnět Jan 3. 8.). Dnes musí uživatel název
+  pole znát a napsat ho bez překlepu; nabídka při psaní (jako doplňování příkazů v terminálu) by to
+  zásadně zpříjemnila a odstranila tichý překlep v tokenu, který se projeví až v tisku. Týká se
+  všech míst, kde se zadávají `{POLE}` (barvy, text prvku, obsah buněk), takže se to má navrhnout
+  jednou a sdílet, ne dělat per pole. Zdroj nabídky = schéma agendy, které už klient má.
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
