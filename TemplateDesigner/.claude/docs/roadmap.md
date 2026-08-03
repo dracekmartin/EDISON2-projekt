@@ -5,8 +5,9 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B36** (poznámky z linky) - `B35c`/`B35d` čekají na dvě odpovědi od KOVED,
-> bez nich se nedají zavřít. `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`+`B35b` 3. 8.
+> **▶ Další session:** **B35c** (CIS čísla, S) a pak **B36** (poznámky z linky včetně výluk, M).
+> Nic z Vlny 0 už nečeká na zákazníka - obojí se 3. 8. dohledalo v datech.
+> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`+`B35b` 3. 8.
 > Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
@@ -39,16 +40,14 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B35c** | **CIS čísla zastávek** (#13088) - výchozí / aktuální / cílová. Zdroj je ověřený: registr zastávek `^JRZ(czst)` `$`-pole **9** („číslo zastávky dle celostátního registru"). ⚠️ **Čeká na odpověď zákazníka:** na jejich datech je tato hodnota **shodná** s polem „Číslo zastávky", které už tiskneme (41994 = 41994) - je otázka, jestli nechtějí šestimístný CIS kód uzel+sloupek (u Zlína `419940`, leží v `$`-poli 5). | S | pole je v nabídce agendy a zákazník potvrdí, že je to to číslo |
-| **B35d** | **Výlukové texty odděleně** (#13088) - do CIS chodí jako poznámka „Výluka: …", na vývěsce je chtějí zvlášť. Systémově to jde bez změny dat do CIS: poznámky už nesou kategorii a legenda podle ní filtruje, takže výlukové označit vlastní kategorií a klient si položí dva bloky legendy. ⚠️ **Čeká na odpověď zákazníka, kde ten text zadává** - komentář spoje (umíme hned) vs. poznámka linky (pak to stojí na `B36`). | S–M | klient dostane výluky v samostatném bloku a v CIS se nic nezmění |
-| **B36** | **#13093a - poznámky, snadná část:** textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec (linkový JŘ je čte) - druhý blok poznámek si klient složí sám, filtr podle typu poznámky legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků poznámek nad sebou bez ručního dopočítávání výšky |
+| **B35c** | **CIS čísla zastávek** (#13088) - výchozí / aktuální / cílová. **Nic neblokuje** (3. 8. dohledáno v datech): CIS číslo = registr zastávek `^JRZ(czst)` `$`-pole **9** (legacy `dta14`, „číslo zastávky dle celostátního registru"). Šestimístný údaj v `$`-poli 5 (`419940`) je **číslo pro strojky** = CIS × koeficient (`JRapiZst` ř.62/327), ne CIS kód - dotaz na zákazníka tedy netřeba. Na jejich datech je CIS číslo shodné s czst, takže **skutečně chybí hlavně výchozí a cílová** varianta (dnes tiskneme jen aktuální zastávku a název konečné, ne její číslo). | S | pole jsou v nabídce agendy a plní se |
+| **B36** | **#13093a - poznámky z linky + výluky odděleně** (pohltilo `B35d` z #13088): textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec, i když je linkový JŘ čte (`^JRL(sku,lin,"C",key,idx)`; key 1 = tarifní, 3 = všeobecné, 4 = radiobus) · **výlukové texty vlastní kategorií** - 3. 8. změřeno na datech KOVED: 166 poznámek začíná „Výluka:" a **všechny jsou poznámky linky (key 3), ani jedna komentář spoje**, takže v datech pro ně kategorie neexistuje a rozlišují se prefixem (což je i konvence zákazníka - tak to posílají do CIS) · druhý blok poznámek si klient složí sám, filtr podle kategorie legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků nad sebou (jeden bez výluk, druhý jen výluky) bez ručního dopočítávání výšky |
 | **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
 
-**Otázky na KOVED, až sloupek potvrdí** (nejsou to bloky, jen se nesmí zapomenout): (1) je u nich
-označník ještě k něčemu? Kdyby ne, přepínač „Číslo stanoviště podle" může zmizet a zůstane jen sloupek
-- ale je to breaking pro zákazníka, který dělení stránek na označník používá, takže ne bez jejich
-potvrzení. (2) chtěli by **popis sloupku** („směr Brno přes UH")? Data ho nesou, sloupec je jen
-schovaný z nabídky.
+**Otázky na KOVED - nic neblokují, jen se nesmí zapomenout** (3. 8.): (1) je u nich označník ještě
+k něčemu? Kdyby ne, mohl by přepínač „Číslo stanoviště podle" zmizet a zůstat jen sloupek - ale je to
+breaking pro zákazníka, který dělení stránek na označník používá (#8828), takže ne bez potvrzení obou.
+(2) chtěli by **popis sloupku** („směr Brno přes UH")? Data ho nesou, sloupec je jen schovaný z nabídky.
 
 **Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):** **#13099** souhrnné JŘ (sdružení
 linek se stejným koncovým trojčíslím pod vzorovou linku - dnes ručně skriptem v Excelu; pro KOVED

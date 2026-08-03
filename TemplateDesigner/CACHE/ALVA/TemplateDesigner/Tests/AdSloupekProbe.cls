@@ -45,6 +45,66 @@ ClassMethod GrepRoutines(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Kde v datech leží text se zadaným vzorkem (#13088 výluky): hledá v poznámkách linky
+/// (`^JRL(sku,lin,"C",key,idx)`) i v komentářích spoje (`^JRL(sku,lin,"MhD","SeT_SpeC",znak)`).
+/// IN: DB, PATTERN, MAXLIN (default 500). OUT: počty per zdroj + ukázky.
+ClassMethod ScanText(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set pattern = $zconvert($get(^||ML("IN","PATTERN")), "L")
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 500
+		kill ^||ML("OUT")
+		if (db = "") || (pattern = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a PATTERN jsou povinné"))
+
+		set linek = 0, vPozn = 0, vKomentar = 0, ukazek = 0
+		set sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku))
+			quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin))
+				quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+
+				// poznámky linky
+				set key = ""
+				for {
+					set key = $order(^[db]JRL(sku,lin,"C",key))
+					quit:key=""
+					set idx = ""
+					for {
+						set idx = $order(^[db]JRL(sku,lin,"C",key,idx))
+						quit:idx=""
+						set txt = $get(^[db]JRL(sku,lin,"C",key,idx))
+						continue:'$find($zconvert(txt,"L"), pattern)
+						set vPozn = vPozn + 1
+						if ukazek < 8 { set ukazek = ukazek + 1, ^||ML("OUT","UKAZKA",ukazek) = "POZNAMKA_LINKY sku="_sku_" lin="_lin_" key="_key_": "_$extract(txt,1,90) }
+					}
+				}
+
+				// komentáře spoje (SeT_SpeC)
+				set znak = ""
+				for {
+					set znak = $order(^[db]JRL(sku,lin,"MhD","SeT_SpeC",znak))
+					quit:znak=""
+					set txt = $get(^[db]JRL(sku,lin,"MhD","SeT_SpeC",znak))
+					continue:'$find($zconvert(txt,"L"), pattern)
+					set vKomentar = vKomentar + 1
+					if ukazek < 8 { set ukazek = ukazek + 1, ^||ML("OUT","UKAZKA",ukazek) = "KOMENTAR_SPOJE sku="_sku_" lin="_lin_" znak="_znak_": "_$extract(txt,1,90) }
+				}
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = db_" linek="_linek_" nalezu: poznamky linky="_vPozn_" komentare spoje="_vKomentar
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Řádky implementace metody na SERVERU obsahující vzorek - kontrola, že se `.cls` opravdu nasadila
 /// (editace mimo hook se na server nedostane a testy pak běží proti staré kopii).
 /// IN: CLASS, METHOD, PATTERN. OUT: nalezené řádky.
