@@ -2,6 +2,29 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-03 ✅ - `B36` poznámky z linky + výluky, `B37` bod 2 místenky (#13093, #13088)
+
+Detail → changelog 2026-08-03 (11) a (12).
+
+**Poznámky zadané u linky** (`^JRL(sku,lin,"C",key,idx)`, klíč 1 tarifní / 3 všeobecné /
+4 radiobus, klíč 2 legacy přeskakuje) se do zastávkové vývěsky dostávají poprvé. Vydáno obojí,
+co klient chtěl: **skalární pole „Výlukové texty"** (ta „databázová položka" z #13088) i **řádky
+poznámek s kategorií**, takže si výluky složí zvlášť (prvek poznámek má volbu Včetně / Bez výluk /
+Jen výluky). Vše opt-in parametrem - zapnuté by přidalo dlouhý tarifní blok všem existujícím šablonám.
+
+**Emitujeme záznam = jedna poznámka**, legacy je slepuje do jednoho textu; pak nejde oddělit výluku
+od místenkového textu ve **stejné** kategorii 3 (změřeno: 166 výluk KOVED, všechny v kategorii 3
+spolu s „R - k jízdence je možné zakoupit místenku"). Proto filtr podle prefixu, ne podle kategorie.
+
+**Bod 2 - místenky hotové, kola čekají na glyf.** „R" u odjezdu + řádek legendy, opt-in. Kolo má
+hotové plumbing, ale `ZnakKola()` vrací prázdno: piktogram ve fontu je, jeho **znak neznáme** a
+legacy ho na vývěsce netiskl. Test `TestZnakKolaZatimNeni` to drží - odhadnout znak = vykreslit
+cizí piktogram, přesně chyba opravovaná téhož dne u přestupů.
+
+**Bod 4 se nedělal - byl už hotový** (ověřeno 3. 8.): prvek poznámek umí `CalculateHeightFromData`
+i `ComputeFontScale` a `PageLayoutEngine` u dynamické výšky posouvá prvky pod ním (`cumulativeDeltaY`).
+Zbývá to jen klientovi ukázat s poznámkou, že první blok má mít výšku prázdnou.
+
 ## 2026-08-03 ✅ - `B43` čtvereček ukáže barvu z dat (#12997)
 
 Detail → changelog 2026-08-03 (10). Pole s `{BARVA_LINKY}` mělo bílý čtvereček, takže vypadalo jako

@@ -5,10 +5,10 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B36** (poznámky z linky včetně výlukových textů, M) - odblokované,
-> cesta k výlukám je rozhodnutá (viz blok). `B28`-`B34`, `B38` a `B41` hotové 31. 7.,
-> `B35a`-`B35c` 3. 8.; **#13048 i #13088 zavřené 3. 8.**, výluky přesunuté do #13093.
-> Linkový JŘ (**B10**, **B13**) jde až po ní.
+> **▶ Další session:** **B45** (znak kola ve fontu, S - chce dohledat glyf v Mapě znaků) nebo
+> **B40** z Vlny 1. **B37 je zablokovaný** odpovědí v #13093 (překryv s #13102 u Petra).
+> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`-`B35c`, `B36`, `B43` a bod 2 z `B37` 3. 8.;
+> **#13048 i #13088 zavřené 3. 8.** Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
@@ -40,8 +40,8 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B36** | **#13093a poznámky z linky + výlukové texty** (pohltilo poslední bod #13088, který je proto 3. 8. zavřený). Textové poznámky zadané u linky se do zastávkové vývěsky nedostanou vůbec, i když je linkový JŘ čte: `^JRL(sku,lin,"C",key,idx)`, key 1 = tarifní, 3 = všeobecné, 4 = radiobus (key 2 legacy přeskakuje), čtení viz `LinkovyJrAd.PridatPoznamkyLinky`. **Vydat obojí:** (1) **skalární pole „Výlukové texty"** - klient žádal „novou databázovou položku, kterou by mohli používat v návrháři" a píše, že to „zobrazuje ve zvláštním poli", takže si to má jít položit jako běžný text kamkoli; (2) **řádky poznámek s kategorií** (výluka zvlášť), aby to šlo i blokem legendy s filtrem. **Emitovat záznam = jedna poznámka**, legacy je slepuje do jednoho textu a pak nejde výluky oddělit. **Výluky se poznají podle prefixu „Výluka:"** - změřeno 3. 8. na 800 linkách KOVED: 166 takových poznámek, všechny v kategorii 3, ani jedna v komentářích spoje; kategorie 3 je míchaná (je v ní i „R - k jízdence je možné zakoupit místenku"), takže zobrazit celou kategorii nestačí. **Do JRMAIN sahat netřeba** (Petr, #13098: „zatím můžou použít normální poznámku a tu zobrazit" - to už dělají); samostatné pole pro výluky v JŘ přijde s pozdější etapou JŘ a není blokující. · **Bod 4 tiketu (automatická výška + zmenšení textu + druhý blok navázaný na první) je HOTOVÝ** - ověřeno 3. 8.: prvek poznámek má `CalculateHeightFromData` i `ComputeFontScale` a `PageLayoutEngine` u dynamické výšky **posune elementy pod ním** (`cumulativeDeltaY`). Zbývá to jen vyzkoušet a napísat klientovi, že první blok má mít výšku prázdnou. ⚠️ Dvě otázky na klienta (v #13093, **neblokují data**): je „Výluka:" pevná konvence · chtějí i ostatní poznámky linky, nebo jen výlukové. | M | klient složí dvojici bloků nad sebou (jeden bez výluk, druhý jen výluky) bez ručního dopočítávání výšky |
-| **B37** | **#13093 body 2+3 - atributy u odjezdů a pokračující spoje** (3. 8. odblokováno, **data existují, není to práce JŘ**). **Bod 2:** přeprava kol = hlava věty spoje pole **19** (legacy `dta20` PrepJiKola, u KOVED **166 spojů**), místenkování „R" = pole **6** (`dta6`, **310 spojů**; typ místenkování v poli 11 nevyplňují vůbec). Práce = anotace u odjezdu + řádek legendy; ⚠️ po zkušenosti z 3. 8. **ověřit, na kterém znaku symbolového fontu ty glyfy sedí** (katalog: kola = PJI, R = místenkování možno) - písmeno z číselníku tam nesedí. **Bod 3:** pokračující spoje = **návaznosti** v subnode `32` (`m@33#linka:spoj:zastávka:…:dopravce`, u KOVED **390 spojů**) - nesou číslo linky i cíl, tedy vše, co klient chce („pokračuje do zast. X (l. 304)", poslední trojčíslí linky). Práce = seskupit podle (cíl, linka) místo podle čísla spoje + přepínač zobrazení. ⚠️ Neplest s dnešním textem „jede až do zast. X" - ten je o prodloužení po **vlastní** lince (#7947), kdežto tohle je pokračování **na jinou** linku. Vhodné jednou potvrdit, že `omzId 32` je to, co uživatel v JŘ vidí jako pokračování spoje. | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
+| **B37** | **#13093 bod 3 - pokračující spoje** (bod 2 hotový 3. 8.). Návaznosti leží v subnode `32` (`m@33#linka:spoj:zastávka:…:dopravce`, u KOVED **390 spojů**) a nesou číslo linky i cíl, tedy vše, co klient chce („pokračuje do zast. X (l. 304)", poslední trojčíslí linky). Práce = seskupit podle (cíl, linka) místo podle čísla spoje + přepínač zobrazení. ⚠️ Neplest s dnešním textem „jede až do zast. X" - ten je o prodloužení po **vlastní** lince (#7947), kdežto tohle je pokračování **na jinou** linku. 🛑 **Než se to začne dělat, čeká odpověď v #13093:** stejný příklad (linka 304) řeší **#13102** u Petra - virtuální prodloužení spoje jen pro vývěsku. Kdyby se spoj v JŘ prodloužil, poznámka „pokračuje do…" je zbytečná a udělali bychom dvě řešení téhož. Vhodné jednou potvrdit, že `omzId 32` je to, co uživatel v JŘ vidí jako pokračování spoje. | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
+| **B45** | **Znak kola v symbolovém fontu** (zbytek #13093 bodu 2, 3. 8.). Anotace i legenda pro přepravu kol jsou hotové, ale `ZnakKola()` vrací prázdno, takže se kolo netiskne - **neznáme znak, na kterém glyf kola v `Fonts/TimeTable2.ttf` sedí** a legacy ho na vývěsce netiskl, takže se nemáme od čeho odrazit. Dohledat v Mapě znaků (Windows charmap nad tím fontem), doplnit návratovou hodnotu a upravit `TestZnakKolaZatimNeni`, který to schválně drží zamčené. ⚠️ Neodhadovat podle písmena číselníku - pozice glyfů mu neodpovídají (ověřeno 3. 8. u přestupů: autobus `w`, vlak `x`). | S | v náhledu u odjezdu vyjede kolo, ne cizí piktogram |
 
 **Otázka na KOVED - odeslaná 3. 8. v odpovědi na #13048, nic neblokuje:** je u nich označník ještě
 k něčemu? Kdyby ne, mohl by přepínač „Číslo stanoviště podle" zmizet a zůstat jen sloupek - ale je to
@@ -175,6 +175,10 @@ při scope té fáze, ne teď.
   my přidali pole `BARVA_LINKY_2`. ⚠️ Čeká jediné: **nikde není linka se dvěma barvami**, takže to
   chce nastavit v JŘ (Hromadné úpravy vlastností linky) a projít očima; pak už je co odpovědět
   zákazníkovi (Petr o odpověď výslovně žádal, viz #12997)
+- **#13093 bod 3 (pokračující spoje) = `B37`, čeká odpověď** - dotaz do #13093, jestli to nemá řešit
+  **#13102** u Petra (virtuální prodloužení spoje v JŘ). Oba body ukazují na stejný příklad (linka 304);
+  prodloužení v JŘ by poznámku „pokračuje do…" udělalo zbytečnou. Body 1, 2 a 4 tiketu jsou hotové,
+  takže tiket drží už jen tohle rozhodnutí.
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
   jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
   (který sloupec - legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
@@ -183,7 +187,7 @@ při scope té fáze, ne teď.
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
-**Kolo KOVED z 30. 7. drží Vlna 0** (`B35`-`B37`; `B28`-`B34` a `B38` hotové) **+ Vlna 3**
+**Kolo KOVED z 30. 7. drží Vlna 0** (`B37` čeká na odpověď, `B45`; ostatní hotové) **+ Vlna 3**
 (`B39`) - sem se nekopíruje.
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
