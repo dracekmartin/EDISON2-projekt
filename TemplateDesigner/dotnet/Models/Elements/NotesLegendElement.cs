@@ -207,8 +207,11 @@ public class NotesLegendElement : StopScheduleElementBase
         try
         {
             var znakPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
-            ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
-            lineX += symbolFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
+            // Znak legendy musí být týž glyf jako značka u zastávky - u piktogramů se pozice ve
+            // symbolovém fontu neshoduje s písmenem číselníku (autobus „A" → „w", vlak „L" → „x").
+            string znak = SymbolJeText(pozn.Znak) || pozn.Znak.Length != 1 ? pozn.Znak : SymbolGlyph(pozn.Znak);
+            ctx.Canvas.DrawText(znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
+            lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f;
 
             // Text - vždy default barva (klient výslovně chce barvit jen znak).
             // Při pevné marker buňce (textStartX) text zarovnán; jinak hned za znakem (bez separátoru).

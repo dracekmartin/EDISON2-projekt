@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-03 (8) - fix: přestupy kreslily cizí piktogram (#13048 bod 1)
+
+Značka přestupu vypadala náhodně (trojúhelník a kolo místo autobusu a vlaku) - všiml si Jan při
+vizuální kontrole. Příčina: do symbolového fontu jsme posílali **písmeno z číselníku** („A", „L")
+a doufali, že tam ten piktogram je. Pozice glyfů v Timetable fontu se ale s písmeny číselníku
+**neshodují**.
+
+Naměřeno v Mapě znaků: **autobus = `w`** (0x77), **lokomotiva = `x`** (0x78), vagon = `z` (0x7A).
+Překlad datového znaku na glyf drží `StopScheduleElementBase.SymbolGlyph` a používají ho **obě**
+kreslicí cesty - značka u zastávky i znak v legendě (jinak by se rozešly a legenda by vysvětlovala
+jiný symbol, než je vidět u zastávky).
+
+**Potvrzuje to invariant „na znamení jde textem":** na pozici `x` je lokomotiva, takže piktogramová
+cesta by u každé zastávky na znamení nakreslila vláček. Textová cesta (`x`/`y`/`z`) zůstala nedotčená
+a je teď zamčená testem - to byla výslovná obava Jana a stojí na tom vzhled vývěsky.
+
+⚠️ **Neověřené zůstávají** pozice pro clo, paragrafy, metro, letadlo a loď. Dnes je nemá v datech
+žádná firma, ale první, kdo je bude mít, dostane cizí piktogram, dokud je někdo stejně nezkontroluje -
+zapsáno v `elementy-architektura.md`, kde ten bod visel jako otevřený od návrhu symbolového fontu.
+
+Caché beze změny (je to čistě render), .NET 550/550 (+3).
+
 ## 2026-08-03 (7) - přestupy mají řádek v legendě (#13048 bod 1)
 
 Značku přestupu jsme kreslili, ale nikde nevysvětlili - piktogram autobusu nebo vlaku sám cestujícímu

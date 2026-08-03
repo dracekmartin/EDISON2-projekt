@@ -20,7 +20,23 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
     /// jednoznakové symboly (bezbariér `H`/`F`…) jdou přes symbolový font.
     /// Viz <c>.claude/docs/elementy-architektura.md</c> (render-mód „text" vs „font-glyf").
     /// </summary>
-    protected static bool SymbolJeText(string znak) => znak is "x" or "y" or "z";
+    internal static bool SymbolJeText(string znak) => znak is "x" or "y" or "z";
+
+    /// <summary>
+    /// Znak, který se pro daný datový atribut skutečně kreslí ze symbolového fontu. Pozice glyfů
+    /// v Timetable fontu se **neshodují s písmeny číselníku** - autobus (`A`) sedí na `w`, vlak (`L`)
+    /// na `x` (lokomotiva; `z` je vagon). Ověřeno v Mapě znaků 2026-08-03 (#13048 bod 1) a přesně
+    /// proto se „na znamení" kreslí textem: na `x` je vláček, ne křížek.
+    /// Neznámé znaky se vrací nezměněné - u `H`/`F` (bezbariér) a kroužkových dnů to sedí a funguje.
+    /// ⚠️ Pozice pro clo, paragrafy, metro, letadlo a loď **ověřené nejsou** - až je někdo bude mít
+    /// v datech, musí projít stejnou kontrolou, jinak vyjede cizí piktogram (viz `elementy-architektura.md`).
+    /// </summary>
+    internal static string SymbolGlyph(string znak) => znak switch
+    {
+        "A" => "w",   // autobus (0x77)
+        "L" => "x",   // vlak - lokomotiva (0x78)
+        _   => znak,
+    };
 
     // ─── DataSource klíče (editovatelné v šabloně) ──────────────────────────
 

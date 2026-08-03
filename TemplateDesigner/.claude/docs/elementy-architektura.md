@@ -503,6 +503,15 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
   je jiný symbol) - proto musí jít přes render-mód **text**, ne font-glyf. Totéž `y`/`z`.
 - **id → znak fontu:** legacy `Case Else` kreslí `ToChar(ID)`; je třeba ověřit, jakou hodnotu nese
   datový atribut (ASCII mnemoniky `H`=72 / `x`=120 vs. GSId 1-66) a že sedí na glyf ve fontu.
+  **Částečně ověřeno 2026-08-03** (Mapa znaků nad `Fonts/TimeTable2.ttf`, #13048 bod 1): pozice glyfů
+  se **neshodují s písmeny číselníku**, takže datový znak se musí přeložit - **autobus `A` → `w`
+  (0x77)**, **vlak `L` → `x` (0x78, lokomotiva)**; `z` (0x7A) je vagon. Překlad drží
+  `StopScheduleElementBase.SymbolGlyph` (zamčeno testem `SymbolGlyphTests`) a používají ho **obě**
+  kreslicí cesty - značka u zastávky i znak v legendě, jinak by se rozešly.
+  Zároveň to vysvětluje, proč „na znamení" **musí** jít textem: na `x` je lokomotiva.
+  ⚠️ **Neověřené zůstávají** pozice pro clo `C`, paragrafy `G`/`a`/`b`/`c`, metro `e`/`f`/`g`,
+  letadlo `O` a loď `D` - dnes je nemá v datech žádná firma, ale první, kdo je bude mít, musí projít
+  stejnou kontrolou, jinak dostane cizí piktogram. `H`/`F` (bezbariér) a kroužkové dny sedí na písmenu.
 - **Font `x` = vláček** ověřeno v TimeTable2 (SkiaSharp render u uživatele) → potvrzuje, že na-znamení
   NEsmí jít fontem.
 
