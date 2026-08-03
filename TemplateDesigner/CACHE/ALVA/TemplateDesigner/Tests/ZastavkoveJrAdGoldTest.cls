@@ -35,8 +35,9 @@ Method TestGold0365001()
 	// Re-baseline 2026-08-03 (#13088 potřetí): + ZDROJ_STANOVISTE. Výchozí zdroj stanoviště zůstal
 	// označník, takže se kromě nového pole nic nezměnilo - a to je zároveň důkaz, že nový přepínač
 	// je zpětně neutrální.
-	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS_ZASTAVKA(_VYCHOZI/_CILOVA) → dtto, jen md5.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=96 md5=My1NmNxRwTuf62x4l5P2Jg==")
+	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS čísla zastávek, pak přejmenovaná na příponu
+	// `_CIS` dle konvence agendy (CISLO_ZASTAVKA_CIS …) → dtto, jen md5.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=96 md5=bQT/Nfm0LwldvVj3Dm+Dtw==")
 }
 
 Method TestGold0365005()
@@ -46,8 +47,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-07-31 (#13008): + pole DOPRAVCI_SOUHRNNY_JR ve `values` → jen md5.
 	// Re-baseline 2026-08-03 (#13088): + pole SLOUPEK, pak + SLOUPEK_SPOJU/POPIS/VARIANT
 	// a nakonec + ZDROJ_STANOVISTE → dtto, jen md5.
-	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS čísla zastávek → dtto, jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=168 md5=6AdR1hnQ/DNicGfA23h/LA==")
+	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS čísla zastávek (pak přejmenovaná) → dtto, jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=168 md5=T4E9jdd4XscrE4aB26TxtA==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

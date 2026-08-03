@@ -8,6 +8,10 @@ zastávek (dostupné v dynamické tabulce).
 
 - Zdroj = registr zastávek `^JRZ(czst)` `$`-pole **9** (legacy `JRapiZst` ř.150 `dta14`,
   „číslo zastávky dle celostátního registru").
+- **Pojmenování má příponu `_CIS`** (`CISLO_ZASTAVKA_CIS`, `CISLO_ZASTAVKA_VYCHOZI_CIS`,
+  `CISLO_ZASTAVKA_CILOVA_CIS`) - stejně jako `POPIS_ZASTAVKA_CIS` / `POPIS_SMER_CIS`, tedy „totéž,
+  ale podle CIS číselníku". Původně jsem to pojmenoval předponou (`CIS_ZASTAVKA`) a vedle
+  `CISLO_ZASTAVKA` to vypadalo jako nesouvisející pole, ne jako jeho druhý zdroj (upozornil Jan).
 - ⚠️ **Šestimístný údaj v `$`-poli 5** (`419940`), který na první pohled vypadá jako CIS kód, je
   „číslo zastávky **pro strojky**" = CIS × koeficient (`JRapiZst` ř.327). Nepoužívat - test to hlídá.
 - **Výchozí a cílová se berou ve směru stránky** (u směru Zpět tedy obráceně proti směru Tam) -
