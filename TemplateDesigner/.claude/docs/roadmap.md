@@ -43,10 +43,11 @@ ne odbavit nejhezčí featuru.
 | **B36** | **#13093a - poznámky z linky** (+ výlukové texty, ale ⚠️ **výluky Jan 3. 8. odložil a řeší je s kolegy** - nedělat, dokud neřekne): textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec, i když je linkový JŘ čte (`^JRL(sku,lin,"C",key,idx)`; key 1 = tarifní, 3 = všeobecné, 4 = radiobus) · **výlukové texty vlastní kategorií** - 3. 8. změřeno na datech KOVED: 166 poznámek začíná „Výluka:" a **všechny jsou poznámky linky (key 3), ani jedna komentář spoje**, takže v datech pro ně kategorie neexistuje a rozlišují se prefixem (což je i konvence zákazníka - tak to posílají do CIS) · druhý blok poznámek si klient složí sám, filtr podle kategorie legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků nad sebou (jeden bez výluk, druhý jen výluky) bez ručního dopočítávání výšky |
 | **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
 
-**Otázky na KOVED - nic neblokují, jen se nesmí zapomenout** (3. 8.): (1) je u nich označník ještě
+**Otázka na KOVED - odeslaná 3. 8. v odpovědi na #13048, nic neblokuje:** je u nich označník ještě
 k něčemu? Kdyby ne, mohl by přepínač „Číslo stanoviště podle" zmizet a zůstat jen sloupek - ale je to
 breaking pro zákazníka, který dělení stránek na označník používá (#8828), takže ne bez potvrzení obou.
-(2) chtěli by **popis sloupku** („směr Brno přes UH")? Data ho nesou, sloupec je jen schovaný z nabídky.
+**Nezeptáno (a nemusí se):** chtěli by **popis sloupku** („směr Brno přes UH")? Data ho nesou, sloupec
+je jen schovaný z nabídky - viz rozhodnutí v changelogu 2026-08-03 (2).
 
 **Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):** **#13099** souhrnné JŘ (sdružení
 linek se stejným koncovým trojčíslím pod vzorovou linku - dnes ručně skriptem v Excelu; pro KOVED
@@ -154,7 +155,10 @@ při scope té fáze, ne teď.
 ### Čeká na někoho jiného - postrčit, není to práce
 
 - **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení - kolega
-- **#13048 bod 4 fáze 2** (duplikace řádku u víc nástupišť) - čeká potvrzení KOVED
+- **#13048 zavřený 3. 8.** (Jan) - vizuálně odsouhlaseny přestupy, sloupek i přepnutí logiky
+  stanovišť. V odpovědi jsme se zeptali, **jestli označník ještě k něčemu využívají, nebo se to má
+  řídit jen sloupkem** - podle odpovědi se dá překlopit výchozí hodnota „Číslo stanoviště podle"
+  (dnes Označník kvůli zákazníkovi, který dělení stránek na označník používá, viz #8828)
 - **#13091a `B30` + #12997 `B31` implementováno 31. 7.** - čeká, až to KOVED uvidí ve své vývěsce
   (vzhled seznamu zastávek, barva linky z dat u sloupců)
 - **#13091 bod 4 (zóny) `B34` doportováno 31. 7.** - čekají tři odpovědi od KOVED, bez nich to nemá
