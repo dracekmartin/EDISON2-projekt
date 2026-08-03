@@ -169,7 +169,14 @@ Kanonické termíny (doména JŘ):
 
 | Pojem | Kanonický label | NE |
 |---|---|---|
-| Fyzické stanoviště zastávky (sloupek, ze kterého spoj odjíždí) | **Označník** (pole `NASTUPISTE` na wire zůstává) | ~~Nástupiště~~, ~~stanoviště~~, ~~sloupek~~ |
+| Pole „nástupiště" z trasy linky (volný text) | **Označník** (pole `NASTUPISTE` na wire zůstává) | ~~Nástupiště~~, ~~stanoviště~~ |
+| Číslo z číselníku sloupků zastávky (AD) | **Sloupek** (pole `SLOUPEK`) | ~~označník~~, ~~stanoviště~~ |
+
+⚠️ **Označník a sloupek NEJSOU synonyma** (zjištěno 2026-08-03 u #13088): v AD jsou to dvě různá pole
+vedle sebe (volný text vs. číselník s GPS a popisem směru) a zákazník je rozlišuje - do 3. 8. tu bylo
+napsané, že „sloupek" je zakázaný tvar téhož, což bylo nepravda. **V MHD se témuž fyzickému stanovišti
+doménově říká označník**, takže se názvosloví mezi AD a MHD záměrně liší a nesjednocuje (rozhodnutí
+Jan 2026-08-03); MHD pole `SLOUPEK` nemá. Datová mapa obou → `docs/ad-data-mapa.md`.
 
 Výjimka: text „tisk stanoviště" v legendě CIS atributů (`ZastavkoveJrAd.TextAtributu`, znak „S") je
 doslovná parita textů starého modulu - nechává se.

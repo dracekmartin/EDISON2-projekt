@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-03 - `B35a` sloupec Sloupek v seznamu zastávek (#13088, #13048 bod 3)
+
+KOVED psal, že „označník je, ale sloupek není, ten je pro nás důležitější". Ukázalo se, že to nejsou
+synonyma: **označník** (naše dosavadní pole) je volný text z trasy linky, kdežto **sloupek** je odkaz
+do číselníku sloupků zastávky (`^JRZ(czst,"Sloupek",id)` = číslo ~ GPS ~ popis směru, např. „směr Brno
+přes UH") a je to údaj, který jde do CIS. Tiskli jsme tedy to prázdnější z obou polí.
+
+- Nové pole agendy **Sloupek** (`SLOUPEK`) - hodnota z trasy linky pro daný směr, tedy J-věta
+  `#`-segment **12** (`sloupekTam:sloupekZpet`, legacy `dta14`) proti segmentu 3 u označníku.
+- Nový sloupec **Sloupek** v seznamu zastávek, defaultně vypnutý; existující šablony ho dostanou
+  nabídnutý v dialogu sloupců (doplňování chybějících známých sloupců), takže bez migrace.
+- **Data to potvrzují:** na lince ZL_KOVED 0822995 je sloupek vyplněný u všech zastávek, označník
+  jen u části; na CB_CSADAD 0365001 je sloupek vyplněný a označník prázdný úplně.
+- Vydává jen AD agenda. V MHD se témuž fyzickému stanovišti doménově říká označník, takže se tam
+  pole nezavádí a rozdíl v názvosloví mezi AD a MHD zůstává (rozhodnutí Jan 2026-08-03).
+
+Zlaté odtisky: shodné počty, jiné md5 - podpis přidaného pole (přebaselinováno v tomtéž commitu).
+Per-spoj přebití sloupku (W pozice 13), popis sloupku a přepnutí režimů „více hodnot" a dělení
+stránek na sloupek zůstávají na `B35b`.
+
+Caché 63/63 (+3), .NET 539/539 (+3).
+
 ## 2026-07-31 (8) - `B33` popis dopravce po řádcích, i pro souhrnný JŘ (#13008)
 
 Dosud se dopravci tiskli jako **jeden odstavec** uvozený „Zajišťuje: " a oddělený čárkami. KOVED

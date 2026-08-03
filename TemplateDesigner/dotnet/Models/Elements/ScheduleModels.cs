@@ -45,6 +45,7 @@ public class ZastavkaData
     public bool NaZnameni { get; set; }
     public string Nastupiste { get; set; } = "";   // nástupiště/označník zastávky (AD: J-věta #3; MHD: Oznacnik)
     public string NastupisteSpoju { get; set; } = ""; // nástupiště dle spojů (CSV dle četnosti, první = nejčetnější); "" = bez per-spoj dat
+    public string Sloupek { get; set; } = "";      // sloupek z číselníku zastávky (AD: J-věta #12); "" = nevyplněný nebo MHD
     public List<AtributData> Atributy { get; set; } = [];
     public List<PoznamkaZastavkyData> PoznamkyZastavky { get; set; } = [];
     /// <summary>Časy jízdy per varianta trasy (dynamické „TrasaMin"): číslo, „&lt;" (projíždí) nebo "" (mimo trasu).

@@ -111,6 +111,14 @@ různě: `CB_CSADAD` má vše v trase a pole registru prázdné u všech 5728 za
 naopak v registru. Čtení jen jednoho zdroje = chybějící vysvětlivka na vývěsce (bylo tak do 30. 7.,
 viz `AtributyZastavky`). V registru se vyskytují jen znaky z číselníku, není to kategorie zastávky.
 
+**Sloupek** (KOVED #13088, ověřeno 3. 8.) je **jiný údaj než označník** a v datech leží vedle něj:
+J-věta segment **#12** (`sloupekTam:sloupekZpet`, legacy `dta14` - `JRapiLin` ř.700), per spoj
+**W pozice 13** (legacy `trs(14)` - `JRapiSp` ř.311/349), spoj přebíjí trasu (`JRapiExp6` ř.1961-1962,
+`JRapiExp10` ř.832-836). Hodnota je **odkaz do číselníku sloupků zastávky**
+`^JRZ(czst,"Sloupek",id)` = `číslo ~ GPS lat ~ GPS lon ~ popis směru` („směr Brno přes UH"); číslo
+1-255, legacy před exportem do CIS kontroluje číselnost (`+sloupek=sloupek`). Na rozdíl od označníku
+je vyplněný **systematicky** (ZL_KOVED i CB_CSADAD ho mají u všech zastávek testovaných linek).
+
 **Označník (nástupiště)** = W pole **7** per spoj, fallback J-věta segment **#3** (`nastTam:nastZpet`)
 per zastávka a směr. Ověřeno 30. 7. na `CB_CSADAD` 0320680: J-věta nese `11`, W-trasa spoje `22` -
 tedy skutečně označníky té zastávky. ⚠️ **Obsah pole není zaručený**: na `CB_GWBUS` 501/0000001 je
@@ -291,6 +299,26 @@ původní odvozené mapě:
 - `("J")` = počet zastávek (`26`).
 - `("J",poradi)` = `czst:atributy##…:…` - **první `:`-pole = czst** (číslo zastávky → `^JRZ`). `poradi` = 1..N.
 - `("J",poradi,tcd)` / `…,"bd",idx` = km varianty + detailní body (fiktivní zóna `5~…~zona^km`).
+- **Kompletní mapa `#`-segmentů** (1:1 `JRapiLin` ř.651-703, kde jsou jako `dta1..dta17`; ověřeno 3. 8.
+  a doplněno, aby se nemusela znovu dohledávat v legacy). Segment = `dta` číslo minus 2 od `dta3` výš:
+
+  | seg | dta | obsah |
+  |---|---|---|
+  | 1 | 1+2 | `czst:atributy` (atributy = znaky číselníku 16) |
+  | 2 | 3 | (nepoužito) |
+  | 3 | 4+5 | **označník** `nastupisteTam:nastupisteZpet` (volný text) |
+  | 4 | 6 | MHD numero + systém (`I`/`P`/`Z`/`B` = ids/idpp/idpz/bip) |
+  | 5 | 7 | **odsazení** zastávky (single per bod - proto `B12`/#7937 nejde per směr bez změny zdroje) |
+  | 6 | 8 | tarifní pásmo MHD (1-4) |
+  | 7 | 9 | předpis pro tisk trasy MHD (`tam:zpet`) |
+  | 8 | 10 | předpis pro čas u trasy MHD |
+  | 9 | 11 | **zóna IDS** (čárka = oddělovač) |
+  | 10 | 12 | předpis pro tisk **základní** trasy MHD (= vzorová trasa) |
+  | 11 | 13 | zóna IDS pro odbavovací zařízení |
+  | 12 | 14 | **sloupek** `sloupekTam:sloupekZpet` (číselník, viz §výše) |
+  | 13 | 15 | povel BUSE (číselník 26) |
+  | 14 | 16 | jede přes - pro poznámku do odbavovacího zařízení |
+  | 15 | 17 | DS zóny (`DSId|zonaId;…`) |
 
 ### Spoje `("T")` / `("Z")` ⭐ (oprava mapy)
 - `("T")` = **počet spojů** ve směru (header), `("T",sp)` = věta spoje.
@@ -320,6 +348,10 @@ původní odvozené mapě:
   (ověřeno: czst `4842`, GPS `48.97/14.49`).
 - **`$`-pole 8 = atributy zastávky** (přestupy `A`/`L`, na znamení…) - čte se **spolu** s atributy
   z trasy linky, viz `B23`.
+- **`$`-pole 9 = číslo zastávky dle celostátního registru (CIS)** (`JRapiZst` ř.150 `dta14`). ⚠️ Na
+  KOVED datech je **shodné s czst** (41994 = 41994), takže se nepozná od pole `CISLO_ZASTAVKA`, které
+  už tiskneme; šestimístný CIS kód uzel+sloupek (`419940`) je v `~`-struktuře `$`-pole 5. Viz `B35c`.
+- **`^JRZ(czst,"Sloupek",id)` = číselník sloupků** zastávky (`číslo ~ GPS lat ~ GPS lon ~ popis směru`).
 - **`$`-pole 11 = `zóna IDS ~ hranice IDS (0/1) ~ další zóny (";")`** (`JRapiZst` dta15/16/17).
   Ověřeno: zastávka `4842` má u sebe `100J`, kdežto trasa téže linky říká `101` - **zdroje se
   reálně liší**. Písmeno v kódu (`100J`, `O12`) nese **přepravní systém**, ne zónu

@@ -38,6 +38,13 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 3. 8. 2026 - Sloupek v seznamu zastávek
+
+- **Nový sloupec Sloupek** v seznamu zastávek u zastávkových jízdních řádů. Bere se z trasy linky
+  podle směru jízdy a je to číslo z číselníku sloupků zastávky, tedy jiný údaj než dosavadní sloupec
+  **Označník** (ten nese pole „nástupiště" z trasy linky). Zapíná se v nastavení sloupců, ve stávajících
+  šablonách se nabídne sám.
+
 ### 31. 7. 2026 - Vzhled seznamu zastávek a barva linky ve sloupcích
 
 - **Šipka směru jízdy** - nastavitelná tloušťka, velikost hrotu, tvar hrotu (plný / otevřený /

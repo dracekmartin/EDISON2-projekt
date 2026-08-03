@@ -45,6 +45,41 @@ public class StopListCellTextTests
         Assert.Equal("5", Text(MultiPlatformDisplay.All, Stop("5", "")));
     }
 
+    // ── Sloupek (KOVED #13088) ────────────────────────────────────────────────
+
+    /// <summary>Sloupek je jiný údaj než označník (číslo z číselníku zastávky vs. volný text
+    /// z trasy) - zákazníci, kteří evidují oboje, mají v datech obě hodnoty a nesmí se míchat.</summary>
+    [Fact]
+    public void Sloupek_JeNezavislyNaOznacniku()
+    {
+        var z = Stop("11", "22,11");
+        z.Sloupek = "2";
+
+        Assert.Equal("2", new StopListElement().GetCellText(z, StopFields.Sloupek));
+        Assert.Equal("11", new StopListElement().GetCellText(z, StopFields.Nastupiste));
+    }
+
+    /// <summary>Režimy „více označníků" se sloupku (zatím) netýkají - jsou postavené na per-spoj
+    /// datech označníku. Kdyby sloupek jejich hodnotu přebíral, tiskl by cizí číslo.</summary>
+    [Fact]
+    public void Sloupek_NerididiSeRezimyOznacniku()
+    {
+        var z = Stop("11", "22,11");
+        z.Sloupek = "2";
+
+        Assert.Equal("2", new StopListElement { MultiPlatformMode = MultiPlatformDisplay.MostFrequent }
+            .GetCellText(z, StopFields.Sloupek));
+        Assert.Equal("2", new StopListElement { MultiPlatformMode = MultiPlatformDisplay.All }
+            .GetCellText(z, StopFields.Sloupek));
+    }
+
+    /// <summary>MHD sloupek nevydává (tam je totéž stanoviště „označník") - prázdná buňka, ne pád.</summary>
+    [Fact]
+    public void Sloupek_BezDatJePrazdny()
+    {
+        Assert.Equal("", new StopListElement().GetCellText(Stop("11", ""), StopFields.Sloupek));
+    }
+
     // ── Zóny (KOVED #13091 bod 4) ─────────────────────────────────────────────
 
     /// <summary>Hraniční zastávka leží ve dvou zónách. Starý modul je odděloval čárkou, takže

@@ -356,4 +356,38 @@ Method TestTextDneVTydnuSvatek()
 	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "6"), "jede v sobotu", "dny beze změny")
 }
 
+// ── SloupekZTrasy - sloupek z J-věty #12 dle směru (KOVED #13088) ──
+
+/// Vstupy jsou skutečné J-věty ze ZL_KOVED linky 0822995 (zastávky 1 a 3), aby test hlídal
+/// tvar reálných dat, ne jen syntetický vzor.
+Method TestSloupekZTrasyDleSmeru()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set veta = "41994:TA##2:V#2###0:0#:##0:0##2:100##0#"
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta, 1), "2", "směr tam = první hodnota segmentu 12")
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta, 0), "100", "směr zpět = druhá hodnota")
+	set veta2 = "42023:##:#2###0:0#:##0:0##3:1##0#"
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta2, 1), "3", "jiná zastávka, směr tam")
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta2, 0), "1", "jiná zastávka, směr zpět")
+}
+
+/// Sloupek a označník jsou dvě různá pole (segment 12 vs. 3). Na téhle zastávce je označník
+/// prázdný, sloupek vyplněný - kdyby se čtení pletlo, vývěska by tiskla prázdno.
+Method TestSloupekNeniOznacnik()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set veta = "42001:V##:#2###0:0#:##0:0##2:1##0#"
+	set oznacnik = $piece($piece(veta, "#", 3), ":", 1)
+	do $$$AssertEquals(oznacnik, "", "označník (segment 3) je na téhle zastávce prázdný")
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta, 1), "2", "sloupek (segment 12) je vyplněný")
+}
+
+/// Linka bez evidence sloupků (kratší J-věta) nesmí spadnout ani vymyslet hodnotu.
+Method TestSloupekChybejiciSegment()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", "4842:x##11", 1), "", "krátká J-věta → prázdno")
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", "", 1), "", "prázdná J-věta → prázdno")
+}
+
 }

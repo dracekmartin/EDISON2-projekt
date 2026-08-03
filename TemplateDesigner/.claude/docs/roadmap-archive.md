@@ -2,6 +2,36 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-03 ✅ - `B35a` sloupec Sloupek v seznamu zastávek (#13088, #13048 bod 3)
+
+Detail → changelog 2026-08-03. Půlka bloku `B35` byla založená na špatném předpokladu, že „označník"
+a „sloupek" jsou dvě slova pro totéž a bude potřeba se doptat JŘ, co v datech je. **Nejsou to
+synonyma a doptávat se nebylo potřeba** - obojí je v datech vedle sebe:
+
+- **Označník** = volný text z trasy linky (J-věta `#`-segment **3** = `nastupisteTam:nastupisteZpet`,
+  legacy `dta4`/`dta5`; per spoj W pozice **7**). Bez číselníku, takže si tam každý píše co chce
+  (u GWBUS jsou tam texty „JET"/„JETE", u KOVED na jedné zastávce „V").
+- **Sloupek** = odkaz do **číselníku sloupků zastávky** `^JRZ(czst,"Sloupek",id)` = `číslo ~ GPS lat ~
+  GPS lon ~ popis směru` (J-věta `#`-segment **12** = `sloupekTam:sloupekZpet`, legacy `dta14`; per spoj
+  W pozice **13**, přebíjí trasu). Číslo 1-255, legacy ho před exportem do CIS kontroluje na číselnost.
+  Zlín aut. nádr. má sloupky 1-8, 21-24, … s popisy „směr Brno přes UH".
+- Doloženo v legacy `JRapiLin` ř.651-703 (rozpad J-věty na `dta`), `JRapiSp` ř.311/349 (per-spoj),
+  `JRapiExp6` ř.1957-1963 a `JRapiExp10` ř.832-836 (pořadí rozhodování trasa → spoj).
+
+**Sloupek je ten reálně používaný údaj:** ZL_KOVED 0822995 ho má u všech zastávek, označník jen
+u části; CB_CSADAD 0365001 ho má u všech a označník nikde. Tiskli jsme tedy dosud to prázdnější pole.
+
+Hotovo: pole agendy `SLOUPEK` (values i řádky ZASTAVKY) + sloupec **Sloupek** v seznamu zastávek
+(defaultně vypnutý, existujícím šablonám se nabídne sám, bez migrace). Zlaté odtisky přebaselinovány -
+shodné počty, jiné md5.
+
+**Rozhodnutí (Jan 2026-08-03):** názvosloví se mezi AD a MHD **záměrně liší** - v AD jsou označník
+a sloupek dvě různá pole, v MHD se témuž fyzickému stanovišti říká označník. MHD proto pole `SLOUPEK`
+nezavádí. Pravidlo v `ux-conventions.md` §8 („vždy označník") zúženo na AD nástupiště.
+
+**Zbývá z #13088:** `B35b` (per-spoj sloupek, popis, přepnutí režimů), `B35c` (CIS čísla, čeká na
+zákazníka), `B35d` (výluky, čeká na zákazníka).
+
 ## 2026-07-31 ✅ - `B29` denní značky dle rozvržení sloupců (#13045a)
 
 Detail → changelog 2026-07-31 (4). Klient hlásil dvě věci (sobotní odjezdy v nedělním sloupci ·

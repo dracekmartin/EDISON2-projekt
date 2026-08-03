@@ -329,6 +329,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     i filtrOznacnik '= "" s nastupiste = filtrOznacnik          // #8828: stránka nese svůj označník
     d vals.%Set("NASTUPISTE",             nastupiste)         // A2: NEJEDOU_SPOJE je misnomer → NASTUPISTE
     d vals.%Set("NEJEDOU_SPOJE",          nastupiste)         // zastaralé (kompatibilita) → NASTUPISTE
+    d vals.%Set("SLOUPEK",                ..SloupekZTrasy($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)), smer '= "Z"))
 
     // ── trasa → zastávky (CELÁ trasa ve směru jízdy, vč. projetých; zóny + na znamení) ──
     // Tam: vzestupně 1→N. Zpět: sestupně N→1. Aktuální = JE_AKTUALNI; projeté mají casJizdy=0 a bez
@@ -524,6 +525,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s nastRadek = nastJv
         i (filtrOznacnik '= "") && jeAkt s nastRadek = filtrOznacnik
         d z.%Set("NASTUPISTE", nastRadek)
+        // KOVED #13088: sloupek zastávky (J-věta #12 dle směru) - druhý, číselníkový údaj vedle
+        // označníku. Dělení stránek (#8828) dnes běží na označníku, sloupek proto nese trasu.
+        d z.%Set("SLOUPEK", ..SloupekZTrasy(veta, jeTam))
         // KOVED #13048 bod 4: nástupiště dle SPOJŮ (W pole 8, fallback J-věta) - CSV dle četnosti,
         // první = nejčetnější. Element z toho staví režimy „nejčetnější" / „výčet". Na rozdělené
         // stránce u vývěskové zastávky rovněž jen označník stránky (stránka JE o něm).
@@ -837,6 +841,16 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
         }
     }
     i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
+}
+
+/// Sloupek zastávky z trasy linky - J-věta `#`-segment **12** ve tvaru `sloupekTam:sloupekZpet`
+/// (legacy `JRapiLin` ř.700 `dta14`), vybraný dle směru. Je to **odkaz do číselníku sloupků
+/// zastávky** (`^JRZ(czst,"Sloupek",id)` = číslo~GPS~popis směru), tedy jiný údaj než označník
+/// (segment 3), který je volný text. Zákazníci, kteří sloupky evidují, tisknou tento údaj.
+/// Per-spoj přebití (W pozice 13) tento krok ještě nedělá - viz roadmapa `B35b`.
+ClassMethod SloupekZTrasy(veta As %String, jeTam As %Boolean) As %String
+{
+    ret $p($p(veta, "#", 12), ":", $s(jeTam:1, 1:2))
 }
 
 /// Nástupiště zastávky posbíraná ze SPOJŮ směru - legacy pravidlo „nástupiště ze spoje,
@@ -1986,6 +2000,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "NASTUPISTE",             "Označník",               "text")
+    d ..AddField(fields, "SLOUPEK",                "Sloupek",                "text")
     // _CIS varianty (celostátní názvy) jsou AD-specifické - MHD je zatím neprodukuje.
     // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values -
     // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.
@@ -2010,6 +2025,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
     d ..AddField(colZastavkyFields, "NASTUPISTE",        "Označník",          "text")
     d ..AddField(colZastavkyFields, "NASTUPISTE_SPOJU",  "Označník (dle spojů)", "text")
+    d ..AddField(colZastavkyFields, "SLOUPEK",           "Sloupek",           "text")
     // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno - nese jen J-klíč (= interní ID),
     // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
     // TRASA_MIN (pole variantních časů jízdy v každém řádku) je wire-only - pole (ne skalár),
