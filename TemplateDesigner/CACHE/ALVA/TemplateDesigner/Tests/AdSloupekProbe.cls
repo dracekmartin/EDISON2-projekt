@@ -109,7 +109,10 @@ ClassMethod ScanAtributySpoju(ByRef sys As %String) As %Status
 						set vKola = $piece(hlava, ":", 19)
 						set vMist = $piece(hlava, ":", 6)
 						set vTyp  = $piece(hlava, ":", 11)
-						if vKola '= "" { set kola = kola + 1, hodnKola(vKola) = $get(hodnKola(vKola)) + 1 }
+						if vKola '= "" {
+						set kola = kola + 1, hodnKola(vKola) = $get(hodnKola(vKola)) + 1
+						if $get(ukazekKola) < 5 { set ukazekKola = $get(ukazekKola) + 1, ^||ML("OUT","KOLA_UKAZKY",ukazekKola) = "sku="_sku_" lin="_lin_" smer="_sm_" spoj="_sp_" hodnota="_vKola }
+					}
 						if vMist '= "" { set misten = misten + 1, hodnMisten(vMist) = $get(hodnMisten(vMist)) + 1 }
 						if vTyp '= "" { set typMisten = typMisten + 1 }
 						if $data(^[db]JRL(sku,lin,sm,sp,32)) {

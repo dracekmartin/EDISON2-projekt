@@ -149,9 +149,11 @@ public class NotesLegendElement : StopScheduleElementBase
                         RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, paints.Text, colRight, textStartX),
                     TypPoznamky.SpecialniZnak =>
                         RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
-                            (pozn.Znak.Length == 1 && !SymbolJeText(pozn.Znak)) ? symbolFont : boldFont, noteFont, paints.Text, false, colRight, textStartX),
+                            JePiktogram(pozn.Znak) ? symbolFont : boldFont, noteFont, paints.Text, false, colRight, textStartX,
+                            JePiktogram(pozn.Znak)),
                     _ when pozn.Znak.Length > 0 =>
-                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, paints.Text, true, colRight, textStartX),
+                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, paints.Text, true, colRight, textStartX,
+                            piktogram: false),
                     _ =>
                         DrawWrappedBody(ctx, pozn.Text, textStartX ?? lineX, noteY, colRight, noteFont, paints.Text, scaledNoteLineH),
                 };
@@ -200,7 +202,7 @@ public class NotesLegendElement : StopScheduleElementBase
     private int RenderSymbolWithText(RenderContext ctx, PoznamkaData pozn,
         ref float lineX, float currentY, float lineH,
         SKFont symbolFont, SKFont textFont, SKPaint textPaint, bool suffixSeparator,
-        float colRight, float? textStartX = null)
+        float colRight, float? textStartX = null, bool piktogram = false)
     {
         // Symbol - pokud má pozn.ForeColor z DB, použij ji; jinak default textPaint barva.
         SKPaint symbolPaint = textPaint;
@@ -215,8 +217,10 @@ public class NotesLegendElement : StopScheduleElementBase
         {
             var znakPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
             // Znak legendy musí být týž glyf jako značka u zastávky - u piktogramů se pozice ve
-            // symbolovém fontu neshoduje s písmenem číselníku (autobus „A" → „w", vlak „L" → „x").
-            string znak = SymbolJeText(pozn.Znak) || pozn.Znak.Length != 1 ? pozn.Znak : SymbolGlyph(pozn.Znak);
+            // symbolovém fontu neshoduje s písmenem číselníku (autobus „A" → „z", kolo „K" → „L").
+            // Jen u piktogramů: značka kreslená normálním fontem (ruční komentáře) je písmeno,
+            // které si zákazník zadal, a překlad by z „A" udělal „z".
+            string znak = piktogram ? SymbolGlyph(pozn.Znak) : pozn.Znak;
             ctx.Canvas.DrawText(znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
             lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f;
 

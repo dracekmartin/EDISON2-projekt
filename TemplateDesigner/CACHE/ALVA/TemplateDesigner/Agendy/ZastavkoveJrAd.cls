@@ -795,8 +795,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         i inv s bezbarLegenda("H") = $s(allBBP:"všechny spoje mají bezbariérově přístupné vozidlo", 1:"spoj má bezbariérově přístupné vozidlo")
         // #13093 bod 2: přeprava kol (hlava:19, legacy dta20 PrepJiKola) a místenkování (hlava:6, dta6).
         // U KOVED 166 spojů s kolem a 310 s R (měřeno 3. 8.). Opt-in, legacy to na vývěsce netiskl.
-        // Prázdný znak kola = glyf ještě neznáme (viz ZnakKola) → nekreslí se, ať nevyjede cizí piktogram.
-        s kolo = (tiskKola && +$p(hlava,":",19) && (..ZnakKola() '= ""))
+        s kolo = (tiskKola && +$p(hlava,":",19))
         s mistenka = (tiskMistenek && ($p(hlava,":",6) '= ""))
         i kolo s odjAtrLegenda(..ZnakKola()) = "specialni~spoj přepravuje jízdní kola"
         i mistenka s odjAtrLegenda("R") = "text~k jízdence je možné zakoupit místenku"
@@ -911,17 +910,14 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
 
 /// Znak, kterým se u odjezdu kreslí **přeprava jízdních kol** (#13093 bod 2).
 ///
-/// ⚠️ **Zatím prázdný, takže se kolo netiskne.** Kolo je v symbolovém JŘ fontu piktogram, ale legacy
-/// ho na vývěsce nikdy netiskl (v `JRapiLinPrtMhd` není), takže se nemáme od čeho odrazit - a pozice
-/// glyfů se **neshodují s písmeny číselníku** (ověřeno 3. 8. u přestupů: autobus sedí na `w`, vlak
-/// na `x`). Hádat znak = vykreslit cizí piktogram, což je přesně chyba, kterou jsme dnes opravovali.
-///
-/// Doplnit po dohledání v Mapě znaků nad `Fonts/TimeTable2.ttf` (hledat kolo, vzít jeho kód) -
-/// pak je to jednořádková změna a `TestZnakKolaZatimNeni` spadne, což je záměrná pojistka.
-/// Místenkování „R" tuhle závislost nemá: kreslí se jako **prostý text** (tak ho zapisuje i zákazník).
+/// „K" je **náš marker, ne písmeno číselníku** - kola jsou atribut spoje a číselník atributů pro ně
+/// znak nemá. Na glyf kola ho přeloží `StopScheduleElementBase.SymbolGlyph` („K" → `L`, 0x4C);
+/// posílat rovnou `L` nelze, to je v číselníku vlak a přeložilo by se na lokomotivu.
+/// Pozice ověřená 3. 8. vytažením obrysů z `Fonts/TimeTable2.ttf`, ne odhadem podle písmene.
+/// Místenkování „R" překlad nepotřebuje: kreslí se jako **prostý text** (tak ho zapisuje i zákazník).
 ClassMethod ZnakKola() As %String
 {
-    ret ""
+    ret "K"
 }
 
 /// Textové poznámky z vlastností linky (#13093 bod 1). Zdroj `^JRL(sku,lin,"C",key,idx)`, kategorie

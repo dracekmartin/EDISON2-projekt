@@ -896,9 +896,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 Separator();
                 foreach (var a in attrs)
                 {
-                    bool piktogram = a.Znak.Length == 1 && !SymbolJeText(a.Znak);
+                    bool piktogram = JePiktogram(a.Znak);
                     // Piktogram se kreslí ze symbolového fontu, kde glyfy nesedí na písmena číselníku
-                    // (autobus „A" → „w", vlak „L" → „x"); text zůstává tím, co je v datech.
+                    // (autobus „A" → „z", vlak „L" → „x"); text zůstává tím, co je v datech.
                     runs.Add(new MarkerRun(piktogram ? SymbolGlyph(a.Znak) : a.Znak, piktogram));
                 }
             }

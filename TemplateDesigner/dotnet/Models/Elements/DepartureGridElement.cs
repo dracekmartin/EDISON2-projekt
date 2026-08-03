@@ -488,7 +488,7 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Jednoznakový speciální symbol (piktogram) → kreslí se symbolovým JŘ fontem.
     /// Víceznakové SpecialniZnak (dny „Po"…) i NZ (čísla) zůstávají v normálním fontu.</summary>
     private static bool JeGlyfSymbol(AnotaceData a) =>
-        a.Typ == TypAnotace.SpecialniZnak && a.Znak.Length == 1 && !SymbolJeText(a.Znak);
+        a.Typ == TypAnotace.SpecialniZnak && JePiktogram(a.Znak);
 
     public override void Render(RenderContext ctx)
     {

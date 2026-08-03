@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-03 (13) - kolo se tiskne, a autobus konečně taky autobus (#13093 bod 2, #13048 bod 1)
+
+Glyf kola dohledaný → **kola se tisknou** (zápis (12) o „čeká na glyf" tím neplatí). Cestou se
+ukázalo, že **ranní oprava přestupů byla jen z poloviny správná**: písmena jsme si opsali z Mapy
+znaků a autobus jsme poslali na `w`, kde je ve skutečnosti **železniční vagon**. U přestupu na
+autobus se tedy kreslil vagon - vypadalo to plausibilně, proto to prošlo i vizuální kontrolou.
+
+- **Pozice čtené přímo z fontu, ne okem z Mapy znaků.** Obrysy glyfů vytažené z `TimeTable2.ttf`
+  a vykreslené do kontaktního listu s popisky kódů - jediný způsob, jak to přečíst spolehlivě
+  (jména glyfů font nenese, jsou obecná). Postup zapsaný v `elementy-architektura.md`.
+  Platné pozice: `z` autobus · `x` vlak · `L` kolo · `w` **vagon** · `y` restaurace.
+- **Pozice ověřené i ve slovenském fontu** - `TimeTable2SK.ttf` **není kopie**: `w` je tam autobus,
+  `x` moderní jednotka. Naše tři volby (`z`, `x`, `L`) znamenají v obou fontech totéž, `w` je
+  přesně ta jedna pozice, kde by se vzhled rozešel podle jazyka.
+- **Kola jdou markerem `K`**, který render přeloží na glyf. Číselník pro kola znak nemá (je to
+  atribut spoje) a poslat rovnou `L` nelze - to je vlak.
+- **Překlad glyfu jen na piktogramové cestě.** Dosud se aplikoval i na značky kreslené normálním
+  fontem, takže ruční komentář se značkou „A" by v legendě vyšel jako „z". Podmínka „je to
+  piktogram" je teď na jednom místě (`JePiktogram`), dřív byla trojmo opsaná.
+
+Caché 72/72, .NET 562/562 (+3). Ověřeno na ZL_KOVED 0823141 (linka s kolem): v legendě jsou obě
+vysvětlivky. ⚠️ Piktogramy chce **projít očima** - stroj vidí jen znak, ne co je nakreslené.
+
 ## 2026-08-03 (12) - místenky u odjezdů, kola čekají na glyf (#13093 bod 2)
 
 Klient hlásil, že se nezobrazují *„cyklobusové poznámky ani rezervace u času odjezdů (znak kola, R),

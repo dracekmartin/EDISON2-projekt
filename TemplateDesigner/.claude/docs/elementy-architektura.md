@@ -503,12 +503,28 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
   je jiný symbol) - proto musí jít přes render-mód **text**, ne font-glyf. Totéž `y`/`z`.
 - **id → znak fontu:** legacy `Case Else` kreslí `ToChar(ID)`; je třeba ověřit, jakou hodnotu nese
   datový atribut (ASCII mnemoniky `H`=72 / `x`=120 vs. GSId 1-66) a že sedí na glyf ve fontu.
-  **Částečně ověřeno 2026-08-03** (Mapa znaků nad `Fonts/TimeTable2.ttf`, #13048 bod 1): pozice glyfů
-  se **neshodují s písmeny číselníku**, takže datový znak se musí přeložit - **autobus `A` → `w`
-  (0x77)**, **vlak `L` → `x` (0x78, lokomotiva)**; `z` (0x7A) je vagon. Překlad drží
-  `StopScheduleElementBase.SymbolGlyph` (zamčeno testem `SymbolGlyphTests`) a používají ho **obě**
-  kreslicí cesty - značka u zastávky i znak v legendě, jinak by se rozešly.
+  **Částečně ověřeno 2026-08-03** (#13048 bod 1, #13093 bod 2): pozice glyfů se **neshodují s písmeny
+  číselníku**, takže datový znak se musí přeložit - **autobus `A` → `z` (0x7A)**, **vlak `L` → `x`
+  (0x78, lokomotiva)**, **kola → `L` (0x4C)**; `w` (0x77) je železniční vagon, `y` (0x79) restaurace.
+  Kola nemají písmeno v číselníku (je to atribut spoje), proto je agenda posílá vlastním markerem
+  **`K`** - poslat rovnou `L` nelze, to je vlak. Překlad drží `StopScheduleElementBase.SymbolGlyph`
+  (zamčeno `SymbolGlyphTests`) a používají ho **obě** kreslicí cesty - značka u zastávky i znak
+  v legendě, jinak by se rozešly. Aplikuje se **jen na piktogramovou cestu** (`JePiktogram`):
+  značka kreslená normálním fontem je písmeno zadané zákazníkem a překlad by z „A" udělal „z".
   Zároveň to vysvětluje, proč „na znamení" **musí** jít textem: na `x` je lokomotiva.
+
+  ⚠️ **Pozice musí platit v CZ i SK fontu** (`TimeTable2.ttf` / `TimeTable2SK.ttf`, přepíná
+  `FontResolver.SymbolFontFamily`) - fonty **nejsou** kopie. Porovnáno 2026-08-03: `z` (0x7A) je
+  autobus a `L` (0x4C) kolo v obou, `x` (0x78) je vlak v obou (CZ parní lokomotiva, SK moderní
+  jednotka), ale **`w` (0x77) je v CZ železniční vagon a v SK autobus**. Právě proto jde autobus
+  na `z`, ne na `w`: `w` by tiskl v Česku vagon a na Slovensku autobus. Nová položka mapy se musí
+  zkontrolovat v **obou** fontech, jinak se vzhled rozejde podle jazyka.
+
+  🔧 **Jak pozici ověřit** (Mapa znaků na to nestačí - dvakrát se z ní přečetlo špatně, protože
+  ikony jsou drobné a sousedí spolu vagon s autobusem): vytáhnout **obrysy glyfů přímo z fontu** a
+  nakreslit kontaktní list s popisky kódů. `fontTools` přečte `cmap` (font je mapovaný v symbolové
+  oblasti `0xF020`+, takže znak = kód − `0xF000`; jména glyfů jsou obecná typu `exclam`, sémantiku
+  nenesou), obrysy pak stačí vykreslit `PIL`em jako polylinie. Jednorázový skript, do repa nepatří.
   ⚠️ **Neověřené zůstávají** pozice pro clo `C`, paragrafy `G`/`a`/`b`/`c`, metro `e`/`f`/`g`,
   letadlo `O` a loď `D` - dnes je nemá v datech žádná firma, ale první, kdo je bude mít, musí projít
   stejnou kontrolou, jinak dostane cizí piktogram. `H`/`F` (bezbariér) a kroužkové dny sedí na písmenu.

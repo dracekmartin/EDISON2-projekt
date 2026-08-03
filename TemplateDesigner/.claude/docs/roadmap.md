@@ -5,9 +5,9 @@
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B45** (znak kola ve fontu, S - chce dohledat glyf v Mapě znaků) nebo
-> **B40** z Vlny 1. **B37 je zablokovaný** odpovědí v #13093 (překryv s #13102 u Petra).
-> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`-`B35c`, `B36`, `B43` a bod 2 z `B37` 3. 8.;
+> **▶ Další session:** **B40** z Vlny 1 (jednotné čáry a mřížka tabulek, M) - Vlna 0 je dojetá,
+> jediný její zbytek **B37 je zablokovaný** odpovědí v #13093 (překryv s #13102 u Petra).
+> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`-`B35c`, `B36`, `B43`, `B45` a bod 2 z `B37` 3. 8.;
 > **#13048 i #13088 zavřené 3. 8.** Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
@@ -41,7 +41,6 @@ ne odbavit nejhezčí featuru.
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
 | **B37** | **#13093 bod 3 - pokračující spoje** (bod 2 hotový 3. 8.). Návaznosti leží v subnode `32` (`m@33#linka:spoj:zastávka:…:dopravce`, u KOVED **390 spojů**) a nesou číslo linky i cíl, tedy vše, co klient chce („pokračuje do zast. X (l. 304)", poslední trojčíslí linky). Práce = seskupit podle (cíl, linka) místo podle čísla spoje + přepínač zobrazení. ⚠️ Neplest s dnešním textem „jede až do zast. X" - ten je o prodloužení po **vlastní** lince (#7947), kdežto tohle je pokračování **na jinou** linku. 🛑 **Než se to začne dělat, čeká odpověď v #13093:** stejný příklad (linka 304) řeší **#13102** u Petra - virtuální prodloužení spoje jen pro vývěsku. Kdyby se spoj v JŘ prodloužil, poznámka „pokračuje do…" je zbytečná a udělali bychom dvě řešení téhož. Vhodné jednou potvrdit, že `omzId 32` je to, co uživatel v JŘ vidí jako pokračování spoje. | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
-| **B45** | **Znak kola v symbolovém fontu** (zbytek #13093 bodu 2, 3. 8.). Anotace i legenda pro přepravu kol jsou hotové, ale `ZnakKola()` vrací prázdno, takže se kolo netiskne - **neznáme znak, na kterém glyf kola v `Fonts/TimeTable2.ttf` sedí** a legacy ho na vývěsce netiskl, takže se nemáme od čeho odrazit. Dohledat v Mapě znaků (Windows charmap nad tím fontem), doplnit návratovou hodnotu a upravit `TestZnakKolaZatimNeni`, který to schválně drží zamčené. ⚠️ Neodhadovat podle písmena číselníku - pozice glyfů mu neodpovídají (ověřeno 3. 8. u přestupů: autobus `w`, vlak `x`). | S | v náhledu u odjezdu vyjede kolo, ne cizí piktogram |
 
 **Otázka na KOVED - odeslaná 3. 8. v odpovědi na #13048, nic neblokuje:** je u nich označník ještě
 k něčemu? Kdyby ne, mohl by přepínač „Číslo stanoviště podle" zmizet a zůstat jen sloupek - ale je to

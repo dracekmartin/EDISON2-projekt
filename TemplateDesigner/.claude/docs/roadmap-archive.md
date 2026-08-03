@@ -2,6 +2,24 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-03 ✅ - `B45` glyf kola + oprava autobusu (#13093 bod 2, #13048 bod 1)
+
+Detail → changelog 2026-08-03 (13). Kola se tisknou; cestou se ukázalo, že **ranní oprava přestupů
+byla z poloviny špatná** - autobus jsme podle ručně opsaného kódu poslali na `w`, kde je železniční
+vagon, takže u přestupu na autobus jezdil vagon (vypadalo plausibilně, prošlo to i vizuální kontrolou).
+
+**Poučení, které se nesmí ztratit:** pozici glyfu **nečíst okem z Mapy znaků**. Ikony jsou drobné,
+vagon a autobus sousedí a dvakrát se to přečetlo špatně. Správný postup = vytáhnout obrysy přímo
+z `.ttf` a nakreslit kontaktní list s popisky kódů (jména glyfů font nenese, jsou obecná).
+
+**Druhý invariant:** pozice musí platit v CZ **i SK** fontu - `TimeTable2SK.ttf` **není kopie**.
+`w` je tam autobus, `x` moderní jednotka. Naše volby (`z` autobus, `x` vlak, `L` kolo) znamenají
+v obou totéž; `w` je přesně ta jedna pozice, kde by se vzhled rozešel podle jazyka.
+
+Kola jdou naším markerem `K` (číselník pro ně znak nemá, `L` je vlak). Překlad glyfu se navíc dosud
+aplikoval i na značky kreslené normálním fontem - ruční komentář „A" by v legendě vyšel jako „z";
+podmínka „je to piktogram" je teď na jednom místě (`JePiktogram`) místo trojmo opsaná.
+
 ## 2026-08-03 ✅ - `B36` poznámky z linky + výluky, `B37` bod 2 místenky (#13093, #13088)
 
 Detail → changelog 2026-08-03 (11) a (12).

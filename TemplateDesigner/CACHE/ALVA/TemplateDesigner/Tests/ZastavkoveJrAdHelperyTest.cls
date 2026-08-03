@@ -382,13 +382,14 @@ Method TestTextPoznamkyLinky()
 	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "#"), "", "jen oddělovač → prázdno (poznámka se přeskočí)")
 }
 
-/// Znak kola zatím neznáme, takže se kolo NESMÍ tisknout - jinak by u odjezdu vyjel cizí piktogram
-/// (přesně chyba, kterou jsme 3. 8. opravovali u přestupů). Až se glyf dohledá v Mapě znaků, tento
-/// test spadne a je to signál doplnit i legendu, ne pojistku obejít.
-Method TestZnakKolaZatimNeni()
+/// Kola posíláme markerem „K", který si .NET přeloží na glyf kola (`L`, 0x4C). Poslat rovnou „L"
+/// nejde - to je v číselníku vlak a přeložilo by se na lokomotivu, tedy přesně ta záměna piktogramů,
+/// kterou jsme 3. 8. opravovali u přestupů.
+Method TestZnakKolaJeMarkerNeGlyf()
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	do $$$AssertEquals($classmethod(cls, "ZnakKola"), "", "dokud neznáme glyf kola, znak je prázdný a kolo se netiskne")
+	do $$$AssertEquals($classmethod(cls, "ZnakKola"), "K", "kola jdou markerem K, glyf dosadí render")
+	do $$$AssertNotEquals($classmethod(cls, "ZnakKola"), "L", "L je v číselníku vlak → lokomotiva")
 }
 
 // ── JeViditelnyAtribut - co z číselníku 16 je informace pro cestujícího (KOVED #13048 bod 1) ──
