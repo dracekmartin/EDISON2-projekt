@@ -25,6 +25,22 @@ podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivk
 Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
 binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
 
+## 2026-08-04 ✅ - `B49` pozice glyfů ve slovenském fontu ověřeny
+
+Detail → changelog 2026-08-04 (11). Obrysy vytažené z obou fontů (postup v `elementy-architektura.md`).
+**Co dnes překládáme, je pro SK správně** - `z` autobus, `x` vlak, `L` kolo sedí v obou fontech
+(u `z` a `L` je obrys dokonce identický), takže `SymbolGlyph` culture parametr nepotřebuje a žádná
+vada se slovenskému zákazníkovi netiskla.
+
+Skutečná vada byla **v komentáři**: `FontResolver.cs` tvrdil „znaky jsou pro CZ i SK stejné, liší se
+jen tvary glyfů". Měření to vyvrátilo - `w` je v CZ vagon a v SK **autobus**, `D` je v CZ křížek
+a v SK **dlaň**. Komentář opraven, měřená tabulka zapsaná do dokumentace.
+
+**Poučení - dokumentace si protiřečila a nikdo si toho nevšiml.** Testy i `elementy-architektura.md`
+měly rozdíl CZ/SK popsaný správně (zapsalo se to při opravě kola), jen `FontResolver.cs` tvrdil opak.
+Kdo by se řídil jím, namapoval by autobus na `w` a slovenskému zákazníkovi by tiskl vagon. **Rozpor
+mezi dvěma komentáři je horší než chybějící komentář** - vypadá to jako ověřená informace.
+
 ## 2026-08-04 ✅ - `B40` mřížka tabulkových prvků jako jedno sdílené API
 
 Detail → changelog 2026-08-04 (10). „Rámeček = vnější, mřížka = vnitřní" (rozhodnutí Jan). Sdílený

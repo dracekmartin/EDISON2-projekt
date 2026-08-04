@@ -531,9 +531,23 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
   nakreslit kontaktní list s popisky kódů. `fontTools` přečte `cmap` (font je mapovaný v symbolové
   oblasti `0xF020`+, takže znak = kód − `0xF000`; jména glyfů jsou obecná typu `exclam`, sémantiku
   nenesou), obrysy pak stačí vykreslit `PIL`em jako polylinie. Jednorázový skript, do repa nepatří.
-  ⚠️ **Neověřené zůstávají** pozice pro clo `C`, paragrafy `G`/`a`/`b`/`c`, metro `e`/`f`/`g`,
-  letadlo `O` a loď `D` - dnes je nemá v datech žádná firma, ale první, kdo je bude mít, musí projít
+  ⚠️ **Neověřené zůstávají** pozice pro clo `C`, paragrafy `G`/`a`/`b`/`c`, metro `e`/`f`/`g`
+  a letadlo `O` - dnes je nemá v datech žádná firma, ale první, kdo je bude mít, musí projít
   stejnou kontrolou, jinak dostane cizí piktogram. `H`/`F` (bezbariér) a kroužkové dny sedí na písmenu.
+
+  📐 **Měření CZ × SK (4. 8. 2026, `B49`)** - obrysy vytažené z obou fontů, ať se to nemusí opakovat:
+
+  | Kód | `TimeTable2.ttf` (CZ) | `TimeTable2SK.ttf` (SK) | Význam |
+  |---|---|---|---|
+  | `z` 0x7A | autobus | autobus (**identický obrys**) | ✅ shodný |
+  | `L` 0x4C | jízdní kolo | jízdní kolo (**identický obrys**) | ✅ shodný |
+  | `x` 0x78 | parní lokomotiva | moderní jednotka | ✅ oba **vlak**, jen jiná kresba |
+  | `w` 0x77 | železniční vagon | **autobus** | ❌ **jiný význam** |
+  | `D` 0x44 | křížek | **dlaň** | ❌ **jiný význam** |
+
+  Závěr: **co dnes překládáme, je pro SK správně** (`A`→`z`, `L`→`x`, `K`→`L`), takže `SymbolGlyph`
+  culture parametr nepotřebuje. Ale SK font **není** jen jiné ztvárnění týchž kódů - u `w` a `D`
+  se liší význam, takže ověření nové položky mapy musí proběhnout **v obou fontech**.
 - **Font `x` = vláček** ověřeno v TimeTable2 (SkiaSharp render u uživatele) → potvrzuje, že na-znamení
   NEsmí jít fontem.
 

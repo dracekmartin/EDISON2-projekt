@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-04 (11) - pozice glyfů ve slovenském fontu ověřeny (`B49`)
+
+Symboly u spojů (autobus, vlak, kolo) se kreslí znaky ze speciálního dopravního fontu a slovenská
+verze fontu je vlastní soubor. Mapa pozic byla ale změřená jen proti české verzi - u slovenského
+zákazníka tedy hrozilo, že vyjede cizí piktogram. BBSK se na návrhář aktivně ptá (#13070), takže
+to nebylo hypotetické.
+
+**Výsledek měření: nic se netisklo špatně.** Kódy, které překládáme, sedí v obou fontech - `z`
+autobus, `x` vlak, `L` kolo (u `z` a `L` je obrys dokonce **identický**, u `x` je to lokomotiva
+proti moderní jednotce, tedy jiná kresba téhož významu). `SymbolGlyph` proto culture parametr
+nepotřebuje.
+
+**Vada byla v komentáři:** `FontResolver.cs` tvrdil, že „znaky jsou pro CZ i SK stejné, liší se jen
+tvary glyfů". Měření to vyvrátilo - **`w` je v CZ železniční vagon, ale v SK autobus** a **`D` je
+v CZ křížek, v SK dlaň**. Kdo by se tím komentářem řídil a namapoval autobus na `w`, tiskl by
+Čechům vagon. Komentář opraven; měřená tabulka CZ × SK je v `elementy-architektura.md`, ať se to
+nemusí opakovat.
+
+Přibyl test, že žádná sémantická značka necílí na `w` - jediný z používaných kódů, jehož význam
+závisí na jazyce.
+
+.NET 1533/1533 (TD 591, +3).
+
 ## 2026-08-04 (10) - mřížka tabulkových prvků jako jedno sdílené API (`B40`)
 
 **Rámeček = vnější obrys, mřížka = vnitřní čáry** (rozhodnutí Jan). Do teď vedly k vnějšímu obrysu

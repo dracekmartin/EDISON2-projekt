@@ -33,6 +33,21 @@ public class SymbolGlyphTests
         Assert.NotEqual("w", StopScheduleElementBase.SymbolGlyph("A"));
     }
 
+    /// <summary>
+    /// Žádná sémantická značka nesmí cílit na „w": je to jediný kód z používaných, který má
+    /// v CZ a SK fontu **jiný význam** (CZ železniční vagon × SK autobus, změřeno 4. 8. 2026),
+    /// takže by se výsledek rozešel podle jazyka šablony. Zbytek mapy (`z` autobus, `x` vlak,
+    /// `L` kolo) sedí v obou fontech - proto `SymbolGlyph` culture parametr nepotřebuje.
+    /// </summary>
+    [Theory]
+    [InlineData("A")]
+    [InlineData("L")]
+    [InlineData("K")]
+    public void ZadnaZnackaNecliNaKodZavislyNaJazyku(string znak)
+    {
+        Assert.NotEqual("w", StopScheduleElementBase.SymbolGlyph(znak));
+    }
+
     /// <summary>Kola nemají písmeno v číselníku, posílají se naším markerem „K". Musí se přeložit na
     /// „L" (kolo); poslat rovnou „L" nelze, to je vlak a skončilo by na lokomotivě.</summary>
     [Fact]
