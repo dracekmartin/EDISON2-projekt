@@ -4,7 +4,9 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using EDControls;
 using SkiaSharp;
+using EDFilterComboBox = EDControls.EDFilterComboBox.EDFilterComboBox;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Models;
@@ -201,60 +203,17 @@ public partial class PropertiesPanel : UserControl
         DockPanel.SetDock(label, Dock.Left);
         panel.Children.Add(label);
 
-        var allItems = sd.GetSuggestions().ToList();
-
-        var combo = new ComboBox
+        // Filtrování, zobrazení „hodnota - popisek" i commit vybrané hodnoty do Textu řeší sdílená
+        // komponenta (volný režim = uživatel smí napsat i hodnotu mimo nabídku, což tenhle descriptor
+        // vyžaduje). Vlastní implementace tady být nesmí - viz changelog 2026-08-04 (3).
+        var combo = new EDFilterComboBox
         {
-            IsEditable          = true,
-            IsTextSearchEnabled = false,
-            StaysOpenOnEdit     = true,
-            Text                = sd.Get(),
-            FontSize            = 11,
-            Padding             = new Thickness(1, 1, 1, 1),
+            KeyLabelSeparator = "  -  ",   // užší panel má dvojité mezery od dřív, ať se vzhled nemění
+            FontSize          = 11,
+            Padding           = new Thickness(1, 1, 1, 1),
         };
-
-        void Refilter(string text)
-        {
-            combo.Items.Clear();
-            foreach (var (val, lbl) in allItems)
-            {
-                bool match = string.IsNullOrEmpty(text)
-                    || val.Contains(text, StringComparison.OrdinalIgnoreCase)
-                    || lbl.Contains(text, StringComparison.OrdinalIgnoreCase);
-                if (!match) continue;
-                var display = string.IsNullOrEmpty(lbl) || lbl == val ? val : $"{val}  -  {lbl}";
-                combo.Items.Add(new ComboBoxItem { Content = display, Tag = val });
-            }
-        }
-
-        Refilter("");
-
-        // Refiltrujeme jen při stisku klávesy (ne při interní změně WPF způsobené výběrem položky).
-        // Pokud bychom filtrovali i při SelectionChanged→TextChanged, Refilter() smaže Items
-        // a SelectedItem se stane null - DropDownClosed pak nemá co číst.
-        bool userIsTyping = false;
-        combo.PreviewKeyDown += (_, _) => userIsTyping = true;
-        combo.PreviewKeyUp   += (_, _) => userIsTyping = false;
-
-        combo.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
-            new TextChangedEventHandler((_, _) =>
-            {
-                if (_suppressChanges || !userIsTyping) return;
-                Refilter(combo.Text);
-                if (combo.Items.Count > 0) combo.IsDropDownOpen = true;
-            }));
-
-        // DropDownClosed: WPF nastavil Text na Content (display string) - přepíšeme na Tag (hodnotu).
-        // SelectedItem je zachován, protože Refilter() se při výběru nespustil.
-        combo.DropDownClosed += (_, _) =>
-        {
-            if (combo.SelectedItem is not ComboBoxItem item) return;
-            var val = (string)item.Tag!;
-            _suppressChanges = true;
-            combo.SelectedItem = null;
-            combo.Text = val;
-            _suppressChanges = false;
-        };
+        combo.Suggestions = sd.GetSuggestions().Select(s => new ListItem(s.Value, s.Label)).ToList();
+        combo.Text        = sd.Get();
 
         string oldVal = sd.Get();
         combo.LostFocus += (_, _) =>

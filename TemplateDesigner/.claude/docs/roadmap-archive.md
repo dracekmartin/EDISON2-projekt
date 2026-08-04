@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-04 ✅ - `B46` filtrovaný ComboBox sjednocen na sdílené komponentě
+
+Detail → changelog 2026-08-04 (3). Do filtru skupiny linek se nedaly napsat dva znaky: první
+neodfiltroval nic, druhý přepsal napsaný text zpátky na jinou skupinu a přenačetl linky pro skupinu,
+kterou uživatel nevybral. Výběr instancí si držel **vlastní** filtrovaný ComboBox, i když EDControls
+má na tentýž účel `EDFilterComboBox`, který tuhle třídu problémů řeší a má na ni testy. Zrušena
+i druhá vlastní kopie (nabídka datových polí v panelu vlastností) - v TD už žádná nezůstala.
+
+**Poučení, které se nesmí ztratit:** filtrovat `ICollectionView` nastavený jako `ItemsSource` ComboBoxu
+je past - ComboBox si s ním synchronizuje výběr, takže vyfiltrování právě vybrané položky vynutí změnu
+výběru a ta přepíše text v editovatelném poli. Sdílená komponenta proto plní `Items` přímo a hodnotu
+nese v `Tag`. **Než se v TD napíše filtrovaný ComboBox, hledá se sdílená komponenta** - tady byly
+vedle sebe tři implementace téhož a vlastní byla ta rozbitá.
+
+**Druhé poučení - deduplikace odhalila vadu ve sdílené komponentě.** Aby sloučení nebylo regresí,
+musela se srovnat jedna odchylka: volný režim bral klidovou hodnotu pole jako filtr, takže šipka
+nabídla jen právě nastavenou položku. Když se dvě implementace slévají, **rozdíly se musí projít
+kus po kusu** - ne předpokládat, že sdílená je nadmnožina.
+
 ## 2026-08-03 ✅ - `B45` glyf kola + oprava autobusu (#13093 bod 2, #13048 bod 1)
 
 Detail → changelog 2026-08-03 (13). Kola se tisknou; cestou se ukázalo, že **ranní oprava přestupů

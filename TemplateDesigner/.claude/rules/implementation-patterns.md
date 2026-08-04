@@ -37,40 +37,35 @@ Elementy dostávají `RenderContext` místo holého `SKCanvas`. Kontext obsahuje
 
 Elementy volají `ctx.ToCanvasRect(X, Y, Width, height)` pro přepočet souřadnic.
 
-### WPF editable ComboBox - event ordering gotcha
+### Filtrovaný editovatelný ComboBox - vždy sdílený `EDFilterComboBox`
 
-**Problém:** Při použití `IsEditable=true` ComboBox s live filtrováním (`TextChanged` → `Items.Clear()` + rebuild) WPF spouští eventy **synchronně** v tomto pořadí při výběru položky:
+⚠️ **Nepiš vlastní.** Filtrovaný editovatelný ComboBox je v EDControls jako `EDFilterComboBox`
+(volný režim = smí i text mimo nabídku, `StrictSelection` = jen platná položka). TD ho používá
+v panelu vlastností (`AddSuggestRow`) i ve výběru instancí; **dvě vlastní implementace vedle něj
+stály jeden reálný bug** (2026-08-04, `B46`: do skupiny linek nešlo napsat druhý znak).
+
+Proč to nikdy nedělat ručně - dvě pasti, které komponenta drží za tebe:
+
+**Past 1 - filtrování `ICollectionView` nastaveného jako `ItemsSource`.** ComboBox si s ním
+synchronizuje výběr, takže vyfiltrování právě vybrané položky vynutí změnu výběru → přepíše text
+v editovatelném poli a spustí `SelectionChanged`. Komponenta proto plní `Items` **přímo** a hodnotu
+nese v `Tag`.
+
+**Past 2 - pořadí eventů.** Při použití `IsEditable=true` ComboBox s live filtrováním (`TextChanged` → `Items.Clear()` + rebuild) WPF spouští eventy **synchronně** v tomto pořadí při výběru položky:
 1. `SelectionChanged` - WPF nastaví `SelectedItem`
 2. `combo.Text = item.Content` - WPF nastaví text na display string (e.g. "SPOJE  -  Spoje")
 3. `TextChanged` - náš handler spustí `Refilter()` → `Items.Clear()` → **`SelectedItem` se stane null**
 4. `DropDownClosed` - `SelectedItem` je null → handler nic nedělá → text zůstane jako display string
 
-**Fix:** Používáme `PreviewKeyDown`/`PreviewKeyUp` k detekci uživatelského psaní. `TextChanged` zavolá `Refilter()` pouze pokud `userIsTyping == true`. WPF interní změna textu při výběru nemá asociovaný klávesový event → Refilter se přeskočí → `SelectedItem` zůstane živý → `DropDownClosed` může přečíst `item.Tag` (skutečnou hodnotu, ne display string).
+Rozlišit uživatelovo psaní od interní změny textu jde jen klávesovým eventem - a **musí to být
+`PreviewKeyDown`**, protože `PreviewKeyUp` přichází **až po** `TextChanged`, takže filtr jede o znak
+pozadu (druhá polovina bugu `B46`: první napsaný znak neodfiltroval nic). Výběr se navíc nesmí
+commitovat z `SelectedItem` (Refilter ho může mezitím zahodit), ale z Key zachyceného už
+v `SelectionChanged`.
 
-```csharp
-bool userIsTyping = false;
-combo.PreviewKeyDown += (_, _) => userIsTyping = true;
-combo.PreviewKeyUp   += (_, _) => userIsTyping = false;
-
-combo.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler((_, _) =>
-{
-    if (_suppressChanges || !userIsTyping) return;  // přeskočit WPF interní změny
-    Refilter(combo.Text);
-    if (combo.Items.Count > 0) combo.IsDropDownOpen = true;
-}));
-
-combo.DropDownClosed += (_, _) =>
-{
-    if (combo.SelectedItem is not ComboBoxItem item) return;  // SelectedItem je zachován!
-    var val = (string)item.Tag!;   // skutečná hodnota (např. "SPOJE")
-    _suppressChanges = true;
-    combo.SelectedItem = null;
-    combo.Text = val;              // přepíše display string "SPOJE  -  Spoje"
-    _suppressChanges = false;
-};
-```
-
-**Kde je použito:** `PropertiesPanel.xaml.cs` `AddSuggestRow()`.
+Referenční řešení všeho výše = `EDControls/dotnet/EDFilterComboBox/EDFilterComboBox.cs` (remarks
+třídy + testy v `EDControls.Tests`). Konzumenti v TD: `PropertiesPanel.AddSuggestRow()`,
+`InstancePickerDialog`.
 
 ### DataContext - resolvování placeholderů
 ```csharp

@@ -65,7 +65,10 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
   Past: registruje window-level **Ctrl+F** binding v `OnLoaded` a musí ho odregistrovat
   v `OnUnloaded` — jinak se při re-loadu akumulují kopie.
 - `EDFilterComboBox/` — logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
-  WPF). `EDFilter/` — skládání filtrů.
+  WPF). **Jediné místo pro filtrovaný editovatelný ComboBox - vlastní nepsat**; drží pasti
+  pořadí WPF eventů (viz remarks třídy) a invariant „napsaný text = filtr, klidová hodnota
+  filtr NE" (šipka proto nabídne celý seznam, ne jen nastavenou položku).
+  `EDFilter/` — skládání filtrů.
 - `EDSearchTextBox/` — `TextBox` pro hledání (placeholder, ✕, Esc); styl v `EDControlStyles.xaml`.
 - `EDInfoBar/` — info proužek (text + volitelná ikona + akční odkaz); prázdné → skryté,
   styl v `EDControlStyles.xaml`, viditelnost řídí konzument.

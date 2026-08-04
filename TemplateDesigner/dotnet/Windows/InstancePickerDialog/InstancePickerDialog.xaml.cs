@@ -1,10 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
+using EDControls;
 using TemplateDesigner.Models.Schema;
 
 namespace TemplateDesigner;
@@ -12,12 +9,6 @@ namespace TemplateDesigner;
 public partial class InstancePickerDialog : Window
 {
     private readonly InstancePickerDialogViewModel _vm;
-
-    // Searchable combobox skupin: filtrujeme přes ICollectionView (ne Items.Clear → SelectedItem přežije).
-    private ICollectionView? _skupinyView;
-    private string _skupinaFilter = "";
-    private bool _skupinaUserTyping;      // rozliší uživatelské psaní od programové změny textu (výběr)
-    private bool _suppressSkupinaReload;   // předvýběr nesmí přenačíst list (dělá to Loaded)
 
     public InstancePickerDialog(InstancePickerDialogViewModel vm)
     {
@@ -50,42 +41,32 @@ public partial class InstancePickerDialog : Window
         };
     }
 
-    /// <summary>Naplní filtr skupin (searchable combobox), předvybere aktuální/první a napojí přenačtení.</summary>
+    /// <summary>Naplní filtr skupin, předvybere aktuální/první a napojí přenačtení instancí na výběr.</summary>
     private void SetupSkupinaFilter()
     {
         SkupinaRow.Visibility = Visibility.Visible;
 
-        _skupinyView = CollectionViewSource.GetDefaultView(_vm.Skupiny);
-        _skupinyView.Filter = o => _skupinaFilter == ""
-            || (o is AgendaSkupina s && s.Display.Contains(_skupinaFilter, StringComparison.OrdinalIgnoreCase));
-        CmbSkupina.ItemsSource = _skupinyView;
+        // Zobrazení „číslo - název" a hledání dle obojího umí sdílená komponenta sama (její výchozí
+        // separátor je totéž co AgendaSkupina.Display), takže se sem posílá holý Key + Label.
+        CmbSkupina.Suggestions = _vm.Skupiny.Select(s => new ListItem(s.Value, s.Label)).ToList();
 
-        // Předvýběr: uložená/aktuální skupina, jinak první v seznamu (= server default).
+        // Předvýběr: uložená/aktuální skupina, jinak první v seznamu (= server default). Musí být
+        // hotový DŘÍV, než se napojí DropDownClosed - jinak by předvýběr přenačetl list, který
+        // stejně vzápětí načte Loaded.
         var initial = _vm.Skupiny.FirstOrDefault(s => s.Value == _vm.SelectedSkupinaId) ?? _vm.Skupiny.FirstOrDefault();
-        _suppressSkupinaReload = true;
-        CmbSkupina.SelectedItem = initial;
         _vm.SelectedSkupinaId = initial?.Value;
         _vm.SelectedSkupinaLabel = initial?.Display;
-        _suppressSkupinaReload = false;
+        CmbSkupina.SelectedKey = initial?.Value;
 
-        // Contains-filtr jen při uživatelském psaní (programová změna textu při výběru nerefiltruje).
-        CmbSkupina.PreviewKeyUp += (_, _) => _skupinaUserTyping = true;
-        CmbSkupina.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler((_, _) =>
+        // Striktní režim fixuje výběr až ve svém DropDownClosed; náš handler je registrovaný později,
+        // takže SelectedKey už nese novou hodnotu.
+        CmbSkupina.DropDownClosed += (_, _) =>
         {
-            if (!_skupinaUserTyping) return;
-            _skupinaFilter = CmbSkupina.Text ?? "";
-            _skupinyView?.Refresh();
-            CmbSkupina.IsDropDownOpen = true;
-        }));
-        CmbSkupina.SelectionChanged += (_, _) =>
-        {
-            _skupinaUserTyping = false;
-            if (CmbSkupina.SelectedItem is not AgendaSkupina s) return;
+            var s = _vm.Skupiny.FirstOrDefault(x => x.Value == CmbSkupina.SelectedKey);
+            if (s is null || s.Value == _vm.SelectedSkupinaId) return;
             _vm.SelectedSkupinaId = s.Value;
             _vm.SelectedSkupinaLabel = s.Display;
-            // Reset filtru → příště plný seznam.
-            if (_skupinaFilter != "") { _skupinaFilter = ""; _skupinyView?.Refresh(); }
-            if (!_suppressSkupinaReload) ReloadInstances();
+            ReloadInstances();
         };
     }
 

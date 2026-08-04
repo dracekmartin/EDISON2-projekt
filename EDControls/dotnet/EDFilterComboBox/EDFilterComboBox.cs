@@ -83,6 +83,9 @@ public class EDFilterComboBox : ComboBox
     private bool _userIsTyping;
     // Po dobu programové změny Textu potlačí filtrování (jinak by SetText spustil Refilter).
     private bool _suppressChanges;
+    // True jen když aktuální Text napsal uživatel jako filtr. Klidová hodnota (commit, binding, výchozí
+    // stav) filtr NEPŘEDSTAVUJE → šipka pak ukazuje celý seznam, ne jen položky shodné s hodnotou.
+    private bool _textIsUserFilter;
     // Key vybraný v aktuální relaci dropdownu, zachycený v SelectionChanged (viz CommitSelection).
     private string? _committedKey;
 
@@ -112,6 +115,7 @@ public class EDFilterComboBox : ComboBox
         AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler((_, _) =>
         {
             if (_suppressChanges || !_userIsTyping) return;
+            _textIsUserFilter = true;
             Refilter(Text);
             if (Items.Count > 0 && !IsDropDownOpen)
             {
@@ -127,13 +131,13 @@ public class EDFilterComboBox : ComboBox
         // aby se ztracený PreviewKeyUp (zaseknutý příznak) nepřenášel do další interakce.
         DropDownClosed += (_, _) => { _userIsTyping = false; CommitSelection(); };
 
-        // Otevření = nová relace výběru (zapomeň předchozí pick). BEZ napsaného filtru (text = klidový
-        // display) → ukaž celý seznam. Uživatel mohl dřív psát a nevybrat → Items zůstaly filtrované;
-        // šipka má ukázat vše. Při otevření psaním je text ≠ display, Items filtruje už TextChanged → neresetujeme.
+        // Otevření = nová relace výběru (zapomeň předchozí pick). Není-li v poli napsaný filtr (jen
+        // klidová hodnota), ukaž celý seznam - jinak by šipka nabídla pouze právě nastavenou položku
+        // a přepnout na jinou by šlo až po smazání textu. Při otevření psaním filtruje už TextChanged.
         DropDownOpened += (_, _) =>
         {
             _committedKey = null;
-            if (StrictSelection && Text == DisplayFor(SelectedKey)) Refilter(null);
+            if (!_textIsUserFilter) Refilter(null);
         };
 
         // Select-all na fokus řeší OnApplyTemplate napojením na PART_EditableTextBox (synchronně,
@@ -149,10 +153,10 @@ public class EDFilterComboBox : ComboBox
                 new Action(() => { if (!IsKeyboardFocusWithin && !IsDropDownOpen) ShowSelectedKeyText(); }));
         };
 
-        // Počáteční zobrazení: striktní naplní seznam (pro šipku) + ukáže aktuální výběr, volný naplní dropdown.
+        // Počáteční zobrazení: celý seznam (výchozí hodnota není filtr), striktní navíc ukáže aktuální výběr.
         Loaded += (_, _) =>
         {
-            Refilter(StrictSelection ? null : Text);
+            Refilter(_textIsUserFilter ? Text : null);
             if (StrictSelection) ShowSelectedKeyText();
         };
     }
@@ -237,11 +241,13 @@ public class EDFilterComboBox : ComboBox
     }
 
     // Nastaví Text bez spuštění filtrování; SelectedItem=null → Text je jediný zdroj pravdy zobrazení.
+    // Programově nastavený text je klidová hodnota, ne uživatelův filtr (viz _textIsUserFilter).
     private void SetText(string text)
     {
         _suppressChanges = true;
         if (SelectedItem != null) SelectedItem = null;
         Text = text;
+        _textIsUserFilter = false;
         _suppressChanges = false;
     }
 
@@ -275,16 +281,16 @@ public class EDFilterComboBox : ComboBox
     private static void OnKeyLabelSeparatorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not EDFilterComboBox c) return;
-        c.Refilter(c.StrictSelection ? null : c.Text);
+        c.Refilter(c._textIsUserFilter ? c.Text : null);
         if (c.StrictSelection) c.ShowSelectedKeyText();
     }
 
-    // Změna Suggestions: naplní Items (striktní = celý seznam pro šipku, volný = dle textu);
+    // Změna Suggestions: naplní Items (celý seznam, pokud uživatel právě nepíše filtr);
     // striktní navíc obnoví klidový display (Label se mohl právě stát dostupným).
     private static void OnSuggestionsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not EDFilterComboBox c) return;
-        c.Refilter(c.StrictSelection ? null : c.Text);
+        c.Refilter(c._textIsUserFilter ? c.Text : null);
         if (c.StrictSelection) c.ShowSelectedKeyText();
     }
 }

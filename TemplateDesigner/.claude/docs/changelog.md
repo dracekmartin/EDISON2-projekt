@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-04 (3) - hledání skupiny linek přepsáno na sdílený `EDFilterComboBox` (`B46`)
+
+Nahlásil Jan: ve výběru linek se do filtru skupiny nedá napsat víc než jeden znak. Reprodukováno
+z kódu, dvě příčiny v `InstancePickerDialog`:
+
+- **Filtr jel o znak pozadu.** Příznak „uživatel píše" se zapínal v `PreviewKeyUp`, který u WPF přichází
+  **až po** `TextChanged` - při prvním znaku byl tedy ještě vypnutý a filtr se přeskočil.
+- **Druhý znak přepsal napsaný text.** Filtroval se `ICollectionView` nastavený jako `ItemsSource`,
+  se kterým si ComboBox synchronizuje výběr. Vyfiltrování právě vybrané skupiny proto vynutilo změnu
+  výběru → ComboBox zapsal do pole popis nové položky, handler `SelectionChanged` shodil filtr na
+  prázdný a **přenačetl linky pro skupinu, kterou uživatel nevybral** (to bylo na tom nejhorší,
+  protože to není vidět).
+
+Oprava = **použít sdílený `EDFilterComboBox`** z EDControls (`StrictSelection`), který přesně tuhle
+třídu problémů řeší (plní `Items` přímo, hodnotu drží v `Tag`, výběr commituje z `SelectionChanged`
+zachyceného Key) a má na to testy. Vlastních ~35 řádků filtrování i se čtyřmi stavovými příznaky
+zmizelo; výběr se teď snímá v `DropDownClosed`, kde ho komponenta fixuje. **Vzhled se nemění** -
+výchozí separátor komponenty je `" - "`, což je totéž co `AgendaSkupina.Display`.
+
+**Zrušena i druhá vlastní kopie** (rozhodnutí Jan: čistá deduplikace hned): nabídka datových polí
+v panelu vlastností (`PropertiesPanel.AddSuggestRow`) jede na téže komponentě ve volném režimu.
+Ta kopie bugem netrpěla (byla postavená správně), ale byla to třetí implementace téhož; její
+dvojité mezery v „hodnota - popisek" drží `KeyLabelSeparator`, takže se panel vizuálně nemění.
+Undo/redo commit na `LostFocus` zůstal v panelu, kam patří.
+
+**Jeden rozdíl si vyžádal úpravu sdílené komponenty** (jinak by to nebyla deduplikace, ale
+regrese): ve volném režimu brala komponenta klidovou hodnotu pole jako filtr, takže šipka nabídla
+**jen právě nastavenou položku** a přepnout na jinou šlo až po smazání textu. Nově je filtrem jen
+text, který uživatel skutečně napsal (`_textIsUserFilter`); programově nastavená hodnota filtr není.
+⚠️ **Dotýká se i EDInputFormu** (tamní volné ComboBoxy měly tutéž vadu, teď nabídnou celý seznam) -
+je to oprava, ale je to změna chování ve sdílené knihovně, tedy i v EDISONMAIN2.
+
+.NET 1510/1510 (EDControls 507 (+2), TD 568, EDISONMAIN2 435).
+
 ## 2026-08-04 (2) - výběr kategorií poznámek linky (#13093 bod 1, zbytek)
 
 V zadání stálo *„Dají se v šabloně aktivovat? **Příp. filtrovat Poznámky 1, Poznámky 2 apod?** Asi to
