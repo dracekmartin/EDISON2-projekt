@@ -1,5 +1,6 @@
 using System.Globalization;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Tests.Models;
 
@@ -102,5 +103,50 @@ public class RowSorterTests
         var rows = Rows("c", "a", "b");
 
         Assert.Same(rows, RowSorter.Sort(rows, Cs, (null, false), ("", true)));
+    }
+}
+
+/// <summary>
+/// Zapojení řazení do prvku. Samotný <see cref="RowSorter"/> je otestovaný výše - tohle hlídá,
+/// že ho dynamická tabulka opravdu volá. „Hotové, ale nezapojené" je failure mode, který 4. 8.
+/// nastal dvakrát (allowlist parametrů, nenasazený formulář), a izolovaný test algoritmu ho nechytí.
+/// </summary>
+public class DynamicTableSortWiringTests
+{
+    private static readonly CultureInfo Cs = new("cs-CZ");
+
+    private static IReadOnlyList<DataContext> Rows(params string[] values) =>
+        [.. values.Select(v => new DataContext(new Dictionary<string, object?> { ["CENA"] = v }, culture: Cs))];
+
+    [Fact]
+    public void PrvekRadiPodleNastavenehoSloupce()
+    {
+        var el = new DynamicTableElement { SortField = "CENA" };
+
+        var result = el.VisibleDataRows(Rows("12", "2", "9")).Select(r => r.GetString("CENA")).ToList();
+
+        Assert.Equal(["2", "9", "12"], result);   // číselně, ne abecedně
+    }
+
+    [Fact]
+    public void BezNastaveni_ZustanePoradiZDat()
+    {
+        var el = new DynamicTableElement();
+
+        var result = el.VisibleDataRows(Rows("12", "2", "9")).Select(r => r.GetString("CENA")).ToList();
+
+        Assert.Equal(["12", "2", "9"], result);
+    }
+
+    [Fact]
+    public void RazeniSeSkladaSFiltremRadku()
+    {
+        // Obojí jde týmž trychtýřem - kdyby se filtr aplikoval až po řazení (nebo naopak jen
+        // v jedné z cest), rozešel by se render s výpočtem výšky.
+        var el = new DynamicTableElement { SortField = "CENA", RowVisibilityExpression = "{CENA} > 5" };
+
+        var result = el.VisibleDataRows(Rows("12", "2", "9")).Select(r => r.GetString("CENA")).ToList();
+
+        Assert.Equal(["9", "12"], result);
     }
 }

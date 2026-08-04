@@ -287,7 +287,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
 
     /// <summary>Řádky po filtru viditelnosti a po seřazení. **Jediné místo** - render i výpočet výšky
     /// jdou tudy, takže se nemůžou rozejít v pořadí ani v počtu.</summary>
-    private IReadOnlyList<DataContext> VisibleDataRows(IReadOnlyList<DataContext> rows) =>
+    internal IReadOnlyList<DataContext> VisibleDataRows(IReadOnlyList<DataContext> rows) =>
         RowSorter.Sort(
             RowConditions.VisibleRows(rows, RowVisibilityExpression),
             rows.Count > 0 ? rows[0].Culture : null,

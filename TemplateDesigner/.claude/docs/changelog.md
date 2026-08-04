@@ -21,7 +21,15 @@ tabulka má pořadí řádků od uživatele.
 
 Počítané sloupce (`{CENA}*{POCET}`) se v1 nenabízejí - bez vyhodnocení výrazu není co porovnat.
 
-.NET 1543/1543 (TD 601, +10).
+Kromě testů řadicí logiky přibyl i test **zapojení** - že prvek `RowSorter` opravdu volá a že se
+řazení skládá s filtrem řádků. Izolovaný test algoritmu by „hotové, ale nezapojené" nechytil,
+a přesně to 4. 8. nastalo dvakrát (allowlist parametrů, nenasazený formulář).
+
+⚠️ **Otevřeno pro pozdější doladění nad lepšími daty** (rozhodnutí Jan): počítané sloupce v nabídce,
+a případné vyladění chování `Max. řádků` v kombinaci s řazením (dnes = seřaď, pak vezmi prvních N,
+což je asi to, co člověk čeká, ale nikdo to zatím nezkoušel na reálné tabulce).
+
+.NET 1546/1546 (TD 604, +13).
 
 ## 2026-08-04 (13) - repertoár symbolového fontu změřen (příprava `B10`)
 
