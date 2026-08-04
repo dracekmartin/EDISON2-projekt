@@ -1097,12 +1097,19 @@ public class EDInputFormPlaceholderWireTests
         Assert.True(vraceny.Placeholders);
     }
 
+    /// <summary>
+    /// Po drátě jede **jen příznak**, ne seznam nabízených polí: ten zná pouze klient (ze schématu
+    /// agendy) a drží ho <c>EDInputForm.PlaceholderFields</c>. Kdyby se vezl v poli, server by ho
+    /// na zpáteční cestě přepsal prázdnem a tlačítko by po prvním kole nabízelo prázdno.
+    /// </summary>
     [Fact]
-    public void TextovePole_NeseTokenyVListItems()
+    public void SeznamPoliPoDratuNejede()
     {
-        // Tokeny jedou ve slotu 13 (u textového pole dosud nevyužitém) - proto nový je jen příznak.
-        var field = ParseSingleField(FieldRow("CISLO_LINKY~Číslo linky", "", "", "", "", "", "1"));
+        var odeslane = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
 
-        Assert.Equal("CISLO_LINKY", Assert.Single(field.ListItems).Key);
+        var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([odeslane]);
+        var vraceny = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
+
+        Assert.Empty(vraceny.ListItems);
     }
 }

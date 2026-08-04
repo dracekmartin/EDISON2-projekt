@@ -14,6 +14,14 @@ namespace EDControls.EDInputForm
 {
     public partial class EDInputForm : UserControl
     {
+        /// <summary>
+        /// Datová pole nabízená tlačítkem „vložit pole" u textových polí s příznakem
+        /// <see cref="Field.Placeholders"/>. **Čistě klientský stav** - server tenhle seznam nezná
+        /// (nezná agendu šablony), takže po drátě NESMÍ cestovat: formulář chodí tam a zpět
+        /// (Validate) a cokoli, co server neumí vrátit, by se cestou vyprázdnilo.
+        /// </summary>
+        public IReadOnlyList<ListItem> PlaceholderFields { get; set; } = [];
+
         // ─── Configuration ────────────────────────────────────────────────────────
 
         // MLRest a PopupDisplayer ze sdíleného EDServices.Current — nezávislé na Window.DataContext.
@@ -497,8 +505,8 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
-        /// „Vložit pole" u textového pole s placeholdery: nabídne seznam polí agendy (dodal ho
-        /// klient do <c>ListItems</c>) a vybraný token vloží **na pozici kurzoru** - hodnota bývá
+        /// „Vložit pole" u textového pole s placeholdery: nabídne <see cref="PlaceholderFields"/>
+        /// a vybraný token vloží **na pozici kurzoru** - hodnota bývá
         /// věta s tokeny uvnitř („Linka {CISLO_LINKY}: {POPIS_LINKY}"), ne jen samotný token,
         /// takže nahradit celou hodnotu by nestačilo.
         /// </summary>
@@ -506,14 +514,14 @@ namespace EDControls.EDInputForm
         {
             if (sender is not System.Windows.Controls.Button btn || btn.DataContext is not Field field) return;
             if (!field.Editable) return;
-            if (field.ListItems.Count == 0)
+            if (PlaceholderFields.Count == 0)
             {
                 EDViewModel.EDServices.Current.PopupDisplayer.Info(
-                    "Šablona nemá agendu, takže není z čeho vybírat datová pole.");
+                    "Není z čeho vybírat - tahle šablona nemá napojená data.");
                 return;
             }
 
-            var token = PlaceholderPicker.Pick(btn, field.ListItems);
+            var token = PlaceholderPicker.Pick(btn, PlaceholderFields);
             if (token is null) return;
 
             // Kurzor drží TextBox vlevo od tlačítka; bez něj (nemá fokus) se vkládá na konec.

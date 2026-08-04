@@ -1676,7 +1676,8 @@ public partial class MainWindow : Window
 
     private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
-        var dlg = new ElementEditDialog(element, cacheClass, title) { Owner = this };
+        var dlg = new ElementEditDialog(element, cacheClass, title)
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);
@@ -1774,7 +1775,8 @@ public partial class MainWindow : Window
         var dlg = new ElementEditDialog(
             section,
             "ALVA.TemplateDesigner.EDInputForm.SectionEdit",
-            "Vlastnosti sekce: " + section.Name) { Owner = this };
+            "Vlastnosti sekce: " + section.Name)
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
             _vm!.Execute(dlg.ResultCommand);
         InvalidateCanvas();

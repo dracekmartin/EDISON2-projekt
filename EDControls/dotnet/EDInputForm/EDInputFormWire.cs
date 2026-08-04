@@ -90,10 +90,8 @@ internal static class EDInputFormWire
                     HelpText         = row.Length >= 12 && row.GetString(12) != "" ? row.GetString(12) : null,
                     ParentGroup      = currentGroup,
                 };
-                // List + ComboBox sdílejí listItems storage v pozici 13; u textového pole s
-                // placeholdery se v témž slotu vezou nabízené tokeny (plní je klient, ne server).
-                if ((field.FieldType == EFieldType.List || field.FieldType == EFieldType.ComboBox
-                     || field.FieldType == EFieldType.Text)
+                // List + ComboBox sdílejí listItems storage v pozici 13
+                if ((field.FieldType == EFieldType.List || field.FieldType == EFieldType.ComboBox)
                     && row.Length >= 13)
                     field.ListItems = ParseListItems(row.GetString(13));
                 if (field.FieldType == EFieldType.File && row.Length >= 14)

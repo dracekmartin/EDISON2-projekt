@@ -38,7 +38,11 @@ public partial class InlinePropertiesForm : UserControl
 
     /// <summary>Datová pole aktuální agendy pro nabídku „vložit pole" u textových vlastností.
     /// Nastavuje host při změně agendy - panel schéma nezná.</summary>
-    public IReadOnlyList<EDControls.ListItem> PlaceholderFields { get; set; } = [];
+    public IReadOnlyList<EDControls.ListItem> PlaceholderFields
+    {
+        get => TheForm.PlaceholderFields;
+        set => TheForm.PlaceholderFields = value;
+    }
 
     /// <summary>Napojí undo executor + canvas invalidaci (volá host jednou).</summary>
     public void SetContext(Action<IDesignerCommand> execute, Action invalidate)
@@ -75,7 +79,6 @@ public partial class InlinePropertiesForm : UserControl
         try
         {
             ElementFormBinder.PopulateFontFields(TheForm);
-            ElementFormBinder.PopulatePlaceholderFields(TheForm, PlaceholderFields);
             _preFilled = ElementFormBinder.Prefill(TheForm, _target);
             // Řez (váhy) - plní se z reálných řezů rodiny až po prefillu (kdy je hodnota rodiny známá).
             ElementFormBinder.PopulateFontWeightFields(TheForm);

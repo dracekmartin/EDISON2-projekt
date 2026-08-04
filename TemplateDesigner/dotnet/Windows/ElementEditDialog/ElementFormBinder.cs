@@ -41,18 +41,6 @@ public static class ElementFormBinder
                 field.ListItems = FontItems;
     }
 
-    /// <summary>
-    /// Klientsky naplní nabídku datových polí do textových polí, která přijímají <c>{POLE}</c>
-    /// (server je označil příznakem). **Seznam zná jen návrhář** - Caché agendu šablony nezná,
-    /// takže tokeny nemůže poslat s formulářem.
-    /// </summary>
-    public static void PopulatePlaceholderFields(EDInputForm form, IReadOnlyList<ListItem> fields)
-    {
-        foreach (var field in (form.Items ?? []).OfType<Field>())
-            if (field.Placeholders)
-                field.ListItems = [.. fields];
-    }
-
     private const string FamilySuffix = "FontFamily";
     private const string WeightSuffix = "FontWeight";
 
