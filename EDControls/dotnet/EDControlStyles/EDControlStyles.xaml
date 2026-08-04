@@ -908,24 +908,15 @@
                                    Width="16" Height="16" Margin="0,0,6,0"
                                    VerticalAlignment="Center"
                                    RenderOptions.BitmapScalingMode="HighQuality"/>
-                            <!-- Akční odkaz (link-style tlačítko) vpravo; schová se bez ActionText. -->
+                            <!-- Akční odkaz vpravo; schová se bez ActionText. Styl je sdílený
+                                 (EDTheme.LinkButton) a definovaný níž v tomtéž slovníku → DynamicResource. -->
                             <Button x:Name="ActionButton" DockPanel.Dock="Right"
-                                    Margin="8,0,0,0" Focusable="False" Cursor="Hand"
+                                    Style="{DynamicResource EDTheme.LinkButton}"
+                                    Margin="8,0,0,0" Focusable="False"
                                     VerticalAlignment="Center"
+                                    FontSize="{TemplateBinding FontSize}"
                                     Content="{TemplateBinding ActionText}"
-                                    Command="{TemplateBinding ActionCommand}">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <TextBlock x:Name="ActionGlyph" Text="{TemplateBinding Content}"
-                                                   Foreground="{DynamicResource EDTheme.Accent.Blue}"/>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ActionGlyph" Property="TextDecorations" Value="Underline"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                                    Command="{TemplateBinding ActionCommand}"/>
                             <TextBlock x:Name="MessageText" Text="{TemplateBinding Text}"
                                        TextWrapping="Wrap" VerticalAlignment="Center"
                                        Foreground="{TemplateBinding Foreground}"/>
@@ -1792,6 +1783,28 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Odkaz vypadající jako odkaz: tlačítko bez plochy, akcentová barva, podtržení na hover.
+         Keyed - opt-in (akční odkaz EDInfoBaru, patička přihlašovací obrazovky shellu).
+         BasedOn kvůli font tokenům: šablona je holý TextBlock, takže bez něj by odkaz
+         nereagoval na user škálování fontu. -->
+    <Style x:Key="EDTheme.LinkButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.Blue}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <TextBlock x:Name="Glyph" Text="{TemplateBinding Content}"
+                               Foreground="{TemplateBinding Foreground}"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Glyph" Property="TextDecorations" Value="Underline"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

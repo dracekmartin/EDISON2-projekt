@@ -53,6 +53,28 @@
                         <Button Content="{StaticResource EDStrings.Cancel}" Width="90" IsCancel="True"/>
                     </StackPanel>
                 </StackPanel>
+
+                <!-- Patička karty: značka dodavatele + prokliky na web a portál podpory.
+                     Musí zůstat v levém sloupci - přes WebView2 widgety vpravo se WPF obsah
+                     kvůli airspace nevykreslí. -->
+                <Border VerticalAlignment="Bottom" Padding="16,10"
+                        Background="{DynamicResource EDTheme.Bg.PanelAlt}"
+                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Image Source="{StaticResource EDIcons.MlineLogo}" Width="36" Height="36"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="M-line software s.r.o."
+                                       Foreground="{DynamicResource EDTheme.Text.Primary}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                <Button Style="{StaticResource EDTheme.LinkButton}" Margin="0,0,12,0"
+                                        Content="www.m-line.cz" Click="MlineWeb_Click"/>
+                                <Button Style="{StaticResource EDTheme.LinkButton}"
+                                        Content="podpora.m-line.cz" Click="MlineSupport_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
 

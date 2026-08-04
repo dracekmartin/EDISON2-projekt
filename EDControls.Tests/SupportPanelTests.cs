@@ -27,6 +27,23 @@ public class SupportPanelTests
         return ml;
     }
 
+    // ---------- Veřejné URL ----------
+
+    [Fact]
+    public void PublicUrls_AreAbsoluteHttpsInMlineDomain()
+    {
+        // Konstanty se nikde jinde nevalidují - rozbitá URL se projeví až chybou prohlížeče
+        // po kliknutí (patička přihlašovací obrazovky, tlačítka panelu Podpora).
+        var urls = new[] { SupportActions.PortalUrl, SupportActions.WebUrl, SupportActions.WidgetBaseUrl };
+
+        Assert.All(urls, url =>
+        {
+            var uri = new Uri(url);
+            Assert.Equal(Uri.UriSchemeHttps, uri.Scheme);
+            Assert.EndsWith("m-line.cz", uri.Host);
+        });
+    }
+
     // ---------- Feedback URL ----------
 
     [Fact]

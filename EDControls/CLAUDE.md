@@ -55,6 +55,8 @@ ať se okna nové aplikace nemíchají se shellem.
   `.xaml` SDK zahrnuje sám, ruční `<Page>` = duplikát) + `BitmapImage` v `EDIcons.xaml`
   se sémantickým klíčem (`EDIcons.MyName`, ne název souboru).
 - Nový text: `<sys:String x:Key="EDStrings.X">` v `EDStrings.xaml`, bez změny csproj.
+- Výjimka: `EDIcons.MlineLogo` je `DrawingImage` (vektor) s brand barvou zapečenou v geometrii -
+  rastr se v běžné velikosti rozpadá a v dark modu se značka záměrně nepřebarvuje.
 
 ## Root-level infrastruktura (`dotnet/*.cs`)
 
