@@ -28,13 +28,14 @@ public partial class FontSettingsWindow : Window
         ResetBtn.Content = $"Obnovit výchozí ({DefaultLabel})";
 
         var prefs = UserFontPreference.Current;
+        var currentPt = FontService.OverrideBodyPt(prefs);
         FamilyCombo.ItemsSource = FontCatalog.Families(FontCatalog.InstalledFamilies(), prefs.FontFamily);
-        SizeCombo.ItemsSource = FontCatalog.SizesPt(FontService.DefaultBodyPt)
+        SizeCombo.ItemsSource = FontCatalog.SizesPt(FontService.DefaultBodyPt, currentPt)
             .Select(pt => new SizeChoice(pt, FormatPt(pt) + (IsDefaultPt(pt) ? " (výchozí)" : "")))
             .ToList();
 
         SelectFamily(prefs.FontApplied ? prefs.FontFamily : null);
-        SelectSize(prefs.FontApplied ? prefs.FontSize : null);
+        SelectSize(currentPt);
         UpdateCurrentState(prefs);
         UpdatePreview();
     }
@@ -90,7 +91,7 @@ public partial class FontSettingsWindow : Window
     private void UpdateCurrentState(UserFontPreference prefs)
     {
         CurrentStateText.Text = prefs.FontApplied && !string.IsNullOrEmpty(prefs.FontFamily)
-            ? $"Aktuálně: vlastní ({prefs.FontFamily}, {FormatPt(prefs.FontSize ?? FontService.DefaultBodyPt)} pt)"
+            ? $"Aktuálně: vlastní ({prefs.FontFamily}, {FormatPt(FontService.OverrideBodyPt(prefs) ?? FontService.DefaultBodyPt)} pt)"
             : $"Aktuálně: výchozí ({DefaultLabel})";
     }
 

@@ -69,7 +69,17 @@ public static class FontService
     }
 
     private static double? ToPx(double? sizePt) =>
-        sizePt is { } pt ? Math.Clamp(pt, MinBodyPt, MaxBodyPt) * PtToPx : null;
+        sizePt is { } pt ? ClampBodyPt(pt) * PtToPx : null;
+
+    private static double ClampBodyPt(double sizePt) => Math.Clamp(sizePt, MinBodyPt, MaxBodyPt);
+
+    /// <summary>
+    /// User override velikosti **v pt** po clampu, nebo <c>null</c> když override neplatí.
+    /// Dialog z toho staví předvolbu i řádek „Aktuálně" — musí ukazovat, co je opravdu vidět,
+    /// ne surovou hodnotu z <c>font.json</c>.
+    /// </summary>
+    internal static double? OverrideBodyPt(UserFontPreference prefs) =>
+        prefs.FontApplied && prefs.FontSize is { } pt ? ClampBodyPt(pt) : null;
 
     /// <summary>
     /// Vyvolá se po každém <see cref="Apply"/> — pokrývá in-process změnu (menu Styl)

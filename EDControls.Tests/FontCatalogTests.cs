@@ -75,4 +75,28 @@ public class FontCatalogTests
 
         Assert.Single(sizes, s => s == 12);
     }
+
+    [Fact]
+    public void SizesPt_KeepsCurrentOutsideOffer()
+    {
+        // Ruční edit font.json — combo nesmí tvrdit jinou velikost, než jaká je aplikovaná.
+        var sizes = FontCatalog.SizesPt(10.5, current: 13);
+
+        Assert.Contains(13, sizes);
+        Assert.Equal(sizes.OrderBy(s => s), sizes);
+    }
+
+    [Fact]
+    public void SizesPt_DoesNotDuplicateCurrentAlreadyOffered()
+    {
+        Assert.Single(FontCatalog.SizesPt(10.5, current: 12), s => s == 12);
+    }
+
+    [Fact]
+    public void IsAllowed_RejectsSymbolFontAndAcceptsWhitelistCaseInsensitively()
+    {
+        Assert.False(FontCatalog.IsAllowed("Wingdings"));
+        Assert.False(FontCatalog.IsAllowed(null));
+        Assert.True(FontCatalog.IsAllowed("calibri"));
+    }
 }

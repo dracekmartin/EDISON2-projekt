@@ -37,13 +37,54 @@ public class UserFontPreferenceTests
     {
         // Pinned tvar sdílený s TemplateDesigner — přejmenování property (bez JsonPropertyName)
         // nebo změna naming policy tenhle kontrakt rozbije.
-        WithTempFontFile("""{"fontApplied":true,"fontFamily":"Calibri","fontSize":14.5}""", _ =>
+        WithTempFontFile("""{"fontApplied":true,"fontFamily":"Calibri","fontSize":14.5,"version":1}""", _ =>
         {
             UserFontPreference.Load();
 
             Assert.True(UserFontPreference.Current.FontApplied);
             Assert.Equal("Calibri", UserFontPreference.Current.FontFamily);
             Assert.Equal(14.5, UserFontPreference.Current.FontSize);
+        });
+    }
+
+    [Fact]
+    public void Load_LegacyFileWithoutVersion_DropsSizeKeepsWhitelistedFamily()
+    {
+        // Velikost bez verze pochází z buildu, který pt vykresloval jako px — uživatel ji
+        // ladil podle výsledku, takže po opravě nedává smysl. Rodina chybou zasažená nebyla.
+        WithTempFontFile("""{"fontApplied":true,"fontFamily":"Calibri","fontSize":10}""", _ =>
+        {
+            UserFontPreference.Load();
+
+            Assert.Null(UserFontPreference.Current.FontSize);
+            Assert.Equal("Calibri", UserFontPreference.Current.FontFamily);
+            Assert.True(UserFontPreference.Current.FontApplied);
+        });
+    }
+
+    [Fact]
+    public void Load_LegacyFileWithSymbolFont_DropsOverrideEntirely()
+    {
+        // Původní systémový picker pustil i symbolové fonty — whitelist je má uklidit.
+        WithTempFontFile("""{"fontApplied":true,"fontFamily":"Wingdings","fontSize":10}""", _ =>
+        {
+            UserFontPreference.Load();
+
+            Assert.False(UserFontPreference.Current.FontApplied);
+            Assert.Null(UserFontPreference.Current.FontFamily);
+        });
+    }
+
+    [Fact]
+    public void Save_StampsVersion_SoNextLoadKeepsSize()
+    {
+        // Bez razítka by MigrateLegacy zahodila i velikost právě zvolenou v dialogu.
+        WithTempFontFile(null, _ =>
+        {
+            new UserFontPreference { FontApplied = true, FontFamily = "Calibri", FontSize = 12 }.Save();
+            UserFontPreference.Load();
+
+            Assert.Equal(12, UserFontPreference.Current.FontSize);
         });
     }
 
