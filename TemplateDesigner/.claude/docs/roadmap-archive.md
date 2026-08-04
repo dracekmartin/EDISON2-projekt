@@ -25,6 +25,25 @@ podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivk
 Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
 binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
 
+## 2026-08-04 ✅ - `B47` drift test allowlistu serverových parametrů + `B51` plnění seznamu
+
+Detail → changelog 2026-08-04 (8). Obecné nálezy dojeté po vydání verze.
+
+`B47`: strojová pojistka proti pasti, která se vrátila **čtyřikrát** (parametr čtený v `GetData`
+chybí v `ServerSideParams` → jeho přepnutí v UI nespustí re-fetch, takže klik nedělá nic a tisk
+vyjede jinak než náhled). **Test našel čtvrtý výskyt sám:** `DELENI_SLOUPCU` v `LinkovyJrAd`.
+
+**Poučení, které se nesmí ztratit:** u ručně držených allowlistů se **testuje oběma směry** -
+chybějící klíč (tichá vada) i mrtvý klíč (zbytečný re-fetch). Ty dva testy se navzájem kontrolují:
+kdyby parser `.cls` zrezivěl a nevracel nic, „chybějící" projde na prázdném vstupu, ale „mrtvé"
+spadne na všech položkách allowlistu. Jednosměrná kontrola tuhle vlastnost nemá.
+Druhé poučení: **pojistku ověř mutací** - dočasně odeber klíč a přesvědč se, že test spadne.
+Zelený guard test nic nedokazuje.
+
+`B51`: `EDList` plnil řádky po jednom do kolekce navázané na `DataGrid` s filtrem, takže 200 řádků
+znamenalo 200 přepočtů pohledu; `DeferRefresh` (včetně nastavení filtru uvnitř) to zkolabuje do
+jednoho. Projevilo se to až po přechodu na async načítání - dřív to bylo schované za zámrzem.
+
 ## 2026-08-04 ✅ - `B50` export i tisk posílají tytéž parametry co náhled
 
 Detail → changelog 2026-08-04 (4). Export z lišty neposílal do `GetData` parametry sestavy vůbec

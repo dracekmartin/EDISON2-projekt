@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-08-04 (8) - pojistka allowlistu parametrů (`B47`) + plnění seznamu (`B51`)
+
+Dva obecné nálezy dojeté po vydání verze.
+
+### `B47` - drift test na `ServerSideParams`
+
+Past, která se vrátila **čtyřikrát**: parametr, jehož hodnotu zpracovává server v `GetData`, musí být
+v allowlistu `ServerSideParams`, jinak jeho přepnutí v UI nespustí re-fetch - klik nedělá nic a tisk
+vyjede jinak než náhled (tiskový dialog si data tahá čerstvě). Nově to hlídá test: vyparsuje
+z agendových `.cls` čtení `^||ML("IN","KLIC")`, odečte infrastrukturní klíče a ověří podmnožinu.
+
+**Test našel čtvrtý výskyt hned:** `DELENI_SLOUPCU` („Dělení spojů dle platnosti") čte `LinkovyJrAd`
+v `GetData`, ale v allowlistu nebyl. Latentní, protože linkový JŘ ještě není zveřejněná agenda -
+doplněno.
+
+Testuje se **oběma směry** (chybějící klíč = tichá vada, mrtvý klíč = zbytečný re-fetch); ty dva testy
+se navzájem hlídají, protože kdyby parser zrezivěl, směr „mrtvé klíče" spadne na celém allowlistu.
+Pojistka ověřena mutací - s odebraným klíčem test spadne.
+
+⚠️ **Dynamické klíče parser vynechává**: `ZastavkoveJrMhd` čte `^||ML("IN","par_2_"_AtributID)`, což je
+rodina klíčů skládaná za běhu, ne název parametru. Mimochodem je to **mrtvá legacy větev** - klíč nikdo
+neposílá a `NETISKNUTE_ATRIBUTY` z komentáře nikde neexistuje. Neřešeno, jen zaznamenáno.
+
+### `B51` - seznam se plnil po jednom řádku
+
+`EDList` přidával řádky jeden po druhém do kolekce navázané na `DataGrid` s filtrem, takže 200 řádků
+znamenalo 200 oznámení o změně a 200 přepočtů pohledu, a nakonec ještě celý `RefreshFilter()`.
+`DeferRefresh` (s nastavením filtru uvnitř) to zkolabuje do jednoho průchodu.
+
+Projevilo se to až po přechodu pickeru na async: načtení dosedá, zatímco uživatel píše do filtru
+skupiny, takže to škubalo. Dřív bylo schované za zámrzem synchronního načítání.
+
+⚠️ **Sdílená komponenta** - dotýká se všech konzumentů EDListu včetně EDISONu. Jednotkové testy prošly,
+ale je to změna chování při plnění seznamu, takže stojí za proklik i tam.
+
+.NET 1529/1529 (EDControls 507, TD 587 (+4), EDISONMAIN2 435).
+
 ## 2026-08-04 (7) - zobrazení obsahu jen v šabloně, čtyři parametry pryč (rozhodnutí Jan)
 
 **Rozhodnutí Jan 4. 8.:** *„Za mě je důležité, co vidí zákazník, ne co posílá server. Nemělo by to

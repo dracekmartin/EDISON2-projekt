@@ -361,15 +361,31 @@ namespace EDControls.EDList
         {
             // Unsubscribe stará data — žádné spying na zaniklé řádky
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
-            _rows.Clear();
             _checkAnchor = null;
-            foreach (var row in ParseRows(output))
+
+            // Plnění po jednom = jedno oznámení o změně na řádek a s aktivním filtrem i přepočet
+            // pohledu na každé z nich. DeferRefresh to zkolabuje do JEDNOHO průchodu na konci
+            // (včetně nastavení filtru, které je proto taky uvnitř). Bez toho 200 řádků škubne UI
+            // zrovna ve chvíli, kdy uživatel píše do filtru — dřív to bylo schované za zámrzem
+            // synchronního načítání, po přechodu na async se to začalo projevovat.
+            var view = CollectionViewSource.GetDefaultView(dataGrid.ItemsSource);
+            var defer = view?.DeferRefresh();
+            try
             {
-                row.PropertyChanged += OnRowPropertyChanged;
-                _rows.Add(row);
+                _rows.Clear();
+                foreach (var row in ParseRows(output))
+                {
+                    row.PropertyChanged += OnRowPropertyChanged;
+                    _rows.Add(row);
+                }
+                RefreshFilter();  // re-apply current search po LoadList (nový dataset)
             }
+            finally
+            {
+                defer?.Dispose();
+            }
+
             FireCheckedRowsChanged();
-            RefreshFilter();  // re-apply current search po LoadList (nový dataset)
             // Aplikuj persistent column layout asynchronně po data load — minor flicker (default
             // sloupce → persistované), ale UI neblokuje.
             _ = LoadLayoutAsync();

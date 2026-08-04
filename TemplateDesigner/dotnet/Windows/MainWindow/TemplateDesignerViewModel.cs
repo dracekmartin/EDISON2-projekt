@@ -2489,10 +2489,20 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Parametry zpracovávané v Caché GetData (rozdělení sloupců, varianty tras) -
     /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
-    private static readonly string[] ServerSideParams =
+    /// <summary>
+    /// Parametry, jejichž hodnotu zpracovává až server v <c>GetData</c> - jejich změna proto musí
+    /// spustit re-fetch dat, ne jen překreslení náhledu.
+    /// <para>
+    /// ⚠️ **Chybějící klíč je tichá vada:** přepnutí volby v UI nedělá nic a tisk pak vyjede jinak
+    /// než náhled (tiskový dialog fetchuje čerstvě). Stalo se to čtyřikrát, proto to hlídá
+    /// <c>ServerSideParamsDriftTests</c> - nový parametr čtený v <c>.cls</c> musí být i tady.
+    /// </para>
+    /// </summary>
+    internal static readonly string[] ServerSideParams =
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
          "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
-         "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE"];
+         "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
+         "DELENI_SLOUPCU"];
 
     private string? _lastServerParamsSnapshot;
 

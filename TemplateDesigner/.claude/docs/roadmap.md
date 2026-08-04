@@ -77,7 +77,6 @@ prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
 | **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M |
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M |
-| **B47** | **Drift test na `ServerSideParams` allowlist** (nález review 4. 8.) - už **3. výskyt** téže pasti (parametr čtený v `GetData` chyběl v allowlistu → klik no-op + tisk ≠ náhled; dřív `ROZDELIT_PER_OZNACNIK`, teď `SOUHRN_NA_ZNAMENI` + `SPOJE_U_DOPRAVCE`). Vyparsovat z `.cls` čtení `^\|\|ML("IN","X")`, odečíst infrastrukturní klíče (LINKA_ID, INSTANCE_ID, SKUPINA_LINEK_ID, key, search, limit) a assertovat podmnožinu v allowlistu - stejný vzor jako `EDInputFormSchemaDriftTests`. | S |
 | **B48** | **Klasifikace značek podle kategorie i v seznamu zastávek** (nález review 4. 8.) - `StopListElement.IsTransferAttr` pozná přestup podle **písmene** („A"/„L"), stejná třída bugu, kterou `e10ad2b` opravil u anotací mřížky: MHD atribut s kódem 65/76 by se přeložil na cizí piktogram, nebo zmizel pod defaultně vypnutým `ShowTransferAttributes`, zatímco jeho řádek legendy zůstane. Fix = tagovat ATRIBUTY kategorií `prestup` na wire (AD ji u legendy už posílá) a překlad gatovat kategorií; přitom sjednotit i výjimku `SymbolJeText` (x/y/z = text je AD konvence, na MHD znaky bez kategorie nepatří). **Gate před vydáním, které dostane MHD firma:** ověřit v číselníku atributů MHD firem, jestli se kódy 65/76 reálně vyskytují - pak se to stává urgentní. | M |
 | **B49** | **SK symbolový font - obrysová verifikace pozic glyfů** (nález review 4. 8.) - mapa `SymbolGlyph` (`z` autobus · `x` vlak · `L` kolo) je změřená jen proti `TimeTable2.ttf`; u `TimeTable2SK.ttf` víme, že `w`=autobus a `x`=moderní jednotka, ale komentář ve `FontResolver.cs` tvrdí „znaky jsou pro CZ i SK stejné" - **jedno z toho je špatně**. Před nasazením slovenskému zákazníkovi zopakovat kontaktní list (postup v `elementy-architektura.md`); pokud se pozice liší, `SymbolGlyph` dostane culture parametr. | S |
 
@@ -147,14 +146,6 @@ při analýze 31. 7. se ukázalo, že s `B13` nemá nic společného a je to **M
   zásadně zpříjemnila a odstranila tichý překlep v tokenu, který se projeví až v tisku. Týká se
   všech míst, kde se zadávají `{POLE}` (barvy, text prvku, obsah buněk), takže se to má navrhnout
   jednou a sdílet, ne dělat per pole. Zdroj nabídky = schéma agendy, které už klient má.
-- **`B51` EDList plní řádky po jednom - škubnutí při psaní** (S; nález Jan 4. 8. na pomalé lince,
-  odložené za verzi). `ApplyRows` přidává řádky jeden po druhém do `ObservableCollection` navázané
-  na `DataGrid` s filtrem → 200 řádků = 200 oznámení o změně, každé s přepočtem filtru i layoutu,
-  a nakonec ještě celý `RefreshFilter()`. Od chvíle, co je načítání async (změna 2026-08-04 (6)),
-  to dosedá **zatímco uživatel píše** do filtru skupiny, takže je to znát jako škubání; dřív to bylo
-  schované za zámrzem. Fix = odložit přepočet pohledu na dobu plnění (`ICollectionView.DeferRefresh`)
-  → jeden průchod místo dvou set. ⚠️ Sdílená komponenta - projeví se u všech konzumentů EDListu
-  (i výběr šablon z DB), takže po změně proklikat i EDISON, ne jen návrhář.
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
