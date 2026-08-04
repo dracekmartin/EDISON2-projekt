@@ -24,8 +24,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Obecné ────────────────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
-        s f = form.AddFieldToLastGroup("GridColor", "Barva mřížky", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFD0D0D0"
         d form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         d form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
@@ -64,6 +62,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 100, 60)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

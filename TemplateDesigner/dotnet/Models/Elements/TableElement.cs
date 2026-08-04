@@ -9,8 +9,6 @@ namespace TemplateDesigner.Models.Elements;
 
 public enum TableMode { Fixed, Dynamic }
 
-public enum TableBorderStyle { None, Outer, All, RowsOnly, ColumnsOnly }
-
 public enum ColumnWidthMode { Mm, Percent }
 
 // ─── TableColumn ────────────────────────────────────────────────────────────
@@ -131,6 +129,16 @@ public class TableCell
 /// </summary>
 public class TableElement : TemplateElement
 {
+    /// <summary>
+    /// Tabulka dřív kreslila vlastní vnější rámec natvrdo; ten je nově rámeček elementu, takže si ho
+    /// nová tabulka přednastaví na tentýž vzhled (0,7 px při 96 DPI = 0,19 mm). `B40`.
+    /// </summary>
+    public TableElement()
+    {
+        BorderColor = "#FF999999";
+        BorderWidth = 0.19f;
+    }
+
     public TableMode Mode { get; set; } = TableMode.Dynamic;
 
     /// <summary>
@@ -161,7 +169,8 @@ public class TableElement : TemplateElement
     /// <summary>Styl datových buněk tabulky. Null = výchozí (#222222 text, průhledné pozadí).</summary>
     public TextStyle? DataStyle { get; set; }
 
-    public TableBorderStyle BorderStyle { get; set; } = TableBorderStyle.Outer;
+    /// <summary>Mřížka = vnitřní čáry. Vnější obrys kreslí rámeček elementu (viz <see cref="GridStyle"/>).</summary>
+    public GridStyle Grid { get; set; } = new() { ShowRowLines = false, ShowColumnLines = false, Color = "#FFCCCCCC" };
 
     /// <summary>Barva střídajících se řádků (#AARRGGBB). Null = bez střídání.</summary>
     public string? AlternatingRowColor { get; set; }
@@ -274,16 +283,20 @@ public class TableElement : TemplateElement
         var tableRect = ctx.ToCanvasRect(X, Y, Width, tableHeight);
 
         using var bgPaint     = new SKPaint { Color = SKColors.White };
-        using var borderPaint = new SKPaint { Color = new SKColor(0xFF999999), IsStroke = true, StrokeWidth = 0.7f };
-        using var sepPaint    = new SKPaint { Color = new SKColor(0xFFCCCCCC), IsStroke = true, StrokeWidth = 0.5f };
+        // Jediný paint pro vnitřní čáry; vnější obrys kreslí RenderBorderPass z rámečku elementu.
+        // Tloušťka v mm (dřív natvrdo v px → čáry neškálovaly se zvětšením ani s tiskovým rozlišením).
+        using var sepPaint = new SKPaint
+        {
+            Color = ColorHex.ParseOrBlack(Grid.Color),
+            IsStroke = true,
+            StrokeWidth = MathF.Max(0.5f, (Grid.Width ?? BorderWidth) * ctx.MmToPx),
+        };
 
         ctx.Canvas.DrawRect(tableRect, bgPaint);
 
         var visibleColumns = Columns.Where(c => c.Visible).ToList();
         if (visibleColumns.Count == 0)
         {
-            if (BorderStyle != TableBorderStyle.None)
-                ctx.Canvas.DrawRect(tableRect, borderPaint);
             return;
         }
 
@@ -306,7 +319,7 @@ public class TableElement : TemplateElement
             float currentY = Y;
 
             if (ShowHeader)
-                currentY = RenderHeader(ctx, visibleColumns, colWidths, headerStyles, currentY, borderPaint, sepPaint);
+                currentY = RenderHeader(ctx, visibleColumns, colWidths, headerStyles, currentY, sepPaint);
 
             IReadOnlyList<DataContext> dataRows = [];
             if (Mode == TableMode.Fixed)
@@ -318,10 +331,8 @@ public class TableElement : TemplateElement
             }
 
             if (SummaryRows is { Count: > 0 })
-                RenderSummaryRows(ctx, visibleColumns, colWidths, currentY, borderPaint, sepPaint, dataRows);
+                RenderSummaryRows(ctx, visibleColumns, colWidths, currentY, sepPaint, dataRows);
 
-            if (BorderStyle != TableBorderStyle.None)
-                ctx.Canvas.DrawRect(tableRect, borderPaint);
         }
         finally
         {
@@ -330,7 +341,7 @@ public class TableElement : TemplateElement
     }
 
     private float RenderHeader(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        ResolvedTextStyle[] headerStyles, float startY, SKPaint borderPaint, SKPaint sepPaint)
+        ResolvedTextStyle[] headerStyles, float startY, SKPaint sepPaint)
     {
         // Full-width pozadí z table-level stylu - pokryje případný přesah nebo mezery
         var tableHeaderStyle = ResolveColumnHeaderParent();
@@ -348,7 +359,7 @@ public class TableElement : TemplateElement
             var cellRect = new SKRect(colX, startY, colX + colW, startY + HeaderHeight);
             CellRenderer.DrawCell(ctx, cellRect, Rendering.ColumnHeader.Resolve(cols[i].Header, ""), headerStyles[i]);
 
-            if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
+            if (Grid.ShowColumnLines)
             {
                 var top = ctx.ToCanvas(colX + colW, startY);
                 var bot = ctx.ToCanvas(colX + colW, startY + HeaderHeight);
@@ -360,7 +371,7 @@ public class TableElement : TemplateElement
         // Čára pod záhlavím
         var lineStart = ctx.ToCanvas(X, startY + HeaderHeight);
         var lineEnd   = ctx.ToCanvas(X + Width, startY + HeaderHeight);
-        ctx.Canvas.DrawLine(lineStart, lineEnd, borderPaint);
+        ctx.Canvas.DrawLine(lineStart, lineEnd, sepPaint);
 
         return startY + HeaderHeight;
     }
@@ -413,7 +424,7 @@ public class TableElement : TemplateElement
                 var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
                 CellRenderer.DrawCell(ctx, cellRect, content, cellStyle);
 
-                if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
+                if (Grid.ShowColumnLines)
                 {
                     var top = ctx.ToCanvas(colX + colW, currentY);
                     var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
@@ -422,7 +433,7 @@ public class TableElement : TemplateElement
                 colX += colW;
             }
 
-            if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
+            if (Grid.ShowRowLines)
             {
                 var a = ctx.ToCanvas(X, currentY + RowHeight);
                 var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
@@ -477,7 +488,7 @@ public class TableElement : TemplateElement
                 var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
                 CellRenderer.DrawCell(ctx, cellRect, sample, effectiveStyles[ci]);
 
-                if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
+                if (Grid.ShowColumnLines)
                 {
                     var top = ctx.ToCanvas(colX + colW, currentY);
                     var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
@@ -486,7 +497,7 @@ public class TableElement : TemplateElement
                 colX += colW;
             }
 
-            if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
+            if (Grid.ShowRowLines)
             {
                 var a = ctx.ToCanvas(X, currentY + RowHeight);
                 var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
@@ -499,14 +510,14 @@ public class TableElement : TemplateElement
     }
 
     private void RenderSummaryRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        float startY, SKPaint borderPaint, SKPaint sepPaint, IReadOnlyList<DataContext> dataRows)
+        float startY, SKPaint sepPaint, IReadOnlyList<DataContext> dataRows)
     {
         if (SummaryRows is null || SummaryRows.Count == 0) return;
 
         // Oddělovací čára nad souhrnem
         var topStart = ctx.ToCanvas(X, startY);
         var topEnd   = ctx.ToCanvas(X + Width, startY);
-        ctx.Canvas.DrawLine(topStart, topEnd, borderPaint);
+        ctx.Canvas.DrawLine(topStart, topEnd, sepPaint);
 
         float currentY = startY;
         foreach (var row in SummaryRows)
@@ -551,7 +562,7 @@ public class TableElement : TemplateElement
                 var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
                 CellRenderer.DrawCell(ctx, cellRect, content, cellStyle);
 
-                if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
+                if (Grid.ShowColumnLines)
                 {
                     var top = ctx.ToCanvas(colX + colW, currentY);
                     var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
@@ -560,7 +571,7 @@ public class TableElement : TemplateElement
                 colX += colW;
             }
 
-            if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
+            if (Grid.ShowRowLines)
             {
                 var a = ctx.ToCanvas(X, currentY + RowHeight);
                 var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
@@ -627,18 +638,7 @@ public class TableElement : TemplateElement
             Set   = v => HeaderHeight = v,
             Min   = 2, Max = 50, Unit = "mm"
         },
-        new EnumPropertyDescriptor
-        {
-            Label   = "Rámeček",
-            Group   = "Tabulka",
-            Get     = () => BorderStyle,
-            Set     = v => BorderStyle = (TableBorderStyle)v,
-            Options = [("Žádný",    (object)TableBorderStyle.None),
-                       ("Vnější",   (object)TableBorderStyle.Outer),
-                       ("Vše",      (object)TableBorderStyle.All),
-                       ("Řádky",    (object)TableBorderStyle.RowsOnly),
-                       ("Sloupce",  (object)TableBorderStyle.ColumnsOnly)]
-        },
+        .. GetGridDescriptors(Grid),
         new ColorPropertyDescriptor
         {
             Label = "Střídání řádků",
@@ -719,7 +719,7 @@ public class TableElement : TemplateElement
             HeaderHeight        = HeaderHeight,
             HeaderStyle         = HeaderStyle?.Clone(),
             DataStyle           = DataStyle?.Clone(),
-            BorderStyle         = BorderStyle,
+            Grid                = Grid.Clone(),
             AlternatingRowColor = AlternatingRowColor,
         };
         CopyBaseTo(clone);

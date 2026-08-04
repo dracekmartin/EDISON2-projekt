@@ -30,10 +30,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
         d form.AddDecimal("RowHeight", "Výška řádku", 6, 2, 50, "mm")
         d form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
-        // „Čáry tabulky" = mřížka mezi buňkami; rámeček celého elementu je base pole níže.
-        s f = form.AddFieldToLastGroup("BorderStyle", "Čáry tabulky", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("None", "Žádný"), f.AddListItem("Outer", "Vnější"), f.AddListItem("All", "Vše")
-        d f.AddListItem("RowsOnly", "Řádky"), f.AddListItem("ColumnsOnly", "Sloupce")
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         s f = form.AddNumber("MinRows", "Min. řádků (0 = ne)", 0, 0, 200)
         s f.helpText = "Doplní prázdné řádky do tohoto počtu - pevná výška boxu (např. faktura). 0 = bez minima"
@@ -46,6 +42,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Base pole (rámeček elementu formulář dřív neměl vůbec - šel nastavit jen v panelu) ─
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

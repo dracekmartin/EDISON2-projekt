@@ -178,6 +178,29 @@ public class EDInputFormSchemaDriftTests
             + $"(dvě editační cesty téže sady):\n{string.Join("\n", problems)}");
     }
 
+    [Fact]
+    public void PoleMrizky_MajiVCsStejnyPopisekISkupinu()
+    {
+        // `AddGrid` je volitelný balíček (tabulkové prvky), takže se neověřuje na obdélníku jako
+        // zbytek base sady, ale na prvku, který mřížku má.
+        var expected = BaseFieldsLabelToGroup("AddGrid");
+        Assert.NotEmpty(expected);
+
+        var descriptors = new StopListElement().GetPropertyDescriptors()
+            .Where(d => !string.IsNullOrEmpty(d.Label))
+            .ToDictionary(d => d.Label!, d => d.Group ?? "", StringComparer.Ordinal);
+
+        var problems = expected
+            .Where(kv => !descriptors.TryGetValue(kv.Key, out var group) || group != kv.Value)
+            .Select(kv => descriptors.TryGetValue(kv.Key, out var g)
+                ? $"\"{kv.Key}\": Caché skupina \"{kv.Value}\" × C# \"{g}\""
+                : $"\"{kv.Key}\": v C# deskriptorech chybí (Caché skupina \"{kv.Value}\")")
+            .ToList();
+
+        Assert.True(problems.Count == 0,
+            $"Pole mřížky se rozešla mezi {BaseFieldsFile} a C# GetGridDescriptors:\n{string.Join("\n", problems)}");
+    }
+
     // ── Názvoslovný drift (labely + volby) ───────────────────────────────────
     // Zamyká kanon z ux-conventions §8: tentýž field key musí mít všude tentýž label
     // a zakázané tvary termínů se nesmí objevit v labelech, volbách ani panelových deskriptorech.
@@ -339,12 +362,16 @@ public class EDInputFormSchemaDriftTests
 
     /// <summary>Popisky base polí ze sdíleného balíčku, mapované na skupinu, do které patří
     /// (skupinu určuje AddGroup na začátku metody).</summary>
-    private static Dictionary<string, string> BaseFieldsLabelToGroup()
+    /// <param name="onlyMethod">Null = celý balíček; jinak jen jedna metoda (balíček `AddGrid`
+    /// je volitelný - má ho tabulkový prvek, ne každý element).</param>
+    private static Dictionary<string, string> BaseFieldsLabelToGroup(string? onlyMethod = null)
     {
         string text = File.ReadAllText(Path.Combine(EDInputFormDir(), BaseFieldsFile));
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (Match m in BaseFieldsMethodRx.Matches(text))
         {
+            if (onlyMethod is not null && m.Groups[1].Value != onlyMethod) continue;
+            if (onlyMethod is null && m.Groups[1].Value == "AddGrid") continue;
             var body = m.Groups[2].Value;
             var group = GroupLabelRx.Match(body) is { Success: true } g ? g.Groups[1].Value : "";
             foreach (Match f in LabeledFieldRx.Matches(body))

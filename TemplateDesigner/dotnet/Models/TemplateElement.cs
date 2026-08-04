@@ -263,6 +263,49 @@ public abstract class TemplateElement
     internal const string PositionGroup = "Pozice a velikost";
     internal const string BorderGroup = "Rámeček elementu";
     internal const string ConditionsGroup = "Podmínky";
+    internal const string GridGroup = "Mřížka";
+
+    /// <summary>
+    /// Helper - deskriptory mřížky (vnitřních čar) tabulkového prvku. Obdoba rámečku: jedna sada
+    /// polí, všude stejné popisky. Vnější obrys sem nepatří, ten je rámeček elementu.
+    /// </summary>
+    /// <param name="grid">Instance prvku - deskriptory na ni jen ukazují.</param>
+    /// <param name="withLineToggles">
+    /// False u prvku, který mřížkou kreslí jen čáru pod záhlavím (legenda poznámek) - přepínače
+    /// řádků/sloupců by tam lhaly. Stejný vzor jako <c>withCorners</c> u rámečku.
+    /// </param>
+    /// <remarks>Popisky a skupiny musí souhlasit se sdíleným Caché balíčkem
+    /// <c>BaseElementFields.AddGrid</c> - hlídá <c>EDInputFormSchemaDriftTests</c>.</remarks>
+    protected static IReadOnlyList<PropertyDescriptor> GetGridDescriptors(GridStyle grid, bool withLineToggles = true) =>
+    [
+        .. withLineToggles
+            ? new PropertyDescriptor[]
+            {
+                new BoolPropertyDescriptor { Label = "Čáry mezi řádky",  Group = GridGroup, Get = () => grid.ShowRowLines,    Set = v => grid.ShowRowLines = v },
+                new BoolPropertyDescriptor { Label = "Čáry mezi sloupci", Group = GridGroup, Get = () => grid.ShowColumnLines, Set = v => grid.ShowColumnLines = v },
+            }
+            : [],
+        new ColorPropertyDescriptor { Label = "Barva mřížky", Group = GridGroup, Get = () => grid.Color, Set = v => grid.Color = v },
+        // 0 = „dle tloušťky rámečku" - číselné pole nemá jak vyjádřit „nenastaveno" (stejný trik jako výška řádku).
+        new FloatPropertyDescriptor
+        {
+            Label = "Tloušťka mřížky", Group = GridGroup,
+            Get = () => grid.Width ?? 0f,
+            Set = v => grid.Width = v <= 0f ? null : v,
+            Min = 0, Max = 5, Unit = "mm", Format = "0.0#"
+        },
+        new EnumPropertyDescriptor
+        {
+            Label = "Styl mřížky", Group = GridGroup,
+            Get = () => grid.Style, Set = v => grid.Style = (LineStyle)v,
+            Options =
+            [
+                ("Plná", (object)LineStyle.Solid),
+                ("Čárkovaná", (object)LineStyle.Dashed),
+                ("Tečkovaná", (object)LineStyle.Dotted),
+            ]
+        },
+    ];
 
     /// <summary>
     /// Helper - vrátí deskriptory společných vlastností pozice a ZIndex.

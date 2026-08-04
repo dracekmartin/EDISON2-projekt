@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-04 (10) - mřížka tabulkových prvků jako jedno sdílené API (`B40`)
+
+**Rámeček = vnější obrys, mřížka = vnitřní čáry** (rozhodnutí Jan). Do teď vedly k vnějšímu obrysu
+dvě cesty - rámeček, který má **každý** prvek, a vlastní rámec tabulky zadrátovaný v kódu. Nešlo
+tedy jen o chybějící nastavení, ale o duplicitu konceptu.
+
+Nový sdílený objekt `GridStyle` (řádky · sloupce · barva · tloušťka mm · styl) drží **jen vnitřní
+čáry** a používá ho všech pět tabulkových prvků. Kompozicí, ne děděním - tabulky nejsou
+`ScheduleElementBase`, takže společný předek by nepomohl. V Caché je to balíček polí
+`BaseElementFields.AddGrid(form)` vedle `AddBorder`, takže formulář prvku je o jeden řádek delší
+a popisky se skupinami hlídá drift test (přibyl `PoleMrizky_MajiVCsStejnyPopisekISkupinu`).
+
+**Co to uživateli dá:** pevná i dynamická tabulka mají poprvé nastavitelnou barvu, tloušťku a styl
+čar - dosud to bylo zadrátované a nešlo změnit vůbec. Mřížka odjezdů a tabulka linky nově umí čáry
+vypnout. A ovládá se to všude stejně jako rámeček.
+
+**Vedlejší oprava:** čáry tabulek byly v **px** (`0.7f` vnější, `0.5f` vnitřní), takže neškálovaly
+se zvětšením ani s tiskovým rozlišením, zatímco všechno ostatní ano. Nově mm jako jinde.
+
+**Migrace 1.6.0 → 1.7.0** (`MigrationGridStyle`) drží vzhled: skaláry JŘ prvků 1:1, přepínače
+zapnuté (kreslily se vždy), tabulkám se dosavadní zadrátovaný rámec přenese do rámečku elementu.
+Nová tabulka si ho přednastaví v konstruktoru, aby vypadala jako dosud.
+
+**Ověření, které za to ručí:** odtisky renderu vyšly u všech čtyř JŘ prvků **bajt po bajtu stejně**,
+změnil se jediný - dynamická tabulka, přesně jak bylo zamýšleno. ⚠️ Odtisk volá jen `Render()`, ne
+`RenderBorderPass()`, takže vnější rámec z rámečku elementu **neověřuje** - ten je potřeba projít
+očima v návrháři i v PDF.
+
+.NET 1530/1530 (TD 588, +1 drift test) · Caché 73/73.
+
 ## 2026-08-04 (9) - filtrované seznamy načítají asynchronně + mrtvá legacy větev pryč
 
 Dojetí úklidu po vydání verze (rozhodnutí Jan: jít do sdílené komponenty celé, ne obezličkou).

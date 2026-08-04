@@ -14,6 +14,9 @@ namespace TemplateDesigner.Models.Elements;
 /// </summary>
 public class StopListElement : StopScheduleElementBase, IRowHighlightable
 {
+    /// <summary>Svislé čáry mezi sloupci byly u seznamu zastávek vždy opt-in (na rozdíl od ostatních JŘ prvků).</summary>
+    public StopListElement() => Grid.ShowColumnLines = false;
+
     // ═══════════════════════════════════════════
     // Sloupce - konfigurovatelné pořadí, šířky, záhlaví
     // ═══════════════════════════════════════════
@@ -37,11 +40,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     // ═══════════════════════════════════════════
     // Řádky (DataRowHeight je na ScheduleElementBase)
     // ═══════════════════════════════════════════
-    public bool ShowRowSeparators { get; set; } = true;
+    
 
     /// <summary>Svislé čáry mezi sloupci (tloušťka, styl a barva = mřížka elementu).
     /// Default vyp = dosavadní vzhled; uvnitř sloupce zastávek rozděleného na značky + název se nekreslí.</summary>
-    public bool ShowColumnSeparators { get; set; }
+    
 
     /// <summary>Na kolik oddílů vedle sebe se seznam rozřeže (KOVED #13097), max
     /// <see cref="MaxPartCount"/>. 1 = jeden svislý seznam (dosavadní stav). Každý oddíl nese
@@ -410,8 +413,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return new RowSpec(RowKind.Data, rowH, specs)
         {
             Background = ColorHex.ParseOrNull(rowBg),
-            VerticalLinePaint = ShowColumnSeparators ? paints.Grid : null,
-            LineBelowPaint = ShowRowSeparators ? paints.Grid : null,
+            VerticalLinePaint = Grid.ShowColumnLines ? paints.Grid : null,
+            LineBelowPaint = Grid.ShowRowLines ? paints.Grid : null,
             // Značky (na znamení / atributy / poznámky) po úsecích: piktogramy symbolovým
             // Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky normálním.
             // V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
@@ -434,7 +437,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         var specs = BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth, widths);
         ColumnRenderer.DrawRow(ctx, xMm, Y, headerH, specs,
-            ShowColumnSeparators ? paints.Grid : null, fontScale: scale);
+            Grid.ShowColumnLines ? paints.Grid : null, fontScale: scale);
 
         // Čára pod záhlavím
         var lineStart = ctx.ToCanvas(xMm, Y + headerH);
@@ -1132,8 +1135,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor  { Label = "Všechny varianty tras", Group = "Zastávky", Get = () => ShowAllRouteVariants, Set = v => ShowAllRouteVariants = v },
 
         GetDataRowHeightDescriptor(),
-        new BoolPropertyDescriptor { Label = "Oddělovací čáry",   Group = "Řádky",    Get = () => ShowRowSeparators, Set = v => ShowRowSeparators = v },
-        new BoolPropertyDescriptor { Label = "Svislé čáry mezi sloupci", Group = "Řádky", Get = () => ShowColumnSeparators, Set = v => ShowColumnSeparators = v },
 
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
@@ -1266,8 +1267,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         var clone = new StopListElement
         {
-            ShowRowSeparators       = ShowRowSeparators,
-            ShowColumnSeparators    = ShowColumnSeparators,
             PartCount               = PartCount,
             PartGap                 = PartGap,
             Columns                 = Columns.Select(c => c.Clone()).ToList(),

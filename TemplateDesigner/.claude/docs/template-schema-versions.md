@@ -134,7 +134,7 @@ bumpne na „1.1.0" **spolu s** `ITemplateMigration`. (Kosmetický rozdíl „1.
 Caché metadat vs „1.0.0" v C# je funkčně irelevantní - `VersionComparer` je srovnává jako rovné a
 metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 
-### V1.1.0–V1.6.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
+### V1.1.0–V1.7.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
 
 - **1.1.0** `MigrationHighlightRules` - řádkové zvýraznění: skalární pár → `highlightRules[]` seznam.
 - **1.2.0** `MigrationKnizniToLinkovy` - přejmenování knižní → linkový (agenda kódy/typy).
@@ -154,6 +154,17 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   ve prospěch tloušťky v mm (`directionArrowWidth`). Převod drží vzhled: tučná → 0,4 mm, jinak
   0,2 mm (dřívějších 1,5 / 0,8 **px**, což v tisku dávalo vláskovku). Dvě cesty k jedné vlastnosti
   byly zbytečné a přepínač neuměl konkrétní tloušťku, kterou zákazník chce.
+- **1.7.0** `MigrationGridStyle` (2026-08-04, `B40`) - mřížka tabulkových prvků do sdíleného objektu
+  `grid` (řádky · sloupce · barva · tloušťka mm · styl) a **vnější obrys převzal rámeček elementu**.
+  Do 1.6.0 vedly k obrysu dvě cesty (rámeček, který má každý prvek, a vlastní rámec tabulky
+  zadrátovaný v kódu) - ta duplicita byla důvod sjednocení. JŘ prvky: skaláry `gridColor` /
+  `gridLineWidth` / `gridLineStyle` → `grid`, přepínače čar zapnuté (kreslily se vždy), u seznamu
+  zastávek se přenesou jeho `showRowSeparators` / `showColumnSeparators`. Tabulky: `borderStyle`
+  pěti hodnot → `Vše`→řádky+sloupce, `Řádky`→řádky, `Sloupce`→sloupce, `Vnější`/`Žádný`→bez
+  vnitřních čar; a u všeho kromě `Žádný` migrace přenese dosavadní zadrátovaný rámec do rámečku
+  elementu (0,7 px při 96 DPI = 0,19 mm, `#FF999999`), pokud si ho uživatel sám nenastavil.
+  Vedlejší oprava: tloušťka čar tabulek byla v **px**, takže neškálovala se zvětšením ani s tiskovým
+  rozlišením - nově mm jako všude jinde.
 
 ---
 

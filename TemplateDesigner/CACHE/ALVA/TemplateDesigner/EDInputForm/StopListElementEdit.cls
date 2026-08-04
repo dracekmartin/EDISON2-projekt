@@ -21,17 +21,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Obecné ────────────────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
-        s f = form.AddFieldToLastGroup("GridColor", "Barva mřížky", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFD0D0D0"
-        s f = form.AddDecimal("GridLineWidth", "Tloušťka mřížky", "", 0, 5, "mm")
-        s f.helpText = "Prázdné = dle tloušťky rámečku elementu"
-        s f = form.AddFieldToLastGroup("GridLineStyle", "Styl mřížky", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
-        d form.AddBool("ShowRowSeparators", "Oddělovací čáry", 0)
-        s f = form.AddBool("ShowColumnSeparators", "Svislé čáry mezi sloupci", 0)
-        s f.helpText = "Čáry mezi sloupci ve tvaru mřížky (barva, tloušťka a styl výše)"
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "#FFE0E0E0")
@@ -83,6 +74,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50, 50)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

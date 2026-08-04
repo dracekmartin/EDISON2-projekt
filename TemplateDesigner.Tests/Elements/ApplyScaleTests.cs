@@ -62,7 +62,7 @@ public class ApplyScaleTests
         {
             DirectionArrowWidth = 0.3f,
             DirectionArrowHeadSize = 1.5f,
-            GridLineWidth = 0.2f,
+            Grid = { Width = 0.2f },
             PartGap = 4f,
         };
         var auto = new StopListElement();   // tloušťka mřížky nenastavená = dle rámečku
@@ -72,9 +72,9 @@ public class ApplyScaleTests
 
         Assert.Equal(0.6f, el.DirectionArrowWidth);
         Assert.Equal(3f, el.DirectionArrowHeadSize);
-        Assert.Equal(0.4f, el.GridLineWidth);
+        Assert.Equal(0.4f, el.Grid.Width);
         Assert.Equal(8f, el.PartGap);          // mezera mezi oddíly je taky rozměr v mm
-        Assert.Null(auto.GridLineWidth);
+        Assert.Null(auto.Grid.Width);
     }
 
     [Fact]

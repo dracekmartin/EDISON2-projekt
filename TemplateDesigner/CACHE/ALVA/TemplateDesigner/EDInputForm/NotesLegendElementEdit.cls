@@ -24,8 +24,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Obecné" ──────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
-        s f = form.AddFieldToLastGroup("GridColor", "Barva mřížky", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFD0D0D0"
 
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
@@ -95,6 +93,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 0)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 100)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

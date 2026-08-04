@@ -25,6 +25,28 @@ podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivk
 Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
 binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
 
+## 2026-08-04 ✅ - `B40` mřížka tabulkových prvků jako jedno sdílené API
+
+Detail → changelog 2026-08-04 (10). „Rámeček = vnější, mřížka = vnitřní" (rozhodnutí Jan). Sdílený
+objekt `GridStyle` pro všech pět tabulkových prvků + balíček polí `AddGrid` vedle `AddBorder`;
+tabulky poprvé dostaly nastavitelnou barvu/tloušťku/styl čar, JŘ prvky možnost čáry vypnout.
+Migrace 1.6.0 → 1.7.0 drží vzhled.
+
+**Poučení 1 - průzkum vyvrátil zadání.** Blok tvrdil, že JŘ prvky mají „barvu + přepínače"
+a tabulky volbu čar. Realita: JŘ prvky měly barvu **i tloušťku i styl** a chyběla jim jen volba
+čar, kdežto tabulky měly volbu čar a vzhled vůbec. **Zadání psané zpaměti se rozešlo se stavem
+za čtyři dny** - průzkum před implementací není formalita.
+
+**Poučení 2 - hledej duplicitu konceptu, ne chybějící nastavení.** Skutečný problém nebyl
+„uživatel si nenastaví barvu", ale že k vnějšímu obrysu vedly dvě nezávislé cesty. Jakmile se to
+rozdělilo podle významu (rámeček = vnější, mřížka = vnitřní), zmizel i důvod, proč tabulky měly
+vlastní enum pěti hodnot.
+
+**Poučení 3 - odtisk renderu ověřuje jen to, co kreslí.** Odtisky potvrdily, že čtyři JŘ prvky
+vyšly bajt po bajtu stejně (refaktor behavior-preserving) a změnila se jen dynamická tabulka.
+Ale odtisk volá `Render()`, ne `RenderBorderPass()`, takže **vnější rámec neověřuje** - u změny,
+která obrys přesouvá jinam, je zelený odtisk shodou okolností, ne důkazem.
+
 ## 2026-08-04 🧹 - Revize roadmapy: zrušen ukazatel `L‑1…L‑4` + mrtvé a duplikované záznamy
 
 Roadmapa měla 375 řádků, z toho 35 balastu (rozhodnutí Jan: „jen vyloženě mrtvé nebo duplikované",

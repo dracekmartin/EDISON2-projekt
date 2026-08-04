@@ -55,13 +55,8 @@ public abstract class ScheduleElementBase : TemplateElement
     /// <summary>Výchozí styl záhlaví. Per-column TextStyle cascaduje od tohoto, tohle pak od <see cref="ScheduleHeaderDefaults"/>.</summary>
     public TextStyle HeaderStyle { get; set; } = new();
 
-    public string GridColor { get; set; } = "#FFD0D0D0";
-
-    /// <summary>Tloušťka čar mřížky v mm. Null = z tloušťky rámečku elementu (dosavadní chování).</summary>
-    public float? GridLineWidth { get; set; }
-
-    /// <summary>Styl čar mřížky - plná (výchozí), čárkovaná, tečkovaná. Vzor sdílí s čárou (<see cref="LineElement"/>).</summary>
-    public LineStyle GridLineStyle { get; set; } = LineStyle.Solid;
+    /// <summary>Mřížka = vnitřní čáry prvku. Vnější obrys je rámeček elementu (viz <see cref="GridStyle"/>).</summary>
+    public GridStyle Grid { get; set; } = new() { ShowColumnLines = true };
 
     /// <summary>
     /// Výška jednoho datového řádku v mm. Null = auto-výpočet z fontu (<see cref="ComputeRowH"/>).
@@ -185,9 +180,9 @@ public abstract class ScheduleElementBase : TemplateElement
     /// <summary>Vytvoří standardní sadu paintů pro JŘ elementy. Volající musí dispose.</summary>
     protected SchedulePaints CreateStandardPaints(RenderContext ctx)
     {
-        var (dashMm, gapMm) = LineElement.GetDefaultDashPattern(GridLineStyle);
+        var (dashMm, gapMm) = LineElement.GetDefaultDashPattern(Grid.Style);
         return new(
-            ColorHex.ParseOrBlack(GridColor),
+            ColorHex.ParseOrBlack(Grid.Color),
             ColorHex.Parse(HeaderStyle.BackgroundColor, "#FFE0E0E0"),
             ColorHex.Parse(HeaderStyle.TextColor, ColorHex.Black),
             gridStrokePx: ComputeGridStrokePx(ctx),
@@ -196,11 +191,11 @@ public abstract class ScheduleElementBase : TemplateElement
     }
 
     /// <summary>
-    /// Tloušťka mřížky v px = `GridLineWidth * MmToPx`; bez vlastní hodnoty `BorderWidth * MmToPx`
+    /// Tloušťka mřížky v px = `Grid.Width * MmToPx`; bez vlastní hodnoty `BorderWidth * MmToPx`
     /// (sjednocená s outer borderem), minimum 0.5px aby byla vždy viditelná i když je border vypnutý.
     /// </summary>
     private float ComputeGridStrokePx(RenderContext ctx) =>
-        MathF.Max(0.5f, (GridLineWidth ?? BorderWidth) * ctx.MmToPx);
+        MathF.Max(0.5f, (Grid.Width ?? BorderWidth) * ctx.MmToPx);
 
     /// <summary>Vykreslí záhlaví sekce: pozadí + text + horizontální čára pod záhlavím.</summary>
     protected static float RenderSectionHeader(
@@ -254,7 +249,7 @@ public abstract class ScheduleElementBase : TemplateElement
         base.ApplyScale(scale);
         DataStyle.ApplyScale(scale);     // FontSize + paddingy (dřív jen FontSize)
         HeaderStyle.ApplyScale(scale);
-        if (GridLineWidth is not null) GridLineWidth *= scale;
+        if (Grid.Width is not null) Grid.Width *= scale;
         if (DataRowHeight is not null) DataRowHeight *= scale;   // dřív se neškálovalo (LineTable/StopList/DepartureGrid)
     }
 
@@ -265,35 +260,9 @@ public abstract class ScheduleElementBase : TemplateElement
     /// Pokročilé Header/Data styling (font, alignment, padding) zůstává v dialogu sloupců;
     /// základní barvy (bg + text pro Header a Data) najdeš v <see cref="GetCellZoneBaseColorDescriptors"/>.
     /// </summary>
-    protected IReadOnlyList<PropertyDescriptor> GetScheduleBaseDescriptors() =>
-    [
-        new ColorPropertyDescriptor
-        {
-            Label = "Barva mřížky", Group = "Obecné",
-            Get = () => GridColor, Set = v => GridColor = v
-        },
-        // 0 = „dle tloušťky rámečku" (dosavadní chování) - stejný trik jako u výšky řádku,
-        // číselné pole nemá jak vyjádřit „nenastaveno".
-        new FloatPropertyDescriptor
-        {
-            Label = "Tloušťka mřížky", Group = "Obecné",
-            Get = () => GridLineWidth ?? 0f,
-            Set = v => GridLineWidth = v <= 0f ? null : v,
-            Min = 0, Max = 5, Unit = "mm"
-        },
-        new EnumPropertyDescriptor
-        {
-            Label = "Styl mřížky", Group = "Obecné",
-            Get = () => GridLineStyle,
-            Set = v => GridLineStyle = (LineStyle)v,
-            Options =
-            [
-                ("Plná", (object)LineStyle.Solid),
-                ("Čárkovaná", (object)LineStyle.Dashed),
-                ("Tečkovaná", (object)LineStyle.Dotted),
-            ]
-        },
-    ];
+    /// <param name="withLineToggles">False u prvku, který mřížkou kreslí jen čáru pod záhlavím.</param>
+    protected IReadOnlyList<PropertyDescriptor> GetScheduleBaseDescriptors(bool withLineToggles = true) =>
+        GetGridDescriptors(Grid, withLineToggles);
 
     /// <summary>
     /// Sjednocený descriptor pro <see cref="DataRowHeight"/> - výška datového řádku v mm.
@@ -368,9 +337,7 @@ public abstract class ScheduleElementBase : TemplateElement
     {
         target.DataStyle     = DataStyle.Clone();
         target.HeaderStyle   = HeaderStyle.Clone();
-        target.GridColor     = GridColor;
-        target.GridLineWidth = GridLineWidth;
-        target.GridLineStyle = GridLineStyle;
+        target.Grid = Grid.Clone();
         target.DataRowHeight = DataRowHeight;
     }
 }

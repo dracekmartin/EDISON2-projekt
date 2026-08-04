@@ -210,7 +210,9 @@ skládej z jednotlivých TextElementů s rámečky, ne z tabulky.
 
 **WidthMode:** `Mm`, `Percent`
 **Alignment:** `Left`, `Center`, `Right`
-**BorderStyle:** `None`, `Outer` (pouze vnější rámeček), `All` (všechny čáry), `RowsOnly` (jen vodorovné), `ColumnsOnly` (jen svislé)
+**grid** (mřížka = jen vnitřní čáry; vnější obrys je `borderColor`/`borderWidth` elementu jako u všech prvků):
+`""grid"": { ""showRowLines"": true, ""showColumnLines"": false, ""color"": ""#FFCCCCCC"", ""width"": 0.2, ""style"": ""Solid"" }`
+- `width` v mm, vynechané = dle tloušťky rámečku · `style`: `Solid`, `Dashed`, `Dotted`
 
 ### ImageElement
 ```json

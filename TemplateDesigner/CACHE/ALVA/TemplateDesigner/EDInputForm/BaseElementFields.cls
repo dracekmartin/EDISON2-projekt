@@ -29,6 +29,26 @@ ClassMethod AddBorder(form As ALVA.EDControls.EDInputForm.Form, withCorners As %
     }
 }
 
+/// Mřížka tabulkového prvku = jen VNITŘNÍ čáry, vlastní skupina. Vnější obrys je rámeček elementu
+/// (AddBorder) - do 4. 8. 2026 vedly k obrysu dvě cesty a to byl důvod sjednocení.
+/// <var>withLineToggles</var>=0 u prvku, který mřížkou kreslí jen čáru pod záhlavím (legenda
+/// poznámek) - přepínače řádků/sloupců by tam lhaly.
+ClassMethod AddGrid(form As ALVA.EDControls.EDInputForm.Form, withLineToggles As %Boolean = 1)
+{
+    d form.AddGroup("grid", "Mřížka")
+    i withLineToggles {
+        d form.AddBool("Grid.ShowRowLines", "Čáry mezi řádky", 1)
+        d form.AddBool("Grid.ShowColumnLines", "Čáry mezi sloupci", 0)
+    }
+    s f = form.AddFieldToLastGroup("Grid.Color", "Barva mřížky", $$$FieldTypeColor, 0, 0)
+    s f.value = "#FFD0D0D0"
+    s f = form.AddDecimal("Grid.Width", "Tloušťka mřížky", "", 0, 5, "mm")
+    s f.helpText = "Prázdné nebo 0 = podle tloušťky rámečku elementu"
+    s f = form.AddFieldToLastGroup("Grid.Style", "Styl mřížky", $$$FieldTypeList, 0, 1)
+    d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
+    s f.value = "Solid"
+}
+
 /// Pozice, velikost, rotace, vrstva, uzamčení.
 /// <var>defHeight</var>="" = dynamická výška (dopočítá ji engine), jinak pevná výchozí hodnota;
 /// <var>heightRequired</var>=1 u elementů, které bez výšky nemají smysl (obrázek, kód, obdélník);
