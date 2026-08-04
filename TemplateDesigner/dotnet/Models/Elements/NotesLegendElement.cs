@@ -397,7 +397,7 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Textové poznámky",    Group = "Filtrování", Get = () => ShowTextovePoznamky, Set = v => ShowTextovePoznamky = v },
         new EnumPropertyDescriptor
         {
-            Label = "Výlukové poznámky", Group = "Filtrování",
+            Label = "Poznámky linky - výluky", Group = "Filtrování",
             Get = () => Vyluky, Set = v => Vyluky = (VylukyFiltr)v,
             Options =
             [
@@ -406,9 +406,9 @@ public class NotesLegendElement : StopScheduleElementBase
                 ("Jen výluky", (object)VylukyFiltr.Jen)
             ]
         },
-        new BoolPropertyDescriptor  { Label = "Tarifní podmínky linky",   Group = "Filtrování", Get = () => ShowPoznamkyLinkyTarifni,   Set = v => ShowPoznamkyLinkyTarifni = v },
-        new BoolPropertyDescriptor  { Label = "Všeobecné poznámky linky", Group = "Filtrování", Get = () => ShowPoznamkyLinkyVseobecne, Set = v => ShowPoznamkyLinkyVseobecne = v },
-        new BoolPropertyDescriptor  { Label = "Radiobus poznámky linky",  Group = "Filtrování", Get = () => ShowPoznamkyLinkyRadiobus,  Set = v => ShowPoznamkyLinkyRadiobus = v },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - tarifní",   Group = "Filtrování", Get = () => ShowPoznamkyLinkyTarifni,   Set = v => ShowPoznamkyLinkyTarifni = v },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - všeobecné", Group = "Filtrování", Get = () => ShowPoznamkyLinkyVseobecne, Set = v => ShowPoznamkyLinkyVseobecne = v },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - radiobus",  Group = "Filtrování", Get = () => ShowPoznamkyLinkyRadiobus,  Set = v => ShowPoznamkyLinkyRadiobus = v },
 
         new ColorPropertyDescriptor { Label = "NZ pozadí",  Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { Label = "NZ barva",   Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
