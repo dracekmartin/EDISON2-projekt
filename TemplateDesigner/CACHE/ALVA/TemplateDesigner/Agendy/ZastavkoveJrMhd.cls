@@ -779,12 +779,6 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
         // Atributy spoje
         k myarr s isok = ##class(ALVA.MHD.SpojeFce).GetAtributySpoj(.sys,SpojID,"",.myarr)
         i 'isok continue
-        // Filtr: vyhodit netisknuté atributy (parametr NETISKNUTE_ATRIBUTY)
-        s AtributID = ""
-        f {
-            s AtributID = $o(myarr("arr",1,AtributID)) q:AtributID=""
-            i $d(^||ML("IN","par_2_"_AtributID)) k myarr("arr",1,AtributID)
-        }
         k ^||TiskMHD("spojAtributy",SpojID) m ^||TiskMHD("spojAtributy",SpojID) = myarr
 
         // NZ přiřazení

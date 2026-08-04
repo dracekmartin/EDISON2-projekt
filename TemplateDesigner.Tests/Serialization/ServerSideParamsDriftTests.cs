@@ -86,26 +86,32 @@ public class ServerSideParamsDriftTests
     [Fact]
     public void DynamickeKlice_SePreskoci()
     {
-        // ZastavkoveJrMhd čte `^||ML("IN","par_2_"_AtributID)` - rodina klíčů skládaná za běhu,
-        // ne pevný název parametru (legacy „netisknuté atributy"; klíč dnes nikdo neposílá).
-        // Kdyby parser bral `par_2_` jako parametr, test by hlásil neexistující drift.
-        var keys = StaticInKeys(AgendaFile("ZastavkoveJrMhd.cls"));
+        // Klíč skládaný za běhu (`"prefix"_promenna`) není název parametru - parser ho musí vynechat,
+        // jinak by hlásil drift na něčem, co v allowlistu být nemá. Testuje se na vlastním vstupu,
+        // ne na .cls z repa: v agendách dnes žádný takový klíč není (poslední byl legacy
+        // `par_2_"_AtributID` v `ZastavkoveJrMhd`, mrtvá větev smazaná 4. 8. 2026), takže test nad
+        // reálným souborem by prošel naprázdno a nic nehlídal.
+        var keys = StaticInKeysFromText(
+            """
+            s hodnota = $g(^||ML("IN","PEVNY_KLIC"))
+            i $d(^||ML("IN","dynamicky_"_AtributID)) d Neco()
+            """);
 
-        Assert.DoesNotContain("par_2_", keys);
+        Assert.Contains("PEVNY_KLIC", keys);
+        Assert.DoesNotContain("dynamicky_", keys);
     }
 
     // ── Parsování ─────────────────────────────────────────────────────────────
 
     /// <summary>Pevně pojmenované IN klíče souboru (bez klíčů skládaných konkatenací).</summary>
-    private static List<string> StaticInKeys(string file)
-    {
-        string text = File.ReadAllText(file);
-        return InKeyRx.Matches(text)
+    private static List<string> StaticInKeys(string file) => StaticInKeysFromText(File.ReadAllText(file));
+
+    private static List<string> StaticInKeysFromText(string text) =>
+        InKeyRx.Matches(text)
             .Where(m => m.Groups[2].Value != "_")   // "prefix"_var = dynamický klíč
             .Select(m => m.Groups[1].Value)
             .Distinct(StringComparer.Ordinal)
             .ToList();
-    }
 
     private static string[] AgendaFiles() => Directory.GetFiles(AgendyDir(), "*.cls");
 

@@ -12,6 +12,9 @@ okno — a uživatel to nahlásí jako „appka se zasekla", ne jako „seznam s
 navíc serializují souběžné dotazy (sdílený `MLRest` jede přes procesní globály `^||ML`) a odpověď
 staršího dotazu už nedosedne, takže rychlé přepínání filtru nezamíchá řádky.
 
+Filtrovaný seznam přes `EDFilter`: automatický reload (Loaded + změna hodnoty pole) jede
+`RefreshAsync()`, takže host nemusí dělat nic. Synchronní `Refresh()` zůstává pro ruční trigger.
+
 ⚠️ **Past při psaní dalšího async volání: `CacheClass` je `DependencyProperty`.** Čtení uvnitř
 `Task.Run` skončí `InvalidOperationException` („volající vlákno nemá přístup k tomuto objektu") —
 hodnotu si vytáhni do lokální proměnné **před** přechodem na threadpool. Totéž platí pro každou

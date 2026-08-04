@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-08-04 (9) - filtrované seznamy načítají asynchronně + mrtvá legacy větev pryč
+
+Dojetí úklidu po vydání verze (rozhodnutí Jan: jít do sdílené komponenty celé, ne obezličkou).
+
+### Výběr šablon z databáze zamrzal stejně jako picker instancí
+
+Zbývající synchronní cesta: `CacheTemplatePickerDialog` volal `InitializeList()` a data načítal
+`EDFilter.Refresh()` → `Target.LoadList()`, obojí na UI vlákně - a filtr to dělá při otevření
+**i při každé změně hodnoty pole**. Opravit to jen v návrháři nešlo, protože data tečou přes
+`EDFilter`, což je sdílená komponenta.
+
+- `EDFilter` dostal **`RefreshAsync()`**; automatický reload (Loaded + změna hodnoty) jde nově tudy.
+  Synchronní `Refresh()` zůstává pro ruční trigger, takže API je aditivní.
+- Fire-and-forget z event handleru musí chybu spolknout na místě (`async void` by ji vyhodil mimo
+  jakýkoli catch) - jde přes `IPopupDisplayer` z `EDServices`.
+- Výběr šablon v návrháři: `InitializeListAsync()` + reload po smazání/přejmenování taky async.
+
+⚠️ **Dotýká se i EDISONu** - všechny filtrované seznamy tam přestanou mrazit UI. Jednotkové testy
+prošly, ale je to změna chování ve sdílené knihovně, takže stojí za proklik.
+
+**Pořadí načtení sloupců vs. řádků se nezměnilo** (kdo z Loaded běží první, běží první i teď) - jen
+už se to serializuje přes zámek v EDListu. Pokud tam někdy vznikne problém, je to pre-existující
+vlastnost, ne důsledek async.
+
+### Mrtvá legacy větev v MHD agendě
+
+`ZastavkoveJrMhd` filtroval atributy spoje podle `^||ML("IN","par_2_"_AtributID)` - klíče, které
+**nikdo neposílá**; parametr `NETISKNUTE_ATRIBUTY` z komentáře nikde neexistuje. Podmínka byla vždy
+nepravdivá, takže smazání je chováním neutrální. Ověřeno grepem přes celé repo (žádný jiný výskyt)
+a Caché testy 73/73.
+
+⚠️ **Na co se tady NEDÁ spolehnout:** zlaté pokrytí MHD agendy je slabé (viz `C9`), takže zelené testy
+tu nejsou důkaz. Jistota stojí na tom, že `$d` nad nikdy nenastaveným klíčem je vždy 0.
+
+`ServerSideParamsDriftTests` tím ztratil reálný vzorek dynamického klíče, takže jeho test parseru
+**přestal být platný** (procházel by naprázdno) - přepsán na vlastní vstup místo souboru z repa.
+
+.NET 1529/1529 · Caché 73/73.
+
 ## 2026-08-04 (8) - pojistka allowlistu parametrů (`B47`) + plnění seznamu (`B51`)
 
 Dva obecné nálezy dojeté po vydání verze.
