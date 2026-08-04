@@ -72,6 +72,19 @@ public class NotesLegendElement : StopScheduleElementBase
     /// Dřív parametr sestavy „Skrýt souhrn…"; přesunuto sem, aby se obsah zapínal na jednom místě.</summary>
     public bool ShowSouhrnBezbarier { get; set; } = true;
 
+    /// <summary>
+    /// Přeprava jízdních kol - značka u minuty odjezdu **i** vysvětlivka v legendě (#13093 bod 2).
+    /// Značka se kreslí v mřížce odjezdů, ale zapíná se tady: uživatel má mít vypínání obsahu na
+    /// jednom místě (rozhodnutí Jan 2026-08-04). Obojí visí na jedné volbě, takže nemůže vzniknout
+    /// značka bez vysvětlení. Výchozí vypnuto - legacy kola na vývěsce netiskl.
+    ///
+    /// ⚠️ Důsledek volby: šablona **bez bloku poznámek** tyhle značky nezapne vůbec.
+    /// </summary>
+    public bool ShowZnackaKola { get; set; } = false;
+
+    /// <summary>Místenka („R" u odjezdu + vysvětlivka). Chování jako <see cref="ShowZnackaKola"/>.</summary>
+    public bool ShowZnackaMistenky { get; set; } = false;
+
     // ─── Designer ───────────────────────────────────────────────────────────
 
     protected override float DesignerPlaceholderHeight => 25f;
@@ -425,6 +438,8 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Poznámky linky - všeobecné", Group = "Filtrování", Get = () => ShowPoznamkyLinkyVseobecne, Set = v => ShowPoznamkyLinkyVseobecne = v },
         new BoolPropertyDescriptor  { Label = "Poznámky linky - radiobus",  Group = "Filtrování", Get = () => ShowPoznamkyLinkyRadiobus,  Set = v => ShowPoznamkyLinkyRadiobus = v },
         new BoolPropertyDescriptor  { Label = "Souhrn bezbariérových spojů",  Group = "Filtrování", Get = () => ShowSouhrnBezbarier,       Set = v => ShowSouhrnBezbarier = v },
+        new BoolPropertyDescriptor  { Label = "Přeprava kol u odjezdů",       Group = "Filtrování", Get = () => ShowZnackaKola,            Set = v => ShowZnackaKola = v },
+        new BoolPropertyDescriptor  { Label = "Místenky u odjezdů",           Group = "Filtrování", Get = () => ShowZnackaMistenky,        Set = v => ShowZnackaMistenky = v },
 
         new ColorPropertyDescriptor { Label = "NZ pozadí",  Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { Label = "NZ barva",   Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
@@ -466,6 +481,8 @@ public class NotesLegendElement : StopScheduleElementBase
             ShowPoznamkyLinkyVseobecne = ShowPoznamkyLinkyVseobecne,
             ShowPoznamkyLinkyRadiobus  = ShowPoznamkyLinkyRadiobus,
             ShowSouhrnBezbarier        = ShowSouhrnBezbarier,
+            ShowZnackaKola             = ShowZnackaKola,
+            ShowZnackaMistenky         = ShowZnackaMistenky,
         };
         CopyBaseTo(clone);
         CopyStopScheduleProperties(clone);

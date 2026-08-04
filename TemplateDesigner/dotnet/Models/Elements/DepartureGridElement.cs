@@ -487,15 +487,6 @@ public class DepartureGridElement : StopScheduleElementBase
 
     /// <summary>Jednoznakový speciální symbol (piktogram) → kreslí se symbolovým JŘ fontem.
     /// Víceznakové SpecialniZnak (dny „Po"…) i NZ (čísla) zůstávají v normálním fontu.</summary>
-    /// <summary>Značka přepravy jízdních kol u minuty odjezdu (#13093 bod 2). Volba sedí tady, protože
-    /// tenhle prvek tu značku kreslí - vysvětlivka v legendě se dorovná sama, takže nemůže vzniknout
-    /// značka bez vysvětlení. Výchozí vypnuto: legacy ji na vývěsce netiskl.</summary>
-    public bool ShowZnackaKola { get; set; } = false;
-
-    /// <summary>Značka „R" (k jízdence lze zakoupit místenku) u minuty odjezdu.
-    /// Chování i důvod umístění jako u <see cref="ShowZnackaKola"/>.</summary>
-    public bool ShowZnackaMistenky { get; set; } = false;
-
     private static bool JeGlyfSymbol(AnotaceData a) =>
         a.Typ == TypAnotace.SpecialniZnak && JePiktogram(a.Znak);
 
@@ -1410,8 +1401,6 @@ public class DepartureGridElement : StopScheduleElementBase
         new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace - text", Get = () => AnotaceTextStyle.TextColor ?? "", Set = v => AnotaceTextStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
         new BoolPropertyDescriptor  { Label = "Anotace",              Group = "Anotace", Get = () => ShowAnotace,              Set = v => ShowAnotace = v },
-        new BoolPropertyDescriptor  { Label = "Značka přepravy kol",    Group = "Anotace", Get = () => ShowZnackaKola,           Set = v => ShowZnackaKola = v },
-        new BoolPropertyDescriptor  { Label = "Značka místenky",        Group = "Anotace", Get = () => ShowZnackaMistenky,       Set = v => ShowZnackaMistenky = v },
 
         new FloatPropertyDescriptor { Label = "Mezera min. ↔ anot.",  Group = "Mezery", Get = () => AnotaceGap,      Set = v => AnotaceGap = v,      Min = 0, Max = 5, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Mezera anot. ↔ anot.", Group = "Mezery", Get = () => AnotaceInterGap, Set = v => AnotaceInterGap = v, Min = 0, Max = 5, Unit = "mm" },
@@ -1472,8 +1461,6 @@ public class DepartureGridElement : StopScheduleElementBase
             MinuteBold                 = MinuteBold,
             AlternatingRowColor        = AlternatingRowColor,
             ShowAnotace                = ShowAnotace,
-            ShowZnackaKola             = ShowZnackaKola,
-            ShowZnackaMistenky         = ShowZnackaMistenky,
             AnotaceFontSize            = AnotaceFontSize,
             NegativniZnackaBackColor   = NegativniZnackaBackColor,
             NegativniZnackaForeColor   = NegativniZnackaForeColor,

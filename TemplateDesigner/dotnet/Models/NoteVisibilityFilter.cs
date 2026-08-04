@@ -107,19 +107,17 @@ public static class NoteVisibilityFilter
     /// </summary>
     public static HashSet<string> HiddenContentCategories(Template template)
     {
+        var legends = template.Sections.SelectMany(s => s.Elements)
+            .OfType<Elements.NotesLegendElement>().ToList();
+
         var hidden = new HashSet<string>();
-        var elements = template.Sections.SelectMany(s => s.Elements).ToList();
-
-        var grids = elements.OfType<Elements.DepartureGridElement>().ToList();
-        if (grids.Count > 0)
-        {
-            if (!grids.Any(g => g.ShowZnackaKola)) hidden.Add(KolaKat);
-            if (!grids.Any(g => g.ShowZnackaMistenky)) hidden.Add(MistenkyKat);
-        }
-
-        var legends = elements.OfType<Elements.NotesLegendElement>().ToList();
-        if (legends.Count > 0 && !legends.Any(l => l.ShowSouhrnBezbarier))
-            hidden.Add(SouhrnBezbarierKat);
+        // „Netiskne se, dokud to někdo nezapne" - proto se neptáme, jestli blok poznámek existuje.
+        // Šablona bez něj tedy značky kol ani místenek nemá; je to důsledek toho, že vypínání obsahu
+        // drží jeden prvek (rozhodnutí Jan 2026-08-04).
+        if (!legends.Any(l => l.ShowZnackaKola)) hidden.Add(KolaKat);
+        if (!legends.Any(l => l.ShowZnackaMistenky)) hidden.Add(MistenkyKat);
+        // Souhrn bezbariér je naopak výchozím stavem zapnutý; bez bloku poznámek není co zobrazit.
+        if (legends.Count > 0 && !legends.Any(l => l.ShowSouhrnBezbarier)) hidden.Add(SouhrnBezbarierKat);
 
         return hidden;
     }
