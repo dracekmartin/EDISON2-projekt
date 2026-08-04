@@ -47,20 +47,12 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
         _   => znak,
     };
 
-    /// <summary>
-    /// Kategorie, jejichž značky nesou **význam** a musí se přeložit na glyf. Ostatní značky jsou
-    /// v datech **už jako pozice ve fontu** a přeložit se NESMÍ.
-    ///
-    /// ⚠️ Tohle je celý důvod, proč překlad nesmí být plošný podle písmene: agenda MHD posílá značku
-    /// jako <c>$c(kód)</c>, tedy přímo pozici ve fontu (`ConvertSpecialniZnak`). Kód 65 dá „A", kód 75
-    /// „K" - plošný překlad by zákazníkovi MHD nakreslil autobus nebo kolo místo jeho symbolu.
-    /// </summary>
-    private static readonly HashSet<string> SemantickeKategorie = ["prestup", "odjezd-atribut"];
-
     /// <summary>Znak k vykreslení pro značku dané kategorie - přeloží jen sémantické značky
-    /// (viz <see cref="SemantickeKategorie"/>), ostatní vrátí nezměněné.</summary>
+    /// (<see cref="NoteCategories.Semanticke"/>), ostatní vrátí nezměněné. Agenda MHD posílá značku
+    /// jako <c>$c(kód)</c>, tedy přímo pozici ve fontu, takže plošný překlad podle písmene by jí
+    /// nakreslil cizí piktogram.</summary>
     internal static string GlyfDleKategorie(string znak, string kategorie) =>
-        SemantickeKategorie.Contains(kategorie) ? SymbolGlyph(znak) : znak;
+        NoteCategories.Semanticke.Contains(kategorie) ? SymbolGlyph(znak) : znak;
 
     // ─── DataSource klíče (editovatelné v šabloně) ──────────────────────────
 

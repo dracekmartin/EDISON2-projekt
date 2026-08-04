@@ -1,3 +1,4 @@
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Tests.Elements;
@@ -73,7 +74,7 @@ public class SymbolGlyphTests
     [Fact]
     public void MrizkaOdjezduPrekladaGlyfStejneJakoLegenda()
     {
-        var kolo = new AnotaceData { Typ = TypAnotace.SpecialniZnak, Znak = "K", Kategorie = "odjezd-atribut" };
+        var kolo = new AnotaceData { Typ = TypAnotace.SpecialniZnak, Znak = "K", Kategorie = NoteCategories.OdjezdKola };
         Assert.Equal("L", DepartureGridElement.GlyfProKresleni(kolo));
         Assert.Equal(StopScheduleElementBase.SymbolGlyph("K"), DepartureGridElement.GlyfProKresleni(kolo));
 
@@ -95,11 +96,26 @@ public class SymbolGlyphTests
         // MHD kategorii sémantických značek nepoužívá (prázdná nebo „atribut-zastavky").
         Assert.Equal("A", StopScheduleElementBase.GlyfDleKategorie("A", ""));
         Assert.Equal("K", StopScheduleElementBase.GlyfDleKategorie("K", ""));
-        Assert.Equal("A", StopScheduleElementBase.GlyfDleKategorie("A", "atribut-zastavky"));
+        Assert.Equal("A", StopScheduleElementBase.GlyfDleKategorie("A", NoteCategories.AtributZastavky));
 
-        // Sémantické značky AD se přeloží.
-        Assert.Equal("z", StopScheduleElementBase.GlyfDleKategorie("A", "prestup"));
-        Assert.Equal("L", StopScheduleElementBase.GlyfDleKategorie("K", "odjezd-atribut"));
+        // Sémantické značky AD se přeloží. Kategorie SE BEROU Z KONSTANT - opsané jméno je přesně to,
+        // co 4. 8. rozbilo kolo: kategorie se přejmenovala a překlad zůstal na starém jménu, kdežto
+        // test si to staré jméno držel sám, takže zůstal zelený nad nefunkční aplikací.
+        Assert.Equal("z", StopScheduleElementBase.GlyfDleKategorie("A", NoteCategories.Prestup));
+        Assert.Equal("L", StopScheduleElementBase.GlyfDleKategorie("K", NoteCategories.OdjezdKola));
+    }
+
+    /// <summary>Kategorie, které nesou **marker** místo pozice ve fontu, musí být v sémantické sadě -
+    /// jinak se marker vykreslí surově a vyjede cizí piktogram. Tohle je pojistka proti rozejití
+    /// dvou nezávislých míst (co se vypíná v šabloně × co se překládá na glyf).</summary>
+    [Fact]
+    public void MarkeroveKategorieJsouSemanticke()
+    {
+        Assert.Contains(NoteCategories.OdjezdKola, NoteCategories.Semanticke);
+        Assert.Contains(NoteCategories.Prestup, NoteCategories.Semanticke);
+
+        // A naopak: kategorie MHD značek v sadě být nesmí.
+        Assert.DoesNotContain(NoteCategories.AtributZastavky, NoteCategories.Semanticke);
     }
 
     /// <summary>Znaky, které dnes fungují (bezbariér, kroužkové dny), se nesmí překládat - jejich

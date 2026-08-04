@@ -1,3 +1,4 @@
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Tests.Elements;
@@ -11,10 +12,10 @@ public class NotesLegendVylukyTests
 {
     private static List<PoznamkaData> Vzorek() =>
     [
-        new() { Typ = TypPoznamky.Text, Text = "Na lince platí Tarif IDZK", Kategorie = "poznamka-linky-tarifni" },
-        new() { Typ = TypPoznamky.Text, Text = "R - k jízdence lze zakoupit místenku", Kategorie = "poznamka-linky-vseobecne" },
-        new() { Typ = TypPoznamky.Text, Text = "Výluka: Staré Město, hřbitov zrušena", Kategorie = "vyluka" },
-        new() { Typ = TypPoznamky.Text, Text = "Výluka: objízdná trasa I/50", Kategorie = "vyluka" },
+        new() { Typ = TypPoznamky.Text, Text = "Na lince platí Tarif IDZK", Kategorie = NoteCategories.PoznamkaLinkyTarifni },
+        new() { Typ = TypPoznamky.Text, Text = "R - k jízdence lze zakoupit místenku", Kategorie = NoteCategories.PoznamkaLinkyVseobecne },
+        new() { Typ = TypPoznamky.Text, Text = "Výluka: Staré Město, hřbitov zrušena", Kategorie = NoteCategories.Vyluka },
+        new() { Typ = TypPoznamky.Text, Text = "Výluka: objízdná trasa I/50", Kategorie = NoteCategories.Vyluka },
         new() { Typ = TypPoznamky.SpecialniZnak, Znak = "x", Text = "na znamení", Kategorie = "atribut-zastavky" },
     ];
 

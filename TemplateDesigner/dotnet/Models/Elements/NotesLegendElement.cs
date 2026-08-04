@@ -350,12 +350,12 @@ public class NotesLegendElement : StopScheduleElementBase
     }
 
     /// <summary>Kategorie, kterou Caché dává výlukovým poznámkám linky (text začíná „Výluka").</summary>
-    private const string VylukaKategorie = "vyluka";
+    private const string VylukaKategorie = NoteCategories.Vyluka;
 
     /// <summary>Kategorie poznámek zadaných u linky (Caché tagy dle klíče ve vlastnostech linky).</summary>
-    private const string KatLinkyTarifni   = "poznamka-linky-tarifni";
-    private const string KatLinkyVseobecne = "poznamka-linky-vseobecne";
-    private const string KatLinkyRadiobus  = "poznamka-linky-radiobus";
+    private const string KatLinkyTarifni   = NoteCategories.PoznamkaLinkyTarifni;
+    private const string KatLinkyVseobecne = NoteCategories.PoznamkaLinkyVseobecne;
+    private const string KatLinkyRadiobus  = NoteCategories.PoznamkaLinkyRadiobus;
 
     /// <summary>Pustí poznámku linky dle zaškrtnutých kategorií. Poznámky, které z linky nejsou
     /// (značky, omezení, ruční komentáře), tímhle filtrem projdou vždy - jinak by je vypnutá

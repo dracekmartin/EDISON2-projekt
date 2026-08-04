@@ -28,8 +28,8 @@ public class ObsahKategorieTests
     {
         var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(new NotesLegendElement()));
 
-        Assert.Contains("odjezd-kola", hidden);
-        Assert.Contains("odjezd-mistenka", hidden);
+        Assert.Contains(NoteCategories.OdjezdKola, hidden);
+        Assert.Contains(NoteCategories.OdjezdMistenka, hidden);
         Assert.DoesNotContain("bezbarier-agregat", hidden);
     }
 
@@ -42,7 +42,7 @@ public class ObsahKategorieTests
             Sablona(new NotesLegendElement { ShowZnackaKola = true }));
 
         Assert.DoesNotContain("odjezd-kola", hidden);
-        Assert.Contains("odjezd-mistenka", hidden);   // druhá kategorie se tím nezapne
+        Assert.Contains(NoteCategories.OdjezdMistenka, hidden);   // druhá kategorie se tím nezapne
     }
 
     /// <summary>Souhrn bezbariér se schová jen když ho žádný blok poznámek nechce (dřív parametr).</summary>
@@ -52,7 +52,7 @@ public class ObsahKategorieTests
         var hidden = NoteVisibilityFilter.HiddenContentCategories(
             Sablona(new NotesLegendElement { ShowSouhrnBezbarier = false }));
 
-        Assert.Contains("bezbarier-agregat", hidden);
+        Assert.Contains(NoteCategories.BezbarierAgregat, hidden);
     }
 
     /// <summary>Dva bloky poznámek: stačí, když kategorii chce jeden z nich - jinak by druhý blok
@@ -74,7 +74,7 @@ public class ObsahKategorieTests
     {
         var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(new DepartureGridElement()));
 
-        Assert.Contains("odjezd-kola", hidden);
-        Assert.Contains("odjezd-mistenka", hidden);
+        Assert.Contains(NoteCategories.OdjezdKola, hidden);
+        Assert.Contains(NoteCategories.OdjezdMistenka, hidden);
     }
 }

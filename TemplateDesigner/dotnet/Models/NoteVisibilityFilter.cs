@@ -45,15 +45,20 @@ public static class NoteVisibilityFilter
     public const string ParamName = "SCHOVAT_V_ROZSAHU";
 
 
-    /// <summary>Kategorie legendy pro agregátní bezbariér poznámku (Caché tag).</summary>
-    private const string AggBezbarierKat = "bezbarier-agregat";
+    /// <summary>Kategorie legendy pro souhrn „všechny spoje bezbariérové" (Caché tag).</summary>
+    private const string AggBezbarierKat = NoteCategories.BezbarierAgregat;
 
     /// <summary>Kategorie legendy pro „× na znamení" (Caché tag). Skryje se, když StopList značku netiskne (#7161 D5).</summary>
-    private const string AtributZastavkyKat = "atribut-zastavky";
+    private const string AtributZastavkyKat = NoteCategories.AtributZastavky;
 
     /// <summary>Kategorie legendy pro přestupy vlak/autobus (Caché tag). Skryje se, když je žádný
     /// StopList netiskne - piktogram bez vysvětlení je nečitelný, vysvětlení bez piktogramu matoucí.</summary>
-    private const string PrestupKat = "prestup";
+    private const string PrestupKat = NoteCategories.Prestup;
+
+    /// <summary>Kategorie atributů odjezdu (kola, místenka) - zapínají se v prvku poznámek a filtr
+    /// podle nich prořezává značku u minuty i řádek legendy naráz.</summary>
+    private const string KolaKat = NoteCategories.OdjezdKola;
+    private const string MistenkyKat = NoteCategories.OdjezdMistenka;
 
     /// <summary>Převede hodnotu parametru sestavy na režim. Neznámé / „Ruční komentáře" = default (legacy).</summary>
     public static NoteRangeSuppression ParseMode(object? paramValue) => paramValue?.ToString() switch
@@ -88,22 +93,14 @@ public static class NoteVisibilityFilter
     /// viditelnost značky - jinak by u výchozího nastavení naskočily řádky k piktogramům, které nikde
     /// nejsou. Bez StopListu nevíme záměr → neskrývat (stejně jako u „na znamení").
     /// </summary>
-    /// <summary>Kategorie legendy pro atributy odjezdu - zapínají se v prvku odjezdů (tam, kde se
-    /// kreslí značka), legenda se dorovná sama.</summary>
-    private const string KolaKat = "odjezd-kola";
-    private const string MistenkyKat = "odjezd-mistenka";
-
-    /// <summary>Kategorie souhrnu „všechny spoje bezbariérové" - zapíná se v prvku poznámek.</summary>
-    private const string SouhrnBezbarierKat = "bezbarier-agregat";
-
     /// <summary>
     /// Kategorie obsahu, které se v této šabloně **netisknou vůbec** (ani značka, ani vysvětlivka).
     /// Server posílá nadmnožinu otagovanou kategorií a rozhodnutí drží šablona - proto tady, na jednom
     /// místě, a ne parametrem sestavy: je to čistě „co se zobrazí", žádný re-fetch.
     ///
-    /// Značka a její vysvětlivka jsou svázané: volba sedí na prvku, který značku **kreslí** (kola
-    /// a místenky = mřížka odjezdů), legenda se podle toho prořeže. Nemůže tak vzniknout značka,
-    /// které nikdo nerozumí, ani vysvětlivka k něčemu, co na vývěsce není.
+    /// Značka a její vysvětlivka jsou svázané **jednou** volbou v bloku poznámek: filtr podle kategorie
+    /// odebere obojí. Nemůže tak vzniknout značka, které nikdo nerozumí, ani vysvětlivka k něčemu,
+    /// co na vývěsce není.
     /// </summary>
     public static HashSet<string> HiddenContentCategories(Template template)
     {
@@ -117,7 +114,7 @@ public static class NoteVisibilityFilter
         if (!legends.Any(l => l.ShowZnackaKola)) hidden.Add(KolaKat);
         if (!legends.Any(l => l.ShowZnackaMistenky)) hidden.Add(MistenkyKat);
         // Souhrn bezbariér je naopak výchozím stavem zapnutý; bez bloku poznámek není co zobrazit.
-        if (legends.Count > 0 && !legends.Any(l => l.ShowSouhrnBezbarier)) hidden.Add(SouhrnBezbarierKat);
+        if (legends.Count > 0 && !legends.Any(l => l.ShowSouhrnBezbarier)) hidden.Add(AggBezbarierKat);
 
         return hidden;
     }
