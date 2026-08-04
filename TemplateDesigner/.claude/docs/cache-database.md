@@ -142,15 +142,28 @@ Centrální storage pro všechny číselníky MHD modulu. Klíčem je typ číse
 - 1–7 → "Po","Út","St","Čt","Pá","So","Ne" (dny v týdnu)
 - \>31 → `$char(SpecZnak)` (ASCII znak)
 
-Známé AtributID (z CB_DP):
+Číselník atributů **CB_DP** (změřeno 4. 8. 2026, `B48` gate - kompletní stav globálu):
 
-| AtributID | Popis | SpecZnak → znak | ProSpoj | ProZastavku |
-|---|---|---|---|---|
-| 1003 | na znamení | 68 → D | 0 | 1 |
-| 1005 | přestup na železnici | 120 → x | 0 | 1 |
-| 1006 | jízdenkový automat | 123 → { | 0 | 1 |
-| 1007 | bezbariérově přístupné | 72 → H | 1 | 1 |
-| 1008 | částečně bezbariérové | 70 → F | 1 | 0 |
+| AtributID | Popis | Znak (číselník) | SpecZnak → na wire | ProSpoj | ProZastavku |
+|---|---|---|---|---|---|
+| 1001 | jen nástup | N | 109 → `m` | 0 | 0 |
+| 1002 | jen výstup | V | 108 → `l` | 0 | 0 |
+| 1003 | na znamení | x | 68 → `D` | 0 | 1 |
+| 1004 | přestup na linkovou dopravu | A | 119 → `w` | 0 | 1 |
+| 1005 | přestup na železniční dopravu | L | 120 → `x` | 0 | 1 |
+| 1006 | jízdenkový automat | J | 123 → `{` | 0 | 1 |
+| 1007 | bezbariérově přístupné | B | 72 → `H` | 1 | 1 |
+| 1008 | částečně bezbariérové | C | 70 → `F` | 1 | 0 |
+| 1009 | nácestná zastávka | E | (prázdné) | 0 | 0 |
+| 1010 | konečná zastávka | K | (prázdné) | 0 | 0 |
+| 1011 | příjezd a odjezd | P | (prázdné) | 0 | 0 |
+
+⚠️ **Sloupec `Znak` na wire NEJDE.** Agenda posílá `ConvertSpecialniZnak(SpecZnak)`, tedy **pozici
+ve fontu**. Písmeno z číselníku (`A` přestup na bus, `L` přestup na vlak) je jen popisek v UI - kdyby
+se posílalo ono, srazilo by se s naší mapou glyfů, kde `A`/`L` znamenají něco jiného.
+
+⚠️ **Prázdný `SpecZnak` = atribut se netiskne** (`i SpecialniZnak = "" continue`), proto 1009-1011
+na vývěsce nikdy nejsou.
 
 #### PoznamkaSpoj - poznámky přiřaditelné ke spojům
 
