@@ -65,6 +65,17 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     /// </summary>
     public string? RowVisibilityExpression { get; set; }
 
+    /// <summary>Datové pole, podle kterého se řadí řádky. Prázdné = pořadí, v jakém je vrátí agenda
+    /// (dosavadní chování). Typ řazení se neodvozuje od sloupce, ale od hodnot - viz <see cref="RowSorter"/>.</summary>
+    public string? SortField { get; set; }
+
+    public bool SortDescending { get; set; }
+
+    /// <summary>Druhotný klíč - uplatní se při shodě v <see cref="SortField"/>.</summary>
+    public string? ThenByField { get; set; }
+
+    public bool ThenByDescending { get; set; }
+
     /// <summary>
     /// Podmíněné formátování řádku: seznam pravidel (výraz → barva pozadí), první splněné vyhrává.
     /// Null/prázdné = bez zvýraznění. Vyhodnocuje <see cref="RowConditions.HighlightColor(IReadOnlyList{HighlightRule}, DataContext)"/>.
@@ -268,8 +279,19 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         return MinRows > 0 ? Math.Max(n, MinRows) : n;
     }
 
+    /// <summary>Sloupce, podle kterých lze řadit - nabídka „pole (záhlaví)". Počítané sloupce
+    /// (`Expression` bez `Field`) v1 nenabízíme.</summary>
+    private IEnumerable<(string Value, string Label)> SortableColumns() =>
+        Columns.Where(c => !string.IsNullOrWhiteSpace(c.Field))
+               .Select(c => (c.Field!, string.IsNullOrWhiteSpace(c.Header) ? c.Field! : c.Header));
+
+    /// <summary>Řádky po filtru viditelnosti a po seřazení. **Jediné místo** - render i výpočet výšky
+    /// jdou tudy, takže se nemůžou rozejít v pořadí ani v počtu.</summary>
     private IReadOnlyList<DataContext> VisibleDataRows(IReadOnlyList<DataContext> rows) =>
-        RowConditions.VisibleRows(rows, RowVisibilityExpression);
+        RowSorter.Sort(
+            RowConditions.VisibleRows(rows, RowVisibilityExpression),
+            rows.Count > 0 ? rows[0].Culture : null,
+            (SortField, SortDescending), (ThenByField, ThenByDescending));
 
     /// <summary>Barva pozadí zvýraznění řádku (sdílený <see cref="RowConditions"/>); null = bez zvýraznění.</summary>
     public string? ResolveRowHighlight(DataContext row) =>
@@ -472,6 +494,37 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
             Min   = 2, Max = 50, Unit = "mm"
         },
         .. GetGridDescriptors(Grid),
+
+        // Řazení: nabídka = sloupce s datovým polem (počítané sloupce v1 neřadíme - nemají co
+        // porovnat bez vyhodnocení výrazu). Uživatel vybírá jen sloupec a směr; jestli je to číslo,
+        // datum nebo text pozná RowSorter z hodnot.
+        new SuggestStringPropertyDescriptor
+        {
+            Label = "Řadit podle", Group = "Tabulka",
+            Get = () => SortField ?? "", Set = v => SortField = string.IsNullOrWhiteSpace(v) ? null : v,
+            GetSuggestions = SortableColumns
+        },
+        new EnumPropertyDescriptor
+        {
+            Label = "Směr", Group = "Tabulka",
+            VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField),
+            Get = () => SortDescending, Set = v => SortDescending = (bool)v,
+            Options = [("Vzestupně", (object)false), ("Sestupně", (object)true)]
+        },
+        new SuggestStringPropertyDescriptor
+        {
+            Label = "Potom podle", Group = "Tabulka",
+            VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField),
+            Get = () => ThenByField ?? "", Set = v => ThenByField = string.IsNullOrWhiteSpace(v) ? null : v,
+            GetSuggestions = SortableColumns
+        },
+        new EnumPropertyDescriptor
+        {
+            Label = "Směr (druhý klíč)", Group = "Tabulka",
+            VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField) && !string.IsNullOrWhiteSpace(ThenByField),
+            Get = () => ThenByDescending, Set = v => ThenByDescending = (bool)v,
+            Options = [("Vzestupně", (object)false), ("Sestupně", (object)true)]
+        },
         new ColorPropertyDescriptor
         {
             Label = "Střídání řádků", Group = "Tabulka",
@@ -529,6 +582,10 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
             HeaderStyle         = HeaderStyle?.Clone(),
             DataStyle           = DataStyle?.Clone(),
             Grid                = Grid.Clone(),
+            SortField           = SortField,
+            SortDescending      = SortDescending,
+            ThenByField         = ThenByField,
+            ThenByDescending    = ThenByDescending,
             AlternatingRowColor = AlternatingRowColor,
             RowVisibilityExpression = RowVisibilityExpression,
             HighlightRules          = HighlightRules?.Select(r => r.Clone()).ToList(),

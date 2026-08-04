@@ -30,6 +30,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
         d form.AddDecimal("RowHeight", "Výška řádku", 6, 2, 50, "mm")
         d form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
+        // Řazení řádků: sloupce jsou per element, Caché je nezná - položky plní klient
+        // (PopulateSortFields), stejně jako u „Zdroj dat". Prázdné = pořadí z agendy.
+        s f = form.AddFieldToLastGroup("SortField", "Řadit podle", $$$FieldTypeList, 0, 0)
+        s f.helpText = "Prázdné = pořadí, v jakém řádky vrátí databáze. Číslo, datum i text se poznají z hodnot."
+        s f = form.AddFieldToLastGroup("SortDescending", "Směr", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("0", "Vzestupně"), f.AddListItem("1", "Sestupně")
+        s f.value = "0"
+        s f = form.AddFieldToLastGroup("ThenByField", "Potom podle", $$$FieldTypeList, 0, 0)
+        s f = form.AddFieldToLastGroup("ThenByDescending", "Směr (druhý klíč)", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("0", "Vzestupně"), f.AddListItem("1", "Sestupně")
+        s f.value = "0"
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         s f = form.AddNumber("MinRows", "Min. řádků (0 = ne)", 0, 0, 200)
         s f.helpText = "Doplní prázdné řádky do tohoto počtu - pevná výška boxu (např. faktura). 0 = bez minima"

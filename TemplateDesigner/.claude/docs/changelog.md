@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-04 (14) - řazení řádků v dynamické tabulce (`B27`)
+
+Dynamická tabulka tiskla řádky v pořadí, v jakém je vrátila databáze, a uživatel s tím nemohl nic
+dělat. Nově si vybere **sloupec a směr**; druhý klíč se odkryje, až když je vyplněný první, aby
+panel zůstal krátký. Prázdné = dosavadní chování, takže existující šablony se nemění.
+
+**Na typ řazení se neptáme** (rozhodnutí Jan): číslo, datum i text se poznají z hodnot. Volba
+„abecedně × číselně" vypadá jako služba uživateli, ale špatná volba vyrobí výstup, který vypadá
+seřazeně a je v nesmyslném pořadí - a nikdo netuší, že textově je „12" před „9". Smíšený sloupec
+se řadí jako text (kdyby stačilo „něco se naparsovalo", pořadí by záviselo na náhodě), text jde
+českou abecedou (aby „Ř" bylo za „R") a **prázdné hodnoty jdou vždy dozadu, i sestupně**.
+
+**Comboboxy, ne mini-jazyk** (rozhodnutí Jan): `ORDER BY CENA DESC` by znamenalo psát názvy polí
+rukou - a to je přesně vada, kterou má řešit `B44` (překlep se projeví až v tisku). Nabídku sloupců
+plní klient, stejně jako u pole „Zdroj dat"; Caché je nezná, jsou per element.
+
+**Jen dynamická tabulka.** U zastávek a odjezdů určuje pořadí trasa a to se řadit nesmí; pevná
+tabulka má pořadí řádků od uživatele.
+
+Počítané sloupce (`{CENA}*{POCET}`) se v1 nenabízejí - bez vyhodnocení výrazu není co porovnat.
+
+.NET 1543/1543 (TD 601, +10).
+
 ## 2026-08-04 (13) - repertoár symbolového fontu změřen (příprava `B10`)
 
 `B10` (symboly pro linkový JŘ) měl jako největší neznámou otázku „který kód nese který piktogram" -

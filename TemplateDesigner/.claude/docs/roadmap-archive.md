@@ -25,6 +25,26 @@ podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivk
 Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
 binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
 
+## 2026-08-04 ✅ - `B27` řazení řádků v dynamické tabulce
+
+Detail → changelog 2026-08-04 (14). Uživatel vybere sloupec a směr (druhý klíč se odkryje až po
+prvním), **typ řazení se neptá** - číslo, datum i text se poznají z hodnot.
+
+**Rozhodnutí Jan:** (1) typ odvodit, ne nabízet - špatně zvolený typ vyrobí výstup, který vypadá
+seřazeně a je v nesmyslném pořadí, a nikdo netuší, že textově je „12" před „9"; (2) comboboxy,
+ne mini-jazyk typu `ORDER BY` - psaní názvů polí rukou je přesně vada, kterou má řešit `B44`,
+takže zavádět další takové místo by šlo proti sobě; (3) jen dynamická tabulka - u zastávek pořadí
+určuje trasa a to se řadit nesmí.
+
+**Poučení, které se nesmí ztratit:** „prázdné hodnoty dozadu" **nesmí být návratovou hodnotou
+porovnání** - sestupné řazení komparátor obrací, takže by prázdné vyplavaly nahoru. Musí to být
+vlastní úroveň řazení před hodnotou. Napsal jsem to nejdřív špatně a chytil až při psaní testu
+na obě směry.
+
+Druhé: řazení sedí v `VisibleDataRows`, tedy v **jediném trychtýři**, kterým jde render i výpočet
+výšky. Kdyby se řadilo jen v renderu, rozešly by se - táž třída chyby jako asymetrie výšky a fontu
+u záhlaví.
+
 ## 2026-08-04 ✅ - `B48` gate změřen: kolize podle písmene u MHD nehrozí
 
 Detail → changelog 2026-08-04 (12). Blok se zakládal na obavě, že MHD atribut s kódem 65/76 by se
