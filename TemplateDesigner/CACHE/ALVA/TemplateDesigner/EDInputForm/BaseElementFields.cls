@@ -79,6 +79,7 @@ ClassMethod AddConditions(form As ALVA.EDControls.EDInputForm.Form)
 {
     d form.AddGroup("advanced", "Podmínky")
     s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
+    s f.placeholders = 1
     s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 }
 

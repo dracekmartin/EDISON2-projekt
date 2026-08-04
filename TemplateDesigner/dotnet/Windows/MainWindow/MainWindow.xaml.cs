@@ -1059,7 +1059,8 @@ public partial class MainWindow : Window
         vm.RequestOverflowCheck = dataPages =>
             _previewCanvas!.CountOverflowingPages(dataPages);
 
-        var dlg = new PrintDialog(vm) { Owner = this };
+        var dlg = new PrintDialog(vm)
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
         dlg.ShowDialog();
 
         // Tisk sdílí _previewParams s tabem parametrů - po zavření přenačti tab formulář,

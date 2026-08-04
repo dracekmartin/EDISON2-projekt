@@ -65,6 +65,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddText("SpojeDataSource", "Kolekce spojů", "SPOJE")
         s f = form.AddText("SkupinyDnuDataSource", "Kolekce skupin dnů", "SKUPINY_DNU")
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
+        s f.placeholders = 1
         s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí (i s přípojnými řádky). Pole řádku: POPIS, TC, ZONA, MHD, TYP, PORADI, NASTUPISTE. Např. {ZONA} == ""1"""
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit pravidla…"

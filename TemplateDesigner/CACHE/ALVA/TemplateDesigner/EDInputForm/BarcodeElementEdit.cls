@@ -20,7 +20,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Kód" ─────────────────────────────────────────────────
         d form.AddGroup("code", "Kód")
-        d form.AddText("Content", "Obsah")
+        s f = form.AddText("Content", "Obsah")
+        s f.placeholders = 1
 
         s f = form.AddFieldToLastGroup("BarcodeType", "Typ kódu", $$$FieldTypeList, 0, 1)
         d f.AddListItem("QR", "QR kód")
