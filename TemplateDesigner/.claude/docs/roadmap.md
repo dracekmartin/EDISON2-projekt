@@ -74,7 +74,6 @@ prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
 | **B10** | **Symbolový font - linková část** (gate R5): `ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`. Zastávkový JŘ hotový 9. 7. Bez toho knižní/výlepový JŘ „tiše lže" u dopravních symbolů. | M→S |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M |
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M |
-| **B48** | **Přepínač přestupů u zastávek neplatí pro MHD** (nález review 4. 8., gate změřen 4. 8.). **Gate vyhodnocen - NENÍ urgentní:** obávaná kolize (atribut s kódem 65/76 by se spletl s přestupem a přeložil na cizí piktogram) se v číselníku `CB_DP` **nevyskytuje** a strukturálně je nepravděpodobná - agenda MHD posílá `$c(SpecZnak)`, tedy **pozici ve fontu**, ne písmeno, takže by firma musela atribut nasměrovat přesně na 65/76 (glyf trojúhelníku / jízdního kola). Měřený číselník → `cache-database.md`. **Co ale reálně platí:** MHD posílá přestupy jako `w`/`x`, kdežto `IsTransferAttr` je hledá podle písmene (`"A"`/`"L"`), takže je u MHD **vůbec nepozná** - přepínač „Přestupy (vlak/autobus)" na ně nemá vliv a řídí je obecný přepínač „Atributy". Tisknou se tedy správně, ale ovládají se jinak než u AD; je to nekonzistence UI, ne vada výstupu. Fix zůstává tentýž: tagovat ATRIBUTY kategorií `prestup` na wire (AD ji u legendy už posílá) a překlad i gatování vázat na kategorii. **Vzít až s poptávkou od MHD firmy** (dnes jen DPCB/DPKV) - dokud nikdo nehlásí, že mu přepínač přestupů nefunguje, není za co platit. | M |
 
 ---
 
@@ -178,6 +177,7 @@ při scope té fáze, ne teď.
 
 | # | Co | Vel. | Co potřebuje |
 |---|---|---|---|
+| B48 | Přepínač „Přestupy (vlak/autobus)" u MHD nefunguje - MHD posílá přestupy jako pozici ve fontu (`w`/`x`), ne jako písmeno, takže je `IsTransferAttr` nepozná a řídí je obecný přepínač „Atributy". Tisknou se správně, jen se ovládají jinak než u AD. Fix = tagovat ATRIBUTY kategorií `prestup` na wire. Měření gate 4. 8. → archiv | M | poptávku od firmy s modulem MHD (dnes DPCB/DPKV) |
 | TR10 | Skrýt spoje o So/Ne/svátcích | S–M | Caché filtr |
 | TR7 | Per-písmeno výběr sloupců variant jízdních dob | S–M | jen pokud TRANSDEV potvrdí nad novým chováním (varianty dle trasy+nástupiště s max časy jsou od 27. 7. hotové) |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | nový datový model |

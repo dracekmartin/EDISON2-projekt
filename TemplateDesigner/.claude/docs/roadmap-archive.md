@@ -25,6 +25,25 @@ podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivk
 Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
 binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
 
+## 2026-08-04 ✅ - `B48` gate změřen: kolize podle písmene u MHD nehrozí
+
+Detail → changelog 2026-08-04 (12). Blok se zakládal na obavě, že MHD atribut s kódem 65/76 by se
+spletl s přestupem a přeložil na cizí piktogram. **Změřeno v číselníku `CB_DP`: ty kódy tam nejsou**,
+a strukturálně je kolize nepravděpodobná - agenda MHD posílá `$c(SpecZnak)`, tedy **pozici ve fontu**,
+ne písmeno, takže by firma musela atribut nasměrovat přesně na 65/76 (trojúhelník / jízdní kolo).
+
+**Měření ale našlo jinou věc, než blok předpokládal:** MHD posílá přestupy jako `w`/`x`, kdežto
+`IsTransferAttr` je hledá podle písmene `A`/`L` - u MHD je tedy vůbec nepozná. Přepínač „Přestupy
+(vlak/autobus)" na ně nemá vliv, řídí je obecný přepínač „Atributy". Tisknou se správně, jen se
+ovládají jinak než u AD. Zbytek přesunut do „Bez poptávky nebrat", protože to není vada výstupu.
+
+**Poučení - gate se vyplatilo změřit dřív než programovat.** Blok byl odhadnutý na půl dne práce
+kvůli riziku, které v datech neexistuje. Měření stálo pár dotazů a změnilo zadání: z „oprav kolizi"
+se stalo „přepínač u MHD neplatí", což je jiná (a menší) věc s jinou naléhavostí.
+
+Vedlejší zisk: číselník atributů `CB_DP` je v `cache-database.md` doplněný na kompletní naměřený
+stav (dosud tam byla půlka) + poznámka, že sloupec `Znak` na wire vůbec nejde.
+
 ## 2026-08-04 ✅ - `B49` pozice glyfů ve slovenském fontu ověřeny
 
 Detail → changelog 2026-08-04 (11). Obrysy vytažené z obou fontů (postup v `elementy-architektura.md`).

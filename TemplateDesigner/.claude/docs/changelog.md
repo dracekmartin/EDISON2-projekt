@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-04 (12) - gate k přepínači přestupů změřen (`B48`)
+
+Blok se zakládal na obavě, že atribut firmy s modulem MHD s kódem 65/76 by se spletl s přestupem
+a přeložil na cizí piktogram. **V číselníku `CB_DP` ty kódy nejsou** a kolize je nepravděpodobná
+i strukturálně: agenda MHD posílá `$c(SpecZnak)`, tedy pozici ve fontu, ne písmeno z číselníku.
+
+**Měření našlo jinou věc:** MHD posílá přestupy jako `w`/`x`, kdežto `IsTransferAttr` je hledá podle
+písmene `A`/`L`, takže je u MHD nepozná. Přepínač „Přestupy (vlak/autobus)" na ně proto nemá vliv
+a řídí je obecný přepínač „Atributy" - tisknou se správně, jen se ovládají jinak než u AD.
+Nekonzistence ovládání, ne vada výstupu → přesunuto mezi „Bez poptávky nebrat".
+
+Číselník `CB_DP` v `cache-database.md` doplněn na kompletní naměřený stav + poznámka, že sloupec
+`Znak` na wire vůbec nejde (jinak by se srazil s naší mapou glyfů, kde `A`/`L` znamenají něco jiného).
+
 ## 2026-08-04 (11) - pozice glyfů ve slovenském fontu ověřeny (`B49`)
 
 Symboly u spojů (autobus, vlak, kolo) se kreslí znaky ze speciálního dopravního fontu a slovenská
