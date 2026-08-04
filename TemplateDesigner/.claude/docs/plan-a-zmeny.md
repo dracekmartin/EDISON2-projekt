@@ -38,6 +38,28 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 4. 8. 2026 - Poznámky zadané u linky, kola a místenky na vývěsce
+
+Zastávková vývěska umí zobrazit texty, které máte zadané ve **vlastnostech linky**, a označit spoje
+přepravující jízdní kola nebo umožňující místenku.
+
+- **Poznámky zadané u linky** - tarifní, všeobecné i radiobusové texty. Vybíráte je po druzích, tedy
+  stejně jako v jízdním řádu u tisku A4/A5, a to zvlášť pro každý blok poznámek.
+- **Výlukové texty zvlášť** - poznámky začínající slovem „Výluka" jde od ostatních oddělit. Buď dvěma
+  bloky poznámek nad sebou (v jednom *Bez výluk*, ve druhém *Jen výluky*), nebo jako **samostatné pole
+  „Výlukové texty"**, které si položíte kamkoli na stránku jako běžný text.
+- **Výška bloku se dopočítá sama** - když prvnímu bloku necháte prázdnou výšku, druhý se pod ním
+  posune podle toho, kolik textu vyšlo. Při pevné výšce se text zmenší, aby nepřetekl.
+- **Přeprava kol a místenky u odjezdů** - u času odjezdu se vytiskne symbol kola nebo písmeno „R"
+  a do legendy přijde vysvětlivka. Zapíná se to jednou volbou, takže nemůže zůstat značka bez
+  vysvětlení. Pokud si význam značky vysvětlujete vlastní poznámkou u linky, má přednost ta vaše.
+- **Přestupy na vlak a autobus** mají v legendě vysvětlivku a správné piktogramy.
+
+**Kde to najdete:** u prvku **Legenda poznámek** v sekci Filtrování. Všechna volba „co se na vývěsce
+ukáže" je nově na jednom místě v šabloně - z parametrů sestavy tato nastavení zmizela, takže je
+nemusíte hledat na dvou místech. Ve výchozím stavu jsou nové položky vypnuté, takže se vzhled
+stávajících šablon nemění, dokud si je nezapnete.
+
 ### 3. 8. 2026 - Sloupek v seznamu zastávek
 
 - **Nový sloupec Sloupek** v seznamu zastávek u zastávkových jízdních řádů. Bere se z trasy linky

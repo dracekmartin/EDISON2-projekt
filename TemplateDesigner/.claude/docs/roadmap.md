@@ -7,8 +7,10 @@
 
 > **▶ Další session:** **B40** z Vlny 1 (jednotné čáry a mřížka tabulek, M) - Vlna 0 je dojetá,
 > jediný její zbytek **B37 je zablokovaný** odpovědí v #13093 (překryv s #13102 u Petra).
-> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`-`B35c`, `B36`, `B43`, `B45` a bod 2 z `B37` 3. 8.;
-> **#13048 i #13088 zavřené 3. 8.** Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
+> `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`-`B35c`, `B36`, `B43`, `B45` a bod 2 z `B37` 3. 8.,
+> `B46`, `B50` a deduplikace vypínání obsahu 4. 8.; **#13048 i #13088 zavřené 3. 8.**
+> **Verze se 4. 8. dává do produkce** - #13093 (body 1, 2, 4) je v ní.
+> Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 

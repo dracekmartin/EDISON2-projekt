@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-08-04 (7) - zobrazení obsahu jen v šabloně, čtyři parametry pryč (rozhodnutí Jan)
+
+**Rozhodnutí Jan 4. 8.:** *„Za mě je důležité, co vidí zákazník, ne co posílá server. Nemělo by to
+fungovat tím způsobem, že zákazník uvidí něco duplikovaně kvůli nějaké interní logice."* Poznámky
+linky, kola, místenky a souhrn bezbariérových spojů se zapínaly **parametrem sestavy** a zároveň
+filtrovaly **v bloku poznámek** - dvě místa pro jednu otázku.
+
+Server teď posílá vše otagované kategorií a rozhodnutí drží **jen šablona** (blok poznámek, sekce
+Filtrování). Zrušené parametry: `POZNAMKY_LINKY`, `TISK_MISTENEK`, `TISK_KOLA`,
+`SCHOVAT_AGREGAT_BEZBARIER`. V „Poznámky a legenda" zůstal souhrn na znamení (mění, **co se
+generuje**) a rozsah nepoznámkovat.
+
+- **Značka a vysvětlivka visí na jedné volbě** - filtr prořezává anotaci u minuty i řádek legendy
+  podle téže kategorie, takže nemůže vzniknout značka bez vysvětlení ani vysvětlivka bez značky.
+- **Kola a místenky nejdřív sedly na mřížku odjezdů** (prvek, který značku kreslí - vzor na-znamení
+  a přestupů), ale **Jan rozhodl přesunout je k ostatním do bloku poznámek**: pro mřížku to per
+  kategorii nebyl precedens (měla jen hromadné „Anotace") a přednost má jedno místo pro uživatele.
+  ⚠️ Důsledek: šablona **bez bloku poznámek** tyhle značky nezapne vůbec (drží test).
+- **Výluky nedostaly čtvrtý vypínač** - jsou to všeobecné poznámky (v datech táž kategorie, poznáme
+  je podle prefixu), takže se zapínají s nimi a enum je jen rozděluje mezi bloky. Bez toho by
+  naskočily všem existujícím šablonám, protože server je teď posílá vždy. Odhalily to spadlé testy.
+- **Výchozí stav všeho nového = vypnuto**, takže existující šablony vypadají stejně. Zlaté odtisky
+  se proto změnily **jen v počtu poznámek** (157→235, 198→236); stránky, zastávky ani odjezdy ne -
+  to je podpis „server posílá nadmnožinu, klient filtruje".
+- **Popisky srovnané s Edisonem:** `JRapiLin1` ř.250-252 pojmenovává ta pole
+  `PoznamkyDruhPoznamkyProLinku`**Tarifni**/**Vseobecne**/**Radiobus** a má u nich přepínače
+  Tisknout A4/A5. Filtr proto používá stejná slova a prefix „Poznámky linky - ". Klient v zadání
+  psal „Poznámky 1, Poznámky 2 apod", ale Edison je nečísluje - čísla jsou interní klíče uzlu.
+
+**Cílový model (checklist z metadat) zatím ne, a blokátor je pojmenovaný:** `ElementPropertyAccessor`
+umí navázat jen property cesty (`A.B.C`), **ne mapu** - generovaný checklist by nejdřív chtěl rozšířit
+binder nebo přidat typ pole do EDControls. Použité obyčejné vlastnosti: **ubyly 4 parametry, přidaly
+se 3 volby** → méně přepínačů a každá kategorie na jednom místě.
+
+### Dvě chyby cestou, obě stejného druhu (ověřoval jsem něco jiného, než co platí)
+
+1. **Odstranění parametrů se nedostalo na server.** Editoval jsem `.cls` **skriptem**, a hook nahrává
+   jen editace nástrojem - zdroj v repu parametry neměl, server je měl dál a build je zobrazoval.
+   Testy to nemohly zachytit (v odtiscích se parametry neprojevují). `cache_compile` to nespraví:
+   hledá zdroj pod `C:\DEV\EDISON`, takže zkompiluje starou serverovou kopii a řekne „up-to-date".
+   **Jediné spolehlivé ověření je zavolat agendu a podívat se, co reálně vrátí.**
+2. **Kolo se zas kreslilo jako cizí glyf.** Při rozdělení `odjezd-atribut` na `odjezd-kola`
+   a `odjezd-mistenka` zůstal seznam sémantických kategorií (těch, jejichž značka se **překládá na
+   glyf**) na starém jménu. Testy byly zelené, protože si to staré jméno držely samy.
+   → Jména kategorií mají jediný zdroj `Models/NoteCategories.cs`, testy je berou odtud a nová
+   pojistka hlídá, že markerové kategorie v sémantické sadě opravdu jsou.
+
+Caché 73/73, .NET 583/583. Release build EDControls i TemplateDesigner bez chyb.
+
 ## 2026-08-04 (6) - výběr instancí načítá data asynchronně (zámrz na pomalé lince)
 
 Jan hlásil, že **při prvním otevření výběru linek v AD zamrzne aplikace na ~15 s**, když do filtru

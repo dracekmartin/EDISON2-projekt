@@ -270,6 +270,18 @@ nepřestavuje** (funguje, testy drží, přestavba by byla náklad bez užitku).
   (aditivně) nebo zmigrovat; EDInputForm nemá checklist field typ → buď generovaná bool pole
   z metadat kategorií, nebo malý aditivní field typ v EDControls.
 
+**Stav po 4. 8. (rozhodnutí Jan):** čtyři parametry sestavy (`POZNAMKY_LINKY`, `TISK_MISTENEK`,
+`TISK_KOLA`, `SCHOVAT_AGREGAT_BEZBARIER`) **zrušeny** a vypínání obsahu je jen v šabloně - server
+posílá nadmnožinu otagovanou kategorií. Rodina tím **neroste, ale ani se nepřestavěla**: ubyly
+4 parametry, přidaly se 3 volby na prvku. Cílový checklist z metadat naráží na konkrétní blokátor -
+`ElementPropertyAccessor` naváže jen property cesty (`A.B.C`), **ne mapu**, takže by chtěl rozšířit
+binder nebo přidat typ pole do EDControls. Do té doby jsou to obyčejné vlastnosti.
+
+⚠️ **Kategorie nese dvě nezávislé věci** - (1) co se vypíná v šabloně a (2) jestli se značka
+**překládá na glyf** symbolového fontu. Po přejmenování kategorie 4. 8. zůstalo druhé místo na starém
+jménu a kolo vyjelo jako cizí piktogram (testy zelené, držely si staré jméno samy). Proto mají jména
+jediný zdroj `Models/NoteCategories.cs` a testy je berou odtud, ne z literálů.
+
 **Mikropravidlo hned:** závislost prvek→parametr **zviditelnit** - pole prvku, která bez
 zapnutého parametru nic nedělají (kategorie linky vs. `POZNAMKY_LINKY`), zašednout/schovat,
 ne jen popsat v helpTextu.

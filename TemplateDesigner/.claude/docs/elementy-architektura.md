@@ -520,6 +520,12 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
   na `z`, ne na `w`: `w` by tiskl v Česku vagon a na Slovensku autobus. Nová položka mapy se musí
   zkontrolovat v **obou** fontech, jinak se vzhled rozejde podle jazyka.
 
+  ⚠️ **Překlad se váže na KATEGORII, ne na písmeno** (od 4. 8.). Agenda MHD posílá značku jako
+  `$c(kód)`, tedy **přímo pozici ve fontu** (`ConvertSpecialniZnak`) - kód 65 dá „A", 75 „K", takže
+  plošný překlad podle písmene by jí nakreslil autobus nebo kolo místo jejího symbolu. Sémantické
+  kategorie (dnes `prestup`, `odjezd-kola`, `odjezd-mistenka`) drží `Models/NoteCategories.Semanticke`;
+  jména kategorií mají jediný zdroj, protože na nich visí i vypínání obsahu v šabloně.
+
   🔧 **Jak pozici ověřit** (Mapa znaků na to nestačí - dvakrát se z ní přečetlo špatně, protože
   ikony jsou drobné a sousedí spolu vagon s autobusem): vytáhnout **obrysy glyfů přímo z fontu** a
   nakreslit kontaktní list s popisky kódů. `fontTools` přečte `cmap` (font je mapovaný v symbolové

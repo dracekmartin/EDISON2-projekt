@@ -2,6 +2,29 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-04 ✅ - vypínání obsahu jen v šabloně (deduplikace parametrů × filtru)
+
+Detail → changelog 2026-08-04 (7). **Rozhodnutí Jan:** rozhoduje, co vidí zákazník, ne co posílá
+server - nesmí mít jedno nastavení na dvou místech kvůli interní logice. Poznámky linky, kola,
+místenky a souhrn bezbariérů se zapínaly parametrem sestavy **i** filtrem v bloku poznámek.
+Server teď posílá vše otagované kategorií, rozhodnutí drží jen šablona, čtyři parametry zrušeny.
+
+**Invariant:** značka u minuty a její vysvětlivka visí na **jedné** volbě (filtr prořezává obojí
+podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivka bez značky.
+
+**Dvě poučení, obě „ověřoval jsem něco jiného, než co platí":**
+1. `.cls` editovaný **skriptem** se nenasadí (hook reaguje jen na editaci nástrojem) a `cache_compile`
+   to nespraví - hledá zdroj pod `C:/DEV/EDISON`, takže zkompiluje starou serverovou kopii a řekne
+   „up-to-date". Ověření = **zavolat agendu a podívat se, co vrátí**, ne čtení zdroje.
+2. Jména kategorií nesou **dvě nezávislé věci** - co se vypíná v šabloně a co se překládá na glyf.
+   Po přejmenování zůstal překlad na starém jménu a kolo vyjelo jako cizí piktogram; testy zelené,
+   protože si staré jméno držely samy. → jediný zdroj `Models/NoteCategories.cs` + pojistka, že
+   markerové kategorie jsou v sémantické sadě.
+
+**Nedodělané vědomě:** cílový model z rozhodnutí o kategoriích (checklist generovaný z metadat).
+Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
+binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
+
 ## 2026-08-04 ✅ - `B50` export i tisk posílají tytéž parametry co náhled
 
 Detail → changelog 2026-08-04 (4). Export z lišty neposílal do `GetData` parametry sestavy vůbec
