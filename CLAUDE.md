@@ -147,6 +147,13 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
   PostToolUse na Edit/Write) - upload + compile, chyby na stderr. `cache_compile` (MCP)
   volej jen na to, co hook nepokryje (dávka, změna mimo agenta); **ne na týž soubor po
   editaci** - dvojí nasazení si navzájem přepisuje výsledek.
+  ⚠️ **Úprava `.cls` mimo Edit/Write hook NESPUSTÍ** (typicky hromadná změna skriptem z Bashe) -
+  na serveru pak zůstane stará třída, kdežto v repu je nová. U EDInputForm formulářů se to
+  projeví jako „pole je prázdné a uložení nic neudělá" (klíče polí přestanou odpovídat
+  vlastnostem v C#). **Drift testy to nechytí - čtou `.cls` z repa, ne ze serveru.** Po takové
+  editaci deploy vynuť: `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash
+  .claude/hooks/compile-objectscript.sh` (MCP `cache_compile` z tohohle repa neuploaduje,
+  hledá zdroj v `C:\DEV\EDISON`).
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - sadu
   pustí jen když se změnily její zdroje (`.cs`→.NET, `.cls`→Caché); Caché zúží na dotčené
   package, ale změna v sdíleném `EDControls`/`EDTesting` spustí všechny. Souhrn selhání
