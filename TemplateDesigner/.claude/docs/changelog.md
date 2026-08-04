@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-04 (5) - export i tisk posílají tytéž parametry co náhled (`B50`)
+
+Nález z review (4): **export PDF/PNG z lišty ignoroval parametry sestavy.** Fetchoval `GetData` jen
+s instancí a klientské parametry nemergoval do stránek, takže výstup vyjel s výchozími hodnotami -
+bez písmen variant, poznámek linky, kol a místenek, bez rozdělení po stanovištích - i když náhled
+na obrazovce ukazoval ty volby zapnuté. Uživatel to pozná až z vytištěné vývěsky.
+
+**Při opravě se ukázalo, že tisková cesta má zrcadlovou vadu:** neposílala `SKUPINA_LINEK_ID`.
+U AD je linka klíčovaná dvojicí (skupina, linka), takže s vybranou nedefaultní skupinou mohl tisk
+vytáhnout linku z jiné skupiny, než kterou si uživatel vybral v pickeru.
+
+Tři cesty (náhled, export, tisk) si tu mapu skládaly každá zvlášť a každá zapomněla něco jiného.
+Nově je to **jedno místo**: `ComposeGetDataParams` (parametry sestavy + klíč instance + skupina)
+a `MergeParamsIntoPages` (domíchání hodnot do stránek pro C# renderování). Devět testů na obojí,
+včetně toho, že instance přebíjí klíč linky z parametrů a že prázdná skupina se neposílá jako
+prázdný řetězec (server si má vybrat default).
+
+⚠️ **Chování se mění tam, kde bylo dosud špatně** - export teď respektuje nastavení a tisk sahá
+do správné skupiny. Kdo si na starý export zvykl, uvidí jiný (správný) výstup.
+
+.NET 1519/1519 (EDControls 507, TD 577 (+9), EDISONMAIN2 435).
+
 ## 2026-08-04 (4) - produkční review týdne: opravené nálezy před verzí
 
 Celkové review změn za ~poslední týden (4 dimenze: business logika poznámek, wiring parametrů,

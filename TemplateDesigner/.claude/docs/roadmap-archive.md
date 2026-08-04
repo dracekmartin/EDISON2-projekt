@@ -2,6 +2,18 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-04 ✅ - `B50` export i tisk posílají tytéž parametry co náhled
+
+Detail → changelog 2026-08-04 (4). Export z lišty neposílal do `GetData` parametry sestavy vůbec
+a nemergoval je do stránek, takže vyjel s výchozími hodnotami, i když náhled ukazoval zapnuté volby.
+Při opravě se ukázalo, že **tisková cesta má zrcadlovou vadu** - zapomínala skupinu linek, takže
+u AD (linka klíčovaná dvojicí skupina+linka) mohla vytisknout linku z jiné skupiny.
+
+**Poučení, které se nesmí ztratit:** tři cesty stavěly parametry pro `GetData` každá zvlášť
+a každá zapomněla něco jiného. Je z toho jedno místo (`ComposeGetDataParams` + `MergeParamsIntoPages`).
+**Když se stejná mapa parametrů skládá na víc místech, je jen otázka času, kdy se rozejdou** -
+a projeví se to jako „vytisklo se něco jiného, než jsem viděl", což uživatel nahlásí pozdě nebo vůbec.
+
 ## 2026-08-04 ✅ - `B46` filtrovaný ComboBox sjednocen na sdílené komponentě
 
 Detail → changelog 2026-08-04 (3). Do filtru skupiny linek se nedaly napsat dva znaky: první
