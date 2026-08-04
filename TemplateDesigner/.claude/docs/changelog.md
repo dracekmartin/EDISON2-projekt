@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-04 (13) - repertoár symbolového fontu změřen (příprava `B10`)
+
+`B10` (symboly pro linkový JŘ) měl jako největší neznámou otázku „který kód nese který piktogram" -
+katalog 66 symbolů z legacy nese **mnemonické znaky**, ne pozice ve fontu, a doklad chyběl.
+
+Vytaženy obrysy **všech 94 tisknutelných pozic z obou fontů** a zapsány do katalogu
+(`elementy-architektura.md`). Zjištění:
+
+- **Pozice z katalogu se s pozicí ve fontu často neshoduje** - letadlo je na `n` (ne `O`), paragraf
+  na `P` (ne `G`), metro na `#` (ne `M`). Je to táž past jako autobus `A`→`z`, jen v širším měřítku;
+  implementace tedy musí jít přes mapu, ne přes písmeno.
+- **CZ a SK se liší přesně ve 3 z 94 pozic** (`D`, `w`, `x`) - zbytek je shodný. Sdílená mapa proto
+  bude potřebovat rozlišení jazyka jen pro tyhle tři, ne plošně. (Rozšiřuje `B49`, které měřilo 5 znaků.)
+- **Ve fontu není loď, wifi ani zásuvka** (katalog 61/65/66) - ty se z něj nakreslit nedají a při
+  implementaci potřebují jiný zdroj nebo text.
+
+Vlastní implementace `B10` se nedělala (rozhodnutí Jan: teď jen ověřit pozice) - blok v roadmapě
+má nově změřený popis a rozhodnutý rozsah (sdílená mapa pro všechny prvky).
+
 ## 2026-08-04 (12) - gate k přepínači přestupů změřen (`B48`)
 
 Blok se zakládal na obavě, že atribut firmy s modulem MHD s kódem 65/76 by se spletl s přestupem

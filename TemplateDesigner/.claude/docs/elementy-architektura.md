@@ -501,8 +501,36 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
 - **`x` na znamení = prostý text, ne font-glyf.** Legacy ho v legendě tiskne jako „x" (konvence), ne
   jako piktogram. Naivní „surový znak → Timetable font" ho vykreslí jako **vláček** (glyf na pozici `x`
   je jiný symbol) - proto musí jít přes render-mód **text**, ne font-glyf. Totéž `y`/`z`.
-- **id → znak fontu:** legacy `Case Else` kreslí `ToChar(ID)`; je třeba ověřit, jakou hodnotu nese
-  datový atribut (ASCII mnemoniky `H`=72 / `x`=120 vs. GSId 1-66) a že sedí na glyf ve fontu.
+- ✅ **Repertoár fontu změřen (4. 8. 2026, `B10` gate)** - obrysy všech 94 tisknutelných pozic
+  vytažené z obou fontů. Mapa níže; **pozice `znak` z katalogu se s pozicí ve fontu často NESHODUJE**
+  (letadlo je na `n`, ne na `O`; paragraf na `P`, ne na `G`; metro na `#`, ne na `M`) - je to táž past
+  jako autobus `A`→`z`, jen v širším měřítku. Implementace `B10` musí jít přes mapu, ne přes písmeno.
+
+  | Pozice | Piktogram | | Pozice | Piktogram |
+  |---|---|---|---|---|
+  | `+` 0x2B | kříž | | `X` 0x58 | zkřížená kladiva |
+  | `.` 0x2E | šipka doprava dolů | | `Y` 0x59 · `Z` 0x5A | telefon |
+  | `/` 0x2F | hodiny | | `[` 0x5B | autovlak (auto na voze) |
+  | `0`-`9` 0x30-39 | kroužkové číslice | | `a`-`j` 0x61-6A | číslice 0-9 v rámečku |
+  | `:` 0x3A · `;` 0x3B | šipka nahoru / dolů | | `k` 0x6B | „K" v osmiúhelníku |
+  | `=` 0x3D | zvedací plošina pro vozík | | `n` 0x6E | **letadlo** |
+  | `?` 0x3F · `@` 0x40 | šipka vlevo / vpravo | | `o` 0x6F | budova |
+  | `A` 0x41 · `B` 0x42 | trojúhelník | | `p` 0x70 | **zavazadla** (kufr) |
+  | `D` 0x44 | křížek (CZ) / **dlaň (SK)** | | `q` 0x71 | přeškrtnutý kufr |
+  | `F` 0x46 | **částečně bezbariér** | | `r` 0x72 | „R" v rámečku |
+  | `G` 0x47 | nevidomý s holí | | `w` 0x77 | vagon (CZ) / **autobus (SK)** |
+  | `H` 0x48 | **bezbariér** (vozíček) | | `x` 0x78 | lokomotiva (CZ) / **jednotka (SK)** |
+  | `L` 0x4C | **jízdní kolo** | | `y` 0x79 | restaurace (příbor v rámečku) |
+  | `M` 0x4D | příbor (restaurace) | | `z` 0x7A | **autobus** |
+  | `P` 0x50 | **paragraf** § | | `}` 0x7D | informace |
+  | `Q` 0x51 | sklenka | | `~` 0x7E | **P+R** |
+  | `V` 0x56 | postel | | `!`-`)` 0x21-29 | loga dopravců |
+
+  ⚠️ **Ve fontu NENÍ** loď (katalog 61), wifi (65) ani zásuvka (66) - ty tři se z tohohle fontu
+  nakreslit nedají a při implementaci potřebují jiný zdroj (nebo text).
+
+  ✅ **CZ × SK se liší přesně ve 3 z 94 pozic:** `D`, `w`, `x` (viz tabulka). Zbytek repertoáru je
+  shodný, takže sdílená mapa `B10` culture parametr potřebuje **jen pro tyhle tři**.
   **Částečně ověřeno 2026-08-03** (#13048 bod 1, #13093 bod 2): pozice glyfů se **neshodují s písmeny
   číselníku**, takže datový znak se musí přeložit - **autobus `A` → `z` (0x7A)**, **vlak `L` → `x`
   (0x78, lokomotiva)**, **kola → `L` (0x4C)**; `w` (0x77) je železniční vagon, `y` (0x79) restaurace.
