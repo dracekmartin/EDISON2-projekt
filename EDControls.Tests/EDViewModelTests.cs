@@ -213,6 +213,17 @@ public class EDViewModelTests
     }
 
     [Fact]
+    public void PersistedFormId_HonoursFormIdPrefix()
+    {
+        // TemplateDesigner si prefix přepisuje, aby jeho okna ve sdílené telemetrii nesplynula se shellem.
+        var services = MockServices();
+        services.FormIdPrefix = "TD";
+        var vm = new FooViewModel(services);
+
+        Assert.Equal("TD.FooWindow", vm.PublicPersistedFormId);
+    }
+
+    [Fact]
     public void Set_ReturnsTrue_OnChange_False_OnSame()
     {
         var vm = new TestViewModel(MockServices());

@@ -7,7 +7,7 @@ Základní třída ViewModelů + okolní infrastruktura: `EDServices` (DI kontej
 ## AttachToWindow — volat PŘED Show()/ShowDialog()
 
 `WindowNavigator` ho volá automaticky; **shell okno ho v AppBootstrapperu volá ručně**.
-Dělá čtyři věci:
+Dělá tři věci:
 
 1. **Klávesy** z `Actions` + vždy **Ctrl+Enter → OkCommand**. OK tlačítko záměrně nemá
    `IsDefault` — samotný Enter slouží EDInputFormu k navigaci mezi poli.
@@ -17,17 +17,23 @@ Dělá čtyři věci:
    Obojí best-effort — výjimka se spolkne, okno se otevře vždy.
 3. **`PopupDisplayer` se stane window-scoped** — resolve owner: per-call → okno VM →
    globální default. Agendová okna tak nedostávají popupy nad shellem.
-4. **Usage telemetrie** (`EDUsageTelemetry`) — OPEN + kliky na **pojmenované** controly
-   (ContextMenu/Popup routed event nemusí dorazit), flush dávky do Caché při `Closed`
-   (server legacy `...Telemetry.LogUsageBatch`). Vše best-effort, nikdy nehazí. Legacy
-   launch trackuje `WindowNavigator.LaunchLegacy` (OPEN si hostovaná forma trackne sama).
 
-Panel Podpora tady **není** — visí na `Window.Loaded` z `EDAppearance.Initialize`, protože
-TemplateDesigner `AttachToWindow` nevolá. `EDViewModel.ShowSupportPanel` zůstává jako opt-out,
-který ten class handler čte. Viz [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md).
+Panel Podpora ani usage telemetrie tady **nejsou** — obojí visí na `Window.Loaded`
+z `EDAppearance.Initialize`, protože TemplateDesigner `AttachToWindow` nevolá. Viz
+[EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md).
 
-`PersistedFormId` default `"EDISON2.<Window>"` — prefix odděluje od legacy numerických ID
+`PersistedFormId` default `"<FormIdPrefix>.<Window>"` (`EDServices.FormIdPrefix`, shell
+`EDISON2`, TD `TD`) — prefix odděluje aplikace navzájem i od legacy numerických ID
 z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
+
+## Usage telemetrie (`EDUsageTelemetryHook`)
+
+OPEN + kliky na **pojmenované** controly (ContextMenu/Popup routed event nemusí dorazit),
+flush do Caché při `Closed`. Best-effort, nikdy nehazí. Legacy launch trackuje
+`WindowNavigator.LaunchLegacy` (OPEN si hostovaná forma trackne sama). Hook bere **jen okna
+s `EDViewModel` a nenulovým `PersistedFormId`** — šum (overlay okna, popupy, chrome
+AvalonDocku) ViewModel nemá, takže vypadne bez druhé attached property. Guard `IsHooked`:
+`Loaded` může fírovat opakovaně.
 
 ## Commands
 

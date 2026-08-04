@@ -12,9 +12,11 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
 
 ## Nová m-line aplikace
 
-`EDAppearance.Initialize(app)` jednou před prvním oknem — napojí `FontService`
-+ `ThemeService`. Dále merge `EDIcons.xaml` + `EDStrings.xaml` a
-`DispatcherUnhandledException` handler (viz root CLAUDE.md).
+`EDAppearance.Initialize(app)` jednou před prvním oknem (a **až po** `EDServices.Initialize`)
+— napojí `FontService` + `ThemeService` a class handlery na `Window.Loaded`, které rozdají
+panel Podpora a usage telemetrii. Dále merge `EDIcons.xaml` + `EDStrings.xaml`,
+`DispatcherUnhandledException` handler (viz root CLAUDE.md) a `EDServices.FormIdPrefix`,
+ať se okna nové aplikace nemíchají se shellem.
 
 ## Vzhled: EDTheme + EDControlStyles
 

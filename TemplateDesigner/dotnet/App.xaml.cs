@@ -24,7 +24,11 @@ public partial class App : Application
         EventManager.RegisterClassHandler(typeof(Window), Window.LoadedEvent,
             new RoutedEventHandler(OnAnyWindowLoaded));
 
-        EDServices.Initialize(new EDServices(null, new WindowNavigator(), new PopupDisplayer()));
+        // FormIdPrefix odděluje okna TD od shellu ve sdílené usage telemetrii a v persistenci stavu oken.
+        EDServices.Initialize(new EDServices(null, new WindowNavigator(), new PopupDisplayer())
+        {
+            FormIdPrefix = "TD"
+        });
 
         // Sdílený vzhled (font + světlý/tmavý režim) - jedna registrace, sdílené storage s EDISONMAIN2
         // (%APPDATA%\m-line\common\). Apply před MainWindow.Show eliminuje flicker; FileSystemWatcher

@@ -11,7 +11,8 @@ stejný vzor jako `ThemeService`) → panel dostane **každé okno včetně odd�
 zásahu do jeho XAML a bez per-app drátování.
 
 **Na `EDViewModel.AttachToWindow` to viset nemůže**: TemplateDesigner ho nevolá vůbec (hlavní
-okno i dialogy otevírá přímo, ne přes `WindowNavigator`) — panel tam pak nebyl nikde.
+okno i dialogy otevírá přímo, ne přes `WindowNavigator`) — panel tam pak nebyl nikde. Ze
+stejného důvodu visí na témže class handleru i usage telemetrie (`EDUsageTelemetryHook`).
 
 Přeskočí se (`ShouldAttach`): `IOverlayWindow`, **okna frameworku** (`FrameworkWindows` — chrome
 AvalonDocku, viz [EDViewModel/CLAUDE.md](../EDViewModel/CLAUDE.md)), `EDSupportPanel.Suppress="True"`
