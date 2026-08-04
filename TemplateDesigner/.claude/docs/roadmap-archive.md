@@ -25,6 +25,32 @@ podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivk
 Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
 binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
 
+## 2026-08-04 🧹 - Revize roadmapy: zrušen ukazatel `L‑1…L‑4` + mrtvé a duplikované záznamy
+
+Roadmapa měla 375 řádků, z toho 35 balastu (rozhodnutí Jan: „jen vyloženě mrtvé nebo duplikované",
+tabulku `C5`–`C7` nechat). Odebráno:
+
+- **Ukazatel `L‑1…L‑4`** (rozhodnutí Jan) - měl zajistit, že linkový JŘ postoupí v každé vlně, ale
+  reálně je odložený „až po zákaznické frontě", takže mechanismus nefungoval a byl to jen třetí
+  opis týchž bloků. Duplikované řádky `C2`/`C3`/`C8`/`C9` zrušené, ale **jejich unikátní detail
+  nejdřív přesunut do bloků** (`B10` gate R5, `B13` gate R1/R2, `B14` celý obsah auditů H1+H2) -
+  `B14` na ně do té doby jen odkazovala, takže smazání bez přesunu by detail zahodilo.
+- **Stale tvrzení:** „`B37` čeká na odpověď, `B45`" - `B45` byla hotová a v archivu a `B37` je od
+  4. 8. odblokovaná; hlavička o 200 řádků výš to říkala správně. Dál vysvětlivka k `B38` (hotová)
+  a poznámka o vyvráceném nálezu barev zón (historie, patří sem, ne do aktivního plánu).
+- **Duplicity:** `B12` byla 3×, `C4` 4×, otázka na KOVED k označníkům 2×.
+- **Hlavička** nesla datum 2026-07-31 a přitom popisovala události ze 4. 8., plus výčet ~15
+  dokončených bloků - ten drží archiv.
+
+**Poučení, které se nesmí ztratit:** duplikace nevznikla nedbalostí, ale **zakládáním druhé evidence
+k témuž bloku** (ukazatel postupu, „prerekvizity", detailní tabulka). Proto je z toho pravidlo 3
+v návodu: jedna práce = jeden záznam, priorita se řídí vlnami. `B13` byl v dokumentu 6×, `B10` 5×.
+
+**Nezměněno, jen zaznamenáno:** v sekci „Čeká na někoho jiného" visí dvě položky, které čekají
+na **Jana**, ne na kolegy - nastavit linku se dvěma barvami a projít ji očima (#12997), a doplnit
+do #13102 větu, že jejich struktura musí nést čas u každé přidané zastávky. Přesun by byl
+restrukturalizace, ne úklid.
+
 ## 2026-08-04 ✅ - `B47` drift test allowlistu serverových parametrů + `B51` plnění seznamu
 
 Detail → changelog 2026-08-04 (8). Obecné nálezy dojeté po vydání verze.
