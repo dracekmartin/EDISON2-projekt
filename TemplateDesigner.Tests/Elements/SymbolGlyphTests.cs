@@ -67,6 +67,25 @@ public class SymbolGlyphTests
         Assert.False(StopScheduleElementBase.JePiktogram(""));
     }
 
+    /// <summary>Mřížka odjezdů musí překlad glyfu dělat **taky** - dlouho ho nedělala, takže kolo
+    /// u minuty vyšlo jako glyf sedící na pozici „K" (uživatel to popsal jako „had"), zatímco
+    /// v legendě už bylo správně. Značka a její vysvětlivka se nesmí rozejít.</summary>
+    [Fact]
+    public void MrizkaOdjezduPrekladaGlyfStejneJakoLegenda()
+    {
+        var kolo = new AnotaceData { Typ = TypAnotace.SpecialniZnak, Znak = "K" };
+        Assert.Equal("L", DepartureGridElement.GlyfProKresleni(kolo));
+        Assert.Equal(StopScheduleElementBase.SymbolGlyph("K"), DepartureGridElement.GlyfProKresleni(kolo));
+
+        // Textová anotace („R" u místenky, ruční komentáře) se nepřekládá - je to písmeno ze zadání.
+        var mistenka = new AnotaceData { Typ = TypAnotace.Text, Znak = "R" };
+        Assert.Equal("R", DepartureGridElement.GlyfProKresleni(mistenka));
+
+        // „Na znamení" jde textovou cestou, i když je označené jako speciální znak.
+        var naZnameni = new AnotaceData { Typ = TypAnotace.SpecialniZnak, Znak = "x" };
+        Assert.Equal("x", DepartureGridElement.GlyfProKresleni(naZnameni));
+    }
+
     /// <summary>Znaky, které dnes fungují (bezbariér, kroužkové dny), se nesmí překládat - jejich
     /// glyf na písmenu sedí a překlad by je rozbil.</summary>
     [Fact]

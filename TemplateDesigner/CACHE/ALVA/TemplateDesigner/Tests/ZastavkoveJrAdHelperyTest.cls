@@ -392,6 +392,20 @@ Method TestZnakKolaJeMarkerNeGlyf()
 	do $$$AssertNotEquals($classmethod(cls, "ZnakKola"), "L", "L je v číselníku vlak → lokomotiva")
 }
 
+/// Zákazník si značku vysvětluje sám vlastní poznámkou u linky („R - k jízdence…"), takže naši
+/// generovanou vysvětlivku pro týž znak zahodíme - jinak stály v legendě dvě pod sebou (nahlášeno
+/// 4. 8. z reálné vývěsky KOVED). Pomlčka za znakem je povinná, jinak by běžný text začínající
+/// jednoznakovým slovem umlčel legendu značky, kterou nikdo nevysvětlil.
+Method TestZnakVysvetlivkyLinky()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", "R - k jízdence je možné zakoupit místenku"), "R", "vysvětlivka značky R")
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", "Na lince platí tarif Zlínského kraje"), "", "běžný text není vysvětlivka")
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", "IDS DSZO: na všech spojích"), "", "text s dvojtečkou není vysvětlivka")
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", "V úseku Zlín - Otrokovice"), "", "bez pomlčky HNED za znakem to není vysvětlivka")
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", ""), "", "prázdný text")
+}
+
 // ── JeViditelnyAtribut - co z číselníku 16 je informace pro cestujícího (KOVED #13048 bod 1) ──
 
 /// Znaky pro cestujícího se tisknou. Kdyby některý vypadl, tiše zmizí z vývěsky - to byla

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-04 (1) - kolo u odjezdu bylo cizí glyf, dvojí vysvětlivka „R" (#13093 bod 2)
+
+Tři pozorování z reálné vývěsky KOVED. Dvě byly chyby, jedna ne.
+
+- **Kolo u odjezdu se kreslilo jako cizí piktogram** („had"). Příčina: **mřížka odjezdů překlad glyfu
+  vůbec nedělala** - kreslila datový znak surově, takže marker kol `K` vyjel jako glyf sedící na
+  pozici „K". Legenda přitom překládala správně, takže značka a její vysvětlivka se rozešly.
+  Opraveno; překlad teď jde přes `GlyfProKresleni` i při **měření** šířky slotu, aby se render
+  a layout nerozjely. Dosud to nikdo neviděl, protože jediné dřívější glyfové anotace byly
+  bezbariér `H`/`F`, které na svém písmenu sedí náhodou správně.
+- **Legenda vysvětlovala „R" dvakrát** - jednou naše generovaná vysvětlivka, jednou zákazníkova
+  vlastní poznámka u linky („R - … i pro přepravu jízdních kol na https://rezervace.idzk.cz").
+  Nové pravidlo: **vlastní vysvětlivka zákazníka vyhrává** a naši pro tentýž znak zahodíme.
+  Poznává se konvencí „`<znak> - text`" (pomlčka povinná, jinak by „V úseku…" umlčelo značku „V").
+  Platí **jen na atributy odjezdu** - rozdílové poznámky tras mají písmena přiřazená námi za běhu,
+  takže umlčet je zákazníkovým textem „A - …" by odstranilo vysvětlivku, na kterou ukazuje minuta.
+- **Tučné „x" v legendě není chyba ani novinka** - letterové značky tam jdou tučně od první verze
+  (`64cf76f`), piktogramy ne (symbolový font tučný řez nemá). Necháno, viz „potřebuje rozhodnutí".
+
+Ověřeno na ZL_KOVED **skupina 2 „Pro CC" / linka 0823141**: v legendě je jedno „R" (zákaznické)
+a řádek kol. Caché 73/73 (+1), .NET 563/563 (+1). Zlaté odtisky beze změny.
+
 ## 2026-08-03 (13) - kolo se tiskne, a autobus konečně taky autobus (#13093 bod 2, #13048 bod 1)
 
 Glyf kola dohledaný → **kola se tisknou** (zápis (12) o „čeká na glyf" tím neplatí). Cestou se

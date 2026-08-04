@@ -600,7 +600,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
 
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
-    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar, odjAtrLegenda
+    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar, odjAtrLegenda, znakyLinky
     // Režim písmen variant (KOVED bod 5): písmeno varianty u minuty NAHRAZUJE automatické rozdílové
     // poznámky - kudy varianta jede, říká přímo sloupec („<"/prázdno). Jinak by vývěska nesla dvě
     // abecedy vedle sebe (přesně to, co jsme u legacy kritizovali). RozdilyTras se pak nepočítá vůbec.
@@ -655,12 +655,17 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // stejné písmeno tak znamená totéž na všech stránkách téže zastávky.
     d ..ProrezatLegenduRozdilu(odjezdy, .rozdilLegenda)
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
-    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP, .prestupSeen, .odjAtrLegenda)
+    // Zákazník si značku často vysvětluje sám vlastní poznámkou u linky („R - k jízdence…"). Když se
+    // ty poznámky tisknou, jeho vysvětlivka vyhrává a naši generovanou zahodíme - jinak stojí dvě
+    // pod sebou. Musí se zjistit PŘED SestavPoznamky, tam se legenda skládá.
+    s tisknuPoznamkyLinky = ($zcvt($g(^||ML("IN","POZNAMKY_LINKY")),"L") = "true")
+    i tisknuPoznamkyLinky d ..ZnakyVysvetleneLinkou(dataDB, sku, lin, .znakyLinky)
+    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP, .prestupSeen, .odjAtrLegenda, .znakyLinky)
 
     // #13093 bod 1: textové poznámky z vlastností linky. Do zastávkové vývěsky se dosud nedostaly
     // vůbec, i když je linkový JŘ čte. Opt-in parametrem - bez toho by naskočily všem existujícím
     // šablonám s blokem poznámek (u KOVED včetně dlouhého tarifního textu IDZK).
-    i ($zcvt($g(^||ML("IN","POZNAMKY_LINKY")),"L") = "true") d ..PoznamkyLinky(dataDB, sku, lin, poznamky)
+    i tisknuPoznamkyLinky d ..PoznamkyLinky(dataDB, sku, lin, poznamky)
 
     // směrové poznámky linky (tab MHD: poznámky tam/zpět/vše) - 1:1 legacy JRapiLinPrtMhd1 ř.440-447.
     // Tam → klíče ">" + "<>"; Zpět → "<" + "<>". Plain text bez znaku.
@@ -945,6 +950,44 @@ ClassMethod PoznamkyLinky(dataDB As %String, sku As %String, lin As %String, poz
             d poznamky.%Push(..BuildPoznamka("text", "", txt, "", "", kat))
         }
     }
+}
+
+/// Značky, které si zákazník vysvětluje **sám** v poznámkách u linky (zjištěno 4. 8. na vývěsce).
+/// Konvence: poznámka začíná „<znak> - …" - KOVED má „R - k jízdence je možné zakoupit místenku
+/// i pro přepravu jízdních kol na https://rezervace.idzk.cz". Jeho text je bohatší než náš
+/// generovaný, takže **vyhrává on** a naši vysvětlivku pro tentýž znak zahodíme; jinak vývěska
+/// vysvětluje totéž dvakrát pod sebou.
+///
+/// Záměrně platí **jen na atributy odjezdu** (kola, místenka). Rozdílové poznámky tras mají písmena
+/// `A`, `B`, `C`… **přiřazená námi za běhu** - kdyby je zákazníkova poznámka „A - …" umlčela, zmizí
+/// vysvětlivka, na kterou se odkazuje značka u minuty, a vývěska přestane být čitelná.
+ClassMethod ZnakyVysvetleneLinkou(dataDB As %String, sku As %String, lin As %String, ByRef znaky)
+{
+    s key = ""
+    f {
+        s key = $o(^[dataDB]JRL(sku,lin,"C",key))
+        q:key=""
+        i key = 2 continue
+        s idx = ""
+        f {
+            s idx = $o(^[dataDB]JRL(sku,lin,"C",key,idx))
+            q:idx=""
+            s txt = ..TextPoznamkyLinky($g(^[dataDB]JRL(sku,lin,"C",key,idx)))
+            s znak = ..ZnakVysvetlivky(txt)
+            i znak '= "" { s znaky(znak) = 1 }
+        }
+    }
+}
+
+/// Vysvětluje tato poznámka linky nějakou značku, a kterou? Vrátí znak, nebo prázdno.
+/// Konvence „<znak> - text": jednoznakové první slovo a pomlčka za ním. Pomlčka je záměrně
+/// **povinná** - bez ní by „V úseku…" vypadalo jako vysvětlivka značky „V".
+ClassMethod ZnakVysvetlivky(txt As %String) As %String
+{
+    s prvniSlovo = $p(txt, " ", 1)
+    i $l(prvniSlovo) '= 1 ret ""
+    i $p(txt, " ", 2) '= "-" ret ""
+    ret prvniSlovo
 }
 
 /// Text poznámky linky pro vývěsku: legacy značka `$$` (TrNz) pryč, `#` je oddělovač odstavců a na
@@ -1594,7 +1637,7 @@ ClassMethod ProrezatLegenduRozdilu(odjezdy As %DynamicArray, ByRef legenda)
 
 /// Sestaví legendu: atributy zastávek + atributy spoje (bezbariér) + rozdíly tras + "nejede/jede".
 /// Pořadí 1:1 gold (`ALVA.TISKMHD.Data`): speciální znaky → rozdíly/text → omezení.
-ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, allBBP As %Boolean = 0, ByRef prestupSeen, ByRef odjAtrLegenda) As %DynamicArray
+ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, allBBP As %Boolean = 0, ByRef prestupSeen, ByRef odjAtrLegenda, ByRef znakyLinky) As %DynamicArray
 {
     s poznamky = ##class(%DynamicArray).%New()
     // týdenní platnost - kroužkové denní značky (číslice 1-7): „⑤ = jede v pátek" (specialni → font kroužkuje)
@@ -1617,6 +1660,7 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
     f {
         s znakAtr = $o(odjAtrLegenda(znakAtr))
         q:znakAtr=""
+        continue:$d(znakyLinky(znakAtr))     // zákazník si tuto značku vysvětluje vlastní poznámkou
         s zapis = odjAtrLegenda(znakAtr)
         d poznamky.%Push(..BuildPoznamka($p(zapis,"~",1), znakAtr, $p(zapis,"~",2), "", "", "odjezd-atribut"))
     }

@@ -490,6 +490,13 @@ public class DepartureGridElement : StopScheduleElementBase
     private static bool JeGlyfSymbol(AnotaceData a) =>
         a.Typ == TypAnotace.SpecialniZnak && JePiktogram(a.Znak);
 
+    /// <summary>Znak, který se u odjezdu skutečně nakreslí. U piktogramů se **musí** přeložit přes
+    /// <see cref="StopScheduleElementBase.SymbolGlyph"/> - datový znak nesedí na pozici glyfu
+    /// (kola „K" → `L`, autobus „A" → `z`). Bez toho vyjede cizí piktogram: kolo se kreslilo jako
+    /// glyf na pozici „K". Používat i při **měření** šířky slotu, jinak se rozejde s vykreslením.</summary>
+    internal static string GlyfProKresleni(AnotaceData a) =>
+        JeGlyfSymbol(a) ? SymbolGlyph(a.Znak) : a.Znak;
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -932,7 +939,7 @@ public class DepartureGridElement : StopScheduleElementBase
                     {
                         SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
                         bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
-                        extraPx += af.MeasureText(a.Znak) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
+                        extraPx += af.MeasureText(GlyfProKresleni(a)) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
                     }
                 }
                 return scaledMinuteW + extraPx / ctx.MmToPx;
@@ -984,6 +991,7 @@ public class DepartureGridElement : StopScheduleElementBase
                         foreach (var anot in odj.Anotace)
                         {
                             SKFont aFont = JeGlyfSymbol(anot) ? anotGlyphFont! : (anot.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
+                            string anotZnak = GlyfProKresleni(anot);
 
                             // Negativní značka invertovaně - černý box + bílý znak (jako legacy). Vždy zapnuto.
                             if (anot.Typ == TypAnotace.NegativniZnacka)
@@ -991,10 +999,10 @@ public class DepartureGridElement : StopScheduleElementBase
                                 nzBgPaint ??= new SKPaint { Color = ColorHex.ParseOrBlack(NegativniZnackaBackColor), IsAntialias = true };
                                 nzFgPaint ??= new SKPaint { Color = ColorHex.Parse(NegativniZnackaForeColor, "#FFFFFFFF"), IsAntialias = true };
                                 float hpad  = aFont.Size * 0.12f;
-                                float znakW = aFont.MeasureText(anot.Znak);
+                                float znakW = aFont.MeasureText(anotZnak);
                                 var m = aFont.Metrics;
                                 ctx.Canvas.DrawRect(new SKRect(anotX, minPt.Y + m.Ascent, anotX + znakW + hpad * 2, minPt.Y + m.Descent), nzBgPaint);
-                                ctx.Canvas.DrawText(anot.Znak, anotX + hpad, minPt.Y, aFont, nzFgPaint);
+                                ctx.Canvas.DrawText(anotZnak, anotX + hpad, minPt.Y, aFont, nzFgPaint);
                                 anotX += znakW + hpad * 2 + anotInterGapPx;
                                 continue;
                             }
@@ -1009,8 +1017,8 @@ public class DepartureGridElement : StopScheduleElementBase
                                 aPaint = customAnotPaint;
                             }
 
-                            ctx.Canvas.DrawText(anot.Znak, anotX, minPt.Y, aFont, aPaint);
-                            anotX += aFont.MeasureText(anot.Znak) + anotInterGapPx;
+                            ctx.Canvas.DrawText(anotZnak, anotX, minPt.Y, aFont, aPaint);
+                            anotX += aFont.MeasureText(anotZnak) + anotInterGapPx;
                         }
                     }
 
