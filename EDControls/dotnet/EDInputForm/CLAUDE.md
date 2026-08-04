@@ -46,12 +46,13 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
 - Volitelný `List` dostane implicitní prázdnou položku, povinný ne.
 - `ComboBox` = editable s autocomplete (custom hodnota povolena, items jsou nápověda);
   `List` = strict enum. Renderuje se sdíleným `EDFilterComboBox`.
-- Search z toolbaru vstupuje do `EffectiveVisibility` (pole může být skryté hledáním
-  nezávisle na `Visibility`); match je diakritika-insensitive, stav rozbalení skupin
-  se před hledáním ukládá a po zrušení obnovuje.
+- `EDComponentToolbar` sedí `Flat="True"` přímo v hlavičkovém pruhu `Položka | Hodnota`
+  (jeden pruh, pozadí kreslí Border formuláře). Search vstupuje do `EffectiveVisibility`
+  (pole může být skryté hledáním nezávisle na `Visibility`); match je diakritika-insensitive,
+  stav rozbalení skupin se před hledáním ukládá a po zrušení obnovuje.
 - Enter = Tab (na Buttonu klikne); dialog potvrzuje jen Ctrl+Enter (window-level
   binding hosta). Ctrl+číslice skáče na položku dle `Number` (200 ms buffer).
-- Popup nápovědy (? v toolbaru, `HelpCommand`) se generuje z `KeyboardShortcuts`
+- Popup nápovědy (ikona v hlavičkovém pruhu, `HelpCommand`) se generuje z `KeyboardShortcuts`
   v `EDInputForm.xaml.cs` — **při přidání/změně zkratky aktualizuj tento seznam**.
   Vypisuj jen reálně nadrátované zkratky (search Enter/Shift+Enter/Esc zatím nefungují).
 - Save při validačních chybách zobrazí popup přes `PopupDisplayer` a vrátí false.

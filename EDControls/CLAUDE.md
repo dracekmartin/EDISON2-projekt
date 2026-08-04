@@ -72,7 +72,9 @@ ať se okna nové aplikace nemíchají se shellem.
 
 - `EDComponentToolbar/` — sdílený toolbar EDInputForm/EDList (search, export, ...).
   Past: registruje window-level **Ctrl+F** binding v `OnLoaded` a musí ho odregistrovat
-  v `OnUnloaded` — jinak se při re-loadu akumulují kopie.
+  v `OnUnloaded` — jinak se při re-loadu akumulují kopie. `Flat="True"` = vsazení do cizí
+  hlavičky: nekreslí brandový pruh ani padding a barvy textu/hoveru přepne na světlé pozadí
+  (`OnAccent.*` overlaye jsou poloprůhledná bílá, na světlém neviditelné).
 - `EDFilterComboBox/` — logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
   WPF). `EDFilter/` — skládání filtrů.
 - `EDSearchTextBox/` — `TextBox` pro hledání (placeholder, ✕, Esc); styl v `EDControlStyles.xaml`.

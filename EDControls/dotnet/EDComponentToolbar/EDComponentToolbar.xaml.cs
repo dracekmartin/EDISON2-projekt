@@ -65,6 +65,20 @@ public partial class EDComponentToolbar : UserControl
         set => SetValue(TitleProperty, value);
     }
 
+    // ─── Vzhled ─────────────────────────────────────────────────────────────
+
+    public static readonly DependencyProperty FlatProperty =
+        DependencyProperty.Register(nameof(Flat), typeof(bool), typeof(EDComponentToolbar),
+            new PropertyMetadata(false));
+
+    /// <summary>Toolbar nekreslí vlastní brandový pruh (pozadí + padding řeší hostitel) a barvy
+    /// textu/hoveru se přepnou na běžné plochy - pro vsazení do cizí hlavičky, viz EDInputForm.</summary>
+    public bool Flat
+    {
+        get => (bool)GetValue(FlatProperty);
+        set => SetValue(FlatProperty, value);
+    }
+
     // ─── Search ─────────────────────────────────────────────────────────────
 
     public static readonly DependencyProperty ShowSearchProperty =
