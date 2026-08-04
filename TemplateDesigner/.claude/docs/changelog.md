@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-04 (6) - výběr instancí načítá data asynchronně (zámrz na pomalé lince)
+
+Jan hlásil, že **při prvním otevření výběru linek v AD zamrzne aplikace na ~15 s**, když do filtru
+skupiny napíše číslo; podruhé už je to rychlé.
+
+**Kořen byl v už opraveném `B46`** a tohle je jeho druhá polovina. Starý ručně psaný ComboBox volal
+při každé změně výběru `ReloadInstances()`, a psaní filtru výběr měnilo jako vedlejší efekt (viz
+changelog (3)) - takže **každý napsaný znak spouštěl synchronní dotaz na server**. `B46` to odstranil,
+proto zámrz zmizel. Zůstala ale příčina, proč to bolelo tak moc: **ta volání jsou synchronní na UI
+vlákně**, takže cokoli pomalého mrazí celou aplikaci.
+
+Serverová strana přitom rychlá je - naměřeno proti dev serveru na `CB_CSADAD`: `GetAvailableSkupiny`
+**58 ms**, `GetAvailableInstances` **94 ms**, triviální ping 280 ms, a seznam instancí je navíc
+limitovaný na 200 řádků. Šlo tedy o latenci linky, ne o data ani dotaz.
+
+Nově je celý picker async (R1):
+
+- `EDList` dostal **`InitializeListAsync()` a `LoadListAsync(filter)`** (aditivně, synchronní zůstávají
+  pro ostatní konzumenty). Dotaz běží na threadpoolu, výsledek dosedne na UI vlákně.
+- Async varianty **serializují souběžné dotazy** - sdílený `MLRest` jede přes procesní globály
+  `^||ML`, takže dva souběžné by si přepsaly vstup i výstup - a **odpověď staršího dotazu už
+  nedosedne** (generace), takže rychlé přepínání skupiny nezamíchá řádky.
+- Chyba načítání jde přes `IPopupDisplayer` (R2), což u `async void` handlerů není detail - bez toho
+  by výjimka spadla mimo dialog. **Overlay „probíhá akce" tam vědomě NENÍ** (zkoušel jsem ho a Jan ho
+  vyhodil): načtení je typicky ~100 ms a překryv z rychlé operace dělá opticky pomalou. Async je tu
+  kvůli tomu, aby pomalá linka nezmrazila aplikaci, ne aby se čekání zobrazovalo.
+- `GetAvailableSkupiny` před otevřením dialogu jde taky na pozadí (`OpenInstancePickerCommand` je
+  nově `AsyncRelayCommand`).
+
+⚠️ **Stejný vzor má i výběr šablon z databáze** (`CacheTemplatePickerDialog` volá `LoadList`
+synchronně) - na pomalé lince zamrzne stejně. Neopraveno, není odtud hlášené.
+
+.NET 1525/1525 (EDControls 507, TD 583, EDISONMAIN2 435).
+
 ## 2026-08-04 (5) - export i tisk posílají tytéž parametry co náhled (`B50`)
 
 Nález z review (4): **export PDF/PNG z lišty ignoroval parametry sestavy.** Fetchoval `GetData` jen

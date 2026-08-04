@@ -28,17 +28,39 @@ public partial class InstancePickerDialog : Window
 
         // Init list po načtení okna. Agenda + zvolená skupina jdou do EDList filtru pod
         // ^||ML("IN","filter",...) - dispatch je přečte a předá do GetAvailableInstances.
-        Loaded += (_, _) =>
+        // Async (R1): na pomalé lince by synchronní varianta zmrazila celou aplikaci, ne jen dialog.
+        Loaded += async (_, _) => await RunGuardedAsync(async () =>
         {
-            TheList.InitializeList();
-            ReloadInstances();
+            await TheList.InitializeListAsync();
+            await ReloadInstancesAsync();
 
             // Po načtení dat - předoznačit initially selected
             foreach (var id in _vm.InitiallySelectedValues)
                 TheList.SetChecked(id, true);
 
             _vm.OnCheckedRowsChanged(_vm.InitiallySelectedValues.Count, TheList.Rows.Count);
-        };
+        });
+    }
+
+    /// <summary>
+    /// Pošle chybu načítání přes <c>IPopupDisplayer</c> (R2). Handlery událostí jsou `async void`,
+    /// takže bez tohohle by výjimka spadla mimo dialog.
+    /// <para>
+    /// ⚠️ **Záměrně bez overlaye „probíhá akce"** - načtení seznamu je typicky ~100 ms a překryv
+    /// z něj dělá opticky pomalou operaci (rozhodnutí Jan 2026-08-04). Async je tu kvůli tomu, aby
+    /// pomalá linka nezmrazila aplikaci, ne aby se čekání zobrazovalo.
+    /// </para>
+    /// </summary>
+    private async Task RunGuardedAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            _vm.PopupDisplayer.Error(ex);
+        }
     }
 
     /// <summary>Naplní filtr skupin, předvybere aktuální/první a napojí přenačtení instancí na výběr.</summary>
@@ -60,23 +82,23 @@ public partial class InstancePickerDialog : Window
 
         // Striktní režim fixuje výběr až ve svém DropDownClosed; náš handler je registrovaný později,
         // takže SelectedKey už nese novou hodnotu.
-        CmbSkupina.DropDownClosed += (_, _) =>
+        CmbSkupina.DropDownClosed += async (_, _) =>
         {
             var s = _vm.Skupiny.FirstOrDefault(x => x.Value == CmbSkupina.SelectedKey);
             if (s is null || s.Value == _vm.SelectedSkupinaId) return;
             _vm.SelectedSkupinaId = s.Value;
             _vm.SelectedSkupinaLabel = s.Display;
-            ReloadInstances();
+            await RunGuardedAsync(ReloadInstancesAsync);
         };
     }
 
     /// <summary>Přenačte seznam instancí (EDList) pro aktuální agendu + zvolenou skupinu.</summary>
-    private void ReloadInstances()
+    private async Task ReloadInstancesAsync()
     {
         var filter = new Dictionary<string, string> { ["agendaCode"] = _vm.AgendaCode };
         if (!string.IsNullOrEmpty(_vm.SelectedSkupinaId))
             filter["SKUPINA_LINEK_ID"] = _vm.SelectedSkupinaId!;
-        TheList.LoadList(filter);
+        await TheList.LoadListAsync(filter);
     }
 
     /// <summary>Mapuje zaškrtnuté EDListRow → AgendaInstance pro výstup VM.</summary>

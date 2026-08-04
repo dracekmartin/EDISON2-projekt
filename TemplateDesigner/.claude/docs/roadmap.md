@@ -134,6 +134,14 @@ při analýze 31. 7. se ukázalo, že s `B13` nemá nic společného a je to **M
   zásadně zpříjemnila a odstranila tichý překlep v tokenu, který se projeví až v tisku. Týká se
   všech míst, kde se zadávají `{POLE}` (barvy, text prvku, obsah buněk), takže se to má navrhnout
   jednou a sdílet, ne dělat per pole. Zdroj nabídky = schéma agendy, které už klient má.
+- **`B51` EDList plní řádky po jednom - škubnutí při psaní** (S; nález Jan 4. 8. na pomalé lince,
+  odložené za verzi). `ApplyRows` přidává řádky jeden po druhém do `ObservableCollection` navázané
+  na `DataGrid` s filtrem → 200 řádků = 200 oznámení o změně, každé s přepočtem filtru i layoutu,
+  a nakonec ještě celý `RefreshFilter()`. Od chvíle, co je načítání async (změna 2026-08-04 (6)),
+  to dosedá **zatímco uživatel píše** do filtru skupiny, takže je to znát jako škubání; dřív to bylo
+  schované za zámrzem. Fix = odložit přepočet pohledu na dobu plnění (`ICollectionView.DeferRefresh`)
+  → jeden průchod místo dvou set. ⚠️ Sdílená komponenta - projeví se u všech konzumentů EDListu
+  (i výběr šablon z DB), takže po změně proklikat i EDISON, ne jen návrhář.
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované

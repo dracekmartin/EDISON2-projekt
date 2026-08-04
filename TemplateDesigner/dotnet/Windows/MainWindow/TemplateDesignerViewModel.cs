@@ -636,8 +636,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _openInstancePicker, _prevInstance, _nextInstance, _refreshData, _toggleParamsBar;
-    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda;
+    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _prevInstance, _nextInstance, _refreshData, _toggleParamsBar;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda, _openInstancePicker;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= Command(Redo,          () => CanRedo);
@@ -652,7 +652,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
     public AsyncRelayCommand ChangeAgendaCommand   => _changeAgenda   ??= CommandAsync(ChangeAgendaAsync);
-    public RelayCommand OpenInstancePickerCommand  => _openInstancePicker ??= Command(OpenInstancePicker);
+    public AsyncRelayCommand OpenInstancePickerCommand => _openInstancePicker ??= CommandAsync(OpenInstancePickerAsync);
     public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= Command(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
     public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
     public RelayCommand RefreshDataCommand         => _refreshData    ??= Command(RefreshData);
@@ -1149,7 +1149,7 @@ public class TemplateDesignerViewModel : EDViewModel
         return true;
     }
 
-    private void OpenInstancePicker()
+    private async Task OpenInstancePickerAsync()
     {
         if (CacheProvider is null)
         {
@@ -1163,8 +1163,10 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
-        // Skupiny linek pro filtr v pickeru (prázdné = agenda bez skupin → filtr skrytý). Rychlý lookup.
-        var skupiny = CacheProvider.GetAvailableSkupiny(agendaCode);
+        // Skupiny linek pro filtr v pickeru (prázdné = agenda bez skupin → filtr skrytý).
+        // Async (R1): cachované, ale první volání jde po síti - na pomalé lince by zmrazilo aplikaci.
+        var provider = CacheProvider;
+        var skupiny = await Task.Run(() => provider.GetAvailableSkupiny(agendaCode));
         var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances, skupiny, _activeSkupinaId, CurrentInstanceLabelPlural);
         if (Dialogs?.ShowInstancePicker(vm) != true) return;
 
