@@ -459,10 +459,10 @@ public class AppBootstrapper
     {
         var treeGetter = new ModuleTreeGetter();
         var switcher = new CompanySwitcher(services, prefs, nav.CloseAll);
-        // Sdílená služba oblíbených — strom (VM) i miniaplikace „Oblíbené" (provider) drží tutéž instanci.
+        // Sdílená služba zástupců - strom (VM) i miniaplikace „Plocha" (provider) drží tutéž instanci.
         var shortcuts = new ModuleShortcutsService();
         var miniAppCatalog = MiniAppCatalog.Build([
-            new FavoritesMiniAppProvider(shortcuts),
+            new DesktopMiniAppProvider(shortcuts),
             new CoreMiniApps(), new LegacyMiniAppProvider(), new LegacyDashboardMiniAppProvider(),
 #if DEBUG
             new DevSampleMiniApps(),

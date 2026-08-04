@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using ALWA.SYS;
 using EDControls;
+using EDControls.EDSupportPanel;
 using EDISONMAIN2;
 using EDISONMAIN2.MiniApps;
 
@@ -69,6 +70,24 @@ namespace EDISONMAIN2.Windows.LoginWindow
             wv.Navigate(url);
             host.Child = wv;
             _widgets.Add(wv);
+        }
+
+        private void MlineWeb_Click(object sender, RoutedEventArgs e) => OpenExternal(SupportActions.WebUrl);
+
+        private void MlineSupport_Click(object sender, RoutedEventArgs e) => OpenExternal(SupportActions.PortalUrl);
+
+        // Selhání prohlížeče nesmí shodit přihlašovací obrazovku - hlásí se do stejného pruhu jako login.
+        private void OpenExternal(string url)
+        {
+            try
+            {
+                SupportActions.OpenUrl(url);
+            }
+            catch (Exception)
+            {
+                ErrorText.Text = "Nepodařilo se otevřít prohlížeč.";
+                ErrorText.Visibility = Visibility.Visible;
+            }
         }
 
         private void OkBtn_Click(object sender, RoutedEventArgs e)

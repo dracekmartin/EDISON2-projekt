@@ -40,6 +40,74 @@
     <DropShadowEffect x:Key="EDTheme.Shadow.Popup" Color="#000000" Direction="315" ShadowDepth="2" BlurRadius="8" Opacity="0.22"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         Focus ring — jediný indikátor klávesového focusu v celé knihovně
+
+         Nese ho FocusVisualStyle (adorner), ne triggery v templatech, ze dvou důvodů:
+         WPF kreslí FocusVisualStyle jen když focus přišel z klávesnice (po kliknutí myší
+         nic — IsKeyboardFocused trigger by svítil i tam), a adorner funguje i na
+         kontrolkách bez custom template (PasswordBox, DataGridRow, RadioButton).
+
+         Ring je dvoubarevný: kontrastní halo + accent linka nad ním. Halo drží
+         viditelnost na pozadích, která accent barvu utopí (brandový pruh Accent.Header).
+
+         Past: Stroke musí být DynamicResource, jinak ring zamrzne v light barvě.
+         Styl bez TargetType je FrameworkElement → setter kvalifikovaně Control.Template.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Style x:Key="EDTheme.FocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Grid Margin="-2" SnapsToDevicePixels="True">
+                        <Rectangle Stroke="{DynamicResource EDTheme.Focus.RingContrast}" StrokeThickness="3"   RadiusX="4" RadiusY="4"/>
+                        <Rectangle Stroke="{DynamicResource EDTheme.Focus.Ring}"         StrokeThickness="1.5" RadiusX="4" RadiusY="4"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Inset varianta pro items ve scrollovaných kontejnerech (ListBoxItem, DataGridCell,
+         TreeViewItem, ...) — adorner layer nerespektuje clip ScrollVieweru, takže vnější
+         ring u krajní položky přeteče přes hranu. Kreslí se proto uvnitř bounds. -->
+    <Style x:Key="EDTheme.FocusVisual.Inset">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Grid Margin="1" SnapsToDevicePixels="True">
+                        <Rectangle Stroke="{DynamicResource EDTheme.Focus.RingContrast}" StrokeThickness="3"   RadiusX="2" RadiusY="2"/>
+                        <Rectangle Stroke="{DynamicResource EDTheme.Focus.Ring}"         StrokeThickness="1.5" RadiusX="2" RadiusY="2"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Globální default místo systémového tečkovaného rámečku ze SystemColors.ControlText
+         (téměř černý, v dark modu neviditelný).
+
+         Past: tenhle override sám nestačí. Theme style Aera u většiny kontrolek nastavuje
+         FocusVisualStyle vlastní hodnotou (u TextBoxu dokonce null) a ta má vyšší prioritu
+         než default value, ze které se override čte — chytí se tedy jen prvky, kterým ho
+         theme style nesetuje (DatePicker). Proto ho každý styl níž nastavuje explicitně;
+         bez toho zůstane tečkovaný rámeček. Ověřeno přes
+         DependencyPropertyHelper.GetValueSource: Button/CheckBox/TextBox = DefaultStyle.
+
+         Nefunguje v popupech (ComboBox dropdown, menu, tooltip): jejich visual tree nemá
+         AdornerDecorator. Klávesový cue tam nesou triggery IsHighlighted / IsSelected. -->
+    <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}" BasedOn="{StaticResource EDTheme.FocusVisual}"/>
+
+    <!-- Setter-only styly pro kontrolky, které vlastní template nemají (stock Aero chrome).
+         Bez TargetType shody by jim focus ring vzal theme style. Implicitní styl bez
+         BasedOn theme style NEnahrazuje, dokud přepisuje jen tuhle jednu property. -->
+    <Style TargetType="ToggleButton">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
+    </Style>
+
+    <Style TargetType="RadioButton">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          MenuItem — flat menu s 4 role templates + Separator
          ═══════════════════════════════════════════════════════════════════ -->
 
@@ -358,6 +426,7 @@
          CheckBox — flat box + accent checkmark
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="CheckBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
         <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
@@ -422,6 +491,7 @@
          TabItem — moderní underline tabs (Chrome/VS Code styl)
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="TabItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="Padding"    Value="12,6"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Secondary}"/>
@@ -572,6 +642,7 @@
 
     <!-- ComboBox -->
     <Style TargetType="ComboBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding"         Value="6,4"/>
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
@@ -687,6 +758,7 @@
          TextBox — flat input s focus accent
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="TextBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding"         Value="6,4"/>
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
@@ -836,24 +908,15 @@
                                    Width="16" Height="16" Margin="0,0,6,0"
                                    VerticalAlignment="Center"
                                    RenderOptions.BitmapScalingMode="HighQuality"/>
-                            <!-- Akční odkaz (link-style tlačítko) vpravo; schová se bez ActionText. -->
+                            <!-- Akční odkaz vpravo; schová se bez ActionText. Styl je sdílený
+                                 (EDTheme.LinkButton) a definovaný níž v tomtéž slovníku → DynamicResource. -->
                             <Button x:Name="ActionButton" DockPanel.Dock="Right"
-                                    Margin="8,0,0,0" Focusable="False" Cursor="Hand"
+                                    Style="{DynamicResource EDTheme.LinkButton}"
+                                    Margin="8,0,0,0" Focusable="False"
                                     VerticalAlignment="Center"
+                                    FontSize="{TemplateBinding FontSize}"
                                     Content="{TemplateBinding ActionText}"
-                                    Command="{TemplateBinding ActionCommand}">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <TextBlock x:Name="ActionGlyph" Text="{TemplateBinding Content}"
-                                                   Foreground="{DynamicResource EDTheme.Accent.Blue}"/>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="ActionGlyph" Property="TextDecorations" Value="Underline"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                                    Command="{TemplateBinding ActionCommand}"/>
                             <TextBlock x:Name="MessageText" Text="{TemplateBinding Text}"
                                        TextWrapping="Wrap" VerticalAlignment="Center"
                                        Foreground="{TemplateBinding Foreground}"/>
@@ -874,6 +937,7 @@
 
     <!-- PasswordBox — minimální styl. WPF default šablona stačí, jen sjednotit typografii. -->
     <Style TargetType="PasswordBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding"         Value="6,4"/>
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
@@ -888,6 +952,7 @@
          Button — flat moderní desktop look
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding"         Value="12,4"/>
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
@@ -1130,6 +1195,7 @@
     </Style>
 
     <Style TargetType="TreeViewItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="Background"      Value="Transparent"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
@@ -1216,6 +1282,7 @@
     </Style>
 
     <Style TargetType="ListBoxItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="Padding"         Value="8,4"/>
         <Setter Property="Background"      Value="Transparent"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -1274,6 +1341,7 @@
     </Style>
 
     <Style TargetType="DataGridColumnHeader">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Panel}"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Header}"/>
         <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
@@ -1288,6 +1356,7 @@
     </Style>
 
     <Style TargetType="DataGridCell">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="Background"      Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding"         Value="8,4"/>
@@ -1416,6 +1485,7 @@
     </Style>
 
     <Style TargetType="DatePicker">
+        <Setter Property="FocusVisualStyle"         Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Background"               Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="Foreground"               Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="BorderBrush"              Value="{DynamicResource EDTheme.Border.Medium}"/>
@@ -1587,6 +1657,7 @@
 
     <!-- Den v měsíci — stavy přes read-only DP (IsToday/IsSelected/IsInactive/…). -->
     <Style x:Key="EDCalendarDayButtonStyle" TargetType="prim:CalendarDayButton">
+        <Setter Property="FocusVisualStyle"           Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="MinWidth"                   Value="30"/>
         <Setter Property="MinHeight"                  Value="28"/>
         <Setter Property="Foreground"                 Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -1631,6 +1702,7 @@
 
     <!-- Měsíc/rok v year/decade view. -->
     <Style x:Key="EDCalendarButtonStyle" TargetType="prim:CalendarButton">
+        <Setter Property="FocusVisualStyle"           Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="MinWidth"                   Value="42"/>
         <Setter Property="MinHeight"                  Value="42"/>
         <Setter Property="Foreground"                 Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -1681,6 +1753,7 @@
          jemný hover/pressed z theme tokenů (dark mode přes DynamicResource). Keyed —
          opt-in, nepřebíjí implicitní Button. Obsah = <Image> s ikonou. -->
     <Style x:Key="EDTheme.ToolbarButton" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding" Value="4"/>
         <Setter Property="MinWidth" Value="28"/>
         <Setter Property="MinHeight" Value="28"/>
@@ -1717,10 +1790,33 @@
         </Setter>
     </Style>
 
+    <!-- Odkaz vypadající jako odkaz: tlačítko bez plochy, akcentová barva, podtržení na hover.
+         Keyed - opt-in (akční odkaz EDInfoBaru, patička přihlašovací obrazovky shellu).
+         BasedOn kvůli font tokenům: šablona je holý TextBlock, takže bez něj by odkaz
+         nereagoval na user škálování fontu. -->
+    <Style x:Key="EDTheme.LinkButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.Blue}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <TextBlock x:Name="Glyph" Text="{TemplateBinding Content}"
+                               Foreground="{TemplateBinding Foreground}"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Glyph" Property="TextDecorations" Value="Underline"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Barevné tlačítko panelu Podpora (EDSupportPanel). Barvu plochy dodává volající
          z tokenů EDTheme.Support.* — hover/pressed jsou průhledné bílé overlaye nad ní,
          takže se nemusí dopočítávat světlejší odstín pro každou barvu zvlášť. -->
     <Style x:Key="EDTheme.SupportPanelButton" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <!-- MinHeight, ne Height: popisek se při user škálování fontu zalomí na víc řádků
              a tlačítko musí povyrůst, ne text ořezat. -->
         <Setter Property="MinHeight" Value="30"/>

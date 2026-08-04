@@ -102,6 +102,24 @@ public class FontServiceTests
     }
 
     [Fact]
+    public void OverrideBodyPt_NotApplied_ReturnsNull()
+    {
+        // Dialog pak předvolí výchozí velikost, ne osiřelou hodnotu z font.json.
+        var prefs = new UserFontPreference { FontApplied = false, FontFamily = "Arial", FontSize = 9 };
+
+        Assert.Null(FontService.OverrideBodyPt(prefs));
+    }
+
+    [Fact]
+    public void OverrideBodyPt_ReturnsClampedValue()
+    {
+        // Ručně editovaná velikost: dialog musí ukázat, co se aplikuje, ne surové číslo.
+        var prefs = new UserFontPreference { FontApplied = true, FontFamily = "Arial", FontSize = 200 };
+
+        Assert.Equal(FontService.MaxBodyPt, FontService.OverrideBodyPt(prefs));
+    }
+
+    [Fact]
     public void DefaultBodyPt_MatchesThemeTokenInPoints()
     {
         // Dialog z toho staví popisek „(výchozí)" — nesmí se rozejít s tokenem.

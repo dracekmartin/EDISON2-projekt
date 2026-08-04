@@ -67,9 +67,13 @@ Pasti wire formátu: subscripty jsou **stringy** (`cVar["1"]` → `^||ML("IN","1
 numerické 1); `CList` ↔ `$lb()`, čte se `$li(^||ML("IN","i"), n)` (1-based); v named
 foreach přeskoč klíč `"ERR"` (MLRest metadata, ne data).
 
-`QueryOrThrow` = `Query` + `ThrowIfError()` atomicky. Na `IMLRest` (ViewModely) i jako
+`QueryOrThrow` = `Query` + `ThrowIfError()`. Na `IMLRest` (ViewModely) i jako
 extension na konkrétním `MLRest` (legacy) - extension deleguje na `MLRestAdapter`, aby
 překlad chyby na výjimku žil na jednom místě. Odděleně volej jen pro graceful degradation.
+**Souběžné requesty jen na klonech** (`With()`) - `RestStatus` je per-instance a čte se až po
+`Query`, takže paralelní volání na téže instanci si stavy prohodí (spolknutá chyba / cizí
+výjimka). Klon má stejný GUID (pro server tatáž session) a každý request běží ve vlastním
+Caché procesu, takže si nešlapou ani po `^||ML`. Vzor: `Modules/RestCallRunner` v EDISONMAIN2.
 Binární data: `BinarySave(bytes)` → GUID, `BinaryLoad(guid)`
 (server: `$$$SYSBinary(GUID)`, automaticky se uvolní).
 

@@ -27,6 +27,23 @@ public class SupportPanelTests
         return ml;
     }
 
+    // ---------- Veřejné URL ----------
+
+    [Fact]
+    public void PublicUrls_AreAbsoluteHttpsInMlineDomain()
+    {
+        // Konstanty se nikde jinde nevalidují - rozbitá URL se projeví až chybou prohlížeče
+        // po kliknutí (patička přihlašovací obrazovky, tlačítka panelu Podpora).
+        var urls = new[] { SupportActions.PortalUrl, SupportActions.WebUrl, SupportActions.WidgetBaseUrl };
+
+        Assert.All(urls, url =>
+        {
+            var uri = new Uri(url);
+            Assert.Equal(Uri.UriSchemeHttps, uri.Scheme);
+            Assert.EndsWith("m-line.cz", uri.Host);
+        });
+    }
+
     // ---------- Feedback URL ----------
 
     [Fact]
@@ -252,6 +269,14 @@ public class SupportPanelTests
     {
         // Vlastní overlay okna EDControls (panel, „Akce probíhá") nesmí dostat vlastní panel.
         RunSta(() => Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(new FakeOverlayWindow())));
+    }
+
+    [Fact]
+    public void ShouldAttach_DockWindow_False()
+    {
+        // Chrome AvalonDocku (drop overlay, plovoucí okno widgetu): karta nepatří na drag artefakt
+        // a owned okno v jeho Show()/Close() rozbíjí drag docku. Viz WindowOwnershipTests.
+        RunSta(() => Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(new AvalonDock.Controls.FakeDockWindow())));
     }
 
     [Fact]

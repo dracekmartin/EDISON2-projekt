@@ -25,6 +25,8 @@
     <SolidColorBrush x:Key="EDTheme.Bg.Surface" Color="{StaticResource EDTheme.Bg.Surface.Color}"/>
     <Color x:Key="EDTheme.Bg.Base.Color">#FF1E1E1E</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Base" Color="{StaticResource EDTheme.Bg.Base.Color}"/>
+    <Color x:Key="EDTheme.Bg.Sunken.Color">#FF1E1E1E</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Sunken" Color="{StaticResource EDTheme.Bg.Sunken.Color}"/>
     <Color x:Key="EDTheme.Bg.Panel.Color">#FF252526</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Panel" Color="{StaticResource EDTheme.Bg.Panel.Color}"/>
     <Color x:Key="EDTheme.Bg.PanelAlt.Color">#FF2A2A2C</Color>
@@ -72,6 +74,13 @@
     <SolidColorBrush x:Key="EDTheme.Accent.BlueSelected" Color="{StaticResource EDTheme.Accent.BlueSelected.Color}"/>
     <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FF3A5F86</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
+
+    <!-- Focus — ring jasnější než Accent.Blue (1,5px linka v accent odstínu je na
+         Bg.Surface slabá), halo tmavé, aby ring vystoupil i na světlém brandovém pruhu. -->
+    <Color x:Key="EDTheme.Focus.Ring.Color">#FF7CC4FF</Color>
+    <SolidColorBrush x:Key="EDTheme.Focus.Ring" Color="{StaticResource EDTheme.Focus.Ring.Color}"/>
+    <Color x:Key="EDTheme.Focus.RingContrast.Color">#FF141414</Color>
+    <SolidColorBrush x:Key="EDTheme.Focus.RingContrast" Color="{StaticResource EDTheme.Focus.RingContrast.Color}"/>
 
     <!-- Accent: Green -->
     <Color x:Key="EDTheme.Accent.GreenDark.Color">#FF9BD6A3</Color>

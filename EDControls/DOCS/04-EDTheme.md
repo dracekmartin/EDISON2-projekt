@@ -68,10 +68,16 @@ Bonus tokens: pro každou barvu existují **dva** klíče:
 ### Accent — Blue (primary action color)
 | Token | Default | Použití |
 |---|---|---|
-| `EDTheme.Accent.Blue` | `#2196F3` | Focus, active section border, selection |
+| `EDTheme.Accent.Blue` | `#2196F3` | Active section border, selection, aktivní vstup |
 | `EDTheme.Accent.BlueDark` | `#0D47A1` | Text na světle modrém pozadí |
 | `EDTheme.Accent.BlueBg` | `#E3F2FD` | Instance chip, info badges |
 | `EDTheme.Accent.BlueSelected` | `#D2E6FF` | Vybraná sekce v listu |
+
+### Focus (klávesový focus ring)
+| Token | Default | Použití |
+|---|---|---|
+| `EDTheme.Focus.Ring` | `#2563EB` | Accent linka focus ringu (`EDTheme.FocusVisual`) |
+| `EDTheme.Focus.RingContrast` | `#FFFFFF` | Kontrastní halo pod linkou, drží ring viditelný i na `Accent.Header` |
 
 ### Accent — Green (agenda status, success)
 | Token | Default | Použití |
@@ -146,11 +152,9 @@ Postup:
 3. Nahraď `Color="#XXX"` → `Color="{DynamicResource EDTheme.X}"`
 4. Build + visual check (DynamicResource missing → render selže elegantně, ale visual může vypadat divně)
 
-## Dark mode (budoucnost)
+## Dark mode
 
-Tokens v `DynamicResource` = připraveno pro runtime swap. Postup:
-1. Vytvořit `EDTheme.Dark.xaml` se stejnými klíči, jen dark color values
-2. V `App.xaml`/`MainWindow` runtime swap merged dictionaries (Dark vs Light)
-3. Aplikace překreslí automaticky
-
-V1 (today): jen light theme; infra pro dark hotová.
+Hotový: `EDThemeDark.xaml` má stejné klíče jen s dark hodnotami a `ThemeService` ji za
+běhu přidává na konec `Application.Resources.MergedDictionaries`. Přebijí se tím jen
+lookupy přes `DynamicResource` — `StaticResource` na brush zamrzne v light barvě.
+Preference je cross-process (`%APPDATA%\m-line\common\theme.json`).

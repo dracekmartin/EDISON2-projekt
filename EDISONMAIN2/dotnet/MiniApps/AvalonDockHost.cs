@@ -129,9 +129,19 @@ public sealed class AvalonDockHost : IMiniAppHost
     private LayoutPanel ColumnsPanel =>
         _dock.Layout.RootPanel.Children.OfType<LayoutPanel>().FirstOrDefault() ?? _dock.Layout.RootPanel;
 
-    // První (levý) document pane — cíl pro taby a první sloupec.
-    private LayoutDocumentPane DocumentPane =>
-        _dock.Layout.Descendents().OfType<LayoutDocumentPane>().First();
+    // První (levý) document pane — cíl pro taby a první sloupec. Když žádný není (všechny dokumenty
+    // odtržené do plovoucích oken), vyrobit ho — otevření další mini-app nesmí spadnout.
+    private LayoutDocumentPane DocumentPane
+    {
+        get
+        {
+            if (_dock.Layout.Descendents().OfType<LayoutDocumentPane>().FirstOrDefault() is { } pane)
+                return pane;
+            var created = new LayoutDocumentPane();
+            ColumnsPanel.Children.Add(created);
+            return created;
+        }
+    }
 
     public string SaveLayout()
     {

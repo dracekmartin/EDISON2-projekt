@@ -1,14 +1,14 @@
 namespace EDISONMAIN2.MiniApps;
 
 /// <summary>
-/// DataObject formáty pro drag&drop modulů. In-process (nese přímo <c>ExecutableModule</c> instanci).
-/// Dvě rozlišené operace: přetažení ze stromu (přidání) vs. přeuspořádání dlaždic v miniaplikaci.
+/// DataObject formáty pro drag&drop na plochu. In-process (nese přímo instance).
+/// Dvě rozlišené operace: přetažení modulu ze stromu (přidání) vs. přeuspořádání dlaždic.
 /// </summary>
 internal static class ModuleDrag
 {
-    /// <summary>Modul tažený ze stromu do miniaplikace Oblíbené → přidání.</summary>
+    /// <summary>Modul (<c>ExecutableModule</c>) tažený ze stromu na plochu → přidání.</summary>
     public const string FromTree = "EDISON.Module.FromTree";
 
-    /// <summary>Dlaždice tažená uvnitř miniaplikace Oblíbené → přeuspořádání.</summary>
-    public const string Reorder = "EDISON.Module.Reorder";
+    /// <summary>Dlaždice (<c>Shortcut</c>) tažená uvnitř plochy → přeuspořádání.</summary>
+    public const string ReorderTile = "EDISON.Shortcut.Reorder";
 }

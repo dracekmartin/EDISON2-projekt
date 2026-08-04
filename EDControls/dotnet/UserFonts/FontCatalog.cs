@@ -43,12 +43,19 @@ public static class FontCatalog
         return result;
     }
 
+    /// <summary>Je rodina na whitelistu? Neřeší, jestli je na stroji nainstalovaná.</summary>
+    internal static bool IsAllowed(string? family) =>
+        family is not null && AllowedFamilies.Contains(family, StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Velikosti v pt k nabídnutí, včetně <paramref name="defaultPt"/> (typicky necelé —
-    /// plyne z px tokenu), setříděné a bez duplicit.
+    /// plyne z px tokenu) a <paramref name="current"/>, setříděné a bez duplicit.
+    /// <paramref name="current"/> mimo nabídku (ruční edit font.json) se přidá ze stejného
+    /// důvodu jako u rodin — combo nesmí tvrdit něco jiného, než co je aplikované.
     /// </summary>
-    internal static IReadOnlyList<double> SizesPt(double defaultPt) =>
-        OfferedSizesPt.Append(defaultPt).Distinct().OrderBy(s => s).ToList();
+    internal static IReadOnlyList<double> SizesPt(double defaultPt, double? current = null) =>
+        OfferedSizesPt.Append(defaultPt).Concat(current is { } c ? [c] : Array.Empty<double>())
+            .Distinct().OrderBy(s => s).ToList();
 
     /// <summary>Nainstalované rodiny fontů dle WPF. Tenký wrapper — celá logika je v <see cref="Families"/>.</summary>
     internal static IEnumerable<string> InstalledFamilies() =>

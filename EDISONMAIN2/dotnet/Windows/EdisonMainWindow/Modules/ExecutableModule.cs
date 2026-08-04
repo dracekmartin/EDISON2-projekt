@@ -42,9 +42,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         private bool _isFavorite;
 
         /// <summary>
-        /// Jediná mutable/observable property — uživatelovo „oblíbené" označení. Přepíná se in-place
-        /// (hvězdička), takže nevyžaduje rebuild stromu. Instance se sdílí mezi hlavním stromem,
-        /// záložkou Oblíbené a žebříčkem Používané → přepnutí jednou se projeví všude.
+        /// Uživatelovo „oblíbené" označení (★). Přepíná se in-place, takže nevyžaduje rebuild stromu.
+        /// Instance se sdílí mezi hlavním stromem, záložkou Oblíbené, žebříčkem Používané i dlaždicí
+        /// na ploše (<see cref="DesktopShortcut.Module"/>) → přepnutí jednou se projeví všude.
         /// </summary>
         public bool IsFavorite
         {
@@ -54,24 +54,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 if (_isFavorite == value) return;
                 _isFavorite = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFavorite)));
-            }
-        }
-
-        private int _favoriteSlot;
-
-        /// <summary>
-        /// Pozice dlaždice v mřížce miniaplikace Oblíbené (0-based slot; sloupce dle šířky panelu,
-        /// prázdné sloty = mezery). Řídí <see cref="Modules.ModuleShortcutsService"/>. Relevantní jen
-        /// když <see cref="IsFavorite"/>. Observable — změna přeskládá mřížku (attached Slot binding).
-        /// </summary>
-        public int FavoriteSlot
-        {
-            get => _favoriteSlot;
-            set
-            {
-                if (_favoriteSlot == value) return;
-                _favoriteSlot = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FavoriteSlot)));
             }
         }
 

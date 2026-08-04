@@ -1,8 +1,14 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ToolbarButton: transparentní pozadí, hover efekt -->
+    <!-- ToolbarButton: transparentní pozadí, hover efekt.
+         FocusVisualStyle explicitně: theme style Aera nastavuje vlastní hodnotu s vyšší prioritou
+         než globální override v EDControlStyles.xaml, takže bez setteru zůstane tečkovaný rámeček
+         neviditelný v dark modu. Platí pro všechna tlačítka níž.
+         DynamicResource, ne StaticResource: klíč žije v jiné dictionary a odložený StaticResource
+         se tu vyhodnotí na UnsetValue → výjimka při aplikaci stylu. -->
     <Style x:Key="ToolbarButton" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding" Value="4"/>
         <Setter Property="MinWidth" Value="28"/>
         <Setter Property="MinHeight" Value="28"/>
@@ -41,6 +47,7 @@
 
     <!-- ToolbarToggle: jako ToolbarButton + checked stav -->
     <Style x:Key="ToolbarToggle" TargetType="ToggleButton">
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding" Value="4"/>
         <Setter Property="MinWidth" Value="28"/>
         <Setter Property="MinHeight" Value="28"/>
@@ -80,6 +87,7 @@
 
     <!-- PaletteButton: jako ToolbarButton + Hand kurzor (signalizuje drag) -->
     <Style x:Key="PaletteButton" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding" Value="4"/>
         <Setter Property="MinWidth" Value="28"/>
         <Setter Property="MinHeight" Value="28"/>

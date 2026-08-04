@@ -120,9 +120,9 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// FormID pro persistenci stavu okna přes <see cref="WindowStatePersistence"/>.
-    /// Default odvozuje z názvu VM: <c>EdisonMainViewModel</c> → <c>"EDISON2.EdisonMainWindow"</c>.
-    /// Override na <c>null</c> v subclass pro opt-out.
+    /// FormID pro persistenci stavu okna přes <see cref="WindowStatePersistence"/> a pro usage
+    /// telemetrii. Default odvozuje z názvu VM: <c>EdisonMainViewModel</c> →
+    /// <c>"EDISON2.EdisonMainWindow"</c>. Override na <c>null</c> v subclass pro opt-out.
     /// </summary>
     protected virtual string? PersistedFormId
     {
@@ -131,9 +131,15 @@ public class EDViewModel : INotifyPropertyChanged
             var name = GetType().Name;
             if (name.EndsWith("ViewModel"))
                 name = name[..^"ViewModel".Length] + "Window";
-            return $"EDISON2.{name}";
+            return $"{_services.FormIdPrefix}.{name}";
         }
     }
+
+    /// <summary>
+    /// <see cref="PersistedFormId"/> pro <see cref="EDUsageTelemetryHook"/> — ten visí na class
+    /// handleru <c>Window.Loaded</c>, takže na protected člen nedosáhne.
+    /// </summary>
+    internal string? UsageFormId => PersistedFormId;
 
     /// <summary>
     /// Volat **před** <c>window.Show()</c> / <c>ShowDialog()</c> aby se klávesové zkratky
@@ -147,10 +153,7 @@ public class EDViewModel : INotifyPropertyChanged
         _scopedPopupDisplayer = new WindowScopedPopupDisplayer(_services.PopupDisplayer, window);
         RegisterKeyBindings(window);
         if (PersistedFormId is { } formId)
-        {
             WindowStatePersistence.Attach(window, formId);
-            HookUsageTelemetry(window, formId);
-        }
     }
 
     /// <summary>
@@ -161,27 +164,6 @@ public class EDViewModel : INotifyPropertyChanged
     /// <c>EDSupportPanel.Suppress</c>.
     /// </summary>
     public bool ShowSupportPanel { get; protected set; } = true;
-
-    /// <summary>
-    /// Usage telemetrie okna (<see cref="EDUsageTelemetry"/>): OPEN + kliky na pojmenované
-    /// controly (obdoba WinForms <c>Name</c> v legacy EDForm; nepojmenované se přeskočí),
-    /// flush dávky při zavření okna. ContextMenu/Popup stromy nemusí routovat až na okno —
-    /// telemetrie je best-effort, přesnost tam neřešíme.
-    /// </summary>
-    private void HookUsageTelemetry(Window window, string formId)
-    {
-        EDUsageTelemetry.Track(formId, "OPEN");
-
-        RoutedEventHandler onClick = (_, e) =>
-        {
-            var name = ((e.OriginalSource ?? e.Source) as FrameworkElement)?.Name;
-            if (!string.IsNullOrEmpty(name)) EDUsageTelemetry.Track(formId, name);
-        };
-        window.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, onClick, handledEventsToo: true);
-        window.AddHandler(System.Windows.Controls.MenuItem.ClickEvent, onClick, handledEventsToo: true);
-
-        window.Closed += (_, _) => EDUsageTelemetry.Flush(_services.MLRest);
-    }
 
     /// <summary>
     /// Vytvoří <see cref="RelayCommand"/> s napojeným <see cref="PopupDisplayer"/> pro výjimky.

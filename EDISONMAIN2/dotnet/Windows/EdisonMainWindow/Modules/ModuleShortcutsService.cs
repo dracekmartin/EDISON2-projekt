@@ -3,92 +3,161 @@ using System.Collections.ObjectModel;
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
-    /// Sdílený zdroj pravdy pro oblíbené moduly — používá ho strom (hvězdička ★) i dockovatelná
-    /// miniaplikace „Oblíbené" (dlaždice). Čistě in-memory: členství + <b>sdílené</b>
+    /// Sdílený zdroj pravdy pro plochu (dlaždice zástupců) - používá ho miniaplikace „Plocha"
+    /// i strom (★ nad moduly hlavní nabídky). Plocha je nadmnožina oblíbených: drží položky všech
+    /// <see cref="ShortcutKind"/>, ★ umí jen <see cref="ShortcutKind.MenuModule"/>.
+    /// Čistě in-memory: členství + pozice (<see cref="DesktopShortcut.Slot"/>) + <b>sdílené</b>
     /// <see cref="ExecutableModule"/> instance (tytéž jako ve stromu → flip <c>IsFavorite</c> se
-    /// projeví všude) + pozice dlaždic (<see cref="ExecutableModule.FavoriteSlot"/>, mřížka s mezerami).
-    /// Persistenci a spouštění NEřeší — to obsluhuje <c>EdisonMainViewModel</c> přes
-    /// <see cref="LaunchRequested"/>, <c>Favorites.CollectionChanged</c> a <see cref="SlotsChanged"/>.
+    /// projeví všude). Persistenci a spouštění NEřeší - obsluhuje <c>EdisonMainViewModel</c> přes
+    /// <see cref="LaunchRequested"/>, <c>Items.CollectionChanged</c> a <see cref="SlotsChanged"/>.
     /// </summary>
     public sealed class ModuleShortcutsService
     {
         private IReadOnlyList<ExecutableModule> _all = [];
 
-        /// <summary>Oblíbené (členství). Pozice dlaždice drží <see cref="ExecutableModule.FavoriteSlot"/>.</summary>
-        public ObservableCollection<ExecutableModule> Favorites { get; } = [];
+        // Uložené položky, které v aktuálním stromě neexistují (odebraná licence, hidden, mlineOnly).
+        // Nezobrazují se, ale musí se uložit zpátky - jinak by je první změna členství tiše smazala.
+        private readonly List<DesktopShortcutDto> _unresolved = [];
+
+        /// <summary>Položky plochy v pořadí připnutí. Pozici dlaždice drží <see cref="DesktopShortcut.Slot"/>.</summary>
+        public ObservableCollection<DesktopShortcut> Items { get; } = [];
 
         /// <summary>
-        /// Miniaplikace si vyžádá spuštění modulu; obsluhuje <c>EdisonMainViewModel</c>
-        /// (usage + overlay + <c>WindowNavigator</c>) — launch logika není duplikovaná.
+        /// Miniaplikace si vyžádá spuštění položky; obsluhuje <c>EdisonMainViewModel</c>
+        /// (usage + overlay + <c>WindowNavigator</c>) - launch logika není duplikovaná.
         /// </summary>
-        public event Action<ExecutableModule>? LaunchRequested;
+        public event Action<DesktopShortcut>? LaunchRequested;
 
-        /// <summary>Změna pozice dlaždice (<see cref="PlaceAt"/>) — shell persistuje sloty.</summary>
+        /// <summary>Změna pozice dlaždice (<see cref="PlaceAt"/>) - shell persistuje.</summary>
         public event Action? SlotsChanged;
 
-        public void RequestLaunch(ExecutableModule module) => LaunchRequested?.Invoke(module);
+        public void RequestLaunch(DesktopShortcut shortcut) => LaunchRequested?.Invoke(shortcut);
 
         /// <summary>
-        /// Re-inicializace po (pře)stavbě stromů (login, přepnutí firmy). Bere instance z aktuálních
-        /// stromů (sdílené, ne kopie). Sloty z <paramref name="slotsByElementId"/>; chybějící → pořadí.
+        /// Re-inicializace po (pře)stavbě stromů (login, přepnutí firmy). Moduly hlavní nabídky se
+        /// dohledávají v aktuálních stromech (sdílené instance, ne kopie); ostatní druhy si nesou
+        /// vše v uložené položce. Chybějící <see cref="DesktopShortcutDto.Slot"/> → pořadí.
         /// </summary>
-        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<string> favoriteIdsInOrder,
-                         IReadOnlyDictionary<string, int>? slotsByElementId = null)
+        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<DesktopShortcutDto> stored)
         {
             _all = allExecutables.ToList();
-            foreach (var m in Favorites) m.IsFavorite = false;
-            Favorites.Clear();
-            int order = 0;
-            foreach (var id in favoriteIdsInOrder)
-                if (!Contains(id) && Resolve(id) is { } module)
+            foreach (var item in Items)
+                if (item.Module is { } module) module.IsFavorite = false;
+            Items.Clear();
+            _unresolved.Clear();
+
+            // 1) roztřídit na zobrazitelné a jen přenášené (skryté) položky
+            var shown = new List<(DesktopShortcutDto Dto, ShortcutKind Kind, ExecutableModule? Module)>();
+            var keys = new HashSet<string>();
+            foreach (var dto in stored)
+            {
+                // Uznáváme jen jméno člena: Enum.TryParse bere i číselné stringy ("0" → MenuModule,
+                // "7" → nedefinovaná hodnota), což by u numericky serializovaného legacy ItemType
+                // přeznačilo uložená data. Neznámý druh se jen přenese dál (novější verze, ruční edit).
+                if (!Enum.IsDefined(typeof(ShortcutKind), dto.Kind))
                 {
-                    module.IsFavorite = true;
-                    // TryGetValue, ne GetValueOrDefault — default 0 by kolidoval se slotem 0.
-                    module.FavoriteSlot = slotsByElementId != null && slotsByElementId.TryGetValue(id, out var slot)
-                        ? slot : order;
-                    Favorites.Add(module);
-                    order++;
+                    _unresolved.Add(dto);
+                    continue;
                 }
+                var kind = Enum.Parse<ShortcutKind>(dto.Kind);
+
+                var module = kind == ShortcutKind.MenuModule ? Resolve(dto.ElementId) : null;
+                if (kind == ShortcutKind.MenuModule && module is null)
+                {
+                    _unresolved.Add(dto);
+                    continue;
+                }
+                if (!keys.Add($"{kind}|{dto.ElementId}|{dto.Id}")) continue;
+                shown.Add((dto, kind, module));
+            }
+
+            // 2) sloty: nejdřív rezervuj pozice skrytých položek, ať je zobrazené nepřeberou - jinak
+            // by po návratu licence seděly dvě dlaždice na sobě (mřížka kolize neřeší).
+            var used = new HashSet<int>(_unresolved.Select(d => d.Slot ?? -1));
+            int order = 0;
+            foreach (var (dto, kind, module) in shown)
+            {
+                int slot = dto.Slot ?? order;
+                while (!used.Add(slot)) slot++;
+
+                if (module is not null) module.IsFavorite = true;
+                Items.Add(new DesktopShortcut
+                {
+                    Kind = kind,
+                    Id = dto.Id,
+                    ElementId = dto.ElementId,
+                    DisplayedName = module?.DisplayedName ?? dto.Name,
+                    ExecutablePath = module?.ExecutablePath ?? dto.Exe,
+                    FormName = module?.FormName ?? dto.Form,
+                    InputParam = module?.InputParam ?? dto.Input,
+                    Report = dto.Report,
+                    Module = module,
+                    Slot = slot,
+                });
+                order++;
+            }
         }
 
-        public bool Contains(string elementId) => Favorites.Any(f => f.ElementId == elementId);
+        /// <summary>Vše k uložení: zobrazené položky + uložené, které aktuální strom nezná.</summary>
+        public IEnumerable<DesktopShortcutDto> Persistable() =>
+            Items.Select(i => i.ToDto()).Concat(_unresolved);
+
+        /// <summary>Je modul hlavní nabídky na ploše? (řídí ★ ve stromu)</summary>
+        public bool Contains(string elementId) =>
+            Items.Any(i => i.Kind == ShortcutKind.MenuModule && i.ElementId == elementId);
 
         /// <summary>Najde instanci modulu podle ElementId napříč všemi stromy (pro DnD drop).</summary>
         public ExecutableModule? Resolve(string elementId) =>
             _all.FirstOrDefault(e => e.ElementId == elementId);
 
+        /// <summary>Přidá modul hlavní nabídky na plochu (idempotentní).</summary>
         public void Add(ExecutableModule module)
         {
             if (module.ElementId.Length == 0 || Contains(module.ElementId)) return;
             module.IsFavorite = true;
-            module.FavoriteSlot = NextFreeSlot();
-            Favorites.Add(module);
+            var shortcut = DesktopShortcut.ForModule(module);
+            shortcut.Slot = NextFreeSlot();
+            Items.Add(shortcut);
         }
 
+        /// <summary>Odebere z plochy zástupce daného modulu hlavní nabídky.</summary>
         public void Remove(ExecutableModule module)
         {
-            if (Favorites.FirstOrDefault(f => f.ElementId == module.ElementId) is not { } existing) return;
-            existing.IsFavorite = false;
-            Favorites.Remove(existing);
+            if (Items.FirstOrDefault(i => i.Kind == ShortcutKind.MenuModule && i.ElementId == module.ElementId)
+                is not { } existing) return;
+            Remove(existing);
+        }
+
+        public void Remove(DesktopShortcut shortcut)
+        {
+            if (Items.FirstOrDefault(i => i.Key == shortcut.Key) is not { } existing) return;
+            if (existing.Module is { } module) module.IsFavorite = false;
+            Items.Remove(existing);
         }
 
         /// <summary>
         /// Umístí dlaždici na daný slot (mřížka s mezerami). Když je slot obsazený, prohodí ho
         /// s dosavadní pozicí přesouvané dlaždice (swap).
         /// </summary>
-        public void PlaceAt(ExecutableModule module, int slot)
+        public void PlaceAt(DesktopShortcut shortcut, int slot)
         {
-            if (slot < 0 || !Contains(module.ElementId) || module.FavoriteSlot == slot) return;
-            if (Favorites.FirstOrDefault(f => f.FavoriteSlot == slot && f != module) is { } occupant)
-                occupant.FavoriteSlot = module.FavoriteSlot;
-            module.FavoriteSlot = slot;
+            // Cílovou dlaždici hledej v kolekci podle Key (jako Remove) - předaná instance může být
+            // z doby před posledním Seed a zápis do ní by se nikam neprojevil.
+            if (slot < 0 || Items.FirstOrDefault(i => i.Key == shortcut.Key) is not { } target
+                || target.Slot == slot) return;
+            if (Items.FirstOrDefault(i => i.Slot == slot && i.Key != target.Key) is { } occupant)
+                occupant.Slot = target.Slot;
+            target.Slot = slot;
             SlotsChanged?.Invoke();
         }
 
-        /// <summary>Nejnižší volný slot (kompaktní zaplnění mezer při přidání).</summary>
+        /// <summary>
+        /// Nejnižší volný slot (kompaktní zaplnění mezer při přidání). Počítá i pozice skrytých
+        /// položek - ty se ukládají se svým slotem a po návratu by kolidovaly.
+        /// </summary>
         private int NextFreeSlot()
         {
-            var used = Favorites.Select(f => f.FavoriteSlot).ToHashSet();
+            var used = Items.Select(i => i.Slot).Concat(_unresolved.Select(d => d.Slot ?? -1)).ToHashSet();
             int i = 0;
             while (used.Contains(i)) i++;
             return i;

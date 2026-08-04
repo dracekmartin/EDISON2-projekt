@@ -21,6 +21,17 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   starou firmu / session bez mutace sdílené instance.
 - `LogoutWatcher` pollí `maSeUkoncit` s `CacheLocks=2`, aby poll neobnovoval
   server-side idle timer.
+- Session-scoped stav (access, tři stromy, preference, výchozí okno) načítá
+  `Modules/SessionDataLoader` **na jeden zátah přes klony** (`RestCallRunner`, viz root
+  CLAUDE.md) a `EdisonMainViewModel.ApplySessionData` ho pak promítne **synchronně** — guardy
+  `_suppressXxx` neplatí přes `await` a selhání loadu tak nechá předchozí stromy naživu.
+  Ctor VM data nenačítá: shell se ukáže hned a `InitializeAsync()` běží z `ContentRendered`
+  **před** `OpenStartupWindowIfAny` (výchozí okno se hledá ve stromu). Do prvního initu je
+  `_modulePrefs` null, takže save cesty musí zůstat null-safe.
+- Přepnutí firmy dělá `SwitchCompanyCommand` (`SelectedCompanyId` setter ho jen spustí);
+  index se nastaví teprve po `Accepted`, takže odmítnutí nepotřebuje rollback. Sám
+  `CompanySwitcher.Switch` (zavření oken + VerifyLic) zůstává synchronní — potřebuje UI
+  thread na dialogy licenčního retry.
 - DEBUG build má verzi `999999.9` — netriggeruje update check.
 - Zavření shellu (= ukončení aplikace i všech agend) se potvrzuje v `Closing` přes
   `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu
@@ -30,7 +41,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 ## UI pasti
 
 - `EDFilterComboBox` (výběr firmy) **musí být mimo `<Menu>`** — WPF Menu krade fokus
-  editovatelnému poli uvnitř; proto je v `DockPanel` vedle Menu.
+  editovatelnému poli uvnitř; proto je v `DockPanel` vedle Menu. Horní lišta je proto
+  rozdělená na **dva `Menu` controly** (`EdisonMenu` = jen položka EDISON, pak combo, pak
+  `TopMenu` se zbytkem), aby hlavní nabídka stála první; cena je, že šipkami se mezi oběma
+  menu nepřejde. `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
 - **Status bar** = segmenty ikona + hodnota, technika (namespace, port, login, Mlp) jen
@@ -38,10 +52,19 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   funguje **jen na explicitním** `<StatusBarItem>` (na surovém `TextBlock` se nepropíše na
   generovaný kontejner), stejně tak `Visibility="Collapsed"` bez zbytkové mezery.
   `<Separator/>` patří jen mezi vždy viditelné segmenty — u sbalitelného by zůstal viset.
+- **Launcher panel** je zapuštěná plocha (`EDTheme.Bg.Sunken`), na které leží **jedna spojitá
+  karta** z `Bg.Surface`: pruh záložek → hledání → strom (navazující `BorderThickness`,
+  zakulacení jen na krajích). V light je totiž `Bg.Base` == `Bg.Surface` a bez toho panel
+  splyne s obsahem. Akční toolbar zůstává **vedle karty** na zapuštěném chrome — ikonové taby
+  a ikonové akce by jinak splynuly v jednu řadu, navíc obě skupiny obsahují ★.
+  `TreeTabControl` nese **jen tab strip**: `TabItem`y jsou ikonové (text v ToolTipu) a záměrně
+  **bez Contentu** (ikona proto patří do `TabItem.Header`), stromy jsou sourozenci v kartě
+  a přepínají se `Is*TabActive`. Důsledek: všech pět stromů žije pořád → do `Tag` datových
+  šablon (most pro `ContextMenu`) nejde brát `AncestorType=TabControl`, jde tam `VmProxy`.
 - **Toolbar nad stromy** (Rozbalit/Sbalit vše + oblíbené/výchozí okno nad vybraným uzlem):
-  Rozbalit/Sbalit vše cílí na **aktivní** záložku (`ActiveExpandableTree` dle
-  `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna obalena
-  `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar
+  jedna instance vpravo v řádku se záložkami. Rozbalit/Sbalit vše cílí na **aktivní** záložku
+  (`ActiveExpandableTree` dle `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna
+  obalena `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar
   akce) plní code-behind — `TreeView.SelectedItem` nelze bindovat, jede přes
   `SelectedItemChanged` + `TabControl.SelectionChanged`. Ikonové tlačítko = sdílený styl
   `EDTheme.ToolbarButton` z EDControls.
@@ -52,7 +75,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   po `Layout.Updated` odsune cizí taby jinam a razítkuje pane `DockMinWidth/Height`
   (hook nutno obnovovat přes `LayoutChanged` — Deserialize mění celý LayoutRoot).
   „Zavřít miniaplikace" jde přes `CloseUnpinned`; `EnsurePinnedOpen` ji dootevře
-  po restore / defaultu / resetu. Když není otevřená mini-app Oblíbené (`HasOpenFavorites`),
+  po restore / defaultu / resetu. Když není otevřená mini-app Plocha (`HasOpenDesktop`),
   ukáže se pod stromem `EDInfoBar` s akcí na její zobrazení.
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
@@ -67,6 +90,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému záblesku.
   Chrome docku (taby, bordery, pozadí dokumentů) EDTheme tokeny nečte — dark řeší
   swap `DockManager.Theme` na VS2013 Light/Dark v code-behind okna.
+  **Vlastní okna docku (overlay s drop terči, plovoucí okna) nikdo zvenčí nesmí zavírat ani k nim
+  věšet owned okna** — AvalonDock si overlay cachuje a cizí `Close()` shodí každý další drag
+  (hlídá `FrameworkWindows` v EDControls, detail v jeho `EDViewModel/CLAUDE.md`). Odtržené
+  mini-apps zavírej přes `document.Close()` (`MiniAppManager`), ne přes okno.
   Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts` (spolu se šířkou stromu
   v `LocalPrefs.TreeWidths`, stejný lifecycle přes `AttachTreeLayout`); chybí-li uložený →
   výchozí layout = pinned karusel `Core.Podpora` (1–3 sloupce dle šířky; při plném
@@ -74,7 +101,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   hover se kvůli HWND WebView2 zjišťuje pozicí kurzoru + `WindowFromPoint` (ne `IsMouseOver`,
   a ne jen souřadnice — cizí okno shell překrývá); pauza vyprší po 3 min klidu, protože WPF fokus
   je sticky a kliknutí na šipku by cyklení zastavilo navždy — krátký timeout tam nejde, čtení
-  kolečkem/klávesami kurzorem nehýbe; obsah lazy, drží se živý) + Oblíbené dole;
+  kolečkem/klávesami kurzorem nehýbe; obsah lazy, drží se živý) + Plocha dole;
   prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
   Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,
@@ -82,6 +109,14 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   v `CompositeCollection` — bindingy tam jdou jen přes `BindingProxy` (`VmProxy`):
   `x:Reference` na TopMenu při BAML loadu cyklí, `ElementName`/DataContext jsou
   mimo namescope/strom; lokální `Style` na nich blokuje `ItemContainerStyle` skupin.
+
+## Plocha se zástupci
+
+Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `DesktopShortcut` všech
+`ShortcutKind`, ★ ve stromu umí jen `MenuModule` (= záložka Oblíbené). Identita je `Key`
+(`Kind|ElementId|Id`). Položka, kterou aktuální strom nezná (licence, `hidden`), se
+**nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní
+druhy jde dnes jen uložit, ne vytvořit/spustit: [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md).
 
 ## Výchozí okno (startup window)
 

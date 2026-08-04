@@ -17,41 +17,32 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{DynamicResource EDTheme.Bg.Surface}">
         <!-- IsSharedSizeScope na outer Grid → column header bar a všechny field rows
              sdílí stejný ItemLabel column width.
-             3 rows: Toolbar (volitelný) | Column header bar | Items -->
+             2 rows: Column header bar (nese i toolbar) | Items -->
         <Grid Grid.IsSharedSizeScope="True">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Toolbar bar (Row 0): EDComponentToolbar — sdílená komponenta napříč
-                 EDInputForm / EDList / budoucí tabulkové komponenty.
-                 Help "?" (vpravo od hledání) otevírá popup zkratek přes HelpCommand
-                 (WireToolbarSearch). Settings vypnutý dokud nemá reálný Command. -->
-            <edct:EDComponentToolbar Grid.Row="0"
-                                     x:Name="Toolbar"
-                                     ShowSearch="True"
-                                     ShowHelp="True"
-                                     ShowSettings="False"/>
-
-            <!-- Column header bar: Položka | Hodnota.
+            <!-- Column header bar: Položka | Hodnota | toolbar (hledání + nápověda).
                  Modern PropertyGrid layout: 2 logické sloupce — label + input. Errors/help
                  inline pod inputem (Material Design pattern).
                  Responzivní šířka: label Auto (fit obsahu, floor MinWidth), hodnota "*" s
                  MaxWidth → při dostatku místa se zastaví na 320 a přebytek zůstane prázdný
                  vpravo (jako fixní sloupec + spacer dřív); při nedostatku se hodnota zmenší
-                 první až na MinWidth, teprve pak tlačí na label. Musí sedět s field row níž.
+                 první až na MinWidth, teprve pak tlačí na label. Sloupce 0/1 musí sedět
+                 s field row níž; sloupec 2 je jen hlavičkový (field row má sloupce dva).
                  Padding.Left=16 align s indented field rows pod skupinou. -->
-            <Border Grid.Row="1"
+            <Border Grid.Row="0"
                     Background="{DynamicResource EDTheme.Accent.BlueBg}"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}"
                     BorderThickness="0,0,0,1"
-                    Padding="16,5,2,5">
+                    Padding="16,3,4,3">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="120" SharedSizeGroup="ItemLabel"/>
                         <ColumnDefinition Width="*" MinWidth="120" MaxWidth="320"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="Položka"
                                Foreground="{DynamicResource EDTheme.Text.Header}"
@@ -61,10 +52,23 @@
                                Foreground="{DynamicResource EDTheme.Text.Header}"
                                FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                Margin="2,0,0,0" VerticalAlignment="Center"/>
+
+                    <!-- EDComponentToolbar - sdílená komponenta napříč EDInputForm / EDList /
+                         budoucími tabulkovými komponentami; Flat, protože pruh kreslí Border výš.
+                         Ikona nápovědy otevírá popup zkratek přes HelpCommand (WireToolbarSearch).
+                         Settings vypnutý dokud nemá reálný Command. -->
+                    <edct:EDComponentToolbar Grid.Column="2"
+                                             x:Name="Toolbar"
+                                             Flat="True"
+                                             ShowSearch="True"
+                                             ShowHelp="True"
+                                             ShowSettings="False"
+                                             HorizontalAlignment="Right"
+                                             VerticalAlignment="Center"/>
                 </Grid>
             </Border>
 
-            <ItemsControl Grid.Row="2" x:Name="TheItemsControl"
+            <ItemsControl Grid.Row="1" x:Name="TheItemsControl"
                           ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"
                           d:ItemsSource="{Binding Items, Source={d:DesignInstance designTime:EDInputFormDesignTimeData, IsDesignTimeCreatable=True}}">
             <ItemsControl.ItemsPanel>

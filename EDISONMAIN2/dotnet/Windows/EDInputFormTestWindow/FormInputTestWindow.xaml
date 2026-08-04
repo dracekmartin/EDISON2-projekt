@@ -6,7 +6,7 @@
         xmlns:ed="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
         xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls"
         mc:Ignorable="d"
-        Title="Test InputForm" Height="480" Width="460"
+        Title="Test EDInputForm" Height="480" Width="460"
         WindowStartupLocation="CenterOwner">
     <DockPanel>
         <ToolBar DockPanel.Dock="Top">

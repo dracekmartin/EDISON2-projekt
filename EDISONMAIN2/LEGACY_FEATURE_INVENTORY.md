@@ -32,8 +32,8 @@
 
 **Celkový stav náhrady:** jádro shellu (startup, login, session/ACTIVITY zámek, přepínání firmy,
 spouštění legacy modulů, updater, cooperative logout, mini-app infrastruktura) je **hotové nebo
-funkčně pokryté**. Největší zbývající mezery jsou v **uživatelských UI funkcích** (plocha se
-zástupci, startup formulář, vyhledávání ve stromu, změna hesla) a **admin UI** (správa nastavení,
+funkčně pokryté**. Největší zbývající mezery jsou v **uživatelských UI funkcích** (zástupci
+tisků na ploše, vyhledávání ve stromu, změna hesla) a **admin UI** (správa nastavení,
 práv, uživatelů, úloh) — to je z velké části vědomě delegováno na legacy `USERS.exe` / `frmSetup`
 nebo odloženo post-MVP.
 
@@ -41,7 +41,7 @@ nebo odloženo post-MVP.
 
 1. **Změna hesla** (`frmChangePassword`) — flag `ChangePasswordNeeded` se parsuje, ale dialog ani vynucený-reset cyklus (-108) neexistuje.
 2. **Runtime přepnutí připojení** (`mnuPrgConnect` / multi-connection list) — stub `NotYetImplemented` (S1).
-3. **Plocha se zástupci** (EDDesktop: drag-drop, persist, uspořádat) + **startup formulář** (auto-otevření po loginu).
+3. **Zástupci mimo hlavní nabídku na ploše** (tiskové sestavy, pohledy DS) - model hotový, chybí kanál modul→shell a `CallType=Procedura` (viz `docs/DESKTOP_SHORTCUTS.md`).
 4. **Per-firma barevné schéma** shellu (`RefreshMainformScheme`).
 5. **Mini-app rendering detaily** — ikony řádků (parsují se, nerenderují), číselné formátování buněk, typové třídění, tisk.
 6. **Lokalizační infrastruktura** (feature #4, Open) — dnes bridge na legacy `formEDISONMAINLanguageList`.
@@ -170,16 +170,16 @@ Legacy: `frmMain.vb` (~2948 ř.), `EDDesktop.vb`, `EDDockingPanel.vb`, navigace/
 
 | Feature | Legacy | Co dělá | Stav | Ref |
 |---|---|---|---|---|
-| Oblíbené (přidat/odebrat/strom) | `frmMain.CreateFavouriteItems`/`AddFavouriteItem`/`DeleteFavouriteItem` | Insert/Delete klávesy + context menu; strom oblíbených z nodeID + rodičů + potomků. | 🟡 PLAN „favorites partly done". Sekce Oblíbené v `Tree.cls` chybí; per-user dynamický strom (-1) v shellu neimplementován. | PLAN; modMain |
+| Oblíbené (přidat/odebrat/strom) | `frmMain.CreateFavouriteItems`/`AddFavouriteItem`/`DeleteFavouriteItem` | Insert/Delete klávesy + context menu; strom oblíbených z nodeID + rodičů + potomků. | ✅ ★ v kontextovém menu + toolbaru, záložka Oblíbené (ořezaný strom, i po rodinách). Klíč je `ElementId`, ne legacy `nodeID`; sekce Oblíbené v `Tree.cls` (server) záměrně chybí - staví ji klient. | `ModuleShortcutsService` |
 | Notifikace přidání (blikání) | `frmMain.NotifyFavouriteItemAdded` | Timer problikne ikonu panelu Oblíbené. | ⏭️ Kosmetika. | — |
-| Startup formulář (nastavit/zrušit) | `frmMain.SetStartupForm`/`MarkStartupForm` | Označí uzel jako startovací (ikona), uloží `SetUserDefaultForm`. | ❌ Žádné nastavení startovacího modulu. | modMain `StartupForm` |
-| Auto-otevření startup formuláře | `frmMain.RunStartupForm` | Po loginu otevře uživatelovo domovské okno. | ❌ Chybí. | — |
-| Plocha se zástupci (EDDesktop) | `EDDesktop.vb` | ListView plocha, vlastní OnPaint ikon, `DesktopShortcut` struct. | ❌ EDISONMAIN2 nemá plochu se zástupci. | RESP §6 |
-| Vytvořit/odebrat zástupce | `frmMain.CreateShortcut`/`RemoveShortcut`, `formEDISONMAINShortcutList` | Přidání/odebrání zástupce na plochu (check-list typů). | ❌ Chybí. | — |
-| Drag-drop ze stromu na plochu | `EDDesktop.OnDragDrop` + `tvw_ItemDrag` | Tažení form uzlu → zástupce na pozici dropu; přesun v rámci plochy. | ❌ Chybí. | — |
-| Spuštění/smazání z plochy | `EDDesktop` DoubleClick/Enter/Delete | Double-click → ShowFormDemand; Delete → odebrat. | ❌ Chybí. | — |
-| Uspořádat ikony / snap-to-grid | `frmMain.mnuArrangeIcons`, `EDDesktop.OnSizeChanged` | Context menu „Uspořádat ikony", re-arrange při resize. | ❌ Chybí. | — |
-| Persist zástupců | `frmMain.Load/SaveUserSettings` | Filtruje dle licence+access, obnovuje pozice/výběr. | ❌ Chybí. | modMain `DesktopShortcuts` |
+| Startup formulář (nastavit/zrušit) | `frmMain.SetStartupForm`/`MarkStartupForm` | Označí uzel jako startovací (ikona), uloží `SetUserDefaultForm`. | ✅ Kontextové menu stromu, značka „(výchozí)"; per user × IDFa (feature #25). | `UserProfileService` |
+| Auto-otevření startup formuláře | `frmMain.RunStartupForm` | Po loginu otevře uživatelovo domovské okno. | ✅ `OpenStartupWindowIfAny` z `ContentRendered` (jednou za běh). | `EdisonMainViewModel` |
+| Plocha se zástupci (EDDesktop) | `EDDesktop.vb` | ListView plocha, vlastní OnPaint ikon, `DesktopShortcut` struct. | 🟡 Mini-app „Plocha" (dlaždice v `SlotGridPanel`), ne celookenní plocha. | `DesktopMiniAppView` |
+| Vytvořit/odebrat zástupce | `frmMain.CreateShortcut`/`RemoveShortcut`, `formEDISONMAINShortcutList` | Přidání/odebrání zástupce na plochu (check-list typů). | 🟡 Jen `MenuModule` (★ / DnD). Check-list tisků chybí - chybí kanál modul→shell. | docs/DESKTOP_SHORTCUTS.md |
+| Drag-drop ze stromu na plochu | `EDDesktop.OnDragDrop` + `tvw_ItemDrag` | Tažení form uzlu → zástupce na pozici dropu; přesun v rámci plochy. | ✅ `ModuleDrag.FromTree` / `ReorderTile` + `SlotGridPanel.SlotAt`. | `DesktopMiniAppView.xaml.cs` |
+| Spuštění/smazání z plochy | `EDDesktop` DoubleClick/Enter/Delete | Double-click → ShowFormDemand; Delete → odebrat. | 🟡 Klik spustí, kontextové menu odebere. `CallType=Procedura` (tiskové sestavy) chybí. | docs/DESKTOP_SHORTCUTS.md |
+| Uspořádat ikony / snap-to-grid | `frmMain.mnuArrangeIcons`, `EDDesktop.OnSizeChanged` | Context menu „Uspořádat ikony", re-arrange při resize. | 🟡 Mřížka je responzivní (sloupce dle šířky), „Uspořádat ikony" chybí. | `SlotGridPanel` |
+| Persist zástupců | `frmMain.Load/SaveUserSettings` | Filtruje dle licence+access, obnovuje pozice/výběr. | ✅ Blob `Shortcuts` (per user × IDFa); neznámé položky se drží, nemažou. | `ModulePreferencesService` |
 | WebInfo / news ticker | `EDDesktop.DrawWebInfoData`, `LoadInformation` | „Informace M-line" + „Tipy" (střídání 10 s), odkazy, daňový kalendář, notifikace verze/licence ze síťového `WebInfo.txt`. | ⏭️/🟡 News ticker neportován; částečně nahrazeno DashPanel widgety + S4 INFO label. | PLAN S4 |
 | DashPanel web widgety (info/wiki/školení) | `frmMain.InitializeForm` | 3 webové dashboard panely (m-line podpora) + InfoPanel s licenčním/verzním varováním. | ❌ Web dashboard widgety chybí; varování částečně v status baru. | PLAN #1 |
 
@@ -241,13 +241,13 @@ Legacy: `formEDISONMAINSettingsShow.vb` (~1828 ř.), `formEDISONMAINAccessTree.v
 | → Tab Update konfigurace | `chkUpdateEnabled`/cesty | Server/port/cesty updatu. | 🟡 Klientský updater hotový, konfigurační UI chybí (čte se ze serveru). | PLAN #1 |
 | Editor přístupových práv (ECL) | `formEDISONMAINAccessTree.vb` | Hierarchický editor práv per-formulář (Číst/Zapisovat/Měnit/Úplné řízení, tri-state, kaskáda), export CSV. | ⏭️ **Editor není a není plánován pro MVP** — delegováno na legacy. | RESP §7 |
 | Runtime kontrola práv + filtrace stromu | (ECL aplikované v `BuildTreeXML`) | ECL uživatele filtruje strom. | ✅ `AccessLoader` + `EdisonMainViewModel.IsAllowed`/`TryFilter` (3 vrstvy). | PLAN S8 |
-| Editor uživatele (self-edit) | `formEDISONMAINUserEdit.vb` | Změna hesla, startup form, osobní export dir, certifikáty, seznam zákazníků. | ❌ Není (změna hesla chybí; startup form chybí; certifikáty/zákazníci delegováno). | PLAN #6, #7 |
+| Editor uživatele (self-edit) | `formEDISONMAINUserEdit.vb` | Změna hesla, startup form, osobní export dir, certifikáty, seznam zákazníků. | 🟡 `UserProfileWindow` (EDInputForm) + výchozí okno ze stromu; změna hesla, certifikáty a zákazníci chybí. | `UserProfileWindow` |
 | Feature flagy uživatele (#14-17,22,23,30) | (USERS.exe / Caché) | enabled, časové okno, vynucená změna hesla, hash, login mód, per-user timeout. | ⏭️ Editace přes legacy `USERS.exe`. #30 UI = feature #6 (Open). Server vyhodnocuje při loginu. | PLAN #6, #7 |
 | Licence — seznam/detail | `SettingsShow.LoadLicense`, `formLICENCEINFOMain` | ListView licencí, detaily. | 🟡 `LicenceService` interně, bez UI seznamu. Licenční nástroje čtou legacy XML strom (post-MVP reconnect). | PLAN „dva zdroje" |
 | Licence — přidat/import/refresh | `frmAddLicense.vb`, `RefreshLicense` | Base64 klíč → `Activation.Add` (3DES); refresh z M-line cloudu. | ❌ Import = server-init (legacy); refresh menu akce chybí. | PLAN #5; RESP §13 |
 | Naplánované systémové úlohy | `formEDISONMAINSystemTaskEdit.vb` | Toggle auto úloh (transfer, update, licence, feedback, info) + notif. maily. | ❌ Editor chybí (některé akce řeší updater). Mimo MVP. | RESP §9 |
 | Seznam úloh na pozadí (viewer) | `formEDISONMAINTaskList.vb` | Grid background tasks (refresh/delete/output/notes), Ctrl+Shift+B. | 🟡 Vstup hotový (S6), ale otevírá legacy okno; WPF viewer nepřepsán. | PLAN S6 |
-| Desktop shortcuts (check-list) | `formEDISONMAINShortcutList.vb` | Výběr zástupců na plochu. | ❌ Plocha + oblíbené (-1) mimo MVP. | PLAN S7 |
+| Desktop shortcuts (check-list) | `formEDISONMAINShortcutList.vb` | Výběr zástupců na plochu. | ❌ Picker tisků chybí (varianty v docs/DESKTOP_SHORTCUTS.md); plocha samotná hotová. | docs/DESKTOP_SHORTCUTS.md |
 | Per-firma/aplikace nastavení | `formEDISONMAINSettingsApplication.vb`, `frmIdFaApplicationSettings.vb` | Která aplikace běží v které DB s jakým zdrojem (per firma override). | ⏭️ Server-init, mimo MVP. | RESP §9 |
 | Kick-and-login (admin over-license) | `frmNoMDI` → `formUSERSActivity` | Info seznam aktivních sessions (kick prakticky nefunkční). | 🟡 `LicenceVerifier` spawne legacy `USERS.exe formUSERSActivity`; WPF dialog = feature #8 (Open). | PLAN #8 |
 
@@ -320,31 +320,30 @@ Položky ⏭️ (vědomě neportovat) zde nejsou — viz Executive summary.
 
 1. **Změna hesla** (`frmChangePassword` ekvivalent) — vynucený reset (-108) i dobrovolná změna. Login dnes flag ignoruje. *(§2)*
 2. **Runtime přepnutí připojení + multi-connection list** — S1 stub `NotYetImplemented`. *(§3)*
-3. **Startup formulář** — nastavit „domovský" modul + auto-otevření po loginu. *(§5.3)*
-4. **Mini-app rendering parita** — ikony řádků (parsují se, nerenderují), číselné formátování + pravé zarovnání, typové třídění. *(§6)*
-5. **Per-firma barevné schéma shellu** (`RefreshMainformScheme`). *(§5.4)*
-6. **Lokalizační infrastruktura** (feature #4) — dnes bridge na legacy. *(§8)*
+3. **Mini-app rendering parita** - ikony řádků (parsují se, nerenderují), číselné formátování + pravé zarovnání, typové třídění. *(§6)*
+4. **Per-firma barevné schéma shellu** (`RefreshMainformScheme`). *(§5.4)*
+5. **Lokalizační infrastruktura** (feature #4) - dnes bridge na legacy. *(§8)*
 
 ### Střední hodnota
 
-8. **Plocha se zástupci** (EDDesktop) — drag-drop, persist, uspořádat. Velká featura — ověřit, jestli ji uživatelé reálně používají, nebo stačí strom + oblíbené. *(§5.3)*
-9. **Oblíbené (-1)** — per-user dynamický strom v shellu (PLAN „partly done"). *(§5.3)*
-10. **Persistence navigace** — tree expanded/selected/width per uživatel. *(§5.4)*
-11. **Dialog vs. modeless toggle** (`ShowWindowsAsDialogs`) — má consumera dodat. *(§5.2)*
-12. **Mini-app: licenční gating (element 15) + per-firma re-filtr katalogu**. *(§6)*
-13. **Mini-app: funkční omezení (FO/UseFO)** — klient neposílá → data za všechny. *(§6)*
-14. **Background tasks WPF viewer** (dnes bridge legacy). *(§7)*
-15. **Per-user timeout editor** (feature #6) + admin UI globálního timeoutu. *(§7)*
-16. **Kick-and-login WPF dialog** (feature #8) — dnes spawn legacy `USERS.exe`. *(§7)*
+6. **Zástupci tisků / pohledů DS na ploše** - plocha i model hotové, chybí kanály k legacy modulům (`docs/DESKTOP_SHORTCUTS.md`); „Uspořádat ikony" neportováno. *(§5.3)*
+7. **Oblíbené (-1)** - sekce Oblíbené v `Tree.cls` (server) chybí; shell staví záložku sám z plochy. *(§5.3)*
+8. **Persistence navigace** - tree expanded/selected/width per uživatel. *(§5.4)*
+9. **Dialog vs. modeless toggle** (`ShowWindowsAsDialogs`) - má consumera dodat. *(§5.2)*
+10. **Mini-app: licenční gating (element 15) + per-firma re-filtr katalogu**. *(§6)*
+11. **Mini-app: funkční omezení (FO/UseFO)** - klient neposílá → data za všechny. *(§6)*
+12. **Background tasks WPF viewer** (dnes bridge legacy). *(§7)*
+13. **Per-user timeout editor** (feature #6) + admin UI globálního timeoutu. *(§7)*
+14. **Kick-and-login WPF dialog** (feature #8) - dnes spawn legacy `USERS.exe`. *(§7)*
 
 ### Nízká hodnota / edge
 
-17. **Remember-me s heslem** (AES) — dnes jen jméno+firma. *(§2)*
-18. **ConnectionLost / RestConectionFail / TLevel transaction** UX. *(§4)*
-19. **Refresh stromu po změně nastavení** (`NotifyDataSent` callback). *(§5.2)*
-20. **Splash screen**, **news ticker (WebInfo)**, **changelog viewer** (`frmInformation`/`frmVersionDetails`). *(§1, §9, §11)*
-21. **Type 1 uzel (CSP/web link)** ve stromu. *(§5.2)*
-22. **Reset pozic oken** command. *(§11)*
+15. **Remember-me s heslem** (AES) - dnes jen jméno+firma. *(§2)*
+16. **ConnectionLost / RestConectionFail / TLevel transaction** UX. *(§4)*
+17. **Refresh stromu po změně nastavení** (`NotifyDataSent` callback). *(§5.2)*
+18. **Splash screen**, **news ticker (WebInfo)**, **changelog viewer** (`frmInformation`/`frmVersionDetails`). *(§1, §9, §11)*
+19. **Type 1 uzel (CSP/web link)** ve stromu. *(§5.2)*
+20. **Reset pozic oken** command. *(§11)*
 23. **Login error kódy -10/-11** (prázdné jméno/heslo) mapování. *(§2)*
 
 ### Vědomě delegováno na legacy (ne mezera, ale součást „plné náhrady" až po MVP)

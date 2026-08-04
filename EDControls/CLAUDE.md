@@ -12,9 +12,11 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
 
 ## Nová m-line aplikace
 
-`EDAppearance.Initialize(app)` jednou před prvním oknem — napojí `FontService`
-+ `ThemeService`. Dále merge `EDIcons.xaml` + `EDStrings.xaml` a
-`DispatcherUnhandledException` handler (viz root CLAUDE.md).
+`EDAppearance.Initialize(app)` jednou před prvním oknem (a **až po** `EDServices.Initialize`)
+— napojí `FontService` + `ThemeService` a class handlery na `Window.Loaded`, které rozdají
+panel Podpora a usage telemetrii. Dále merge `EDIcons.xaml` + `EDStrings.xaml`,
+`DispatcherUnhandledException` handler (viz root CLAUDE.md) a `EDServices.FormIdPrefix`,
+ať se okna nové aplikace nemíchají se shellem.
 
 ## Vzhled: EDTheme + EDControlStyles
 
@@ -34,6 +36,13 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
   hostují items přes panel s `IsItemsHost="True"`, takže `ItemsPanel` apod. WPF
   ignoruje) a rozbil by globální propagaci fontu (styly čtou font tokeny
   přes `DynamicResource`).
+- **Klávesový focus nese `FocusVisualStyle` (`EDTheme.FocusVisual`)**, ne triggery — WPF ho kreslí
+  jen po Tab/Alt (`IsKeyboardFocused` svítí i po kliknutí myší). **Každý styl si ho musí nastavit
+  sám**: theme style Aera přebíjí globální override `SystemParameters.FocusVisualStyleKey`
+  (u `TextBox` na null), takže bez setteru zůstane systémový tečkovaný rámeček, v dark neviditelný.
+  Items ve scrollerech `EDTheme.FocusVisual.Inset` (vnější ring přetéká hranu ScrollVieweru);
+  z jiné dictionary `DynamicResource` (odložený `StaticResource` = `UnsetValue`); v popupech
+  adorner nefunguje, cue nesou `IsHighlighted`/`IsSelected`.
 - **Lokální `Style`/`ItemContainerStyle` na themovaném controlu musí mít
   `BasedOn="{StaticResource {x:Type Xxx}}"`** — theming (font, dark mode, template dle
   `Role`) žije v implicitním stylu a explicitní styl ho *nedědí, nahrazuje celý*.
@@ -46,6 +55,8 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
   `.xaml` SDK zahrnuje sám, ruční `<Page>` = duplikát) + `BitmapImage` v `EDIcons.xaml`
   se sémantickým klíčem (`EDIcons.MyName`, ne název souboru).
 - Nový text: `<sys:String x:Key="EDStrings.X">` v `EDStrings.xaml`, bez změny csproj.
+- Výjimka: `EDIcons.MlineLogo` je `DrawingImage` (vektor) s brand barvou zapečenou v geometrii -
+  rastr se v běžné velikosti rozpadá a v dark modu se značka záměrně nepřebarvuje.
 
 ## Root-level infrastruktura (`dotnet/*.cs`)
 
@@ -63,7 +74,9 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
 
 - `EDComponentToolbar/` — sdílený toolbar EDInputForm/EDList (search, export, ...).
   Past: registruje window-level **Ctrl+F** binding v `OnLoaded` a musí ho odregistrovat
-  v `OnUnloaded` — jinak se při re-loadu akumulují kopie.
+  v `OnUnloaded` — jinak se při re-loadu akumulují kopie. `Flat="True"` = vsazení do cizí
+  hlavičky: nekreslí brandový pruh ani padding a barvy textu/hoveru přepne na světlé pozadí
+  (`OnAccent.*` overlaye jsou poloprůhledná bílá, na světlém neviditelné).
 - `EDFilterComboBox/` — logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
   WPF). **Jediné místo pro filtrovaný editovatelný ComboBox - vlastní nepsat**; drží pasti
   pořadí WPF eventů (viz remarks třídy) a invariant „napsaný text = filtr, klidová hodnota

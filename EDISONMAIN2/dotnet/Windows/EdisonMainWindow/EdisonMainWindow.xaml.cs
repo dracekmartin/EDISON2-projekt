@@ -14,7 +14,6 @@ using DataObject = System.Windows.DataObject;
 using Point = System.Windows.Point;
 using DragDrop = System.Windows.DragDrop;
 using DragDropEffects = System.Windows.DragDropEffects;
-using TabControl = System.Windows.Controls.TabControl;
 using TreeView = System.Windows.Controls.TreeView;
 
 namespace EDISONMAIN2
@@ -62,16 +61,28 @@ namespace EDISONMAIN2
             DockManager.Theme = dark ? new Vs2013DarkTheme() : new Vs2013LightTheme();
         }
 
-        // Po prvním vykreslení (WPF analog legacy frmMain_Shown) otevři uživatelův výchozí okno.
-        // ContentRendered fíruje jednou po prvním paintu — strom už je postavený a licenčně filtrovaný.
-        private void OnContentRendered(object? sender, System.EventArgs e)
+        // Po prvním vykreslení (WPF analog legacy frmMain_Shown) načti session state a otevři
+        // uživatelův výchozí okno. ContentRendered fíruje jednou po prvním paintu; okno se tedy
+        // ukáže hned a stromy dorazí pod overlayem. Pořadí je invariant — výchozí okno se hledá
+        // ve stromu, takže init musí dobíhnout první.
+        private async void OnContentRendered(object? sender, System.EventArgs e)
         {
             ContentRendered -= OnContentRendered;
             // Až teď je okno v cílové (maximalizované) velikosti a restore šířky stromu proběhl —
             // od teď smí SizeChanged clamp zasahovat (dřív by přepsal restorovanou šířku).
             _layoutReady = true;
-            if (DataContext is EdisonMainViewModel vm)
-                vm.OpenStartupWindowIfAny();
+            if (DataContext is not EdisonMainViewModel vm) return;
+            try
+            {
+                await vm.InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                // async void z eventu — bez catch by výjimka letěla na DispatcherUnhandledException.
+                vm.PopupDisplayer.Error(ex);
+                return;
+            }
+            vm.OpenStartupWindowIfAny();
         }
 
         // MiniAppManager (ve VM) potřebuje DockingManager z view → host injektneme po načtení okna,
@@ -170,11 +181,9 @@ namespace EDISONMAIN2
         }
 
         // Přepnutí záložky → SelectedModule z výběru nově aktivního stromu (Používané → null),
-        // aby toolbar akce odpovídaly viditelné záložce. Guard filtruje bublající SelectionChanged
-        // z vnitřního ListBoxu (Používané).
+        // aby toolbar akce odpovídaly viditelné záložce.
         private void TreeTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.Source is not TabControl) return;
             if (DataContext is not EdisonMainViewModel vm) return;
             TreeView? tv = TreeTabControl.SelectedIndex switch
             {

@@ -25,6 +25,15 @@ public class UserFontPreference
     /// <summary>Velikost základního UI (Body) v pt. Ostatní velikosti (Small/Caption/Header/Large) se škálují proporcionálně.</summary>
     public double? FontSize { get; set; }
 
+    /// <summary>
+    /// Verze schématu. Chybí = soubor psaný verzí, která pt hodnotu vykreslovala jako px
+    /// (viz <see cref="MigrateLegacy"/>). Novější verze než <see cref="CurrentVersion"/>
+    /// se nechává být — starší build cizí data nepřepisuje, dokud user sám neuloží.
+    /// </summary>
+    public int? Version { get; set; }
+
+    internal const int CurrentVersion = 1;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -54,7 +63,7 @@ public class UserFontPreference
         {
             if (!File.Exists(FilePath)) return;
             var json = File.ReadAllText(FilePath);
-            Current = JsonSerializer.Deserialize<UserFontPreference>(json, JsonOptions) ?? new();
+            Current = MigrateLegacy(JsonSerializer.Deserialize<UserFontPreference>(json, JsonOptions) ?? new());
         }
         catch
         {
@@ -62,8 +71,31 @@ public class UserFontPreference
         }
     }
 
+    /// <summary>
+    /// Zahodí velikost uloženou verzí, která pt hodnotu vykreslovala jako px: uživatelé si ji
+    /// tehdy nastavovali podle výsledku na obrazovce, takže to není jejich zamýšlená velikost
+    /// v pt, ale kompenzace chyby — po opravě by dala nesmysl (menší než default, nebo skok
+    /// o třetinu nahoru). Rodina se drží (chyba se jí netýkala), pokud je na whitelistu;
+    /// symbolový font z původního pickeru se zahodí taky. Běží v paměti při každém načtení,
+    /// dokud uživatel neuloží — startup záměrně nic nezapisuje.
+    /// </summary>
+    internal static UserFontPreference MigrateLegacy(UserFontPreference prefs)
+    {
+        if (prefs.Version >= CurrentVersion) return prefs;
+
+        prefs.FontSize = null;
+        if (!FontCatalog.IsAllowed(prefs.FontFamily)) prefs.FontFamily = null;
+        prefs.FontApplied = prefs.FontApplied && prefs.FontFamily is not null;
+        prefs.Version = CurrentVersion;
+        return prefs;
+    }
+
     public void Save()
     {
+        // Co zapisujeme, je podle definice aspoň aktuální schéma — bez razítka by čerstvě
+        // uloženou velikost při dalším startu zahodila MigrateLegacy. Max drží razítko
+        // novějšího buildu, ať mu tenhle uložení nesrazí soubor na starší verzi.
+        Version = Math.Max(Version ?? 0, CurrentVersion);
         Directory.CreateDirectory(Dir);
         File.WriteAllText(FilePath, JsonSerializer.Serialize(this, JsonOptions));
     }

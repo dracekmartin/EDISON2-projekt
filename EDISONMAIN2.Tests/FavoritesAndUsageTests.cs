@@ -156,82 +156,83 @@ public class FavoritesAndUsageTests
     // ---------- ModulePreferencesService ----------------------------------
 
     [Fact]
-    public void Prefs_LoadFavorites_ParsesList()
+    public async Task Prefs_LoadShortcuts_ParsesList()
     {
         var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "Favorites")
-            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""["100","200"]""")));
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
+                """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A","Slot":3}]""")));
         var svc = new ModulePreferencesService(prefs);
 
-        Assert.Equal(["100", "200"], svc.LoadFavorites());
+        var dto = Assert.Single(await svc.LoadShortcutsAsync());
+        Assert.Equal("MenuModule", dto.Kind);
+        Assert.Equal("100", dto.ElementId);
+        Assert.Equal(3, dto.Slot);
     }
 
     [Fact]
-    public void Prefs_LoadFavorites_NullBlob_ReturnsEmpty()
+    public async Task Prefs_LoadShortcuts_NullBlob_ReturnsEmpty()
     {
         var prefs = Substitute.For<IUserPrefsService>();   // LoadAsync default → Task<null>
         var svc = new ModulePreferencesService(prefs);
 
-        Assert.Empty(svc.LoadFavorites());
+        Assert.Empty(await svc.LoadShortcutsAsync());
     }
 
     [Fact]
-    public void Prefs_LoadFavorites_CorruptBlob_ReturnsEmpty()
+    public async Task Prefs_LoadShortcuts_CorruptBlob_ReturnsEmpty()
     {
         var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "Favorites")
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
             .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""{"not":"a list"}""")));
         var svc = new ModulePreferencesService(prefs);
 
-        Assert.Empty(svc.LoadFavorites());
+        Assert.Empty(await svc.LoadShortcutsAsync());
     }
 
     [Fact]
-    public void Prefs_LoadUsage_ParsesMap()
+    public async Task Prefs_Shortcuts_RoundTripsNonMenuItem_WithReportPayload()
+    {
+        // Zástupce tiskové sestavy (mimo hlavní nabídku) musí přežít uložení i načtení
+        // včetně report payloadu - jinak by ho plocha po restartu neumožnila spustit.
+        JsonNode? written = null;
+        var prefs = Substitute.For<IUserPrefsService>();
+        await prefs.SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Do<JsonNode>(n => written = n));
+        var svc = new ModulePreferencesService(prefs);
+        var report = new ReportPayload("AD", "EkonomickySystem", "1", "S12", "P7", JeVerejny: true);
+
+        await svc.SaveShortcutsAsync([new DesktopShortcutDto(nameof(ShortcutKind.PrintReport), "PrehledSkod",
+            "31001", "Přehled škod", "VOZIDLA2.exe", Slot: 2, Report: report)]);
+
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts").Returns(Task.FromResult(written));
+        var dto = Assert.Single(await svc.LoadShortcutsAsync());
+        Assert.Equal(nameof(ShortcutKind.PrintReport), dto.Kind);
+        Assert.Equal("PrehledSkod", dto.Id);
+        Assert.Equal(2, dto.Slot);
+        Assert.Equal(report, dto.Report);
+    }
+
+    [Fact]
+    public async Task Prefs_LoadUsage_ParsesMap()
     {
         var prefs = Substitute.For<IUserPrefsService>();
         prefs.LoadAsync("EDISONMAIN2", "ModuleUsage")
             .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""{"100":{"Count":5,"LastUsedUtc":"2026-01-01T00:00:00"}}""")));
         var svc = new ModulePreferencesService(prefs);
 
-        var usage = svc.LoadUsage();
+        var usage = await svc.LoadUsageAsync();
         Assert.Equal(5, usage["100"].Count);
     }
 
     [Fact]
-    public async Task Prefs_SaveFavorites_WritesScopedBlob()
+    public async Task Prefs_SaveShortcuts_WritesScopedBlob()
     {
         var prefs = Substitute.For<IUserPrefsService>();
         var svc = new ModulePreferencesService(prefs);
 
-        await svc.SaveFavoritesAsync(["100", "200"]);
+        await svc.SaveShortcutsAsync([new DesktopShortcutDto(nameof(ShortcutKind.MenuModule), "100", "100", "A", Slot: 2)]);
 
-        await prefs.Received().SaveAsync("EDISONMAIN2", "Favorites",
-            Arg.Is<JsonNode>(n => n.ToJsonString() == """["100","200"]"""));
-    }
-
-    [Fact]
-    public void Prefs_LoadFavoriteSlots_ParsesMap()
-    {
-        var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "FavoriteSlots")
-            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""{"100":0,"200":4}""")));
-        var svc = new ModulePreferencesService(prefs);
-
-        var slots = svc.LoadFavoriteSlots();
-        Assert.Equal(0, slots["100"]);
-        Assert.Equal(4, slots["200"]);
-    }
-
-    [Fact]
-    public async Task Prefs_SaveFavoriteSlots_WritesScopedBlob()
-    {
-        var prefs = Substitute.For<IUserPrefsService>();
-        var svc = new ModulePreferencesService(prefs);
-
-        await svc.SaveFavoriteSlotsAsync(new Dictionary<string, int> { ["100"] = 2 });
-
-        await prefs.Received().SaveAsync("EDISONMAIN2", "FavoriteSlots", Arg.Any<JsonNode>());
+        await prefs.Received().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
     }
 
     // ---------- VM integrace: toggle + usage ------------------------------
@@ -250,7 +251,7 @@ public class FavoritesAndUsageTests
 
         Assert.True(module.IsFavorite);
         Assert.Same(module, Assert.Single(vm.FavoritesTree));
-        prefs.Received().SaveAsync("EDISONMAIN2", "Favorites", Arg.Any<JsonNode>());
+        prefs.Received().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
 
         vm.ToggleFavoriteCommand.Execute(module);
 
@@ -274,7 +275,7 @@ public class FavoritesAndUsageTests
         var favFamily = Assert.IsType<ModuleFamily>(Assert.Single(vm.FavoritesTree));
         Assert.Equal(2, favFamily.NestedModules.Count);
         Assert.All(family.NestedModules.OfType<ExecutableModule>(), m => Assert.True(m.IsFavorite));
-        prefs.Received().SaveAsync("EDISONMAIN2", "Favorites", Arg.Any<JsonNode>());
+        prefs.Received().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
 
         vm.ToggleFavoriteCommand.Execute(family);
 
@@ -323,17 +324,57 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
-    public void FavoritesLoadedAtStartup_PrebuildsFavoritesTree()
+    public void ShortcutsLoadedAtStartup_PrebuildsFavoritesTree()
     {
         var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "Favorites")
-            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""["100"]""")));
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
+                """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"App"}]""")));
         var vm = CreateVM(prefs, tree: [Exe("100", "App"), Exe("200", "Other")]);
 
         var fav = Assert.IsType<ExecutableModule>(Assert.Single(vm.FavoritesTree));
         Assert.Equal("100", fav.ElementId);
         Assert.False(vm.HasNoFavorites);
         Assert.Equal(3, vm.SelectedTreeTabIndex);   // bez uložené volby výchozí Oblíbené (3) když nějaké jsou
+    }
+
+    [Fact]
+    public void NonMenuShortcut_NotInFavoritesTree_ButSurvivesFavoriteToggle()
+    {
+        // Tisková sestava na ploše není položkou hlavní nabídky → do záložky Oblíbené nepatří,
+        // ale změna oblíbených ji nesmí z uloženého blobu vyhodit.
+        JsonNode? written = null;
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
+                """[{"Kind":"PrintReport","Id":"PrehledSkod","ElementId":"31001","Name":"Přehled škod"}]""")));
+        prefs.SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Do<JsonNode>(n => written = n));
+        var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
+
+        Assert.Empty(vm.FavoritesTree);
+
+        vm.ToggleFavoriteCommand.Execute(vm.MainMenuTree.OfType<ExecutableModule>().Single());
+
+        Assert.Contains("PrehledSkod", written!.ToJsonString());
+        Assert.Contains("\"100\"", written.ToJsonString());
+    }
+
+    [Fact]
+    public void ShortcutForModuleMissingFromTree_SurvivesFavoriteToggle()
+    {
+        // Modul, který strom aktuálně nezná (odebraná licence) - po toggle jiného modulu
+        // musí zůstat v uloženém blobu, jinak by o zástupce uživatel tiše přišel.
+        JsonNode? written = null;
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
+                """[{"Kind":"MenuModule","Id":"999","ElementId":"999","Name":"Nelicencovaný"}]""")));
+        prefs.SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Do<JsonNode>(n => written = n));
+        var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
+
+        vm.ToggleFavoriteCommand.Execute(vm.MainMenuTree.OfType<ExecutableModule>().Single());
+
+        Assert.Contains("\"999\"", written!.ToJsonString());
     }
 
     [Fact]
@@ -356,6 +397,43 @@ public class FavoritesAndUsageTests
         vm.SelectedTreeTabIndex = 4;
 
         prefs.Received().SaveAsync("EDISONMAIN2", "SelectedTab", Arg.Any<JsonNode>());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void SelectedTab_ActivatesExactlyOneContent(int tab)
+    {
+        // Obsah záložek nejsou Contenty TabItemů, ale sourozenci přepínaní těmito viditelnostmi —
+        // dvě aktivní najednou by se v kartě překryly.
+        var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
+
+        vm.SelectedTreeTabIndex = tab;
+
+        bool[] active =
+        [
+            vm.IsMainMenuTabActive, vm.IsSystemAdminTabActive, vm.IsPartnerSolutionsTabActive,
+            vm.IsFavoritesTabActive, vm.IsUsedModulesTabActive,
+        ];
+        Assert.Equal(tab, Array.IndexOf(active, true));
+        Assert.Single(active, a => a);
+    }
+
+    [Fact]
+    public void SelectedTab_Change_NotifiesContentVisibilities()
+    {
+        var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
+        vm.SelectedTreeTabIndex = 0;
+        List<string?> raised = [];
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        vm.SelectedTreeTabIndex = 2;
+
+        Assert.Contains(nameof(vm.IsMainMenuTabActive), raised);
+        Assert.Contains(nameof(vm.IsPartnerSolutionsTabActive), raised);
     }
 
     // ---------- harness (mirror EdisonMainViewModelTests) -----------------
@@ -381,14 +459,20 @@ public class FavoritesAndUsageTests
         var switcher = new CompanySwitcher(svc, localPrefs, () => { });
 
         EDServices.Initialize(svc);
+        EdisonMainViewModel vm;
         try
         {
-            return new EdisonMainViewModel(Companies, mlRest, treeGetter, initialLicence: null, switcher,
-                () => new(SwitchUserResult.Cancelled, null), localPrefs, () => [], () => { }, MiniAppCatalog.Build([]));
+            vm = new EdisonMainViewModel(Companies, mlRest, treeGetter, initialLicence: null, switcher,
+                () => new(SwitchUserResult.Cancelled, null), localPrefs, () => [], () => { }, MiniAppCatalog.Build([]),
+                restRunner: new InlineRestCallRunner(mlRest));
         }
         finally
         {
             EDServices.Reset();
         }
+        // Session state se plní až v InitializeAsync (v produkci z ContentRendered); s inline
+        // runnerem je load synchronní, takže GetResult tady nemá na co čekat.
+        vm.InitializeAsync().GetAwaiter().GetResult();
+        return vm;
     }
 }

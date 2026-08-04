@@ -52,6 +52,13 @@ public class EDServices(
     public string? AppVersion { get; set; }
 
     /// <summary>
+    /// Prefix form ID (persistence stavu okna, usage telemetrie) — odděluje okna jednotlivých
+    /// m-line aplikací od sebe i od legacy numerických ID z <c>EDISFormEnum</c>. Nastavuje
+    /// composition-root (TemplateDesigner <c>"TD"</c>), default patří shellu.
+    /// </summary>
+    public string FormIdPrefix { get; set; } = "EDISON2";
+
+    /// <summary>
     /// Persistent per-user state (column layouty, hidden položky, ...). Default je
     /// no-op <see cref="NullUserPrefsService"/>; composition-root nastaví
     /// <see cref="CacheUserPrefsService"/> po vytvoření <see cref="MLRest"/>.

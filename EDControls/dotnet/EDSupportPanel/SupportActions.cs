@@ -22,6 +22,9 @@ public static class SupportActions
     /// <summary>Portál uživatelské podpory (helpdesk, wiki).</summary>
     public static readonly string PortalUrl = "https://podpora.m-line.cz";
 
+    /// <summary>Firemní web M-line.</summary>
+    public static readonly string WebUrl = "https://www.m-line.cz";
+
     // Widget feedback API zahazuje context delší než 255 znaků, proto tvrdé zkrácení.
     private const int ContextMaxLength = 255;
 
