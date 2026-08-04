@@ -2708,6 +2708,23 @@ public class TemplateDesignerViewModel : EDViewModel
             suppression, hideAgg, hideNaZnameni, hidePrestupLegend: hidePrestup, hiddenContent: hiddenContent);
     }
 
+    /// <summary>
+    /// Datová pole aktuální agendy pro nabídku „vložit pole" u textových vlastností - skaláry
+    /// i pole kolekcí v jednom seznamu, u kolekce se do popisku připíše, odkud pole je.
+    /// Uživatel hledá název, nepřemýšlí v kategoriích (rozhodnutí Jan 4. 8.).
+    /// </summary>
+    public IReadOnlyList<EDControls.ListItem> PlaceholderFieldItems()
+    {
+        var schema = SchemaProvider.GetSchema(State.CurrentTemplate.AgendaCode ?? "");
+        if (schema is null) return [];
+
+        var items = schema.Fields.Select(f => new EDControls.ListItem(f.FieldName, f.Label ?? f.FieldName));
+        var fromCollections = (schema.FieldCollections ?? []).SelectMany(c =>
+            c.Fields.Select(f => new EDControls.ListItem(f.FieldName, $"{f.Label ?? f.FieldName} ({c.Name})")));
+
+        return [.. items.Concat(fromCollections).DistinctBy(i => i.Key)];
+    }
+
     public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)
     {
         var agendaCode = State.CurrentTemplate.AgendaCode;

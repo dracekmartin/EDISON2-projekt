@@ -1881,6 +1881,8 @@ public partial class MainWindow : Window
 
             if (panelSchema is not null)
             {
+                // Nabídka „vložit pole" - seznam zná jen návrhář (ze schématu agendy), Caché ne.
+                InlineElementForm.PlaceholderFields = _vm.PlaceholderFieldItems();
                 InlineElementForm.ShowElement(selected[0], panelSchema);
                 ShowInlineFormPanel(true);
             }

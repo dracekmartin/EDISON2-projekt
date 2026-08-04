@@ -496,6 +496,43 @@ namespace EDControls.EDInputForm
             field.Value = "";
         }
 
+        /// <summary>
+        /// „Vložit pole" u textového pole s placeholdery: nabídne seznam polí agendy (dodal ho
+        /// klient do <c>ListItems</c>) a vybraný token vloží **na pozici kurzoru** - hodnota bývá
+        /// věta s tokeny uvnitř („Linka {CISLO_LINKY}: {POPIS_LINKY}"), ne jen samotný token,
+        /// takže nahradit celou hodnotu by nestačilo.
+        /// </summary>
+        private void PlaceholderField_InsertClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.Button btn || btn.DataContext is not Field field) return;
+            if (!field.Editable || field.ListItems.Count == 0) return;
+
+            var token = PlaceholderPicker.Pick(btn, field.ListItems);
+            if (token is null) return;
+
+            // Kurzor drží TextBox vlevo od tlačítka; bez něj (nemá fokus) se vkládá na konec.
+            var box = FindTextBox(btn);
+            string current = field.Value ?? "";
+            int caret = box?.CaretIndex ?? current.Length;
+            caret = Math.Clamp(caret, 0, current.Length);
+
+            field.Value = current.Insert(caret, token);
+            if (box is not null)
+            {
+                box.Text = field.Value;           // binding je na LostFocus, ať se to projeví hned
+                box.CaretIndex = caret + token.Length;
+                box.Focus();
+            }
+        }
+
+        private static System.Windows.Controls.TextBox? FindTextBox(DependencyObject from)
+        {
+            if (VisualTreeHelper.GetParent(from) is not { } parent) return null;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+                if (VisualTreeHelper.GetChild(parent, i) is System.Windows.Controls.TextBox tb) return tb;
+            return null;
+        }
+
         private void FileField_BrowseClick(object sender, RoutedEventArgs e)
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;

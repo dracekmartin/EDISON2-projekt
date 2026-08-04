@@ -62,6 +62,16 @@ namespace EDControls.EDInputForm
         /// nebo speciální <c>"$FOLDER"</c> pro výběr složky. Prázdné = všechny soubory.
         /// Ignoruje se pro ostatní typy.
         /// </summary>
+        /// <summary>
+        /// Textové pole, do kterého patří datové placeholdery <c>{POLE}</c> - vedle něj se ukáže
+        /// „vložit pole". Nastavuje server v <c>.cls</c> (ví, kam placeholdery patří), **seznam
+        /// polí ale dodává klient** do <see cref="ListItems"/>, protože Caché agendu nezná.
+        /// </summary>
+        public bool Placeholders { get; set; } = false;
+
+        public WpfVisibility PlaceholderPickerVisibility =>
+            Placeholders && ListItems.Count > 0 ? WpfVisibility.Visible : WpfVisibility.Collapsed;
+
         public string FileFilter { get; set; } = "";
 
         /// <summary>

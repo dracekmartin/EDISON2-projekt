@@ -27,7 +27,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Text" ────────────────────────────────────────────────
         d form.AddGroup("text", "Text")
-        d form.AddText("Text", "Obsah")
+        // Placeholdery {POLE}: příznak říká, že sem patří datová pole - jejich SEZNAM dodá klient
+        // (Caché agendu šablony nezná). Vedle pole se pak ukáže „vložit pole".
+        s f = form.AddText("Text", "Obsah")
+        s f.placeholders = 1
         d form.AddBool("WordWrap", "Zalamovat řádky", 1)
 
         // ── Skupina "Font" ────────────────────────────────────────────────

@@ -37,6 +37,10 @@ Property format As %String;
 /// Jednotka jako suffix za polem (např. "mm", "pt"), jen vizuální. Prázdné = bez jednotky.
 Property unit As %String;
 
+/// Textové pole přijímá datové placeholdery {POLE} - klient u něj ukáže „vložit pole".
+/// SEZNAM polí server neposílá (nezná agendu šablony), plní ho klient do listItems.
+Property placeholders As %Boolean [ InitialExpression = 0 ];
+
 Method AddListItem(key As %String, label As %String)
 {
 	d ..listItems.Insert($lb(key, label))
@@ -59,7 +63,7 @@ Method Serialize() As %List
 			s listStr = listStr _ key _ $$$ListKeyValSep _ label
 		}
 	}
-	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable,..visibility,..helpText,listStr,..fileFilter,..min,..max,..format,..unit)
+	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable,..visibility,..helpText,listStr,..fileFilter,..min,..max,..format,..unit,..placeholders)
 }
 
 }

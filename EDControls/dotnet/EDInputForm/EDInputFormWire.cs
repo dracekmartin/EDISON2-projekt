@@ -42,7 +42,8 @@ internal static class EDInputFormWire
                     f.Min?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
                     f.Max?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
                     f.Format ?? "",
-                    f.Unit ?? ""),
+                    f.Unit ?? "",
+                    f.Placeholders ? "1" : "0"),
                 _ => new CList()
             };
             cVar[i.ToString()] = entry;
@@ -89,8 +90,10 @@ internal static class EDInputFormWire
                     HelpText         = row.Length >= 12 && row.GetString(12) != "" ? row.GetString(12) : null,
                     ParentGroup      = currentGroup,
                 };
-                // List + ComboBox sdílejí listItems storage v pozici 13
-                if ((field.FieldType == EFieldType.List || field.FieldType == EFieldType.ComboBox)
+                // List + ComboBox sdílejí listItems storage v pozici 13; u textového pole s
+                // placeholdery se v témž slotu vezou nabízené tokeny (plní je klient, ne server).
+                if ((field.FieldType == EFieldType.List || field.FieldType == EFieldType.ComboBox
+                     || field.FieldType == EFieldType.Text)
                     && row.Length >= 13)
                     field.ListItems = ParseListItems(row.GetString(13));
                 if (field.FieldType == EFieldType.File && row.Length >= 14)
@@ -108,6 +111,9 @@ internal static class EDInputFormWire
                     field.Format = row.GetString(17);
                 if (row.Length >= 18 && row.GetString(18) != "")
                     field.Unit = row.GetString(18);
+                // Pozice 19: pole přijímá {POLE} placeholdery. Aditivní - starší server ji neposílá.
+                if (row.Length >= 19)
+                    field.Placeholders = row.GetString(19) == "1";
                 items.Add(field);
             }
         }
