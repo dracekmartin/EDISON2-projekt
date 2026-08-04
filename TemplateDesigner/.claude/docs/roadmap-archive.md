@@ -46,10 +46,19 @@ tabulku `C5`–`C7` nechat). Odebráno:
 k témuž bloku** (ukazatel postupu, „prerekvizity", detailní tabulka). Proto je z toho pravidlo 3
 v návodu: jedna práce = jeden záznam, priorita se řídí vlnami. `B13` byl v dokumentu 6×, `B10` 5×.
 
-**Nezměněno, jen zaznamenáno:** v sekci „Čeká na někoho jiného" visí dvě položky, které čekají
-na **Jana**, ne na kolegy - nastavit linku se dvěma barvami a projít ji očima (#12997), a doplnit
-do #13102 větu, že jejich struktura musí nést čas u každé přidané zastávky. Přesun by byl
-restrukturalizace, ne úklid.
+**Druhé kolo téhož dne - zákaznická fronta vyprázdněna** (rozhodnutí Jan): revize odhalila, že
+v sekci „Čeká na někoho jiného" visí položky, které už nečekají na nikoho. Odebráno **#12997**
+(druhá barva linky - hotové), **#13091a** + **#13091 bod 4** (zóny, vzhled seznamu zastávek -
+hotové) a **#13102** (virtuální prodloužení spoje - není u nás). V sekci zůstaly jen `TR2`
+(čeká SK ověření kódování na-znamení u kolegy) a `TR8` (park, blokuje potvrzení TRANSDEV) - tedy
+opravdu jen věci na někom jiném.
+
+**Poučení:** sekce „čeká na někoho jiného" je nejtišší místo, kde plán hnije - položka se tam dá
+odložit a nikdo ji už nikdy neproklepne, protože „to není naše práce". Stálo to za jeden dotaz
+a čtyři z šesti položek zmizely.
+
+#13102 zůstává zaevidované na dvou správných místech: v seznamu „mimo návrhář" (je u Petra) a jako
+křížový odkaz v `B37`, kde vysvětluje, proč `B37` **není** na #13102 blokovaná.
 
 ## 2026-08-04 ✅ - `B47` drift test allowlistu serverových parametrů + `B51` plnění seznamu
 

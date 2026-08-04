@@ -172,26 +172,6 @@ při scope té fáze, ne teď.
 ### Čeká na někoho jiného - postrčit, není to práce
 
 - **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení - kolega
-- **#13091a `B30` + #12997 `B31` implementováno 31. 7.** - čeká, až to KOVED uvidí ve své vývěsce
-  (vzhled seznamu zastávek, barva linky z dat u sloupců)
-- **#13091 bod 4 (zóny) `B34` doportováno 31. 7.** - čekají tři odpovědi od KOVED, bez nich to nemá
-  smysl dál posouvat: (1) má mít zastávka přednost i tam, kde trasa zónu má? (starý modul dává
-  přednost trase - přehození by nás rozešlo s JDF a exporty) · (2) mají u linky zapnuté „Zóny - tisk
-  a export do JDF bez písmen"? (bez toho písmeno zůstane) · (3) číslo linky a zastávky, kde to vidí
-  špatně - ověří, že jejich kód zóny je „číslo + písmeno", ne jiný identifikátor
-- **#12997 druhá barva linky dodělaná 3. 8.** - Petr téhož dne rozšířil JŘ na víc barev na linku,
-  my přidali pole `BARVA_LINKY_2`. ⚠️ Čeká jediné: **nikde není linka se dvěma barvami**, takže to
-  chce nastavit v JŘ (Hromadné úpravy vlastností linky) a projít očima; pak už je co odpovědět
-  zákazníkovi (Petr o odpověď výslovně žádal, viz #12997)
-- **#13102 virtuální prodloužení spoje** (Petr) - **není to náš bod 3** (ten je celý u nás, viz `B37`).
-  Tady je přínos „ubude varianta ve sloupcích minut" a zadává se ručně u spoje. ⚠️ **Zadarmo to
-  nedostaneme a je to dané jejich vlastním zadáním:** kdyby prodloužení šlo do trasy spoje
-  (`^JRL(...,"W",…)`), dopočítá se u nás všechno samo (`ObsluhovanePoradi` to čte za běhu). Ale #13102
-  chce prodloužení **virtuální, jen pro vývěsku, bez úniku do jiných výstupů**, takže do trasy zapsat
-  NESMÍ (čtou ji exporty JDF/CIS) → poloviny jsou dvě: oni zadávání + úložiště, my přečtení a přiložení
-  k trase. **Naše polovina je malá, pokud se dopředu dohodne, kam to zapíšou** - a jejich struktura musí
-  nést **čas u každé přidané zastávky** (bez času nejde odjezd nikam postavit). To je věta, která patří
-  do #13102 **teď**, ne až po implementaci. Na vývěsce by pak stačil jeden parametr sestavy.
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
   jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
   (který sloupec - legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
