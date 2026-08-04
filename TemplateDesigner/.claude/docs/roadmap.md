@@ -42,7 +42,18 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B37** | **#13093 bod 3 - poznámka „pokračuje do…" u odjezdu** (4. 8.: **není zablokované, je to celé u nás**). Klient chce seskupit odjezdy se stejným pokračováním do stejného cíle po stejné lince pod jedno písmeno a vysvětlivku („u1 - pokračuje do zast. Uherské Hradiště, žel. st. (l. 304)"), plus přepínač zobrazení. **Data máme:** uzel `32`, payload `m@33#linka:spoj:zastávka:…`; legacy to popisuje jako „spoj pokračuje po lince, spoji do zastávky" (`JRapiNZUtl2` ř.539), takže **ta zastávka je cíl**, ne přestupní bod. **Značka je „u"** (`JRapiLinPrtWin` ř.1561) - zákazníkovo „u1" opisuje starý modul. ⚠️ **Filtrovat typ vztahu:** je to rodina *vyčká / navazuje / pokračuje* (`JRapiLinPrtWin` ř.293; v JŘ druh poznámky `PoznamkyDruhVyckaNavazujePokracuje` s tiskem A4/A5), takže z 10 578 spojů s tím uzlem se smí označit jen „pokračuje" - jinak dostane značku i spoj, který jen čeká na návaznost. Přepínač patří do bloku poznámek (jako ostatní obsah). **Vztah k #13102** (virtuální prodloužení u Petra): jiná featura nad stejným jevem - tam je přínos „ubude varianta ve sloupcích minut" a zadává se ručně, tady je poznámka **automatická** z existujících dat. Nečeká jedno na druhé; u spojů, kde jednou prodloužení zadají, bude naše poznámka nadbytečná (detail zobrazení, ne blokátor). | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
+| **B37** | **#13093 bod 3 - poznámka „pokračuje do…" u odjezdu** (4. 8.: **není zablokované, je to celé u nás**). Klient chce seskupit odjezdy se stejným pokračováním do stejného cíle po stejné lince pod jedno písmeno a vysvětlivku („u1 - pokračuje do zast. Uherské Hradiště, žel. st. (l. 304)"), plus přepínač zobrazení. **Data máme:** uzel `32`, payload `m@33#linka:spoj:zastávka:…`; legacy to popisuje jako „spoj pokračuje po lince, spoji do zastávky" (`JRapiNZUtl2` ř.539), takže **ta zastávka je cíl**, ne přestupní bod. **Značka je „u"** (`JRapiLinPrtWin` ř.1561) - zákazníkovo „u1" opisuje starý modul. ⚠️ **Filtrovat typ vztahu:** je to rodina *vyčká / navazuje / pokračuje* (`JRapiLinPrtWin` ř.293; v JŘ druh poznámky `PoznamkyDruhVyckaNavazujePokracuje` s tiskem A4/A5), takže z 10 578 spojů s tím uzlem se smí označit jen „pokračuje" - jinak dostane značku i spoj, který jen čeká na návaznost. Přepínač patří do bloku poznámek (jako ostatní obsah). **Datová mapa (změřeno 4. 8. na 3 000 linkách KOVED):** `m@<n>` je **index záznamu, ne typ vztahu** -
+to byl můj chybný předpoklad. Vztahy leží ve dvou uzlech s **různým layoutem**:
+· uzel **31** (26 226 záznamů) = `m@i#<typ>#A:linka:spoj:2:zastávka:čas::dopravce:<typ>:cíl:::` - nese
+**dvě** zastávky (přípoj + jeho cíl), hodně záznamů na spoj → odpovídá *navazuje / vyčká*;
+· uzel **32** (1 930 v tomtéž rozsahu) = `m@i#linka:spoj:zastávka:2::A::čas:::dopravce` - **jedna**
+zastávka, řídké → odpovídá legacy popisu *„spoj pokracuje po lince, spoji do zastavky"*
+(`JRapiNZUtl2` ř.539), takže **ta zastávka je cíl**. U vlaku je layout `…:V:` a místo spoje číslo vlaku.
+⚠️ **Zbývá potvrdit jediné:** že uzel 32 nese **výhradně** „pokračuje" (legacy má tři sekce - vyčká 322,
+navazuje 482, pokračuje 539 - a kandidátem na třetí je uzel **34**, 6 105 záznamů). Ověřit na jejich
+příkladu linky 304, ať značku nedostane spoj, který jen čeká na návaznost.
+
+**Vztah k #13102** (virtuální prodloužení u Petra): jiná featura nad stejným jevem - tam je přínos „ubude varianta ve sloupcích minut" a zadává se ručně, tady je poznámka **automatická** z existujících dat. Nečeká jedno na druhé; u spojů, kde jednou prodloužení zadají, bude naše poznámka nadbytečná (detail zobrazení, ne blokátor). | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
 
 **Otázka na KOVED - odeslaná 3. 8. v odpovědi na #13048, nic neblokuje:** je u nich označník ještě
 k něčemu? Kdyby ne, mohl by přepínač „Číslo stanoviště podle" zmizet a zůstat jen sloupek - ale je to

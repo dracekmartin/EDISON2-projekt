@@ -6,6 +6,60 @@ Include (%occInclude, GENERAL)
 Class ALVA.TemplateDesigner.Tests.AdSloupekProbe
 {
 
+/// Jaké vztahy mezi spoji data nesou (#13093 bod 3). Legacy zná rodinu vyčká / navazuje / pokračuje
+/// a označit se smí jen „pokračuje", jinak dostane značku i spoj, který jen čeká na návaznost.
+/// IN: DB, MAXLIN. OUT: pro každý numerický subnode spoje počet + ukázky payloadu (prefix `m@<id>#`).
+ClassMethod ScanVztahySpoju(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 400
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0
+		kill pocty, ukazky
+		set sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				for sm = "T", "Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,sm,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set uzel = ""
+						for {
+							set uzel = $order(^[db]JRL(sku,lin,sm,sp,uzel)) quit:uzel=""
+							continue:'$isvalidnum(uzel)
+							set val = $get(^[db]JRL(sku,lin,sm,sp,uzel))
+							set prefix = $piece(val, "#", 1)
+							set klic = uzel _ " / " _ prefix
+							set pocty(klic) = $get(pocty(klic)) + 1
+							if '$data(ukazky(klic)) set ukazky(klic) = "lin=" _ lin _ " sp=" _ sp _ ": " _ $extract(val, 1, 110)
+						}
+					}
+				}
+			}
+		}
+		set klic = "", n = 0
+		for {
+			set klic = $order(pocty(klic)) quit:klic=""
+			set n = n + 1
+			set ^||ML("OUT","VZTAH",n) = "[uzel/prefix " _ klic _ "] x" _ pocty(klic) _ " -- " _ $get(ukazky(klic))
+		}
+		set ^||ML("OUT","SOUHRN") = db _ " linek=" _ linek _ " ruznych vztahu=" _ n
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Fulltext přes zdrojáky legacy rutin. IN: PREFIX (např. "JRapi"), PATTERN (case-insensitive),
 /// MAX (default 60). OUT: "<rutina>:<řádek> = <text>".
 ClassMethod GrepRoutines(ByRef sys As %String) As %Status
