@@ -34,6 +34,13 @@ build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumen
   hostují items přes panel s `IsItemsHost="True"`, takže `ItemsPanel` apod. WPF
   ignoruje) a rozbil by globální propagaci fontu (styly čtou font tokeny
   přes `DynamicResource`).
+- **Klávesový focus nese `FocusVisualStyle` (`EDTheme.FocusVisual`)**, ne triggery — WPF ho kreslí
+  jen po Tab/Alt (`IsKeyboardFocused` svítí i po kliknutí myší). **Každý styl si ho musí nastavit
+  sám**: theme style Aera přebíjí globální override `SystemParameters.FocusVisualStyleKey`
+  (u `TextBox` na null), takže bez setteru zůstane systémový tečkovaný rámeček, v dark neviditelný.
+  Items ve scrollerech `EDTheme.FocusVisual.Inset` (vnější ring přetéká hranu ScrollVieweru);
+  z jiné dictionary `DynamicResource` (odložený `StaticResource` = `UnsetValue`); v popupech
+  adorner nefunguje, cue nesou `IsHighlighted`/`IsSelected`.
 - **Lokální `Style`/`ItemContainerStyle` na themovaném controlu musí mít
   `BasedOn="{StaticResource {x:Type Xxx}}"`** — theming (font, dark mode, template dle
   `Role`) žije v implicitním stylu a explicitní styl ho *nedědí, nahrazuje celý*.

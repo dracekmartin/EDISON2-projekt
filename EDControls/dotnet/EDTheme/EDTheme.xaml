@@ -141,6 +141,20 @@
     <SolidColorBrush x:Key="EDTheme.Accent.Header" Color="{StaticResource EDTheme.Accent.Header.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         COLORS — Focus (klávesový focus ring, EDTheme.FocusVisual)
+         Vlastní tokeny, ne Accent.Blue: ring potřebuje v dark vyšší jasnost než accent
+         a Accent.Blue už nese selekci, takže by se ladění obou pralo.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="EDTheme.Focus.Ring.Color">#FF2563EB</Color>
+    <SolidColorBrush x:Key="EDTheme.Focus.Ring" Color="{StaticResource EDTheme.Focus.Ring.Color}"/>
+
+    <!-- Kontrastní halo pod ringem — bez něj ring zmizí na brandovém pruhu
+         EDTheme.Accent.Header (#0D47A1, v dark se nepřepisuje), kde sedí tlačítka
+         EDComponentToolbaru. Dvoubarevný ring je vidět na libovolném pozadí. -->
+    <Color x:Key="EDTheme.Focus.RingContrast.Color">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="EDTheme.Focus.RingContrast" Color="{StaticResource EDTheme.Focus.RingContrast.Color}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          COLORS — Accent: Green (agenda status, success)
          ═══════════════════════════════════════════════════════════════════ -->
     <!-- Agenda chip text (tmavě zelená pro kontrast) -->

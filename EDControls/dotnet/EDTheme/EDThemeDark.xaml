@@ -73,6 +73,13 @@
     <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FF3A5F86</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
 
+    <!-- Focus — ring jasnější než Accent.Blue (1,5px linka v accent odstínu je na
+         Bg.Surface slabá), halo tmavé, aby ring vystoupil i na světlém brandovém pruhu. -->
+    <Color x:Key="EDTheme.Focus.Ring.Color">#FF7CC4FF</Color>
+    <SolidColorBrush x:Key="EDTheme.Focus.Ring" Color="{StaticResource EDTheme.Focus.Ring.Color}"/>
+    <Color x:Key="EDTheme.Focus.RingContrast.Color">#FF141414</Color>
+    <SolidColorBrush x:Key="EDTheme.Focus.RingContrast" Color="{StaticResource EDTheme.Focus.RingContrast.Color}"/>
+
     <!-- Accent: Green -->
     <Color x:Key="EDTheme.Accent.GreenDark.Color">#FF9BD6A3</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.GreenDark" Color="{StaticResource EDTheme.Accent.GreenDark.Color}"/>
