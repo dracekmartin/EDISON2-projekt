@@ -59,6 +59,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Odjezdy - specifické (anotace = horní indexy/značky u minut) ──
         d form.AddGroup("departure", "Odjezdy - specifické")
         d form.AddBool("ShowAnotace", "Zobrazit anotace", 1)
+        s fKola = form.AddBool("ShowZnackaKola", "Značka přepravy kol", 0)
+        s fKola.helpText = "U spojů, které přepravují jízdní kola, se za časem odjezdu vytiskne symbol kola a do legendy přijde vysvětlivka. Dřív parametr sestavy."
+        d form.AddBool("ShowZnackaMistenky", "Značka místenky", 0)
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ")
 

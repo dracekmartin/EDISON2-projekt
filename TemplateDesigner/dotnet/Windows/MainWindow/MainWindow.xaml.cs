@@ -992,13 +992,6 @@ public partial class MainWindow : Window
             var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
             buildRealData = paramValues =>
             {
-                // Merge parametrů do každého DataContextu - C# rendering je potřebuje
-                // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
-                var stringParams = paramValues
-                    .Where(kv => kv.Value is not null)
-                    .ToDictionary(kv => kv.Key, kv => (object?)kv.Value!.ToString(),
-                        StringComparer.OrdinalIgnoreCase);
-
                 List<DataContext>? pages;
 
                 // Pokud má uživatel aktivní instance (vybrané přes Instance Picker), iteruj je
@@ -1009,8 +1002,8 @@ public partial class MainWindow : Window
                     var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
                     foreach (var inst in _vm.ActiveInstances)
                     {
-                        var p = new Dictionary<string, object?>(paramValues) { [paramName] = inst.Value };
-                        var instPages = provider.GetData(agendaCode, p);
+                        var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
+                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId));
                         if (instPages is null) continue;
                         all.AddRange(instPages);
                     }
@@ -1025,17 +1018,18 @@ public partial class MainWindow : Window
                 }
 
                 if (pages is null) return null;
-                if (stringParams.Count > 0)
-                    pages = pages.Select(p => p.WithExtraValues(stringParams)).ToList();
+                // Merge parametrů do každého DataContextu - C# rendering je potřebuje
+                // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
+                pages = TemplateDesignerViewModel.MergeParamsIntoPages(pages, paramValues).ToList();
 
                 return TemplateDesigner.Models.NoteVisibilityFilter.Apply(
                     pages,
                     TemplateDesigner.Models.NoteVisibilityFilter.ParseMode(
                         paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamName)),
-                    TemplateDesigner.Models.NoteVisibilityFilter.ParseBool(
-                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamAggBezbarier)),
+                    false,
                     TemplateDesigner.Models.NoteVisibilityFilter.ShouldHideNaZnameniLegend(_vm.State.CurrentTemplate),
-                    hidePrestupLegend: TemplateDesigner.Models.NoteVisibilityFilter.ShouldHidePrestupLegend(_vm.State.CurrentTemplate));
+                    hidePrestupLegend: TemplateDesigner.Models.NoteVisibilityFilter.ShouldHidePrestupLegend(_vm.State.CurrentTemplate),
+                    hiddenContent: TemplateDesigner.Models.NoteVisibilityFilter.HiddenContentCategories(_vm.State.CurrentTemplate));
             };
         }
 

@@ -75,10 +75,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Poznámky linky, které začínají ""Výluka"", lze mít v samostatném bloku: v jednom bloku zvolte Bez výluk a ve druhém Jen výluky. Vyžaduje zapnutý parametr sestavy Poznámky zadané u linky."
         // Kategorie poznámek zadaných u linky - klient je chce rozložit do víc bloků, protože mají jiné
         // rozložení sloupců než seznam značek (dlouhé odstavce vs. „značka + text").
-        s f = form.AddBool("ShowPoznamkyLinkyTarifni", "Poznámky linky - tarifní", 1)
+        s f = form.AddBool("ShowPoznamkyLinkyTarifni", "Poznámky linky - tarifní", 0)
         s f.helpText = "Které poznámky zadané u linky blok bere. Vypnutím se schová jen tato kategorie - volba Textové poznámky výše vypne i ruční komentáře a rozdíly tras. Vyžaduje zapnutý parametr sestavy Poznámky zadané u linky."
-        d form.AddBool("ShowPoznamkyLinkyVseobecne", "Poznámky linky - všeobecné", 1)
-        d form.AddBool("ShowPoznamkyLinkyRadiobus", "Poznámky linky - radiobus", 1)
+        d form.AddBool("ShowPoznamkyLinkyVseobecne", "Poznámky linky - všeobecné", 0)
+        d form.AddBool("ShowPoznamkyLinkyRadiobus", "Poznámky linky - radiobus", 0)
+        s fBez = form.AddBool("ShowSouhrnBezbarier", "Souhrn bezbariérových spojů", 1)
+        s fBez.helpText = "Souhrnná vysvětlivka ""všechny spoje mají bezbariérově přístupné vozidlo"" místo značky u každého odjezdu. Dřív parametr sestavy."
 
         // ── Skupina "Negativní značky" ────────────────────────────────────
         d form.AddGroup("nz", "Negativní značky")

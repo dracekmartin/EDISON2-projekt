@@ -18,14 +18,17 @@ public class NotesLegendVylukyTests
         new() { Typ = TypPoznamky.SpecialniZnak, Znak = "x", Text = "na znamení", Kategorie = "atribut-zastavky" },
     ];
 
+    /// <summary>Výluky jsou všeobecné poznámky linky, takže se rozdělení mezi bloky testuje s nimi
+    /// zapnutými - vypnutá kategorie by je schovala celé.</summary>
     private static List<string> Texty(VylukyFiltr filtr) =>
-        [.. new NotesLegendElement { Vyluky = filtr }.FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text)];
+        [.. new NotesLegendElement { Vyluky = filtr, ShowPoznamkyLinkyVseobecne = true }
+            .FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text)];
 
-    /// <summary>Výchozí stav = dosavadní chování, jeden blok se vším.</summary>
+    /// <summary>Se zapnutými všeobecnými projdou jak R, tak obě výluky (+ značka).</summary>
     [Fact]
     public void Vcetne_PropustiVse()
     {
-        Assert.Equal(5, Texty(VylukyFiltr.Vcetne).Count);
+        Assert.Equal(4, Texty(VylukyFiltr.Vcetne).Count);
     }
 
     [Fact]
@@ -33,7 +36,7 @@ public class NotesLegendVylukyTests
     {
         var texty = Texty(VylukyFiltr.Bez);
 
-        Assert.Equal(3, texty.Count);
+        Assert.Equal(2, texty.Count);
         Assert.DoesNotContain(texty, t => t.StartsWith("Výluka"));
         Assert.Contains("na znamení", texty);   // ostatní kategorie filtr nesmí sebrat
     }
@@ -44,6 +47,7 @@ public class NotesLegendVylukyTests
         var texty = Texty(VylukyFiltr.Jen);
 
         Assert.Equal(2, texty.Count);
+        Assert.DoesNotContain("na znamení", texty);
         Assert.All(texty, t => Assert.StartsWith("Výluka", t));
     }
 
@@ -54,7 +58,7 @@ public class NotesLegendVylukyTests
     [Fact]
     public void VypnutaKategorieLinky_ZmiziJenOna()
     {
-        var texty = new NotesLegendElement { ShowPoznamkyLinkyTarifni = false }
+        var texty = new NotesLegendElement { ShowPoznamkyLinkyTarifni = false, ShowPoznamkyLinkyVseobecne = true }
             .FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text).ToList();
 
         Assert.DoesNotContain(texty, t => t.StartsWith("Na lince platí"));
@@ -70,9 +74,7 @@ public class NotesLegendVylukyTests
     {
         var jenTarifni = new NotesLegendElement
         {
-            ShowPoznamkyLinkyVseobecne = false,
-            ShowPoznamkyLinkyRadiobus = false,
-            Vyluky = VylukyFiltr.Bez,
+            ShowPoznamkyLinkyTarifni = true,
             ShowSpecialniZnaky = false,
         }.FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text).ToList();
 
@@ -91,20 +93,23 @@ public class NotesLegendVylukyTests
             ShowPoznamkyLinkyRadiobus = false,
         }.FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text).ToList();
 
-        Assert.Contains("na znamení", vse);
-        Assert.Equal(3, vse.Count);   // zůstaly obě výluky + značka, zmizely jen dvě poznámky linky
+        Assert.Equal(["na znamení"], vse);   // značka zůstala, všechny poznámky linky odešly (i výluky)
     }
 
-    /// <summary>Výchozí stav nesmí nic schovat - jinak by se existujícím šablonám změnil vzhled.</summary>
+    /// <summary>Výchozí stav **netiskne** žádnou poznámku linky - server je teď posílá vždy (dřív je
+    /// gatoval parametr sestavy), takže bez tohohle by texty naskočily všem existujícím šablonám.
+    /// Výluky jsou na všeobecných, takže odejdou s nimi.</summary>
     [Fact]
-    public void VychoziStav_NechavaVsechnyKategorieLinky()
+    public void VychoziStav_NetiskneZadnouPoznamkuLinky()
     {
         var e = new NotesLegendElement();
 
-        Assert.True(e.ShowPoznamkyLinkyTarifni);
-        Assert.True(e.ShowPoznamkyLinkyVseobecne);
-        Assert.True(e.ShowPoznamkyLinkyRadiobus);
-        Assert.Equal(5, e.FiltrujPoznamkyProTest(Vzorek()).Count);
+        Assert.False(e.ShowPoznamkyLinkyTarifni);
+        Assert.False(e.ShowPoznamkyLinkyVseobecne);
+        Assert.False(e.ShowPoznamkyLinkyRadiobus);
+
+        var texty = e.FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text).ToList();
+        Assert.Equal(["na znamení"], texty);
     }
 
     /// <summary>MHD kategorie neposílá - prázdná kategorie nesmí spadnout do výluk, jinak by se

@@ -46,7 +46,7 @@ Method TestGold0365001()
 	// Re-baseline 2026-08-03 (#13093 bod 1): + pole VYLUKOVE_TEXTY. **Počty poznámek se nezměnily**,
 	// což je zároveň důkaz, že nový parametr „Poznámky zadané u linky" je defaultně vypnutý a
 	// existujícím šablonám se legenda nerozrostla.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=157 md5=pP+VT9wTIqjsP+HlwE7+Eg==")
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=qf2BwxdVm+5RA2vi/4XP0g==")
 }
 
 Method TestGold0365005()
@@ -61,7 +61,7 @@ Method TestGold0365005()
 	// (pozn 168 → 198, +30 na 38 stránek). Viz vysvětlení u gold 0365001.
 	// Re-baseline 2026-08-03 (#12997): + pole BARVA_LINKY_2 → jen md5.
 	// Re-baseline 2026-08-03 (#13093 bod 1): + VYLUKOVE_TEXTY, počty beze změny (parametr je vypnutý).
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=198 md5=qm9FkM2qlE/mKLndoPTkwQ==")
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=wNdi6Qicx6qa56p5kPKhIA==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

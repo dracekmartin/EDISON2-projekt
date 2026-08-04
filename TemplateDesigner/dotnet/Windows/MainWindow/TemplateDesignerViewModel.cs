@@ -77,6 +77,9 @@ public class TemplateDesignerViewModel : EDViewModel
     /// do pickeru i do GetData (aby se linka fetchla ze správné skupiny).</summary>
     private string? _activeSkupinaId;
 
+    /// <summary>Zvolená skupina linek pro cesty mimo VM (tiskový dialog si staví GetData sám).</summary>
+    public string? ActiveSkupinaId => _activeSkupinaId;
+
     private int _activeInstanceIndex;
     public int ActiveInstanceIndex
     {
@@ -260,13 +263,7 @@ public class TemplateDesignerViewModel : EDViewModel
             StatusText = $"Načítám data: {instance.Display}…";
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
-            var getDataParams = new Dictionary<string, object?>(_previewParams, StringComparer.OrdinalIgnoreCase)
-            {
-                [paramName] = instance.Value
-            };
-            // Skupina linek musí do GetData - u AD je linka klíčovaná (skupina, linka), jinak by se
-            // fetchla z jiné/default skupiny než z které byla vybraná.
-            if (!string.IsNullOrEmpty(_activeSkupinaId)) getDataParams["SKUPINA_LINEK_ID"] = _activeSkupinaId;
+            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId);
             var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
@@ -2492,8 +2489,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
     private static readonly string[] ServerSideParams =
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
-         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE", "POZNAMKY_LINKY",
-         "TISK_MISTENEK", "TISK_KOLA", "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE"];
+         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
+         "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE"];
 
     private string? _lastServerParamsSnapshot;
 
@@ -2615,22 +2612,59 @@ public class TemplateDesignerViewModel : EDViewModel
         var agendaCode      = State.CurrentTemplate.AgendaCode;
         var instances       = _activeInstances.ToList();
         var skupinaId       = _activeSkupinaId;
+        var printParams     = new Dictionary<string, object?>(_previewParams, StringComparer.OrdinalIgnoreCase);
         var realPreviewData = _realPreviewData;   // reference swap-only pole - lokální kopie reference stačí
         var suppression     = CurrentNoteSuppression();
-        var hideAgg         = CurrentHideAggBezbarier();
         var hideNaZnameni   = CurrentHideNaZnameniLegend();
         var hidePrestup     = CurrentHidePrestupLegend();
+        var hiddenContent   = CurrentHiddenContent();
 
         return await Task.Run(() => BuildAllPreviewDataPagesCore(
-            culture, agendaCode, instances, skupinaId, realPreviewData, suppression, hideAgg, hideNaZnameni, hidePrestup, progress));
+            culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent));
+    }
+
+    /// <summary>
+    /// Parametry pro `GetData` jedné instance = parametry sestavy + klíč instance + skupina linek.
+    /// **Jediné místo, kde se tahle mapa staví.** Náhled, export i tisk musí serveru poslat totéž,
+    /// jinak vyjede jiný výstup, než ukazuje náhled - a nikdo si toho nevšimne. Přesně tak vznikly
+    /// dvě vady naráz: export z lišty neposílal parametry sestavy, tisk zapomínal skupinu linek
+    /// (u AD je linka klíčovaná dvojicí skupina+linka, takže se fetchla z default skupiny).
+    /// </summary>
+    internal static Dictionary<string, object?> ComposeGetDataParams(
+        IReadOnlyDictionary<string, object?> printParams, string instanceParamName,
+        string instanceValue, string? skupinaId)
+    {
+        var p = new Dictionary<string, object?>(printParams, StringComparer.OrdinalIgnoreCase)
+        {
+            [instanceParamName] = instanceValue   // instance přebíjí případný klíč linky z parametrů
+        };
+        if (!string.IsNullOrEmpty(skupinaId)) p["SKUPINA_LINEK_ID"] = skupinaId;
+        return p;
+    }
+
+    /// <summary>
+    /// Přimíchá hodnoty parametrů sestavy do každé stránky - část parametrů vyhodnocuje až C#
+    /// renderování a čte je z dat (`HODINY_OD`, `CASOVA_OSA`, `TISK_PROJETYCH_ZAST`…). Musí to udělat
+    /// **každá** cesta, která staví stránky pro render, jinak se nakreslí něco jiného než v náhledu.
+    /// </summary>
+    internal static IReadOnlyList<DataContext> MergeParamsIntoPages(
+        IReadOnlyList<DataContext> pages, IReadOnlyDictionary<string, object?> printParams)
+    {
+        var stringParams = printParams
+            .Where(kv => kv.Value is not null)
+            .ToDictionary(kv => kv.Key, kv => (object?)kv.Value!.ToString(), StringComparer.OrdinalIgnoreCase);
+        return stringParams.Count == 0 ? pages : pages.Select(p => p.WithExtraValues(stringParams)).ToList();
     }
 
     private IReadOnlyList<DataContext> BuildAllPreviewDataPagesCore(
         CultureInfo culture, string? agendaCode, List<AgendaInstance> instances, string? skupinaId,
+        IReadOnlyDictionary<string, object?> printParams,
         IReadOnlyList<DataContext?>? realPreviewData,
         NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni, bool hidePrestup,
-        IProgress<string>? progress)
+        IProgress<string>? progress, IReadOnlySet<string>? hiddenContent = null)
     {
+        List<DataContext>? pages = null;
+
         // Multi-instance batch: pro každou aktivní instanci fetch GetData a sloučit do flat seznamu.
         // PDF export tak vygeneruje N×K stránek (N instancí × K stránek per instance, např. zastávka×směr).
         if (instances.Count > 0 && CacheProvider is not null && !string.IsNullOrEmpty(agendaCode))
@@ -2641,24 +2675,25 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 var inst = instances[i];
                 progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
-                var getParams = new Dictionary<string, object?> { [paramName] = inst.Value };
-                if (!string.IsNullOrEmpty(skupinaId)) getParams["SKUPINA_LINEK_ID"] = skupinaId;
-                var pages = CacheProvider.GetData(agendaCode, getParams);
-                if (pages is null) continue;
-                foreach (var p in pages) all.Add(p.WithCulture(culture));
+                var fetched = CacheProvider.GetData(
+                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId));
+                if (fetched is null) continue;
+                foreach (var p in fetched) all.Add(p.WithCulture(culture));
             }
-            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, suppression, hideAgg, hideNaZnameni, hidePrestupLegend: hidePrestup);
+            if (all.Count > 0) pages = all;
         }
 
-        if (realPreviewData is { Count: > 0 })
-            return NoteVisibilityFilter.Apply(
-                realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
-                suppression, hideAgg, hideNaZnameni, hidePrestupLegend: hidePrestup);
+        pages ??= realPreviewData is { Count: > 0 }
+            ? realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList()
+            : null;
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
         // export musí přesto projít - vrátíme prázdný DataContext, aby se vyrenderovala
-        // jedna stránka s placeholdery beze změny.
-        return [BuildPreviewMockData() ?? new DataContext()];
+        // jedna stránka s placeholdery beze změny. (Parametry si domíchá sám.)
+        if (pages is null) return [BuildPreviewMockData() ?? new DataContext()];
+
+        return NoteVisibilityFilter.Apply(MergeParamsIntoPages(pages, printParams),
+            suppression, hideAgg, hideNaZnameni, hidePrestupLegend: hidePrestup, hiddenContent: hiddenContent);
     }
 
     public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)
@@ -2735,12 +2770,11 @@ public class TemplateDesignerViewModel : EDViewModel
 
         var src = overrideParams ?? _previewParams;
         var suppressionMode = NoteVisibilityFilter.ParseMode(src.GetValueOrDefault(NoteVisibilityFilter.ParamName));
-        var hideAgg = NoteVisibilityFilter.ParseBool(src.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
         if (mockData is null) return null;
 
         var counter = new NoteSuppressionCounter();
-        var filtered = NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg, CurrentHideNaZnameniLegend(), counter,
-            CurrentHidePrestupLegend());
+        var filtered = NoteVisibilityFilter.Apply(mockData, suppressionMode, false, CurrentHideNaZnameniLegend(), counter,
+            CurrentHidePrestupLegend(), CurrentHiddenContent());
         UpdateNoteSuppressionText(counter, src);
         return filtered;
     }
@@ -2781,9 +2815,10 @@ public class TemplateDesignerViewModel : EDViewModel
     private NoteRangeSuppression CurrentNoteSuppression() =>
         NoteVisibilityFilter.ParseMode(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamName));
 
-    /// <summary>Skrýt agregátní bezbariér poznámku (#7161 D6) z aktuálního parametru sestavy.</summary>
-    private bool CurrentHideAggBezbarier() =>
-        NoteVisibilityFilter.ParseBool(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
+    /// <summary>Kategorie obsahu vypnuté v šabloně (kola, místenky, souhrn bezbariér) - dřív tři
+    /// parametry sestavy. Zapíná se to na prvku, který obsah kreslí, aby to bylo na jednom místě.</summary>
+    private IReadOnlySet<string> CurrentHiddenContent() =>
+        NoteVisibilityFilter.HiddenContentCategories(State.CurrentTemplate);
 
     /// <summary>Skrýt legendu „× na znamení" když StopList netiskne značku (#7161 D5) - ze šablony.</summary>
     private bool CurrentHideNaZnameniLegend() =>

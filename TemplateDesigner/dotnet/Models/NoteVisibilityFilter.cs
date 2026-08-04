@@ -44,8 +44,6 @@ public static class NoteVisibilityFilter
     /// <summary>Název parametru sestavy (GetParameters), který řídí filtr rozsahu „nepoznámkovat".</summary>
     public const string ParamName = "SCHOVAT_V_ROZSAHU";
 
-    /// <summary>Parametr - skrýt agregátní poznámku „všechny spoje bezbariérové" (#7161 D6).</summary>
-    public const string ParamAggBezbarier = "SCHOVAT_AGREGAT_BEZBARIER";
 
     /// <summary>Kategorie legendy pro agregátní bezbariér poznámku (Caché tag).</summary>
     private const string AggBezbarierKat = "bezbarier-agregat";
@@ -90,6 +88,42 @@ public static class NoteVisibilityFilter
     /// viditelnost značky - jinak by u výchozího nastavení naskočily řádky k piktogramům, které nikde
     /// nejsou. Bez StopListu nevíme záměr → neskrývat (stejně jako u „na znamení").
     /// </summary>
+    /// <summary>Kategorie legendy pro atributy odjezdu - zapínají se v prvku odjezdů (tam, kde se
+    /// kreslí značka), legenda se dorovná sama.</summary>
+    private const string KolaKat = "odjezd-kola";
+    private const string MistenkyKat = "odjezd-mistenka";
+
+    /// <summary>Kategorie souhrnu „všechny spoje bezbariérové" - zapíná se v prvku poznámek.</summary>
+    private const string SouhrnBezbarierKat = "bezbarier-agregat";
+
+    /// <summary>
+    /// Kategorie obsahu, které se v této šabloně **netisknou vůbec** (ani značka, ani vysvětlivka).
+    /// Server posílá nadmnožinu otagovanou kategorií a rozhodnutí drží šablona - proto tady, na jednom
+    /// místě, a ne parametrem sestavy: je to čistě „co se zobrazí", žádný re-fetch.
+    ///
+    /// Značka a její vysvětlivka jsou svázané: volba sedí na prvku, který značku **kreslí** (kola
+    /// a místenky = mřížka odjezdů), legenda se podle toho prořeže. Nemůže tak vzniknout značka,
+    /// které nikdo nerozumí, ani vysvětlivka k něčemu, co na vývěsce není.
+    /// </summary>
+    public static HashSet<string> HiddenContentCategories(Template template)
+    {
+        var hidden = new HashSet<string>();
+        var elements = template.Sections.SelectMany(s => s.Elements).ToList();
+
+        var grids = elements.OfType<Elements.DepartureGridElement>().ToList();
+        if (grids.Count > 0)
+        {
+            if (!grids.Any(g => g.ShowZnackaKola)) hidden.Add(KolaKat);
+            if (!grids.Any(g => g.ShowZnackaMistenky)) hidden.Add(MistenkyKat);
+        }
+
+        var legends = elements.OfType<Elements.NotesLegendElement>().ToList();
+        if (legends.Count > 0 && !legends.Any(l => l.ShowSouhrnBezbarier))
+            hidden.Add(SouhrnBezbarierKat);
+
+        return hidden;
+    }
+
     public static bool ShouldHidePrestupLegend(Template template)
     {
         var stopLists = template.Sections
@@ -100,18 +134,19 @@ public static class NoteVisibilityFilter
         return !stopLists.Any(e => e.ShowTransferAttributes);
     }
 
-    public static List<DataContext> Apply(IReadOnlyList<DataContext> pages, NoteRangeSuppression mode, bool hideAggregateBezbarier = false, bool hideNaZnameniLegend = false, NoteSuppressionCounter? counter = null, bool hidePrestupLegend = false)
+    public static List<DataContext> Apply(IReadOnlyList<DataContext> pages, NoteRangeSuppression mode, bool hideAggregateBezbarier = false, bool hideNaZnameniLegend = false, NoteSuppressionCounter? counter = null, bool hidePrestupLegend = false, IReadOnlySet<string>? hiddenContent = null)
     {
         var hide = HideCategories(mode);
-        return pages.Select(p => Apply(p, hide, hideAggregateBezbarier, hideNaZnameniLegend, counter, hidePrestupLegend)).ToList();
+        return pages.Select(p => Apply(p, hide, hideAggregateBezbarier, hideNaZnameniLegend, counter, hidePrestupLegend, hiddenContent)).ToList();
     }
 
-    public static DataContext Apply(DataContext page, NoteRangeSuppression mode, bool hideAggregateBezbarier = false, bool hideNaZnameniLegend = false, NoteSuppressionCounter? counter = null, bool hidePrestupLegend = false) =>
-        Apply(page, HideCategories(mode), hideAggregateBezbarier, hideNaZnameniLegend, counter, hidePrestupLegend);
+    public static DataContext Apply(DataContext page, NoteRangeSuppression mode, bool hideAggregateBezbarier = false, bool hideNaZnameniLegend = false, NoteSuppressionCounter? counter = null, bool hidePrestupLegend = false, IReadOnlySet<string>? hiddenContent = null) =>
+        Apply(page, HideCategories(mode), hideAggregateBezbarier, hideNaZnameniLegend, counter, hidePrestupLegend, hiddenContent);
 
-    private static DataContext Apply(DataContext page, HashSet<string> hide, bool hideAggBezbarier, bool hideNaZnameni, NoteSuppressionCounter? counter, bool hidePrestup = false)
+    private static DataContext Apply(DataContext page, HashSet<string> hide, bool hideAggBezbarier, bool hideNaZnameni, NoteSuppressionCounter? counter, bool hidePrestup = false, IReadOnlySet<string>? hiddenContent = null)
     {
-        if (hide.Count == 0 && !hideAggBezbarier && !hideNaZnameni && !hidePrestup) return page;
+        bool maObsah = hiddenContent is { Count: > 0 };
+        if (hide.Count == 0 && !hideAggBezbarier && !hideNaZnameni && !hidePrestup && !maObsah) return page;
 
         var surviving = new HashSet<string>(StringComparer.Ordinal);
         var newRows = new Dictionary<string, IReadOnlyList<DataContext>>(StringComparer.OrdinalIgnoreCase);
@@ -119,12 +154,12 @@ public static class NoteVisibilityFilter
         // 1) ODJEZDY - odfiltruj schované anotace a posbírej znaky těch, které zůstaly viditelné.
         foreach (var (key, rows) in page.Rows)
             if (key.Equals(OdjezdyKey, StringComparison.OrdinalIgnoreCase))
-                newRows[key] = rows.Select(r => FilterOdjezd(r, hide, surviving, counter)).ToList();
+                newRows[key] = rows.Select(r => FilterOdjezd(r, hide, surviving, counter, hiddenContent)).ToList();
 
         // 2) POZNAMKY - prořež legendu (potřebuje surviving z kroku 1).
         foreach (var (key, rows) in page.Rows)
             if (key.Equals(PoznamkyKey, StringComparison.OrdinalIgnoreCase))
-                newRows[key] = rows.Where(r => KeepPoznamka(r, hide, surviving, hideAggBezbarier, hideNaZnameni, counter, hidePrestup)).ToList();
+                newRows[key] = rows.Where(r => KeepPoznamka(r, hide, surviving, hideAggBezbarier, hideNaZnameni, counter, hidePrestup, hiddenContent)).ToList();
 
         // 3) ostatní zdroje beze změny.
         foreach (var (key, rows) in page.Rows)
@@ -134,7 +169,7 @@ public static class NoteVisibilityFilter
         return new DataContext(page.Values, newRows, page.Culture);
     }
 
-    private static DataContext FilterOdjezd(DataContext odjezd, HashSet<string> hide, HashSet<string> surviving, NoteSuppressionCounter? counter)
+    private static DataContext FilterOdjezd(DataContext odjezd, HashSet<string> hide, HashSet<string> surviving, NoteSuppressionCounter? counter, IReadOnlySet<string>? hiddenContent = null)
     {
         if (odjezd.GetValue("ANOTACE") is not JsonArray anotace) return odjezd;
 
@@ -145,6 +180,8 @@ public static class NoteVisibilityFilter
             var kategorie = node["KATEGORIE"]?.ToString() ?? "";
             var vRozsahu  = node["V_ROZSAHU_NEPOZNAMKOVAT"]?.ToString() == "1";
             if (vRozsahu && hide.Contains(kategorie)) { counter?.CountAnnotation(); continue; }   // schovat
+            // Kategorie vypnutá v šabloně se netiskne vůbec (ne jen v rozsahu „nepoznámkovat").
+            if (hiddenContent?.Contains(kategorie) == true) { counter?.CountAnnotation(); continue; }
 
             kept.Add(node.DeepClone());
             var znak = node["ZNAK"]?.ToString() ?? "";
@@ -154,9 +191,11 @@ public static class NoteVisibilityFilter
         return odjezd.WithExtraValues(new Dictionary<string, object?> { ["ANOTACE"] = kept });
     }
 
-    private static bool KeepPoznamka(DataContext poznamka, HashSet<string> hide, HashSet<string> surviving, bool hideAggBezbarier, bool hideNaZnameni, NoteSuppressionCounter? counter, bool hidePrestup = false)
+    private static bool KeepPoznamka(DataContext poznamka, HashSet<string> hide, HashSet<string> surviving, bool hideAggBezbarier, bool hideNaZnameni, NoteSuppressionCounter? counter, bool hidePrestup = false, IReadOnlySet<string>? hiddenContent = null)
     {
         var kategorie = poznamka.GetString("KATEGORIE");
+        // Vypnutá kategorie obsahu - vysvětlivka odejde spolu se značkou, kterou už nikdo nekreslí.
+        if (hiddenContent?.Contains(kategorie) == true) { counter?.CountLegendRow(); return false; }
         if (hideAggBezbarier && kategorie == AggBezbarierKat) { counter?.CountLegendRow(); return false; }   // #7161 D6 - skrýt agregát bezbariér
         // „× na znamení" se nepočítá do signálu - neschovává ho parametr, ale nastavení StopListu
         // (legenda jen následuje viditelnost značky), takže by signál svítil u běžných šablon.

@@ -60,13 +60,17 @@ public class NotesLegendElement : StopScheduleElementBase
     /// jen mezi poznámkami linky. Výluky mají vlastní volbu (<see cref="Vyluky"/>), protože se
     /// nefiltrují podle kategorie zdroje, ale podle prefixu textu.
     /// </summary>
-    public bool ShowPoznamkyLinkyTarifni { get; set; } = true;
+    public bool ShowPoznamkyLinkyTarifni { get; set; } = false;
 
     /// <inheritdoc cref="ShowPoznamkyLinkyTarifni"/>
-    public bool ShowPoznamkyLinkyVseobecne { get; set; } = true;
+    public bool ShowPoznamkyLinkyVseobecne { get; set; } = false;
 
     /// <inheritdoc cref="ShowPoznamkyLinkyTarifni"/>
-    public bool ShowPoznamkyLinkyRadiobus { get; set; } = true;
+    public bool ShowPoznamkyLinkyRadiobus { get; set; } = false;
+
+    /// <summary>Souhrnná vysvětlivka „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
+    /// Dřív parametr sestavy „Skrýt souhrn…"; přesunuto sem, aby se obsah zapínal na jednom místě.</summary>
+    public bool ShowSouhrnBezbarier { get; set; } = true;
 
     // ─── Designer ───────────────────────────────────────────────────────────
 
@@ -348,6 +352,10 @@ public class NotesLegendElement : StopScheduleElementBase
         KatLinkyTarifni   => ShowPoznamkyLinkyTarifni,
         KatLinkyVseobecne => ShowPoznamkyLinkyVseobecne,
         KatLinkyRadiobus  => ShowPoznamkyLinkyRadiobus,
+        // Výluka JE všeobecná poznámka - v datech leží v téže kategorii a jen ji poznáváme podle
+        // prefixu textu. Vlastní vypínač by byl čtvrtý přepínač téhož; „Poznámky linky - výluky"
+        // jen rozděluje všeobecné mezi bloky (Včetně / Bez / Jen), nezapíná je.
+        VylukaKategorie   => ShowPoznamkyLinkyVseobecne,
         _                 => true,
     };
 
@@ -416,6 +424,7 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Poznámky linky - tarifní",   Group = "Filtrování", Get = () => ShowPoznamkyLinkyTarifni,   Set = v => ShowPoznamkyLinkyTarifni = v },
         new BoolPropertyDescriptor  { Label = "Poznámky linky - všeobecné", Group = "Filtrování", Get = () => ShowPoznamkyLinkyVseobecne, Set = v => ShowPoznamkyLinkyVseobecne = v },
         new BoolPropertyDescriptor  { Label = "Poznámky linky - radiobus",  Group = "Filtrování", Get = () => ShowPoznamkyLinkyRadiobus,  Set = v => ShowPoznamkyLinkyRadiobus = v },
+        new BoolPropertyDescriptor  { Label = "Souhrn bezbariérových spojů",  Group = "Filtrování", Get = () => ShowSouhrnBezbarier,       Set = v => ShowSouhrnBezbarier = v },
 
         new ColorPropertyDescriptor { Label = "NZ pozadí",  Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { Label = "NZ barva",   Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
@@ -456,6 +465,7 @@ public class NotesLegendElement : StopScheduleElementBase
             ShowPoznamkyLinkyTarifni   = ShowPoznamkyLinkyTarifni,
             ShowPoznamkyLinkyVseobecne = ShowPoznamkyLinkyVseobecne,
             ShowPoznamkyLinkyRadiobus  = ShowPoznamkyLinkyRadiobus,
+            ShowSouhrnBezbarier        = ShowSouhrnBezbarier,
         };
         CopyBaseTo(clone);
         CopyStopScheduleProperties(clone);
