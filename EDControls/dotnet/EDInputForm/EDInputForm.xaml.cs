@@ -505,7 +505,13 @@ namespace EDControls.EDInputForm
         private void PlaceholderField_InsertClick(object sender, RoutedEventArgs e)
         {
             if (sender is not System.Windows.Controls.Button btn || btn.DataContext is not Field field) return;
-            if (!field.Editable || field.ListItems.Count == 0) return;
+            if (!field.Editable) return;
+            if (field.ListItems.Count == 0)
+            {
+                EDViewModel.EDServices.Current.PopupDisplayer.Info(
+                    "Šablona nemá agendu, takže není z čeho vybírat datová pole.");
+                return;
+            }
 
             var token = PlaceholderPicker.Pick(btn, field.ListItems);
             if (token is null) return;

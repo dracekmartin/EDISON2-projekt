@@ -53,6 +53,7 @@ namespace EDControls.EDInputForm
                 _listItems = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(ListItemsForDisplay));
+                OnPropertyChanged(nameof(PlaceholderPickerVisibility));
             }
         }
         private List<ListItem> _listItems = [];
@@ -67,10 +68,20 @@ namespace EDControls.EDInputForm
         /// „vložit pole". Nastavuje server v <c>.cls</c> (ví, kam placeholdery patří), **seznam
         /// polí ale dodává klient** do <see cref="ListItems"/>, protože Caché agendu nezná.
         /// </summary>
-        public bool Placeholders { get; set; } = false;
+        public bool Placeholders
+        {
+            get => _placeholders;
+            set { _placeholders = value; OnPropertyChanged(); OnPropertyChanged(nameof(PlaceholderPickerVisibility)); }
+        }
+        private bool _placeholders;
 
+        /// <summary>
+        /// Viditelnost „vložit pole". Řídí se **jen příznakem**, ne naplněným seznamem: seznam
+        /// dodává klient až po postavení formuláře a schované tlačítko je k nerozeznání od rozbité
+        /// funkce. Prázdný seznam proto řeší až samotný výběr hláškou.
+        /// </summary>
         public WpfVisibility PlaceholderPickerVisibility =>
-            Placeholders && ListItems.Count > 0 ? WpfVisibility.Visible : WpfVisibility.Collapsed;
+            Placeholders ? WpfVisibility.Visible : WpfVisibility.Collapsed;
 
         public string FileFilter { get; set; } = "";
 
