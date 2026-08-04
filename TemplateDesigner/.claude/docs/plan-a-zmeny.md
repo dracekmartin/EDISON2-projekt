@@ -38,6 +38,24 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 4. 8. 2026 - Datová pole se vybírají ze seznamu, nemusíte je psát
+
+Název databázového pole jste dosud museli znát a napsat bez překlepu - a chyba se projevila
+až na vytištěné sestavě. Nově je u takových polí vpravo tlačítko `{ }`, které otevře seznam
+polí aktuální agendy s možností hledat.
+
+- **Vkládá na místo kurzoru** - takže pole doplníte i doprostřed rozepsané věty
+  (`Linka {CISLO_LINKY}: {POPIS_LINKY}`), nejen do prázdného pole.
+- **Kde ho najdete** - obsah textového prvku a čárového kódu, podmínka viditelnosti prvku
+  i sekce, viditelnost řádku tabulek, název souboru při exportu.
+- Psát názvy polí ručně jde dál, nic se tím nemění.
+
+### 4. 8. 2026 - Řádky dynamické tabulky lze seřadit
+
+U dynamické tabulky vyberete **sloupec a směr** řazení; druhý sloupec se nabídne, až vyplníte
+první. Čísla, data i text se poznají podle hodnot, takže se neptáme, jak se má řadit - textově
+by „12" bylo před „9". Prázdné hodnoty jdou vždy nakonec. Bez nastavení se pořadí nemění.
+
 ### 4. 8. 2026 - Poznámky zadané u linky, kola a místenky na vývěsce
 
 Zastávková vývěska umí zobrazit texty, které máte zadané ve **vlastnostech linky**, a označit spoje

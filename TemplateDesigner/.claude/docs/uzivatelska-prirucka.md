@@ -315,6 +315,11 @@ Kdekoli v textu napíšete pole ve složených závorkách, např. `Linka {CISLO
 `{CISLO_LINKY}` nahradí skutečnou hodnotou. Dostupná pole pro aktuální agendu vidíte v panelu
 „Pole agendy" a můžete je přetáhnout přímo na plátno.
 
+Název pole nemusíte psát ručně - u polí, kam se data dosazují, je vpravo tlačítko `{ }`. Otevře
+seznam polí agendy, ve kterém lze hledat, a vybrané pole vloží **na místo, kde máte kurzor**.
+Hodí se i doprostřed rozepsané věty. Najdete ho u obsahu textového prvku a čárového kódu,
+u podmínky viditelnosti prvku i sekce, u viditelnosti řádku tabulek a u názvu souboru při exportu.
+
 ### Formátování hodnot
 V zástupném symbolu lze hodnotu naformátovat zápisem `{POLE:FORMÁT}`:
 

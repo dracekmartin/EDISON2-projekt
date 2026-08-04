@@ -25,6 +25,25 @@ podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivk
 Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
 binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
 
+## 2026-08-04 ✅ - `B44` nabídka datových polí místo psaní `{POLE}`
+
+Detail → changelog 2026-08-04 (16). Vedle pole je tlačítko s hledatelným seznamem polí agendy;
+výběr **vloží token na pozici kurzoru**. Zapnuté u obsahu textového prvku, podmínky viditelnosti
+(prvek i sekce), viditelnosti řádku tabulek, obsahu čárového kódu a názvu souboru při exportu.
+
+**Rozhodnutí Jan:** (1) vkládat, ne nahrazovat hodnotu - změřeno na šablonách v repu, že třetina
+výskytů je věta s tokeny uvnitř, takže výběr celé hodnoty comboboxem by je znemožnil; (2) nabízet
+**všechna pole agendy** s popiskem, odkud jsou - uživatel hledá název, nepřemýšlí v kategoriích;
+(3) v1 nechat uživatelům vyzkoušet a doladit podle zpětné vazby, ne dopředu (Jan 4. 8.).
+
+**Poučení:** aditivní pole obousměrného kontraktu se musí přidat do **zápisu i čtení na obou
+stranách** (4 místa, ne 2) - jinak ho zpáteční cesta zahodí. Statická kontrola to nechytí, protože
+se vždy dívá jen na jeden směr; rozhodla sonda logující každý průchod. Nasazení `.cls` se ověřuje
+stažením ze serveru.
+
+**Vědomě nedodělané:** obsah buněk tabulek (edituje se vlastním dialogem sloupců, ne formulářem -
+samostatná UI cesta, ne jednořádkový příznak) a doplňování při psaní `{` nad týmž seznamem.
+
 ## 2026-08-04 ✅ - `B27` řazení řádků v dynamické tabulce
 
 Detail → changelog 2026-08-04 (14). Uživatel vybere sloupec a směr (druhý klíč se odkryje až po

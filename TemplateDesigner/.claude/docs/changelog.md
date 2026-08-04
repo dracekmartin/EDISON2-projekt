@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-04 (16) - nabídka datových polí místo psaní `{POLE}` (`B44`)
+
+Název pole se psal rukou a překlep se poznal **až v tisku**. Vedle pole je nově tlačítko, které
+otevře hledatelný seznam polí agendy a vybrané **vloží na pozici kurzoru** - hodnota bývá věta
+s tokeny uvnitř (`Linka {CISLO_LINKY}: {POPIS_LINKY}`), ne jen samotný token, takže výběr celé
+hodnoty comboboxem by druhý případ znemožnil. Hledání drží sdílený `EDFilterComboBox`.
+
+Zapnuto tam, kde se `{POLE}` opravdu dosazuje: obsah textového prvku, **podmínka viditelnosti**
+(u každého prvku i sekce), viditelnost řádku tabulek, obsah čárového kódu a vzor názvu souboru
+při exportu. Vynechaná zůstala pole nesoucí **holý název bez závorek** (datové pole obrázku,
+kolekce řádkové tabulky) - tam by vložení tokenu hodnotu rozbilo.
+
+**Dělba práce:** server v `.cls` označí příznakem pole, kam placeholdery patří; **seznam polí zná
+jen klient** (ze schématu agendy, Caché agendu nezná).
+
+**Poučení - u obousměrného kontraktu nestačí přidat sloupec na obou stranách:** formulář chodí
+tam a zpět (Validate), takže aditivní pole se musí přidat do **zápisu i čtení na obou stranách** -
+čtyři místa, ne dvě. Chybějící čtení v `Form.cls` zahazovalo příznak na zpáteční cestě (tlačítko
+se po prvním kole schovalo); tentýž tvar chyby pak podruhé vyprázdnil seznam polí. Seznam proto
+po drátě nejede vůbec - je to klientský stav (`EDInputForm.PlaceholderFields`).
+
+**Trojí statická kontrola tenhle rozpor odhalit nemohla** (server posílá ✓, parser čte ✓, DLL
+čerstvá ✓) - každá se dívala na jeden směr. Rozhodla až sonda logující, co dorazí při **každém**
+průchodu. Nasazení `.cls` se ověřuje **stažením ze serveru**, ne čtením zdroje v repu.
+
 ## 2026-08-04 (15) - VRÁCENO: `DeferRefresh` v EDListu shazoval výběr linky
 
 Optimalizace plnění seznamu z (8) (`B51`) **shazovala aplikaci** při výběru linky:
