@@ -518,6 +518,18 @@
         <!-- Segment = ikona + hodnota, technika (namespace, port, login, Mlp) je v ToolTipu.
              Separator jen mezi vždy viditelnými segmenty — u sbalitelných by zůstal viset. -->
         <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
+            <!-- Značka aplikace (stejný molecule jako ikona okna a hero pruh přihlášení) - brand,
+                 ne segment, proto bez hodnoty; velikost z tokenu, ať roste s user fontem. -->
+            <StatusBarItem Padding="8,3,4,3" ToolTip="EDISON">
+                <Image Source="{StaticResource EDIcons.Molecule}"
+                       Width="{DynamicResource EDTheme.IconSize.Default}"
+                       Height="{DynamicResource EDTheme.IconSize.Default}"
+                       VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+            </StatusBarItem>
+
+            <Separator/>
+
             <StatusBarItem>
                 <StatusBarItem.ToolTip>
                     <StackPanel>
