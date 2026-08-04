@@ -106,6 +106,11 @@ Když přijde **první varianta** chování (např. „šipka vpravo místo vlev
 
 - „Hodím to na konec panelu" - akumulační anti-pattern.
 - Property, která vypíná druhou, **bez** vizuálního schování té druhé.
+- **Maskovaný enum** - dva booly, kde druhý má smysl jen při zapnutém prvním
+  (`PISMENA_VARIANT` + `PRVNI_BEZ_PISMENE`). Příště **jeden enum se 3 volbami** - vzor
+  „Výlukové poznámky: Včetně / Bez výluk / Jen výluky". Existující dvojice se nechávají
+  (`visibleWhen` to drží snesitelné), nové nevznikají.
+- **Nový bool „zobrazit kategorii obsahu X"** - viz stopka v §5.3.
 - Modal dialog s 10+ taby - preferuj méně tabů s lepší organizací.
 - Stejná property na 2 místech s nejasným pořadím priority.
 - Per-customer hacky uvnitř elementu (`IsForDpkv: true`) → patří do šablony.
@@ -134,6 +139,8 @@ UX strana:
 [ ] Cascade: dědit z parent style? (pokud styling)
 [ ] Direct manipulation: lze vizuálně místo property?
 [ ] Multi-edit safe: rozumně funguje při výběru více elementů?
+[ ] Není to maskovaný enum? (druhý bool závislý na prvním → jeden enum, §2 anti-patterns)
+[ ] Není to nový bool „zobrazit kategorii X"? (→ STOPKA §5.3, trigger = kategorie-checklist)
 ```
 
 Pokud na něco z toho neumíš odpovědět **před implementací**, je to signál, že request je nedomyšlený. Vrať se k zadání.
@@ -232,6 +239,40 @@ Pro **show/hide přepínače** (např. #7955 „ruční komentář přebíjí au
 
 Doplňuje §6 „Caché ↔ TD kontrakt o legendě": pokud TD potřebuje filtrovat → Caché posílá **raw
 otagovaná data**, ne hotový předfiltrovaný text.
+
+### 5.3 Kategorie obsahu - STOPKA na nové show/hide booly (rozhodnutí Jan 2026-08-04)
+
+Rodina „zobrazit/schovat kategorii obsahu" má ~11 členů: parametry (místenky, kola, poznámky
+linky, souhrn bezbariér, souhrn na znamení) + filtry prvku poznámek (3 typy záznamů, výluky,
+3 kategorie poznámek linky). Každý vznikl stejně: tiket → nový bool + C# property + pole
+formuláře + test. Řada je **otevřená** (klient kategorie čísluje „Poznámky 1, 2…"), osa variace
+je pozorovaná z mnoha stran - podle Q2 je zralá na abstrakci, ale **bez nového požadavku se
+nepřestavuje** (funguje, testy drží, přestavba by byla náklad bez užitku).
+
+**Pravidlo:**
+- **Žádný nový bool „zobrazit kategorii X"** jako samostatná property nebo parametr.
+- **Trigger:** první další request tohoto typu (další kategorie poznámek, další značka
+  u odjezdů…) platí architektonickou cenu - zavede kategorie-checklist níže a sveze se
+  jako jeho první přírůstek.
+
+**Cílový model (kategorie-checklist):**
+- Server taguje každý záznam kategorií (**už dělá** - `odjezd-atribut`, tarifní/všeobecné/
+  radiobus, výluky) a metadata kategorie nesou **default viditelnosti** („místenky: default
+  schované").
+- Prvek drží jen **mapu overrides** (např. `HiddenCategories`), ne bool per kategorie.
+  Nová kategorie = jen serverová změna; JSON schéma šablony, C# model ani formulář se nemění.
+- UI: skupina „Filtrování" = **checklist generovaný z kategorií** (labely z metadat),
+  místo ručně psaných polí. Samovysvětlující, žádný helpText na interakce.
+- PrintDialog přestane bobtnat: show/hide volby nové generace **nejdou do parametrů**
+  (jsou to render filtry - jen překreslení, žádný re-fetch). Parametr zůstává jen pro věci
+  měnící **co se vygeneruje** (zdroj stanoviště, rozdělení sloupců).
+- Známé náklady do plánu triggeru: stávající `Show*` properties nechat žít jako legacy čtení
+  (aditivně) nebo zmigrovat; EDInputForm nemá checklist field typ → buď generovaná bool pole
+  z metadat kategorií, nebo malý aditivní field typ v EDControls.
+
+**Mikropravidlo hned:** závislost prvek→parametr **zviditelnit** - pole prvku, která bez
+zapnutého parametru nic nedělají (kategorie linky vs. `POZNAMKY_LINKY`), zašednout/schovat,
+ne jen popsat v helpTextu.
 
 ---
 
