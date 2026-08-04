@@ -17,7 +17,7 @@ public static class StopFields
     public const string TravelTime = "CAS_JIZDY";         // čas jízdy (příp. rozvinut na varianty tras)
     public const string Poradi     = "PORADI";            // pořadí zastávky (zobrazovací čítač)
     public const string JeAktualni = "AKTUALNI_ZASTAVKA"; // příznak aktuální (nástupní) zastávky
-    public const string Zone       = "ZONY";              // tarifní zóny (ploché „1/2")
+    public const string Zone       = "ZONY";              // tarifní zóny (ploché „1,2" - jako starý modul)
     public const string Nastupiste = "NASTUPISTE";        // označník zastávky (AD: J-věta #3; MHD: Oznacnik) - UI label „Označník"
     public const string NastupisteSpoju = "NASTUPISTE_SPOJU"; // označníky dle spojů (AD: W-trasa pozice 7, fallback J-věta) - CSV dle četnosti, první = nejčetnější
 

@@ -20,6 +20,87 @@ Method TestZonyVsLegacyKvdp()
 	do ..AssertZony("KV_DP", 1, 410101, 1)
 }
 
+/// Záskok zóny na registr zastávek nad **živými daty** (KOVED #13091 bod 4): když trasa linky
+/// zónu nemá, musí se vzít z `^JRZ` `$`-pole 11 - to je přesně případ, na který si klient stěžoval.
+/// Očekávanou hodnotu čte test ze stejného globálu, takže nepadá na driftu zákaznických dat;
+/// dokazuje zapojení (čtení pole + záskok + odstranění písmen), ne konkrétní číslo.
+Method TestZaskokZonyNaRegistrZastavek()
+{
+	set db = "CB_GWBUS", czst = 4842
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - záskok zón přeskočen")
+		quit
+	}
+	set zonaRegistru = $piece($piece($get(^[db]JRZ(czst)),"$",11),"~",1)
+	if zonaRegistru = "" {
+		do $$$AssertTrue(1, "zastávka "_czst_" nemá v registru zónu - záskok nelze ověřit na těchto datech")
+		quit
+	}
+	// J-věta bez zóny (9. #-segment prázdný) → hodnota musí přijít z registru zastávek.
+	set vetaBezZony = czst_":x##:#1###0:0#:##0:0##:##0#"
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set zeZaskoku = $classmethod(cls, "ZonyZastavky", db, vetaBezZony, czst, 0)
+	do $$$AssertEquals(zeZaskoku, zonaRegistru, "prázdná zóna u trasy → zóna z registru: "_zonaRegistru)
+
+	// Se zapnutým odstraněním písmen zůstane jen číslo z číselníku zón.
+	set bezPismen = $classmethod(cls, "ZonyZastavky", db, vetaBezZony, czst, 1)
+	set cekano = $translate(zonaRegistru, "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm", "")
+	do $$$AssertEquals(bezPismen, cekano, "odstranění písmen: "_zonaRegistru_" → "_bezPismen)
+
+	// Zóna u trasy má přednost před registrem (legacy priorita).
+	set vetaSeZonou = czst_":x##:#1###0:0#:#101#0:0##:##0#"
+	set zTrasy = $classmethod(cls, "ZonyZastavky", db, vetaSeZonou, czst, 0)
+	do $$$AssertEquals(zTrasy, "101", "zóna u trasy linky přebíjí registr zastávek")
+}
+
+/// Tvar názvu zastávky se propíše do reálných dat (KOVED #13089) - end-to-end přes `GetData`,
+/// ne jen čistá funkce. Běží na `ZL_KOVED` (data KOVED), protože právě tam mají zastávky název
+/// s dvojčárkou a tečkovanými zkratkami; výchozí tvar musí zůstat dosavadní (zkrácený).
+Method TestTvarNazvuVDatech()
+{
+	set db = "ZL_KOVED", sku = 1, lin = "0822995"
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - tvar názvu přeskočen")
+		quit
+	}
+	if '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka "_lin_" v "_db_" chybí - tvar názvu přeskočen")
+		quit
+	}
+
+	set vychozi = ..PrvniNazevZastavky(db, sku, lin, "")
+	set typo = ..PrvniNazevZastavky(db, sku, lin, "Typograficky upravený")
+	set plny = ..PrvniNazevZastavky(db, sku, lin, "Plný CIS")
+
+	// Bez parametru = dosavadní tvar (bez dvojčárky, bez mezer za tečkami) - na tom stojí gold.
+	do $$$AssertTrue(vychozi '[ ",,", "výchozí tvar nemá dvojčárku: "_vychozi)
+	// Typografická úprava přidá mezeru za čárku; plný CIS naopak vrátí dvojčárku.
+	do $$$AssertTrue(typo [ ", ", "typograficky upravený má mezeru za čárkou: "_typo)
+	do $$$AssertTrue(plny [ ",,", "plný CIS má dvojčárku: "_plny)
+}
+
+/// Název první zastávky ze `GetData` při daném tvaru názvu - pomocník pro test výše.
+ClassMethod PrvniNazevZastavky(db As %String, sku As %String, lin As %String, tvar As %String) As %String
+{
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	set:tvar'="" ^||ML("IN","TVAR_NAZVU_ZASTAVKY") = tvar
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+	set page = $get(^||ML("OUT",1))
+	if page = "" quit ""
+	set obj = ##class(%DynamicObject).%FromJSON(page)
+	// %Get, ne dot-notace - v klíči je podtržítko a to je v ObjectScriptu operátor spojení.
+	set rows = obj.%Get("rows")
+	if '$isobject(rows) quit ""
+	set zast = rows.%Get("ZASTAVKY")
+	if '$isobject(zast) quit ""
+	set prvni = zast.%Get(0)
+	quit $select($isobject(prvni):prvni.%Get("NAZEV_ZASTAVKY"), 1:"")
+}
+
 /// Přestupy: autobus „A" na terminálech linky 0330510 (ČB AN) se emituje do ATRIBUTY zastávek.
 /// Zamyká rozšíření nad legacy (server je posílá vždy; zobrazení řídí přepínač na prvku StopList).
 Method TestPrestupyEmit()

@@ -23,9 +23,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("general", "Obecné")
         s f = form.AddFieldToLastGroup("GridColor", "Barva mřížky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFD0D0D0"
+        s f = form.AddDecimal("GridLineWidth", "Tloušťka mřížky", "", 0, 5, "mm")
+        s f.helpText = "Prázdné = dle tloušťky rámečku elementu"
+        s f = form.AddFieldToLastGroup("GridLineStyle", "Styl mřížky", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
         d form.AddBool("ShowRowSeparators", "Oddělovací čáry", 0)
+        s f = form.AddBool("ShowColumnSeparators", "Svislé čáry mezi sloupci", 0)
+        s f.helpText = "Čáry mezi sloupci ve tvaru mřížky (barva, tloušťka a styl výše)"
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "#FFE0E0E0")
@@ -45,21 +51,35 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Sloupec Označník, když spoje jedou z různých označníků zastávky: hodnota z trasy / označník s nejvíce spoji / výčet všech dle četnosti / nebo řádek pro každý označník (časy jen variant daného označníku). Zapněte si k tomu sloupec Označník v tabu Sloupce; řádky vyžadují zapnuté Všechny varianty tras."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
+        s f = form.AddNumber("PartCount", "Rozdělit na více oddílů", 1, 1, 3)
+        s f.helpText = "Seznam se rozřeže na tolik oddílů vedle sebe. Každý oddíl nese celou tabulku znovu (záhlaví i všechny sloupce), jen s další porcí zastávek, takže je prvek nižší. Sloupce se pak musí vejít do šířky jednoho oddílu."
+        s f = form.AddDecimal("PartGap", "Mezera mezi oddíly", 3, 0, 50, "mm")
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)
         d f.AddListItem("AfterName", "Za zastávkou"), f.AddListItem("BeforeName", "Před zastávkou")
-        d form.AddBool("ShowDirectionArrow", "Šipka směru", 0)
+        // Zapnutí šipky řídí parametr sestavy TISK_SIPKY - jako pole prvku by bylo mrtvé (parametr
+        // ho přebije). Tady zůstává jen vzhled šipky.
         s f = form.AddFieldToLastGroup("DirectionArrowPosition", "Pozice šipky", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Right", "Vpravo (u pravého okraje elementu)"), f.AddListItem("Left", "Vlevo (u levého okraje elementu)")
+        s f.helpText = "Tisk šipky se zapíná v parametrech sestavy (Tisknout šipky směru)"
         s f = form.AddFieldToLastGroup("DirectionArrowColor", "Barva šipky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        d form.AddBool("DirectionArrowBold", "Tučná šipka", 0)
+        d form.AddDecimal("DirectionArrowWidth", "Tloušťka šipky", 0.2, 0.05, 5, "mm")
+        d form.AddDecimal("DirectionArrowHeadSize", "Velikost hrotu", 1.2, 0.5, 20, "mm")
+        s f = form.AddFieldToLastGroup("DirectionArrowHead", "Hrot šipky", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Filled", "Plný"), f.AddListItem("Open", "Otevřený"), f.AddListItem("None", "Bez hrotu")
+        s f = form.AddFieldToLastGroup("DirectionArrowLineStyle", "Styl čáry šipky", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
         d form.AddBool("CurrentStopUnderline", "Podtržení aktuální zast.", 1)
         d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
         s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
         s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Pozadí aktuální (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
-        d form.AddBool("ShowPassedStops", "Projeté zastávky", 0)
+        // Zapnutí tisku projetých zastávek řídí parametr sestavy TISK_PROJETYCH_ZAST; tady je vzhled.
         s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Barva projetých", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF999999"
+        s f.helpText = "Tisk projetých zastávek se zapíná v parametrech sestavy (Tisknout projeté zastávky)"
+        s f = form.AddFieldToLastGroup("PassedStopsTime", "Čas u projetých", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Hide", "Nezobrazovat"), f.AddListItem("Show", "Zobrazit")
+        s f.helpText = "Časy jsou počítané od vývěskové zastávky, u projetých proto vycházejí záporné"
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)

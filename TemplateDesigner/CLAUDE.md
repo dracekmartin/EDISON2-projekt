@@ -109,16 +109,19 @@ architektonických položek se zastav a nech rozhodnutí na uživateli.
 > do [`roadmap-archive.md`](.claude/docs/roadmap-archive.md), nenechávej odškrtnuté „✅ hotovo"
 > řádky. Platí i pro rozhodovací tabulky.
 
-### Wiki - mapování a sync (krok 6 skillu `implementuj`)
+### Wiki - seedy (krok 6 skillu `implementuj`)
 
 Linkované wiki články drží **`.claude/wiki-map.json`** (allow-list). Pravidla:
 
-- **Synchni JEN články z mapy.** Co v mapě není, se nikdy netkne (folder-level: platí nejbližší `wiki-map.json` nad měněným souborem; dnes jedna na úrovni TD).
-- Krok 6: pokud featura mění **user-facing chování** pokryté některým `seed`em z mapy → aktualizuj ten seed a synchni jeho článek (MCP `update_wiki_article`, `id` z mapy). Jinak wiki přeskoč.
+- 🚫 **Agent na podporu NENAHRÁVÁ** (rozhodnutí Jan 2026-07-31). Krok 6 končí u **seedu v repu**;
+  `update_wiki_article` nevolat. Článek „Novinky" je reálně **public** (mapa u něj tvrdí `internal`),
+  takže sync by zákazníkům ukázal featuru, která ještě není ve vydané verzi - načasování publikace
+  je vázané na release, ne na commit. Do reportu napiš „seed připravený k nahrání".
+- Krok 6: pokud featura mění **user-facing chování** pokryté některým `seed`em z mapy → aktualizuj
+  ten seed. Co v mapě není, se netkne (folder-level: platí nejbližší `wiki-map.json` nad měněným
+  souborem; dnes jedna na úrovni TD). Jinak wiki přeskoč.
 - **TipTap-safe markdown:** konvertor **NEUMÍ tabulky** (slije je do jednoho odstavce) → piš odrážky / definiční seznamy. OK: nadpisy, seznamy, odkazy, tučné/kurzíva, blockquote, `---`.
 - **Seed = source of truth, wiki = zrcadlo** - na wiki needitovat ručně.
-- Ověření po syncu drž **lehké** (nečti celý obsah zpět - velký článek přesáhne limit odpovědi; ověř `number`/`updatedAt`).
-- Budoucí tvrdá pojistka (až se v praxi ukáže, že se na sync zapomíná): pre-push guard čtoucí `wiki-map.json`, případně CI přes REST.
 
 ---
 

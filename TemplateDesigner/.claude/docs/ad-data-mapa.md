@@ -317,7 +317,16 @@ původní odvozené mapě:
 
 ### Zastávka `^JRZ(czst)`
 - Hlavní uzel `$`-delimited: `NORM_NAZEV$Název,,lokalita$BLO$…$czst$0$zónaIDS~0~$GPS_N$GPS_E$…`
-  (ověřeno: czst `4842`, zóna IDS `101`, GPS `48.97/14.49`).
+  (ověřeno: czst `4842`, GPS `48.97/14.49`).
+- **`$`-pole 8 = atributy zastávky** (přestupy `A`/`L`, na znamení…) - čte se **spolu** s atributy
+  z trasy linky, viz `B23`.
+- **`$`-pole 11 = `zóna IDS ~ hranice IDS (0/1) ~ další zóny (";")`** (`JRapiZst` dta15/16/17).
+  Ověřeno: zastávka `4842` má u sebe `100J`, kdežto trasa téže linky říká `101` - **zdroje se
+  reálně liší**. Písmeno v kódu (`100J`, `O12`) nese **přepravní systém**, ne zónu
+  (`JRapi4hand`: ODIS → „O", IDSOK → „I"); pro tisk se maže dle `ZonaIdsDelZnk`.
+- **Zóna do tisku (1:1 legacy `JRapiExp10`):** trasa linky (J-věta 9. `#`-segment, čárka =
+  oddělovač) → když prázdná, záskok na `$`-pole 11 (u hraniční zastávky i druhá zóna);
+  hodnota `-` = netisknout.
 - `^JRZ(czst,1,linka)` = index linek obsluhujících zastávku.
 
 ### PATCH (ověřeno)

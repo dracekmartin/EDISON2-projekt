@@ -187,6 +187,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Pevný dev seznam firem, se kterými se běžně pracuje. Idfa i datový namespace = kód.</summary>
     public static readonly IReadOnlyList<(string Code, string Label)> DevFirms =
     [
+        ("ZL_KOVED",  "ZL_KOVED - KOVED / IDZK (AD)"),
         ("CB_CSADAD", "CB_CSADAD - ČSAD Autobusy (AD)"),
         ("CB_GWBUS",  "CB_GWBUS - GW BUS (AD)"),
         ("KV_DP",     "KV_DP - DP Karlovy Vary (MHD)"),
@@ -2487,7 +2488,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Parametry zpracovávané v Caché GetData (rozdělení sloupců, varianty tras) -
     /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
     private static readonly string[] ServerSideParams =
-        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK"];
+        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
+         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD"];
 
     private string? _lastServerParamsSnapshot;
 

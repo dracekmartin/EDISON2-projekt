@@ -60,7 +60,12 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 > Jedno místo: co je hotové (→ otestovat → zavřít na helpdesku), co malé/velké zbývá. Detaily v sekcích níže.
 > **Legenda:** ✅ hotovo (AD) · 🧪 hotovo, ověřit u klienta · 🟢 malé zbývá · 🟠 velké zbývá (analýza/data) ·
 > ⬜ MHD-port (AD hotové, MHD ne) · ➖ mimo TD / mimo scope.
-> ⚠️ Featury jsou vyřešené primárně pro **AD** agendu (TRANSDEV = AD); MHD-port jen na reálnou potřebu (DPCB/DPKV).
+> ⚠️ Featury jsou vyřešené primárně pro **AD** agendu; MHD-port jen na reálnou potřebu (DPCB/DPKV).
+> **Past na routování práce** (upřesněno Janem 31. 7. 2026): self-contained MHD modul mají **jen DPCB
+> a DPKV**, všichni ostatní vedou jízdní řády v modulu **JR (= AD)** - i městskou dopravu. Zákazník
+> proto napíše „MHD", protože jde o městskou dopravu v nějakém městě, ale datově je to AD. Než se něco
+> označí za MHD práci, **ověř, ve kterém modulu zákazník data vede** (např. #13070 BBSK psal
+> „TISK JŘ MHD" a jde o AD).
 
 ### 0.1 Tikety (helpdesk)
 
@@ -200,7 +205,7 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
 
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7959
 - **Upřesnění agendy:** TRANSDEV jezdí primárně **linkovou (AD)** + lokální MHD; **self-contained MHD
-  modul používají jen DPCB/DPKV**. Tiket se proto týká **AD agendy** (`ZastavkoveJrAd`), ne MHD modulu.
+  modul mají jen DPCB/DPKV**. Tiket se proto týká **AD agendy** (`ZastavkoveJrAd`), ne MHD modulu.
 - **Citace:** *„Mám linku, která má druhou zastávku pro školní spoj... Ovšem z první zastávky na tuto druhou zastávku žádný spoj nepojede. Potřeboval bych, aby zastávka nebyla v seznamu zastávek, pokud není aktuální."*
 - **Stav v AD - obě chování implementovaná a aktivní:**
   - **(a) StopList filtr** - neobsluhovaná zastávka se nepřidá do seznamu: `ZastavkoveJrAd:296`

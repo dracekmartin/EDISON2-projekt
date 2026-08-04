@@ -1,12 +1,13 @@
 # Roadmap
 
-> **Stav k 2026-07-31** (helpdeskové kolo dojeté - #7947, #7955, #7959, #13048 i #10660 zavřené;
-> zastávkový JŘ nemá otevřený zákaznický tiket; verze připravena k publish).
+> **Stav k 2026-07-31** (předchozí kolo dojeté - #7947, #7955, #7959, #13048 i #10660 zavřené;
+> **30. 7. přišlo nové kolo zpětné vazby KOVED/IDZK** - 9 tiketů, viz Vlna 0).
 > **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
-> **▶ Další session:** **B10** (symbolový font linkové části) nebo **B13** (rozřezání široké tabulky) -
-> helpdeskovou frontu máme prázdnou, takže poprvé jde plná pozornost na linkový JŘ.
+> **▶ Další session:** **B35** (nová pole agendy) a dál Vlnou 0 - KOVED kreslí vývěsky
+> v návrháři naostro a fronta se znovu naplnila. `B28`-`B31` + `B34` hotové 31. 7.
+> Linkový JŘ (**B10**, **B13**) jde až po ní.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
@@ -29,10 +30,32 @@ changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde
 
 ---
 
+## 🌊 Vlna 0 - zákaznická fronta KOVED/IDZK (kolo 30. 7. 2026)
+
+KOVED (IDZK, Lábsky) začal vývěsky kreslit v návrháři naostro a poslal zpětnou vazbu po blocích.
+Většina je doladění toho, co už tiskneme (vzhled, tvar textu, chybějící pole); dva body jsou velké
+koncepty a leží ve Vlně 3. Řazeno **od nejrychleji zavíratelného** - cíl je zmenšit počet tiketů,
+ne odbavit nejhezčí featuru.
+
+| # | Blok | Vel. | Uzavírací podmínka |
+|---|---|---|---|
+| **B35** | **#13088 - nová pole agendy:** CIS čísla zastávek (výchozí / aktuální / cílová) · **číslo sloupku** (pro ně jiný údaj než označník, který už máme - nejdřív s JŘ vyjasnit, co v datech je) · výlukové texty jako oddělené pole (do CIS chodí jako poznámka „Výluka: …", na vývěsce je chtějí zvlášť). | M | pole jsou v nabídce agendy a plní se |
+| **B36** | **#13093a - poznámky, snadná část:** textové poznámky zadané ve vlastnostech linky se do zastávkové vývěsky nedostanou vůbec (linkový JŘ je čte) - druhý blok poznámek si klient složí sám, filtr podle typu poznámky legenda umí · automatická výška bloku poznámek se zmenšením textu při přetečení. | M | klient složí dvojici bloků poznámek nad sebou bez ručního dopočítávání výšky |
+| **B37** | **#13093b - poznámky, datově náročná část:** cyklobusové poznámky a rezervace u odjezdů (chybí zdroj) · **pokračující spoje** sloučené do jedné poznámky podle stejného cíle a linky, ne podle čísla spoje („pokračuje do zast. …, l. 304"), volitelně zapínatelné. | M–L | klient si zapne a poznámka odpovídá jejich ruční praxi |
+
+**Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):** **#13099** souhrnné JŘ (sdružení
+linek se stejným koncovým trojčíslím pod vzorovou linku - dnes ručně skriptem v Excelu; pro KOVED
+podmínka přesunu tvorby vývěsek do EDISONu; tisk hlavičky dopravců pro souhrnné JŘ je hotový `B33`) · **#13102** virtuální
+prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
+**#13098** je můj sběrný tiket - dnes v něm visí jen odsazení zastávky per směr = `B12` / #7937.
+
+---
+
 ## 🌊 Vlna 1 - zákaznické velké + odemknout linkový
 
 | # | Blok | Vel. |
 |---|---|---|
+| **B40** | **Čáry a mřížka tabulky jako jedno API napříč tabulkovými prvky** (rozhodnuto 31. 7. při review `B30`). Dnes jsou dva nesourodé světy: prvky JŘ mají barvu mřížky + přepínače „které čáry" per prvek, kdežto pevná a dynamická tabulka mají volbu **které** čáry (žádné / vnější / vše / řádky / sloupce), ale **barvu i tloušťku zadrátovanou v kódu** (`0xFFCCCCCC`, 0,5 px) - uživatel je nezmění vůbec. Sjednotit kompozicí (jeden objekt „mřížka": které čáry · barva · tloušťka mm · styl) použitý všemi pěti tabulkovými prvky, jedno místo pro paint. Vedlejší efekt: tabulky dostanou nastavitelnou barvu a tloušťku čar. Migrace stávajících vlastností (`gridColor`, `showRowSeparators`, `borderStyle`) → nový objekt. | M |
 | **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M |
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). | M |
@@ -48,6 +71,17 @@ changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde
 
 L‑4 stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem
 řádků, ne pětkrát v per-element smyčkách.
+
+---
+
+## 🌊 Vlna 3 - velké koncepty z kola KOVED
+
+Body z fronty Vlny 0, které nejsou doladění - chtějí vlastní plánování. (`B38` odsud odpadla:
+při analýze 31. 7. se ukázalo, že s `B13` nemá nic společného a je to **M** uvnitř prvku - hotová.)
+
+| # | Blok | Vel. | Pozn. |
+|---|---|---|---|
+| **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období. Mění datový model + chce editor. **Zbytek tiketu po `B29`** - ohlášená chybná značka je opravená 31. 7. (`B29`, archiv), takže část „netiskni značku, kterou už říká nadpis sloupce" je hotová a pro vlastní skupiny se jen musí dodržet i u nich. | L | koncept skupin + editor; pravidlo značek už existuje (`DenniZnacky`) |
 
 ---
 
@@ -74,6 +108,19 @@ L‑4 stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání 
   První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** - tržní minimum
   (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
   credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
+- **`B42` Co všechno umí import z předlohy nastavit** (M, nejdřív analýza; podnět Jan 31. 7. při `B41`).
+  Import dnes umí **pozice a prvky** plus část vzhledu (fonty, výšky řádků, barvy záhlaví, sloupce).
+  Otevřená otázka: umí z předlohy rozumně odvodit i **parametry sestavy** a **další nastavení prvků**
+  (pozice značek, šipka, sloupce jako zóna/označník, varianty tras, skupiny dnů)? Je to velká
+  a netriviální část importu, takže se to má projít vědomě, ne po jedné vlastnosti.
+  ⚠️ **Klíčové omezení, na které to narazí:** hodnoty parametrů sestavy jsou uložené **per uživatel ×
+  agenda**, ne per šablona - kdyby je import nastavil, přepíše nastavení pro všechny ostatní šablony
+  té agendy. Buď se tedy musí zavést per-šablonové hodnoty parametrů (velké rozhodnutí, dotýká se
+  `ApplyPersistedPrintParamsAsync`), nebo import smí jen **navrhnout** (viz krok níže).
+  **Malý krok, který jde udělat hned (S):** detekci časové osy z předlohy vrátit a její výsledek
+  **napsat do protokolu importu** („předloha má osu 5-23, nastavte ji v parametrech"), ať se informace
+  neztratí a dostane se k tomu, kdo s ní může něco udělat. Původní detekce (`timeAxisRangeFrom/To`
+  v `AiGuidedScheduleBuilder`) je v gitu před commitem `B41`.
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
@@ -103,6 +150,16 @@ při scope té fáze, ne teď.
 
 - **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení - kolega
 - **#13048 bod 4 fáze 2** (duplikace řádku u víc nástupišť) - čeká potvrzení KOVED
+- **#13091a `B30` + #12997 `B31` implementováno 31. 7.** - čeká, až to KOVED uvidí ve své vývěsce
+  (vzhled seznamu zastávek, barva linky z dat u sloupců)
+- **#13091 bod 4 (zóny) `B34` doportováno 31. 7.** - čekají tři odpovědi od KOVED, bez nich to nemá
+  smysl dál posouvat: (1) má mít zastávka přednost i tam, kde trasa zónu má? (starý modul dává
+  přednost trase - přehození by nás rozešlo s JDF a exporty) · (2) mají u linky zapnuté „Zóny - tisk
+  a export do JDF bez písmen"? (bez toho písmeno zůstane) · (3) číslo linky a zastávky, kde to vidí
+  špatně - ověří, že jejich kód zóny je „číslo + písmeno", ne jiný identifikátor
+- **#12997 zbytek je na straně JŘ, ne návrháře:** klient chce u linky **dvě** barvy (zvlášť číslo
+  linky, zvlášť pozadí), dnes se ukládá jedna (`GetBarvaLinky` → jedno RGB). Návrhář obojí umí
+  zobrazit, jakmile data druhou barvu ponesou - postrčit Petra
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
   jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
   (který sloupec - legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
@@ -110,6 +167,9 @@ při scope té fáze, ne teď.
 ### Reálná zbývající práce
 
 `B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
+
+**Kolo KOVED z 30. 7. drží Vlna 0** (`B35`-`B37`; `B28`-`B34` a `B38` hotové) **+ Vlna 3**
+(`B39`) - sem se nekopíruje.
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
 
@@ -129,12 +189,9 @@ při scope té fáze, ne teď.
 
 Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
 
-**Nález 2026-07-30 (S, bez poptávky nebrat):** u **zastávek a odjezdů** se pozadí a barva textu
-záhlaví/buněk nedají nastavit jinde než po jednotlivých sloupcích - pole „Pozadí záhlaví" / „Pozadí
-buněk" jim v tabu Obecné chybí (legenda poznámek i linková tabulka je mají). Podle `CLAUDE.md` mají
-být 4 základní barvy zón dostupné napříč tabulkovými prvky, takže to vypadá na drift z migrace na
-formuláře. Důsledek navíc: barvu z dat (`{BARVA_LINKY}`) tam nelze zadat vůbec, protože editor
-sloupců textový vstup na barvu nemá (rozhodnuto 30. 7. nechat - doplnit až s poptávkou).
+*(Nález z 30. 7. o chybějících barvách zón u zastávek a odjezdů byl při `B31` (31. 7.) **vyvrácen** -
+pole tam jsou, jen pod jinými popisky; skutečná mezera byl textový zápis barvy a ta je opravená.
+Detail v archivu roadmapy.)*
 
 **Fixní (statická) tabulka - implementace odložena na poptávku faktur / F3.** Analýza 2026-07-12
 rozhodla „koncept implementovat" (tabulka dává reflow podmíněných řádků, auto výšku řádku a

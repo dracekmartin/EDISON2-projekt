@@ -15,6 +15,7 @@ Class ALVA.TemplateDesigner.EDInputForm.StyleFields
 /// (např. "Symbol: ") pro odlišení zón ve stejné skupině.
 ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, groupKey As %String, groupLabel As %String, defTextColor As %String = "", defBgColor As %String = "", newGroup As %Boolean = 1, labelPrefix As %String = "")
 {
+    s barvaZDat = "Lze zadat i {BARVA_LINKY} - barvu vezme z jízdního řádu (nenastavená = bílá)"
     i newGroup d form.AddGroup(groupKey, groupLabel)
     // ComboBox (editovatelný) s prázdným seznamem - klient naplní nainstalovanými fonty
     // (ElementFormBinder.PopulateFontFields). Prázdné = dědit z rodiče kaskády.
@@ -33,8 +34,10 @@ ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, gro
     d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
     s f = form.AddFieldToLastGroup(prefix_".TextColor", labelPrefix_"Barva textu", $$$FieldTypeColor, 0, 0)
     s:defTextColor'="" f.value = defTextColor
+    s f.helpText = barvaZDat
     s f = form.AddFieldToLastGroup(prefix_".BackgroundColor", labelPrefix_"Pozadí", $$$FieldTypeColor, 0, 0)
     s:defBgColor'="" f.value = defBgColor
+    s f.helpText = barvaZDat
     d form.AddDecimal(prefix_".PaddingTop", labelPrefix_"Vnitřní okraj nahoře", "", 0, 20, "mm")
     d form.AddDecimal(prefix_".PaddingRight", labelPrefix_"Vnitřní okraj vpravo", "", 0, 20, "mm")
     d form.AddDecimal(prefix_".PaddingBottom", labelPrefix_"Vnitřní okraj dole", "", 0, 20, "mm")

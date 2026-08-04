@@ -44,8 +44,8 @@ public class CellStyleVM : INotifyPropertyChanged
     public bool?                      Italic        { get => _italic;        set { _italic        = value;              OnChanged(); OnChanged(nameof(EffectiveItalic));        OnChanged(nameof(HasExplicitItalic)); } }
     public bool?                      Underline     { get => _underline;     set { _underline     = value;              OnChanged(); OnChanged(nameof(EffectiveUnderline));     OnChanged(nameof(HasExplicitUnderline)); } }
     public bool?                      Strikethrough { get => _strikethrough; set { _strikethrough = value;              OnChanged(); OnChanged(nameof(EffectiveStrikethrough)); OnChanged(nameof(HasExplicitStrikethrough)); } }
-    public string?                    TextColor     { get => _textColor;     set { _textColor     = NullIfEmpty(value); OnChanged(); } }
-    public string?                    BgColor       { get => _bgColor;       set { _bgColor       = NullIfEmpty(value); OnChanged(); } }
+    public string?                    TextColor     { get => _textColor;     set { SetColor(value, ref _textColor); OnChanged(); } }
+    public string?                    BgColor       { get => _bgColor;       set { SetColor(value, ref _bgColor);   OnChanged(); } }
     public TextHorizontalAlignment?   HAlign        { get => _hAlign;        set { _hAlign        = value;              OnChanged(); OnChanged(nameof(HasExplicitHAlign)); } }
     public TextVerticalAlignment?     VAlign        { get => _vAlign;        set { _vAlign        = value;              OnChanged(); OnChanged(nameof(HasExplicitVAlign)); } }
     public float?                     PaddingTop    { get => _paddingTop;    set { _paddingTop    = value;              OnChanged(); } }
@@ -233,4 +233,14 @@ public class CellStyleVM : INotifyPropertyChanged
     }
 
     private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
+
+    /// <summary>Zapíše barvu, jen když je to platná hodnota (hex nebo barva z dat) - jinak nechá
+    /// předchozí. Barva se od zavedení textového zápisu dá napsat rukou, a neplatná uložená hodnota
+    /// se dřív projevila až při kreslení a šablona pak vypadala rozbitá (viz <see cref="ColorHex"/>).
+    /// Notifikaci pošle volající vždy, takže se pole ve formuláři vrátí na platnou hodnotu.</summary>
+    private static void SetColor(string? value, ref string? target)
+    {
+        var normalized = NullIfEmpty(value);
+        if (normalized is null || ColorHex.IsValid(normalized)) target = normalized;
+    }
 }

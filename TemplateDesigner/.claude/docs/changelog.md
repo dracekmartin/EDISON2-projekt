@@ -1,5 +1,209 @@
 # Changelog
 
+## 2026-07-31 (8) - `B33` popis dopravce po řádcích, i pro souhrnný JŘ (#13008)
+
+Dosud se dopravci tiskli jako **jeden odstavec** uvozený „Zajišťuje: " a oddělený čárkami. KOVED
+potřebuje hlavičku jako na svém vzoru: řádek na dopravce, před ním číslo linky dle licence, za ním
+výčet spojů - a bez našeho uvození, protože si úvodní větu píší sami.
+
+Nové pole agendy **Dopravci souhrnného JŘ** (`DOPRAVCI_SOUHRNNY_JR`) skládá:
+
+```
+Linka 802170 | ČSAD BUS Uherské Hradiště a.s., …, provoz Uh. Hradiště, tel. …, spoje č. 1-31, 201-204
+Linka 802170 | ČSAD BUS Uherské Hradiště a.s., …, provoz Uh. Brod, tel. …, spoje č. 51
+Linka 803170 | ARRIVA autobusy a.s., …, provozovna Zlín, tel. …, spoje č. 71-75, 271-273
+```
+
+- **Čísla spojů se stlačují do rozsahů** („1-31, 201-204"); dvojice zůstává výčtem („1, 2"), čte se
+  lépe. Vypnout je lze parametrem **Výčet spojů u dopravce**.
+- **Funguje i pro souhrnný jízdní řád**, kde jednu vývěskovou linku obsluhuje víc dopravců pod
+  různými licencemi: řádky se seskupují podle **(licenční linka → dopravce → provoz)** a licenční
+  číslo se bere **od spoje** („Zdroj spoje"), ne od linky. Uložený je index linky = číslo doplněné
+  nulami na 7 znaků, převod je 1:1 s legacy (`cnvIndLin`).
+- **Na obyčejné lince se nic nezměnilo** - zdroj spoje je prázdný, takže vznikne jedna skupina
+  a platí číslo té linky. Zlaté odtisky to potvrzují: shodné počty, mění se jen md5 (nové pole).
+- `POPIS_DOPRAVCE` zůstává nedotčené, aby existující šablony nezměnily tvar.
+
+⚠️ **Souhrnná větev je ověřená jen syntetickými vstupy** - v žádné testovací firmě souhrnná linka
+není (v datech KOVED je u spojů vyplněná *návaznost*, ne zdroj spoje). První reálné potvrzení přijde
+od zákazníka.
+
+**Poučení k zlatým odtiskům:** posun digestu jsem nejdřív přečetl jako úbytek poznámek (110 → 96)
+a hodinu hledal neexistující chybu. Ta hodnota byla mezitím přebaselinovaná v #13045; skutečná změna
+byla jen md5. Do testu proto přidán postup: **nejdřív porovnat složky digestu** - shodné počty +
+jiné md5 = přidané/přejmenované pole, ne změna chování.
+
+Caché 60/60 (+9), .NET 536/536.
+
+## 2026-07-31 (7) - `B32` tvar názvu zastávky jako volba sestavy (#13089)
+
+KOVED viděl na vývěsce „Zlín,aut.nádr." a chtěl si vybrat, jak má název vypadat. Nově jsou v
+parametrech sestavy dvě volby v **nové skupině „Obecné"** (název zastávky se objevuje i v nadpisu
+vývěsky, v cíli a v textech poznámek, takže to není nastavení jednoho prvku):
+
+- **Tvar názvu zastávky:** Zkrácený („Zlín,aut.nádr.", **výchozí = dosavadní stav**) · Typograficky
+  upravený („Zlín, aut. nádr.") · Plný CIS („Zlín,,aut.nádr.") · Plný CIS s okresem
+  („Zlín,,aut.nádr.,ZL") - poslední dva pro technické exporty a soutěže.
+- **Použít název pro MHD:** zastávka může mít v číselníku vedle názvu podle CIS ještě „upravený název
+  pro MHD" a ten se tiskl přednostně. Vypnutím se použije CIS název. (Např. v CB je u autobusového
+  nádraží MHD název „České Budějovice,AN" místo „České Budějovice,,aut.nádr.".)
+
+**Proč parametr a ne vlastnost prvku:** mění to hodnotu dat, ne vzhled - skládá se na serveru. A je to
+volba při tisku: klient chce běžně vylepšený tvar a pro export do soutěže plný CIS, bez druhé šablony.
+Oba parametry jsou v allowlistu server-side parametrů, takže jejich změna spustí načtení dat.
+
+- **Typografické pravidlo je vědomě jen pro názvy zastávek**, ne pro libovolný text: mezera za tečkou
+  by rozbila webovou adresu („www.idzk.cz" → „www. idzk. cz"), a tu mají v poznámce k tarifu na každé
+  lince IDZK. Před číslicí se mezera nedoplňuje, takže „rozc.0.9" a „č.1" zůstávají.
+- Ověřeno **end-to-end na datech KOVED** (`ZL_KOVED`, linka 0822995), ne jen jako čistá funkce:
+  výchozí tvar je bez dvojčárky, typografický má mezeru za čárkou, plný CIS dvojčárku vrátí.
+- Zlaté odtisky se nepohnuly - výchozí hodnota je dosavadní tvar.
+
+Caché 57/57 (+5), .NET 536/536.
+
+## 2026-07-31 (6) - `B41` odklizené mrtvé UI: co řídí parametr sestavy, není i v prvku
+
+Tři přepínače v prvcích **nic nedělaly** - parametr sestavy je přebíjel, a protože ho agendy JŘ
+posílají vždy, klik v prvku byl bez efektu. Přesně z téhle dvojkolejnosti vznikla dvojice hlášení
+`B22`/`B24` (Jan si toho všiml znovu při klikání 31. 7.).
+
+- Z prvků zmizely: **Šipka směru** a **Projeté zastávky** (seznam zastávek) a **Roztáhnout na výšku**
+  (mřížka odjezdů). Zapínají se v parametrech sestavy, což je jediné místo.
+- Vzhled zůstává v šabloně, kam patří: barva, tloušťka, hrot a styl čáry šipky · barva a čas
+  u projetých zastávek. U nich je nově nápověda, kde se tisk zapíná, aby to uživatel našel.
+- Z modelu odešly i tři fallbacky časové osy (`timeAxisMode`, `timeAxisRangeFrom/To`), které z panelu
+  vypadly už dřív. Nahradily je konstanty shodné s výchozími hodnotami parametrů agendy.
+- **Ověřeno, že to nic nerozbije:** všech pět parametrů posílají obě agendy JŘ (AD i MHD), a vlastnost
+  prvku se uplatnila jen bez dat - v tom stavu ale seznam kreslí zástupné řádky (šipka se nekreslí,
+  projeté nemají co filtrovat) a mřížka vrací prázdný layout.
+- **Uložené šablony bez migrace** - odebrané klíče se při čtení ignorují, hodnota se stejně
+  zahazovala. Z distribuční AD šablony jsou vyčištěné.
+- **Vedlejší nález:** distribuční šablona měla u mřížky napsanou časovou osu „Vlastní rozsah 4-22",
+  ale agenda posílá výchozí „Jen hodiny s odjezdy", takže se ten rozsah nikdy netiskl. Klíče
+  odstraněny; kdybychom ten rozsah chtěli mít v distribuci, musí se změnit výchozí hodnota parametru
+  v agendě, ne šablona.
+- **Import PDF** si přestal do šablony zapisovat detekovanou časovou osu a šipku - stejně se
+  při tisku nepoužily. Uživatel si osu nastaví v parametrech.
+
+.NET 536/536, Caché 52/52.
+
+## 2026-07-31 (4) - denní značky se netisknou tam, kde je říká nadpis sloupce (#13045)
+
+Klient hlásil, že u spojů vidí značku „6", i když totéž říká nadpis sloupce, a že v nedělním sloupci
+má sobotní odjezdy. **Časy byly správně, lhala značka** - a je to jeden nedoportovaný kus starého
+modulu, který způsoboval obojí.
+
+- **Značka dne se nově řídí rozvržením sloupců.** Když má sobota i neděle vlastní sloupec, u platností
+  „sobota", „neděle" a „svátek" se značka netiskne vůbec - sloupec ji říká. Když je víkend v jednom
+  sloupci, značka zůstává, ale jen když spoj skutečně odlišuje (jede jen v sobotu, jen v neděli,
+  jen ve svátek). Konkrétní pracovní dny („jede jen v pátek") se značkují jako dosud.
+- **Proč to vypadalo jako sobotní odjezdy v nedělním sloupci:** spoj s platností „sobota a svátek"
+  se do nedělního sloupce dostane oprávněně (ve svátek jede), ale nesl u sebe značku „6", takže se
+  celý sloupec čte jako sobotní. Teď je bez značky, stejně jako ve starém modulu.
+- **Nová značka „svátek"** - dosud jsme ji neumili vůbec, přitom ve sloučeném víkendovém sloupci
+  je to ta jediná, která odliší spoj jedoucí jen ve svátek od spoje jedoucího každou neděli.
+  Text do legendy „jede ve svátek".
+
+**Ověřeno na datech klienta** (`ZL_KOVED`, linka 0771251): tři sloupce dnů, spoje s platností „6+"
+se objevují v sobotním i nedělním sloupci a už u nich není žádná denní značka. Kontrolní vzorek
+`CB_CSADAD` 0345067: ze 33 odjezdů zmizelo 15 falešných značek „6" a s nimi řádek legendy.
+Zlaté odtisky přebaselinovány - ubyly **jen řádky legendy** (110 → 96 a 183 → 168), počty stránek,
+zastávek i odjezdů zůstaly beze změny, což je přesně očekávaný tvar změny.
+
+## 2026-07-31 (4) - `B38` seznam zastávek jde rozdělit na oddíly na pokračování (#13097)
+
+Vysoký seznam zastávek se dá rozřezat na **2 nebo 3 oddíly vedle sebe** (vzor: vývěska PID, kterou
+klient přiložil). Každý oddíl nese **celou tabulku znovu** - záhlaví i všechny sloupce, jen s další
+porcí zastávek; řádky se dělí rovnoměrně. Prvek je tím o polovinu (třetinu) nižší, což je celý smysl.
+
+- **V roadmapě to bylo přeceněné** jako `L` čekající na `B13` (rozřezání široké tabulky u linkového
+  JŘ) s tím, že je to „tentýž mechanismus". Není: `B13` řeže sloupce do stránkových bloků přes
+  stránkovací engine, tady se řádky rozlévají do oddílů uvnitř rámce prvku. Reálně **M** a nezávislé.
+- **Strop 3 oddíly** (rozhodnutí Jan 31. 7.) - každý oddíl zužuje sloupce, u čtyř a víc už by se
+  vývěska s variantními časy nedala přečíst.
+- Šipka směru mezi oddíly **pokračuje** (v oddílu s aktuální zastávkou od ní, dál od horní hrany).
+- Šířky sloupců i automatické zmenšování textu se počítají ze šířky **oddílu**; kdo má hodně sloupců,
+  musí prvek rozšířit nebo část sloupců vypnout.
+- Výchozí hodnota 1 oddíl = dosavadní vzhled, **bez migrace**.
+
+.NET 536/536 (+8), Caché 52/52.
+
+## 2026-07-31 (3) - `B34` zóny: doportovaná logika starého modulu (#13091 bod 4)
+
+Klient hlásil dvě věci: zóna se objeví jen tehdy, když je vyplněná u trasy linky, a místo čísla zóny
+se tiskne písmeno přepravního systému. **Obojí umí starý modul a my jsme to neměli doportované** -
+není to tedy nová featura, ale chybějící kus parity.
+
+- **Záskok na nastavení zastávky:** zóna se bere z trasy linky, a když ji trasa nemá, z registru
+  zastávek (u hraniční zastávky včetně druhé zóny). Priorita zůstává jako ve starém modulu -
+  trasa vyhrává, zastávka je záskok.
+- **Písmeno přepravního systému se odstraní**, pokud je to zapnuté. Písmeno v kódu zóny označuje
+  přepravní systém (v datech se předřazuje: ODIS → „O", IDSOK → „I"), ne zónu, takže do tisku patří
+  jen číslo z číselníku. Řídí to nastavení JŘ - globálně, nebo u konkrétní linky polem
+  **„Zóny - tisk a export do JDF bez písmen"**. Nové UI netřeba, klient si to zapne sám.
+- **Hodnota `-` u zóny znamená „netisknout"** - dosud bychom vytiskli pomlčku.
+- **Víc zón u zastávky se odděluje čárkou**, ne lomítkem - shodně se starým modulem. Dosud to
+  nebylo vidět, protože víc zón přicházelo jako jedna hodnota; se záskokem začnou být samostatné.
+
+**Měřeno, ne odhadnuto:** zlaté odtisky (`CB_CSADAD`) se **neposunuly** - ta firma zóny IDS nemá,
+takže záskok tam nic nepřidal. Paritní testy zón vůči starému modulu (`CB_GWBUS`, `KV_DP`) zůstaly
+zelené. Nový test dokazuje záskok na živých datech (zastávka s prázdnou zónou u trasy a zónou
+`100J` v registru → `100J`, se zapnutým odstraněním písmen → `100`).
+
+Caché 48/48 (+3), .NET 528/528 (+2). **Zbývá dořešit s klientem** (mimo tento blok): jestli má mít
+zastávka přednost i tam, kde trasa zónu má (starý modul dává přednost trase), jaké mají nastavení
+a na které lince to vidí špatně - to poslední zároveň ověří, že jejich kód zóny je „číslo + písmeno".
+
+## 2026-07-31 (2) - `B30` + `B31`: vzhled seznamu zastávek a barva z dat u sloupců (#13091a, #12997)
+
+První dva bloky zákaznické fronty KOVED z 30. 7. Obojí sahá do téhož místa (seznam zastávek a
+nastavení jeho sloupců), proto se dělalo jedním sezením.
+
+**Šipka směru jízdy** je nastavitelná: tloušťka, velikost hrotu, tvar hrotu (plný / otevřený /
+bez hrotu) a styl čáry (plná / čárkovaná / tečkovaná).
+
+- **Zároveň opravená vláskovka v tisku:** tloušťka se zadávala v pixelech (0,8), takže na obrazovce
+  vypadala rozumně, ale v tisku (jiné rozlišení) z ní byla nitka. Nově je v milimetrech; výchozí
+  hodnota 0,2 mm odpovídá tomu, jak šipka vypadala na obrazovce při zobrazení 1:1. Přesně tohle
+  klient hlásil jako „šipka je malá".
+- **Přepínač „Tučná šipka" zrušen** (rozhodnuto při review 31. 7.) - dělal totéž co tloušťka, jen
+  hrubě. Uložené šablony převede migrace na 1.6.0 (tučná → 0,4 mm), takže vypadají stejně jako dřív.
+
+**Svislé čáry mezi sloupci** seznamu zastávek (dosud šly jen vodorovné). Tloušťka, styl i barva jsou
+společné vlastnosti mřížky prvku, takže vodorovné a svislé čáry drží stejný vzhled; tloušťku mřížky
+šlo dosud řídit jen nepřímo tloušťkou rámečku.
+
+- Uvnitř sloupce zastávek se čára nekreslí, i když je jeho obsah rozdělený na značky a název
+  (režim „značky před zastávkou") - jinak by to vypadalo jako sloupec navíc.
+
+**Čas u projetých zastávek** má volbu: nezobrazovat (nově výchozí) · zobrazit (dosavadní chování).
+
+- **Proč byly záporné:** časy jsou počítané od vývěskové zastávky, takže u zastávek, které spoj už
+  projel, vycházejí do minulosti. Klient to označil za neplatný údaj a měl pravdu.
+- **Třetí volba „skrýt jen záporné" při review vypadla** - u projeté zastávky jiný než záporný čas
+  z dat nevznikne (ani v AD, ani v MHD), takže se chovala shodně s „nezobrazovat" a byla to jen
+  volba navíc v panelu.
+- Značka „projíždí bez stání" zůstává - není to čas.
+- Řeší se v prvku, ne na serveru: je to volba zobrazení a data zůstávají beze změny (gold parita).
+
+**Barva z dat u zastávek a odjezdů (#12997).** V editoru sloupců jde barva textu i pozadí zapsat
+textem, takže tam lze zadat `{BARVA_LINKY}` - dosud byl jen výběr barvy, který barvu z dat nabídnout
+neumí. Sdílené s odjezdy, linkovou i dynamickou tabulkou (jeden editor). Nesmyslný zápis se do
+šablony nedostane, stejně jako u formulářových polí.
+
+- U barev záhlaví a buněk se v panelu nově ukazuje nápověda, že jde zadat `{BARVA_LINKY}` - dosud
+  ji měl jen rámeček, text a obdélník, takže se o té možnosti u tabulek nedalo dozvědět.
+- **Zbývá mimo návrhář:** klient chce v jízdním řádu **dvě** barvy linky (zvlášť text, zvlášť
+  pozadí). Dnes je uložená jedna (`GetBarvaLinky` → jedno RGB), takže ji lze použít buď na text,
+  nebo na pozadí. Druhá barva je práce na straně JŘ, ne návrháře.
+
+.NET 526/526 (+16), Caché 45/45. Formulář prvku ověřen proti serveru.
+
+**Návrh k rozhodnutí (z review 31. 7.):** čáry a mřížka tabulky by měly být **jedno API napříč všemi
+tabulkovými prvky** - dnes jsou dva nesourodé světy (prvky JŘ mají barvu mřížky a přepínače čar,
+pevná a dynamická tabulka mají volbu „které čáry", ale barvu i tloušťku zadrátovanou v kódu).
+Zaevidováno jako `B40`.
+
 ## 2026-07-31 - #10660 DPKV uzavřen (grafické připomínky po importu z legacy)
 
 Poslední otevřený zákaznický tiket zastávkového JŘ. Klient hlásil čtyři oblasti a u tří z nich šlo

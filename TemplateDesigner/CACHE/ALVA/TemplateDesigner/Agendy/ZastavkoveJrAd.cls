@@ -221,6 +221,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) - fresh per request
+        d ..NactiNastaveniNazvu()         // tvar názvu zastávky + „název pro MHD" (platí pro celou sestavu)
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         // Default = první skupina v ^JRL - shodně s GetAvailableInstances. Picker posílá jen
@@ -305,6 +306,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("TITULEK",                titulek)
     d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
+    d vals.%Set("DOPRAVCI_SOUHRNNY_JR",         ..DopravciSouhrnnyJr(dataDB, sku, lin, ..VypsatSpojeDopravce()))
     d vals.%Set("BARVA_LINKY",            ..BarvaLinky(IdFa, dataDB, sku, lin))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1)
@@ -449,6 +451,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     }
 
     // Emituj VŠECHNY zastávky směru (vč. projetých, jako MHD) - StopList je filtruje dle „tisk projetých".
+    s zonaBezPismen = ..ZonaBezPismen(dataDB, sku, lin)   // nastavení je per linka, ne per zastávka
     s poradi = ""
     s cnt = 0
     f {
@@ -462,7 +465,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         i czst="" continue
         i '$d(servedPoradi(poradi)) continue                // jen obsluhované zastávky (jako legacy)
         s atributy  = ..AtributyZastavky(dataDB, czst, $p($p(veta,":",2),"#",1))   // trasa linky + registr zastávek
-        s zona      = $p($p(veta,":",5),"#",2)               // "#zóna#..."
+        s zony      = ..ZonyZastavky(dataDB, veta, czst, zonaBezPismen)   // trasa linky + záskok na registr zastávek
         s odsazeni  = +$p(veta,"#",5)                        // dta7 „odrazeni" - odsazení názvu o N znaků (legacy mkPLinWin/JRapiLin: 5. #-segment)
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
@@ -471,7 +474,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         // „na znamení" se tiskne přes atribut „x" (níže) - legacy UVOD tiskne jen „x". NaZnameni=0,
         // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
         s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0, odsazeni)
-        i zona '= "" d ..AddZona(z, zona)
+        f zi=1:1:$l(zony,";") {
+            s zx = $p(zony,";",zi)
+            i zx '= "" d ..AddZona(z, zx)
+        }
         // atributy zastávky → symbol u názvu + řádek legendy (jen neprojeté + významové znaky; analogicky MHD).
         // Přestupy (vlak „L" / autobus „A") jdou nad rámec legacy - posílají se vždy jako data zastávky,
         // ale legendu NEplní; jejich symbol řídí přepínač „Přestupy" na prvku StopList (default vyp).
@@ -739,14 +745,10 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             i komentarZnak '= "" s komentareLegenda(komentarZnak) = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_SpeC",komentarZnak))
         }
 
-        // Týdenní platnost - kroužkové denní značky (číslice 1-7 z plk = konkrétní dny, které spoj jede).
-        // Prázdné/"."/skupinové vzory (X, +) = celá skupina → bez značky (1:1 legacy: značka jen u
-        // konkrétních dnů, např. „⑤"=jede jen v pátek). Jednoznaková číslice → symbolový font ji kroužkuje.
-        s dnyZnaky = ""
-        f di=1:1:$l(plk) {
-            s dch = $e(plk, di)
-            i "1234567" '[ dch continue
-            s dnyZnaky = dnyZnaky_dch
+        // Týdenní platnost - kroužkové denní značky; sada závisí na rozvržení sloupců (viz DenniZnacky).
+        s dnyZnaky = ..DenniZnacky(ftl, plk)
+        f di=1:1:$l(dnyZnaky) {
+            s dch = $e(dnyZnaky, di)
             s dnyLegenda(dch) = ..TextDneVTydnu(dch)
         }
 
@@ -1280,6 +1282,56 @@ ClassMethod AtributyZastavky(dataDB As %String, czst As %String, atributyTrasy A
     ret vysledek
 }
 
+/// Tarifní zóny zastávky, `;`-oddělené (1:1 legacy `JRapiExp10` blok „trasa").
+/// Přednost má zóna z **trasy linky** (J-věta, 9. `#`-segment - `JRapiLin` dta11; čárka uvnitř je
+/// oddělovač zón, ne součást hodnoty). Když ji trasa nemá, vezme se z **registru zastávek**
+/// (`^JRZ` `$`-pole 11 = `zóna~hranice IDS~další zóny`; druhá zóna se přidá jen u hraniční
+/// zastávky). Hodnota `-` = zóny netisknout. `zonaBezPismen` odstraní z kódu písmena.
+ClassMethod ZonyZastavky(dataDB As %String, veta As %String, czst As %String, zonaBezPismen As %Boolean = 0) As %String
+{
+    s zonyTrasy = $tr($p(veta,"#",9), ",", ";")
+    i zonyTrasy = "", czst '= "" {
+        s poleRegistru = $p($g(^[dataDB]JRZ(czst)),"$",11)
+        s zonaRegistru = $p(poleRegistru,"~",1)
+        // Hraniční zastávka (příznak) leží ve dvou zónách - druhá je v témže poli.
+        i +$p(poleRegistru,"~",2) {
+            s druhaZona = $p(poleRegistru,"~",3)
+            i druhaZona '= "" s zonaRegistru = $s(zonaRegistru="":druhaZona, 1:zonaRegistru_";"_druhaZona)
+        }
+        s zonyTrasy = zonaRegistru
+    }
+    i zonyTrasy = "-" ret ""                     // „-" u linky = zóny se netisknou
+    s vysledek = ""
+    f idx=1:1:$l(zonyTrasy,";") {
+        s zona = $p(zonyTrasy,";",idx)
+        i zonaBezPismen s zona = ..ZonaBezPismenVKodu(zona)
+        i zona = "" continue
+        s vysledek = vysledek_$s(vysledek="":"",1:";")_zona
+    }
+    ret vysledek
+}
+
+/// Odstraní z kódu zóny písmena (1:1 legacy `delZnk^JRapiLinPrtPS2`). Písmeno v kódu nese
+/// **přepravní systém** (`JRapi4hand`: ODIS → „O", IDSOK → „I"), ne číslo zóny - do tisku
+/// patří jen číslo z číselníku. Záměrně jen ASCII, jako legacy.
+ClassMethod ZonaBezPismenVKodu(zona As %String) As %String
+{
+    ret $tr(zona, "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm", "")
+}
+
+/// Má se z kódu zóny odstranit písmeno přepravního systému? Globální nastavení
+/// `^JRSET("Definice","ZonaIdsDelZnk")`, přebité nastavením tisku linky
+/// `^JRL(sku,lin,"PATCH","ZonaIdsDelZnk")` - prázdné/0 = dle programu, 1 = nechat, 2 = odstranit
+/// (1:1 legacy `JRapiExp10` + `JRapiLin1` dta77). V JŘ to je u linky pole „Zóny - tisk a export
+/// do JDF bez písmen".
+ClassMethod ZonaBezPismen(dataDB As %String, sku As %String, lin As %String) As %Boolean
+{
+    s nastaveni = +$g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk"))
+    s perLinka = +$g(^[dataDB]JRL(sku,lin,"PATCH","ZonaIdsDelZnk"))
+    i perLinka s nastaveni = perLinka - 1
+    ret ''nastaveni
+}
+
 /// Název zastávky podle pořadí v trase (přes czst z J-věty `#1:1`).
 ClassMethod NazZPoradi(dataDB As %String, sku As %String, lin As %String, poradi As %String) As %String
 {
@@ -1506,10 +1558,33 @@ ClassMethod PrefixOmezeni(omzId As %String) As %String
     q $case(omzId, 11:"jede jen ", 12:"jede také ", 13:"jede ", 14:"jede jen v su. ", 15:"jede jen v li. ", 22:"nejede ", :"")
 }
 
-/// Text do legendy pro kroužkovou denní značku týdenní platnosti (číslice 1-7).
+/// Text do legendy pro kroužkovou denní značku týdenní platnosti (dny 1-7, svátek `+`).
 ClassMethod TextDneVTydnu(dch As %String) As %String
 {
-    q $case(dch, "1":"jede v pondělí", "2":"jede v úterý", "3":"jede ve středu", "4":"jede ve čtvrtek", "5":"jede v pátek", "6":"jede v sobotu", "7":"jede v neděli", :"")
+    q $case(dch, "1":"jede v pondělí", "2":"jede v úterý", "3":"jede ve středu", "4":"jede ve čtvrtek", "5":"jede v pátek", "6":"jede v sobotu", "7":"jede v neděli", "+":"jede ve svátek", :"")
+}
+
+/// Denní značky týdenní platnosti pro odjezd - závisí na **rozvržení sloupců dnů** (FTL),
+/// 1:1 legacy `JRapiLinPrtMhd1` (ř.80-83 pro FTL 0, ř.112-114 pro FTL 1, ř.128-130 pro FTL 2,
+/// ř.151-152 pro FTL 3). Značka smí nést jen informaci, kterou **nedává nadpis sloupce**:
+///   - sobota i neděle mají vlastní sloupec (FTL 0/3) → pro 6, 7 a `+` se značka netiskne vůbec
+///   - víkend je v jednom sloupci (FTL 1/2) → značka rozlišuje uvnitř sloupce, ale jen když spoj
+///     nejede i v ostatní víkendové dny („6" jen bez 7 a bez `+`, „7" a `+` jen bez 6)
+/// Konkrétní pracovní dny (1-5) se značkují vždy - sloupec pracovních dnů je nerozlišuje.
+/// Skupinový vzor `X` a prázdná/`.` platnost značku nemají (celá skupina).
+ClassMethod DenniZnacky(ftl As %String, plk As %String) As %String
+{
+    s znacky = ""
+    f di=1:1:$l(plk) {
+        s dch = $e(plk, di)
+        i "12345" '[ dch continue
+        s znacky = znacky_dch
+    }
+    i (ftl = 0) || (ftl = 3) q znacky
+    i (plk["6") && (plk'["7") && (plk'["+") s znacky = znacky_"6"
+    i (plk'["6") && (plk["7") s znacky = znacky_"7"
+    i (plk'["6") && (plk["+") s znacky = znacky_"+"
+    q znacky
 }
 
 /// Datumová část omezení - 1:1 formát zastávkového JŘ (gold `JRapiLinPrtPS3`): datumy přes `UpravDatum`
@@ -1622,6 +1697,115 @@ ClassMethod PopisDopravce(dataDB As %String, sku As %String, lin As %String) As 
     q "Zajišťuje: "_txt
 }
 
+/// DOPRAVCI_SOUHRNNY_JR = každý dopravce (firma × provoz) na **vlastním řádku**, bez uvození, ve tvaru
+/// „Linka &lt;licenční číslo&gt; | &lt;dopravce&gt;, spoje č. &lt;rozsahy&gt;" (KOVED #13008).
+/// Pojmenované podle účelu: skládá hlavičku **souhrnného jízdního řádu**, kde jednu vývěskovou linku
+/// obsluhuje víc dopravců pod různými licencemi. Na obyčejné lince funguje stejně (jedna licence,
+/// jedna skupina), takže se dá použít i tam.
+///
+/// Oproti `POPIS_DOPRAVCE` (jeden odstavec s „Zajišťuje: ") je to samostatné pole - staré nemůže
+/// změnit tvar, visí na něm zlaté odtisky i existující šablony.
+///
+/// Řádky se seskupují podle **(licenční linka → dopravce → provoz)**, takže souhrnná linka vyrobí
+/// řádek per licenci; licenční číslo dává <see cref="LicencniLinkaSpoje"/>.
+/// ⚠️ Souhrnná větev je ověřená jen syntetickými vstupy - v žádné testovací firmě souhrnná linka
+/// není, první reálné potvrzení přijde od zákazníka.
+ClassMethod DopravciSouhrnnyJr(dataDB As %String, sku As %String, lin As %String, vypsatSpoje As %Boolean = 1) As %String
+{
+    s cisloLinky = +lin
+    k dop, dopSpoje
+    f smer="T","Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+            q:sp=""
+            i '$isvalidnum(sp) continue
+            s spojRec = $g(^[dataDB]JRL(sku,lin,smer,sp))
+            s licencniLinka = ..LicencniLinkaSpoje(spojRec, cisloLinky)
+            s carriers = $p(spojRec, "#", 2)
+            f ci=1:1:$l(carriers,"~") {
+                s slot = $p(carriers,"~",ci)
+                i slot = "" continue
+                s fa = $p(slot,":",1)
+                i fa = "" continue
+                s pr = $p(slot,":",2)
+                s dop(licencniLinka, fa, pr) = ""
+                s dopSpoje(licencniLinka, fa, pr, +sp) = ""
+            }
+        }
+    }
+
+    k videno
+    s vysledek = "", licLin = ""
+    f {
+        s licLin = $o(dop(licLin))
+        q:licLin=""
+        s fa = ""
+        f {
+            s fa = $o(dop(licLin,fa))
+            q:fa=""
+            s pr = ""
+            f {
+                s pr = $o(dop(licLin,fa,pr))
+                q:pr=""
+                s nazev = ..NazevDopravce(dataDB, fa, pr)
+                i nazev = "" continue
+                s radek = "Linka "_licLin_" | "_nazev
+                i vypsatSpoje {
+                    // Referencí nelze předat uzel s indexy - přelít do lokálního pole (merge jen když uzel je).
+                    k spojeDop
+                    i $d(dopSpoje(licLin, fa, pr)) m spojeDop = dopSpoje(licLin, fa, pr)
+                    s rozsahy = ..RozsahyCisel(.spojeDop)
+                    i rozsahy '= "" s radek = radek_", spoje č. "_rozsahy
+                }
+                i $d(videno(radek)) continue   // tentýž dopravce i provoz v obou směrech = jeden řádek
+                s videno(radek) = ""
+                i vysledek '= "" s vysledek = vysledek_$c(10)
+                s vysledek = vysledek_radek
+            }
+        }
+    }
+    ret vysledek
+}
+
+/// Licenční číslo linky, pod kterou spoj jede. U **souhrnného JŘ** spoje pocházejí z několika
+/// licenčních linek a každý si nese „Zdroj spoje" (`#`-pole 3 = `index linky~spoj`); index je číslo
+/// linky doplněné nulami na 7 znaků, takže číslo je `$e(index,2,7)` (1:1 legacy `cnvIndLin^JRapiFce`).
+/// Bez zdroje (obyčejná linka) platí číslo té linky, na které stojíme.
+ClassMethod LicencniLinkaSpoje(spojRec As %String, cisloLinky As %String) As %String
+{
+    s zdrojIndex = $p($p(spojRec, "#", 3), "~", 1)
+    i zdrojIndex = "" ret cisloLinky
+    s cislo = +$e(zdrojIndex, 2, 7)
+    ret $s(cislo:cislo, 1:cisloLinky)
+}
+
+/// Čísla (subscripty pole) stlačená do rozsahů: „1-31, 201-204". Dvojice se vypíše jako „1, 2" -
+/// „1-2" se čte hůř než výčet. Vstup je pole s **číselnými** subscripty, iteruje se vzestupně.
+ClassMethod RozsahyCisel(ByRef cisla) As %String
+{
+    s vysledek = "", zacatek = "", predchozi = "", c = ""
+    f {
+        s c = $o(cisla(c))
+        q:c=""
+        i '$isvalidnum(c) continue
+        i zacatek = "" s zacatek = c, predchozi = c  continue
+        i c = (predchozi + 1) s predchozi = c  continue
+        s vysledek = vysledek_$s(vysledek="":"", 1:", ")_..RozsahText(zacatek, predchozi)
+        s zacatek = c, predchozi = c
+    }
+    i zacatek '= "" s vysledek = vysledek_$s(vysledek="":"", 1:", ")_..RozsahText(zacatek, predchozi)
+    ret vysledek
+}
+
+/// Jeden úsek výčtu: samostatné číslo, dvojice („1, 2") nebo rozsah („1-31").
+ClassMethod RozsahText(odC As %String, doC As %String) As %String
+{
+    i odC = doC ret odC
+    i doC = (odC + 1) ret odC_", "_doC
+    ret odC_"-"_doC
+}
+
 /// Text dopravce (fa,pr) z `^JRSET("DOP",...)` - 1:1 s `gDopMHD`/PzaJ assembly `^JRapiLinPrtMhd`:
 /// 1) je-li nastaven zkrácený MHD název (per-provoz $6 → firemní $14), použij ho SAMOSTATNĚ.
 /// 2) jinak plný tvar `<obchodní název / sídlo firmy>, <sídlo provozovny>,,tel:<telefon provozovny>`.
@@ -1657,10 +1841,77 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
 /// Fallback na $2, pokud $7 chybí (nevyplněný odbav název).
 ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 {
+    i czst = "" q ""                 // prázdný subscript (^JRZ("")) = <SUBSCRIPT>
     s rec = $g(^[dataDB]JRZ(czst))
-    s nazev = $p(rec, "$", 7)
+    // Pole 7 = „upravený název pro MHD" (legacy JRapiZst dta13). Má přednost, ale parametrem
+    // sestavy ho lze vypnout - KOVED ho u některých zastávek má a na vývěsce chce CIS název.
+    s nazev = ""
+    i ..PouzitNazevProMhd() s nazev = $p(rec, "$", 7)
     i nazev = "" s nazev = $p(rec, "$", 2)
-    q $replace(nazev, ",,", ",")     // display název: "obec,,místo" → "obec,místo" (legacy collapse; _CIS pole ,, zachovává)
+    q ..FormatNazvuZastavky(nazev, $p(rec, "$", 3), ..TvarNazvuZastavky())
+}
+
+/// Tvar názvu zastávky pro tisk (KOVED #13089). Vstup je název z registru zastávek, kde je
+/// obec a místo oddělené **dvojčárkou** („Zlín,,aut.nádr."). <var>okres</var> = pole 3 registru.
+///
+/// Tvary: prázdný / „Zkrácený" = dvojčárka na jednu (dosavadní chování a výchozí hodnota) ·
+/// „Plný CIS" = dvojčárka zůstane (technické exporty, soutěže) · „Plný CIS s okresem" = a navíc
+/// okres na konci · „Typograficky upravený" = zkrácený + mezera za čárkou a tečkou.
+ClassMethod FormatNazvuZastavky(nazev As %String, okres As %String = "", tvar As %String = "") As %String
+{
+    i nazev = "" ret ""
+    i tvar = "Plný CIS" ret nazev
+    i tvar = "Plný CIS s okresem" ret nazev_$s(okres'="":","_okres, 1:"")
+    s zkraceny = $replace(nazev, ",,", ",")
+    i tvar = "Typograficky upravený" ret ..MezeryPoInterpunkci(zkraceny)
+    ret zkraceny
+}
+
+/// Doplní mezeru za čárku a tečku - „Zlín,aut.nádr." → „Zlín, aut. nádr.". Před číslicí se mezera
+/// nedoplňuje, aby zůstalo „č.1" a desetinná čísla. Záměrně jen pro **názvy zastávek**: na volný
+/// text se pustit nesmí, rozbila by webová adresa („www.idzk.cz" → „www. idzk. cz").
+ClassMethod MezeryPoInterpunkci(txt As %String) As %String
+{
+    s vysledek = ""
+    f i=1:1:$l(txt) {
+        s znak = $e(txt, i)
+        s vysledek = vysledek_znak
+        i (znak '= ",") && (znak '= ".") continue
+        s dalsi = $e(txt, i + 1)
+        i dalsi = "" continue            // konec textu
+        i dalsi = " " continue           // mezera už tam je
+        i dalsi ? 1N continue            // číslice
+        s vysledek = vysledek_" "
+    }
+    ret vysledek
+}
+
+/// Tvar názvu zastávky z parametru sestavy - per požadavek uložený do `^||TiskAd` (nastavuje
+/// `GetData`/`GetMockData`, ať se nemusí protahovat všemi voláními jména).
+ClassMethod TvarNazvuZastavky() As %String
+{
+    ret $g(^||TiskAd("nazev","tvar"))
+}
+
+/// Má se použít „upravený název pro MHD" z registru zastávek? Výchozí ano = dosavadní chování.
+ClassMethod PouzitNazevProMhd() As %Boolean
+{
+    ret $g(^||TiskAd("nazev","mhd"), 1)
+}
+
+/// Má se u dopravce vypsat výčet spojů? Parametr sestavy, výchozí ano (tak to má zákazník na vzoru).
+ClassMethod VypsatSpojeDopravce() As %Boolean
+{
+    ret ($zcvt($g(^||ML("IN","SPOJE_U_DOPRAVCE")),"L") '= "false")
+}
+
+/// Přečte nastavení názvů zastávek z parametrů sestavy do `^||TiskAd`. Volá se po úklidu cache
+/// na začátku požadavku, než se začnou skládat jména.
+ClassMethod NactiNastaveniNazvu()
+{
+    s ^||TiskAd("nazev","tvar") = $g(^||ML("IN","TVAR_NAZVU_ZASTAVKY"))
+    // Tolerantně jako ostatní bool parametry (starší klient posílal „True"); prázdné = zapnuto.
+    s ^||TiskAd("nazev","mhd") = ($zcvt($g(^||ML("IN","NAZEV_PRO_MHD")),"L") '= "false")
 }
 
 /// "Číselníkový" (CIS) název zastávky z ^JRZ `$2` - zkrácený, s `,,` zachovaným (1:1 legacy POPIS_ZASTAVKA_CIS dta20).
@@ -1682,6 +1933,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů - fresh per request
+        d ..NactiNastaveniNazvu()
 
         // Živý náhled z první linky aktuální firmy (session dataDB) - zrcadlí reálný GetData.
         d ..PrvniLinka(dataDB, .sku, .lin)
@@ -1717,6 +1969,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
     d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+    d ..AddField(fields, "DOPRAVCI_SOUHRNNY_JR",         "Dopravci souhrnného JŘ",    "text")
     d ..AddField(fields, "BARVA_LINKY",            "Barva linky",            "color")
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
@@ -1807,6 +2060,29 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč - starší klient ignoruje).
     // Konvence: skupina = UI název elementu, který parametr ovlivňuje („Seznam zastávek" /
     // „Mřížka odjezdů" / „Poznámky a legenda"); parametry pro celou šablonu → „Obecné".
+    // „Obecné" je první schválně - je to nastavení celé sestavy, ne jednoho prvku.
+
+    // KOVED #13089: tvar názvu zastávky. Platí pro název všude, kde se objeví (seznam zastávek,
+    // nadpis vývěsky, cíl, texty poznámek), proto „Obecné" a ne „Seznam zastávek".
+    // ⚠️ Výchozí „Zkrácený" = dosavadní chování - jiná výchozí hodnota by pohnula zlatými odtisky.
+    s pTvarNaz = ##class(%DynamicObject).%New()
+    s pTvarNaz.name         = "TVAR_NAZVU_ZASTAVKY"
+    s pTvarNaz.label        = "Tvar názvu zastávky"
+    s pTvarNaz.type         = "enum"
+    s pTvarNaz.group        = "Obecné"
+    s pTvarNaz.defaultValue = "Zkrácený"
+    s pTvarNaz.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek, s okresem i jeho zkratku - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
+    s optsTN = ##class(%DynamicArray).%New()
+    d optsTN.%Push("Zkrácený")
+    d optsTN.%Push("Typograficky upravený")
+    d optsTN.%Push("Plný CIS")
+    d optsTN.%Push("Plný CIS s okresem")
+    s pTvarNaz.options = optsTN
+    d arr.%Push(pTvarNaz)
+
+    d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnutím se použije název podle CIS.")
+    d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.")
+
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
     // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník

@@ -53,6 +53,30 @@ public class ApplyScaleTests
         Assert.Null(el.Columns[1].Width);              // auto zůstává auto
     }
 
+    /// <summary>Milimetrové rozměry šipky směru a mřížky musí škálovat spolu se šablonou -
+    /// jinak se při zvětšení vývěsky ztratí (šipka zůstane vlásková).</summary>
+    [Fact]
+    public void StopList_SkaluujeSipkuIMrizku()
+    {
+        var el = new StopListElement
+        {
+            DirectionArrowWidth = 0.3f,
+            DirectionArrowHeadSize = 1.5f,
+            GridLineWidth = 0.2f,
+            PartGap = 4f,
+        };
+        var auto = new StopListElement();   // tloušťka mřížky nenastavená = dle rámečku
+
+        el.ApplyScale(2f);
+        auto.ApplyScale(2f);
+
+        Assert.Equal(0.6f, el.DirectionArrowWidth);
+        Assert.Equal(3f, el.DirectionArrowHeadSize);
+        Assert.Equal(0.4f, el.GridLineWidth);
+        Assert.Equal(8f, el.PartGap);          // mezera mezi oddíly je taky rozměr v mm
+        Assert.Null(auto.GridLineWidth);
+    }
+
     [Fact]
     public void DepartureGrid_SkaluujeSkupinoveOverridy_AWidthOverride()
     {

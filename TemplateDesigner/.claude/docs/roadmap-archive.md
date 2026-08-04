@@ -2,6 +2,182 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-31 ✅ - `B29` denní značky dle rozvržení sloupců (#13045a)
+
+Detail → changelog 2026-07-31 (4). Klient hlásil dvě věci (sobotní odjezdy v nedělním sloupci ·
+značka „6" navíc) a **byla to jedna chyba**: značku dne jsme emitovali bez ohledu na rozvržení
+sloupců dnů, takže spoj s platností „sobota a svátek" nesl „6" i v nedělním sloupci, kam patří
+kvůli svátku. **Časy byly celou dobu správně, lhala značka.**
+
+Doportováno 1:1 dle `JRapiLinPrtMhd1` (nová `DenniZnacky`): oddělený sobotní a nedělní sloupec →
+u platností 6/7/+ žádná značka · sloučený víkend → značka jen když spoj odlišuje (vylučuje se proti
+sobotě) · konkrétní pracovní dny značkované vždy. Doplněna dosud chybějící značka **„svátek"**
+(legacy symbol id 15) s legendou „jede ve svátek".
+
+Ověřeno na datech klienta `ZL_KOVED` (linka 0771251, tři sloupce dnů, spoje „6+"), kontrolní vzorek
+`CB_CSADAD` 0345067 (zmizelo 15 falešných značek). Zlaté odtisky přebaselinovány - ubyly **jen řádky
+legendy** (110 → 96, 183 → 168), počty stránek/zastávek/odjezdů beze změny.
+
+**Zbývá z tiketu #13045:** koncept vlastních skupin dnů s obdobími = `B39` (Vlna 3).
+**Otevřený nález mimo tento blok:** u téže stránky se naše písmena rozdílů tras (E, Q, H) rozcházejí
+s legacy (J, E, G, O) - samostatná věc, nespojovat s tímhle.
+
+## 2026-07-31 ✅ - `B28` odpověď BBSK #13070 (bez vývoje)
+
+Ptali se na variantní trasy (zacházky) v šabloně a na vývěsku na výšku. **Všechno umíme** - odpověď
+byla návod, kde se co zapíná, plus nabídka hovoru; tiket vyřešen bez řádku kódu.
+
+Podstatná zjištění, která z toho vypadla a platí dál:
+- **„MHD" v zadání zákazníka obvykle znamená městskou dopravu, ne náš MHD modul** (ten mají jen
+  DPCB/DPKV) - ověřovat modul evidence, viz `customer-requirements §0.1`.
+- **Poznámky o rozdílech tras se zapínají u linky v JŘ** („Nastavení k tisku" → „Odjezdník MHD" →
+  „Poznámkovat rozdíly v trase"), ne v šabloně; sada písmen je tam v poli „Volné značky".
+- **Bez vzorové trasy poznámky nezmizí** - odpadne jen věta „jede až do" (spoj nemůže jet za vzor).
+  Změřeno: napříč ~38 000 linkami tří firem nemá kombinaci „poznámkování zapnuté + vyplněná vzorová
+  trasa" **ani jedna linka**, takže pozitivní formulace („jede přes") je na reálných datech
+  neproběhaná - neslibovat ji bez zkoušky.
+- Sonda pro výběr ukázkové linky se zacházkami = `AdVariantyProbe.ScanZachazky`.
+
+## 2026-07-31 ✅ - `B33` popis dopravce po řádcích, i pro souhrnný JŘ (#13008)
+
+Detail → changelog 2026-07-31 (8). Nové pole **`DOPRAVCI_SOUHRNNY_JR`**: řádek na dopravce × provoz,
+před ním licenční číslo linky, za ním výčet spojů stlačený do rozsahů; bez uvozujícího „Zajišťuje".
+`POPIS_DOPRAVCE` zůstalo nedotčené (visí na něm šablony i zlaté odtisky).
+
+- **Blok nebyl gated na #13099, jak roadmapa tvrdila.** #13099 řeší **vytváření** souhrnných linek
+  v EDISONu (dnes ručně v Excelu); tisk hlavičky na nich nezávisí. Seskupení podle
+  **(licenční linka → dopravce → provoz)** obslouží obojí jedním kódem.
+- **Licenční číslo se u souhrnné linky bere od spoje** („Zdroj spoje", `#`-pole 3 = `index~spoj`).
+  Index je číslo linky doplněné nulami na 7 znaků → převod `$e(index,2,7)`, 1:1 legacy `cnvIndLin`.
+  Bez zdroje (obyčejná linka) platí číslo té linky = dosavadní chování, zlaté odtisky beze změny.
+- ⚠️ **Souhrnná větev je ověřená jen syntetickými vstupy** - souhrnná linka v testovacích firmách
+  není; v datech KOVED je u spojů *návaznost*, ne zdroj spoje. Reálné potvrzení až od zákazníka.
+- **Jméno pole podle účelu** (rozhodnutí Jan): popisuje scénář, ne obsah. Padlo to až ve chvíli, kdy
+  byla souhrnná větev hotová - jinak by jméno slibovalo víc, než kód dělá.
+- **Poučení k zlatým odtiskům** zapsané přímo do testu: u posunu digestu nejdřív porovnat jeho
+  složky. Shodné počty + jiné md5 = přidané pole, ne změna chování (na tuhle past jsem najel).
+
+## 2026-07-31 ✅ - `B32` tvar názvu zastávky jako volba sestavy (#13089)
+
+Detail → changelog 2026-07-31 (7). Dvě volby v **nové skupině parametrů „Obecné"**: tvar názvu
+(zkrácený = výchozí · typograficky upravený · plný CIS · plný CIS s okresem) a „Použít název pro MHD".
+
+- **Kde se název skládá:** `NazevZastavky` čte `^JRZ` pole 7 („upravený název pro MHD",
+  legacy `JRapiZst` dta13) a padá na pole 2 (CIS); pole 3 je okres. Jedna metoda = pravidlo se propíše
+  i do nadpisu vývěsky, cíle a textů poznámek, protože všechny berou název odtud.
+- **Proč parametr, ne vlastnost prvku:** mění to **hodnotu dat** (skládá server), a je to volba při
+  tisku - klient chce běžně vylepšený tvar a pro export do soutěže plný CIS bez druhé šablony.
+  Skupina „Obecné" (ne „Seznam zastávek"), protože název je i v nadpisu, cíli a poznámkách; konvence
+  „skupina = prvek, parametry celé sestavy → Obecné" je zapsaná v agendě.
+- **Nastavení per požadavek** leží v `^||TiskAd("nazev",…)`, aby se nemuselo protahovat všemi
+  voláními jména (`NactiNastaveniNazvu` se volá po úklidu cache v `GetData`/`GetMockData`).
+- **Typografické pravidlo jen na názvy zastávek**, ne na volný text - mezera za tečkou rozbije
+  `www.idzk.cz`, a ten mají v poznámce k tarifu na každé lince IDZK. Před číslicí se mezera nedoplní
+  (`rozc.0.9`, `č.1`). Zamčeno testem včetně toho, že dvojčárka se stahuje **před** typografií.
+- **Oba parametry v allowlistu server-side parametrů** - jinak by změna v UI nespustila re-fetch
+  a klik by byl no-op (past z `cache-api.md`).
+- Ověřeno end-to-end na datech KOVED (`ZL_KOVED`, linka 0822995), ne jen jako čistá funkce.
+  Zlaté odtisky se nepohnuly (výchozí = dosavadní tvar).
+
+## 2026-07-31 ✅ - `B41` mrtvé UI odklizeno: co řídí parametr sestavy, není i v prvku
+
+Detail → changelog 2026-07-31 (6). Tři přepínače v prvcích nic nedělaly, protože je parametr sestavy
+přebíjel - a agendy JŘ ho posílají vždy. Z téhle dvojkolejnosti vznikla hlášení `B22`/`B24`.
+
+Odstraněno z prvků: **Šipka směru**, **Projeté zastávky** (seznam zastávek), **Roztáhnout na výšku**
+(mřížka odjezdů) - včetně tří fallbacků časové osy, které z panelu vypadly už dřív. Nahradily je
+konstanty shodné s výchozími hodnotami parametrů agendy. Vzhled (barva/tloušťka/hrot šipky, barva
+a čas u projetých) v šabloně zůstává a dostal nápovědu, kde se tisk zapíná.
+
+- **Bezpečnost změny doložena, ne odhadnuta:** všech pět parametrů posílají obě agendy JŘ (AD i MHD),
+  a vlastnost prvku se uplatnila jen bez dat - v tom stavu seznam kreslí zástupné řádky (šipka se
+  nekreslí, projeté nemají co filtrovat) a mřížka vrací prázdný layout.
+- **Bez migrace a bez bumpu verze** - odebrané klíče se při čtení ignorují a hodnota se stejně
+  zahazovala (zapsáno v `template-schema-versions`).
+- **Vedlejší nález:** distribuční AD šablona měla u mřížky napsanou časovou osu „Vlastní rozsah 4-22",
+  ale agenda posílá „Jen hodiny s odjezdy", takže se ten rozsah nikdy netiskl. Kdyby ho distribuce
+  měla mít, musí se změnit výchozí hodnota parametru v agendě, ne šablona.
+- **Import PDF** si přestal zapisovat detekovanou časovou osu a šipku - stejně se při tisku nepoužily.
+- **Pravidlo do budoucna:** když agenda pošle parametr, prvek tu vlastnost **nevystavuje**; vzhled
+  patří do šablony, zapínání do parametrů.
+
+## 2026-07-31 ✅ - `B38` rozdělení seznamu zastávek na oddíly na pokračování (#13097)
+
+Detail → changelog 2026-07-31 (4). **Přeceněný blok: v roadmapě visel jako `L` gated na `B13`
+s tvrzením „tentýž mechanismus". Není.** `B13` řeže **široké** sloupce linkové tabulky do
+stránkových bloků (stránkovací engine, jiný prvek), `B38` rozlévá **řádky** seznamu zastávek do
+oddílů vedle sebe **uvnitř rámce prvku** - engine do toho nemluví. Reálná velikost **M**, uděláno
+samostatně.
+
+Prvek dostal „Rozdělit na více oddílů" (1-3) a „Mezera mezi oddíly"; každý oddíl nese celou tabulku
+znovu (záhlaví + všechny sloupce), řádky se dělí rovnoměrně, výška se počítá z nejdelšího oddílu.
+Strop 3 je rozhodnutí Jan 31. 7. - víc oddílů zužuje sloupce tak, že se vývěska nedá přečíst.
+
+- **Hlavní past:** šířky sloupců a automatické zmenšování textu se musí počítat ze šířky **oddílu**,
+  ne prvku. Bez toho sloupce z oddílu vylezou (`ResolveColumnWidths`/`ComputeWidthScale` proto berou
+  šířku parametrem).
+- **Šipka směru pokračuje mezi oddíly** - v oddílu s aktuální zastávkou od ní dolů, v dalších od
+  horní hrany. Jinak by končila v půlce seznamu.
+- Vedlejší efekt refaktoru: výběr viditelných řádků (projeté, podmínka viditelnosti) a sestavení
+  řádku jsou vytažené z kreslicí smyčky do metod, takže smyčka je čitelná.
+- Aditivní vlastnost s výchozí hodnotou 1 → žádná migrace, nikomu se vzhled nemění.
+
+## 2026-07-31 ✅ - `B34` zóny: doportovaná logika starého modulu (#13091 bod 4)
+
+Detail → changelog 2026-07-31 (3). **Klíčové zjištění analýzy: nebyla to nová featura, ale
+nedoportovaný kus starého modulu** - obě klientovy stížnosti (zóna jen z trasy linky · písmeno
+místo čísla) legacy řeší, jen jsme to nepřevzali.
+
+Doportováno 1:1 dle `JRapiExp10`: záskok na registr zastávek (`^JRZ` `$`-pole 11, u hraniční
+zastávky i druhá zóna), odstranění písmen dle nastavení (globální `^JRSET("Definice","ZonaIdsDelZnk")`
+přebité u linky `PATCH` - v JŘ pole „Zóny - tisk a export do JDF bez písmen"), hodnota `-`
+= netisknout. Oddělovač více zón srovnán na čárku (starý modul), dosud lomítko.
+
+- **Písmeno v kódu zóny nese přepravní systém**, ne zónu - do dat se předřazuje (`JRapi4hand`:
+  ODIS → „O", IDSOK → „I"), legacy ho pro tisk maže (`delZnk^JRapiLinPrtPS2`). Tím je vysvětlena
+  klientova druhá věta („písmeno místo čísla z číselníku").
+- **Riziko gold parity změřeno, ne odhadnuto:** zlaté odtisky `CB_CSADAD` se neposunuly (firma
+  zóny IDS nemá), paritní testy zón `CB_GWBUS`/`KV_DP` zůstaly zelené. Přidán test, který záskok
+  dokazuje na živých datech a čte očekávanou hodnotu ze stejného globálu, takže nepadá na driftu
+  zákaznických dat.
+- **Nedělá se, dokud klient neodpoví** (visí v „Čeká na někoho jiného"): jestli má zastávka
+  přednost i tam, kde trasa zónu má. Legacy dává přednost trase; přehození by nás rozešlo
+  s ostatními výstupy (JDF, exporty), takže to není naše rozhodnutí.
+
+## 2026-07-31 ✅ - `B30` vzhled seznamu zastávek (#13091a) + `B31` barva z dat u sloupců (#12997)
+
+Detail → changelog 2026-07-31 (2). Dva bloky fronty KOVED jedním sezením, protože sahají do téhož
+místa (seznam zastávek a nastavení jeho sloupců).
+
+**`B30`** - šipka směru jde nastavit (tloušťka, velikost a tvar hrotu, styl čáry), přibyly svislé
+čáry mezi sloupci a čas u projetých zastávek má volbu, jak se má chovat.
+
+- **Vedlejší nález, opravený:** tloušťka šipky se zadávala v **pixelech**, takže v tisku z ní byla
+  vláskovka - odtud klientovo „šipka je malá". Nově milimetry, výchozí hodnoty drží dosavadní
+  vzhled na obrazovce. Milimetrové rozměry šipky i mřížky se škálují se šablonou (test).
+- **Záporné časy u projetých zastávek** jsou důsledkem toho, že časy jsou kumulativní od vývěskové
+  zastávky. Nově se defaultně skryjí. Řešeno v prvku, ne v agendě - je to volba zobrazení, data
+  zůstala beze změny (zlaté odtisky nedotčené, 45/45).
+- Tloušťku a styl mřížky dostaly **všechny** JŘ prvky (žijí na společném základu), zapnutí svislých
+  čar jen seznam zastávek - ostatní je už měly.
+- **Review 31. 7. přineslo dvě zjednodušení:** přepínač „Tučná šipka" zrušen (dělal totéž co
+  tloušťka, jen hrubě → migrace šablon na 1.6.0) a volba u projetých časů zúžena ze tří na dvě
+  („skrýt jen záporné" se na reálných datech chovalo shodně s „nezobrazovat"). Sjednocení čar
+  a mřížky napříč **všemi** tabulkovými prvky vzniklo z téhož review jako blok `B40`.
+
+**`B31`** - barva textu i pozadí sloupce se dá **zapsat textem**, takže tam jde zadat
+`{BARVA_LINKY}`; dosud byl jen výběr barvy, který barvu z dat nabídnout neumí. Jeden sdílený editor
+sloupců → pokryty zastávky, odjezdy, linková i dynamická tabulka. Nápověda o `{BARVA_LINKY}`
+přidaná k barvám záhlaví a buněk (dosud ji měl jen rámeček, text a obdélník).
+
+- **Roadmapa tvrdila něco jiného:** nález „Fáze B" z 30. 7. říkal, že u zastávek a odjezdů pole
+  „Pozadí záhlaví / Pozadí buněk" v tabu Obecné **chybí**. Ve skutečnosti tam jsou, jen pod popisky
+  „Barva textu / Pozadí" ve skupinách „Styl záhlaví / Styl datových buněk" (sdílený balíček polí
+  stylu). Skutečná mezera byla jen ta jedna: nešlo zadat barvu **textem**. Tvrzení z roadmapy
+  smazáno, ať se podle něj nepřepisuje něco, co funguje.
+- **Zbytek `B31` je mimo návrhář** (viz roadmapa, „Čeká na někoho jiného"): dvě barvy linky
+  (zvlášť text, zvlášť pozadí) potřebují druhou hodnotu v jízdním řádu.
+
 ## 2026-07-30 ✅ - `B22` „Hodiny od/do" v parametrech - vyřešeno opravou `B24`
 
 Symptom: „Hodiny od/do" byly vidět, i když časová osa nebyla „Vlastní rozsah". Prohledání kódu ale

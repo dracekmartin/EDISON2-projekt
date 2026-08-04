@@ -605,7 +605,7 @@ public partial class PropertiesPanel : UserControl
         _execute?.Invoke(new SetPropertyCommand(label, oldVal, newVal, apply));
 
         // Pokud má panel deskriptory s VisibleWhen, rebuildni - změna jedné hodnoty
-        // mohla ovlivnit viditelnost jiných řádků (např. HodinyOd/Do závisí na TimeAxisMode).
+        // mohla ovlivnit viditelnost jiných řádků.
         if (_hasVisibleWhen && _currentDescriptors is not null)
             Dispatcher.BeginInvoke(new Action(() => ShowDescriptors(_currentDescriptors)));
     }
