@@ -131,11 +131,26 @@ Body z fronty Vlny 0, které nejsou doladění - chtějí vlastní plánování.
   **napsat do protokolu importu** („předloha má osu 5-23, nastavte ji v parametrech"), ať se informace
   neztratí a dostane se k tomu, kdo s ní může něco udělat. Původní detekce (`timeAxisRangeFrom/To`
   v `AiGuidedScheduleBuilder`) je v gitu před commitem `B41`.
-- **`B44` Nabídka datových polí při psaní `{…}`** (M–L; podnět Jan 3. 8.). Dnes musí uživatel název
-  pole znát a napsat ho bez překlepu; nabídka při psaní (jako doplňování příkazů v terminálu) by to
-  zásadně zpříjemnila a odstranila tichý překlep v tokenu, který se projeví až v tisku. Týká se
-  všech míst, kde se zadávají `{POLE}` (barvy, text prvku, obsah buněk), takže se to má navrhnout
-  jednou a sdílet, ne dělat per pole. Zdroj nabídky = schéma agendy, které už klient má.
+- **`B44` Nabídka datových polí místo psaní `{…}`** (M; podnět Jan 3. 8., návrh + rozhodnutí 4. 8.).
+  Dnes musí uživatel název pole znát a napsat bez překlepu; chyba se projeví **až v tisku**.
+  **Změřeno na šablonách v repu:** všech 18 výskytů `{POLE}` je v **téže vlastnosti** (text textového
+  prvku), z toho 12× je celá hodnota jeden token a 6× věta s tokeny uvnitř (`Linka {CISLO_LINKY}:
+  {POPIS_LINKY}`). ⚠️ **Proto NELZE nahradit pole ComboBoxem** - je to totéž pole, jednou token,
+  podruhé věta se dvěma tokeny; výběr celé hodnoty by druhý případ znemožnil.
+  **Rozhodnutý návrh (Jan 4. 8.):** pole zůstane textové a vedle něj bude **„vložit pole"** -
+  hledatelný seznam (`EDFilterComboBox`, žádná nová vyhledávací logika), výběr **vloží token na
+  pozici kurzoru**. Je to standardní vzor z hromadné korespondence a report designerů, je **vidět**
+  (na rozdíl od doplňování skrytého za napsáním `{`) a funguje i pro větu s víc tokeny.
+  **Kdo co dodává:** server v `.cls` označí pole, kam placeholdery patří (aditivní sloupec na wire -
+  čtečka má délkové pojistky, takže EDISON to nerozbije); **seznam polí dodá klient** ze schématu
+  agendy, protože Caché agendu nezná - týž mechanismus jako „Zdroj dat" a řazení sloupců. Tokeny se
+  vezou v `Field.ListItems` (u textového pole dnes nevyužité), takže nový je jen ten příznak.
+  **Rozsah (rozhodnutí Jan):** připojitelné chování v EDControls použité **oběma cestami** -
+  formulářem z Caché i vlastními editory návrháře; jinak vzniknou dvě implementace téhož.
+  V prvním kroku nabízet **všechna pole agendy** s popiskem, odkud jsou (uživatel hledá název,
+  nepřemýšlí v kategoriích); kontextový filtr až kdyby vadil.
+  Doplňování při psaní `{` se dá přidat později nad týmž seznamem - není to buď/anebo.
+
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
