@@ -178,6 +178,14 @@ při scope té fáze, ne teď.
   **#13102** u Petra (virtuální prodloužení spoje v JŘ). Oba body ukazují na stejný příklad (linka 304);
   prodloužení v JŘ by poznámku „pokračuje do…" udělalo zbytečnou. Body 1, 2 a 4 tiketu jsou hotové,
   takže tiket drží už jen tohle rozhodnutí.
+  ⚠️ **Zadarmo to z #13102 nedostaneme a je to dané jejich vlastním zadáním.** Kdyby prodloužení šlo do
+  trasy spoje (`^JRL(...,"W",…)`), dopočítá se u nás všechno samo (obsluhované zastávky, varianty,
+  odjezdy) - `ObsluhovanePoradi` to čte za běhu. Ale #13102 chce prodloužení **virtuální, jen pro
+  vývěsku, bez úniku do jiných výstupů**, takže do trasy zapsat NESMÍ (čtou ji exporty JDF/CIS) →
+  poloviny jsou dvě: oni zadávání + úložiště, my přečtení a přiložení k trase. **Naše polovina je malá,
+  pokud se dopředu dohodne, kam to zapíšou** - a jejich struktura musí nést **čas u každé přidané
+  zastávky** (bez času nejde odjezd nikam postavit). To je věta, která patří do #13102 **teď**, ne až
+  po implementaci. Na vývěsce by pak stačil jeden parametr sestavy, prvky se nemění.
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
   jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
   (který sloupec - legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
