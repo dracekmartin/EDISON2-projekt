@@ -73,6 +73,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("Vyluky", "Výlukové poznámky", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Vcetne", "Včetně"), f.AddListItem("Bez", "Bez výluk"), f.AddListItem("Jen", "Jen výluky")
         s f.helpText = "Poznámky linky, které začínají ""Výluka"", lze mít v samostatném bloku: v jednom bloku zvolte Bez výluk a ve druhém Jen výluky. Vyžaduje zapnutý parametr sestavy Poznámky zadané u linky."
+        // Kategorie poznámek zadaných u linky - klient je chce rozložit do víc bloků, protože mají jiné
+        // rozložení sloupců než seznam značek (dlouhé odstavce vs. „značka + text").
+        s f = form.AddBool("ShowPoznamkyLinkyTarifni", "Tarifní podmínky linky", 1)
+        s f.helpText = "Které poznámky zadané u linky blok bere. Vypnutím se schová jen tato kategorie - volba Textové poznámky výše vypne i ruční komentáře a rozdíly tras. Vyžaduje zapnutý parametr sestavy Poznámky zadané u linky."
+        d form.AddBool("ShowPoznamkyLinkyVseobecne", "Všeobecné poznámky linky", 1)
+        d form.AddBool("ShowPoznamkyLinkyRadiobus", "Radiobus poznámky linky", 1)
 
         // ── Skupina "Negativní značky" ────────────────────────────────────
         d form.AddGroup("nz", "Negativní značky")

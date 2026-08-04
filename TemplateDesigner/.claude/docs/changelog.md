@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-04 (2) - výběr kategorií poznámek linky (#13093 bod 1, zbytek)
+
+V zadání stálo *„Dají se v šabloně aktivovat? **Příp. filtrovat Poznámky 1, Poznámky 2 apod?** Asi to
+bude muset být v nějakém jiném poli než seznam poznámek s NZ, kvůli jinému rozložení sloupců."* -
+druhou větu jsme minule přeslechli. Blok poznámek umí vybírat podle **druhu** (negativní značky /
+speciální znaky / textové poznámky) a k tomu výluky, ale kategorie poznámek linky vybrat nešly:
+„Textové poznámky" vypne poznámky linky **spolu s** ručními komentáři a rozdíly tras, což není filtr.
+
+Nově tři volby v Filtrování: **Tarifní podmínky linky · Všeobecné poznámky linky · Radiobus poznámky
+linky**. Kategorie server tagoval už od (11), takže je to práce jen v prvku - filtr, panel, formulář.
+
+- **Vybírá jen mezi poznámkami linky.** Značky, omezení a ruční komentáře jím projdou vždy; jinak by
+  vypnutá kategorie sebrala jako vedlejší efekt i je (hlídá test).
+- **Výluky zůstávají vlastní volbou** - nefiltrují se podle kategorie zdroje, ale podle prefixu textu,
+  takže jsou napříč kategoriemi (v datech leží ve „všeobecných").
+- Výchozí vše zapnuté = existujícím šablonám se vzhled nemění.
+
+⚠️ **Popisky jsou naše doménové názvy** (tarifní / všeobecné / radiobus), kdežto klient v zadání píše
+„Poznámky 1, Poznámky 2" podle číslování ve vlastnostech linky. Slova jsou srozumitelnější než čísla,
+ale pokud jeho záložka v JŘ čísluje, popisky se mají srovnat - **rozhodnutí na Janovi**.
+
+.NET 567/567 (+4), Caché 73/73.
+
 ## 2026-08-04 (1) - kolo u odjezdu bylo cizí glyf, dvojí vysvětlivka „R" (#13093 bod 2)
 
 Tři pozorování z reálné vývěsky KOVED. Dvě byly chyby, jedna ne.

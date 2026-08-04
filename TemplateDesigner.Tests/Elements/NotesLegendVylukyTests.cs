@@ -47,6 +47,66 @@ public class NotesLegendVylukyTests
         Assert.All(texty, t => Assert.StartsWith("Výluka", t));
     }
 
+    // ── Výběr kategorií poznámek linky (#13093 bod 1: „příp. filtrovat Poznámky 1, Poznámky 2?") ──
+
+    /// <summary>Klient chce jednotlivé kategorie poznámek linky rozložit do víc bloků (mají jiné
+    /// rozložení sloupců než seznam značek). Vypnutá kategorie zmizí, ostatní zůstanou.</summary>
+    [Fact]
+    public void VypnutaKategorieLinky_ZmiziJenOna()
+    {
+        var texty = new NotesLegendElement { ShowPoznamkyLinkyTarifni = false }
+            .FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text).ToList();
+
+        Assert.DoesNotContain(texty, t => t.StartsWith("Na lince platí"));
+        Assert.Contains("R - k jízdence lze zakoupit místenku", texty);   // jiná kategorie linky zůstává
+        Assert.Contains("na znamení", texty);
+        Assert.Equal(4, texty.Count);
+    }
+
+    /// <summary>Dvojice bloků: v jednom jen tarifní, ve druhém jen všeobecné. To je ten scénář,
+    /// kvůli kterému o filtr žádal.</summary>
+    [Fact]
+    public void LzeNechatJenJednuKategoriiLinky()
+    {
+        var jenTarifni = new NotesLegendElement
+        {
+            ShowPoznamkyLinkyVseobecne = false,
+            ShowPoznamkyLinkyRadiobus = false,
+            Vyluky = VylukyFiltr.Bez,
+            ShowSpecialniZnaky = false,
+        }.FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text).ToList();
+
+        Assert.Equal(["Na lince platí Tarif IDZK"], jenTarifni);
+    }
+
+    /// <summary>Filtr kategorií se **nesmí** dotknout poznámek, které z linky nejsou (značky, omezení,
+    /// ruční komentáře) - jinak by vypnutá kategorie sebrala jako vedlejší efekt i je.</summary>
+    [Fact]
+    public void KategorieLinky_NesahajiNaOstatniPoznamky()
+    {
+        var vse = new NotesLegendElement
+        {
+            ShowPoznamkyLinkyTarifni = false,
+            ShowPoznamkyLinkyVseobecne = false,
+            ShowPoznamkyLinkyRadiobus = false,
+        }.FiltrujPoznamkyProTest(Vzorek()).Select(p => p.Text).ToList();
+
+        Assert.Contains("na znamení", vse);
+        Assert.Equal(3, vse.Count);   // zůstaly obě výluky + značka, zmizely jen dvě poznámky linky
+    }
+
+    /// <summary>Výchozí stav nesmí nic schovat - jinak by se existujícím šablonám změnil vzhled.</summary>
+    [Fact]
+    public void VychoziStav_NechavaVsechnyKategorieLinky()
+    {
+        var e = new NotesLegendElement();
+
+        Assert.True(e.ShowPoznamkyLinkyTarifni);
+        Assert.True(e.ShowPoznamkyLinkyVseobecne);
+        Assert.True(e.ShowPoznamkyLinkyRadiobus);
+        Assert.Equal(5, e.FiltrujPoznamkyProTest(Vzorek()).Count);
+    }
+
     /// <summary>MHD kategorie neposílá - prázdná kategorie nesmí spadnout do výluk, jinak by se
     /// při volbě „Bez výluk" vytratily poznámky agend, které o kategoriích nevědí.</summary>
     [Fact]

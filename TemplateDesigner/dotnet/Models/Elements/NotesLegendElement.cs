@@ -50,6 +50,24 @@ public class NotesLegendElement : StopScheduleElementBase
     /// </summary>
     public VylukyFiltr Vyluky { get; set; } = VylukyFiltr.Vcetne;
 
+    /// <summary>
+    /// Kategorie poznámek zadaných u linky, které blok bere (#13093 bod 1: „příp. filtrovat Poznámky 1,
+    /// Poznámky 2?"). Klient je chce rozložit do víc bloků, protože mají jiné rozložení sloupců než
+    /// seznam značek - dlouhé odstavce vs. krátké řádky „značka + text".
+    ///
+    /// Výchozí vše zapnuté = dosavadní chování. Neplést s <see cref="ShowTextovePoznamky"/>, které
+    /// vypne **všechny** textové poznámky včetně ručních komentářů a rozdílů tras; tyto tři vybírají
+    /// jen mezi poznámkami linky. Výluky mají vlastní volbu (<see cref="Vyluky"/>), protože se
+    /// nefiltrují podle kategorie zdroje, ale podle prefixu textu.
+    /// </summary>
+    public bool ShowPoznamkyLinkyTarifni { get; set; } = true;
+
+    /// <inheritdoc cref="ShowPoznamkyLinkyTarifni"/>
+    public bool ShowPoznamkyLinkyVseobecne { get; set; } = true;
+
+    /// <inheritdoc cref="ShowPoznamkyLinkyTarifni"/>
+    public bool ShowPoznamkyLinkyRadiobus { get; set; } = true;
+
     // ─── Designer ───────────────────────────────────────────────────────────
 
     protected override float DesignerPlaceholderHeight => 25f;
@@ -303,11 +321,28 @@ public class NotesLegendElement : StopScheduleElementBase
              (p.Typ == TypPoznamky.SpecialniZnak && ShowSpecialniZnaky) ||
              (p.Typ == TypPoznamky.Text && ShowTextovePoznamky))
             && VylukaProjde(p)
+            && KategorieLinkyProjde(p)
         ).ToList();
     }
 
     /// <summary>Kategorie, kterou Caché dává výlukovým poznámkám linky (text začíná „Výluka").</summary>
     private const string VylukaKategorie = "vyluka";
+
+    /// <summary>Kategorie poznámek zadaných u linky (Caché tagy dle klíče ve vlastnostech linky).</summary>
+    private const string KatLinkyTarifni   = "poznamka-linky-tarifni";
+    private const string KatLinkyVseobecne = "poznamka-linky-vseobecne";
+    private const string KatLinkyRadiobus  = "poznamka-linky-radiobus";
+
+    /// <summary>Pustí poznámku linky dle zaškrtnutých kategorií. Poznámky, které z linky nejsou
+    /// (značky, omezení, ruční komentáře), tímhle filtrem projdou vždy - jinak by je vypnutá
+    /// kategorie schovala jako vedlejší efekt.</summary>
+    private bool KategorieLinkyProjde(PoznamkaData p) => p.Kategorie switch
+    {
+        KatLinkyTarifni   => ShowPoznamkyLinkyTarifni,
+        KatLinkyVseobecne => ShowPoznamkyLinkyVseobecne,
+        KatLinkyRadiobus  => ShowPoznamkyLinkyRadiobus,
+        _                 => true,
+    };
 
     /// <summary>Pustí poznámku dle <see cref="Vyluky"/>. Slouží k tomu, aby si uživatel složil dva bloky
     /// nad sebou: jeden bez výluk, druhý jen s nimi (KOVED #13093).</summary>
@@ -371,6 +406,9 @@ public class NotesLegendElement : StopScheduleElementBase
                 ("Jen výluky", (object)VylukyFiltr.Jen)
             ]
         },
+        new BoolPropertyDescriptor  { Label = "Tarifní podmínky linky",   Group = "Filtrování", Get = () => ShowPoznamkyLinkyTarifni,   Set = v => ShowPoznamkyLinkyTarifni = v },
+        new BoolPropertyDescriptor  { Label = "Všeobecné poznámky linky", Group = "Filtrování", Get = () => ShowPoznamkyLinkyVseobecne, Set = v => ShowPoznamkyLinkyVseobecne = v },
+        new BoolPropertyDescriptor  { Label = "Radiobus poznámky linky",  Group = "Filtrování", Get = () => ShowPoznamkyLinkyRadiobus,  Set = v => ShowPoznamkyLinkyRadiobus = v },
 
         new ColorPropertyDescriptor { Label = "NZ pozadí",  Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { Label = "NZ barva",   Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
@@ -408,6 +446,9 @@ public class NotesLegendElement : StopScheduleElementBase
             Vyluky                   = Vyluky,
             ShowSpecialniZnaky       = ShowSpecialniZnaky,
             ShowTextovePoznamky      = ShowTextovePoznamky,
+            ShowPoznamkyLinkyTarifni   = ShowPoznamkyLinkyTarifni,
+            ShowPoznamkyLinkyVseobecne = ShowPoznamkyLinkyVseobecne,
+            ShowPoznamkyLinkyRadiobus  = ShowPoznamkyLinkyRadiobus,
         };
         CopyBaseTo(clone);
         CopyStopScheduleProperties(clone);
