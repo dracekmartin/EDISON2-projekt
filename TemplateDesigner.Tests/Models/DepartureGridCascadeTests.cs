@@ -112,6 +112,33 @@ public class DepartureGridCascadeTests
         Assert.Equal(TextVerticalAlignment.Bottom, inherited.ResolveGroupHeaderParent().VAlign);
     }
 
+    // ── ResolveAnotaceTextStyle: scalar AnotaceFontSize ──────────────────────────
+
+    [Fact]
+    public void AnotaceText_DataStyleFontSize_NesmiBytPrebitScalarem()
+    {
+        // Třetí výskyt téhož bugu (nález review 4. 8.): AnotaceFontSize přebíjel
+        // uživatelovu Velikost z tabu Obecné, guard kontroloval jen AnotaceTextStyle.
+        var grid = new DepartureGridElement
+        {
+            DataStyle = new TextStyle { FontSize = 12f },
+        };
+
+        var s = grid.ResolveAnotaceTextStyle(grid.ResolveHourDataParent());
+
+        Assert.Equal(12f, s.FontSize);
+    }
+
+    [Fact]
+    public void AnotaceText_BezKaskady_PouzijeScalarFallback()
+    {
+        var grid = new DepartureGridElement();
+
+        var s = grid.ResolveAnotaceTextStyle(grid.ResolveHourDataParent());
+
+        Assert.Equal(grid.AnotaceFontSize, s.FontSize);
+    }
+
     // ── Element-level parent (tab Obecné → resolve) ──────────────────────────────
 
     [Fact]

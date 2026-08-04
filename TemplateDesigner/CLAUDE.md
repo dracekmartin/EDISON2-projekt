@@ -169,7 +169,7 @@ Vědomá rozhodnutí, která se znovu neotevírají (ne mezery):
 Single-file `.exe` se generuje skriptem `publish.ps1` v rootu projektu:
 
 ```powershell
-cd c:\MLineRepos\EDISON2\TemplateDesigner
+cd C:\Users\miesb\source\EDISONMAIN2\TemplateDesigner
 .\publish.ps1
 ```
 

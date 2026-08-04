@@ -106,7 +106,7 @@ public class TemplateDesignerViewModel : EDViewModel
         get
         {
             var lbl = CapitalizeFirst(CurrentInstanceLabel);
-            if (_activeInstances.Count == 0) return $"{lbl}: - (klikni pro výběr)";
+            if (_activeInstances.Count == 0) return $"{lbl}: - (klikněte pro výběr)";
             var cur = CurrentActiveInstance;
             return _activeInstances.Count == 1
                 ? $"{lbl}: {cur?.Display}"
@@ -330,7 +330,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „…výběr - linky").</summary>
     public string PreviousInstanceTooltip => $"Předchozí {CurrentInstanceLabel}";
     public string NextInstanceTooltip     => $"Další {CurrentInstanceLabel}";
-    public string InstancePickerHint      => $"Klikni pro výběr - {CurrentInstanceLabelPlural}";
+    public string InstancePickerHint      => $"Klikněte pro výběr - {CurrentInstanceLabelPlural}";
 
     private static string CapitalizeFirst(string s) =>
         string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];

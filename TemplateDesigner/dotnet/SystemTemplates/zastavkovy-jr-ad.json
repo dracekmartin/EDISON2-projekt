@@ -491,13 +491,6 @@
       "group": "Pozn\u00E1mky a legenda"
     },
     {
-      "name": "SCHOVAT_AGREGAT_BEZBARIER",
-      "label": "Skr\u00FDt souhrn \u0022v\u0161echny spoje bezbari\u00E9rov\u00E9\u0022",
-      "type": "bool",
-      "defaultValue": "false",
-      "group": "Pozn\u00E1mky a legenda"
-    },
-    {
       "name": "SCHOVAT_V_ROZSAHU",
       "label": "V rozsahu nepozn\u00E1mkovat schovat",
       "type": "enum",

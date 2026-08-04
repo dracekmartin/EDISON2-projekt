@@ -211,7 +211,7 @@ ClassMethod Compare(ByRef sys As %String) As %Status
 	kill ^||ML("OUT"), ^||TdOracleGlb
 	if 'ok {
 		set ^||ML("OUT","SKIP") = "legacy oracle nedostupný (třída/namespace)"
-		quit $$$OK
+		ret $$$OK
 	}
 	set ^||ML("OUT","DEP")  = "leg="_res("dep","legN")_" our="_res("dep","ourN")_" match="_$s(res("dep","match"):"ANO",1:"NE")_" diff="_res("dep","diff")
 	set ^||ML("OUT","ZAST") = "leg="_res("zast","legN")_" our="_res("zast","ourN")_" match="_$s(res("zast","match"):"ANO",1:"NE")_" diff="_res("zast","diff")

@@ -308,7 +308,8 @@ Historicky **2× opraveno** v DepartureGrid. Při přidávání nové cascade vr
 
 ### Caché ↔ TD kontrakt o legendě / atributech
 
-Caché posílá hotovou legendu poznámek včetně atributů. TD nemůže filtrovat podle viditelnosti sloupců (request D5 v `customer-requirements-zastavkovy-jr.md`).
+Caché posílá legendu poznámek otagovanou kategoriemi a TD filtruje (`NoteVisibilityFilter`) - původní příklad
+(D5, filtr dle viditelnosti sloupců) je tím vyřešený. Princip ale platí dál:
 
 **Pravidlo:** při přidávání novy generovaných textů v Caché si vyjasni, **kdo filtruje**. Pokud TD potřebuje filtrovat → posílej raw data, ne hotový text.
 

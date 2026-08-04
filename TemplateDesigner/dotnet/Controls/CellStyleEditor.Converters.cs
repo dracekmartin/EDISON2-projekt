@@ -77,9 +77,9 @@ public sealed class VAlignToLabelConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
-        TextVerticalAlignment.Top    => "Nahoru",
+        TextVerticalAlignment.Top    => "Nahoře",
         TextVerticalAlignment.Middle => "Na střed",
-        TextVerticalAlignment.Bottom => "Dolů",
+        TextVerticalAlignment.Bottom => "Dole",
         _ => "",
     };
 

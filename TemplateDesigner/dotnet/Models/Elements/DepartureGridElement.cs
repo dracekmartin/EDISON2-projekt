@@ -391,6 +391,16 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Parent kaskády pro per-column override datové buňky sloupce hodin.</summary>
     public ResolvedTextStyle ResolveHourDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
+    /// <summary>Styl textových anotací (písmena, dny). Scalar <see cref="AnotaceFontSize"/> je
+    /// poslední fallback - platí jen když velikost nenastavila žádná vrstva kaskády.</summary>
+    internal ResolvedTextStyle ResolveAnotaceTextStyle(ResolvedTextStyle dataBase)
+    {
+        var s = AnotaceTextStyle.Resolve(dataBase);
+        if (AnotaceTextStyle.FontSize is null && DataStyle.FontSize is null)
+            s = s with { FontSize = AnotaceFontSize };
+        return s;
+    }
+
     /// <summary>Parent kaskády pro per-column override záhlaví skupiny dnů.</summary>
     public ResolvedTextStyle ResolveGroupHeaderParent()
     {
@@ -583,9 +593,7 @@ public class DepartureGridElement : StopScheduleElementBase
         var anotSymStyle = AnotaceSymbolStyle.Resolve(dataBase);
         if (AnotaceSymbolStyle.FontSize is null)
             anotSymStyle = anotSymStyle with { FontSize = minuteElementStyle.FontSize * 0.8f };
-        var anotTextStyle = AnotaceTextStyle.Resolve(dataBase);
-        if (AnotaceTextStyle.FontSize is null)
-            anotTextStyle = anotTextStyle with { FontSize = AnotaceFontSize };
+        var anotTextStyle = ResolveAnotaceTextStyle(dataBase);
         // Symbolový JŘ font (piktogramy) pro jednoznakové SpecialniZnak - dle jazyka šablony.
         // Uživatelský font v AnotaceSymbolStyle (pokud zvolen) má přednost; jinak embedded TimeTable2.
         var anotGlyphStyle = AnotaceSymbolStyle.FontFamily is null
@@ -1390,8 +1398,8 @@ public class DepartureGridElement : StopScheduleElementBase
         new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Anotace - symboly", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Anotace - symboly", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace - symboly", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
-        new ColorPropertyDescriptor  { Label = "NZ pozadí",     Group = "Anotace - symboly", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
-        new ColorPropertyDescriptor  { Label = "NZ znak",       Group = "Anotace - symboly", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
+        new ColorPropertyDescriptor  { Label = "Pozadí negativní značky", Group = "Anotace - symboly", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor  { Label = "Barva negativní značky",  Group = "Anotace - symboly", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
         // ── Styl anotací - text (písmena, dny) ──
         new StringPropertyDescriptor { Label = "Font",         Group = "Anotace - text", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },

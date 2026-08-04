@@ -658,14 +658,14 @@ ClassMethod NastVarProbe(ByRef sys As %String) As %Status
 	if dumpPage '= "" {
 		set dj = $get(^||ML("OUT",dumpPage))
 		kill ^||ML("OUT")
-		if dj = "" { set ^||ML("OUT","ERR") = "stránka prázdná"  quit $$$OK }
+		if dj = "" { set ^||ML("OUT","ERR") = "stránka prázdná"  ret $$$OK }
 		set dz = ##class(%DynamicObject).%FromJSON(dj).rows.%Get("ZASTAVKY"), di = dz.%GetIterator(), rn = 0, dump = ""
 		while di.%GetNext(.dk, .d) {
 			set rn = rn + 1
 			set dump = dump_rn_":"_d.%Get("NAZEV_ZASTAVKY")_"[cas="_d.%Get("CAS_JIZDY")_" tm="_..JoinArr(d.%Get("TRASA_MIN"))_" nv="_..JoinArr(d.%Get("NASTUPISTE_VARIANT"))_"] "
 		}
 		set ^||ML("OUT","DUMP") = dump
-		quit $$$OK
+		ret $$$OK
 	}
 	set nPages = 0, stranky = "", p = ""
 	for {

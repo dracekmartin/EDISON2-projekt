@@ -150,7 +150,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Pole agendy → nový text s {POLE} na ploše", "táhnout pole na plochu"),
                 new("Pole agendy → přidat {POLE} do existujícího textu", "táhnout pole na text"),
                 new("Zkopírovat {NAZEV_POLE} do schránky", "dvojklik na pole"),
-                new("Parametry sestavy (živě mění náhled)", "lišta nad náhledem"),
+                new("Parametry sestavy (živě mění náhled)", "tab Parametry vlevo / tiskový dialog"),
             ],
             Tip = "Agenda říká JAKOU sestavu děláte (Zastávkový JŘ, …), varianta odkud jsou data (AD / MHD). " +
                   "Šablona je vázaná na konkrétní kombinaci - vidíte ji na zeleném štítku a v titulku okna.",
@@ -256,7 +256,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Agregace v souhrnných řádcích tabulky", "SUM({CENA}*{POCET}), COUNT, AVG, MIN, MAX"),
                 new("Číslo stránky / celkem stran", "{PAGE} / {TOTAL_PAGES}"),
             ],
-            Tip = "Výraz viditelnosti se zadává ve vlastnosti „Viditelnost“ - prázdný = vždy viditelné. " +
+            Tip = "Výraz viditelnosti se zadává ve vlastnosti „Podmínka viditelnosti“ - prázdný = vždy viditelné. " +
                   "Formátování čísel a datumů řídí jazyk šablony (Ctrl+Shift+P), ne nastavení Windows.",
         },
 
@@ -266,7 +266,7 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Proporcionální škálování celé šablony", "lišta nástrojů 50–200 %"),
-                new("Zamknout element proti posunu/změně velikosti", "vlastnost Zamčeno"),
+                new("Zamknout element proti posunu/změně velikosti", "vlastnost Uzamčeno"),
                 new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
                 new("Výška „auto“ - element roste podle obsahu (text se zalamuje)", "Výška prázdná"),
                 new("JŘ element s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),

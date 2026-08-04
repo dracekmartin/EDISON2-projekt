@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-08-04 (17) - celkové review: mechanické opravy + evidence větších nálezů
+
+Kompletní review sweep aktuálního stavu v 6 dimenzích (UI/UX konzistence, srozumitelnost pro
+uživatele, architektura, udržitelnost, Caché strana, výkon+robustnost lightweight) - 6 paralelních
+agentů proti vlastním pravidlům projektu. Celkový verdikt: **zdravé** (hranice vrstev drží, R1-R5
+vynucené strukturou, wire a err-pattern v Caché ~100 %, em dashe 0, hardcoded barvy 0, zkratky 1:1
+s kódem). Mechanické nálezy opraveny hned, větší evidovány jako `B52`-`B58`:
+
+**Opraveno:**
+- **Nápověda odkazovala na zrušený parametr** „Poznámky zadané u linky" (2 helpTexty filtrů bloku
+  poznámek) - úklid přesunu (7) zůstal v půlce; stejně tak stale kopie zrušeného parametru
+  `SCHOVAT_AGREGAT_BEZBARIER` v `SystemTemplates/zastavkovy-jr-ad.json` (offline fallback by ukázal
+  mrtvý přepínač).
+- **helpText Viditelnosti řádku učil pole zrušená migrací 1.3.0** (`{JE_AKTUALNI} == 1`) - opraven
+  na skutečná (`NAZEV_ZASTAVKY`, `AKTUALNI_ZASTAVKA`, `NA_ZNAMENI`…).
+- **Scalar override u textu anotací mřížky** - `AnotaceFontSize` přebíjel uživatelovu Velikost
+  z tabu Obecné; guard nově kontroluje i `DataStyle` (3. výskyt téže třídy bugu → extrahovaný
+  `ResolveAnotaceTextStyle` + 2 regresní testy v `DepartureGridCascadeTests`).
+- **Formulář poznámek lhal o pozadí záhlaví** (F0F0F0 vs. tištěné E0E0E0 z kaskády) a o defaultu
+  řazení; labely „NZ pozadí/barva/znak" rozepsány („Pozadí značky", „Barva textu značky"…).
+- **Tisk bez vybrané linky** - hláška nově navádí na štítek výběru linky (dřív jen „Databáze
+  nevrátila žádná data").
+- Kanon: „Nahoru/Dolů" → „Nahoře/Dole" v editoru stylů buněk; tykání → vykání (chip instance,
+  výběr agendy); F1 zbavena zakázaných tvarů („Zamčeno", „Viditelnost") a odkazu na neexistující
+  „lištu nad náhledem".
+- Caché: guard prázdného `AtributID` v MHD atributech (2 místa, `<SUBSCRIPT>` z dat bez Itm);
+  `quit` s argumentem uvnitř bloků → `ret` (Faktury, LinkovyJrAd, 2 testy); stale komentář
+  „KnizniJrAd".
+- Docs: checklist nové agendy v `cache-api.md` naváděl na `agendas[]` v appsettings (reálně
+  auto-discovery přes `AgendyRegistr`); `mvvm-patterns.md` cituje `Grid` místo zrušeného
+  `GridColor` a hierarchii se 3 úrovněmi (StopScheduleElementBase); `feature-design-principles.md`
+  §6 mrtvý příklad D5; `ux-conventions.md` §8 stale label; publish cesta v CLAUDE.md.
+- Smazány 3 vytěžené sondy (`AdWTrasaProbe`, `AdProdlouzeniProbe`, `AdVariantyProbe`).
+
+**Evidováno:** `B52` 🛑 rozhodnutí - migrace persistovaných voleb zrušených parametrů (kola/
+místenky tiše zmizí uživatelům, kteří je měli zapnuté) · `B53` per-frame dekódování obrázku
+a čárového kódu · `B54` drift test defaultů formulář↔C# · `B55` testy migrací + parsingu agend ·
+`B56` dedup Build* helperů Caché agend (~400-500 řádků) · `B57` přerostlé skupiny formulářů ·
+`B58` srozumitelnost pro nováčka. Checklist na ruční proklik: `review-proklik-checklist.md`
+(jednorázový, po vytěžení smazat).
+
 ## 2026-08-04 (16) - nabídka datových polí místo psaní `{POLE}` (`B44`)
 
 Název pole se psal rukou a překlep se poznal **až v tisku**. Vedle pole je nově tlačítko, které

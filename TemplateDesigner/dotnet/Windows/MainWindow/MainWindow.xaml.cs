@@ -1013,7 +1013,7 @@ public partial class MainWindow : Window
                 {
                     // Bez vybrané instance nelze tisknout reálná data - linku určuje výhradně
                     // Instance Picker (parametry sestavy už LINKA_ID neobsahují). Dialog na null
-                    // ukáže "Caché nevrátila žádná data".
+                    // ukáže hlášku s navedením na výběr linky.
                     pages = null;
                 }
 
