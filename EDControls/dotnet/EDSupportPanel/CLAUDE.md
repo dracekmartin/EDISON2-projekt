@@ -13,9 +13,10 @@ zásahu do jeho XAML a bez per-app drátování.
 **Na `EDViewModel.AttachToWindow` to viset nemůže**: TemplateDesigner ho nevolá vůbec (hlavní
 okno i dialogy otevírá přímo, ne přes `WindowNavigator`) — panel tam pak nebyl nikde.
 
-Přeskočí se (`ShouldAttach`): `IOverlayWindow`, `EDSupportPanel.Suppress="True"` (opt-out pro
-okna bez VM — nastaveno na `EDPopup`/`EDErrorPopup`, ten je 640×440 a guard velikosti by ho
-propustil), `EDViewModel.ShowSupportPanel = false`, a okno, které panel už má.
+Přeskočí se (`ShouldAttach`): `IOverlayWindow`, **okna frameworku** (`FrameworkWindows` — chrome
+AvalonDocku, viz [EDViewModel/CLAUDE.md](../EDViewModel/CLAUDE.md)), `EDSupportPanel.Suppress="True"`
+(opt-out pro okna bez VM — nastaveno na `EDPopup`/`EDErrorPopup`, ten je 640×440 a guard velikosti
+by ho propustil), `EDViewModel.ShowSupportPanel = false`, a okno, které panel už má.
 
 ## Karta žije v owned okně (`SupportPanelWindow`)
 

@@ -67,6 +67,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému záblesku.
   Chrome docku (taby, bordery, pozadí dokumentů) EDTheme tokeny nečte — dark řeší
   swap `DockManager.Theme` na VS2013 Light/Dark v code-behind okna.
+  **Vlastní okna docku (overlay s drop terči, plovoucí okna) nikdo zvenčí nesmí zavírat ani k nim
+  věšet owned okna** — AvalonDock si overlay cachuje a cizí `Close()` shodí každý další drag
+  (hlídá `FrameworkWindows` v EDControls, detail v jeho `EDViewModel/CLAUDE.md`). Odtržené
+  mini-apps zavírej přes `document.Close()` (`MiniAppManager`), ne přes okno.
   Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts` (spolu se šířkou stromu
   v `LocalPrefs.TreeWidths`, stejný lifecycle přes `AttachTreeLayout`); chybí-li uložený →
   výchozí layout = pinned karusel `Core.Podpora` (1–3 sloupce dle šířky; při plném

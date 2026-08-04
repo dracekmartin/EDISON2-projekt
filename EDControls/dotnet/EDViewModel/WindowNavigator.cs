@@ -177,7 +177,7 @@ public class WindowNavigator : IWindowNavigator
     public void CloseAll()
     {
         foreach (var w in Application.Current.Windows.OfType<Window>().ToList())
-            if (w != Application.Current.MainWindow && w is not IOverlayWindow) w.Close();
+            if (ShouldClose(w, Application.Current.MainWindow)) w.Close();
 
         foreach (var entry in _legacyProcesses)
         {
@@ -228,16 +228,16 @@ public class WindowNavigator : IWindowNavigator
         return [.. legacy, .. wpf];
     }
 
-    /// <summary>Skip WPF/WebView2 interních oken (AdornerWindow atd.) — uživatelská okna nejsou v MS./System./Microsoft. namespace.
-    /// Plus overlay okna EDControls (<see cref="IOverlayWindow"/>) — panel Podpora / „Akce probíhá" nejsou modul.</summary>
+    /// <summary>Okno, které aplikace nevlastní: overlay okna EDControls (<see cref="IOverlayWindow"/> —
+    /// panel Podpora / „Akce probíhá") a okna frameworku (<see cref="FrameworkWindows"/>, včetně chrome
+    /// AvalonDocku). Nejsou to moduly a nesmí se zavírat.</summary>
     internal static bool IsInternalWindow(Window w) =>
-        w is IOverlayWindow || IsInternalNamespace(w.GetType().Namespace);
+        w is IOverlayWindow || FrameworkWindows.IsFrameworkOwned(w);
 
-    internal static bool IsInternalNamespace(string? ns)
-    {
-        ns ??= "";
-        return ns.StartsWith("MS.") || ns.StartsWith("System.") || ns.StartsWith("Microsoft.");
-    }
+    /// <summary>Smí <see cref="CloseAll"/> tohle okno zavřít? (Odděleno od enumerace
+    /// <c>Application.Windows</c>, aby šlo testovat bez běžící <c>Application</c>.)</summary>
+    internal static bool ShouldClose(Window w, Window? mainWindow) =>
+        w != mainWindow && !IsInternalWindow(w);
 
     /// <summary>
     /// Display label pro legacy proces: preferuje <c>MainWindowTitle</c> (text v záhlaví okna,

@@ -255,6 +255,14 @@ public class SupportPanelTests
     }
 
     [Fact]
+    public void ShouldAttach_DockWindow_False()
+    {
+        // Chrome AvalonDocku (drop overlay, plovoucí okno widgetu): karta nepatří na drag artefakt
+        // a owned okno v jeho Show()/Close() rozbíjí drag docku. Viz WindowOwnershipTests.
+        RunSta(() => Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(new AvalonDock.Controls.FakeDockWindow())));
+    }
+
+    [Fact]
     public void ShouldAttach_ViewModelOptedOut_False()
     {
         RunSta(() =>

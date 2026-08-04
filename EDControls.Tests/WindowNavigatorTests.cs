@@ -170,39 +170,7 @@ public class WindowNavigatorTests
             args);
     }
 
-    // ---------- IsInternalNamespace ----------
-
-    [Fact]
-    public void IsInternalNamespace_MsPrefix_True()
-    {
-        Assert.True(WindowNavigator.IsInternalNamespace("MS.Win32"));
-    }
-
-    [Fact]
-    public void IsInternalNamespace_SystemPrefix_True()
-    {
-        Assert.True(WindowNavigator.IsInternalNamespace("System.Windows"));
-    }
-
-    [Fact]
-    public void IsInternalNamespace_MicrosoftPrefix_True()
-    {
-        // WebView2 + jiné Microsoft tooling pluginy.
-        Assert.True(WindowNavigator.IsInternalNamespace("Microsoft.Web.WebView2.Wpf"));
-    }
-
-    [Fact]
-    public void IsInternalNamespace_UserApp_False()
-    {
-        Assert.False(WindowNavigator.IsInternalNamespace("EDISONMAIN2.Windows.EdisonMainWindow"));
-    }
-
-    [Fact]
-    public void IsInternalNamespace_Null_False()
-    {
-        // Typ v globálním namespace (Namespace == null) → uživatelské okno, ne interní.
-        Assert.False(WindowNavigator.IsInternalNamespace(null));
-    }
+    // Vlastnictví oken (IsInternalWindow / ShouldClose) → WindowOwnershipTests.
 
     // ---------- ResolveExecutablePath ----------
 

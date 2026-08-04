@@ -71,6 +71,10 @@ z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
   nevidí** — panel Podpora a „Akce probíhá" jsou top-level okna, takže by se jinak nabídly
   jako modul a `CloseAll` by je zavřel (panel nevratně). Nové owned overlay okno tenhle
   marker potřebuje.
+- **Okna frameworku (`FrameworkWindows`) `CloseAll()` nezavírá** — `DockingManager` si overlay okno
+  cachuje (vzniká skryté už při jeho `Loaded`) a nulluje ho teprve po vlastním `Close()`, takže cizí
+  zavření shodí **každý další drag přes dock**. Past: `AvalonDock.Controls.IOverlayWindow` je jiný
+  typ téhož krátkého názvu, marker EDControls ho nepokryje → predikát jede podle namespace.
 
 ## Drobné pasti
 

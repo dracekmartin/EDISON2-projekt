@@ -56,6 +56,9 @@ public static class EDSupportPanel
     /// <summary>Má tohle okno dostat panel? (Rozhodnutí odděleno od eventu, aby šlo testovat.)</summary>
     internal static bool ShouldAttach(Window window) =>
         window is not IOverlayWindow                  // vlastní overlay okna EDControls
+        // Chrome frameworku (drop overlay a plovoucí okna AvalonDocku): karta nepatří na drag
+        // artefakt a owned okno vytvářené uvnitř jeho Show()/Close() rozbíjí drag docku.
+        && !FrameworkWindows.IsFrameworkOwned(window)
         && !GetSuppress(window)
         && window.DataContext is not EDViewModel.EDViewModel { ShowSupportPanel: false }
         && !IsAttached(window);
