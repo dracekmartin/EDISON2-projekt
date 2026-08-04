@@ -281,20 +281,25 @@ if (node["Version"] is null && node["GridSize"] is { } oldGridSize)
 
 **Stav:** ✅ Wave 1.5 (2026-05-20).
 
-### `EDISONMAIN2` — Typ 2 (oblíbené + používanost stromu modulů)
+### `EDISONMAIN2` - Typ 2 (plocha se zástupci + používanost stromu modulů)
 
 | Key | Typ | Schema | Owner |
 |---|---|---|---|
-| `"Favorites"` | 2 | `List<string>` — ElementId oblíbených modulů (ruční ★) v pořadí připnutí | `EDISONMAIN2.Windows.EdisonMainWindow.Modules.ModulePreferencesService` |
+| `"Shortcuts"` | 2 | `List<DesktopShortcutDto>` - položky plochy v pořadí připnutí: `{ Kind, Id, ElementId, Name, Exe, Form, Input, Slot, Report }` | `EDISONMAIN2.Windows.EdisonMainWindow.Modules.ModulePreferencesService` |
 | `"ModuleUsage"` | 2 | `Dictionary<string, UsageEntry>` — ElementId → `{ Count, LastUsedUtc }` (automaticky při spuštění modulu) | `ModulePreferencesService` |
 | `"TreeExpansion"` | 1 | `List<string>` — klíče rozbalených uzlů `"<tree>:<index-cesta>"` (např. `"main:5.2"`, `"favorites:0"`); `null`/chybí = serverové výchozí | `ModulePreferencesService` |
 | `"SelectedTab"` | 1 | `int` — index naposledy otevřené záložky stromu; `null`/chybí = výchozí dle oblíbených | `ModulePreferencesService` |
 
-Záložky „Oblíbené" (ořezaný strom dle Favorites) a „Používané" (žebříček dle ModuleUsage)
-v hlavním shellu. ElementId = numerické ID z EDISFormEnum (string). TreeExpansion drží
-rozbalení stromu modulů mezi relacemi (save na každou změnu rozbalení).
+`Shortcuts` je blob **plochy**, ne jen oblíbených: `Kind` (string, ne enum - přeskládání
+`ShortcutKind` nesmí přeznačit uložená data) rozlišuje modul hlavní nabídky od tiskové
+sestavy / pohledu DS, `Slot` je pozice dlaždice (chybí → pořadí), `Report` je payload sestav.
+Záložka stromu „Oblíbené" = položky s `Kind = MenuModule` (★), „Používané" = žebříček dle
+`ModuleUsage`. ElementId = numerické ID z EDISFormEnum (string). **Položku, kterou aktuální
+strom nezná (licence, hidden), klient nezobrazí, ale uloží zpátky** - filtrace při ukládání
+by ji tiše smazala. Model a chybějící kanály k legacy modulům:
+`EDISONMAIN2/docs/DESKTOP_SHORTCUTS.md`.
 
-**Stav:** ✅ Implementováno (2026-06-22).
+**Stav:** ✅ Implementováno (2026-06-22); `Shortcuts` nahradilo `Favorites`+`FavoriteSlots` (2026-08-03).
 
 ### Záměrně skipnuté
 

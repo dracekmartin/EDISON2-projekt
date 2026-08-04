@@ -13,66 +13,68 @@ using DragDropEffects = System.Windows.DragDropEffects;
 
 namespace EDISONMAIN2.MiniApps;
 
-public partial class FavoritesMiniAppView : UserControl
+public partial class DesktopMiniAppView : UserControl
 {
     private Point _dragStart;
-    private ExecutableModule? _dragModule;
+    private DesktopShortcut? _dragTile;
     private bool _suppressClick;   // po reorder tažení potlačí následný klik (jinak by dlaždice i spustila)
 
-    public FavoritesMiniAppView() => InitializeComponent();
+    public DesktopMiniAppView() => InitializeComponent();
 
-    private FavoritesMiniAppViewModel? Vm => DataContext as FavoritesMiniAppViewModel;
+    private DesktopMiniAppViewModel? Vm => DataContext as DesktopMiniAppViewModel;
 
-    // Klik na dlaždici → spuštění modulu (přeskočeno, pokud právě proběhlo přetažení).
+    // Klik na dlaždici → spuštění zástupce (přeskočeno, pokud právě proběhlo přetažení).
     private void Tile_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (_suppressClick) { _suppressClick = false; return; }
-        if (((FrameworkElement)sender).DataContext is ExecutableModule m) Vm?.Shortcuts.RequestLaunch(m);
+        if (((FrameworkElement)sender).DataContext is DesktopShortcut s) Vm?.Shortcuts.RequestLaunch(s);
     }
 
     private void Tile_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _dragStart = e.GetPosition(null);
-        _dragModule = ((FrameworkElement)sender).DataContext as ExecutableModule;
+        _dragTile = ((FrameworkElement)sender).DataContext as DesktopShortcut;
     }
 
     private void Tile_MouseMove(object sender, MouseEventArgs e)
     {
-        if (e.LeftButton != MouseButtonState.Pressed || _dragModule is null) return;
+        if (e.LeftButton != MouseButtonState.Pressed || _dragTile is null) return;
         var p = e.GetPosition(null);
         if (Math.Abs(p.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
             Math.Abs(p.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
 
-        var module = _dragModule;
-        _dragModule = null;
+        var tile = _dragTile;
+        _dragTile = null;
         _suppressClick = true;
-        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(ModuleDrag.Reorder, module), DragDropEffects.Move);
+        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(ModuleDrag.ReorderTile, tile), DragDropEffects.Move);
     }
 
-    private void Favorites_DragOver(object sender, DragEventArgs e)
+    private void Desktop_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(ModuleDrag.Reorder) ? DragDropEffects.Move
+        e.Effects = e.Data.GetDataPresent(ModuleDrag.ReorderTile) ? DragDropEffects.Move
                   : e.Data.GetDataPresent(ModuleDrag.FromTree) ? DragDropEffects.Copy
                   : DragDropEffects.None;
         e.Handled = true;
     }
 
-    private void Favorites_Drop(object sender, DragEventArgs e)
+    private void Desktop_Drop(object sender, DragEventArgs e)
     {
         if (Vm?.Shortcuts is not { } svc) return;
 
-        // Cílový slot z pozice dropu (mřížka; -1 když panel není realizovaný = prázdné oblíbené).
+        // Cílový slot z pozice dropu (mřížka; -1 když panel není realizovaný = prázdná plocha).
         var panel = FindPanel();
         int slot = panel is not null ? panel.SlotAt(e.GetPosition(panel)) : -1;
 
-        if (e.Data.GetData(ModuleDrag.Reorder) is ExecutableModule dragged)
+        if (e.Data.GetData(ModuleDrag.ReorderTile) is DesktopShortcut dragged)
         {
-            if (slot >= 0 && svc.Contains(dragged.ElementId)) svc.PlaceAt(dragged, slot);
+            if (slot >= 0) svc.PlaceAt(dragged, slot);
         }
         else if (e.Data.GetData(ModuleDrag.FromTree) is ExecutableModule fromTree)
         {
-            svc.Add(fromTree);                       // přidá (assign next free slot) — idempotentní
-            if (slot >= 0) svc.PlaceAt(fromTree, slot);   // …a přesune na místo dropu
+            svc.Add(fromTree);                       // přidá (assign next free slot) - idempotentní
+            // …a přesune na místo dropu; instanci dlaždice zná až služba (Add ji vytvořila).
+            if (slot >= 0 && svc.Items.FirstOrDefault(i => ReferenceEquals(i.Module, fromTree)) is { } tile)
+                svc.PlaceAt(tile, slot);
         }
         e.Handled = true;
     }

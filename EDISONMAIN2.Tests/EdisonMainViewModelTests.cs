@@ -458,37 +458,37 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void HasOpenFavorites_TrueAfterDefaultLayout_FalseWhenClosed()
+    public void HasOpenDesktop_TrueAfterDefaultLayout_FalseWhenClosed()
     {
         var services = MockServices();
-        var favorites = new MiniAppDescriptor(FavoritesMiniAppProvider.FavoritesId, "Oblíbené",
+        var desktop = new MiniAppDescriptor(DesktopMiniAppProvider.DesktopId, "Plocha",
             () => new StubMiniApp(services));
-        var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(favorites)]));
+        var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(desktop)]));
         var host = new RecordingHost();
 
-        vm.AttachMiniAppHost(host);   // bez uloženého layoutu → výchozí sada (Oblíbené jako řada dole)
-        Assert.True(vm.HasOpenFavorites);
+        vm.AttachMiniAppHost(host);   // bez uloženého layoutu → výchozí sada (Plocha jako řada dole)
+        Assert.True(vm.HasOpenDesktop);
 
-        host.Panes.Single(p => p.ContentId.StartsWith("Core.Oblibene#")).Close();
-        Assert.False(vm.HasOpenFavorites);
+        host.Panes.Single(p => p.ContentId.StartsWith(DesktopMiniAppProvider.DesktopId + "#")).Close();
+        Assert.False(vm.HasOpenDesktop);
     }
 
     [Fact]
-    public void ShowFavoritesMiniAppCommand_OpensFavorites_SetsHasOpenFavorites()
+    public void ShowDesktopMiniAppCommand_OpensDesktop_SetsHasOpenDesktop()
     {
         var services = MockServices();
-        var favorites = new MiniAppDescriptor(FavoritesMiniAppProvider.FavoritesId, "Oblíbené",
+        var desktop = new MiniAppDescriptor(DesktopMiniAppProvider.DesktopId, "Plocha",
             () => new StubMiniApp(services));
-        // Uložený layout → RecordingHost.RestoreLayout je no-op, Oblíbené se samo neotevře.
+        // Uložený layout → RecordingHost.RestoreLayout je no-op, Plocha se sama neotevře.
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.MiniAppLayouts.Returns(new Dictionary<string, string> { ["CB_DP"] = "x" });
-        var vm = CreateVM(prefs: prefs, miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(favorites)]));
+        var vm = CreateVM(prefs: prefs, miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(desktop)]));
         vm.AttachMiniAppHost(new RecordingHost());
-        Assert.False(vm.HasOpenFavorites);
+        Assert.False(vm.HasOpenDesktop);
 
-        vm.ShowFavoritesMiniAppCommand.Execute(null);
+        vm.ShowDesktopMiniAppCommand.Execute(null);
 
-        Assert.True(vm.HasOpenFavorites);
+        Assert.True(vm.HasOpenDesktop);
     }
 
     private sealed class StubMiniApp(EDServices services) : EDMiniAppViewModel(services)

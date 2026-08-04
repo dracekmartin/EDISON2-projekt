@@ -6,10 +6,10 @@ using NSubstitute;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy miniaplikace Oblíbené — VM je tenká vrstva nad <see cref="ModuleShortcutsService"/>
+/// Testy miniaplikace Plocha - VM je tenká vrstva nad <see cref="ModuleShortcutsService"/>
 /// (launch conduit, remove, empty-state). Sdílení se stromem pokrývá <c>ModuleShortcutsServiceTests</c>.
 /// </summary>
-public class FavoritesMiniAppViewModelTests
+public class DesktopMiniAppViewModelTests
 {
     private static EDServices MockServices() =>
         new(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
@@ -17,33 +17,36 @@ public class FavoritesMiniAppViewModelTests
     private static ExecutableModule Exe(string id, string name = "M") =>
         new() { DisplayedName = name, ElementId = id, ExecutablePath = id + ".exe" };
 
-    private static FavoritesMiniAppViewModel Vm(ModuleShortcutsService svc) => new(MockServices(), svc);
+    private static DesktopShortcutDto Menu(string elementId) =>
+        new(nameof(ShortcutKind.MenuModule), elementId, elementId, "M");
+
+    private static DesktopMiniAppViewModel Vm(ModuleShortcutsService svc) => new(MockServices(), svc);
 
     [Fact]
-    public void Favorites_ExposesServiceCollection()
+    public void Items_ExposesServiceCollection()
     {
         var svc = new ModuleShortcutsService();
-        svc.Seed([Exe("100")], ["100"]);
+        svc.Seed([Exe("100")], [Menu("100")]);
         var vm = Vm(svc);
 
-        Assert.Same(svc.Favorites, vm.Favorites);
-        Assert.True(vm.HasFavorites);
+        Assert.Same(svc.Items, vm.Items);
+        Assert.True(vm.HasItems);
     }
 
     [Fact]
-    public void HasFavorites_False_WhenEmpty_AndRaisesOnChange()
+    public void HasItems_False_WhenEmpty_AndRaisesOnChange()
     {
         var svc = new ModuleShortcutsService();
         var a = Exe("100");
         svc.Seed([a], []);
         var vm = Vm(svc);
         var raised = false;
-        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.HasFavorites)) raised = true; };
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.HasItems)) raised = true; };
 
-        Assert.False(vm.HasFavorites);
+        Assert.False(vm.HasItems);
         svc.Add(a);
 
-        Assert.True(vm.HasFavorites);
+        Assert.True(vm.HasItems);
         Assert.True(raised);
     }
 
@@ -51,15 +54,14 @@ public class FavoritesMiniAppViewModelTests
     public void LaunchCommand_RequestsLaunchThroughService()
     {
         var svc = new ModuleShortcutsService();
-        var a = Exe("100");
-        svc.Seed([a], ["100"]);
+        svc.Seed([Exe("100")], [Menu("100")]);
         var vm = Vm(svc);
-        ExecutableModule? launched = null;
-        svc.LaunchRequested += m => launched = m;
+        DesktopShortcut? launched = null;
+        svc.LaunchRequested += s => launched = s;
 
-        vm.LaunchCommand.Execute(a);
+        vm.LaunchCommand.Execute(svc.Items[0]);
 
-        Assert.Same(a, launched);
+        Assert.Same(svc.Items[0], launched);
     }
 
     [Fact]
@@ -67,12 +69,12 @@ public class FavoritesMiniAppViewModelTests
     {
         var svc = new ModuleShortcutsService();
         var a = Exe("100");
-        svc.Seed([a], ["100"]);
+        svc.Seed([a], [Menu("100")]);
         var vm = Vm(svc);
 
-        vm.RemoveCommand.Execute(a);
+        vm.RemoveCommand.Execute(svc.Items[0]);
 
-        Assert.Empty(svc.Favorites);
+        Assert.Empty(svc.Items);
         Assert.False(a.IsFavorite);
     }
 
@@ -84,7 +86,7 @@ public class FavoritesMiniAppViewModelTests
         svc.Seed([a], []);
         var vm = Vm(svc);
         int raised = 0;
-        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.HasFavorites)) raised++; };
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.HasItems)) raised++; };
 
         vm.OnClosed();
         svc.Add(a);   // po OnClosed už VM nereaguje

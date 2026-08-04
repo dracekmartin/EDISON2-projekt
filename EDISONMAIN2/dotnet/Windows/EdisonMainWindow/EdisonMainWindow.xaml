@@ -437,18 +437,18 @@
                 </TabItem>
             </TabControl>
 
-            <!-- Upozornění, že miniaplikace Oblíbené není zobrazená (přišel by o rychlý přístup
-                 k připnutým modulům). Skryje se, jakmile je otevřená (HasOpenFavorites). -->
+            <!-- Upozornění, že miniaplikace Plocha není zobrazená (přišel by o rychlý přístup
+                 k připnutým zástupcům). Skryje se, jakmile je otevřená (HasOpenDesktop). -->
             <edib:EDInfoBar Grid.Row="2"
-                            Text="Miniaplikace Oblíbené není zobrazena."
+                            Text="Miniaplikace Plocha není zobrazena."
                             Icon="{StaticResource EDIcons.Star}"
                             ActionText="Zobrazit"
-                            ActionCommand="{Binding ShowFavoritesMiniAppCommand}">
+                            ActionCommand="{Binding ShowDesktopMiniAppCommand}">
                 <edib:EDInfoBar.Style>
                     <Style TargetType="{x:Type edib:EDInfoBar}" BasedOn="{StaticResource {x:Type edib:EDInfoBar}}">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasOpenFavorites}" Value="False">
+                            <DataTrigger Binding="{Binding HasOpenDesktop}" Value="False">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>

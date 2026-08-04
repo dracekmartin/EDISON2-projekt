@@ -1,10 +1,10 @@
-<UserControl x:Class="EDISONMAIN2.MiniApps.FavoritesMiniAppView"
+<UserControl x:Class="EDISONMAIN2.MiniApps.DesktopMiniAppView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ma="clr-namespace:EDISONMAIN2.MiniApps"
              xmlns:modules="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.Modules">
     <!-- AllowDrop na kořeni: přetažení modulu ze stromu (přidání) i dlaždice (přemístění na slot). -->
-    <Grid AllowDrop="True" Background="Transparent" DragOver="Favorites_DragOver" Drop="Favorites_Drop">
+    <Grid AllowDrop="True" Background="Transparent" DragOver="Desktop_DragOver" Drop="Desktop_Drop">
         <!-- Prázdný stav: výzva k přetažení modulů ze stromu. -->
         <TextBlock Text="Přetáhněte sem moduly ze stromu, nebo je přidejte přes ★ v kontextovém menu."
                    TextWrapping="Wrap" TextAlignment="Center" MaxWidth="320"
@@ -14,7 +14,7 @@
                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding HasFavorites}" Value="False">
+                        <DataTrigger Binding="{Binding HasItems}" Value="False">
                             <Setter Property="Visibility" Value="Visible"/>
                         </DataTrigger>
                     </Style.Triggers>
@@ -22,19 +22,19 @@
             </TextBlock.Style>
         </TextBlock>
 
-        <!-- Responzivní mřížka dlaždic; pozice = FavoriteSlot (mezery povolené). Klik spustí, tažení přemístí. -->
+        <!-- Responzivní mřížka dlaždic; pozice = DesktopShortcut.Slot (mezery povolené). Klik spustí, tažení přemístí. -->
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <ScrollViewer.Style>
                 <Style TargetType="ScrollViewer">
                     <Setter Property="Visibility" Value="Visible"/>
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding HasFavorites}" Value="False">
+                        <DataTrigger Binding="{Binding HasItems}" Value="False">
                             <Setter Property="Visibility" Value="Collapsed"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </ScrollViewer.Style>
-            <ItemsControl x:Name="TilesHost" ItemsSource="{Binding Favorites}" Margin="6">
+            <ItemsControl x:Name="TilesHost" ItemsSource="{Binding Items}" Margin="6">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <ma:SlotGridPanel/>
@@ -42,11 +42,11 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemContainerStyle>
                     <Style TargetType="ContentPresenter">
-                        <Setter Property="ma:SlotGridPanel.Slot" Value="{Binding FavoriteSlot}"/>
+                        <Setter Property="ma:SlotGridPanel.Slot" Value="{Binding Slot}"/>
                     </Style>
                 </ItemsControl.ItemContainerStyle>
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type modules:ExecutableModule}">
+                    <DataTemplate DataType="{x:Type modules:DesktopShortcut}">
                         <Border Width="128" Height="72" Margin="6" Padding="6" AllowDrop="True"
                                 Background="{DynamicResource EDTheme.Bg.Surface}"
                                 BorderBrush="{DynamicResource EDTheme.Border.Light}"
@@ -64,7 +64,7 @@
                             </StackPanel>
                             <Border.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="Odebrat z oblíbených"
+                                    <MenuItem Header="Odebrat z plochy"
                                               Command="{Binding PlacementTarget.Tag.RemoveCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                 </ContextMenu>

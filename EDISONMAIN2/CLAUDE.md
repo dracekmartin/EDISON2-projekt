@@ -52,7 +52,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   po `Layout.Updated` odsune cizí taby jinam a razítkuje pane `DockMinWidth/Height`
   (hook nutno obnovovat přes `LayoutChanged` — Deserialize mění celý LayoutRoot).
   „Zavřít miniaplikace" jde přes `CloseUnpinned`; `EnsurePinnedOpen` ji dootevře
-  po restore / defaultu / resetu. Když není otevřená mini-app Oblíbené (`HasOpenFavorites`),
+  po restore / defaultu / resetu. Když není otevřená mini-app Plocha (`HasOpenDesktop`),
   ukáže se pod stromem `EDInfoBar` s akcí na její zobrazení.
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
@@ -74,7 +74,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   hover se kvůli HWND WebView2 zjišťuje pozicí kurzoru + `WindowFromPoint` (ne `IsMouseOver`,
   a ne jen souřadnice — cizí okno shell překrývá); pauza vyprší po 3 min klidu, protože WPF fokus
   je sticky a kliknutí na šipku by cyklení zastavilo navždy — krátký timeout tam nejde, čtení
-  kolečkem/klávesami kurzorem nehýbe; obsah lazy, drží se živý) + Oblíbené dole;
+  kolečkem/klávesami kurzorem nehýbe; obsah lazy, drží se živý) + Plocha dole;
   prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
   Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,
@@ -82,6 +82,14 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   v `CompositeCollection` — bindingy tam jdou jen přes `BindingProxy` (`VmProxy`):
   `x:Reference` na TopMenu při BAML loadu cyklí, `ElementName`/DataContext jsou
   mimo namescope/strom; lokální `Style` na nich blokuje `ItemContainerStyle` skupin.
+
+## Plocha se zástupci
+
+Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `DesktopShortcut` všech
+`ShortcutKind`, ★ ve stromu umí jen `MenuModule` (= záložka Oblíbené). Identita je `Key`
+(`Kind|ElementId|Id`). Položka, kterou aktuální strom nezná (licence, `hidden`), se
+**nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní
+druhy jde dnes jen uložit, ne vytvořit/spustit: [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md).
 
 ## Výchozí okno (startup window)
 

@@ -57,7 +57,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenDefaultMiniAppsCommand { get; }
         public ICommand CloseMiniAppsCommand { get; }
         public ICommand ResetMiniAppsCommand { get; }
-        public ICommand ShowFavoritesMiniAppCommand { get; }
+        public ICommand ShowDesktopMiniAppCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
         // EDISON menu
@@ -107,9 +107,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Je v docku alespoň jedna mini-app? False → shell ukáže prázdný placeholder.</summary>
         public bool HasOpenMiniApps { get => _hasOpenMiniApps; private set => Set(ref _hasOpenMiniApps, value); }
 
-        private bool _hasOpenFavorites;
-        /// <summary>Je otevřená miniaplikace Oblíbené? False → proužek pod stromem s výzvou k zobrazení.</summary>
-        public bool HasOpenFavorites { get => _hasOpenFavorites; private set => Set(ref _hasOpenFavorites, value); }
+        private bool _hasOpenDesktop;
+        /// <summary>Je otevřená miniaplikace Plocha? False → proužek pod stromem s výzvou k zobrazení.</summary>
+        public bool HasOpenDesktop { get => _hasOpenDesktop; private set => Set(ref _hasOpenDesktop, value); }
 
         /// <summary>
         /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/> a obnoví
@@ -125,7 +125,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void UpdateMiniAppFlags()
         {
             HasOpenMiniApps = _miniAppManager!.OpenInstances.Count > 0;
-            HasOpenFavorites = _miniAppManager.OpenInstances.Any(i => i.DescriptorId == FavoritesMiniAppProvider.FavoritesId);
+            HasOpenDesktop = _miniAppManager.OpenInstances.Any(i => i.DescriptorId == DesktopMiniAppProvider.DesktopId);
         }
 
         /// <summary>
@@ -139,10 +139,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _applyTreeWidth = applyWidth;
         }
 
-        // Výchozí rozložení: web widgety ve sloupcích nahoře + Oblíbené přes celou šířku dole.
+        // Výchozí rozložení: web widgety ve sloupcích nahoře + Plocha přes celou šířku dole.
         private void OpenDefaultMiniApps()
         {
-            _miniAppManager?.OpenDefaultLayout(DefaultMiniApps, _miniAppCatalog.Find(FavoritesMiniAppProvider.FavoritesId));
+            _miniAppManager?.OpenDefaultLayout(DefaultMiniApps, _miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId));
             // Pinned mimo výchozí sadu nesmí zmizet ani po resetu / prvním spuštění.
             _miniAppManager?.EnsurePinnedOpen();
         }
@@ -221,7 +221,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _prefs = prefs;
             _getActiveModules = getActiveModules;
             _miniAppCatalog = miniAppCatalog;
-            // Sdílená služba oblíbených (strom ⇄ miniaplikace). Bez ní (testy) VM drží vlastní instanci.
+            // Sdílená služba zástupců plochy (strom ★ ⇄ dlaždice). Bez ní (testy) VM drží vlastní instanci.
             _shortcuts = shortcuts ?? new ModuleShortcutsService();
 
             OpenModuleCommand        = CommandAsync<IModule>(OpenModule);
@@ -241,10 +241,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseUnpinned());
             // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.
             ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
-            // Proužek pod stromem: otevře Oblíbené jako řadu dole (mirror výchozího umístění).
-            ShowFavoritesMiniAppCommand = Command(() =>
+            // Proužek pod stromem: otevře Plochu jako řadu dole (mirror výchozího umístění).
+            ShowDesktopMiniAppCommand = Command(() =>
             {
-                if (_miniAppCatalog.Find(FavoritesMiniAppProvider.FavoritesId) is { } d)
+                if (_miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId) is { } d)
                     _miniAppManager?.Open(d, newRow: true);
             });
 
@@ -309,13 +309,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             _services.MLRest = mlRest;
 
-            // Změny oblíbených z miniaplikace (DnD add, remove, reorder) → přestav strom + persist.
+            // Změny plochy z miniaplikace (DnD add, remove, reorder) → přestav strom + persist.
             // Seed při loadu je pod _suppressFavoritesSync (nemá znovu ukládat načtené).
-            _shortcuts.Favorites.CollectionChanged += (_, _) => { if (!_suppressFavoritesSync) SyncFavorites(); };
+            _shortcuts.Items.CollectionChanged += (_, _) => { if (!_suppressFavoritesSync) SyncFavorites(); };
             // Přesun dlaždice (reorder v miniaplikaci) → persistuj pozice (bez změny členství).
-            _shortcuts.SlotsChanged += PersistFavoriteSlots;
+            _shortcuts.SlotsChanged += PersistShortcuts;
             // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
-            _shortcuts.LaunchRequested += module => OpenModuleCommand.Execute(module);
+            _shortcuts.LaunchRequested += LaunchShortcut;
 
             RebuildSessionState(initialLicence);
         }
@@ -399,10 +399,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _usage = _modulePrefs.LoadUsage();
             _expansion = _modulePrefs.LoadExpansion();
 
-            // Seed sdílené služby z uložených ID (nastaví IsFavorite na sdílených instancích).
+            // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
             // Pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
             _suppressFavoritesSync = true;
-            _shortcuts.Seed(AllExecutables(), _modulePrefs.LoadFavorites(), _modulePrefs.LoadFavoriteSlots());
+            _shortcuts.Seed(AllExecutables(), _modulePrefs.LoadShortcuts());
             _suppressFavoritesSync = false;
 
             RefreshFamilyFavoriteFlags();
@@ -810,11 +810,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené (3) když nějaké jsou, jinak Hlavní nabídka (0).
         private int DefaultTreeTab() => HasNoFavorites ? 0 : 3;
 
-        // Per-user × IDFa stav (oblíbené + používanost). _modulePrefs se re-vytváří v RebuildSessionState
+        // Per-user × IDFa stav (plocha + používanost). _modulePrefs se re-vytváří v RebuildSessionState
         // (UserPrefs se může po switch-user vyměnit). Stromové leaf instance se sdílí napříč kolekcemi.
         private ModulePreferencesService _modulePrefs = null!;
         private readonly ModuleShortcutsService _shortcuts;
-        // Guard: potlačí auto-sync handler kolekce oblíbených během Seed / hromadné změny (family toggle).
+        // Guard: potlačí auto-sync handler kolekce plochy během Seed / hromadné změny (family toggle).
         private bool _suppressFavoritesSync;
         private Dictionary<string, UsageEntry> _usage = [];
         // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
@@ -960,21 +960,30 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             SyncFavorites();
         }
 
-        // Přestaví záložku Oblíbené + agregační flagy rodin a uloží pořadí. Volá se po každé změně
-        // členství oblíbených (tree toggle i změny z miniaplikace přes CollectionChanged).
+        // Přestaví záložku Oblíbené + agregační flagy rodin a uloží plochu. Volá se po každé změně
+        // členství (tree toggle i změny z miniaplikace přes CollectionChanged).
         private void SyncFavorites()
         {
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
-            _ = _modulePrefs.SaveFavoritesAsync(_shortcuts.Favorites.Select(f => f.ElementId));
-            PersistFavoriteSlots();
+            PersistShortcuts();
         }
 
-        // Uloží pozice dlaždic (ElementId → slot). Volá se při změně členství i při přesunu dlaždice.
-        private void PersistFavoriteSlots() =>
-            _ = _modulePrefs?.SaveFavoriteSlotsAsync(_shortcuts.Favorites.ToDictionary(f => f.ElementId, f => f.FavoriteSlot));
+        // Uloží plochu (druh, identita, pozice). Volá se při změně členství i při přesunu dlaždice.
+        private void PersistShortcuts() => _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
 
-        private HashSet<string> FavoriteIdSet() => [.. _shortcuts.Favorites.Select(f => f.ElementId)];
+        // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModule (usage + overlay); ostatní
+        // druhy zástupců (tiskové sestavy, pohledy DS) shell zatím spustit neumí - viz
+        // docs/DESKTOP_SHORTCUTS.md, kanál spuštění přes EDISONMAIN2API.
+        private void LaunchShortcut(DesktopShortcut shortcut)
+        {
+            if (shortcut.Module is { } module) OpenModuleCommand.Execute(module);
+            else PopupDisplayer.Info("Tento typ zástupce zatím nelze z plochy spustit.");
+        }
+
+        // Oblíbené = položky plochy, které jsou modulem hlavní nabídky (★ ve stromu jiné druhy nezná).
+        private HashSet<string> FavoriteIdSet() =>
+            [.. _shortcuts.Items.Where(i => i.Kind == ShortcutKind.MenuModule).Select(i => i.ElementId)];
 
         // Nastaví ModuleFamily.IsFavorite = "všichni potomci oblíbení" napříč hlavními stromy (řídí text
         // kontextového menu rodiny). Vrací, zda je uzel plně oblíbený (rekurzivní agregace).

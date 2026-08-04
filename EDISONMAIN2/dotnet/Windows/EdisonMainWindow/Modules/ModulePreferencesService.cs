@@ -18,8 +18,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     public class ModulePreferencesService
     {
         private const string Scope          = "EDISONMAIN2";
-        private const string FavoritesKey   = "Favorites";
-        private const string FavoriteSlotsKey = "FavoriteSlots";
+        private const string ShortcutsKey   = "Shortcuts";
         private const string UsageKey       = "ModuleUsage";
         private const string ExpansionKey   = "TreeExpansion";
         private const string SelectedTabKey = "SelectedTab";
@@ -28,22 +27,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         public ModulePreferencesService(IUserPrefsService prefs) => _prefs = prefs;
 
-        /// <summary>ElementId oblíbených modulů v pořadí připnutí. Prázdný list při chybě / chybějícím blobu.</summary>
-        public List<string> LoadFavorites() => LoadBlob<List<string>>(FavoritesKey) ?? [];
+        /// <summary>Položky plochy v pořadí připnutí (druh, identita, pozice). Prázdný list při chybě / chybějícím blobu.</summary>
+        public List<DesktopShortcutDto> LoadShortcuts() => LoadBlob<List<DesktopShortcutDto>>(ShortcutsKey) ?? [];
+
+        public Task SaveShortcutsAsync(IEnumerable<DesktopShortcutDto> shortcuts) =>
+            SaveBlobAsync(ShortcutsKey, shortcuts.ToList());
 
         /// <summary>Používanost per ElementId (počet spuštění + čas posledního). Prázdná mapa při chybě.</summary>
         public Dictionary<string, UsageEntry> LoadUsage() =>
             LoadBlob<Dictionary<string, UsageEntry>>(UsageKey) ?? [];
-
-        public Task SaveFavoritesAsync(IEnumerable<string> elementIds) =>
-            SaveBlobAsync(FavoritesKey, elementIds.ToList());
-
-        /// <summary>Pozice dlaždic oblíbených (ElementId → slot v mřížce). Prázdná mapa při chybě / chybějícím blobu.</summary>
-        public Dictionary<string, int> LoadFavoriteSlots() =>
-            LoadBlob<Dictionary<string, int>>(FavoriteSlotsKey) ?? [];
-
-        public Task SaveFavoriteSlotsAsync(IReadOnlyDictionary<string, int> slots) =>
-            SaveBlobAsync(FavoriteSlotsKey, slots);
 
         public Task SaveUsageAsync(IReadOnlyDictionary<string, UsageEntry> usage) =>
             SaveBlobAsync(UsageKey, usage);
