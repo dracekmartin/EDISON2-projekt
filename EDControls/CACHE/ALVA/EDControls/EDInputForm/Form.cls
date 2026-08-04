@@ -290,6 +290,10 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 			i $ll(listVal)>=16 s f.max    = $li(listVal,16)
 			i $ll(listVal)>=17 s f.format = $li(listVal,17)
 			i $ll(listVal)>=18 s f.unit   = $li(listVal,18)
+			// Pozice 19: příznak "pole přijímá {POLE}". MUSÍ se číst i tady - formulář chodí
+			// tam a zpět (Validate) a bez toho by se příznak na zpáteční cestě ztratil a klient
+			// by tlačítko „vložit pole" po prvním kole schoval.
+			i $ll(listVal)>=19 s f.placeholders = $li(listVal,19)
 		}
 	}
 	q form

@@ -1081,6 +1081,22 @@ public class EDInputFormPlaceholderWireTests
         Assert.True(field.Placeholders);
     }
 
+    /// <summary>
+    /// Formulář chodí tam a zpět (Validate), takže příznak musí přežít i **zpáteční** cestu.
+    /// Caché ho zpočátku při čtení zahazovalo (četlo jen po pozici 18) → tlačítko „vložit pole"
+    /// se po prvním kole schovalo. Tenhle test hlídá .NET stranu round-tripu.
+    /// </summary>
+    [Fact]
+    public void PriznakPrezijeCestuTamIZpet()
+    {
+        var odeslane = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
+
+        var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([odeslane]);
+        var vraceny = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
+
+        Assert.True(vraceny.Placeholders);
+    }
+
     [Fact]
     public void TextovePole_NeseTokenyVListItems()
     {
