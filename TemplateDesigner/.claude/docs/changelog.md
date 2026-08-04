@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-04 (15) - VRÁCENO: `DeferRefresh` v EDListu shazoval výběr linky
+
+Optimalizace plnění seznamu z (8) (`B51`) **shazovala aplikaci** při výběru linky:
+`InvalidOperationException` - „Nelze změnit nebo zkontrolovat obsah nebo Current pozici
+CollectionView během odkladu Refresh".
+
+**Proč to byl špatný nápad:** `ICollectionView.DeferRefresh` neodkládá `CollectionChanged`.
+`Clear`/`Add` nad `ObservableCollection` je posílají dál a `ListCollectionView` při jejich
+zpracování sahá na currency - což je během odkladu zakázané. Odklad je určený pro změny
+**pohledu** (filtr, řazení), ne pro hromadnou mutaci zdrojové kolekce.
+
+Vráceno na původní plnění po jednom. Škubnutí při psaní do filtru skupiny je menší zlo než pád
+při výběru linky; komentář v kódu teď říká, proč to znovu nezkoušet.
+
+⚠️ **Poučení, které bolí:** testy tohle nechytily a nechytí - je to chování WPF za běhu nad reálným
+`DataGrid`em. Zelená sada u změny, která sahá na `CollectionView`, negarantuje nic; takovou změnu
+je nutné proklikat, a to jsem u (8) neudělal.
+
 ## 2026-08-04 (14) - řazení řádků v dynamické tabulce (`B27`)
 
 Dynamická tabulka tiskla řádky v pořadí, v jakém je vrátila databáze, a uživatel s tím nemohl nic

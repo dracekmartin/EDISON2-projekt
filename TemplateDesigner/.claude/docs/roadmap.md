@@ -151,6 +151,14 @@ Body z fronty Vlny 0, které nejsou doladění - chtějí vlastní plánování.
   nepřemýšlí v kategoriích); kontextový filtr až kdyby vadil.
   Doplňování při psaní `{` se dá přidat později nad týmž seznamem - není to buď/anebo.
 
+- **`B51` EDList plní řádky po jednom - škubnutí při psaní** (S; nález Jan 4. 8., **první pokus
+  vrácen**). `ApplyRows` přidává řádky jeden po druhém do `ObservableCollection` navázané na
+  `DataGrid` s filtrem → 200 řádků = 200 přepočtů pohledu. Projeví se, když načtení dosedne, zatímco
+  uživatel píše do filtru skupiny. ⚠️ **`ICollectionView.DeferRefresh` NENÍ řešení** - zkoušeno
+  4. 8. a shodilo výběr linky (`CollectionChanged` chodí dál a view při něm sahá na currency, což je
+  během odkladu zakázané; detail v changelogu 2026-08-04 (15)). Schůdné cesty: odpojit `ItemsSource`
+  na dobu mutace a zase připojit, nebo kolekce s hromadnou výměnou (jeden `Reset` místo N `Add`).
+  **Podmínka: proklikat**, testy tuhle třídu chyb nechytí.
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované

@@ -363,29 +363,21 @@ namespace EDControls.EDList
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _checkAnchor = null;
 
-            // Plnění po jednom = jedno oznámení o změně na řádek a s aktivním filtrem i přepočet
-            // pohledu na každé z nich. DeferRefresh to zkolabuje do JEDNOHO průchodu na konci
-            // (včetně nastavení filtru, které je proto taky uvnitř). Bez toho 200 řádků škubne UI
-            // zrovna ve chvíli, kdy uživatel píše do filtru — dřív to bylo schované za zámrzem
-            // synchronního načítání, po přechodu na async se to začalo projevovat.
-            var view = CollectionViewSource.GetDefaultView(dataGrid.ItemsSource);
-            var defer = view?.DeferRefresh();
-            try
+            // ⚠️ NEOBALOVAT do ICollectionView.DeferRefresh (zkoušeno 4. 8. 2026 jako `B51` a hned
+            // VRÁCENO): mutace ObservableCollection za odloženého refreshe shodí `ListCollectionView`
+            // na „Nelze změnit nebo zkontrolovat obsah nebo Current pozici CollectionView během
+            // odkladu Refresh" — Clear/Add pořád posílají CollectionChanged a view při něm sahá na
+            // currency, což je během odkladu zakázané. Projevilo se to až za běhu při výběru linky,
+            // testy to nechytily. Škubnutí při plnění je menší zlo než pád.
+            _rows.Clear();
+            foreach (var row in ParseRows(output))
             {
-                _rows.Clear();
-                foreach (var row in ParseRows(output))
-                {
-                    row.PropertyChanged += OnRowPropertyChanged;
-                    _rows.Add(row);
-                }
-                RefreshFilter();  // re-apply current search po LoadList (nový dataset)
-            }
-            finally
-            {
-                defer?.Dispose();
+                row.PropertyChanged += OnRowPropertyChanged;
+                _rows.Add(row);
             }
 
             FireCheckedRowsChanged();
+            RefreshFilter();  // re-apply current search po LoadList (nový dataset)
             // Aplikuj persistent column layout asynchronně po data load — minor flicker (default
             // sloupce → persistované), ale UI neblokuje.
             _ = LoadLayoutAsync();
