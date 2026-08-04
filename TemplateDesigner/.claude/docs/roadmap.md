@@ -6,7 +6,7 @@
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
 > **▶ Další session:** **B40** z Vlny 1 (jednotné čáry a mřížka tabulek, M) - Vlna 0 je dojetá,
-> jediný její zbytek **B37 je zablokovaný** odpovědí v #13093 (překryv s #13102 u Petra).
+> jediný její zbytek **B37** (poznámka „pokračuje do…") je 4. 8. odblokovaný - je to celé u nás.
 > `B28`-`B34`, `B38` a `B41` hotové 31. 7., `B35a`-`B35c`, `B36`, `B43`, `B45` a bod 2 z `B37` 3. 8.,
 > `B46`, `B50` a deduplikace vypínání obsahu 4. 8.; **#13048 i #13088 zavřené 3. 8.**
 > **Verze se 4. 8. dává do produkce** - #13093 (body 1, 2, 4) je v ní.
@@ -42,7 +42,7 @@ ne odbavit nejhezčí featuru.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B37** | **#13093 bod 3 - pokračující spoje** (bod 2 hotový 3. 8.). Návaznosti leží v subnode `32` (`m@33#linka:spoj:zastávka:…:dopravce`, u KOVED **10 578 spojů** v celé firmě) a nesou číslo linky i cíl, tedy vše, co klient chce („pokračuje do zast. X (l. 304)", poslední trojčíslí linky). Práce = seskupit podle (cíl, linka) místo podle čísla spoje + přepínač zobrazení. ⚠️ Neplest s dnešním textem „jede až do zast. X" - ten je o prodloužení po **vlastní** lince (#7947), kdežto tohle je pokračování **na jinou** linku. 🛑 **Než se to začne dělat, čeká odpověď v #13093:** stejný příklad (linka 304) řeší **#13102** u Petra - virtuální prodloužení spoje jen pro vývěsku. Kdyby se spoj v JŘ prodloužil, poznámka „pokračuje do…" je zbytečná a udělali bychom dvě řešení téhož. Vhodné jednou potvrdit, že `omzId 32` je to, co uživatel v JŘ vidí jako pokračování spoje. | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
+| **B37** | **#13093 bod 3 - poznámka „pokračuje do…" u odjezdu** (4. 8.: **není zablokované, je to celé u nás**). Klient chce seskupit odjezdy se stejným pokračováním do stejného cíle po stejné lince pod jedno písmeno a vysvětlivku („u1 - pokračuje do zast. Uherské Hradiště, žel. st. (l. 304)"), plus přepínač zobrazení. **Data máme:** uzel `32`, payload `m@33#linka:spoj:zastávka:…`; legacy to popisuje jako „spoj pokračuje po lince, spoji do zastávky" (`JRapiNZUtl2` ř.539), takže **ta zastávka je cíl**, ne přestupní bod. **Značka je „u"** (`JRapiLinPrtWin` ř.1561) - zákazníkovo „u1" opisuje starý modul. ⚠️ **Filtrovat typ vztahu:** je to rodina *vyčká / navazuje / pokračuje* (`JRapiLinPrtWin` ř.293; v JŘ druh poznámky `PoznamkyDruhVyckaNavazujePokracuje` s tiskem A4/A5), takže z 10 578 spojů s tím uzlem se smí označit jen „pokračuje" - jinak dostane značku i spoj, který jen čeká na návaznost. Přepínač patří do bloku poznámek (jako ostatní obsah). **Vztah k #13102** (virtuální prodloužení u Petra): jiná featura nad stejným jevem - tam je přínos „ubude varianta ve sloupcích minut" a zadává se ručně, tady je poznámka **automatická** z existujících dat. Nečeká jedno na druhé; u spojů, kde jednou prodloužení zadají, bude naše poznámka nadbytečná (detail zobrazení, ne blokátor). | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
 
 **Otázka na KOVED - odeslaná 3. 8. v odpovědi na #13048, nic neblokuje:** je u nich označník ještě
 k něčemu? Kdyby ne, mohl by přepínač „Číslo stanoviště podle" zmizet a zůstat jen sloupek - ale je to
@@ -187,18 +187,15 @@ při scope té fáze, ne teď.
   my přidali pole `BARVA_LINKY_2`. ⚠️ Čeká jediné: **nikde není linka se dvěma barvami**, takže to
   chce nastavit v JŘ (Hromadné úpravy vlastností linky) a projít očima; pak už je co odpovědět
   zákazníkovi (Petr o odpověď výslovně žádal, viz #12997)
-- **#13093 bod 3 (pokračující spoje) = `B37`, čeká odpověď** - dotaz do #13093, jestli to nemá řešit
-  **#13102** u Petra (virtuální prodloužení spoje v JŘ). Oba body ukazují na stejný příklad (linka 304);
-  prodloužení v JŘ by poznámku „pokračuje do…" udělalo zbytečnou. Body 1, 2 a 4 tiketu jsou hotové,
-  takže tiket drží už jen tohle rozhodnutí.
-  ⚠️ **Zadarmo to z #13102 nedostaneme a je to dané jejich vlastním zadáním.** Kdyby prodloužení šlo do
-  trasy spoje (`^JRL(...,"W",…)`), dopočítá se u nás všechno samo (obsluhované zastávky, varianty,
-  odjezdy) - `ObsluhovanePoradi` to čte za běhu. Ale #13102 chce prodloužení **virtuální, jen pro
-  vývěsku, bez úniku do jiných výstupů**, takže do trasy zapsat NESMÍ (čtou ji exporty JDF/CIS) →
-  poloviny jsou dvě: oni zadávání + úložiště, my přečtení a přiložení k trase. **Naše polovina je malá,
-  pokud se dopředu dohodne, kam to zapíšou** - a jejich struktura musí nést **čas u každé přidané
-  zastávky** (bez času nejde odjezd nikam postavit). To je věta, která patří do #13102 **teď**, ne až
-  po implementaci. Na vývěsce by pak stačil jeden parametr sestavy, prvky se nemění.
+- **#13102 virtuální prodloužení spoje** (Petr) - **není to náš bod 3** (ten je celý u nás, viz `B37`).
+  Tady je přínos „ubude varianta ve sloupcích minut" a zadává se ručně u spoje. ⚠️ **Zadarmo to
+  nedostaneme a je to dané jejich vlastním zadáním:** kdyby prodloužení šlo do trasy spoje
+  (`^JRL(...,"W",…)`), dopočítá se u nás všechno samo (`ObsluhovanePoradi` to čte za běhu). Ale #13102
+  chce prodloužení **virtuální, jen pro vývěsku, bez úniku do jiných výstupů**, takže do trasy zapsat
+  NESMÍ (čtou ji exporty JDF/CIS) → poloviny jsou dvě: oni zadávání + úložiště, my přečtení a přiložení
+  k trase. **Naše polovina je malá, pokud se dopředu dohodne, kam to zapíšou** - a jejich struktura musí
+  nést **čas u každé přidané zastávky** (bez času nejde odjezd nikam postavit). To je věta, která patří
+  do #13102 **teď**, ne až po implementaci. Na vývěsce by pak stačil jeden parametr sestavy.
 - **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
   jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
   (který sloupec - legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
