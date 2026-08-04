@@ -45,7 +45,14 @@ vlastní enum pěti hodnot.
 **Poučení 3 - odtisk renderu ověřuje jen to, co kreslí.** Odtisky potvrdily, že čtyři JŘ prvky
 vyšly bajt po bajtu stejně (refaktor behavior-preserving) a změnila se jen dynamická tabulka.
 Ale odtisk volá `Render()`, ne `RenderBorderPass()`, takže **vnější rámec neověřuje** - u změny,
-která obrys přesouvá jinam, je zelený odtisk shodou okolností, ne důkazem.
+která obrys přesouvá jinam, je zelený odtisk shodou okolností, ne důkazem. Jan proto prošel
+výsledek očima v běžící aplikaci a odsouhlasil.
+
+**Poučení 4 - zelený drift test neznamená nasazeno.** Formuláře na Caché jsem upravil skriptem
+z Bashe, takže se nespustil deploy hook (jen Edit/Write) a na serveru zůstaly staré třídy.
+Projevilo se to jako „pole je prázdné a uložení nic neudělá", protože klíče polí přestaly
+odpovídat vlastnostem v C#. **Drift test to nechytil - kontroluje dvojici repo × C#, ale rozešla
+se dvojice server × C#.** Past i postup vynuceného deploye jsou v root `CLAUDE.md`.
 
 ## 2026-08-04 🧹 - Revize roadmapy: zrušen ukazatel `L‑1…L‑4` + mrtvé a duplikované záznamy
 

@@ -25,8 +25,13 @@ Nová tabulka si ho přednastaví v konstruktoru, aby vypadala jako dosud.
 
 **Ověření, které za to ručí:** odtisky renderu vyšly u všech čtyř JŘ prvků **bajt po bajtu stejně**,
 změnil se jediný - dynamická tabulka, přesně jak bylo zamýšleno. ⚠️ Odtisk volá jen `Render()`, ne
-`RenderBorderPass()`, takže vnější rámec z rámečku elementu **neověřuje** - ten je potřeba projít
-očima v návrháři i v PDF.
+`RenderBorderPass()`, takže vnější rámec z rámečku elementu **neověřuje** - ten Jan proto prošel
+očima v běžící aplikaci a odsouhlasil (4. 8.).
+
+⚠️ **Pozor při nasazení:** formuláře na Caché se poprvé nasadily až dodatečně - editace `.cls`
+skriptem z Bashe nespustí deploy hook, takže na serveru zůstaly staré formuláře a projevilo se to
+jako „pole je prázdné a uložení nic neudělá". Drift testy to nechytnou (čtou `.cls` z repa, ne ze
+serveru). Detail a postup vynuceného deploye → root `CLAUDE.md`.
 
 .NET 1530/1530 (TD 588, +1 drift test) · Caché 73/73.
 
