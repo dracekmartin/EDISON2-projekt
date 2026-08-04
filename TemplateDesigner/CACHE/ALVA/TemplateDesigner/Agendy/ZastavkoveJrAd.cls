@@ -793,7 +793,8 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s cbe = (iscbe && +$p(hlava,":",22))
         i inv s bezbarLegenda("H") = $s(allBBP:"všechny spoje mají bezbariérově přístupné vozidlo", 1:"spoj má bezbariérově přístupné vozidlo")
         // #13093 bod 2: přeprava kol (hlava:19, legacy dta20 PrepJiKola) a místenkování (hlava:6, dta6).
-        // U KOVED 3 602 spojů s kolem a 6 739 s R. Emitujeme **vždy** otagované; zapnutí drží šablona
+        // U KOVED 3 602 spojů s kolem a 6 739 s R (měřeno 4. 8. na všech 17 029 linkách).
+        // Emitujeme **vždy** otagované; zapnutí drží šablona
         // (prvek odjezdů), protože je to čistě „co se zobrazí" - ne to, co se má z DB dopočítat.
         s kolo = +$p(hlava,":",19)
         s mistenka = ($p(hlava,":",6) '= "")

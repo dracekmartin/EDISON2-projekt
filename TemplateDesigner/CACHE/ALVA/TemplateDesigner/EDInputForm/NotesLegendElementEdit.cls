@@ -80,7 +80,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowPoznamkyLinkyVseobecne", "Poznámky linky - všeobecné", 0)
         d form.AddBool("ShowPoznamkyLinkyRadiobus", "Poznámky linky - radiobus", 0)
         s fBez = form.AddBool("ShowSouhrnBezbarier", "Souhrn bezbariérových spojů", 1)
-        s fBez.helpText = "Souhrnná vysvětlivka ""všechny spoje mají bezbariérově přístupné vozidlo"" místo značky u každého odjezdu. Dřív parametr sestavy."
+        s fBez.helpText = "Souhrnná vysvětlivka ""všechny spoje mají bezbariérově přístupné vozidlo"" místo značky u každého odjezdu."
 
         // ── Skupina "Negativní značky" ────────────────────────────────────
         d form.AddGroup("nz", "Negativní značky")
