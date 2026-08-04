@@ -180,7 +180,7 @@
                 <MenuItem Header="Odeslat systémové soubory" Command="{Binding SendSystemLogCommand}"/>
             </MenuItem>
             <MenuItem Header="Test funkcí">
-                <MenuItem Header="Test InputForm"    Command="{Binding OpenInputFormTestCommand}"/>
+                <MenuItem Header="Test EDInputForm"  Command="{Binding OpenInputFormTestCommand}"/>
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
                 <MenuItem Header="Test odhlašovacího countdownu" Command="{Binding OpenLogoutCountdownTestCommand}"/>
