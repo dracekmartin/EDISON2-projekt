@@ -26,9 +26,13 @@ vysvětlivky. ⚠️ Piktogramy chce **projít očima** - stroj vidí jen znak, 
 ## 2026-08-03 (12) - místenky u odjezdů, kola čekají na glyf (#13093 bod 2)
 
 Klient hlásil, že se nezobrazují *„cyklobusové poznámky ani rezervace u času odjezdů (znak kola, R),
-ani v poznámkách"*. **Data pro obojí existují** (měřeno 3. 8. na 800 linkách KOVED): přeprava kol =
-19. pole věty spoje (166 spojů), místenkování = 6. pole (310 spojů); typ místenkování nevyplňují.
-Není to tedy požadavek na jízdní řády.
+ani v poznámkách"*. **Data pro obojí existují** (KOVED, celá firma = 17 029 linek): přeprava kol =
+19. pole věty spoje (**3 602 spojů**), místenkování = 6. pole (**6 739 spojů**); typ místenkování
+nevyplňují. Není to tedy požadavek na jízdní řády.
+
+⚠️ **Oprava 4. 8.:** původně tu stálo 166 a 310 spojů. To byl **vzorek prvních 800 linek** - sonda má
+výchozí strop `MAXLIN`, kterého jsem si nevšiml, takže „změřeno na 800 linkách" ve skutečnosti nebyl
+celý rozsah. Skutečná čísla jsou o řád vyšší. Featura je tím podstatně relevantnější, než jsme psali.
 
 - **Místenky hotové:** u odjezdu se vytiskne **„R"** (prostý text, tak to zapisuje i zákazník ve svých
   poznámkách) a do legendy přijde vysvětlivka. Parametr **Místenky u odjezdů**, výchozí vypnuto.

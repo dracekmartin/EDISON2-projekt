@@ -31,8 +31,9 @@ poznámek s kategorií**, takže si výluky složí zvlášť (prvek poznámek m
 Jen výluky). Vše opt-in parametrem - zapnuté by přidalo dlouhý tarifní blok všem existujícím šablonám.
 
 **Emitujeme záznam = jedna poznámka**, legacy je slepuje do jednoho textu; pak nejde oddělit výluku
-od místenkového textu ve **stejné** kategorii 3 (změřeno: 166 výluk KOVED, všechny v kategorii 3
-spolu s „R - k jízdence je možné zakoupit místenku"). Proto filtr podle prefixu, ne podle kategorie.
+od místenkového textu ve **stejné** kategorii 3 (**1 648 výluk** v celé firmě KOVED, všechny
+v kategorii 3 spolu s „R - k jízdence je možné zakoupit místenku"). Proto filtr podle prefixu,
+ne podle kategorie. (Původně tu stálo 166 - vzorek prvních 800 linek, viz oprava v changelogu 4. 8.)
 
 **Bod 2 - místenky hotové, kola čekají na glyf.** „R" u odjezdu + řádek legendy, opt-in. Kolo má
 hotové plumbing, ale `ZnakKola()` vrací prázdno: piktogram ve fontu je, jeho **znak neznáme** a
@@ -83,7 +84,7 @@ Ověřeno na ZL_KOVED 0822995 směr Tam (Zlín,Malenovice,ZPS): aktuální 42033
 **#13088 zavřený 3. 8.** (Jan) - dva ze tří bodů dodány (CIS čísla, sloupek), třetí (**výlukové texty**)
 přesunutý do **#13093**, kde už poznámky z linky leží - včetně požadavku na **skalární pole**
 („nová databázová položka pro návrhář“). Cesta je rozhodnutá a **nepotřebuje zásah do JRMAIN**:
-klient už dnes píše „Výluka: …“ do běžných poznámek linky (166 na 800 linkách), stačí je začít
+klient už dnes píše „Výluka: …“ do běžných poznámek linky (1 648 v celé firmě), stačí je začít
 číst a oddělit podle prefixu → `B36`.
 
 ## 2026-08-03 ✅ - `B35b` logiku stanovišť lze přepnout na sloupek (#13088, #13048 bod 4)
