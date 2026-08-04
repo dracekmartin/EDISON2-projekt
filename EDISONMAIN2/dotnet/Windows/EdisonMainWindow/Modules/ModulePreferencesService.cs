@@ -12,8 +12,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// Per-user × IDFa stav stromu modulů (oblíbené + používanost) přes <see cref="IUserPrefsService"/>.
     /// Schémata blobů a registr scope viz <c>EDControls/DOCS/05-userdata-scopes.md</c> (scope "EDISONMAIN2").
     /// IdFa izolace je automatická — server klíčuje z sys kontextu MLRest, instance se používá per session.
-    /// Load je sync (blokuje krátký HTTP call — konzistentní s ModuleTreeGetter v témže rebuildu);
-    /// Save je fire-and-forget, chyby se logují (persistence nesmí shodit UI).
+    /// Load i Save jsou async (nesmí blokovat UI thread — session rebuild jich dělá čtyři);
+    /// chyby se logují a degradují na prázdno, persistence nesmí shodit UI.
     /// </summary>
     public class ModulePreferencesService
     {
@@ -28,14 +28,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public ModulePreferencesService(IUserPrefsService prefs) => _prefs = prefs;
 
         /// <summary>Položky plochy v pořadí připnutí (druh, identita, pozice). Prázdný list při chybě / chybějícím blobu.</summary>
-        public List<DesktopShortcutDto> LoadShortcuts() => LoadBlob<List<DesktopShortcutDto>>(ShortcutsKey) ?? [];
+        public async Task<List<DesktopShortcutDto>> LoadShortcutsAsync() =>
+            await LoadBlobAsync<List<DesktopShortcutDto>>(ShortcutsKey) ?? [];
 
         public Task SaveShortcutsAsync(IEnumerable<DesktopShortcutDto> shortcuts) =>
             SaveBlobAsync(ShortcutsKey, shortcuts.ToList());
 
         /// <summary>Používanost per ElementId (počet spuštění + čas posledního). Prázdná mapa při chybě.</summary>
-        public Dictionary<string, UsageEntry> LoadUsage() =>
-            LoadBlob<Dictionary<string, UsageEntry>>(UsageKey) ?? [];
+        public async Task<Dictionary<string, UsageEntry>> LoadUsageAsync() =>
+            await LoadBlobAsync<Dictionary<string, UsageEntry>>(UsageKey) ?? [];
 
         public Task SaveUsageAsync(IReadOnlyDictionary<string, UsageEntry> usage) =>
             SaveBlobAsync(UsageKey, usage);
@@ -44,17 +45,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// Klíče rozbalených uzlů stromu (index-cesta per strom, viz EdisonMainViewModel).
         /// Vrací <c>null</c> když nebylo nikdy uloženo → caller ponechá serverové výchozí rozbalení.
         /// </summary>
-        public List<string>? LoadExpansion() => LoadBlob<List<string>>(ExpansionKey);
+        public Task<List<string>?> LoadExpansionAsync() => LoadBlobAsync<List<string>>(ExpansionKey);
 
         public Task SaveExpansionAsync(IEnumerable<string> expandedKeys) =>
             SaveBlobAsync(ExpansionKey, expandedKeys.ToList());
 
         /// <summary>Index naposledy otevřené záložky stromu, nebo <c>null</c> když nebylo uloženo.</summary>
-        public int? LoadSelectedTab()
+        public async Task<int?> LoadSelectedTabAsync()
         {
             try
             {
-                var node = _prefs.LoadAsync(Scope, SelectedTabKey).GetAwaiter().GetResult();
+                var node = await _prefs.LoadAsync(Scope, SelectedTabKey);
                 return node?.GetValue<int>();
             }
             catch (Exception ex)
@@ -66,11 +67,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         public Task SaveSelectedTabAsync(int index) => SaveBlobAsync(SelectedTabKey, index);
 
-        private T? LoadBlob<T>(string key) where T : class
+        private async Task<T?> LoadBlobAsync<T>(string key) where T : class
         {
             try
             {
-                var node = _prefs.LoadAsync(Scope, key).GetAwaiter().GetResult();
+                var node = await _prefs.LoadAsync(Scope, key);
                 return node?.Deserialize<T>();
             }
             catch (Exception ex)

@@ -21,6 +21,17 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   starou firmu / session bez mutace sdílené instance.
 - `LogoutWatcher` pollí `maSeUkoncit` s `CacheLocks=2`, aby poll neobnovoval
   server-side idle timer.
+- Session-scoped stav (access, tři stromy, preference, výchozí okno) načítá
+  `Modules/SessionDataLoader` **na jeden zátah přes klony** (`RestCallRunner`, viz root
+  CLAUDE.md) a `EdisonMainViewModel.ApplySessionData` ho pak promítne **synchronně** — guardy
+  `_suppressXxx` neplatí přes `await` a selhání loadu tak nechá předchozí stromy naživu.
+  Ctor VM data nenačítá: shell se ukáže hned a `InitializeAsync()` běží z `ContentRendered`
+  **před** `OpenStartupWindowIfAny` (výchozí okno se hledá ve stromu). Do prvního initu je
+  `_modulePrefs` null, takže save cesty musí zůstat null-safe.
+- Přepnutí firmy dělá `SwitchCompanyCommand` (`SelectedCompanyId` setter ho jen spustí);
+  index se nastaví teprve po `Accepted`, takže odmítnutí nepotřebuje rollback. Sám
+  `CompanySwitcher.Switch` (zavření oken + VerifyLic) zůstává synchronní — potřebuje UI
+  thread na dialogy licenčního retry.
 - DEBUG build má verzi `999999.9` — netriggeruje update check.
 - Zavření shellu (= ukončení aplikace i všech agend) se potvrzuje v `Closing` přes
   `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu

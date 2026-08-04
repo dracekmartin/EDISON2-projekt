@@ -47,7 +47,9 @@ public class EdisonMainViewModelTests
         ILocalPrefs? prefs = null,
         Action? closeAllWindows = null,
         MiniAppCatalog? miniAppCatalog = null,
-        IMLRest? mlRest = null)
+        IMLRest? mlRest = null,
+        IRestCallRunner? restRunner = null,
+        bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
@@ -61,14 +63,20 @@ public class EdisonMainViewModelTests
         var catalog = miniAppCatalog ?? MiniAppCatalog.Build([]);
 
         EDServices.Initialize(svc);
+        EdisonMainViewModel vm;
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p, () => [], close, catalog);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p, () => [], close, catalog,
+                                         restRunner: restRunner ?? new InlineRestCallRunner(mockMLRest));
         }
         finally
         {
             EDServices.Reset();
         }
+        // Session state se plní až v InitializeAsync (v produkci z ContentRendered). S inline
+        // runnerem je load synchronní, takže GetResult tady nemá na co čekat ani na čem uváznout.
+        if (initialize) vm.InitializeAsync().GetAwaiter().GetResult();
+        return vm;
     }
 
     private static IModuleTreeGetter EmptyTreeGetter()
@@ -106,6 +114,137 @@ public class EdisonMainViewModelTests
         Assert.StartsWith("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
         Assert.StartsWith("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
         Assert.StartsWith("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
+    }
+
+    // ── Dvoufázový init a async rebuild ────────────────────────────────────────────
+
+    /// <summary>
+    /// Runner, kterému lze mezi fázemi testu zavřít bránu — drží load rozpracovaný, aby šlo
+    /// sledovat stav VM „během" rebuildu. <c>Gate == null</c> = synchronní jako inline runner.
+    /// </summary>
+    private sealed class SwitchableGateRunner(IMLRest rest) : IRestCallRunner
+    {
+        public TaskCompletionSource? Gate { get; set; }
+
+        public async Task<T> RunAsync<T>(Func<IMLRest, T> call)
+        {
+            if (Gate is not null) await Gate.Task;
+            return call(rest);
+        }
+    }
+
+    [Fact]
+    public void Constructor_LeavesTreesEmpty_UntilInitializeAsync()
+    {
+        var mockTree = MainTreeWith(new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "" });
+
+        var vm = CreateVM(treeGetter: mockTree, initialize: false);
+
+        // Shell se ukáže hned; data dorazí až z ContentRendered → InitializeAsync.
+        Assert.Empty(vm.MainMenuTree);
+        mockTree.DidNotReceive().GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task InitializeAsync_IsIdempotent()
+    {
+        var mockTree = MainTreeWith(new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "" });
+        var vm = CreateVM(treeGetter: mockTree, initialize: false);
+
+        await vm.InitializeAsync();
+        await vm.InitializeAsync();
+
+        // Tři stromy jednou, ne dvakrát — druhé volání vrací týž task.
+        Assert.Equal(3, mockTree.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IModuleTreeGetter.GetModuleTree)));
+        Assert.Single(vm.MainMenuTree);
+    }
+
+    [Fact]
+    public async Task InitializeAsync_ShowsActionInProgress_WhileLoading()
+    {
+        var ml = MockMLRest();
+        var runner = new SwitchableGateRunner(ml) { Gate = new TaskCompletionSource() };
+        var vm = CreateVM(mlRest: ml, restRunner: runner, initialize: false);
+
+        var loading = vm.InitializeAsync();
+
+        Assert.True(vm.IsActionInProgress);
+        runner.Gate.SetResult();
+        await loading;
+        Assert.False(vm.IsActionInProgress);
+    }
+
+    // Strom napoprvé projde, podruhé (rebuild) spadne — simuluje server mimo provoz při přepnutí.
+    private static IModuleTreeGetter TreeFailingOnSecondLoad()
+    {
+        var mockTree = Substitute.For<IModuleTreeGetter>();
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
+        int mainCalls = 0;
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(_ =>
+            ++mainCalls == 1
+                ? [new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" }]
+                : throw new InvalidOperationException("server je mimo"));
+        return mockTree;
+    }
+
+    [Fact]
+    public void RefreshLicense_LoadFailure_KeepsPreviousTrees()
+    {
+        // Táž firma i uživatel → předchozí strom je pořád platný. LoadAndFilterTree ho dřív
+        // mazal PŘED requestem, takže selhání nechalo záložku trvale prázdnou.
+        // Přes command (ne interní metodu): s inline runnerem doběhne synchronně a chyba
+        // skončí v PopupDisplayer.Error, jak to udělá i AsyncRelayCommand v produkci.
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        var vm = CreateVM(popup: mockPopup, treeGetter: TreeFailingOnSecondLoad());
+        Assert.Single(vm.MainMenuTree);   // předpoklad
+
+        vm.RefreshLicenseCommand.Execute(null);
+
+        Assert.StartsWith("Turnusy", Assert.Single(vm.MainMenuTree).DisplayedName);
+        mockPopup.Received(1).Error(Arg.Any<InvalidOperationException>());
+    }
+
+    [Fact]
+    public async Task SwitchCompany_LoadFailure_ClearsSessionState()
+    {
+        // Tady naopak: session už patří nové firmě, takže strom staré je cizí — šel by spustit
+        // mimo licenci nové firmy a fire-and-forget save by jeho data zapsal do jejích blobů.
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var vm = CreateVM(popup: mockPopup, treeGetter: TreeFailingOnSecondLoad());
+        Assert.Single(vm.MainMenuTree);   // předpoklad
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SwitchCompanyAsync(1));
+
+        Assert.Empty(vm.MainMenuTree);
+        Assert.Empty(vm.FavoritesTree);
+        Assert.Empty(vm.UsedModules);
+    }
+
+    [Fact]
+    public async Task SwitchCompany_ShellClosedDuringLoad_DoesNotSaveOldLayoutUnderNewIdfa()
+    {
+        // Mezi posunem Idfa a restore layoutu je await, ve kterém je UI thread volný — zavření
+        // shellu (nebo force logout) tam volá PersistMiniAppLayout(Idfa), tedy už NOVOU firmu,
+        // zatímco dock drží ještě mini-apps té staré.
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var prefs = Substitute.For<ILocalPrefs>();
+        var layouts = new Dictionary<string, string>();
+        prefs.MiniAppLayouts.Returns(layouts);
+        var ml = MockMLRest();
+        var runner = new SwitchableGateRunner(ml);
+        var vm = CreateVM(popup: mockPopup, prefs: prefs, mlRest: ml, restRunner: runner);
+        vm.AttachMiniAppHost(Substitute.For<IMiniAppHost>());
+
+        runner.Gate = new TaskCompletionSource();
+        var switching = vm.SwitchCompanyAsync(1);
+        Assert.True(vm.ConfirmShellClose());   // uživatel zavře shell během loadu
+        runner.Gate.SetResult();
+        await switching;
+
+        Assert.DoesNotContain("JI_DP", layouts.Keys);
+        Assert.Contains("CB_DP", layouts.Keys);
     }
 
     // ── Výchozí okno (startup window) ──────────────────────────────────────────────
@@ -174,27 +313,27 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void SelectedCompanyIndex_ConfirmDenied_DoesNotSwitch()
+    public async Task SwitchCompany_ConfirmDenied_DoesNotSwitch()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(false);
         var vm = CreateVM(popup: mockPopup);
         int original = vm.SelectedCompanyIndex;
 
-        vm.SelectedCompanyIndex = original == 0 ? 1 : 0;
+        await vm.SwitchCompanyAsync(original == 0 ? 1 : 0);
 
         Assert.Equal(original, vm.SelectedCompanyIndex);
     }
 
     [Fact]
-    public void SelectedCompanyIndex_ConfirmAccepted_SwitchesCompany()
+    public async Task SwitchCompany_ConfirmAccepted_SwitchesCompany()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var vm = CreateVM(popup: mockPopup);
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
-        vm.SelectedCompanyIndex = target;
+        await vm.SwitchCompanyAsync(target);
 
         Assert.Equal(target, vm.SelectedCompanyIndex);
         Assert.Equal(Companies[target].Database, vm.Namespace);
@@ -202,7 +341,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void SelectedCompanyIndex_Switch_ReappliesTreeSearch()
+    public async Task SwitchCompany_ReappliesTreeSearch()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
@@ -217,7 +356,7 @@ public class EdisonMainViewModelTests
         var vm = CreateVM(popup: mockPopup, treeGetter: mockTree);
         vm.TreeSearchText = "turnus";
 
-        vm.SelectedCompanyIndex = vm.SelectedCompanyIndex == 0 ? 1 : 0;
+        await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex == 0 ? 1 : 0);
 
         // StartsWith — ModuleLaunchabilityCheck může připojit suffix k názvu.
         var modules = vm.MainMenuTree.Cast<ExecutableModule>().ToList();
@@ -226,7 +365,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void SelectedCompanyIndex_Switch_UpdatesMLRestProperties()
+    public async Task SwitchCompany_UpdatesMLRestProperties()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
@@ -240,50 +379,51 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), null, switcher, switchUser, prefs, () => [], () => { }, MiniAppCatalog.Build([]));
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), null, switcher, switchUser, prefs, () => [], () => { }, MiniAppCatalog.Build([]),
+                                         restRunner: new InlineRestCallRunner(mockMLRest));
         }
         finally
         {
             EDServices.Reset();
         }
+        await vm.InitializeAsync();
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
-        vm.SelectedCompanyIndex = target;
+        await vm.SwitchCompanyAsync(target);
 
         mockMLRest.Received().DataNamespace = Companies[target].Database;
         mockMLRest.Received().Idfa = Companies[target].Id;
     }
 
     [Fact]
-    public void SelectedCompanyIndex_Switch_ClosesAllWindows()
+    public async Task SwitchCompany_ClosesAllWindows()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var closeAll = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, closeAllWindows: closeAll);
 
-        int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
-        vm.SelectedCompanyIndex = target;
+        await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex == 0 ? 1 : 0);
 
         closeAll.Received(1).Invoke();
     }
 
     [Fact]
-    public void SelectedCompanyIndex_SameValue_DoesNotConfirm()
+    public async Task SwitchCompany_SameIndex_DoesNotConfirm()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         var vm = CreateVM(popup: mockPopup);
 
-        vm.SelectedCompanyIndex = vm.SelectedCompanyIndex;
+        await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex);
 
         mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
     }
 
     [Fact]
-    public void SelectedCompanyIndex_SwitchRefused_RollsBackIndex_ShowsPopup()
+    public async Task SwitchCompany_Refused_KeepsIndex_ShowsPopup()
     {
-        // Non-admin over-limit → CompanySwitcher vrátí Refused → VM musí vrátit index zpět
-        // a zobrazit hlášku (jinak UI ukazuje firmu, na kterou se reálně nepřepnulo).
+        // Non-admin over-limit → CompanySwitcher vrátí Refused → VM nesmí index posunout
+        // a musí zobrazit hlášku (jinak UI ukazuje firmu, na kterou se reálně nepřepnulo).
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
@@ -302,15 +442,17 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), licence, switcher, switchUser, prefs, () => [], () => { }, MiniAppCatalog.Build([]));
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), licence, switcher, switchUser, prefs, () => [], () => { }, MiniAppCatalog.Build([]),
+                                         restRunner: new InlineRestCallRunner(mockMLRest));
         }
         finally
         {
             EDServices.Reset();
         }
+        await vm.InitializeAsync();
 
         int original = vm.SelectedCompanyIndex;
-        vm.SelectedCompanyIndex = original == 0 ? 1 : 0;
+        await vm.SwitchCompanyAsync(original == 0 ? 1 : 0);
 
         Assert.Equal(original, vm.SelectedCompanyIndex);
         Assert.Equal(Companies[original].Id, vm.Idfa);
@@ -340,6 +482,22 @@ public class EdisonMainViewModelTests
         vm.SelectedCompanyId = "JI_DP";
 
         Assert.Equal("CB_DP", vm.SelectedCompanyId);   // nezměněno → combobox se vrátí na původní
+    }
+
+    [Fact]
+    public void SelectedCompanyId_SetConfirmDenied_NotifiesBack()
+    {
+        // Combobox si drží vlastní editovanou hodnotu — bez notifikace by zůstal na firmě,
+        // na kterou se nepřepnulo (getter sám nestačí, WPF se nezeptá).
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        var vm = CreateVM(popup: mockPopup);
+        var notified = new List<string?>();
+        vm.PropertyChanged += (_, e) => notified.Add(e.PropertyName);
+
+        vm.SelectedCompanyId = "JI_DP";
+
+        Assert.Contains(nameof(vm.SelectedCompanyId), notified);
     }
 
     [Fact]

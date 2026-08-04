@@ -156,7 +156,7 @@ public class FavoritesAndUsageTests
     // ---------- ModulePreferencesService ----------------------------------
 
     [Fact]
-    public void Prefs_LoadShortcuts_ParsesList()
+    public async Task Prefs_LoadShortcuts_ParsesList()
     {
         var prefs = Substitute.For<IUserPrefsService>();
         prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
@@ -164,30 +164,30 @@ public class FavoritesAndUsageTests
                 """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A","Slot":3}]""")));
         var svc = new ModulePreferencesService(prefs);
 
-        var dto = Assert.Single(svc.LoadShortcuts());
+        var dto = Assert.Single(await svc.LoadShortcutsAsync());
         Assert.Equal("MenuModule", dto.Kind);
         Assert.Equal("100", dto.ElementId);
         Assert.Equal(3, dto.Slot);
     }
 
     [Fact]
-    public void Prefs_LoadShortcuts_NullBlob_ReturnsEmpty()
+    public async Task Prefs_LoadShortcuts_NullBlob_ReturnsEmpty()
     {
         var prefs = Substitute.For<IUserPrefsService>();   // LoadAsync default → Task<null>
         var svc = new ModulePreferencesService(prefs);
 
-        Assert.Empty(svc.LoadShortcuts());
+        Assert.Empty(await svc.LoadShortcutsAsync());
     }
 
     [Fact]
-    public void Prefs_LoadShortcuts_CorruptBlob_ReturnsEmpty()
+    public async Task Prefs_LoadShortcuts_CorruptBlob_ReturnsEmpty()
     {
         var prefs = Substitute.For<IUserPrefsService>();
         prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
             .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""{"not":"a list"}""")));
         var svc = new ModulePreferencesService(prefs);
 
-        Assert.Empty(svc.LoadShortcuts());
+        Assert.Empty(await svc.LoadShortcutsAsync());
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class FavoritesAndUsageTests
             "31001", "Přehled škod", "VOZIDLA2.exe", Slot: 2, Report: report)]);
 
         prefs.LoadAsync("EDISONMAIN2", "Shortcuts").Returns(Task.FromResult(written));
-        var dto = Assert.Single(svc.LoadShortcuts());
+        var dto = Assert.Single(await svc.LoadShortcutsAsync());
         Assert.Equal(nameof(ShortcutKind.PrintReport), dto.Kind);
         Assert.Equal("PrehledSkod", dto.Id);
         Assert.Equal(2, dto.Slot);
@@ -213,14 +213,14 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
-    public void Prefs_LoadUsage_ParsesMap()
+    public async Task Prefs_LoadUsage_ParsesMap()
     {
         var prefs = Substitute.For<IUserPrefsService>();
         prefs.LoadAsync("EDISONMAIN2", "ModuleUsage")
             .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""{"100":{"Count":5,"LastUsedUtc":"2026-01-01T00:00:00"}}""")));
         var svc = new ModulePreferencesService(prefs);
 
-        var usage = svc.LoadUsage();
+        var usage = await svc.LoadUsageAsync();
         Assert.Equal(5, usage["100"].Count);
     }
 
@@ -459,14 +459,20 @@ public class FavoritesAndUsageTests
         var switcher = new CompanySwitcher(svc, localPrefs, () => { });
 
         EDServices.Initialize(svc);
+        EdisonMainViewModel vm;
         try
         {
-            return new EdisonMainViewModel(Companies, mlRest, treeGetter, initialLicence: null, switcher,
-                () => new(SwitchUserResult.Cancelled, null), localPrefs, () => [], () => { }, MiniAppCatalog.Build([]));
+            vm = new EdisonMainViewModel(Companies, mlRest, treeGetter, initialLicence: null, switcher,
+                () => new(SwitchUserResult.Cancelled, null), localPrefs, () => [], () => { }, MiniAppCatalog.Build([]),
+                restRunner: new InlineRestCallRunner(mlRest));
         }
         finally
         {
             EDServices.Reset();
         }
+        // Session state se plní až v InitializeAsync (v produkci z ContentRendered); s inline
+        // runnerem je load synchronní, takže GetResult tady nemá na co čekat.
+        vm.InitializeAsync().GetAwaiter().GetResult();
+        return vm;
     }
 }

@@ -32,7 +32,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
     class EdisonMainViewModel : EDViewModel
     {
-        private readonly IModuleTreeGetter _treeGetter;
+        private readonly ISessionDataLoader _sessionLoader;
         private readonly CompanySwitcher _switcher;
         private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
@@ -64,6 +64,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand ConnectToDatabaseCommand { get; }
         public ICommand RunEdisonCopyCommand { get; }
         public ICommand ExitCommand { get; }
+        // Přepínač firem v horní liště (setter SelectedCompanyId ho spouští za binding).
+        public ICommand SwitchCompanyCommand { get; }
         // Uživatel menu
         public ICommand LoginAsAnotherUserCommand { get; }
         public ICommand ShowUserEditCommand { get; }
@@ -147,9 +149,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _miniAppManager?.EnsurePinnedOpen();
         }
 
+        // Po dobu výměny session (persist staré → CloseAll → async rebuild → restore nové) nesmí
+        // nikdo layout ukládat: dock je mezitím prázdný a Idfa už ukazuje na novou firmu, takže
+        // zavření shellu během rebuildu (nebo force logout) by jí přepsalo uložený layout.
+        private bool _sessionSwapInProgress;
+
         private void PersistMiniAppLayout(string idfa)
         {
-            if (_miniAppManager is null) return;
+            if (_miniAppManager is null || _sessionSwapInProgress) return;
             // Best-effort: serializace layoutu nesmí zablokovat zavření shellu / přepnutí firmy.
             try
             {
@@ -213,9 +220,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Func<IReadOnlyList<RunningModuleInfo>> getActiveModules,
             Action closeAllWindows,
             MiniAppCatalog miniAppCatalog,
-            ModuleShortcutsService? shortcuts = null)
+            ModuleShortcutsService? shortcuts = null,
+            IRestCallRunner? restRunner = null)
         {
-            _treeGetter = treeService;
             _switcher = switcher;
             _switchUser = switchUser;
             _prefs = prefs;
@@ -254,7 +261,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ExitCommand                   = Command(ExitApplication);
 
             // Uživatel menu
-            LoginAsAnotherUserCommand     = Command(LoginAsAnotherUser);
+            LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUser);
             ShowUserEditCommand           = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText())));
             ChangePasswordCommand         = Command(() =>
             {
@@ -274,9 +281,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ExpandSubtreeCommand            = Command<IModule>(m => SetSubtreeExpanded(m, true));
             CollapseSubtreeCommand          = Command<IModule>(m => SetSubtreeExpanded(m, false));
 
+            SwitchCompanyCommand          = CommandAsync<int>(SwitchCompanyAsync);
+
             // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
             ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
-            RefreshLicenseCommand         = Command(RefreshLicense);
+            RefreshLicenseCommand         = CommandAsync(RefreshLicense);
             // Admin-only — legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
             ShowUsersLocksCommand         = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
             ShowUsersActivityCommand      = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
@@ -301,6 +310,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             FavoritesTree = [];
             UsedModules = [];
             _sourceTrees = [("main", MainMenuTree), ("system", SystemAdminTree), ("partners", PartnerSolutionsTree)];
+            // Runner drží politiku „klon per paralelní volání"; testy podstrčí sekvenční variantu.
+            _sessionLoader = new SessionDataLoader(restRunner ?? new RestCallRunner(() => Rest),
+                                                  treeService, [.. _sourceTrees.Select(t => t.Name)]);
 
             // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
@@ -317,36 +329,73 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
 
-            RebuildSessionState(initialLicence);
+            _initialLicence = initialLicence;
         }
 
+        private readonly Lic? _initialLicence;
+        private Task? _initialization;
+
         /// <summary>
-        /// Po změně session state (initial load v ctor, switch firmy, manual refresh licence)
-        /// přebuduje VEŠKERÝ session-scoped derived state. Jediný bod rozšíření pro budoucí
+        /// První naplnění session-scoped stavu. Ctor ho záměrně nedělá — shell se ukáže hned
+        /// a data dorazí pod overlayem. Volá code-behind z <c>ContentRendered</c> PŘED
+        /// <see cref="OpenStartupWindowIfAny"/> (to potřebuje hotové stromy). Idempotentní.
+        /// </summary>
+        public Task InitializeAsync() => _initialization ??= RebuildSessionStateAsync(_initialLicence);
+
+        /// <summary>
+        /// Po změně session state (initial load, switch firmy, switch uživatele, manual refresh
+        /// licence) přebuduje VEŠKERÝ session-scoped derived state. Jediný bod rozšíření pro budoucí
         /// session-scoped data (ECL, user settings, font scheme per firma, …) — přidá se sem,
         /// callsity nepotřebují vědět.
         /// </summary>
-        private void RebuildSessionState(Lic? licence)
+        private async Task RebuildSessionStateAsync(Lic? licence)
         {
             _services.ActiveLicence = licence;
-            _services.AccessTable = AccessLoader.Load(Rest, licence, _services.IsAdmin);
-            LoadAndFilterTrees();
-            LoadPersonalization();
-            LoadStartupWindow();
+            // _modulePrefs se vytváří tady (ne v ctoru), aby reflektoval výměnu UserPrefs po switch-user.
+            _modulePrefs = new ModulePreferencesService(UserPrefs);
+
+            using (ActionInProgress())
+            {
+                var data = await _sessionLoader.LoadAsync(licence, _services.IsAdmin, _modulePrefs);
+                ApplySessionData(data);
+            }
 
             // Nové instance uzlů mají IsVisibleBySearch=true — trvající hledaný text je nutné znovu aplikovat.
             if (_treeSearchText.Trim().Length > 0) ApplySearch();
         }
 
+        /// <summary>
+        /// Promítne načtená data do VM. Musí zůstat SYNCHRONNÍ: guardy <c>_suppressXxx</c> níž
+        /// spoléhají na nepřerušený běh, přes <c>await</c> uvnitř by přestaly platit. Zároveň
+        /// tím platí, že selhání loadu nechá předchozí stav (stromy, oblíbené) nedotčený.
+        /// </summary>
+        private void ApplySessionData(SessionData data)
+        {
+            _services.AccessTable = data.AccessTable;
+            foreach (var (name, tree) in _sourceTrees)
+                FillFilteredTree(tree, data.Trees[name]);
+            ApplyPersonalization(data);
+            ApplyStartupWindow(data.DefaultWindowId);
+        }
+
+        /// <summary>
+        /// Zahodí session-scoped stav do prázdna. Pro cesty, kde už se session přepnula (jiná firma
+        /// / uživatel) a load selhal - držet dál data předchozí session by znamenalo spustitelné
+        /// moduly mimo licenci nové firmy a zápis cizích preferencí do jejích blobů.
+        /// </summary>
+        private void ClearSessionState() => ApplySessionData(new SessionData(
+            new AccessTable([], isAllAccess: false),
+            _sourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
+            Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, DefaultWindowId: 0));
+
         private int _defaultWindowId;
         /// <summary>Id uživatelova výchozího okna (EDISFormEnum) pro aktuální IDFa; 0 = žádný.</summary>
         public int DefaultWindowId { get => _defaultWindowId; private set => Set(ref _defaultWindowId, value); }
 
-        // Načte výchozí okno (per IDFa) a označí odpovídající uzel stromu. Volá se z
-        // RebuildSessionState → po loginu i po přepnutí firmy (jiná firma může mít jiný default).
-        private void LoadStartupWindow()
+        // Výchozí okno je per IDFa → přebírá se při každém rebuildu (jiná firma může mít jiný default).
+        private void ApplyStartupWindow(int defaultWindowId)
         {
-            DefaultWindowId = UserProfileService.LoadDefaultWindow(Rest);
+            DefaultWindowId = defaultWindowId;
             ApplyStartupWindowMark();
         }
 
@@ -391,18 +440,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 OpenModuleCommand.Execute(module);
         }
 
-        // Oblíbené + používanost jsou per-user × IDFa → načítají se po (pře)stavbě stromů.
-        // _modulePrefs se vytváří tady (ne v ctoru), aby reflektoval případnou výměnu UserPrefs po switch-user.
-        private void LoadPersonalization()
+        // Oblíbené + používanost jsou per-user × IDFa → aplikují se po (pře)stavbě stromů.
+        private void ApplyPersonalization(SessionData data)
         {
-            _modulePrefs = new ModulePreferencesService(UserPrefs);
-            _usage = _modulePrefs.LoadUsage();
-            _expansion = _modulePrefs.LoadExpansion();
+            _usage = data.Usage;
+            _expansion = data.Expansion;
 
             // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
             // Pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
             _suppressFavoritesSync = true;
-            _shortcuts.Seed(AllExecutables(), _modulePrefs.LoadShortcuts());
+            _shortcuts.Seed(AllExecutables(), data.Shortcuts);
             _suppressFavoritesSync = false;
 
             RefreshFamilyFavoriteFlags();
@@ -417,7 +464,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Poslední otevřená záložka (per-user × IDFa); bez uložené volby výchozí dle oblíbených.
             _suppressTabSave = true;
-            SelectedTreeTabIndex = _modulePrefs.LoadSelectedTab() ?? DefaultTreeTab();
+            SelectedTreeTabIndex = data.SelectedTab ?? DefaultTreeTab();
             _suppressTabSave = false;
         }
 
@@ -484,7 +531,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     SetExpandedRecursive(module, expanded);
             }
             finally { _suppressExpansionSave = false; }
-            _ = _modulePrefs.SaveExpansionAsync(CollectExpandedKeys());
+            _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
         }
 
         // Rozbalit/sbalit rodinu i její potomky (kontextové menu „úroveň").
@@ -494,7 +541,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _suppressExpansionSave = true;
             try { SetExpandedRecursive(module, expanded); }
             finally { _suppressExpansionSave = false; }
-            _ = _modulePrefs.SaveExpansionAsync(CollectExpandedKeys());
+            _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
         }
 
         // internal kvůli unit testům (InternalsVisibleTo EDISONMAIN2.Tests).
@@ -530,7 +577,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void OnFamilyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && !_suppressExpansionSave)
-                _ = _modulePrefs.SaveExpansionAsync(CollectExpandedKeys());
+                _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
         }
 
         private List<string> CollectExpandedKeys()
@@ -618,20 +665,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             return match;
         }
 
-        // Stromy i licenční gating jsou per-IdFa, takže po přepnutí firmy refresh všech tří.
-        private void LoadAndFilterTrees()
-        {
-            foreach (var (name, tree) in _sourceTrees)
-                LoadAndFilterTree(tree, name);
-        }
-
         // Per stanice konstantní (DNS doména / registry override) — stačí vyhodnotit jednou.
         private static readonly bool IsMlineDomainStation = MlineDomainDetector.IsDomainMline();
 
-        private void LoadAndFilterTree(ObservableCollection<IModule> target, string treeName)
+        // Clear až tady (po úspěšném loadu, ne před requestem) — selhání jinak nechá záložku
+        // trvale prázdnou a při přepnutí firmy zahodí i strom, který byl platný.
+        private void FillFilteredTree(ObservableCollection<IModule> target, IReadOnlyList<IModule> tree)
         {
             target.Clear();
-            var tree = _treeGetter.GetModuleTree(Rest, treeName);
             foreach (var module in tree)
             {
                 if (TryFilter(module, _services.ActiveLicence, _services.AccessTable, IsMlineDomainStation) is { } filtered)
@@ -806,7 +847,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 foreach (var name in TabActiveProperties)
                     OnPropertyChanged(name);
                 if (!_suppressTabSave)
-                    _ = _modulePrefs.SaveSelectedTabAsync(value);
+                    _ = _modulePrefs?.SaveSelectedTabAsync(value);
             }
         }
 
@@ -826,9 +867,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené (3) když nějaké jsou, jinak Hlavní nabídka (0).
         private int DefaultTreeTab() => HasNoFavorites ? 0 : 3;
 
-        // Per-user × IDFa stav (plocha + používanost). _modulePrefs se re-vytváří v RebuildSessionState
-        // (UserPrefs se může po switch-user vyměnit). Stromové leaf instance se sdílí napříč kolekcemi.
-        private ModulePreferencesService _modulePrefs = null!;
+        // Per-user × IDFa stav (plocha + používanost). _modulePrefs se re-vytváří v každém rebuildu
+        // (UserPrefs se může po switch-user vyměnit); null do prvního initu — bindingy okna jedou dřív
+        // než on, takže save cesty musí být null-safe (jinak NRE z TwoWay bindingu záložky).
+        private ModulePreferencesService? _modulePrefs;
         private readonly ModuleShortcutsService _shortcuts;
         // Guard: potlačí auto-sync handler kolekce plochy během Seed / hromadné změny (family toggle).
         private bool _suppressFavoritesSync;
@@ -849,42 +891,76 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ObservableCollection<CompanyItem> VisibleIdfas { get; }
 
         private int _selectedCompanyIndex;
+        /// <summary>Vybraná firma jako čistý stav — přepnutí dělá <see cref="SwitchCompanyCommand"/>.</summary>
         public int SelectedCompanyIndex
         {
             get => _selectedCompanyIndex;
-            set
+            private set
             {
-                if (_selectedCompanyIndex == value) return;
-
-                if (!PopupDisplayer.Confirm($"Přepnout na firmu {VisibleIdfas[value].DisplayName}? Zavřou se všechna otevřená okna."))
-                    return;
-
-                int originalIndex = _selectedCompanyIndex;
-                var oldIdfa = Idfa;
-
-                Set(ref _selectedCompanyIndex, value);
-                OnPropertyChanged(nameof(Namespace));
-                OnPropertyChanged(nameof(Idfa));
-                OnPropertyChanged(nameof(WindowTitle));
-                OnPropertyChanged(nameof(SelectedCompanyId));
-
-                var result = _switcher.Switch(Idfa, Namespace, _services.ActiveLicence);
-
-                if (result.Outcome == LicenceAcquireOutcome.Accepted)
-                {
-                    RebuildSessionState(result.Licence);
-                    ReplaceMiniAppSession(oldIdfa);
-                }
-                else
-                {
-                    Set(ref _selectedCompanyIndex, originalIndex);
-                    OnPropertyChanged(nameof(Namespace));
-                    OnPropertyChanged(nameof(Idfa));
-                    OnPropertyChanged(nameof(WindowTitle));
-                    if (result.Outcome == LicenceAcquireOutcome.Refused)
-                        PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
-                }
+                if (!Set(ref _selectedCompanyIndex, value)) return;
+                RaiseSessionPropertiesChanged();
             }
+        }
+
+        // Derived properties nad vybranou firmou — jeden seznam pro přepnutí i pro odmítnutí.
+        private void RaiseSessionPropertiesChanged()
+        {
+            OnPropertyChanged(nameof(Namespace));
+            OnPropertyChanged(nameof(Idfa));
+            OnPropertyChanged(nameof(WindowTitle));
+            OnPropertyChanged(nameof(SelectedCompanyId));
+        }
+
+        /// <summary>
+        /// Přepnutí firmy: potvrzení → <see cref="CompanySwitcher"/> (zavře okna, vymění Idfa,
+        /// licence) → async rebuild session state → výměna layoutu miniaplikací. Index se nastaví
+        /// teprve po <c>Accepted</c>, takže odmítnutí ani cancel nepotřebují rollback.
+        /// <c>internal</c> kvůli testům — <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.
+        /// </summary>
+        internal async Task SwitchCompanyAsync(int index)
+        {
+            if (index < 0 || index >= VisibleIdfas.Count || index == _selectedCompanyIndex) return;
+
+            var target = VisibleIdfas[index];
+            if (!PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna."))
+                return;
+
+            var oldIdfa = Idfa;
+            var result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
+
+            if (result.Outcome != LicenceAcquireOutcome.Accepted)
+            {
+                // Combobox si drží cílovou firmu z vlastního editu → notifikací ho vrať na platnou.
+                RaiseSessionPropertiesChanged();
+                if (result.Outcome == LicenceAcquireOutcome.Refused)
+                    PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
+                return;
+            }
+
+            // Layout staré firmy ulož a dock zavři JEŠTĚ než se Idfa posune - mezi indexem a restore
+            // je await, během kterého jde shell zavřít (persist by dock staré firmy uložil pod novou).
+            PersistMiniAppLayout(oldIdfa);
+            _miniAppManager?.CloseAll();
+
+            _sessionSwapInProgress = true;
+            try
+            {
+                SelectedCompanyIndex = index;
+                await RebuildSessionStateAsync(result.Licence);
+            }
+            catch
+            {
+                // Session už patří nové firmě, takže stará data jsou cizí: šla by spustit mimo její
+                // licenci a fire-and-forget save by je zapsal do jejích blobů. Prázdný shell + chyba
+                // je jediný konzistentní stav (recovery: Aktualizovat licenci nebo restart).
+                ClearSessionState();
+                throw;
+            }
+            finally
+            {
+                _sessionSwapInProgress = false;
+            }
+            RestoreMiniAppLayout(Idfa);
         }
 
         public CompanyItem SelectedCompany => VisibleIdfas[_selectedCompanyIndex];
@@ -896,9 +972,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string WindowTitle => $"M-line EDISON [{Idfa}]";
 
         /// <summary>
-        /// IDFa aktuální firmy pro filtrovatelný přepínač (SuggestComboBox.SelectedKey, TwoWay).
-        /// Setter najde firmu a deleguje na <see cref="SelectedCompanyIndex"/> (potvrzení + switch + rollback);
-        /// závěrečné OnPropertyChanged vrátí combobox na původní firmu, když se index nezměnil (cancel/reject).
+        /// IDFa aktuální firmy pro filtrovatelný přepínač (EDFilterComboBox.SelectedKey, TwoWay).
+        /// Setter jen spustí <see cref="SwitchCompanyCommand"/> a hned notifikuje zpět, takže
+        /// combobox drží potvrzenou firmu, dokud přepnutí neproběhne (příp. neselže).
         /// </summary>
         public string SelectedCompanyId
         {
@@ -906,7 +982,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             set
             {
                 int index = VisibleIdfas.ToList().FindIndex(c => c.Id == value);
-                if (index >= 0) SelectedCompanyIndex = index;
+                if (index >= 0 && index != _selectedCompanyIndex && SwitchCompanyCommand.CanExecute(index))
+                    SwitchCompanyCommand.Execute(index);
                 OnPropertyChanged(nameof(SelectedCompanyId));
             }
         }
@@ -1038,7 +1115,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _usage[module.ElementId] = entry with { Count = entry.Count + 1, LastUsedUtc = DateTime.UtcNow };
 
             RebuildUsedList();
-            _ = _modulePrefs.SaveUsageAsync(_usage);
+            _ = _modulePrefs?.SaveUsageAsync(_usage);
         }
 
         // Všechny EXE instance napříč hlavními stromy. FavoritesTree i UsedModules sdílí tytéž instance,
@@ -1155,7 +1232,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 ShutdownWithoutConfirm();
         }
 
-        private void LoginAsAnotherUser()
+        private async Task LoginAsAnotherUser()
         {
             if (!PopupDisplayer.Confirm("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
                 return;
@@ -1173,7 +1250,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     ShutdownWithoutConfirm();
                     return;
                 case SwitchUserResult.Success:
-                    RebuildSessionState(outcome.Licence);
+                    // Selhání loadu po výměně uživatele: viz ClearSessionState — preference jsou
+                    // per-user, takže stará data by se zapisovala pod nového uživatele.
+                    try { await RebuildSessionStateAsync(outcome.Licence); }
+                    catch { ClearSessionState(); throw; }
                     ReplaceMiniAppSession(Idfa);   // přihlášení jiného uživatele: stejná firma, jiná data
                     // StatusBar identity bindings refreshne na novém MLRest.
                     OnPropertyChanged(nameof(UserName));
@@ -1213,9 +1293,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
         }
 
-        private void RefreshLicense()
+        private async Task RefreshLicense()
         {
-            RebuildSessionState(_services.LicenceLoader?.Invoke());
+            await RebuildSessionStateAsync(_services.LicenceLoader?.Invoke());
             PopupDisplayer.Info("Licence byla aktualizována.");
         }
 

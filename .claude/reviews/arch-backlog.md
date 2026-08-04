@@ -5,7 +5,7 @@
 Ten dokument je snapshot analýzy (evidence, dopad, návrh) a **nemění se**. Tady je plán
 a stav.
 
-**Hotovo: 8 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
+**Hotovo: 10 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
 
 ## Jak s dokumentem pracovat
 
@@ -193,7 +193,39 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R2 - `RebuildSessionState` dělá 10 blokujících round-tripů na UI threadu
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-04) - **odchylky od návrhu, všechny vědomé:**
+  (a) Load se vysekl do `Modules/SessionDataLoader` (+ `SessionData` DTO), VM ho jen
+  aplikuje - `ApplySessionData` je záměrně **sync**, protože guardy `_suppressXxx` přes
+  `await` neplatí. Přesun do `ModuleTreeState` v R1 tím zlevní podruhé.
+  (b) **Jedna vlna, ne dvě**: na hotových stromech závisí až aplikace dat, ne jejich načtení.
+  Prefs jdou sekvenčně v jedné větvi (`IUserPrefsService` drží sdílenou instanci MLRest,
+  klon jí nejde podstrčit bez změny EDControls) → wall-clock ~4 round-tripy místo 9.
+  (c) **Paralelní volání jen na klonech** (`RestCallRunner`): `QueryOrThrow` čte
+  `RestStatus` až po `Query` a ten je per-instance, takže `Task.WhenAll` nad sdílenou
+  instancí by tiše prohazoval chyby - to zadání nevědělo. Probe proti dev serveru potvrdila
+  process-per-request (6 souběžných requestů = 6 různých `$JOB`, 956 ms vs 5041 ms
+  sekvenčně), takže `^||ML` nekoliduje.
+  (d) Ctor už nenačítá - `InitializeAsync()` z `ContentRendered`, shell je vidět hned.
+  `LoginAsAnotherUser` a `RefreshLicense` jsou `CommandAsync`.
+  (e) `GetAwaiter().GetResult()` je z EDISONMAIN2 pryč až na `Updater.Fetch` (HTTP na
+  release server, běží před vznikem shellu, nesouvisí se session rebuildem) a dvě testovací
+  `InitializeAsync()` v harnessech.
+  (f) **Zbývá jeden blokující round-trip**: `CompanySwitcher.Switch` (VerifyLic) musí na UI
+  threadu kvůli dialogům licenčního retry. Overlay ho nekryje - kandidát na follow-up.
+  (g) Ze skeptického review vypadly dvě reálné pasti volného UI threadu, obě opravené:
+  layout mini-apps se ukládá **před** posunem `Idfa` a po dobu swapu je persist potlačený
+  (zavření shellu během rebuildu jinak uložilo dock staré firmy pod novou), a selhání
+  rebuildu po už přepnuté session čistí stav (`ClearSessionState`) - držet stará data
+  znamenalo spustitelné moduly mimo licenci nové firmy a zápis cizích preferencí do jejích
+  blobů. Selhání při refreshi licence naopak předchozí strom drží (táž firma) - dva testy.
+  (h) **Zbytkové riziko:** preference pořád jedou na sdílené instanci MLRest (klon jim nejde
+  podstrčit bez změny EDControls), takže se teoreticky mohou potkat s `WindowStatePersistence`
+  / `SessionLogout` na zavření okna během loadu. Oba konce chyby polykají, takže dopad je
+  tichý (neuložená pozice okna, ACTIVITY zámek do idle timeoutu). Fix = `Func<IMLRest>`
+  přetížení `CacheUserPrefsService` → **vlna 4** (tam se dávkuje publish EDControls).
+  Testy: `SessionDataLoaderTests` (4, proti ručně psanému thread-safe fake `IMLRest` -
+  NSubstitute není thread-safe) + 4 VM testy (prázdné stromy do initu, idempotence initu,
+  overlay po dobu loadu, selhání loadu nechá předchozí strom).
 - **P1 · M** · Závisí na: R12 (kosmeticky) · Blokuje: R14, výrazně zlevňuje R1
 - **Co udělat:** Tři kroky, dají se commitovat zvlášť:
   1. `RebuildSessionState` na `async Task`, tři `GetTree` a pět `UserData.Load` paralelně
@@ -214,7 +246,15 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R14 - `SelectedCompanyIndex` setter dělá modální dialog, síť a rollback
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-04) - dělané spolu s R2 (setter nemůže awaitovat, takže to
+  jinak nešlo). `SelectedCompanyIndex` je čistý stav s private setterem, workflow je
+  `SwitchCompanyCommand` = `CommandAsync<int>(SwitchCompanyAsync)`; `internal` seam kvůli
+  testům (`AsyncRelayCommand` nemá awaitovatelný Execute). Rollback **zmizel** místo aby se
+  sjednotil: index se nastaví teprve po `Accepted`, takže Refused/cancel jen notifikuje
+  derived properties (`RaiseSessionPropertiesChanged`, jeden seznam místo dvou opsaných).
+  **Odchylka:** binding zůstal na `SelectedCompanyId` (TwoWay), setter jen spouští command -
+  `EDFilterComboBox` veřejný commit event nemá a doplnit ho = změna `EDControls.dll`, kterou
+  backlog dávkuje do vlny 4.
 - **P3 · S** · Závisí na: **R2** · Blokuje: -
 - **Co udělat:** Property nechat jako čistý stav (`Set` + notifikace), workflow přesunout
   do `SwitchCompanyCommand` (`AsyncRelayCommand` - dostane zdarma double-click guard
@@ -285,7 +325,8 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
         `CloseAllCommand` v XAML, což ze strany VM není vidět - nerozbij to.
   - [ ] Menu commandy (font, theme, `RunEdisonCopy`, `OpenWebUrl`, `ShowAppInfo`, chord)
         do vlastní partial třídy nebo `ShellMenuCommands`.
-- **Zachovat:** `RebuildSessionState` jako jediný rozšiřovací bod pro session-scoped stav.
+- **Zachovat:** `RebuildSessionStateAsync` (+ `SessionDataLoader`) jako jediný rozšiřovací bod
+  pro session-scoped stav.
   To je dobrý vzor, jen dnes volá příliš mnoho věcí přímo.
 - **Hotovo když:** `EdisonMainViewModel` je pod ~400 řádky a orchestruje; sdílené
   `_suppressXxx` flagy patří té třídě, které se týkají; testy jsou rozdělené podle

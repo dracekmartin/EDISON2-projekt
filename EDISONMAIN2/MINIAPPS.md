@@ -223,7 +223,7 @@ licencovaný/přístupný). Vlastní per-mini-app gating (samostatný `ElementId
 až bude potřeba jemnější granularita.
 
 **Refresh při přepnutí firmy:** dostupnost mini-apps závisí na licenci/modulu, což se mění při
-přepnutí firmy (`RebuildSessionState` re-filtruje stromy). Katalog (resp. jeho filtrovaná podmnožina
+přepnutí firmy (`RebuildSessionStateAsync` re-filtruje stromy). Katalog (resp. jeho filtrovaná podmnožina
 nabízená v launcheru) se proto musí **re-vyhodnotit stejně jako stromy modulů**, jinak launcher po
 přepnutí ukazuje mini-apps nedostupné firmy.
 
