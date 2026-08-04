@@ -274,6 +274,18 @@ ClassMethod StrankaAtributy(ByRef sys As %String) As %Status
 			set p = p + 1
 			set ^||ML("OUT","POZNAMKA",p) = "["_pz.%Get("ZNAK")_"] "_pz.%Get("KATEGORIE")_": "_$extract(pz.%Get("TEXT"),1,60)
 		}
+
+		// značky u odjezdů - odpověď na „mění ten parametr jen odjezdy, nebo i něco jiného?"
+		set d = 0, itd = page.rows.%Get("ODJEZDY").%GetIterator()
+		while itd.%GetNext(.dk, .o) {
+			set znaky = ""
+			set ita2 = o.%Get("ANOTACE").%GetIterator()
+			while ita2.%GetNext(.k2, .a2) { set znaky = znaky _ a2.%Get("ZNAK") }
+			continue:znaky=""
+			set d = d + 1
+			if d '> 40 { set ^||ML("OUT","ODJEZD",d) = o.%Get("HODINA")_":"_o.%Get("MINUTA")_" znaky="_znaky }
+		}
+		set ^||ML("OUT","ODJEZDU_SE_ZNACKOU") = d
 		kill ^||TiskAd
 	}
 	catch (ex) { $$$CatchErrRest }
