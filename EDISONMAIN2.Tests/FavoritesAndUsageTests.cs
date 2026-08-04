@@ -399,6 +399,43 @@ public class FavoritesAndUsageTests
         prefs.Received().SaveAsync("EDISONMAIN2", "SelectedTab", Arg.Any<JsonNode>());
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void SelectedTab_ActivatesExactlyOneContent(int tab)
+    {
+        // Obsah záložek nejsou Contenty TabItemů, ale sourozenci přepínaní těmito viditelnostmi —
+        // dvě aktivní najednou by se v kartě překryly.
+        var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
+
+        vm.SelectedTreeTabIndex = tab;
+
+        bool[] active =
+        [
+            vm.IsMainMenuTabActive, vm.IsSystemAdminTabActive, vm.IsPartnerSolutionsTabActive,
+            vm.IsFavoritesTabActive, vm.IsUsedModulesTabActive,
+        ];
+        Assert.Equal(tab, Array.IndexOf(active, true));
+        Assert.Single(active, a => a);
+    }
+
+    [Fact]
+    public void SelectedTab_Change_NotifiesContentVisibilities()
+    {
+        var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
+        vm.SelectedTreeTabIndex = 0;
+        List<string?> raised = [];
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        vm.SelectedTreeTabIndex = 2;
+
+        Assert.Contains(nameof(vm.IsMainMenuTabActive), raised);
+        Assert.Contains(nameof(vm.IsPartnerSolutionsTabActive), raised);
+    }
+
     // ---------- harness (mirror EdisonMainViewModelTests) -----------------
 
     private static readonly CompanyStruct[] Companies = [new() { Id = "CB_DP", Database = "CB_DP" }];

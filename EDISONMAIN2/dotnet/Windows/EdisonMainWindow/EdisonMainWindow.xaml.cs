@@ -14,7 +14,6 @@ using DataObject = System.Windows.DataObject;
 using Point = System.Windows.Point;
 using DragDrop = System.Windows.DragDrop;
 using DragDropEffects = System.Windows.DragDropEffects;
-using TabControl = System.Windows.Controls.TabControl;
 using TreeView = System.Windows.Controls.TreeView;
 
 namespace EDISONMAIN2
@@ -170,11 +169,9 @@ namespace EDISONMAIN2
         }
 
         // Přepnutí záložky → SelectedModule z výběru nově aktivního stromu (Používané → null),
-        // aby toolbar akce odpovídaly viditelné záložce. Guard filtruje bublající SelectionChanged
-        // z vnitřního ListBoxu (Používané).
+        // aby toolbar akce odpovídaly viditelné záložce.
         private void TreeTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.Source is not TabControl) return;
             if (DataContext is not EdisonMainViewModel vm) return;
             TreeView? tv = TreeTabControl.SelectedIndex switch
             {

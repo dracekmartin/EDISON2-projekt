@@ -802,10 +802,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             get => _selectedTreeTabIndex;
             set
             {
-                if (Set(ref _selectedTreeTabIndex, value) && !_suppressTabSave)
+                if (!Set(ref _selectedTreeTabIndex, value)) return;
+                foreach (var name in TabActiveProperties)
+                    OnPropertyChanged(name);
+                if (!_suppressTabSave)
                     _ = _modulePrefs.SaveSelectedTabAsync(value);
             }
         }
+
+        // Záložky nesou jen strip; obsah je pod hledáním a přepíná se těmito viditelnostmi.
+        private static readonly string[] TabActiveProperties =
+        [
+            nameof(IsMainMenuTabActive), nameof(IsSystemAdminTabActive), nameof(IsPartnerSolutionsTabActive),
+            nameof(IsFavoritesTabActive), nameof(IsUsedModulesTabActive),
+        ];
+
+        public bool IsMainMenuTabActive         => _selectedTreeTabIndex == 0;
+        public bool IsSystemAdminTabActive      => _selectedTreeTabIndex == 1;
+        public bool IsPartnerSolutionsTabActive => _selectedTreeTabIndex == 2;
+        public bool IsFavoritesTabActive        => _selectedTreeTabIndex == 3;
+        public bool IsUsedModulesTabActive      => _selectedTreeTabIndex == 4;
 
         // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené (3) když nějaké jsou, jinak Hlavní nabídka (0).
         private int DefaultTreeTab() => HasNoFavorites ? 0 : 3;

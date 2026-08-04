@@ -25,6 +25,8 @@
     <SolidColorBrush x:Key="EDTheme.Bg.Surface" Color="{StaticResource EDTheme.Bg.Surface.Color}"/>
     <Color x:Key="EDTheme.Bg.Base.Color">#FF1E1E1E</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Base" Color="{StaticResource EDTheme.Bg.Base.Color}"/>
+    <Color x:Key="EDTheme.Bg.Sunken.Color">#FF1E1E1E</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Sunken" Color="{StaticResource EDTheme.Bg.Sunken.Color}"/>
     <Color x:Key="EDTheme.Bg.Panel.Color">#FF252526</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Panel" Color="{StaticResource EDTheme.Bg.Panel.Color}"/>
     <Color x:Key="EDTheme.Bg.PanelAlt.Color">#FF2A2A2C</Color>

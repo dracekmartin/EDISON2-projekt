@@ -30,7 +30,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 ## UI pasti
 
 - `EDFilterComboBox` (výběr firmy) **musí být mimo `<Menu>`** — WPF Menu krade fokus
-  editovatelnému poli uvnitř; proto je v `DockPanel` vedle Menu.
+  editovatelnému poli uvnitř; proto je v `DockPanel` vedle Menu. Horní lišta je proto
+  rozdělená na **dva `Menu` controly** (`EdisonMenu` = jen položka EDISON, pak combo, pak
+  `TopMenu` se zbytkem), aby hlavní nabídka stála první; cena je, že šipkami se mezi oběma
+  menu nepřejde. `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
 - **Status bar** = segmenty ikona + hodnota, technika (namespace, port, login, Mlp) jen
@@ -38,10 +41,19 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   funguje **jen na explicitním** `<StatusBarItem>` (na surovém `TextBlock` se nepropíše na
   generovaný kontejner), stejně tak `Visibility="Collapsed"` bez zbytkové mezery.
   `<Separator/>` patří jen mezi vždy viditelné segmenty — u sbalitelného by zůstal viset.
+- **Launcher panel** je zapuštěná plocha (`EDTheme.Bg.Sunken`), na které leží **jedna spojitá
+  karta** z `Bg.Surface`: pruh záložek → hledání → strom (navazující `BorderThickness`,
+  zakulacení jen na krajích). V light je totiž `Bg.Base` == `Bg.Surface` a bez toho panel
+  splyne s obsahem. Akční toolbar zůstává **vedle karty** na zapuštěném chrome — ikonové taby
+  a ikonové akce by jinak splynuly v jednu řadu, navíc obě skupiny obsahují ★.
+  `TreeTabControl` nese **jen tab strip**: `TabItem`y jsou ikonové (text v ToolTipu) a záměrně
+  **bez Contentu** (ikona proto patří do `TabItem.Header`), stromy jsou sourozenci v kartě
+  a přepínají se `Is*TabActive`. Důsledek: všech pět stromů žije pořád → do `Tag` datových
+  šablon (most pro `ContextMenu`) nejde brát `AncestorType=TabControl`, jde tam `VmProxy`.
 - **Toolbar nad stromy** (Rozbalit/Sbalit vše + oblíbené/výchozí okno nad vybraným uzlem):
-  Rozbalit/Sbalit vše cílí na **aktivní** záložku (`ActiveExpandableTree` dle
-  `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna obalena
-  `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar
+  jedna instance vpravo v řádku se záložkami. Rozbalit/Sbalit vše cílí na **aktivní** záložku
+  (`ActiveExpandableTree` dle `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna
+  obalena `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar
   akce) plní code-behind — `TreeView.SelectedItem` nelze bindovat, jede přes
   `SelectedItemChanged` + `TabControl.SelectionChanged`. Ikonové tlačítko = sdílený styl
   `EDTheme.ToolbarButton` z EDControls.

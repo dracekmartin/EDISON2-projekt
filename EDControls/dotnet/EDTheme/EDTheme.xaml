@@ -47,6 +47,12 @@
     <Color x:Key="EDTheme.Bg.Base.Color">#FFFFFFFF</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Base" Color="{StaticResource EDTheme.Bg.Base.Color}"/>
 
+    <!-- Zapuštěná chrome vrstva pod obsahem (levý panel launcheru) — obsah na ní leží
+         jako karta z Bg.Surface. V light je Bg.Base == Bg.Surface, takže bez tohoto
+         tokenu by panel s obsahem splynul; v dark elevaci nese už Base vs. Surface. -->
+    <Color x:Key="EDTheme.Bg.Sunken.Color">#FFF3F4F6</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Sunken" Color="{StaticResource EDTheme.Bg.Sunken.Color}"/>
+
     <!-- Pozadí panelu (hlavičky levých panelů, status bar) -->
     <Color x:Key="EDTheme.Bg.Panel.Color">#FFF3F4F6</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Panel" Color="{StaticResource EDTheme.Bg.Panel.Color}"/>
