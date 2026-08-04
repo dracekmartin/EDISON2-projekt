@@ -234,11 +234,11 @@ public class NotesLegendElement : StopScheduleElementBase
         try
         {
             var znakPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
-            // Znak legendy musí být týž glyf jako značka u zastávky - u piktogramů se pozice ve
-            // symbolovém fontu neshoduje s písmenem číselníku (autobus „A" → „z", kolo „K" → „L").
-            // Jen u piktogramů: značka kreslená normálním fontem (ruční komentáře) je písmeno,
-            // které si zákazník zadal, a překlad by z „A" udělal „z".
-            string znak = piktogram ? SymbolGlyph(pozn.Znak) : pozn.Znak;
+            // Znak legendy musí být týž glyf jako značka u zastávky - u sémantických značek se pozice
+            // ve fontu neshoduje s písmenem číselníku (autobus „A" → „z", kolo „K" → „L"). Překlad
+            // se řídí kategorií, ne písmenem: značky MHD jsou v datech už jako pozice ve fontu.
+            // A jen u piktogramů: značka kreslená normálním fontem je písmeno zadané zákazníkem.
+            string znak = piktogram ? GlyfDleKategorie(pozn.Znak, pozn.Kategorie) : pozn.Znak;
             ctx.Canvas.DrawText(znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
             lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f;
 

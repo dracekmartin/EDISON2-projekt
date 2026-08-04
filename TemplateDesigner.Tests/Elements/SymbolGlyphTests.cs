@@ -73,7 +73,7 @@ public class SymbolGlyphTests
     [Fact]
     public void MrizkaOdjezduPrekladaGlyfStejneJakoLegenda()
     {
-        var kolo = new AnotaceData { Typ = TypAnotace.SpecialniZnak, Znak = "K" };
+        var kolo = new AnotaceData { Typ = TypAnotace.SpecialniZnak, Znak = "K", Kategorie = "odjezd-atribut" };
         Assert.Equal("L", DepartureGridElement.GlyfProKresleni(kolo));
         Assert.Equal(StopScheduleElementBase.SymbolGlyph("K"), DepartureGridElement.GlyfProKresleni(kolo));
 
@@ -84,6 +84,22 @@ public class SymbolGlyphTests
         // „Na znamení" jde textovou cestou, i když je označené jako speciální znak.
         var naZnameni = new AnotaceData { Typ = TypAnotace.SpecialniZnak, Znak = "x" };
         Assert.Equal("x", DepartureGridElement.GlyfProKresleni(naZnameni));
+    }
+
+    /// <summary>Překlad se řídí **kategorií z dat**, ne písmenem. Agenda MHD posílá značku jako
+    /// <c>$c(kód)</c>, tedy přímo pozici ve fontu - kód 65 dá „A", kód 75 „K". Plošný překlad podle
+    /// písmene by zákazníkovi MHD nakreslil autobus nebo kolo místo jeho symbolu.</summary>
+    [Fact]
+    public void ZnackyMhdSeNeprekladaji()
+    {
+        // MHD kategorii sémantických značek nepoužívá (prázdná nebo „atribut-zastavky").
+        Assert.Equal("A", StopScheduleElementBase.GlyfDleKategorie("A", ""));
+        Assert.Equal("K", StopScheduleElementBase.GlyfDleKategorie("K", ""));
+        Assert.Equal("A", StopScheduleElementBase.GlyfDleKategorie("A", "atribut-zastavky"));
+
+        // Sémantické značky AD se přeloží.
+        Assert.Equal("z", StopScheduleElementBase.GlyfDleKategorie("A", "prestup"));
+        Assert.Equal("L", StopScheduleElementBase.GlyfDleKategorie("K", "odjezd-atribut"));
     }
 
     /// <summary>Znaky, které dnes fungují (bezbariér, kroužkové dny), se nesmí překládat - jejich

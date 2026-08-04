@@ -126,6 +126,11 @@ public class AnotaceData
     /// Wire-format zatím rendering ignoruje (rezervováno).
     /// </summary>
     public string? BackColor { get; set; }
+
+    /// <summary>Kategorie z Caché („odjezd-atribut", „bezbarier", „rucni-komentar"…) - stejný tag,
+    /// jaký nese odpovídající řádek legendy. Řídí, jestli se značka **přeloží na glyf**: značky MHD
+    /// jsou v datech už jako pozice ve fontu, takže se přeložit nesmí. Prázdná u agend bez kategorií.</summary>
+    public string Kategorie { get; set; } = "";
 }
 
 /// <summary>Poznámka v legendě pod mřížkou.</summary>

@@ -897,9 +897,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 foreach (var a in attrs)
                 {
                     bool piktogram = JePiktogram(a.Znak);
-                    // Piktogram se kreslí ze symbolového fontu, kde glyfy nesedí na písmena číselníku
-                    // (autobus „A" → „z", vlak „L" → „x"); text zůstává tím, co je v datech.
-                    runs.Add(new MarkerRun(piktogram ? SymbolGlyph(a.Znak) : a.Znak, piktogram));
+                    // Přestupová značka se kreslí ze symbolového fontu, kde glyfy nesedí na písmena
+                    // číselníku (autobus „A" → „z", vlak „L" → „x"). Ostatní atributy se NEpřekládají -
+                    // u MHD je znak v datech už pozice ve fontu, u AD ostatní znaky na svém písmenu sedí.
+                    bool prelozit = piktogram && IsTransferAttr(a);
+                    runs.Add(new MarkerRun(prelozit ? SymbolGlyph(a.Znak) : a.Znak, piktogram));
                 }
             }
         }
