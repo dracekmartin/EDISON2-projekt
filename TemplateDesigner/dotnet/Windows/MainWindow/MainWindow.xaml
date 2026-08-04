@@ -913,7 +913,7 @@
                             Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding HasNoteSuppression, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Nastavení sestavy mění obsah vývěsky: rozsah „Spoje, nepoznámkovat“, skrytí souhrnné bezbariérové poznámky, písmena variant tras, rozdělení vývěsky po označnících">
+                            ToolTip="Nastavení sestavy mění obsah vývěsky: rozsah „Spoje, nepoznámkovat“, skrytí souhrnné bezbariérové poznámky, písmena variant tras, rozdělení vývěsky po stanovištích">
                         <TextBlock Text="{Binding NoteSuppressionText}"
                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}" FontWeight="SemiBold"
                                    VerticalAlignment="Center"

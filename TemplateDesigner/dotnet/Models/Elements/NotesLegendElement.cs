@@ -82,6 +82,11 @@ public class NotesLegendElement : StopScheduleElementBase
         var filtered = FilterPoznamky(poznamky);
         bool hasData = filtered.Count > 0;
 
+        // Prázdný výsledek filtru s reálnými daty = blok se netiskne vůbec, ani nadpis.
+        // Šablona s blokem „Jen výluky" se tiskne i pro linky bez výluk - osiřelý nadpis
+        // nad prázdnem by byl na většině vývěsek.
+        if (!hasData && ctx.Data is not null) return;
+
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
         float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
 
@@ -280,7 +285,9 @@ public class NotesLegendElement : StopScheduleElementBase
     {
         var poznamky = BuildPoznamky(data);
         var filtered = FilterPoznamky(poznamky);
-        if (filtered.Count == 0) return DesignerPlaceholderHeight;
+        // S reálnými daty se prázdný blok zcela složí (0 mm) - elementy pod ním se posunou
+        // nahoru; placeholder výška patří jen designeru bez dat.
+        if (filtered.Count == 0) return data is null ? DesignerPlaceholderHeight : 0f;
 
         // Výška = záhlaví + nejvyšší sloupec (poznámky se zalamují → akumulujeme řádky per sloupec).
         var ordered = OrderNotes(filtered);

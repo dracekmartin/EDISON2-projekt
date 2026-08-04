@@ -2375,7 +2375,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pZdrojSt.type         = "enum"
     s pZdrojSt.group        = "Seznam zastávek"
     s pZdrojSt.defaultValue = "Označník"
-    s pZdrojSt.description  = "Který údaj z jízdního řádu se bere jako číslo stanoviště: Označník (pole nástupiště z trasy linky) nebo Sloupek (číslo z číselníku sloupků zastávky). Volba řídí Více označníků, samostatné stránky i titulek stránky. Sloupce Označník a Sloupek jdou tisknout oba nezávisle."
+    s pZdrojSt.description  = "Který údaj z jízdního řádu se bere jako číslo stanoviště: Označník (pole nástupiště z trasy linky) nebo Sloupek (číslo z číselníku sloupků zastávky). Volba řídí Více stanovišť, samostatné stránky i titulek stránky. Sloupce Označník a Sloupek jdou tisknout oba nezávisle."
     s optsZS = ##class(%DynamicArray).%New()
     d optsZS.%Push("Označník")
     d optsZS.%Push("Sloupek")

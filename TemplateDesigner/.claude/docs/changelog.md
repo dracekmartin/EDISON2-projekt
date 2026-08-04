@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-08-04 (4) - produkční review týdne: opravené nálezy před verzí
+
+Celkové review změn za ~poslední týden (4 dimenze: business logika poznámek, wiring parametrů,
+UI/UX texty, glyfy/render) před vydáním verze. Testy byly zelené už před opravami; review našlo
+tři funkční díry a pár textovek. Opraveno:
+
+- **Dva parametry vypadly z `ServerSideParams` allowlistu** - „Souhrn všechny zastávky na znamení"
+  a „Výčet spojů u dopravce" jsou server-side (čte je `GetData`), ale jejich změna nespouštěla
+  re-fetch: klik byl no-op a **tisk pak vyjel jinak než náhled** (PrintDialog fetchuje čerstvě).
+  Třetí výskyt téže pasti → strojová pojistka jako `B47`.
+- **Prázdný blok legendy při tisku zmizí celý** - blok „Jen výluky" na lince bez výluk dřív vytiskl
+  osiřelý nadpis nad prázdnem a u dynamické výšky si držel 25mm placeholder, který odtlačil elementy
+  pod sebou. Šablona se tiskne pro všechny linky a většina výluky nemá, takže by to bylo na většině
+  vývěsek. Nově: reálná data + prázdný filtr = nekreslí se nic a výška je 0 (placeholder zůstává
+  jen designeru bez dat). Dva regresní testy (výška + odtisk canvasu).
+- **Terminologický drift „označník" → „stanoviště"** na 3 místech u #13088: description parametru
+  „Číslo stanoviště podle" odkazoval na přejmenovanou volbu („Více označníků" → „Více stanovišť"),
+  tooltip chipu a stavový řádek říkaly „rozdělení po označnících" - při volbě Sloupek věcně špatně.
+- **Czechglish tooltip** „Smaže per-sloupec overrides" → „Smaže úpravy jednotlivých sloupců" (5 dialogů).
+- **Formulář poznámek lhal o defaultu řazení** - fallback pole „Řazení poznámek" tvrdil „Výchozí",
+  element defaultuje „Dle typu" (prefill to vždy překryl, jen kosmetika formuláře).
+
+**Nálezy odložené se záznamem:** `B48` (StopList klasifikuje přestupy podle písmene - MHD riziko),
+`B49` (SK font neověřené pozice glyfů), `B50` (export PDF/PNG ignoruje parametry sestavy),
+`B47` (drift test allowlistu). Na radaru bez bloku: potlačení duplicitní vysvětlivky („X - text")
+se rozhoduje na serveru podle parametru, ale viditelnost zákazníkovy poznámky až filtrem prvku -
+krajní kombinace umí nechat značku „R"/„K" bez vysvětlivky; a zákazníkova poznámka „K - …" umlčí
+piktogram kola, který si čtenář s textovým „K" nespáruje.
+
+.NET TD 570/570 (+2), EDISONMAIN2 435/435, Caché 112/112. K nasazení: týden sahal i do EDControls
+(náhled barvy z dat) → do produkce jde DLL + exe.
+
 ## 2026-08-04 (3) - hledání skupiny linek přepsáno na sdílený `EDFilterComboBox` (`B46`)
 
 Nahlásil Jan: ve výběru linek se do filtru skupiny nedá napsat víc než jeden znak. Reprodukováno

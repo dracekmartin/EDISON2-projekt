@@ -21,10 +21,11 @@ public class PrintSettingsNoticeTests
     }
 
     [Fact]
-    public void RozdeleniPoOznacnicich_Hlasi()
+    public void RozdeleniPoStanovistich_Hlasi()
     {
         var t = TemplateDesignerViewModel.BuildPrintSettingsNotice(false, false, true);
-        Assert.Contains("vývěska rozdělená po označnících", t);
+        // „Stanoviště" je zastřešující pojem - dělit se dá podle označníku i sloupku (ZDROJ_STANOVISTE).
+        Assert.Contains("vývěska rozdělená po stanovištích", t);
     }
 
     [Fact]
@@ -39,7 +40,7 @@ public class PrintSettingsNoticeTests
     {
         var t = TemplateDesignerViewModel.BuildPrintSettingsNotice(true, true, true);
         Assert.Equal(
-            "Sestava: poznámky skryté nastavením · rozdíly tras nahrazené písmeny variant · vývěska rozdělená po označnících",
+            "Sestava: poznámky skryté nastavením · rozdíly tras nahrazené písmeny variant · vývěska rozdělená po stanovištích",
             t);
     }
 }

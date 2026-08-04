@@ -120,4 +120,30 @@ public class NotesLegendVylukyTests
         Assert.Single(new NotesLegendElement { Vyluky = VylukyFiltr.Bez }.FiltrujPoznamkyProTest(bezKategorie));
         Assert.Empty(new NotesLegendElement { Vyluky = VylukyFiltr.Jen }.FiltrujPoznamkyProTest(bezKategorie));
     }
+
+    // ── Prázdný blok při reálných datech (šablona „Jen výluky" na lince bez výluk) ──
+
+    /// <summary>Blok, jehož filtr při tisku nic nepropustí, se složí na 0 mm - nesmí si držet
+    /// 25mm placeholder, který by odtlačil elementy pod ním. Placeholder patří jen designeru.</summary>
+    [Fact]
+    public void PrazdnyFiltrSRealnymiDaty_SloziBlokNaNulu()
+    {
+        var blok = new NotesLegendElement { Width = 80, Vyluky = VylukyFiltr.Jen };
+
+        Assert.Equal(0f, blok.CalculateHeightFromData(Rendering.RenderSnapshot.Data(("POZNAMKY", []))));
+        Assert.Equal(25f, new NotesLegendElement { Width = 80 }.CalculateHeightFromData(null));
+    }
+
+    /// <summary>Prázdný blok při tisku nekreslí vůbec nic - ani nadpis. Šablona se tiskne pro
+    /// všechny linky a většina výluku nemá; osiřelý nadpis nad prázdnem by byl na většině vývěsek.</summary>
+    [Fact]
+    public void PrazdnyFiltrSRealnymiDaty_NekresliAniNadpis()
+    {
+        var data = Rendering.RenderSnapshot.Data(("POZNAMKY", []));
+        var blok = new NotesLegendElement { X = 10, Y = 10, Width = 80, Vyluky = VylukyFiltr.Jen };
+        // Referenční prázdný canvas: element s nulovou šířkou nekreslí nic už od první verze.
+        var prazdnyCanvas = Rendering.RenderSnapshot.Capture(new NotesLegendElement { Width = 0 }, data);
+
+        Assert.Equal(prazdnyCanvas, Rendering.RenderSnapshot.Capture(blok, data));
+    }
 }

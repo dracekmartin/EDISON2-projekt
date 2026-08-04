@@ -328,7 +328,7 @@
                                         Padding="10,3" Margin="0,0,6,0"/>
                                 <Button Content="Resetovat všechny sloupce"
                                         Command="{Binding ResetAllColumnStylesCommand}"
-                                        ToolTip="Smaže per-sloupec overrides - všechny sloupce budou dědit z tabu Obecné"
+                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce budou dědit z tabu Obecné"
                                         Padding="10,3"/>
                             </StackPanel>
                         </StackPanel>

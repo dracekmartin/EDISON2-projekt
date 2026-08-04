@@ -2493,7 +2493,7 @@ public class TemplateDesignerViewModel : EDViewModel
     private static readonly string[] ServerSideParams =
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
          "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE", "POZNAMKY_LINKY",
-         "TISK_MISTENEK", "TISK_KOLA"];
+         "TISK_MISTENEK", "TISK_KOLA", "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE"];
 
     private string? _lastServerParamsSnapshot;
 
@@ -2750,8 +2750,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// se počítají ze skutečně odfiltrovaných položek náhledové stránky (parametr sám nemusí nic
     /// schovat - rozsah „Spoje, nepoznámkovat" nemusí mít v datech firmy záznamy a signál z parametru
     /// by lhal). Zbylé dvě věci se hlásí dle parametru, protože se aplikují už na serveru:
-    /// písmena variant nahrazují rozdílové poznámky a rozdělení po označnících vyndá ze stránky
-    /// odjezdy jiných označníků. Právě to se tiše dělo, když UI parametr ukazovalo jako vypnutý.
+    /// písmena variant nahrazují rozdílové poznámky a rozdělení po stanovištích vyndá ze stránky
+    /// odjezdy jiných stanovišť. Právě to se tiše dělo, když UI parametr ukazovalo jako vypnutý.
     /// </summary>
     private void UpdateNoteSuppressionText(NoteSuppressionCounter counter, IReadOnlyDictionary<string, object?> paramValues)
     {
@@ -2767,7 +2767,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var duvody = new List<string>(3);
         if (notesHidden) duvody.Add("poznámky skryté nastavením");
         if (variantLetters) duvody.Add("rozdíly tras nahrazené písmeny variant");
-        if (splitPerPlatform) duvody.Add("vývěska rozdělená po označnících");
+        if (splitPerPlatform) duvody.Add("vývěska rozdělená po stanovištích");
         return duvody.Count == 0 ? "" : "Sestava: " + string.Join(" · ", duvody);
     }
 
