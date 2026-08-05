@@ -270,7 +270,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
     }
 
-    private static List<TemplateParameter> ParseParameters(string json)
+    /// <summary>Internal kvůli testům wire kontraktu parametrů sestavy.</summary>
+    internal static List<TemplateParameter> ParseParameters(string json)
     {
         try
         {
@@ -438,27 +439,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                 throw new CacheAgendaException(
                     $"Načtení dat agendy '{agendaCode}' z databáze selhalo: {_mlRest.RestStatus.Message}");
 
-            // Každý OUT node = jedna stránka (JSON objekt { "values": {...}, "rows": {...} })
-            var pages = new List<DataContext>();
-            foreach (var kvp in result)
-            {
-                if (kvp.Key == "ERR") continue;
-                string? json = kvp.Value?.Value?.ToString();
-                if (string.IsNullOrEmpty(json)) continue;
-
-                try
-                {
-                    var node = JsonNode.Parse(json);
-                    if (node is null) continue;
-                    var dc = ParseSinglePageData(node);
-                    if (dc is not null) pages.Add(dc);
-                }
-                catch
-                {
-                    // Přeskočit nevalidní stránku
-                }
-            }
-            return pages.Count > 0 ? pages : null;
+            return ParsePages(result.Select(kvp => (kvp.Key, kvp.Value?.Value?.ToString())));
         }
         catch (CacheAgendaException)
         {
@@ -473,10 +454,39 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     }
 
     /// <summary>
+    /// Každý OUT node = jedna stránka dat (JSON objekt { "values": {...}, "rows": {...} }).
+    /// Klíč <c>ERR</c> je metadata MLRestu, ne data - přeskočit. Nevalidní stránka se zahodí, ale
+    /// ostatní zůstanou (raději část výstupu než nic). Null = ani jedna použitelná stránka.
+    /// Internal kvůli testům - vícestránkový kontrakt jinak nejde ověřit bez Caché serveru.
+    /// </summary>
+    internal static List<DataContext>? ParsePages(IEnumerable<(string Key, string? Json)> outNodes)
+    {
+        var pages = new List<DataContext>();
+        foreach (var (key, json) in outNodes)
+        {
+            if (key == "ERR") continue;
+            if (string.IsNullOrEmpty(json)) continue;
+
+            try
+            {
+                var node = JsonNode.Parse(json);
+                if (node is null) continue;
+                var dc = ParseSinglePageData(node);
+                if (dc is not null) pages.Add(dc);
+            }
+            catch
+            {
+                // Přeskočit nevalidní stránku
+            }
+        }
+        return pages.Count > 0 ? pages : null;
+    }
+
+    /// <summary>
     /// Parsuje jeden objekt stránky { "values": {...}, "rows": {...} } do DataContext.
     /// Sdílená logika pro GetData i GetMockData.
     /// </summary>
-    private static DataContext? ParseSinglePageData(JsonNode node)
+    internal static DataContext? ParseSinglePageData(JsonNode node)
     {
         // Skalární hodnoty (+ vnořená pole/objekty jako JsonNode - např. VARIANTY_TRAS[])
         var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
@@ -699,7 +709,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         _          => FieldDataType.Text
     };
 
-    private static TableTemplateDefinition? ParseTableTemplate(string json)
+    /// <summary>Internal kvůli testům wire kontraktu předdefinovaného layoutu tabulky.</summary>
+    internal static TableTemplateDefinition? ParseTableTemplate(string json)
     {
         try
         {

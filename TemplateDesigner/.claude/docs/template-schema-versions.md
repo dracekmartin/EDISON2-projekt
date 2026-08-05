@@ -69,7 +69,14 @@ Template JSON má top-level `version` field (semver string, např. `"1.0.0"`). P
    ];
    ```
 4. **Aktualizuj sekci [Verze](#verze) níže** s popisem co se změnilo
-5. **Unit test** - old-schema JSON → migrator → new-schema validní deserialize
+5. **Unit test v `<NázevMigrace>Tests`** - old-schema JSON → migrator → new-schema validní
+   deserialize, plus **idempotence** (dvojí spuštění dá totéž) a **odolnost proti poškozené
+   šabloně** (chybějící sekce, jiný typ hodnoty → nespadnout).
+   ⚠️ **Ten název je povinný:** `TemplateMigratorTests.KazdaMigrace_MaVlastniTridyTestu` reflexí
+   hlídá, že ke každé migraci existuje třída `<NázevMigrace>Tests` (do 5. 8. tři chyběly a nikdo se
+   to nedozvěděl). Chybná migrace se jinak pozná až tím, že se zákazníkovi změní hotová vývěska.
+   💡 Test psaný „na zelenou" umí být slepý - u `ERR` klíče v datech byl (obsah by se stejně
+   neparsoval). Ověř mutací: rozbij v migraci jednu podmínku a test musí spadnout.
 
 ## Verzování semver
 

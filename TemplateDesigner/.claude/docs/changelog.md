@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-08-05 (3) - `B55` testy převodu šablon a čtení dat z databáze
+
+Nález review 4. 8.: tři převody formátu šablony a celé čtení odpovědí agendy neměly test, navzdory
+vlastním pravidlům (`template-schema-versions.md` krok 5, `feature-design-principles.md §7`).
+Obojí je vrstva, kde se chyba pozná až u zákazníka - buď se změní hotová vývěska, nebo se vytiskne
+prázdno. **+79 testů (646 → 725).**
+
+**Převody formátu šablony:**
+- `MigrationGridStyleTests` (1.6.0 → 1.7.0, nejsložitější převod) - pět hodnot volby rámce na dva
+  přepínače vnitřních čar, přenos dosud zadrátovaného rámce tabulky do rámečku prvku (a **ne**
+  u volby „Žádný"), respektování vlastního nastavení uživatele × přepsání fakticky vypnutého
+  rámečku (nula / průhledná), skaláry JŘ prvků → objekt, dva vlastní přepínače seznamu zastávek.
+- `MigrationHighlightRulesTests` - zvýraznění řádků z jednoho pravidla na seznam; neúplné
+  zvýraznění (podmínka bez barvy) pravidlo nevyrobí.
+- `MigrationKnizniToLinkovyTests` - přejmenování kódu agendy; ostatní kódy se nesmí dotknout.
+- Všechny tři: idempotence + odolnost proti poškozené šabloně (chybějící sekce, číslo místo textu).
+
+**Čtení odpovědí agendy** (`CacheAgendaParsingTests`, běží bez serveru i bez VPN): schéma
+(typy polí, starší název kolekcí `groups`, pole bez názvu / kolekce bez klíče), **vícestránkový
+výstup** (jedna stránka na zastávku × směr, přeskočení metadat `ERR`, poškozená stránka se zahodí
+ale ostatní zůstanou), obsah stránky (čísla a booly na text s desetinnou tečkou, vnořená pole
+zůstanou strukturou), předdefinovaný layout tabulky, parametry sestavy.
+Kvůli testovatelnosti se vícestránkové čtení vyčlenilo do `ParsePages` - bez toho by šlo ověřit
+jen se živým serverem.
+
+**Nová strojová pojistka:** `KazdaMigrace_MaVlastniTridyTestu` reflexí hlídá, že ke každé migraci
+existuje třída `<NázevMigrace>Tests`. Na test u nové migrace se tím nedá zapomenout.
+
+**⚠️ Poučení, které stálo za to:** všech 78 testů prošlo hned napoprvé, tak jsem je proti kódu
+**ověřil mutacemi** (rozbít podmínku → test musí spadnout). Jeden byl slepý - přeskočení klíče `ERR`
+procházelo i s vypnutou podmínkou, protože testovací obsah `ERR` by se stejně neparsoval jako
+stránka. Opraveno; zbylých 8 mutací sada chytá. Zapsáno do `template-schema-versions.md` krok 5.
+
 ## 2026-08-05 (2) - `B54` formulář prvku říká pravdu o výchozích hodnotách a nabízí, co panel
 
 Nález review 4. 8.: drift test hlídal jen **existenci** property, ne hodnotu, takže se výchozí

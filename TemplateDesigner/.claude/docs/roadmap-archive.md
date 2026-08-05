@@ -2,6 +2,19 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-05 ✅ - `B55` testy migrace šablon + parsingu agend
+
+**Zadání bloku (nález review 4. 8.):** `MigrationGridStyle` (1.7.0, nejsložitější migrace - 5 hodnot
+borderStyle + přenos rámce), `MigrationHighlightRules` a `MigrationKnizniToLinkovy` nemají unit test
+navzdory pravidlu v `template-schema-versions.md` krok 5; `CacheAgendaProvider` parsing
+(GetSchema→DataSchema, GetData→multi-page List, přeskok „ERR") bez testu navzdory
+`feature-design-principles.md §7`. Vel. **M**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (3). +79 testů (646 → 725), vícestránkové čtení dat
+vyčleněno do `ParsePages` (jinak neověřitelné bez serveru), nová pojistka
+`KazdaMigrace_MaVlastniTridyTestu`. Sada ověřená **mutacemi** - jeden test byl slepý (přeskočení
+`ERR`) a opravil se; poučení zapsané do `template-schema-versions.md` krok 5.
+
 ## 2026-08-05 ✅ - `B54` drift test výchozích hodnot formulář ↔ C# + chybějící pole
 
 **Zadání bloku (nález review 4. 8.):** `EDInputFormSchemaDriftTests` hlídá existenci property, ne

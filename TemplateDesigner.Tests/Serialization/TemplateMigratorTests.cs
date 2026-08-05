@@ -214,4 +214,32 @@ public class TemplateMigratorTests
         Assert.Contains("rozbité pole X", ex.Message);
         Assert.IsType<InvalidOperationException>(ex.InnerException);
     }
+
+    /// <summary>
+    /// Pojistka na pravidlo z `template-schema-versions.md` (krok 5): **každá migrace má vlastní
+    /// testy**. Do 5. 8. tři chyběly (`GridStyle`, `HighlightRules`, `KnizniToLinkovy`) a nikdo se
+    /// to nedozvěděl. Chybná migrace se pozná až tím, že se zákazníkovi změní hotová vývěska - jinou
+    /// zpětnou vazbu tahle vrstva nemá, takže test musí být povinný, ne doporučený.
+    /// </summary>
+    [Fact]
+    public void KazdaMigrace_MaVlastniTridyTestu()
+    {
+        var migrations = typeof(TemplateMigrator).Assembly.GetTypes()
+            .Where(t => t is { IsAbstract: false, IsInterface: false }
+                        && typeof(ITemplateMigration).IsAssignableFrom(t))
+            .Select(t => t.Name)
+            .ToList();
+
+        Assert.NotEmpty(migrations);   // prázdno = reflexe zrezivěla, ne že migrace nejsou
+
+        var testClasses = typeof(TemplateMigratorTests).Assembly.GetTypes()
+            .Select(t => t.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var without = migrations.Where(m => !testClasses.Contains(m + "Tests")).ToList();
+
+        Assert.True(without.Count == 0,
+            "Migrace bez vlastní třídy testů: " + string.Join(", ", without)
+            + ". Založ <NázevMigrace>Tests (převod + idempotence + odolnost proti poškozené šabloně).");
+    }
 }
