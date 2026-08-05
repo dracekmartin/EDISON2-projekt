@@ -16,6 +16,12 @@ namespace TemplateDesigner.Tests.Rendering;
 /// z OS), proto baseline **není v gitu** a test **neselže, když soubor chybí** - jen ho vytvoří.
 /// Trvalou pixelovou regresní sadu by šlo mít až se zabalenými textovými fonty.
 ///
+/// ⚠️ **Odtisk nepokrývá fallback větve.** Fixtury mají styly nastavené natvrdo
+/// (`DataStyle = Style(7)` → `Bold = false`), takže se vůbec nespustí kaskádové fallbacky, které
+/// platí jen když vrstva nad nimi nic nenastavila. Změna takového fallbacku projde odtiskem
+/// **beze změny** (ověřeno mutací 5. 8. na tučnosti minut). Na tuhle třídu jsou kaskádové unit
+/// testy (`DepartureGridCascadeTests`, `StopListCascadeTests`), ne odtisky.
+///
 /// 💡 Poučení z prvního použití (29. 7.): baseline se dá omylem sejmout **proti zastaralé binárce** -
 /// když je spuštěný designer, build testů selže na uzamčeném `TemplateDesigner.exe` a testy běží
 /// proti staré DLL. Před snímáním baseline **zavři aplikaci** a ověř, že build proběhl.

@@ -55,7 +55,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Styl datových buněk: DataStyle = báze (minuty i hodinová čísla z ní dědí),
         // MinuteStyle = minutový override navrch (prefix „Minuta:").
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "")
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ")
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ", 1)
 
         // ── Odjezdy - specifické (anotace = horní indexy/značky u minut) ──
         d form.AddGroup("departure", "Odjezdy - specifické")

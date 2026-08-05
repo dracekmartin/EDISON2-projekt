@@ -420,18 +420,36 @@ public class DepartureGridElement : StopScheduleElementBase
         return p;
     }
 
+    /// <summary>
+    /// Z čeho dědí minutová zóna: datový styl prvku, na něm skalární fallback velikosti a tučnosti
+    /// (`MinuteFontSize`/`MinuteBold` platí jen když je nenastavil `DataStyle` - jinak by přebíjely
+    /// uživatelovu volbu z tabu Obecné). Vlastní vrstva zóny (`MinuteStyle`) se pak resolvuje nad tímhle.
+    /// </summary>
+    public ResolvedTextStyle ResolveElementMinuteParent()
+    {
+        var p = DataStyle.Resolve(ScheduleDataDefaults);
+        if (DataStyle.FontSize is null) p = p with { FontSize = MinuteFontSize };
+        if (DataStyle.Bold is null)     p = p with { Bold = MinuteBold };
+        return p;
+    }
+
+    /// <summary>Z čeho dědí symboly anotací = datový styl prvku (velikost si zóna dopočítá
+    /// z minutové, viz <see cref="Render"/>).</summary>
+    public ResolvedTextStyle ResolveElementAnotaceSymbolParent() => DataStyle.Resolve(ScheduleDataDefaults);
+
+    /// <summary>Z čeho dědí text anotací: datový styl prvku + skalární fallback velikosti
+    /// (`AnotaceFontSize` platí jen když velikost nenastavil `DataStyle`).</summary>
+    public ResolvedTextStyle ResolveElementAnotaceTextParent()
+    {
+        var p = DataStyle.Resolve(ScheduleDataDefaults);
+        if (DataStyle.FontSize is null) p = p with { FontSize = AnotaceFontSize };
+        return p;
+    }
+
     /// <summary>Parent kaskády pro per-column override minutové buňky skupiny.</summary>
     public ResolvedTextStyle ResolveGroupMinuteParent()
     {
-        var dataResolved = DataStyle.Resolve(ScheduleDataDefaults);
-        var p = MinuteStyle.Resolve(dataResolved);
-
-        // Legacy fallback: scalar MinuteFontSize/MinuteBold platí pouze když cascade (MinuteStyle + DataStyle)
-        // nenastavil explicit. Tím se user-set DataStyle.FontSize/Bold z tabu Obecné nepřebije.
-        if (MinuteStyle.FontSize is null && DataStyle.FontSize is null)
-            p = p with { FontSize = MinuteFontSize };
-        if (MinuteStyle.Bold is null && DataStyle.Bold is null)
-            p = p with { Bold = MinuteBold };
+        var p = MinuteStyle.Resolve(ResolveElementMinuteParent());
 
         // Minutové buňky: padding default 0 (hustá mřížka)
         p = p with

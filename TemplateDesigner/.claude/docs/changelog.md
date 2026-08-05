@@ -1,6 +1,42 @@
 # Changelog
 
-## 2026-08-05 (1) - pokračující spoje na vývěsce, `B37` hotová (#13093 bod 3 - poslední bod tiketu)
+## 2026-08-05 (5) - `B59` formulář přestal lhát o tučnosti záhlaví a minut
+
+Dokončení `B54`: u vlastností, které se **dědí z kaskády** (nejsou na prvku nastavené), formulář
+vědomě ukazuje hodnotu, na kterou kaskáda dopadne. Kontrola z `B54` je jen přeskakovala, protože
+porovnávala surovou vlastnost. Doplněno srovnání proti kaskádě - a hned to našlo dvě **skutečné
+lži**, které uživatel vidí (na rozdíl od `B54`, kde šlo jen o nastražené pasti):
+
+- **Zaškrtávátko „Tučné" u stylu záhlaví** (seznam zastávek, dynamická tabulka) bylo nezaškrtnuté,
+  přitom se záhlaví tučně tiskne.
+- **Totéž „Minuta: Tučné"** v mřížce odjezdů - minuty se tisknou tučně (drží to skalární
+  `MinuteBold = true` jako poslední fallback), formulář tvrdil opak.
+
+**Proč to `B54` nenašlo:** tahle pole jdou přes sdílený stylový balíček (`StyleFields`) a z parsování
+vypadávala - v ObjectScriptu je `_` **operátor spojení**, ale regex ho bral jako součást názvu, takže
+se `prefix_".Bold"` nedosadil a klíč zóny se nepoznal. Opraveno; rozsah kontroly se tím rozšířil
+z 8 polí na všechna stylová pole všech zón (včetně podmíněného přiřazení `s:defTextColor'="" f.value`).
+
+**Co se změnilo:**
+- `StyleFields.Add` má parametr `defBold` (aditivní, na konci - stará volání se nerozbijí); posílá ho
+  seznam zastávek a dynamická tabulka pro záhlaví a mřížka odjezdů pro minuty.
+- `DepartureGridElement` dostal tři přístupové body „z čeho zóna dědí" (minuty, symboly a text
+  značek) - bez nich nešlo strojově ověřit, co u podzón z kaskády dopadne. Konvence názvu
+  `ResolveElement<Zóna>Parent()`; když chybí, **test to nahlásí**, ne přeskočí.
+- `ResolveGroupMinuteParent` se o nový přístupový bod opírá, takže skalární fallback tučnosti
+  a velikosti minut je na jednom místě, ne na dvou.
+
+**Ověřeno:** 730/730 .NET, 74/74 Caché, nasazení `.cls` potvrzené voláním `StopListElementEdit.Init`
+(server vrací `HeaderStyle.Bold` = 1). Nová kontrola prověřena mutacemi (změna barvy i tučnosti
+v kaskádě test shodí). Pokrytí hlídá `PorovnaniSKaskadou_NezustaloBezPokryti`, ať kontrola nezůstane
+mrtvá, kdyby ta pole z formulářů zmizela.
+
+**⚠️ Poučení k odtiskům:** zjednodušení výpočtu minut jsem chtěl doložit odtiskem pixelů, ale mutace
+ukázala, že **odtisk tuhle třídu změn nezachytí** - fixtury mají styly nastavené natvrdo
+(`DataStyle = Style(7)`), takže se kaskádové fallbacky vůbec nespustí. Doloženo kaskádovými unit testy
+(`DepartureGridCascadeTests`, obě mutace chytí). Poznámka doplněná k `ElementRenderSnapshotTests`.
+
+## 2026-08-05 (4) - pokračující spoje na vývěsce, `B37` hotová (#13093 bod 3 - poslední bod tiketu)
 
 Klient chtěl označit odjezdy, které pokračují dál, jednou poznámkou per cíl: *„u1 - pokračuje do zast.
 Uherské Hradiště, žel. st. (l. 304)"*, seskupeno podle cíle a linky, **bez ohledu na číslo spoje**.

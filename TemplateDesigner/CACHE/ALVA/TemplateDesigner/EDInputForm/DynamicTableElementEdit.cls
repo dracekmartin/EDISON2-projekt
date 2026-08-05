@@ -48,7 +48,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Ořízne přebytečné datové řádky. 0 = bez omezení"
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF333333", "#FFE8E8E8")
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF333333", "#FFE8E8E8", 1, "", 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF222222", "#00FFFFFF")
 
         // ── Base pole (rámeček elementu formulář dřív neměl vůbec - šel nastavit jen v panelu) ─

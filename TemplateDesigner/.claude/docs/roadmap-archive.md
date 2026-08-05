@@ -15,6 +15,21 @@ takže se trasa pokračujícího spoje nedohledává.
 Správný uzel určil kolega v #13098; já jsem předtím dvě session stavěl na 32. Kdyby se to nezeptalo,
 značku „pokračuje" by dostaly spoje, které jen čekají na návaznost.
 
+## 2026-08-05 ✅ - `B59` výchozí hodnoty děděných stylů proti kaskádě
+
+**Zadání bloku (zbytek `B54`, 5. 8.):** u property, která smí být nenastavená („dědí se"), formulář
+vědomě ukazuje hodnotu, na kterou dopadne kaskáda. Drift test to přeskakoval - porovnával surovou
+property, a ta je null. Právě tady lež uživatel uvidí. Srovnání muselo jít přes jednotný přístupový
+bod, ne reflexi naslepo. Vel. **S-M**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (5). Předpokládaných 8 polí kaskádě odpovídalo, ale
+rozšíření parsování o sdílený stylový balíček (padalo na tom, že `_` je v ObjectScriptu operátor
+spojení) odhalilo **dvě reálné lži**: zaškrtávátko „Tučné" u záhlaví a u minut ukazovalo
+nezaškrtnuto, přitom se ten text tučně tiskne. Opraveno parametrem `defBold` ve `StyleFields`.
+Mřížka odjezdů dostala tři přístupové body „z čeho zóna dědí" (konvence `ResolveElement<Zóna>Parent`;
+chybějící přístupový bod test hlásí, nepřeskakuje). Poučení: **odtisk pixelů tuhle třídu změn
+nezachytí**, protože fixtury mají styly natvrdo - kryjí ji kaskádové unit testy.
+
 ## 2026-08-05 ✅ - `B55` testy migrace šablon + parsingu agend
 
 **Zadání bloku (nález review 4. 8.):** `MigrationGridStyle` (1.7.0, nejsložitější migrace - 5 hodnot

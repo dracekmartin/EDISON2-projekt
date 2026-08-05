@@ -66,7 +66,7 @@ public class EDInputFormSchemaDriftTests
         RegexOptions.Compiled);
 
     private static readonly Regex BaseFieldsMethodRx = new(
-        @"ClassMethod (Add\w+)\([^)]*\)\s*\{(.*?)\n\}",
+        @"ClassMethod (Add\w*)\([^)]*\)\s*\{(.*?)\n\}",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
     private const string BaseFieldsFile = "BaseElementFields.cls";
@@ -115,14 +115,21 @@ public class EDInputFormSchemaDriftTests
         @"AddFieldToLastGroup\(\s*""([^""]+)""",
         RegexOptions.Compiled);
 
+    /// <summary>`s f.value = …`, včetně podmíněné varianty ze stylového balíčku
+    /// (`s:defTextColor'="" f.value = defTextColor`) - po dosazení argumentu se podmínka
+    /// vyhodnotí tím, že dosazená hodnota není prázdná.</summary>
     private static readonly Regex ValueAssignRx = new(
-        @"^\s*s(?:et)? f\.value\s*=\s*(.+?)\s*$",
+        @"^\s*s(?:et)?(?::[^\s]+)?\s+f\.value\s*=\s*(.+?)\s*$",
         RegexOptions.Compiled);
 
     [Theory]
     [MemberData(nameof(SchemaMap))]
     public void VychoziHodnotyVeFormulari_OdpovidajiCSharpu(string clsFile, Type targetType)
     {
+        // Dno kaskády přebírá výchozí styl otevřené šablony - test musí měřit zapečený stav,
+        // ne to, co po sobě nechal jiný test.
+        DocumentDefaults.Style = null;
+
         var declared = ExtractDeclaredDefaults(clsFile);
         var target = Activator.CreateInstance(targetType)!;
         var skip = VirtualKeys.GetValueOrDefault(clsFile, []);
@@ -137,10 +144,17 @@ public class EDInputFormSchemaDriftTests
             string csharpDefault = ElementPropertyAccessor.Get(target, key);
 
             // Nenastavená („dědí se") property: formulář tam VĚDOMĚ ukazuje hodnotu, na kterou
-            // kaskáda dopadne (rozhodnutí 4. 8. u pozadí záhlaví poznámek), a tu tenhle test
-            // nevidí - porovnává surovou property. Srovnání s kaskádou by muselo jít přes
-            // Resolve*Parent() každého prvku; vedené jako `B59`.
-            if (csharpDefault.Length == 0 && ElementPropertyAccessor.AcceptsNull(target, key)) continue;
+            // dopadne kaskáda (rozhodnutí 4. 8. u pozadí záhlaví poznámek), takže se surovou
+            // property porovnávat nelze - musí se zeptat kaskády.
+            if (csharpDefault.Length == 0 && ElementPropertyAccessor.AcceptsNull(target, key))
+            {
+                var (cascaded, problem) = CascadedDefault(target, key, formDefault);
+                if (problem is not null) { problems.Add(problem); continue; }
+                if (!SameValue(formDefault, cascaded!))
+                    problems.Add($"\"{key}\": formulář nabízí \"{formDefault}\", ale z kaskády "
+                                 + $"dopadne \"{cascaded}\" (property se dědí, takže se vykreslí ta z kaskády)");
+                continue;
+            }
 
             if (!SameValue(formDefault, csharpDefault))
                 problems.Add($"\"{key}\": formulář nabízí \"{formDefault}\", {targetType.Name} má \"{csharpDefault}\"");
@@ -150,6 +164,91 @@ public class EDInputFormSchemaDriftTests
             $"{clsFile}: výchozí hodnoty se rozešly s C# (formulář by uživateli ukázal jinou hodnotu, "
             + $"než se vykreslí):\n{string.Join("\n", problems)}");
     }
+
+    /// <summary>
+    /// Pojistka, že větev „porovnej s kaskádou" nezůstane mrtvá. Kdyby ta pole z formulářů zmizela
+    /// (nebo se přestala poznávat), test výše by dál svítil zeleně a nikdo by nevěděl, že hlídá
+    /// o třídu chyb méně - a je to ta třída, kterou uživatel reálně uvidí (formulář ukáže barvu,
+    /// tisk vezme jinou).
+    /// </summary>
+    [Fact]
+    public void PorovnaniSKaskadou_NezustaloBezPokryti()
+    {
+        DocumentDefaults.Style = null;
+
+        var covered = new List<string>();
+        foreach (var row in SchemaMap)
+        {
+            var clsFile = (string)row[0]!;
+            var type = (Type)row[1]!;
+            var target = Activator.CreateInstance(type)!;
+            var skip = VirtualKeys.GetValueOrDefault(clsFile, []);
+
+            foreach (var (key, _) in ExtractDeclaredDefaults(clsFile))
+            {
+                if (key.StartsWith("__") || skip.Contains(key) || CreationSizeKeys.Contains(key)) continue;
+                if (!ElementPropertyAccessor.Exists(target, key)) continue;
+                if (ElementPropertyAccessor.Get(target, key).Length != 0) continue;
+                if (!ElementPropertyAccessor.AcceptsNull(target, key)) continue;
+
+                covered.Add($"{type.Name}.{key}");
+            }
+        }
+
+        Assert.True(covered.Count >= 8,
+            "Proti kaskádě se porovnává jen " + covered.Count + " polí (čekáno aspoň 8: barva textu "
+            + "a pozadí × záhlaví a buňky × legenda poznámek a linková tabulka). Nalezeno: "
+            + string.Join(", ", covered));
+    }
+
+    /// <summary>
+    /// Hodnota, kterou pro nenastavenou („dědí se") property vydá kaskáda. Zóna se odvodí z prefixu
+    /// klíče (<c>HeaderStyle.TextColor</c> → <c>ResolveElementHeaderParent()</c>) - tenhle přístupový
+    /// bod má na dnešek každá rodina tabulkových prvků (JŘ základ, dynamická i pevná tabulka).
+    /// Sdílet ho přes interface se vědomě NEmá (`mvvm-patterns.md` §Pravidla pro inheritance),
+    /// proto se hledá konvencí názvu - a když chybí, test to **nahlásí**, ne přeskočí.
+    /// Vrací (hodnota, null) nebo (null, důvod selhání).
+    /// </summary>
+    private static (string? Value, string? Problem) CascadedDefault(object target, string key, string formDefault)
+    {
+        int dot = key.LastIndexOf('.');
+        if (dot <= 0)
+            return (null, $"\"{key}\": property se dědí a formulář u ní nabízí \"{formDefault}\", "
+                          + "ale klíč není stylová zóna - nejde zjistit, co dopadne z kaskády");
+
+        string prefix = key[..dot], propertyName = key[(dot + 1)..];
+        if (!prefix.EndsWith("Style", StringComparison.Ordinal))
+            return (null, $"\"{key}\": property se dědí, ale prefix \"{prefix}\" není stylová zóna "
+                          + "- doplň způsob, jak se u ní zjistí hodnota z kaskády");
+
+        string zone = prefix[..^"Style".Length];
+        var resolver = target.GetType().GetMethod($"ResolveElement{zone}Parent",
+            BindingFlags.Public | BindingFlags.Instance, Type.EmptyTypes);
+        if (resolver is null)
+            return (null, $"\"{key}\": formulář nabízí výchozí hodnotu pro děděnou property, ale "
+                          + $"{target.GetType().Name} nemá ResolveElement{zone}Parent() - bez něj nejde "
+                          + "ověřit, že formulář neukazuje jinou barvu, než se vykreslí");
+
+        var resolved = resolver.Invoke(target, null);
+        var property = resolved?.GetType().GetProperty(propertyName,
+            BindingFlags.Public | BindingFlags.Instance);
+        if (property is null)
+            return (null, $"\"{key}\": vyřešený styl nemá property \"{propertyName}\"");
+
+        return (FormValue(property.GetValue(resolved)), null);
+    }
+
+    /// <summary>Hodnota z modelu ve tvaru, v jakém ji nese formulář (bool jako 1/0, jinak text).
+    /// Zrcadlí konverzi v <c>ElementPropertyAccessor</c> - ta je private.</summary>
+    private static string FormValue(object? value) => value switch
+    {
+        null      => "",
+        bool b    => b ? "1" : "0",
+        float f   => f.ToString(CultureInfo.InvariantCulture),
+        double d  => d.ToString(CultureInfo.InvariantCulture),
+        Enum e    => e.ToString(),
+        _         => value.ToString() ?? "",
+    };
 
     /// <summary>Deklarované výchozí hodnoty z .cls. Nezjistitelné (proměnná místo literálu,
     /// prázdná hodnota = „nech na C#") se vynechají - porovnávat se dá jen literál.</summary>
@@ -204,13 +303,13 @@ public class EDInputFormSchemaDriftTests
     }
 
     private static readonly Regex BaseFieldsCallWithArgsRx = new(
-        @"BaseElementFields\)\.(Add\w+)\(form\s*(?:,\s*(.*?))?\s*\)\s*$",
+        @"(?:BaseElementFields|StyleFields)\)\.(Add\w*)\(form\s*(?:,\s*(.*?))?\s*\)\s*$",
         RegexOptions.Compiled);
 
     /// <summary>`ClassMethod AddGrid(form As …, withLineToggles As %Boolean = 1)` → parametry
     /// za `form` s jejich výchozími hodnotami, v deklarovaném pořadí.</summary>
     private static readonly Regex BaseFieldsSignatureRx = new(
-        @"ClassMethod (Add\w+)\(([^)]*)\)",
+        @"ClassMethod (Add\w*)\(([^)]*)\)",
         RegexOptions.Compiled);
 
     private static readonly Regex ParamRx = new(
@@ -232,23 +331,31 @@ public class EDInputFormSchemaDriftTests
     {
         if (_baseFieldsMethods is not null) return _baseFieldsMethods;
 
-        string text = File.ReadAllText(Path.Combine(EDInputFormDir(), BaseFieldsFile));
-        var bodies = BaseFieldsMethodRx.Matches(text)
-            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value.Split('\n'));
-
+        // Oba sdílené balíčky: base pole (`AddBorder`/`AddGrid`/…) i stylové zóny (`Add`).
+        // Bez stylového balíčku by z kontroly vypadly výchozí barvy a řezy záhlaví a buněk,
+        // které si prvky předávají jako argumenty - a právě tam byla nalezena lež o tučnosti.
         var result = new Dictionary<string, BaseFieldsMethod>(StringComparer.Ordinal);
-        foreach (Match sig in BaseFieldsSignatureRx.Matches(text))
+        foreach (var file in new[] { BaseFieldsFile, StyleFieldsFile })
         {
-            if (!bodies.TryGetValue(sig.Groups[1].Value, out var body)) continue;
-            var pars = ParamRx.Matches(sig.Groups[2].Value)
-                .Select(m => (Name: m.Groups[1].Value,
-                              Default: m.Groups[2].Success ? m.Groups[2].Value : null))
-                .Where(p => p.Name != "form")
-                .ToList();
-            result[sig.Groups[1].Value] = new BaseFieldsMethod(pars, body);
+            string text = File.ReadAllText(Path.Combine(EDInputFormDir(), file));
+            var bodies = BaseFieldsMethodRx.Matches(text)
+                .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value.Split('\n'));
+
+            foreach (Match sig in BaseFieldsSignatureRx.Matches(text))
+            {
+                if (!bodies.TryGetValue(sig.Groups[1].Value, out var body)) continue;
+                var pars = ParamRx.Matches(sig.Groups[2].Value)
+                    .Select(m => (Name: m.Groups[1].Value,
+                                  Default: m.Groups[2].Success ? m.Groups[2].Value : null))
+                    .Where(p => p.Name != "form")
+                    .ToList();
+                result[sig.Groups[1].Value] = new BaseFieldsMethod(pars, body);
+            }
         }
         return _baseFieldsMethods = result;
     }
+
+    private const string StyleFieldsFile = "StyleFields.cls";
 
     /// <summary>Pozičně napáruje argumenty volání na parametry; nedodané zůstanou na deklarované
     /// výchozí hodnotě.</summary>
@@ -315,10 +422,25 @@ public class EDInputFormSchemaDriftTests
     /// se nepřepisuje (popisky).</summary>
     private static string SubstituteArguments(string line, Dictionary<string, string> args)
     {
+        // Hranice názvu jsou jen písmena a číslice - `_` je v ObjectScriptu operátor spojení,
+        // ne součást názvu (proto ho konvence v proměnných zakazuje). Kdyby se bral jako součást
+        // názvu, `prefix_".TextColor"` by se nedosadil a klíč zóny by se nepoznal.
         foreach (var (name, value) in args)
-            line = Regex.Replace(line, $@"(?<![""\w.]){Regex.Escape(name)}(?![""\w])", value);
+            line = Regex.Replace(line, $@"(?<![""A-Za-z0-9.]){Regex.Escape(name)}(?![A-Za-z0-9])", value);
+
+        // Stylový balíček skládá klíč spojením (`prefix_".TextColor"`); po dosazení je z toho
+        // `"HeaderStyle"_".TextColor"` a musí se to slít na jeden literál, jinak se klíč nepozná.
+        string before;
+        do
+        {
+            before = line;
+            line = ConcatRx.Replace(line, "\"$1$2\"");
+        } while (line != before);
+
         return line;
     }
+
+    private static readonly Regex ConcatRx = new(@"""([^""]*)""\s*_\s*""([^""]*)""", RegexOptions.Compiled);
 
     /// <summary>Literál z argumentu .cls, nebo null když se staticky přečíst nedá (proměnná,
     /// výraz, makro) nebo je prázdný (= „výchozí hodnotu drží C#").</summary>
