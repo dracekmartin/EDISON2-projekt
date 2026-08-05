@@ -1,5 +1,22 @@
 # Glob: CACHE/**
 
+## 🚨 Nasazení `.cls`: editace nástrojem, ověření voláním serveru
+
+`.cls` nasazuje na dev **PostToolUse hook** a ten reaguje **jen na Edit/Write**. Cokoli jiného
+(skript z Bashe, `sed`, python) změní soubor v repu a **server nechá starý**.
+
+- **Nikdy neupravuj `.cls` skriptem.** Ani „mechanicky" (mazání řádků, přidání dvou polí) - právě tam
+  se to stalo dvakrát 4. 8. Když už se to stane, vynuť nasazení:
+  `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`
+- **`cache_compile` (MCP) to nespraví** a **lže uklidňujícím způsobem**: hledá zdroj pod
+  `C:\DEV\EDISON`, takže u tohohle repa nahlásí `not-found-on-disk`, zkompiluje **starou serverovou
+  kopii** a napíše „up-to-date".
+- **Jak se to pozná:** testy jsou zelené a aplikace se chová podle starého kódu. Testy to nechytí -
+  `%UnitTest` jede proti serveru, ale drift v parametrech/formulářích se v odtiscích neprojeví.
+- **Ověřuj voláním, ne čtením.** „Zdroj v repu to má" ani „grep v nasazené metodě" nestačí:
+  **zavolej agendu / dispatch a podívej se, co reálně vrátí** (`cache_query_cvar` na `GetParameters`,
+  `Init`, …). To je jediná kontrola, která odpovídá na otázku „co uvidí klient".
+
 ## Caché namespace struktura
 
 `ALVA.TemplateDesigner.*` se dělí **podle role třídy** do folder/namespace:
