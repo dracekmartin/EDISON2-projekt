@@ -154,6 +154,14 @@ odpovědi na případné znovuotevření/dotaz:
 - **Zvýraznění ne-výchozích hodnot v liště parametrů** (per-agenda dědění hodnot mate - rozhodnutí
   Jan 28. 7.: zatím nechat)
 - **Spodní mez zmenšení textu buňky** (extrém se zmenší bez limitu - zvážit při vizuálu bodu 2 v B2)
+- **Přenos uložených voleb zrušených parametrů kolo / místenky / souhrn bezbariérovosti** do vlastností
+  prvku poznámek (bývalý `B52`, nález review 4. 8.; **rozhodnutí Jan 5. 8.: neřešit** - je to v pilotním
+  testování, počet dotčených uživatelů je malý). Co se stane, když si někdo stěžuje: blob
+  `^ALVA.EDControls.UserData(IdFa,user,"TemplateDesigner.PrintParams",<AgendaCode>)` s `TISK_KOLA=true`
+  se od přesunu do prvku ignoruje → značky mu z tisku zmizely; `SCHOVAT_AGREGAT_BEZBARIER=true` naopak
+  znamená, že se souhrn vrátil. Náprava = zapnout to znovu ve vlastnostech prvku poznámek (jednorázově
+  per šablona). Automatická migrace blobu je možná, ale mapování není 1:1 - parametr byl per
+  uživatel × agenda, vlastnost je per šablona.
 
 ### 0.5 Parita a rozšíření - JEN na poptávku (přesunuto z roadmapy 29. 7.)
 
