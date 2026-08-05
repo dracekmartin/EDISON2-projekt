@@ -2,6 +2,19 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-05 ✅ - `B54` drift test výchozích hodnot formulář ↔ C# + chybějící pole
+
+**Zadání bloku (nález review 4. 8.):** `EDInputFormSchemaDriftTests` hlídá existenci property, ne
+defaulty: nalezeno ~10 rozdílů, kde formulář „lže o defaultu". Rozšířit test o porovnání `f.value`
+↔ C# default + doplnit do `DepartureGridElementEdit.cls` chybějící pole (barvy negativní značky,
+zarovnání záhlaví). Vel. **S-M**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (2). Rozdílů bylo 14 a **nešlo o živou chybu**: formulář
+hodnotu ze schématu použije jen u property bez hodnoty, takže se dnes vždy přebije skutečnou -
+byla to nastražená past, ne lež. Srovnáno i tak a zamčeno testem. Nad zadání přidána druhá kontrola
+„co jde nastavit v panelu, jde nastavit i ve formuláři" (3 vědomé výjimky napříč deseti prvky) -
+právě ta chytá třídu, do které patřila chybějící pole mřížky odjezdů. Zbytek → `B59`.
+
 ## 2026-08-05 ✅ - `B53` per-frame přepočet u obrázku a čárového kódu
 
 **Zadání bloku (nález review 4. 8.):** `ImageElement.Render` dekóduje Base64 (až 5 MB) + bitmapu

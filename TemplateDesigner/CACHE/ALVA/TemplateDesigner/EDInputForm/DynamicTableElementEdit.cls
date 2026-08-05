@@ -52,8 +52,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF222222", "#00FFFFFF")
 
         // ── Base pole (rámeček elementu formulář dřív neměl vůbec - šel nastavit jen v panelu) ─
-        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
-        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form, 1, "#FF999999", 0.19)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 1, 0, 0, "#FFCCCCCC")
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

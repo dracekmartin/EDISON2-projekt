@@ -68,7 +68,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("Center", "Na střed")
         d f.AddListItem("Right", "Vpravo")
         d f.AddListItem("Justify", "Do bloku")
-        s f.value = "Left"
+        s f.value = "Center"
 
         s f = form.AddFieldToLastGroup("Style.VAlign", "Svisle", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Top", "Nahoře")

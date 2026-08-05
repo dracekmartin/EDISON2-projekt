@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -90,6 +91,343 @@ public class EDInputFormSchemaDriftTests
         Assert.True(missing.Count == 0,
             $"{clsFile}: field keys bez odpovídající C# property na {targetType.Name}: " +
             $"{string.Join(", ", missing)}. Buď přejmenuj zpět, uprav .cls, nebo doplň VirtualKeys.");
+    }
+
+    // ── Výchozí hodnoty: formulář nesmí nabízet jinou než skutečnou ─────────
+    // Do 5. 8. hlídal test jen EXISTENCI property, ne hodnotu. Formulář přitom výchozí hodnotu
+    // ze schématu ukáže vždy, když property nemá hodnotu (`ElementFormBinder.Prefill`: prázdná
+    // reflexe → `field.Value` ze schématu) - u nullable („dědí se") property to znamená, že UI
+    // tvrdí jednu hodnotu a tiskne se druhá. To je přesně ta třída chyb, na kterou má projekt
+    // diagnostiku v CLAUDE.md. U ne-nullable property se default neukáže nikdy, ale zůstává jako
+    // past: stačí property zesplatnit na nullable a lež se aktivuje.
+
+    /// <summary>Velikost, se kterou prvek VZNIKÁ - drží ji C# factory, ne výchozí hodnota property
+    /// (holá instance má nulu). Formulář ji tedy legitimně nabízí jinou a porovnávat ji tady nelze.</summary>
+    private static readonly HashSet<string> CreationSizeKeys = new(StringComparer.Ordinal) { "Width", "Height" };
+
+    /// <summary>`form.AddText|Bool|Number|Decimal("key", "label", <default>` - 3. argument je hodnota.</summary>
+    private static readonly Regex DirectDefaultRx = new(
+        @"form\.Add(?:Text|Bool|Number|Decimal)\(\s*""([^""]+)"",\s*""[^""]*"",\s*([^,)]*)",
+        RegexOptions.Compiled);
+
+    /// <summary>`AddFieldToLastGroup("key", …)` - hodnota se dává až přiřazením `s f.value = …`.</summary>
+    private static readonly Regex FieldToLastGroupRx = new(
+        @"AddFieldToLastGroup\(\s*""([^""]+)""",
+        RegexOptions.Compiled);
+
+    private static readonly Regex ValueAssignRx = new(
+        @"^\s*s(?:et)? f\.value\s*=\s*(.+?)\s*$",
+        RegexOptions.Compiled);
+
+    [Theory]
+    [MemberData(nameof(SchemaMap))]
+    public void VychoziHodnotyVeFormulari_OdpovidajiCSharpu(string clsFile, Type targetType)
+    {
+        var declared = ExtractDeclaredDefaults(clsFile);
+        var target = Activator.CreateInstance(targetType)!;
+        var skip = VirtualKeys.GetValueOrDefault(clsFile, []);
+
+        var problems = new List<string>();
+        foreach (var (key, formDefault) in declared)
+        {
+            if (key.StartsWith("__") || skip.Contains(key)) continue;
+            if (CreationSizeKeys.Contains(key)) continue;
+            if (!ElementPropertyAccessor.Exists(target, key)) continue;   // řeší jiný test
+
+            string csharpDefault = ElementPropertyAccessor.Get(target, key);
+
+            // Nenastavená („dědí se") property: formulář tam VĚDOMĚ ukazuje hodnotu, na kterou
+            // kaskáda dopadne (rozhodnutí 4. 8. u pozadí záhlaví poznámek), a tu tenhle test
+            // nevidí - porovnává surovou property. Srovnání s kaskádou by muselo jít přes
+            // Resolve*Parent() každého prvku; vedené jako `B59`.
+            if (csharpDefault.Length == 0 && ElementPropertyAccessor.AcceptsNull(target, key)) continue;
+
+            if (!SameValue(formDefault, csharpDefault))
+                problems.Add($"\"{key}\": formulář nabízí \"{formDefault}\", {targetType.Name} má \"{csharpDefault}\"");
+        }
+
+        Assert.True(problems.Count == 0,
+            $"{clsFile}: výchozí hodnoty se rozešly s C# (formulář by uživateli ukázal jinou hodnotu, "
+            + $"než se vykreslí):\n{string.Join("\n", problems)}");
+    }
+
+    /// <summary>Deklarované výchozí hodnoty z .cls. Nezjistitelné (proměnná místo literálu,
+    /// prázdná hodnota = „nech na C#") se vynechají - porovnávat se dá jen literál.</summary>
+    private static Dictionary<string, string> ExtractDeclaredDefaults(string clsFile)
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        string? lastKey = null;
+
+        foreach (var line in ClsLinesWithBaseFields(clsFile))
+        {
+            if (DirectDefaultRx.Match(line) is { Success: true } direct)
+            {
+                lastKey = direct.Groups[1].Value;
+                if (Literal(direct.Groups[2].Value) is { } v) result[lastKey] = v;
+                continue;
+            }
+            if (FieldToLastGroupRx.Match(line) is { Success: true } f2l)
+            {
+                lastKey = f2l.Groups[1].Value;
+                continue;
+            }
+            if (lastKey is not null && ValueAssignRx.Match(line) is { Success: true } assign
+                && Literal(assign.Groups[1].Value) is { } val)
+                result[lastKey] = val;
+        }
+        return result;
+    }
+
+    /// <summary>Řádky formuláře včetně rozbalených volání sdíleného balíčku base polí - jinak by
+    /// base pole (mřížka, rámeček, pozice) zůstala bez kontroly výchozích hodnot. Rozbalení
+    /// respektuje přepínače balíčku - `AddGrid(form, 0)` u legendy poznámek mřížkové přepínače
+    /// nepřidává, takže se u ní nesmí kontrolovat.
+    ///
+    /// Výchozí šířka/výška se předává jako argument (`AddPosition(form, 30, 30, 1)`) a **záměrně
+    /// se nekontroluje**: je to velikost, se kterou prvek vzniká (drží ji C# factory), ne výchozí
+    /// hodnota property - holá instance má `Width = 0`. Porovnávat se dá jen literál v těle
+    /// balíčku, proměnná se přeskočí.</summary>
+    private static IEnumerable<string> ClsLinesWithBaseFields(string clsFile)
+    {
+        var methods = BaseFieldsMethods();
+        foreach (var line in File.ReadAllLines(Path.Combine(EDInputFormDir(), clsFile)))
+        {
+            if (BaseFieldsCallWithArgsRx.Match(line) is { Success: true } call
+                && methods.TryGetValue(call.Groups[1].Value, out var method))
+            {
+                var args = BindArguments(method.Parameters, call.Groups[2].Value);
+                foreach (var inner in ExpandBody(method.Body, args)) yield return inner;
+                continue;
+            }
+            yield return line;
+        }
+    }
+
+    private static readonly Regex BaseFieldsCallWithArgsRx = new(
+        @"BaseElementFields\)\.(Add\w+)\(form\s*(?:,\s*(.*?))?\s*\)\s*$",
+        RegexOptions.Compiled);
+
+    /// <summary>`ClassMethod AddGrid(form As …, withLineToggles As %Boolean = 1)` → parametry
+    /// za `form` s jejich výchozími hodnotami, v deklarovaném pořadí.</summary>
+    private static readonly Regex BaseFieldsSignatureRx = new(
+        @"ClassMethod (Add\w+)\(([^)]*)\)",
+        RegexOptions.Compiled);
+
+    private static readonly Regex ParamRx = new(
+        @"(\w+)\s+As\s+[\w%.]+(?:\s*=\s*(""[^""]*""|[^,]+))?",
+        RegexOptions.Compiled);
+
+    /// <summary>`i &lt;param&gt; {` - jediná forma podmínky, kterou umíme vyhodnotit. Cokoli
+    /// složitějšího se rozbalí celé (konzervativně), takže test nemůže tichým vyhodnocením
+    /// pole ztratit.</summary>
+    private static readonly Regex SimpleGuardRx = new(
+        @"^\s*i(?:f)?\s+(\w+)\s*\{\s*$",
+        RegexOptions.Compiled);
+
+    private sealed record BaseFieldsMethod(List<(string Name, string? Default)> Parameters, string[] Body);
+
+    private static Dictionary<string, BaseFieldsMethod>? _baseFieldsMethods;
+
+    private static Dictionary<string, BaseFieldsMethod> BaseFieldsMethods()
+    {
+        if (_baseFieldsMethods is not null) return _baseFieldsMethods;
+
+        string text = File.ReadAllText(Path.Combine(EDInputFormDir(), BaseFieldsFile));
+        var bodies = BaseFieldsMethodRx.Matches(text)
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value.Split('\n'));
+
+        var result = new Dictionary<string, BaseFieldsMethod>(StringComparer.Ordinal);
+        foreach (Match sig in BaseFieldsSignatureRx.Matches(text))
+        {
+            if (!bodies.TryGetValue(sig.Groups[1].Value, out var body)) continue;
+            var pars = ParamRx.Matches(sig.Groups[2].Value)
+                .Select(m => (Name: m.Groups[1].Value,
+                              Default: m.Groups[2].Success ? m.Groups[2].Value : null))
+                .Where(p => p.Name != "form")
+                .ToList();
+            result[sig.Groups[1].Value] = new BaseFieldsMethod(pars, body);
+        }
+        return _baseFieldsMethods = result;
+    }
+
+    /// <summary>Pozičně napáruje argumenty volání na parametry; nedodané zůstanou na deklarované
+    /// výchozí hodnotě.</summary>
+    private static Dictionary<string, string> BindArguments(
+        List<(string Name, string? Default)> parameters, string rawArgs)
+    {
+        var given = SplitArguments(rawArgs);
+        var bound = new Dictionary<string, string>(StringComparer.Ordinal);
+        for (int i = 0; i < parameters.Count; i++)
+        {
+            var value = i < given.Count ? given[i] : parameters[i].Default;
+            if (value is not null) bound[parameters[i].Name] = value.Trim();
+        }
+        return bound;
+    }
+
+    /// <summary>Dělení na argumenty po vrchní úrovni - uvnitř uvozovek se čárka nepočítá.</summary>
+    private static List<string> SplitArguments(string raw)
+    {
+        var result = new List<string>();
+        if (string.IsNullOrWhiteSpace(raw)) return result;
+
+        bool inString = false;
+        int start = 0;
+        for (int i = 0; i < raw.Length; i++)
+        {
+            if (raw[i] == '"') inString = !inString;
+            else if (raw[i] == ',' && !inString) { result.Add(raw[start..i]); start = i + 1; }
+        }
+        result.Add(raw[start..]);
+        return result;
+    }
+
+    private static IEnumerable<string> ExpandBody(string[] body, Dictionary<string, string> args)
+    {
+        int skipUntilDepth = -1;
+        int depth = 0;
+
+        foreach (var raw in body)
+        {
+            if (skipUntilDepth < 0 && SimpleGuardRx.Match(raw) is { Success: true } guard
+                && args.TryGetValue(guard.Groups[1].Value, out var flag)
+                && (flag is "0" or "\"\"" || flag.Length == 0))
+            {
+                skipUntilDepth = depth;
+                depth++;
+                continue;
+            }
+
+            depth += raw.Count(c => c == '{') - raw.Count(c => c == '}');
+
+            if (skipUntilDepth >= 0)
+            {
+                if (depth <= skipUntilDepth) skipUntilDepth = -1;
+                continue;
+            }
+
+            yield return SubstituteArguments(raw, args);
+        }
+    }
+
+    /// <summary>Dosadí hodnoty argumentů za názvy parametrů - jinak by výchozí hodnota, kterou si
+    /// prvek předává do sdíleného balíčku, z kontroly vypadla jako „neliterál". Obsah uvozovek
+    /// se nepřepisuje (popisky).</summary>
+    private static string SubstituteArguments(string line, Dictionary<string, string> args)
+    {
+        foreach (var (name, value) in args)
+            line = Regex.Replace(line, $@"(?<![""\w.]){Regex.Escape(name)}(?![""\w])", value);
+        return line;
+    }
+
+    /// <summary>Literál z argumentu .cls, nebo null když se staticky přečíst nedá (proměnná,
+    /// výraz, makro) nebo je prázdný (= „výchozí hodnotu drží C#").</summary>
+    private static string? Literal(string raw)
+    {
+        raw = raw.Trim();
+        if (raw.Length == 0 || raw is "\"\"") return null;
+        if (raw.StartsWith('"') && raw.EndsWith('"') && raw.Length >= 2)
+            return raw[1..^1] is { Length: > 0 } inner ? inner : null;
+        // Číslo bez uvozovek (0, 1, 10, 0.5); cokoli jiného je proměnná nebo výraz
+        return double.TryParse(raw, CultureInfo.InvariantCulture, out _) ? raw : null;
+    }
+
+    /// <summary>Formulář a C# zapisují tutéž hodnotu různě - bool jako 1/0, čísla jako 0 vs 0.5.</summary>
+    private static bool SameValue(string formValue, string csharpValue)
+    {
+        if (string.Equals(formValue, csharpValue, StringComparison.Ordinal)) return true;
+        if (double.TryParse(formValue, CultureInfo.InvariantCulture, out var a)
+            && double.TryParse(csharpValue, CultureInfo.InvariantCulture, out var b))
+            return Math.Abs(a - b) < 1e-6;
+        return false;
+    }
+
+    // ── Co jde nastavit v panelu, musí jít nastavit i ve formuláři ───────────
+    // Od Wave 4 je hlavní editační cestou Caché formulář; panelové deskriptory zůstaly pro
+    // formátovací lištu, úpravu více prvků a fallback. Když ale formulář nějakou vlastnost nemá,
+    // je u jednoho prvku hlavní cestou nedosažitelná - přesně tak zmizely 3 vlastnosti mřížky
+    // odjezdů (zarovnání záhlaví, dvojice barev negativní značky), nalezené 4. 8. ručně.
+
+    /// <summary>Vlastnosti, které panel VĚDOMĚ nabízí sám. Klíč = "Typ.PropertyPath".</summary>
+    private static readonly Dictionary<string, string> PanelOnlyProperties = new(StringComparer.Ordinal)
+    {
+        // Dopočítané náhledy skutečné čárky/mezery - nejsou to nastavitelné hodnoty
+        ["LineElement.EffectiveDashMm"] = "dopočítaná hodnota, ne nastavení",
+        ["LineElement.EffectiveGapMm"]  = "dopočítaná hodnota, ne nastavení",
+        // Šířka sloupce hodin se zadává v tabu Sloupce (řádek Hodiny) - formulář ji záměrně
+        // nemá, aby existoval jediný zdroj (viz komentář v DepartureGridElementEdit.cls)
+        ["DepartureGridElement.HourColumnWidth"] = "jediný zdroj je tab Sloupce",
+    };
+
+    private static readonly Regex DescriptorGetterRx = new(
+        @"Get\s*=\s*\(\)\s*=>\s*([A-Za-z_][A-Za-z0-9_.]*)",
+        RegexOptions.Compiled);
+
+    [Theory]
+    [MemberData(nameof(SchemaMap))]
+    public void CoJdeNastavitVPanelu_JdeNastavitIVeFormulari(string clsFile, Type targetType)
+    {
+        if (!typeof(TemplateElement).IsAssignableFrom(targetType)) return;   // sekce/stránka panel nemá
+
+        var panelProperties = PanelEditedProperties(targetType);
+        Assert.NotEmpty(panelProperties);   // prázdno = regex zrezivěl, ne že prvek nic needituje
+
+        var formKeys = ExtractKeys(clsFile).ToHashSet(StringComparer.Ordinal);
+        var stylePrefixes = FormStylePrefixes(clsFile);
+        var target = Activator.CreateInstance(targetType)!;
+
+        var missing = panelProperties
+            .Where(p => !formKeys.Contains(p))
+            .Where(p => !stylePrefixes.Contains(p.Split('.')[0]))
+            .Where(p => !PanelOnlyProperties.ContainsKey($"{targetType.Name}.{p}"))
+            .Where(p => ElementPropertyAccessor.Exists(target, p))   // dopočítané get-only vlastnosti
+            .ToList();
+
+        Assert.True(missing.Count == 0,
+            $"{targetType.Name}: panel umí nastavit vlastnosti, které ve formuláři ({clsFile}) nejsou, "
+            + $"takže hlavní editační cestou nejdou změnit: {string.Join(", ", missing)}. "
+            + "Doplň je do .cls, nebo je zapiš do PanelOnlyProperties s důvodem.");
+    }
+
+    /// <summary>Property paths z `GetPropertyDescriptors()` v .cs prvku. Base sada
+    /// (`GetPositionDescriptors` a spol.) sem nespadá - žije ve své třídě a hlídají ji jiné testy.</summary>
+    private static List<string> PanelEditedProperties(Type elementType)
+    {
+        string source = File.ReadAllText(ElementSourceFile(elementType));
+        int start = source.IndexOf("GetPropertyDescriptors", StringComparison.Ordinal);
+        if (start < 0) return [];
+
+        // Konec kolekce deskriptorů: první "];" na úrovni odsazení metody
+        int end = source.IndexOf("\n    ];", start, StringComparison.Ordinal);
+        string block = end > start ? source[start..end] : source[start..];
+
+        return DescriptorGetterRx.Matches(block)
+            .Select(m => m.Groups[1].Value.TrimEnd('.'))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static string ElementSourceFile(Type elementType)
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
+            dir = dir.Parent;
+        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
+
+        string path = Path.Combine(dir!.FullName, "TemplateDesigner", "dotnet", "Models", "Elements",
+            elementType.Name + ".cs");
+        Assert.True(File.Exists(path), $"Nenalezen zdroják prvku: {path}");
+        return path;
+    }
+
+    /// <summary>Prefixy stylových zón ve formuláři - balíček `StyleFields` i tlačítko pod-formuláře
+    /// `style:&lt;prefix&gt;`. Vlastnost pod takovým prefixem je ve formuláři dosažitelná.</summary>
+    private static HashSet<string> FormStylePrefixes(string clsFile)
+    {
+        string text = File.ReadAllText(Path.Combine(EDInputFormDir(), clsFile));
+        var prefixes = StyleFieldsCallRx.Matches(text).Select(m => m.Groups[1].Value)
+            .Concat(Regex.Matches(text, @"""style:([^""]+)""").Select(m => m.Groups[1].Value));
+        return prefixes.ToHashSet(StringComparer.Ordinal);
     }
 
     [Fact]
@@ -260,7 +598,11 @@ public class EDInputFormSchemaDriftTests
         //   StrokeWidth - u čáry je to „Tloušťka" (čáry samotné), u obdélníku „Tloušťka okraje"
         // („Height" tu byl do 29. 7. kvůli rozdílnému popisku výšky - sdílený BaseElementFields
         //  ho sjednotil na „Výška" + nápovědu, takže výjimka padla.)
-        var exempt = new HashSet<string>(StringComparer.Ordinal) { "StrokeWidth" };
+        //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Pozadí značky"), v mřížce
+        //     odjezdů stojí hned vedle obecné barvy symbolu anotace, takže tam musí být v popisku
+        //     rozlišené („Pozadí negativní značky"); bez toho se nedá poznat, co která barva řídí.
+        var exempt = new HashSet<string>(StringComparer.Ordinal)
+            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor" };
 
         var labelsPerKey = new Dictionary<string, Dictionary<string, List<string>>>();
         foreach (var file in AllEditClsFiles())

@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-08-05 (2) - `B54` formulář prvku říká pravdu o výchozích hodnotách a nabízí, co panel
+
+Nález review 4. 8.: drift test hlídal jen **existenci** property, ne hodnotu, takže se výchozí
+hodnoty ve formuláři rozešly s C#. Dvě rozšíření kontroly + srovnání nalezených rozdílů.
+
+**⚠️ Upřesnění nálezu:** zadání tvrdilo, že formulář uživateli ukáže jinou hodnotu, než se vykreslí.
+Ve skutečnosti `ElementFormBinder.Prefill` použije hodnotu ze schématu **jen když property žádnou
+hodnotu nemá** - u všech 14 rozdílů je vždy vyplněná, takže se přebije a uživatel dnes vidí správně.
+Nebyla to živá chyba, ale **nastražená past**: jak vlastnost začne smět být nenastavená (nullable),
+lež se aktivuje - a to je přesně třída „UI ukazuje jiné nastavení, než se tiskne".
+
+**Nové strojové kontroly** (`EDInputFormSchemaDriftTests`, +24 testů, celkem 646):
+- **Výchozí hodnota ve formuláři == C# default** (per formulář). Parsuje `f.value` i 3. argument
+  `AddText/Bool/Number/Decimal` a porovnává s `ElementPropertyAccessor.Get` nad holou instancí.
+  Rozbalování sdílených balíčků respektuje jejich přepínače (`AddGrid(form, 0)` u legendy poznámek
+  mřížkové přepínače nepřidává) a dosazuje argumenty za parametry.
+- **Co jde nastavit v panelu, jde nastavit i ve formuláři.** Od Wave 4 je formulář hlavní editační
+  cesta; když v něm vlastnost není, je u jednoho prvku nedosažitelná. Napříč deseti prvky vyšly
+  3 vědomé výjimky (dopočítané náhledy čárky/mezery u čáry, šířka sloupce hodin - ta má jediný
+  zdroj v tabu Sloupce).
+
+**Srovnané rozdíly (14):** barva pozadí čárového kódu (bílá, ne průhledná - čtečka potřebuje
+kontrast) · rámeček a mřížka dynamické tabulky (barva, tloušťka, čáry mezi řádky) · čáry mezi
+sloupci u mřížky odjezdů a linkové tabulky · šířka minuty a oddělovač skupin u mřížky odjezdů ·
+okraje stránky (0 mm, ne 10) · vodorovné zarovnání textového prvku (na střed).
+Sdílené balíčky `AddBorder`/`AddGrid` dostaly parametry pro tyto hodnoty - jedna definice pole,
+ale každý prvek řekne svůj skutečný default (aditivní, staré volání se nerozbije).
+
+**Doplněná pole mřížky odjezdů:** zarovnání záhlaví + pozadí a barva negativní značky.
+Popisky negativní značky zůstávají rozlišené („Pozadí negativní značky"), i když legenda poznámek
+používá u téhož klíče „Pozadí značky" - v mřížce stojí hned vedle obecné barvy symbolu anotace,
+takže bez rozlišení by nešlo poznat, co která barva řídí (výjimka v testu s důvodem).
+
+**Ověřeno:** 646/646 .NET, 73/73 Caché, a nasazení `.cls` na server potvrzené voláním
+`DepartureGridElementEdit.Init` (odpověď obsahuje nová pole i opravené hodnoty) - testy čtou `.cls`
+z repa, takže samy o nasazení nic neříkají.
+
+**Zbývající mezera → `B59`:** u nenastavených („dědí se") stylových barev formulář vědomě ukazuje
+hodnotu, na kterou dopadne kaskáda (rozhodnutí 4. 8. u pozadí záhlaví poznámek). Tu tenhle test
+nevidí - porovnává surovou property, takže ty případy přeskakuje.
+
 ## 2026-08-05 (1) - `B53` obrázek a čárový kód se nepřepočítávají při každém překreslení
 
 Nález review 4. 8.: `ImageElement.Render` dekódoval Base64 (limit 5 MB) a `BarcodeElement`

@@ -28,8 +28,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         d form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
-        d form.AddDecimal("MinuteWidth", "Šířka minuty", 6, 3, 15, "mm")
-        d form.AddDecimal("GroupSeparatorWidth", "Oddělovač skupin", 0, 0, 5, "mm")
+        d form.AddDecimal("MinuteWidth", "Šířka minuty", 5, 3, 15, "mm")
+        d form.AddDecimal("GroupSeparatorWidth", "Oddělovač skupin", 0.5, 0, 5, "mm")
         d form.AddDecimal("AnotaceGap", "Mezera minuta ↔ anotace", "", 0, 5, "mm")
         d form.AddDecimal("AnotaceInterGap", "Mezera anotace ↔ anotace", "", 0, 5, "mm")
         d form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
@@ -46,6 +46,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("style:HeaderStyle", "Styl záhlaví", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit styl…"
         d form.AddDecimal("SkupinaDnuHeaderLineHeight", "Min. výška řádku záhlaví", 4, 2, 10, "mm")
+        s f = form.AddFieldToLastGroup("HeaderVerticalAlignment", "Zarovnání záhlaví", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
+        s f.value = "Bottom"
         s f = form.AddFieldToLastGroup("style:HeaderLine2Style", "Styl 2. řádku nadpisu", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit styl…"
 
@@ -58,11 +61,16 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("departure", "Odjezdy - specifické")
         d form.AddBool("ShowAnotace", "Zobrazit anotace", 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ")
+        // Negativní značka = symbol vykreslený inverzně (znak na plné ploše) - vlastní dvojice barev.
+        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Pozadí negativní značky", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF000000"
+        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva negativní značky", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FFFFFFFF"
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ")
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
-        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 1, 1, 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 100, 60)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 
