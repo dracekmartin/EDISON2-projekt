@@ -1,13 +1,35 @@
 # Changelog
 
+## 2026-08-05 (7) - signál „nastavení mění obsah vývěsky" svítil, i když se nic nedělo
+
+Nález Jan 5. 8. při prohlídce `B58`: modrý štítek ve stavovém řádku (*„Sestava: poznámky skryté
+nastavením"*) hlásil skrytý obsah na **úplně běžné šabloně**, kde nikdo nic nenastavil.
+
+**Příčina - regrese z přesunu parametrů do prvku (4. 8., changelog (7)):** signál má hlídat jedinou
+věc - že **uložený parametr sestavy** tiše mění obsah (vznikl z případu, kdy zapnuté „Rozdělit
+vývěsku pro každý označník" zmizelo z UI a s ním i odjezdy jiného stanoviště). Kód si to sám hlídá:
+u „na znamení" a „přestupů" je výslovně napsáno, že se do signálu **nepočítají**, protože je
+neschovává parametr, ale nastavení prvku, *„takže by signál svítil u běžných šablon"*. Když se ale
+kola, místenky a souhrn bezbariérovosti přesunuly z parametrů do prvku poznámek, počítat se
+nepřestaly - a protože jsou **vypnuté ve výchozím stavu**, stačilo mít v datech značku, kterou si
+uživatel nezapnul, a signál se rozsvítil.
+
+Je to nejdražší třída chyb v projektu naruby: signál, který má varovat, že UI lže, sám lhal.
+
+**Opraveno:** kategorie vypnuté v prvku se do signálu nepočítají (stejně jako „na znamení"
+a „přestupy"). Zastaralý tooltip srovnán - jmenuje jen skutečné příčiny a dodává, že značky vypnuté
+v prvku nejsou skrytá změna. Dva regresní testy (chyba i její protipól, ať se oprava nepřehnala
+a signál nezmlkl tam, kde varovat má), prověřené mutacemi. 740/740.
+
 ## 2026-08-05 (6) - `B58` srozumitelnost pro nováčka
 
 Nález review 4. 8.: pět míst, kde se nový uživatel zasekne, protože mu aplikace neřekne, co se děje.
 
-- **Náhled s ukázkovými daty je označený** - nad náhledem je štítek *„Ukázková data - vyberte linku
-  pro data z databáze"*. Bez lišty stránkování byl náhled se smyšlenými daty k nerozeznání od hotové
-  vývěsky. Štítek se nezobrazuje u šablony bez vazby na databázi, kde by lhal (žádná reálná data se
-  tam nečekají).
+- **Náhled s ukázkovými daty je poznat** - štítek instance ve stavovém řádku říká
+  *„Linka: - (ukázková data, klikněte pro výběr)"*. Bez lišty stránkování byl náhled se smyšlenými
+  daty k nerozeznání od hotové vývěsky. **Rozhodnutí Jan 5. 8.:** informace patří do štítku, který
+  už existuje, ne do nového prvku u náhledu - první verze tam přidávala rámečky navíc a to se
+  neujalo. U šablony bez vazby na databázi se nehlásí, tam by lhala.
 - **Nová šablona (Ctrl+N) zdědí rozpracovanou agendu** (rozhodnutí Jan 5. 8.). Dosud vznikala bez
   agendy → prázdná nabídka datových polí, prázdný náhled a nováček nevěděl, co dělá špatně.
   Přepnutí zůstává na Ctrl+Shift+A.

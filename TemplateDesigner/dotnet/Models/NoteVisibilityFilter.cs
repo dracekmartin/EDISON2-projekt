@@ -178,7 +178,10 @@ public static class NoteVisibilityFilter
             var vRozsahu  = node["V_ROZSAHU_NEPOZNAMKOVAT"]?.ToString() == "1";
             if (vRozsahu && hide.Contains(kategorie)) { counter?.CountAnnotation(); continue; }   // schovat
             // Kategorie vypnutá v šabloně se netiskne vůbec (ne jen v rozsahu „nepoznámkovat").
-            if (hiddenContent?.Contains(kategorie) == true) { counter?.CountAnnotation(); continue; }
+            // Do signálu se NEPOČÍTÁ - stejně jako „na znamení" a „přestupy" níže: neschovává to
+            // parametr sestavy, ale nastavení prvku, a kola/místenky/pokračování jsou vypnuté
+            // ve výchozím stavu, takže by signál svítil na každé běžné šabloně (nález Jan 5. 8.).
+            if (hiddenContent?.Contains(kategorie) == true) continue;
 
             kept.Add(node.DeepClone());
             var znak = node["ZNAK"]?.ToString() ?? "";
@@ -192,7 +195,8 @@ public static class NoteVisibilityFilter
     {
         var kategorie = poznamka.GetString("KATEGORIE");
         // Vypnutá kategorie obsahu - vysvětlivka odejde spolu se značkou, kterou už nikdo nekreslí.
-        if (hiddenContent?.Contains(kategorie) == true) { counter?.CountLegendRow(); return false; }
+        // Do signálu se NEPOČÍTÁ (viz FilterOdjezd) - je to nastavení prvku, ne parametr sestavy.
+        if (hiddenContent?.Contains(kategorie) == true) return false;
         if (hideAggBezbarier && kategorie == AggBezbarierKat) { counter?.CountLegendRow(); return false; }   // #7161 D6 - skrýt agregát bezbariér
         // „× na znamení" se nepočítá do signálu - neschovává ho parametr, ale nastavení StopListu
         // (legenda jen následuje viditelnost značky), takže by signál svítil u běžných šablon.

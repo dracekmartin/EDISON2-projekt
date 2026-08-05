@@ -115,6 +115,41 @@ public class NoteVisibilityFilterTests
         Assert.Equal(0, counter.HiddenLegendRows);
     }
 
+    /// <summary>
+    /// Značka vypnutá v prvku poznámek (kola, místenky, pokračující spoje) se do signálu NESMÍ
+    /// počítat. Jsou vypnuté ve výchozím stavu, takže signál „nastavení mění obsah vývěsky" by
+    /// svítil na každé běžné šabloně a přestal by cokoli znamenat - a to je přesně signál, který
+    /// má hlídat, kdy UI lže (nález Jan 5. 8., regrese z přesunu parametrů do prvku 4. 8.).
+    /// </summary>
+    [Fact]
+    public void Pocitadlo_ZnackaVypnutaVPrvku_SeNepocita()
+    {
+        var page = Stranka("kola", "b", vRozsahu: false);
+        var counter = new NoteSuppressionCounter();
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment, counter: counter,
+            hiddenContent: new HashSet<string> { "kola" });
+
+        // Značka i vysvětlivka zmizí (to je správně - uživatel je nezapnul)...
+        Assert.Empty(((JsonArray)result.Rows["ODJEZDY"][0].GetValue("ANOTACE")!));
+        Assert.Empty(result.Rows["POZNAMKY"]);
+        // ...ale signál o „skryté nastavením" se rozsvítit nesmí.
+        Assert.False(counter.AnythingHidden);
+    }
+
+    /// <summary>Kontrolní protipól: co schová PARAMETR sestavy, se počítat musí - jinak by se
+    /// oprava výše přehnala a signál by zmlkl i tam, kde má varovat.</summary>
+    [Fact]
+    public void Pocitadlo_ParametrSestavySePocitaDal()
+    {
+        var page = Stranka("rozdil-trasy", "B", vRozsahu: true);
+        var counter = new NoteSuppressionCounter();
+
+        NoteVisibilityFilter.Apply(page, NoteRangeSuppression.AutoRouteNote, counter: counter);
+
+        Assert.True(counter.AnythingHidden);
+    }
+
     [Fact]
     public void Pocitadlo_NaZnameniDleStopListu_SeNepocita()
     {

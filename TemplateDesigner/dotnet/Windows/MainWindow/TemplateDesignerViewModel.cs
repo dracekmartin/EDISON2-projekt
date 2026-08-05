@@ -106,7 +106,13 @@ public class TemplateDesignerViewModel : EDViewModel
         get
         {
             var lbl = CapitalizeFirst(CurrentInstanceLabel);
-            if (_activeInstances.Count == 0) return $"{lbl}: - (klikněte pro výběr)";
+            // Bez vybrané instance kreslí náhled ukázková data - řekni to tady, aby se nedal splést
+            // s hotovou vývěskou. U šablony bez vazby na databázi se žádná reálná data nečekají,
+            // takže by „ukázková data" lhala (rozhodnutí Jan 5. 8.).
+            if (_activeInstances.Count == 0)
+                return IsSampleDataPreview
+                    ? $"{lbl}: - (ukázková data, klikněte pro výběr)"
+                    : $"{lbl}: - (klikněte pro výběr)";
             var cur = CurrentActiveInstance;
             return _activeInstances.Count == 1
                 ? $"{lbl}: {cur?.Display}"
@@ -344,7 +350,6 @@ public class TemplateDesignerViewModel : EDViewModel
         OnPropertyChanged(nameof(NextInstanceTooltip));
         OnPropertyChanged(nameof(InstancePickerHint));
         OnPropertyChanged(nameof(IsSampleDataPreview));
-        OnPropertyChanged(nameof(SampleDataHint));
     }
 
     // ── Real preview data ────────────────────────────────────────────────────
@@ -394,24 +399,20 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool HasPageNavigation => RealPreviewPageCount > 0;
 
     /// <summary>
-    /// Náhled kreslí ukázková data, ne data z databáze - UI to musí říct, jinak se dá splést
-    /// s hotovou vývěskou (bez lišty stránkování je to jediná stopa). Platí jen pro agendu, která
-    /// reálná data vůbec umí: u šablony bez vazby na databázi by hlášení „ukázková data" lhalo,
-    /// protože tam se žádná nečekají.
+    /// Náhled kreslí ukázková data, ne data z databáze. Říká to **štítek instance** ve stavovém
+    /// řádku, ne nic navíc u náhledu (rozhodnutí Jan 5. 8. - informace už tam byla, chybělo jen
+    /// spojení „nevybraná linka ⇒ v náhledu jsou vymyšlená data"). Platí jen pro agendu, která
+    /// reálná data vůbec umí: u šablony bez vazby na databázi by hlášení „ukázková data" lhalo.
     /// </summary>
     public bool IsSampleDataPreview =>
-        ShouldShowSampleDataBadge(
+        ShouldReportSampleData(
             RealPreviewPageCount,
             State.CurrentTemplate.AgendaCode,
             State.CurrentTemplate.AgendaCode is { Length: > 0 } c && CacheProvider?.GetCacheClass(c) is not null);
 
     /// <summary>Testovatelné jádro <see cref="IsSampleDataPreview"/>.</summary>
-    internal static bool ShouldShowSampleDataBadge(int realPageCount, string? agendaCode, bool agendaHasData) =>
+    internal static bool ShouldReportSampleData(int realPageCount, string? agendaCode, bool agendaHasData) =>
         realPageCount == 0 && agendaCode is { Length: > 0 } && agendaHasData;
-
-    /// <summary>Popisek štítku ukázkových dat - jmenuje, co chybí vybrat (linku, fakturu…).</summary>
-    public string SampleDataHint =>
-        $"Ukázková data - vyberte {CurrentInstanceLabel} pro data z databáze";
 
     /// <summary>
     /// Notifikace po výměně reálných preview dat. Pořadí je záměrné: <see cref="PreviewPageItems"/>
@@ -431,6 +432,7 @@ public class TemplateDesignerViewModel : EDViewModel
             OnPropertyChanged(nameof(HasMultiplePages));
             OnPropertyChanged(nameof(HasPageNavigation));
             OnPropertyChanged(nameof(IsSampleDataPreview));
+            OnPropertyChanged(nameof(ActiveInstanceText));   // nese text o ukázkových datech
         }
         finally { _previewPagesSyncing = false; }
         // WPF umí nastavení SelectedIndex během výměny ItemsSource spolknout (combobox zůstane

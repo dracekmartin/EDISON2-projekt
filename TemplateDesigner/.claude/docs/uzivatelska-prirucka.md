@@ -378,9 +378,9 @@ vypadá stejně na každé stanici.
 Pravý panel ukazuje **výsledný tisk** - stejným jádrem, jaké se použije při reálném tisku.
 Na rozdíl od plátna respektuje podmíněnou viditelnost, takže vidíte přesně to, co se vytiskne.
 
-Dokud nemáte vybranou linku, kreslí náhled **ukázková data** a nad náhledem je na to štítek
-(*Ukázková data - vyberte linku pro data z databáze*). S vybranou linkou štítek zmizí a místo něj
-je pruh pro procházení stránek dat, takže je vždy poznat, na co se koukáte.
+Dokud nemáte vybranou linku, kreslí náhled **ukázková data** - štítek linky ve stavovém řádku to
+říká (*Linka: - (ukázková data, klikněte pro výběr)*). S vybranou linkou se nad náhledem objeví pruh
+pro procházení stránek dat, takže je vždy poznat, na co se koukáte.
 
 ### Vícestránkové sestavy
 Stránkování řeší systém automaticky: hlavičky/patičky se opakují podle nastaveného chování sekcí,

@@ -15,16 +15,16 @@ public class NovackovaOrientaceTests
     // ── Štítek „ukázková data" u náhledu ─────────────────────────────────────
 
     [Fact]
-    public void UkazkovaData_BezVybraneInstanceSeOznaci()
+    public void UkazkovaData_BezVybraneInstanceSeHlasi()
     {
-        Assert.True(TemplateDesignerViewModel.ShouldShowSampleDataBadge(
+        Assert.True(TemplateDesignerViewModel.ShouldReportSampleData(
             realPageCount: 0, agendaCode: "ZASTAVKOVY_JR_AD", agendaHasData: true));
     }
 
     [Fact]
     public void UkazkovaData_SReálnymiDatySeNeoznacuji()
     {
-        Assert.False(TemplateDesignerViewModel.ShouldShowSampleDataBadge(
+        Assert.False(TemplateDesignerViewModel.ShouldReportSampleData(
             realPageCount: 3, agendaCode: "ZASTAVKOVY_JR_AD", agendaHasData: true));
     }
 
@@ -32,11 +32,11 @@ public class NovackovaOrientaceTests
     [Fact]
     public void UkazkovaData_SablonaBezVazbyNaDatabaziSeNeoznacuje()
     {
-        Assert.False(TemplateDesignerViewModel.ShouldShowSampleDataBadge(
+        Assert.False(TemplateDesignerViewModel.ShouldReportSampleData(
             realPageCount: 0, agendaCode: "GENERAL", agendaHasData: false));
-        Assert.False(TemplateDesignerViewModel.ShouldShowSampleDataBadge(
+        Assert.False(TemplateDesignerViewModel.ShouldReportSampleData(
             realPageCount: 0, agendaCode: "", agendaHasData: false));
-        Assert.False(TemplateDesignerViewModel.ShouldShowSampleDataBadge(
+        Assert.False(TemplateDesignerViewModel.ShouldReportSampleData(
             realPageCount: 0, agendaCode: null, agendaHasData: false));
     }
 
