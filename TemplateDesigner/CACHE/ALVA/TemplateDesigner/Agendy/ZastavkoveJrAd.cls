@@ -600,7 +600,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
 
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
-    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar, odjAtrLegenda, znakyLinky
+    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar, odjAtrLegenda, znakyLinky, pokrLegenda, pokrPoradi
     // Režim písmen variant (KOVED bod 5): písmeno varianty u minuty NAHRAZUJE automatické rozdílové
     // poznámky - kudy varianta jede, říká přímo sloupec („<"/prázdno). Jinak by vývěska nesla dvě
     // abecedy vedle sebe (přesně to, co jsme u legacy kritizovali). RozdilyTras se pak nepočítá vůbec.
@@ -645,7 +645,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         }
     }
     d vals.%Set("VARIANTY_TRAS", variantyTras)
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik, zdrojSt, .odjAtrLegenda)
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik, zdrojSt, .odjAtrLegenda, .pokrLegenda)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) - stránku negenerovat
     i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
     // Vývěska je samostatná stránka → legenda vysvětluje jen značky, které na TÉTO stránce reálně jsou.
@@ -659,7 +659,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // jeho vysvětlivka vyhrává a naši generovanou zahodíme - jinak stojí dvě pod sebou. Musí se
     // zjistit PŘED SestavPoznamky, tam se legenda skládá.
     d ..ZnakyVysvetleneLinkou(dataDB, sku, lin, .znakyLinky)
-    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP, .prestupSeen, .odjAtrLegenda, .znakyLinky)
+    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP, .prestupSeen, .odjAtrLegenda, .znakyLinky, .pokrLegenda)
 
     // #13093 bod 1: textové poznámky z vlastností linky (tarifní / všeobecné / radiobus, výluky
     // zvlášť). Emitujeme **vždy** otagované kategorií; které z nich blok ukáže, drží šablona - je to
@@ -723,7 +723,7 @@ ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
 /// Pro každý spoj: odjezd = Odjezd spoje + offset času na aktuální zastávce (z trasy spoje "W").
 /// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "", zdrojSt As %String = "OZN", ByRef odjAtrLegenda) As %DynamicArray
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "", zdrojSt As %String = "OZN", ByRef odjAtrLegenda, ByRef pokrLegenda) As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
@@ -798,6 +798,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         // (prvek odjezdů), protože je to čistě „co se zobrazí" - ne to, co se má z DB dopočítat.
         s kolo = +$p(hlava,":",19)
         s mistenka = ($p(hlava,":",6) '= "")
+        s pokrZnak = ..PokracovaniZnak(dataDB, sku, lin, smer, sp, .pokrLegenda, .pokrPoradi)
         i kolo s odjAtrLegenda(..ZnakKola()) = "specialni~spoj přepravuje jízdní kola~odjezd-kola"
         i mistenka s odjAtrLegenda("R") = "text~k jízdence je možné zakoupit místenku~odjezd-mistenka"
         i cbe s bezbarLegenda("F") = "spoj má částečne bezbariérově přístupné vozidlo, nutná dopomoc průvodce"
@@ -835,6 +836,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             i cbe d ..AddAnotace(o, "specialni", "F", "", "", "bezbarier", sp, vRozsahu)
             i kolo d ..AddAnotace(o, "specialni", ..ZnakKola(), "", "", "odjezd-kola", sp, vRozsahu)
             i mistenka d ..AddAnotace(o, "text", "R", "", "", "odjezd-mistenka", sp, vRozsahu)
+            i pokrZnak '= "" d ..AddAnotace(o, "text", pokrZnak, "", "", "pokracovani", sp, vRozsahu)
             f indexZnaku=1:1:$l(komentarZnaky) { s komentarZnak = $e(komentarZnaky, indexZnaku)  i komentarZnak '= "" d ..AddAnotace(o, "text", komentarZnak, "", "", "rucni-komentar", sp, vRozsahu) }
             d odjezdy.%Push(o)
         }
@@ -907,6 +909,37 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
         }
     }
     i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
+}
+
+/// Značka pokračování spoje pro daný spoj, nebo prázdno (#13093 bod 3).
+///
+/// Zdroj `^JRL(sku,lin,smer,spoj,34)`, tvar `u@<náš spoj>:<linka>:<spoj>:<cíl>:…` - značka `u@` je
+/// táž „u", kterou pro pokračování používá legacy (`JRapiLinPrtWin` ř.1561). **Zastávka v záznamu je
+/// cíl** (konečná pokračujícího spoje), ověřeno 5. 8.: spoj 251 linky 0773165 má v záznamu
+/// Otrokovice,Štěrkoviště a trasa jeho pokračování tam končí, kdežto ostatní končí na žel.st.
+/// Nemusíme tedy dohledávat trasu pokračujícího spoje - a tím padá i to, že pokračující linka
+/// může ležet v jiné skupině linek.
+///
+/// ⚠️ **Nepoužívat uzel 32** - to je návaznost (`m@…`, jiný tvar, nese i vlaky), ne pokračování.
+///
+/// Odjezdy se stejným **(linka, cíl)** dostanou tutéž značku `u1`, `u2`… - klient výslovně chce
+/// neřešit číslo spoje. Číslování je per stránka v pořadí prvního výskytu (stabilní a reprodukovatelné,
+/// stejný princip jako písmena rozdílů tras). Číslice se dává vždy, i u jediného cíle.
+ClassMethod PokracovaniZnak(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, ByRef legenda, ByRef poradi) As %String
+{
+    s zapis = $g(^[dataDB]JRL(sku,lin,smer,sp,34))   // 34 = pokračuje (NE 32, to je návaznost)
+    i zapis = "" ret ""
+    s rec = $p(zapis, "@", 2)
+    s pLin = $p(rec, ":", 2), pCil = $p(rec, ":", 4)
+    i (pLin = "") || (pCil = "") ret ""
+    s klic = pLin _ "|" _ pCil
+    i $d(poradi(klic)) ret poradi(klic)
+    s cislo = $g(poradi) + 1, poradi = cislo
+    s znak = "u" _ cislo
+    s poradi(klic) = znak
+    // „(l. 532)" - klient chce poslední trojčíslí linky, ne celé číslo
+    s legenda(znak) = "pokračuje do zast. " _ pCil _ " (l. " _ $e(pLin, $l(pLin) - 2, $l(pLin)) _ ")"
+    ret znak
 }
 
 /// Znak, kterým se u odjezdu kreslí **přeprava jízdních kol** (#13093 bod 2).
@@ -1633,7 +1666,7 @@ ClassMethod ProrezatLegenduRozdilu(odjezdy As %DynamicArray, ByRef legenda)
 
 /// Sestaví legendu: atributy zastávek + atributy spoje (bezbariér) + rozdíly tras + "nejede/jede".
 /// Pořadí 1:1 gold (`ALVA.TISKMHD.Data`): speciální znaky → rozdíly/text → omezení.
-ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, allBBP As %Boolean = 0, ByRef prestupSeen, ByRef odjAtrLegenda, ByRef znakyLinky) As %DynamicArray
+ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, allBBP As %Boolean = 0, ByRef prestupSeen, ByRef odjAtrLegenda, ByRef znakyLinky, ByRef pokrLegenda) As %DynamicArray
 {
     s poznamky = ##class(%DynamicArray).%New()
     // týdenní platnost - kroužkové denní značky (číslice 1-7): „⑤ = jede v pátek" (specialni → font kroužkuje)
@@ -1659,6 +1692,14 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         continue:$d(znakyLinky(znakAtr))     // zákazník si tuto značku vysvětluje vlastní poznámkou
         s zapis = odjAtrLegenda(znakAtr)
         d poznamky.%Push(..BuildPoznamka($p(zapis,"~",1), znakAtr, $p(zapis,"~",2), "", "", $p(zapis,"~",3)))
+    }
+    // pokračující spoje - značky u1, u2… přidělil server per stránka (viz PokracovaniZnak).
+    // Kreslí se textem (víceznakové), kategorie `pokracovani` = filtr-tag pro šablonu.
+    s znakPokr = ""
+    f {
+        s znakPokr = $o(pokrLegenda(znakPokr))
+        q:znakPokr=""
+        d poznamky.%Push(..BuildPoznamka("text", znakPokr, pokrLegenda(znakPokr), "", "", "pokracovani"))
     }
     // přestupy - vlastní kategorie, aby si je šablona bez značky přestupu mohla schovat.
     // Text z číselníku je jen „autobus" / „vlak", pro legendu z toho udělá větu „přestup na …".
