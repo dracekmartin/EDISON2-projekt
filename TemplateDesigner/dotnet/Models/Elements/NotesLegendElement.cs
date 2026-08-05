@@ -85,6 +85,13 @@ public class NotesLegendElement : StopScheduleElementBase
     /// <summary>Místenka („R" u odjezdu + vysvětlivka). Chování jako <see cref="ShowZnackaKola"/>.</summary>
     public bool ShowZnackaMistenky { get; set; } = false;
 
+    /// <summary>
+    /// Pokračující spoje (#13093 bod 3) - značka `u1`, `u2`… u minuty **i** vysvětlivka „pokračuje do
+    /// zast. X (l. 304)". Odjezdy se stejným cílem po stejné lince mají tutéž značku; číslo spoje se
+    /// neřeší, jak klient výslovně chtěl. Chování a umístění volby jako u <see cref="ShowZnackaKola"/>.
+    /// </summary>
+    public bool ShowPokracujiciSpoje { get; set; } = false;
+
     // ─── Designer ───────────────────────────────────────────────────────────
 
     protected override float DesignerPlaceholderHeight => 25f;
@@ -440,6 +447,7 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Souhrn bezbariérových spojů",  Group = "Filtrování", Get = () => ShowSouhrnBezbarier,       Set = v => ShowSouhrnBezbarier = v },
         new BoolPropertyDescriptor  { Label = "Přeprava kol u odjezdů",       Group = "Filtrování", Get = () => ShowZnackaKola,            Set = v => ShowZnackaKola = v },
         new BoolPropertyDescriptor  { Label = "Místenky u odjezdů",           Group = "Filtrování", Get = () => ShowZnackaMistenky,        Set = v => ShowZnackaMistenky = v },
+        new BoolPropertyDescriptor  { Label = "Pokračující spoje",            Group = "Filtrování", Get = () => ShowPokracujiciSpoje,      Set = v => ShowPokracujiciSpoje = v },
 
         new ColorPropertyDescriptor { Label = "Pozadí značky",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { Label = "Barva textu značky", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
@@ -483,6 +491,7 @@ public class NotesLegendElement : StopScheduleElementBase
             ShowSouhrnBezbarier        = ShowSouhrnBezbarier,
             ShowZnackaKola             = ShowZnackaKola,
             ShowZnackaMistenky         = ShowZnackaMistenky,
+            ShowPokracujiciSpoje       = ShowPokracujiciSpoje,
         };
         CopyBaseTo(clone);
         CopyStopScheduleProperties(clone);

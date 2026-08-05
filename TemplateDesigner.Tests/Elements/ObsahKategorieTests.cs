@@ -45,6 +45,19 @@ public class ObsahKategorieTests
         Assert.Contains(NoteCategories.OdjezdMistenka, hidden);   // druhá kategorie se tím nezapne
     }
 
+    /// <summary>Pokračující spoje (#13093 bod 3) - jedna volba drží značku `u1` u minuty i její
+    /// vysvětlivku, takže nemůže vzniknout značka, které nikdo nerozumí.</summary>
+    [Fact]
+    public void PokracujiciSpoje_VychoziSkryte_ZapnutimOdemcene()
+    {
+        Assert.Contains(NoteCategories.Pokracovani,
+            NoteVisibilityFilter.HiddenContentCategories(Sablona(new NotesLegendElement())));
+
+        Assert.DoesNotContain(NoteCategories.Pokracovani,
+            NoteVisibilityFilter.HiddenContentCategories(
+                Sablona(new NotesLegendElement { ShowPokracujiciSpoje = true })));
+    }
+
     /// <summary>Souhrn bezbariér se schová jen když ho žádný blok poznámek nechce (dřív parametr).</summary>
     [Fact]
     public void VypnutySouhrnBezbarier_SeSkryje()

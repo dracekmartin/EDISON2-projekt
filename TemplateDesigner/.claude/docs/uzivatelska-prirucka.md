@@ -633,6 +633,9 @@ Vysvětlivky pod mřížkou.
 - **Přeprava kol u odjezdů** a **Místenky u odjezdů** - zapnou **značku u času odjezdu i vysvětlivku
   v legendě naráz**, aby nevznikla značka, které nikdo nerozumí. Kola se kreslí symbolem kola,
   místenka písmenem „R". Výchozí stav vypnuto.
+- **Pokračující spoje** - spoje, které pokračují dál po jiné lince, dostanou u odjezdu značku „u1“,
+  „u2“… a v legendě vysvětlivku „pokračuje do zast. … (l. 304)“ s posledním trojčíslím linky.
+  Odjezdy se stejným cílem po stejné lince mají tutéž značku, čísla spojů se neřeší. Výchozí vypnuto.
 
 > Značky kol a místenek se kreslí u minut, ale zapínají se tady - aby bylo vypínání obsahu na jednom
 > místě. Šablona **bez bloku poznámek** je proto nemá kde zapnout.

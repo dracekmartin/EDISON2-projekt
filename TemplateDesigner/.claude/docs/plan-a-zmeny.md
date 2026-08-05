@@ -38,6 +38,16 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 5. 8. 2026 - Pokračující spoje
+
+Spoje, které v místě konečné pokračují dál už jako jiný spoj, jde na vývěsce označit: u času odjezdu
+se vytiskne značka „u1“, „u2“… a v legendě přijde vysvětlivka **„pokračuje do zast. Podhradí (l. 532)“**
+s posledním trojčíslím linky, po které spoj pokračuje.
+
+Odjezdy, které pokračují do **stejného cíle po stejné lince**, dostanou tutéž značku - čísla spojů se
+neřeší, taková legenda zůstane krátká. Zapíná se u prvku Legenda poznámek volbou **Pokračující spoje**
+(výchozí vypnuto) a bere se z údaje o pokračování, který v jízdních řádech už zadáváte.
+
 ### 4. 8. 2026 - Datová pole se vybírají ze seznamu, nemusíte je psát
 
 Název databázového pole jste dosud museli znát a napsat bez překlepu - a chyba se projevila

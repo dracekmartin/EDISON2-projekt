@@ -59,6 +59,7 @@ public static class NoteVisibilityFilter
     /// podle nich prořezává značku u minuty i řádek legendy naráz.</summary>
     private const string KolaKat = NoteCategories.OdjezdKola;
     private const string MistenkyKat = NoteCategories.OdjezdMistenka;
+    private const string PokracovaniKat = NoteCategories.Pokracovani;
 
     /// <summary>Převede hodnotu parametru sestavy na režim. Neznámé / „Ruční komentáře" = default (legacy).</summary>
     public static NoteRangeSuppression ParseMode(object? paramValue) => paramValue?.ToString() switch
@@ -113,6 +114,7 @@ public static class NoteVisibilityFilter
         // drží jeden prvek (rozhodnutí Jan 2026-08-04).
         if (!legends.Any(l => l.ShowZnackaKola)) hidden.Add(KolaKat);
         if (!legends.Any(l => l.ShowZnackaMistenky)) hidden.Add(MistenkyKat);
+        if (!legends.Any(l => l.ShowPokracujiciSpoje)) hidden.Add(PokracovaniKat);
         // Souhrn bezbariér je naopak výchozím stavem zapnutý; bez bloku poznámek není co zobrazit.
         if (legends.Count > 0 && !legends.Any(l => l.ShowSouhrnBezbarier)) hidden.Add(AggBezbarierKat);
 

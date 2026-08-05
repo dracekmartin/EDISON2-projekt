@@ -2,6 +2,19 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-05 ✅ - `B37` pokračující spoje (#13093 bod 3, tiket tím dojetý)
+
+Detail → changelog 2026-08-05 (1). Značka `u1`/`u2`… u odjezdu + vysvětlivka „pokračuje do zast. X
+(l. 532)", seskupeno podle (linka, cíl), jeden checkbox v bloku poznámek.
+
+**Poučení, které se nesmí ztratit:** data jsou v uzlu **34** (`u@<náš spoj>:<linka>:<spoj>:<cíl>`),
+**ne v 32** - ten je návaznost. `m@<n>` je index záznamu, ne typ vztahu. Zastávka v záznamu **je cíl**
+(dokázáno rozdílným vzorkem: spoj 251 → Štěrkoviště = konečná jeho pokračování, ostatní → žel.st.),
+takže se trasa pokračujícího spoje nedohledává.
+
+Správný uzel určil kolega v #13098; já jsem předtím dvě session stavěl na 32. Kdyby se to nezeptalo,
+značku „pokračuje" by dostaly spoje, které jen čekají na návaznost.
+
 ## 2026-08-05 ✅ - `B55` testy migrace šablon + parsingu agend
 
 **Zadání bloku (nález review 4. 8.):** `MigrationGridStyle` (1.7.0, nejsložitější migrace - 5 hodnot

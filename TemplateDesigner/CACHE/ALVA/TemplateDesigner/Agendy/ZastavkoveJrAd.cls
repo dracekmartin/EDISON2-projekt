@@ -937,9 +937,16 @@ ClassMethod PokracovaniZnak(dataDB As %String, sku As %String, lin As %String, s
     s cislo = $g(poradi) + 1, poradi = cislo
     s znak = "u" _ cislo
     s poradi(klic) = znak
-    // „(l. 532)" - klient chce poslední trojčíslí linky, ne celé číslo
-    s legenda(znak) = "pokračuje do zast. " _ pCil _ " (l. " _ $e(pLin, $l(pLin) - 2, $l(pLin)) _ ")"
+    s legenda(znak) = ..TextPokracovani(pLin, pCil)
     ret znak
+}
+
+/// Text vysvětlivky pokračování: „pokračuje do zast. <cíl> (l. <trojčíslí>)".
+/// Klient chce **poslední trojčíslí** linky, ne celé číslo („l. 304", ne „l. 824532").
+ClassMethod TextPokracovani(linka As %String, cil As %String) As %String
+{
+    s trojcisli = $s($l(linka) > 3: $e(linka, $l(linka) - 2, $l(linka)), 1: linka)
+    ret "pokračuje do zast. " _ cil _ " (l. " _ trojcisli _ ")"
 }
 
 /// Znak, kterým se u odjezdu kreslí **přeprava jízdních kol** (#13093 bod 2).

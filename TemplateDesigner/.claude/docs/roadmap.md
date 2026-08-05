@@ -7,8 +7,8 @@
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 > **▶ Další session:** nálezy review 4. 8. (**B56** → **B58**, `B59`), pak **B18** (deklarativní pravidla
-> EDInputFormu, M). Zákaznická fronta KOVED je dojetá, zbývá **B37** (poznámka „pokračuje do…",
-> od 4. 8. odblokovaná a celá u nás). Verze šla 4. 8. do produkce (#13093 body 1, 2, 4 jsou v ní).
+> EDInputFormu, M). **Zákaznická fronta KOVED je dojetá** - `B37` (poznámka „pokračuje do…")
+> hotová 5. 8., takže **#13093 je celý uzavřený**. Verze šla 4. 8. do produkce (body 1, 2, 4).
 > Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
 
 ---
@@ -50,26 +50,12 @@ připravená odpověď leží v [`customer-requirements §0.4`](customer-require
 
 ## 🚌 Zastávkový JŘ - známé věci
 
-KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30. 7. je až na `B37` dojetá.
+KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30. 7. je **dojetá**.
 **Plný stav** (hotové featury + co otestovat pro uzavření helpdesk tiketů) →
 [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md).
 
-| # | Blok | Vel. | Uzavírací podmínka |
-|---|---|---|---|
-| **B37** | **#13093 bod 3 - poznámka „pokračuje do…" u odjezdu** (4. 8.: **není zablokované, je to celé u nás**). Klient chce seskupit odjezdy se stejným pokračováním do stejného cíle po stejné lince pod jedno písmeno a vysvětlivku („u1 - pokračuje do zast. Uherské Hradiště, žel. st. (l. 304)"), plus přepínač zobrazení. **Data máme:** uzel `32`, payload `m@33#linka:spoj:zastávka:…`; legacy to popisuje jako „spoj pokračuje po lince, spoji do zastávky" (`JRapiNZUtl2` ř.539), takže **ta zastávka je cíl**, ne přestupní bod. **Značka je „u"** (`JRapiLinPrtWin` ř.1561) - zákazníkovo „u1" opisuje starý modul. ⚠️ **Filtrovat typ vztahu:** je to rodina *vyčká / navazuje / pokračuje* (`JRapiLinPrtWin` ř.293; v JŘ druh poznámky `PoznamkyDruhVyckaNavazujePokracuje` s tiskem A4/A5), takže z 10 578 spojů s tím uzlem se smí označit jen „pokračuje" - jinak dostane značku i spoj, který jen čeká na návaznost. Přepínač patří do bloku poznámek (jako ostatní obsah). **Data ověřená 5. 8. (kolega potvrdil uzel, my dokázali sémantiku):** pokračování je
-`^JRL(sku,lin,smer,spoj,34)`, tvar **`u@<náš spoj>:<linka pokračování>:<spoj pokračování>:<cíl>:1:0`**.
-Značka `u@` je táž „u", kterou legacy pro pokračování používá (`JRapiLinPrtWin` ř.1561) a kterou má
-zákazník v požadavku („u1").
-· **Zastávka v záznamu JE cíl** (konečná pokračujícího spoje) - dokázáno rozdílným vzorkem: linka
-0773165 spoj 251 → `u@251:773165:250:Otrokovice,Štěrkoviště`, a trasa spoje 250 končí na czst 25691 =
-Otrokovice,Štěrkoviště, kdežto spoje 58/62/252 končí na 25694 = Otrokovice,žel.st. a mají v záznamu
-žel.st. **Nemusíme tedy dohledávat trasu pokračujícího spoje** - a tím padá i problém, že pokračující
-linka může ležet v jiné skupině linek (vzorek 1: linka 824532 v sku 1 nenalezena).
-· ⚠️ **Uzel 32 byla slepá ulička** (moje chyba): `m@…` záznamy, jiný tvar, nese i vlaky - je to
-návaznost, ne pokračování. `m@<n>` je navíc **index záznamu, ne typ vztahu**.
-· ⚠️ **Neznámá:** poslední dvě pole (`:1:0`) byla ve všech viděných záznamech konstantní. Návrh na
-nich nezávisí (existence záznamu = pokračuje), ale při implementaci se ověří, jestli `f5=0` neznamená
-„netisknout" - pokud ano, filtruje se.
+**Vlna 0 je dojetá** - `B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový**
+(body 1, 2 a 4 šly do verze 4. 8.). Zbytek kola KOVED leží ve Vlně 3 (`B39` vlastní skupiny dnů).
 
 **Plán implementace (schválený tvar):**
 1. **Server** (`ZastavkoveJrAd`): číst uzel 34 per spoj, seskupit odjezdy podle **(linka, cíl)** -

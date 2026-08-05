@@ -24,6 +24,10 @@ public static class NoteCategories
     /// <summary>Místenka u odjezdu („R", kreslí se textem) - kategorie kvůli vypínání v šabloně.</summary>
     public const string OdjezdMistenka = "odjezd-mistenka";
 
+    /// <summary>Pokračování spoje na jinou linku - značka `u1`, `u2`… (#13093 bod 3). Značky
+    /// přiděluje server per stránka; víceznakové, takže se kreslí textem, ne symbolovým fontem.</summary>
+    public const string Pokracovani = "pokracovani";
+
     /// <summary>Atribut zastávky (na znamení a spol.).</summary>
     public const string AtributZastavky = "atribut-zastavky";
 

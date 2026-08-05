@@ -406,6 +406,16 @@ Method TestZnakVysvetlivkyLinky()
 	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", ""), "", "prázdný text")
 }
 
+/// Vysvětlivka pokračování nese **poslední trojčíslí** linky, ne celé číslo - klient to tak má
+/// v požadavku („l. 304") a v jízdním řádu se linky takhle zkráceně označují (#13093 bod 3).
+Method TestTextPokracovani()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "TextPokracovani", "824532", "Podhradí"), "pokračuje do zast. Podhradí (l. 532)", "trojčíslí z konce čísla linky")
+	do $$$AssertEquals($classmethod(cls, "TextPokracovani", "773165", "Otrokovice,žel.st."), "pokračuje do zast. Otrokovice,žel.st. (l. 165)", "cíl je celý název zastávky")
+	do $$$AssertEquals($classmethod(cls, "TextPokracovani", "42", "Kvasice,nám."), "pokračuje do zast. Kvasice,nám. (l. 42)", "krátké číslo linky se neřeže")
+}
+
 // ── JeViditelnyAtribut - co z číselníku 16 je informace pro cestujícího (KOVED #13048 bod 1) ──
 
 /// Znaky pro cestujícího se tisknou. Kdyby některý vypadl, tiše zmizí z vývěsky - to byla

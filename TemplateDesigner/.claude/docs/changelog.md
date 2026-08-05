@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-08-05 (1) - pokračující spoje na vývěsce, `B37` hotová (#13093 bod 3 - poslední bod tiketu)
+
+Klient chtěl označit odjezdy, které pokračují dál, jednou poznámkou per cíl: *„u1 - pokračuje do zast.
+Uherské Hradiště, žel. st. (l. 304)"*, seskupeno podle cíle a linky, **bez ohledu na číslo spoje**.
+
+**Cesta k datům byla to hlavní na celé položce.** Postavil jsem to nejdřív na uzlu **32** a bylo to
+špatně - kolega (#13098) upřesnil, že pokračování je v uzlu **34**, což data okamžitě potvrdila:
+záznam začíná `u@`, tedy tou značkou „u", kterou pro pokračování používá legacy
+(`JRapiLinPrtWin` ř.1561) a kterou má klient v požadavku. Uzel 32 je návaznost (`m@…`, jiný tvar,
+nese i vlaky). Navíc `m@<n>` je **index záznamu, ne typ vztahu** - na tom stál můj původní plán filtru.
+
+Tvar: `u@<náš spoj>:<linka>:<spoj>:<cíl>:1:0`.
+
+- **Zastávka v záznamu je cíl**, ne předávací bod - dokázáno rozdílným vzorkem: spoj 251 linky
+  0773165 má v záznamu Otrokovice,Štěrkoviště a trasa jeho pokračování tam končí, kdežto ostatní
+  spoje končí na žel.st. a mají v záznamu žel.st. **Nedohledáváme tedy trasu pokračujícího spoje**,
+  a tím padá i to, že pokračující linka může ležet v jiné skupině linek.
+- **Značky `u1`, `u2`… přiděluje server per stránka** v pořadí prvního výskytu (stabilní,
+  reprodukovatelné - stejný princip jako písmena rozdílů tras). Odjezdy se stejným (linka, cíl) mají
+  tutéž značku. Číslice se dává vždy, i u jediného cíle.
+- **„u + číslice" nekoliduje** s ničím na vývěsce: rozdíly tras a varianty berou A-Z, kroužkové dny
+  číslice 1-7, ruční komentáře písmena z číselníku. Značka je víceznaková → kreslí se textem.
+- **Jeden checkbox „Pokračující spoje"** v bloku poznámek (výchozí vypnuto), kategorie `pokracovani`.
+  Zapíná značku i vysvětlivku naráz, takže nemůže vzniknout jedno bez druhého.
+
+Ověřeno na dvou nezávislých případech: ZL_KOVED sku 2 linka 0773165 zastávka 16 (pokračování po téže
+lince) a sku 1 linka 0824955 (pokračování **na jinou** linku) → `[u1] pokračuje do zast. Podhradí
+(l. 532)`, u minuty 11:55 značky `Ru1` vedle sebe s místenkou.
+
+Caché 74/74 (+1), .NET 726/726 (+1). **Zlaté odtisky beze změny** - gold linky (CB_CSADAD) spoje
+s pokračováním nemají, takže featura je nemohla pohnout.
+
+⚠️ Nedořešená drobnost: poslední dvě pole záznamu (`:1:0`) byla ve všech viděných záznamech
+konstantní a nic z nich nečteme. Kdyby `f5=0` znamenalo „netisknout", bude to potřeba filtrovat.
+
 ## 2026-08-05 (3) - `B55` testy převodu šablon a čtení dat z databáze
 
 Nález review 4. 8.: tři převody formátu šablony a celé čtení odpovědí agendy neměly test, navzdory

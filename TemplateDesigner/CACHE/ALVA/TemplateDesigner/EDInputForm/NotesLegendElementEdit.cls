@@ -83,6 +83,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s fBez.helpText = "Souhrnná vysvětlivka ""všechny spoje mají bezbariérově přístupné vozidlo"" místo značky u každého odjezdu."
         s fKola = form.AddBool("ShowZnackaKola", "Přeprava kol u odjezdů", 0)
         s fKola.helpText = "U spojů, které přepravují jízdní kola, se za časem odjezdu vytiskne symbol kola a do legendy přijde vysvětlivka. Zapíná obojí naráz, aby nevznikla značka bez vysvětlení."
+        s fPokr = form.AddBool("ShowPokracujiciSpoje", "Pokračující spoje", 0)
+        s fPokr.helpText = "Spoje, které pokračují dál po jiné lince, dostanou u odjezdu značku ""u1"", ""u2""… a v legendě vysvětlivku ""pokračuje do zast. … (l. 304)"". Odjezdy se stejným cílem po stejné lince mají tutéž značku."
         s fMist = form.AddBool("ShowZnackaMistenky", "Místenky u odjezdů", 0)
         s fMist.helpText = "U spojů, ke kterým lze zakoupit místenku, se za časem odjezdu vytiskne ""R"" a do legendy přijde vysvětlivka."
 
