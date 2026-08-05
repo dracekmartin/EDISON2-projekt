@@ -48,9 +48,13 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding Code}"
+                            <!-- Popis, co agenda tiskne. Do 5. 8. tu byl interní kód
+                                 (ZASTAVKOVY_JR_AD), který uživateli nic neříká. -->
+                            <TextBlock Text="{Binding Description}"
+                                       Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Caption}"
-                                       Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
                         <TextBlock Grid.Column="1"
                                    Text="(aktuální)"

@@ -6,7 +6,8 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **▶ Další session:** nálezy review 4. 8. (**B58**, pak **B56**/**B57**), pak **B18** (deklarativní pravidla
+> **▶ Další session:** z nálezů review 4. 8. zbývají **B56** (dedup kódu agend, chce opatrně)
+> a **B57** (přerostlé formuláře), pak **B18** (deklarativní pravidla
 > EDInputFormu, M). **Zákaznická fronta KOVED je dojetá** - `B37` (poznámka „pokračuje do…")
 > hotová 5. 8., takže **#13093 je celý uzavřený**. Verze šla 4. 8. do produkce (body 1, 2, 4).
 > Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
@@ -43,7 +44,6 @@ připravená odpověď leží v [`customer-requirements §0.4`](customer-require
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). **Follow-up 2 (review 4. 8.):** rozšířit gramatiku o čtení **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs. `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - mikropravidlo §5.3 dnes plní jen helpTexty. | M |
 | **B56** | **Dedup Build\* helperů Caché agend do `BaseAgenda`** (nález review 4. 8.) - `BuildZastavka/BuildOdjezd/BuildPoznamka/AddAnotace/RgbToHex…` duplikované ve 2-4 agendách (~400-500 řádků) a **už divergují** (AD verze +kategorie, +3 parametry anotací); komentář „duplikováno z MHD" přestal platit doslova. Sjednotit na nadmnožinu parametrů v `BaseAgenda` (aditivní - stará volání se nerozbijí), omz/datum helpery do sdílené JR utility. Každá nová vlastnost výstupního JSON se dnes píše 2-4×. Překryv s `B14` (dedup tiskových enginů) - `B56` je menší výsek Build\* helperů, `B14` řeší i readery; při realizaci jednoho zredukovat druhý. | M |
 | **B57** | **Přerostlé skupiny formulářů + TableEditorDialog** (nález review 4. 8., proti rozpočtu §2 max ~7 položek) - „Zastávky - specifické" ve `StopListElementEdit` má ~23 polí (rozpadá se přirozeně: šipka / aktuální zastávka / projeté / oddíly), „Obecné" u dynamické tabulky 13 a mřížky odjezdů 10, „Filtrování" legendy 10 (dlouhodobě kategorie-checklist §5.3); `TableEditorDialog` má 5 tabů (limit 3). K tomu chybějící descriptions: `SCHOVAT_V_ROZSAHU` (krkolomný label), `ROZTAHNOUT_NA_VYSKU`, celý formulář mřížky odjezdů (žargon „anotace" → „značky u odjezdů"). | M |
-| **B58** | **Srozumitelnost pro nováčka** (nález review 4. 8.; vstup = checklist na proklik v `review-proklik-checklist.md`) - F1 nápověda nezná featury posledního měsíce (oddíly seznamu, řazení dynamické tabulky, filtry poznámek - přesně kde budou lidi hledat zrušené parametry); náhled s ukázkovými daty není nijak označen (badge „ukázková data"); Ctrl+N vyrábí šablonu bez agendy (zdědit aktuální, nebo rovnou otevřít výběr); ChangeAgendaDialog ukazuje interní kódy (`ZASTAVKOVY_JR_AD`); „Použít" s 0 vybranými linkami tiše spadne na mock. | M |
 
 ---
 

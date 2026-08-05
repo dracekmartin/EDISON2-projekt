@@ -3,6 +3,11 @@
 > ⚠️ **Jednorázový dokument** - po projití a vytěžení (opravy / body do roadmapy) SMAZAT
 > (git historie stačí). Vstup pro `B58`; body 3-5 souvisí s rozhodnutím `B52`.
 
+> **Stav 5. 8.:** `B58` je hotová, takže body **1, 8, 12** (Ctrl+N bez agendy, mock vs. reálná data,
+> nulový výběr linek) už mají opravu v kódu - zůstávají tu jen na **vizuální posouzení**, jestli to
+> naživo funguje. Bod **7** (obsah F1) je doplněný, jde o čitelnost textu. Bod **4** je zavřený
+> rozhodnutím u `B52` (neřešit, pilotní provoz). Ostatní body strojově posoudit nejde a čekají na tebe.
+
 Věci, které z kódu nejde posoudit - vizuální dojem, focus, srozumitelnost hlášek naživo.
 
 1. **Ctrl+N jako nováček**: založ novou šablonu a bez znalostí zkus pokračovat - je z obrazovky

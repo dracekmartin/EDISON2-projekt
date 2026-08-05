@@ -777,6 +777,19 @@
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                             </StackPanel>
                         </Border>
+                        <!-- Štítek ukázkových dat - bez pageru byl náhled se smyšlenými daty
+                             nerozeznatelný od hotové vývěsky. Sdílí týž pruh (režimy se vylučují). -->
+                        <Border Visibility="{Binding IsSampleDataPreview, Converter={StaticResource BoolToVis}}"
+                                Background="{DynamicResource EDTheme.Bg.PanelAlt}"
+                                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
+                            <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    BorderBrush="{DynamicResource EDTheme.Semantic.Warning}"
+                                    BorderThickness="1" CornerRadius="3" Padding="8,2">
+                                <TextBlock Text="{Binding SampleDataHint}"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                                           Foreground="{DynamicResource EDTheme.Semantic.Warning}"/>
+                            </Border>
+                        </Border>
                     </Grid>
 
                     <!-- Scrollovatelný canvas náhledu - vyplní zbytek, začíná nahoře (zarovnané s návrhářem).

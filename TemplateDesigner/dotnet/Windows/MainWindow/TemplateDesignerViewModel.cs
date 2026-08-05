@@ -343,6 +343,8 @@ public class TemplateDesignerViewModel : EDViewModel
         OnPropertyChanged(nameof(PreviousInstanceTooltip));
         OnPropertyChanged(nameof(NextInstanceTooltip));
         OnPropertyChanged(nameof(InstancePickerHint));
+        OnPropertyChanged(nameof(IsSampleDataPreview));
+        OnPropertyChanged(nameof(SampleDataHint));
     }
 
     // ── Real preview data ────────────────────────────────────────────────────
@@ -392,6 +394,26 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool HasPageNavigation => RealPreviewPageCount > 0;
 
     /// <summary>
+    /// Náhled kreslí ukázková data, ne data z databáze - UI to musí říct, jinak se dá splést
+    /// s hotovou vývěskou (bez lišty stránkování je to jediná stopa). Platí jen pro agendu, která
+    /// reálná data vůbec umí: u šablony bez vazby na databázi by hlášení „ukázková data" lhalo,
+    /// protože tam se žádná nečekají.
+    /// </summary>
+    public bool IsSampleDataPreview =>
+        ShouldShowSampleDataBadge(
+            RealPreviewPageCount,
+            State.CurrentTemplate.AgendaCode,
+            State.CurrentTemplate.AgendaCode is { Length: > 0 } c && CacheProvider?.GetCacheClass(c) is not null);
+
+    /// <summary>Testovatelné jádro <see cref="IsSampleDataPreview"/>.</summary>
+    internal static bool ShouldShowSampleDataBadge(int realPageCount, string? agendaCode, bool agendaHasData) =>
+        realPageCount == 0 && agendaCode is { Length: > 0 } && agendaHasData;
+
+    /// <summary>Popisek štítku ukázkových dat - jmenuje, co chybí vybrat (linku, fakturu…).</summary>
+    public string SampleDataHint =>
+        $"Ukázková data - vyberte {CurrentInstanceLabel} pro data z databáze";
+
+    /// <summary>
     /// Notifikace po výměně reálných preview dat. Pořadí je záměrné: <see cref="PreviewPageItems"/>
     /// PŘED <see cref="RealPreviewIndex"/> - výměna ItemsSource comboboxu synchronně pushne
     /// SelectedIndex=-1 do VM a zpětná korekce ze setteru se během reentrantního binding update
@@ -408,6 +430,7 @@ public class TemplateDesignerViewModel : EDViewModel
             OnPropertyChanged(nameof(PageNavigationText));
             OnPropertyChanged(nameof(HasMultiplePages));
             OnPropertyChanged(nameof(HasPageNavigation));
+            OnPropertyChanged(nameof(IsSampleDataPreview));
         }
         finally { _previewPagesSyncing = false; }
         // WPF umí nastavení SelectedIndex během výměny ItemsSource spolknout (combobox zůstane
@@ -1080,7 +1103,10 @@ public class TemplateDesignerViewModel : EDViewModel
     private async Task NewTemplateAsync()
     {
         if (!await ConfirmUnsavedChangesAsync()) return;
-        ReplaceWithBlankTemplate(agendaCode: null);
+        // Nová šablona zdědí rozpracovanou agendu (rozhodnutí Jan 5. 8.): kdo kreslí vývěsky pro
+        // jednu agendu, nemusí ji po Ctrl+N vybírat znovu. Bez agendy nemá šablona nabídku datových
+        // polí ani náhled a nováčkovi není jasné, co dělá špatně. Přepnutí zůstává na Ctrl+Shift+A.
+        ReplaceWithBlankTemplate(agendaCode: State.CurrentTemplate.AgendaCode);
     }
 
     /// <summary>

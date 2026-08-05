@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-08-05 (6) - `B58` srozumitelnost pro nováčka
+
+Nález review 4. 8.: pět míst, kde se nový uživatel zasekne, protože mu aplikace neřekne, co se děje.
+
+- **Náhled s ukázkovými daty je označený** - nad náhledem je štítek *„Ukázková data - vyberte linku
+  pro data z databáze"*. Bez lišty stránkování byl náhled se smyšlenými daty k nerozeznání od hotové
+  vývěsky. Štítek se nezobrazuje u šablony bez vazby na databázi, kde by lhal (žádná reálná data se
+  tam nečekají).
+- **Nová šablona (Ctrl+N) zdědí rozpracovanou agendu** (rozhodnutí Jan 5. 8.). Dosud vznikala bez
+  agendy → prázdná nabídka datových polí, prázdný náhled a nováček nevěděl, co dělá špatně.
+  Přepnutí zůstává na Ctrl+Shift+A.
+- **Výběr agendy neukazuje interní kódy** (`ZASTAVKOVY_JR_AD`) - místo nich popis, co se u agendy
+  vybírá („Data z databáze - vybírá se linka", u obecné šablony „Bez vazby na databázi"). Registr
+  popis po drátě nenese a doplňovat ho kvůli jednomu dialogu je nepoměr, takže se skládá z toho, co
+  registr má.
+- **„Použít" bez zaškrtnuté linky poradí**, co udělat, místo tichého propadnutí na ukázková data.
+  Když ale výběr **existoval**, je nulový výběr legitimní („chci ho zrušit") a povolí se - výsledek
+  pak řekne štítek výše.
+- **Nápověda F1 má sekci „Vývěska JŘ - obsah a značky"** s featurami posledního měsíce: filtry
+  poznámek, značky u odjezdů (kola, místenky, pokračující spoje), souhrn bezbariérovosti, rozdělení
+  seznamu zastávek na oddíly, řazení dynamické tabulky. Součástí je i to, **kam se přesunuly zrušené
+  parametry tisku** - přesně tam je lidi budou hledat.
+- **Totéž doplněno AI pomocníkovi** (`CapabilityCatalog`) - měl stejnou mezeru, takže by uživatele
+  posílal do parametrů sestavy, které už neexistují.
+
+**Nová brána:** testy ověřují, že přepínače, na které nápověda odkazuje, na tom místě **opravdu
+jsou** (skupina „Filtrování" prvku poznámek, oddíly u zastávek, řazení u dynamické tabulky). Kdyby
+se přesunuly, nápověda by začala lhát a test spadne. Prověřeno mutacemi - všechny tři chytí.
+**738/738 .NET.**
+
+**Wiki seed** `uzivatelska-prirucka.md` aktualizovaný (nová šablona dědí agendu, štítek ukázkových
+dat) - připravený k nahrání, nesynchronizováno.
+
 ## 2026-08-05 (5) - `B59` formulář přestal lhát o tučnosti záhlaví a minut
 
 Dokončení `B54`: u vlastností, které se **dědí z kaskády** (nejsou na prvku nastavené), formulář

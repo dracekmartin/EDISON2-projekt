@@ -288,15 +288,21 @@ Pravidla obsahu (ZÁVAZNÁ):
             "sloupce s mapováním na pole NEBO počítaným výrazem ({CENA}*{POCET}) a formátem; " +
             "podmíněnou viditelnost řádku (výraz nad daty řádku); pravidla zvýraznění řádku (výraz → barva pozadí); " +
             "min/max počet řádků (min doplní prázdné = pevná výška, max ořízne); " +
+            "řazení řádků (Řadit podle + Směr; prázdné = pořadí z agendy); " +
             "souhrnné řádky s agregacemi SUM/COUNT/AVG/MIN/MAX (i nad výrazem, např. SUM({CENA}*{POCET})).",
         ElementTypes.StopList =>
             "Tabulka zastávek linky. Sloupce a jejich styl se nastavují ve vlastním dialogu sloupců " +
-            "(vč. volitelného sloupce Označník). Podporuje podmíněnou viditelnost a zvýraznění řádků.",
+            "(vč. volitelného sloupce Označník). Podporuje podmíněnou viditelnost a zvýraznění řádků. " +
+            "Dlouhou trasu lze rozdělit na víc oddílů vedle sebe (Rozdělit na více oddílů + Mezera mezi oddíly) - " +
+            "každý oddíl nese celou tabulku znovu včetně záhlaví, takže prvek je nižší a širší.",
         ElementTypes.DepartureGrid =>
             "Mřížka minut odjezdů po skupinách dnů. Skupiny a sloupce mají vlastní dialog " +
             "(vč. přepisu nadpisu skupiny a sloupce hodin per skupina).",
         ElementTypes.NotesLegend =>
-            "Legenda vysvětlivek/poznámek pod jízdním řádem (1–4 sloupce, řazení, filtr typů).",
+            "Legenda vysvětlivek/poznámek pod jízdním řádem (1–4 sloupce, řazení, směr plnění, filtr typů). " +
+            "⚠️ Tady se zapínají i ZNAČKY U ODJEZDŮ - přeprava kol, místenky, pokračující spoje - a souhrn " +
+            "bezbariérových spojů; NE v parametrech sestavy (dřív to parametry tisku byly). Značka a její " +
+            "vysvětlivka jsou jedna volba. Bez tohoto prvku v šabloně se značky nevytisknou vůbec.",
         ElementTypes.LineTable =>
             "Sloupcová tabulka celé linky (zastávky × spoje) pro linkový/knižní JŘ. Sloupce ve vlastním dialogu.",
         _ => null

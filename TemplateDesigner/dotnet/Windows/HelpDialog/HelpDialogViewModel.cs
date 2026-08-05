@@ -234,14 +234,37 @@ public class HelpDialogViewModel : EDViewModel
                 new("Obrázek - ze souboru (auto zmenšení velkých)", "paleta"),
                 new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
                 new("Kód - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
-                new("Dynamická tabulka - řádky z kolekce dat agendy", "paleta"),
+                new("Dynamická tabulka - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
                 new("Zastávky JŘ - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
                 new("Mřížka odjezdů JŘ - minuty po skupinách dnů", "paleta (JŘ agenda)"),
                 new("Legenda poznámek JŘ - značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
             ],
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
-                  "zvýraznění řádku podle výrazu, min/max počet řádků a souhrnné řádky (SUM, COUNT, AVG…). " +
-                  "Vše v dialogu tabulky (dvojklik).",
+                  "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr), min/max počet řádků " +
+                  "a souhrnné řádky (SUM, COUNT, AVG…). Vše v dialogu tabulky (dvojklik).",
+        },
+
+        new HelpSection
+        {
+            Title = "🚌 Vývěska JŘ - obsah a značky",
+            Entries =
+            [
+                new("Které poznámky se tisknou (negativní značky, speciální znaky, textové, poznámky linky)",
+                    "prvek Legenda poznámek → Filtrování"),
+                new("Značky u odjezdů: přeprava kol, místenky, pokračující spoje", "dtto Filtrování"),
+                new("Souhrn bezbariérových spojů (jedna věta místo značky u každého odjezdu)", "dtto Filtrování"),
+                new("Poznámky linky - výluky, tarifní, všeobecné, radiobus", "dtto Filtrování"),
+                new("Řazení poznámek a směr plnění sloupců legendy", "prvek Legenda poznámek → Rozložení"),
+                new("Dlouhá trasa na užší vývěsku - rozdělit seznam zastávek na oddíly vedle sebe",
+                    "prvek Zastávky JŘ → Rozdělit na více oddílů"),
+                new("Zvýraznění aktuální zastávky, projeté zastávky, šipka směru", "prvek Zastávky JŘ"),
+                new("Skupiny dnů, šířka minuty, oddělovač skupin, značky u minut", "prvek Mřížka odjezdů"),
+                new("Kolik vývěsek se vytiskne (zastávka × směr) a co je na které", "lišta stránkování nad náhledem"),
+            ],
+            Tip = "Značky u odjezdů a souhrn bezbariérovosti se zapínají v prvku Legenda poznámek, " +
+                  "NE v parametrech sestavy - dřív to byly parametry tisku. Značka u odjezdu a její vysvětlivka " +
+                  "jsou jedna volba, takže nemůže vzniknout značka, kterou legenda nevysvětlí. " +
+                  "Když šablona prvek Legenda poznámek nemá, značky se nevytisknou vůbec.",
         },
 
         new HelpSection

@@ -15,6 +15,23 @@ takže se trasa pokračujícího spoje nedohledává.
 Správný uzel určil kolega v #13098; já jsem předtím dvě session stavěl na 32. Kdyby se to nezeptalo,
 značku „pokračuje" by dostaly spoje, které jen čekají na návaznost.
 
+## 2026-08-05 ✅ - `B58` srozumitelnost pro nováčka
+
+**Zadání bloku (nález review 4. 8.; vstup = checklist na proklik):** F1 nápověda nezná featury
+posledního měsíce (oddíly seznamu, řazení dynamické tabulky, filtry poznámek - přesně kde budou lidi
+hledat zrušené parametry); náhled s ukázkovými daty není nijak označen (badge); Ctrl+N vyrábí šablonu
+bez agendy (zdědit aktuální, nebo rovnou otevřít výběr); ChangeAgendaDialog ukazuje interní kódy;
+„Použít" s 0 vybranými linkami tiše spadne na mock. Vel. **M**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (6). Ctrl+N **dědí agendu** (rozhodnutí Jan 5. 8.,
+alternativa „otevřít výběr" zamítnuta - přidávala klik tomu, kdo dělá deset vývěsek pro tutéž
+agendu). Nulový výběr linek se rozlišuje: nic nebylo vybráno → navést, něco bylo → zrušení povolit.
+Nad zadání doplněn AI pomocník, který měl stejnou mezeru. Nová brána hlídá, že přepínače, na které
+nápověda odkazuje, na tom místě opravdu jsou.
+
+**Zbývá na uživateli:** vizuální posouzení štítku a čitelnost textů nápovědy - `review-proklik-checklist.md`
+zůstává otevřený pro proklik (jeho ostatní body strojově posoudit nejde).
+
 ## 2026-08-05 ✅ - `B59` výchozí hodnoty děděných stylů proti kaskádě
 
 **Zadání bloku (zbytek `B54`, 5. 8.):** u property, která smí být nenastavená („dědí se"), formulář
