@@ -6,9 +6,9 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **▶ Další session:** **B18** (deklarativní pravidla EDInputFormu, M). Zákaznická fronta KOVED
-> je dojetá, zbývá **B37** (poznámka „pokračuje do…", od 4. 8. odblokovaná a celá u nás)
-> a rozhodnutí **B52**. Verze šla 4. 8. do produkce (#13093 body 1, 2, 4 jsou v ní).
+> **▶ Další session:** nálezy review 4. 8. (**B54** → **B58**), pak **B18** (deklarativní pravidla
+> EDInputFormu, M). Zákaznická fronta KOVED je dojetá, zbývá **B37** (poznámka „pokračuje do…",
+> od 4. 8. odblokovaná a celá u nás). Verze šla 4. 8. do produkce (#13093 body 1, 2, 4 jsou v ní).
 > Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
 
 ---
@@ -35,13 +35,12 @@ changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde
 ## 🏛️ Architektura a nálezy review (4. 8. 2026)
 
 Obecné architektonické bloky (napříč agendami) + nálezy celkového review sweep 4. 8.
-`B52` je 🛑 rozhodnutí a stojí nahoře schválně.
+(`B52` migrace uložených voleb zrušených parametrů: **rozhodnuto 5. 8. neřešit** - pilotní provoz,
+připravená odpověď leží v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)
 
 | # | Blok | Vel. |
 |---|---|---|
-| **B52** | 🛑 **ROZHODNUTÍ (Jan): migrace persistovaných voleb zrušených parametrů** (nález review 4. 8.). Přesun kola/místenky/souhrn bezbariér z parametrů do prvku poznámek (changelog (7)) **nepřenáší uloženou volbu**: blob `^ALVA.EDControls.UserData(...,"TemplateDesigner.PrintParams",...)` s `TISK_KOLA=true` se tiše ignoruje → **značky uživateli zmizí z tisku**; `SCHOVAT_AGREGAT_BEZBARIER=true` → souhrn se tiše **vrátí**. Týká se jen uživatelů, kteří volby aktivně používali. Varianty: (a) jednorázová migrace při otevření šablony (blob → vlastnosti prvku poznámek, s záznamem že proběhla), (b) jen komunikace - oprava wiki seedu (dnes tvrdí „vzhled se nemění") + release note „volby si znovu zapněte v prvku". U (a) pozor: parametr byl per uživatel×agenda, vlastnost je per šablona - mapování není 1:1. **Uzavírací podmínka:** žádný zákazník nepřijde tiše o značky, které měl zapnuté. | S-M |
 | **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). **Follow-up 2 (review 4. 8.):** rozšířit gramatiku o čtení **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs. `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - mikropravidlo §5.3 dnes plní jen helpTexty. | M |
-| **B53** | **Per-frame přepočet bez cache: obrázek a čárový kód** (nález review 4. 8.) - `ImageElement.Render` dekóduje Base64 (až 5 MB) + bitmapu a `BarcodeElement` přepočítává ZXing matici **při každém framu**; porušení pravidla §7 „structured parsing vždy cachovat". Cache s invalidací per (obsah, velikost) po vzoru `StopScheduleElementBase.SetCacheRef`; bitmapu držet dekódovanou, dispose při změně. | S |
 | **B54** | **Drift test defaultů formulář ↔ C# + chybějící pole** (nález review 4. 8.) - `EDInputFormSchemaDriftTests` hlídá existenci property, ne defaulty: nalezeno ~10 rozdílů, kde formulář „lže o defaultu" (Barcode pozadí, Text zarovnání, PageEdit okraje 10 vs 0 mm, `BaseElementFields.AddGrid` sloupcové čáry…). Rozšířit test o porovnání `f.value` ↔ C# default (reflexe přes touž property path) + doplnit do `DepartureGridElementEdit.cls` chybějící pole (barvy negativní značky, zarovnání záhlaví), která panel má a formulář ne. Uzavře celou třídu problémů strojově. | S-M |
 | **B55** | **Testy: migrace šablon + parsing agend** (nález review 4. 8.) - `MigrationGridStyle` (1.7.0, nejsložitější migrace - 5 hodnot borderStyle + přenos rámce), `MigrationHighlightRules` a `MigrationKnizniToLinkovy` nemají unit test navzdory pravidlu v `template-schema-versions.md` krok 5; `CacheAgendaProvider` parsing (GetSchema→DataSchema, GetData→multi-page List, přeskok „ERR") bez testu navzdory `feature-design-principles.md §7`. | M |
 | **B56** | **Dedup Build\* helperů Caché agend do `BaseAgenda`** (nález review 4. 8.) - `BuildZastavka/BuildOdjezd/BuildPoznamka/AddAnotace/RgbToHex…` duplikované ve 2-4 agendách (~400-500 řádků) a **už divergují** (AD verze +kategorie, +3 parametry anotací); komentář „duplikováno z MHD" přestal platit doslova. Sjednotit na nadmnožinu parametrů v `BaseAgenda` (aditivní - stará volání se nerozbijí), omz/datum helpery do sdílené JR utility. Každá nová vlastnost výstupního JSON se dnes píše 2-4×. Překryv s `B14` (dedup tiskových enginů) - `B56` je menší výsek Build\* helperů, `B14` řeší i readery; při realizaci jednoho zredukovat druhý. | M |

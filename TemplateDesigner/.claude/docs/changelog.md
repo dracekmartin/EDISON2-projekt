@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-08-05 (1) - `B53` obrázek a čárový kód se nepřepočítávají při každém překreslení
+
+Nález review 4. 8.: `ImageElement.Render` dekódoval Base64 (limit 5 MB) a `BarcodeElement`
+propočítával matici ZXing **při každém framu** - porušení pravidla „structured parsing vždy
+cachovat" (`feature-design-principles.md §7`). Projevovalo se to škubáním při tahání prvku, zoomu
+a psaní do vlastností.
+
+**Co se změnilo:**
+- **Obrázek** drží dekódovanou bitmapu + `SKImage`, klíč cache = reference stringu `ImageBase64`
+  (string je immutable a nahrazuje se celý, takže nové přiřazení i načtení šablony z JSON dají
+  novou referenci = invalidaci). `SetImmutable()` před `SKImage.FromBitmap` → pixely se sdílí,
+  ne kopírují. **Neúspěch dekódování se cachuje taky** - poškozená data se dřív zkoušela dekódovat
+  znovu každý frame. `GetImageAspectRatio()` čte z téže cache (dřív dekódovalo zvlášť).
+- **Čárový kód** drží hotovou nahrávku kreslení (`SKPicture`) v lokálních souřadnicích, per frame
+  zbyl jeden `DrawPicture` s posunem. Klíč = obsah × velikost v px × typ × barva kódu.
+  Nezakódovatelný obsah (např. EAN-13 s jiným počtem číslic) se taky cachuje - dřív ZXing
+  vyhazoval výjimku při každém framu.
+- **Slití souvislých úseků modulů do jednoho obdélníku** - ZXing vrací matici v **pixelech cílové
+  velikosti, ne v modulech kódu**, takže se u velkého QR kreslilo ~160 tisíc obdélníčků po jednom.
+  Sousední buňky se kvůli `+0.5` překrývají, takže sjednocení úseku je bez vyhlazování **přesně
+  tentýž obrazec** - odtisky to potvrdily. Tohle byla ve skutečnosti hlavní cena, ne zakódování.
+  ⚠️ Kdo bude sahat na to `+0.5`, ruší tím i platnost slévání.
+
+**Změřeno** (jedno překreslení plátna, 4 px/mm): QR 100 mm **43 → 1,0 ms**, QR 40 mm 6,4 → 0,3 ms,
+Code 128 2,2 → 0,2 ms, obrázek 1400 px 20,2 → 4,6 ms. Drobný obrázek (64 px) se nezlepšil - u něj
+nikdy nestálo čas dekódování, ale samo kreslení.
+
+**Ověřeno:** odtisk pixelů 15 případů (4 režimy škálování, poškozený obrázek, 6 typů kódu, vlastní
+barva, nezakódovatelný obsah, prázdný obsah, nekvadratický kód na necelých souřadnicích) je před
+zásahem a po zásahu **identický**. Nové `CachedContentRenderTests` (13 testů) hlídají, že cache drží
+i že se správně zahazuje, a že odtisk vyhřáté instance == odtisk čerstvé. Sada 622/622.
+
+**Bezpečnost cache vůči vláknům:** export na pozadí běží nad `DeepClone` snapshotem šablony
+(`MainWindow.xaml.cs`, `TemplateDesignerViewModel`), takže instance elementu nikdy nekreslí dvě
+vlákna současně - stejný předpoklad, na kterém stojí i cache prvků JŘ.
+
 ## 2026-08-04 (17) - celkové review: mechanické opravy + evidence větších nálezů
 
 Kompletní review sweep aktuálního stavu v 6 dimenzích (UI/UX konzistence, srozumitelnost pro

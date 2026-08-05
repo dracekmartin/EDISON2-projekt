@@ -35,6 +35,23 @@ public class BarcodeElement : TemplateElement
         BackgroundColor = "#FFFFFFFF";
     }
 
+    // ─── Cache vykresleného kódu ────────────────────────────────────────────
+    // Bez cache se při každém framu znovu zakóduje matice a nakreslí modul po modulu -
+    // u velkého QR jsou to stovky tisíc kreslicích příkazů na jedno překreslení plátna.
+    // Cachuje se hotová nahrávka kreslení (SKPicture) v lokálních souřadnicích; per frame
+    // zbyde jeden DrawPicture s posunem. Klíč = vše, co tvar nebo barvu ovlivňuje.
+
+    [JsonIgnore] private SKPicture? _cachedPicture;
+    [JsonIgnore] private string? _cachedContent;
+    [JsonIgnore] private int _cachedWidthPx;
+    [JsonIgnore] private int _cachedHeightPx;
+    [JsonIgnore] private BarcodeElementType _cachedType;
+    [JsonIgnore] private SKColor _cachedForeColor;
+    [JsonIgnore] private bool _cacheFilled;
+
+    /// <summary>Počet skutečných zakódování - testovací sonda, že cache drží.</summary>
+    [JsonIgnore] internal int EncodeCount { get; private set; }
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -50,22 +67,60 @@ public class BarcodeElement : TemplateElement
             return;
         }
 
+        var picture = GetBarcodePicture(content, rect.Width, rect.Height);
+        if (picture is null)
+        {
+            DrawPlaceholder(ctx.Canvas, rect);
+            return;
+        }
+
+        // Nahrávka je v lokálních souřadnicích (0,0) - posun na místo elementu dělá matice.
+        ctx.Canvas.Save();
+        ctx.Canvas.Translate(rect.Left, rect.Top);
+        ctx.Canvas.DrawPicture(picture);
+        ctx.Canvas.Restore();
+    }
+
+    /// <summary>
+    /// Nahrávka kreslení kódu, nebo null když se obsah nedá zakódovat (např. EAN-13 s jiným
+    /// počtem číslic). Neúspěch se cachuje taky - jinak by ZXing při každém framu vyhazoval výjimku.
+    /// </summary>
+    private SKPicture? GetBarcodePicture(string content, float rectW, float rectH)
+    {
+        int widthPx  = Math.Max(1, (int)rectW);
+        int heightPx = Math.Max(1, (int)rectH);
+        var foreColor = SkForeColor;
+
+        if (_cacheFilled
+            && _cachedContent == content
+            && _cachedWidthPx == widthPx && _cachedHeightPx == heightPx
+            && _cachedType == BarcodeType && _cachedForeColor == foreColor)
+            return _cachedPicture;
+
+        _cachedPicture?.Dispose();
+        _cachedPicture   = null;
+        _cachedContent   = content;
+        _cachedWidthPx   = widthPx;
+        _cachedHeightPx  = heightPx;
+        _cachedType      = BarcodeType;
+        _cachedForeColor = foreColor;
+        _cacheFilled     = true;
+
+        EncodeCount++;
         try
         {
-            RenderBarcode(ctx.Canvas, rect, content);
+            _cachedPicture = RecordBarcode(content, widthPx, heightPx, rectW, rectH, foreColor);
         }
         catch
         {
-            DrawPlaceholder(ctx.Canvas, rect);
+            _cachedPicture = null;
         }
-
+        return _cachedPicture;
     }
 
-    private void RenderBarcode(SKCanvas canvas, SKRect rect, string content)
+    private SKPicture RecordBarcode(string content, int widthPx, int heightPx,
+        float rectW, float rectH, SKColor foreColor)
     {
-        int widthPx = Math.Max(1, (int)rect.Width);
-        int heightPx = Math.Max(1, (int)rect.Height);
-
         var format = BarcodeType switch
         {
             BarcodeElementType.QR         => BarcodeFormat.QR_CODE,
@@ -78,26 +133,40 @@ public class BarcodeElement : TemplateElement
         };
         BitMatrix matrix = _writer.encode(content, format, widthPx, heightPx, _hints);
 
-        float cellW = rect.Width / matrix.Width;
-        float cellH = rect.Height / matrix.Height;
+        float cellW = rectW / matrix.Width;
+        float cellH = rectH / matrix.Height;
 
-        using var fgPaint = new SKPaint { Color = SkForeColor, Style = SKPaintStyle.Fill };
+        using var recorder = new SKPictureRecorder();
+        // +1 v ohraničení nahrávky: krajní modul přesahuje o +0.5 (viz níže) a nesmí se odříznout.
+        var canvas = recorder.BeginRecording(new SKRect(0, 0, rectW + 1f, rectH + 1f));
 
-        for (int row = 0; row < matrix.Height; row++)
+        using (var fgPaint = new SKPaint { Color = foreColor, Style = SKPaintStyle.Fill })
         {
-            for (int col = 0; col < matrix.Width; col++)
+            // ZXing vrací matici v pixelech cílové velikosti, ne v modulech kódu - jeden modul je
+            // tak desítky sousedních buněk. Souvislý úsek se kreslí jako jeden obdélník: buňky se
+            // kvůli +0.5 překrývají, takže sjednocení úseku je přesně tentýž obrazec (bez vyhlazování
+            // rozhoduje jen to, jestli střed pixelu leží uvnitř) - u velkého QR ubude řádově práce.
+            for (int row = 0; row < matrix.Height; row++)
             {
-                if (matrix[col, row])
+                int col = 0;
+                while (col < matrix.Width)
                 {
+                    if (!matrix[col, row]) { col++; continue; }
+
+                    int start = col;
+                    while (col < matrix.Width && matrix[col, row]) col++;
+
                     canvas.DrawRect(
-                        rect.Left + col * cellW,
-                        rect.Top + row * cellH,
-                        cellW + 0.5f,   // +0.5 zamezí mezerám mezi buňkami při subpixelovém zarovnání
+                        start * cellW,
+                        row * cellH,
+                        (col - start) * cellW + 0.5f,   // +0.5 zamezí mezerám při subpixelovém zarovnání
                         cellH + 0.5f,
                         fgPaint);
                 }
             }
         }
+
+        return recorder.EndRecording();
     }
 
     private void DrawPlaceholder(SKCanvas canvas, SKRect rect)

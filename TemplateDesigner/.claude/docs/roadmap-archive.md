@@ -2,6 +2,20 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-05 ✅ - `B53` per-frame přepočet u obrázku a čárového kódu
+
+**Zadání bloku (nález review 4. 8.):** `ImageElement.Render` dekóduje Base64 (až 5 MB) + bitmapu
+a `BarcodeElement` přepočítává ZXing matici **při každém framu**; porušení pravidla §7 „structured
+parsing vždy cachovat". Cache s invalidací per (obsah, velikost) po vzoru
+`StopScheduleElementBase.SetCacheRef`; bitmapu držet dekódovanou, dispose při změně. Vel. **S**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (1). Nad zadání šlo jedno zjištění: hlavní cenou nebylo
+zakódování, ale kreslení - ZXing vrací matici v **pixelech cílové velikosti, ne v modulech**, takže
+se u velkého QR kreslilo ~160 tisíc obdélníčků po jednom. Slití souvislých úseků do jednoho
+obdélníku je díky překryvu `+0.5` pixelově identické (potvrzeno odtisky) a přineslo většinu
+zrychlení: QR 100 mm 43 → 1,0 ms na frame. Ověřeno odtiskem 15 případů před/po (identický)
++ `CachedContentRenderTests` (13 testů), sada 622/622.
+
 ## 2026-08-04 ✅ - vypínání obsahu jen v šabloně (deduplikace parametrů × filtru)
 
 Detail → changelog 2026-08-04 (7). **Rozhodnutí Jan:** rozhoduje, co vidí zákazník, ne co posílá
