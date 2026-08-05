@@ -6,6 +6,89 @@ Include (%occInclude, GENERAL)
 Class ALVA.TemplateDesigner.Tests.AdSloupekProbe
 {
 
+/// Je zastávka v uzlu 32 **cíl** pokračování, nebo předávací bod? (#13093 bod 3, otázka na kolegy.)
+/// Pro pár spojů s uzlem 32 dohledá trasu pokračujícího spoje a vypíše její první a poslední
+/// obsluhovanou zastávku, aby šlo porovnat se zastávkou ze záznamu.
+/// IN: DB, MAXLIN, LIN (volitelně jen jedna linka). Read-only.
+ClassMethod PokracovaniOverit(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set jenLin = $get(^||ML("IN","LIN"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 400
+		set uzel = +$get(^||ML("IN","UZEL")) if uzel < 1 set uzel = 34   // kolega 4. 8.: pokračování je v 34
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0, ukazek = 0
+		set ^||ML("OUT","0_UZEL") = "zkoumany uzel = " _ uzel
+		set sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek>=maxLin
+				quit:ukazek>=5
+				if (jenLin '= "") && (lin '= jenLin) continue
+				set linek = linek + 1
+				for sm = "T", "Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,sm,sp)) quit:sp=""
+						quit:ukazek>=5
+						continue:'$isvalidnum(sp)
+						set zapis = $get(^[db]JRL(sku,lin,sm,sp,uzel))
+						continue:zapis=""
+						// statistika koncových polí + počtu záznamů (má f5/f6 vůbec varianty?)
+						set recAll = $piece(zapis, "@", 2)
+						set kombi = "f5=" _ $piece(recAll, ":", 5) _ " f6=" _ $piece(recAll, ":", 6) _ " poli=" _ $length(recAll, ":") _ " zaznamu=" _ $length(zapis, "@")
+						set kombinace(kombi) = $get(kombinace(kombi)) + 1
+						// uzel 34: `u@<nas spoj>:<linka>:<spoj>:<zastavka>:<f5>:<f6>`
+						set rec = $piece(zapis, "@", 2)
+						set pLin = $piece(rec, ":", 2), pSp = $piece(rec, ":", 3), pZast = $piece(rec, ":", 4)
+						set ukazek = ukazek + 1
+						set ^||ML("OUT","A_NAS", ukazek) = "sku=" _ sku _ " lin=" _ lin _ " smer=" _ sm _ " spoj=" _ sp _ "  RAW: " _ $extract(zapis, 1, 90)
+						set ^||ML("OUT","B_ZAPIS", ukazek) = "pokracuje linka=" _ pLin _ " spoj=" _ pSp _ " zastavka=""" _ pZast _ """ f5=" _ $piece(rec, ":", 5) _ " f6=" _ $piece(rec, ":", 6) _ " poli=" _ $length(rec, ":")
+						if pLin = "" set ^||ML("OUT","C_TRASA", ukazek) = "prazdna linka - neparsovatelne" continue
+						// klíč linky v globálu je se vedoucími nulami na 7 znaků
+						set pLinKey = $extract("0000000", 1, 7 - $length(pLin)) _ pLin
+						set nalezeno = 0
+						for sm2 = "T", "Z" {
+							continue:nalezeno
+							set hlava = $piece($get(^[db]JRL(sku,pLinKey,sm2,pSp)), "#", 1)
+							continue:hlava=""
+							set nalezeno = 1
+							set cisloTrasy = $piece(hlava, ":", 3)
+							set wTrasa = $get(^[db]JRL(sku,pLinKey,"W",cisloTrasy))
+							set prvni = "", posledni = ""
+							for i = 1:1:$length(wTrasa, "#") {
+								set seg = $piece(wTrasa, "#", i)
+								set pp = $piece(seg, ":", 1), cas = $piece(seg, ":", 2)
+								continue:pp=""
+								continue:(cas="<")||(cas="")||(cas="|")
+								set:prvni="" prvni = pp
+								set posledni = pp
+							}
+							set ^||ML("OUT","C_TRASA", ukazek) = "smer=" _ sm2 _ " trasa=" _ cisloTrasy _ " prvni poradi=" _ prvni _ " posledni poradi=" _ posledni
+							set ^||ML("OUT","D_PRVNI", ukazek) = $extract($get(^[db]JRL(sku,pLinKey,"J",prvni)), 1, 60)
+							set ^||ML("OUT","E_POSLEDNI", ukazek) = $extract($get(^[db]JRL(sku,pLinKey,"J",posledni)), 1, 60)
+						}
+						if 'nalezeno set ^||ML("OUT","C_TRASA", ukazek) = "pokracujici spoj nenalezen (jina skupina linek nebo vlak)"
+					}
+				}
+			}
+		}
+		set k = "", i = 0
+		for { set k = $order(kombinace(k)) quit:k=""  set i = i + 1, ^||ML("OUT","F_KOMBINACE", i) = k _ "  x" _ kombinace(k) }
+		set ^||ML("OUT","SOUHRN") = db _ " prosleho linek=" _ linek _ " ukazek=" _ ukazek
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Jaké vztahy mezi spoji data nesou (#13093 bod 3). Legacy zná rodinu vyčká / navazuje / pokračuje
 /// a označit se smí jen „pokračuje", jinak dostane značku i spoj, který jen čeká na návaznost.
 /// IN: DB, MAXLIN. OUT: pro každý numerický subnode spoje počet + ukázky payloadu (prefix `m@<id>#`).

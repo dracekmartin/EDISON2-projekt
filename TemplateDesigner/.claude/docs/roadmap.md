@@ -57,16 +57,35 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B37** | **#13093 bod 3 - poznámka „pokračuje do…" u odjezdu** (4. 8.: **není zablokované, je to celé u nás**). Klient chce seskupit odjezdy se stejným pokračováním do stejného cíle po stejné lince pod jedno písmeno a vysvětlivku („u1 - pokračuje do zast. Uherské Hradiště, žel. st. (l. 304)"), plus přepínač zobrazení. **Data máme:** uzel `32`, payload `m@33#linka:spoj:zastávka:…`; legacy to popisuje jako „spoj pokračuje po lince, spoji do zastávky" (`JRapiNZUtl2` ř.539), takže **ta zastávka je cíl**, ne přestupní bod. **Značka je „u"** (`JRapiLinPrtWin` ř.1561) - zákazníkovo „u1" opisuje starý modul. ⚠️ **Filtrovat typ vztahu:** je to rodina *vyčká / navazuje / pokračuje* (`JRapiLinPrtWin` ř.293; v JŘ druh poznámky `PoznamkyDruhVyckaNavazujePokracuje` s tiskem A4/A5), takže z 10 578 spojů s tím uzlem se smí označit jen „pokračuje" - jinak dostane značku i spoj, který jen čeká na návaznost. Přepínač patří do bloku poznámek (jako ostatní obsah). **Datová mapa (změřeno 4. 8. na 3 000 linkách KOVED):** `m@<n>` je **index záznamu, ne typ vztahu** -
-to byl můj chybný předpoklad. Vztahy leží ve dvou uzlech s **různým layoutem**:
-· uzel **31** (26 226 záznamů) = `m@i#<typ>#A:linka:spoj:2:zastávka:čas::dopravce:<typ>:cíl:::` - nese
-**dvě** zastávky (přípoj + jeho cíl), hodně záznamů na spoj → odpovídá *navazuje / vyčká*;
-· uzel **32** (1 930 v tomtéž rozsahu) = `m@i#linka:spoj:zastávka:2::A::čas:::dopravce` - **jedna**
-zastávka, řídké → odpovídá legacy popisu *„spoj pokracuje po lince, spoji do zastavky"*
-(`JRapiNZUtl2` ř.539), takže **ta zastávka je cíl**. U vlaku je layout `…:V:` a místo spoje číslo vlaku.
-⚠️ **Zbývá potvrdit jediné:** že uzel 32 nese **výhradně** „pokračuje" (legacy má tři sekce - vyčká 322,
-navazuje 482, pokračuje 539 - a kandidátem na třetí je uzel **34**, 6 105 záznamů). Ověřit na jejich
-příkladu linky 304, ať značku nedostane spoj, který jen čeká na návaznost.
+| **B37** | **#13093 bod 3 - poznámka „pokračuje do…" u odjezdu** (4. 8.: **není zablokované, je to celé u nás**). Klient chce seskupit odjezdy se stejným pokračováním do stejného cíle po stejné lince pod jedno písmeno a vysvětlivku („u1 - pokračuje do zast. Uherské Hradiště, žel. st. (l. 304)"), plus přepínač zobrazení. **Data máme:** uzel `32`, payload `m@33#linka:spoj:zastávka:…`; legacy to popisuje jako „spoj pokračuje po lince, spoji do zastávky" (`JRapiNZUtl2` ř.539), takže **ta zastávka je cíl**, ne přestupní bod. **Značka je „u"** (`JRapiLinPrtWin` ř.1561) - zákazníkovo „u1" opisuje starý modul. ⚠️ **Filtrovat typ vztahu:** je to rodina *vyčká / navazuje / pokračuje* (`JRapiLinPrtWin` ř.293; v JŘ druh poznámky `PoznamkyDruhVyckaNavazujePokracuje` s tiskem A4/A5), takže z 10 578 spojů s tím uzlem se smí označit jen „pokračuje" - jinak dostane značku i spoj, který jen čeká na návaznost. Přepínač patří do bloku poznámek (jako ostatní obsah). **Data ověřená 5. 8. (kolega potvrdil uzel, my dokázali sémantiku):** pokračování je
+`^JRL(sku,lin,smer,spoj,34)`, tvar **`u@<náš spoj>:<linka pokračování>:<spoj pokračování>:<cíl>:1:0`**.
+Značka `u@` je táž „u", kterou legacy pro pokračování používá (`JRapiLinPrtWin` ř.1561) a kterou má
+zákazník v požadavku („u1").
+· **Zastávka v záznamu JE cíl** (konečná pokračujícího spoje) - dokázáno rozdílným vzorkem: linka
+0773165 spoj 251 → `u@251:773165:250:Otrokovice,Štěrkoviště`, a trasa spoje 250 končí na czst 25691 =
+Otrokovice,Štěrkoviště, kdežto spoje 58/62/252 končí na 25694 = Otrokovice,žel.st. a mají v záznamu
+žel.st. **Nemusíme tedy dohledávat trasu pokračujícího spoje** - a tím padá i problém, že pokračující
+linka může ležet v jiné skupině linek (vzorek 1: linka 824532 v sku 1 nenalezena).
+· ⚠️ **Uzel 32 byla slepá ulička** (moje chyba): `m@…` záznamy, jiný tvar, nese i vlaky - je to
+návaznost, ne pokračování. `m@<n>` je navíc **index záznamu, ne typ vztahu**.
+· ⚠️ **Neznámá:** poslední dvě pole (`:1:0`) byla ve všech viděných záznamech konstantní. Návrh na
+nich nezávisí (existence záznamu = pokračuje), ale při implementaci se ověří, jestli `f5=0` neznamená
+„netisknout" - pokud ano, filtruje se.
+
+**Plán implementace (schválený tvar):**
+1. **Server** (`ZastavkoveJrAd`): číst uzel 34 per spoj, seskupit odjezdy podle **(linka, cíl)** -
+   číslo spoje se ignoruje, jak klient výslovně chce. Per stránka přidělit značky **`u1`, `u2`, …**
+   v pořadí prvního výskytu (stabilní, reprodukovatelné, stejný princip jako písmena rozdílů tras).
+   Anotace u minuty + řádek legendy `u1 - pokračuje do zast. <cíl> (l. <poslední trojčíslí linky>)`,
+   oba s kategorií **`pokracovani`**.
+2. **Značky „u+číslice" nekolidují** s ničím na vývěsce: rozdíly tras a varianty berou A-Z, kroužkové
+   dny číslice 1-7, ruční komentáře písmena z číselníku. Číslice se dává vždy, i u jediného cíle
+   (jednoduché pravidlo). Značka je víceznaková → kreslí se textem, ne přes symbolový font.
+3. **Klient**: jeden checkbox v bloku poznámek („Pokračující spoje", výchozí vypnuto) + kategorie do
+   `NoteCategories`. Filtr už umí prořezat značku i vysvětlivku naráz, takže nemůže vzniknout jedno
+   bez druhého. Žádný parametr sestavy.
+4. **Brány**: Caché testy (parsování záznamu, seskupení, přidělení značek), .NET testy (filtr
+   kategorie), **gold rebaseline** - přibudou anotace i řádky legendy, takže se změní počty poznámek.
 
 **Vztah k #13102** (virtuální prodloužení u Petra): jiná featura nad stejným jevem - tam je přínos „ubude varianta ve sloupcích minut" a zadává se ručně, tady je poznámka **automatická** z existujících dat. Nečeká jedno na druhé; u spojů, kde jednou prodloužení zadají, bude naše poznámka nadbytečná (detail zobrazení, ne blokátor). | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | TRANSDEV potvrdí nad výsledkem |
