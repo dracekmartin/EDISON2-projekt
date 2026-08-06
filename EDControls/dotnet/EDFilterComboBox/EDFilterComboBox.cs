@@ -17,8 +17,8 @@ namespace EDControls.EDFilterComboBox;
 ///   uživatel smí napsat i text mimo <see cref="Suggestions"/> — ty jsou jen nápověda.</item>
 ///   <item><b>striktní</b> (<see cref="StrictSelection"/> = true): hodnotou je <see cref="SelectedKey"/>;
 ///   commituje se jen platná položka, v klidu se zobrazí čitelný „Key — Label", při vstupu do pole se
-///   vybere celý text (první napsaný znak ho přepíše → hledání jiné položky bez mazání) a neplatný
-///   text se po opuštění vrátí na aktuální výběr.</item>
+///   vybere celý text (první napsaný znak ho přepíše → hledání jiné položky bez mazání), Enter potvrdí
+///   i napsaný text (exaktní nebo jednoznačná shoda) a neplatný text se po opuštění vrátí na aktuální výběr.</item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -96,6 +96,7 @@ public class EDFilterComboBox : ComboBox
         {
             _userIsTyping = !IsNavigationKey(e.Key);
             if (e.Key == Key.Escape) _committedKey = null;   // Esc = zrušení výběru → commit revertne
+            if (e.Key == Key.Enter) CommitTypedTextOnEnter();
         };
         PreviewKeyUp   += (_, _) => _userIsTyping = false;
 
@@ -155,6 +156,18 @@ public class EDFilterComboBox : ComboBox
             Refilter(StrictSelection ? null : Text);
             if (StrictSelection) ShowSelectedKeyText();
         };
+    }
+
+    // Enter po napsání textu bez picku z dropdownu: dohledej položku podle textu (exakt, jinak
+    // jediný kandidát filtru), jinak by commit napsaný výběr revertnul. Text == display zachyceného
+    // picku → pick platí (šipky Text přepisují), nedohledávat. Zavřený dropdown (žádný match
+    // při psaní) → commit ručně, DropDownClosed nepřijde.
+    private void CommitTypedTextOnEnter()
+    {
+        if (!StrictSelection || Text == DisplayFor(_committedKey)) return;
+        if (EDFilterComboBoxLogic.ResolveTyped(Suggestions, Text, KeyLabelSeparator) is { } typed)
+            _committedKey = typed.Key;
+        if (!IsDropDownOpen) CommitSelection();
     }
 
     // Navigační/commit klávesy nemají spustit filtrování: WPF při nich přepíše Text na zvýrazněnou

@@ -85,11 +85,28 @@
             </MenuItem>
             </Menu>
             <!-- Přepínač firem MUSÍ být mimo <Menu>: Menu si přebírá fokus/myš pro navigaci a
-                 editovatelnému comboboxu uvnitř kradlo fokus (klik do textu "odkliknul"). -->
+                 editovatelnému comboboxu uvnitř kradlo fokus (klik do textu "odkliknul").
+                 ToolTip nese plný název firmy - editovatelný TextBox dlouhý text jen ořízne
+                 (TextTrimming neumí) a jinde v UI plný název není. -->
             <edfc:EDFilterComboBox DockPanel.Dock="Left" StrictSelection="True"
                                    Suggestions="{Binding CompanySuggestions}"
                                    SelectedKey="{Binding SelectedCompanyId, Mode=TwoWay}"
-                                   MinWidth="220" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                                   ToolTip="{Binding SelectedCompany.DisplayName}"
+                                   MinWidth="220" VerticalAlignment="Center" Margin="4,0,8,0">
+                <edfc:EDFilterComboBox.Style>
+                    <Style TargetType="edfc:EDFilterComboBox" BasedOn="{StaticResource {x:Type edfc:EDFilterComboBox}}">
+                        <Style.Triggers>
+                            <!-- Během přepínání firmy nejde vyvolat další přepnutí; jediná firma = není co vybírat. -->
+                            <DataTrigger Binding="{Binding IsActionInProgress}" Value="True">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding HasMultipleCompanies}" Value="False">
+                                <Setter Property="IsEnabled" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </edfc:EDFilterComboBox.Style>
+            </edfc:EDFilterComboBox>
             <Menu x:Name="TopMenu" BorderThickness="0">
             <MenuItem Header="Uživatel">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.User}" Width="16" Height="16"/></MenuItem.Icon>

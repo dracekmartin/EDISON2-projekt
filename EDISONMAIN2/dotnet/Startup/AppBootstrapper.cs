@@ -458,7 +458,7 @@ public class AppBootstrapper
         EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs)
     {
         var treeGetter = new ModuleTreeGetter();
-        var switcher = new CompanySwitcher(services, prefs, nav.CloseAll);
+        var switcher = new CompanySwitcher(services, prefs, nav.CloseShellWindows, nav.CloseLegacyModules);
         // Sdílená služba zástupců - strom (VM) i miniaplikace „Plocha" (provider) drží tutéž instanci.
         var shortcuts = new ModuleShortcutsService();
         var miniAppCatalog = MiniAppCatalog.Build([

@@ -72,7 +72,9 @@ AvalonDocku) ViewModel nemá, takže vypadne bez druhé attached property. Guard
   padají na `LockExist`.
 - Legacy `EDISONMAIN.exe` se spouští napřímo, ne přes host — potřebuje
   `ApplyDefaultInput` retrofit, který host neumí.
-- `CloseAll()` je záměrně jen na konkrétní třídě `WindowNavigator`, ne na interface.
+- `CloseAll()` je záměrně jen na konkrétní třídě `WindowNavigator`, ne na interface;
+  totéž jeho fáze `CloseShellWindows()` / `CloseLegacyModules()` (přepnutí firmy je
+  volá odděleně - shell okna před swapem Idfa, legacy až po získání licence).
 - **Owned overlay okna EDControls (`IOverlayWindow`) `CloseAll()` ani „Spuštěné moduly"
   nevidí** — panel Podpora a „Akce probíhá" jsou top-level okna, takže by se jinak nabídly
   jako modul a `CloseAll` by je zavřel (panel nevratně). Nové owned overlay okno tenhle

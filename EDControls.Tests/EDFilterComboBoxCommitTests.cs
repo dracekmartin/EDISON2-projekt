@@ -67,6 +67,69 @@ public class EDFilterComboBoxCommitTests
         });
     }
 
+    [Fact]
+    public void Enter_PoNapsaniJednoznacnehoTextu_CommitujeKeyDoTwoWayZdroje()
+    {
+        RunSta(() =>
+        {
+            var source = new KeyHolder { Value = "A" };
+            var combo = new EDCombo { StrictSelection = true };
+            combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
+            BindingOperations.SetBinding(combo, EDCombo.SelectedKeyProperty,
+                new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
+
+            // Uživatel napíše jednoznačný text a dá Enter bez výběru z dropdownu (dropdown zavřený
+            // → commit proběhne přímo v Enter handleru, DropDownClosed nepřijde).
+            combo.Text = "bet";
+            Invoke(combo, "CommitTypedTextOnEnter", []);
+
+            Assert.Equal("B", source.Value);
+        });
+    }
+
+    [Fact]
+    public void Enter_NejednoznacnyText_RevertujeNaPuvodniKey()
+    {
+        RunSta(() =>
+        {
+            var source = new KeyHolder { Value = "A" };
+            var combo = new EDCombo { StrictSelection = true };
+            combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Alba")];
+            BindingOperations.SetBinding(combo, EDCombo.SelectedKeyProperty,
+                new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
+
+            combo.Text = "al";   // matchuje Alfa i Alba, žádný exakt
+            Invoke(combo, "CommitTypedTextOnEnter", []);
+
+            Assert.Equal("A", source.Value);                     // zdroj beze změny
+            Assert.Equal("A - Alfa", combo.Text);                // display revertnul na výběr
+        });
+    }
+
+    [Fact]
+    public void Enter_PoVyberuSipkou_NeprepisujeZachycenyPick()
+    {
+        RunSta(() =>
+        {
+            var source = new KeyHolder { Value = "A" };
+            var combo = new EDCombo { StrictSelection = true };
+            combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
+            BindingOperations.SetBinding(combo, EDCombo.SelectedKeyProperty,
+                new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
+
+            // Šipka vybere B: SelectionChanged zachytí pick a WPF přepíše Text na jeho display.
+            combo.SelectedItem = combo.Items.OfType<ComboBoxItem>().Single(i => (string?)i.Tag == "B");
+            Assert.Equal("B - Beta", combo.Text);
+
+            // Enter: resolve se přeskočí (Text == display picku) a commit z DropDownClosed
+            // fixuje pick zachycený v SelectionChanged.
+            Invoke(combo, "CommitTypedTextOnEnter", []);
+            Invoke(combo, "CommitSelection", []);
+
+            Assert.Equal("B", source.Value);
+        });
+    }
+
     private static void Invoke(EDCombo combo, string method, object?[] args) =>
         typeof(EDCombo).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!
             .Invoke(combo, args);

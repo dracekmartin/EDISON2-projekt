@@ -27,7 +27,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 {
     record CompanyItem(string Id, string Name, string Database)
     {
-        public string DisplayName => string.IsNullOrEmpty(Name) ? Id : $"{Name} [{Id}]";
+        // Stejný formát jako display přepínače firem (EDFilterComboBox „Key - Label"),
+        // aby confirm dialog a ToolTip mluvily o téže položce stejně.
+        public string DisplayName => string.IsNullOrEmpty(Name) ? Id : $"{Id} - {Name}";
     }
 
     class EdisonMainViewModel : EDViewModel
@@ -909,6 +911,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OnPropertyChanged(nameof(Idfa));
             OnPropertyChanged(nameof(WindowTitle));
             OnPropertyChanged(nameof(SelectedCompanyId));
+            OnPropertyChanged(nameof(SelectedCompany));
+        }
+
+        // Pustí render (overlay) před blokující synchronní prací. Guard na běžící Application,
+        // ne jen na dispatcher vlákna: DispatcherTimer ve VM dispatcher testovacímu vláknu
+        // vytvoří, ale nikdo ho nepumpuje - await Yield by tam nikdy nedoběhl.
+        private static async Task YieldToRender()
+        {
+            if (Application.Current?.Dispatcher is { } d && d.CheckAccess())
+                await Dispatcher.Yield(DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -922,16 +934,30 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (index < 0 || index >= VisibleIdfas.Count || index == _selectedCompanyIndex) return;
 
             var target = VisibleIdfas[index];
-            if (!PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna."))
+            // Potvrzení jen když je co ztratit - bez otevřených oken je přepnutí nedestruktivní
+            // (layout miniaplikací se persistuje per IDFa a při návratu obnoví).
+            if (_getActiveModules().Count > 0
+                && !PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna i miniaplikace."))
                 return;
 
             var oldIdfa = Idfa;
-            var result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
+            SwitchOutcome result;
+            // Synchronní část (zavření oken, VerifyLic, logout staré firmy) blokuje UI thread -
+            // overlay „Akce probíhá" se musí stihnout vykreslit před ní (yield). Scope nesmí
+            // přesáhnout do RebuildSessionStateAsync (má vlastní; IsActionInProgress není
+            // refcounted) ani pod popupy níž.
+            using (ActionInProgress())
+            {
+                await YieldToRender();
+                result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
+            }
 
             if (result.Outcome != LicenceAcquireOutcome.Accepted)
             {
                 // Combobox si drží cílovou firmu z vlastního editu → notifikací ho vrať na platnou.
                 RaiseSessionPropertiesChanged();
+                // Cancelled bez hlášky záměrně: vzniká jen tak, že admin sám odmítl licenční
+                // retry dialog - akci aktivně zrušil, další popup by byl jen friction.
                 if (result.Outcome == LicenceAcquireOutcome.Refused)
                     PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 return;
@@ -991,6 +1017,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Firmy jako nápověda pro filtrovatelný přepínač (Key = IDFa, Label = název).</summary>
         public IEnumerable<ListItem> CompanySuggestions =>
             VisibleIdfas.Select(c => new ListItem(c.Id, c.Name));
+
+        /// <summary>Jediná firma → přepínač se zdisabluje (zůstává jako indikace aktuální firmy).</summary>
+        public bool HasMultipleCompanies => VisibleIdfas.Count > 1;
 
         private async Task OpenModule(IModule module)
         {

@@ -456,7 +456,7 @@ public class FavoritesAndUsageTests
             UserPrefs = prefs,
         };
         var localPrefs = Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, localPrefs, () => { });
+        var switcher = new CompanySwitcher(svc, localPrefs, () => { }, () => { });
 
         EDServices.Initialize(svc);
         EdisonMainViewModel vm;

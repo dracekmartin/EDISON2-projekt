@@ -30,8 +30,11 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   `_modulePrefs` null, takže save cesty musí zůstat null-safe.
 - Přepnutí firmy dělá `SwitchCompanyCommand` (`SelectedCompanyId` setter ho jen spustí);
   index se nastaví teprve po `Accepted`, takže odmítnutí nepotřebuje rollback. Sám
-  `CompanySwitcher.Switch` (zavření oken + VerifyLic) zůstává synchronní — potřebuje UI
-  thread na dialogy licenčního retry.
+  `CompanySwitcher.Switch` zůstává synchronní — potřebuje UI thread na dialogy licenčního
+  retry; VM ho obaluje `ActionInProgress` + yield, aby se overlay stihl vykreslit.
+  Zavírání dvoufázově: WPF okna shellu **před** swapem Idfa (volají server přes sdílený
+  MLRest), legacy moduly až po `Accepted` těsně před logoutem staré firmy - neúspěšné
+  přepnutí je tak nezabije. Confirm se ukazuje jen s otevřenými moduly.
 - DEBUG build má verzi `999999.9` — netriggeruje update check.
 - Zavření shellu (= ukončení aplikace i všech agend) se potvrzuje v `Closing` přes
   `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu

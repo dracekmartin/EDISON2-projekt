@@ -27,7 +27,8 @@ public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
 public class CompanySwitcher(
     EDServices services,
     ILocalPrefs localPrefs,
-    Action closeAllWindows)
+    Action closeShellWindows,
+    Action closeLegacyModules)
 {
     /// <summary>
     /// Vybere výchozí firmu pro startup: priorita <paramref name="preferredIdfa"/> →
@@ -43,11 +44,12 @@ public class CompanySwitcher(
     }
 
     /// <summary>
-    /// Přepne firmu: zavře všechna agendová okna, vymění Idfa+Namespace v MLRest a získá
-    /// licenci přes <see cref="LicenceVerifier"/> (s admin USERS.exe retry). Při neúspěchu
-    /// rollbackuje MLRest na původní hodnoty. <see cref="ILocalPrefs.LastIdfa"/> aktualizuje
-    /// při <see cref="LicenceAcquireOutcome.Accepted"/>. Confirm popup je odpovědnost
-    /// callsite (VM ho zobrazí před voláním).
+    /// Přepne firmu: zavře WPF okna shellu, vymění Idfa+Namespace v MLRest a získá
+    /// licenci přes <see cref="LicenceVerifier"/> (s admin USERS.exe retry). Legacy moduly
+    /// se zavírají až po <see cref="LicenceAcquireOutcome.Accepted"/> - neúspěšné přepnutí
+    /// tak nezabije rozpracovanou práci v nich. Při neúspěchu rollbackuje MLRest na původní
+    /// hodnoty. <see cref="ILocalPrefs.LastIdfa"/> aktualizuje při Accepted. Confirm popup
+    /// je odpovědnost callsite (VM ho zobrazí před voláním).
     /// </summary>
     /// <param name="newIdfa">Cílová Idfa.</param>
     /// <param name="newNamespace">Cílový DataNamespace.</param>
@@ -58,7 +60,10 @@ public class CompanySwitcher(
         var originalIdfa = mlRest.Idfa;
         var originalNamespace = mlRest.DataNamespace;
 
-        closeAllWindows();
+        // WPF okna shellu volají server přes sdílený MLRest - po swapu Idfa by jejich requesty
+        // (save při zavření, refresh) šly do cizí firmy, proto se zavírají před ním. Legacy
+        // moduly mají vlastní spojení (Idfa v launch args), swap se jich netýká → až po Accepted.
+        closeShellWindows();
         mlRest.Idfa = newIdfa;
         mlRest.DataNamespace = newNamespace;
 
@@ -75,6 +80,10 @@ public class CompanySwitcher(
 
         if (outcome == LicenceAcquireOutcome.Accepted)
         {
+            // Kill legacy modulů PŘED logoutem staré firmy: sdílejí shell GUID s CacheLocks=1,
+            // po zániku jejího ACTIVITY zámku by jim padal každý request na LockExist.
+            closeLegacyModules();
+
             // Uvolnit ACTIVITY zámek staré firmy (per-IdFa) — jinak drží licenční slot té firmy
             // do server timeoutu. Až po Accepted (nová firma má zámek), aby rollback zůstal bezpečný.
             // Logout běží na klonu se starou idfa/namespace — sdílený MLRest (už na nové firmě) se nemění.
