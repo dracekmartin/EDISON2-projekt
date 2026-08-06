@@ -250,10 +250,13 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Které poznámky se tisknou (negativní značky, speciální znaky, textové, poznámky linky)",
-                    "prvek Legenda poznámek → Filtrování"),
-                new("Značky u odjezdů: přeprava kol, místenky, pokračující spoje", "dtto Filtrování"),
-                new("Souhrn bezbariérových spojů (jedna věta místo značky u každého odjezdu)", "dtto Filtrování"),
-                new("Poznámky linky - výluky, tarifní, všeobecné, radiobus", "dtto Filtrování"),
+                    "prvek Legenda poznámek → Co se tiskne"),
+                new("Značky u odjezdů: přeprava kol, místenky, pokračující spoje",
+                    "prvek Legenda poznámek → Značky u odjezdů"),
+                new("Souhrn bezbariérových spojů (jedna věta místo značky u každého odjezdu)",
+                    "dtto Značky u odjezdů"),
+                new("Poznámky linky - výluky, tarifní, všeobecné, radiobus",
+                    "prvek Legenda poznámek → Poznámky linky"),
                 new("Řazení poznámek a směr plnění sloupců legendy", "prvek Legenda poznámek → Rozložení"),
                 new("Dlouhá trasa na užší vývěsku - rozdělit seznam zastávek na oddíly vedle sebe",
                     "prvek Zastávky JŘ → Rozdělit na více oddílů"),

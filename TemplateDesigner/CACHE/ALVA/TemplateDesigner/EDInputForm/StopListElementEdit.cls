@@ -28,23 +28,38 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "#FFE0E0E0", 1, "", 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "#00FFFFFF")
 
-        // ── Zastávky - specifické (značky, směr, zvýraznění) ──────────────
-        d form.AddGroup("stops", "Zastávky - specifické")
+        // ── Co se u zastávky tiskne ───────────────────────────────────────
+        // Skupina „Zastávky - specifické" měla 23 polí v jednom seznamu (rozpočet je ~7), takže
+        // se rozpadla podle toho, čeho se pole týkají. Klíče polí se NEMĚNÍ - jde jen o to, v jaké
+        // skupině se zobrazí, takže uložené šablony ani panel vlastností to nepocítí.
+        d form.AddGroup("stopscontent", "Zastávky - obsah")
         d form.AddBool("ShowStopIndentation", "Odsazení", 1)
-        d form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
+        s f = form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
+        s f.helpText = "Zastávka, kde spoj staví jen na znamení, dostane značku (výchozí „×")"
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
-        d form.AddBool("ShowStopAttributes", "Atributy", 1)
+        s f = form.AddBool("ShowStopAttributes", "Atributy", 1)
+        s f.helpText = "Značky u zastávky z jízdního řádu (např. „S" - tisk stanoviště, zóny)"
         s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/autobus)", 0)
         s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Původní JŘ je netiskl."
+        d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
+
+        // ── Stanoviště a varianty tras ────────────────────────────────────
+        d form.AddGroup("stopsplatform", "Stanoviště a varianty tras")
         s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více stanovišť", $$$FieldTypeList, 0, 1)
         d f.AddListItem("FromRoute", "Z trasy linky"), f.AddListItem("MostFrequent", "Nejčetnější dle spojů"), f.AddListItem("All", "Výčet všech")
         d f.AddListItem("RowPerPlatform", "Řádek pro každé stanoviště")
         s f.helpText = "Když spoje jedou z různých stanovišť zastávky: hodnota z trasy / to s nejvíce spoji / výčet všech dle četnosti / nebo řádek pro každé (časy jen variant daného stanoviště). Platí pro údaj zvolený v parametru sestavy Číslo stanoviště podle a zapněte si k tomu jeho sloupec v tabu Sloupce; řádky vyžadují zapnuté Všechny varianty tras."
-        d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
-        d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
+        s f = form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
+        s f.helpText = "Spoje jedoucí odlišnou trasou dostanou vlastní sloupec časů; vypnuto = jen hlavní trasa"
+
+        // ── Rozdělení dlouhé trasy ────────────────────────────────────────
+        d form.AddGroup("stopsparts", "Rozdělení na oddíly")
         s f = form.AddNumber("PartCount", "Rozdělit na více oddílů", 1, 1, 3)
         s f.helpText = "Seznam se rozřeže na tolik oddílů vedle sebe. Každý oddíl nese celou tabulku znovu (záhlaví i všechny sloupce), jen s další porcí zastávek, takže je prvek nižší. Sloupce se pak musí vejít do šířky jednoho oddílu."
         s f = form.AddDecimal("PartGap", "Mezera mezi oddíly", 3, 0, 50, "mm")
+
+        // ── Značky a šipka směru ──────────────────────────────────────────
+        d form.AddGroup("stopsmarkers", "Značky a šipka směru")
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)
         d f.AddListItem("AfterName", "Za zastávkou"), f.AddListItem("BeforeName", "Před zastávkou")
         // Zapnutí šipky řídí parametr sestavy TISK_SIPKY - jako pole prvku by bylo mrtvé (parametr
@@ -60,6 +75,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("Filled", "Plný"), f.AddListItem("Open", "Otevřený"), f.AddListItem("None", "Bez hrotu")
         s f = form.AddFieldToLastGroup("DirectionArrowLineStyle", "Styl čáry šipky", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
+
+        // ── Aktuální a projeté zastávky ───────────────────────────────────
+        d form.AddGroup("stopshighlight", "Aktuální a projeté zastávky")
         d form.AddBool("CurrentStopUnderline", "Podtržení aktuální zast.", 1)
         d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
         s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")

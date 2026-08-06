@@ -15,6 +15,20 @@ takže se trasa pokračujícího spoje nedohledává.
 Správný uzel určil kolega v #13098; já jsem předtím dvě session stavěl na 32. Kdyby se to nezeptalo,
 značku „pokračuje" by dostaly spoje, které jen čekají na návaznost.
 
+## 2026-08-05 ✅ - `B57` přerostlé skupiny formulářů (zúženo)
+
+**Zadání bloku (nález review 4. 8.):** „Zastávky - specifické" ~23 polí, „Obecné" u dynamické
+tabulky 13 a mřížky odjezdů 10, „Filtrování" legendy 10; `TableEditorDialog` 5 tabů (limit 3);
+chybějící descriptions u `SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU` a celého formuláře mřížky
+odjezdů (žargon „anotace"). Vel. **M**.
+
+**Hotovo zúžené** - detail v changelogu 2026-08-05 (8). Rozpad skupin u tří prvků, žargon „anotace"
+→ „značky u odjezdů" (formulář i panel), 13 vysvětlivek. **Dva body ze zadání vyhozeny s důvodem:**
+karty pevné tabulky (spící prvek, redukci už řeší Fáze B krok 2 - byla to druhá evidence téže práce)
+a popisy parametrů sestavy (parametr nemá pole pro popis → aditivní změna kontraktu, přesunuto
+k `B18` follow-up 3). Rozpad skupiny „Filtrování" shodil bránu z `B58`, která hlídá, že nápověda
+odkazuje na existující místo - srovnána nápověda, wiki seed i test.
+
 ## 2026-08-05 ✅ - `B58` srozumitelnost pro nováčka
 
 **Zadání bloku (nález review 4. 8.; vstup = checklist na proklik):** F1 nápověda nezná featury

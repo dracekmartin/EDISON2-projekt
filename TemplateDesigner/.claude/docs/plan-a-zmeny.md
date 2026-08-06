@@ -83,7 +83,7 @@ přepravující jízdní kola nebo umožňující místenku.
   vysvětlení. Pokud si význam značky vysvětlujete vlastní poznámkou u linky, má přednost ta vaše.
 - **Přestupy na vlak a autobus** mají v legendě vysvětlivku a správné piktogramy.
 
-**Kde to najdete:** u prvku **Legenda poznámek** v sekci Filtrování. Všechna volba „co se na vývěsce
+**Kde to najdete:** u prvku **Legenda poznámek** v sekci **Značky u odjezdů**. Všechna volba „co se na vývěsce
 ukáže" je nově na jednom místě v šabloně - z parametrů sestavy tato nastavení zmizela, takže je
 nemusíte hledat na dvou místech. Ve výchozím stavu jsou nové položky vypnuté, takže se vzhled
 stávajících šablon nemění, dokud si je nezapnete.

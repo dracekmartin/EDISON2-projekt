@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-08-05 (8) - `B57` formuláře prvků se daly přečíst
+
+Nález review 4. 8.: skupiny formulářů přerostly rozpočet (~7 položek) a u mřížky odjezdů nebyla
+k 93 polím **jediná vysvětlivka**. Změřeno před zásahem: „Zastávky - specifické" 23 polí,
+„Filtrování" legendy 11, „Obecné" u dynamické tabulky 11, u mřížky odjezdů 10.
+
+**Rozpad skupin** (klíče polí se NEMĚNÍ - jde jen o zařazení, takže uložené šablony ani panel
+vlastností to nepocítí):
+- **Seznam zastávek**, 23 → pět skupin: „Zastávky - obsah" (6), „Stanoviště a varianty tras" (2),
+  „Rozdělení na oddíly" (2), „Značky a šipka směru" (7), „Aktuální a projeté zastávky" (6).
+- **Mřížka odjezdů**, „Obecné" 10 → „Skupiny dnů" (3) a „Rozměry a mřížka" (5); mezery u značek se
+  přesunuly ke značkám, kam patří.
+- **Legenda poznámek**, „Filtrování" 11 → „Co se tiskne" (3), „Poznámky linky" (4),
+  **„Značky u odjezdů"** (4). Poslední skupina je ta, kterou lidi hledají - do července to byly
+  parametry tisku.
+
+**Žargon pryč:** „anotace" bylo interní slovo. Nově **„značky u odjezdů"** - v poli, ve skupině
+i v panelu vlastností (`Anotace - symboly` → `Značky u odjezdů - symbol`, „Mezera min. ↔ anot." →
+„Mezera minuta ↔ značka"). Property v kódu se nepřejmenovaly, jen popisky.
+
+**Vysvětlivky:** doplněno 13 tam, kde z popisku nešlo poznat, co volba dělá (šířka minuty, oddělovač
+skupin, hodiny u každé skupiny, max skupin, negativní značka, značky u odjezdů, na znamení, atributy,
+všechny varianty tras…). Ne ke všem 93 polím - u „Font" nebo „Tučné" by vysvětlivka byla šum.
+
+**Brána zafungovala sama:** rozpad skupiny „Filtrování" **shodil test** z `B58`, který hlídá, že
+nápověda F1 odkazuje na existující místo. Přesně proto vznikl - srovnány nápověda, wiki seed
+i test na nové názvy skupin.
+
+**Ze zadání vyhozeno:**
+- **`TableEditorDialog` z 5 karet na 3** - pevná tabulka je **spící prvek** (z UI ji nelze vytvořit,
+  dialog žije jen pro otevření starých šablon, `TableElement.cs:123-128`), takže dnes se k němu
+  uživatel nedostane. A redukce toho dialogu **už v roadmapě je** ve Fázi B kroku 2 - byla to druhá
+  evidence téže práce (proti pravidlu 3 roadmapy).
+- **Vysvětlivky u parametrů sestavy** (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) - parametr
+  **žádné pole pro popis nemá** (`TemplateParameter`), takže to není „dopsat text", ale aditivní
+  rozšíření kontraktu na obou stranách. Přesunuto k `B18`, kde se gramatika parametrů stejně otevírá.
+
+**Ověřeno:** 740/740 .NET, 74/74 Caché, nasazení potvrzené voláním `NotesLegendElementEdit.Init`
+(server vrací všechny tři nové skupiny).
+
+
 ## 2026-08-05 (7) - signál „nastavení mění obsah vývěsky" svítil, i když se nic nedělo
 
 Nález Jan 5. 8. při prohlídce `B58`: modrý štítek ve stavovém řádku (*„Sestava: poznámky skryté

@@ -1,13 +1,13 @@
 # Roadmap
 
-> **Stav k 2026-08-04.** **Jen otevřená / akční práce** - co je hotové, patří do
+> **Jen otevřená / akční práce** - co je hotové, patří do
 > [`roadmap-archive.md`](roadmap-archive.md) (průběžný changelog →
 > [`changelog.md`](changelog.md)); **výčet dokončených bloků sem nepiš**, drží ho archiv.
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **Stav k 2026-08-05.** **▶ Další session:** z nálezů review 4. 8. zbývá **B57** (přerostlé
-> formuláře), pak **B18** (deklarativní pravidla EDInputFormu, M). **`B56` odložen** (rozhodnutí
+> **Stav k 2026-08-05.** **▶ Další session:** nálezy review 4. 8. jsou **dojeté** - zbývá **B18**
+> (deklarativní pravidla EDInputFormu, M) a `B60`. **`B56` odložen** (rozhodnutí
 > Jan 5. 8. - žádná předčasná deduplikace, dokud se tvar výstupních dat neustálí; podklad z analýzy
 > leží v Backlogu). **Zákaznická fronta KOVED je dojetá** - `B37` (poznámka „pokračuje do…")
 > hotová 5. 8., takže **#13093 je celý uzavřený**. Verze šla 4. 8. do produkce (body 1, 2, 4).
@@ -42,8 +42,7 @@ připravená odpověď leží v [`customer-requirements §0.4`](customer-require
 
 | # | Blok | Vel. |
 |---|---|---|
-| **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). **Follow-up 2 (review 4. 8.):** rozšířit gramatiku o čtení **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs. `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - mikropravidlo §5.3 dnes plní jen helpTexty. | M |
-| **B57** | **Přerostlé skupiny formulářů + TableEditorDialog** (nález review 4. 8., proti rozpočtu §2 max ~7 položek) - „Zastávky - specifické" ve `StopListElementEdit` má ~23 polí (rozpadá se přirozeně: šipka / aktuální zastávka / projeté / oddíly), „Obecné" u dynamické tabulky 13 a mřížky odjezdů 10, „Filtrování" legendy 10 (dlouhodobě kategorie-checklist §5.3); `TableEditorDialog` má 5 tabů (limit 3). K tomu chybějící descriptions: `SCHOVAT_V_ROZSAHU` (krkolomný label), `ROZTAHNOUT_NA_VYSKU`, celý formulář mřížky odjezdů (žargon „anotace" → „značky u odjezdů"). | M |
+| **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). **Follow-up 2 (review 4. 8.):** rozšířit gramatiku o čtení **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs. `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - mikropravidlo §5.3 dnes plní jen helpTexty. **Follow-up 3 (z `B57`, 5. 8.):** parametr sestavy nemá pole pro **popis** (`TemplateParameter` má jen název/popisek/typ/default/volby/skupinu/viditelnost), takže krkolomné labely (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) nejde vysvětlit. Aditivní klíč na wire + vykreslení jako tooltip - dělat spolu s gramatikou, ne zvlášť kvůli dvěma tooltipům. | M |
 | **B60** | **Název zastávky se v linkovém JŘ tvoří jinak než na vývěsce** (nález analýzy `B56`, 5. 8.) - vývěska respektuje volbu tvaru názvu (#13089) i přepínač „použít upravený název pro MHD" (`ZastavkoveJrAd.cls:2137-2146`), linkový JŘ bere název natvrdo (`LinkovyJrAd.cls:1326-1332`). Táž zastávka se tak může na vývěsce a v linkovém JŘ jmenovat jinak - zákazník to může vidět jako chybu. **Není to dedup, je to chybějící featura v linkovém JŘ**; rozhodnout, jestli se má srovnat (a pak i jak s tím, že linkový JŘ nemá žádný test). Nespěchá - linkový JŘ ještě není u zákazníka. | S-M |
 
 ---

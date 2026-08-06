@@ -69,19 +69,19 @@ public class NovackovaOrientaceTests
 
     /// <summary>
     /// Nápověda tvrdí, že se značky u odjezdů a souhrn bezbariérovosti zapínají v prvku
-    /// Legenda poznámek ve skupině „Filtrování" (dřív to byly parametry tisku). Kdyby se ty
+    /// Legenda poznámek ve skupině „Značky u odjezdů" (dřív to byly parametry tisku). Kdyby se ty
     /// přepínače přesunuly nebo přejmenovaly, nápověda by posílala uživatele na místo, kde nic
     /// není - a to je přesně ta situace, kterou má `B58` řešit, ne vyrobit.
     /// </summary>
     [Fact]
     public void Napoveda_PrepinaceZnacekOpravduJsouVeFiltrovaniLegendy()
     {
-        var filtrovani = FieldsInGroup("NotesLegendElementEdit.cls", "Filtrování");
+        var znacky = FieldsInGroup("NotesLegendElementEdit.cls", "Značky u odjezdů");
 
-        Assert.Contains("ShowZnackaKola", filtrovani);            // přeprava kol
-        Assert.Contains("ShowZnackaMistenky", filtrovani);        // místenky
-        Assert.Contains("ShowPokracujiciSpoje", filtrovani);      // pokračující spoje
-        Assert.Contains("ShowSouhrnBezbarier", filtrovani);       // souhrn bezbariérových spojů
+        Assert.Contains("ShowZnackaKola", znacky);            // přeprava kol
+        Assert.Contains("ShowZnackaMistenky", znacky);        // místenky
+        Assert.Contains("ShowPokracujiciSpoje", znacky);      // pokračující spoje
+        Assert.Contains("ShowSouhrnBezbarier", znacky);       // souhrn bezbariérových spojů
     }
 
     /// <summary>Nápověda posílá k rozdělení dlouhé trasy do prvku Zastávky JŘ - ať tam ta volba je.</summary>

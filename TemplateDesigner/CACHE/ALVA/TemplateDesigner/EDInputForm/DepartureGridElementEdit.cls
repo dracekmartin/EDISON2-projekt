@@ -22,17 +22,26 @@ ClassMethod Init(ByRef sys As %String) As %Status
         $$$FillParams
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
-        // ── Obecné ────────────────────────────────────────────────────────
-        d form.AddGroup("general", "Obecné")
-        d form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
+        // ── Skupiny dnů ───────────────────────────────────────────────────
+        // Původní „Obecné" mělo 10 polí bez jediné vysvětlivky (rozpočet je ~7). Rozpad podle toho,
+        // čeho se pole týkají; klíče polí se NEMĚNÍ, mění se jen zařazení a popisky.
+        d form.AddGroup("groups", "Skupiny dnů")
+        s f = form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
+        s f.helpText = "Nadpis nad každým blokem minut (např. „Pracovní dny", „Sobota")"
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
-        d form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
+        s f = form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
+        s f.helpText = "Sloupec s hodinami se zopakuje u každé skupiny dnů. Vypnuto = jeden sloupec hodin vlevo pro všechny skupiny."
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
-        d form.AddDecimal("MinuteWidth", "Šířka minuty", 5, 3, 15, "mm")
-        d form.AddDecimal("GroupSeparatorWidth", "Oddělovač skupin", 0.5, 0, 5, "mm")
-        d form.AddDecimal("AnotaceGap", "Mezera minuta ↔ anotace", "", 0, 5, "mm")
-        d form.AddDecimal("AnotaceInterGap", "Mezera anotace ↔ anotace", "", 0, 5, "mm")
-        d form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
+        s f.helpText = "Kolik skupin dnů se vejde do prvku; další se nevykreslí. 0 = bez omezení."
+
+        // ── Rozměry a mřížka ──────────────────────────────────────────────
+        d form.AddGroup("layout", "Rozměry a mřížka")
+        s f = form.AddDecimal("MinuteWidth", "Šířka minuty", 5, 3, 15, "mm")
+        s f.helpText = "Šířka jednoho políčka s minutou - určuje, kolik minut se vejde na řádek"
+        s f = form.AddDecimal("GroupSeparatorWidth", "Oddělovač skupin", 0.5, 0, 5, "mm")
+        s f.helpText = "Mezera mezi bloky jednotlivých skupin dnů. 0 = bez mezery."
+        s f = form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
+        s f.helpText = "Vodorovná mezera mezi jednotlivými odjezdy v řádku. Prázdné = podle šířky minuty."
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         // Časová osa (rozsah hodin) i „Roztáhnout na výšku" jsou parametry sestavy
@@ -57,13 +66,22 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ", 1)
 
-        // ── Odjezdy - specifické (anotace = horní indexy/značky u minut) ──
-        d form.AddGroup("departure", "Odjezdy - specifické")
-        d form.AddBool("ShowAnotace", "Zobrazit anotace", 1)
+        // ── Značky u odjezdů ──────────────────────────────────────────────
+        // „Anotace" bylo interní slovo - uživatel tomu říká značky u odjezdů (písmena a symboly
+        // u minuty, které vysvětluje legenda poznámek). Klíče polí zůstaly, přejmenované jsou
+        // popisky; tytéž popisky nese i panel vlastností (`ux-conventions §8`).
+        d form.AddGroup("departure", "Značky u odjezdů")
+        s f = form.AddBool("ShowAnotace", "Značky u odjezdů", 1)
+        s f.helpText = "Písmena a symboly u minuty (nízkopodlažní spoj, kolo, jede jen v určité dny…). Co se z nich tiskne, řídí prvek Legenda poznámek - ta je i vysvětluje."
+        s f = form.AddDecimal("AnotaceGap", "Mezera minuta ↔ značka", "", 0, 5, "mm")
+        s f.helpText = "Odsazení značky od minuty. Prázdné = automaticky podle velikosti písma."
+        s f = form.AddDecimal("AnotaceInterGap", "Mezera mezi značkami", "", 0, 5, "mm")
+        s f.helpText = "Odsazení mezi dvěma značkami u téhož odjezdu"
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ")
         // Negativní značka = symbol vykreslený inverzně (znak na plné ploše) - vlastní dvojice barev.
         s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Pozadí negativní značky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        s f.helpText = "Negativní značka = znak vykreslený inverzně, tedy světlý na plné barevné ploše"
         s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva negativní značky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ")

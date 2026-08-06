@@ -65,11 +65,18 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "DleTypu"
         d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
 
-        // ── Skupina "Filtrování" ──────────────────────────────────────────
-        d form.AddGroup("filter", "Filtrování")
+        // ── Co blok tiskne ────────────────────────────────────────────────
+        // Skupina „Filtrování" míchala tři různé věci a měla 11 položek (rozpočet ~7): které
+        // poznámky blok bere, co si bere z poznámek zadaných u linky, a značky u odjezdů (ty
+        // uživatelé hledají nejčastěji, protože do července byly parametrem tisku). Klíče polí
+        // se NEMĚNÍ - rozpad je jen vizuální.
+        d form.AddGroup("filter", "Co se tiskne")
         d form.AddBool("ShowNegativniZnacky", "Negativní značky", 1)
         d form.AddBool("ShowSpecialniZnaky", "Speciální znaky", 1)
         d form.AddBool("ShowTextovePoznamky", "Textové poznámky", 1)
+
+        // ── Poznámky zadané u linky ───────────────────────────────────────
+        d form.AddGroup("filterline", "Poznámky linky")
         s f = form.AddFieldToLastGroup("Vyluky", "Poznámky linky - výluky", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Vcetne", "Včetně"), f.AddListItem("Bez", "Bez výluk"), f.AddListItem("Jen", "Jen výluky")
         s f.helpText = "Poznámky linky, které začínají ""Výluka"", lze mít v samostatném bloku: v jednom bloku zvolte Bez výluk a ve druhém Jen výluky."
@@ -79,6 +86,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Které poznámky zadané u linky blok bere. Vypnutím se schová jen tato kategorie - volba Textové poznámky výše vypne i ruční komentáře a rozdíly tras."
         d form.AddBool("ShowPoznamkyLinkyVseobecne", "Poznámky linky - všeobecné", 0)
         d form.AddBool("ShowPoznamkyLinkyRadiobus", "Poznámky linky - radiobus", 0)
+
+        // ── Značky u odjezdů ──────────────────────────────────────────────
+        // Do července to byly parametry tisku, takže tady je lidi hledají. Každý přepínač zapíná
+        // značku u minuty I její vysvětlivku - nemůže vzniknout značka, kterou legenda nevysvětlí.
+        d form.AddGroup("filtermarks", "Značky u odjezdů")
         s fBez = form.AddBool("ShowSouhrnBezbarier", "Souhrn bezbariérových spojů", 1)
         s fBez.helpText = "Souhrnná vysvětlivka ""všechny spoje mají bezbariérově přístupné vozidlo"" místo značky u každého odjezdu."
         s fKola = form.AddBool("ShowZnackaKola", "Přeprava kol u odjezdů", 0)
