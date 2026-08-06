@@ -54,6 +54,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   menu nepřejde. `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
+- **Spuštěné moduly** se značí cestou agendou (`BuildModulePaths`, klíč `exe|forma|param`) -
+  dvě agendy mají běžně shodný název. Fallback (modul mimo strom, WPF okno) = titulek bez
+  koncového `[IDFa]`; **titulky oken si `[IDFa]` naopak drží** (přidává ho `WindowNavigator`).
 - Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
   nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají).
 - **Status bar** = segmenty ikona + hodnota, technika (namespace, port, login, Mlp) jen

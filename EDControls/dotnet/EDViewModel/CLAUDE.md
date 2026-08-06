@@ -62,7 +62,10 @@ AvalonDocku) ViewModel nemá, takže vypadne bez druhé attached property. Guard
 - `ShowDialog` ztmavuje ownera přes `WindowDimmer` (refcount), **ne** `IsEnabled=false`
   — to by srazilo controly na 0.5 opacity.
 - Legacy launch: sentinel `"EDISONMAIN2"` + 12 polí (server…mlp, formFqn, shellGuid,
-  inputParam, agendaPath, licensedElements) — viz `BuildLauncherArguments`.
+  inputParam, assemblyPath, licensedElements) - viz `BuildLauncherArguments`.
+- `GetActiveModules` vrací i `ExeName`/`FormFqn`/`InputParam` - `DisplayName` legacy modulu je
+  doslovný `MainWindowTitle` (agenda si ho formátuje sama), takže rozlišit dva stejně pojmenované
+  moduly umí až konzument přes tuhle identitu.
 - Modeless `ShowLegacy`/`ShowLegacyAsync` dedupují: běží-li už proces se stejným
   `exe+forma+inputParam`, jen přenesou focus (`SetForegroundWindow`), nový nespustí
   (`TryFocusExistingLegacy`). Dialogové/blokující varianty ne — ztmavují shell, druhý

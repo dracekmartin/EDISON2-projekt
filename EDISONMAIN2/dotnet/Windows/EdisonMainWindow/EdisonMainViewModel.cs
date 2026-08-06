@@ -1409,7 +1409,63 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void RefreshRunningModules()
         {
             var modules = _getActiveModules();
-            RunningModules = modules.Count == 0 ? [_emptyPlaceholder] : modules;
+            if (modules.Count == 0) { RunningModules = [_emptyPlaceholder]; return; }
+
+            var paths = BuildModulePaths(_sourceTrees.Select(t => t.Tree));
+            RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, paths) })];
+        }
+
+        /// <summary>
+        /// Mapa <c>exe|forma|param</c> → cesta agendou („Mzdy a personalistika › Zaměstnanci").
+        /// Klíč je záměrně tentýž, kterým <c>WindowNavigator</c> deduplikuje běžící procesy.
+        /// </summary>
+        internal static Dictionary<string, string> BuildModulePaths(IEnumerable<IEnumerable<IModule>> trees)
+        {
+            var paths = new Dictionary<string, string>();
+            foreach (var tree in trees)
+                foreach (var root in tree)
+                    Collect(root, "");
+            return paths;
+
+            void Collect(IModule module, string prefix)
+            {
+                switch (module)
+                {
+                    case ModuleFamily family:
+                        var branch = prefix.Length == 0 ? family.DisplayedName : prefix + PathSeparator + family.DisplayedName;
+                        foreach (var child in family.NestedModules) Collect(child, branch);
+                        break;
+                    case ExecutableModule exe:
+                        // První nález vyhrává - týž modul může být ve stromě víckrát (např. i v Oblíbených).
+                        paths.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
+                            prefix.Length == 0 ? exe.DisplayedName : prefix + PathSeparator + exe.DisplayedName);
+                        break;
+                }
+            }
+        }
+
+        private const string PathSeparator = " › ";
+
+        private static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
+
+        /// <summary>
+        /// Label do menu „Spuštěné moduly": cesta agendou, když modul ve stromě najdeme, jinak
+        /// vlastní titulek okna bez koncového <c>[IDFa]</c>. Dvě agendy mají běžně shodný název
+        /// (Zaměstnanci z MZDY2 vs. z Požadavků na volno) a firma je v položce zbytečná - při
+        /// přepnutí firmy se otevřená okna zavírají, takže jsou vždy z aktuální.
+        /// </summary>
+        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, string> paths) =>
+            paths.TryGetValue(ModuleKey(info.ExeName, info.FormFqn, info.InputParam), out var path)
+                ? path
+                : StripIdfaSuffix(info.DisplayName);
+
+        /// <summary>Odřízne jeden koncový <c>[...]</c> (suffix s firmou). Hranatá závorka uvnitř názvu zůstane.</summary>
+        internal static string StripIdfaSuffix(string title)
+        {
+            var trimmed = title.TrimEnd();
+            if (!trimmed.EndsWith(']')) return title;
+            var open = trimmed.LastIndexOf('[');
+            return open <= 0 ? title : trimmed[..open].TrimEnd();
         }
 
         private void NotYetImplemented()

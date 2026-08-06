@@ -224,7 +224,12 @@ public class WindowNavigator : IWindowNavigator
                     if (e.Process.HasExited) return;
                     var hwnd = e.Process.MainWindowHandle;
                     if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
-                }));
+                })
+            {
+                ExeName = e.ExeName,
+                FormFqn = e.FormFqn,
+                InputParam = e.InputParam,
+            });
 
         var wpf = Application.Current.Windows
             .OfType<Window>()
