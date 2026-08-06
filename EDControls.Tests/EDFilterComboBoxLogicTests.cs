@@ -6,6 +6,18 @@ namespace EDControls.Tests;
 /// <summary>Testy čisté logiky EDFilterComboBox: zobrazovaný řetězec + filtrovací predikát.</summary>
 public class EDFilterComboBoxLogicTests
 {
+    [Theory]
+    [InlineData(3, -1, 1, 0)]     // "nic nevybráno" + dolů → první
+    [InlineData(3, -1, -1, 2)]    // "nic nevybráno" + nahoru → poslední
+    [InlineData(3, 0, 1, 1)]
+    [InlineData(3, 2, 1, 2)]      // na konci stojí (bez wrapování)
+    [InlineData(3, 0, -1, 0)]     // na začátku stojí
+    [InlineData(1, 0, 1, 0)]
+    [InlineData(0, -1, 1, -1)]    // prázdný seznam
+    [InlineData(0, 0, -1, -1)]
+    public void NextIndex_ClampsWithoutWrapping(int count, int current, int delta, int expected) =>
+        Assert.Equal(expected, EDFilterComboBoxLogic.NextIndex(count, current, delta));
+
     [Fact]
     public void Display_KeyAndLabel_JoinsWithSeparator()
     {

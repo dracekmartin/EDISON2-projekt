@@ -32,6 +32,19 @@ internal static class EDFilterComboBoxLogic
     }
 
     /// <summary>
+    /// Cílový index po stisku šipky. Bez wrapování (na krajích stojí - konzistentní se stock
+    /// ComboBoxem), z „nic nevybráno" (-1) jde dolů na první a nahoru na poslední položku.
+    /// Prázdný seznam vrací -1.
+    /// </summary>
+    internal static int NextIndex(int count, int current, int delta)
+    {
+        if (count <= 0) return -1;
+        if (current < 0) return delta > 0 ? 0 : count - 1;
+        var next = current + delta;
+        return next < 0 ? 0 : next >= count ? count - 1 : next;
+    }
+
+    /// <summary>
     /// Dohledá položku pro napsaný text při Enteru (bez výběru z dropdownu): exaktní shoda na Key,
     /// pak na Display/Label, nakonec jediný kandidát filtru. Vše normalizovaně (case + diakritika).
     /// Nejednoznačný nebo neznámý text → null (volající revertuje jako dřív).

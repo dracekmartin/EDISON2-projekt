@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using EDControls;
 using EDCombo = EDControls.EDFilterComboBox.EDFilterComboBox;
 
@@ -112,23 +113,120 @@ public class EDFilterComboBoxCommitTests
         RunSta(() =>
         {
             var source = new KeyHolder { Value = "A" };
-            var combo = new EDCombo { StrictSelection = true };
-            combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
-            BindingOperations.SetBinding(combo, EDCombo.SelectedKeyProperty,
-                new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
+            var combo = Bound(source);
 
-            // Šipka vybere B: SelectionChanged zachytí pick a WPF přepíše Text na jeho display.
-            combo.SelectedItem = combo.Items.OfType<ComboBoxItem>().Single(i => (string?)i.Tag == "B");
+            // Šipka dolů: z kotvy na aktuálním výběru (A) se posune na B a commituje Enterem.
+            combo.HandleNavigationKey(Key.Down);
             Assert.Equal("B - Beta", combo.Text);
 
-            // Enter: resolve se přeskočí (Text == display picku) a commit z DropDownClosed
-            // fixuje pick zachycený v SelectionChanged.
-            Invoke(combo, "CommitTypedTextOnEnter", []);
-            Invoke(combo, "CommitSelection", []);
+            combo.HandleNavigationKey(Key.Enter);
 
             Assert.Equal("B", source.Value);
         });
     }
+
+    // HD 13132/3: Enter po šipce se ZAVŘENÝM dropdownem propadal early-returnem
+    // (Text už byl display picku) a commit se nikdy nezavolal - LostKeyboardFocus pak revertnul.
+    [Fact]
+    public void Enter_PoSipceSeZavrenymDropdownem_Commituje()
+    {
+        RunSta(() =>
+        {
+            var source = new KeyHolder { Value = "A" };
+            var combo = Bound(source);
+
+            // Přesně to, co udělá WPF šipkou nad zavřeným dropdownem: změní SelectedItem.
+            combo.SelectedItem = combo.Items.OfType<ComboBoxItem>().Single(i => (string?)i.Tag == "B");
+            Assert.False(combo.IsDropDownOpen);
+
+            combo.HandleNavigationKey(Key.Enter);
+
+            Assert.Equal("B", source.Value);
+        });
+    }
+
+    // Pozn.: IsDropDownOpen tu nelze ověřit - ComboBox ho coercuje na false, dokud control není
+    // naloadovaný v okně. Testujeme tedy posun výběru, který je na otevření nezávislý.
+    [Fact]
+    public void SipkaDolu_ZacneUAktualnihoVyberu()
+    {
+        RunSta(() =>
+        {
+            var combo = Bound(new KeyHolder { Value = "A" });
+
+            combo.HandleNavigationKey(Key.Down);
+
+            Assert.Equal("B", SelectedTag(combo));
+        });
+    }
+
+    [Fact]
+    public void SipkaDolu_BezVyberu_VezmePrvniPolozku()
+    {
+        RunSta(() =>
+        {
+            var combo = Bound(new KeyHolder());   // žádný SelectedKey
+
+            combo.HandleNavigationKey(Key.Down);
+
+            Assert.Equal("A", SelectedTag(combo));
+        });
+    }
+
+    [Fact]
+    public void Sipky_NaKrajichStoji()
+    {
+        RunSta(() =>
+        {
+            var combo = Bound(new KeyHolder { Value = "A" });
+
+            combo.HandleNavigationKey(Key.Up);      // z kotvy A nahoru → stojí na A
+            Assert.Equal("A", SelectedTag(combo));
+
+            combo.HandleNavigationKey(Key.Down);    // A → B (poslední)
+            combo.HandleNavigationKey(Key.Down);    // stojí na B
+            Assert.Equal("B", SelectedTag(combo));
+        });
+    }
+
+    [Fact]
+    public void Escape_ZahodiRozpracovanyVyberARevertneDisplay()
+    {
+        RunSta(() =>
+        {
+            var source = new KeyHolder { Value = "A" };
+            var combo = Bound(source);
+            combo.HandleNavigationKey(Key.Down);    // rozpracovaný výběr B
+
+            // Esc klávesu záměrně nespotřebuje (Storno v dialogu musí fungovat dál).
+            Assert.False(combo.HandleNavigationKey(Key.Escape));
+
+            Assert.Equal("A", source.Value);        // zdroj beze změny
+            Assert.Equal("A - Alfa", combo.Text);   // display revertnul
+        });
+    }
+
+    // Volný režim nesmí Enter polykat - EDInputForm ho používá na navigaci mezi poli.
+    [Fact]
+    public void VolnyRezim_EnterNechaKlavesuProbublat()
+    {
+        RunSta(() =>
+        {
+            var combo = new EDCombo { Suggestions = [new ListItem("A", "Alfa")] };
+            Assert.False(combo.HandleNavigationKey(Key.Enter));
+        });
+    }
+
+    private static EDCombo Bound(KeyHolder source)
+    {
+        var combo = new EDCombo { StrictSelection = true };
+        combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
+        BindingOperations.SetBinding(combo, EDCombo.SelectedKeyProperty,
+            new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
+        return combo;
+    }
+
+    private static string? SelectedTag(EDCombo combo) => (combo.SelectedItem as ComboBoxItem)?.Tag as string;
 
     private static void Invoke(EDCombo combo, string method, object?[] args) =>
         typeof(EDCombo).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!
