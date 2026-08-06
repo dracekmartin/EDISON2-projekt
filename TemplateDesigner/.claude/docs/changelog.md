@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-06 (2) - 🧹 průchod roadmapou: pět neplatných tvrzení pryč
+
+`B61` (asynchronní export náhledu) **odstraněn** - rozhodnutí Jan, není to teď priorita. Poučení
+o snapshotu ale zůstalo **v kódu u té metody** (`PrintDialogViewModel.ExportPdf`), protože tam se
+na něj někdo podívá; roadmapa na to není potřeba. #13150 se navíc týká **starého tisku**, ne našeho.
+
+**Co bylo v roadmapě napsané a neplatilo** (ověřeno v kódu, ne z paměti):
+
+- **Fáze B krok 1** slibovala „opravy nálezů: `Clone()` zapomíná `SummaryRows`, `RowVM.ToModel()`
+  zahazuje per-cell `Format`+`Style`". **Obojí je dávno opravené** - `TableElement.Clone()` kopíruje
+  `SummaryRows` (ř. 716) a `CellVM.ToModel()` nese `Format` i `Style` (ř. 205-210). Někdo by na to
+  plánoval čas, který není potřeba.
+- **`B14` tvrdil**, že „`CasHodnota` bere `"|"` jinak v `KnizniJrAd` vs `ZastavkoveJrAd`".
+  **Neplatí** - obě verze jsou funkčně identické, lišil se jen koncový komentář (nález analýzy `B56`).
+- **Stale názvy tříd:** `KnizniJrAd`/`KnizniJrMhd` se jmenují `LinkovyJrAd`/`LinkovyJrMhd` (od migrace
+  šablon 1.2.0). Roadmapa je vedla pod starým jménem na dvou místech.
+- **`B14` odhad objemu duplikace** doplněn korekcí z analýzy: ne „~400-500 řádků", ale z 27 stejně
+  pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků).
+
+**Sekce Import PDF, AI integrace, Fáze C+D/E/F a provozní čtyřka prošly bez nálezu** - jejich tvrzení
+odpovídají stavu kódu.
+
+**Nedotaženo:** jestli KOVED odpověděl na dotaz k označníku (posláno 3. 8. k #13048) - přes API se mi
+tiket nepodařilo dohledat, je to na Janovi. Nic to neblokuje.
+
+
 ## 2026-08-06 (1) - 🧹 sekce zastávkového JŘ srovnána, dva čerstvé nálezy z helpdesku
 
 **Sekce byla rozbitá** po dokončení `B37`: zůstal v ní celý **implementační plán hotové featury**
