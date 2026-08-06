@@ -6,6 +6,10 @@ update flow: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md).
 
 Bootstrap orchestruje `Startup/AppBootstrapper` (template method: setup wizard → prefs →
 login → MLRest → firma → VerifyLic → module tree → update check → font → shell okno).
+Login okno (jen Release dialog path) zůstává po OK otevřené jako progress podklad přes
+post-login kroky a zavírá se až na shell `ContentRendered`; `HandOffLoginWindow` musí
+přiřadit `Application.MainWindow` na shell **před** restore `OnMainWindowClose` — implicitní
+MainWindow je login okno a špatné pořadí buď zabije app, nebo nechá proces bez konce.
 `Services/` složka neexistuje záměrně — single-consumer infrastruktura je ko-lokovaná
 se svým consumerem, cross-cutting věci jdou do `EDControls`.
 

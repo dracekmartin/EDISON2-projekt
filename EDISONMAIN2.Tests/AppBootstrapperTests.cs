@@ -132,6 +132,15 @@ public class AppBootstrapperTests
             return null!;
         }
 
+        public bool HandOffCalled { get; private set; }
+        public bool ShellBuiltBeforeHandOff { get; private set; }
+
+        protected override void HandOffLoginWindow(EdisonMainWindow wnd)
+        {
+            HandOffCalled = true;
+            ShellBuiltBeforeHandOff = BuildShellCalled;
+        }
+
         protected override void Shutdown() => ShutdownCalled = true;
     }
 
@@ -396,6 +405,49 @@ public class AppBootstrapperTests
         Assert.True(b.AcquireSessionCalled);
         Assert.NotNull(b.SavedIdfa);
         Assert.True(b.WireActivityCalled);
+    }
+
+    // ---------- Handoff login okna ----------
+
+    [Fact]
+    public void Run_Success_CallsHandOffAfterBuildShell()
+    {
+        var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Accepted };
+
+        b.Run();
+
+        Assert.True(b.HandOffCalled);
+        Assert.True(b.ShellBuiltBeforeHandOff);   // handoff váže ContentRendered na hotové okno
+    }
+
+    [Fact]
+    public void Run_LoginCancelled_DoesNotHandOff()
+    {
+        var b = new TestableBootstrapper { LoginSucceeds = false };
+
+        b.Run();
+
+        Assert.False(b.HandOffCalled);
+    }
+
+    [Fact]
+    public void Run_LicenceRefused_DoesNotHandOff()
+    {
+        var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Refused };
+
+        b.Run();
+
+        Assert.False(b.HandOffCalled);
+    }
+
+    [Fact]
+    public void Run_UpdateTriggered_DoesNotHandOff()
+    {
+        var b = new TestableBootstrapper { UpdateTriggered = true };
+
+        b.Run();
+
+        Assert.False(b.HandOffCalled);
     }
 
     // ---------- SwitchUser ----------

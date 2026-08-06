@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDSupportPanel;
@@ -12,11 +13,18 @@ namespace EDISONMAIN2.Windows.LoginWindow
     {
         private readonly MLRest _mlRest;
         private readonly string _initialPassword;
+        private readonly bool _keepOpenOnSuccess;
+
+        // Startup progress fáze - okno zůstává otevřené pod dobíhajícím bootstrapem, nesmí ho zavřít uživatel.
+        private bool _inProgress;
 
         // WebView2 widgety novinek/wiki/školení — pre-login (bez session).
         private readonly List<FontZoomWebView> _widgets = new();
 
         public LoginResult? Result { get; private set; }
+
+        /// <summary>Úspěšný login v režimu <c>keepOpenOnSuccess</c> - caller ukončí čekací frame a pokračuje v bootstrapu.</summary>
+        public event EventHandler? LoginSucceeded;
 
         /// <summary>Uživatel chce zapamatovat heslo (checkbox). Čte caller po úspěšném loginu.</summary>
         public bool RememberPassword => RememberBox.IsChecked == true;
@@ -28,11 +36,16 @@ namespace EDISONMAIN2.Windows.LoginWindow
         /// ať se příště automaticky nevyplní znovu a login zbytečně nepadá.</summary>
         public bool RememberedPasswordRejected { get; private set; }
 
-        public LoginWindow(MLRest mlRest, string? initialUsername = null, string? initialPassword = null, bool showRemember = true)
+        public LoginWindow(MLRest mlRest, string? initialUsername = null, string? initialPassword = null,
+                           bool showRemember = true, bool keepOpenOnSuccess = false)
         {
             _mlRest = mlRest;
             _initialPassword = initialPassword ?? "";
+            _keepOpenOnSuccess = keepOpenOnSuccess;
             InitializeComponent();
+
+            // Alt+F4 / X během progress fáze nesmí okno shodit; Application.Shutdown cancel ignoruje.
+            Closing += (_, e) => e.Cancel = _inProgress;
 
             // Reauth (přihlásit jiného uživatele) session nepersistuje → checkbox skrytý (byl by mrtvý).
             if (!showRemember)
@@ -96,7 +109,15 @@ namespace EDISONMAIN2.Windows.LoginWindow
             {
                 ErrorText.Visibility = Visibility.Collapsed;
                 Result = UserAuthenticator.Login(new MLRestAdapter(_mlRest), UsernameBox.Text, PasswordBox.Password);
-                DialogResult = true;
+                if (_keepOpenOnSuccess)
+                {
+                    EnterProgressState();
+                    LoginSucceeded?.Invoke(this, EventArgs.Empty);
+                }
+                else
+                {
+                    DialogResult = true;
+                }
             }
             catch (LoginException ex)
             {
@@ -112,6 +133,41 @@ namespace EDISONMAIN2.Windows.LoginWindow
                     PasswordBox.Focus();
                 }
             }
+        }
+
+        // IsCancel zavírá jen modální okno (ShowDialog) - startup režim běží přes Show, zavřít musíme sami.
+        private void CancelBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (_keepOpenOnSuccess && !_inProgress)
+                Close();
+        }
+
+        private void EnterProgressState()
+        {
+            _inProgress = true;
+            UsernameBox.IsEnabled = false;
+            PasswordBox.IsEnabled = false;
+            RememberBox.IsEnabled = false;
+            OkBtn.IsEnabled = false;
+            CancelBtn.IsEnabled = false;
+            // Plně kvalifikované — UseWindowsForms dělá z Cursors ambiguitu s WinForms.
+            Cursor = System.Windows.Input.Cursors.Wait;
+            ShowProgress("Přihlašování…");
+        }
+
+        /// <summary>Aktualizuje progress text startupu a hned ho vykreslí - další bootstrap krok UI thread zablokuje.</summary>
+        public void ShowProgress(string message)
+        {
+            ProgressText.Text = message;
+            ProgressText.Visibility = Visibility.Visible;
+            Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+        }
+
+        /// <summary>Zavření bootstrapperem po vykreslení shellu - jediná cesta ven z progress fáze.</summary>
+        public void CloseAfterHandoff()
+        {
+            _inProgress = false;
+            Close();
         }
     }
 }

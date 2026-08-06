@@ -105,6 +105,7 @@ public class AppBootstrapper
             return null;
         }
 
+        _startupLoginWindow?.ShowProgress("Ověřuji licenci…");
         var session = EstablishSession(
             new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
             login, services);
@@ -122,13 +123,32 @@ public class AppBootstrapper
         WireActivityFailedHandler(session, services);
 
         // Až po SavePostLoginState — LastIdfa musí být uložená i když teď shell skončí updatem.
+        _startupLoginWindow?.ShowProgress("Kontroluji aktualizace…");
         if (CheckForUpdate(session, services))
         {
             Shutdown();
             return null;
         }
 
-        return BuildShellWindow(prep, session, licence, services, nav, popup, prefs);
+        _startupLoginWindow?.ShowProgress("Spouštím aplikaci…");
+        var wnd = BuildShellWindow(prep, session, licence, services, nav, popup, prefs);
+        HandOffLoginWindow(wnd);
+        return wnd;
+    }
+
+    /// <summary>
+    /// Předání role hlavního okna z login okna na shell. MainWindow se musí přiřadit explicitně —
+    /// implicitní WPF pravidlo ho dalo login oknu (první zkonstruované) a dokud je otevřené,
+    /// shell by roli nezískal; pořadí (MainWindow → OnMainWindowClose) chrání před shutdownem
+    /// při pozdějším zavření login okna. To se zavře až po prvním vykreslení shellu, aby
+    /// v přechodu nebyla vidět plocha.
+    /// </summary>
+    protected virtual void HandOffLoginWindow(EdisonMainWindow wnd)
+    {
+        if (_startupLoginWindow is not { } loginWindow) return;
+        _application.MainWindow = wnd;
+        _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
+        wnd.ContentRendered += (_, _) => loginWindow.CloseAfterHandoff();
     }
 
     /// <summary>
@@ -172,6 +192,10 @@ public class AppBootstrapper
 
     /// <summary>Nastaví <see cref="BuildShellWindow"/> — viz <c>ShutdownForced</c>.</summary>
     private Action? _suppressShellCloseConfirm;
+
+    /// <summary>Login okno držené otevřené přes post-login kroky (jen Release dialog path);
+    /// zavře ho <see cref="HandOffLoginWindow"/> po vykreslení shellu.</summary>
+    private Windows.LoginWindow.LoginWindow? _startupLoginWindow = null;   // = null kvůli CS0649 v DEBUG (přiřazení je v #else větvi)
 
     /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest).</summary>
     protected record PreLoginContext(
@@ -254,9 +278,12 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Zobrazí login dialog (release) nebo vrátí hardcoded dev login (DEBUG). Po dobu
-    /// dialogu přepne <c>ShutdownMode</c> na <c>OnExplicitShutdown</c> aby zavření dialogu
-    /// nevypnulo aplikaci (žádné jiné okno ještě není otevřené).
+    /// Zobrazí login okno (release) nebo vrátí hardcoded dev login (DEBUG). Přepne
+    /// <c>ShutdownMode</c> na <c>OnExplicitShutdown</c> aby zavření okna nevypnulo aplikaci;
+    /// restore dělá až <see cref="HandOffLoginWindow"/>. Okno po úspěchu zůstává otevřené
+    /// (progress podklad pod dobíhajícím bootstrapem) - čekání řeší
+    /// <see cref="System.Windows.Threading.DispatcherFrame"/> místo ShowDialog, aby návrat
+    /// nevyžadoval zavření okna.
     /// </summary>
     protected virtual bool TryLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
     {
@@ -265,36 +292,39 @@ public class AppBootstrapper
         return true;
 #else
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-        try
-        {
-            // Zapamatované heslo předvyplní jen když patří k naposledy přihlášenému jménu (DPAPI).
-            string initialPassword = PasswordProtector.Unprotect(prefs.RememberedPassword, prefs.LastLoginName ?? "") ?? "";
 
-            var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, prefs.LastLoginName, initialPassword);
-            if (loginWindow.ShowDialog() != true)
+        // Zapamatované heslo předvyplní jen když patří k naposledy přihlášenému jménu (DPAPI).
+        string initialPassword = PasswordProtector.Unprotect(prefs.RememberedPassword, prefs.LastLoginName ?? "") ?? "";
+
+        var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, prefs.LastLoginName, initialPassword,
+                                                              keepOpenOnSuccess: true);
+        var frame = new System.Windows.Threading.DispatcherFrame();
+        loginWindow.LoginSucceeded += (_, _) => frame.Continue = false;
+        loginWindow.Closed += (_, _) => frame.Continue = false;
+        loginWindow.Show();
+        System.Windows.Threading.Dispatcher.PushFrame(frame);
+
+        if (loginWindow.Result == null)
+        {
+            // Zrušeno po odmítnutí zapamatovaného hesla → zapomeň ho (jinak příště zase auto-selže).
+            if (loginWindow.RememberedPasswordRejected)
             {
-                // Zrušeno po odmítnutí zapamatovaného hesla → zapomeň ho (jinak příště zase auto-selže).
-                if (loginWindow.RememberedPasswordRejected)
-                {
-                    prefs.RememberedPassword = null;
-                    prefs.Save();
-                }
-                login = null!;
-                return false;
+                prefs.RememberedPassword = null;
+                prefs.Save();
             }
-            login = loginWindow.Result!;
+            login = null!;
+            // ShutdownMode se nerestoruje - Run() hned volá explicitní Shutdown().
+            return false;
+        }
+        login = loginWindow.Result;
+        _startupLoginWindow = loginWindow;
 
-            // Ulož / zapomeň. Při vynucené změně hesla (feature #17) heslo neukládej — za chvíli
-            // se změní a zapamatované by bylo neplatné. Persist proběhne v SavePostLoginState.
-            prefs.RememberedPassword = loginWindow.RememberPassword && !login.ChangePasswordNeeded
-                ? PasswordProtector.Protect(login.UserName, loginWindow.EnteredPassword)
-                : null;
-            return true;
-        }
-        finally
-        {
-            _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        }
+        // Ulož / zapomeň. Při vynucené změně hesla (feature #17) heslo neukládej — za chvíli
+        // se změní a zapamatované by bylo neplatné. Persist proběhne v SavePostLoginState.
+        prefs.RememberedPassword = loginWindow.RememberPassword && !login.ChangePasswordNeeded
+            ? PasswordProtector.Protect(login.UserName, loginWindow.EnteredPassword)
+            : null;
+        return true;
 #endif
     }
 
@@ -305,15 +335,18 @@ public class AppBootstrapper
     /// </summary>
     protected virtual bool ForcePasswordChange(MLRest loginRest, string username)
     {
+        // Restore na předchozí mode, ne hardcoded — po dialog loginu je OnExplicitShutdown v platnosti až do handoffu.
+        var previousMode = _application.ShutdownMode;
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
         {
             return new Windows.LoginWindow.ChangePasswordWindow(new MLRestAdapter(loginRest), username)
+                { Owner = _startupLoginWindow }
                 .ShowDialog() == true;
         }
         finally
         {
-            _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
+            _application.ShutdownMode = previousMode;
         }
     }
 
