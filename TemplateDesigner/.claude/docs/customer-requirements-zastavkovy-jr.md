@@ -104,7 +104,7 @@ polovina 2026 - viz §H). Zavírat po ověření dané featury v releasu TD + od
 | TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | ✅ **HOTOVO 2026-07-10** (AD J-věta #3 + MHD Oznacnik; StopList sloupec „Nástupiště" opt-in). Ověřeno 0320680. |
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | ✅ **HOTOVO 2026-07-10** - pevná `DataRowHeight` se zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList + DepartureGrid). |
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🟠 · ⚠️ **(min) „cíl per směr" HOTOVO** dnešním `POPIS_SMER`=konečná (A-AD); zbývá střední (per zast.×směr) + ideál (DB cílů) |
-| TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | 🟠 nový datový model |
+| TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | ✅ **HOTOVO 2026-08-03** (#12997): JŘ umí víc barev na linku (Petr), agenda je vydává jako `BARVA_LINKY` / `BARVA_LINKY_2` a jdou zapsat do každého barevného pole šablony. TRANSDEV jede AD (§A6), takže i jejich MHD Trenčín je pokryté. |
 | TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | S–M | 🟡 **zčásti vyřešeno 2026-07-27** (#13048 bod 5): varianty dle sledu zastávek (málo sloupců) + parametr „Řazení variant tras: Stabilní". Zbývá jen případný per-písmeno výběr - až TRANSDEV potvrdí nad novým chováním |
 | TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | ? | ⏸️ **park - premisa nejasná** (viz níže §TR/8): naše časy jsou kumulativní → 0-segment se tiskne jako opakované číslo (1,1), ne „0"; per-segment sloupec TD nemá. Ověřit u TRANSDEV, který sloupec (legacy „Průběhy"?) |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | 🟠 Caché-input (Studio JŘ) |
@@ -691,8 +691,26 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 
 ## TR. TRANSDEV - konsolidovaná sada požadavků (2026-07-03, k analýze)
 
-Souhrnný wishlist k zastávkovému CP (SK legislativa + praxe MHD Trenčín). **Neanalyzováno** - před
-implementací dohledat/založit tikety + upřesnit. U každého poznámka o stavu/infra na TD straně:
+Souhrnný wishlist k zastávkovému CP (SK legislativa + praxe MHD Trenčín). U každého bodu stav na
+naší straně. **TRANSDEV jede AD agendu** (§A6) - i jejich MHD Trenčín, takže „AD-only" je pro ně OK.
+
+**Stav sady k 2026-08-06: 5 z 10 hotových** (TR1 osa přes půlnoc, TR2 souhrn na-znamení, TR3
+nástupiště, TR4 auto výška řádku, TR6 barva linky), TR7 zčásti, TR5 v minimální variantě.
+
+**⚠️ Zbytek nedrží my - drží vstupní strana (editor JŘ / Studio JŘ), tj. kolegové.** Tohle patří
+do #13098, aby to viselo na správném člověku:
+
+| Bod | Co potřebuje od kolegů | Bez toho se u nás nedá udělat |
+|---|---|---|
+| **TR5** střední/ideál | pole „cíl" v trase linky per zastávka × směr (jako nástupiště/sloupek); ideál = číselník cílů + odkaz id | data neexistují; my umíme jen konečnou směru (`POPIS_SMER`) |
+| **TR7** zbytek | v editoru spojů určit, **které spoje / který úsek** řídí generování jízdních dob | dnes to řídí pořadí výskytu variantu, což je přesně to nestabilní číslování, na které si stěžují |
+| **TR9** | přepracovat zadávání poznámek (Vlastnosti → MHD): rozsah TČ přímo do první tabulky vedle značky | je to celé vstupní workflow legacy modulu, tisková strana se nemění |
+| **TR10** | rozšířit filtr negativních značek (Vlastnosti → „MHD - další") i na So/Ne/svátky | dnes jde filtr jen na sloupce školní výuka / prázdniny |
+| **TR8** | co je legacy sloupec **„Průběhy"** - je per-segment? Plus screenshot od klienta, kde vidí „0" | naše časy jsou kumulativní, „0" tam vůbec nevzniká, takže není kde „<1" tisknout |
+| **B12** / #7937 | odsazení zastávky **per směr** - `^JRL` dta7 je jedna hodnota na bod trasy (i legacy), sdílená pro tam i zpět | základ hotový, per-směr chce nové pole + editor |
+
+U každého z nich je naše část **malá a navazuje** (přečíst pole, vydat ho ve schématu, nabídnout
+v šabloně) - pořadí je tedy dané: nejdřív vstupní strana, pak my.
 
 1. **Časová os cez polnoc** (noční linky 22→5h) nebo aspoň manuální přeuspořádání hodin.
    → ✅ **Už hotové (B3, #9036)**: `TimeAxisMode=Range`, `HODINY_OD=22`/`HODINY_DO=5` → wrap přes půlnoc
@@ -724,7 +742,16 @@ implementací dohledat/založit tikety + upřesnit. U každého poznámka o stav
    (střední) cíl textem per zastávka × směr v trase (jako nástupiště/sloupík); (ideál) DB cílů + id per zastávka×směr.
    Dnes hackují přes `informace`/`titulek`. NEW, datový model, M–L. *(Odbourá i speciální cíle pro tabule.)*
 6. **Barva linky**: ve vlastnostech linky bg + text barva; v šabloně u objektu volba „farba linky" místo pevné
-   z palety → aplikuje se při tisku. Šetří hodiny u grafických změn (MHD Trenčín). NEW, M.
+   z palety → aplikuje se při tisku. Šetří hodiny u grafických změn (MHD Trenčín).
+   ✅ **HOTOVO 2026-08-03 (#12997):** JŘ modul umí od 3. 8. **víc barev na linku** (Petr Šmíd,
+   `^JRL(sku,lin,"PATCH","BARVA")`); modul jim význam nedává, klient první používá jako text a druhou
+   jako pozadí - přesně jak si to představoval. Agenda je vydává jako `BARVA_LINKY` / `BARVA_LINKY_2`
+   (`ZastavkoveJrAd.BarvaLinky`) a **jdou napsat do každého barevného pole šablony** místo pevné barvy,
+   takže jedna šablona obslouží všechny linky. Nápovědu k tomu nese barevné pole samo.
+   - **Záměrně bez mezikroku v paletě** (volba „barva linky" jako položka color pickeru) - přidal by klik
+     všem uživatelům kvůli menšině případů; místo toho se placeholder píše do pole (`ColorPickerHelper.cs:35`).
+   - **Jen AD agenda.** `ZastavkoveJrMhd` pole nemá - relevantní pro DPCB/DPKV, ne pro TRANSDEV.
+   - **Zbývá ověřit u klienta** (nic neblokuje): že mu to v jeho verzi opravdu ušetří to ruční přepisování.
 7. **Jízdní doby - výběr sloupců variant**: víc variant trasy → víc sloupců jízdních dob; číslování dnes odráží
    pořadí výskytu variantu v seznamu spojů (nestabilní - Sloupec 3 na začátku = Sloupec 2 uprostřed). Chce
    explicitní kontrolu (které spoje / úsek řídí generování). → **Relates L1 multi-varianta TrasaMin** (`VARIANTY_TRAS`

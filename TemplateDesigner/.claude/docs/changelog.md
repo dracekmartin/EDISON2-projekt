@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-06 (4) - 🚌 sada TRANSDEV přerovnaná: 5 z 10 hotových, zbytek drží vstupní strana
+
+Průchod celého wishlistu TRANSDEV (10 bodů, SK legislativa + MHD Trenčín) proti kódu.
+
+**`TR6` barva linky je hotová** - a šlo to mimo naši evidenci, proto se to sem doplňuje. JŘ modul umí
+od 3. 8. víc barev na linku (#12997, Petr Šmíd), agenda je vydává jako `BARVA_LINKY` / `BARVA_LINKY_2`
+a jdou napsat do každého barevného pole šablony místo pevné barvy. Klient používá první jako text
+a druhou jako pozadí - přesně to, co v požadavku popsal („jedna šablona, ne desítky"). Volba „barva
+linky" **záměrně není položkou palety** - přidala by klik všem kvůli menšině případů.
+
+**Hotových je 5 z 10:** TR1 (osa přes půlnoc), TR2 (souhrn na-znamení), TR3 (nástupiště), TR4 (auto
+výška řádku), TR6 (barva linky). TR7 zčásti (varianty dle sledu zastávek + stabilní řazení, 27. 7.),
+TR5 v minimální variantě (konečná směru).
+
+**Podstatný nález: zbytek sady nedržíme my, drží ho vstupní strana** (editor trasy / editor spojů /
+Vlastnosti linky v legacy JŘ). Do §TR přidána tabulka „co potřebuje od kolegů" pro `TR5`, `TR7`, `TR8`,
+`TR9`, `TR10` a `B12`/#7937 - u všech je naše část malá a **navazující**, takže pořadí je dané: nejdřív
+vstupní strana, pak my. Dřív to bylo rozházené v textu jednotlivých bodů, takže z toho nešlo poznat,
+že pět z šesti otevřených věcí čeká na někoho jiného.
+
+
 ## 2026-08-06 (3) - 🧹 fronta zastávkového JŘ: jen naše otevřená práce
 
 **Rozhodnutí Jan:** roadmapa je seznam **naší otevřené práce**, ne zrcadlo helpdesku. Cizí a hotové

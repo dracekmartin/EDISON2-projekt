@@ -68,7 +68,6 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
 | TR10 | Skrýt spoje o So/Ne/svátcích | S–M | Caché filtr |
 | TR8 | „<1" místo „0" u nulové jízdní doby - premisa nejasná: naše časy jsou kumulativní, 0-segment se tiskne jako opakované číslo, ne „0"; per-segment sloupec TD nemá. Detail → `customer-requirements §TR/8` | ? | potvrzení od TRANSDEV, který sloupec vlastně myslí (legacy „Průběhy"?) |
 | TR7 | Per-písmeno výběr sloupců variant jízdních dob | S–M | jen pokud TRANSDEV potvrdí nad novým chováním (varianty dle trasy+nástupiště s max časy jsou od 27. 7. hotové) |
-| TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | nový datový model |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | Caché-input (Studio JŘ) |
 | TR5 | Definice cíle - střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
 
