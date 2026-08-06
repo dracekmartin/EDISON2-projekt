@@ -1,20 +1,48 @@
 using System.IO;
 using System.Text;
 using System.Windows;
+using EDControls.ErrorReporting;
 
 namespace EDControls.EDViewModel;
 
 internal partial class EDErrorPopup : Window
 {
-    private EDErrorPopup(Exception ex)
+    private readonly string? _refId;
+
+    private EDErrorPopup(Exception ex, string? refId)
     {
         InitializeComponent();
         // CenterOwner mine maximalizovaný shell (restore bounds) — centrujeme ručně po layoutu.
         Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
         ErrorText.Text = ex.ToString();
+
+        _refId = refId;
+        if (refId is not null)
+        {
+            RefIdText.Text = refId;
+            RefIdPanel.Visibility = Visibility.Visible;
+            FollowUpPanel.Visibility = Visibility.Visible;
+            SendFollowUpBtn.Visibility = Visibility.Visible;
+        }
     }
 
     private void OkBtn_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void SendFollowUpBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_refId is null) return;
+
+        var text = FollowUpText.Text;
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        ErrorReports.ReportFollowUp(_refId, text, Owner);
+
+        // Odesílá se na pozadí a výsledek se nezjišťuje — potvrzení je o tom, že jsme text
+        // převzali. Druhé kliknutí by poslalo duplicitu, proto se ovládání schová.
+        FollowUpText.IsEnabled = false;
+        SendFollowUpBtn.Visibility = Visibility.Collapsed;
+        FollowUpSentText.Visibility = Visibility.Visible;
+    }
 
     private void SaveBtn_Click(object sender, RoutedEventArgs e)
     {
@@ -29,7 +57,8 @@ internal partial class EDErrorPopup : Window
 
         try
         {
-            File.WriteAllText(dlg.FileName, ErrorText.Text, Encoding.UTF8);
+            var header = _refId is null ? "" : $"Referenční číslo: {_refId}{Environment.NewLine}{Environment.NewLine}";
+            File.WriteAllText(dlg.FileName, header + ErrorText.Text, Encoding.UTF8);
         }
         catch (Exception ex)
         {
@@ -39,9 +68,9 @@ internal partial class EDErrorPopup : Window
         }
     }
 
-    internal static void Show(Window? owner, Exception ex)
+    internal static void Show(Window? owner, Exception ex, string? refId = null)
     {
-        var popup = new EDErrorPopup(ex) { Owner = owner };
+        var popup = new EDErrorPopup(ex, refId) { Owner = owner };
         popup.ShowDialog();
     }
 }

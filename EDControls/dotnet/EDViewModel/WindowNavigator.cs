@@ -176,9 +176,24 @@ public class WindowNavigator : IWindowNavigator
     /// </summary>
     public void CloseAll()
     {
+        CloseShellWindows();
+        CloseLegacyModules();
+    }
+
+    /// <summary>
+    /// Jen WPF část <see cref="CloseAll"/>: modeless okna shellu (kromě <c>MainWindow</c>).
+    /// Oddělené kvůli přepnutí firmy - tato okna volají server přes sdílený MLRest, takže se
+    /// musí zavřít před swapem Idfa; legacy moduly (vlastní spojení) až po úspěchu.
+    /// </summary>
+    public void CloseShellWindows()
+    {
         foreach (var w in Application.Current.Windows.OfType<Window>().ToList())
             if (ShouldClose(w, Application.Current.MainWindow)) w.Close();
+    }
 
+    /// <summary>Jen legacy část <see cref="CloseAll"/>: kill tracked child procesů.</summary>
+    public void CloseLegacyModules()
+    {
         foreach (var entry in _legacyProcesses)
         {
             try
@@ -209,7 +224,12 @@ public class WindowNavigator : IWindowNavigator
                     if (e.Process.HasExited) return;
                     var hwnd = e.Process.MainWindowHandle;
                     if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
-                }));
+                })
+            {
+                ExeName = e.ExeName,
+                FormFqn = e.FormFqn,
+                InputParam = e.InputParam,
+            });
 
         var wpf = Application.Current.Windows
             .OfType<Window>()

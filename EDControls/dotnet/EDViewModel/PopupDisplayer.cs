@@ -23,6 +23,12 @@ public class PopupDisplayer(Window? defaultOwner = null) : IPopupDisplayer
     public bool? ConfirmYesNoCancel(string message, string? title = null, Window? owner = null) =>
         EDPopup.ShowYesNoCancel(owner ?? DefaultOwner, message, title);
 
-    public void Error(Exception ex, Window? owner = null) =>
-        EDErrorPopup.Show(owner ?? DefaultOwner, ex);
+    public void Error(Exception ex, Window? owner = null)
+    {
+        // Nahlásit PŘED zobrazením dialogu — snímek okna má zachytit stav v okamžiku chyby,
+        // ne chybový dialog přes něj.
+        var resolvedOwner = owner ?? DefaultOwner;
+        var refId = ErrorReporting.ErrorReports.Report(ex, resolvedOwner);
+        EDErrorPopup.Show(resolvedOwner, ex, refId);
+    }
 }

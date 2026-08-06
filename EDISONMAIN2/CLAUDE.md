@@ -6,6 +6,10 @@ update flow: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md).
 
 Bootstrap orchestruje `Startup/AppBootstrapper` (template method: setup wizard → prefs →
 login → MLRest → firma → VerifyLic → module tree → update check → font → shell okno).
+Login okno (jen Release dialog path) zůstává po OK otevřené jako progress podklad přes
+post-login kroky a zavírá se až na shell `ContentRendered`; `HandOffLoginWindow` musí
+přiřadit `Application.MainWindow` na shell **před** restore `OnMainWindowClose` — implicitní
+MainWindow je login okno a špatné pořadí buď zabije app, nebo nechá proces bez konce.
 `Services/` složka neexistuje záměrně — single-consumer infrastruktura je ko-lokovaná
 se svým consumerem, cross-cutting věci jdou do `EDControls`.
 
@@ -30,8 +34,11 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   `_modulePrefs` null, takže save cesty musí zůstat null-safe.
 - Přepnutí firmy dělá `SwitchCompanyCommand` (`SelectedCompanyId` setter ho jen spustí);
   index se nastaví teprve po `Accepted`, takže odmítnutí nepotřebuje rollback. Sám
-  `CompanySwitcher.Switch` (zavření oken + VerifyLic) zůstává synchronní — potřebuje UI
-  thread na dialogy licenčního retry.
+  `CompanySwitcher.Switch` zůstává synchronní — potřebuje UI thread na dialogy licenčního
+  retry; VM ho obaluje `ActionInProgress` + yield, aby se overlay stihl vykreslit.
+  Zavírání dvoufázově: WPF okna shellu **před** swapem Idfa (volají server přes sdílený
+  MLRest), legacy moduly až po `Accepted` těsně před logoutem staré firmy - neúspěšné
+  přepnutí je tak nezabije. Confirm se ukazuje jen s otevřenými moduly.
 - DEBUG build má verzi `999999.9` — netriggeruje update check.
 - Zavření shellu (= ukončení aplikace i všech agend) se potvrzuje v `Closing` přes
   `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu
@@ -47,6 +54,11 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   menu nepřejde. `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
+- **Spuštěné moduly** se značí cestou agendou (`BuildModulePaths`, klíč `exe|forma|param`) -
+  dvě agendy mají běžně shodný název. Fallback (modul mimo strom, WPF okno) = titulek bez
+  koncového `[IDFa]`; **titulky oken si `[IDFa]` naopak drží** (přidává ho `WindowNavigator`).
+- Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
+  nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají).
 - **Status bar** = segmenty ikona + hodnota, technika (namespace, port, login, Mlp) jen
   v ToolTipu. Stojí na `LastChildFill="False"` z EDControlStyles; `DockPanel.Dock="Right"`
   funguje **jen na explicitním** `<StatusBarItem>` (na surovém `TextBlock` se nepropíše na

@@ -631,6 +631,11 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Accent.BlueSelected}"/>
                         </Trigger>
+                        <!-- Klávesová navigace v otevřeném dropdownu nehýbe IsSelected, jen zvýrazněním.
+                             Bez tohoto triggeru šipky vizuálně "nedělají nic" (myš ano - IsMouseOver). -->
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                        </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5"/>
                         </Trigger>
@@ -706,8 +711,10 @@
                             </Grid>
                         </Border>
 
-                        <!-- Dropdown popup -->
-                        <Popup x:Name="Popup"
+                        <!-- Dropdown popup. Jméno PART_Popup je kontrakt: ComboBox.OnApplyTemplate si
+                             ho hledá a bez něj mu zůstane null reference na popup (degraduje mouse
+                             capture, zavření klikem mimo, StaysOpenOnEdit i automation peer). -->
+                        <Popup x:Name="PART_Popup"
                                Placement="Bottom"
                                IsOpen="{TemplateBinding IsDropDownOpen}"
                                AllowsTransparency="True"
@@ -875,6 +882,12 @@
                         <Trigger Property="Text" Value="">
                             <Setter TargetName="Placeholder"      Property="Visibility" Value="Visible"/>
                             <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <!-- Fokus placeholder sbalí (cue banner): leží přesně tam, kde stojí caret na
+                             pozici 0, takže by kurzor blikal uvnitř prvního písmene nápovědy.
+                             MUSÍ být za Text triggerem výše - u shodné property vyhrává poslední. -->
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Placeholder" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

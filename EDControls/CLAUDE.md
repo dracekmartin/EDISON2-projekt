@@ -69,6 +69,8 @@ ať se okna nové aplikace nemíchají se shellem.
   `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) — pořadí
   a počet polí musí zůstat synchronní.
 - `WindowDimmer` — ztmavení okna, refcount per okno; UI-thread only.
+- `ErrorReporting/` — hlášení chyb na `podpora.m-line.cz` (přímý HTTPS POST, **ne** přes
+  Caché jako usage telemetrie). Vlastní `CLAUDE.md`.
 
 ## Ostatní podsložky
 
@@ -81,7 +83,10 @@ ať se okna nové aplikace nemíchají se shellem.
   WPF). **Jediné místo pro filtrovaný editovatelný ComboBox - vlastní nepsat**; drží pasti
   pořadí WPF eventů (viz remarks třídy) a invariant „napsaný text = filtr, klidová hodnota
   filtr NE" (šipka proto nabídne celý seznam, ne jen nastavenou položku).
-  `EDFilter/` — skládání filtrů.
+  Šipky/Enter/Esc obsluhuje **override `OnPreviewKeyDown`**: `ComboBox` je značí `Handled`
+  už ve fázi class handlerů, takže instance handler by se s otevřeným dropdownem nikdy
+  nezavolal. Navigace jede přes `SelectedIndex` (ne přes interní zvýraznění WPF), aby pick
+  zachytil `SelectionChanged`. `EDFilter/` - skládání filtrů.
 - `EDSearchTextBox/` — `TextBox` pro hledání (placeholder, ✕, Esc); styl v `EDControlStyles.xaml`.
 - `EDInfoBar/` — info proužek (text + volitelná ikona + akční odkaz); prázdné → skryté,
   styl v `EDControlStyles.xaml`, viditelnost řídí konzument.

@@ -27,7 +27,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 {
     record CompanyItem(string Id, string Name, string Database)
     {
-        public string DisplayName => string.IsNullOrEmpty(Name) ? Id : $"{Name} [{Id}]";
+        // Stejný formát jako display přepínače firem (EDFilterComboBox „Key - Label"),
+        // aby confirm dialog a ToolTip mluvily o téže položce stejně.
+        public string DisplayName => string.IsNullOrEmpty(Name) ? Id : $"{Id} - {Name}";
     }
 
     class EdisonMainViewModel : EDViewModel
@@ -643,26 +645,35 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>
         /// Nastaví <see cref="IModule.IsVisibleBySearch"/> rekurzivně. Uzel je viditelný, když jeho
         /// název obsahuje <paramref name="text"/> (case + diakritika insensitive) NEBO má viditelného
-        /// potomka (prázdný text = vše viditelné). Rodina s nalezeným potomkem se při aktivním hledání
-        /// rozbalí. Vrací, zda je modul viditelný.
+        /// potomka (prázdný text = vše viditelné). Rodina nalezená podle vlastního názvu zpřístupní
+        /// celý svůj obsah; rodina s nalezeným potomkem se při aktivním hledání rozbalí.
+        /// Vrací, zda je modul viditelný.
         /// </summary>
         internal static bool ApplySearchToModule(IModule module, string text)
         {
             var needle = SearchNormalization.NormalizeForSearch(text);
-            bool match = needle.Length == 0
+            bool selfMatch = needle.Length == 0
                 || SearchNormalization.NormalizeForSearch(module.DisplayedName).Contains(needle);
 
             if (module is ModuleFamily family)
             {
+                // Shoda na názvu skupiny zpřístupní celý její obsah - potomci hledané slovo v názvu
+                // nemají, takže by nález byl slepá ulička (skupina prázdná a spustit ji nejde).
+                // Prázdný needle v rekurzi = "všechno viditelné", proto stačí předat "".
+                bool wholeSubtree = selfMatch && needle.Length > 0;
                 bool anyChildVisible = false;
                 foreach (var child in family.NestedModules)
-                    if (ApplySearchToModule(child, text)) anyChildVisible = true;
-                match = match || anyChildVisible;
-                if (text.Length > 0 && anyChildVisible) family.IsExpanded = true;
+                    if (ApplySearchToModule(child, wholeSubtree ? "" : text)) anyChildVisible = true;
+                selfMatch = selfMatch || anyChildVisible;
+                if (text.Length > 0 && anyChildVisible)
+                {
+                    if (wholeSubtree) SetExpandedRecursive(family, true);
+                    else family.IsExpanded = true;
+                }
             }
 
-            module.IsVisibleBySearch = match;
-            return match;
+            module.IsVisibleBySearch = selfMatch;
+            return selfMatch;
         }
 
         // Per stanice konstantní (DNS doména / registry override) — stačí vyhodnotit jednou.
@@ -909,6 +920,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OnPropertyChanged(nameof(Idfa));
             OnPropertyChanged(nameof(WindowTitle));
             OnPropertyChanged(nameof(SelectedCompanyId));
+            OnPropertyChanged(nameof(SelectedCompany));
+        }
+
+        // Pustí render (overlay) před blokující synchronní prací. Guard na běžící Application,
+        // ne jen na dispatcher vlákna: DispatcherTimer ve VM dispatcher testovacímu vláknu
+        // vytvoří, ale nikdo ho nepumpuje - await Yield by tam nikdy nedoběhl.
+        private static async Task YieldToRender()
+        {
+            if (Application.Current?.Dispatcher is { } d && d.CheckAccess())
+                await Dispatcher.Yield(DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -922,16 +943,30 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (index < 0 || index >= VisibleIdfas.Count || index == _selectedCompanyIndex) return;
 
             var target = VisibleIdfas[index];
-            if (!PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna."))
+            // Potvrzení jen když je co ztratit - bez otevřených oken je přepnutí nedestruktivní
+            // (layout miniaplikací se persistuje per IDFa a při návratu obnoví).
+            if (_getActiveModules().Count > 0
+                && !PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna i miniaplikace."))
                 return;
 
             var oldIdfa = Idfa;
-            var result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
+            SwitchOutcome result;
+            // Synchronní část (zavření oken, VerifyLic, logout staré firmy) blokuje UI thread -
+            // overlay „Akce probíhá" se musí stihnout vykreslit před ní (yield). Scope nesmí
+            // přesáhnout do RebuildSessionStateAsync (má vlastní; IsActionInProgress není
+            // refcounted) ani pod popupy níž.
+            using (ActionInProgress())
+            {
+                await YieldToRender();
+                result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
+            }
 
             if (result.Outcome != LicenceAcquireOutcome.Accepted)
             {
                 // Combobox si drží cílovou firmu z vlastního editu → notifikací ho vrať na platnou.
                 RaiseSessionPropertiesChanged();
+                // Cancelled bez hlášky záměrně: vzniká jen tak, že admin sám odmítl licenční
+                // retry dialog - akci aktivně zrušil, další popup by byl jen friction.
                 if (result.Outcome == LicenceAcquireOutcome.Refused)
                     PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 return;
@@ -991,6 +1026,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Firmy jako nápověda pro filtrovatelný přepínač (Key = IDFa, Label = název).</summary>
         public IEnumerable<ListItem> CompanySuggestions =>
             VisibleIdfas.Select(c => new ListItem(c.Id, c.Name));
+
+        /// <summary>Jediná firma → přepínač se zdisabluje (zůstává jako indikace aktuální firmy).</summary>
+        public bool HasMultipleCompanies => VisibleIdfas.Count > 1;
 
         private async Task OpenModule(IModule module)
         {
@@ -1371,7 +1409,63 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void RefreshRunningModules()
         {
             var modules = _getActiveModules();
-            RunningModules = modules.Count == 0 ? [_emptyPlaceholder] : modules;
+            if (modules.Count == 0) { RunningModules = [_emptyPlaceholder]; return; }
+
+            var paths = BuildModulePaths(_sourceTrees.Select(t => t.Tree));
+            RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, paths) })];
+        }
+
+        /// <summary>
+        /// Mapa <c>exe|forma|param</c> → cesta agendou („Mzdy a personalistika › Zaměstnanci").
+        /// Klíč je záměrně tentýž, kterým <c>WindowNavigator</c> deduplikuje běžící procesy.
+        /// </summary>
+        internal static Dictionary<string, string> BuildModulePaths(IEnumerable<IEnumerable<IModule>> trees)
+        {
+            var paths = new Dictionary<string, string>();
+            foreach (var tree in trees)
+                foreach (var root in tree)
+                    Collect(root, "");
+            return paths;
+
+            void Collect(IModule module, string prefix)
+            {
+                switch (module)
+                {
+                    case ModuleFamily family:
+                        var branch = prefix.Length == 0 ? family.DisplayedName : prefix + PathSeparator + family.DisplayedName;
+                        foreach (var child in family.NestedModules) Collect(child, branch);
+                        break;
+                    case ExecutableModule exe:
+                        // První nález vyhrává - týž modul může být ve stromě víckrát (např. i v Oblíbených).
+                        paths.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
+                            prefix.Length == 0 ? exe.DisplayedName : prefix + PathSeparator + exe.DisplayedName);
+                        break;
+                }
+            }
+        }
+
+        private const string PathSeparator = " › ";
+
+        private static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
+
+        /// <summary>
+        /// Label do menu „Spuštěné moduly": cesta agendou, když modul ve stromě najdeme, jinak
+        /// vlastní titulek okna bez koncového <c>[IDFa]</c>. Dvě agendy mají běžně shodný název
+        /// (Zaměstnanci z MZDY2 vs. z Požadavků na volno) a firma je v položce zbytečná - při
+        /// přepnutí firmy se otevřená okna zavírají, takže jsou vždy z aktuální.
+        /// </summary>
+        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, string> paths) =>
+            paths.TryGetValue(ModuleKey(info.ExeName, info.FormFqn, info.InputParam), out var path)
+                ? path
+                : StripIdfaSuffix(info.DisplayName);
+
+        /// <summary>Odřízne jeden koncový <c>[...]</c> (suffix s firmou). Hranatá závorka uvnitř názvu zůstane.</summary>
+        internal static string StripIdfaSuffix(string title)
+        {
+            var trimmed = title.TrimEnd();
+            if (!trimmed.EndsWith(']')) return title;
+            var open = trimmed.LastIndexOf('[');
+            return open <= 0 ? title : trimmed[..open].TrimEnd();
         }
 
         private void NotYetImplemented()

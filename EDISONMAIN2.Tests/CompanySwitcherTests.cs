@@ -24,7 +24,8 @@ public class CompanySwitcherTests
         IPopupDisplayer? popup = null,
         IWindowNavigator? nav = null,
         ILocalPrefs? prefs = null,
-        Action? closeAllWindows = null)
+        Action? closeShellWindows = null,
+        Action? closeLegacyModules = null)
     {
         var services = new EDServices(
             mlRest,
@@ -36,7 +37,8 @@ public class CompanySwitcherTests
         };
         return new CompanySwitcher(services,
             prefs ?? Substitute.For<ILocalPrefs>(),
-            closeAllWindows ?? (() => { }));
+            closeShellWindows ?? (() => { }),
+            closeLegacyModules ?? (() => { }));
     }
 
     // ---------- PickInitial ----------
@@ -287,32 +289,77 @@ public class CompanySwitcherTests
         Assert.Equal("JI_DP", mlRest.Idfa);
     }
 
-    // ---------- Switch — closeAllWindows side effect ----------
+    // ---------- Switch - zavírání oken a modulů ----------
 
     [Fact]
-    public void Switch_CallsCloseAllWindows_BeforeMLRestSwap()
+    public void Switch_ZavreShellOkna_PredSwapemMLRest()
     {
-        var mlRest = MLRestMocks.Create();
-        var closeAll = Substitute.For<Action>();
-        var switcher = CreateSwitcher(mlRest, () => null, closeAllWindows: closeAll);
+        // WPF okna shellu volají server přes sdílený MLRest - zavření (save) musí proběhnout
+        // ještě pod starou Idfa, jinak by requesty šly do cizí firmy.
+        var mlRest = MLRestMocks.Create();   // start Idfa = CB_DP
+        string? idfaAtClose = null;
+        var switcher = CreateSwitcher(mlRest, () => null, closeShellWindows: () => idfaAtClose = mlRest.Idfa);
 
         switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
 
-        closeAll.Received(1).Invoke();
+        Assert.Equal("CB_DP", idfaAtClose);
     }
 
     [Fact]
-    public void Switch_CallsCloseAllWindows_EvenOnRefused()
+    public void Switch_Refused_NechaLegacyModulyBezet()
+    {
+        // Neúspěšné přepnutí nesmí zabít rozpracovanou práci v legacy modulech - mají vlastní
+        // spojení se starou Idfa a shell zůstává na původní firmě. Shell okna se obětují
+        // (musí se zavřít před swapem), legacy až po Accepted.
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, -1);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var closeShell = Substitute.For<Action>();
+        var closeLegacy = Substitute.For<Action>();
+        var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false,
+                                      closeShellWindows: closeShell, closeLegacyModules: closeLegacy);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        closeShell.Received(1).Invoke();
+        closeLegacy.DidNotReceive().Invoke();
+    }
+
+    [Fact]
+    public void Switch_AdminCancelled_NechaLegacyModulyBezet()
     {
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
-        var closeAll = Substitute.For<Action>();
-        var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false, closeAllWindows: closeAll);
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(false);
+        var closeLegacy = Substitute.For<Action>();
+        var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: true, popup: popup,
+                                      closeLegacyModules: closeLegacy);
 
         switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
-        closeAll.Received(1).Invoke();
+        closeLegacy.DidNotReceive().Invoke();
+    }
+
+    [Fact]
+    public void Switch_Accepted_ZavreLegacyModulyPredLogoutem()
+    {
+        // Pořadí kill → logout je nutné: moduly sdílejí shell GUID s CacheLocks=1, po zániku
+        // ACTIVITY zámku staré firmy by jim padal každý request na LockExist.
+        var mlRest = MLRestMocks.Create();   // start Idfa = CB_DP
+        SetupVerifyLic(mlRest, 1);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var closeLegacy = Substitute.For<Action>();
+        var switcher = CreateSwitcher(mlRest, () => licence, closeLegacyModules: closeLegacy);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        Received.InOrder(() =>
+        {
+            closeLegacy.Invoke();
+            mlRest.With(cacheLocks: 0, idfa: "CB_DP", dataNamespace: "CB_DP");
+        });
     }
 
     // ---------- Switch — prefs persistence ----------

@@ -6,6 +6,18 @@ namespace EDControls.Tests;
 /// <summary>Testy čisté logiky EDFilterComboBox: zobrazovaný řetězec + filtrovací predikát.</summary>
 public class EDFilterComboBoxLogicTests
 {
+    [Theory]
+    [InlineData(3, -1, 1, 0)]     // "nic nevybráno" + dolů → první
+    [InlineData(3, -1, -1, 2)]    // "nic nevybráno" + nahoru → poslední
+    [InlineData(3, 0, 1, 1)]
+    [InlineData(3, 2, 1, 2)]      // na konci stojí (bez wrapování)
+    [InlineData(3, 0, -1, 0)]     // na začátku stojí
+    [InlineData(1, 0, 1, 0)]
+    [InlineData(0, -1, 1, -1)]    // prázdný seznam
+    [InlineData(0, 0, -1, -1)]
+    public void NextIndex_ClampsWithoutWrapping(int count, int current, int delta, int expected) =>
+        Assert.Equal(expected, EDFilterComboBoxLogic.NextIndex(count, current, delta));
+
     [Fact]
     public void Display_KeyAndLabel_JoinsWithSeparator()
     {
@@ -33,9 +45,59 @@ public class EDFilterComboBoxLogicTests
     [InlineData("cb", true)]          // shoda na Key (case-insensitive)
     [InlineData("BUDĚ", true)]        // shoda na Label (case-insensitive)
     [InlineData("xyz", false)]        // žádná shoda
+    [InlineData("ceske", true)]       // psaní bez diakritiky najde Label s diakritikou
+    [InlineData("BUDE", true)]
     public void Matches_KeyOrLabel_CaseInsensitive(string? text, bool expected)
     {
         var item = new ListItem("CB", "České Budějovice");
         Assert.Equal(expected, EDFilterComboBoxLogic.Matches(item, text));
+    }
+
+    [Fact]
+    public void Matches_TextSDiakritikou_NajdeLabelBezDiakritiky()
+    {
+        Assert.True(EDFilterComboBoxLogic.Matches(new ListItem("PL", "Plzen"), "plzeň"));
+    }
+
+    private static readonly ListItem[] Firmy =
+    [
+        new("CB", "České Budějovice"),
+        new("PL", "Plzeň"),
+        new("PB", "Příbram"),
+    ];
+
+    [Theory]
+    [InlineData("cb", "CB")]                        // exaktní Key (case-insensitive)
+    [InlineData("CB - České Budějovice", "CB")]     // exaktní Display
+    [InlineData("cb - ceske budejovice", "CB")]     // exaktní Display bez diakritiky
+    [InlineData("plzeň", "PL")]                     // exaktní Label
+    [InlineData("budejo", "CB")]                    // jediný kandidát filtru
+    [InlineData(" cb ", "CB")]                      // trim okrajů
+    public void ResolveTyped_JednoznacnyText_VratiPolozku(string text, string expectedKey)
+    {
+        Assert.Equal(expectedKey, EDFilterComboBoxLogic.ResolveTyped(Firmy, text, " - ")?.Key);
+    }
+
+    [Theory]
+    [InlineData("p")]      // víc kandidátů bez exaktní shody (Plzeň i Příbram)
+    [InlineData("xyz")]    // žádná shoda
+    [InlineData("")]       // prázdný text
+    [InlineData(null)]
+    public void ResolveTyped_NejednoznacnyNeboPrazdnyText_VratiNull(string? text)
+    {
+        Assert.Null(EDFilterComboBoxLogic.ResolveTyped(Firmy, text, " - "));
+    }
+
+    [Fact]
+    public void ResolveTyped_ExaktniKeyMaPrednostPredFiltrem()
+    {
+        // "PL" je exaktní Key a zároveň substring "PL..." obou P-firem → vyhrává exakt.
+        Assert.Equal("PL", EDFilterComboBoxLogic.ResolveTyped(Firmy, "PL", " - ")?.Key);
+    }
+
+    [Fact]
+    public void ResolveTyped_NullSuggestions_VratiNull()
+    {
+        Assert.Null(EDFilterComboBoxLogic.ResolveTyped(null, "cb", " - "));
     }
 }

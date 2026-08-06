@@ -1,4 +1,5 @@
 using EDControls.EDViewModel;
+using EDControls.ErrorReporting;
 
 namespace EDISONMAIN2
 {
@@ -10,6 +11,17 @@ namespace EDISONMAIN2
     {
         private void Application_Startup(object sender, System.Windows.StartupEventArgs e)
         {
+            // Chyby mimo dispatcher by jinak zmizely beze stopy — do telemetrie, bez dialogu.
+            AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            {
+                if (args.ExceptionObject is Exception ex) ErrorReports.ReportFatal(ex);
+            };
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (_, args) =>
+            {
+                ErrorReports.ReportBackground(args.Exception);
+                args.SetObserved();
+            };
+
             var window = new AppBootstrapper(this).Run();
             window?.Show();
         }

@@ -49,6 +49,9 @@ public class EdisonMainViewModelTests
         MiniAppCatalog? miniAppCatalog = null,
         IMLRest? mlRest = null,
         IRestCallRunner? restRunner = null,
+        Func<IReadOnlyList<RunningModuleInfo>>? getActiveModules = null,
+        CompanyStruct[]? companies = null,
+        Action? closeLegacyModules = null,
         bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
@@ -58,7 +61,7 @@ public class EdisonMainViewModelTests
         svc.MLRest = mockMLRest;
         var close = closeAllWindows ?? (() => { });
         var p = prefs ?? Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, p, close);
+        var switcher = new CompanySwitcher(svc, p, close, closeLegacyModules ?? (() => { }));
         Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
         var catalog = miniAppCatalog ?? MiniAppCatalog.Build([]);
 
@@ -66,7 +69,8 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p, () => [], close, catalog,
+            vm = new EdisonMainViewModel(companies ?? Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p,
+                                         getActiveModules ?? (() => []), close, catalog,
                                          restRunner: restRunner ?? new InlineRestCallRunner(mockMLRest));
         }
         finally
@@ -85,6 +89,10 @@ public class EdisonMainViewModelTests
         mock.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
         return mock;
     }
+
+    // Confirm před přepnutím firmy se ukazuje jen když je otevřený aspoň jeden modul.
+    private static Func<IReadOnlyList<RunningModuleInfo>> OneOpenWindow() =>
+        () => [new RunningModuleInfo("Okno", () => { })];
 
     [Fact]
     public void Constructor_LoadsCompanies()
@@ -317,7 +325,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(false);
-        var vm = CreateVM(popup: mockPopup);
+        var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
         int original = vm.SelectedCompanyIndex;
 
         await vm.SwitchCompanyAsync(original == 0 ? 1 : 0);
@@ -330,7 +338,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var vm = CreateVM(popup: mockPopup);
+        var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
         await vm.SwitchCompanyAsync(target);
@@ -338,6 +346,69 @@ public class EdisonMainViewModelTests
         Assert.Equal(target, vm.SelectedCompanyIndex);
         Assert.Equal(Companies[target].Database, vm.Namespace);
         Assert.Equal(Companies[target].Id, vm.Idfa);
+        mockPopup.Received(1).Confirm(Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task SwitchCompany_BezOtevrenychOken_NeptaSeNaPotvrzeni()
+    {
+        // Bez otevřených oken je přepnutí nedestruktivní - dialog by byl jen zbytečné friction.
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        var vm = CreateVM(popup: mockPopup);   // default: žádné aktivní moduly
+
+        int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
+        await vm.SwitchCompanyAsync(target);
+
+        mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+        Assert.Equal(target, vm.SelectedCompanyIndex);
+    }
+
+    [Fact]
+    public async Task SwitchCompany_BehemSynchronniFaze_JeActionInProgress()
+    {
+        // Synchronní fáze (CloseAll, VerifyLic) blokuje UI thread - overlay musí být aktivní
+        // už před ní, jinak shell "zamrzne" bez indikace. Callback closeAll běží uvnitř Switch.
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        EdisonMainViewModel? vmRef = null;
+        bool? duringSwitch = null;
+        var vm = CreateVM(popup: mockPopup, closeAllWindows: () => duringSwitch = vmRef!.IsActionInProgress);
+        vmRef = vm;
+
+        await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex == 0 ? 1 : 0);
+
+        Assert.True(duringSwitch);
+        Assert.False(vm.IsActionInProgress);
+    }
+
+    [Fact]
+    public void CompanyItem_DisplayName_FormatIdfaPomlckaNazev()
+    {
+        // Jednotný formát s displayem přepínače (EDFilterComboBox "Key - Label").
+        Assert.Equal("CB - České Budějovice", new CompanyItem("CB", "České Budějovice", "DB").DisplayName);
+        Assert.Equal("CB", new CompanyItem("CB", "", "DB").DisplayName);
+    }
+
+    [Fact]
+    public void HasMultipleCompanies_JednaFirma_False()
+    {
+        var single = new CompanyStruct[] { new() { Id = "CB_DP", Database = "CB_DP" } };
+
+        Assert.False(CreateVM(companies: single).HasMultipleCompanies);
+        Assert.True(CreateVM().HasMultipleCompanies);
+    }
+
+    [Fact]
+    public async Task SwitchCompany_Prepnuti_NotifikujeSelectedCompany()
+    {
+        // Na SelectedCompany visí ToolTip comba (plný název firmy) - bez notifikace by ukazoval starou.
+        var vm = CreateVM();
+        var notified = new List<string?>();
+        vm.PropertyChanged += (_, e) => notified.Add(e.PropertyName);
+
+        await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex == 0 ? 1 : 0);
+
+        Assert.Contains(nameof(vm.SelectedCompany), notified);
     }
 
     [Fact]
@@ -373,7 +444,7 @@ public class EdisonMainViewModelTests
         var svc = MockServices(popup: mockPopup);
         svc.MLRest = mockMLRest;
         var prefs = Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, prefs, () => { });
+        var switcher = new CompanySwitcher(svc, prefs, () => { }, () => { });
         Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
         EDServices.Initialize(svc);
         EdisonMainViewModel vm;
@@ -396,16 +467,18 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public async Task SwitchCompany_ClosesAllWindows()
+    public async Task SwitchCompany_ClosesShellWindowsAndLegacyModules()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var closeAll = Substitute.For<Action>();
-        var vm = CreateVM(popup: mockPopup, closeAllWindows: closeAll);
+        var closeShell = Substitute.For<Action>();
+        var closeLegacy = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, closeAllWindows: closeShell, closeLegacyModules: closeLegacy);
 
         await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex == 0 ? 1 : 0);
 
-        closeAll.Received(1).Invoke();
+        closeShell.Received(1).Invoke();
+        closeLegacy.Received(1).Invoke();
     }
 
     [Fact]
@@ -436,7 +509,7 @@ public class EdisonMainViewModelTests
         svc.LicenceLoader = () => licence;
         svc.IsAdmin = false;
         var prefs = Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, prefs, () => { });
+        var switcher = new CompanySwitcher(svc, prefs, () => { }, () => { });
         Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
         EDServices.Initialize(svc);
         EdisonMainViewModel vm;
@@ -464,7 +537,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var vm = CreateVM(popup: mockPopup);
+        var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
 
         vm.SelectedCompanyId = "JI_DP";
 
@@ -477,7 +550,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(false);
-        var vm = CreateVM(popup: mockPopup);
+        var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
 
         vm.SelectedCompanyId = "JI_DP";
 
@@ -491,7 +564,7 @@ public class EdisonMainViewModelTests
         // na kterou se nepřepnulo (getter sám nestačí, WPF se nezeptá).
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(false);
-        var vm = CreateVM(popup: mockPopup);
+        var vm = CreateVM(popup: mockPopup, getActiveModules: OneOpenWindow());
         var notified = new List<string?>();
         vm.PropertyChanged += (_, e) => notified.Add(e.PropertyName);
 

@@ -2,6 +2,7 @@
 using System.Windows.Threading;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.ErrorReporting;
 using EDControls.UserFonts;
 using TemplateDesigner.Config;
 
@@ -12,6 +13,17 @@ public partial class App : Application
     public App()
     {
         DispatcherUnhandledException += OnUnhandledException;
+
+        // Chyby mimo dispatcher by jinak zmizely beze stopy — do telemetrie, bez dialogu.
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex) ErrorReports.ReportFatal(ex);
+        };
+        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            ErrorReports.ReportBackground(args.Exception);
+            args.SetObserved();
+        };
     }
 
     protected override void OnStartup(StartupEventArgs e)
@@ -162,14 +174,19 @@ public partial class App : Application
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        // Plný detail (stack trace) do diagnostiky; uživateli jen srozumitelná hláška, ne syrový dump.
-        System.Diagnostics.Debug.WriteLine($"[Unhandled] {e.Exception}");
-        MessageBox.Show(
-            $"Došlo k neočekávané chybě:\n\n{e.Exception.Message}\n\n" +
-            "Aplikace pokračuje dál; pokud problém přetrvává, restartujte ji.",
-            "Chyba aplikace",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+        // Sdílený popup místo MessageBoxu: nese stack trace, referenční číslo a hlášení
+        // do telemetrie. Dřív šel detail jen do Debug.WriteLine, takže v Release mizel.
+        try
+        {
+            // Handler visí od konstruktoru App, tedy dřív než EDServices.Initialize v OnStartup —
+            // pád při startu by na EDServices.Current hodil druhou výjimku.
+            EDServices.Current.PopupDisplayer.Error(e.Exception);
+        }
+        catch
+        {
+            MessageBox.Show($"Došlo k neočekávané chybě:\n\n{e.Exception}",
+                "Chyba aplikace", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
         e.Handled = true;
     }
 }

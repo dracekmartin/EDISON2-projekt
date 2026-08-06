@@ -47,11 +47,23 @@
                     <TextBlock x:Name="ErrorText" Foreground="{DynamicResource EDTheme.Semantic.Danger}"
                                TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,12"/>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button x:Name="OkBtn" Content="{StaticResource EDStrings.Ok}" Width="90"
-                                IsDefault="True" Click="OkBtn_Click" Margin="0,0,8,0"/>
-                        <Button Content="{StaticResource EDStrings.Cancel}" Width="90" IsCancel="True"/>
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Progress startupu po úspěšném loginu - jen text, spinner by na blokovaném UI threadu
+                             zamrzl. Vlevo od tlačítek, ať zobrazení nehne layoutem. -->
+                        <TextBlock x:Name="ProgressText" Grid.Column="0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                   TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,8,0"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="OkBtn" Content="{StaticResource EDStrings.Ok}" Width="90"
+                                    IsDefault="True" Click="OkBtn_Click" Margin="0,0,8,0"/>
+                            <Button x:Name="CancelBtn" Content="{StaticResource EDStrings.Cancel}" Width="90"
+                                    IsCancel="True" Click="CancelBtn_Click"/>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
 
                 <!-- Patička karty: značka dodavatele + prokliky na web a portál podpory.

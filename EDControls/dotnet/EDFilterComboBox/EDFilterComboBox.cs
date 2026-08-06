@@ -17,8 +17,8 @@ namespace EDControls.EDFilterComboBox;
 ///   uživatel smí napsat i text mimo <see cref="Suggestions"/> — ty jsou jen nápověda.</item>
 ///   <item><b>striktní</b> (<see cref="StrictSelection"/> = true): hodnotou je <see cref="SelectedKey"/>;
 ///   commituje se jen platná položka, v klidu se zobrazí čitelný „Key — Label", při vstupu do pole se
-///   vybere celý text (první napsaný znak ho přepíše → hledání jiné položky bez mazání) a neplatný
-///   text se po opuštění vrátí na aktuální výběr.</item>
+///   vybere celý text (první napsaný znak ho přepíše → hledání jiné položky bez mazání), Enter potvrdí
+///   i napsaný text (exaktní nebo jednoznačná shoda) a neplatný text se po opuštění vrátí na aktuální výběr.</item>
 /// </list>
 /// </summary>
 /// <remarks>
@@ -95,12 +95,7 @@ public class EDFilterComboBox : ComboBox
         IsTextSearchEnabled = false;   // vlastní filtrování místo prefixového autocomplete
         StaysOpenOnEdit     = true;
 
-        PreviewKeyDown += (_, e) =>
-        {
-            _userIsTyping = !IsNavigationKey(e.Key);
-            if (e.Key == Key.Escape) _committedKey = null;   // Esc = zrušení výběru → commit revertne
-        };
-        PreviewKeyUp   += (_, _) => _userIsTyping = false;
+        PreviewKeyUp += (_, _) => _userIsTyping = false;
 
         // Výběr položky zachyť hned (přijde PŘED Text=display → TextChanged → DropDownClosed), aby
         // pick přežil i případný Refilter, který mezitím vyprázdní Items a zahodí SelectedItem.
@@ -161,9 +156,75 @@ public class EDFilterComboBox : ComboBox
         };
     }
 
-    // Navigační/commit klávesy nemají spustit filtrování: WPF při nich přepíše Text na zvýrazněnou
-    // položku (→ TextChanged), a Refilter by přestavěl Items a zahodil kotvu zvýraznění uprostřed
-    // navigace. Znakové klávesy filtrují dál (viz _userIsTyping guard v TextChanged handleru).
+    /// <summary>
+    /// Navigaci a commit si obsluhujeme sami. <c>ComboBox.OnPreviewKeyDown</c> značí šipky, Enter
+    /// a Esc jako <c>Handled</c> už ve fázi class handlerů, tedy PŘED instance handlery - handler
+    /// registrovaný v ctoru by se s otevřeným dropdownem nikdy nezavolal. Přepsání virtuální
+    /// metody běží místo té jeho, takže máme první slovo.
+    /// </summary>
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        _userIsTyping = !IsNavigationKey(e.Key);
+        if (HandleNavigationKey(e.Key)) { e.Handled = true; return; }
+        base.OnPreviewKeyDown(e);
+    }
+
+    /// <summary>
+    /// Šipky / Enter / Esc. Vrací true, když je klávesa spotřebovaná.
+    /// Navigace jde vědomě přes <see cref="Selector.SelectedIndex"/>, ne přes interní zvýraznění
+    /// WPF: pick tak zachytí <c>SelectionChanged</c> do <c>_committedKey</c> a položka se rozsvítí
+    /// (<c>IsSelected</c>). <c>Text</c> se přepíše na display, ale <c>_userIsTyping</c> je u
+    /// navigačních kláves false, takže <see cref="Refilter"/> neproběhne.
+    /// </summary>
+    internal bool HandleNavigationKey(Key key)
+    {
+        switch (key)
+        {
+            case Key.Down:
+            case Key.Up:
+                // Otevřít MUSÍ být dřív než výběr - DropDownOpened nuluje _committedKey a Refilter
+                // při něm vyprázdní Items (→ SelectedIndex = -1), takže kotvu hledáme až potom.
+                if (!IsDropDownOpen) IsDropDownOpen = true;
+                var from = SelectedIndex >= 0 ? SelectedIndex : IndexOfKey(SelectedKey);
+                var next = EDFilterComboBoxLogic.NextIndex(Items.Count, from, key == Key.Down ? 1 : -1);
+                if (next >= 0 && next != SelectedIndex) SelectedIndex = next;
+                return true;
+
+            case Key.Enter:
+                CommitTypedTextOnEnter();
+                // Otevřený dropdown zavři → DropDownClosed fixuje výběr (CommitSelection).
+                if (IsDropDownOpen) { IsDropDownOpen = false; return true; }
+                return StrictSelection;
+
+            case Key.Escape:
+                _committedKey = null;   // commit pak revertne na aktuální SelectedKey
+                if (IsDropDownOpen) { IsDropDownOpen = false; return true; }
+                // Zavřené pole: revert napsaného textu hned (nečekat na ztrátu fokusu), ale klávesu
+                // NEspotřebovat - jinak by Esc v dialogu přestal fungovat jako Storno.
+                if (StrictSelection) ShowSelectedKeyText();
+                return false;
+
+            default:
+                return false;
+        }
+    }
+
+    // Enter po napsání textu bez picku z dropdownu: dohledej položku podle textu (exakt, jinak
+    // jediný kandidát filtru), jinak by commit napsaný výběr revertnul. Text == display zachyceného
+    // picku → pick platí (šipky Text přepisují), nedohledávat. Zavřený dropdown (šipkami vybraná
+    // položka nebo žádný match při psaní) → commit ručně, DropDownClosed nepřijde.
+    private void CommitTypedTextOnEnter()
+    {
+        if (!StrictSelection) return;
+        if (Text != DisplayFor(_committedKey)
+            && EDFilterComboBoxLogic.ResolveTyped(Suggestions, Text, KeyLabelSeparator) is { } typed)
+            _committedKey = typed.Key;
+        if (!IsDropDownOpen) CommitSelection();
+    }
+
+    // Navigační/commit klávesy nemají spustit filtrování: Text se při nich přepíše na vybranou
+    // položku (→ TextChanged), a Refilter by přestavěl Items a zahodil kotvu navigace uprostřed
+    // procházení. Znakové klávesy filtrují dál (viz _userIsTyping guard v TextChanged handleru).
     private static bool IsNavigationKey(Key k) =>
         k is Key.Up or Key.Down or Key.PageUp or Key.PageDown or Key.Enter or Key.Escape or Key.Tab;
 
@@ -249,6 +310,16 @@ public class EDFilterComboBox : ComboBox
         Text = text;
         _textIsUserFilter = false;
         _suppressChanges = false;
+    }
+
+    // Index položky dropdownu s daným Key (Tag), -1 když tam není. Kotva pro šipky z klidového
+    // stavu: navigace pak začíná u aktuálního výběru, ne od první položky seznamu.
+    private int IndexOfKey(string? key)
+    {
+        if (string.IsNullOrEmpty(key)) return -1;
+        for (int i = 0; i < Items.Count; i++)
+            if (Items[i] is ComboBoxItem { Tag: string tag } && tag == key) return i;
+        return -1;
     }
 
     // „Key — Label" pro daný Key dohledaný v aktuálních Suggestions; neznámý Key vrátí beze změny.
