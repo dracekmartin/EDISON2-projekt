@@ -163,7 +163,7 @@ public static class AiGuidedScheduleBuilder
                 BackgroundColor = headerBg
             },
             ShowHeader = ai.HasHeader,
-            ShowRowSeparators = GetBoolProp(sp, "showRowSeparators", true),
+            Grid = { ShowRowLines = GetBoolProp(sp, "showRowSeparators", true) },
             DataRowHeight = stopRowH,
             Columns = columns,
         };

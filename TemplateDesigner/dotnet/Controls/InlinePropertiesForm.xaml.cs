@@ -36,6 +36,14 @@ public partial class InlinePropertiesForm : UserControl
         TheForm.ButtonClicked += key => ButtonClicked?.Invoke(key);
     }
 
+    /// <summary>Datová pole aktuální agendy pro nabídku „vložit pole" u textových vlastností.
+    /// Nastavuje host při změně agendy - panel schéma nezná.</summary>
+    public IReadOnlyList<EDControls.ListItem> PlaceholderFields
+    {
+        get => TheForm.PlaceholderFields;
+        set => TheForm.PlaceholderFields = value;
+    }
+
     /// <summary>Napojí undo executor + canvas invalidaci (volá host jednou).</summary>
     public void SetContext(Action<IDesignerCommand> execute, Action invalidate)
     {

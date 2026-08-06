@@ -219,8 +219,15 @@ public static class FontResolver
 
     /// <summary>
     /// Rodina symbolového JŘ fontu (piktogramy dopravy: vozíček = „H", bezbariér částečně = „F",
-    /// na znamení, automat = „{"…) podle jazyka šablony. Znaky (drátové kódy z Caché) jsou pro CZ i SK
-    /// stejné, liší se jen tvary glyfů - SK má vlastní variantu. Embedded font (<c>Fonts/TimeTable2*.ttf</c>).
+    /// na znamení, automat = „{"…) podle jazyka šablony. Embedded font (<c>Fonts/TimeTable2*.ttf</c>).
+    /// <para>
+    /// ⚠️ **SK font NENÍ jen jiné ztvárnění týchž kódů** (změřeno 4. 8. 2026 obrysy z obou fontů;
+    /// dřívější tvrzení „znaky jsou pro CZ i SK stejné" bylo nepravdivé). Kódy, které dnes
+    /// překládáme, sedí v obou (`z` autobus, `x` vlak, `L` kolo - u `z` a `L` je obrys dokonce
+    /// identický), ale **`w` je v CZ železniční vagon a v SK autobus** a **`D` je v CZ křížek
+    /// a v SK dlaň**. Nová položka <c>SymbolGlyph</c> se proto musí ověřit v **obou** fontech,
+    /// jinak se vzhled rozejde podle jazyka šablony. Postup v <c>elementy-architektura.md</c>.
+    /// </para>
     /// </summary>
     public static string SymbolFontFamily(System.Globalization.CultureInfo? culture) =>
         string.Equals(culture?.TwoLetterISOLanguageName, "sk", StringComparison.OrdinalIgnoreCase)

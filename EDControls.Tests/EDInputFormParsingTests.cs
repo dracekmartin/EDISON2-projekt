@@ -1042,3 +1042,74 @@ public class EDInputFormParsingTests
         Assert.Equal("Brno", f.ListItems[1].Key);
     }
 }
+
+/// <summary>
+/// Drátový kontrakt příznaku „pole přijímá {POLE} placeholdery" (sloupec 19). Přidával se
+/// **aditivně** - starší server ho neposílá a čtečka to musí přežít, jinak by nová EDControls
+/// rozbila formuláře v EDISONu.
+/// </summary>
+public class EDInputFormPlaceholderWireTests
+{
+    private static Field ParseSingleField(CList row)
+    {
+        var data = new CVar();
+        data["1"] = new CVar(row);
+        return Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(data)));
+    }
+
+    private static CList FieldRow(params object[] tail)
+    {
+        var head = new object[] { "FIELD", 1, "Text", "Obsah", "TEXT", "", "0", "0", "", "1", "0", "" };
+        return new CList([.. head, .. tail]);
+    }
+
+    [Fact]
+    public void StarsiServerBezSloupce_NerozbijeParsovani()
+    {
+        // 12 sloupců = stav před rozšířením; příznak musí vyjít jako vypnutý, ne spadnout.
+        var field = ParseSingleField(FieldRow());
+
+        Assert.False(field.Placeholders);
+    }
+
+    [Fact]
+    public void PriznakSePrenese()
+    {
+        // 13-18 = listItems, fileFilter, min, max, format, unit; 19 = placeholders
+        var field = ParseSingleField(FieldRow("", "", "", "", "", "", "1"));
+
+        Assert.True(field.Placeholders);
+    }
+
+    /// <summary>
+    /// Formulář chodí tam a zpět (Validate), takže příznak musí přežít i **zpáteční** cestu.
+    /// Caché ho zpočátku při čtení zahazovalo (četlo jen po pozici 18) → tlačítko „vložit pole"
+    /// se po prvním kole schovalo. Tenhle test hlídá .NET stranu round-tripu.
+    /// </summary>
+    [Fact]
+    public void PriznakPrezijeCestuTamIZpet()
+    {
+        var odeslane = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
+
+        var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([odeslane]);
+        var vraceny = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
+
+        Assert.True(vraceny.Placeholders);
+    }
+
+    /// <summary>
+    /// Po drátě jede **jen příznak**, ne seznam nabízených polí: ten zná pouze klient (ze schématu
+    /// agendy) a drží ho <c>EDInputForm.PlaceholderFields</c>. Kdyby se vezl v poli, server by ho
+    /// na zpáteční cestě přepsal prázdnem a tlačítko by po prvním kole nabízelo prázdno.
+    /// </summary>
+    [Fact]
+    public void SeznamPoliPoDratuNejede()
+    {
+        var odeslane = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
+
+        var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([odeslane]);
+        var vraceny = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
+
+        Assert.Empty(vraceny.ListItems);
+    }
+}

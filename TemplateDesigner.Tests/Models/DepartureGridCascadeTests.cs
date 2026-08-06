@@ -112,6 +112,33 @@ public class DepartureGridCascadeTests
         Assert.Equal(TextVerticalAlignment.Bottom, inherited.ResolveGroupHeaderParent().VAlign);
     }
 
+    // ── ResolveAnotaceTextStyle: scalar AnotaceFontSize ──────────────────────────
+
+    [Fact]
+    public void AnotaceText_DataStyleFontSize_NesmiBytPrebitScalarem()
+    {
+        // Třetí výskyt téhož bugu (nález review 4. 8.): AnotaceFontSize přebíjel
+        // uživatelovu Velikost z tabu Obecné, guard kontroloval jen AnotaceTextStyle.
+        var grid = new DepartureGridElement
+        {
+            DataStyle = new TextStyle { FontSize = 12f },
+        };
+
+        var s = grid.ResolveAnotaceTextStyle(grid.ResolveHourDataParent());
+
+        Assert.Equal(12f, s.FontSize);
+    }
+
+    [Fact]
+    public void AnotaceText_BezKaskady_PouzijeScalarFallback()
+    {
+        var grid = new DepartureGridElement();
+
+        var s = grid.ResolveAnotaceTextStyle(grid.ResolveHourDataParent());
+
+        Assert.Equal(grid.AnotaceFontSize, s.FontSize);
+    }
+
     // ── Element-level parent (tab Obecné → resolve) ──────────────────────────────
 
     [Fact]
@@ -123,5 +150,55 @@ public class DepartureGridCascadeTests
         };
 
         Assert.Equal("#FF336699", grid.ResolveHourDataParent().TextColor);
+    }
+
+    // ── „Z čeho zóna dědí" - přístupový bod pro formulář ────────────────────────
+    // Formulář musí u nenastavené vlastnosti nabídnout to, co dopadne z kaskády (jinak ukazuje
+    // jednu hodnotu a tiskne se druhá). Aby to šlo strojově ověřit, má každá zóna metodu
+    // „z čeho dědím" - a ta se nesmí rozejít s tím, co si spočítá kreslicí cesta.
+
+    [Fact]
+    public void MinutovaZona_JeVychozeTucna()
+    {
+        // Tohle je ta hodnota, kterou musí formulář nabídnout jako výchozí u „Minuta: Tučné"
+        // (do 5. 8. nabízel nezaškrtnuto, přitom se minuty tučně tiskly).
+        var grid = new DepartureGridElement();
+
+        Assert.True(grid.ResolveElementMinuteParent().Bold);
+        Assert.Equal(grid.MinuteFontSize, grid.ResolveElementMinuteParent().FontSize);
+    }
+
+    [Fact]
+    public void ZChehoZonaDedi_SeNerozejdeSKreslicíCestou()
+    {
+        var grid = new DepartureGridElement();
+
+        // Minutová zóna: kreslicí cesta resolvuje MinuteStyle nad tímtéž rodičem.
+        Assert.Equal(grid.MinuteStyle.Resolve(grid.ResolveElementMinuteParent()).Bold,
+                     grid.ResolveGroupMinuteParent().Bold);
+        Assert.Equal(grid.MinuteStyle.Resolve(grid.ResolveElementMinuteParent()).FontSize,
+                     grid.ResolveGroupMinuteParent().FontSize);
+
+        // Text značek: dtto, jen se rodič skládá s vlastním skalárním fallbackem velikosti.
+        Assert.Equal(grid.ResolveAnotaceTextStyle(grid.ResolveHourDataParent()).FontSize,
+                     grid.AnotaceTextStyle.Resolve(grid.ResolveElementAnotaceTextParent()).FontSize);
+
+        // Symboly značek dědí přímo datový styl prvku (velikost si dopočítá z minutové).
+        Assert.Equal(grid.ResolveHourDataParent().TextColor,
+                     grid.ResolveElementAnotaceSymbolParent().TextColor);
+    }
+
+    [Fact]
+    public void ZChehoZonaDedi_RespektujeUzivateluvDatovyStyl()
+    {
+        var grid = new DepartureGridElement
+        {
+            DataStyle = new TextStyle { FontSize = 12f, Bold = false },
+        };
+
+        // Skalární fallback nesmí přebít, co uživatel nastavil v tabu Obecné.
+        Assert.Equal(12f, grid.ResolveElementMinuteParent().FontSize);
+        Assert.False(grid.ResolveElementMinuteParent().Bold);
+        Assert.Equal(12f, grid.ResolveElementAnotaceTextParent().FontSize);
     }
 }

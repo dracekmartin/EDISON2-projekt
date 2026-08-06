@@ -13,20 +13,43 @@ Class ALVA.TemplateDesigner.EDInputForm.BaseElementFields
 {
 
 /// Rámeček elementu + rohy, vlastní skupina. <var>withCorners</var>=0 pro elementy bez plochy,
-/// kde rohy nemají smysl (čára).
-ClassMethod AddBorder(form As ALVA.EDControls.EDInputForm.Form, withCorners As %Boolean = 1)
+/// kde rohy nemají smysl (čára). <var>defColor</var>/<var>defWidth</var> = výchozí hodnoty toho
+/// konkrétního prvku; musí souhlasit s jeho C# defaulty (hlídá EDInputFormSchemaDriftTests).
+ClassMethod AddBorder(form As ALVA.EDControls.EDInputForm.Form, withCorners As %Boolean = 1, defColor As %String = "#00FFFFFF", defWidth As %String = 0)
 {
     d form.AddGroup("border", "Rámeček elementu")
     s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
-    s f.value = "#00FFFFFF"
-    s f.helpText = "Lze zadat i {BARVA_LINKY} - barvu vezme z jízdního řádu (nenastavená = bílá)"
-    d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
+    s f.value = defColor
+    s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
+    d form.AddDecimal("BorderWidth", "Tloušťka rámečku", defWidth, 0, 5, "mm")
     i withCorners {
         s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
         d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
         s f.value = "None"
         d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
     }
+}
+
+/// Mřížka tabulkového prvku = jen VNITŘNÍ čáry, vlastní skupina. Vnější obrys je rámeček elementu
+/// (AddBorder) - do 4. 8. 2026 vedly k obrysu dvě cesty a to byl důvod sjednocení.
+/// <var>withLineToggles</var>=0 u prvku, který mřížkou kreslí jen čáru pod záhlavím (legenda
+/// poznámek) - přepínače řádků/sloupců by tam lhaly. <var>defRowLines</var>/<var>defColumnLines</var>/
+/// <var>defColor</var> = výchozí hodnoty toho konkrétního prvku (každý si mřížku inicializuje
+/// jinak); musí souhlasit s jeho C# defaulty (hlídá EDInputFormSchemaDriftTests).
+ClassMethod AddGrid(form As ALVA.EDControls.EDInputForm.Form, withLineToggles As %Boolean = 1, defRowLines As %Boolean = 1, defColumnLines As %Boolean = 0, defColor As %String = "#FFD0D0D0")
+{
+    d form.AddGroup("grid", "Mřížka")
+    i withLineToggles {
+        d form.AddBool("Grid.ShowRowLines", "Čáry mezi řádky", defRowLines)
+        d form.AddBool("Grid.ShowColumnLines", "Čáry mezi sloupci", defColumnLines)
+    }
+    s f = form.AddFieldToLastGroup("Grid.Color", "Barva mřížky", $$$FieldTypeColor, 0, 0)
+    s f.value = defColor
+    s f = form.AddDecimal("Grid.Width", "Tloušťka mřížky", "", 0, 5, "mm")
+    s f.helpText = "Prázdné nebo 0 = podle tloušťky rámečku elementu"
+    s f = form.AddFieldToLastGroup("Grid.Style", "Styl mřížky", $$$FieldTypeList, 0, 1)
+    d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
+    s f.value = "Solid"
 }
 
 /// Pozice, velikost, rotace, vrstva, uzamčení.
@@ -59,6 +82,7 @@ ClassMethod AddConditions(form As ALVA.EDControls.EDInputForm.Form)
 {
     d form.AddGroup("advanced", "Podmínky")
     s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
+    s f.placeholders = 1
     s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
 }
 

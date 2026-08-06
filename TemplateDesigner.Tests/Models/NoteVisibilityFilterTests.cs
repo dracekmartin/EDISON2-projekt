@@ -115,6 +115,41 @@ public class NoteVisibilityFilterTests
         Assert.Equal(0, counter.HiddenLegendRows);
     }
 
+    /// <summary>
+    /// Značka vypnutá v prvku poznámek (kola, místenky, pokračující spoje) se do signálu NESMÍ
+    /// počítat. Jsou vypnuté ve výchozím stavu, takže signál „nastavení mění obsah vývěsky" by
+    /// svítil na každé běžné šabloně a přestal by cokoli znamenat - a to je přesně signál, který
+    /// má hlídat, kdy UI lže (nález Jan 5. 8., regrese z přesunu parametrů do prvku 4. 8.).
+    /// </summary>
+    [Fact]
+    public void Pocitadlo_ZnackaVypnutaVPrvku_SeNepocita()
+    {
+        var page = Stranka("kola", "b", vRozsahu: false);
+        var counter = new NoteSuppressionCounter();
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment, counter: counter,
+            hiddenContent: new HashSet<string> { "kola" });
+
+        // Značka i vysvětlivka zmizí (to je správně - uživatel je nezapnul)...
+        Assert.Empty(((JsonArray)result.Rows["ODJEZDY"][0].GetValue("ANOTACE")!));
+        Assert.Empty(result.Rows["POZNAMKY"]);
+        // ...ale signál o „skryté nastavením" se rozsvítit nesmí.
+        Assert.False(counter.AnythingHidden);
+    }
+
+    /// <summary>Kontrolní protipól: co schová PARAMETR sestavy, se počítat musí - jinak by se
+    /// oprava výše přehnala a signál by zmlkl i tam, kde má varovat.</summary>
+    [Fact]
+    public void Pocitadlo_ParametrSestavySePocitaDal()
+    {
+        var page = Stranka("rozdil-trasy", "B", vRozsahu: true);
+        var counter = new NoteSuppressionCounter();
+
+        NoteVisibilityFilter.Apply(page, NoteRangeSuppression.AutoRouteNote, counter: counter);
+
+        Assert.True(counter.AnythingHidden);
+    }
+
     [Fact]
     public void Pocitadlo_NaZnameniDleStopListu_SeNepocita()
     {
@@ -127,6 +162,53 @@ public class NoteVisibilityFilterTests
 
         Assert.Empty(result.Rows["POZNAMKY"]);
         Assert.False(counter.AnythingHidden);
+    }
+
+    /// <summary>Rozhodnutí, jestli legendu přestupů schovat, se bere ze šablony: schová se, jen když
+    /// je žádný seznam zastávek netiskne. Bez seznamu zastávek neznáme záměr, takže se neschovává.</summary>
+    [Fact]
+    public void ShouldHidePrestup_SledujeNastaveniStopListu()
+    {
+        var bezPrestupu = new TemplateDesigner.Models.Elements.StopListElement();   // default = přestupy vyp
+        var sPrestupy   = new TemplateDesigner.Models.Elements.StopListElement { ShowTransferAttributes = true };
+
+        Assert.True(NoteVisibilityFilter.ShouldHidePrestupLegend(SablonaS(bezPrestupu)));
+        Assert.False(NoteVisibilityFilter.ShouldHidePrestupLegend(SablonaS(sPrestupy)));
+        Assert.False(NoteVisibilityFilter.ShouldHidePrestupLegend(new Template()));   // bez StopListu → neskrývat
+    }
+
+    private static Template SablonaS(TemplateElement element)
+    {
+        var t = new Template();
+        var s = new Section();
+        s.Elements.Add(element);
+        t.Sections.Add(s);
+        return t;
+    }
+
+    /// <summary>Piktogram přestupu bez vysvětlení je nečitelný, vysvětlení bez piktogramu matoucí -
+    /// legenda přestupů proto následuje viditelnost značky, ne parametr sestavy (#13048 bod 1).</summary>
+    [Fact]
+    public void PrestupLegenda_SeSkryjeKdyzStopListZnackuNetiskne()
+    {
+        var page = Stranka("prestup", "A", vRozsahu: false);
+        var counter = new NoteSuppressionCounter();
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment,
+            hidePrestupLegend: true, counter: counter);
+
+        Assert.Empty(result.Rows["POZNAMKY"]);
+        Assert.False(counter.AnythingHidden);   // není to potlačení parametrem → do signálu nepatří
+    }
+
+    [Fact]
+    public void PrestupLegenda_ZustaneKdyzStopListZnackuTiskne()
+    {
+        var page = Stranka("prestup", "A", vRozsahu: false);
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment);
+
+        Assert.Single(result.Rows["POZNAMKY"]);
     }
 
     [Fact]

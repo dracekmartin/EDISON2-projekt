@@ -42,7 +42,7 @@ Parameter InstanceLabel As %String = "linka";
 
 Parameter InstanceLabelPlural As %String = "linky";
 
-/// Vrátí DataSchema - shodné s KnizniJrAd (stejný wire formát).
+/// Vrátí DataSchema - shodné s LinkovyJrAd (stejný wire formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {
     $$$FillParams

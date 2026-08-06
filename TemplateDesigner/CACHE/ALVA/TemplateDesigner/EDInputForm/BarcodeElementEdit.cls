@@ -20,7 +20,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Kód" ─────────────────────────────────────────────────
         d form.AddGroup("code", "Kód")
-        d form.AddText("Content", "Obsah")
+        s f = form.AddText("Content", "Obsah")
+        s f.placeholders = 1
 
         s f = form.AddFieldToLastGroup("BarcodeType", "Typ kódu", $$$FieldTypeList, 0, 1)
         d f.AddListItem("QR", "QR kód")
@@ -38,7 +39,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FF000000"
 
         s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
+        // Bílá, ne průhledná jako u ostatních prvků - čtečka potřebuje kontrast (drží to C# ctor).
+        s f.value = "#FFFFFFFF"
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)

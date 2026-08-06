@@ -30,10 +30,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
         d form.AddDecimal("RowHeight", "Výška řádku", 6, 2, 50, "mm")
         d form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
-        // „Čáry tabulky" = mřížka mezi buňkami; rámeček celého elementu je base pole níže.
-        s f = form.AddFieldToLastGroup("BorderStyle", "Čáry tabulky", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("None", "Žádný"), f.AddListItem("Outer", "Vnější"), f.AddListItem("All", "Vše")
-        d f.AddListItem("RowsOnly", "Řádky"), f.AddListItem("ColumnsOnly", "Sloupce")
+        // Řazení řádků: sloupce jsou per element, Caché je nezná - položky plní klient
+        // (PopulateSortFields), stejně jako u „Zdroj dat". Prázdné = pořadí z agendy.
+        s f = form.AddFieldToLastGroup("SortField", "Řadit podle", $$$FieldTypeList, 0, 0)
+        s f.helpText = "Prázdné = pořadí, v jakém řádky vrátí databáze. Číslo, datum i text se poznají z hodnot."
+        s f = form.AddFieldToLastGroup("SortDescending", "Směr", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("0", "Vzestupně"), f.AddListItem("1", "Sestupně")
+        s f.value = "0"
+        s f = form.AddFieldToLastGroup("ThenByField", "Potom podle", $$$FieldTypeList, 0, 0)
+        s f = form.AddFieldToLastGroup("ThenByDescending", "Směr (druhý klíč)", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("0", "Vzestupně"), f.AddListItem("1", "Sestupně")
+        s f.value = "0"
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         s f = form.AddNumber("MinRows", "Min. řádků (0 = ne)", 0, 0, 200)
         s f.helpText = "Doplní prázdné řádky do tohoto počtu - pevná výška boxu (např. faktura). 0 = bez minima"
@@ -41,15 +48,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Ořízne přebytečné datové řádky. 0 = bez omezení"
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF333333", "#FFE8E8E8")
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF333333", "#FFE8E8E8", 1, "", 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF222222", "#00FFFFFF")
 
         // ── Base pole (rámeček elementu formulář dřív neměl vůbec - šel nastavit jen v panelu) ─
-        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form, 1, "#FF999999", 0.19)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 1, 0, 0, "#FFCCCCCC")
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
+        s f.placeholders = 1
         s f.helpText = "Podmínka nad daty řádku - řádky, kde neplatí, se nevykreslí. Názvy polí = mapování ""Field"" ze sloupců (tab Sloupce). Např. {CENA} > 0"
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit pravidla…"

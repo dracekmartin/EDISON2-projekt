@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Expressions;
@@ -13,6 +14,9 @@ namespace TemplateDesigner.Models.Elements;
 /// </summary>
 public class StopListElement : StopScheduleElementBase, IRowHighlightable
 {
+    /// <summary>Svislé čáry mezi sloupci byly u seznamu zastávek vždy opt-in (na rozdíl od ostatních JŘ prvků).</summary>
+    public StopListElement() => Grid.ShowColumnLines = false;
+
     // ═══════════════════════════════════════════
     // Sloupce - konfigurovatelné pořadí, šířky, záhlaví
     // ═══════════════════════════════════════════
@@ -26,16 +30,21 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new() { Key = StopFields.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
         new() { Key = StopFields.JeAktualni,   Header = "Akt.",      Width = 6f,  Visible = false },
         new() { Key = StopFields.Nastupiste,   Header = "Označník", Width = 12f, Visible = false },
+        new() { Key = StopFields.Sloupek,      Header = "Sloupek",  Width = 12f, Visible = false },
+        // Popis sloupku (StopFields.SloupekPopis) se v nabídce sloupců ZÁMĚRNĚ neobjevuje - nikdo si
+        // o něj neřekl a texty z číselníku jsou zčásti provozní („točna", „výstup"), ne pro cestující.
+        // Data ho nesou dál, takže jde použít v dynamické tabulce i jako placeholder; do nabídky
+        // sloupců ho vrať, teprve když ho někdo bude chtít (rozhodnutí Jan 2026-08-03).
     ];
 
     // ═══════════════════════════════════════════
     // Řádky (DataRowHeight je na ScheduleElementBase)
     // ═══════════════════════════════════════════
-    public bool ShowRowSeparators { get; set; } = true;
+    
 
     /// <summary>Svislé čáry mezi sloupci (tloušťka, styl a barva = mřížka elementu).
     /// Default vyp = dosavadní vzhled; uvnitř sloupce zastávek rozděleného na značky + název se nekreslí.</summary>
-    public bool ShowColumnSeparators { get; set; }
+    
 
     /// <summary>Na kolik oddílů vedle sebe se seznam rozřeže (KOVED #13097), max
     /// <see cref="MaxPartCount"/>. 1 = jeden svislý seznam (dosavadní stav). Každý oddíl nese
@@ -219,7 +228,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         if (Width <= 0) return;
 
-        var zastavky = ExpandPlatformRows(BuildZastavky(ctx.Data));
+        var zastavky = BuildZastavkyProRender(ctx.Data);
         bool hasData = zastavky.Count > 0;
 
         // Sloupce se musí znát PŘED škálou - vodorovná část škály se počítá z nich (a varianty
@@ -404,8 +413,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return new RowSpec(RowKind.Data, rowH, specs)
         {
             Background = ColorHex.ParseOrNull(rowBg),
-            VerticalLinePaint = ShowColumnSeparators ? paints.Grid : null,
-            LineBelowPaint = ShowRowSeparators ? paints.Grid : null,
+            VerticalLinePaint = Grid.ShowColumnLines ? paints.Grid : null,
+            LineBelowPaint = Grid.ShowRowLines ? paints.Grid : null,
             // Značky (na znamení / atributy / poznámky) po úsecích: piktogramy symbolovým
             // Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky normálním.
             // V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
@@ -428,7 +437,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         var specs = BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth, widths);
         ColumnRenderer.DrawRow(ctx, xMm, Y, headerH, specs,
-            ShowColumnSeparators ? paints.Grid : null, fontScale: scale);
+            Grid.ShowColumnLines ? paints.Grid : null, fontScale: scale);
 
         // Čára pod záhlavím
         var lineStart = ctx.ToCanvas(xMm, Y + headerH);
@@ -642,7 +651,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     public override float CalculateHeightFromData(DataContext? data)
     {
-        var zastavky = ExpandPlatformRows(BuildZastavky(data));
+        var zastavky = BuildZastavkyProRender(data);
         if (zastavky.Count == 0) return DesignerPlaceholderHeight;
 
         bool showPassed = GetBoolParam(data, "TISK_PROJETYCH_ZAST", DefaultShowPassedStops);
@@ -726,6 +735,20 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return cols.Count > 0 ? cols.Max(c => ResolveDataStyle(c).FontSize) : (DataStyle.FontSize ?? 8f);
     }
 
+    /// <summary>Řídí sloupek režimy „více hodnot", řádkové duplikování a dělení stránek místo označníku?
+    /// **Odvozené z dat** (parametr sestavy „Číslo stanoviště podle" → `ZDROJ_STANOVISTE`), ne uživatelské
+    /// nastavení prvku - proto se neserializuje. Dvě místa, kde se totéž nastavuje, už jsme jednou
+    /// odklízeli (`B41`).</summary>
+    [JsonIgnore] internal bool SloupekJakoStanoviste { get; set; }
+
+    /// <summary>Zastávky pro render/měření: rozvinuté na stanoviště a se zdrojem stanoviště přečteným
+    /// z dat. Jediná cesta, jak si prvek zastávky bere - aby zdroj nemohl chybět v jedné z nich.</summary>
+    private List<ZastavkaData> BuildZastavkyProRender(DataContext? data)
+    {
+        SloupekJakoStanoviste = data?.GetValue("ZDROJ_STANOVISTE")?.ToString() == "Sloupek";
+        return ExpandPlatformRows(BuildZastavky(data));
+    }
+
     internal string GetCellText(ZastavkaData z, string columnKey, bool isPassed = false)
     {
         // Variantní časový sub-sloupec „CAS_JIZDY#i" → z.TrasaMin[i] (číslo / „<" / "" jak přišlo z Caché)
@@ -741,20 +764,29 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             StopFields.TravelTime   => FilterPassedTime(z.CasJizdy > 0 ? z.CasJizdy.ToString() : "", isPassed),
             // Víc zón u jedné zastávky (hraniční) odděluje čárka - shodně se starým modulem.
             StopFields.Zone         => string.Join(",", z.Zony),
-            StopFields.Nastupiste   => MultiPlatformMode switch
-            {
-                // Dle spojů: první položka CSV = nejčetnější / celý výčet; bez per-spoj dat fallback na trasu
-                MultiPlatformDisplay.MostFrequent => z.NastupisteSpoju.Length > 0
-                    ? z.NastupisteSpoju.Split(',')[0] : z.Nastupiste,
-                MultiPlatformDisplay.All => z.NastupisteSpoju.Length > 0
-                    ? z.NastupisteSpoju.Replace(",", ", ") : z.Nastupiste,
-                _ => z.Nastupiste,
-            },
+            // Režimy „více hodnot" platí pro ten údaj, který je zvolený jako číslo stanoviště;
+            // druhý sloupec ukazuje prostou hodnotu z trasy, aby se čísla nemíchala.
+            StopFields.Nastupiste   => SloupekJakoStanoviste
+                ? z.Nastupiste
+                : StanovisteDleRezimu(z.Nastupiste, z.NastupisteSpoju),
+            StopFields.Sloupek      => SloupekJakoStanoviste
+                ? StanovisteDleRezimu(z.Sloupek, z.SloupekSpoju)
+                : z.Sloupek,
+            StopFields.SloupekPopis => z.SloupekPopis,
             StopFields.Poradi       => z.Poradi > 0 ? z.Poradi.ToString() : "",
             StopFields.JeAktualni   => z.JeAktualni ? "1" : "",
             _                       => ""
         };
     }
+
+    /// <summary>Hodnota stanoviště podle <see cref="MultiPlatformMode"/>: z trasy / nejčetnější dle spojů /
+    /// výčet všech. Bez per-spoj dat vždy fallback na hodnotu z trasy.</summary>
+    private string StanovisteDleRezimu(string zTrasy, string dleSpoju) => MultiPlatformMode switch
+    {
+        MultiPlatformDisplay.MostFrequent => dleSpoju.Length > 0 ? dleSpoju.Split(',')[0] : zTrasy,
+        MultiPlatformDisplay.All          => dleSpoju.Length > 0 ? dleSpoju.Replace(",", ", ") : zTrasy,
+        _                                 => zTrasy,
+    };
 
     /// <summary>Čas jízdy u projeté zastávky podle volby <see cref="PassedStopsTime"/>. Ne-číselnou
     /// hodnotu („&lt;" = projíždí) nechává - není to čas, jen značka.</summary>
@@ -866,7 +898,14 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             {
                 Separator();
                 foreach (var a in attrs)
-                    runs.Add(new MarkerRun(a.Znak, a.Znak.Length == 1 && !SymbolJeText(a.Znak)));
+                {
+                    bool piktogram = JePiktogram(a.Znak);
+                    // Přestupová značka se kreslí ze symbolového fontu, kde glyfy nesedí na písmena
+                    // číselníku (autobus „A" → „z", vlak „L" → „x"). Ostatní atributy se NEpřekládají -
+                    // u MHD je znak v datech už pozice ve fontu, u AD ostatní znaky na svém písmenu sedí.
+                    bool prelozit = piktogram && IsTransferAttr(a);
+                    runs.Add(new MarkerRun(prelozit ? SymbolGlyph(a.Znak) : a.Znak, piktogram));
+                }
             }
         }
 
@@ -983,6 +1022,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public List<ZastavkaData> ExpandPlatformRows(List<ZastavkaData> stops)
     {
         if (MultiPlatformMode != MultiPlatformDisplay.RowPerPlatform) return stops;
+        bool sl = SloupekJakoStanoviste;
         // Rozpad řádků má smysl jen s variantními časovými sloupci - bez nich by duplikáty nesly
         // identický jediný čas (CasJizdy základní trasy) a vypadaly jako chyba.
         if (!ShowAllRouteVariants) return stops;
@@ -992,11 +1032,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         {
             // Odlišná stanoviště variant, které zde staví - v pořadí prvního výskytu (bez třídění).
             // Jen indexy v rozsahu TrasaMin (obojí server drží stejně dlouhé; guard proti fantom řádku).
+            var varianty = sl ? z.SloupekVariant : z.NastupisteVariant;
             var platforms = new List<string>();
-            int pocetSloupcu = Math.Min(z.NastupisteVariant.Count, z.TrasaMin.Count);
+            int pocetSloupcu = Math.Min(varianty.Count, z.TrasaMin.Count);
             for (int i = 0; i < pocetSloupcu; i++)
             {
-                var p = z.NastupisteVariant[i];
+                var p = varianty[i];
                 if (!string.IsNullOrEmpty(p) && !platforms.Contains(p)) platforms.Add(p);
             }
 
@@ -1009,7 +1050,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             bool first = true;
             foreach (var plat in platforms)
             {
-                result.Add(CloneStopForPlatform(z, plat, keepMarkers: first));
+                result.Add(CloneStopForPlatform(z, plat, keepMarkers: first, sloupek: sl));
                 first = false;
             }
         }
@@ -1021,12 +1062,13 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// („&lt;") není vázaná na stanoviště → zůstane jen na prvním řádku (aby se info neztratilo, ale
     /// neopakovalo). Značky (atributy / na znamení / poznámky) jen na prvním řádku; název a zóna se
     /// opakují (je to táž zastávka). Neaktivní (aktuální řeší jediný řádek výše).</summary>
-    private static ZastavkaData CloneStopForPlatform(ZastavkaData z, string platform, bool keepMarkers)
+    private static ZastavkaData CloneStopForPlatform(ZastavkaData z, string platform, bool keepMarkers, bool sloupek)
     {
+        var varianty = sloupek ? z.SloupekVariant : z.NastupisteVariant;
         var trasa = new List<string>(z.TrasaMin.Count);
         for (int i = 0; i < z.TrasaMin.Count; i++)
         {
-            string nv = i < z.NastupisteVariant.Count ? z.NastupisteVariant[i] : "";
+            string nv = i < varianty.Count ? varianty[i] : "";
             string val = z.TrasaMin[i];
             if (nv == platform)
                 trasa.Add(val);                           // čas varianty jedoucí z tohoto stanoviště
@@ -1044,8 +1086,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             JeAktualni       = false,
             Odsazeni         = z.Odsazeni,
             NaZnameni        = keepMarkers && z.NaZnameni,
-            Nastupiste       = platform,
+            Nastupiste       = sloupek ? z.Nastupiste : platform,
             NastupisteSpoju  = z.NastupisteSpoju,
+            Sloupek          = sloupek ? platform : z.Sloupek,
+            SloupekSpoju     = z.SloupekSpoju,
+            SloupekPopis     = z.SloupekPopis,
+            SloupekVariant   = z.SloupekVariant,
             Zony             = z.Zony,
             Atributy         = keepMarkers ? z.Atributy : [],
             PoznamkyZastavky = keepMarkers ? z.PoznamkyZastavky : [],
@@ -1089,8 +1135,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor  { Label = "Všechny varianty tras", Group = "Zastávky", Get = () => ShowAllRouteVariants, Set = v => ShowAllRouteVariants = v },
 
         GetDataRowHeightDescriptor(),
-        new BoolPropertyDescriptor { Label = "Oddělovací čáry",   Group = "Řádky",    Get = () => ShowRowSeparators, Set = v => ShowRowSeparators = v },
-        new BoolPropertyDescriptor { Label = "Svislé čáry mezi sloupci", Group = "Řádky", Get = () => ShowColumnSeparators, Set = v => ShowColumnSeparators = v },
 
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
@@ -1099,14 +1143,14 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor  { Label = "Přestupy (vlak/autobus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
         new EnumPropertyDescriptor
         {
-            Label = "Více označníků", Group = "Zastávky",
+            Label = "Více stanovišť", Group = "Zastávky",
             Get = () => MultiPlatformMode,
             Set = v => MultiPlatformMode = (MultiPlatformDisplay)v,
             Options = [
                 ("Z trasy linky", (object)MultiPlatformDisplay.FromRoute),
                 ("Nejčetnější dle spojů", (object)MultiPlatformDisplay.MostFrequent),
                 ("Výčet všech", (object)MultiPlatformDisplay.All),
-                ("Řádek pro každý označník", (object)MultiPlatformDisplay.RowPerPlatform)
+                ("Řádek pro každé stanoviště", (object)MultiPlatformDisplay.RowPerPlatform)
             ]
         },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
@@ -1223,8 +1267,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         var clone = new StopListElement
         {
-            ShowRowSeparators       = ShowRowSeparators,
-            ShowColumnSeparators    = ShowColumnSeparators,
             PartCount               = PartCount,
             PartGap                 = PartGap,
             Columns                 = Columns.Select(c => c.Clone()).ToList(),

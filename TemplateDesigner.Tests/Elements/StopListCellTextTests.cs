@@ -45,6 +45,94 @@ public class StopListCellTextTests
         Assert.Equal("5", Text(MultiPlatformDisplay.All, Stop("5", "")));
     }
 
+    // ── Sloupek (KOVED #13088) ────────────────────────────────────────────────
+
+    /// <summary>Sloupek je jiný údaj než označník (číslo z číselníku zastávky vs. volný text
+    /// z trasy) - zákazníci, kteří evidují oboje, mají v datech obě hodnoty a nesmí se míchat.</summary>
+    [Fact]
+    public void Sloupek_JeNezavislyNaOznacniku()
+    {
+        var z = Stop("11", "22,11");
+        z.Sloupek = "2";
+
+        Assert.Equal("2", new StopListElement().GetCellText(z, StopFields.Sloupek));
+        Assert.Equal("11", new StopListElement().GetCellText(z, StopFields.Nastupiste));
+    }
+
+    /// <summary>Režimy platí pro ten údaj, který je zvolený jako stanoviště. Když je zvolený označník,
+    /// sloupec Sloupek ukazuje prostou hodnotu z trasy - jinak by pod hlavičkou „Sloupek" vyšlo číslo
+    /// spočítané z označníků.</summary>
+    [Fact]
+    public void Sloupek_BezPrepnutiIgnorujeRezimy()
+    {
+        var z = Stop("11", "22,11");
+        z.Sloupek = "2";
+        z.SloupekSpoju = "3,2";
+
+        Assert.Equal("2", new StopListElement { MultiPlatformMode = MultiPlatformDisplay.MostFrequent }
+            .GetCellText(z, StopFields.Sloupek));
+        Assert.Equal("2", new StopListElement { MultiPlatformMode = MultiPlatformDisplay.All }
+            .GetCellText(z, StopFields.Sloupek));
+    }
+
+    /// <summary>Po přepnutí parametru sestavy na Sloupek přeberou režimy sloupky a označník se naopak
+    /// přestane počítat - přepínač je jeden a platí pro oba sloupce zrcadlově (KOVED #13088).</summary>
+    [Fact]
+    public void PoPrepnutiNaSloupek_RezimyPlatiProSloupek()
+    {
+        var z = Stop("11", "22,11");
+        z.Sloupek = "2";
+        z.SloupekSpoju = "3,2";
+
+        var nejcetnejsi = new StopListElement
+        {
+            MultiPlatformMode = MultiPlatformDisplay.MostFrequent,
+            SloupekJakoStanoviste = true,
+        };
+        Assert.Equal("3", nejcetnejsi.GetCellText(z, StopFields.Sloupek));
+        Assert.Equal("11", nejcetnejsi.GetCellText(z, StopFields.Nastupiste));
+
+        var vycet = new StopListElement
+        {
+            MultiPlatformMode = MultiPlatformDisplay.All,
+            SloupekJakoStanoviste = true,
+        };
+        Assert.Equal("3, 2", vycet.GetCellText(z, StopFields.Sloupek));
+        Assert.Equal("11", vycet.GetCellText(z, StopFields.Nastupiste));
+    }
+
+    /// <summary>Zdroj stanoviště je odvozený z dat, ne uživatelské nastavení prvku - do šablony se
+    /// nesmí uložit, jinak by přebil parametr sestavy (past odklizená v `B41`).</summary>
+    [Fact]
+    public void ZdrojStanoviste_SeNeserializuje()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(new StopListElement { SloupekJakoStanoviste = true });
+
+        Assert.DoesNotContain("SloupekJakoStanoviste", json);
+    }
+
+    /// <summary>MHD sloupek nevydává (tam je totéž stanoviště „označník") - prázdná buňka, ne pád.</summary>
+    [Fact]
+    public void Sloupek_BezDatJePrazdny()
+    {
+        Assert.Equal("", new StopListElement().GetCellText(Stop("11", ""), StopFields.Sloupek));
+        Assert.Equal("", new StopListElement().GetCellText(Stop("11", ""), StopFields.SloupekPopis));
+    }
+
+    /// <summary>Popis sloupku se v nabídce sloupců nenabízí (nikdo si o něj neřekl), ale data ho nesou
+    /// a vykreslí se, kdykoli se ten klíč jako sloupec použije - dynamickou tabulkou nebo až ho někdo
+    /// bude chtít zpět v nabídce.</summary>
+    [Fact]
+    public void PopisSloupku_SeVykresliKdyzSePouzije()
+    {
+        var z = Stop("11", "");
+        z.Sloupek = "2";
+        z.SloupekPopis = "směr Brno přes UH";
+
+        Assert.Equal("směr Brno přes UH", new StopListElement().GetCellText(z, StopFields.SloupekPopis));
+        Assert.Equal("2", new StopListElement().GetCellText(z, StopFields.Sloupek));
+    }
+
     // ── Zóny (KOVED #13091 bod 4) ─────────────────────────────────────────────
 
     /// <summary>Hraniční zastávka leží ve dvou zónách. Starý modul je odděloval čárkou, takže

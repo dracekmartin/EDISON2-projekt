@@ -391,6 +391,16 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Parent kaskády pro per-column override datové buňky sloupce hodin.</summary>
     public ResolvedTextStyle ResolveHourDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
+    /// <summary>Styl textových anotací (písmena, dny). Scalar <see cref="AnotaceFontSize"/> je
+    /// poslední fallback - platí jen když velikost nenastavila žádná vrstva kaskády.</summary>
+    internal ResolvedTextStyle ResolveAnotaceTextStyle(ResolvedTextStyle dataBase)
+    {
+        var s = AnotaceTextStyle.Resolve(dataBase);
+        if (AnotaceTextStyle.FontSize is null && DataStyle.FontSize is null)
+            s = s with { FontSize = AnotaceFontSize };
+        return s;
+    }
+
     /// <summary>Parent kaskády pro per-column override záhlaví skupiny dnů.</summary>
     public ResolvedTextStyle ResolveGroupHeaderParent()
     {
@@ -410,18 +420,36 @@ public class DepartureGridElement : StopScheduleElementBase
         return p;
     }
 
+    /// <summary>
+    /// Z čeho dědí minutová zóna: datový styl prvku, na něm skalární fallback velikosti a tučnosti
+    /// (`MinuteFontSize`/`MinuteBold` platí jen když je nenastavil `DataStyle` - jinak by přebíjely
+    /// uživatelovu volbu z tabu Obecné). Vlastní vrstva zóny (`MinuteStyle`) se pak resolvuje nad tímhle.
+    /// </summary>
+    public ResolvedTextStyle ResolveElementMinuteParent()
+    {
+        var p = DataStyle.Resolve(ScheduleDataDefaults);
+        if (DataStyle.FontSize is null) p = p with { FontSize = MinuteFontSize };
+        if (DataStyle.Bold is null)     p = p with { Bold = MinuteBold };
+        return p;
+    }
+
+    /// <summary>Z čeho dědí symboly anotací = datový styl prvku (velikost si zóna dopočítá
+    /// z minutové, viz <see cref="Render"/>).</summary>
+    public ResolvedTextStyle ResolveElementAnotaceSymbolParent() => DataStyle.Resolve(ScheduleDataDefaults);
+
+    /// <summary>Z čeho dědí text anotací: datový styl prvku + skalární fallback velikosti
+    /// (`AnotaceFontSize` platí jen když velikost nenastavil `DataStyle`).</summary>
+    public ResolvedTextStyle ResolveElementAnotaceTextParent()
+    {
+        var p = DataStyle.Resolve(ScheduleDataDefaults);
+        if (DataStyle.FontSize is null) p = p with { FontSize = AnotaceFontSize };
+        return p;
+    }
+
     /// <summary>Parent kaskády pro per-column override minutové buňky skupiny.</summary>
     public ResolvedTextStyle ResolveGroupMinuteParent()
     {
-        var dataResolved = DataStyle.Resolve(ScheduleDataDefaults);
-        var p = MinuteStyle.Resolve(dataResolved);
-
-        // Legacy fallback: scalar MinuteFontSize/MinuteBold platí pouze když cascade (MinuteStyle + DataStyle)
-        // nenastavil explicit. Tím se user-set DataStyle.FontSize/Bold z tabu Obecné nepřebije.
-        if (MinuteStyle.FontSize is null && DataStyle.FontSize is null)
-            p = p with { FontSize = MinuteFontSize };
-        if (MinuteStyle.Bold is null && DataStyle.Bold is null)
-            p = p with { Bold = MinuteBold };
+        var p = MinuteStyle.Resolve(ResolveElementMinuteParent());
 
         // Minutové buňky: padding default 0 (hustá mřížka)
         p = p with
@@ -488,7 +516,15 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Jednoznakový speciální symbol (piktogram) → kreslí se symbolovým JŘ fontem.
     /// Víceznakové SpecialniZnak (dny „Po"…) i NZ (čísla) zůstávají v normálním fontu.</summary>
     private static bool JeGlyfSymbol(AnotaceData a) =>
-        a.Typ == TypAnotace.SpecialniZnak && a.Znak.Length == 1 && !SymbolJeText(a.Znak);
+        a.Typ == TypAnotace.SpecialniZnak && JePiktogram(a.Znak);
+
+    /// <summary>Znak, který se u odjezdu skutečně nakreslí. U piktogramů se sémantická značka **musí**
+    /// přeložit na glyf (kola „K" → `L`) - bez toho vyjede cizí piktogram, kolo se kreslilo jako glyf
+    /// na pozici „K". Překlad jde přes kategorii, ne přes písmeno: značky MHD jsou v datech už jako
+    /// pozice ve fontu a přeložit se nesmí. Používat i při **měření** šířky slotu, jinak se rozejde
+    /// s vykreslením.</summary>
+    internal static string GlyfProKresleni(AnotaceData a) =>
+        JeGlyfSymbol(a) ? GlyfDleKategorie(a.Znak, a.Kategorie) : a.Znak;
 
     public override void Render(RenderContext ctx)
     {
@@ -575,9 +611,7 @@ public class DepartureGridElement : StopScheduleElementBase
         var anotSymStyle = AnotaceSymbolStyle.Resolve(dataBase);
         if (AnotaceSymbolStyle.FontSize is null)
             anotSymStyle = anotSymStyle with { FontSize = minuteElementStyle.FontSize * 0.8f };
-        var anotTextStyle = AnotaceTextStyle.Resolve(dataBase);
-        if (AnotaceTextStyle.FontSize is null)
-            anotTextStyle = anotTextStyle with { FontSize = AnotaceFontSize };
+        var anotTextStyle = ResolveAnotaceTextStyle(dataBase);
         // Symbolový JŘ font (piktogramy) pro jednoznakové SpecialniZnak - dle jazyka šablony.
         // Uživatelský font v AnotaceSymbolStyle (pokud zvolen) má přednost; jinak embedded TimeTable2.
         var anotGlyphStyle = AnotaceSymbolStyle.FontFamily is null
@@ -932,7 +966,7 @@ public class DepartureGridElement : StopScheduleElementBase
                     {
                         SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
                         bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
-                        extraPx += af.MeasureText(a.Znak) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
+                        extraPx += af.MeasureText(GlyfProKresleni(a)) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
                     }
                 }
                 return scaledMinuteW + extraPx / ctx.MmToPx;
@@ -984,6 +1018,7 @@ public class DepartureGridElement : StopScheduleElementBase
                         foreach (var anot in odj.Anotace)
                         {
                             SKFont aFont = JeGlyfSymbol(anot) ? anotGlyphFont! : (anot.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
+                            string anotZnak = GlyfProKresleni(anot);
 
                             // Negativní značka invertovaně - černý box + bílý znak (jako legacy). Vždy zapnuto.
                             if (anot.Typ == TypAnotace.NegativniZnacka)
@@ -991,10 +1026,10 @@ public class DepartureGridElement : StopScheduleElementBase
                                 nzBgPaint ??= new SKPaint { Color = ColorHex.ParseOrBlack(NegativniZnackaBackColor), IsAntialias = true };
                                 nzFgPaint ??= new SKPaint { Color = ColorHex.Parse(NegativniZnackaForeColor, "#FFFFFFFF"), IsAntialias = true };
                                 float hpad  = aFont.Size * 0.12f;
-                                float znakW = aFont.MeasureText(anot.Znak);
+                                float znakW = aFont.MeasureText(anotZnak);
                                 var m = aFont.Metrics;
                                 ctx.Canvas.DrawRect(new SKRect(anotX, minPt.Y + m.Ascent, anotX + znakW + hpad * 2, minPt.Y + m.Descent), nzBgPaint);
-                                ctx.Canvas.DrawText(anot.Znak, anotX + hpad, minPt.Y, aFont, nzFgPaint);
+                                ctx.Canvas.DrawText(anotZnak, anotX + hpad, minPt.Y, aFont, nzFgPaint);
                                 anotX += znakW + hpad * 2 + anotInterGapPx;
                                 continue;
                             }
@@ -1009,8 +1044,8 @@ public class DepartureGridElement : StopScheduleElementBase
                                 aPaint = customAnotPaint;
                             }
 
-                            ctx.Canvas.DrawText(anot.Znak, anotX, minPt.Y, aFont, aPaint);
-                            anotX += aFont.MeasureText(anot.Znak) + anotInterGapPx;
+                            ctx.Canvas.DrawText(anotZnak, anotX, minPt.Y, aFont, aPaint);
+                            anotX += aFont.MeasureText(anotZnak) + anotInterGapPx;
                         }
                     }
 
@@ -1376,25 +1411,25 @@ public class DepartureGridElement : StopScheduleElementBase
         new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Styl minuty", Get = () => MinuteStyle.TextColor ?? "",            Set = v => MinuteStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
         // ── Styl anotací - symboly (speciální/NZ) ──
-        new StringPropertyDescriptor { Label = "Font",         Group = "Anotace - symboly", Get = () => AnotaceSymbolStyle.FontFamily ?? "", Set = v => AnotaceSymbolStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Anotace - symboly", Get = () => AnotaceSymbolStyle.FontSize ?? 0, Set = v => AnotaceSymbolStyle.FontSize = v > 0 ? v : null, Min = 0, Max = 20, Unit = "pt" },
-        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Anotace - symboly", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
-        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Anotace - symboly", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
-        new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace - symboly", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
-        new ColorPropertyDescriptor  { Label = "NZ pozadí",     Group = "Anotace - symboly", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
-        new ColorPropertyDescriptor  { Label = "NZ znak",       Group = "Anotace - symboly", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
+        new StringPropertyDescriptor { Label = "Font",         Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.FontFamily ?? "", Set = v => AnotaceSymbolStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
+        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.FontSize ?? 0, Set = v => AnotaceSymbolStyle.FontSize = v > 0 ? v : null, Min = 0, Max = 20, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
+        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
+        new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
+        new ColorPropertyDescriptor  { Label = "Pozadí negativní značky", Group = "Značky u odjezdů - symbol", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor  { Label = "Barva negativní značky",  Group = "Značky u odjezdů - symbol", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
         // ── Styl anotací - text (písmena, dny) ──
-        new StringPropertyDescriptor { Label = "Font",         Group = "Anotace - text", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Anotace - text", Get = () => AnotaceTextStyle.FontSize ?? AnotaceFontSize, Set = v => AnotaceTextStyle.FontSize = v, Min = 3, Max = 20, Unit = "pt" },
-        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Anotace - text", Get = () => AnotaceTextStyle.Bold ?? false,   Set = v => AnotaceTextStyle.Bold = v ? true : null },
-        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Anotace - text", Get = () => AnotaceTextStyle.Italic ?? false, Set = v => AnotaceTextStyle.Italic = v ? true : null },
-        new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace - text", Get = () => AnotaceTextStyle.TextColor ?? "", Set = v => AnotaceTextStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
+        new StringPropertyDescriptor { Label = "Font",         Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
+        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.FontSize ?? AnotaceFontSize, Set = v => AnotaceTextStyle.FontSize = v, Min = 3, Max = 20, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.Bold ?? false,   Set = v => AnotaceTextStyle.Bold = v ? true : null },
+        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.Italic ?? false, Set = v => AnotaceTextStyle.Italic = v ? true : null },
+        new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.TextColor ?? "", Set = v => AnotaceTextStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
-        new BoolPropertyDescriptor  { Label = "Anotace",              Group = "Anotace", Get = () => ShowAnotace,              Set = v => ShowAnotace = v },
+        new BoolPropertyDescriptor  { Label = "Značky u odjezdů",     Group = "Značky u odjezdů", Get = () => ShowAnotace,              Set = v => ShowAnotace = v },
 
-        new FloatPropertyDescriptor { Label = "Mezera min. ↔ anot.",  Group = "Mezery", Get = () => AnotaceGap,      Set = v => AnotaceGap = v,      Min = 0, Max = 5, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Mezera anot. ↔ anot.", Group = "Mezery", Get = () => AnotaceInterGap, Set = v => AnotaceInterGap = v, Min = 0, Max = 5, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Mezera minuta ↔ značka", Group = "Mezery", Get = () => AnotaceGap,      Set = v => AnotaceGap = v,      Min = 0, Max = 5, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Mezera mezi značkami",   Group = "Mezery", Get = () => AnotaceInterGap, Set = v => AnotaceInterGap = v, Min = 0, Max = 5, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Mezera mezi odjezdy",  Group = "Mezery", Get = () => OdjezdGap,       Set = v => OdjezdGap = v,       Min = 0, Max = 10, Unit = "mm" },
 
         .. GetPositionDescriptors()

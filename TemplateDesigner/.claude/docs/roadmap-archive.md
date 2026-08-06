@@ -2,6 +2,458 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-05 ✅ - `B37` pokračující spoje (#13093 bod 3, tiket tím dojetý)
+
+Detail → changelog 2026-08-05 (1). Značka `u1`/`u2`… u odjezdu + vysvětlivka „pokračuje do zast. X
+(l. 532)", seskupeno podle (linka, cíl), jeden checkbox v bloku poznámek.
+
+**Poučení, které se nesmí ztratit:** data jsou v uzlu **34** (`u@<náš spoj>:<linka>:<spoj>:<cíl>`),
+**ne v 32** - ten je návaznost. `m@<n>` je index záznamu, ne typ vztahu. Zastávka v záznamu **je cíl**
+(dokázáno rozdílným vzorkem: spoj 251 → Štěrkoviště = konečná jeho pokračování, ostatní → žel.st.),
+takže se trasa pokračujícího spoje nedohledává.
+
+Správný uzel určil kolega v #13098; já jsem předtím dvě session stavěl na 32. Kdyby se to nezeptalo,
+značku „pokračuje" by dostaly spoje, které jen čekají na návaznost.
+
+## 2026-08-05 ✅ - `B57` přerostlé skupiny formulářů (zúženo)
+
+**Zadání bloku (nález review 4. 8.):** „Zastávky - specifické" ~23 polí, „Obecné" u dynamické
+tabulky 13 a mřížky odjezdů 10, „Filtrování" legendy 10; `TableEditorDialog` 5 tabů (limit 3);
+chybějící descriptions u `SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU` a celého formuláře mřížky
+odjezdů (žargon „anotace"). Vel. **M**.
+
+**Hotovo zúžené** - detail v changelogu 2026-08-05 (8). Rozpad skupin u tří prvků, žargon „anotace"
+→ „značky u odjezdů" (formulář i panel), 13 vysvětlivek. **Dva body ze zadání vyhozeny s důvodem:**
+karty pevné tabulky (spící prvek, redukci už řeší Fáze B krok 2 - byla to druhá evidence téže práce)
+a popisy parametrů sestavy (parametr nemá pole pro popis → aditivní změna kontraktu, přesunuto
+k `B18` follow-up 3). Rozpad skupiny „Filtrování" shodil bránu z `B58`, která hlídá, že nápověda
+odkazuje na existující místo - srovnána nápověda, wiki seed i test.
+
+## 2026-08-05 ✅ - `B58` srozumitelnost pro nováčka
+
+**Zadání bloku (nález review 4. 8.; vstup = checklist na proklik):** F1 nápověda nezná featury
+posledního měsíce (oddíly seznamu, řazení dynamické tabulky, filtry poznámek - přesně kde budou lidi
+hledat zrušené parametry); náhled s ukázkovými daty není nijak označen (badge); Ctrl+N vyrábí šablonu
+bez agendy (zdědit aktuální, nebo rovnou otevřít výběr); ChangeAgendaDialog ukazuje interní kódy;
+„Použít" s 0 vybranými linkami tiše spadne na mock. Vel. **M**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (6). Ctrl+N **dědí agendu** (rozhodnutí Jan 5. 8.,
+alternativa „otevřít výběr" zamítnuta - přidávala klik tomu, kdo dělá deset vývěsek pro tutéž
+agendu). Nulový výběr linek se rozlišuje: nic nebylo vybráno → navést, něco bylo → zrušení povolit.
+Nad zadání doplněn AI pomocník, který měl stejnou mezeru. Nová brána hlídá, že přepínače, na které
+nápověda odkazuje, na tom místě opravdu jsou.
+
+**Zbývá na uživateli:** vizuální posouzení štítku a čitelnost textů nápovědy - `review-proklik-checklist.md`
+zůstává otevřený pro proklik (jeho ostatní body strojově posoudit nejde).
+
+## 2026-08-05 ✅ - `B59` výchozí hodnoty děděných stylů proti kaskádě
+
+**Zadání bloku (zbytek `B54`, 5. 8.):** u property, která smí být nenastavená („dědí se"), formulář
+vědomě ukazuje hodnotu, na kterou dopadne kaskáda. Drift test to přeskakoval - porovnával surovou
+property, a ta je null. Právě tady lež uživatel uvidí. Srovnání muselo jít přes jednotný přístupový
+bod, ne reflexi naslepo. Vel. **S-M**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (5). Předpokládaných 8 polí kaskádě odpovídalo, ale
+rozšíření parsování o sdílený stylový balíček (padalo na tom, že `_` je v ObjectScriptu operátor
+spojení) odhalilo **dvě reálné lži**: zaškrtávátko „Tučné" u záhlaví a u minut ukazovalo
+nezaškrtnuto, přitom se ten text tučně tiskne. Opraveno parametrem `defBold` ve `StyleFields`.
+Mřížka odjezdů dostala tři přístupové body „z čeho zóna dědí" (konvence `ResolveElement<Zóna>Parent`;
+chybějící přístupový bod test hlásí, nepřeskakuje). Poučení: **odtisk pixelů tuhle třídu změn
+nezachytí**, protože fixtury mají styly natvrdo - kryjí ji kaskádové unit testy.
+
+## 2026-08-05 ✅ - `B55` testy migrace šablon + parsingu agend
+
+**Zadání bloku (nález review 4. 8.):** `MigrationGridStyle` (1.7.0, nejsložitější migrace - 5 hodnot
+borderStyle + přenos rámce), `MigrationHighlightRules` a `MigrationKnizniToLinkovy` nemají unit test
+navzdory pravidlu v `template-schema-versions.md` krok 5; `CacheAgendaProvider` parsing
+(GetSchema→DataSchema, GetData→multi-page List, přeskok „ERR") bez testu navzdory
+`feature-design-principles.md §7`. Vel. **M**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (3). +79 testů (646 → 725), vícestránkové čtení dat
+vyčleněno do `ParsePages` (jinak neověřitelné bez serveru), nová pojistka
+`KazdaMigrace_MaVlastniTridyTestu`. Sada ověřená **mutacemi** - jeden test byl slepý (přeskočení
+`ERR`) a opravil se; poučení zapsané do `template-schema-versions.md` krok 5.
+
+## 2026-08-05 ✅ - `B54` drift test výchozích hodnot formulář ↔ C# + chybějící pole
+
+**Zadání bloku (nález review 4. 8.):** `EDInputFormSchemaDriftTests` hlídá existenci property, ne
+defaulty: nalezeno ~10 rozdílů, kde formulář „lže o defaultu". Rozšířit test o porovnání `f.value`
+↔ C# default + doplnit do `DepartureGridElementEdit.cls` chybějící pole (barvy negativní značky,
+zarovnání záhlaví). Vel. **S-M**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (2). Rozdílů bylo 14 a **nešlo o živou chybu**: formulář
+hodnotu ze schématu použije jen u property bez hodnoty, takže se dnes vždy přebije skutečnou -
+byla to nastražená past, ne lež. Srovnáno i tak a zamčeno testem. Nad zadání přidána druhá kontrola
+„co jde nastavit v panelu, jde nastavit i ve formuláři" (3 vědomé výjimky napříč deseti prvky) -
+právě ta chytá třídu, do které patřila chybějící pole mřížky odjezdů. Zbytek → `B59`.
+
+## 2026-08-05 ✅ - `B53` per-frame přepočet u obrázku a čárového kódu
+
+**Zadání bloku (nález review 4. 8.):** `ImageElement.Render` dekóduje Base64 (až 5 MB) + bitmapu
+a `BarcodeElement` přepočítává ZXing matici **při každém framu**; porušení pravidla §7 „structured
+parsing vždy cachovat". Cache s invalidací per (obsah, velikost) po vzoru
+`StopScheduleElementBase.SetCacheRef`; bitmapu držet dekódovanou, dispose při změně. Vel. **S**.
+
+**Hotovo** - detail v changelogu 2026-08-05 (1). Nad zadání šlo jedno zjištění: hlavní cenou nebylo
+zakódování, ale kreslení - ZXing vrací matici v **pixelech cílové velikosti, ne v modulech**, takže
+se u velkého QR kreslilo ~160 tisíc obdélníčků po jednom. Slití souvislých úseků do jednoho
+obdélníku je díky překryvu `+0.5` pixelově identické (potvrzeno odtisky) a přineslo většinu
+zrychlení: QR 100 mm 43 → 1,0 ms na frame. Ověřeno odtiskem 15 případů před/po (identický)
++ `CachedContentRenderTests` (13 testů), sada 622/622.
+
+## 2026-08-04 ✅ - vypínání obsahu jen v šabloně (deduplikace parametrů × filtru)
+
+Detail → changelog 2026-08-04 (7). **Rozhodnutí Jan:** rozhoduje, co vidí zákazník, ne co posílá
+server - nesmí mít jedno nastavení na dvou místech kvůli interní logice. Poznámky linky, kola,
+místenky a souhrn bezbariérů se zapínaly parametrem sestavy **i** filtrem v bloku poznámek.
+Server teď posílá vše otagované kategorií, rozhodnutí drží jen šablona, čtyři parametry zrušeny.
+
+**Invariant:** značka u minuty a její vysvětlivka visí na **jedné** volbě (filtr prořezává obojí
+podle kategorie) → nemůže vzniknout značka bez vysvětlení ani vysvětlivka bez značky.
+
+**Dvě poučení, obě „ověřoval jsem něco jiného, než co platí":**
+1. `.cls` editovaný **skriptem** se nenasadí (hook reaguje jen na editaci nástrojem) a `cache_compile`
+   to nespraví - hledá zdroj pod `C:/DEV/EDISON`, takže zkompiluje starou serverovou kopii a řekne
+   „up-to-date". Ověření = **zavolat agendu a podívat se, co vrátí**, ne čtení zdroje.
+2. Jména kategorií nesou **dvě nezávislé věci** - co se vypíná v šabloně a co se překládá na glyf.
+   Po přejmenování zůstal překlad na starém jménu a kolo vyjelo jako cizí piktogram; testy zelené,
+   protože si staré jméno držely samy. → jediný zdroj `Models/NoteCategories.cs` + pojistka, že
+   markerové kategorie jsou v sémantické sadě.
+
+**Nedodělané vědomě:** cílový model z rozhodnutí o kategoriích (checklist generovaný z metadat).
+Blokátor pojmenován: `ElementPropertyAccessor` naváže jen property cesty, **ne mapu** → chce rozšířit
+binder nebo přidat typ pole do EDControls. Dnešní stav: ubyly 4 parametry, přidaly se 3 volby.
+
+## 2026-08-04 ✅ - `B44` nabídka datových polí místo psaní `{POLE}`
+
+Detail → changelog 2026-08-04 (16). Vedle pole je tlačítko s hledatelným seznamem polí agendy;
+výběr **vloží token na pozici kurzoru**. Zapnuté u obsahu textového prvku, podmínky viditelnosti
+(prvek i sekce), viditelnosti řádku tabulek, obsahu čárového kódu a názvu souboru při exportu.
+
+**Rozhodnutí Jan:** (1) vkládat, ne nahrazovat hodnotu - změřeno na šablonách v repu, že třetina
+výskytů je věta s tokeny uvnitř, takže výběr celé hodnoty comboboxem by je znemožnil; (2) nabízet
+**všechna pole agendy** s popiskem, odkud jsou - uživatel hledá název, nepřemýšlí v kategoriích;
+(3) v1 nechat uživatelům vyzkoušet a doladit podle zpětné vazby, ne dopředu (Jan 4. 8.).
+
+**Poučení:** aditivní pole obousměrného kontraktu se musí přidat do **zápisu i čtení na obou
+stranách** (4 místa, ne 2) - jinak ho zpáteční cesta zahodí. Statická kontrola to nechytí, protože
+se vždy dívá jen na jeden směr; rozhodla sonda logující každý průchod. Nasazení `.cls` se ověřuje
+stažením ze serveru.
+
+**Vědomě nedodělané:** obsah buněk tabulek (edituje se vlastním dialogem sloupců, ne formulářem -
+samostatná UI cesta, ne jednořádkový příznak) a doplňování při psaní `{` nad týmž seznamem.
+
+## 2026-08-04 ✅ - `B27` řazení řádků v dynamické tabulce
+
+Detail → changelog 2026-08-04 (14). Uživatel vybere sloupec a směr (druhý klíč se odkryje až po
+prvním), **typ řazení se neptá** - číslo, datum i text se poznají z hodnot.
+
+**Rozhodnutí Jan:** (1) typ odvodit, ne nabízet - špatně zvolený typ vyrobí výstup, který vypadá
+seřazeně a je v nesmyslném pořadí, a nikdo netuší, že textově je „12" před „9"; (2) comboboxy,
+ne mini-jazyk typu `ORDER BY` - psaní názvů polí rukou je přesně vada, kterou má řešit `B44`,
+takže zavádět další takové místo by šlo proti sobě; (3) jen dynamická tabulka - u zastávek pořadí
+určuje trasa a to se řadit nesmí.
+
+**Poučení, které se nesmí ztratit:** „prázdné hodnoty dozadu" **nesmí být návratovou hodnotou
+porovnání** - sestupné řazení komparátor obrací, takže by prázdné vyplavaly nahoru. Musí to být
+vlastní úroveň řazení před hodnotou. Napsal jsem to nejdřív špatně a chytil až při psaní testu
+na obě směry.
+
+Druhé: řazení sedí v `VisibleDataRows`, tedy v **jediném trychtýři**, kterým jde render i výpočet
+výšky. Kdyby se řadilo jen v renderu, rozešly by se - táž třída chyby jako asymetrie výšky a fontu
+u záhlaví.
+
+## 2026-08-04 ✅ - `B48` gate změřen: kolize podle písmene u MHD nehrozí
+
+Detail → changelog 2026-08-04 (12). Blok se zakládal na obavě, že MHD atribut s kódem 65/76 by se
+spletl s přestupem a přeložil na cizí piktogram. **Změřeno v číselníku `CB_DP`: ty kódy tam nejsou**,
+a strukturálně je kolize nepravděpodobná - agenda MHD posílá `$c(SpecZnak)`, tedy **pozici ve fontu**,
+ne písmeno, takže by firma musela atribut nasměrovat přesně na 65/76 (trojúhelník / jízdní kolo).
+
+**Měření ale našlo jinou věc, než blok předpokládal:** MHD posílá přestupy jako `w`/`x`, kdežto
+`IsTransferAttr` je hledá podle písmene `A`/`L` - u MHD je tedy vůbec nepozná. Přepínač „Přestupy
+(vlak/autobus)" na ně nemá vliv, řídí je obecný přepínač „Atributy". Tisknou se správně, jen se
+ovládají jinak než u AD. Zbytek přesunut do „Bez poptávky nebrat", protože to není vada výstupu.
+
+**Poučení - gate se vyplatilo změřit dřív než programovat.** Blok byl odhadnutý na půl dne práce
+kvůli riziku, které v datech neexistuje. Měření stálo pár dotazů a změnilo zadání: z „oprav kolizi"
+se stalo „přepínač u MHD neplatí", což je jiná (a menší) věc s jinou naléhavostí.
+
+Vedlejší zisk: číselník atributů `CB_DP` je v `cache-database.md` doplněný na kompletní naměřený
+stav (dosud tam byla půlka) + poznámka, že sloupec `Znak` na wire vůbec nejde.
+
+## 2026-08-04 ✅ - `B49` pozice glyfů ve slovenském fontu ověřeny
+
+Detail → changelog 2026-08-04 (11). Obrysy vytažené z obou fontů (postup v `elementy-architektura.md`).
+**Co dnes překládáme, je pro SK správně** - `z` autobus, `x` vlak, `L` kolo sedí v obou fontech
+(u `z` a `L` je obrys dokonce identický), takže `SymbolGlyph` culture parametr nepotřebuje a žádná
+vada se slovenskému zákazníkovi netiskla.
+
+Skutečná vada byla **v komentáři**: `FontResolver.cs` tvrdil „znaky jsou pro CZ i SK stejné, liší se
+jen tvary glyfů". Měření to vyvrátilo - `w` je v CZ vagon a v SK **autobus**, `D` je v CZ křížek
+a v SK **dlaň**. Komentář opraven, měřená tabulka zapsaná do dokumentace.
+
+**Poučení - dokumentace si protiřečila a nikdo si toho nevšiml.** Testy i `elementy-architektura.md`
+měly rozdíl CZ/SK popsaný správně (zapsalo se to při opravě kola), jen `FontResolver.cs` tvrdil opak.
+Kdo by se řídil jím, namapoval by autobus na `w` a slovenskému zákazníkovi by tiskl vagon. **Rozpor
+mezi dvěma komentáři je horší než chybějící komentář** - vypadá to jako ověřená informace.
+
+## 2026-08-04 ✅ - `B40` mřížka tabulkových prvků jako jedno sdílené API
+
+Detail → changelog 2026-08-04 (10). „Rámeček = vnější, mřížka = vnitřní" (rozhodnutí Jan). Sdílený
+objekt `GridStyle` pro všech pět tabulkových prvků + balíček polí `AddGrid` vedle `AddBorder`;
+tabulky poprvé dostaly nastavitelnou barvu/tloušťku/styl čar, JŘ prvky možnost čáry vypnout.
+Migrace 1.6.0 → 1.7.0 drží vzhled.
+
+**Poučení 1 - průzkum vyvrátil zadání.** Blok tvrdil, že JŘ prvky mají „barvu + přepínače"
+a tabulky volbu čar. Realita: JŘ prvky měly barvu **i tloušťku i styl** a chyběla jim jen volba
+čar, kdežto tabulky měly volbu čar a vzhled vůbec. **Zadání psané zpaměti se rozešlo se stavem
+za čtyři dny** - průzkum před implementací není formalita.
+
+**Poučení 2 - hledej duplicitu konceptu, ne chybějící nastavení.** Skutečný problém nebyl
+„uživatel si nenastaví barvu", ale že k vnějšímu obrysu vedly dvě nezávislé cesty. Jakmile se to
+rozdělilo podle významu (rámeček = vnější, mřížka = vnitřní), zmizel i důvod, proč tabulky měly
+vlastní enum pěti hodnot.
+
+**Poučení 3 - odtisk renderu ověřuje jen to, co kreslí.** Odtisky potvrdily, že čtyři JŘ prvky
+vyšly bajt po bajtu stejně (refaktor behavior-preserving) a změnila se jen dynamická tabulka.
+Ale odtisk volá `Render()`, ne `RenderBorderPass()`, takže **vnější rámec neověřuje** - u změny,
+která obrys přesouvá jinam, je zelený odtisk shodou okolností, ne důkazem. Jan proto prošel
+výsledek očima v běžící aplikaci a odsouhlasil.
+
+**Poučení 4 - zelený drift test neznamená nasazeno.** Formuláře na Caché jsem upravil skriptem
+z Bashe, takže se nespustil deploy hook (jen Edit/Write) a na serveru zůstaly staré třídy.
+Projevilo se to jako „pole je prázdné a uložení nic neudělá", protože klíče polí přestaly
+odpovídat vlastnostem v C#. **Drift test to nechytil - kontroluje dvojici repo × C#, ale rozešla
+se dvojice server × C#.** Past i postup vynuceného deploye jsou v root `CLAUDE.md`.
+
+## 2026-08-04 🧹 - Revize roadmapy: zrušen ukazatel `L‑1…L‑4` + mrtvé a duplikované záznamy
+
+Roadmapa měla 375 řádků, z toho 35 balastu (rozhodnutí Jan: „jen vyloženě mrtvé nebo duplikované",
+tabulku `C5`–`C7` nechat). Odebráno:
+
+- **Ukazatel `L‑1…L‑4`** (rozhodnutí Jan) - měl zajistit, že linkový JŘ postoupí v každé vlně, ale
+  reálně je odložený „až po zákaznické frontě", takže mechanismus nefungoval a byl to jen třetí
+  opis týchž bloků. Duplikované řádky `C2`/`C3`/`C8`/`C9` zrušené, ale **jejich unikátní detail
+  nejdřív přesunut do bloků** (`B10` gate R5, `B13` gate R1/R2, `B14` celý obsah auditů H1+H2) -
+  `B14` na ně do té doby jen odkazovala, takže smazání bez přesunu by detail zahodilo.
+- **Stale tvrzení:** „`B37` čeká na odpověď, `B45`" - `B45` byla hotová a v archivu a `B37` je od
+  4. 8. odblokovaná; hlavička o 200 řádků výš to říkala správně. Dál vysvětlivka k `B38` (hotová)
+  a poznámka o vyvráceném nálezu barev zón (historie, patří sem, ne do aktivního plánu).
+- **Duplicity:** `B12` byla 3×, `C4` 4×, otázka na KOVED k označníkům 2×.
+- **Hlavička** nesla datum 2026-07-31 a přitom popisovala události ze 4. 8., plus výčet ~15
+  dokončených bloků - ten drží archiv.
+
+**Poučení, které se nesmí ztratit:** duplikace nevznikla nedbalostí, ale **zakládáním druhé evidence
+k témuž bloku** (ukazatel postupu, „prerekvizity", detailní tabulka). Proto je z toho pravidlo 3
+v návodu: jedna práce = jeden záznam, priorita se řídí vlnami. `B13` byl v dokumentu 6×, `B10` 5×.
+
+**Druhé kolo téhož dne - zákaznická fronta vyprázdněna** (rozhodnutí Jan): revize odhalila, že
+v sekci „Čeká na někoho jiného" visí položky, které už nečekají na nikoho. Odebráno **#12997**
+(druhá barva linky - hotové), **#13091a** + **#13091 bod 4** (zóny, vzhled seznamu zastávek -
+hotové) a **#13102** (virtuální prodloužení spoje - není u nás). V sekci zůstaly jen `TR2`
+(čeká SK ověření kódování na-znamení u kolegy) a `TR8` (park, blokuje potvrzení TRANSDEV) - tedy
+opravdu jen věci na někom jiném.
+
+**Poučení:** sekce „čeká na někoho jiného" je nejtišší místo, kde plán hnije - položka se tam dá
+odložit a nikdo ji už nikdy neproklepne, protože „to není naše práce". Stálo to za jeden dotaz
+a čtyři z šesti položek zmizely.
+
+#13102 zůstává zaevidované na dvou správných místech: v seznamu „mimo návrhář" (je u Petra) a jako
+křížový odkaz v `B37`, kde vysvětluje, proč `B37` **není** na #13102 blokovaná.
+
+## 2026-08-04 ✅ - `B47` drift test allowlistu serverových parametrů + `B51` plnění seznamu
+
+Detail → changelog 2026-08-04 (8). Obecné nálezy dojeté po vydání verze.
+
+`B47`: strojová pojistka proti pasti, která se vrátila **čtyřikrát** (parametr čtený v `GetData`
+chybí v `ServerSideParams` → jeho přepnutí v UI nespustí re-fetch, takže klik nedělá nic a tisk
+vyjede jinak než náhled). **Test našel čtvrtý výskyt sám:** `DELENI_SLOUPCU` v `LinkovyJrAd`.
+
+**Poučení, které se nesmí ztratit:** u ručně držených allowlistů se **testuje oběma směry** -
+chybějící klíč (tichá vada) i mrtvý klíč (zbytečný re-fetch). Ty dva testy se navzájem kontrolují:
+kdyby parser `.cls` zrezivěl a nevracel nic, „chybějící" projde na prázdném vstupu, ale „mrtvé"
+spadne na všech položkách allowlistu. Jednosměrná kontrola tuhle vlastnost nemá.
+Druhé poučení: **pojistku ověř mutací** - dočasně odeber klíč a přesvědč se, že test spadne.
+Zelený guard test nic nedokazuje.
+
+`B51`: `EDList` plnil řádky po jednom do kolekce navázané na `DataGrid` s filtrem, takže 200 řádků
+znamenalo 200 přepočtů pohledu; `DeferRefresh` (včetně nastavení filtru uvnitř) to zkolabuje do
+jednoho. Projevilo se to až po přechodu na async načítání - dřív to bylo schované za zámrzem.
+
+## 2026-08-04 ✅ - `B50` export i tisk posílají tytéž parametry co náhled
+
+Detail → changelog 2026-08-04 (4). Export z lišty neposílal do `GetData` parametry sestavy vůbec
+a nemergoval je do stránek, takže vyjel s výchozími hodnotami, i když náhled ukazoval zapnuté volby.
+Při opravě se ukázalo, že **tisková cesta má zrcadlovou vadu** - zapomínala skupinu linek, takže
+u AD (linka klíčovaná dvojicí skupina+linka) mohla vytisknout linku z jiné skupiny.
+
+**Poučení, které se nesmí ztratit:** tři cesty stavěly parametry pro `GetData` každá zvlášť
+a každá zapomněla něco jiného. Je z toho jedno místo (`ComposeGetDataParams` + `MergeParamsIntoPages`).
+**Když se stejná mapa parametrů skládá na víc místech, je jen otázka času, kdy se rozejdou** -
+a projeví se to jako „vytisklo se něco jiného, než jsem viděl", což uživatel nahlásí pozdě nebo vůbec.
+
+## 2026-08-04 ✅ - `B46` filtrovaný ComboBox sjednocen na sdílené komponentě
+
+Detail → changelog 2026-08-04 (3). Do filtru skupiny linek se nedaly napsat dva znaky: první
+neodfiltroval nic, druhý přepsal napsaný text zpátky na jinou skupinu a přenačetl linky pro skupinu,
+kterou uživatel nevybral. Výběr instancí si držel **vlastní** filtrovaný ComboBox, i když EDControls
+má na tentýž účel `EDFilterComboBox`, který tuhle třídu problémů řeší a má na ni testy. Zrušena
+i druhá vlastní kopie (nabídka datových polí v panelu vlastností) - v TD už žádná nezůstala.
+
+**Poučení, které se nesmí ztratit:** filtrovat `ICollectionView` nastavený jako `ItemsSource` ComboBoxu
+je past - ComboBox si s ním synchronizuje výběr, takže vyfiltrování právě vybrané položky vynutí změnu
+výběru a ta přepíše text v editovatelném poli. Sdílená komponenta proto plní `Items` přímo a hodnotu
+nese v `Tag`. **Než se v TD napíše filtrovaný ComboBox, hledá se sdílená komponenta** - tady byly
+vedle sebe tři implementace téhož a vlastní byla ta rozbitá.
+
+**Druhé poučení - deduplikace odhalila vadu ve sdílené komponentě.** Aby sloučení nebylo regresí,
+musela se srovnat jedna odchylka: volný režim bral klidovou hodnotu pole jako filtr, takže šipka
+nabídla jen právě nastavenou položku. Když se dvě implementace slévají, **rozdíly se musí projít
+kus po kusu** - ne předpokládat, že sdílená je nadmnožina.
+
+## 2026-08-03 ✅ - `B45` glyf kola + oprava autobusu (#13093 bod 2, #13048 bod 1)
+
+Detail → changelog 2026-08-03 (13). Kola se tisknou; cestou se ukázalo, že **ranní oprava přestupů
+byla z poloviny špatná** - autobus jsme podle ručně opsaného kódu poslali na `w`, kde je železniční
+vagon, takže u přestupu na autobus jezdil vagon (vypadalo plausibilně, prošlo to i vizuální kontrolou).
+
+**Poučení, které se nesmí ztratit:** pozici glyfu **nečíst okem z Mapy znaků**. Ikony jsou drobné,
+vagon a autobus sousedí a dvakrát se to přečetlo špatně. Správný postup = vytáhnout obrysy přímo
+z `.ttf` a nakreslit kontaktní list s popisky kódů (jména glyfů font nenese, jsou obecná).
+
+**Druhý invariant:** pozice musí platit v CZ **i SK** fontu - `TimeTable2SK.ttf` **není kopie**.
+`w` je tam autobus, `x` moderní jednotka. Naše volby (`z` autobus, `x` vlak, `L` kolo) znamenají
+v obou totéž; `w` je přesně ta jedna pozice, kde by se vzhled rozešel podle jazyka.
+
+Kola jdou naším markerem `K` (číselník pro ně znak nemá, `L` je vlak). Překlad glyfu se navíc dosud
+aplikoval i na značky kreslené normálním fontem - ruční komentář „A" by v legendě vyšel jako „z";
+podmínka „je to piktogram" je teď na jednom místě (`JePiktogram`) místo trojmo opsaná.
+
+## 2026-08-03 ✅ - `B36` poznámky z linky + výluky, `B37` bod 2 místenky (#13093, #13088)
+
+Detail → changelog 2026-08-03 (11) a (12).
+
+**Poznámky zadané u linky** (`^JRL(sku,lin,"C",key,idx)`, klíč 1 tarifní / 3 všeobecné /
+4 radiobus, klíč 2 legacy přeskakuje) se do zastávkové vývěsky dostávají poprvé. Vydáno obojí,
+co klient chtěl: **skalární pole „Výlukové texty"** (ta „databázová položka" z #13088) i **řádky
+poznámek s kategorií**, takže si výluky složí zvlášť (prvek poznámek má volbu Včetně / Bez výluk /
+Jen výluky). Vše opt-in parametrem - zapnuté by přidalo dlouhý tarifní blok všem existujícím šablonám.
+
+**Emitujeme záznam = jedna poznámka**, legacy je slepuje do jednoho textu; pak nejde oddělit výluku
+od místenkového textu ve **stejné** kategorii 3 (**1 648 výluk** v celé firmě KOVED, všechny
+v kategorii 3 spolu s „R - k jízdence je možné zakoupit místenku"). Proto filtr podle prefixu,
+ne podle kategorie. (Původně tu stálo 166 - vzorek prvních 800 linek, viz oprava v changelogu 4. 8.)
+
+**Bod 2 - místenky hotové, kola čekají na glyf.** „R" u odjezdu + řádek legendy, opt-in. Kolo má
+hotové plumbing, ale `ZnakKola()` vrací prázdno: piktogram ve fontu je, jeho **znak neznáme** a
+legacy ho na vývěsce netiskl. Test `TestZnakKolaZatimNeni` to drží - odhadnout znak = vykreslit
+cizí piktogram, přesně chyba opravovaná téhož dne u přestupů.
+
+**Bod 4 se nedělal - byl už hotový** (ověřeno 3. 8.): prvek poznámek umí `CalculateHeightFromData`
+i `ComputeFontScale` a `PageLayoutEngine` u dynamické výšky posouvá prvky pod ním (`cumulativeDeltaY`).
+Zbývá to jen klientovi ukázat s poznámkou, že první blok má mít výšku prázdnou.
+
+## 2026-08-03 ✅ - `B43` čtvereček ukáže barvu z dat (#12997)
+
+Detail → changelog 2026-08-03 (10). Pole s `{BARVA_LINKY}` mělo bílý čtvereček, takže vypadalo jako
+nenastavená barva. Formulář o datech neví, hodnotu jen zobrazuje - proto **aditivní** vlastnost
+`Field.PreviewValue` v EDControls (náhledovou barvu vyplní host, komponenta ji do hodnoty nepřepisuje)
++ šrafování pro token bez náhledu. V návrháři `ColorHex.ResolveDataBoundForUi` a naplnění v
+`ElementFormBinder.Prefill`; data pro UI drží `ColorHex.UiData`, které nastavuje kreslení náhledu.
+
+**Invariant:** hodnota zůstává tokenem. Zapsat vyřešenou barvu = šablona přestane brát barvu z dat
+a zamrzne na barvě náhodně otevřené linky. Hlídá `ColorHexUiPreviewTests` (5 testů).
+
+**Rozhodnutí (Jan 3. 8.):** cílový stav je **šrafování**, přesná barva je bonus tam, kde náhledový
+canvas kreslil stránku s daty. V návrhářském pohledu data nejsou a dohánět je nemá cenu - důležité
+bylo, aby čtvereček nevypadal jako nenastavená bílá. `UiData` se maže při každé změně dat náhledu,
+protože **cizí barva mate víc než neutrální stav**.
+
+⚠️ Nasazení: dotýká se **EDControls**, takže do produkce jde DLL i .exe.
+
+## 2026-08-03 ✅ - `B35c` CIS čísla zastávek (#13088)
+
+Detail → changelog 2026-08-03 (4). Tři nová pole sestavy (CIS číslo zastávky · výchozí · cílová)
++ totéž jako pole řádku kolekce zastávek. Zdroj = registr zastávek `^JRZ(czst)` `$`-pole **9**.
+
+**Nebylo potřeba se zákazníka na nic ptát** (na což to bylo v roadmapě chybně napsané): šestimístný
+údaj v `$`-poli 5 (`419940`), který vypadá jako CIS kód, je „číslo zastávky **pro strojky**" =
+CIS × koeficient (`JRapiZst` ř.62/327). Test to hlídá, aby se ta záměna nevrátila.
+
+**Zjištění, které stojí za zapamatování:** na datech KOVED je CIS číslo **shodné s interním číslem**
+zastávky, které už tiskneme (42033 = 42033) - jejich číslování je přebrané z CIS. Z toho bodu tiketu
+jim tedy reálně chyběla hlavně **výchozí a cílová** zastávka, kde jsme uměli jen název konečné.
+U jiné firmy se ty dvě hodnoty rozejít mohou, proto pole smysl má.
+
+Sloupec seznamu zastávek se nepřidával - tiket žádal pole agendy. Přes dynamickou tabulku to jde,
+do nabídky sloupců se doplní, až o to někdo řekne (stejná úvaha jako u popisu sloupku).
+
+Ověřeno na ZL_KOVED 0822995 směr Tam (Zlín,Malenovice,ZPS): aktuální 42033, výchozí 41994, cílová 2774.
+
+**#13088 zavřený 3. 8.** (Jan) - dva ze tří bodů dodány (CIS čísla, sloupek), třetí (**výlukové texty**)
+přesunutý do **#13093**, kde už poznámky z linky leží - včetně požadavku na **skalární pole**
+(„nová databázová položka pro návrhář“). Cesta je rozhodnutá a **nepotřebuje zásah do JRMAIN**:
+klient už dnes píše „Výluka: …“ do běžných poznámek linky (1 648 v celé firmě), stačí je začít
+číst a oddělit podle prefixu → `B36`.
+
+## 2026-08-03 ✅ - `B35b` logiku stanovišť lze přepnout na sloupek (#13088, #13048 bod 4)
+
+Detail → changelog 2026-08-03 (2) a (3). Režimy „více hodnot", řádkové duplikování, dělení stránek
+i titulek rozdělené stránky dosud počítaly jen s označníkem; nový parametr sestavy **Číslo stanoviště
+podle** (Označník / Sloupek) je přepne naráz. Data pod tím: per-spoj sloupek (W 13), výčet dle
+četnosti, sloupek per varianta trasy a popis sloupku z číselníku.
+
+**Změřeno před stavbou** (400 linek ZL_KOVED): 94 linek plní sloupek i na úrovni spoje, 19 zastávek
+má napříč spoji různé sloupky (u označníku 102 / 46). Bez toho měření by se stavěl přepínač, o kterém
+nevíme, jestli má nad jejich daty co zobrazit.
+
+**Rozhodnutí:**
+- **Default Označník** - dělení stránek si vyžádal jiný zákazník a už podle něj tiskne; přehození
+  defaultu by mu změnilo vývěsku bez varování. Zlaté odtisky to potvrzují (mimo nové pole beze změny).
+- **Přepínač jen na jednom místě**: parametr sestavy (dělení stránek vzniká na serveru), prvek si
+  výsledek čte z dat a vlastní kopii nemá - poučení z `B41`, hlídá to test na neserializaci.
+- **Oba sloupce zůstávají nezávislé** - režimy platí pro zvolený údaj, druhý ukazuje hodnotu z trasy.
+- **„Stanoviště" je od teď zastřešující pojem** (ne synonymum označníku) - popisky, které platí pro
+  obojí, ho používají a ban v drift testu je zrušený. Viz `ux-conventions §8`.
+
+**Pozice obou údajů drží jedna funkce** (`PoziceStanoviste`) a agregace i W-mapa jsou parametrizované
+zdrojem, ne zkopírované; cache má zdroj v klíči.
+
+**Poučení (past):** dvě `.cls` jsem upravil skriptem, ten zápisem přidal BOM, upload na server tím
+tiše padal a testy běžely proti staré kopii třídy. `.cls` neupravovat skriptem vůbec; ověřit stav
+serveru umí `AdSloupekProbe.ZdrojMetody`.
+
+## 2026-08-03 ✅ - `B35a` sloupec Sloupek v seznamu zastávek (#13088, #13048 bod 3)
+
+Detail → changelog 2026-08-03. Půlka bloku `B35` byla založená na špatném předpokladu, že „označník"
+a „sloupek" jsou dvě slova pro totéž a bude potřeba se doptat JŘ, co v datech je. **Nejsou to
+synonyma a doptávat se nebylo potřeba** - obojí je v datech vedle sebe:
+
+- **Označník** = volný text z trasy linky (J-věta `#`-segment **3** = `nastupisteTam:nastupisteZpet`,
+  legacy `dta4`/`dta5`; per spoj W pozice **7**). Bez číselníku, takže si tam každý píše co chce
+  (u GWBUS jsou tam texty „JET"/„JETE", u KOVED na jedné zastávce „V").
+- **Sloupek** = odkaz do **číselníku sloupků zastávky** `^JRZ(czst,"Sloupek",id)` = `číslo ~ GPS lat ~
+  GPS lon ~ popis směru` (J-věta `#`-segment **12** = `sloupekTam:sloupekZpet`, legacy `dta14`; per spoj
+  W pozice **13**, přebíjí trasu). Číslo 1-255, legacy ho před exportem do CIS kontroluje na číselnost.
+  Zlín aut. nádr. má sloupky 1-8, 21-24, … s popisy „směr Brno přes UH".
+- Doloženo v legacy `JRapiLin` ř.651-703 (rozpad J-věty na `dta`), `JRapiSp` ř.311/349 (per-spoj),
+  `JRapiExp6` ř.1957-1963 a `JRapiExp10` ř.832-836 (pořadí rozhodování trasa → spoj).
+
+**Sloupek je ten reálně používaný údaj:** ZL_KOVED 0822995 ho má u všech zastávek, označník jen
+u části; CB_CSADAD 0365001 ho má u všech a označník nikde. Tiskli jsme tedy dosud to prázdnější pole.
+
+Hotovo: pole agendy `SLOUPEK` (values i řádky ZASTAVKY) + sloupec **Sloupek** v seznamu zastávek
+(defaultně vypnutý, existujícím šablonám se nabídne sám, bez migrace). Zlaté odtisky přebaselinovány -
+shodné počty, jiné md5.
+
+**Rozhodnutí (Jan 2026-08-03):** názvosloví se mezi AD a MHD **záměrně liší** - v AD jsou označník
+a sloupek dvě různá pole, v MHD se témuž fyzickému stanovišti říká označník. MHD proto pole `SLOUPEK`
+nezavádí. Pravidlo v `ux-conventions.md` §8 („vždy označník") zúženo na AD nástupiště.
+
+**Zbývá z #13088:** `B35b` (per-spoj sloupek, popis, přepnutí režimů), `B35c` (CIS čísla, čeká na
+zákazníka), `B35d` (výluky, čeká na zákazníka).
+
 ## 2026-07-31 ✅ - `B29` denní značky dle rozvržení sloupců (#13045a)
 
 Detail → changelog 2026-07-31 (4). Klient hlásil dvě věci (sobotní odjezdy v nedělním sloupci ·

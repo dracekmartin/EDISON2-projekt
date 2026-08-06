@@ -1,5 +1,35 @@
 # Glob: CACHE/**
 
+## 🚨 Nasazení `.cls`: editace nástrojem, ověření voláním serveru
+
+`.cls` nasazuje na dev **PostToolUse hook** a ten reaguje **jen na Edit/Write**. Cokoli jiného
+(skript z Bashe, `sed`, python) změní soubor v repu a **server nechá starý**.
+
+- **Nikdy neupravuj `.cls` skriptem.** Ani „mechanicky" (mazání řádků, přidání dvou polí) - právě tam
+  se to stalo dvakrát 4. 8. Když už se to stane, vynuť nasazení:
+  `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`
+- **`cache_compile` (MCP) to nespraví** a **lže uklidňujícím způsobem**: hledá zdroj pod
+  `C:\DEV\EDISON`, takže u tohohle repa nahlásí `not-found-on-disk`, zkompiluje **starou serverovou
+  kopii** a napíše „up-to-date".
+- **Jak se to pozná:** testy jsou zelené a aplikace se chová podle starého kódu. Testy to nechytí -
+  `%UnitTest` jede proti serveru, ale drift v parametrech/formulářích se v odtiscích neprojeví.
+- **Ověřuj voláním, ne čtením.** „Zdroj v repu to má" ani „grep v nasazené metodě" nestačí:
+  **zavolej agendu / dispatch a podívej se, co reálně vrátí** (`cache_query_cvar` na `GetParameters`,
+  `Init`, …). To je jediná kontrola, která odpovídá na otázku „co uvidí klient".
+  ⚠️ **Voláním ověř KAŽDOU třídu, kterou jsi změnil**, ne jednu za všechny - 5. 8. jsem ověřil
+  legendu poznámek, ale ne seznam zastávek, a ten byl rozbitý (uživateli spadlo přidání prvku).
+
+## 🚨 Uvozovka v textu se ZDVOJUJE
+
+`"` uvnitř textového literálu ho **ukončí** - musí být `""`. Typicky to potká vysvětlivky:
+`"… (výchozí „×")"` vypadá nevinně, ale ObjectScript to přečte jako konec textu, pak `)` mimo
+literál a poslední `"` otevře nový → `<SYNTAX>` a **spadne to teprve uživateli při otevření
+formuláře**. Správně: `"… (výchozí ""×"")"`.
+
+Hlídá to `ObjectScriptSyntaxTests` (projede všechny `.cls` v repu a hlásí řádek, který končí
+uprostřed textu). Nic jiného to nezachytí: rozbitá třída se nasadí, .NET testy o Caché zdrojácích
+nevědí a `%UnitTest` kompiluje jen testovací package.
+
 ## Caché namespace struktura
 
 `ALVA.TemplateDesigner.*` se dělí **podle role třídy** do folder/namespace:
@@ -7,7 +37,7 @@
 - **`ALVA.TemplateDesigner.API.*`** - obecná business logika TD projektu (cross-cutting). Příklady: `Sablony` (CRUD šablon), v budoucnu `UserPreferences`, `SectionTemplates`.
 - **`ALVA.TemplateDesigner.Agendy.*`** - agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `Faktury`.
 - **`ALVA.TemplateDesigner.EDList.*`** - dispatch třídy pro EDList komponentu (UI contract). Příklady: `Sablony` (backing pro CacheTemplatePickerDialog), `Instance` (backing pro InstancePickerDialog).
-- **`ALVA.TemplateDesigner.EDInputForm.*`** - dispatch třídy pro EDInputForm komponentu (Wave 4, zatím prázdné).
+- **`ALVA.TemplateDesigner.EDInputForm.*`** - dispatch třídy pro EDInputForm komponentu (hlavní editační cesta elementů od Wave 4).
 - **`ALVA.TemplateDesigner.EDInputGrid.*`** - dispatch třídy pro EDInputGrid (až bude potřeba).
 
 **Klíčový princip:** folder/namespace 1:1 mapuje na **roli třídy**. Doménový název může opakovat napříč rolemi - `API.Sablony` (CRUD) vs `EDList.Sablony` (EDList dispatch nad šablonami) jsou jasně rozlišené namespace prefixem.
@@ -310,7 +340,7 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 ```
 
 **Wiring** (`Config/CacheSchemaWiring.cs`):
-- Přečte `templatedesigner.appsettings.json` → pro každou agendu vytvoří `CacheAgendaProvider(cacheClass, mlRest)`
+- Agendy zjistí **auto-discovery** ze serveru (`AgendyRegistr.ListAgendy` → `CacheAgendaRegistry`); pro každou vytvoří `CacheAgendaProvider(cacheClass, mlRest)`. `templatedesigner.appsettings.json` agendy nedefinuje.
 - Fallback: `CompositeDataSchemaProvider` (Caché primary + JSON fallback ze `schemas/*.schema.json`)
 
 ---
@@ -319,7 +349,7 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
 1. Vytvořit Caché třídu `ALVA.TemplateDesigner.Agendy.<Agenda> Extends ALVA.TemplateDesigner.Agendy.BaseAgenda`
 2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`, `GetMockData`
-3. Přidat záznam do `templatedesigner.appsettings.json` → `agendas[]`
+3. Nic neregistrovat ručně - agendu najde auto-discovery (`AgendyRegistr.ListAgendy`); v UI se nabízí až s `Released = 1`
 4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
    - `GetMockData` vrací JSON: `{ "values": { "POLE": "hodnota", ... }, "rows": { "KLIC": [ {...}, ... ] } }`
 

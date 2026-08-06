@@ -13,6 +13,10 @@ public enum LegendWrap { PoSloupcich, PoRadcich }
 /// <summary>Řazení poznámek v legendě.</summary>
 public enum LegendRazeni { Vychozi, DleTypu, DleDelkyVzestupne, DleDelkySestupne }
 
+/// <summary>Jak blok legendy zachází s výlukovými poznámkami linky (#13093) - klient si pokládá dva
+/// bloky nad sebe, jeden „Bez výluk" a druhý „Jen výluky".</summary>
+public enum VylukyFiltr { Vcetne, Bez, Jen }
+
 /// <summary>
 /// Režim časové osy odjezdů v DepartureGrid. Paralelní s legacy „Časová osa odjezdů" comboboxem.
 /// </summary>
@@ -45,6 +49,9 @@ public class ZastavkaData
     public bool NaZnameni { get; set; }
     public string Nastupiste { get; set; } = "";   // nástupiště/označník zastávky (AD: J-věta #3; MHD: Oznacnik)
     public string NastupisteSpoju { get; set; } = ""; // nástupiště dle spojů (CSV dle četnosti, první = nejčetnější); "" = bez per-spoj dat
+    public string Sloupek { get; set; } = "";      // sloupek z číselníku zastávky (AD: J-věta #12); "" = nevyplněný nebo MHD
+    public string SloupekSpoju { get; set; } = ""; // sloupky dle spojů (CSV dle četnosti, první = nejčetnější)
+    public string SloupekPopis { get; set; } = ""; // popis sloupku z číselníku („směr Brno přes UH")
     public List<AtributData> Atributy { get; set; } = [];
     public List<PoznamkaZastavkyData> PoznamkyZastavky { get; set; } = [];
     /// <summary>Časy jízdy per varianta trasy (dynamické „TrasaMin"): číslo, „&lt;" (projíždí) nebo "" (mimo trasu).
@@ -55,6 +62,10 @@ public class ZastavkaData
     /// odkud daná varianta z této zastávky odjíždí, nebo "" (varianta zde nestaví). Zdroj pro režim
     /// „Řádek pro každý označník" (KOVED #13048 bod 4).</summary>
     public List<string> NastupisteVariant { get; set; } = [];
+
+    /// <summary>Sloupek každé varianty trasy (zarovnané s <c>TrasaMin</c>) - obdoba
+    /// <see cref="NastupisteVariant"/> pro sloupek.</summary>
+    public List<string> SloupekVariant { get; set; } = [];
 
     /// <summary>Zdrojový řádek dat této zastávky - pro vyhodnocení řádkových podmínek (zvýraznění)
     /// nad poli řádku. Neserializuje se.</summary>
@@ -115,6 +126,11 @@ public class AnotaceData
     /// Wire-format zatím rendering ignoruje (rezervováno).
     /// </summary>
     public string? BackColor { get; set; }
+
+    /// <summary>Kategorie z Caché („odjezd-atribut", „bezbarier", „rucni-komentar"…) - stejný tag,
+    /// jaký nese odpovídající řádek legendy. Řídí, jestli se značka **přeloží na glyf**: značky MHD
+    /// jsou v datech už jako pozice ve fontu, takže se přeložit nesmí. Prázdná u agend bez kategorií.</summary>
+    public string Kategorie { get; set; } = "";
 }
 
 /// <summary>Poznámka v legendě pod mřížkou.</summary>
@@ -123,6 +139,10 @@ public class PoznamkaData
     public TypPoznamky Typ { get; set; }
     public string Znak { get; set; } = "";
     public string Text { get; set; } = "";
+
+    /// <summary>Kategorie z Caché („vyluka“, „poznamka-linky-tarifni“, „atribut-zastavky“…) - filtr-tag pro
+    /// prvek legendy. Prázdná u agend, které kategorie neposílají (MHD).</summary>
+    public string Kategorie { get; set; } = "";
 
     /// <summary>
     /// Volitelná barva textu znaku (hex „#FFRRGGBB", null = default render).

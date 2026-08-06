@@ -44,10 +44,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Okraje" ──────────────────────────────────────────────
         d form.AddGroup("margins", "Okraje")
-        d form.AddDecimal("PageSize.MarginTop", "Nahoře", 10, 0, 200, "mm")
-        d form.AddDecimal("PageSize.MarginBottom", "Dole", 10, 0, 200, "mm")
-        d form.AddDecimal("PageSize.MarginLeft", "Vlevo", 10, 0, 200, "mm")
-        d form.AddDecimal("PageSize.MarginRight", "Vpravo", 10, 0, 200, "mm")
+        d form.AddDecimal("PageSize.MarginTop", "Nahoře", 0, 0, 200, "mm")
+        d form.AddDecimal("PageSize.MarginBottom", "Dole", 0, 0, 200, "mm")
+        d form.AddDecimal("PageSize.MarginLeft", "Vlevo", 0, 0, 200, "mm")
+        d form.AddDecimal("PageSize.MarginRight", "Vpravo", 0, 0, 200, "mm")
 
         // ── Skupina "Jazyk" ───────────────────────────────────────────────
         d form.AddGroup("locale", "Jazyk")

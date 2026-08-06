@@ -115,11 +115,11 @@ public class MyElement : TemplateElement
 ```csharp
 public class MyScheduleElement : ScheduleElementBase
 {
-    // HeaderStyle, DataStyle, GridColor, DataRowHeight zděděné z base
+    // HeaderStyle, DataStyle, Grid (GridStyle), DataRowHeight zděděné z base
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        .. GetScheduleBaseDescriptors(),         // GridColor
+        .. GetGridDescriptors(),                 // mřížka (které čáry, barva, tloušťka)
         .. GetCellZoneBaseColorDescriptors(),    // 4× Header/Data bg/text color
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "...", ButtonLabel = "Upravit sloupce...", ActionId = ... },
         GetDataRowHeightDescriptor(),            // 0=auto, mm
@@ -133,7 +133,7 @@ public class MyScheduleElement : ScheduleElementBase
 
 ### Pravidla pro inheritance vs composition
 
-- **Inheritance:** „is-a" vztah (StopList JE schedule element). Maximálně 2 úrovně (`TemplateElement → ScheduleElementBase → konkrétní`). Žádné hluboké hierarchie.
+- **Inheritance:** „is-a" vztah (StopList JE schedule element). Maximálně 3 úrovně (`TemplateElement → ScheduleElementBase → StopScheduleElementBase → konkrétní`; mezivrstva sdílí poznámky/atributy zastávkových elementů). Žádné hlubší hierarchie.
 - **Composition:** „has-a" vztah (StopList MÁ HeaderStyle). Styling, render util, dialogy - vše přes composition. TextStyle žije nezávisle na hierarchii elementu, sdíleno mezi `TextElement` a všemi tabulkovými elementy.
 - **Pro nové komplexní structures preferovat composition** - sdílené services, helper třídy, struct s explicit Resolve(), ne deep inheritance.
 

@@ -356,4 +356,134 @@ Method TestTextDneVTydnuSvatek()
 	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "6"), "jede v sobotu", "dny beze změny")
 }
 
+// ── Poznámky linky a výluky (KOVED #13093 bod 1) ──
+
+/// Výluky se poznají prefixem „Výluka" - konvence zákazníka, tak to posílají i do CIS.
+/// Kdyby detekce chytala víc, spadl by do výlukového bloku i místenkový text ze stejné kategorie.
+Method TestJeVyluka()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertTrue($classmethod(cls, "JeVyluka", "Výluka: Z důvodu uzavírky I/50…"), "prefix Výluka:")
+	do $$$AssertTrue($classmethod(cls, "JeVyluka", "Výluka bez dvojtečky taky projde"), "prefix bez dvojtečky")
+	do $$$AssertTrue('$classmethod(cls, "JeVyluka", "R - k jízdence je možné zakoupit místenku"), "místenkový text není výluka")
+	do $$$AssertTrue('$classmethod(cls, "JeVyluka", "Na lince platí Tarif IDZK"), "tarifní text není výluka")
+	do $$$AssertTrue('$classmethod(cls, "JeVyluka", "Kvůli výluce jezdí jinak"), "slovo uvnitř textu nestačí")
+	do $$$AssertTrue('$classmethod(cls, "JeVyluka", ""), "prázdný text není výluka")
+}
+
+/// Text poznámky se pro vývěsku čistí: legacy značka „$$" pryč, „#" (oddělovač odstavců) na mezeru -
+/// legenda text zalamuje sama, takže znak křížku by v ní jen svítil.
+Method TestTextPoznamkyLinky()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "Text s $$TrNz"), "Text s TrNz", "$$ se odstraní")
+	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "První#Druhý"), "První Druhý", "# je mezera")
+	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "  Text  "), "Text", "okrajové mezery pryč")
+	do $$$AssertEquals($classmethod(cls, "TextPoznamkyLinky", "#"), "", "jen oddělovač → prázdno (poznámka se přeskočí)")
+}
+
+/// Kola posíláme markerem „K", který si .NET přeloží na glyf kola (`L`, 0x4C). Poslat rovnou „L"
+/// nejde - to je v číselníku vlak a přeložilo by se na lokomotivu, tedy přesně ta záměna piktogramů,
+/// kterou jsme 3. 8. opravovali u přestupů.
+Method TestZnakKolaJeMarkerNeGlyf()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "ZnakKola"), "K", "kola jdou markerem K, glyf dosadí render")
+	do $$$AssertNotEquals($classmethod(cls, "ZnakKola"), "L", "L je v číselníku vlak → lokomotiva")
+}
+
+/// Zákazník si značku vysvětluje sám vlastní poznámkou u linky („R - k jízdence…"), takže naši
+/// generovanou vysvětlivku pro týž znak zahodíme - jinak stály v legendě dvě pod sebou (nahlášeno
+/// 4. 8. z reálné vývěsky KOVED). Pomlčka za znakem je povinná, jinak by běžný text začínající
+/// jednoznakovým slovem umlčel legendu značky, kterou nikdo nevysvětlil.
+Method TestZnakVysvetlivkyLinky()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", "R - k jízdence je možné zakoupit místenku"), "R", "vysvětlivka značky R")
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", "Na lince platí tarif Zlínského kraje"), "", "běžný text není vysvětlivka")
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", "IDS DSZO: na všech spojích"), "", "text s dvojtečkou není vysvětlivka")
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", "V úseku Zlín - Otrokovice"), "", "bez pomlčky HNED za znakem to není vysvětlivka")
+	do $$$AssertEquals($classmethod(cls, "ZnakVysvetlivky", ""), "", "prázdný text")
+}
+
+/// Vysvětlivka pokračování nese **poslední trojčíslí** linky, ne celé číslo - klient to tak má
+/// v požadavku („l. 304") a v jízdním řádu se linky takhle zkráceně označují (#13093 bod 3).
+Method TestTextPokracovani()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "TextPokracovani", "824532", "Podhradí"), "pokračuje do zast. Podhradí (l. 532)", "trojčíslí z konce čísla linky")
+	do $$$AssertEquals($classmethod(cls, "TextPokracovani", "773165", "Otrokovice,žel.st."), "pokračuje do zast. Otrokovice,žel.st. (l. 165)", "cíl je celý název zastávky")
+	do $$$AssertEquals($classmethod(cls, "TextPokracovani", "42", "Kvasice,nám."), "pokračuje do zast. Kvasice,nám. (l. 42)", "krátké číslo linky se neřeže")
+}
+
+// ── JeViditelnyAtribut - co z číselníku 16 je informace pro cestujícího (KOVED #13048 bod 1) ──
+
+/// Znaky pro cestujícího se tisknou. Kdyby některý vypadl, tiše zmizí z vývěsky - to byla
+/// podstata hlášení #13048 bodu 1, takže je vyjmenované v testu, ne jen v kódu.
+Method TestViditelneAtributyProCestujiciho()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	for znak = "x", "y", "z", "e", "f", "g", "O", "D", "C", "G", "a", "b", "c" {
+		do $$$AssertTrue($classmethod(cls, "JeViditelnyAtribut", znak), "atribut pro cestujícího se tiskne: "_znak)
+	}
+}
+
+/// Tiskové direktivy legacy se jako značka tisknout NESMÍ - na AD datech jsou jich tisíce
+/// (T 2724×, E 2111×, P 843× jen u KOVED), takže by vývěsku zaplevelily.
+Method TestTiskoveDirektivyNejsouZnacka()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	for znak = "T", "P", "p", "o", "N", "V", "J", "S", ">", "<", "E", "H" {
+		do $$$AssertTrue('$classmethod(cls, "JeViditelnyAtribut", znak), "tisková direktiva není značka: "_znak)
+	}
+	// Přestupy mají vlastní přepínač, takže do obecné viditelnosti nepatří.
+	do $$$AssertTrue('$classmethod(cls, "JeViditelnyAtribut", "A"), "autobus jde přes přepínač přestupů")
+	do $$$AssertTrue('$classmethod(cls, "JeViditelnyAtribut", "L"), "vlak jde přes přepínač přestupů")
+	do $$$AssertTrue('$classmethod(cls, "JeViditelnyAtribut", ""), "prázdný znak není atribut")
+}
+
+// ── SloupekZTrasy - sloupek z J-věty #12 dle směru (KOVED #13088) ──
+
+/// Vstupy jsou skutečné J-věty ze ZL_KOVED linky 0822995 (zastávky 1 a 3), aby test hlídal
+/// tvar reálných dat, ne jen syntetický vzor.
+Method TestSloupekZTrasyDleSmeru()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set veta = "41994:TA##2:V#2###0:0#:##0:0##2:100##0#"
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta, 1), "2", "směr tam = první hodnota segmentu 12")
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta, 0), "100", "směr zpět = druhá hodnota")
+	set veta2 = "42023:##:#2###0:0#:##0:0##3:1##0#"
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta2, 1), "3", "jiná zastávka, směr tam")
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta2, 0), "1", "jiná zastávka, směr zpět")
+}
+
+/// Sloupek a označník jsou dvě různá pole (segment 12 vs. 3). Na téhle zastávce je označník
+/// prázdný, sloupek vyplněný - kdyby se čtení pletlo, vývěska by tiskla prázdno.
+Method TestSloupekNeniOznacnik()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set veta = "42001:V##:#2###0:0#:##0:0##2:1##0#"
+	set oznacnik = $piece($piece(veta, "#", 3), ":", 1)
+	do $$$AssertEquals(oznacnik, "", "označník (segment 3) je na téhle zastávce prázdný")
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", veta, 1), "2", "sloupek (segment 12) je vyplněný")
+}
+
+/// Pozice sloupku a označníku v datech drží jedna funkce - kdyby se rozešly, agregace dle spojů
+/// by počítala jiné pole než sloupec a vývěska by tiskla dvě různá čísla pod jedním názvem.
+Method TestPoziceStanoviste()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "PoziceStanoviste", "OZN"), "7~3", "označník = W 7, J-věta 3")
+	do $$$AssertEquals($classmethod(cls, "PoziceStanoviste", "SL"), "13~12", "sloupek = W 13, J-věta 12")
+	do $$$AssertEquals($classmethod(cls, "PoziceStanoviste", ""), "7~3", "neznámý zdroj → označník (dosavadní chování)")
+}
+
+/// Linka bez evidence sloupků (kratší J-věta) nesmí spadnout ani vymyslet hodnotu.
+Method TestSloupekChybejiciSegment()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", "4842:x##11", 1), "", "krátká J-věta → prázdno")
+	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", "", 1), "", "prázdná J-věta → prázdno")
+}
+
 }

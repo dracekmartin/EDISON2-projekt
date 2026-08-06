@@ -77,7 +77,19 @@ public class InstancePickerDialogViewModel : EDViewModel
 
     protected override void OnOk()
     {
-        SelectedInstances = RequestSelectedInstances?.Invoke() ?? [];
+        var chosen = RequestSelectedInstances?.Invoke() ?? [];
+
+        // Nula zaškrtnutých znamenala tiché propadnutí na ukázková data - uživatel klikl „Použít"
+        // a nepoznal, že se nic nepoužilo. Když ale něco vybráno BYLO, je nulový výběr legitimní
+        // („chci zrušit výběr") a náhled to řekne štítkem ukázkových dat.
+        if (chosen.Count == 0 && _initiallySelectedValues.Count == 0)
+        {
+            PopupDisplayer.Info($"Zaškrtněte aspoň jednu položku ({_instanceLabelPlural}), "
+                                + "nebo dialog zavřete přes Storno - náhled pak zůstane na ukázkových datech.");
+            return;
+        }
+
+        SelectedInstances = chosen;
         CloseDialog(true);
     }
 }

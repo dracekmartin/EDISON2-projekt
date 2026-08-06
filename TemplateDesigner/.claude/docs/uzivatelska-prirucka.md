@@ -110,7 +110,9 @@ neuložené změny.
 
 ### Nová šablona
 `Soubor → Nová` (Ctrl+N). Nová šablona obsahuje jednu výchozí sekci přes celou tiskovou plochu;
-sekce a prvky pak přidáváte podle potřeby.
+sekce a prvky pak přidáváte podle potřeby. **Převezme agendu té šablony, kterou máte právě
+otevřenou** - když děláte víc vývěsek pro tutéž agendu, nemusíte ji vybírat znovu; přepnout jde
+kdykoli přes `Nástroje → Změnit agendu` (Ctrl+Shift+A).
 
 ### Agenda a varianta - nad jakými daty šablona běží
 Každá šablona je vázaná na **agendu** (jakou sestavu tvoříte - např. Zastávkový jízdní řád,
@@ -315,6 +317,11 @@ Kdekoli v textu napíšete pole ve složených závorkách, např. `Linka {CISLO
 `{CISLO_LINKY}` nahradí skutečnou hodnotou. Dostupná pole pro aktuální agendu vidíte v panelu
 „Pole agendy" a můžete je přetáhnout přímo na plátno.
 
+Název pole nemusíte psát ručně - u polí, kam se data dosazují, je vpravo tlačítko `{ }`. Otevře
+seznam polí agendy, ve kterém lze hledat, a vybrané pole vloží **na místo, kde máte kurzor**.
+Hodí se i doprostřed rozepsané věty. Najdete ho u obsahu textového prvku a čárového kódu,
+u podmínky viditelnosti prvku i sekce, u viditelnosti řádku tabulek a u názvu souboru při exportu.
+
 ### Formátování hodnot
 V zástupném symbolu lze hodnotu naformátovat zápisem `{POLE:FORMÁT}`:
 
@@ -368,9 +375,12 @@ vypadá stejně na každé stanici.
 ## 9. Náhled, export a tisk
 
 ### Živý náhled
-Pravý panel ukazuje **výsledný tisk** s ukázkovými daty agendy - stejným jádrem, jaké se použije
-při reálném tisku. Na rozdíl od plátna respektuje podmíněnou viditelnost, takže vidíte přesně to,
-co se vytiskne.
+Pravý panel ukazuje **výsledný tisk** - stejným jádrem, jaké se použije při reálném tisku.
+Na rozdíl od plátna respektuje podmíněnou viditelnost, takže vidíte přesně to, co se vytiskne.
+
+Dokud nemáte vybranou linku, kreslí náhled **ukázková data** - štítek linky ve stavovém řádku to
+říká (*Linka: - (ukázková data, klikněte pro výběr)*). S vybranou linkou se nad náhledem objeví pruh
+pro procházení stránek dat, takže je vždy poznat, na co se koukáte.
 
 ### Vícestránkové sestavy
 Stránkování řeší systém automaticky: hlavičky/patičky se opakují podle nastaveného chování sekcí,
@@ -615,6 +625,26 @@ Vysvětlivky pod mřížkou.
 - **Negativní značky / Speciální znaky / Textové poznámky** - přepínače, které typy poznámek se v legendě vůbec zobrazí
 - **NZ pozadí / NZ barva** - barvy invertovaného boxu u negativních značek
 
+**Co se na vývěsce ukáže** (jen zastávkový JŘ z AD dat) - všechno se zapíná tady, v jednom seznamu:
+
+- **Poznámky linky - tarifní / všeobecné / radiobus** - texty zadané ve vlastnostech linky. Jsou to
+  tytéž druhy, které v jízdním řádu volíte pro tisk A4/A5. Výchozí stav je vypnuto.
+- **Poznámky linky - výluky** - *Včetně* / *Bez výluk* / *Jen výluky*. Výluky jsou všeobecné poznámky
+  začínající slovem „Výluka", takže se zapínají spolu s nimi; tato volba je jen **rozděluje mezi
+  bloky**. Chcete-li je zvlášť, položte dva bloky poznámek nad sebe: v horním *Bez výluk*, ve spodním
+  *Jen výluky* (a hornímu nechte prázdnou výšku, aby se spodní sám posunul).
+- **Souhrn bezbariérových spojů** - souhrnná vysvětlivka „všechny spoje mají bezbariérově přístupné
+  vozidlo" místo značky u každého odjezdu. Výchozí stav zapnuto.
+- **Přeprava kol u odjezdů** a **Místenky u odjezdů** - zapnou **značku u času odjezdu i vysvětlivku
+  v legendě naráz**, aby nevznikla značka, které nikdo nerozumí. Kola se kreslí symbolem kola,
+  místenka písmenem „R". Výchozí stav vypnuto.
+- **Pokračující spoje** - spoje, které pokračují dál po jiné lince, dostanou u odjezdu značku „u1“,
+  „u2“… a v legendě vysvětlivku „pokračuje do zast. … (l. 304)“ s posledním trojčíslím linky.
+  Odjezdy se stejným cílem po stejné lince mají tutéž značku, čísla spojů se neřeší. Výchozí vypnuto.
+
+> Značky kol a místenek se kreslí u minut, ale zapínají se tady - aby bylo vypínání obsahu na jednom
+> místě. Šablona **bez bloku poznámek** je proto nemá kde zapnout.
+
 Všechny tři prvky mohou mít pevnou nebo dynamickou (automatickou) výšku a při pevné výšce
 uplatňují **auto-zmenšení písma** (kap. 6).
 
@@ -679,9 +709,14 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 
 Navíc jen u AD: **Rozdělení sloupců (typy provozu)**, **Řazení variant tras**, **Písmena variant
 u odjezdů** (+ **První varianta bez písmene**), **Samostatná stránka pro každý označník** (vše
-viz kap. 1), **V rozsahu nepoznámkovat schovat**, **Skrýt souhrn „všechny spoje bezbariérové"**
-a **Souhrn „všechny zastávky na znamení"** - místo značky × u každé zastávky jeden souhrnný řádek
-v legendě (má smysl na linkách, kde jsou na znamení všechny zastávky).
+viz kap. 1), **V rozsahu nepoznámkovat schovat** a **Souhrn „všechny zastávky na znamení"** - místo
+značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
+všechny zastávky).
+
+> **Co se zobrazí, se nastavuje v šabloně, ne tady.** Poznámky zadané u linky, přeprava kol,
+> místenky a souhrn bezbariérových spojů se zapínají u **prvku Legenda poznámek** (kap. 2) - aby bylo
+> jedno místo, kde si vyberete, co vývěska ukazuje. V parametrech sestavy zůstává to, co mění
+> **obsah nebo rozvržení** dat, ne jen jejich zobrazení.
 
 Většina parametrů má u sebe **nápovědu** (bublinu s vysvětlením), co přesně dělá.
 

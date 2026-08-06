@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using SkiaSharp;
 
 namespace TemplateDesigner.Models.Elements;
@@ -20,6 +21,55 @@ public class ImageElement : TemplateElement
 
     public ImageScaleMode ScaleMode { get; set; } = ImageScaleMode.Fit;
 
+    // ─── Cache dekódovaného obrázku ─────────────────────────────────────────
+    // Base64 se dekóduje jednou per obsah, ne při každém framu (až 5 MB dat).
+    // Klíč = reference stringu: ImageBase64 se vždy nahrazuje celý (string je immutable),
+    // takže nové přiřazení i načtení šablony ze JSON dají novou referenci = invalidaci.
+
+    [JsonIgnore] private string? _cachedBase64;
+    [JsonIgnore] private SKBitmap? _cachedBitmap;
+    [JsonIgnore] private SKImage? _cachedImage;
+
+    /// <summary>Počet skutečných dekódování - testovací sonda, že cache drží.</summary>
+    [JsonIgnore] internal int DecodeCount { get; private set; }
+
+    /// <summary>
+    /// Dekódovaný obrázek z <see cref="ImageBase64"/>, nebo null (chybí / poškozená data).
+    /// Neúspěch se cachuje taky - jinak by se neplatná data zkoušela dekódovat při každém framu.
+    /// </summary>
+    private SKImage? GetDecodedImage()
+    {
+        if (ReferenceEquals(ImageBase64, _cachedBase64))
+            return _cachedImage;
+
+        _cachedImage?.Dispose();
+        _cachedBitmap?.Dispose();
+        _cachedImage = null;
+        _cachedBitmap = null;
+        _cachedBase64 = ImageBase64;
+
+        if (string.IsNullOrEmpty(ImageBase64)) return null;
+
+        DecodeCount++;
+        try
+        {
+            _cachedBitmap = SKBitmap.Decode(Convert.FromBase64String(ImageBase64));
+            if (_cachedBitmap is not null)
+            {
+                // SetImmutable → SKImage sdílí pixely s bitmapou místo kopie (drží se obojí, ne dvě sady dat).
+                _cachedBitmap.SetImmutable();
+                _cachedImage = SKImage.FromBitmap(_cachedBitmap);
+            }
+        }
+        catch
+        {
+            _cachedBitmap?.Dispose();
+            _cachedBitmap = null;
+            _cachedImage = null;
+        }
+        return _cachedImage;
+    }
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -27,18 +77,9 @@ public class ImageElement : TemplateElement
 
         // Pozadí elementu (letterbox mezery u Fit mode) kreslí base RenderBackgroundPass před obsahem.
 
-        // Pokus o dekódování obrázku
-        SKBitmap? bitmap = null;
-        if (!string.IsNullOrEmpty(ImageBase64))
+        var image = GetDecodedImage();
+        if (image != null)
         {
-            try { bitmap = SKBitmap.Decode(Convert.FromBase64String(ImageBase64)); }
-            catch { /* neplatná data */ }
-        }
-
-        if (bitmap != null)
-        {
-            using (bitmap)
-            using (var image = SKImage.FromBitmap(bitmap))
             using (var paint = new SKPaint { IsAntialias = true })
             {
                 // Linear filter + mipmaps = kvalitní škálování nahoru i dolů (default by byl nearest).
@@ -109,14 +150,9 @@ public class ImageElement : TemplateElement
     /// </summary>
     public float? GetImageAspectRatio()
     {
-        if (string.IsNullOrEmpty(ImageBase64)) return null;
-        try
-        {
-            using var bmp = SKBitmap.Decode(Convert.FromBase64String(ImageBase64));
-            if (bmp is null || bmp.Width <= 0 || bmp.Height <= 0) return null;
-            return (float)bmp.Width / bmp.Height;
-        }
-        catch { return null; }
+        var image = GetDecodedImage();
+        if (image is null || image.Width <= 0 || image.Height <= 0) return null;
+        return (float)image.Width / image.Height;
     }
 
     /// <summary>Nastaví obrázek z byte[] s automatickým downscale pokud přesáhne limit.</summary>

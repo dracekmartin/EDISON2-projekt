@@ -222,7 +222,8 @@ public class PrintDialogViewModel : EDViewModel
 
             if (dataPages is null or { Count: 0 })
             {
-                StatusText = "Databáze nevrátila žádná data.";
+                // Nejčastější příčina není výpadek DB, ale žádná vybraná linka - navést uživatele.
+                StatusText = "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).";
                 return;
             }
 

@@ -155,10 +155,26 @@
                     </Style.Triggers>
                 </Style>
 
+                <!-- Textové pole; u polí s placeholdery ({POLE}) přibude vpravo výběr, který token
+                     vloží na pozici kurzoru. Tlačítko je vidět jen když klient dodal seznam polí. -->
                 <DataTemplate x:Key="TextFieldTemplate">
-                    <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
-                             ToolTip="{Binding ValidationError}"
-                             Style="{StaticResource FieldTextBoxStyle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                                 ToolTip="{Binding ValidationError}"
+                                 Style="{StaticResource FieldTextBoxStyle}"/>
+                        <Button Grid.Column="1"
+                                Content="{}{ }"
+                                Click="PlaceholderField_InsertClick"
+                                Width="28" Padding="0" Margin="2,0,0,0"
+                                IsEnabled="{Binding Editable}"
+                                Visibility="{Binding PlaceholderPickerVisibility}"
+                                ToolTip="Vložit datové pole na pozici kurzoru"/>
+                    </Grid>
                 </DataTemplate>
 
                 <DataTemplate x:Key="NumberFieldTemplate">
@@ -280,8 +296,9 @@
                                 Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
+                                    <!-- SwatchValue = náhled od hosta (barva z dat), jinak hodnota pole. -->
                                     <Border BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1" CornerRadius="2"
-                                            Background="{Binding Value, Converter={StaticResource HexToBrush}}"/>
+                                            Background="{Binding SwatchValue, Converter={StaticResource HexToBrush}}"/>
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>

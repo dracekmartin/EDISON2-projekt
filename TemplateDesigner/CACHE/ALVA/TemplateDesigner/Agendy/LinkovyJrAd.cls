@@ -1212,7 +1212,7 @@ ClassMethod UpravDatum(dat As %String, tiskDtm As %Integer) As %String
     s dd = +$p(dat,".",1), mm = +$p(dat,".",2), rr = $p(dat,".",3)
     i tiskDtm = 1 {
         i $l(rr) > 2 s rr = $e(rr,*-1,*)
-        q dd_"."_mm_"."_rr
+        ret dd_"."_mm_"."_rr
     }
     q dd_"."_mm_"."
 }

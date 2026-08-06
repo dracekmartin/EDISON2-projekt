@@ -6,6 +6,20 @@ Read-only tabulka řízená z Caché. Host nastaví `CacheClass`, zavolá `Initi
 v okně (master–detail) je standardní scénář. API čti z `EDList.xaml.cs`; Caché builder
 je `ALVA.EDControls.EDList.List`, referenční implementace `MockList.cls`.
 
+⚠️ **Preferuj `InitializeListAsync()` / `LoadListAsync(filter)`** (R1). Synchronní varianty drží
+UI vlákno po celý round-trip, takže na pomalé lince zmrazí **celou aplikaci**, ne jen hostující
+okno — a uživatel to nahlásí jako „appka se zasekla", ne jako „seznam se načítá". Async varianty
+navíc serializují souběžné dotazy (sdílený `MLRest` jede přes procesní globály `^||ML`) a odpověď
+staršího dotazu už nedosedne, takže rychlé přepínání filtru nezamíchá řádky.
+
+Filtrovaný seznam přes `EDFilter`: automatický reload (Loaded + změna hodnoty pole) jede
+`RefreshAsync()`, takže host nemusí dělat nic. Synchronní `Refresh()` zůstává pro ruční trigger.
+
+⚠️ **Past při psaní dalšího async volání: `CacheClass` je `DependencyProperty`.** Čtení uvnitř
+`Task.Run` skončí `InvalidOperationException` („volající vlákno nemá přístup k tomuto objektu") —
+hodnotu si vytáhni do lokální proměnné **před** přechodem na threadpool. Totéž platí pro každou
+další DP. Testy to nechytí (WPF DP kontroluje vlákno až za běhu).
+
 ## Wire kontrakt (JSON přes `^||ML`)
 
 Detaily ve sdíleném `EDControls/DOCS/01-wire-formats.md` — tam patří změny formátu.

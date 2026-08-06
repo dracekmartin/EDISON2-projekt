@@ -37,9 +37,9 @@ public partial class CellStyleEditor : UserControl
 
     public static readonly VAlignOption[] VAlignOptionsDefault =
     [
-        new("Nahoru",           TextVerticalAlignment.Top),
+        new("Nahoře",           TextVerticalAlignment.Top),
         new("Na střed",         TextVerticalAlignment.Middle),
-        new("Dolů",             TextVerticalAlignment.Bottom),
+        new("Dole",             TextVerticalAlignment.Bottom),
     ];
 
     public HAlignOption[] HAlignOptions

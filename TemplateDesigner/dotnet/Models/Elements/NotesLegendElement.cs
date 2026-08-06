@@ -43,6 +43,55 @@ public class NotesLegendElement : StopScheduleElementBase
     public bool ShowSpecialniZnaky { get; set; } = true;
     public bool ShowTextovePoznamky { get; set; } = true;
 
+    /// <summary>
+    /// Jak blok zachází s **výlukovými** poznámkami linky (Caché kategorie „vyluka"). Klient je chce mít
+    /// na vývěsce zvlášť od ostatních (#13093), takže si položí dva bloky: v prvním „Bez výluk", ve druhém
+    /// „Jen výluky". Výchozní „Včetně" = dosavadní chování (jeden blok se vším).
+    /// </summary>
+    public VylukyFiltr Vyluky { get; set; } = VylukyFiltr.Vcetne;
+
+    /// <summary>
+    /// Kategorie poznámek zadaných u linky, které blok bere (#13093 bod 1: „příp. filtrovat Poznámky 1,
+    /// Poznámky 2?"). Klient je chce rozložit do víc bloků, protože mají jiné rozložení sloupců než
+    /// seznam značek - dlouhé odstavce vs. krátké řádky „značka + text".
+    ///
+    /// Výchozí vše zapnuté = dosavadní chování. Neplést s <see cref="ShowTextovePoznamky"/>, které
+    /// vypne **všechny** textové poznámky včetně ručních komentářů a rozdílů tras; tyto tři vybírají
+    /// jen mezi poznámkami linky. Výluky mají vlastní volbu (<see cref="Vyluky"/>), protože se
+    /// nefiltrují podle kategorie zdroje, ale podle prefixu textu.
+    /// </summary>
+    public bool ShowPoznamkyLinkyTarifni { get; set; } = false;
+
+    /// <inheritdoc cref="ShowPoznamkyLinkyTarifni"/>
+    public bool ShowPoznamkyLinkyVseobecne { get; set; } = false;
+
+    /// <inheritdoc cref="ShowPoznamkyLinkyTarifni"/>
+    public bool ShowPoznamkyLinkyRadiobus { get; set; } = false;
+
+    /// <summary>Souhrnná vysvětlivka „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
+    /// Dřív parametr sestavy „Skrýt souhrn…"; přesunuto sem, aby se obsah zapínal na jednom místě.</summary>
+    public bool ShowSouhrnBezbarier { get; set; } = true;
+
+    /// <summary>
+    /// Přeprava jízdních kol - značka u minuty odjezdu **i** vysvětlivka v legendě (#13093 bod 2).
+    /// Značka se kreslí v mřížce odjezdů, ale zapíná se tady: uživatel má mít vypínání obsahu na
+    /// jednom místě (rozhodnutí Jan 2026-08-04). Obojí visí na jedné volbě, takže nemůže vzniknout
+    /// značka bez vysvětlení. Výchozí vypnuto - legacy kola na vývěsce netiskl.
+    ///
+    /// ⚠️ Důsledek volby: šablona **bez bloku poznámek** tyhle značky nezapne vůbec.
+    /// </summary>
+    public bool ShowZnackaKola { get; set; } = false;
+
+    /// <summary>Místenka („R" u odjezdu + vysvětlivka). Chování jako <see cref="ShowZnackaKola"/>.</summary>
+    public bool ShowZnackaMistenky { get; set; } = false;
+
+    /// <summary>
+    /// Pokračující spoje (#13093 bod 3) - značka `u1`, `u2`… u minuty **i** vysvětlivka „pokračuje do
+    /// zast. X (l. 304)". Odjezdy se stejným cílem po stejné lince mají tutéž značku; číslo spoje se
+    /// neřeší, jak klient výslovně chtěl. Chování a umístění volby jako u <see cref="ShowZnackaKola"/>.
+    /// </summary>
+    public bool ShowPokracujiciSpoje { get; set; } = false;
+
     // ─── Designer ───────────────────────────────────────────────────────────
 
     protected override float DesignerPlaceholderHeight => 25f;
@@ -56,6 +105,11 @@ public class NotesLegendElement : StopScheduleElementBase
         var poznamky = BuildPoznamky(ctx.Data);
         var filtered = FilterPoznamky(poznamky);
         bool hasData = filtered.Count > 0;
+
+        // Prázdný výsledek filtru s reálnými daty = blok se netiskne vůbec, ani nadpis.
+        // Šablona s blokem „Jen výluky" se tiskne i pro linky bez výluk - osiřelý nadpis
+        // nad prázdnem by byl na většině vývěsek.
+        if (!hasData && ctx.Data is not null) return;
 
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
         float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
@@ -142,9 +196,11 @@ public class NotesLegendElement : StopScheduleElementBase
                         RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, paints.Text, colRight, textStartX),
                     TypPoznamky.SpecialniZnak =>
                         RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
-                            (pozn.Znak.Length == 1 && !SymbolJeText(pozn.Znak)) ? symbolFont : boldFont, noteFont, paints.Text, false, colRight, textStartX),
+                            JePiktogram(pozn.Znak) ? symbolFont : boldFont, noteFont, paints.Text, false, colRight, textStartX,
+                            JePiktogram(pozn.Znak)),
                     _ when pozn.Znak.Length > 0 =>
-                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, paints.Text, true, colRight, textStartX),
+                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, paints.Text, true, colRight, textStartX,
+                            piktogram: false),
                     _ =>
                         DrawWrappedBody(ctx, pozn.Text, textStartX ?? lineX, noteY, colRight, noteFont, paints.Text, scaledNoteLineH),
                 };
@@ -193,7 +249,7 @@ public class NotesLegendElement : StopScheduleElementBase
     private int RenderSymbolWithText(RenderContext ctx, PoznamkaData pozn,
         ref float lineX, float currentY, float lineH,
         SKFont symbolFont, SKFont textFont, SKPaint textPaint, bool suffixSeparator,
-        float colRight, float? textStartX = null)
+        float colRight, float? textStartX = null, bool piktogram = false)
     {
         // Symbol - pokud má pozn.ForeColor z DB, použij ji; jinak default textPaint barva.
         SKPaint symbolPaint = textPaint;
@@ -207,8 +263,13 @@ public class NotesLegendElement : StopScheduleElementBase
         try
         {
             var znakPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
-            ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
-            lineX += symbolFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
+            // Znak legendy musí být týž glyf jako značka u zastávky - u sémantických značek se pozice
+            // ve fontu neshoduje s písmenem číselníku (autobus „A" → „z", kolo „K" → „L"). Překlad
+            // se řídí kategorií, ne písmenem: značky MHD jsou v datech už jako pozice ve fontu.
+            // A jen u piktogramů: značka kreslená normálním fontem je písmeno zadané zákazníkem.
+            string znak = piktogram ? GlyfDleKategorie(pozn.Znak, pozn.Kategorie) : pozn.Znak;
+            ctx.Canvas.DrawText(znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
+            lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f;
 
             // Text - vždy default barva (klient výslovně chce barvit jen znak).
             // Při pevné marker buňce (textStartX) text zarovnán; jinak hned za znakem (bez separátoru).
@@ -248,7 +309,9 @@ public class NotesLegendElement : StopScheduleElementBase
     {
         var poznamky = BuildPoznamky(data);
         var filtered = FilterPoznamky(poznamky);
-        if (filtered.Count == 0) return DesignerPlaceholderHeight;
+        // S reálnými daty se prázdný blok zcela složí (0 mm) - elementy pod ním se posunou
+        // nahoru; placeholder výška patří jen designeru bez dat.
+        if (filtered.Count == 0) return data is null ? DesignerPlaceholderHeight : 0f;
 
         // Výška = záhlaví + nejvyšší sloupec (poznámky se zalamují → akumulujeme řádky per sloupec).
         var ordered = OrderNotes(filtered);
@@ -279,14 +342,51 @@ public class NotesLegendElement : StopScheduleElementBase
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 
+    /// <summary>Testovací vstup do filtru - render ho volá zároveň s daty, což se v testu neposkládá.</summary>
+    internal List<PoznamkaData> FiltrujPoznamkyProTest(List<PoznamkaData> poznamky) => FilterPoznamky(poznamky);
+
     private List<PoznamkaData> FilterPoznamky(List<PoznamkaData> poznamky)
     {
         return poznamky.Where(p =>
-            (p.Typ == TypPoznamky.NegativniZnacka && ShowNegativniZnacky) ||
-            (p.Typ == TypPoznamky.SpecialniZnak && ShowSpecialniZnaky) ||
-            (p.Typ == TypPoznamky.Text && ShowTextovePoznamky)
+            ((p.Typ == TypPoznamky.NegativniZnacka && ShowNegativniZnacky) ||
+             (p.Typ == TypPoznamky.SpecialniZnak && ShowSpecialniZnaky) ||
+             (p.Typ == TypPoznamky.Text && ShowTextovePoznamky))
+            && VylukaProjde(p)
+            && KategorieLinkyProjde(p)
         ).ToList();
     }
+
+    /// <summary>Kategorie, kterou Caché dává výlukovým poznámkám linky (text začíná „Výluka").</summary>
+    private const string VylukaKategorie = NoteCategories.Vyluka;
+
+    /// <summary>Kategorie poznámek zadaných u linky (Caché tagy dle klíče ve vlastnostech linky).</summary>
+    private const string KatLinkyTarifni   = NoteCategories.PoznamkaLinkyTarifni;
+    private const string KatLinkyVseobecne = NoteCategories.PoznamkaLinkyVseobecne;
+    private const string KatLinkyRadiobus  = NoteCategories.PoznamkaLinkyRadiobus;
+
+    /// <summary>Pustí poznámku linky dle zaškrtnutých kategorií. Poznámky, které z linky nejsou
+    /// (značky, omezení, ruční komentáře), tímhle filtrem projdou vždy - jinak by je vypnutá
+    /// kategorie schovala jako vedlejší efekt.</summary>
+    private bool KategorieLinkyProjde(PoznamkaData p) => p.Kategorie switch
+    {
+        KatLinkyTarifni   => ShowPoznamkyLinkyTarifni,
+        KatLinkyVseobecne => ShowPoznamkyLinkyVseobecne,
+        KatLinkyRadiobus  => ShowPoznamkyLinkyRadiobus,
+        // Výluka JE všeobecná poznámka - v datech leží v téže kategorii a jen ji poznáváme podle
+        // prefixu textu. Vlastní vypínač by byl čtvrtý přepínač téhož; „Poznámky linky - výluky"
+        // jen rozděluje všeobecné mezi bloky (Včetně / Bez / Jen), nezapíná je.
+        VylukaKategorie   => ShowPoznamkyLinkyVseobecne,
+        _                 => true,
+    };
+
+    /// <summary>Pustí poznámku dle <see cref="Vyluky"/>. Slouží k tomu, aby si uživatel složil dva bloky
+    /// nad sebou: jeden bez výluk, druhý jen s nimi (KOVED #13093).</summary>
+    private bool VylukaProjde(PoznamkaData p) => Vyluky switch
+    {
+        VylukyFiltr.Bez => p.Kategorie != VylukaKategorie,
+        VylukyFiltr.Jen => p.Kategorie == VylukaKategorie,
+        _               => true,
+    };
 
     /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní - v rámci tieru/pořadí zachová pořadí z dat).</summary>
     private List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) => Razeni switch
@@ -309,7 +409,7 @@ public class NotesLegendElement : StopScheduleElementBase
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        .. GetScheduleBaseDescriptors(),
+        .. GetScheduleBaseDescriptors(withLineToggles: false),   // mřížkou kreslí jen čáru pod záhlavím
         .. GetCellZoneBaseColorDescriptors(),
 
         new StringPropertyDescriptor { Label = "Nadpis",               Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
@@ -330,9 +430,27 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
         new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Filtrování", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
         new BoolPropertyDescriptor  { Label = "Textové poznámky",    Group = "Filtrování", Get = () => ShowTextovePoznamky, Set = v => ShowTextovePoznamky = v },
+        new EnumPropertyDescriptor
+        {
+            Label = "Poznámky linky - výluky", Group = "Filtrování",
+            Get = () => Vyluky, Set = v => Vyluky = (VylukyFiltr)v,
+            Options =
+            [
+                ("Včetně", (object)VylukyFiltr.Vcetne),
+                ("Bez výluk", (object)VylukyFiltr.Bez),
+                ("Jen výluky", (object)VylukyFiltr.Jen)
+            ]
+        },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - tarifní",   Group = "Filtrování", Get = () => ShowPoznamkyLinkyTarifni,   Set = v => ShowPoznamkyLinkyTarifni = v },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - všeobecné", Group = "Filtrování", Get = () => ShowPoznamkyLinkyVseobecne, Set = v => ShowPoznamkyLinkyVseobecne = v },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - radiobus",  Group = "Filtrování", Get = () => ShowPoznamkyLinkyRadiobus,  Set = v => ShowPoznamkyLinkyRadiobus = v },
+        new BoolPropertyDescriptor  { Label = "Souhrn bezbariérových spojů",  Group = "Filtrování", Get = () => ShowSouhrnBezbarier,       Set = v => ShowSouhrnBezbarier = v },
+        new BoolPropertyDescriptor  { Label = "Přeprava kol u odjezdů",       Group = "Filtrování", Get = () => ShowZnackaKola,            Set = v => ShowZnackaKola = v },
+        new BoolPropertyDescriptor  { Label = "Místenky u odjezdů",           Group = "Filtrování", Get = () => ShowZnackaMistenky,        Set = v => ShowZnackaMistenky = v },
+        new BoolPropertyDescriptor  { Label = "Pokračující spoje",            Group = "Filtrování", Get = () => ShowPokracujiciSpoje,      Set = v => ShowPokracujiciSpoje = v },
 
-        new ColorPropertyDescriptor { Label = "NZ pozadí",  Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
-        new ColorPropertyDescriptor { Label = "NZ barva",   Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
+        new ColorPropertyDescriptor { Label = "Pozadí značky",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor { Label = "Barva textu značky", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
         .. GetPositionDescriptors()
     ];
@@ -364,8 +482,16 @@ public class NotesLegendElement : StopScheduleElementBase
             NegativniZnackaBackColor = NegativniZnackaBackColor,
             NegativniZnackaForeColor = NegativniZnackaForeColor,
             ShowNegativniZnacky      = ShowNegativniZnacky,
+            Vyluky                   = Vyluky,
             ShowSpecialniZnaky       = ShowSpecialniZnaky,
             ShowTextovePoznamky      = ShowTextovePoznamky,
+            ShowPoznamkyLinkyTarifni   = ShowPoznamkyLinkyTarifni,
+            ShowPoznamkyLinkyVseobecne = ShowPoznamkyLinkyVseobecne,
+            ShowPoznamkyLinkyRadiobus  = ShowPoznamkyLinkyRadiobus,
+            ShowSouhrnBezbarier        = ShowSouhrnBezbarier,
+            ShowZnackaKola             = ShowZnackaKola,
+            ShowZnackaMistenky         = ShowZnackaMistenky,
+            ShowPokracujiciSpoje       = ShowPokracujiciSpoje,
         };
         CopyBaseTo(clone);
         CopyStopScheduleProperties(clone);

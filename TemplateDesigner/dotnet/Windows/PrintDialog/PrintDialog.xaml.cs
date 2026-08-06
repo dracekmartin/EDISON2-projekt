@@ -10,6 +10,14 @@ public partial class PrintDialog : Window
 {
     private readonly PrintDialogViewModel _vm;
 
+    /// <summary>Nabídka polí pro tlačítko „vložit pole" (název souboru exportu). Caché seznam nezná -
+    /// dodává ho návrhář ze schématu agendy, viz <see cref="EDInputForm.PlaceholderFields"/>.</summary>
+    public IReadOnlyList<EDControls.ListItem> PlaceholderFields
+    {
+        get => ParamForm.PlaceholderFields;
+        set => ParamForm.PlaceholderFields = value;
+    }
+
     public PrintDialog(PrintDialogViewModel vm)
     {
         _vm = vm;

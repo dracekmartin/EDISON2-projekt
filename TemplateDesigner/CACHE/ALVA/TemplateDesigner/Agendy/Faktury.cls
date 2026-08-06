@@ -125,7 +125,7 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
             ["DPH 21%",          "{DPH}",              "N2"],
             ["Celková částka",   "{CELKOVA_CASTKA}",   "N2"]
         ])
-        q 1
+        ret 1
     }
 
     if key = "FAKTURA_PLATBA" {
@@ -135,7 +135,7 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
             ["Částka k úhradě",  "{CELKOVA_CASTKA}",   "N2"],
             ["Datum splatnosti", "{DATUM_SPLATNOSTI}", ""]
         ])
-        q 1
+        ret 1
     }
 
     q 1

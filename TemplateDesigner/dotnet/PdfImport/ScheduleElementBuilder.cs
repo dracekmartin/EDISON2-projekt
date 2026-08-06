@@ -49,7 +49,7 @@ public static class ScheduleElementBuilder
                     BackgroundColor = "#FFE0E0E0"
                 },
                 ShowHeader = true,
-                ShowRowSeparators = true,
+                Grid = { ShowRowLines = true },
                 DataRowHeight = detection.DataRowHeight,
                 Columns = BuildStopColumns(detection),
             };

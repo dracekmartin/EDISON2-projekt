@@ -277,12 +277,20 @@ namespace EDControls.EDList
 
         // ─── Veřejné API ──────────────────────────────────────────────────────────
 
-        public void InitializeList()
+        public void InitializeList() =>
+            ApplyColumns(EnsureConfigured().QueryOrThrow(CacheClass, "InitializeList", new CVar()));
+
+        /// <summary>
+        /// Async varianta <see cref="InitializeList"/> — dotaz běží na threadpoolu, výsledek dosedne
+        /// na UI vlákně (R1). Preferuj ji všude, kde host běží nad pomalou linkou: synchronní varianta
+        /// zmrazí **celou aplikaci** na dobu round-tripu, ne jen hostující okno.
+        /// </summary>
+        public async Task InitializeListAsync()
         {
             var mlRest = EnsureConfigured();
-            var output = mlRest.QueryOrThrow(CacheClass, "InitializeList", new CVar());
-            _columns = ParseColumns(output);
-            RebuildColumns();
+            var cacheClass = CacheClass;   // DependencyProperty → čti na UI vlákně, ne uvnitř Task.Run
+            var output = await RunQueryAsync(() => mlRest.QueryOrThrow(cacheClass, "InitializeList", new CVar()));
+            ApplyColumns(output);
         }
 
         public void LoadList() => LoadList(filter: null);
@@ -295,23 +303,79 @@ namespace EDControls.EDList
         /// </summary>
         public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {
+            _loadGeneration++;   // sync načtení je autoritativní — případná async odpověď v letu se zahodí
+            ApplyRows(EnsureConfigured().QueryOrThrow(CacheClass, "LoadList", BuildLoadInput(filter)));
+        }
+
+        public Task LoadListAsync() => LoadListAsync(filter: null);
+
+        /// <summary>
+        /// Async varianta <see cref="LoadList(IReadOnlyDictionary{string, string}?)"/> (R1) — viz
+        /// <see cref="InitializeListAsync"/>. Rychlé přepínání filtru je ošetřené: dotazy se serializují
+        /// (sdílený <c>MLRest</c> jede přes procesní globály <c>^||ML</c>, dva souběžné by si je přepsaly)
+        /// a odpověď staršího dotazu už do seznamu nedosedne.
+        /// </summary>
+        public async Task LoadListAsync(IReadOnlyDictionary<string, string>? filter)
+        {
             var mlRest = EnsureConfigured();
+            var cacheClass = CacheClass;   // DependencyProperty → čti na UI vlákně, ne uvnitř Task.Run
+            var input = BuildLoadInput(filter);
+            var generation = ++_loadGeneration;
+
+            var output = await RunQueryAsync(() => mlRest.QueryOrThrow(cacheClass, "LoadList", input));
+
+            if (generation != _loadGeneration) return;   // mezitím přišel novější požadavek
+            ApplyRows(output);
+        }
+
+        // Serializace dotazů - sdílený MLRest komunikuje přes procesní globály ^||ML, takže dva
+        // souběžné dotazy z téhož EDListu by si vzájemně přepsaly vstup i výstup.
+        private readonly System.Threading.SemaphoreSlim _queryGate = new(1, 1);
+        private int _loadGeneration;
+
+        private async Task<CVar> RunQueryAsync(Func<CVar> query)
+        {
+            await _queryGate.WaitAsync();
+            try { return await Task.Run(query); }
+            finally { _queryGate.Release(); }
+        }
+
+        private static CVar BuildLoadInput(IReadOnlyDictionary<string, string>? filter)
+        {
             var input = new CVar();
             if (filter is not null)
             {
                 foreach (var kv in filter)
                     input["filter"][kv.Key] = new CVar(kv.Value);
             }
-            var output = mlRest.QueryOrThrow(CacheClass, "LoadList", input);
+            return input;
+        }
+
+        private void ApplyColumns(CVar output)
+        {
+            _columns = ParseColumns(output);
+            RebuildColumns();
+        }
+
+        private void ApplyRows(CVar output)
+        {
             // Unsubscribe stará data — žádné spying na zaniklé řádky
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
-            _rows.Clear();
             _checkAnchor = null;
+
+            // ⚠️ NEOBALOVAT do ICollectionView.DeferRefresh (zkoušeno 4. 8. 2026 jako `B51` a hned
+            // VRÁCENO): mutace ObservableCollection za odloženého refreshe shodí `ListCollectionView`
+            // na „Nelze změnit nebo zkontrolovat obsah nebo Current pozici CollectionView během
+            // odkladu Refresh" — Clear/Add pořád posílají CollectionChanged a view při něm sahá na
+            // currency, což je během odkladu zakázané. Projevilo se to až za běhu při výběru linky,
+            // testy to nechytily. Škubnutí při plnění je menší zlo než pád.
+            _rows.Clear();
             foreach (var row in ParseRows(output))
             {
                 row.PropertyChanged += OnRowPropertyChanged;
                 _rows.Add(row);
             }
+
             FireCheckedRowsChanged();
             RefreshFilter();  // re-apply current search po LoadList (nový dataset)
             // Aplikuj persistent column layout asynchronně po data load — minor flicker (default

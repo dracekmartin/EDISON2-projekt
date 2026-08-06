@@ -30,7 +30,23 @@ Method TestGold0365001()
 	// md5, počty stránek, zastávek, odjezdů i poznámek zůstaly shodné (podpis přidaného pole).
 	// Kontrola při dalším posunu: **nejdřív porovnej složky digestu** - když sedí počty a liší se
 	// jen md5, je to přidané/přejmenované pole, ne změna chování (past, na kterou jsem 31. 7. najel).
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=96 md5=5K8eF6RWLfwYx8QFBQHZZw==")
+	// Re-baseline 2026-08-03 (#13088): přibylo pole SLOUPEK ve `values` i v řádcích ZASTAVKY → opět jen md5.
+	// Re-baseline 2026-08-03 (#13088 podruhé): + SLOUPEK_SPOJU, SLOUPEK_POPIS, SLOUPEK_VARIANT → dtto.
+	// Re-baseline 2026-08-03 (#13088 potřetí): + ZDROJ_STANOVISTE. Výchozí zdroj stanoviště zůstal
+	// označník, takže se kromě nového pole nic nezměnilo - a to je zároveň důkaz, že nový přepínač
+	// je zpětně neutrální.
+	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS čísla zastávek, pak přejmenovaná na příponu
+	// `_CIS` dle konvence agendy (CISLO_ZASTAVKA_CIS …) → dtto, jen md5.
+	// Re-baseline 2026-08-03 (#13048 bod 1): přestupy dostaly řádek legendy (kategorie „prestup") →
+	// ⚠️ **mění se i POČTY**, ne jen md5: pozn 96 → 157 (+61 na 39 stránek, tedy max 2 řádky na
+	// stránku pro „A" a „L"). Je to záměrná změna výstupu, ne přidané pole. Na vývěsce se ty řádky
+	// objeví jen když prvek zastávek přestupy tiskne - Caché posílá nadmnožinu a prořezává ji
+	// render-time filtr (`NoteVisibilityFilter.ShouldHidePrestupLegend`).
+	// Re-baseline 2026-08-03 (#12997): + pole BARVA_LINKY_2 (druhá barva linky) → zpět jen md5.
+	// Re-baseline 2026-08-03 (#13093 bod 1): + pole VYLUKOVE_TEXTY. **Počty poznámek se nezměnily**,
+	// což je zároveň důkaz, že nový parametr „Poznámky zadané u linky" je defaultně vypnutý a
+	// existujícím šablonám se legenda nerozrostla.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=qf2BwxdVm+5RA2vi/4XP0g==")
 }
 
 Method TestGold0365005()
@@ -38,7 +54,14 @@ Method TestGold0365005()
 	// Re-baseline 2026-07-31 (#13045): dtto - o 15 řádků legendy méně (pozn 183 → 168),
 	// počty stránek, zastávek i odjezdů beze změny.
 	// Re-baseline 2026-07-31 (#13008): + pole DOPRAVCI_SOUHRNNY_JR ve `values` → jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=168 md5=U99udLrq2DJ74WV1TOS1Mw==")
+	// Re-baseline 2026-08-03 (#13088): + pole SLOUPEK, pak + SLOUPEK_SPOJU/POPIS/VARIANT
+	// a nakonec + ZDROJ_STANOVISTE → dtto, jen md5.
+	// Re-baseline 2026-08-03 (#13088 počtvrté): + CIS čísla zastávek (pak přejmenovaná) → dtto, jen md5.
+	// Re-baseline 2026-08-03 (#13048 bod 1): + řádky legendy pro přestupy → ⚠️ mění i počty
+	// (pozn 168 → 198, +30 na 38 stránek). Viz vysvětlení u gold 0365001.
+	// Re-baseline 2026-08-03 (#12997): + pole BARVA_LINKY_2 → jen md5.
+	// Re-baseline 2026-08-03 (#13093 bod 1): + VYLUKOVE_TEXTY, počty beze změny (parametr je vypnutý).
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=wNdi6Qicx6qa56p5kPKhIA==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

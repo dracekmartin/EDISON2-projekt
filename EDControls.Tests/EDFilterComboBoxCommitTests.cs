@@ -217,6 +217,38 @@ public class EDFilterComboBoxCommitTests
         });
     }
 
+    [Fact]
+    public void Suggestions_WithPresetValue_OffersWholeListNotJustTheMatchingItem()
+    {
+        RunSta(() =>
+        {
+            // Volný režim: Text nese aktuální hodnotu. Ta NENÍ filtr - jinak by šipka nabídla jen
+            // právě nastavenou položku a přepnout na jinou by šlo až po smazání textu.
+            var combo = new EDCombo { Text = "A" };
+            combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
+
+            Assert.Equal(2, combo.Items.Count);
+        });
+    }
+
+    [Fact]
+    public void Reopen_AfterUserTypedFilter_KeepsFilteredList()
+    {
+        RunSta(() =>
+        {
+            var combo = new EDCombo { StrictSelection = true };
+            combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
+
+            // Napsaný filtr má přežít do otevřeného dropdownu (jinak by psaní nic nefiltrovalo).
+            SetField(combo, "_textIsUserFilter", true);
+            Invoke(combo, "Refilter", ["B"]);
+            Assert.Equal(1, combo.Items.Count);
+
+            combo.IsDropDownOpen = true;   // → DropDownOpened; napsaný filtr se nesmí zahodit
+            Assert.Equal(1, combo.Items.Count);
+        });
+    }
+
     private static EDCombo Bound(KeyHolder source)
     {
         var combo = new EDCombo { StrictSelection = true };
@@ -227,6 +259,10 @@ public class EDFilterComboBoxCommitTests
     }
 
     private static string? SelectedTag(EDCombo combo) => (combo.SelectedItem as ComboBoxItem)?.Tag as string;
+
+    private static void SetField(EDCombo combo, string field, object value) =>
+        typeof(EDCombo).GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!
+            .SetValue(combo, value);
 
     private static void Invoke(EDCombo combo, string method, object?[] args) =>
         typeof(EDCombo).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!

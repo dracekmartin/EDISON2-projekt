@@ -87,6 +87,7 @@ public partial class DynamicTableEditorDialog : Window
     {
         ElementFormBinder.PopulateFontFields(GeneralForm);
         PopulateDataSourceField();
+        PopulateSortFields();
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
         ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
 
@@ -107,6 +108,20 @@ public partial class DynamicTableEditorDialog : Window
         var field = (GeneralForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == "DataSource");
         if (field is null) return;
         field.ListItems = _collections.Select(c => new ListItem(c.CollectionKey, c.Name)).ToList();
+    }
+
+    /// <summary>Naplní nabídku řazení sloupci prvku (Caché je nezná - jsou per element).
+    /// Nabízí jen sloupce s datovým polem; počítané nemají co porovnat bez vyhodnocení výrazu.</summary>
+    private void PopulateSortFields()
+    {
+        var items = _vm.ColumnVMs
+            .Where(c => !string.IsNullOrWhiteSpace(c.Field))
+            .Select(c => new ListItem(c.Field!, string.IsNullOrWhiteSpace(c.Header) ? c.Field! : c.Header))
+            .ToList();
+
+        foreach (var key in new[] { "SortField", "ThenByField" })
+            if ((GeneralForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == key) is { } field)
+                field.ListItems = items;
     }
 
     /// <summary>Přímý odchyt výběru v ComboBoxu pole „Zdroj dat" - čte SelectedValue živě, uloží do

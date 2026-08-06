@@ -501,8 +501,81 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
 - **`x` na znamení = prostý text, ne font-glyf.** Legacy ho v legendě tiskne jako „x" (konvence), ne
   jako piktogram. Naivní „surový znak → Timetable font" ho vykreslí jako **vláček** (glyf na pozici `x`
   je jiný symbol) - proto musí jít přes render-mód **text**, ne font-glyf. Totéž `y`/`z`.
-- **id → znak fontu:** legacy `Case Else` kreslí `ToChar(ID)`; je třeba ověřit, jakou hodnotu nese
-  datový atribut (ASCII mnemoniky `H`=72 / `x`=120 vs. GSId 1-66) a že sedí na glyf ve fontu.
+- ✅ **Repertoár fontu změřen (4. 8. 2026, `B10` gate)** - obrysy všech 94 tisknutelných pozic
+  vytažené z obou fontů. Mapa níže; **pozice `znak` z katalogu se s pozicí ve fontu často NESHODUJE**
+  (letadlo je na `n`, ne na `O`; paragraf na `P`, ne na `G`; metro na `#`, ne na `M`) - je to táž past
+  jako autobus `A`→`z`, jen v širším měřítku. Implementace `B10` musí jít přes mapu, ne přes písmeno.
+
+  | Pozice | Piktogram | | Pozice | Piktogram |
+  |---|---|---|---|---|
+  | `+` 0x2B | kříž | | `X` 0x58 | zkřížená kladiva |
+  | `.` 0x2E | šipka doprava dolů | | `Y` 0x59 · `Z` 0x5A | telefon |
+  | `/` 0x2F | hodiny | | `[` 0x5B | autovlak (auto na voze) |
+  | `0`-`9` 0x30-39 | kroužkové číslice | | `a`-`j` 0x61-6A | číslice 0-9 v rámečku |
+  | `:` 0x3A · `;` 0x3B | šipka nahoru / dolů | | `k` 0x6B | „K" v osmiúhelníku |
+  | `=` 0x3D | zvedací plošina pro vozík | | `n` 0x6E | **letadlo** |
+  | `?` 0x3F · `@` 0x40 | šipka vlevo / vpravo | | `o` 0x6F | budova |
+  | `A` 0x41 · `B` 0x42 | trojúhelník | | `p` 0x70 | **zavazadla** (kufr) |
+  | `D` 0x44 | křížek (CZ) / **dlaň (SK)** | | `q` 0x71 | přeškrtnutý kufr |
+  | `F` 0x46 | **částečně bezbariér** | | `r` 0x72 | „R" v rámečku |
+  | `G` 0x47 | nevidomý s holí | | `w` 0x77 | vagon (CZ) / **autobus (SK)** |
+  | `H` 0x48 | **bezbariér** (vozíček) | | `x` 0x78 | lokomotiva (CZ) / **jednotka (SK)** |
+  | `L` 0x4C | **jízdní kolo** | | `y` 0x79 | restaurace (příbor v rámečku) |
+  | `M` 0x4D | příbor (restaurace) | | `z` 0x7A | **autobus** |
+  | `P` 0x50 | **paragraf** § | | `}` 0x7D | informace |
+  | `Q` 0x51 | sklenka | | `~` 0x7E | **P+R** |
+  | `V` 0x56 | postel | | `!`-`)` 0x21-29 | loga dopravců |
+
+  ⚠️ **Ve fontu NENÍ** loď (katalog 61), wifi (65) ani zásuvka (66) - ty tři se z tohohle fontu
+  nakreslit nedají a při implementaci potřebují jiný zdroj (nebo text).
+
+  ✅ **CZ × SK se liší přesně ve 3 z 94 pozic:** `D`, `w`, `x` (viz tabulka). Zbytek repertoáru je
+  shodný, takže sdílená mapa `B10` culture parametr potřebuje **jen pro tyhle tři**.
+  **Částečně ověřeno 2026-08-03** (#13048 bod 1, #13093 bod 2): pozice glyfů se **neshodují s písmeny
+  číselníku**, takže datový znak se musí přeložit - **autobus `A` → `z` (0x7A)**, **vlak `L` → `x`
+  (0x78, lokomotiva)**, **kola → `L` (0x4C)**; `w` (0x77) je železniční vagon, `y` (0x79) restaurace.
+  Kola nemají písmeno v číselníku (je to atribut spoje), proto je agenda posílá vlastním markerem
+  **`K`** - poslat rovnou `L` nelze, to je vlak. Překlad drží `StopScheduleElementBase.SymbolGlyph`
+  (zamčeno `SymbolGlyphTests`) a používají ho **obě** kreslicí cesty - značka u zastávky i znak
+  v legendě, jinak by se rozešly. Aplikuje se **jen na piktogramovou cestu** (`JePiktogram`):
+  značka kreslená normálním fontem je písmeno zadané zákazníkem a překlad by z „A" udělal „z".
+  Zároveň to vysvětluje, proč „na znamení" **musí** jít textem: na `x` je lokomotiva.
+
+  ⚠️ **Pozice musí platit v CZ i SK fontu** (`TimeTable2.ttf` / `TimeTable2SK.ttf`, přepíná
+  `FontResolver.SymbolFontFamily`) - fonty **nejsou** kopie. Porovnáno 2026-08-03: `z` (0x7A) je
+  autobus a `L` (0x4C) kolo v obou, `x` (0x78) je vlak v obou (CZ parní lokomotiva, SK moderní
+  jednotka), ale **`w` (0x77) je v CZ železniční vagon a v SK autobus**. Právě proto jde autobus
+  na `z`, ne na `w`: `w` by tiskl v Česku vagon a na Slovensku autobus. Nová položka mapy se musí
+  zkontrolovat v **obou** fontech, jinak se vzhled rozejde podle jazyka.
+
+  ⚠️ **Překlad se váže na KATEGORII, ne na písmeno** (od 4. 8.). Agenda MHD posílá značku jako
+  `$c(kód)`, tedy **přímo pozici ve fontu** (`ConvertSpecialniZnak`) - kód 65 dá „A", 75 „K", takže
+  plošný překlad podle písmene by jí nakreslil autobus nebo kolo místo jejího symbolu. Sémantické
+  kategorie (dnes `prestup`, `odjezd-kola`, `odjezd-mistenka`) drží `Models/NoteCategories.Semanticke`;
+  jména kategorií mají jediný zdroj, protože na nich visí i vypínání obsahu v šabloně.
+
+  🔧 **Jak pozici ověřit** (Mapa znaků na to nestačí - dvakrát se z ní přečetlo špatně, protože
+  ikony jsou drobné a sousedí spolu vagon s autobusem): vytáhnout **obrysy glyfů přímo z fontu** a
+  nakreslit kontaktní list s popisky kódů. `fontTools` přečte `cmap` (font je mapovaný v symbolové
+  oblasti `0xF020`+, takže znak = kód − `0xF000`; jména glyfů jsou obecná typu `exclam`, sémantiku
+  nenesou), obrysy pak stačí vykreslit `PIL`em jako polylinie. Jednorázový skript, do repa nepatří.
+  ⚠️ **Neověřené zůstávají** pozice pro clo `C`, paragrafy `G`/`a`/`b`/`c`, metro `e`/`f`/`g`
+  a letadlo `O` - dnes je nemá v datech žádná firma, ale první, kdo je bude mít, musí projít
+  stejnou kontrolou, jinak dostane cizí piktogram. `H`/`F` (bezbariér) a kroužkové dny sedí na písmenu.
+
+  📐 **Měření CZ × SK (4. 8. 2026, `B49`)** - obrysy vytažené z obou fontů, ať se to nemusí opakovat:
+
+  | Kód | `TimeTable2.ttf` (CZ) | `TimeTable2SK.ttf` (SK) | Význam |
+  |---|---|---|---|
+  | `z` 0x7A | autobus | autobus (**identický obrys**) | ✅ shodný |
+  | `L` 0x4C | jízdní kolo | jízdní kolo (**identický obrys**) | ✅ shodný |
+  | `x` 0x78 | parní lokomotiva | moderní jednotka | ✅ oba **vlak**, jen jiná kresba |
+  | `w` 0x77 | železniční vagon | **autobus** | ❌ **jiný význam** |
+  | `D` 0x44 | křížek | **dlaň** | ❌ **jiný význam** |
+
+  Závěr: **co dnes překládáme, je pro SK správně** (`A`→`z`, `L`→`x`, `K`→`L`), takže `SymbolGlyph`
+  culture parametr nepotřebuje. Ale SK font **není** jen jiné ztvárnění týchž kódů - u `w` a `D`
+  se liší význam, takže ověření nové položky mapy musí proběhnout **v obou fontech**.
 - **Font `x` = vláček** ověřeno v TimeTable2 (SkiaSharp render u uživatele) → potvrzuje, že na-znamení
   NEsmí jít fontem.
 

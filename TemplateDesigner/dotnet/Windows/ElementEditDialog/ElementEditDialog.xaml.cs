@@ -35,6 +35,14 @@ public partial class ElementEditDialog : Window
     /// Null dokud nebyl dialog potvrzen.</summary>
     public IReadOnlyDictionary<string, string>? FinalValues { get; private set; }
 
+    /// <summary>Nabídka polí pro tlačítko „vložit pole" - viz <see cref="EDInputForm.PlaceholderFields"/>.
+    /// Bez naplnění by tlačítko v dialogu bylo mrtvé (příznak u pole nese Caché, seznam zná návrhář).</summary>
+    public IReadOnlyList<EDControls.ListItem> PlaceholderFields
+    {
+        get => TheForm.PlaceholderFields;
+        set => TheForm.PlaceholderFields = value;
+    }
+
     /// <param name="target">Editovaný objekt (element, sekce, stránka - in-memory model).</param>
     /// <param name="cacheClass">Caché schema class (např. "ALVA.TemplateDesigner.EDInputForm.TextElementEdit").</param>
     /// <param name="title">Titulek okna.</param>

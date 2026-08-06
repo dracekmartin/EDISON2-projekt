@@ -42,7 +42,8 @@ internal static class EDInputFormWire
                     f.Min?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
                     f.Max?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
                     f.Format ?? "",
-                    f.Unit ?? ""),
+                    f.Unit ?? "",
+                    f.Placeholders ? "1" : "0"),
                 _ => new CList()
             };
             cVar[i.ToString()] = entry;
@@ -108,6 +109,9 @@ internal static class EDInputFormWire
                     field.Format = row.GetString(17);
                 if (row.Length >= 18 && row.GetString(18) != "")
                     field.Unit = row.GetString(18);
+                // Pozice 19: pole přijímá {POLE} placeholdery. Aditivní - starší server ji neposílá.
+                if (row.Length >= 19)
+                    field.Placeholders = row.GetString(19) == "1";
                 items.Add(field);
             }
         }

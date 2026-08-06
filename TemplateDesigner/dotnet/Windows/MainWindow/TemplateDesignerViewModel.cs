@@ -77,6 +77,9 @@ public class TemplateDesignerViewModel : EDViewModel
     /// do pickeru i do GetData (aby se linka fetchla ze správné skupiny).</summary>
     private string? _activeSkupinaId;
 
+    /// <summary>Zvolená skupina linek pro cesty mimo VM (tiskový dialog si staví GetData sám).</summary>
+    public string? ActiveSkupinaId => _activeSkupinaId;
+
     private int _activeInstanceIndex;
     public int ActiveInstanceIndex
     {
@@ -103,7 +106,13 @@ public class TemplateDesignerViewModel : EDViewModel
         get
         {
             var lbl = CapitalizeFirst(CurrentInstanceLabel);
-            if (_activeInstances.Count == 0) return $"{lbl}: - (klikni pro výběr)";
+            // Bez vybrané instance kreslí náhled ukázková data - řekni to tady, aby se nedal splést
+            // s hotovou vývěskou. U šablony bez vazby na databázi se žádná reálná data nečekají,
+            // takže by „ukázková data" lhala (rozhodnutí Jan 5. 8.).
+            if (_activeInstances.Count == 0)
+                return IsSampleDataPreview
+                    ? $"{lbl}: - (ukázková data, klikněte pro výběr)"
+                    : $"{lbl}: - (klikněte pro výběr)";
             var cur = CurrentActiveInstance;
             return _activeInstances.Count == 1
                 ? $"{lbl}: {cur?.Display}"
@@ -158,6 +167,7 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 _realPreviewIndex = 0;
+                Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
                 RequestPreviewRefresh?.Invoke();
             }
@@ -259,13 +269,7 @@ public class TemplateDesignerViewModel : EDViewModel
             StatusText = $"Načítám data: {instance.Display}…";
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
-            var getDataParams = new Dictionary<string, object?>(_previewParams, StringComparer.OrdinalIgnoreCase)
-            {
-                [paramName] = instance.Value
-            };
-            // Skupina linek musí do GetData - u AD je linka klíčovaná (skupina, linka), jinak by se
-            // fetchla z jiné/default skupiny než z které byla vybraná.
-            if (!string.IsNullOrEmpty(_activeSkupinaId)) getDataParams["SKUPINA_LINEK_ID"] = _activeSkupinaId;
+            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId);
             var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
@@ -275,6 +279,7 @@ public class TemplateDesignerViewModel : EDViewModel
             if (pages is null || pages.Count == 0)
             {
                 _realPreviewData = null;
+                Models.ColorHex.UiData = null;
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
@@ -287,6 +292,7 @@ public class TemplateDesignerViewModel : EDViewModel
                                    && _realPreviewIndex >= 0 && _realPreviewIndex < _realPreviewData.Count)
                     ? _realPreviewData[_realPreviewIndex] : null;
                 _realPreviewData = newData;
+                Models.ColorHex.UiData = null;   // naplní ho až kreslení nové stránky
                 _realPreviewIndex = keepPage ? FindMatchingPageIndex(newData, currentPage, _realPreviewIndex) : 0;
                 StatusText = $"{instance.Display}: {pages.Count} stránek";
             }
@@ -330,7 +336,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „…výběr - linky").</summary>
     public string PreviousInstanceTooltip => $"Předchozí {CurrentInstanceLabel}";
     public string NextInstanceTooltip     => $"Další {CurrentInstanceLabel}";
-    public string InstancePickerHint      => $"Klikni pro výběr - {CurrentInstanceLabelPlural}";
+    public string InstancePickerHint      => $"Klikněte pro výběr - {CurrentInstanceLabelPlural}";
 
     private static string CapitalizeFirst(string s) =>
         string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
@@ -343,6 +349,7 @@ public class TemplateDesignerViewModel : EDViewModel
         OnPropertyChanged(nameof(PreviousInstanceTooltip));
         OnPropertyChanged(nameof(NextInstanceTooltip));
         OnPropertyChanged(nameof(InstancePickerHint));
+        OnPropertyChanged(nameof(IsSampleDataPreview));
     }
 
     // ── Real preview data ────────────────────────────────────────────────────
@@ -392,6 +399,22 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool HasPageNavigation => RealPreviewPageCount > 0;
 
     /// <summary>
+    /// Náhled kreslí ukázková data, ne data z databáze. Říká to **štítek instance** ve stavovém
+    /// řádku, ne nic navíc u náhledu (rozhodnutí Jan 5. 8. - informace už tam byla, chybělo jen
+    /// spojení „nevybraná linka ⇒ v náhledu jsou vymyšlená data"). Platí jen pro agendu, která
+    /// reálná data vůbec umí: u šablony bez vazby na databázi by hlášení „ukázková data" lhalo.
+    /// </summary>
+    public bool IsSampleDataPreview =>
+        ShouldReportSampleData(
+            RealPreviewPageCount,
+            State.CurrentTemplate.AgendaCode,
+            State.CurrentTemplate.AgendaCode is { Length: > 0 } c && CacheProvider?.GetCacheClass(c) is not null);
+
+    /// <summary>Testovatelné jádro <see cref="IsSampleDataPreview"/>.</summary>
+    internal static bool ShouldReportSampleData(int realPageCount, string? agendaCode, bool agendaHasData) =>
+        realPageCount == 0 && agendaCode is { Length: > 0 } && agendaHasData;
+
+    /// <summary>
     /// Notifikace po výměně reálných preview dat. Pořadí je záměrné: <see cref="PreviewPageItems"/>
     /// PŘED <see cref="RealPreviewIndex"/> - výměna ItemsSource comboboxu synchronně pushne
     /// SelectedIndex=-1 do VM a zpětná korekce ze setteru se během reentrantního binding update
@@ -408,6 +431,8 @@ public class TemplateDesignerViewModel : EDViewModel
             OnPropertyChanged(nameof(PageNavigationText));
             OnPropertyChanged(nameof(HasMultiplePages));
             OnPropertyChanged(nameof(HasPageNavigation));
+            OnPropertyChanged(nameof(IsSampleDataPreview));
+            OnPropertyChanged(nameof(ActiveInstanceText));   // nese text o ukázkových datech
         }
         finally { _previewPagesSyncing = false; }
         // WPF umí nastavení SelectedIndex během výměny ItemsSource spolknout (combobox zůstane
@@ -636,8 +661,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _openInstancePicker, _prevInstance, _nextInstance, _refreshData, _toggleParamsBar;
-    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda;
+    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _prevInstance, _nextInstance, _refreshData, _toggleParamsBar;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda, _openInstancePicker;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= Command(Redo,          () => CanRedo);
@@ -652,7 +677,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
     public AsyncRelayCommand ChangeAgendaCommand   => _changeAgenda   ??= CommandAsync(ChangeAgendaAsync);
-    public RelayCommand OpenInstancePickerCommand  => _openInstancePicker ??= Command(OpenInstancePicker);
+    public AsyncRelayCommand OpenInstancePickerCommand => _openInstancePicker ??= CommandAsync(OpenInstancePickerAsync);
     public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= Command(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
     public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
     public RelayCommand RefreshDataCommand         => _refreshData    ??= Command(RefreshData);
@@ -1080,7 +1105,10 @@ public class TemplateDesignerViewModel : EDViewModel
     private async Task NewTemplateAsync()
     {
         if (!await ConfirmUnsavedChangesAsync()) return;
-        ReplaceWithBlankTemplate(agendaCode: null);
+        // Nová šablona zdědí rozpracovanou agendu (rozhodnutí Jan 5. 8.): kdo kreslí vývěsky pro
+        // jednu agendu, nemusí ji po Ctrl+N vybírat znovu. Bez agendy nemá šablona nabídku datových
+        // polí ani náhled a nováčkovi není jasné, co dělá špatně. Přepnutí zůstává na Ctrl+Shift+A.
+        ReplaceWithBlankTemplate(agendaCode: State.CurrentTemplate.AgendaCode);
     }
 
     /// <summary>
@@ -1149,7 +1177,7 @@ public class TemplateDesignerViewModel : EDViewModel
         return true;
     }
 
-    private void OpenInstancePicker()
+    private async Task OpenInstancePickerAsync()
     {
         if (CacheProvider is null)
         {
@@ -1163,8 +1191,10 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
-        // Skupiny linek pro filtr v pickeru (prázdné = agenda bez skupin → filtr skrytý). Rychlý lookup.
-        var skupiny = CacheProvider.GetAvailableSkupiny(agendaCode);
+        // Skupiny linek pro filtr v pickeru (prázdné = agenda bez skupin → filtr skrytý).
+        // Async (R1): cachované, ale první volání jde po síti - na pomalé lince by zmrazilo aplikaci.
+        var provider = CacheProvider;
+        var skupiny = await Task.Run(() => provider.GetAvailableSkupiny(agendaCode));
         var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances, skupiny, _activeSkupinaId, CurrentInstanceLabelPlural);
         if (Dialogs?.ShowInstancePicker(vm) != true) return;
 
@@ -2487,9 +2517,20 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Parametry zpracovávané v Caché GetData (rozdělení sloupců, varianty tras) -
     /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
-    private static readonly string[] ServerSideParams =
+    /// <summary>
+    /// Parametry, jejichž hodnotu zpracovává až server v <c>GetData</c> - jejich změna proto musí
+    /// spustit re-fetch dat, ne jen překreslení náhledu.
+    /// <para>
+    /// ⚠️ **Chybějící klíč je tichá vada:** přepnutí volby v UI nedělá nic a tisk pak vyjede jinak
+    /// než náhled (tiskový dialog fetchuje čerstvě). Stalo se to čtyřikrát, proto to hlídá
+    /// <c>ServerSideParamsDriftTests</c> - nový parametr čtený v <c>.cls</c> musí být i tady.
+    /// </para>
+    /// </summary>
+    internal static readonly string[] ServerSideParams =
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
-         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD"];
+         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
+         "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
+         "DELENI_SLOUPCU"];
 
     private string? _lastServerParamsSnapshot;
 
@@ -2611,21 +2652,59 @@ public class TemplateDesignerViewModel : EDViewModel
         var agendaCode      = State.CurrentTemplate.AgendaCode;
         var instances       = _activeInstances.ToList();
         var skupinaId       = _activeSkupinaId;
+        var printParams     = new Dictionary<string, object?>(_previewParams, StringComparer.OrdinalIgnoreCase);
         var realPreviewData = _realPreviewData;   // reference swap-only pole - lokální kopie reference stačí
         var suppression     = CurrentNoteSuppression();
-        var hideAgg         = CurrentHideAggBezbarier();
         var hideNaZnameni   = CurrentHideNaZnameniLegend();
+        var hidePrestup     = CurrentHidePrestupLegend();
+        var hiddenContent   = CurrentHiddenContent();
 
         return await Task.Run(() => BuildAllPreviewDataPagesCore(
-            culture, agendaCode, instances, skupinaId, realPreviewData, suppression, hideAgg, hideNaZnameni, progress));
+            culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent));
+    }
+
+    /// <summary>
+    /// Parametry pro `GetData` jedné instance = parametry sestavy + klíč instance + skupina linek.
+    /// **Jediné místo, kde se tahle mapa staví.** Náhled, export i tisk musí serveru poslat totéž,
+    /// jinak vyjede jiný výstup, než ukazuje náhled - a nikdo si toho nevšimne. Přesně tak vznikly
+    /// dvě vady naráz: export z lišty neposílal parametry sestavy, tisk zapomínal skupinu linek
+    /// (u AD je linka klíčovaná dvojicí skupina+linka, takže se fetchla z default skupiny).
+    /// </summary>
+    internal static Dictionary<string, object?> ComposeGetDataParams(
+        IReadOnlyDictionary<string, object?> printParams, string instanceParamName,
+        string instanceValue, string? skupinaId)
+    {
+        var p = new Dictionary<string, object?>(printParams, StringComparer.OrdinalIgnoreCase)
+        {
+            [instanceParamName] = instanceValue   // instance přebíjí případný klíč linky z parametrů
+        };
+        if (!string.IsNullOrEmpty(skupinaId)) p["SKUPINA_LINEK_ID"] = skupinaId;
+        return p;
+    }
+
+    /// <summary>
+    /// Přimíchá hodnoty parametrů sestavy do každé stránky - část parametrů vyhodnocuje až C#
+    /// renderování a čte je z dat (`HODINY_OD`, `CASOVA_OSA`, `TISK_PROJETYCH_ZAST`…). Musí to udělat
+    /// **každá** cesta, která staví stránky pro render, jinak se nakreslí něco jiného než v náhledu.
+    /// </summary>
+    internal static IReadOnlyList<DataContext> MergeParamsIntoPages(
+        IReadOnlyList<DataContext> pages, IReadOnlyDictionary<string, object?> printParams)
+    {
+        var stringParams = printParams
+            .Where(kv => kv.Value is not null)
+            .ToDictionary(kv => kv.Key, kv => (object?)kv.Value!.ToString(), StringComparer.OrdinalIgnoreCase);
+        return stringParams.Count == 0 ? pages : pages.Select(p => p.WithExtraValues(stringParams)).ToList();
     }
 
     private IReadOnlyList<DataContext> BuildAllPreviewDataPagesCore(
         CultureInfo culture, string? agendaCode, List<AgendaInstance> instances, string? skupinaId,
+        IReadOnlyDictionary<string, object?> printParams,
         IReadOnlyList<DataContext?>? realPreviewData,
-        NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni,
-        IProgress<string>? progress)
+        NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni, bool hidePrestup,
+        IProgress<string>? progress, IReadOnlySet<string>? hiddenContent = null)
     {
+        List<DataContext>? pages = null;
+
         // Multi-instance batch: pro každou aktivní instanci fetch GetData a sloučit do flat seznamu.
         // PDF export tak vygeneruje N×K stránek (N instancí × K stránek per instance, např. zastávka×směr).
         if (instances.Count > 0 && CacheProvider is not null && !string.IsNullOrEmpty(agendaCode))
@@ -2636,24 +2715,42 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 var inst = instances[i];
                 progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
-                var getParams = new Dictionary<string, object?> { [paramName] = inst.Value };
-                if (!string.IsNullOrEmpty(skupinaId)) getParams["SKUPINA_LINEK_ID"] = skupinaId;
-                var pages = CacheProvider.GetData(agendaCode, getParams);
-                if (pages is null) continue;
-                foreach (var p in pages) all.Add(p.WithCulture(culture));
+                var fetched = CacheProvider.GetData(
+                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId));
+                if (fetched is null) continue;
+                foreach (var p in fetched) all.Add(p.WithCulture(culture));
             }
-            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, suppression, hideAgg, hideNaZnameni);
+            if (all.Count > 0) pages = all;
         }
 
-        if (realPreviewData is { Count: > 0 })
-            return NoteVisibilityFilter.Apply(
-                realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
-                suppression, hideAgg, hideNaZnameni);
+        pages ??= realPreviewData is { Count: > 0 }
+            ? realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList()
+            : null;
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
         // export musí přesto projít - vrátíme prázdný DataContext, aby se vyrenderovala
-        // jedna stránka s placeholdery beze změny.
-        return [BuildPreviewMockData() ?? new DataContext()];
+        // jedna stránka s placeholdery beze změny. (Parametry si domíchá sám.)
+        if (pages is null) return [BuildPreviewMockData() ?? new DataContext()];
+
+        return NoteVisibilityFilter.Apply(MergeParamsIntoPages(pages, printParams),
+            suppression, hideAgg, hideNaZnameni, hidePrestupLegend: hidePrestup, hiddenContent: hiddenContent);
+    }
+
+    /// <summary>
+    /// Datová pole aktuální agendy pro nabídku „vložit pole" u textových vlastností - skaláry
+    /// i pole kolekcí v jednom seznamu, u kolekce se do popisku připíše, odkud pole je.
+    /// Uživatel hledá název, nepřemýšlí v kategoriích (rozhodnutí Jan 4. 8.).
+    /// </summary>
+    public IReadOnlyList<EDControls.ListItem> PlaceholderFieldItems()
+    {
+        var schema = SchemaProvider.GetSchema(State.CurrentTemplate.AgendaCode ?? "");
+        if (schema is null) return [];
+
+        var items = schema.Fields.Select(f => new EDControls.ListItem(f.FieldName, f.Label ?? f.FieldName));
+        var fromCollections = (schema.FieldCollections ?? []).SelectMany(c =>
+            c.Fields.Select(f => new EDControls.ListItem(f.FieldName, $"{f.Label ?? f.FieldName} ({c.Name})")));
+
+        return [.. items.Concat(fromCollections).DistinctBy(i => i.Key)];
     }
 
     public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)
@@ -2730,11 +2827,11 @@ public class TemplateDesignerViewModel : EDViewModel
 
         var src = overrideParams ?? _previewParams;
         var suppressionMode = NoteVisibilityFilter.ParseMode(src.GetValueOrDefault(NoteVisibilityFilter.ParamName));
-        var hideAgg = NoteVisibilityFilter.ParseBool(src.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
         if (mockData is null) return null;
 
         var counter = new NoteSuppressionCounter();
-        var filtered = NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg, CurrentHideNaZnameniLegend(), counter);
+        var filtered = NoteVisibilityFilter.Apply(mockData, suppressionMode, false, CurrentHideNaZnameniLegend(), counter,
+            CurrentHidePrestupLegend(), CurrentHiddenContent());
         UpdateNoteSuppressionText(counter, src);
         return filtered;
     }
@@ -2744,8 +2841,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// se počítají ze skutečně odfiltrovaných položek náhledové stránky (parametr sám nemusí nic
     /// schovat - rozsah „Spoje, nepoznámkovat" nemusí mít v datech firmy záznamy a signál z parametru
     /// by lhal). Zbylé dvě věci se hlásí dle parametru, protože se aplikují už na serveru:
-    /// písmena variant nahrazují rozdílové poznámky a rozdělení po označnících vyndá ze stránky
-    /// odjezdy jiných označníků. Právě to se tiše dělo, když UI parametr ukazovalo jako vypnutý.
+    /// písmena variant nahrazují rozdílové poznámky a rozdělení po stanovištích vyndá ze stránky
+    /// odjezdy jiných stanovišť. Právě to se tiše dělo, když UI parametr ukazovalo jako vypnutý.
     /// </summary>
     private void UpdateNoteSuppressionText(NoteSuppressionCounter counter, IReadOnlyDictionary<string, object?> paramValues)
     {
@@ -2761,7 +2858,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var duvody = new List<string>(3);
         if (notesHidden) duvody.Add("poznámky skryté nastavením");
         if (variantLetters) duvody.Add("rozdíly tras nahrazené písmeny variant");
-        if (splitPerPlatform) duvody.Add("vývěska rozdělená po označnících");
+        if (splitPerPlatform) duvody.Add("vývěska rozdělená po stanovištích");
         return duvody.Count == 0 ? "" : "Sestava: " + string.Join(" · ", duvody);
     }
 
@@ -2775,13 +2872,18 @@ public class TemplateDesignerViewModel : EDViewModel
     private NoteRangeSuppression CurrentNoteSuppression() =>
         NoteVisibilityFilter.ParseMode(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamName));
 
-    /// <summary>Skrýt agregátní bezbariér poznámku (#7161 D6) z aktuálního parametru sestavy.</summary>
-    private bool CurrentHideAggBezbarier() =>
-        NoteVisibilityFilter.ParseBool(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
+    /// <summary>Kategorie obsahu vypnuté v šabloně (kola, místenky, souhrn bezbariér) - dřív tři
+    /// parametry sestavy. Zapíná se to na prvku, který obsah kreslí, aby to bylo na jednom místě.</summary>
+    private IReadOnlySet<string> CurrentHiddenContent() =>
+        NoteVisibilityFilter.HiddenContentCategories(State.CurrentTemplate);
 
     /// <summary>Skrýt legendu „× na znamení" když StopList netiskne značku (#7161 D5) - ze šablony.</summary>
     private bool CurrentHideNaZnameniLegend() =>
         NoteVisibilityFilter.ShouldHideNaZnameniLegend(State.CurrentTemplate);
+
+    /// <summary>Skrýt legendu přestupů, když je žádný StopList netiskne - ze šablony (#13048 bod 1).</summary>
+    private bool CurrentHidePrestupLegend() =>
+        NoteVisibilityFilter.ShouldHidePrestupLegend(State.CurrentTemplate);
 
     /// <summary>Výchozí mock hodnota podle typu pole - použije se když Example chybí.</summary>
     private static string MockDefault(DataField f) => f.DataType switch

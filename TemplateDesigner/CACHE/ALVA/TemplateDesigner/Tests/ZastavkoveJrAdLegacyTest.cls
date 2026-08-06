@@ -53,6 +53,78 @@ Method TestZaskokZonyNaRegistrZastavek()
 	do $$$AssertEquals(zTrasy, "101", "zóna u trasy linky přebíjí registr zastávek")
 }
 
+/// Barva linky z JŘ modulu (#12997). JŘ umí od 3. 8. víc barev na linku, čteme je podle pořadí -
+/// gold linka `0365001` má nastavenou jednu (`149;202;100`), takže druhá musí vyjít prázdná, ne
+/// omylem tatáž. Kdyby se pořadí ignorovalo, obě pole by nesla stejnou barvu a nikdo by si nevšiml.
+Method TestBarvaLinkyDlePoradi()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set db = "CB_CSADAD", sku = 1, lin = "0365001"
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - barva linky přeskočena")
+		quit
+	}
+	if $get(^[db]JRL(sku, lin, "PATCH", "BARVA")) = "" {
+		do $$$AssertTrue(1, "linka "_lin_" nemá nastavenou barvu - test přeskočen")
+		quit
+	}
+
+	set prvni = $classmethod(cls, "BarvaLinky", "CB_CSADAD", db, sku, lin, 1)
+	set druha = $classmethod(cls, "BarvaLinky", "CB_CSADAD", db, sku, lin, 2)
+	do $$$AssertEquals(prvni, "#FF95CA64", "první barva linky jako hex: "_prvni)
+	do $$$AssertEquals(druha, "", "druhá barva není nastavená → prázdno, ne kopie první")
+	// Bez pořadí = první barva (zpětná kompatibilita volání i uložených šablon).
+	do $$$AssertEquals($classmethod(cls, "BarvaLinky", "CB_CSADAD", db, sku, lin), prvni, "bez pořadí = první barva")
+}
+
+/// CIS číslo zastávky je 9. pole registru, ne interní `czst` (KOVED #13088). Na datech KOVED se ty dvě
+/// hodnoty shodují (číslování přebrané z CIS), takže test hlídá **zdroj**, ne shodu s czst - jinak by
+/// prošel i kdybychom omylem vraceli czst. Šestimístné číslo pro strojky (`419940`) to být nesmí.
+Method TestCisloZastavkyCisJe9Pole()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set db = "ZL_KOVED", czst = 41994
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - CIS číslo přeskočeno")
+		quit
+	}
+	if '$data(^[db]JRZ(czst)) {
+		do $$$AssertTrue(1, "zastávka "_czst_" v "_db_" chybí - CIS číslo přeskočeno")
+		quit
+	}
+
+	set cis = $classmethod(cls, "CisloZastavkyCis", db, czst)
+	set ocekavane = $piece($get(^[db]JRZ(czst)), "$", 9)
+	set strojky = $piece($piece($get(^[db]JRZ(czst)), "$", 5), "~", 4)
+	do $$$AssertEquals(cis, ocekavane, "CIS číslo = 9. pole registru: "_cis)
+	do $$$AssertTrue(cis '= "", "CIS číslo není prázdné")
+	do $$$AssertTrue(cis '= strojky, "CIS číslo není číslo pro strojky ("_strojky_")")
+	do $$$AssertEquals($classmethod(cls, "CisloZastavkyCis", db, ""), "", "prázdný czst → prázdno")
+}
+
+/// Popis sloupku se čte z číselníku zastávky (KOVED #13088). Zlín, aut. nádr. (czst 41994) má
+/// sloupky s popisy směrů - ověřuje, že bereme `~`-pole 4, ne číslo nebo GPS.
+Method TestPopisSloupkuZCiselniku()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set db = "ZL_KOVED", czst = 41994
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - popis sloupku přeskočen")
+		quit
+	}
+	if '$data(^[db]JRZ(czst, "Sloupek", 2)) {
+		do $$$AssertTrue(1, "zastávka "_czst_" nemá číselník sloupků - popis sloupku přeskočen")
+		quit
+	}
+
+	set popis = $classmethod(cls, "PopisSloupku", db, czst, 2)
+	set ocekavany = $piece($get(^[db]JRZ(czst, "Sloupek", 2)), "~", 4)
+	do $$$AssertEquals(popis, ocekavany, "popis = 4. pole číselníku: "_popis)
+	do $$$AssertTrue(popis '= "", "popis sloupku není prázdný")
+	do $$$AssertTrue('$isvalidnum(popis), "popis je text, ne číslo sloupku ani GPS: "_popis)
+	do $$$AssertEquals($classmethod(cls, "PopisSloupku", db, czst, ""), "", "bez sloupku → prázdný popis")
+}
+
 /// Tvar názvu zastávky se propíše do reálných dat (KOVED #13089) - end-to-end přes `GetData`,
 /// ne jen čistá funkce. Běží na `ZL_KOVED` (data KOVED), protože právě tam mají zastávky název
 /// s dvojčárkou a tečkovanými zkratkami; výchozí tvar musí zůstat dosavadní (zkrácený).
@@ -586,14 +658,14 @@ ClassMethod NastVarProbe(ByRef sys As %String) As %Status
 	if dumpPage '= "" {
 		set dj = $get(^||ML("OUT",dumpPage))
 		kill ^||ML("OUT")
-		if dj = "" { set ^||ML("OUT","ERR") = "stránka prázdná"  quit $$$OK }
+		if dj = "" { set ^||ML("OUT","ERR") = "stránka prázdná"  ret $$$OK }
 		set dz = ##class(%DynamicObject).%FromJSON(dj).rows.%Get("ZASTAVKY"), di = dz.%GetIterator(), rn = 0, dump = ""
 		while di.%GetNext(.dk, .d) {
 			set rn = rn + 1
 			set dump = dump_rn_":"_d.%Get("NAZEV_ZASTAVKY")_"[cas="_d.%Get("CAS_JIZDY")_" tm="_..JoinArr(d.%Get("TRASA_MIN"))_" nv="_..JoinArr(d.%Get("NASTUPISTE_VARIANT"))_"] "
 		}
 		set ^||ML("OUT","DUMP") = dump
-		quit $$$OK
+		ret $$$OK
 	}
 	set nPages = 0, stranky = "", p = ""
 	for {

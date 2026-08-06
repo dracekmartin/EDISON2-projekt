@@ -169,13 +169,24 @@ Kanonické termíny (doména JŘ):
 
 | Pojem | Kanonický label | NE |
 |---|---|---|
-| Fyzické stanoviště zastávky (sloupek, ze kterého spoj odjíždí) | **Označník** (pole `NASTUPISTE` na wire zůstává) | ~~Nástupiště~~, ~~stanoviště~~, ~~sloupek~~ |
+| Pole „nástupiště" z trasy linky (volný text) | **Označník** (pole `NASTUPISTE` na wire zůstává) | ~~Nástupiště~~, ~~stanoviště~~ |
+| Číslo z číselníku sloupků zastávky (AD) | **Sloupek** (pole `SLOUPEK`) | ~~označník~~ |
+| Zastřešující pojem pro „ten z těch dvou, který je zvolený" | **Stanoviště** (volba „Číslo stanoviště podle") | konkrétní z těch dvou, když se míní obojí |
+
+⚠️ **Označník a sloupek NEJSOU synonyma** (zjištěno 2026-08-03 u #13088): v AD jsou to dvě různá pole
+vedle sebe (volný text vs. číselník s GPS a popisem směru) a zákazník je rozlišuje - do 3. 8. tu bylo
+napsané, že „sloupek" je zakázaný tvar téhož, což bylo nepravda. **V MHD se témuž fyzickému stanovišti
+doménově říká označník**, takže se názvosloví mezi AD a MHD záměrně liší a nesjednocuje (rozhodnutí
+Jan 2026-08-03); MHD pole `SLOUPEK` nemá. Datová mapa obou → `docs/ad-data-mapa.md`.
+„Stanoviště" tím přestalo být zakázaný tvar (byl zakázaný jako synonymum označníku) a je to teď
+**zastřešující pojem** - používej ho jen tam, kde se opravdu míní „ten zvolený z těch dvou"
+(popisky „Více stanovišť", „Řádek pro každé stanoviště", „Číslo stanoviště podle").
 
 Výjimka: text „tisk stanoviště" v legendě CIS atributů (`ZastavkoveJrAd.TextAtributu`, znak „S") je
 doslovná parita textů starého modulu - nechává se.
 
 **UI texty jen česky** - žádné cizí výrazy typu „per", „split" v labelech, tooltipech a helpTextech
-(„Samostatná stránka pro každý označník", ne „per označník"; „Řádek pro každý označník",
+(„Samostatná stránka pro každé stanoviště", ne „per označník"; „Řádek pro každé stanoviště",
 ne „per stanoviště").
 
 **⚠️ Labely enum parametrů sestavy jsou ZAMČENÉ** - hodnota volby se persistuje i porovnává na

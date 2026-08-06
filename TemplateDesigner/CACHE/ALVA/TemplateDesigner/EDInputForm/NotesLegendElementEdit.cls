@@ -24,14 +24,14 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Obecné" ──────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
-        s f = form.AddFieldToLastGroup("GridColor", "Barva mřížky", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFD0D0D0"
 
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
         d form.AddText("HeaderText", "Nadpis", "Poznámky")
+        // Default musí sedět na baked kaskádu (ScheduleHeaderDefaults) - jinak formulář ukazuje
+        // jinou barvu, než se tiskne.
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFF0F0F0"
+        s f.value = "#FFE0E0E0"
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
@@ -62,24 +62,54 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Volby 1:1 s panelem (DleTypu je default elementu - dřív v dialogu úplně chyběla)
         d f.AddListItem("DleTypu", "Dle typu (značky → atributy → text)"), f.AddListItem("Vychozi", "Výchozí (dle dat)")
         d f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
-        s f.value = "Vychozi"
+        s f.value = "DleTypu"
         d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
 
-        // ── Skupina "Filtrování" ──────────────────────────────────────────
-        d form.AddGroup("filter", "Filtrování")
+        // ── Co blok tiskne ────────────────────────────────────────────────
+        // Skupina „Filtrování" míchala tři různé věci a měla 11 položek (rozpočet ~7): které
+        // poznámky blok bere, co si bere z poznámek zadaných u linky, a značky u odjezdů (ty
+        // uživatelé hledají nejčastěji, protože do července byly parametrem tisku). Klíče polí
+        // se NEMĚNÍ - rozpad je jen vizuální.
+        d form.AddGroup("filter", "Co se tiskne")
         d form.AddBool("ShowNegativniZnacky", "Negativní značky", 1)
         d form.AddBool("ShowSpecialniZnaky", "Speciální znaky", 1)
         d form.AddBool("ShowTextovePoznamky", "Textové poznámky", 1)
 
+        // ── Poznámky zadané u linky ───────────────────────────────────────
+        d form.AddGroup("filterline", "Poznámky linky")
+        s f = form.AddFieldToLastGroup("Vyluky", "Poznámky linky - výluky", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Vcetne", "Včetně"), f.AddListItem("Bez", "Bez výluk"), f.AddListItem("Jen", "Jen výluky")
+        s f.helpText = "Poznámky linky, které začínají ""Výluka"", lze mít v samostatném bloku: v jednom bloku zvolte Bez výluk a ve druhém Jen výluky."
+        // Kategorie poznámek zadaných u linky - klient je chce rozložit do víc bloků, protože mají jiné
+        // rozložení sloupců než seznam značek (dlouhé odstavce vs. „značka + text").
+        s f = form.AddBool("ShowPoznamkyLinkyTarifni", "Poznámky linky - tarifní", 0)
+        s f.helpText = "Které poznámky zadané u linky blok bere. Vypnutím se schová jen tato kategorie - volba Textové poznámky výše vypne i ruční komentáře a rozdíly tras."
+        d form.AddBool("ShowPoznamkyLinkyVseobecne", "Poznámky linky - všeobecné", 0)
+        d form.AddBool("ShowPoznamkyLinkyRadiobus", "Poznámky linky - radiobus", 0)
+
+        // ── Značky u odjezdů ──────────────────────────────────────────────
+        // Do července to byly parametry tisku, takže tady je lidi hledají. Každý přepínač zapíná
+        // značku u minuty I její vysvětlivku - nemůže vzniknout značka, kterou legenda nevysvětlí.
+        d form.AddGroup("filtermarks", "Značky u odjezdů")
+        s fBez = form.AddBool("ShowSouhrnBezbarier", "Souhrn bezbariérových spojů", 1)
+        s fBez.helpText = "Souhrnná vysvětlivka ""všechny spoje mají bezbariérově přístupné vozidlo"" místo značky u každého odjezdu."
+        s fKola = form.AddBool("ShowZnackaKola", "Přeprava kol u odjezdů", 0)
+        s fKola.helpText = "U spojů, které přepravují jízdní kola, se za časem odjezdu vytiskne symbol kola a do legendy přijde vysvětlivka. Zapíná obojí naráz, aby nevznikla značka bez vysvětlení."
+        s fPokr = form.AddBool("ShowPokracujiciSpoje", "Pokračující spoje", 0)
+        s fPokr.helpText = "Spoje, které pokračují dál po jiné lince, dostanou u odjezdu značku ""u1"", ""u2""… a v legendě vysvětlivku ""pokračuje do zast. … (l. 304)"". Odjezdy se stejným cílem po stejné lince mají tutéž značku."
+        s fMist = form.AddBool("ShowZnackaMistenky", "Místenky u odjezdů", 0)
+        s fMist.helpText = "U spojů, ke kterým lze zakoupit místenku, se za časem odjezdu vytiskne ""R"" a do legendy přijde vysvětlivka."
+
         // ── Skupina "Negativní značky" ────────────────────────────────────
         d form.AddGroup("nz", "Negativní značky")
-        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "NZ pozadí", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Pozadí značky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "NZ barva", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva textu značky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 0)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 100)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

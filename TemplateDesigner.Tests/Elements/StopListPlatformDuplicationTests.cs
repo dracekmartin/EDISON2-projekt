@@ -22,6 +22,42 @@ public class StopListPlatformDuplicationTests
         new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform }
             .ExpandPlatformRows([.. stops]);
 
+    /// <summary>Po přepnutí na sloupek se řádky rozvíjejí podle sloupků variant a hodnota jde do
+    /// sloupce Sloupek; označník zůstane, jak byl. Jinak by duplikované řádky nesly cizí číslo
+    /// (KOVED #13088).</summary>
+    [Fact]
+    public void PoPrepnutiNaSloupek_RozviRadkyPodleSloupku()
+    {
+        var s = Stop("Medlovice", current: false, ["5", "6"], ["9", "9"]);
+        s.Nastupiste = "9";
+        s.SloupekVariant = ["3", "2"];
+
+        var r = new StopListElement
+        {
+            MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform,
+            SloupekJakoStanoviste = true,
+        }.ExpandPlatformRows([s]);
+
+        Assert.Equal(2, r.Count);
+        Assert.Equal(["3", "2"], r.Select(x => x.Sloupek));
+        Assert.All(r, x => Assert.Equal("9", x.Nastupiste));   // označník se nepřepisuje
+        Assert.Equal(["5", ""], r[0].TrasaMin);                // časy jen varianty sloupku 3
+        Assert.Equal(["", "6"], r[1].TrasaMin);
+    }
+
+    /// <summary>Bez přepnutí se sloupky na řádky nerozvíjejí, i když je v datech má - řídí to
+    /// označník, jak to bylo dosud.</summary>
+    [Fact]
+    public void BezPrepnuti_SloupkyRadkyNerozvineji()
+    {
+        var s = Stop("Medlovice", current: false, ["5", "6"], ["9", "9"]);
+        s.SloupekVariant = ["3", "2"];
+
+        var r = Expand(s);
+
+        Assert.Single(r);   // označníky jsou shodné (9, 9) → jeden řádek
+    }
+
     [Fact]
     public void JinyRezim_NechaSeznamBezeZmeny()
     {

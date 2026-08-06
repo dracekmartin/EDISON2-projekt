@@ -5,6 +5,7 @@ using EDControls;
 using EDControls.EDInputForm;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
+using TemplateDesigner.Models;
 
 namespace TemplateDesigner;
 
@@ -148,6 +149,10 @@ public static class ElementFormBinder
                 var reflected = ElementPropertyAccessor.Get(target, field.Key);
                 var display = !string.IsNullOrEmpty(reflected) ? reflected : (field.Value ?? "");
                 field.Value = display;
+                // Barva z dat ({BARVA_LINKY}): čtvereček dostane vyřešenou barvu jako NÁHLED, hodnota
+                // zůstane tokenem. Jinak vypadá pole jako nenastavená bílá (#12997). Bez dat zůstane
+                // náhled prázdný a komponenta ukáže šrafování „z dat".
+                field.PreviewValue = ColorHex.ResolveDataBoundForUi(display);
                 preFilled[field.Key] = display;
             }
             return preFilled;

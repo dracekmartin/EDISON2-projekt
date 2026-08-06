@@ -53,6 +53,7 @@ namespace EDControls.EDInputForm
                 _listItems = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(ListItemsForDisplay));
+                OnPropertyChanged(nameof(PlaceholderPickerVisibility));
             }
         }
         private List<ListItem> _listItems = [];
@@ -62,6 +63,26 @@ namespace EDControls.EDInputForm
         /// nebo speciální <c>"$FOLDER"</c> pro výběr složky. Prázdné = všechny soubory.
         /// Ignoruje se pro ostatní typy.
         /// </summary>
+        /// <summary>
+        /// Textové pole, do kterého patří datové placeholdery <c>{POLE}</c> - vedle něj se ukáže
+        /// „vložit pole". Nastavuje server v <c>.cls</c> (ví, kam placeholdery patří), **seznam
+        /// polí ale dodává klient** do <see cref="ListItems"/>, protože Caché agendu nezná.
+        /// </summary>
+        public bool Placeholders
+        {
+            get => _placeholders;
+            set { _placeholders = value; OnPropertyChanged(); OnPropertyChanged(nameof(PlaceholderPickerVisibility)); }
+        }
+        private bool _placeholders;
+
+        /// <summary>
+        /// Viditelnost „vložit pole". Řídí se **jen příznakem**, ne naplněným seznamem: seznam
+        /// dodává klient až po postavení formuláře a schované tlačítko je k nerozeznání od rozbité
+        /// funkce. Prázdný seznam proto řeší až samotný výběr hláškou.
+        /// </summary>
+        public WpfVisibility PlaceholderPickerVisibility =>
+            Placeholders ? WpfVisibility.Visible : WpfVisibility.Collapsed;
+
         public string FileFilter { get; set; } = "";
 
         /// <summary>
@@ -108,12 +129,34 @@ namespace EDControls.EDInputForm
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(BoolValue));
                 OnPropertyChanged(nameof(DateValue));
+                OnPropertyChanged(nameof(SwatchValue));
                 // Immediate client-side type/range validation pro UX feedback.
                 // Server response (ExecuteValidate → ApplyOutput) případně přepíše s podrobnější chybou.
                 // GetTypeError vrací null pro prázdné hodnoty — required se kontroluje až při BeforeSave.
                 ValidationError = GetTypeError();
             }
         }
+
+        /// <summary>
+        /// Náhledová barva pro čtvereček u pole typu Color, když <see cref="Value"/> nenese barvu, ale
+        /// **odkaz na data** (např. <c>{BARVA_LINKY}</c> v návrháři sestav). Vyplňuje ji **host**, který
+        /// data má - komponenta ji jen zobrazuje a do <see cref="Value"/> ji nikdy nepřepisuje.
+        /// Prázdné = čtvereček se řídí přímo hodnotou (dosavadní chování).
+        /// </summary>
+        public string? PreviewValue
+        {
+            get => _previewValue;
+            set
+            {
+                _previewValue = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SwatchValue));
+            }
+        }
+        private string? _previewValue;
+
+        /// <summary>Hodnota, kterou se barví čtvereček: náhled od hosta, jinak samotná hodnota.</summary>
+        public string? SwatchValue => string.IsNullOrEmpty(_previewValue) ? _value : _previewValue;
 
         /// <summary>Two-way bool pohled na <c>Value</c> pro CheckBox binding. <c>"1"</c> = true, ostatní = false.</summary>
         public bool BoolValue

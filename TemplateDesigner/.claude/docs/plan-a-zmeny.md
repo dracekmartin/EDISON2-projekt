@@ -38,6 +38,80 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 5. 8. 2026 - Pokračující spoje
+
+Spoje, které v místě konečné pokračují dál už jako jiný spoj, jde na vývěsce označit: u času odjezdu
+se vytiskne značka „u1“, „u2“… a v legendě přijde vysvětlivka **„pokračuje do zast. Podhradí (l. 532)“**
+s posledním trojčíslím linky, po které spoj pokračuje.
+
+Odjezdy, které pokračují do **stejného cíle po stejné lince**, dostanou tutéž značku - čísla spojů se
+neřeší, taková legenda zůstane krátká. Zapíná se u prvku Legenda poznámek volbou **Pokračující spoje**
+(výchozí vypnuto) a bere se z údaje o pokračování, který v jízdních řádech už zadáváte.
+
+### 4. 8. 2026 - Datová pole se vybírají ze seznamu, nemusíte je psát
+
+Název databázového pole jste dosud museli znát a napsat bez překlepu - a chyba se projevila
+až na vytištěné sestavě. Nově je u takových polí vpravo tlačítko `{ }`, které otevře seznam
+polí aktuální agendy s možností hledat.
+
+- **Vkládá na místo kurzoru** - takže pole doplníte i doprostřed rozepsané věty
+  (`Linka {CISLO_LINKY}: {POPIS_LINKY}`), nejen do prázdného pole.
+- **Kde ho najdete** - obsah textového prvku a čárového kódu, podmínka viditelnosti prvku
+  i sekce, viditelnost řádku tabulek, název souboru při exportu.
+- Psát názvy polí ručně jde dál, nic se tím nemění.
+
+### 4. 8. 2026 - Řádky dynamické tabulky lze seřadit
+
+U dynamické tabulky vyberete **sloupec a směr** řazení; druhý sloupec se nabídne, až vyplníte
+první. Čísla, data i text se poznají podle hodnot, takže se neptáme, jak se má řadit - textově
+by „12" bylo před „9". Prázdné hodnoty jdou vždy nakonec. Bez nastavení se pořadí nemění.
+
+### 4. 8. 2026 - Poznámky zadané u linky, kola a místenky na vývěsce
+
+Zastávková vývěska umí zobrazit texty, které máte zadané ve **vlastnostech linky**, a označit spoje
+přepravující jízdní kola nebo umožňující místenku.
+
+- **Poznámky zadané u linky** - tarifní, všeobecné i radiobusové texty. Vybíráte je po druzích, tedy
+  stejně jako v jízdním řádu u tisku A4/A5, a to zvlášť pro každý blok poznámek.
+- **Výlukové texty zvlášť** - poznámky začínající slovem „Výluka" jde od ostatních oddělit. Buď dvěma
+  bloky poznámek nad sebou (v jednom *Bez výluk*, ve druhém *Jen výluky*), nebo jako **samostatné pole
+  „Výlukové texty"**, které si položíte kamkoli na stránku jako běžný text.
+- **Výška bloku se dopočítá sama** - když prvnímu bloku necháte prázdnou výšku, druhý se pod ním
+  posune podle toho, kolik textu vyšlo. Při pevné výšce se text zmenší, aby nepřetekl.
+- **Přeprava kol a místenky u odjezdů** - u času odjezdu se vytiskne symbol kola nebo písmeno „R"
+  a do legendy přijde vysvětlivka. Zapíná se to jednou volbou, takže nemůže zůstat značka bez
+  vysvětlení. Pokud si význam značky vysvětlujete vlastní poznámkou u linky, má přednost ta vaše.
+- **Přestupy na vlak a autobus** mají v legendě vysvětlivku a správné piktogramy.
+
+**Kde to najdete:** u prvku **Legenda poznámek** v sekci **Značky u odjezdů**. Všechna volba „co se na vývěsce
+ukáže" je nově na jednom místě v šabloně - z parametrů sestavy tato nastavení zmizela, takže je
+nemusíte hledat na dvou místech. Ve výchozím stavu jsou nové položky vypnuté, takže se vzhled
+stávajících šablon nemění, dokud si je nezapnete.
+
+### 3. 8. 2026 - Sloupek v seznamu zastávek
+
+- **Nový sloupec Sloupek** v seznamu zastávek u zastávkových jízdních řádů. Bere se z trasy linky
+  podle směru jízdy a je to číslo z číselníku sloupků zastávky, tedy jiný údaj než dosavadní sloupec
+  **Označník** (ten nese pole „nástupiště" z trasy linky). Zapíná se v nastavení sloupců, ve stávajících
+  šablonách se nabídne sám.
+- **Nová volba Číslo stanoviště podle** (Označník / Sloupek) v parametrech sestavy. Určuje, který
+  z těch dvou údajů se použije tam, kde jde o „stanoviště, ze kterého spoj odjíždí": při více hodnotách
+  na jedné zastávce, u samostatné stránky pro každé stanoviště i v titulku takové stránky. Výchozí
+  je Označník, takže dosavadní vývěsky vypadají stejně; kdo eviduje sloupky, přepne na Sloupek.
+- **Druhá barva linky** - linka může mít v jízdních řádech víc barev a v návrháři je použijete zápisem
+  `{BARVA_LINKY}` a `{BARVA_LINKY_2}` v barvě textu, pozadí i rámečku. Typicky jedna pro číslo linky
+  a druhá pro pozadí.
+- **Přestupy mají vysvětlení v legendě** - k symbolu přestupu se do legendy tiskne „přestup na autobus"
+  a „přestup na vlak". Řádek se objeví jen když máte přestupy u seznamu zastávek zapnuté.
+- **Další atributy zastávky na vývěsce** - kromě „na znamení" se nově tisknou i jeho časové varianty,
+  metro A/B/C, letadlo, loď, clo a paragrafy, včetně řádku legendy. Technické značky pro tisk
+  (tučně, podtrženě, jen nástup / jen výstup a podobně) se jako symbol u zastávky záměrně netisknou.
+- **CIS čísla zastávek** - nová pole sestavy: CIS číslo zastávky, CIS číslo výchozí zastávky a CIS
+  číslo cílové zastávky (bere se ve směru, o kterém vývěska je). Stejný údaj je i u každého řádku
+  seznamu zastávek pro použití v tabulce.
+- Volby, které dřív mluvily o označníku, ale platí pro obojí, se jmenují **Více stanovišť**,
+  **Řádek pro každé stanoviště** a **Samostatná stránka pro každé stanoviště**.
+
 ### 31. 7. 2026 - Vzhled seznamu zastávek a barva linky ve sloupcích
 
 - **Šipka směru jízdy** - nastavitelná tloušťka, velikost hrotu, tvar hrotu (plný / otevřený /

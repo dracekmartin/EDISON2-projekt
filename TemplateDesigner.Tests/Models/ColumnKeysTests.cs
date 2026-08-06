@@ -33,6 +33,8 @@ public class ColumnKeysTests
         Assert.Equal("AKTUALNI_ZASTAVKA", StopFields.JeAktualni);
         Assert.Equal("ZONY", StopFields.Zone);
         Assert.Equal("NASTUPISTE", StopFields.Nastupiste);
+        Assert.Equal("SLOUPEK", StopFields.Sloupek);
+        Assert.Equal("SLOUPEK_POPIS", StopFields.SloupekPopis);
         Assert.Equal("ID", StopFields.Id);
         Assert.Equal("CAS_JIZDY#", StopFields.TravelTimeVariantPrefix);
     }
@@ -47,7 +49,11 @@ public class ColumnKeysTests
     public void VychoziSloupce_StopList_PouzivajiFieldId()
     {
         string[] known = [StopFields.TravelTime, StopFields.StopName, StopFields.Zone,
-                          StopFields.Poradi, StopFields.JeAktualni, StopFields.Nastupiste];
+                          StopFields.Poradi, StopFields.JeAktualni, StopFields.Nastupiste,
+                          StopFields.Sloupek];
+        // SloupekPopis tu schválně NENÍ - do nabídky sloupců nepatří, dokud si ho někdo nevyžádá
+        // (rozhodnutí Jan 2026-08-03). Kdyby ho někdo do výchozích sloupců vrátil, tento test spadne
+        // a donutí ho to rozhodnutí zopakovat.
         Assert.All(StopListElement.GetDefaultColumns(), c => Assert.Contains(c.Key, known));
     }
 

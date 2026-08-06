@@ -23,7 +23,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="Vyber agendu pro novou šablonu. Po potvrzení dojde k vytvoření nové prázdné šablony - případnou rozdělanou práci budeš nejdřív vyzván uložit nebo zahodit."
+                   Text="Vyberte agendu pro novou šablonu. Po potvrzení se vytvoří nová prázdná šablona - případnou rozdělanou práci budete nejdřív vyzváni uložit nebo zahodit."
                    TextWrapping="Wrap" Margin="0,0,0,10" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
 
         <ListBox Grid.Row="1"
@@ -48,9 +48,13 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding Code}"
+                            <!-- Popis, co agenda tiskne. Do 5. 8. tu byl interní kód
+                                 (ZASTAVKOVY_JR_AD), který uživateli nic neříká. -->
+                            <TextBlock Text="{Binding Description}"
+                                       Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Caption}"
-                                       Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
                         <TextBlock Grid.Column="1"
                                    Text="(aktuální)"

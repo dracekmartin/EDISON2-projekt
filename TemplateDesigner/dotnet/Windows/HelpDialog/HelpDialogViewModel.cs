@@ -150,7 +150,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Pole agendy → nový text s {POLE} na ploše", "táhnout pole na plochu"),
                 new("Pole agendy → přidat {POLE} do existujícího textu", "táhnout pole na text"),
                 new("Zkopírovat {NAZEV_POLE} do schránky", "dvojklik na pole"),
-                new("Parametry sestavy (živě mění náhled)", "lišta nad náhledem"),
+                new("Parametry sestavy (živě mění náhled)", "tab Parametry vlevo / tiskový dialog"),
             ],
             Tip = "Agenda říká JAKOU sestavu děláte (Zastávkový JŘ, …), varianta odkud jsou data (AD / MHD). " +
                   "Šablona je vázaná na konkrétní kombinaci - vidíte ji na zeleném štítku a v titulku okna.",
@@ -234,14 +234,40 @@ public class HelpDialogViewModel : EDViewModel
                 new("Obrázek - ze souboru (auto zmenšení velkých)", "paleta"),
                 new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
                 new("Kód - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
-                new("Dynamická tabulka - řádky z kolekce dat agendy", "paleta"),
+                new("Dynamická tabulka - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
                 new("Zastávky JŘ - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
                 new("Mřížka odjezdů JŘ - minuty po skupinách dnů", "paleta (JŘ agenda)"),
                 new("Legenda poznámek JŘ - značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
             ],
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
-                  "zvýraznění řádku podle výrazu, min/max počet řádků a souhrnné řádky (SUM, COUNT, AVG…). " +
-                  "Vše v dialogu tabulky (dvojklik).",
+                  "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr), min/max počet řádků " +
+                  "a souhrnné řádky (SUM, COUNT, AVG…). Vše v dialogu tabulky (dvojklik).",
+        },
+
+        new HelpSection
+        {
+            Title = "🚌 Vývěska JŘ - obsah a značky",
+            Entries =
+            [
+                new("Které poznámky se tisknou (negativní značky, speciální znaky, textové, poznámky linky)",
+                    "prvek Legenda poznámek → Co se tiskne"),
+                new("Značky u odjezdů: přeprava kol, místenky, pokračující spoje",
+                    "prvek Legenda poznámek → Značky u odjezdů"),
+                new("Souhrn bezbariérových spojů (jedna věta místo značky u každého odjezdu)",
+                    "dtto Značky u odjezdů"),
+                new("Poznámky linky - výluky, tarifní, všeobecné, radiobus",
+                    "prvek Legenda poznámek → Poznámky linky"),
+                new("Řazení poznámek a směr plnění sloupců legendy", "prvek Legenda poznámek → Rozložení"),
+                new("Dlouhá trasa na užší vývěsku - rozdělit seznam zastávek na oddíly vedle sebe",
+                    "prvek Zastávky JŘ → Rozdělit na více oddílů"),
+                new("Zvýraznění aktuální zastávky, projeté zastávky, šipka směru", "prvek Zastávky JŘ"),
+                new("Skupiny dnů, šířka minuty, oddělovač skupin, značky u minut", "prvek Mřížka odjezdů"),
+                new("Kolik vývěsek se vytiskne (zastávka × směr) a co je na které", "lišta stránkování nad náhledem"),
+            ],
+            Tip = "Značky u odjezdů a souhrn bezbariérovosti se zapínají v prvku Legenda poznámek, " +
+                  "NE v parametrech sestavy - dřív to byly parametry tisku. Značka u odjezdu a její vysvětlivka " +
+                  "jsou jedna volba, takže nemůže vzniknout značka, kterou legenda nevysvětlí. " +
+                  "Když šablona prvek Legenda poznámek nemá, značky se nevytisknou vůbec.",
         },
 
         new HelpSection
@@ -256,7 +282,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Agregace v souhrnných řádcích tabulky", "SUM({CENA}*{POCET}), COUNT, AVG, MIN, MAX"),
                 new("Číslo stránky / celkem stran", "{PAGE} / {TOTAL_PAGES}"),
             ],
-            Tip = "Výraz viditelnosti se zadává ve vlastnosti „Viditelnost“ - prázdný = vždy viditelné. " +
+            Tip = "Výraz viditelnosti se zadává ve vlastnosti „Podmínka viditelnosti“ - prázdný = vždy viditelné. " +
                   "Formátování čísel a datumů řídí jazyk šablony (Ctrl+Shift+P), ne nastavení Windows.",
         },
 
@@ -266,7 +292,7 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Proporcionální škálování celé šablony", "lišta nástrojů 50–200 %"),
-                new("Zamknout element proti posunu/změně velikosti", "vlastnost Zamčeno"),
+                new("Zamknout element proti posunu/změně velikosti", "vlastnost Uzamčeno"),
                 new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
                 new("Výška „auto“ - element roste podle obsahu (text se zalamuje)", "Výška prázdná"),
                 new("JŘ element s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),

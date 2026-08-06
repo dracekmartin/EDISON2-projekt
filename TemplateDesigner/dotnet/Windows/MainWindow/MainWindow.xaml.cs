@@ -992,13 +992,6 @@ public partial class MainWindow : Window
             var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
             buildRealData = paramValues =>
             {
-                // Merge parametrů do každého DataContextu - C# rendering je potřebuje
-                // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
-                var stringParams = paramValues
-                    .Where(kv => kv.Value is not null)
-                    .ToDictionary(kv => kv.Key, kv => (object?)kv.Value!.ToString(),
-                        StringComparer.OrdinalIgnoreCase);
-
                 List<DataContext>? pages;
 
                 // Pokud má uživatel aktivní instance (vybrané přes Instance Picker), iteruj je
@@ -1009,8 +1002,8 @@ public partial class MainWindow : Window
                     var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
                     foreach (var inst in _vm.ActiveInstances)
                     {
-                        var p = new Dictionary<string, object?>(paramValues) { [paramName] = inst.Value };
-                        var instPages = provider.GetData(agendaCode, p);
+                        var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
+                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId));
                         if (instPages is null) continue;
                         all.AddRange(instPages);
                     }
@@ -1020,21 +1013,23 @@ public partial class MainWindow : Window
                 {
                     // Bez vybrané instance nelze tisknout reálná data - linku určuje výhradně
                     // Instance Picker (parametry sestavy už LINKA_ID neobsahují). Dialog na null
-                    // ukáže "Caché nevrátila žádná data".
+                    // ukáže hlášku s navedením na výběr linky.
                     pages = null;
                 }
 
                 if (pages is null) return null;
-                if (stringParams.Count > 0)
-                    pages = pages.Select(p => p.WithExtraValues(stringParams)).ToList();
+                // Merge parametrů do každého DataContextu - C# rendering je potřebuje
+                // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
+                pages = TemplateDesignerViewModel.MergeParamsIntoPages(pages, paramValues).ToList();
 
                 return TemplateDesigner.Models.NoteVisibilityFilter.Apply(
                     pages,
                     TemplateDesigner.Models.NoteVisibilityFilter.ParseMode(
                         paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamName)),
-                    TemplateDesigner.Models.NoteVisibilityFilter.ParseBool(
-                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamAggBezbarier)),
-                    TemplateDesigner.Models.NoteVisibilityFilter.ShouldHideNaZnameniLegend(_vm.State.CurrentTemplate));
+                    false,
+                    TemplateDesigner.Models.NoteVisibilityFilter.ShouldHideNaZnameniLegend(_vm.State.CurrentTemplate),
+                    hidePrestupLegend: TemplateDesigner.Models.NoteVisibilityFilter.ShouldHidePrestupLegend(_vm.State.CurrentTemplate),
+                    hiddenContent: TemplateDesigner.Models.NoteVisibilityFilter.HiddenContentCategories(_vm.State.CurrentTemplate));
             };
         }
 
@@ -1064,7 +1059,8 @@ public partial class MainWindow : Window
         vm.RequestOverflowCheck = dataPages =>
             _previewCanvas!.CountOverflowingPages(dataPages);
 
-        var dlg = new PrintDialog(vm) { Owner = this };
+        var dlg = new PrintDialog(vm)
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
         dlg.ShowDialog();
 
         // Tisk sdílí _previewParams s tabem parametrů - po zavření přenačti tab formulář,
@@ -1681,7 +1677,8 @@ public partial class MainWindow : Window
 
     private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
-        var dlg = new ElementEditDialog(element, cacheClass, title) { Owner = this };
+        var dlg = new ElementEditDialog(element, cacheClass, title)
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);
@@ -1779,7 +1776,8 @@ public partial class MainWindow : Window
         var dlg = new ElementEditDialog(
             section,
             "ALVA.TemplateDesigner.EDInputForm.SectionEdit",
-            "Vlastnosti sekce: " + section.Name) { Owner = this };
+            "Vlastnosti sekce: " + section.Name)
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
             _vm!.Execute(dlg.ResultCommand);
         InvalidateCanvas();
@@ -1886,6 +1884,8 @@ public partial class MainWindow : Window
 
             if (panelSchema is not null)
             {
+                // Nabídka „vložit pole" - seznam zná jen návrhář (ze schématu agendy), Caché ne.
+                InlineElementForm.PlaceholderFields = _vm.PlaceholderFieldItems();
                 InlineElementForm.ShowElement(selected[0], panelSchema);
                 ShowInlineFormPanel(true);
             }

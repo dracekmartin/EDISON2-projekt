@@ -88,7 +88,8 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
 
     s fname = ""
     i $isobject(vals) && vals.%IsDefined("__EXPORT_FILENAME") { s fname = vals.%Get("__EXPORT_FILENAME") }
-    d form.AddText("__EXPORT_FILENAME", "Název souboru (tokeny {POLE})", fname)
+    s f = form.AddText("__EXPORT_FILENAME", "Název souboru (tokeny {POLE})", fname)
+    s f.placeholders = 1
 
     // Imposice (N-up): skládání stránek šablony na fyzické listy - stránky 1:1, blok centrovaný.
     // Geometrii/validaci mřížky řeší C# (SheetComposer - zná rozměr stránky šablony); tady jen volby.
