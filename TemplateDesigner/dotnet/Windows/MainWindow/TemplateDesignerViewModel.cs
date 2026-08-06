@@ -573,20 +573,6 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _hasPreviewOverflow, value);
     }
 
-    private string _noteSuppressionText = "";
-    /// <summary>
-    /// Neprázdné = nastavení sestavy část poznámek schovalo (status bar to ukáže). Bez toho nejde
-    /// rozeznat „žádné poznámky nejsou" od „jsou, ale schoval je parametr".
-    /// </summary>
-    public string NoteSuppressionText
-    {
-        get => _noteSuppressionText;
-        set { if (Set(ref _noteSuppressionText, value)) OnPropertyChanged(nameof(HasNoteSuppression)); }
-    }
-
-    /// <summary>Řídí viditelnost bloku o schovaných poznámkách ve status baru.</summary>
-    public bool HasNoteSuppression => _noteSuppressionText != "";
-
     private string _agendaNameText = "Agenda: -";
     public string AgendaNameText
     {
@@ -2829,44 +2815,9 @@ public class TemplateDesignerViewModel : EDViewModel
         var suppressionMode = NoteVisibilityFilter.ParseMode(src.GetValueOrDefault(NoteVisibilityFilter.ParamName));
         if (mockData is null) return null;
 
-        var counter = new NoteSuppressionCounter();
-        var filtered = NoteVisibilityFilter.Apply(mockData, suppressionMode, false, CurrentHideNaZnameniLegend(), counter,
+        return NoteVisibilityFilter.Apply(mockData, suppressionMode, false, CurrentHideNaZnameniLegend(),
             CurrentHidePrestupLegend(), CurrentHiddenContent());
-        UpdateNoteSuppressionText(counter, src);
-        return filtered;
     }
-
-    /// <summary>
-    /// Text signálu o nastavení, které **tiše mění obsah** vývěsky, pro status bar. Schované poznámky
-    /// se počítají ze skutečně odfiltrovaných položek náhledové stránky (parametr sám nemusí nic
-    /// schovat - rozsah „Spoje, nepoznámkovat" nemusí mít v datech firmy záznamy a signál z parametru
-    /// by lhal). Zbylé dvě věci se hlásí dle parametru, protože se aplikují už na serveru:
-    /// písmena variant nahrazují rozdílové poznámky a rozdělení po stanovištích vyndá ze stránky
-    /// odjezdy jiných stanovišť. Právě to se tiše dělo, když UI parametr ukazovalo jako vypnutý.
-    /// </summary>
-    private void UpdateNoteSuppressionText(NoteSuppressionCounter counter, IReadOnlyDictionary<string, object?> paramValues)
-    {
-        NoteSuppressionText = BuildPrintSettingsNotice(
-            counter.AnythingHidden,
-            NoteVisibilityFilter.ParseBool(paramValues.GetValueOrDefault(VariantLettersParamName)),
-            NoteVisibilityFilter.ParseBool(paramValues.GetValueOrDefault(SplitPerPlatformParamName)));
-    }
-
-    /// <summary>Složí text signálu; prázdný = nastavení obsah nemění (blok se ve status baru nezobrazí).</summary>
-    internal static string BuildPrintSettingsNotice(bool notesHidden, bool variantLetters, bool splitPerPlatform)
-    {
-        var duvody = new List<string>(3);
-        if (notesHidden) duvody.Add("poznámky skryté nastavením");
-        if (variantLetters) duvody.Add("rozdíly tras nahrazené písmeny variant");
-        if (splitPerPlatform) duvody.Add("vývěska rozdělená po stanovištích");
-        return duvody.Count == 0 ? "" : "Sestava: " + string.Join(" · ", duvody);
-    }
-
-    /// <summary>Parametr sestavy „Písmena variant u odjezdů" - nahrazuje automatické rozdílové poznámky.</summary>
-    private const string VariantLettersParamName = "PISMENA_VARIANT";
-
-    /// <summary>Parametr sestavy „Rozdělit vývěsku pro každý označník" - dělí stránky a filtruje odjezdy.</summary>
-    private const string SplitPerPlatformParamName = "ROZDELIT_PER_OZNACNIK";
 
     /// <summary>Režim schování poznámek v rozsahu „nepoznámkovat" z aktuálního parametru sestavy.</summary>
     private NoteRangeSuppression CurrentNoteSuppression() =>

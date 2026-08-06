@@ -29,6 +29,10 @@ a popisy parametrů sestavy (parametr nemá pole pro popis → aditivní změna 
 k `B18` follow-up 3). Rozpad skupiny „Filtrování" shodil bránu z `B58`, která hlídá, že nápověda
 odkazuje na existující místo - srovnána nápověda, wiki seed i test.
 
+**Proklik 5. 8. (Jan):** rozdělení vyhovuje. **Otevřený kandidát na později:** kdyby zákazníkům
+formuláře pořád přišly dlouhé, rozdělit je na **víc tabů** (dnes je celý formulář jeden svitek se
+skupinami). Čeká se na jejich reakci, nezakládá se blok - není co řešit, dokud si někdo nestěžuje.
+
 ## 2026-08-05 ✅ - `B58` srozumitelnost pro nováčka
 
 **Zadání bloku (nález review 4. 8.; vstup = checklist na proklik):** F1 nápověda nezná featury

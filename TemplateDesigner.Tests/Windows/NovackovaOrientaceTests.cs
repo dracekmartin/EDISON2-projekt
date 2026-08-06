@@ -6,9 +6,10 @@ namespace TemplateDesigner.Tests.Windows;
 
 /// <summary>
 /// Věci, na kterých se zasekl nováček (review 4. 8., blok `B58`): náhled s ukázkovými daty nebyl
-/// nijak označený, výběr agendy ukazoval interní kódy a nápověda F1 neznala featury posledního
-/// měsíce. Testy drží to, co jde ověřit strojově - hlavně **aby nápověda nezačala lhát** o tom,
-/// kde se co zapíná.
+/// nijak označený a nápověda F1 neznala featury posledního měsíce. Testy drží to, co jde ověřit
+/// strojově - hlavně **aby nápověda nezačala lhát** o tom, kde se co zapíná.
+/// (Popis místo interního kódu ve výběru agendy se 5. 8. **vrátil** - rozhodnutí Jan, kód je
+/// pochopitelný; testy na popis proto zrušené.)
 /// </summary>
 public class NovackovaOrientaceTests
 {
@@ -38,31 +39,6 @@ public class NovackovaOrientaceTests
             realPageCount: 0, agendaCode: "", agendaHasData: false));
         Assert.False(TemplateDesignerViewModel.ShouldReportSampleData(
             realPageCount: 0, agendaCode: null, agendaHasData: false));
-    }
-
-    // ── Výběr agendy: popis místo interního kódu ─────────────────────────────
-
-    [Fact]
-    public void VyberAgendy_PopisRikaCoSeVybira()
-    {
-        var linky = new AgendaRegistryEntry("ZASTAVKOVY_JR_AD", "Zastávkový JŘ · AD",
-            "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", InstanceLabel: "linka");
-
-        var popis = ChangeAgendaDialogViewModel.Describe(linky);
-
-        Assert.Contains("linka", popis);
-        Assert.DoesNotContain("ZASTAVKOVY_JR_AD", popis);        // interní kód uživateli nic neříká
-        Assert.DoesNotContain("ALVA.", popis);
-    }
-
-    [Fact]
-    public void VyberAgendy_SablonaBezDatabazeToRekne()
-    {
-        var general = new AgendaRegistryEntry("GENERAL", "Obecná šablona", CacheClass: "");
-
-        var popis = ChangeAgendaDialogViewModel.Describe(general);
-
-        Assert.Contains("Bez vazby na databázi", popis);
     }
 
     // ── Nápověda F1 nesmí lhát o tom, kde se co zapíná ───────────────────────

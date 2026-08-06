@@ -33,21 +33,10 @@ public class ChangeAgendaDialogViewModel : EDViewModel
                 a.Variant is { Length: > 0 } ? (a.VariantLabel is { Length: > 0 } ? a.VariantLabel : a.Variant)
                                              : a.EffectiveAgendaLabel,
                 a.EffectiveAgendaLabel,
-                Describe(a),
                 IsCurrent: a.Code.Equals(currentCode, StringComparison.OrdinalIgnoreCase)))
             .ToList();
         _selected = Agendas.FirstOrDefault(a => a.IsCurrent) ?? Agendas.FirstOrDefault();
     }
-
-    /// <summary>
-    /// Čím se řádek odlišuje jazykem uživatele. Registr popis nenese (a doplňovat ho po drátě kvůli
-    /// jednomu dialogu je nepoměr), takže se skládá z toho, co registr má: co se u agendy vybírá.
-    /// To je zároveň to, co uživatel musí udělat dál, aby viděl data z databáze.
-    /// </summary>
-    internal static string Describe(AgendaRegistryEntry a) =>
-        a.CacheClass is { Length: > 0 }
-            ? $"Data z databáze - vybírá se {a.InstanceLabel}"
-            : "Bez vazby na databázi - jen pevný obsah šablony";
 
     protected override void OnOk()
     {
@@ -61,9 +50,7 @@ public class ChangeAgendaDialogViewModel : EDViewModel
     }
 }
 
-/// <summary>Jeden řádek výběru: Name = varianta (nebo agenda, když varianty nemá), Group = agenda,
-/// Description = co se u agendy vybírá (místo interního kódu, který uživateli nic neříkal).</summary>
-public record AgendaRowVM(string Code, string Name, string Group, string Description, bool IsCurrent)
-{
-    public bool HasDescription => Description.Length > 0;
-}
+/// <summary>Jeden řádek výběru: Name = varianta (nebo agenda, když varianty nemá), Group = agenda.
+/// Code se v dialogu zobrazuje jako podtitul - zkusil jsem ho 5. 8. nahradit popisem, ale
+/// rozhodnutí Jan: kód je pochopitelný, nevymýšlet místo něj text.</summary>
+public record AgendaRowVM(string Code, string Name, string Group, bool IsCurrent);

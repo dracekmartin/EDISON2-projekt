@@ -5,7 +5,8 @@ namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
 /// Filtr viditelnosti poznámek zastávkového JŘ: schování kategorie v rozsahu „Spoje, nepoznámkovat"
-/// + počitadlo pro viditelný signál („poznámky jsou, ale nastavení je schovalo" vs. „žádné nejsou").
+/// a podle toho, co je vypnuté v prvku poznámek. (Počitadlo pro signál ve stavovém řádku zrušeno
+/// 5. 8. spolu s tou hláškou - rozhodnutí Jan: byl to obklad na chybu, ne oprava.)
 /// </summary>
 public class NoteVisibilityFilterTests
 {
@@ -88,80 +89,29 @@ public class NoteVisibilityFilterTests
         Assert.Single(result.Rows["POZNAMKY"]);
     }
 
+    /// <summary>Kategorie vypnutá v prvku poznámek odebere značku u minuty **i** její vysvětlivku -
+    /// nemůže vzniknout značka, kterou legenda nevysvětlí, ani vysvětlivka k ničemu.</summary>
     [Fact]
-    public void Pocitadlo_PriSchovani_NapocitaAnotaciILegendu()
-    {
-        var page = Stranka("rozdil-trasy", "B", vRozsahu: true);
-        var counter = new NoteSuppressionCounter();
-
-        NoteVisibilityFilter.Apply(page, NoteRangeSuppression.AutoRouteNote, counter: counter);
-
-        Assert.True(counter.AnythingHidden);
-        Assert.Equal(1, counter.HiddenAnnotations);
-        Assert.Equal(1, counter.HiddenLegendRows);
-    }
-
-    [Fact]
-    public void Pocitadlo_KdyzNicNeschovano_ZustaneNula()
-    {
-        // Parametr zapnutý, ale žádná anotace do rozsahu nespadá → signál nesmí svítit
-        var page = Stranka("rozdil-trasy", "B", vRozsahu: false);
-        var counter = new NoteSuppressionCounter();
-
-        NoteVisibilityFilter.Apply(page, NoteRangeSuppression.AutoRouteNote, counter: counter);
-
-        Assert.False(counter.AnythingHidden);
-        Assert.Equal(0, counter.HiddenAnnotations);
-        Assert.Equal(0, counter.HiddenLegendRows);
-    }
-
-    /// <summary>
-    /// Značka vypnutá v prvku poznámek (kola, místenky, pokračující spoje) se do signálu NESMÍ
-    /// počítat. Jsou vypnuté ve výchozím stavu, takže signál „nastavení mění obsah vývěsky" by
-    /// svítil na každé běžné šabloně a přestal by cokoli znamenat - a to je přesně signál, který
-    /// má hlídat, kdy UI lže (nález Jan 5. 8., regrese z přesunu parametrů do prvku 4. 8.).
-    /// </summary>
-    [Fact]
-    public void Pocitadlo_ZnackaVypnutaVPrvku_SeNepocita()
+    public void VypnutaKategorieVPrvku_OdebereZnackuIVysvetlivku()
     {
         var page = Stranka("kola", "b", vRozsahu: false);
-        var counter = new NoteSuppressionCounter();
-
-        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment, counter: counter,
-            hiddenContent: new HashSet<string> { "kola" });
-
-        // Značka i vysvětlivka zmizí (to je správně - uživatel je nezapnul)...
-        Assert.Empty(((JsonArray)result.Rows["ODJEZDY"][0].GetValue("ANOTACE")!));
-        Assert.Empty(result.Rows["POZNAMKY"]);
-        // ...ale signál o „skryté nastavením" se rozsvítit nesmí.
-        Assert.False(counter.AnythingHidden);
-    }
-
-    /// <summary>Kontrolní protipól: co schová PARAMETR sestavy, se počítat musí - jinak by se
-    /// oprava výše přehnala a signál by zmlkl i tam, kde má varovat.</summary>
-    [Fact]
-    public void Pocitadlo_ParametrSestavySePocitaDal()
-    {
-        var page = Stranka("rozdil-trasy", "B", vRozsahu: true);
-        var counter = new NoteSuppressionCounter();
-
-        NoteVisibilityFilter.Apply(page, NoteRangeSuppression.AutoRouteNote, counter: counter);
-
-        Assert.True(counter.AnythingHidden);
-    }
-
-    [Fact]
-    public void Pocitadlo_NaZnameniDleStopListu_SeNepocita()
-    {
-        // Legendu „× na znamení" neschovává parametr, ale nastavení StopListu → do signálu nepatří
-        var page = Stranka("atribut-zastavky", "x", vRozsahu: false);
-        var counter = new NoteSuppressionCounter();
 
         var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment,
-            hideNaZnameniLegend: true, counter: counter);
+            hiddenContent: new HashSet<string> { "kola" });
+
+        Assert.Empty((JsonArray)result.Rows["ODJEZDY"][0].GetValue("ANOTACE")!);
+        Assert.Empty(result.Rows["POZNAMKY"]);
+    }
+
+    [Fact]
+    public void NaZnameniDleStopListu_SchovaLegendu()
+    {
+        var page = Stranka("atribut-zastavky", "x", vRozsahu: false);
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment,
+            hideNaZnameniLegend: true);
 
         Assert.Empty(result.Rows["POZNAMKY"]);
-        Assert.False(counter.AnythingHidden);
     }
 
     /// <summary>Rozhodnutí, jestli legendu přestupů schovat, se bere ze šablony: schová se, jen když
@@ -192,13 +142,11 @@ public class NoteVisibilityFilterTests
     public void PrestupLegenda_SeSkryjeKdyzStopListZnackuNetiskne()
     {
         var page = Stranka("prestup", "A", vRozsahu: false);
-        var counter = new NoteSuppressionCounter();
 
         var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment,
-            hidePrestupLegend: true, counter: counter);
+            hidePrestupLegend: true);
 
         Assert.Empty(result.Rows["POZNAMKY"]);
-        Assert.False(counter.AnythingHidden);   // není to potlačení parametrem → do signálu nepatří
     }
 
     [Fact]
@@ -212,17 +160,14 @@ public class NoteVisibilityFilterTests
     }
 
     [Fact]
-    public void Pocitadlo_AgregatBezbarier_SeDoSignaluPocita()
+    public void AgregatBezbarier_SeSchovaKdyzMaByt()
     {
         var page = Stranka("bezbarier-agregat", "H", vRozsahu: false);
-        var counter = new NoteSuppressionCounter();
 
         var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment,
-            hideAggregateBezbarier: true, counter: counter);
+            hideAggregateBezbarier: true);
 
         Assert.Empty(result.Rows["POZNAMKY"]);
-        Assert.True(counter.AnythingHidden);
-        Assert.Equal(1, counter.HiddenLegendRows);
     }
 
     [Fact]
@@ -254,12 +199,10 @@ public class NoteVisibilityFilterTests
                 ["POZNAMKY"] = [poznamka],
             });
 
-        var counter = new NoteSuppressionCounter();
-        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.AutoRouteNote, counter: counter);
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.AutoRouteNote);
 
+        // Schová se jen anotace v rozsahu; legenda zůstane, protože znak nese i spoj mimo rozsah.
         Assert.Equal(1, PocetAnotaci(result));
         Assert.Single(result.Rows["POZNAMKY"]);
-        Assert.Equal(1, counter.HiddenAnnotations);
-        Assert.Equal(0, counter.HiddenLegendRows);
     }
 }

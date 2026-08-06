@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-08-05 (11) - proklik: hláška o skrytém obsahu zrušena, popis agendy vrácen na kód
+
+Výsledek prokliku (Jan). Tučnost, dědění agendy, štítek ukázkových dat, výběr linek s nulou,
+rozpad skupin, nápověda i plynulost obrázku/kódu **prošly**. Dvě věci zpět:
+
+**1. Signál „Sestava: poznámky skryté nastavením" zrušen celý.** Rozhodnutí Jan: *„jestli to měl být
+fix chyby, tak to má opravit ta chyba, ne přidat další hlášku, která je matoucí ve smyslu toho, co má
+komunikovat."* Vznikl jako obklad na `B24` (uložený parametr zapnutý, UI ho ukazovalo vypnutý,
+z vývěsky tiše zmizely odjezdy) a od té doby nikdo nepoznal, co konkrétně hlásí - i po ranní opravě
+falešných poplachů zůstal neakční, protože nepojmenoval nastavení ani cestu k němu. Tu třídu chyb
+dnes drží **driftové testy schémat** z `B54`/`B59`, tedy oprava místo obkladu.
+
+Odešlo s ním i `NoteSuppressionCounter` (existoval jen pro tu hlášku) a protahování počitadla přes
+`NoteVisibilityFilter` - signatury se tím zjednodušily o parametr. **Testy filtrování zůstaly**,
+jen zbavené počitadla: co se schová při vypnuté kategorii v prvku, u „na znamení", u přestupů
+a u souhrnu bezbariérovosti, se hlídá dál. Invariant v `CLAUDE.md` přepsán na „nezavádět zpátky
+bez pojmenování konkrétního nastavení".
+
+**2. Popis ve výběru agendy vrácen na kód konfigurace.** Rozhodnutí Jan: *„to předchozí, co tam bylo,
+mi přišlo pochopitelné, ať tam nevymýšlíme nějaké zbytečné věci."* `ZASTAVKOVY_JR_AD` je zpět místo
+mého „Data z databáze - vybírá se linka"; dva testy na ten popis zrušené.
+
+**Poznámka k rozpadu skupin (`B57`):** vyhovuje, ale **čeká se na reakci zákazníků** - kdyby jim
+formuláře pořád přišly dlouhé, kandidát je rozdělit je na víc tabů. Zatím se nic nemění.
+
+**Ověřeno:** 739/739 .NET (o 10 méně - zrušené testy hlášky a popisu agendy), build solution čistý.
+Caché strany se to netklo.
+
+
 ## 2026-08-05 (10) - 🧹 sekce nálezů review uzavřena, běžná fronta je prázdná
 
 Rozhodnutí Jan 5. 8. po dojetí `B53`-`B59`:
