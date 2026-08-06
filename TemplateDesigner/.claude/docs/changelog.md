@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-06 (3) - 🧹 fronta zastávkového JŘ: jen naše otevřená práce
+
+**Rozhodnutí Jan:** roadmapa je seznam **naší otevřené práce**, ne zrcadlo helpdesku. Cizí a hotové
+věci z ní pryč, i když je „dobré o nich vědět" - poznámka bez akce jen dělá frontu nepřehlednou.
+
+**Ze zastávkového JŘ odstraněno:**
+
+- **#13150** (export blokuje počítač, BUSEM), **#12964** (negativní značky Vsetín), **#13102**
+  (virtuální prodloužení spoje) - řeší se v **legacy JŘ modulu** nebo jsou přiřazené jinému člověku.
+- **#13099** (souhrnné JŘ) - není naše práce v návrháři.
+- **#13048** včetně nezodpovězeného dotazu na označník - tiket je zavřený od 30. 7.; dotaz žije
+  v helpdesku, roadmapa ho držet nemusí.
+- **`TR2`** (souhrn na-znamení) - **hotové**, SK ověření kódování proběhlo (Jan). V evidenci
+  požadavků 🟡→✅.
+- Sekce **„Čeká na někoho jiného"** zrušená celá. `TR8` (nulová jízdní doba) přešel do
+  „Bez poptávky nebrat", což je totéž zaparkování s jasnou podmínkou.
+
+**Zůstalo:** `B12` (#7937 odsazení per směr, jen když TRANSDEV tlačí) a `B39` (vlastní skupiny dnů,
+velký blok) - dvě věci, obě naše. Plus parkoviště „bez poptávky nebrat", které je záměrně parkoviště.
+
+Do budoucna platí pravidlo v hlavičce roadmapy: **tikety mimo návrhář a čekání na cizí lidi se sem
+nepíšou.**
+
+
 ## 2026-08-06 (2) - 🧹 průchod roadmapou: pět neplatných tvrzení pryč
 
 `B61` (asynchronní export náhledu) **odstraněn** - rozhodnutí Jan, není to teď priorita. Poučení

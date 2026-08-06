@@ -100,7 +100,7 @@ polovina 2026 - viz §H). Zavírat po ověření dané featury v releasu TD + od
 | # | Co | Vel. | Stav (2026-07-10) |
 |---|---|---|---|
 | TR1 | Časová osa přes půlnoc | - | ✅ = #9036 **resolved 2026-07-28** |
-| TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | 🟡 **IMPLEMENTOVÁNO 2026-07-10** (AD, opt-in `SOUHRN_NA_ZNAMENI`, gold-safe) · ⚠️ **čeká SK ověření**: SKNI nepoužívá „x" pro na-znamení → kolega prověřuje kódování |
+| TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | ✅ **HOTOVO** (AD, opt-in `SOUHRN_NA_ZNAMENI`, gold-safe) - implementováno 2026-07-10, uzavřeno 2026-08-06 (Jan: SK ověření kódování proběhlo) |
 | TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | ✅ **HOTOVO 2026-07-10** (AD J-věta #3 + MHD Oznacnik; StopList sloupec „Nástupiště" opt-in). Ověřeno 0320680. |
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | ✅ **HOTOVO 2026-07-10** - pevná `DataRowHeight` se zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList + DepartureGrid). |
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🟠 · ⚠️ **(min) „cíl per směr" HOTOVO** dnešním `POPIS_SMER`=konečná (A-AD); zbývá střední (per zast.×směr) + ideál (DB cílů) |
@@ -134,8 +134,8 @@ Excel od IDZK (Lábsky) k zastávkovému JŘ z našeho návrháře. Body:
 
 Detaily hotových: changelog 2026-07-24 (zóny) + 2026-07-26 (přestupy) + 2026-07-27/28 (body 2, 4, 5, titulek, slovník „označník"). **Tiket ZAVŘEN - klient 30. 7. potvrdil, že zmenšování textu funguje, jak čekal** (poslední otevřený bod 2). Reklamace = znovuotevření tiketu.
 
-**Dispatch:** malí kandidáti odbaveni (TR3 ✅, TR4 ✅, TR2 implementováno - ⚠️ čeká SK ověření
-kódování na-znamení, TR8 ⏸️ park do potvrzení TRANSDEV). Zbývají jen 🟠 velké body (analýza/data).
+**Dispatch:** malí kandidáti odbaveni (TR3 ✅, TR4 ✅, TR2 ✅, TR8 ⏸️ park do potvrzení TRANSDEV).
+Zbývají jen 🟠 velké body (analýza/data).
 
 ### 0.4 Follow-upy uzavřených tiketů - JEN na vyžádání zákazníka (nezakládat dřív)
 

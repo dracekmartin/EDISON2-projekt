@@ -6,21 +6,21 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **Stav k 2026-08-05.**
+> **Stav k 2026-08-06.**
 >
-> **▶ Další krok: proklikat, ne brát další blok.** 5. 8. šlo do repa deset commitů měnících UI
-> (předzaškrtnutá tučnost, dědění agendy u Ctrl+N, štítek instance, rozpad skupin formulářů,
-> nápověda) a nic z toho neprošlo očima - vstup je `review-proklik-checklist.md`. Že to není
-> formalita, ukázal `<SYNTAX>` v seznamu zastávek: našel ho první klik, ne devět zelených sad testů.
+> **Běžná fronta je prázdná.** Nálezy review 4. 8. (`B52`-`B59`) jsou dojeté, sekce zrušená, změny
+> z 5. 8. proklikané (`review-proklik-checklist.md`) - z proklikání vypadlo zrušení matoucí hlášky
+> ve stavovém řádku a vrácení popisu u výběru agendy. Odložené velké věci **`B18`** a **`B56`**
+> leží v Backlogu, **`B60`** u linkového JŘ.
 >
-> **Nálezy review 4. 8. jsou dojeté a sekce uzavřená** (`B52`-`B59`); v běžné frontě nezůstal žádný
-> blok. Odložené velké věci: **`B18`** (deklarativní pravidla EDInputFormu) a **`B56`** (deduplikace
-> kódu agend, rozhodnutí Jan 5. 8. - žádná předčasná deduplikace, dokud se tvar výstupních dat
-> neustálí) leží v Backlogu; **`B60`** u linkového JŘ, kam patří.
+> **▶ Další krok: Fáze B** (tabulkové elementy) - po nálezu 6. 8. je menší, než vypadala,
+> dá se vzít vcelku. Alternativa je linkový JŘ (**B10** + **B13**) jako dedikovaný slot.
 >
 > **Zákaznická fronta KOVED je dojetá** - `B37` hotová 5. 8., takže **#13093 je celý uzavřený**.
 > Verze v produkci je ze **4. 8.** (body 1, 2, 4), nic z 5. 8. se k zákazníkům ještě nedostalo.
-> Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
+>
+> **Co sem nepatří** (rozhodnutí Jan 6. 8.): tikety řešené mimo návrhář a čekání na cizí lidi.
+> Roadmapa je seznam **naší otevřené práce**, ne zrcadlo helpdesku.
 
 ---
 
@@ -49,43 +49,16 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 **Plný stav** (hotové featury + co otestovat pro uzavření helpdesk tiketů) →
 [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md).
 
-**Vlna 0 je dojetá** - `B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový**
-(body 1, 2 a 4 šly do verze 4. 8.). Zbytek kola KOVED leží ve Vlně 3 (`B39` vlastní skupiny dnů).
+`B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový** (body 1, 2 a 4 šly do verze
+4. 8.). Z kola KOVED zbývá jediná věc - `B39` (vlastní skupiny dnů), a je to velký blok.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | TRANSDEV potvrdí nad výsledkem |
+| **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí; visí i v mém sběrném #13098. | M | TRANSDEV potvrdí nad výsledkem |
 | **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období. Mění datový model + chce editor. **Zbytek tiketu po `B29`** - ohlášená chybná značka je opravená 31. 7. (`B29`, archiv), takže část „netiskni značku, kterou už říká nadpis sloupce" je hotová a pro vlastní skupiny se jen musí dodržet i u nich. Pravidlo značek už existuje (`DenniZnacky`). | L | koncept skupin + editor |
 
-**Otázka na KOVED - odeslaná 3. 8. v odpovědi na #13048, nic neblokuje:** je u nich označník ještě
-k něčemu? Kdyby ne, mohl by přepínač „Číslo stanoviště podle" zmizet a zůstat jen sloupek - ale je to
-breaking pro zákazníka, který dělení stránek na označník používá (#8828), takže ne bez potvrzení obou.
-**Nezeptáno (a nemusí se):** chtěli by **popis sloupku** („směr Brno přes UH")? Data ho nesou, sloupec
-je jen schovaný z nabídky - viz rozhodnutí v changelogu 2026-08-03 (2).
-
-**Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):**
-**#12964** negativní značky u vsetínské MHD (ZGROUP) - zákazníkovi vadí množství značek a text
-„pokračuje **přes** X" místo „pokračuje **do** X". Opravuje se v **legacy modulu**
-(`JRMAIN\CACHE\JRapiLinPrtMhd.mac:454`, Petr 5. 8.), ne u nás. 💡 **Potvrzuje naše znění z `B37`:**
-my emitujeme „pokračuje do zast. X (l. …)", tedy přesně to, co zákazník chce - kdyby pokračování
-jednou dostala i MHD agenda v TD, držet stejné znění. ·
-**#13150** export výlepových JŘ blokuje počítač (BUSEM, 6. 8., verze 260728.0.12) - „dělá se na
-popředí… když se přepneme do jiného programu, tak nás to během chvilky vrátí zpátky". ⚠️ **Nejspíš
-NENÍ náš** (TD dělá export reálných dat na pozadí s progresem už dnes a krádež fokusu se na nic
-v TD nepodobá; formulace „v nových jízdních řádech" + přiřazení Petra ukazuje na JŘ modul) -
-**ale je potřeba to potvrdit**, protože kdyby BUSEM tiskl vývěsky z návrháře, je to naše. ·
-**#13099** souhrnné JŘ (sdružení
-linek se stejným koncovým trojčíslím pod vzorovou linku - dnes ručně skriptem v Excelu; pro KOVED
-podmínka přesunu tvorby vývěsek do EDISONu; tisk hlavičky dopravců pro souhrnné JŘ je hotový `B33`) · **#13102** virtuální
-prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
-**#13098** je můj sběrný tiket - dnes v něm visí jen odsazení zastávky per směr = `B12` / #7937.
-
-### Čeká na někoho jiného - postrčit, není to práce
-
-- **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení - kolega
-- **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
-  jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
-  (který sloupec - legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
+Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
+patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
 
@@ -93,6 +66,7 @@ prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
 |---|---|---|---|
 | B48 | Přepínač „Přestupy (vlak/autobus)" u MHD nefunguje - MHD posílá přestupy jako pozici ve fontu (`w`/`x`), ne jako písmeno, takže je `IsTransferAttr` nepozná a řídí je obecný přepínač „Atributy". Tisknou se správně, jen se ovládají jinak než u AD. Fix = tagovat ATRIBUTY kategorií `prestup` na wire. Měření gate 4. 8. → archiv | M | poptávku od firmy s modulem MHD (dnes DPCB/DPKV) |
 | TR10 | Skrýt spoje o So/Ne/svátcích | S–M | Caché filtr |
+| TR8 | „<1" místo „0" u nulové jízdní doby - premisa nejasná: naše časy jsou kumulativní, 0-segment se tiskne jako opakované číslo, ne „0"; per-segment sloupec TD nemá. Detail → `customer-requirements §TR/8` | ? | potvrzení od TRANSDEV, který sloupec vlastně myslí (legacy „Průběhy"?) |
 | TR7 | Per-písmeno výběr sloupců variant jízdních dob | S–M | jen pokud TRANSDEV potvrdí nad novým chováním (varianty dle trasy+nástupiště s max časy jsou od 27. 7. hotové) |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | nový datový model |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | Caché-input (Studio JŘ) |
