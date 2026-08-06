@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-05 (10) - 🧹 sekce nálezů review uzavřena, běžná fronta je prázdná
+
+Rozhodnutí Jan 5. 8. po dojetí `B53`-`B59`:
+
+- **`B18`** (deklarativní pravidla EDInputFormu) → **Backlog velkých věcí**. Není to featura
+  návrháře, ale kapabilita sdílené komponenty pro celý EDISON; v běžné frontě jen zabírala místo.
+  Nese tři follow-upy (migrace editoru stylů buněk, zašednutí polí mrtvých bez parametru, popis
+  u parametru sestavy z `B57`).
+- **`B60`** → k **linkovému JŘ**, kam patří. **Změřeno, než se rozhodlo:** není to malá věc, jak
+  vypadalo. Tvarování názvu zastávky visí na **dvou parametrech sestavy** (`TVAR_NAZVU_ZASTAVKY`
+  se 4 volbami, `NAZEV_PRO_MHD`) načítaných do `^||TiskAd`, takže srovnání znamená přidat linkovému
+  JŘ dva **uživatelsky viditelné** parametry (popisky enumu jsou po vydání zamčené) + sdílet pět
+  helperů - a to bez jakéhokoli testu (linkové agendy mají 0 testů). Nejdřív se musí rozhodnout,
+  jestli ty parametry v linkovém JŘ vůbec chceme.
+- Sekce „Architektura a nálezy review (4. 8.)" **smazána** - byla prázdná.
+
+**V běžné frontě tím nezůstal žádný blok.** Další krok není další blok, ale **proklikat 5. 8.** -
+deset commitů měnících UI, z nichž nic neprošlo očima. Že to není formalita, ukázal `<SYNTAX>`
+v seznamu zastávek: našla ho první ruční akce, ne devět zelených sad testů.
+
+
 ## 2026-08-05 (9) - přidání prvku padalo na `<SYNTAX>`, doplněna brána
 
 **Regrese z `B57` (8), nahlášená hned při prokliku:** přidání seznamu zastávek do šablony skončilo

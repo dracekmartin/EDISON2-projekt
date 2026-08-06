@@ -6,11 +6,20 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **Stav k 2026-08-05.** **▶ Další session:** nálezy review 4. 8. jsou **dojeté** - zbývá **B18**
-> (deklarativní pravidla EDInputFormu, M) a `B60`. **`B56` odložen** (rozhodnutí
-> Jan 5. 8. - žádná předčasná deduplikace, dokud se tvar výstupních dat neustálí; podklad z analýzy
-> leží v Backlogu). **Zákaznická fronta KOVED je dojetá** - `B37` (poznámka „pokračuje do…")
-> hotová 5. 8., takže **#13093 je celý uzavřený**. Verze šla 4. 8. do produkce (body 1, 2, 4).
+> **Stav k 2026-08-05.**
+>
+> **▶ Další krok: proklikat, ne brát další blok.** 5. 8. šlo do repa deset commitů měnících UI
+> (předzaškrtnutá tučnost, dědění agendy u Ctrl+N, štítek instance, rozpad skupin formulářů,
+> nápověda) a nic z toho neprošlo očima - vstup je `review-proklik-checklist.md`. Že to není
+> formalita, ukázal `<SYNTAX>` v seznamu zastávek: našel ho první klik, ne devět zelených sad testů.
+>
+> **Nálezy review 4. 8. jsou dojeté a sekce uzavřená** (`B52`-`B59`); v běžné frontě nezůstal žádný
+> blok. Odložené velké věci: **`B18`** (deklarativní pravidla EDInputFormu) a **`B56`** (deduplikace
+> kódu agend, rozhodnutí Jan 5. 8. - žádná předčasná deduplikace, dokud se tvar výstupních dat
+> neustálí) leží v Backlogu; **`B60`** u linkového JŘ, kam patří.
+>
+> **Zákaznická fronta KOVED je dojetá** - `B37` hotová 5. 8., takže **#13093 je celý uzavřený**.
+> Verze v produkci je ze **4. 8.** (body 1, 2, 4), nic z 5. 8. se k zákazníkům ještě nedostalo.
 > Linkový JŘ (**B10**, **B13**) jde až po zákaznické frontě.
 
 ---
@@ -31,19 +40,6 @@ changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde
 2. **Zákaznická položka má uzavírací podmínku** („co ověřit, aby se dala zavřít") - jinak zůstane „hotová, ale otevřená".
 3. **Jedna práce = jeden záznam.** Priorita se řídí pořadím v dokumentu; nezakládej k témuž bloku
    druhou evidenci (ukazatel `L‑1…L‑4` takhle vznikl a 4. 8. se zrušil - linkový JŘ byl v dokumentu 6×).
-
----
-
-## 🏛️ Architektura a nálezy review (4. 8. 2026)
-
-Obecné architektonické bloky (napříč agendami) + nálezy celkového review sweep 4. 8.
-(`B52` migrace uložených voleb zrušených parametrů: **rozhodnuto 5. 8. neřešit** - pilotní provoz,
-připravená odpověď leží v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)
-
-| # | Blok | Vel. |
-|---|---|---|
-| **B18** | **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). **Follow-up 2 (review 4. 8.):** rozšířit gramatiku o čtení **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs. `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - mikropravidlo §5.3 dnes plní jen helpTexty. **Follow-up 3 (z `B57`, 5. 8.):** parametr sestavy nemá pole pro **popis** (`TemplateParameter` má jen název/popisek/typ/default/volby/skupinu/viditelnost), takže krkolomné labely (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) nejde vysvětlit. Aditivní klíč na wire + vykreslení jako tooltip - dělat spolu s gramatikou, ne zvlášť kvůli dvěma tooltipům. | M |
-| **B60** | **Název zastávky se v linkovém JŘ tvoří jinak než na vývěsce** (nález analýzy `B56`, 5. 8.) - vývěska respektuje volbu tvaru názvu (#13089) i přepínač „použít upravený název pro MHD" (`ZastavkoveJrAd.cls:2137-2146`), linkový JŘ bere název natvrdo (`LinkovyJrAd.cls:1326-1332`). Táž zastávka se tak může na vývěsce a v linkovém JŘ jmenovat jinak - zákazník to může vidět jako chybu. **Není to dedup, je to chybějící featura v linkovém JŘ**; rozhodnout, jestli se má srovnat (a pak i jak s tím, že linkový JŘ nemá žádný test). Nespěchá - linkový JŘ ještě není u zákazníka. | S-M |
 
 ---
 
@@ -119,6 +115,7 @@ prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
 | **B10** | **Symbolový font - linková část** (gate R5). Linková tabulka dnes symboly **nekreslí vůbec** - agenda posílá legacy klíče (`|`, `<`, `m`, `u`…) a chybí převod na pozice ve fontu. ✅ **Podklady hotové:** katalog 66 symbolů, render-módy i **změřený repertoár fontu** (94 pozic z obou fontů) jsou v `elementy-architektura.md`, takže neznámá „který kód nese který piktogram" je pryč. ⚠️ Pozice `znak` z katalogu se s pozicí ve fontu často **neshoduje** (letadlo `n`, paragraf `P`, metro `#`) - musí jít přes mapu, ne přes písmeno. **Rozsah (rozhodnutí Jan 4. 8.):** sdílená mapa `značka → (render-mód, hodnota)` pro všechny prvky, nahradí i dnešní `SymbolGlyph` u zastávkových vývěsek → dotkne se běžícího zastávkového JŘ, chce zlaté odtisky. Culture rozlišení jen pro **3 pozice** (`D`, `w`, `x`). Ve fontu chybí loď, wifi a zásuvka. | M→S |
 | **B13** | **2D bin-packing / `Strih`** (gate R1/R2) - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce". Nutné pro reálný tisk MHD linek; zastávkový JŘ to nepotřebuje. | L |
 | **B14** | **Dedup Caché tiskových enginů + jejich testy** - doprovod ostrého knižního JŘ, ne dopředu. (a) **Dedup** (*audit H1*): `CasHodnota` bere `"|"` jinak v `KnizniJrAd` vs `ZastavkoveJrAd`, různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → vyextrahovat sdílené readery + `Build*` do `BaseAgenda`/`JrShared`; je to **Caché analog R1 extrakce jádra** (`B13` řeší .NET render-side, tohle Caché data-side). Korektnostní riziko. Menší výsek Build\* helperů = `B56` (nález review); při realizaci jednoho zredukovat druhý. (b) **Testy** (*audit H2*, = `T1b`): `KnizniJr*` (~1975 ř.) 0 testů, `ZastavkoveJrMhd` 1 helper; AD gold gate tiše projde bez `CB_CSADAD`, křehký digest nad živými daty (pinuje 2/22 linek), `tools/compare-gold.ps1` neexistuje → smoke + frozen-input gold testy, bezpodmínečný gate (zmrazit vstup do izolovaného ns). | L + M |
+| **B60** | **Název zastávky se v linkovém JŘ tvoří jinak než na vývěsce** (nález analýzy `B56`, 5. 8.) - vývěska respektuje volbu tvaru názvu (#13089, 4 volby) i přepínač „použít upravený název pro MHD"; linkový JŘ bere název natvrdo, takže **táž zastávka může mít na dvou výstupech jiné jméno**. ⚠️ **Změřeno 5. 8. - není to malá věc:** tvarování visí na **dvou parametrech sestavy** (`TVAR_NAZVU_ZASTAVKY`, `NAZEV_PRO_MHD`) načítaných do `^||TiskAd`, takže srovnání = přidat linkovému JŘ dva uživatelsky viditelné parametry (popisky enumu jsou po vydání zamčené) + sdílet 5 helperů (`FormatNazvuZastavky`, `MezeryPoInterpunkci`, `TvarNazvuZastavky`, `PouzitNazevProMhd`, `NactiNastaveniNazvu`) - a to **bez jakéhokoli testu** (linkové agendy 0 testů, síť staví `B14b`). **Nejdřív rozhodnout, jestli ty parametry v linkovém JŘ chceme.** | M |
 
 `B13` stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem
 řádků, ne pětkrát v per-element smyčkách.
@@ -126,6 +123,10 @@ prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
 ---
 
 ### 📥 Backlog / budoucí velké tracky
+
+- **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
+  věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,
+  ne featura návrháře). **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). **Follow-up 2 (review 4. 8.):** rozšířit gramatiku o čtení **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs. `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - mikropravidlo §5.3 dnes plní jen helpTexty. **Follow-up 3 (z `B57`, 5. 8.):** parametr sestavy nemá pole pro **popis** (`TemplateParameter` má jen název/popisek/typ/default/volby/skupinu/viditelnost), takže krkolomné labely (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) nejde vysvětlit. Aditivní klíč na wire + vykreslení jako tooltip - dělat spolu s gramatikou, ne zvlášť kvůli dvěma tooltipům.
 
 - **`B56` Sjednocení opsaných pomocných funkcí agend** (odloženo - **rozhodnutí Jan 5. 8.**:
   nedělat předčasnou deduplikaci, dokud se tvar výstupních dat neustálí; sjednocením by se zabetonoval
