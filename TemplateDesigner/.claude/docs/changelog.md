@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-06 (1) - 🧹 sekce zastávkového JŘ srovnána, dva čerstvé nálezy z helpdesku
+
+**Sekce byla rozbitá** po dokončení `B37`: zůstal v ní celý **implementační plán hotové featury**
+(14 řádků), osiřelé buňky tabulky (`| M | klient si zapne… |`) a dva bloky (`B12`, `B39`) bez hlavičky
+tabulky. Plán je historie (drží ho archiv a changelog 5. 8.), takže odešel; hlavička vrácena.
+
+**Prošel jsem otevřené tikety JŘ, ať roadmapa odpovídá skutečnosti** - a dva jsou z dneška:
+
+- **#12964 (ZGROUP, Vsetín)** - zákazníkovi vadí množství negativních značek a text „pokračuje
+  **přes** X" místo „pokračuje **do** X". **Není naše:** opravuje se v legacy modulu
+  (`JRapiLinPrtMhd.mac:454`, Petr 5. 8.). 💡 Ale **potvrzuje znění, které jsme v `B37` zvolili** -
+  my emitujeme „pokračuje do zast. X (l. …)", tedy přesně to, co zákazník chce. Zapsáno, aby to
+  MHD agenda v TD jednou nedělala jinak.
+- **#13150 (BUSEM)** - export výlepových JŘ do PDF „se dělá na popředí, vyblokuje počítač a když se
+  přepneme do jiného programu, vrátí nás to zpátky". **Nejspíš není náš** (TD dělá export reálných dat
+  na pozadí s progresem už dnes a krádež fokusu se ničemu v TD nepodobá; „v nových jízdních řádech"
+  + přiřazený Petr ukazuje na JŘ modul) - **ale je to potřeba potvrdit**, protože kdyby BUSEM tiskl
+  vývěsky z návrháře, je to naše.
+
+**Nový blok `B61` (S)** - při čtení #13150 se ukázalo, že **jednu cestu máme rozbitou stejně**:
+`PrintDialogViewModel.ExportPdf()` (export náhledu) staví data, renderuje i otevírá PDF **synchronně
+na UI threadu**, bez progresu - porušuje R1. Export reálných dat to má správně, takže je to jedna
+zapomenutá cesta. Dnes to nebolí (jedna sada ukázkových dat), u velké šablony ale okno zamrzne.
+
+
 ## 2026-08-05 (11) - proklik: hláška o skrytém obsahu zrušena, popis agendy vrácen na kód
 
 Výsledek prokliku (Jan). Tučnost, dědění agendy, štítek ukázkových dat, výběr linek s nulou,

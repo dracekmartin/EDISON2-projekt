@@ -52,22 +52,9 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 **Vlna 0 je dojetá** - `B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový**
 (body 1, 2 a 4 šly do verze 4. 8.). Zbytek kola KOVED leží ve Vlně 3 (`B39` vlastní skupiny dnů).
 
-**Plán implementace (schválený tvar):**
-1. **Server** (`ZastavkoveJrAd`): číst uzel 34 per spoj, seskupit odjezdy podle **(linka, cíl)** -
-   číslo spoje se ignoruje, jak klient výslovně chce. Per stránka přidělit značky **`u1`, `u2`, …**
-   v pořadí prvního výskytu (stabilní, reprodukovatelné, stejný princip jako písmena rozdílů tras).
-   Anotace u minuty + řádek legendy `u1 - pokračuje do zast. <cíl> (l. <poslední trojčíslí linky>)`,
-   oba s kategorií **`pokracovani`**.
-2. **Značky „u+číslice" nekolidují** s ničím na vývěsce: rozdíly tras a varianty berou A-Z, kroužkové
-   dny číslice 1-7, ruční komentáře písmena z číselníku. Číslice se dává vždy, i u jediného cíle
-   (jednoduché pravidlo). Značka je víceznaková → kreslí se textem, ne přes symbolový font.
-3. **Klient**: jeden checkbox v bloku poznámek („Pokračující spoje", výchozí vypnuto) + kategorie do
-   `NoteCategories`. Filtr už umí prořezat značku i vysvětlivku naráz, takže nemůže vzniknout jedno
-   bez druhého. Žádný parametr sestavy.
-4. **Brány**: Caché testy (parsování záznamu, seskupení, přidělení značek), .NET testy (filtr
-   kategorie), **gold rebaseline** - přibudou anotace i řádky legendy, takže se změní počty poznámek.
-
-**Vztah k #13102** (virtuální prodloužení u Petra): jiná featura nad stejným jevem - tam je přínos „ubude varianta ve sloupcích minut" a zadává se ručně, tady je poznámka **automatická** z existujících dat. Nečeká jedno na druhé; u spojů, kde jednou prodloužení zadají, bude naše poznámka nadbytečná (detail zobrazení, ne blokátor). | M | klient si zapne a poznámka odpovídá jejich ruční praxi |
+| # | Blok | Vel. | Uzavírací podmínka |
+|---|---|---|---|
+| **B61** | **Export náhledu do PDF běží na UI threadu** (nález 6. 8. při čtení #13150) - `PrintDialogViewModel.ExportPdf()` volá stavbu dat, render i otevření PDF synchronně, bez `Task.Run` a bez progresu; **porušuje R1**. Export reálných dat (`ExportRealDataPdfAsync`) to má správně, takže jde o jednu zapomenutou cestu. Dopad je dnes malý (náhledový export = jedna sada ukázkových dat), proto to nikdo nenahlásil - ale u velké šablony to zamrzne okno a Windows ukáže „Neodpovídá". Fix = obalit stejným vzorem jako reálný export. | S | export velké šablony nezamrzne okno |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | TRANSDEV potvrdí nad výsledkem |
 | **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období. Mění datový model + chce editor. **Zbytek tiketu po `B29`** - ohlášená chybná značka je opravená 31. 7. (`B29`, archiv), takže část „netiskni značku, kterou už říká nadpis sloupce" je hotová a pro vlastní skupiny se jen musí dodržet i u nich. Pravidlo značek už existuje (`DenniZnacky`). | L | koncept skupin + editor |
 
@@ -77,7 +64,18 @@ breaking pro zákazníka, který dělení stránek na označník používá (#88
 **Nezeptáno (a nemusí se):** chtěli by **popis sloupku** („směr Brno přes UH")? Data ho nesou, sloupec
 je jen schovaný z nabídky - viz rozhodnutí v changelogu 2026-08-03 (2).
 
-**Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):** **#13099** souhrnné JŘ (sdružení
+**Mimo návrhář (vést jako práci JŘ, u nás jen navázat výstup):**
+**#12964** negativní značky u vsetínské MHD (ZGROUP) - zákazníkovi vadí množství značek a text
+„pokračuje **přes** X" místo „pokračuje **do** X". Opravuje se v **legacy modulu**
+(`JRMAIN\CACHE\JRapiLinPrtMhd.mac:454`, Petr 5. 8.), ne u nás. 💡 **Potvrzuje naše znění z `B37`:**
+my emitujeme „pokračuje do zast. X (l. …)", tedy přesně to, co zákazník chce - kdyby pokračování
+jednou dostala i MHD agenda v TD, držet stejné znění. ·
+**#13150** export výlepových JŘ blokuje počítač (BUSEM, 6. 8., verze 260728.0.12) - „dělá se na
+popředí… když se přepneme do jiného programu, tak nás to během chvilky vrátí zpátky". ⚠️ **Nejspíš
+NENÍ náš** (TD dělá export reálných dat na pozadí s progresem už dnes a krádež fokusu se na nic
+v TD nepodobá; formulace „v nových jízdních řádech" + přiřazení Petra ukazuje na JŘ modul) -
+**ale je potřeba to potvrdit**, protože kdyby BUSEM tiskl vývěsky z návrháře, je to naše. ·
+**#13099** souhrnné JŘ (sdružení
 linek se stejným koncovým trojčíslím pod vzorovou linku - dnes ručně skriptem v Excelu; pro KOVED
 podmínka přesunu tvorby vývěsek do EDISONu; tisk hlavičky dopravců pro souhrnné JŘ je hotový `B33`) · **#13102** virtuální
 prodloužení spoje jen pro vývěsku (zadávání v JŘ, přiřazeno Petrovi).
