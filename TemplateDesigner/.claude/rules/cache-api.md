@@ -16,6 +16,19 @@
 - **Ověřuj voláním, ne čtením.** „Zdroj v repu to má" ani „grep v nasazené metodě" nestačí:
   **zavolej agendu / dispatch a podívej se, co reálně vrátí** (`cache_query_cvar` na `GetParameters`,
   `Init`, …). To je jediná kontrola, která odpovídá na otázku „co uvidí klient".
+  ⚠️ **Voláním ověř KAŽDOU třídu, kterou jsi změnil**, ne jednu za všechny - 5. 8. jsem ověřil
+  legendu poznámek, ale ne seznam zastávek, a ten byl rozbitý (uživateli spadlo přidání prvku).
+
+## 🚨 Uvozovka v textu se ZDVOJUJE
+
+`"` uvnitř textového literálu ho **ukončí** - musí být `""`. Typicky to potká vysvětlivky:
+`"… (výchozí „×")"` vypadá nevinně, ale ObjectScript to přečte jako konec textu, pak `)` mimo
+literál a poslední `"` otevře nový → `<SYNTAX>` a **spadne to teprve uživateli při otevření
+formuláře**. Správně: `"… (výchozí ""×"")"`.
+
+Hlídá to `ObjectScriptSyntaxTests` (projede všechny `.cls` v repu a hlásí řádek, který končí
+uprostřed textu). Nic jiného to nezachytí: rozbitá třída se nasadí, .NET testy o Caché zdrojácích
+nevědí a `%UnitTest` kompiluje jen testovací package.
 
 ## Caché namespace struktura
 

@@ -35,10 +35,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("stopscontent", "Zastávky - obsah")
         d form.AddBool("ShowStopIndentation", "Odsazení", 1)
         s f = form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
-        s f.helpText = "Zastávka, kde spoj staví jen na znamení, dostane značku (výchozí „×")"
+        s f.helpText = "Zastávka, kde spoj staví jen na znamení, dostane značku (výchozí ""×"")"
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
         s f = form.AddBool("ShowStopAttributes", "Atributy", 1)
-        s f.helpText = "Značky u zastávky z jízdního řádu (např. „S" - tisk stanoviště, zóny)"
+        s f.helpText = "Značky u zastávky z jízdního řádu (např. ""S"" - tisk stanoviště, zóny)"
         s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/autobus)", 0)
         s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Původní JŘ je netiskl."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)

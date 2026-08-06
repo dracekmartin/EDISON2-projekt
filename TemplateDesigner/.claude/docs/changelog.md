@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-05 (9) - přidání prvku padalo na `<SYNTAX>`, doplněna brána
+
+**Regrese z `B57` (8), nahlášená hned při prokliku:** přidání seznamu zastávek do šablony skončilo
+chybovým dialogem `<SYNTAX> zInit+36^…StopListElementEdit`. Ve dvou vysvětlivkách (a jedné u mřížky
+odjezdů) jsem uzavřel český citát obyčejnou `"` - ta v ObjectScriptu **ukončí textový literál**,
+takže zbytek řádku se rozsypal. Správně se zdvojuje (`""`).
+
+**Proč to prošlo přes všechny brány:** rozbitá třída se na server nasadí, **.NET testy o Caché
+zdrojácích nic nevědí** a `%UnitTest` kompiluje jen testovací package - takže 740/740 i 74/74 svítilo
+zeleně, zatímco formulář byl rozbitý. Ověřoval jsem nasazení voláním serveru, ale jen u legendy
+poznámek; u seznamu zastávek ne, a právě ten byl vadný.
+
+**Opraveno + brána:** `ObjectScriptSyntaxTests` projede **všechny `.cls` v repu** a nahlásí řádek,
+který končí uprostřed textového literálu (parsuje znak po znaku, komentáře řeší implicitně).
+Prověřeno mutací - vrácení původní chyby test shodí. Do `cache-api.md` přidáno pravidlo o zdvojování
+uvozovky a upřesnění, že **voláním se ověřuje každá změněná třída**, ne jedna za všechny.
+
+**Ověřeno:** 749/749 .NET, 74/74 Caché, `StopListElementEdit.Init` i `DepartureGridElementEdit`
+volané na serveru vracejí `ok` a všechny nové skupiny s vysvětlivkami.
+
+
 ## 2026-08-05 (8) - `B57` formuláře prvků se daly přečíst
 
 Nález review 4. 8.: skupiny formulářů přerostly rozpočet (~7 položek) a u mřížky odjezdů nebyla

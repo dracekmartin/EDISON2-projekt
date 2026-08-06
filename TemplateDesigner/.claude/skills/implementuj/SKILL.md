@@ -10,13 +10,6 @@ allowed-tools: Read, Edit, Write, Glob, Grep, ToolSearch, Bash(dotnet build *), 
 Uživatel dodává **co a proč** (priorita, architektonická rozhodnutí, high-level kontext).
 Ty vezeš **mechaniku** - průzkum, testy, kód, ověření, docs, commit - bez čekání na dílčí pokyny.
 
-**Bez žurnálu nezačínej.** Úplně první věc, kterou uděláš, je `zurnal_zapis` typ `zamer`.
-Když ten nástroj není dostupný (typicky neběží MCP server `edison-zurnal`), **zastav a řekni
-to** - neber položku, needituj, a hlavně **nepřecházej na „vedu poznámky interně"**. Report
-se sestavuje ze žurnálu (§Žurnál), takže bez něj nemáš čím splnit kontrakt skillu.
-(Doloženo dvěma běhy 2026-08-03: oba degradovaly na interní poznámky, dojely do konce
-a doručily výstup s nulovými událostmi `brana`.)
-
 ## 0. Vzít položku
 
 | Vstup | Co udělat |
@@ -127,7 +120,6 @@ a máš pokračovat svou volbou a uvést v reportu, že rozhodnutí zůstalo ote
 ## Co nedělat
 
 - Nerozhodovat za uživatele architekturu ani priority.
-- Nepokračovat, když chybí žurnál, a nevést poznámky interně místo něj.
 - Neobcházet `guard.sh` a neupravovat brány, aby prošly.
 - Netvrdit „ověřeno", když jsi jen přečetl kód nebo spustil build.
 - Nenechávat v roadmapě odškrtnuté hotové řádky.

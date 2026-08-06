@@ -27,7 +27,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // čeho se pole týkají; klíče polí se NEMĚNÍ, mění se jen zařazení a popisky.
         d form.AddGroup("groups", "Skupiny dnů")
         s f = form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
-        s f.helpText = "Nadpis nad každým blokem minut (např. „Pracovní dny", „Sobota")"
+        s f.helpText = "Nadpis nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         s f = form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f.helpText = "Sloupec s hodinami se zopakuje u každé skupiny dnů. Vypnuto = jeden sloupec hodin vlevo pro všechny skupiny."
