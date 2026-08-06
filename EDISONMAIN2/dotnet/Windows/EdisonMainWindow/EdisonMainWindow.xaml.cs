@@ -33,6 +33,11 @@ namespace EDISONMAIN2
             SystemAdminTreeView.SelectedItemChanged += TreeSelectedItemChanged;
             PartnerSolutionsTreeView.SelectedItemChanged += TreeSelectedItemChanged;
             FavoritesTreeView.SelectedItemChanged += TreeSelectedItemChanged;
+            MainMenuTreeView.KeyDown += Tree_KeyDown;
+            SystemAdminTreeView.KeyDown += Tree_KeyDown;
+            PartnerSolutionsTreeView.KeyDown += Tree_KeyDown;
+            FavoritesTreeView.KeyDown += Tree_KeyDown;
+            UsedModulesList.KeyDown += UsedModules_KeyDown;
             Loaded += WireMiniAppHost;
             ContentRendered += OnContentRendered;
             // Drží plochu miniaplikací nad minimem při zúžení (splitter i okno) — viz handler.
@@ -194,6 +199,34 @@ namespace EDISONMAIN2
                 _ => null,
             };
             vm.SelectedModule = tv?.SelectedItem as IModule;
+        }
+
+        // Enter na vybraném uzlu = totéž co klik (modul spustí, složku přepne). Handler visí na
+        // TreeView, ne na TreeViewItem - dostane klávesu z fokusovaného itemu bez řešení bublání.
+        private void Tree_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            switch (((TreeView)sender).SelectedItem)
+            {
+                case ModuleFamily family:
+                    family.IsExpanded = !family.IsExpanded;
+                    e.Handled = true;
+                    break;
+                case ExecutableModule module:
+                    OpenModule(module);
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        private void UsedModules_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+            if (((System.Windows.Controls.ListBox)sender).SelectedItem is ExecutableModule module)
+            {
+                OpenModule(module);
+                e.Handled = true;
+            }
         }
 
         private void UsedModuleItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)

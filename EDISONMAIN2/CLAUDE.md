@@ -54,6 +54,8 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   menu nepřejde. `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
+- Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
+  nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají).
 - **Status bar** = segmenty ikona + hodnota, technika (namespace, port, login, Mlp) jen
   v ToolTipu. Stojí na `LastChildFill="False"` z EDControlStyles; `DockPanel.Dock="Right"`
   funguje **jen na explicitním** `<StatusBarItem>` (na surovém `TextBlock` se nepropíše na

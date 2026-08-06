@@ -645,26 +645,35 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>
         /// Nastaví <see cref="IModule.IsVisibleBySearch"/> rekurzivně. Uzel je viditelný, když jeho
         /// název obsahuje <paramref name="text"/> (case + diakritika insensitive) NEBO má viditelného
-        /// potomka (prázdný text = vše viditelné). Rodina s nalezeným potomkem se při aktivním hledání
-        /// rozbalí. Vrací, zda je modul viditelný.
+        /// potomka (prázdný text = vše viditelné). Rodina nalezená podle vlastního názvu zpřístupní
+        /// celý svůj obsah; rodina s nalezeným potomkem se při aktivním hledání rozbalí.
+        /// Vrací, zda je modul viditelný.
         /// </summary>
         internal static bool ApplySearchToModule(IModule module, string text)
         {
             var needle = SearchNormalization.NormalizeForSearch(text);
-            bool match = needle.Length == 0
+            bool selfMatch = needle.Length == 0
                 || SearchNormalization.NormalizeForSearch(module.DisplayedName).Contains(needle);
 
             if (module is ModuleFamily family)
             {
+                // Shoda na názvu skupiny zpřístupní celý její obsah - potomci hledané slovo v názvu
+                // nemají, takže by nález byl slepá ulička (skupina prázdná a spustit ji nejde).
+                // Prázdný needle v rekurzi = "všechno viditelné", proto stačí předat "".
+                bool wholeSubtree = selfMatch && needle.Length > 0;
                 bool anyChildVisible = false;
                 foreach (var child in family.NestedModules)
-                    if (ApplySearchToModule(child, text)) anyChildVisible = true;
-                match = match || anyChildVisible;
-                if (text.Length > 0 && anyChildVisible) family.IsExpanded = true;
+                    if (ApplySearchToModule(child, wholeSubtree ? "" : text)) anyChildVisible = true;
+                selfMatch = selfMatch || anyChildVisible;
+                if (text.Length > 0 && anyChildVisible)
+                {
+                    if (wholeSubtree) SetExpandedRecursive(family, true);
+                    else family.IsExpanded = true;
+                }
             }
 
-            module.IsVisibleBySearch = match;
-            return match;
+            module.IsVisibleBySearch = selfMatch;
+            return selfMatch;
         }
 
         // Per stanice konstantní (DNS doména / registry override) — stačí vyhodnotit jednou.

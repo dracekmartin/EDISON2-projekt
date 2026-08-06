@@ -63,6 +63,64 @@ public class EdisonMainViewModelSearchTests
         Assert.True(fam.IsVisibleBySearch);
     }
 
+    // HD 13132/5: nález skupiny nesmí být slepá ulička - spustit ji nejde, takže musí jít
+    // spustit modul z ní, i když hledané slovo v názvu nemá.
+    [Fact]
+    public void Family_MatchedByOwnName_RevealsWholeContent()
+    {
+        var kid = Exe("Zaměstnanci");
+        var fam = Fam("Mzdy a personalistika", kid);
+        fam.IsExpanded = false;
+
+        Assert.True(EdisonMainViewModel.ApplySearchToModule(fam, "mzdy"));
+
+        Assert.True(fam.IsVisibleBySearch);
+        Assert.True(fam.IsExpanded);
+        Assert.True(kid.IsVisibleBySearch);
+    }
+
+    [Fact]
+    public void Family_MatchedByOwnName_RevealsNestedSubtree()
+    {
+        var deep = Exe("Výplatní lístky");
+        var sub = Fam("Výpočet", deep);
+        var other = Exe("Zaměstnanci");
+        var fam = Fam("Mzdy a personalistika", sub, other);
+
+        Assert.True(EdisonMainViewModel.ApplySearchToModule(fam, "personalistika"));
+
+        Assert.True(sub.IsVisibleBySearch);
+        Assert.True(sub.IsExpanded);      // rozbaleno rekurzivně, ať je list rovnou dosažitelný
+        Assert.True(deep.IsVisibleBySearch);
+        Assert.True(other.IsVisibleBySearch);
+    }
+
+    // Shoda na potomkovi zůstává filtrující - jinak by "turnus" ukázalo celou rodinu.
+    [Fact]
+    public void Family_MatchedByDescendant_StillHidesOtherChildren()
+    {
+        var match = Exe("Turnusy");
+        var other = Exe("Objednávky");
+        var fam = Fam("Autobusová doprava", match, other);
+
+        EdisonMainViewModel.ApplySearchToModule(fam, "turnus");
+
+        Assert.True(match.IsVisibleBySearch);
+        Assert.False(other.IsVisibleBySearch);
+    }
+
+    [Fact]
+    public void Family_MatchedByOwnName_EmptyFamilyStaysCollapsed()
+    {
+        var fam = Fam("Mzdy a personalistika");
+        fam.IsExpanded = false;
+
+        Assert.True(EdisonMainViewModel.ApplySearchToModule(fam, "mzdy"));
+
+        Assert.True(fam.IsVisibleBySearch);
+        Assert.False(fam.IsExpanded);   // není co ukázat
+    }
+
     [Fact]
     public void Family_Hidden_WhenNothingMatches()
     {
