@@ -105,10 +105,10 @@ polovina 2026 - viz §H). Zavírat po ověření dané featury v releasu TD + od
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | ✅ **HOTOVO 2026-07-10** - pevná `DataRowHeight` se zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList + DepartureGrid). |
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🟠 · ⚠️ **(min) „cíl per směr" HOTOVO** dnešním `POPIS_SMER`=konečná (A-AD); zbývá střední (per zast.×směr) + ideál (DB cílů) |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | ✅ **HOTOVO 2026-08-03** (#12997): JŘ umí víc barev na linku (Petr), agenda je vydává jako `BARVA_LINKY` / `BARVA_LINKY_2` a jdou zapsat do každého barevného pole šablony. TRANSDEV jede AD (§A6), takže i jejich MHD Trenčín je pokryté. |
-| TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | S–M | 🟡 **zčásti vyřešeno 2026-07-27** (#13048 bod 5): varianty dle sledu zastávek (málo sloupců) + parametr „Řazení variant tras: Stabilní". Zbývá jen případný per-písmeno výběr - až TRANSDEV potvrdí nad novým chováním |
+| TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | S–M | ✅ **v návrháři ten problém neexistuje** (ověřeno 6. 8.): sloupce se nezapínají, rozvinou se samy a mají písmena variant, ne pozicová čísla - poslat k vyzkoušení. Předtím: **zčásti vyřešeno 2026-07-27** (#13048 bod 5): varianty dle sledu zastávek (málo sloupců) + parametr „Řazení variant tras: Stabilní". Zbývá jen případný per-písmeno výběr - až TRANSDEV potvrdí nad novým chováním |
 | TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | ? | ⏸️ **park - premisa nejasná** (viz níže §TR/8): naše časy jsou kumulativní → 0-segment se tiskne jako opakované číslo (1,1), ne „0"; per-segment sloupec TD nemá. Ověřit u TRANSDEV, který sloupec (legacy „Průběhy"?) |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | 🟠 Caché-input (Studio JŘ) |
-| TR10 | Skrýt spoje o So/Ne/svátcích | S–M | 🟠 Caché filtr |
+| TR10 | Skrýt spoje o So/Ne/svátcích | S | 🟡 **malá varianta jde u nás** (přepínač „skrýt značené spoje i ve víkendových sloupcích" nad existujícím per-linkovým seznamem `MHD_NENZ1_NENZ2`); vlastní seznam per sloupec = kolegové. Detail §TR |
 
 **Z prezentací zákazníkům - §P:**
 
@@ -697,20 +697,40 @@ naší straně. **TRANSDEV jede AD agendu** (§A6) - i jejich MHD Trenčín, tak
 **Stav sady k 2026-08-06: 5 z 10 hotových** (TR1 osa přes půlnoc, TR2 souhrn na-znamení, TR3
 nástupiště, TR4 auto výška řádku, TR6 barva linky), TR7 zčásti, TR5 v minimální variantě.
 
-**⚠️ Zbytek nedrží my - drží vstupní strana (editor JŘ / Studio JŘ), tj. kolegové.** Tohle patří
-do #13098, aby to viselo na správném člověku:
+**Kdo drží zbytek** (poctivě prověřeno v kódu 6. 8. - dvě věci se posunuly proti prvnímu odhadu).
+Tabulka je podklad pro #13098:
 
-| Bod | Co potřebuje od kolegů | Bez toho se u nás nedá udělat |
+| Bod | Kdo to drží | Proč |
 |---|---|---|
-| **TR5** střední/ideál | pole „cíl" v trase linky per zastávka × směr (jako nástupiště/sloupek); ideál = číselník cílů + odkaz id | data neexistují; my umíme jen konečnou směru (`POPIS_SMER`) |
-| **TR7** zbytek | v editoru spojů určit, **které spoje / který úsek** řídí generování jízdních dob | dnes to řídí pořadí výskytu variantu, což je přesně to nestabilní číslování, na které si stěžují |
-| **TR9** | přepracovat zadávání poznámek (Vlastnosti → MHD): rozsah TČ přímo do první tabulky vedle značky | je to celé vstupní workflow legacy modulu, tisková strana se nemění |
-| **TR10** | rozšířit filtr negativních značek (Vlastnosti → „MHD - další") i na So/Ne/svátky | dnes jde filtr jen na sloupce školní výuka / prázdniny |
-| **TR8** | co je legacy sloupec **„Průběhy"** - je per-segment? Plus screenshot od klienta, kde vidí „0" | naše časy jsou kumulativní, „0" tam vůbec nevzniká, takže není kde „<1" tisknout |
-| **B12** / #7937 | odsazení zastávky **per směr** - `^JRL` dta7 je jedna hodnota na bod trasy (i legacy), sdílená pro tam i zpět | základ hotový, per-směr chce nové pole + editor |
+| **TR5** cíl | **kolegové** | pole „cíl" v trase linky per zastávka × směr (jako nástupiště/sloupek) neexistuje; my umíme jen konečnou směru (`POPIS_SMER`). Ideál = číselník cílů + odkaz id |
+| **TR9** poznámkování | **kolegové** | rozsah TČ je uložený **per spoj** (`^JRL(...,"PATCH","MHDSPNPZN",spojId)` = `od~do`), u značky žádný rozsah není. Chtějí ho vedle značky = nové pole + přepsané zadávání. U nás **není co číst** a tisková strana se nemění |
+| **TR8** „<1" | **kolegové + klient** | co je legacy sloupec „Průběhy" (je per-segment?) + screenshot, kde tu „0" vidí. Naše časy jsou kumulativní, „0" u nás nevzniká |
+| **B12** / #7937 | **kolegové** | odsazení per směr - `^JRL` dta7 je jedna hodnota na bod trasy (i legacy), sdílená pro tam i zpět; per-směr chce nové pole + editor |
+| **TR10** skrývání | **zčásti my** | ⬇️ viz níže - malá varianta jde u nás |
+| **TR7** sloupce jízdních dob | **nikdo, jen ověřit** | ⬇️ viz níže - v návrháři ten problém neexistuje |
 
-U každého z nich je naše část **malá a navazuje** (přečíst pole, vydat ho ve schématu, nabídnout
-v šabloně) - pořadí je tedy dané: nejdřív vstupní strana, pak my.
+**`TR7` - stížnost se návrháře netýká** (ověřeno 6. 8. v kódu). Klient si stěžuje, že „v editore
+šablóny je náročné tipovať, ktorý stĺpec zapnúť, lebo číslovanie odráža poradie výskytu variantu".
+V TD se **žádný sloupec nezapíná**: `StopListElement` si sloupec jízdních dob sám rozvine na N
+variantních podsloupců (`ExpandTravelTimeColumns`, výchozí „Všechny varianty tras" = zapnuto)
+a záhlaví nejsou pozicová čísla, ale **písmena variant** (`PISMENA_VARIANT`) nebo písmena rozdílů
+tras s rozlišením kolizí (`B1`/`B2`/`T1`). Nestabilní pořadí napříč stránkami řeší
+`RAZENI_VARIANT = Stabilní (pořadí spojů)` od 27. 7. **Není co implementovat - poslat klientovi
+k vyzkoušení.** Hlubší přání („určit, podle kterých spojů se doby generují") vzniklo jako obklad
+tohoto problému; až po vyzkoušení má smysl se ptát, jestli ještě platí.
+
+**`TR10` - malá varianta jde čistě u nás, plná ne.** Potlačení už v kódu **existuje**, jen míří na
+jiné sloupce: `ZarazeniSpoje` čte per-linkový seznam „značky nevypisovat" (`MHD_NENZ1_NENZ2`)
+a nuluje jím **jen sloupce školní výuka / o prázdninách**; víkendové sloupce se nastaví na 1 bez
+jakékoli kontroly.
+- **Naše varianta (S):** přepínač sestavy „Skrýt značené spoje i ve víkendových sloupcích" - použije
+  **týž seznam**, který klient pro školní sloupce už vyplňuje, i na So/Ne/svátky. Bez kolegů,
+  bez nového datového pole. **Omezení:** nejde mít pro víkend jiné značky než pro školní sloupce,
+  a v režimech bez prázdninového dělení (FTL 0/2) by se ten seznam začal poprvé čítat, což je
+  chování závislé na datech zadaných k jinému účelu - **default vypnuto** a ověřit na jejich datech.
+- **Plná varianta (kolegové):** vlastní seznam značek per sloupec = nové pole ve Vlastnostech linky.
+- ⚠️ **Číslo negativní značky je per linka**, ne firemní číselník - proto ten seznam **nemůže** být
+  parametrem šablony s vypsanými čísly. Jediná cesta u nás je „použij ten, co už existuje".
 
 1. **Časová os cez polnoc** (noční linky 22→5h) nebo aspoň manuální přeuspořádání hodin.
    → ✅ **Už hotové (B3, #9036)**: `TimeAxisMode=Range`, `HODINY_OD=22`/`HODINY_DO=5` → wrap přes půlnoc

@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-08-06 (5) - 🔍 sada TRANSDEV prověřená v kódu: dva body se posunuly
+
+Poctivý průchod tří bodů, o kterých jsem tvrdil, že „drží vstupní strana". **Dva z nich tak nestály.**
+
+**`TR7` výběr sloupců jízdních dob - v návrháři ten problém vůbec neexistuje.** Klient si stěžuje,
+že „je náročné tipovat, který sloupec zapnout, protože číslování odráží pořadí výskytu varianty".
+V TD se **žádný sloupec nezapíná**: sloupec jízdních dob se sám rozvine na tolik podsloupců, kolik
+je variant, a v záhlaví nejsou pozicová čísla, ale **písmena variant** (kolize `B1`/`B2`, varianta
+bez písmene `T1`). Nestabilní pořadí napříč stránkami řeší volba „Řazení variant: Stabilní" od 27. 7.
+**Není co implementovat ani na kom to nechat - poslat klientovi k vyzkoušení.** Jeho hlubší přání
+(„určit, podle kterých spojů se doby generují") vzniklo jako obklad tohoto problému, takže se má
+ptát znovu až po vyzkoušení.
+
+**`TR10` skrývání spojů o So/Ne/svátcích - malá varianta jde čistě u nás** (nový blok `B62`, S).
+Potlačení už v kódu je, jen míří na jiné sloupce: `ZarazeniSpoje` čte per-linkový seznam „značky
+nevypisovat" a nuluje jím **jen školní / prázdninové** sloupce, víkendové nastaví bez jakékoli
+kontroly. Přepínač sestavy může ten **týž seznam**, který klient pro školní sloupce vyplňuje, použít
+i na víkend. Default vypnuto - v režimech bez prázdninového dělení by se ten seznam začal poprvé
+čítat, tedy chování závislé na datech zadaných k jinému účelu.
+⚠️ **Číslo negativní značky je per linka, ne firemní číselník**, takže seznam značek **nemůže** být
+parametrem šablony s vypsanými čísly - jediná cesta u nás je „použij ten, co už existuje". Vlastní
+seznam per sloupec proto zůstává práce kolegů.
+
+**`TR9` obrácená logika poznámkování - potvrzeno, že my ne.** Rozsah TČ je uložený **per spoj**
+(`^JRL(...,"PATCH","MHDSPNPZN",spojId)` = `od~do`), u značky žádný rozsah není. Klient ho chce vedle
+značky, aby ho nezadával dvacetkrát - to je nové pole a přepsané zadávání. U nás **není co číst**
+a tisková strana se nemění.
+
+**Poučení:** „drží to vstupní strana" jsem u dvou bodů odvodil z textu požadavku, ne z kódu.
+U `TR7` to znamenalo nechat na kolegech něco, co je hotové.
+
+
 ## 2026-08-06 (4) - 🚌 sada TRANSDEV přerovnaná: 5 z 10 hotových, zbytek drží vstupní strana
 
 Průchod celého wishlistu TRANSDEV (10 bodů, SK legislativa + MHD Trenčín) proti kódu.

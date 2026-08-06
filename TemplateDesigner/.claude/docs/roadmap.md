@@ -55,6 +55,7 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí; visí i v mém sběrném #13098. | M | TRANSDEV potvrdí nad výsledkem |
+| **B62** | **Skrýt značené spoje i ve víkendových sloupcích** (TRANSDEV `TR10`, bez vlastního tiketu) - potlačení „značky nevypisovat" už v kódu existuje, ale míří jen na sloupce školní výuka / o prázdninách; víkendové se nastaví bez kontroly. Přepínač sestavy použije **týž per-linkový seznam** i na So/Ne/svátky. Default vypnuto - v režimech bez prázdninového dělení by se ten seznam začal poprvé čítat. Vlastní seznam značek per sloupec už je práce kolegů (nové pole ve Vlastnostech linky). | S | TRANSDEV potvrdí na svých datech |
 | **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období. Mění datový model + chce editor. **Zbytek tiketu po `B29`** - ohlášená chybná značka je opravená 31. 7. (`B29`, archiv), takže část „netiskni značku, kterou už říká nadpis sloupce" je hotová a pro vlastní skupiny se jen musí dodržet i u nich. Pravidlo značek už existuje (`DenniZnacky`). | L | koncept skupin + editor |
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
@@ -65,9 +66,7 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
 | # | Co | Vel. | Co potřebuje |
 |---|---|---|---|
 | B48 | Přepínač „Přestupy (vlak/autobus)" u MHD nefunguje - MHD posílá přestupy jako pozici ve fontu (`w`/`x`), ne jako písmeno, takže je `IsTransferAttr` nepozná a řídí je obecný přepínač „Atributy". Tisknou se správně, jen se ovládají jinak než u AD. Fix = tagovat ATRIBUTY kategorií `prestup` na wire. Měření gate 4. 8. → archiv | M | poptávku od firmy s modulem MHD (dnes DPCB/DPKV) |
-| TR10 | Skrýt spoje o So/Ne/svátcích | S–M | Caché filtr |
 | TR8 | „<1" místo „0" u nulové jízdní doby - premisa nejasná: naše časy jsou kumulativní, 0-segment se tiskne jako opakované číslo, ne „0"; per-segment sloupec TD nemá. Detail → `customer-requirements §TR/8` | ? | potvrzení od TRANSDEV, který sloupec vlastně myslí (legacy „Průběhy"?) |
-| TR7 | Per-písmeno výběr sloupců variant jízdních dob | S–M | jen pokud TRANSDEV potvrdí nad novým chováním (varianty dle trasy+nástupiště s max časy jsou od 27. 7. hotové) |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | Caché-input (Studio JŘ) |
 | TR5 | Definice cíle - střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
 
