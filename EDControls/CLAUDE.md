@@ -69,6 +69,8 @@ ať se okna nové aplikace nemíchají se shellem.
   `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) — pořadí
   a počet polí musí zůstat synchronní.
 - `WindowDimmer` — ztmavení okna, refcount per okno; UI-thread only.
+- `ErrorReporting/` — hlášení chyb na `podpora.m-line.cz` (přímý HTTPS POST, **ne** přes
+  Caché jako usage telemetrie). Vlastní `CLAUDE.md`.
 
 ## Ostatní podsložky
 
