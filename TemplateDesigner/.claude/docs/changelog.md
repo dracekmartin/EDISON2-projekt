@@ -1,5 +1,81 @@
 # Changelog
 
+## 2026-08-07 (3) - ✅ rozhodnutí: skrývání spojů o víkendu pohltí obecné definování sloupců
+
+**Jan 7. 8.:** `TR10` nedělat zvlášť. Až se sloupec bude definovat obecně (seznamem značek nebo
+rozsahem dnů), tenhle případ z toho vypadne sám a dnešní pevné schéma se stane presetem.
+
+⚠️ **Podmínka, bez které pohlcený není:** definice sloupce musí nést i **vyloučení**, ne jen zahrnutí.
+Kolega to formuloval jako „vypisovat spoje, které ty značky mají obsažené" - TRANSDEV ale potřebuje
+opak: spoj podle dat jede a on ho ve víkendovém sloupci nechce. S pouhým zahrnutím by musel označkovat
+všechny spoje, které vidět **chce**, tedy víc práce, ne méně. Platí to i pro rozsah dnů (spoj, který
+v sobotu jede, se do sloupce spočítá a musí ho přebít vyloučení). Dnešní per-linkový seznam
+„nevypisovat spoje se značkou" je přesně ten vylučovací seznam - zpětná kompatibilita zdarma.
+
+**Levná cesta zůstává jako fallback** (dorovnat ten seznam ze 2 slotů na 4 per sloupec), kdyby
+TRANSDEV tlačil dřív, než bude `B39` navržená. `B63` (dočtení „nevypisovat značku ve sloupci") na tom
+nezávisí a platí dál - je to jiná osa a dnes kvůli němu tiskneme značky, které si zákazník vypnul.
+
+
+## 2026-08-07 (2) - 🔗 skrývání spojů a vlastní skupiny dnů jsou jedna věc + nález: nečteme jeden seznam
+
+Jan se zeptal, jestli `TR10` (skrývat spoje o So/Ne/svátcích) souvisí s návrhem kolegy k `B39`.
+**Souvisí, je to tentýž problém** - a při hledání odpovědi vypadl nález na naší straně.
+
+**Starý modul má u linky DVA různé per-sloupcové seznamy** (`JRapiLinPrtMhd1.mac` ř. 37-45), což se
+dosud pletlo do jednoho:
+
+- `MHD_NENZ1_NENZ2` (2 sloty) - **skryje spoj** z pracovních sloupců (mimo prázdniny / o prázdninách).
+  Tohle čteme, je to zdroj dnešního prázdninového dělení.
+- `MHD_NEZNZ123` (**4 sloty, per sloupec**) - minuta se vytiskne, ale **potlačí se u ní značka**;
+  a je-li značka potlačená ve všech sloupcích, kde spoj je, vypadne i z legendy (`noNZ2`, ř. 348).
+  **Tenhle ignorujeme.** → nový blok `B63` (S): na naší vývěsce se tisknou značky, které si zákazník
+  u linky vypnul. Sousední řádky téže rutiny, ze které jsme portovali `ZarazeniSpoje` - vzali jsme
+  37-40 a 41-45 ne. Souvisí s #12964 (stížnost na množství značek).
+
+**Odpověď na Janovu otázku:** „nevypisovat značku" a „nevypisovat spoj" jsou dvě různé potřeby a starý
+modul je **záměrně rozděluje**. V novém obecném řešení musí zůstat oddělené - kdyby splynuly do jednoho
+seznamu, zákazník přestane umět říct „spoj tiskni, jen u něj neopakuj značku, kterou už říká nadpis
+sloupce" (což je přesně to, co jsme řešili v `B29`).
+
+**Návrh kolegy `B39` pohltí `TR10`.** Definovat sloupec buď seznamem značek, nebo rozsahem dnů;
+dnešní pevné schéma se stane presetem a skrývání o víkendu z toho vypadne samo. **`TR10` proto
+nezakládat jako samostatnou featuru.**
+
+⚠️ **Korekce mého včerejšího tvrzení:** napsal jsem, že „číslo negativní značky je per linka, takže
+seznam nemůže být parametrem šablony". **Není to podložené** - rozsah čísel se přiděluje **firemně**
+(`^JRSET("Cis","InPlatODDO")`, symboly `InPlatOzn`), jen význam značky plyne z omezení jednotlivých
+spojů. Jestli „značka 3" znamená na dvou linkách totéž, je otázka datové disciplíny - a rozhoduje,
+kde smí nové per-sloupcové nastavení žít. Otázka na kolegu, ne moje tvrzení. (Zrušení `B62` to
+nemění, ten padl z jiného důvodu.)
+
+⚠️ **Skutečná práce v `B39`** je varianta „rozsah dnů": potřebuje vyhodnocovač **„jede spoj v datu X"**.
+Dnes omezení spoje umíme jen formátovat do textu, ne jimi počítat.
+
+
+## 2026-08-07 (1) - ❌ oprava: blok `B62` zrušen, můj návrh by funkci rozbil
+
+Jan se zeptal, **kdo poptal** „vlastní seznam skrývaných spojů per sloupec", který jsem u `TR10`
+nechal kolegům. **Nikdo** - vymyslel jsem si ho jako omezení svého návrhu a pak to omezení povýšil
+na úkol. Přesně ta poznámka bez poptávky, kterou z roadmapy vyhazujeme.
+
+Kontrola u té otázky odhalila **věcnou chybu v `B62`**. Existující per-linkový seznam „značky
+nevypisovat" (`MHD_NENZ1_NENZ2`) míří na sloupce **„Pracovní dny mimo prázdniny"** a **„Pracovní
+dny o prázdninách"** - tedy dva **pracovní** sloupce (`NacistSkupinyDnu`), ne „školní", jak jsem
+tvrdil. Víkendový je až třetí.
+
+Můj návrh („použij týž seznam i na víkend") by tedy spoj odebral **ze všech sloupců naráz** a nevytiskl
+by se vůbec. Zákazník chce opak: nechat ho v pracovních dnech, schovat jen v So/Ne/svátky.
+**Blok `B62` zrušen** - byl by to regres vydávaný za featuru.
+
+`TR10` je tím celý na kolegích: potřebuje **vlastní seznam značek pro víkendové sloupce** (nové pole
+ve Vlastnostech linky vedle dnešního pro pracovní). Naše část pak bude pár řádků. Je to i to, o co
+zákazník doslova žádal - rozšířit dnešní nastavení na další sloupce, ne postavit něco nového.
+
+**Poučení:** včerejší nález „malá varianta jde u nás" jsem si neověřil až na sloupce, kterých se ten
+seznam týká. Stačilo přečíst `NacistSkupinyDnu` vedle `ZarazeniSpoje` - dva soubory od sebe.
+
+
 ## 2026-08-06 (5) - 🔍 sada TRANSDEV prověřená v kódu: dva body se posunuly
 
 Poctivý průchod tří bodů, o kterých jsem tvrdil, že „drží vstupní strana". **Dva z nich tak nestály.**

@@ -706,7 +706,7 @@ Tabulka je podklad pro #13098:
 | **TR9** poznámkování | **kolegové** | rozsah TČ je uložený **per spoj** (`^JRL(...,"PATCH","MHDSPNPZN",spojId)` = `od~do`), u značky žádný rozsah není. Chtějí ho vedle značky = nové pole + přepsané zadávání. U nás **není co číst** a tisková strana se nemění |
 | **TR8** „<1" | **kolegové + klient** | co je legacy sloupec „Průběhy" (je per-segment?) + screenshot, kde tu „0" vidí. Naše časy jsou kumulativní, „0" u nás nevzniká |
 | **B12** / #7937 | **kolegové** | odsazení per směr - `^JRL` dta7 je jedna hodnota na bod trasy (i legacy), sdílená pro tam i zpět; per-směr chce nové pole + editor |
-| **TR10** skrývání | **zčásti my** | ⬇️ viz níže - malá varianta jde u nás |
+| **TR10** skrývání | **pohlceno `B39`** | rozhodnutí Jan 7. 8. - nedělat zvlášť, vyřeší to obecné definování sloupců. ⬇️ podmínka: sloupec musí umět i vyloučení |
 | **TR7** sloupce jízdních dob | **nikdo, jen ověřit** | ⬇️ viz níže - v návrháři ten problém neexistuje |
 
 **`TR7` - stížnost se návrháře netýká** (ověřeno 6. 8. v kódu). Klient si stěžuje, že „v editore
@@ -719,18 +719,37 @@ tras s rozlišením kolizí (`B1`/`B2`/`T1`). Nestabilní pořadí napříč str
 k vyzkoušení.** Hlubší přání („určit, podle kterých spojů se doby generují") vzniklo jako obklad
 tohoto problému; až po vyzkoušení má smysl se ptát, jestli ještě platí.
 
-**`TR10` - malá varianta jde čistě u nás, plná ne.** Potlačení už v kódu **existuje**, jen míří na
-jiné sloupce: `ZarazeniSpoje` čte per-linkový seznam „značky nevypisovat" (`MHD_NENZ1_NENZ2`)
-a nuluje jím **jen sloupce školní výuka / o prázdninách**; víkendové sloupce se nastaví na 1 bez
-jakékoli kontroly.
-- **Naše varianta (S):** přepínač sestavy „Skrýt značené spoje i ve víkendových sloupcích" - použije
-  **týž seznam**, který klient pro školní sloupce už vyplňuje, i na So/Ne/svátky. Bez kolegů,
-  bez nového datového pole. **Omezení:** nejde mít pro víkend jiné značky než pro školní sloupce,
-  a v režimech bez prázdninového dělení (FTL 0/2) by se ten seznam začal poprvé čítat, což je
-  chování závislé na datech zadaných k jinému účelu - **default vypnuto** a ověřit na jejich datech.
-- **Plná varianta (kolegové):** vlastní seznam značek per sloupec = nové pole ve Vlastnostech linky.
-- ⚠️ **Číslo negativní značky je per linka**, ne firemní číselník - proto ten seznam **nemůže** být
-  parametrem šablony s vypsanými čísly. Jediná cesta u nás je „použij ten, co už existuje".
+**`TR10` - u nás to nejde, a první návrh byl chybný** (opraveno 7. 8.). Potlačení v kódu existuje
+(`ZarazeniSpoje` čte per-linkový seznam „značky nevypisovat", `MHD_NENZ1_NENZ2`), ale míří na sloupce
+**„Pracovní dny mimo prázdniny"** a **„Pracovní dny o prázdninách"** - tedy dva **pracovní** sloupce.
+Víkendový je až třetí (`NacistSkupinyDnu`) a nastaví se na 1 bez jakékoli kontroly.
+
+- ❌ **Zavržený návrh (blok `B62`, zrušen):** „přepínač sestavy použije týž seznam i na víkend."
+  Rozbilo by to funkci, ne dodalo: značka v tom seznamu už dnes spoj odebírá z pracovních sloupců,
+  takže rozšířením na víkend by spoj zmizel **ze všech** a nevytiskl se vůbec.
+- ✅ **ROZHODNUTO 7. 8. (Jan): pohlceno `B39`** - nedělat zvlášť. Obecné definování sloupců (podle
+  značek / rozsahu dnů) tenhle případ pokryje a dnešní pevné schéma se stane presetem.
+  ⚠️ **Podmínka, bez které pohlcené není:** definice sloupce musí nést i **vyloučení**, ne jen
+  zahrnutí. Kolega to formuloval jako „vypisovat spoje, které ty značky mají obsažené"; TRANSDEV
+  ale potřebuje opak - spoj podle dat jede a on ho ve víkendovém sloupci nechce. S pouhým zahrnutím
+  by musel označkovat všechny spoje, které vidět **chce**, tedy víc práce, ne méně. Platí to i pro
+  rozsah dnů: spoj, který v sobotu jede, se do sloupce spočítá a musí ho přebít vyloučení.
+  Dnešní per-linkový seznam „nevypisovat spoje se značkou" je přesně ten vylučovací seznam.
+- 📦 **Odložený fallback** (kdyby TRANSDEV tlačil dřív, než bude `B39` navržená): dorovnat seznam
+  „nevypisovat spoje se značkou" ze **2 slotů na 4 per sloupec** - tvar, který vedle už existuje
+  u `MHD_NEZNZ123`. Kolegové přidají pole, my přečteme sloty 3/4. Pár řádků na obou stranách.
+- ⚠️ **Neplést s `B63`.** Nastavení „nevypisovat **značku** ve sloupci" spoj **neskryje** - minuta se
+  vytiskne, zmizí jen značka u ní. Ve starém modulu je to rozdělené **záměrně po chybě**: zakomentovaný
+  blok (`JRapiLinPrtMhd1.mac` ř. 246-251) ukazuje, že se tím spoj dřív přeskakoval celý a „NETISKLY SE
+  ČASY", takže čas se dnes ukládá vždy a vynechá se jen značka. `B63` tedy `TR10` **nevyřeší**.
+- ⚠️ **Číslo negativní značky:** rozsah čísel se přiděluje **firemně** (`^JRSET("Cis","InPlatODDO")`,
+  symboly `InPlatOzn`), ale význam plyne z omezení jednotlivých spojů - takže není jisté, že „značka 3"
+  znamená na dvou linkách totéž. **Otázka na kolegu**, ne naše tvrzení; rozhoduje, jestli seznam značek
+  smí žít v šabloně, nebo musí zůstat u linky. (Rozsahy dnů jsou na lince nezávislé, ty do šablony patří.)
+  ⚠️ Dřívější tvrzení „je per linka" bylo nepodložené.
+- 🔎 **Nález 7. 8.:** `MHD_NEZNZ123` (4 sloty per sloupec, „nevypisovat značku") **vůbec nečteme** →
+  blok `B63`. Na naší vývěsce se tisknou značky, které si zákazník u linky vypnul. Sousední řádky téže
+  rutiny, ze které jsme portovali `ZarazeniSpoje` (ř. 37-40 vzato, 41-45 ne). Souvisí s #12964.
 
 1. **Časová os cez polnoc** (noční linky 22→5h) nebo aspoň manuální přeuspořádání hodin.
    → ✅ **Už hotové (B3, #9036)**: `TimeAxisMode=Range`, `HODINY_OD=22`/`HODINY_DO=5` → wrap přes půlnoc
