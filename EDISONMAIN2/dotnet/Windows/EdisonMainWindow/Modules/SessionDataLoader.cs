@@ -19,6 +19,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         Dictionary<string, UsageEntry> Usage,
         List<string>? Expansion,
         int? SelectedTab,
+        Dictionary<string, string> ChangelogSnooze,
         int DefaultWindowId);
 
     public interface ISessionDataLoader
@@ -50,25 +51,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             // observované, takže selhání jedné nezůstane jako UnobservedTaskException.
             await Task.WhenAll([access, defaultWindow, preferences, .. trees.Select(t => (Task)t.Task)]);
 
-            var (shortcuts, usage, expansion, selectedTab) = preferences.Result;
+            var (shortcuts, usage, expansion, selectedTab, changelogSnooze) = preferences.Result;
             return new SessionData(
                 access.Result,
                 trees.ToDictionary(t => t.Name, t => t.Task.Result),
-                shortcuts, usage, expansion, selectedTab,
+                shortcuts, usage, expansion, selectedTab, changelogSnooze,
                 defaultWindow.Result);
         }
 
         // Preference jdou sekvenčně v jedné větvi: IUserPrefsService drží sdílenou instanci MLRest
         // z composition rootu, takže jim runner nemá kam podstrčit klon a souběžně by si praly
         // RestStatus. Paralelizace by chtěla aditivní přetížení v EDControls (kandidát na vlnu 4).
-        private static async Task<(List<DesktopShortcutDto>, Dictionary<string, UsageEntry>, List<string>?, int?)>
+        private static async Task<(List<DesktopShortcutDto>, Dictionary<string, UsageEntry>, List<string>?, int?, Dictionary<string, string>)>
             LoadPreferencesAsync(ModulePreferencesService prefs)
         {
             var shortcuts = await prefs.LoadShortcutsAsync();
             var usage = await prefs.LoadUsageAsync();
             var expansion = await prefs.LoadExpansionAsync();
             var selectedTab = await prefs.LoadSelectedTabAsync();
-            return (shortcuts, usage, expansion, selectedTab);
+            var changelogSnooze = await prefs.LoadChangelogSnoozeAsync();
+            return (shortcuts, usage, expansion, selectedTab, changelogSnooze);
         }
     }
 }

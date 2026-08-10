@@ -15,12 +15,14 @@ using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDControls.UserFonts;
 using EDISONMAIN2.MiniApps;
+using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias — class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
 using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
+using ChangelogWnd = EDISONMAIN2.Windows.ChangelogWindow.ChangelogWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -223,13 +225,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Action closeAllWindows,
             MiniAppCatalog miniAppCatalog,
             ModuleShortcutsService? shortcuts = null,
-            IRestCallRunner? restRunner = null)
+            IRestCallRunner? restRunner = null,
+            IChangelogSource? changelogSource = null)
         {
             _switcher = switcher;
             _switchUser = switchUser;
             _prefs = prefs;
             _getActiveModules = getActiveModules;
             _miniAppCatalog = miniAppCatalog;
+            // Null (testy) = novinky vypnuté; produkci dává InfChangelogSource AppBootstrapper.
+            _changelogSource = changelogSource;
             // Sdílená služba zástupců plochy (strom ★ ⇄ dlaždice). Bez ní (testy) VM drží vlastní instanci.
             _shortcuts = shortcuts ?? new ModuleShortcutsService();
 
@@ -355,6 +360,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _services.ActiveLicence = licence;
             // _modulePrefs se vytváří tady (ne v ctoru), aby reflektoval výměnu UserPrefs po switch-user.
             _modulePrefs = new ModulePreferencesService(UserPrefs);
+            // Nová instance per session: resetuje per-session dedup popupů (snooze je per-user × IDFa).
+            _changelogPrompt = _changelogSource is { } src
+                ? new ChangelogPromptService(src, _modulePrefs, ShowChangelogWindow)
+                : null;
 
             using (ActionInProgress())
             {
@@ -378,6 +387,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 FillFilteredTree(tree, data.Trees[name]);
             ApplyPersonalization(data);
             ApplyStartupWindow(data.DefaultWindowId);
+            _changelogPrompt?.SeedSnooze(data.ChangelogSnooze);
         }
 
         /// <summary>
@@ -388,7 +398,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ClearSessionState() => ApplySessionData(new SessionData(
             new AccessTable([], isAllAccess: false),
             _sourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
-            Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, DefaultWindowId: 0));
+            Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
 
         private int _defaultWindowId;
         /// <summary>Id uživatelova výchozího okna (EDISFormEnum) pro aktuální IDFa; 0 = žádný.</summary>
@@ -878,6 +888,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené (3) když nějaké jsou, jinak Hlavní nabídka (0).
         private int DefaultTreeTab() => HasNoFavorites ? 0 : 3;
 
+        private readonly IChangelogSource? _changelogSource;
+        // Auto-popup novinek (infotexty). Žije se session jako _modulePrefs; null = vypnuto (testy).
+        private ChangelogPromptService? _changelogPrompt;
+
         // Per-user × IDFa stav (plocha + používanost). _modulePrefs se re-vytváří v každém rebuildu
         // (UserPrefs se může po switch-user vyměnit); null do prvního initu — bindingy okna jedou dřív
         // než on, takže save cesty musí být null-safe (jinak NRE z TwoWay bindingu záložky).
@@ -1035,9 +1049,25 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (module is not ExecutableModule { ExecutablePath: { Length: > 0 } path } em) return;
 
             RecordUsage(em);
+            // Novinky blokují otevření agendy: modální dialog před launchem, ať změny nezapadnou.
+            if (_changelogPrompt is { } prompt)
+                await prompt.ShowIfNewAsync(path, em.DisplayedName);
+
             // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces — čekáme na jeho okno).
             using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
+        }
+
+        /// <summary>Novinky shellu po loginu (EDISONMAIN.INF - obsah sdílený s legacy shellem).</summary>
+        public Task ShowShellChangelogIfAnyAsync() =>
+            _changelogPrompt?.ShowIfNewAsync("EDISONMAIN", "EDISON") ?? Task.CompletedTask;
+
+        private void ShowChangelogWindow(string title, ChangelogContent content, Action<bool> onClosed)
+        {
+            var wnd = new ChangelogWnd(title, content);
+            // Modální: ShowIfNewAsync se vrátí až po zavření, volající tak čeká s dalším otvíráním.
+            WindowNavigator.ShowDialog(wnd);
+            onClosed(wnd.SnoozeChecked);
         }
 
         // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.

@@ -12,6 +12,7 @@ using EDControls.UserFonts;
 using EDControls.UserPrefs;
 using EDISONMAIN2.LegacyMiniApps;
 using EDISONMAIN2.MiniApps;
+using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
@@ -507,7 +508,8 @@ public class AppBootstrapper
         ]);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
                                                 licence, switcher, () => SwitchUser(services, nav.CloseAll),
-                                                prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog, shortcuts);
+                                                prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog, shortcuts,
+                                                changelogSource: new InfChangelogSource());
         _suppressShellCloseConfirm = viewModel.SuppressCloseConfirm;
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };

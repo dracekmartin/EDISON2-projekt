@@ -140,6 +140,17 @@ Okno `Windows/UserProfileWindow` je EDInputForm (`…EDInputForm.UserProfile`), 
 drží klient, ne schema třída** — `Main.LoadUser/SaveUser` jsou samy MLRest metody, volat je
 ze schematu by kolidovalo na `^||ML`.
 
+## Novinky (changelog agend)
+
+Auto-popup `Windows/ChangelogWindow` zrcadlí legacy infotexty: existence `<KLÍČ>_DIFF.INF`
+vedle binárek = „jsou nové změny". Modální a **blokuje otvírání**: v `OpenModule` funnelu
+před spuštěním agendy, shellový check před `OpenStartupWindowIfAny`; menu
+`LaunchModeless/Dialog` záměrně ne. Max 1× za session per
+INF klíč (kryje i re-focus dedup `ShowLegacyAsync`). Snooze (UserPrefs `ChangelogSnooze`)
+váže SHA-256 hash obsahu `_DIFF`, ne verzi - Caché-only patch nechává stale `_DIFF` na
+disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy
+`EDConversion.Package.ToInformationFile` včetně výjimky NDMAIN (vlastní soubor).
+
 ## Legacy moduly — EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`,

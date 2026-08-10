@@ -81,6 +81,7 @@ public class SessionDataLoaderTests
             ["ModuleUsage"] = """{"100":{"Count":7,"LastUsedUtc":"2026-01-01T00:00:00"}}""",
             ["TreeExpansion"] = """["main:0"]""",
             ["SelectedTab"] = "2",
+            ["ChangelogSnooze"] = """{"AD":"HASH1"}""",
         };
 
         public Task<JsonNode?> LoadAsync(string scope, string key)
@@ -117,6 +118,7 @@ public class SessionDataLoaderTests
         Assert.Equal(7, data.Usage["100"].Count);
         Assert.Equal(["main:0"], data.Expansion);
         Assert.Equal(2, data.SelectedTab);
+        Assert.Equal("HASH1", data.ChangelogSnooze["AD"]);
     }
 
     [Fact]
@@ -161,5 +163,6 @@ public class SessionDataLoaderTests
         Assert.Empty(data.Usage);
         Assert.Null(data.Expansion);
         Assert.Null(data.SelectedTab);
+        Assert.Empty(data.ChangelogSnooze);
     }
 }

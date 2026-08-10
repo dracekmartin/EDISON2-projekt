@@ -12,16 +12,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// Per-user × IDFa stav stromu modulů (oblíbené + používanost) přes <see cref="IUserPrefsService"/>.
     /// Schémata blobů a registr scope viz <c>EDControls/DOCS/05-userdata-scopes.md</c> (scope "EDISONMAIN2").
     /// IdFa izolace je automatická — server klíčuje z sys kontextu MLRest, instance se používá per session.
-    /// Load i Save jsou async (nesmí blokovat UI thread — session rebuild jich dělá čtyři);
+    /// Load i Save jsou async (nesmí blokovat UI thread — session rebuild jich dělá pět);
     /// chyby se logují a degradují na prázdno, persistence nesmí shodit UI.
     /// </summary>
     public class ModulePreferencesService
     {
-        private const string Scope          = "EDISONMAIN2";
-        private const string ShortcutsKey   = "Shortcuts";
-        private const string UsageKey       = "ModuleUsage";
-        private const string ExpansionKey   = "TreeExpansion";
-        private const string SelectedTabKey = "SelectedTab";
+        private const string Scope             = "EDISONMAIN2";
+        private const string ShortcutsKey      = "Shortcuts";
+        private const string UsageKey          = "ModuleUsage";
+        private const string ExpansionKey      = "TreeExpansion";
+        private const string SelectedTabKey    = "SelectedTab";
+        private const string ChangelogSnoozeKey = "ChangelogSnooze";
 
         private readonly IUserPrefsService _prefs;
 
@@ -49,6 +50,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         public Task SaveExpansionAsync(IEnumerable<string> expandedKeys) =>
             SaveBlobAsync(ExpansionKey, expandedKeys.ToList());
+
+        /// <summary>Odložené novinky: klíč INF souboru ("AD", "EDISONMAIN") → hash odloženého change-setu.</summary>
+        public async Task<Dictionary<string, string>> LoadChangelogSnoozeAsync() =>
+            await LoadBlobAsync<Dictionary<string, string>>(ChangelogSnoozeKey) ?? [];
+
+        public Task SaveChangelogSnoozeAsync(IReadOnlyDictionary<string, string> snooze) =>
+            SaveBlobAsync(ChangelogSnoozeKey, snooze);
 
         /// <summary>Index naposledy otevřené záložky stromu, nebo <c>null</c> když nebylo uloženo.</summary>
         public async Task<int?> LoadSelectedTabAsync()

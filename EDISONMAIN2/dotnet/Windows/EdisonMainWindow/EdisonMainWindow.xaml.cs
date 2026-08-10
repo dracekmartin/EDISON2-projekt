@@ -87,6 +87,8 @@ namespace EDISONMAIN2
                 vm.PopupDisplayer.Error(ex);
                 return;
             }
+            // Novinky shellu před výchozím oknem - modální, otevírání pokračuje až po zavření.
+            await vm.ShowShellChangelogIfAnyAsync();
             vm.OpenStartupWindowIfAny();
         }
 
