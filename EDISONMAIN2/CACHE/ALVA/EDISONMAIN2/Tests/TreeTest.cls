@@ -128,8 +128,9 @@ Method TestFamilyRecordsHaveSixFieldsAllTrees()
 	}
 }
 
-/// EXE záznamy musí mít 10 polí dle wire-format kontraktu.
-Method TestExeRecordsHaveTenFields()
+/// EXE záznamy musí mít 11 polí dle wire-format kontraktu (i když volání AddExe dlouhý
+/// název neuvádí — default parametru ho doplní, aby byl řádek uniformní).
+Method TestExeRecordsHaveElevenFields()
 {
 	do ..SetupSys(.sys)
 	set ^||ML("IN","tree") = "main"
@@ -143,8 +144,30 @@ Method TestExeRecordsHaveTenFields()
 		set record = ^||ML("OUT", i)
 		if ($listget(record, 1) '= "EXE") { continue }
 		set fieldCount = $listlength(record)
-		do $$$AssertEquals(fieldCount, 10, "EXE record #"_i_" has "_fieldCount_" fields, expected 10")
+		do $$$AssertEquals(fieldCount, 11, "EXE record #"_i_" has "_fieldCount_" fields, expected 11")
 	}
+}
+
+/// Dlouhý název (legacy nameEx) musí přežít regeneraci z XML — bez něj by plocha i menu
+/// spuštěných modulů tiše spadly na krátký název. Pin na "Fakturace" ze zpracování AD.
+Method TestLongNameSurvivesGeneration()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "main"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	set i = "", withLongName = 0, found = 0
+	for {
+		set i = $order(^||ML("OUT", i))
+		quit:i=""
+		continue:i'?1.N
+		set record = ^||ML("OUT", i)
+		if ($listget(record, 1) '= "EXE") { continue }
+		if ($listget(record, 11) '= "") { set withLongName = withLongName + 1 }
+		if ($listget(record, 11) = "Fakturace - zpracování AD") { set found = 1 }
+	}
+	do $$$AssertNotTrue((withLongName = 0), "Main strom musí mít EXE s neprázdným dlouhým názvem (pole 11)")
+	do $$$AssertTrue(found, "Fakturace ze zpracování AD musí mít dlouhý název ""Fakturace - zpracování AD""")
 }
 
 /// Wire hodnoty (ne jen počet polí): AddExe/AddFamily mapuje %Boolean → "1"/"0" string,

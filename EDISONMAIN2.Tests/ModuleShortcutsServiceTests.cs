@@ -150,6 +150,59 @@ public class ModuleShortcutsServiceTests
         Assert.Equal(["200"], svc.Items.Select(i => i.ElementId));
     }
 
+    // Dlaždice nemá kontext stromu → text = dlouhý název, cesta agendou jde do ToolTipu.
+    [Fact]
+    public void Seed_TileShowsLongName_AndTreePathForToolTip()
+    {
+        var a = new ExecutableModule {
+            DisplayedName = "Nastavení", ElementId = "100", ExecutablePath = "VOZ.exe",
+            FormName = "f", LongName = "Nastavení vozidel"
+        };
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([a], [Menu("100")], _ => "Vozidla › Číselníky › Nastavení");
+
+        var tile = Assert.Single(svc.Items);
+        Assert.Equal("Nastavení", tile.DisplayedName);
+        Assert.Equal("Nastavení vozidel", tile.DisplayedLongName);
+        Assert.Equal("Vozidla › Číselníky › Nastavení", tile.TreePath);
+    }
+
+    [Fact]
+    public void Seed_ModuleWithoutLongName_TileFallsBackToShortName()
+    {
+        var a = Exe("100", "Objednávky");
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([a], [Menu("100")], _ => "Autobusová doprava › Objednávky");
+
+        Assert.Equal("Objednávky", Assert.Single(svc.Items).DisplayedLongName);
+    }
+
+    // Bez znalosti cesty (položka mimo strom) by prázdný ToolTip byl jen prázdný rámeček.
+    [Fact]
+    public void Seed_WithoutPathProvider_ToolTipFallsBackToName()
+    {
+        var a = Exe("100", "Objednávky");
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([a], [Menu("100")]);
+
+        Assert.Equal("Objednávky", Assert.Single(svc.Items).TreePath);
+    }
+
+    [Fact]
+    public void Add_UsesPathProviderFromLastSeed()
+    {
+        var a = Exe("100", "Objednávky");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a], [], _ => "Autobusová doprava › Objednávky");
+
+        svc.Add(a);
+
+        Assert.Equal("Autobusová doprava › Objednávky", Assert.Single(svc.Items).TreePath);
+    }
+
     [Fact]
     public void Add_IsIdempotent_AndSetsFlag()
     {

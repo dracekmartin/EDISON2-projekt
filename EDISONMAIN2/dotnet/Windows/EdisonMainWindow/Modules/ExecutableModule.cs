@@ -6,6 +6,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     {
         public string DisplayedName { get; init; } = "";
 
+        /// <summary>
+        /// Disambiguovaný název (legacy `nameEx`) - krátký název je ve stromu nejednoznačný
+        /// (dvoje „Zaměstnanci", troje „Události"). <c>""</c> = legacy data ho nemají.
+        /// Ke zobrazení používej <see cref="DisplayedLongName"/>.
+        /// </summary>
+        public string LongName { get; init; } = "";
+
+        /// <summary>Dlouhý název pro plochu a menu spuštěných modulů; fallback krátký název.</summary>
+        public string DisplayedLongName => LongName.Length > 0 ? LongName : DisplayedName;
+
         public string ExecutablePath { get; init; } = "";
 
         public string FormName { get; init; } = "";

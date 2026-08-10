@@ -52,6 +52,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         public string DisplayedName { get; init; } = "";
 
+        /// <summary>
+        /// Text dlaždice - dlouhý název modulu (legacy `nameEx`), fallback <see cref="DisplayedName"/>.
+        /// Na ploše chybí kontext stromu, takže krátký název sám je nejednoznačný.
+        /// Odvozené ze stromu, nepersistuje se.
+        /// </summary>
+        public string DisplayedLongName { get; init; } = "";
+
+        /// <summary>
+        /// Cesta agendou do ToolTipu dlaždice. U položek, které strom nezná (sestavy, pohledy DS),
+        /// padá na <see cref="DisplayedLongName"/> - prázdný ToolTip by byl jen prázdný rámeček.
+        /// Odvozené ze stromu, nepersistuje se.
+        /// </summary>
+        public string TreePath { get; init; } = "";
+
         public string ExecutablePath { get; init; } = "";
 
         public string FormName { get; init; } = "";
@@ -91,12 +105,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>Zástupce modulu hlavní nabídky (přidání přes ★ nebo tažením ze stromu).</summary>
-        public static DesktopShortcut ForModule(ExecutableModule module) => new()
+        public static DesktopShortcut ForModule(ExecutableModule module, string treePath = "") => new()
         {
             Kind = ShortcutKind.MenuModule,
             Id = module.ElementId,
             ElementId = module.ElementId,
             DisplayedName = module.DisplayedName,
+            DisplayedLongName = module.DisplayedLongName,
+            TreePath = treePath.Length > 0 ? treePath : module.DisplayedLongName,
             ExecutablePath = module.ExecutablePath,
             FormName = module.FormName,
             InputParam = module.InputParam,

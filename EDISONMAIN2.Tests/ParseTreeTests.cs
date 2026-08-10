@@ -105,6 +105,51 @@ public class ParseTreeTests
         Assert.False(mod.IsLicensed);
     }
 
+    // Dlouhý název (legacy nameEx) je 11. pole; nemá ho většina modulů → fallback na krátký.
+    [Fact]
+    public void ParseTree_ReadsLongName()
+    {
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Fakturace", "FAKTURACEEX.exe", "ALVA.FAKTURACEEX.formMain",
+                              "108016", "1", "AD", "0", "", "0", "Fakturace - zpracování AD");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("Fakturace - zpracování AD", mod.LongName);
+        Assert.Equal("Fakturace - zpracování AD", mod.DisplayedLongName);
+        Assert.Equal("Fakturace", mod.DisplayedName);
+    }
+
+    [Fact]
+    public void ParseTree_EmptyLongName_DisplayedLongNameFallsBackToShortName()
+    {
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Objednávky", "ADOBJEDNAVKY.exe", "ALVA.ADOBJEDNAVKY.formList",
+                              "31001", "1", "", "0", "", "0", "");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("", mod.LongName);
+        Assert.Equal("Objednávky", mod.DisplayedLongName);
+    }
+
+    // Řádek bez 11. pole (starší server) nesmí shodit parser.
+    [Fact]
+    public void ParseTree_TenFieldRow_HasNoLongName()
+    {
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Turnusy", "ADTURNUSY.exe", "ALVA.ADTURNUSY.formList",
+                              "30001", "1", "", "0", "", "0");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("", mod.LongName);
+        Assert.Equal("Turnusy", mod.DisplayedLongName);
+    }
+
     [Fact]
     public void ParseTree_FamilyWithChildren()
     {
