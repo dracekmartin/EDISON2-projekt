@@ -8,9 +8,11 @@
 
 > **Stav k 2026-08-10.**
 >
-> **▶ Další krok: proklik `B39` etapy 1** (vlastní sloupce vývěsky - dny + značky). Implementace
-> hotová 10. 8. se zelenými branami vč. živé parity presetů, **nezacommitovaná** - klikací cesty
-> v changelogu 2026-08-10 (10) a žurnálu. Etapa 2 (období) čeká na business odpovědi kolegy.
+> **▶ Další krok: `B39` etapa 2 - období.** Etapa 1 (dny + značky) je po prokliku Jana a review
+> **commitnutá 10. 8.** (`41066e8`). Vstupní kontext etapy 2 drží řádek B39 níže + changelog
+> 2026-08-10 (11): sémantika datových poznámek k odkývání, funkce od kolegy
+> `ALVA.ISY.ISYLinky.API.LinkyStatistika` (metoda „jede"; legacy `$$mkStaLin^JRapi` - přecházet
+> na novou) a požadavky zákazníka (víc rozsahů na sloupec, auto-potlačení značky).
 > Velké alternativy: **Fáze B** (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít
 > vcelku) nebo linkový JŘ (**B10** + **B13**) jako dedikovaný slot.
 >
@@ -56,7 +58,7 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B39** | **#13045b vlastní sloupce vývěsky** - místo čtyř pevných rozvržení si uživatel definuje sloupce mřížky odjezdů v šabloně (rozhodnutí changelog 2026-08-10 (9)). **Etapa 1 (dny + značky) implementovaná 10. 8.** - changelog (10); brány zelené vč. živé parity presetů, **čeká na proklik Jana a commit** (klikací cesty v žurnálu). Pohlcuje `TR10`. **Etapa 2 (blokovaná): období** - zbývá odkývat sémantiku datových poznámek („jede jen" protíná / „nejede" vyřazuje jen při pokrytí celého období / „jede+jede také" nikdy nevyřazují / sudé-liché zařadit); `k@`/`L@` vyřešeno 10. 8. (legacy, neřešit). 💡 Nově: vyhodnocovač „kdy spoj skutečně jede" existuje (`ALVA.ISY.ISYLinky.API.LinkyStatistika`, přecházet na ni z `$$mkStaLin^JRapi`) → varianta (b) zlevňuje; před návrhem prověřit signaturu. Požadavky zákazníka na období (changelog (11)): víc rozsahů na sloupec + auto-potlačení značky, když se omezení spoje kryje s obdobím celé. Jen AD, MHD se nemění. | L | Etapa 1: proklik UI (dialog, vzory, badge, undo) → commit. Etapa 2: business odpovědi → implementace období |
+| **B39** | **#13045b vlastní sloupce vývěsky - zbývá etapa 2: období.** Etapa 1 (dny + značky) hotová a commitnutá 10. 8. (`41066e8`, changelog (10) + zapracovaná review; rozhodnutí (9)); pohltila `TR10`. **Jak navázat na etapu 2:** (a) odkývat u kolegy sémantiku datových poznámek - „jede jen" = protíná se s obdobím; „nejede" vyřazuje jen při pokrytí celého období; „jede"/„jede také" nikdy nevyřazují; sudé/liché týdny → zařadit a nechat na uživateli (`k@`/`L@` vyřešeno: legacy, zahazovat dál); (b) prověřit funkci od kolegy **`ALVA.ISY.ISYLinky.API.LinkyStatistika`** (metoda „jede" - spočítá, kdy spoj skutečně jede; legacy ekvivalent `$$mkStaLin^JRapi`, přecházet na novou) - signatura, návrat, výkon v tiskové cestě → může povýšit období z porovnávání rozsahů na skutečné „spoj v období jede" i splnit zákazníkovo **auto-potlačení značky**, když se omezení kryje s obdobím celé; (c) požadavky zákazníka (changelog (11)): **víc rozsahů dat na sloupec** („14.2.-18.2., 1.7.-31.8., …", dny školního vyučování). Editor rozšířit o podmínku „Období" (aditivní klíč `obdobi` ve wire definici); dluh: sjednotit zdroj presetů C# ↔ ObjectScript zrcadlo v paritním testu. Jen AD, MHD se nemění. | L | Etapa 2: pravidla odkývaná kolegou + LinkyStatistika prověřená → sloupec s obdobím dává správné spoje na živých datech |
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
