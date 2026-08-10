@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-10 (7) - Porovnání odtisků kreslení proti baseline je opt-in
+
+Test `Odtisky_SouhlasiSBaseline` padal kolegovi na sadě, i když byl kód v pořádku. Baseline odtisků
+je vázaná na stroj (nemáme zabalené textové fonty, text kreslí Arial z OS), takže **není v gitu** -
+ale test si ji při prvním běhu sejmul komukoli do `%TEMP%` a po **první zamýšlené** změně kreslení
+začal hlásit „kreslení se rozešlo". Hláška přitom o ničem reálném nevypovídala a nešlo z ní poznat,
+že jde o zastaralý soubor v tempu.
+
+Porovnání se teď provede jen s `TD_RENDER_BASELINE=1` - bez proměnné se test souboru vůbec nedotkne.
+Nástroj tím zůstává použitelný pro refaktory kreslicí cesty (`B13`), ale nemůže nikomu padnout.
+Ověřeno obojí: bez proměnné projde i nad úmyslně rozbitou baseline, s proměnnou nad ní padne.
+Zbylé čtyři odtiskové testy (determinismus + citlivost na 0,1 mm a 0,5 pt) jsou na stroji nezávislé
+a zůstávají. Harness sám odebrat nelze - `RenderSnapshot` a fixtury používají další tři testy.
+
 ## 2026-08-10 (6) - ✅ `B63`: značky, které si zákazník u linky vypnul, se přestaly tisknout
 
 Vývěska teď respektuje per-linkový seznam **„nevypisovat značku ve sloupci"** (`MHD_NEZNZ123`,

@@ -14,8 +14,9 @@ namespace TemplateDesigner.Tests.Rendering;
 ///
 /// ⚠️ **Odtisk je vázaný na stroj** - projekt nemá zabalené textové fonty (jen symbolové
 /// `TimeTable2`), takže text rasterizuje Arial z OS. Baseline hodnoty proto **nepatří do gitu**
-/// (kolegovi by padal pre-push); porovnávej vždy jen před/po na tomtéž stroji, nejlépe přes
-/// soubor mimo repozitář. Committed test níže hlídá jen determinismus samotného harnessu.
+/// (kolegovi by padal pre-push); porovnávej vždy jen před/po na tomtéž stroji, přes soubor mimo
+/// repozitář a **zapnutím `TD_RENDER_BASELINE=1`** (jinak porovnání neběží - viz
+/// <c>ElementRenderSnapshotTests</c>). Testy v gitu hlídají jen determinismus a citlivost harnessu.
 /// </summary>
 internal static class RenderSnapshot
 {

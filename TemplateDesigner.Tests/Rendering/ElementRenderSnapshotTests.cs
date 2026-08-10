@@ -5,15 +5,19 @@ namespace TemplateDesigner.Tests.Rendering;
 
 /// <summary>
 /// Odtisky kreslení pěti tabulkových elementů - **migrační důkaz** pro refaktory kreslicí cesty
-/// (row-plan vrstva / R1 extrakce). Použití:
+/// (row-plan vrstva / R1 extrakce). Porovnání proti baseline se **zapíná na vyžádání**
+/// (<c>TD_RENDER_BASELINE=1</c>) - bez proměnné se souboru vůbec nedotkne. Použití:
 ///
-/// 1. Před zásahem: <c>dotnet test --filter ElementRenderSnapshotTests</c> → zapíše odtisky do
-///    souboru mimo repozitář (cesta v <see cref="BaselinePath"/>, vypsaná i v hlášce testu).
-/// 2. Po zásahu: spustit znovu - test porovná proti tomu souboru a řekne, který element se rozešel.
-/// 3. Po dokončení refaktoru soubor smazat (nebo přepsat novým baseline, pokud je změna zamýšlená).
+/// 1. Před zásahem: <c>TD_RENDER_BASELINE=1 dotnet test --filter ElementRenderSnapshotTests</c> →
+///    zapíše odtisky do souboru mimo repozitář (cesta v <see cref="BaselinePath"/>, vypsaná
+///    i v hlášce testu).
+/// 2. Po zásahu: spustit znovu se stejnou proměnnou - test porovná a řekne, který element se rozešel.
+/// 3. Po dokončení refaktoru soubor smazat (nebo přesnímat, pokud je změna zamýšlená).
 ///
 /// ⚠️ Odtisky jsou **vázané na stroj** (projekt nemá zabalené textové fonty → text kreslí Arial
-/// z OS), proto baseline **není v gitu** a test **neselže, když soubor chybí** - jen ho vytvoří.
+/// z OS), proto baseline **není v gitu**. A proto je porovnání opt-in: dřív se baseline sejmula
+/// při prvním běhu komukoli a **po první zamýšlené změně kreslení mu začala padat** hláškou
+/// „kreslení se rozešlo", která o ničem reálném nevypovídala (potkalo kolegu 10. 8.).
 /// Trvalou pixelovou regresní sadu by šlo mít až se zabalenými textovými fonty.
 ///
 /// ⚠️ **Odtisk nepokrývá fallback větve.** Fixtury mají styly nastavené natvrdo
@@ -106,10 +110,15 @@ public class ElementRenderSnapshotTests
     }
 
     /// <summary>Porovnání proti baseline souboru mimo repozitář (viz dokumentace třídy).
-    /// Chybí-li soubor, test ho vytvoří a projde - první běh = sejmutí baseline.</summary>
+    /// Bez <c>TD_RENDER_BASELINE=1</c> se neprovede vůbec; se zapnutou proměnnou platí:
+    /// chybí-li soubor, test ho vytvoří a projde - první běh = sejmutí baseline.</summary>
     [Fact]
     public void Odtisky_SouhlasiSBaseline()
     {
+        // Opt-in: mimo probíhající refaktor kreslicí cesty nemá porovnání co dokazovat a jen by
+        // padalo na baseline sejmuté k dřívějšímu stavu kreslení.
+        if (Environment.GetEnvironmentVariable("TD_RENDER_BASELINE") != "1") return;
+
         var current = CaptureAll();
         var text = string.Join("\n", current.Select(x => $"{x.Label} = {x.Hash}"));
 
