@@ -41,7 +41,19 @@ stejné minutě (jsou ~130 m od sebe).
 kde spoj nestaví) se bez filtru počítá jako čas 0 a sonda hlásí falešné nulové úseky - první verze
 jich takhle našla 16, všechny neplatné.
 
-Seedy: uživatelská příručka (Tabulka zastávek) + Novinky.
+**Doplněno 10. 8. po vizuální kontrole (Jan):** samotné „<1" odsadí svou číslici doprava a zarovnání
+sloupce vpravo to řeší jen zdánlivě (jednociferné časy pak odskočí místo dvouciferných). Prvek proto
+**odsadí ostatní čísla o šířku znaku „<"** (měřeno z reálného fontu), takže číslice stojí ve svislici
+a „<" z ní vystupuje doleva; přepínač **„Zarovnat číslice pod sebe"** (výchozí zapnuto) to umí vrátit.
+Odsazuje se jen při zarovnání vlevo a jen ve sloupci, kde „<1" reálně je.
+
+**Vedlejší nález opravený tímtéž (Jan): zarovnání sloupce „Čas" se nepropisovalo na varianty tras.**
+`ExpandTravelTimeColumns` vytvářel variantní sloupce od nuly, takže u linky s víc variantami se
+uživatelovo zarovnání tiše zahodilo. Nově se dědí. ⚠️ **Per-sloupcový styl (font, barvy, okraje) se
+pořád nededí** - je to týž vzorec, ale jeho oprava mění vzhled zákazníkům, kteří styl na „Čase"
+nastavený mají, takže zvlášť a s vědomím Jana.
+
+**Seedy:** uživatelská příručka (Tabulka zastávek) + Novinky.
 
 ---
 

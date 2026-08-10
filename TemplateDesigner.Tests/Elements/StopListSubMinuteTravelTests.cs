@@ -138,6 +138,92 @@ public class StopListSubMinuteTravelTests
         Assert.Equal("<1", el.GetCellText(trasa[2], $"{StopFields.TravelTimeVariantPrefix}0"));
     }
 
+    // ── Zarovnání číslic (zavěšení „<") ───────────────────────────────────────
+
+    private static float Odsazeni(StopListElement el, List<ZastavkaData> trasa, int radek)
+    {
+        var sloupce = Casy();
+        el.PrepareSubMinuteCells(trasa, false, sloupce);
+        return el.ResolveCellStyle(sloupce[0], trasa[radek], isCurrent: false, isPassed: false).PaddingLeft;
+    }
+
+    /// <summary>Ostatní čísla se odsadí o šířku „&lt;", aby jejich číslice zůstaly ve svislici
+    /// s číslicí v „&lt;1". Samo „&lt;1" se neodsazuje - právě ono ten znak vlevo vystrkuje.</summary>
+    [Fact]
+    public void Zapnuto_CislaSeOdsadi_SamoZnaceniNe()
+    {
+        var trasa = Trasa();
+        var el = new StopListElement { ShowSubMinuteTravel = true };
+
+        float bezZnacky = Odsazeni(el, trasa, 3);       // „3" - odsazené
+        float seZnackou = Odsazeni(el, trasa, 1);       // „<1" - neodsazené
+        float vychozi = new StopListElement().ResolveCellStyle(Casy()[0], trasa[3], false, false).PaddingLeft;
+
+        Assert.True(bezZnacky > seZnackou, $"číslo mělo být odsazené: {bezZnacky} vs {seZnackou}");
+        Assert.Equal(vychozi, seZnackou, 3);
+        Assert.True(bezZnacky - vychozi > 0.5f, $"odsazení je podezřele malé: {bezZnacky - vychozi} mm");
+    }
+
+    [Fact]
+    public void Vypnuty_Prepinac_NeodsazujeNic()
+    {
+        var trasa = Trasa();
+        var el = new StopListElement { ShowSubMinuteTravel = true, AlignSubMinuteDigits = false };
+
+        Assert.Equal(Odsazeni(el, trasa, 1), Odsazeni(el, trasa, 3), 3);
+    }
+
+    /// <summary>Při zarovnání vpravo se číslice srovnají samy - odsazení by je rozhodilo.</summary>
+    [Fact]
+    public void ZarovnaniVpravo_Neodsazuje()
+    {
+        var trasa = Trasa();
+        var el = new StopListElement { ShowSubMinuteTravel = true };
+        var sloupce = new List<StopColumn>
+            { new() { Key = StopFields.TravelTime, Alignment = TextHorizontalAlignment.Right } };
+        el.PrepareSubMinuteCells(trasa, false, sloupce);
+
+        Assert.Equal(el.ResolveCellStyle(sloupce[0], trasa[1], false, false).PaddingLeft,
+                     el.ResolveCellStyle(sloupce[0], trasa[3], false, false).PaddingLeft, 3);
+    }
+
+    /// <summary>Bez jízdy pod minutu se nemá odsazovat nic - vývěska musí vypadat jako dřív.</summary>
+    [Fact]
+    public void BezNuloveJizdy_NeodsazujeNic()
+    {
+        List<ZastavkaData> trasa =
+        [
+            Stop("Vývěsková", 0, jeAktualni: true),
+            Stop("Za dvě minuty", 2),
+            Stop("Za pět minut", 5),
+        ];
+        var el = new StopListElement { ShowSubMinuteTravel = true };
+        float vychozi = new StopListElement().ResolveCellStyle(Casy()[0], trasa[1], false, false).PaddingLeft;
+
+        Assert.Equal(vychozi, Odsazeni(el, trasa, 1), 3);
+    }
+
+    // ── Variantní sloupce dědí zarovnání ze sloupce „Čas" ─────────────────────
+
+    /// <summary>Rozpad na varianty vytváří sloupce znovu - zarovnání ze „Času" se musí přenést,
+    /// jinak se uživatelovo nastavení u linky s víc variantami tras tiše zahodí.</summary>
+    [Fact]
+    public void VariantniSloupce_DediZarovnaniZeSloupceCas()
+    {
+        List<StopColumn> puvodni =
+        [
+            new() { Key = StopFields.TravelTime, Alignment = TextHorizontalAlignment.Right },
+            new() { Key = StopFields.StopName, Alignment = TextHorizontalAlignment.Left },
+        ];
+
+        var rozvinute = StopListElement.ExpandTravelTimeColumns(puvodni, ["A", "B"]);
+
+        var casove = rozvinute.Where(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)).ToList();
+        Assert.Equal(2, casove.Count);
+        Assert.All(casove, c => Assert.Equal(TextHorizontalAlignment.Right, c.Alignment));
+        Assert.Equal(TextHorizontalAlignment.Left, rozvinute.Single(c => c.Key == StopFields.StopName).Alignment);
+    }
+
     [Fact]
     public void Klonovani_NeseVolbuDal()
     {

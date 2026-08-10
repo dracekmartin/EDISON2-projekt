@@ -594,6 +594,8 @@ Levý sloupec sestavy - seznam zastávek s časy a atributy.
 - **Přestupy (vlak/autobus)** - zobrazí u zastávky symbol přestupu na vlak („L") / autobus („A"); výchozí vypnuto
 - **Poznámky zastávky** - zobrazí poznámkové značky u zastávky
 - **Jízda pod minutu jako <1** - jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů „<1" místo prázdna; výchozí vypnuto. Zastávka, kterou spoj neobsluhuje, zůstane prázdná
+- **Zarovnat číslice pod sebe** - znak „<" se vysune doleva, aby číslice zůstaly ve svislici s ostatními časy (výchozí zapnuto); vypnuto = „<1" se vypíše jako obyčejný text a jeho číslice odskočí doprava. Platí jen při zarovnání sloupce vlevo - vpravo se číslice srovnají samy
+- **Zarovnání sloupce Čas se dědí na varianty** - když má linka víc variant tras a sloupec se rozpadne na víc časových sloupců, zarovnání nastavené u sloupce „Čas" platí pro všechny
 - **Pozice značek** - Za zastávkou (výchozí) / Před zastávkou
 - **Šipka směru + Pozice šipky + Barva šipky + Tučná šipka** - grafická šipka ukazující směr jízdy od aktuální zastávky dál po trase
 - **Záhlaví sloupců** - zap/vyp řádek záhlaví

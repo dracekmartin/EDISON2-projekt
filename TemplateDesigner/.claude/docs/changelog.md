@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-10 (4) - 🎯 „<1" zarovnává číslice; zarovnání sloupce se dědí na varianty tras
+
+Vizuální kontrola `B64` (Jan) našla dvě věci.
+
+**„<1" odsadilo svou číslici doprava.** Zarovnání sloupce vpravo to řeší jen zdánlivě - pak odskočí
+jednociferné časy místo dvouciferných („9" vedle „11"). Prvek proto **odsadí ostatní čísla o šířku
+znaku „<"** (měřeno z reálného fontu, ne odhadem), takže číslice stojí ve svislici a „<" z ní
+vystupuje doleva. Přepínač **„Zarovnat číslice pod sebe"** (výchozí zapnuto, hned pod „<1"
+ve formuláři zastávek) to umí vrátit na obyčejný text.
+
+Odsazuje se **jen při zarovnání vlevo** (vpravo se číslice srovnají samy a odsazení by je rozhodilo)
+a **jen ve sloupci, kde „<1" reálně je** - bez jízdy pod minutu vypadá vývěska jako dřív.
+
+**Zarovnání sloupce „Čas" se nepropisovalo na varianty tras** (nález Jan, opraveno). Rozpad na
+variantní sloupce je vytvářel od nuly, takže u linky s víc variantami se nastavené zarovnání **tiše
+zahodilo** a podsloupce se kreslily vlevo. Nově se dědí. ⚠️ **Per-sloupcový styl (font, barvy,
+vnitřní okraje) se pořád nededí** - stejný vzorec, ale jeho oprava změní vzhled zákazníkům, kteří
+styl na „Čase" nastavený mají; proto zvlášť.
+
+Ověřeno: 13 testů (5 nových), **obě mutace je zabily** (vynechané dědění zarovnání i ignorovaný
+přepínač). Odtisk tří variant vedle sebe rozhodl vizuál. Nasazená třída ověřena voláním `Init` -
+pole 42 `AlignSubMinuteDigits`, default 1. Caché 74/74, .NET 1886.
+
+
 ## 2026-08-10 (3) - ✅ `B64`: krátkou jízdní dobu jde vytisknout jako „<1"
 
 Prvek Tabulka zastávek má volbu **„Jízda pod minutu jako <1"** (výchozí vypnuto). Jede-li se na

@@ -75,6 +75,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// viz <see cref="MarkSubMinuteCells"/>.</summary>
     public bool ShowSubMinuteTravel { get; set; }
 
+    /// <summary>Při „&lt;1" odsadit ostatní čísla o šířku znaku „&lt;", aby číslice zůstaly ve svislici
+    /// a „&lt;" z ní vystupoval doleva. Vypnuto = „&lt;1" se vypíše jako obyčejný text, takže jeho číslice
+    /// odskočí doprava. Platí jen při zarovnání sloupce vlevo (vpravo se číslice srovnají samy).</summary>
+    public bool AlignSubMinuteDigits { get; set; } = true;
+
     /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>
     /// <remarks>Default AfterName = za názvem zastávky (CBDP layout). BeforeName = před názvem (DPKV layout, např. „× Globus").</remarks>
     public StopMarkersSide MarkersPosition { get; set; } = StopMarkersSide.AfterName;
@@ -525,7 +530,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 specs[i] = new ColumnRenderer.CellSpec(
                     widths[col],
                     GetCellText(z, col.Key, isPassed),
-                    ResolveRowStyle(col, isCurrent, isPassed),
+                    ResolveCellStyle(col, z, isCurrent, isPassed),
                     i == stopNameIdx ? nameShrinkReserveMm : CellRenderer.DefaultShrinkReserveMm,
                     i == stopNameIdx ? nameTrailingMm : 0f);
             }
@@ -551,7 +556,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 result[idx++] = new ColumnRenderer.CellSpec(
                     widths[col],
                     GetCellText(z, col.Key, isPassed),
-                    ResolveRowStyle(col, isCurrent, isPassed));
+                    ResolveCellStyle(col, z, isCurrent, isPassed));
             }
         }
         return result;
@@ -830,6 +835,32 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             }
         }
         _subMinuteCells = cells.Count > 0 ? cells : null;
+        _subMinuteColumns = cells.Count > 0 ? [.. cells.Select(c => c.Item2)] : null;
+    }
+
+    /// <summary>Sloupce, ve kterých v tomhle průchodu nějaké „&lt;1" je - jen v nich se odsazují čísla.</summary>
+    [JsonIgnore] private HashSet<string>? _subMinuteColumns;
+
+    /// <summary>Styl buňky datového řádku + **zavěšení „&lt;"**: v časovém sloupci, kde se „&lt;1"
+    /// objevilo, se ostatním číslům přidá vlevo odsazení o šířku znaku „&lt;", takže číslice zůstanou
+    /// ve svislici a „&lt;" z ní vystupuje doleva. Dělá se to jen u zarovnání vlevo - vpravo se
+    /// číslice srovnají samy a odsazení by je rozhodilo.</summary>
+    internal ResolvedTextStyle ResolveCellStyle(StopColumn col, ZastavkaData z, bool isCurrent, bool isPassed)
+    {
+        var style = ResolveRowStyle(col, isCurrent, isPassed);
+        if (!AlignSubMinuteDigits) return style;
+        if (_subMinuteColumns?.Contains(col.Key) != true) return style;
+        if (style.HAlign != TextHorizontalAlignment.Left) return style;
+        if (_subMinuteCells?.Contains((z, col.Key)) == true) return style;   // sama „<1" se neodsazuje
+        return style with { PaddingLeft = style.PaddingLeft + HangWidthMm(style) };
+    }
+
+    /// <summary>Šířka znaku „&lt;" v mm pro daný řez a velikost písma.</summary>
+    private static float HangWidthMm(ResolvedTextStyle style)
+    {
+        using var typeface = GetTypeface(style);
+        using var font = new SKFont(typeface, style.FontSize);   // velikost v pt → míra v pt
+        return font.MeasureText(SubMinuteText.AsSpan(0, 1)) * PtToMm;
     }
 
     /// <summary>Totéž, co dělá <see cref="Render"/> před kreslením řádků - sesbírá viditelné řádky
@@ -869,15 +900,21 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     /// <summary>Rozvine sloupec „CAS_JIZDY" na N variantních sub-sloupců (Key „CAS_JIZDY#i", Header = písmeno,
     /// pevná šířka). Ostatní sloupce beze změny. Volá se jen při >= 2 variantách.</summary>
-    private static List<StopColumn> ExpandTravelTimeColumns(List<StopColumn> cols, List<string> headers)
+    internal static List<StopColumn> ExpandTravelTimeColumns(List<StopColumn> cols, List<string> headers)
     {
         var result = new List<StopColumn>(cols.Count + headers.Count);
         foreach (var col in cols)
         {
             if (col.Key == StopFields.TravelTime)
             {
+                // Zarovnání se dědí ze sloupce „Čas" - je to tentýž údaj rozpadlý na varianty,
+                // takže nastavení na jednovariantní lince nesmí u víc variant tiše zmizet.
                 for (int i = 0; i < headers.Count; i++)
-                    result.Add(new StopColumn { Key = $"{StopFields.TravelTimeVariantPrefix}{i}", Header = headers[i], Width = VariantColumnWidthMm, Visible = true });
+                    result.Add(new StopColumn
+                    {
+                        Key = $"{StopFields.TravelTimeVariantPrefix}{i}", Header = headers[i],
+                        Width = VariantColumnWidthMm, Visible = true, Alignment = col.Alignment,
+                    });
             }
             else result.Add(col);
         }
@@ -1216,6 +1253,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
         new BoolPropertyDescriptor  { Label = "Jízda pod minutu jako <1", Group = "Zastávky", Get = () => ShowSubMinuteTravel, Set = v => ShowSubMinuteTravel = v },
+        new BoolPropertyDescriptor  { Label = "Zarovnat číslice pod sebe", Group = "Zastávky", Get = () => AlignSubMinuteDigits, Set = v => AlignSubMinuteDigits = v },
         new EnumPropertyDescriptor
         {
             Label = "Pozice značek", Group = "Zastávky",
@@ -1345,6 +1383,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ShowTransferAttributes  = ShowTransferAttributes,
             ShowStopNotes           = ShowStopNotes,
             ShowSubMinuteTravel     = ShowSubMinuteTravel,
+            AlignSubMinuteDigits    = AlignSubMinuteDigits,
             MarkersPosition         = MarkersPosition,
             MultiPlatformMode       = MultiPlatformMode,
             CurrentStopUnderline    = CurrentStopUnderline,
