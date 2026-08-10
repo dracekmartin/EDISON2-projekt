@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-10 (3) - ✅ `B64`: krátkou jízdní dobu jde vytisknout jako „<1"
+
+Prvek Tabulka zastávek má volbu **„Jízda pod minutu jako <1"** (výchozí vypnuto). Jede-li se na
+následující zastávku pod minutu, vypíše se ve sloupci časů „<1" místo prázdna. TRANSDEV `TR8`.
+
+**Netriviální část je rozlišení „jízda pod minutu" od „chybí údaj"** - obojí je v datech nula.
+Časy jsou kumulativní od vývěskové zastávky, takže nula pro *jízdu* může být jen v souvislém běhu
+hned za ní; nula za prvním nenulovým časem znamená, že tu zastávku reprezentativní spoj neobsluhuje.
+Značí se proto jen ten běh a první reálný čas ho ukončí. Vývěsková zastávka a projeté značku nedostanou.
+Variantní sloupce mají každý vlastní běh, „<" (varianta tu nestaví) běh neovlivní.
+
+Ověřeno 8 testy; **obě mutace implementace je zabily** (záměna `break` za `continue` = 1 pád,
+vynechané přeskočení vývěskové zastávky = 5 pádů). Drift brána pole vidí. Nasazená třída ověřena
+voláním `Init` (server vydává `ShowSubMinuteTravel`, default 0). Caché 74/74, .NET 1881 zelených.
+
+Seedy aktualizované: uživatelská příručka a Novinky (obojí připravené k nahrání, ne nahrané).
+
+
 ## 2026-08-10 (2) - 🎯 „<1" je naše práce (`B64`), obrácené poznámkování berou kolegové
 
 Dvě z nepokrytých věcí se posunuly, obě po rozhovoru Jana s kolegy.

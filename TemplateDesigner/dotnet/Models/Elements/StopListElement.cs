@@ -68,6 +68,13 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public bool ShowTransferAttributes { get; set; }
     public bool ShowStopNotes { get; set; } = true;
 
+    /// <summary>Jízda kratší než minuta se ve sloupci časů vypíše jako „&lt;1" místo nuly (TRANSDEV,
+    /// praxe části dopravců v SR). Default vyp = dnešní chování (nula se netiskne vůbec).
+    /// Časy jsou kumulativní od vývěskové zastávky, takže nula pro *jízdu* vzniká jen na zastávkách
+    /// hned za vývěskovou; nula za prvním nenulovým časem znamená „chybí údaj", ne jízdu pod minutu -
+    /// viz <see cref="MarkSubMinuteCells"/>.</summary>
+    public bool ShowSubMinuteTravel { get; set; }
+
     /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>
     /// <remarks>Default AfterName = za názvem zastávky (CBDP layout). BeforeName = před názvem (DPKV layout, např. „× Globus").</remarks>
     public StopMarkersSide MarkersPosition { get; set; } = StopMarkersSide.AfterName;
@@ -306,6 +313,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         try
         {
             var visibleRows = hasData ? CollectVisibleRows(zastavky, showPassed) : [];
+            MarkSubMinuteCells(visibleRows, columns);
             int rowsPerPart = RowsPerPart(visibleRows.Count, parts);
             bool currentInPreviousPart = false;
 
@@ -756,12 +764,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         {
             string variant = int.TryParse(columnKey.AsSpan(StopFields.TravelTimeVariantPrefix.Length), out int vi)
                    && vi >= 0 && vi < z.TrasaMin.Count ? z.TrasaMin[vi] : "";
-            return FilterPassedTime(variant, isPassed);
+            return FilterPassedTime(SubMinuteOr(variant, z, columnKey), isPassed);
         }
         return columnKey switch
         {
             StopFields.StopName     => BuildStopDisplayText(z),
-            StopFields.TravelTime   => FilterPassedTime(z.CasJizdy > 0 ? z.CasJizdy.ToString() : "", isPassed),
+            StopFields.TravelTime   => FilterPassedTime(SubMinuteOr(z.CasJizdy > 0 ? z.CasJizdy.ToString() : "", z, columnKey), isPassed),
             // Víc zón u jedné zastávky (hraniční) odděluje čárka - shodně se starým modulem.
             StopFields.Zone         => string.Join(",", z.Zony),
             // Režimy „více hodnot" platí pro ten údaj, který je zvolený jako číslo stanoviště;
@@ -787,6 +795,59 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         MultiPlatformDisplay.All          => dleSpoju.Length > 0 ? dleSpoju.Replace(",", ", ") : zTrasy,
         _                                 => zTrasy,
     };
+
+    private const string SubMinuteText = "<1";
+
+    /// <summary>Buňky, kde nula ve sloupci časů znamená **skutečnou jízdu pod minutu**, ne chybějící
+    /// údaj. Klíč = (řádek, sloupec); prázdné/null = featura vypnutá nebo taková buňka není.</summary>
+    [JsonIgnore] private HashSet<(ZastavkaData, string)>? _subMinuteCells;
+
+    /// <summary>Najde buňky s jízdou pod minutu - jednou per render/měření, protože to jde poznat
+    /// jen z pořadí řádků. Časy jsou kumulativní od vývěskové zastávky, takže nula pro *jízdu* může
+    /// být jen v souvislém běhu hned za ní; **první nenulový čas ten běh ukončí** a každá další nula
+    /// už znamená „tuhle zastávku reprezentativní spoj neobsluhuje" (`CasJizdyZMapy` vrací 0 i pro
+    /// zastávku mimo trasu). Bez toho rozlišení by „&lt;1" vyskočilo tam, kde má být prázdno.</summary>
+    private void MarkSubMinuteCells(List<StopRow> rows, List<StopColumn> columns)
+    {
+        _subMinuteCells = null;
+        if (!ShowSubMinuteTravel) return;
+
+        var cells = new HashSet<(ZastavkaData, string)>();
+        foreach (var col in columns)
+        {
+            if (col.Key != StopFields.TravelTime
+                && !col.Key.StartsWith(StopFields.TravelTimeVariantPrefix, System.StringComparison.Ordinal)) continue;
+
+            bool afterCurrent = false;
+            foreach (var row in rows)
+            {
+                if (row.IsCurrent) { afterCurrent = true; continue; }
+                if (!afterCurrent || row.IsPassed) continue;
+                // „<" / prázdno = varianta tu nestaví; není to čas, takže běh neukončuje ani nezakládá
+                if (!int.TryParse(RawTravelTime(row.Z, col.Key), out int minuty)) continue;
+                if (minuty != 0) break;
+                cells.Add((row.Z, col.Key));
+            }
+        }
+        _subMinuteCells = cells.Count > 0 ? cells : null;
+    }
+
+    /// <summary>Totéž, co dělá <see cref="Render"/> před kreslením řádků - sesbírá viditelné řádky
+    /// a označí buňky s jízdou pod minutu. Existuje, aby to šlo ověřit bez kreslení na canvas.</summary>
+    internal void PrepareSubMinuteCells(List<ZastavkaData> zastavky, bool showPassed, List<StopColumn> columns)
+        => MarkSubMinuteCells(CollectVisibleRows(zastavky, showPassed), columns);
+
+    /// <summary>Hodnota časového sloupce, jak přišla z dat - bez náhrady za „&lt;1".</summary>
+    private static string RawTravelTime(ZastavkaData z, string columnKey)
+    {
+        if (!columnKey.StartsWith(StopFields.TravelTimeVariantPrefix, System.StringComparison.Ordinal))
+            return z.CasJizdy.ToString();
+        return int.TryParse(columnKey.AsSpan(StopFields.TravelTimeVariantPrefix.Length), out int vi)
+               && vi >= 0 && vi < z.TrasaMin.Count ? z.TrasaMin[vi] : "";
+    }
+
+    private string SubMinuteOr(string value, ZastavkaData z, string columnKey)
+        => _subMinuteCells?.Contains((z, columnKey)) == true ? SubMinuteText : value;
 
     /// <summary>Čas jízdy u projeté zastávky podle volby <see cref="PassedStopsTime"/>. Ne-číselnou
     /// hodnotu („&lt;" = projíždí) nechává - není to čas, jen značka.</summary>
@@ -1154,6 +1215,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ]
         },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
+        new BoolPropertyDescriptor  { Label = "Jízda pod minutu jako <1", Group = "Zastávky", Get = () => ShowSubMinuteTravel, Set = v => ShowSubMinuteTravel = v },
         new EnumPropertyDescriptor
         {
             Label = "Pozice značek", Group = "Zastávky",
@@ -1282,6 +1344,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ShowStopAttributes      = ShowStopAttributes,
             ShowTransferAttributes  = ShowTransferAttributes,
             ShowStopNotes           = ShowStopNotes,
+            ShowSubMinuteTravel     = ShowSubMinuteTravel,
             MarkersPosition         = MarkersPosition,
             MultiPlatformMode       = MultiPlatformMode,
             CurrentStopUnderline    = CurrentStopUnderline,

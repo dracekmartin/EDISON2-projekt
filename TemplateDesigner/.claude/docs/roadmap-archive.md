@@ -2,6 +2,33 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-10 ✅ - `B64` „<1" místo „0" u jízdy pod minutu (TRANSDEV `TR8`)
+
+TRANSDEV `TR8`. Prvek Tabulka zastávek dostal volbu **„Jízda pod minutu jako <1"** (výchozí vypnuto):
+jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů „<1" místo prázdna.
+
+**Proč to šlo udělat bez kolegů:** premisu vyjasnil Jan 10. 8. - zákazník musí mít na mysli první úsek,
+protože časy jsou kumulativní od vývěskové zastávky, takže její vlastní řádek je 0 **a hned následující
+zastávka je taky 0**, jede-li se tam pod minutu. Dál v tom sloupci nula pro jízdu nevzniká (součty se
+při nulovém úseku jen zopakují, ověřeno na `CB_CSADAD` 0380520 var. T3: 1→1). Tím padla hypotéza
+o legacy sloupci „Průběhy" i potřeba per-segment sloupce.
+
+**Jak se pozná skutečná jízda pod minutu od chybějícího údaje:** `CasJizdyZMapy` vrací 0 i pro zastávku,
+kterou reprezentativní spoj neobsluhuje. Protože kumulativní časy rostou, taková nula přijde **za**
+prvním nenulovým časem - `MarkSubMinuteCells` proto značí jen souvislý běh nul hned za vývěskovou
+zastávkou a první reálný čas ten běh ukončí. Projeté zastávky a vývěsková sama se nikdy neznačí
+(tam nulová jízda není informace, ale definice). Variantní sloupce mají každý vlastní běh; „<" (varianta
+tu nestaví) není čas, takže běh neukončí ani nezaloží.
+
+Ověřeno: 8 nových testů, **obě mutace implementace testy zabily** (`break`→`continue` = 1 pád,
+vynechané `continue` u vývěskové zastávky = 5 pádů). Drift brána pole vidí (rozdílný default
+v `.cls` a C# ji shodí). Nasazená třída ověřena voláním `Init` - server vydává pole 41
+`ShowSubMinuteTravel`. Caché testy 74/74, .NET 1881.
+
+Seedy: uživatelská příručka (Tabulka zastávek) + Novinky.
+
+---
+
 ## 2026-08-05 ✅ - `B37` pokračující spoje (#13093 bod 3, tiket tím dojetý)
 
 Detail → changelog 2026-08-05 (1). Značka `u1`/`u2`… u odjezdu + vysvětlivka „pokračuje do zast. X

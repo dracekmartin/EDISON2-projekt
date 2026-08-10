@@ -38,6 +38,15 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 10. 8. 2026 - Krátká jízdní doba se dá vytisknout jako „<1"
+
+Časy jízdy se na vývěsce počítají od zastávky, pro kterou se tiskne. Když se na následující zastávku
+jede pod minutu, vycházela nula a ve sloupci nezůstalo nic. Nově se tam dá vytisknout **„<1"**, tedy
+méně než minuta.
+
+Zapíná se u prvku Tabulka zastávek volbou **Jízda pod minutu jako <1** (výchozí vypnuto, takže bez
+zásahu se nic nemění). Zastávka, kterou spoj neobsluhuje, zůstane prázdná i se zapnutou volbou.
+
 ### 5. 8. 2026 - Pokračující spoje
 
 Spoje, které v místě konečné pokračují dál už jako jiný spoj, jde na vývěsce označit: u času odjezdu

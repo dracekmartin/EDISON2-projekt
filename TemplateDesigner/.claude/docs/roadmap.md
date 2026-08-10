@@ -6,15 +6,15 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **Stav k 2026-08-06.**
+> **Stav k 2026-08-10.**
 >
-> **Běžná fronta je prázdná.** Nálezy review 4. 8. (`B52`-`B59`) jsou dojeté, sekce zrušená, změny
-> z 5. 8. proklikané (`review-proklik-checklist.md`) - z proklikání vypadlo zrušení matoucí hlášky
-> ve stavovém řádku a vrácení popisu u výběru agendy. Odložené velké věci **`B18`** a **`B56`**
-> leží v Backlogu, **`B60`** u linkového JŘ.
+> **▶ Další krok: `B63`** (dočtení nastavení „nevypisovat značku ve sloupci") - malé.
+> Velké alternativy: **Fáze B** (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít
+> vcelku) nebo linkový JŘ (**B10** + **B13**) jako dedikovaný slot.
 >
-> **▶ Další krok: Fáze B** (tabulkové elementy) - po nálezu 6. 8. je menší, než vypadala,
-> dá se vzít vcelku. Alternativa je linkový JŘ (**B10** + **B13**) jako dedikovaný slot.
+> **Sada TRANSDEV je celá rozdělená** (10. 8.) - 5 hotových, cíl / obrácené poznámkování / odsazení
+> per směr berou **kolegové** (proto tady nejsou), skrývání spojů o víkendu pohltilo #13045, „<1"
+> je `B64`. Odložené velké věci **`B18`** a **`B56`** leží v Backlogu, **`B60`** u linkového JŘ.
 >
 > **Zákaznická fronta KOVED je dojetá** - `B37` hotová 5. 8., takže **#13093 je celý uzavřený**.
 > Verze v produkci je ze **4. 8.** (body 1, 2, 4), nic z 5. 8. se k zákazníkům ještě nedostalo.
@@ -54,8 +54,6 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí; visí i v mém sběrném #13098. | M | TRANSDEV potvrdí nad výsledkem |
-| **B64** | **„<1" místo „0" u jízdy pod minutu** (TRANSDEV `TR8`, premisa vyjasněná 10. 8.) - doba jízdy se počítá **od vývěskové zastávky**, takže vlastní řádek zastávky je 0 a **hned následující zastávka je taky 0**, když se tam jede pod minutu. To je jediné místo, kde v tom sloupci nula pro *jízdu* vzniká (dál jsou to kumulativní součty, které se opakují) - tedy přesně to, co zákazník vidí. Pravidlo: řádek **jiný než vývěsková zastávka** s nulovou kumulativní dobou → „<1". Parametr sestavy, default vypnuto (praxe SK, ČR nemusí chtít). ⚠️ **Past:** `CasJizdyZMapy` vrací 0 i když zastávka **není na trase** nebo ji spoj projíždí - to je „nemám data", ne nulová jízda; bez rozlišení by „<1" vyskočilo tam, kde nemá být. | S | odtisk s nulovým prvním úsekem + řádek bez dat zůstane prázdný |
 | **B63** | **Nečteme nastavení „nevypisovat značku ve sloupci N"** (nález 7. 8.) - starý modul má u linky **dva různé** per-sloupcové seznamy: `MHD_NENZ1_NENZ2` (2 sloty) skryje **spoj** z pracovních sloupců (to čteme) a `MHD_NEZNZ123` (**4 sloty, per sloupec**) nechá minutu vytisknout, ale **potlačí u ní značku** - a když je značka potlačená ve všech sloupcích, kde spoj je, vypadne i z legendy (`noNZ2^JRapiLinPrtMhd1:348`). Druhý z nich **ignorujeme**, takže na naší vývěsce se značky, které si zákazník vypnul, tisknou dál. Sousední řádky téže rutiny, ze které jsme portovali `ZarazeniSpoje` (ř. 37-40 vzato, 41-45 ne). Přímo souvisí s #12964 (stížnost na množství značek). | S | odtisk linky s nastaveným seznamem = značka zmizí u minut i z legendy |
 | **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období. Mění datový model + chce editor. **Zbytek tiketu po `B29`** - ohlášená chybná značka je opravená 31. 7. (`B29`, archiv), takže část „netiskni značku, kterou už říká nadpis sloupce" je hotová a pro vlastní skupiny se jen musí dodržet i u nich. Pravidlo značek už existuje (`DenniZnacky`). **Návrh kolegy (7. 8.), který tenhle blok mění na obecný:** definovat sloupec v sekci minut buď (a) **seznamem negativních značek** - vypiš spoje, které je mají (tím padnou prázdniny), nebo (b) **rozsahem dnů** - spočítej, které spoje v těch dnech jedou (tím padne vánoční provoz a podobné speciality). Dnešní pevné schéma se tím stane presetem. **Pohltí to `TR10`** (skrývání spojů o So/Ne/svátcích - **rozhodnutí Jan 7. 8.: nedělat zvlášť**), ale **jen když sloupec umí i vyloučení**, ne jen zahrnutí: TRANSDEV má spoj, který podle dat jede, a ve víkendovém sloupci ho nechce - s pouhým „vypisuj spoje s těmito značkami" by musel označkovat všechny, které vidět chce. Dnešní per-linkový seznam „nevypisovat spoje se značkou" = ten vylučovací seznam, dnešní pevné schéma = preset. ⚠️ Varianta (b) potřebuje **vyhodnocovač „jede spoj v datu X"**, který dnes nemáme: omezení spoje umíme jen formátovat do textu (`SestavTextOmezeni`), ne jimi počítat. To je skutečná práce tohoto bloku. ⚠️ Otevřená otázka pro kolegu: **rozsah čísel negativních značek je firemní** (`^JRSET("Cis","InPlatODDO")` + symboly `InPlatOzn`), ale význam značky plyne z omezení jednotlivých spojů - takže není jisté, že „značka 3" znamená na dvou linkách totéž. Na tom stojí, jestli seznam značek smí žít v šabloně, nebo musí zůstat u linky. Rozsahy dnů jsou naopak na lince nezávislé, takže do šablony patří. | L | koncept skupin + editor |
 
@@ -67,7 +65,6 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
 | # | Co | Vel. | Co potřebuje |
 |---|---|---|---|
 | B48 | Přepínač „Přestupy (vlak/autobus)" u MHD nefunguje - MHD posílá přestupy jako pozici ve fontu (`w`/`x`), ne jako písmeno, takže je `IsTransferAttr` nepozná a řídí je obecný přepínač „Atributy". Tisknou se správně, jen se ovládají jinak než u AD. Fix = tagovat ATRIBUTY kategorií `prestup` na wire. Měření gate 4. 8. → archiv | M | poptávku od firmy s modulem MHD (dnes DPCB/DPKV) |
-| TR5 | Definice cíle - střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
 
 *(Follow-upy uzavřených tiketů „na vyžádání zákazníka" → [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)*
 

@@ -42,6 +42,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/autobus)", 0)
         s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Původní JŘ je netiskl."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
+        s f = form.AddBool("ShowSubMinuteTravel", "Jízda pod minutu jako <1", 0)
+        s f.helpText = "Jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů ""<1"" místo prázdna. Zastávka, kterou spoj neobsluhuje, zůstane prázdná."
 
         // ── Stanoviště a varianty tras ────────────────────────────────────
         d form.AddGroup("stopsplatform", "Stanoviště a varianty tras")
