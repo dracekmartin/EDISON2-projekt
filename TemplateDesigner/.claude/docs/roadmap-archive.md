@@ -10,7 +10,7 @@ jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů
 **Proč to šlo udělat bez kolegů:** premisu vyjasnil Jan 10. 8. - zákazník musí mít na mysli první úsek,
 protože časy jsou kumulativní od vývěskové zastávky, takže její vlastní řádek je 0 **a hned následující
 zastávka je taky 0**, jede-li se tam pod minutu. Dál v tom sloupci nula pro jízdu nevzniká (součty se
-při nulovém úseku jen zopakují, vzorek z analýzy 10. 7.: `CB_CSADAD` 0380520 var. T3 mělo 1→1, ⚠️ ta linka už ve firmě není). Tím padla hypotéza
+při nulovém úseku jen zopakují, ověřeno na `CB_CSADAD` **skupina 10**, linka 0380520, trasa 2: zastávky 2→3 ve stejné minutě). Tím padla hypotéza
 o legacy sloupci „Průběhy" i potřeba per-segment sloupce.
 
 **Jak se pozná skutečná jízda pod minutu od chybějícího údaje:** `CasJizdyZMapy` vrací 0 i pro zastávku,
@@ -25,11 +25,21 @@ vynechané `continue` u vývěskové zastávky = 5 pádů). Drift brána pole vi
 v `.cls` a C# ji shodí). Nasazená třída ověřena voláním `Init` - server vydává pole 41
 `ShowSubMinuteTravel`. Caché testy 74/74, .NET 1881.
 
-**Vizuální kontrola: odtiskem, ne na živé lince.** Linka z původní analýzy (`0380520`) už ve firmě
-`CB_CSADAD` není a jediná městská linka, kterou jsem tam prošel (`0365001`, MHD Písek, skupina 1), nemá
-dva sousední body se stejným časem - na dev datech tedy featuru ukázat nejde. Ověřeno proto odtiskem
-prvku nad syntetickými daty: „<1" se do úzkého sloupce časů vejde, vývěskové zastávce zůstane prázdno
-a řádek s chybějícím údajem zůstal prázdný taky.
+**Vizuální kontrola: odtisk + reálná linka.** Odtisk prvku nad syntetickými daty potvrdil, že „<1"
+se do úzkého sloupce časů vejde, vývěskové zastávce zůstane prázdno a řádek s chybějícím údajem
+zůstane prázdný taky.
+
+**Reálné nulové úseky existují ve všech čtyřech dev firmách** (sonda 10. 8., projela `W` trasy linek
+a hledala dvě sousední zastávky se stejným časem): `CB_CSADAD` 8+, `ZL_KOVED` 6+, `CB_GWBUS` 7+,
+`SKNI_MHDNITRA` 6+. Klikací cesta pro KOVED: **skupina 2, linka `0805302`**, vývěska pro
+**Uherské Hradiště, Na Rybníku** směr Mařatice - následující zastávka *Mařatice, dol.konec* je ve
+stejné minutě (jsou ~130 m od sebe).
+
+⚠️ **Dvě pasti, na které sonda narazila** (kdyby se hledalo znovu): linka `0380520` je ve firmě
+`CB_CSADAD` ve **skupině 10**, ne 1 - skupiny nejdou od jedničky po řadě (jsou i 10, 101, 127), takže
+„v skupině 1 to není" neznamená „není to tam". A **`+"|"` je nula**: segment `|` (zastávka na trase,
+kde spoj nestaví) se bez filtru počítá jako čas 0 a sonda hlásí falešné nulové úseky - první verze
+jich takhle našla 16, všechny neplatné.
 
 Seedy: uživatelská příručka (Tabulka zastávek) + Novinky.
 

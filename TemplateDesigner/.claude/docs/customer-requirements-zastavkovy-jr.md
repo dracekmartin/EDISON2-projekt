@@ -801,7 +801,7 @@ Víkendový je až třetí (`NacistSkupinyDnu`) a nastaví se na 1 bez jakékoli
      je **kumulativní od vývěskové zastávky** (`CasJizdyZMapy(fromPoradi = vývěsková, poradi)`), takže
      její vlastní řádek je 0 **a následující zastávka je taky 0**, jede-li se tam pod minutu. Nikde jinde
      v tom sloupci nula pro jízdu nevznikne - dál jsou to kumulativní součty, které se při nulovém úseku
-     jen zopakují (vzorek z analýzy 10. 7.: `CB_CSADAD` 0380520 var. T3 mělo 1→1, ⚠️ ta linka už ve firmě není). Tím padá dřívější hypotéza o legacy
+     jen zopakují (ověřeno na `CB_CSADAD` **skupina 10**, linka 0380520, trasa 2: zastávky 2→3 ve stejné minutě). Tím padá dřívější hypotéza o legacy
      sloupci „Průběhy" i potřeba per-segment sloupce; **kolegy k tomu nepotřebujeme**.
    - **Pravidlo:** řádek **jiný než vývěskové zastávky** s nulovou kumulativní dobou → „<1". Vlastní
      řádek vývěskové zastávky zůstává 0 (stojím tam, nulová jízda je definice, ne informace).
