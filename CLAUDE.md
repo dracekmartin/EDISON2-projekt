@@ -130,7 +130,7 @@ Referenční implementace: `EDISONMAIN2/dotnet/Startup/App.xaml(.cs)`.
 - **Per-machine JSON** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`),
   přístup přes injektovaný `ILocalPrefs` (composition root `AppBootstrapper`). Ukládá
   `LastIdfa`, `LastLoginName`, `RememberedPassword` (DPAPI blob - předvyplní se jen
-  když jméno v blobu == `LastLoginName`), `TryWindowsAutoLogin`, `MiniAppLayouts`,
+  když jméno v blobu == `LastLoginName`), `MiniAppLayouts`,
   `ShowWindowsAsDialogs` (zatím no-op). Nové preference = nullable property; chybějící
   klíče zůstanou null (kompatibilní upgrade).
 - **Per-user × IDFa (Caché)** - stav oken automaticky přes `EDViewModel` /

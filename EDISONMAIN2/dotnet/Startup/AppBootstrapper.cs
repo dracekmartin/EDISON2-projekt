@@ -90,7 +90,7 @@ public class AppBootstrapper
 
         var prep = PrepareLogin(prefs);
 
-        // Auto-login (Windows SSO) má přednost; když není zapnutý / neprojde, fallback na dialog.
+        // Auto-login (Windows SSO) má přednost; když neprojde, fallback na dialog.
         if (!TryAutoLogin(prep.LoginRest, prefs, out var login) && !TryLogin(prep.LoginRest, prefs, out login))
         {
             Shutdown();
@@ -351,15 +351,19 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Windows SSO auto-login (legacy-style): jen když je na stanici zapnutý
-    /// <see cref="ILocalPrefs.TryWindowsAutoLogin"/>, zkusí login na <c>Environment.UserName</c>
-    /// s prázdným heslem — server přihlásí jen LDAP-AUTO uživatele. Neúspěch (jiný mód / nepovoleno)
+    /// Windows SSO auto-login (legacy-style): login na <c>Environment.UserName</c> s prázdným
+    /// heslem - server tak přihlásí jen LDAP-AUTO uživatele. Neúspěch (jiný mód / nepovoleno)
     /// → false → fallback na <see cref="TryLogin"/> dialog. Vrací true = přihlášeno bez dialogu.
     /// </summary>
+    /// <remarks>
+    /// Zkouší se **vždy**, jako ve starém spouštěči. LDAP-AUTO účet jinak nemá jak projít: server
+    /// ho při neprázdném heslu překlopí na plný LDAP bind (`ALVA.SYS.Login:1138`), takže dialogem,
+    /// kde uživatel heslo napíše, se přihlásit nedá. Cena je jeden request na startu i pro účty
+    /// typu EDISON, které tudy neprojdou.
+    /// </remarks>
     protected virtual bool TryAutoLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
     {
         login = null!;
-        if (!prefs.TryWindowsAutoLogin) return false;
         try
         {
             login = Windows.LoginWindow.UserAuthenticator.Login(new MLRestAdapter(loginRest), Environment.UserName, "");
