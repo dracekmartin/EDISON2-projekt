@@ -29,6 +29,11 @@ počtu testů. Když počet testů po přidání testu neroste, není zelená ze
 3. **Spoj, který nesedí do žádného sloupce** (nebo naopak do dvou) - co s ním?
 4. **Svátky** - podle jakého kalendáře, a platí i pro vlastní skupiny?
 5. **Zpětná kompatibilita** - dnešní pevná schémata se musí stát presety, jinak neprojdou zlaté odtisky.
+6. **Kam se přesunou poziční seznamy značek** (doplněno 10. 8. po `B63`): `B63` i `TR10` stojí na
+   per-linkových seznamech, kde **slot N = sloupec N**. To drží jen u dnešních čtyř pevných rozvržení -
+   s vlastními sloupci index přestane být stabilní. Domluva Jan + kolega: **přesunout je do návrháře**,
+   aby si každý sloupec nesl svůj seznam potlačených i vylučovaných značek. Zbývá rozhodnout, co
+   s existující konfigurací u linek (MHD Nitra ji má vyplněnou na každé lince) - záskok, migrace, nebo obojí.
 
 Sloupec potřebuje **tři nezávislé knoflíky**, které se nesmí slít: zahrnutí (kdo do sloupce patří),
 vyloučení (koho vyhodit, i když by patřil - to je `TR10`) a potlačení značky (`B63`, hotové).

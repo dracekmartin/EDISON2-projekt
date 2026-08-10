@@ -24,7 +24,13 @@ odtisky zůstaly netknuté a proto to tak dlouho nikdo nenahlásil. Používá t
 kde je to na každé lince. Souvisí s #12964 (stížnost na množství značek u vsetínské MHD).
 
 Ověřeno: `TestZnackaSkrytaVeSloupci` (9 assertů, mutace bez hranic slova ho shodí), Caché 75/75
-včetně zlatých odtisků, .NET 1885.
+včetně zlatých odtisků, .NET 1885. Koncepčně proklikané (Jan 10. 8.).
+
+🔭 **Bude se to muset předělat s `B39`** (poznámka Jan 10. 8.): tenhle seznam je **poziční** - slot N
+patří sloupci N - což drží jen u dnešních čtyř pevných rozvržení sloupců. S vlastními skupinami dnů
+index sloupce přestane být stabilní. Domluva s kolegou: přesunout nastavení **rovnou do návrháře**,
+aby si každý sloupec nesl svůj seznam. Totéž potká vylučovací seznam u `TR10`. Detail a otevřená
+otázka (co s už vyplněnou konfigurací u linek Nitry) jsou u `B39` v roadmapě.
 
 **Poučení:** test class upravená skriptem se **nenasadí** (hook jede jen po Edit/Write) - runner
 hlásil 74/74 a nový test vůbec neběžel. Chytlo se to jen tím, že jsem si všiml nezměněného počtu.
