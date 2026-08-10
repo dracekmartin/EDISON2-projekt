@@ -10,7 +10,7 @@ jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů
 **Proč to šlo udělat bez kolegů:** premisu vyjasnil Jan 10. 8. - zákazník musí mít na mysli první úsek,
 protože časy jsou kumulativní od vývěskové zastávky, takže její vlastní řádek je 0 **a hned následující
 zastávka je taky 0**, jede-li se tam pod minutu. Dál v tom sloupci nula pro jízdu nevzniká (součty se
-při nulovém úseku jen zopakují, ověřeno na `CB_CSADAD` 0380520 var. T3: 1→1). Tím padla hypotéza
+při nulovém úseku jen zopakují, vzorek z analýzy 10. 7.: `CB_CSADAD` 0380520 var. T3 mělo 1→1, ⚠️ ta linka už ve firmě není). Tím padla hypotéza
 o legacy sloupci „Průběhy" i potřeba per-segment sloupce.
 
 **Jak se pozná skutečná jízda pod minutu od chybějícího údaje:** `CasJizdyZMapy` vrací 0 i pro zastávku,
@@ -24,6 +24,12 @@ Ověřeno: 8 nových testů, **obě mutace implementace testy zabily** (`break`�
 vynechané `continue` u vývěskové zastávky = 5 pádů). Drift brána pole vidí (rozdílný default
 v `.cls` a C# ji shodí). Nasazená třída ověřena voláním `Init` - server vydává pole 41
 `ShowSubMinuteTravel`. Caché testy 74/74, .NET 1881.
+
+**Vizuální kontrola: odtiskem, ne na živé lince.** Linka z původní analýzy (`0380520`) už ve firmě
+`CB_CSADAD` není a jediná městská linka, kterou jsem tam prošel (`0365001`, MHD Písek, skupina 1), nemá
+dva sousední body se stejným časem - na dev datech tedy featuru ukázat nejde. Ověřeno proto odtiskem
+prvku nad syntetickými daty: „<1" se do úzkého sloupce časů vejde, vývěskové zastávce zůstane prázdno
+a řádek s chybějícím údajem zůstal prázdný taky.
 
 Seedy: uživatelská příručka (Tabulka zastávek) + Novinky.
 
