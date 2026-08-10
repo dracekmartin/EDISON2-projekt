@@ -73,7 +73,8 @@ public class UserAuthenticatorTests
     }
 
     [Theory]
-    [InlineData(-1, "neexistuje")]
+    [InlineData(-1, "Neplatné jméno nebo heslo")]
+    [InlineData(-101, "neexistuje")]
     [InlineData(-107, "heslo")]
     [InlineData(-105, "deaktivován")]
     [InlineData(-999, "kód -999")]   // neznámý kód → generická hláška s kódem
@@ -83,6 +84,17 @@ public class UserAuthenticatorTests
 
         var ex = Assert.Throws<LoginException>(() => UserAuthenticator.Login(ml, "u", "p"));
         Assert.Contains(fragment, ex.Message);
+    }
+
+    // HD 13132/1: -1 je sběrný kód (i selhání LDAP bindu), neexistenci hlásí jedině -101.
+    // Tvrzení „uživatel neexistuje" u -1 poslalo hledání příčiny úplně jiným směrem.
+    [Fact]
+    public void Login_GenericFailure_DoesNotClaimUserIsMissing()
+    {
+        var ex = Assert.Throws<LoginException>(
+            () => UserAuthenticator.Login(MockWithResponse("-1"), "u", "p"));
+
+        Assert.DoesNotContain("neexistuje", ex.Message);
     }
 
     [Theory]

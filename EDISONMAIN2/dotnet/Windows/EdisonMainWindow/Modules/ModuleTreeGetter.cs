@@ -18,7 +18,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>
         /// Wire format (z ALVA.EDISONMAIN2.API.Tree.GetTree):
         ///   $lb("FAMILY", displayName, isExpanded, elementId, isLicensed, mlineOnly)
-        ///   $lb("EXE", displayName, executablePath, formName, elementId, isLicensed, inputParam, hidden, color, mlineOnly)
+        ///   $lb("EXE", displayName, executablePath, formName, elementId, isLicensed, inputParam, hidden, color, mlineOnly, longName)
         ///   $lb("FAMILY_END")
         /// </summary>
         internal static ObservableCollection<IModule> ParseTree(CVar treeData)
@@ -55,7 +55,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                             InputParam     = row.Count >= 7 ? row.GetString(7) : "",
                             Hidden         = row.Count >= 8 && row.GetString(8) == "1",
                             Color          = row.Count >= 9 ? row.GetString(9) : "",
-                            MlineOnly      = row.Count >= 10 && row.GetString(10) == "1"
+                            MlineOnly      = row.Count >= 10 && row.GetString(10) == "1",
+                            LongName       = row.Count >= 11 ? row.GetString(11) : ""
                         });
                         break;
                     case "FAMILY_END":

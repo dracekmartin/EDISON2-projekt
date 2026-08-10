@@ -215,7 +215,12 @@ void EmitNode(XElement node, int depth)
         if (fqn.Length > 0) withFqn++;
         if (exe.Length > 0) withExe++;
 
-        sb.AppendLine($"{indent}d ..AddExe({Q(name)}, {Q(exe)}, {Q(fqn)}, {Q(id2)}, {(licensed ? 1 : 0)}, {Q(input)}, {(hidden ? 1 : 0)}, {Q(color)}, {(mlineOnly ? 1 : 0)})");
+        // Dlouhý název je poslední (volitelný) argument — emituje se jen když v XML je,
+        // ať se do generovaného Tree.cls nesypou stovky prázdných řetězců.
+        string longName = NodeNameEx(effective, name);
+        string longNameArg = longName.Length > 0 ? $", {Q(longName)}" : "";
+
+        sb.AppendLine($"{indent}d ..AddExe({Q(name)}, {Q(exe)}, {Q(fqn)}, {Q(id2)}, {(licensed ? 1 : 0)}, {Q(input)}, {(hidden ? 1 : 0)}, {Q(color)}, {(mlineOnly ? 1 : 0)}{longNameArg})");
     }
 }
 
@@ -244,6 +249,14 @@ string NodeName(XElement node)
 {
     var name = node.Elements("name").FirstOrDefault()?.Value?.Trim();
     return string.IsNullOrEmpty(name) ? $"#{(string?)node.Attribute("id")}" : name;
+}
+
+// <nameEx> dítě = disambiguovaný dlouhý název (legacy ho ukazuje na ploše). "" když chybí
+// nebo se neliší od <name> — takový nenese informaci navíc. Pomlčky sjednoceny na "-".
+string NodeNameEx(XElement node, string name)
+{
+    var nameEx = node.Elements("nameEx").FirstOrDefault()?.Value?.Trim().Replace('–', '-').Replace('—', '-');
+    return string.IsNullOrEmpty(nameEx) || nameEx == name ? "" : nameEx;
 }
 
 // ObjectScript string literal — escapuje " → "".

@@ -51,14 +51,14 @@
                                 Background="{DynamicResource EDTheme.Bg.Surface}"
                                 BorderBrush="{DynamicResource EDTheme.Border.Light}"
                                 BorderThickness="1" CornerRadius="4" Cursor="Hand"
-                                ToolTip="{Binding DisplayedName}"
+                                ToolTip="{Binding TreePath}"
                                 MouseLeftButtonUp="Tile_MouseLeftButtonUp"
                                 PreviewMouseLeftButtonDown="Tile_PreviewMouseLeftButtonDown"
                                 MouseMove="Tile_MouseMove">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Source="{StaticResource EDIcons.Module}" Width="24" Height="24"
                                        Margin="0,0,0,4" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                <TextBlock Text="{Binding DisplayedName}" TextWrapping="Wrap"
+                                <TextBlock Text="{Binding DisplayedLongName}" TextWrapping="Wrap"
                                            TextAlignment="Center" MaxHeight="34" TextTrimming="CharacterEllipsis"
                                            Foreground="{DynamicResource EDTheme.Text.Primary}"/>
                             </StackPanel>

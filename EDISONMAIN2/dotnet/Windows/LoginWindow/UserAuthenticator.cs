@@ -87,10 +87,13 @@ namespace EDISONMAIN2.Windows.LoginWindow
             _ => serverText.Length > 0 ? serverText : "Změna hesla selhala.",
         };
 
+        // -1 je na serveru sběrný kód pro GeneralError, AccessDenied i InvalidUsernameOrPassword
+        // (u LDAP účtů selhání bindu proti doméně) - nesmí tedy tvrdit, že uživatel neexistuje.
+        // Neexistenci hlásí jedině -101 (UserDoesNotExist). Viz ALVA.SYS.Login:73-84.
         private static string GetErrorMessage(int code) => code switch
         {
-            -1   => "Uživatel neexistuje.",
-            -101 => "Uživatel nemá přidělené ID.",
+            -1   => "Neplatné jméno nebo heslo, nebo selhalo ověření proti doméně.",
+            -101 => "Uživatel s tímto jménem v EDISONu neexistuje.",
             -102 => "Uživatel není povolen v systému.",
             -103 => "Uživatel není povolen pro aplikaci EDISON.",
             -104 => "Uživatel není povolen v tomto čase.",

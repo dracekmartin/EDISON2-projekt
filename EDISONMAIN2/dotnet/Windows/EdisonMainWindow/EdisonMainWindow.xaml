@@ -180,7 +180,7 @@
             </MenuItem>
             <MenuItem Header="Nastavení">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Settings}" Width="16" Height="16"/></MenuItem.Icon>
-                <MenuItem Header="Nastavení fontu…" Command="{Binding FontSettingsCommand}"/>
+                <MenuItem Header="Nastavení písma…" Command="{Binding FontSettingsCommand}"/>
                 <MenuItem Header="Tmavý režim"  IsCheckable="True" IsChecked="{Binding IsDarkMode}"/>
                 <Separator/>
                 <MenuItem Header="Nastavení jazyka" Command="{Binding ShowLanguageSettingsCommand}"/>

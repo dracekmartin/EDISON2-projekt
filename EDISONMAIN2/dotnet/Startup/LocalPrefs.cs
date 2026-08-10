@@ -27,12 +27,6 @@ public interface ILocalPrefs
     /// <summary>Uložená šířka stromu modulů (px) per IDFa. Null = žádná uložená.</summary>
     Dictionary<string, double>? TreeWidths { get; set; }
 
-    /// <summary>
-    /// Per-stanice: zkusit při startu Windows SSO auto-login (jméno = <c>Environment.UserName</c>,
-    /// prázdné heslo) před zobrazením login dialogu. Zapnout na stanicích s LDAP-AUTO uživateli;
-    /// default false (EDISON/LDAP deploymenty → rovnou dialog, žádný zbytečný failed-login pokus).
-    /// </summary>
-    bool TryWindowsAutoLogin { get; set; }
     void Save();
 }
 
@@ -50,7 +44,6 @@ public class LocalPrefs : ILocalPrefs
 
     // Uživatel → Možnosti — ShowWindowsAsDialogs zatím bez behaviorálního efektu (uloženo pro budoucnost).
     public bool ShowWindowsAsDialogs { get; set; }
-    public bool TryWindowsAutoLogin { get; set; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }

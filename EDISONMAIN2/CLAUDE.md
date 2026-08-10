@@ -54,9 +54,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   menu nepřejde. `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
-- **Spuštěné moduly** se značí cestou agendou (`BuildModulePaths`, klíč `exe|forma|param`) -
-  dvě agendy mají běžně shodný název. Fallback (modul mimo strom, WPF okno) = titulek bez
-  koncového `[IDFa]`; **titulky oken si `[IDFa]` naopak drží** (přidává ho `WindowNavigator`).
+- **Spuštěné moduly** se značí dlouhým názvem modulu, jinak cestou agendou
+  (`BuildModuleLabels`, klíč `exe|forma|param`) - krátký název mají dvě agendy běžně shodný.
+  Fallback (modul mimo strom, WPF okno) = titulek bez koncového `[IDFa]`; **titulky oken si
+  `[IDFa]` naopak drží** (přidává ho `WindowNavigator`).
 - Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
   nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají).
 - **Status bar** = segmenty ikona + hodnota, technika (namespace, port, login, Mlp) jen
@@ -129,6 +130,9 @@ Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `Desktop
 (`Kind|ElementId|Id`). Položka, kterou aktuální strom nezná (licence, `hidden`), se
 **nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní
 druhy jde dnes jen uložit, ne vytvořit/spustit: [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md).
+Dlaždice ukazuje **dlouhý název** (`ExecutableModule.LongName`, legacy `nameEx`; fallback krátký)
+a cestu agendou v ToolTipu (`Seed` ji dostává delegátem) - mimo strom chybí kontext, který
+krátký název zjednoznačňuje. Obojí odvozené ze stromu, nepersistuje se do `DesktopShortcutDto`.
 
 ## Výchozí okno (startup window)
 
@@ -139,6 +143,17 @@ strom, ne legacy AccessTree.
 Okno `Windows/UserProfileWindow` je EDInputForm (`…EDInputForm.UserProfile`), ale **data
 drží klient, ne schema třída** — `Main.LoadUser/SaveUser` jsou samy MLRest metody, volat je
 ze schematu by kolidovalo na `^||ML`.
+
+## Novinky (changelog agend)
+
+Auto-popup `Windows/ChangelogWindow` zrcadlí legacy infotexty: existence `<KLÍČ>_DIFF.INF`
+vedle binárek = „jsou nové změny". Modální a **blokuje otvírání**: v `OpenModule` funnelu
+před spuštěním agendy, shellový check před `OpenStartupWindowIfAny`; menu
+`LaunchModeless/Dialog` záměrně ne. Max 1× za session per
+INF klíč (kryje i re-focus dedup `ShowLegacyAsync`). Snooze (UserPrefs `ChangelogSnooze`)
+váže SHA-256 hash obsahu `_DIFF`, ne verzi - Caché-only patch nechává stale `_DIFF` na
+disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy
+`EDConversion.Package.ToInformationFile` včetně výjimky NDMAIN (vlastní soubor).
 
 ## Legacy moduly — EDISONMAIN2API
 

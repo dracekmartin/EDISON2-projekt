@@ -11,8 +11,8 @@ namespace EDISONMAIN2.Tests;
 /// </summary>
 public class RunningModulesLabelTests
 {
-    private static ExecutableModule Exe(string name, string exe, string form, string input = "") =>
-        new() { DisplayedName = name, ExecutablePath = exe, FormName = form, InputParam = input };
+    private static ExecutableModule Exe(string name, string exe, string form, string input = "", string longName = "") =>
+        new() { DisplayedName = name, ExecutablePath = exe, FormName = form, InputParam = input, LongName = longName };
 
     private static ModuleFamily Fam(string name, params IModule[] kids)
     {
@@ -24,70 +24,83 @@ public class RunningModulesLabelTests
     private static RunningModuleInfo Running(string title, string exe = "", string form = "", string input = "") =>
         new(title, () => { }) { ExeName = exe, FormFqn = form, InputParam = input };
 
-    // ---------- BuildModulePaths ----------
+    // ---------- BuildModuleLabels ----------
 
     [Fact]
-    public void BuildModulePaths_PrefixesModuleWithItsFamily()
+    public void BuildModuleLabels_PrefixesModuleWithItsFamily()
     {
-        var paths = EdisonMainViewModel.BuildModulePaths(
+        var labels = EdisonMainViewModel.BuildModuleLabels(
             [[Fam("Mzdy a personalistika", Exe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formZam"))]]);
 
-        Assert.Equal("Mzdy a personalistika › Zaměstnanci", Assert.Single(paths).Value);
+        Assert.Equal("Mzdy a personalistika › Zaměstnanci", Assert.Single(labels).Value.Path);
     }
 
     [Fact]
-    public void BuildModulePaths_JoinsNestedFamilies()
+    public void BuildModuleLabels_JoinsNestedFamilies()
     {
-        var paths = EdisonMainViewModel.BuildModulePaths(
+        var labels = EdisonMainViewModel.BuildModuleLabels(
             [[Fam("MHD", Fam("Plánování", Exe("Turnusy", "MHD2.exe", "f")))]]);
 
-        Assert.Equal("MHD › Plánování › Turnusy", Assert.Single(paths).Value);
+        Assert.Equal("MHD › Plánování › Turnusy", Assert.Single(labels).Value.Path);
     }
 
     [Fact]
-    public void BuildModulePaths_RootLevelModule_HasNoPrefix()
+    public void BuildModuleLabels_RootLevelModule_HasNoPrefix()
     {
-        var paths = EdisonMainViewModel.BuildModulePaths([[Exe("Nastavení", "SET.exe", "f")]]);
+        var labels = EdisonMainViewModel.BuildModuleLabels([[Exe("Nastavení", "SET.exe", "f")]]);
 
-        Assert.Equal("Nastavení", Assert.Single(paths).Value);
+        Assert.Equal("Nastavení", Assert.Single(labels).Value.Path);
     }
 
     [Fact]
-    public void BuildModulePaths_SameNameDifferentAgenda_KeptApart()
+    public void BuildModuleLabels_SameNameDifferentAgenda_KeptApart()
     {
-        var paths = EdisonMainViewModel.BuildModulePaths([[
+        var labels = EdisonMainViewModel.BuildModuleLabels([[
             Fam("Mzdy a personalistika", Exe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formZam")),
             Fam("Zaměstnanci",           Exe("Zaměstnanci", "VOLNO.exe", "ALVA.VOLNO.formZam")),
         ]]);
 
-        Assert.Equal(2, paths.Count);
-        Assert.Contains("Mzdy a personalistika › Zaměstnanci", paths.Values);
-        Assert.Contains("Zaměstnanci › Zaměstnanci", paths.Values);
+        Assert.Equal(2, labels.Count);
+        Assert.Contains("Mzdy a personalistika › Zaměstnanci", labels.Values.Select(l => l.Path));
+        Assert.Contains("Zaměstnanci › Zaměstnanci", labels.Values.Select(l => l.Path));
     }
 
     // Týž modul figuruje ve víc stromech (a v Oblíbených) - duplicitní klíč nesmí shodit build mapy.
     [Fact]
-    public void BuildModulePaths_DuplicateModule_FirstWins()
+    public void BuildModuleLabels_DuplicateModule_FirstWins()
     {
-        var paths = EdisonMainViewModel.BuildModulePaths([
+        var labels = EdisonMainViewModel.BuildModuleLabels([
             [Fam("Hlavní nabídka", Exe("Turnusy", "MHD2.exe", "f"))],
             [Fam("Oblíbené",       Exe("Turnusy", "MHD2.exe", "f"))],
         ]);
 
-        Assert.Equal("Hlavní nabídka › Turnusy", Assert.Single(paths).Value);
+        Assert.Equal("Hlavní nabídka › Turnusy", Assert.Single(labels).Value.Path);
     }
 
     // InputParam je součást identity - jedna exe+forma se dvěma parametry jsou dva moduly.
     [Fact]
-    public void BuildModulePaths_InputParamDistinguishesModules()
+    public void BuildModuleLabels_InputParamDistinguishesModules()
     {
-        var paths = EdisonMainViewModel.BuildModulePaths([[
+        var labels = EdisonMainViewModel.BuildModuleLabels([[
             Fam("Doprava",
                 Exe("Plánování", "DS.exe", "f"),
                 Exe("Plánování (admin)", "DS.exe", "f", "AdminMode=1")),
         ]]);
 
-        Assert.Equal(2, paths.Count);
+        Assert.Equal(2, labels.Count);
+    }
+
+    // Dlouhý název (legacy nameEx) se nese vedle cesty - obojí najednou, jeden průchod stromem.
+    [Fact]
+    public void BuildModuleLabels_CarriesLongNameNextToPath()
+    {
+        var labels = EdisonMainViewModel.BuildModuleLabels([[
+            Fam("Zpracování dopravy", Exe("Fakturace", "FAKT.exe", "f", longName: "Fakturace - zpracování AD")),
+        ]]);
+
+        var label = Assert.Single(labels).Value;
+        Assert.Equal("Zpracování dopravy › Fakturace", label.Path);
+        Assert.Equal("Fakturace - zpracování AD", label.LongName);
     }
 
     // ---------- StripIdfaSuffix ----------
@@ -104,14 +117,28 @@ public class RunningModulesLabelTests
 
     // ---------- ResolveRunningLabel ----------
 
+    // Dlouhý název má přednost před cestou - je kratší a disambiguuje sám o sobě.
     [Fact]
-    public void ResolveRunningLabel_KnownModule_UsesAgendaPath()
+    public void ResolveRunningLabel_ModuleWithLongName_UsesLongName()
     {
-        var paths = EdisonMainViewModel.BuildModulePaths(
+        var labels = EdisonMainViewModel.BuildModuleLabels([[
+            Fam("Zpracování dopravy", Exe("Fakturace", "FAKT.exe", "f", longName: "Fakturace - zpracování AD")),
+        ]]);
+
+        var label = EdisonMainViewModel.ResolveRunningLabel(Running("Fakturace [CK_DP]", "FAKT.exe", "f"), labels);
+
+        Assert.Equal("Fakturace - zpracování AD", label);
+    }
+
+    // Dlouhý název má v legacy datech jen pětina modulů - zbytek drží rozlišení cestou.
+    [Fact]
+    public void ResolveRunningLabel_ModuleWithoutLongName_UsesAgendaPath()
+    {
+        var labels = EdisonMainViewModel.BuildModuleLabels(
             [[Fam("Mzdy a personalistika", Exe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formZam"))]]);
 
         var label = EdisonMainViewModel.ResolveRunningLabel(
-            Running("Zaměstnanci [CKSCHWAN]", "MZDY2.exe", "ALVA.MZDY2.formZam"), paths);
+            Running("Zaměstnanci [CKSCHWAN]", "MZDY2.exe", "ALVA.MZDY2.formZam"), labels);
 
         Assert.Equal("Mzdy a personalistika › Zaměstnanci", label);
     }
@@ -120,7 +147,7 @@ public class RunningModulesLabelTests
     public void ResolveRunningLabel_UnknownModule_FallsBackToTitleWithoutIdfa()
     {
         var label = EdisonMainViewModel.ResolveRunningLabel(
-            Running("Něco jiného [CK_SCHWAN]", "X.exe", "ALVA.X.form"), new Dictionary<string, string>());
+            Running("Něco jiného [CK_SCHWAN]", "X.exe", "ALVA.X.form"), NoLabels);
 
         Assert.Equal("Něco jiného", label);
     }
@@ -129,9 +156,10 @@ public class RunningModulesLabelTests
     [Fact]
     public void ResolveRunningLabel_WpfWindow_StripsShellSuffix()
     {
-        var label = EdisonMainViewModel.ResolveRunningLabel(
-            Running("EDInputForm [CK_SCHWAN]"), new Dictionary<string, string>());
+        var label = EdisonMainViewModel.ResolveRunningLabel(Running("EDInputForm [CK_SCHWAN]"), NoLabels);
 
         Assert.Equal("EDInputForm", label);
     }
+
+    private static readonly Dictionary<string, EdisonMainViewModel.ModuleLabel> NoLabels = [];
 }

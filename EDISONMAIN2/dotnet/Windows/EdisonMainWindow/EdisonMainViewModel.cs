@@ -15,12 +15,14 @@ using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDControls.UserFonts;
 using EDISONMAIN2.MiniApps;
+using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias — class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
 using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
+using ChangelogWnd = EDISONMAIN2.Windows.ChangelogWindow.ChangelogWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -223,13 +225,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Action closeAllWindows,
             MiniAppCatalog miniAppCatalog,
             ModuleShortcutsService? shortcuts = null,
-            IRestCallRunner? restRunner = null)
+            IRestCallRunner? restRunner = null,
+            IChangelogSource? changelogSource = null)
         {
             _switcher = switcher;
             _switchUser = switchUser;
             _prefs = prefs;
             _getActiveModules = getActiveModules;
             _miniAppCatalog = miniAppCatalog;
+            // Null (testy) = novinky vypnuté; produkci dává InfChangelogSource AppBootstrapper.
+            _changelogSource = changelogSource;
             // Sdílená služba zástupců plochy (strom ★ ⇄ dlaždice). Bez ní (testy) VM drží vlastní instanci.
             _shortcuts = shortcuts ?? new ModuleShortcutsService();
 
@@ -355,6 +360,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _services.ActiveLicence = licence;
             // _modulePrefs se vytváří tady (ne v ctoru), aby reflektoval výměnu UserPrefs po switch-user.
             _modulePrefs = new ModulePreferencesService(UserPrefs);
+            // Nová instance per session: resetuje per-session dedup popupů (snooze je per-user × IDFa).
+            _changelogPrompt = _changelogSource is { } src
+                ? new ChangelogPromptService(src, _modulePrefs, ShowChangelogWindow)
+                : null;
 
             using (ActionInProgress())
             {
@@ -378,6 +387,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 FillFilteredTree(tree, data.Trees[name]);
             ApplyPersonalization(data);
             ApplyStartupWindow(data.DefaultWindowId);
+            _changelogPrompt?.SeedSnooze(data.ChangelogSnooze);
         }
 
         /// <summary>
@@ -388,7 +398,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ClearSessionState() => ApplySessionData(new SessionData(
             new AccessTable([], isAllAccess: false),
             _sourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
-            Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, DefaultWindowId: 0));
+            Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
 
         private int _defaultWindowId;
         /// <summary>Id uživatelova výchozího okna (EDISFormEnum) pro aktuální IDFa; 0 = žádný.</summary>
@@ -451,7 +461,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
             // Pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
             _suppressFavoritesSync = true;
-            _shortcuts.Seed(AllExecutables(), data.Shortcuts);
+            var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
+            _shortcuts.Seed(AllExecutables(), data.Shortcuts, exe =>
+                labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
+                    ? label.Path : "");
             _suppressFavoritesSync = false;
 
             RefreshFamilyFavoriteFlags();
@@ -878,6 +891,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené (3) když nějaké jsou, jinak Hlavní nabídka (0).
         private int DefaultTreeTab() => HasNoFavorites ? 0 : 3;
 
+        private readonly IChangelogSource? _changelogSource;
+        // Auto-popup novinek (infotexty). Žije se session jako _modulePrefs; null = vypnuto (testy).
+        private ChangelogPromptService? _changelogPrompt;
+
         // Per-user × IDFa stav (plocha + používanost). _modulePrefs se re-vytváří v každém rebuildu
         // (UserPrefs se může po switch-user vyměnit); null do prvního initu — bindingy okna jedou dřív
         // než on, takže save cesty musí být null-safe (jinak NRE z TwoWay bindingu záložky).
@@ -1035,9 +1052,25 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (module is not ExecutableModule { ExecutablePath: { Length: > 0 } path } em) return;
 
             RecordUsage(em);
+            // Novinky blokují otevření agendy: modální dialog před launchem, ať změny nezapadnou.
+            if (_changelogPrompt is { } prompt)
+                await prompt.ShowIfNewAsync(path, em.DisplayedName);
+
             // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces — čekáme na jeho okno).
             using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
+        }
+
+        /// <summary>Novinky shellu po loginu (EDISONMAIN.INF - obsah sdílený s legacy shellem).</summary>
+        public Task ShowShellChangelogIfAnyAsync() =>
+            _changelogPrompt?.ShowIfNewAsync("EDISONMAIN", "EDISON") ?? Task.CompletedTask;
+
+        private void ShowChangelogWindow(string title, ChangelogContent content, Action<bool> onClosed)
+        {
+            var wnd = new ChangelogWnd(title, content);
+            // Modální: ShowIfNewAsync se vrátí až po zavření, volající tak čeká s dalším otvíráním.
+            WindowNavigator.ShowDialog(wnd);
+            onClosed(wnd.SnoozeChecked);
         }
 
         // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
@@ -1411,21 +1444,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             var modules = _getActiveModules();
             if (modules.Count == 0) { RunningModules = [_emptyPlaceholder]; return; }
 
-            var paths = BuildModulePaths(_sourceTrees.Select(t => t.Tree));
-            RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, paths) })];
+            var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
+            RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, labels) })];
         }
 
         /// <summary>
-        /// Mapa <c>exe|forma|param</c> → cesta agendou („Mzdy a personalistika › Zaměstnanci").
-        /// Klíč je záměrně tentýž, kterým <c>WindowNavigator</c> deduplikuje běžící procesy.
+        /// Mapa <c>exe|forma|param</c> → popisky modulu. Klíč je záměrně tentýž, kterým
+        /// <c>WindowNavigator</c> deduplikuje běžící procesy.
         /// </summary>
-        internal static Dictionary<string, string> BuildModulePaths(IEnumerable<IEnumerable<IModule>> trees)
+        internal static Dictionary<string, ModuleLabel> BuildModuleLabels(IEnumerable<IEnumerable<IModule>> trees)
         {
-            var paths = new Dictionary<string, string>();
+            var labels = new Dictionary<string, ModuleLabel>();
             foreach (var tree in trees)
                 foreach (var root in tree)
                     Collect(root, "");
-            return paths;
+            return labels;
 
             void Collect(IModule module, string prefix)
             {
@@ -1437,8 +1470,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                         break;
                     case ExecutableModule exe:
                         // První nález vyhrává - týž modul může být ve stromě víckrát (např. i v Oblíbených).
-                        paths.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
-                            prefix.Length == 0 ? exe.DisplayedName : prefix + PathSeparator + exe.DisplayedName);
+                        labels.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
+                            new ModuleLabel(
+                                prefix.Length == 0 ? exe.DisplayedName : prefix + PathSeparator + exe.DisplayedName,
+                                exe.LongName));
                         break;
                 }
             }
@@ -1449,14 +1484,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
 
         /// <summary>
-        /// Label do menu „Spuštěné moduly": cesta agendou, když modul ve stromě najdeme, jinak
-        /// vlastní titulek okna bez koncového <c>[IDFa]</c>. Dvě agendy mají běžně shodný název
-        /// (Zaměstnanci z MZDY2 vs. z Požadavků na volno) a firma je v položce zbytečná - při
-        /// přepnutí firmy se otevřená okna zavírají, takže jsou vždy z aktuální.
+        /// Popisky modulu ve stromu: <c>Path</c> = cesta agendou včetně listu
+        /// („Mzdy a personalistika › Zaměstnanci"), <c>LongName</c> = legacy <c>nameEx</c>
+        /// (může být prázdný - má ho jen pětina modulů).
         /// </summary>
-        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, string> paths) =>
-            paths.TryGetValue(ModuleKey(info.ExeName, info.FormFqn, info.InputParam), out var path)
-                ? path
+        internal record ModuleLabel(string Path, string LongName);
+
+        /// <summary>
+        /// Label do menu „Spuštěné moduly": dlouhý název modulu, jinak cesta agendou, jinak
+        /// (modul mimo strom) vlastní titulek okna bez koncového <c>[IDFa]</c>. Krátký název sám
+        /// nestačí - dvě agendy ho mají běžně shodný (Zaměstnanci z MZDY2 vs. z Požadavků na
+        /// volno). Firma je v položce zbytečná - při přepnutí firmy se otevřená okna zavírají.
+        /// </summary>
+        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, ModuleLabel> labels) =>
+            labels.TryGetValue(ModuleKey(info.ExeName, info.FormFqn, info.InputParam), out var label)
+                ? (label.LongName.Length > 0 ? label.LongName : label.Path)
                 : StripIdfaSuffix(info.DisplayName);
 
         /// <summary>Odřízne jeden koncový <c>[...]</c> (suffix s firmou). Hranatá závorka uvnitř názvu zůstane.</summary>
