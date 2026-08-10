@@ -731,6 +731,9 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
     // bezbariér konfig (per linka): isinv/iscbe = feature povolená, allBBP = všechny spoje bezbar.
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)
 
+    // „nevypisovat NZ ve sloupci 1-4" - per linka, 4 sloty. Potlačuje **značku u minuty**, ne spoj.
+    s nzNoShow = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NEZNZ123"))
+
     s sp = ""
     f {
         s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
@@ -776,7 +779,8 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         i txt '= "" {
             i cnz '= "" {
                 s znak = cnz, typOmez = "nz"
-                s poznMap("byMarker", cnz) = txt, poznMap("typ", cnz) = "nz"
+                // legenda se zapíše až u sloupce, kde se značka reálně tiskne - když je potlačená
+                // ve všech sloupcích spoje, nemá v legendě co dělat (legacy noNZ2)
             } else {
                 s znak = ..ZiskejMarker(.poznMap, txt)
             }
@@ -831,7 +835,13 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             f di=1:1:$l(dnyZnaky) d ..AddAnotace(o, "specialni", $e(dnyZnaky,di), "", "", "tydenni-platnost", sp, vRozsahu)
             i pismRT '= "" d ..AddAnotace(o, "text", pismRT, "", "", "rozdil-trasy", sp, vRozsahu)
             i pismVarTx '= "" d ..AddAnotace(o, "text", pismVarTx, "", "", "varianta-trasy", sp, vRozsahu)
-            i znak  '= "" d ..AddAnotace(o, typOmez, znak, "", "", "omezeni", sp, vRozsahu)
+            i znak '= "" {
+                s skryto = (typOmez = "nz") && ..ZnackaSkrytaVeSloupci(nzNoShow, $p(skupiny,",",gi), znak)
+                i 'skryto {
+                    i typOmez = "nz" s poznMap("byMarker", znak) = txt, poznMap("typ", znak) = "nz"
+                    d ..AddAnotace(o, typOmez, znak, "", "", "omezeni", sp, vRozsahu)
+                }
+            }
             i inv && 'allBBP d ..AddAnotace(o, "specialni", "H", "", "", "bezbarier", sp, vRozsahu)   // u allBBP se marker netiskne, jen legenda
             i cbe d ..AddAnotace(o, "specialni", "F", "", "", "bezbarier", sp, vRozsahu)
             i kolo d ..AddAnotace(o, "specialni", ..ZnakKola(), "", "", "odjezd-kola", sp, vRozsahu)
@@ -842,6 +852,20 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         }
     }
     q odjezdy
+}
+
+/// Má se negativní značka `nz` potlačit **u minut** ve sloupci `sloupec` (1-4)? Per-linkový seznam
+/// `MHD_NEZNZ123` (4 sloty `~`, v každém čísla značek oddělená čárkou) - 1:1 legacy
+/// `noNZ^JRapiLinPrtMhd1` ř.340. Slot N patří sloupci N (na rozdíl od `MHD_NENZ1_NENZ2`, kde má
+/// legacy sloty prohozené).
+///
+/// ⚠️ Potlačuje se **jen značka**, spoj se tiskne dál. Legacy to tak má záměrně po chybě:
+/// zakomentovaný blok (`JRapiLinPrtMhd1` ř.246-251) ukazuje, že se tím spoj dřív přeskakoval celý
+/// a „NETISKLY SE ČASY". Skrytí celého spoje ze sloupce je jiné nastavení (`MHD_NENZ1_NENZ2`).
+ClassMethod ZnackaSkrytaVeSloupci(cfg As %String, sloupec As %String, nz As %String) As %Boolean
+{
+    i (cfg = "") || (nz = "") || (sloupec = "") ret 0
+    ret (","_$p(cfg, "~", sloupec)_",") [ (","_(+nz)_",")
 }
 
 /// Konfigurace bezbariérových atributů spoje (1:1 `JRapiLinPrtMhd` ř.317-318, `AllSpIsBBP` ř.953):

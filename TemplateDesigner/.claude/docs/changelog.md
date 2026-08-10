@@ -1,5 +1,85 @@
 # Changelog
 
+## 2026-08-10 (8) - Test závislý na stroji už neprojde do repa
+
+Návazně na opt-in baseline níže: aby se opakování téhož nespoléhalo na to, že si na to někdo vzpomene,
+hlídá to teď test (`MachineLocalStateGuardTests`). Projde zdrojáky **všech `*.Tests` projektů** v repu
+(kolegovi je jedno, který projekt mu sadu shodí) a shodí sadu, když test sahá na soubor mimo repozitář
+pod **stálým jménem**, nebo do uživatelského profilu (`GetFolderPath`, `%APPDATA%`…). Unikátní jméno
+na běh (`Guid.NewGuid()`) je v pořádku - takový soubor mezi běhy nezůstane a nezestárne.
+
+**Proč to autor sám nepozná:** `pre-push` pouští sadu na jeho stroji, kde artefakt existuje a je
+svěží, takže je tam zeleno vždy. CI, které by sadu pustilo na čistém stroji, nemáme - je to tedy
+principiálně nevidět, dokud na to nenarazí kolega.
+
+**Ověřeno mutací, ne jen zelenou sadou:** dočasný test s pevnou cestou do `%TEMP%` sadu shodil
+a hláška ukázala soubor i řádek. Mutace zároveň odhalila, že první verze hlásila tři řádky místo
+jednoho (okno příkazu se otevíralo i na `{`) - zúženo na řádky se spouštěčem. Detekce má vlastní
+ověření (rozlomený `Path.Combine`, komentář se nepočítá) a výjimka se musí obhájit: `Vyjimky_JsouStalePotreba`
+shodí sadu, když výjimka přestane být potřeba - jinak by mlčky kryla nový prohřešek ve stejném souboru.
+
+Jediná dnešní výjimka je baseline odtisků (opt-in, viz níže). Zbytek repa je čistý: ostatní testy, které
+píšou do tempu, používají jméno s `Guid.NewGuid()`, a předvolba fontu v EDControls si cestu injektuje.
+
+**Co to nezachytí:** závislost na fontech z OS, na síti / dev serveru a na obsahu proměnných prostředí.
+Na tu třídu je jediná skutečná pojistka běh na čistém stroji, tedy CI. Pravidlo je v `architecture-rules.md`
+jako 5. „must not happen" scénář. Sada 762/762 (+11).
+
+## 2026-08-10 (7) - Porovnání odtisků kreslení proti baseline je opt-in
+
+Test `Odtisky_SouhlasiSBaseline` padal kolegovi na sadě, i když byl kód v pořádku. Baseline odtisků
+je vázaná na stroj (nemáme zabalené textové fonty, text kreslí Arial z OS), takže **není v gitu** -
+ale test si ji při prvním běhu sejmul komukoli do `%TEMP%` a po **první zamýšlené** změně kreslení
+začal hlásit „kreslení se rozešlo". Hláška přitom o ničem reálném nevypovídala a nešlo z ní poznat,
+že jde o zastaralý soubor v tempu.
+
+Porovnání se teď provede jen s `TD_RENDER_BASELINE=1` - bez proměnné se test souboru vůbec nedotkne.
+Nástroj tím zůstává použitelný pro refaktory kreslicí cesty (`B13`), ale nemůže nikomu padnout.
+Ověřeno obojí: bez proměnné projde i nad úmyslně rozbitou baseline, s proměnnou nad ní padne.
+Zbylé čtyři odtiskové testy (determinismus + citlivost na 0,1 mm a 0,5 pt) jsou na stroji nezávislé
+a zůstávají. Harness sám odebrat nelze - `RenderSnapshot` a fixtury používají další tři testy.
+
+## 2026-08-10 (6) - ✅ `B63`: značky, které si zákazník u linky vypnul, se přestaly tisknout
+
+Vývěska teď respektuje per-linkový seznam **„nevypisovat značku ve sloupci"** (`MHD_NEZNZ123`,
+4 sloty = 4 sloupce). Doteď jsme ho ignorovali, takže se u minut tiskly značky, které si zákazník
+vypnul, a byly i v legendě.
+
+**Doloženo před/po na živých datech:** `SKNI_MHDNITRA`, linka 0000001 (konfigurace `52~52~53,54,55~`)
+měla značku 52 u **34 ze 47 odjezdů** - po opravě **0×** a zmizela i z legendy. „Před" jsem změřil
+mutací (potlačení vypnuté), aby bylo vidět, že to dělá ta nová větev, ne shoda dat.
+
+**Legenda se zapisuje až u sloupce, kde se značka reálně tiskne** - potlačená ve všech sloupcích spoje
+znamená, že v legendě nemá co dělat (1:1 legacy `noNZ2`). Nemíchat s `MHD_NENZ1_NENZ2`, který skrývá
+**celý spoj** z pracovních sloupců a má navíc legacy sloty prohozené.
+
+⚠️ **České firmy to vyplněné nemají** (`CB_CSADAD` 0 z 31 216 linek, `ZL_KOVED` 0 z 17 029) - proto
+zlaté odtisky nehnuly a proto to nikdo nenahlásil. Používá to slovenská MHD Nitra, tam na každé lince.
+
+**Poučení (podruhé v téhle session):** `.cls` upravená skriptem se **nenasadí**, hook reaguje jen na
+Edit/Write. Runner hlásil 74/74 a můj nový test vůbec neběžel; poznal jsem to jen podle nezměněného
+počtu testů. Když počet testů po přidání testu neroste, není zelená zelená.
+
+### Pro `B39` (vlastní skupiny dnů) je potřeba nejdřív domluva - pět otázek
+
+1. **Kde nastavení žije** - šablona, nebo linka? Rozsahy dnů jsou na lince nezávislé (→ šablona),
+   u seznamu značek to není jisté: čísla se přidělují firemně, ale význam plyne z omezení spojů.
+2. **Může sloupec kombinovat obojí** (seznam značek i rozsah dnů), nebo vždy jen jedno pravidlo?
+3. **Spoj, který nesedí do žádného sloupce** (nebo naopak do dvou) - co s ním?
+4. **Svátky** - podle jakého kalendáře, a platí i pro vlastní skupiny?
+5. **Zpětná kompatibilita** - dnešní pevná schémata se musí stát presety, jinak neprojdou zlaté odtisky.
+6. **Kam se přesunou poziční seznamy značek** (doplněno 10. 8. po `B63`): `B63` i `TR10` stojí na
+   per-linkových seznamech, kde **slot N = sloupec N**. To drží jen u dnešních čtyř pevných rozvržení -
+   s vlastními sloupci index přestane být stabilní. Domluva Jan + kolega: **přesunout je do návrháře**,
+   aby si každý sloupec nesl svůj seznam potlačených i vylučovaných značek. Zbývá rozhodnout, co
+   s existující konfigurací u linek (MHD Nitra ji má vyplněnou na každé lince) - záskok, migrace, nebo obojí.
+
+Sloupec potřebuje **tři nezávislé knoflíky**, které se nesmí slít: zahrnutí (kdo do sloupce patří),
+vyloučení (koho vyhodit, i když by patřil - to je `TR10`) a potlačení značky (`B63`, hotové).
+Skutečná práce je varianta „rozsah dnů" - potřebuje **vyhodnocovač „jede spoj v datu X"**, který
+dnes nemáme (omezení spoje umíme jen formátovat do textu).
+
+
 ## 2026-08-10 (5) - ✅ `B64` uzavřeno: „<1" bez přepínače, sloupce variant dědí celý styl
 
 **Přepínač „Zarovnat číslice pod sebe" zrušen** (rozhodnutí Jan po vidění odtisku) - visící „<"

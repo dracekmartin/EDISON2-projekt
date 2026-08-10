@@ -2,6 +2,41 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-10 ✅ - `B63` čteme „nevypisovat značku ve sloupci" (per linka, 4 sloty)
+
+Starý modul má u linky **dva různé** per-sloupcové seznamy a my čteli jen jeden:
+`MHD_NENZ1_NENZ2` skryje **spoj** z pracovních sloupců (čteme dávno), `MHD_NEZNZ123` (4 sloty, slot N
+= sloupec N) nechá minutu vytisknout a **potlačí u ní jen značku**. Druhý jsme ignorovali, takže na
+naší vývěsce se tiskly značky, které si zákazník u linky vypnul.
+
+Nově `ZnackaSkrytaVeSloupci` + potlačení v `NacistOdjezdy` per sloupec. **Legenda se zapisuje až
+u sloupce, kde se značka reálně tiskne** - když je potlačená ve všech sloupcích spoje, vypadne
+i z legendy (1:1 legacy `noNZ2`). Slot N patří sloupci N; ⚠️ u `MHD_NENZ1_NENZ2` má legacy sloty
+**prohozené**, tady ne.
+
+**Doloženo před/po na živých datech** (`SKNI_MHDNITRA`, linka 0000001, konfigurace `52~52~53,54,55~`):
+značka 52 byla u **34 ze 47 odjezdů** a v legendě → po opravě **0× a v legendě není**. Sonda
+`PocetZnacky` postavila stránku vývěsky a spočítala anotace; „před" se změřilo mutací (potlačení
+vypnuté), aby bylo vidět, že to opravdu dělá ta nová větev.
+
+⚠️ **České firmy to nastavené nemají** (`CB_CSADAD` 0/31216 linek, `ZL_KOVED` 0/17029) - proto zlaté
+odtisky zůstaly netknuté a proto to tak dlouho nikdo nenahlásil. Používá to **slovenská MHD Nitra**,
+kde je to na každé lince. Souvisí s #12964 (stížnost na množství značek u vsetínské MHD).
+
+Ověřeno: `TestZnackaSkrytaVeSloupci` (9 assertů, mutace bez hranic slova ho shodí), Caché 75/75
+včetně zlatých odtisků, .NET 1885. Koncepčně proklikané (Jan 10. 8.).
+
+🔭 **Bude se to muset předělat s `B39`** (poznámka Jan 10. 8.): tenhle seznam je **poziční** - slot N
+patří sloupci N - což drží jen u dnešních čtyř pevných rozvržení sloupců. S vlastními skupinami dnů
+index sloupce přestane být stabilní. Domluva s kolegou: přesunout nastavení **rovnou do návrháře**,
+aby si každý sloupec nesl svůj seznam. Totéž potká vylučovací seznam u `TR10`. Detail a otevřená
+otázka (co s už vyplněnou konfigurací u linek Nitry) jsou u `B39` v roadmapě.
+
+**Poučení:** test class upravená skriptem se **nenasadí** (hook jede jen po Edit/Write) - runner
+hlásil 74/74 a nový test vůbec neběžel. Chytlo se to jen tím, že jsem si všiml nezměněného počtu.
+
+---
+
 ## 2026-08-10 ✅ - `B64` „<1" místo „0" u jízdy pod minutu (TRANSDEV `TR8`)
 
 TRANSDEV `TR8`. Prvek Tabulka zastávek dostal volbu **„Jízda pod minutu jako <1"** (výchozí vypnuto):
