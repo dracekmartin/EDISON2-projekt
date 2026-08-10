@@ -800,6 +800,168 @@ ClassMethod ScanPerSpoj(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Sonda k `B39` etapě 2: jaké tvary týdenní platnosti (`plk`, hlava spoje pole 7) data reálně
+/// nesou. Rozhoduje, jestli jde denní značky sjednotit pravidlem „spoj pokrývá celý sloupec →
+/// značka se netiskne" - u zkratky `X` a prázdné platnosti vyjde stejně jako legacy, u explicitně
+/// vypsaného `12345` by se výsledek lišil. IN: DB, MAXLIN. Read-only.
+ClassMethod ScanPlk(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 2000
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0, spoju = 0, plnyTyden = 0, sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				for smerIdx = "T","Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set spoju = spoju + 1
+						set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)), "#", 1), ":", 7)
+						set klic = $select(plk="":"(prázdné)", 1:plk)
+						set tvary(klic) = $get(tvary(klic)) + 1
+						// riziko sjednocení: všech pět pracovních dnů vypsaných jednotlivě
+						if (plk["1")&&(plk["2")&&(plk["3")&&(plk["4")&&(plk["5") set plnyTyden = plnyTyden + 1
+					}
+				}
+			}
+		}
+		set tvar = "", n = 0
+		for {
+			set tvar = $order(tvary(tvar)) quit:tvar=""
+			set n = n + 1
+			if n <= 25 set ^||ML("OUT","TVAR",$translate($justify(n,3)," ","0")) = """"_tvar_""" x"_tvary(tvar)
+		}
+		set ^||ML("OUT","SOUHRN") = db_" linek="_linek_" spojů="_spoju_" různých tvarů="_n
+		set ^||ML("OUT","RIZIKO") = "spojů s vypsanými všemi pracovními dny (1..5 zvlášť)="_plnyTyden
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sonda k `B39` etapě 2 (období): co reálně vrátí `ALVA.ISY.ISYLinky.API.LinkyStatistika.jede`
+/// nad linkou AD - je třída nasazená, jak dlouho počítá, jaké má klíče (`smerId` 0/1 vs. naše T/Z)
+/// a sedí seznam spojů na `^JRL`. IN: DB, SKU, LIN, OD, DO (dd.mm.rrrr). Read-only, po vytěžení smazat.
+ClassMethod JedeSonda(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		set datumOd = $get(^||ML("IN","OD"))
+		set datumDo = $get(^||ML("IN","DO"))
+		kill ^||ML("OUT"), ^||SondaJede
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+		if datumOd = "" set datumOd = "1.7.2026"
+		if datumDo = "" set datumDo = "31.8.2026"
+
+		set jeTrida = ##class(%Dictionary.CompiledClass).%ExistsId("ALVA.ISY.ISYLinky.API.LinkyStatistika")
+		set ^||ML("OUT","A_TRIDA") = $select(jeTrida:"LinkyStatistika je nasazená", 1:"LinkyStatistika NA SERVERU NENÍ")
+		if 'jeTrida ret $$$OK
+		if '$data(^[db]JRL(sku,lin,"I")) {
+			set ^||ML("OUT","A_DATA") = "linka "_lin_" v "_db_" neexistuje"
+			ret $$$OK
+		}
+
+		set hrlOd = ##class(ALVA.GENERALAPI.Date).DateToHor(datumOd)
+		set hrlDo = ##class(ALVA.GENERALAPI.Date).DateToHor(datumDo)
+		set ^||ML("OUT","B_OBDOBI") = datumOd_" - "_datumDo_" (dní "_(hrlDo-hrlOd+1)_")"
+
+		// data linky předáváme globálem - linka je v našich klíčích už v indexovém tvaru,
+		// přes `id` by ji `cisloLinkyDoIndexu` převedla podruhé
+		set sys("U","DATA") = db
+		kill arrLin
+		do ##class(ALVA.ISY.ISYLinky.API.Linky).nacti(.sys, $listbuild(sku,"",""), $name(^[db]JRL(sku,lin)), .arrLin)
+		set platiOd = $listget($listget($get(arrLin("DTA")),7),1)
+		set platiDo = $listget($listget($get(arrLin("DTA")),7),2)
+		set ^||ML("OUT","B_PLATNOST_LINKY") = "od "_$select(platiOd="":"-", 1:##class(ALVA.GENERALAPI.Date).horToDate(platiOd))_" do "_$select(platiDo="":"-", 1:##class(ALVA.GENERALAPI.Date).horToDate(platiDo))
+
+		kill arr
+		set arr("PAR","horlogOdDo") = $listbuild(hrlOd, hrlDo)
+		set arr("PAR","platnostLin") = +$get(^||ML("IN","PLATNOSTLIN"))
+		set arr("GLB") = "^||SondaJede"
+		set zacatek = $zhorolog
+		do ##class(ALVA.ISY.ISYLinky.API.LinkyStatistika).jede(.sys, $listbuild(sku,"",""), $name(^[db]JRL(sku,lin)), .arr)
+		set ^||ML("OUT","C_TRVANI") = $fnumber($zhorolog - zacatek, "", 3)_" s (platnostLin="_(+$get(^||ML("IN","PLATNOSTLIN")))_")"
+
+		// tvar výstupu + ukázky bitmap
+		set pocet = 0, ukazek = 0, smerId = ""
+		for {
+			set smerId = $order(^||SondaJede("DTA",smerId)) quit:smerId=""
+			set spojId = ""
+			for {
+				set spojId = $order(^||SondaJede("DTA",smerId,spojId)) quit:spojId=""
+				set pocet = pocet + 1
+				set val = $get(^||SondaJede("DTA",smerId,spojId))
+				set dnu = $listget(val,1), bitmapa = $listget(val,3)
+				set pocty(dnu) = $get(pocty(dnu)) + 1
+				if ukazek < 8 {
+					set ukazek = ukazek + 1
+					set ^||ML("OUT","E_UKAZKA",ukazek) = "smerId="_smerId_" spoj="_spojId_" jede dní="_dnu_" bitmapa("_$length(bitmapa)_")="_$extract(bitmapa,1,45)
+				}
+			}
+		}
+		set ^||ML("OUT","D_POCET") = "vrácených spojů="_pocet
+
+		// sedí klíče na naše ^JRL? (jede vrací smerId 0/1, my čteme T/Z)
+		set nasich = 0, chybi = 0
+		for smerIdx = "T","Z" {
+			set smerId = $select(smerIdx="T":0, 1:1)
+			set sp = ""
+			for {
+				set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+				continue:'$isvalidnum(sp)
+				set nasich = nasich + 1
+				if '$data(^||SondaJede("DTA",smerId,sp)) {
+					set chybi = chybi + 1
+					if chybi <= 5 set ^||ML("OUT","G_CHYBI",chybi) = "v odpovědi není smer="_smerIdx_" spoj="_sp
+				}
+			}
+		}
+		set ^||ML("OUT","F_KLICE") = "spojů v ^JRL="_nasich_" bez odpovědi="_chybi
+
+		// rozložení: kolik spojů v období nejede vůbec / jede každý den / jede jen část
+		set dnu = "", nula = 0, plny = 0, castecne = 0, celkemDnu = hrlDo - hrlOd + 1
+		for {
+			set dnu = $order(pocty(dnu)) quit:dnu=""
+			if dnu = 0 { set nula = nula + pocty(dnu) }
+			elseif dnu = celkemDnu { set plny = plny + pocty(dnu) }
+			else { set castecne = castecne + pocty(dnu) }
+		}
+		set ^||ML("OUT","H_ROZLOZENI") = "v období nejede vůbec="_nula_" jede každý den="_plny_" jede jen část="_castecne
+
+		// kolik spojů linky má vůbec datumové omezení (kvůli relevanci filtru obdobím)
+		set somez = 0
+		for smerIdx = "T","Z" {
+			set sp = ""
+			for {
+				set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+				continue:'$isvalidnum(sp)
+				set maOmez = 0
+				for omzId = 11,12,13,14,15,22 { if $get(^[db]JRL(sku,lin,smerIdx,sp,omzId)) '= "" set maOmez = 1 }
+				set somez = somez + maOmez
+			}
+		}
+		set ^||ML("OUT","I_OMEZENI") = "spojů s datumovým omezením="_somez
+		kill ^||SondaJede
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Rozpad J-věty trasy linky na `#`-segmenty. IN: DB, SKU, LIN, MAX (default 8 zastávek).
 /// OUT: per zastávka jeden řádek "poradi | seg1 | seg2 | ..." pro ruční porovnání s editorem trasy.
 ClassMethod DumpJVeta(ByRef sys As %String) As %Status
