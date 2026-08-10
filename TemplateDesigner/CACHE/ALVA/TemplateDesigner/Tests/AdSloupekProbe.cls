@@ -800,6 +800,610 @@ ClassMethod ScanPerSpoj(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Sonda k `B39`: kde se obdobím **potlačí negativní značka** (spoj jede celé období sloupce, takže
+/// nemá co vysvětlovat) a kde naopak zůstane (jede jen část). Klíčový požadavek zákazníka z #13045.
+/// IN: DB, SKU, LIN, OBDOBI, STRANEK. Read-only.
+ClassMethod ZnackyProZkousku(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		set obdobi = $get(^||ML("IN","OBDOBI")) set:obdobi="" obdobi = "1.7.-31.8."
+		set stranek = +$get(^||ML("IN","STRANEK")) if stranek < 1 set stranek = 6
+		kill ^||ML("OUT")
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set zbytek = """2"",""nadpis"":""Soboty"",""dny"":""6""},{""id"":""3"",""nadpis"":""Nedele a svatky"",""dny"":""7+"""
+		set defBez = "{""sloupce"":[{""id"":""1"",""nadpis"":""Pracovni dny"",""dny"":""12345""},{""id"":" _ zbytek _ "}]}"
+		set defS = "{""sloupce"":[{""id"":""1"",""nadpis"":""Pracovni dny"",""dny"":""12345"",""obdobi"":""" _ obdobi _ """},{""id"":" _ zbytek _ "}]}"
+
+		do ..ZnackyStranek(.sys, db, sku, lin, defBez, stranek, .bez)
+		do ..ZnackyStranek(.sys, db, sku, lin, defS, stranek, .s)
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_ZADANI") = "linka "_lin_", sloupec Pracovni dny, obdobi """_obdobi_""""
+		set n = 0, cas = ""
+		for {
+			set cas = $order(bez(cas)) quit:cas=""
+			continue:'$data(s(cas))
+			continue:bez(cas)=s(cas)
+			set n = n + 1
+			quit:n>10
+			set ^||ML("OUT","B_ZMENA",n) = cas_": znacky bez obdobi """_bez(cas)_""" → s obdobim """_s(cas)_""""
+		}
+		set ^||ML("OUT","C_SOUHRN") = "odjezdu se zmenenymi znackami (prvnich "_stranek_" stranek) = "_n
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Značky u odjezdů 1. sloupce, klíčované „zastávka čas". Pomocná pro ZnackyProZkousku.
+ClassMethod ZnackyStranek(ByRef sys As %String, db As %String, sku As %String, lin As %String, definice As %String, stranek As %Integer, ByRef out)
+{
+	kill out
+	set sys("U","DATA") = db
+	kill ^||ML("IN")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	set ^||ML("IN","DEFINICE_SLOUPCU") = definice
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set klic = "", i = 0
+	for {
+		set klic = $order(^||ML("OUT",klic)) quit:klic=""
+		continue:'$isvalidnum(klic)
+		set i = i + 1
+		quit:i>stranek
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT",klic))
+		set zast = page.values.%Get("POPIS_ZASTAVKA")
+		set it = page.rows.%Get("ODJEZDY").%GetIterator()
+		while it.%GetNext(.k, .o) {
+			continue:o.%Get("SKUPINA_DNU_ID")'="1"
+			set znaky = "", ita = o.%Get("ANOTACE").%GetIterator()
+			while ita.%GetNext(.ak, .a) { set znaky = znaky_a.%Get("ZNAK") }
+			set out(zast_" "_o.%Get("HODINA")_":"_$translate($justify(o.%Get("MINUTA"),2)," ",0)) = znaky
+		}
+	}
+	kill ^||ML("OUT")
+}
+
+/// Sonda k `B39`: přesné zadání pro ruční zkoušku období. Pro první stránky vývěsky vypíše časy
+/// v 1. sloupci bez období a s ním, plus které zmizí - to je očekávaný výsledek, proti kterému jde
+/// v návrháři porovnávat. IN: DB, SKU, LIN, OBDOBI, STRANEK. Read-only.
+ClassMethod ZadaniProZkousku(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		set obdobi = $get(^||ML("IN","OBDOBI")) set:obdobi="" obdobi = "1.7.-31.8."
+		set stranek = +$get(^||ML("IN","STRANEK")) if stranek < 1 set stranek = 3
+		kill ^||ML("OUT")
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set sloupce = """2"",""nadpis"":""Soboty"",""dny"":""6""},{""id"":""3"",""nadpis"":""Nedele a svatky"",""dny"":""7+"""
+		set defBez = "{""sloupce"":[{""id"":""1"",""nadpis"":""Pracovni dny"",""dny"":""12345""},{""id"":" _ sloupce _ "}]}"
+		set defS = "{""sloupce"":[{""id"":""1"",""nadpis"":""Pracovni dny"",""dny"":""12345"",""obdobi"":""" _ obdobi _ """},{""id"":" _ sloupce _ "}]}"
+
+		do ..CasyStranek(.sys, db, sku, lin, defBez, stranek, .bez)
+		do ..CasyStranek(.sys, db, sku, lin, defS, stranek, .s)
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_ZADANI") = "linka "_lin_" skupina "_sku_", sloupce Prac/So/Ne, obdobi """_obdobi_""" jen u 1. sloupce"
+		for i = 1:1:stranek {
+			continue:'$data(bez(i))
+			set radek = $get(bez(i,"zast"))
+			set ^||ML("OUT","B_STRANKA"_i) = radek
+			set ^||ML("OUT","C_STRANKA"_i_"_BEZ") = "  bez obdobi: "_$get(bez(i,"casy"))
+			set ^||ML("OUT","D_STRANKA"_i_"_S") = "  s obdobim: "_$get(s(i,"casy"))
+			// co zmizelo - jako multimnožina (tentýž čas může mít víc variant trasy)
+			kill zbyva
+			set casyS = $get(s(i,"casy"))
+			for ci = 1:1:$length(casyS,",") {
+				set c = $zstrip($piece(casyS,",",ci),"<>W")
+				continue:c=""
+				set zbyva(c) = $get(zbyva(c)) + 1
+			}
+			set zmizelo = "", pocet = 0, casy = $get(bez(i,"casy"))
+			for ci = 1:1:$length(casy,",") {
+				set c = $zstrip($piece(casy,",",ci),"<>W")
+				continue:c=""
+				if $get(zbyva(c)) > 0 { set zbyva(c) = zbyva(c) - 1  continue }
+				set pocet = pocet + 1
+				set zmizelo = zmizelo_$select(zmizelo="":"", 1:", ")_c
+			}
+			set ^||ML("OUT","E_STRANKA"_i_"_ZMIZI") = "  ZMIZI "_pocet_"x: "_$select(zmizelo="":"(nic)", 1:zmizelo)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Časy v 1. sloupci na prvních N stránkách vývěsky. Pomocná pro ZadaniProZkousku.
+ClassMethod CasyStranek(ByRef sys As %String, db As %String, sku As %String, lin As %String, definice As %String, stranek As %Integer, ByRef out)
+{
+	kill out
+	set sys("U","DATA") = db
+	kill ^||ML("IN")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	set ^||ML("IN","DEFINICE_SLOUPCU") = definice
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set klic = "", i = 0
+	for {
+		set klic = $order(^||ML("OUT",klic)) quit:klic=""
+		continue:'$isvalidnum(klic)
+		set i = i + 1
+		quit:i>stranek
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT",klic))
+		set out(i) = 1
+		set out(i,"zast") = "zastavka """_page.values.%Get("POPIS_ZASTAVKA")_""" smer "_page.values.%Get("POPIS_SMER")
+		set casy = "", it = page.rows.%Get("ODJEZDY").%GetIterator()
+		while it.%GetNext(.k, .o) {
+			continue:o.%Get("SKUPINA_DNU_ID")'="1"
+			set casy = casy_$select(casy="":"", 1:", ")_o.%Get("HODINA")_":"_$translate($justify(o.%Get("MINUTA"),2)," ",0)
+		}
+		set out(i,"casy") = $select(casy="":"(zadny)", 1:casy)
+	}
+	kill ^||ML("OUT")
+}
+
+/// Sonda k `B39`: která linka má nejvíc spojů, které v zadaném období vůbec nejedou (= na
+/// prázdninové vývěsce zmizí). Slouží k výběru linky pro ruční vyzkoušení, aby byl rozdíl vidět.
+/// IN: DB, SKU, OD, DO, MAXLIN. Read-only.
+ClassMethod NejlepsiLinkaProObdobi(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set datumOd = $get(^||ML("IN","OD")) set:datumOd="" datumOd = "1.7.2025"
+		set datumDo = $get(^||ML("IN","DO")) set:datumDo="" datumDo = "31.8.2025"
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 250
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+		if sku = "" set sku = $order(^[db]JRL(""))
+
+		set sys("U","DATA") = db
+		set hrlOd = ##class(ALVA.GENERALAPI.Date).DateToHor(datumOd)
+		set hrlDo = ##class(ALVA.GENERALAPI.Date).DateToHor(datumDo)
+		set linek = 0, lin = ""
+		for {
+			set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+			quit:linek>=maxLin
+			continue:'$data(^[db]JRL(sku,lin,"I"))
+			set linek = linek + 1
+			kill ^||SondaJede, arr
+			set arr("PAR","horlogOdDo") = $listbuild(hrlOd, hrlDo)
+			set arr("PAR","platnostLin") = 1
+			set arr("GLB") = "^||SondaJede"
+			do ##class(ALVA.ISY.ISYLinky.API.LinkyStatistika).jede(.sys, $listbuild(sku,"",""), $name(^[db]JRL(sku,lin)), .arr)
+			set nejede = 0, jede = 0, smerId = ""
+			for {
+				set smerId = $order(^||SondaJede("DTA",smerId)) quit:smerId=""
+				set spojId = ""
+				for {
+					set spojId = $order(^||SondaJede("DTA",smerId,spojId)) quit:spojId=""
+					if +$listget($get(^||SondaJede("DTA",smerId,spojId)),1) { set jede = jede + 1 } else { set nejede = nejede + 1 }
+				}
+			}
+			continue:nejede<5
+			continue:jede<5
+			set poradi(nejede, lin) = "jede="_jede_" nejede="_nejede
+		}
+		kill ^||SondaJede
+		set n = 0, klic = ""
+		for {
+			set klic = $order(poradi(klic), -1) quit:klic=""
+			set lin = ""
+			for {
+				set lin = $order(poradi(klic, lin)) quit:lin=""
+				set n = n + 1
+				quit:n>8
+				set ^||ML("OUT","LINKA",n) = "lin="_lin_" "_poradi(klic,lin)
+			}
+			quit:n>8
+		}
+		set ^||ML("OUT","SOUHRN") = db_" skupina="_sku_" obdobi="_datumOd_"-"_datumDo_" prosle linek="_linek
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sonda k `B39`: najde linky vhodné na ruční vyzkoušení období - mají prázdninové rozvržení
+/// (dvě pracovní skupiny), vyplněnou NZ konfiguraci a dost spojů, aby byl rozdíl vidět.
+/// IN: DB, MAXLIN. Read-only.
+ClassMethod LinkyProZkousku(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 20000
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0, nalez = 0, sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek>=maxLin
+				quit:nalez>=8
+				set linek = linek + 1
+				set ftl = +$get(^[db]JRL(sku,lin,"PATCH","MHD_TYP_R"))
+				continue:(ftl'=1)&&(ftl'=3)
+				set nz = $get(^[db]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))
+				continue:$translate(nz,"~")=""
+				// kolik spojů má datumové omezení (bez nich není co obdobím filtrovat)
+				set spoju = 0, sOmez = 0
+				for smerIdx = "T","Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set spoju = spoju + 1
+						for omzId = 11,12,13,14,15,22 { if $get(^[db]JRL(sku,lin,smerIdx,sp,omzId)) '= "" set sOmez = sOmez + 1 quit }
+					}
+				}
+				continue:sOmez<3
+				set nalez = nalez + 1
+				set ^||ML("OUT","LINKA",nalez) = "sku="_sku_" lin="_lin_" rozvrzeni="_ftl_" NZ="_nz_
+					" spoju="_spoju_" s datumovym omezenim="_sOmez_" platnost="_$piece($get(^[db]JRL(sku,lin,"PATCH","Plati")),":",1)
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = db_" proslo linek="_linek_" nalezeno="_nalez
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sonda k `B39`: porovná vývěsku **přes všechny stránky** s obdobím u 1. sloupce a bez něj.
+/// Odpovídá na „proč vidím upozornění, ale na stránce se nic nezměnilo" - stránka je jedna
+/// zastávka × směr, upozornění agreguje celou linku. IN: DB, SKU, LIN, OBDOBI. Read-only.
+ClassMethod ObdobiPresStranky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		set obdobi = $get(^||ML("IN","OBDOBI"))
+		if obdobi = "" set obdobi = "1.7.-31.8."
+		kill ^||ML("OUT")
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		// výchozí vzor Prac / So / Ne+svátky, období jen u 1. sloupce
+		set sloupce = """1"",""nadpis"":""Pracovni dny"",""dny"":""12345"""
+		set defBez = "{""sloupce"":[{""id"":" _ sloupce _ "}," _
+			"{""id"":""2"",""nadpis"":""Soboty"",""dny"":""6""}," _
+			"{""id"":""3"",""nadpis"":""Nedele a svatky"",""dny"":""7+""}]}"
+		set defS = "{""sloupce"":[{""id"":" _ sloupce _ ",""obdobi"":""" _ obdobi _ """}," _
+			"{""id"":""2"",""nadpis"":""Soboty"",""dny"":""6""}," _
+			"{""id"":""3"",""nadpis"":""Nedele a svatky"",""dny"":""7+""}]}"
+
+		set t1 = $zhorolog
+		do ..SecistVyvesku(.sys, db, sku, lin, defBez, .bez)
+		set t2 = $zhorolog
+		do ..SecistVyvesku(.sys, db, sku, lin, defS, .s)
+		set t3 = $zhorolog
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_OBDOBI") = obdobi_" (jen u 1. sloupce, vzor Prac/So/Ne)"
+		set ^||ML("OUT","A_CAS") = "GetData bez obdobi="_$fnumber(t2-t1,"",3)_" s · s obdobim="_$fnumber(t3-t2,"",3)_" s"
+		set ^||ML("OUT","B_BEZ_OBDOBI") = "stránek="_$get(bez("stranek"))_" odjezdů celkem="_$get(bez("odj"))_
+			" · sloupec1="_(+$get(bez("sl",1)))_" sloupec2="_(+$get(bez("sl",2)))_" sloupec3="_(+$get(bez("sl",3)))
+		set ^||ML("OUT","C_S_OBDOBIM") = "stránek="_$get(s("stranek"))_" odjezdů celkem="_$get(s("odj"))_
+			" · sloupec1="_(+$get(s("sl",1)))_" sloupec2="_(+$get(s("sl",2)))_" sloupec3="_(+$get(s("sl",3)))
+		set ^||ML("OUT","D_ROZDIL") = "odjezdů ubylo="_($get(bez("odj")) - $get(s("odj")))_
+			" · stránek s upozorněním="_(+$get(s("varovani")))_" · nezařazených hlášení="_(+$get(s("nezarazene")))
+		set c = "", ruznychSpoju = 0, seznam = ""
+		for { set c = $order(s("spoj", c)) quit:c=""  set ruznychSpoju = ruznychSpoju + 1  set seznam = seznam_$select(seznam="":"", 1:", ")_c }
+		set ^||ML("OUT","E_RUZNYCH_SPOJU") = "různých nezařazených spojů = "_ruznychSpoju_" (čísla: "_$extract(seznam,1,60)_")"
+		set ^||ML("OUT","F_PRVNI_VAROVANI") = $get(s("prvni"))
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sečte odjezdy vývěsky přes všechny stránky. Pomocná pro ObdobiPresStranky.
+ClassMethod SecistVyvesku(ByRef sys As %String, db As %String, sku As %String, lin As %String, definice As %String, ByRef souhrn)
+{
+	kill souhrn
+	set sys("U","DATA") = db
+	kill ^||ML("IN")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	set ^||ML("IN","DEFINICE_SLOUPCU") = definice
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set klic = "", souhrn("stranek") = 0, souhrn("odj") = 0
+	for {
+		set klic = $order(^||ML("OUT",klic)) quit:klic=""
+		continue:'$isvalidnum(klic)
+		set souhrn("stranek") = souhrn("stranek") + 1
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT",klic))
+		set nez = page.values.%Get("NEZARAZENE_SPOJE")
+		set cisla = page.values.%Get("NEZARAZENE_SPOJE_CISLA")
+		for ci = 1:1:$length(cisla,",") { set c = $piece(cisla,",",ci)  if c '= "" set souhrn("spoj", c) = "" }
+		if nez '= "" {
+			set souhrn("varovani") = $get(souhrn("varovani")) + 1
+			set souhrn("nezarazene") = $get(souhrn("nezarazene")) + $length(nez,",")
+			if $get(souhrn("prvni")) = "" {
+				set souhrn("prvni") = "zastávka """_page.values.%Get("POPIS_ZASTAVKA")_""" směr "_page.values.%Get("POPIS_SMER")_": "_$extract(nez,1,80)
+			}
+		}
+		set it = page.rows.%Get("ODJEZDY").%GetIterator()
+		while it.%GetNext(.k, .o) {
+			set souhrn("odj") = souhrn("odj") + 1
+			set idS = o.%Get("SKUPINA_DNU_ID")
+			set souhrn("sl",idS) = $get(souhrn("sl",idS)) + 1
+		}
+	}
+	kill ^||ML("OUT")
+}
+
+/// Sonda k `B39`: týdenní platnosti spojů jedné linky + do kolika sloupců dnes spoj spadne.
+/// Hledá spoje, které patří do víc sloupců naráz - tam se dnešní „jedna sada značek na spoj"
+/// rozchází s per-sloupcovým počítáním. IN: DB, SKU, LIN. Read-only.
+ClassMethod PlkLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		kill ^||ML("OUT")
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+		set ftl = +$get(^[db]JRL(sku,lin,"PATCH","MHD_TYP_R"))
+		set ^||ML("OUT","A_FTL") = "rozvržení linky (FTL) = "_ftl
+		set kolizi = 0
+		for smerIdx = "T","Z" {
+			set sp = ""
+			for {
+				set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+				continue:'$isvalidnum(sp)
+				set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)),"#",1),":",7)
+				set klicPlk = $select(plk="":"(prázdné)", 1:plk)
+				set pocty(klicPlk) = $get(pocty(klicPlk)) + 1
+				// spadne do víc sloupců a legacy by mu do všech dalo tutéž sadu značek?
+				set skupiny = $classmethod(cls, "ZarazeniSpoje", ftl, plk, "", "")
+				set legacy = $classmethod(cls, "DenniZnacky", ftl, plk)
+				if ($length(skupiny,",") > 1) && (legacy '= "") {
+					set kolizi = kolizi + 1
+					if kolizi <= 8 set ^||ML("OUT","C_KOLIZE",kolizi) = "spoj "_sp_" ("_smerIdx_") platnost="""_plk_""" → sloupce "_skupiny_", legacy značky """_legacy_""""
+				}
+			}
+		}
+		set plk = "", radek = ""
+		for { set plk = $order(pocty(plk)) quit:plk=""  set radek = radek_""""_plk_"""x"_pocty(plk)_" " }
+		set ^||ML("OUT","B_PLATNOSTI") = radek
+		set ^||ML("OUT","D_SOUHRN") = "spojů ve víc sloupcích se značkou = "_kolizi
+		// sdílí oba směry číslování spojů? (klient podle čísel počítá spoje v upozornění)
+		set spolecnych = 0, sp = ""
+		for {
+			set sp = $order(^[db]JRL(sku,lin,"T",sp)) quit:sp=""
+			continue:'$isvalidnum(sp)
+			if $data(^[db]JRL(sku,lin,"Z",sp)) set spolecnych = spolecnych + 1
+		}
+		set ^||ML("OUT","E_CISLA_V_OBOU_SMERECH") = "cisel spoju existujicich v obou smerech = "_spolecnych
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sonda k `B39`: nese se „spoj o svátku nejede" týdenní platností, nebo datumovým omezením
+/// (= negativní značkou)? Rozhoduje, jestli tu informaci má vysvětlovat denní značka, nebo jestli
+/// ji zákazníkovi řekne už NZ. IN: DB, MAXLIN. Read-only.
+ClassMethod ScanSvatky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 3000
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set linek = 0, spoju = 0, sMarkerem = 0, sku = ""
+		kill kat
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				for smerIdx = "T","Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set spoju = spoju + 1
+						set veta = $get(^[db]JRL(sku,lin,smerIdx,sp))
+						set plk = $piece($piece(veta,"#",1),":",7)
+						set cnz = $piece(veta,"#",7)
+						// má spoj datumové omezení (to, co nese negativní značku a text do legendy)?
+						set maOmez = 0
+						for omzId = 11,12,13,14,15,22 { if $get(^[db]JRL(sku,lin,smerIdx,sp,omzId)) '= "" set maOmez = 1 }
+						if maOmez set sMarkerem = sMarkerem + 1
+						// zajímají nás spoje, které jedou v neděli, ale NE ve svátek
+						continue:'(plk["7")
+						continue:plk["+"
+						set klic = $select(maOmez&&(cnz'=""):"1 s omezením i číslem značky",
+							maOmez:"2 s omezením, ale bez čísla značky",
+							cnz'="":"3 jen číslo značky, bez omezení",
+							1:"4 BEZ čehokoli - nic to nevysvětlí")
+						set kat(klic) = $get(kat(klic)) + 1
+					}
+				}
+			}
+		}
+		set klic = "", celkem = 0
+		for { set klic = $order(kat(klic)) quit:klic=""  set celkem = celkem + kat(klic) }
+		set ^||ML("OUT","SOUHRN") = db_" linek="_linek_" spojů="_spoju_" · s datumovým omezením="_sMarkerem
+		set ^||ML("OUT","A_CELKEM") = "spojů ""jede v neděli, ale ne ve svátek""="_celkem
+		set klic = ""
+		for { set klic = $order(kat(klic)) quit:klic=""  set ^||ML("OUT","B_"_$piece(klic," ",1)) = klic_" = "_kat(klic) }
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sonda k `B39` etapě 2: kolika spojům přibude denní značka po sjednocení pravidla „značka jen
+/// když spoj nepokrývá celý sloupec". Rozlišuje oddělený víkendový sloupec („Neděle a svátky",
+/// vzory 0/3) a slitý („So, Ne a svátky", vzory 1/2) - legacy tam značky netiskne v různém rozsahu.
+/// IN: DB, MAXLIN. Read-only.
+ClassMethod ScanNoveZnacky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 3000
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+		set linek = 0, spoju = 0, novaNedele = 0, novaSlity = 0, novaPrac = 0, sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek>=maxLin
+				set linek = linek + 1
+				for smerIdx = "T","Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set spoju = spoju + 1
+						set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)), "#", 1), ":", 7)
+						set dny = $classmethod(cls, "DnySpoje", plk)
+						// oddělený víkendový sloupec „7+" (vzor Prac / So / Ne+svátky)
+						set noveNe = $classmethod(cls, "DenniZnackyProSloupec", dny, "7+")
+						set legacyNe = ""   // legacy FTL0 víkendové značky netiskne vůbec
+						if (noveNe '= legacyNe) && $classmethod(cls, "SedneDoSloupceDny", dny, "7+") set novaNedele = novaNedele + 1
+						do ..Smer(.smery, "NEDELE", legacyNe, noveNe, $classmethod(cls, "SedneDoSloupceDny", dny, "7+"))
+						// slitý víkendový sloupec „67+" (vzor Prac / víkend)
+						set noveSl = $classmethod(cls, "DenniZnackyProSloupec", dny, "67+")
+						set legacySl = $classmethod(cls, "DenniZnacky", 2, plk)
+						set legacySl = $translate(legacySl, "12345")   // ve víkendovém sloupci jde jen o 6/7/+
+						if (noveSl '= legacySl) && $classmethod(cls, "SedneDoSloupceDny", dny, "67+") set novaSlity = novaSlity + 1
+						do ..Smer(.smery, "SLITY", legacySl, noveSl, $classmethod(cls, "SedneDoSloupceDny", dny, "67+"))
+						// pracovní sloupec „12345"
+						set novePr = $classmethod(cls, "DenniZnackyProSloupec", dny, "12345")
+						set legacyPr = $translate($classmethod(cls, "DenniZnacky", 0, plk), "67+")
+						if (novePr '= legacyPr) && $classmethod(cls, "SedneDoSloupceDny", dny, "12345") set novaPrac = novaPrac + 1
+						do ..Smer(.smery, "PRACOVNI", legacyPr, novePr, $classmethod(cls, "SedneDoSloupceDny", dny, "12345"))
+						// jmenovatel: kolik spojů do sloupce vůbec spadne (jak hustá ta změna bude)
+						if $classmethod(cls, "SedneDoSloupceDny", dny, "7+") set smery("NEDELE","vsech") = $get(smery("NEDELE","vsech")) + 1
+						if $classmethod(cls, "SedneDoSloupceDny", dny, "67+") set smery("SLITY","vsech") = $get(smery("SLITY","vsech")) + 1
+						if $classmethod(cls, "SedneDoSloupceDny", dny, "12345") set smery("PRACOVNI","vsech") = $get(smery("PRACOVNI","vsech")) + 1
+					}
+				}
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = db_" linek="_linek_" spojů="_spoju
+		set ^||ML("OUT","A_NEDELE_SVATKY") = "sloupec ""Neděle a svátky"" (vzor 0/3): jinak než dnes u "_novaNedele_" spojů"
+		set ^||ML("OUT","B_SLITY_VIKEND") = "sloupec ""So, Ne a svátky"" (vzor 1/2): jinak než dnes u "_novaSlity_" spojů"
+		set ^||ML("OUT","C_PRACOVNI") = "sloupec ""Pracovní dny"": jinak než dnes u "_novaPrac_" spojů"
+		for typ = "NEDELE", "SLITY", "PRACOVNI" {
+			set vsech = +$get(smery(typ,"vsech"))
+			set pribude = +$get(smery(typ,"pribude"))
+			set podil = $select(vsech:$fnumber(pribude / vsech * 100, "", 1), 1:0)
+			set ^||ML("OUT","D_SMER_"_typ) = "ve sloupci je "_vsech_" spojů · značka PŘIBUDE u "_pribude_" ("_podil_" %)"_
+				" · ZMIZÍ u "_(+$get(smery(typ,"zmizi")))_" · jiná sada u "_(+$get(smery(typ,"jina")))
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Přibude značka, zmizí, nebo se jen změní sada? (Pomocná pro ScanNoveZnacky.)
+ClassMethod Smer(ByRef smery, typ As %String, legacy As %String, nove As %String, sedne As %Boolean)
+{
+	if 'sedne quit
+	if legacy = nove quit
+	if legacy = "" { set smery(typ,"pribude") = $get(smery(typ,"pribude")) + 1 quit }
+	if nove = "" { set smery(typ,"zmizi") = $get(smery(typ,"zmizi")) + 1 quit }
+	set smery(typ,"jina") = $get(smery(typ,"jina")) + 1
+}
+
+/// Sonda k `B39` etapě 2: co vyjde z GetData, když má sloupec zadané období. Postaví definici
+/// se dvěma sloupci (období vs. bez podmínky), zavolá GetData a shrne, kolik odjezdů kam spadlo
+/// a jaké značky u nich jsou. IN: DB, SKU, LIN, OBDOBI. Read-only, po vytěžení smazat.
+ClassMethod DefiniceObdobiSonda(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set sku = $get(^||ML("IN","SKU"))
+		set lin = $get(^||ML("IN","LIN"))
+		set obdobi = $get(^||ML("IN","OBDOBI"))
+		if obdobi = "" set obdobi = "1.7.-31.8."
+		if (db = "") || (lin = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LIN jsou povinné"))
+
+		set def = "{""sloupce"":[" _
+			"{""id"":""1"",""nadpis"":""Obdobi"",""dny"":"""",""obdobi"":""" _ obdobi _ """}," _
+			"{""id"":""2"",""nadpis"":""Bez podminky"",""dny"":"""",""obdobi"":""""}]}"
+		set ^||ML("OUT","A_DEFINICE") = def
+
+		set sys("U","DATA") = db
+		kill ^||ML("IN")
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		set ^||ML("IN","DEFINICE_SLOUPCU") = def
+		set zacatek = $zhorolog
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+		set trvalo = $zhorolog - zacatek
+
+		set stranek = 0, klic = "", prvni = ""
+		for {
+			set klic = $order(^||ML("OUT",klic)) quit:klic=""
+			continue:klic="ERR"
+			continue:'$isvalidnum(klic)
+			set stranek = stranek + 1
+			if prvni = "" set prvni = $get(^||ML("OUT",klic))
+		}
+		set chyba = $get(^||ML("OUT","ERR"))
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_DEFINICE") = def
+		set ^||ML("OUT","B_TRVANI") = $fnumber(trvalo,"",3)_" s, stránek="_stranek
+		if chyba '= "" set ^||ML("OUT","C_CHYBA") = chyba
+		if prvni = "" ret $$$OK
+
+		set page = ##class(%DynamicObject).%FromJSON(prvni)
+		set ^||ML("OUT","D_NEZARAZENE") = page.values.%Get("NEZARAZENE_SPOJE")
+		set ^||ML("OUT","E_MIMO_PLATNOST") = page.values.%Get("OBDOBI_MIMO_PLATNOST")
+		set n = 0, it = page.rows.%Get("ODJEZDY").%GetIterator()
+		while it.%GetNext(.k, .o) {
+			set idSloupce = o.%Get("SKUPINA_DNU_ID")
+			set pocty(idSloupce) = $get(pocty(idSloupce)) + 1
+			set znaky = ""
+			set ita = o.%Get("ANOTACE").%GetIterator()
+			while ita.%GetNext(.ak, .a) { set znaky = znaky _ a.%Get("ZNAK") }
+			if znaky '= "" {
+				set n = n + 1
+				if n <= 12 set ^||ML("OUT","G_ZNACKY",n) = "sloupec="_idSloupce_" "_o.%Get("HODINA")_":"_o.%Get("MINUTA")_" znaky="_znaky
+			}
+		}
+		set idSloupce = "", radek = ""
+		for { set idSloupce = $order(pocty(idSloupce)) quit:idSloupce=""  set radek = radek_"sloupec "_idSloupce_"="_pocty(idSloupce)_" odjezdů  " }
+		set ^||ML("OUT","F_ODJEZDY") = radek
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Sonda k `B39` etapě 2: jaké tvary týdenní platnosti (`plk`, hlava spoje pole 7) data reálně
 /// nesou. Rozhoduje, jestli jde denní značky sjednotit pravidlem „spoj pokrývá celý sloupec →
 /// značka se netiskne" - u zkratky `X` a prázdné platnosti vyjde stejně jako legacy, u explicitně
