@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-08-10 (6) - ✅ `B63`: značky, které si zákazník u linky vypnul, se přestaly tisknout
+
+Vývěska teď respektuje per-linkový seznam **„nevypisovat značku ve sloupci"** (`MHD_NEZNZ123`,
+4 sloty = 4 sloupce). Doteď jsme ho ignorovali, takže se u minut tiskly značky, které si zákazník
+vypnul, a byly i v legendě.
+
+**Doloženo před/po na živých datech:** `SKNI_MHDNITRA`, linka 0000001 (konfigurace `52~52~53,54,55~`)
+měla značku 52 u **34 ze 47 odjezdů** - po opravě **0×** a zmizela i z legendy. „Před" jsem změřil
+mutací (potlačení vypnuté), aby bylo vidět, že to dělá ta nová větev, ne shoda dat.
+
+**Legenda se zapisuje až u sloupce, kde se značka reálně tiskne** - potlačená ve všech sloupcích spoje
+znamená, že v legendě nemá co dělat (1:1 legacy `noNZ2`). Nemíchat s `MHD_NENZ1_NENZ2`, který skrývá
+**celý spoj** z pracovních sloupců a má navíc legacy sloty prohozené.
+
+⚠️ **České firmy to vyplněné nemají** (`CB_CSADAD` 0 z 31 216 linek, `ZL_KOVED` 0 z 17 029) - proto
+zlaté odtisky nehnuly a proto to nikdo nenahlásil. Používá to slovenská MHD Nitra, tam na každé lince.
+
+**Poučení (podruhé v téhle session):** `.cls` upravená skriptem se **nenasadí**, hook reaguje jen na
+Edit/Write. Runner hlásil 74/74 a můj nový test vůbec neběžel; poznal jsem to jen podle nezměněného
+počtu testů. Když počet testů po přidání testu neroste, není zelená zelená.
+
+### Pro `B39` (vlastní skupiny dnů) je potřeba nejdřív domluva - pět otázek
+
+1. **Kde nastavení žije** - šablona, nebo linka? Rozsahy dnů jsou na lince nezávislé (→ šablona),
+   u seznamu značek to není jisté: čísla se přidělují firemně, ale význam plyne z omezení spojů.
+2. **Může sloupec kombinovat obojí** (seznam značek i rozsah dnů), nebo vždy jen jedno pravidlo?
+3. **Spoj, který nesedí do žádného sloupce** (nebo naopak do dvou) - co s ním?
+4. **Svátky** - podle jakého kalendáře, a platí i pro vlastní skupiny?
+5. **Zpětná kompatibilita** - dnešní pevná schémata se musí stát presety, jinak neprojdou zlaté odtisky.
+
+Sloupec potřebuje **tři nezávislé knoflíky**, které se nesmí slít: zahrnutí (kdo do sloupce patří),
+vyloučení (koho vyhodit, i když by patřil - to je `TR10`) a potlačení značky (`B63`, hotové).
+Skutečná práce je varianta „rozsah dnů" - potřebuje **vyhodnocovač „jede spoj v datu X"**, který
+dnes nemáme (omezení spoje umíme jen formátovat do textu).
+
+
 ## 2026-08-10 (5) - ✅ `B64` uzavřeno: „<1" bez přepínače, sloupce variant dědí celý styl
 
 **Přepínač „Zarovnat číslice pod sebe" zrušen** (rozhodnutí Jan po vidění odtisku) - visící „<"

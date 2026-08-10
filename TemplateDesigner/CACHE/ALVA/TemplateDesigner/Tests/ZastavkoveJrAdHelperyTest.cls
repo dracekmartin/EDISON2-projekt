@@ -86,6 +86,26 @@ Method TestBitmapNaSkupiny()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BitmapNaSkupiny("1~1"), "1,2", "1~1 → 1,2")
 }
 
+// ── „nevypisovat NZ ve sloupci" (MHD_NEZNZ123) ───────────────────────────────
+
+Method TestZnackaSkrytaVeSloupci()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	// slot N patří sloupci N (na rozdíl od MHD_NENZ1_NENZ2, kde legacy sloty prohazuje)
+	set cfg = "3~7,8~~12"
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", cfg, 1, 3), 1, "značka 3 skrytá ve sloupci 1")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", cfg, 2, 3), 0, "ve sloupci 2 se značka 3 tiskne")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", cfg, 2, 8), 1, "výčet ve slotu: 7,8 → 8 skrytá")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", cfg, 3, 3), 0, "prázdný slot neskrývá nic")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", cfg, 4, 12), 1, "čtvrtý sloupec (FTL 3) taky")
+	// číslo se porovnává numericky (legacy +NZ), aby „03" sedlo na „3"
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", cfg, 1, "03"), 1, "vedoucí nula nevadí")
+	// dílčí shoda se nesmí chytit - „1" není „12"
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", cfg, 4, 1), 0, "1 není 12")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", "", 1, 3), 0, "bez konfigurace se netiskne nic navíc")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaVeSloupci", cfg, 1, ""), 0, "spoj bez značky")
+}
+
 // ── Časy jízdy z W-mapy ──────────────────────────────────────────────────────
 
 Method TestCasHodnota()

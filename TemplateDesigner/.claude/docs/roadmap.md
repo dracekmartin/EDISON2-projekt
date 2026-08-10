@@ -8,7 +8,8 @@
 
 > **Stav k 2026-08-10.**
 >
-> **▶ Další krok: `B63`** (dočtení nastavení „nevypisovat značku ve sloupci") - malé.
+> **▶ Další krok: `B39`** (vlastní skupiny dnů) - **nejdřív domluva s kolegou nad tvarem**, ne kód;
+> pět otázek k rozhodnutí je v changelogu 2026-08-10 (6). Malá alternativa už ve frontě není.
 > Velké alternativy: **Fáze B** (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít
 > vcelku) nebo linkový JŘ (**B10** + **B13**) jako dedikovaný slot.
 >
@@ -54,7 +55,6 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B63** | **Nečteme nastavení „nevypisovat značku ve sloupci N"** (nález 7. 8.) - starý modul má u linky **dva různé** per-sloupcové seznamy: `MHD_NENZ1_NENZ2` (2 sloty) skryje **spoj** z pracovních sloupců (to čteme) a `MHD_NEZNZ123` (**4 sloty, per sloupec**) nechá minutu vytisknout, ale **potlačí u ní značku** - a když je značka potlačená ve všech sloupcích, kde spoj je, vypadne i z legendy (`noNZ2^JRapiLinPrtMhd1:348`). Druhý z nich **ignorujeme**, takže na naší vývěsce se značky, které si zákazník vypnul, tisknou dál. Sousední řádky téže rutiny, ze které jsme portovali `ZarazeniSpoje` (ř. 37-40 vzato, 41-45 ne). Přímo souvisí s #12964 (stížnost na množství značek). | S | odtisk linky s nastaveným seznamem = značka zmizí u minut i z legendy |
 | **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období. Mění datový model + chce editor. **Zbytek tiketu po `B29`** - ohlášená chybná značka je opravená 31. 7. (`B29`, archiv), takže část „netiskni značku, kterou už říká nadpis sloupce" je hotová a pro vlastní skupiny se jen musí dodržet i u nich. Pravidlo značek už existuje (`DenniZnacky`). **Návrh kolegy (7. 8.), který tenhle blok mění na obecný:** definovat sloupec v sekci minut buď (a) **seznamem negativních značek** - vypiš spoje, které je mají (tím padnou prázdniny), nebo (b) **rozsahem dnů** - spočítej, které spoje v těch dnech jedou (tím padne vánoční provoz a podobné speciality). Dnešní pevné schéma se tím stane presetem. **Pohltí to `TR10`** (skrývání spojů o So/Ne/svátcích - **rozhodnutí Jan 7. 8.: nedělat zvlášť**), ale **jen když sloupec umí i vyloučení**, ne jen zahrnutí: TRANSDEV má spoj, který podle dat jede, a ve víkendovém sloupci ho nechce - s pouhým „vypisuj spoje s těmito značkami" by musel označkovat všechny, které vidět chce. Dnešní per-linkový seznam „nevypisovat spoje se značkou" = ten vylučovací seznam, dnešní pevné schéma = preset. ⚠️ Varianta (b) potřebuje **vyhodnocovač „jede spoj v datu X"**, který dnes nemáme: omezení spoje umíme jen formátovat do textu (`SestavTextOmezeni`), ne jimi počítat. To je skutečná práce tohoto bloku. ⚠️ Otevřená otázka pro kolegu: **rozsah čísel negativních značek je firemní** (`^JRSET("Cis","InPlatODDO")` + symboly `InPlatOzn`), ale význam značky plyne z omezení jednotlivých spojů - takže není jisté, že „značka 3" znamená na dvou linkách totéž. Na tom stojí, jestli seznam značek smí žít v šabloně, nebo musí zůstat u linky. Rozsahy dnů jsou naopak na lince nezávislé, takže do šablony patří. | L | koncept skupin + editor |
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
