@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-08-10 (9) - 🧭 `B39` rozhodnuto: vlastní sloupce vývěsky, zadání ve dvou etapách
+
+Domluva Jan + kolega dokončena - pět otázek z (6) je zodpovězených, blok přechází z „domluva" na
+„implementace". Rozhodnutí:
+
+- **Kde žije:** definice sloupců v šabloně; edituje se v dialogu sloupců **prvku mřížky odjezdů**.
+  **Jedna definice na šablonu** - ovlivňuje data celé vývěsky včetně legendy, ne jen prvek; kdyby
+  šablona měla prvků odjezdů víc, sdílí ji.
+- **Přednost (backup režim):** šablona s definicí → linkové seznamy (`MHD_NENZ1_NENZ2`,
+  `MHD_NEZNZ123`) se ignorují **celé**; šablona bez definice → dnešní chování beze změny (Nitra se
+  nezmění ani o pixel). **Nemíchat** - žádné „dny ze šablony, značky z linky". Nové šablony
+  předvyplní výchozí vzor (Prac / So / Ne+svátky), takže se linkové zadání opouští přirozeně,
+  bez jednorázové migrace; nová JŘ ho už nabízet nemusí, číst ho ale musíme umět napořád.
+- **Model sloupce:** max 5 sloupců, u každého kaskáda podmínek **dny → značky → období**; značky
+  jako **dva seznamy** (jen s těmito / bez těchto - vylučovací je podmínka pohlcení `TR10`)
+  + per-sloupec seznam **„nevypisovat značku"** (přestěhování `B63` z linky na sloupec).
+  Nevyplněná podmínka neomezuje. Překryvy sloupců jsou legitimní (jsou i dnes) - pojistka se staví
+  jen na díry.
+- **Díra v pokrytí:** viditelné upozornění „N spojů nespadá do žádného sloupce" (a které)
+  v návrháři **i při tisku**, ne tvrdý zákaz. Kontrola jde jen nad načtenými daty, proto musí být
+  i v tiskové cestě - šablona bez díry u linky A může mít díru u linky B.
+- **`X` v týdenní platnosti** = legislativní zkratka pracovních dnů (kolega) → při vyhodnocování
+  pravidla se počítá jako 1-5.
+- **Číslování negativních značek je konzistentní per skupina linek** (kolega) → konkrétní čísla
+  značek v šabloně jsou v pořádku, odkaz „přes roli" není potřeba. Pojistka proti použití šablony
+  nad jinou skupinou: editor u zadané značky zobrazí její význam z aktuálních dat.
+
+**Etapa 1 (bez otevřených otázek): dny + značky.** Editor sloupců, presety čtyř dnešních rozvržení,
+upozornění na nepokryté spoje, JSON šablony verze + migrace (R5), serverový druhý režim zařazování
+(dnešní kód zůstává jako režim „automaticky"), definice do `GetData` jako JSON parametr
+(allowlist `ServerSideParams`) a **re-fetch při úpravě sloupců** - data nově závisí na obsahu
+šablony, to je jediná nová vazba. Testy: zlaté odtisky beze změny (kryjí backup režim) + „preset
+přes nový režim == dnešní výstup" na živých datech.
+
+**Etapa 2 (blokovaná na business odpovědích): období.** Navržená pravidla čekají na odkývání:
+„jede jen" = patří, jen když se data protínají s obdobím; „nejede" vyřazuje **jen při pokrytí
+celého** období sloupce; „jede"/„jede také" **nikdy nevyřazují** (jen přidávají jízdy → pro
+zařazení se ignorují, do legendy jdou jako dnes); sudé/liché týdny neumíme rozhodnout → zařadit
+a nechat na uživateli; víc poznámek naráz = platí všechny zároveň (potvrzeno). Otevřené: význam
+prefixu `k@`/`L@` v datových omezeních (kolega neví - dohledat; do té doby konzervativně „neumíme
+rozhodnout → zařadit", předem změřit výskyt na živých datech). Rozdíl „jede" vs. „jede také" **není
+blokující** - pravidlo „nikdy nevyřazuje" ho obchází; bude potřeba, až kdyby „jede také" mělo spoj
+do sloupce přitahovat.
+
+**Rozsah:** jen AD. MHD má vlastní typy provozu a nemění se (rozhodnutí Jan).
+
 ## 2026-08-10 (8) - Test závislý na stroji už neprojde do repa
 
 Návazně na opt-in baseline níže: aby se opakování téhož nespoléhalo na to, že si na to někdo vzpomene,
