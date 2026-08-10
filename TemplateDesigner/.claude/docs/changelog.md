@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-10 (2) - 🎯 „<1" je naše práce (`B64`), obrácené poznámkování berou kolegové
+
+Dvě z nepokrytých věcí se posunuly, obě po rozhovoru Jana s kolegy.
+
+**`TR8` „<1" místo „0" - premisa vyjasněná, kolegy k tomu nepotřebujeme.** Jan přišel s tím, že
+zákazník musí mít na mysli **první úsek**, protože nikde jinde to nedává smysl. Ověřeno v kódu a platí:
+doba jízdy je kumulativní **od vývěskové zastávky**, takže její vlastní řádek je 0 **a hned následující
+zastávka je taky 0**, jede-li se tam pod minutu. Dál v tom sloupci už nula pro jízdu nevzniká - kumulativní
+součty se při nulovém úseku jen zopakují (1→1). Tím padá hypotéza o legacy sloupci „Průběhy" i potřeba
+per-segment sloupce. → nový blok **`B64`** (S): řádek jiný než vývěskové zastávky s nulovou kumulativní
+dobou tiskne „<1", parametr sestavy, default vypnuto.
+
+⚠️ **Past k tomu:** `CasJizdyZMapy` vrací 0 i pro zastávku **mimo trasu** nebo projížděnou - to je
+„nemám data", ne nulová jízda. Bez rozlišení by „<1" vyskočilo tam, kde má být prázdno.
+
+**`TR9` obrácená logika poznámkování - berou kolegové.** Rozsah TČ přímo vedle značky místo klikání
+u každého spoje; zapracují to do zadávání jízdních řádů. Tisková strana se nemění, u nás žádná práce.
+
+**Tím je sada TRANSDEV celá rozdělená** - nic nezůstalo bez vlastníka: 5 hotových, `TR7` k ověření
+u klienta, `TR5`+`TR9`+#7937 u kolegů, `TR10` v #13045, `TR8` u nás jako `B64`.
+
+
 ## 2026-08-10 (1) - 🤝 dohoda s kolegy: sloupce pro odsazení a cíl; co tím pokryté NENÍ
 
 Jan se domluvil s kolegy, že do jízdních řádů přidají **sloupec pro odsazení zastávky** a **sloupec

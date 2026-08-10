@@ -106,8 +106,8 @@ polovina 2026 - viz §H). Zavírat po ověření dané featury v releasu TD + od
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🤝 **DOHODNUTO s kolegy 10. 8.** - do jízdních řádů přidají **sloupec pro zadání cíle**; naše část pak je pole přečíst a nabídnout v šabloně. ⚠️ Ověřit, že je **per zastávka × směr** (střední varianta) - jen per směr už umíme dnes přes `POPIS_SMER`=konečná. (min) HOTOVO, ideál = číselník cílů zůstává mimo |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | ✅ **HOTOVO 2026-08-03** (#12997): JŘ umí víc barev na linku (Petr), agenda je vydává jako `BARVA_LINKY` / `BARVA_LINKY_2` a jdou zapsat do každého barevného pole šablony. TRANSDEV jede AD (§A6), takže i jejich MHD Trenčín je pokryté. |
 | TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | S–M | ✅ **v návrháři ten problém neexistuje** (ověřeno 6. 8.): sloupce se nezapínají, rozvinou se samy a mají písmena variant, ne pozicová čísla - poslat k vyzkoušení. Předtím: **zčásti vyřešeno 2026-07-27** (#13048 bod 5): varianty dle sledu zastávek (málo sloupců) + parametr „Řazení variant tras: Stabilní". Zbývá jen případný per-písmeno výběr - až TRANSDEV potvrdí nad novým chováním |
-| TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | ? | ⏸️ **park - premisa nejasná** (viz níže §TR/8): naše časy jsou kumulativní → 0-segment se tiskne jako opakované číslo (1,1), ne „0"; per-segment sloupec TD nemá. Ověřit u TRANSDEV, který sloupec (legacy „Průběhy"?) |
-| TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | 🟠 Caché-input (Studio JŘ) |
+| TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | S | 🟢 **premisa vyjasněná 10. 8. (Jan) - je to NAŠE práce, blok `B64`.** Zákazník musí mít na mysli **první úsek**: doba jízdy se počítá od vývěskové zastávky, takže její vlastní řádek je 0 a hned následující zastávka je taky 0, jede-li se tam pod minutu. Jinde v tom sloupci nula pro jízdu nevzniká. Detail a past → §TR/8 |
+| TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | 🤝 **DOHODNUTO s kolegy 10. 8.** - zapracují do zadávání jízdních řádů; tisková strana se nemění, u nás žádná práce |
 | TR10 | Skrýt spoje o So/Ne/svátcích | S | 🟡 **malá varianta jde u nás** (přepínač „skrýt značené spoje i ve víkendových sloupcích" nad existujícím per-linkovým seznamem `MHD_NENZ1_NENZ2`); vlastní seznam per sloupec = kolegové. Detail §TR |
 
 **Z prezentací zákazníkům - §P:**
@@ -795,15 +795,22 @@ Víkendový je až třetí (`NacistSkupinyDnu`) a nastaví se na 1 bez jakékoli
    pořadí výskytu variantu v seznamu spojů (nestabilní - Sloupec 3 na začátku = Sloupec 2 uprostřed). Chce
    explicitní kontrolu (které spoje / úsek řídí generování). → **Relates L1 multi-varianta TrasaMin** (`VARIANTY_TRAS`
    + `ShowAllRouteVariants`); je to ta „jemnější výběr variant (per-písmeno)" z `ad-data-mapa.md §10`. M.
-8. **Jízdní doby - „<1" místo „0"**: nulová jízdní doba mezi zastávkami → zobrazit „<1" (méně než minuta) místo „0".
-   Konfigurovatelné. ⏸️ **PARK - premisa nejasná (analýza 2026-07-10):**
-   - TD (i legacy „Časy"/„Trasa min.") zobrazuje **kumulativní** čas od nástupní zastávky. 0-minutový úsek
-     (dvě sousední zastávky stejný kumulativ, ověřeno na `CB_CSADAD` lin **0380520** var. T3: 1→1) se tiskne
-     jako **opakované číslo** (1,1), **ne jako „0"**. Jediná „0" = řádek nástupní zastávky (ta zůstává 0).
-   - **Per-segment sloupec** (Δ z předchozí zastávky, kde by 0-úsek dal „0") **TD nemá**. V legacy je kandidát
-     sloupec **„Průběhy"** (název napovídá per-segment) - neověřeno.
-   - **Blokuje:** potvrzení od TRANSDEV - screenshot, ve kterém sloupci „0" vidí. Bez per-segment sloupce není
-     TR8 co implementovat (není kde „0" tisknout). Pokud chtějí per-segment sloupec → nová funkce (sloupec + „<1").
+8. **Jízdní doby - „<1" místo „0"**: nulová jízdní doba mezi zastávkami → zobrazit „<1" (méně než minuta).
+   Konfigurovatelné. 🟢 **PREMISA VYJASNĚNÁ 10. 8. (Jan) - je to naše práce, blok `B64` (S):**
+   - Zákazník musí mít na mysli **první úsek** (jízdu z vývěskové zastávky na následující). Doba jízdy
+     je **kumulativní od vývěskové zastávky** (`CasJizdyZMapy(fromPoradi = vývěsková, poradi)`), takže
+     její vlastní řádek je 0 **a následující zastávka je taky 0**, jede-li se tam pod minutu. Nikde jinde
+     v tom sloupci nula pro jízdu nevznikne - dál jsou to kumulativní součty, které se při nulovém úseku
+     jen zopakují (ověřeno na `CB_CSADAD` 0380520 var. T3: 1→1). Tím padá dřívější hypotéza o legacy
+     sloupci „Průběhy" i potřeba per-segment sloupce; **kolegy k tomu nepotřebujeme**.
+   - **Pravidlo:** řádek **jiný než vývěskové zastávky** s nulovou kumulativní dobou → „<1". Vlastní
+     řádek vývěskové zastávky zůstává 0 (stojím tam, nulová jízda je definice, ne informace).
+   - **Parametr sestavy, default vypnuto** - zákazník sám psal „konfigurovatelné" a je to praxe části
+     dopravců v SR; ČR to takhle nemusí chtít.
+   - ⚠️ **Past:** `CasJizdyZMapy` vrací 0 i když zastávka **není na trase** nebo ji spoj projíždí (`<`) -
+     to je „nemám data", ne nulová jízda. Bez rozlišení by „<1" vyskočilo tam, kde má být prázdno.
+     Rozlišit u zdroje (chybějící údaj → prázdno, ne 0).
+
 9. **Poznámkování spojů - obrácená logika**: dnes horní tabulka (značka/text/spoje) + spodní tabulka (kde
    NEpoznámkovat). Chce: rozsah TČ přímo v první tabulce vedle značky/spojů. Legacy-input workflow (tab „MHD").
    Zjednodušení, méně chyb. M (Caché-input strana).
