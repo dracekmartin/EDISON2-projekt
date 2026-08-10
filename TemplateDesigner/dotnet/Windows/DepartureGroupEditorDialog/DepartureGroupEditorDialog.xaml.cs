@@ -23,6 +23,9 @@ public partial class DepartureGroupEditorDialog : Window
     public List<DepartureGroupColumnStyle> ResultGroupColumns => _vm.ResultGroupColumns;
     public ColumnVisualStyle? ResultHourColumnStyle => _vm.ResultHourColumnStyle;
 
+    /// <summary>Definice vlastních sloupců (tab „Definice sloupců"). Null = automaticky dle linky.</summary>
+    public List<DepartureColumnDefinition>? ResultCustomColumns => _vm.ResultCustomColumns;
+
     /// <summary>Command z tabu „Obecné" (EDInputForm) - null pokud se nic nezměnilo.
     /// Caller (MainWindow) ho vykoná spolu se Result* (per-column styly + hour).</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
@@ -35,10 +38,14 @@ public partial class DepartureGroupEditorDialog : Window
         DepartureGridElement element,
         List<SkupinaDnuData> availableGroups,
         List<DepartureGroupColumnStyle> currentStyles,
-        ColumnVisualStyle? hourColumnStyle)
+        ColumnVisualStyle? hourColumnStyle,
+        List<DepartureColumnDefinition>? customColumns = null,
+        string? nzConfig = null,
+        string? suppressedSlots = null)
     {
         _element = element;
-        _vm = new DepartureGroupEditorDialogViewModel(element, availableGroups, currentStyles, hourColumnStyle);
+        _vm = new DepartureGroupEditorDialogViewModel(element, availableGroups, currentStyles, hourColumnStyle,
+            customColumns, nzConfig, suppressedSlots);
         DataContext = _vm;
         InitializeComponent();
 

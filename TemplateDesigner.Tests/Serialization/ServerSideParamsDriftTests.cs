@@ -28,6 +28,9 @@ public class ServerSideParamsDriftTests
         "key",                // GetTableTemplate: klíč šablony tabulky
         "search",             // GetAvailableInstances: filtr pickeru
         "limit",              // GetAvailableInstances: strop počtu
+        "DEFINICE_SLOUPCU",   // vlastní sloupce vývěsky - obsah šablony, ne parametr sestavy;
+                              // posílá se vždy čerstvě ze šablony (ComposeGetDataParams) a re-fetch
+                              // při změně řeší vlastní snapshot (RefetchIfColumnsDefinitionChanged)
     };
 
     // Čtení pojmenovaného IN klíče. Skupina 2 zachytí znak za uvozovkou - když je to `_`, jde

@@ -38,6 +38,28 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 10. 8. 2026 - Sloupce vývěsky si nadefinujete v šabloně
+
+Dosud byly sloupce vývěsky (Pracovní dny / Soboty / Neděle a svátky…) dané napevno nastavením
+linky. Nově si je můžete nadefinovat přímo v šabloně: v dialogu prvku odjezdů přibyl tab
+**Vlastní definice sloupců**, kde každému sloupci (nejvýše pěti) určíte:
+
+- **nadpis** (i dvouřádkový),
+- **dny v týdnu** včetně svátku,
+- **značky** - „jen spoje se značkami" nebo naopak „bez spojů se značkami" (tím jde třeba schovat
+  vybrané spoje z víkendového sloupce),
+- **nevypisovat značky** - spoj se vytiskne, jen se u minuty neopakuje značka, kterou už říká
+  nadpis sloupce.
+
+Čtyři dosavadní rozvržení jsou připravená jako **vzory** jedním klikem (prázdninové vzory se
+předvyplní čísly značek z aktuální linky) a pátá volba **Prázdná** nechá stavbu sloupců úplně
+na vás. Existující šablony se nemění - dokud definici nezapnete, sloupce se dál řídí nastavením
+linky.
+
+Když nadefinované sloupce nepokryjí všechny spoje, návrhář to ukáže ve stavovém řádku
+(„N odjezdů nespadá do žádného sloupce") a totéž zopakuje při exportu do PDF - žádný odjezd
+tak nezmizí bez povšimnutí.
+
 ### 10. 8. 2026 - Krátká jízdní doba se dá vytisknout jako „<1"
 
 Časy jízdy se na vývěsce počítají od zastávky, pro kterou se tiskne. Když se na následující zastávku

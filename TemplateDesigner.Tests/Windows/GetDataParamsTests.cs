@@ -19,7 +19,7 @@ public class GetDataParamsTests
     [Fact]
     public void ComposeGetDataParams_PropustiParametrySestavy()
     {
-        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", null);
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", null, null);
 
         Assert.Equal(true, p["PISMENA_VARIANT"]);
         Assert.Equal(5, p["HODINY_OD"]);
@@ -28,7 +28,7 @@ public class GetDataParamsTests
     [Fact]
     public void ComposeGetDataParams_PridaInstanciISkupinu()
     {
-        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", "5");
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", "5", null);
 
         Assert.Equal("876401", p["LINKA_ID"]);
         Assert.Equal("5", p["SKUPINA_LINEK_ID"]);
@@ -38,7 +38,7 @@ public class GetDataParamsTests
     public void ComposeGetDataParams_BezSkupiny_KlicVubecNeposila()
     {
         // Prázdná skupina znamená „server si vybere default", ne „skupina je prázdný řetězec".
-        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", "");
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", "", null);
 
         Assert.False(p.ContainsKey("SKUPINA_LINEK_ID"));
     }
@@ -49,7 +49,7 @@ public class GetDataParamsTests
         var src = Params();
         src["LINKA_ID"] = "stara";
 
-        var p = TemplateDesignerViewModel.ComposeGetDataParams(src, "LINKA_ID", "876401", null);
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(src, "LINKA_ID", "876401", null, null);
 
         Assert.Equal("876401", p["LINKA_ID"]);
     }
@@ -58,7 +58,7 @@ public class GetDataParamsTests
     public void ComposeGetDataParams_NemeniZdrojovyDictionary()
     {
         var src = Params();
-        TemplateDesignerViewModel.ComposeGetDataParams(src, "LINKA_ID", "876401", "5");
+        TemplateDesignerViewModel.ComposeGetDataParams(src, "LINKA_ID", "876401", "5", null);
 
         Assert.False(src.ContainsKey("LINKA_ID"));
         Assert.False(src.ContainsKey("SKUPINA_LINEK_ID"));

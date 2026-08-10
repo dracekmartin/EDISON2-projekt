@@ -10,6 +10,10 @@
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip">
 
+    <Window.Resources>
+        <controls:NotNullToVisibleConverter x:Key="NotNullToVis"/>
+    </Window.Resources>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -104,6 +108,123 @@
 
                         </StackPanel>
                     </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <!-- ── Tab 3: Vlastní definice sloupců (dny + značky; tab Sloupce zůstává vzhled) ── -->
+            <TabItem Header="Vlastní definice sloupců">
+                <Grid Margin="6">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel>
+                        <RadioButton Content="Automaticky (dle linky)" IsChecked="{Binding AutomaticColumns}"
+                                     Margin="0,0,0,2"
+                                     ToolTip="Sloupce podle nastavení linky - dnešní chování beze změny"/>
+                        <RadioButton Content="Vlastní sloupce" IsChecked="{Binding UseCustomColumns}"
+                                     ToolTip="Sloupce definuje šablona (dny v týdnu a značky); nastavení linky se nepoužije"/>
+                        <StackPanel Orientation="Horizontal" Margin="18,6,0,2" IsEnabled="{Binding UseCustomColumns}">
+                            <TextBlock Text="Vzor:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <ComboBox Width="290" ItemsSource="{Binding Presets}" DisplayMemberPath="Label"
+                                      SelectedItem="{Binding SelectedPreset}"/>
+                            <Button Content="Použít vzor" Command="{Binding ApplyPresetCommand}" Padding="10,3" Margin="6,0,0,0"
+                                    ToolTip="Nahradí sloupce vybraným vzorem - čtyři dnešní rozvržení"/>
+                        </StackPanel>
+                        <TextBlock Text="Nejvýše 5 sloupců. Nevyplněná podmínka sloupec neomezuje; spoj může být ve více sloupcích."
+                                   FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="18,0,0,6"/>
+                        <TextBlock Text="{Binding CustomColumnsError}" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontWeight="SemiBold"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="18,0,0,6"
+                                   Visibility="{Binding CustomColumnsError, Converter={StaticResource NotNullToVis}}"/>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" IsEnabled="{Binding UseCustomColumns}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200" MinWidth="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Vlevo: seznam vlastních sloupců -->
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ListBox ItemsSource="{Binding CustomColumnVMs}"
+                                     SelectedItem="{Binding SelectedCustomVM, Mode=TwoWay}"
+                                     DisplayMemberPath="DisplayName"/>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button Content="Přidat" Command="{Binding AddCustomColumnCommand}"
+                                        IsEnabled="{Binding CanAddCustomColumn}" Padding="8,3" Margin="0,0,4,0"/>
+                                <Button Content="Odebrat" Command="{Binding RemoveCustomColumnCommand}"
+                                        IsEnabled="{Binding HasCustomSelection}" Padding="8,3" Margin="0,0,4,0"/>
+                                <Button Content="▲" Command="{Binding MoveCustomUpCommand}" Width="26" Padding="0,3"
+                                        Margin="0,0,2,0" ToolTip="Posunout nahoru"/>
+                                <Button Content="▼" Command="{Binding MoveCustomDownCommand}" Width="26" Padding="0,3"
+                                        ToolTip="Posunout dolů"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Vpravo: podmínky vybraného sloupce -->
+                        <ScrollViewer Grid.Column="1" Margin="8,0,0,0"
+                                      VerticalScrollBarVisibility="Auto"
+                                      IsEnabled="{Binding HasCustomSelection}">
+                            <StackPanel>
+                                <TextBlock Text="Nadpis sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Nadpis:" VerticalAlignment="Center" Width="90"/>
+                                    <TextBox Width="220" Text="{Binding SelectedCustomVM.Header, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Druhý řádek:" VerticalAlignment="Center" Width="90"/>
+                                    <TextBox Width="220" Text="{Binding SelectedCustomVM.Header2, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+
+                                <Separator Margin="0,4,0,8"/>
+
+                                <TextBlock Text="Dny" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <WrapPanel Margin="0,0,0,4">
+                                    <CheckBox Content="Po" IsChecked="{Binding SelectedCustomVM.Po}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Út" IsChecked="{Binding SelectedCustomVM.Ut}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="St" IsChecked="{Binding SelectedCustomVM.St}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Čt" IsChecked="{Binding SelectedCustomVM.Ct}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Pá" IsChecked="{Binding SelectedCustomVM.Pa}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="So" IsChecked="{Binding SelectedCustomVM.So}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Ne" IsChecked="{Binding SelectedCustomVM.Ne}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Svátek" IsChecked="{Binding SelectedCustomVM.Svatek}" Margin="0,0,8,4"/>
+                                </WrapPanel>
+                                <TextBlock Text="Spoj bez omezení dnů patří do každého sloupce; platnost „X“ se počítá jako Po-Pá."
+                                           FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
+
+                                <Separator Margin="0,4,0,8"/>
+
+                                <TextBlock Text="Negativní značky" FontWeight="SemiBold" Margin="0,0,0,6"
+                                           ToolTip="Číslo negativní značky dostává spoj v jízdních řádech spolu s datovým omezením (např. „10 - nejede od 1. 7. do 31. 8.“). Vývěska značku bere jako fakt: filtruje spoje podle čísla a text omezení tiskne do legendy - platnost samotnou nevyhodnocuje."/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Jen spoje se značkami:" VerticalAlignment="Center" Width="150"
+                                               ToolTip="Do sloupce patří jen spoje s některou z těchto značek"/>
+                                    <TextBox Width="160" Text="{Binding SelectedCustomVM.IncludeMarks, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Bez spojů se značkami:" VerticalAlignment="Center" Width="150"
+                                               ToolTip="Spoj s některou z těchto značek se do sloupce nezařadí, i když by dny seděl"/>
+                                    <TextBox Width="160" Text="{Binding SelectedCustomVM.ExcludeMarks, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Nevypisovat značky:" VerticalAlignment="Center" Width="150"
+                                               ToolTip="Spoj se vytiskne, jen se u minuty nezopakuje značka (např. když ji už říká nadpis sloupce)"/>
+                                    <TextBox Width="160" Text="{Binding SelectedCustomVM.SuppressedMarks, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <TextBlock Text="Čísla značek oddělená čárkou (např. 52, 53). Prázdné = neomezuje."
+                                           FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
                 </Grid>
             </TabItem>
 

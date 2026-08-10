@@ -8,9 +8,9 @@
 
 > **Stav k 2026-08-10.**
 >
-> **▶ Další krok: `B39` etapa 1** (vlastní sloupce vývěsky - dny + značky). Domluva s kolegou
-> proběhla 10. 8., rozhodnutí kompletní v changelogu 2026-08-10 (9); etapa 2 (období) čeká na
-> business odpovědi. Malá alternativa už ve frontě není.
+> **▶ Další krok: proklik `B39` etapy 1** (vlastní sloupce vývěsky - dny + značky). Implementace
+> hotová 10. 8. se zelenými branami vč. živé parity presetů, **nezacommitovaná** - klikací cesty
+> v changelogu 2026-08-10 (10) a žurnálu. Etapa 2 (období) čeká na business odpovědi kolegy.
 > Velké alternativy: **Fáze B** (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít
 > vcelku) nebo linkový JŘ (**B10** + **B13**) jako dedikovaný slot.
 >
@@ -56,7 +56,7 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B39** | **#13045b vlastní sloupce vývěsky** - místo čtyř pevných rozvržení si uživatel definuje sloupce mřížky odjezdů v šabloně. **Rozhodnutí kompletní** (changelog 2026-08-10 (9)): editor v dialogu sloupců prvku odjezdů, jedna definice na šablonu, max 5 sloupců, kaskáda podmínek dny → značky (zahrnout/vyloučit) → období + per-sloupec „nevypisovat značku" (`B63` se stěhuje z linky na sloupec); šablona s definicí přebíjí linkové seznamy **celé**, bez definice = dnešní chování (backup, Nitra beze změny); nové šablony předvyplní výchozí vzor; upozornění „N spojů nespadá do žádného sloupce" v návrháři i tisku, ne blokace. **Etapa 1 (teď): dny + značky** - editor, presety čtyř dnešních rozvržení, upozornění, JSON verze + migrace (R5), serverový režim „podle definice" (dnešní kód = režim „automaticky"), definice jako JSON parametr `GetData` (allowlist) + re-fetch při úpravě sloupců, test „preset == dnešní výstup" na živých datech. Pohlcuje `TR10` (vylučovací seznam značek). **Etapa 2 (blokovaná): období** - čeká na odkývání sémantiky datových poznámek a význam prefixu `k@`/`L@` (návrh pravidel v changelogu (9); do vyjasnění konzervativně „zařadit"). Jen AD, MHD se nemění. | L | Etapa 1: presety dají stejný výstup jako dnešní rozvržení (živá data) + víkendový spoj jde skrýt vyloučením značky (TRANSDEV) |
+| **B39** | **#13045b vlastní sloupce vývěsky** - místo čtyř pevných rozvržení si uživatel definuje sloupce mřížky odjezdů v šabloně (rozhodnutí changelog 2026-08-10 (9)). **Etapa 1 (dny + značky) implementovaná 10. 8.** - changelog (10); brány zelené vč. živé parity presetů, **čeká na proklik Jana a commit** (klikací cesty v žurnálu). Pohlcuje `TR10`. **Etapa 2 (blokovaná): období** - zbývá odkývat sémantiku datových poznámek („jede jen" protíná / „nejede" vyřazuje jen při pokrytí celého období / „jede+jede také" nikdy nevyřazují / sudé-liché zařadit); `k@`/`L@` vyřešeno 10. 8. (legacy, neřešit). 💡 Nově: vyhodnocovač „kdy spoj skutečně jede" existuje (`ALVA.ISY.ISYLinky.API.LinkyStatistika`, přecházet na ni z `$$mkStaLin^JRapi`) → varianta (b) zlevňuje; před návrhem prověřit signaturu. Požadavky zákazníka na období (changelog (11)): víc rozsahů na sloupec + auto-potlačení značky, když se omezení spoje kryje s obdobím celé. Jen AD, MHD se nemění. | L | Etapa 1: proklik UI (dialog, vzory, badge, undo) → commit. Etapa 2: business odpovědi → implementace období |
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).

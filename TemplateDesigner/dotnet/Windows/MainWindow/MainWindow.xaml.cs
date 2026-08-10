@@ -990,6 +990,8 @@ public partial class MainWindow : Window
         {
             var provider = _vm.CacheProvider;
             var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
+            // Snapshot na UI threadu - callback běží na threadpoolu a nesmí sahat na živou šablonu
+            var columnsDefJson = _vm.CurrentColumnsDefinitionJson();
             buildRealData = paramValues =>
             {
                 List<DataContext>? pages;
@@ -1003,7 +1005,7 @@ public partial class MainWindow : Window
                     foreach (var inst in _vm.ActiveInstances)
                     {
                         var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
-                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId));
+                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson));
                         if (instPages is null) continue;
                         all.AddRange(instPages);
                     }
@@ -1630,14 +1632,20 @@ public partial class MainWindow : Window
         var previewData = _vm!.State.CurrentPreviewData;
         var availableGroups = element.GetAvailableSkupinyDnu(previewData);
 
+        // NZ konfigurace linky z dat - editor z ní předvyplní prázdninové vzory definice sloupců
+        var nzConfig = previewData?.GetValue("NZ_KONFIG")?.ToString();
+        var suppressedSlots = previewData?.GetValue("NEVYPISOVAT_ZNACKY_SLOUPCU")?.ToString();
+
         var dlg = new DepartureGroupEditorDialog(
-            element, availableGroups, element.GroupColumns, element.HourColumnStyle)
+            element, availableGroups, element.GroupColumns, element.HourColumnStyle,
+            element.CustomColumns, nzConfig, suppressedSlots)
             { Owner = this };
 
         if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)
 
         _vm.ApplyDepartureGridEdit(element, dlg.GeneralCommand, dlg.StyleCommands,
-            dlg.ResultGroupColumns, availableGroups.Count > 0, dlg.ResultHourColumnStyle);
+            dlg.ResultGroupColumns, availableGroups.Count > 0, dlg.ResultHourColumnStyle,
+            dlg.ResultCustomColumns);
 
         InvalidateCanvas();
         InvalidatePreview();

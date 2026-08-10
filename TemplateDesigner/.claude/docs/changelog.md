@@ -1,5 +1,102 @@
 # Changelog
 
+## 2026-08-10 (11) - 🧭 `B39` etapa 2: dvě odpovědi od kolegy + upřesnění od zákazníka
+
+Tři nové vstupy (Jan, po implementaci etapy 1) - **nic z toho nemění etapu 1**, všechno se týká
+etapy 2 (období):
+
+1. **Prefix `k@`/`L@` je legacy věc - neřešit** (kolega). Dnešní zahazování při formátování textu
+   je správně; konzervativní pravidlo „poznámka s prefixem → spoj zařadit" v etapě 2 zůstává,
+   ale už není otevřená otázka. Měření výskytu `@` na živých datech tím odpadá.
+2. **Vyhodnocovač „kdy spoj skutečně jede" v EDISONu EXISTUJE** (kolega): legacy
+   `$$mkStaLin^JRapi(...)` a nová `ALVA.ISY.ISYLinky.API.LinkyStatistika` (metoda „jede");
+   statistiky dnes jedou na staré, nové funkce (oběhy) už na nové - **přecházet na novou**.
+   Tím **zlevňuje varianta (b)** („spoj v období skutečně jede"), kterou analýza odhadla jako
+   vlastní projekt kvůli chybějícímu kalendáři - kalendář/vyhodnocení drží ISY. Před návrhem
+   etapy 2 prověřit signaturu a co přesně vrací.
+3. **Zákaznický mail (#13045) upřesňuje očekávání od období:** sloupec má umět **víc rozsahů dat**
+   („14.2.-18.2., 1.7.-31.8., 29.10.-30.10."); „dny školního vyučování" = tentýž mechanismus;
+   a **auto-potlačení negativní značky**, když se omezení spoje kryje s obdobím sloupce celé
+   (značka se ukáže jen u spoje s výjimkou uvnitř období - „v létě nejede, na podzim ano").
+   To je silnější než ruční per-sloupcový seznam „nevypisovat" z etapy 1 (ten zůstává) a stojí
+   na vyhodnocení z bodu 2.
+
+## 2026-08-10 (10) - 🚧 `B39` etapa 1 implementovaná: vlastní sloupce vývěsky (dny + značky)
+
+**Nezacommitováno - blok L čeká na proklik Jana** (viz klikací cesty v reportu/žurnálu). Všechny
+brány zelené: build bez chyb, xUnit 772/772 (+10), Caché 86/86 (+1), **živá parita presetů prošla**.
+
+**Co uživatel dostal:** dialog odjezdů má třetí tab **„Definice sloupců"** - přepínač
+Automaticky (dle linky) / Vlastní sloupce, až 5 sloupců, u každého nadpis (dvouřádkový), dny
+(Po-Ne + Svátek), značky „jen s těmito" / „bez těchto" a per-sloupcové „nevypisovat značky"
+(přestěhování `B63` z linky na sloupec). Čtyři dnešní rozvržení jako vzory jedním klikem -
+prázdninové se předvyplní čísly značek z konfigurace aktuální linky (nová pole `NZ_KONFIG`
++ `NEVYPISOVAT_ZNACKY_SLOUPCU` ve values). Nepokryté spoje hlásí oranžový badge ve status baru
+(konkrétní minuty + tooltip s cestou) a dovětek hlášky exportu PDF. Nový prvek odjezdů z palety
+začíná se vzorem Prac/So/Ne (rozhodnutí Jan: návrhář je primární); PDF import zůstává na
+Automaticky. `TR10` (skrývání víkendových spojů) tím je pokryté vylučovacím seznamem.
+
+**Technicky:** definice žije na prvku (`CustomColumns`, aditivní JSON - bez bumpu verze dle
+konvence, starší build ji ignoruje = přesně backup chování). Na server jde jako JSON parametr
+`DEFINICE_SLOUPCU` (infrastrukturní klíč, ne parametr sestavy) skládaný VŽDY čerstvě ze šablony
+v `ComposeGetDataParams` - nikdy přes `_previewParams`, aby ho nepřepsala persistovaná hodnota
+(třída chyb `B24`). Data nově závisí na obsahu šablony → `RefetchIfColumnsDefinitionChanged`
+(dialog OK, undo, redo) porovnává snapshot definice a přenačítá. Server: druhý režim zařazování
+(`ParseDefiniceSloupcu`, `ZarazeniSpojeDleDefinice`, `DenniZnackyDleDefinice`,
+`ZnackaSkrytaDleDefinice`, `NEZARAZENE_SPOJE`); dnešní kód je nedotčený režim „automaticky".
+`X` v platnosti = pracovní dny 1-5; nerozpoznaná platnost → spoj se nikam nezařadí (hlásí se,
+legacy ho tiše zahazovala se stejným výsledkem tisku).
+
+**Pojistky:** `ZastavkoveJrAdDefiniceParitaTest` - **preset postavený z konfigurace linky dává na
+živých datech (CB_CSADAD gold linky) bajtově stejný výstup jako režim automaticky** (digest celého
+GetData). K tomu jednotkové paritní testy napříč FTL × platnost × značky. Gold digesty
+přebaselinované (jen md5 - dvě nová pole ve values; počty beze změny). Dvě vědomé odchylky od
+legacy, obě dokumentované testem: prázdninové rozvržení bez NZ konfigurace dává pracovní spoj do
+obou pracovních sloupců (legacy jen do 1.); víkendové denní značky se u netypických kombinací dnů
+(např. sloupec jen So+Ne) netisknou konzervativně jako legacy.
+
+**Doladěno po prokliku (Jan, 10. 8.):**
+
+- Tab se jmenuje **„Vlastní definice sloupců"**; rozdělení vs. tab Sloupce je vědomý atyp -
+  definice je **zdroj** sloupců (jako nastavení linky v automatice), tab Sloupce zůstává
+  **zobrazovací vrstva** (přepis nadpisu / viditelnost / pořadí / styl) a přepis vyhrává nad
+  zdrojem - totéž pravidlo jako u sloupců z linky, žádná synchronizace není potřeba.
+  Sloučení tabů zavrženo (přidávání sloupců by bylo atyp ve sdíleném vzoru tabulkových dialogů).
+- Combo vzorů **předvybere vzor, kterému aktuální sloupce odpovídají** - prázdné combo vypadalo
+  jako neuložený vzor (stav nese seznam sloupců, ne combo).
+- Pátá volba **„Prázdná (sloupce si přidáte sami)"** - stavba od nuly bez vzoru.
+- **Validace seznamů značek** při OK (jen čísla oddělená čárkou) - „10;20" by server tiše přečetl
+  jako samotnou 10, „abc" jako nulu; teď dialog nezavře a jmenuje chybný sloupec.
+- Tooltip **„Negativní značky"**: číslo přiděluje JŘ spolu s datovým omezením; vývěska filtruje
+  podle čísla jako faktu a platnost nevyhodnocuje (to je etapa 2).
+- Nový sloupec **nezdědí styl po smazaném** (uvolněná id s uloženým stylem se přeskakují).
+- Kombinace podmínek zůstávají vědomě volné (táž značka v „jen" i „bez" = prázdný sloupec;
+  díru hlásí upozornění). Parametr sestavy „Rozdělení sloupců" se při aktivní definici neuplatní
+  (definice přebíjí linku celou) - případné schování parametru je kosmetika na později.
+
+**Zapracované nálezy z code review (před commitem):**
+
+- **Sloupec bez zaškrtnutých dnů neomezoval podle kontraktu, ale vyřazoval** - spoj s omezenou
+  platností do něj nikdy nespadl (sloupec „jen značka X, kterýkoli den" nešel postavit). Opraveno
+  + test.
+- **Zastávka, jejíž všechny odjezdy spadly mimo sloupce, zmizela i s varováním** - prázdná stránka
+  se zahodila dřív, než se zapsalo NEZARAZENE_SPOJE. Teď stránka vyjde (prázdná + varování).
+- **Enter v dialogu ztrácel rozepsaný text** (pole ukládala až při opuštění, OK je výchozí
+  tlačítko) - pole definice ukládají průběžně.
+- **Validace značek chytá i mezeru místo čárky** („52 53" by server přečetl jen jako 52).
+- **Re-fetch při změně definice jde přes centrální vykonání příkazů** - chytá i přidání/smazání/
+  vložení prvku odjezdů, ne jen dialog a undo/redo. Snapshot definice se zapisuje až po
+  ÚSPĚŠNÉM načtení dat a souběžné fetche kryje generace (spadlý/pomalý fetch nezamaskuje
+  potřebu obnovy).
+- **Výchozí vzor dostává jen PRVNÍ prvek odjezdů v šabloně a jen u zastávkového JŘ AD** - druhý
+  prvek by definicí tiše přepnul data celé šablony a u MHD by dialog tvrdil vlastní sloupce,
+  které její server nečte.
+- Oranžový badge se čistí při zahození dat (přepnutí agendy/instance) a jeho tooltip vede na
+  správný tab („Vlastní definice sloupců").
+- Dluh do etapy 2: paritní Caché test staví preset vlastním zrcadlem `DepartureColumnPresets.Build`
+  (ručně synchronizované kopie) - při rozšíření presetů sjednotit zdroj, jinak parita hlídá zrcadlo,
+  ne to, co klient reálně posílá.
+
 ## 2026-08-10 (9) - 🧭 `B39` rozhodnuto: vlastní sloupce vývěsky, zadání ve dvou etapách
 
 Domluva Jan + kolega dokončena - pět otázek z (6) je zodpovězených, blok přechází z „domluva" na

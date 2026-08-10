@@ -244,6 +244,53 @@ public class DepartureGroupColumnStyle
 }
 
 /// <summary>
+/// Definice vlastního sloupce vývěsky - KDO do sloupce patří (na rozdíl od
+/// <see cref="DepartureGroupColumnStyle"/>, který říká, jak sloupec vypadá). Kaskáda podmínek:
+/// dny → značky (jen s / bez) → (období, etapa 2); nevyplněná podmínka neomezuje.
+/// Serializuje se do šablony; na server jde jako JSON parametr DEFINICE_SLOUPCU
+/// (<see cref="DepartureGridElement.BuildColumnsDefinitionWireJson"/>).
+/// </summary>
+public class DepartureColumnDefinition
+{
+    /// <summary>Stabilní id sloupce - vrací se z dat jako SKUPINA_DNU_ID, takže na něm visí
+    /// i per-sloupcové styly (<see cref="DepartureGroupColumnStyle.SkupinaDnuId"/>).
+    /// Při přeskládání sloupců se nemění, jinak by styly přeskočily jinam.</summary>
+    public string Id { get; set; } = "";
+
+    /// <summary>Nadpis sloupce (první řádek záhlaví).</summary>
+    public string Header { get; set; } = "";
+
+    /// <summary>Druhý řádek nadpisu. Prázdné = jednořádkové záhlaví.</summary>
+    public string Header2 { get; set; } = "";
+
+    /// <summary>Dny v týdnu jako znaky 1-7 a "+" (svátek). Prázdné = dny neomezují.
+    /// Platnost spoje "X" server počítá jako pracovní dny 1-5.</summary>
+    public string Days { get; set; } = "";
+
+    /// <summary>Jen spoje s těmito značkami (CSV čísel). Prázdné = neomezuje.</summary>
+    public string IncludeMarks { get; set; } = "";
+
+    /// <summary>Bez spojů s těmito značkami (CSV čísel) - spoj se značkou se do sloupce
+    /// nezařadí, i když by dny seděl. Prázdné = neomezuje.</summary>
+    public string ExcludeMarks { get; set; } = "";
+
+    /// <summary>Značky, které se v tomto sloupci netisknou u minut (CSV čísel); spoj zůstává.
+    /// Per-sloupcová náhrada linkového seznamu „nevypisovat značku ve sloupci".</summary>
+    public string SuppressedMarks { get; set; } = "";
+
+    public DepartureColumnDefinition Clone() => new()
+    {
+        Id = Id,
+        Header = Header,
+        Header2 = Header2,
+        Days = Days,
+        IncludeMarks = IncludeMarks,
+        ExcludeMarks = ExcludeMarks,
+        SuppressedMarks = SuppressedMarks
+    };
+}
+
+/// <summary>
 /// Resolves __INDEX_0, __INDEX_1, ... positional keys to actual SkupinaDnuId.
 /// Import uses __INDEX_ keys because runtime IDs aren't known at import time.
 /// This method maps them by position to the actual group IDs.

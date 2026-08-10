@@ -241,6 +241,10 @@ public class PrintDialogViewModel : EDViewModel
 
             StatusText = $"Generuji PDF ({totalPages} stránek)…";
             string sheetInfo = sheets is null ? "" : $" · {sheets.ShortLabel}";
+            // Vlastní sloupce: odjezdy mimo všechny sloupce se na vývěsce nevytisknou - říct to
+            // i tady, ne jen ve status baru návrháře (tisknout může jiná linka než v náhledu).
+            var unassigned = UnassignedDepartures.Summarize(dataPages);
+            string unassignedInfo = unassigned is null ? "" : $" · ⚠ {unassigned}";
 
             if (splitMode == ExportSplitMode.Single)
             {
@@ -248,9 +252,9 @@ public class PrintDialogViewModel : EDViewModel
                 // ve wiring), takže nekoliduje s preview renderem UI threadu.
                 await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets));
                 OpenPdf(target);
-                StatusText = overflow > 0
+                StatusText = (overflow > 0
                     ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}{sheetInfo}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}";
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo;
                 return;
             }
 
@@ -270,9 +274,9 @@ public class PrintDialogViewModel : EDViewModel
             });
 
             OpenFolder(target);
-            StatusText = overflow > 0
+            StatusText = (overflow > 0
                 ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{sheetInfo}"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}";
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo;
         }
         catch (Exception ex)
         {

@@ -166,6 +166,7 @@ public class TemplateDesignerViewModel : EDViewModel
             if (clearRealData)
             {
                 _realPreviewData = null;
+                UnassignedDeparturesWarning = null;   // badge patří k zahozeným datům
                 _realPreviewIndex = 0;
                 Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
@@ -263,29 +264,35 @@ public class TemplateDesignerViewModel : EDViewModel
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode)) return;
 
-        int gen = _previewDataGeneration;
+        // Bump generace: starší souběžný fetch (pomalejší odpověď se starou definicí/parametry)
+        // se po dokončení zahodí, místo aby přepsal čerstvější data.
+        int gen = ++_previewDataGeneration;
         try
         {
             StatusText = $"Načítám data: {instance.Display}…";
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
-            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId);
+            var columnsDefJson = CurrentColumnsDefinitionJson();
+            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson);
             var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
             // zastaralý a nesmí dosednout do nové šablony.
             if (gen != _previewDataGeneration) return;
+            _lastColumnsDefinitionSnapshot = columnsDefJson;   // data odteď odpovídají této definici
 
             if (pages is null || pages.Count == 0)
             {
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
+                UnassignedDeparturesWarning = null;
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
             {
                 var culture = GetTemplateCulture();
                 var newData = pages.Select(d => d.WithCulture(culture)).ToList();
+                UnassignedDeparturesWarning = UnassignedDepartures.Summarize(newData);
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
                 // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
                 var currentPage = (keepPage && _realPreviewData is not null
@@ -556,6 +563,18 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _statusText, value);
     }
 
+    private string? _unassignedDeparturesWarning;
+    /// <summary>Odjezdy, které při vlastních sloupcích nespadly do žádného sloupce (souhrn hodnot
+    /// NEZARAZENE_SPOJE ze stránek). Null = nic → badge ve status baru je skrytý. Chybějící minuta
+    /// je jinak neviditelná vada - proto viditelné upozornění, ne tichý log.</summary>
+    public string? UnassignedDeparturesWarning
+    {
+        get => _unassignedDeparturesWarning;
+        private set { if (Set(ref _unassignedDeparturesWarning, value)) OnPropertyChanged(nameof(HasUnassignedDepartures)); }
+    }
+
+    public bool HasUnassignedDepartures => !string.IsNullOrEmpty(_unassignedDeparturesWarning);
+
     private string _selectionStatusText = "";
     /// <summary>Klidová „stav výběru" zóna status baru (aktuální element / sekce). Píše ji jen
     /// <see cref="UpdateStatusForSelection"/>; mění se volně s výběrem, nepřepíše akční hlášku.</summary>
@@ -812,6 +831,10 @@ public class TemplateDesignerViewModel : EDViewModel
         IsDirty = true;
         NotifyUndoRedo();
         RequestPropertiesPanelUpdate?.Invoke();
+        // Jediné místo, kde příkaz může pohnout definicí sloupců (dialog, přidání/smazání/vložení
+        // prvku odjezdů) - definice se posílá do GetData, bez re-fetche by náhled ukazoval data
+        // staré definice a tisk by vyjel jinak.
+        RefetchIfColumnsDefinitionChanged();
     }
 
     /// <summary>Vykoná seznam příkazů jako jeden undo krok (1 příkaz → přímo, víc → CompositeCommand).
@@ -829,7 +852,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// jako jeden undo krok.</summary>
     public void ApplyDepartureGridEdit(DepartureGridElement element, IDesignerCommand? generalCommand,
         IEnumerable<IDesignerCommand> styleCommands, List<DepartureGroupColumnStyle> resultGroupColumns,
-        bool hasGroups, ColumnVisualStyle? resultHourColumnStyle)
+        bool hasGroups, ColumnVisualStyle? resultHourColumnStyle,
+        List<DepartureColumnDefinition>? resultCustomColumns)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
@@ -839,7 +863,9 @@ public class TemplateDesignerViewModel : EDViewModel
                 v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
         cmds.Add(new SetPropertyCommand("Styl sloupce hodin", element.HourColumnStyle, resultHourColumnStyle,
             v => element.HourColumnStyle = (ColumnVisualStyle?)v));
-        ExecuteAsComposite("Nastavení odjezdů", cmds);
+        cmds.Add(new SetPropertyCommand("Vlastní sloupce", element.CustomColumns, resultCustomColumns,
+            v => element.CustomColumns = (List<DepartureColumnDefinition>?)v));
+        ExecuteAsComposite("Nastavení odjezdů", cmds);   // re-fetch při změně definice řeší Execute
     }
 
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
@@ -905,6 +931,7 @@ public class TemplateDesignerViewModel : EDViewModel
         RebuildSections();
         RequestCanvasRefresh?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();
+        RefetchIfColumnsDefinitionChanged();
     }
 
     private void Redo()
@@ -916,6 +943,20 @@ public class TemplateDesignerViewModel : EDViewModel
         RebuildSections();
         RequestCanvasRefresh?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();
+        RefetchIfColumnsDefinitionChanged();
+    }
+
+    /// <summary>Definice vlastních sloupců je jediný kus šablony, na kterém závisí DATA (posílá se
+    /// do GetData) - po každé změně, která ji mohla pohnout (dialog sloupců, undo/redo), se musí
+    /// znovu načíst, jinak náhled ukazuje sloupce staré definice.</summary>
+    private string? _lastColumnsDefinitionSnapshot;
+
+    private void RefetchIfColumnsDefinitionChanged()
+    {
+        // Snapshot zapisuje až ÚSPĚŠNÝ fetch (RefreshDataForCurrentInstanceAsync) - kdyby se
+        // zapsal tady a fetch spadl, další kontroly by se tvářily, že data definici odpovídají.
+        if (CurrentColumnsDefinitionJson() == _lastColumnsDefinitionSnapshot) return;
+        if (CurrentActiveInstance is not null) _ = RefreshDataForCurrentInstanceAsync(keepPage: true);
     }
 
     /// <summary>
@@ -2644,9 +2685,10 @@ public class TemplateDesignerViewModel : EDViewModel
         var hideNaZnameni   = CurrentHideNaZnameniLegend();
         var hidePrestup     = CurrentHidePrestupLegend();
         var hiddenContent   = CurrentHiddenContent();
+        var columnsDefJson  = CurrentColumnsDefinitionJson();
 
         return await Task.Run(() => BuildAllPreviewDataPagesCore(
-            culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent));
+            culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent, columnsDefJson));
     }
 
     /// <summary>
@@ -2658,15 +2700,34 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     internal static Dictionary<string, object?> ComposeGetDataParams(
         IReadOnlyDictionary<string, object?> printParams, string instanceParamName,
-        string instanceValue, string? skupinaId)
+        string instanceValue, string? skupinaId, string? columnsDefinitionJson)
     {
         var p = new Dictionary<string, object?>(printParams, StringComparer.OrdinalIgnoreCase)
         {
             [instanceParamName] = instanceValue   // instance přebíjí případný klíč linky z parametrů
         };
         if (!string.IsNullOrEmpty(skupinaId)) p["SKUPINA_LINEK_ID"] = skupinaId;
+        // Definice vlastních sloupců jde VŽDY čerstvě ze šablony (parametr metody), nikdy přes
+        // _previewParams - tam by ji ApplyPersistedPrintParams mohl přepsat starou persistovanou
+        // hodnotou a tisklo by se jiné rozvržení, než šablona říká (třída chyb B24).
+        if (!string.IsNullOrEmpty(columnsDefinitionJson)) p["DEFINICE_SLOUPCU"] = columnsDefinitionJson;
         return p;
     }
+
+    /// <summary>Vzor sloupců předvyplnit jen prvnímu prvku odjezdů v šabloně a jen u zastávkového
+    /// JŘ AD (jediná agenda, jejíž server DEFINICE_SLOUPCU čte). Kód agendy je stabilní
+    /// persistovaný klíč.</summary>
+    private bool ShouldPrefillDepartureColumns() =>
+        string.Equals(State.CurrentTemplate.AgendaCode, "ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)
+        && !State.CurrentTemplate.Sections.SelectMany(s => s.Elements).OfType<DepartureGridElement>().Any();
+
+    /// <summary>Definice vlastních sloupců platná pro celou šablonu - z prvního prvku odjezdů,
+    /// který ji má. Null = režim „Automaticky (dle linky)".</summary>
+    internal string? CurrentColumnsDefinitionJson() =>
+        State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
+            .OfType<DepartureGridElement>()
+            .Select(e => e.BuildColumnsDefinitionWireJson())
+            .FirstOrDefault(j => j is not null);
 
     /// <summary>
     /// Přimíchá hodnoty parametrů sestavy do každé stránky - část parametrů vyhodnocuje až C#
@@ -2687,7 +2748,7 @@ public class TemplateDesignerViewModel : EDViewModel
         IReadOnlyDictionary<string, object?> printParams,
         IReadOnlyList<DataContext?>? realPreviewData,
         NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni, bool hidePrestup,
-        IProgress<string>? progress, IReadOnlySet<string>? hiddenContent = null)
+        IProgress<string>? progress, IReadOnlySet<string>? hiddenContent = null, string? columnsDefinitionJson = null)
     {
         List<DataContext>? pages = null;
 
@@ -2702,7 +2763,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 var inst = instances[i];
                 progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
                 var fetched = CacheProvider.GetData(
-                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId));
+                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId, columnsDefinitionJson));
                 if (fetched is null) continue;
                 foreach (var p in fetched) all.Add(p.WithCulture(culture));
             }
@@ -3021,6 +3082,13 @@ public class TemplateDesignerViewModel : EDViewModel
         else
         {
             element = CreateElementByType(elementType!, mmX, mmY);
+            // Výchozí vzor sloupců (rozhodnutí Jan 10. 8.: nové jedou z návrháře, linka je backup)
+            // dostane jen PRVNÍ prvek odjezdů v šabloně a jen u agendy, jejíž server definici čte -
+            // druhý prvek by definicí tiše přepnul data celé šablony a MHD by v dialogu tvrdila
+            // vlastní sloupce, které její server ignoruje. PDF import vzor nedostává (zrcadlí
+            // rozvržení importované vývěsky).
+            if (element is DepartureGridElement grid && ShouldPrefillDepartureColumns())
+                grid.CustomColumns = DepartureColumnPresets.Build("PRAC_SO_NE", null, null);
         }
 
         // Snap i rozměrů - výchozí velikosti (80×8, 190×25…) nejsou násobky kroku mřížky,

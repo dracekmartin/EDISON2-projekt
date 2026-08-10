@@ -135,6 +135,46 @@ public class DepartureGridElement : StopScheduleElementBase
     }
     private List<DepartureGroupColumnStyle> _groupColumns = [];
 
+    /// <summary>Vlastní definice sloupců vývěsky (dny + značky). Null nebo prázdné = režim
+    /// „Automaticky (dle linky)" - server staví sloupce podle nastavení linky jako dosud.
+    /// Neprázdné → posílá se serveru jako parametr DEFINICE_SLOUPCU a přebíjí linkové
+    /// rozvržení i seznamy značek celé. Jedna definice platí pro celou šablonu (ovlivňuje
+    /// data celé vývěsky včetně legendy, ne jen tento prvek).</summary>
+    public List<DepartureColumnDefinition>? CustomColumns
+    {
+        get => _customColumns;
+        set { _customColumns = value; _cachedLayout = null; }
+    }
+    private List<DepartureColumnDefinition>? _customColumns;
+
+    /// <summary>Maximální počet vlastních sloupců - víc se na vývěsku rozumně nevejde.</summary>
+    public const int MaxCustomColumns = 5;
+
+    private static readonly System.Text.Json.JsonSerializerOptions WireJsonOptions =
+        new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
+    /// <summary>Wire JSON definice sloupců pro parametr DEFINICE_SLOUPCU (klíče čte
+    /// ParseDefiniceSloupcu v ZastavkoveJrAd.cls). Null = definice není → automaticky.</summary>
+    public string? BuildColumnsDefinitionWireJson()
+    {
+        if (CustomColumns is not { Count: > 0 } cols) return null;
+        var arr = new System.Text.Json.Nodes.JsonArray();
+        foreach (var c in cols)
+        {
+            arr.Add(new System.Text.Json.Nodes.JsonObject
+            {
+                ["id"] = c.Id,
+                ["nadpis"] = c.Header,
+                ["nadpis2"] = c.Header2,
+                ["dny"] = c.Days,
+                ["znackyJen"] = c.IncludeMarks,
+                ["znackyBez"] = c.ExcludeMarks,
+                ["nevypisovatZnacky"] = c.SuppressedMarks
+            });
+        }
+        return new System.Text.Json.Nodes.JsonObject { ["sloupce"] = arr }.ToJsonString(WireJsonOptions);
+    }
+
     // ─── Designer ───────────────────────────────────────────────────────────
 
     protected override float DesignerPlaceholderHeight => 60f;
@@ -1493,6 +1533,7 @@ public class DepartureGridElement : StopScheduleElementBase
             HourColumnStyle            = HourColumnStyle?.Clone(),
             HourColumnHeader           = HourColumnHeader,
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
+            CustomColumns              = CustomColumns?.Select(c => c.Clone()).ToList(),
         };
         CopyBaseTo(clone);
         CopyStopScheduleProperties(clone);
