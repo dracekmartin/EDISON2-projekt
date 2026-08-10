@@ -31,3 +31,10 @@ Konkrétní situace, které integrace s Caché musí předejít. Kontrolní sezn
 2. **Silent fail při Caché chybě** → uživatel neví proč se data nenačetla. Kontrola: chyba jde přes `IPopupDisplayer.Error(ex)` (R2).
 3. **Breaking JSON change bez migrátoru** → staré šablony nejdou otevřít. Kontrola: každá breaking změna JSON formátu musí mít migraci v `TemplateMigrator` (R5).
 4. **Všechno naráz** (big bang migration) → nelze vrátit. Kontrola: per-element migrace, paralelní běh starého a nového systému (vzor: PropertyDescriptor + EDInputForm paralelně, Wave 4).
+5. **Test závislý na stroji, kde běží** → padá kolegům na věcech, které nezavinili. Test smí záviset
+   jen na obsahu repa a na tom, co si sám v běhu vytvoří **pod unikátním jménem** (`Guid.NewGuid()`);
+   cokoli lokálního (sejmutá baseline, soubor v `%TEMP%` se stálým jménem, uživatelský profil) musí
+   být **vypnuté defaultně** a zapínat se proměnnou prostředí. Autor to sám nepozná - `pre-push` běží
+   na jeho stroji, kde artefakt existuje a je svěží, a CI, které by sadu pustilo na čistém stroji,
+   nemáme. Kontrola: `MachineLocalStateGuardTests` (projede zdrojáky všech `*.Tests` projektů;
+   vědomé výjimky u sebe nesou důvod).

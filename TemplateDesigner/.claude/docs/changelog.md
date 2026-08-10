@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-10 (8) - Test závislý na stroji už neprojde do repa
+
+Návazně na opt-in baseline níže: aby se opakování téhož nespoléhalo na to, že si na to někdo vzpomene,
+hlídá to teď test (`MachineLocalStateGuardTests`). Projde zdrojáky **všech `*.Tests` projektů** v repu
+(kolegovi je jedno, který projekt mu sadu shodí) a shodí sadu, když test sahá na soubor mimo repozitář
+pod **stálým jménem**, nebo do uživatelského profilu (`GetFolderPath`, `%APPDATA%`…). Unikátní jméno
+na běh (`Guid.NewGuid()`) je v pořádku - takový soubor mezi běhy nezůstane a nezestárne.
+
+**Proč to autor sám nepozná:** `pre-push` pouští sadu na jeho stroji, kde artefakt existuje a je
+svěží, takže je tam zeleno vždy. CI, které by sadu pustilo na čistém stroji, nemáme - je to tedy
+principiálně nevidět, dokud na to nenarazí kolega.
+
+**Ověřeno mutací, ne jen zelenou sadou:** dočasný test s pevnou cestou do `%TEMP%` sadu shodil
+a hláška ukázala soubor i řádek. Mutace zároveň odhalila, že první verze hlásila tři řádky místo
+jednoho (okno příkazu se otevíralo i na `{`) - zúženo na řádky se spouštěčem. Detekce má vlastní
+ověření (rozlomený `Path.Combine`, komentář se nepočítá) a výjimka se musí obhájit: `Vyjimky_JsouStalePotreba`
+shodí sadu, když výjimka přestane být potřeba - jinak by mlčky kryla nový prohřešek ve stejném souboru.
+
+Jediná dnešní výjimka je baseline odtisků (opt-in, viz níže). Zbytek repa je čistý: ostatní testy, které
+píšou do tempu, používají jméno s `Guid.NewGuid()`, a předvolba fontu v EDControls si cestu injektuje.
+
+**Co to nezachytí:** závislost na fontech z OS, na síti / dev serveru a na obsahu proměnných prostředí.
+Na tu třídu je jediná skutečná pojistka běh na čistém stroji, tedy CI. Pravidlo je v `architecture-rules.md`
+jako 5. „must not happen" scénář. Sada 762/762 (+11).
+
 ## 2026-08-10 (7) - Porovnání odtisků kreslení proti baseline je opt-in
 
 Test `Odtisky_SouhlasiSBaseline` padal kolegovi na sadě, i když byl kód v pořádku. Baseline odtisků
