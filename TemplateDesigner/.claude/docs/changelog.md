@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-10 (1) - 🤝 dohoda s kolegy: sloupce pro odsazení a cíl; co tím pokryté NENÍ
+
+Jan se domluvil s kolegy, že do jízdních řádů přidají **sloupec pro odsazení zastávky** a **sloupec
+pro zadání cíle**; velký tiket na vykreslování odjezdů (#13045 „Skupiny dnů - nastavení", KOVED, open)
+řeší definici sloupců. Tím se zaplňují **tři** z otevřených položek: `TR5` (cíl), #7937 (odsazení
+per směr) a `TR10` (skrývání spojů o víkendu, pohlcené #13045).
+
+**Nepokryté zůstávají dvě věci** a je potřeba, aby to nezmizelo mezi řádky:
+
+- **`TR8` „<1" místo „0"** - nikdo to nemá. Pořád chybí odpověď, ve kterém sloupci zákazník tu nulu
+  vidí (u nás nevzniká, časy jsou kumulativní; kandidát je legacy „Průběhy").
+- **`TR9` obrácená logika poznámkování** - zadávání poznámek (rozsah TČ vedle značky místo klikání
+  u každého spoje). Není součástí ani jednoho ze tří dohodnutých kusů.
+
+**Dvě věci k ověření u dohodnutých sloupců:**
+
+- **cíl musí být per zastávka × směr** (střední varianta). Jen per směr už umíme dnes přes
+  `POPIS_SMER`=konečná a zákazník to sám označil za nouzové řešení.
+- **odsazení per Tč pásmo vývěsu** byla druhá polovina #7937 a sloupec ji nepokryje - ověřit
+  u TRANSDEV, jestli na ní trvá.
+
+Mimo zastávkové vývěsky pořád visí **#11300** (KORID, skrýt prázdné přípojové řádky) - přípoje nejsou
+koncept zastávkového JŘ, patří k linkovým. A na naší straně `B63` (nečteme „nevypisovat značku
+ve sloupci") - pokud #13045 to nastavení přesune do šablony, `B63` se stane zbytečným, jinak platí.
+
+
 ## 2026-08-07 (3) - ✅ rozhodnutí: skrývání spojů o víkendu pohltí obecné definování sloupců
 
 **Jan 7. 8.:** `TR10` nedělat zvlášť. Až se sloupec bude definovat obecně (seznamem značek nebo
