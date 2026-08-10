@@ -164,15 +164,6 @@ public class StopListSubMinuteTravelTests
         Assert.True(bezZnacky - vychozi > 0.5f, $"odsazení je podezřele malé: {bezZnacky - vychozi} mm");
     }
 
-    [Fact]
-    public void Vypnuty_Prepinac_NeodsazujeNic()
-    {
-        var trasa = Trasa();
-        var el = new StopListElement { ShowSubMinuteTravel = true, AlignSubMinuteDigits = false };
-
-        Assert.Equal(Odsazeni(el, trasa, 1), Odsazeni(el, trasa, 3), 3);
-    }
-
     /// <summary>Při zarovnání vpravo se číslice srovnají samy - odsazení by je rozhodilo.</summary>
     [Fact]
     public void ZarovnaniVpravo_Neodsazuje()
@@ -210,9 +201,13 @@ public class StopListSubMinuteTravelTests
     [Fact]
     public void VariantniSloupce_DediZarovnaniZeSloupceCas()
     {
+        var styl = new ColumnVisualStyle
+        {
+            Data = new TextStyle { HAlign = TextHorizontalAlignment.Right, VAlign = TextVerticalAlignment.Bottom },
+        };
         List<StopColumn> puvodni =
         [
-            new() { Key = StopFields.TravelTime, Alignment = TextHorizontalAlignment.Right },
+            new() { Key = StopFields.TravelTime, Alignment = TextHorizontalAlignment.Right, Style = styl },
             new() { Key = StopFields.StopName, Alignment = TextHorizontalAlignment.Left },
         ];
 
@@ -221,6 +216,10 @@ public class StopListSubMinuteTravelTests
         var casove = rozvinute.Where(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)).ToList();
         Assert.Equal(2, casove.Count);
         Assert.All(casove, c => Assert.Equal(TextHorizontalAlignment.Right, c.Alignment));
+        // Dialog sloupců píše zarovnání (vodorovné i svislé) do stylu, ne do Alignment - bez dědění
+        // stylu se nastavení u linky s víc variantami tiše zahodilo.
+        Assert.All(casove, c => Assert.Equal(TextHorizontalAlignment.Right, c.Style?.Data?.HAlign));
+        Assert.All(casove, c => Assert.Equal(TextVerticalAlignment.Bottom, c.Style?.Data?.VAlign));
         Assert.Equal(TextHorizontalAlignment.Left, rozvinute.Single(c => c.Key == StopFields.StopName).Alignment);
     }
 

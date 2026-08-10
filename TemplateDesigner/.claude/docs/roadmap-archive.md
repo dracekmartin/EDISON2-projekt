@@ -44,14 +44,17 @@ jich takhle našla 16, všechny neplatné.
 **Doplněno 10. 8. po vizuální kontrole (Jan):** samotné „<1" odsadí svou číslici doprava a zarovnání
 sloupce vpravo to řeší jen zdánlivě (jednociferné časy pak odskočí místo dvouciferných). Prvek proto
 **odsadí ostatní čísla o šířku znaku „<"** (měřeno z reálného fontu), takže číslice stojí ve svislici
-a „<" z ní vystupuje doleva; přepínač **„Zarovnat číslice pod sebe"** (výchozí zapnuto) to umí vrátit.
-Odsazuje se jen při zarovnání vlevo a jen ve sloupci, kde „<1" reálně je.
+a „<" z ní vystupuje doleva. Odsazuje se jen při zarovnání vlevo (vpravo se číslice srovnají samy)
+a jen ve sloupci, kde „<1" reálně je. **Bez přepínače** - Jan ho po vidění odtisku zrušil, tohle je
+jediné chování (nabízený přepínač „Zarovnat číslice pod sebe" existoval jen mezi dvěma commity).
 
-**Vedlejší nález opravený tímtéž (Jan): zarovnání sloupce „Čas" se nepropisovalo na varianty tras.**
-`ExpandTravelTimeColumns` vytvářel variantní sloupce od nuly, takže u linky s víc variantami se
-uživatelovo zarovnání tiše zahodilo. Nově se dědí. ⚠️ **Per-sloupcový styl (font, barvy, okraje) se
-pořád nededí** - je to týž vzorec, ale jeho oprava mění vzhled zákazníkům, kteří styl na „Čase"
-nastavený mají, takže zvlášť a s vědomím Jana.
+**Vedlejší nález opravený tímtéž: nastavení sloupce „Čas" se nepropisovalo na varianty tras.**
+`ExpandTravelTimeColumns` vytvářel variantní sloupce od nuly. ⚠️ **Nejdřív jsem zdědil jen
+`Alignment` a bylo to k ničemu** - dialog sloupců píše zarovnání (vodorovné **i svislé**) do
+`Style.Data`, takže uživatel po opravě neviděl žádnou změnu a nahlásil to. Dědí se proto **celý
+per-sloupcový styl i `Alignment`**; šířku a hlavičku si varianty určují samy. **Poučení:** než
+prohlásím „opraveno", ověřit tou cestou, kterou uživatel reálně klikne - dvě cesty k témuž nastavení
+znamenají, že oprava jedné z nich nemusí být vidět.
 
 **Seedy:** uživatelská příručka (Tabulka zastávek) + Novinky.
 

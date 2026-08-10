@@ -48,10 +48,10 @@ Zapíná se u prvku Tabulka zastávek volbou **Jízda pod minutu jako <1** (výc
 zásahu se nic nemění). Zastávka, kterou spoj neobsluhuje, zůstane prázdná i se zapnutou volbou.
 
 Aby kvůli tomu neodskočila čísla, znak „<" se vysouvá doleva a číslice zůstávají ve svislici
-s ostatními časy. Kdyby se vám to nezdálo, jde to vypnout volbou **Zarovnat číslice pod sebe**.
+s ostatními časy.
 
-**Navíc:** zarovnání sloupce „Čas" se teď propíše i na časové sloupce variant tras. Když měla linka
-víc variant, sloupce se rozpadly a vaše nastavení zarovnání se tiše nepoužilo.
+**Navíc oprava:** nastavení sloupce „Čas" - zarovnání i styl - se teď propíše i na časové sloupce
+variant tras. Když měla linka víc variant, sloupce se rozpadly a vaše nastavení se tiše nepoužilo.
 
 ### 5. 8. 2026 - Pokračující spoje
 

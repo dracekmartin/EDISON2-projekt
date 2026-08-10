@@ -75,11 +75,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// viz <see cref="MarkSubMinuteCells"/>.</summary>
     public bool ShowSubMinuteTravel { get; set; }
 
-    /// <summary>Při „&lt;1" odsadit ostatní čísla o šířku znaku „&lt;", aby číslice zůstaly ve svislici
-    /// a „&lt;" z ní vystupoval doleva. Vypnuto = „&lt;1" se vypíše jako obyčejný text, takže jeho číslice
-    /// odskočí doprava. Platí jen při zarovnání sloupce vlevo (vpravo se číslice srovnají samy).</summary>
-    public bool AlignSubMinuteDigits { get; set; } = true;
-
     /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>
     /// <remarks>Default AfterName = za názvem zastávky (CBDP layout). BeforeName = před názvem (DPKV layout, např. „× Globus").</remarks>
     public StopMarkersSide MarkersPosition { get; set; } = StopMarkersSide.AfterName;
@@ -848,7 +843,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     internal ResolvedTextStyle ResolveCellStyle(StopColumn col, ZastavkaData z, bool isCurrent, bool isPassed)
     {
         var style = ResolveRowStyle(col, isCurrent, isPassed);
-        if (!AlignSubMinuteDigits) return style;
         if (_subMinuteColumns?.Contains(col.Key) != true) return style;
         if (style.HAlign != TextHorizontalAlignment.Left) return style;
         if (_subMinuteCells?.Contains((z, col.Key)) == true) return style;   // sama „<1" se neodsazuje
@@ -907,13 +901,17 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         {
             if (col.Key == StopFields.TravelTime)
             {
-                // Zarovnání se dědí ze sloupce „Čas" - je to tentýž údaj rozpadlý na varianty,
-                // takže nastavení na jednovariantní lince nesmí u víc variant tiše zmizet.
+                // Zarovnání **i per-sloupcový styl** se dědí ze sloupce „Čas" - je to tentýž údaj
+                // rozpadlý na varianty, takže nastavení na jednovariantní lince nesmí u víc variant
+                // tiše zmizet. ⚠️ Dialog sloupců píše zarovnání do `Style.Data.HAlign` (svislé taky),
+                // ne jen do `Alignment` - dědit jen `Alignment` proto nestačilo a uživatel viděl,
+                // že se sloupce nehýbou. Šířka a hlavička se nededí, ty varianty určují samy.
                 for (int i = 0; i < headers.Count; i++)
                     result.Add(new StopColumn
                     {
                         Key = $"{StopFields.TravelTimeVariantPrefix}{i}", Header = headers[i],
-                        Width = VariantColumnWidthMm, Visible = true, Alignment = col.Alignment,
+                        Width = VariantColumnWidthMm, Visible = true,
+                        Alignment = col.Alignment, Style = col.Style,
                     });
             }
             else result.Add(col);
@@ -1253,7 +1251,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
         new BoolPropertyDescriptor  { Label = "Jízda pod minutu jako <1", Group = "Zastávky", Get = () => ShowSubMinuteTravel, Set = v => ShowSubMinuteTravel = v },
-        new BoolPropertyDescriptor  { Label = "Zarovnat číslice pod sebe", Group = "Zastávky", Get = () => AlignSubMinuteDigits, Set = v => AlignSubMinuteDigits = v },
         new EnumPropertyDescriptor
         {
             Label = "Pozice značek", Group = "Zastávky",
@@ -1383,7 +1380,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ShowTransferAttributes  = ShowTransferAttributes,
             ShowStopNotes           = ShowStopNotes,
             ShowSubMinuteTravel     = ShowSubMinuteTravel,
-            AlignSubMinuteDigits    = AlignSubMinuteDigits,
             MarkersPosition         = MarkersPosition,
             MultiPlatformMode       = MultiPlatformMode,
             CurrentStopUnderline    = CurrentStopUnderline,

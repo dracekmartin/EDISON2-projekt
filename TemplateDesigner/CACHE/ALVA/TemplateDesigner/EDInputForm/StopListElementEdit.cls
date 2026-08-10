@@ -44,8 +44,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         s f = form.AddBool("ShowSubMinuteTravel", "Jízda pod minutu jako <1", 0)
         s f.helpText = "Jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů ""<1"" místo prázdna. Zastávka, kterou spoj neobsluhuje, zůstane prázdná."
-        s f = form.AddBool("AlignSubMinuteDigits", "Zarovnat číslice pod sebe", 1)
-        s f.helpText = "Znak ""<"" se vysune doleva, aby číslice zůstaly ve svislici s ostatními časy. Vypnuto = ""<1"" se vypíše jako obyčejný text a jeho číslice odskočí doprava. Platí jen při zarovnání sloupce vlevo."
 
         // ── Stanoviště a varianty tras ────────────────────────────────────
         d form.AddGroup("stopsplatform", "Stanoviště a varianty tras")

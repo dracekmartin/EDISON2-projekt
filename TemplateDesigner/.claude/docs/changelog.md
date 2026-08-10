@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-10 (5) - ✅ `B64` uzavřeno: „<1" bez přepínače, sloupce variant dědí celý styl
+
+**Přepínač „Zarovnat číslice pod sebe" zrušen** (rozhodnutí Jan po vidění odtisku) - visící „<"
+je jediné chování. Formulář zastávek má z `B64` jedinou položku, `Jízda pod minutu jako <1`.
+
+**Dědění nastavení na varianty tras dotaženo - moje první oprava byla k ničemu.** Zdědil jsem jen
+`Alignment`, ale dialog sloupců píše zarovnání (vodorovné **i svislé**) do `Style.Data`. Jan zkoušel
+měnit zarovnání a nic se nehýbalo, což to odhalilo. Dědí se proto **celý per-sloupcový styl**
+(font, barvy, vnitřní okraje, obě zarovnání) i `Alignment`; šířku a hlavičku si varianty určují samy.
+
+**Poučení:** dvě cesty k témuž nastavení znamenají, že oprava jedné z nich nemusí být vidět - před
+tvrzením „opraveno" ověřit tou cestou, kterou uživatel reálně klikne. Minule jsem tuhle druhou cestu
+sám pojmenoval jako „per-sloupcový styl se nededí" a odložil ji, přitom to byla ta používaná.
+
+Ověřeno: 12 testů, mutace dědění stylu test shodí. Nasazená třída ověřena voláním `Init` (pole 41
+`ShowSubMinuteTravel`, `AlignSubMinuteDigits` už tam není). .NET 1885 zelených.
+
+
 ## 2026-08-10 (4) - 🎯 „<1" zarovnává číslice; zarovnání sloupce se dědí na varianty tras
 
 Vizuální kontrola `B64` (Jan) našla dvě věci.
