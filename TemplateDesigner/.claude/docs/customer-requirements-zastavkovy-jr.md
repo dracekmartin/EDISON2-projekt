@@ -89,6 +89,8 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
 | #13048 | KOVED (IDZK/Lábsky) | Poznámky/sloupce zastávek (5 bodů) | ✅ **ZAVŘENO 30. 7. 2026** - všech 5 bodů v1; klient potvrdil i zmenšování textu (bod 2), což byl poslední otevřený bod | - | §0.3 |
 
+| #13045 | KOVED (IDZK/Lábsky) | Skupiny dnů - vlastní sloupce vývěsky | ✅ **HOTOVO 10. 8. 2026, obě části** - (a) denní značky dle rozvržení sloupců (`B29`, 31. 7.: spoj „sobota a svátek" nesl „6" i v nedělním sloupci); (b) vlastní definice sloupců = dny + značky + období (`B39`, 10. 8.) | Vlastní sloupce: dny, „jen/bez značek", „nevypisovat značky", období jako rozsahy dat (bez roku = každý rok). Ověřit na jejich lince, že vývěska sedí, a poradit jim, že nedělní a svátkový provoz se rozliší **rozdělením sloupce**, ne značkami | changelog 2026-07-31 (4) + 2026-08-10 (12) |
+
 **Poznámka k uzavírání:** ready-to-close jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
 polovina 2026 - viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci
 (vzor odpovědi = #8772/#7161: „vyřešeno v novém Návrháři sestav, viz wiki").

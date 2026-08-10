@@ -278,6 +278,11 @@ public class DepartureColumnDefinition
     /// Per-sloupcová náhrada linkového seznamu „nevypisovat značku ve sloupci".</summary>
     public string SuppressedMarks { get; set; } = "";
 
+    /// <summary>Období sloupce - rozsahy dat oddělené čárkou („14.2.-18.2., 1.7.-31.8."). Prázdné =
+    /// neomezuje. Datum bez roku platí každý rok (šablona přežije překlopení jízdního řádku),
+    /// datum s rokem jednorázově. Spoj patří do sloupce, když v období jede aspoň jeden den.</summary>
+    public string Period { get; set; } = "";
+
     public DepartureColumnDefinition Clone() => new()
     {
         Id = Id,
@@ -286,7 +291,8 @@ public class DepartureColumnDefinition
         Days = Days,
         IncludeMarks = IncludeMarks,
         ExcludeMarks = ExcludeMarks,
-        SuppressedMarks = SuppressedMarks
+        SuppressedMarks = SuppressedMarks,
+        Period = Period
     };
 }
 

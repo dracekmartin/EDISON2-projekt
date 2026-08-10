@@ -49,7 +49,8 @@ Method TestGold0365001()
 	// Re-baseline 2026-08-10 (#13045b vlastní sloupce): + pole NZ_KONFIG a NEVYPISOVAT_ZNACKY_SLOUPCU
 	// (podklad pro prázdninové vzory v editoru sloupců) → jen md5. Počty beze změny = režim
 	// „automaticky" se vlastními sloupci nehnul; paritu presetů hlídá ZastavkoveJrAdDefiniceParitaTest.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=/sNlYmCtHT50/Pj14HLE5Q==")
+	// Re-baseline 2026-08-10 (#13045b etapa 2): + pole PRESETY_SLOUPCU → jen md5, počty beze změny.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=L8b1eefEewg1//ClENRgrQ==")
 }
 
 Method TestGold0365005()
@@ -65,7 +66,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-03 (#12997): + pole BARVA_LINKY_2 → jen md5.
 	// Re-baseline 2026-08-03 (#13093 bod 1): + VYLUKOVE_TEXTY, počty beze změny (parametr je vypnutý).
 	// Re-baseline 2026-08-10 (#13045b): + NZ_KONFIG a NEVYPISOVAT_ZNACKY_SLOUPCU → jen md5, počty beze změny.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=syJk9d4c9aGRGghvY6FC/w==")
+	// Re-baseline 2026-08-10 (#13045b etapa 2): + pole PRESETY_SLOUPCU → jen md5, počty beze změny.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=iH0osA7SWstBvY5NyvWM1w==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

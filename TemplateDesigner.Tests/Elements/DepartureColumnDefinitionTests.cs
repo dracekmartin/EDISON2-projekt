@@ -51,50 +51,55 @@ public class DepartureColumnDefinitionTests
         Assert.Null(new DepartureGridElement { CustomColumns = [] }.BuildColumnsDefinitionWireJson());
     }
 
-    // ── Vzory (presety) - tvar 1:1 s paritními Caché testy ──────────────────────────
+    // ── Vzory (presety) ─────────────────────────────────────────────────────────────
+    // Obsah vzorů staví server (PresetySloupcu) a měří ho živá parita v Caché - klient je jen
+    // čte, takže tady se testuje čtení, ne pravidla rozvržení.
+
+    internal const string PresetyJson = """
+        {"PRAC_SO_NE":[
+            {"id":"1","nadpis":"Pracovní dny","dny":"12345","znackyBez":"","nevypisovatZnacky":"52"},
+            {"id":"2","nadpis":"Soboty","dny":"6","znackyBez":"","nevypisovatZnacky":""},
+            {"id":"3","nadpis":"Neděle a svátky","dny":"7+","znackyBez":"","nevypisovatZnacky":"53,54"}],
+         "PRAC_VIKEND":[
+            {"id":"1","nadpis":"Pracovní dny","dny":"12345","znackyBez":"21,32","nevypisovatZnacky":""},
+            {"id":"2","nadpis":"Soboty, neděle a svátky","dny":"67+","znackyBez":"","nevypisovatZnacky":""}]}
+        """;
 
     [Fact]
-    public void Preset_PracSoNe_TriSloupceDny()
+    public void Presety_PrectouSeZeServeru()
     {
-        var cols = DepartureColumnPresets.Build("PRAC_SO_NE", null, null);
+        var presety = DepartureColumnPresets.Parse(PresetyJson);
 
+        Assert.Equal(2, presety.Count);
+        var cols = presety["PRAC_SO_NE"];
         Assert.Equal(["1", "2", "3"], cols.Select(c => c.Id));
         Assert.Equal(["12345", "6", "7+"], cols.Select(c => c.Days));
         Assert.Equal(["Pracovní dny", "Soboty", "Neděle a svátky"], cols.Select(c => c.Header));
-        Assert.All(cols, c => Assert.Equal("", c.ExcludeMarks));
+        Assert.Equal("53,54", cols[2].SuppressedMarks);
+        Assert.Equal("21,32", presety["PRAC_VIKEND"][0].ExcludeMarks);
     }
 
+    /// <summary>Bez dat (standalone běh, agenda bez vzorů) se vzory prostě nenabídnou - klient
+    /// si je nesmí složit sám, jinak by se rozešel se serverem a parita by hlídala kopii.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("{}")]
+    [InlineData("tohle není JSON")]
+    [InlineData("[1,2,3]")]
+    public void Presety_BezPodkladuJsouPrazdne(string? json)
+        => Assert.Empty(DepartureColumnPresets.Parse(json));
+
+    /// <summary>Server smí kontrakt rozšířit (aditivní evoluce) - chybějící klíč nesmí shodit čtení.</summary>
     [Fact]
-    public void Preset_Prazdniny_VylucujeZnackyZNzKonfigurace()
+    public void Presety_ChybejiciKliceJsouPrazdneRetezce()
     {
-        // nzCfg "21~22|31~32": 21 = jede o prázdninách, 22 = nejede; poziční seznamy prohozené
-        // (legacy) → sloupec „mimo prázdniny" vylučuje 21+32, „o prázdninách" 22+31.
-        var cols = DepartureColumnPresets.Build("PRAZDNINY_VIKEND", "21~22|31~32", null);
-
-        Assert.Equal(3, cols.Count);
-        Assert.Equal("21,32", cols[0].ExcludeMarks);
-        Assert.Equal("22,31", cols[1].ExcludeMarks);
-        Assert.Equal("", cols[2].ExcludeMarks);
-        Assert.Equal("67+", cols[2].Days);
-    }
-
-    [Fact]
-    public void Preset_BezNzKonfigurace_MaPrazdnaVylouceni()
-    {
-        var cols = DepartureColumnPresets.Build("PRAZDNINY_SO_NE", "", "");
-        Assert.Equal(4, cols.Count);
-        Assert.All(cols, c => Assert.Equal("", c.ExcludeMarks));
-    }
-
-    [Fact]
-    public void Preset_PozicniNevypisovatZnacky_SePreklopiNaSloupce()
-    {
-        // Poziční linkový seznam MHD_NEZNZ123 (slot N = sloupec N) vzor přenese do per-sloupcových seznamů
-        var cols = DepartureColumnPresets.Build("PRAC_SO_NE", null, "52~52~53,54,55~");
-
-        Assert.Equal("52", cols[0].SuppressedMarks);
-        Assert.Equal("52", cols[1].SuppressedMarks);
-        Assert.Equal("53,54,55", cols[2].SuppressedMarks);
+        var presety = DepartureColumnPresets.Parse("""{"X":[{"id":"1"}]}""");
+        var col = presety["X"][0];
+        Assert.Equal("1", col.Id);
+        Assert.Equal("", col.Header);
+        Assert.Equal("", col.Days);
+        Assert.Equal("", col.Period);
     }
 
     // ── Šablona: serializace + klon ──────────────────────────────────────────────────
@@ -141,24 +146,105 @@ public class DepartureColumnDefinitionTests
         Assert.False(withoutDef.ContainsKey("DEFINICE_SLOUPCU"));
     }
 
-    // ── Souhrn nezařazených odjezdů (status bar) ────────────────────────────────────
+    // ── Souhrn toho, co sloupce nevzaly (status bar) ────────────────────────────────
+
+    private static DataContext Page(string? nezarazene, string? mimoPlatnost = null, string? cisla = null)
+    {
+        var values = new Dictionary<string, object?>();
+        if (nezarazene is not null) values["NEZARAZENE_SPOJE"] = nezarazene;
+        if (mimoPlatnost is not null) values["OBDOBI_MIMO_PLATNOST"] = mimoPlatnost;
+        if (cisla is not null) values["NEZARAZENE_SPOJE_CISLA"] = cisla;
+        return new DataContext(values);
+    }
+
+    /// <summary>Tentýž spoj vypadne na každé zastávce linky zvlášť, takže počítat časy znamená
+    /// hlásit desítky problémů místo tří (KOVED 802192: 31 odjezdů = 3 spoje).</summary>
+    [Fact]
+    public void ColumnWarning_PocitaSpojeNeOdjezdy()
+    {
+        var pages = new[]
+        {
+            Page("5:32", cisla: "10"),
+            Page("5:40, 14:10", cisla: "10,23"),
+            Page("5:48", cisla: "10"),
+        };
+
+        var text = DepartureColumnWarnings.Summarize(pages);
+
+        Assert.StartsWith("2 spoje se nevejdou do žádného sloupce", text);
+        Assert.Contains("č. 10, 23", text);
+        // pořadí je vzestupné, ne v jakém je potkaly stránky - jinak to vypadá jako jiná čísla
+        var prehazene = DepartureColumnWarnings.Summarize([Page("5:32", cisla: "21,3"), Page("5:40", cisla: "14")]);
+        Assert.Contains("č. 3, 14, 21", prehazene);
+        // časy odjezdů v závorce být nesmí - je jich víc než spojů a hláška by se rozešla s počtem
+        Assert.DoesNotContain("5:32", text);
+    }
 
     [Fact]
-    public void UnassignedWarning_AgregujeStrankyADrziCeskePluraly()
+    public void ColumnWarning_AgregujeStrankyADrziCeskePluraly()
     {
-        static DataContext Page(string? nezarazene)
-        {
-            var values = new Dictionary<string, object?>();
-            if (nezarazene is not null) values["NEZARAZENE_SPOJE"] = nezarazene;
-            return new DataContext(values);
-        }
+        Assert.Null(DepartureColumnWarnings.Summarize([Page(null), Page("")]));
 
-        Assert.Null(UnassignedDepartures.Summarize([Page(null), Page("")]));
+        var jeden = DepartureColumnWarnings.Summarize([Page("5:32", cisla: "10")]);
+        Assert.Equal("1 spoj se nevejde do žádného sloupce a na vývěsce nebude (č. 10)", jeden);
 
-        var jeden = UnassignedDepartures.Summarize([Page("5:32")]);
-        Assert.Equal("1 odjezd nespadá do žádného sloupce (5:32)", jeden);
-
-        var dva = UnassignedDepartures.Summarize([Page("5:32"), Page("14:10, 5:32")]);
-        Assert.Equal("2 odjezdy nespadají do žádného sloupce (5:32, 14:10)", dva);
+        var pet = DepartureColumnWarnings.Summarize([Page("5:32", cisla: "1,2,3,4,5")]);
+        Assert.StartsWith("5 spojů se nevejde", pet);
     }
+
+    /// <summary>Bez čísel spojů (data staršího serveru) se počítají časy - hláška nesmí zmizet.</summary>
+    [Fact]
+    public void ColumnWarning_BezCiselSpojuPocitaOdjezdy()
+    {
+        var text = DepartureColumnWarnings.Summarize([Page("5:32"), Page("14:10, 5:32")]);
+        Assert.StartsWith("2 odjezdy se nevejdou do žádného sloupce", text);
+        Assert.Contains("5:32", text);
+    }
+
+    /// <summary>Sloupec s obdobím mimo platnost jízdního řádku zůstane prázdný - bez hlášky by
+    /// uživatel neměl jak zjistit proč (typicky šablona, která přežila překlopení jízdního řádku).</summary>
+    [Fact]
+    public void ColumnWarning_HlasiObdobiMimoPlatnostAJmenujeSloupce()
+    {
+        var jeden = DepartureColumnWarnings.Summarize([Page(null, "Vánoční provoz")]);
+        Assert.Equal("období sloupce „Vánoční provoz“ leží mimo platnost jízdního řádku - sloupec zůstane prázdný", jeden);
+
+        var dva = DepartureColumnWarnings.Summarize([Page(null, "Vánoce"), Page(null, "Prázdniny, Vánoce")]);
+        Assert.Equal("období sloupců „Vánoce“, „Prázdniny“ leží mimo platnost jízdního řádku - zůstanou prázdné", dva);
+    }
+
+    /// <summary>Obě vady naráz se spojí do jedné hlášky - badge ve status baru je jeden.</summary>
+    [Fact]
+    public void ColumnWarning_SpojiObeVadyDoJedneHlasky()
+    {
+        var obe = DepartureColumnWarnings.Summarize([Page("5:32", "Vánoce")]);
+        Assert.NotNull(obe);
+        Assert.Contains("1 odjezd se nevejde", obe);
+        Assert.Contains("mimo platnost jízdního řádku", obe);
+        Assert.Contains(";", obe);
+    }
+
+    // ── Období sloupce - validace vstupu ────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("1.7.-31.8.")]
+    [InlineData("14.2.-18.2., 1.7.-31.8., 29.10.-30.10.")]
+    [InlineData("27.12.2026-29.12.2026")]
+    [InlineData("1.7.2026-31.8.")]
+    [InlineData("24.12.")]
+    public void Obdobi_PlatneTvaryProjdou(string obdobi)
+        => Assert.True(DepartureGroupEditorDialogViewModel.JePlatneObdobi(obdobi));
+
+    /// <summary>Server nerozpoznaný rozsah tiše zahodí - sloupec by pak mlčky bral všechny spoje,
+    /// takže neplatný tvar musí zastavit OK v dialogu.</summary>
+    [Theory]
+    [InlineData("od cervence do srpna")]
+    [InlineData("1.7.-31.8.-30.9.")]
+    [InlineData("32.1.-5.2.")]
+    [InlineData("1.13.-5.2.")]
+    [InlineData("2026-07-01")]
+    [InlineData("1.7.1800-31.8.1800")]
+    public void Obdobi_NeplatneTvaryNeprojdou(string obdobi)
+        => Assert.False(DepartureGroupEditorDialogViewModel.JePlatneObdobi(obdobi));
 }

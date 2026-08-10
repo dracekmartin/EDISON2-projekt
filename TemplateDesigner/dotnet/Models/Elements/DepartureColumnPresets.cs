@@ -1,16 +1,22 @@
+using System.Text.Json.Nodes;
+
 namespace TemplateDesigner.Models.Elements;
 
 /// <summary>
-/// Předpřipravené vzory vlastních sloupců vývěsky = čtyři dnešní pevná rozvržení. Paritu zařazení
-/// spojů se serverovým „automaticky" hlídají Caché testy (TestDefiniceParitaPreset* v
-/// ZastavkoveJrAdHelperyTest). Prázdninové vzory potřebují NZ konfiguraci linky (čísla značek
-/// „jede/nejede o prázdninách") - bez ní se oba pracovní sloupce chovají stejně.
+/// Předpřipravené vzory vlastních sloupců vývěsky = čtyři dnešní pevná rozvržení.
+/// <para>
+/// Obsah vzorů (dny, vyloučené značky, potlačení značek) staví **server** z konfigurace linky
+/// a posílá ho v poli PRESETY_SLOUPCU - klient ho jen přečte. Dřív si ho skládaly obě strany
+/// zvlášť a paritní Caché test tak hlídal kopii pravidel, ne to, co klient reálně pošle.
+/// Bez načtených dat proto vzory nejsou k dispozici (nabídne se jen prázdná definice).
+/// </para>
 /// </summary>
 public static class DepartureColumnPresets
 {
     public sealed record Preset(string Key, string Label);
 
-    /// <summary>Nabídka vzorů - labely 1:1 s volbami parametru „Rozdělení sloupců".</summary>
+    /// <summary>Nabídka vzorů - klíče stabilní (visí na nich volba v editoru), popisky 1:1
+    /// s volbami parametru „Rozdělení sloupců". Obsah vzoru drží server.</summary>
     public static IReadOnlyList<Preset> All { get; } =
     [
         new("PRAC_SO_NE",       "Pracovní / Sobota / Neděle+svátky"),
@@ -19,69 +25,41 @@ public static class DepartureColumnPresets
         new("PRAZDNINY_SO_NE",  "Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky"),
     ];
 
-    /// <summary>
-    /// Sestaví sloupce vzoru. nzConfig = "NZ1~NZ2|NENZ1~NENZ2" z dat linky (pole NZ_KONFIG),
-    /// suppressedSlots = poziční seznam „nevypisovat značku" (pole NEVYPISOVAT_ZNACKY_SLOUPCU,
-    /// slot N patří N-tému sloupci). Obojí smí být prázdné - pak vzor nese jen dny.
-    /// </summary>
-    public static List<DepartureColumnDefinition> Build(string key, string? nzConfig, string? suppressedSlots)
+    /// <summary>Vzory z pole PRESETY_SLOUPCU (klíč vzoru → sloupce). Prázdný/neplatný vstup =
+    /// prázdná mapa; volající pak vzory nenabízí.</summary>
+    public static IReadOnlyDictionary<string, List<DepartureColumnDefinition>> Parse(string? json)
     {
-        // 1. pozice = značka „jede o prázdninách", 2. = „nejede o prázdninách"; poziční seznamy
-        // skrývání spojů mají legacy sloty prohozené (viz ZarazeniSpoje v ZastavkoveJrAd.cls).
-        var nz = (nzConfig ?? "").Split('|');
-        var nzMain = nz[0].Split('~');
-        var jedeOPrazd   = nzMain.Length > 0 ? nzMain[0].Trim() : "";
-        var nejedeOPrazd = nzMain.Length > 1 ? nzMain[1].Trim() : "";
-        var nenz = (nz.Length > 1 ? nz[1] : "").Split('~');
-        var nenzMimo   = nenz.Length > 1 ? nenz[1].Trim() : "";
-        var nenzOPrazd = nenz.Length > 0 ? nenz[0].Trim() : "";
+        var vysledek = new Dictionary<string, List<DepartureColumnDefinition>>(StringComparer.Ordinal);
+        if (string.IsNullOrWhiteSpace(json)) return vysledek;
 
-        var mimoBez   = JoinMarks(jedeOPrazd, nenzMimo);
-        var oPrazdBez = JoinMarks(nejedeOPrazd, nenzOPrazd);
+        JsonNode? root;
+        try { root = JsonNode.Parse(json); }
+        catch (System.Text.Json.JsonException) { return vysledek; }
+        if (root is not JsonObject obj) return vysledek;
 
-        List<DepartureColumnDefinition> cols = key switch
+        foreach (var (klic, hodnota) in obj)
         {
-            "PRAC_SO_NE" =>
-            [
-                Col("1", "Pracovní dny", "12345"),
-                Col("2", "Soboty", "6"),
-                Col("3", "Neděle a svátky", "7+"),
-            ],
-            "PRAC_VIKEND" =>
-            [
-                Col("1", "Pracovní dny", "12345"),
-                Col("2", "Soboty, neděle a svátky", "67+"),
-            ],
-            "PRAZDNINY_VIKEND" =>
-            [
-                Col("1", "Pracovní dny mimo prázdniny", "12345", mimoBez),
-                Col("2", "Pracovní dny o prázdninách", "12345", oPrazdBez),
-                Col("3", "Soboty, neděle a svátky", "67+"),
-            ],
-            "PRAZDNINY_SO_NE" =>
-            [
-                Col("1", "Pracovní dny mimo prázdniny", "12345", mimoBez),
-                Col("2", "Pracovní dny o prázdninách", "12345", oPrazdBez),
-                Col("3", "Soboty", "6"),
-                Col("4", "Neděle a svátky", "7+"),
-            ],
-            _ => []
-        };
-
-        // poziční „nevypisovat značku" se překlopí na per-sloupcový seznam (slot N → sloupec N)
-        var slots = (suppressedSlots ?? "").Split('~');
-        for (int i = 0; i < cols.Count && i < slots.Length; i++)
-            cols[i].SuppressedMarks = slots[i].Trim();
-
-        return cols;
+            if (hodnota is not JsonArray pole) continue;
+            var sloupce = new List<DepartureColumnDefinition>();
+            foreach (var polozka in pole)
+            {
+                if (polozka is not JsonObject s) continue;
+                sloupce.Add(new DepartureColumnDefinition
+                {
+                    Id = Text(s, "id"),
+                    Header = Text(s, "nadpis"),
+                    Header2 = Text(s, "nadpis2"),
+                    Days = Text(s, "dny"),
+                    IncludeMarks = Text(s, "znackyJen"),
+                    ExcludeMarks = Text(s, "znackyBez"),
+                    SuppressedMarks = Text(s, "nevypisovatZnacky"),
+                    Period = Text(s, "obdobi"),
+                });
+            }
+            vysledek[klic] = sloupce;
+        }
+        return vysledek;
     }
 
-    private static DepartureColumnDefinition Col(string id, string header, string days, string excludeMarks = "") =>
-        new() { Id = id, Header = header, Days = days, ExcludeMarks = excludeMarks };
-
-    private static string JoinMarks(string a, string b)
-    {
-        var parts = (a + "," + b).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        return string.Join(",", parts.Distinct());
-    }
+    private static string Text(JsonObject o, string klic) => o[klic]?.GetValue<string>() ?? "";
 }

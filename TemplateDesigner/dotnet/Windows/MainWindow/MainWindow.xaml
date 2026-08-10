@@ -908,16 +908,17 @@
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
                     </Border>
 
-                    <!-- 5) Nezařazené odjezdy u vlastních sloupců (jmenuje konkrétní minuty
-                         i cestu k nápravě - na rozdíl od zrušeného signálu B24 z 5. 8.). -->
+                    <!-- 5) Co vlastní sloupce nevzaly - nezařazené odjezdy i sloupec s obdobím mimo
+                         platnost JŘ (jmenuje konkrétní minuty / sloupce i cestu k nápravě,
+                         na rozdíl od zrušeného signálu B24 z 5. 8.). -->
                     <Border Grid.Column="7"
                             Background="{DynamicResource EDTheme.Semantic.Warning}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
                             VerticalAlignment="Stretch"
-                            Visibility="{Binding HasUnassignedDepartures, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Definice sloupců nepokrývá všechny spoje - upravte ji v prvku odjezdů (dvojklik na prvek, tab Vlastní definice sloupců)">
+                            Visibility="{Binding HasColumnDataWarning, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Definice sloupců nepokrývá všechny spoje, nebo její období leží mimo platnost jízdního řádku - upravte ji v prvku odjezdů (dvojklik na prvek, tab Vlastní definice sloupců)">
                         <!-- Black záměrně mimo theme: text na Semantic.Warning pozadí (oranžová je
                              v obou tématech světlá, černá na ní má vždy dostatečný kontrast). -->
-                        <TextBlock Text="{Binding UnassignedDeparturesWarning}"
+                        <TextBlock Text="{Binding ColumnDataWarning}"
                                    Foreground="Black" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"/>

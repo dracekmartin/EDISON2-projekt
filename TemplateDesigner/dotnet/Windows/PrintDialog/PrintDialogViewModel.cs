@@ -241,9 +241,10 @@ public class PrintDialogViewModel : EDViewModel
 
             StatusText = $"Generuji PDF ({totalPages} stránek)…";
             string sheetInfo = sheets is null ? "" : $" · {sheets.ShortLabel}";
-            // Vlastní sloupce: odjezdy mimo všechny sloupce se na vývěsce nevytisknou - říct to
-            // i tady, ne jen ve status baru návrháře (tisknout může jiná linka než v náhledu).
-            var unassigned = UnassignedDepartures.Summarize(dataPages);
+            // Vlastní sloupce: co se na vývěsku nedostane (odjezd mimo sloupce, sloupec s obdobím
+            // mimo platnost JŘ) říct i tady, ne jen ve status baru návrháře - tisknout může jiná
+            // linka než v náhledu.
+            var unassigned = DepartureColumnWarnings.Summarize(dataPages);
             string unassignedInfo = unassigned is null ? "" : $" · ⚠ {unassigned}";
 
             if (splitMode == ExportSplitMode.Single)

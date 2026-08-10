@@ -239,6 +239,10 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // #13088: kterým údajem se řídí stanoviště (dělení stránek, výčty). Default = označník.
         s zdrojSt = $s($g(^||ML("IN","ZDROJ_STANOVISTE")) = "Sloupek" : "SL", 1 : "OZN")
 
+        // Má-li vlastní sloupec zadané období, spočítá „kdy spoj jede" ISY - jedním voláním na celou
+        // linku, protože stránek stavíme N. Bez období se nevolá nic a dnešní cesta se nemění.
+        d ..PripravitJede(.sys, dataDB, sku, lin)
+
         // Multi-page: jedna stránka per zastávka × směr (Tam + Zpět). Aktuální zastávka =
         // ze které se počítají odjezdy; StopList ukazuje úsek od ní ve směru jízdy.
         f smer = "T", "Z" {
@@ -607,6 +611,8 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // dal 1:1 stejnou vývěsku jako dnešní rozvržení téže linky.
     d vals.%Set("NZ_KONFIG", nzCfg)
     d vals.%Set("NEVYPISOVAT_ZNACKY_SLOUPCU", $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NEZNZ123")))
+    // hotové vzory sloupců - klient je nestaví sám, aby parita hlídala to, co reálně posílá
+    d vals.%Set("PRESETY_SLOUPCU", ..PresetySloupcu(dataDB, sku, lin))
 
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
     k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar, odjAtrLegenda, znakyLinky, pokrLegenda, pokrPoradi
@@ -654,18 +660,26 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         }
     }
     d vals.%Set("VARIANTY_TRAS", variantyTras)
-    k nezarazeneSpoje
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik, zdrojSt, .odjAtrLegenda, .pokrLegenda, .defSloupce, .nezarazeneSpoje)
+    k nezarazeneSpoje, obdobiMimoPlatnost
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik, zdrojSt, .odjAtrLegenda, .pokrLegenda, .defSloupce, .nezarazeneSpoje, .obdobiMimoPlatnost)
     // Zastávka bez odjezdů v daném směru (konečná) - stránku negenerovat. Výjimka: když odjezdy
     // existují a jen nespadly do žádného vlastního sloupce, stránka MUSÍ ven, jinak zmizí
     // i s varováním NEZARAZENE_SPOJE (celá vývěska by se tiše ztratila bez upozornění).
-    i (odjezdy.%Size() = 0) && ('$d(nezarazeneSpoje)) q ""
+    i (odjezdy.%Size() = 0) && ('$d(nezarazeneSpoje)) && ($g(obdobiMimoPlatnost) = "") q ""
     // Vlastní sloupce: odjezdy, které nespadly do žádného sloupce - chybějící minuta je jinak
     // neviditelná vada, proto ji stránka nese a klient ukáže varování (návrhář i tisk).
     i pocetDefSloupcu {
         s csvNezarazene = ""
         f ni=1:1:+$g(nezarazeneSpoje) s csvNezarazene = csvNezarazene_$s(csvNezarazene="":"", 1:", ")_nezarazeneSpoje(ni)
         d vals.%Set("NEZARAZENE_SPOJE", csvNezarazene)
+        // čísla spojů zvlášť - klient podle nich počítá SPOJE, ne odjezdy (tentýž spoj vypadne
+        // na každé zastávce linky, takže počet časů hlásí desítky problémů místo jednoho)
+        s csvSpoju = "", spX = ""
+        f { s spX = $o(nezarazeneSpoje("spoj", spX))  q:spX=""  s csvSpoju = csvSpoju_$s(csvSpoju="":"", 1:",")_spX }
+        d vals.%Set("NEZARAZENE_SPOJE_CISLA", csvSpoju)
+        // sloupec, jehož období leží mimo platnost jízdního řádku, by jinak zůstal prázdný
+        // a uživatel by neměl jak zjistit proč (šablona přežila překlopení jízdního řádku)
+        d vals.%Set("OBDOBI_MIMO_PLATNOST", $g(obdobiMimoPlatnost))
     }
     i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
     // Vývěska je samostatná stránka → legenda vysvětluje jen značky, které na TÉTO stránce reálně jsou.
@@ -746,7 +760,7 @@ ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 /// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`),
 /// s vlastní definicí sloupců (defSloupce z ParseDefiniceSloupcu) dle `ZarazeniSpojeDleDefinice`;
 /// nezarazeneSpoje pak sbírá časy odjezdů, které nespadly do žádného sloupce (→ NEZARAZENE_SPOJE).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "", zdrojSt As %String = "OZN", ByRef odjAtrLegenda, ByRef pokrLegenda, ByRef defSloupce, ByRef nezarazeneSpoje) As %DynamicArray
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "", zdrojSt As %String = "OZN", ByRef odjAtrLegenda, ByRef pokrLegenda, ByRef defSloupce, ByRef nezarazeneSpoje, ByRef obdobiMimoPlatnost) As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
@@ -756,6 +770,15 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
 
     // „nevypisovat NZ ve sloupci 1-4" - per linka, 4 sloty. Potlačuje **značku u minuty**, ne spoj.
     s nzNoShow = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NEZNZ123"))
+
+    // období vlastních sloupců: rozsahy dat převedené na horolog proti platnosti jízdního řádku.
+    // Sloupec, kterému po ořezu nezbyl žádný rozsah, se hlásí ven - jinak zmlkne bez vysvětlení.
+    k obdobiSloupcu
+    s obdobiMimoPlatnost = ""
+    i +$g(defSloupce) {
+        d ..ObdobiSloupcu(dataDB, sku, lin, .defSloupce, .obdobiSloupcu)
+        s obdobiMimoPlatnost = $g(obdobiSloupcu("mimo"))
+    }
 
     s sp = ""
     f {
@@ -841,34 +864,48 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             i komentarZnak '= "" s komentareLegenda(komentarZnak) = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_SpeC",komentarZnak))
         }
 
-        // Týdenní platnost - kroužkové denní značky; sada závisí na rozvržení sloupců (viz DenniZnacky).
-        i +$g(defSloupce) { s dnyZnaky = ..DenniZnackyDleDefinice(.defSloupce, plk) }
-        else { s dnyZnaky = ..DenniZnacky(ftl, plk) }
-        f di=1:1:$l(dnyZnaky) {
-            s dch = $e(dnyZnaky, di)
-            s dnyLegenda(dch) = ..TextDneVTydnu(dch)
-        }
-
         // spoj může patřit do více sloupců dnů (FTL layout + prázdninové dělení dle CNZ)
-        i +$g(defSloupce) { s skupiny = ..ZarazeniSpojeDleDefinice(.defSloupce, plk, cnz) }
+        i +$g(defSloupce) { s skupiny = ..ZarazeniSpojeDleDefinice(.defSloupce, plk, cnz, smer, sp, .obdobiSloupcu) }
         else { s skupiny = ..ZarazeniSpoje(ftl, plk, cnz, nzCfg) }
         i skupiny = "" {
             // vlastní sloupce: nezařazený odjezd se hlásí (jinak tiše zmizí z vývěsky);
             // automaticky = legacy tiché přeskočení (KamPrt = 0, nerozpoznané Plk)
-            i +$g(defSloupce) s nezarazeneSpoje($i(nezarazeneSpoje)) = hod_":"_$tr($j(min,2)," ",0)
+            // hlásí se čas i číslo spoje: tentýž spoj vypadne na každé zastávce zvlášť, takže
+            // pouhý počet časů dělá z jednoho problému desítky (nález Jan 10. 8.)
+            i +$g(defSloupce) {
+                s nezarazeneSpoje($i(nezarazeneSpoje)) = hod_":"_$tr($j(min,2)," ",0)
+                s nezarazeneSpoje("spoj", sp) = ""
+            }
             continue
         }
+        // Týdenní platnost - kroužkové denní značky. V režimu „automaticky" je sada dána rozvržením
+        // (viz DenniZnacky), u vlastních sloupců se počítá **per sloupec**: značka se tiskne, jen
+        // když spoj nepokrývá celý sloupec, a to je u každého sloupce jinak.
+        i '+$g(defSloupce) {
+            s dnyZnaky = ..DenniZnacky(ftl, plk)
+            f di=1:1:$l(dnyZnaky) { s dnyLegenda($e(dnyZnaky,di)) = ..TextDneVTydnu($e(dnyZnaky,di)) }
+        }
+        s dnySpoje = ..DnySpoje(plk)
         f gi=1:1:$l(skupiny,",") {
-            s o = ..BuildOdjezd(currentPoradi, $p(skupiny,",",gi), hod, min)
+            s idSloupce = $p(skupiny,",",gi)
+            s o = ..BuildOdjezd(currentPoradi, idSloupce, hod, min)
+            s idxSloupce = 0, pokryvaObdobi = 0
+            i +$g(defSloupce) {
+                s idxSloupce = ..IndexSloupce(.defSloupce, idSloupce)
+                s dnyZnaky = ..DenniZnackyProSloupec(plk, dnySpoje, $g(defSloupce(idxSloupce,"dny")))
+                f di=1:1:$l(dnyZnaky) { s dnyLegenda($e(dnyZnaky,di)) = ..TextDneVTydnu($e(dnyZnaky,di)) }
+                // spoj jedoucí celé období sloupce nemá u negativní značky co vysvětlovat (#13045)
+                s pokryvaObdobi = (+$g(obdobiSloupcu(idxSloupce)) > 0) && (..JizdaVObdobi(smer, sp, .obdobiSloupcu, idxSloupce, $g(defSloupce(idxSloupce,"dny"))) = 2)
+            }
             // pořadí anotací 1:1 legacy ZnkOm: dny → rozdíl trasy → omezení → bezbariér → ruční komentář.
             // KATEGORIE + spoj = pro TD filtr viditelnosti (#7955) - Caché generuje nadmnožinu.
             f di=1:1:$l(dnyZnaky) d ..AddAnotace(o, "specialni", $e(dnyZnaky,di), "", "", "tydenni-platnost", sp, vRozsahu)
             i pismRT '= "" d ..AddAnotace(o, "text", pismRT, "", "", "rozdil-trasy", sp, vRozsahu)
             i pismVarTx '= "" d ..AddAnotace(o, "text", pismVarTx, "", "", "varianta-trasy", sp, vRozsahu)
             i znak '= "" {
-                // vlastní sloupce nesou potlačení značky samy (per-sloupec seznam); linkový
-                // poziční seznam MHD_NEZNZ123 platí jen v režimu „automaticky"
-                i +$g(defSloupce) { s skryto = (typOmez = "nz") && ..ZnackaSkrytaDleDefinice(.defSloupce, $p(skupiny,",",gi), znak) }
+                // vlastní sloupce nesou potlačení značky samy (per-sloupec seznam + pokrytí období);
+                // linkový poziční seznam MHD_NEZNZ123 platí jen v režimu „automaticky"
+                i +$g(defSloupce) { s skryto = (typOmez = "nz") && (..ZnackaSkrytaDleDefinice(.defSloupce, idSloupce, znak) || pokryvaObdobi) }
                 else { s skryto = (typOmez = "nz") && ..ZnackaSkrytaVeSloupci(nzNoShow, $p(skupiny,",",gi), znak) }
                 i 'skryto {
                     i typOmez = "nz" s poznMap("byMarker", znak) = txt, poznMap("typ", znak) = "nz"
@@ -1426,6 +1463,8 @@ ClassMethod ParseDefiniceSloupcu(ByRef defArr) As %Integer
         s defArr(n,"dny")     = sl.%Get("dny")
         s defArr(n,"jen")     = ..NormalizujSeznamZnacek(sl.%Get("znackyJen"))
         s defArr(n,"bez")     = ..NormalizujSeznamZnacek(sl.%Get("znackyBez"))
+        // období se drží v původním textovém tvaru - rok se doplňuje až proti platnosti JŘ
+        s defArr(n,"obdobi")  = sl.%Get("obdobi")
         s defArr("nevyp",id)  = ..NormalizujSeznamZnacek(sl.%Get("nevypisovatZnacky"))
     }
     s defArr = n
@@ -1487,9 +1526,10 @@ ClassMethod SedneDoSloupceDny(dnySpoje As %String, sloupecDny As %String) As %Bo
 
 /// Zařazení spoje do vlastních sloupců (druhý režim vedle ZarazeniSpoje). Kaskáda podmínek:
 /// dny (průnik s týdenní platností) → značky „jen s těmito" (CNZ musí být v seznamu; spoj bez CNZ
-/// nesedí) → značky „bez těchto" (CNZ v seznamu vyřazuje). Nevyplněná podmínka neomezuje.
+/// nesedí) → značky „bez těchto" (CNZ v seznamu vyřazuje) → **období** (spoj v něm musí jet aspoň
+/// jeden den). Nevyplněná podmínka neomezuje; bez podkladu z ISY neomezuje ani období.
 /// Vrací CSV id sloupců ("" = spoj nespadl nikam → hlásí se v NEZARAZENE_SPOJE).
-ClassMethod ZarazeniSpojeDleDefinice(ByRef defArr, plk As %String, cnz As %String) As %String
+ClassMethod ZarazeniSpojeDleDefinice(ByRef defArr, plk As %String, cnz As %String, smer As %String = "", sp As %String = "", ByRef obdobiSloupcu) As %String
 {
     s dnySpoje = ..DnySpoje(plk)
     s out = ""
@@ -1497,9 +1537,19 @@ ClassMethod ZarazeniSpojeDleDefinice(ByRef defArr, plk As %String, cnz As %Strin
         i '..SedneDoSloupceDny(dnySpoje, defArr(i,"dny")) continue
         i (defArr(i,"jen") '= "") && ((cnz = "") || (defArr(i,"jen") '[ (","_(+cnz)_","))) continue
         i (defArr(i,"bez") '= "") && (cnz '= "") && (defArr(i,"bez") [ (","_(+cnz)_",")) continue
+        i ..JizdaVObdobi(smer, sp, .obdobiSloupcu, i, defArr(i,"dny")) = 0 continue
         s out = out_$s(out="":"", 1:",")_defArr(i,"id")
     }
     q out
+}
+
+/// Index sloupce v definici podle jeho id (anotace pracují s id, období s pořadím). 0 = nenalezeno.
+ClassMethod IndexSloupce(ByRef defArr, id As %String) As %Integer
+{
+    f i=1:1:+$g(defArr) {
+        i defArr(i,"id") = id ret i
+    }
+    q 0
 }
 
 /// Potlačení značky u minut ve vlastním sloupci - obdoba ZnackaSkrytaVeSloupci, ale seznam
@@ -1512,29 +1562,289 @@ ClassMethod ZnackaSkrytaDleDefinice(ByRef defArr, sloupecId As %String, nz As %S
     q (cfg [ (","_(+nz)_","))
 }
 
-/// Denní značky pro vlastní sloupce - stejná filozofie jako DenniZnacky (značka jen tam, kde ji
-/// nedává nadpis sloupce): konkrétní pracovní dny 1-5 vždy; víkendové (6, 7, +) jen když nějaký
-/// sloupec slévá všechny tři dohromady, a pak dle legacy pravidel (»6« bez 7 a +; »7« a »+« bez 6).
-/// Vědomě konzervativní kvůli 1:1 paritě presetů s DenniZnacky: sloupec s částečnou kombinací
-/// (např. jen So+Ne) víkendové značky nedostane - stejně jako legacy FTL 0/3.
-ClassMethod DenniZnackyDleDefinice(ByRef defArr, plk As %String) As %String
+/// Denní značky spoje v konkrétním vlastním sloupci.
+///
+/// Obecné pravidlo: **značka se tiskne, jen když spoj nepokrývá celý sloupec** - co platí pro celý
+/// sloupec, říká jeho nadpis. Tisknou se **jen dny, které sloupec sám pokrývá**, takže se do sloupce
+/// nemůže dostat značka dne, který v něm vůbec není (to byla chyba opravená v `B29`).
+///
+/// ⚠️ Čtyři kombinace, které umí i režim „automaticky" (`12345` / `6` / `7+` / `67+`), si drží
+/// **dnešní chování** - rozhodnutí Jan 10. 8. Obecné pravidlo by ve sloupci „Neděle a svátky"
+/// označkovalo 6 269 ze 7 295 spojů (86 %) a ve slitém víkendu 4 386 z 8 213 (53 %); značka na
+/// většině řádků nerozlišuje nic a je hlavně příznakem, že sloupec neodpovídá datům (v CB_CSADAD
+/// skoro žádný nedělní spoj o svátcích nejede). Kdo chce nedělní a sváteční provoz odlišit,
+/// rozdělí si sloupec - vlastní sloupce to od etapy 1 umožňují.
+ClassMethod DenniZnackyProSloupec(plk As %String, dnySpoje As %String, sloupecDny As %String) As %String
 {
+    i sloupecDny = "" q ""                                      // sloupec neomezuje - není vůči čemu značku vztáhnout
+    // kombinace známé z dnešních rozvržení - beze změny
+    i sloupecDny = "12345" q ..DenniZnacky(0, plk)               // FTL 0 vrací jen znaky 1-5
+    i (sloupecDny = "6") || (sloupecDny = "7+") q ""             // oddělený víkendový sloupec: nadpis to říká
+    i sloupecDny = "67+" q $tr(..DenniZnacky(2, plk), "12345")   // slitý víkend dle dnešního pravidla
+    // vlastní kombinace (uživatel si dny slil sám) - obecné pravidlo
+    i (dnySpoje = "") || (dnySpoje = "-") q ""
+    s pokryva = 1
+    f i=1:1:$l(sloupecDny) {
+        i dnySpoje '[ $e(sloupecDny,i) s pokryva = 0
+    }
+    i pokryva q ""
     s znacky = ""
-    f di=1:1:$l(plk) {
-        s dch = $e(plk, di)
-        i "12345" '[ dch continue
-        s znacky = znacky_dch
+    f i=1:1:$l(sloupecDny) {
+        s dch = $e(sloupecDny,i)
+        i dnySpoje [ dch s znacky = znacky_dch
     }
-    s slite = 0
-    f i=1:1:+$g(defArr) {
-        s cd = defArr(i,"dny")
-        i (cd["6") && (cd["7") && (cd["+") s slite = 1
-    }
-    i 'slite q znacky
-    i (plk["6") && (plk'["7") && (plk'["+") s znacky = znacky_"6"
-    i (plk'["6") && (plk["7") s znacky = znacky_"7"
-    i (plk'["6") && (plk["+") s znacky = znacky_"+"
     q znacky
+}
+
+/// Vzory vlastních sloupců = čtyři dnešní pevná rozvržení, postavená z konfigurace linky.
+/// **Jediný zdroj pravdy**: klient je nestaví sám, bere je z hodnoty `PRESETY_SLOUPCU`, a paritní
+/// test měří proti témuž kódu - parita tak hlídá to, co klient reálně pošle, ne ruční kopii pravidel.
+/// Klíče vzorů jsou stabilní (visí na nich volba v editoru), popisky 1:1 s parametrem
+/// „Rozdělení sloupců".
+ClassMethod PresetySloupcu(dataDB As %String, sku As %String, lin As %String) As %String
+{
+    s nz    = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))
+    s nenz  = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
+    s neznz = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NEZNZ123"))
+    // 1. pozice NZ = „jede o prázdninách", 2. = „nejede"; poziční seznamy skrývání spojů mají
+    // legacy sloty prohozené (viz ZarazeniSpoje)
+    s mimoBez   = ..SpojSeznamyZnacek($p(nz,"~",1), $p(nenz,"~",2))
+    s oPrazdBez = ..SpojSeznamyZnacek($p(nz,"~",2), $p(nenz,"~",1))
+
+    s out = ##class(%DynamicObject).%New()
+    d out.%Set("PRAC_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny","12345",""), $lb("2","Soboty","6",""), $lb("3","Neděle a svátky","7+","")), neznz))
+    d out.%Set("PRAC_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny","12345",""), $lb("2","Soboty, neděle a svátky","67+","")), neznz))
+    d out.%Set("PRAZDNINY_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","12345",mimoBez), $lb("2","Pracovní dny o prázdninách","12345",oPrazdBez), $lb("3","Soboty, neděle a svátky","67+","")), neznz))
+    d out.%Set("PRAZDNINY_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","12345",mimoBez), $lb("2","Pracovní dny o prázdninách","12345",oPrazdBez), $lb("3","Soboty","6",""), $lb("4","Neděle a svátky","7+","")), neznz))
+    q out.%ToJSON()
+}
+
+/// Sloupce jednoho vzoru; `neznz` = poziční seznam „nevypisovat značku" (slot N patří N-tému sloupci).
+ClassMethod PresetSloupce(sloupce As %List, neznz As %String) As %DynamicArray
+{
+    s arr = ##class(%DynamicArray).%New()
+    f i=1:1:$ll(sloupce) {
+        s def = $li(sloupce, i)
+        s sl = ##class(%DynamicObject).%New()
+        d sl.%Set("id", $li(def,1))
+        d sl.%Set("nadpis", $li(def,2))
+        d sl.%Set("dny", $li(def,3))
+        d sl.%Set("znackyBez", $li(def,4))
+        d sl.%Set("nevypisovatZnacky", $zstrip($p(neznz,"~",i),"<>W"))
+        d arr.%Push(sl)
+    }
+    q arr
+}
+
+/// Spojení dvou CSV seznamů čísel značek do jednoho (bez duplicit, prázdné se přeskočí).
+ClassMethod SpojSeznamyZnacek(a As %String, b As %String) As %String
+{
+    s out = ""
+    f i=1:1:2 {
+        s seznam = $s(i=1:$g(a), 1:$g(b))
+        f j=1:1:$l(seznam,",") {
+            s cislo = $zstrip($p(seznam,",",j),"<>W")
+            i cislo = "" continue
+            i (","_out_",") [ (","_cislo_",") continue
+            s out = out_$s(out="":"", 1:",")_cislo
+        }
+    }
+    q out
+}
+
+/// Rozsahy období sloupce z uživatelského textu („14.2.-18.2., 1.7.-31.8." nebo „1.7.2026-31.8.2026").
+/// Datum **bez roku** se opakuje každý rok (šablona pak přežije překlopení jízdního řádku), datum
+/// **s rokem** platí jednou. Nerozpoznaný rozsah se zahodí - tvar hlídá editor při OK.
+/// Vrací počet, rozsahy(k) = $lb(odText, doText).
+ClassMethod ParseObdobi(text As %String, ByRef rozsahy) As %Integer
+{
+    k rozsahy
+    s rozsahy = 0
+    i $g(text) = "" q 0
+    s n = 0
+    f i=1:1:$l(text,",") {
+        s cast = $zstrip($p(text,",",i), "<>W")
+        i cast = "" continue
+        s odText = $zstrip($p(cast,"-",1), "<>W")
+        s doText = $zstrip($p(cast,"-",2), "<>W")
+        i doText = "" s doText = odText
+        i ('..JeDatumTvar(odText)) || ('..JeDatumTvar(doText)) continue
+        s n = n + 1
+        s rozsahy(n) = $lb(odText, doText)
+    }
+    s rozsahy = n
+    q n
+}
+
+/// Je text datum ve tvaru „d.m", „d.m." nebo „d.m.rrrr"? Rok je nepovinný (= každý rok).
+ClassMethod JeDatumTvar(text As %String) As %Boolean
+{
+    s text = $g(text)
+    i text = "" q 0
+    s den = $p(text,".",1), mesic = $p(text,".",2), rok = $p(text,".",3)
+    i ('$isvalidnum(den)) || ('$isvalidnum(mesic)) q 0
+    i (+den < 1) || (+den > 31) || (+mesic < 1) || (+mesic > 12) q 0
+    i rok '= "" {
+        i '$isvalidnum(rok) q 0
+        i (+rok < 1900) || (+rok > 2999) q 0
+    }
+    q 1
+}
+
+/// Platnost jízdního řádku linky jako $lb(hrlOd, hrlDo) - `PATCH,"Plati"` ve tvaru „datumOd~datumDo:…".
+/// Prázdná složka = neomezeno.
+ClassMethod PlatnostLinky(dataDB As %String, sku As %String, lin As %String) As %String
+{
+    s val = $p($g(^[dataDB]JRL(sku,lin,"PATCH","Plati")), ":", 1)
+    s datumOd = $p(val,"~",1), datumDo = $p(val,"~",2)
+    s hrlOd = "", hrlDo = ""
+    i ..JeDatumTvar(datumOd) s hrlOd = ..DatumNaHorolog(datumOd, $p(datumOd,".",3))
+    i ..JeDatumTvar(datumDo) s hrlDo = ..DatumNaHorolog(datumDo, $p(datumDo,".",3))
+    q $lb(hrlOd, hrlDo)
+}
+
+/// „d.m" + rok → horolog; "" když datum v daném roce neexistuje (29.2. v nepřestupném roce).
+ClassMethod DatumNaHorolog(text As %String, rok As %String) As %String
+{
+    i $g(rok) = "" q ""
+    s den = +$p(text,".",1), mesic = +$p(text,".",2)
+    s hrl = ""
+    try { s hrl = ##class(ALVA.GENERALAPI.Date).DateToHor(den_"."_mesic_"."_rok) } catch (ex) { s hrl = "" }
+    q hrl
+}
+
+/// Období všech vlastních sloupců převedené na horolog + souhrnný rozsah pro jeden dotaz do ISY.
+/// Datum bez roku se materializuje pro každý rok, který protíná platnost jízdního řádku (rozsah
+/// přes Nový rok pokračuje do dalšího roku). Rozsahy mimo platnost se zahazují - sloupec, kterému
+/// takhle nezbude nic, se hlásí uživateli, protože jinak zmlkne bez vysvětlení.
+///   obdobiSloupcu(i)        = počet rozsahů sloupce i (0 = neomezuje)
+///   obdobiSloupcu(i,k)      = $lb(hrlOd, hrlDo)
+///   obdobiSloupcu("rozsah") = $lb(spanOd, spanDo) přes všechny sloupce ("" = žádné období)
+///   obdobiSloupcu("mimo")   = nadpisy sloupců, jejichž období leží mimo platnost jízdního řádku
+ClassMethod ObdobiSloupcu(dataDB As %String, sku As %String, lin As %String, ByRef defArr, ByRef obdobiSloupcu)
+{
+    k obdobiSloupcu
+    s obdobiSloupcu("rozsah") = $lb("", "")
+    s obdobiSloupcu("mimo") = ""
+    s platnost = ..PlatnostLinky(dataDB, sku, lin)
+    s hrlPlatiOd = $lg(platnost,1), hrlPlatiDo = $lg(platnost,2)
+    s dnesniRok = $p(##class(ALVA.GENERALAPI.Date).horToDate($h), ".", 3)
+    s rokOd = $s(hrlPlatiOd'="":$p(##class(ALVA.GENERALAPI.Date).horToDate(hrlPlatiOd),".",3), 1:dnesniRok)
+    s rokDo = $s(hrlPlatiDo'="":$p(##class(ALVA.GENERALAPI.Date).horToDate(hrlPlatiDo),".",3), 1:dnesniRok + 1)
+    s spanOd = "", spanDo = ""
+    f i=1:1:+$g(defArr) {
+        s obdobiSloupcu(i) = 0
+        k rozsahy
+        i '..ParseObdobi($g(defArr(i,"obdobi")), .rozsahy) continue
+        s obdobiSloupcu(i,"zadano") = 1
+        s n = 0
+        f ri=1:1:+$g(rozsahy) {
+            s odText = $lg(rozsahy(ri),1), doText = $lg(rozsahy(ri),2)
+            s maRok = ($p(odText,".",3) '= "") || ($p(doText,".",3) '= "")
+            i maRok {
+                s rok = $s($p(odText,".",3)'="":$p(odText,".",3), 1:$p(doText,".",3))
+                s hrlOd = ..DatumNaHorolog(odText, $s($p(odText,".",3)'="":$p(odText,".",3), 1:rok))
+                s hrlDo = ..DatumNaHorolog(doText, $s($p(doText,".",3)'="":$p(doText,".",3), 1:rok))
+                i (hrlOd '= "") && (hrlDo '= "") && (hrlDo < hrlOd) s hrlDo = ..DatumNaHorolog(doText, rok + 1)
+                d ..PridatRozsah(hrlOd, hrlDo, hrlPlatiOd, hrlPlatiDo, .n, .obdobiSloupcu, i, .spanOd, .spanDo)
+                continue
+            }
+            // bez roku - opakuje se; rok před platností kvůli rozsahu přesahujícímu Nový rok
+            f rok = (rokOd - 1) : 1 : rokDo {
+                s hrlOd = ..DatumNaHorolog(odText, rok)
+                s hrlDo = ..DatumNaHorolog(doText, rok)
+                i (hrlOd '= "") && (hrlDo '= "") && (hrlDo < hrlOd) s hrlDo = ..DatumNaHorolog(doText, rok + 1)
+                d ..PridatRozsah(hrlOd, hrlDo, hrlPlatiOd, hrlPlatiDo, .n, .obdobiSloupcu, i, .spanOd, .spanDo)
+            }
+        }
+        s obdobiSloupcu(i) = n
+        i n = 0 {
+            s nadpis = $g(defArr(i,"nadpis"))
+            i nadpis = "" s nadpis = "sloupec "_i
+            s obdobiSloupcu("mimo") = obdobiSloupcu("mimo")_$s(obdobiSloupcu("mimo")="":"", 1:", ")_nadpis
+        }
+    }
+    s obdobiSloupcu("rozsah") = $lb(spanOd, spanDo)
+}
+
+/// Přidá rozsah do období sloupce, když protíná platnost jízdního řádku (a ořízne ho na ni).
+/// Pomocná metoda `ObdobiSloupcu` - vlastní try/catch nepotřebuje, volá se jen z API metody.
+ClassMethod PridatRozsah(hrlOd As %String, hrlDo As %String, hrlPlatiOd As %String, hrlPlatiDo As %String, ByRef n, ByRef obdobiSloupcu, i As %Integer, ByRef spanOd, ByRef spanDo)
+{
+    i (hrlOd = "") || (hrlDo = "") q
+    i (hrlPlatiOd '= "") && (hrlOd < hrlPlatiOd) s hrlOd = hrlPlatiOd
+    i (hrlPlatiDo '= "") && (hrlDo > hrlPlatiDo) s hrlDo = hrlPlatiDo
+    i hrlDo < hrlOd q                                   // rozsah leží mimo platnost jízdního řádku
+    s n = n + 1
+    s obdobiSloupcu(i,n) = $lb(hrlOd, hrlDo)
+    i (spanOd = "") || (hrlOd < spanOd) s spanOd = hrlOd
+    i (spanDo = "") || (hrlDo > spanDo) s spanDo = hrlDo
+}
+
+/// Denní bitmapy „kdy spoj skutečně jede" pro celou linku. Vyhodnocení (datumová omezení, svátky,
+/// sudé/liché týdny, platnost linky) drží ISY - `LinkyStatistika.jede`; my ho voláme **jednou na
+/// request** a výsledek necháme v `^||TiskAd`, protože GetData staví N stránek z téže linky.
+/// Linku předáváme globálem: v našich klíčích je už v indexovém tvaru a přes `id` by ji
+/// `cisloLinkyDoIndexu` převedla podruhé.
+ClassMethod PripravitJede(ByRef sys As %String, dataDB As %String, sku As %String, lin As %String)
+{
+    k defArr
+    i '..ParseDefiniceSloupcu(.defArr) q
+    k obdobiSloupcu
+    d ..ObdobiSloupcu(dataDB, sku, lin, .defArr, .obdobiSloupcu)
+    s hrlOd = $lg(obdobiSloupcu("rozsah"),1), hrlDo = $lg(obdobiSloupcu("rozsah"),2)
+    i (hrlOd = "") || (hrlDo = "") q                    // žádný sloupec období neomezuje
+    k arr
+    s arr("PAR","horlogOdDo") = $lb(hrlOd, hrlDo)
+    s arr("PAR","platnostLin") = 1
+    s arr("GLB") = $name(^||TiskAd("jede","raw"))
+    d ##class(ALVA.ISY.ISYLinky.API.LinkyStatistika).jede(.sys, $lb(sku,"",""), $name(^[dataDB]JRL(sku,lin)), .arr)
+    s ^||TiskAd("jede","od") = hrlOd
+    // stát pro dopravní kalendář (0 CZ / 1 SK) - kalendář `jede` naplnil pro oba, svátky se liší
+    s ^||TiskAd("jede","stat") = +$g(^[dataDB]JRSET("COME","REC"))
+}
+
+/// Patří den do sloupce? Sloupec bez dnů neomezuje. Svátek patří jen do sloupce, který svátek
+/// vyjmenoval - jinak by „Pracovní dny" tvrdily, že pokrývají i 1. květen.
+/// Pomocná pro `JizdaVObdobi`; kalendář bere z toho, co naplnila `PripravitJede`.
+ClassMethod DenPatriDoSloupce(hrl As %String, sloupecDny As %String) As %Boolean
+{
+    i sloupecDny = "" q 1
+    s stat = +$g(^||TiskAd("jede","stat"))
+    s jeSvatek = +$lg($g(^||TiskAd("jede","raw","CAL",hrl,stat)), 3)
+    i jeSvatek q (sloupecDny [ "+")
+    q (sloupecDny [ ((hrl + 3 # 7) + 1))
+}
+
+/// Jak spoj jede v období sloupce: 2 = každý den období, 1 = jen část, 0 = vůbec ani den,
+/// -1 = neumíme rozhodnout (chybí podklad z ISY → chová se jako „neomezuje").
+/// Sloupec bez období vrací 2 (nic neomezuje, značka se z téhle osy netiskne). Sloupec, jehož
+/// období leží **mimo platnost jízdního řádku**, vrací 0 - do „Vánočního provozu" nepatří všechny
+/// spoje jen proto, že jízdní řád Vánoce nepokrývá (hlásí se přes OBDOBI_MIMO_PLATNOST).
+ClassMethod JizdaVObdobi(smer As %String, sp As %String, ByRef obdobiSloupcu, sloupecIdx As %Integer, sloupecDny As %String = "") As %Integer
+{
+    s pocet = +$g(obdobiSloupcu(sloupecIdx))
+    i pocet = 0 q $s(+$g(obdobiSloupcu(sloupecIdx,"zadano")):0, 1:2)
+    s hrlOdBitmapy = $g(^||TiskAd("jede","od"))
+    s smerId = $s(smer="Z":1, 1:0)
+    s val = $g(^||TiskAd("jede","raw","DTA",smerId,sp))
+    i (hrlOdBitmapy = "") || (val = "") q -1
+    s bitmapa = $lg(val,3)
+    i bitmapa = "" q -1
+    s jede = 0, nejede = 0
+    f k=1:1:pocet {
+        s hrlOd = $lg(obdobiSloupcu(sloupecIdx,k),1), hrlDo = $lg(obdobiSloupcu(sloupecIdx,k),2)
+        f hrl = hrlOd:1:hrlDo {
+            s poz = hrl - hrlOdBitmapy + 1
+            i (poz < 1) || (poz > $l(bitmapa)) continue
+            // dny mimo sloupec se nepočítají: pracovní spoj o víkendu nejede, takže by „jede celé
+            // období" nesplnil nikdy a potlačení značky by se nezapnulo (nález Jan 10. 8.)
+            i '..DenPatriDoSloupce(hrl, sloupecDny) continue
+            i +$e(bitmapa, poz) { s jede = 1 } else { s nejede = 1 }
+        }
+    }
+    i 'jede q 0
+    q $s(nejede:1, 1:2)
 }
 
 /// Rozdíly tras - pro každý spoj daného směru porovná jeho trasu se vzorovou (základní) trasou

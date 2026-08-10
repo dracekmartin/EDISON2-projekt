@@ -46,8 +46,8 @@ Method AssertParita(db As %String, sku As %String, lin As %String)
 }
 
 /// Zavolá GetData (s volitelnou definicí sloupců) a vrátí digest. V režimu definice před digestem
-/// odebere NEZARAZENE_SPOJE - pole existuje jen tam (legacy nerozpoznané platnosti tiše přeskakuje,
-/// definice je hlásí; vytištěné odjezdy jsou stejné).
+/// odebere NEZARAZENE_SPOJE a OBDOBI_MIMO_PLATNOST - obě pole existují jen tam (legacy nerozpoznané
+/// platnosti tiše přeskakuje, definice je hlásí; vytištěné odjezdy jsou stejné).
 Method DigestGetData(db As %String, sku As %String, lin As %String, definice As %String) As %String
 {
 	do ..SetupSys(.sys)
@@ -61,66 +61,25 @@ Method DigestGetData(db As %String, sku As %String, lin As %String, definice As 
 		for p = 1:1:+$get(^||ML("OUT")) {
 			set obj = ##class(%DynamicObject).%FromJSON(^||ML("OUT",p))
 			do obj.values.%Remove("NEZARAZENE_SPOJE")
+			do obj.values.%Remove("NEZARAZENE_SPOJE_CISLA")
+			do obj.values.%Remove("OBDOBI_MIMO_PLATNOST")
 			set ^||ML("OUT",p) = obj.%ToJSON()
 		}
 	}
 	quit ##class(ALVA.TemplateDesigner.Tests.GoldUtil).Digest()
 }
 
-/// Preset definice z konfigurace linky - zrcadlí DepartureColumnPresets.Build v TD (dny dle FTL,
-/// vyloučení z NZ konfigurace, per-sloupcové potlačení značek z pozičního seznamu MHD_NEZNZ123).
+/// Definice sloupců z vzoru odpovídajícího dnešnímu rozvržení linky. Vzory bere ze **serveru**
+/// (`PresetySloupcu`) - tedy z téhož místa, odkud je vezme editor v TD. Dřív si je test skládal
+/// vlastním zrcadlem pravidel a hlídal tím kopii, ne to, co klient reálně posílá.
 ClassMethod PresetJson(db As %String, sku As %String, lin As %String) As %String
 {
 	set ftl = +$get(^[db]JRL(sku,lin,"PATCH","MHD_TYP_R"))
-	set nz = $get(^[db]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))
-	set nenz = $get(^[db]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
-	set neznz = $get(^[db]JRL(sku,lin,"PATCH","MHD_NEZNZ123"))
-	// 1. pozice NZ = „jede o prázdninách", 2. = „nejede"; poziční seznamy legacy prohozené
-	set mimoBez   = ..SpojSeznamy($piece(nz,"~",1), $piece(nenz,"~",2))
-	set oPrazdBez = ..SpojSeznamy($piece(nz,"~",2), $piece(nenz,"~",1))
-
-	set sloupce = ##class(%DynamicArray).%New()
-	if ftl = 1 {
-		do sloupce.%Push(..Sloupec("1", "Pracovní dny mimo prázdniny", "12345", mimoBez))
-		do sloupce.%Push(..Sloupec("2", "Pracovní dny o prázdninách", "12345", oPrazdBez))
-		do sloupce.%Push(..Sloupec("3", "Soboty, neděle a svátky", "67+", ""))
-	} elseif ftl = 2 {
-		do sloupce.%Push(..Sloupec("1", "Pracovní dny", "12345", ""))
-		do sloupce.%Push(..Sloupec("2", "Soboty, neděle a svátky", "67+", ""))
-	} elseif ftl = 3 {
-		do sloupce.%Push(..Sloupec("1", "Pracovní dny mimo prázdniny", "12345", mimoBez))
-		do sloupce.%Push(..Sloupec("2", "Pracovní dny o prázdninách", "12345", oPrazdBez))
-		do sloupce.%Push(..Sloupec("3", "Soboty", "6", ""))
-		do sloupce.%Push(..Sloupec("4", "Neděle a svátky", "7+", ""))
-	} else {
-		do sloupce.%Push(..Sloupec("1", "Pracovní dny", "12345", ""))
-		do sloupce.%Push(..Sloupec("2", "Soboty", "6", ""))
-		do sloupce.%Push(..Sloupec("3", "Neděle a svátky", "7+", ""))
-	}
-	for i = 1:1:sloupce.%Size() {
-		set slot = $piece(neznz, "~", i)
-		if slot '= "" do sloupce.%Get(i-1).%Set("nevypisovatZnacky", slot)
-	}
+	set klic = $case(ftl, 1:"PRAZDNINY_VIKEND", 2:"PRAC_VIKEND", 3:"PRAZDNINY_SO_NE", :"PRAC_SO_NE")
+	set vzory = ##class(%DynamicObject).%FromJSON(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PresetySloupcu(db, sku, lin))
 	set def = ##class(%DynamicObject).%New()
-	do def.%Set("sloupce", sloupce)
+	do def.%Set("sloupce", vzory.%Get(klic))
 	quit def.%ToJSON()
-}
-
-ClassMethod Sloupec(id As %String, nadpis As %String, dny As %String, bez As %String) As %DynamicObject
-{
-	set sl = ##class(%DynamicObject).%New()
-	do sl.%Set("id", id)
-	do sl.%Set("nadpis", nadpis)
-	do sl.%Set("dny", dny)
-	if bez '= "" do sl.%Set("znackyBez", bez)
-	quit sl
-}
-
-ClassMethod SpojSeznamy(a As %String, b As %String) As %String
-{
-	if a = "" quit b
-	if b = "" quit a
-	quit a_","_b
 }
 
 }

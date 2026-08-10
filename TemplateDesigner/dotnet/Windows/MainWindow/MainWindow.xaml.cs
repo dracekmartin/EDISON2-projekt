@@ -1632,13 +1632,13 @@ public partial class MainWindow : Window
         var previewData = _vm!.State.CurrentPreviewData;
         var availableGroups = element.GetAvailableSkupinyDnu(previewData);
 
-        // NZ konfigurace linky z dat - editor z ní předvyplní prázdninové vzory definice sloupců
-        var nzConfig = previewData?.GetValue("NZ_KONFIG")?.ToString();
-        var suppressedSlots = previewData?.GetValue("NEVYPISOVAT_ZNACKY_SLOUPCU")?.ToString();
+        // Vzory sloupců staví server z konfigurace linky - klient je nesestavuje sám, aby
+        // paritní test hlídal to, co editor reálně pošle (bez dat se vzory nenabízejí).
+        var presetsJson = previewData?.GetValue("PRESETY_SLOUPCU")?.ToString();
 
         var dlg = new DepartureGroupEditorDialog(
             element, availableGroups, element.GroupColumns, element.HourColumnStyle,
-            element.CustomColumns, nzConfig, suppressedSlots)
+            element.CustomColumns, presetsJson)
             { Owner = this };
 
         if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)

@@ -8,13 +8,14 @@
 
 > **Stav k 2026-08-10.**
 >
-> **▶ Další krok: `B39` etapa 2 - období.** Etapa 1 (dny + značky) je po prokliku Jana a review
-> **commitnutá 10. 8.** (`41066e8`). Vstupní kontext etapy 2 drží řádek B39 níže + changelog
-> 2026-08-10 (11): sémantika datových poznámek k odkývání, funkce od kolegy
-> `ALVA.ISY.ISYLinky.API.LinkyStatistika` (metoda „jede"; legacy `$$mkStaLin^JRapi` - přecházet
-> na novou) a požadavky zákazníka (víc rozsahů na sloupec, auto-potlačení značky).
-> Velké alternativy: **Fáze B** (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít
-> vcelku) nebo linkový JŘ (**B10** + **B13**) jako dedikovaný slot.
+> **▶ Zastávkový JŘ nemá otevřenou práci.** `B39` (vlastní sloupce vývěsky, #13045b) je hotová
+> oběma etapami 10. 8. - fronta KOVED je tím dojetá. **Další krok si vyber:** **Fáze B**
+> (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
+> (**B10** + **B13**) jako dedikovaný slot.
+>
+> **Nedodělek k `B39`:** zákazníkovi poradit, jak sloupce skládat - nedělní a sváteční provoz se
+> rozliší rozdělením sloupce, ne značkami (v datech skoro žádný nedělní spoj o svátcích nejede,
+> značka by padla na 86 % odjezdů). Patří to do wiki seedu, ne do kódu.
 >
 > **Sada TRANSDEV je celá rozdělená** (10. 8.) - 5 hotových, cíl / obrácené poznámkování / odsazení
 > per směr berou **kolegové** (proto tady nejsou), skrývání spojů o víkendu pohltilo #13045, „<1"
@@ -54,11 +55,7 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md).
 
 `B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový** (body 1, 2 a 4 šly do verze
-4. 8.). Z kola KOVED zbývá jediná věc - `B39` (vlastní skupiny dnů), a je to velký blok.
-
-| # | Blok | Vel. | Uzavírací podmínka |
-|---|---|---|---|
-| **B39** | **#13045b vlastní sloupce vývěsky - zbývá etapa 2: období.** Etapa 1 (dny + značky) hotová a commitnutá 10. 8. (`41066e8`, changelog (10) + zapracovaná review; rozhodnutí (9)); pohltila `TR10`. **Jak navázat na etapu 2:** (a) odkývat u kolegy sémantiku datových poznámek - „jede jen" = protíná se s obdobím; „nejede" vyřazuje jen při pokrytí celého období; „jede"/„jede také" nikdy nevyřazují; sudé/liché týdny → zařadit a nechat na uživateli (`k@`/`L@` vyřešeno: legacy, zahazovat dál); (b) prověřit funkci od kolegy **`ALVA.ISY.ISYLinky.API.LinkyStatistika`** (metoda „jede" - spočítá, kdy spoj skutečně jede; legacy ekvivalent `$$mkStaLin^JRapi`, přecházet na novou) - signatura, návrat, výkon v tiskové cestě → může povýšit období z porovnávání rozsahů na skutečné „spoj v období jede" i splnit zákazníkovo **auto-potlačení značky**, když se omezení kryje s obdobím celé; (c) požadavky zákazníka (changelog (11)): **víc rozsahů dat na sloupec** („14.2.-18.2., 1.7.-31.8., …", dny školního vyučování). Editor rozšířit o podmínku „Období" (aditivní klíč `obdobi` ve wire definici); dluh: sjednotit zdroj presetů C# ↔ ObjectScript zrcadlo v paritním testu. Jen AD, MHD se nemění. | L | Etapa 2: pravidla odkývaná kolegou + LinkyStatistika prověřená → sloupec s obdobím dává správné spoje na živých datech |
+4. 8.). `B39` (vlastní sloupce vývěsky) hotová 10. 8. → **z kola KOVED nezbývá nic**.
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
@@ -91,6 +88,11 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
 ---
 
 ### 📥 Backlog / budoucí velké tracky
+
+- **`B65` Kalendářový výběr období u sloupce vývěsky** (S, rozhodnutí Jan 10. 8.: do první verze
+  stačí text). Dnes se rozsahy dat píšou ručně („14.2.-18.2., 1.7.-31.8.") a tvar hlídá validace
+  při OK. Až se featura usadí, nahradit vybíráním v kalendáři - u „dnů školního vyučování" je ruční
+  psaní desítek rozsahů otravné. Tvar zápisu na wire se tím nemění, jde čistě o zadávání.
 
 - **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
   věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,

@@ -166,7 +166,7 @@ public class TemplateDesignerViewModel : EDViewModel
             if (clearRealData)
             {
                 _realPreviewData = null;
-                UnassignedDeparturesWarning = null;   // badge patří k zahozeným datům
+                ColumnDataWarning = null;   // badge patří k zahozeným datům
                 _realPreviewIndex = 0;
                 Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
@@ -285,14 +285,14 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
-                UnassignedDeparturesWarning = null;
+                ColumnDataWarning = null;
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
             {
                 var culture = GetTemplateCulture();
                 var newData = pages.Select(d => d.WithCulture(culture)).ToList();
-                UnassignedDeparturesWarning = UnassignedDepartures.Summarize(newData);
+                ColumnDataWarning = DepartureColumnWarnings.Summarize(newData);
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
                 // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
                 var currentPage = (keepPage && _realPreviewData is not null
@@ -563,17 +563,18 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _statusText, value);
     }
 
-    private string? _unassignedDeparturesWarning;
-    /// <summary>Odjezdy, které při vlastních sloupcích nespadly do žádného sloupce (souhrn hodnot
-    /// NEZARAZENE_SPOJE ze stránek). Null = nic → badge ve status baru je skrytý. Chybějící minuta
-    /// je jinak neviditelná vada - proto viditelné upozornění, ne tichý log.</summary>
-    public string? UnassignedDeparturesWarning
+    private string? _columnDataWarning;
+    /// <summary>Co vlastní sloupce nevzaly - odjezdy mimo všechny sloupce a sloupce s obdobím mimo
+    /// platnost jízdního řádku. Null = nic → badge ve status baru je skrytý. Obojí je jinak
+    /// neviditelná vada (chybějící minuta, prázdný sloupec) - proto viditelné upozornění,
+    /// ne tichý log.</summary>
+    public string? ColumnDataWarning
     {
-        get => _unassignedDeparturesWarning;
-        private set { if (Set(ref _unassignedDeparturesWarning, value)) OnPropertyChanged(nameof(HasUnassignedDepartures)); }
+        get => _columnDataWarning;
+        private set { if (Set(ref _columnDataWarning, value)) OnPropertyChanged(nameof(HasColumnDataWarning)); }
     }
 
-    public bool HasUnassignedDepartures => !string.IsNullOrEmpty(_unassignedDeparturesWarning);
+    public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
 
     private string _selectionStatusText = "";
     /// <summary>Klidová „stav výběru" zóna status baru (aktuální element / sekce). Píše ji jen
@@ -2717,6 +2718,17 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Vzor sloupců předvyplnit jen prvnímu prvku odjezdů v šabloně a jen u zastávkového
     /// JŘ AD (jediná agenda, jejíž server DEFINICE_SLOUPCU čte). Kód agendy je stabilní
     /// persistovaný klíč.</summary>
+    /// <summary>Výchozí sloupce nového prvku odjezdů - vzor „Pracovní / Sobota / Neděle+svátky"
+    /// tak, jak ho poslal server pro aktuální linku. Bez načtených dat null = prvek zůstane
+    /// v režimu „Automaticky (dle linky)"; vzor složený naslepo by u téhle linky nemusel sedět.</summary>
+    private List<DepartureColumnDefinition>? DefaultDepartureColumns()
+    {
+        var presety = DepartureColumnPresets.Parse(State.CurrentPreviewData?.GetValue("PRESETY_SLOUPCU")?.ToString());
+        return presety.TryGetValue("PRAC_SO_NE", out var vzor) && vzor.Count > 0
+            ? [.. vzor.Select(c => c.Clone())]
+            : null;
+    }
+
     private bool ShouldPrefillDepartureColumns() =>
         string.Equals(State.CurrentTemplate.AgendaCode, "ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)
         && !State.CurrentTemplate.Sections.SelectMany(s => s.Elements).OfType<DepartureGridElement>().Any();
@@ -3088,7 +3100,7 @@ public class TemplateDesignerViewModel : EDViewModel
             // vlastní sloupce, které její server ignoruje. PDF import vzor nedostává (zrcadlí
             // rozvržení importované vývěsky).
             if (element is DepartureGridElement grid && ShouldPrefillDepartureColumns())
-                grid.CustomColumns = DepartureColumnPresets.Build("PRAC_SO_NE", null, null);
+                grid.CustomColumns = DefaultDepartureColumns();
         }
 
         // Snap i rozměrů - výchozí velikosti (80×8, 190×25…) nejsou násobky kroku mřížky,

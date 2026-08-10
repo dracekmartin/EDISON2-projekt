@@ -1,5 +1,71 @@
 # Changelog
 
+## 2026-08-10 (12) - ✅ `B39` etapa 2: sloupec vývěsky jde omezit obdobím
+
+Tím je `B39` (a s ním tiket #13045b) hotový. Brány: build bez chyb, xUnit 798/798 (+26),
+Caché 89/89 (+3), živá parita vzorů prošla.
+
+**Co uživatel dostal:** u vlastního sloupce třetí podmínka **„Období"** - seznam rozsahů dat
+(„14.2.-18.2., 1.7.-31.8., 29.10.-30.10."). Datum **bez roku platí každý rok**, takže šablona
+přežije překlopení jízdního řádku; datum **s rokem** platí jednou (výluka, mimořádný provoz).
+Do sloupce patří spoj, který v období jede aspoň jeden den. **Kdo jede celé období, přijde
+o negativní značku** - nemá co vysvětlovat; kdo jen část („v létě nejede, na podzim ano"),
+značku si nechá. Zákazníkovy „dny školního vyučování" nepotřebují nic navíc - zadají se
+jako rozsahy, protože v datech AD žádný pojem „školní den" není (dopravní kalendář zná jen
+den v týdnu, svátek a sudý/lichý týden; slovo „školní" se v poznámkách 600 linek nevyskytuje).
+
+**Kdo rozhoduje, kdy spoj jede:** ne my. Vyhodnocení si vzala existující funkce EDISONu
+(`ALVA.ISY.ISYLinky.API.LinkyStatistika.jede`) - vrátí pro každý spoj **denní bitmapu** přes zadané
+období a řeší v ní datumová omezení, svátky, sudé/liché týdny i platnost linky. Voláme ji **jednou
+na linku** přes souhrn všech rozsahů (cache v `^||TiskAd`), sloupec je pak jen výřez z bitmapy;
+365 dní × 22 spojů stojí 0,013 s. Linku předáváme globálem - přes `id` by ji `cisloLinkyDoIndexu`
+převedla podruhé.
+
+**Past, kterou to odhalilo:** šablona s pevným datem („27.12.2026") u jízdního řádu platného
+2022-2023 vrátí u **všech** spojů „jede 0 dní" a sloupec zmlkne. Proto sloupec, jemuž po ořezu na
+platnost nezbyl žádný rozsah, **nebere nic a hlásí to** (`OBDOBI_MIMO_PLATNOST` → oranžový badge
+i dovětek u exportu PDF). Bez toho by vývěska tvrdila, že o Vánocích jedou všechny spoje.
+
+**Denní značky - rozhodnutí Jan po měření.** Sloupec, který slije víc druhů dne, musí jít rozlišit
+(spoj jedoucí jen v sobotu vypadá ve sloupci „So + Ne" stejně jako víkendový) a **negativní značka
+to nahradit nemůže** - nese datumové omezení, ne den v týdnu. Nové pravidlo („značka jen když spoj
+nepokrývá celý sloupec", a tiskne se **jen den, který sloupec obsahuje**) se proto zavádí
+**jen u kombinací, které dnešní rozvržení nezná**. Standardní sloupce zůstávají beze změny: obecné
+pravidlo by v „Neděle a svátky" označkovalo **6 269 ze 7 295 spojů (86 %)** a ve slitém víkendu
+4 386 z 8 213 (53 %) - značka na většině řádků nerozlišuje nic a je hlavně příznakem, že sloupec
+neodpovídá datům (v CB_CSADAD skoro žádný nedělní spoj o svátcích nejede). Komu to vadí, ať si
+sloupec rozdělí na „Neděle" a „Svátky" - od etapy 1 to jde. Konstrukcí přitom **nemůže nastat
+chyba `B29`**: značka nikdy nepojmenuje den, který ve sloupci není.
+
+**Dluh z etapy 1 splacen:** vzory sloupců staví server (`PresetySloupcu`, pole `PRESETY_SLOUPCU`)
+a klient je jen čte. Paritní test tím měří to, co editor reálně pošle, ne ruční kopii pravidel;
+bez načtených dat se vzory nenabízejí, protože prázdninový vzor postavený naslepo by neseděl na
+značky konkrétní linky.
+
+**Nález z prokliku (Jan, KOVED linka 824520): potlačení značky se nikdy nezapínalo.** Pokrytí období
+se počítalo přes **všechny kalendářní dny**, takže pracovní spoj podmínku „jede celé období" nesplnil
+nikdy - o víkendu nejede. Zákazníkův hlavní požadavek tím byl fakticky mrtvý (na živých datech
+nesplnil „jede celé období" ani jeden z 55 spojů linky). Nově se pokrytí počítá **jen přes dny, které
+sloupec pokrývá**; svátek se počítá jen sloupci, který ho vyjmenoval, aby „Pracovní dny" netvrdily,
+že pokrývají 1. květen. Doloženo: na téže lince po opravě mizí značka 18 u spojů jedoucích celé
+prázdniny (11 odjezdů na prvních 8 stránkách), předtím nemizela žádná.
+
+**Nález z prokliku (Jan, KOVED linka 802192):** hláška o nezařazených spojích počítala **odjezdy,
+ne spoje**. Tentýž spoj vypadne na každé zastávce linky zvlášť, takže tři nezařazené spoje (10, 23,
+38) hlásila jako „31 odjezdů" - číslo vypadalo desetkrát hůř, než jaká byla skutečnost, a nešlo
+z něj poznat, že jde pořád o totéž. Server nově posílá i čísla spojů (`NEZARAZENE_SPOJE_CISLA`),
+klient podle nich počítá spoje a časy nechává jako ukázku, kde je hledat. Bez čísel (starší server)
+se počítají časy jako dřív, hláška tedy nezmizí.
+
+⚠️ **Souvislost, která z toho plyne:** stránka vývěsky je jedna zastávka × směr, ale hláška sčítá
+celou linku. Že se na právě zobrazené zastávce nic nezmění, zatímco hláška naskočí, je normální -
+dotčená zastávka může být kterákoli z padesáti.
+
+**Ověřeno voláním na živých datech** (CB_CSADAD, linka 0365001): sloupec s obdobím „1.7.2023"
+(sobota) vzal 5 z 9 odjezdů, sloupec bez podmínky 9; u odjezdu 17:30 zmizela značka 29. Období
+„27.12.2026" nechalo sloupec prázdný a stránka nese hlášku. Gold digesty přebaselinovány - **jen
+md5**, počty stránek/zastávek/odjezdů/poznámek beze změny (přibylo pole `PRESETY_SLOUPCU`).
+
 ## 2026-08-10 (11) - 🧭 `B39` etapa 2: dvě odpovědi od kolegy + upřesnění od zákazníka
 
 Tři nové vstupy (Jan, po implementaci etapy 1) - **nic z toho nemění etapu 1**, všechno se týká

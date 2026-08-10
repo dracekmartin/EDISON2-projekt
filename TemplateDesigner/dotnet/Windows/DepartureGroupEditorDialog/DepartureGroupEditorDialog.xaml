@@ -222,6 +222,19 @@
                                 <TextBlock Text="Čísla značek oddělená čárkou (např. 52, 53). Prázdné = neomezuje."
                                            FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                            FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
+
+                                <Separator Margin="0,4,0,8"/>
+
+                                <TextBlock Text="Období" FontWeight="SemiBold" Margin="0,0,0,6"
+                                           ToolTip="Do sloupce patří spoj, který v zadaném období jede aspoň jeden den. Kdo jede celé období, nemá u minuty negativní značku - nemá co vysvětlovat; kdo jen část (v létě nejede, na podzim ano), značku dostane."/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Rozsahy dat:" VerticalAlignment="Center" Width="150"
+                                               ToolTip="Víc rozsahů oddělte čárkou - např. prázdniny jako 14.2.-18.2., 1.7.-31.8., 29.10.-30.10."/>
+                                    <TextBox Width="260" Text="{Binding SelectedCustomVM.Period, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <TextBlock Text="Datum bez roku platí každý rok (1.7.-31.8.), s rokem jednorázově (27.12.2026-29.12.2026). Prázdné = neomezuje."
+                                           FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
                             </StackPanel>
                         </ScrollViewer>
                     </Grid>

@@ -2,6 +2,7 @@ using EDControls;
 using EDControls.EDViewModel;
 using NSubstitute;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Tests.Elements;
 
 namespace TemplateDesigner.Tests.Windows;
 
@@ -18,7 +19,12 @@ public class DepartureGroupEditorCustomColumnsTests
             Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
 
     private static DepartureGroupEditorDialogViewModel Vm(DepartureGridElement el) =>
-        new(el, [], el.GroupColumns, el.HourColumnStyle, el.CustomColumns);
+        new(el, [], el.GroupColumns, el.HourColumnStyle, el.CustomColumns,
+            DepartureColumnDefinitionTests.PresetyJson);
+
+    /// <summary>Sloupce vzoru tak, jak je posílá server (obsah vzoru se měří v Caché paritě).</summary>
+    private static List<DepartureColumnDefinition> Vzor(string klic = "PRAC_SO_NE") =>
+        [.. DepartureColumnPresets.Parse(DepartureColumnDefinitionTests.PresetyJson)[klic].Select(c => c.Clone())];
 
     [Fact]
     public void ElementBezDefinice_SeOtevreJakoAutomaticky()
@@ -33,7 +39,7 @@ public class DepartureGroupEditorCustomColumnsTests
     [Fact]
     public void ElementSDefinici_SeOtevreJakoVlastniSVyplnenymiSloupci()
     {
-        var el = new DepartureGridElement { CustomColumns = DepartureColumnPresets.Build("PRAC_SO_NE", null, null) };
+        var el = new DepartureGridElement { CustomColumns = Vzor() };
         var vm = Vm(el);
 
         Assert.True(vm.UseCustomColumns);
@@ -46,7 +52,7 @@ public class DepartureGroupEditorCustomColumnsTests
     [Fact]
     public void RucneUpravenaDefinice_NeukazujeZadnyVzor()
     {
-        var cols = DepartureColumnPresets.Build("PRAC_SO_NE", null, null);
+        var cols = Vzor();
         cols[0].ExcludeMarks = "52";   // odchylka od vzoru
         var vm = Vm(new DepartureGridElement { CustomColumns = cols });
 
@@ -71,7 +77,7 @@ public class DepartureGroupEditorCustomColumnsTests
     [Fact]
     public void PrazdnyVzor_VyprazdniSloupcePruStavbuOdZacatku()
     {
-        var el = new DepartureGridElement { CustomColumns = DepartureColumnPresets.Build("PRAC_SO_NE", null, null) };
+        var el = new DepartureGridElement { CustomColumns = Vzor() };
         var vm = Vm(el);
 
         vm.SelectedPreset = vm.Presets.First(p => p.Key == "PRAZDNA");
@@ -106,7 +112,7 @@ public class DepartureGroupEditorCustomColumnsTests
     [Fact]
     public void PrepnutiNaAutomatickyAOk_VratiNull()
     {
-        var el = new DepartureGridElement { CustomColumns = DepartureColumnPresets.Build("PRAC_SO_NE", null, null) };
+        var el = new DepartureGridElement { CustomColumns = Vzor() };
         var vm = Vm(el);
 
         vm.AutomaticColumns = true;   // uživatel přepne radio zpět na Automaticky

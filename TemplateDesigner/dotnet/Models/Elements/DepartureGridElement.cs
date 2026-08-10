@@ -169,7 +169,8 @@ public class DepartureGridElement : StopScheduleElementBase
                 ["dny"] = c.Days,
                 ["znackyJen"] = c.IncludeMarks,
                 ["znackyBez"] = c.ExcludeMarks,
-                ["nevypisovatZnacky"] = c.SuppressedMarks
+                ["nevypisovatZnacky"] = c.SuppressedMarks,
+                ["obdobi"] = c.Period
             });
         }
         return new System.Text.Json.Nodes.JsonObject { ["sloupce"] = arr }.ToJsonString(WireJsonOptions);
