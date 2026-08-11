@@ -1,9 +1,9 @@
-# EDFooter — poznámky pro vývojáře
+# EDFooter - poznámky pro vývojáře
 
 Standardizovaný footer okna (`UserControl`, plně v XAML → viditelný v designeru).
 `FooterMode`: `Close` (default) / `OkCancel`. Volitelný `LeftContent` (přiřazuje se
 přímo do presenteru, ne bindingem). Když má `EDViewModel` okna neprázdné `Actions`,
-footer automaticky zobrazí rozbalovací menu „Akce" vlevo — vše řízeno děděným
+footer automaticky zobrazí rozbalovací menu „Akce" vlevo - vše řízeno děděným
 DataContext, žádné atributy.
 
 ## Zavírání okna (neodvoditelné chování)
@@ -12,9 +12,9 @@ DataContext, žádné atributy.
   `window.DialogResult = result` (`ShowDialog()` okno se tím zavře); při
   `InvalidOperationException` (= `Show()` okno) fallback na `window.Close()`.
   Null → rovnou `Close()`. Host okno nepotřebuje žádný flag.
-- Před `Close()` se volá `Owner?.Activate()` — vrací fokus vlastníkovi.
+- Před `Close()` se volá `Owner?.Activate()` - vrací fokus vlastníkovi.
 - **Zavřít i Storno sdílí handler**: pokud VM má `ConfirmOnCancel = true`, nejdřív se
-  ptá přes `PopupDisplayer.ConfirmClose()` — okna s neuloženými daty tím dostanou
+  ptá přes `PopupDisplayer.ConfirmClose()` - okna s neuloženými daty tím dostanou
   potvrzení zdarma.
 - OK tlačítko: s VM volá `OkCommand` a spoléhá, že VM vyvolá `RequestClose`
   (validace v `OnOk` může zavření odmítnout); bez VM zavře rovnou.
@@ -23,5 +23,5 @@ DataContext, žádné atributy.
 
 Přidání okna viz root [CLAUDE.md](../../../CLAUDE.md) („Přidání nového okna"); footer na
 spodek kořenového `DockPanel`: `<ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>`.
-Potvrzení klávesou (Ctrl+Enter, OK bez `IsDefault`) řeší `EDViewModel.AttachToWindow` —
+Potvrzení klávesou (Ctrl+Enter, OK bez `IsDefault`) řeší `EDViewModel.AttachToWindow` -
 viz [EDViewModel/CLAUDE.md](../EDViewModel/CLAUDE.md).

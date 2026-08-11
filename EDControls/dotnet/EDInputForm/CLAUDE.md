@@ -1,12 +1,12 @@
-# EDInputForm — poznámky pro vývojáře
+# EDInputForm - poznámky pro vývojáře
 
 Dynamický formulář definovaný a validovaný v Caché. Host nastaví `CacheClass`
 (+ volitelně `InitParams`), `Init()` proběhne automaticky na `Loaded`. Služby se čtou
-z `EDServices.Current` — **ne** z DataContext okna. API čti z `EDInputForm.xaml.cs`;
+z `EDServices.Current` - **ne** z DataContext okna. API čti z `EDInputForm.xaml.cs`;
 orchestrace bez WPF je `EDInputFormController.cs`, kodek wire formátu `EDInputFormWire.cs`
 (obojí testovatelné bez controlu); Caché builder je
 `ALVA.EDControls.EDInputForm.Form`. Referenční ukázka featur:
-`EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` — **při přidání nové featury přidej příklad i tam**.
+`EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` - **při přidání nové featury přidej příklad i tam**.
 
 ## Wire formát (pořadí pozic = protokol, neměnit!)
 
@@ -25,11 +25,11 @@ orchestrace bez WPF je `EDInputFormController.cs`, kodek wire formátu `EDInputF
 ## Round-trip pravidlo
 
 Každá property se musí round-tripovat (server ji zapisuje v `Serialize`/`WriteToOut`,
-.NET čte v `ParseItems` a posílá zpět v `SerializeItemsCVar`, server čte v `ReadFromIn`)
-— jinak ji server po prvním round-tripu ztratí. **Výjimka: Image** — Base64 value se
+.NET čte v `ParseItems` a posílá zpět v `SerializeItemsCVar`, server čte v `ReadFromIn`),
+jinak ji server po prvním round-tripu ztratí. **Výjimka: Image** - Base64 value se
 na server neposílá (limit MLRest) a preservuje se client-side v controlleru.
 Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů v OUT
-(`HasFormItems`) — bez nich zachová klientské Items.
+(`HasFormItems`) - bez nich zachová klientské Items.
 
 ## Pasti
 
@@ -40,7 +40,7 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
   kliku (server roundtrip jen s `ValidateOnChange=1`). `Initialized` je deprekovaný alias
   `SchemaLoaded` (stínil `FrameworkElement.Initialized`) - fajruje pořád, smaže se až při
   koordinovaném publish obou aplikací.
-- Setter `CacheClass` resetuje controller — příští `Init()` načte schema novou třídou.
+- Setter `CacheClass` resetuje controller - příští `Init()` načte schema novou třídou.
 - Klientská validace: type-error má prioritu před required; type-check běží hned
   při setu Value.
 - Volitelný `List` dostane implicitní prázdnou položku, povinný ne.
@@ -53,6 +53,6 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
 - Enter = Tab (na Buttonu klikne); dialog potvrzuje jen Ctrl+Enter (window-level
   binding hosta). Ctrl+číslice skáče na položku dle `Number` (200 ms buffer).
 - Popup nápovědy (ikona v hlavičkovém pruhu, `HelpCommand`) se generuje z `KeyboardShortcuts`
-  v `EDInputForm.xaml.cs` — **při přidání/změně zkratky aktualizuj tento seznam**.
+  v `EDInputForm.xaml.cs` - **při přidání/změně zkratky aktualizuj tento seznam**.
   Vypisuj jen reálně nadrátované zkratky (search Enter/Shift+Enter/Esc zatím nefungují).
 - Save při validačních chybách zobrazí popup přes `PopupDisplayer` a vrátí false.
