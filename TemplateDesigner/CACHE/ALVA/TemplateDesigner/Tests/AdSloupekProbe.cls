@@ -868,6 +868,93 @@ ClassMethod ZnackyStranek(ByRef sys As %String, db As %String, sku As %String, l
 	kill ^||ML("OUT")
 }
 
+/// Sonda k #12843: jaké linky MHD modul v dané firmě zná (`ALVA.MHD.LSO`) - potřeba k dohledání
+/// linky, na které jde vizuálně porovnat značky. IN: DB, IDFA, MAX. Read-only.
+ClassMethod MhdLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set fa = $get(^||ML("IN","IDFA")) set:fa="" fa = IdFa
+		set max = +$get(^||ML("IN","MAX")) if max < 1 set max = 15
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set n = 0, id = ""
+		for {
+			set id = $order(^[db]ALVA.MHD.LSO(fa,1,"DTA",id)) quit:id=""
+			set n = n + 1
+			quit:n>max
+			set ^||ML("OUT","LINKA",$translate($justify(n,2)," ",0)) = "id="_id_
+				" cislo="_$get(^[db]ALVA.MHD.LSO(fa,1,"DTA",id,"DTA",1,"CisloLinky"))_
+				" nazev="_$extract($get(^[db]ALVA.MHD.LSO(fa,1,"DTA",id,"DTA",1,"Nazev")),1,40)_
+				" plati="_$get(^[db]ALVA.MHD.LSO(fa,1,"DTA",id,"DTA",1,"PlatiOd"))
+		}
+		set ^||ML("OUT","SOUHRN") = db_" firma="_fa_" linek(prvnich "_max_")="_$select(n>max:max, 1:n)
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sonda k #12843 bodu 6: které značky MHD vývěska reálně vydá - u zastávek i v legendě - a jaký
+/// piktogram jim ve fontu odpovídá. Slouží k porovnání „co je v datech" × „co se nakreslí".
+/// IN: DB, LINKA (id linky MHD), MAXZAST. Read-only.
+ClassMethod MhdZnackyLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set linka = $get(^||ML("IN","LINKA"))
+		set maxZast = +$get(^||ML("IN","MAXZAST")) if maxZast < 1 set maxZast = 12
+		kill ^||ML("OUT")
+		if (db = "") || (linka = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LINKA jsou povinné"))
+
+		set sys("U","DATA") = db
+		kill ^||ML("IN")
+		set ^||ML("IN","LINKA_ID") = linka
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
+		set chyba = $get(^||ML("OUT","ERR"))
+		set prvni = "", klic = "", stranek = 0
+		for {
+			set klic = $order(^||ML("OUT",klic)) quit:klic=""
+			continue:'$isvalidnum(klic)
+			set stranek = stranek + 1
+			if prvni = "" set prvni = $get(^||ML("OUT",klic))
+		}
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_SOUHRN") = db_" linka="_linka_" stranek="_stranek
+		if chyba '= "" set ^||ML("OUT","A_CHYBA") = chyba
+		if prvni = "" ret $$$OK
+
+		set page = ##class(%DynamicObject).%FromJSON(prvni)
+		set ^||ML("OUT","B_ZASTAVKA") = page.values.%Get("POPIS_ZASTAVKA")_" · smer "_page.values.%Get("POPIS_SMER")
+		// značky u zastávek
+		set n = 0, it = page.rows.%Get("ZASTAVKY").%GetIterator()
+		while it.%GetNext(.k, .z) {
+			set znaky = "", ita = z.%Get("ATRIBUTY").%GetIterator()
+			while ita.%GetNext(.ak, .a) { set znaky = znaky_a.%Get("ZNAK")_"("_$ascii(a.%Get("ZNAK"))_") " }
+			continue:znaky=""
+			set n = n + 1
+			quit:n>maxZast
+			set ^||ML("OUT","C_ZASTAVKA",n) = $extract(z.%Get("NAZEV_ZASTAVKY"),1,28)_" → "_znaky
+		}
+		set ^||ML("OUT","C_POCET") = "zastavek se znackou="_n
+		// legenda
+		set p = 0, itp = page.rows.%Get("POZNAMKY").%GetIterator()
+		while itp.%GetNext(.pk, .pz) {
+			set p = p + 1
+			quit:p>20
+			set zn = pz.%Get("ZNAK")
+			set ^||ML("OUT","D_LEGENDA",p) = "znak="""_zn_""" ("_$select(zn="":"-",1:$ascii(zn))_") typ="_pz.%Get("TYP")_
+				" kat="_pz.%Get("KATEGORIE")_" text="_$extract(pz.%Get("TEXT"),1,45)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Sonda k #12843 bodu 6: číselník atributů MHD - jaký `SpecZnak` nese který popis a co z něj
 /// udělá `ConvertSpecialniZnak` (kód > 31 se překlápí na znak, tedy na **pozici ve fontu**).
 /// Odpovídá na „proč se u ‚prestup na vlak' kreslí kolo". IN: DB, IDFA. Read-only.

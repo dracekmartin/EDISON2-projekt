@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-11 (5) - 🔍 #12843 bod 6 (kolo místo vlaku) je už opravený - doloženo
+
+Zákazník hlásil, že „prestup na vlak" kreslí jízdní kolo. **Ověřeno na jeho datech a v aktuálním
+buildu to neplatí** - legenda kreslí autobus i vlak správně, a to v české i slovenské lokalizaci.
+
+**Proč to vypadalo právě takhle:** přestup na vlak má v číselníku písmeno `L`, ale na pozici `L`
+je **v obou variantách symbolového fontu jízdní kolo**. Musí se tedy překládat na pozici `x`
+(lokomotiva). Bez překladu vyjede doslova kolo - přesně ten příznak. Překlad se dnes dělá na obou
+místech: u značky vedle zastávky i v legendě (podle kategorie `prestup`, kterou agenda posílá).
+
+**Kde se to stalo:** klient testoval verzi **260804**, tedy z okna, ve kterém se ta série oprav
+dělala (3.-4. 8.: „přestupy kreslily cizí piktogram", „kolo se tiskne, autobus byl vagon",
+„překlad glyfu podle kategorie, ne podle písmene"). Odepsat mu, ať to zkusí na nové verzi.
+
+**Vedlejší nález - varianty fontu se liší ve třech pozicích** (vykresleno a porovnáno): `na znamení`
+je česky **křížek**, slovensky **dlaň**; pozice `w` je česky **vagon**, slovensky **autobus**;
+`x` je vlak v obou, jen jinou kresbou. U přestupů to nevadí (`z` i `x` znamenají v obou totéž),
+ale kdyby se někdy překládala pozice `D` nebo `w`, **musí to jít přes jazyk** - jinak vyjede
+v jedné zemi cizí piktogram.
+
+**Kde to zkoušet:** `SKNI_MHDNITRA`, linka 0000001, první zastávka „Nitra, Železničná stanica"
+(atributy `TAL` = tučně + autobus + vlak). Firma přidána do dev přepínače - je to jediná
+v seznamu se slovenskými daty a s vyplněnými per-linkovými seznamy „nevypisovat značku".
+
 ## 2026-08-11 (4) - ✅ #12843 bod 9: ikona do záhlaví sloupce hodin
 
 Zákazník má na vývěsce v záhlaví hodin obrázek hodin a přes samostatný obrázkový prvek ho tam
