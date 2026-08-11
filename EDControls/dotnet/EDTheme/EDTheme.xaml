@@ -250,6 +250,10 @@
          ═══════════════════════════════════════════════════════════════════ -->
     <FontFamily x:Key="EDTheme.FontFamily">Segoe UI</FontFamily>
 
+    <!-- Monospace — funkční požadavek (zarovnání hex hodnot, stack trace), NE user-volitelná
+         rodina: FontService přepisuje jen přesný klíč EDTheme.FontFamily, tenhle zůstane. -->
+    <FontFamily x:Key="EDTheme.FontFamily.Mono">Consolas</FontFamily>
+
     <!-- Drobné popisky — ruler ticks, badge texts, group labels v toolbaru -->
     <sys:Double x:Key="EDTheme.FontSize.Small">12</sys:Double>
 
@@ -270,6 +274,9 @@
 
     <!-- Large — zvýraznění (výjimečně) -->
     <sys:Double x:Key="EDTheme.FontSize.Large">17</sys:Double>
+
+    <!-- Display — hero wordmark login okna (mimo ladder běžného UI textu) -->
+    <sys:Double x:Key="EDTheme.FontSize.Display">26</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════════
          ICON SIZE — rozměr ikon v toolbarech a menu. FontService škáluje
