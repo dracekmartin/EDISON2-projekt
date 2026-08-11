@@ -12,6 +12,7 @@
 
     <Window.Resources>
         <controls:NotNullToVisibleConverter x:Key="NotNullToVis"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </Window.Resources>
 
     <Grid Margin="10">
@@ -111,8 +112,10 @@
                 </Grid>
             </TabItem>
 
-            <!-- ── Tab 3: Vlastní definice sloupců (dny + značky; tab Sloupce zůstává vzhled) ── -->
-            <TabItem Header="Vlastní definice sloupců">
+            <!-- ── Tab 3: Vlastní definice sloupců (dny + značky + období; tab Sloupce zůstává vzhled)
+                 Skrytý, dokud featuru nerozsvítí lokální config (#13045b čeká na testování). ── -->
+            <TabItem Header="Vlastní definice sloupců"
+                     Visibility="{Binding ShowCustomColumnsTab, Converter={StaticResource BoolToVis}}">
                 <Grid Margin="6">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

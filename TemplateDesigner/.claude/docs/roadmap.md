@@ -13,6 +13,11 @@
 > (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
 > (**B10** + **B13**) jako dedikovaný slot.
 >
+> **▶ Čeká na odblokování: `B39` je ve verzi zhasnutá.** Vypínač `Features.CustomDepartureColumns`
+> v `templatedesigner.appsettings.local.json` vedle exe (schová tab i předvyplnění nových prvků).
+> Až to kolega proklikne na dev, **flag odstranit** - ne jen přepnout; padne u toho test
+> `TabVlastnichSloupcu_JeVychoziZhasnuty`, což je ten signál.
+>
 > **Nedodělek k `B39`:** zákazníkovi poradit, jak sloupce skládat - nedělní a sváteční provoz se
 > rozliší rozdělením sloupce, ne značkami (v datech skoro žádný nedělní spoj o svátcích nejede,
 > značka by padla na 86 % odjezdů). Patří to do wiki seedu, ne do kódu.

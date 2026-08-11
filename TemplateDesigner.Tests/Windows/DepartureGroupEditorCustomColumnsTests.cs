@@ -26,6 +26,15 @@ public class DepartureGroupEditorCustomColumnsTests
     private static List<DepartureColumnDefinition> Vzor(string klic = "PRAC_SO_NE") =>
         [.. DepartureColumnPresets.Parse(DepartureColumnDefinitionTests.PresetyJson)[klic].Select(c => c.Clone())];
 
+    /// <summary>Featura jde do verze zhasnutá (#13045b) - tab se ukáže, až ho rozsvítí lokální
+    /// config vedle exe. Až testování skončí, tenhle test padne a je to signál flag odstranit.</summary>
+    [Fact]
+    public void TabVlastnichSloupcu_JeVychoziZhasnuty()
+    {
+        Assert.False(TemplateDesigner.Config.AppSettings.CustomDepartureColumnsEnabled);
+        Assert.False(Vm(new DepartureGridElement()).ShowCustomColumnsTab);
+    }
+
     [Fact]
     public void ElementBezDefinice_SeOtevreJakoAutomaticky()
     {

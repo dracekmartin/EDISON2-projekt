@@ -219,6 +219,10 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     public bool HasCustomSelection => _selectedCustomVM is not null;
     public bool CanAddCustomColumn => CustomColumnVMs.Count < DepartureGridElement.MaxCustomColumns;
 
+    /// <summary>Ukázat tab „Vlastní definice sloupců"? Featura jde do verze zhasnutá (#13045b),
+    /// rozsvítí ji lokální config. Skrytý tab definici v šabloně nemaže - OK ji vrátí beze změny.</summary>
+    public bool ShowCustomColumnsTab => Config.AppSettings.CustomDepartureColumnsEnabled;
+
     /// <summary>Nabídka vzorů + prázdná varianta pro stavbu od začátku. Vzory drží server
     /// (pole PRESETY_SLOUPCU), takže bez načtených dat zůstane jen prázdná varianta - vzor
     /// složený naslepo by u prázdninových rozvržení neseděl na značky konkrétní linky.</summary>

@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-11 (1) - 🔌 vlastní sloupce vývěsky jdou do verze zhasnuté
+
+Rozhodnutí Jan: `B39` (#13045b) se do zítřejší ostré verze dostane, ale uživatel se k ní zatím
+nedostane - nejdřív si to má proklikat kolega na dev.
+
+Vypínač je klíč `Features.CustomDepartureColumns` v **`templatedesigner.appsettings.local.json`**
+vedle exe (per-user override, gitignored). **Jedna vydaná verze tak poslouží obojímu** - zákazník
+ji má zhasnutou, kdo testuje, si vedle exe položí soubor a má ji rozsvícenou. Bez druhého buildu.
+
+```json
+{ "Features": { "CustomDepartureColumns": true } }
+```
+
+⚠️ **Schovat jen tab v dialogu by nestačilo.** První prvek odjezdů vložený do šablony zastávkového
+JŘ AD si výchozí vzor sloupců nastavuje **sám** (rozhodnutí z etapy 1) - uživatel by tedy dostal
+šablonu jedoucí novou datovou cestou, aniž by ji viděl nebo mohl vypnout. Vypínač proto zhasíná
+**obojí**: tab i to předvyplnění.
+
+Existující definice se skrytím tabu **nemažou** - dialog je načte a OK vrátí beze změny. Serverová
+strana je zhasnutím nedotčená a je zpětně kompatibilní sama o sobě: bez definice se chová přesně
+jako dřív (drží to zlaté odtisky i živá parita vzorů).
+
+Připnuto testem (`TabVlastnichSloupcu_JeVychoziZhasnuty`) - až featuru testování odblokuje, test
+spadne a je to signál flag odstranit, ne ho jen přepnout.
+
 ## 2026-08-10 (12) - ✅ `B39` etapa 2: sloupec vývěsky jde omezit obdobím
 
 Tím je `B39` (a s ním tiket #13045b) hotový. Brány: build bez chyb, xUnit 798/798 (+26),
