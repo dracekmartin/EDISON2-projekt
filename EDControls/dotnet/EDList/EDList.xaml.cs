@@ -124,7 +124,7 @@ namespace EDControls.EDList
         private IReadOnlyList<ListColumn>? _columns;
         public IReadOnlyList<ListColumn>? Columns => _columns;
 
-        private readonly ObservableCollection<EDListRow> _rows = new();
+        private readonly BulkObservableCollection<EDListRow> _rows = new();
 
         /// <summary>Aktuální načtené řádky (read-only pohled). Po <c>LoadList</c> obsahuje server data.</summary>
         public IReadOnlyList<EDListRow> Rows => _rows;
@@ -363,18 +363,20 @@ namespace EDControls.EDList
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _checkAnchor = null;
 
-            // ⚠️ NEOBALOVAT do ICollectionView.DeferRefresh (zkoušeno 4. 8. 2026 jako `B51` a hned
-            // VRÁCENO): mutace ObservableCollection za odloženého refreshe shodí `ListCollectionView`
-            // na „Nelze změnit nebo zkontrolovat obsah nebo Current pozici CollectionView během
-            // odkladu Refresh" — Clear/Add pořád posílají CollectionChanged a view při něm sahá na
-            // currency, což je během odkladu zakázané. Projevilo se to až za běhu při výběru linky,
-            // testy to nechytily. Škubnutí při plnění je menší zlo než pád.
-            _rows.Clear();
-            foreach (var row in ParseRows(output))
-            {
-                row.PropertyChanged += OnRowPropertyChanged;
-                _rows.Add(row);
-            }
+            // Hromadná výměna = jedno oznámení místo N+1. Plnění po jednom bylo vidět jako škubnutí,
+            // když načtení dosedlo, zatímco uživatel psal do filtru skupiny (odkrylo to až async
+            // načítání pickeru; dřív to schoval zámrz synchronního).
+            //
+            // ⚠️ NEOBALOVAT do ICollectionView.DeferRefresh (zkoušeno 4. 8. 2026 a hned VRÁCENO):
+            // odklad neodkládá CollectionChanged, takže mutace zdrojové kolekce pod ním shodí
+            // `ListCollectionView` na „Nelze změnit nebo zkontrolovat obsah nebo Current pozici
+            // CollectionView během odkladu Refresh". Tohle je jiná cesta - žádný odklad, jen jedno
+            // oznámení; `Reset` posílal i dosavadní `Clear`, takže to pro pohled není nový stav.
+            // ToList je nutné: ParseRows je líný iterátor, takže druhý průchod by vyrobil jiné
+            // instance řádků a odběr změn by visel na těch, které v seznamu nejsou
+            var newRows = ParseRows(output).ToList();
+            foreach (var row in newRows) row.PropertyChanged += OnRowPropertyChanged;
+            _rows.ReplaceAll(newRows);
 
             FireCheckedRowsChanged();
             RefreshFilter();  // re-apply current search po LoadList (nový dataset)
