@@ -38,53 +38,30 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
-### 10. 8. 2026 - Sloupce vývěsky si nadefinujete v šabloně
+### 11. 8. 2026 - Drobnosti ze zastávkových vývěsek
 
-Dosud byly sloupce vývěsky (Pracovní dny / Soboty / Neděle a svátky…) dané napevno nastavením
-linky. Nově si je můžete nadefinovat přímo v šabloně: v dialogu prvku odjezdů přibyl tab
-**Vlastní definice sloupců**, kde každému sloupci (nejvýše pěti) určíte:
+Tři věci z vašich podnětů k zastávkovým jízdním řádům.
 
-- **nadpis** (i dvouřádkový),
-- **dny v týdnu** včetně svátku,
-- **značky** - „jen spoje se značkami" nebo naopak „bez spojů se značkami" (tím jde třeba schovat
-  vybrané spoje z víkendového sloupce),
-- **nevypisovat značky** - spoj se vytiskne, jen se u minuty neopakuje značka, kterou už říká
-  nadpis sloupce.
+- **Šipka směru jízdy vlevo už nepřekrývá jízdní doby.** Dosud si brala místo od sousedního
+  sloupce a při užším prvku se do něj vešly i číslice. Nově má vyhrazený vlastní pruh, se kterým
+  počítá rozdělení šířky, takže se překryv nemůže stát bez ohledu na velikost prvku.
+- **Barva písma aktuální zastávky** - dosud šlo nastavit jen podbarvení. Najdete ji u seznamu
+  zastávek ve skupině **Zvýraznění** jako *Barva textu aktuální*; prázdná hodnota znamená
+  „stejná jako ostatní řádky", takže se stávající šablony nemění.
+- **Obrázek v záhlaví sloupce hodin** - u prvku odjezdů v záložce *Obecné* vyberete obrázek
+  (typicky ikonu hodin) a ten se vykreslí v záhlaví hodinového sloupce **u každé skupiny dnů**
+  sám, takže ho neumisťujete ručně a drží i při změně rozvržení. Když je obrázek nastavený,
+  nadpis sloupce se netiskne.
 
-Čtyři dosavadní rozvržení jsou připravená jako **vzory** jedním klikem (prázdninové vzory se
-předvyplní čísly značek z aktuální linky) a pátá volba **Prázdná** nechá stavbu sloupců úplně
-na vás. Existující šablony se nemění - dokud definici nezapnete, sloupce se dál řídí nastavením
-linky.
+### 10. 8. 2026 - Vývěska respektuje, které značky jste u linky vypnuli
 
-Když nadefinované sloupce nepokryjí všechny spoje, návrhář to ukáže ve stavovém řádku
-(„N odjezdů nespadá do žádného sloupce") a totéž zopakuje při exportu do PDF - žádný odjezd
-tak nezmizí bez povšimnutí.
+U linky lze určit, **které negativní značky se v kterém sloupci nemají vypisovat**. Toto nastavení
+jsme dosud nečetli, takže se na vývěsce tiskly značky, které jste měli vypnuté - a byly i v legendě.
 
-### 10. 8. 2026 - Sloupec vývěsky můžete omezit obdobím
+Nově se respektuje: značka potlačená ve všech sloupcích spoje zmizí i z legendy, protože tam nemá
+co vysvětlovat. Spoj se přitom tiskne dál - potlačuje se jen značka u minuty, ne odjezd.
 
-K dnům a značkám přibyla u sloupce třetí podmínka - **Období**. Zadáte do ní rozsahy dat oddělené
-čárkou, například `14.2.-18.2., 1.7.-31.8., 29.10.-30.10.` pro prázdninový sloupec. Do sloupce pak
-patří spoje, které v zadaném období aspoň jeden den jedou.
-
-- **Datum bez roku** (`1.7.-31.8.`) platí každý rok - šablona vám vydrží i po překlopení jízdního
-  řádku na další období.
-- **Datum s rokem** (`27.12.2026-29.12.2026`) platí jednorázově, třeba pro výluku nebo mimořádný
-  provoz.
-- Sloupec „dny školního vyučování" se zadá stejně - jako rozsahy dat pro daný rok.
-
-**Negativní značky se přitom uklidí samy.** Když spoj jede celé období sloupce, značka u minuty
-se nevypisuje - nemá co vysvětlovat. Zůstane jen u spojů, které mají uvnitř období výjimku
-(„v létě nejede, na podzim ano").
-
-Období se vyhodnocuje proti skutečnému provozu spoje, tedy včetně svátků a sudých/lichých týdnů.
-Pokud zadané období leží mimo platnost jízdního řádku, sloupec zůstane prázdný a návrhář na to
-upozorní ve stavovém řádku i při exportu - typicky se to stane u šablony s pevným rokem po
-překlopení jízdního řádku.
-
-> **Tip k rozlišení nedělního a svátkového provozu.** Ve sloupci, který slévá víc druhů dne
-> („Soboty, neděle a svátky"), poznáte podle kroužkové značky, který spoj jede jen část z nich.
-> Pokud potřebujete odlišit neděli od svátku, je čitelnější dát jim **vlastní sloupce** než
-> značkovat většinu odjezdů - v datech obvykle jede o svátcích jen zlomek nedělních spojů.
+Nastavení zůstává tam, kde bylo, u linky - v návrháři není co zapínat.
 
 ### 10. 8. 2026 - Krátká jízdní doba se dá vytisknout jako „<1"
 

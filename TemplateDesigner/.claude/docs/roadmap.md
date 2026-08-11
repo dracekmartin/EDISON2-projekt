@@ -17,6 +17,8 @@
 > v `templatedesigner.appsettings.local.json` vedle exe (schová tab i předvyplnění nových prvků).
 > Až to kolega proklikne na dev, **flag odstranit** - ne jen přepnout; padne u toho test
 > `TabVlastnichSloupcu_JeVychoziZhasnuty`, což je ten signál.
+> Zároveň **vrátit novinku do wiki seedu** `plan-a-zmeny.md` - 11. 8. se odtud vyňala, aby seed
+> nepopisoval funkci, kterou zákazník nemá; text se dá složit z changelogu 2026-08-10 (10) a (12).
 >
 > **Nedodělek k `B39`:** zákazníkovi poradit, jak sloupce skládat - nedělní a sváteční provoz se
 > rozliší rozdělením sloupce, ne značkami (v datech skoro žádný nedělní spoj o svátcích nejede,
