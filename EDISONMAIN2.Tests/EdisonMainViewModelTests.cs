@@ -859,4 +859,65 @@ public class EdisonMainViewModelTests
         Assert.True(vm.ConfirmShellClose());
         mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
     }
+
+    // ---------- Programové ukončení jde přes ShellShutdown ----------
+    // Dřív VM volal Application.Current.Shutdown() přímo, takže tyhle tři cesty nešly otestovat.
+
+    [Fact]
+    public void Exit_Confirmed_ForcesShutdown()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var shutdown = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown);
+
+        vm.ExitCommand.Execute(null);
+
+        shutdown.Received(1).Invoke();
+    }
+
+    [Fact]
+    public void Exit_Declined_DoesNotShutdown()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        var shutdown = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown);
+
+        vm.ExitCommand.Execute(null);
+
+        shutdown.DidNotReceiveWithAnyArgs().Invoke();
+    }
+
+    [Theory]
+    [InlineData(SwitchUserResult.LicenceRefused)]
+    [InlineData(SwitchUserResult.LicenceCancelled)]
+    public async Task LoginAsAnotherUser_LicenceFailure_ForcesShutdown(SwitchUserResult result)
+    {
+        // Po neúspěšné licenci je stará session už zničená (closeAllWindows proběhlo),
+        // takže jediná bezpečná cesta je ukončit — a nesmí na ni jít potvrzovací dialog.
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var shutdown = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown,
+                          switchUser: () => new(result, null));
+
+        await vm.LoginAsAnotherUserAsync();
+
+        shutdown.Received(1).Invoke();
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_Cancelled_DoesNotShutdown()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var shutdown = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown,
+                          switchUser: () => new(SwitchUserResult.Cancelled, null));
+
+        await vm.LoginAsAnotherUserAsync();
+
+        shutdown.DidNotReceiveWithAnyArgs().Invoke();
+    }
 }

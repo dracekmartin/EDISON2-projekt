@@ -422,8 +422,8 @@ public class AppBootstrapper
                                                   BuildActivityFailedWire(services), nav.CloseAll);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
                                                 licence, switcher, sessionSwitcher.Switch,
-                                                prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog, shortcuts,
-                                                changelogSource: new InfChangelogSource());
+                                                prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
+                                                miniAppCatalog, shortcuts, new InfChangelogSource());
         _shutdown.AttachShell(viewModel.SuppressCloseConfirm);
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };

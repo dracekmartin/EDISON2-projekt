@@ -4,6 +4,7 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDControls.UserPrefs;
+using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDTesting;
@@ -81,6 +82,9 @@ internal static class EdisonMainViewModelHarness
         IUserPrefsService? userPrefs = null,
         Lic? initialLicence = null,
         Func<SwitchUserOutcome>? switchUser = null,
+        Action? forceShutdown = null,
+        ModuleShortcutsService? shortcuts = null,
+        IChangelogSource? changelogSource = null,
         bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
@@ -100,8 +104,9 @@ internal static class EdisonMainViewModelHarness
         {
             vm = new EdisonMainViewModel(companies ?? Companies, mockMLRest, mockTree, initialLicence, switcher,
                                          switchUser ?? (() => new(SwitchUserResult.Cancelled, null)), p,
-                                         getActiveModules ?? (() => []), close, catalog,
-                                         restRunner: restRunner ?? new InlineRestCallRunner(mockMLRest));
+                                         getActiveModules ?? (() => []), close, forceShutdown ?? (() => { }),
+                                         catalog, shortcuts ?? new ModuleShortcutsService(), changelogSource,
+                                         restRunner ?? new InlineRestCallRunner(mockMLRest));
         }
         finally
         {

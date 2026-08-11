@@ -41,6 +41,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
         private readonly Func<IReadOnlyList<RunningModuleInfo>> _getActiveModules;
+        // Vynucené ukončení aplikace (ShellShutdown.Force) — obchází potvrzovací dialog shellu.
+        private readonly Action _forceShutdown;
         private readonly MiniAppCatalog _miniAppCatalog;
         // Manager žije až po AttachMiniAppHost (potřebuje DockingManager z view) — do té doby null.
         private MiniAppManager? _miniAppManager;
@@ -223,20 +225,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ILocalPrefs prefs,
             Func<IReadOnlyList<RunningModuleInfo>> getActiveModules,
             Action closeAllWindows,
+            Action forceShutdown,
             MiniAppCatalog miniAppCatalog,
-            ModuleShortcutsService? shortcuts = null,
-            IRestCallRunner? restRunner = null,
-            IChangelogSource? changelogSource = null)
+            ModuleShortcutsService shortcuts,
+            IChangelogSource? changelogSource,
+            IRestCallRunner? restRunner = null)
         {
             _switcher = switcher;
             _switchUser = switchUser;
             _prefs = prefs;
             _getActiveModules = getActiveModules;
+            _forceShutdown = forceShutdown;
             _miniAppCatalog = miniAppCatalog;
-            // Null (testy) = novinky vypnuté; produkci dává InfChangelogSource AppBootstrapper.
+            // Null = novinky vypnuté (testy); produkci dává InfChangelogSource AppBootstrapper.
             _changelogSource = changelogSource;
-            // Sdílená služba zástupců plochy (strom ★ ⇄ dlaždice). Bez ní (testy) VM drží vlastní instanci.
-            _shortcuts = shortcuts ?? new ModuleShortcutsService();
+            _shortcuts = shortcuts;
 
             OpenModuleCommand        = CommandAsync<IModule>(OpenModule);
             ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
@@ -268,7 +271,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ExitCommand                   = Command(ExitApplication);
 
             // Uživatel menu
-            LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUser);
+            LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUserAsync);
             ShowUserEditCommand           = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText())));
             ChangePasswordCommand         = Command(() =>
             {
@@ -1291,19 +1294,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             return true;
         }
 
-        private void ShutdownWithoutConfirm()
-        {
-            SuppressCloseConfirm();
-            Application.Current.Shutdown();
-        }
-
         private void ExitApplication()
         {
             if (PopupDisplayer.Confirm(ExitConfirmMessage))
-                ShutdownWithoutConfirm();
+                _forceShutdown();
         }
 
-        private async Task LoginAsAnotherUser()
+        /// <summary><c>internal</c> kvůli testům — <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.</summary>
+        internal async Task LoginAsAnotherUserAsync()
         {
             if (!PopupDisplayer.Confirm("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
                 return;
@@ -1315,10 +1313,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
                 case SwitchUserResult.LicenceRefused:
                     PopupDisplayer.Info("Pro nového uživatele byl překročen počet licencí. Aplikace bude ukončena.");
-                    ShutdownWithoutConfirm();
+                    _forceShutdown();
                     return;
                 case SwitchUserResult.LicenceCancelled:
-                    ShutdownWithoutConfirm();
+                    _forceShutdown();
                     return;
                 case SwitchUserResult.Success:
                     // Selhání loadu po výměně uživatele: viz ClearSessionState — preference jsou
