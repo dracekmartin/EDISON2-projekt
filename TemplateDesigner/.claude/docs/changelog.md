@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-11 (4) - ✅ #12843 bod 9: ikona do záhlaví sloupce hodin
+
+Zákazník má na vývěsce v záhlaví hodin obrázek hodin a přes samostatný obrázkový prvek ho tam
+nedostal - sloupec hodin se opakuje u každé skupiny dnů, takže by musel ručně umístit tři obrázky
+a hlídat je při každé změně rozvržení.
+
+Prvek odjezdů má nově v tabu Obecné pole **„Obrázek v záhlaví hodin"**. Vykreslí se **v každé
+skupině dnů** sám, vejde se celý, vystředěný, s okrajem, a škáluje se s buňkou. **Když je obrázek
+nastavený, nadpis sloupce se netiskne** - dvě věci v jedné buňce by se překryly a na jejich vývěsce
+tam žádný text není; vymazáním obrázku se nadpis vrátí.
+
+Zatím **jeden obrázek pro všechny skupiny** (rozhodnutí Jan: nedělat rovnou per skupinu). Rozšíření
+je aditivní, kdyby to někdo chtěl jinak.
+
+Dekódování obrázku z Base64 (s cache) vytaženo do sdílené pomůcky a používá ho i obrázkový prvek -
+jinak by v projektu byly dvě cesty k témuž a jedna z nich by časem zaostala.
+
+⚠️ **Past, na kterou jsem šlápl:** buňka záhlaví se počítá v **milimetrech**, plátno kreslí
+v **pixelech**. Bez převodu se obrázek vykreslil mimo záběr a vypadalo to, že se hodnota neuložila.
+Komentář u metody to teď říká.
+
+Ověřeno proklikem (Jan, 11. 8.). xUnit 799, celkem 1 996.
+
 ## 2026-08-11 (3) - ✅ #12843: šipka vlevo si přestala lehat na jízdní doby + barva písma aktuální zastávky
 
 Dva body z podnětů TRANSDEV (Šimko, testoval verzi ze 4. 8. na šabloně „Nitra").

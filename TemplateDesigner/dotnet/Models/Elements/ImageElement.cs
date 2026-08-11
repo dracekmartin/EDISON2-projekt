@@ -26,49 +26,16 @@ public class ImageElement : TemplateElement
     // Klíč = reference stringu: ImageBase64 se vždy nahrazuje celý (string je immutable),
     // takže nové přiřazení i načtení šablony ze JSON dají novou referenci = invalidaci.
 
-    [JsonIgnore] private string? _cachedBase64;
-    [JsonIgnore] private SKBitmap? _cachedBitmap;
-    [JsonIgnore] private SKImage? _cachedImage;
+    [JsonIgnore] private readonly Rendering.CachedBase64Image _cache = new();
 
     /// <summary>Počet skutečných dekódování - testovací sonda, že cache drží.</summary>
-    [JsonIgnore] internal int DecodeCount { get; private set; }
+    [JsonIgnore] internal int DecodeCount => _cache.DecodeCount;
 
     /// <summary>
     /// Dekódovaný obrázek z <see cref="ImageBase64"/>, nebo null (chybí / poškozená data).
     /// Neúspěch se cachuje taky - jinak by se neplatná data zkoušela dekódovat při každém framu.
     /// </summary>
-    private SKImage? GetDecodedImage()
-    {
-        if (ReferenceEquals(ImageBase64, _cachedBase64))
-            return _cachedImage;
-
-        _cachedImage?.Dispose();
-        _cachedBitmap?.Dispose();
-        _cachedImage = null;
-        _cachedBitmap = null;
-        _cachedBase64 = ImageBase64;
-
-        if (string.IsNullOrEmpty(ImageBase64)) return null;
-
-        DecodeCount++;
-        try
-        {
-            _cachedBitmap = SKBitmap.Decode(Convert.FromBase64String(ImageBase64));
-            if (_cachedBitmap is not null)
-            {
-                // SetImmutable → SKImage sdílí pixely s bitmapou místo kopie (drží se obojí, ne dvě sady dat).
-                _cachedBitmap.SetImmutable();
-                _cachedImage = SKImage.FromBitmap(_cachedBitmap);
-            }
-        }
-        catch
-        {
-            _cachedBitmap?.Dispose();
-            _cachedBitmap = null;
-            _cachedImage = null;
-        }
-        return _cachedImage;
-    }
+    private SKImage? GetDecodedImage() => _cache.Get(ImageBase64);
 
     public override void Render(RenderContext ctx)
     {
@@ -107,7 +74,7 @@ public class ImageElement : TemplateElement
     /// Vykreslí obrázek do rect podle zvoleného režimu škálování:
     /// Fit = vejde se celý (mezery), Fill = vyplní (ořízne), Stretch = roztáhne (deformuje), None = originální velikost.
     /// </summary>
-    private static void DrawImageWithScaleMode(
+    internal static void DrawImageWithScaleMode(
         SKCanvas canvas, SKImage image, SKRect dest,
         SKSamplingOptions sampling, SKPaint paint, ImageScaleMode mode)
     {

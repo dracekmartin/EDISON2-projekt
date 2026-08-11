@@ -128,6 +128,15 @@ public class DepartureGridElement : StopScheduleElementBase
     /// (přes <see cref="Rendering.ColumnHeader.Resolve"/>, jednotně se skupinami i ostatními komponentami).</summary>
     public string HourColumnHeader { get; set; } = "";
 
+    /// <summary>Obrázek do záhlaví sloupce hodin (Base64 PNG/JPG) - kreslí se v **každé** skupině
+    /// dnů, protože sloupec hodin se u každé opakuje (podnět #12843 bod 9: hodinová ikona ve vývěsce
+    /// Trenčína). Prázdné = kreslí se nadpis. Když je obrázek nastavený, **nadpis se nekreslí** -
+    /// jinak by se překrývaly a jejich vývěska tam žádný text nemá.</summary>
+    public string? HourColumnHeaderImageBase64 { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    private readonly Rendering.CachedBase64Image _hourHeaderImage = new();
+
     public List<DepartureGroupColumnStyle> GroupColumns
     {
         get => _groupColumns;
@@ -772,7 +781,10 @@ public class DepartureGridElement : StopScheduleElementBase
                 ? hourHeaderStyle with { BackgroundColor = bgColorOverride }
                 : hourHeaderStyle;
             var rect = new SKRect(hx, currentY, hx + HourColumnWidth, currentY + scaledCombinedHeaderH);
-            CellRenderer.DrawCell(ctx, rect, Rendering.ColumnHeader.Resolve(HourColumnHeader, "Hod"), style, scale);
+            var ikona = _hourHeaderImage.Get(HourColumnHeaderImageBase64);
+            // obrázek nahrazuje nadpis - dvě věci v jedné buňce by se překryly
+            CellRenderer.DrawCell(ctx, rect, ikona is null ? Rendering.ColumnHeader.Resolve(HourColumnHeader, "Hod") : "", style, scale);
+            if (ikona is not null) DrawHourHeaderIcon(ctx, ikona, rect);
         }
 
         // Nakreslí datovou buňku sloupce hodin přes CellRenderer.
@@ -1141,6 +1153,22 @@ public class DepartureGridElement : StopScheduleElementBase
         }
     }
 
+
+    /// <summary>Vykreslí ikonu do buňky záhlaví sloupce hodin - vejde se celá, vystředěná,
+    /// s malým okrajem, aby se nedotýkala mřížky. Škáluje se s buňkou, takže drží i při zmenšení.
+    /// ⚠️ `bunka` je v milimetrech (jako všechny rozměry elementu), plátno kreslí v pixelech -
+    /// bez převodu se obrázek vykreslí mimo záběr.</summary>
+    private static void DrawHourHeaderIcon(RenderContext ctx, SKImage ikona, SKRect bunkaMm)
+    {
+        float okraj = MathF.Min(bunkaMm.Width, bunkaMm.Height) * 0.12f;
+        var cil = ctx.ToCanvasRect(
+            bunkaMm.Left + okraj, bunkaMm.Top + okraj,
+            bunkaMm.Width - (2 * okraj), bunkaMm.Height - (2 * okraj));
+        if (cil.Width <= 0 || cil.Height <= 0) return;
+        using var paint = new SKPaint { IsAntialias = true };
+        var sampling = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
+        ImageElement.DrawImageWithScaleMode(ctx.Canvas, ikona, cil, sampling, paint, ImageScaleMode.Fit);
+    }
 
     private void RenderPlaceholder(RenderContext ctx)
     {
@@ -1533,6 +1561,7 @@ public class DepartureGridElement : StopScheduleElementBase
             NegativniZnackaForeColor   = NegativniZnackaForeColor,
             HourColumnStyle            = HourColumnStyle?.Clone(),
             HourColumnHeader           = HourColumnHeader,
+            HourColumnHeaderImageBase64 = HourColumnHeaderImageBase64,
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
             CustomColumns              = CustomColumns?.Select(c => c.Clone()).ToList(),
         };

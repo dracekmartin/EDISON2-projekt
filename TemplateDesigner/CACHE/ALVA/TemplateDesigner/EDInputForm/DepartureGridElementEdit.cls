@@ -31,6 +31,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         s f = form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f.helpText = "Sloupec s hodinami se zopakuje u každé skupiny dnů. Vypnuto = jeden sloupec hodin vlevo pro všechny skupiny."
+        s f = form.AddFieldToLastGroup("HourColumnHeaderImageBase64", "Obrázek v záhlaví hodin", $$$FieldTypeImage, 0, 0)
+        s f.helpText = "Ikona se vykreslí v záhlaví sloupce hodin u každé skupiny dnů. Když je nastavená, nadpis sloupce se netískne."
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
         s f.helpText = "Kolik skupin dnů se vejde do prvku; další se nevykreslí. 0 = bez omezení."
 
