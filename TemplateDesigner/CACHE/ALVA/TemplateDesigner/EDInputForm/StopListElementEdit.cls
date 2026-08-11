@@ -84,6 +84,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
         s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
         s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Pozadí aktuální (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("CurrentStopTextColor", "Barva textu aktuální (prázdné = dle buňky)", $$$FieldTypeColor, 0, 0)
         // Zapnutí tisku projetých zastávek řídí parametr sestavy TISK_PROJETYCH_ZAST; tady je vzhled.
         s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Barva projetých", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF999999"

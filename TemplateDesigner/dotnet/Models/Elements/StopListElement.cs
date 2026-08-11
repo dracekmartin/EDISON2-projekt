@@ -121,6 +121,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public float? CurrentStopFontSize { get; set; }
     public string? CurrentStopBackgroundColor { get; set; }
 
+    /// <summary>Barva písma aktuální zastávky; null = dědit z kaskády (podnět #12843 bod 2 -
+    /// pozadí šlo nastavit, barvu písma ne).</summary>
+    public string? CurrentStopTextColor { get; set; }
+
     // ═══════════════════════════════════════════
     // Podmíněné řádkové featury (sdílené s DynamicTable/LineTable přes RowConditions).
     // Vyhodnocují výraz nad daty zastávky (z.SourceRow). Prázdný výraz = vypnuto (nulová změna).
@@ -257,8 +261,17 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         float partWidth = PartWidthMm();
         if (partWidth <= 0) return;
 
+        // Šipka vlevo si nárokuje pruh nalevo od sloupce zastávek. Musí být součástí rozdělení
+        // šířek, ne kreslením přes souseda - jinak si po zúžení prvku lehne na jízdní doby
+        // (#12843 bod 1). Vpravo se kreslí uvnitř sloupce a rezervu drží nameShrinkReserveMm.
+        bool showArrowEarly = GetBoolParam(ctx.Data, "TISK_SIPKY", DefaultShowArrow);
+        float arrowLaneMm = showArrowEarly && DirectionArrowPosition == DirectionArrowSide.Left
+            ? ArrowOutsideOffsetMm + (MathF.Max(DirectionArrowHeadSize, DirectionArrowWidth) / 2f) + 0.2f
+            : 0f;
+        float columnsWidthMm = MathF.Max(1f, partWidth - arrowLaneMm);
+
         float heightScale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
-        float scale = MathF.Min(heightScale, ComputeWidthScale(columns, partWidth));
+        float scale = MathF.Min(heightScale, ComputeWidthScale(columns, columnsWidthMm));
         float baseFontSize = DataStyle.FontSize ?? 8f;
         // Výška záhlaví/řádku musí odpovídat NEJVĚTŠÍMU reálně vykreslenému (per-column resolved)
         // fontu, ne jen element-level fontu. Jinak vzniká asymetrie: per-column font glyf zvětší,
@@ -275,8 +288,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         // Parametry z tiskového dialogu přepíší element properties
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", DefaultShowPassedStops);
-        bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", DefaultShowArrow);
-        bool arrowLeft = showArrow && DirectionArrowPosition == DirectionArrowSide.Left;
+        bool showArrow = showArrowEarly;
+        bool arrowLeft = arrowLaneMm > 0f;
 
         // Šipka se vykresluje UVNITŘ sloupce zastávek (Key = NAZEV_ZASTAVKY) - vertikální čára je
         // kousek od vnitřního okraje sloupce, bracket horizontálně směřuje do sloupce.
@@ -285,10 +298,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Fallback (žádný StopName sloupec): poslední sloupec.
         int stopNameIdx = columns.FindIndex(c => c.Key == StopFields.StopName);
         if (stopNameIdx < 0) stopNameIdx = columns.Count - 1;
-        var colW = ResolveColumnWidths(columns, partWidth);
+        var colW = ResolveColumnWidths(columns, columnsWidthMm);
         // Odsazení sloupce zastávek od levé hrany oddílu (per oddíl se přičte jeho X).
         float stopNameOffsetMm = 0f;
         for (int i = 0; i < stopNameIdx && i < columns.Count; i++) stopNameOffsetMm += colW[columns[i]];
+        stopNameOffsetMm += arrowLaneMm;   // pruh šipky leží před sloupcem zastávek
         float stopNameWidthMm = stopNameIdx >= 0 && stopNameIdx < columns.Count ? colW[columns[stopNameIdx]] : 0f;
 
         // Symbolový font pro piktogramové značky (MHD „na znamení" = drátový kód „D" → piktogram).
@@ -335,7 +349,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
                 // Záhlaví sloupců se v každém oddílu zopakuje - oddíl je celá tabulka znovu.
                 float currentY = ShowHeader
-                    ? RenderColumnHeaders(ctx, columns, stopNameIdx, markersSubCellWidth, colW, headerH, paints, scale, partX, partWidth)
+                    ? RenderColumnHeaders(ctx, columns, stopNameIdx, markersSubCellWidth, colW, headerH, paints, scale, partX, partWidth, arrowLaneMm)
                     : Y;
 
                 if (visibleRows.Count > 0)
@@ -363,7 +377,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                         currentY += rowH;
 
                         plan.Add(BuildRowSpec(ctx, row, columns, stopNameIdx, colW, markersSubCellWidth,
-                            stopNameLeftMm, rowH, scale, symbolFace, nameShrinkReserveMm, paints));
+                            stopNameLeftMm, rowH, scale, symbolFace, nameShrinkReserveMm, paints, arrowLaneMm));
                     }
 
                     RowPlanRenderer.DrawRows(ctx, partX, rowsStartY, partWidth, plan, scale);
@@ -395,7 +409,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private RowSpec BuildRowSpec(
         RenderContext ctx, StopRow row, List<StopColumn> columns, int stopNameIdx,
         Dictionary<StopColumn, float> colW, float markersSubCellWidth, float stopNameLeftMm,
-        float rowH, float scale, SKTypeface symbolFace, float nameShrinkReserveMm, SchedulePaints paints)
+        float rowH, float scale, SKTypeface symbolFace, float nameShrinkReserveMm, SchedulePaints paints,
+        float arrowLaneMm)
     {
         var z = row.Z;
 
@@ -417,6 +432,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         var specs = BuildDataRowSpecs(columns, z, row.IsCurrent, row.IsPassed, stopNameIdx,
             markersSubCellWidth, colW, nameShrinkReserveMm, nameTrailingMm);
+        specs = InsertArrowLane(specs, stopNameIdx, arrowLaneMm);
 
         return new RowSpec(RowKind.Data, rowH, specs)
         {
@@ -436,14 +452,15 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private float RenderColumnHeaders(
         RenderContext ctx, List<StopColumn> columns, int stopNameIdx, float markersSubCellWidth,
         Dictionary<StopColumn, float> widths, float headerH, SchedulePaints paints, float scale,
-        float xMm, float widthMm)
+        float xMm, float widthMm, float arrowLaneMm)
     {
         // Výchozí pozadí záhlaví (přes celou šířku oddílu).
         // Per-column header bg z kaskády to lokálně přepíše.
         var headerRect = ctx.ToCanvasRect(xMm, Y, widthMm, headerH);
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
-        var specs = BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth, widths);
+        var specs = InsertArrowLane(
+            BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth, widths), stopNameIdx, arrowLaneMm);
         ColumnRenderer.DrawRow(ctx, xMm, Y, headerH, specs,
             Grid.ShowColumnLines ? paints.Grid : null, fontScale: scale);
 
@@ -490,6 +507,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 Bold      = CurrentStopBold || resolved.Bold,
                 FontSize  = CurrentStopFontSize ?? resolved.FontSize,
                 Underline = CurrentStopUnderline || resolved.Underline,
+                TextColor = CurrentStopTextColor is { Length: > 0 } barva ? barva : resolved.TextColor,
             };
         }
 
@@ -554,6 +572,21 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                     ResolveCellStyle(col, z, isCurrent, isPassed));
             }
         }
+        return result;
+    }
+
+    /// <summary>Vloží před sloupec zastávek prázdný pruh, ve kterém se kreslí šipka směru jízdy.
+    /// Bez něj si šipka půjčuje pravý okraj sousedního sloupce a po zúžení prvku mu leží přes text
+    /// (#12843 bod 1). Svislice zůstává na začátku pruhu (tam, kde soused končí), buňka za pruhem
+    /// si ji proto potlačí - jinak by vedle sebe byly dvě.</summary>
+    private static ColumnRenderer.CellSpec[] InsertArrowLane(ColumnRenderer.CellSpec[] specs, int at, float laneMm)
+    {
+        if (laneMm <= 0f || at < 0 || at >= specs.Length) return specs;
+        var result = new ColumnRenderer.CellSpec[specs.Length + 1];
+        Array.Copy(specs, 0, result, 0, at);
+        result[at] = new ColumnRenderer.CellSpec(laneMm, "", specs[at].Style);
+        result[at + 1] = specs[at] with { SuppressLeadingLine = true };
+        Array.Copy(specs, at + 1, result, at + 2, specs.Length - at - 1);
         return result;
     }
 
@@ -1320,6 +1353,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         new BoolPropertyDescriptor  { Label = "Podtržení aktuální",  Group = "Zvýraznění", Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
         new BoolPropertyDescriptor  { Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
+        new ColorPropertyDescriptor { Label = "Barva textu aktuální", Group = "Zvýraznění", Get = () => CurrentStopTextColor ?? "", Set = v => CurrentStopTextColor = string.IsNullOrWhiteSpace(v) ? null : v },
         new FloatPropertyDescriptor { Label = "Velikost aktuální",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
         new ColorPropertyDescriptor { Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         // „Projeté zastávky" (zapnutí) tu záměrně není - řídí ji parametr sestavy
@@ -1391,6 +1425,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             CurrentStopBold         = CurrentStopBold,
             CurrentStopFontSize     = CurrentStopFontSize,
             CurrentStopBackgroundColor = CurrentStopBackgroundColor,
+            CurrentStopTextColor = CurrentStopTextColor,
             RowVisibilityExpression = RowVisibilityExpression,
             HighlightRules          = HighlightRules?.Select(r => r.Clone()).ToList(),
         };
