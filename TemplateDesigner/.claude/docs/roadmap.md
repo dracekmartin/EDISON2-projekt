@@ -143,14 +143,6 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
   **napsat do protokolu importu** („předloha má osu 5-23, nastavte ji v parametrech"), ať se informace
   neztratí a dostane se k tomu, kdo s ní může něco udělat. Původní detekce (`timeAxisRangeFrom/To`
   v `AiGuidedScheduleBuilder`) je v gitu před commitem `B41`.
-- **`B51` EDList plní řádky po jednom - škubnutí při psaní** (S; nález Jan 4. 8., **první pokus
-  vrácen**). `ApplyRows` přidává řádky jeden po druhém do `ObservableCollection` navázané na
-  `DataGrid` s filtrem → 200 řádků = 200 přepočtů pohledu. Projeví se, když načtení dosedne, zatímco
-  uživatel píše do filtru skupiny. ⚠️ **`ICollectionView.DeferRefresh` NENÍ řešení** - zkoušeno
-  4. 8. a shodilo výběr linky (`CollectionChanged` chodí dál a view při něm sahá na currency, což je
-  během odkladu zakázané; detail v changelogu 2026-08-04 (15)). Schůdné cesty: odpojit `ItemsSource`
-  na dobu mutace a zase připojit, nebo kolekce s hromadnou výměnou (jeden `Reset` místo N `Add`).
-  **Podmínka: proklikat**, testy tuhle třídu chyb nechytí.
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované

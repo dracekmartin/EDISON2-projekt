@@ -2,6 +2,23 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-11 ✅ - `B51` seznam se plní najednou, ne po jednom řádku
+
+Detail → changelog 2026-08-11 (2). Nález Jan 4. 8., **první pokus vrácen** (`DeferRefresh` shodil
+výběr linky - odklad neodkládá oznámení o změně kolekce, jen přepočet pohledu).
+
+Dvě stě řádků znamenalo dvě stě přepočtů navázaného pohledu; vidět to bylo ve chvíli, kdy načtení
+dosedlo, zatímco uživatel psal do filtru skupiny. Odkrylo to až async načítání pickeru - dřív to
+schoval zámrz synchronního načítání.
+
+Řešeno hromadnou výměnou obsahu (`BulkObservableCollection.ReplaceAll`) = jediný `Reset`, který
+pohled dostával i dosud z `Clear`. Past cestou: parsování řádků je **líný iterátor**, takže se musí
+zhmotnit před odběrem změn - jinak druhý průchod vyrobí jiné instance a odběr visí na řádcích,
+které v seznamu nejsou.
+
+⚠️ Sdílená komponenta (i EDISONMAIN2). **Ověřeno proklikem Jana 11. 8.** - testy tuhle třídu chyb
+nechytí, přesně na tom padl pokus ze 4. 8.
+
 ## 2026-08-10 ✅ - `B39` vlastní sloupce vývěsky (#13045b), obě etapy
 
 Detail → changelog 2026-08-10 (9) rozhodnutí, (10) etapa 1 = dny + značky, (12) etapa 2 = období.

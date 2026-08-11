@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-11 (2) - ✅ `B51` seznam se plní najednou, ne po jednom řádku
+
+Seznamy v dialozích (šablony, instance) se plnily řádek po řádku, takže dvě stě řádků znamenalo
+dvě stě přepočtů navázaného pohledu. **Vidět to bylo jako škubnutí**, když načtení dosedlo, zatímco
+uživatel psal do filtru skupiny. Nález Jan 4. 8.; odkrylo to až async načítání pickeru - dřív to
+schoval zámrz synchronního načítání.
+
+Obsah se teď vymění najednou a pošle se **jediné** oznámení - a je to `Reset`, který pohled
+dostával i dosud z `Clear`, takže pro něj nejde o nový stav.
+
+⚠️ **Vědomě to není `DeferRefresh`.** Ten se na tohle zkoušel 4. 8. a hned se vracel: odklad
+neodkládá oznámení o změně kolekce, jen přepočet pohledu, takže mutace zdroje pod ním shodí
+`ListCollectionView` na currency (spadlo to při výběru linky). Komentář u kódu drží důvod,
+proč to znovu nezkoušet.
+
+**Past, na kterou jsem cestou skoro šlápl:** parsování řádků je líný iterátor. Projít ho dvakrát -
+jednou kvůli odběru změn, podruhé kvůli naplnění - by vyrobilo dvě různé sady objektů a odběr by
+visel na řádcích, které v seznamu nejsou. Musí se zhmotnit předem.
+
+**Ověřeno proklikem** (Jan, 11. 8.) - sdílená komponenta, dotýká se i EDISONMAIN2, a testy tuhle
+třídu chyb nechytí. EDControls 647 (+5), celkem 1 996.
+
 ## 2026-08-11 (1) - 🔌 vlastní sloupce vývěsky jdou do verze zhasnuté
 
 Rozhodnutí Jan: `B39` (#13045b) se do zítřejší ostré verze dostane, ale uživatel se k ní zatím
