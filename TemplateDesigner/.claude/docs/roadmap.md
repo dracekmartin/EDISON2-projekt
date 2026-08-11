@@ -157,9 +157,10 @@ při scope té fáze, ne teď.
 
 1. **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe - v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
-3. **Další výchozí šablony** (MHD + linkový) = **`C4`** - jediná evidence tohoto bodu; linková
-   varianta je prerekvizita Fáze C+D. Mechanismus embed→MLINE hotový (governance v1, zastávková AD),
-   zbývá kurátorovat + přesunout JSON do `SystemTemplates/`. Vel. **S**.
+3. **Další výchozí šablony** = **`C4`** - jediná evidence tohoto bodu. Zastávková **AD i MHD**
+   hotové (MHD 11. 8. - port AD varianty, KV_DP chtěl začít zkoušet). Zbývá **linková**, která je
+   prerekvizita Fáze C+D. Mechanismus embed→MLINE hotový; nový soubor v `SystemTemplates/`
+   stačí přidat, zabalí i nalije se sám. Vel. **S**.
 4. **Zákaznická dokumentace na wiki (post-release)** - seedy hotové (`uzivatelska-prirucka.md`,
    `plan-a-zmeny.md`); zbývá **obrázky + publikace**.
 

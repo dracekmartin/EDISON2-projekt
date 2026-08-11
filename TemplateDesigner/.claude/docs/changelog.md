@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-11 (6) - ✅ výchozí systémová šablona i pro agendu MHD
+
+KV_DP chtěl začít zkoušet, ale jediná zabudovaná šablona byla vázaná na agendu AD, takže se jim
+v seznamu vůbec nenabídla. Portováno z AD varianty - **rozvržení, styly ani nastavení prvků se
+nemění**, liší se jen to, co agenda MHD neposílá.
+
+**Co bylo potřeba změnit** (zbytek je 1:1):
+
+- **`{POZNAMKA_POD_DOPRAVCE}` pryč** - MHD to pole nemá a nevyřešený zástupný text se tiskne
+  **doslova**, takže by na vývěsce svítil název pole. Jediná AD-specifická věc, kterou šablona měla.
+- **Parametry sestavy ořezané na šest**, které MHD nabízí (chybí rozdělení sloupců, souhrn
+  na znamení, skrytí v rozsahu). Je to jen záloha pro běh bez připojení - s Caché se berou z agendy.
+- Nový stabilní `id`, aby seeder aktualizoval týž záznam a nezakládal při každém startu nový.
+
+**Co se ověřovalo předem** (proti schématu MHD, ne od oka): datová pole, čtyři kolekce, všech šest
+sloupců seznamu zastávek a to, že legenda nemá zapnuté filtry podle kategorií - ty MHD neposílá.
+
+Zabalení nevyžaduje registraci: projekt bere celou složku `SystemTemplates/` zástupným znakem
+a seeder nalije do MLINE větve všechno, co v .exe najde. Ověřeno výpisem zdrojů z sestavené
+knihovny (obě šablony) i proklikem nad KV_DP.
+
 ## 2026-08-11 (5) - 🔍 #12843 bod 6 (kolo místo vlaku) je už opravený - doloženo
 
 Zákazník hlásil, že „prestup na vlak" kreslí jízdní kolo. **Ověřeno na jeho datech a v aktuálním
