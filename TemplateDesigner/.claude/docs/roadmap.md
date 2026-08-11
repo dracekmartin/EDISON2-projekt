@@ -6,7 +6,7 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **Stav k 2026-08-10.**
+> **Stav k 2026-08-11** (verze vydaná 11. 8.).
 >
 > **▶ Zastávkový JŘ nemá otevřenou práci.** `B39` (vlastní sloupce vývěsky, #13045b) je hotová
 > oběma etapami 10. 8. - fronta KOVED je tím dojetá. **Další krok si vyber:** **Fáze B**
@@ -24,12 +24,15 @@
 > rozliší rozdělením sloupce, ne značkami (v datech skoro žádný nedělní spoj o svátcích nejede,
 > značka by padla na 86 % odjezdů). Patří to do wiki seedu, ne do kódu.
 >
-> **Sada TRANSDEV je celá rozdělená** (10. 8.) - 5 hotových, cíl / obrácené poznámkování / odsazení
-> per směr berou **kolegové** (proto tady nejsou), skrývání spojů o víkendu pohltilo #13045, „<1"
-> je `B64`. Odložené velké věci **`B18`** a **`B56`** leží v Backlogu, **`B60`** u linkového JŘ.
+> **Sada TRANSDEV: 7 z 10 hotových** (11. 8.). Cíl a obrácené poznámkování berou **kolegové**
+> (proto tady nejsou), odsazení per směr taky. Otevřený u nás zůstává jediný - **výběr variant
+> jízdních dob** (`TR7`), který zákazník 10. 8. potvrdil znovu jako #12843 bod 4; hotová je jen
+> půlka (nestabilní číslování). Odložené velké věci **`B18`** a **`B56`** leží v Backlogu,
+> **`B60`** u linkového JŘ.
 >
 > **Zákaznická fronta KOVED je dojetá** - `B37` hotová 5. 8., takže **#13093 je celý uzavřený**.
-> Verze v produkci je ze **4. 8.** (body 1, 2, 4), nic z 5. 8. se k zákazníkům ještě nedostalo.
+> **Verze z 11. 8. je vydaná** a nese všechno od 5. 8. včetně (pokračující spoje, značky dle
+> nastavení linky, „<1", podněty #12843) - kromě vlastních sloupců vývěsky, které jdou zhasnuté.
 >
 > **Co sem nepatří** (rozhodnutí Jan 6. 8.): tikety řešené mimo návrhář a čekání na cizí lidi.
 > Roadmapa je seznam **naší otevřené práce**, ne zrcadlo helpdesku.
