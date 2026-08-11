@@ -908,9 +908,21 @@
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
                     </Border>
 
-                    <!-- Sloupec 7 zůstal prázdný: signál „nastavení mění obsah vývěsky" byl 5. 8.
-                         zrušen (rozhodnutí Jan) - byl to obklad na chybu B24, ne oprava, a nikdo
-                         z něj nepoznal, co konkrétně hlásí. -->
+                    <!-- 5) Co vlastní sloupce nevzaly - nezařazené odjezdy i sloupec s obdobím mimo
+                         platnost JŘ (jmenuje konkrétní minuty / sloupce i cestu k nápravě,
+                         na rozdíl od zrušeného signálu B24 z 5. 8.). -->
+                    <Border Grid.Column="7"
+                            Background="{DynamicResource EDTheme.Semantic.Warning}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
+                            VerticalAlignment="Stretch"
+                            Visibility="{Binding HasColumnDataWarning, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Definice sloupců nepokrývá všechny spoje, nebo její období leží mimo platnost jízdního řádku - upravte ji v prvku odjezdů (dvojklik na prvek, tab Vlastní definice sloupců)">
+                        <!-- Black záměrně mimo theme: text na Semantic.Warning pozadí (oranžová je
+                             v obou tématech světlá, černá na ní má vždy dostatečný kontrast). -->
+                        <TextBlock Text="{Binding ColumnDataWarning}"
+                                   Foreground="Black" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                    </Border>
                 </Grid>
             </Border>
 

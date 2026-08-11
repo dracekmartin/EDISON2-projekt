@@ -102,6 +102,75 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRo
     };
 }
 
+// ─── CustomColumnVM - řádek definice vlastního sloupce (tab „Definice sloupců") ──
+
+public class CustomColumnVM : INotifyPropertyChanged
+{
+    public string Id { get; init; } = "";
+
+    private string _header = "";
+    public string Header { get => _header; set { _header = value; OnChanged(); OnChanged(nameof(DisplayName)); } }
+
+    private string _header2 = "";
+    public string Header2 { get => _header2; set { _header2 = value; OnChanged(); } }
+
+    // Dny v týdnu - zaškrtávátka 1:1 s abecedou platnosti (1-7, + = svátek)
+    private bool _po, _ut, _st, _ct, _pa, _so, _ne, _svatek;
+    public bool Po     { get => _po;     set { _po = value;     OnChanged(); } }
+    public bool Ut     { get => _ut;     set { _ut = value;     OnChanged(); } }
+    public bool St     { get => _st;     set { _st = value;     OnChanged(); } }
+    public bool Ct     { get => _ct;     set { _ct = value;     OnChanged(); } }
+    public bool Pa     { get => _pa;     set { _pa = value;     OnChanged(); } }
+    public bool So     { get => _so;     set { _so = value;     OnChanged(); } }
+    public bool Ne     { get => _ne;     set { _ne = value;     OnChanged(); } }
+    public bool Svatek { get => _svatek; set { _svatek = value; OnChanged(); } }
+
+    private string _includeMarks = "";
+    public string IncludeMarks { get => _includeMarks; set { _includeMarks = value; OnChanged(); } }
+
+    private string _excludeMarks = "";
+    public string ExcludeMarks { get => _excludeMarks; set { _excludeMarks = value; OnChanged(); } }
+
+    private string _suppressedMarks = "";
+    public string SuppressedMarks { get => _suppressedMarks; set { _suppressedMarks = value; OnChanged(); } }
+
+    private string _period = "";
+    public string Period { get => _period; set { _period = value; OnChanged(); } }
+
+    public string DisplayName => string.IsNullOrWhiteSpace(Header) ? "(bez nadpisu)" : Header;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+
+    public DepartureColumnDefinition ToModel() => new()
+    {
+        Id = Id,
+        Header = Header.Trim(),
+        Header2 = Header2.Trim(),
+        Days = (Po ? "1" : "") + (Ut ? "2" : "") + (St ? "3" : "") + (Ct ? "4" : "")
+             + (Pa ? "5" : "") + (So ? "6" : "") + (Ne ? "7" : "") + (Svatek ? "+" : ""),
+        IncludeMarks = IncludeMarks.Trim(),
+        ExcludeMarks = ExcludeMarks.Trim(),
+        SuppressedMarks = SuppressedMarks.Trim(),
+        Period = Period.Trim()
+    };
+
+    public static CustomColumnVM FromModel(DepartureColumnDefinition d) => new()
+    {
+        Id = d.Id,
+        Header = d.Header,
+        Header2 = d.Header2,
+        Po = d.Days.Contains('1'), Ut = d.Days.Contains('2'), St = d.Days.Contains('3'),
+        Ct = d.Days.Contains('4'), Pa = d.Days.Contains('5'), So = d.Days.Contains('6'),
+        Ne = d.Days.Contains('7'), Svatek = d.Days.Contains('+'),
+        IncludeMarks = d.IncludeMarks,
+        ExcludeMarks = d.ExcludeMarks,
+        SuppressedMarks = d.SuppressedMarks,
+        Period = d.Period
+    };
+}
+
 // ─── Dialog ViewModel ───────────────────────────────────────────────────────
 
 class DepartureGroupEditorDialogViewModel : EDViewModel
@@ -121,6 +190,59 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
     public List<DepartureGroupColumnStyle> ResultGroupColumns { get; private set; } = [];
     public ColumnVisualStyle? ResultHourColumnStyle { get; private set; }
+
+    // ── Tab 3: Definice sloupců (vlastní sloupce - dny + značky) ─────────
+
+    public ObservableCollection<CustomColumnVM> CustomColumnVMs { get; } = [];
+
+    private bool _useCustomColumns;
+    public bool UseCustomColumns
+    {
+        get => _useCustomColumns;
+        set { if (Set(ref _useCustomColumns, value)) OnPropertyChanged(nameof(AutomaticColumns)); }
+    }
+
+    /// <summary>Protějšek pro RadioButton „Automaticky" (bez converteru v XAML).</summary>
+    public bool AutomaticColumns
+    {
+        get => !_useCustomColumns;
+        set => UseCustomColumns = !value;
+    }
+
+    private CustomColumnVM? _selectedCustomVM;
+    public CustomColumnVM? SelectedCustomVM
+    {
+        get => _selectedCustomVM;
+        set { Set(ref _selectedCustomVM, value); OnPropertyChanged(nameof(HasCustomSelection)); }
+    }
+
+    public bool HasCustomSelection => _selectedCustomVM is not null;
+    public bool CanAddCustomColumn => CustomColumnVMs.Count < DepartureGridElement.MaxCustomColumns;
+
+    /// <summary>Nabídka vzorů + prázdná varianta pro stavbu od začátku. Vzory drží server
+    /// (pole PRESETY_SLOUPCU), takže bez načtených dat zůstane jen prázdná varianta - vzor
+    /// složený naslepo by u prázdninových rozvržení neseděl na značky konkrétní linky.</summary>
+    public IReadOnlyList<DepartureColumnPresets.Preset> Presets { get; }
+
+    private DepartureColumnPresets.Preset? _selectedPreset;
+    public DepartureColumnPresets.Preset? SelectedPreset
+    {
+        get => _selectedPreset;
+        set => Set(ref _selectedPreset, value);
+    }
+
+    /// <summary>Výsledná definice: null = „Automaticky (dle linky)".</summary>
+    public List<DepartureColumnDefinition>? ResultCustomColumns { get; private set; }
+
+    private string? _customColumnsError;
+    /// <summary>Chyba validace definice sloupců - OK dialog nezavře, dokud trvá. Null = v pořádku.</summary>
+    public string? CustomColumnsError
+    {
+        get => _customColumnsError;
+        private set => Set(ref _customColumnsError, value);
+    }
+
+    private readonly IReadOnlyDictionary<string, List<DepartureColumnDefinition>> _presety;
 
     /// <summary>Rezervované ID pro sloupec hodin v GroupVMs.</summary>
     internal const string HourColumnId = "__HOUR__";
@@ -156,15 +278,74 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     public RelayCommand MoveUpCommand { get; }
     public RelayCommand MoveDownCommand { get; }
 
+    // Definice sloupců (tab 3)
+    public RelayCommand AddCustomColumnCommand { get; }
+    public RelayCommand RemoveCustomColumnCommand { get; }
+    public RelayCommand MoveCustomUpCommand { get; }
+    public RelayCommand MoveCustomDownCommand { get; }
+    public RelayCommand ApplyPresetCommand { get; }
+
     // ── Konstruktor ──────────────────────────────────────────────────
 
     public DepartureGroupEditorDialogViewModel(
         DepartureGridElement element,
         List<SkupinaDnuData> availableGroups,
         List<DepartureGroupColumnStyle> currentStyles,
-        ColumnVisualStyle? hourColumnStyle)
+        ColumnVisualStyle? hourColumnStyle,
+        List<DepartureColumnDefinition>? customColumns = null,
+        string? presetsJson = null)
     {
         _element = element;
+        _presety = DepartureColumnPresets.Parse(presetsJson);
+        Presets = [.. DepartureColumnPresets.All.Where(p => _presety.ContainsKey(p.Key)),
+                   new("PRAZDNA", "Prázdná (sloupce si přidáte sami)")];
+
+        // Tab 3: definice vlastních sloupců (null/prázdné = automaticky dle linky)
+        foreach (var c in customColumns ?? []) CustomColumnVMs.Add(CustomColumnVM.FromModel(c));
+        _useCustomColumns = CustomColumnVMs.Count > 0;
+        SelectedCustomVM = CustomColumnVMs.FirstOrDefault();
+        // Když aktuální sloupce odpovídají některému vzoru, předvyber ho - jinak prázdné combo
+        // vypadá, jako by se použitý vzor neuložil (stav definice nese seznam sloupců, ne combo).
+        SelectedPreset = DetectPreset();
+
+        AddCustomColumnCommand = Command(() =>
+        {
+            if (!CanAddCustomColumn) return;
+            var vm = new CustomColumnVM { Id = NextFreeCustomId(), Header = "Nový sloupec" };
+            CustomColumnVMs.Add(vm);
+            SelectedCustomVM = vm;
+            OnPropertyChanged(nameof(CanAddCustomColumn));
+        });
+        RemoveCustomColumnCommand = Command(() =>
+        {
+            if (SelectedCustomVM is null) return;
+            var idx = CustomColumnVMs.IndexOf(SelectedCustomVM);
+            CustomColumnVMs.Remove(SelectedCustomVM);
+            SelectedCustomVM = CustomColumnVMs.Count > 0 ? CustomColumnVMs[Math.Min(idx, CustomColumnVMs.Count - 1)] : null;
+            OnPropertyChanged(nameof(CanAddCustomColumn));
+        });
+        MoveCustomUpCommand = Command(() =>
+        {
+            if (SelectedCustomVM is null) return;
+            var idx = CustomColumnVMs.IndexOf(SelectedCustomVM);
+            if (idx > 0) CustomColumnVMs.Move(idx, idx - 1);
+        });
+        MoveCustomDownCommand = Command(() =>
+        {
+            if (SelectedCustomVM is null) return;
+            var idx = CustomColumnVMs.IndexOf(SelectedCustomVM);
+            if (idx >= 0 && idx < CustomColumnVMs.Count - 1) CustomColumnVMs.Move(idx, idx + 1);
+        });
+        ApplyPresetCommand = Command(() =>
+        {
+            if (SelectedPreset is null) return;
+            CustomColumnVMs.Clear();
+            foreach (var c in _presety.TryGetValue(SelectedPreset.Key, out var vzor) ? vzor : [])
+                CustomColumnVMs.Add(CustomColumnVM.FromModel(c.Clone()));
+            SelectedCustomVM = CustomColumnVMs.FirstOrDefault();
+            UseCustomColumns = true;
+            OnPropertyChanged(nameof(CanAddCustomColumn));
+        });
 
         // Vyřešené rodičovské styly pro kaskádu (element-level → column override)
         var hourHeaderInherited  = element.ResolveHourHeaderParent();
@@ -263,10 +444,110 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             setter(SelectedGroupVM, result);
     }
 
+    /// <summary>Vzor, kterému aktuální sloupce přesně odpovídají (nadpisy, dny i značky); null =
+    /// vlastní kombinace. Porovnává se proti vzoru postavenému z konfigurace téže linky.</summary>
+    private DepartureColumnPresets.Preset? DetectPreset()
+    {
+        if (CustomColumnVMs.Count == 0) return null;
+        foreach (var preset in Presets)
+        {
+            if (!_presety.TryGetValue(preset.Key, out var built)) continue;
+            if (built.Count != CustomColumnVMs.Count) continue;
+            var match = true;
+            for (int i = 0; i < built.Count && match; i++)
+            {
+                var a = built[i];
+                var b = CustomColumnVMs[i].ToModel();
+                match = a.Header == b.Header && a.Header2 == b.Header2 && a.Days == b.Days
+                     && a.IncludeMarks == b.IncludeMarks && a.ExcludeMarks == b.ExcludeMarks
+                     && a.SuppressedMarks == b.SuppressedMarks && a.Period == b.Period;
+            }
+            if (match) return preset;
+        }
+        return null;
+    }
+
+    /// <summary>Nejmenší volné číselné id - stabilní přes přeskládání (styly sloupců na něm visí),
+    /// u vzorů 1:1 s dnešními indexy sloupců, takže existující styly zůstanou na svém místě.
+    /// Novým sloupcům se vyhýbá i id s uloženým stylem (jinak by nový sloupec po smazaném
+    /// zdědil jeho vzhled).</summary>
+    private string NextFreeCustomId()
+    {
+        var used = CustomColumnVMs.Select(vm => vm.Id)
+            .Concat(_element.GroupColumns.Select(gc => gc.SkupinaDnuId))
+            .ToHashSet(StringComparer.Ordinal);
+        for (int i = 1; ; i++)
+            if (!used.Contains(i.ToString())) return i.ToString();
+    }
+
     // ── OK ──────────────────────────────────────────────────────────
+
+    /// <summary>Seznam značek smí být jen čísla oddělená čárkou. Jiný vstup by server tiše přečetl
+    /// po svém („abc" jako 0, z „10;20" i „52 53" jen první číslo) - proto se OK zastaví tady.</summary>
+    private static bool JsouPlatneZnacky(string seznam)
+    {
+        if (string.IsNullOrWhiteSpace(seznam)) return true;
+        return seznam.Split(',').All(p =>
+        {
+            var cislo = p.Trim();
+            return cislo.Length == 0 || cislo.All(char.IsDigit);   // uvnitř čísla už nesmí být nic, ani mezera
+        });
+    }
+
+    /// <summary>Období smí být jen rozsahy dat oddělené čárkou („14.2.-18.2., 1.7.-31.8.",
+    /// s rokem i bez). Server nerozpoznaný rozsah tiše zahodí, takže by sloupec mlčky bral všechny
+    /// spoje - proto se OK zastaví tady.</summary>
+    internal static bool JePlatneObdobi(string obdobi)
+    {
+        if (string.IsNullOrWhiteSpace(obdobi)) return true;
+        foreach (var cast in obdobi.Split(','))
+        {
+            var rozsah = cast.Trim();
+            if (rozsah.Length == 0) continue;
+            var meze = rozsah.Split('-');
+            if (meze.Length > 2) return false;
+            foreach (var mez in meze)
+                if (!JeDatum(mez.Trim())) return false;
+        }
+        return true;
+    }
+
+    /// <summary>Datum „d.m", „d.m." nebo „d.m.rrrr" - rok nepovinný (bez roku = každý rok).
+    /// Zrcadlí <c>JeDatumTvar</c> v ZastavkoveJrAd.cls; kdyby se rozešly, editor by pustil
+    /// rozsah, který server zahodí.</summary>
+    private static bool JeDatum(string text)
+    {
+        if (text.Length == 0) return false;
+        var casti = text.Split('.');
+        if (casti.Length is < 2 or > 3) return false;
+        if (!int.TryParse(casti[0], out var den) || den is < 1 or > 31) return false;
+        if (!int.TryParse(casti[1], out var mesic) || mesic is < 1 or > 12) return false;
+        if (casti.Length == 3 && casti[2].Length > 0)
+            if (!int.TryParse(casti[2], out var rok) || rok is < 1900 or > 2999) return false;
+        return true;
+    }
 
     protected override void OnOk()
     {
+        // Validace definice sloupců - nevalidní seznam značek ani období nepustit na server
+        if (UseCustomColumns)
+        {
+            var chybny = CustomColumnVMs.FirstOrDefault(vm =>
+                !JsouPlatneZnacky(vm.IncludeMarks) || !JsouPlatneZnacky(vm.ExcludeMarks) || !JsouPlatneZnacky(vm.SuppressedMarks));
+            if (chybny is not null)
+            {
+                CustomColumnsError = $"Sloupec „{chybny.DisplayName}“: seznamy značek smí obsahovat jen čísla oddělená čárkou (např. 52, 53).";
+                return;
+            }
+            var chybneObdobi = CustomColumnVMs.FirstOrDefault(vm => !JePlatneObdobi(vm.Period));
+            if (chybneObdobi is not null)
+            {
+                CustomColumnsError = $"Sloupec „{chybneObdobi.DisplayName}“: období smí být jen rozsahy dat oddělené čárkou (např. 1.7.-31.8., 29.10.-30.10.).";
+                return;
+            }
+        }
+        CustomColumnsError = null;
+
         // Element-level styl (HeaderStyle/DataStyle/MinuteStyle/…) řeší EDInputForm v tabu Obecné
         // (code-behind přes ElementFormBinder). Zde jen per-skupina/sloupec + hour.
         var hourVm = GroupVMs.FirstOrDefault(vm => vm.SkupinaDnuId == HourColumnId);
@@ -283,6 +564,11 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             .Where(vm => vm.SkupinaDnuId != HourColumnId)
             .Select(vm => vm.ToModel())
             .ToList();
+
+        // Definice vlastních sloupců - null = automaticky (vypnuté, nebo zapnuté bez sloupců)
+        ResultCustomColumns = UseCustomColumns && CustomColumnVMs.Count > 0
+            ? CustomColumnVMs.Select(vm => vm.ToModel()).ToList()
+            : null;
 
         // Pozn.: per-column typografii záhlaví (font/velikost/řez) ignoruje render
         // (DepartureGridElement.WithParentHeaderTypography) - element-level je autoritativní.

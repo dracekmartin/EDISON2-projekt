@@ -2,6 +2,33 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-10 ✅ - `B39` vlastní sloupce vývěsky (#13045b), obě etapy
+
+Detail → changelog 2026-08-10 (9) rozhodnutí, (10) etapa 1 = dny + značky, (12) etapa 2 = období.
+Pohltilo `TR10` (skrývání spojů o víkendu).
+
+**Etapa 1:** dialog odjezdů má tab „Vlastní definice sloupců" - až 5 sloupců, u každého nadpis, dny
+(Po-Ne + svátek), značky „jen s těmito" / „bez těchto" a per-sloupcové „nevypisovat značky"
+(přestěhování `B63` z linky na sloupec). Čtyři dnešní rozvržení jako vzory. Nepokryté spoje hlásí
+oranžový badge i dovětek u exportu PDF.
+
+**Etapa 2:** třetí podmínka **Období** (víc rozsahů dat; bez roku = každý rok, s rokem jednorázově).
+Vyhodnocení „kdy spoj jede" dělá **`ALVA.ISY.ISYLinky.API.LinkyStatistika.jede`** - denní bitmapa
+přes období, jedno volání na linku. Spoj v období jede aspoň den → patří do sloupce; jede celé
+období → negativní značka se potlačí. Sloupec s obdobím mimo platnost jízdního řádku nebere nic
+a hlásí to (jinak by šablona po překlopení JŘ tiše zmlkla).
+
+**Denní značky:** obecné pravidlo „značka jen když spoj nepokrývá celý sloupec" **jen u kombinací
+dnů, které dnešní rozvržení nezná**; standardní sloupce beze změny (rozhodnutí Jan po měření -
+v „Neděle a svátky" by značku dostalo 86 % spojů, což nerozlišuje nic). Negativní značka to
+nahradit nemůže, nese datumové omezení, ne den v týdnu.
+
+**Dluh z etapy 1 splacen:** vzory staví server (`PresetySloupcu` → pole `PRESETY_SLOUPCU`), klient
+je jen čte; parita tak měří to, co editor reálně pošle.
+
+Gold digesty přebaselinovány (jen md5, počty beze změny). Sondy k oběma etapám žijí
+v `AdSloupekProbe.cls`.
+
 ## 2026-08-10 ✅ - `B63` čteme „nevypisovat značku ve sloupci" (per linka, 4 sloty)
 
 Starý modul má u linky **dva různé** per-sloupcové seznamy a my čteli jen jeden:

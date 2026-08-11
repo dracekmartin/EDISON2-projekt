@@ -506,4 +506,289 @@ Method TestSloupekChybejiciSegment()
 	do $$$AssertEquals($classmethod(cls, "SloupekZTrasy", "", 1), "", "prázdná J-věta → prázdno")
 }
 
+// ── Vlastní sloupce vývěsky (dny + značky) ───────────────────────────────────
+
+Method TestDnySpoje()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", ""), "", "prázdná platnost = jede každý den")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "."), "", "tečka = jede každý den")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "X"), "12345", "X = legislativní zkratka pracovních dnů")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "X6"), "123456", "X + sobota")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "15"), "15", "konkrétní dny beze změny")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "67+"), "67+", "víkend + svátek")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "1X"), "12345", "duplicitní dny se neopakují")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "abc"), "-", "nerozpoznaná platnost → žádný den (spoj se nikam nezařadí)")
+}
+
+Method TestZarazeniSpojeDleDefiniceKaskada()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	// 2 sloupce: pracovní jen se značkami 5,6; víkend bez značky 7
+	kill def
+	set def = 2
+	set def(1,"id") = "A", def(1,"dny") = "12345", def(1,"jen") = ",5,6,", def(1,"bez") = ""
+	set def(2,"id") = "B", def(2,"dny") = "67+",   def(2,"jen") = "",     def(2,"bez") = ",7,"
+
+	// dny: spoj bez omezení sedí do obou, ale „jen" ho z A vyřadí (nemá značku)
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "", ""), "B", "spoj bez značky neprojde přes seznam „jen s těmito“")
+	// „jen": spoj se značkou 5 projde do A; do B taky (B „jen" nemá)
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "", "5"), "A,B", "značka v seznamu „jen“ → sedí")
+	// „bez": značka 7 vyřadí z B, v A není v „jen"? je 7 mimo ",5,6," → vyřazen i z A
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "", "7"), "", "vyloučená značka → nikam")
+	// dny rozhodují před značkami: sobotní spoj se značkou 5 do A nesedí dny
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "6", "5"), "B", "dny mají přednost před značkami")
+	// normalizace čísel značek: „05" == 5
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "", "05"), "A,B", "číslo značky se porovnává numericky")
+
+	// sloupec bez dnů neomezuje (kontrakt „nevyplněná podmínka neomezuje") - jen značky filtrují
+	kill def
+	set def = 1
+	set def(1,"id") = "F", def(1,"dny") = "", def(1,"jen") = ",5,", def(1,"bez") = ""
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "6", "5"), "F", "sobotní spoj se značkou sedí do sloupce bez dnů")
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "6", ""), "", "spoj bez značky přes „jen“ neprojde")
+}
+
+/// Rozsahy období z uživatelského textu - tvar, který editor pustí, musí server přečíst stejně.
+Method TestParseObdobi()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill r
+	do $$$AssertEquals($classmethod(cls, "ParseObdobi", "", .r), 0, "prázdné období neomezuje")
+	kill r
+	do $$$AssertEquals($classmethod(cls, "ParseObdobi", "14.2.-18.2., 1.7.-31.8., 29.10.-30.10.", .r), 3, "tři rozsahy oddělené čárkou")
+	do $$$AssertEquals($list(r(2),1), "1.7.", "druhý rozsah začíná 1.7.")
+	do $$$AssertEquals($list(r(2),2), "31.8.", "druhý rozsah končí 31.8.")
+	kill r
+	do $$$AssertEquals($classmethod(cls, "ParseObdobi", "24.12.", .r), 1, "jedno datum = jednodenní rozsah")
+	do $$$AssertEquals($list(r(1),2), "24.12.", "konec = začátek")
+	kill r
+	do $$$AssertEquals($classmethod(cls, "ParseObdobi", "od cervence, 32.1.-5.2., 1.13.", .r), 0, "nesmyslné rozsahy se zahodí")
+
+	do $$$AssertTrue($classmethod(cls, "JeDatumTvar", "1.7."), "datum bez roku je platné")
+	do $$$AssertTrue($classmethod(cls, "JeDatumTvar", "1.7.2026"), "datum s rokem je platné")
+	do $$$AssertTrue('$classmethod(cls, "JeDatumTvar", "2026-07-01"), "ISO tvar neplatí")
+	do $$$AssertTrue('$classmethod(cls, "JeDatumTvar", "31.13."), "měsíc 13 neplatí")
+}
+
+/// Vyhodnocení jízdy v období nad denní bitmapou z ISY. Bitmapu podstrčíme rovnou do ^||TiskAd,
+/// ať test nezávisí na datech serveru - měří se pravidlo, ne obsah jízdního řádku.
+Method TestJizdaVObdobi()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill ^||TiskAd
+	set hrlOd = ##class(ALVA.GENERALAPI.Date).DateToHor("1.7.2026")
+	set ^||TiskAd("jede","od") = hrlOd
+	// spoj 1 jede celých 10 dní, spoj 2 jen prvních 5, spoj 3 vůbec
+	set ^||TiskAd("jede","raw","DTA",0,1) = $listbuild(10, hrlOd, "1111111111")
+	set ^||TiskAd("jede","raw","DTA",0,2) = $listbuild(5,  hrlOd, "1111100000")
+	set ^||TiskAd("jede","raw","DTA",0,3) = $listbuild(0,  hrlOd, "0000000000")
+
+	kill obd
+	set obd(1) = 1, obd(1,1) = $listbuild(hrlOd, hrlOd + 9)
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 1, .obd, 1), 2, "jede celé období → značka se potlačí")
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 2, .obd, 1), 1, "jede jen část → značka zůstane")
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 3, .obd, 1), 0, "nejede ani den → do sloupce nepatří")
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 99, .obd, 1), -1, "spoj bez podkladu z ISY → neumíme rozhodnout")
+
+	// Pokrytí se počítá jen přes dny, které sloupec pokrývá. Bez toho by pracovní spoj nikdy
+	// nesplnil „jede celé období" (o víkendu nejede) a potlačení značky by se nikdy nezaplo.
+	kill ^||TiskAd
+	set hrlPo = ##class(ALVA.GENERALAPI.Date).DateToHor("6.7.2026")   // pondělí
+	set ^||TiskAd("jede","od") = hrlPo
+	set bitmapa = ""
+	for d = 0:1:13 { set bitmapa = bitmapa_$select(((hrlPo + d + 3 # 7) + 1) < 6:1, 1:0) }
+	set ^||TiskAd("jede","raw","DTA",0,42) = $listbuild(10, hrlPo, bitmapa)
+	kill obd
+	set obd(1) = 1, obd(1,1) = $listbuild(hrlPo, hrlPo + 13)
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 42, .obd, 1, "12345"), 2, "pracovní spoj pokryje pracovní sloupec → značka se potlačí")
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 42, .obd, 1, ""), 1, "sloupec bez omezení dnů počítá i víkend → jede jen část")
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 42, .obd, 1, "6"), 0, "v sobotním sloupci ten spoj nejede vůbec")
+
+	// sloupec bez období neomezuje; sloupec, jemuž po ořezu na platnost JŘ nezbyl rozsah, nebere nic
+	kill obd
+	set obd(2) = 0
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 3, .obd, 2), 2, "sloupec bez období neomezuje")
+	set obd(2,"zadano") = 1
+	do $$$AssertEquals($classmethod(cls, "JizdaVObdobi", "T", 1, .obd, 2), 0, "období mimo platnost JŘ → do sloupce nepatří nic")
+	kill ^||TiskAd
+}
+
+/// Období se v kaskádě uplatní až po dnech a značkách a spoj vyřadí, i když dny i značky sedí.
+Method TestZarazeniSpojeDleDefiniceObdobi()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill ^||TiskAd
+	set hrlOd = ##class(ALVA.GENERALAPI.Date).DateToHor("1.7.2026")
+	set ^||TiskAd("jede","od") = hrlOd
+	set ^||TiskAd("jede","raw","DTA",0,7) = $listbuild(0, hrlOd, "0000000000")
+
+	kill def
+	set def = 1
+	set def(1,"id") = "A", def(1,"dny") = "", def(1,"jen") = "", def(1,"bez") = ""
+	kill obd
+	set obd(1) = 1, obd(1,1) = $listbuild(hrlOd, hrlOd + 9)
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "", "", "T", 7, .obd), "", "spoj v období nejede → do sloupce nepatří")
+	kill obd
+	set obd(1) = 0
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "", "", "T", 7, .obd), "A", "bez období se týž spoj zařadí")
+	kill ^||TiskAd
+}
+
+Method TestZnackaSkrytaDleDefinice()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill def
+	set def = 2
+	set def(1,"id") = "P", def(2,"id") = "V"
+	set def("nevyp","P") = ",52,53,", def("nevyp","V") = ""
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaDleDefinice", .def, "P", "52"), 1, "značka v per-sloupcovém seznamu → potlačit")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaDleDefinice", .def, "V", "52"), 0, "jiný sloupec bez seznamu → tisknout")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaDleDefinice", .def, "P", "99"), 0, "značka mimo seznam → tisknout")
+	do $$$AssertEquals($classmethod(cls, "ZnackaSkrytaDleDefinice", .def, "P", ""), 0, "bez značky → nic k potlačení")
+}
+
+Method TestParseDefiniceSloupcu()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	// validní definice
+	set ^||ML("IN","DEFINICE_SLOUPCU") = "{""sloupce"":[{""id"":""1"",""nadpis"":""Pracovní dny"",""nadpis2"":""mimo prázdniny"",""dny"":""12345"",""znackyJen"":"""",""znackyBez"":""21, 32"",""nevypisovatZnacky"":""52""},{""id"":""2"",""nadpis"":""Soboty"",""dny"":""6""}]}"
+	kill def
+	do $$$AssertEquals($classmethod(cls, "ParseDefiniceSloupcu", .def), 2, "dva sloupce")
+	do $$$AssertEquals($get(def(1,"nadpis")), "Pracovní dny", "nadpis 1. sloupce")
+	do $$$AssertEquals($get(def(1,"nadpis2")), "mimo prázdniny", "druhý řádek nadpisu")
+	do $$$AssertEquals($get(def(1,"bez")), ",21,32,", "seznam „bez“ normalizovaný (ořez mezer)")
+	do $$$AssertEquals($get(def("nevyp","1")), ",52,", "per-sloupcové potlačení značek")
+	do $$$AssertEquals($get(def(2,"dny")), "6", "dny 2. sloupce")
+
+	// nevalidní vstupy → 0 = režim automaticky
+	set ^||ML("IN","DEFINICE_SLOUPCU") = "tohle není json"
+	do $$$AssertEquals($classmethod(cls, "ParseDefiniceSloupcu", .def), 0, "nevalidní JSON → automaticky")
+	set ^||ML("IN","DEFINICE_SLOUPCU") = "{""neco"":1}"
+	do $$$AssertEquals($classmethod(cls, "ParseDefiniceSloupcu", .def), 0, "chybí sloupce → automaticky")
+	kill ^||ML("IN","DEFINICE_SLOUPCU")
+	do $$$AssertEquals($classmethod(cls, "ParseDefiniceSloupcu", .def), 0, "bez parametru → automaticky")
+}
+
+/// Parita presetů: definice odpovídající čtyřem dnešním rozvržením musí zařadit spoj do týchž
+/// sloupců jako legacy ZarazeniSpoje - hlavní pojistka, že presety jsou 1:1 náhrada.
+Method TestDefiniceParitaPresetFtl0()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill def
+	set def = 3
+	set def(1,"id") = 1, def(1,"dny") = "12345", def(1,"jen") = "", def(1,"bez") = ""
+	set def(2,"id") = 2, def(2,"dny") = "6",     def(2,"jen") = "", def(2,"bez") = ""
+	set def(3,"id") = 3, def(3,"dny") = "7+",    def(3,"jen") = "", def(3,"bez") = ""
+	for plk = "", ".", "12345", "X", "15", "6", "7", "+", "67", "16", "67+" {
+		do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, plk, ""), $classmethod(cls, "ZarazeniSpoje", 0, plk, "", ""), "FTL0 parita, plk="_plk)
+	}
+}
+
+Method TestDefiniceParitaPresetFtl2()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill def
+	set def = 2
+	set def(1,"id") = 1, def(1,"dny") = "12345", def(1,"jen") = "", def(1,"bez") = ""
+	set def(2,"id") = 2, def(2,"dny") = "67+",   def(2,"jen") = "", def(2,"bez") = ""
+	for plk = "", ".", "12345", "X", "15", "6", "7", "+", "67", "16", "67+" {
+		do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, plk, ""), $classmethod(cls, "ZarazeniSpoje", 2, plk, "", ""), "FTL2 parita, plk="_plk)
+	}
+}
+
+/// FTL1 (prázdninové dělení): preset se staví z NZ konfigurace linky - „mimo prázdniny" vylučuje
+/// značku „jede o prázdninách" + poziční seznam 1, „o prázdninách" vylučuje „nejede o prázdninách"
+/// + poziční seznam 2. nzCfg = "21~22|31~32" → nzftl2=21 (jede o prázd), nzftl1=22 (nejede),
+/// nenzftl1=32, nenzftl2=31 (legacy sloty prohozené).
+Method TestDefiniceParitaPresetFtl1()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set nzCfg = "21~22|31~32"
+	kill def
+	set def = 3
+	set def(1,"id") = 1, def(1,"dny") = "12345", def(1,"jen") = "", def(1,"bez") = ",21,32,"
+	set def(2,"id") = 2, def(2,"dny") = "12345", def(2,"jen") = "", def(2,"bez") = ",22,31,"
+	set def(3,"id") = 3, def(3,"dny") = "67+",   def(3,"jen") = "", def(3,"bez") = ""
+	for plk = "", ".", "12345", "X", "6", "16", "67+" {
+		for cnz = "", "21", "22", "31", "32", "99" {
+			do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, plk, cnz), $classmethod(cls, "ZarazeniSpoje", 1, plk, cnz, nzCfg), "FTL1 parita, plk="_plk_" cnz="_cnz)
+		}
+	}
+}
+
+Method TestDefiniceParitaPresetFtl3()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set nzCfg = "21~22|31~32"
+	kill def
+	set def = 4
+	set def(1,"id") = 1, def(1,"dny") = "12345", def(1,"jen") = "", def(1,"bez") = ",21,32,"
+	set def(2,"id") = 2, def(2,"dny") = "12345", def(2,"jen") = "", def(2,"bez") = ",22,31,"
+	set def(3,"id") = 3, def(3,"dny") = "6",     def(3,"jen") = "", def(3,"bez") = ""
+	set def(4,"id") = 4, def(4,"dny") = "7+",    def(4,"jen") = "", def(4,"bez") = ""
+	for plk = "", ".", "12345", "X", "6", "7", "16", "67+" {
+		for cnz = "", "21", "22", "31", "32", "99" {
+			do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, plk, cnz), $classmethod(cls, "ZarazeniSpoje", 3, plk, cnz, nzCfg), "FTL3 parita, plk="_plk_" cnz="_cnz)
+		}
+	}
+}
+
+/// Vědomá odchylka od legacy: linka BEZ NZ konfigurace dává v legacy FTL1/3 pracovní spoj jen do
+/// 1. sloupce (prázdné nzftl1 == prázdné cnz je „exact match"); preset s prázdnými seznamy značek
+/// ho dá do obou pracovních sloupců. Degenerovaný případ (prázdninové rozvržení bez prázdninových
+/// značek nedává smysl) - test odchylku dokumentuje, aby nezanikla mlčky.
+Method TestDefiniceFtl1BezNzKonfigurace()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill def
+	set def = 3
+	set def(1,"id") = 1, def(1,"dny") = "12345", def(1,"jen") = "", def(1,"bez") = ""
+	set def(2,"id") = 2, def(2,"dny") = "12345", def(2,"jen") = "", def(2,"bez") = ""
+	set def(3,"id") = 3, def(3,"dny") = "67+",   def(3,"jen") = "", def(3,"bez") = ""
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpoje", 1, "", "", ""), "1,3", "legacy: prázdná NZ cfg → jen 1. pracovní sloupec")
+	do $$$AssertEquals($classmethod(cls, "ZarazeniSpojeDleDefinice", .def, "", ""), "1,2,3", "definice: bez vyloučení → oba pracovní sloupce (vědomě jinak)")
+}
+
+/// Denní značky u vlastních sloupců. Kombinace, které umí i režim „automaticky", se chovají jako
+/// dnes (parita vzorů); vlastní kombinace dostanou obecné pravidlo „značka jen když spoj nepokrývá
+/// celý sloupec". Rozhodnutí Jan 10. 8. - obecné pravidlo ve standardních sloupcích by označkovalo
+/// 86 % odjezdů, což nerozlišuje nic.
+Method TestDenniZnackyProSloupec()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+
+	// ── známé kombinace: beze změny proti dnešku ────────────────────────────
+	for plk = "", ".", "X", "15", "6", "7", "+", "67", "67+", "16", "7+" {
+		set dny = $classmethod(cls, "DnySpoje", plk)
+		do $$$AssertEquals($classmethod(cls, "DenniZnackyProSloupec", plk, dny, "12345"), $classmethod(cls, "DenniZnacky", 0, plk), "pracovní sloupec = dnešek, plk="_plk)
+		do $$$AssertEquals($classmethod(cls, "DenniZnackyProSloupec", plk, dny, "6"), "", "oddělená sobota = bez značky, plk="_plk)
+		do $$$AssertEquals($classmethod(cls, "DenniZnackyProSloupec", plk, dny, "7+"), "", "oddělená neděle+svátky = bez značky, plk="_plk)
+		do $$$AssertEquals($classmethod(cls, "DenniZnackyProSloupec", plk, dny, "67+"), $translate($classmethod(cls, "DenniZnacky", 2, plk), "12345"), "slitý víkend = dnešek, plk="_plk)
+	}
+
+	// ── vlastní kombinace: obecné pravidlo ─────────────────────────────────
+	// sloupec „So + Ne" (bez svátku) - jinak by v něm sobotní spoj vypadal stejně jako víkendový
+	do $$$AssertEquals(..Znacky("6", "67"), "6", "jede jen v sobotu → značka 6")
+	do $$$AssertEquals(..Znacky("7", "67"), "7", "jede jen v neděli → značka 7")
+	do $$$AssertEquals(..Znacky("67", "67"), "", "jede oba dny sloupce → bez značky")
+	do $$$AssertEquals(..Znacky("67+", "67"), "", "svátek navíc sloupec nezajímá → bez značky")
+	do $$$AssertEquals(..Znacky("", "67"), "", "spoj bez omezení jede vždy → bez značky")
+
+	// značka nikdy nepojmenuje den, který ve sloupci není (chyba opravená v B29) - ověřeno na
+	// vlastní kombinaci, u standardního „7+" se značky netisknou vůbec (viz výše)
+	do $$$AssertEquals(..Znacky("6+", "567"), "6", "spoj So+svátek dostane ve sloupci Pá-Ne jen 6, svátek se nepropíše")
+
+	// vlastní kombinace mimo víkend („Vánoční provoz Po-St")
+	do $$$AssertEquals(..Znacky("X", "123"), "", "pracovní spoj pokryje Po-St → bez značky")
+	do $$$AssertEquals(..Znacky("13", "123"), "13", "jede jen Po a St → značky 1 a 3")
+}
+
+/// Zkratka pro TestDenniZnackyProSloupec - `plk` == vypsané dny (bez zkratky X).
+Method Znacky(plk As %String, sloupecDny As %String) As %String
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	quit $classmethod(cls, "DenniZnackyProSloupec", plk, $classmethod(cls, "DnySpoje", plk), sloupecDny)
+}
+
 }

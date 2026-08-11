@@ -1,5 +1,214 @@
 # Changelog
 
+## 2026-08-10 (12) - ✅ `B39` etapa 2: sloupec vývěsky jde omezit obdobím
+
+Tím je `B39` (a s ním tiket #13045b) hotový. Brány: build bez chyb, xUnit 798/798 (+26),
+Caché 89/89 (+3), živá parita vzorů prošla.
+
+**Co uživatel dostal:** u vlastního sloupce třetí podmínka **„Období"** - seznam rozsahů dat
+(„14.2.-18.2., 1.7.-31.8., 29.10.-30.10."). Datum **bez roku platí každý rok**, takže šablona
+přežije překlopení jízdního řádku; datum **s rokem** platí jednou (výluka, mimořádný provoz).
+Do sloupce patří spoj, který v období jede aspoň jeden den. **Kdo jede celé období, přijde
+o negativní značku** - nemá co vysvětlovat; kdo jen část („v létě nejede, na podzim ano"),
+značku si nechá. Zákazníkovy „dny školního vyučování" nepotřebují nic navíc - zadají se
+jako rozsahy, protože v datech AD žádný pojem „školní den" není (dopravní kalendář zná jen
+den v týdnu, svátek a sudý/lichý týden; slovo „školní" se v poznámkách 600 linek nevyskytuje).
+
+**Kdo rozhoduje, kdy spoj jede:** ne my. Vyhodnocení si vzala existující funkce EDISONu
+(`ALVA.ISY.ISYLinky.API.LinkyStatistika.jede`) - vrátí pro každý spoj **denní bitmapu** přes zadané
+období a řeší v ní datumová omezení, svátky, sudé/liché týdny i platnost linky. Voláme ji **jednou
+na linku** přes souhrn všech rozsahů (cache v `^||TiskAd`), sloupec je pak jen výřez z bitmapy;
+365 dní × 22 spojů stojí 0,013 s. Linku předáváme globálem - přes `id` by ji `cisloLinkyDoIndexu`
+převedla podruhé.
+
+**Past, kterou to odhalilo:** šablona s pevným datem („27.12.2026") u jízdního řádu platného
+2022-2023 vrátí u **všech** spojů „jede 0 dní" a sloupec zmlkne. Proto sloupec, jemuž po ořezu na
+platnost nezbyl žádný rozsah, **nebere nic a hlásí to** (`OBDOBI_MIMO_PLATNOST` → oranžový badge
+i dovětek u exportu PDF). Bez toho by vývěska tvrdila, že o Vánocích jedou všechny spoje.
+
+**Denní značky - rozhodnutí Jan po měření.** Sloupec, který slije víc druhů dne, musí jít rozlišit
+(spoj jedoucí jen v sobotu vypadá ve sloupci „So + Ne" stejně jako víkendový) a **negativní značka
+to nahradit nemůže** - nese datumové omezení, ne den v týdnu. Nové pravidlo („značka jen když spoj
+nepokrývá celý sloupec", a tiskne se **jen den, který sloupec obsahuje**) se proto zavádí
+**jen u kombinací, které dnešní rozvržení nezná**. Standardní sloupce zůstávají beze změny: obecné
+pravidlo by v „Neděle a svátky" označkovalo **6 269 ze 7 295 spojů (86 %)** a ve slitém víkendu
+4 386 z 8 213 (53 %) - značka na většině řádků nerozlišuje nic a je hlavně příznakem, že sloupec
+neodpovídá datům (v CB_CSADAD skoro žádný nedělní spoj o svátcích nejede). Komu to vadí, ať si
+sloupec rozdělí na „Neděle" a „Svátky" - od etapy 1 to jde. Konstrukcí přitom **nemůže nastat
+chyba `B29`**: značka nikdy nepojmenuje den, který ve sloupci není.
+
+**Dluh z etapy 1 splacen:** vzory sloupců staví server (`PresetySloupcu`, pole `PRESETY_SLOUPCU`)
+a klient je jen čte. Paritní test tím měří to, co editor reálně pošle, ne ruční kopii pravidel;
+bez načtených dat se vzory nenabízejí, protože prázdninový vzor postavený naslepo by neseděl na
+značky konkrétní linky.
+
+**Nález z prokliku (Jan, KOVED linka 824520): potlačení značky se nikdy nezapínalo.** Pokrytí období
+se počítalo přes **všechny kalendářní dny**, takže pracovní spoj podmínku „jede celé období" nesplnil
+nikdy - o víkendu nejede. Zákazníkův hlavní požadavek tím byl fakticky mrtvý (na živých datech
+nesplnil „jede celé období" ani jeden z 55 spojů linky). Nově se pokrytí počítá **jen přes dny, které
+sloupec pokrývá**; svátek se počítá jen sloupci, který ho vyjmenoval, aby „Pracovní dny" netvrdily,
+že pokrývají 1. květen. Doloženo: na téže lince po opravě mizí značka 18 u spojů jedoucích celé
+prázdniny (11 odjezdů na prvních 8 stránkách), předtím nemizela žádná.
+
+**Nález z prokliku (Jan, KOVED linka 802192):** hláška o nezařazených spojích počítala **odjezdy,
+ne spoje**. Tentýž spoj vypadne na každé zastávce linky zvlášť, takže tři nezařazené spoje (10, 23,
+38) hlásila jako „31 odjezdů" - číslo vypadalo desetkrát hůř, než jaká byla skutečnost, a nešlo
+z něj poznat, že jde pořád o totéž. Server nově posílá i čísla spojů (`NEZARAZENE_SPOJE_CISLA`),
+klient podle nich počítá spoje a časy nechává jako ukázku, kde je hledat. Bez čísel (starší server)
+se počítají časy jako dřív, hláška tedy nezmizí.
+
+⚠️ **Souvislost, která z toho plyne:** stránka vývěsky je jedna zastávka × směr, ale hláška sčítá
+celou linku. Že se na právě zobrazené zastávce nic nezmění, zatímco hláška naskočí, je normální -
+dotčená zastávka může být kterákoli z padesáti.
+
+**Ověřeno voláním na živých datech** (CB_CSADAD, linka 0365001): sloupec s obdobím „1.7.2023"
+(sobota) vzal 5 z 9 odjezdů, sloupec bez podmínky 9; u odjezdu 17:30 zmizela značka 29. Období
+„27.12.2026" nechalo sloupec prázdný a stránka nese hlášku. Gold digesty přebaselinovány - **jen
+md5**, počty stránek/zastávek/odjezdů/poznámek beze změny (přibylo pole `PRESETY_SLOUPCU`).
+
+## 2026-08-10 (11) - 🧭 `B39` etapa 2: dvě odpovědi od kolegy + upřesnění od zákazníka
+
+Tři nové vstupy (Jan, po implementaci etapy 1) - **nic z toho nemění etapu 1**, všechno se týká
+etapy 2 (období):
+
+1. **Prefix `k@`/`L@` je legacy věc - neřešit** (kolega). Dnešní zahazování při formátování textu
+   je správně; konzervativní pravidlo „poznámka s prefixem → spoj zařadit" v etapě 2 zůstává,
+   ale už není otevřená otázka. Měření výskytu `@` na živých datech tím odpadá.
+2. **Vyhodnocovač „kdy spoj skutečně jede" v EDISONu EXISTUJE** (kolega): legacy
+   `$$mkStaLin^JRapi(...)` a nová `ALVA.ISY.ISYLinky.API.LinkyStatistika` (metoda „jede");
+   statistiky dnes jedou na staré, nové funkce (oběhy) už na nové - **přecházet na novou**.
+   Tím **zlevňuje varianta (b)** („spoj v období skutečně jede"), kterou analýza odhadla jako
+   vlastní projekt kvůli chybějícímu kalendáři - kalendář/vyhodnocení drží ISY. Před návrhem
+   etapy 2 prověřit signaturu a co přesně vrací.
+3. **Zákaznický mail (#13045) upřesňuje očekávání od období:** sloupec má umět **víc rozsahů dat**
+   („14.2.-18.2., 1.7.-31.8., 29.10.-30.10."); „dny školního vyučování" = tentýž mechanismus;
+   a **auto-potlačení negativní značky**, když se omezení spoje kryje s obdobím sloupce celé
+   (značka se ukáže jen u spoje s výjimkou uvnitř období - „v létě nejede, na podzim ano").
+   To je silnější než ruční per-sloupcový seznam „nevypisovat" z etapy 1 (ten zůstává) a stojí
+   na vyhodnocení z bodu 2.
+
+## 2026-08-10 (10) - 🚧 `B39` etapa 1 implementovaná: vlastní sloupce vývěsky (dny + značky)
+
+**Nezacommitováno - blok L čeká na proklik Jana** (viz klikací cesty v reportu/žurnálu). Všechny
+brány zelené: build bez chyb, xUnit 772/772 (+10), Caché 86/86 (+1), **živá parita presetů prošla**.
+
+**Co uživatel dostal:** dialog odjezdů má třetí tab **„Definice sloupců"** - přepínač
+Automaticky (dle linky) / Vlastní sloupce, až 5 sloupců, u každého nadpis (dvouřádkový), dny
+(Po-Ne + Svátek), značky „jen s těmito" / „bez těchto" a per-sloupcové „nevypisovat značky"
+(přestěhování `B63` z linky na sloupec). Čtyři dnešní rozvržení jako vzory jedním klikem -
+prázdninové se předvyplní čísly značek z konfigurace aktuální linky (nová pole `NZ_KONFIG`
++ `NEVYPISOVAT_ZNACKY_SLOUPCU` ve values). Nepokryté spoje hlásí oranžový badge ve status baru
+(konkrétní minuty + tooltip s cestou) a dovětek hlášky exportu PDF. Nový prvek odjezdů z palety
+začíná se vzorem Prac/So/Ne (rozhodnutí Jan: návrhář je primární); PDF import zůstává na
+Automaticky. `TR10` (skrývání víkendových spojů) tím je pokryté vylučovacím seznamem.
+
+**Technicky:** definice žije na prvku (`CustomColumns`, aditivní JSON - bez bumpu verze dle
+konvence, starší build ji ignoruje = přesně backup chování). Na server jde jako JSON parametr
+`DEFINICE_SLOUPCU` (infrastrukturní klíč, ne parametr sestavy) skládaný VŽDY čerstvě ze šablony
+v `ComposeGetDataParams` - nikdy přes `_previewParams`, aby ho nepřepsala persistovaná hodnota
+(třída chyb `B24`). Data nově závisí na obsahu šablony → `RefetchIfColumnsDefinitionChanged`
+(dialog OK, undo, redo) porovnává snapshot definice a přenačítá. Server: druhý režim zařazování
+(`ParseDefiniceSloupcu`, `ZarazeniSpojeDleDefinice`, `DenniZnackyDleDefinice`,
+`ZnackaSkrytaDleDefinice`, `NEZARAZENE_SPOJE`); dnešní kód je nedotčený režim „automaticky".
+`X` v platnosti = pracovní dny 1-5; nerozpoznaná platnost → spoj se nikam nezařadí (hlásí se,
+legacy ho tiše zahazovala se stejným výsledkem tisku).
+
+**Pojistky:** `ZastavkoveJrAdDefiniceParitaTest` - **preset postavený z konfigurace linky dává na
+živých datech (CB_CSADAD gold linky) bajtově stejný výstup jako režim automaticky** (digest celého
+GetData). K tomu jednotkové paritní testy napříč FTL × platnost × značky. Gold digesty
+přebaselinované (jen md5 - dvě nová pole ve values; počty beze změny). Dvě vědomé odchylky od
+legacy, obě dokumentované testem: prázdninové rozvržení bez NZ konfigurace dává pracovní spoj do
+obou pracovních sloupců (legacy jen do 1.); víkendové denní značky se u netypických kombinací dnů
+(např. sloupec jen So+Ne) netisknou konzervativně jako legacy.
+
+**Doladěno po prokliku (Jan, 10. 8.):**
+
+- Tab se jmenuje **„Vlastní definice sloupců"**; rozdělení vs. tab Sloupce je vědomý atyp -
+  definice je **zdroj** sloupců (jako nastavení linky v automatice), tab Sloupce zůstává
+  **zobrazovací vrstva** (přepis nadpisu / viditelnost / pořadí / styl) a přepis vyhrává nad
+  zdrojem - totéž pravidlo jako u sloupců z linky, žádná synchronizace není potřeba.
+  Sloučení tabů zavrženo (přidávání sloupců by bylo atyp ve sdíleném vzoru tabulkových dialogů).
+- Combo vzorů **předvybere vzor, kterému aktuální sloupce odpovídají** - prázdné combo vypadalo
+  jako neuložený vzor (stav nese seznam sloupců, ne combo).
+- Pátá volba **„Prázdná (sloupce si přidáte sami)"** - stavba od nuly bez vzoru.
+- **Validace seznamů značek** při OK (jen čísla oddělená čárkou) - „10;20" by server tiše přečetl
+  jako samotnou 10, „abc" jako nulu; teď dialog nezavře a jmenuje chybný sloupec.
+- Tooltip **„Negativní značky"**: číslo přiděluje JŘ spolu s datovým omezením; vývěska filtruje
+  podle čísla jako faktu a platnost nevyhodnocuje (to je etapa 2).
+- Nový sloupec **nezdědí styl po smazaném** (uvolněná id s uloženým stylem se přeskakují).
+- Kombinace podmínek zůstávají vědomě volné (táž značka v „jen" i „bez" = prázdný sloupec;
+  díru hlásí upozornění). Parametr sestavy „Rozdělení sloupců" se při aktivní definici neuplatní
+  (definice přebíjí linku celou) - případné schování parametru je kosmetika na později.
+
+**Zapracované nálezy z code review (před commitem):**
+
+- **Sloupec bez zaškrtnutých dnů neomezoval podle kontraktu, ale vyřazoval** - spoj s omezenou
+  platností do něj nikdy nespadl (sloupec „jen značka X, kterýkoli den" nešel postavit). Opraveno
+  + test.
+- **Zastávka, jejíž všechny odjezdy spadly mimo sloupce, zmizela i s varováním** - prázdná stránka
+  se zahodila dřív, než se zapsalo NEZARAZENE_SPOJE. Teď stránka vyjde (prázdná + varování).
+- **Enter v dialogu ztrácel rozepsaný text** (pole ukládala až při opuštění, OK je výchozí
+  tlačítko) - pole definice ukládají průběžně.
+- **Validace značek chytá i mezeru místo čárky** („52 53" by server přečetl jen jako 52).
+- **Re-fetch při změně definice jde přes centrální vykonání příkazů** - chytá i přidání/smazání/
+  vložení prvku odjezdů, ne jen dialog a undo/redo. Snapshot definice se zapisuje až po
+  ÚSPĚŠNÉM načtení dat a souběžné fetche kryje generace (spadlý/pomalý fetch nezamaskuje
+  potřebu obnovy).
+- **Výchozí vzor dostává jen PRVNÍ prvek odjezdů v šabloně a jen u zastávkového JŘ AD** - druhý
+  prvek by definicí tiše přepnul data celé šablony a u MHD by dialog tvrdil vlastní sloupce,
+  které její server nečte.
+- Oranžový badge se čistí při zahození dat (přepnutí agendy/instance) a jeho tooltip vede na
+  správný tab („Vlastní definice sloupců").
+- Dluh do etapy 2: paritní Caché test staví preset vlastním zrcadlem `DepartureColumnPresets.Build`
+  (ručně synchronizované kopie) - při rozšíření presetů sjednotit zdroj, jinak parita hlídá zrcadlo,
+  ne to, co klient reálně posílá.
+
+## 2026-08-10 (9) - 🧭 `B39` rozhodnuto: vlastní sloupce vývěsky, zadání ve dvou etapách
+
+Domluva Jan + kolega dokončena - pět otázek z (6) je zodpovězených, blok přechází z „domluva" na
+„implementace". Rozhodnutí:
+
+- **Kde žije:** definice sloupců v šabloně; edituje se v dialogu sloupců **prvku mřížky odjezdů**.
+  **Jedna definice na šablonu** - ovlivňuje data celé vývěsky včetně legendy, ne jen prvek; kdyby
+  šablona měla prvků odjezdů víc, sdílí ji.
+- **Přednost (backup režim):** šablona s definicí → linkové seznamy (`MHD_NENZ1_NENZ2`,
+  `MHD_NEZNZ123`) se ignorují **celé**; šablona bez definice → dnešní chování beze změny (Nitra se
+  nezmění ani o pixel). **Nemíchat** - žádné „dny ze šablony, značky z linky". Nové šablony
+  předvyplní výchozí vzor (Prac / So / Ne+svátky), takže se linkové zadání opouští přirozeně,
+  bez jednorázové migrace; nová JŘ ho už nabízet nemusí, číst ho ale musíme umět napořád.
+- **Model sloupce:** max 5 sloupců, u každého kaskáda podmínek **dny → značky → období**; značky
+  jako **dva seznamy** (jen s těmito / bez těchto - vylučovací je podmínka pohlcení `TR10`)
+  + per-sloupec seznam **„nevypisovat značku"** (přestěhování `B63` z linky na sloupec).
+  Nevyplněná podmínka neomezuje. Překryvy sloupců jsou legitimní (jsou i dnes) - pojistka se staví
+  jen na díry.
+- **Díra v pokrytí:** viditelné upozornění „N spojů nespadá do žádného sloupce" (a které)
+  v návrháři **i při tisku**, ne tvrdý zákaz. Kontrola jde jen nad načtenými daty, proto musí být
+  i v tiskové cestě - šablona bez díry u linky A může mít díru u linky B.
+- **`X` v týdenní platnosti** = legislativní zkratka pracovních dnů (kolega) → při vyhodnocování
+  pravidla se počítá jako 1-5.
+- **Číslování negativních značek je konzistentní per skupina linek** (kolega) → konkrétní čísla
+  značek v šabloně jsou v pořádku, odkaz „přes roli" není potřeba. Pojistka proti použití šablony
+  nad jinou skupinou: editor u zadané značky zobrazí její význam z aktuálních dat.
+
+**Etapa 1 (bez otevřených otázek): dny + značky.** Editor sloupců, presety čtyř dnešních rozvržení,
+upozornění na nepokryté spoje, JSON šablony verze + migrace (R5), serverový druhý režim zařazování
+(dnešní kód zůstává jako režim „automaticky"), definice do `GetData` jako JSON parametr
+(allowlist `ServerSideParams`) a **re-fetch při úpravě sloupců** - data nově závisí na obsahu
+šablony, to je jediná nová vazba. Testy: zlaté odtisky beze změny (kryjí backup režim) + „preset
+přes nový režim == dnešní výstup" na živých datech.
+
+**Etapa 2 (blokovaná na business odpovědích): období.** Navržená pravidla čekají na odkývání:
+„jede jen" = patří, jen když se data protínají s obdobím; „nejede" vyřazuje **jen při pokrytí
+celého** období sloupce; „jede"/„jede také" **nikdy nevyřazují** (jen přidávají jízdy → pro
+zařazení se ignorují, do legendy jdou jako dnes); sudé/liché týdny neumíme rozhodnout → zařadit
+a nechat na uživateli; víc poznámek naráz = platí všechny zároveň (potvrzeno). Otevřené: význam
+prefixu `k@`/`L@` v datových omezeních (kolega neví - dohledat; do té doby konzervativně „neumíme
+rozhodnout → zařadit", předem změřit výskyt na živých datech). Rozdíl „jede" vs. „jede také" **není
+blokující** - pravidlo „nikdy nevyřazuje" ho obchází; bude potřeba, až kdyby „jede také" mělo spoj
+do sloupce přitahovat.
+
+**Rozsah:** jen AD. MHD má vlastní typy provozu a nemění se (rozhodnutí Jan).
+
 ## 2026-08-10 (8) - Test závislý na stroji už neprojde do repa
 
 Návazně na opt-in baseline níže: aby se opakování téhož nespoléhalo na to, že si na to někdo vzpomene,

@@ -8,10 +8,14 @@
 
 > **Stav k 2026-08-10.**
 >
-> **▶ Další krok: `B39`** (vlastní skupiny dnů) - **nejdřív domluva s kolegou nad tvarem**, ne kód;
-> pět otázek k rozhodnutí je v changelogu 2026-08-10 (6). Malá alternativa už ve frontě není.
-> Velké alternativy: **Fáze B** (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít
-> vcelku) nebo linkový JŘ (**B10** + **B13**) jako dedikovaný slot.
+> **▶ Zastávkový JŘ nemá otevřenou práci.** `B39` (vlastní sloupce vývěsky, #13045b) je hotová
+> oběma etapami 10. 8. - fronta KOVED je tím dojetá. **Další krok si vyber:** **Fáze B**
+> (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
+> (**B10** + **B13**) jako dedikovaný slot.
+>
+> **Nedodělek k `B39`:** zákazníkovi poradit, jak sloupce skládat - nedělní a sváteční provoz se
+> rozliší rozdělením sloupce, ne značkami (v datech skoro žádný nedělní spoj o svátcích nejede,
+> značka by padla na 86 % odjezdů). Patří to do wiki seedu, ne do kódu.
 >
 > **Sada TRANSDEV je celá rozdělená** (10. 8.) - 5 hotových, cíl / obrácené poznámkování / odsazení
 > per směr berou **kolegové** (proto tady nejsou), skrývání spojů o víkendu pohltilo #13045, „<1"
@@ -51,11 +55,7 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md).
 
 `B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový** (body 1, 2 a 4 šly do verze
-4. 8.). Z kola KOVED zbývá jediná věc - `B39` (vlastní skupiny dnů), a je to velký blok.
-
-| # | Blok | Vel. | Uzavírací podmínka |
-|---|---|---|---|
-| **B39** | **#13045b vlastní skupiny dnů** - dnes pevné pracovní dny / soboty / neděle. Klient chce vlastní skupiny s obdobími („Vánoční provoz 27.-29. 12.", „Prázdniny" s několika rozsahy, „Dny školního vyučování"), spoje se do sloupce vyberou podle období. Mění datový model + chce editor. **Zbytek tiketu po `B29`** - ohlášená chybná značka je opravená 31. 7. (`B29`, archiv), takže část „netiskni značku, kterou už říká nadpis sloupce" je hotová a pro vlastní skupiny se jen musí dodržet i u nich. Pravidlo značek už existuje (`DenniZnacky`). **Návrh kolegy (7. 8.), který tenhle blok mění na obecný:** definovat sloupec v sekci minut buď (a) **seznamem negativních značek** - vypiš spoje, které je mají (tím padnou prázdniny), nebo (b) **rozsahem dnů** - spočítej, které spoje v těch dnech jedou (tím padne vánoční provoz a podobné speciality). Dnešní pevné schéma se tím stane presetem. **Pohltí to `TR10`** (skrývání spojů o So/Ne/svátcích - **rozhodnutí Jan 7. 8.: nedělat zvlášť**), ale **jen když sloupec umí i vyloučení**, ne jen zahrnutí: TRANSDEV má spoj, který podle dat jede, a ve víkendovém sloupci ho nechce - s pouhým „vypisuj spoje s těmito značkami" by musel označkovat všechny, které vidět chce. Dnešní per-linkový seznam „nevypisovat spoje se značkou" = ten vylučovací seznam, dnešní pevné schéma = preset. ⚠️ **Pozičnost seznamů značek se rozbije** (zapsat Jan 10. 8.): `B63` i `TR10` stojí na per-linkových seznamech, kde **slot N = sloupec N** - to má smysl jen u dnešních čtyř pevných rozvržení. Jak budou sloupce vlastní (dají se přidat, přejmenovat, přeřadit), index sloupce přestane být stabilní a oba seznamy ztratí význam. Domluva Jan + kolega: **přesunout je rovnou do návrháře** - každý sloupec si nese svůj seznam potlačených značek i svůj vylučovací seznam, místo pozičního zápisu u linky. Pak je ale potřeba rozhodnout, **co s existující per-linkovou konfigurací** (`MHD_NEZNZ123` má vyplněné každá linka MHD Nitra) - čtení jako záskok, jednorázová migrace, nebo obojí. ⚠️ Varianta (b) potřebuje **vyhodnocovač „jede spoj v datu X"**, který dnes nemáme: omezení spoje umíme jen formátovat do textu (`SestavTextOmezeni`), ne jimi počítat. To je skutečná práce tohoto bloku. ⚠️ Otevřená otázka pro kolegu: **rozsah čísel negativních značek je firemní** (`^JRSET("Cis","InPlatODDO")` + symboly `InPlatOzn`), ale význam značky plyne z omezení jednotlivých spojů - takže není jisté, že „značka 3" znamená na dvou linkách totéž. Na tom stojí, jestli seznam značek smí žít v šabloně, nebo musí zůstat u linky. Rozsahy dnů jsou naopak na lince nezávislé, takže do šablony patří. | L | koncept skupin + editor |
+4. 8.). `B39` (vlastní sloupce vývěsky) hotová 10. 8. → **z kola KOVED nezbývá nic**.
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
@@ -88,6 +88,11 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
 ---
 
 ### 📥 Backlog / budoucí velké tracky
+
+- **`B65` Kalendářový výběr období u sloupce vývěsky** (S, rozhodnutí Jan 10. 8.: do první verze
+  stačí text). Dnes se rozsahy dat píšou ručně („14.2.-18.2., 1.7.-31.8.") a tvar hlídá validace
+  při OK. Až se featura usadí, nahradit vybíráním v kalendáři - u „dnů školního vyučování" je ruční
+  psaní desítek rozsahů otravné. Tvar zápisu na wire se tím nemění, jde čistě o zadávání.
 
 - **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
   věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,

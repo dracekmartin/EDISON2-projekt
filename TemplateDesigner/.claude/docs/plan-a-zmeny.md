@@ -38,6 +38,54 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 10. 8. 2026 - Sloupce vývěsky si nadefinujete v šabloně
+
+Dosud byly sloupce vývěsky (Pracovní dny / Soboty / Neděle a svátky…) dané napevno nastavením
+linky. Nově si je můžete nadefinovat přímo v šabloně: v dialogu prvku odjezdů přibyl tab
+**Vlastní definice sloupců**, kde každému sloupci (nejvýše pěti) určíte:
+
+- **nadpis** (i dvouřádkový),
+- **dny v týdnu** včetně svátku,
+- **značky** - „jen spoje se značkami" nebo naopak „bez spojů se značkami" (tím jde třeba schovat
+  vybrané spoje z víkendového sloupce),
+- **nevypisovat značky** - spoj se vytiskne, jen se u minuty neopakuje značka, kterou už říká
+  nadpis sloupce.
+
+Čtyři dosavadní rozvržení jsou připravená jako **vzory** jedním klikem (prázdninové vzory se
+předvyplní čísly značek z aktuální linky) a pátá volba **Prázdná** nechá stavbu sloupců úplně
+na vás. Existující šablony se nemění - dokud definici nezapnete, sloupce se dál řídí nastavením
+linky.
+
+Když nadefinované sloupce nepokryjí všechny spoje, návrhář to ukáže ve stavovém řádku
+(„N odjezdů nespadá do žádného sloupce") a totéž zopakuje při exportu do PDF - žádný odjezd
+tak nezmizí bez povšimnutí.
+
+### 10. 8. 2026 - Sloupec vývěsky můžete omezit obdobím
+
+K dnům a značkám přibyla u sloupce třetí podmínka - **Období**. Zadáte do ní rozsahy dat oddělené
+čárkou, například `14.2.-18.2., 1.7.-31.8., 29.10.-30.10.` pro prázdninový sloupec. Do sloupce pak
+patří spoje, které v zadaném období aspoň jeden den jedou.
+
+- **Datum bez roku** (`1.7.-31.8.`) platí každý rok - šablona vám vydrží i po překlopení jízdního
+  řádku na další období.
+- **Datum s rokem** (`27.12.2026-29.12.2026`) platí jednorázově, třeba pro výluku nebo mimořádný
+  provoz.
+- Sloupec „dny školního vyučování" se zadá stejně - jako rozsahy dat pro daný rok.
+
+**Negativní značky se přitom uklidí samy.** Když spoj jede celé období sloupce, značka u minuty
+se nevypisuje - nemá co vysvětlovat. Zůstane jen u spojů, které mají uvnitř období výjimku
+(„v létě nejede, na podzim ano").
+
+Období se vyhodnocuje proti skutečnému provozu spoje, tedy včetně svátků a sudých/lichých týdnů.
+Pokud zadané období leží mimo platnost jízdního řádku, sloupec zůstane prázdný a návrhář na to
+upozorní ve stavovém řádku i při exportu - typicky se to stane u šablony s pevným rokem po
+překlopení jízdního řádku.
+
+> **Tip k rozlišení nedělního a svátkového provozu.** Ve sloupci, který slévá víc druhů dne
+> („Soboty, neděle a svátky"), poznáte podle kroužkové značky, který spoj jede jen část z nich.
+> Pokud potřebujete odlišit neděli od svátku, je čitelnější dát jim **vlastní sloupce** než
+> značkovat většinu odjezdů - v datech obvykle jede o svátcích jen zlomek nedělních spojů.
+
 ### 10. 8. 2026 - Krátká jízdní doba se dá vytisknout jako „<1"
 
 Časy jízdy se na vývěsce počítají od zastávky, pro kterou se tiskne. Když se na následující zastávku
