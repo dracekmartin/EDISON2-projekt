@@ -6,6 +6,9 @@ update flow: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md).
 
 Bootstrap orchestruje `Startup/AppBootstrapper` (template method: setup wizard → prefs →
 login → MLRest → firma → VerifyLic → module tree → update check → font → shell okno).
+**Po návratu z `Run` bootstrapper dožil** - co běží dál, má vlastní session-scoped objekt
+(`SessionSwitcher` = přihlášení jiného uživatele, `ShellShutdown` = vynucené ukončení);
+skládání session sdílí obě cesty přes `SessionFactory.Establish`.
 Login okno (jen Release dialog path) zůstává po OK otevřené jako progress podklad přes
 post-login kroky a zavírá se až na shell `ContentRendered`; `HandOffLoginWindow` musí
 přiřadit `Application.MainWindow` na shell **před** restore `OnMainWindowClose` — implicitní
@@ -42,7 +45,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 - DEBUG build má verzi `999999.9` — netriggeruje update check.
 - Zavření shellu (= ukončení aplikace i všech agend) se potvrzuje v `Closing` přes
   `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu
-  musí jít přes `AppBootstrapper.ShutdownForced` / `SuppressCloseConfirm`** — jinak force logout
+  musí jít přes `ShellShutdown.Force` / `SuppressCloseConfirm`** — jinak force logout
   nebo version gate uvízne na dialogu, který smí uživatel odmítnout.
 
 ## UI pasti
