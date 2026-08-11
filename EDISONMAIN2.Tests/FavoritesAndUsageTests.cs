@@ -11,6 +11,7 @@ using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDTesting;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
+using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
 
 namespace EDISONMAIN2.Tests;
 
@@ -436,43 +437,9 @@ public class FavoritesAndUsageTests
         Assert.Contains(nameof(vm.IsPartnerSolutionsTabActive), raised);
     }
 
-    // ---------- harness (mirror EdisonMainViewModelTests) -----------------
+    // ---------- harness ----------------------------------------------------
 
-    private static readonly CompanyStruct[] Companies = [new() { Id = "CB_DP", Database = "CB_DP" }];
-
-    private static EdisonMainViewModel CreateVM(IUserPrefsService prefs, IReadOnlyList<IModule> tree)
-    {
-        var mlRest = MLRestMocks.Create("CB_DP");
-        mlRest.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
-            .Returns(MLRestMocks.Output("3"));
-
-        var treeGetter = Substitute.For<IModuleTreeGetter>();
-        treeGetter.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(tree);
-        treeGetter.GetModuleTree(Arg.Any<IMLRest>(), "system").Returns([]);
-        treeGetter.GetModuleTree(Arg.Any<IMLRest>(), "partners").Returns([]);
-
-        var svc = new EDServices(mlRest, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
-        {
-            UserPrefs = prefs,
-        };
-        var localPrefs = Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, localPrefs, () => { }, () => { });
-
-        EDServices.Initialize(svc);
-        EdisonMainViewModel vm;
-        try
-        {
-            vm = new EdisonMainViewModel(Companies, mlRest, treeGetter, initialLicence: null, switcher,
-                () => new(SwitchUserResult.Cancelled, null), localPrefs, () => [], () => { }, MiniAppCatalog.Build([]),
-                restRunner: new InlineRestCallRunner(mlRest));
-        }
-        finally
-        {
-            EDServices.Reset();
-        }
-        // Session state se plní až v InitializeAsync (v produkci z ContentRendered); s inline
-        // runnerem je load synchronní, takže GetResult tady nemá na co čekat.
-        vm.InitializeAsync().GetAwaiter().GetResult();
-        return vm;
-    }
+    private static EdisonMainViewModel CreateVM(IUserPrefsService prefs, IReadOnlyList<IModule> tree) =>
+        EdisonMainViewModelHarness.CreateVM(
+            companies: OneCompany, treeGetter: TreeGetterWith(tree), userPrefs: prefs);
 }
