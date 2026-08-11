@@ -47,7 +47,7 @@
                      x:Name="ErrorText"
                      IsReadOnly="True"
                      TextWrapping="NoWrap"
-                     FontFamily="Consolas"
+                     FontFamily="{DynamicResource EDTheme.FontFamily.Mono}"
                      FontSize="{DynamicResource EDTheme.FontSize.Caption}"
                      VerticalScrollBarVisibility="Auto"
                      HorizontalScrollBarVisibility="Auto"

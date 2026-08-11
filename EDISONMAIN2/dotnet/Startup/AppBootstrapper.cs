@@ -9,7 +9,6 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDControls.UserFonts;
-using EDControls.UserPrefs;
 using EDISONMAIN2.LegacyMiniApps;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.ChangelogWindow;
@@ -23,28 +22,11 @@ using Application = System.Windows.Application;
 namespace EDISONMAIN2;
 
 /// <summary>
-/// Výsledek pokusu o přepnutí uživatele. <see cref="Outcome"/> rozlišuje úspěch, zrušení
-/// v login dialogu a selhání licence pro nového uživatele.
-/// </summary>
-public record SwitchUserOutcome(SwitchUserResult Outcome, Lic? Licence);
-
-public enum SwitchUserResult
-{
-    /// <summary>Uživatel zrušil login dialog. Shell pokračuje s původním session beze změny.</summary>
-    Cancelled,
-    /// <summary>Licence pro nového uživatele přesáhla limit (admin retry / non-admin). Caller obvykle ukončí app.</summary>
-    LicenceRefused,
-    /// <summary>Admin v LicenceVerifier retry loop zvolil Storno. Caller obvykle ukončí app.</summary>
-    LicenceCancelled,
-    /// <summary>Nový uživatel přihlášen, MLRest swapnut, licence platná.</summary>
-    Success,
-}
-
-/// <summary>
 /// Pojmenované kroky startup workflow s jasnými error/cancel exit pointy (login zrušený,
 /// licence Refused/Cancelled, connection error). App.xaml.cs jen vytvoří bootstrapper,
 /// zavolá <see cref="Run"/> a ukáže okno (nebo nic pokud Run vrátil null — Shutdown už
-/// proběhl uvnitř).
+/// proběhl uvnitř). Po návratu z <see cref="Run"/> bootstrapper dožil: co má běžet dál,
+/// dostane vlastní objekt (<see cref="SessionSwitcher"/>, <see cref="ShellShutdown"/>).
 ///
 /// Testovatelnost: každý krok je <c>protected virtual</c>, testovatelný subclass přepíše
 /// jen ty které potřebuje (typicky <see cref="InitializeServices"/>, <see cref="PrepareLogin"/>,
@@ -54,18 +36,19 @@ public enum SwitchUserResult
 public class AppBootstrapper
 {
     private readonly Application _application;
+    private readonly ShellShutdown _shutdown;
 
     public AppBootstrapper(Application application)
     {
         _application = application;
+        _shutdown = new ShellShutdown(application);
     }
 
     /// <summary>Pro test-only subclassy — neinjektuje <see cref="Application"/>, takže
     /// derived class MUSÍ přepsat všechny metody co by ho použily (Shutdown, BuildShellWindow,
     /// WireActivityFailedHandler, Release branch TryLogin).</summary>
-    protected AppBootstrapper()
+    protected AppBootstrapper() : this(null!)
     {
-        _application = null!;
     }
 
     /// <summary>
@@ -125,14 +108,15 @@ public class AppBootstrapper
 
         // Až po SavePostLoginState — LastIdfa musí být uložená i když teď shell skončí updatem.
         _startupLoginWindow?.ShowProgress("Kontroluji aktualizace…");
-        if (CheckForUpdate(session, services))
+        var update = CheckForUpdate(session, services);
+        if (update.ShouldExit)
         {
             Shutdown();
             return null;
         }
 
         _startupLoginWindow?.ShowProgress("Spouštím aplikaci…");
-        var wnd = BuildShellWindow(prep, session, licence, services, nav, popup, prefs);
+        var wnd = BuildShellWindow(prep, session, licence, services, nav, popup, prefs, update.Notice);
         HandOffLoginWindow(wnd);
         return wnd;
     }
@@ -154,9 +138,12 @@ public class AppBootstrapper
 
     /// <summary>
     /// Klientský update check — mandatory, bez user volby (stanice nemá co rozhodovat).
-    /// Vrací true = shell se má ukončit (spawnutý EDUPDATE / rozbitý stav). Viz docs/UPDATE_FLOW.md §7.
+    /// <c>ShouldExit</c> = shell se má ukončit (spawnutý EDUPDATE / rozbitý stav);
+    /// <c>Notice</c> = běžící notice-only kontrola release serveru pro status bar.
+    /// Viz docs/UPDATE_FLOW.md §7.
     /// </summary>
-    protected virtual bool CheckForUpdate(SessionContext session, EDServices services)
+    protected virtual (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) CheckForUpdate(
+        SessionContext session, EDServices services)
     {
         var updater = new Updater();
         var settings = updater.LoadSettings(session.MLRest);
@@ -176,23 +163,16 @@ public class AppBootstrapper
                     services.PopupDisplayer.Info(
                         $"Aktualizaci nelze spustit ({ex.Message}). Kontaktujte Vašeho správce IS.");
                 }
-                return true;
+                return (true, null);
             case UpdateOutcome.Broken:
                 services.PopupDisplayer.Info(result.Message);
-                return true;
+                return (true, null);
             default:
                 // Notice-only kontrola release serveru M-line běží paralelně se stavbou shellu;
                 // výsledek napojí BuildShellWindow do status baru. Viz docs/UPDATE_FLOW.md §7.
-                _releaseNoticeTask = Task.Run(
-                    () => updater.GetReleaseNotice(settings, VerzeInf.Current));
-                return false;
+                return (false, Task.Run(() => updater.GetReleaseNotice(settings, VerzeInf.Current)));
         }
     }
-
-    private Task<ReleaseNoticeResult>? _releaseNoticeTask;
-
-    /// <summary>Nastaví <see cref="BuildShellWindow"/> — viz <c>ShutdownForced</c>.</summary>
-    private Action? _suppressShellCloseConfirm;
 
     /// <summary>Login okno držené otevřené přes post-login kroky (jen Release dialog path);
     /// zavře ho <see cref="HandOffLoginWindow"/> po vykreslení shellu.</summary>
@@ -205,12 +185,6 @@ public class AppBootstrapper
         CompanyStruct StartCompany,
         string Server,
         int Port);
-
-    /// <summary>Connection info — vstup do <see cref="EstablishSession"/>. Sdílí initial bootstrap a user switch.</summary>
-    protected record ConnectionInfo(string Server, int Port, string Database, string Idfa);
-
-    /// <summary>Sdílený postlogin kontext (real MLRest + licence loader factory).</summary>
-    protected record SessionContext(IMLRest MLRest, LoginResult Login, Func<Lic?> LicenceLoader);
 
     // ----- Virtual hooks: production defaults, test overrides -----
 
@@ -377,33 +351,7 @@ public class AppBootstrapper
     }
 
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
-    {
-        var inner = new MLRest(conn.Server, conn.Port, conn.Database, conn.Idfa)
-        {
-            LoginName = login.UserName,
-            FullName = login.FullName,
-            Mlp = login.Mlp.ToString(),
-            // Aktivuje server-side per-request version gate (prázdná verze = gate neběží).
-            EdisonVersion = VerzeInf.Current
-        };
-#if DEBUG
-        // Deterministický GUID v dev: Stop Debugging (hard-kill) ACTIVITY zámek neuvolní, ale
-        // příští spuštění reusne stejný klíč (idfa~ip~guid) → zámek se přepíše, neakumuluje se
-        // (a neroste falešně licenční počet). V produkci náhodný GUID per session (default).
-        inner.GUID = $"DEV-{Environment.MachineName}-{Environment.UserName}";
-#endif
-        var mlRest = new MLRestAdapter(inner);
-
-        services.IsAdmin = login.IsAdmin;
-        // services.MLRest se musí nastavit už tady — admin override v LicenceVerifier spouští
-        // USERS.exe přes WindowNavigator.ShowLegacyAndWait, ten čte connection z EDServices.Current.MLRest.
-        services.MLRest = mlRest;
-        services.UserPrefs = new CacheUserPrefsService(mlRest);
-
-        var licenceService = new LicenceService(mlRest.Inner);
-        services.LicenceLoader = licenceService.GetActiveLicence;
-        return new SessionContext(mlRest, login, licenceService.GetActiveLicence);
-    }
+        => SessionFactory.Establish(conn, login, services);
 
     protected virtual (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session, EDServices services)
         => LicenceVerifier.TryAcquireSession(
@@ -427,73 +375,36 @@ public class AppBootstrapper
     /// <summary>
     /// Factory pro delegát který napojí EdisonActivityFailed handler na daný MLRest. Použito
     /// pro initial bootstrap (<see cref="WireActivityFailedHandler"/>) i pro user switch
-    /// (<see cref="SwitchUser"/> swapuje MLRest a musí napojit handler znovu).
+    /// (<see cref="SessionSwitcher"/> swapuje MLRest a musí napojit handler znovu).
     /// </summary>
-    private Action<IMLRest> BuildActivityFailedWire(EDServices services) => mlRest =>
+    private Action<IMLRest> BuildActivityFailedWire(EDServices services)
     {
-        if (mlRest is not MLRestAdapter adapter) return;
-        adapter.Inner.EdisonActivityFailed += (_, _) =>
-            _application.Dispatcher.Invoke(() =>
-            {
-                services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
-                ShutdownForced();
-            });
-        // Server per-request version gate (date+full segmenty) — viz docs/UPDATE_FLOW.md §5.
-        adapter.Inner.EdisonVersionFailed += (_, _) =>
-            _application.Dispatcher.Invoke(() =>
-            {
-                services.PopupDisplayer.Info("Rozdílná verze Caché a verze Edison, aplikace bude ukončena.");
-                ShutdownForced();
-            });
-    };
-
-    /// <summary>Login dialog pro user switch — owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
-    protected virtual LoginResult? PromptLoginForReauth(MLRest loginRest)
-    {
-        var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, showRemember: false)
+        // Lokální kopie polí: delegát žije po celou session, closure na bootstrapper by ho držela taky.
+        var app = _application;
+        var shutdown = _shutdown;
+        return mlRest =>
         {
-            Owner = _application.MainWindow,
-        };
-        return loginWindow.ShowDialog() == true ? loginWindow.Result : null;
-    }
-
-    /// <summary>
-    /// Reauth flow ("Přihlásit jiného uživatele"): prompt → close all → reuse <see cref="EstablishSession"/>
-    /// (drží UserPrefs cache + LicenceService synchronně s MLRest) → wire activity → acquire licence.
-    /// Při zrušení v login dialogu nic neudělá; při selhání licence MLRest už je swapnut, caller
-    /// obvykle volí shutdown (rollback nelze: closeAllWindows už proběhlo).
-    /// </summary>
-    public SwitchUserOutcome SwitchUser(EDServices services, Action closeAllWindows)
-    {
-        var current = ((MLRestAdapter)services.RequireMLRest).Inner;
-        var login = PromptLoginForReauth(current);
-        if (login == null) return new(SwitchUserResult.Cancelled, null);
-
-        closeAllWindows();
-
-        // Odhlásit starého uživatele — jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
-        // do server-side timeoutu. Až po confirmu (login != null), před swapem session.
-        // Flush telemetrie ještě pod starou session — server bere userID z ní.
-        EDUsageTelemetry.Flush(services.MLRest);
-        SessionLogout.Logout(services.MLRest);
-
-        var session = EstablishSession(
-            new ConnectionInfo(current.Server, current.Port, current.DataNamespace, current.Idfa),
-            login, services);
-        WireActivityFailedHandler(session, services);
-
-        var (outcome, licence) = AcquireSession(session, services);
-        return outcome switch
-        {
-            LicenceAcquireOutcome.Accepted => new(SwitchUserResult.Success, licence),
-            LicenceAcquireOutcome.Refused => new(SwitchUserResult.LicenceRefused, null),
-            _ => new(SwitchUserResult.LicenceCancelled, null),
+            if (mlRest is not MLRestAdapter adapter) return;
+            adapter.Inner.EdisonActivityFailed += (_, _) =>
+                app.Dispatcher.Invoke(() =>
+                {
+                    services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
+                    shutdown.Force();
+                });
+            // Server per-request version gate (date+full segmenty) — viz docs/UPDATE_FLOW.md §5.
+            adapter.Inner.EdisonVersionFailed += (_, _) =>
+                app.Dispatcher.Invoke(() =>
+                {
+                    services.PopupDisplayer.Info("Rozdílná verze Caché a verze Edison, aplikace bude ukončena.");
+                    shutdown.Force();
+                });
         };
     }
 
     protected virtual EdisonMainWindow BuildShellWindow(
         PreLoginContext prep, SessionContext session, Lic? licence,
-        EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs)
+        EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
+        Task<ReleaseNoticeResult>? releaseNotice)
     {
         var treeGetter = new ModuleTreeGetter();
         var switcher = new CompanySwitcher(services, prefs, nav.CloseShellWindows, nav.CloseLegacyModules);
@@ -506,11 +417,14 @@ public class AppBootstrapper
             new DevSampleMiniApps(),
 #endif
         ]);
+        // Owner login dialogu se čte lazily — MainWindow ukazuje na shell až po HandOffLoginWindow.
+        var sessionSwitcher = new SessionSwitcher(services, () => _application.MainWindow,
+                                                  BuildActivityFailedWire(services), nav.CloseAll);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
-                                                licence, switcher, () => SwitchUser(services, nav.CloseAll),
+                                                licence, switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog, shortcuts,
                                                 changelogSource: new InfChangelogSource());
-        _suppressShellCloseConfirm = viewModel.SuppressCloseConfirm;
+        _shutdown.AttachShell(viewModel.SuppressCloseConfirm);
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popup.DefaultOwner = wnd;
@@ -518,14 +432,17 @@ public class AppBootstrapper
 
         // Notice z release serveru (nová verze / potvrzení aktuálnosti) — doběhne typicky
         // až po zobrazení okna.
-        _releaseNoticeTask?.ContinueWith(t =>
+        releaseNotice?.ContinueWith(t =>
         {
             if (t.Result.Outcome != ReleaseNoticeOutcome.Unknown)
                 wnd.Dispatcher.BeginInvoke(() => viewModel.ReleaseNotice = t.Result);
         }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
         // Cooperative logout — poll běží přes services.MLRest (následuje swap při switch user).
-        var logoutWatcher = new LogoutWatcher(() => services.MLRest, ShowLogoutCountdown);
+        var shutdown = _shutdown;
+        var logoutWatcher = new LogoutWatcher(
+            () => services.MLRest,
+            seconds => new Windows.LogoutCountdownWindow.LogoutCountdownWindow(seconds, shutdown.Force).Show());
         logoutWatcher.Start();
         wnd.Closed += (_, _) => logoutWatcher.Stop();
 
@@ -541,16 +458,5 @@ public class AppBootstrapper
         return wnd;
     }
 
-    private void ShowLogoutCountdown(int seconds) =>
-        new Windows.LogoutCountdownWindow.LogoutCountdownWindow(seconds, ShutdownForced).Show();
-
-    protected virtual void Shutdown() => ShutdownForced();
-
-    // Vynucené ukončení nesmí vytáhnout potvrzovací dialog shellu (EdisonMainWindow.OnShellClosing) —
-    // uživatel by force logout / version gate mohl odmítnout. Před loginem je pole null (shell není).
-    private void ShutdownForced()
-    {
-        _suppressShellCloseConfirm?.Invoke();
-        _application.Shutdown();
-    }
+    protected virtual void Shutdown() => _shutdown.Force();
 }

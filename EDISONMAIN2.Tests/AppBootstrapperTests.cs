@@ -18,6 +18,11 @@ namespace EDISONMAIN2.Tests;
 /// </summary>
 public class AppBootstrapperTests
 {
+    /// <remarks>
+    /// Jede přes bezparametrický ctor, takže <c>Application</c> uvnitř je null. Nový krok
+    /// v <see cref="AppBootstrapper.Run"/>, který na něj sáhne (dialog, Dispatcher, ShutdownMode),
+    /// tady spadne na NRE až za běhu testu - takový krok patří za <c>protected virtual</c> hook.
+    /// </remarks>
     private class TestableBootstrapper : AppBootstrapper
     {
         public bool ShutdownCalled { get; private set; }
@@ -41,14 +46,6 @@ public class AppBootstrapperTests
         public IPopupDisplayer Popup { get; set; } = Substitute.For<IPopupDisplayer>();
         public IWindowNavigator Nav { get; set; } = Substitute.For<IWindowNavigator>();
         public IMLRest MLRest { get; set; } = MLRestMocks.Create();
-        public LoginResult? ReauthLoginResult { get; set; }
-        public MLRest? CapturedPromptConnection { get; private set; }
-
-        protected override LoginResult? PromptLoginForReauth(MLRest loginRest)
-        {
-            CapturedPromptConnection = loginRest;
-            return ReauthLoginResult;
-        }
 
         protected override (WindowNavigator Nav, PopupDisplayer Popup, EDServices Services) InitializeServices()
         {
@@ -123,10 +120,13 @@ public class AppBootstrapperTests
             => WireActivityCalled = true;
 
         public bool UpdateTriggered { get; set; }
-        protected override bool CheckForUpdate(SessionContext session, EDServices services) => UpdateTriggered;
+
+        protected override (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) CheckForUpdate(
+            SessionContext session, EDServices services) => (UpdateTriggered, null);
 
         protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep, SessionContext session, Lic? licence,
-            EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs)
+            EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
+            Task<ReleaseNoticeResult>? releaseNotice)
         {
             BuildShellCalled = true;
             return null!;
@@ -448,95 +448,6 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.False(b.HandOffCalled);
-    }
-
-    // ---------- SwitchUser ----------
-
-    private static EDServices ServicesWith(string server, int port, string db, string idfa, string loginName)
-    {
-        var inner = new MLRest(server, port, db, idfa) { LoginName = loginName };
-        var adapter = new MLRestAdapter(inner);
-        return new EDServices(adapter, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
-    }
-
-    [Fact]
-    public void SwitchUser_PromptReturnsNull_ReturnsCancelled_NoSideEffects()
-    {
-        var b = new TestableBootstrapper { ReauthLoginResult = null };
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
-        var originalMLRest = services.MLRest;
-        var closeAll = Substitute.For<Action>();
-
-        var outcome = b.SwitchUser(services, closeAll);
-
-        Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
-        Assert.Null(outcome.Licence);
-        closeAll.DidNotReceiveWithAnyArgs().Invoke();
-        Assert.Same(originalMLRest, services.MLRest);
-    }
-
-    [Fact]
-    public void SwitchUser_PromptReceivesCurrentConnection()
-    {
-        var b = new TestableBootstrapper { ReauthLoginResult = null };
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
-
-        b.SwitchUser(services, () => { });
-
-        Assert.NotNull(b.CapturedPromptConnection);
-        Assert.Equal("test-host", b.CapturedPromptConnection!.Server);
-        Assert.Equal(9999, b.CapturedPromptConnection.Port);
-        Assert.Equal("CB_DP", b.CapturedPromptConnection.DataNamespace);
-        Assert.Equal("CB_DP", b.CapturedPromptConnection.Idfa);
-    }
-
-    private static LoginResult ReauthLogin() => new(7, "bob", "Bob", false, "", false, true, "");
-
-    [Fact]
-    public void SwitchUser_LoginAndLicenceAccepted_ReturnsSuccess_ClosesWindows()
-    {
-        var b = new TestableBootstrapper
-        {
-            ReauthLoginResult = ReauthLogin(),
-            SessionOutcome = LicenceAcquireOutcome.Accepted,
-        };
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
-        var closeAll = Substitute.For<Action>();
-
-        var outcome = b.SwitchUser(services, closeAll);
-
-        Assert.Equal(SwitchUserResult.Success, outcome.Outcome);
-        closeAll.Received(1).Invoke();
-        Assert.True(b.WireActivityCalled);
-    }
-
-    [Fact]
-    public void SwitchUser_LicenceRefused_MapsToLicenceRefused()
-    {
-        var b = new TestableBootstrapper
-        {
-            ReauthLoginResult = ReauthLogin(),
-            SessionOutcome = LicenceAcquireOutcome.Refused,
-        };
-
-        var outcome = b.SwitchUser(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
-
-        Assert.Equal(SwitchUserResult.LicenceRefused, outcome.Outcome);
-        Assert.Null(outcome.Licence);
-    }
-
-    [Fact]
-    public void SwitchUser_LicenceCancelled_MapsToLicenceCancelled()
-    {
-        var b = new TestableBootstrapper
-        {
-            ReauthLoginResult = ReauthLogin(),
-            SessionOutcome = LicenceAcquireOutcome.Cancelled,
-        };
-
-        var outcome = b.SwitchUser(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
-
-        Assert.Equal(SwitchUserResult.LicenceCancelled, outcome.Outcome);
     }
 
 }

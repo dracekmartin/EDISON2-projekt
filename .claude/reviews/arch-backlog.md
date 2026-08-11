@@ -5,7 +5,7 @@
 Ten dokument je snapshot analýzy (evidence, dopad, návrh) a **nemění se**. Tady je plán
 a stav.
 
-**Hotovo: 10 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
+**Hotovo: 11 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
 
 ## Jak s dokumentem pracovat
 
@@ -270,7 +270,21 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R9b - `SwitchUser` z `AppBootstrapper` do `SessionSwitcher`
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-11) - (a) `SwitchUser` je `SessionSwitcher.Switch()`; sdílené
+  skládání session vytáhnuto do `SessionFactory.Establish` (+ top-level `ConnectionInfo`
+  / `SessionContext`, dřív nested v bootstrapperu), takže startup i switch mají jednu
+  implementaci a `SessionSwitcher` je testovatelný stejným `protected virtual` vzorem.
+  (b) `CheckForUpdate` vrací `(bool ShouldExit, Task<ReleaseNoticeResult>? Notice)`,
+  `_releaseNoticeTask` zrušen (jde parametrem do `BuildShellWindow`).
+  **Nad zadání:** kritérium „žádné metody volané po startu" si vyžádalo i `ShellShutdown`
+  (drží suppress hook shellu + `Application`) - `ShutdownForced`/`_suppressShellCloseConfirm`
+  byly volané z activity/version gate handleru a z odpočtu odhlášení, tedy dlouho po `Run`.
+  `BuildActivityFailedWire` a logout countdown proto berou lokální kopie polí, ať closure
+  nedrží bootstrapper. **Zbývá:** `_startupLoginWindow` je pořád mutable pole, ale žije jen
+  uvnitř `Run` (vytáhnout by znamenalo změnit signaturu `TryLogin` hooku) - vědomě ponecháno.
+  Testy: `SwitchUser` sada přesunuta do `SessionSwitcherTests` (6, +2 nové: wire míří na
+  novou session, connection dědí firmu). `ShellShutdown` bez testu - `Application.Shutdown`
+  nejde headless.
 - **P2 · M** · Závisí na: R9a, R14 (stejná oblast) · Blokuje: -
 - **Co udělat:** (a) `SwitchUser` do vlastního `SessionSwitcher` (paralela ke
   `CompanySwitcher`, který přesně tuhle roli už má) - tím `AppBootstrapper` přestane žít

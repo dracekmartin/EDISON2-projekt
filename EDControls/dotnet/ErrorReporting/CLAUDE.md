@@ -1,7 +1,7 @@
-# ErrorReporting — poznámky pro vývojáře
+# ErrorReporting - poznámky pro vývojáře
 
 Hlášení chyb na `podpora.m-line.cz/api/telemetry/ingest`. Náhrada legacy `frmMLErrorEx`
-(`EDISON/EDLIBRARY/`), ne doslovná parita — odchylky jsou vědomé a jsou níž.
+(`EDISON/EDLIBRARY/`), ne doslovná parita - odchylky jsou vědomé a jsou níž.
 
 **Jiný kanál než usage telemetrie.** `EDUsageTelemetry` jde přes MLRest do Caché; tohle je
 přímý HTTPS POST mimo Caché. Společného nemají nic než slovo „telemetrie".
@@ -15,42 +15,42 @@ bez WPF i HTTP, aby šla testovat přímo.
 - Povinné `source`, `type`, `module`, `name`; `type` ∈ `info` | `warning` | `error`.
 - Volitelné `partner` (= IdFa), `description`, `data`, `attachments[{filename,mimeType,data}]`.
 - Pole až 100 záznamů = jedna dávka; víc server odmítne 400 (`MaxBatchSize`).
-- Jediný klíč pro celý systém (nastavení `telemetry_api_key`), **sdílený s legacy EDISONem** —
+- Jediný klíč pro celý systém (nastavení `telemetry_api_key`), **sdílený s legacy EDISONem** -
   server nerozlišuje podle zdroje. Vlastní klíč by byl zásah do mlwebu.
 
 **Past: `applyEdisonVersions`.** Server přepíše firmě „poslední hlášenou verzi EDISONu"
 podle `data.version`, když je záznam instalační událost (`module="EDISON"` **a**
 `name="Instalace verze"`) nebo nese klíč `pocty` / `ad_pocetRZ` / `mhd_pocetRZ` /
 `zam_pocetZam`. `data.version` posíláme (bez ní je hlášení k ničemu), takže se těm dvěma
-vzorům musíme vyhýbat — jinak by každá chyba z EDISON2 přepsala zákazníkovi verzi legacy
+vzorům musíme vyhýbat - jinak by každá chyba z EDISON2 přepsala zákazníkovi verzi legacy
 EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_CarriesUnitMetricKeys`.
 
 ## Vědomé odchylky od legacy
 
 - **Hybrid místo „až na tlačítko".** Jádro odejde automaticky (`stage=auto`), dobrovolný popis
   okolností posílá uživatel z dialogu jako druhý záznam `type=info` se stejným `refId`
-  (`stage=user`). Párování přes `refId` v `description` — server se kvůli tomu neměnil.
+  (`stage=user`). Párování přes `refId` v `description` - server se kvůli tomu neměnil.
 - **Deduplikace je povinná, ne vylepšení.** Suppression list vědomě **nemáme** (rozhodnutí
   2026-08-04), takže projde i běžný provozní `Lock exist failed!`, který legacy zahazoval.
   Jediná pojistka proti chybě v `OnPaint` / timeru je `ErrorThrottle` (klíč = typ výjimky +
   5 rámců stacku + form, okno 5 min, pak souhrn s `repeatCount`, strop 50 na běh).
-- **Snímek jen vlastních oken** (`RenderTargetBitmap`), ne obrazovky — cizí aplikace se do
+- **Snímek jen vlastních oken** (`RenderTargetBitmap`), ne obrazovky - cizí aplikace se do
   přílohy nemají jak dostat. Legacy sešívá všechny monitory. Důsledek: **HWND obsah se
   nevykreslí**, takže WebView2 miniaplikace shellu zůstanou v snímku prázdné a snímek nikdy
   není přesně to, co uživatel viděl.
-- **Interní běh se označí, nezahodí** — `source` dostane suffix `-internal`
+- **Interní běh se označí, nezahodí** - `source` dostane suffix `-internal`
   (`MlineEnvironment`, zrcadlí legacy `IsDomainMline` včetně registru
   `HKCU\Software\Edison\MlineDomain`). Legacy z m-line domény neposílá nic a přichází
   o vlastní dogfooding; zahodit se dá vždy na serveru, vrátit nikdy. Suffix ve `source` (ne
   příznak v `data`) proto, že Přehled telemetrie filtruje podle sloupce Zdroj a volby bere
-  z dat — nová hodnota se ve filtru objeví sama. Pozor: `source` jde i do předmětu tiketu.
+  z dat - nová hodnota se ve filtru objeví sama. Pozor: `source` jde i do předmětu tiketu.
 
 ## Drobné
 
-- `IngestUrl` / `ApiKey` jsou `static readonly`, ne `const` — `const` se inlinuje do
+- `IngestUrl` / `ApiKey` jsou `static readonly`, ne `const` - `const` se inlinuje do
   konzumenta, takže samostatně nasazená `EDControls.dll` by hodnotu nezměnila exe, které se
   nepřebuildilo (stejný důvod jako u `SupportActions.WidgetKey`).
 - `ReportFatal` posílá **synchronně** s 5s timeoutem: po `AppDomain.UnhandledException`
   runtime proces vzápětí ukončí a fire-and-forget by se nestihl.
-- `TryCapture` bere `FrameworkElement`, ne `Window` — nezobrazené okno má nulovou
+- `TryCapture` bere `FrameworkElement`, ne `Window` - nezobrazené okno má nulovou
   `ActualWidth`, takže by šlo testovat jen s reálně otevřeným oknem.

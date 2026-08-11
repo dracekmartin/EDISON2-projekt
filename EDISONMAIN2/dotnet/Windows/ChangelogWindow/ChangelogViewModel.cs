@@ -16,6 +16,9 @@ namespace EDISONMAIN2.Windows.ChangelogWindow
 
         public string ModuleTitle { get; }
 
+        // Okno se vždy otvírá uprostřed shellu (CenterOwner) - pozici/velikost si záměrně nepamatuje.
+        protected override string? PersistedFormId => null;
+
         public bool HasChanges => _content.ChangesText is { Length: > 0 };
 
         private bool _showChangesOnly;
