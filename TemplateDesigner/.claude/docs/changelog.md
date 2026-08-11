@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-11 (3) - ✅ #12843: šipka vlevo si přestala lehat na jízdní doby + barva písma aktuální zastávky
+
+Dva body z podnětů TRANSDEV (Šimko, testoval verzi ze 4. 8. na šabloně „Nitra").
+
+**Šipka směru jízdy vlevo měla pevné odsazení do cizího sloupce.** Kreslila se 1,5 mm nalevo od
+sloupce zastávek, tedy **do prostoru sloupce s jízdními dobami**, a spoléhala na to, že tam je
+prázdný pravý okraj. Při výchozí šířce to sedělo, po zúžení prvku si lehla přes čísla. Vpravo se
+přitom kreslí uvnitř sloupce a rezervu na sebe má - byla to asymetrie, ne záměr.
+
+Nově je pruh pro šipku **součástí rozdělení šířky**: odečte se z šířky prvku, zbytek se rozdělí
+mezi sloupce a před sloupec zastávek se vloží prázdné místo. Soused se do něj nedostane bez ohledu
+na šířku prvku. Svislice mřížky zůstává na začátku pruhu (kde soused končí), buňka za pruhem si
+svou vlastní potlačí, aby tam nebyly dvě. Vpravo se nezměnilo nic - pruh se počítá jen pro levou.
+
+Vedlejší oprava: se sloupcem zastávek na první pozici se šipka dosud kreslila mimo prvek a ořízla
+se; teď má pruh i tam.
+
+**Barva písma aktuální zastávky** dosud nešla nastavit - pozadí, podtržení, tučné a velikost ano,
+barva písma ne. Doplněná do panelu i do formuláře; prázdná = dědí se z buňky, takže existující
+šablony vypadají stejně.
+
+Ověřeno proklikem (Jan, 11. 8.) - render se testy nechytá. xUnit 799, celkem 1 996.
+
 ## 2026-08-11 (2) - ✅ `B51` seznam se plní najednou, ne po jednom řádku
 
 Seznamy v dialozích (šablony, instance) se plnily řádek po řádku, takže dvě stě řádků znamenalo

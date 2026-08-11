@@ -91,6 +91,8 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 
 | #13045 | KOVED (IDZK/Lábsky) | Skupiny dnů - vlastní sloupce vývěsky | ✅ **HOTOVO 10. 8. 2026, obě části** - (a) denní značky dle rozvržení sloupců (`B29`, 31. 7.: spoj „sobota a svátek" nesl „6" i v nedělním sloupci); (b) vlastní definice sloupců = dny + značky + období (`B39`, 10. 8.) | Vlastní sloupce: dny, „jen/bez značek", „nevypisovat značky", období jako rozsahy dat (bez roku = každý rok). Ověřit na jejich lince, že vývěska sedí, a poradit jim, že nedělní a svátkový provoz se rozliší **rozdělením sloupce**, ne značkami | changelog 2026-07-31 (4) + 2026-08-10 (12) |
 
+| #12843 | TRANSDEV (Šimko) | Podněty k zastávkovým JŘ - 9 bodů z testování šablony „Nitra" (MHD) | 🟡 **rozpracováno** - psáno 10. 8. proti verzi ze **4. 8.**, takže část už je hotová a jen se k němu nedostala | **Hotové, dostane s verzí:** negativní značky dle nastavení linky (body 5 a 8 = `B63`). **Opraveno 11. 8.:** šipka vlevo přes jízdní doby (bod 1), barva písma aktuální zastávky (bod 2). **Čeká na jeho upřesnění:** které znaky poznámek se kreslí špatně a jestli u zastávky nebo v legendě (bod 6 - číselník Nitry je vytěžený, „přestup na vlak" = kód 120, ve fontu lokomotiva), přesné kroky k vynulovanému poli výluk (bod 7 - u nás se nechová). **Otázky, ne chyby:** zalomení textu v záhlaví (3), výběr variant tras (4), ikonka hodin v záhlaví (9) | changelog 2026-08-11 (3) |
+
 **Poznámka k uzavírání:** ready-to-close jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
 polovina 2026 - viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci
 (vzor odpovědi = #8772/#7161: „vyřešeno v novém Návrháři sestav, viz wiki").

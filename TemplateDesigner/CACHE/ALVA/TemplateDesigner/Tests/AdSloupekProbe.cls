@@ -868,6 +868,38 @@ ClassMethod ZnackyStranek(ByRef sys As %String, db As %String, sku As %String, l
 	kill ^||ML("OUT")
 }
 
+/// Sonda k #12843 bodu 6: číselník atributů MHD - jaký `SpecZnak` nese který popis a co z něj
+/// udělá `ConvertSpecialniZnak` (kód > 31 se překlápí na znak, tedy na **pozici ve fontu**).
+/// Odpovídá na „proč se u ‚prestup na vlak' kreslí kolo". IN: DB, IDFA. Read-only.
+ClassMethod MhdAtributyEnums(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set fa = $get(^||ML("IN","IDFA")) set:fa="" fa = IdFa
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+		set n = 0, id = ""
+		for {
+			set id = $order(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id)) quit:id=""
+			set spec = $get(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id,"SpecZnak"))
+			set popis = $get(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id,"Popis"))
+			set nazev = $get(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id,"Nazev"))
+			set n = n + 1
+			quit:n>30
+			set znak = $classmethod(cls, "ConvertSpecialniZnak", spec)
+			set ^||ML("OUT","ATRIBUT",$translate($justify(n,2)," ",0)) =
+				"id="_id_" SpecZnak="""_spec_""" → kresli se znak """_znak_"""  popis="_$extract(popis_nazev,1,60)
+		}
+		set ^||ML("OUT","SOUHRN") = db_" firma="_fa_" atributu="_n
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Sonda k `B39`: přesné zadání pro ruční zkoušku období. Pro první stránky vývěsky vypíše časy
 /// v 1. sloupci bez období a s ním, plus které zmizí - to je očekávaný výsledek, proti kterému jde
 /// v návrháři porovnávat. IN: DB, SKU, LIN, OBDOBI, STRANEK. Read-only.
