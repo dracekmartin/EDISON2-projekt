@@ -271,6 +271,48 @@ public class FixedTableElementTests
         Assert.Equal("text", el.Rows[0].Cells[0].Content);
     }
 
+    // ── Vkládání ze schránky ──────────────────────────────────────────────────
+
+    /// <summary>Excel dává do schránky řádky po koncích řádku a buňky po tabulátorech.</summary>
+    [Fact]
+    public void TextZeSchranky_SeRozsekaNaBunky()
+    {
+        var block = TableElement.ParseClipboardBlock("Linka\t42\r\nSměr\tBrno\r\n");
+
+        Assert.Equal(2, block.Count);            // koncová prázdná řádka se zahodí
+        Assert.Equal(["Linka", "42"], block[0]);
+        Assert.Equal(["Směr", "Brno"], block[1]);
+    }
+
+    /// <summary>Vložený blok se nesmí tiše oříznout - tabulka se dorovná na jeho velikost.</summary>
+    [Fact]
+    public void VlozeniBloku_DorovnaTabulku()
+    {
+        var el = TableElement.CreateGrid(2, 2);
+        el.Height = 12f;
+
+        el.PasteBlock(1, 1, [["a", "b", "c"], ["d", "e", "f"]]);
+
+        Assert.Equal(3, el.Rows!.Count);      // 1 + 2 řádky bloku
+        Assert.Equal(4, el.Columns.Count);    // 1 + 3 sloupce bloku
+        Assert.Equal("a", el.Rows[1].Cells[1].Content);
+        Assert.Equal("f", el.Rows[2].Cells[3].Content);
+        Assert.Equal(18f, el.Height);         // dorovnaný řádek tabulku zvětšil
+    }
+
+    /// <summary>Blok přepíše jen to, kam dosáhne - okolní buňky zůstanou.</summary>
+    [Fact]
+    public void VlozeniBloku_NechaOkolniBunkyBytNaPokoji()
+    {
+        var el = TableElement.CreateGrid(3, 2);
+        el.Rows![0].Cells[2].Content = "zůstat";
+
+        el.PasteBlock(0, 0, [["x"]]);
+
+        Assert.Equal("x", el.Rows[0].Cells[0].Content);
+        Assert.Equal("zůstat", el.Rows[0].Cells[2].Content);
+    }
+
     // ── Čáry mřížky ───────────────────────────────────────────────────────────
 
     /// <summary>

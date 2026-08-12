@@ -86,6 +86,8 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 | Enter / Shift+Enter | potvrdit a o buňku níž / výš |
 | Šipky | pohyb po buňkách |
 | Delete / Backspace | vymazat **obsah buňky** (ne prvek - to je ta past) |
+| Ctrl+C / Ctrl+X / Ctrl+V | schránka pracuje s **buňkami**, ne s prvkem; Ctrl+V vloží blok z Excelu (řádky po koncích řádku, buňky po tabulátorech) a tabulku dorovná |
+| `{` při psaní | nabídka datových polí; šipky vybírají, Enter nebo Tab doplní i s koncovou závorkou, Esc zavře nabídku (teprve druhý Esc zahodí úpravu) |
 | Esc | ven z buňky na prvek, podruhé zrušit výběr |
 
 ### Grouping / layout

@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-08-12 (7) - 📋 pevná tabulka: vkládání z Excelu (`B74`) a našeptávač polí (`B75`)
+
+**Vložení bloku ze schránky** (Ctrl+V ve vybrané buňce): řádky se berou po koncích řádku, buňky po
+tabulátorech, obsah sedne od vybrané buňky a **tabulka se dorovná**, když je blok větší. Obsah
+takových tabulek mají lidé často hotový v Excelu - jinak by ho přepisovali buňku po buňce.
+
+⚠️ **Proč růst a ne ořez:** bez výběru více buněk (`B76`) je to jediná neztrátová možnost; tak to
+dělá i tabulka ve Wordu a v Docs. Až výběr oblasti bude, pravidlo se zjemní na excelové „vybraná
+oblast = cíl vložení" (poznámka je u `B76`).
+
+**Schránka uvnitř tabulky patří buňkám** - Ctrl+C, Ctrl+X i Ctrl+V pracují s buňkou, ne s prvkem.
+Stejná past jako u Delete: bez toho by Ctrl+V uprostřed vyplňování vložil na plátno kopii tabulky.
+
+**Našeptávač polí:** po napsání `{` v buňce vyskočí seznam polí agendy, filtruje se **podle názvu
+i českého popisku** (pole si lidi pamatují jako „Číslo linky", ne jako `CISLO_LINKY`), šipky
+vybírají, Enter nebo Tab doplní i s koncovou závorkou, Esc zavře nabídku a teprve druhý zahodí
+úpravu buňky. Ručně psané `{LOKALNI_OZNACENI_LINKY}` je pozvánka k překlepu, který se pozná až
+na výtisku jako vytištěná složená závorka.
+
+⚠️ **Pád při doplnění pole a co z toho plyne** (nahlásil Jan): zápis do textového pole spustí
+obsluhu „text se změnil" **synchronně**, ještě než se posune kurzor - přepočet nabídky pak dostal
+zápornou délku podřetězce. Opraveno v příčině (přepočet se během doplňování vypne) i pojistkou
+(pozice kurzoru se ořízne). **Rozpoznání rozepsaného `{POLE` se přesunulo z okna do
+`Models/PlaceholderToken`** - v code-behindu se takový výpočet nedá otestovat jinak než proklikem.
+Testy pak rovnou odhalily dvě nepřesnosti: chování dvou závorek za sebou (bere se bližší ke
+kurzoru = uživatel píše nové pole) a mrtvou větev, která nemohla nastat.
+
+**Brány:** build bez chyb, **847 testů** zelených (10 nových na rozpoznání pole u kurzoru včetně
+stavu, na kterém to spadlo, a 3 na vkládání bloku).
+
+
 ## 2026-08-12 (6) - 🧭 slovenské texty poznámek: rozsah vyjasněný, řídit je bude kultura šablony (`B69`)
 
 TRANSDEV hlásil, že po přepnutí na SK kulturu se mu značky pořád zobrazují česky. Prošli jsme to

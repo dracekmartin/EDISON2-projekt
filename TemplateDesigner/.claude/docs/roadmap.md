@@ -192,9 +192,7 @@ vyplňuje na plátně, dialog má jedinou záložku) → archiv. Cíl **není fa
 | # | Co | Vel. |
 |---|---|---|
 | B73 | **Šířka sloupce a výška řádku tažením** za dělicí čáru. Dnes se šířky zadávají jen číslem v mm a výška řádku je jedna společná pro celou tabulku - výška **per řádek** je aditivní změna modelu | S–M |
-| B74 | **Vložení bloku z Excelu** (Ctrl+V textu odděleného tabulátory naplní buňky, tabulku dorovná). Nejlevnější velká výhra - lidé mají obsah takových tabulek často hotový v Excelu | S |
-| B75 | **Našeptávač polí po `{`** v buňce. Ručně psané `{LOKALNI_OZNACENI_LINKY}` je pozvánka k překlepu, který se projeví až v tisku vytištěnou složenou závorkou | S |
-| B76 | **Výběr více buněk tažením** a na něm hromadné formátování + **ColSpan** slučování buněk (aditivní JSON, span-aware DrawRow). **RowSpan vědomě odložen** - spanování výšek × střídání řádků × podmíněná viditelnost | M |
+| B76 | **Výběr více buněk tažením** a na něm hromadné formátování + **ColSpan** slučování buněk (aditivní JSON, span-aware DrawRow). **RowSpan vědomě odložen** - spanování výšek × střídání řádků × podmíněná viditelnost. ⚠️ Zjemní i vkládání ze schránky: dnes se vkládá od vybrané buňky a tabulka se dorovná (Word/Docs chování, jediné neztrátové bez výběru oblasti); s výběrem má platit **vybraná oblast = cíl vložení** (Excel), jedna buňka = dnešní chování | M |
 | B77 | **Připravené bloky agend při vkládání tabulky** (`GetTableTemplates`: „Záhlaví linky", „Shrnutí faktury"). Na serveru existují pro každou agendu, ale od zrušení starého dialogu k nim **nevede z UI cesta**. Patří k vkládání prvku („prázdná / z připraveného bloku"), ne do dialogu | S |
 
 ---

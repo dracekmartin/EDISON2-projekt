@@ -519,6 +519,42 @@ public class TableElement : TemplateElement
         }
     }
 
+    /// <summary>
+    /// Vloží blok textu (řádky × sloupce) od dané buňky a **tabulku dorovná**, když se blok
+    /// nevejde. Bez dorovnání by se z vloženého bloku tiše ztratil přesah, což se pozná až
+    /// při kontrole výsledku.
+    /// </summary>
+    public void PasteBlock(int startRow, int startCol, IReadOnlyList<IReadOnlyList<string>> block)
+    {
+        if (block.Count == 0) return;
+        Rows ??= [];
+
+        int potrebaRadku   = startRow + block.Count;
+        int potrebaSloupcu = startCol + block.Max(r => r.Count);
+        while (Rows.Count < potrebaRadku)       InsertRow(Rows.Count);
+        while (Columns.Count < potrebaSloupcu)  InsertColumn(Columns.Count);
+
+        for (int r = 0; r < block.Count; r++)
+            for (int c = 0; c < block[r].Count; c++)
+            {
+                var row = Rows[startRow + r];
+                while (row.Cells.Count <= startCol + c) row.Cells.Add(new TableCell());
+                row.Cells[startCol + c].Content = block[r][c];
+            }
+    }
+
+    /// <summary>
+    /// Rozseká text ze schránky na buňky. Excel a Sheets dávají do schránky **řádky oddělené
+    /// koncem řádku a buňky tabulátorem**, takže stačí tohle - uvozovkování hodnot s vnořeným
+    /// koncem řádku vědomě neřešíme (v tabulkách tohoto typu se nevyskytuje).
+    /// </summary>
+    public static List<List<string>> ParseClipboardBlock(string text)
+    {
+        var radky = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').ToList();
+        while (radky.Count > 0 && radky[^1].Length == 0) radky.RemoveAt(radky.Count - 1);
+        return [.. radky.Select(r => r.Split('\t').ToList())];
+    }
+
     /// <summary>Smaže sloupec i jeho buňky; poslední sloupec nechá být.</summary>
     public bool RemoveColumn(int index)
     {

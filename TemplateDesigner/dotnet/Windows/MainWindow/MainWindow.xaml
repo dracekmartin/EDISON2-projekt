@@ -740,7 +740,18 @@
                                  Background="White" Padding="2"
                                  AcceptsReturn="True" AcceptsTab="False"
                                  PreviewKeyDown="InlineEditBox_PreviewKeyDown"
+                                 TextChanged="InlineEditBox_TextChanged"
                                  LostKeyboardFocus="InlineEditBox_LostKeyboardFocus"/>
+
+                        <!-- Našeptávač datových polí v buňce tabulky - otevře se po napsání „{".
+                             Ručně psané {LOKALNI_OZNACENI_LINKY} je pozvánka k překlepu, který se
+                             pozná až na výtisku jako vytištěná složená závorka. -->
+                        <ListBox x:Name="CellFieldSuggestBox" Visibility="Collapsed"
+                                 MaxHeight="180" MinWidth="220"
+                                 DisplayMemberPath="Label"
+                                 BorderThickness="1" BorderBrush="{DynamicResource EDTheme.Accent.Blue}"
+                                 Background="{DynamicResource EDTheme.Background.Panel}"
+                                 MouseLeftButtonUp="CellFieldSuggestBox_MouseLeftButtonUp"/>
                     </Canvas>
                 </Grid>
             </ScrollViewer>

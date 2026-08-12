@@ -3108,6 +3108,8 @@ public partial class MainWindow : Window
     {
         if (_cellEditing)
         {
+            // Klik do nabídky polí přebere fokus - to není odchod z buňky, ale výběr položky.
+            if (CellFieldSuggestBox.IsMouseOver) return;
             EndCellEdit(commit: true);
             return;
         }

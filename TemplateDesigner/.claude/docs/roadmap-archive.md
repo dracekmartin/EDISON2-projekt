@@ -2,6 +2,16 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-12 ✅ - `B74` + `B75`: vkládání z Excelu a našeptávač polí v buňce
+
+Detail → changelog 2026-08-12 (7). Ctrl+V vloží blok ze schránky od vybrané buňky a tabulku
+dorovná; schránka uvnitř tabulky pracuje s buňkami, ne s prvkem. Po `{` v buňce vyskočí nabídka
+polí agendy (filtr podle názvu i českého popisku, Enter/Tab doplní i s koncovou závorkou).
+
+⚠️ **Doplnění pole spadlo** (nahlásil Jan): zápis do textového pole spustí obsluhu změny textu
+synchronně, dřív než se posune kurzor. Kromě opravy z toho zbylo poučení - rozpoznání rozepsaného
+`{POLE` odešlo z code-behindu do `Models/PlaceholderToken`, protože jinak se nedalo otestovat.
+
 ## 2026-08-12 ✅ - Fáze B krok 2: pevná tabulka se vyplňuje na plátně
 
 Detail → changelog 2026-08-12 (5). Obsah i struktura se dělají v tabulce (Alt+klik do buňky, psaní
