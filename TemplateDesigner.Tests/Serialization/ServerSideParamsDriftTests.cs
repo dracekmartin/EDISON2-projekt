@@ -31,6 +31,8 @@ public class ServerSideParamsDriftTests
         "DEFINICE_SLOUPCU",   // vlastní sloupce vývěsky - obsah šablony, ne parametr sestavy;
                               // posílá se vždy čerstvě ze šablony (ComposeGetDataParams) a re-fetch
                               // při změně řeší vlastní snapshot (RefetchIfColumnsDefinitionChanged)
+        "JAZYK",              // jazyk textů značek = kultura šablony, ne volba v parametrech sestavy;
+                              // re-fetch při přepnutí kultury drží tentýž snapshot (CurrentWireSnapshot)
     };
 
     // Čtení pojmenovaného IN klíče. Skupina 2 zachytí znak za uvozovkou - když je to `_`, jde

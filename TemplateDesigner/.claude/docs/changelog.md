@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-08-12 (8) - 🇸🇰 texty značek se řídí jazykem šablony (`B69`)
+
+Slovenský zákazník má na vývěsce správné piktogramy, ale **popisky u nich česky** - vedle svého
+slovenského komentáře z číselníku tak má naši českou větu (#12843). Texty legendy totiž skládá
+server a byly napevno české.
+
+**Jazyk teď určuje kultura šablony** (volba ve Vlastnostech stránky), ne firemní nastavení starého
+modulu. Rozhodnutí Jan 12. 8.: jeden zdroj místo dvou, drží se stejnou volbou jako symbolový font,
+a jedna firma tak může mít českou i slovenskou šablonu vedle sebe - to legacy neumí, protože se
+u něj přepíná per firma.
+
+Přeložené je to, co skládáme my: vysvětlivky atributů (na znamenie, lietadlo…), přestupy,
+bezbariérovost, kola, místenky, prefixy datumových omezení (`premáva len` / `nepremáva`), názvy dnů
+a **rozdíly tras** (`nepremáva cez zast. X`). **Znění se nevymýšlelo** - je doslova ze starého
+modulu (`MODE=1` v `JRapiLinPrtMhd`), takže ho zákazník zná z výtisku. Kde starý modul slovenskou
+variantu nemá, drží se jeho vzor.
+
+⚠️ **Nepřekládá se, co napsal uživatel** - poznámky z číselníku linky, názvy zastávek ani nadpisy
+sloupců dnů. To jsou data, ne naše texty; nadpisy si zákazník přepisuje v šabloně (proto měl
+1. sloupec slovensky a další česky).
+
+⚠️ **Znak bez slovenské varianty nezmizí, padá na češtinu.** Slovenská sada je override nad českou,
+ne její náhrada - tiskové direktivy (tučně, jen nástup…) se jako značka nekreslí, tak se
+nepřekládaly.
+
+**Přepnutí kultury přenačte data.** Bez toho by v náhledu zůstala česká legenda až do výběru jiné
+instance. `JAZYK` proto není parametr sestavy (uživatel ho v parametrech nenastavuje) a re-fetch
+u něj drží tentýž snapshot jako u vlastních sloupců - driftový test `ServerSideParams` si ho
+vyžádal sám a je v něm zapsané, proč tam patří.
+
+**Brány:** build bez chyb, **2051 .NET testů** (6 nových: jazyk v parametrech, přebití persistované
+hodnoty, snapshot pro re-fetch) a **91 Caché testů** zelených, 2 nové na přepínač jazyka - jeden
+kontroluje, že **žádný tištěný text nezůstal bez slovenské varianty**. Mutační kontrola: zabití
+rozpoznání kódu jazyka i vypnutí předání parametru testy shodí. Zlaté odtisky se nezměnily = česká
+cesta je beze změny. Ověřeno **voláním nasazené třídy** na lince 0365001 (CB_CSADAD): se `JAZYK=sk`
+je všech 39 stránek slovenských, bez něj českých, počet poznámek shodný.
+
+👁 Zbývá porovnat se zákazníkovým starým výtiskem - jestli některou větu formuluje jinak.
+
 ## 2026-08-12 (7) - 📋 pevná tabulka: vkládání z Excelu (`B74`) a našeptávač polí (`B75`)
 
 **Vložení bloku ze schránky** (Ctrl+V ve vybrané buňce): řádky se berou po koncích řádku, buňky po

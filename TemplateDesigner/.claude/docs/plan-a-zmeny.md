@@ -38,6 +38,16 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 12. 8. 2026 - Slovenské vysvětlivky podle jazyka šablony
+
+Vysvětlivky, které Návrhář skládá sám (na znamenie, prestup, bezbariérovosť, „premáva len",
+„nepremáva cez zast. …", názvy dnů), se teď tisknou **v jazyce nastaveném v šabloně** - dialog
+`Vlastnosti stránky…`, pole „Formát čísel a datumů". Tím samým nastavením se řídí i znaková sada
+symbolů, takže texty a piktogramy drží jednu volbu.
+
+Nepřekládá se to, co jste napsali sami: poznámky zadané u linky, názvy zastávek ani vlastní nadpisy
+sloupců dnů. Jedna firma tak může mít českou i slovenskou šablonu vedle sebe.
+
 ### 12. 8. 2026 - Sloupce vývěsky si můžete nadefinovat sami
 
 Dosud rozvržení sloupců mřížky odjezdů určovala konfigurace linky - jedno ze čtyř pevných schémat

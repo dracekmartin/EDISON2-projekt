@@ -1007,7 +1007,7 @@ public partial class MainWindow : Window
                     foreach (var inst in _vm.ActiveInstances)
                     {
                         var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
-                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson));
+                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson, _vm.JazykSablony));
                         if (instPages is null) continue;
                         all.AddRange(instPages);
                     }

@@ -277,13 +277,13 @@ public class TemplateDesignerViewModel : EDViewModel
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
             var columnsDefJson = CurrentColumnsDefinitionJson();
-            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson);
+            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson, JazykSablony);
             var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
             // zastaralý a nesmí dosednout do nové šablony.
             if (gen != _previewDataGeneration) return;
-            _lastColumnsDefinitionSnapshot = columnsDefJson;   // data odteď odpovídají této definici
+            _lastColumnsDefinitionSnapshot = CurrentWireSnapshot();   // data odteď odpovídají definici i jazyku
 
             if (pages is null || pages.Count == 0)
             {
@@ -956,11 +956,18 @@ public class TemplateDesignerViewModel : EDViewModel
     /// znovu načíst, jinak náhled ukazuje sloupce staré definice.</summary>
     private string? _lastColumnsDefinitionSnapshot;
 
+    /// <summary>Co ze šablony ovlivňuje **data** z `GetData`: definice sloupců a jazyk textů značek.
+    /// Když se to pohne, náhled musí přenačíst - jinak ukazuje data staré definice / starý jazyk.</summary>
+    private string CurrentWireSnapshot() => ComposeWireSnapshot(CurrentColumnsDefinitionJson(), JazykSablony);
+
+    internal static string ComposeWireSnapshot(string? columnsDefinitionJson, string jazyk) =>
+        (columnsDefinitionJson ?? "") + "|" + jazyk;
+
     private void RefetchIfColumnsDefinitionChanged()
     {
         // Snapshot zapisuje až ÚSPĚŠNÝ fetch (RefreshDataForCurrentInstanceAsync) - kdyby se
         // zapsal tady a fetch spadl, další kontroly by se tvářily, že data definici odpovídají.
-        if (CurrentColumnsDefinitionJson() == _lastColumnsDefinitionSnapshot) return;
+        if (CurrentWireSnapshot() == _lastColumnsDefinitionSnapshot) return;
         if (CurrentActiveInstance is not null) _ = RefreshDataForCurrentInstanceAsync(keepPage: true);
     }
 
@@ -2711,6 +2718,11 @@ public class TemplateDesignerViewModel : EDViewModel
             culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent, columnsDefJson));
     }
 
+    /// <summary>Dvoumístný kód jazyka šablony pro server (`cs` / `sk`) - z kultury, kterou uživatel
+    /// vybírá ve vlastnostech stránky. Tou se řídí i symbolový font, takže jazyk textů a piktogramů
+    /// má jeden zdroj.</summary>
+    internal string JazykSablony => GetTemplateCulture().TwoLetterISOLanguageName.ToLowerInvariant();
+
     /// <summary>
     /// Parametry pro `GetData` jedné instance = parametry sestavy + klíč instance + skupina linek.
     /// **Jediné místo, kde se tahle mapa staví.** Náhled, export i tisk musí serveru poslat totéž,
@@ -2720,7 +2732,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     internal static Dictionary<string, object?> ComposeGetDataParams(
         IReadOnlyDictionary<string, object?> printParams, string instanceParamName,
-        string instanceValue, string? skupinaId, string? columnsDefinitionJson)
+        string instanceValue, string? skupinaId, string? columnsDefinitionJson, string? jazyk)
     {
         var p = new Dictionary<string, object?>(printParams, StringComparer.OrdinalIgnoreCase)
         {
@@ -2731,6 +2743,9 @@ public class TemplateDesignerViewModel : EDViewModel
         // _previewParams - tam by ji ApplyPersistedPrintParams mohl přepsat starou persistovanou
         // hodnotou a tisklo by se jiné rozvržení, než šablona říká (třída chyb B24).
         if (!string.IsNullOrEmpty(columnsDefinitionJson)) p["DEFINICE_SLOUPCU"] = columnsDefinitionJson;
+        // Jazyk textů značek (#12843) - jde ze šablony, ne z parametrů sestavy, ať ho persistovaná
+        // hodnota nemůže přepsat (třída chyb B24). Prázdný = server zůstane na češtině.
+        if (!string.IsNullOrEmpty(jazyk)) p["JAZYK"] = jazyk;
         return p;
     }
 
@@ -2794,7 +2809,8 @@ public class TemplateDesignerViewModel : EDViewModel
                 var inst = instances[i];
                 progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
                 var fetched = CacheProvider.GetData(
-                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId, columnsDefinitionJson));
+                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId,
+                        columnsDefinitionJson, culture.TwoLetterISOLanguageName.ToLowerInvariant()));
                 if (fetched is null) continue;
                 foreach (var p in fetched) all.Add(p.WithCulture(culture));
             }

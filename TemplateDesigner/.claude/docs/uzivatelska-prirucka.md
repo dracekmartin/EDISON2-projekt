@@ -372,6 +372,11 @@ a datumů": Čeština (cs-CZ), Slovenština (sk-SK), Angličtina (en-US), Němč
 čísel a datumů se řídí tímto nastavením nezávisle na tom, na jakém počítači se tiskne - tisk tak
 vypadá stejně na každé stanici.
 
+U jízdních řádů se tímtéž nastavením řídí i **jazyk vysvětlivek v legendě** (u slovenštiny tedy
+„premáva len", „na znamenie") a **znaková sada symbolů**. Nepřekládá se to, co jste napsali sami -
+poznámky zadané u linky, názvy zastávek ani vlastní nadpisy sloupců dnů zůstávají tak, jak jsou
+uložené.
+
 ---
 
 ## 9. Náhled, export a tisk

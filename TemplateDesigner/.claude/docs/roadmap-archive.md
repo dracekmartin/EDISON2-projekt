@@ -2,6 +2,23 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-12 ✅ - `B69`: texty značek se řídí jazykem šablony
+
+Detail → changelog 2026-08-12 (8). TRANSDEV #12843: slovenský zákazník měl správné piktogramy, ale
+české popisky u nich. Jazyk textů legendy teď určuje **kultura šablony** (Vlastnosti stránky), ne
+firemní příznak starého modulu - rozhodnutí Jan 12. 8., jeden zdroj místo dvou a jedna firma může
+mít českou i slovenskou šablonu vedle sebe. Znění je doslova ze starého modulu (`MODE=1`).
+
+⚠️ **Nepřekládá se, co napsal uživatel** (poznámky z číselníku, názvy zastávek, nadpisy sloupců dnů)
+a znak bez slovenské varianty padá na češtinu - slovenská sada je override, ne náhrada.
+
+⚠️ **`JAZYK` NENÍ parametr sestavy**, i když ho `GetData` čte (roadmapa předpokládala allowlist
+`ServerSideParams`). Uživatel ho v parametrech nenastavuje; re-fetch po přepnutí kultury drží
+snapshot vedle definice sloupců. Driftový test si klíč vyžádal sám a je v něm zapsané proč.
+
+Ověřeno voláním nasazené třídy (0365001/CB_CSADAD): `JAZYK=sk` → všech 39 stránek slovensky, bez
+klíče česky, počet poznámek shodný. Zbývá porovnání s výtiskem zákazníka.
+
 ## 2026-08-12 ✅ - `B74` + `B75`: vkládání z Excelu a našeptávač polí v buňce
 
 Detail → changelog 2026-08-12 (7). Ctrl+V vloží blok ze schránky od vybrané buňky a tabulku

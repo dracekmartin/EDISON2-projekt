@@ -6,6 +6,71 @@ Include %occInclude
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdHelperyTest Extends ALVA.EDTesting.MLTestCase
 {
 
+// ── Jazyk textů značek (#12843) ──────────────────────────────────────────────
+/// Slovenský zákazník má správné piktogramy, ale české popisky v legendě. Jazyk se bere
+/// z kultury šablony (`JAZYK` na wire), ne z firemního nastavení legacy tisku.
+Method TestJazykTextuZnacek()
+{
+	// Bez NactiJazyk (starší klient, sonda) → čeština; klíč se nesmí protáhnout z jiného testu
+	kill ^||TiskAd("jazyk")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "cs", "výchozí jazyk = čeština")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(22), "nejede ", "CZ prefix omezení")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("x"), "na znamení", "CZ atribut")
+
+	// Neznámý kód i prázdno padá na češtinu, „sk-SK" se zkrátí na „sk"
+	set ^||ML("IN","JAZYK") = "de"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NactiJazyk()
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "cs", "neznámý kód → čeština")
+	set ^||ML("IN","JAZYK") = "sk-SK"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NactiJazyk()
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "sk", "sk-SK → sk")
+
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(11), "premáva len ", "SK prefix omezení")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(22), "nepremáva ", "SK prefix zákazu")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextDneVTydnu("7"), "premáva v nedeľu", "SK den v týdnu")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("x"), "na znamenie", "SK atribut na znamení")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextKola(), "spoj prepravuje bicykle", "SK kola")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextBezbarier(1), "všetky spoje s bezbariérovým prístupom do vozidla", "SK souhrn bezbariérovosti")
+
+	// Rozdíly tras - SK znění je 1:1 legacy OmTrasa^JRapiLinPrtMhd (MODE=1)
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextJedePres(), "premáva cez zast. ", "SK jede přes")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextNeobsluhuje(), "nepremáva cez zast. ", "SK neobsluhuje")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextJedeJenDo(), "premáva len do zast. ", "SK jede jen do")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextPres(), " cez ", "SK předložka průjezdu")
+
+	// Nepřeložený znak nesmí zmizet - SK sada je override nad českou, ne její náhrada
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("T"), "tučně", "znak bez SK varianty padá na CZ")
+	kill ^||TiskAd("jazyk"), ^||ML("IN","JAZYK")
+}
+
+/// Každý text, který se na vývěsce reálně tiskne, musí být v obou jazycích neprázdný a jiný -
+/// prázdná SK varianta by v legendě udělala díru, shodná by znamenala zapomenutý překlad.
+Method TestJazykZadnyTextNechybi()
+{
+	kill ^||TiskAd("jazyk")
+	for znak = "x", "y", "z", "O" { set cs("atr", znak) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu(znak) }
+	for omzId = 11, 12, 13, 14, 15, 22 { set cs("omz", omzId) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(omzId) }
+	for dch = 1, 2, 3, 4, 5, 6, 7, "+" { set cs("den", dch) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextDneVTydnu(dch) }
+
+	set ^||TiskAd("jazyk") = "sk"
+	for znak = "x", "y", "z", "O" {
+		set sk = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu(znak)
+		do $$$AssertNotEquals(sk, "", "SK text atributu "_znak_" není prázdný")
+		do $$$AssertNotEquals(sk, cs("atr", znak), "SK text atributu "_znak_" je přeložený")
+	}
+	for omzId = 11, 12, 13, 14, 15, 22 {
+		set sk = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(omzId)
+		do $$$AssertNotEquals(sk, "", "SK prefix omezení "_omzId_" není prázdný")
+		do $$$AssertNotEquals(sk, cs("omz", omzId), "SK prefix omezení "_omzId_" je přeložený")
+	}
+	for dch = 1, 2, 3, 4, 5, 6, 7, "+" {
+		set sk = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextDneVTydnu(dch)
+		do $$$AssertNotEquals(sk, "", "SK den "_dch_" není prázdný")
+		do $$$AssertNotEquals(sk, cs("den", dch), "SK den "_dch_" je přeložený")
+	}
+	kill ^||TiskAd("jazyk")
+}
+
 // ── NastupisteCsv - nástupiště dle spojů, řazení dle četnosti (KOVED #13048 bod 4) ──
 
 Method TestNastupisteCsvRazeniDleCetnosti()

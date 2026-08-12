@@ -222,6 +222,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) - fresh per request
         d ..NactiNastaveniNazvu()         // tvar názvu zastávky + „název pro MHD" (platí pro celou sestavu)
+        d ..NactiJazyk()                  // jazyk textů značek = kultura šablony (#12843)
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         // Default = první skupina v ^JRL - shodně s GetAvailableInstances. Picker posílá jen
@@ -681,7 +682,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         // a uživatel by neměl jak zjistit proč (šablona přežila překlopení jízdního řádku)
         d vals.%Set("OBDOBI_MIMO_PLATNOST", $g(obdobiMimoPlatnost))
     }
-    i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
+    i souhrnNaZn s atrSeen("x") = ..TextSouhrnuNaZnameni()   // TR2: agregátní řádek místo per-zastávka „na znamení"
     // Vývěska je samostatná stránka → legenda vysvětluje jen značky, které na TÉTO stránce reálně jsou.
     // Ostatní kategorie to mají samo (plní se z vytištěných odjezdů), rozdíly tras ne - ty se počítají
     // per zastávka nezávisle na tom, které odjezdy stránka nese (rozdělení per označník, spoj bez
@@ -841,7 +842,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         // atributy spoje - bezbariér (inv = hlava:15) / částečně (cbe = hlava:22); SpecZnak 72=H / 70=F
         s inv = (isinv && +$p(hlava,":",15))
         s cbe = (iscbe && +$p(hlava,":",22))
-        i inv s bezbarLegenda("H") = $s(allBBP:"všechny spoje mají bezbariérově přístupné vozidlo", 1:"spoj má bezbariérově přístupné vozidlo")
+        i inv s bezbarLegenda("H") = ..TextBezbarier(allBBP)
         // #13093 bod 2: přeprava kol (hlava:19, legacy dta20 PrepJiKola) a místenkování (hlava:6, dta6).
         // U KOVED 3 602 spojů s kolem a 6 739 s R (měřeno 4. 8. na všech 17 029 linkách).
         // Emitujeme **vždy** otagované; zapnutí drží šablona
@@ -849,9 +850,9 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s kolo = +$p(hlava,":",19)
         s mistenka = ($p(hlava,":",6) '= "")
         s pokrZnak = ..PokracovaniZnak(dataDB, sku, lin, smer, sp, .pokrLegenda, .pokrPoradi)
-        i kolo s odjAtrLegenda(..ZnakKola()) = "specialni~spoj přepravuje jízdní kola~odjezd-kola"
-        i mistenka s odjAtrLegenda("R") = "text~k jízdence je možné zakoupit místenku~odjezd-mistenka"
-        i cbe s bezbarLegenda("F") = "spoj má částečne bezbariérově přístupné vozidlo, nutná dopomoc průvodce"
+        i kolo s odjAtrLegenda(..ZnakKola()) = "specialni~"_..TextKola()_"~odjezd-kola"
+        i mistenka s odjAtrLegenda("R") = "text~"_..TextMistenky()_"~odjezd-mistenka"
+        i cbe s bezbarLegenda("F") = ..TextCastecneBezbarier()
 
         // ruční komentáře spoje (tab MHD: Komentáře = SeT_SpeC přiřazené spoji přes MhD_SpeC).
         // V rozsahu „Spoje, nepoznámkovat" (MHDSPNPZN) se anotace jen OZNAČÍ (vRozsahu) - co se reálně
@@ -1941,8 +1942,8 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         i pokrac '= "" {
             s cilNaz = ..KonecnaNazev(dataDB, sku, lin, spojTr, smer, tcDo)
             i cilNaz '= "" {                       // bez známého cíle větu nepsat (jinak „jede až do zast. ")
-                s vetaCil = "jede až do zast. "_cilNaz
-                i pruJezd '= "" s vetaCil = vetaCil_" přes "_pruJezd
+                s vetaCil = ..TextJedeAzDo()_cilNaz
+                i pruJezd '= "" s vetaCil = vetaCil_..TextPres()_pruJezd
             }
         }
 
@@ -1953,23 +1954,23 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         s txt = vetaCil
         i jede '= "" {
             i txt = "" {
-                s txt = "jede přes zast. "_jede
+                s txt = ..TextJedePres()_jede
             } else {
-                s $p(txt,", ",$l(txt,", ")+1) = "jede přes zast. "_jede
+                s $p(txt,", ",$l(txt,", ")+1) = ..TextJedePres()_jede
             }
         }
         i nejede '= "" {
             i txt = "" {
-                s txt = "neobsluhuje zast. "_nejede
+                s txt = ..TextNeobsluhuje()_nejede
             } else {
-                s $p(txt," , ",$l(txt," , ")+1) = "neobsluhuje zast. "_nejede
+                s $p(txt," , ",$l(txt," , ")+1) = ..TextNeobsluhuje()_nejede
             }
         }
         i jedeDo '= "" {
             i txt = "" {
-                s txt = "jede jen do zast. "_jedeDo
+                s txt = ..TextJedeJenDo()_jedeDo
             } else {
-                s $p(txt,", ",$l(txt,", ")+1) = "jede jen do zast. "_jedeDo
+                s $p(txt,", ",$l(txt,", ")+1) = ..TextJedeJenDo()_jedeDo
             }
         }
         i txt = "" continue
@@ -2219,7 +2220,7 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
     f {
         s znak = $o(prestupSeen(znak))
         q:znak=""
-        d poznamky.%Push(..BuildPoznamka("specialni", znak, "přestup na "_prestupSeen(znak), "", "", "prestup"))
+        d poznamky.%Push(..BuildPoznamka("specialni", znak, ..TextPrestupu()_prestupSeen(znak), "", "", "prestup"))
     }
     // atributy spoje - bezbariér (H) / částečně bezbariér (F). Při allBBP je „H" agregátní řádek
     // („všechny spoje…") → kategorie „bezbarier-agregat" (TD filtr ho umí skrýt, #7161 D6).
@@ -2333,6 +2334,28 @@ ClassMethod TextAtributu(znak As %String) As %String
     s m("<") = "příjezdová zastávka"
     s m("E") = "nácestná zastávka"
     s m("H") = "cílová zastávka pro tablo"
+
+    // SK varianty jen u znaků, které se na vývěsce reálně tisknou (`JeViditelnyAtribut` + přestupy).
+    // Tiskové direktivy (tučně, podtrženě, jen nástup…) se jako značka nekreslí, takže je nepřekládáme.
+    // „na znamenie" je znění z legacy (`MODE=1`), zbytek drží stejný vzor.
+    i ..Jazyk() = "sk" {
+        s s("x") = "na znamenie"
+        s s("y") = "na znamenie od 20:00"
+        s s("z") = "na znamenie v pracovné dni od 22:00, cez víkendy celodenne"
+        s s("A") = "autobus"
+        s s("L") = "vlak"
+        s s("e") = "Metro A"
+        s s("f") = "Metro B"
+        s s("g") = "Metro C"
+        s s("O") = "lietadlo"
+        s s("D") = "loď"
+        s s("C") = "clo"
+        s s("G") = "paragraf"
+        s s("a") = "paragraf 1"
+        s s("b") = "paragraf 2"
+        s s("c") = "paragraf 3"
+        i $d(s(znak)) q s(znak)
+    }
     q $g(m(znak))
 }
 
@@ -2355,12 +2378,19 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
 /// Prefix textu pro daný typ omezení (1:1 s `txtNZ^JRapiNZUtl`).
 ClassMethod PrefixOmezeni(omzId As %String) As %String
 {
+    // SK sloveso „premáva" je z legacy („premáva len do zast. …"), ne vymyšlené.
+    i ..Jazyk() = "sk" {
+        q $case(omzId, 11:"premáva len ", 12:"premáva aj ", 13:"premáva ", 14:"premáva len v su. ", 15:"premáva len v li. ", 22:"nepremáva ", :"")
+    }
     q $case(omzId, 11:"jede jen ", 12:"jede také ", 13:"jede ", 14:"jede jen v su. ", 15:"jede jen v li. ", 22:"nejede ", :"")
 }
 
 /// Text do legendy pro kroužkovou denní značku týdenní platnosti (dny 1-7, svátek `+`).
 ClassMethod TextDneVTydnu(dch As %String) As %String
 {
+    i ..Jazyk() = "sk" {
+        q $case(dch, "1":"premáva v pondelok", "2":"premáva v utorok", "3":"premáva v stredu", "4":"premáva vo štvrtok", "5":"premáva v piatok", "6":"premáva v sobotu", "7":"premáva v nedeľu", "+":"premáva vo sviatok", :"")
+    }
     q $case(dch, "1":"jede v pondělí", "2":"jede v úterý", "3":"jede ve středu", "4":"jede ve čtvrtek", "5":"jede v pátek", "6":"jede v sobotu", "7":"jede v neděli", "+":"jede ve svátek", :"")
 }
 
@@ -2707,6 +2737,101 @@ ClassMethod VypsatSpojeDopravce() As %Boolean
 
 /// Přečte nastavení názvů zastávek z parametrů sestavy do `^||TiskAd`. Volá se po úklidu cache
 /// na začátku požadavku, než se začnou skládat jména.
+/// Jazyk textů značek pro tento request = kultura šablony (klient posílá `JAZYK` = dvoumístný kód).
+/// Prázdné / neznámé → čeština. Drží se v `^||TiskAd` jako ostatní per-request invarianty, aby se
+/// nemusel protahovat všemi signaturami textových helperů.
+///
+/// ⚠️ **Jen texty značek** (#12843: zákazník má správně slovenské piktogramy, ale české popisky).
+/// Nadpisy sloupců dnů ani nadpisy prvků sem nepatří - ty si uživatel přepisuje v šabloně.
+ClassMethod NactiJazyk()
+{
+    s kod = $zcvt($p($g(^||ML("IN","JAZYK")),"-",1),"L")
+    s ^||TiskAd("jazyk") = $s(kod = "sk":"sk", 1:"cs")
+}
+
+/// Jazyk textů tohoto requestu (`cs` / `sk`). Bez `NactiJazyk` (starší klient, sonda) → `cs`.
+ClassMethod Jazyk() As %String
+{
+    ret $g(^||TiskAd("jazyk"), "cs")
+}
+
+/// Bezbariérovost spoje. SK znění „všetky spoje s bezbariérovým prístupom do vozidla" je z jeho
+/// starého tisku (#12843), ne vymyšlené.
+ClassMethod TextBezbarier(vsechny As %Boolean) As %String
+{
+    i ..Jazyk() = "sk" {
+        ret $s(vsechny:"všetky spoje s bezbariérovým prístupom do vozidla", 1:"spoj má bezbariérovo prístupné vozidlo")
+    }
+    ret $s(vsechny:"všechny spoje mají bezbariérově přístupné vozidlo", 1:"spoj má bezbariérově přístupné vozidlo")
+}
+
+ClassMethod TextCastecneBezbarier() As %String
+{
+    i ..Jazyk() = "sk" ret "spoj má čiastočne bezbariérovo prístupné vozidlo, potrebná pomoc sprievodcu"
+    ret "spoj má částečne bezbariérově přístupné vozidlo, nutná dopomoc průvodce"
+}
+
+ClassMethod TextKola() As %String
+{
+    i ..Jazyk() = "sk" ret "spoj prepravuje bicykle"
+    ret "spoj přepravuje jízdní kola"
+}
+
+/// SK znění z legacy (`MODE=1`: „cestovný lístok s miestenkou je možné zakúpiť").
+ClassMethod TextMistenky() As %String
+{
+    i ..Jazyk() = "sk" ret "cestovný lístok s miestenkou je možné zakúpiť"
+    ret "k jízdence je možné zakoupit místenku"
+}
+
+/// Předložková část věty o přestupu; za ni se lepí druh dopravy z číselníku („autobus" / „vlak").
+ClassMethod TextPrestupu() As %String
+{
+    i ..Jazyk() = "sk" ret "prestup na "
+    ret "přestup na "
+}
+
+ClassMethod TextSouhrnuNaZnameni() As %String
+{
+    i ..Jazyk() = "sk" ret "všetky zastávky linky sú na znamenie"
+    ret "všechny zastávky linky jsou na znamení"
+}
+
+/// Věty o rozdílu trasy spoje vůči vzorové trase. SK znění je 1:1 legacy `OmTrasa^JRapiLinPrtMhd`
+/// (`MODE=1`): „premáva cez" / „nepremáva cez" / „premáva len do". Slovo „pokračuje" legacy ve SK
+/// nechává - je slovensky správné, mění se jen předložka („cez"), viz `TextPokracovani`/`TextPres`.
+ClassMethod TextJedePres() As %String
+{
+    i ..Jazyk() = "sk" ret "premáva cez zast. "
+    ret "jede přes zast. "
+}
+
+ClassMethod TextNeobsluhuje() As %String
+{
+    i ..Jazyk() = "sk" ret "nepremáva cez zast. "
+    ret "neobsluhuje zast. "
+}
+
+ClassMethod TextJedeJenDo() As %String
+{
+    i ..Jazyk() = "sk" ret "premáva len do zast. "
+    ret "jede jen do zast. "
+}
+
+/// Prodloužení za konec vzorové trasy (#7947) - větu legacy nemá, takže SK drží jeho vzor („premáva").
+ClassMethod TextJedeAzDo() As %String
+{
+    i ..Jazyk() = "sk" ret "premáva až do zast. "
+    ret "jede až do zast. "
+}
+
+/// Předložka mezi cílem a výčtem průjezdů („… přes X, Y").
+ClassMethod TextPres() As %String
+{
+    i ..Jazyk() = "sk" ret " cez "
+    ret " přes "
+}
+
 ClassMethod NactiNastaveniNazvu()
 {
     s ^||TiskAd("nazev","tvar") = $g(^||ML("IN","TVAR_NAZVU_ZASTAVKY"))
@@ -2745,6 +2870,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů - fresh per request
         d ..NactiNastaveniNazvu()
+        d ..NactiJazyk()
 
         // Živý náhled z první linky aktuální firmy (session dataDB) - zrcadlí reálný GetData.
         d ..PrvniLinka(dataDB, .sku, .lin)

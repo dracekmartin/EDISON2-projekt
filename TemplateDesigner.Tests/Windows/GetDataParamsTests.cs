@@ -19,7 +19,7 @@ public class GetDataParamsTests
     [Fact]
     public void ComposeGetDataParams_PropustiParametrySestavy()
     {
-        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", null, null);
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", null, null, null);
 
         Assert.Equal(true, p["PISMENA_VARIANT"]);
         Assert.Equal(5, p["HODINY_OD"]);
@@ -28,7 +28,7 @@ public class GetDataParamsTests
     [Fact]
     public void ComposeGetDataParams_PridaInstanciISkupinu()
     {
-        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", "5", null);
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", "5", null, null);
 
         Assert.Equal("876401", p["LINKA_ID"]);
         Assert.Equal("5", p["SKUPINA_LINEK_ID"]);
@@ -38,7 +38,7 @@ public class GetDataParamsTests
     public void ComposeGetDataParams_BezSkupiny_KlicVubecNeposila()
     {
         // Prázdná skupina znamená „server si vybere default", ne „skupina je prázdný řetězec".
-        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", "", null);
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", "", null, null);
 
         Assert.False(p.ContainsKey("SKUPINA_LINEK_ID"));
     }
@@ -49,7 +49,7 @@ public class GetDataParamsTests
         var src = Params();
         src["LINKA_ID"] = "stara";
 
-        var p = TemplateDesignerViewModel.ComposeGetDataParams(src, "LINKA_ID", "876401", null, null);
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(src, "LINKA_ID", "876401", null, null, null);
 
         Assert.Equal("876401", p["LINKA_ID"]);
     }
@@ -58,7 +58,7 @@ public class GetDataParamsTests
     public void ComposeGetDataParams_NemeniZdrojovyDictionary()
     {
         var src = Params();
-        TemplateDesignerViewModel.ComposeGetDataParams(src, "LINKA_ID", "876401", "5", null);
+        TemplateDesignerViewModel.ComposeGetDataParams(src, "LINKA_ID", "876401", "5", null, null);
 
         Assert.False(src.ContainsKey("LINKA_ID"));
         Assert.False(src.ContainsKey("SKUPINA_LINEK_ID"));
@@ -87,5 +87,67 @@ public class GetDataParamsTests
             pages, new Dictionary<string, object?> { ["NECO"] = null });
 
         Assert.Same(pages, merged);   // nic k domíchání → beze změny, bez alokace nových stránek
+    }
+
+    // ── Jazyk textů značek (#12843) ───────────────────────────────────────────
+
+    /// <summary>Jazyk jde do dat jako `JAZYK` - texty značek generuje server, takže bez něj by
+    /// slovenská vývěska měla české popisky u správných piktogramů.</summary>
+    [Fact]
+    public void ComposeGetDataParams_PosleJazyk()
+    {
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", null, null, "sk");
+
+        Assert.Equal("sk", p["JAZYK"]);
+    }
+
+    /// <summary>Bez jazyka se klíč neposílá - server zůstane na češtině (starší chování).</summary>
+    [Fact]
+    public void ComposeGetDataParams_BezJazyka_KlicNeposila()
+    {
+        Assert.DoesNotContain("JAZYK",
+            TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", null, null, null).Keys);
+        Assert.DoesNotContain("JAZYK",
+            TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", null, null, "").Keys);
+    }
+
+    /// <summary>Přepnutí kultury šablony musí vypadat jako změna dat - jinak zůstane v náhledu
+    /// česká legenda a znovu se načte až po výběru jiné instance.</summary>
+    [Fact]
+    public void WireSnapshot_SeMeniSJazykem()
+    {
+        Assert.NotEqual(
+            TemplateDesignerViewModel.ComposeWireSnapshot(null, "cs"),
+            TemplateDesignerViewModel.ComposeWireSnapshot(null, "sk"));
+    }
+
+    /// <summary>Beze změny se přenačítat nesmí - fetch je jednotky sekund na instanci.</summary>
+    [Fact]
+    public void WireSnapshot_BezeZmenyJeShodny()
+    {
+        Assert.Equal(
+            TemplateDesignerViewModel.ComposeWireSnapshot("{\"a\":1}", "cs"),
+            TemplateDesignerViewModel.ComposeWireSnapshot("{\"a\":1}", "cs"));
+    }
+
+    /// <summary>Definice sloupců zůstává ve snapshotu i po přidání jazyka - jazyk ji nesmí vytlačit.</summary>
+    [Fact]
+    public void WireSnapshot_ZachytiIZmenuSloupcu()
+    {
+        Assert.NotEqual(
+            TemplateDesignerViewModel.ComposeWireSnapshot("{\"a\":1}", "cs"),
+            TemplateDesignerViewModel.ComposeWireSnapshot("{\"a\":2}", "cs"));
+    }
+
+    /// <summary>Jazyk se bere ze šablony, ne z parametrů sestavy - persistovaná hodnota parametru
+    /// ho nesmí přebít (třída chyb B24).</summary>
+    [Fact]
+    public void ComposeGetDataParams_JazykZeSablonyPrebijeParametry()
+    {
+        var params2 = new Dictionary<string, object?>(Params()) { ["JAZYK"] = "cs" };
+
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(params2, "LINKA_ID", "876401", null, null, "sk");
+
+        Assert.Equal("sk", p["JAZYK"]);
     }
 }
