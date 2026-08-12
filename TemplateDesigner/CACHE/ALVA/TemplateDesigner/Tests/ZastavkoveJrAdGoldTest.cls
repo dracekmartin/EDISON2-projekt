@@ -50,7 +50,11 @@ Method TestGold0365001()
 	// (podklad pro prázdninové vzory v editoru sloupců) → jen md5. Počty beze změny = režim
 	// „automaticky" se vlastními sloupci nehnul; paritu presetů hlídá ZastavkoveJrAdDefiniceParitaTest.
 	// Re-baseline 2026-08-10 (#13045b etapa 2): + pole PRESETY_SLOUPCU → jen md5, počty beze změny.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=L8b1eefEewg1//ClENRgrQ==")
+	// Re-baseline 2026-08-12 (#12843): varianty tras se rozlišují jen podle úseku OD vývěskové zastávky
+	// dál (1:1 legacy, dřív se srovnával celý směr). ⚠️ Mění se **obsah**, ne počty: sloupců variant
+	// 116 → 60, protože 56 z nich mělo v tištěném úseku identická čísla a lišilo se jen před vývěskou.
+	// Počty stránek/zastávek/odjezdů/poznámek zůstaly shodné = neztratil se žádný spoj ani řádek.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=gqnRyaF1qpURSba9+EAvrQ==")
 }
 
 Method TestGold0365005()
@@ -67,7 +71,63 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-03 (#13093 bod 1): + VYLUKOVE_TEXTY, počty beze změny (parametr je vypnutý).
 	// Re-baseline 2026-08-10 (#13045b): + NZ_KONFIG a NEVYPISOVAT_ZNACKY_SLOUPCU → jen md5, počty beze změny.
 	// Re-baseline 2026-08-10 (#13045b etapa 2): + pole PRESETY_SLOUPCU → jen md5, počty beze změny.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=iH0osA7SWstBvY5NyvWM1w==")
+	// Re-baseline 2026-08-12 (#12843): varianty jen z úseku od vývěskové zastávky - viz gold 0365001,
+	// tady taky jen obsah TRASA_MIN, počty beze změny.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=SSgviYKWpFhhXKwtFToN0w==")
+}
+
+/// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
+/// dva sloupce s identickými čísly a uživatel v nich hledá rozdíl, který tam není (TRANSDEV #12843).
+/// Před opravou to na 0365001 bylo 56 duplicitních sloupců ze 116; digest sám tuhle vadu nechytí,
+/// protože je to hash - tenhle test hlídá ten invariant přímo.
+Method TestZadneDuplicitniVariantniSloupce()
+{
+	set db = ..#GOLDDB
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - přeskočeno")
+		quit
+	}
+	do ..SetupSys(.sys)
+	set sys("U","DATA") = db
+	kill ^||ML
+	set ^||ML("IN","SKUPINA_LINEK_ID") = 1
+	set ^||ML("IN","LINKA_ID") = "0365001"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+	set duplicit = 0, sloupcu = 0, kde = "", key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.ZASTAVKY
+		if '$isobject(zast) continue
+		// Sloupce jako svislé řezy TRASA_MIN, ale jen od vývěskové zastávky dál (projeté se tisknou
+		// jen na přání a tam se varianty legitimně liší).
+		kill sloupec
+		set poVyvesce = 0, it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			if $zcvt(radek.%Get("AKTUALNI_ZASTAVKA"),"L") = "true" set poVyvesce = 1
+			continue:'poVyvesce
+			set casy = radek.%Get("TRASA_MIN")
+			continue:'$isobject(casy)
+			for ci = 0:1:casy.%Size()-1 { set sloupec(ci) = $g(sloupec(ci))_"~"_casy.%Get(ci) }
+		}
+		kill videno
+		set ci = ""
+		for  {
+			set ci = $order(sloupec(ci))
+			quit:ci=""
+			set sloupcu = sloupcu + 1
+			if $data(videno(sloupec(ci))) {
+				set duplicit = duplicit + 1
+				if kde = "" set kde = "stránka "_key_" ("_page.values.%Get("POPIS_ZASTAVKA")_", směr "_page.values.SMER_")"
+			}
+			set videno(sloupec(ci)) = ""
+		}
+	}
+	do $$$AssertTrue(sloupcu > 0, "gold 0365001 nedal žádný variantní sloupec - rozbitý fixture?")
+	do $$$AssertEquals(duplicit, 0, "duplicitní variantní sloupce ("_duplicit_" z "_sloupcu_"), první: "_kde)
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

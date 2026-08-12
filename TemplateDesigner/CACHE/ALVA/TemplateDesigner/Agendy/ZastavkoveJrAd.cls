@@ -397,8 +397,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
 
     // ── varianty tras (dynamické „TrasaMin") - KOVED #13048 bod 5 ────────────────
-    // Varianta = SLED OBSLUHOVANÝCH ZASTÁVEK (1:1 legacy dedup dle `prutmbmp`, JRapiLinPrtMhd1
-    // ř.266-300), NE časový profil - spoje stejné trasy s jinými časy se slévají.
+    // Varianta = SLED OBSLUHOVANÝCH ZASTÁVEK **od vývěskové zastávky dál** (1:1 legacy dedup dle
+    // `prutmbmp` nad smyčkou `f mytc=Tc:Krok:TcDo`, JRapiLinPrtMhd1 ř.266-300), NE časový profil -
+    // spoje stejné trasy s jinými časy se slévají. Proč jen ten úsek: `JeVUsekuVariant`.
     // Čas sloupce = MAXIMUM přes spoje varianty (legacy „ponechá se delší čas") = „nejpozději za X min".
     // Signatura jen přes ZOBRAZENÉ zastávky (servedPoradi): staví = „S", nestaví = „<" (`<` i `|`),
     // mimo trasu = prázdno. Označník do identity NEJDE - dal by vizuálně identické časové sloupce
@@ -424,6 +425,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         f {
             s ppV = $o(servedPoradi(ppV))  q:ppV=""
             i '$isvalidnum(ppV) continue
+            i '..JeVUsekuVariant(ppV, currentPoradi, jeTam) continue   // úsek před vývěskou do identity nejde
             s vv = $g(wMapV(ppV))
             s $p(sigV,"~",ppV) = $s(vv="":"", (vv="<")||(vv="|"):"<", 1:"S")
         }
@@ -432,19 +434,29 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             s variantSig(sigV) = poradiVar
             s variantRepSpoj(poradiVar) = spV
             s variantCt(poradiVar) = ctV                 // číslo trasy varianty → nástupiště per varianta (W pole 7)
+            // Úsek PŘED vývěskou (projeté zastávky, opt-in „tisk projetých") se bere z tohoto
+            // reprezentativního spoje - je to skutečný spoj. Maximum přes spoje varianty by tady dalo
+            // číslo, které nejede nikdo: právě v tomhle úseku se spoje varianty legitimně liší.
             s ppV = ""
             f {
                 s ppV = $o(servedPoradi(ppV))  q:ppV=""
-                s variantPat(poradiVar,ppV) = $p(sigV,"~",ppV)
+                i ..JeVUsekuVariant(ppV, currentPoradi, jeTam) {
+                    s variantPat(poradiVar,ppV) = $p(sigV,"~",ppV)
+                } else {
+                    s vvP = $g(wMapV(ppV))
+                    s variantPat(poradiVar,ppV) = $s(vvP="":"", (vvP="<")||(vvP="|"):"<", 1:"S")
+                    i ..CasHodnota(vvP) '= "" s variantMax(poradiVar,ppV) = ..CasJizdyZMapy(.wMapV, currentPoradi, ppV)
+                }
             }
         }
         s viV = variantSig(sigV)
         s spojVarianta(spV) = viV
         s variantPocet(viV) = $g(variantPocet(viV)) + 1
-        // max kumulativní čas per zastávka přes spoje varianty
+        // max kumulativní čas per zastávka přes spoje varianty (jen úsek, kterým je varianta daná)
         s ppV = ""
         f {
             s ppV = $o(servedPoradi(ppV))  q:ppV=""
+            i '..JeVUsekuVariant(ppV, currentPoradi, jeTam) continue
             i ..CasHodnota($g(wMapV(ppV))) = "" continue
             s tV = ..CasJizdyZMapy(.wMapV, currentPoradi, ppV)
             i ('$d(variantMax(viV,ppV))) || (tV > $g(variantMax(viV,ppV))) s variantMax(viV,ppV) = tV
@@ -2373,6 +2385,19 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
         s txt = txt_..PrefixOmezeni(omzId)_datumy
     }
     q txt
+}
+
+/// Leží zastávka `poradi` v úseku, podle kterého se rozlišují varianty tras? Tedy od vývěskové
+/// zastávky (včetně) dál ve směru jízdy - 1:1 legacy smyčka `f mytc=Tc:Krok:TcDo`
+/// (`JRapiLinPrtMhd1.mac:274`).
+///
+/// ⚠️ Rozdíl trasy PŘED vývěskovou zastávkou nesmí zakládat vlastní variantu: časy se počítají jako
+/// rozdíl proti vývěskové zastávce, takže dva spoje se zajezdkou v první polovině linky dají ve druhé
+/// polovině dva sloupce s IDENTICKÝMI čísly (hlásil TRANSDEV, #12843). Zpětný směr jde v pořadích
+/// sestupně, proto se srovnává obráceně.
+ClassMethod JeVUsekuVariant(poradi As %String, currentPoradi As %String, jeTam As %Boolean) As %Boolean
+{
+    q $s(jeTam:(poradi '< currentPoradi), 1:(poradi '> currentPoradi))
 }
 
 /// Prefix textu pro daný typ omezení (1:1 s `txtNZ^JRapiNZUtl`).

@@ -191,6 +191,26 @@ Method TestCasJizdyZMapy()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasJizdyZMapy(.wMap, 1, 99), 0, "mimo trasu → 0")
 }
 
+// ── Úsek, podle kterého se rozlišují varianty tras (#12843) ─────────────────
+/// Varianta se smí rozlišovat jen podle úseku od vývěskové zastávky dál. Rozdíl trasy PŘED ní by dal
+/// dva sloupce s identickými čísly, protože časy jsou rozdíl proti té zastávce.
+Method TestJeVUsekuVariant()
+{
+	// Směr Tam - pořadí roste; vývěskovou zastávku samotnou úsek zahrnuje (legacy začíná na Tc)
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(5, 5, 1), "vývěsková zastávka patří do úseku")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(9, 5, 1), "za vývěskou patří do úseku")
+	do $$$AssertNotTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(4, 5, 1), "před vývěskou do úseku nepatří")
+
+	// Směr Zpět - pořadí klesá, takže srovnání je obrácené
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(5, 5, 0), "zpět: vývěsková zastávka patří do úseku")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(2, 5, 0), "zpět: za vývěskou je NIŽŠÍ pořadí")
+	do $$$AssertNotTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(9, 5, 0), "zpět: před vývěskou je vyšší pořadí")
+
+	// První zastávka směru = celá trasa je v úseku (tam se varianty rozlišovat mají)
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(1, 1, 1), "první zastávka Tam")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(20, 1, 1), "konec trasy je v úseku první zastávky")
+}
+
 // ── Datumová omezení (1:1 txtNZ^JRapiNZUtl + UprDat^JRapiLinPrtPS3) ─────────
 
 Method TestPrefixOmezeni()

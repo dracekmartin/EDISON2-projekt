@@ -220,6 +220,18 @@ generují se dodatečné minutové sloupce s označením A/B/C. Detekce přes bi
 (`prutmbmp`) - shodné bitmapy = stejná trasa → reuse. (Analogie MHD alg. 1002 rozdílové
 trasy, ale tady přes časové průběhy, ne bitmapy obsluhy.)
 
+⚠️ **Bitmapa se staví jen od tištěné zastávky do konce** (`f mytc=Tc:Krok:TcDo`,
+`JRapiLinPrtMhd1.mac:274`) a uloží se pod klíč `(Tc, Smer)` - varianty jsou tedy vlastnictvím
+konkrétní zastávky. Rozdíl trasy PŘED tou zastávkou variantu zakládat nesmí: časy jsou rozdíl proti
+ní, takže zajezdka v první polovině linky by ve druhé polovině dala dva sloupce s identickými čísly.
+My jsme to do 12. 8. srovnávali přes celý směr (na gold 0365001 to bylo 56 duplicitních sloupců
+ze 116); dnes to drží `JeVUsekuVariant` + invariantní test `TestZadneDuplicitniVariantniSloupce`.
+
+⚠️ **Obsah sloupce se od legacy pořád liší** (vědomě, rozhodnutí odložené): legacy si nechá **jeden
+skutečný průběh** (ten s delším časem na konci, `necham prubeh s delsim casem`), my bereme maximum
+per zastávku přes spoje varianty - takže sloupec může nést kombinaci, kterou nejede žádný spoj
+(rozdíl v jednotkách minut).
+
 ### Anotace u odjezdů + legenda
 
 Speciální znaky a NZ se generují jako horní indexy u minut; texty se sbírají do legendy
@@ -819,8 +831,10 @@ nastavení linky jako v legacy.
 - **Co to dělá:** když část spojů jede **jinou trasou / jinak rychle**, ukazujeme víc sloupců časů -
   každá varianta své časy (a „<" u zastávek, které varianta projíždí).
 - **Kde:** seznam zastávek vlevo (`StopListElement` - `ShowAllRouteVariants`, dynamické sloupce z `VARIANTY_TRAS`/`TrasaMin`).
-- **Stav:** ✅ **HOTOVO** - multi-varianta TrasaMin (L1): dynamický počet sloupců (N dle dat, ne 15 napevno),
-  1:1 ověřeno gold 0365005. *(Zbývá jen „jemnější výběr variant per-písmeno" = TRANSDEV TR7, jiný bod.)*
+- **Stav:** ✅ **HOTOVO** - multi-varianta TrasaMin (L1): dynamický počet sloupců (N dle dat, ne 15 napevno).
+  ⚠️ **„1:1 ověřeno gold 0365005" platilo pro písmena a jednosloupcový režim, NE pro počet variantních
+  sloupců** - tam se to od legacy lišilo od začátku (opraveno 12. 8., viz níže). Gold digest je hash
+  našeho výstupu, takže odchylku od starého modulu nemohl chytit. *(Zbývá „jemnější výběr variant" = `B67`.)*
 
 ### 🟢 Dormant (umíme, ale nemáme testovací data)
 - **Potlačit negativní značku v některých sloupcích** (AD-N5, legacy `MHD_NEZNZ123`) - vázané na NZ, dnes
