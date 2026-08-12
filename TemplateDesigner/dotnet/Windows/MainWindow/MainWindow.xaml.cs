@@ -1418,7 +1418,8 @@ public partial class MainWindow : Window
         Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
         Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
-        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
+        Add("Tabulka (z dat)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
+        Add("Tabulka (pevná)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Table, 0, 0));
 
         // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
         var kind = _vm.CurrentAgendaElementKind;

@@ -1915,7 +1915,7 @@ public class TemplateDesignerViewModel : EDViewModel
         ElementTypes.Rectangle     => (60f, 20f),
         ElementTypes.Line          => (190f, 1f),
         ElementTypes.Image         => (40f, 30f),
-        // ElementTypes.Table (Fixed) je spící - nevytváří se z UI (viz TableElement docstring)
+        ElementTypes.Table         => (90f, 18f),   // 3 řádky po 6 mm - viz CreateGrid
         ElementTypes.DynamicTable  => (190f, 30f),
         ElementTypes.Barcode       => (30f, 30f),
         ElementTypes.StopList      => (60f, 60f),
@@ -1934,7 +1934,7 @@ public class TemplateDesignerViewModel : EDViewModel
             ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
             ElementTypes.Line          => new LineElement      { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Image         => new ImageElement     { X = x, Y = y, Width = w, Height = h },
-            // ElementTypes.Table (Fixed) je spící - nevytváří se z UI (viz TableElement docstring)
+            ElementTypes.Table         => NewFixedTable(x, y, w, h),
             ElementTypes.DynamicTable  => new DynamicTableElement { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Barcode       => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
             ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
@@ -1947,6 +1947,21 @@ public class TemplateDesignerViewModel : EDViewModel
         el.BorderColor = "#FF000000";
         el.BorderWidth = 0.1f;
         return el;
+    }
+
+    /// <summary>
+    /// Nová pevná tabulka - mřížka 3 × 3 s **pevnou výškou**. Bez výšky (Height null) by prvek
+    /// platil za dynamický a canvas by mu nabídl jen boční úchyty, takže by za něj nešlo táhnout
+    /// do výšky - a to uživatel od ručně kreslené tabulky čeká (nahlášeno 12. 8.).
+    /// </summary>
+    private static TableElement NewFixedTable(float x, float y, float w, float? h)
+    {
+        var table = TableElement.CreateGrid(columns: 3, rows: 3);
+        table.X = x;
+        table.Y = y;
+        table.Width = w;
+        table.Height = h;
+        return table;
     }
 
     // ── Delete ──────────────────────────────────────────────────────────────────

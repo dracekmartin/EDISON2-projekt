@@ -252,7 +252,7 @@ Pravidla obsahu (ZÁVAZNÁ):
     private static readonly string[] GenericTypes =
     [
         ElementTypes.Text, ElementTypes.Image, ElementTypes.Rectangle,
-        ElementTypes.Line, ElementTypes.Barcode, ElementTypes.DynamicTable
+        ElementTypes.Line, ElementTypes.Barcode, ElementTypes.DynamicTable, ElementTypes.Table
     ];
 
     /// <summary>
@@ -274,6 +274,7 @@ Pravidla obsahu (ZÁVAZNÁ):
         ElementTypes.Line          => "Čára",
         ElementTypes.Barcode       => "Kód (QR / čárový)",
         ElementTypes.DynamicTable  => "Tabulka (dynamická)",
+        ElementTypes.Table         => "Tabulka (pevná)",
         ElementTypes.StopList      => "Seznam zastávek (zastávkový JŘ)",
         ElementTypes.DepartureGrid => "Mřížka odjezdů (zastávkový JŘ)",
         ElementTypes.NotesLegend   => "Legenda poznámek (zastávkový JŘ)",
@@ -283,6 +284,10 @@ Pravidla obsahu (ZÁVAZNÁ):
 
     private static string? ElementNote(string type) => type switch
     {
+        ElementTypes.Table =>
+            "Mřížka, jejíž obsah vyplňuje uživatel - buňka nese text nebo pole {CISLO_LINKY}. " +
+            "Nahrazuje skládání hlaviček a bloků (platební údaje, rekapitulace) z jednotlivých textů: " +
+            "je to jeden prvek, se kterým se hýbe vcelku. Řádky se z dat negenerují - na to je tabulka dynamická.",
         ElementTypes.DynamicTable =>
             "Řádky se generují z datové kolekce agendy (DataSource). Dialog tabulky (dvojklik) umí navíc: " +
             "sloupce s mapováním na pole NEBO počítaným výrazem ({CENA}*{POCET}) a formátem; " +

@@ -180,10 +180,11 @@ při scope té fáze, ne teď.
 
 Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
 
-**Pevná (ručně vyplňovaná) tabulka - záměr upřesněn 12. 8. (Jan), bere se teď.** Prvek je hotový,
-ale uspaný (není v paletě). Cíl **není faktura, ale náhrada „poskládám to z textových polí"** -
-hlavička sestavy i blok v těle faktury (platební údaje, rekapitulace) jako **jeden** prvek, se kterým
-se hýbe vcelku. Dnešní důkaz, že chybí: naše vlastní systémové šablony mají hlavičku z 5-6 textů.
+**Pevná (ručně vyplňovaná) tabulka - záměr upřesněn 12. 8. (Jan), rozdělaná.** Cíl **není faktura,
+ale náhrada „poskládám to z textových polí"** - hlavička sestavy i blok v těle faktury (platební
+údaje, rekapitulace) jako **jeden** prvek, se kterým se hýbe vcelku. Dnešní důkaz, že chybí: naše
+vlastní systémové šablony mají hlavičku z 5-6 textů. **Krok 1 hotový 12. 8.** (prvek je v paletě,
+vzhled sjednocen) → archiv.
 
 **Model = objekt na stránce s excelovskými klávesami** (Word/PowerPoint), ne tabulkový procesor -
 žádný řádek vzorců ani odkazy typu A1. Dvě rozhodnutí 12. 8.: **zvláštní řádek záhlaví se u tohoto
@@ -192,14 +193,13 @@ prvku ruší** (záhlaví = první řádek, který si uživatel udělá tučný;
 ⚠️ Připravené bloky agend (`GetTableTemplates`: „Záhlaví linky", „Shrnutí faktury") existují na
 serveru i v editoru, ale bez tohoto prvku k nim nevede z UI cesta.
 
-- **Krok 1 - prvek existuje (S–M):** paleta + továrna (vloží 3 × 3, bez řádku záhlaví, viditelná
-  mřížka), přepínač režimu z panelu pryč (dynamickou dělá `DynamicTableElement`), render na **plán
-  řádků** (`RowSpec`; `B11` ho vynechal - kreslí svislou čáru i za posledním sloupcem a vrství dvě
-  pozadí), zmenšení obsahu při zmenšení prvku jako u ostatních tabulek, prázdná tabulka viditelná
-  (dnes se nevykreslí nic); drift-test allowlist zúžit.
-- **Krok 2 - zadávání na plátně (M):** dvojklik = dovnitř a rovnou psát, F2 upraví vybranou buňku,
-  Tab/Enter posun, Esc ven; pravý klik = vložit/smazat řádek a sloupec; šířka sloupce tažením;
-  dialog zredukovat na „Obecné".
+- **Krok 2 - zadávání na plátně (M), další na řadě:** dvojklik = dovnitř a rovnou psát, F2 upraví
+  vybranou buňku, Tab/Enter posun, Esc ven; pravý klik = vložit/smazat řádek a sloupec; šířka
+  sloupce tažením. **Součástí je zrušení dnešního aparátu**: dialog se scvrkne na jediné „Obecné"
+  postavené na EDInputFormu (`TableElementEdit.cls`) **bez tlačítka „Upravit sloupce"** - struktura
+  i obsah patří na plátno, v dialogu zůstanou jen obecné vlastnosti prvku (potvrzeno Janem 12. 8.).
+  ⚠️ Přidání řádku dnes obsah zmenší (prvek má pevnou výšku kvůli úchytům); s přidáváním na plátně
+  se má výška dorovnat o `RowHeight`, ať tabulka roste jako ve Wordu.
 - **Postupně dál (nice-to-have, nic neblokuje):** výška **per řádek** tažením (model má dnes jednu
   společnou výšku - aditivní změna), vkládání bloku z Excelu (Ctrl+V textu odděleného tabulátory),
   našeptávač polí po `{`, výběr více buněk tažením a na něj **ColSpan** merged cells. **RowSpan

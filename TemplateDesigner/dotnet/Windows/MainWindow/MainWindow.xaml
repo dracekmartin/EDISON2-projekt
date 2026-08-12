@@ -311,6 +311,10 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (pevná - obsah vyplníte sami)" Tag="TableElement"
+                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
+                            <Image Source="{StaticResource EDIcons.Grid}" Style="{StaticResource ToolbarIconStyle}"/>
+                        </Button>
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
                         <!-- JŘ elementy - viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
                         <Button x:Name="BtnPalStopList" Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"

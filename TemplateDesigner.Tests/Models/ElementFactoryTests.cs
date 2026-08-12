@@ -5,18 +5,34 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
-/// Zámek továrny elementů. Hlídá zejména <b>spící Fixed tabulku</b> (<see cref="TableElement"/>):
-/// nesmí jít vytvořit z UI/továrny - živá je <see cref="DynamicTableElement"/>. Když někdo Fixed
-/// tabulku oživí (vrátí větev do <c>CreateElementByType</c>), tento test spadne a připomene, že
-/// vědomě odmrazuje typ (schéma musí být záměrné) - viz TableElement docstring.
+/// Zámek továrny elementů - každý typ z palety musí vyrobit přesně svou třídu (továrna má
+/// <c>_ =&gt; TextElement</c> fallback, takže překlep by tiše vrátil textový prvek).
+/// Pevná tabulka má navíc vlastní test na to, s čím se vloží: bez mřížky a řádků by uživatel
+/// dostal neviditelný prvek, protože tabulka bez sloupců nemá co kreslit.
 /// </summary>
 public class ElementFactoryTests
 {
     [Fact]
-    public void FixedTable_NelzeVytvoritZTovarny()
+    public void PevnaTabulka_SeVlozíJakoVyplnitelnaMrizka()
     {
-        var el = TemplateDesignerViewModel.CreateElementByType(ElementTypes.Table, 0, 0);
-        Assert.IsNotType<TableElement>(el);
+        var el = Assert.IsType<TableElement>(
+            TemplateDesignerViewModel.CreateElementByType(ElementTypes.Table, 0, 0));
+
+        Assert.Equal(TableMode.Fixed, el.Mode);
+        Assert.Equal(3, el.Columns.Count);
+        Assert.Equal(3, el.Rows?.Count);
+        Assert.All(el.Rows!, r => Assert.Equal(3, r.Cells.Count));
+
+        // Bez viditelných čar by prázdná mřížka nebyla poznat.
+        Assert.True(el.Grid.ShowRowLines);
+        Assert.True(el.Grid.ShowColumnLines);
+
+        // Pevná výška je podmínka toho, aby šlo za tabulku táhnout do výšky - prvek bez výšky
+        // platí za dynamický a dostane od plátna jen boční úchyty.
+        Assert.Equal(3 * el.RowHeight, el.Height);
+
+        // Řádek záhlaví se u pevné tabulky vědomě nenabízí - záhlaví si udělá uživatel prvním řádkem.
+        Assert.False(el.ShowHeader);
     }
 
     [Fact]
@@ -32,6 +48,7 @@ public class ElementFactoryTests
     [InlineData(ElementTypes.Line, typeof(LineElement))]
     [InlineData(ElementTypes.Image, typeof(ImageElement))]
     [InlineData(ElementTypes.Barcode, typeof(BarcodeElement))]
+    [InlineData(ElementTypes.Table, typeof(TableElement))]
     [InlineData(ElementTypes.StopList, typeof(StopListElement))]
     [InlineData(ElementTypes.DepartureGrid, typeof(DepartureGridElement))]
     [InlineData(ElementTypes.NotesLegend, typeof(NotesLegendElement))]

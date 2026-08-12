@@ -288,9 +288,9 @@ Vše v `dotnet/Rendering/`:
 | Prvek | Co dělá | Používá |
 |---|---|---|
 | `CellRenderer.DrawCell` | jedna buňka: bg → padding → HAlign/VAlign → decorations. **Jediné místo pozicování textu buňky.** | všechny 4 (i DepartureGrid na hodinové buňky) |
-| `ColumnRenderer.DrawRow` + `CellSpec` | jeden vodorovný řádek = sekvence buněk + volitelné svislé čáry | StopList, LineTable, DynamicTable (R1a) |
+| `ColumnRenderer.DrawRow` + `CellSpec` | jeden vodorovný řádek = sekvence buněk + volitelné svislé čáry | StopList, LineTable, DynamicTable, TableElement (R1a) |
 | `TableLayout.ResolveWidths` | šířky: pevné (mm/%) + auto-split zbytku rovným dílem; **nevejde-li se, zmenší šířky na šířku elementu** (místo dřívějšího oříznutí) | StopList, DynamicTable, TableElement |
-| `TableLayout.ComputeWidthScale` | vodorovný protějšek `ComputeFontScale` - škála pro **fonty a výšky řádků**, aby se tabulka vešla do šířky. Element ji kombinuje s výškovou přes `MathF.Min` a předává do `CellRenderer` jako `fontScale`. Bez ní na šířku reagovalo jen zmenšování textu v jednotlivé buňce → vedle sebe různé velikosti písma; a přebytek se tiše oříznul (svislé varování hlídá jen výšku) | StopList, DynamicTable, LineTable (vlastní výpočet šířek → skalární varianta). **DepartureGrid mimo** = pivot, málo sloupců. **TableElement** má jen zmenšení šířek - font-škálu vůbec nezná (uspaný element, dorovná se při oživení, Fáze B krok 1) |
+| `TableLayout.ComputeWidthScale` | vodorovný protějšek `ComputeFontScale` - škála pro **fonty a výšky řádků**, aby se tabulka vešla do šířky. Element ji kombinuje s výškovou přes `MathF.Min` a předává do `CellRenderer` jako `fontScale`. Bez ní na šířku reagovalo jen zmenšování textu v jednotlivé buňce → vedle sebe různé velikosti písma; a přebytek se tiše oříznul (svislé varování hlídá jen výšku) | StopList, DynamicTable, LineTable (vlastní výpočet šířek → skalární varianta), TableElement. **DepartureGrid mimo** = pivot, málo sloupců |
 | `TableLayout.ResolveCascade` | kaskáda stylu buňky `column → element → baked` + legacy alignment fallback | StopList, DynamicTable, LineTable |
 | `CellDefaults.Default` | poslední vrstva kaskády (Arial 9pt, padding 0.5mm, VAlign Middle…) | všechny |
 | `ColumnHeader.Resolve` | sémantika „override přebíjí zdroj, prázdné → zdroj" u nadpisů | všechny |
@@ -319,8 +319,11 @@ Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho d
   zvýraznění (per-řádkové overridy), filtr projížděných zastávek, variantní časové sloupce (Km-expand).
 
 **DynamicTable** (obecná tabulka):
-- Souhrnné řádky s agregacemi (SUM/COUNT/AVG…), alternating row color, Fixed mód s `{PLACEHOLDER}`
-  ze skalárů (dormant `TableElement`).
+- Souhrnné řádky s agregacemi (SUM/COUNT/AVG…), střídání řádků, řazení, zvýraznění řádků, min/max počet.
+
+**TableElement** (pevná, ručně vyplňovaná tabulka):
+- Řádky a texty buněk drží šablona (`Rows`/`Cells`), ne data - buňka nese text nebo `{PLACEHOLDER}`
+  ze skalárů. Mód `Dynamic` na téže třídě zůstal **jen pro staré šablony**; z UI se nenastavuje.
 
 **LineTable** (knižní JŘ):
 - **Výpočet šířek** (Km-expanze na N sub-sloupců dle dat + časové sloupce spojů sdílejí auto pool -

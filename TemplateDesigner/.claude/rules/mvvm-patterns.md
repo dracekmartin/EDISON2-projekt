@@ -12,7 +12,7 @@ Od Wave 4 je hlavní editační cestou **Caché formulář** (`*Edit.cls`): u el
 
 1. **Formátovací lišta** (`FormatToolbar`) je potřebuje **vždy**, i když se zobrazuje Caché formulář.
 2. **Úprava více elementů naráz** jde jen přes ně (Caché formulář edituje jeden cíl).
-3. **Fallback** pro element bez `*Edit.cls` schématu (dnes uspaná pevná tabulka).
+3. **Fallback** pro element bez `*Edit.cls` schématu (dnes pevná tabulka).
 
 **Nejsou tedy druhý zdroj pravdy pro schéma** - u base polí je autoritou sdílený
 [`BaseElementFields.cls`](../../CACHE/ALVA/TemplateDesigner/EDInputForm/BaseElementFields.cls) a C#

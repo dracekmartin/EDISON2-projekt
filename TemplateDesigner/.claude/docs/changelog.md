@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-08-12 (3) - 🧱 pevná tabulka je zpátky v paletě (Fáze B, krok 1)
+
+Ručně vyplňovanou tabulku aplikace uměla celou dobu, ale nešlo ji vložit - nebyla v paletě ani
+v nabídce „Přidat", takže se k ní uživatel nedostal. **Záměr (Jan 12. 8.): není to featura pro
+faktury, je to náhrada „poskládám to z textových polí".** Hlavička sestavy i blok v těle faktury
+(platební údaje, rekapitulace) má být **jeden** prvek, se kterým se hýbe vcelku. Důkaz, že chybí:
+naše vlastní systémové šablony mají hlavičku poskládanou z 5-6 samostatných textů.
+
+**Co je nově:**
+
+- **Vloží se jako mřížka 3 × 3** s viditelnými čarami, prázdná a připravená k vyplnění.
+- **Bez řádku záhlaví** (rozhodnutí Jan): záhlaví si uživatel udělá z prvního řádku tím, že ho
+  ztuční. Přepínač zůstal jen kvůli šablonám, které ho už mají.
+- **Přepínač režimu (pevná / dynamická) z panelu pryč.** Dynamickou tabulku dělá samostatný prvek;
+  přepnutí vedlo do stavu, ze kterého se uživatel nedostal zpátky.
+- **Zmenší obsah při zmenšení prvku**, jako ostatní tabulky. Dřív se přebytečné řádky jen ořízly -
+  po zmenšení prvku o polovinu uživatel tiše přišel o půlku řádků.
+- **Prázdná tabulka je vidět.** Bez sloupců se dřív nevykreslilo vůbec nic, takže po vložení nebylo
+  poznat, kam se kliklo.
+
+**Vzhled sjednocen se zbytkem** (prvek jel jako jediný mimo sdílený plán řádků): mizí svislá čára
+navíc na vnějším okraji, která zdvojovala rámeček, a vlastní barva pozadí řádku už **přebíjí**
+střídání řádků místo aby se s ním míchala (u průsvitné barvy prosvítala zebra zespodu).
+
+**Tři chyby z prvního proklikání (Jan), všechny opravené:**
+
+- **Nešlo táhnout do výšky.** Prvek se vkládal bez pevné výšky, což z něj dělalo „dynamický" prvek,
+  a těm plátno nabízí jen boční úchyty. Vkládá se s výškou (3 řádky = 18 mm), takže se chová jako
+  každý jiný prvek. Cena: přidání řádku obsah zmenší místo aby tabulku zvětšilo - dorovná se
+  v kroku 2, kde se řádky budou přidávat přímo na plátně.
+- **Po natažení do výšky zbylo dole prázdné bílé místo.** Zmenšování obsahu bylo napsané jen jedním
+  směrem („nevejde se → zmenši"); opačný případ u ostatních tabulek nenastává, protože jim počet
+  řádků plyne z dat. Nově **řádky vyplní výšku prvku**, ale **písmo se přitom nezvětšuje** (roztažený
+  prvek má mít vyšší řádky, ne větší text - jako tabulka na snímku v PowerPointu). Zmenšit se písmo
+  umí dál. Starých tabulek v režimu „z dat" se roztahování netýká.
+- **Mřížka blikala při posunu po plátně** - a byla to obecná chyba obou tabulek, nejen nové.
+  Čára tenčí než pixel se **bez vyhlazení** kreslí jen když trefí střed pixelu, takže při posunu
+  o zlomek milimetru mizela a zase se objevovala. Naměřeno: z deseti pozic se nevykreslila v šesti.
+  JŘ prvky tohle pravidlo („tenká čára → vyhlazovat") mají od začátku, tabulky ne; nově je pero
+  mřížky na jednom místě (`GridStyle.CreatePaint`) a používají ho obě tabulky.
+
+**Brány:** build bez chyb, .NET 810 zelených (799 původních + 11 nových na pevnou tabulku). Dva testy
+ověřeny mutací, ať netvrdí víc, než měří: vypnutá škála shodí test na zmenšování obsahu, vypnuté
+vyhlazení shodí test na mizející mřížku.
+
+**Dál:** krok 2 = zadávání přímo na plátně (dvojklik do buňky a psát, Tab/Enter posun, pravý klik
+na vložení řádku a sloupce, šířky tažením) a s ním zredukování dialogu na jediné „Obecné".
+Do té doby se obsah zadává dosavadním dialogem sloupců a řádků.
+
+
 ## 2026-08-12 (2) - 🔌 přepínač vlastních sloupců odstraněn, featura svítí všem
 
 **Rozhodnutí Jan:** vypínač `Features.CustomDepartureColumns` pryč, vlastní sloupce vývěsky jsou

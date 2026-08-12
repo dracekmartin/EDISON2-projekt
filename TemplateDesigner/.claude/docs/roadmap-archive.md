@@ -2,6 +2,20 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-12 ✅ - Fáze B krok 1: pevná tabulka je zpátky v paletě
+
+Detail → changelog 2026-08-12 (3). Záměr upřesněn Janem: **není to featura pro faktury, je to
+náhrada „poskládám to z textových polí"** (jeden prvek místo šesti textů v hlavičce).
+
+Prvek v paletě i v nabídce „Přidat" (vloží mřížku 3 × 3 bez řádku záhlaví), přepínač režimu z panelu
+pryč, render převeden na sdílený plán řádků (zmizela svislá čára navíc na vnějším okraji a vrstvení
+dvou pozadí), prázdná tabulka je vidět, zmenšení i **roztažení** řádků na výšku prvku.
+
+⚠️ **Nález z proklikání, který platil pro obě tabulky:** čára tenčí než pixel se bez vyhlazení kreslí
+jen když trefí střed pixelu → mřížka při posunu prvku blikala (z deseti pozic chyběla v šesti).
+Pero mřížky je nově na jednom místě (`GridStyle.CreatePaint`) se stejným pravidlem, jaké měly JŘ
+prvky od začátku. Ověřeno proklikem Jana 12. 8.
+
 ## 2026-08-11 ✅ - `B51` seznam se plní najednou, ne po jednom řádku
 
 Detail → changelog 2026-08-11 (2). Nález Jan 4. 8., **první pokus vrácen** (`DeferRefresh` shodil
