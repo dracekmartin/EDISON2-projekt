@@ -176,9 +176,11 @@ public partial class MainWindow
         InlineEditBox.Visibility = Visibility.Collapsed;
         HideSuggest();
 
+        // Příkaz si **nesmí** držet instanci buňky: každá změna struktury (vložení řádku, tažení
+        // hranice, vložení ze schránky) mřížku naklonuje, takže by zpětný krok psal do odpojené
+        // buňky a tiše nic neudělal (nález revize 12. 8.). Adresuje se proto souřadnicí.
         if (commit && cell is not null && newText != oldText)
-            _vm.Execute(new SetPropertyCommand("Obsah buňky", oldText, newText,
-                v => cell.Content = (string)(v ?? "")));
+            _vm.Execute(CellContentCommand(_cellTable, _cellRow, _cellCol, oldText, newText));
 
         skCanvas.Focus();
         InvalidateCanvas();
@@ -193,6 +195,9 @@ public partial class MainWindow
     private bool HandleTableCellsKey(KeyEventArgs e)
     {
         if (_vm is null || _cellTable is null || _cellEditing) return false;
+
+        ClampCellSelection();
+        if (_cellTable is null) return false;
 
         var (rows, cols) = _cellTable.GridSize(_vm.State.CurrentPreviewData);
         if (rows == 0 || cols == 0) { ExitTableCells(); return false; }
@@ -215,7 +220,7 @@ public partial class MainWindow
                 return true;
 
             case Key.Tab:
-                MoveCell(0, shift ? -1 : 1, rows, cols);
+                MoveCell(0, shift ? -1 : 1, rows, cols, wrap: true);
                 return true;
 
             case Key.Enter:
@@ -314,21 +319,58 @@ public partial class MainWindow
 
             case Key.Tab:
                 EndCellEdit(commit: true);
-                MoveCell(0, shift ? -1 : 1, rows, cols);
+                MoveCell(0, shift ? -1 : 1, rows, cols, wrap: true);
                 return true;
         }
         return false;
     }
 
-    /// <summary>Posun po buňkách; na konci řádku přeskočí na začátek dalšího (jako Tab v Excelu).</summary>
-    private void MoveCell(int dRow, int dCol, int rows, int cols)
+    /// <summary>
+    /// Posun po buňkách. Šipky a Enter drží svůj sloupec i řádek; **jen Tab** přeskakuje na konci
+    /// řádku na začátek dalšího. Dřív se to počítalo přes jeden plochý index, takže šipka nahoru
+    /// v prvním řádku skočila do jiného sloupce (nález revize 12. 8.).
+    /// </summary>
+    private void MoveCell(int dRow, int dCol, int rows, int cols, bool wrap = false)
     {
-        int index = _cellRow * cols + _cellCol + dRow * cols + dCol;
-        index = Math.Clamp(index, 0, rows * cols - 1);
-
-        _cellRow = index / cols;
-        _cellCol = index % cols;
+        if (wrap)
+        {
+            int index = Math.Clamp(_cellRow * cols + _cellCol + dCol, 0, rows * cols - 1);
+            _cellRow = index / cols;
+            _cellCol = index % cols;
+        }
+        else
+        {
+            _cellRow = Math.Clamp(_cellRow + dRow, 0, rows - 1);
+            _cellCol = Math.Clamp(_cellCol + dCol, 0, cols - 1);
+        }
         InvalidateCanvas();
+    }
+
+    /// <summary>Zápis obsahu buňky jako vratný příkaz - buňku dohledá podle souřadnice, takže
+    /// funguje i po přeskládání mřížky.</summary>
+    private SetPropertyCommand CellContentCommand(TableElement table, int row, int col,
+        string oldText, string newText) =>
+        new("Obsah buňky", oldText, newText, v =>
+        {
+            if (table.EnsureCell(_vm!.State.CurrentPreviewData, row, col) is { } c)
+                c.Content = (string)(v ?? "");
+        });
+
+    /// <summary>
+    /// Srovná vybranou buňku do mřížky. Ctrl+Z a Ctrl+Y jdou mimo náš kód, takže po vrácení
+    /// vloženého řádku (nebo po smazání celé tabulky) ukazoval výběr mimo mřížku - zmizelo
+    /// zvýraznění a psaní ani Delete nic nedělaly, dokud uživatel neklikl znovu (nález revize 12. 8.).
+    /// </summary>
+    private void ClampCellSelection()
+    {
+        if (_vm is null || _cellTable is null) return;
+
+        bool vSablone = _vm.State.CurrentTemplate.Sections.Any(sec => sec.Elements.Contains(_cellTable));
+        var (rows, cols) = _cellTable.GridSize(_vm.State.CurrentPreviewData);
+        if (!vSablone || rows == 0 || cols == 0) { ExitTableCells(); return; }
+
+        _cellRow = Math.Clamp(_cellRow, 0, rows - 1);
+        _cellCol = Math.Clamp(_cellCol, 0, cols - 1);
     }
 
     private void ClearCell()
@@ -337,9 +379,7 @@ public partial class MainWindow
         var cell = _cellTable.EnsureCell(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
         if (cell is null || cell.Content.Length == 0) return;
 
-        string old = cell.Content;
-        _vm.Execute(new SetPropertyCommand("Obsah buňky", old, "",
-            v => cell.Content = (string)(v ?? "")));
+        _vm.Execute(CellContentCommand(_cellTable, _cellRow, _cellCol, cell.Content, ""));
         InvalidateCanvas();
     }
 
@@ -357,6 +397,10 @@ public partial class MainWindow
     /// <summary>Odsazení začátku dvojice od horní/levé hrany prvku (mm) - taky se během tažení
     /// nemění, jinak by se rozměr počítal z rozhýbaného základu.</summary>
     private float _dividerPairStart;
+
+    /// <summary>Myš se během tažení skutečně pohnula. Bez toho by pouhý klik na hranici zapsal
+    /// prázdný krok do historie a označil šablonu za změněnou (nález revize 12. 8.).</summary>
+    private bool _dividerMoved;
     private TableElement? _dividerTable;
     private TableElement.StructureSnapshot? _dividerBefore;
 
@@ -419,6 +463,7 @@ public partial class MainWindow
 
         _dividerDrag   = divider;
         _dividerTable  = table;
+        _dividerMoved  = false;
         _dividerBefore = table.CaptureStructure();
         skCanvas.CaptureMouse();
         return true;
@@ -435,6 +480,7 @@ public partial class MainWindow
         if (rect is null) return;
 
         var data = _vm.State.CurrentPreviewData;
+        _dividerMoved = true;
 
         if (drag.Kind == DividerKind.Column)
         {
@@ -465,13 +511,15 @@ public partial class MainWindow
         }
 
         var kind = _dividerDrag?.Kind ?? DividerKind.Column;
+        bool moved = _dividerMoved;
         _dividerDrag   = null;
         _dividerTable  = null;
         _dividerBefore = null;
+        _dividerMoved  = false;
         _vm.State.DragBadgeText = null;
         skCanvas.ReleaseMouseCapture();
 
-        if (!commit) { table.RestoreStructure(before); InvalidateCanvas(); return; }
+        if (!commit || !moved) { table.RestoreStructure(before); InvalidateCanvas(); return; }
 
         var after = table.CaptureStructure();
         _vm.Execute(new SetPropertyCommand(
@@ -591,7 +639,8 @@ public partial class MainWindow
         if (block.Count == 0) return;
 
         int row = _cellRow, col = _cellCol;
-        EditStructure("Vložení ze schránky", t => t.PasteBlock(row, col, block));
+        EditStructure("Vložení ze schránky",
+            t => t.PasteBlock(_vm.State.CurrentPreviewData, row, col, block));
     }
 
     // ── Řádky a sloupce ───────────────────────────────────────────────────────
@@ -627,12 +676,8 @@ public partial class MainWindow
         Add("Vložit ze schránky (Ctrl+V)", PasteIntoCells);
         Add("Vymazat obsah buňky (Del)", ClearCell);
 
-        menu.Items.Add(new Separator());
-        Add("Vlastnosti tabulky… (Esc, Enter)", () =>
-        {
-            ExitTableCells();
-            OpenPropertiesForElement(table);
-        });
+        // „Vlastnosti tabulky" tu vědomě nejsou - nabídka pokračuje standardními položkami prvku
+        // (Vyjmout, Kopírovat, Smazat, Vrstva, Vlastnosti), společnými pro všechny prvky.
         return true;
     }
 
@@ -669,6 +714,9 @@ public partial class MainWindow
     private void DrawTableCellOverlay(SKCanvas canvas, float cw)
     {
         if (_vm is null || _canvas is null || _cellTable is null || _cellEditing) return;
+
+        ClampCellSelection();
+        if (_cellTable is null) return;
 
         var elRect = _canvas.GetElementCanvasRect(_cellTable, cw);
         var cellMm = _cellTable.CellRectMm(_vm.State.CurrentPreviewData, _cellRow, _cellCol);

@@ -436,13 +436,18 @@ public class TableElement : TemplateElement
         if (!Height.HasValue)
             return [.. rows.Select(r => r.Height ?? RowHeight)];
 
+        // Záhlaví i souhrny se kreslí zmenšené stejnou škálou jako text, takže se musí odečítat
+        // zmenšené - jinak by řádkům zbylo méně, než kolik je reálně volného místa, a dole by
+        // zůstal pruh bílé (nález revize 12. 8.).
         float proRadky = Height.Value
-                         - (ShowHeader ? HeaderHeight : 0f)
-                         - (SummaryRows?.Count ?? 0) * RowHeight;
+                         - (ShowHeader ? HeaderHeight * fontScale : 0f)
+                         - (SummaryRows?.Count ?? 0) * RowHeight * fontScale;
 
+        // Minimum i pro řádky bez vlastní výšky: bez něj je sdílené jádro stáhne na nulu, jakmile
+        // samotné pevné výšky přerostou místo - a nulový řádek už nejde chytit myší.
         return TableLayout.ResolveWidths(
             [.. rows.Select(r => new TableLayout.ColWidth(r.Height, ColumnWidthMode.Mm))],
-            MathF.Max(0f, proRadky));
+            MathF.Max(0f, proRadky), MinRowHeightMm);
     }
 
     // ─── Editace na plátně ───────────────────────────────────────────
@@ -649,22 +654,35 @@ public class TableElement : TemplateElement
     /// nevejde. Bez dorovnání by se z vloženého bloku tiše ztratil přesah, což se pozná až
     /// při kontrole výsledku.
     /// </summary>
-    public void PasteBlock(int startRow, int startCol, IReadOnlyList<IReadOnlyList<string>> block)
+    public void PasteBlock(DataContext? data, int startRow, int startCol,
+        IReadOnlyList<IReadOnlyList<string>> block)
     {
         if (block.Count == 0) return;
         Rows ??= [];
 
-        int potrebaRadku   = startRow + block.Count;
-        int potrebaSloupcu = startCol + block.Max(r => r.Count);
-        while (Rows.Count < potrebaRadku)       InsertRow(Rows.Count);
-        while (Columns.Count < potrebaSloupcu)  InsertColumn(Columns.Count);
+        // Indexy jsou **viditelné** (tak jak uživatel vidí mřížku), obsah se ale ukládá po modelu -
+        // se skrytým sloupcem nebo řádkem by se bez převodu psalo vedle (nález revize 12. 8.).
+        var viditelneRadky   = VisibleFixedRows(data);
+        var viditelneSloupce = Columns.Where(c => c.Visible).ToList();
+
+        while (viditelneRadky.Count < startRow + block.Count)
+        {
+            InsertRow(Rows.Count);
+            viditelneRadky = VisibleFixedRows(data);
+        }
+        while (viditelneSloupce.Count < startCol + block.Max(r => r.Count))
+        {
+            InsertColumn(Columns.Count);
+            viditelneSloupce = [.. Columns.Where(c => c.Visible)];
+        }
 
         for (int r = 0; r < block.Count; r++)
             for (int c = 0; c < block[r].Count; c++)
             {
-                var row = Rows[startRow + r];
-                while (row.Cells.Count <= startCol + c) row.Cells.Add(new TableCell());
-                row.Cells[startCol + c].Content = block[r][c];
+                var row = viditelneRadky[startRow + r];
+                int modelCol = Columns.IndexOf(viditelneSloupce[startCol + c]);
+                while (row.Cells.Count <= modelCol) row.Cells.Add(new TableCell());
+                row.Cells[modelCol].Content = block[r][c];
             }
     }
 

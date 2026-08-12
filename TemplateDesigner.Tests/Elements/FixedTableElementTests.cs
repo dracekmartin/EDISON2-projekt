@@ -388,7 +388,7 @@ public class FixedTableElementTests
         var el = TableElement.CreateGrid(2, 2);
         el.Height = 12f;
 
-        el.PasteBlock(1, 1, [["a", "b", "c"], ["d", "e", "f"]]);
+        el.PasteBlock(null, 1, 1, [["a", "b", "c"], ["d", "e", "f"]]);
 
         Assert.Equal(3, el.Rows!.Count);      // 1 + 2 řádky bloku
         Assert.Equal(4, el.Columns.Count);    // 1 + 3 sloupce bloku
@@ -404,10 +404,79 @@ public class FixedTableElementTests
         var el = TableElement.CreateGrid(3, 2);
         el.Rows![0].Cells[2].Content = "zůstat";
 
-        el.PasteBlock(0, 0, [["x"]]);
+        el.PasteBlock(null, 0, 0, [["x"]]);
 
         Assert.Equal("x", el.Rows[0].Cells[0].Content);
         Assert.Equal("zůstat", el.Rows[0].Cells[2].Content);
+    }
+
+    // ── Nálezy revize 12. 8. ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Vkládání dostává **viditelné** indexy, obsah se ale ukládá po modelu. Se skrytým sloupcem
+    /// se dřív psalo vedle (nález revize).
+    /// </summary>
+    [Fact]
+    public void VlozeniBloku_SeSkrytymSloupcem_TrefiSpravnouBunku()
+    {
+        var el = TableElement.CreateGrid(3, 1);
+        el.Columns[1].Visible = false;   // prostřední sloupec skrytý
+
+        el.PasteBlock(null, 0, 1, [["druhý viditelný"]]);
+
+        Assert.Equal("", el.Rows![0].Cells[1].Content);                 // skrytý zůstane prázdný
+        Assert.Equal("druhý viditelný", el.Rows[0].Cells[2].Content);
+    }
+
+    /// <summary>
+    /// Vrácení obsahu buňky musí fungovat i po přeskládání mřížky. Příkaz proto adresuje buňku
+    /// souřadnicí - kdyby si držel instanci, po vložení řádku (které mřížku klonuje) by psal
+    /// do odpojené buňky a tiše nic neudělal.
+    /// </summary>
+    [Fact]
+    public void BunkaDohledanaSouradnici_PrezijePreskladaniMrizky()
+    {
+        var el = TableElement.CreateGrid(2, 2);
+        el.EnsureCell(null, 1, 1)!.Content = "text";
+
+        var pred = el.CaptureStructure();
+        el.InsertRow(0);
+        el.RestoreStructure(pred);   // klon - původní instance buňky je odpojená
+
+        Assert.Equal("text", el.EnsureCell(null, 1, 1)!.Content);
+    }
+
+    /// <summary>
+    /// Se zapnutým řádkem záhlaví a přetečením se záhlaví kreslí zmenšené, takže se i v rozpočtu
+    /// musí odečítat zmenšené - jinak zbyde dole pruh bílé, kvůli kterému se to celé dělalo.
+    /// </summary>
+    [Fact]
+    public void SeZahlavimAPretecenim_ObsahDosedneNaVyskuPrvku()
+    {
+        var el = TableElement.CreateGrid(1, 3);
+        el.ShowHeader = true;
+        el.HeaderHeight = 8f;
+        el.Height = 20f;                                   // 8 + 3×6 = 26 mm se musí vejít do 20
+        foreach (var r in el.Rows!) r.Height = 6f;
+
+        var layout = el.ComputeLayout(null);
+        float celkem = layout.HeaderHeightMm + layout.RowHeights.Sum();
+
+        Assert.Equal(20f, celkem, 1);
+    }
+
+    /// <summary>Řádek bez vlastní výšky se nesmí stáhnout na nulu - nulový řádek nejde chytit myší
+    /// a uživatel se k němu už nedostane.</summary>
+    [Fact]
+    public void RadkyBezVlastniVysky_SeNestahnouNaNulu()
+    {
+        var el = TableElement.CreateGrid(1, 3);
+        el.Height = 12f;
+        el.Rows![0].Height = 30f;   // jeden pevný řádek přeroste celý prvek
+
+        var vysky = el.ComputeLayout(null).RowHeights;
+
+        Assert.All(vysky, h => Assert.True(h > 0f, $"řádek stažený na {h} mm už nejde chytit"));
     }
 
     // ── Čáry mřížky ───────────────────────────────────────────────────────────
