@@ -21,11 +21,9 @@ public class AppSettings
 
     public CacheConnectionSettings? Cache    { get; set; }
     public AiAssistantSettings AiAssistant   { get; set; } = new();
-    public FeatureSettings Features          { get; set; } = new();
 
     /// <summary>Smí uživatel na vlastní definici sloupců vývěsky? Výchozí ne - featura jde do verze
     /// zhasnutá a rozsvítí se lokálním configem u toho, kdo ji testuje.</summary>
-    public static bool CustomDepartureColumnsEnabled => Current?.Features.CustomDepartureColumns ?? false;
 
     /// <summary>Zdroj nakonec použitého configu (pro diagnostiku startu).</summary>
     [JsonIgnore]
@@ -111,9 +109,6 @@ public class AppSettings
             target.AiAssistant.AnthropicApiKey = local.AiAssistant.AnthropicApiKey;
         if (local.AiAssistant.Enabled != target.AiAssistant.Enabled)
             target.AiAssistant.Enabled = local.AiAssistant.Enabled;
-        // nullable = jde rozeznat „lokální config to neřeší" od „lokální config to vypíná"
-        if (local.Features.CustomDepartureColumns is not null)
-            target.Features.CustomDepartureColumns = local.Features.CustomDepartureColumns;
     }
 }
 
@@ -152,18 +147,6 @@ public class CacheConnectionSettings
     /// <summary>True pokud je připojení nakonfigurováno.</summary>
     [JsonIgnore]
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Server) && Port > 0;
-}
-
-/// <summary>Přepínače nedokončených featur - co jde do verze, ale ještě nemá být vidět uživateli.
-/// Zapíná se v <c>templatedesigner.appsettings.local.json</c> vedle exe, takže jedna vydaná verze
-/// poslouží zákazníkovi (zhasnuté) i testování na dev (rozsvícené) bez druhého buildu.</summary>
-public class FeatureSettings
-{
-    /// <summary>Vlastní definice sloupců vývěsky (#13045b) - tab v dialogu odjezdů a předvyplnění
-    /// nových prvků odjezdů výchozím vzorem. Null/false = uživatel se k featuře nedostane;
-    /// existující definice v šabloně se tím nemažou, jen nejdou editovat.
-    /// Odstranit, až featuru odblokuje testování u zákazníka.</summary>
-    public bool? CustomDepartureColumns { get; set; }
 }
 
 /// <summary>Nastavení AI asistenta pro generování šablon.</summary>

@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-12 (2) - 🔌 přepínač vlastních sloupců odstraněn, featura svítí všem
+
+**Rozhodnutí Jan:** vypínač `Features.CustomDepartureColumns` pryč, vlastní sloupce vývěsky jsou
+zapnuté napořád. Důvod není „už je to otestované", ale **že ten mechanismus u vydané verze nefunguje**.
+
+⚠️ **Poučení, kvůli kterému to sem patří: feature flag ze souboru vedle exe u našeho single-file
+publishe nefunguje.** Config se čte přes `AppContext.BaseDirectory`, což u self-extracting bundlu
+(`IncludeNativeLibrariesForSelfExtract`) není složka exe, ale rozbalovací složka - takže
+`templatedesigner.appsettings.local.json` položený vedle exe se **nikdy nepřečte**. Lokální build
+(`bin/Debug`) ho čte v pořádku, proto to vypadalo funkčně. Deklarovaný záměr „jedna vydaná verze
+poslouží zákazníkovi zhasnutá a na devu rozsvícená" tedy **nikdy neplatil** a nikdo to neověřil na
+publishnutém exe. Kdyby se příště zaváděl další přepínač, musí se ověřit na publishnuté verzi,
+nebo číst config podle `Environment.ProcessPath`, ne `BaseDirectory`.
+
+⚠️ **Druhá korekce:** tvrdil jsem Janovi, že publish local.json přepisuje. **Nepřepisuje** - csproj má
+`CopyToPublishDirectory: Never` (kopíruje se jen do `bin/`). To nebyla příčina.
+
+**Odstraněno:** `FeatureSettings` + property + `MergeLocal` větev v `AppSettings`, `ShowCustomColumnsTab`
+i vazba `Visibility` na tabu, podmínka v `ShouldPrefillDepartureColumns` a test-pojistka
+`TabVlastnichSloupcu_JeVychoziZhasnuty` (splnila účel). Vypínač smazán i z lokálního configu
+a z `C:\Edison\`.
+
+**Důsledek, který je potřeba vzít v potaz:** featura jde **do příští vydané verze rozsvícená**, i když
+ji kolega ještě neproklikal. Proto je novinka zpátky v seedu `plan-a-zmeny.md` (nahrání na wiki až
+s vydáním, jako vždy) a roadmapa už nedrží odstavec o odblokování.
+
+Brány: build bez chyb, .NET 1996 zelených (798 TD, o zrušenou pojistku méně), publish do `C:\Edison\`
+proběhl - exe z 12. 8. 10:24 nese featuru samo, bez souboru vedle sebe.
+
+
 ## 2026-08-11 (6) - ✅ výchozí systémová šablona i pro agendu MHD
 
 KV_DP chtěl začít zkoušet, ale jediná zabudovaná šablona byla vázaná na agendu AD, takže se jim

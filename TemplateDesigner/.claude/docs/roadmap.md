@@ -6,19 +6,13 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **Stav k 2026-08-11** (verze vydaná 11. 8.).
+> **Stav k 2026-08-12.** Verze vydaná 11. 8.; `B39` od 12. 8. **rozsvícená pro všechny**
+> (přepínač odstraněn - viz changelog 2026-08-12).
 >
 > **▶ Zastávkový JŘ nemá otevřenou práci.** `B39` (vlastní sloupce vývěsky, #13045b) je hotová
 > oběma etapami 10. 8. - fronta KOVED je tím dojetá. **Další krok si vyber:** **Fáze B**
 > (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
 > (**B10** + **B13**) jako dedikovaný slot.
->
-> **▶ Čeká na odblokování: `B39` je ve verzi zhasnutá.** Vypínač `Features.CustomDepartureColumns`
-> v `templatedesigner.appsettings.local.json` vedle exe (schová tab i předvyplnění nových prvků).
-> Až to kolega proklikne na dev, **flag odstranit** - ne jen přepnout; padne u toho test
-> `TabVlastnichSloupcu_JeVychoziZhasnuty`, což je ten signál.
-> Zároveň **vrátit novinku do wiki seedu** `plan-a-zmeny.md` - 11. 8. se odtud vyňala, aby seed
-> nepopisoval funkci, kterou zákazník nemá; text se dá složit z changelogu 2026-08-10 (10) a (12).
 >
 > **Nedodělek k `B39`:** zákazníkovi poradit, jak sloupce skládat - nedělní a sváteční provoz se
 > rozliší rozdělením sloupce, ne značkami (v datech skoro žádný nedělní spoj o svátcích nejede,

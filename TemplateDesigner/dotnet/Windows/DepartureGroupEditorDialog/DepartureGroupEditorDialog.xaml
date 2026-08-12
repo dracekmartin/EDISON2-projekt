@@ -112,10 +112,8 @@
                 </Grid>
             </TabItem>
 
-            <!-- ── Tab 3: Vlastní definice sloupců (dny + značky + období; tab Sloupce zůstává vzhled)
-                 Skrytý, dokud featuru nerozsvítí lokální config (#13045b čeká na testování). ── -->
-            <TabItem Header="Vlastní definice sloupců"
-                     Visibility="{Binding ShowCustomColumnsTab, Converter={StaticResource BoolToVis}}">
+            <!-- ── Tab 3: Vlastní definice sloupců (dny + značky + období; tab Sloupce zůstává vzhled) ── -->
+            <TabItem Header="Vlastní definice sloupců">
                 <Grid Margin="6">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

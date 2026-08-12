@@ -38,6 +38,37 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 12. 8. 2026 - Sloupce vývěsky si můžete nadefinovat sami
+
+Dosud rozvržení sloupců mřížky odjezdů určovala konfigurace linky - jedno ze čtyř pevných schémat
+(pracovní dny / sobota / neděle a svátky, případně s rozpadem na prázdniny). Nově si sloupce můžete
+**nadefinovat v šabloně**, a to až pět.
+
+U prvku odjezdů v `Upravit sloupce…` je záložka **Vlastní definice sloupců** s přepínačem
+**Automaticky (dle linky)** / **Vlastní sloupce**. U každého sloupce nastavíte:
+
+- **Nadpis** (i dvouřádkový)
+- **Dny** - Po až Ne a Svátek
+- **Značky** - *jen s těmito* / *bez těchto* negativními značkami. Tím se dá vyřešit i „tenhle spoj
+  na vývěsce o víkendu nechci", což dosud nešlo.
+- **Období** - seznam rozsahů dat („14. 2.-18. 2., 1. 7.-31. 8."). Datum **bez roku platí každý rok**,
+  takže šablona přežije překlopení jízdního řádu; datum **s rokem** platí jednou (výluka, mimořádný
+  provoz). Do sloupce patří spoj, který v období jede aspoň jeden den.
+- **Nevypisovat značky** - které negativní značky se v tom sloupci u minut netisknou
+
+Čtyři dosavadní rozvržení jsou připravená **jako vzory na jedno kliknutí**, takže obvykle stačí vzor
+vybrat a doladit. U prázdninových vzorů se čísla značek předvyplní z konfigurace aktuální linky.
+
+**Když sloupce nedefinujete, nic se nemění** - šablona se řídí konfigurací linky jako dosud.
+Pokud naopak definici zadáte, seznamy značek u linky se pro vývěsku ignorují, aby nebylo nastavení
+na dvou místech. Nově přidaný prvek odjezdů začíná se vzorem pracovní dny / sobota / neděle a svátky.
+
+**Spoj, který nespadne do žádného sloupce, se neztratí potichu** - návrhář i tisk upozorní, kolik
+takových spojů je a které to jsou.
+
+> **Tip k zadávání:** nedělní a sváteční provoz rozlište **rozdělením na dva sloupce**, ne značkou.
+> V datech skoro žádný nedělní spoj o svátcích nejede, takže by značka padla téměř na všechny odjezdy.
+
 ### 11. 8. 2026 - Drobnosti ze zastávkových vývěsek
 
 Tři věci z vašich podnětů k zastávkovým jízdním řádům.

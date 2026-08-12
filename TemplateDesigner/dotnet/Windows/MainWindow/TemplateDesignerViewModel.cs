@@ -2734,8 +2734,7 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     private bool ShouldPrefillDepartureColumns() =>
-        Config.AppSettings.CustomDepartureColumnsEnabled
-        && string.Equals(State.CurrentTemplate.AgendaCode, "ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)
+        string.Equals(State.CurrentTemplate.AgendaCode, "ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)
         && !State.CurrentTemplate.Sections.SelectMany(s => s.Elements).OfType<DepartureGridElement>().Any();
 
     /// <summary>Definice vlastních sloupců platná pro celou šablonu - z prvního prvku odjezdů,
