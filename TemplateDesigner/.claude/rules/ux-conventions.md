@@ -58,6 +58,36 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 | F2 | Inline editace textu (jen TextElement, 1 vybraný) |
 | Dvojklik | Vlastnosti elementu (dvojklik do prázdna = zrušit výběr) |
 
+### Uvnitř pevné tabulky (editace buněk na plátně)
+
+⚠️ **Dvojklik zůstává na nastavení i tady** (rozhodnutí Jan 12. 8.). První návrh na něj věsil vstup
+do buňky, jenže uživatel má z ostatních tabulek (zastávky, odjezdy, tabulka z dat) naučené, že
+dvojklik otevře nastavení - tabulka by byla jediná výjimka **uvnitř naší aplikace**, a ta shoda váží
+víc než zvyk z Wordu. Do obsahu se proto vchází **F2** (u textového prvku znamená totéž: „uprav
+obsah na místě"), **Alt+klikem** rovnou do zvolené buňky, nebo položkou **„Vyplnit tabulku"**
+v místní nabídce. Alt je zvolený záměrně: v aplikaci už znamená „o úroveň hloub" (vytáhnout prvek
+ze skupiny) a je to **jeden klik bez F-klávesy** - na noteboocích s Fn řadou to rozhoduje
+(rozhodnutí Jan 12. 8. po zkoušení).
+
+⚠️ **Myší cesta dovnitř „druhý klik na už vybranou tabulku" se zkusila a zahodila** (12. 8.):
+první klik dvojkliku ji spustil dřív, než dorazil druhý, takže na vybrané tabulce vlezl do buňky
+a na nevybrané otevřel nastavení - nepředvídatelné. Odlišit obojí jde jen čekáním na případný
+druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
+
+| Zkratka | Akce |
+|---|---|
+| Alt+klik | dovnitř rovnou do té buňky (hlavní cesta) |
+| F2 (nebo místní nabídka) | dovnitř do naposledy kliknuté buňky |
+| Dvojklik | vlastnosti prvku (jako u všech ostatních prvků) |
+| Klik (uvnitř) | přepnout buňku |
+| psaní | přepíše obsah buňky (jako Excel) |
+| F2 | upravit stávající obsah buňky |
+| Tab / Shift+Tab | buňka vedle / předchozí (přes konec řádku na další) |
+| Enter / Shift+Enter | potvrdit a o buňku níž / výš |
+| Šipky | pohyb po buňkách |
+| Delete / Backspace | vymazat **obsah buňky** (ne prvek - to je ta past) |
+| Esc | ven z buňky na prvek, podruhé zrušit výběr |
+
 ### Grouping / layout
 
 | Zkratka | Akce |

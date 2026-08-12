@@ -33,6 +33,7 @@ public class EDInputFormSchemaDriftTests
         { "StopListElementEdit.cls",      typeof(StopListElement) },
         { "DepartureGridElementEdit.cls", typeof(DepartureGridElement) },
         { "DynamicTableElementEdit.cls",  typeof(DynamicTableElement) },
+        { "TableElementEdit.cls",         typeof(TableElement) },
         { "LineTableElementEdit.cls",     typeof(LineTableElement) },
         { "SectionEdit.cls",              typeof(Section) },
         { "PageEdit.cls",                 typeof(Template) },
@@ -479,6 +480,9 @@ public class EDInputFormSchemaDriftTests
         // Šířka sloupce hodin se zadává v tabu Sloupce (řádek Hodiny) - formulář ji záměrně
         // nemá, aby existoval jediný zdroj (viz komentář v DepartureGridElementEdit.cls)
         ["DepartureGridElement.HourColumnWidth"] = "jediný zdroj je tab Sloupce",
+        // Pevná tabulka řádky z dat negeneruje (na to je DynamicTableElement). Pole zůstává jen
+        // v panelu kvůli starým šablonám, které tenhle prvek mají v režimu „z dat".
+        ["TableElement.DataSource"] = "jen pro staré šablony v režimu z dat; nový prvek ho nemá",
     };
 
     private static readonly Regex DescriptorGetterRx = new(

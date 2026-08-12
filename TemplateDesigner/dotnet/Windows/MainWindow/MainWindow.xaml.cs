@@ -199,7 +199,6 @@ public partial class MainWindow : Window
         _propsVm.RequestOpenDepartureGridDialog = el => OpenDepartureGridDialog(el);
         _propsVm.RequestOpenStopColumnsDialog = el => OpenStopColumnsDialog(el);
         _propsVm.RequestOpenDynamicTableDialog = el => OpenDynamicTableDialog(el);
-        _propsVm.RequestOpenTableEditorDialog = el => OpenTableEditorDialog(el);
         _propsVm.RequestPickFile = (title, filter) =>
         {
             var dlg = new Microsoft.Win32.OpenFileDialog { Title = title, Filter = filter };
@@ -233,6 +232,7 @@ public partial class MainWindow : Window
             MenuAiAssistant.Visibility = Visibility.Collapsed;
 
         this.PreviewKeyDown += OnWindowKeyDown;
+        this.PreviewTextInput += OnWindowTextInput;   // psaní do vybrané buňky pevné tabulky
 
         // Field drag from schema tree - Window-level events for cross-panel drag
         SchemaTree.PreviewMouseLeftButtonDown += SchemaTree_PreviewMouseDown;
@@ -425,6 +425,8 @@ public partial class MainWindow : Window
             (float)(CanvasScrollViewer.HorizontalOffset + CanvasScrollViewer.ViewportWidth),
             (float)(CanvasScrollViewer.VerticalOffset + CanvasScrollViewer.ViewportHeight));
         _canvas.Render(surface.Canvas, (float)skCanvas.ActualWidth, (float)skCanvas.ActualHeight);
+
+        DrawTableCellOverlay(surface.Canvas, (float)skCanvas.ActualWidth);
 
         if (_mouseMode == MouseMode.RubberBand && _rubberBandRect.HasValue)
         {
@@ -1663,6 +1665,8 @@ public partial class MainWindow : Window
         Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
         Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
         Models.Elements.ImageElement       => ("ALVA.TemplateDesigner.EDInputForm.ImageElementEdit", "Vlastnosti obrázku"),
+        // Pevná tabulka má jediný tab (bez sloupců a řádků) - strukturu i obsah dělá plátno.
+        Models.Elements.TableElement       => ("ALVA.TemplateDesigner.EDInputForm.TableElementEdit", "Vlastnosti tabulky"),
         // LineTable NENÍ zde - má vlastní 2-tab dialog (Obecné + Sloupce), viz OpenLineTableColumnsDialog.
         _ => (null, null)
     };
@@ -1757,23 +1761,6 @@ public partial class MainWindow : Window
             _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
             if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
         }
-
-        InvalidateCanvas();
-        InvalidatePreview();
-        UpdatePropertiesPanel();
-    }
-
-    private void OpenTableEditorDialog(TableElement element)
-    {
-        var collections = _vm!.GetAvailableGroups();
-        IReadOnlyList<TemplateDesigner.Models.Schema.DataField>? collectionFields = collections.Count > 0
-            ? (collections.FirstOrDefault(c => c.CollectionKey == element.DataSource)?.Fields
-                   ?? collections.SelectMany(c => c.Fields).ToList())
-            : null;
-
-        var dlg = new TableEditorDialog(element, collectionFields, _vm.TableTemplateProvider) { Owner = this };
-        if (dlg.ShowDialog() == true)
-            _vm!.ApplyTableEdit(element, dlg.ResultColumns, dlg.ResultRows, dlg.ResultSummaryRows);
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -1986,6 +1973,13 @@ public partial class MainWindow : Window
         // V inline edit modu nereagujeme na globální zkratky - TextBox si Enter/Esc obslouží sám.
         // Bez tohoto by PreviewKeyDown odchytil Enter dřív než TextBox a otevřel dialog místo commitu.
         if (_inlineEditElement is not null) return;
+
+        // Uvnitř tabulky patří klávesy buňce, ne prvku (jinak by Delete smazal celou tabulku).
+        if (InTableCells)
+        {
+            if (HandleCellEditKey(e) || HandleTableCellsKey(e)) { e.Handled = true; return; }
+            if (_cellEditing) return;   // zbytek psaní obslouží textové pole samo
+        }
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
 
         // Psaní v textovém poli (inline panel EDInputForm, filtr stromu, …): Enter potvrdí pole
@@ -2165,6 +2159,13 @@ public partial class MainWindow : Window
             EnterInlineEdit(te);
             e.Handled = true;
         }
+        // F2 = „uprav obsah na místě" i u pevné tabulky - dvojklik zůstává na nastavení, aby se
+        // tabulka nechovala jinak než ostatní prvky (námitka Jana 12. 8.).
+        else if (e.Key == Key.F2 && _vm.State.SelectedElements.Count == 1
+                 && TryEnterTableCells(_vm.State.SelectedElements[0]))
+        {
+            e.Handled = true;
+        }
         else if (e.Key == Key.F1)
         {
             ShowHelp();
@@ -2306,12 +2307,41 @@ public partial class MainWindow : Window
         }
 
         var hit = _canvas.HitTestElement(cx, cy, cw);
+
+        // Uvnitř tabulky: klik přepne buňku (Excel), klik jinam nás z tabulky pustí ven.
+        ExitTableCellsIfElsewhere(hit?.Element);
+        if (InTableCells && TrySelectCellAt(cx, cy, cw))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (hit is not null)
         {
             var (section, element) = hit.Value;
             bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
             bool alt  = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
 
+            // Kam se kliklo - F2 pak otevře tuhle buňku, ne pořád levou horní.
+            RememberElementClick(element, cx, cy, cw);
+
+            // Alt+klik = rovnou do té buňky. Alt v aplikaci znamená „o úroveň hloub" (vytáhnout
+            // prvek ze skupiny), takže obsah prvku je jeho přirozené pokračování - a je to jeden
+            // klik bez F-klávesy, což na noteboocích s Fn řadou rozhoduje.
+            if (alt && element is TableElement { Mode: TableMode.Fixed })
+            {
+                _vm.State.SelectedElements.Clear();
+                _vm.State.SelectedElements.Add(element);
+                _vm.ActivateSection(section);
+                if (TryEnterTableCells(element))
+                {
+                    UpdatePropertiesPanel();
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+    
             _vm.HandleElementHit(section, element, ctrl, alt);
 
             _dragElement           = element;
@@ -2608,6 +2638,29 @@ public partial class MainWindow : Window
         var hit = _canvas.HitTestElement(cx, cy, cw);
         var menu = new ContextMenu();
 
+        // Pravý klik na pevnou tabulku nabízí práci s řádky a sloupci - i když uživatel zrovna
+        // není „uvnitř". Jinak by se k vkládání řádku dostal jen ten, kdo tuší Alt+klik.
+        if (hit?.Element is TableElement { Mode: TableMode.Fixed } rightClickedTable
+            && !ReferenceEquals(rightClickedTable, _cellTable))
+        {
+            _vm.State.SelectedElements.Clear();
+            _vm.State.SelectedElements.Add(rightClickedTable);
+            _vm.ActivateSection(hit.Value.Section);
+            RememberElementClick(rightClickedTable, cx, cy, cw);
+            TryEnterTableCells(rightClickedTable, beginEdit: false);
+            UpdatePropertiesPanel();
+        }
+
+        if (InTableCells && ReferenceEquals(hit?.Element, _cellTable)
+            && TryBuildCellContextMenu(menu, cx, cy, cw))
+        {
+            menu.PlacementTarget = skCanvas;
+            menu.IsOpen = true;
+            e.Handled = true;
+            return;
+        }
+        ExitTableCellsIfElsewhere(hit?.Element);
+
         if (hit.HasValue)
         {
             var el = hit.Value.Element;
@@ -2646,6 +2699,8 @@ public partial class MainWindow : Window
 
             if (el is TextElement te)
                 menu.Items.Add(new MenuItem { Header = "Upravit text (F2)", Command = new EDControls.EDViewModel.RelayCommand(() => EnterInlineEdit(te)) });
+            if (el is TableElement { Mode: TableMode.Fixed })
+                menu.Items.Add(new MenuItem { Header = "Vyplnit tabulku (Alt+klik, F2)", Command = new EDControls.EDViewModel.RelayCommand(() => TryEnterTableCells(el)) });
 
             menu.Items.Add(new Separator());
             menu.Items.Add(new MenuItem
@@ -3028,6 +3083,13 @@ public partial class MainWindow : Window
 
     private void InlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Buňka tabulky má vlastní pravidla (Enter a Tab potvrdí a posunou se dál).
+        if (_cellEditing)
+        {
+            if (HandleCellEditKey(e)) e.Handled = true;
+            return;
+        }
+
         // PreviewKeyDown - musí zachytit Enter dřív než TextBox.AcceptsReturn vloží newline.
         if (e.Key == Key.Escape)
         {
@@ -3044,6 +3106,11 @@ public partial class MainWindow : Window
 
     private void InlineEditBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
+        if (_cellEditing)
+        {
+            EndCellEdit(commit: true);
+            return;
+        }
         if (_inlineEditElement is not null)
             ExitInlineEdit(commit: true);
     }

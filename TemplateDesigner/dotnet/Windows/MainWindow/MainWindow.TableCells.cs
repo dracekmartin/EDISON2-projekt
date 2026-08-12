@@ -1,0 +1,401 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using SkiaSharp;
+using TemplateDesigner.Commands.Implementations;
+using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
+
+namespace TemplateDesigner;
+
+/// <summary>
+/// Zadávání obsahu pevné tabulky **přímo na plátně** - dvojklik dovnitř, psaní do buňky, pohyb
+/// klávesami, vkládání a mazání řádků a sloupců z místní nabídky.
+///
+/// Model je „objekt na stránce s excelovskými klávesami" (Word/PowerPoint), ne tabulkový procesor:
+/// první klik vybere tabulku jako prvek, dvojklik teprve vejde dovnitř, Esc vrací o úroveň zpět.
+/// Dokud je uživatel uvnitř, **klávesy patří buňce, ne prvku** - jinak by Delete při mazání překlepu
+/// smazal celou tabulku.
+/// </summary>
+public partial class MainWindow
+{
+    // Tabulka, ve které jsme „uvnitř"; null = nejsme v žádné.
+    private TableElement? _cellTable;
+    private int _cellRow;
+    private int _cellCol;
+
+    /// <summary>Právě se píše do buňky (InlineEditBox je vidět) - odlišuje „vybraná buňka" od „píšu".</summary>
+    private bool _cellEditing;
+    private string? _cellEditOriginal;
+
+    private bool InTableCells => _cellTable is not null;
+
+    /// <summary>
+    /// Poslední místo, kam se na prvek kliklo (mm relativně k prvku). Díky tomu F2 otevře **tu
+    /// buňku, na kterou uživatel klikl**, ne pořád levou horní - klik prvek jen vybere, takže bez
+    /// zapamatování by se ta informace ztratila.
+    /// </summary>
+    private (TemplateElement Element, float XMm, float YMm)? _lastElementClick;
+
+    /// <summary>Zapamatuje místo kliknutí na prvek (volá se z mouse-down na plátně).</summary>
+    private void RememberElementClick(TemplateElement element, float cx, float cy, float cw)
+    {
+        if (_canvas is null) return;
+        var rect = _canvas.GetElementCanvasRect(element, cw);
+        _lastElementClick = rect is null
+            ? null
+            : (element, (cx - rect.Value.Left) / _canvas.MmToPx, (cy - rect.Value.Top) / _canvas.MmToPx);
+    }
+
+    // ── Vstup a odchod ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Vejde do tabulky (Alt+klik, F2 nebo místní nabídka). Vrací false pro jiné prvky, zamčenou
+    /// nebo otočenou tabulku.
+    /// <para>
+    /// **Dvojklik sem vědomě nevede** - u všech ostatních prvků otevírá nastavení a tabulka by byla
+    /// jediná výjimka (námitka Jana 12. 8.). Obsah se tedy otvírá klávesou F2, stejně jako u
+    /// textového prvku, kde F2 taky znamená „uprav obsah na místě".
+    /// </para>
+    /// Vstupuje se do buňky, na kterou uživatel naposledy klikl; bez kliknutí do levé horní.
+    /// </summary>
+    private bool TryEnterTableCells(TemplateElement element, bool beginEdit = true)
+    {
+        if (_vm is null || _canvas is null) return false;
+        if (element is not TableElement { Mode: TableMode.Fixed } table) return false;
+        if (table.IsLocked || table.IsRotated) return false;
+
+        var (rows, cols) = table.GridSize(_vm.State.CurrentPreviewData);
+        if (rows == 0 || cols == 0) return false;
+
+        var hit = _lastElementClick is { } click && ReferenceEquals(click.Element, table)
+            ? table.HitTestCell(_vm.State.CurrentPreviewData, click.XMm, click.YMm)
+            : null;
+        _cellTable = table;
+        _cellRow   = hit?.Row ?? 0;
+        _cellCol   = hit?.Col ?? 0;
+
+        // Vstup rovnou otevře buňku k psaní - F2 u textového prvku taky rovnou píše, ne že by
+        // uživatel musel mačkat další klávesu. Výjimka je pravý klik: tam se buňka jen vybere,
+        // protože uživatel míří na nabídku, ne na psaní.
+        if (beginEdit) BeginCellEdit(replace: false);
+        InvalidateCanvas();
+        return true;
+    }
+
+    // ⚠️ Myší cesta dovnitř („druhý klik na už vybranou tabulku") tu **vědomě není** - zkusila se
+    // 12. 8. a chovala se nepředvídatelně: první klik dvojkliku ji spustil dřív, než dorazil druhý,
+    // takže na vybrané tabulce vlezl do buňky a na nevybrané otevřel nastavení. Odlišit obojí jde
+    // jen čekáním na případný druhý klik, což by vstup do buňky pokaždé zdrželo. Dovnitř se tedy
+    // chodí F2 nebo místní nabídkou.
+
+    /// <summary>Odejde z tabulky ven na úroveň prvku. Rozepsaný text se potvrdí.</summary>
+    private void ExitTableCells(bool commitEdit = true)
+    {
+        if (_cellEditing) EndCellEdit(commitEdit);
+        _cellTable = null;
+        InvalidateCanvas();
+    }
+
+    /// <summary>Klik jinam než do aktuální tabulky nás musí dostat ven - jinak by klávesy dál
+    /// mířily do buňky prvku, který uživatel opustil.</summary>
+    private void ExitTableCellsIfElsewhere(TemplateElement? hitElement)
+    {
+        if (InTableCells && !ReferenceEquals(hitElement, _cellTable)) ExitTableCells();
+    }
+
+    /// <summary>Klik uvnitř tabulky, ve které už jsme = přepnutí buňky (v tu chvíli se chová
+    /// jako Excel - žádné další dvojkliky).</summary>
+    private bool TrySelectCellAt(float cx, float cy, float cw)
+    {
+        if (_vm is null || _canvas is null || _cellTable is null) return false;
+
+        var rect = _canvas.GetElementCanvasRect(_cellTable, cw);
+        if (rect is null) return false;
+
+        var hit = _cellTable.HitTestCell(_vm.State.CurrentPreviewData,
+            (cx - rect.Value.Left) / _canvas.MmToPx,
+            (cy - rect.Value.Top)  / _canvas.MmToPx);
+        if (hit is null) return false;
+
+        if (_cellEditing) EndCellEdit(commit: true);
+        (_cellRow, _cellCol) = (hit.Value.Row, hit.Value.Col);
+        InvalidateCanvas();
+        return true;
+    }
+
+    // ── Psaní do buňky ────────────────────────────────────────────────────────
+
+    /// <summary>Otevře textové pole přesně přes buňku. <paramref name="replace"/> = začít prázdný
+    /// (uživatel začal psát), jinak se předvyplní stávající obsah (F2 nebo dvojklik).</summary>
+    private void BeginCellEdit(bool replace)
+    {
+        if (_vm is null || _canvas is null || _cellTable is null) return;
+
+        float cw = (float)skCanvas.ActualWidth;
+        var elRect = _canvas.GetElementCanvasRect(_cellTable, cw);
+        var cellMm = _cellTable.CellRectMm(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
+        if (elRect is null || cellMm is null) return;
+
+        var cell = _cellTable.EnsureCell(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
+        if (cell is null) return;
+
+        float px = _canvas.MmToPx;
+        Canvas.SetLeft(InlineEditBox, elRect.Value.Left + cellMm.Value.Left * px);
+        Canvas.SetTop (InlineEditBox, elRect.Value.Top  + cellMm.Value.Top  * px);
+        InlineEditBox.Width  = cellMm.Value.Width  * px;
+        InlineEditBox.Height = cellMm.Value.Height * px;
+
+        // Písmo pole musí odpovídat tomu, co kreslí Skia - jinak text při psaní poskočí.
+        var style = _cellTable.ResolveColumnDataParent();
+        InlineEditBox.FontSize   = style.FontSize * (96f / 72f) * _vm.State.Zoom;
+        InlineEditBox.FontFamily = new FontFamily(style.FontFamily);
+        InlineEditBox.Text       = replace ? "" : cell.Content;
+        InlineEditBox.Visibility = Visibility.Visible;
+
+        _cellEditing      = true;
+        _cellEditOriginal = cell.Content;
+
+        InlineEditBox.Focus();
+        InlineEditBox.CaretIndex = InlineEditBox.Text.Length;
+        if (!replace) InlineEditBox.SelectAll();
+    }
+
+    /// <summary>Zavře textové pole; při potvrzení zapíše obsah přes příkaz, takže funguje Ctrl+Z.</summary>
+    private void EndCellEdit(bool commit)
+    {
+        if (!_cellEditing || _vm is null || _cellTable is null) return;
+
+        string newText = InlineEditBox.Text ?? "";
+        string oldText = _cellEditOriginal ?? "";
+        var cell = _cellTable.EnsureCell(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
+
+        _cellEditing      = false;
+        _cellEditOriginal = null;
+        InlineEditBox.Visibility = Visibility.Collapsed;
+
+        if (commit && cell is not null && newText != oldText)
+            _vm.Execute(new SetPropertyCommand("Obsah buňky", oldText, newText,
+                v => cell.Content = (string)(v ?? "")));
+
+        skCanvas.Focus();
+        InvalidateCanvas();
+    }
+
+    // ── Klávesy ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Klávesy, když jsme uvnitř tabulky, ale zrovna nepíšeme. Vrací true = zpracováno, klávesa
+    /// se nesmí pustit dál na globální zkratky (Delete by smazal prvek, šipky by hnuly tabulkou).
+    /// </summary>
+    private bool HandleTableCellsKey(KeyEventArgs e)
+    {
+        if (_vm is null || _cellTable is null || _cellEditing) return false;
+
+        var (rows, cols) = _cellTable.GridSize(_vm.State.CurrentPreviewData);
+        if (rows == 0 || cols == 0) { ExitTableCells(); return false; }
+
+        bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+        switch (e.Key)
+        {
+            case Key.Escape:
+                ExitTableCells();
+                return true;
+
+            case Key.F2:
+                BeginCellEdit(replace: false);
+                return true;
+
+            case Key.Delete:
+            case Key.Back:
+                ClearCell();
+                return true;
+
+            case Key.Tab:
+                MoveCell(0, shift ? -1 : 1, rows, cols);
+                return true;
+
+            case Key.Enter:
+                MoveCell(shift ? -1 : 1, 0, rows, cols);
+                return true;
+
+            case Key.Up:    MoveCell(-1, 0, rows, cols); return true;
+            case Key.Down:  MoveCell(1, 0, rows, cols);  return true;
+            case Key.Left:  MoveCell(0, -1, rows, cols); return true;
+            case Key.Right: MoveCell(0, 1, rows, cols);  return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Psaní na vybranou buňku ji rovnou přepíše (jako v Excelu). Chytá se to až na napsaném
+    /// **znaku**, ne na klávese - jinak by se rozbila diakritika a rozložení klávesnice, protože
+    /// z kódu klávesy se znak nedá spolehlivě odvodit.
+    /// </summary>
+    private void OnWindowTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (!InTableCells || _cellEditing || e.Text.Length == 0 || char.IsControl(e.Text[0])) return;
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) || Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) return;
+
+        BeginCellEdit(replace: true);
+        if (!_cellEditing) return;
+
+        InlineEditBox.Text = e.Text;
+        InlineEditBox.CaretIndex = e.Text.Length;
+        e.Handled = true;
+    }
+
+    /// <summary>Klávesy v rozepsané buňce. Enter a Tab potvrdí a **posunou se dál** - to je ten
+    /// excelovský pocit, kvůli kterému se dá tabulka vyplnit bez sahání na myš.</summary>
+    private bool HandleCellEditKey(KeyEventArgs e)
+    {
+        if (!_cellEditing || _vm is null || _cellTable is null) return false;
+
+        var (rows, cols) = _cellTable.GridSize(_vm.State.CurrentPreviewData);
+        bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+        switch (e.Key)
+        {
+            case Key.Escape:
+                EndCellEdit(commit: false);
+                return true;
+
+            case Key.Enter when !shift:
+                EndCellEdit(commit: true);
+                MoveCell(1, 0, rows, cols);
+                return true;
+
+            case Key.Tab:
+                EndCellEdit(commit: true);
+                MoveCell(0, shift ? -1 : 1, rows, cols);
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>Posun po buňkách; na konci řádku přeskočí na začátek dalšího (jako Tab v Excelu).</summary>
+    private void MoveCell(int dRow, int dCol, int rows, int cols)
+    {
+        int index = _cellRow * cols + _cellCol + dRow * cols + dCol;
+        index = Math.Clamp(index, 0, rows * cols - 1);
+
+        _cellRow = index / cols;
+        _cellCol = index % cols;
+        InvalidateCanvas();
+    }
+
+    private void ClearCell()
+    {
+        if (_vm is null || _cellTable is null) return;
+        var cell = _cellTable.EnsureCell(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
+        if (cell is null || cell.Content.Length == 0) return;
+
+        string old = cell.Content;
+        _vm.Execute(new SetPropertyCommand("Obsah buňky", old, "",
+            v => cell.Content = (string)(v ?? "")));
+        InvalidateCanvas();
+    }
+
+    // ── Řádky a sloupce ───────────────────────────────────────────────────────
+
+    /// <summary>Položky místní nabídky pro tabulku, ve které jsme uvnitř. Vrací false, když
+    /// nejsme v tabulce - volající pak postaví běžné menu prvku.</summary>
+    private bool TryBuildCellContextMenu(ContextMenu menu, float cx, float cy, float cw)
+    {
+        if (_vm is null || _cellTable is null) return false;
+        TrySelectCellAt(cx, cy, cw);
+
+        var table = _cellTable;
+        void Add(string header, Action action) =>
+            menu.Items.Add(new MenuItem
+            {
+                Header  = header,
+                Command = new EDControls.EDViewModel.RelayCommand(action)
+            });
+
+        // Vložení nad / vlevo posune stávající obsah o jednu dál, takže s ním musí jít i výběr -
+        // jinak by uživateli „uskočil" na nový prázdný řádek (nahlášeno 12. 8.).
+        Add("Vložit řádek nad",  () => EditStructure("Vložení řádku", t => t.InsertRow(_cellRow), rowDelta: 1));
+        Add("Vložit řádek pod",  () => EditStructure("Vložení řádku", t => t.InsertRow(_cellRow + 1)));
+        Add("Smazat řádek",      () => EditStructure("Smazání řádku", t => t.RemoveRow(_cellRow)));
+        menu.Items.Add(new Separator());
+
+        int modelCol = table.ModelColumnIndex(_vm.State.CurrentPreviewData, _cellCol);
+        Add("Vložit sloupec vlevo",  () => EditStructure("Vložení sloupce", t => t.InsertColumn(modelCol), colDelta: 1));
+        Add("Vložit sloupec vpravo", () => EditStructure("Vložení sloupce", t => t.InsertColumn(modelCol + 1)));
+        Add("Smazat sloupec",        () => EditStructure("Smazání sloupce", t => t.RemoveColumn(modelCol)));
+        menu.Items.Add(new Separator());
+        Add("Vymazat obsah buňky (Del)", ClearCell);
+
+        menu.Items.Add(new Separator());
+        Add("Vlastnosti tabulky… (Esc, Enter)", () =>
+        {
+            ExitTableCells();
+            OpenPropertiesForElement(table);
+        });
+        return true;
+    }
+
+    /// <summary>
+    /// Undoable změna struktury. Řádky, sloupce i výška se vrací jedním snímkem - dělat z každé
+    /// z nich vlastní příkaz by znamenalo, že Ctrl+Z vrátí půl operace.
+    /// </summary>
+    /// <param name="rowDelta">Posun výběru, když se obsah odsunul (vložení nad / vlevo).</param>
+    private void EditStructure(string label, Action<TableElement> change, int rowDelta = 0, int colDelta = 0)
+    {
+        if (_vm is null || _cellTable is null) return;
+        var table = _cellTable;
+
+        var before = table.CaptureStructure();
+        change(table);
+        var after = table.CaptureStructure();
+
+        _vm.Execute(new SetPropertyCommand(label, before, after,
+            v => table.RestoreStructure((TableElement.StructureSnapshot)v!)));
+
+        // Výběr jde s obsahem (viz rowDelta); po smazání může skončit mimo mřížku.
+        var (rows, cols) = table.GridSize(_vm.State.CurrentPreviewData);
+        _cellRow = Math.Clamp(_cellRow + rowDelta, 0, Math.Max(0, rows - 1));
+        _cellCol = Math.Clamp(_cellCol + colDelta, 0, Math.Max(0, cols - 1));
+
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
+    }
+
+    // ── Kreslení ──────────────────────────────────────────────────────────────
+
+    /// <summary>Zvýraznění vybrané buňky a rámeček kolem tabulky, ve které jsme uvnitř. Bez toho
+    /// by uživatel nepoznal, jestli klávesy míří do buňky, nebo na prvek.</summary>
+    private void DrawTableCellOverlay(SKCanvas canvas, float cw)
+    {
+        if (_vm is null || _canvas is null || _cellTable is null || _cellEditing) return;
+
+        var elRect = _canvas.GetElementCanvasRect(_cellTable, cw);
+        var cellMm = _cellTable.CellRectMm(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
+        if (elRect is null || cellMm is null) return;
+
+        float px = _canvas.MmToPx;
+        var cellRect = new SKRect(
+            elRect.Value.Left + cellMm.Value.Left  * px,
+            elRect.Value.Top  + cellMm.Value.Top   * px,
+            elRect.Value.Left + cellMm.Value.Right * px,
+            elRect.Value.Top  + cellMm.Value.Bottom * px);
+
+        using var fill   = new SKPaint { Color = new SKColor(0x222563EB) };
+        using var border = new SKPaint
+        {
+            Color = new SKColor(0xFF2563EB), IsStroke = true, StrokeWidth = 2f, IsAntialias = true
+        };
+        canvas.DrawRect(cellRect, fill);
+        canvas.DrawRect(cellRect, border);
+
+        using var tableBorder = new SKPaint
+        {
+            Color = new SKColor(0x802563EB), IsStroke = true, StrokeWidth = 1f, IsAntialias = true
+        };
+        canvas.DrawRect(elRect.Value, tableBorder);
+    }
+}

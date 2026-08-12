@@ -112,6 +112,165 @@ public class FixedTableElementTests
         Assert.True(px.Green > 100, $"pod modrou nesmí prosvítat červená zebra (bylo {px})");
     }
 
+    // ── Mřížka pro editaci na plátně ──────────────────────────────────────────
+
+    /// <summary>Trefování buňky myší musí sedět na to, co je vidět - tedy i po zmenšení a
+    /// roztažení. Proto počítá totéž rozvržení jako kreslení.</summary>
+    [Fact]
+    public void TrefeniBunky_SediNaRoztazenouTabulku()
+    {
+        var el = TableElement.CreateGrid(2, 3);
+        el.Width = 100; el.Height = 36f;   // 3 řádky po 6 mm roztažené na 12 mm
+
+        Assert.Equal((0, 0), el.HitTestCell(null, 10f, 1f));
+        Assert.Equal((1, 0), el.HitTestCell(null, 10f, 13f));
+        Assert.Equal((2, 1), el.HitTestCell(null, 60f, 30f));
+        Assert.Null(el.HitTestCell(null, 10f, 50f));    // pod tabulkou
+    }
+
+    /// <summary>Obdélník buňky je tentýž, který se kreslí - jinak by textové pole při psaní
+    /// nesedělo na buňku.</summary>
+    [Fact]
+    public void ObdelnikBunky_OdpovidaRozvrzeni()
+    {
+        var el = TableElement.CreateGrid(2, 2);
+        el.Width = 100; el.Height = 12f;
+
+        var rect = el.CellRectMm(null, 1, 1);
+
+        Assert.NotNull(rect);
+        Assert.Equal(50f, rect!.Value.Left, 3);
+        Assert.Equal(6f,  rect.Value.Top, 3);
+        Assert.Equal(100f, rect.Value.Right, 3);
+    }
+
+    /// <summary>
+    /// Editace obsahu nesmí zahodit formát ani styl buňky. Dřív se řádky při potvrzení dialogu
+    /// skládaly znovu a tyhle vlastnosti se tiše ztrácely (nejvíc u tabulek z připravených bloků
+    /// agendy, kde Caché posílá formát per buňku). Psaní na plátně edituje **tutéž instanci**,
+    /// takže se ztratit nemají z principu - tenhle test to drží.
+    /// </summary>
+    [Fact]
+    public void EditaceObsahu_NezahodiFormatAniStylBunky()
+    {
+        var el = TableElement.CreateGrid(2, 1);
+        el.Rows![0].Cells[1].Format = "dd.MM.yyyy";
+        el.Rows[0].Cells[1].Style = new TextStyle { Bold = true, TextColor = "#FFFF0000" };
+
+        var cell = el.EnsureCell(null, 0, 1);
+        cell!.Content = "{DATUM_OD}";
+
+        Assert.Same(el.Rows[0].Cells[1], cell);
+        Assert.Equal("dd.MM.yyyy", el.Rows[0].Cells[1].Format);
+        Assert.True(el.Rows[0].Cells[1].Style?.Bold);
+        Assert.Equal("#FFFF0000", el.Rows[0].Cells[1].Style?.TextColor);
+    }
+
+    /// <summary>Zpětný krok po změně struktury musí zachovat i formát a styl buněk - snímek se
+    /// dělá klonem, takže by se dal snadno pokazit mělkou kopií.</summary>
+    [Fact]
+    public void SnimekStruktury_ZachovaFormatIStylBunky()
+    {
+        var el = TableElement.CreateGrid(2, 1);
+        el.Rows![0].Cells[1].Format = "N2";
+        el.Rows[0].Cells[1].Style = new TextStyle { Bold = true };
+
+        var pred = el.CaptureStructure();
+        el.InsertRow(0);
+        el.RestoreStructure(pred);
+
+        Assert.Equal("N2", el.Rows[0].Cells[1].Format);
+        Assert.True(el.Rows[0].Cells[1].Style?.Bold);
+    }
+
+    /// <summary>Staré šablony mají řádky kratší než počet sloupců - do posledních sloupců by pak
+    /// nešlo psát, kdyby se buňka nedoplnila.</summary>
+    [Fact]
+    public void ChybejiciBunka_SeDoplniPredEditaci()
+    {
+        var el = TableElement.CreateGrid(3, 1);
+        el.Rows![0].Cells.RemoveAt(2);
+
+        var cell = el.EnsureCell(null, 0, 2);
+
+        Assert.NotNull(cell);
+        Assert.Equal(3, el.Rows[0].Cells.Count);
+    }
+
+    // ── Řádky a sloupce ───────────────────────────────────────────────────────
+
+    /// <summary>Přidání řádku tabulku **zvětší**, ne aby zmenšilo obsah - roste jako ve Wordu.</summary>
+    [Fact]
+    public void VlozeniRadku_ZvetsiTabulku()
+    {
+        var el = TableElement.CreateGrid(2, 3);
+        el.Height = 18f;
+
+        el.InsertRow(1);
+
+        Assert.Equal(4, el.Rows!.Count);
+        Assert.Equal(24f, el.Height);
+        Assert.Equal(2, el.Rows[1].Cells.Count);   // nový řádek má buňky pro všechny sloupce
+    }
+
+    [Fact]
+    public void SmazaniRadku_ZmensiTabulku()
+    {
+        var el = TableElement.CreateGrid(2, 3);
+        el.Height = 18f;
+
+        Assert.True(el.RemoveRow(0));
+        Assert.Equal(2, el.Rows!.Count);
+        Assert.Equal(12f, el.Height);
+    }
+
+    /// <summary>Poslední řádek ani sloupec nejde smazat - z prázdné tabulky by nebylo co vyplnit
+    /// a uživatel by ji musel smazat a vložit znovu.</summary>
+    [Fact]
+    public void PosledniRadekASloupec_NejdouSmazat()
+    {
+        var el = TableElement.CreateGrid(1, 1);
+
+        Assert.False(el.RemoveRow(0));
+        Assert.False(el.RemoveColumn(0));
+    }
+
+    /// <summary>Vložený sloupec posune buňky, ne aby se obsah rozjel o jednu doleva.</summary>
+    [Fact]
+    public void VlozeniSloupce_PosuneObsahBunek()
+    {
+        var el = TableElement.CreateGrid(2, 1);
+        el.Rows![0].Cells[0].Content = "vlevo";
+        el.Rows[0].Cells[1].Content  = "vpravo";
+
+        el.InsertColumn(1);
+
+        Assert.Equal(3, el.Columns.Count);
+        Assert.Equal("vlevo",  el.Rows[0].Cells[0].Content);
+        Assert.Equal("",       el.Rows[0].Cells[1].Content);
+        Assert.Equal("vpravo", el.Rows[0].Cells[2].Content);
+    }
+
+    /// <summary>Zpětný krok po změně struktury musí vrátit řádky, sloupce **i výšku** najednou -
+    /// jinak by Ctrl+Z vrátil půl operace.</summary>
+    [Fact]
+    public void SnimekStruktury_VratiIVysku()
+    {
+        var el = TableElement.CreateGrid(2, 2);
+        el.Height = 12f;
+        el.Rows![0].Cells[0].Content = "text";
+
+        var pred = el.CaptureStructure();
+        el.InsertRow(0);
+        el.InsertColumn(0);
+        el.RestoreStructure(pred);
+
+        Assert.Equal(2, el.Rows.Count);
+        Assert.Equal(2, el.Columns.Count);
+        Assert.Equal(12f, el.Height);
+        Assert.Equal("text", el.Rows[0].Cells[0].Content);
+    }
+
     // ── Čáry mřížky ───────────────────────────────────────────────────────────
 
     /// <summary>

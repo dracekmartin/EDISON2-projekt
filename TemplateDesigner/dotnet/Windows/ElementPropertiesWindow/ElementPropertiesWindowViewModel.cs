@@ -40,7 +40,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
     /// <summary>
     /// Callback: VM říká View "zobraz tyto deskriptory" - stejný pattern jako RequestCanvasRefresh
-    /// v MainWindow. Používá se uvnitř EnhanceTableEditor při interní změně panelu.
+    /// v MainWindow. Používá se při interní změně panelu (např. přepnutí, které mění sadu polí).
     /// </summary>
     public Action<IReadOnlyList<Models.PropertyDescriptor>>? RequestShowDescriptors { get; set; }
 
@@ -64,12 +64,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
     /// Sdílí logiku s MainWindow.OpenDynamicTableDialog - jedna cesta, žádná duplikace.
     /// </summary>
     public Action<DynamicTableElement>? RequestOpenDynamicTableDialog { get; set; }
-
-    /// <summary>
-    /// Callback pro otevření TableEditorDialog (statická tabulka) - otevření + apply řeší View
-    /// (MainWindow.OpenTableEditorDialog), stejně jako ostatní tabulkové editory. VM nezná WPF.
-    /// </summary>
-    public Action<TableElement>? RequestOpenTableEditorDialog { get; set; }
 
     /// <summary>Callback pro výběr souboru (title, filter → cesta / null). View drží OpenFileDialog.</summary>
     public Func<string, string, string?>? RequestPickFile { get; set; }
@@ -124,9 +118,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             if (fields is { Count: > 0 })
                 descriptors = EnhanceWithFieldPicker(descriptors, fields);
         }
-
-        if (element is TableElement tableElement)
-            descriptors = EnhanceTableEditor(descriptors, tableElement);
 
         if (element is DynamicTableElement dynamicTable)
             descriptors = EnhanceDynamicTableEditor(descriptors, dynamicTable);
@@ -191,61 +182,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
     }
 
     // ── Privátní buildery ─────────────────────────────────────────────────
-
-    private IReadOnlyList<Models.PropertyDescriptor> EnhanceTableEditor(
-        IReadOnlyList<Models.PropertyDescriptor> descriptors,
-        TableElement element)
-    {
-        var collections = _getAvailableGroups?.Invoke() ?? [];
-
-        var list = new List<Models.PropertyDescriptor>(descriptors.Count);
-        foreach (var d in descriptors)
-        {
-            if (d is Models.EnumPropertyDescriptor enumD && enumD.Label == "Režim")
-            {
-                // Obalit Set - po změně módu obnovit panel (Zdroj dat se zobrazí/skryje)
-                list.Add(new Models.EnumPropertyDescriptor
-                {
-                    Label   = enumD.Label,
-                    Group   = enumD.Group,
-                    Get     = enumD.Get,
-                    Set     = v =>
-                    {
-                        enumD.Set(v);
-                        RequestShowDescriptors?.Invoke(
-                            EnhanceTableEditor(element.GetPropertyDescriptors(), element));
-                    },
-                    Options = enumD.Options
-                });
-            }
-            else if (d is Models.StringPropertyDescriptor strD && strD.Label == "Zdroj dat" && collections.Count > 0)
-            {
-                list.Add(new Models.SuggestStringPropertyDescriptor
-                {
-                    Label          = strD.Label,
-                    Group          = strD.Group,
-                    Get            = strD.Get,
-                    Set            = strD.Set,
-                    GetSuggestions = () => collections.Select(c => (c.CollectionKey, c.Name))
-                });
-            }
-            else if (d is Models.ButtonPropertyDescriptor btn && btn.ActionId == Models.ButtonPropertyDescriptor.ActionOpenTableEditor)
-            {
-                list.Add(new Models.ButtonPropertyDescriptor
-                {
-                    Label       = btn.Label,
-                    Group       = btn.Group,
-                    ButtonLabel = btn.ButtonLabel,
-                    OnClick     = () => RequestOpenTableEditorDialog?.Invoke(element)
-                });
-            }
-            else
-            {
-                list.Add(d);
-            }
-        }
-        return list;
-    }
 
     private IReadOnlyList<Models.PropertyDescriptor> EnhanceDynamicTableEditor(
         IReadOnlyList<Models.PropertyDescriptor> descriptors,
