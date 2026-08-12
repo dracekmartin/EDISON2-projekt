@@ -2,6 +2,18 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-12 ✅ - Fáze B krok 2: pevná tabulka se vyplňuje na plátně
+
+Detail → changelog 2026-08-12 (5). Obsah i struktura se dělají v tabulce (Alt+klik do buňky, psaní
+jako v Excelu, Tab a Enter posouvají, pravý klik na řádky a sloupce), dialog spadl na jedinou
+záložku „Obecné" (`TableElementEdit.cls`) a **starý pětizáložkový editor je smazaný**.
+
+⚠️ **Cesta dovnitř se hledala třikrát** - dvojklik i „druhý klik na vybranou tabulku" se zahodily
+(důvody v changelogu a v `ux-conventions.md`), zůstal **Alt+klik**. Nezkoušet znovu.
+
+⚠️ Drift testy schémat chytly tři rozpory nového formuláře proti C# - výchozí hodnoty, „Zdroj dat"
+jen v panelu, odlišný popisek téhož pole. Přesně ta třída chyb, kterou proklik neodhalí.
+
 ## 2026-08-12 ✅ - Fáze B krok 1: pevná tabulka je zpátky v paletě
 
 Detail → changelog 2026-08-12 (3). Záměr upřesněn Janem: **není to featura pro faktury, je to

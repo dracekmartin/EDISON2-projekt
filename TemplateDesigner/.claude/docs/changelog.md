@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-08-12 (5) - 🔍 projeté zastávky: nedorozumění, ne chyba (+ dohnané testy)
+
+TRANSDEV hlásil, že se v nové verzi **přestaly zobrazovat projeté zastávky**. Prošli jsme cestu hodnot:
+parametr „Tisknout projeté zastávky" je **výchozí vypnutý**, hodnoty obsahových parametrů od 15. 7.
+patří **šabloně** a ta přebíjí per-agenda i defaulty (`ApplyTemplatePrintParamsToPreview`).
+
+**Reprodukovat se to nepodařilo** - Jan to proklikal: přepnutí funguje, uložení i znovuotevření drží
+hodnotu. Takže odpověď zákazníkovi je „zapněte parametr a uložte", ne oprava. Do odpovědi jde
+i záchytka: kdyby se mu to překlápělo zpět, je to chyba u nás.
+
+⚠️ **Zaparkované riziko (`B68`, spouštěč = druhá stejná stížnost):** `SyncParametersToTemplate` zapisuje
+do šablony **všechny** obsahové parametry, i ty, kterých se uživatel nedotkl. Uložení tím zabetonuje
+výchozí hodnotu a ta přebije per-agenda nastavení - uživatel o svou volbu přijde, aniž by něco přepnul.
+To je nejpravděpodobnější vysvětlení jeho případu (jednorázově kolem 15. 7.). Neopravuje se teď, protože
+samonosná šablona je záměr a bez reprodukce bychom měnili chování, které dnes funguje.
+
+**Dohnané brány k `4d9325a`** (tam testy nešly spustit kvůli cizí rozpracované práci na tabulkách):
+15 testů zelených, **mutace zabila 2** (rastr ignorující značky), plná sada **2032** zelených.
+
+
+## 2026-08-12 (5) - ⌨️ pevná tabulka se vyplňuje na plátně, dialog spadl na jedinou záložku
+
+Fáze B krok 2. Obsah ručně vyplňované tabulky se zadává **přímo v ní**, ne v okně vedle: dovnitř
+**Alt+klikem** na buňku (nebo F2 na vybrané tabulce), pak se píše jako v Excelu - psaní přepíše
+obsah, F2 upraví stávající, **Tab a Enter potvrdí a posunou se dál**, šipky chodí po buňkách,
+Esc jde ven. **Delete uvnitř maže obsah buňky, ne prvek.** Vše přes příkazy, takže Ctrl+Z funguje.
+
+**Řádky a sloupce z pravého kliku** (vložit nad/pod, vlevo/vpravo, smazat) - vložení řádku tabulku
+o řádek **zvětší**, aby rostla jako ve Wordu; poslední řádek ani sloupec smazat nejdou. Výběr jde
+s obsahem: po vložení nad zůstaneš na svém textu, ne na novém prázdném řádku.
+
+**Dialog má jedinou záložku „Obecné"** postavenou na Caché formuláři (`TableElementEdit.cls`) -
+bez tlačítka „Upravit sloupce" a bez záložek Sloupce / Řádky / Styl sloupců / Souhrn. Starý
+pětizáložkový editor je **smazaný** (dialog, jeho ViewModel, XAML i mrtvé napojení v panelu):
+nedosažitelný kód se dřív nebo později rozejde s tím, co dělá plátno.
+
+⚠️ **Cesta dovnitř se hledala třikrát, ať se to nezkouší znovu:**
+
+- **Dvojklik → do buňky** (první návrh) - zahozen. U všech ostatních prvků otevírá nastavení,
+  takže by tabulka byla jediná výjimka **uvnitř naší aplikace**; ta shoda váží víc než zvyk z Wordu.
+- **Druhý klik na už vybranou tabulku** - zahozen. První klik dvojkliku ho spustil dřív, než dorazil
+  druhý, takže na vybrané tabulce vlezl do buňky a na nevybrané otevřel nastavení. Rozlišit to jde
+  jen čekáním na případný druhý klik, což by vstup pokaždé zdrželo.
+- **Alt+klik** - zůstává. Alt v aplikaci znamená „o úroveň hloub" (vytáhnout prvek ze skupiny),
+  je to jeden klik bez F-klávesy a s dvojklikem se neplete.
+
+**Drift testy schémat chytly tři rozpory** nového formuláře proti C# (výchozí hodnoty záhlaví
+a čar mřížky, „Zdroj dat" jen v panelu, odlišný popisek téhož pole) - všechny srovnané, `DataSource`
+je vědomá výjimka pro staré šablony v režimu „z dat".
+
+**Brány:** build bez chyb, **2032 testů** zelených (834 TD, z toho 16 nových na trefování buněk,
+řádky a sloupce a na to, že editace obsahu nezahodí formát ani styl buňky). Formulář ověřen
+**voláním serveru**, ne čtením zdrojáku.
+
+**Zbývá:** tažení šířky sloupce myší, vkládání bloku z Excelu, našeptávač polí po `{`, výběr více
+buněk (a na něm slučování). Připravené bloky agend (`GetTableTemplates`) zůstaly bez cesty z UI -
+patří k vkládání tabulky, ne do dialogu.
+
+
 ## 2026-08-12 (4) - ✅ #12843: rozestup odjezdů jde srovnat do rastru
 
 Zákazník: *„zakladám na rovnomernom rozostupe medzi spojmi tak, aby prípadná značka pri jednom spoji

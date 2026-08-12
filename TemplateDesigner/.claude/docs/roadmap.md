@@ -72,6 +72,7 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
 
 | # | Co | Vel. | Co potřebuje |
 |---|---|---|---|
+| B68 | **Do šablony se zapisují i parametry, kterých se uživatel nedotkl** (`SyncParametersToTemplate` iteruje všechny obsahové parametry). Uložení tím zabetonuje **výchozí** hodnotu a ta pak přebíjí per-agenda nastavení - uživatel o svou volbu přijde, aniž by něco přepnul. Podezření u #12843 (TRANSDEV: „projeté zastávky se přestaly zobrazovat"), ale **reprodukovat se to nepodařilo** - u Jana se hodnota ukládá i načítá správně, takže to nejspíš byl jednorázový dopad přesunu parametrů do šablony 15. 7. Oprava = zapisovat jen hodnoty odlišné od výchozí (nebo sledovat „dotčeno" per parametr). | S | **druhou stejnou stížnost** - pak je to reprodukce a opravit; jinak nechat, protože samonosná šablona je záměr |
 | B48 | Přepínač „Přestupy (vlak/autobus)" u MHD nefunguje - MHD posílá přestupy jako pozici ve fontu (`w`/`x`), ne jako písmeno, takže je `IsTransferAttr` nepozná a řídí je obecný přepínač „Atributy". Tisknou se správně, jen se ovládají jinak než u AD. Fix = tagovat ATRIBUTY kategorií `prestup` na wire. Měření gate 4. 8. → archiv | M | poptávku od firmy s modulem MHD (dnes DPCB/DPKV) |
 
 *(Follow-upy uzavřených tiketů „na vyžádání zákazníka" → [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)*
@@ -180,30 +181,20 @@ při scope té fáze, ne teď.
 
 Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
 
-**Pevná (ručně vyplňovaná) tabulka - záměr upřesněn 12. 8. (Jan), rozdělaná.** Cíl **není faktura,
-ale náhrada „poskládám to z textových polí"** - hlavička sestavy i blok v těle faktury (platební
-údaje, rekapitulace) jako **jeden** prvek, se kterým se hýbe vcelku. Dnešní důkaz, že chybí: naše
-vlastní systémové šablony mají hlavičku z 5-6 textů. **Krok 1 hotový 12. 8.** (prvek je v paletě,
-vzhled sjednocen) → archiv.
+**Pevná (ručně vyplňovaná) tabulka - kroky 1 a 2 hotové 12. 8.** (prvek v paletě, obsah se
+vyplňuje na plátně, dialog má jedinou záložku) → archiv. Cíl **není faktura, ale náhrada
+„poskládám to z textových polí"**. Model = **objekt na stránce s excelovskými klávesami**
+(Word/PowerPoint), ne tabulkový procesor - žádný řádek vzorců ani odkazy typu A1.
 
-**Model = objekt na stránce s excelovskými klávesami** (Word/PowerPoint), ne tabulkový procesor -
-žádný řádek vzorců ani odkazy typu A1. Dvě rozhodnutí 12. 8.: **zvláštní řádek záhlaví se u tohoto
-prvku ruší** (záhlaví = první řádek, který si uživatel udělá tučný; přepínač zůstává jen kvůli starým
-šablonám) a **struktura se dělá na plátně, ne v dialogu** - z 5 tabů má zbýt jediné „Obecné".
-⚠️ Připravené bloky agend (`GetTableTemplates`: „Záhlaví linky", „Shrnutí faktury") existují na
-serveru i v editoru, ale bez tohoto prvku k nim nevede z UI cesta.
+**Co zbývá - rozhodnout, co ještě do první verze** (nic z toho neblokuje používání):
 
-- **Krok 2 - zadávání na plátně (M), další na řadě:** dvojklik = dovnitř a rovnou psát, F2 upraví
-  vybranou buňku, Tab/Enter posun, Esc ven; pravý klik = vložit/smazat řádek a sloupec; šířka
-  sloupce tažením. **Součástí je zrušení dnešního aparátu**: dialog se scvrkne na jediné „Obecné"
-  postavené na EDInputFormu (`TableElementEdit.cls`) **bez tlačítka „Upravit sloupce"** - struktura
-  i obsah patří na plátno, v dialogu zůstanou jen obecné vlastnosti prvku (potvrzeno Janem 12. 8.).
-  ⚠️ Přidání řádku dnes obsah zmenší (prvek má pevnou výšku kvůli úchytům); s přidáváním na plátně
-  se má výška dorovnat o `RowHeight`, ať tabulka roste jako ve Wordu.
-- **Postupně dál (nice-to-have, nic neblokuje):** výška **per řádek** tažením (model má dnes jednu
-  společnou výšku - aditivní změna), vkládání bloku z Excelu (Ctrl+V textu odděleného tabulátory),
-  našeptávač polí po `{`, výběr více buněk tažením a na něj **ColSpan** merged cells. **RowSpan
-  vědomě odložen** (spanování výšek × střídání řádků × podmíněná viditelnost).
+| # | Co | Vel. |
+|---|---|---|
+| B68 | **Šířka sloupce a výška řádku tažením** za dělicí čáru. Dnes se šířky zadávají jen číslem v mm a výška řádku je jedna společná pro celou tabulku - výška **per řádek** je aditivní změna modelu | S–M |
+| B69 | **Vložení bloku z Excelu** (Ctrl+V textu odděleného tabulátory naplní buňky, tabulku dorovná). Nejlevnější velká výhra - lidé mají obsah takových tabulek často hotový v Excelu | S |
+| B70 | **Našeptávač polí po `{`** v buňce. Ručně psané `{LOKALNI_OZNACENI_LINKY}` je pozvánka k překlepu, který se projeví až v tisku vytištěnou složenou závorkou | S |
+| B71 | **Výběr více buněk tažením** a na něm hromadné formátování + **ColSpan** slučování buněk (aditivní JSON, span-aware DrawRow). **RowSpan vědomě odložen** - spanování výšek × střídání řádků × podmíněná viditelnost | M |
+| B72 | **Připravené bloky agend při vkládání tabulky** (`GetTableTemplates`: „Záhlaví linky", „Shrnutí faktury"). Na serveru existují pro každou agendu, ale od zrušení starého dialogu k nim **nevede z UI cesta**. Patří k vkládání prvku („prázdná / z připraveného bloku"), ne do dialogu | S |
 
 ---
 
