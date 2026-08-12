@@ -1327,7 +1327,8 @@ ClassMethod PismenoVarianty(poradiSloupce As %Integer, prvniBez As %Boolean = 1)
 /// - vyhne se tomu, aby expresní spoj projíždějící uzly (`<`) určoval časy. "" když nikdo nestaví.
 ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String) As %String
 {
-    k pocet
+    s jeTam = (smer '= "Z")
+    k pocet, pokryti, delka, zamitnuto
     s sp = ""
     f {
         s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
@@ -1335,16 +1336,48 @@ ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String
         i '$isvalidnum(sp) continue
         s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
         i ct = "" continue
+        i $d(zamitnuto(ct)) continue
+        i $d(pocet(ct)) { s pocet(ct) = pocet(ct) + 1  continue }   // trasu už známe (W-mapa je per trasa), jen spoje
         d ..WMapa(dataDB, sku, lin, ct, .wMap)
         s c = $g(wMap(currentPoradi))
-        i (c '= "") && (c '= "<") && ($isvalidnum(c)) s pocet(ct) = $g(pocet(ct)) + 1   // spoj této trasy staví na vývěsce
+        i (c = "") || (c = "<") || ('$isvalidnum(c)) { s zamitnuto(ct) = ""  continue }   // na vývěsce nestaví
+        s pocet(ct) = 1
+        // Pokrytí = kolik zastávek trasa obslouží OD vývěsky dál (= kolik řádků seznamu vyplní),
+        // délka = nejvzdálenější kumulativní čas. Zastávky před vývěskou se nepočítají - sloupec
+        // se plní od ní dolů, takže trasa s hromadou zastávek před ní by nepomohla.
+        s n = 0, maxT = 0, pp = ""
+        f {
+            s pp = $o(wMap(pp))
+            q:pp=""
+            i '$isvalidnum(pp) continue
+            i '..JeVUsekuVariant(pp, currentPoradi, jeTam) continue
+            i ..CasHodnota($g(wMap(pp))) = "" continue
+            s n = n + 1
+            s t = ..CasJizdyZMapy(.wMap, currentPoradi, pp)
+            i t > maxT s maxT = t
+        }
+        s pokryti(ct) = n, delka(ct) = maxT
     }
-    // nejčastější trasa = hlavní
-    s baseCt = "", maxN = 0, ct = ""
+    q ..VyberZaklTrasu(.pokryti, .delka, .pocet)
+}
+
+/// Vybere trasu pro **jediný** sloupec časů: největší pokrytí seznamu, při shodě delší jízda,
+/// pak víc spojů, pak nejnižší číslo trasy (determinismus).
+///
+/// ⚠️ **Nejčetnější trasa je špatné kritérium** - nejvíc spojů má často zkrácená trasa, takže sloupec
+/// skončil v polovině seznamu a zbytek zůstal prázdný (hlásil TRANSDEV, #12843). Starý modul bere
+/// v automatickém režimu **nejdelší** spočítaný průběh (`JRapiLinPrtMhd1.mac:330` řadí průběhy od
+/// největšího a jedničku dá do sloupce „Časy"), takže tohle je oprava odchylky, ne nová volba.
+/// Pokrytí měříme přímo (počet obsloužených zastávek), legacy ho aproximuje délkou textu průběhu.
+ClassMethod VyberZaklTrasu(ByRef pokryti, ByRef delka, ByRef pocet) As %String
+{
+    s baseCt = "", bestN = -1, bestT = -1, bestP = -1, ct = ""
     f {
-        s ct = $o(pocet(ct), 1, n)
+        s ct = $o(pokryti(ct), 1, n)
         q:ct=""
-        i n > maxN s maxN = n, baseCt = ct
+        s t = +$g(delka(ct)), p = +$g(pocet(ct))
+        s lepsi = $s(n > bestN:1, (n = bestN) && (t > bestT):1, (n = bestN) && (t = bestT) && (p > bestP):1, 1:0)
+        i lepsi s baseCt = ct, bestN = n, bestT = t, bestP = p
     }
     q baseCt
 }

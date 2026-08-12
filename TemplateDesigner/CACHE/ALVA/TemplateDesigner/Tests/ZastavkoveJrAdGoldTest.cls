@@ -54,7 +54,10 @@ Method TestGold0365001()
 	// dál (1:1 legacy, dřív se srovnával celý směr). ⚠️ Mění se **obsah**, ne počty: sloupců variant
 	// 116 → 60, protože 56 z nich mělo v tištěném úseku identická čísla a lišilo se jen před vývěskou.
 	// Počty stránek/zastávek/odjezdů/poznámek zůstaly shodné = neztratil se žádný spoj ani řádek.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=gqnRyaF1qpURSba9+EAvrQ==")
+	// Re-baseline 2026-08-12 (#12843 podruhé): jediný sloupec časů se vybírá podle POKRYTÍ seznamu
+	// (kolik zastávek trasa od vývěsky obslouží), ne podle četnosti spojů - nejvíc spojů měla často
+	// zkrácená trasa a sloupec končil v polovině. Mění se hodnoty CAS_JIZDY, počty zůstávají.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=yBhnqVEGT9BcblETwSNetg==")
 }
 
 Method TestGold0365005()
@@ -73,7 +76,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-10 (#13045b etapa 2): + pole PRESETY_SLOUPCU → jen md5, počty beze změny.
 	// Re-baseline 2026-08-12 (#12843): varianty jen z úseku od vývěskové zastávky - viz gold 0365001,
 	// tady taky jen obsah TRASA_MIN, počty beze změny.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=SSgviYKWpFhhXKwtFToN0w==")
+	// Re-baseline 2026-08-12 (#12843 podruhé): volba trasy pro jediný sloupec dle pokrytí - viz 0365001.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=JzHFBIUre8MjFBN2GZq2VQ==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá

@@ -211,6 +211,40 @@ Method TestJeVUsekuVariant()
 	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(20, 1, 1), "konec trasy je v úseku první zastávky")
 }
 
+// ── Volba trasy pro jediný sloupec časů (#12843) ─────────────────────────────
+/// Rozhoduje pokrytí seznamu, ne četnost spojů - nejvíc spojů má často zkrácená trasa a sloupec pak
+/// končí v polovině seznamu („niekedy len do polovice trasy").
+Method TestVyberZaklTrasu()
+{
+	// Pokrytí přebíjí četnost: trasa 7 má 12× víc spojů, ale vyplní o 8 řádků méň
+	kill pokryti, delka, pocet
+	set pokryti(7) = 12, delka(7) = 15, pocet(7) = 24
+	set pokryti(9) = 20, delka(9) = 31, pocet(9) = 2
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).VyberZaklTrasu(.pokryti, .delka, .pocet), 9, "vyhraje větší pokrytí")
+
+	// Shodné pokrytí → delší jízda (dvě trasy stejného počtu zastávek, jedna jede dál)
+	kill pokryti, delka, pocet
+	set pokryti(3) = 10, delka(3) = 22, pocet(3) = 5
+	set pokryti(4) = 10, delka(4) = 30, pocet(4) = 5
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).VyberZaklTrasu(.pokryti, .delka, .pocet), 4, "shoda pokrytí → delší jízda")
+
+	// Shodné pokrytí i jízda → víc spojů (aby se nezměnilo nic tam, kde se nekrátí)
+	kill pokryti, delka, pocet
+	set pokryti(3) = 10, delka(3) = 22, pocet(3) = 5
+	set pokryti(8) = 10, delka(8) = 22, pocet(8) = 40
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).VyberZaklTrasu(.pokryti, .delka, .pocet), 8, "shoda pokrytí i jízdy → víc spojů")
+
+	// Úplná shoda → nejnižší číslo trasy, ať výstup nezávisí na pořadí průchodu
+	kill pokryti, delka, pocet
+	set pokryti(12) = 10, delka(12) = 22, pocet(12) = 5
+	set pokryti(5) = 10, delka(5) = 22, pocet(5) = 5
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).VyberZaklTrasu(.pokryti, .delka, .pocet), 5, "úplná shoda → nejnižší číslo trasy")
+
+	// Žádná trasa na vývěsce nestaví → prázdno (volající to musí ustát)
+	kill pokryti, delka, pocet
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).VyberZaklTrasu(.pokryti, .delka, .pocet), "", "bez kandidátů → prázdné")
+}
+
 // ── Datumová omezení (1:1 txtNZ^JRapiNZUtl + UprDat^JRapiLinPrtPS3) ─────────
 
 Method TestPrefixOmezeni()

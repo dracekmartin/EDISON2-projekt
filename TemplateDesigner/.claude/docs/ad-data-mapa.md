@@ -227,6 +227,17 @@ ní, takže zajezdka v první polovině linky by ve druhé polovině dala dva sl
 My jsme to do 12. 8. srovnávali přes celý směr (na gold 0365001 to bylo 56 duplicitních sloupců
 ze 116); dnes to drží `JeVUsekuVariant` + invariantní test `TestZadneDuplicitniVariantniSloupce`.
 
+⚠️ **Sloupec „Časy" ve starém modulu NENÍ „výchozí spoj".** Přepínač u linky
+`^JRL(sku,lin,"PATCH","mhd","par",1)` (legacy `arrprtlin("dta",73)`, popisek „mhd odjezdník -
+automaticky generovat časové průběhy tras") rozhoduje mezi dvěma zdroji: **vypnuto** = ručně zadané
+minuty u trasy (`^JRL(sku,lin,"J",poradi)`, 8. `#`-segment ve tvaru `Tam:Zpět`, přes `GetMin` na
+rozdíly proti vývěsce), **zapnuto** = spočítaný průběh, přičemž legacy bere **nejdelší** (`ptm`
+průběhy se řadí od největšího, `JRapiLinPrtMhd1.mac:330`; 2.-4. jdou do „Pracovní 3/4/5").
+Ověřeno na datech: MHD Nitra má zapnuto (minuty vyplněné má, ale legacy je ignoruje), CB_CSADAD
+vypnuto s prázdnými minutami → ve starém tiskne prázdno. **My přepínač ignorujeme a vždy počítáme**;
+trasu vybíráme podle pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji.
+Ručně zadané minuty **nečteme vůbec** - featura na vyžádání.
+
 ⚠️ **Obsah sloupce se od legacy pořád liší** (vědomě, rozhodnutí odložené): legacy si nechá **jeden
 skutečný průběh** (ten s delším časem na konci, `necham prubeh s delsim casem`), my bereme maximum
 per zastávku přes spoje varianty - takže sloupec může nést kombinaci, kterou nejede žádný spoj

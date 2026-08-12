@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-08-12 (10) - 🔧 jeden sloupec jízdních dob už nekončí v polovině seznamu (#12843)
+
+Zákazníkův první bod: „ak zvolím zobraziť len jeden variant, je to automaticky prvý nájdený, niekedy
+len do polovice trasy". Zase to byla **odchylka od starého modulu**, ne chybějící volba.
+
+**Příčina:** vybírali jsme trasu, kterou na vývěskové zastávce staví **nejvíc spojů**. Nejčetnější
+bývá zkrácená trasa, takže sloupec se vyplnil do poloviny seznamu a zbytek zůstal prázdný. Starý
+modul v automatickém režimu bere **nejdelší** spočítaný průběh (`JRapiLinPrtMhd1.mac:330` řadí
+průběhy od největšího a jedničku dává do sloupce „Časy").
+
+**Teď se vybírá podle pokrytí seznamu** - kolik zastávek trasa od vývěsky dál obslouží; při shodě
+delší jízda, pak víc spojů, pak nejnižší číslo trasy (aby výstup nezávisel na pořadí průchodu).
+Pokrytí měříme přímo počtem zastávek, legacy ho aproximuje délkou textu průběhu.
+
+**Změřeno na zákazníkově lince (MHD Nitra 12, 67 zastávek):** vyplněných řádků **676 → 946**, což je
+**dosažitelné maximum** - sloupec teď sedí na maximu na **všech 67 stránkách** (dřív na 30).
+Nejvýraznější zastávka Gorazdova: **17 → 28 z 32 řádků**. Zbylé 4 řádky neobslouží žádná jediná
+trasa, takže víc než tohle jedním sloupcem nejde.
+
+⚠️ **Cena, kterou to má:** trasa s největším pokrytím může být vzácný spoj, takže časy nemusí patřit
+tomu, čím jede většina. Prázdný řádek ale vypadá jako chyba, o minutu jiný čas ne.
+
+⚠️ **Co to nemění:** rozdílové poznámky („neobsluhuje zast. X") si vzorovou trasu berou z `J`-věty
+(pole 10/7), ne z tohoto výběru - ověřeno, `zaklCt` se používá jen na tenhle sloupec.
+
+**Kontext, který u toho vyšel** (a stojí za zapamatování): sloupec „Časy" ve starém modulu **není
+žádný „výchozí spoj"**. Přepínač u linky (`PATCH,"mhd","par",1` = „automaticky generovat časové
+průběhy tras") rozhoduje, jestli tam jsou **ručně zadané minuty u trasy** (`J`-věta, segment 8), nebo
+spočítaný průběh. Nitra má automatický režim, CB_CSADAD ruční s prázdnými minutami - tedy ve starém
+tiskne prázdno. My přepínač ignorujeme a vždy počítáme, což je pro oba lepší než starý stav; čtení
+ručně zadaných minut zůstává neimplementované, dokud o něj někdo nepožádá.
+
+**Brány:** **94 Caché testů** zelených (1 nový na pravidlo výběru, 5 případů včetně rozhodování při
+shodě), zlaté odtisky přebaselinované (mění se hodnoty `CAS_JIZDY`, počty stránek/zastávek/odjezdů/
+poznámek beze změny), **2062 .NET testů** zelených. Mutace (výběr podle četnosti) test shodí a zlaté
+odtisky pod ní naopak projdou - což je zároveň důkaz, že jejich změna je právě tímto pravidlem.
+
 ## 2026-08-12 (10) - ↔️ pevná tabulka: šířky sloupců a výšky řádků tažením (`B73`)
 
 Šířky sloupců **nešly nastavit vůbec** - zadávaly se ve smazaném pětizáložkovém dialogu a od jeho
