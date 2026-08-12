@@ -9,14 +9,11 @@
 > **Stav k 2026-08-12.** Verze vydaná 11. 8.; `B39` od 12. 8. **rozsvícená pro všechny**
 > (přepínač odstraněn - viz changelog 2026-08-12).
 >
-> **▶ Zastávkový JŘ nemá otevřenou práci.** `B39` (vlastní sloupce vývěsky, #13045b) je hotová
-> oběma etapami 10. 8. - fronta KOVED je tím dojetá. **Další krok si vyber:** **Fáze B**
-> (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
+> **▶ Zastávkový JŘ má jedinou otevřenou věc a ta je blokovaná** - `B67` (výběr variant jízdních
+> dob) čeká na odpovědi od TRANSDEV. `B39` (vlastní sloupce vývěsky, #13045b) je hotová oběma
+> etapami 10. 8., takže **fronta KOVED je dojetá**. **Další krok si vyber:** **Fáze B** (tabulkové
+> elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
 > (**B10** + **B13**) jako dedikovaný slot.
->
-> **Nedodělek k `B39`:** zákazníkovi poradit, jak sloupce skládat - nedělní a sváteční provoz se
-> rozliší rozdělením sloupce, ne značkami (v datech skoro žádný nedělní spoj o svátcích nejede,
-> značka by padla na 86 % odjezdů). Patří to do wiki seedu, ne do kódu.
 >
 > **Sada TRANSDEV: 7 z 10 hotových** (11. 8.). Cíl a obrácené poznámkování berou **kolegové**
 > (proto tady nejsou), odsazení per směr taky. Otevřený u nás zůstává jediný - **výběr variant
@@ -26,7 +23,10 @@
 >
 > **Zákaznická fronta KOVED je dojetá** - `B37` hotová 5. 8., takže **#13093 je celý uzavřený**.
 > **Verze z 11. 8. je vydaná** a nese všechno od 5. 8. včetně (pokračující spoje, značky dle
-> nastavení linky, „<1", podněty #12843) - kromě vlastních sloupců vývěsky, které jdou zhasnuté.
+> nastavení linky, „<1", podněty #12843). Vlastní sloupce vývěsky v ní ještě zhasnuté byly;
+> od 12. 8. je přepínač odstraněný, takže **příští vydání je ponese rozsvícené** - i proto je novinka
+> zpátky v seedu (rada „nedělní a sváteční provoz rozdělit na dva sloupce, ne značkou" je v ní taky)
+> a nahraje se s vydáním.
 >
 > **Co sem nepatří** (rozhodnutí Jan 6. 8.): tikety řešené mimo návrhář a čekání na cizí lidi.
 > Roadmapa je seznam **naší otevřené práce**, ne zrcadlo helpdesku.
@@ -60,6 +60,10 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 `B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový** (body 1, 2 a 4 šly do verze
 4. 8.). `B39` (vlastní sloupce vývěsky) hotová 10. 8. → **z kola KOVED nezbývá nic**.
+
+| # | Blok | Vel. | Uzavírací podmínka |
+|---|---|---|---|
+| **B67** | **Výběr variant jízdních dob** (TRANSDEV `TR7` = #12843 bod 4, zákazník potvrdil 10. 8.) - dnes je jediná volba „jedna varianta, nebo všechny". Hotová je půlka: nestabilní číslování je pryč (varianty se sdružují dle sledu zastávek a mají písmena, ne poziční čísla). Zbývá **vybrat, KTERÉ varianty se tisknou**. ⛔ **Blokované na odpovědích** (Jan se ptal 12. 8.): ruční výběr per linka, nebo pravidlo (nejčastější / obsluhující daný úsek)? Jak často se ta volba mění? ⚠️ **Podmínka návrhu:** varianty se počítají per zastávku a výchozí řazení je „dle četnosti ze zastávky", takže **písmeno A znamená na každé stránce jinou variantu** - jakýkoli výběr „tiskni jen A" vyžaduje zapnuté „Stabilní (pořadí spojů)", nebo změnu výchozí hodnoty. | S–M | TRANSDEV potvrdí nad výsledkem |
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
@@ -97,6 +101,15 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
   stačí text). Dnes se rozsahy dat píšou ručně („14.2.-18.2., 1.7.-31.8.") a tvar hlídá validace
   při OK. Až se featura usadí, nahradit vybíráním v kalendáři - u „dnů školního vyučování" je ruční
   psaní desítek rozsahů otravné. Tvar zápisu na wire se tím nemění, jde čistě o zadávání.
+
+- **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
+  prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do
+  dalších šablon. **Co už existuje:** uložení **celé sekce** jako vlastní šablony a seskupení prvků
+  (Ctrl+G). Chybí mezistupeň mezi nimi - pojmenovaný blok menší než sekce. **Proč to čeká na pevnou
+  tabulku:** dokud je hlavička poskládaná z 6 samostatných textů, musí blok řešit relativní pozice a
+  vazby uvnitř skupiny; jako **jeden** prvek (pevná tabulka) je uložení skoro zadarmo. Otevřené:
+  kde bloky žijí (per uživatel × firma jako šablony sekcí, nebo sdílené v DB) a jestli se vkládají
+  z palety, nebo z nabídky „Přidat".
 
 - **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
   věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,
@@ -167,20 +180,30 @@ při scope té fáze, ne teď.
 
 Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
 
-**Fixní (statická) tabulka - implementace odložena na poptávku faktur / F3.** Analýza 2026-07-12
-rozhodla „koncept implementovat" (tabulka dává reflow podmíněných řádků, auto výšku řádku a
-strukturální editaci, což skupina elementů principiálně neumí). Model i render Fixed módu jsou hotové
-a na sdíleném jádru; pro JŘ to potřeba není.
+**Pevná (ručně vyplňovaná) tabulka - záměr upřesněn 12. 8. (Jan), bere se teď.** Prvek je hotový,
+ale uspaný (není v paletě). Cíl **není faktura, ale náhrada „poskládám to z textových polí"** -
+hlavička sestavy i blok v těle faktury (platební údaje, rekapitulace) jako **jeden** prvek, se kterým
+se hýbe vcelku. Dnešní důkaz, že chybí: naše vlastní systémové šablony mají hlavičku z 5-6 textů.
 
-- **Krok 1 - střízlivé oživení (S–M):** paleta „Tabulka (pevná)" + factory (`Mode=Fixed`, Mode v UI
-  zamčený - dynamickou dělá `DynamicTableElement`); render dorovnat na **plán řádků** (`RowSpec`; `B11` ji vědomě vynechal - kreslí svislou čáru za
-  každým sloupcem včetně vnějšího a vrství dvě pozadí u pevných řádků, takže sjednocení jí výstup
-  změní a jako uspaný element není v odtiscích)
-  (sjednotí mřížku, auto-scale, **předpoklad pro merge**); drift-test allowlist zúžit.
-- **Krok 2 - UX modernizace + merge (M, s poptávkou):** inline editace buněk na plátně (dvojklik,
-  à la F2 na TextElementu - standardní pocit z FastReportu, řeší „5 tabů je moc"), redukce dialogu
-  na 2-tab vzor, **ColSpan** merged cells (aditivní JSON, span-aware DrawRow). **RowSpan vědomě
-  odložen** (vzácný, těžký - spanování výšek × zebra × VisibilityExpression) - až na poptávku / F3.
+**Model = objekt na stránce s excelovskými klávesami** (Word/PowerPoint), ne tabulkový procesor -
+žádný řádek vzorců ani odkazy typu A1. Dvě rozhodnutí 12. 8.: **zvláštní řádek záhlaví se u tohoto
+prvku ruší** (záhlaví = první řádek, který si uživatel udělá tučný; přepínač zůstává jen kvůli starým
+šablonám) a **struktura se dělá na plátně, ne v dialogu** - z 5 tabů má zbýt jediné „Obecné".
+⚠️ Připravené bloky agend (`GetTableTemplates`: „Záhlaví linky", „Shrnutí faktury") existují na
+serveru i v editoru, ale bez tohoto prvku k nim nevede z UI cesta.
+
+- **Krok 1 - prvek existuje (S–M):** paleta + továrna (vloží 3 × 3, bez řádku záhlaví, viditelná
+  mřížka), přepínač režimu z panelu pryč (dynamickou dělá `DynamicTableElement`), render na **plán
+  řádků** (`RowSpec`; `B11` ho vynechal - kreslí svislou čáru i za posledním sloupcem a vrství dvě
+  pozadí), zmenšení obsahu při zmenšení prvku jako u ostatních tabulek, prázdná tabulka viditelná
+  (dnes se nevykreslí nic); drift-test allowlist zúžit.
+- **Krok 2 - zadávání na plátně (M):** dvojklik = dovnitř a rovnou psát, F2 upraví vybranou buňku,
+  Tab/Enter posun, Esc ven; pravý klik = vložit/smazat řádek a sloupec; šířka sloupce tažením;
+  dialog zredukovat na „Obecné".
+- **Postupně dál (nice-to-have, nic neblokuje):** výška **per řádek** tažením (model má dnes jednu
+  společnou výšku - aditivní změna), vkládání bloku z Excelu (Ctrl+V textu odděleného tabulátory),
+  našeptávač polí po `{`, výběr více buněk tažením a na něj **ColSpan** merged cells. **RowSpan
+  vědomě odložen** (spanování výšek × střídání řádků × podmíněná viditelnost).
 
 ---
 
