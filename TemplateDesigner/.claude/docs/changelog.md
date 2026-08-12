@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-12 (3) - ✅ #12843: nadpis skupiny dnů jde zalomit ručně (Enter i token)
+
+TRANSDEV hlásil, že v záhlaví sloupců minut nefunguje **ani Enter, ani `
+`**. Měl pravdu a byly
+to **dvě nezávislé věci** - proto nezabralo nic:
+
+- **Pole přepisu nadpisu Enter vůbec nepřijalo** (jednořádkový TextBox → Enter spustil výchozí
+  tlačítko dialogu). U nadpisů sloupců zastávek je to pole víceřádkové už dávno, tady se to
+  nedotáhlo. Nově `AcceptsReturn` + max 3 řádky + tooltip, takže Enter uvnitř pole dělá řádek,
+  ne potvrzení dialogu (rozhodnutí Jan: konzistentní s ostatními formuláři).
+- **Vykreslování zlom zahazovalo.** Záhlaví skupin dnů se skládá jinak než ostatní tabulky: dva
+  řádky vznikly **jen z dat** (druhý nadpis, vlastní styl), jinak se text zalamoval podle šířky
+  (dělení podle mezer). Zlom se do sdílené funkce `CellLayout.SplitLines` nikdy nedostal, i když
+  ji buňky a nadpisy sloupců používají.
+
+**Jak to je teď** (`ComposeHeaderLines`): ruční zlom = další řádek **téhož** nadpisu, tedy stejný
+styl; druhý nadpis z dat zůstává sekundární s vlastním stylem; bez zlomu se pořád zalamuje podle
+šířky. Tři případy, jedno místo.
+
+⚠️ **Past, bez které by to byla polovičatá oprava:** minimální šířka skupiny se počítá z nejdelšího
+**slova** nadpisu. Bez úpravy by dvouřádkový nadpis byl jedno dlouhé slovo a **roztáhl sloupec na
+součet obou řádků** - zlom proto dělí slova stejně jako mezera (`HeaderWords`).
+
+Ověřeno: 7 nových testů, **obě mutace je zabily** (nerespektování zlomu = 4 pády, nedělení slov
+taky). Proklikáno Janem - Enter odentruje a nadpis je na dvou řádcích. .NET 2015 zelených.
+Příručka doplněná.
+
+
 ## 2026-08-12 (3) - 🧱 pevná tabulka je zpátky v paletě (Fáze B, krok 1)
 
 Ručně vyplňovanou tabulku aplikace uměla celou dobu, ale nešlo ji vložit - nebyla v paletě ani

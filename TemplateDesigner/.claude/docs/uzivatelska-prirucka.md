@@ -680,6 +680,11 @@ Analogický dvoutabový dialog:
 - Pro skupinu: viditelnost, pořadí (▲/▼), **přepis nadpisu** (jinak se použije nadpis z dat, u
   sloupce hodin výchozí „Hod"), pevná šířka (prázdné = automatický výpočet + rovnoměrné dofill),
   vlastní barva zebry pro danou skupinu.
+- **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `
+`)
+  a nadpis se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
+  jízdní řád u skupiny vyplněný i druhý nadpis, přidá se pod ně jako další řádek s vlastním
+  stylem (viz *Záhlaví - 2. řádek* ve vlastnostech prvku).
 - Per-sloupec styl barev a zarovnání zvlášť pro záhlaví a data. **Typografie záhlaví (font,
   velikost, řez) je ale jednotná pro celý prvek** - nedá se nastavit odlišně po jednotlivých
   skupinách, aby šla velikost písma měnit z jednoho místa v panelu.

@@ -194,7 +194,30 @@ public class DepartureGridElement : StopScheduleElementBase
     // ═══════════════════════════════════════════════════════════════════════════
 
     /// <summary>Jeden řádek záhlaví skupiny dnů. IsSecondary = pochází z Nadpis2 (jiný styl).</summary>
-    private record HeaderLine(string Text, bool IsSecondary);
+    internal record HeaderLine(string Text, bool IsSecondary);
+
+    /// <summary>Slova nadpisu pro výpočet minimální šířky skupiny. **Ruční zlom dělí slova stejně
+    /// jako mezera** - jinak by dvouřádkový nadpis byl jedno dlouhé slovo a roztáhl minimální šířku
+    /// na součet obou řádků.</summary>
+    internal static string[] HeaderWords(string fullName) =>
+        [.. Rendering.CellLayout.SplitLines(fullName)
+            .SelectMany(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries))];
+
+    /// <summary>Řádky záhlaví skupiny dnů. **Ruční zlom** (Enter nebo token) v nadpisu = další řádek
+    /// **téhož** nadpisu, tedy stejný styl. **Druhý nadpis z dat** je jiná věc - má vlastní styl
+    /// (`HeaderLine2Style`), proto jde zvlášť jako sekundární řádek a nezalamuje se.
+    /// Bez druhého nadpisu se každý ruční řádek ještě dozalomí podle šířky (`wrap`).</summary>
+    internal static HeaderLine[] ComposeHeaderLines(string nadpis, string nadpis2,
+        Func<string, IEnumerable<string>> wrap)
+    {
+        var rucniRadky = Rendering.CellLayout.SplitLines(nadpis);
+
+        if (nadpis2.Length > 0)
+            return [.. rucniRadky.Select(r => new HeaderLine(r, IsSecondary: false))
+                                 .Append(new HeaderLine(nadpis2, IsSecondary: true))];
+
+        return [.. rucniRadky.SelectMany(wrap).Select(w => new HeaderLine(w, IsSecondary: false))];
+    }
 
     private record GroupLayout(
         SkupinaDnuData Skupina,
@@ -288,7 +311,7 @@ public class DepartureGridElement : StopScheduleElementBase
 
             string fullName = sk.Nadpis;
             if (sk.Nadpis2.Length > 0) fullName += " " + sk.Nadpis2;
-            var words = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var words = HeaderWords(fullName);
 
             // Element font pro měření minimální šířky
             float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
@@ -363,28 +386,21 @@ public class DepartureGridElement : StopScheduleElementBase
         }
 
         // Layout řádků záhlaví:
-        // - Pokud má skupina vyplněn Nadpis2 → 2 distinct řádky bez word-wrap (Line 1 + Line 2, různé styly)
-        // - Jinak → word-wrap pouze Nadpis (všechny řádky jako Line 1, společný styl)
+        // - Ruční zlom v nadpisu (Enter nebo token) → řádky ve STEJNÉM stylu
+        // - Nadpis2 z dat → navíc sekundární řádek s vlastním stylem (HeaderLine2Style)
+        // - Bez zlomu a bez Nadpis2 → word-wrap podle šířky (dosavadní chování)
         finalGroups = finalGroups.Select(g =>
         {
-            if (g.Skupina.Nadpis2.Length > 0)
-            {
-                // Zachovat hranici Nadpis / Nadpis2 - bez wrap (předpokládáme, že každý se vejde)
-                var lines = new HeaderLine[]
-                {
-                    new(g.Skupina.Nadpis, IsSecondary: false),
-                    new(g.Skupina.Nadpis2, IsSecondary: true),
-                };
-                return g with { HeaderLines = lines };
-            }
-
-            // Single-nadpis: word-wrap přes celý text, všechny řádky Line 1 (element font)
             float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var wrapFont = new SKFont(
                 // resolved rodina + řez (vč. dokumentového defaultu) - wrap musí trefit stejný font jako render
                 GetTypeface(ResolveGroupHeaderParent()), fontPx);
-            var wrapped = WrapHeaderText(g.Skupina.Nadpis, g.GroupWidth, wrapFont, effectiveMmToPx);
-            return g with { HeaderLines = wrapped.Select(w => new HeaderLine(w, IsSecondary: false)).ToArray() };
+
+            return g with
+            {
+                HeaderLines = ComposeHeaderLines(g.Skupina.Nadpis, g.Skupina.Nadpis2,
+                    radek => WrapHeaderText(radek, g.GroupWidth, wrapFont, effectiveMmToPx)),
+            };
         }).ToList();
 
         float effFontSize = DataStyle.FontSize ?? 8f;
