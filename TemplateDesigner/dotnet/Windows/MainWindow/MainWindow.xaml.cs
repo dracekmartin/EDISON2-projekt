@@ -1975,7 +1975,10 @@ public partial class MainWindow : Window
         if (_inlineEditElement is not null) return;
 
         // Uvnitř tabulky patří klávesy buňce, ne prvku (jinak by Delete smazal celou tabulku).
-        if (InTableCells)
+        // ⚠️ Jen když je fokus na plátně nebo v editované buňce: režim buňky zůstává zapnutý i po
+        // potvrzení textu, takže bez téhle podmínky by po kliknutí do pole v panelu vlastností
+        // Delete mazal obsah buňky místo znaku v poli (nález revize 12. 8.).
+        if (InTableCells && (_cellEditing || skCanvas.IsKeyboardFocusWithin))
         {
             if (HandleCellEditKey(e) || HandleTableCellsKey(e)) { e.Handled = true; return; }
             if (_cellEditing) return;   // zbytek psaní obslouží textové pole samo

@@ -256,6 +256,11 @@ public partial class MainWindow
         if (!InTableCells || _cellEditing || e.Text.Length == 0 || char.IsControl(e.Text[0])) return;
         if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) || Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) return;
 
+        // ⚠️ Jen když píše uživatel do plátna. Bez téhle podmínky ukradne psaní každému poli
+        // v panelu vlastností: režim buňky zůstává zapnutý i po potvrzení textu, takže první
+        // napsaný znak by spadl do tabulky místo do pole (nález revize 12. 8.).
+        if (!skCanvas.IsKeyboardFocusWithin) return;
+
         BeginCellEdit(replace: true);
         if (!_cellEditing) return;
 

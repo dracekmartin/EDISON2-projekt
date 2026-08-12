@@ -896,7 +896,7 @@ public class TableElement : TemplateElement
         },
 
         // ── Záhlaví / Datové buňky - element-level základní barvy.
-        // Detailní cascade (font, alignment, padding) je v TableEditorDialog.
+        // Detailní styl (font, zarovnání, vnitřní okraje) je ve formuláři TableElementEdit.cls.
         new BoolPropertyDescriptor
         {
             Label = "Tučné záhlaví",
