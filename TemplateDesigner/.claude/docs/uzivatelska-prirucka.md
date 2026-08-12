@@ -1,5 +1,7 @@
 # Návrhář sestav - uživatelská příručka
 
+*aktuálně umožňuje navrhovat šablony ZASTÁVKOVÝCH (MHD) jízdních řádů, linkové JŘ jsou v přípravě*
+
 > Vizuální editor tiskových sestav v EDISONu. Navrhnete vzhled šablony, systém k ní doplní
 > data a vytiskne PDF. **Část I** pokrývá obecné ovládání aplikace - práci se šablonou,
 > sekcemi, prvky, styly, daty a exportem - bez ohledu na typ sestavy. **Část II** popisuje
