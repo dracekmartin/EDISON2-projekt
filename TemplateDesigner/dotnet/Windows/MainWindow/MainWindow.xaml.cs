@@ -2308,6 +2308,14 @@ public partial class MainWindow : Window
 
         var hit = _canvas.HitTestElement(cx, cy, cw);
 
+        // Hrana sloupce má přednost před výběrem buňky i před posunem prvku - myš na ní ukazuje
+        // kurzor pro změnu šířky, takže uživatel míří na ni.
+        if (TryBeginDividerDrag(cx, cy, cw))
+        {
+            e.Handled = true;
+            return;
+        }
+
         // Uvnitř tabulky: klik přepne buňku (Excel), klik jinam nás z tabulky pustí ven.
         ExitTableCellsIfElsewhere(hit?.Element);
         if (InTableCells && TrySelectCellAt(cx, cy, cw))
@@ -2374,6 +2382,13 @@ public partial class MainWindow : Window
         if (_vm is null || _canvas is null) return;
         var pos = e.GetPosition(skCanvas);
         float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
+
+        if (InDividerDrag)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed) { EndDividerDrag(true); return; }
+            UpdateDividerDrag(cx, cy, cw);
+            return;
+        }
 
         if (_mouseMode == MouseMode.Dragging)
         {
@@ -2610,7 +2625,11 @@ public partial class MainWindow : Window
         }
 
         var handleHit2 = _canvas.HitTestHandle(cx, cy, cw);
-        if (handleHit2.HasValue)
+        // Hrana sloupce pevné tabulky má přednost před „posunout prvek" - jinak by o možnosti
+        // táhnout šířku uživatel nevěděl, protože kurzor by pořád ukazoval posun.
+        if (DividerAt(cx, cy, cw) is { } divider)
+            skCanvas.Cursor = divider.Kind == DividerKind.Column ? Cursors.SizeWE : Cursors.SizeNS;
+        else if (handleHit2.HasValue)
             skCanvas.Cursor = GetResizeCursor(handleHit2.Value.Handle);
         else
         {
@@ -2622,6 +2641,7 @@ public partial class MainWindow : Window
 
     private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
     {
+        if (InDividerDrag)                          { EndDividerDrag(true); return; }
         if (_mouseMode == MouseMode.Dragging)       EndDrag(true);
         else if (_mouseMode == MouseMode.Resizing)  EndResize(true);
         else if (_mouseMode == MouseMode.RubberBand) EndRubberBand();

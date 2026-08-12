@@ -88,6 +88,16 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 | Delete / Backspace | vymazat **obsah buňky** (ne prvek - to je ta past) |
 | Ctrl+C / Ctrl+X / Ctrl+V | schránka pracuje s **buňkami**, ne s prvkem; Ctrl+V vloží blok z Excelu (řádky po koncích řádku, buňky po tabulátorech) a tabulku dorovná |
 | `{` při psaní | nabídka datových polí; šipky vybírají, Enter nebo Tab doplní i s koncovou závorkou, Esc zavře nabídku (teprve druhý Esc zahodí úpravu) |
+| tažení vnitřní hranice | šířka sloupce / výška řádku; funguje i na **vybrané** tabulce, nemusí se dovnitř |
+
+**Tažení hranic - dvě pravidla, obě vydřená zkoušením 12. 8.:**
+
+1. **Mění se jen dvojice u hrany** - co jeden získá, druhý ztratí, zbytek tabulky se nehne.
+   První návrh dal tažené položce pevný rozměr a zbytek nechal rozdělit mezi všechny ostatní,
+   takže se při tažení dolů hýbalo i to nad hranou. U sloupců to nebylo vidět, dokud se táhla
+   první hrana.
+2. **Vnější hrana patří prvku, ne krajní buňce** - jinak by uživatel nevěděl, jestli mění tabulku,
+   nebo sloupec (stejně to má Excel i Word). Krajní sloupec se rozšiřuje hranou vedle něj.
 | Esc | ven z buňky na prvek, podruhé zrušit výběr |
 
 ### Grouping / layout

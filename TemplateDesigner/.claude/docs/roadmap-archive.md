@@ -19,6 +19,17 @@ snapshot vedle definice sloupců. Driftový test si klíč vyžádal sám a je v
 Ověřeno voláním nasazené třídy (0365001/CB_CSADAD): `JAZYK=sk` → všech 39 stránek slovensky, bez
 klíče česky, počet poznámek shodný. Zbývá porovnání s výtiskem zákazníka.
 
+## 2026-08-12 ✅ - `B73`: šířky sloupců a výšky řádků tažením
+
+Detail → changelog 2026-08-12 (9). Šířky sloupců po zrušení starého dialogu **nešly nastavit vůbec**,
+takže to nebyl komfort, ale díra po předchozím kroku. Táhne se za vnitřní hranici, funguje i na
+vybrané tabulce; řádek dostal vlastní nepovinnou výšku.
+
+⚠️ **Poučení, které stálo tři kola proklikání:** pro řádky jsem vymýšlel jinou mechaniku než pro
+sloupce (škálování obsahu místo rozdělení místa) a pokaždé to znamenalo zpětnou vazbu nebo pohyb
+tam, kde se hýbat nemělo. Kolmý protějšek se má počítat **týmž kódem**, ne analogicky. Pravidla
+(mění se jen dvojice u hrany; vnější hrana patří prvku) jsou v `ux-conventions.md`.
+
 ## 2026-08-12 ✅ - `B74` + `B75`: vkládání z Excelu a našeptávač polí v buňce
 
 Detail → changelog 2026-08-12 (7). Ctrl+V vloží blok ze schránky od vybrané buňky a tabulku

@@ -9,8 +9,9 @@
 > **Stav k 2026-08-12.** Verze vydaná 11. 8.; `B39` od 12. 8. **rozsvícená pro všechny**
 > (přepínač odstraněn - viz changelog 2026-08-12).
 >
-> **▶ Zastávkový JŘ má jedinou otevřenou věc a ta je blokovaná** - `B67` (výběr variant jízdních
-> dob) čeká na odpovědi od TRANSDEV. `B39` (vlastní sloupce vývěsky, #13045b) je hotová oběma
+> **▶ Zastávkový JŘ má jedinou otevřenou věc a NENÍ blokovaná** - `B67` se 12. 8. rozpadl: hlavní
+> stížnost (duplicitní sloupce variant) byla naše odchylka od starého modulu a je opravená, zbylé tři
+> body jdou udělat bez cizí součinnosti; blokovaná zůstala jen ruční tabulka, která na nás není. `B39` (vlastní sloupce vývěsky, #13045b) je hotová oběma
 > etapami 10. 8., takže **fronta KOVED je dojetá**. **Další krok si vyber:** **Fáze B** (tabulkové
 > elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
 > (**B10** + **B13**) jako dedikovaný slot.
@@ -63,7 +64,7 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B67** | **Výběr variant jízdních dob** (TRANSDEV `TR7` = #12843 bod 4, zákazník potvrdil 10. 8.) - dnes je jediná volba „jedna varianta, nebo všechny". Hotová je půlka: nestabilní číslování je pryč (varianty se sdružují dle sledu zastávek a mají písmena, ne poziční čísla). Zbývá **vybrat, KTERÉ varianty se tisknou**. ⛔ **Blokované na odpovědích** (Jan se ptal 12. 8.): ruční výběr per linka, nebo pravidlo (nejčastější / obsluhující daný úsek)? Jak často se ta volba mění? ⚠️ **Podmínka návrhu:** varianty se počítají per zastávku a výchozí řazení je „dle četnosti ze zastávky", takže **písmeno A znamená na každé stránce jinou variantu** - jakýkoli výběr „tiskni jen A" vyžaduje zapnuté „Stabilní (pořadí spojů)", nebo změnu výchozí hodnoty. | S–M | TRANSDEV potvrdí nad výsledkem |
+| **B67** | **Jemnější zobrazení variant jízdních dob** (TRANSDEV #12843 bod 4 = původní `TR7`). ✅ Hotové: nestabilní číslování (27. 7.) a **duplicitní sloupce se stejnými čísly** (12. 8., varianty se rozlišují jen podle úseku od vývěskové zastávky - byla to odchylka od starého modulu). Zbývají tři nezávislé věci, žádná nepotřebuje cizí součinnost: **(a)** obsah variantního sloupce sladit s legacy (dnes maximum přes spoje varianty → sloupec, který nejede žádný spoj; legacy nechá jeden skutečný průběh, rozdíl jednotky minut), **(b)** základ jednosloupcového režimu - dnes nejčetnější trasa, což je někdy zkrácený spoj a sloupec pak v polovině seznamu končí prázdnem („len do polovice trasy"); volba nejčastější / nejdelší, **s rozhodnutím o výchozí hodnotě** (odchylka od starého modulu, jsou na to paritní testy), **(c)** řazení variant podle délky jízdy (třetí volba k dnešním dvěma). ⛔ **Ruční zaškrtávací tabulka variant v lince je mimo** (rozhodnutí Jan 12. 8.: není na nás) - a než by se dělala, musí zákazník rozhodnout, **co se stane se spoji odškrtnuté varianty**: každý spoj, který na zastávce staví, musí patřit do některého zobrazeného sloupce, jinak značka u minuty odkazuje na variantu, která na vývěsce není. | S (a,b,c) | poslat mu (a)-(c) a nechat posoudit, jestli ruční výběr ještě chce |
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
@@ -190,7 +191,6 @@ vyplňuje na plátně, dialog má jedinou záložku) → archiv. Cíl **není fa
 
 | # | Co | Vel. |
 |---|---|---|
-| B73 | **Šířka sloupce a výška řádku tažením** za dělicí čáru. Dnes se šířky zadávají jen číslem v mm a výška řádku je jedna společná pro celou tabulku - výška **per řádek** je aditivní změna modelu | S–M |
 | B76 | **Výběr více buněk tažením** a na něm hromadné formátování + **ColSpan** slučování buněk (aditivní JSON, span-aware DrawRow). **RowSpan vědomě odložen** - spanování výšek × střídání řádků × podmíněná viditelnost. ⚠️ Zjemní i vkládání ze schránky: dnes se vkládá od vybrané buňky a tabulka se dorovná (Word/Docs chování, jediné neztrátové bez výběru oblasti); s výběrem má platit **vybraná oblast = cíl vložení** (Excel), jedna buňka = dnešní chování | M |
 | B77 | **Připravené bloky agend při vkládání tabulky** (`GetTableTemplates`: „Záhlaví linky", „Shrnutí faktury"). Na serveru existují pro každou agendu, ale od zrušení starého dialogu k nim **nevede z UI cesta**. Patří k vkládání prvku („prázdná / z připraveného bloku"), ne do dialogu | S |
 

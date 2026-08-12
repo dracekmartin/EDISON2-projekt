@@ -1,5 +1,72 @@
 # Changelog
 
+## 2026-08-12 (10) - ↔️ pevná tabulka: šířky sloupců a výšky řádků tažením (`B73`)
+
+Šířky sloupců **nešly nastavit vůbec** - zadávaly se ve smazaném pětizáložkovém dialogu a od jeho
+zrušení k nim nevedla cesta. Přitom nejčastější použití je „úzký sloupec s popiskem, široký
+s hodnotou", takže to nebyl komfort, ale díra po předchozím kroku.
+
+Nově se **táhne za vnitřní hranici** - svislá mění šířku sloupce (min. 3 mm), vodorovná výšku řádku
+(min. 2 mm). Funguje to na **vybrané** tabulce, nemusí se dovnitř; kurzor se na hranici mění, během
+tažení se ukazuje rozměr v mm a Ctrl+Z vrátí celé tažení jedním krokem. Řádek dostal **vlastní
+nepovinnou výšku** (bez ní platí společná), takže se změnou jednoho řádku nezabetonuje zbytek.
+
+⚠️ **Tři chyby z proklikání (Jan), všechny stejného původu - vymýšlel jsem pro řádky jinou
+mechaniku než pro sloupce:**
+
+- **Nešlo chytit hranici** - kurzor se nastavoval na začátku obsluhy pohybu myši, jenže ta si ho
+  na konci přenastavuje podle toho, co je pod myší. Bez kurzoru nebylo poznat, kde je citlivé místo.
+- **Tažení nahoru a dolů ustřelovalo** - výška se řešila škálováním obsahu na výšku prvku, což se
+  točí samo proti sobě (vyšší řádek → vyšší obsah → větší zmenšení → jiné rozměry pod myší).
+  Nově řádky používají **týž rozdělovací výpočet jako sloupce** (`TableLayout.ResolveWidths`).
+- **Tažení hýbalo i tím, čeho se nemělo týkat** - tažená položka dostala pevný rozměr a zbytek si
+  rozdělily všechny ostatní. Nově se mění **jen dvojice u hrany**, jejich součet zůstává, zbytek
+  tabulky se nehne. U sloupců se to neprojevilo, dokud se táhla první hrana.
+
+**Vnější hrana zůstává prvku** (mění velikost tabulky), ne krajní buňce - jinak by uživatel nevěděl,
+co zrovna mění. Krajní sloupec se rozšiřuje hranou vedle něj, stejně jako v Excelu a Wordu.
+
+**Brány:** build bez chyb, **2058 testů** zelených (860 TD, z toho 7 nových: tažení nehne ostatními,
+minimum drží obě strany dvojice, zvětšení prvku rozdělí výšku mezi řádky, vlastní výška řádku
+přežije zvětšení i zpětný krok).
+
+
+## 2026-08-12 (9) - 🔧 varianty jízdních dob: sloupce s identickými čísly zmizely (#12843)
+
+Zákazník hlásil zbytečnou duplicitu: „spoj má v polovine trasy zachádzku, ale v úseku za ňou idú
+všetky spoje rovnako a zobrazujú sa dva rovnaké stĺpce". Měl pravdu a byla to **naše odchylka od
+starého modulu**, ne chybějící featura.
+
+**Příčina:** varianta trasy se rozlišovala podle sledu zastávek přes **celý směr linky**, tedy včetně
+úseku před zastávkou, na které vývěska visí. Časy se přitom počítají jako rozdíl proti té zastávce,
+takže rozdíl ležící před ní na čísla nemá vliv - a dva spoje se zajezdkou v první polovině linky daly
+ve druhé polovině dva sloupce s **identickými čísly**. Starý modul staví průběh smyčkou od tištěné
+zastávky do konce a ukládá ho pod klíč té zastávky, tedy varianty jsou jejím vlastnictvím.
+
+**Změřeno na gold lince 0365001:** sloupců variant **116 → 60**, z toho **56 byly duplicity**
+s identickými čísly v tištěném úseku, po opravě **0**. Počty stránek, zastávek, odjezdů i poznámek
+zůstaly shodné - žádný spoj ani řádek se neztratil. Ubylo na 27 z 39 stránek.
+
+⚠️ **Úsek před vývěskou se bere z reprezentativního spoje varianty**, ne jako maximum přes její spoje.
+Právě tam se totiž spoje varianty legitimně liší, takže maximum by dalo číslo, které nejede nikdo.
+Týká se to jen tisku projetých zastávek (výchozí vypnutý, časy záporné).
+
+**Proč to 20 dní nikdo neviděl:** zlaté odtisky jsou hash **našeho** výstupu, takže chytí regresi
+proti včerejšku, ne rozdíl proti starému modulu - pod mutací (vrácená stará logika) prošly zelené.
+Legacy oracle máme na rozdílové poznámky, ne na počet sloupců. Proto k opravě přibyl **invariantní
+test** `TestZadneDuplicitniVariantniSloupce`, který hlídá přímo tu vadu: žádné dva variantní sloupce
+nesmí mít v tištěném úseku identická čísla. Falešné tvrzení „1:1 ověřeno" u variantních sloupců je
+v `ad-data-mapa.md` opravené.
+
+**Brány:** **93 Caché testů** zelených (2 nové: úsek variant + ten invariant), zlaté odtisky
+přebaselinované s vysvětlením, **2058 .NET testů** zelených. Mutační kontrola: vrácení staré logiky
+shodí oba nové testy a invariantní test vypíše přesně `56 z 116, první: stránka 10 (Erbenova, směr T)`
+- shodně s nezávislým měřením přes volání serveru.
+
+⏭️ **Vědomě neřešeno:** obsah variantního sloupce (legacy si nechá jeden skutečný průběh, my bereme
+maximum per zastávku - rozdíl v jednotkách minut), základ jednosloupcového režimu a řazení variant
+podle délky jízdy. Vše čeká na rozhodnutí, sedí na témže místě v kódu.
+
 ## 2026-08-12 (8) - 🇸🇰 texty značek se řídí jazykem šablony (`B69`)
 
 Slovenský zákazník má na vývěsce správné piktogramy, ale **popisky u nich česky** - vedle svého

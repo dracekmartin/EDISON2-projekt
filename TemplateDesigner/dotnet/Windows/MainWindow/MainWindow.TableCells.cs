@@ -338,6 +338,144 @@ public partial class MainWindow
         InvalidateCanvas();
     }
 
+    // ── Tažení hranic sloupců a řádků ─────────────────────────────────────────
+
+    private enum DividerKind { Column, Row }
+
+    /// <summary>Právě tažená hrana; null = netáhne se.</summary>
+    private (DividerKind Kind, int Index)? _dividerDrag;
+
+    /// <summary>Součet rozměrů dvojice u hrany, zjištěný na začátku tažení. Drží se konstantní,
+    /// takže zbytek tabulky se nehne - kdyby se přepočítával průběžně, ujíždělo by to.</summary>
+    private float _dividerPairSum;
+
+    /// <summary>Odsazení začátku dvojice od horní/levé hrany prvku (mm) - taky se během tažení
+    /// nemění, jinak by se rozměr počítal z rozhýbaného základu.</summary>
+    private float _dividerPairStart;
+    private TableElement? _dividerTable;
+    private TableElement.StructureSnapshot? _dividerBefore;
+
+    /// <summary>
+    /// Tabulka, jejíž hrany jde chytat: ta, ve které jsme uvnitř, **nebo prostě vybraná**.
+    /// Kdyby to šlo jen uvnitř, musel by uživatel nejdřív Alt+kliknout (což rovnou otevře psaní)
+    /// - rozměry přitom potřebuje srovnat dřív, než začne vyplňovat.
+    /// </summary>
+    private TableElement? DividerTable => _cellTable
+        ?? (_vm?.State.SelectedElements is [TableElement { Mode: TableMode.Fixed } vybrana]
+            && !vybrana.IsLocked && !vybrana.IsRotated ? vybrana : null);
+
+    /// <summary>Jak blízko k hraně stačí být, aby se chytila (v px, ať to sedí na oko při každém
+    /// přiblížení).</summary>
+    private const float DividerHitPx = 4f;
+
+    private bool InDividerDrag => _dividerDrag is not null;
+
+    /// <summary>Hrana, kterou myš právě „drží" - podklad pro kurzor i pro začátek tažení.
+    /// Svislá má přednost před vodorovnou (v rohu je pravděpodobnější, že uživatel míří na sloupec).</summary>
+    private (DividerKind Kind, int Index)? DividerAt(float cx, float cy, float cw)
+    {
+        if (_vm is null || _canvas is null || DividerTable is not { } table) return null;
+
+        var rect = _canvas.GetElementCanvasRect(table, cw);
+        if (rect is null) return null;
+        if (cx < rect.Value.Left || cx > rect.Value.Right) return null;
+        if (cy < rect.Value.Top  || cy > rect.Value.Bottom) return null;
+
+        float tolerance = DividerHitPx / _canvas.MmToPx;
+        float xMm = (cx - rect.Value.Left) / _canvas.MmToPx;
+        float yMm = (cy - rect.Value.Top)  / _canvas.MmToPx;
+        var data = _vm.State.CurrentPreviewData;
+
+        if (table.HitTestColumnDivider(data, xMm, tolerance) is { } col) return (DividerKind.Column, col);
+        if (table.HitTestRowDivider(data, yMm, tolerance) is { } row)    return (DividerKind.Row, row);
+        return null;
+    }
+
+    /// <summary>Začátek tažení hrany. Vrací false, když myš na hraně nestojí.</summary>
+    private bool TryBeginDividerDrag(float cx, float cy, float cw)
+    {
+        if (DividerAt(cx, cy, cw) is not { } divider || DividerTable is not { } table) return false;
+
+        if (_cellEditing) EndCellEdit(commit: true);
+
+        var layout = table.ComputeLayout(_vm!.State.CurrentPreviewData);
+        if (divider.Kind == DividerKind.Column)
+        {
+            _dividerPairStart = 0f;
+            for (int i = 0; i < divider.Index; i++) _dividerPairStart += layout.ColumnWidths[i];
+            _dividerPairSum = layout.ColumnWidths[divider.Index] + layout.ColumnWidths[divider.Index + 1];
+        }
+        else
+        {
+            _dividerPairStart = table.ShowHeader ? layout.HeaderHeightMm : 0f;
+            for (int i = 0; i < divider.Index; i++) _dividerPairStart += layout.RowHeights[i];
+            _dividerPairSum = layout.RowHeights[divider.Index] + layout.RowHeights[divider.Index + 1];
+        }
+
+        _dividerDrag   = divider;
+        _dividerTable  = table;
+        _dividerBefore = table.CaptureStructure();
+        skCanvas.CaptureMouse();
+        return true;
+    }
+
+    /// <summary>Průběh tažení - rozměr je vzdálenost od začátku dvojice k myši; soused dostane
+    /// zbytek, takže se zbytek tabulky nehne.</summary>
+    private void UpdateDividerDrag(float cx, float cy, float cw)
+    {
+        if (_vm is null || _canvas is null || _dividerTable is not { } table
+            || _dividerDrag is not { } drag) return;
+
+        var rect = _canvas.GetElementCanvasRect(table, cw);
+        if (rect is null) return;
+
+        var data = _vm.State.CurrentPreviewData;
+
+        if (drag.Kind == DividerKind.Column)
+        {
+            float sirka = (cx - rect.Value.Left) / _canvas.MmToPx - _dividerPairStart;
+            table.SetColumnPair(data, drag.Index, sirka, _dividerPairSum);
+            _vm.State.DragBadgeText = $"Šířka sloupce: " +
+                $"{Math.Clamp(sirka, TableElement.MinColumnWidthMm, _dividerPairSum - TableElement.MinColumnWidthMm):0.#} mm";
+        }
+        else
+        {
+            float vyska = (cy - rect.Value.Top) / _canvas.MmToPx - _dividerPairStart;
+            table.SetRowPair(data, drag.Index, vyska, _dividerPairSum);
+            _vm.State.DragBadgeText = $"Výška řádku: " +
+                $"{Math.Clamp(vyska, TableElement.MinRowHeightMm, _dividerPairSum - TableElement.MinRowHeightMm):0.#} mm";
+        }
+
+        InvalidateCanvas();
+    }
+
+    /// <summary>Konec tažení - výsledek jde přes příkaz, aby ho vrátil Ctrl+Z jedním krokem.</summary>
+    private void EndDividerDrag(bool commit)
+    {
+        if (_vm is null || _dividerTable is not { } table || _dividerBefore is not { } before)
+        {
+            _dividerDrag  = null;
+            _dividerTable = null;
+            return;
+        }
+
+        var kind = _dividerDrag?.Kind ?? DividerKind.Column;
+        _dividerDrag   = null;
+        _dividerTable  = null;
+        _dividerBefore = null;
+        _vm.State.DragBadgeText = null;
+        skCanvas.ReleaseMouseCapture();
+
+        if (!commit) { table.RestoreStructure(before); InvalidateCanvas(); return; }
+
+        var after = table.CaptureStructure();
+        _vm.Execute(new SetPropertyCommand(
+            kind == DividerKind.Column ? "Šířka sloupce" : "Výška řádku", before, after,
+            v => table.RestoreStructure((TableElement.StructureSnapshot)v!)));
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
+    }
+
     // ── Našeptávač datových polí ──────────────────────────────────────────────
 
     /// <summary>Nabídka je otevřená - pak jí patří šipky a Enter, ne pohybu po buňkách.</summary>

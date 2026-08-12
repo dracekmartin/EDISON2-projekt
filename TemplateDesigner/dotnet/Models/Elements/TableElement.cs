@@ -81,6 +81,10 @@ public class TableRow
 
     public string? BackgroundColor { get; set; }
 
+    /// <summary>Vlastní výška řádku v mm. Null = společná výška tabulky (<c>RowHeight</c>);
+    /// vyplní se tažením vodorovné čáry.</summary>
+    public float? Height { get; set; }
+
     /// <summary>Podmíněná viditelnost vyhodnocovaná print enginem. Null = vždy viditelný.</summary>
     public string? VisibilityExpression { get; set; }
 
@@ -88,6 +92,7 @@ public class TableRow
     {
         Cells               = Cells.Select(c => c.Clone()).ToList(),
         BackgroundColor     = BackgroundColor,
+        Height              = Height,
         VisibilityExpression = VisibilityExpression
     };
 }
@@ -208,10 +213,17 @@ public class TableElement : TemplateElement
 
     protected override float DesignerPlaceholderHeight => Mode == TableMode.Fixed
         // Aspoň jeden řádek - prázdná tabulka by jinak měla nulovou výšku a nešlo by ji chytit myší.
-        ? NaturalHeight(Math.Max(Rows?.Count ?? 0, 1))
+        ? (Rows is { Count: > 0 } r ? NaturalHeight(r) : NaturalHeight(1))
         : 40f + (SummaryRows?.Count ?? 0) * RowHeight;
 
-    /// <summary>Přirozená (neškálovaná) výška obsahu v mm pro daný počet řádků.</summary>
+    /// <summary>Neškálovaná výška obsahu v mm - každý řádek svou výškou (<see cref="TableRow.Height"/>,
+    /// bez ní společná <see cref="RowHeight"/>).</summary>
+    private float NaturalHeight(IReadOnlyList<TableRow> rows) =>
+        (ShowHeader ? HeaderHeight : 0f)
+        + rows.Sum(r => r.Height ?? RowHeight)
+        + (SummaryRows?.Count ?? 0) * RowHeight;
+
+    /// <summary>Totéž pro řádky z dat - ty vlastní výšku nemají, takže stačí počet.</summary>
     private float NaturalHeight(int rowCount) =>
         (ShowHeader ? HeaderHeight : 0f) + rowCount * RowHeight + (SummaryRows?.Count ?? 0) * RowHeight;
 
@@ -229,7 +241,7 @@ public class TableElement : TemplateElement
     /// </summary>
     public float CalculateHeightFromData(DataContext? data)
     {
-        if (Mode == TableMode.Fixed) return NaturalHeight(VisibleFixedRows(data).Count);
+        if (Mode == TableMode.Fixed) return NaturalHeight(VisibleFixedRows(data));
 
         var rows = data?.GetRows(DataSource ?? "") ?? [];
         return NaturalHeight(rows.Count > 0 ? rows.Count : DesignerPreviewRows);
@@ -339,7 +351,7 @@ public class TableElement : TemplateElement
             if (ShowHeader)
                 plan.Add(HeaderRow(cols, colWidths, headerStyles, sepPaint, headerH));
             plan.AddRange(Mode == TableMode.Fixed
-                ? FixedRowSpecs(ctx, cols, colWidths, dataStyles, sepPaint, fixedRows, rowH)
+                ? FixedRowSpecs(ctx, cols, colWidths, dataStyles, sepPaint, fixedRows, layout.RowHeights)
                 : DynamicRowSpecs(ctx, cols, colWidths, dataStyles, sepPaint, dataRows, rowH));
 
             float currentY = RowPlanRenderer.DrawRows(ctx, X, Y, Width, plan, fontScale);
@@ -372,8 +384,10 @@ public class TableElement : TemplateElement
     /// <param name="Rows">Viditelné řádky - **objekty z modelu**, takže se do nich dá rovnou psát.</param>
     /// <param name="ColumnIndexes">Index viditelného sloupce → index v <see cref="Columns"/>. Buňky
     /// v řádku jsou uložené podle modelu, takže bez tohohle by se u skryté ho sloupce psalo vedle.</param>
+    /// <param name="RowHeights">Výška každého viditelného řádku v mm (už naškálovaná).</param>
+    /// <param name="RowHeightMm">Společná výška - pro souhrnné řádky a pro režim „z dat".</param>
     public readonly record struct GridLayout(
-        float[] ColumnWidths, float RowHeightMm, float HeaderHeightMm,
+        float[] ColumnWidths, float[] RowHeights, float RowHeightMm, float HeaderHeightMm,
         float FontScale, IReadOnlyList<TableRow> Rows, int[] ColumnIndexes);
 
     public GridLayout ComputeLayout(DataContext? data) =>
@@ -387,7 +401,7 @@ public class TableElement : TemplateElement
         int rowCount = Mode == TableMode.Fixed
             ? rows.Count
             : ((data?.GetRows(DataSource ?? "").Count ?? 0) is var n && n > 0 ? n : DesignerPreviewRows);
-        float naturalH = NaturalHeight(rowCount);
+        float naturalH = Mode == TableMode.Fixed ? NaturalHeight(rows) : NaturalHeight(rowCount);
         float heightRatio = Height.HasValue && naturalH > 0 ? Height.Value / naturalH : 1f;
         float widthScale  = TableLayout.ComputeWidthScale(WidthProjection(cols), Width);
 
@@ -395,13 +409,40 @@ public class TableElement : TemplateElement
         // nikdy se nezvětšuje - vyšší tabulka má mít vyšší řádky, ne větší text.
         float fontScale = MathF.Min(1f, MathF.Min(heightRatio, widthScale));
 
-        // Řádky vyplní výšku prvku: při roztažení se proporcionálně natáhnou (jinak by dole zbylo
-        // prázdné bílé místo), při zmenšení jdou dolů s písmem. U starých tabulek v režimu „z dat"
-        // se řádky netahají - jejich počet plyne z dat, takže by se výška měnila pod rukama.
-        float rowScale = Mode == TableMode.Fixed ? MathF.Max(fontScale, heightRatio) : fontScale;
-
+        float[] rowHeights = ResolveRowHeights(rows, rowCount, fontScale);
         int[] columnIndexes = [.. cols.Select(c => Columns.IndexOf(c))];
-        return new(colWidths, RowHeight * rowScale, HeaderHeight * rowScale, fontScale, rows, columnIndexes);
+
+        return new(colWidths, rowHeights, RowHeight * fontScale, HeaderHeight * fontScale,
+                   fontScale, rows, columnIndexes);
+    }
+
+    /// <summary>
+    /// Výšky řádků **stejnou mechanikou jako šířky sloupců** (<see cref="TableLayout.ResolveWidths"/>):
+    /// řádek s vlastní výškou si ji drží, ostatní si rovným dílem rozdělí zbytek prvku. Tažení
+    /// vodorovné hranice se tak chová přesně jako tažení svislé, jen kolmo - a celková výška prvku
+    /// se přitom nemění.
+    /// <para>
+    /// ⚠️ Dřív se místo rozdělení celý obsah **škáloval** na výšku prvku. Tažení hranice se tím
+    /// rozjelo samo proti sobě: vyšší řádek = vyšší obsah = větší zmenšení = jiné rozměry pod myší
+    /// při dalším pohybu (nahlášeno 12. 8.).
+    /// </para>
+    /// Bez pevné výšky prvku se nerozděluje nic - výška je prostě součet řádků.
+    /// </summary>
+    private float[] ResolveRowHeights(IReadOnlyList<TableRow> rows, int rowCount, float fontScale)
+    {
+        if (Mode != TableMode.Fixed)
+            return [.. Enumerable.Repeat(RowHeight * fontScale, rowCount)];
+
+        if (!Height.HasValue)
+            return [.. rows.Select(r => r.Height ?? RowHeight)];
+
+        float proRadky = Height.Value
+                         - (ShowHeader ? HeaderHeight : 0f)
+                         - (SummaryRows?.Count ?? 0) * RowHeight;
+
+        return TableLayout.ResolveWidths(
+            [.. rows.Select(r => new TableLayout.ColWidth(r.Height, ColumnWidthMode.Mm))],
+            MathF.Max(0f, proRadky));
     }
 
     // ─── Editace na plátně ───────────────────────────────────────────
@@ -414,9 +455,10 @@ public class TableElement : TemplateElement
         if (row < 0 || row >= layout.Rows.Count || col < 0 || col >= layout.ColumnWidths.Length) return null;
         float x = 0f;
         for (int i = 0; i < col; i++) x += layout.ColumnWidths[i];
-        float y = (ShowHeader ? layout.HeaderHeightMm : 0f) + row * layout.RowHeightMm;
+        float y = ShowHeader ? layout.HeaderHeightMm : 0f;
+        for (int i = 0; i < row; i++) y += layout.RowHeights[i];
 
-        return new SKRect(x, y, x + layout.ColumnWidths[col], y + layout.RowHeightMm);
+        return new SKRect(x, y, x + layout.ColumnWidths[col], y + layout.RowHeights[row]);
     }
 
     /// <summary>Buňka pod bodem (mm relativně k prvku), nebo null mimo mřížku a v záhlaví.</summary>
@@ -428,7 +470,14 @@ public class TableElement : TemplateElement
         float top = ShowHeader ? layout.HeaderHeightMm : 0f;
         if (yMm < top) return null;
 
-        int row = (int)((yMm - top) / layout.RowHeightMm);
+        // Řádky mohou mít každý jinou výšku, takže se prochází, ne dělí.
+        int row = -1;
+        float y = top;
+        for (int i = 0; i < layout.RowHeights.Length; i++)
+        {
+            if (yMm >= y && yMm < y + layout.RowHeights[i]) { row = i; break; }
+            y += layout.RowHeights[i];
+        }
         if (row < 0 || row >= layout.Rows.Count) return null;
 
         float x = 0f;
@@ -438,6 +487,82 @@ public class TableElement : TemplateElement
             x += layout.ColumnWidths[col];
         }
         return null;
+    }
+
+    /// <summary>Nejmenší šířka sloupce v mm - pod ni tažení nepustí, jinak by sloupec zmizel
+    /// a nešel chytit zpět.</summary>
+    public const float MinColumnWidthMm = 3f;
+
+    /// <summary>
+    /// Sloupec, jehož **pravá hrana** je do tolerance od bodu - pro tažení šířky. Poslední (vnější)
+    /// hrana se vědomě nenabízí: to je okraj prvku a mění se tažením za úchyt prvku.
+    /// </summary>
+    public int? HitTestColumnDivider(DataContext? data, float xMm, float toleranceMm)
+    {
+        var layout = ComputeLayout(data);
+        float x = 0f;
+        for (int i = 0; i < layout.ColumnWidths.Length - 1; i++)
+        {
+            x += layout.ColumnWidths[i];
+            if (MathF.Abs(xMm - x) <= toleranceMm) return i;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Tažení svislé hranice: nastaví šířku sloupce **vlevo od ní** a zbytek dvojice dá sousedovi
+    /// vpravo. Součet dvojice zůstává, takže se ostatní sloupce vůbec nehnou - hrana se chová jako
+    /// v tabulkovém editoru, kde tažení mění právě ty dva sloupce, mezi kterými je.
+    /// </summary>
+    /// <param name="pairSumMm">Součet šířek dvojice zjištěný na začátku tažení.</param>
+    public void SetColumnPair(DataContext? data, int divider, float leftWidthMm, float pairSumMm)
+    {
+        int leva  = ModelColumnIndex(data, divider);
+        int prava = ModelColumnIndex(data, divider + 1);
+        if (leva < 0 || prava < 0) return;
+
+        float left = Math.Clamp(leftWidthMm, MinColumnWidthMm, pairSumMm - MinColumnWidthMm);
+        SetColumnWidthMm(leva,  left);
+        SetColumnWidthMm(prava, pairSumMm - left);
+    }
+
+    private void SetColumnWidthMm(int modelCol, float widthMm)
+    {
+        Columns[modelCol].Width     = widthMm;
+        Columns[modelCol].WidthMode = ColumnWidthMode.Mm;
+    }
+
+    /// <summary>Nejmenší výška řádku v mm.</summary>
+    public const float MinRowHeightMm = 2f;
+
+    /// <summary>
+    /// Řádek, jehož **dolní hrana** je do tolerance od bodu - pro tažení výšky. Poslední hrana
+    /// se nenabízí ze stejného důvodu jako u sloupců: je to okraj prvku.
+    /// </summary>
+    public int? HitTestRowDivider(DataContext? data, float yMm, float toleranceMm)
+    {
+        var layout = ComputeLayout(data);
+        float y = ShowHeader ? layout.HeaderHeightMm : 0f;
+        for (int i = 0; i < layout.RowHeights.Length - 1; i++)
+        {
+            y += layout.RowHeights[i];
+            if (MathF.Abs(yMm - y) <= toleranceMm) return i;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Tažení vodorovné hranice - kolmý protějšek <see cref="SetColumnPair"/>: mění se jen řádek
+    /// nad hranou a jeho soused pod ní, ostatní zůstávají, kde byly.
+    /// </summary>
+    public void SetRowPair(DataContext? data, int divider, float topHeightMm, float pairSumMm)
+    {
+        var rows = VisibleFixedRows(data);
+        if (divider < 0 || divider + 1 >= rows.Count) return;
+
+        float horni = Math.Clamp(topHeightMm, MinRowHeightMm, pairSumMm - MinRowHeightMm);
+        rows[divider].Height     = horni;
+        rows[divider + 1].Height = pairSumMm - horni;
     }
 
     /// <summary>Rozměry mřížky pro pohyb po buňkách (Tab/Enter/šipky).</summary>
@@ -588,7 +713,7 @@ public class TableElement : TemplateElement
     /// <summary>Ručně vyplněné řádky: text buňky = obsah s vyhodnocenými {POLE}, styl v kaskádě
     /// buňka → sloupec → element.</summary>
     private IEnumerable<RowSpec> FixedRowSpecs(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        ResolvedTextStyle[] dataStyles, SKPaint sepPaint, IReadOnlyList<TableRow> rows, float rowH)
+        ResolvedTextStyle[] dataStyles, SKPaint sepPaint, IReadOnlyList<TableRow> rows, float[] rowHeights)
     {
         SKColor? altColor = ColorHex.ParseOrNull(AlternatingRowColor);
         var gridPaint    = ColumnGridPaint(sepPaint);
@@ -617,7 +742,7 @@ public class TableElement : TemplateElement
 
             // Vlastní pozadí řádku přebíjí střídání řádků - dřív se kreslila obě přes sebe, takže
             // průhledná vlastní barva propouštěla zebru pod sebou.
-            yield return new(RowKind.Data, rowH, specs)
+            yield return new(RowKind.Data, rowHeights[i], specs)
             {
                 Background = ColorHex.ParseOrNull(row.BackgroundColor)
                              ?? (altColor.HasValue && i % 2 == 1 ? altColor : null),

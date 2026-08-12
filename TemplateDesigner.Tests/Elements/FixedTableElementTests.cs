@@ -271,6 +271,103 @@ public class FixedTableElementTests
         Assert.Equal("text", el.Rows[0].Cells[0].Content);
     }
 
+    // ── Tažení hranic sloupců a řádků ─────────────────────────────────────────
+
+    /// <summary>
+    /// Tažení hrany mění **jen dvojici, mezi kterou hrana je**. První návrh dal tažené položce
+    /// pevný rozměr a zbytek nechal rozdělit mezi všechny ostatní - při tažení dolů se pak hýbalo
+    /// i to nad hranou (nahlášeno 12. 8.).
+    /// </summary>
+    [Fact]
+    public void TazeniHranySloupce_NehneOstatnimiSloupci()
+    {
+        var el = TableElement.CreateGrid(3, 1);
+        el.Width = 90;   // tři sloupce po 30 mm
+
+        // Hrana mezi prostředním a pravým: prostřední na 20, pravý dostane zbytek dvojice.
+        el.SetColumnPair(null, divider: 1, leftWidthMm: 20f, pairSumMm: 60f);
+
+        var sirky = el.ComputeLayout(null).ColumnWidths;
+        Assert.Equal(30f, sirky[0], 3);   // levý se nesmí hnout
+        Assert.Equal(20f, sirky[1], 3);
+        Assert.Equal(40f, sirky[2], 3);
+    }
+
+    [Fact]
+    public void TazeniHranyRadku_NehneOstatnimiRadky()
+    {
+        var el = TableElement.CreateGrid(1, 3);
+        el.Height = 18f;   // tři řádky po 6 mm
+
+        el.SetRowPair(null, divider: 1, topHeightMm: 4f, pairSumMm: 12f);
+
+        var vysky = el.ComputeLayout(null).RowHeights;
+        Assert.Equal(6f, vysky[0], 3);    // horní se nesmí hnout
+        Assert.Equal(4f, vysky[1], 3);
+        Assert.Equal(8f, vysky[2], 3);
+    }
+
+    /// <summary>Minimum drží obě strany dvojice - jinak by šlo jednu stáhnout na nulu a nešla
+    /// by chytit zpět.</summary>
+    [Theory]
+    [InlineData(-50f)]
+    [InlineData(500f)]
+    public void TazeniZaMez_NechaObemaAsponMinimum(float pozadovanaSirka)
+    {
+        var el = TableElement.CreateGrid(2, 1);
+        el.Width = 60;
+
+        el.SetColumnPair(null, divider: 0, pozadovanaSirka, pairSumMm: 60f);
+
+        var sirky = el.ComputeLayout(null).ColumnWidths;
+        Assert.True(sirky[0] >= TableElement.MinColumnWidthMm, $"levý {sirky[0]}");
+        Assert.True(sirky[1] >= TableElement.MinColumnWidthMm, $"pravý {sirky[1]}");
+        Assert.Equal(60f, sirky[0] + sirky[1], 3);   // součet dvojice se nemění
+    }
+
+    /// <summary>Zvětšení prvku rozdělí novou výšku mezi řádky, které si vlastní výšku nenastavily -
+    /// stejně jako sloupce dělí šířku. Dřív zůstaly na výchozí výšce a dole zbylo bílé místo.</summary>
+    [Fact]
+    public void ZvetseniPrvku_RozdeliVyskuMeziRadky()
+    {
+        var el = TableElement.CreateGrid(1, 3);
+        el.Height = 18f;
+
+        el.Height = 30f;   // uživatel natáhl prvek
+
+        Assert.All(el.ComputeLayout(null).RowHeights, h => Assert.Equal(10f, h, 3));
+    }
+
+    /// <summary>Řádek s vlastní výškou si ji při zvětšení prvku **drží**; přizpůsobí se ostatní.</summary>
+    [Fact]
+    public void RadekSVlastniVyskou_SiJiDrziPriZvetseniPrvku()
+    {
+        var el = TableElement.CreateGrid(1, 3);
+        el.Height = 18f;
+        el.Rows![0].Height = 4f;
+
+        el.Height = 24f;
+
+        var vysky = el.ComputeLayout(null).RowHeights;
+        Assert.Equal(4f, vysky[0], 3);
+        Assert.Equal(10f, vysky[1], 3);
+        Assert.Equal(10f, vysky[2], 3);
+    }
+
+    /// <summary>Vlastní výška řádku musí přežít zpětný krok - snímek struktury ji nese.</summary>
+    [Fact]
+    public void SnimekStruktury_ZachovaVlastniVyskuRadku()
+    {
+        var el = TableElement.CreateGrid(1, 2);
+        el.Rows![0].Height = 9f;
+
+        var pred = el.CaptureStructure();
+        el.Rows[0].Height = 20f;
+        el.RestoreStructure(pred);
+
+        Assert.Equal(9f, el.Rows[0].Height);
+    }
+
     // ── Vkládání ze schránky ──────────────────────────────────────────────────
 
     /// <summary>Excel dává do schránky řádky po koncích řádku a buňky po tabulátorech.</summary>
