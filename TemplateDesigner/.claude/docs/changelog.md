@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-12 (6) - 🧭 slovenské texty poznámek: rozsah vyjasněný, řídit je bude kultura šablony (`B69`)
+
+TRANSDEV hlásil, že po přepnutí na SK kulturu se mu značky pořád zobrazují česky. Prošli jsme to
+a **moje první čtení bylo příliš plošné**.
+
+**Co kultura šablony dnes reálně dělá** (dvě věci, ne jedna): formát čísel a datumů **a výběr
+symbolového fontu** - `sk-SK` → `TimeTable_nove_SK`, kde `w` je autobus místo vagonu a `D` dlaň místo
+křížku. Takže když Jan přepínal kulturu, správně se měnily **piktogramy** - a to byla i odpověď na jeho
+starší bod „přestup na vlak se zobrazuje se symbolem bicykla".
+
+**Co nedělá:** texty legendy. Ty generuje agenda a jsou napevno české. Na jeho vývěsce je to vidět
+v jedné legendě vedle sebe - „x **na znamení**" a „**přestup na autobus**" česky (naše), ale
+„K — **premáva po zast. Kmeťova**" slovensky (jeho komentář z číselníku linky).
+
+⚠️ **Korekce odhadu:** psal jsem, že to chce vymyslet slovenská znění a poslat serveru jazyk.
+První část neplatí - **starý modul má obě varianty napevno** a přepíná je firemním příznakem
+`^JRSET("COME","REC")` (0=CZ, 1=SK). `SKNI_MHDNITRA` v něm má **1**, takže Nitra je označená jako
+slovenská už dnes a legacy podle toho tiskne. Znění tedy **převezmeme doslova** („zastávka je len na
+znamenie" je doslova text z jeho starého tisku) - žádné vymýšlení ani dotazy na formulace.
+
+**Rozhodnutí Jan:** jazyk textů bude řídit **kultura šablony**, ne firemní příznak. Jeden zdroj místo
+dvou, konzistentní s tím, jak se už vybírá font, a jde mít v jedné firmě českou i slovenskou šablonu
+(což legacy neumí). Cena: kultura musí jít do `GetData` jako parametr **a do allowlistu
+`ServerSideParams`** (jinak přepnutí nepřenačte data), a přepnutí kultury tím přenačítá data, ne jen
+překresluje. Volitelně předvyplnit kulturu nové šablony podle firemního příznaku, ať to slovenská
+firma nemusí hlídat.
+
+→ blok **`B69`** (M). Rozsah je tím mechanický a nízkorizikový, ne návrhový.
+
+
 ## 2026-08-12 (5) - 🔍 projeté zastávky: nedorozumění, ne chyba (+ dohnané testy)
 
 TRANSDEV hlásil, že se v nové verzi **přestaly zobrazovat projeté zastávky**. Prošli jsme cestu hodnot:
