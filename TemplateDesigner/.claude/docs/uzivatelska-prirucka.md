@@ -608,8 +608,9 @@ Levý sloupec sestavy - seznam zastávek s časy a atributy.
 
 Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle…).
 
-- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, nadpis sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
+- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Rozestup odjezdů (Podle obsahu / Rovnoměrný - viz níže), Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, nadpis sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
 - **Časová osa** - Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah (+ pole Hodiny od/do); Roztáhnout na výšku - když je mřížka nižší, než by odpovídalo datům, řádky (a font) se proporcionálně zvětší (strop 1,5× přirozené výšky)
+- **Rozestup odjezdů** - *Podle obsahu* (výchozí): minuta se značkou zabere víc místa a odsune odjezdy za sebou. *Rovnoměrný*: jeden rastr pro celý sloupec podle nejširšího odjezdu, takže minuty stojí pod sebou napříč hodinami a značka nerozhodí zarovnání ostatních. „Šířka minuty" je pak spodní mez rastru; jedna hodina s víc značkami rozestup zvětší celému sloupci
 - **Řádky dat** - Výška řádku, Střídavé podbarvení (sudé řádky)
 - **Záhlaví - 2. řádek** - Velikost, Tučné, Kurzíva, Barva textu pro druhý řádek nadpisu skupiny (např. „den" v „Pracovní / den") - pokud nevyplněno, dědí z prvního řádku
 - **Styl minuty** - Font, Velikost, Tučné, Kurzíva, Barva textu

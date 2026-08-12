@@ -41,6 +41,12 @@ public class DepartureGridElement : StopScheduleElementBase
     // ═══════════════════════════════════════════
     public float HourColumnWidth { get; set; } = 8f;
     public float MinuteWidth { get; set; } = 5f;
+
+    /// <summary>Jak se skládají odjezdy do řádku hodiny. Výchozí <see cref="DepartureSpacing.ByContent"/>
+    /// = dnešní chování (slot roste o šířku značek, takže minuta se značkou odsune ty za sebou).
+    /// <see cref="DepartureSpacing.Even"/> = jeden rozestup pro celou skupinu, takže minuty stojí ve
+    /// svislici napříč řádky - sázení starého modulu (TRANSDEV #12843).</summary>
+    public DepartureSpacing MinuteSpacing { get; set; } = DepartureSpacing.ByContent;
     public float MinuteFontSize { get; set; } = 7f;
 
     /// <summary>Styl textu minuty (font, bold, barva). Null properties = element defaults.</summary>
@@ -195,6 +201,29 @@ public class DepartureGridElement : StopScheduleElementBase
 
     /// <summary>Jeden řádek záhlaví skupiny dnů. IsSecondary = pochází z Nadpis2 (jiný styl).</summary>
     internal record HeaderLine(string Text, bool IsSecondary);
+
+    /// <summary>Šířky slotů odjezdů po uplatnění režimu rozestupu. `ByContent` je nechá, jak jsou
+    /// (každá minuta zabere jen to, co potřebuje). `Even` je srovná na **nejširší z nich**, takže
+    /// minuty stojí ve svislici napříč řádky a značka nerozhodí sousedy - za cenu toho, že jeden
+    /// odjezd s víc značkami roztáhne rozestup celé skupině.
+    /// ⚠️ Minimální šířka skupiny se počítá bez šířky značek (jako dosud), takže hodně označkovaná
+    /// skupina může chtít širší prvek - „Šířka minuty" je pro rastr jen spodní mez.</summary>
+    internal static List<float> ApplySpacingMode(List<float> slotW, DepartureSpacing mode, float uniformSlotMm)
+    {
+        if (mode != DepartureSpacing.Even || slotW.Count == 0 || uniformSlotMm <= 0) return slotW;
+        return [.. slotW.Select(_ => uniformSlotMm)];
+    }
+
+    /// <summary>Rastr rovnoměrného rozestupu: **nejširší odjezd celé skupiny dnů** (minuta + její
+    /// značky), nejméně však nominální šířka minuty. Počítá se přes celý sloupec, aby čísla stála
+    /// pod sebou i mezi hodinami - kdyby se bralo maximum jen za řádek, hodina se značkami by měla
+    /// jiný rozestup než hodina bez nich.</summary>
+    internal static float UniformSlotWidth(IEnumerable<float> slotyVeSkupine, float nominalMm)
+    {
+        float max = nominalMm;
+        foreach (float s in slotyVeSkupine) if (s > max) max = s;
+        return max;
+    }
 
     /// <summary>Slova nadpisu pro výpočet minimální šířky skupiny. **Ruční zlom dělí slova stejně
     /// jako mezera** - jinak by dvouřádkový nadpis byl jedno dlouhé slovo a roztáhl minimální šířku
@@ -720,6 +749,27 @@ public class DepartureGridElement : StopScheduleElementBase
         float currentY = Y;
         float scaledMinuteW = (MinuteWidth + AnotaceGap) * dataScale;
 
+        // Rastr rovnoměrného rozestupu per skupina dnů (plní se po vytvoření fontů anotací).
+        var uniformSlotByGroup = new Dictionary<string, float>();
+
+        // Šířka slotu jednoho odjezdu: nominální (scaledMinuteW) + jeho anotace. Nezávisí na skupině
+        // (fonty anotací jsou element-level), takže se počítá i pro rastr celého sloupce.
+        float SlotWidthMm(OdjezdData o)
+        {
+            float extraPx = 0f;
+            if (ShowAnotace && o.Anotace.Count > 0)
+            {
+                extraPx = anotGapPx;
+                foreach (var a in o.Anotace)
+                {
+                    SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
+                    bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
+                    extraPx += af.MeasureText(GlyfProKresleni(a)) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
+                }
+            }
+            return scaledMinuteW + extraPx / ctx.MmToPx;
+        }
+
         try
         {
             foreach (var g in layout.Groups)
@@ -753,6 +803,14 @@ public class DepartureGridElement : StopScheduleElementBase
             anotSymPaint  = anotSymStyle.CreateTextPaint();
             anotTextFont  = anotTextStyle.CreateFont(dataScale, ctx.MmToPx);
             anotTextPaint = anotTextStyle.CreateTextPaint();
+
+            // Rovnoměrný rozestup: jeden rastr na **celý sloupec** (skupinu dnů), ne jen na řádek
+            // hodiny - jinak by hodina se značkami měla jiný rozestup než hodina bez nich a čísla
+            // by nestála pod sebou. Maximum se proto bere přes všechny odjezdy skupiny.
+            if (MinuteSpacing == DepartureSpacing.Even)
+                foreach (var g in layout.Groups)
+                    uniformSlotByGroup[g.Skupina.Id] = UniformSlotWidth(
+                        g.ByHour.Values.SelectMany(o => o).Select(SlotWidthMm), scaledMinuteW);
 
             if (AlternatingRowColor is not null)
                 zebraPaint = new SKPaint { Color = ColorHex.ParseOrTransparent(AlternatingRowColor) };
@@ -1021,27 +1079,10 @@ public class DepartureGridElement : StopScheduleElementBase
             float padR = ms.PaddingRight * dataScale;
             float padT = ms.PaddingTop * dataScale;
 
-            // Adaptivní šířka slotu každého odjezdu: nominální (scaledMinuteW) + šířka anotací,
-            // aby se minuta s poznámkami nepřekrývala s další minutou (zachová nominální mezeru).
             float availW = g.GroupWidth - padL - padR;
 
-            float SlotWidthMm(OdjezdData o)
-            {
-                float extraPx = 0f;
-                if (ShowAnotace && o.Anotace.Count > 0)
-                {
-                    extraPx = anotGapPx;
-                    foreach (var a in o.Anotace)
-                    {
-                        SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
-                        bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
-                        extraPx += af.MeasureText(GlyfProKresleni(a)) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
-                    }
-                }
-                return scaledMinuteW + extraPx / ctx.MmToPx;
-            }
-
-            var slotW = odjezdy.Select(SlotWidthMm).ToList();
+            var slotW = ApplySpacingMode([.. odjezdy.Select(SlotWidthMm)], MinuteSpacing,
+                uniformSlotByGroup.TryGetValue(gid, out var u) ? u : 0f);
             float blockW = slotW.Sum() + Math.Max(0, odjezdy.Count - 1) * scaledOdjezdGap;
             float alignOffset = padL + ms.HAlign switch
             {
@@ -1476,6 +1517,17 @@ public class DepartureGridElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Hodiny u každé sk.",  Group = "Odjezdy", Get = () => HourColumnPerGroup,        Set = v => HourColumnPerGroup = v },
         new FloatPropertyDescriptor { Label = "Max skupin",          Group = "Odjezdy", Get = () => MaxGroupCount,             Set = v => MaxGroupCount = (int)v, Min = 0, Max = 10, Format = "0", Unit = "(0=∞)" },
         new FloatPropertyDescriptor { Label = "Šířka minuty",       Group = "Odjezdy", Get = () => MinuteWidth,                Set = v => MinuteWidth = v, Min = 3, Max = 15, Unit = "mm" },
+        new EnumPropertyDescriptor
+        {
+            Label = "Rozestup odjezdů", Group = "Odjezdy",
+            Get = () => MinuteSpacing,
+            Set = v => MinuteSpacing = (DepartureSpacing)v,
+            Options =
+            [
+                ("Podle obsahu", (object)DepartureSpacing.ByContent),
+                ("Rovnoměrný", (object)DepartureSpacing.Even),
+            ]
+        },
         new FloatPropertyDescriptor { Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
 
         GetDataRowHeightDescriptor("Řádky dat"),
@@ -1561,6 +1613,7 @@ public class DepartureGridElement : StopScheduleElementBase
             HourColumnPerGroup         = HourColumnPerGroup,
             MaxGroupCount              = MaxGroupCount,
             MinuteWidth                = MinuteWidth,
+            MinuteSpacing              = MinuteSpacing,
             MinuteFontSize             = MinuteFontSize,
             MinuteStyle                = MinuteStyle.Clone(),
             AnotaceSymbolStyle         = AnotaceSymbolStyle.Clone(),
@@ -1585,4 +1638,15 @@ public class DepartureGridElement : StopScheduleElementBase
         CopyStopScheduleProperties(clone);
         return clone;
     }
+}
+
+/// <summary>Rozestup odjezdů v řádku hodiny.</summary>
+public enum DepartureSpacing
+{
+    /// <summary>Slot každého odjezdu je široký podle svého obsahu (výchozí, chování do 8/2026):
+    /// minuta se značkou zabere víc místa a odsune odjezdy za sebou.</summary>
+    ByContent,
+    /// <summary>Jeden rozestup pro celou skupinu podle nejširšího odjezdu - minuty stojí ve svislici
+    /// napříč řádky, značka nerozhodí zarovnání ostatních.</summary>
+    Even,
 }

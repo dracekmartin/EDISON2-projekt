@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-08-12 (4) - ✅ #12843: rozestup odjezdů jde srovnat do rastru
+
+Zákazník: *„zakladám na rovnomernom rozostupe medzi spojmi tak, aby prípadná značka pri jednom spoji
+nerozhádzala zarovnanie ostatných"*. Šířka slotu odjezdu je dnes `šířka minuty + šířka jeho značek`,
+takže označkovaná minuta odsune ty za sebou a mřížka se roztřepí i mezi řádky.
+
+Prvek odjezdů má proto volbu **„Rozestup odjezdů"** (skupina Odjezdy, pod „Šířka minuty"):
+*Podle obsahu* (výchozí = dnešní chování, nikomu se nic nezmění) a *Rovnoměrný*.
+
+**Rastr se počítá za celý sloupec, ne za řádek hodiny** (rozhodnutí Jan po projití s odtiskem) -
+maximum přes všechny odjezdy skupiny dnů, nejméně nominální šířka minuty. Kdyby se bralo maximum jen
+za řádek, hodina se značkami by měla jiný rozestup než hodina bez nich a **čísla by nestála pod sebou**,
+což je právě to, co na našem výstupu vadilo. Rovnoměrnost v řádku z toho vyjde sama.
+
+**Proč tenhle tvar a ne zarovnání do bloku:** Jan to nejdřív čekal jako „rozpočítat na šířku řádku
+s rovnoměrnými mezerami". Zákazníkův starý tisk to tak ale nemá - řádky se třemi odjezdy končí
+v polovině sloupce a nerozprostírají se, zatímco k-tý odjezd je v každém řádku na stejné pozici.
+Blokové zarovnání by svislice rozpadlo úplně.
+
+⚠️ **Cena:** jedna hodina s víc značkami zvětší rozestup celému sloupci (i řádkům bez značek), takže
+se do řádku vejde méně odjezdů. Proto je to volba, ne nové výchozí chování.
+
+⚠️ **Připlácnutá značka není tento režim** - vzdálenost značky od číslice řídí „Mezera minuta ↔ značka"
+(výchozí 0 mm). Zákazníkovi doporučit 0,3-0,5 mm, na jeho starém tisku ta mezera je.
+
+**Vizuálně ověřeno Janem** na `ZL_KOVED` skupina 3, linka `0945607` (vsetínská MHD - táž linka jako
+#12964), zastávka „Vsetín, Rybníky": 52 odjezdů, 28 z nich se značkou. Kontrolní linka bez rozdílu:
+`0729666`, „Kyjov, aut.st." - 46 odjezdů, ale všechny mají právě jednu značku, takže rastr sedí už dnes.
+
+⚠️ **Testy tohoto commitu nebylo možné spustit** - testovací projekt se v té chvíli nepřeložil kvůli
+cizí rozpracované práci na tabulkách (`TableEditorRowRoundTripTests.cs` odkazuje na `RowVM`, který
+ještě neexistuje). Aplikační projekt se přeložil, testy jsou napsané (8 asserty na rastr a jeho
+uplatnění) a doběhnou, jak bude strom přeložitelný.
+
+
 ## 2026-08-12 (3) - ✅ #12843: nadpis skupiny dnů jde zalomit ručně (Enter i token)
 
 TRANSDEV hlásil, že v záhlaví sloupců minut nefunguje **ani Enter, ani `
