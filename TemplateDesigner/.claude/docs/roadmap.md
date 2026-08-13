@@ -46,29 +46,15 @@ changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde
 
 ## 🚌 Zastávkový JŘ - známé věci
 
-KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30. 7. je **dojetá**.
-**Plný stav** (hotové featury + co otestovat pro uzavření helpdesk tiketů) →
-[`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md).
+**Fronta je prázdná - u nás nezbývá nic.** KOVED (IDZK, Lábsky) kreslí vývěsky naostro a jeho kolo
+je dojeté; TRANSDEV taky (`B67` hotová 13. 8. → archiv). Ze Šimkova odstavce o jízdních dobách
+zůstává jen **ruční zaškrtávací tabulka variant**, odložená po dohodě s kolegou (13. 8.) - dá se mu
+nejdřív hotové k vyzkoušení.
 
-`B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový** (body 1, 2 a 4 šly do verze
-4. 8.). `B39` (vlastní sloupce vývěsky) hotová 10. 8. → **z kola KOVED nezbývá nic**.
-
-**Fronta zastávkového JŘ je prázdná.** `B67` (varianty jízdních dob, TRANSDEV #12843) dokončena
-13. 8. → archiv. Ze Šimkova odstavce o jízdních dobách zbývá jen **ruční zaškrtávací tabulka variant**,
-odložená po dohodě s kolegou (13. 8.) - dá se mu nejdřív k vyzkoušení. Stav tiketu drží
-[`customer-requirements §0.1`](customer-requirements-zastavkovy-jr.md), ne roadmapa.
-
-Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
-patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
-
-### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
-
-| # | Co | Vel. | Co potřebuje |
-|---|---|---|---|
-| B68 | **Do šablony se zapisují i parametry, kterých se uživatel nedotkl** (`SyncParametersToTemplate` iteruje všechny obsahové parametry). Uložení tím zabetonuje **výchozí** hodnotu a ta pak přebíjí per-agenda nastavení - uživatel o svou volbu přijde, aniž by něco přepnul. Podezření u #12843 (TRANSDEV: „projeté zastávky se přestaly zobrazovat"), ale **reprodukovat se to nepodařilo** - u Jana se hodnota ukládá i načítá správně, takže to nejspíš byl jednorázový dopad přesunu parametrů do šablony 15. 7. Oprava = zapisovat jen hodnoty odlišné od výchozí (nebo sledovat „dotčeno" per parametr). | S | **druhou stejnou stížnost** - pak je to reprodukce a opravit; jinak nechat, protože samonosná šablona je záměr |
-| B48 | Přepínač „Přestupy (vlak/autobus)" u MHD nefunguje - MHD posílá přestupy jako pozici ve fontu (`w`/`x`), ne jako písmeno, takže je `IsTransferAttr` nepozná a řídí je obecný přepínač „Atributy". Tisknou se správně, jen se ovládají jinak než u AD. Fix = tagovat ATRIBUTY kategorií `prestup` na wire. Měření gate 4. 8. → archiv | M | poptávku od firmy s modulem MHD (dnes DPCB/DPKV) |
-
-*(Follow-upy uzavřených tiketů „na vyžádání zákazníka" → [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)*
+**Stav tiketů, parkované položky i „jen na poptávku" věci drží
+[`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md)**, ne roadmapa -
+sem patří jen naše otevřená práce. Tiketů řešených **mimo návrhář** (legacy JŘ modul, cizí přiřazení)
+se roadmapa nedrží (rozhodnutí Jan 6. 8.).
 
 ---
 
@@ -122,8 +108,8 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
   a 46 testů helperů; **linkové agendy nemají ani jeden test** (2 000 řádků), takže tam by zásah jel
   bez sítě. Vzor existuje - `BaseAgenda` už 4 sdílené helpery hostuje.
 
-- **Zastávkový JŘ business** (parkované helpdesk A2-A5/A6/B4 + TRANSDEV sada) → viz sekce „Zastávkový JŘ - známé věci" výše
-- **Fáze B - odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
+- **Zastávkový JŘ business** (parkované helpdesk položky + TRANSDEV sada) →
+  [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md), ne roadmapa
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
   vnořené datasource (`_rows` v `_rows`).
 
@@ -141,10 +127,10 @@ patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
   Otevřená otázka: umí z předlohy rozumně odvodit i **parametry sestavy** a **další nastavení prvků**
   (pozice značek, šipka, sloupce jako zóna/označník, varianty tras, skupiny dnů)? Je to velká
   a netriviální část importu, takže se to má projít vědomě, ne po jedné vlastnosti.
-  ⚠️ **Klíčové omezení, na které to narazí:** hodnoty parametrů sestavy jsou uložené **per uživatel ×
-  agenda**, ne per šablona - kdyby je import nastavil, přepíše nastavení pro všechny ostatní šablony
-  té agendy. Buď se tedy musí zavést per-šablonové hodnoty parametrů (velké rozhodnutí, dotýká se
-  `ApplyPersistedPrintParamsAsync`), nebo import smí jen **navrhnout** (viz krok níže).
+  ⚠️ **Omezení už neplatí tak, jak tu stálo:** hodnoty parametrů sestavy se od 15. 7. ukládají **i do
+  šablony** a mají přednost před per-agenda nastavením (`SyncParametersToTemplate`), takže import by
+  je nastavit mohl, aniž rozhodí ostatní šablony té agendy. Zůstává druhá past: uloží se i hodnoty,
+  kterých se nikdo nedotkl - detail u #12843 v `customer-requirements §0.1`.
   **Malý krok, který jde udělat hned (S):** detekci časové osy z předlohy vrátit a její výsledek
   **napsat do protokolu importu** („předloha má osu 5-23, nastavte ji v parametrech"), ať se informace
   neztratí a dostane se k tomu, kdo s ní může něco udělat. Původní detekce (`timeAxisRangeFrom/To`
@@ -256,7 +242,7 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 
 | Krok | Co | Stav |
 |---|---|---|
-| 32 | **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. ⚠️ **Gated na oživení fixní tabulky (Fáze B)** - cíl importu statické tabulky je Fixed mód, který je dnes uspaný; do té doby nedělat | ⬜ |
+| 32 | **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílem je **pevná tabulka**, která od 12. 8. žije (prvek v paletě, obsah se vyplňuje na plátně), takže gate padl a záleží jen na prioritě | ⬜ |
 | 33 | JŘ import: **ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
 
 Křivky/Bézier v obecném importu - low-prio, bez poptávky.
