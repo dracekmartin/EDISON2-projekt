@@ -52,6 +52,32 @@ Nové odtisky jsou jen ze `CB_CSADAD` - digest na živých datech jiného zákaz
 upraví jízdní řád, takže ostatní firmy drží **invarianty**, ne hash. Když některá firma na serveru
 chybí, sada ji přeskočí a kontrolu obou stavů vynechá, aby test nepadal podle toho, kde běží.
 
+## 2026-08-13 (2) - 🧪 typová sada linek: každá situace má svou linku
+
+Rozšíření předchozího bodu na to, o co šlo doopravdy: **ne jeden příznak, ale typy situací**. Sonda
+změřila profil linek napříč čtyřmi firmami (co v jejich výstupu reálně vzniká - varianty, projíždění,
+prázdno, víc stanovišť u zastávky, pokračující spoje, kola, místenky, rozdílové poznámky, týdenní
+platnost, poznámky linky, výluky, zóny, přestupy, směrové poznámky, ruční režim přepínače) a z toho
+je postavená **sada deseti linek**, kde každý typ někdo drží. Typy jsou u linek zapsané jako značky.
+
+**Nové brány** (`ZastavkoveJrAdSadaTest`):
+
+- **Sada nesmí vyhnít** - u každé linky se kontroluje, že typ, který má pokrývat, na ní **opravdu
+  vzniká**. Kdyby zákazník upravil jízdní řád a linka svůj typ přestala nést, ostatní testy by dál
+  běžely a nic nekontrolovaly. Test to odhalil hned při psaní: sám jsem měl chybné srovnání (v Caché
+  je `=` řetězcové, takže nedefinovaná hodnota se nerovná nule) a kontrola vycházela naopak.
+- **Variantní pole musí být zarovnaná s hlavičkami** - časy, stanoviště i sloupky se čtou po indexech,
+  takže o jedno kratší pole znamená čas přiřazený cizí variantě, který v tisku vypadá platně. Mutace
+  (jedno pole o prvek kratší) shodí test na **7996 z 12084 řádků**.
+- **Značka u minuty musí odkazovat na sloupec, který na vývěsce je** - jinak si cestující přečte
+  písmeno, ke kterému není co dohledat. Zároveň se přepnutím režimu písmen **nesmí změnit počet
+  stránek ani odjezdů** (je to volba zobrazení, ne filtr dat). Mutace (písmeno u minuty o znak jinak)
+  shodí test na **2085 z 2085 značek**.
+
+⚠️ **Caché sada se prodloužila z ~40 s na ~1 min 45 s** - každý test je jeden průchod `GetData` nad
+deseti linkami a největší z nich má 101 stránek. Vědomá cena za pokrytí; kdyby to začalo vadit,
+dá se to zkrátit sloučením průchodů do jednoho testu, ne zúžením sady.
+
 ## 2026-08-12 (10) - 🔧 jeden sloupec jízdních dob už nekončí v polovině seznamu (#12843)
 
 Zákazníkův první bod: „ak zvolím zobraziť len jeden variant, je to automaticky prvý nájdený, niekedy

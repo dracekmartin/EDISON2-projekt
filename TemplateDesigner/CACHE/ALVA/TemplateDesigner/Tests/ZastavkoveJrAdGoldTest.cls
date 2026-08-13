@@ -151,43 +151,26 @@ Method TestGold0330530()
 	do ..AssertLine(1, "0330530", "pages=45 zast=1058 odj=1236 pozn=639 md5=ikpMfLU9R6u+uhBk3+p/HA==")
 }
 
-/// Testovací sada linek **napříč firmami** - jedna linka pokrývá jen svůj tvar dat, takže invarianty
-/// jedou přes všechny. Vybráno sondou `AdSloupekProbe.NajdiVariantniPripady` 13. 8. tak, aby v sadě
-/// byly různé případy (čísla jsou naměřená `AdSloupekProbe.PripadyLinky`):
-///
-///   `CB_CSADAD 0365001` - gold; nejdosažnější trasa obsluhuje všechny zastávky, takže v Času
-///                         nevzniká „<" ani prázdno (proto sama nestačí)
-///   `CB_CSADAD 0330530` - nejvíc variantních sloupců (12 na stránku), 18× „<" v Času
-///   `SKNI_MHDNITRA 0000012` - zákazníkova linka z #12843: 67 stránek, 48 s variantami, 164× „<", 48× prázdno
-///   `SKNI_MHDNITRA 0000002` - přepínač u linky v **ručním** režimu a vyplněné ruční minuty u trasy
-///   `ZL_KOVED 0823955` - prázdno v Času (zastávka mimo základní trasu), „<" žádné
-///   `CB_GWBUS 0320118` - čtvrtá firma a největší rozsah: 101 stránek, 80 s variantami, až 10 sloupců,
-///                        383× „<" a 819× prázdno v Času
-///
-/// Firma, která na serveru není, se přeskočí (`NactiLinku` vrátí 0) - sada nesmí padat kvůli tomu,
-/// kde běží.
+/// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka
+/// pokrývá, a test proti vyhnití fixture). Tady se jen zbaví typových značek - dva seznamy linek by se
+/// rozešly.
 ClassMethod Pripady(ByRef pripady)
 {
 	kill pripady
-	set pripady($increment(pripady)) = "CB_CSADAD~1~0365001"
-	set pripady($increment(pripady)) = "CB_CSADAD~1~0330530"
-	set pripady($increment(pripady)) = "SKNI_MHDNITRA~1~0000012"
-	set pripady($increment(pripady)) = "SKNI_MHDNITRA~1~0000002"
-	set pripady($increment(pripady)) = "ZL_KOVED~1~0823955"
-	set pripady($increment(pripady)) = "CB_GWBUS~1~0320118"
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).Sada(.sada)
+	set i = ""
+	for  {
+		set i = $order(sada(i))
+		quit:i=""
+		set pripady($increment(pripady)) = $piece(sada(i), "~", 1, 3)
+	}
 }
 
-/// Spustí agendu nad jednou linkou sady; 0 = firma na tomto serveru není, případ se přeskakuje.
+/// Spustí agendu nad jednou linkou sady; 0 = firma nebo linka na tomto serveru není.
 ClassMethod NactiLinku(ByRef sys, db As %String, sku As %String, lin As %String) As %Boolean
 {
-	if '##class(%SYS.Namespace).Exists(db) quit 0
-	if '$data(^[db]JRL(sku, lin, "I")) quit 0
-	set sys("U","DATA") = db
-	kill ^||ML
-	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
-	set ^||ML("IN","LINKA_ID") = lin
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
-	quit 1
+	kill parametry
+	quit ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
 }
 
 /// Sloupec „Čas jízdy" smí nést jen tři stavy: číslo, „<" (základní trasa zastávkou projíždí bez
@@ -254,11 +237,13 @@ Method TestZakladniCasNeseJenPovoleneStavy()
 /// zastávka přes spoje varianty, takže mohl nést kombinaci časů, kterou nejede žádný spoj - a v datech
 /// to není poznat, protože každé číslo samo o sobě existuje. Test ke každému sloupci hledá trasu,
 /// jejíž průběh mu odpovídá ve všech zastávkách; když žádná není, sloupec je míchaný.
-/// Jede přes celou sadu linek, ne jen gold - jedna linka pokrývá jen svůj tvar dat.
+/// Jede přes **jádro** sady (pět linek ze čtyř firem), ne jen gold - jedna linka pokrývá jen svůj tvar
+/// dat. Celá sada tu záměrně není: hledání odpovídající trasy je nejdražší kontrola z celé sady
+/// (sloupce × trasy × zastávky) a na deseti linkách zdvojnásobila dobu běhu, aniž by přidala typ.
 Method TestVariantniSloupecJeProbehJedneTrasy()
 {
 	do ..SetupSys(.sys)
-	do ..Pripady(.pripady)
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).Jadro(.pripady)
 	set sloupcu = 0, michanych = 0, kde = "", overeno = 0
 	set i = ""
 	for  {

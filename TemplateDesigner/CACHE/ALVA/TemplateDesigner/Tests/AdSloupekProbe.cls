@@ -80,6 +80,111 @@ ClassMethod NajdiVariantniPripady(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// **Typový profil linek** - pro každou linku firmy pustí agendu a změří, které situace v jejím
+/// výstupu vůbec vznikají. Slouží k sestavení testovací sady tak, aby každý typ situace držela nějaká
+/// linka (jedna linka pokrývá jen svůj tvar dat).
+/// IN: DB, SKU (default 1), MAXLIN (default 40). Read-only.
+ClassMethod ProfilyLinek(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinne"))
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 40
+
+		kill profil
+		set linek = 0, lin = ""
+		for {
+			set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+			quit:linek'<maxLin
+			continue:'$data(^[db]JRL(sku,lin,"I"))
+			continue:'$data(^[db]JRL(sku,lin,"W"))
+			set linek = linek + 1
+			kill ^||TiskAd, ^||ML("OUT")
+			set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+			set ^||ML("IN","LINKA_ID") = lin
+			do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+			kill p
+			set p("stranek") = 0, key = ""
+			for {
+				set key = $order(^||ML("OUT", key)) quit:key=""
+				continue:key="ERR"
+				set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+				set zast = page.rows.ZASTAVKY
+				continue:'$isobject(zast)
+				set p("stranek") = p("stranek") + 1
+				set sloupcu = 0
+				if $isobject(page.values.%Get("VARIANTY_TRAS")) set sloupcu = page.values.%Get("VARIANTY_TRAS").%Size()
+				if sloupcu > $get(p("maxSloupcu")) set p("maxSloupcu") = sloupcu
+				if sloupcu > 1 set p("sVariantami") = $get(p("sVariantami")) + 1
+				// zastávky: stavy Času, víc stanovišť u jedné zastávky, atributy
+				set it = zast.%GetIterator()
+				while it.%GetNext(.i, .radek) {
+					set c = radek.%Get("CAS_JIZDY")
+					if c = "<" { set p("mensitko") = $get(p("mensitko")) + 1 }
+					elseif c = "" { set p("prazdnoCas") = $get(p("prazdnoCas")) + 1 }
+					set nv = radek.%Get("NASTUPISTE_VARIANT")
+					if $isobject(nv) {
+						kill stan
+						for ni = 0:1:nv.%Size()-1 { set v = nv.%Get(ni)  if v '= "" set stan(v) = "" }
+						set pocetStan = 0, sv = ""
+						for { set sv = $order(stan(sv)) quit:sv=""  set pocetStan = pocetStan + 1 }
+						if pocetStan > 1 set p("viceStanovist") = $get(p("viceStanovist")) + 1
+					}
+					if radek.%Get("ZONY") '= "" , $isobject(radek.%Get("ZONY")), radek.%Get("ZONY").%Size() > 0 set p("zony") = $get(p("zony")) + 1
+					set atr = radek.%Get("ATRIBUTY")
+					if $isobject(atr) {
+						for ai = 0:1:atr.%Size()-1 {
+							set znak = atr.%Get(ai).%Get("ZNAK")
+							if (znak = "A") || (znak = "L") { set p("prestupy") = $get(p("prestupy")) + 1 }
+							elseif znak = "x" { set p("naZnameni") = $get(p("naZnameni")) + 1 }
+						}
+					}
+				}
+				// anotace u odjezdů podle kategorie
+				set odj = page.rows.ODJEZDY
+				if $isobject(odj) {
+					set io = odj.%GetIterator()
+					while io.%GetNext(.i2, .o) {
+						set an = o.%Get("ANOTACE")
+						continue:'$isobject(an)
+						for ai = 0:1:an.%Size()-1 {
+							set kat = an.%Get(ai).%Get("KATEGORIE")
+							continue:kat=""
+							set p("kat_"_kat) = $get(p("kat_"_kat)) + 1
+						}
+					}
+				}
+				// legenda podle kategorie
+				set pozn = page.rows.POZNAMKY
+				if $isobject(pozn) {
+					set ip = pozn.%GetIterator()
+					while ip.%GetNext(.i3, .r) {
+						set kat = r.%Get("KATEGORIE")
+						continue:kat=""
+						set p("legenda_"_kat) = $get(p("legenda_"_kat)) + 1
+					}
+				}
+			}
+			set radek = "lin=" _ lin
+			set k = ""
+			for { set k = $order(p(k)) quit:k=""  set radek = radek _ " " _ k _ "=" _ p(k) }
+			set profil(lin) = radek
+		}
+		kill ^||ML("OUT")
+		set lin = ""
+		for {
+			set lin = $order(profil(lin)) quit:lin=""
+			set ^||ML("OUT", "P_" _ lin) = profil(lin)
+		}
+		set ^||ML("OUT","Z_SOUHRN") = "firma " _ db _ ", linek " _ linek
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Co na jedné lince reálně vznikne, když se pustí agenda (`B67`): kolik stránek má variantní sloupce,
 /// kde v základním sloupci časů je „<" a kde prázdno. Slouží k výběru linek do testovací sady a k tomu,
 /// aby šlo říct **konkrétní zastávku**, na které se to dá vizuálně zkontrolovat.
