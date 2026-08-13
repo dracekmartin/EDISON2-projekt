@@ -467,13 +467,14 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s pocetSloupcu = 0
     i razeniVar = "Stabilní (pořadí spojů)" {
         f viY=1:1:poradiVar { s pocetSloupcu = pocetSloupcu + 1  s displayVar(pocetSloupcu) = viY }
-    } elseif razeniVar = "Dle délky jízdy (nejkratší první)" {
+    } elseif (razeniVar = "Dle délky jízdy (nejkratší první)") || (razeniVar = "Dle délky jízdy (nejdelší první)") {
         // Nejrychlejší varianta stojí hned vedle sloupce „Čas", nejpomalejší vpravo - cestující
         // pak čte sloupce jako škálu, ne jako nahodilé pořadí. Délka = kumulativní čas nejdál
         // od vývěskové zastávky, tedy táž hodnota, kterou se vybírá průběh varianty.
         // Shoda délek → pořadí výskytu, ať výstup nezávisí na pořadí průchodu.
+        s opacne = (razeniVar = "Dle délky jízdy (nejdelší první)")
         k radArr
-        f viY=1:1:poradiVar s radArr(+$g(variantDelka(viY)),viY) = ""
+        f viY=1:1:poradiVar s radArr($s(opacne:-$g(variantDelka(viY)), 1:+$g(variantDelka(viY))),viY) = ""
         s dKey = ""
         f {
             s dKey = $o(radArr(dKey))  q:dKey=""
@@ -3191,6 +3192,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // Popisky voleb jsou po vydání ZAMČENÉ (persistuje se zobrazovaný text), proto „nejkratší první"
     // rovnou v popisku - směr řazení už nepůjde upřesnit přejmenováním.
     d optsRV.%Push("Dle délky jízdy (nejkratší první)")
+    d optsRV.%Push("Dle délky jízdy (nejdelší první)")
     s pRazV.options = optsRV
     d arr.%Push(pRazV)
 

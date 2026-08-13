@@ -23,6 +23,20 @@ public class StopListPlatformDuplicationTests
         new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform }
             .ExpandPlatformRows([.. stops]);
 
+    /// <summary>Zastávka **před** vývěskou (projetá) se rozpadá stejně jako ta za ní. Nitra 9,
+    /// vývěska Fraňa Mojtu: CENTRUM, Mlyny má dvě stanoviště, ale leží v projeté části - a rozpad
+    /// tam nebyl vidět (nahlásil Jan 13. 8.). Testy do té doby kryly jen zastávky za vývěskou.</summary>
+    [Fact]
+    public void ZastavkaPredVyveskou_SeRozviTaky()
+    {
+        var r = Expand(
+            Stop("CENTRUM, Mlyny", current: false, ["-9", "-9"], ["A", "B"]),
+            Stop("Fraňa Mojtu", current: true, ["0", "0"], ["B", "B"]),
+            Stop("Predmostie", current: false, ["2", "2"], ["B", "B"]));
+
+        Assert.Equal(["CENTRUM, Mlyny", "CENTRUM, Mlyny", "Fraňa Mojtu", "Predmostie"], r.Select(z => z.Popis));
+    }
+
     /// <summary>Po přepnutí na sloupek se řádky rozvíjejí podle sloupků variant a hodnota jde do
     /// sloupce Sloupek; označník zůstane, jak byl. Jinak by duplikované řádky nesly cizí číslo
     /// (KOVED #13088).</summary>

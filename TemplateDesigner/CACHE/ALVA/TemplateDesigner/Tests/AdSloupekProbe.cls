@@ -339,7 +339,11 @@ ClassMethod ViceStanovistLinky(ByRef sys As %String) As %Status
 				set nalezu = nalezu + 1
 				continue:ukazek'<8
 				set ukazek = ukazek + 1
-				set vzorky(ukazek) = "vyveska " _ page.values.%Get("POPIS_ZASTAVKA") _ " (smer " _ page.values.SMER _ ") -> zastavka " _ radek.%Get("NAZEV_ZASTAVKY") _ " ma " _ pocet _ " stanovist"
+				// Délka TRASA_MIN je tu podstatná: klient rozvíjí řádky jen po délku pole časů
+				// (`Math.Min(varianty, TrasaMin)`), takže kratší pole rozpad tiše vypne.
+				set tm = radek.%Get("TRASA_MIN")
+				set delkaCasu = $select($isobject(tm):tm.%Size(), 1:-1)
+				set vzorky(ukazek) = "vyveska " _ page.values.%Get("POPIS_ZASTAVKA") _ " (smer " _ page.values.SMER _ ") -> zastavka " _ radek.%Get("NAZEV_ZASTAVKY") _ " ma " _ pocet _ " stanovist, TRASA_MIN delka " _ delkaCasu
 			}
 		}
 		kill ^||ML("OUT")

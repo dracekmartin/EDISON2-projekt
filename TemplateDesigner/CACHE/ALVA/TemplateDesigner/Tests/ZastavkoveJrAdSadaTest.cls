@@ -386,6 +386,41 @@ Method TestRazeniVariantDleDelkyJizdy()
 	}
 	do $$$AssertEquals(stranekSVariantami > 0, 1, "linka nemá ani jednu stránku s víc variantami - test by neověřil nic")
 	do $$$AssertEquals(spatne, "", "sloupce nejsou seřazené od nejkratší jízdy: "_spatne)
+
+	// Obrácená volba musí dát obrácené pořadí, ne totéž - jinak by se lišila jen popiskem.
+	kill parametry
+	set parametry("RAZENI_VARIANT") = "Dle délky jízdy (nejdelší první)"
+	do ..NactiLinku(.sys, db, sku, lin, .parametry)
+	set spatneOpacne = "", key = ""
+	for  {
+		set key = $order(^||ML("OUT", key)) quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.ZASTAVKY
+		continue:'$isobject(zast)
+		set sloupcu = 0
+		if $isobject(page.values.%Get("VARIANTY_TRAS")) set sloupcu = page.values.%Get("VARIANTY_TRAS").%Size()
+		continue:sloupcu<2
+		kill dojezd
+		set it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			set tm = radek.%Get("TRASA_MIN")
+			continue:'$isobject(tm)
+			for ti = 0:1:tm.%Size()-1 {
+				set v = tm.%Get(ti)
+				continue:'$isvalidnum(v)
+				set dojezd(ti) = v
+			}
+		}
+		for ti = 1:1:sloupcu-1 {
+			set predchozi = ti-1
+			continue:'$data(dojezd(ti))
+			continue:'$data(dojezd(predchozi))
+			continue:dojezd(ti)'>dojezd(predchozi)
+			if spatneOpacne = "" set spatneOpacne = "stránka "_key_" ("_page.values.%Get("POPIS_ZASTAVKA")_"): sloupec "_(ti+1)_" dojíždí za "_dojezd(ti)_", předchozí už za "_dojezd(predchozi)
+		}
+	}
+	do $$$AssertEquals(spatneOpacne, "", "obrácená volba neseřadila od nejdelší jízdy: "_spatneOpacne)
 }
 
 /// Počet odjezdů ve všech stránkách právě načteného výstupu.
