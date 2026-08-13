@@ -37,9 +37,9 @@ Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Cach�
 Otevřené tikety #12434 (BBSK - „Export Tisk JŘ") a #12260 (BUSLINE - „úprava šablony") jsou obecné tracker / dotazy, ne konkrétní featury - neuvedeny.
 
 Mimo scope zastávkového JŘ (protříděno proti živému HD 2026-07-20 - všechny tiskové „suspended" tikety
-mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD; **žádný zastávkový nechybí**):
+mimo tabulku výše jsou linkové/knižní JŘ, nebo úplně mimo TD; **žádný zastávkový nechybí**):
 
-**Linkové / knižní JŘ (→ Fáze C/D, ne sem):**
+**Linkové / knižní JŘ (řeší se s jejich trackem, ne sem):**
 - **#7487** (KORID) - NZ + týdenní platnost 4 na řádek.
 - **#8360** (KU HK) - přípojové řádky: kurzíva / barva / velikost písma, aby čas přípoje nesplýval s časem spoje.
 - **#8372** (KORID) - „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).

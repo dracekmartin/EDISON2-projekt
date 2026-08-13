@@ -23,7 +23,7 @@
 >
 > **⚠️ Status (2026-07-02): akční položky zamergovány do [`roadmap.md`](roadmap.md)** -
 > architektonický track (T1–T6), blok A (A4 výstupní kanály), blok B (B4/B5 governance detaily),
-> Fáze C+D (sloučeno, TiskJR náhrada), Fáze E (Relace), **Fáze F (REPORTGENERATOR)** a otevřené
+> linkové a knižní JŘ (náhrada TiskJR), Relace a vozové JŘ, **report generátor** a otevřené
 > otázky Q1–Q6. **Aktuální stav položek = roadmap; tento dokument = evergreen referenční detail**
 > (legacy inventář §3, průřezová témata §4, zdůvodnění etapizace §5) - neaktualizuje se per položka.
 
@@ -241,9 +241,9 @@ jejich priorita čtením legacy kódu.
 - Per-instance přiřazení šablony (linka → šablona A4/A5) - datový model
   `InstanceDefaults` už existuje (Wave 1), rozšířit o šablonu.
 
-### Etapa 3 - Knižní/výlepový JŘ (náhrada TiskJR; roadmap Fáze C/D sloučeně)
-- Legacy generuje vývěsní i knižní z téhož - **Fáze C (meziměstský) a D (knižní)
-  v roadmapě jsou pravděpodobně jeden track** s oracle `mkPLinWin` (JRMAIN).
+### Etapa 3 - Knižní/výlepový JŘ (náhrada TiskJR; v roadmapě „Linkové a knižní JŘ")
+- Legacy generuje vývěsní i knižní z téhož - **meziměstský i knižní jsou jeden track**
+  s oraclem `mkPLinWin` (JRMAIN).
 - Pořadí: (1) symbolový font Timetable do SkiaSharp + převodní tabulka
   (`ConvertSpecialniZnak` mapování už známe z obou legacy systémů);
   (2) agenda `KnizniJrAd` - čistá reimplementace à la ZastavkoveJrAd, gold oracle
@@ -263,14 +263,14 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
 3. **TableElement dorovnat na RG úroveň** (navazuje na Wave 4 W4-9 Dynamic-first):
    per-řádek zvýraznění/barvy z dat, overflow módy buňky, opakování mezisoučtového
    řádku, řádek-jako-designový-layout (koncepčně PerDataRow sekce), datové typy sloupců.
-   Merged cells + conditional formatting už jsou ve Fázi B roadmapy.
+   Merged cells + conditional formatting už jsou v backlogu roadmapy (tabulkové prvky).
 4. **Výstupní kanály fáze 2:** Excel export, PDF heslo/podpis, Epson znakový tisk -
    podle reálné poptávky (Epson = pokladny/jízdenky, ověřit zda vůbec migruje do TD
    nebo zůstane v legacy TISKu).
 5. **Vědomě neportovat bez poptávky:** grafy (12 použití), AZTEC (2), calculated pole
    (2 - TD výrazový jazyk je nadmnožina), checkbox (8). Ověřit se zákazníky a škrtnout.
 
-### Etapa 5 - Relace (TiskJRRELACE) + vozové JŘ (roadmap Fáze E)
+### Etapa 5 - Relace (TiskJRRELACE) + vozové JŘ (v roadmapě „Relace a vozové JŘ")
 - Nejdřív zodpovědět open questions (live use case Relace? priorita vozových?) -
   viz `legacy-nahrada.md`. Vozové JŘ mají vlastní legacy generátory
   (`ALVA.MHD.ReportGenerator`, `AD.ADREPORTGEN`) - samostatná analýza až bude aktuální.
@@ -311,7 +311,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
   (+ `ALVA.TISKJR.*` 5 tříd), `C:\DEV\EDISON\TiskJRRELACE`.
 - Navazuje na: [`legacy-nahrada.md`](legacy-nahrada.md)
   (TiskMHD mapovací matice - evergreen), [`legacy-nahrada.md`](legacy-nahrada.md),
-  [`roadmap.md`](roadmap.md) (blok A, Wave 4, Fáze B–E).
+  [`roadmap.md`](roadmap.md).
 
 
 
@@ -569,7 +569,7 @@ poznámky, sloupce), ne pixely. Místa nejnáchylnější k odlišnosti, která 
 
 # Legacy Caché generátory JŘ - reference pro TD migrace
 
-Mapování typů jízdních řádů na **legacy Caché report generátory** + business kontext per typ. Slouží jako reference před implementací nových agend v TD (Fáze C/D/E, PRIORITA 2 - zastávkový JŘ pro linkové JŘ data).
+Mapování typů jízdních řádů na **legacy Caché report generátory** + business kontext per typ. Slouží jako reference před implementací nových agend v TD (linkové a knižní JŘ, Relace a vozové - PRIORITA 2, zastávkový JŘ pro linkové JŘ data).
 
 > **Stav 2026-05-29.** Některé položky jsou open questions (?označené) - doptat se Martina Hubaty.
 
@@ -632,7 +632,7 @@ Dva legacy generátory podle typu:
 
 **Použití:** v linkové dopravě se tiskne **v turnusech** (oběhy vozidel - který spoj jede které vozidlo).
 
-**Stav v TD:** zatím **neimplementováno**. Fáze E v roadmap.
+**Stav v TD:** zatím **neimplementováno**. V roadmapě „Relace a vozové JŘ".
 
 ---
 
@@ -642,11 +642,11 @@ Per roadmap PRIORITA 2 (po dokončení Wave 4):
 
 1. **Zastávkové JŘ pro linkové JŘ data** - rozšířit `ZastavkoveJrMhd` o linkový datový zdroj (nebo nová agenda). Zachovat dvojí formát „město × linková" stejně jako legacy `ALVA.TISKMHD`.
 
-Fáze C/D/E v roadmap (později, nižší priorita):
+V roadmapě linkové/knižní JŘ a Relace/vozové (později, nižší priorita):
 
-2. **Linkové vývěsní/knižní JŘ** - `ALVA.TISKJR` ekvivalent (Fáze C - meziměstský; ale legacy generuje obojí)
+2. **Linkové vývěsní/knižní JŘ** - `ALVA.TISKJR` ekvivalent (meziměstský; legacy generuje obojí)
 3. **Relace** - `ALVA.TiskJRRELACE` ekvivalent (specifický slovenský use case)
-4. **Vozové JŘ** - `ALVA.MHD.ReportGenerator` + `AD.ADREPORTGEN` ekvivalent (Fáze E - vozový)
+4. **Vozové JŘ** - `ALVA.MHD.ReportGenerator` + `AD.ADREPORTGEN` ekvivalent (vozové JŘ)
 
 ---
 

@@ -302,7 +302,7 @@ Pro čistou reimplementaci je otázka, zda číst `^JRL`/`^JRZ` přímo, nebo p�
 
 ## 6. Otevřené otázky (ověřit před implementací)
 
-> **Úklid:** tato sekce se ořeže/přepíše až po vyřešení otázek - typicky během Fáze C+D
+> **Úklid:** tato sekce se ořeže/přepíše až po vyřešení otázek - typicky během linkových a knižních JŘ
 > (linkové/knižní JŘ), kde se tyto otázky (FTL/Plk/CNZ, skupina linek, tarif) reálně řeší.
 > Do té doby zůstává jako referenční poznámky.
 

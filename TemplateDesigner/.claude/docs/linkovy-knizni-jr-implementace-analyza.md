@@ -48,12 +48,12 @@ Existuje jen dokumentace a roadmapa:
 | `CLAUDE.md` §Aktuální focus | Zastávkový JŘ je hotový 1:1; linkový/knižní je next big track, zatím nezahájený |
 | `.claude/docs/legacy-nahrada.md` §2 | Business popis `ALVA.TISKJR` - zóny, km, Tč, obousměrnost, PostScript fixed-width trik, návaznosti |
 | `.claude/docs/legacy-nahrada.md` §3.3 | Nejpodrobnější - rozsah (33 400 LOC VB + 3 290 Caché), navržené kroky, gold oracle `mkPLinWin` |
-| `.claude/docs/roadmap.md` „Fáze C+D" (řádky 132–163) | Kroky 42–44 (analýza referenčních výstupů, symbolový font, `LineTableElement`, agenda `KnizniJrAd`) - **vše ⬜ nezahájeno** |
-| `.claude/docs/architektonicka-rozhodnuti-agendy.md` | ⚠️ **Gate před krokem 43** - R1 (sdílené tabulkové jádro StopList+DynamicTable+LineTable), R2 (layout zodpovědnosti), R5 (embedded fonty) - **přečíst před návrhem elementu** |
+| `.claude/docs/roadmap.md` „Linkové a knižní JŘ" | Bloky `B10` (symbolový font), `B13` (rozřezání široké tabulky), `B14`, `B60` + odložené body `C5`-`C7` - **nezahájeno** |
+| `.claude/docs/architektonicka-rozhodnuti-agendy.md` | ⚠️ **Gate před návrhem elementu** - R1 (sdílené tabulkové jádro StopList+DynamicTable+LineTable), R2 (layout zodpovědnosti), R5 (embedded fonty) - **přečíst před návrhem elementu** |
 | `.claude/docs/ad-data-mapa.md` §„Dva formáty linkového JŘ" | Rozlišuje „klasický sloupcový" (zastávky×spoje, doložený reálnou linkou) vs „MHD minutová mřížka" - **toto je popis dat pro ZastavkoveJrAd, ne pro LineTableElement**; nepřeskakovat, ale nezaměňovat účel |
 
-**Roadmapa čeká přesně na tuto práci** - kroky 42–44 ve Fázi C+D jsou navržené, ale nikdo je
-nezačal. Tento dokument je fakticky rozpracování kroku 42 („Analýza referenčních výstupů + wire
+**Roadmapa čeká přesně na tuto práci** - bloky linkových a knižních JŘ jsou navržené, ale nikdo je
+nezačal. Tento dokument je fakticky rozpracování prvního z nich („Analýza referenčních výstupů + wire
 formát").
 
 ---
@@ -137,7 +137,7 @@ Na rozdíl od `ZastavkoveJrAd` (čistě JSON-per-page, viz `ad-data-mapa.md`), l
 používá **objektově orientovanou strukturu**: `idobj` = číslo objektu (datový paket), každý
 objekt je buď **datový blok** (typ 2 = blok odjezdů) nebo **poznámkový blok** (typ 3), navzájem
 provázané (`arr,5,idobj2`). Tohle je přímý zdroj pro „flow skládání datových paketů" zmíněné
-v roadmapě (Fáze C+D, bod 2 prerekvizit) - N bloků vedle sebe i pod sebe podle místa.
+v roadmapě (`B13`) - N bloků vedle sebe i pod sebe podle místa.
 
 ```
 @glbout@(idobj,"row",radek,"arr",1) = typ řádku:  1=platnost, 2=zastávka, 3=vyčká, 4=navazuje, 5=text
@@ -245,7 +245,7 @@ mezi existující" bez renumbering.
 
 Slovenský fork (~49 700 LOC), třetí odlišný výstup (řádky = odjezdy, sloupce = linka/čas/směr/
 nástupiště) - blíž zastávkovému JŘ, ale ne identický. **Open question v `legacy-nahrada.md`:
-je to živý use case?** Roadmapa (`roadmap.md` Fáze E) říká „nejdřív ověřit živý use case (Q3)".
+je to živý use case?** Roadmapa („Relace a vozové JŘ") říká „nejdřív ověřit živý use case".
 **Doporučení: nezahrnovat do prvního implementačního pokusu.** Zaměřit se čistě na `mkPLinWin`
 (klasický linkový/knižní), Relace je samostatné rozhodnutí až po ověření u zákazníka.
 
@@ -413,7 +413,7 @@ C:\DEV\EDISON\TiskJR\_ruzne\                                  - TTF fonty (Timet
 
 TemplateDesigner\.claude\docs\legacy-nahrada.md
 TemplateDesigner\.claude\docs\legacy-nahrada.md
-TemplateDesigner\.claude\docs\roadmap.md  (Fáze C+D)
+TemplateDesigner\.claude\docs\roadmap.md  (Linkové a knižní JŘ)
 TemplateDesigner\.claude\docs\ad-data-mapa.md
 TemplateDesigner\.claude\docs\architektonicka-rozhodnuti-agendy.md
 TemplateDesigner\.claude\rules\new-element-checklist.md

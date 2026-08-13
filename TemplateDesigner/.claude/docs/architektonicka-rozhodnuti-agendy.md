@@ -57,12 +57,12 @@ skonči, tolik se nevešlo). Konkrétní elementy by pak dodávaly jen to své: 
 dekorace (šipka směru, zvýraznění aktuální zastávky), DepartureGrid pivot (hodiny ×
 skupiny dnů - ten je jiný, pivot do jádra nepatří), LineTable sloupce spojů.
 
-**Jaký problém to řeší.** Fáze C+D přinese `LineTableElement` (svislý seznam zastávek ×
+**Jaký problém to řeší.** Linkové a knižní JŘ přinesou `LineTableElement` (svislý seznam zastávek ×
 sloupce spojů = strukturálně kříženec StopListu a TableElementu). Pak relace, vozové JŘ,
 RG tabulky s per-řádkovým designem. Bez sdíleného jádra každý = dalších ~1 000+ řádků
 layoutu, které se musí zvlášť ladit a zvlášť neúmyslně rozbíjet.
 
-**Co se rozhoduje.** Až se začne navrhovat LineTableElement (Fáze C+D, krok 43):
+**Co se rozhoduje.** Až se začne navrhovat LineTableElement (linkové a knižní JŘ):
 postavit ho jako pátý samostatný element (rychlejší teď, dražší navždy), NEBO nejdřív
 vytáhnout sdílené řádkové jádro z StopList + DynamicTable a LineTable postavit nad ním
 (pomalejší teď o ~1–2 týdny, levnější každý další element).
@@ -118,14 +118,14 @@ vyžadovat znát oba.
    umí říct „pokračuj na další stránce od řádku 41". To je rozšíření rozhraní, které
    se musí navrhnout jednou a pořádně, ne třikrát různě.
 
-**Doporučení + termín.** Napsat před začátkem Fáze C+D (půl dne). Do té doby: žádné nové
+**Doporučení + termín.** Napsat před začátkem linkových a knižních JŘ (půl dne). Do té doby: žádné nové
 layoutové chování nepřidávat do elementů, pokud koncepčně patří enginu (a naopak).
 
 > **✅ Model potvrzen 2026-07-03 (diskuze):** „engine skládá celek (elementy/sekce/stránky),
 > element rozhoduje jen lokálně o svém vnitřku a výsledek hlásí nahoru" = přesně dnešní
 > architektura, nic se nemění. Z R2 zbývá jediná otevřená věc: **návrh partial-fit rozhraní**
 > (rozšíření hlášení z „jsem vysoký X mm" na „vykreslil jsem řádky 1–40, zbývá 12, pokračuj
-> odtud") - jednou, jednotně pro všechny tabulkové elementy, před Fází C+D.
+> odtud") - jednou, jednotně pro všechny tabulkové elementy, před linkovými a knižními JŘ.
 
 ---
 
@@ -143,7 +143,7 @@ faktury tučný a opakovaný na další stránce. U nás už to v malém existuj
 
 **Jaký problém to řeší.** Celý REPORTGENERATOR je postavený OBRÁCENĚ než my: jeho server
 posílá klientovi prezentační příkazy („řádek se zvýrazněním 3, buňka barvy X, přeteklý
-text zalom módem 2"). Až budeme migrovat jeho agendy (Fáze F), každá bude potřebovat
+text zalom módem 2"). Až budeme migrovat jeho agendy (report generátor), každá bude potřebovat
 nějak vyjádřit „tenhle řádek je zvýrazněný" - a když nebude dohodnutý způsob, každá si
 vymyslí vlastní klíče a za rok budeme mít pět dialektů téhož.
 
@@ -217,7 +217,7 @@ instalací fontu a kontrolou při startu - to nechceme kopírovat.
 (pozor na licence fontů - Timetable je interní/legacy, ověřit). Souvisí s R4: font musí
 být tam, kde běží render.
 
-**Doporučení + termín.** Nejpozději jako první krok Fáze C+D (krok 42b už to v roadmapě
+**Doporučení + termín.** Nejpozději jako první krok linkových a knižních JŘ (roadmapa už to
 naznačuje); zvážit dřív, pokud pilot ukáže problémy se spec. znaky u MHD.
 
 ---
@@ -258,7 +258,7 @@ neběžela naostro. Každá její vada objevená až při migraci páté agendy 
 A navíc: zákazníkům byl modul slíben „na polovinu 2026" - ta je teď.
 
 **Doporučení.** Pilot = další velký blok po dokončení rozdělané práce (DynamicTable).
-Fáze C+D i F až po něm - poučené tím, co pilot ukáže.
+Linkové JŘ i report generátor až po něm - poučené tím, co pilot ukáže.
 
 ---
 
@@ -266,11 +266,11 @@ Fáze C+D i F až po něm - poučené tím, co pilot ukáže.
 
 | # | Rozhodnutí jednou větou | Kdy nejpozději |
 |---|---|---|
-| R1 | Řádkový tabulkový layout se píše jednou (sdílené jádro), elementy dodávají jen odlišnosti | design LineTableElementu (Fáze C+D) |
-| R2 | Sepsat, co v layoutu patří enginu, co elementu, a jak si předávají „nevešel jsem se" | před Fází C+D |
+| R1 | Řádkový tabulkový layout se píše jednou (sdílené jádro), elementy dodávají jen odlišnosti | design LineTableElementu (linkové a knižní JŘ) |
+| R2 | Sepsat, co v layoutu patří enginu, co elementu, a jak si předávají „nevešel jsem se" | před linkovými a knižními JŘ |
 | R3 | Kontrakt agend: schválený seznam prezentačních nápověd + jen aditivní změny | před F2 (RG bridge rozhodnutí) |
 | R4 | Headless tisk: pilot na stanici, ale render oddělit fasádou → později služba | návrh bloku A |
-| R5 | Fonty přibalit do aplikace, nikdy nespoléhat na instalaci ve Windows | start Fáze C+D |
+| R5 | Fonty přibalit do aplikace, nikdy nespoléhat na instalaci ve Windows | start linkových a knižních JŘ |
 | R6 | Systémové šablony jdou se .exe, DB jen pro zákaznické | návrh bloku B |
 | R7 | Jedna agenda k reálnému zákazníkovi dřív, než se migrují další | teď (další velký blok) |
 
@@ -374,7 +374,7 @@ dnešní pixel-ořez (`ClipTop`/`ClipBottom`). Kontrakt je aditivní, nic nerozb
 **Kontrakt je rozhodnut; implementace NEteď.** Důvody:
 - Pro knižní JŘ je palčivější **vodorovná** osa (C3 bin-packing), ne svislá - sám row-pagination mu
   moc nepomůže, dokud se neřeší sloupce.
-- Nejsilnější konzument svislé osy je **dlouhá faktura/report** (Fáze B/F).
+- Nejsilnější konzument svislé osy je **dlouhá faktura/report** (tabulkové prvky, report generátor).
 - Implementace = rozšíření `PageLayoutEngine` (nová větev split) + `LayoutResult` (řádková okna místo
   clip) + `RenderRowWindow` na 3 elementech + testy. Patří k paginačnímu/bin-packing tracku, ať se
   svislá i vodorovná osa navrhnou a otestují spolu na knižním JŘ.
