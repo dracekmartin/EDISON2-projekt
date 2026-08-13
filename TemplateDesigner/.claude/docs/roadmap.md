@@ -6,8 +6,9 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **Stav k 2026-08-12.** Verze vydaná 11. 8.; `B39` od 12. 8. **rozsvícená pro všechny**
-> (přepínač odstraněn - viz changelog 2026-08-12).
+> **Stav k 2026-08-13.** Verze vydaná 11. 8.; `B39` od 12. 8. **rozsvícená pro všechny**
+> (přepínač odstraněn - viz changelog 2026-08-12). 13. 8. přibyly `B67` kroky 1+2 a typová testovací
+> sada linek - **nevydané a neproklikané**, viz sekce `B67` pod tabulkou.
 >
 > **▶ Zastávkový JŘ má jedinou otevřenou věc a NENÍ blokovaná** - `B67` se 12. 8. rozpadl: hlavní
 > stížnost (duplicitní sloupce variant) byla naše odchylka od starého modulu a je opravená. Z dohodnuté
@@ -71,7 +72,29 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 ✅ **Kroky 1 a 2 jsou hotové 13. 8.** (oddělení sloupce Času od variant, tři stavy `CAS_JIZDY`,
 jedno pravidlo výběru průběhu pro obě rodiny) - detail v changelogu 2026-08-13, ať se sem nepíše
-dvakrát. Zbývá:
+dvakrát. Commity `99fb735`, `ec15b77`, `28f80d8`, nepushnuté.
+
+**Na čem se dá pokračovat** (stav k 13. 8., ať to nikdo nemusí dohledávat znovu):
+
+- **Testovací sada linek je hotová a typová** - `ZastavkoveJrAdSadaTest.Sada` (deset linek ze čtyř firem,
+  u každé zapsané značky typů, které pokrývá; `Jadro` = pět linek pro drahé kontroly). Kandidáty hledá
+  sonda `AdSloupekProbe`: `NajdiVariantniPripady` (hrubý filtr přes firmu), `ProfilyLinek` (co ve výstupu
+  linky reálně vzniká), `PripadyLinky` (jedna linka + konkrétní zastávka k proklikání). **Sondy nemazat**,
+  u další změny variantních sloupců se budou hledat linky znovu.
+- **Brána pro krok 3 už stojí** - `TestPismenaVariantOdkazujiNaExistujiciSloupec` hlídá, že každá značka
+  u minuty odkazuje na existující sloupec a že přepnutí režimu nemění počty stránek ani odjezdů. Krok 3
+  se tedy dá psát rovnou proti ní.
+- 👁 **Neověřené očima**: sloupec Času vedle variant a „<" v něm nikdo neviděl na vývěsce. Proklikat
+  v tomhle pořadí: **GW BUS 0320118** (vývěska Ševětín, nám. - až 10 sloupců, „<" u rozc. Dubové Mlýny),
+  **Nitra 12** (Gorazdova, „<" u ZŠ Krškany), **CB_CSADAD 0330530** (Kaplice, aut. nádr., až 12 sloupců),
+  **Nitra 9** (kola + zastávka se dvěma stanovišti - základní čas musí být jen na prvním řádku),
+  **Nitra 6** (jednovariantní linka a přesto „<"), **Nitra 2** + **CB_CSADAD 0365001** (kontrolní vzorky,
+  nemá se změnit nic). Firma se přepíná dev přepínačem v aplikaci.
+- ⚠️ **Caché sada trvá ~1 min 45 s** (dřív ~40 s) - každý test je průchod `GetData` nad deseti linkami.
+  Zkrátit se dá **sloučením průchodů** do jednoho testu (jeden load, víc kontrol), ne zúžením sady. Vel. S,
+  vzít jen když to začne vadit.
+
+Zbývá:
 
 **3. Značka u minut pro každou variantu + vysvětlení trasy v legendě** (S) = bod (c). Značky brát ze
 **samostatné znakové řady**, ne z abecedy rozdílových poznámek (legacy má v kódu default „UVWXYZ", tedy
