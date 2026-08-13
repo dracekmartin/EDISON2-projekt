@@ -2,6 +2,18 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-13 ✅ - `B78`: kontrola uvozovek chytá i druhou půlku té třídy chyb
+
+Detail → changelog 2026-08-13 (7). Statická kontrola `.cls` hlásila jen řádek, který **končí**
+uprostřed textu (lichý počet uvozovek). Uvozovka uvnitř textu, za kterou pokračuje další text
+v uvozovkách, je párná a prošla - a přesně ten tvar 13. 8. způsobil Caché test padající **bez
+hlášky** (na serveru zůstala nezkompilovaná třída), zatímco `cache-api.md` tvrdilo, že to test hlídá.
+
+⚠️ **Kontrola platí jen uvnitř závorek** a rozšířit ji nejde: mimo ně je „text, mezera, slovo"
+legitimní podmíněný příkaz (`s:group'="" param.group = group`) a v repu jich jsou desítky. V praxi
+chyba vzniká v argumentu (hlášky testů, helpTexty), kde závorky jsou. Mez je zapsaná v testu jako
+`[InlineData]` s očekáváním „projde", ať je vidět, a v `cache-api.md`.
+
 ## 2026-08-13 ✅ - `B67`: jemnější zobrazení variant jízdních dob (TRANSDEV #12843)
 
 Detail → changelog 2026-08-12 (10) a 2026-08-13 (1)-(6). Původně `TR7`, podaný podruhé jako #12843

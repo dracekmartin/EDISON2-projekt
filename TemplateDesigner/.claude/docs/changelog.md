@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-13 (7) - 🔍 kontrola uvozovek v `.cls` chytá i druhou půlku té třídy chyb (`B78`)
+
+Statická kontrola hlásila jen řádek, který **končí** uprostřed textu (lichý počet uvozovek).
+Uvozovka uvnitř textu, za kterou pokračuje další text v uvozovkách, je **párná** a prošla:
+
+```
+do $$$AssertEquals(x, 1, "„<" nevzniklo (" _ y _ ")")
+```
+
+Tenhle tvar se nezkompiluje, ale test mlčel - a projevilo se to 13. 8. jako **Caché test padající
+bez hlášky**, protože na serveru zůstala nezkompilovaná třída. `cache-api.md` přitom tvrdilo, že to
+tenhle test hlídá; teď to platí.
+
+Nová část kontroly hledá **zavřenou uvozovku, za kterou stojí holé slovo**. ⚠️ **Uplatní se jen
+uvnitř závorek** - mimo ně je „text, mezera, slovo" legitimní podmíněný příkaz
+(`s:group'="" param.group = group`) a v repu jich jsou desítky, takže širší pravidlo by hlásilo
+falešné poplachy. V praxi chyba vzniká v argumentu (hlášky testů, helpTexty), kde závorky jsou.
+Ta mez je zapsaná v testu jako `[InlineData]` s očekáváním „projde", ať je vidět, ne zamlčená.
+
+**Brány:** **2116 .NET testů**; kontrola projela všechny `.cls` v repu bez nálezu. Vyladěno proti
+reálným falešným poplachům - první podoba pravidla (bez závorkové podmínky) jich nahlásila 18.
+
 ## 2026-08-13 (6) - ↕️ třetí volba řazení variant: od nejrychlejší k nejpomalejší (`B67` krok 4)
 
 K dosavadním dvěma (dle četnosti ze zastávky, stabilní dle spojů) přibylo **„Dle délky jízdy

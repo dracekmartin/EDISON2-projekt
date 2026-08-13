@@ -26,9 +26,17 @@
 literál a poslední `"` otevře nový → `<SYNTAX>` a **spadne to teprve uživateli při otevření
 formuláře**. Správně: `"… (výchozí ""×"")"`.
 
-Hlídá to `ObjectScriptSyntaxTests` (projede všechny `.cls` v repu a hlásí řádek, který končí
-uprostřed textu). Nic jiného to nezachytí: rozbitá třída se nasadí, .NET testy o Caché zdrojácích
-nevědí a `%UnitTest` kompiluje jen testovací package.
+Hlídá to `ObjectScriptSyntaxTests` (projede všechny `.cls` v repu). Nic jiného to nezachytí: rozbitá
+třída se nasadí, .NET testy o Caché zdrojácích nevědí a `%UnitTest` kompiluje jen testovací package.
+**Chyba se pak projeví jako Caché test padající bez hlášky** - na serveru zůstane stará verze třídy.
+
+Kontrola má dvě části, protože chyba má dvě podoby:
+
+1. **řádek končí uprostřed textu** (lichý počet uvozovek) - `s x = "neuzavřeno`
+2. **uvozovek je sudě, ale text skončil uprostřed** - `d Neco(x, "„<" nevzniklo (" _ y _ ")")`.
+   Tuhle půlku kontrola do 13. 8. neviděla. ⚠️ **Platí jen uvnitř závorek**: mimo ně je „text, mezera,
+   slovo" legitimní podmíněný příkaz (`s:group'="" param.group = group`), takže tam se pravidlo
+   neuplatní a chyba tohoto tvaru projde. V praxi vzniká v argumentu (hlášky testů, helpTexty).
 
 ## Caché namespace struktura
 
