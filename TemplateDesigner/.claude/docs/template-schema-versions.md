@@ -141,7 +141,7 @@ bumpne na „1.1.0" **spolu s** `ITemplateMigration`. (Kosmetický rozdíl „1.
 Caché metadat vs „1.0.0" v C# je funkčně irelevantní - `VersionComparer` je srovnává jako rovné a
 metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 
-### V1.1.0–V1.7.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
+### V1.1.0–V1.8.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
 
 - **1.1.0** `MigrationHighlightRules` - řádkové zvýraznění: skalární pár → `highlightRules[]` seznam.
 - **1.2.0** `MigrationKnizniToLinkovy` - přejmenování knižní → linkový (agenda kódy/typy).
@@ -172,6 +172,15 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   elementu (0,7 px při 96 DPI = 0,19 mm, `#FF999999`), pokud si ho uživatel sám nenastavil.
   Vedlejší oprava: tloušťka čar tabulek byla v **px**, takže neškálovala se zvětšením ani s tiskovým
   rozlišením - nově mm jako všude jinde.
+- **1.8.0** `MigrationRouteVariantsColumn` (2026-08-13, `B80`) - varianty jízdních dob se zapínají
+  jako **sloupec** (`CAS_JIZDY_VARIANTY`), ne vlastností prvku `showAllRouteVariants`. Ta byla
+  pozůstatek doby, kdy variantní sloupce ten „Čas jízdy" nahrazovaly; od 13. 8. stojí vedle sebe,
+  takže to bylo nastavení sloupců schované mimo sloupce - a šířka ani styl variant nešly nastavit.
+  Nová položka se vloží za sloupec „Čas jízdy", přebere jeho zarovnání i styl (dosud si je varianty
+  půjčovaly za běhu) a dostane dosud zadrátovaných 6 mm. **Viditelnost je věrný převod, ne oprava:**
+  zapne se jen tehdy, byl-li viditelný i sloupec „Čas" - varianty se totiž rozvíjely z něj, takže
+  jeho skrytí je tiše vyplo. Zapnout je podle zaškrtávátka by zákazníkovi vysypalo do hotové vývěsky
+  až dvanáct sloupců bez jediného kliknutí. Past samotná je pryč - položka je nadále nezávislá.
 
 ---
 

@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-08-13 (3) - 🎚️ varianty tras se zapínají ve sloupcích, ne zaškrtávátkem (`B80`)
+
+Podnět Jan 13. 8. při přípravě proklikání `B67`: „varianty tras se zapínají mimo sloupce, není to
+atyp?" Je - a byl to pozůstatek. Dokud varianty sloupec „Čas jízdy" **nahrazovaly**, bylo to
+zaškrtávátko přepínačem režimu a do panelu patřilo. Od 13. 8. stojí obě rodiny sloupců vedle sebe,
+takže to bylo **nastavení sloupců schované mimo sloupce**.
+
+Nově je to položka **„Varianty tras"** v seznamu sloupců, s vlastní viditelností, šířkou a stylem.
+Při tisku se rozvine na tolik sloupců, kolik má linka variant; linka s jedinou variantou žádný
+nedostane (to je sloupec „Čas jízdy"). Že se jedna položka rozpadne na víc sloupců, říká dialog
+textem - jinak by uživatel nepochopil, proč mu jedno zaškrtnutí udělalo dvanáct sloupců.
+
+**Tři věci, které to spraví jako vedlejší efekt:**
+
+- **Šířka variant šla nastavit poprvé** - dosud byla zadrátovaná na 6 mm. Platí pro **jeden**
+  sloupec, ne pro celý blok: počet variant je daný daty, takže dělením jedné šířky by linka
+  s dvanácti variantami dostala nečitelné sloupce.
+- **Styl a zarovnání si varianty nesly parazitně ze sloupce „Čas"** - obcházení chybějícího modelu,
+  na které v kódu ukazoval komentář. Teď mají vlastní.
+- **Past: skrytý sloupec „Čas" tiše vypínal varianty** (rozvíjely se z něj), a s nimi i rozpad
+  zastávky na řádky podle stanovišť. Do 12. 8. to nešlo potkat, protože se varianty s „Časem"
+  vylučovaly; od jejich oddělení to byla reálná past. Obojí je teď nezávislé.
+
+⚠️ **Zákazník nepozná nic** - uloženou volbu převede migrace šablony (1.7.0 → 1.8.0) a zapne položku
+jen tam, kde se varianty reálně tiskly, tedy když byl viditelný i sloupec „Čas". Zapnout je podle
+samotného zaškrtávátka by lidem se skrytým „Časem" vysypalo do hotové vývěsky až dvanáct sloupců,
+aniž by na cokoli klikli (rozhodnutí Jan 13. 8.). Zarovnání a styl se ze sloupce „Čas" zkopírují,
+ať se nezmění vzhled.
+
+**Brány:** build 0 chyb, **2093 .NET testů** (895 TD vč. 15 nových na migraci a 11 na rozvinutí
+sloupců) a **101 Caché testů**. Mutace migrace (zapnout podle zaškrtávátka bez ohledu na sloupec
+„Čas") shodí právě ten test, který věrnost převodu hlídá. Formulář prvku ověřen **voláním serveru** -
+a vyplatilo se: nasazovací hook se po editaci `.cls` nespustil a server vracel starou třídu i se
+zrušeným polem; po vynuceném nasazení vrací novou.
+
 ## 2026-08-13 (1) - 🧩 sloupec časů a varianty tras jsou dvě nezávislé věci (`B67` kroky 1+2)
 
 Dohoda z 13. 8. (Jan + kolega): zachovat legacy rozdělení „Časy" × „varianty", ale počítat obojí

@@ -1,3 +1,4 @@
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Tests.Elements;
@@ -85,13 +86,25 @@ public class StopListPlatformDuplicationTests
     [Fact]
     public void BezVariantnichSloupcu_SeNerozpada()
     {
-        // Vypnuté „Všechny varianty tras" = jediný sloupec času (stejný na všech duplikátech)
+        // Skrytý sloupec „Varianty tras" = jediný sloupec času (stejný na všech duplikátech)
         // → rozpad by vypadal jako chyba; režim se pak neaplikuje.
         var stops = new List<ZastavkaData> { Stop("A", false, ["5", "6"], ["1", "2"]) };
-        var vysledek = new StopListElement
-            { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform, ShowAllRouteVariants = false }
-            .ExpandPlatformRows(stops);
-        Assert.Same(stops, vysledek);
+        var el = new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform };
+        el.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = false;
+
+        Assert.Same(stops, el.ExpandPlatformRows(stops));
+    }
+
+    /// <summary>Rozpad na řádky visí na sloupci variant, ne na sloupci „Čas jízdy" - ten si smí
+    /// uživatel skrýt, aniž tím tiše vypne něco jiného (past zrušená v `B80`).</summary>
+    [Fact]
+    public void SkrytySloupecCasu_RozpadNezrusi()
+    {
+        var stops = new List<ZastavkaData> { Stop("A", false, ["5", "6"], ["1", "2"]) };
+        var el = new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform };
+        el.Columns.Single(c => c.Key == StopFields.TravelTime).Visible = false;
+
+        Assert.Equal(2, el.ExpandPlatformRows(stops).Count);
     }
 
     [Fact]

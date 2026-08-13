@@ -38,6 +38,12 @@ public static class StopFields
     /// ani jako sloupec (uživatel s ním nepracuje).</summary>
     public const string Id = "ID";
 
+    /// <summary>Sloupec „Varianty tras" - persistovaná položka seznamu sloupců, která se sama nikdy
+    /// nevykreslí: při renderu se rozvine na tolik sloupců, kolik má linka variant jízdních dob
+    /// (klíče <see cref="TravelTimeVariantPrefix"/>). Šířka a styl položky platí pro **jeden**
+    /// variantní sloupec. Není to pole kolekce ZASTAVKY, proto ho DynamicTable nenabízí.</summary>
+    public const string TravelTimeVariants = "CAS_JIZDY_VARIANTY";
+
     /// <summary>Prefix runtime variantních časových sub-sloupců (<c>"CAS_JIZDY#0"</c>, <c>"CAS_JIZDY#1"</c>, …),
     /// generovaných za běhu při více variantách jízdních dob. Nepersistuje se v default sloupcích.</summary>
     public const string TravelTimeVariantPrefix = "CAS_JIZDY#";

@@ -36,6 +36,7 @@ public class ColumnKeysTests
         Assert.Equal("SLOUPEK", StopFields.Sloupek);
         Assert.Equal("SLOUPEK_POPIS", StopFields.SloupekPopis);
         Assert.Equal("ID", StopFields.Id);
+        Assert.Equal("CAS_JIZDY_VARIANTY", StopFields.TravelTimeVariants);
         Assert.Equal("CAS_JIZDY#", StopFields.TravelTimeVariantPrefix);
     }
 
@@ -48,9 +49,9 @@ public class ColumnKeysTests
     [Fact]
     public void VychoziSloupce_StopList_PouzivajiFieldId()
     {
-        string[] known = [StopFields.TravelTime, StopFields.StopName, StopFields.Zone,
-                          StopFields.Poradi, StopFields.JeAktualni, StopFields.Nastupiste,
-                          StopFields.Sloupek];
+        string[] known = [StopFields.TravelTime, StopFields.TravelTimeVariants, StopFields.StopName,
+                          StopFields.Zone, StopFields.Poradi, StopFields.JeAktualni,
+                          StopFields.Nastupiste, StopFields.Sloupek];
         // SloupekPopis tu schválně NENÍ - do nabídky sloupců nepatří, dokud si ho někdo nevyžádá
         // (rozhodnutí Jan 2026-08-03). Kdyby ho někdo do výchozích sloupců vrátil, tento test spadne
         // a donutí ho to rozhodnutí zopakovat.

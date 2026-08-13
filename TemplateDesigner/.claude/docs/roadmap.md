@@ -127,8 +127,9 @@ Lesní hřbitov"); „T1" je náš náhradní název **bez značky u minut**, ta
 2. Slováci z callu (13. 8.): šlo jim jen o **spárování minuty se sloupcem**, nebo i o **slovní
    vysvětlení trasy**? Podle toho se bod 3 zúží nebo rozšíří.
 
-**Drobnost k tomu:** systémová šablona AD má `showAllRouteVariants: false`, takže na výchozí šabloně
-varianty nikdo neuvidí, dokud je v prvku nezapne - zapnout.
+**Drobnost k tomu:** systémová šablona AD má sloupec **Varianty tras skrytý** (od `B80` se zapíná
+v seznamu sloupců, dřív to bylo zaškrtávátko `showAllRouteVariants`), takže na výchozí šabloně
+varianty nikdo neuvidí, dokud si ho zapne - zapnout.
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).

@@ -25,6 +25,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public static List<StopColumn> GetDefaultColumns() =>
     [
         new() { Key = StopFields.TravelTime,   Header = "Čas",       Width = 8f,  Visible = true },
+        // Rozvine se při renderu na N sloupců dle variant linky; šířka platí pro jeden z nich.
+        new() { Key = StopFields.TravelTimeVariants, Header = "",    Width = VariantColumnWidthMm, Visible = true },
         new() { Key = StopFields.StopName,     Header = "Zastávka",  Width = 50f, Visible = true },
         new() { Key = StopFields.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
         new() { Key = StopFields.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
@@ -150,9 +152,13 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// Ne-číselné značky (např. „&lt;" = projíždí) zůstávají, nejsou to časy.</summary>
     public PassedStopsTimeDisplay PassedStopsTime { get; set; } = PassedStopsTimeDisplay.Hide;
 
-    /// <summary>Multi-varianta časů tras: true = zobrazit všechny varianty (N sloupců dle dat, hlavičky = písmena),
-    /// false = jen výchozí trasa (jeden sloupec „Čas jízdy" = ZakladniCisloTrasy). Default všechny (= legacy).</summary>
-    public bool ShowAllRouteVariants { get; set; } = true;
+    /// <summary>Zobrazují se varianty jízdních dob? Řídí to **viditelnost sloupce**
+    /// <see cref="StopFields.TravelTimeVariants"/>, ne vlastnost prvku - do 8/2026 to bylo
+    /// zaškrtávátko v panelu, což byl pozůstatek doby, kdy varianty sloupec „Čas" nahrazovaly.
+    /// Dokud na nich viselo rozvinutí sloupce „Čas", jeho skrytí varianty tiše vyplo.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool ShowsRouteVariants =>
+        Columns.Any(c => c.Visible && c.Key == StopFields.TravelTimeVariants);
 
     // ═══════════════════════════════════════════
     // Vyloučené atributy
@@ -246,11 +252,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // časů jejich počet mění).
         var columns = GetVisibleColumns();
 
-        // Multi-varianta časů tras: rozvine sloupec „CAS_JIZDY" na N variantních sub-sloupců
-        // (dynamicky dle dat, hlavičky = písmena z VARIANTY_TRAS). < 2 varianty → beze změny (jeden sloupec).
-        var variantHeaders = GetVariantHeaders(ctx.Data);
-        if (ShowAllRouteVariants && variantHeaders.Count >= 2)
-            columns = ExpandTravelTimeColumns(columns, variantHeaders);
+        // Multi-varianta časů tras: položka „Varianty tras" se rozvine na N variantních sloupců
+        // (dynamicky dle dat, hlavičky = písmena z VARIANTY_TRAS). < 2 varianty → položka zmizí,
+        // protože jediná varianta je totéž co sloupec „Čas".
+        columns = ExpandTravelTimeColumns(columns, GetVariantHeaders(ctx.Data));
 
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font. Vodorovně totéž -
         // součet pevných šířek sloupců nad šířku elementu se dřív oříznul (svislé varování
@@ -932,34 +937,28 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return [];
     }
 
-    /// <summary>Rozvine sloupec „CAS_JIZDY" na N variantních sub-sloupců (Key „CAS_JIZDY#i", Header = písmeno,
-    /// pevná šířka). Ostatní sloupce beze změny. Volá se jen při >= 2 variantách.</summary>
+    /// <summary>Rozvine položku „Varianty tras" na N sloupců (Key „CAS_JIZDY#i", Header = písmeno
+    /// varianty). Šířka, zarovnání i styl položky platí pro **každý** z nich - je to N zobrazení
+    /// téhož údaje, takže se nastavují jednou. Ostatní sloupce beze změny.
+    ///
+    /// <para>Méně než dvě varianty = položka se zahodí: jediná varianta je totéž co sloupec „Čas"
+    /// a prázdný sloupec s písmenem by na vývěsce vypadal jako chyba dat.</para></summary>
     internal static List<StopColumn> ExpandTravelTimeColumns(List<StopColumn> cols, List<string> headers)
     {
         var result = new List<StopColumn>(cols.Count + headers.Count);
         foreach (var col in cols)
         {
-            if (col.Key == StopFields.TravelTime)
-            {
-                // Sloupec „Čas jízdy" zůstává a variantní sloupce se řadí ZA něj - jsou to dvě
-                // nezávislé věci, stejně jako ve starém modulu („Časy" vs „Trasa min. 1-15"). Dřív
-                // ho varianty nahradily, takže deklarovaná doba linky ze sestavy zmizela, jakmile
-                // zastávka měla dvě varianty.
-                result.Add(col);
-                // Zarovnání **i per-sloupcový styl** se dědí ze sloupce „Čas" - je to tentýž údaj
-                // rozpadlý na varianty, takže nastavení na jednovariantní lince nesmí u víc variant
-                // tiše zmizet. ⚠️ Dialog sloupců píše zarovnání do `Style.Data.HAlign` (svislé taky),
-                // ne jen do `Alignment` - dědit jen `Alignment` proto nestačilo a uživatel viděl,
-                // že se sloupce nehýbou. Šířka a hlavička se nededí, ty varianty určují samy.
-                for (int i = 0; i < headers.Count; i++)
-                    result.Add(new StopColumn
-                    {
-                        Key = $"{StopFields.TravelTimeVariantPrefix}{i}", Header = headers[i],
-                        Width = VariantColumnWidthMm, Visible = true,
-                        Alignment = col.Alignment, Style = col.Style,
-                    });
-            }
-            else result.Add(col);
+            if (col.Key != StopFields.TravelTimeVariants) { result.Add(col); continue; }
+
+            if (headers.Count < 2) continue;
+
+            for (int i = 0; i < headers.Count; i++)
+                result.Add(new StopColumn
+                {
+                    Key = $"{StopFields.TravelTimeVariantPrefix}{i}", Header = headers[i],
+                    Width = col.Width ?? VariantColumnWidthMm, Visible = true,
+                    Alignment = col.Alignment, Style = col.Style,
+                });
         }
         return result;
     }
@@ -1166,7 +1165,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         bool sl = SloupekJakoStanoviste;
         // Rozpad řádků má smysl jen s variantními časovými sloupci - bez nich by duplikáty nesly
         // identický jediný čas (CasJizdy základní trasy) a vypadaly jako chyba.
-        if (!ShowAllRouteVariants) return stops;
+        if (!ShowsRouteVariants) return stops;
 
         var result = new List<ZastavkaData>(stops.Count);
         foreach (var z in stops)
@@ -1276,8 +1275,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             Get = () => PartGap, Set = v => PartGap = v,
             Min = 0, Max = 50, Unit = "mm", Format = "0.##"
         },
-        new BoolPropertyDescriptor  { Label = "Všechny varianty tras", Group = "Zastávky", Get = () => ShowAllRouteVariants, Set = v => ShowAllRouteVariants = v },
-
         GetDataRowHeightDescriptor(),
 
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
@@ -1434,7 +1431,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             CurrentStopUnderline    = CurrentStopUnderline,
             PassedStopsForeColor    = PassedStopsForeColor,
             PassedStopsTime         = PassedStopsTime,
-            ShowAllRouteVariants    = ShowAllRouteVariants,
             ExcludedAttributeIds    = [.. ExcludedAttributeIds],
             ShowHeader              = ShowHeader,
             CurrentStopBold         = CurrentStopBold,

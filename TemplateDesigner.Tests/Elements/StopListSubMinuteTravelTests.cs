@@ -194,34 +194,8 @@ public class StopListSubMinuteTravelTests
         Assert.Equal(vychozi, Odsazeni(el, trasa, 1), 3);
     }
 
-    // ── Variantní sloupce dědí zarovnání ze sloupce „Čas" ─────────────────────
-
-    /// <summary>Rozpad na varianty vytváří sloupce znovu - zarovnání ze „Času" se musí přenést,
-    /// jinak se uživatelovo nastavení u linky s víc variantami tras tiše zahodí.</summary>
-    [Fact]
-    public void VariantniSloupce_DediZarovnaniZeSloupceCas()
-    {
-        var styl = new ColumnVisualStyle
-        {
-            Data = new TextStyle { HAlign = TextHorizontalAlignment.Right, VAlign = TextVerticalAlignment.Bottom },
-        };
-        List<StopColumn> puvodni =
-        [
-            new() { Key = StopFields.TravelTime, Alignment = TextHorizontalAlignment.Right, Style = styl },
-            new() { Key = StopFields.StopName, Alignment = TextHorizontalAlignment.Left },
-        ];
-
-        var rozvinute = StopListElement.ExpandTravelTimeColumns(puvodni, ["A", "B"]);
-
-        var casove = rozvinute.Where(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)).ToList();
-        Assert.Equal(2, casove.Count);
-        Assert.All(casove, c => Assert.Equal(TextHorizontalAlignment.Right, c.Alignment));
-        // Dialog sloupců píše zarovnání (vodorovné i svislé) do stylu, ne do Alignment - bez dědění
-        // stylu se nastavení u linky s víc variantami tiše zahodilo.
-        Assert.All(casove, c => Assert.Equal(TextHorizontalAlignment.Right, c.Style?.Data?.HAlign));
-        Assert.All(casove, c => Assert.Equal(TextVerticalAlignment.Bottom, c.Style?.Data?.VAlign));
-        Assert.Equal(TextHorizontalAlignment.Left, rozvinute.Single(c => c.Key == StopFields.StopName).Alignment);
-    }
+    // Zarovnání a styl variantních sloupců se od `B80` berou z položky „Varianty tras", ne ze
+    // sloupce „Čas" - kontrakt drží `StopListVariantColumnsTests`, tady byl jen shodou okolností.
 
     [Fact]
     public void Klonovani_NeseVolbuDal()

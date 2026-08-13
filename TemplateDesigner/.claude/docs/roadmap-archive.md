@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-13 ✅ - `B80`: varianty tras jsou položka seznamu sloupců
+
+Detail → changelog 2026-08-13 (3). Podnět Jan při přípravě proklikání `B67`: zapínání variant
+zaškrtávátkem v panelu byl atyp. Byl to pozůstatek doby, kdy varianty sloupec „Čas jízdy"
+**nahrazovaly**; od 13. 8. stojí vedle sebe, takže šlo o nastavení sloupců schované mimo sloupce.
+Jako položka seznamu má poprvé nastavitelnou šířku (dosud zadrátovaných 6 mm) a vlastní styl místo
+parazitního dědění ze sloupce „Čas".
+
+⚠️ **Vedlejší past, kterou to ruší:** varianty se rozvíjely ZE sloupce „Čas", takže jeho skrytí je
+tiše vyplo - a s nimi i rozpad zastávky na řádky podle stanovišť. Do 12. 8. se to nedalo potkat
+(vylučovaly se), po jejich oddělení to byla reálná past.
+
+⚠️ **Zákazník nepozná nic** - migrace 1.7.0 → 1.8.0 zapne položku jen tam, kde se varianty reálně
+tiskly (tedy když byl viditelný i sloupec „Čas"), a zkopíruje na ni jeho zarovnání i styl.
+Rozhodnutí Jan 13. 8.: věrný převod vzhledu má přednost před zpětnou opravou pasti.
+
+⚠️ **Nasazovací hook se po editaci `.cls` nespustil** a server vracel starou třídu se zrušeným polem.
+Chytlo to jen ověření **voláním** (`cache-api.md`) - čtení zdroje v repu by tvrdilo, že je hotovo.
+
 ## 2026-08-12 ✅ - `B69`: texty značek se řídí jazykem šablony
 
 Detail → changelog 2026-08-12 (8). TRANSDEV #12843: slovenský zákazník měl správné piktogramy, ale

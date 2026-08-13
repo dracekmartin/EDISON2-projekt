@@ -556,12 +556,15 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   automatické volby: Automaticky (dle linky) / Pracovní-Sobota-Neděle+svátky /
   Pracovní-víkend / Prázdniny (mimo+o prázdninách)-víkend / Prázdniny (mimo+o prázdninách)
   -Sobota-Neděle+svátky.
-- **Varianty tras** (přepínač „Všechny varianty tras" na prvku Tabulka zastávek) - když spoje
-  jedou z dané zastávky různými trasami, zobrazí se pro každou trasu vlastní časový sloupec.
-  Varianta = jedna trasa (sled obsluhovaných zastávek); v jejím sloupci je **nejdelší jízdní doba
-  přes spoje té varianty** (bezpečný údaj „dojede nejpozději za…"). Počet sloupců je dynamický -
-  tolik, kolik je skutečně tras v datech. Vypnuto = jeden sloupec základní trasy. Řazení a písmenné
-  označení variant se nastavuje parametry sestavy (viz níže).
+- **Varianty tras** (sloupec „Varianty tras" na prvku Tabulka zastávek - zapíná se v jeho nastavení
+  na záložce Sloupce) - když spoje jedou z dané zastávky různými trasami, dostane každá trasa
+  vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek); v jejím sloupci je
+  **průběh jedné skutečné trasy** - té s delší jízdní dobou, takže údaj odpovídá spoji, který
+  opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže **jedna položka
+  v seznamu sloupců se v tisku rozpadne na víc sloupců**; šířka a styl, které u ní nastavíte, platí
+  pro každý z nich. Linka s jedinou variantou žádný nedostane - to je sloupec „Čas jízdy", který
+  stojí vedle variant samostatně. Řazení a písmenné označení variant se nastavuje parametry sestavy
+  (viz níže).
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
