@@ -462,11 +462,28 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     }
 
     // pořadí sloupců variant: dle četnosti ze zastávky (KOVED default - nejvíc spojů první,
-    // shoda četností → pořadí výskytu) / „Stabilní" = pořadí výskytu spojů
+    // shoda četností → pořadí výskytu) / „Stabilní" = pořadí výskytu spojů / dle délky jízdy
     k displayVar
     s pocetSloupcu = 0
     i razeniVar = "Stabilní (pořadí spojů)" {
         f viY=1:1:poradiVar { s pocetSloupcu = pocetSloupcu + 1  s displayVar(pocetSloupcu) = viY }
+    } elseif razeniVar = "Dle délky jízdy (nejkratší první)" {
+        // Nejrychlejší varianta stojí hned vedle sloupce „Čas", nejpomalejší vpravo - cestující
+        // pak čte sloupce jako škálu, ne jako nahodilé pořadí. Délka = kumulativní čas nejdál
+        // od vývěskové zastávky, tedy táž hodnota, kterou se vybírá průběh varianty.
+        // Shoda délek → pořadí výskytu, ať výstup nezávisí na pořadí průchodu.
+        k radArr
+        f viY=1:1:poradiVar s radArr(+$g(variantDelka(viY)),viY) = ""
+        s dKey = ""
+        f {
+            s dKey = $o(radArr(dKey))  q:dKey=""
+            s viK = ""
+            f {
+                s viK = $o(radArr(dKey,viK))  q:viK=""
+                s pocetSloupcu = pocetSloupcu + 1
+                s displayVar(pocetSloupcu) = viK
+            }
+        }
     } else {
         k radArr
         f viY=1:1:poradiVar s radArr(-$g(variantPocet(viY)),viY) = ""
@@ -3167,10 +3184,13 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRazV.type         = "enum"
     s pRazV.group        = "Seznam zastávek"
     s pRazV.defaultValue = "Dle četnosti ze zastávky"
-    s pRazV.description  = "Pořadí variantních časových sloupců v seznamu zastávek: nejčastější varianta z dané zastávky první, nebo stabilní pořadí dle spojů (stejné napříč stránkami)."
+    s pRazV.description  = "Pořadí variantních časových sloupců v seznamu zastávek: nejčastější varianta z dané zastávky první, stabilní pořadí dle spojů (stejné napříč stránkami), nebo od nejrychlejší varianty k nejpomalejší."
     s optsRV = ##class(%DynamicArray).%New()
     d optsRV.%Push("Dle četnosti ze zastávky")
     d optsRV.%Push("Stabilní (pořadí spojů)")
+    // Popisky voleb jsou po vydání ZAMČENÉ (persistuje se zobrazovaný text), proto „nejkratší první"
+    // rovnou v popisku - směr řazení už nepůjde upřesnit přejmenováním.
+    d optsRV.%Push("Dle délky jízdy (nejkratší první)")
     s pRazV.options = optsRV
     d arr.%Push(pRazV)
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-13 (6) - ↕️ třetí volba řazení variant: od nejrychlejší k nejpomalejší (`B67` krok 4)
+
+K dosavadním dvěma (dle četnosti ze zastávky, stabilní dle spojů) přibylo **„Dle délky jízdy
+(nejkratší první)"**. Nejrychlejší varianta pak stojí hned vedle sloupce „Čas" a sloupce se čtou
+jako škála, ne jako nahodilé pořadí. Délka = kumulativní čas nejdál od vývěskové zastávky, tedy
+**táž hodnota, kterou se vybírá průběh varianty** - řazení a výběr tak nemůžou tvrdit každý něco
+jiného. Shoda délek → pořadí výskytu, ať výstup nezávisí na pořadí průchodu daty.
+
+Směr řazení je **v popisku volby**, ne jen v nápovědě: popisky voleb jsou po vydání zamčené
+(persistuje se zobrazovaný text), takže „nejkratší první" už nepůjde doplnit přejmenováním.
+
+**Brány:** **103 Caché testů** (1 nový: řazení nesmí ubrat ani přidat stránku, odjezd nebo sloupec -
+je to volba zobrazení, ne filtr - a sloupce musí být opravdu seřazené podle dojezdu). Mutace
+(seřadit obráceně) test shodí a řekne konkrétní stránku i čísla. Nabídka voleb ověřena **voláním**
+nasazené třídy nad druhou firmou.
+
 ## 2026-08-13 (5) - 🔤 značka u minuty i vysvětlení trasy naráz (`B67` krok 3)
 
 Slovenský zákazník z callu chtěl u minuty poznat, **kterým sloupcem** spoj jede. Dosud to šlo jen

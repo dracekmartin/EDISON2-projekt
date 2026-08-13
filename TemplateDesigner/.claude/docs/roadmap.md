@@ -66,43 +66,33 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B67** | **Jemnější zobrazení variant jízdních dob** (TRANSDEV #12843 bod 4 = původní `TR7`). ✅ Hotové 12. 8.: nestabilní číslování (27. 7.), **duplicitní sloupce** se stejnými čísly a **volba trasy pro jediný sloupec** - obojí byla odchylka od starého modulu. ✅ 13. 8. hotové **kroky 1+2** dohodnuté podoby (sloupec Času se od variant oddělil a nese tři stavy; obě rodiny sloupců mají jedno pravidlo výběru průběhu - changelog 2026-08-13). Zbývají **kroky 3+4** podle sekce pod tabulkou: značka u minut + vysvětlení u každé varianty, řazení variant podle délky jízdy. | 2× S | poslat hotové Šimkovi a nechat posoudit, jestli ruční výběr variant ještě chce |
+| **B67** | **Jemnější zobrazení variant jízdních dob** (TRANSDEV #12843 bod 4 = původní `TR7`). ✅ **Všechny čtyři kroky dohodnuté podoby hotové 13. 8.** (changelog 2026-08-13, body 1-6): oddělení sloupce Času od variant, tři stavy `CAS_JIZDY`, jedno pravidlo výběru průběhu, značka u minuty vedle rozdílové poznámky, třetí volba řazení. **Zbývá jen posouzení zákazníkem** - kód je hotový. | - | poslat hotové Šimkovi a nechat posoudit, jestli ruční výběr variant ještě chce; k tomu odpovědi na dvě otázky níže |
 
-### `B67` - dohodnutá podoba dokončení (Jan + kolega, 13. 8.)
+### `B67` - co po dokončení kódu zbývá
 
-✅ **Kroky 1 a 2 jsou hotové 13. 8.** (oddělení sloupce Času od variant, tři stavy `CAS_JIZDY`,
-jedno pravidlo výběru průběhu pro obě rodiny) - detail v changelogu 2026-08-13, ať se sem nepíše
-dvakrát. Commity `99fb735`, `ec15b77`, `28f80d8`, nepushnuté.
+**Kód je hotový** (detail v changelogu 2026-08-13, body 1-6). Zbývá **poctivé proklikání kompletu
+proti starému modulu a proti všem požadavkům** - rozhodnutí Jan 13. 8.: dělat až na hotovém celku,
+ne po kouskách. Ověřeno očima zatím: sloupec Času vedle variant, „<" (Nitra 12 + Nitra 6), nula
+u jízdy pod minutu, převod staré šablony.
 
-**Na čem se dá pokračovat** (stav k 13. 8., ať to nikdo nemusí dohledávat znovu):
+👁 **Neproklikáno**: značky variant u minut + legenda (krok 3), třetí volba řazení (krok 4), rozpad
+zastávky na řádky podle stanovišť, MHD vývěska (DPCB/DPKV - kvůli nule u projetých zastávek),
+kontrolní vzorky **Nitra 2** a **CB_CSADAD 0365001** (nemá se změnit nic). Firma se přepíná dev
+přepínačem v aplikaci.
 
-- **Testovací sada linek je hotová a typová** - `ZastavkoveJrAdSadaTest.Sada` (deset linek ze čtyř firem,
-  u každé zapsané značky typů, které pokrývá; `Jadro` = pět linek pro drahé kontroly). Kandidáty hledá
-  sonda `AdSloupekProbe`: `NajdiVariantniPripady` (hrubý filtr přes firmu), `ProfilyLinek` (co ve výstupu
-  linky reálně vzniká), `PripadyLinky` (jedna linka + konkrétní zastávka k proklikání). **Sondy nemazat**,
-  u další změny variantních sloupců se budou hledat linky znovu.
-- **Brána pro krok 3 už stojí** - `TestPismenaVariantOdkazujiNaExistujiciSloupec` hlídá, že každá značka
-  u minuty odkazuje na existující sloupec a že přepnutí režimu nemění počty stránek ani odjezdů. Krok 3
-  se tedy dá psát rovnou proti ní.
-- 👁 **Neověřené očima**: sloupec Času vedle variant a „<" v něm nikdo neviděl na vývěsce. Proklikat
-  v tomhle pořadí: **GW BUS 0320118** (vývěska Ševětín, nám. - až 10 sloupců, „<" u rozc. Dubové Mlýny),
-  **Nitra 12** (Gorazdova, „<" u ZŠ Krškany), **CB_CSADAD 0330530** (Kaplice, aut. nádr., až 12 sloupců),
-  **Nitra 9** (kola + zastávka se dvěma stanovišti - základní čas musí být jen na prvním řádku),
-  **Nitra 6** (jednovariantní linka a přesto „<"), **Nitra 2** + **CB_CSADAD 0365001** (kontrolní vzorky,
-  nemá se změnit nic). Firma se přepíná dev přepínačem v aplikaci.
-- ⚠️ **Caché sada trvá ~1 min 45 s** (dřív ~40 s) - každý test je průchod `GetData` nad deseti linkami.
-  Zkrátit se dá **sloučením průchodů** do jednoho testu (jeden load, víc kontrol), ne zúžením sady. Vel. S,
-  vzít jen když to začne vadit.
+⚠️ **Značky variant NEJSOU parita** a nesmí se tak tvrdit: legacy je bere z nastavení u linky
+(`^JRL(sku,lin,"PATCH","mhd","par",2)`), které **nemá vyplněné ani jedna z 325 prověřených linek**,
+takže značky netiskne vůbec; dřívější tvrzení „legacy má v kódu default UVWXYZ" bylo mylné. Naše
+řada jede od „A" stejně jako písmena rozdílových poznámek, takže se **na minutě můžou potkat dvě
+stejná písmena v jiném významu** - vědomý kompromis (rozhodnutí Jan 13. 8.), řeší se, až na to někdo
+narazí. Je možné, že se ta volba časem přestěhuje z nastavení linky do návrháře.
 
-✅ **Krok 3 hotový 13. 8.** - značka u minuty i vysvětlení trasy běží vedle sebe, písmena zapnutá
-jako výchozí (changelog 2026-08-13 (5)). ⚠️ **Není to parita** a nesmí se tak tvrdit: legacy bere
-značky z nastavení u linky, které **nemá vyplněné ani jedna z 325 prověřených linek** - dřívější
-tvrzení „legacy má v kódu default UVWXYZ" bylo mylné. Obě řady písmen jedou od „A", takže se můžou
-na minutě potkat; vědomý kompromis (rozhodnutí Jan 13. 8.).
-
-Zbývá:
-
-**4. Řazení variant podle délky jízdy** (S) = třetí volba k dnešním dvěma.
+**Zázemí pro další změny variant** (ať se nehledá znovu): typová sada `ZastavkoveJrAdSadaTest.Sada`
+(deset linek ze čtyř firem, u každé zapsané typy, které pokrývá; `Jadro` = pět linek pro drahé
+kontroly) a sondy v `AdSloupekProbe` - `NajdiVariantniPripady`, `ProfilyLinek`, `PripadyLinky`
+(linka → konkrétní zastávka k proklikání), `ZnakySloupcu` (kdo má vyplněné znaky sloupců u linky).
+**Sondy nemazat.** ⚠️ Caché sada trvá ~1 min 45 s; zkrátit jde **sloučením průchodů** do jednoho
+testu, ne zúžením sady (vel. S, vzít, až začne vadit).
 
 **Až na vyžádání** (výpočet i data na to budou připravené, není to nová featura):
 

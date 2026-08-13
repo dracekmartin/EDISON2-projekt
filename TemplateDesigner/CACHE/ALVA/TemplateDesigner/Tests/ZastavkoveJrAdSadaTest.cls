@@ -325,6 +325,69 @@ Method TestPismenaVariantNevypinajiRozdilovePoznamky()
 	do $$$AssertEquals($get(p("legenda_rozdil-trasy")) > 0, 1, "v režimu písmen zmizelo vysvětlení rozdílu trasy z legendy")
 }
 
+/// Řazení variant je volba ZOBRAZENÍ, ne filtr: přeskládá sloupce, ale nesmí ubrat ani přidat
+/// stránku, odjezd nebo sloupec. „Dle délky jízdy" navíc musí sloupce opravdu seřadit - kdyby se
+/// jen tvářilo, že řadí, nikdo by to nepoznal (pořadí variant je na první pohled nahodilé).
+Method TestRazeniVariantDleDelkyJizdy()
+{
+	do ..SetupSys(.sys)
+	set db = "SKNI_MHDNITRA", sku = 1, lin = "0000012"
+	kill parametry
+	if '..NactiLinku(.sys, db, sku, lin, .parametry) {
+		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - přeskočeno")
+		quit
+	}
+	do ..ZmerProfil(.pVychozi)
+	set odjezduVychozi = ..PocetOdjezdu()
+
+	kill parametry
+	set parametry("RAZENI_VARIANT") = "Dle délky jízdy (nejkratší první)"
+	do ..NactiLinku(.sys, db, sku, lin, .parametry)
+	do ..ZmerProfil(.pDelka)
+	set odjezduDelka = ..PocetOdjezdu()
+
+	do $$$AssertEquals($get(pVychozi("stranek")), $get(pDelka("stranek")), "řazení variant změnilo počet stránek - je to volba zobrazení, ne filtr")
+	do $$$AssertEquals(odjezduVychozi, odjezduDelka, "řazení variant změnilo počet odjezdů")
+	do $$$AssertEquals($get(pVychozi("maxSloupcu")), $get(pDelka("maxSloupcu")), "řazení variant změnilo počet sloupců")
+
+	// Sloupce musí jít od nejkratší jízdy k nejdelší. Poslední čas ve sloupci je jeho dojezd,
+	// takže stačí porovnat poslední vyplněnou hodnotu sousedních sloupců.
+	set spatne = "", stranekSVariantami = 0, key = ""
+	for  {
+		set key = $order(^||ML("OUT", key)) quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.ZASTAVKY
+		continue:'$isobject(zast)
+		set sloupcu = 0
+		if $isobject(page.values.%Get("VARIANTY_TRAS")) set sloupcu = page.values.%Get("VARIANTY_TRAS").%Size()
+		continue:sloupcu<2
+		set stranekSVariantami = stranekSVariantami + 1
+		kill dojezd
+		set it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			set tm = radek.%Get("TRASA_MIN")
+			continue:'$isobject(tm)
+			for ti = 0:1:tm.%Size()-1 {
+				set v = tm.%Get(ti)
+				continue:'$isvalidnum(v)
+				set dojezd(ti) = v
+			}
+		}
+		// ⚠️ Za podmínkou příkazu nesmí být mezery - `dojezd(ti - 1)` ukončí argument u první mezery
+		// a třída se nepřeloží (chyba „Missing right parenthesis").
+		for ti = 1:1:sloupcu-1 {
+			set predchozi = ti-1
+			continue:'$data(dojezd(ti))
+			continue:'$data(dojezd(predchozi))
+			continue:dojezd(ti)'<dojezd(predchozi)
+			if spatne = "" set spatne = "stránka "_key_" ("_page.values.%Get("POPIS_ZASTAVKA")_"): sloupec "_(ti+1)_" dojíždí za "_dojezd(ti)_", předchozí až za "_dojezd(predchozi)
+		}
+	}
+	do $$$AssertEquals(stranekSVariantami > 0, 1, "linka nemá ani jednu stránku s víc variantami - test by neověřil nic")
+	do $$$AssertEquals(spatne, "", "sloupce nejsou seřazené od nejkratší jízdy: "_spatne)
+}
+
 /// Počet odjezdů ve všech stránkách právě načteného výstupu.
 ClassMethod PocetOdjezdu() As %Integer
 {
