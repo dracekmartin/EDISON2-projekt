@@ -231,12 +231,26 @@ ze 116); dnes to drží `JeVUsekuVariant` + invariantní test `TestZadneDuplicit
 `^JRL(sku,lin,"PATCH","mhd","par",1)` (legacy `arrprtlin("dta",73)`, popisek „mhd odjezdník -
 automaticky generovat časové průběhy tras") rozhoduje mezi dvěma zdroji: **vypnuto** = ručně zadané
 minuty u trasy (`^JRL(sku,lin,"J",poradi)`, 8. `#`-segment ve tvaru `Tam:Zpět`, přes `GetMin` na
-rozdíly proti vývěsce), **zapnuto** = spočítaný průběh, přičemž legacy bere **nejdelší** (`ptm`
-průběhy se řadí od největšího, `JRapiLinPrtMhd1.mac:330`; 2.-4. jdou do „Pracovní 3/4/5").
-Ověřeno na datech: MHD Nitra má zapnuto (minuty vyplněné má, ale legacy je ignoruje), CB_CSADAD
-vypnuto s prázdnými minutami → ve starém tiskne prázdno. **My přepínač ignorujeme a vždy počítáme**;
-trasu vybíráme podle pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji.
-Ručně zadané minuty **nečteme vůbec** - featura na vyžádání.
+rozdíly proti vývěsce; **jediný sloupec**), **zapnuto** = spočítané průběhy, a to **až čtyři sloupce**
+(`JRapiExp10.mac:383-420` naplní `dta` 3/9/11/12 a ruční hodnotu zahodí).
+Jak vzniká pořadí: pro **každý spoj** se od tištěné zastávky do konce směru poskládá průběh
+kumulativních minut proti ní („<" = projíždí), shodné průběhy se sloučí a zbytek se seřadí **podle
+délky textového zápisu** průběhu (`$l(prutm)`, `JRapiLinPrtMhd1.mac:322-337`) - první sloupec je tedy
+ten, který **dosáhne nejdál**, ne „nejdelší čas" ani „nejvíc spojů". Kolik z těch čtyř se dostane na
+papír, drží tisková předloha (neověřeno).
+⚠️ **„Časy" a variantní „minutové sloupce" jsou v legacy dvě NEZÁVISLÉ rodiny**: Časy slučují shodné
+**časy** (1-4 sloupce), variantní sloupce shodný **sled zastávek** (až 15, značka z nastavení linky)
+a plní se **bez ohledu na přepínač**. Naše svázání „varianty nahradí sloupec Času" je vlastní
+konstrukce, ne parita.
+⚠️ **Přepínač je per LINKA, ne per firma, a Nitra ho má na obojí** (měřeno 13. 8., dřív tu stálo
+paušální „Nitra má zapnuto"): linka `0000001` = zapnuto, linka `0000002` = vypnuto a ruční minuty
+vyplněné (`J`-věta segment 8 = `0:34`) → **na téhle lince starý modul tiskne její ruční minuty, ne
+spočítané**. České firmy naopak mají vypnuto s **prázdnými** minutami (vzorek `CB_CSADAD`, `ZL_KOVED`
+0822995, `CB_GWBUS` 0320113 - segment 8 = `:`) → ve starém tiskne prázdno, náš spočítaný sloupec je
+tam tedy featura, ne odchylka. **My přepínač ignorujeme a vždy počítáme**; trasu vybíráme podle
+pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji. Ručně zadané minuty
+**nečteme vůbec** - u linek v ručním režimu s vyplněnými minutami (Nitra) proto tiskneme **jiná
+čísla** než jejich starý výtisk. Vzorek jsou 4 linky, ne plošné měření.
 
 ⚠️ **Obsah sloupce se od legacy pořád liší** (vědomě, rozhodnutí odložené): legacy si nechá **jeden
 skutečný průběh** (ten s delším časem na konci, `necham prubeh s delsim casem`), my bereme maximum

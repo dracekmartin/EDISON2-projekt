@@ -10,8 +10,9 @@
 > (přepínač odstraněn - viz changelog 2026-08-12).
 >
 > **▶ Zastávkový JŘ má jedinou otevřenou věc a NENÍ blokovaná** - `B67` se 12. 8. rozpadl: hlavní
-> stížnost (duplicitní sloupce variant) byla naše odchylka od starého modulu a je opravená, zbylé tři
-> body jdou udělat bez cizí součinnosti; blokovaná zůstala jen ruční tabulka, která na nás není. `B39` (vlastní sloupce vývěsky, #13045b) je hotová oběma
+> stížnost (duplicitní sloupce variant) byla naše odchylka od starého modulu a je opravená. Zbytek má
+> od 13. 8. **dohodnutou podobu** (čtyři kroky velikosti S, sekce pod tabulkou) a jde udělat bez cizí
+> součinnosti; blokovaná zůstala jen ruční tabulka variant, která na nás není. `B39` (vlastní sloupce vývěsky, #13045b) je hotová oběma
 > etapami 10. 8., takže **fronta KOVED je dojetá**. **Další krok si vyber:** **Fáze B** (tabulkové
 > elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
 > (**B10** + **B13**) jako dedikovaný slot.
@@ -64,7 +65,68 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B67** | **Jemnější zobrazení variant jízdních dob** (TRANSDEV #12843 bod 4 = původní `TR7`). ✅ Hotové 12. 8.: nestabilní číslování (27. 7.), **duplicitní sloupce** se stejnými čísly a **volba trasy pro jediný sloupec** - obojí byla odchylka od starého modulu (varianty se srovnávaly přes celý směr; sloupec se bral podle nejčetnějšího spoje místo pokrytí). Zbývá: **(a)** varianty přestanou přepisovat sloupec „Čas jízdy" a budou vedle něj jako ve starém (Časy + Trasa min. 1-15) - **chce migraci šablon** (dnešní mají variantní pod-sloupce pod klíči `CAS_JIZDY#1..N`) a při tom dá smysl poslat `CAS_JIZDY` se třemi stavy jako `TRASA_MIN`, aby projížděná zastávka měla „<" i v tom jednom sloupci (dnes prázdno, legacy tam „<" má; ve variantních sloupcích to funguje), **(b)** řazení variant podle délky jízdy (třetí volba k dnešním dvěma), **(c)** hlavičky bez písmene jsou „T1"-„T5" a nikde se nevysvětlují - varianta bez rozdílové poznámky je pro uživatele nečitelná. **Rozhodnuto, neotvírat:** výběr trasy pro jeden sloupec NENÍ uživatelská volba (starý modul bere nejdelší, my pokrytí - je to pravidlo, ne nastavení); ⛔ mimo nás: ruční zaškrtávací tabulka variant v lince a čtení ručně zadaných minut u trasy (nikdo nepoptal, české firmy je mají prázdné, Nitra je má ale legacy je v jejím režimu ignoruje). | M (a) + S (b, c) | poslat hotové Šimkovi a nechat posoudit, jestli ruční výběr ještě chce |
+| **B67** | **Jemnější zobrazení variant jízdních dob** (TRANSDEV #12843 bod 4 = původní `TR7`). ✅ Hotové 12. 8.: nestabilní číslování (27. 7.), **duplicitní sloupce** se stejnými čísly a **volba trasy pro jediný sloupec** - obojí byla odchylka od starého modulu. Zbytek se dokončí podle **dohodnuté podoby pod tabulkou** (Jan + kolega 13. 8.): rozdělit Časy × varianty, jedno pravidlo výběru průběhu, značka + vysvětlení u každé varianty, řazení podle délky jízdy. | 4× S | poslat hotové Šimkovi a nechat posoudit, jestli ruční výběr variant ještě chce |
+
+### `B67` - dohodnutá podoba dokončení (Jan + kolega, 13. 8.)
+
+**1. Rozdělit „Časy" × „varianty" na dvě nezávislé věci** (S). Dnešní svázání („varianty nahradí
+sloupec Času") je naše konstrukce, ne parita: legacy má dvě rodiny, které se plní **bez ohledu na
+přepínač u linky** - „Časy" slučují shodné **časy** (1-4 sloupce), „Trasa min. 1-15" shodný **sled
+zastávek** (`JRapiExp10.mac:383-420`).
+
+- „Čas jízdy" = vlastní sloupec s vlastní viditelností, zůstává i když se varianty tisknou.
+- Variantní sloupce vedle něj, generované při ≥ 2 variantách. **Migrace šablon není potřeba** -
+  `CAS_JIZDY#n` se nikde neukládá, vzniká až při kreslení (ověřeno 13. 8.).
+- `CAS_JIZDY` poslat se třemi stavy jako `TRASA_MIN`, aby projížděná zastávka měla „<" i v jednom
+  sloupci (dnes prázdno, legacy „<" má; ve variantních sloupcích to funguje).
+
+**2. Jedno pravidlo výběru průběhu pro obě rodiny** (S): vybere se **skutečný průběh jednoho spoje**,
+nikdy se nemíchá; kritérium **dosah** (počet obsluhovaných zastávek od vývěskové zastávky dál), při
+shodě **delší čas**. „Časy" = takový průběh přes všechny spoje zastávky, varianta = takový průběh
+v rámci svého sledu zastávek.
+
+- Ruší dvě dnešní odchylky: variantní sloupec dnes nese **maximum per zastávku** (kombinace, kterou
+  nejede žádný spoj - legacy si nechá reálný průběh, „nechám průběh s delším časem"), a hlavní sloupec
+  se vybírá podle pokrytí **trasy**, ne podle průběhu spoje (trasa, kterou nikdo nejede, tak nemůže
+  vyhrát).
+- Tiebreak „delší čas" je **naše rozhodnutí, ne parita**: legacy při shodné délce zápisu průběhu
+  rozhoduje pořadím zpracování, tedy nahodile (`JRapiLinPrtMhd1.mac:322-337`). Pro cestujícího je
+  bezpečnější pozdější číslo („nejpozději za X min"). Napsat to takhle i do dokumentace.
+- **Rozhodnuto, neotvírat:** výběr průběhu pro jeden sloupec NENÍ uživatelská volba, je to pravidlo.
+
+**3. Značka u minut pro každou variantu + vysvětlení trasy v legendě** (S) = bod (c). Značky brát ze
+**samostatné znakové řady**, ne z abecedy rozdílových poznámek (legacy má v kódu default „UVWXYZ", tedy
+od konce abecedy), a **rozdílové poznámky nechat běžet** - v legacy jsou obě věci nezávislé
+(`JRapiLinPrtMhd1.mac:298` a `:522-530`), takže značka řekne „který sloupec" a poznámka „kudy".
+Tím zmizí „T1" bez značky i dnešní vypínání poznámek v režimu písmen.
+
+**Doloženo** (Jan 13. 8., CB_CSADAD, zastávka Žižkova): vedle sebe sloupce „B" a „T1". „B" si hlavička
+vypůjčila od rozdílové poznámky, takže má značku u minut i vysvětlení v legendě („neobsluhuje zast.
+Lesní hřbitov"); „T1" je náš náhradní název **bez značky u minut**, takže se čte vylučovací metodou
+„minuta bez B jede T1".
+
+**4. Řazení variant podle délky jízdy** (S) = třetí volba k dnešním dvěma.
+
+**Až na vyžádání** (výpočet i data na to budou připravené, není to nová featura):
+
+- **2. až 4. sloupec Času** - legacy je v automatickém režimu má. Reálný dopad má na lince, kde tentýž
+  sled zastávek nese dva časové profily: Nitra `0000002` směr Zpět - trasy 2/4/6 končí na 35 min,
+  trasa 3 má na zastávce 15 pobyt `19/5` a končí na 40. Ten pomalejší se dnes nedostane nikam, protože
+  variantní sloupec ho nepokryje (sled zastávek je shodný).
+- **Čtení ručně zadaných minut** u linek s vypnutým přepínačem (`^JRL(sku,lin,"J",poradi)` segment 8,
+  `Tam:Zpět`, kumulativně od začátku směru). Nitra je udržuje (oba směry), české firmy mají prázdné →
+  starý modul jim tiskne prázdno, takže náš spočítaný sloupec je tam přínos, ne odchylka.
+
+**Otevřené dotazy na zákazníka:**
+
+1. Chce po deduplikaci ještě **ruční zaškrtávací tabulku variant**? Pokud ano, potřebujeme vědět, co
+   se má stát se spoji odškrtnuté varianty - **každý spoj, co na zastávce staví, musí patřit do
+   některého zobrazeného sloupce**, jinak značka u minuty odkazuje na variantu, která na vývěsce není.
+2. Slováci z callu (13. 8.): šlo jim jen o **spárování minuty se sloupcem**, nebo i o **slovní
+   vysvětlení trasy**? Podle toho se bod 3 zúží nebo rozšíří.
+
+**Drobnost k tomu:** systémová šablona AD má `showAllRouteVariants: false`, takže na výchozí šabloně
+varianty nikdo neuvidí, dokud je v prvku nezapne - zapnout.
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
