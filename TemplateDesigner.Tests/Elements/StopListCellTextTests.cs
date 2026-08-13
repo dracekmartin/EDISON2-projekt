@@ -159,7 +159,7 @@ public class StopListCellTextTests
     private static ZastavkaData StopSCasy(int casJizdy, params string[] varianty) => new()
     {
         Popis = "Zastávka",
-        CasJizdy = casJizdy,
+        CasJizdy = casJizdy.ToString(),
         TrasaMin = [.. varianty],
     };
 
@@ -203,5 +203,41 @@ public class StopListCellTextTests
         var el = new StopListElement { PassedStopsTime = PassedStopsTimeDisplay.Hide };
         Assert.Equal("", el.GetCellText(StopSCasy(9), StopFields.TravelTime, isPassed: true));
         Assert.Equal("9", el.GetCellText(StopSCasy(9), StopFields.TravelTime, isPassed: false));
+    }
+
+    // ── Tři stavy základního sloupce časů (B67) ───────────────────────────────
+    // Sloupec „Čas jízdy" nese totéž co variantní: číslo, „<" (základní trasa projíždí bez stání)
+    // nebo prázdno (mimo základní trasu). Dřív bylo prázdno i pro projíždění, takže z jediného
+    // sloupce nebylo poznat, že tudy spoj vůbec jede.
+
+    private static string ZakladniCas(string raw) =>
+        new StopListElement().GetCellText(new ZastavkaData { Popis = "Zastávka", CasJizdy = raw }, StopFields.TravelTime);
+
+    [Fact]
+    public void ZakladniCas_ProjizdiSeTiskneZnackou()
+    {
+        Assert.Equal("<", ZakladniCas("<"));
+    }
+
+    [Fact]
+    public void ZakladniCas_MimoTrasuJePrazdno()
+    {
+        Assert.Equal("", ZakladniCas(""));
+    }
+
+    /// <summary>Nula znamená „jízda pod minutu" a řeší ji vlastní volba, takže sama se netiskne;
+    /// záporný čas nese jen projetá zastávka a ten se v základním sloupci taky nezobrazuje. Bez toho
+    /// by se po přechodu na text objevily nuly tam, kde bylo dosud prázdno.</summary>
+    [Fact]
+    public void ZakladniCas_NulaAniZapornyCasSeNetisknou()
+    {
+        Assert.Equal("", ZakladniCas("0"));
+        Assert.Equal("", ZakladniCas("-7"));
+    }
+
+    [Fact]
+    public void ZakladniCas_CisloProjde()
+    {
+        Assert.Equal("12", ZakladniCas("12"));
     }
 }

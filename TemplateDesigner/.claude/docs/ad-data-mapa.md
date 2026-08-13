@@ -252,10 +252,28 @@ pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji
 **nečteme vůbec** - u linek v ručním režimu s vyplněnými minutami (Nitra) proto tiskneme **jiná
 čísla** než jejich starý výtisk. Vzorek jsou 4 linky, ne plošné měření.
 
-⚠️ **Obsah sloupce se od legacy pořád liší** (vědomě, rozhodnutí odložené): legacy si nechá **jeden
-skutečný průběh** (ten s delším časem na konci, `necham prubeh s delsim casem`), my bereme maximum
-per zastávku přes spoje varianty - takže sloupec může nést kombinaci, kterou nejede žádný spoj
-(rozdíl v jednotkách minut).
+✅ **Obsah sloupce už míchaný není** (`B67`, 13. 8.): variantní sloupec nese **průběh jedné vybrané
+trasy** - v rámci varianty vyhrává delší jízda (`DelkaProfilu`), při shodě nižší číslo trasy. Totéž
+pravidlo drží jediný sloupec „Časy" (`VyberZaklTrasu`: dosah, pak delší jízda), takže obě rodiny
+sloupců mají jedno pravidlo a vždy jde o skutečný spoj. Hlídá to invariantní test
+`TestVariantniSloupecJeProbehJedneTrasy` (ke každému sloupci musí existovat trasa, jejíž průběh mu
+odpovídá; pod mutací +1 minuta padne na 60 z 60 sloupců). Legacy dělá totéž
+(`necham prubeh s delsim casem`).
+
+**Co od legacy zbývá jinak:** (a) kritérium pro jediný sloupec „Časy" měříme jako **dosah** (počet
+obsloužených zastávek), legacy ho aproximuje **délkou textu průběhu** - koreluje to, totožné to není
+a oraclem to ověřené nemáme; (b) legacy v automatickém režimu plní **až čtyři** sloupce Času, my jeden
+(zbytek na vyžádání); (c) ruční minuty nečteme (viz výše)
+
+⚠️ **Sloupec „Čas jízdy" nese tři stavy** (`B67`): číslo, „<" (základní trasa zastávkou projíždí bez
+stání) nebo prázdno (mimo základní trasu). Dřív bylo prázdno v obou případech. Na wire je to od té
+doby **text, ne číslo** (schéma pole zůstalo `number`, protože MHD posílá jen čísla); na gold lince
+`0365001` stav „<" nevzniká, pravidlo proto drží jednotkový test `TestCasJizdySloupce`.
+
+⚠️ **Variantní sloupce sloupec „Časy" nenahrazují** (`B67`, dřív ho vytlačily): jsou to dvě nezávislé
+rodiny jako v legacy („Časy" vs „Trasa min. 1-15"), sloupec Času má vlastní viditelnost a varianty se
+řadí za něj. V režimu „Řádek pro každé stanoviště" se základní čas vypíše jen na prvním z rozvinutých
+řádků - na stanoviště vázaný není.
 
 ### Anotace u odjezdů + legenda
 

@@ -57,7 +57,13 @@ Method TestGold0365001()
 	// Re-baseline 2026-08-12 (#12843 podruhé): jediný sloupec časů se vybírá podle POKRYTÍ seznamu
 	// (kolik zastávek trasa od vývěsky obslouží), ne podle četnosti spojů - nejvíc spojů měla často
 	// zkrácená trasa a sloupec končil v polovině. Mění se hodnoty CAS_JIZDY, počty zůstávají.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=yBhnqVEGT9BcblETwSNetg==")
+	// Re-baseline 2026-08-13 (`B67` kroky 1+2): dvě záměrné změny obsahu naráz. (1) CAS_JIZDY má tři
+	// stavy - zastávka, kterou základní trasa projíždí bez stání, má „<" místo prázdna (legacy ho tam má).
+	// (2) Variantní sloupec nese průběh JEDNÉ vybrané trasy (delší jízda vyhrává), ne maximum per
+	// zastávka, které mohlo dát kombinaci, kterou nejede žádný spoj. ⚠️ **Počty jsou shodné**
+	// (pages/zast/odj/pozn beze změny) = neztratil se žádný spoj ani řádek, změnily se jen hodnoty
+	// v časových sloupcích. Že sloupec odpovídá reálnému spoji, hlídá `TestVariantniSloupecJeProbehJedneTrasy`.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=01bapZaPvI+E6TUHVUsjew==")
 }
 
 Method TestGold0365005()
@@ -77,7 +83,9 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-12 (#12843): varianty jen z úseku od vývěskové zastávky - viz gold 0365001,
 	// tady taky jen obsah TRASA_MIN, počty beze změny.
 	// Re-baseline 2026-08-12 (#12843 podruhé): volba trasy pro jediný sloupec dle pokrytí - viz 0365001.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=JzHFBIUre8MjFBN2GZq2VQ==")
+	// Re-baseline 2026-08-13 (`B67` kroky 1+2): tři stavy CAS_JIZDY + variantní sloupec z jedné trasy -
+	// viz gold 0365001. Počty stránek, zastávek, odjezdů i poznámek beze změny.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=q5Bz5atVWrGA+jsgUgPZSQ==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -132,6 +140,137 @@ Method TestZadneDuplicitniVariantniSloupce()
 	}
 	do $$$AssertTrue(sloupcu > 0, "gold 0365001 nedal žádný variantní sloupec - rozbitý fixture?")
 	do $$$AssertEquals(duplicit, 0, "duplicitní variantní sloupce ("_duplicit_" z "_sloupcu_"), první: "_kde)
+}
+
+/// Sloupec „Čas jízdy" smí nést jen tři stavy: číslo, „<" (základní trasa zastávkou projíždí bez
+/// stání) nebo prázdno (mimo základní trasu). Test hlídá, že se do něj nedostane nic jiného - je to
+/// od `B67` textová hodnota, takže by tudy mohl protéct třeba `|` z W-věty.
+///
+/// ⚠️ Na gold lince `0365001` stav „<" **nevzniká** (její nejdosažnější trasa obsluhuje všechny
+/// zastávky, které obsluhuje kdokoli), takže tenhle test není důkazem, že se „<" tiskne - to drží
+/// jednotkový test `CasJizdySloupce` v `ZastavkoveJrAdHelperyTest`.
+Method TestZakladniCasNeseJenPovoleneStavy()
+{
+	set db = ..#GOLDDB
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - přeskočeno")
+		quit
+	}
+	do ..SetupSys(.sys)
+	set sys("U","DATA") = db
+	kill ^||ML
+	set ^||ML("IN","SKUPINA_LINEK_ID") = 1
+	set ^||ML("IN","LINKA_ID") = "0365001"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+	set cisel = 0, projizdi = 0, prazdnych = 0, jinych = 0, prvniJine = "", key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.ZASTAVKY
+		continue:'$isobject(zast)
+		set it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			set c = radek.%Get("CAS_JIZDY")
+			if c = "<" { set projizdi = projizdi + 1 }
+			elseif c = "" { set prazdnych = prazdnych + 1 }
+			elseif $isvalidnum(c) { if c > 0 set cisel = cisel + 1 }
+			else {
+				set jinych = jinych + 1
+				if prvniJine = "" set prvniJine = radek.%Get("NAZEV_ZASTAVKY")_" = "_c
+			}
+		}
+	}
+	set stavy = "čísel "_cisel_", projíždí "_projizdi_", prázdných "_prazdnych_", jiných "_jinych
+	do $$$AssertEquals(cisel > 0, 1, "žádný čas jízdy - rozbitý fixture? ("_stavy_")")
+	do $$$AssertEquals(jinych, 0, "čas jízdy nese nepovolený stav ("_prvniJine_"; "_stavy_")")
+}
+
+/// Variantní sloupec musí být průběh **jedné skutečné trasy**. Dřív se skládal jako maximum per
+/// zastávka přes spoje varianty, takže mohl nést kombinaci časů, kterou nejede žádný spoj - a v datech
+/// to není poznat, protože každé číslo samo o sobě existuje. Test ke každému sloupci hledá trasu,
+/// jejíž průběh mu odpovídá ve všech zastávkách; když žádná není, sloupec je míchaný.
+Method TestVariantniSloupecJeProbehJedneTrasy()
+{
+	set db = ..#GOLDDB
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - přeskočeno")
+		quit
+	}
+	do ..SetupSys(.sys)
+	set sys("U","DATA") = db
+	set sku = 1, lin = "0365001"
+	kill ^||ML
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+	set sloupcu = 0, michanych = 0, kde = "", key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.ZASTAVKY
+		continue:'$isobject(zast)
+		set smer = page.values.SMER
+		// Čísla sloupců od vývěskové zastávky dál (projeté se tisknou jen na přání a berou se z téže
+		// trasy, takže je nemusíme kontrolovat zvlášť). „<" a prázdno nejsou čas.
+		kill hodnoty
+		set aktPoradi = "", poVyvesce = 0, it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			if $zcvt(radek.%Get("AKTUALNI_ZASTAVKA"),"L") = "true" set poVyvesce = 1, aktPoradi = radek.%Get("ID")
+			continue:'poVyvesce
+			set casy = radek.%Get("TRASA_MIN")
+			continue:'$isobject(casy)
+			for ci = 0:1:casy.%Size()-1 {
+				set v = casy.%Get(ci)
+				continue:'$isvalidnum(v)
+				set hodnoty(ci, radek.%Get("ID")) = v
+			}
+		}
+		continue:aktPoradi=""
+		// Trasy, které v tomhle směru někdo jede - jen mezi nimi má smysl hledat.
+		kill trasy
+		set sp = ""
+		for  {
+			set sp = $order(^[db]JRL(sku,lin,smer,sp))
+			quit:sp=""
+			continue:'$isvalidnum(sp)
+			set ct = $piece($piece($get(^[db]JRL(sku,lin,smer,sp)),"#",1),":",3)
+			if ct '= "" set trasy(ct) = ""
+		}
+		set ci = ""
+		for  {
+			set ci = $order(hodnoty(ci))
+			quit:ci=""
+			set sloupcu = sloupcu + 1
+			set sedi = 0, ct = ""
+			for  {
+				set ct = $order(trasy(ct))
+				quit:ct=""
+				quit:sedi
+				kill wMap
+				do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).WMapa(db, sku, lin, ct, .wMap)
+				set ok = 1, pp = ""
+				for  {
+					set pp = $order(hodnoty(ci, pp))
+					quit:pp=""
+					if ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota($get(wMap(pp))) = "" { set ok = 0  quit }
+					if ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasJizdyZMapy(.wMap, aktPoradi, pp) '= hodnoty(ci, pp) { set ok = 0  quit }
+				}
+				set sedi = ok
+			}
+			if 'sedi {
+				set michanych = michanych + 1
+				if kde = "" set kde = "stránka "_key_" ("_page.values.%Get("POPIS_ZASTAVKA")_", směr "_smer_"), sloupec "_ci
+			}
+		}
+	}
+	do $$$AssertTrue(sloupcu > 0, "gold "_lin_" nedal žádný variantní sloupec - rozbitý fixture?")
+	do $$$AssertEquals(michanych, 0, "variantních sloupců bez odpovídající trasy: "_michanych_" z "_sloupcu_", první: "_kde)
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

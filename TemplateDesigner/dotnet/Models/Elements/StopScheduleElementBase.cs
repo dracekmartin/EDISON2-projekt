@@ -111,7 +111,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             {
                 Id            = row.GetString(StopFields.Id),
                 Popis         = row.GetString(StopFields.StopName),
-                CasJizdy      = ParseInt(row.GetString(StopFields.TravelTime)),
+                CasJizdy      = row.GetString(StopFields.TravelTime),
                 Poradi        = ParseInt(row.GetString(StopFields.Poradi)),
                 JeAktualni    = ParseBool(row.GetString(StopFields.JeAktualni)),
                 Odsazeni      = ParseInt(row.GetString("ODSAZENI")),

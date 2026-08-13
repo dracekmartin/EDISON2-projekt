@@ -41,7 +41,10 @@ public class ZastavkaData
 {
     public string Id { get; set; } = "";
     public string Popis { get; set; } = "";
-    public int CasJizdy { get; set; }
+    /// <summary>Čas jízdy základní trasy - tři stavy jako <see cref="TrasaMin"/>: číslo, „&lt;"
+    /// (základní trasa projíždí bez stání) nebo "" (mimo základní trasu). Kumulativní od vývěskové
+    /// zastávky, takže u projetých vychází záporný.</summary>
+    public string CasJizdy { get; set; } = "";
     public int Poradi { get; set; }
     public bool JeAktualni { get; set; }
     public int Odsazeni { get; set; }

@@ -411,7 +411,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s pismenaVar = ($zcvt($g(^||ML("IN","PISMENA_VARIANT")),"L") = "true")
     s prvniBez   = ($zcvt($g(^||ML("IN","PRVNI_BEZ_PISMENE")),"L") '= "false")
     s razeniVar  = $g(^||ML("IN","RAZENI_VARIANT"))
-    k variantSig, variantPocet, variantRepSpoj, variantMax, variantPat, spojVarianta, variantCt
+    k variantSig, variantPocet, variantRepSpoj, variantCas, variantPat, spojVarianta, variantCt, variantDelka
     s poradiVar = 0, spV = ""
     f {
         s spV = $o(^[dataDB]JRL(sku,lin,smer,spV))
@@ -432,34 +432,32 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         i '$d(variantSig(sigV)) {
             s poradiVar = poradiVar + 1
             s variantSig(sigV) = poradiVar
-            s variantRepSpoj(poradiVar) = spV
-            s variantCt(poradiVar) = ctV                 // číslo trasy varianty → nástupiště per varianta (W pole 7)
-            // Úsek PŘED vývěskou (projeté zastávky, opt-in „tisk projetých") se bere z tohoto
-            // reprezentativního spoje - je to skutečný spoj. Maximum přes spoje varianty by tady dalo
-            // číslo, které nejede nikdo: právě v tomhle úseku se spoje varianty legitimně liší.
-            s ppV = ""
-            f {
-                s ppV = $o(servedPoradi(ppV))  q:ppV=""
-                i ..JeVUsekuVariant(ppV, currentPoradi, jeTam) {
-                    s variantPat(poradiVar,ppV) = $p(sigV,"~",ppV)
-                } else {
-                    s vvP = $g(wMapV(ppV))
-                    s variantPat(poradiVar,ppV) = $s(vvP="":"", (vvP="<")||(vvP="|"):"<", 1:"S")
-                    i ..CasHodnota(vvP) '= "" s variantMax(poradiVar,ppV) = ..CasJizdyZMapy(.wMapV, currentPoradi, ppV)
-                }
-            }
         }
         s viV = variantSig(sigV)
         s spojVarianta(spV) = viV
         s variantPocet(viV) = $g(variantPocet(viV)) + 1
-        // max kumulativní čas per zastávka přes spoje varianty (jen úsek, kterým je varianta daná)
+        // Kandidát na průběh varianty: delší jízda vyhrává (dosah mají členové varianty shodný, to je
+        // jejich definice), při shodě nižší číslo trasy kvůli determinismu. Legacy „nechám průběh
+        // s delším časem" - `JRapiLinPrtMhd1.mac` ř.290-294.
+        s delkaV = ..DelkaProfilu(.wMapV, currentPoradi, .servedPoradi, jeTam)
+        i ('$d(variantDelka(viV))) || (delkaV > variantDelka(viV)) || ((delkaV = variantDelka(viV)) && (ctV < variantCt(viV))) {
+            s variantDelka(viV) = delkaV, variantCt(viV) = ctV, variantRepSpoj(viV) = spV
+        }
+    }
+
+    // Hodnoty variantních sloupců = průběh JEDNÉ vybrané trasy, nikdy se nemíchají. Dřív se bralo
+    // maximum per zastávka přes spoje varianty, což mohlo dát kombinaci časů, kterou nejede žádný spoj.
+    // Z téže trasy vyjde i úsek před vývěskou (projeté zastávky, opt-in „tisk projetých") a stanoviště
+    // varianty, takže celý sloupec odpovídá jednomu reálnému spoji.
+    f viY=1:1:poradiVar {
+        d ..WMapa(dataDB, sku, lin, $g(variantCt(viY)), .wMapSel)
         s ppV = ""
         f {
             s ppV = $o(servedPoradi(ppV))  q:ppV=""
-            i '..JeVUsekuVariant(ppV, currentPoradi, jeTam) continue
-            i ..CasHodnota($g(wMapV(ppV))) = "" continue
-            s tV = ..CasJizdyZMapy(.wMapV, currentPoradi, ppV)
-            i ('$d(variantMax(viV,ppV))) || (tV > $g(variantMax(viV,ppV))) s variantMax(viV,ppV) = tV
+            i '$isvalidnum(ppV) continue
+            s vvS = $g(wMapSel(ppV))
+            s variantPat(viY,ppV) = $s(vvS="":"", (vvS="<")||(vvS="|"):"<", 1:"S")
+            i ..CasHodnota(vvS) '= "" s variantCas(viY,ppV) = ..CasJizdyZMapy(.wMapSel, currentPoradi, ppV)
         }
     }
 
@@ -503,7 +501,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s odsazeni  = +$p(veta,"#",5)                        // dta7 „odrazeni" - odsazení názvu o N znaků (legacy mkPLinWin/JRapiLin: 5. #-segment)
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
-        s casJizdy = $s(jeProjeta:0, 1:..CasJizdyZMapy(.zaklWMap, currentPoradi, poradi))   // projetá → 0 (StopList ji ztlumí); jinak kumulativní min od vývěskové
+        s casJizdy = ..CasJizdySloupce(.zaklWMap, currentPoradi, poradi, jeProjeta)
         s cnt = cnt + 1
         // „na znamení" se tiskne přes atribut „x" (níže) - legacy UVOD tiskne jen „x". NaZnameni=0,
         // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
@@ -529,12 +527,12 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
                 i jePrestup { s prestupSeen(znak) = txtAtr } else { s atrSeen(znak) = txtAtr }
             }
         }
-        // varianty časů (dynamické TrasaMin) - sloupce v pořadí displayVar, hodnota = max čas varianty
+        // varianty časů (dynamické TrasaMin) - sloupce v pořadí displayVar, hodnota = průběh vybrané trasy
         s trasaMin = ##class(%DynamicArray).%New()
         f colX=1:1:pocetSloupcu {
             s viX = displayVar(colX)
             s patX = $g(variantPat(viX,poradi))
-            i patX = "S" { d trasaMin.%Push(+$g(variantMax(viX,poradi))) }
+            i patX = "S" { d trasaMin.%Push(+$g(variantCas(viX,poradi))) }
             else { d trasaMin.%Push(patX) }
         }
         d z.%Set("TRASA_MIN", trasaMin)
@@ -1369,6 +1367,10 @@ ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String
 /// v automatickém režimu **nejdelší** spočítaný průběh (`JRapiLinPrtMhd1.mac:330` řadí průběhy od
 /// největšího a jedničku dá do sloupce „Časy"), takže tohle je oprava odchylky, ne nová volba.
 /// Pokrytí měříme přímo (počet obsloužených zastávek), legacy ho aproximuje délkou textu průběhu.
+///
+/// Variantní sloupce jedou podle **téhož pravidla** (dosah, při shodě delší jízda) - jen tam mají
+/// členové varianty dosah shodný z definice, takže rozhoduje `DelkaProfilu`. Jedno pravidlo pro obě
+/// rodiny sloupců je záměr, ne shoda: obojí má být skutečný průběh jednoho spoje.
 ClassMethod VyberZaklTrasu(ByRef pokryti, ByRef delka, ByRef pocet) As %String
 {
     s baseCt = "", bestN = -1, bestT = -1, bestP = -1, ct = ""
@@ -1402,6 +1404,41 @@ ClassMethod CasJizdyZMapy(ByRef wMap, fromPoradi As %String, poradi As %String) 
     s cTo   = ..CasHodnota($g(wMap(poradi)))
     i (cFrom = "") || (cTo = "") q 0
     q cTo - cFrom
+}
+
+/// Hodnota sloupce „Čas jízdy" pro jednu zastávku - **tři stavy jako `TRASA_MIN`**: číslo (základní
+/// trasa tu staví), „<" (projíždí bez stání) nebo prázdno (mimo základní trasu). Dřív bylo prázdno
+/// i pro projíždění, takže z jediného sloupce nebylo vidět, že tudy spoj vůbec jede - legacy tam „<"
+/// má (`JRapiLinPrtMhd1.mac` ř.276-277 slévá `|` a `<`).
+///
+/// Projetá zastávka (před vývěskovou) zůstává na 0: StopList ji ztlumí a jestli se u ní čas vypíše,
+/// řídí volba „tisk projetých" nad variantními sloupci.
+ClassMethod CasJizdySloupce(ByRef wMap, currentPoradi As %String, poradi As %String, jeProjeta As %Boolean = 0) As %String
+{
+    i jeProjeta q 0
+    s vv = $g(wMap(poradi))
+    i (vv = "<") || (vv = "|") q "<"
+    i ..CasHodnota(vv) = "" q ""
+    q ..CasJizdyZMapy(.wMap, currentPoradi, poradi)
+}
+
+/// Jak dlouho průběh jede: nejvzdálenější kumulativní čas od vývěskové zastávky dál. Kritérium pro
+/// výběr průběhu varianty - dosah (počet obsloužených zastávek) mají členové varianty shodný, protože
+/// právě ten je definuje, takže rozhoduje čas. Legacy „nechám průběh s delším časem"
+/// (`JRapiLinPrtMhd1.mac` ř.290-294).
+ClassMethod DelkaProfilu(ByRef wMap, currentPoradi As %String, ByRef servedPoradi, jeTam As %Boolean) As %Integer
+{
+    s maxT = 0, pp = ""
+    f {
+        s pp = $o(servedPoradi(pp))
+        q:pp=""
+        i '$isvalidnum(pp) continue
+        i '..JeVUsekuVariant(pp, currentPoradi, jeTam) continue
+        i ..CasHodnota($g(wMap(pp))) = "" continue
+        s t = ..CasJizdyZMapy(.wMap, currentPoradi, pp)
+        i t > maxT s maxT = t
+    }
+    q maxT
 }
 
 /// Vrátí sloupce dnů (1-based indexy, čárkou oddělené) pro spoj - 1:1 s `KamPrt` logikou
@@ -3214,7 +3251,9 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Build* helpery výstupního JSON (duplikováno z ZastavkoveJrMhd - stejný formát)
 /// ═══════════════════════════════════════════════════════════════════════════════
-ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %Integer = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
+/// `casJizdy` má tři stavy jako `TRASA_MIN`: číslo, „<" (základní trasa projíždí bez stání) nebo
+/// prázdno (mimo základní trasu).
+ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %String = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
 {
     s zastavka = ##class(%DynamicObject).%New()
     // Čitelná field ID (SLOVO_SLOVO) - sdílený kontrakt sloupců StopList↔DynamicTable.

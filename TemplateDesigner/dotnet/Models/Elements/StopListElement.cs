@@ -802,7 +802,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return columnKey switch
         {
             StopFields.StopName     => BuildStopDisplayText(z),
-            StopFields.TravelTime   => FilterPassedTime(SubMinuteOr(z.CasJizdy > 0 ? z.CasJizdy.ToString() : "", z, columnKey), isPassed),
+            StopFields.TravelTime   => FilterPassedTime(SubMinuteOr(ZakladniCas(z.CasJizdy), z, columnKey), isPassed),
             // Víc zón u jedné zastávky (hraniční) odděluje čárka - shodně se starým modulem.
             StopFields.Zone         => string.Join(",", z.Zony),
             // Režimy „více hodnot" platí pro ten údaj, který je zvolený jako číslo stanoviště;
@@ -819,6 +819,13 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             _                       => ""
         };
     }
+
+    /// <summary>Text základního sloupce časů z třístavové hodnoty (číslo / „&lt;" / prázdno). Nula
+    /// a záporný čas se netisknou - nula znamená „jízda pod minutu" a řeší ji zvlášť
+    /// <see cref="ShowSubMinuteTravel"/>, záporný čas nese jen projetá zastávka. „&lt;" projde,
+    /// není to čas, ale informace, že tudy základní trasa jede bez stání.</summary>
+    private static string ZakladniCas(string raw) =>
+        int.TryParse(raw, out int minuty) ? (minuty > 0 ? raw : "") : raw;
 
     /// <summary>Hodnota stanoviště podle <see cref="MultiPlatformMode"/>: z trasy / nejčetnější dle spojů /
     /// výčet všech. Bez per-spoj dat vždy fallback na hodnotu z trasy.</summary>
@@ -837,9 +844,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     /// <summary>Najde buňky s jízdou pod minutu - jednou per render/měření, protože to jde poznat
     /// jen z pořadí řádků. Časy jsou kumulativní od vývěskové zastávky, takže nula pro *jízdu* může
-    /// být jen v souvislém běhu hned za ní; **první nenulový čas ten běh ukončí** a každá další nula
-    /// už znamená „tuhle zastávku reprezentativní spoj neobsluhuje" (`CasJizdyZMapy` vrací 0 i pro
-    /// zastávku mimo trasu). Bez toho rozlišení by „&lt;1" vyskočilo tam, kde má být prázdno.</summary>
+    /// být jen v souvislém běhu hned za ní; **první nenulový čas ten běh ukončí**. Zastávka mimo trasu
+    /// dnes posílá prázdno (třístavová hodnota), takže se sem nedostane - běh přesto hlídáme, protože
+    /// nula za prvním reálným časem by „&lt;1" ukázala tam, kde má být prázdno.</summary>
     private void MarkSubMinuteCells(List<StopRow> rows, List<StopColumn> columns)
     {
         _subMinuteCells = null;
@@ -899,7 +906,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private static string RawTravelTime(ZastavkaData z, string columnKey)
     {
         if (!columnKey.StartsWith(StopFields.TravelTimeVariantPrefix, System.StringComparison.Ordinal))
-            return z.CasJizdy.ToString();
+            return z.CasJizdy;
         return int.TryParse(columnKey.AsSpan(StopFields.TravelTimeVariantPrefix.Length), out int vi)
                && vi >= 0 && vi < z.TrasaMin.Count ? z.TrasaMin[vi] : "";
     }
@@ -934,6 +941,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         {
             if (col.Key == StopFields.TravelTime)
             {
+                // Sloupec „Čas jízdy" zůstává a variantní sloupce se řadí ZA něj - jsou to dvě
+                // nezávislé věci, stejně jako ve starém modulu („Časy" vs „Trasa min. 1-15"). Dřív
+                // ho varianty nahradily, takže deklarovaná doba linky ze sestavy zmizela, jakmile
+                // zastávka měla dvě varianty.
+                result.Add(col);
                 // Zarovnání **i per-sloupcový styl** se dědí ze sloupce „Čas" - je to tentýž údaj
                 // rozpadlý na varianty, takže nastavení na jednovariantní lince nesmí u víc variant
                 // tiše zmizet. ⚠️ Dialog sloupců píše zarovnání do `Style.Data.HAlign` (svislé taky),
@@ -1210,7 +1222,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         {
             Id               = z.Id,
             Popis            = z.Popis,
-            CasJizdy         = z.CasJizdy,
+            // Základní čas není vázaný na stanoviště (je to doba linky), takže zůstane na prvním
+            // řádku - stejně jako značka „projíždí" a značky zastávky. Zopakovaný na každém řádku
+            // vypadá jako chyba dat.
+            CasJizdy         = keepMarkers ? z.CasJizdy : "",
             Poradi           = z.Poradi,
             JeAktualni       = false,
             Odsazeni         = z.Odsazeni,

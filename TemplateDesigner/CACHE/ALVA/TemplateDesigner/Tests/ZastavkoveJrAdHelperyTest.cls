@@ -6,6 +6,30 @@ Include %occInclude
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdHelperyTest Extends ALVA.EDTesting.MLTestCase
 {
 
+// ── Tři stavy sloupce „Čas jízdy" (B67) ──────────────────────────────────────
+/// Sloupec časů nese totéž co variantní sloupce: číslo, „<" když základní trasa zastávkou projíždí
+/// bez stání, a prázdno, když zastávka na základní trase vůbec není. Dřív bylo prázdno v obou
+/// případech, takže z jediného sloupce nebylo vidět, že tudy spoj jede. Na gold lince se stav
+/// „projíždí" nevyskytuje, proto se pravidlo ověřuje tady, nad syntetickou W-mapou.
+Method TestCasJizdySloupce()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	// vývěsková zastávka 10 (čas 20), 11 staví (23), 12 projíždí, 13 nestaví (`|`), 15 mimo trasu,
+	// 16 je pobytová (příjezd 30 + čekání 4 → odjezd 34)
+	kill wMap
+	set wMap(10) = 20, wMap(11) = 23, wMap(12) = "<", wMap(13) = "|", wMap(16) = "30/4"
+
+	do $$$AssertEquals($classmethod(cls, "CasJizdySloupce", .wMap, 10, 11), 3, "staví → kumulativní čas od vývěsky")
+	do $$$AssertEquals($classmethod(cls, "CasJizdySloupce", .wMap, 10, 12), "<", "projíždí → značka, ne prázdno")
+	do $$$AssertEquals($classmethod(cls, "CasJizdySloupce", .wMap, 10, 13), "<", "`|` je taky projíždění (legacy je slévá)")
+	do $$$AssertEquals($classmethod(cls, "CasJizdySloupce", .wMap, 10, 15), "", "mimo trasu → prázdno")
+	do $$$AssertEquals($classmethod(cls, "CasJizdySloupce", .wMap, 10, 16), 14, "pobytová zastávka se počítá z odjezdu")
+	// Projetá zastávka (před vývěskou) zůstává na 0 - StopList ji ztlumí a časy u ní řídí volba
+	// „tisk projetých" nad variantními sloupci.
+	do $$$AssertEquals($classmethod(cls, "CasJizdySloupce", .wMap, 10, 11, 1), 0, "projetá → 0 bez ohledu na trasu")
+	kill wMap
+}
+
 // ── Jazyk textů značek (#12843) ──────────────────────────────────────────────
 /// Slovenský zákazník má správné piktogramy, ale české popisky v legendě. Jazyk se bere
 /// z kultury šablony (`JAZYK` na wire), ne z firemního nastavení legacy tisku.

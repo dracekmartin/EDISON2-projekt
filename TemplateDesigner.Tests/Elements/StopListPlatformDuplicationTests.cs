@@ -45,6 +45,21 @@ public class StopListPlatformDuplicationTests
         Assert.Equal(["", "6"], r[1].TrasaMin);
     }
 
+    /// <summary>Základní čas jízdy není vázaný na stanoviště (je to doba linky), takže zůstane jen na
+    /// prvním z rozvinutých řádků - stejně jako značka „projíždí". Zopakovaný na každém řádku vypadá
+    /// jako chyba dat (B67, sloupec časů se od variant oddělil a je vidět vždy).</summary>
+    [Fact]
+    public void ZakladniCasZustaneJenNaPrvnimRadku()
+    {
+        var s = Stop("Medlovice", current: false, ["5", "6"], ["1", "2"]);
+        s.CasJizdy = "5";
+
+        var r = Expand(s);
+
+        Assert.Equal(2, r.Count);
+        Assert.Equal(["5", ""], r.Select(x => x.CasJizdy));
+    }
+
     /// <summary>Bez přepnutí se sloupky na řádky nerozvíjejí, i když je v datech má - řídí to
     /// označník, jak to bylo dosud.</summary>
     [Fact]

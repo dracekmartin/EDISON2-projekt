@@ -10,9 +10,9 @@
 > (přepínač odstraněn - viz changelog 2026-08-12).
 >
 > **▶ Zastávkový JŘ má jedinou otevřenou věc a NENÍ blokovaná** - `B67` se 12. 8. rozpadl: hlavní
-> stížnost (duplicitní sloupce variant) byla naše odchylka od starého modulu a je opravená. Zbytek má
-> od 13. 8. **dohodnutou podobu** (čtyři kroky velikosti S, sekce pod tabulkou) a jde udělat bez cizí
-> součinnosti; blokovaná zůstala jen ruční tabulka variant, která na nás není. `B39` (vlastní sloupce vývěsky, #13045b) je hotová oběma
+> stížnost (duplicitní sloupce variant) byla naše odchylka od starého modulu a je opravená. Z dohodnuté
+> podoby (sekce pod tabulkou) jsou **kroky 1+2 hotové 13. 8.**, zbývají dva velikosti S a jdou udělat
+> bez cizí součinnosti; blokovaná zůstala jen ruční tabulka variant, která na nás není. `B39` (vlastní sloupce vývěsky, #13045b) je hotová oběma
 > etapami 10. 8., takže **fronta KOVED je dojetá**. **Další krok si vyber:** **Fáze B** (tabulkové
 > elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
 > (**B10** + **B13**) jako dedikovaný slot.
@@ -65,34 +65,13 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 
 | # | Blok | Vel. | Uzavírací podmínka |
 |---|---|---|---|
-| **B67** | **Jemnější zobrazení variant jízdních dob** (TRANSDEV #12843 bod 4 = původní `TR7`). ✅ Hotové 12. 8.: nestabilní číslování (27. 7.), **duplicitní sloupce** se stejnými čísly a **volba trasy pro jediný sloupec** - obojí byla odchylka od starého modulu. Zbytek se dokončí podle **dohodnuté podoby pod tabulkou** (Jan + kolega 13. 8.): rozdělit Časy × varianty, jedno pravidlo výběru průběhu, značka + vysvětlení u každé varianty, řazení podle délky jízdy. | 4× S | poslat hotové Šimkovi a nechat posoudit, jestli ruční výběr variant ještě chce |
+| **B67** | **Jemnější zobrazení variant jízdních dob** (TRANSDEV #12843 bod 4 = původní `TR7`). ✅ Hotové 12. 8.: nestabilní číslování (27. 7.), **duplicitní sloupce** se stejnými čísly a **volba trasy pro jediný sloupec** - obojí byla odchylka od starého modulu. ✅ 13. 8. hotové **kroky 1+2** dohodnuté podoby (sloupec Času se od variant oddělil a nese tři stavy; obě rodiny sloupců mají jedno pravidlo výběru průběhu - changelog 2026-08-13). Zbývají **kroky 3+4** podle sekce pod tabulkou: značka u minut + vysvětlení u každé varianty, řazení variant podle délky jízdy. | 2× S | poslat hotové Šimkovi a nechat posoudit, jestli ruční výběr variant ještě chce |
 
 ### `B67` - dohodnutá podoba dokončení (Jan + kolega, 13. 8.)
 
-**1. Rozdělit „Časy" × „varianty" na dvě nezávislé věci** (S). Dnešní svázání („varianty nahradí
-sloupec Času") je naše konstrukce, ne parita: legacy má dvě rodiny, které se plní **bez ohledu na
-přepínač u linky** - „Časy" slučují shodné **časy** (1-4 sloupce), „Trasa min. 1-15" shodný **sled
-zastávek** (`JRapiExp10.mac:383-420`).
-
-- „Čas jízdy" = vlastní sloupec s vlastní viditelností, zůstává i když se varianty tisknou.
-- Variantní sloupce vedle něj, generované při ≥ 2 variantách. **Migrace šablon není potřeba** -
-  `CAS_JIZDY#n` se nikde neukládá, vzniká až při kreslení (ověřeno 13. 8.).
-- `CAS_JIZDY` poslat se třemi stavy jako `TRASA_MIN`, aby projížděná zastávka měla „<" i v jednom
-  sloupci (dnes prázdno, legacy „<" má; ve variantních sloupcích to funguje).
-
-**2. Jedno pravidlo výběru průběhu pro obě rodiny** (S): vybere se **skutečný průběh jednoho spoje**,
-nikdy se nemíchá; kritérium **dosah** (počet obsluhovaných zastávek od vývěskové zastávky dál), při
-shodě **delší čas**. „Časy" = takový průběh přes všechny spoje zastávky, varianta = takový průběh
-v rámci svého sledu zastávek.
-
-- Ruší dvě dnešní odchylky: variantní sloupec dnes nese **maximum per zastávku** (kombinace, kterou
-  nejede žádný spoj - legacy si nechá reálný průběh, „nechám průběh s delším časem"), a hlavní sloupec
-  se vybírá podle pokrytí **trasy**, ne podle průběhu spoje (trasa, kterou nikdo nejede, tak nemůže
-  vyhrát).
-- Tiebreak „delší čas" je **naše rozhodnutí, ne parita**: legacy při shodné délce zápisu průběhu
-  rozhoduje pořadím zpracování, tedy nahodile (`JRapiLinPrtMhd1.mac:322-337`). Pro cestujícího je
-  bezpečnější pozdější číslo („nejpozději za X min"). Napsat to takhle i do dokumentace.
-- **Rozhodnuto, neotvírat:** výběr průběhu pro jeden sloupec NENÍ uživatelská volba, je to pravidlo.
+✅ **Kroky 1 a 2 jsou hotové 13. 8.** (oddělení sloupce Času od variant, tři stavy `CAS_JIZDY`,
+jedno pravidlo výběru průběhu pro obě rodiny) - detail v changelogu 2026-08-13, ať se sem nepíše
+dvakrát. Zbývá:
 
 **3. Značka u minut pro každou variantu + vysvětlení trasy v legendě** (S) = bod (c). Značky brát ze
 **samostatné znakové řady**, ne z abecedy rozdílových poznámek (legacy má v kódu default „UVWXYZ", tedy

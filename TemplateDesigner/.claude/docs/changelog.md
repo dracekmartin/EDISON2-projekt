@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-08-13 (1) - 🧩 sloupec časů a varianty tras jsou dvě nezávislé věci (`B67` kroky 1+2)
+
+Dohoda z 13. 8. (Jan + kolega): zachovat legacy rozdělení „Časy" × „varianty", ale počítat obojí
+automaticky. Dva kroky naráz, protože sedí na témže kódu.
+
+**1. Sloupec „Čas jízdy" už varianty nevytlačí.** Dosud ho variantní sloupce **nahradily**, takže na
+zastávce se dvěma variantami z vývěsky zmizela deklarovaná doba linky. Teď zůstává a varianty se řadí
+**za něj** - přesně jako ve starém modulu, kde vedle sebe stojí „Časy" a „Trasa min. 1-15", a ten je
+navíc plní **bez ohledu na přepínač u linky** (`JRapiExp10.mac:383-420`), takže naše svázání bylo
+vlastní konstrukce, ne parita. Sloupec Času má vlastní viditelnost jako každý jiný.
+
+⚠️ **Existující šablony tím na takových zastávkách dostanou o sloupec víc.** Kdo ho tam nechce, vypne
+ho v nastavení prvku. V režimu „Řádek pro každé stanoviště" se vypíše **jen na prvním** z rozvinutých
+řádků - na stanoviště vázaný není, stejně jako značka „projíždí".
+
+**2. Sloupec „Čas jízdy" nese tři stavy** jako variantní: číslo, **„<"** (základní trasa zastávkou
+projíždí bez stání) a prázdno (mimo základní trasu). Dřív bylo prázdno v obou případech, takže
+z jediného sloupce nebylo vidět, že tudy spoj vůbec jede - legacy tam „<" má. Nula a záporný čas se
+dál netisknou (nula patří volbě „jízda pod minutu", záporný čas projeté zastávce).
+
+**3. Variantní sloupec je průběh jedné skutečné trasy.** Dosud se skládal jako **maximum per zastávka**
+přes spoje varianty, takže mohl nést kombinaci časů, **kterou nejede žádný spoj** - a v datech to nejde
+poznat, protože každé číslo samo existuje. Nově se vybere jedna trasa: v rámci varianty vyhrává delší
+jízda, při shodě nižší číslo trasy. Legacy dělá totéž („nechám průběh s delším časem"). Z téže trasy
+jde i stanoviště varianty a úsek před vývěskou, takže se sloupec nemůže rozejít sám se sebou.
+
+**Jedno pravidlo pro obě rodiny:** skutečný průběh jednoho spoje, kritérium **dosah**, při shodě
+**delší jízda**. U variant je dosah z definice shodný, takže tam rozhoduje čas. Tiebreak „delší jízda"
+je **naše rozhodnutí, ne parita** - legacy při shodné délce zápisu rozhoduje pořadím zpracování, tedy
+nahodile; pro cestujícího je bezpečnější pozdější číslo.
+
+**Brány:** **873 .NET testů** zelených (8 nových: rozdělení sloupců, tři stavy základního sloupce,
+základní čas jen na prvním řádku stanoviště) a **97 Caché testů** (3 nové). Gold odtisky přebaselinované:
+**počty stránek, zastávek, odjezdů i poznámek jsou shodné** (39/800/844/235 a 38/762/498/236), mění se
+jen hodnoty v časových sloupcích - tedy se neztratil žádný spoj ani řádek. Mutační kontrola: +1 minuta
+ve variantním sloupci shodí nový invariantní test na **60 z 60** sloupců.
+
+⚠️ **Stav „<" gold linka neukáže** - její nejdosažnější trasa obsluhuje všechny zastávky, které
+obsluhuje kdokoli, takže tam „<" nevzniká. Pravidlo proto drží jednotkový test nad syntetickou W-mapou;
+na zákazníkových datech (Nitra) to zbývá vidět na vývěsce.
+
 ## 2026-08-12 (10) - 🔧 jeden sloupec jízdních dob už nekončí v polovině seznamu (#12843)
 
 Zákazníkův první bod: „ak zvolím zobraziť len jeden variant, je to automaticky prvý nájdený, niekedy

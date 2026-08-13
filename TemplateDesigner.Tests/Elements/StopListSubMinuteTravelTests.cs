@@ -12,7 +12,7 @@ namespace TemplateDesigner.Tests.Elements;
 public class StopListSubMinuteTravelTests
 {
     private static ZastavkaData Stop(string nazev, int casJizdy, bool jeAktualni = false, params string[] varianty)
-        => new() { Popis = nazev, CasJizdy = casJizdy, JeAktualni = jeAktualni, TrasaMin = [.. varianty] };
+        => new() { Popis = nazev, CasJizdy = casJizdy.ToString(), JeAktualni = jeAktualni, TrasaMin = [.. varianty] };
 
     private static List<StopColumn> Casy() => [new StopColumn { Key = StopFields.TravelTime }];
 
