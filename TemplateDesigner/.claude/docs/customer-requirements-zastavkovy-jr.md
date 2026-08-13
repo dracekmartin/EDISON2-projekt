@@ -181,6 +181,12 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
   převod na šablonu má smysl, až někdo bude mít dvě šablony téže agendy s jiným exportem
 - **Per-sloupcové zvýraznění řádků** (`HighlightRule.TargetColumn` - model to pole nese, render
   barví celý řádek) + **barva textu / kurzíva** pravidla zvýraznění
+- **Jazyk tří automatických vět v MHD agendě** (S; z roadmapy 13. 8. jako `B79`, odebráno na
+  rozhodnutí Jan - žádná slovenská firma dnes MHD modul nemá). Dny v týdnu u kroužkových značek
+  („jede v pondělí"), automatická poznámka typu provozu („jede jen &lt;typ&gt;") a automatické rozdíly
+  tras („končí v zast. X") jsou napevno česky; parametr `JAZYK` se do MHD agendy posílá, ale
+  ignoruje se. Fix je stejný vzor jako `B69` u AD (přepínač jazyka + texty). Dopadne to teprve na
+  slovenského zákazníka s MHD modulem - dnes ho mají DPCB a DPKV, MHD Nitra jede na AD agendě.
 
 ---
 
