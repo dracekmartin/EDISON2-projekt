@@ -1671,7 +1671,7 @@ public partial class MainWindow : Window
         _ => (null, null)
     };
 
-    /// <summary>Caché *Edit.cls schéma pro inline panel (W4-10) - pokrývá i komplexní elementy
+    /// <summary>Caché *Edit.cls schéma pro inline panel - pokrývá i komplexní elementy
     /// (StopList/DepartureGrid/Dynamic), jejichž „Obecné" tab modálu jede na tomtéž schématu.
     /// Sloupce komplexních zůstávají jen v dvojkliku (plný 2-tab dialog).</summary>
     private static string? PanelCacheClass(TemplateElement element)
@@ -1867,7 +1867,7 @@ public partial class MainWindow : Window
 
         var selected = _vm!.State.SelectedElements;
 
-        // Jeden element se schématem → EDInputForm panel (W4-10). Descriptory se pořád počítají
+        // Jeden element se schématem → EDInputForm panel. Descriptory se pořád počítají
         // pro FormatToolbar. Více / žádný / bez schématu → starý PropertyDescriptor panel.
         string? panelSchema = selected.Count == 1 ? PanelCacheClass(selected[0]) : null;
 

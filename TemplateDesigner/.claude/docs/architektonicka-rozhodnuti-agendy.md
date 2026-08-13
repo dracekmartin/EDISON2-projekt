@@ -69,8 +69,8 @@ vytáhnout sdílené řádkové jádro z StopList + DynamicTable a LineTable pos
 
 **Doporučení.** Druhá cesta. Podmínky jsou příznivé: budou existovat právě 2–3 konzumenti
 (pravidlo „extract až při 2+"), a refaktor existujících elementů kryjí letošní testy.
-DepartureGrid do jádra necpat - je to pivot, ne řádková tabulka (viz W4-9 poznámka
-v roadmapě: sdílení na úrovni nastavení/dat, ne renderu).
+DepartureGrid do jádra necpat - je to pivot, ne řádková tabulka: sdílí se na úrovni
+nastavení a dat, ne renderu.
 
 **Nejpozději kdy:** první design LineTableElementu. Do té doby drobnost s velkým efektem:
 **vše, co teď vzniká v DynamicTableElement, psát s vědomím, že se to do jádra přesune**

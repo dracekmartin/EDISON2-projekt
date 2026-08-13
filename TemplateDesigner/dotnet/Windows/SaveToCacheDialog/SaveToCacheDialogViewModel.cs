@@ -5,7 +5,7 @@ namespace TemplateDesigner;
 
 /// <summary>
 /// Bridge mezi parent (MainWindow) a EDInputForm-based dialogem pro pojmenování
-/// šablony před uložením do Caché. Po Wave 4 - definice formuláře (která pole,
+/// šablony před uložením do Caché. Definice formuláře (která pole,
 /// labely, validace) žije v Caché třídě <c>ALVA.TemplateDesigner.EDInputForm.SaveTemplate</c>,
 /// VM jen drží initial values (input → Caché Init) a final result (output ← form.Save).
 /// </summary>

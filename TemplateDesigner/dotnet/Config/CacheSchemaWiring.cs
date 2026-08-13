@@ -41,7 +41,7 @@ internal static class CacheSchemaWiring
 
     /// <summary>
     /// Vytvoří <see cref="CacheAgendaProvider"/> s předaným MLRest a seznamem agend.
-    /// Wave 2: agendy přichází z Caché registru (<see cref="IAgendaRegistry"/>), nikoli
+    /// Agendy přichází z Caché registru (<see cref="IAgendaRegistry"/>), nikoli
     /// z <c>appsettings.json</c>. GENERAL agenda je v seznamu injektována syntheticky
     /// implementací registru. Vrátí null pokud seznam je prázdný.
     /// </summary>

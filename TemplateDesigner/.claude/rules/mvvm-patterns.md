@@ -6,7 +6,7 @@ Každý element implementuje `GetPropertyDescriptors()` vracející seznam deskr
 
 ### Zúžená role descriptorů vůči EDInputFormu (evidence 2026-07-29)
 
-Od Wave 4 je hlavní editační cestou **Caché formulář** (`*Edit.cls`): u elementu se schématem ho
+Hlavní editační cestou je **Caché formulář** (`*Edit.cls`): u elementu se schématem ho
 `RefreshInlineProperties` ukáže v panelu i v dialogu. Descriptory tím **nepřestaly platit** - jsou
 živé ve třech konkrétních rolích a proto je nelze odstranit:
 

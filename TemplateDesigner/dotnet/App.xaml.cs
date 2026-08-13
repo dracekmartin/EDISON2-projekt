@@ -108,7 +108,7 @@ public partial class App : Application
             }
         };
 
-        // Wave 2 (W2-1): registr agend - Caché auto-discovery z BaseAgenda subclasses.
+        // Registr agend - Caché auto-discovery z BaseAgenda subclasses.
         // Sync wait do 3s - pokud propadne, MainWindow startuje jen s GENERAL agendou
         // (fallback v CacheAgendaRegistry). Cold-start Caché HTTP je dominantní, warm calls 50ms.
         IReadOnlyList<TemplateDesigner.Serialization.AgendaRegistryEntry> agendas = [];

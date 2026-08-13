@@ -99,7 +99,7 @@ Největší soubory: `MainWindow.xaml.cs` 2 671, `MainWindowViewModel.cs` 2 471 
 | T2 | **Sync export na UI threadu** - ✅ **opraveno 2026-07-02** | Fetch + render na threadpoolu nad snapshotem šablony (`DeepClone` - editace během exportu výstup neovlivní), dvoufázový progress ve status baru, orchestrace z code-behind → VM (první řez T4). | Zbývá jen: první `GetSchema` hit sync (mitigován `_schemaCache`); cancel až na reálnou potřebu. |
 | T3 | **Versioning bez obsahu** - ✅ **guardy opraveny 2026-07-02** | Forward-compat guard (verze > current → odmítnout), selhání migrace → výjimka (ne tichý `Debug.WriteLine`), sémantické porovnání verzí, ctor pro test injection. V1 v DB neexistují (ověřeno: DB storage vznikl po TextStyle breaking change). | Zbývá jen: potvrdit neexistenci starých JSON souborů z éry před 2026-03-24 (bez `version` pole); pokud se objeví → H-19 migrace + heuristika detekce. |
 | T4 | **God objects** | `MainWindow.xaml.cs` (2 671, 167 členů) + `TemplateDesignerViewModel` (2 471, bez vnitřního členění). R4 porušení: `TableEditorDialogViewModel.cs:609-643` staví WPF UI ve VM; VM vytváří dialogy s `Owner=Application.Current.MainWindow` a sahá na `Clipboard`. | Postupný rozpad VM na služby (InstanceCoordinator, TemplatePersistence - shluky už de facto existují); nové featury nepřidávat do těchto dvou souborů. `TableEditorDialogViewModel` UI konstrukci přesunout do view. |
-| T5 | **Živé duplikace bez pojistky** | PropertyDescriptor (C#) × EDInputForm (Caché) ~1,1k LOC mirror (akceptovaný Wave 4 dluh, ale bez driftového testu); `EDList/Instance.cls:113` hardcoded kopie agend registru; `ZastavkoveJrAd.GetMockData:1174` čte živá firemní data. | Driftový test (reflexe: property path z *Edit.cls existuje na elementu); `Instance.cls` napojit na `AgendyRegistr`; statický mock pro AD. |
+| T5 | **Živé duplikace bez pojistky** | PropertyDescriptor (C#) × EDInputForm (Caché) ~1,1k LOC mirror (vědomě akceptovaný dluh, ale bez driftového testu); `EDList/Instance.cls:113` hardcoded kopie agend registru; `ZastavkoveJrAd.GetMockData:1174` čte živá firemní data. | Driftový test (reflexe: property path z *Edit.cls existuje na elementu); `Instance.cls` napojit na `AgendyRegistr`; statický mock pro AD. |
 | T6 | Drobnosti | `architecture.md` nezná `PdfImport/` (4,3k LOC) ani `Services/` (2,6k); `MessageBox.Show` v `MainWindow.xaml.cs:1021`; 96× `new SKPaint/SKFont` per-frame v Render() běžných elementů (schedule elementy to řeší, zbytek ne); `ScheduleDetectorTest.cs` kompilovaný do produkční assembly. | Úklid při příležitosti. |
 
 ---
@@ -239,7 +239,7 @@ jejich priorita čtením legacy kódu.
   (ekvivalent `ExportReportToGlb`/`AktualizujAgendu` - dnes JSON, ne GOF); audit log
   změn šablon; právo na designer (ECL). Roadmap B1/B2/B3 + P2-6.
 - Per-instance přiřazení šablony (linka → šablona A4/A5) - datový model
-  `InstanceDefaults` už existuje (Wave 1), rozšířit o šablonu.
+  `InstanceDefaults` už existuje, rozšířit o šablonu.
 
 ### Etapa 3 - Knižní/výlepový JŘ (náhrada TiskJR; v roadmapě „Linkové a knižní JŘ")
 - Legacy generuje vývěsní i knižní z téhož - **meziměstský i knižní jsou jeden track**
@@ -260,7 +260,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
    `LegacyRgAgenda` třída by zpřístupnila všech 28 agend najednou s omezenou věrností;
    nebo čisté reimplementace vybraných agend (vzor Faktury). Pragmaticky: **bridge
    nejdřív** (rychlé pokrytí), čisté agendy tam, kde se investice vyplatí.
-3. **TableElement dorovnat na RG úroveň** (navazuje na Wave 4 W4-9 Dynamic-first):
+3. **TableElement dorovnat na RG úroveň** (navazuje na Dynamic-first tabulku):
    per-řádek zvýraznění/barvy z dat, overflow módy buňky, opakování mezisoučtového
    řádku, řádek-jako-designový-layout (koncepčně PerDataRow sekce), datové typy sloupců.
    Merged cells + conditional formatting už jsou v backlogu roadmapy (tabulkové prvky).
@@ -638,7 +638,7 @@ Dva legacy generátory podle typu:
 
 ## Souhrn priority migrace v TD
 
-Per roadmap PRIORITA 2 (po dokončení Wave 4):
+Per roadmap PRIORITA 2:
 
 1. **Zastávkové JŘ pro linkové JŘ data** - rozšířit `ZastavkoveJrMhd` o linkový datový zdroj (nebo nová agenda). Zachovat dvojí formát „město × linková" stejně jako legacy `ALVA.TISKMHD`.
 

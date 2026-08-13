@@ -6,7 +6,7 @@ using TemplateDesigner.Commands;
 namespace TemplateDesigner.Controls;
 
 /// <summary>
-/// Inline properties panel postavený na EDInputFormu (W4-10) - nahrazuje PropertyDescriptor rendering
+/// Inline properties panel postavený na EDInputFormu - nahrazuje PropertyDescriptor rendering
 /// pro editaci jednoho elementu. Sdílí *Edit.cls schéma + <see cref="ElementFormBinder"/> s modálním
 /// <see cref="ElementEditDialog"/>; navíc **živý write-back**: změna pole → SetPropertyCommand → undo.
 ///

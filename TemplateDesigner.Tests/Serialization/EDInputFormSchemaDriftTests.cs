@@ -9,7 +9,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
-/// Driftová pojistka Wave 4 duplikace schémat: Caché <c>EDInputForm/*Edit.cls</c> třídy jsou
+/// Driftová pojistka duplikace schémat: Caché <c>EDInputForm/*Edit.cls</c> třídy jsou
 /// manuální mirror C# properties (field key = property path, čte/zapisuje ElementFormBinder
 /// reflexí). Přejmenování property v C# bez úpravy .cls = runtime chyba u zákazníka.
 ///
@@ -466,7 +466,7 @@ public class EDInputFormSchemaDriftTests
     }
 
     // ── Co jde nastavit v panelu, musí jít nastavit i ve formuláři ───────────
-    // Od Wave 4 je hlavní editační cestou Caché formulář; panelové deskriptory zůstaly pro
+    // Hlavní editační cestou je Caché formulář; panelové deskriptory zůstaly pro
     // formátovací lištu, úpravu více prvků a fallback. Když ale formulář nějakou vlastnost nemá,
     // je u jednoho prvku hlavní cestou nedosažitelná - přesně tak zmizely 3 vlastnosti mřížky
     // odjezdů (zarovnání záhlaví, dvojice barev negativní značky), nalezené 4. 8. ručně.

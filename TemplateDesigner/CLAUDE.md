@@ -158,11 +158,11 @@ Preview v designeru = plný engine s mock daty. "Tisk" = tentýž engine s reál
 
 Vědomá rozhodnutí, která se znovu neotevírají (ne mezery):
 
-- **Databáze jako source of truth pro konfiguraci a šablony** - dává smysl pro doménovou logiku (Wave 1–3)
+- **Databáze jako source of truth pro konfiguraci a šablony** - dává smysl pro doménovou logiku
 - **Univerzální Section třída** - jednodušší než pevná hierarchie (Crystal Reports)
 - **Absolutní pozicování jako default** - správné pro tiskové sestavy s pevným layoutem
-- **PropertyDescriptor a EDInputForm paralelně** - ne cut-over, per element migrace (Wave 4)
-- **Server-side migrace šablon** - autoritativní, ne klientská (Wave 3)
+- **PropertyDescriptor a EDInputForm paralelně** - ne cut-over, per element migrace
+- **Server-side migrace šablon** - autoritativní, ne klientská
 
 ---
 
