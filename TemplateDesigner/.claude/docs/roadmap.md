@@ -4,8 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** vybrat mezi **tabulkovými prvky** (`B76` + `B77`, dají se vzít vcelku)
-> a **linkovými JŘ** (`B10` + `B13`) jako dedikovaným slotem.
+> **Nejblíž na řadě:** `B81` (neděle × svátek ve vlastních sloupcích vývěsky) - **hlásí zákazník
+> a tiše to vrací špatná data**, takže má přednost. Pak vybrat mezi **tabulkovými prvky**
+> (`B76` + `B77`, dají se vzít vcelku) a **linkovými JŘ** (`B10` + `B13`) jako dedikovaným slotem.
 >
 > ⚠️ **Nevydané a jen zčásti proklikané je všechno od 12. 8. včetně** - poslední vydaná verze je
 > z 11. 8. Seedy novinek čekají na vydání, dřív se nenahrávají.
@@ -14,8 +15,58 @@
 
 ## 🚌 Zastávkové JŘ
 
-Nic otevřeného. Stav tiketů, parkované položky i věci „jen na poptávku" drží
+Stav tiketů, parkované položky i věci „jen na poptávku" drží
 [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
+
+### Denní značky podle vyhlášky 122/2014 (revize `B39` kolegou, 13. 8.)
+
+Kolega prošel vlastní sloupce vývěsky a narazil na to, že sloupec „Ne" nevrátí **žádné** spoje,
+přestože na lince jsou - mají platnost `+`.
+Ptal se současně, jak zadat `X` a jestli „Po-Pá" znamená kalendářní, nebo pracovní dny.
+Obojí je tatáž věc: **vlastní sloupce zavedly zadávání dnů, které neodpovídá abecedě značek
+z vyhlášky**, a na tom rozdílu se rozjíždí i vyhodnocení.
+
+Co říká [vyhláška 122/2014](https://krajta.slv.cz/2014/122), příloha č. 2, značky časového rozsahu provozu:
+
+- `X` = jede v pracovních dnech
+- `+` = **jede v neděli a ve státem uznané svátky** (jedna značka pro obojí)
+- `1`-`7` = jede v pondělí … v neděli
+- značky lze kombinovat, některé kombinace jsou nepřípustné (výčet **nemáme** - příloha je
+  obrázková, oficiální PDF na mv.gov.cz hodí 404; dočíst z tištěného znění, než se dělá validace)
+- negativní značky = dvoumístné číslo 01-31 bíle v černém obdélníku, texty „jede jen…",
+  „jede také…", „jede od…do…", „jede v sudých/lichých týdnech", „nejede…"
+
+| # | Co | Vel. |
+|---|---|---|
+| B81 | **`+` musí znamenat i neděli** (bug, hlásí zákazník). `DnySpoje` nechá `+` jako `+` a `SedneDoSloupceDny` dělá průnik znaků (`ZastavkoveJrAd.cls:1584-1607`), takže sloupec `7` spoj s platností `+` nevezme. Legacy to nikdy neřešil - jeho nedělní sloupec je vždy `plk["7" || plk["+"` (`ZarazeniSpoje` FTL 0/3, legacy `JRapiLinPrtMhd1:112-113`), sloupec „jen neděle" starý modul neumí. **Druhá polovina téhož je osa Období**: `DenPatriDoSloupce` (`:1893`) pustí svátek jen do sloupce, který vyjmenoval `+`, takže velikonoční neděle nepatří do sloupce „Ne" a spoj se `7` vyjde jako „nejede celé období" (drží si negativní značku, kterou nemá mít). Presety `7+` / `67+` se nemění, dotčené jsou jen vlastní sloupce se samotným „Ne" nebo samotným „Svátkem" | S |
+| B82 | **Zadávání dnů v abecedě vyhlášky + `X`.** Dnes jsou v editoru zaškrtávátka Po-Ne + Svátek a `X` nejde zadat vůbec. Navíc **týž string `Days` znamená na dvou místech dvě různé věci**: při zařazení spoje je `12345` kalendářní Po-Pá (a platnost `X` se rozepíše na 1-5, `DnySpoje`), zatímco na ose Období je `12345` „pracovní dny" (svátek do nich nikdy nepadne, `DenPatriDoSloupce`). Rozdíl je věcný, ne kosmetický: spoj `1` jede i o svátečním pondělí, spoj `X` ne | M |
+| B83 | **Vysvětlivka u `+` na vývěsce AD je jiná než v legacy i než ve vyhlášce.** My tiskneme hardcoded „jede ve svátek" (`ZastavkoveJrAd.cls:2489`, zafixované testem), legacy bere text z **číselníku** `^JRSET("NCOME",rec,znak)` včetně klíče `+` (`JRapiLinPrtMhd1:113`), takže zákazníkovy vlastní texty ignorujeme; legacy default je vyhláškové „jede v neděli a státem uznané svátky" (`JRapiExp32:489`). Náš **linkový** JŘ AD to má správně a `NCOME` čte (`LinkovyJrAd.cls:953`) - dvě naše agendy si odporují | S |
+| B84 | **MHD: značka dne bez vysvětlivky.** `ZastavkoveJrMhd.GetDenVTydnuText` (`:1532`) zná jen 1-7; pro `+` a `X` vrací prázdno, ale glyf se u minuty vytiskne (`AddAnotace`, `:1263`) a vyhláška vysvětlivku vyžaduje. **Nejdřív ověřit, jestli MHD kalendář ty znaky vůbec produkuje** (`ALVA.MHD.KalendarFce.MakeRozpisTplProTypProvozuID`, je to třída, ne rutina - grep rutin se k ní nedostal); pokud ne, je to mrtvá větev a zavře se bez práce | S |
+
+**Rozhodnutí, která musí padnout před `B81`/`B82`** (byla rozepsaná, Jan je zatím neuzavřel):
+
+1. **Co znamená `X` v editoru sloupce.** Buď zkratka, která zaškrtne 1-5 (význam zařazení se nemění,
+   uložené šablony i vzory zůstanou platné, žádná migrace), nebo samostatná podmínka „jen spoje
+   s platností `X`" (vyhláškově přesné, ale mění význam už uložených sloupců → migrace `Days`
+   „12345" → „X12345" plus přestavba vzorů `PresetySloupcu`).
+2. **Má sloupec se samotným `+` brát i spoje jedoucí v neděli?** Podle vyhlášky ano, `+` ty dva dny
+   slévá; „jen svátky" značkami popsat nejde a patří do osy Období. Doporučení bylo ano, ale
+   s tím, že rozdíl neděle × svátek **zůstává živý** v pokrytí období a v denních značkách - jinak
+   přijdeme o „spoj nepokrývá celý sloupec" u svátečního provozu.
+
+**Čím je to doložené** (ať se to nedeleguje znovu): definice značek z vyhlášky (příloha je
+obrázková, texty přes krajta.slv.cz), legacy zdroj grepem rutin na dev serveru (`AdSloupekProbe.GrepRoutines`),
+naše data sondou `AdSloupekProbe.ScanSvatky` - v `CB_CSADAD` je na 3 000 linkách **1 429 spojů, které
+jedou v neděli a nejedou ve svátek**, takže data ty dvě kategorie reálně rozlišují a slít je natvrdo
+nelze. **Neproklikané na kolegově lince** - chybí firma a číslo linky; na nich se dá `B81` doložit
+přímo přes `GetData` (a zjistit, jestli mu nezařazené spoje hlásil oranžový badge, což je jediná
+pojistka, která tu situaci má chytat).
+
+### Ostatní z revize `B39`
+
+| # | Co | Vel. |
+|---|---|---|
+| B85 | **Nové povinné pole v `.cls` zablokuje formulář starším klientům.** Kolega hlásil, že „Rozestup odjezdů" se při otevření nenačte a musí ho vyplňovat pořád. Není to chyba `B39`: pole `MinuteSpacing` přidané 12. 8. (`4d9325a`), jeho exe je z 11. 8. Schéma jde na server hned, klient až s vydáním, takže starší build pole nezná → prefill nemá co načíst, `required` nepustí OK, a `ElementFormBinder` klíč bez property na cíli zahodí (hodnota se nikdy neuloží). **Kolegovi stačí nový build**, otevřená je ta systémová past: nová pole nedělat `required`, nebo klient nemá `required` vynucovat u pole, ke kterému nemá property (`ElementPropertyAccessor.Exists`) | S |
 
 ---
 
