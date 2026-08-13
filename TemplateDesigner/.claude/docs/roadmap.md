@@ -94,18 +94,13 @@ dvakrát. Commity `99fb735`, `ec15b77`, `28f80d8`, nepushnuté.
   Zkrátit se dá **sloučením průchodů** do jednoho testu (jeden load, víc kontrol), ne zúžením sady. Vel. S,
   vzít jen když to začne vadit.
 
+✅ **Krok 3 hotový 13. 8.** - značka u minuty i vysvětlení trasy běží vedle sebe, písmena zapnutá
+jako výchozí (changelog 2026-08-13 (5)). ⚠️ **Není to parita** a nesmí se tak tvrdit: legacy bere
+značky z nastavení u linky, které **nemá vyplněné ani jedna z 325 prověřených linek** - dřívější
+tvrzení „legacy má v kódu default UVWXYZ" bylo mylné. Obě řady písmen jedou od „A", takže se můžou
+na minutě potkat; vědomý kompromis (rozhodnutí Jan 13. 8.).
+
 Zbývá:
-
-**3. Značka u minut pro každou variantu + vysvětlení trasy v legendě** (S) = bod (c). Značky brát ze
-**samostatné znakové řady**, ne z abecedy rozdílových poznámek (legacy má v kódu default „UVWXYZ", tedy
-od konce abecedy), a **rozdílové poznámky nechat běžet** - v legacy jsou obě věci nezávislé
-(`JRapiLinPrtMhd1.mac:298` a `:522-530`), takže značka řekne „který sloupec" a poznámka „kudy".
-Tím zmizí „T1" bez značky i dnešní vypínání poznámek v režimu písmen.
-
-**Doloženo** (Jan 13. 8., CB_CSADAD, zastávka Žižkova): vedle sebe sloupce „B" a „T1". „B" si hlavička
-vypůjčila od rozdílové poznámky, takže má značku u minut i vysvětlení v legendě („neobsluhuje zast.
-Lesní hřbitov"); „T1" je náš náhradní název **bez značky u minut**, takže se čte vylučovací metodou
-„minuta bez B jede T1".
 
 **4. Řazení variant podle délky jízdy** (S) = třetí volba k dnešním dvěma.
 

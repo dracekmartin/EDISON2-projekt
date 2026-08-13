@@ -303,6 +303,28 @@ Method TestPismenaVariantOdkazujiNaExistujiciSloupec()
 	do $$$AssertEquals(rozdilPoctu, "", "přepnutí režimu písmen změnilo počty, to je volba zobrazení: "_rozdilPoctu)
 }
 
+/// Značka varianty a rozdílová poznámka jsou dvě nezávislé věci a musí běžet vedle sebe: značka
+/// řekne „kterým sloupcem", poznámka „kudy". Do 13. 8. režim písmen poznámky vypínal, takže si
+/// uživatel musel vybrat - a sloupce bez písmene („T1") neměly ani jedno. Tak to má i starý modul,
+/// který u minuty skládá obojí zvlášť (`JRapiLinPrtMhd1.mac:529`, značka sloupce `:297`).
+Method TestPismenaVariantNevypinajiRozdilovePoznamky()
+{
+	do ..SetupSys(.sys)
+	// Linka vybraná pro typ „rozdilTrasy" - jinde by test prošel prázdnem.
+	set db = "SKNI_MHDNITRA", sku = 1, lin = "0000014"
+	kill parametry
+	set parametry("PISMENA_VARIANT") = "true"
+	if '..NactiLinku(.sys, db, sku, lin, .parametry) {
+		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - přeskočeno")
+		quit
+	}
+	do ..ZmerProfil(.p)
+
+	do $$$AssertEquals($get(p("kat_varianta-trasy")) > 0, 1, "režim písmen nedal ani jednu značku varianty u minut")
+	do $$$AssertEquals($get(p("kat_rozdil-trasy")) > 0, 1, "v režimu písmen zmizely rozdílové poznámky u minut - vylučují se zase navzájem?")
+	do $$$AssertEquals($get(p("legenda_rozdil-trasy")) > 0, 1, "v režimu písmen zmizelo vysvětlení rozdílu trasy z legendy")
+}
+
 /// Počet odjezdů ve všech stránkách právě načteného výstupu.
 ClassMethod PocetOdjezdu() As %Integer
 {

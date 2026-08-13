@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-08-13 (5) - 🔤 značka u minuty i vysvětlení trasy naráz (`B67` krok 3)
+
+Slovenský zákazník z callu chtěl u minuty poznat, **kterým sloupcem** spoj jede. Dosud to šlo jen
+za cenu ztráty: režim „Písmena variant u odjezdů" značky přidal, ale **vypnul automatické rozdílové
+poznámky**, takže z legendy zmizelo vysvětlení „neobsluhuje zast. Lesní hřbitov". A sloupce, které
+si hlavičku nevypůjčily od poznámky (náš náhradní název „T1"), neměly ani jedno - četly se
+vylučovací metodou.
+
+**Nově běží obojí vedle sebe** a písmena jsou **zapnutá jako výchozí**: značka u minuty říká
+**který sloupec**, poznámka **kudy**. Přesně tak to má i starý modul, který u minuty skládá obojí
+zvlášť (`JRapiLinPrtMhd1.mac:529`, značka sloupce `:297`).
+
+⚠️ **Tohle NENÍ parita se starým modulem a nesmí se tak tvrdit.** Legacy bere značky sloupců
+z **nastavení u linky** (`^JRL(sku,lin,"PATCH","mhd","par",2)`, `JRapiLinPrtMhd1.mac:26`) - i-tý znak
+patří i-tému sloupci. Žádný default v kódu není; „UVWXYZ" je jen komentář vedle toho řádku.
+**Změřeno: 0 z 325 linek to má vyplněné** (Nitra 0/29, CB_CSADAD 0/240, GW BUS 0/52, KOVED 0/4),
+takže starý modul těmhle zákazníkům značky netiskne vůbec a „udělat to jako legacy" by nedodalo nic.
+Dosavadní tvrzení roadmapy („legacy má v kódu default UVWXYZ") bylo mylné.
+
+⚠️ **Vědomý kompromis** (rozhodnutí Jan 13. 8.): značky variant jedou od **A** stejně jako písmena
+rozdílových poznámek, takže se na jedné minutě můžou potkat dvě stejná písmena v jiném významu.
+Starý modul se tomu vyhýbal řadou od konce abecedy. Řeší se, až na to někdo narazí - je možné, že
+se ta volba časem přestěhuje z nastavení linky do návrháře.
+
+**Brány:** **102 Caché testů** (1 nový: v režimu písmen musí zůstat značky variant, rozdílové
+poznámky u minut i jejich vysvětlení v legendě) a **902 .NET**. Mutace (vrátit vylučování) shodí
+právě ten nový test. Parametry ověřeny **voláním** nasazené třídy - `PISMENA_VARIANT` má nový
+výchozí stav i popis. K měření přibyla read-only sonda `ZnakySloupcu`.
+
 ## 2026-08-13 (4) - 🔢 nula ve sloupci časů se tiskne, prázdno zůstává významu „nejede tudy"
 
 Nález Jana při proklikávání `B67` (linka 9 Nitra, zastávka **Bizetova**): sloupec „Čas" byl na jejím

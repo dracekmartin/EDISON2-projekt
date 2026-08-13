@@ -627,10 +627,12 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
 
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
     k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar, odjAtrLegenda, znakyLinky, pokrLegenda, pokrPoradi
-    // Režim písmen variant (KOVED bod 5): písmeno varianty u minuty NAHRAZUJE automatické rozdílové
-    // poznámky - kudy varianta jede, říká přímo sloupec („<"/prázdno). Jinak by vývěska nesla dvě
-    // abecedy vedle sebe (přesně to, co jsme u legacy kritizovali). RozdilyTras se pak nepočítá vůbec.
-    i 'pismenaVar d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
+    // Značka varianty u minuty a rozdílová poznámka jsou DVĚ NEZÁVISLÉ věci a běží vedle sebe -
+    // značka řekne „kterým sloupcem", poznámka „kudy". Tak to má i starý modul: u minuty skládá
+    // obojí zvlášť (`JRapiLinPrtMhd1.mac:529`, značka sloupce `:297`). Do 13. 8. u nás režim písmen
+    // poznámky vypínal, takže si uživatel musel vybrat mezi spárováním minuty se sloupcem a
+    // vysvětlením trasy; sloupce bez písmene („T1") pak neměly ani jedno.
+    d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
     s variantyTras = ##class(%DynamicArray).%New()
     i pismenaVar {
         // hlavičky = písmena variant v pořadí sloupců; volitelně první (nejčetnější) bez písmene
@@ -3153,8 +3155,12 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d arr.%Push(pZdrojSt)
 
     // Varianty tras (KOVED #13048 bod 5) - týkají se variantních sloupců seznamu zastávek.
-    // Varianta = sled zastávek (legacy dedup), časy sloupce = max přes spoje varianty.
-    // Písmena u odjezdů nahrazují automatické rozdílové poznámky (jedna abeceda na vývěsce).
+    // Varianta = sled zastávek (legacy dedup), časy sloupce = průběh jedné skutečné trasy.
+    // ⚠️ Písmena variant a písmena rozdílových poznámek jsou dvě NEZÁVISLÉ řady a obě začínají od
+    // „A", takže se na jedné minutě můžou potkat dvě stejná písmena v jiném významu. Vědomý
+    // kompromis (rozhodnutí Jan 13. 8.) - řeší se, až na to někdo narazí. Starý modul se tomu vyhnul
+    // vlastní řadou od konce abecedy („UVWXYZ"), jenže tu bere z nastavení u linky, které nemá
+    // vyplněné ani jedna z 325 prověřených linek - takže značky netiskne vůbec.
     s pRazV = ##class(%DynamicObject).%New()
     s pRazV.name         = "RAZENI_VARIANT"
     s pRazV.label        = "Řazení variant tras"
@@ -3168,7 +3174,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRazV.options = optsRV
     d arr.%Push(pRazV)
 
-    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant u odjezdů", "false", "Seznam zastávek", "Varianty tras dostanou písmena A-Z v záhlaví sloupců a u minut odjezdů. Nahrazuje automatické poznámky rozdílů tras - kudy spoj jede, je vidět přímo ve sloupci varianty.")
+    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant u odjezdů", "true", "Seznam zastávek", "Varianty tras dostanou písmena A-Z v záhlaví sloupců a u minut odjezdů, takže je u minuty vidět, kterým sloupcem spoj jede. Poznámky rozdílů tras běží dál vedle nich - značka říká který sloupec, poznámka kudy.")
 
     s pPrvB = ##class(%DynamicObject).%New()
     s pPrvB.name         = "PRVNI_BEZ_PISMENE"

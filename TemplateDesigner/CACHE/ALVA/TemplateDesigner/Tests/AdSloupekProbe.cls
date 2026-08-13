@@ -245,6 +245,57 @@ ClassMethod PripadyLinky(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Plní zákazníci **znaky variantních sloupců** u linky (`B67` krok 3)? Starý modul je bere ze
+/// stringu `^JRL(sku,lin,"PATCH","mhd","par",2)` - i-tý znak patří i-tému sloupci
+/// (`JRapiLinPrtMhd1.mac:26` a `:297`). Žádný default v kódu není; prázdné nastavení = sloupce
+/// zůstanou bez značky. Podle toho, kolik linek ho reálně má, se rozhoduje, jestli TD stačí
+/// parita (číst nastavení), nebo potřebuje i vlastní záložní řadu.
+/// IN: DB, SKU (default 1), MAXLIN (default 500). Read-only.
+ClassMethod ZnakySloupcu(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")) if db = "" set db = dataDB
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin = 0 set maxLin = 500
+
+		kill ^||ML("OUT")
+		set linek = 0, sZnaky = 0, ukazek = 0, lin = ""
+		kill vzorky, delky
+		for {
+			set lin = $order(^[db]JRL(sku, lin)) quit:lin=""
+			quit:linek'<maxLin
+			continue:'$data(^[db]JRL(sku, lin, "I"))
+			set linek = linek + 1
+			set znaky = $get(^[db]JRL(sku, lin, "PATCH", "mhd", "par", 2))
+			continue:znaky=""
+			set sZnaky = sZnaky + 1
+			set delky($length(znaky)) = $get(delky($length(znaky))) + 1
+			if ukazek < 8 {
+				set ukazek = ukazek + 1
+				set vzorky(ukazek) = "lin=" _ lin _ " znaky=""" _ znaky _ """"
+			}
+		}
+
+		set ^||ML("OUT","A_FIRMA") = db _ " sku=" _ sku
+		set ^||ML("OUT","B_SOUHRN") = "linek=" _ linek _ " sVyplnenymiZnaky=" _ sZnaky
+		set d = "", prehled = ""
+		for {
+			set d = $order(delky(d)) quit:d=""
+			set prehled = prehled _ $select(prehled="":"", 1:", ") _ d _ " znaku: " _ delky(d) _ "x"
+		}
+		set ^||ML("OUT","C_DELKY") = prehled
+		set u = ""
+		for {
+			set u = $order(vzorky(u)) quit:u=""
+			set ^||ML("OUT","D_VZOREK_" _ u) = vzorky(u)
+		}
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Je zastávka v uzlu 32 **cíl** pokračování, nebo předávací bod? (#13093 bod 3, otázka na kolegy.)
 /// Pro pár spojů s uzlem 32 dohledá trasu pokračujícího spoje a vypíše její první a poslední
 /// obsluhovanou zastávku, aby šlo porovnat se zastávkou ze záznamu.
