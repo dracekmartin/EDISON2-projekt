@@ -1,10 +1,144 @@
 Include (%occInclude, GENERAL)
 
-/// Read-only sonda k #13048 bodu 3 / #13088: kde v datech AD leží „sloupek" (KOVED ho odlišuje
-/// od nástupiště = našeho označníku). Umí fulltext přes legacy rutiny (`^rMAC`) a rozpad
-/// `#`-segmentů J-věty trasy linky. Nic nemění, po vytěžení smazat.
+/// Read-only sondy nad AD daty. Původně k #13048 bodu 3 / #13088 (kde v datech leží „sloupek", který
+/// KOVED odlišuje od nástupiště = našeho označníku); fulltext přes legacy rutiny (`^rMAC`) a rozpad
+/// `#`-segmentů J-věty. Od `B67` navíc `NajdiVariantniPripady` + `PripadyLinky`, kterými se vybírají
+/// linky do testovací sady (`ZastavkoveJrAdGoldTest.Pripady`) - **ty dvě si nech**, hledání kandidátů
+/// bude potřeba u každé další změny variantních sloupců. Nic nemění.
 Class ALVA.TemplateDesigner.Tests.AdSloupekProbe
 {
+
+/// Read-only hledání linek pro testovací sadu (`B67`): kde vznikají variantní sloupce, kde v základním
+/// sloupci časů vzniká „<" (vybraná trasa zastávkou projíždí bez stání) a kde má **tentýž sled zastávek
+/// dva různé časové průběhy** - právě tam rozhoduje pravidlo „vyhrává delší jízda". Jedna gold linka
+/// pokrývá jen svůj tvar dat, proto se kandidáti hledají napříč firmami.
+///
+/// Signatury se skládají přes celý směr (ne per vývěskovou zastávku), takže je to **hrubý filtr** na
+/// kandidáty - potvrzuje se pak spuštěním agendy nad konkrétní linkou (`PripadyLinky`).
+/// IN: DB, SKU (default 1), MAXLIN (default 300), MAXOUT (default 30). Read-only.
+ClassMethod NajdiVariantniPripady(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinne"))
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 300
+		set maxOut = +$get(^||ML("IN","MAXOUT")) if maxOut < 1 set maxOut = 30
+		kill ^||ML("OUT")
+
+		set linek = 0, vypsanych = 0, lin = ""
+		for {
+			set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+			quit:linek'<maxLin
+			quit:vypsanych'<maxOut
+			continue:'$data(^[db]JRL(sku,lin,"W"))
+			set linek = linek + 1
+			kill ^||TiskAd                       // cache agendy je per linka, ať v tomhle běhu neroste
+			set variant = 0, projizdeni = 0, stejnyVzor = 0, tras = 0
+			for smer = "T", "Z" {
+				kill served, sig
+				do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).ObsluhovanePoradi(db, sku, lin, smer, .served)
+				continue:'$data(served)
+				kill ct
+				set sp = ""
+				for {
+					set sp = $order(^[db]JRL(sku,lin,smer,sp)) quit:sp=""
+					continue:'$isvalidnum(sp)
+					set c = $piece($piece($get(^[db]JRL(sku,lin,smer,sp)),"#",1),":",3)
+					if c '= "" set ct(c) = ""
+				}
+				set pocetVzoru = 0, c = ""
+				for {
+					set c = $order(ct(c)) quit:c=""
+					set tras = tras + 1
+					kill wMap
+					do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).WMapa(db, sku, lin, c, .wMap)
+					set vzor = "", casy = "", pp = ""
+					for {
+						set pp = $order(served(pp)) quit:pp=""
+						set v = $get(wMap(pp))
+						set stav = $select(v="":"-", (v="<")||(v="|"):"<", 1:"S")
+						if stav = "<" set projizdeni = 1
+						set vzor = vzor_stav
+						set casy = casy_"~"_##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota(v)
+					}
+					if '$data(sig(vzor)) { set pocetVzoru = pocetVzoru + 1 }
+					elseif sig(vzor) '= casy { set stejnyVzor = 1 }
+					set sig(vzor) = casy
+				}
+				if pocetVzoru > 1 set variant = 1
+			}
+			continue:('variant)&&('projizdeni)&&('stejnyVzor)
+			set vypsanych = vypsanych + 1
+			set ^||ML("OUT", "K"_vypsanych) = db_" lin="_lin_" tras="_tras_" varianty="_variant_" projizdeni="_projizdeni_" stejnyVzorJineCasy="_stejnyVzor_" prepinacAuto="_$get(^[db]JRL(sku,lin,"PATCH","mhd","par",1))
+		}
+		set ^||ML("OUT", "Z_SOUHRN") = "prohledano linek: "_linek_", vypsano: "_vypsanych
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Co na jedné lince reálně vznikne, když se pustí agenda (`B67`): kolik stránek má variantní sloupce,
+/// kde v základním sloupci časů je „<" a kde prázdno. Slouží k výběru linek do testovací sady a k tomu,
+/// aby šlo říct **konkrétní zastávku**, na které se to dá vizuálně zkontrolovat.
+/// IN: SKU (default 1), LIN. Read-only (jen čte, co vrátí GetData).
+ClassMethod PripadyLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set lin = $get(^||ML("IN","LIN"))
+		if lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LIN je povinne"))
+
+		kill ^||ML("OUT")
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+		set stranek = 0, sVariantami = 0, maxSloupcu = 0, mensitek = 0, prazdnych = 0, ukazek = 0
+		kill vzorky
+		set key = ""
+		for {
+			set key = $order(^||ML("OUT", key)) quit:key=""
+			continue:key="ERR"
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			set zast = page.rows.ZASTAVKY
+			continue:'$isobject(zast)
+			set stranek = stranek + 1
+			set sloupcu = 0
+			if $isobject(page.values.%Get("VARIANTY_TRAS")) set sloupcu = page.values.%Get("VARIANTY_TRAS").%Size()
+			if sloupcu > maxSloupcu set maxSloupcu = sloupcu
+			if sloupcu > 1 set sVariantami = sVariantami + 1
+			set kdeMensitko = "", it = zast.%GetIterator()
+			while it.%GetNext(.i, .radek) {
+				set c = radek.%Get("CAS_JIZDY")
+				if c = "<" {
+					set mensitek = mensitek + 1
+					if kdeMensitko = "" set kdeMensitko = radek.%Get("NAZEV_ZASTAVKY")
+				}
+				elseif c = "" { set prazdnych = prazdnych + 1 }
+			}
+			if (kdeMensitko '= "") && (ukazek < 5) {
+				set ukazek = ukazek + 1
+				set vzorky(ukazek) = "vyveska " _ page.values.%Get("POPIS_ZASTAVKA") _ " (smer " _ page.values.SMER _ ", sloupcu variant " _ sloupcu _ ") ma < u zastavky " _ kdeMensitko
+			}
+		}
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_LINKA") = "sku=" _ sku _ " lin=" _ lin
+		set ^||ML("OUT","B_SOUHRN") = "stranek=" _ stranek _ " sVariantami=" _ sVariantami _ " maxSloupcuVariant=" _ maxSloupcu _ " mensitekVCase=" _ mensitek _ " prazdnychVCase=" _ prazdnych
+		set u = ""
+		for {
+			set u = $order(vzorky(u)) quit:u=""
+			set ^||ML("OUT","C_VZOREK_" _ u) = vzorky(u)
+		}
+	}
+	// Bez úklidu OUT by chyba v sondě poslala klientovi celý výstup GetData (megabajty stránek).
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
 
 /// Je zastávka v uzlu 32 **cíl** pokračování, nebo předávací bod? (#13093 bod 3, otázka na kolegy.)
 /// Pro pár spojů s uzlem 32 dohledá trasu pokračujícího spoje a vypíše její první a poslední

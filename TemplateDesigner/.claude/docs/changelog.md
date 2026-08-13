@@ -32,14 +32,25 @@ je **naše rozhodnutí, ne parita** - legacy při shodné délce zápisu rozhodu
 nahodile; pro cestujícího je bezpečnější pozdější číslo.
 
 **Brány:** **873 .NET testů** zelených (8 nových: rozdělení sloupců, tři stavy základního sloupce,
-základní čas jen na prvním řádku stanoviště) a **97 Caché testů** (3 nové). Gold odtisky přebaselinované:
+základní čas jen na prvním řádku stanoviště) a **98 Caché testů** (4 nové). Gold odtisky přebaselinované:
 **počty stránek, zastávek, odjezdů i poznámek jsou shodné** (39/800/844/235 a 38/762/498/236), mění se
 jen hodnoty v časových sloupcích - tedy se neztratil žádný spoj ani řádek. Mutační kontrola: +1 minuta
 ve variantním sloupci shodí nový invariantní test na **60 z 60** sloupců.
 
-⚠️ **Stav „<" gold linka neukáže** - její nejdosažnější trasa obsluhuje všechny zastávky, které
-obsluhuje kdokoli, takže tam „<" nevzniká. Pravidlo proto drží jednotkový test nad syntetickou W-mapou;
-na zákazníkových datech (Nitra) to zbývá vidět na vývěsce.
+**Testovací sada už není jedna linka.** Gold linka 0365001 stav „<" vůbec nevyrobí (její nejdosažnější
+trasa obsluhuje všechno), takže by ta změna prošla jako inertní. Sonda proto prošla čtyři firmy
+a invariantní testy teď jedou přes **šest linek ze čtyř firem**, každou s jiným tvarem dat:
+
+- `SKNI_MHDNITRA 0000012` - zákazníkova linka z #12843: 67 stránek, 48 s variantami, až 6 sloupců, **164× „<"**, 48× prázdno
+- `CB_GWBUS 0320118` - největší rozsah: 101 stránek, 80 s variantami, až 10 sloupců, 383× „<", 819× prázdno
+- `CB_CSADAD 0330530` - **nejvíc sloupců variant (12)**, 18× „<"; přibrána i jako třetí gold odtisk
+- `SKNI_MHDNITRA 0000002` - přepínač u linky v ručním režimu a vyplněné ruční minuty
+- `ZL_KOVED 0823955` - prázdno v Času bez jediného „<"
+- `CB_CSADAD 0365001` - původní gold, kde nevzniká ani jeden z těch stavů
+
+Nové odtisky jsou jen ze `CB_CSADAD` - digest na živých datech jiného zákazníka by padal, kdykoli si
+upraví jízdní řád, takže ostatní firmy drží **invarianty**, ne hash. Když některá firma na serveru
+chybí, sada ji přeskočí a kontrolu obou stavů vynechá, aby test nepadal podle toho, kde běží.
 
 ## 2026-08-12 (10) - 🔧 jeden sloupec jízdních dob už nekončí v polovině seznamu (#12843)
 
