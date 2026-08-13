@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-13 (4) - 🔢 nula ve sloupci časů se tiskne, prázdno zůstává významu „nejede tudy"
+
+Nález Jana při proklikávání `B67` (linka 9 Nitra, zastávka **Bizetova**): sloupec „Čas" byl na jejím
+řádku **prázdný**, zatímco variantní sloupce vedle měly **0**. Jeden údaj, dva zápisy na jednom řádku.
+
+**Proč byl prázdný špatně:** prázdno v seznamu zastávek **něco znamená** - „tudy tenhle průběh
+nejede". To jsme právě v kroku 2 doladili, aby šlo odlišit projíždění (`<`) od neobsluhování.
+Bizetova je ale hned za vývěskovou zastávkou, jede se tam pod minutu, takže vyjde nula - a ta se
+v sloupci „Čas" potlačovala. Cestující tedy četl „sem to nejede" u zastávky, kterou spoj obsluhuje.
+
+**Nově jdou oba sloupce touž cestou.** Nula se tiskne; kdo chce čitelnější tvar, zapne si
+„Jízda pod minutu jako <1" (chová se pak stejně v obou rodinách sloupců, jako dosud).
+
+**Řádek vývěskové zastávky zůstává prázdný** - a nově i ve variantních sloupcích, kde se dosud
+nula tiskla. Na zastávce, kde stojíš, není „0 minut" údaj, ale definice; vyjde stejně v každém
+sloupci, takže je to jen šum. Odpovídá to tvaru, který mají zapnuté „<1" už dnes.
+
+⚠️ **Dopad na MHD prověřen zvlášť** - MHD posílá nulu i pro **projeté zastávky**
+(`ZastavkoveJrMhd.cls:1141`; AD tam má záporný čas), takže bez ohledu by se vývěsky DPCB/DPKV nad
+vývěskovou zastávkou pokryly nulami. Výchozí „Nezobrazovat" je odfiltruje jako dosud a hlídá to test
+pro obě podoby dat.
+
+**Brány:** **2100 .NET testů** (902 TD). Mutace (zrušit výjimku pro řádek vývěskové zastávky) shodí
+**6 testů**. Zlaté odtisky se nemění - jde o vykreslení textu buňky, ne o data z agendy.
+
 ## 2026-08-13 (3) - 🎚️ varianty tras se zapínají ve sloupcích, ne zaškrtávátkem (`B80`)
 
 Podnět Jan 13. 8. při přípravě proklikání `B67`: „varianty tras se zapínají mimo sloupce, není to

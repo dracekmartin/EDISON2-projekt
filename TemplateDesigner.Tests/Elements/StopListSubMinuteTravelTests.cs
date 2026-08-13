@@ -35,11 +35,14 @@ public class StopListSubMinuteTravelTests
         return [.. trasa.Select(z => el.GetCellText(z, StopFields.TravelTime))];
     }
 
+    /// <summary>Vypnutá volba = nula se tiskne tak, jak přišla. Prázdno je vyhrazené významu „tudy
+    /// tenhle průběh nejede", takže potlačená nula dělala ze zastávky do minuty neobsluhovanou
+    /// (nález Jan 13. 8., linka 9 Nitra). Vývěsková zastávka zůstává prázdná - tam nula není údaj.</summary>
     [Fact]
-    public void Vypnuto_NulaZustavaPrazdna()
+    public void Vypnuto_NulaSeTiskne_KromeVyveskoveZastavky()
     {
         var trasa = Trasa();
-        Assert.Equal(["", "", "", "3", "5"], Texty(new StopListElement(), trasa));
+        Assert.Equal(["", "0", "0", "3", "5"], Texty(new StopListElement(), trasa));
     }
 
     [Fact]
@@ -61,27 +64,29 @@ public class StopListSubMinuteTravelTests
         Assert.Equal("", texty[0]);
     }
 
-    /// <summary>Past, kvůli které je tohle netriviální: `CasJizdyZMapy` vrací 0 i pro zastávku, kterou
-    /// reprezentativní spoj neobsluhuje. Taková nula přijde **za** nenulovým časem, protože kumulativní
-    /// časy rostou - a nesmí se z ní stát „&lt;1".</summary>
+    /// <summary>Past, kvůli které je tohle netriviální: nula **za** nenulovým časem není jízda pod
+    /// minutu (kumulativní časy rostou), takže se z ní nesmí stát „&lt;1". Vypsat se ale smí - je to
+    /// hodnota, kterou agenda poslala, a prázdno by tvrdilo „tudy se nejede".</summary>
     [Fact]
-    public void Zapnuto_NulaZaRealnymCasemJeChybejiciUdaj_NeJizdaPodMinutu()
+    public void Zapnuto_NulaZaRealnymCasemNeniJizdaPodMinutu()
     {
         List<ZastavkaData> trasa =
         [
             Stop("Vývěsková", 0, jeAktualni: true),
             Stop("Hned za ní", 0),
             Stop("Za tři minuty", 3),
-            Stop("Spoj tu nestaví", 0),   // 0 = chybí údaj, ne jízda pod minutu
+            Stop("Nula za reálným časem", 0),
             Stop("Za deset minut", 10),
         ];
 
         var texty = Texty(new StopListElement { ShowSubMinuteTravel = true }, trasa);
 
-        Assert.Equal(["", "<1", "3", "", "10"], texty);
+        Assert.Equal(["", "<1", "3", "0", "10"], texty);
     }
 
-    /// <summary>Projeté zastávky mají nulu vynucenou agendou („údaj není relevantní", KOVED #13091).</summary>
+    /// <summary>Projeté zastávky mají nulu vynucenou agendou („údaj není relevantní", KOVED #13091),
+    /// takže z nich nesmí být „&lt;1". Že se ta nula při zvoleném „Zobrazit" vypíše, je důsledek volby -
+    /// výchozí „Nezobrazovat" ji schová (test níže).</summary>
     [Fact]
     public void Zapnuto_ProjetaZastavkaZnackuNedostane()
     {
@@ -95,7 +100,22 @@ public class StopListSubMinuteTravelTests
         var el = new StopListElement { ShowSubMinuteTravel = true, PassedStopsTime = PassedStopsTimeDisplay.Show };
         var texty = Texty(el, trasa, showPassed: true);
 
-        Assert.Equal(["", "", "<1"], texty);
+        Assert.Equal(["0", "", "<1"], texty);
+    }
+
+    /// <summary>Výchozí stav: projetá zastávka časy nemá, ať už agenda posílá nulu (MHD -
+    /// <c>ZastavkoveJrMhd.cls:1141</c>) nebo záporný čas (AD). Kdyby se nula projetých začala
+    /// tisknout, MHD vývěsky by nad vývěskovou zastávkou dostaly sloupec nul.</summary>
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-7")]
+    public void ProjetaZastavkaJeVychoziNastavenimPrazdna(string cas)
+    {
+        var el = new StopListElement();   // PassedStopsTime = Hide (výchozí)
+        var z = new ZastavkaData { Popis = "Projetá", CasJizdy = cas, TrasaMin = [cas] };
+
+        Assert.Equal("", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
+        Assert.Equal("", el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "0", isPassed: true));
     }
 
     // ── Variantní sloupce časů ────────────────────────────────────────────────
@@ -116,8 +136,10 @@ public class StopListSubMinuteTravelTests
         string A(int radek) => el.GetCellText(trasa[radek], $"{StopFields.TravelTimeVariantPrefix}0");
         string B(int radek) => el.GetCellText(trasa[radek], $"{StopFields.TravelTimeVariantPrefix}1");
 
-        Assert.Equal(["0", "<1", "<1"], new[] { A(0), A(1), A(2) });
-        Assert.Equal(["0", "2", "4"], new[] { B(0), B(1), B(2) });
+        // Řádek vývěskové zastávky je prázdný i tady - do 13. 8. tam variantní sloupce nulu tiskly,
+        // zatímco sloupec „Čas" vedle nich prázdný byl (nález Jan na lince 9, zastávka Kmeťova).
+        Assert.Equal(["", "<1", "<1"], new[] { A(0), A(1), A(2) });
+        Assert.Equal(["", "2", "4"], new[] { B(0), B(1), B(2) });
     }
 
     /// <summary>„&lt;" = varianta tu nestaví. Není to čas, takže běh nul neukončí ani nezaloží.</summary>

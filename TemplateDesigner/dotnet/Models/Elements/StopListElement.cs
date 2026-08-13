@@ -802,12 +802,15 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         {
             string variant = int.TryParse(columnKey.AsSpan(StopFields.TravelTimeVariantPrefix.Length), out int vi)
                    && vi >= 0 && vi < z.TrasaMin.Count ? z.TrasaMin[vi] : "";
-            return FilterPassedTime(SubMinuteOr(variant, z, columnKey), isPassed);
+            return FilterPassedTime(SubMinuteOr(FilterCurrentStopTime(variant, z), z, columnKey), isPassed);
         }
         return columnKey switch
         {
             StopFields.StopName     => BuildStopDisplayText(z),
-            StopFields.TravelTime   => FilterPassedTime(SubMinuteOr(ZakladniCas(z.CasJizdy), z, columnKey), isPassed),
+            // Základní i variantní sloupec jdou TOUŽ cestou - je to tentýž údaj a rozdílné zacházení
+            // se hned pozná: nula se v „Čase" potlačovala, ve variantách ne, takže zastávka s jízdou
+            // pod minutu vypadala v jednom sloupci jako neobsluhovaná a hned vedle měla „0".
+            StopFields.TravelTime   => FilterPassedTime(SubMinuteOr(FilterCurrentStopTime(z.CasJizdy, z), z, columnKey), isPassed),
             // Víc zón u jedné zastávky (hraniční) odděluje čárka - shodně se starým modulem.
             StopFields.Zone         => string.Join(",", z.Zony),
             // Režimy „více hodnot" platí pro ten údaj, který je zvolený jako číslo stanoviště;
@@ -824,13 +827,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             _                       => ""
         };
     }
-
-    /// <summary>Text základního sloupce časů z třístavové hodnoty (číslo / „&lt;" / prázdno). Nula
-    /// a záporný čas se netisknou - nula znamená „jízda pod minutu" a řeší ji zvlášť
-    /// <see cref="ShowSubMinuteTravel"/>, záporný čas nese jen projetá zastávka. „&lt;" projde,
-    /// není to čas, ale informace, že tudy základní trasa jede bez stání.</summary>
-    private static string ZakladniCas(string raw) =>
-        int.TryParse(raw, out int minuty) ? (minuty > 0 ? raw : "") : raw;
 
     /// <summary>Hodnota stanoviště podle <see cref="MultiPlatformMode"/>: z trasy / nejčetnější dle spojů /
     /// výčet všech. Bez per-spoj dat vždy fallback na hodnotu z trasy.</summary>
@@ -918,6 +914,17 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     private string SubMinuteOr(string value, ZastavkaData z, string columnKey)
         => _subMinuteCells?.Contains((z, columnKey)) == true ? SubMinuteText : value;
+
+    /// <summary>Čas na řádku vývěskové zastávky se netiskne - nula tam není údaj, ale definice
+    /// („stojíš tady") a vyjde stejně v každém sloupci. Platí pro obě rodiny sloupců, jinak by se
+    /// rozešly. Ne-číselnou hodnotu („&lt;") nechává, není to čas.
+    ///
+    /// <para>⚠️ Mimo tento řádek se nula **tiskne**: prázdno v seznamu znamená „tudy tenhle průběh
+    /// nejede", takže potlačená nula dělala ze zastávky s jízdou pod minutu neobsluhovanou
+    /// (nález Jan 13. 8., linka 9 Nitra, zastávka Bizetova). Čitelnější tvar dá volba
+    /// <see cref="ShowSubMinuteTravel"/>.</para></summary>
+    private static string FilterCurrentStopTime(string value, ZastavkaData z) =>
+        z.JeAktualni && int.TryParse(value, out _) ? "" : value;
 
     /// <summary>Čas jízdy u projeté zastávky podle volby <see cref="PassedStopsTime"/>. Ne-číselnou
     /// hodnotu („&lt;" = projíždí) nechává - není to čas, jen značka.</summary>

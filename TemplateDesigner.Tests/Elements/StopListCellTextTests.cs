@@ -205,6 +205,20 @@ public class StopListCellTextTests
         Assert.Equal("9", el.GetCellText(StopSCasy(9), StopFields.TravelTime, isPassed: false));
     }
 
+    /// <summary>Volba „Zobrazit" u projetých zastávek platí i pro základní sloupec. Ten do 13. 8.
+    /// zahazoval záporný čas dřív, než se k němu volba dostala, takže zůstal prázdný, i když si
+    /// uživatel zobrazení výslovně zapnul - a variantní sloupce vedle něj číslo měly.</summary>
+    [Fact]
+    public void ZakladniSloupecCasu_ZobrazitPlatiIProNej()
+    {
+        var el = new StopListElement { PassedStopsTime = PassedStopsTimeDisplay.Show };
+        var z = StopSCasy(0, "-7");
+        z.CasJizdy = "-7";
+
+        Assert.Equal("-7", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
+        Assert.Equal("-7", el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "0", isPassed: true));
+    }
+
     // ── Tři stavy základního sloupce časů (B67) ───────────────────────────────
     // Sloupec „Čas jízdy" nese totéž co variantní: číslo, „<" (základní trasa projíždí bez stání)
     // nebo prázdno (mimo základní trasu). Dřív bylo prázdno i pro projíždění, takže z jediného
@@ -225,14 +239,31 @@ public class StopListCellTextTests
         Assert.Equal("", ZakladniCas(""));
     }
 
-    /// <summary>Nula znamená „jízda pod minutu" a řeší ji vlastní volba, takže sama se netiskne;
-    /// záporný čas nese jen projetá zastávka a ten se v základním sloupci taky nezobrazuje. Bez toho
-    /// by se po přechodu na text objevily nuly tam, kde bylo dosud prázdno.</summary>
+    /// <summary>Nula se tiskne. Prázdno v seznamu znamená „tudy tenhle průběh nejede", takže
+    /// potlačená nula dělala ze zastávky s jízdou pod minutu neobsluhovanou - a hned vedle měla
+    /// ve variantním sloupci „0" (nález Jan 13. 8. na lince 9, zastávka Bizetova). Kdo chce místo
+    /// nuly čitelnější tvar, zapne si „Jízda pod minutu jako &lt;1".</summary>
     [Fact]
-    public void ZakladniCas_NulaAniZapornyCasSeNetisknou()
+    public void ZakladniCas_NulaSeTiskne()
     {
-        Assert.Equal("", ZakladniCas("0"));
-        Assert.Equal("", ZakladniCas("-7"));
+        Assert.Equal("0", ZakladniCas("0"));
+    }
+
+    /// <summary>Základní sloupec musí dát na tutéž hodnotu totéž co variantní - rozdílné zacházení
+    /// je vidět vedle sebe na jednom řádku.</summary>
+    [Theory]
+    [InlineData("0")]
+    [InlineData("12")]
+    [InlineData("<")]
+    [InlineData("")]
+    public void ZakladniCas_JeShodnySeSloupcemVarianty(string hodnota)
+    {
+        var el = new StopListElement();
+        var z = new ZastavkaData { Popis = "Zastávka", CasJizdy = hodnota, TrasaMin = [hodnota] };
+
+        Assert.Equal(
+            el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "0"),
+            el.GetCellText(z, StopFields.TravelTime));
     }
 
     [Fact]
