@@ -423,6 +423,75 @@ Method TestRazeniVariantDleDelkyJizdy()
 	do $$$AssertEquals(spatneOpacne, "", "obrácená volba neseřadila od nejdelší jízdy: "_spatneOpacne)
 }
 
+/// Dva variantní sloupce se **nesmí shodovat po celé délce vývěsky**. Šimko (#12843, 12. 8.):
+/// „spoj má v polovici trasy zachádzku - v úseku za zachádzkou už všetky spoje idú rovnako a
+/// zobrazenie dvoch rovnakých stĺpcov je zbytočná duplicita." Varianta je u nás sled zastávek
+/// **od vývěskové zastávky dál**, takže trasy lišící se až za vývěskou zůstávají oddělené (správně,
+/// liší se), ale trasy shodné od vývěsky dál se musí slít do jednoho sloupce - jinak by cestující
+/// četl dva sloupce se stejnými čísly. Stejně to dělá starý modul, který sloupce staví per
+/// vývěsková zastávka (`JRapiLinPrtMhd1.mac:286-299`, klíč `Tc`+`Smer`) - **přečteno ze zdroje,
+/// neověřeno spuštěním legacy**.
+///
+/// <p>Doplňuje `ZastavkoveJrAdGoldTest.TestZadneDuplicitniVariantniSloupce`, který hlídá totéž,
+/// ale jen na gold lince 0365001. Tady jde o pět linek ze čtyř firem - jedna linka pokrývá jen
+/// svůj tvar dat.</p>
+Method TestZadneDvaSloupceVariantNejsouShodne()
+{
+	do ..SetupSys(.sys)
+	do ..Jadro(.jadro)
+	set shodne = "", dvojic = 0, overeno = 0, i = ""
+	for  {
+		set i = $order(jadro(i))
+		quit:i=""
+		set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
+		kill parametry
+		continue:'..NactiLinku(.sys, db, sku, lin, .parametry)
+		set overeno = overeno + 1
+		set key = ""
+		for  {
+			set key = $order(^||ML("OUT", key)) quit:key=""
+			continue:key="ERR"
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			set zast = page.rows.ZASTAVKY
+			continue:'$isobject(zast)
+			set sloupcu = 0
+			if $isobject(page.values.%Get("VARIANTY_TRAS")) set sloupcu = page.values.%Get("VARIANTY_TRAS").%Size()
+			continue:sloupcu<2
+			// Otisk sloupce = jeho hodnoty přes řádky, ale **jen od vývěskové zastávky dál**.
+			// V projeté části se varianty legitimně liší (tam se ještě nesešly), takže porovnání
+			// přes celou stránku by duplicitu neodhalilo - přesně na to tenhle test nejdřív najel.
+			kill otisk
+			set poVyvesce = 0, it = zast.%GetIterator()
+			while it.%GetNext(.ri, .radek) {
+				if $zcvt(radek.%Get("AKTUALNI_ZASTAVKA"),"L") = "true" set poVyvesce = 1
+				continue:'poVyvesce
+				set tm = radek.%Get("TRASA_MIN")
+				continue:'$isobject(tm)
+				for ti = 0:1:sloupcu-1 {
+					set hodnota = ""
+					if ti < tm.%Size() set hodnota = tm.%Get(ti)
+					set otisk(ti) = $get(otisk(ti)) _ "|" _ hodnota
+				}
+			}
+			for ai = 0:1:sloupcu-2 {
+				for bi = ai+1:1:sloupcu-1 {
+					continue:'$data(otisk(ai))
+					continue:'$data(otisk(bi))
+					set dvojic = dvojic + 1
+					continue:otisk(ai)'=otisk(bi)
+					if shodne = "" set shodne = db_" "_lin_", stránka "_key_" ("_page.values.%Get("POPIS_ZASTAVKA")_"): sloupce "_(ai+1)_" a "_(bi+1)_" mají po celé délce stejné hodnoty"
+				}
+			}
+		}
+	}
+	if 'overeno {
+		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
+		quit
+	}
+	do $$$AssertEquals(dvojic > 0, 1, "nenašla se ani jedna stránka se dvěma variantními sloupci - test by neověřil nic")
+	do $$$AssertEquals(shodne, "", "dva variantní sloupce jsou shodné, měly se slít do jednoho: "_shodne)
+}
+
 /// Počet odjezdů ve všech stránkách právě načteného výstupu.
 ClassMethod PocetOdjezdu() As %Integer
 {
