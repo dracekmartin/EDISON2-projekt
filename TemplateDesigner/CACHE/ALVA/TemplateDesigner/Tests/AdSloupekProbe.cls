@@ -323,8 +323,13 @@ ClassMethod ViceStanovistLinky(ByRef sys As %String) As %Status
 			set zast = page.rows.ZASTAVKY
 			continue:'$isobject(zast)
 			set stranek = stranek + 1
+			// Zastávky PŘED vývěskou jsou projeté - tisknou se šedě a jen na vyžádání, takže rozpad
+			// na řádky tam nikdo neuvidí. Pro proklikání jsou k ničemu; hledáme ty za vývěskou.
+			set zaVyveskou = 0
 			set it = zast.%GetIterator()
 			while it.%GetNext(.i, .radek) {
+				if radek.%Get("AKTUALNI_ZASTAVKA") = "true" set zaVyveskou = 1  continue
+				continue:'zaVyveskou
 				set nv = radek.%Get("NASTUPISTE_VARIANT")
 				continue:'$isobject(nv)
 				kill ruzne

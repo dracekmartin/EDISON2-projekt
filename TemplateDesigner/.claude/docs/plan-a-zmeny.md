@@ -38,6 +38,32 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 13. 8. 2026 - Jízdní doby variant tras: přehlednější a lépe čitelné
+
+Sloupce s jízdními dobami u zastávkových vývěsek se dočkaly několika úprav najednou.
+
+**Sloupec „Čas jízdy" už nezmizí.** Dosud ho na zastávkách s více variantami trasy variantní sloupce
+nahradily, takže z vývěsky zmizela deklarovaná doba jízdy linky. Nově zůstává a varianty se řadí
+za něj. Pokud ho na takové vývěsce nechcete, vypnete si ho jako kterýkoli jiný sloupec.
+
+**Nový znak „&lt;" v časech** znamená, že tudy spoj jede, ale nestaví. Dříve tam bylo prázdno stejně
+jako u trasy, kudy spoj vůbec nejede - tyhle dvě různé situace teď jdou rozeznat. Nula (jízda kratší
+než minuta) se vypisuje; kdo chce čitelnější tvar, zapne si v nastavení prvku „Jízda pod minutu
+jako &lt;1".
+
+**U minuty odjezdu je vidět, kterým sloupcem spoj jede.** Písmena variant se nově tisknou i u minut,
+a to **současně s poznámkami o rozdílech tras** - dosud se obojí vylučovalo, takže jste měli buď
+označení sloupce, nebo vysvětlení, kudy spoj jede. Značka říká „který sloupec", poznámka „kudy".
+
+**Řazení variant si volíte.** K dosavadnímu řazení podle četnosti a stabilnímu pořadí přibyly dvě
+volby podle délky jízdy - od nejkratší, nebo od nejdelší.
+
+**Zapínání variant se přesunulo mezi sloupce.** Dosud to bylo zaškrtávátko v nastavení prvku; nově
+je to položka **„Varianty tras"** v seznamu sloupců, takže má vlastní šířku, styl i pořadí jako
+každý jiný sloupec. Jedna položka se v tisku rozpadne na tolik sloupců, kolik má linka variant.
+**Vaše stávající šablony se převedou samy** a vytisknou se stejně jako dosud - nastavení, které jste
+měli, zůstává zachované.
+
 ### 12. 8. 2026 - Slovenské vysvětlivky podle jazyka šablony
 
 Vysvětlivky, které Návrhář skládá sám (na znamenie, prestup, bezbariérovosť, „premáva len",
