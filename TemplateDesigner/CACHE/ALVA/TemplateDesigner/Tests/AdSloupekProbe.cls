@@ -296,6 +296,65 @@ ClassMethod ZnakySloupcu(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Kde na lince se zastávka obsluhuje z **víc stanovišť** - tedy kde se v režimu „Řádek pro každé
+/// stanoviště" rozpadne na víc řádků. Slouží k tomu, aby šlo říct konkrétní vývěsku a zastávku
+/// k proklikání; bez toho se hledá ručně listováním stránek.
+/// IN: SKU (default 1), LIN. Read-only.
+ClassMethod ViceStanovistLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set lin = $get(^||ML("IN","LIN"))
+		if lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LIN je povinne"))
+
+		kill ^||ML("OUT")
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+		set stranek = 0, nalezu = 0, ukazek = 0, key = ""
+		kill vzorky
+		for {
+			set key = $order(^||ML("OUT", key)) quit:key=""
+			continue:key="ERR"
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			set zast = page.rows.ZASTAVKY
+			continue:'$isobject(zast)
+			set stranek = stranek + 1
+			set it = zast.%GetIterator()
+			while it.%GetNext(.i, .radek) {
+				set nv = radek.%Get("NASTUPISTE_VARIANT")
+				continue:'$isobject(nv)
+				kill ruzne
+				set pocet = 0
+				for vi = 0:1:nv.%Size()-1 {
+					set hodnota = nv.%Get(vi)
+					continue:hodnota=""
+					continue:$data(ruzne(hodnota))
+					set ruzne(hodnota) = "", pocet = pocet + 1
+				}
+				continue:pocet<2
+				set nalezu = nalezu + 1
+				continue:ukazek'<8
+				set ukazek = ukazek + 1
+				set vzorky(ukazek) = "vyveska " _ page.values.%Get("POPIS_ZASTAVKA") _ " (smer " _ page.values.SMER _ ") -> zastavka " _ radek.%Get("NAZEV_ZASTAVKY") _ " ma " _ pocet _ " stanovist"
+			}
+		}
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_LINKA") = "sku=" _ sku _ " lin=" _ lin
+		set ^||ML("OUT","B_SOUHRN") = "stranek=" _ stranek _ " zastavekSViceStanovisti=" _ nalezu
+		set u = ""
+		for {
+			set u = $order(vzorky(u)) quit:u=""
+			set ^||ML("OUT","C_VZOREK_" _ u) = vzorky(u)
+		}
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Je zastávka v uzlu 32 **cíl** pokračování, nebo předávací bod? (#13093 bod 3, otázka na kolegy.)
 /// Pro pár spojů s uzlem 32 dohledá trasu pokračujícího spoje a vypíše její první a poslední
 /// obsluhovanou zastávku, aby šlo porovnat se zastávkou ze záznamu.
