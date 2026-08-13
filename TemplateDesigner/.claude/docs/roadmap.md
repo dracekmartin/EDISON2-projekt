@@ -6,30 +6,19 @@
 > Follow-upy „na vyžádání zákazníka" žijí
 > v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
-> **Stav k 2026-08-13.** Verze vydaná 11. 8.; `B39` od 12. 8. **rozsvícená pro všechny**
-> (přepínač odstraněn - viz changelog 2026-08-12). 13. 8. přibyly `B67` kroky 1+2 a typová testovací
-> sada linek - **nevydané a neproklikané**, viz sekce `B67` pod tabulkou.
+> **Stav k 2026-08-13.** ▶ **Zákaznická fronta je prázdná - obě.** KOVED dojetá (`B39` 10. 8.),
+> zastávkový JŘ dojetý (`B67` 13. 8.). **Další krok si vyber:** **Fáze B** (tabulkové elementy, po
+> nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ (**B10** + **B13**) jako
+> dedikovaný slot.
 >
-> **▶ Zastávkový JŘ má jedinou otevřenou věc a NENÍ blokovaná** - `B67` se 12. 8. rozpadl: hlavní
-> stížnost (duplicitní sloupce variant) byla naše odchylka od starého modulu a je opravená. Z dohodnuté
-> podoby (sekce pod tabulkou) jsou **kroky 1+2 hotové 13. 8.**, zbývají dva velikosti S a jdou udělat
-> bez cizí součinnosti; blokovaná zůstala jen ruční tabulka variant, která na nás není. `B39` (vlastní sloupce vývěsky, #13045b) je hotová oběma
-> etapami 10. 8., takže **fronta KOVED je dojetá**. **Další krok si vyber:** **Fáze B** (tabulkové
-> elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
-> (**B10** + **B13**) jako dedikovaný slot.
+> ⚠️ **Nevydané a jen zčásti proklikané:** všechno od 12. 8. včetně - vlastní sloupce vývěsky
+> rozsvícené pro všechny, slovenské vysvětlivky, varianty jízdních dob (`B67`) a jejich přesun mezi
+> sloupce (`B80`). Poslední vydaná verze je z 11. 8. Seedy novinek jsou napsané a **čekají na vydání**,
+> nenahrávají se dřív.
 >
-> **Sada TRANSDEV: 7 z 10 hotových** (11. 8.). Cíl a obrácené poznámkování berou **kolegové**
-> (proto tady nejsou), odsazení per směr taky. Otevřený u nás zůstává jediný - **výběr variant
-> jízdních dob** (`TR7`), který zákazník 10. 8. potvrdil znovu jako #12843 bod 4; hotová je jen
-> půlka (nestabilní číslování). Odložené velké věci **`B18`** a **`B56`** leží v Backlogu,
+> **Sada TRANSDEV: 8 z 10 hotových.** Cíl a obrácené poznámkování berou **kolegové** (proto tady
+> nejsou), odsazení per směr taky. Odložené velké věci **`B18`** a **`B56`** leží v Backlogu,
 > **`B60`** u linkového JŘ.
->
-> **Zákaznická fronta KOVED je dojetá** - `B37` hotová 5. 8., takže **#13093 je celý uzavřený**.
-> **Verze z 11. 8. je vydaná** a nese všechno od 5. 8. včetně (pokračující spoje, značky dle
-> nastavení linky, „<1", podněty #12843). Vlastní sloupce vývěsky v ní ještě zhasnuté byly;
-> od 12. 8. je přepínač odstraněný, takže **příští vydání je ponese rozsvícené** - i proto je novinka
-> zpátky v seedu (rada „nedělní a sváteční provoz rozdělit na dva sloupce, ne značkou" je v ní taky)
-> a nahraje se s vydáním.
 >
 > **Co sem nepatří** (rozhodnutí Jan 6. 8.): tikety řešené mimo návrhář a čekání na cizí lidi.
 > Roadmapa je seznam **naší otevřené práce**, ne zrcadlo helpdesku.
@@ -64,57 +53,10 @@ KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30.
 `B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový** (body 1, 2 a 4 šly do verze
 4. 8.). `B39` (vlastní sloupce vývěsky) hotová 10. 8. → **z kola KOVED nezbývá nic**.
 
-| # | Blok | Vel. | Uzavírací podmínka |
-|---|---|---|---|
-| **B67** | **Jemnější zobrazení variant jízdních dob** (TRANSDEV #12843 bod 4 = původní `TR7`). ✅ **Všechny čtyři kroky dohodnuté podoby hotové 13. 8.** (changelog 2026-08-13, body 1-6): oddělení sloupce Času od variant, tři stavy `CAS_JIZDY`, jedno pravidlo výběru průběhu, značka u minuty vedle rozdílové poznámky, třetí volba řazení. **Zbývá jen posouzení zákazníkem** - kód je hotový. | - | poslat hotové Šimkovi a nechat posoudit, jestli ruční výběr variant ještě chce; k tomu odpovědi na dvě otázky níže |
-
-### `B67` - co po dokončení kódu zbývá
-
-**Kód je hotový** (detail v changelogu 2026-08-13, body 1-6). Zbývá **poctivé proklikání kompletu
-proti starému modulu a proti všem požadavkům** - rozhodnutí Jan 13. 8.: dělat až na hotovém celku,
-ne po kouskách. Ověřeno očima zatím: sloupec Času vedle variant, „<" (Nitra 12 + Nitra 6), nula
-u jízdy pod minutu, převod staré šablony.
-
-👁 **Neproklikáno**: značky variant u minut + legenda (krok 3), třetí volba řazení (krok 4), rozpad
-zastávky na řádky podle stanovišť, MHD vývěska (DPCB/DPKV - kvůli nule u projetých zastávek),
-kontrolní vzorky **Nitra 2** a **CB_CSADAD 0365001** (nemá se změnit nic). Firma se přepíná dev
-přepínačem v aplikaci.
-
-⚠️ **Značky variant NEJSOU parita** a nesmí se tak tvrdit: legacy je bere z nastavení u linky
-(`^JRL(sku,lin,"PATCH","mhd","par",2)`), které **nemá vyplněné ani jedna z 325 prověřených linek**,
-takže značky netiskne vůbec; dřívější tvrzení „legacy má v kódu default UVWXYZ" bylo mylné. Naše
-řada jede od „A" stejně jako písmena rozdílových poznámek, takže se **na minutě můžou potkat dvě
-stejná písmena v jiném významu** - vědomý kompromis (rozhodnutí Jan 13. 8.), řeší se, až na to někdo
-narazí. Je možné, že se ta volba časem přestěhuje z nastavení linky do návrháře.
-
-**Zázemí pro další změny variant** (ať se nehledá znovu): typová sada `ZastavkoveJrAdSadaTest.Sada`
-(deset linek ze čtyř firem, u každé zapsané typy, které pokrývá; `Jadro` = pět linek pro drahé
-kontroly) a sondy v `AdSloupekProbe` - `NajdiVariantniPripady`, `ProfilyLinek`, `PripadyLinky`
-(linka → konkrétní zastávka k proklikání), `ZnakySloupcu` (kdo má vyplněné znaky sloupců u linky).
-**Sondy nemazat.** ⚠️ Caché sada trvá ~1 min 45 s; zkrátit jde **sloučením průchodů** do jednoho
-testu, ne zúžením sady (vel. S, vzít, až začne vadit).
-
-**Až na vyžádání** (výpočet i data na to budou připravené, není to nová featura):
-
-- **2. až 4. sloupec Času** - legacy je v automatickém režimu má. Reálný dopad má na lince, kde tentýž
-  sled zastávek nese dva časové profily: Nitra `0000002` směr Zpět - trasy 2/4/6 končí na 35 min,
-  trasa 3 má na zastávce 15 pobyt `19/5` a končí na 40. Ten pomalejší se dnes nedostane nikam, protože
-  variantní sloupec ho nepokryje (sled zastávek je shodný).
-- **Čtení ručně zadaných minut** u linek s vypnutým přepínačem (`^JRL(sku,lin,"J",poradi)` segment 8,
-  `Tam:Zpět`, kumulativně od začátku směru). Nitra je udržuje (oba směry), české firmy mají prázdné →
-  starý modul jim tiskne prázdno, takže náš spočítaný sloupec je tam přínos, ne odchylka.
-
-**Otevřené dotazy na zákazníka:**
-
-1. Chce po deduplikaci ještě **ruční zaškrtávací tabulku variant**? Pokud ano, potřebujeme vědět, co
-   se má stát se spoji odškrtnuté varianty - **každý spoj, co na zastávce staví, musí patřit do
-   některého zobrazeného sloupce**, jinak značka u minuty odkazuje na variantu, která na vývěsce není.
-2. Slováci z callu (13. 8.): šlo jim jen o **spárování minuty se sloupcem**, nebo i o **slovní
-   vysvětlení trasy**? Podle toho se bod 3 zúží nebo rozšíří.
-
-**Drobnost k tomu:** systémová šablona AD má sloupec **Varianty tras skrytý** (od `B80` se zapíná
-v seznamu sloupců, dřív to bylo zaškrtávátko `showAllRouteVariants`), takže na výchozí šabloně
-varianty nikdo neuvidí, dokud si ho zapne - zapnout.
+**Fronta zastávkového JŘ je prázdná.** `B67` (varianty jízdních dob, TRANSDEV #12843) dokončena
+13. 8. → archiv. Ze Šimkova odstavce o jízdních dobách zbývá jen **ruční zaškrtávací tabulka variant**,
+odložená po dohodě s kolegou (13. 8.) - dá se mu nejdřív k vyzkoušení. Stav tiketu drží
+[`customer-requirements §0.1`](customer-requirements-zastavkovy-jr.md), ne roadmapa.
 
 Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
 patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).

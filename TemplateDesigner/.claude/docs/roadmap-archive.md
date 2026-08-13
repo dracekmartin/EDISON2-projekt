@@ -2,6 +2,44 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-13 ✅ - `B67`: jemnější zobrazení variant jízdních dob (TRANSDEV #12843)
+
+Detail → changelog 2026-08-12 (10) a 2026-08-13 (1)-(6). Původně `TR7`, podaný podruhé jako #12843
+bod 4. Hotové: nestabilní číslování · duplicitní sloupce · volba trasy pro jediný sloupec · oddělení
+sloupce „Čas jízdy" od variant · tři stavy `CAS_JIZDY` · jedno pravidlo výběru průběhu pro obě rodiny
+sloupců · značka u minuty vedle rozdílové poznámky · dvě volby řazení podle délky jízdy.
+
+**Ze Šimkova odstavce o jízdních dobách je hotové všechno kromě ruční zaškrtávací tabulky variant** -
+ta je **odložená po dohodě s kolegou** (13. 8.): není to jednoduchá změna, dá se mu nejdřív k
+vyzkoušení a domluví se potom. Evidence u tiketu, ne tady.
+
+⚠️ **Značky variant NEJSOU parita se starým modulem** a nesmí se tak tvrdit. Legacy je bere
+z nastavení u linky (`^JRL(sku,lin,"PATCH","mhd","par",2)`, `JRapiLinPrtMhd1.mac:26` a `:297`),
+které **nemá vyplněné ani jedna z 325 prověřených linek** - starý modul tedy značky netiskne vůbec.
+Dřívější tvrzení roadmapy „legacy má v kódu default UVWXYZ" bylo mylné, `UVWXYZ` je jen komentář.
+Naše řada jede od „A" stejně jako písmena rozdílových poznámek, takže se na minutě můžou potkat dvě
+stejná písmena v jiném významu - vědomý kompromis (rozhodnutí Jan 13. 8.), řeší se, až na to někdo
+narazí. Ta volba se možná časem přestěhuje z nastavení linky do návrháře.
+
+**Zázemí pro další změny variant** (nemazat, bude potřeba): typová sada `ZastavkoveJrAdSadaTest.Sada`
+(deset linek ze čtyř firem, u každé zapsané typy, které pokrývá; `Jadro` = pět linek pro drahé
+kontroly) a sondy v `AdSloupekProbe` - `NajdiVariantniPripady`, `ProfilyLinek`, `PripadyLinky`
+(linka → konkrétní zastávka k proklikání), `ViceStanovistLinky` (kde se zastávka rozpadá na řádky),
+`ZnakySloupcu` (kdo má vyplněné znaky sloupců u linky). ⚠️ Caché sada trvá ~1 min 45 s; zkrátit jde
+**sloučením průchodů** do jednoho testu, ne zúžením sady.
+
+⚠️ **Poučení z bran:** test na duplicitní sloupce byl napoprvé slepý - porovnával je přes celou
+stránku včetně projetých zastávek, kde se varianty legitimně liší, takže duplicitu v úseku za
+vývěskou nemohl najít a mutace ho neshodila. Absenci něčeho je potřeba měřit na tom výseku, kde to
+má vzniknout.
+
+**Na vyžádání** (výpočet i data budou připravené, není to nová featura): **2. až 4. sloupec Času**
+(legacy je v automatickém režimu má; dopad na lince, kde tentýž sled zastávek nese dva časové
+profily - Nitra `0000002` směr Zpět, trasy 2/4/6 končí na 35 min, trasa 3 s pobytem `19/5` na 40) ·
+**čtení ručně zadaných minut** u linek s vypnutým přepínačem (`^JRL(sku,lin,"J",poradi)` segment 8,
+`Tam:Zpět`, kumulativně od začátku směru; Nitra je udržuje, české firmy mají prázdné → starý modul
+jim tiskne prázdno, takže náš spočítaný sloupec je přínos, ne odchylka).
+
 ## 2026-08-13 ✅ - `B80`: varianty tras jsou položka seznamu sloupců
 
 Detail → changelog 2026-08-13 (3). Podnět Jan při přípravě proklikání `B67`: zapínání variant
