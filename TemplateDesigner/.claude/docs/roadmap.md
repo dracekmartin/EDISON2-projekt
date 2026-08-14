@@ -60,12 +60,6 @@ nelze. **Neproklikané na kolegově lince** - chybí firma a číslo linky; na n
 přímo přes `GetData` (a zjistit, jestli mu nezařazené spoje hlásil oranžový badge, což je jediná
 pojistka, která tu situaci má chytat).
 
-### Ostatní z revize `B39`
-
-| # | Co | Vel. |
-|---|---|---|
-| B85 | **Nové povinné pole v `.cls` zablokuje formulář starším klientům.** Kolega hlásil, že „Rozestup odjezdů" se při otevření nenačte a musí ho vyplňovat pořád. Není to chyba `B39`: pole `MinuteSpacing` přidané 12. 8. (`4d9325a`), jeho exe je z 11. 8. Schéma jde na server hned, klient až s vydáním, takže starší build pole nezná → prefill nemá co načíst, `required` nepustí OK, a `ElementFormBinder` klíč bez property na cíli zahodí (hodnota se nikdy neuloží). **Kolegovi stačí nový build**, otevřená je ta systémová past: nová pole nedělat `required`, nebo klient nemá `required` vynucovat u pole, ke kterému nemá property (`ElementPropertyAccessor.Exists`) | S |
-
 ---
 
 ## 📥 Backlog

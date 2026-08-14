@@ -2,6 +2,18 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-14 ✅ - `B85`: nové povinné pole nezablokuje formulář staršímu programu
+
+Detail → changelog 2026-08-14 (3). Nález z revize `B39`, ale ne chyba `B39`: schéma formuláře jde
+na server hned, program až s vydáním, takže starší build dostane pole, ke kterému nemá vlastnost -
+a `required` u něj znamenalo, že formulář nešel potvrdit vůbec. Projevilo se to u „Rozestupu
+odjezdů" (kolega měl program o den starší, než je to pole).
+
+**Neodvoditelné:** povinnost se ruší jen klientsky a jen u pole **bez vlastnosti na cíli** - jeho
+hodnotu stejně zahodí `ExtractCommands`, takže povinnost neměla co vynutit. Serverová `Validate`
+platí dál. Druhá varianta (nedělat nová pole `required`) by znamenala vzdát se `required` jako
+způsobu, jak u výběrového pole potlačit prázdný řádek - ten idiom používají skoro všechny výčty.
+
 ## 2026-08-14 ✅ - `B84`: zavřeno bez práce, značky `+` a `X` z MHD vyjít nemůžou
 
 Bod z revize `B39` předpokládal, že se u minuty vytiskne značka `+` / `X`, ke které chybí

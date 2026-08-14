@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-14 (3) - 🔓 nové povinné pole už nezablokuje formulář staršímu programu (`B85`)
+
+Pole přidané do formuláře jde na server hned, ale do programu až s vydáním. Starší program tedy
+dostal schéma s polem, ke kterému nemá vlastnost - a když bylo **povinné**, nešel formulář vůbec
+potvrdit: prefill neměl co načíst, uživatel neměl co vyplnit a neuložil ani zbytek. Přesně takhle
+se 13. 8. projevil „Rozestup odjezdů" (pole z 12. 8., kolega měl program z 11. 8.).
+
+Nově se povinnost u pole, ke kterému program nemá vlastnost, **ruší**. Není co obcházet: hodnotu
+takového pole stejně zahodí zápis do modelu, takže povinnost jen blokovala. Serverová kontrola při
+uložení platí dál - ruší se jen klientská hláška.
+
+**Brány:** **921 .NET testů** (3 nové: povinné pole bez vlastnosti přestane být povinné, pole
+s vlastností povinné zůstane, totéž pro vnořenou cestu).
+
 ## 2026-08-14 (2) - 🔎 `B84` zavřeno bez práce: značky z vyhlášky MHD neprodukuje
 
 `B84` předpokládal, že se u minuty vytiskne značka `+` / `X` bez vysvětlivky. Neplatí:

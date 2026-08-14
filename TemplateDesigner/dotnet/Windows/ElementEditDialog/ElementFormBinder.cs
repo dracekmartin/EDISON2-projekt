@@ -139,13 +139,26 @@ public static class ElementFormBinder
     private static int _prefilling;
 
     public static Dictionary<string, string> Prefill(EDInputForm form, object target)
+        => Prefill([.. (form.Items ?? []).OfType<Field>()], target);
+
+    /// <summary>Testovatelné jádro <see cref="Prefill(EDInputForm, object)"/> nad holým seznamem
+    /// polí (bez WPF kontrolky).</summary>
+    internal static Dictionary<string, string> Prefill(List<Field> fields, object target)
     {
         _prefilling++;
         try
         {
             var preFilled = new Dictionary<string, string>();
-            foreach (var field in (form.Items ?? []).OfType<Field>())
+            foreach (var field in fields)
             {
+                // Povinnost u pole, které na cíli nemá property, by nešla splnit: prefill nemá co
+                // načíst a hodnotu stejně zahodí ExtractCommands. Potkává to starší program po
+                // přidání pole do schématu (schéma jde na server hned, program až s vydáním) -
+                // bez tohohle formulář nepustí OK a nejde uložit ani zbytek. Serverová Validate
+                // platí dál, tohle ruší jen klientskou hlášku.
+                if (field.Required && !ElementPropertyAccessor.Exists(target, field.Key))
+                    field.Required = false;
+
                 var reflected = ElementPropertyAccessor.Get(target, field.Key);
                 var display = !string.IsNullOrEmpty(reflected) ? reflected : (field.Value ?? "");
                 field.Value = display;
