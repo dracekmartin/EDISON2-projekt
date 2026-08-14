@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-08-14 (3) - 🗓️ vlastní sloupec „Neděle" už nevrací prázdno (`B81`)
+
+Zákazník si ve vlastních sloupcích vývěsky udělal sloupec **Neděle** a nevyšel v něm **ani jeden
+odjezd**, přestože na lince nedělní spoje jsou. Příčina: spoje mají platnost **`+`**, což podle
+[vyhlášky 122/2014](https://krajta.slv.cz/2014/122) znamená „jede v neděli **a** ve státem uznané
+svátky" - jenže program dělal průnik holých znaků, takže `+` do sloupce `7` nespadlo.
+
+**Nově z `+` plyne i neděle.** Že jsou to dvě různé značky a jedna druhou zahrnuje, potvrzuje sama
+příloha vyhlášky zákazem kombinace `+` se `7` - kdyby `+` neděli nezahrnovalo, dávala by ta dvojice
+smysl.
+
+**Značka u minut se přitom netiskne** - spoj `+` jede každou neděli, takže sloupec pokrývá celý
+a vysvětluje ho nadpis. Potvrdil Jiří Bžoch 14. 8.: značka patří do opačného případu, tedy když spoj
+sloupec **nepokrývá** (sloupec „pracovní dny", spoj jedoucí jen v pondělí → u minut `1`).
+
+**Druhá polovina téže chyby byla na ose Období:** svátek patřil jen do sloupce, který vyjmenoval `+`,
+takže velikonoční neděle nepatřila do sloupce „Ne" a spoj se `7` z toho vyšel jako „nejede celé
+období" - a držel si negativní značku, kterou mít neměl. Nově svátek padnoucí na neděli do nedělního
+sloupce patří. U dnů 1-6 to vědomě neplatí: „Pracovní dny" nesmí tvrdit, že pokrývají 1. květen,
+a rozlišit je od samostatného „pondělí" umí teprve `X` z vyhlášky (`B82`).
+
+⚠️ **Vedlejší dopad, který je vidět:** spoj `6+` dostane ve vlastním sloupci Pá-Ne značky **`67`**
+místo dosavadní `6`. Dřív se neděle zamlčela a značka tvrdila, že spoj jede jen v sobotu.
+Standardních rozvržení (`12345` / `6` / `7+` / `67+`) se to netýká, ta si drží dnešní chování.
+
+**Brány:** **108 Caché testů** (2 nové: pravidlo `+` → neděle vč. zařazení a značek, a end-to-end
+sloupec „Neděle" na lince `CB_CSADAD 0330530`) a **918 .NET**. Mutace (vypnout odvození neděle) shodí
+právě ty dva a e2e hlásí doslova zákazníkův příznak: *„vlastní sloupec Neděle nevrátil ani jeden
+odjezd"*. Linku vybrala nová sonda `AdSloupekProbe.NajdiPlusSpoje` - v CB_CSADAD je **4 840 spojů
+s platností `+`** na 3 000 linkách, takže to není okrajový tvar dat.
+
 ## 2026-08-14 (5) - 🔗 rozvržení sloupců vývěsky se nastavuje z jednoho místa (`B88`)
 
 Na otázku „jaké sloupce vzniknou" odpovídala **dvě** nastavení naráz - parametr sestavy „Rozdělení

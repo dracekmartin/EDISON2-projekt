@@ -65,6 +65,28 @@ podstrčila české texty. Kvůli tomu se `NactiTextyZnacek` musí volat **až p
 Ověřeno voláním nad reálnými daty (nový test čte oba jazykové záznamy firmy). Zlaté odtisky se
 nehnuly - na kontrolních linkách se `+` do legendy netiskne, protože ji říká už nadpis sloupce.
 
+## 2026-08-14 ✅ - `B81`: vlastní sloupec „Neděle" vracel prázdno
+
+Detail → changelog 2026-08-14 (3). Spoj s platností `+` („jede v neděli **a** ve státem uznané
+svátky") nespadl do vlastního sloupce s dny `7`, protože se dělal průnik holých znaků - zákazníkovi
+tak vyšel sloupec „Neděle" prázdný, přestože nedělní spoje na lince byly. Nově z `+` plyne i neděle;
+značka se u minut netiskne, protože spoj sloupec pokrývá celý (potvrdil Jiří Bžoch 14. 8. - značka
+patří do opačného případu, kdy spoj sloupec **ne**pokrývá).
+
+Druhá polovina byla na ose Období: svátek patřil jen do sloupce, který vyjmenoval `+`, takže
+velikonoční neděle nepatřila do sloupce „Ne". ⚠️ **U dnů 1-6 to vědomě neplatí** - „Pracovní dny"
+nesmí tvrdit, že pokrývají 1. květen, a rozlišit je od samostatného „pondělí" umí teprve `X`
+z vyhlášky (`B82`).
+
+⚠️ **Vedlejší dopad na značky:** spoj `6+` dostane ve vlastním sloupci Pá-Ne značky `67` místo
+dosavadní `6` - dřív se neděle zamlčela. Standardních rozvržení (`12345` / `6` / `7+` / `67+`) se to
+netýká.
+
+**Doloženo mutací:** vypnutí odvození neděle shodí end-to-end test hláškou, která je doslova
+zákazníkovým příznakem („vlastní sloupec Neděle nevrátil ani jeden odjezd"). Linku vybrala sonda
+`AdSloupekProbe.NajdiPlusSpoje` (4 840 spojů s `+` na 3 000 linkách CB_CSADAD) - **sondu nemazat**,
+u `B82` se bude hodit.
+
 ## 2026-08-13 ✅ - `B78`: kontrola uvozovek chytá i druhou půlku té třídy chyb
 
 Detail → changelog 2026-08-13 (7). Statická kontrola `.cls` hlásila jen řádek, který **končí**

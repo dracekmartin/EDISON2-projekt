@@ -492,6 +492,46 @@ Method TestZadneDvaSloupceVariantNejsouShodne()
 	do $$$AssertEquals(shodne, "", "dva variantní sloupce jsou shodné, měly se slít do jednoho: "_shodne)
 }
 
+/// `B81` end-to-end: vlastní sloupec „Neděle" (dny `7`) musí vrátit odjezdy spojů s platností `+`.
+/// Tohle je ta chyba, jak ji viděl zákazník - sloupec vyšel **prázdný**, přestože nedělní spoje na
+/// lince jsou. Linka `0330530` má podle sondy `AdSloupekProbe.NajdiPlusSpoje` osm spojů s `+`,
+/// z toho čtyři s čistým `+` (bez soboty), takže se to na ní dá doložit.
+Method TestVlastniSloupecNedeleVratiSpojeSPlus()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330530"
+	kill parametry
+	set parametry("DEFINICE_SLOUPCU") = "{""sloupce"":[{""id"":1,""nadpis"":""Neděle"",""dny"":""7""}]}"
+	if '..NactiLinku(.sys, db, sku, lin, .parametry) {
+		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - přeskočeno")
+		quit
+	}
+
+	set odjezdu = ..PocetOdjezdu()
+	do $$$AssertEquals(odjezdu > 0, 1, "vlastní sloupec ""Neděle"" nevrátil ani jeden odjezd - spoje s platností ""+"" do něj nespadly")
+
+	// Značka u minut být nemá: spoj „+"" jede každou neděli, takže sloupec pokrývá celý
+	// (potvrdil Jiří Bžoch 14. 8. - značka patří do opačného případu).
+	set znacek = 0, key = ""
+	for  {
+		set key = $order(^||ML("OUT", key)) quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set odj = page.rows.ODJEZDY
+		continue:'$isobject(odj)
+		set io = odj.%GetIterator()
+		while io.%GetNext(.j, .o) {
+			set an = o.%Get("ANOTACE")
+			continue:'$isobject(an)
+			for ai = 0:1:an.%Size()-1 {
+				continue:an.%Get(ai).%Get("KATEGORIE")'="tydenni-platnost"
+				set znacek = znacek + 1
+			}
+		}
+	}
+	do $$$AssertEquals(znacek, 0, "ve sloupci ""Neděle"" se objevily denní značky ("_znacek_"), i když ho spoje pokrývají celý")
+}
+
 /// Počet odjezdů ve všech stránkách právě načteného výstupu.
 ClassMethod PocetOdjezdu() As %Integer
 {

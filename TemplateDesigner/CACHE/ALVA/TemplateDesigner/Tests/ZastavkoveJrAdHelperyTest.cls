@@ -963,11 +963,46 @@ Method TestDenniZnackyProSloupec()
 
 	// značka nikdy nepojmenuje den, který ve sloupci není (chyba opravená v B29) - ověřeno na
 	// vlastní kombinaci, u standardního „7+" se značky netisknou vůbec (viz výše)
-	do $$$AssertEquals(..Znacky("6+", "567"), "6", "spoj So+svátek dostane ve sloupci Pá-Ne jen 6, svátek se nepropíše")
+	// ⚠️ Od `B81` je tu „67", ne „6": „+" podle vyhlášky zahrnuje neděli, takže spoj ve sloupci
+	// Pá-Ne jede sobotu i neděli. Dřív se neděle zamlčela a značka tvrdila, že jede jen v sobotu.
+	do $$$AssertEquals(..Znacky("6+", "567"), "67", "spoj So+neděle/svátky dostane ve sloupci Pá-Ne značky 6 a 7")
 
 	// vlastní kombinace mimo víkend („Vánoční provoz Po-St")
 	do $$$AssertEquals(..Znacky("X", "123"), "", "pracovní spoj pokryje Po-St → bez značky")
 	do $$$AssertEquals(..Znacky("13", "123"), "13", "jede jen Po a St → značky 1 a 3")
+}
+
+/// `B81` - značka „+" znamená podle vyhlášky 122/2014 „jede v neděli **a** ve státem uznané svátky",
+/// takže spoj s ní patří i do sloupce s dny „7". Do 14. 8. se dělal průnik holých znaků, takže
+/// vlastní sloupec „Neděle" vyšel prázdný, přestože nedělní spoje na lince byly (hlásil zákazník).
+Method TestPlusZahrnujeNedeli()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+
+	// samotné odvození dnů
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "+"), "+7", "z ""+"" plyne i neděle")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "6+"), "6+7", "So + neděle/svátky")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "7+"), "7+", "když už 7 je, nepřidává se podruhé")
+	do $$$AssertEquals($classmethod(cls, "DnySpoje", "7"), "7", "samotná neděle svátek nepřibírá")
+
+	// zařazení do vlastního sloupce
+	do $$$AssertEquals(..Sedne("+", "7"), 1, "spoj ""+"" patří do sloupce Neděle")
+	do $$$AssertEquals(..Sedne("6+", "7"), 1, "spoj So+neděle/svátky taky")
+	do $$$AssertEquals(..Sedne("7", "7"), 1, "spoj ""7"" beze změny")
+	do $$$AssertEquals(..Sedne("6", "7"), 0, "sobotní spoj do neděle nepatří")
+	do $$$AssertEquals(..Sedne("X", "7"), 0, "pracovní spoj do neděle nepatří")
+
+	// zobrazení: spoj sloupec pokrývá → bez značky (potvrdil Jiří Bžoch 14. 8.)
+	do $$$AssertEquals(..Znacky("+", "7"), "", "spoj ""+"" pokrývá sloupec Neděle → značka se netiskne")
+	// opačný případ z téže odpovědi: spoj sloupec nepokrývá → značka
+	do $$$AssertEquals(..Znacky("1", "12345"), "1", "spoj jedoucí jen v pondělí dostane ve sloupci pracovních dnů značku 1")
+}
+
+/// Zkratka pro TestPlusZahrnujeNedeli - sedne spoj s platností `plk` do sloupce s dny `sloupecDny`?
+Method Sedne(plk As %String, sloupecDny As %String) As %Boolean
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	quit $classmethod(cls, "SedneDoSloupceDny", $classmethod(cls, "DnySpoje", plk), sloupecDny)
 }
 
 /// Zkratka pro TestDenniZnackyProSloupec - `plk` == vypsané dny (bez zkratky X).

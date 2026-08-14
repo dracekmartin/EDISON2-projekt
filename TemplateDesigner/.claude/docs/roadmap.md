@@ -4,9 +4,10 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** `B81` (neděle × svátek ve vlastních sloupcích vývěsky) - **hlásí zákazník
-> a tiše to vrací špatná data**, takže má přednost. Pak vybrat mezi **tabulkovými prvky**
-> (`B76` + `B77`, dají se vzít vcelku) a **linkovými JŘ** (`B10` + `B13`) jako dedikovaným slotem.
+> **Nejblíž na řadě:** `B82` (zadávání dnů v abecedě vyhlášky vč. `X`) - navazuje na opravenou
+> `B81` a je to poslední otevřená věc z revize vlastních sloupců. Jinak vybrat mezi **tabulkovými
+> prvky** (`B76` + `B77`, dají se vzít vcelku) a **linkovými JŘ** (`B10` + `B13`) jako dedikovaným
+> slotem.
 >
 > ⚠️ **Nevydané a jen zčásti proklikané je všechno od 12. 8. včetně** - poslední vydaná verze je
 > z 11. 8. Seedy novinek čekají na vydání, dřív se nenahrávají.
@@ -20,11 +21,10 @@ Stav tiketů, parkované položky i věci „jen na poptávku" drží
 
 ### Denní značky podle vyhlášky 122/2014 (revize `B39` kolegou, 13. 8.)
 
-Kolega prošel vlastní sloupce vývěsky a narazil na to, že sloupec „Ne" nevrátí **žádné** spoje,
-přestože na lince jsou - mají platnost `+`.
-Ptal se současně, jak zadat `X` a jestli „Po-Pá" znamená kalendářní, nebo pracovní dny.
-Obojí je tatáž věc: **vlastní sloupce zavedly zadávání dnů, které neodpovídá abecedě značek
-z vyhlášky**, a na tom rozdílu se rozjíždí i vyhodnocení.
+Kolega prošel vlastní sloupce vývěsky a narazil na dvě věci: sloupec „Ne" nevracel **žádné** spoje
+(opraveno 14. 8. jako `B81` → archiv) a nejde zadat `X`, resp. není jasné, jestli „Po-Pá" znamená
+kalendářní, nebo pracovní dny. To druhé zbývá: **vlastní sloupce zavedly zadávání dnů, které
+neodpovídá abecedě značek z vyhlášky**, a na tom rozdílu se rozjíždí i vyhodnocení.
 
 Co říká [vyhláška 122/2014](https://krajta.slv.cz/2014/122), příloha č. 2, značky časového rozsahu provozu:
 
@@ -43,56 +43,33 @@ Co říká [vyhláška 122/2014](https://krajta.slv.cz/2014/122), příloha č. 
 
 | # | Co | Vel. |
 |---|---|---|
-| B81 | **`+` musí znamenat i neděli** (bug, hlásí zákazník). `DnySpoje` nechá `+` jako `+` a `SedneDoSloupceDny` dělá průnik znaků (`ZastavkoveJrAd.cls:1584-1607`), takže sloupec `7` spoj s platností `+` nevezme. Legacy to nikdy neřešil - jeho nedělní sloupec je vždy `plk["7" || plk["+"` (`ZarazeniSpoje` FTL 0/3, legacy `JRapiLinPrtMhd1:112-113`), sloupec „jen neděle" starý modul neumí. **Druhá polovina téhož je osa Období**: `DenPatriDoSloupce` (`:1893`) pustí svátek jen do sloupce, který vyjmenoval `+`, takže velikonoční neděle nepatří do sloupce „Ne" a spoj se `7` vyjde jako „nejede celé období" (drží si negativní značku, kterou nemá mít). Presety `7+` / `67+` se nemění, dotčené jsou jen vlastní sloupce se samotným „Ne" nebo samotným „Svátkem" | S |
 | B82 | **Zadávání dnů v abecedě vyhlášky + `X`.** Dnes jsou v editoru zaškrtávátka Po-Ne + Svátek a `X` nejde zadat vůbec. Navíc **týž string `Days` znamená na dvou místech dvě různé věci**: při zařazení spoje je `12345` kalendářní Po-Pá (a platnost `X` se rozepíše na 1-5, `DnySpoje`), zatímco na ose Období je `12345` „pracovní dny" (svátek do nich nikdy nepadne, `DenPatriDoSloupce`). Rozdíl je věcný, ne kosmetický: spoj `1` jede i o svátečním pondělí, spoj `X` ne. **Rozsah po rozhodnutí níže:** (a) `X` a `+` jako volitelné značky v editoru, (b) validace zákazu kombinací, (c) sjednotit význam `Days` na obou místech - dnešní dvojznačnost je právě to, co „X jako samostatná kategorie" odstraňuje | M |
 
-**Zobrazení - rozhodnuto (Jan 14. 8.), potvrzeno kolegou (citace níže):** platnost spoje se
-**protne se dny sloupce** a značka popisuje až ten průnik. Spoj „neděle a svátky" ve sloupci
-„Neděle" tedy jede všechny neděle, pokrývá sloupec celý a **značku nemá** - vysvětluje to nadpis
-sloupce. Značka zůstává jen tam, kde spoj sloupec **nepokrývá**: sloupec `X` (pracovní dny) a spoj
-jedoucí jen `1` (pondělí) → u minut `1`. Je to dosavadní pravidlo programu, žádná nová logika;
-`B81` je tedy **jen o zařazení** spoje do sloupce.
+**Zobrazení - rozhodnuto (Jan 14. 8.), potvrzeno kolegou:** platnost spoje se **protne se dny
+sloupce** a značka popisuje až ten průnik. Spoj sloupec pokrývá → značka se netiskne (vysvětluje ho
+nadpis); nepokrývá → značka. Sloupec `X` (pracovní dny) a spoj jedoucí jen `1` → u minut `1`.
+Je to dosavadní pravidlo programu, žádná nová logika - `B82` ho nemění, jen mění **zadávání** dnů.
 
 ⚠️ Zvažovalo se tisknout `+` i v nedělním sloupci (aby cestující věděl o svátcích) a **zamítnuto**:
-sloupec je rozsah, ne jen nadpis - značka „jede v neděli a ve svátek" pod nadpisem „Neděle" tvrdí
-svátky u sloupce, který je neobsahuje. **Důsledek přijatý vědomě:** kdo si staví vlastní sloupce,
-odpovídá za jejich pojmenování. Sloupec nazvaný „Soboty" s nedělními dny vytiskne nedělní minuty
-bez jakékoli vysvětlivky a program to neopraví. Vývěska bez sloupce se svátky o svátcích prostě
-nic neřekne; „upozorni, že vývěska nepokrývá svátky" by byla samostatná featura, ne součást `B81`.
+sloupec je rozsah, ne jen nadpis. **Důsledek přijatý vědomě:** kdo si staví vlastní sloupce,
+odpovídá za jejich pojmenování - sloupec „Soboty" s nedělními dny vytiskne nedělní minuty bez
+vysvětlivky a program to neopraví. Vývěska bez sloupce se svátky o svátcích nic neřekne;
+„upozorni, že vývěska nepokrývá svátky" by byla samostatná featura.
 
 **`B82` - rozhodnuto (Jan 14. 8.): jde se podle vyhlášky, ne zkratkou.** V editoru půjde vybrat
 `X` i `+` jako samostatné značky a platí pravidla přílohy, tedy i zákaz kombinací (`X` s `1`-`5`,
 `+` se `7`). Zkratka „X zaškrtne 1-5" se zamítá - příloha ty dvě věci výslovně rozlišuje.
 
 **Migrace odpadá** a je to doloženo, ne odhad: vlastní sloupce byly do 12. 8. za vypínačem, který
-se u vydané verze **nikdy nerozsvítil** (config se z publishnutého single-file exe nečetl, výchozí
-stav zhasnuto - viz changelog 2026-08-12 (2)). Poslední vydaná verze je z 11. 8., takže zákaznická
-šablona vlastní sloupce nést nemůže. ⚠️ **Naše vlastní testovací šablony v DB od 12. 8. je ale
-nesou** - po změně významu je bude potřeba přeuložit, ne migrovat.
+se u vydané verze **nikdy nerozsvítil** (config se z publishnutého single-file exe nečetl - viz
+changelog 2026-08-12 (2)). Poslední vydaná verze je z 11. 8., takže zákaznická šablona vlastní
+sloupce nést nemůže. ⚠️ **Naše testovací šablony v DB od 12. 8. je ale nesou** - po změně významu
+je bude potřeba přeuložit, ne migrovat.
 
-**Čím je to doložené** (ať se to nedeleguje znovu): definice značek z vyhlášky (příloha je
-obrázková, texty přes krajta.slv.cz), legacy zdroj grepem rutin na dev serveru (`AdSloupekProbe.GrepRoutines`),
-naše data sondou `AdSloupekProbe.ScanSvatky` - v `CB_CSADAD` je na 3 000 linkách **1 429 spojů, které
-jedou v neděli a nejedou ve svátek**, takže data ty dvě kategorie reálně rozlišují a slít je natvrdo
-nelze. **Neproklikané na kolegově lince** - chybí firma a číslo linky; na nich se dá `B81` doložit
-přímo přes `GetData` (a zjistit, jestli mu nezařazené spoje hlásil oranžový badge, což je jediná
-pojistka, která tu situaci má chytat).
-
-**Odpověď kolegy (Jiří Bžoch, 14. 8.) - potvrzuje pravidlo výše, `B81` tím není blokovaná:**
-
-> „Pokud má sloupec nadpis Neděle a je tam nastaveno 7, vypisují se tam časy spojů jedoucích
-> v neděli. Je-li u spoje značka `+` (neděle a svátky), pak jede každou neděli (+ nějaké svátky
-> navíc), tzn. v tom sloupci bych vypsal jen čas bez té 7. (…) Tu značku bych vypisoval v opačném
-> případě, tzn. pokud spoj nějaký den nejede - např. pro sloupec bude `X` (pracovní dny) a spoj bude
-> mít třeba `1` (pondělí), pak by u minut měla být `1`."
-
-Tedy přesně „platnost se protne se dny sloupce, značka popisuje až ten průnik" - spoj sloupec
-pokrývá → bez značky; nepokrývá → značka. **Zadání `B81` se tím nemění, jen je doložené.**
-
-⚠️ **Sloupec „jen Neděle" je okrajový případ** (kolega: „takový případ asi nenastane, většinou mají
-pole neděle a svátky") - opravu to ale neruší: dnes ten sloupec vrátí **prázdno** místo nedělních
-odjezdů, což je tichá ztráta dat, ne kosmetika. Nesmyslně pojmenovaný sloupec zůstává na
-odpovědnosti zákazníka (rozhodnutí Jan 14. 8.: kdo si staví vlastní sloupce, pojmenovává si je sám).
+**Podklady, ať se nedohledávají znovu:** texty vyhlášky přes krajta.slv.cz (příloha je obrázková),
+legacy zdroj grepem rutin (`AdSloupekProbe.GrepRoutines`), naše data sondami `ScanSvatky`
+(1 429 spojů jede v neděli a ne ve svátek → kategorie se slít nedají) a `NajdiPlusSpoje`
+(4 840 spojů s platností `+` na 3 000 linkách).
 
 ---
 

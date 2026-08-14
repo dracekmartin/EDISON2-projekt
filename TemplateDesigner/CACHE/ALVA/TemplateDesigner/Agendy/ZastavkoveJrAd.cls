@@ -1602,6 +1602,12 @@ ClassMethod NacistSkupinyDnuDleDefinice(ByRef defArr) As %DynamicArray
 /// Dny, kdy spoj podle týdenní platnosti jede, jako znaky 1-7,+. "" = jede každý den (prázdná
 /// nebo "." platnost); "-" = žádný rozpoznaný den (nerozpoznané Plk → spoj se nikam nezařadí,
 /// jako legacy KamPrt=0). "X" = legislativní zkratka pracovních dnů → 1-5.
+///
+/// ⚠️ **"+" znamená podle vyhlášky 122/2014 „jede v neděli **a** ve státem uznané svátky"**, takže
+/// z něj plyne i neděle - proto se doplní "7". Bez toho spoj s "+" nespadl do vlastního sloupce
+/// s dny "7" a zákazníkovi vyšel sloupec „Neděle" prázdný, přestože nedělní spoje na lince byly
+/// (`B81`, hlásil zákazník). Že jsou to dvě různé značky, potvrzuje i příloha vyhlášky zákazem
+/// kombinace "+" se "7" - kdyby "+" neděli nezahrnovalo, dávala by ta dvojice smysl.
 ClassMethod DnySpoje(plk As %String) As %String
 {
     i (plk = "") || (plk = ".") q ""
@@ -1611,6 +1617,7 @@ ClassMethod DnySpoje(plk As %String) As %String
         i ch = "X" { f d=1:1:5 { i dny'[d s dny = dny_d } }
         elseif ("1234567+"[ch) { i dny'[ch s dny = dny_ch }
     }
+    i (dny["+") && (dny'["7") s dny = dny_"7"
     q $s(dny="":"-", 1:dny)
 }
 
@@ -1916,8 +1923,13 @@ ClassMethod DenPatriDoSloupce(hrl As %String, sloupecDny As %String) As %Boolean
     i sloupecDny = "" q 1
     s stat = +$g(^||TiskAd("jede","stat"))
     s jeSvatek = +$lg($g(^||TiskAd("jede","raw","CAL",hrl,stat)), 3)
-    i jeSvatek q (sloupecDny [ "+")
-    q (sloupecDny [ ((hrl + 3 # 7) + 1))
+    s denVTydnu = (hrl + 3 # 7) + 1
+    // Svátek patří do sloupce, který vyjmenoval "+", a **navíc do nedělního sloupce, když padne
+    // na neděli** - velikonoční neděle je pořád neděle, takže sloupec „Ne" pokrývá (`B81`). U dnů
+    // 1-6 to neplatí: „Pracovní dny" nesmí tvrdit, že pokrývají 1. květen, a rozlišit je od
+    // samostatného „pondělí" umí teprve `X` z vyhlášky (`B82`).
+    i jeSvatek q (sloupecDny [ "+") || ((denVTydnu = 7) && (sloupecDny [ "7"))
+    q (sloupecDny [ denVTydnu)
 }
 
 /// Jak spoj jede v období sloupce: 2 = každý den období, 1 = jen část, 0 = vůbec ani den,

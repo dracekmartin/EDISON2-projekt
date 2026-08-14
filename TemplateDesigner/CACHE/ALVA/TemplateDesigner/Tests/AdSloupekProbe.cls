@@ -364,6 +364,61 @@ ClassMethod ViceStanovistLinky(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Linky se spoji s platností **„+"** (jede v neděli a ve státem uznané svátky) - `B81`. Takový spoj
+/// dnes nespadne do vlastního sloupce s dny „7", takže sloupec „Neděle" vyjde prázdný. Sonda dá
+/// konkrétní linku a čísla spojů, na kterých se to dá doložit i po opravě.
+/// IN: DB, MAXLIN (default 3000). Read-only.
+ClassMethod NajdiPlusSpoje(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 3000
+
+		kill ^||ML("OUT")
+		set linek = 0, plusSpoju = 0, ukazek = 0, sku = ""
+		kill vzorky
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek'<maxLin
+				continue:'$data(^[db]JRL(sku,lin,"I"))
+				set linek = linek + 1
+				set naLince = "", pocetNaLince = 0
+				for smerIdx = "T","Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)),"#",1),":",7)
+						continue:'(plk["+")
+						set plusSpoju = plusSpoju + 1
+						set pocetNaLince = pocetNaLince + 1
+						if $length(naLince,",") < 6 set naLince = naLince_$select(naLince="":"", 1:",")_smerIdx_sp_"("_plk_")"
+					}
+				}
+				continue:'pocetNaLince
+				continue:ukazek'<8
+				set ukazek = ukazek + 1
+				set vzorky(ukazek) = "sku="_sku_" lin="_lin_" · spojů s ""+""="_pocetNaLince_" · "_naLince
+			}
+		}
+		set ^||ML("OUT","A_FIRMA") = db
+		set ^||ML("OUT","B_SOUHRN") = "linek="_linek_" spojů s platností ""+""="_plusSpoju
+		set u = ""
+		for {
+			set u = $order(vzorky(u)) quit:u=""
+			set ^||ML("OUT","C_VZOREK_"_u) = vzorky(u)
+		}
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Je zastávka v uzlu 32 **cíl** pokračování, nebo předávací bod? (#13093 bod 3, otázka na kolegy.)
 /// Pro pár spojů s uzlem 32 dohledá trasu pokračujícího spoje a vypíše její první a poslední
 /// obsluhovanou zastávku, aby šlo porovnat se zastávkou ze záznamu.
