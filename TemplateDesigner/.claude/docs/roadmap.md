@@ -31,8 +31,13 @@ Co říká [vyhláška 122/2014](https://krajta.slv.cz/2014/122), příloha č. 
 - `X` = jede v pracovních dnech
 - `+` = **jede v neděli a ve státem uznané svátky** (jedna značka pro obojí)
 - `1`-`7` = jede v pondělí … v neděli
-- značky lze kombinovat, některé kombinace jsou nepřípustné (výčet **nemáme** - příloha je
-  obrázková, oficiální PDF na mv.gov.cz hodí 404; dočíst z tištěného znění, než se dělá validace)
+- značky lze kombinovat, ale **výčet nepřípustných kombinací už máme** (doslovně z přílohy,
+  ověřeno 14. 8.): *„Nepřípustné jsou kombinace značky pracovních dnů se značkami jednotlivých
+  pracovních dnů a značky neděle se státními svátky se značkou neděle."* Tedy `X` nejde s `1`-`5`
+  a `+` nejde se `7`. **Plyne z toho, že `+` nedělní provoz zahrnuje** (jinak by dvojice dávala
+  smysl) a že `X` **není zkratka za 1-5**, ale samostatná kategorie. Obrázková zůstává jen podoba
+  piktogramů, ne pravidla. ⚠️ Platí pro **značky u spoje**, ne pro sadu dnů ve vlastním sloupci -
+  sloupec „Neděle a svátky" má dny `7+` legitimně
 - negativní značky = dvoumístné číslo 01-31 bíle v černém obdélníku, texty „jede jen…",
   „jede také…", „jede od…do…", „jede v sudých/lichých týdnech", „nejede…"
 
