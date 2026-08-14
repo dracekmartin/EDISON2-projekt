@@ -46,11 +46,12 @@ Co říká [vyhláška 122/2014](https://krajta.slv.cz/2014/122), příloha č. 
 | B81 | **`+` musí znamenat i neděli** (bug, hlásí zákazník). `DnySpoje` nechá `+` jako `+` a `SedneDoSloupceDny` dělá průnik znaků (`ZastavkoveJrAd.cls:1584-1607`), takže sloupec `7` spoj s platností `+` nevezme. Legacy to nikdy neřešil - jeho nedělní sloupec je vždy `plk["7" || plk["+"` (`ZarazeniSpoje` FTL 0/3, legacy `JRapiLinPrtMhd1:112-113`), sloupec „jen neděle" starý modul neumí. **Druhá polovina téhož je osa Období**: `DenPatriDoSloupce` (`:1893`) pustí svátek jen do sloupce, který vyjmenoval `+`, takže velikonoční neděle nepatří do sloupce „Ne" a spoj se `7` vyjde jako „nejede celé období" (drží si negativní značku, kterou nemá mít). Presety `7+` / `67+` se nemění, dotčené jsou jen vlastní sloupce se samotným „Ne" nebo samotným „Svátkem" | S |
 | B82 | **Zadávání dnů v abecedě vyhlášky + `X`.** Dnes jsou v editoru zaškrtávátka Po-Ne + Svátek a `X` nejde zadat vůbec. Navíc **týž string `Days` znamená na dvou místech dvě různé věci**: při zařazení spoje je `12345` kalendářní Po-Pá (a platnost `X` se rozepíše na 1-5, `DnySpoje`), zatímco na ose Období je `12345` „pracovní dny" (svátek do nich nikdy nepadne, `DenPatriDoSloupce`). Rozdíl je věcný, ne kosmetický: spoj `1` jede i o svátečním pondělí, spoj `X` ne. **Rozsah po rozhodnutí níže:** (a) `X` a `+` jako volitelné značky v editoru, (b) validace zákazu kombinací, (c) sjednotit význam `Days` na obou místech - dnešní dvojznačnost je právě to, co „X jako samostatná kategorie" odstraňuje | M |
 
-**Zobrazení - rozhodnuto (Jan 14. 8.):** platnost spoje se **protne se dny sloupce** a značka
-popisuje až ten průnik. Spoj „neděle a svátky" ve sloupci „Neděle" tedy jede všechny neděle,
-pokrývá sloupec celý a **značku nemá** - vysvětluje to nadpis sloupce. Značka zůstává jen tam, kde
-spoj sloupec nepokrývá (spoj „neděle" ve sloupci „Neděle a svátky" → `7`). Je to dosavadní pravidlo
-programu, žádná nová logika; `B81` je tedy **jen o zařazení** spoje do sloupce.
+**Zobrazení - rozhodnuto (Jan 14. 8.), potvrzeno kolegou (citace níže):** platnost spoje se
+**protne se dny sloupce** a značka popisuje až ten průnik. Spoj „neděle a svátky" ve sloupci
+„Neděle" tedy jede všechny neděle, pokrývá sloupec celý a **značku nemá** - vysvětluje to nadpis
+sloupce. Značka zůstává jen tam, kde spoj sloupec **nepokrývá**: sloupec `X` (pracovní dny) a spoj
+jedoucí jen `1` (pondělí) → u minut `1`. Je to dosavadní pravidlo programu, žádná nová logika;
+`B81` je tedy **jen o zařazení** spoje do sloupce.
 
 ⚠️ Zvažovalo se tisknout `+` i v nedělním sloupci (aby cestující věděl o svátcích) a **zamítnuto**:
 sloupec je rozsah, ne jen nadpis - značka „jede v neděli a ve svátek" pod nadpisem „Neděle" tvrdí
@@ -77,10 +78,21 @@ nelze. **Neproklikané na kolegově lince** - chybí firma a číslo linky; na n
 přímo přes `GetData` (a zjistit, jestli mu nezařazené spoje hlásil oranžový badge, což je jediná
 pojistka, která tu situaci má chytat).
 
-**Čeká se na odpověď kolegy** (Jan se ptal 14. 8.): jsou na jeho lince spoje, které jedou **jen
-v neděli a ne o svátcích**? Když ano, sloupec „Neděle" má smysl a po opravě se naplní. Když ne
-(všechny nedělní spoje mají `+`), je pro něj správná odpověď standardní sloupec **„Neděle
-a svátky"** - dostane tytéž odjezdy, nadpis bude pravdivý a nevznikne žádná značka navíc.
+**Odpověď kolegy (Jiří Bžoch, 14. 8.) - potvrzuje pravidlo výše, `B81` tím není blokovaná:**
+
+> „Pokud má sloupec nadpis Neděle a je tam nastaveno 7, vypisují se tam časy spojů jedoucích
+> v neděli. Je-li u spoje značka `+` (neděle a svátky), pak jede každou neděli (+ nějaké svátky
+> navíc), tzn. v tom sloupci bych vypsal jen čas bez té 7. (…) Tu značku bych vypisoval v opačném
+> případě, tzn. pokud spoj nějaký den nejede - např. pro sloupec bude `X` (pracovní dny) a spoj bude
+> mít třeba `1` (pondělí), pak by u minut měla být `1`."
+
+Tedy přesně „platnost se protne se dny sloupce, značka popisuje až ten průnik" - spoj sloupec
+pokrývá → bez značky; nepokrývá → značka. **Zadání `B81` se tím nemění, jen je doložené.**
+
+⚠️ **Sloupec „jen Neděle" je okrajový případ** (kolega: „takový případ asi nenastane, většinou mají
+pole neděle a svátky") - opravu to ale neruší: dnes ten sloupec vrátí **prázdno** místo nedělních
+odjezdů, což je tichá ztráta dat, ne kosmetika. Nesmyslně pojmenovaný sloupec zůstává na
+odpovědnosti zákazníka (rozhodnutí Jan 14. 8.: kdo si staví vlastní sloupce, pojmenovává si je sám).
 
 ---
 
