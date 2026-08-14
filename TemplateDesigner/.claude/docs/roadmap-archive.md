@@ -2,6 +2,16 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-14 ✅ - `B84`: zavřeno bez práce, značky `+` a `X` z MHD vyjít nemůžou
+
+Bod z revize `B39` předpokládal, že se u minuty vytiskne značka `+` / `X`, ke které chybí
+vysvětlivka. Ověřeno (zdroj kalendáře i běh nad daty `CB_DP`): `MakeRozpisTplProTypProvozuID`
+vrací rozpis **jen pro dny 1-7** - „pracovní dny" rozepíše na 1-5, „neděle a svátky" na 7. Znaky
+z vyhlášky tedy MHD neprodukuje a doplňovat pro ně vysvětlivku nemá co obsluhovat.
+
+**Místo toho vznikl `B86`** - při ověřování se ukázalo, že se nevytiskne ani žádná z těch značek,
+které kalendář produkuje. Sonda `MhdPlatnostiProbe` zůstává v repu; bude potřeba u `B86`.
+
 ## 2026-08-14 ✅ - `B83`: vysvětlivky dnů na vývěsce AD čtou zákaznický číselník
 
 Detail → changelog 2026-08-14 (1). Nález z revize `B39`: vývěska tiskla texty denních značek
