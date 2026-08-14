@@ -1629,6 +1629,10 @@ ClassMethod SedneDoSloupceDny(dnySpoje As %String, sloupecDny As %String) As %Bo
     i sloupecDny = "" q 1
     i dnySpoje = "" q 1
     i dnySpoje = "-" q 0
+    // „X" (pracovní dny) se pro **zařazení** chová jako 1-5: spoj jedoucí jen v pondělí do sloupce
+    // pracovních dnů patří (jen ho nepokrývá celý, takže dostane značku). Od kalendářního „12345"
+    // se „X" liší až na ose Období, kde svátek do pracovních dnů nepadne - `DenPatriDoSloupce`.
+    i sloupecDny [ "X" s sloupecDny = sloupecDny_"12345"
     f i=1:1:$l(dnySpoje) {
         i sloupecDny [ $e(dnySpoje,i) ret 1
     }
@@ -1688,12 +1692,15 @@ ClassMethod ZnackaSkrytaDleDefinice(ByRef defArr, sloupecId As %String, nz As %S
 ClassMethod DenniZnackyProSloupec(plk As %String, dnySpoje As %String, sloupecDny As %String) As %String
 {
     i sloupecDny = "" q ""                                      // sloupec neomezuje - není vůči čemu značku vztáhnout
-    // kombinace známé z dnešních rozvržení - beze změny
-    i sloupecDny = "12345" q ..DenniZnacky(0, plk)               // FTL 0 vrací jen znaky 1-5
+    // kombinace známé z dnešních rozvržení - beze změny („X" = pracovní dny podle vyhlášky, což je
+    // od `B82` tvar, který posílají presety; kalendářní „12345" se chová stejně, liší se jen svátky)
+    i (sloupecDny = "12345") || (sloupecDny = "X") q ..DenniZnacky(0, plk)   // FTL 0 vrací jen znaky 1-5
     i (sloupecDny = "6") || (sloupecDny = "7+") q ""             // oddělený víkendový sloupec: nadpis to říká
     i sloupecDny = "67+" q $tr(..DenniZnacky(2, plk), "12345")   // slitý víkend dle dnešního pravidla
     // vlastní kombinace (uživatel si dny slil sám) - obecné pravidlo
     i (dnySpoje = "") || (dnySpoje = "-") q ""
+    // „X" ve sloupci se vůči značkám chová jako 1-5; samotné „X" značka není, tu nese den v týdnu
+    i sloupecDny [ "X" s sloupecDny = $tr(sloupecDny,"X")_"12345"
     s pokryva = 1
     f i=1:1:$l(sloupecDny) {
         i dnySpoje '[ $e(sloupecDny,i) s pokryva = 0
@@ -1723,10 +1730,10 @@ ClassMethod PresetySloupcu(dataDB As %String, sku As %String, lin As %String) As
     s oPrazdBez = ..SpojSeznamyZnacek($p(nz,"~",2), $p(nenz,"~",1))
 
     s out = ##class(%DynamicObject).%New()
-    d out.%Set("PRAC_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny","12345",""), $lb("2","Soboty","6",""), $lb("3","Neděle a svátky","7+","")), neznz))
-    d out.%Set("PRAC_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny","12345",""), $lb("2","Soboty, neděle a svátky","67+","")), neznz))
-    d out.%Set("PRAZDNINY_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","12345",mimoBez), $lb("2","Pracovní dny o prázdninách","12345",oPrazdBez), $lb("3","Soboty, neděle a svátky","67+","")), neznz))
-    d out.%Set("PRAZDNINY_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","12345",mimoBez), $lb("2","Pracovní dny o prázdninách","12345",oPrazdBez), $lb("3","Soboty","6",""), $lb("4","Neděle a svátky","7+","")), neznz))
+    d out.%Set("PRAC_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny","X",""), $lb("2","Soboty","6",""), $lb("3","Neděle a svátky","7+","")), neznz))
+    d out.%Set("PRAC_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny","X",""), $lb("2","Soboty, neděle a svátky","67+","")), neznz))
+    d out.%Set("PRAZDNINY_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","X",mimoBez), $lb("2","Pracovní dny o prázdninách","X",oPrazdBez), $lb("3","Soboty, neděle a svátky","67+","")), neznz))
+    d out.%Set("PRAZDNINY_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","X",mimoBez), $lb("2","Pracovní dny o prázdninách","X",oPrazdBez), $lb("3","Soboty","6",""), $lb("4","Neděle a svátky","7+","")), neznz))
     q out.%ToJSON()
 }
 
@@ -1924,12 +1931,16 @@ ClassMethod DenPatriDoSloupce(hrl As %String, sloupecDny As %String) As %Boolean
     s stat = +$g(^||TiskAd("jede","stat"))
     s jeSvatek = +$lg($g(^||TiskAd("jede","raw","CAL",hrl,stat)), 3)
     s denVTydnu = (hrl + 3 # 7) + 1
-    // Svátek patří do sloupce, který vyjmenoval "+", a **navíc do nedělního sloupce, když padne
-    // na neděli** - velikonoční neděle je pořád neděle, takže sloupec „Ne" pokrývá (`B81`). U dnů
-    // 1-6 to neplatí: „Pracovní dny" nesmí tvrdit, že pokrývají 1. květen, a rozlišit je od
-    // samostatného „pondělí" umí teprve `X` z vyhlášky (`B82`).
-    i jeSvatek q (sloupecDny [ "+") || ((denVTydnu = 7) && (sloupecDny [ "7"))
-    q (sloupecDny [ denVTydnu)
+    // Svátek: patří do sloupce, který vyjmenoval "+"; do sloupce „X" (pracovní dny) nikdy, protože
+    // pracovní dny svátky z definice nezahrnují; jinak je svátek pořád tím dnem v týdnu, kterým
+    // padl - velikonoční neděle do sloupce „Ne" patří (`B81`), 1. květen do kalendářního „Po-Pá"
+    // taky. Právě proto musí jít „pracovní dny" zadat jako `X`, ne jako `12345` (`B82`).
+    i jeSvatek {
+        i sloupecDny [ "+" q 1
+        i sloupecDny [ "X" q 0
+        q (sloupecDny [ denVTydnu)
+    }
+    q (sloupecDny [ denVTydnu) || ((sloupecDny [ "X") && (denVTydnu < 6))
 }
 
 /// Jak spoj jede v období sloupce: 2 = každý den období, 1 = jen část, 0 = vůbec ani den,

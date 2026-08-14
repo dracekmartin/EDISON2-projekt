@@ -63,7 +63,12 @@ Method TestGold0365001()
 	// zastávka, které mohlo dát kombinaci, kterou nejede žádný spoj. ⚠️ **Počty jsou shodné**
 	// (pages/zast/odj/pozn beze změny) = neztratil se žádný spoj ani řádek, změnily se jen hodnoty
 	// v časových sloupcích. Že sloupec odpovídá reálnému spoji, hlídá `TestVariantniSloupecJeProbehJedneTrasy`.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=01bapZaPvI+E6TUHVUsjew==")
+	// Re-baseline 2026-08-14 (`B82`): presety vlastních sloupců posílají u „Pracovních dnů" značku
+	// `X` z vyhlášky místo kalendářního `12345` - pracovní dny nezahrnují svátky, kdežto vypsané
+	// Po-Pá ano. ⚠️ **Mění se JEN md5**, počty stránek/zastávek/odjezdů/poznámek jsou shodné;
+	// ověřeno izolovaně: s presety vrácenými na `12345` projdou odtisky beze změny, takže rozdíl
+	// nepochází odjinud než z pole PRESETY_SLOUPCU.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=9IrnY2yYyljc364ouA542w==")
 }
 
 Method TestGold0365005()
@@ -85,7 +90,9 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-12 (#12843 podruhé): volba trasy pro jediný sloupec dle pokrytí - viz 0365001.
 	// Re-baseline 2026-08-13 (`B67` kroky 1+2): tři stavy CAS_JIZDY + variantní sloupec z jedné trasy -
 	// viz gold 0365001. Počty stránek, zastávek, odjezdů i poznámek beze změny.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=q5Bz5atVWrGA+jsgUgPZSQ==")
+	// Re-baseline 2026-08-14 (`B82`): presety posílají „Pracovní dny" jako `X` z vyhlášky místo
+	// kalendářního `12345` → jen md5, počty shodné (viz vysvětlení u gold 0365001).
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=rT9TQ3uujic46jGO5DioKQ==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -148,7 +155,9 @@ Method TestZadneDuplicitniVariantniSloupce()
 /// jízdní řád; ostatní firmy proto drží invariantní testy, ne odtisk.
 Method TestGold0330530()
 {
-	do ..AssertLine(1, "0330530", "pages=45 zast=1058 odj=1236 pozn=639 md5=ikpMfLU9R6u+uhBk3+p/HA==")
+	// Re-baseline 2026-08-14 (`B82`): presety posílají „Pracovní dny" jako `X` z vyhlášky místo
+	// kalendářního `12345` → jen md5, počty shodné (viz vysvětlení u gold 0365001).
+	do ..AssertLine(1, "0330530", "pages=45 zast=1058 odj=1236 pozn=639 md5=1NqkIxaEhFZcS5LZxM4OXw==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

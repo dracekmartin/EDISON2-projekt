@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-14 (4) - 🅧 dny sloupce se zadávají v abecedě vyhlášky, včetně „pracovních dnů" (`B82`)
+
+Vlastní sloupce vývěsky měly zaškrtávátka Po-Ne + Svátek a **„pracovní dny" (`X`) nešly zadat vůbec**.
+Přitom `X` **není zkratka za Po-Pá**: pracovní dny svátky nezahrnují, kdežto vypsané Po-Pá ano - spoj
+„jede v pondělí" jede i o svátečním pondělí, spoj „jede v pracovních dnech" ne. Vyhláška 122/2014 ty
+dvě věci výslovně rozlišuje a zakazuje jejich kombinaci.
+
+**V editoru přibylo „Pracovní dny (X)".** Zakázané kombinace z vyhlášky (`X` s Po-Pá, „Svátek" s „Ne")
+**nejdou ani zaškrtnout** - protikus se zašedne. Zákaz tak vyplývá z ovládání, ne z hlášky po
+potvrzení (rozhodnutí Jan 14. 8.). Legální kombinace jako „pracovní dny + sobota" zůstávají.
+
+**Dvojznačnost, kvůli které se to rozjíždělo, je pryč.** Týž zápis `12345` dosud znamenal na dvou
+místech dvě různé věci: při zařazení spoje kalendářní Po-Pá, na ose Období „pracovní dny" (svátek
+do nich nikdy nepadl). Nově:
+
+- **`X`** = pracovní dny. Pro zařazení se chová jako 1-5 (spoj jedoucí jen v pondělí do sloupce
+  patří, jen ho nepokrývá celý, takže dostane značku), ale **svátek do něj nepadne nikdy**.
+- **`12345`** = kalendářní Po-Pá, tedy **včetně svátků**, které na ně padnou.
+
+**Vzory sloupců proto posílají u „Pracovních dnů" nově `X`.** Kdo má vlastní sloupce postavené na
+vypsaném Po-Pá, dostane od teď do nich i svátky - což je to, co ten zápis podle vyhlášky znamená.
+⚠️ Zákaznických šablon se to netýká (vlastní sloupce se do vydané verze nikdy nedostaly), ale
+**naše testovací šablony v DB je nesou a je potřeba je přeuložit**.
+
+**Brány:** **109 Caché testů** (1 nový na pravidla `X`) a **940 .NET** (7 nových na editor - zápis
+`X`, vzájemné zašednění, a že otevřít a zavřít dialog beze změny definici nezmění). Zlaté odtisky
+přebaselinované: **mění se jen md5, počty stránek/zastávek/odjezdů/poznámek jsou shodné**, a je to
+ověřené izolovaně - s vzory vrácenými na `12345` projdou odtisky beze změny, takže rozdíl nepochází
+odjinud než z pole `PRESETY_SLOUPCU`.
+
 ## 2026-08-14 (3) - 🗓️ vlastní sloupec „Neděle" už nevrací prázdno (`B81`)
 
 Zákazník si ve vlastních sloupcích vývěsky udělal sloupec **Neděle** a nevyšel v něm **ani jeden

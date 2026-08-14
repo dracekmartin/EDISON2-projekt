@@ -192,18 +192,23 @@
 
                                 <TextBlock Text="Dny" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <WrapPanel Margin="0,0,0,4">
-                                    <CheckBox Content="Po" IsChecked="{Binding SelectedCustomVM.Po}" Margin="0,0,8,4"/>
-                                    <CheckBox Content="Út" IsChecked="{Binding SelectedCustomVM.Ut}" Margin="0,0,8,4"/>
-                                    <CheckBox Content="St" IsChecked="{Binding SelectedCustomVM.St}" Margin="0,0,8,4"/>
-                                    <CheckBox Content="Čt" IsChecked="{Binding SelectedCustomVM.Ct}" Margin="0,0,8,4"/>
-                                    <CheckBox Content="Pá" IsChecked="{Binding SelectedCustomVM.Pa}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Po" IsChecked="{Binding SelectedCustomVM.Po}" IsEnabled="{Binding SelectedCustomVM.LzePoPa}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Út" IsChecked="{Binding SelectedCustomVM.Ut}" IsEnabled="{Binding SelectedCustomVM.LzePoPa}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="St" IsChecked="{Binding SelectedCustomVM.St}" IsEnabled="{Binding SelectedCustomVM.LzePoPa}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Čt" IsChecked="{Binding SelectedCustomVM.Ct}" IsEnabled="{Binding SelectedCustomVM.LzePoPa}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Pá" IsChecked="{Binding SelectedCustomVM.Pa}" IsEnabled="{Binding SelectedCustomVM.LzePoPa}" Margin="0,0,8,4"/>
                                     <CheckBox Content="So" IsChecked="{Binding SelectedCustomVM.So}" Margin="0,0,8,4"/>
-                                    <CheckBox Content="Ne" IsChecked="{Binding SelectedCustomVM.Ne}" Margin="0,0,8,4"/>
-                                    <CheckBox Content="Svátek" IsChecked="{Binding SelectedCustomVM.Svatek}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Ne" IsChecked="{Binding SelectedCustomVM.Ne}" IsEnabled="{Binding SelectedCustomVM.LzeNe}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Svátek" IsChecked="{Binding SelectedCustomVM.Svatek}" IsEnabled="{Binding SelectedCustomVM.LzeSvatek}" Margin="0,0,8,4"/>
                                 </WrapPanel>
-                                <TextBlock Text="Spoj bez omezení dnů patří do každého sloupce; platnost „X“ se počítá jako Po-Pá."
-                                           FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}"
-                                           FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
+                                <WrapPanel Margin="0,0,0,4">
+                                    <CheckBox Content="Pracovní dny (X)" IsChecked="{Binding SelectedCustomVM.Pracovni}"
+                                              IsEnabled="{Binding SelectedCustomVM.LzePracovni}" Margin="0,0,8,4"
+                                              ToolTip="Pracovní dny podle vyhlášky - na rozdíl od zaškrtnutého Po-Pá nezahrnují svátky"/>
+                                </WrapPanel>
+                                <TextBlock TextWrapping="Wrap" FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"
+                                           Text="Spoj bez omezení dnů patří do každého sloupce. „Pracovní dny“ nezahrnují svátky, kdežto zaškrtnuté Po-Pá ano - proto je vyhláška rozlišuje a nejdou zaškrtnout zároveň. Totéž platí pro „Svátek“ a „Ne“."/>
 
                                 <Separator Margin="0,4,0,8"/>
 

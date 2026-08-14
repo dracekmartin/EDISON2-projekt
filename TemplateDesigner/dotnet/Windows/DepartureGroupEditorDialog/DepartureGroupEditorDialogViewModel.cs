@@ -114,16 +114,29 @@ public class CustomColumnVM : INotifyPropertyChanged
     private string _header2 = "";
     public string Header2 { get => _header2; set { _header2 = value; OnChanged(); } }
 
-    // Dny v týdnu - zaškrtávátka 1:1 s abecedou platnosti (1-7, + = svátek)
-    private bool _po, _ut, _st, _ct, _pa, _so, _ne, _svatek;
-    public bool Po     { get => _po;     set { _po = value;     OnChanged(); } }
-    public bool Ut     { get => _ut;     set { _ut = value;     OnChanged(); } }
-    public bool St     { get => _st;     set { _st = value;     OnChanged(); } }
-    public bool Ct     { get => _ct;     set { _ct = value;     OnChanged(); } }
-    public bool Pa     { get => _pa;     set { _pa = value;     OnChanged(); } }
+    // Dny v týdnu - zaškrtávátka 1:1 s abecedou platnosti podle vyhlášky 122/2014
+    // (1-7 = Po až Ne, X = pracovní dny, + = neděle a státem uznané svátky).
+    private bool _po, _ut, _st, _ct, _pa, _so, _ne, _svatek, _pracovni;
+    public bool Po     { get => _po;     set { _po = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
+    public bool Ut     { get => _ut;     set { _ut = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
+    public bool St     { get => _st;     set { _st = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
+    public bool Ct     { get => _ct;     set { _ct = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
+    public bool Pa     { get => _pa;     set { _pa = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
     public bool So     { get => _so;     set { _so = value;     OnChanged(); } }
-    public bool Ne     { get => _ne;     set { _ne = value;     OnChanged(); } }
-    public bool Svatek { get => _svatek; set { _svatek = value; OnChanged(); } }
+    public bool Ne     { get => _ne;     set { _ne = value;     OnChanged(); OnChanged(nameof(LzeSvatek)); } }
+    public bool Svatek { get => _svatek; set { _svatek = value; OnChanged(); OnChanged(nameof(LzeNe)); } }
+
+    /// <summary>„X" = pracovní dny (vyhláška 122/2014). Liší se od zaškrtnutého Po-Pá tím, že
+    /// **nezahrnuje svátky** - spoj jedoucí „v pondělí" jede i o svátečním pondělí, spoj „v pracovní
+    /// dny" ne. Proto to jsou dvě různé volby, ne zkratka jedné za druhou.</summary>
+    public bool Pracovni { get => _pracovni; set { _pracovni = value; OnChanged(); OnChanged(nameof(LzePoPa)); } }
+
+    // Vyhláška zakazuje kombinace „X" s jednotlivými pracovními dny a „+" s nedělí (příloha č. 2).
+    // Nepřípustnou kombinaci proto nejde ani zaškrtnout - protikus se zašedne.
+    public bool LzePracovni => !(_po || _ut || _st || _ct || _pa);
+    public bool LzePoPa     => !_pracovni;
+    public bool LzeNe       => !_svatek;
+    public bool LzeSvatek   => !_ne;
 
     private string _includeMarks = "";
     public string IncludeMarks { get => _includeMarks; set { _includeMarks = value; OnChanged(); } }
@@ -148,8 +161,9 @@ public class CustomColumnVM : INotifyPropertyChanged
         Id = Id,
         Header = Header.Trim(),
         Header2 = Header2.Trim(),
-        Days = (Po ? "1" : "") + (Ut ? "2" : "") + (St ? "3" : "") + (Ct ? "4" : "")
-             + (Pa ? "5" : "") + (So ? "6" : "") + (Ne ? "7" : "") + (Svatek ? "+" : ""),
+        Days = (Pracovni ? "X" : "") + (Po ? "1" : "") + (Ut ? "2" : "") + (St ? "3" : "")
+             + (Ct ? "4" : "") + (Pa ? "5" : "") + (So ? "6" : "") + (Ne ? "7" : "")
+             + (Svatek ? "+" : ""),
         IncludeMarks = IncludeMarks.Trim(),
         ExcludeMarks = ExcludeMarks.Trim(),
         SuppressedMarks = SuppressedMarks.Trim(),
@@ -164,6 +178,7 @@ public class CustomColumnVM : INotifyPropertyChanged
         Po = d.Days.Contains('1'), Ut = d.Days.Contains('2'), St = d.Days.Contains('3'),
         Ct = d.Days.Contains('4'), Pa = d.Days.Contains('5'), So = d.Days.Contains('6'),
         Ne = d.Days.Contains('7'), Svatek = d.Days.Contains('+'),
+        Pracovni = d.Days.Contains('X'),
         IncludeMarks = d.IncludeMarks,
         ExcludeMarks = d.ExcludeMarks,
         SuppressedMarks = d.SuppressedMarks,

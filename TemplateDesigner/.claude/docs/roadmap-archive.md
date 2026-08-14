@@ -65,6 +65,21 @@ podstrčila české texty. Kvůli tomu se `NactiTextyZnacek` musí volat **až p
 Ověřeno voláním nad reálnými daty (nový test čte oba jazykové záznamy firmy). Zlaté odtisky se
 nehnuly - na kontrolních linkách se `+` do legendy netiskne, protože ji říká už nadpis sloupce.
 
+## 2026-08-14 ✅ - `B82`: dny sloupce v abecedě vyhlášky včetně „pracovních dnů"
+
+Detail → changelog 2026-08-14 (4). Tím je uzavřená celá revize vlastních sloupců od kolegy (13. 8.).
+
+`X` (pracovní dny) nešlo zadat vůbec a týž zápis `12345` znamenal na dvou místech dvě různé věci -
+při zařazení spoje kalendářní Po-Pá, na ose Období „pracovní dny". Nově je `X` samostatná volba
+v editoru, `12345` znamená kalendářní Po-Pá **včetně svátků**, které na ně padnou, a `X` svátky
+nezahrnuje nikdy. Zakázané kombinace z vyhlášky (`X` s Po-Pá, „Svátek" s „Ne") nejdou zaškrtnout -
+protikus se zašedne, takže zákaz vyplývá z ovládání, ne z hlášky po potvrzení (rozhodnutí Jan 14. 8.).
+
+⚠️ **Vzory sloupců posílají u „Pracovních dnů" `X`**, takže se změnily zlaté odtisky - **jen md5,
+počty shodné**. Ověřeno izolovaně: s vzory vrácenými na `12345` projdou odtisky beze změny, takže
+rozdíl nepochází odjinud než z pole `PRESETY_SLOUPCU`. **Naše testovací šablony v DB je potřeba
+přeuložit**; zákaznických se to netýká (vlastní sloupce se do vydané verze nikdy nedostaly).
+
 ## 2026-08-14 ✅ - `B81`: vlastní sloupec „Neděle" vracel prázdno
 
 Detail → changelog 2026-08-14 (3). Spoj s platností `+` („jede v neděli **a** ve státem uznané

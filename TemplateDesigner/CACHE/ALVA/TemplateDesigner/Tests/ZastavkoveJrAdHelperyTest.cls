@@ -998,6 +998,26 @@ Method TestPlusZahrnujeNedeli()
 	do $$$AssertEquals(..Znacky("1", "12345"), "1", "spoj jedoucí jen v pondělí dostane ve sloupci pracovních dnů značku 1")
 }
 
+/// `B82` - „X" (pracovní dny) je podle vyhlášky **samostatná kategorie**, ne zkratka za 1-5.
+/// Pro zařazení do sloupce se chová jako 1-5 (spoj jedoucí jen v pondělí do pracovních dnů patří,
+/// jen je nepokrývá celé), liší se až u svátků - a ty řeší osa Období, ne tahle metoda.
+Method TestPracovniDnyJakoSamostatnaZnacka()
+{
+	// zařazení: sloupec „X" bere pracovní spoje i jednotlivé dny
+	do $$$AssertEquals(..Sedne("X", "X"), 1, "spoj v pracovních dnech patří do sloupce pracovních dnů")
+	do $$$AssertEquals(..Sedne("1", "X"), 1, "spoj jedoucí jen v pondělí do pracovních dnů patří")
+	do $$$AssertEquals(..Sedne("12345", "X"), 1, "vypsané Po-Pá taky")
+	do $$$AssertEquals(..Sedne("6", "X"), 0, "sobotní spoj do pracovních dnů nepatří")
+	do $$$AssertEquals(..Sedne("+", "X"), 0, "spoj neděle/svátky do pracovních dnů nepatří")
+	// a naopak: spoj „X" patří do kalendářního sloupce Po-Pá i do samotného pondělí
+	do $$$AssertEquals(..Sedne("X", "12345"), 1, "pracovní spoj patří do kalendářního Po-Pá")
+	do $$$AssertEquals(..Sedne("X", "1"), 1, "pracovní spoj jede i v pondělí")
+
+	// značky: sloupec „X" se chová jako dosavadní „12345" (rozhodnutí Jan 10. 8. o čtyřech rozvrženích)
+	do $$$AssertEquals(..Znacky("X", "X"), "", "pracovní spoj pokrývá sloupec pracovních dnů → bez značky")
+	do $$$AssertEquals(..Znacky("1", "X"), "1", "spoj jen v pondělí dostane ve sloupci pracovních dnů značku 1")
+}
+
 /// Zkratka pro TestPlusZahrnujeNedeli - sedne spoj s platností `plk` do sloupce s dny `sloupecDny`?
 Method Sedne(plk As %String, sloupecDny As %String) As %Boolean
 {
