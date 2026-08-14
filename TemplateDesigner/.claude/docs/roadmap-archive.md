@@ -9,8 +9,9 @@ vysvětlivka. Ověřeno (zdroj kalendáře i běh nad daty `CB_DP`): `MakeRozpis
 vrací rozpis **jen pro dny 1-7** - „pracovní dny" rozepíše na 1-5, „neděle a svátky" na 7. Znaky
 z vyhlášky tedy MHD neprodukuje a doplňovat pro ně vysvětlivku nemá co obsluhovat.
 
-**Místo toho vznikl `B86`** - při ověřování se ukázalo, že se nevytiskne ani žádná z těch značek,
-které kalendář produkuje. Sonda `MhdPlatnostiProbe` zůstává v repu; bude potřeba u `B86`.
+⚠️ **Značky z vyhlášky jsou téma zastávkového JŘ AD, ne MHD** (upřesnění Jan 14. 8.): v MHD se
+platnost bere z **typu provozu**, ne z ručního zadávání dnů, takže se tam kolem `B39` nic nemění.
+Ostatní body revize (`B81`, `B82`) se MHD netýkají.
 
 ## 2026-08-14 ✅ - `B83`: vysvětlivky dnů na vývěsce AD čtou zákaznický číselník
 

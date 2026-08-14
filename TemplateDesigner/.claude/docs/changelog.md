@@ -1,21 +1,15 @@
 # Changelog
 
-## 2026-08-14 (2) - 🔎 MHD denní značky: `B84` zavřeno bez práce, otevřel se větší nález (`B86`)
+## 2026-08-14 (2) - 🔎 `B84` zavřeno bez práce: značky z vyhlášky MHD neprodukuje
 
 `B84` předpokládal, že se u minuty vytiskne značka `+` / `X` bez vysvětlivky. Neplatí:
 `ALVA.MHD.KalendarFce.MakeRozpisTplProTypProvozuID` vrací rozpis **jen pro dny 1-7** („pracovní
 dny" rozepíše na 1-5, „neděle a svátky" na 7), takže znaky z vyhlášky z MHD vyjít nemůžou.
 Ověřeno zdrojem kalendáře **i během nad daty** `CB_DP` (rozpis vrátil klíče `1,2,3,4,5`).
 
-Při tom se ukázalo, že se nevytiskne ani žádná ze značek, které kalendář produkuje: týdenní
-platnost se čte z proměnné vymazané o osm řádků výš a z klíče, který je **vstupem** kalendáře, ne
-jeho výstupem. Značkovací smyčka tak nikdy neproběhne. Nastavení „automaticky poznámkovat
-odlišnosti v platnostech" má na `CB_DP` zapnuté **168 z 300 linek**, ale **žádná zlatá ani paritní
-linka** - proto to zůstalo bez povšimnutí. Zapsáno jako `B86`; oprava se dá dělat proti legacy
-oraclu, který porovnává i poznámky.
-
-Sonda `MhdPlatnostiProbe` (read-only) zůstává v repu - ukáže pro linku, které dny kalendář reálně
-vrací a kolik spojů má ruční zadání platnosti.
+⚠️ **Značky podle vyhlášky jsou téma zastávkového JŘ AD, ne MHD** (upřesnění Jan 14. 8.): v MHD
+se platnost bere z **typu provozu**, ne z ručního zadávání dnů. Celá revize `B39` se tedy týká AD
+a v MHD se kolem ní nemění nic.
 
 ## 2026-08-14 (1) - 📖 vysvětlivky dnů na vývěsce AD čtou zákaznický číselník (`B83`)
 
