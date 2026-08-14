@@ -2,6 +2,21 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-14 ✅ - `B83`: vysvětlivky dnů na vývěsce AD čtou zákaznický číselník
+
+Detail → changelog 2026-08-14 (1). Nález z revize `B39`: vývěska tiskla texty denních značek
+napevno, takže vlastní znění zákazníka ignorovala - přestože starý modul i náš **linkový** JŘ je
+z číselníku `^JRSET("NCOME")` berou. Dvě naše sestavy tedy u téže značky tiskly jiný text.
+
+Vestavěná znění zůstala jako záloha a znění `+` se srovnalo s vyhláškou 122/2014
+(„jede v neděli a ve státem uznané svátky"). **Neodvoditelné rozhodnutí:** záznam číselníku se
+vybírá podle **jazyka sestavy**, ne podle toho, kterou variantu má firma vyplněnou - firmy mají
+běžně obě (ověřeno na `CB_CSADAD`), takže legacy detekce „vezmi vyplněnou" by slovenské sestavě
+podstrčila české texty. Kvůli tomu se `NactiTextyZnacek` musí volat **až po** `NactiJazyk`.
+
+Ověřeno voláním nad reálnými daty (nový test čte oba jazykové záznamy firmy). Zlaté odtisky se
+nehnuly - na kontrolních linkách se `+` do legendy netiskne, protože ji říká už nadpis sloupce.
+
 ## 2026-08-13 ✅ - `B78`: kontrola uvozovek chytá i druhou půlku té třídy chyb
 
 Detail → changelog 2026-08-13 (7). Statická kontrola `.cls` hlásila jen řádek, který **končí**

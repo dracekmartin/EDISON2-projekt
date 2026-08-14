@@ -223,6 +223,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) - fresh per request
         d ..NactiNastaveniNazvu()         // tvar názvu zastávky + „název pro MHD" (platí pro celou sestavu)
         d ..NactiJazyk()                  // jazyk textů značek = kultura šablony (#12843)
+        d ..NactiTextyZnacek(dataDB)      // vysvětlivky dnů z číselníku zákazníka (musí až po NactiJazyk)
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         // Default = první skupina v ^JRL - shodně s GetAvailableInstances. Picker posílá jen
@@ -2501,12 +2502,19 @@ ClassMethod PrefixOmezeni(omzId As %String) As %String
 }
 
 /// Text do legendy pro kroužkovou denní značku týdenní platnosti (dny 1-7, svátek `+`).
+/// Přednost má zákaznický číselník (`NactiTextyZnacek`), znění níže je záloha pro instalaci,
+/// kde číselník značku nemá.
+///
+/// ⚠️ `+` je podle vyhlášky 122/2014 **neděle i státem uznané svátky**, ne jen svátek - stejné
+/// znění nese výchozí číselník legacy (`JRapiExp32:489`) i náš linkový JŘ (`LinkovyJrAd.TextPlatnosti`).
 ClassMethod TextDneVTydnu(dch As %String) As %String
 {
+    s txt = $s(dch = "":"", 1:$g(^||TiskAd("znacka", dch)))
+    i txt '= "" ret txt
     i ..Jazyk() = "sk" {
-        q $case(dch, "1":"premáva v pondelok", "2":"premáva v utorok", "3":"premáva v stredu", "4":"premáva vo štvrtok", "5":"premáva v piatok", "6":"premáva v sobotu", "7":"premáva v nedeľu", "+":"premáva vo sviatok", :"")
+        q $case(dch, "1":"premáva v pondelok", "2":"premáva v utorok", "3":"premáva v stredu", "4":"premáva vo štvrtok", "5":"premáva v piatok", "6":"premáva v sobotu", "7":"premáva v nedeľu", "+":"premáva v nedeľu a v štátom uznaný deň pracovného pokoja", :"")
     }
-    q $case(dch, "1":"jede v pondělí", "2":"jede v úterý", "3":"jede ve středu", "4":"jede ve čtvrtek", "5":"jede v pátek", "6":"jede v sobotu", "7":"jede v neděli", "+":"jede ve svátek", :"")
+    q $case(dch, "1":"jede v pondělí", "2":"jede v úterý", "3":"jede ve středu", "4":"jede ve čtvrtek", "5":"jede v pátek", "6":"jede v sobotu", "7":"jede v neděli", "+":"jede v neděli a ve státem uznané svátky", :"")
 }
 
 /// Denní značky týdenní platnosti pro odjezd - závisí na **rozvržení sloupců dnů** (FTL),
@@ -2870,6 +2878,22 @@ ClassMethod Jazyk() As %String
     ret $g(^||TiskAd("jazyk"), "cs")
 }
 
+/// Texty denních značek z číselníku `^JRSET("NCOME",rec,znak)` - zákazník si je v EDISONu přepisuje
+/// a starý modul je odtud bere taky (`JRapiLinPrtMhd1:113`), stejně jako náš linkový JŘ.
+/// Načte se jednou per request, `TextDneVTydnu` pak čte tuhle cache.
+///
+/// Záznam se volí podle jazyka sestavy (`NactiJazyk`), ne podle instalace - firma může mít
+/// obě jazykové varianty vyplněné a texty značek se řídí kulturou šablony (#12843).
+ClassMethod NactiTextyZnacek(dataDB As %String)
+{
+    s rec = $s(..Jazyk() = "sk":"*SK", 1:"CZ")
+    f i=1:1:8 {
+        s znak = $p("1,2,3,4,5,6,7,+", ",", i)
+        s txt = $g(^[dataDB]JRSET("NCOME", rec, znak))
+        i txt '= "" s ^||TiskAd("znacka", znak) = txt
+    }
+}
+
 /// Bezbariérovost spoje. SK znění „všetky spoje s bezbariérovým prístupom do vozidla" je z jeho
 /// starého tisku (#12843), ne vymyšlené.
 ClassMethod TextBezbarier(vsechny As %Boolean) As %String
@@ -2986,6 +3010,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         k ^||TiskAd                       // cache per-linka/per-směr invariantů - fresh per request
         d ..NactiNastaveniNazvu()
         d ..NactiJazyk()
+        d ..NactiTextyZnacek(dataDB)
 
         // Živý náhled z první linky aktuální firmy (session dataDB) - zrcadlí reálný GetData.
         d ..PrvniLinka(dataDB, .sku, .lin)

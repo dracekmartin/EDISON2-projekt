@@ -35,8 +35,9 @@ Method TestCasJizdySloupce()
 /// z kultury šablony (`JAZYK` na wire), ne z firemního nastavení legacy tisku.
 Method TestJazykTextuZnacek()
 {
-	// Bez NactiJazyk (starší klient, sonda) → čeština; klíč se nesmí protáhnout z jiného testu
-	kill ^||TiskAd("jazyk")
+	// Bez NactiJazyk (starší klient, sonda) → čeština; klíče se nesmí protáhnout z jiného testu
+	// (číselník značek zůstává načtený po každém GetData, tedy i po gold testech)
+	kill ^||TiskAd("jazyk"), ^||TiskAd("znacka")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "cs", "výchozí jazyk = čeština")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(22), "nejede ", "CZ prefix omezení")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("x"), "na znamení", "CZ atribut")
@@ -71,7 +72,7 @@ Method TestJazykTextuZnacek()
 /// prázdná SK varianta by v legendě udělala díru, shodná by znamenala zapomenutý překlad.
 Method TestJazykZadnyTextNechybi()
 {
-	kill ^||TiskAd("jazyk")
+	kill ^||TiskAd("jazyk"), ^||TiskAd("znacka")
 	for znak = "x", "y", "z", "O" { set cs("atr", znak) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu(znak) }
 	for omzId = 11, 12, 13, 14, 15, 22 { set cs("omz", omzId) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(omzId) }
 	for dch = 1, 2, 3, 4, 5, 6, 7, "+" { set cs("den", dch) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextDneVTydnu(dch) }
@@ -515,8 +516,50 @@ Method TestDenniZnackyBezPlatnosti()
 Method TestTextDneVTydnuSvatek()
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "+"), "jede ve svátek", "svátek má text do legendy")
+	kill ^||TiskAd("znacka")
+	// `+` je podle vyhlášky 122/2014 neděle **i** svátky - samotné „jede ve svátek" tvrdilo méně,
+	// než značka znamená, a rozcházelo se s výchozím číselníkem legacy i s naším linkovým JŘ.
+	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "+"), "jede v neděli a ve státem uznané svátky", "svátek má vyhláškové znění")
 	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "6"), "jede v sobotu", "dny beze změny")
+}
+
+/// Zákazník si vysvětlivky značek přepisuje v číselníku a starý modul je odtud bere - vestavěná
+/// znění jsou jen záloha pro instalaci, kde značka v číselníku není.
+Method TestTextDneVTydnuZCiselniku()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set ^||TiskAd("znacka", "+") = "jede v neděli a o svátcích"
+	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "+"), "jede v neděli a o svátcích", "text zákazníka přebíjí vestavěný")
+	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "6"), "jede v sobotu", "značka bez textu v číselníku padá na vestavěné znění")
+	kill ^||TiskAd("znacka")
+	do $$$AssertEquals($classmethod(cls, "TextDneVTydnu", "+"), "jede v neděli a ve státem uznané svátky", "po vyprázdnění zpět vestavěné znění")
+}
+
+/// Načtení číselníku nad reálnými daty: `NCOME` má obě jazykové varianty a záznam se musí vybrat
+/// podle jazyka sestavy, ne podle toho, kterou má firma vyplněnou (legacy detekce by u firmy
+/// s oběma vždy vrátila češtinu).
+Method TestNactiTextyZnacekDleJazyka()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", db = "CB_CSADAD"
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - číselník značek přeskočen")
+		quit
+	}
+	if $get(^[db]JRSET("NCOME", "CZ", "+")) = "" {
+		do $$$AssertTrue(1, "firma nemá v číselníku značku + - test přeskočen")
+		quit
+	}
+
+	kill ^||TiskAd("znacka"), ^||TiskAd("jazyk")
+	do $classmethod(cls, "NactiTextyZnacek", db)
+	do $$$AssertEquals($get(^||TiskAd("znacka", "+")), $get(^[db]JRSET("NCOME", "CZ", "+")), "česká sestava čte český záznam")
+
+	kill ^||TiskAd("znacka")
+	set ^||TiskAd("jazyk") = "sk"
+	do $classmethod(cls, "NactiTextyZnacek", db)
+	do $$$AssertEquals($get(^||TiskAd("znacka", "+")), $get(^[db]JRSET("NCOME", "*SK", "+")), "slovenská sestava čte slovenský záznam")
+
+	kill ^||TiskAd("znacka"), ^||TiskAd("jazyk")
 }
 
 // ── Poznámky linky a výluky (KOVED #13093 bod 1) ──

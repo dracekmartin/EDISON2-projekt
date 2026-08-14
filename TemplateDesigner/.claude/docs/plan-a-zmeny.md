@@ -38,6 +38,17 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 14. 8. 2026 - Vysvětlivky značek dnů podle vašeho číselníku
+
+Vysvětlivky u kroužkových značek dnů (např. „jede v sobotu") se na zastávkové vývěsce braly
+z pevného seznamu v programu. Nově se berou **z číselníku popisů v EDISONu** - tedy odtud, odkud je
+bere i dosavadní tisk jízdních řádků. Když si v číselníku znění upravíte, projeví se to i ve vývěsce;
+pokud v něm značka není, použije se vestavěné znění.
+
+Zároveň se srovnalo vestavěné znění značky **„+"**: nově **„jede v neděli a ve státem uznané
+svátky"** místo dřívějšího „jede ve svátek". Značka podle vyhlášky pokrývá oba dny a stejné znění
+má i výchozí číselník v EDISONu.
+
 ### 13. 8. 2026 - Jízdní doby variant tras: přehlednější a lépe čitelné
 
 Sloupce s jízdními dobami u zastávkových vývěsek se dočkaly několika úprav najednou.

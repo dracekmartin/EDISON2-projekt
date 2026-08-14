@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-14 (1) - 📖 vysvětlivky dnů na vývěsce AD čtou zákaznický číselník (`B83`)
+
+Zastávková vývěska tiskla u kroužkových denních značek texty **napevno**, takže vlastní znění
+zákazníka (edituje si ho v EDISONu) se ignorovalo. Starý modul i náš vlastní **linkový** JŘ ho
+přitom z číselníku berou - dvě naše sestavy tedy u téže značky tiskly jiný text.
+
+Vysvětlivky se teď načtou z číselníku jednou na začátek sestavy a vestavěná znění zůstávají jako
+záloha pro instalaci, kde značka v číselníku není. Záznam se vybírá **podle jazyka sestavy**, ne
+podle toho, kterou jazykovou variantu má firma vyplněnou: firmy mají běžně obě, takže starší
+způsob (vzít tu, která je vyplněná) by slovenské sestavě podstrčil české texty.
+
+Zároveň se srovnalo vestavěné znění značky `+`: **„jede v neděli a ve státem uznané svátky"** místo
+dosavadního „jede ve svátek". Značka podle vyhlášky 122/2014 pokrývá oba dny a stejné znění nese
+i výchozí číselník starého modulu.
+
+**Brány:** **106 Caché testů** (2 nové: text ze číselníku přebíjí vestavěný; nad reálnými daty se
+česká sestava trefí do českého záznamu a slovenská do slovenského), **73 .NET** kontrol schémat.
+Zlaté odtisky se nehnuly - na kontrolních linkách se `+` do legendy netiskne, protože ji říká už
+nadpis sloupce.
+
 ## 2026-08-13 (7) - 🔍 kontrola uvozovek v `.cls` chytá i druhou půlku té třídy chyb (`B78`)
 
 Statická kontrola hlásila jen řádek, který **končí** uprostřed textu (lichý počet uvozovek).
