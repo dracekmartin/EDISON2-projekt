@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-14 (4) - 🔄 náhled se srovná s parametry sestavy na všech cestách (`B87`)
+
+Parametr, jehož hodnotu zpracovává server (`ROZDELENI_SLOUPCU` a spol.), musí po změně spustit
+**nové načtení dat** - jinak náhled ukazuje data předchozího nastavení, zatímco ovladače i tisk už
+jedou podle nového. To rozhodnutí uměla jen jedna ze tří cest, kterými se hodnoty mění:
+
+- **otevření šablony** - data se tahají při obnovení instance, tedy **dřív**, než se aplikují uložené
+  hodnoty parametrů. Po otevření tak náhled patřil výchozímu nastavení, i když ovladač ukazoval
+  uloženou volbu. Navíc pak nešlo „změnit" volbu na tu, kterou ovladač už ukazoval - vyhodnotilo se
+  to jako beze změny a náhled zůstal rozejitý.
+- **dialog Tisk** - jen překreslil ze starých dat.
+- panel parametrů vlevo re-fetch spouštěl správně.
+
+Rozhodování je teď v **jednom místě** (`RefreshPreviewAfterParamChange`), které volají všechny tři.
+
+**Brány:** **924 .NET testů** (3 nové, zdrojové: každá cesta se ptá toho jednoho místa a žádná si
+netahá data sama). Ověřeno mutací - vrácení jedné cesty na pouhé překreslení test shodí.
+
+⚠️ **Nezmizí tím druhá polovina**: vlastní sloupce vývěsky parametr pořád tiše přebíjejí. Řeší se
+zvlášť (`B88`).
+
 ## 2026-08-14 (3) - 🔓 nové povinné pole už nezablokuje formulář staršímu programu (`B85`)
 
 Pole přidané do formuláře jde na server hned, ale do programu až s vydáním. Starší program tedy

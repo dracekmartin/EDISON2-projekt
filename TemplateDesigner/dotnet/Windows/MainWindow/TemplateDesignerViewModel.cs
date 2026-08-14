@@ -2497,8 +2497,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// se kterými se inicializoval na začátku otevření.</summary>
     private void RefreshParamsUiAfterLoad()
     {
-        RebuildParametersPanel();          // lišta + RequestParamsFormReload (tab)
-        RequestPreviewRefresh?.Invoke();   // živý náhled
+        RebuildParametersPanel();            // lišta + RequestParamsFormReload (tab)
+        RefreshPreviewAfterParamChange();    // živý náhled; u server-side hodnot i nová data
     }
 
     /// <summary>
@@ -2517,7 +2517,7 @@ public class TemplateDesignerViewModel : EDViewModel
         _cachedParamValues = null;
         foreach (var vm in PreviewParameters) vm.NotifyValueChanged();
         NotifyParamsSummaryChanged();
-        RequestPreviewRefresh?.Invoke();
+        RefreshPreviewAfterParamChange();
     }
 
     /// <summary>Uloží aktuální <see cref="_previewParams"/> pro tuto agendu (fire-and-forget).</summary>
@@ -2588,6 +2588,21 @@ public class TemplateDesignerViewModel : EDViewModel
         IsDirty = true;
         _cachedParamValues = null;
         NotifyParamsSummaryChanged();
+        RefreshPreviewAfterParamChange();
+    }
+
+    /// <summary>
+    /// Hodnoty parametrů se změnily → server-side parametr znovu načte data, ostatní jen překreslí
+    /// náhled. **Jediné místo, kde se to rozhoduje** - musí ji volat každá cesta, která hodnotami hne.
+    /// <para>
+    /// Když jedna cesta jen překreslí, náhled zůstane na datech předchozího nastavení, zatímco
+    /// ovladače i tisk už jedou podle nového - a uživatel nemá jak poznat, které z toho platí.
+    /// Potkávalo to dvě cesty: dialog Tisk a hlavně **otevření šablony** (data se natáhnou při
+    /// obnovení instance, tedy dřív, než se aplikují uložené hodnoty parametrů).
+    /// </para>
+    /// </summary>
+    private void RefreshPreviewAfterParamChange()
+    {
         var snapshot = ServerParamsSnapshot();
         if (CurrentActiveInstance is not null && snapshot != _lastServerParamsSnapshot)
         {

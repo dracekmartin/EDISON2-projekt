@@ -60,6 +60,29 @@ nelze. **Neproklikané na kolegově lince** - chybí firma a číslo linky; na n
 přímo přes `GetData` (a zjistit, jestli mu nezařazené spoje hlásil oranžový badge, což je jediná
 pojistka, která tu situaci má chytat).
 
+### Rozvržení sloupců vývěsky se nastavuje ze dvou míst (`B88`)
+
+Parametr sestavy „Rozdělení sloupců (typy provozu)" a vlastní sloupce v prvku Odjezdy odpovídají na
+**tutéž otázku** (jaké sloupce vzniknou), a vlastní sloupce ten parametr **tiše přebíjejí**. Kdo je
+jednou zadá, má z parametru navždycky mrtvé tlačítko a nedozví se proč. (Tab „Sloupce" u prvku je
+v pořádku - ten řeší vzhled, ne existenci sloupců.)
+
+**Dohodnuté řešení** (Jan 14. 8.): parametr přestane být druhé nastavení a stane se **ukazatelem
+i ovladačem jednoho stavu**.
+
+- Do nabídky přibude volba **„Vlastní rozložení"** (aditivní změna, stávající popisky se nemění).
+- Jakmile má prvek zadané vlastní sloupce, parametr se na ni **automaticky překlopí**.
+- Výběr pevného rozvržení vlastní sloupce zahodí → **potvrzení** (destruktivní) a vratné Ctrl+Z.
+
+⚠️ **Dvě pasti, na kterých to stojí:**
+
+1. **Schování sloupce ani přejmenování nadpisu v tabu „Sloupce" překlápět NESMÍ.** Nemění to, jaké
+   sloupce server dodá, jen co je vidět. Kdyby překlápělo, muselo by výběrem pevného rozvržení
+   schované sloupce zase odkrýt a nadpisy zahodit - tedy mazat odvedenou práci při nesouvisející akci.
+2. **„Vlastní rozložení" se nesmí uložit jako předvolba agendy.** Je to fakt o jedné šabloně;
+   v předvolbě napříč šablonami by lhalo u každé další. Když se hodnota přečte tam, kde žádná
+   definice sloupců není, chovat se jako „Automaticky".
+
 ---
 
 ## 📥 Backlog
