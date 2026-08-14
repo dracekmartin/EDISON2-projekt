@@ -62,4 +62,43 @@ public static class DepartureColumnPresets
     }
 
     private static string Text(JsonObject o, string klic) => o[klic]?.GetValue<string>() ?? "";
+
+    /// <summary>
+    /// Popisek vzoru, kterému sloupce **přesně** odpovídají; null = žádnému (uživatel si je upravil).
+    /// Slouží k tomu, aby parametr „Rozdělení sloupců" ukazoval skutečný stav šablony místo aby byl
+    /// druhé nezávislé nastavení. Porovnává se všechno, co jde na server - i nadpis, protože
+    /// přejmenovaný sloupec už není ten vzor.
+    /// </summary>
+    public static string? MatchLabel(
+        IReadOnlyList<DepartureColumnDefinition>? sloupce,
+        IReadOnlyDictionary<string, List<DepartureColumnDefinition>> vzory)
+    {
+        if (sloupce is not { Count: > 0 }) return null;
+        foreach (var vzor in All)
+        {
+            if (vzory.TryGetValue(vzor.Key, out var definice) && SameColumns(sloupce, definice))
+                return vzor.Label;
+        }
+        return null;
+    }
+
+    /// <summary>Shodují se dva seznamy sloupců ve všem, co ovlivňuje výstup (včetně pořadí)?</summary>
+    public static bool SameColumns(
+        IReadOnlyList<DepartureColumnDefinition>? a, IReadOnlyList<DepartureColumnDefinition>? b)
+    {
+        if (a is null || b is null) return a is null && b is null;
+        if (a.Count != b.Count) return false;
+        for (int i = 0; i < a.Count; i++)
+        {
+            if (a[i].Id              != b[i].Id)              return false;
+            if (a[i].Header          != b[i].Header)          return false;
+            if (a[i].Header2         != b[i].Header2)         return false;
+            if (a[i].Days            != b[i].Days)            return false;
+            if (a[i].IncludeMarks    != b[i].IncludeMarks)    return false;
+            if (a[i].ExcludeMarks    != b[i].ExcludeMarks)    return false;
+            if (a[i].SuppressedMarks != b[i].SuppressedMarks) return false;
+            if (a[i].Period          != b[i].Period)          return false;
+        }
+        return true;
+    }
 }

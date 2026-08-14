@@ -3247,6 +3247,10 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d optsR.%Push("Pracovní / víkend (So+Ne+svátky)")
     d optsR.%Push("Prázdniny: Prac. mimo+o prázd. / víkend")
     d optsR.%Push("Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky")
+    // Ukazatel, ne rozvržení: klient ji nastaví sám, když si uživatel sloupce upravil tak, že
+    // neodpovídají žádnému vzoru. Server ji nezná a spadne do „dle linky" - na výsledku nezáleží,
+    // protože s vlastními sloupci stejně přijde DEFINICE_SLOUPCU a ta FTL přebíjí.
+    d optsR.%Push("Vlastní rozložení")
     s pRozd.options = optsR
     d arr.%Push(pRozd)
 

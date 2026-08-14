@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-14 (5) - 🔗 rozvržení sloupců vývěsky se nastavuje z jednoho místa (`B88`)
+
+Na otázku „jaké sloupce vzniknou" odpovídala **dvě** nastavení naráz - parametr sestavy „Rozdělení
+sloupců" a vlastní sloupce v prvku odjezdů - a vlastní sloupce parametr **tiše přebíjely**. Kdo je
+jednou měl, měl z parametru mrtvé tlačítko; a protože nový prvek odjezdů je dostává **předvyplněné**,
+potkávalo to prakticky každou AD šablonu.
+
+Stav teď drží jen šablona a parametr je její **pohled i ovladač**:
+
+- sloupce odpovídají některému vzoru → parametr ukazuje jeho název
+- žádné vlastní sloupce → „Automaticky (dle linky)"
+- ručně upravené (jiné dny, přejmenovaný nadpis, ubraný nebo přeskládaný sloupec) → nová volba
+  **„Vlastní rozložení"**, na kterou se parametr překlopí sám
+- výběr pevného rozvržení zapíše ten vzor do šablony (vratné Ctrl+Z)
+
+Vzory jsou pro tenhle účel použitelné proto, že jsou **1:1 náhrada pevných rozvržení** - hlídá to
+živý paritní test, který porovnává celý výstup obou režimů.
+
+⚠️ **Rozvržení se přestalo ukládat jako předvolba agendy** - je to vlastnost šablony, uložené napříč
+šablonami by u každé další lhalo.
+
+**Brány:** **932 .NET testů** (8 nových na porovnání sloupců se vzorem - každé pole, které jde na
+server, musí zakládat rozdíl), **106 Caché**. Nová volba ověřena **voláním** nasazené agendy.
+
 ## 2026-08-14 (4) - 🔄 náhled se srovná s parametry sestavy na všech cestách (`B87`)
 
 Parametr, jehož hodnotu zpracovává server (`ROZDELENI_SLOUPCU` a spol.), musí po změně spustit

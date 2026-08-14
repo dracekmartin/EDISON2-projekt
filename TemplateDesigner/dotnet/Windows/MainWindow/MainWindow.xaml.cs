@@ -167,6 +167,7 @@ public partial class MainWindow : Window
                 CmbPreviewPage.SelectedItem = CmbPreviewPage.Items[idx];
         }), System.Windows.Threading.DispatcherPriority.Background);
         _vm.RequestParamsFormReload      = ReloadParamsTabForm;
+        _vm.RequestParamsFieldSync       = SyncParamsTabField;
         // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
         _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);
         // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
@@ -1120,6 +1121,14 @@ public partial class MainWindow : Window
         if (_vm is null || sender is not Field field || e.PropertyName != nameof(Field.Value)) return;
         _vm.SetAgendaParamValue(field.Key, field.Value ?? "");
         ApplyParamsTabVisibility();   // visibleWhen (např. Hodiny od/do jen ve „Vlastní rozsah")
+    }
+
+    /// <summary>Přepíše hodnotu jednoho pole v tabu parametrů (bez `Init()`, který je synchronní
+    /// round-trip na Caché). Zápis vyvolá FieldChanged, ale ViewModel stejnou hodnotu zahodí.</summary>
+    private void SyncParamsTabField(string key, string value)
+    {
+        var field = (ParamsTabForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == key);
+        if (field is not null && field.Value != value) field.Value = value;
     }
 
     private void ApplyParamsTabVisibility()

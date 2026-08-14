@@ -308,6 +308,9 @@ public class TemplateDesignerViewModel : EDViewModel
                 StatusText = $"{instance.Display}: {pages.Count} stránek";
             }
             NotifyPreviewPagesChanged();
+            // Vzory sloupců chodí až s daty - teprve teď jde poznat, jestli definice v šabloně
+            // odpovídá některému z nich, a srovnat podle toho parametr rozvržení.
+            SyncLayoutParamFromTemplate();
             RequestPreviewRefresh?.Invoke();
         }
         catch (Exception ex)
@@ -871,6 +874,7 @@ public class TemplateDesignerViewModel : EDViewModel
         cmds.Add(new SetPropertyCommand("Vlastní sloupce", element.CustomColumns, resultCustomColumns,
             v => element.CustomColumns = (List<DepartureColumnDefinition>?)v));
         ExecuteAsComposite("Nastavení odjezdů", cmds);   // re-fetch při změně definice řeší Execute
+        SyncLayoutParamFromTemplate();                   // parametr musí ukázat, co uživatel zadal
     }
 
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
@@ -2526,7 +2530,11 @@ public class TemplateDesignerViewModel : EDViewModel
         if (Preferences is null) return Task.CompletedTask;
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode)) return Task.CompletedTask;
-        return Preferences.SavePrintParamsAsync(agendaCode, _previewParams);
+        // Rozvržení sloupců je vlastnost ŠABLONY (odvozuje se z definice sloupců prvku), ne
+        // předvolba agendy - uložené napříč šablonami by u každé další lhalo.
+        var perAgenda = _previewParams.Where(kv => kv.Key != LayoutParamName)
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+        return Preferences.SavePrintParamsAsync(agendaCode, perAgenda);
     }
 
     /// <summary>Callback do code-behindu: přenačti EDInputForm parametrů v levém tabu
@@ -2588,6 +2596,7 @@ public class TemplateDesignerViewModel : EDViewModel
         IsDirty = true;
         _cachedParamValues = null;
         NotifyParamsSummaryChanged();
+        ApplyLayoutParamPick();   // rozvržení sloupců drží šablona - parametr ho do ní promítne
         RefreshPreviewAfterParamChange();
     }
 
@@ -2775,6 +2784,109 @@ public class TemplateDesignerViewModel : EDViewModel
             .OfType<DepartureGridElement>()
             .Select(e => e.BuildColumnsDefinitionWireJson())
             .FirstOrDefault(j => j is not null);
+
+    // ── Rozvržení sloupců vývěsky: parametr je POHLED na stav šablony, ne druhé nastavení ────────
+    //
+    // Na otázku „jaké sloupce vzniknou" odpovídala dvě místa naráz - parametr sestavy a vlastní
+    // sloupce prvku - a vlastní sloupce parametr tiše přebíjely. Kdo je jednou měl (a nové prvky
+    // odjezdů je dostávají předvyplněné), měl z parametru navždy mrtvé tlačítko.
+    //
+    // Stav drží **jen šablona** (definice sloupců prvku); parametr ji zrcadlí a umí ji přepnout:
+    //   sloupce = některý vzor  → popisek toho vzoru      (vzory jsou 1:1 s volbami parametru)
+    //   žádné sloupce           → „Automaticky (dle linky)"
+    //   ručně upravené          → „Vlastní rozložení" (jen ukazatel, ručně vybrat nejde)
+
+    private const string LayoutParamName    = "ROZDELENI_SLOUPCU";
+    private const string LayoutAutoOption   = "Automaticky (dle linky)";
+    private const string LayoutCustomOption = "Vlastní rozložení";
+
+    private bool    _layoutParamSyncing;
+    private string? _lastLayoutParamValue;
+
+    /// <summary>Callback do code-behindu: sesyncuj hodnotu jednoho pole v tabu parametrů (bez
+    /// `Init()`, který je synchronní round-trip na Caché).</summary>
+    public Action<string, string>? RequestParamsFieldSync { get; set; }
+
+    private bool HasLayoutParam => _agendaParameters.Any(p => p.Name == LayoutParamName);
+
+    private string? LayoutParamValue() => _previewParams.GetValueOrDefault(LayoutParamName) as string;
+
+    /// <summary>Prvek odjezdů, jehož definice sloupců platí pro celou šablonu - stejná volba jako
+    /// <see cref="CurrentColumnsDefinitionJson"/> (první s definicí, jinak první vůbec).</summary>
+    private DepartureGridElement? LayoutOwner()
+    {
+        var grids = State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
+            .OfType<DepartureGridElement>().ToList();
+        return grids.FirstOrDefault(e => e.CustomColumns is { Count: > 0 }) ?? grids.FirstOrDefault();
+    }
+
+    private IReadOnlyDictionary<string, List<DepartureColumnDefinition>> LoadedColumnPresets() =>
+        DepartureColumnPresets.Parse(State.CurrentPreviewData?.GetValue("PRESETY_SLOUPCU")?.ToString());
+
+    /// <summary>Srovná parametr podle toho, co je v šabloně. Tichá cesta - šablonu nemění, jen
+    /// hlásí stav. Volat po každé změně definice sloupců i po dotažení dat (vzory chodí s nimi).</summary>
+    private void SyncLayoutParamFromTemplate()
+    {
+        if (!HasLayoutParam || _layoutParamSyncing) return;
+
+        var cols = LayoutOwner()?.CustomColumns;
+        var presety = LoadedColumnPresets();
+        // Bez načtených vzorů nejde poznat, jestli sloupce některému odpovídají. Radši nesahat,
+        // než chvíli hlásit „Vlastní rozložení" a po dotažení dat to zase přepsat.
+        if (cols is { Count: > 0 } && presety.Count == 0) return;
+
+        var odvozene = cols is { Count: > 0 }
+            ? DepartureColumnPresets.MatchLabel(cols, presety) ?? LayoutCustomOption
+            : LayoutAutoOption;
+        _lastLayoutParamValue = odvozene;
+        if (Equals(LayoutParamValue(), odvozene)) return;
+
+        _layoutParamSyncing = true;
+        try
+        {
+            _previewParams[LayoutParamName] = odvozene;
+            foreach (var vm in PreviewParameters) vm.NotifyValueChanged();
+            RequestParamsFieldSync?.Invoke(LayoutParamName, odvozene);
+            NotifyParamsSummaryChanged();
+        }
+        finally { _layoutParamSyncing = false; }
+    }
+
+    /// <summary>Uživatel vybral rozvržení v parametru → promítnout do šablony jako vratný krok.
+    /// Vlastní sloupce se tím přepíšou vzorem (Ctrl+Z je vrátí) - mazání prvku máme taky bez
+    /// potvrzení, protože změna je hned vidět a vratná.</summary>
+    private void ApplyLayoutParamPick()
+    {
+        if (!HasLayoutParam || _layoutParamSyncing) return;
+        var value = LayoutParamValue();
+        if (Equals(value, _lastLayoutParamValue)) return;
+        _lastLayoutParamValue = value;
+
+        var owner = LayoutOwner();
+        if (owner is null) return;
+
+        // „Vlastní rozložení" je ukazatel, ne volba - vrátí se hodnota odpovídající šabloně.
+        if (value == LayoutCustomOption) { SyncLayoutParamFromTemplate(); return; }
+
+        List<DepartureColumnDefinition>? nove = null;
+        if (value != LayoutAutoOption)
+        {
+            var klic = DepartureColumnPresets.All.FirstOrDefault(p => p.Label == value)?.Key;
+            var presety = LoadedColumnPresets();
+            if (klic is null || !presety.TryGetValue(klic, out var vzor) || vzor.Count == 0)
+            {
+                // Vzory chodí až s daty linky - ať to není tichý no-op jako dřív.
+                StatusText = "Rozvržení sloupců nejde nastavit, dokud nejsou načtená data linky.";
+                SyncLayoutParamFromTemplate();
+                return;
+            }
+            nove = [.. vzor.Select(c => c.Clone())];
+        }
+
+        if (DepartureColumnPresets.SameColumns(owner.CustomColumns, nove)) return;
+        Execute(new SetPropertyCommand("Rozvržení sloupců", owner.CustomColumns, nove,
+            v => owner.CustomColumns = (List<DepartureColumnDefinition>?)v));
+    }
 
     /// <summary>
     /// Přimíchá hodnoty parametrů sestavy do každé stránky - část parametrů vyhodnocuje až C#

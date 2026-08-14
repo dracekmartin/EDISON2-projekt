@@ -2,6 +2,31 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-14 ✅ - `B87`+`B88`: rozvržení sloupců vývěsky má jeden zdroj pravdy
+
+Detail → changelog 2026-08-14 (4) a (5). Vzniklo z Janova pozorování, že přepnutí parametru
+„Rozdělení sloupců" náhledem nehne. Byly to **dvě nezávislé příčiny**:
+
+`B87` - server-side parametr přenačítala data jen jedna ze tří cest. Chybělo to hlavně při
+**otevření šablony**: data se tahají při obnovení instance, tedy dřív, než se aplikují uložené
+hodnoty parametrů. Ovladač pak ukazoval uloženou volbu, náhled patřil výchozí - a „změnit" volbu
+na tu zobrazenou nešlo, vyhodnotilo se to jako beze změny.
+
+`B88` - parametr a vlastní sloupce prvku odpovídaly na tutéž otázku a sloupce parametr tiše
+přebíjely. Stav teď drží **jen šablona**, parametr je její pohled i ovladač; přibyla volba
+„Vlastní rozložení", na kterou se překlopí sám.
+
+**Neodvoditelné rozhodnutí (Jan 14. 8.):** parametr se odvozuje **z obsahu** sloupců (shoda se
+vzorem → název vzoru), ne z pouhé existence vlastních sloupců. Bez toho by hlásil „Vlastní
+rozložení" na každé nové AD šabloně - nový prvek odjezdů dostává sloupce **předvyplněné**
+(rozhodnutí 10. 8. „nové jedou z návrháře, linka je backup"). Opřít se o vzory jde proto, že jsou
+1:1 náhrada pevných rozvržení (živý paritní test přes celý výstup).
+
+⚠️ **Schování sloupce ani přejmenování nadpisu v tabu „Sloupce" parametr nepřeklápí** - to je
+vzhled, ne existence sloupců. Kdyby překlápělo, muselo by výběrem rozvržení schované sloupce zase
+odkrýt a nadpisy zahodit, tedy mazat práci při nesouvisející akci. Přejmenování nadpisu **uvnitř
+vlastních sloupců** naopak shodu se vzorem ruší (nadpis jde na vývěsku).
+
 ## 2026-08-14 ✅ - `B85`: nové povinné pole nezablokuje formulář staršímu programu
 
 Detail → changelog 2026-08-14 (3). Nález z revize `B39`, ale ne chyba `B39`: schéma formuláře jde
