@@ -1633,6 +1633,9 @@ ClassMethod SedneDoSloupceDny(dnySpoje As %String, sloupecDny As %String) As %Bo
     // pracovních dnů patří (jen ho nepokrývá celý, takže dostane značku). Od kalendářního „12345"
     // se „X" liší až na ose Období, kde svátek do pracovních dnů nepadne - `DenPatriDoSloupce`.
     i sloupecDny [ "X" s sloupecDny = sloupecDny_"12345"
+    // „+" znamená „neděle a svátky" i u sloupce, ne jen svátky - jinak by sloupec „Neděle a svátky"
+    // musel vyjmenovat „7+" a spoj jedoucí jen v neděli by z pouhého „+" vypadl.
+    i (sloupecDny [ "+") && (sloupecDny '[ "7") s sloupecDny = sloupecDny_"7"
     f i=1:1:$l(dnySpoje) {
         i sloupecDny [ $e(dnySpoje,i) ret 1
     }
@@ -1695,8 +1698,8 @@ ClassMethod DenniZnackyProSloupec(plk As %String, dnySpoje As %String, sloupecDn
     // kombinace známé z dnešních rozvržení - beze změny („X" = pracovní dny podle vyhlášky, což je
     // od `B82` tvar, který posílají presety; kalendářní „12345" se chová stejně, liší se jen svátky)
     i (sloupecDny = "12345") || (sloupecDny = "X") q ..DenniZnacky(0, plk)   // FTL 0 vrací jen znaky 1-5
-    i (sloupecDny = "6") || (sloupecDny = "7+") q ""             // oddělený víkendový sloupec: nadpis to říká
-    i sloupecDny = "67+" q $tr(..DenniZnacky(2, plk), "12345")   // slitý víkend dle dnešního pravidla
+    i (sloupecDny = "6") || (sloupecDny = "7+") || (sloupecDny = "+") q ""   // oddělený víkendový sloupec: nadpis to říká
+    i (sloupecDny = "67+") || (sloupecDny = "6+") q $tr(..DenniZnacky(2, plk), "12345")   // slitý víkend dle dnešního pravidla
     // vlastní kombinace (uživatel si dny slil sám) - obecné pravidlo
     i (dnySpoje = "") || (dnySpoje = "-") q ""
     // „X" ve sloupci se vůči značkám chová jako 1-5; samotné „X" značka není, tu nese den v týdnu
@@ -1730,10 +1733,10 @@ ClassMethod PresetySloupcu(dataDB As %String, sku As %String, lin As %String) As
     s oPrazdBez = ..SpojSeznamyZnacek($p(nz,"~",2), $p(nenz,"~",1))
 
     s out = ##class(%DynamicObject).%New()
-    d out.%Set("PRAC_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny","X",""), $lb("2","Soboty","6",""), $lb("3","Neděle a svátky","7+","")), neznz))
-    d out.%Set("PRAC_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny","X",""), $lb("2","Soboty, neděle a svátky","67+","")), neznz))
-    d out.%Set("PRAZDNINY_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","X",mimoBez), $lb("2","Pracovní dny o prázdninách","X",oPrazdBez), $lb("3","Soboty, neděle a svátky","67+","")), neznz))
-    d out.%Set("PRAZDNINY_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","X",mimoBez), $lb("2","Pracovní dny o prázdninách","X",oPrazdBez), $lb("3","Soboty","6",""), $lb("4","Neděle a svátky","7+","")), neznz))
+    d out.%Set("PRAC_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny","X",""), $lb("2","Soboty","6",""), $lb("3","Neděle a svátky","+","")), neznz))
+    d out.%Set("PRAC_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny","X",""), $lb("2","Soboty, neděle a svátky","6+","")), neznz))
+    d out.%Set("PRAZDNINY_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","X",mimoBez), $lb("2","Pracovní dny o prázdninách","X",oPrazdBez), $lb("3","Soboty, neděle a svátky","6+","")), neznz))
+    d out.%Set("PRAZDNINY_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","X",mimoBez), $lb("2","Pracovní dny o prázdninách","X",oPrazdBez), $lb("3","Soboty","6",""), $lb("4","Neděle a svátky","+","")), neznz))
     q out.%ToJSON()
 }
 
@@ -1940,7 +1943,10 @@ ClassMethod DenPatriDoSloupce(hrl As %String, sloupecDny As %String) As %Boolean
         i sloupecDny [ "X" q 0
         q (sloupecDny [ denVTydnu)
     }
-    q (sloupecDny [ denVTydnu) || ((sloupecDny [ "X") && (denVTydnu < 6))
+    // „+" pokrývá i běžnou neděli (viz `SedneDoSloupceDny`), „X" pracovní dny 1-5
+    q (sloupecDny [ denVTydnu)
+      || ((sloupecDny [ "X") && (denVTydnu < 6))
+      || ((sloupecDny [ "+") && (denVTydnu = 7))
 }
 
 /// Jak spoj jede v období sloupce: 2 = každý den období, 1 = jen část, 0 = vůbec ani den,

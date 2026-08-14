@@ -7,9 +7,17 @@ Přitom `X` **není zkratka za Po-Pá**: pracovní dny svátky nezahrnují, kde�
 „jede v pondělí" jede i o svátečním pondělí, spoj „jede v pracovních dnech" ne. Vyhláška 122/2014 ty
 dvě věci výslovně rozlišuje a zakazuje jejich kombinaci.
 
-**V editoru přibylo „Pracovní dny (X)".** Zakázané kombinace z vyhlášky (`X` s Po-Pá, „Svátek" s „Ne")
-**nejdou ani zaškrtnout** - protikus se zašedne. Zákaz tak vyplývá z ovládání, ne z hlášky po
-potvrzení (rozhodnutí Jan 14. 8.). Legální kombinace jako „pracovní dny + sobota" zůstávají.
+**V editoru přibylo „Pracovní dny (X)"** a „Svátek" se přejmenoval na **„Neděle a svátky (+)"** -
+značka podle vyhlášky pokrývá obojí, takže původní popisek lhal. Obojí je v jedné sekci
+**Týdenní platnost** vedle dnů.
+
+**Zaslepuje se jen kombinace, která si odporuje:** „Pracovní dny (X)" s vypsanými Po-Pá (`X` svátky
+nikdy, vypsané dny svátky, které na ně padnou, ano). „Ne" a „Neděle a svátky" se **nevylučují** -
+zákaz `+` se `7` z vyhlášky platí pro značky u spoje, ne pro sadu dnů sloupce.
+
+**Značka `+` znamená „neděle a svátky" i u sloupce**, ne jen svátky (rozhodnutí Jan 14. 8.). Sloupec
+„Neděle a svátky" tak stačí zaškrtnout **jednou volbou** a spoje jedoucí jen v neděli z něj
+nevypadnou - vzory ho proto posílají jako samotné `+` (a slitý víkend jako `6+`).
 
 **Dvojznačnost, kvůli které se to rozjíždělo, je pryč.** Týž zápis `12345` dosud znamenal na dvou
 místech dvě různé věci: při zařazení spoje kalendářní Po-Pá, na ose Období „pracovní dny" (svátek

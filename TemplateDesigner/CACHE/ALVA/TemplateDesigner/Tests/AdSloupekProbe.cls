@@ -419,6 +419,66 @@ ClassMethod NajdiPlusSpoje(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Přehled **týdenních platností** v datech firmy - které tvary `Plk` reálně existují, jak často
+/// a na které lince se dá každý ukázat. Slouží k výběru linek pro vizuální kontrolu vlastních
+/// sloupců (`B81`/`B82`): pro sloupec „pracovní dny" je potřeba spoj jedoucí jen v jeden den,
+/// pro nedělní sloupec spoj s „+" apod.
+/// IN: DB, MAXLIN (default 3000), MAXOUT (default 20). Read-only.
+ClassMethod PrehledPlatnosti(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 3000
+		set maxOut = +$get(^||ML("IN","MAXOUT")) if maxOut < 1 set maxOut = 20
+
+		kill ^||ML("OUT"), pocet, kde
+		set linek = 0, sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek'<maxLin
+				continue:'$data(^[db]JRL(sku,lin,"I"))
+				set linek = linek + 1
+				for smerIdx = "T","Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)),"#",1),":",7)
+						continue:plk=""
+						set pocet(plk) = $get(pocet(plk)) + 1
+						if '$data(kde(plk)) set kde(plk) = "lin="_lin_" spoj="_smerIdx_sp
+					}
+				}
+			}
+		}
+		// seřadit dle četnosti sestupně
+		kill dle
+		set plk = ""
+		for { set plk = $order(pocet(plk)) quit:plk=""  set dle(-pocet(plk),plk) = "" }
+		set ^||ML("OUT","A_FIRMA") = db_" linek="_linek
+		set n = 0, c = ""
+		for {
+			set c = $order(dle(c)) quit:c=""
+			set plk = ""
+			for {
+				set plk = $order(dle(c,plk)) quit:plk=""
+				quit:n'<maxOut
+				set n = n + 1
+				set ^||ML("OUT","B_"_$translate($justify(n,3)," ","0")) = """"_plk_""" = "_pocet(plk)_"x · "_kde(plk)
+			}
+			quit:n'<maxOut
+		}
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Je zastávka v uzlu 32 **cíl** pokračování, nebo předávací bod? (#13093 bod 3, otázka na kolegy.)
 /// Pro pár spojů s uzlem 32 dohledá trasu pokračujícího spoje a vypíše její první a poslední
 /// obsluhovanou zastávku, aby šlo porovnat se zastávkou ze záznamu.

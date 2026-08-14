@@ -65,19 +65,28 @@ public class CustomColumnDaysTests
         Assert.True(vm.LzePracovni);
     }
 
+    /// <summary>⚠️ „Ne" a „Neděle a svátky" jdou zaškrtnout **zároveň** - zákaz kombinace `+` se `7`
+    /// z vyhlášky platí pro značky u spoje, ne pro sadu dnů sloupce. Standardní sloupec
+    /// „Neděle a svátky" má `7+` a vzory ho tak posílají; kdyby se ty dvě volby vylučovaly, nešel by
+    /// z editoru složit vůbec (a otevřený vzor by měl obě zaslepené, takže by ho nešlo ani upravit).</summary>
     [Fact]
-    public void SvatekANedeleSeVylucuji()
+    public void NedeleASvatkyJdouZaroven()
     {
         var vm = Sloupec();
-        Assert.True(vm.LzeNe);
-        Assert.True(vm.LzeSvatek);
-
-        vm.Svatek = true;
-        Assert.False(vm.LzeNe);
-
-        vm.Svatek = false;
         vm.Ne = true;
-        Assert.False(vm.LzeSvatek);
+        vm.Svatek = true;
+
+        Assert.Equal("7+", vm.ToModel().Days);
+    }
+
+    [Fact]
+    public void VzorNedeleASvatky_ZustaneStejny()
+    {
+        var vm = CustomColumnVM.FromModel(new DepartureColumnDefinition { Days = "7+" });
+
+        Assert.True(vm.Ne);
+        Assert.True(vm.Svatek);
+        Assert.Equal("7+", vm.ToModel().Days);
     }
 
     /// <summary>Načtení uložené definice musí „X" poznat, jinak by se sloupec po otevření dialogu

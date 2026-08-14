@@ -123,20 +123,21 @@ public class CustomColumnVM : INotifyPropertyChanged
     public bool Ct     { get => _ct;     set { _ct = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
     public bool Pa     { get => _pa;     set { _pa = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
     public bool So     { get => _so;     set { _so = value;     OnChanged(); } }
-    public bool Ne     { get => _ne;     set { _ne = value;     OnChanged(); OnChanged(nameof(LzeSvatek)); } }
-    public bool Svatek { get => _svatek; set { _svatek = value; OnChanged(); OnChanged(nameof(LzeNe)); } }
+    public bool Ne     { get => _ne;     set { _ne = value;     OnChanged(); } }
+    public bool Svatek { get => _svatek; set { _svatek = value; OnChanged(); } }
 
     /// <summary>„X" = pracovní dny (vyhláška 122/2014). Liší se od zaškrtnutého Po-Pá tím, že
     /// **nezahrnuje svátky** - spoj jedoucí „v pondělí" jede i o svátečním pondělí, spoj „v pracovní
     /// dny" ne. Proto to jsou dvě různé volby, ne zkratka jedné za druhou.</summary>
     public bool Pracovni { get => _pracovni; set { _pracovni = value; OnChanged(); OnChanged(nameof(LzePoPa)); } }
 
-    // Vyhláška zakazuje kombinace „X" s jednotlivými pracovními dny a „+" s nedělí (příloha č. 2).
-    // Nepřípustnou kombinaci proto nejde ani zaškrtnout - protikus se zašedne.
+    // ⚠️ Zákaz kombinací z vyhlášky (`X` s 1-5, `+` se `7`) platí pro **značky u spoje**, ne pro
+    // sadu dnů sloupce - sloupec „Neděle a svátky" má `7+` legitimně a vzory ho tak posílají.
+    // Zaslepuje se proto jen kombinace, která si **odporuje ve vyhodnocení**: „X" (svátky nikdy)
+    // s vypsanými Po-Pá (svátky, které na ně padnou, ano). „Ne" + „Neděle a svátky" si neodporují,
+    // jen se překrývají - a bez nich by nešel složit standardní víkendový sloupec.
     public bool LzePracovni => !(_po || _ut || _st || _ct || _pa);
     public bool LzePoPa     => !_pracovni;
-    public bool LzeNe       => !_svatek;
-    public bool LzeSvatek   => !_ne;
 
     private string _includeMarks = "";
     public string IncludeMarks { get => _includeMarks; set { _includeMarks = value; OnChanged(); } }

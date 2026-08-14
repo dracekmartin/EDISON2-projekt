@@ -68,7 +68,11 @@ Method TestGold0365001()
 	// Po-Pá ano. ⚠️ **Mění se JEN md5**, počty stránek/zastávek/odjezdů/poznámek jsou shodné;
 	// ověřeno izolovaně: s presety vrácenými na `12345` projdou odtisky beze změny, takže rozdíl
 	// nepochází odjinud než z pole PRESETY_SLOUPCU.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=9IrnY2yYyljc364ouA542w==")
+	// Re-baseline 2026-08-14 (`B82` podruhé): vzory posílají „Neděle a svátky" jako samotné `+`
+	// a slitý víkend jako `6+` - „+" znamená „neděle a svátky" i u sloupce, takže vyjmenovávat
+	// k němu ještě `7` bylo matoucí. ⚠️ Zase JEN md5, počty shodné; ověřeno izolovaně vrácením
+	// vzorů na `7+`/`67+`, kdy odtisky prošly beze změny.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=qAn06yVi1jr2u8V362MQGQ==")
 }
 
 Method TestGold0365005()
@@ -92,7 +96,11 @@ Method TestGold0365005()
 	// viz gold 0365001. Počty stránek, zastávek, odjezdů i poznámek beze změny.
 	// Re-baseline 2026-08-14 (`B82`): presety posílají „Pracovní dny" jako `X` z vyhlášky místo
 	// kalendářního `12345` → jen md5, počty shodné (viz vysvětlení u gold 0365001).
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=rT9TQ3uujic46jGO5DioKQ==")
+	// Re-baseline 2026-08-14 (`B82` podruhé): vzory posílají „Neděle a svátky" jako samotné `+`
+	// a slitý víkend jako `6+` - „+" znamená „neděle a svátky" i u sloupce, takže vyjmenovávat
+	// k němu ještě `7` bylo matoucí. ⚠️ Zase JEN md5, počty shodné; ověřeno izolovaně vrácením
+	// vzorů na `7+`/`67+`, kdy odtisky prošly beze změny.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=2iKaCMjAzZWFY+fnV+AW/w==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -157,7 +165,11 @@ Method TestGold0330530()
 {
 	// Re-baseline 2026-08-14 (`B82`): presety posílají „Pracovní dny" jako `X` z vyhlášky místo
 	// kalendářního `12345` → jen md5, počty shodné (viz vysvětlení u gold 0365001).
-	do ..AssertLine(1, "0330530", "pages=45 zast=1058 odj=1236 pozn=639 md5=1NqkIxaEhFZcS5LZxM4OXw==")
+	// Re-baseline 2026-08-14 (`B82` podruhé): vzory posílají „Neděle a svátky" jako samotné `+`
+	// a slitý víkend jako `6+` - „+" znamená „neděle a svátky" i u sloupce, takže vyjmenovávat
+	// k němu ještě `7` bylo matoucí. ⚠️ Zase JEN md5, počty shodné; ověřeno izolovaně vrácením
+	// vzorů na `7+`/`67+`, kdy odtisky prošly beze změny.
+	do ..AssertLine(1, "0330530", "pages=45 zast=1058 odj=1236 pozn=639 md5=KzGX7TBpEmJ35mJq8FXNdg==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

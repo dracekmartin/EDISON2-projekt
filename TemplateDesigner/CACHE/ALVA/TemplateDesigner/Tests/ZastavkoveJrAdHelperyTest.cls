@@ -992,6 +992,13 @@ Method TestPlusZahrnujeNedeli()
 	do $$$AssertEquals(..Sedne("6", "7"), 0, "sobotní spoj do neděle nepatří")
 	do $$$AssertEquals(..Sedne("X", "7"), 0, "pracovní spoj do neděle nepatří")
 
+	// „+" znamená „neděle a svátky" i u SLOUPCE, ne jen svátky - jinak by sloupec „Neděle a svátky"
+	// musel vyjmenovat „7+" (dvě zaškrtávátka pro jeden pojem) a spoj jedoucí jen v neděli by
+	// z pouhého „+" vypadl. Rozhodnutí Jan 14. 8.
+	do $$$AssertEquals(..Sedne("7", "+"), 1, "spoj jedoucí jen v neděli patří do sloupce ""Neděle a svátky""")
+	do $$$AssertEquals(..Sedne("+", "+"), 1, "spoj ""+"" tam patří taky")
+	do $$$AssertEquals(..Sedne("6", "+"), 0, "sobotní spoj ne")
+
 	// zobrazení: spoj sloupec pokrývá → bez značky (potvrdil Jiří Bžoch 14. 8.)
 	do $$$AssertEquals(..Znacky("+", "7"), "", "spoj ""+"" pokrývá sloupec Neděle → značka se netiskne")
 	// opačný případ z téže odpovědi: spoj sloupec nepokrývá → značka
