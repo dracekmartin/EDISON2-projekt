@@ -873,8 +873,8 @@ public class TemplateDesignerViewModel : EDViewModel
             v => element.HourColumnStyle = (ColumnVisualStyle?)v));
         cmds.Add(new SetPropertyCommand("Vlastní sloupce", element.CustomColumns, resultCustomColumns,
             v => element.CustomColumns = (List<DepartureColumnDefinition>?)v));
-        ExecuteAsComposite("Nastavení odjezdů", cmds);   // re-fetch při změně definice řeší Execute
-        SyncLayoutParamFromTemplate();                   // parametr musí ukázat, co uživatel zadal
+        // Re-fetch i srovnání parametru rozvržení řeší Execute (RefetchIfColumnsDefinitionChanged).
+        ExecuteAsComposite("Nastavení odjezdů", cmds);
     }
 
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
@@ -955,6 +955,12 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private void RefetchIfColumnsDefinitionChanged()
     {
+        // Definice se mohla pohnout jakkoli - dialogem, přidáním či smazáním prvku, vložením ze
+        // schránky, undo/redo. Parametr rozvržení ji zrcadlí, takže se srovnává tady, na jediném
+        // místě, které tyhle změny vidí všechny. (Bez toho zůstal po přidání prvku odjezdů na
+        // „Automaticky", i když prvek dostal sloupce předvyplněné.)
+        SyncLayoutParamFromTemplate();
+
         // Snapshot zapisuje až ÚSPĚŠNÝ fetch (RefreshDataForCurrentInstanceAsync) - kdyby se
         // zapsal tady a fetch spadl, další kontroly by se tvářily, že data definici odpovídají.
         if (CurrentWireSnapshot() == _lastColumnsDefinitionSnapshot) return;

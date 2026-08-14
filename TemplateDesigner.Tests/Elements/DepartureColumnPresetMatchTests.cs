@@ -83,6 +83,18 @@ public class DepartureColumnPresetMatchTests
         Assert.Null(DepartureColumnPresets.MatchLabel(PracSoNe(), new Dictionary<string, List<DepartureColumnDefinition>>()));
     }
 
+    /// <summary>`Id` je jen vazba pro per-sloupcové styly, ne obsah - a editor sloupců ho při
+    /// rozpoznávání vzoru taky ignoruje. Kdyby ho parametr zohledňoval, obě místa by nad týmiž
+    /// sloupci odpovídala jinak.</summary>
+    [Fact]
+    public void JineIdSteznehoObsahu_PoradToJeVzor()
+    {
+        var jinaId = PracSoNe();
+        foreach (var c in jinaId) c.Id = "x" + c.Id;
+
+        Assert.Equal(PracSoNeLabel, DepartureColumnPresets.MatchLabel(jinaId, Presets()));
+    }
+
     [Fact]
     public void SameColumns_PoznaShoduIRozdilVKazdemPoli()
     {

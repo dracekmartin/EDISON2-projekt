@@ -452,20 +452,14 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     private DepartureColumnPresets.Preset? DetectPreset()
     {
         if (CustomColumnVMs.Count == 0) return null;
+        // Porovnání je sdílené s parametrem „Rozdělení sloupců" - kdyby si každé místo odpovídalo
+        // po svém, editor by ukazoval vzor a parametr nad týmiž sloupci „Vlastní rozložení".
+        var aktualni = CustomColumnVMs.Select(vm => vm.ToModel()).ToList();
         foreach (var preset in Presets)
         {
-            if (!_presety.TryGetValue(preset.Key, out var built)) continue;
-            if (built.Count != CustomColumnVMs.Count) continue;
-            var match = true;
-            for (int i = 0; i < built.Count && match; i++)
-            {
-                var a = built[i];
-                var b = CustomColumnVMs[i].ToModel();
-                match = a.Header == b.Header && a.Header2 == b.Header2 && a.Days == b.Days
-                     && a.IncludeMarks == b.IncludeMarks && a.ExcludeMarks == b.ExcludeMarks
-                     && a.SuppressedMarks == b.SuppressedMarks && a.Period == b.Period;
-            }
-            if (match) return preset;
+            if (_presety.TryGetValue(preset.Key, out var built)
+                && DepartureColumnPresets.SameLayout(aktualni, built))
+                return preset;
         }
         return null;
     }

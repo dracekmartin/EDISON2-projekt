@@ -76,10 +76,34 @@ public static class DepartureColumnPresets
         if (sloupce is not { Count: > 0 }) return null;
         foreach (var vzor in All)
         {
-            if (vzory.TryGetValue(vzor.Key, out var definice) && SameColumns(sloupce, definice))
+            if (vzory.TryGetValue(vzor.Key, out var definice) && SameLayout(sloupce, definice))
                 return vzor.Label;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Shodují se sloupce ve všem, co je **vidět na vývěsce** (nadpisy, dny, značky, období)?
+    /// Na rozdíl od <see cref="SameColumns"/> ignoruje `Id` - to je jen vazba pro per-sloupcové
+    /// styly, ne obsah. Tuhle otázku si klade i editor sloupců, takže obě místa musí odpovídat
+    /// stejně; jinak by parametr tvrdil „vlastní" nad tím, co editor ukazuje jako vzor.
+    /// </summary>
+    public static bool SameLayout(
+        IReadOnlyList<DepartureColumnDefinition>? a, IReadOnlyList<DepartureColumnDefinition>? b)
+    {
+        if (a is null || b is null) return a is null && b is null;
+        if (a.Count != b.Count) return false;
+        for (int i = 0; i < a.Count; i++)
+        {
+            if (a[i].Header          != b[i].Header)          return false;
+            if (a[i].Header2         != b[i].Header2)         return false;
+            if (a[i].Days            != b[i].Days)            return false;
+            if (a[i].IncludeMarks    != b[i].IncludeMarks)    return false;
+            if (a[i].ExcludeMarks    != b[i].ExcludeMarks)    return false;
+            if (a[i].SuppressedMarks != b[i].SuppressedMarks) return false;
+            if (a[i].Period          != b[i].Period)          return false;
+        }
+        return true;
     }
 
     /// <summary>Shodují se dva seznamy sloupců ve všem, co ovlivňuje výstup (včetně pořadí)?</summary>

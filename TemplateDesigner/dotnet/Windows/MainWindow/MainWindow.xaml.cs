@@ -1120,6 +1120,7 @@ public partial class MainWindow : Window
     {
         if (_vm is null || sender is not Field field || e.PropertyName != nameof(Field.Value)) return;
         _vm.SetAgendaParamValue(field.Key, field.Value ?? "");
+        RefreshParamsTabInitParams();  // jinak se hodnota po přepnutí tabu vrátí na starou
         ApplyParamsTabVisibility();   // visibleWhen (např. Hodiny od/do jen ve „Vlastní rozsah")
     }
 
@@ -1127,8 +1128,21 @@ public partial class MainWindow : Window
     /// round-trip na Caché). Zápis vyvolá FieldChanged, ale ViewModel stejnou hodnotu zahodí.</summary>
     private void SyncParamsTabField(string key, string value)
     {
+        RefreshParamsTabInitParams();
         var field = (ParamsTabForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == key);
         if (field is not null && field.Value != value) field.Value = value;
+    }
+
+    /// <summary>
+    /// Přenese aktuální hodnoty parametrů do <c>InitParams</c>. **Nutné po každé změně hodnoty**:
+    /// formulář se sám inicializuje na `Loaded`, tedy i při návratu na tab, a bere je odtud - se
+    /// starým snímkem by se zobrazená hodnota vrátila na tu, se kterou se tab stavěl naposledy,
+    /// zatímco náhled i tisk už jedou podle nové.
+    /// </summary>
+    private void RefreshParamsTabInitParams()
+    {
+        if (_vm is null || string.IsNullOrEmpty(ParamsTabForm.CacheClass)) return;
+        ParamsTabForm.InitParams = _vm.BuildAgendaParamsInitParams();
     }
 
     private void ApplyParamsTabVisibility()

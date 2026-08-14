@@ -18,6 +18,18 @@ Stav teď drží jen šablona a parametr je její **pohled i ovladač**:
 Vzory jsou pro tenhle účel použitelné proto, že jsou **1:1 náhrada pevných rozvržení** - hlídá to
 živý paritní test, který porovnává celý výstup obou režimů.
 
+Cestou se opravily dvě věci, na kterých to při proklikávání stálo:
+
+- **Formulář parametrů se inicializuje při každém zobrazení tabu** a bere hodnoty ze snímku, který
+  mu okno předalo naposledy. Ten se neobnovoval, takže se změněná hodnota po přepnutí tabu vrátila
+  na starou - a kdo na tab přišel až po změně, neviděl ji vůbec. **Netýkalo se to jen rozvržení:**
+  stejně se choval každý parametr měněný v tom tabu, tedy zase „UI ukazuje něco jiného, než se
+  tiskne". Snímek se teď obnovuje s každou změnou hodnoty.
+- **Rozpoznání „jsou tyhle sloupce některý vzor?" existovalo dvakrát** - editor sloupců ignoroval
+  vnitřní identifikátor sloupce, nová logika ne. Editor by ukazoval vzor a parametr nad týmiž
+  sloupci „Vlastní rozložení". Sjednoceno do jedné sdílené funkce (identifikátor je vazba pro
+  styly, ne obsah).
+
 ⚠️ **Rozvržení se přestalo ukládat jako předvolba agendy** - je to vlastnost šablony, uložené napříč
 šablonami by u každé další lhalo.
 
