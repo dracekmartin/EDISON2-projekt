@@ -4,8 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** vybrat mezi **tabulkovými prvky** (`B76` + `B77`, dají se vzít vcelku)
-> a **linkovými JŘ** (`B10` + `B13`) jako dedikovaným slotem.
+> **Nejblíž na řadě:** `B89` - proklikat vlastní sloupce po opravách `B81`/`B82` (kód hotový, chybí
+> jen oči). Pak vybrat mezi **tabulkovými prvky** (`B76` + `B77`, dají se vzít vcelku) a **linkovými
+> JŘ** (`B10` + `B13`) jako dedikovaným slotem.
 >
 > ⚠️ **Nevydané a jen zčásti proklikané je všechno od 12. 8. včetně** - poslední vydaná verze je
 > z 11. 8. Seedy novinek čekají na vydání, dřív se nenahrávají.
@@ -20,6 +21,29 @@
 
 Stav tiketů, parkované položky i věci „jen na poptávku" drží
 [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
+
+### 👁 `B89` Proklikat vlastní sloupce po `B81`+`B82` (S, jen ověření - kód je hotový)
+
+`B81` i `B82` jsou dokončené a v archivu, brány zelené (109 Caché · 941 .NET). **Chybí poslední
+vizuální kontrola** - 14. 8. se stihly jen body A a B, pak se u bodu C našly dvě chyby v editoru,
+kvůli kterým se **změnilo UI i obsah vzorů**, takže A a B je potřeba projet znovu.
+
+Vše na **CB_CSADAD** (dev přepínač). ⚠️ **Staré testovací šablony s vlastními sloupci nepoužívat** -
+mají „Pracovní dny" uložené jako `12345`, což od `B82` znamená „včetně svátků"; sloupce naklikat
+znovu nebo vzít vzor.
+
+| # | Kde | Co má být vidět |
+|---|---|---|
+| A | editor, sekce **Týdenní platnost** | „Pracovní dny (X)" zašedne Po-Pá a naopak · „Ne" a „Neděle a svátky (+)" jdou zaškrtnout **zároveň** (nevylučují se) · So neblokuje nic · po OK a znovuotevření zůstane X zaškrtnuté |
+| B | vzor „Pracovní / Sobota / Neděle+svátky" | 1. sloupec **Pracovní dny (X)**, 3. sloupec **jen** „Neděle a svátky (+)" (ne navíc „Ne") |
+| C | linka `0330530`, sloupec **jen Ne** | vypíše odjezdy (dřív prázdno - to byl zákazníkův bug) a **bez denních značek** u minut; linka má 8 spojů s `+`, 4 s čistým (T203, T235, Z226, Z230) |
+| D | linka `0330530`, sloupec **jen Pracovní dny (X)** | spoj **T13** jede jen v pátek → u jeho minuty značka **`5`** |
+| E | linka `0330530`, sloupec **Pá+So+Ne** | spoje **T239** a **T245** (platnost `6+`) mají značky **`67`**, dřív jen `6` |
+| F | linka `0330530`, **Automaticky (dle linky)** | vývěska jako dřív - žádná regrese |
+| G | linka `0320625`, sloupec **jen Ne** + období `1.7.-31.8.` | nepovinné: **5. 7. 2026 je neděle a státní svátek**, spoj se `7` nesmí dostat značku „nejede celé období" |
+
+Linky vybrané sondami v `AdSloupekProbe` (`NajdiPlusSpoje`, `PrehledPlatnosti`) - **nemazat**,
+u další změny sloupců se budou hodit.
 
 ---
 
