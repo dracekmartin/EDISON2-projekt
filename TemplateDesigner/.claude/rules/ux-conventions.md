@@ -79,6 +79,7 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 | Alt+klik | dovnitř rovnou do té buňky (hlavní cesta) |
 | F2 (nebo místní nabídka) | dovnitř do naposledy kliknuté buňky |
 | Dvojklik | vlastnosti prvku (jako u všech ostatních prvků) |
+| Alt+Enter (nebo místní nabídka) | **vlastnosti buňky** - styl a formát hodnoty; samotný Enter musí zůstat posunu o buňku níž |
 | Klik (uvnitř) | přepnout buňku |
 | psaní | přepíše obsah buňky (jako Excel) |
 | F2 | upravit stávající obsah buňky |
@@ -89,6 +90,7 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 | Ctrl+C / Ctrl+X / Ctrl+V | schránka pracuje s **buňkami**, ne s prvkem; Ctrl+V vloží blok z Excelu (řádky po koncích řádku, buňky po tabulátorech) a tabulku dorovná |
 | `{` při psaní | nabídka datových polí; šipky vybírají, Enter nebo Tab doplní i s koncovou závorkou, Esc zavře nabídku (teprve druhý Esc zahodí úpravu) |
 | tažení vnitřní hranice | šířka sloupce / výška řádku; funguje i na **vybrané** tabulce, nemusí se dovnitř |
+| Esc | ven z buňky na prvek, podruhé zrušit výběr |
 
 **Tažení hranic - dvě pravidla, obě vydřená zkoušením 12. 8.:**
 
@@ -98,7 +100,10 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
    první hrana.
 2. **Vnější hrana patří prvku, ne krajní buňce** - jinak by uživatel nevěděl, jestli mění tabulku,
    nebo sloupec (stejně to má Excel i Word). Krajní sloupec se rozšiřuje hranou vedle něj.
-| Esc | ven z buňky na prvek, podruhé zrušit výběr |
+
+**Formátovací lišta patří uvnitř tabulky buňce, ne prvku** (jinak by tučné ztučnilo celou tabulku
+ve chvíli, kdy uživatel formátuje jednu buňku). Stav tlačítek ukazuje **vyřešenou** hodnotu, tedy
+i tu zděděnou z nastavení tabulky - ne jen to, co má buňka vlastního.
 
 ### Grouping / layout
 

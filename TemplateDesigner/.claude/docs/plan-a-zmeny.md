@@ -27,9 +27,8 @@ Dílčí vylepšení a náměty.
 
 - **Napojení na externí zdroje dat** - možnost tisknout i z dat mimo EDISON (např. z tabulky
   nebo databáze). Zvažujeme jako budoucí směr; konkrétní zdroje a rozsah zatím nejsou dané.
-- **Pevná (Fixed) tabulka** - tabulka s ručně zadanými řádky a pevným počtem (typicky záhlaví
-  dokladu nebo faktura); dnes je k dispozici tabulka s řádky generovanými z dat.
-- **Sloučené buňky v tabulce** - spojení více buněk do jedné (navazuje na pevnou tabulku).
+- **Sloučené buňky v tabulce** - spojení více buněk do jedné, například nadpis přes několik sloupců.
+- **Úpravy více buněk najednou** - označení oblasti tažením a hromadné formátování.
 - **Mezisoučty ve skupinách řádků** - souhrnný řádek za skupinu dat.
 - **Oboustranný / brožurový tisk** při skládání více vývěsek na list - dnes se skládá jednostranně,
   duplex řeší tiskárna.
@@ -37,6 +36,23 @@ Dílčí vylepšení a náměty.
 ---
 
 ## Novinky
+
+### 17. 8. 2026 - Pevná tabulka: vyplňování na plátně a formátování buněk
+
+Do palety přibyla **pevná tabulka** - mřížka, kterou vyplňujete sami. Je určená hlavně jako náhrada
+za skládání hlaviček a bloků údajů z jednotlivých textových polí: místo šesti textů máte jeden
+prvek, se kterým se hýbe vcelku.
+
+**Vyplňuje se přímo v ní.** Dovnitř Alt+klikem na buňku nebo klávesou F2, pak se píše jako
+v Excelu - Tab a Enter posouvají, šipky chodí po buňkách, Esc vede ven. Řádky a sloupce se přidávají
+z místní nabídky, šířky a výšky se táhnou myší za vnitřní hranici. Vložit jde i blok zkopírovaný
+z Excelu a po napsání `{` se nabídnou datová pole.
+
+**Buňku jde nově naformátovat samostatně.** Tučné, kurzívu, podtržení, přeškrtnutí a zarovnání
+máte ve formátovací liště nad plátnem; kompletní nastavení (písmo, velikost, barvy, vnitřní okraje,
+formát hodnoty) otevřete přes Alt+Enter nebo místní nabídkou „Vlastnosti buňky". Prázdné pole
+znamená, že se hodnota dědí z nastavení celé tabulky - proto si tabulku můžete nastavit jednou
+a odchýlit jen to, co potřebujete. Záhlaví si uděláte z prvního řádku tím, že ho ztučníte.
 
 ### 14. 8. 2026 - Vysvětlivky značek dnů podle vašeho číselníku
 

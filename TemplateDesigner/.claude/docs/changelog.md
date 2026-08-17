@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-08-17 (3) - 🅱 pevná tabulka: buňku jde konečně naformátovat (`B76` kroky 1+2)
+
+Pevná tabulka šla do dneška formátovat **jen jako celek** („Styl buněk" a „Styl řádku záhlaví"
+v nastavení prvku). Uvnitř se měnil jen obsah a struktura, takže nefungoval ani způsob práce,
+na kterém prvek stojí: vkládá se bez řádku záhlaví s tím, že *„záhlaví si uživatel udělá z prvního
+řádku tím, že ho ztuční"* - a ztučnit ho nešlo. Per-buňkový styl přitom model umí a kreslení ho
+respektuje; byla to **díra po zrušení pětizáložkového dialogu** (12. 8.), ne chybějící featura.
+
+**Formátovací lišta u tabulky přestala být prázdná.** Uvnitř tabulky patří **aktivní buňce**:
+tučné, kurzíva, podtržení, přeškrtnutí a zarovnání vodorovně i svisle. Stav tlačítek ukazuje
+**vyřešenou** hodnotu (tedy i tu zděděnou z tabulky), ne jen to, co má buňka vlastního.
+
+**Vlastnosti buňky** otevře **Alt+Enter** nebo místní nabídka: písmo, velikost, řez, barvy, vnitřní
+okraje, řádkování a **formát hodnoty** (`dd.MM.yyyy`, `N2` u buňky s datovým polem; prázdné = podle
+sloupce).
+
+⚠️ **Dvě rozhodnutí, která stojí za zapamatování:**
+
+- **Dialog je sdílený stylový pod-formulář** (týž, jakým se nastavuje styl zóny prvku), ne nový
+  formulář ze serveru. Jediný umí stav „dědí se" i u zaškrtávátek: zděděná hodnota je šedě
+  a křížkem se dědění vrací. Potvrzení beze změny tak **nezapeče** zděděné hodnoty do buňky - jinak
+  by se buňka tiše odpojila od „Stylu buněk" a pozdější změna písma tabulky by ji minula.
+- **Cesta k dialogu je Alt+Enter, ne Enter** - Enter uvnitř tabulky potvrzuje a posouvá o buňku níž
+  a dvojklik otevírá vlastnosti prvku; obojí muselo zůstat.
+
+**Zápis je psaný nad množinou buněk**, i když je dnes jednoprvková: výběr oblasti tažením (krok 3)
+přidá jen jiný zdroj souřadnic. Zpětný krok vrací **snímek pořízený před změnou** a buňky adresuje
+**souřadnicí**, ne odkazem - u skupiny tím každá buňka dostane zpět svou vlastní hodnotu a undo
+funguje i po přeskládání mřížky, které buňky naklonuje.
+
+Vedlejší nález: pole pro psaní do buňky bralo písmo ze sloupce, ne z buňky - v ztučněné buňce by
+text při psaní poskočil. Nově se řídí vyřešeným stylem té buňky (včetně řezu a kurzívy).
+
+**Brány:** build bez chyb, **2155 .NET testů** zelených (TD 957, z toho 12 nových). Dvě mutace
+ověřily, že testy měří, co tvrdí: snímek pořízený až po změně shodí 4 testy vratnosti, dialog
+zapékající zděděnou tučnost shodí test „potvrzení beze změny nic nezapíše".
+
+**Zbývá v `B76`:** výběr oblasti tažením a celého řádku/sloupce, Delete a schránka nad oblastí,
+sloučení buněk vodorovně.
+
 ## 2026-08-17 (2) - 🔤 písmena variant u odjezdů přestala být volba (`B90`)
 
 Parametr „Písmena variant u odjezdů" umožňoval vývěsku, ze které **nešlo poznat, který časový

@@ -106,8 +106,7 @@ public partial class FormatToolbar : UserControl
         if (_suppress || desc is null) return;
         bool oldVal = desc.Get();
         bool newVal = !oldVal;
-        _execute?.Invoke(new SetPropertyCommand(desc.Label, oldVal, newVal,
-            v => { desc.Set((bool)v!); _invalidate?.Invoke(); }));
+        Apply(desc, oldVal, newVal, v => desc.Set((bool)v!));
     }
 
     private void SetEnum(EnumPropertyDescriptor? desc, object value)
@@ -115,8 +114,21 @@ public partial class FormatToolbar : UserControl
         if (_suppress || desc is null) return;
         var oldVal = desc.Get();
         if (Equals(oldVal, value)) return;
-        _execute?.Invoke(new SetPropertyCommand(desc.Label, oldVal, value,
-            v => { desc.Set(v!); _invalidate?.Invoke(); }));
+        Apply(desc, oldVal, value, v => desc.Set(v!));
+    }
+
+    /// <summary>Zápis hodnoty jako vratný krok. Deskriptor smí dodat vlastní příkaz
+    /// (<see cref="PropertyDescriptor.MakeCommand"/>) - typicky když jedna změna sahá na víc
+    /// cílů a zpětný krok musí každému vrátit jeho původní hodnotu.</summary>
+    private void Apply(PropertyDescriptor desc, object? oldVal, object? newVal, Action<object?> set)
+    {
+        var command = desc.MakeCommand is { } make
+            ? make(newVal)
+            : new SetPropertyCommand(desc.Label, oldVal, newVal,
+                v => { set(v); _invalidate?.Invoke(); });
+        if (command is null) return;
+        _execute?.Invoke(command);
+        _invalidate?.Invoke();
     }
 
     // ── Click handlery ────────────────────────────────────────────────────────

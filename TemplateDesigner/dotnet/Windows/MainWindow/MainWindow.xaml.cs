@@ -1899,7 +1899,10 @@ public partial class MainWindow : Window
             var descriptors = selected.Count == 1
                 ? _propsVm.PrepareForElement(selected[0], isNewSession: false)
                 : _propsVm.PrepareForMultipleElements(selected);
-            FormatToolbar.ShowDescriptors(descriptors);
+
+            // Uvnitř tabulky patří lišta buňce, ne prvku - jinak by tučné z lišty ztučnilo
+            // celou tabulku ve chvíli, kdy uživatel formátuje jednu buňku.
+            FormatToolbar.ShowDescriptors(InTableCells ? CellFormatDescriptors() : descriptors);
 
             if (panelSchema is not null)
             {

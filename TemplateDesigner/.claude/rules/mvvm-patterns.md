@@ -28,6 +28,10 @@ Hlavní editační cestou je **Caché formulář** (`*Edit.cls`): u elementu se 
 - `EnumPropertyDescriptor` - dropdown s definovanými možnostmi `Options = [(label, value), ...]`
 - `SuggestStringPropertyDescriptor` - filtrovatelný editovatelný ComboBox; `GetSuggestions()` vrací `(Value, Label)` páry
 
+Deskriptor smí nést i **vlastní vratný příkaz** (`MakeCommand`) - pro změnu, která sahá na víc cílů
+najednou (formátování skupiny buněk pevné tabulky). Bez toho by zpětný krok vrátil všem jednu
+společnou hodnotu z lišty místo té jejich; vzor viz `Models/TableCellFormatting.cs`.
+
 **Příklad použití:**
 ```csharp
 public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>

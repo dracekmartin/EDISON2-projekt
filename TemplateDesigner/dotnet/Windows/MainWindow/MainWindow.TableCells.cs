@@ -3,9 +3,11 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using SkiaSharp;
+using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner;
 
@@ -80,6 +82,7 @@ public partial class MainWindow
         // uživatel musel mačkat další klávesu. Výjimka je pravý klik: tam se buňka jen vybere,
         // protože uživatel míří na nabídku, ne na psaní.
         if (beginEdit) BeginCellEdit(replace: false);
+        SyncFormatToolbar();
         InvalidateCanvas();
         return true;
     }
@@ -95,6 +98,7 @@ public partial class MainWindow
     {
         if (_cellEditing) EndCellEdit(commitEdit);
         _cellTable = null;
+        SyncFormatToolbar();
         InvalidateCanvas();
     }
 
@@ -121,6 +125,7 @@ public partial class MainWindow
 
         if (_cellEditing) EndCellEdit(commit: true);
         (_cellRow, _cellCol) = (hit.Value.Row, hit.Value.Col);
+        SyncFormatToolbar();
         InvalidateCanvas();
         return true;
     }
@@ -147,10 +152,13 @@ public partial class MainWindow
         InlineEditBox.Width  = cellMm.Value.Width  * px;
         InlineEditBox.Height = cellMm.Value.Height * px;
 
-        // Písmo pole musí odpovídat tomu, co kreslí Skia - jinak text při psaní poskočí.
-        var style = _cellTable.ResolveColumnDataParent();
+        // Písmo pole musí odpovídat tomu, co kreslí Skia - jinak text při psaní poskočí. Bere se
+        // vyřešený styl **té buňky** (ne celého sloupce), protože buňka může mít vlastní písmo.
+        var style = CellFormatting?.ActiveStyle() ?? _cellTable.ResolveColumnDataParent();
         InlineEditBox.FontSize   = style.FontSize * (96f / 72f) * _vm.State.Zoom;
         InlineEditBox.FontFamily = new FontFamily(style.FontFamily);
+        InlineEditBox.FontWeight = style.Bold ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal;
+        InlineEditBox.FontStyle  = style.Italic ? FontStyles.Italic : FontStyles.Normal;
         InlineEditBox.Text       = replace ? "" : cell.Content;
         InlineEditBox.Visibility = Visibility.Visible;
 
@@ -204,7 +212,10 @@ public partial class MainWindow
 
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
 
-        switch (e.Key)
+        // S Altem hlásí WPF klávesu jako systémovou - bez tohohle by Alt+Enter dorazil jako Key.System.
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+
+        switch (key)
         {
             case Key.Escape:
                 ExitTableCells();
@@ -212,6 +223,12 @@ public partial class MainWindow
 
             case Key.F2:
                 BeginCellEdit(replace: false);
+                return true;
+
+            // Alt+Enter = vlastnosti (zavedené ve Windows). Samotný Enter musí zůstat posunu
+            // o buňku níž, jinak by se rozbilo vyplňování z klávesnice.
+            case Key.Enter when Keyboard.Modifiers.HasFlag(ModifierKeys.Alt):
+                OpenCellProperties();
                 return true;
 
             case Key.Delete:
@@ -343,6 +360,7 @@ public partial class MainWindow
             _cellRow = Math.Clamp(_cellRow + dRow, 0, rows - 1);
             _cellCol = Math.Clamp(_cellCol + dCol, 0, cols - 1);
         }
+        SyncFormatToolbar();
         InvalidateCanvas();
     }
 
@@ -381,6 +399,70 @@ public partial class MainWindow
 
         _vm.Execute(CellContentCommand(_cellTable, _cellRow, _cellCol, cell.Content, ""));
         InvalidateCanvas();
+    }
+
+    // ── Formátování buňky ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Buňky, na které míří formátování. Dnes je to vždy ta jedna vybraná; celá cesta zápisu je
+    /// ale psaná nad **množinou**, aby výběr oblasti tažením přidal jen jiný zdroj souřadnic
+    /// a nemusela se přepisovat ani jedna vratná operace.
+    /// </summary>
+    private IReadOnlyList<(int Row, int Col)> TargetCells =>
+        _cellTable is null ? [] : [(_cellRow, _cellCol)];
+
+    /// <summary>
+    /// Přepne formátovací lištu mezi buňkou a prvkem. Volá se i při každém posunu po buňkách,
+    /// takže **nesmí** sahat na panel vlastností - ten by při každé šipce znovu načítal formulář
+    /// ze serveru.
+    /// </summary>
+    private void SyncFormatToolbar()
+    {
+        if (!InTableCells) { RefreshInlineProperties(); return; }
+
+        FormatToolbar.SetContext(cmd => _vm!.Execute(cmd),
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
+        FormatToolbar.ShowDescriptors(CellFormatDescriptors());
+    }
+
+    /// <summary>Formátování aktivní buňky - kaskáda, vratný zápis i vlastnosti pro lištu žijí
+    /// v modelu (<see cref="TableCellFormatting"/>), tady zůstává jen napojení na plátno.</summary>
+    private TableCellFormatting? CellFormatting =>
+        _cellTable is null || _vm is null
+            ? null
+            : new(_cellTable, () => _vm!.State.CurrentPreviewData, TargetCells);
+
+    private List<PropertyDescriptor> CellFormatDescriptors() => CellFormatting?.Descriptors() ?? [];
+
+    /// <summary>
+    /// Nastavení buňky - sdílený stylový pod-formulář (zděděné hodnoty šedě, křížek je vrátí)
+    /// plus formát hodnoty. Změna se do historie zapisuje **souřadnicí buňky**, ne odkazem na ni:
+    /// každá změna struktury mřížku naklonuje a příkaz držící instanci by pak psal do odpojené buňky.
+    /// </summary>
+    private void OpenCellProperties()
+    {
+        if (_vm is null || _cellTable is null || CellFormatting is not { } formatting) return;
+        if (_cellEditing) EndCellEdit(commit: true);
+
+        var data = _vm.State.CurrentPreviewData;
+        if (_cellTable.EnsureCell(data, _cellRow, _cellCol) is not { } cell) return;
+
+        var vm = new StyleEditDialogViewModel(cell, nameof(TableCell.Style),
+            _cellTable.ResolveCellParent(data, _cellCol),
+            extraTextPath: nameof(TableCell.Format),
+            extraTextLabel: "Formát hodnoty",
+            extraTextHelp: "Pro buňku s datovým polem - např. dd.MM.yyyy nebo N2. Prázdné = podle sloupce.");
+        var dlg = new StyleEditDialog(vm) { Owner = this, Title = "Vlastnosti buňky" };
+
+        var before = formatting.Capture();
+        if (dlg.ShowDialog() != true || vm.ResultCommand is null) return;
+
+        vm.ResultCommand.Execute();
+        _vm.Execute(formatting.Command("Vlastnosti buňky", before));
+
+        SyncFormatToolbar();
+        InvalidateCanvas();
+        InvalidatePreview();
     }
 
     // ── Tažení hranic sloupců a řádků ─────────────────────────────────────────
@@ -675,6 +757,8 @@ public partial class MainWindow
         Add("Kopírovat buňku (Ctrl+C)", CopyCell);
         Add("Vložit ze schránky (Ctrl+V)", PasteIntoCells);
         Add("Vymazat obsah buňky (Del)", ClearCell);
+        menu.Items.Add(new Separator());
+        Add("Vlastnosti buňky (Alt+Enter)", OpenCellProperties);
 
         // „Vlastnosti tabulky" tu vědomě nejsou - nabídka pokračuje standardními položkami prvku
         // (Vyjmout, Kopírovat, Smazat, Vrstva, Vlastnosti), společnými pro všechny prvky.

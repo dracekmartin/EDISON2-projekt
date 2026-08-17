@@ -203,7 +203,9 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
 - **Kód** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí
-- **Tabulka (dynamická)** - řádky se generují automaticky z datové kolekce (viz níže); nabízí se jako jediná varianta tabulky v paletě
+- **Tabulka (dynamická)** - řádky se generují automaticky z datové kolekce (viz níže)
+- **Tabulka (pevná)** - mřížku vyplňujete ručně přímo na plátně; náhrada za skládání hlaviček
+  a bloků z jednotlivých textových prvků (viz níže)
 - **Prvky jízdního řádu** - specializované prvky pro tisk JŘ - objeví se v paletě jen u agend jízdních řádů; viz část II
 
 ### Dynamická tabulka
@@ -215,6 +217,27 @@ barvy pozadí a textu záhlaví i dat. Buňka může obsahovat souhrnný výraz 
 Editor sloupců (dialog „Tabulka - nastavení") má záložky **Obecné** a **Sloupce**: přidání/
 odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce elementu",
 a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor stylu (viz kap. 7).
+
+### Pevná tabulka
+Mřížka, kterou vyplňujete sami - typicky hlavička sestavy nebo blok údajů, se kterým chcete hýbat
+jako s jedním prvkem. Vloží se jako mřížka 3 × 3 bez řádku záhlaví; záhlaví si uděláte z prvního
+řádku tím, že ho ztučníte.
+
+**Vyplňování:** dovnitř se dostanete **Alt+klikem** na buňku, klávesou **F2** nebo položkou
+„Vyplnit tabulku" v místní nabídce. Uvnitř se píše jako v Excelu - psaní přepíše obsah, F2 upraví
+stávající, **Tab** a **Enter** potvrdí a posunou dál, šipky chodí po buňkách, **Esc** vede ven.
+**Delete** uvnitř maže obsah buňky, ne prvek. Ctrl+C/X/V pracují s buňkou; vložit jde i blok
+zkopírovaný z Excelu (tabulka se dorovná). Po napsání `{` se nabídnou datová pole.
+
+**Řádky a sloupce** se přidávají a mažou z místní nabídky; šířku sloupce a výšku řádku změníte
+tažením vnitřní hranice (vnější hrana mění velikost celého prvku).
+
+**Formátování buňky:** vybranou buňku ztučníte, zkurzívíte, podtrhnete, přeškrtnete a zarovnáte
+(vodorovně i svisle) přímo **formátovací lištou** nad plátnem. Kompletní nastavení má **Alt+Enter**
+nebo místní nabídka **„Vlastnosti buňky"**: písmo a velikost, řez, barva textu a pozadí, vnitřní
+okraje, řádkování a **formát hodnoty** (např. `dd.MM.yyyy` nebo `N2` u buňky s datovým polem).
+Prázdné pole znamená **dědit** z nastavení celé tabulky - zděděná hodnota je vidět šedě a křížkem
+u pole se dědění vrací.
 
 ### Přidání prvku
 - Klik na tlačítko v paletě vloží prvek do aktivní sekce (souřadnice 5, 5 mm).
@@ -480,7 +503,9 @@ operaci).
 - **Delete** - Smazat výběr
 - **Ctrl+A** - Vybrat vše v aktivní sekci
 - **Enter / dvojklik** - Vlastnosti výběru (1 prvek = dialog; víc prvků = dialog společných vlastností)
-- **F2** - Rychlá editace textu (jen textový prvek, jeden vybraný)
+- **F2** - Rychlá editace textu (textový prvek), nebo vstup do buňky pevné tabulky
+- **Alt+klik na buňku** - Vstup do pevné tabulky rovnou do té buňky
+- **Alt+Enter (v buňce)** - Vlastnosti buňky (styl, formát hodnoty)
 - **Ctrl+G / Ctrl+Shift+G** - Seskupit / Rozeskupit
 - **Alt+klik** - Vybrat jeden prvek ze skupiny
 - **Ctrl+Shift+H / Ctrl+Shift+J** - Rozdělit prvek vodorovně / svisle

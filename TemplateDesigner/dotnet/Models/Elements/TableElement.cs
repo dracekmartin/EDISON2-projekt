@@ -593,6 +593,45 @@ public class TableElement : TemplateElement
         return tableRow.Cells[modelCol];
     }
 
+    /// <summary>
+    /// Vyřešený rodičovský styl buňky = kaskáda sloupec → „Styl buněk" prvku → zapečené výchozí.
+    /// Dialog buňky ho ukazuje jako zděděné hodnoty a render z něj vychází (<see cref="FixedRowSpecs"/>),
+    /// takže formulář nemůže tvrdit jinou hodnotu, než se vytiskne.
+    /// </summary>
+    public ResolvedTextStyle ResolveCellParent(DataContext? data, int visibleCol)
+    {
+        var layout = ComputeLayout(data);
+        if (visibleCol < 0 || visibleCol >= layout.ColumnIndexes.Length) return ResolveColumnDataParent();
+        return ResolveColumnDataStyle(Columns[layout.ColumnIndexes[visibleCol]]);
+    }
+
+    /// <summary>Stav jedné buňky pro vratnou změnu formátování - adresovaný souřadnicí, ne instancí.</summary>
+    public readonly record struct CellState(int Row, int Col, TextStyle? Style, string? Format);
+
+    /// <summary>
+    /// Snímek formátování skupiny buněk pro undo. Buňky se adresují **souřadnicí**: každá změna
+    /// struktury (vložení řádku, tažení hranice, vložení ze schránky) mřížku naklonuje, takže
+    /// příkaz držící instanci buňky by po zpětném kroku psal do odpojeného objektu.
+    /// </summary>
+    public sealed record CellSnapshot(List<CellState> Cells);
+
+    public CellSnapshot CaptureCells(DataContext? data, IEnumerable<(int Row, int Col)> cells) =>
+        new([.. cells.Select(c =>
+        {
+            var cell = EnsureCell(data, c.Row, c.Col);
+            return new CellState(c.Row, c.Col, cell?.Style?.Clone(), cell?.Format);
+        })]);
+
+    public void RestoreCells(DataContext? data, CellSnapshot snapshot)
+    {
+        foreach (var state in snapshot.Cells)
+        {
+            if (EnsureCell(data, state.Row, state.Col) is not { } cell) continue;
+            cell.Style  = state.Style?.Clone();
+            cell.Format = state.Format;
+        }
+    }
+
     /// <summary>Index sloupce v modelu pro viditelný sloupec (vkládání a mazání sloupců).</summary>
     public int ModelColumnIndex(DataContext? data, int visibleCol)
     {

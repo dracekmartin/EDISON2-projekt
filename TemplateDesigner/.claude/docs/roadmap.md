@@ -34,31 +34,22 @@ Nezávislé na JŘ (faktury i obecné šablony). Cíl pevné tabulky **není fak
 
 #### `B76` Formátování buněk a sloučení vodorovně (M, rozhodnutí Jan 17. 8.)
 
-**Pevná tabulka jde dnes formátovat jen jako celek** - „Styl buněk" a „Styl řádku záhlaví" v nastavení
-prvku plus střídání řádků. Uvnitř tabulky se mění **jen obsah a struktura** (text, řádky a sloupce,
-šířky tažením): jednu buňku nelze ztučnit, zarovnat ani podbarvit a formátovací lišta je u tabulky
-prázdná, protože prvek žádnou takovou vlastnost nenabízí.
+**Hotová je první část** (formátování jedné buňky, 17. 8. - detail v changelogu): formátovací lišta
+uvnitř tabulky patří aktivní buňce a Alt+Enter otevře „Vlastnosti buňky" (písmo, barvy, okraje,
+formát hodnoty) se zděděním z nastavení tabulky. Zápis je psaný nad **množinou** buněk, takže výběr
+oblasti přidá jen jiný zdroj souřadnic.
 
-⚠️ **Tím dnes nefunguje způsob práce, na kterém prvek stojí:** tabulka se vkládá bez řádku záhlaví,
-protože *„záhlaví si uživatel udělá z prvního řádku tím, že ho ztuční"* - a ztučnit ho nejde.
-Per-buňkový styl přitom v modelu **existuje** (nesou ho staré šablony ze smazaného pětizáložkového
-dialogu), jen do něj nemá co zapsat. Je to díra po zrušení toho dialogu, ne nová featura.
+**Zbývá:**
 
-**1. Výběr a formátování** (jádro, bez něj je zbytek k ničemu):
+1. **Výběr oblasti tažením** + celý **řádek / sloupec** kliknutím u okraje („ztuč první řádek",
+   „zarovnej sloupec doprava" jsou nejčastější případ a táhnout přes ně myší je zbytečná práce).
+   Lišta i dialog se nemění, jen dostanou víc buněk. K tomu **Delete a schránka nad oblastí**
+   (dnes pracují jen s jednou buňkou).
+2. **Sloučení buněk vodorovně** (ColSpan): ze tří buněk jeden nadpis přes celou šířku. Aditivně
+   v JSON, kreslení řádku musí umět span. **Sloučení přes řádky vědomě odložené** - míchá se
+   se spanováním výšek, střídáním řádků a podmíněnou viditelností.
 
-- **výběr oblasti tažením** + celý **řádek / sloupec** kliknutím u okraje („ztuč první řádek",
-  „zarovnej sloupec doprava" jsou nejčastější případ a táhnout přes ně myší je zbytečná práce)
-- na výběru: **tučné / kurzíva / podtržení**, **zarovnání vodorovně i svisle**, **font a velikost**,
-  **barva textu a pozadí buňky**, **vnitřní okraje**, **formát hodnoty** u buňky s datovým polem
-- ovládání přes **formátovací lištu** (dnes u tabulky prázdná - prvek jí musí nabídnout vlastnosti
-  vybrané oblasti, ne svoje element-level)
-- **Delete a schránka nad oblastí** (dnes pracují jen s jednou buňkou)
-
-**2. Sloučení buněk vodorovně** (ColSpan): ze tří buněk jeden nadpis přes celou šířku. Aditivně
-v JSON, kreslení řádku musí umět span. **Sloučení přes řádky vědomě odložené** - míchá se
-se spanováním výšek, střídáním řádků a podmíněnou viditelností.
-
-⚠️ **Zjemní i vkládání ze schránky:** dnes se vkládá od vybrané buňky a tabulka se dorovná
+⚠️ **Výběr zjemní i vkládání ze schránky:** dnes se vkládá od vybrané buňky a tabulka se dorovná
 (chování Wordu a Docs, jediné neztrátové bez výběru oblasti); s výběrem má platit **vybraná oblast
 = cíl vložení** (Excel), jedna buňka = dnešní chování.
 
