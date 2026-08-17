@@ -5,7 +5,8 @@
 Ten dokument je snapshot analýzy (evidence, dopad, návrh) a **nemění se**. Tady je plán
 a stav.
 
-**Hotovo: 11 / 22** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
+**Hotovo: 12 / 22 z review** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
+**+ 3 / 8 z pozdějšího skenu** (sekce „Nálezy mimo původní review" dole)
 
 ## Jak s dokumentem pracovat
 
@@ -305,7 +306,25 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R7 - Identita stromu ve 3 paralelních kódováních na 7 místech
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-17) - **nález byl podhodnocený**: mezi review a implementací
+  přibylo commitem `416970b` (regroup launcher panel) **čtvrté** kódování - pětice
+  `Is*TabActive` + ordinálně řazené `TabActiveProperties`; coupling points ~11 místo 7.
+  Zaveden `Modules/TreeTab` s **šesti** členy, ne čtyřmi z návrhu: přibyl `IconKey`
+  (aby deskriptor nemusel do VM tahat WPF `ImageSource`) a `ServerLoaded` (odlišuje tři
+  stromy z `GetModuleTree` od odvozených Oblíbené/Používané - bez toho nešlo `_sourceTrees`
+  odvodit z téhož seznamu). Zmizely oba `switch 0-4`, `Is*TabActive`, `TabActiveProperties`
+  i oba literály `"favorites"`; XAML má `ItemsSource` místo pěti ručních `TabItem`;
+  code-behind má **jeden** handler na kartě místo 9 wiringů podle jmen `TreeView`
+  (`SelectedItemChanged` i `KeyDown` bublají).
+  **Odchylka:** `TreeTab_SelectionChanged` nezmizel jen tak - „výběr viditelné záložky"
+  se přesunul do VM jako mapa výběru **per klíč záložky** (`_selectionByTab`), protože číst
+  `TreeView.SelectedItem` po přepnutí by znamenalo zpátky vázat identitu na jméno controlu.
+  Přestavba stromů mapu čistí (uzly jsou nové instance).
+  Persistence `SelectedTab` je `string` klíč; migrační kód žádný - starý `int` shodí
+  `GetValue<string>()` a existující catch degraduje na výchozí záložku.
+  Testy: 8 indexových nahrazeno 5 klíčovými (neznámý klíč → fallback, unikátnost klíčů,
+  obnovení výběru per záložka). Ověřeno i **reálným spuštěním shellu** - chybný XAML
+  binding testy nechytí.
 - **P2 · M** · Závisí na: - · Blokuje: **R1** (dělej před ním)
 - **Co udělat:** Zavést deskriptor
   `record TreeTab(string Key, string DisplayName, ObservableCollection<IModule>? Tree, bool Expandable)`
@@ -325,23 +344,41 @@ tvrdé závislosti jsou vypsané u položek v poli **Závisí na**.
 
 ### R1 - `EdisonMainViewModel` je God class shellu
 
-- [ ] **Stav:** Open
-- **P1 · L** · Závisí na: **R7**, těží z R2 a R12 · Blokuje: -
+- [ ] **Stav:** Rozpracováno (2026-08-17) - **příprava hotová, čtyři extrakce zbývají.**
+  VM mezitím narostl z 1315 na 1552 řádků a testů na něj je 2067 v 5 souborech, takže nález
+  je dnes větší, ne menší. Hotové mezikroky (každý vlastní commit):
+  - Test harness VM byl duplikovaný **4×** (ne 2×) → jeden `EdisonMainViewModelHarness`.
+    Bez toho by dělení testů podle nových tříd znamenalo opravovat totéž sedmkrát.
+  - Guard `_suppressExpansionSave` → **refcountovaný** `SuppressExpansionSave()` scope.
+    Nested-safe bylo dřív jen jedno z pěti míst (přes lokální `prev`); po rozpadu na tři
+    třídy by plochý bool tiše odemkl persistenci uprostřed vnějšího bloku. Test na vnoření
+    ověřen probem (s plochým resetem padá).
+  - Viz taky **N1** a **N6** níž - obojí uklizeno před extrakcemi, protože by se jinak
+    jen přestěhovalo.
+  **Zbývá** (pořadí platí):
+- **P1 · L** · Závisí na: **R7** (hotovo), těží z R2 a R12 · Blokuje: -
 - **Co udělat:** Čtyři samostatné kroky, každý s přesunutými testy, každý vlastní commit
   (klidně i vlastní worktree). Doporučené pořadí od nejmechaničtějšího:
   - [ ] `ModuleTreeState` - kolekce stromů, filtrace, `ApplySearch`, persistence rozbalení.
         Většina logiky už je `internal static`, takže přesun je hlavně mechanický.
   - [ ] `FavoritesCoordinator` - `_shortcuts` wiring, `SyncFavorites`,
-        `RefreshFamilyFavoriteFlags`, `RebuildFavoritesTree`, `PersistFavoriteSlots`.
+        `RefreshFamilyFavoriteFlags`, `RebuildFavoritesTree`, `PersistShortcuts`
+        (v backlogu dřív `PersistFavoriteSlots`, tak se to nejmenuje). **Vyřeš u toho N7.**
   - [ ] `MiniAppSessionController` - `AttachMiniAppHost`, `AttachTreeLayout`,
         `PersistMiniAppLayout`, `RestoreMiniAppLayout`, `ReplaceMiniAppSession`.
         **Pozor:** persist při zavření shellu jde přes `EventTrigger Closed` →
         `CloseAllCommand` v XAML, což ze strany VM není vidět - nerozbij to.
+        **Vyřeš u toho N2** (tři vstupy persistu, guard jen v jednom).
   - [ ] Menu commandy (font, theme, `RunEdisonCopy`, `OpenWebUrl`, `ShowAppInfo`, chord)
         do vlastní partial třídy nebo `ShellMenuCommands`.
 - **Zachovat:** `RebuildSessionStateAsync` (+ `SessionDataLoader`) jako jediný rozšiřovací bod
   pro session-scoped stav.
   To je dobrý vzor, jen dnes volá příliš mnoho věcí přímo.
+- **Tvrdý invariant, který review nezmiňuje:** `ApplySessionData` musí zůstat **synchronní**
+  (guardy `_suppressXxx` neplatí přes `await`). Po rozpadu poběží přes hranici dvou tříd -
+  musí to zůstat jeden nepřerušený synchronní průběh, jinak selhání loadu přestane nechávat
+  předchozí stromy naživu. Podobně `_modulePrefs` je `null` do prvního `InitializeAsync`
+  a čte ho 5 skupin → sub-třídy chtějí lazy accessor, ne vlastní kopii.
 - **Hotovo když:** `EdisonMainViewModel` je pod ~400 řádky a orchestruje; sdílené
   `_suppressXxx` flagy patří té třídě, které se týkají; testy jsou rozdělené podle
   nových tříd, ne podle jednoho VM.
@@ -479,6 +516,90 @@ jednou, ne po každém úkolu.
 - **Hotovo když:** Event je pryč, TD používá výhradně nový, oba exe jsou publikované
   ze stejného commitu.
 - **Detail:** [nález 6](arch-EDISONMAIN2-EDControls-2026-07-29.md#6-edinputforminitialized-stíní-frameworkelementinitialized)
+
+---
+
+## Nálezy mimo původní review (sken 2026-08-17)
+
+Před vlnou 3 proběhl nezávislý sken na strukturální dluh, který review z 2026-07-29 nezná
+(kód se mezitím posunul o 16 commitů v `Windows/EdisonMainWindow/`). **Žádná nová God class
+nevznikla** - všech 7 tříd přidaných po review je malých, jednoúčelových a otestovaných.
+Tyhle věci ale review nezachytil:
+
+### N1 - Dvě implementace vynuceného ukončení
+
+- [x] **Stav:** Done (2026-08-17) - VM měl vlastní `ShutdownWithoutConfirm` volající
+  `Application.Current.Shutdown()`, přestože `ShellShutdown.Force` z R9b má být jediné místo
+  pravdy (a `EDISONMAIN2/CLAUDE.md` to tvrdilo). Tři exit cesty (`ExitApplication` + dvě
+  licenční větve `LoginAsAnotherUser`) proto neměly test - sahaly na statický
+  `Application.Current`. Teď jde ukončení delegátem z composition rootu; 5 nových testů.
+- **P2 · S** · Vyřešeno v rámci přípravy na R1.
+
+### N6 - Volitelné ctor parametry VM s produkčně významnými defaulty
+
+- [x] **Stav:** Done (2026-08-17) - `shortcuts = null` tiše vyrobilo vlastní
+  `ModuleShortcutsService` (★ ve stromu odpojené od plochy), `changelogSource = null` tiše
+  vyplo novinky. Zapomenutý parametr v composition rootu tedy **nespadl**, jen degradoval
+  featuru. Obojí je teď povinné; `restRunner` zůstává volitelný (je to skutečný test seam).
+- **P3 · S** · Vyřešeno v rámci přípravy na R1.
+
+### N8 - Test harness VM duplikovaný 4×
+
+- [x] **Stav:** Done (2026-08-17) - dvě `CreateVM` + dvě ruční konstrukce v testech.
+  Sjednoceno do `EDISONMAIN2.Tests/EdisonMainViewModelHarness`.
+- **P3 · S** · Vyřešeno v rámci přípravy na R1.
+
+### N2 🔸 - Persistence layoutu miniaplikací má tři vstupy a guard jen v jednom
+
+- [ ] **Stav:** Open
+- **P2 · S** · Závisí na: - · Blokuje: R1 krok `MiniAppSessionController`
+- **Co udělat:** Cesty jsou `Closing` → `ConfirmShellClose`, `EventTrigger Closed` →
+  `CloseAllCommand`, a `SwitchCompanyAsync` / `ReplaceMiniAppSession`. Při normálním zavření
+  shellu se layout ukládá **dvakrát**; `_sessionSwapInProgress` kryje jen switch větev.
+  Sjednotit do jedné cesty s jedním guardem **před** extrakcí controlleru - jinak extrakce
+  tiše ztratí jednu větev. `_sessionSwapInProgress` vyjádřit jako `BeginSessionSwap()`
+  vracející `IDisposable`, ne pole VM ani privátní bool controlleru.
+
+### N7 - `ModuleShortcutsService` mutuje sdílený stav, guard je v jiné třídě
+
+- [ ] **Stav:** Open
+- **P3 · S** · Závisí na: - · Blokuje: R1 krok `FavoritesCoordinator`
+- **Co udělat:** Službu drží VM i `DesktopMiniAppProvider`; mutace probíhá uvnitř služby
+  (`Seed` přepisuje `Items` i `module.IsFavorite`), ale jediná ochrana proti save-loopu je
+  `_suppressFavoritesSync` ve VM - a ten se z `Items.CollectionChanged` nikdy neodhlašuje
+  (anonymní lambda v ctoru). Guard patří k tomu, kdo kolekci mutuje: buď „seed/batch" režim
+  ve službě, který event nefajruje, nebo odhlásitelný handler v koordinátoru.
+
+### N3 - Login workflow rozprostřený do čtyř míst, bez VM
+
+- [ ] **Stav:** Open
+- **P2 · M** · Závisí na: - · Blokuje: -
+- **Co udělat:** `Windows/LoginWindow/LoginWindow.xaml.cs` v code-behind **provádí
+  autentizaci**, drží politiku zapamatovaného hesla, hostuje tři WebView2 widgety a od
+  2026-08-06 i **progress state machine startupu** (`EnterProgressState`, `ShowProgress`,
+  `CloseAfterHandoff`). Bootstrapper ho řídí zvenčí a čeká na něj vlastní `DispatcherFrame`.
+  Je to jediný netriviální workflow shellu bez VM a bez testu na UI vrstvě, a po review
+  vyrostl. Review ho neřešil - v `007f62c` byl login jen `ShowDialog`.
+- **Souvisí:** zbytek R9b („`_startupLoginWindow` je pořád mutable pole") je ve skutečnosti
+  tenhle nález - pole čte pět míst a `ShowProgress` z něj dělá živý UI driver až do
+  `ContentRendered` shellu.
+
+### N4 🔸 - `DesktopMiniAppViewModel.LaunchCommand` nemá ani jeden binding
+
+- [ ] **Stav:** Open
+- **P3 · S** · Závisí na: - · Blokuje: -
+- **Rozhodnout:** View volá službu přímo (`Vm?.Shortcuts.RequestLaunch(s)`), zatímco
+  sourozenecký `RemoveCommand` bindovaný je - dva příkazy téže třídy jedou dvěma kanály.
+  Buď command zapojit, nebo smazat. Stejná třída nálezu jako R13, jen vznikla **po** review.
+
+### N5 - Duplikované drag&drop workflow ve dvou code-behindech
+
+- [ ] **Stav:** Open
+- **P3 · S** · Závisí na: - · Blokuje: -
+- **Co udělat:** `EdisonMainWindow.xaml.cs` a `MiniApps/DesktopMiniAppView.xaml.cs` mají
+  identický vzor `_dragStart` / práh `SystemParameters.Minimum*DragDistance` / `DoDragDrop`
+  plus flag „potlač klik po tažení" (`_treeDragActive` vs `_suppressClick`). Dvě kopie téže
+  politiky ve dvou vrstvách, obě bez testu.
 
 ---
 
