@@ -1,7 +1,12 @@
 # Architektura elementů - JŘ elementy, sdílené tabulkové jádro, symboly
 
 > Sloučeno 2026-07-13 ze 3 dokumentů (schedule-elements-architecture, tabulkove-elementy-jadro,
-> symboly-jr-katalog). Tři části, původní obsah beze změn.
+> symboly-jr-katalog). Část 1 srovnaná s kódem 17. 8. (`B94`) - hierarchie měla o dvě vrstvy méně
+> a výčty vlastností byly rozešlé s kódem.
+>
+> ⚠️ **Výčty vlastností a signatur sem nepatří** - zestárnou dřív než kód a nikdo si toho nevšimne
+> (přesně to se stalo do 17. 8.). Piš sem jen to, co se z kódu nepozná: proč je hranice tam, kde je,
+> co je vědomá výjimka, co se nemá sjednocovat.
 
 
 
@@ -71,58 +76,70 @@
 
 ```
 TemplateElement (abstract)
-├── TextElement, TableElement, ImageElement, ... (generické)
-└── ScheduleElementBase (abstract - společný základ JŘ elementů)
-    ├── StopListElement          - tabulka zastávek (levý sloupec)
-    ├── DepartureGridElement     - mřížka minut odjezdů (pravý sloupec)
-    └── NotesLegendElement       - legenda poznámek (pod mřížkou)
+├── TextElement, TableElement, DynamicTableElement, ImageElement, ... (generické)
+└── ScheduleElementBase (abstract - GENERICKÁ tabulková vrstva: styly + kaskáda,
+    │                    auto-scale fontu, typeface cache, render helpery)
+    ├── LineTableElement         - tabulka celé linky (linkový / knižní JŘ)
+    └── StopScheduleElementBase (abstract - ZASTÁVKOVÝ datový formát: DataSource klíče,
+        │                        typovaná cache, Build* helpery nad vnořenými poli)
+        ├── StopListElement      - tabulka zastávek (levý sloupec)
+        ├── DepartureGridElement - mřížka minut odjezdů (pravý sloupec)
+        └── NotesLegendElement   - legenda poznámek (pod mřížkou)
 ```
 
-Každý element má vlastní `Render()` a `Clone()`. Sdílí base class pro společnou logiku (DataSource klíče, Build helpery, cache, auto-scale fontu).
+**Proč je uprostřed ještě jedna vrstva:** `LineTableElement` chce styly, kaskádu a auto-scale, ale
+zastávkový datový tvar ne (má vlastní: `ZASTAVKY`/`SPOJE`/`SKUPINY_DNU`). Kdyby DataSource klíče
+a `Build*` helpery zůstaly na `ScheduleElementBase`, tahal by je s sebou jako mrtvý balast. Hranice
+tedy je: `ScheduleElementBase` = jak to vypadá, `StopScheduleElementBase` = jak vypadají zastávková
+data. Tři úrovně jsou strop (viz `mvvm-patterns.md` §inheritance vs composition).
 
-### ScheduleElementBase - společný základ
+Každý element má vlastní `Render()` a `Clone()`.
+
+### StopScheduleElementBase - zastávkový datový základ
 
 ```
 DataSource klíče (editovatelné v šabloně):
-  ZastavkyDataSource       = "ZASTAVKY"
-  SkupinyDnuDataSource     = "SKUPINY_DNU"
-  OdjezdyDataSource        = "ODJEZDY"
-  PoznamkyDataSource       = "POZNAMKY"
+  ZastavkyDataSource         = "ZASTAVKY"
+  SkupinyDnuDataSource       = "SKUPINY_DNU"
+  OdjezdyDataSource          = "ODJEZDY"
+  PoznamkyDataSource         = "POZNAMKY"
 
-Společné vizuální properties:
-  FontFamily               = "Arial"
-  FontSize                 = 8f              // pt
-  HeaderFontSize           = 9f
-  GridColor                = "#FFD0D0D0"
-  HeaderBackgroundColor    = "#FFE0E0E0"
-  HeaderForeColor          = "#FF000000"
-
-Společné metody (protected):
-  BuildZastavky(data)       → List<ZastavkaData>
-  BuildSkupinyDnu(data)     → List<SkupinaDnuData>
-  BuildOdjezdyByGroup(data) → Dict<groupId, Dict<hour, List<OdjezdData>>>
-  BuildPoznamky(data)       → List<PoznamkaData>
-  ComputeFontScale(naturalH) → float (auto-scale při přetečení pevné Height)
-  InvalidateCache()          → vymazání cache při změně DataSource
+Build* helpery (protected) - vnořená pole DataContextu → runtime POCO, s cache:
+  BuildZastavky(data)          → List<ZastavkaData>
+  BuildSkupinyDnu(data)        → List<SkupinaDnuData>
+  BuildOdjezdyBySkupina(data)  → Dict<skupina, Dict<hodina, List<OdjezdData>>>
+  BuildPoznamky(data)          → List<PoznamkaData>
+  InvalidateCache()            → vymazání cache při změně DataSource
 ```
+
+Ze `ScheduleElementBase` k tomu přibývá vizuální vrstva - `HeaderStyle` / `DataStyle` (`TextStyle`,
+kaskáda), `Grid` (`GridStyle`), `DataRowHeight` a `ComputeFontScale()` (auto-scale při přetečení pevné
+`Height`). ⚠️ **Ploché vlastnosti typu `FontFamily` / `FontSize` / `GridColor` na base už neexistují** -
+nahradila je kaskáda stylů (viz §Jednotná kaskáda v `mvvm-patterns.md`). Kde je v elementu ještě
+skalární property (`MinuteFontSize`, `NoteFontSize`), je to **vědomá výjimka** a smí jen doplňovat,
+nikdy přebíjet kaskádu.
 
 ### StopListElement
 
 Tabulka zastávek s konfigurovatelnými sloupci (TC, název, čas jízdy, zóna, průběhy, základní trasa). Každý sloupec má `Key`, `Header`, `Width`, `Visible`, `Alignment`. Sloupce editovatelné přes `StopColumnsEditorDialog`.
 
-Další properties: `ShowStopIndentation`, `ShowSignalStopIndicator`, `SignalStopSymbol`, `ShowStopAttributes`, `ShowStopNotes`, `HighlightCurrentStop`, `CurrentStopUnderline`, `ShowPassedStops`, `PassedStopsForeColor`, `ExcludedAttributeIds`.
+**Doménové odlišnosti** (proč je to vlastní element, ne tabulka z dat): zvýraznění aktuální zastávky
+a ztišení projetých (obojí per-řádkový override nad kaskádou, viz „feature override" v
+`mvvm-patterns.md`), odsazení a značky před názvem, filtr projížděných zastávek, variantní časové
+sloupce. Aktuální seznam vlastností drží třída a formulář `StopListElementEdit.cls` - **výčet sem
+nepatří**, zestárne dřív než kód.
 
 ### DepartureGridElement
 
-Mřížka minut odjezdů. Klíčové properties:
-- `SkupinaDnuId` - filtr skupin ("" = všechny, "SMO1,SMO2" = výběr)
-- `HourColumnWidth`, `MinuteWidth`, `MinuteFontSize`, `MinuteBold`
-- `ShowSkupinaDnuHeader`, `SkupinaDnuHeaderLineHeight`, `HeaderVerticalAlignment`
-- `TimeAxisMode` - `Compact` / `Full` / `Range` + `TimeAxisRangeFrom/To`
-- `GroupSeparatorWidth`, `AlternatingRowColor`, `DataRowHeight`
-- `ShowAnotace`, `AnotaceFontSize`
-- `GroupColumns: List<DepartureGroupColumnStyle>` - per-column nastavení (viditelnost, barvy, font, zarovnání, bold/italic) editovatelné přes `DepartureGroupEditorDialog`
-- `ColorRules: List<ColorRule>` - template-driven barvy
+Mřížka minut odjezdů - **pivot**, ne řádková tabulka: jedna buňka je hodina × skupina dnů a nese
+N odjezdů. Doménové odlišnosti: časová osa (kompaktní / plná / rozsah), hodiny přes půlnoc, hodinový
+sloupec zvlášť pro každou skupinu, invertované minuty u negativních značek, anotace u minuty.
+Per-sloupcové nastavení nese `GroupColumns` (`DepartureGroupColumnStyle`) a edituje
+`DepartureGroupEditorDialog`.
+
+⚠️ **Element má pět zón** (hodina, záhlaví skupiny, minuta, symbol anotace, text anotace), ne dvě -
+proto má víc skalárních vlastností v panelu než ostatní tabulky a **nemá dialog s taby po zónách**;
+je to vědomá výjimka, ne nedodělek (`mvvm-patterns.md` §Známé záměrné výjimky).
 
 ### Jednotná kaskáda stylů buněk
 
@@ -287,11 +304,12 @@ Vše v `dotnet/Rendering/`:
 
 | Prvek | Co dělá | Používá |
 |---|---|---|
-| `CellRenderer.DrawCell` | jedna buňka: bg → padding → HAlign/VAlign → decorations. **Jediné místo pozicování textu buňky.** | všechny 4 (i DepartureGrid na hodinové buňky) |
-| `ColumnRenderer.DrawRow` + `CellSpec` | jeden vodorovný řádek = sekvence buněk + volitelné svislé čáry | StopList, LineTable, DynamicTable, TableElement (R1a) |
+| `RowPlanRenderer.DrawRows` + `RowSpec`/`RowKind` | **svislá smyčka**: element popíše řádky (druh, výška, buňky, pozadí, čáry) a jádro je nakreslí pod sebe. `RowKind` nese *význam* řádku (`Header`/`GroupHeader`/`Data`/`SubRow`/`Summary`) pro budoucí řádkové featury (řezání stránek, opakování mezisoučtu). | StopList, LineTable, DynamicTable, TableElement. **DepartureGrid mimo** = pivot |
+| `ColumnRenderer.DrawRow` + `CellSpec` | **vodorovná** vrstva pod tím: jeden řádek = sekvence buněk + volitelné svislé čáry | volá ji `RowPlanRenderer`; přímo jen StopList (řádek mimo plán). Elementy staví `CellSpec` a zbytek přenechají plánu |
+| `CellRenderer.DrawCell` | jedna buňka: bg → padding → HAlign/VAlign → decorations. **Jediné místo pozicování textu buňky.** | přes `ColumnRenderer` všechny řádkové tabulky; přímo DepartureGrid (hodinové buňky) |
 | `TableLayout.ResolveWidths` | šířky: pevné (mm/%) + auto-split zbytku rovným dílem; **nevejde-li se, zmenší šířky na šířku elementu** (místo dřívějšího oříznutí) | StopList, DynamicTable, TableElement |
 | `TableLayout.ComputeWidthScale` | vodorovný protějšek `ComputeFontScale` - škála pro **fonty a výšky řádků**, aby se tabulka vešla do šířky. Element ji kombinuje s výškovou přes `MathF.Min` a předává do `CellRenderer` jako `fontScale`. Bez ní na šířku reagovalo jen zmenšování textu v jednotlivé buňce → vedle sebe různé velikosti písma; a přebytek se tiše oříznul (svislé varování hlídá jen výšku) | StopList, DynamicTable, LineTable (vlastní výpočet šířek → skalární varianta), TableElement. **DepartureGrid mimo** = pivot, málo sloupců |
-| `TableLayout.ResolveCascade` | kaskáda stylu buňky `column → element → baked` + legacy alignment fallback | StopList, DynamicTable, LineTable |
+| `TableLayout.ResolveCascade` | kaskáda stylu buňky `column → element → baked` + legacy alignment fallback | StopList, DynamicTable, LineTable, TableElement |
 | `CellDefaults.Default` | poslední vrstva kaskády (Arial 9pt, padding 0.5mm, VAlign Middle…) | všechny |
 | `ColumnHeader.Resolve` | sémantika „override přebíjí zdroj, prázdné → zdroj" u nadpisů | všechny |
 | `Models/Expressions/RowConditions` | řádková podmínka: výraz nad daty řádku → viditelnost / barva zvýraznění pozadí (fail-open) | DynamicTable + StopList + LineTable (vis+highlight); DepartureGrid mimo = pivot. Element potřebuje per-řádek DataContext (`SourceRow`); default-off = behavior-preserving |
@@ -342,13 +360,14 @@ Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho d
 
 ## 3. Nový tabulkový element - co dostaneš zdarma, co musíš dodat
 
-**Zdarma z jádra:** kreslení buňky, kreslení řádku, výpočet šířek (pokud tvůj model je „per-sloupec"),
-kaskáda stylů, editor sloupců + styl editor, 2-tab dialog (klon).
+**Zdarma z jádra:** kreslení buňky, kreslení řádku, **svislá smyčka** (`RowPlanRenderer`), výpočet
+šířek (pokud tvůj model je „per-sloupec"), kaskáda stylů, editor sloupců + styl editor, 2-tab dialog
+(klon).
 
 **Musíš dodat (tvé odlišnosti):** column model (nebo reuse `StopColumn`/`TableColumn`), mapování
-„co je v buňce" (klíč → hodnota z dat), `Render()` orchestraci (header + řádky přes `DrawRow`),
-`CalculateHeightFromData`, per-row overridy pokud máš (zvýraznění apod.), a EDInputForm schéma
-(`*ElementEdit.cls`) pro tab Obecné.
+„co je v buňce" (klíč → hodnota z dat), **plán řádků** (`RowSpec` per řádek s druhem, výškou
+a buňkami - ne vlastní svislou smyčku), `CalculateHeightFromData`, per-row overridy pokud máš
+(zvýraznění apod.), a EDInputForm schéma (`*ElementEdit.cls`) pro tab Obecné.
 
 **Rozhodni:** je to řádková tabulka (iteruješ záznamy → řádky) → do řádkového jádra. Nebo pivot /
 jiný tvar → vlastní render, ale sdílej datovou vrstvu (jako DepartureGrid).
@@ -369,12 +388,16 @@ jiný tvar → vlastní render, ale sdílej datovou vrstvu (jako DepartureGrid).
 
 | Kandidát | Trigger | Poznámka |
 |---|---|---|
-| **R1a - render-loop orchestrátor** (header + řádky + separátory jako 1 metoda) | šestá tabulka, nebo ladění separátorové logiky na jednom místě | DynamicTable dnes kreslí vlastní per-buňka smyčkou místo `ColumnRenderer.DrawRow`; ~20 řádků skeletu, nízká hodnota / churn na render. |
-| **Výška-z-fontu vs pevná mm** | další element s font-driven výškou | dnes StopList/LineTable počítají výšku z fontu, DynamicTable má pevné `RowHeight` mm. Sjednotit jako `RowHeight?` (null = z fontu) pokrylo by oba. |
+| **Výška-z-fontu vs pevná mm** | další element s font-driven výškou | dnes StopList/LineTable počítají výšku z fontu, DynamicTable i TableElement mají pevné `RowHeight` mm. Sjednotit jako `RowHeight?` (null = z fontu) pokrylo by oba. |
 | **Column model sjednocení** | jen kdyby vznikl konkrétní tlak + bezpečná migrace serializace | viz §4 - dnes vědomě NE. |
 
 Pravidlo: extrahovat **až při 2+ konzumentech** stejné potřeby (ne dopředu). R1 se extrahoval právě
 proto, že vznikl 3. konzument (LineTable) - do té doby by přepis gold-ověřeného StopListu nesl jen riziko.
+
+**Hotové, ať se to nenavrhuje znovu:** *R1a - render-loop orchestrátor* je `RowPlanRenderer` (§1).
+Svislou smyčku měl každý element vlastní; dnes ji mají všechny čtyři řádkové tabulky společnou a řádek
+navíc nese `RowKind`, tedy svůj význam - na tom stojí řezání širokých tabulek do stránkových bloků
+(`B13` v roadmapě), aby se psalo jednou nad plánem a ne pětkrát v per-element smyčkách.
 
 
 

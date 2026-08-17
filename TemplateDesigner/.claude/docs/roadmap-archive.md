@@ -39,6 +39,30 @@ a podmíněnou viditelností) a připravené bloky agend, které pohltí `B66` (
 výběru a sloučení. Formulář buňky je vědomě mimo driftové testy schémat (jeho výchozí hodnoty se
 nikdy nezobrazí) a nahrazuje je vlastní test pokrytí kaskádou.
 
+## 2026-08-17 ✅ - `B94`: reference tabulkových prvků srovnaná s kódem
+
+Blok mluvil o dvou zastaralých tvrzeních v `elementy-architektura.md`; **při čtení proti kódu jich
+bylo pět**, všechna v části 1:
+
+1. **Hierarchie prvků měla o dvě vrstvy méně** - chyběl `StopScheduleElementBase` (mezivrstva pro
+   zastávkový datový tvar) i `LineTableElement`. Doplněno včetně toho, **proč** ta mezivrstva je:
+   `LineTableElement` chce styly a auto-scale, ale zastávkové DataSource klíče a `Build*` helpery ne.
+2. **DataSource klíče a `Build*` helpery** byly přiřčené `ScheduleElementBase` - patří na
+   `StopScheduleElementBase`. Sekce přejmenovaná.
+3. **Ploché vlastnosti** (`FontFamily`, `FontSize`, `GridColor`, `HeaderBackgroundColor`…) na base
+   už neexistují, nahradila je kaskáda stylů. `BuildOdjezdyByGroup` se jmenuje `BuildOdjezdyBySkupina`.
+4. **§1 tabulka sdíleného jádra** neznala `RowPlanRenderer` (svislá smyčka) a tvrdila, že
+   `CellRenderer.DrawCell` volají všechny čtyři přímo - dnes jde přes `ColumnRenderer`, přímo už jen
+   pivot. `TableLayout.ResolveCascade` mělo o konzumenta méně.
+5. **§5 vedl jako kandidáta na extrakci hotovou věc** - „R1a render-loop orchestrátor" je
+   `RowPlanRenderer`. Přesunuto do „hotové, ať se to nenavrhuje znovu", protože právě na plánu řádků
+   stojí `B13` (řezání širokých tabulek).
+
+**Neodvoditelné - proč to zestaralo:** dokument nesl **výčty vlastností a signatur**, tedy přesně to,
+co `CLAUDE.md` do dokumentace zakazuje. Výčty u seznamu zastávek a mřížky odjezdů jsou nahrazené
+popisem doménových odlišností + odkazem na třídu a formulář; v hlavičce je varování, ať se výčty
+nezavádějí zpátky. Bez toho by se to rozešlo znovu a nikdo by si toho nevšiml (`.md` nehlídá test).
+
 ## 2026-08-17 ✅ - `B92`: výchozí linková šablona se distribuuje jako systémová
 
 Detail → changelog 2026-08-17 (8). Šablona ležela v `templates/` (vývojová složka), takže se
