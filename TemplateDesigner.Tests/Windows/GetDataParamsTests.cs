@@ -12,7 +12,7 @@ public class GetDataParamsTests
 {
     private static Dictionary<string, object?> Params() => new()
     {
-        ["PISMENA_VARIANT"] = true,
+        ["PRVNI_BEZ_PISMENE"] = true,
         ["HODINY_OD"]       = 5,
     };
 
@@ -21,7 +21,7 @@ public class GetDataParamsTests
     {
         var p = TemplateDesignerViewModel.ComposeGetDataParams(Params(), "LINKA_ID", "876401", null, null, null);
 
-        Assert.Equal(true, p["PISMENA_VARIANT"]);
+        Assert.Equal(true, p["PRVNI_BEZ_PISMENE"]);
         Assert.Equal(5, p["HODINY_OD"]);
     }
 
@@ -73,7 +73,7 @@ public class GetDataParamsTests
 
         Assert.All(merged, p =>
         {
-            Assert.Equal("True", p.GetString("PISMENA_VARIANT"));
+            Assert.Equal("True", p.GetString("PRVNI_BEZ_PISMENE"));
             Assert.Equal("5", p.GetString("HODINY_OD"));
         });
     }

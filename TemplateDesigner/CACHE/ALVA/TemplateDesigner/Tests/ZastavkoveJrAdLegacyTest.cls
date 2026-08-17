@@ -225,7 +225,7 @@ Method TestPismenaVariant()
 	}
 	do ..SetupSysFor(.sys, db)
 	kill ^||ML("IN"), ^||TiskAd
-	set ^||ML("IN","PISMENA_VARIANT") = "true", ^||ML("IN","PRVNI_BEZ_PISMENE") = "true"
+	set ^||ML("IN","PRVNI_BEZ_PISMENE") = "true"
 	set page = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildStrankaZastavky(db, 1, "0330510", 1, "T")
 	kill ^||ML("IN"), ^||TiskAd
 	do $$$AssertTrue($isobject(page), "stránka 0330510/T/1 se sestavila")

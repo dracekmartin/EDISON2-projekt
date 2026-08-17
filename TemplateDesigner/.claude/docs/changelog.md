@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-08-17 (2) - 🔤 písmena variant u odjezdů přestala být volba (`B90`)
+
+Parametr „Písmena variant u odjezdů" umožňoval vývěsku, ze které **nešlo poznat, který časový
+sloupec pro daný odjezd platí**. Vypnutý stav skládal nadpisy sloupců z písmen rozdílů tras, a když
+je linka neměla (má vypnuté automatické poznámkování), spadly nadpisy na `T1`/`T2`/`T3` a u minut
+nezůstalo nic. Naměřeno na `CB_CSADAD` lince `0330520`: zapnuto → `A` u 5:20 a 22:25, `B` u 7:42
+a 11:13; vypnuto → u týchž minut žádné písmeno.
+
+Parametr je zrušený, písmena jsou vždy. Volbou zůstalo **„První varianta bez písmene"** - to je
+skutečné redakční rozhodnutí a zároveň to, co drží vývěsku s jedinou variantou bez zbytečného „A"
+u každé minuty. Zmizela celá větev, která vyráběla `T1`/`T2`.
+
+⚠️ **Kdo měl parametr vypnutý, uvidí u minut písmena.** Parametr byl vydaný od 27. 7., výchozí stav
+zapnuto - riziko je malé, ale patří do popisu vydání.
+
+⚠️ **Zlaté odtisky do teď pinovaly VYPNUTOU větev**: server čte nenastavený parametr jako `false`
+a gold testy posílají jen číslo linky, takže měřily chování, které uživatel s aktuálním klientem
+nikdy neviděl. Po přebaselinování měří to, co se reálně tiskne. Počty se nezměnily do jednoho
+(stránky, zastávky, odjezdy i poznámky), liší se jen md5 - přibyla písmena u minut.
+
+**Brány:** **109 Caché testů**, nabídka parametrů ověřená **voláním** nasazené agendy (klíčové bylo,
+že u zbylé volby zmizela podmínka viditelnosti - jinak by z UI vypadla i ona).
+
+**Poučení:** tři testovací třídy jsem upravil skriptem, takže je hook nenasadil a testy dál běžely
+proti staré verzi - „aktuální" digest v hlášce byl přesně ten, který jsem si do souboru napsal.
+Přesně ta past, na kterou `cache-api.md` varuje. Nasazení se muselo vynutit ručně.
+
 ## 2026-08-17 - ✅ vlastní sloupce proklikané, „Ne" a „+" se vylučují (`B89`)
 
 Vizuální kontrola po `B81`/`B82` **hotová** (Jan 17. 8.): editor blokuje neslučitelné dvojice,

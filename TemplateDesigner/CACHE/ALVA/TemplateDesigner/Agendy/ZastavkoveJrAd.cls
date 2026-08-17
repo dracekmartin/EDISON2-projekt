@@ -409,7 +409,6 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // sloupce/písmena tak zůstávají shodné napříč stránkami téže zastávky (dvě vývěsky vedle sebe na
     // témže sloupku si neprotiřečí); filtruje se jen mřížka odjezdů.
     // bool parametry číst tolerantně malými písmeny - starší klient posílal C# ToString() "True"
-    s pismenaVar = ($zcvt($g(^||ML("IN","PISMENA_VARIANT")),"L") = "true")
     s prvniBez   = ($zcvt($g(^||ML("IN","PRVNI_BEZ_PISMENE")),"L") '= "false")
     s razeniVar  = $g(^||ML("IN","RAZENI_VARIANT"))
     k variantSig, variantPocet, variantRepSpoj, variantCas, variantPat, spojVarianta, variantCt, variantDelka
@@ -652,44 +651,21 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // poznámky vypínal, takže si uživatel musel vybrat mezi spárováním minuty se sloupcem a
     // vysvětlením trasy; sloupce bez písmene („T1") pak neměly ani jedno.
     d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
+    // Písmena variant nejsou volba: bez nich nejde u minuty poznat, který časový sloupec pro ni
+    // platí, a na lince bez rozdílů tras nezůstalo u minut vůbec nic (nadpisy padaly na „T1"/„T2").
+    // Volbou zůstává jen „první varianta bez písmene" - ta zároveň drží vývěsku s jedinou variantou
+    // bez zbytečného „A" u každé minuty. (Rozhodnutí Jan 17. 8., naměřeno na lince 0330520.)
     s variantyTras = ##class(%DynamicArray).%New()
-    i pismenaVar {
-        // hlavičky = písmena variant v pořadí sloupců; volitelně první (nejčetnější) bez písmene
-        f colY=1:1:pocetSloupcu {
-            s pism = ..PismenoVarianty(colY, prvniBez)
-            i pism '= "" s varPismeno(displayVar(colY)) = pism
-            d variantyTras.%Push(pism)
-        }
-        // spoj → písmeno jeho varianty (anotace u minuty odjezdu)
-        s spX = ""
-        f {
-            s spX = $o(spojVarianta(spX))  q:spX=""
-            i $g(varPismeno(spojVarianta(spX))) '= "" s spojPismenoVar(spX) = varPismeno(spojVarianta(spX))
-        }
-    } else {
-        // hlavičky variantních časových sloupců:
-        //   písmeno rozdílu trasy (RozdilyTras, reprezentativní spoj); stejné písmeno u víc variant
-        //   → rozlišit „B1"/„B2"; varianta bez písmene → „T1"/„T2"…
-        // 1. průchod: spočítej výskyty každého písmene (kolize → číslovat)
-        k pismCount, pismSeq
-        f colY=1:1:pocetSloupcu {
-            s pismV = $g(pismenoSpoj($g(variantRepSpoj(displayVar(colY)))))
-            i pismV '= "" s pismCount(pismV) = $g(pismCount(pismV)) + 1
-        }
-        s fallbackVar = 0
-        f colY=1:1:pocetSloupcu {
-            s pismV = $g(pismenoSpoj($g(variantRepSpoj(displayVar(colY)))))
-            i pismV = "" {
-                s fallbackVar = fallbackVar + 1
-                s hdr = "T" _ fallbackVar
-            } elseif $g(pismCount(pismV)) > 1 {
-                s pismSeq(pismV) = $g(pismSeq(pismV)) + 1
-                s hdr = pismV _ pismSeq(pismV)
-            } else {
-                s hdr = pismV
-            }
-            d variantyTras.%Push(hdr)
-        }
+    f colY=1:1:pocetSloupcu {
+        s pism = ..PismenoVarianty(colY, prvniBez)
+        i pism '= "" s varPismeno(displayVar(colY)) = pism
+        d variantyTras.%Push(pism)
+    }
+    // spoj → písmeno jeho varianty (anotace u minuty odjezdu)
+    s spX = ""
+    f {
+        s spX = $o(spojVarianta(spX))  q:spX=""
+        i $g(varPismeno(spojVarianta(spX))) '= "" s spojPismenoVar(spX) = varPismeno(spojVarianta(spX))
     }
     d vals.%Set("VARIANTY_TRAS", variantyTras)
     k nezarazeneSpoje, obdobiMimoPlatnost
@@ -865,8 +841,9 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         }
 
         // marker rozdílu trasy (z RozdilyTras) - u minuty jako první, dle legacy ZnkOm=ZnkTc_…
-        // V režimu písmen variant (KOVED bod 5) je pismenoSpoj prázdné a místo něj se tiskne
-        // písmeno varianty trasy (kategorie „varianta-trasy" - mimo filtry rozdílů/ručních komentářů).
+        // Vedle něj běží písmeno varianty trasy (kategorie „varianta-trasy" - mimo filtry rozdílů
+        // a ručních komentářů): značka říká „kterým sloupcem", poznámka „kudy". Jsou nezávislé,
+        // jedno druhé nevypíná - viz komentář u RozdilyTras výše.
         s pismRT = $g(pismenoSpoj(sp))
         s pismVarTx = $g(spojPismenoVar(sp))
 
@@ -3250,15 +3227,14 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRazV.options = optsRV
     d arr.%Push(pRazV)
 
-    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant u odjezdů", "true", "Seznam zastávek", "Varianty tras dostanou písmena A-Z v záhlaví sloupců a u minut odjezdů, takže je u minuty vidět, kterým sloupcem spoj jede. Poznámky rozdílů tras běží dál vedle nich - značka říká který sloupec, poznámka kudy.")
-
+    // Zapínání písmen variant tady BYLO a je zrušené (17. 8.): bez nich nešlo u minuty poznat,
+    // který časový sloupec pro ni platí. Zůstala jen volba, kde písmena začínají.
     s pPrvB = ##class(%DynamicObject).%New()
     s pPrvB.name         = "PRVNI_BEZ_PISMENE"
     s pPrvB.label        = "První varianta bez písmene"
     s pPrvB.type         = "bool"
     s pPrvB.defaultValue = "true"
     s pPrvB.group        = "Seznam zastávek"
-    s pPrvB.visibleWhen  = "PISMENA_VARIANT=true"
     s pPrvB.description  = "Nejčastější varianta zůstane bez písmene (hlavní trasa), odchylky se značí od A. Vypnuto = písmena už od první varianty."
     d arr.%Push(pPrvB)
 

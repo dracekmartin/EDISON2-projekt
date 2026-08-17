@@ -2,6 +2,18 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-17 ✅ - `B90`: písmena variant u odjezdů přestala být volba
+
+Detail → changelog 2026-08-17 (2). Vypnutý stav umožňoval vývěsku, ze které nešlo poznat, který
+časový sloupec pro odjezd platí (nadpisy `T1`/`T2`, u minut nic). Parametr zrušen, volbou zůstala
+jen „První varianta bez písmene".
+
+**Neodvoditelné:** u zbylé volby se musela odstranit i podmínka viditelnosti - odkazovala na
+zrušený parametr, takže by z UI vypadla i ona. Ověřeno voláním nasazené agendy, ne čtením zdroje.
+
+⚠️ **Zlaté odtisky do teď pinovaly vypnutou větev** - server čte nenastavený parametr jako `false`
+a gold posílá jen číslo linky. Přebaselinováno; počty shodné do jednoho, liší se jen md5.
+
 ## 2026-08-17 ✅ - `B89`: vlastní sloupce proklikané, revize `B39` uzavřená
 
 Detail → changelog 2026-08-17. Sedm bodů sady (editor, vzor, sloupec „jen Ne", „jen pracovní dny",

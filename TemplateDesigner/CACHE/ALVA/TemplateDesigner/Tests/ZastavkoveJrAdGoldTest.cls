@@ -72,7 +72,12 @@ Method TestGold0365001()
 	// a slitý víkend jako `6+` - „+" znamená „neděle a svátky" i u sloupce, takže vyjmenovávat
 	// k němu ještě `7` bylo matoucí. ⚠️ Zase JEN md5, počty shodné; ověřeno izolovaně vrácením
 	// vzorů na `7+`/`67+`, kdy odtisky prošly beze změny.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=qAn06yVi1jr2u8V362MQGQ==")
+	// Re-baseline 2026-08-17 (`B90`): zrušený parametr „Písmena variant u odjezdů" - písmena jsou
+	// vždy. ⚠️ **Odtisky do teď pinovaly VYPNUTOU větev**: server čte nenastavený parametr jako
+	// `false` a gold posílá jen `LINKA_ID`, takže se měřilo chování, které uživatel s aktuálním
+	// klientem nikdy neviděl. Teď měří to, co se reálně tiskne. Zase JEN md5, počty shodné do
+	// jednoho (stránky, zastávky, odjezdy i poznámky) - přibyla jen písmena u minut.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=34tibjT2PEBKbURDWhq0lQ==")
 }
 
 Method TestGold0365005()
@@ -100,7 +105,7 @@ Method TestGold0365005()
 	// a slitý víkend jako `6+` - „+" znamená „neděle a svátky" i u sloupce, takže vyjmenovávat
 	// k němu ještě `7` bylo matoucí. ⚠️ Zase JEN md5, počty shodné; ověřeno izolovaně vrácením
 	// vzorů na `7+`/`67+`, kdy odtisky prošly beze změny.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=2iKaCMjAzZWFY+fnV+AW/w==")
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=JhNtQg5AWcTsG7prDwWO7w==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -169,7 +174,7 @@ Method TestGold0330530()
 	// a slitý víkend jako `6+` - „+" znamená „neděle a svátky" i u sloupce, takže vyjmenovávat
 	// k němu ještě `7` bylo matoucí. ⚠️ Zase JEN md5, počty shodné; ověřeno izolovaně vrácením
 	// vzorů na `7+`/`67+`, kdy odtisky prošly beze změny.
-	do ..AssertLine(1, "0330530", "pages=45 zast=1058 odj=1236 pozn=639 md5=KzGX7TBpEmJ35mJq8FXNdg==")
+	do ..AssertLine(1, "0330530", "pages=45 zast=1058 odj=1236 pozn=639 md5=PBpmRWC71+5Yt7xD2R9zUw==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

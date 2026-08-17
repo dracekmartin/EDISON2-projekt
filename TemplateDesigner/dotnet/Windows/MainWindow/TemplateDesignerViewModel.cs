@@ -2581,7 +2581,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </para>
     /// </summary>
     internal static readonly string[] ServerSideParams =
-        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
+        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
          "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
          "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
          "DELENI_SLOUPCU"];

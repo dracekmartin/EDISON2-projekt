@@ -238,33 +238,25 @@ Method TestZarovnaniVariantnichPoli()
 	do $$$AssertEquals(rozjezdu, 0, "variantní pole nesedí s počtem hlaviček ("_rozjezdu_" z "_radku_" řádků), první: "_kde)
 }
 
-/// V režimu **písmen variant** musí každá značka u minuty odkazovat na sloupec, který na vývěsce
-/// existuje - jinak si cestující přečte písmeno, ke kterému není co dohledat. Zároveň se přepnutím
-/// režimu nesmí změnit **počet stránek ani odjezdů**: je to volba zobrazení, ne filtr dat.
+/// Každá značka varianty u minuty musí odkazovat na sloupec, který na vývěsce **existuje** - jinak
+/// si cestující přečte písmeno, ke kterému není co dohledat.
+///
+/// ⚠️ Do 17. 8. test porovnával i „režim písmen" proti vypnutému (počty stránek a odjezdů se nesmí
+/// změnit, je to volba zobrazení). Zapínání písmen se zrušilo - vypnutý stav umožňoval vývěsku,
+/// ze které nešlo poznat, který časový sloupec pro minutu platí. Porovnávat dva režimy tedy už není
+/// co; zbyla ta podstatná polovina.
 Method TestPismenaVariantOdkazujiNaExistujiciSloupec()
 {
 	do ..SetupSys(.sys)
 	do ..Jadro(.jadro)
-	set sirotku = 0, kde = "", znacek = 0, overeno = 0, rozdilPoctu = "", i = ""
+	set sirotku = 0, kde = "", znacek = 0, overeno = 0, i = ""
 	for  {
 		set i = $order(jadro(i))
 		quit:i=""
 		set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
-		// nejdřív výchozí režim - počty stránek a odjezdů pro porovnání
 		kill parametry
 		continue:'..NactiLinku(.sys, db, sku, lin, .parametry)
 		set overeno = overeno + 1
-		do ..ZmerProfil(.pVychozi)
-		set odjezduVychozi = ..PocetOdjezdu()
-		// pak režim písmen
-		kill parametry
-		set parametry("PISMENA_VARIANT") = "true"
-		do ..NactiLinku(.sys, db, sku, lin, .parametry)
-		do ..ZmerProfil(.pPismena)
-		set odjezduPismena = ..PocetOdjezdu()
-		if ($get(pVychozi("stranek")) '= $get(pPismena("stranek"))) || (odjezduVychozi '= odjezduPismena) {
-			if rozdilPoctu = "" set rozdilPoctu = db_" "_lin_": stránek "_$get(pVychozi("stranek"))_" → "_$get(pPismena("stranek"))_", odjezdů "_odjezduVychozi_" → "_odjezduPismena
-		}
 		set key = ""
 		for  {
 			set key = $order(^||ML("OUT", key))
@@ -298,9 +290,8 @@ Method TestPismenaVariantOdkazujiNaExistujiciSloupec()
 		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
 		quit
 	}
-	do $$$AssertEquals(znacek > 0, 1, "režim písmen nedal ani jednu značku u minut - přestal fungovat parametr?")
+	do $$$AssertEquals(znacek > 0, 1, "ani jedna značka varianty u minut - přestala se písmena přidělovat?")
 	do $$$AssertEquals(sirotku, 0, "značka u minuty odkazuje na neexistující sloupec ("_sirotku_" z "_znacek_"), první: "_kde)
-	do $$$AssertEquals(rozdilPoctu, "", "přepnutí režimu písmen změnilo počty, to je volba zobrazení: "_rozdilPoctu)
 }
 
 /// Značka varianty a rozdílová poznámka jsou dvě nezávislé věci a musí běžet vedle sebe: značka
@@ -313,7 +304,6 @@ Method TestPismenaVariantNevypinajiRozdilovePoznamky()
 	// Linka vybraná pro typ „rozdilTrasy" - jinde by test prošel prázdnem.
 	set db = "SKNI_MHDNITRA", sku = 1, lin = "0000014"
 	kill parametry
-	set parametry("PISMENA_VARIANT") = "true"
 	if '..NactiLinku(.sys, db, sku, lin, .parametry) {
 		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - přeskočeno")
 		quit

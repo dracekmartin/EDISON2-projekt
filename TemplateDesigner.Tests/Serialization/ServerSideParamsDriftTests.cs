@@ -83,7 +83,7 @@ public class ServerSideParamsDriftTests
         // Pojistka regexu: kdyby zrezivěl, oba testy výše by prošly na prázdném vstupu.
         var keys = StaticInKeys(AgendaFile("ZastavkoveJrAd.cls"));
 
-        Assert.Contains("PISMENA_VARIANT", keys);
+        Assert.Contains("PRVNI_BEZ_PISMENE", keys);
         Assert.Contains("LINKA_ID", keys);
         Assert.True(keys.Count >= 10, $"Naparsováno jen {keys.Count} klíčů - regex nesedí na .cls?");
     }

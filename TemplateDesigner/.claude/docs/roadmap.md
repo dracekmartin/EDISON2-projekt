@@ -22,28 +22,6 @@
 Stav tiketů, parkované položky i věci „jen na poptávku" drží
 [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-### `B90` Písmena variant u odjezdů přestanou být volba (S)
-
-Parametr „Písmena variant u odjezdů" umí vyrobit vývěsku, ze které **nejde přečíst, který časový
-sloupec pro daný odjezd platí**. Vypnutý stav staví nadpisy sloupců z písmen rozdílů tras, a když
-je linka nemá (mají vypnuté automatické poznámkování), spadnou nadpisy na `T1`/`T2`/`T3` a **u minut
-není nic**. Naměřeno 17. 8. na `CB_CSADAD` lince `0330520` (vývěska Autobusové nádraží, 3 varianty):
-zapnuto → `A` u 5:20 a 22:25, `B` u 7:42 a 11:13; vypnuto → u týchž minut **žádné písmeno**.
-
-**Rozhodnutí Jan 17. 8.:** parametr zrušit, písmena mít vždy. Volbou zůstane jen **„První varianta
-bez písmene"** - to je skutečné redakční rozhodnutí a zároveň to, co drží vývěsku s jedinou
-variantou bez zbytečného „A". Tím se smaže i celá větev, která vyráběla `T1`/`T2`.
-
-⚠️ **Dvě věci, na které při tom narazíš:**
-
-1. **Parametr je ve vydané verzi od 27. 7.** (#13048 bod 5), takže někdo ho teoreticky mohl vypnout
-   a přijde mu, že se vývěska změnila. Výchozí hodnota je ale zapnuto a písmena si vyžádal právě ten
-   zákazník, který varianty používá - riziko je malé, ale patří do popisu vydání.
-2. **Zlaté odtisky dnes pinují VYPNUTOU větev.** Server čte nenastavený parametr jako `false`
-   (`$zcvt($g(...))="true"`) a gold testy posílají jen `LINKA_ID` - takže měří chování, které
-   uživatel s aktuálním klientem nikdy nevidí. Po zrušení parametru bude potřeba přebaselinovat
-   a testy začnou konečně měřit to, co se reálně tiskne.
-
 ---
 
 ## 📥 Backlog
