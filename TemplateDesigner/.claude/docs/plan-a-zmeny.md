@@ -27,7 +27,6 @@ Dílčí vylepšení a náměty.
 
 - **Napojení na externí zdroje dat** - možnost tisknout i z dat mimo EDISON (např. z tabulky
   nebo databáze). Zvažujeme jako budoucí směr; konkrétní zdroje a rozsah zatím nejsou dané.
-- **Sloučené buňky v tabulce** - spojení více buněk do jedné, například nadpis přes několik sloupců.
 - **Mezisoučty ve skupinách řádků** - souhrnný řádek za skupinu dat.
 - **Oboustranný / brožurový tisk** při skládání více vývěsek na list - dnes se skládá jednostranně,
   duplex řeší tiskárna.
@@ -46,6 +45,10 @@ prvek, se kterým se hýbe vcelku.
 v Excelu - Tab a Enter posouvají, šipky chodí po buňkách, Esc vede ven. Řádky a sloupce se přidávají
 z místní nabídky, šířky a výšky se táhnou myší za vnitřní hranici. Vložit jde i blok zkopírovaný
 z Excelu a po napsání `{` se nabídnou datová pole.
+
+**Buňky jde sloučit** - označené buňky v řádku spojíte místní nabídkou do jedné, například na
+nadpis přes celou šířku tabulky; texty se přitom nezahazují, ale spojí. Rozdělit je jde stejnou
+cestou zpátky.
 
 **Buněk jde označit víc najednou** - tažením myší přes ně, Shift+klikem, Shift+šipkami, nebo
 Ctrl+A pro celou tabulku. Označenou oblast pak

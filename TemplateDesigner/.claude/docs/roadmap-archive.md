@@ -2,6 +2,43 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-17 ✅ - `B76`: pevná tabulka se dá naformátovat a slučovat (4 kroky)
+
+Detail → changelog 2026-08-17 (3), (4), (5), (6) a (9). Cíl prvku **není faktura, ale náhrada
+„poskládám to z textových polí"** - hlavička sestavy jako jeden prvek, se kterým se hýbe vcelku.
+
+**Co blok přinesl:**
+
+1. **Formátování buňky** - do té doby šla tabulka nastavit jen jako celek, takže nefungoval ani
+   způsob práce, na kterém prvek stojí („záhlaví si udělám z prvního řádku tím, že ho ztuční").
+   Formátovací lišta uvnitř tabulky patří buňce, Ctrl+B/I/U funguje i během psaní.
+2. **Formulář vybrané buňky** (`TableCellEdit.cls`) - stejná stavba jako u prvků, **jedno schéma
+   pro panel i pro okno** pod Alt+Enter.
+3. **Výběr oblasti tažením** (Shift, Ctrl+A) a na něm hromadné formátování, mazání a schránka
+   čitelná Excelem.
+4. **Sloučení buněk vodorovně** z místní nabídky.
+
+⚠️ **Poučení, která stála nejvíc:**
+
+- **Rozsah editace musí být vidět.** Panel měnil celou tabulku, lišta nad ním jednu buňku a nešlo
+  je rozlišit - dokud to Jan nezkusil, vypadalo to hotově.
+- **O tom, komu patří klávesy, nesmí rozhodovat fokus plátna** - vezme mu ho každé tlačítko lišty,
+  takže buňka zůstala zvýrazněná, ale psaní padalo do prázdna („poprvé to jde, po odkliknutí ne").
+- **Formulář buňky musí dostat hodnoty z kaskády**, jinak by potvrzení beze změny zapeklo zděděné
+  hodnoty a odpojilo buňku od nastavení tabulky. Vymazané pole u zděditelné vlastnosti znamená
+  „nenastaveno" - opraveno rovnou pro všechny formuláře, dřív to platilo jen pro barvy.
+- **Výběr celého řádku a sloupce se zkusil a zrušil** (zkratky i položky nabídky): tažení a Shift
+  pokrývají totéž a excelové Shift/Ctrl+mezerník se uživatel nemá kde naučit. Klik u okraje
+  tabulky pro to nejde - tam sedí úchyty na změnu velikosti prvku.
+
+**Vědomě odložené:** sloučení přes řádky (míchá se se spanováním výšek, střídáním řádků
+a podmíněnou viditelností) a připravené bloky agend, které pohltí `B66` (vlastní bloky prvků).
+
+**Pojistky:** `FixedTableCellFormattingTests`, `FixedTableCellRangeTests`, `FixedTableMergeTests`
+(dohromady 44 kontrol) - kaskáda, vratnost podle souřadnic, nezapékání zděděných hodnot, geometrie
+výběru a sloučení. Formulář buňky je vědomě mimo driftové testy schémat (jeho výchozí hodnoty se
+nikdy nezobrazí) a nahrazuje je vlastní test pokrytí kaskádou.
+
 ## 2026-08-17 ✅ - `B92`: výchozí linková šablona se distribuuje jako systémová
 
 Detail → changelog 2026-08-17 (8). Šablona ležela v `templates/` (vývojová složka), takže se

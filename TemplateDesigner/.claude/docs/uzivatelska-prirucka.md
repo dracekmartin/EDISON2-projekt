@@ -244,6 +244,10 @@ Totéž otevřete v samostatném okně přes **Alt+Enter** nebo místní nabídk
 Nejčastější úpravy jsou i ve **formátovací liště** nad plátnem a na **Ctrl+B / Ctrl+I / Ctrl+U**
 (tučné, kurzíva, podtržení - fungují i během psaní).
 
+**Sloučení buněk:** označte buňky v řádku a v místní nabídce zvolte **Sloučit buňky** - vznikne
+jedna buňka přes celou šířku výběru, typicky nadpis. Případné texty ze slučovaných buněk se spojí
+mezerou, aby se nic neztratilo. **Rozdělit buňky** to vrátí zpět a obsah nechá v první buňce.
+
 **Prázdné pole znamená „dědí se" z nastavení celé tabulky.** Panel proto u nevyplněného pole
 ukazuje hodnotu, kterou buňka reálně má; vymazáním pole se dědění vrátí. Nastavení celé tabulky
 je za tlačítkem **„Nastavení celé tabulky"** v prvním řádku panelu (nebo klávesou Esc).

@@ -172,6 +172,21 @@ public partial class MainWindow
         return true;
     }
 
+    /// <summary>Buňka pod pravým klikem: uvnitř výběru se výběr zachová, mimo něj se přesune.</summary>
+    private void SelectForContextMenu(float cx, float cy, float cw)
+    {
+        if (_vm is null || _canvas is null || _cellTable is null) return;
+        var rect = _canvas.GetElementCanvasRect(_cellTable, cw);
+        if (rect is null) return;
+
+        var hit = _cellTable.HitTestCell(_vm.State.CurrentPreviewData,
+            (cx - rect.Value.Left) / _canvas.MmToPx,
+            (cy - rect.Value.Top)  / _canvas.MmToPx);
+        if (hit is null || CellSelection.Contains(hit.Value.Row, hit.Value.Col)) return;
+
+        TrySelectCellAt(cx, cy, cw);
+    }
+
     /// <summary>Tažení výběru - kotva zůstává, aktivní buňka jde za myší. Mimo mřížku se drží
     /// poslední trefená buňka, ať výběr při vyjetí z tabulky neposkakuje.</summary>
     private void UpdateCellRangeDrag(float cx, float cy, float cw)
@@ -939,7 +954,11 @@ public partial class MainWindow
     private bool TryBuildCellContextMenu(ContextMenu menu, float cx, float cy, float cw)
     {
         if (_vm is null || _cellTable is null) return false;
-        TrySelectCellAt(cx, cy, cw);
+
+        // ⚠️ Pravý klik **dovnitř výběru ho nechává být** - jinak by se výběr shodil na jednu buňku
+        // a nabídka by nikdy neukázala „Sloučit buňky" (nález Jan 17. 8.). Klik mimo výběr ho
+        // přesune, jako v Excelu.
+        SelectForContextMenu(cx, cy, cw);
 
         var table = _cellTable;
         void Add(string header, Action action) =>
@@ -961,6 +980,14 @@ public partial class MainWindow
         Add("Vložit sloupec vpravo", () => EditStructure("Vložení sloupce", t => t.InsertColumn(modelCol + 1)));
         Add("Smazat sloupec",        () => EditStructure("Smazání sloupce", t => t.RemoveColumn(modelCol)));
         menu.Items.Add(new Separator());
+        // Sloučení se nabízí jen tam, kde dává smysl - u jedné buňky není co slučovat a rozdělení
+        // u nesloučených by byla mrtvá položka.
+        var data = _vm.State.CurrentPreviewData;
+        if (CellSelection.ColumnCount > 1) Add("Sloučit buňky", MergeCells);
+        if (table.HasMergedCell(data, CellSelection)) Add("Rozdělit buňky", SplitCells);
+        if (CellSelection.ColumnCount > 1 || table.HasMergedCell(data, CellSelection))
+            menu.Items.Add(new Separator());
+
         // Popisek říká, na co akce reálně sáhne - u označené oblasti je to celá oblast.
         string co = CellSelection.IsSingle ? "buňky" : "výběru";
         Add($"Kopírovat obsah {co} (Ctrl+C)", CopyCell);
@@ -972,6 +999,33 @@ public partial class MainWindow
         // „Vlastnosti tabulky" tu vědomě nejsou - nabídka pokračuje standardními položkami prvku
         // (Vyjmout, Kopírovat, Smazat, Vrstva, Vlastnosti), společnými pro všechny prvky.
         return true;
+    }
+
+    /// <summary>
+    /// Sloučí buňky výběru (vodorovně, po řádcích) do jedné a spojí jejich neprázdné obsahy
+    /// mezerou. Výběr se po sloučení smrskne na vzniklou buňku, ať je vidět, co je teď jeden celek.
+    /// </summary>
+    private void MergeCells() => EditCells("Sloučení buněk", t => t.MergeRange(_vm!.State.CurrentPreviewData, CellSelection));
+
+    /// <summary>Rozdělí sloučené buňky výběru zpět; obsah zůstává v té první.</summary>
+    private void SplitCells() => EditCells("Rozdělení buněk", t => t.SplitRange(_vm!.State.CurrentPreviewData, CellSelection));
+
+    /// <summary>Vratná změna obsahu a sloučení nad výběrem - snímek buněk nese i obsah a span,
+    /// takže zpětný krok vrátí i spojený text zpátky do původních buněk.</summary>
+    private void EditCells(string label, Func<TableElement, bool> zmena)
+    {
+        if (_vm is null || _cellTable is null || CellFormatting is not { } formatting) return;
+        if (_cellEditing) EndCellEdit(commit: true);
+
+        var range  = CellSelection;
+        var before = formatting.Capture();
+        if (!zmena(_cellTable)) return;
+
+        _vm.Execute(formatting.Command(label, before));
+        SetCellSelection(CellRange.Single(range.Top, range.Left));
+        SyncFormatToolbar();
+        InvalidateCanvas();
+        InvalidatePreview();
     }
 
     /// <summary>

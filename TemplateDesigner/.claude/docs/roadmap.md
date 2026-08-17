@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** zbytek sady `B93`, `B94`, `B96` níže (revize 17. 8.). Pak vybrat mezi
-> **pevnou tabulkou** (`B76`) a **linkovými JŘ** (`B10` + `B13`) jako dedikovaným slotem.
+> **Nejblíž na řadě:** zbytek sady `B93` a `B96` níže (revize 17. 8.). Pak **linkové JŘ**
+> (`B10` + `B13`) jako dedikovaný slot - pevná tabulka je hotová (`B76`, 17. 8.).
 > Zastávkový JŘ otevřený bod nemá - revize `B39` je uzavřená a proklikaná (17. 8.).
 >
 > ⚠️ **Nevydané a jen zčásti proklikané je všechno od 12. 8. včetně** - poslední vydaná verze je
@@ -36,7 +36,6 @@ voleb se ukládá zobrazený text, takže by přepnutí agendy tiše shodilo nas
 | # | Co | Vel. |
 |---|---|---|
 | **B93** | **Parita tabulkových prvků - nejdřív rozhodnout, pak kód.** Střídání řádků má tabulka z dat, pevná tabulka i mřížka odjezdů, **nemá ho seznam zastávek ani linková tabulka** (dvě nejdelší a nejhůř čitelné tabulky); podmínku viditelnosti a zvýraznění řádku nemá pevná tabulka. Podle klasifikace v [`elementy-architektura.md §0b`](elementy-architektura.md) jsou obě **kategorie 1** (čte jen data řádku) → patří do všech řádkových tabulek, takže je to drift, ne rozhodnutí. Projít všech pět tabulkových prvků × generické featury a rozhodnout per featura. ⚠️ Doplnění sáhne na **vydaný** seznam zastávek - jen aditivně a defaultně vypnuté. Vedlejší efekt: co skončí v jádru, dostane linková tabulka zadarmo. | analýza S + kód S |
-| **B94** | **Dvě zastaralá tvrzení v docs.** Hierarchie prvků v `elementy-architektura.md` neuvádí `StopScheduleElementBase` ani `LineTableElement`; §5 vede jako kandidáta na extrakci něco hotového (tabulka z dat už `RowPlan` používá). (Třetí - „chybí výchozí linková šablona" - padlo s `B92`.) | XS |
 | **B96** | **Datum platnosti: MHD tiskne lomítka, AD tečky** (nález při `B95`, 17. 8.). Zastávková vývěska MHD dá do „Datum platnosti od" `01/11/2018`, AD `11.12.2022`. Česky se datum píše s tečkami, takže MHD tvar je pravděpodobně chyba - jen **je ve vydané verzi**, proto to `B95` nechalo být a linkový MHD srovnalo na tentýž (nesprávný) tvar, aby výstupy nešly proti sobě. Druhá polovina: zastávkový MHD má ve **vzorových datech pro náhled** tečky, ale s ostrými daty vyjde lomítko - náhled tedy ukazuje jiný tvar než tisk. ⚠️ **Nejdřív rozhodnout:** oprava se dotkne vydané vývěsky (zlaté odtisky se přebaselinují) a zákazník uvidí změnu tvaru data. | S + rozhodnutí |
 
 **Vědomě mimo tuhle sadu:** testy linkových agend (`B14b`) - dělají se průběžně, až se na linkové
@@ -54,31 +53,11 @@ Stav tiketů, parkované položky i věci „jen na poptávku" drží
 
 ## 📥 Backlog
 
-### Tabulkové prvky
-
-Nezávislé na JŘ (faktury i obecné šablony). Cíl pevné tabulky **není faktura, ale náhrada
-„poskládám to z textových polí"**. Model = **objekt na stránce s excelovskými klávesami**
-(Word/PowerPoint), ne tabulkový procesor - žádný řádek vzorců ani odkazy typu A1.
-
-#### `B76` Sloučení buněk vodorovně (S, poslední krok bloku)
-
-**Hotové jsou první tři kroky** (17. 8., detail v changelogu): formátování buňky, standardní
-formulář vybrané buňky (panel i Alt+Enter) a **výběr obdélníkové oblasti tažením** se vším, co nad
-ním jede - hromadné formátování, Delete a schránka čitelná Excelem.
-
-**Zbývá sloučení vodorovně** (ColSpan): ze tří buněk jeden nadpis přes celou šířku. Aditivně
-v JSON, kreslení řádku musí umět span. Otevřené k rozhodnutí: **co s obsahem** slučovaných buněk
-(návrh: spojit neprázdné mezerou, ať se nic tiše neztratí; Excel zahazuje, Word spojuje) a že
-rozdělení zpátky vrátí obsah do první buňky.
-
-⚠️ **Sloučení přes řádky vědomě odložené** - míchá se se spanováním výšek, střídáním řádků
-a podmíněnou viditelností.
-
 ### Import PDF - doladění
 
 | Co | Stav |
 |---|---|
-| **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílem je **pevná tabulka**, která od 12. 8. žije (prvek v paletě, obsah se vyplňuje na plátně), takže gate padl a záleží jen na prioritě | ⬜ |
+| **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílová **pevná tabulka** je hotová (`B76`, i se sloučením buněk), takže záleží jen na prioritě | ⬜ |
 | **JŘ import: ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
 
 Křivky/Bézier v obecném importu - low-prio, bez poptávky.

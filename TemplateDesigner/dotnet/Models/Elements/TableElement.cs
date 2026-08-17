@@ -107,11 +107,19 @@ public class TableCell
     /// <summary>Per-cell styl. Null = výchozí. Jen nenullové properties přepisují default.</summary>
     public TextStyle? Style { get; set; }
 
+    /// <summary>
+    /// Přes kolik sloupců je buňka sloučená; 1 = běžná buňka. Aditivní pole - starší šablony ho
+    /// nemají a vypadají stejně jako dřív. Buňky, které sloučená překryla, v modelu **zůstávají**
+    /// (jen se nekreslí), takže rozdělení je prosté vrácení téhle hodnoty na 1.
+    /// </summary>
+    public int ColSpan { get; set; } = 1;
+
     public TableCell Clone() => new()
     {
         Content = Content,
         Format  = Format,
         Style   = Style?.Clone(),
+        ColSpan = ColSpan,
     };
 }
 
@@ -452,18 +460,110 @@ public class TableElement : TemplateElement
 
     // ─── Editace na plátně ───────────────────────────────────────────
 
+    // ─── Sloučené buňky ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Sloupec, který dané místo **vlastní**: u sloučené buňky je to ta její levá, jinak sloupec
+    /// sám. Díky tomu klik doprostřed sloučeného nadpisu vybere nadpis, ne překrytou buňku pod ním.
+    /// </summary>
+    public int SpanAnchorColumn(DataContext? data, int row, int col)
+    {
+        var layout = ComputeLayout(data);
+        if (row < 0 || row >= layout.Rows.Count || col <= 0) return Math.Max(0, col);
+
+        // Zleva doprava se hledat nedá bez projití všech; stačí jít od kliknutého sloupce doleva
+        // a vzít první, jehož sloučení sahá až sem. Překryté buňky mají span 1, takže nepřekáží.
+        for (int i = col - 1; i >= 0; i--)
+            if (i + SpanOf(layout, row, i) > col) return i;
+        return col;
+    }
+
+    /// <summary>Přes kolik viditelných sloupců buňka sahá (nejméně 1, nejvýš do konce mřížky).</summary>
+    public int SpanAt(DataContext? data, int row, int col)
+    {
+        var layout = ComputeLayout(data);
+        if (row < 0 || row >= layout.Rows.Count || col < 0 || col >= layout.ColumnIndexes.Length) return 1;
+        return SpanOf(layout, row, col);
+    }
+
+    private static int SpanOf(GridLayout layout, int row, int visibleCol)
+    {
+        if (visibleCol < 0 || visibleCol >= layout.ColumnIndexes.Length) return 1;
+        var cells = layout.Rows[row].Cells;
+        int modelCol = layout.ColumnIndexes[visibleCol];
+        int span = modelCol < cells.Count ? cells[modelCol].ColSpan : 1;
+        return Math.Clamp(span, 1, layout.ColumnIndexes.Length - visibleCol);
+    }
+
+    /// <summary>
+    /// Sloučí buňky výběru - **po řádcích**, protože slučujeme jen vodorovně. Neprázdné obsahy se
+    /// spojí mezerou, ať se žádný text tiše neztratí (kdo slučuje, dělá to obvykle na prázdné
+    /// tabulce; tohle je pojistka). Vrací false, když není co slučovat.
+    /// </summary>
+    public bool MergeRange(DataContext? data, CellRange range)
+    {
+        if (range.ColumnCount < 2) return false;
+
+        bool zmena = false;
+        for (int row = range.Top; row <= range.Bottom; row++)
+        {
+            var texts = new List<string>();
+            for (int col = range.Left; col <= range.Right; col++)
+                if (EnsureCell(data, row, col) is { Content.Length: > 0 } cell) texts.Add(cell.Content);
+
+            if (EnsureCell(data, row, range.Left) is not { } anchor) continue;
+            anchor.Content = string.Join(" ", texts);
+            anchor.ColSpan = range.ColumnCount;
+
+            for (int col = range.Left + 1; col <= range.Right; col++)
+                if (EnsureCell(data, row, col) is { } covered)
+                {
+                    covered.Content = "";
+                    covered.ColSpan = 1;
+                }
+            zmena = true;
+        }
+        return zmena;
+    }
+
+    /// <summary>Rozdělí sloučené buňky ve výběru; obsah zůstává v té první (nedělí se zpátky -
+    /// nešlo by poznat kam). Vrací false, když ve výběru žádná sloučená není.</summary>
+    public bool SplitRange(DataContext? data, CellRange range)
+    {
+        bool zmena = false;
+        foreach (var (row, col) in range.Cells())
+            if (EnsureCell(data, row, col) is { ColSpan: > 1 } cell)
+            {
+                cell.ColSpan = 1;
+                zmena = true;
+            }
+        return zmena;
+    }
+
+    /// <summary>Je ve výběru sloučená buňka? Řídí nabídku „Rozdělit buňky".</summary>
+    public bool HasMergedCell(DataContext? data, CellRange range) =>
+        range.Cells().Any(c => EnsureCell(data, c.Row, c.Col) is { ColSpan: > 1 });
+
     /// <summary>Obdélník buňky v mm **relativně k prvku** (0,0 = levý horní roh tabulky).
-    /// Null = buňka mimo mřížku. Řádky i sloupce jsou indexované podle toho, co je vidět.</summary>
+    /// Null = buňka mimo mřížku. Řádky i sloupce jsou indexované podle toho, co je vidět.
+    /// U sloučené buňky je obdélník přes všechny její sloupce - a překrytá souřadnice vrací
+    /// tentýž obdélník, takže se zvýrazní celý nadpis, ne kus pod kurzorem.</summary>
     public SKRect? CellRectMm(DataContext? data, int row, int col)
     {
         var layout = ComputeLayout(data);
         if (row < 0 || row >= layout.Rows.Count || col < 0 || col >= layout.ColumnWidths.Length) return null;
+
+        int anchor = SpanAnchorColumn(data, row, col);
+        int span   = SpanAt(data, row, anchor);
+
         float x = 0f;
-        for (int i = 0; i < col; i++) x += layout.ColumnWidths[i];
+        for (int i = 0; i < anchor; i++) x += layout.ColumnWidths[i];
+        float width = 0f;
+        for (int i = anchor; i < anchor + span && i < layout.ColumnWidths.Length; i++) width += layout.ColumnWidths[i];
         float y = ShowHeader ? layout.HeaderHeightMm : 0f;
         for (int i = 0; i < row; i++) y += layout.RowHeights[i];
 
-        return new SKRect(x, y, x + layout.ColumnWidths[col], y + layout.RowHeights[row]);
+        return new SKRect(x, y, x + width, y + layout.RowHeights[row]);
     }
 
     /// <summary>Buňka pod bodem (mm relativně k prvku), nebo null mimo mřížku a v záhlaví.</summary>
@@ -488,7 +588,9 @@ public class TableElement : TemplateElement
         float x = 0f;
         for (int col = 0; col < layout.ColumnWidths.Length; col++)
         {
-            if (xMm >= x && xMm < x + layout.ColumnWidths[col]) return (row, col);
+            // Klik do překryté buňky patří té sloučené - jinak by uživatel „vybral" něco,
+            // co na plátně vůbec nevidí.
+            if (xMm >= x && xMm < x + layout.ColumnWidths[col]) return (row, SpanAnchorColumn(data, row, col));
             x += layout.ColumnWidths[col];
         }
         return null;
@@ -605,8 +707,10 @@ public class TableElement : TemplateElement
         return ResolveColumnDataStyle(Columns[layout.ColumnIndexes[visibleCol]]);
     }
 
-    /// <summary>Stav jedné buňky pro vratnou změnu formátování - adresovaný souřadnicí, ne instancí.</summary>
-    public readonly record struct CellState(int Row, int Col, TextStyle? Style, string? Format);
+    /// <summary>Stav jedné buňky pro vratnou změnu - adresovaný souřadnicí, ne instancí. Nese
+    /// i obsah a sloučení, aby jedním snímkem šlo vrátit i sloučení buněk (spojený text zpět).</summary>
+    public readonly record struct CellState(
+        int Row, int Col, TextStyle? Style, string? Format, string Content = "", int ColSpan = 1);
 
     /// <summary>
     /// Snímek formátování skupiny buněk pro undo. Buňky se adresují **souřadnicí**: každá změna
@@ -619,7 +723,8 @@ public class TableElement : TemplateElement
         new([.. cells.Select(c =>
         {
             var cell = EnsureCell(data, c.Row, c.Col);
-            return new CellState(c.Row, c.Col, cell?.Style?.Clone(), cell?.Format);
+            return new CellState(c.Row, c.Col, cell?.Style?.Clone(), cell?.Format,
+                cell?.Content ?? "", cell?.ColSpan ?? 1);
         })]);
 
     public void RestoreCells(DataContext? data, CellSnapshot snapshot)
@@ -627,8 +732,10 @@ public class TableElement : TemplateElement
         foreach (var state in snapshot.Cells)
         {
             if (EnsureCell(data, state.Row, state.Col) is not { } cell) continue;
-            cell.Style  = state.Style?.Clone();
-            cell.Format = state.Format;
+            cell.Style   = state.Style?.Clone();
+            cell.Format  = state.Format;
+            cell.Content = state.Content;
+            cell.ColSpan = state.ColSpan;
         }
     }
 
@@ -817,14 +924,19 @@ public class TableElement : TemplateElement
         for (int i = 0; i < rows.Count; i++)
         {
             var row = rows[i];
-            var specs = new ColumnRenderer.CellSpec[cols.Count];
+
+            // Sloučená buňka je **jedna** buňka široká přes své sloupce; překryté se přeskočí.
+            // Kreslicí smyčka se tím nemění - dostane prostě méně širších buněk.
+            var specs = new List<ColumnRenderer.CellSpec>(cols.Count);
             for (int ci = 0; ci < cols.Count; ci++)
             {
                 var cellStyle = dataStyles[ci];
                 string content = "";
+                int span = 1;
                 if (ci < row.Cells.Count)
                 {
                     var cell = row.Cells[ci];
+                    span = Math.Clamp(cell.ColSpan, 1, cols.Count - ci);
                     content = ctx.Data?.ResolvePlaceholders(cell.Content) ?? cell.Content;
                     var cellFormat = cell.Format ?? cols[ci].Format;
                     if (cellFormat is not null)
@@ -832,7 +944,11 @@ public class TableElement : TemplateElement
 
                     if (cell.Style is { } cs) cellStyle = cs.Resolve(dataStyles[ci]);
                 }
-                specs[ci] = new(colWidths[ci], content, cellStyle);
+
+                float width = 0f;
+                for (int k = ci; k < ci + span; k++) width += colWidths[k];
+                specs.Add(new(width, content, cellStyle));
+                ci += span - 1;
             }
 
             // Vlastní pozadí řádku přebíjí střídání řádků - dřív se kreslila obě přes sebe, takže

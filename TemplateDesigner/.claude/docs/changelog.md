@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-17 (9) - 🔗 pevná tabulka: sloučení buněk vodorovně (`B76` hotový)
+
+Poslední kus bloku. Označené buňky v řádku se z místní nabídky **sloučí do jedné** - typicky
+nadpis přes celou šířku tabulky. Sloučená buňka se kreslí jako jeden celek (uvnitř nezůstane
+svislá čára) a **klik doprostřed vybere ji**, ne překrytou buňku, kterou uživatel na plátně
+nevidí. „Rozdělit buňky" to vrátí zpět.
+
+**Obsah se při sloučení spojí mezerou** (rozhodnutí Jan 17. 8.). Excel všechno kromě první buňky
+zahodí, Word obsahy spojí - a protože se typicky slučuje na prázdné tabulce, je spojení hlavně
+pojistka, aby se text nikdy neztratil bez varování. Rozdělení nechá obsah v první buňce; zpátky
+rozdělit text nejde, nešlo by poznat kam.
+
+**Výběr přes víc řádků slučuje po řádcích**, ne do jednoho bloku - sloučení je vodorovné,
+takže dva řádky dají dva nadpisy pod sebou.
+
+⚠️ **Sloučení přes řádky vědomě není** - míchá se se spanováním výšek, střídáním řádků
+a podmíněnou viditelností; bez konkrétní poptávky to není za tu složitost.
+
+**Aditivní v JSON:** buňka nese počet sloučených sloupců (výchozí 1), takže starší šablony
+vypadají přesně jako dřív. Vratnost umí zpětný krok jedním kliknutím - snímek buňky nově nese
+i obsah a sloučení, takže Ctrl+Z vrátí i spojený text zpátky do původních buněk.
+
+**Brány:** build čistý, **2203 .NET testů** zelených (TD 1005, z toho 10 nových). Mutace ověřily,
+že testy měří: zahození spojeného textu i kreslení po sloupcích místo sloučení své testy shodí.
+
 ## 2026-08-17 (8) - 🚆 výchozí linková šablona se doručí sama (`B92`)
 
 Zastávkové výchozí šablony jsou zabalené v programu a při spuštění se samy nalijí do databáze, takže

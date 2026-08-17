@@ -85,6 +85,7 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 | tažení přes buňky | **obdélníkový výběr**; Shift+klik ho rozšíří od kotvy |
 | Shift+šipky | rozšířit výběr (bez Shiftu se smrskne na jednu buňku) |
 | Ctrl+A (uvnitř) | vybrat všechny buňky tabulky |
+| místní nabídka | **Sloučit / Rozdělit buňky** (vodorovně). Sloučení spojí neprázdné obsahy mezerou, rozdělení nechá obsah v první buňce; klik do sloučené buňky vybere ji, ne tu překrytou |
 
 ⚠️ **Výběr celého řádku a sloupce vědomě není** (rozhodnutí Jan 17. 8. po vyzkoušení): tažení
 a Shift pokrývají totéž a excelové Shift/Ctrl+mezerník se uživatel nemá kde naučit. Klik u okraje
