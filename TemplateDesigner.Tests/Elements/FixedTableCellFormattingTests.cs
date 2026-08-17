@@ -1,4 +1,8 @@
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using EDControls;
+using EDControls.EDInputForm;
 using EDControls.EDViewModel;
 using NSubstitute;
 using TemplateDesigner.Models;
@@ -11,7 +15,7 @@ namespace TemplateDesigner.Tests.Elements;
 /// takže nefungoval ani způsob práce, na kterém prvek stojí („záhlaví si udělám z prvního řádku
 /// tím, že ho ztuční"). Testy hlídají tři věci, které se dají pokazit tiše:
 /// kaskádu (buňka je překryv nad stylem prvku), vratnost (zpětný krok podle souřadnic)
-/// a to, že potvrzení dialogu beze změny nezapeče zděděné hodnoty do buňky.
+/// a to, že otevření a potvrzení formuláře beze změny nezapeče zděděné hodnoty do buňky.
 /// </summary>
 public class FixedTableCellFormattingTests
 {
@@ -165,125 +169,146 @@ public class FixedTableCellFormattingTests
         Assert.Null(table.EnsureCell(null, 0, 0)!.Style);
     }
 
-    // ── Panel vlastností ──────────────────────────────────────────────────────
+    // ── Formulář buňky (panel i okno Alt+Enter jedou na tomtéž schématu) ──────
+
+    /// <summary>Pole formuláře podle schématu buňky, jak ho vydá server (klíč = property path).</summary>
+    private static List<Field> CellForm() =>
+    [
+        new Field { Key = "Format",          Label = "Formát hodnoty", FieldType = EFieldType.Text },
+        new Field { Key = "Style.FontSize",  Label = "Velikost",       FieldType = EFieldType.Decimal },
+        new Field { Key = "Style.Bold",      Label = "Tučné",          FieldType = EFieldType.Bool },
+        new Field { Key = "Style.TextColor", Label = "Barva textu",    FieldType = EFieldType.Color },
+    ];
+
+    private static (List<Field> Fields, Dictionary<string, string> PreFilled) OpenForm(TableElement table)
+    {
+        var fields = CellForm();
+        ElementFormBinder.ApplyInheritedValues(fields, Formatting(table).InheritedFormValues());
+        var preFilled = ElementFormBinder.Prefill(fields, table.EnsureCell(null, 0, 0)!);
+        return (fields, preFilled);
+    }
 
     [Fact]
-    public void PanelUkazujeBunku_ACestuZpetNaCelouTabulku()
+    public void FormularBunky_UkazujeHodnotyZKaskady()
     {
-        var descriptors = Formatting(Grid()).PanelDescriptors(() => { });
+        var table = Grid();
+        table.DataStyle = new TextStyle { FontSize = 13f, Bold = true, TextColor = "#FF445566" };
 
-        Assert.Contains(descriptors, d => d is ButtonPropertyDescriptor { ButtonLabel: "Nastavení celé tabulky…" });
-        Assert.Contains(descriptors, d => d.Label == "Formát hodnoty");
-        Assert.Contains(descriptors, d => d.Label == "Velikost");
-        Assert.Contains(descriptors, d => d.Label == "Barva textu");
-        Assert.Equal("Vybraná buňka", descriptors[0].Group);
+        var (fields, _) = OpenForm(table);
+
+        Assert.Equal("13", fields.Single(f => f.Key == "Style.FontSize").Value);
+        Assert.Equal("1", fields.Single(f => f.Key == "Style.Bold").Value);
+        Assert.Equal("#FF445566", fields.Single(f => f.Key == "Style.TextColor").Value);
     }
 
     /// <summary>
-    /// Bez vlastního příkazu by panel obalil zápis svým - a zpětný krok by buňce zapsal
-    /// **zděděnou** hodnotu, kterou předtím jen zobrazoval. Tím by se buňka natrvalo odpojila
-    /// od stylu tabulky.
+    /// Nejdůležitější test celého bloku: formulář ukazuje zděděné hodnoty, ale samo jeho otevření
+    /// a potvrzení je **nesmí** zapsat do buňky. Jinak by se buňka odpojila od nastavení tabulky
+    /// a pozdější změna písma celé tabulky by ji minula.
     /// </summary>
     [Fact]
-    public void PanelovyZpetnyKrok_VratiDedeni_NeZobrazenouHodnotu()
+    public void PotvrzeniFormulareBezeZmeny_NezapeceZdedeneHodnoty()
     {
         var table = Grid();
-        table.DataStyle = new TextStyle { FontSize = 11f };
-
-        var size = (FloatPropertyDescriptor)Formatting(table)
-            .PanelDescriptors(() => { }).Single(d => d.Label == "Velikost");
-
-        Assert.Equal(11f, size.Get());          // panel ukazuje zděděnou hodnotu
-        var command = size.MakeCommand!(20f)!;
-        Assert.Equal(20f, table.EnsureCell(null, 0, 0)!.Style!.FontSize);
-
-        command.Undo();
-        Assert.Null(table.EnsureCell(null, 0, 0)!.Style);   // ne 11 zapsaných natvrdo
-        Assert.Equal(11f, Formatting(table).ActiveStyle().FontSize);
-    }
-
-    [Fact]
-    public void VsechnyEditovatelneVlastnostiVPanelu_NesouVlastniPrikaz()
-    {
-        var descriptors = Formatting(Grid()).PanelDescriptors(() => { })
-            .Where(d => d is not ButtonPropertyDescriptor);
-
-        Assert.All(descriptors, d => Assert.NotNull(d.MakeCommand));
-    }
-
-    [Fact]
-    public void FormatHodnotyZPanelu_SeZapiseAJdeVratit()
-    {
-        var table = Grid();
-        var format = (StringPropertyDescriptor)Formatting(table)
-            .PanelDescriptors(() => { }).Single(d => d.Label == "Formát hodnoty");
-
-        var command = format.MakeCommand!("dd.MM.yyyy")!;
-        Assert.Equal("dd.MM.yyyy", table.EnsureCell(null, 0, 0)!.Format);
-
-        command.Undo();
-        Assert.Null(table.EnsureCell(null, 0, 0)!.Format);
-    }
-
-    // ── Dialog vlastností buňky ───────────────────────────────────────────────
-
-    private static StyleEditDialogViewModel CellDialog(TableElement table, int row = 0, int col = 0) =>
-        new(table.EnsureCell(null, row, col)!, nameof(TableCell.Style),
-            table.ResolveCellParent(null, col),
-            extraTextPath: nameof(TableCell.Format),
-            extraTextLabel: "Formát hodnoty");
-
-    /// <summary>
-    /// Nejdůležitější test celého bloku: dialog ukazuje zděděné hodnoty, ale potvrzení beze změny
-    /// je **nesmí** zapsat do buňky. Jinak by se buňka odpojila od „Stylu buněk" prvku a uživatel
-    /// by pak marně měnil písmo celé tabulky.
-    /// </summary>
-    [Fact]
-    public void PotvrzeniDialoguBezeZmeny_NezapeceZdedeneHodnoty()
-    {
-        var table = Grid();
-        table.DataStyle = new TextStyle { Bold = true, FontSize = 13f, TextColor = "#FF445566" };
-
-        var vm = CellDialog(table);
-        vm.OkCommand.Execute(null);
-
-        Assert.Null(vm.ResultCommand);
-        Assert.Null(table.EnsureCell(null, 0, 0)!.Style);
-    }
-
-    [Fact]
-    public void ZmenaVDialogu_SeZapiseAJdeVratit()
-    {
-        var table = Grid();
-        var vm = CellDialog(table);
-        vm.Style.Bold = true;
-        vm.ExtraText  = "N2";
-        vm.OkCommand.Execute(null);
-
-        var command = Assert.IsAssignableFrom<TemplateDesigner.Commands.IDesignerCommand>(vm.ResultCommand);
-        command.Execute();
-
+        table.DataStyle = new TextStyle { FontSize = 13f, Bold = true, TextColor = "#FF445566" };
         var cell = table.EnsureCell(null, 0, 0)!;
-        Assert.True(cell.Style!.Bold);
-        Assert.Equal("N2", cell.Format);
 
-        command.Undo();
-        Assert.Equal(new TextStyle().IsEmpty, cell.Style?.IsEmpty ?? true);
+        var (fields, preFilled) = OpenForm(table);
+        var commands = ElementFormBinder.ExtractCommands(fields, cell, preFilled);
+
+        Assert.Empty(commands);
+        Assert.Null(cell.Style);
+    }
+
+    [Fact]
+    public void ZmenaJednohoPole_ZapiseJenJi()
+    {
+        var table = Grid();
+        table.DataStyle = new TextStyle { FontSize = 13f };
+        var cell = table.EnsureCell(null, 0, 0)!;
+
+        var (fields, preFilled) = OpenForm(table);
+        fields.Single(f => f.Key == "Style.Bold").Value = "1";
+        foreach (var command in ElementFormBinder.ExtractCommands(fields, cell, preFilled)) command.Execute();
+
+        Assert.True(cell.Style!.Bold);
+        Assert.Null(cell.Style.FontSize);                                   // dál se dědí
+        Assert.Equal(13f, Formatting(table).ActiveStyle().FontSize);
+    }
+
+    /// <summary>Vymazané pole = zpátky dědění, ne prázdná hodnota uložená do šablony.</summary>
+    [Fact]
+    public void VymazanePole_VratiDedeni()
+    {
+        var table = Grid();
+        var cell = table.EnsureCell(null, 0, 0)!;
+        cell.Style = new TextStyle { FontSize = 20f };
+        cell.Format = "N2";
+
+        var (fields, preFilled) = OpenForm(table);
+        fields.Single(f => f.Key == "Style.FontSize").Value = "";
+        fields.Single(f => f.Key == "Format").Value = "";
+        foreach (var command in ElementFormBinder.ExtractCommands(fields, cell, preFilled)) command.Execute();
+
+        Assert.Null(cell.Style!.FontSize);
         Assert.Null(cell.Format);
     }
 
-    /// <summary>Prázdný formát znamená „podle sloupce", ne prázdný řetězec uložený v šabloně.</summary>
-    [Fact]
-    public void VymazanyFormat_SeUlozeJakoNenastaveno()
+    // ── Vazba na serverové schéma ─────────────────────────────────────────────
+
+    private static string CellSchemaSource() => File.ReadAllText(Path.Combine(
+        EDInputFormDir(), "TableCellEdit.cls"));
+
+    private static string EDInputFormDir()
     {
-        var table = Grid();
-        table.EnsureCell(null, 0, 0)!.Format = "N2";
+        // Kořen repa: od výstupní složky nahoru, a když tam není (běh s přesměrovaným výstupem),
+        // podle cesty k tomuhle souboru. Test tak závisí jen na obsahu repa, ne na tom, kde běží.
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln"))) dir = dir.Parent;
+        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
+        return Path.Combine(dir.FullName, "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "EDInputForm");
+    }
 
-        var vm = CellDialog(table);
-        vm.ExtraText = "   ";
-        vm.OkCommand.Execute(null);
-        vm.ResultCommand!.Execute();
+    private static string ThisFile([CallerFilePath] string path = "") => path;
 
-        Assert.Null(table.EnsureCell(null, 0, 0)!.Format);
+    /// <summary>
+    /// Formulář buňky je vědomě mimo `EDInputFormSchemaDriftTests` (jeho výchozí hodnoty se nikdy
+    /// nezobrazí - klient je přepíše kaskádou), takže vazbu na C# musí hlídat tenhle test: každé
+    /// pole schématu musí existovat jako vlastnost buňky.
+    /// </summary>
+    [Fact]
+    public void KazdePoleSchematuBunky_ExistujeNaTableCell()
+    {
+        var keys = Regex.Matches(CellSchemaSource(), @"form\.Add(?:Text|Bool|Number|Decimal|FieldToLastGroup)\(\s*""([^""]+)""")
+            .Select(m => m.Groups[1].Value)
+            .Where(k => !k.StartsWith("__"))
+            .ToList();
+
+        var cell = new TableCell();
+        Assert.NotEmpty(keys);
+        Assert.All(keys, k => Assert.True(ElementPropertyAccessor.Exists(cell, k), $"pole {k} není vlastnost buňky"));
+    }
+
+    /// <summary>
+    /// Pojistka toho, proč je formulář z driftových testů vyjmutý: **žádné** pole stylu nesmí
+    /// zůstat bez hodnoty z kaskády, jinak by u něj formulář ukázal výchozí hodnotu ze schématu
+    /// (typicky nezaškrtnuté „Tučné" u textu, který tučný je) a uživatel by ji potvrzením zapekl.
+    /// </summary>
+    [Fact]
+    public void ZdedeneHodnoty_PokryvajiVsechnaStylovaPoleSchematu()
+    {
+        var styleKeys = Regex.Matches(CellSchemaSource(), @"prefix_""\.(\w+)""")
+            .Select(m => "Style." + m.Groups[1].Value)
+            .ToList();
+        // Balíček polí stylu je sdílený - klíče se čtou ze StyleFields.cls, kde je definovaný.
+        if (styleKeys.Count == 0)
+            styleKeys = Regex.Matches(File.ReadAllText(Path.Combine(EDInputFormDir(), "StyleFields.cls")),
+                    @"prefix_""\.(\w+)""")
+                .Select(m => "Style." + m.Groups[1].Value)
+                .ToList();
+
+        Assert.NotEmpty(styleKeys);
+        var inherited = Formatting(Grid()).InheritedFormValues();
+        Assert.All(styleKeys, k => Assert.True(inherited.ContainsKey(k), $"pole {k} nemá hodnotu z kaskády"));
     }
 }

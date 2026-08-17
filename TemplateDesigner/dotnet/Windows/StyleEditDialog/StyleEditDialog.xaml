@@ -9,10 +9,6 @@
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip">
 
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-    </Window.Resources>
-
     <DockPanel Margin="12">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,10,0,0">
@@ -24,16 +20,6 @@
         <TextBlock DockPanel.Dock="Top" Text="Prázdné pole = dědí výchozí (šedě). Vyplněním přepíšeš."
                    FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}"
                    TextWrapping="Wrap" Margin="0,0,0,8"/>
-
-        <!-- Nepovinná vlastnost nad stylem - u buňky formát hodnoty; u zón prvku se nezobrazuje. -->
-        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10"
-                    Visibility="{Binding HasExtraText, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="{Binding ExtraTextLabel}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-            <TextBox Text="{Binding ExtraText, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,2"/>
-            <TextBlock Text="{Binding ExtraTextHelp}" TextWrapping="Wrap" FontStyle="Italic"
-                       Foreground="{DynamicResource EDTheme.Text.Muted}"
-                       FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-        </StackPanel>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <controls:CellStyleEditor

@@ -43,6 +43,10 @@ public partial class ElementEditDialog : Window
         set => TheForm.PlaceholderFields = value;
     }
 
+    /// <summary>Hodnoty z kaskády pro cíl, jehož „nenastaveno" znamená dědění (buňka tabulky).
+    /// Viz <see cref="ElementFormBinder.ApplyInheritedValues"/>; nastavit před zobrazením.</summary>
+    public IReadOnlyDictionary<string, string>? InheritedValues { get; set; }
+
     /// <param name="target">Editovaný objekt (element, sekce, stránka - in-memory model).</param>
     /// <param name="cacheClass">Caché schema class (např. "ALVA.TemplateDesigner.EDInputForm.TextElementEdit").</param>
     /// <param name="title">Titulek okna.</param>
@@ -62,6 +66,7 @@ public partial class ElementEditDialog : Window
     private void OnFormInitialized()
     {
         ElementFormBinder.PopulateFontFields(TheForm);
+        ElementFormBinder.ApplyInheritedValues(TheForm, InheritedValues);
         _preFilled = ElementFormBinder.Prefill(TheForm, _target);
         // Řez (váhy) z reálných řezů rodiny - nastavit PŘED Validate, aby items přežily round-trip
         // (Validate serializuje aktuální items a Caché je echuje zpět).

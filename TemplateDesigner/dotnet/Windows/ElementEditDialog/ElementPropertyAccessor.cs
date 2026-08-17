@@ -117,6 +117,10 @@ public static class ElementPropertyAccessor
         return (current, current.GetType().GetProperty(parts[^1]));
     }
 
+    /// <summary>Hodnota ve tvaru, v jakém ji nese pole formuláře (bool 1/0, čísla invariantně).
+    /// Veřejné kvůli hodnotám z kaskády, které se do formuláře předvyplňují mimo reflexi cíle.</summary>
+    public static string ToFormValue(object? value) => ToStringValue(value);
+
     private static string ToStringValue(object? value) => value switch
     {
         null => "",

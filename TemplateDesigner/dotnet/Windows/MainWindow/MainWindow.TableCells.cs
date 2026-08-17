@@ -219,6 +219,38 @@ public partial class MainWindow
     // ── Klávesy ───────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Zkratky formátování buňky (Ctrl+B/I/U) - platí i **během psaní** do buňky, jako ve Wordu
+    /// a Excelu. Uvnitř tabulky přebíjejí globální význam (Ctrl+B jinak sbaluje levý panel):
+    /// v tabulce čeká uživatel tučné, a bez toho by zkratka mimo tabulku zmizet nemohla.
+    /// </summary>
+    private bool HandleCellFormatKey(KeyEventArgs e)
+    {
+        if (_cellTable is null || !Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return false;
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) return false;
+        if (CellFormatting is not { } formatting) return false;
+
+        // Nová hodnota se spočítá **jednou** z aktivní buňky (jako ve Wordu), ne pro každou zvlášť -
+        // u výběru oblasti by se jinak buňky navzájem prohodily místo srovnání na jednu hodnotu.
+        var style = formatting.ActiveStyle();
+        var (label, change) = e.Key switch
+        {
+            Key.B => ("Tučné",     Set(s => s.Bold          = !style.Bold)),
+            Key.I => ("Kurzíva",   Set(s => s.Italic        = !style.Italic)),
+            Key.U => ("Podtržení", Set(s => s.Underline     = !style.Underline)),
+            _     => (null, null)
+        };
+        if (label is null || change is null) return false;
+
+        static Action<TextStyle> Set(Action<TextStyle> action) => action;
+
+        if (formatting.Apply(label, change) is { } command) _vm!.Execute(command);
+        SyncFormatToolbar();
+        InvalidateCanvas();
+        InvalidatePreview();
+        return true;
+    }
+
+    /// <summary>
     /// Klávesy, když jsme uvnitř tabulky, ale zrovna nepíšeme. Vrací true = zpracováno, klávesa
     /// se nesmí pustit dál na globální zkratky (Delete by smazal prvek, šipky by hnuly tabulkou).
     /// </summary>
@@ -453,9 +485,14 @@ public partial class MainWindow
         // Panel patří uvnitř tabulky **té buňce**, ne prvku. Dokud ukazoval nastavení celé tabulky,
         // stála v něm a v liště dvě zaškrtávátka „Tučné" s jiným dosahem a nešlo je od sebe poznat
         // (nález Jan 17. 8.). Nastavení celé tabulky je za tlačítkem v prvním řádku panelu.
-        InlinePropertiesPanel.SetContext(execute, invalidate);
-        InlinePropertiesPanel.ShowDescriptors(formatting.PanelDescriptors(ExitToTableSettings));
-        ShowInlineFormPanel(false);
+        if (_cellTable.EnsureCell(_vm!.State.CurrentPreviewData, _cellRow, _cellCol) is { } cell)
+        {
+            InlineElementForm.SetContext(CellCommandExecutor(formatting), invalidate);
+            InlineElementForm.PlaceholderFields = _vm.PlaceholderFieldItems();
+            InlineElementForm.InheritedValues   = formatting.InheritedFormValues();
+            InlineElementForm.ShowElement(cell, CellCacheClass);
+            ShowInlineFormPanel(true);
+        }
 
         // Panel se staví i při každém posunu po buňkách; rozepsaná buňka si musí fokus udržet,
         // jinak napsané znaky spadnou do prázdna.
@@ -488,10 +525,26 @@ public partial class MainWindow
             ? null
             : new(_cellTable, () => _vm!.State.CurrentPreviewData, TargetCells);
 
+    /// <summary>Schéma vybrané buňky - **jedno** pro panel i pro okno vlastností, stejně jako
+    /// u prvků. Dvě různá by se nutně rozešla.</summary>
+    private const string CellCacheClass = "ALVA.TemplateDesigner.EDInputForm.TableCellEdit";
+
     /// <summary>
-    /// Nastavení buňky - sdílený stylový pod-formulář (zděděné hodnoty šedě, křížek je vrátí)
-    /// plus formát hodnoty. Změna se do historie zapisuje **souřadnicí buňky**, ne odkazem na ni:
-    /// každá změna struktury mřížku naklonuje a příkaz držící instanci by pak psal do odpojené buňky.
+    /// Zápis z formuláře buňky do historie. Formulář zapisuje do **instance** buňky, jenže každá
+    /// změna struktury mřížku naklonuje - proto se do historie ukládá snímek podle souřadnic,
+    /// jinak by zpětný krok psal do odpojené buňky a tiše nic neudělal.
+    /// </summary>
+    private Action<IDesignerCommand> CellCommandExecutor(TableCellFormatting formatting) => cmd =>
+    {
+        var before = formatting.Capture();
+        cmd.Execute();
+        _vm!.Execute(formatting.Command(cmd.Description, before));
+    };
+
+    /// <summary>
+    /// Okno vlastností buňky (Alt+Enter, místní nabídka) - **týž formulář jako v panelu**, jen
+    /// v modálu; u prvků to funguje stejně. Zděděné hodnoty se předvyplní z kaskády, takže
+    /// potvrzení beze změny buňce nic nezapíše.
     /// </summary>
     private void OpenCellProperties()
     {
@@ -501,18 +554,19 @@ public partial class MainWindow
         var data = _vm.State.CurrentPreviewData;
         if (_cellTable.EnsureCell(data, _cellRow, _cellCol) is not { } cell) return;
 
-        var vm = new StyleEditDialogViewModel(cell, nameof(TableCell.Style),
-            _cellTable.ResolveCellParent(data, _cellCol),
-            extraTextPath: nameof(TableCell.Format),
-            extraTextLabel: "Formát hodnoty",
-            extraTextHelp: "Pro buňku s datovým polem - např. dd.MM.yyyy nebo N2. Prázdné = podle sloupce.");
-        var dlg = new StyleEditDialog(vm) { Owner = this, Title = "Vlastnosti buňky" };
+        var dlg = new ElementEditDialog(cell, CellCacheClass, "Vlastnosti buňky")
+        {
+            Owner = this,
+            PlaceholderFields = _vm.PlaceholderFieldItems(),
+            InheritedValues   = formatting.InheritedFormValues()
+        };
 
         var before = formatting.Capture();
-        if (dlg.ShowDialog() != true || vm.ResultCommand is null) return;
-
-        vm.ResultCommand.Execute();
-        _vm.Execute(formatting.Command("Vlastnosti buňky", before));
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is { } result)
+        {
+            result.Execute();
+            _vm.Execute(formatting.Command("Vlastnosti buňky", before));
+        }
 
         ReturnKeysToCell();
         SyncFormatToolbar();

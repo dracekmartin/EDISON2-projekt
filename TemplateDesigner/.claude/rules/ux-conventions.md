@@ -79,7 +79,8 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 | Alt+klik | dovnitř rovnou do té buňky (hlavní cesta) |
 | F2 (nebo místní nabídka) | dovnitř do naposledy kliknuté buňky |
 | Dvojklik | vlastnosti prvku (jako u všech ostatních prvků) |
-| Alt+Enter (nebo místní nabídka) | **vlastnosti buňky** - styl a formát hodnoty; samotný Enter musí zůstat posunu o buňku níž |
+| Alt+Enter (nebo místní nabídka) | **vlastnosti buňky** - týž formulář jako v panelu, jen v okně; samotný Enter musí zůstat posunu o buňku níž |
+| Ctrl+B / Ctrl+I / Ctrl+U | tučné / kurzíva / podtržení buňky, i během psaní. **Uvnitř tabulky přebíjejí globální význam** (Ctrl+B jinak sbaluje levý panel) - v tabulce čeká uživatel tučné a globální zkratka mimo tabulku nikam nezmizí |
 | Klik (uvnitř) | přepnout buňku |
 | psaní | přepíše obsah buňky (jako Excel) |
 | F2 | upravit stávající obsah buňky |
@@ -112,12 +113,14 @@ do rozepsané buňky, jinak na plátno.
 poznat, jinak stojí proti sobě dvě sady týchž vlastností: do 17. 8. panel měnil celou tabulku,
 zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan). Platí proto:
 
-- panel u buňky začíná skupinou **„Vybraná buňka"** a tlačítkem **„Nastavení celé tabulky…"**
-  (= odchod z buňky, táž cesta jako Esc, jen pojmenovaná),
+- panel u buňky ukazuje **týž formulář jako okno Alt+Enter** (jedno schéma, dva hostitelé - jako
+  u prvků; dvě různá by se rozešla) a začíná skupinou **„Vybraná buňka"** s tlačítkem
+  **„Nastavení celé tabulky"** (= odchod z buňky, táž cesta jako Esc, jen pojmenovaná),
 - formulář prvku má skupinu **„Styl všech buněk"** - z popisku je vidět, že je to výchozí pro celou
   tabulku, ne pro tu jednu,
-- stav polí ukazuje **vyřešenou** hodnotu (i tu zděděnou), ale zapisuje se **jen změněná vlastnost**;
-  zpětný krok musí vrátit dědění, ne zobrazenou hodnotu zapsat natvrdo.
+- pole ukazují **vyřešenou** hodnotu (i tu zděděnou - formulář ji dostane z kaskády, ne ze schématu),
+  ale zapisuje se **jen změněná vlastnost**; vymazané pole vrací dědění a zpětný krok nesmí
+  zobrazenou hodnotu zapsat natvrdo.
 
 ### Grouping / layout
 

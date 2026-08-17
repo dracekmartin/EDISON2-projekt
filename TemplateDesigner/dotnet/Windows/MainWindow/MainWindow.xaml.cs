@@ -1742,6 +1742,9 @@ public partial class MainWindow : Window
     /// <summary>EDInputForm button v inline panelu - otevře editor pravidel zvýraznění.</summary>
     private void OnInlineElementButtonClicked(string key)
     {
+        // Z formuláře buňky zpátky na nastavení celé tabulky (= odchod z buňky, jako Esc).
+        if (key == "__tableSettings") { ExitToTableSettings(); return; }
+
         if (key != "__highlightRules") return;
         if (_vm!.State.SelectedElements is [IRowHighlightable h])
             OpenHighlightRulesDialog(h);
@@ -2008,7 +2011,8 @@ public partial class MainWindow : Window
         // vlastností Delete mazal obsah buňky místo znaku v poli (nález revize 12. 8.).
         if (InTableCells && (_cellEditing || CellKeysActive))
         {
-            if (HandleCellEditKey(e) || HandleTableCellsKey(e)) { e.Handled = true; return; }
+            if (HandleCellFormatKey(e) || HandleCellEditKey(e) || HandleTableCellsKey(e))
+            { e.Handled = true; return; }
             if (_cellEditing) return;   // zbytek psaní obslouží textové pole samo
         }
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);

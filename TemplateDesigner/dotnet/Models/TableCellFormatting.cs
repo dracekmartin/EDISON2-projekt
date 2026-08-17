@@ -58,76 +58,20 @@ public sealed class TableCellFormatting(
     public TableElement.CellSnapshot Capture() => table.CaptureCells(data(), cells);
 
     /// <summary>
-    /// Vlastnosti buňky pro **panel vlastností**: rozsah je vidět z popisků skupin a z tlačítka
-    /// zpět na nastavení celé tabulky. Bez toho stály vedle sebe dvě zaškrtávátka „Tučné" s jiným
-    /// dosahem (panel měnil celou tabulku, lišta buňku) a nešlo je od sebe poznat (nález Jan 17. 8.).
+    /// Hodnoty, které pro tuhle buňku vydá kaskáda (styl sloupce → „Styl všech buněk" prvku →
+    /// zapečené výchozí), ve tvaru polí formuláře - klíč = property path (<c>Style.FontSize</c>).
+    /// Formulář buňky je jimi předvyplněný, takže ukazuje, jak buňka reálně vypadá, ale zapíše
+    /// jen to, co uživatel opravdu změní; jinak by potvrzení formuláře odpojilo buňku od tabulky.
+    /// Čte se **reflexí přes vyřešený styl**, takže nové pole stylu se propíše samo.
     /// </summary>
-    /// <param name="backToTable">Akce „zpět na nastavení celé tabulky" (odchod z buňky).</param>
-    public List<PropertyDescriptor> PanelDescriptors(Action backToTable)
+    public Dictionary<string, string> InheritedFormValues()
     {
-        // Popisky i skupiny drží kanon (`ux-conventions §8`) - stejná vlastnost se všude jmenuje
-        // stejně. Rozsah nese první skupina a tlačítko zpět, ne přejmenované popisky.
-        ColorPropertyDescriptor Color(string label, Func<ResolvedTextStyle, string> get,
-            Action<TextStyle, string?> set) =>
-            new()
-            {
-                Label = label, Group = "Vzhled",
-                Get = () => get(ActiveStyle()),
-                Set = v => Apply(label, s => set(s, v)),
-                MakeCommand = v => Apply(label, s => set(s, (string?)v))
-            };
-
-        return
-        [
-            new ButtonPropertyDescriptor
-            {
-                Label = "", Group = "Vybraná buňka",
-                ButtonLabel = "Nastavení celé tabulky…",
-                OnClick = backToTable
-            },
-            new StringPropertyDescriptor
-            {
-                Label = "Formát hodnoty", Group = "Vybraná buňka",
-                Get = () => FirstCell()?.Format ?? "",
-                Set = v => ApplyToCells("Formát hodnoty", c => c.Format = Empty(v)),
-                MakeCommand = v => ApplyToCells("Formát hodnoty", c => c.Format = Empty((string?)v))
-            },
-            new StringPropertyDescriptor
-            {
-                Label = "Font", Group = "Font",
-                Get = () => ActiveStyle().FontFamily,
-                Set = v => Apply("Font", s => s.FontFamily = Empty(v)),
-                MakeCommand = v => Apply("Font", s => s.FontFamily = Empty((string?)v))
-            },
-            new FloatPropertyDescriptor
-            {
-                Label = "Velikost", Group = "Font", Min = 4, Max = 200, Unit = "pt",
-                Get = () => ActiveStyle().FontSize,
-                Set = v => Apply("Velikost", s => s.FontSize = v),
-                MakeCommand = v => Apply("Velikost", s => s.FontSize = (float)v!)
-            },
-            .. Descriptors(),
-            Color("Barva textu", s => s.TextColor, (s, v) => s.TextColor = v),
-            Color("Pozadí", s => s.BackgroundColor, (s, v) => s.BackgroundColor = v),
-        ];
-    }
-
-    /// <summary>Prázdná hodnota z pole znamená „dědí se", ne prázdný řetězec uložený do šablony.</summary>
-    private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
-
-    private TableCell? FirstCell() =>
-        cells.Count == 0 ? null : table.EnsureCell(data(), cells[0].Row, cells[0].Col);
-
-    /// <summary>Vratná změna buňky mimo styl (formát hodnoty) - stejná mechanika jako
-    /// <see cref="Apply"/>, jen sahá na buňku samotnou.</summary>
-    public IDesignerCommand? ApplyToCells(string label, Action<TableCell> change)
-    {
-        if (cells.Count == 0) return null;
-
-        var before = table.CaptureCells(data(), cells);
-        foreach (var (row, col) in cells)
-            if (table.EnsureCell(data(), row, col) is { } cell) change(cell);
-        return Command(label, before);
+        var resolved = ActiveStyle();
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var property in typeof(ResolvedTextStyle).GetProperties())
+            if (property.GetIndexParameters().Length == 0)
+                values["Style." + property.Name] = ElementPropertyAccessor.ToFormValue(property.GetValue(resolved));
+        return values;
     }
 
     /// <summary>

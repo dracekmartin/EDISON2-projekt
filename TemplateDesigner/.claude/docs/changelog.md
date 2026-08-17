@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-08-17 (5) - 📝 buňka se edituje standardním formulářem, Ctrl+B/I/U funguje (`B76`)
+
+Dvě věci z proklikání (Jan 17. 8.): panel buňky měl vypadat jako každý jiný formulář v aplikaci
+a chyběly zavedené zkratky.
+
+**Vybraná buňka má vlastní formulář** (`TableCellEdit.cls`) - stejná stavba i popisky jako
+u prvků, skupiny „Vybraná buňka" (formát hodnoty) a „Styl buňky" (písmo, řez, velikost, řezy textu,
+zarovnání, barvy, vnitřní okraje, řádkování). **Jedno schéma, dva hostitelé:** panel i okno pod
+Alt+Enter jedou na tomtéž, přesně jako u prvků - dvě různá by se nutně rozešla. Vlastní stylový
+pod-formulář pro buňku tím padl, zůstává jen tam, kde byl (zóny mřížky odjezdů).
+
+**Ctrl+B / Ctrl+I / Ctrl+U** ztuční, zkurzíví a podtrhne buňku, a to **i během psaní**. Uvnitř
+tabulky přebíjejí globální význam (Ctrl+B jinak sbaluje levý panel) - v tabulce čeká uživatel
+tučné a mimo tabulku zkratka funguje dál. Nová hodnota se počítá z aktivní buňky, ne pro každou
+zvlášť, ať u budoucího výběru oblasti buňky nezůstanou prohozené.
+
+⚠️ **Aby formulář nelhal ani nezapékal**, dostal binder EDInputFormu dvě věci:
+
+- **hodnoty z kaskády místo výchozích ze schématu** (`ApplyInheritedValues`) - buňka je překryv,
+  takže formulář musí ukázat, jak reálně vypadá, ale zapsat jen to, co uživatel opravdu změnil;
+- **vymazané pole u zděditelné vlastnosti = „nenastaveno" (null), ne prázdný text.** Do dneška to
+  platilo jen pro barvy. Vymazaný font tak nově znamená „vezmi z tabulky", ne „žádný font",
+  a vymazaný formát hodnoty se vrátí k formátu sloupce.
+
+Zápis z formuláře jde do historie **souřadnicí buňky**, ne odkazem na ni - stejně jako u lišty.
+
+**Doklad:** formulář ověřen voláním nasazené třídy. Testy hlídají, že otevření a potvrzení beze
+změny nic nezapíše, že se zapíše jen změněné pole, že vymazané pole vrátí dědění, že každé pole
+schématu existuje jako vlastnost buňky a že **žádné stylové pole nezůstane bez hodnoty z kaskády**
+(kdyby zůstalo, formulář by u něj ukázal výchozí hodnotu ze schématu a uživatel by ji potvrzením
+zapekl). Formulář buňky je proto vědomě mimo `EDInputFormSchemaDriftTests` - výchozí hodnoty se
+u něj nikdy nezobrazí; důvod je zapsaný na obou stranách.
+
 ## 2026-08-17 (4) - 🚏 seznam zastávek ukazuje jen zastávky dosažitelné z té vývěsky (#7959)
 
 Zastávka, kam **z dané vývěsky nic nejede**, zabírala v seznamu řádek, kde bylo „<" ve sloupci časů

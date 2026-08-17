@@ -232,12 +232,16 @@ zkopírovaný z Excelu (tabulka se dorovná). Po napsání `{` se nabídnou dato
 **Řádky a sloupce** se přidávají a mažou z místní nabídky; šířku sloupce a výšku řádku změníte
 tažením vnitřní hranice (vnější hrana mění velikost celého prvku).
 
-**Formátování buňky:** vybranou buňku ztučníte, zkurzívíte, podtrhnete, přeškrtnete a zarovnáte
-(vodorovně i svisle) přímo **formátovací lištou** nad plátnem. Kompletní nastavení má **Alt+Enter**
-nebo místní nabídka **„Vlastnosti buňky"**: písmo a velikost, řez, barva textu a pozadí, vnitřní
+**Formátování buňky:** jakmile jste uvnitř, **levý panel ukazuje vybranou buňku** - písmo
+a velikost, řez, tučné, kurzívu, podtržení, přeškrtnutí, zarovnání, barvu textu a pozadí, vnitřní
 okraje, řádkování a **formát hodnoty** (např. `dd.MM.yyyy` nebo `N2` u buňky s datovým polem).
-Prázdné pole znamená **dědit** z nastavení celé tabulky - zděděná hodnota je vidět šedě a křížkem
-u pole se dědění vrací.
+Totéž otevřete v samostatném okně přes **Alt+Enter** nebo místní nabídkou „Vlastnosti buňky".
+Nejčastější úpravy jsou i ve **formátovací liště** nad plátnem a na **Ctrl+B / Ctrl+I / Ctrl+U**
+(tučné, kurzíva, podtržení - fungují i během psaní).
+
+**Prázdné pole znamená „dědí se" z nastavení celé tabulky.** Panel proto u nevyplněného pole
+ukazuje hodnotu, kterou buňka reálně má; vymazáním pole se dědění vrátí. Nastavení celé tabulky
+je za tlačítkem **„Nastavení celé tabulky"** v prvním řádku panelu (nebo klávesou Esc).
 
 ### Přidání prvku
 - Klik na tlačítko v paletě vloží prvek do aktivní sekce (souřadnice 5, 5 mm).
@@ -506,6 +510,7 @@ operaci).
 - **F2** - Rychlá editace textu (textový prvek), nebo vstup do buňky pevné tabulky
 - **Alt+klik na buňku** - Vstup do pevné tabulky rovnou do té buňky
 - **Alt+Enter (v buňce)** - Vlastnosti buňky (styl, formát hodnoty)
+- **Ctrl+B / Ctrl+I / Ctrl+U (v buňce)** - Tučné / kurzíva / podtržení buňky
 - **Ctrl+G / Ctrl+Shift+G** - Seskupit / Rozeskupit
 - **Alt+klik** - Vybrat jeden prvek ze skupiny
 - **Ctrl+Shift+H / Ctrl+Shift+J** - Rozdělit prvek vodorovně / svisle
@@ -516,7 +521,7 @@ operaci).
 - **Ctrl+0** - Přizpůsobit zobrazení stránce („Fit")
 - **Ctrl+1** - Skutečná velikost 100 % („1:1")
 - **Ctrl + kolečko myši** - Plynulý zoom (k pozici kurzoru)
-- **Ctrl+B** - Sbalit/rozbalit levý panel
+- **Ctrl+B** - Sbalit/rozbalit levý panel (uvnitř tabulky ztuční buňku)
 - **Ctrl+P** - Tisk
 - **Ctrl+Shift+P** - Vlastnosti stránky
 - **Ctrl+Shift+A** - Změnit agendu

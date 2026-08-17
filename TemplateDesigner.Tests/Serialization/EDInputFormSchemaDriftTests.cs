@@ -575,7 +575,12 @@ public class EDInputFormSchemaDriftTests
     {
         // Ne-elementové formy - needitují property elementu/sekce/šablony:
         //   StyleEdit = pod-formulář stylu (jeho pole ověřuje StyleFields expanze v rodičích).
-        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "StyleEdit.cls" };
+        //   TableCellEdit = formulář vybrané buňky pevné tabulky. Do kontroly výchozích hodnot
+        //     nepatří, protože se **nikdy nezobrazí**: klient je před vyplněním přepíše hodnotami
+        //     z kaskády (buňka je překryv nad nastavením celé tabulky). Vazbu na C# i pokrytí
+        //     kaskádou hlídá `FixedTableCellFormattingTests` - přísněji, než by uměl tenhle test.
+        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "StyleEdit.cls", "TableCellEdit.cls" };
 
         var covered = SchemaMap.Select(row => (string)row[0]!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -727,8 +732,11 @@ public class EDInputFormSchemaDriftTests
         //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Pozadí značky"), v mřížce
         //     odjezdů stojí hned vedle obecné barvy symbolu anotace, takže tam musí být v popisku
         //     rozlišené („Pozadí negativní značky"); bez toho se nedá poznat, co která barva řídí.
+        //   Format - u stránky je to formát papíru („Formát"), u buňky formát vypisované hodnoty
+        //     („Formát hodnoty"). Dvě různé věci, které jen shodou okolností mají stejný název
+        //     vlastnosti na svém cíli.
         var exempt = new HashSet<string>(StringComparer.Ordinal)
-            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor" };
+            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor", "Format" };
 
         var labelsPerKey = new Dictionary<string, Dictionary<string, List<string>>>();
         foreach (var file in AllEditClsFiles())

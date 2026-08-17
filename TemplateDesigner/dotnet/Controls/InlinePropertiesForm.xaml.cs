@@ -36,6 +36,14 @@ public partial class InlinePropertiesForm : UserControl
         TheForm.ButtonClicked += key => ButtonClicked?.Invoke(key);
     }
 
+    /// <summary>
+    /// Hodnoty, které se u **nevyplněných** polí ukážou místo výchozích ze schématu - pro cíl,
+    /// jehož „nenastaveno" znamená dědění (buňka tabulky dědí z nastavení celé tabulky). Klíč =
+    /// property path pole. Formulář pak ukazuje, jak cíl reálně vypadá, a přitom zapíše jen to,
+    /// co uživatel opravdu změnil (baseline změn = zobrazená hodnota).
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? InheritedValues { get; set; }
+
     /// <summary>Datová pole aktuální agendy pro nabídku „vložit pole" u textových vlastností.
     /// Nastavuje host při změně agendy - panel schéma nezná.</summary>
     public IReadOnlyList<EDControls.ListItem> PlaceholderFields
@@ -79,6 +87,7 @@ public partial class InlinePropertiesForm : UserControl
         try
         {
             ElementFormBinder.PopulateFontFields(TheForm);
+            ElementFormBinder.ApplyInheritedValues(TheForm, InheritedValues);
             _preFilled = ElementFormBinder.Prefill(TheForm, _target);
             // Řez (váhy) - plní se z reálných řezů rodiny až po prefillu (kdy je hodnota rodiny známá).
             ElementFormBinder.PopulateFontWeightFields(TheForm);
