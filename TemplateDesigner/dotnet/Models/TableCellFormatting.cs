@@ -49,6 +49,45 @@ public sealed class TableCellFormatting(
         return Command(label, before);
     }
 
+    /// <summary>
+    /// Dorovná ostatní buňky výběru podle toho, co se právě změnilo na **aktivní** buňce.
+    /// Formulář (panel i okno) zapisuje do jednoho objektu, ale uživatel, který má označenou
+    /// oblast, čeká změnu na celé oblasti - jako v Excelu. Kopírují se **jen vlastnosti, které se
+    /// reálně změnily**; zbytek si každá buňka nechává svůj, aby hromadná změna barvy nesrovnala
+    /// i písmo.
+    /// </summary>
+    public void ApplyActiveChangesToOthers(TableElement.CellSnapshot before)
+    {
+        if (cells.Count <= 1) return;
+
+        var (activeRow, activeCol) = cells[0];
+        int index = before.Cells.FindIndex(c => c.Row == activeRow && c.Col == activeCol);
+        if (index < 0) return;
+        if (table.EnsureCell(data(), activeRow, activeCol) is not { } active) return;
+
+        // Prázdný styl místo null - buňka bez vlastního stylu má všechny vlastnosti „nenastaveno",
+        // takže se porovnává hodnota po hodnotě stejně jako u nastavené.
+        var previous  = before.Cells[index];
+        var wasStyle  = previous.Style ?? new TextStyle();
+        var nowStyle  = active.Style ?? new TextStyle();
+
+        var changed = typeof(TextStyle).GetProperties()
+            .Where(p => p.CanWrite && !Equals(p.GetValue(nowStyle), p.GetValue(wasStyle)))
+            .ToList();
+        bool formatChanged = active.Format != previous.Format;
+        if (changed.Count == 0 && !formatChanged) return;
+
+        foreach (var (row, col) in cells.Skip(1))
+        {
+            if (table.EnsureCell(data(), row, col) is not { } cell) continue;
+            if (formatChanged) cell.Format = active.Format;
+            if (changed.Count == 0) continue;
+
+            cell.Style ??= new TextStyle();
+            foreach (var property in changed) property.SetValue(cell.Style, property.GetValue(nowStyle));
+        }
+    }
+
     /// <summary>Vratný příkaz z rozdílu proti snímku <paramref name="before"/> - pro změny, které
     /// do buňky zapsal někdo jiný (dialog vlastností buňky).</summary>
     public IDesignerCommand Command(string label, TableElement.CellSnapshot before) =>

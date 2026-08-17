@@ -59,26 +59,19 @@ Nezávislé na JŘ (faktury i obecné šablony). Cíl pevné tabulky **není fak
 „poskládám to z textových polí"**. Model = **objekt na stránce s excelovskými klávesami**
 (Word/PowerPoint), ne tabulkový procesor - žádný řádek vzorců ani odkazy typu A1.
 
-#### `B76` Formátování buněk a sloučení vodorovně (M, rozhodnutí Jan 17. 8.)
+#### `B76` Sloučení buněk vodorovně (S, poslední krok bloku)
 
-**Hotová je první část** (formátování jedné buňky, 17. 8. - detail v changelogu): formátovací lišta
-uvnitř tabulky patří aktivní buňce a Alt+Enter otevře „Vlastnosti buňky" (písmo, barvy, okraje,
-formát hodnoty) se zděděním z nastavení tabulky. Zápis je psaný nad **množinou** buněk, takže výběr
-oblasti přidá jen jiný zdroj souřadnic.
+**Hotové jsou první tři kroky** (17. 8., detail v changelogu): formátování buňky, standardní
+formulář vybrané buňky (panel i Alt+Enter) a **výběr obdélníkové oblasti tažením** se vším, co nad
+ním jede - hromadné formátování, Delete a schránka čitelná Excelem.
 
-**Zbývá:**
+**Zbývá sloučení vodorovně** (ColSpan): ze tří buněk jeden nadpis přes celou šířku. Aditivně
+v JSON, kreslení řádku musí umět span. Otevřené k rozhodnutí: **co s obsahem** slučovaných buněk
+(návrh: spojit neprázdné mezerou, ať se nic tiše neztratí; Excel zahazuje, Word spojuje) a že
+rozdělení zpátky vrátí obsah do první buňky.
 
-1. **Výběr oblasti tažením** + celý **řádek / sloupec** kliknutím u okraje („ztuč první řádek",
-   „zarovnej sloupec doprava" jsou nejčastější případ a táhnout přes ně myší je zbytečná práce).
-   Lišta i dialog se nemění, jen dostanou víc buněk. K tomu **Delete a schránka nad oblastí**
-   (dnes pracují jen s jednou buňkou).
-2. **Sloučení buněk vodorovně** (ColSpan): ze tří buněk jeden nadpis přes celou šířku. Aditivně
-   v JSON, kreslení řádku musí umět span. **Sloučení přes řádky vědomě odložené** - míchá se
-   se spanováním výšek, střídáním řádků a podmíněnou viditelností.
-
-⚠️ **Výběr zjemní i vkládání ze schránky:** dnes se vkládá od vybrané buňky a tabulka se dorovná
-(chování Wordu a Docs, jediné neztrátové bez výběru oblasti); s výběrem má platit **vybraná oblast
-= cíl vložení** (Excel), jedna buňka = dnešní chování.
+⚠️ **Sloučení přes řádky vědomě odložené** - míchá se se spanováním výšek, střídáním řádků
+a podmíněnou viditelností.
 
 ### Import PDF - doladění
 

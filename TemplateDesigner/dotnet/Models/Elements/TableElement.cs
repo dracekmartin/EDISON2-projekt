@@ -730,6 +730,44 @@ public class TableElement : TemplateElement
     /// koncem řádku a buňky tabulátorem**, takže stačí tohle - uvozovkování hodnot s vnořeným
     /// koncem řádku vědomě neřešíme (v tabulkách tohoto typu se nevyskytuje).
     /// </summary>
+    /// <summary>
+    /// Obsah výběru ve tvaru, kterému rozumí Excel a Sheets (řádky konci řádku, buňky tabulátorem) -
+    /// tedy přesně to, co se z nich vkládá zpátky. Prázdná buňka je prázdné pole, ne vynechané.
+    /// </summary>
+    public string CopyRangeToText(DataContext? data, CellRange range)
+    {
+        var lines = new List<string>();
+        for (int row = range.Top; row <= range.Bottom; row++)
+        {
+            var cells = new List<string>();
+            for (int col = range.Left; col <= range.Right; col++)
+                cells.Add(EnsureCell(data, row, col)?.Content ?? "");
+            lines.Add(string.Join("\t", cells));
+        }
+        return string.Join("\r\n", lines);
+    }
+
+    /// <summary>Vyplní celý výběr jednou hodnotou - vložení jediné hodnoty do označené oblasti
+    /// se v Excelu chová takhle a je to jediný způsob, jak jedním krokem srovnat víc buněk.</summary>
+    public void FillRange(DataContext? data, CellRange range, string content)
+    {
+        foreach (var (row, col) in range.Cells())
+            if (EnsureCell(data, row, col) is { } cell) cell.Content = content;
+    }
+
+    /// <summary>Vymaže obsah buněk výběru; styl ani formát se nemažou (na to je „Resetovat styl").</summary>
+    public bool ClearRangeContent(DataContext? data, CellRange range)
+    {
+        bool zmena = false;
+        foreach (var (row, col) in range.Cells())
+            if (EnsureCell(data, row, col) is { Content.Length: > 0 } cell)
+            {
+                cell.Content = "";
+                zmena = true;
+            }
+        return zmena;
+    }
+
     public static List<List<string>> ParseClipboardBlock(string text)
     {
         var radky = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').ToList();

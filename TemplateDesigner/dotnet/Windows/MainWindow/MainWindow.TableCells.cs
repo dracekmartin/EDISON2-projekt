@@ -27,6 +27,27 @@ public partial class MainWindow
     private int _cellRow;
     private int _cellCol;
 
+    /// <summary>Kotva výběru - buňka, ve které výběr začal. Obdélník se dopočítá proti aktivní
+    /// buňce (<see cref="_cellRow"/>/<see cref="_cellCol"/>), takže rozšiřování kotvu nechává být.</summary>
+    private int _cellAnchorRow;
+    private int _cellAnchorCol;
+
+    /// <summary>Právě se táhne výběr myší.</summary>
+    private bool _cellRangeDrag;
+
+    private bool InCellRangeDrag => _cellRangeDrag && InTableCells;
+
+    private CellRange CellSelection => new(_cellAnchorRow, _cellAnchorCol, _cellRow, _cellCol);
+
+    /// <summary>Přepne výběr; aktivní buňka je vždy ta, kam se píše a podle které jdou řádky a sloupce.</summary>
+    private void SetCellSelection(CellRange range)
+    {
+        _cellAnchorRow = range.AnchorRow;
+        _cellAnchorCol = range.AnchorCol;
+        _cellRow       = range.ActiveRow;
+        _cellCol       = range.ActiveCol;
+    }
+
     /// <summary>Právě se píše do buňky (InlineEditBox je vidět) - odlišuje „vybraná buňka" od „píšu".</summary>
     private bool _cellEditing;
     private string? _cellEditOriginal;
@@ -88,8 +109,7 @@ public partial class MainWindow
             ? table.HitTestCell(_vm.State.CurrentPreviewData, click.XMm, click.YMm)
             : null;
         _cellTable = table;
-        _cellRow   = hit?.Row ?? 0;
-        _cellCol   = hit?.Col ?? 0;
+        SetCellSelection(CellRange.Single(hit?.Row ?? 0, hit?.Col ?? 0));
 
         // Vstup rovnou otevře buňku k psaní - F2 u textového prvku taky rovnou píše, ne že by
         // uživatel musel mačkat další klávesu. Výjimka je pravý klik: tam se buňka jen vybere,
@@ -139,11 +159,38 @@ public partial class MainWindow
         if (hit is null) return false;
 
         if (_cellEditing) EndCellEdit(commit: true);
-        (_cellRow, _cellCol) = (hit.Value.Row, hit.Value.Col);
+
+        // Shift rozšíří výběr od kotvy (jako v Excelu), obyčejný klik ho smrskne na jednu buňku
+        // a zároveň začne tažení - výběr oblasti tak vznikne přirozeným tahem, bez modifikátoru.
+        SetCellSelection(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+            ? CellSelection.ExtendTo(hit.Value.Row, hit.Value.Col)
+            : CellRange.MoveTo(hit.Value.Row, hit.Value.Col));
+        _cellRangeDrag = true;
+
         SyncFormatToolbar();
         InvalidateCanvas();
         return true;
     }
+
+    /// <summary>Tažení výběru - kotva zůstává, aktivní buňka jde za myší. Mimo mřížku se drží
+    /// poslední trefená buňka, ať výběr při vyjetí z tabulky neposkakuje.</summary>
+    private void UpdateCellRangeDrag(float cx, float cy, float cw)
+    {
+        if (_vm is null || _canvas is null || _cellTable is null) return;
+        var rect = _canvas.GetElementCanvasRect(_cellTable, cw);
+        if (rect is null) return;
+
+        var hit = _cellTable.HitTestCell(_vm.State.CurrentPreviewData,
+            (cx - rect.Value.Left) / _canvas.MmToPx,
+            (cy - rect.Value.Top)  / _canvas.MmToPx);
+        if (hit is null || (hit.Value.Row == _cellRow && hit.Value.Col == _cellCol)) return;
+
+        SetCellSelection(CellSelection.ExtendTo(hit.Value.Row, hit.Value.Col));
+        SyncFormatToolbar();
+        InvalidateCanvas();
+    }
+
+    private void EndCellRangeDrag() => _cellRangeDrag = false;
 
     // ── Psaní do buňky ────────────────────────────────────────────────────────
 
@@ -298,6 +345,21 @@ public partial class MainWindow
                 MoveCell(shift ? -1 : 1, 0, rows, cols);
                 return true;
 
+            // Výběr celého řádku / sloupce / tabulky. Zkratky z Excelu; klik u okraje tabulky
+            // pro to nejde použít - tam sedí úchyty pro změnu velikosti prvku (viz místní nabídka,
+            // která tytéž volby nabízí myší).
+            case Key.Space when Keyboard.Modifiers.HasFlag(ModifierKeys.Shift):
+                SelectWholeRow();
+                return true;
+
+            case Key.Space when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+                SelectWholeColumn();
+                return true;
+
+            case Key.A when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+                SelectWholeTable();
+                return true;
+
             // Schránka uvnitř tabulky patří buňkám, ne prvku - jinak by Ctrl+V uprostřed vyplňování
             // vložil kopii celé tabulky vedle.
             case Key.C when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
@@ -313,10 +375,11 @@ public partial class MainWindow
                 PasteIntoCells();
                 return true;
 
-            case Key.Up:    MoveCell(-1, 0, rows, cols); return true;
-            case Key.Down:  MoveCell(1, 0, rows, cols);  return true;
-            case Key.Left:  MoveCell(0, -1, rows, cols); return true;
-            case Key.Right: MoveCell(0, 1, rows, cols);  return true;
+            // Se Shiftem šipka výběr rozšiřuje, bez něj ho smrskne na jednu buňku (Excel).
+            case Key.Up:    MoveCell(-1, 0, rows, cols, extend: shift); return true;
+            case Key.Down:  MoveCell(1, 0, rows, cols, extend: shift);  return true;
+            case Key.Left:  MoveCell(0, -1, rows, cols, extend: shift); return true;
+            case Key.Right: MoveCell(0, 1, rows, cols, extend: shift);  return true;
         }
 
         return false;
@@ -401,19 +464,43 @@ public partial class MainWindow
     /// řádku na začátek dalšího. Dřív se to počítalo přes jeden plochý index, takže šipka nahoru
     /// v prvním řádku skočila do jiného sloupce (nález revize 12. 8.).
     /// </summary>
-    private void MoveCell(int dRow, int dCol, int rows, int cols, bool wrap = false)
+    private void MoveCell(int dRow, int dCol, int rows, int cols, bool wrap = false, bool extend = false)
     {
+        int radek, sloupec;
         if (wrap)
         {
             int index = Math.Clamp(_cellRow * cols + _cellCol + dCol, 0, rows * cols - 1);
-            _cellRow = index / cols;
-            _cellCol = index % cols;
+            radek   = index / cols;
+            sloupec = index % cols;
         }
         else
         {
-            _cellRow = Math.Clamp(_cellRow + dRow, 0, rows - 1);
-            _cellCol = Math.Clamp(_cellCol + dCol, 0, cols - 1);
+            radek   = Math.Clamp(_cellRow + dRow, 0, rows - 1);
+            sloupec = Math.Clamp(_cellCol + dCol, 0, cols - 1);
         }
+
+        SetCellSelection(extend
+            ? CellSelection.ExtendTo(radek, sloupec)
+            : CellRange.MoveTo(radek, sloupec));
+        SyncFormatToolbar();
+        InvalidateCanvas();
+    }
+
+    private void SelectWholeRow()    => SelectRange(r => r.WholeRow(GridCols()));
+    private void SelectWholeColumn() => SelectRange(r => r.WholeColumn(GridRows()));
+    private void SelectWholeTable()  => SelectRange(_ => CellRange.Whole(GridRows(), GridCols()));
+
+    private int GridRows() => _cellTable is null || _vm is null
+        ? 0 : _cellTable.GridSize(_vm.State.CurrentPreviewData).Rows;
+
+    private int GridCols() => _cellTable is null || _vm is null
+        ? 0 : _cellTable.GridSize(_vm.State.CurrentPreviewData).Cols;
+
+    private void SelectRange(Func<CellRange, CellRange> zmena)
+    {
+        if (GridRows() == 0 || GridCols() == 0) return;
+        if (_cellEditing) EndCellEdit(commit: true);
+        SetCellSelection(zmena(CellSelection));
         SyncFormatToolbar();
         InvalidateCanvas();
     }
@@ -441,17 +528,19 @@ public partial class MainWindow
         var (rows, cols) = _cellTable.GridSize(_vm.State.CurrentPreviewData);
         if (!vSablone || rows == 0 || cols == 0) { ExitTableCells(); return; }
 
-        _cellRow = Math.Clamp(_cellRow, 0, rows - 1);
-        _cellCol = Math.Clamp(_cellCol, 0, cols - 1);
+        SetCellSelection(CellSelection.Clamp(rows, cols));
     }
 
+    /// <summary>Vymaže obsah celého výběru jedním vratným krokem (styl zůstává).</summary>
     private void ClearCell()
     {
-        if (_vm is null || _cellTable is null) return;
-        var cell = _cellTable.EnsureCell(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
-        if (cell is null || cell.Content.Length == 0) return;
+        if (_vm is null || _cellTable is null || CellFormatting is not { } formatting) return;
 
-        _vm.Execute(CellContentCommand(_cellTable, _cellRow, _cellCol, cell.Content, ""));
+        var data   = _vm.State.CurrentPreviewData;
+        var before = formatting.Capture();
+        if (!_cellTable.ClearRangeContent(data, CellSelection)) return;
+
+        _vm.Execute(formatting.Command("Obsah buňky", before));
         InvalidateCanvas();
     }
 
@@ -462,8 +551,14 @@ public partial class MainWindow
     /// ale psaná nad **množinou**, aby výběr oblasti tažením přidal jen jiný zdroj souřadnic
     /// a nemusela se přepisovat ani jedna vratná operace.
     /// </summary>
+    /// <summary>
+    /// Buňky, na které míří formátování a mazání: celý výběr, **aktivní buňkou napřed** (podle ní
+    /// se počítá nová hodnota a od ní se dorovnávají ostatní).
+    /// </summary>
     private IReadOnlyList<(int Row, int Col)> TargetCells =>
-        _cellTable is null ? [] : [(_cellRow, _cellCol)];
+        _cellTable is null
+            ? []
+            : [(_cellRow, _cellCol), .. CellSelection.Cells().Where(c => c != (_cellRow, _cellCol))];
 
     /// <summary>
     /// Přepne formátovací lištu mezi buňkou a prvkem. Volá se i při každém posunu po buňkách,
@@ -538,6 +633,9 @@ public partial class MainWindow
     {
         var before = formatting.Capture();
         cmd.Execute();
+        // Formulář zapisuje do aktivní buňky; když je označená oblast, čeká uživatel změnu na celé
+        // oblasti (jako v Excelu), tak se podle ní ostatní dorovnají.
+        formatting.ApplyActiveChangesToOthers(before);
         _vm!.Execute(formatting.Command(cmd.Description, before));
     };
 
@@ -807,11 +905,13 @@ public partial class MainWindow
 
     // ── Schránka ──────────────────────────────────────────────────────────────
 
+    /// <summary>Zkopíruje výběr ve tvaru, který přečte Excel - jedna buňka je prostý text,
+    /// oblast řádky a tabulátory.</summary>
     private void CopyCell()
     {
         if (_vm is null || _cellTable is null) return;
-        var cell = _cellTable.EnsureCell(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
-        if (cell is not null) System.Windows.Clipboard.SetText(cell.Content);
+        System.Windows.Clipboard.SetText(
+            _cellTable.CopyRangeToText(_vm.State.CurrentPreviewData, CellSelection));
     }
 
     /// <summary>
@@ -829,9 +929,18 @@ public partial class MainWindow
         var block = TableElement.ParseClipboardBlock(text);
         if (block.Count == 0) return;
 
-        int row = _cellRow, col = _cellCol;
+        // Jedna hodnota do označené oblasti ji **vyplní** (Excel), blok se vloží od levého horního
+        // rohu výběru a tabulka se dorovná. Bez toho by se dala oblast srovnat jen buňku po buňce.
+        var range = CellSelection;
+        if (block is [[var jedina]] && !range.IsSingle)
+        {
+            EditStructure("Vložení ze schránky",
+                t => t.FillRange(_vm.State.CurrentPreviewData, range, jedina));
+            return;
+        }
+
         EditStructure("Vložení ze schránky",
-            t => t.PasteBlock(_vm.State.CurrentPreviewData, row, col, block));
+            t => t.PasteBlock(_vm.State.CurrentPreviewData, range.Top, range.Left, block));
     }
 
     // ── Řádky a sloupce ───────────────────────────────────────────────────────
@@ -863,9 +972,16 @@ public partial class MainWindow
         Add("Vložit sloupec vpravo", () => EditStructure("Vložení sloupce", t => t.InsertColumn(modelCol + 1)));
         Add("Smazat sloupec",        () => EditStructure("Smazání sloupce", t => t.RemoveColumn(modelCol)));
         menu.Items.Add(new Separator());
-        Add("Kopírovat buňku (Ctrl+C)", CopyCell);
+        Add("Vybrat řádek (Shift+mezerník)",  SelectWholeRow);
+        Add("Vybrat sloupec (Ctrl+mezerník)", SelectWholeColumn);
+        Add("Vybrat celou tabulku (Ctrl+A)",  SelectWholeTable);
+        menu.Items.Add(new Separator());
+
+        // Popisek říká, na co akce reálně sáhne - u označené oblasti je to celá oblast.
+        string co = CellSelection.IsSingle ? "buňky" : "výběru";
+        Add($"Kopírovat obsah {co} (Ctrl+C)", CopyCell);
         Add("Vložit ze schránky (Ctrl+V)", PasteIntoCells);
-        Add("Vymazat obsah buňky (Del)", ClearCell);
+        Add($"Vymazat obsah {co} (Del)", ClearCell);
         menu.Items.Add(new Separator());
         Add("Vlastnosti buňky (Alt+Enter)", OpenCellProperties);
 
@@ -893,8 +1009,7 @@ public partial class MainWindow
 
         // Výběr jde s obsahem (viz rowDelta); po smazání může skončit mimo mřížku.
         var (rows, cols) = table.GridSize(_vm.State.CurrentPreviewData);
-        _cellRow = Math.Clamp(_cellRow + rowDelta, 0, Math.Max(0, rows - 1));
-        _cellCol = Math.Clamp(_cellCol + colDelta, 0, Math.Max(0, cols - 1));
+        SetCellSelection(CellRange.MoveTo(_cellRow + rowDelta, _cellCol + colDelta).Clamp(rows, cols));
 
         UpdatePropertiesPanel();
         InvalidateCanvas();
@@ -912,21 +1027,39 @@ public partial class MainWindow
         if (_cellTable is null) return;
 
         var elRect = _canvas.GetElementCanvasRect(_cellTable, cw);
-        var cellMm = _cellTable.CellRectMm(_vm.State.CurrentPreviewData, _cellRow, _cellCol);
+        var data   = _vm.State.CurrentPreviewData;
+        var cellMm = _cellTable.CellRectMm(data, _cellRow, _cellCol);
         if (elRect is null || cellMm is null) return;
 
         float px = _canvas.MmToPx;
-        var cellRect = new SKRect(
-            elRect.Value.Left + cellMm.Value.Left  * px,
-            elRect.Value.Top  + cellMm.Value.Top   * px,
-            elRect.Value.Left + cellMm.Value.Right * px,
-            elRect.Value.Top  + cellMm.Value.Bottom * px);
+        SKRect ToCanvas(SKRect mm) => new(
+            elRect.Value.Left + mm.Left   * px, elRect.Value.Top + mm.Top    * px,
+            elRect.Value.Left + mm.Right  * px, elRect.Value.Top + mm.Bottom * px);
+
+        var cellRect = ToCanvas(cellMm.Value);
 
         using var fill   = new SKPaint { Color = new SKColor(0x222563EB) };
         using var border = new SKPaint
         {
             Color = new SKColor(0xFF2563EB), IsStroke = true, StrokeWidth = 2f, IsAntialias = true
         };
+
+        // Vybraná oblast se podbarví celá, ale **aktivní buňka zůstane odlišená** silným rámečkem -
+        // je to ta, do které se píše a podle které se vkládají řádky a sloupce.
+        var selection = CellSelection;
+        if (!selection.IsSingle
+            && _cellTable.CellRectMm(data, selection.Top, selection.Left) is { } prvni
+            && _cellTable.CellRectMm(data, selection.Bottom, selection.Right) is { } posledni)
+        {
+            var areaRect = ToCanvas(new SKRect(prvni.Left, prvni.Top, posledni.Right, posledni.Bottom));
+            canvas.DrawRect(areaRect, fill);
+            using var areaBorder = new SKPaint
+            {
+                Color = new SKColor(0xFF2563EB), IsStroke = true, StrokeWidth = 1f, IsAntialias = true
+            };
+            canvas.DrawRect(areaRect, areaBorder);
+        }
+
         canvas.DrawRect(cellRect, fill);
         canvas.DrawRect(cellRect, border);
 

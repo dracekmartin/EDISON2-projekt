@@ -82,13 +82,17 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 | Alt+Enter (nebo místní nabídka) | **vlastnosti buňky** - týž formulář jako v panelu, jen v okně; samotný Enter musí zůstat posunu o buňku níž |
 | Ctrl+B / Ctrl+I / Ctrl+U | tučné / kurzíva / podtržení buňky, i během psaní. **Uvnitř tabulky přebíjejí globální význam** (Ctrl+B jinak sbaluje levý panel) - v tabulce čeká uživatel tučné a globální zkratka mimo tabulku nikam nezmizí |
 | Klik (uvnitř) | přepnout buňku |
+| tažení přes buňky | **obdélníkový výběr**; Shift+klik ho rozšíří od kotvy |
+| Shift+šipky | rozšířit výběr (bez Shiftu se smrskne na jednu buňku) |
+| Shift+mezerník / Ctrl+mezerník | vybrat celý řádek / sloupec. **Klik u okraje tabulky se pro to použít nedá** - tam jsou úchyty na změnu velikosti prvku; totéž nabízí místní nabídka |
+| Ctrl+A (uvnitř) | vybrat všechny buňky tabulky |
 | psaní | přepíše obsah buňky (jako Excel) |
 | F2 | upravit stávající obsah buňky |
 | Tab / Shift+Tab | buňka vedle / předchozí (přes konec řádku na další) |
 | Enter / Shift+Enter | potvrdit a o buňku níž / výš |
 | Šipky | pohyb po buňkách |
-| Delete / Backspace | vymazat **obsah buňky** (ne prvek - to je ta past) |
-| Ctrl+C / Ctrl+X / Ctrl+V | schránka pracuje s **buňkami**, ne s prvkem; Ctrl+V vloží blok z Excelu (řádky po koncích řádku, buňky po tabulátorech) a tabulku dorovná |
+| Delete / Backspace | vymazat **obsah výběru** (ne prvek - to je ta past); styl zůstává |
+| Ctrl+C / Ctrl+X / Ctrl+V | schránka pracuje s **buňkami**, ne s prvkem; kopíruje se celý výběr ve tvaru čitelném Excelem. Ctrl+V vloží blok od levého horního rohu výběru a tabulku dorovná; **jedna hodnota do označené oblasti ji vyplní** |
 | `{` při psaní | nabídka datových polí; šipky vybírají, Enter nebo Tab doplní i s koncovou závorkou, Esc zavře nabídku (teprve druhý Esc zahodí úpravu) |
 | tažení vnitřní hranice | šířka sloupce / výška řádku; funguje i na **vybrané** tabulce, nemusí se dovnitř |
 | Esc | ven z buňky na prvek, podruhé zrušit výběr |
@@ -108,6 +112,11 @@ i Delete padají do prázdna - přesně tak to 17. 8. spadlo. Platí proto dvě 
 buňce, **dokud si je nenárokuje pole, kam se opravdu píše** (panel vlastností, formulář prvku, jiný
 textbox), a každá akce, která si vzala fokus (tlačítko lišty, zavřený dialog), ho **vrátí buňce** -
 do rozepsané buňky, jinak na plátno.
+
+**Aktivní buňka musí zůstat rozpoznatelná i ve výběru** (silný rámeček × podbarvená oblast) -
+je to ta, do které se píše, podle které se vkládají řádky a sloupce a od které se počítá nová
+hodnota při hromadném formátování. Formulář zapisuje do ní a ostatní buňky výběru se dorovnají
+**jen v tom, co se reálně změnilo** - jinak by změna barvy srovnala i písmo.
 
 **Uvnitř tabulky patří lišta i panel vlastností VYBRANÉ BUŇCE, ne prvku.** Rozsah editace musí jít
 poznat, jinak stojí proti sobě dvě sady týchž vlastností: do 17. 8. panel měnil celou tabulku,

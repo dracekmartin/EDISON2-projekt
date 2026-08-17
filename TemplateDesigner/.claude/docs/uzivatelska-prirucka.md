@@ -232,6 +232,12 @@ zkopírovaný z Excelu (tabulka se dorovná). Po napsání `{` se nabídnou dato
 **Řádky a sloupce** se přidávají a mažou z místní nabídky; šířku sloupce a výšku řádku změníte
 tažením vnitřní hranice (vnější hrana mění velikost celého prvku).
 
+**Výběr více buněk:** tažením myší označíte obdélníkovou oblast, Shift+klik a Shift+šipky ji
+rozšíří, **Ctrl+A** vybere celou tabulku, **Shift+mezerník** celý řádek a **Ctrl+mezerník** celý
+sloupec (totéž najdete v místní nabídce). Nad výběrem pak funguje formátování najednou, **Delete**
+vymaže obsah všech vybraných buněk a **Ctrl+C** je zkopíruje ve tvaru, který přečte Excel. Vložíte-li
+do označené oblasti jedinou hodnotu, vyplní se jí celá oblast.
+
 **Formátování buňky:** jakmile jste uvnitř, **levý panel ukazuje vybranou buňku** - písmo
 a velikost, řez, tučné, kurzívu, podtržení, přeškrtnutí, zarovnání, barvu textu a pozadí, vnitřní
 okraje, řádkování a **formát hodnoty** (např. `dd.MM.yyyy` nebo `N2` u buňky s datovým polem).
@@ -511,6 +517,7 @@ operaci).
 - **Alt+klik na buňku** - Vstup do pevné tabulky rovnou do té buňky
 - **Alt+Enter (v buňce)** - Vlastnosti buňky (styl, formát hodnoty)
 - **Ctrl+B / Ctrl+I / Ctrl+U (v buňce)** - Tučné / kurzíva / podtržení buňky
+- **Shift+mezerník / Ctrl+mezerník (v buňce)** - Vybrat celý řádek / sloupec
 - **Ctrl+G / Ctrl+Shift+G** - Seskupit / Rozeskupit
 - **Alt+klik** - Vybrat jeden prvek ze skupiny
 - **Ctrl+Shift+H / Ctrl+Shift+J** - Rozdělit prvek vodorovně / svisle

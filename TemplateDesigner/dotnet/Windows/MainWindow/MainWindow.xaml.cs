@@ -2425,6 +2425,15 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Tažení výběru buněk uvnitř tabulky - musí být před přesunem prvku, jinak by tah po
+        // buňkách hýbal celou tabulkou.
+        if (InCellRangeDrag)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed) { EndCellRangeDrag(); return; }
+            UpdateCellRangeDrag(cx, cy, cw);
+            return;
+        }
+
         if (_mouseMode == MouseMode.Dragging)
         {
             if (e.LeftButton != MouseButtonState.Pressed) { EndDrag(false); return; }
@@ -2677,7 +2686,8 @@ public partial class MainWindow : Window
     private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
     {
         if (InDividerDrag)                          { EndDividerDrag(true); return; }
-        if (_mouseMode == MouseMode.Dragging)       EndDrag(true);
+        if (InCellRangeDrag)                        EndCellRangeDrag();
+        else if (_mouseMode == MouseMode.Dragging)  EndDrag(true);
         else if (_mouseMode == MouseMode.Resizing)  EndResize(true);
         else if (_mouseMode == MouseMode.RubberBand) EndRubberBand();
         else if (_mouseMode == MouseMode.AddingElement) EndAddingElement();
