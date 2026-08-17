@@ -494,9 +494,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Obnoví uložené rozbalení a napojí persistenci na VŠECH stromech (vč. Oblíbených).
             // Suppress brání zápisu během programového apply.
-            _suppressExpansionSave = true;
-            ApplyTreeExpansion();
-            _suppressExpansionSave = false;
+            using (SuppressExpansionSave())
+                ApplyTreeExpansion();
 
             // Poslední otevřená záložka (per-user × IDFa); bez uložené volby výchozí dle oblíbených.
             _suppressTabSave = true;
@@ -511,16 +510,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 FavoritesTree.Add(root);
 
             // Po přestavbě (i mimo load — po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
-            bool prev = _suppressExpansionSave;
-            _suppressExpansionSave = true;
-            ApplyExpansion(FavoritesTree, FavoritesTab.Key);
+            using (SuppressExpansionSave())
+            {
+                ApplyExpansion(FavoritesTree, FavoritesTab.Key);
 
-            // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) — při aktivním hledání přefiltrovat.
-            var searchText = _treeSearchText.Trim();
-            if (searchText.Length > 0)
-                foreach (var root in FavoritesTree)
-                    ApplySearchToModule(root, searchText);
-            _suppressExpansionSave = prev;
+                // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) — při aktivním hledání přefiltrovat.
+                var searchText = _treeSearchText.Trim();
+                if (searchText.Length > 0)
+                    foreach (var root in FavoritesTree)
+                        ApplySearchToModule(root, searchText);
+            }
 
             OnPropertyChanged(nameof(HasNoFavorites));
         }
@@ -543,6 +542,30 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 ApplyExpansion(tree, name);
         }
 
+        /// <summary>
+        /// Potlačí persistenci rozbalení po dobu programové změny stromu. Refcount, ne bool:
+        /// cesty se vnořují (přestavba Oblíbených uvnitř session loadu, re-filtrace při hledání)
+        /// a plochý reset na false by vnitřní blok odemkl dřív, než skončí ten vnější.
+        /// <c>internal</c> kvůli testu na vnoření.
+        /// </summary>
+        internal IDisposable SuppressExpansionSave()
+        {
+            _expansionSaveSuppressed++;
+            return new ExpansionSaveScope(this);
+        }
+
+        private sealed class ExpansionSaveScope(EdisonMainViewModel vm) : IDisposable
+        {
+            private bool _disposed;
+
+            public void Dispose()
+            {
+                if (_disposed) return;
+                _disposed = true;
+                vm._expansionSaveSuppressed--;
+            }
+        }
+
         // ---- rozbalit / sbalit vše (toolbar + kontextové menu) ---------------
 
         // Strom aktivní záložky; Používané (ListBox) strom nemá → null.
@@ -554,13 +577,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void SetActiveTreeExpanded(bool expanded)
         {
             if (ActiveExpandableTree() is not { } tree) return;
-            _suppressExpansionSave = true;
-            try
+            using (SuppressExpansionSave())
             {
                 foreach (var module in tree)
                     SetExpandedRecursive(module, expanded);
             }
-            finally { _suppressExpansionSave = false; }
             _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
         }
 
@@ -568,9 +589,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void SetSubtreeExpanded(IModule module, bool expanded)
         {
             if (module is not ModuleFamily) return;
-            _suppressExpansionSave = true;
-            try { SetExpandedRecursive(module, expanded); }
-            finally { _suppressExpansionSave = false; }
+            using (SuppressExpansionSave())
+                SetExpandedRecursive(module, expanded);
             _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
         }
 
@@ -606,7 +626,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private void OnFamilyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && !_suppressExpansionSave)
+            if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && _expansionSaveSuppressed == 0)
                 _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
         }
 
@@ -658,14 +678,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ApplySearch()
         {
             var text = _treeSearchText.Trim();
-            _suppressExpansionSave = true;
-            try
+            using (SuppressExpansionSave())
             {
                 foreach (var (_, tree) in ExpandableTrees)
                     foreach (var root in tree)
                         ApplySearchToModule(root, text);
             }
-            finally { _suppressExpansionSave = false; }
 
             if (text.Length == 0) ApplyTreeExpansion();
         }
@@ -922,7 +940,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private Dictionary<string, UsageEntry> _usage = [];
         // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
         private List<string>? _expansion;
-        private bool _suppressExpansionSave;
+        private int _expansionSaveSuppressed;
         private const int UsedModulesCap = 20;
 
         // Zdrojové stromy plněné ze serveru (per-IdFa). Jedna kolekce pro společné operace (load, filtrace,

@@ -325,6 +325,29 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
+    public void TreeExpansion_NestedSuppress_PersistsOnlyAfterOutermostScopeEnds()
+    {
+        // Cesty potlačující persistenci se vnořují (přestavba Oblíbených uvnitř session loadu,
+        // re-filtrace při hledání). Plochý bool by po konci vnitřního bloku zápis odemkl
+        // a rozbalení vynucené programově by se uložilo jako uživatelská volba.
+        var prefs = Substitute.For<IUserPrefsService>();
+        var vm = CreateVM(prefs, tree: [Family("MHD", Exe("1"))]);
+        var family = vm.MainMenuTree.OfType<ModuleFamily>().Single();
+        prefs.ClearReceivedCalls();
+
+        using (vm.SuppressExpansionSave())
+        {
+            using (vm.SuppressExpansionSave()) { }
+
+            family.IsExpanded = true;   // vnitřní scope skončil, vnější pořád platí
+            prefs.DidNotReceive().SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
+        }
+
+        family.IsExpanded = false;
+        prefs.Received().SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
+    }
+
+    [Fact]
     public void ShortcutsLoadedAtStartup_PrebuildsFavoritesTree()
     {
         var prefs = Substitute.For<IUserPrefsService>();

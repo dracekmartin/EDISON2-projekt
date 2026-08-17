@@ -83,7 +83,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 - **Toolbar nad stromy** (Rozbalit/Sbalit vše + oblíbené/výchozí okno nad vybraným uzlem):
   jedna instance vpravo v řádku se záložkami. Rozbalit/Sbalit vše cílí na **aktivní** záložku
   (`ActiveExpandableTree`; Používané nemá strom → vyp), bulk změna obalena
-  `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar akce)
+  `SuppressExpansionSave()` + jeden `SaveExpansionAsync`. Ten scope je **refcountovaný** -
+  cesty se vnořují (přestavba Oblíbených uvnitř loadu, re-filtrace při hledání) a plochý bool
+  by vnitřní blok odemkl dřív než vnější. `SelectedModule` (řídí toolbar akce)
   plní code-behind jedním handlerem na kartě - `TreeView.SelectedItem` nelze bindovat a
   `SelectedItemChanged` i `KeyDown` bublají. VM si výběr pamatuje **per záložku**, aby akce
   cílily na to, co je vidět; přestavba stromů ho zahazuje (uzly jsou nové instance).
