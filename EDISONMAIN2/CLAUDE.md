@@ -98,8 +98,9 @@ Mini-apps (AvalonDock, WebView2 widgety, persistence layoutu, karusel) mají vla
 Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `DesktopShortcut` všech
 `ShortcutKind`, ★ ve stromu umí jen `MenuModule` (= záložka Oblíbené). Identita je `Key`
 (`Kind|ElementId|Id`). Položka, kterou aktuální strom nezná (licence, `hidden`), se
-**nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní
-druhy jde dnes jen uložit, ne vytvořit/spustit.
+**nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní druhy
+už jde **spustit** (14. arg hosta, `ShortcutLaunchPayloadCodec`), ale ne vytvořit z agendy -
+kanál modul→shell chybí, viz [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md).
 Dlaždice ukazuje **dlouhý název** (`ExecutableModule.LongName`, legacy `nameEx`; fallback
 krátký) a cestu agendou v ToolTipu (`Seed` ji dostává delegátem) - mimo strom chybí kontext,
 který krátký název zjednoznačňuje. Obojí odvozené ze stromu, nepersistuje se
@@ -129,9 +130,11 @@ ne verzi - Caché-only patch nechává stale `_DIFF` na disku a DEBUG verze je k
 ## Legacy moduly - EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`,
-.NET Framework 4.8, deploy do `C:\Edison\`). Args: sentinel `"EDISONMAIN2"` + 12 polí
+.NET Framework 4.8, deploy do `C:\Edison\`). Args: sentinel `"EDISONMAIN2"` + 13 polí
 (server, port, ns, idfa, login, fullName, mlp, formName, shellGuid, inputParam,
-assemblyPath, licensedElements). Dvě vstupní metody:
+assemblyPath, licensedElements, zástupce na ploše). Poslední pole je Base64 XML zástupce -
+prázdné u běžného launche; s `CallType=Procedura` host místo formy spustí `ProcedureIO`
+agendy (viz [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md)). Dvě vstupní metody:
 
 - `TryGetFormFromArgs` - typ hledá reflexí ve volajícím assembly; kontrakt pro
   retrofitnuté `.exe` (v `Sub Main` zavolat a předat do `Application.Run`; bez argů

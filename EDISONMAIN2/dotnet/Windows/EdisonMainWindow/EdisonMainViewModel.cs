@@ -51,6 +51,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private Action<double>? _applyTreeWidth;
 
         public ICommand OpenModuleCommand { get; }
+        /// <summary>Spuštění zástupce mimo hlavní nabídku (tisková sestava, pohled DS) přes hosta.</summary>
+        public ICommand LaunchShortcutCommand { get; }
         public ICommand ToggleFavoriteCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
         public ICommand OpenEDListTestCommand { get; }
@@ -242,6 +244,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _shortcuts = shortcuts;
 
             OpenModuleCommand        = CommandAsync<IModule>(OpenModule);
+            LaunchShortcutCommand    = CommandAsync<DesktopShortcut>(LaunchShortcutViaHost);
             ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
@@ -1176,8 +1179,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // docs/DESKTOP_SHORTCUTS.md, kanál spuštění přes EDISONMAIN2API.
         private void LaunchShortcut(DesktopShortcut shortcut)
         {
-            if (shortcut.Module is { } module) OpenModuleCommand.Execute(module);
-            else PopupDisplayer.Info("Tento typ zástupce zatím nelze z plochy spustit.");
+            if (shortcut.Module is { } module) { OpenModuleCommand.Execute(module); return; }
+            LaunchShortcutCommand.Execute(shortcut);
+        }
+
+        // Zástupce mimo hlavní nabídku (tisková sestava, uložený pohled): host ho místo formy
+        // pustí jako proceduru agendy. Exe i formu nese sama položka - hostitelská forma nemusí
+        // být ve stromu, takže se nedohledávají.
+        private async Task LaunchShortcutViaHost(DesktopShortcut shortcut)
+        {
+            if (shortcut.ExecutablePath.Length == 0 || shortcut.FormName.Length == 0)
+            {
+                PopupDisplayer.Info($"Zástupce „{shortcut.DisplayedName}\" nemá uloženou agendu ani formulář, "
+                                    + "nelze ho spustit. Vytvořte ho znovu z modulu.");
+                return;
+            }
+            using (ActionInProgress())
+                await WindowNavigator.ShowLegacyShortcutAsync(shortcut.ExecutablePath, shortcut.FormName,
+                    ShortcutLaunchPayloadCodec.Encode(shortcut), inputParam: shortcut.InputParam);
         }
 
         // Oblíbené = položky plochy, které jsou modulem hlavní nabídky (★ ve stromu jiné druhy nezná).

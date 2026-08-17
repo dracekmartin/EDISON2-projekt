@@ -141,7 +141,7 @@ public class WindowNavigatorTests
 
         // Prázdný inputParam zůstává jako "" na pozici [10] — pořadí polí se neposune.
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\"",
             args);
     }
 
@@ -166,8 +166,18 @@ public class WindowNavigatorTests
             MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe", "26001,6001");
 
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\"",
             args);
+    }
+
+    [Fact]
+    public void BuildLauncherArguments_ShortcutPayload_IsLastField()
+    {
+        var args = WindowNavigator.BuildLauncherArguments(
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", "UEFZTE9BRA==");
+
+        // Zástupce je [13] - až za licencovanými elementy, aby starší host kontrakt jen ignoroval.
+        Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\"", args);
     }
 
     // Vlastnictví oken (IsInternalWindow / ShouldClose) → WindowOwnershipTests.

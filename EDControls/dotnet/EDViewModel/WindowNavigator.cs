@@ -65,6 +65,20 @@ public class WindowNavigator : IWindowNavigator
     }
 
     /// <summary>
+    /// Spustí zástupce na ploše (tisková sestava, uložený pohled) - host místo formy zavolá
+    /// proceduru agendy. Záměrně **bez dedup přes <see cref="TryFocusExistingLegacy"/>**: dvě
+    /// spuštění téže sestavy jsou dva legitimní tisky, ne duplikát okna. Proces se z téhož důvodu
+    /// netrackuje mezi moduly - není to modul a v „Spuštěné moduly" nemá co dělat.
+    /// </summary>
+    public async Task ShowLegacyShortcutAsync(string exeName, string formFqn, string shortcutPayload,
+                                              bool shareShellSession = true, string inputParam = "")
+    {
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam, shortcutPayload);
+        if (prc == null) return;
+        await WaitForModuleWindowAsync(prc);
+    }
+
+    /// <summary>
     /// Dedup pro modeless legacy launch: když už běží proces se stejným
     /// <paramref name="exeName"/>+<paramref name="formFqn"/>+<paramref name="inputParam"/>,
     /// přenese na jeho okno focus a vrátí <c>true</c> (duplikát se nespustí). Mrtvé procesy
@@ -280,7 +294,8 @@ public class WindowNavigator : IWindowNavigator
         catch { return ""; }
     }
 
-    private static Process? LaunchLegacy(string exeName, string formFqn, bool shareShellSession, string inputParam)
+    private static Process? LaunchLegacy(string exeName, string formFqn, bool shareShellSession,
+                                         string inputParam, string shortcutPayload = "")
     {
         var mlRest = EDServices.Current.MLRest
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
@@ -304,7 +319,7 @@ public class WindowNavigator : IWindowNavigator
         {
             UseShellExecute = true,
             FileName = direct ? agendaPath : ResolveExecutablePath(LauncherExe),
-            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath, licensedElements),
+            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath, licensedElements, shortcutPayload),
         });
         if (prc != null) KillOnExit.Bind(prc);
         return prc;
@@ -320,11 +335,14 @@ public class WindowNavigator : IWindowNavigator
     /// inputParam + cesta k agendě + licencované elementy. Pozice 1–11 jsou shodné s legacy
     /// kontraktem (takže `FormToRunGetter.TryGetFormFromArgs` retrofitnutých agend zůstává
     /// kompatibilní); agendaPath (host ho čte pro <c>Assembly.LoadFrom</c>) je [11],
-    /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable — starší host je ignoruje).
+    /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable - starší host je ignoruje),
+    /// zástupce na ploše [13] (opaque, host ho místo formy spustí jako proceduru; prázdné = běžný launch).
+    /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
+    /// argv-safe (bez uvozovek a mezer), formát viz <c>EDISONMAIN2/docs/DESKTOP_SHORTCUTS.md</c>.
     /// </summary>
     internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
-        string inputParam, string agendaPath, string licensedElements) =>
-        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\"";
+        string inputParam, string agendaPath, string licensedElements, string shortcutPayload = "") =>
+        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\"";
 
     public static string ResolveExecutablePath(string relativePath)
     {

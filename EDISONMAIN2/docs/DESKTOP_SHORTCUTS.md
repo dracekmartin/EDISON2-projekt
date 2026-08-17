@@ -35,31 +35,63 @@ Legacy: modul běžící v procesu shellu volá `clsForm.CreateShortcut`; samost
 posílá `SerializableShortcut` .NET Remotingem (`EDLIBRARY/clsForm.vb`, případy 4 = create,
 5 = remove). V EDISONMAIN2 jsou moduly **vždy** samostatné procesy a Remoting neexistuje.
 
-Doporučení: **modul zapíše zástupce rovnou do Caché** - `ALVA.EDControls.UserData`, scope
-`EDISONMAIN2`, klíč `Shortcuts` (týž blob, který shell čte; schema viz
-`EDControls/DOCS/05-userdata-scopes.md`). MLRest má modul k dispozici, přežije to pád procesu
-a nevzniká žádný živý kanál. Shell blob přenačte při ukončení legacy procesu -
-`WindowNavigator` spuštěné procesy už sleduje.
+**Dnes to tiše nedělá nic** a to je horší než chybějící featura: dialog „Sestavy na ploše"
+(v agendě pod tlačítkem tisku) se normálně otevře, zaškrtávátka jsou prázdná a OK neudělá nic.
+`ShortcutExists`/`CreateShortcut`/`RemoveShortcut` mají celé tělo uvnitř
+`If Me.MainEdisonForm IsNot Nothing`, bez else a bez chyby, a `MainEdisonForm` je pod
+EDISONMAIN2 vždy `Nothing` (getter hledá MDI kontejner, který samostatné okno nemá).
 
-Zbytek: `clsForm.CreateShortcut`/`RemoveShortcut` potřebují větev „běžím pod EDISONMAIN2"
-(dnes s `MainEdisonForm == null` tiše nic nedělají) a dialog `formEDISONMAINShortcutList`
-je forma legacy shellu, kterou EDISONMAIN2 nenasazuje - viz níže.
+Zvolený směr: **named pipe** (jeden server na shell session, jméno odvozené od `shellGuid`,
+který modul už dostává v `args[9]`, takže nový argument netřeba). Transport patří do
+`EDISONMAIN2API`, `EDLIBRARY` dostane jen aditivní seam - interface `IShortcutSink` a
+`Public Shared ShortcutSink` na `EDForm`, nová **první** větev ve všech třech metodách.
+Aditivní proto, že `EDLibrary.dll` referencuje 185 projektů bez strong name a s pevnou
+`AssemblyVersion` - dokud se nemění existující signatury, jde o drop-in výměnu dvou souborů
+a agendy se nepřebuildovávají.
 
-## Kanál spuštění (shell → modul)
+Varianta „modul zapíše rovnou do Caché" byla zvažovaná a zamítnutá: `UserData.Save` přepisuje
+celý blob pro daný klíč, takže by si zápis modulu a přesouvání dlaždic v shellu navzájem
+přepisovaly, a shell by se o novince dozvěděl až při dalším čtení. Pipe navíc umožní
+`ShortcutExists` (zaškrtávátka v dialogu odpovídají skutečnosti), což přes blob jde taky,
+ale s tím rozdílem, že dlaždice naskočí okamžitě.
+
+## Kanál spuštění (shell → modul) - HOTOVO
 
 Legacy: `frmNoMDI.mFrmMain_ShowFormDemand` větví na `CallType`; u `Procedura` volá
 `RunProcedure`, který reflexí načte `ALVA.<Balik>.ProcedureIO` a předá `ProcedureIO.Input`
 s celým zástupcem (`ReasonEnum.ShortcutCall`).
 
-Návrh: rozšířit arg kontrakt `EDISONMAIN2API` (dnes sentinel `"EDISONMAIN2"` + 12 polí,
-`EDISON/EDISONMAIN2API/FormToRunGetter.cs`; zrcadlí ho `EDControls/EdisonLaunchArgs`) o 14.
-pole = serializovaný zástupce. Host pak:
+V EDISONMAIN2 nese zástupce **14. pole arg kontraktu** (`args[13]`, za licencovanými elementy,
+takže starší host ho jen ignoruje). Obsah je **Base64 nad XML** legacy
+`ALVA.LIBRARY.Remote.SerializableShortcut`:
 
-- `Kind = PrintReport` → poskládat legacy `DesktopShortcut` (`CallType=Procedura`),
-  `EDConversion.Form.GetPackage(form)` → reflexí `ProcedureIO.RunProcedure`, po dokončení
-  proces ukončit (nezobrazuje se okno);
+- **Base64** proto, že `WindowNavigator.BuildLauncherArguments` hodnoty jen obaluje uvozovkami
+  a neescapuje je (má na to vlastní test) - syrové XML by rozbilo příkazový řádek.
+- **`SerializableShortcut`** proto, že je to `XmlSerializer` nad veřejnými poli (ne
+  BinaryFormatter), takže projde mezi .NET Frameworkem a .NET 10. Host ho deserializuje toutéž
+  třídou → **jména polí jsou zmrazená**; shellová strana je zrcadlí v `ShortcutLaunchPayload`.
+
+Skládá ho `ShortcutLaunchPayloadCodec` (EDISONMAIN2), posílá `IWindowNavigator.ShowLegacyShortcutAsync`
+(EDControls o typu zástupce nic neví - dostane neprůhledný string), zpracuje
+`EDISONMAIN2API/ShortcutRunner`:
+
+- `CallType=Procedura` (tisková sestava) → `EDForm.RunProcedure` nad **nezobrazenou**
+  hostitelskou formou;
 - ostatní druhy → forma jako dnes, ale `EDParamIn` = `DesktopShortcut` / `ReportShortcut`
-  (ne string) - legacy formy (`formESREPORTParams`, `frmReportShow`) to tak čekají.
+  **objekt**, ne string - legacy formy (`formESREPORTParams`, `frmReportShow`) to tak čekají.
+
+Dvě pasti, obě ověřené naživo:
+
+1. **ID sestavy musí být číslo.** `GC<T>.FromTypeToString` u enumu dělá `((int)obj).ToString()`
+   a zpětný převod jde přes `Conversion.Val`, takže nečíselný text spadne na 0, `PrintController.Tisk`
+   nenajde větev a **tiskne se ticho bez chyby**. Hlídá to test `Encode_KeepsReportIdVerbatim`.
+2. **Kotva musí přežít start prohlížeče.** `PrintController.Tisk` končí u
+   `ShowEdisonFormStandAloneEx`, které spustí `EDPROCESS.EXE` a obsluhuje ho remotingem
+   hostovaným v procesu hosta. Když host skončí dřív, zůstane `EDPROCESS` viset **bez okna**.
+   Čekat přes `DenyFormClose` nejde - legacy ho nastavuje na `BaseForm` vyrobený uvnitř
+   `ProcedureIO` agendy, ke kterému se host nedostane. `ShortcutRunner` proto hlídá samotné
+   procesy prohlížeče, které vznikly až po něm. Hotový prohlížeč ukončení hosta přežije,
+   rozjetý ne.
 
 ## Práva
 

@@ -60,7 +60,8 @@ AvalonDocku) ViewModel nemá, takže vypadne bez druhé attached property. Guard
 
 - `ShowDialog` ztmavuje ownera přes `WindowDimmer` (refcount), **ne** `IsEnabled=false` - to
   by srazilo controly na 0.5 opacity.
-- Legacy launch: sentinel `"EDISONMAIN2"` + 12 polí, viz `BuildLauncherArguments`.
+- Legacy launch: sentinel `"EDISONMAIN2"` + 13 polí, viz `BuildLauncherArguments` (poslední =
+  Base64 zástupce na ploše, prázdné u běžného launche; `ShowLegacyShortcutAsync`).
   `shareShellSession=true` → modul sdílí shellův ACTIVITY lock (`CacheLocks=1`); pre-login
   admin override (`LicenceVerifier`) musí předat `false`, jinak requesty padají na
   `LockExist`. Legacy `EDISONMAIN.exe` se spouští napřímo, ne přes host - potřebuje
