@@ -39,7 +39,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
 
         // ── Styl buněk (sdílený balíček polí) ─────────────────────────────
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl buněk", "#FF222222", "#00FFFFFF")
+        // ⚠️ Popisek skupiny říká „všech": tenhle formulář je výchozí styl CELÉ tabulky, zatímco
+        // panel u vybrané buňky mění jen tu jednu. Bez toho stály proti sobě dvě sady týchž
+        // vlastností a nešlo poznat, která kam sahá (nález Jan 17. 8.).
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl všech buněk", "#FF222222", "#00FFFFFF")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl řádku záhlaví", "#FF333333", "#FFE8E8E8", 1, "", 1)
 
         // ── Base pole ─────────────────────────────────────────────────────

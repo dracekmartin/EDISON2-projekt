@@ -165,6 +165,66 @@ public class FixedTableCellFormattingTests
         Assert.Null(table.EnsureCell(null, 0, 0)!.Style);
     }
 
+    // ── Panel vlastností ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void PanelUkazujeBunku_ACestuZpetNaCelouTabulku()
+    {
+        var descriptors = Formatting(Grid()).PanelDescriptors(() => { });
+
+        Assert.Contains(descriptors, d => d is ButtonPropertyDescriptor { ButtonLabel: "Nastavení celé tabulky…" });
+        Assert.Contains(descriptors, d => d.Label == "Formát hodnoty");
+        Assert.Contains(descriptors, d => d.Label == "Velikost");
+        Assert.Contains(descriptors, d => d.Label == "Barva textu");
+        Assert.Equal("Vybraná buňka", descriptors[0].Group);
+    }
+
+    /// <summary>
+    /// Bez vlastního příkazu by panel obalil zápis svým - a zpětný krok by buňce zapsal
+    /// **zděděnou** hodnotu, kterou předtím jen zobrazoval. Tím by se buňka natrvalo odpojila
+    /// od stylu tabulky.
+    /// </summary>
+    [Fact]
+    public void PanelovyZpetnyKrok_VratiDedeni_NeZobrazenouHodnotu()
+    {
+        var table = Grid();
+        table.DataStyle = new TextStyle { FontSize = 11f };
+
+        var size = (FloatPropertyDescriptor)Formatting(table)
+            .PanelDescriptors(() => { }).Single(d => d.Label == "Velikost");
+
+        Assert.Equal(11f, size.Get());          // panel ukazuje zděděnou hodnotu
+        var command = size.MakeCommand!(20f)!;
+        Assert.Equal(20f, table.EnsureCell(null, 0, 0)!.Style!.FontSize);
+
+        command.Undo();
+        Assert.Null(table.EnsureCell(null, 0, 0)!.Style);   // ne 11 zapsaných natvrdo
+        Assert.Equal(11f, Formatting(table).ActiveStyle().FontSize);
+    }
+
+    [Fact]
+    public void VsechnyEditovatelneVlastnostiVPanelu_NesouVlastniPrikaz()
+    {
+        var descriptors = Formatting(Grid()).PanelDescriptors(() => { })
+            .Where(d => d is not ButtonPropertyDescriptor);
+
+        Assert.All(descriptors, d => Assert.NotNull(d.MakeCommand));
+    }
+
+    [Fact]
+    public void FormatHodnotyZPanelu_SeZapiseAJdeVratit()
+    {
+        var table = Grid();
+        var format = (StringPropertyDescriptor)Formatting(table)
+            .PanelDescriptors(() => { }).Single(d => d.Label == "Formát hodnoty");
+
+        var command = format.MakeCommand!("dd.MM.yyyy")!;
+        Assert.Equal("dd.MM.yyyy", table.EnsureCell(null, 0, 0)!.Format);
+
+        command.Undo();
+        Assert.Null(table.EnsureCell(null, 0, 0)!.Format);
+    }
+
     // ── Dialog vlastností buňky ───────────────────────────────────────────────
 
     private static StyleEditDialogViewModel CellDialog(TableElement table, int row = 0, int col = 0) =>

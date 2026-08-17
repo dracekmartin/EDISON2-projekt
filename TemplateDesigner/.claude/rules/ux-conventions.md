@@ -101,9 +101,16 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 2. **Vnější hrana patří prvku, ne krajní buňce** - jinak by uživatel nevěděl, jestli mění tabulku,
    nebo sloupec (stejně to má Excel i Word). Krajní sloupec se rozšiřuje hranou vedle něj.
 
-**Formátovací lišta patří uvnitř tabulky buňce, ne prvku** (jinak by tučné ztučnilo celou tabulku
-ve chvíli, kdy uživatel formátuje jednu buňku). Stav tlačítek ukazuje **vyřešenou** hodnotu, tedy
-i tu zděděnou z nastavení tabulky - ne jen to, co má buňka vlastního.
+**Uvnitř tabulky patří lišta i panel vlastností VYBRANÉ BUŇCE, ne prvku.** Rozsah editace musí jít
+poznat, jinak stojí proti sobě dvě sady týchž vlastností: do 17. 8. panel měnil celou tabulku,
+zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan). Platí proto:
+
+- panel u buňky začíná skupinou **„Vybraná buňka"** a tlačítkem **„Nastavení celé tabulky…"**
+  (= odchod z buňky, táž cesta jako Esc, jen pojmenovaná),
+- formulář prvku má skupinu **„Styl všech buněk"** - z popisku je vidět, že je to výchozí pro celou
+  tabulku, ne pro tu jednu,
+- stav polí ukazuje **vyřešenou** hodnotu (i tu zděděnou), ale zapisuje se **jen změněná vlastnost**;
+  zpětný krok musí vrátit dědění, ne zobrazenou hodnotu zapsat natvrdo.
 
 ### Grouping / layout
 

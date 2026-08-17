@@ -418,11 +418,28 @@ public partial class MainWindow
     /// </summary>
     private void SyncFormatToolbar()
     {
-        if (!InTableCells) { RefreshInlineProperties(); return; }
+        if (!InTableCells || CellFormatting is not { } formatting) { RefreshInlineProperties(); return; }
 
-        FormatToolbar.SetContext(cmd => _vm!.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
-        FormatToolbar.ShowDescriptors(CellFormatDescriptors());
+        Action<IDesignerCommand> execute = cmd => _vm!.Execute(cmd);
+        Action invalidate = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
+
+        FormatToolbar.SetContext(execute, invalidate);
+        FormatToolbar.ShowDescriptors(formatting.Descriptors());
+
+        // Panel patří uvnitř tabulky **té buňce**, ne prvku. Dokud ukazoval nastavení celé tabulky,
+        // stála v něm a v liště dvě zaškrtávátka „Tučné" s jiným dosahem a nešlo je od sebe poznat
+        // (nález Jan 17. 8.). Nastavení celé tabulky je za tlačítkem v prvním řádku panelu.
+        InlinePropertiesPanel.SetContext(execute, invalidate);
+        InlinePropertiesPanel.ShowDescriptors(formatting.PanelDescriptors(ExitToTableSettings));
+        ShowInlineFormPanel(false);
+    }
+
+    /// <summary>Tlačítko „Nastavení celé tabulky…" - odejde z buňky, takže panel ukáže prvek.
+    /// Táž cesta jako Esc, jen pojmenovaná (z panelu nebylo poznat, že se tam takhle dostane).</summary>
+    private void ExitToTableSettings()
+    {
+        ExitTableCells();
+        skCanvas.Focus();
     }
 
     /// <summary>Formátování aktivní buňky - kaskáda, vratný zápis i vlastnosti pro lištu žijí
@@ -431,8 +448,6 @@ public partial class MainWindow
         _cellTable is null || _vm is null
             ? null
             : new(_cellTable, () => _vm!.State.CurrentPreviewData, TargetCells);
-
-    private List<PropertyDescriptor> CellFormatDescriptors() => CellFormatting?.Descriptors() ?? [];
 
     /// <summary>
     /// Nastavení buňky - sdílený stylový pod-formulář (zděděné hodnoty šedě, křížek je vrátí)

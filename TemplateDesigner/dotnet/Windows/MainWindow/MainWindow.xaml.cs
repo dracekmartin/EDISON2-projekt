@@ -1888,6 +1888,11 @@ public partial class MainWindow : Window
         InlineElementForm.SetContext(execute, invalidate);
         FormatToolbar.SetContext(execute, invalidate);
 
+        // Uvnitř tabulky patří panel i lišta **vybrané buňce**, ne prvku - nastavení celé tabulky
+        // je za tlačítkem v panelu (a přes Esc). Jinak by proti sobě stály dvě sady týchž
+        // vlastností s jiným dosahem.
+        if (InTableCells && CellFormatting is not null) { SyncFormatToolbar(); return; }
+
         var selected = _vm!.State.SelectedElements;
 
         // Jeden element se schématem → EDInputForm panel. Descriptory se pořád počítají
@@ -1899,10 +1904,7 @@ public partial class MainWindow : Window
             var descriptors = selected.Count == 1
                 ? _propsVm.PrepareForElement(selected[0], isNewSession: false)
                 : _propsVm.PrepareForMultipleElements(selected);
-
-            // Uvnitř tabulky patří lišta buňce, ne prvku - jinak by tučné z lišty ztučnilo
-            // celou tabulku ve chvíli, kdy uživatel formátuje jednu buňku.
-            FormatToolbar.ShowDescriptors(InTableCells ? CellFormatDescriptors() : descriptors);
+            FormatToolbar.ShowDescriptors(descriptors);
 
             if (panelSchema is not null)
             {

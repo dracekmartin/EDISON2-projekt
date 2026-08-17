@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-17 (4) - 🎯 uvnitř tabulky patří panel vybrané buňce (`B76`, nález z proklikání)
+
+Po dopoledním kroku stály proti sobě **dvě zaškrtávátka „Tučné"**: v levém panelu (měnil celou
+tabulku) a v liště nad plátnem (měnila vybranou buňku). Rozlišit je nešlo, takže první zkoušení
+skončilo otázkou, proč se to jednou propíše všude a podruhé do jedné buňky (nález Jan 17. 8.).
+
+Chování se nemění - **formulář prvku je pořád výchozí styl všech buněk a buňka je odchylka** -
+ale rozsah je nově vidět:
+
+- **Panel u vybrané buňky ukazuje tu buňku** (formát hodnoty, font, velikost, tučné/kurzíva/
+  podtržení/přeškrtnutí, zarovnání, barvy) a začíná skupinou **„Vybraná buňka"**.
+- **Tlačítko „Nastavení celé tabulky…"** je první řádek panelu - dosud se tam člověk dostal jen
+  Esc, což z panelu nebylo poznat.
+- **Skupina ve formuláři prvku se jmenuje „Styl všech buněk"** (dřív „Styl buněk"). Ověřeno
+  voláním nasazené třídy, ne čtením zdrojáku.
+
+⚠️ **Panel musel začít respektovat vlastní vratný příkaz deskriptoru** - jinak by zpětný krok
+zapsal buňce **zobrazenou zděděnou hodnotu** místo dědění a buňka by se od tabulky natrvalo
+odpojila. Právě tuhle past hlídá nový test.
+
+**Brány:** build bez chyb, TD **961 testů** zelených (4 nové na panel).
+
 ## 2026-08-17 (3) - 🅱 pevná tabulka: buňku jde konečně naformátovat (`B76` kroky 1+2)
 
 Pevná tabulka šla do dneška formátovat **jen jako celek** („Styl buněk" a „Styl řádku záhlaví"
