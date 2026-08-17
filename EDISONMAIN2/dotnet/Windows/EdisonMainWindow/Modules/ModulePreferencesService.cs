@@ -58,13 +58,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public Task SaveChangelogSnoozeAsync(IReadOnlyDictionary<string, string> snooze) =>
             SaveBlobAsync(ChangelogSnoozeKey, snooze);
 
-        /// <summary>Index naposledy otevřené záložky stromu, nebo <c>null</c> když nebylo uloženo.</summary>
-        public async Task<int?> LoadSelectedTabAsync()
+        /// <summary>
+        /// Klíč naposledy otevřené záložky stromu (<see cref="TreeTab.Key"/>), nebo <c>null</c>
+        /// když nebylo uloženo. Dřív se ukládal index - starou číselnou hodnotu shodí
+        /// <c>GetValue&lt;string&gt;</c> a catch ji degraduje na null (= výchozí záložka).
+        /// </summary>
+        public async Task<string?> LoadSelectedTabAsync()
         {
             try
             {
                 var node = await _prefs.LoadAsync(Scope, SelectedTabKey);
-                return node?.GetValue<int>();
+                return node?.GetValue<string>();
             }
             catch (Exception ex)
             {
@@ -73,7 +77,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             }
         }
 
-        public Task SaveSelectedTabAsync(int index) => SaveBlobAsync(SelectedTabKey, index);
+        public Task SaveSelectedTabAsync(string tabKey) => SaveBlobAsync(SelectedTabKey, tabKey);
 
         private async Task<T?> LoadBlobAsync<T>(string key) where T : class
         {

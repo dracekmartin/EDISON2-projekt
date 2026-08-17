@@ -74,14 +74,19 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   a ikonové akce by jinak splynuly v jednu řadu, navíc obě skupiny obsahují ★.
   `TreeTabControl` nese **jen tab strip**: `TabItem`y jsou ikonové (text v ToolTipu) a záměrně
   **bez Contentu** (ikona proto patří do `TabItem.Header`), stromy jsou sourozenci v kartě
-  a přepínají se `Is*TabActive`. Důsledek: všech pět stromů žije pořád → do `Tag` datových
-  šablon (most pro `ContextMenu`) nejde brát `AncestorType=TabControl`, jde tam `VmProxy`.
+  a přepínají se podle `SelectedTab.Key`. Důsledek: všech pět stromů žije pořád → do `Tag`
+  datových šablon (most pro `ContextMenu`) nejde brát `AncestorType=TabControl`, jde tam `VmProxy`.
+- **Identita záložky je `Modules/TreeTab`** - jeden seznam `TreeTabs` ve VM drží pořadí, klíč
+  (server + persistence), ikonu a příznaky `Expandable`/`ServerLoaded`. Přidání záložky je
+  změna toho seznamu (+ control v kartě), ne koordinovaná editace indexů. `Key` je
+  persistovaný, takže **přejmenování = ztráta uložené volby** uživatelů.
 - **Toolbar nad stromy** (Rozbalit/Sbalit vše + oblíbené/výchozí okno nad vybraným uzlem):
   jedna instance vpravo v řádku se záložkami. Rozbalit/Sbalit vše cílí na **aktivní** záložku
-  (`ActiveExpandableTree` dle `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna
-  obalena `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar
-  akce) plní code-behind - `TreeView.SelectedItem` nelze bindovat, jede přes
-  `SelectedItemChanged` + `TabControl.SelectionChanged`.
+  (`ActiveExpandableTree`; Používané nemá strom → vyp), bulk změna obalena
+  `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar akce)
+  plní code-behind jedním handlerem na kartě - `TreeView.SelectedItem` nelze bindovat a
+  `SelectedItemChanged` i `KeyDown` bublají. VM si výběr pamatuje **per záložku**, aby akce
+  cílily na to, co je vidět; přestavba stromů ho zahazuje (uzly jsou nové instance).
 
 Mini-apps (AvalonDock, WebView2 widgety, persistence layoutu, karusel) mají vlastní
 [dotnet/MiniApps/CLAUDE.md](dotnet/MiniApps/CLAUDE.md).

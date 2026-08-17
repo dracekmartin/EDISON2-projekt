@@ -288,7 +288,7 @@ if (node["Version"] is null && node["GridSize"] is { } oldGridSize)
 | `"Shortcuts"` | 2 | `List<DesktopShortcutDto>` - položky plochy v pořadí připnutí: `{ Kind, Id, ElementId, Name, Exe, Form, Input, Slot, Report }` | `EDISONMAIN2.Windows.EdisonMainWindow.Modules.ModulePreferencesService` |
 | `"ModuleUsage"` | 2 | `Dictionary<string, UsageEntry>` — ElementId → `{ Count, LastUsedUtc }` (automaticky při spuštění modulu) | `ModulePreferencesService` |
 | `"TreeExpansion"` | 1 | `List<string>` — klíče rozbalených uzlů `"<tree>:<index-cesta>"` (např. `"main:5.2"`, `"favorites:0"`); `null`/chybí = serverové výchozí | `ModulePreferencesService` |
-| `"SelectedTab"` | 1 | `int` — index naposledy otevřené záložky stromu; `null`/chybí = výchozí dle oblíbených | `ModulePreferencesService` |
+| `"SelectedTab"` | 1 | `string` — klíč naposledy otevřené záložky stromu (`TreeTab.Key`, např. `"favorites"`); `null`/chybí/neznámý = výchozí dle oblíbených | `ModulePreferencesService` |
 
 `Shortcuts` je blob **plochy**, ne jen oblíbených: `Kind` (string, ne enum - přeskládání
 `ShortcutKind` nesmí přeznačit uložená data) rozlišuje modul hlavní nabídky od tiskové

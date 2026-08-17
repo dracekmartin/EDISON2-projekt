@@ -319,7 +319,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PartnerSolutionsTree = [];
             FavoritesTree = [];
             UsedModules = [];
-            _sourceTrees = [("main", MainMenuTree), ("system", SystemAdminTree), ("partners", PartnerSolutionsTree)];
+            // Pořadí = pořadí záložek v UI. Přidání záložky je změna jen tady (+ případný control v XAML).
+            TreeTabs =
+            [
+                new("main",      "Hlavní nabídka",     "EDIcons.Home",      MainMenuTree,         Expandable: true,  ServerLoaded: true),
+                new("system",    "Správa systému",     "EDIcons.Gears",     SystemAdminTree,      Expandable: true,  ServerLoaded: true),
+                new("partners",  "Partnerská řešení",  "EDIcons.Component", PartnerSolutionsTree, Expandable: true,  ServerLoaded: true),
+                new("favorites", "Oblíbené",           "EDIcons.Star",      FavoritesTree,        Expandable: true,  ServerLoaded: false),
+                new("used",      "Používané",          "EDIcons.History",   null,                 Expandable: false, ServerLoaded: false),
+            ];
+            _selectedTab = TreeTabs[0];
+            _sourceTrees = [.. TreeTabs.Where(t => t.ServerLoaded).Select(t => (t.Key, t.Tree!))];
             // Runner drží politiku „klon per paralelní volání"; testy podstrčí sekvenční variantu.
             _sessionLoader = new SessionDataLoader(restRunner ?? new RestCallRunner(() => Rest),
                                                   treeService, [.. _sourceTrees.Select(t => t.Name)]);
@@ -386,6 +396,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ApplySessionData(SessionData data)
         {
             _services.AccessTable = data.AccessTable;
+            // Uzly se nahradí novými instancemi, takže zapamatovaný výběr míří do prázdna.
+            ForgetSelection();
             foreach (var (name, tree) in _sourceTrees)
                 FillFilteredTree(tree, data.Trees[name]);
             ApplyPersonalization(data);
@@ -402,6 +414,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             new AccessTable([], isAllAccess: false),
             _sourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
             Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
+
+        private void ForgetSelection()
+        {
+            _selectionByTab.Clear();
+            SelectedModule = null;
+        }
 
         private int _defaultWindowId;
         /// <summary>Id uživatelova výchozího okna (EDISFormEnum) pro aktuální IDFa; 0 = žádný.</summary>
@@ -482,7 +500,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Poslední otevřená záložka (per-user × IDFa); bez uložené volby výchozí dle oblíbených.
             _suppressTabSave = true;
-            SelectedTreeTabIndex = data.SelectedTab ?? DefaultTreeTab();
+            SelectedTab = data.SelectedTab is { } key ? TabByKey(key) : DefaultTreeTab();
             _suppressTabSave = false;
         }
 
@@ -495,7 +513,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Po přestavbě (i mimo load — po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
             bool prev = _suppressExpansionSave;
             _suppressExpansionSave = true;
-            ApplyExpansion(FavoritesTree, "favorites");
+            ApplyExpansion(FavoritesTree, FavoritesTab.Key);
 
             // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) — při aktivním hledání přefiltrovat.
             var searchText = _treeSearchText.Trim();
@@ -527,15 +545,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         // ---- rozbalit / sbalit vše (toolbar + kontextové menu) ---------------
 
-        // Strom aktivní záložky (index 0-2 zdrojové, 3 Oblíbené); Používané (ListBox) i cokoli mimo → null.
-        private ObservableCollection<IModule>? ActiveExpandableTree() => SelectedTreeTabIndex switch
-        {
-            0 => MainMenuTree,
-            1 => SystemAdminTree,
-            2 => PartnerSolutionsTree,
-            3 => FavoritesTree,
-            _ => null,
-        };
+        // Strom aktivní záložky; Používané (ListBox) strom nemá → null.
+        private ObservableCollection<IModule>? ActiveExpandableTree() =>
+            SelectedTab.Expandable ? SelectedTab.Tree : null;
 
         // Hromadné rozbalení/sbalení celého aktivního stromu. Suppress + jeden save na konci
         // (jinak by každá rodina zvlášť triggerovala SaveExpansionAsync — vzor jako ApplySearch).
@@ -828,16 +840,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public bool HasNoFavorites => FavoritesTree.Count == 0;
 
         private IModule? _selectedModule;
+        // Výběr si pamatujeme per záložka: stromy zůstávají živé, takže po návratu na záložku
+        // musí toolbar akce cílit na uzel, který je v ní vidět, ne na ten z minule aktivní.
+        private readonly Dictionary<string, IModule?> _selectionByTab = [];
 
         /// <summary>
-        /// Aktuálně vybraný uzel viditelného stromu (nastavuje code-behind ze <c>SelectedItemChanged</c> /
-        /// přepnutí záložky). Řídí toolbar akce (oblíbené, výchozí okno) — na kolekcích/ListBoxu <c>null</c>.
+        /// Aktuálně vybraný uzel viditelného stromu (nastavuje code-behind ze <c>SelectedItemChanged</c>).
+        /// Řídí toolbar akce (oblíbené, výchozí okno) — na kolekcích/ListBoxu <c>null</c>.
         /// </summary>
         public IModule? SelectedModule
         {
             get => _selectedModule;
             set
             {
+                _selectionByTab[SelectedTab.Key] = value;
                 if (!Set(ref _selectedModule, value)) return;
                 OnPropertyChanged(nameof(HasSelection));
                 OnPropertyChanged(nameof(CanSetStartup));
@@ -860,39 +876,37 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             set { if (Set(ref _treeSearchText, value)) ScheduleSearch(); }
         }
 
-        // Pořadí záložek: 0 Hlavní nabídka, 1 Správa systému, 2 Partnerská řešení, 3 Oblíbené, 4 Používané.
-        private int _selectedTreeTabIndex;
+        private TreeTab _selectedTab = null!;   // plní ctor po vytvoření TreeTabs
         private bool _suppressTabSave;
 
-        /// <summary>Aktuální záložka stromu. TwoWay-bound; persistuje se per-user × IDFa (poslední otevřená).</summary>
-        public int SelectedTreeTabIndex
+        /// <summary>
+        /// Pořadí i identita záložek launcher panelu - jediný seznam, ze kterého se odvozuje
+        /// tab strip, viditelnost obsahu, cíl Rozbalit/Sbalit vše i uložená volba.
+        /// </summary>
+        public IReadOnlyList<TreeTab> TreeTabs { get; }
+
+        /// <summary>Aktivní záložka. TwoWay-bound; persistuje se per-user × IDFa (poslední otevřená).</summary>
+        public TreeTab SelectedTab
         {
-            get => _selectedTreeTabIndex;
+            get => _selectedTab;
             set
             {
-                if (!Set(ref _selectedTreeTabIndex, value)) return;
-                foreach (var name in TabActiveProperties)
-                    OnPropertyChanged(name);
+                // TabControl při přestavbě ItemsSource krátce nastaví null - držíme poslední platnou.
+                if (value == null || !Set(ref _selectedTab, value)) return;
+                SelectedModule = _selectionByTab.GetValueOrDefault(value.Key);
                 if (!_suppressTabSave)
-                    _ = _modulePrefs?.SaveSelectedTabAsync(value);
+                    _ = _modulePrefs?.SaveSelectedTabAsync(value.Key);
             }
         }
 
-        // Záložky nesou jen strip; obsah je pod hledáním a přepíná se těmito viditelnostmi.
-        private static readonly string[] TabActiveProperties =
-        [
-            nameof(IsMainMenuTabActive), nameof(IsSystemAdminTabActive), nameof(IsPartnerSolutionsTabActive),
-            nameof(IsFavoritesTabActive), nameof(IsUsedModulesTabActive),
-        ];
+        // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené když nějaké jsou, jinak Hlavní nabídka.
+        private TreeTab DefaultTreeTab() => TabByKey(HasNoFavorites ? "main" : "favorites");
 
-        public bool IsMainMenuTabActive         => _selectedTreeTabIndex == 0;
-        public bool IsSystemAdminTabActive      => _selectedTreeTabIndex == 1;
-        public bool IsPartnerSolutionsTabActive => _selectedTreeTabIndex == 2;
-        public bool IsFavoritesTabActive        => _selectedTreeTabIndex == 3;
-        public bool IsUsedModulesTabActive      => _selectedTreeTabIndex == 4;
+        private TreeTab TabByKey(string? key) =>
+            TreeTabs.FirstOrDefault(t => t.Key == key) ?? TreeTabs[0];
 
-        // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené (3) když nějaké jsou, jinak Hlavní nabídka (0).
-        private int DefaultTreeTab() => HasNoFavorites ? 0 : 3;
+        // Oblíbené se nenačítají ze serveru, ale rozbalení se jim persistuje jako ostatním.
+        private TreeTab FavoritesTab => TabByKey("favorites");
 
         private readonly IChangelogSource? _changelogSource;
         // Auto-popup novinek (infotexty). Žije se session jako _modulePrefs; null = vypnuto (testy).
@@ -912,12 +926,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private const int UsedModulesCap = 20;
 
         // Zdrojové stromy plněné ze serveru (per-IdFa). Jedna kolekce pro společné operace (load, filtrace,
-        // oblíbené/používané, family flagy) místo opakování literálů. Inicializuje ctor po vytvoření kolekcí.
+        // oblíbené/používané, family flagy). Odvozené z TreeTabs, inicializuje je ctor.
         private readonly (string Name, ObservableCollection<IModule> Tree)[] _sourceTrees;
 
         // Všechny rozbalovatelné stromy = zdrojové + odvozený Oblíbené (persistence rozbalení i nad Oblíbenými).
         private IEnumerable<(string Name, ObservableCollection<IModule> Tree)> ExpandableTrees =>
-            [.. _sourceTrees, ("favorites", FavoritesTree)];
+            TreeTabs.Where(t => t.Expandable).Select(t => (t.Key, t.Tree!));
 
         public ObservableCollection<CompanyItem> VisibleIdfas { get; }
 

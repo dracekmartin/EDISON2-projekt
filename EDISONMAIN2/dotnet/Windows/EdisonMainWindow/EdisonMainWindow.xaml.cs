@@ -27,17 +27,11 @@ namespace EDISONMAIN2
         {
             InitializeComponent();
             PreviewKeyDown += OnPreviewKeyDown;
-            // Výběr uzlu napříč stromy → VM.SelectedModule (řídí toolbar akce). SelectedItem
-            // TreeView nelze bindovat, proto přes event; Používané (ListBox) výběr neřeší.
-            MainMenuTreeView.SelectedItemChanged += TreeSelectedItemChanged;
-            SystemAdminTreeView.SelectedItemChanged += TreeSelectedItemChanged;
-            PartnerSolutionsTreeView.SelectedItemChanged += TreeSelectedItemChanged;
-            FavoritesTreeView.SelectedItemChanged += TreeSelectedItemChanged;
-            MainMenuTreeView.KeyDown += Tree_KeyDown;
-            SystemAdminTreeView.KeyDown += Tree_KeyDown;
-            PartnerSolutionsTreeView.KeyDown += Tree_KeyDown;
-            FavoritesTreeView.KeyDown += Tree_KeyDown;
-            UsedModulesList.KeyDown += UsedModules_KeyDown;
+            // Výběr uzlu i Enter řešíme jednou na kartě, ne per strom — obojí bublá, takže
+            // přidání záložky nevyžaduje další wiring. SelectedItem TreeView nelze bindovat.
+            TreeCard.AddHandler(TreeView.SelectedItemChangedEvent,
+                                new RoutedPropertyChangedEventHandler<object>(TreeSelectedItemChanged));
+            TreeCard.AddHandler(KeyDownEvent, new System.Windows.Input.KeyEventHandler(TreeCard_KeyDown));
             Loaded += WireMiniAppHost;
             ContentRendered += OnContentRendered;
             // Drží plochu miniaplikací nad minimem při zúžení (splitter i okno) — viz handler.
@@ -187,28 +181,12 @@ namespace EDISONMAIN2
                 vm.SelectedModule = e.NewValue as IModule;
         }
 
-        // Přepnutí záložky → SelectedModule z výběru nově aktivního stromu (Používané → null),
-        // aby toolbar akce odpovídaly viditelné záložce.
-        private void TreeTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (DataContext is not EdisonMainViewModel vm) return;
-            TreeView? tv = TreeTabControl.SelectedIndex switch
-            {
-                0 => MainMenuTreeView,
-                1 => SystemAdminTreeView,
-                2 => PartnerSolutionsTreeView,
-                3 => FavoritesTreeView,
-                _ => null,
-            };
-            vm.SelectedModule = tv?.SelectedItem as IModule;
-        }
-
-        // Enter na vybraném uzlu = totéž co klik (modul spustí, složku přepne). Handler visí na
-        // TreeView, ne na TreeViewItem - dostane klávesu z fokusovaného itemu bez řešení bublání.
-        private void Tree_KeyDown(object sender, KeyEventArgs e)
+        // Enter na fokusovaném uzlu = totéž co klik (modul spustí, složku přepne). Bere se
+        // DataContext fokusovaného kontejneru, takže jeden handler obslouží stromy i Používané.
+        private void TreeCard_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
-            switch (((TreeView)sender).SelectedItem)
+            switch ((e.OriginalSource as FrameworkElement)?.DataContext)
             {
                 case ModuleFamily family:
                     family.IsExpanded = !family.IsExpanded;
@@ -218,16 +196,6 @@ namespace EDISONMAIN2
                     OpenModule(module);
                     e.Handled = true;
                     break;
-            }
-        }
-
-        private void UsedModules_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Enter) return;
-            if (((System.Windows.Controls.ListBox)sender).SelectedItem is ExecutableModule module)
-            {
-                OpenModule(module);
-                e.Handled = true;
             }
         }
 

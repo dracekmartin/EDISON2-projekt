@@ -18,7 +18,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         List<DesktopShortcutDto> Shortcuts,
         Dictionary<string, UsageEntry> Usage,
         List<string>? Expansion,
-        int? SelectedTab,
+        string? SelectedTab,
         Dictionary<string, string> ChangelogSnooze,
         int DefaultWindowId);
 
@@ -62,7 +62,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         // Preference jdou sekvenčně v jedné větvi: IUserPrefsService drží sdílenou instanci MLRest
         // z composition rootu, takže jim runner nemá kam podstrčit klon a souběžně by si praly
         // RestStatus. Paralelizace by chtěla aditivní přetížení v EDControls (kandidát na vlnu 4).
-        private static async Task<(List<DesktopShortcutDto>, Dictionary<string, UsageEntry>, List<string>?, int?, Dictionary<string, string>)>
+        private static async Task<(List<DesktopShortcutDto>, Dictionary<string, UsageEntry>, List<string>?, string?, Dictionary<string, string>)>
             LoadPreferencesAsync(ModulePreferencesService prefs)
         {
             var shortcuts = await prefs.LoadShortcutsAsync();
