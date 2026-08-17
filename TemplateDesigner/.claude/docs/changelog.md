@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-17 (8) - 🚆 výchozí linková šablona se doručí sama (`B92`)
+
+Zastávkové výchozí šablony jsou zabalené v programu a při spuštění se samy nalijí do databáze, takže
+je uživatel najde připravené. **Výchozí linková šablona ležela mimo tuhle cestu** - existovala jako
+soubor ve vývojové složce, ale nikam se nedostala; uživatel by si ji musel naimportovat ze souboru,
+o kterém neví. Nebyly to dva záměrné kanály, byl to nedokončený jeden. Nově jde stejnou cestou.
+
+V nabídce se ukáže, **až bude linková agenda zveřejněná** - to je záměr, aby se distribuce
+nedodělávala teprve s vydáním.
+
+**Tři věci opravené při přesunu, které uživatel v nabídce vidí:**
+
+- šablona se jmenovala **„Knižní JŘ (AD)"**, ačkoli se agenda jmenuje **Linkový JŘ**. Pojem „knižní"
+  se přejmenoval už dřív a na šablonu se zapomnělo.
+- v názvu byla **dlouhá pomlčka** místo běžné.
+- **popis byl prázdný**, takže by šablona stála v nabídce bez vysvětlení, co to je.
+
+**Aby se to nevrátilo:** nová pojistka hlídá, že každá systémová šablona je opravdu **zabalená
+v programu** (soubor ve složce k tomu nestačí), má vyplněný název, popis i kód agendy, má vlastní
+identifikátor a načte se v aktuální verzi. Kód agendy se porovnává s tím, co agendy reálně
+deklarují - překlep by jinak znamenal šablonu, kterou nikdo nikdy nenajde.
+
 ## 2026-08-17 (7) - 🚆 linkový JŘ mluví stejným slovníkem jako vývěska (`B91`+`B95`)
 
 Zastávková vývěska a linkový jízdní řád nabízely **pro tutéž věc jiná pole**. Nebylo to vidět:
@@ -12,10 +34,13 @@ a u data platnosti. Srovnáno; měnil se **výhradně linkový JŘ**, protože v
 - **Číslo linky u MHD.** Vývěska tiskne pod „Číslo linky" licenční číslo, linkový JŘ tiskl veřejné.
   Táž šablona tedy u jedné linky vytiskla dvě různá čísla podle toho, který jízdní řád se dělal.
   Nově je to v obou licenční číslo a veřejné se nabízí zvlášť jako **„Veřejné označení linky"** -
-  opět pod stejným názvem jako na vývěsce. ⚠️ **Výchozí linková šablona MHD tím začne tisknout
-  licenční číslo** - kdo chce veřejné, přepne pole.
+  opět pod stejným názvem jako na vývěsce.
 - **Datum platnosti u MHD.** Linkový JŘ posílal datum v syrovém tvaru z databáze (`2018-11-01`),
   vývěska v převedeném. Srovnáno na tentýž převod.
+
+Obojí se týká **jen MHD**, pro kterou linková šablona zatím neexistuje - takže dnes nikomu nic
+nezmění vzhled. Výchozí linková šablona pro AD vypadá po změně stejně jako předtím: AD posílá jediné
+číslo linky a datum už dřív s tečkami.
 
 **Co ještě zmizelo z nabídky:** pomocné spojovací klíče (ID skupiny dnů, číslo skupiny u spoje).
 Zůstávají v datech, takže tabulka je dál používá - jen se nenabízejí k vložení, protože v ploché

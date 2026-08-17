@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-17 ✅ - `B92`: výchozí linková šablona se distribuuje jako systémová
+
+Detail → changelog 2026-08-17 (8). Šablona ležela v `templates/` (vývojová složka), takže se
+nezabalila do `.exe` a nenalila do MLINE - uživatel by ji musel naimportovat ze souboru, o kterém
+neví. Přesunutá do `SystemTemplates/`; kód se měnit nemusel, seeder i `.csproj` jdou přes wildcard.
+
+**Opravené při přesunu** (vidí uživatel v nabídce): jmenovala se „Knižní JŘ (AD)", ačkoli se agenda
+jmenuje Linkový JŘ - pojem „knižní" se přejmenoval už s `MigrationKnizniToLinkovy` a na šablonu se
+zapomnělo. V názvu byla **dlouhá pomlčka** a popis byl prázdný.
+
+**Neodvoditelné:** šablona se zabalí a nalije i s `Released = 0` agendou. Je to záměr - picker
+filtruje podle vydaných agend, takže ji uživatel neuvidí, ale kanál se nedodělává až s vydáním.
+
+**Pojistka:** `SystemTemplateSeedTests` (17 kontrol). Jádro je „soubor ve složce ještě neznamená
+soubor v `.exe`" - kontroluje se seznam zabalených resource, k tomu metadata (prázdný nebo
+překlepnutý `agendaCode` = šablona, kterou nikdo nenajde; shodné `Id` = jedna přepíše druhou,
+seeder je idempotentní přes Id) a že se šablona zmigruje na aktuální verzi. `agendaCode` se
+porovnává s kódy, které reálně deklarují `Agendy/*.cls`.
+
 ## 2026-08-17 ✅ - `B91`+`B95`: linkový JŘ mluví stejným slovníkem jako vývěska
 
 Detail → changelog 2026-08-17 (3). Obě rodiny agend posílaly stejně pojmenované kolekce, ale
