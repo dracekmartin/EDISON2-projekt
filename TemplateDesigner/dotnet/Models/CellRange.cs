@@ -41,12 +41,12 @@ public readonly record struct CellRange(int AnchorRow, int AnchorCol, int Active
     public CellRange ExtendTo(int row, int col) => this with { ActiveRow = row, ActiveCol = col };
 
     /// <summary>
-    /// Celý řádek / sloupec / tabulka. Aktivní buňka jde na **začátek** vybraného úseku, ne tam,
-    /// kde stála: obdélník je daný kotvou a aktivní buňkou, takže aktivní buňka musí být jeho roh -
-    /// uprostřed výběru ji držet nelze. Začátek je přirozený, protože se od něj píše i čte.
+    /// Celá tabulka (Ctrl+A). Aktivní buňka jde na **začátek**, ne tam, kde stála: obdélník je daný
+    /// kotvou a aktivní buňkou, takže aktivní buňka musí být jeho roh - uprostřed výběru ji držet
+    /// nelze. Začátek je přirozený, protože se od něj píše i čte.
+    /// <para>Výběr celého řádku a sloupce tu vědomě **není** (rozhodnutí Jan 17. 8.): tažení
+    /// a Shift pokrývají totéž a zkratky pro ně by se uživatel neměl kde naučit.</para>
     /// </summary>
-    public CellRange WholeRow(int columns) => new(ActiveRow, columns - 1, ActiveRow, 0);
-    public CellRange WholeColumn(int rows) => new(rows - 1, ActiveCol, 0, ActiveCol);
     public static CellRange Whole(int rows, int columns) => new(rows - 1, columns - 1, 0, 0);
 
     /// <summary>

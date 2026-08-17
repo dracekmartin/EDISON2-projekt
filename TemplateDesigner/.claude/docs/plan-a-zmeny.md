@@ -47,8 +47,8 @@ v Excelu - Tab a Enter posouvají, šipky chodí po buňkách, Esc vede ven. Ř�
 z místní nabídky, šířky a výšky se táhnou myší za vnitřní hranici. Vložit jde i blok zkopírovaný
 z Excelu a po napsání `{` se nabídnou datová pole.
 
-**Buněk jde označit víc najednou** - tažením myší přes ně, Shift+klikem, nebo klávesami
-(Ctrl+A celá tabulka, Shift+mezerník řádek, Ctrl+mezerník sloupec). Označenou oblast pak
+**Buněk jde označit víc najednou** - tažením myší přes ně, Shift+klikem, Shift+šipkami, nebo
+Ctrl+A pro celou tabulku. Označenou oblast pak
 naformátujete jedním krokem, Delete v ní vymaže obsah a Ctrl+C ji zkopíruje ve tvaru, který přečte
 Excel; vložení jedné hodnoty do označené oblasti ji celou vyplní.
 

@@ -33,9 +33,8 @@ přepnutí agendy tiše ztratilo nastavení.
 ## 2026-08-17 (6) - 🔲 pevná tabulka: výběr více buněk tažením (`B76` krok 3)
 
 Formátovat, mazat a kopírovat šlo dosud jen buňku po buňce. Nově se **tažením myší označí
-obdélníková oblast** (Shift+klik a Shift+šipky ji rozšíří od kotvy, Ctrl+A vybere celou tabulku,
-Shift+mezerník a Ctrl+mezerník celý řádek a sloupec - a totéž je i v místní nabídce). Vybraná
-oblast je podbarvená a **aktivní buňka v ní zůstává rozpoznatelná** silným rámečkem: je to ta, do
+obdélníková oblast** (Shift+klik a Shift+šipky ji rozšíří od kotvy, Ctrl+A vybere celou tabulku).
+Vybraná oblast je podbarvená a **aktivní buňka v ní zůstává rozpoznatelná** silným rámečkem: je to ta, do
 které se píše, podle které se vkládají řádky a od které se počítá nová hodnota při formátování.
 
 **Co nad výběrem funguje:** hromadné formátování (lišta, Ctrl+B/I/U i formulář v panelu), **Delete**
@@ -44,17 +43,17 @@ oblast ve tvaru, který přečte Excel. **Ctrl+V** vloží blok od levého horn�
 dorovná; **jedna hodnota do označené oblasti tu oblast vyplní** - jinak by se dala víc buněk
 srovnat jen po jedné.
 
-⚠️ **Klik u okraje tabulky se na výběr řádku použít nedá** (bylo tak zadané): na okraji sedí úchyty
-pro změnu velikosti prvku, takže by jeden a týž klik jednou vybíral řádek a jindy táhl tabulkou -
-přesně ta nepředvídatelnost, kvůli které se 12. 8. zahodil vstup do buňky „druhým klikem". Místo
-toho jsou excelové zkratky a položky v místní nabídce, aby byly objevitelné.
+⚠️ **Výběr celého řádku a sloupce v tom vědomě není** (rozhodnutí Jan po vyzkoušení). Klikem
+u okraje tabulky to nejde - tam sedí úchyty pro změnu velikosti prvku, takže by týž klik jednou
+vybíral řádek a jindy táhl tabulkou. Excelové Shift/Ctrl+mezerník se zkusily a zase zrušily: tažení
+a Shift pokrývají totéž a tuhle zkratku se uživatel nemá kde naučit.
 
 ⚠️ **Formulář zapisuje do aktivní buňky, ostatní se dorovnají jen v tom, co se změnilo.** Kdyby se
 kopíroval celý styl, hromadná změna barvy by srovnala i písmo a uživatel by o svoje nastavení
 přišel - hlídá to test, mutace „dorovnat všechno" ho shodí.
 
-**Výběr celého řádku či sloupce posune aktivní buňku na jeho začátek** - obdélník je daný dvěma
-rohy, takže aktivní buňku uprostřed výběru držet nejde. Od začátku se ale stejně píše i čte.
+**Ctrl+A posune aktivní buňku na levý horní roh** - obdélník je daný dvěma rohy, takže aktivní
+buňku uprostřed výběru držet nejde. Od začátku se ale stejně píše i čte.
 
 **Brány:** build čistý, **2176 .NET testů** zelených (TD 978, z toho 18 nových).
 

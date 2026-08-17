@@ -84,8 +84,11 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 | Klik (uvnitř) | přepnout buňku |
 | tažení přes buňky | **obdélníkový výběr**; Shift+klik ho rozšíří od kotvy |
 | Shift+šipky | rozšířit výběr (bez Shiftu se smrskne na jednu buňku) |
-| Shift+mezerník / Ctrl+mezerník | vybrat celý řádek / sloupec. **Klik u okraje tabulky se pro to použít nedá** - tam jsou úchyty na změnu velikosti prvku; totéž nabízí místní nabídka |
 | Ctrl+A (uvnitř) | vybrat všechny buňky tabulky |
+
+⚠️ **Výběr celého řádku a sloupce vědomě není** (rozhodnutí Jan 17. 8. po vyzkoušení): tažení
+a Shift pokrývají totéž a excelové Shift/Ctrl+mezerník se uživatel nemá kde naučit. Klik u okraje
+tabulky pro to použít nejde - tam sedí úchyty na změnu velikosti prvku.
 | psaní | přepíše obsah buňky (jako Excel) |
 | F2 | upravit stávající obsah buňky |
 | Tab / Shift+Tab | buňka vedle / předchozí (přes konec řádku na další) |

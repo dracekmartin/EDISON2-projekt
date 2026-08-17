@@ -345,17 +345,8 @@ public partial class MainWindow
                 MoveCell(shift ? -1 : 1, 0, rows, cols);
                 return true;
 
-            // Výběr celého řádku / sloupce / tabulky. Zkratky z Excelu; klik u okraje tabulky
-            // pro to nejde použít - tam sedí úchyty pro změnu velikosti prvku (viz místní nabídka,
-            // která tytéž volby nabízí myší).
-            case Key.Space when Keyboard.Modifiers.HasFlag(ModifierKeys.Shift):
-                SelectWholeRow();
-                return true;
-
-            case Key.Space when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
-                SelectWholeColumn();
-                return true;
-
+            // Celý řádek a sloupec se vědomě nevybírají zkratkou (rozhodnutí Jan 17. 8.) - tažení
+            // a Shift pokrývají totéž a excelové Shift/Ctrl+mezerník se uživatel nemá kde naučit.
             case Key.A when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
                 SelectWholeTable();
                 return true;
@@ -486,9 +477,7 @@ public partial class MainWindow
         InvalidateCanvas();
     }
 
-    private void SelectWholeRow()    => SelectRange(r => r.WholeRow(GridCols()));
-    private void SelectWholeColumn() => SelectRange(r => r.WholeColumn(GridRows()));
-    private void SelectWholeTable()  => SelectRange(_ => CellRange.Whole(GridRows(), GridCols()));
+    private void SelectWholeTable() => SelectRange(_ => CellRange.Whole(GridRows(), GridCols()));
 
     private int GridRows() => _cellTable is null || _vm is null
         ? 0 : _cellTable.GridSize(_vm.State.CurrentPreviewData).Rows;
@@ -972,11 +961,6 @@ public partial class MainWindow
         Add("Vložit sloupec vpravo", () => EditStructure("Vložení sloupce", t => t.InsertColumn(modelCol + 1)));
         Add("Smazat sloupec",        () => EditStructure("Smazání sloupce", t => t.RemoveColumn(modelCol)));
         menu.Items.Add(new Separator());
-        Add("Vybrat řádek (Shift+mezerník)",  SelectWholeRow);
-        Add("Vybrat sloupec (Ctrl+mezerník)", SelectWholeColumn);
-        Add("Vybrat celou tabulku (Ctrl+A)",  SelectWholeTable);
-        menu.Items.Add(new Separator());
-
         // Popisek říká, na co akce reálně sáhne - u označené oblasti je to celá oblast.
         string co = CellSelection.IsSingle ? "buňky" : "výběru";
         Add($"Kopírovat obsah {co} (Ctrl+C)", CopyCell);

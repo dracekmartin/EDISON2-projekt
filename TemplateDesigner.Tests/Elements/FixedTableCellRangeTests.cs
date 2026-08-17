@@ -67,25 +67,16 @@ public class FixedTableCellRangeTests
         Assert.Equal([(0, 0), (0, 1), (1, 0), (1, 1)], cells);
     }
 
-    /// <summary>Aktivní buňka jde na začátek úseku - obdélník je daný dvěma rohy, takže ji
-    /// uprostřed výběru držet nelze; od začátku se navíc přirozeně píše.</summary>
+    /// <summary>Aktivní buňka jde na začátek - obdélník je daný dvěma rohy, takže ji uprostřed
+    /// výběru držet nelze; od začátku se navíc přirozeně píše.</summary>
     [Fact]
-    public void CelyRadekASloupec_PokryjiUsekAAktivniBunkaJdeNaJehoZacatek()
+    public void CelaTabulka_PokryjeVsechnyBunkyAAktivniJdeNaZacatek()
     {
-        var range = CellRange.Single(1, 2);
-
-        var radek = range.WholeRow(columns: 4);
-        Assert.Equal((1, 0), (radek.Top, radek.Left));
-        Assert.Equal((1, 3), (radek.Bottom, radek.Right));
-        Assert.Equal((1, 0), (radek.ActiveRow, radek.ActiveCol));
-
-        var sloupec = range.WholeColumn(rows: 3);
-        Assert.Equal((0, 2), (sloupec.Top, sloupec.Left));
-        Assert.Equal((2, 2), (sloupec.Bottom, sloupec.Right));
-        Assert.Equal((0, 2), (sloupec.ActiveRow, sloupec.ActiveCol));
-
         var cela = CellRange.Whole(rows: 3, columns: 4);
+
         Assert.Equal(12, cela.Count);
+        Assert.Equal((0, 0), (cela.Top, cela.Left));
+        Assert.Equal((2, 3), (cela.Bottom, cela.Right));
         Assert.Equal((0, 0), (cela.ActiveRow, cela.ActiveCol));
     }
 
