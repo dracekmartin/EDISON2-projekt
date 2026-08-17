@@ -172,6 +172,11 @@ odpovědi na případné znovuotevření/dotaz:
 Není to nedodělek, ale práce, která se vyplatí až s konkrétním zákazníkem - v aktivní roadmapě
 jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do hodiny, M = půl dne.
 
+- **Odlišit písmena variant tras od písmen rozdílů tras** (S–M, zjištěno 17. 8.) - varianty berou
+  `A, B, C…`, rozdíly tras sadu `BCEFGHIJOQRW…`, takže **od „B" se překrývají**: na lince, která má
+  obojí, může „B" u jedné minuty znamenat sloupec a u jiné rozdíl trasy. Starý modul na to měl
+  číselník. **Rozhodnutí Jan 17. 8.: čekat, až to někdo nahlásí jako reálný problém** - projeví se
+  tiše a jen tam, kde se obojí sejde na jedné vývěsce
 - **Tiskový parametr „Rozdělení sloupců" pro MHD agendu** (M) - sjednocení s AD, kde už je
   (MHD SMO fáze 3)
 - **Parita variant tras + písmen u odjezdů pro MHD agendu** (S–M) - AD hotové 27. 7. (#13048 bod 5),
