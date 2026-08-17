@@ -2,6 +2,23 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-17 ✅ - `B89`: vlastní sloupce proklikané, revize `B39` uzavřená
+
+Detail → changelog 2026-08-17. Sedm bodů sady (editor, vzor, sloupec „jen Ne", „jen pracovní dny",
+Pá+So+Ne, režim „Automaticky", období se svátkem na neděli) projeté Janem. Nejcennější důkaz:
+na lince `0330530` mají spoje **T239**/**T245** (platnost `6+`) ve sloupci Pá+So+Ne značky **⑥⑦**,
+dřív jen ⑥ - cestující se nedozvěděl o nedělním provozu. Minut se sedmičkou jsou čtyři, tedy tatáž
+čtveřice, kterou vrátí sloupec „jen Ne".
+
+**Doladěno při proklikávání:** „Ne" a „Neděle a svátky (+)" se **vylučují** (rozhodnutí Jan 17. 8.).
+Obhajoba dvojice stála na tom, že vzor posílá `7+`; od `B82` posílá samotné `+` a server si „7"
+doplní sám, takže dvojice nepřidávala nic - doloženo během, kde sloupce `7`, `+` i `7+` daly
+identický výstup. Starší uložený sloupec s `7+` se načte jako `+`.
+
+⚠️ **Nález mimo zadání:** testovací vzor v .NET testech nesl `12345`/`7+`, zatímco server od `B82`
+posílá `X`/`+` - testy potvrzovaly neexistující chování. Srovnáno, u fixture je varování; na server
+se z .NET testů nedosáhne, takže víc než poznámka to hlídat nemůže.
+
 ## 2026-08-14 ✅ - `B87`+`B88`: rozvržení sloupců vývěsky má jeden zdroj pravdy
 
 Detail → changelog 2026-08-14 (4) a (5). Vzniklo z Janova pozorování, že přepnutí parametru

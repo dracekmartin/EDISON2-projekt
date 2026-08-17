@@ -54,7 +54,8 @@ public class CustomColumnDaysTests
         Assert.False(vm.LzePoPa);
     }
 
-    /// <summary>Sobota a neděle „X" neblokují - vyhláška zakazuje jen kombinaci s pracovními dny.</summary>
+    /// <summary>Sobota a neděle „X" neblokují - vyhláška zakazuje jen kombinaci s pracovními dny,
+    /// takže víkendový sloupec „So+Ne" jde s „X" složit dohromady.</summary>
     [Fact]
     public void SobotaANedeleNechavajiPracovniDnyDostupne()
     {
@@ -63,30 +64,56 @@ public class CustomColumnDaysTests
         vm.Ne = true;
 
         Assert.True(vm.LzePracovni);
+        Assert.Equal("67", vm.ToModel().Days);
     }
 
-    /// <summary>⚠️ „Ne" a „Neděle a svátky" jdou zaškrtnout **zároveň** - zákaz kombinace `+` se `7`
-    /// z vyhlášky platí pro značky u spoje, ne pro sadu dnů sloupce. Standardní sloupec
-    /// „Neděle a svátky" má `7+` a vzory ho tak posílají; kdyby se ty dvě volby vylučovaly, nešel by
-    /// z editoru složit vůbec (a otevřený vzor by měl obě zaslepené, takže by ho nešlo ani upravit).</summary>
+    /// <summary>
+    /// „Ne" a „Neděle a svátky" se **vylučují** - stejně jako „X" s Po-Pá (rozhodnutí Jan 17. 8.).
+    /// <para>
+    /// Dřív šly zaškrtnout zároveň s odůvodněním, že vzor „Neděle a svátky" posílá `7+`. To už
+    /// neplatí: od `B82` posílá samotné `+` a server si „7" doplní sám, takže dvojice nic nepřidá -
+    /// ověřeno během nad linkou 0330530, kde sloupce `7`, `+` i `7+` daly identický výstup.
+    /// </para>
+    /// </summary>
     [Fact]
-    public void NedeleASvatkyJdouZaroven()
+    public void NedeleASvatky_SeVylucuji()
     {
         var vm = Sloupec();
-        vm.Ne = true;
-        vm.Svatek = true;
+        Assert.True(vm.LzeNe);
+        Assert.True(vm.LzeSvatek);
 
-        Assert.Equal("7+", vm.ToModel().Days);
+        vm.Svatek = true;
+        Assert.False(vm.LzeNe);
+
+        vm.Svatek = false;
+        vm.Ne = true;
+        Assert.False(vm.LzeSvatek);
     }
 
+    /// <summary>Starší uložený sloupec s `7+` se načte jako samotné „+". Je to **záměrné
+    /// znormalizování** starého tvaru - dialog by jinak otevřel stav, který sám zakazuje.</summary>
     [Fact]
-    public void VzorNedeleASvatky_ZustaneStejny()
+    public void StaryTvarSedmPlus_SeNacteJakoPlus()
     {
         var vm = CustomColumnVM.FromModel(new DepartureColumnDefinition { Days = "7+" });
 
-        Assert.True(vm.Ne);
+        Assert.False(vm.Ne);
         Assert.True(vm.Svatek);
-        Assert.Equal("7+", vm.ToModel().Days);
+        Assert.Equal("+", vm.ToModel().Days);
+    }
+
+    /// <summary>Dnešní tvary se otevřením a zavřením měnit nesmí - normalizace se smí dotknout
+    /// jen toho starého `7+`.</summary>
+    [Theory]
+    [InlineData("+")]
+    [InlineData("7")]
+    [InlineData("6")]
+    [InlineData("X6")]
+    public void OtevritAZavrit_DefiniciNemeni(string dny)
+    {
+        var vm = CustomColumnVM.FromModel(new DepartureColumnDefinition { Days = dny });
+
+        Assert.Equal(dny, vm.ToModel().Days);
     }
 
     /// <summary>Načtení uložené definice musí „X" poznat, jinak by se sloupec po otevření dialogu

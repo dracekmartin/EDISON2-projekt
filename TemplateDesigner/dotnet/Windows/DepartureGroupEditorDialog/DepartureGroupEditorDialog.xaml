@@ -198,12 +198,14 @@
                                     <CheckBox Content="Čt" IsChecked="{Binding SelectedCustomVM.Ct}" IsEnabled="{Binding SelectedCustomVM.LzePoPa}" Margin="0,0,8,4"/>
                                     <CheckBox Content="Pá" IsChecked="{Binding SelectedCustomVM.Pa}" IsEnabled="{Binding SelectedCustomVM.LzePoPa}" Margin="0,0,8,4"/>
                                     <CheckBox Content="So" IsChecked="{Binding SelectedCustomVM.So}" Margin="0,0,8,4"/>
-                                    <CheckBox Content="Ne" IsChecked="{Binding SelectedCustomVM.Ne}" Margin="0,0,8,4"/>
+                                    <CheckBox Content="Ne" IsChecked="{Binding SelectedCustomVM.Ne}"
+                                              IsEnabled="{Binding SelectedCustomVM.LzeNe}" Margin="0,0,8,4"/>
                                     <CheckBox Content="Pracovní dny (X)" IsChecked="{Binding SelectedCustomVM.Pracovni}"
                                               IsEnabled="{Binding SelectedCustomVM.LzePracovni}" Margin="0,0,8,4"
                                               ToolTip="Značka X - na rozdíl od zaškrtnutého Po-Pá nezahrnuje svátky"/>
-                                    <CheckBox Content="Neděle a svátky (+)" IsChecked="{Binding SelectedCustomVM.Svatek}" Margin="0,0,8,4"
-                                              ToolTip="Značka + - jedna značka pro neděli i státem uznané svátky"/>
+                                    <CheckBox Content="Neděle a svátky (+)" IsChecked="{Binding SelectedCustomVM.Svatek}"
+                                              IsEnabled="{Binding SelectedCustomVM.LzeSvatek}" Margin="0,0,8,4"
+                                              ToolTip="Značka + - jedna značka pro neděli i státem uznané svátky. Nejde zaškrtnout spolu s Ne, protože neděli už obsahuje."/>
                                 </WrapPanel>
 
                                 <Separator Margin="0,4,0,8"/>

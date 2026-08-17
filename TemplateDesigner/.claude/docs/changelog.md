@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-17 - ✅ vlastní sloupce proklikané, „Ne" a „+" se vylučují (`B89`)
+
+Vizuální kontrola po `B81`/`B82` **hotová** (Jan 17. 8.): editor blokuje neslučitelné dvojice,
+vzor nese `X` i `+`, sloupec „jen Ne" vypisuje odjezdy bez denních značek, sloupec „jen pracovní
+dny" značí spoj jedoucí jen v pátek, režim „Automaticky" beze změny.
+
+**Klíčový důkaz opravy** (linka 0330530, sloupec Pá+So+Ne): spoje **T239** a **T245** s platností
+„sobota + neděle a svátky" mají u minut **⑥⑦**, dřív jen ⑥ - cestující se nedozvěděl, že jedou
+i v neděli. Spoje s platností jen „+" (T203, T235) mají ⑦ samotné. Minut se sedmičkou jsou čtyři -
+tatáž čtveřice, kterou vrátí sloupec „jen Ne", tedy dvě různě zadané sady sloupců vidí týž nedělní
+provoz.
+
+**Doladěno při tom:** „Ne" a „Neděle a svátky (+)" se teď **vylučují** jako „X" s Po-Pá. Dřív šly
+zaškrtnout obě s odůvodněním, že vzor posílá `7+` - to od `B82` neplatí, vzor posílá samotné `+`
+a server si „7" doplní sám. Ověřeno během: sloupce `7`, `+` i `7+` daly nad toutéž linkou
+identický výstup, takže dvojice nic nepřidávala a jen mátla. Starší uložený sloupec s `7+` se
+načte jako `+`.
+
+⚠️ **Testovací vzor v .NET testech byl rozešlý se serverem** - nesl `12345` a `7+`, zatímco server
+od `B82` posílá `X` a `+`, takže testy potvrzovaly chování, které už neexistuje. Srovnáno; na server
+se z .NET testů nedosáhne, takže tvar hlídá jen poznámka u fixture.
+
+**Brány:** **945 .NET testů**. Dva testy, které zakotvovaly staré chování dvojice, přepsané -
+změnilo se rozhodnutí, ne že by přestaly platit.
+
 ## 2026-08-14 (4) - 🅧 dny sloupce se zadávají v abecedě vyhlášky, včetně „pracovních dnů" (`B82`)
 
 Vlastní sloupce vývěsky měly zaškrtávátka Po-Ne + Svátek a **„pracovní dny" (`X`) nešly zadat vůbec**.

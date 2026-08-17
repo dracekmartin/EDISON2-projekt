@@ -4,9 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** `B89` - proklikat vlastní sloupce po opravách `B81`/`B82` (kód hotový, chybí
-> jen oči). Pak vybrat mezi **tabulkovými prvky** (`B76` + `B77`, dají se vzít vcelku) a **linkovými
-> JŘ** (`B10` + `B13`) jako dedikovaným slotem.
+> **Nejblíž na řadě:** vybrat mezi **pevnou tabulkou** (`B76`) a **linkovými JŘ** (`B10` + `B13`)
+> jako dedikovaným slotem. Zastávkový JŘ otevřený bod nemá - revize `B39` je uzavřená
+> a proklikaná (17. 8.).
 >
 > ⚠️ **Nevydané a jen zčásti proklikané je všechno od 12. 8. včetně** - poslední vydaná verze je
 > z 11. 8. Seedy novinek čekají na vydání, dřív se nenahrávají.
@@ -22,29 +22,6 @@
 Stav tiketů, parkované položky i věci „jen na poptávku" drží
 [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-### 👁 `B89` Proklikat vlastní sloupce po `B81`+`B82` (S, jen ověření - kód je hotový)
-
-`B81` i `B82` jsou dokončené a v archivu, brány zelené (109 Caché · 941 .NET). **Chybí poslední
-vizuální kontrola** - 14. 8. se stihly jen body A a B, pak se u bodu C našly dvě chyby v editoru,
-kvůli kterým se **změnilo UI i obsah vzorů**, takže A a B je potřeba projet znovu.
-
-Vše na **CB_CSADAD** (dev přepínač). ⚠️ **Staré testovací šablony s vlastními sloupci nepoužívat** -
-mají „Pracovní dny" uložené jako `12345`, což od `B82` znamená „včetně svátků"; sloupce naklikat
-znovu nebo vzít vzor.
-
-| # | Kde | Co má být vidět |
-|---|---|---|
-| A | editor, sekce **Týdenní platnost** | „Pracovní dny (X)" zašedne Po-Pá a naopak · „Ne" a „Neděle a svátky (+)" jdou zaškrtnout **zároveň** (nevylučují se) · So neblokuje nic · po OK a znovuotevření zůstane X zaškrtnuté |
-| B | vzor „Pracovní / Sobota / Neděle+svátky" | 1. sloupec **Pracovní dny (X)**, 3. sloupec **jen** „Neděle a svátky (+)" (ne navíc „Ne") |
-| C | linka `0330530`, sloupec **jen Ne** | vypíše odjezdy (dřív prázdno - to byl zákazníkův bug) a **bez denních značek** u minut; linka má 8 spojů s `+`, 4 s čistým (T203, T235, Z226, Z230) |
-| D | linka `0330530`, sloupec **jen Pracovní dny (X)** | spoj **T13** jede jen v pátek → u jeho minuty značka **`5`** |
-| E | linka `0330530`, sloupec **Pá+So+Ne** | spoje **T239** a **T245** (platnost `6+`) mají značky **`67`**, dřív jen `6` |
-| F | linka `0330530`, **Automaticky (dle linky)** | vývěska jako dřív - žádná regrese |
-| G | linka `0320625`, sloupec **jen Ne** + období `1.7.-31.8.` | nepovinné: **5. 7. 2026 je neděle a státní svátek**, spoj se `7` nesmí dostat značku „nejede celé období" |
-
-Linky vybrané sondami v `AdSloupekProbe` (`NajdiPlusSpoje`, `PrehledPlatnosti`) - **nemazat**,
-u další změny sloupců se budou hodit.
-
 ---
 
 ## 📥 Backlog
@@ -55,10 +32,35 @@ Nezávislé na JŘ (faktury i obecné šablony). Cíl pevné tabulky **není fak
 „poskládám to z textových polí"**. Model = **objekt na stránce s excelovskými klávesami**
 (Word/PowerPoint), ne tabulkový procesor - žádný řádek vzorců ani odkazy typu A1.
 
-| # | Co | Vel. |
-|---|---|---|
-| B76 | **Výběr více buněk tažením** a na něm hromadné formátování + **ColSpan** slučování buněk (aditivní JSON, span-aware DrawRow). **RowSpan vědomě odložen** - spanování výšek × střídání řádků × podmíněná viditelnost. ⚠️ Zjemní i vkládání ze schránky: dnes se vkládá od vybrané buňky a tabulka se dorovná (Word/Docs chování, jediné neztrátové bez výběru oblasti); s výběrem má platit **vybraná oblast = cíl vložení** (Excel), jedna buňka = dnešní chování | M |
-| B77 | **Připravené bloky agend při vkládání tabulky** (`GetTableTemplates`: „Záhlaví linky", „Shrnutí faktury"). Na serveru existují pro každou agendu, ale od zrušení starého dialogu k nim **nevede z UI cesta**. Patří k vkládání prvku („prázdná / z připraveného bloku"), ne do dialogu | S |
+#### `B76` Formátování buněk a sloučení vodorovně (M, rozhodnutí Jan 17. 8.)
+
+**Pevná tabulka jde dnes formátovat jen jako celek** - „Styl buněk" a „Styl řádku záhlaví" v nastavení
+prvku plus střídání řádků. Uvnitř tabulky se mění **jen obsah a struktura** (text, řádky a sloupce,
+šířky tažením): jednu buňku nelze ztučnit, zarovnat ani podbarvit a formátovací lišta je u tabulky
+prázdná, protože prvek žádnou takovou vlastnost nenabízí.
+
+⚠️ **Tím dnes nefunguje způsob práce, na kterém prvek stojí:** tabulka se vkládá bez řádku záhlaví,
+protože *„záhlaví si uživatel udělá z prvního řádku tím, že ho ztuční"* - a ztučnit ho nejde.
+Per-buňkový styl přitom v modelu **existuje** (nesou ho staré šablony ze smazaného pětizáložkového
+dialogu), jen do něj nemá co zapsat. Je to díra po zrušení toho dialogu, ne nová featura.
+
+**1. Výběr a formátování** (jádro, bez něj je zbytek k ničemu):
+
+- **výběr oblasti tažením** + celý **řádek / sloupec** kliknutím u okraje („ztuč první řádek",
+  „zarovnej sloupec doprava" jsou nejčastější případ a táhnout přes ně myší je zbytečná práce)
+- na výběru: **tučné / kurzíva / podtržení**, **zarovnání vodorovně i svisle**, **font a velikost**,
+  **barva textu a pozadí buňky**, **vnitřní okraje**, **formát hodnoty** u buňky s datovým polem
+- ovládání přes **formátovací lištu** (dnes u tabulky prázdná - prvek jí musí nabídnout vlastnosti
+  vybrané oblasti, ne svoje element-level)
+- **Delete a schránka nad oblastí** (dnes pracují jen s jednou buňkou)
+
+**2. Sloučení buněk vodorovně** (ColSpan): ze tří buněk jeden nadpis přes celou šířku. Aditivně
+v JSON, kreslení řádku musí umět span. **Sloučení přes řádky vědomě odložené** - míchá se
+se spanováním výšek, střídáním řádků a podmíněnou viditelností.
+
+⚠️ **Zjemní i vkládání ze schránky:** dnes se vkládá od vybrané buňky a tabulka se dorovná
+(chování Wordu a Docs, jediné neztrátové bez výběru oblasti); s výběrem má platit **vybraná oblast
+= cíl vložení** (Excel), jedna buňka = dnešní chování.
 
 ### Import PDF - doladění
 
@@ -86,7 +88,7 @@ sada) - u každé otázky hodnotit: správná cesta v UI / žádné vymyšlené 
   „stránka na A5" → Ctrl+Shift+P · „kopírovat styl" → Ctrl+Shift+C/V · „sloupec cena×počet" → výraz `{CENA}*{POCET}` ·
   „zvýraznit řádky >1000" → zvýraznění řádků · „víc linek k tisku" → chip Instance · „změnit agendu" → Ctrl+Shift+A ·
   „červený rámeček náhledu" → přetečení obsahu · „součet pod tabulku" → `SUM(...)` · „schovat sekci na 1. str." → VisibilityExpression ·
-  „vrátit smazaný prvek" → Ctrl+Z · „písmo celé tabulky" → dialog sloupců · „šablona pro kolegu" → Ctrl+S do DB.
+  „vrátit smazaný prvek" → Ctrl+Z · „písmo celé tabulky" → nastavení prvku, „Styl buněk" · „šablona pro kolegu" → Ctrl+S do DB.
 - *Chytáky* (očekává „zatím neumíme", ne vymyšlený návod): sloučení buněk · export do Excelu · PDF e-mailem ·
   brožura/duplex · vlastní font · import staré šablony z EDISONu.
 - *Nejistota* (odkázat na podporu, ne halucinovat): „špatný čas u 3. zastávky linky 12" (datový problém, ne UI).
@@ -109,7 +111,10 @@ migrace starých Caché sestav · template linting v CI/CD.
   tabulku:** dokud je hlavička poskládaná z 6 samostatných textů, musí blok řešit relativní pozice a
   vazby uvnitř skupiny; jako **jeden** prvek (pevná tabulka) je uložení skoro zadarmo. Otevřené:
   kde bloky žijí (per uživatel × firma jako šablony sekcí, nebo sdílené v DB) a jestli se vkládají
-  z palety, nebo z nabídky „Přidat".
+  z palety, nebo z nabídky „Přidat". **Pohltí i připravené bloky agend** (dřív `B77`): server pro
+  každou agendu drží hotové sestavy tabulek („Záhlaví linky", „Shrnutí faktury"), ale od zrušení
+  starého dialogu k nim z UI nevede cesta - je to titíž „pojmenovaný blok k vložení", jen dodaný
+  námi místo uživatelem, takže samostatnou cestu do UI nedostane (rozhodnutí Jan 17. 8.).
 
 - **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
   věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,
