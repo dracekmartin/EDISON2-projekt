@@ -364,8 +364,8 @@
             </Grid.RowDefinitions>
 
             <!-- Přepínač záložek + akce nad aktivním stromem na jednom řádku. TabControl tu drží
-                 jen tab strip: TabItemy jsou záměrně bez Contentu (stromy jsou pod hledáním v kartě
-                 níž, přepínané Is*TabActive) — content row jeho šablony tak zkolabuje na nulu.
+                 jen tab strip: content skrývá prázdný ContentTemplate (stromy jsou pod hledáním
+                 v kartě níž, přepínané dle SelectedTab.Key) - content row tak zkolabuje na nulu.
                  Přetemplatovat TabControl lokálně nelze, viz EDControls/CLAUDE.md.
                  Záložky vs. akce se nesmí slít do jedné řady ikon (obě skupiny mají ★): taby sedí
                  na kartě (Bg.Surface, spojité s hledáním i stromem = patří k obsahu), akce zůstávají
@@ -380,8 +380,10 @@
                         BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,1,1,0">
                     <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených.
                          BorderThickness=0 — spodní linku kreslí až rámeček řádku s hledáním, spojitě přes celou šířku. -->
-                    <!-- Záložky jsou data (VM.TreeTabs), ne ručně psané TabItemy — pořadí i identita
-                         žijí v jednom seznamu. Ikona patří do Headeru, Content se nezobrazuje (viz výše). -->
+                    <!-- Záložky jsou data (VM.TreeTabs), ne ručně psané TabItemy - pořadí i identita
+                         žijí v jednom seznamu. Ikona patří do Headeru; Content nastavuje generátor
+                         kontejnerů na datovou položku (record ToString!), skrývá ho prázdný
+                         ContentTemplate - Setter Content by generátor přebil lokální hodnotou. -->
                     <TabControl x:Name="TreeTabControl" BorderThickness="0"
                                 ItemsSource="{Binding TreeTabs}"
                                 SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
@@ -396,6 +398,9 @@
                                        Source="{Binding IconKey, Converter={StaticResource ResourceKey}}"/>
                             </DataTemplate>
                         </TabControl.ItemTemplate>
+                        <TabControl.ContentTemplate>
+                            <DataTemplate/>
+                        </TabControl.ContentTemplate>
                     </TabControl>
                 </Border>
                 <!-- Rozbalit/sbalit cílí na aktivní strom (VM.ActiveExpandableTree), zbytek na vybraný

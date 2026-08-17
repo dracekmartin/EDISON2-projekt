@@ -72,9 +72,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   zakulacení jen na krajích). V light je totiž `Bg.Base` == `Bg.Surface` a bez toho panel
   splyne s obsahem. Akční toolbar zůstává **vedle karty** na zapuštěném chrome - ikonové taby
   a ikonové akce by jinak splynuly v jednu řadu, navíc obě skupiny obsahují ★.
-  `TreeTabControl` nese **jen tab strip**: `TabItem`y jsou ikonové (text v ToolTipu) a záměrně
-  **bez Contentu** (ikona proto patří do `TabItem.Header`), stromy jsou sourozenci v kartě
-  a přepínají se podle `SelectedTab.Key`. Důsledek: všech pět stromů žije pořád → do `Tag`
+  `TreeTabControl` nese **jen tab strip**: `TabItem`y jsou ikonové (text v ToolTipu, ikona
+  v `Header`) a content skrývá **prázdný `ContentTemplate`** - generátor kontejnerů nastavuje
+  `Content` na datovou položku (record ToString) a lokální hodnota by přebila Setter ve stylu;
+  stromy jsou sourozenci v kartě a přepínají se podle `SelectedTab.Key`. Důsledek: všech pět stromů žije pořád → do `Tag`
   datových šablon (most pro `ContextMenu`) nejde brát `AncestorType=TabControl`, jde tam `VmProxy`.
 - **Identita záložky je `Modules/TreeTab`** - jeden seznam `TreeTabs` ve VM drží pořadí, klíč
   (server + persistence), ikonu a příznaky `Expandable`/`ServerLoaded`. Přidání záložky je
