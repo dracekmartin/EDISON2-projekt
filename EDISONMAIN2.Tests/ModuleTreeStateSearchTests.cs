@@ -3,8 +3,8 @@ using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
 namespace EDISONMAIN2.Tests;
 
-/// <summary>Testy filtrování stromu podle hledaného textu (EdisonMainViewModel.ApplySearchToModule).</summary>
-public class EdisonMainViewModelSearchTests
+/// <summary>Testy filtrování stromu podle hledaného textu (ModuleTreeState.ApplySearchToModule).</summary>
+public class ModuleTreeStateSearchTests
 {
     private static ExecutableModule Exe(string name) => new() { DisplayedName = name };
 
@@ -19,7 +19,7 @@ public class EdisonMainViewModelSearchTests
     public void EmptyText_AllVisible()
     {
         var exe = Exe("Cokoliv");
-        Assert.True(EdisonMainViewModel.ApplySearchToModule(exe, ""));
+        Assert.True(ModuleTreeState.ApplySearchToModule(exe, ""));
         Assert.True(exe.IsVisibleBySearch);
     }
 
@@ -34,7 +34,7 @@ public class EdisonMainViewModelSearchTests
     public void Leaf_MatchesByName(string name, string text, bool expected)
     {
         var exe = Exe(name);
-        Assert.Equal(expected, EdisonMainViewModel.ApplySearchToModule(exe, text));
+        Assert.Equal(expected, ModuleTreeState.ApplySearchToModule(exe, text));
         Assert.Equal(expected, exe.IsVisibleBySearch);
     }
 
@@ -46,7 +46,7 @@ public class EdisonMainViewModelSearchTests
         var fam = Fam("Autobusová doprava", match, other);
         fam.IsExpanded = false;
 
-        var visible = EdisonMainViewModel.ApplySearchToModule(fam, "turnus");
+        var visible = ModuleTreeState.ApplySearchToModule(fam, "turnus");
 
         Assert.True(visible);
         Assert.True(fam.IsVisibleBySearch);
@@ -59,7 +59,7 @@ public class EdisonMainViewModelSearchTests
     public void Family_VisibleByOwnName()
     {
         var fam = Fam("Doprava", Exe("Turnusy"));
-        Assert.True(EdisonMainViewModel.ApplySearchToModule(fam, "doprav"));
+        Assert.True(ModuleTreeState.ApplySearchToModule(fam, "doprav"));
         Assert.True(fam.IsVisibleBySearch);
     }
 
@@ -72,7 +72,7 @@ public class EdisonMainViewModelSearchTests
         var fam = Fam("Mzdy a personalistika", kid);
         fam.IsExpanded = false;
 
-        Assert.True(EdisonMainViewModel.ApplySearchToModule(fam, "mzdy"));
+        Assert.True(ModuleTreeState.ApplySearchToModule(fam, "mzdy"));
 
         Assert.True(fam.IsVisibleBySearch);
         Assert.True(fam.IsExpanded);
@@ -87,7 +87,7 @@ public class EdisonMainViewModelSearchTests
         var other = Exe("Zaměstnanci");
         var fam = Fam("Mzdy a personalistika", sub, other);
 
-        Assert.True(EdisonMainViewModel.ApplySearchToModule(fam, "personalistika"));
+        Assert.True(ModuleTreeState.ApplySearchToModule(fam, "personalistika"));
 
         Assert.True(sub.IsVisibleBySearch);
         Assert.True(sub.IsExpanded);      // rozbaleno rekurzivně, ať je list rovnou dosažitelný
@@ -103,7 +103,7 @@ public class EdisonMainViewModelSearchTests
         var other = Exe("Objednávky");
         var fam = Fam("Autobusová doprava", match, other);
 
-        EdisonMainViewModel.ApplySearchToModule(fam, "turnus");
+        ModuleTreeState.ApplySearchToModule(fam, "turnus");
 
         Assert.True(match.IsVisibleBySearch);
         Assert.False(other.IsVisibleBySearch);
@@ -115,7 +115,7 @@ public class EdisonMainViewModelSearchTests
         var fam = Fam("Mzdy a personalistika");
         fam.IsExpanded = false;
 
-        Assert.True(EdisonMainViewModel.ApplySearchToModule(fam, "mzdy"));
+        Assert.True(ModuleTreeState.ApplySearchToModule(fam, "mzdy"));
 
         Assert.True(fam.IsVisibleBySearch);
         Assert.False(fam.IsExpanded);   // není co ukázat
@@ -125,7 +125,7 @@ public class EdisonMainViewModelSearchTests
     public void Family_Hidden_WhenNothingMatches()
     {
         var fam = Fam("Doprava", Exe("Turnusy"), Exe("Objednávky"));
-        Assert.False(EdisonMainViewModel.ApplySearchToModule(fam, "xyz"));
+        Assert.False(ModuleTreeState.ApplySearchToModule(fam, "xyz"));
         Assert.False(fam.IsVisibleBySearch);
     }
 
@@ -135,10 +135,10 @@ public class EdisonMainViewModelSearchTests
         var match = Exe("Turnusy");
         var other = Exe("Objednávky");
         var fam = Fam("Doprava", match, other);
-        EdisonMainViewModel.ApplySearchToModule(fam, "xyz");   // vše skryto
+        ModuleTreeState.ApplySearchToModule(fam, "xyz");   // vše skryto
         Assert.False(other.IsVisibleBySearch);
 
-        EdisonMainViewModel.ApplySearchToModule(fam, "");       // vymazání
+        ModuleTreeState.ApplySearchToModule(fam, "");       // vymazání
 
         Assert.True(fam.IsVisibleBySearch);
         Assert.True(match.IsVisibleBySearch);
