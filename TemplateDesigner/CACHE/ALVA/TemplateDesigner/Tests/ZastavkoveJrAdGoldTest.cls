@@ -105,7 +105,11 @@ Method TestGold0365005()
 	// a slitý víkend jako `6+` - „+" znamená „neděle a svátky" i u sloupce, takže vyjmenovávat
 	// k němu ještě `7` bylo matoucí. ⚠️ Zase JEN md5, počty shodné; ověřeno izolovaně vrácením
 	// vzorů na `7+`/`67+`, kdy odtisky prošly beze změny.
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=236 md5=JhNtQg5AWcTsG7prDwWO7w==")
+	// Re-baseline 2026-08-17 (#7959): seznam zastávek zúžený na zastávky **dosažitelné z této
+	// vývěsky** - zastávka, kam odtud nic nejede, mizí. ⚠️ **Mění POČTY, ne jen md5**: zastávek
+	// 762 → 709. Odjezdů se to nedotklo (498 → 498), což je ten podstatný důkaz: neztratil se žádný
+	// spoj, ubyly jen řádky, ke kterým nešlo dojet.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=hzPQTO+x7kYcQm5H493NVA==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -174,7 +178,11 @@ Method TestGold0330530()
 	// a slitý víkend jako `6+` - „+" znamená „neděle a svátky" i u sloupce, takže vyjmenovávat
 	// k němu ještě `7` bylo matoucí. ⚠️ Zase JEN md5, počty shodné; ověřeno izolovaně vrácením
 	// vzorů na `7+`/`67+`, kdy odtisky prošly beze změny.
-	do ..AssertLine(1, "0330530", "pages=45 zast=1058 odj=1236 pozn=639 md5=PBpmRWC71+5Yt7xD2R9zUw==")
+	// Re-baseline 2026-08-17 (#7959): dtto zúžení seznamu na dosažitelné zastávky - zastávek
+	// 1058 → 1022, poznámek 639 → 638 (s posledním výskytem zmizel jeden řádek legendy atributů).
+	// Odjezdy i stránky beze změny. Je to ta linka, na které se to doložilo (Střítež,žel.st.točna
+	// měla „<" ve sloupci časů i ve všech osmi variantách).
+	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=f054aF0NJvQ+i63SRPH+NQ==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

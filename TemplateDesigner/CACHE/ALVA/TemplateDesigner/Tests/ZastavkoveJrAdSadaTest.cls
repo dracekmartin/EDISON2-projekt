@@ -14,17 +14,23 @@ Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest Extends ALVA.EDTesting.
 
 /// Sada: `firma~skupina~linka~typy`. Typy jsou značky, které musí být na té lince reálně vidět
 /// (kontroluje `TestSadaPokryvaTypy`).
+///
+/// ⚠️ **Přetypováno 17. 8.** po zúžení seznamu zastávek na „dosažitelné z této vývěsky" (#7959):
+/// šest linek neslo `mensitko` / `prazdno` **právě přes ty nedosažitelné řádky**, které od té chvíle
+/// v seznamu nejsou. Oba typy dál pokrývají linky KOVEDu, takže sada o pokrytí nepřišla - jen
+/// přestalo platit, že je nese i tahle šestice. Ověřeno měřením (`ProfilyLinek`), ne odhadem:
+/// `<` i prázdno v časech vznikají dál (0330513 má 183 výskytů `<`, 0320680 109 prázdných).
 ClassMethod Sada(ByRef sada)
 {
 	kill sada
 	set sada($increment(sada)) = "CB_CSADAD~1~0365001~kontrolniVzorek"
-	set sada($increment(sada)) = "CB_CSADAD~1~0330530~hodneSloupcu,mensitko"
-	set sada($increment(sada)) = "CB_GWBUS~1~0320118~hodneSloupcu,mensitko,prazdno,viceStanovist,tydenniPlatnost,zony,poznamkyLinky,pokracovani"
-	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000012~mensitko,prazdno,tydenniPlatnost,prestupy,rucniKomentare"
-	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000009~kola,viceStanovist,smerove,mensitko,prazdno"
-	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000006~bezVariant,mensitko"
+	set sada($increment(sada)) = "CB_CSADAD~1~0330530~hodneSloupcu"
+	set sada($increment(sada)) = "CB_GWBUS~1~0320118~hodneSloupcu,mensitko,viceStanovist,tydenniPlatnost,zony,poznamkyLinky,pokracovani"
+	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000012~mensitko,tydenniPlatnost,prestupy,rucniKomentare"
+	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000009~kola,viceStanovist,smerove,mensitko"
+	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000006~bezVariant"
 	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000002~pokracovani,rucniRezim"
-	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000014~rozdilTrasy,mensitko"
+	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000014~rozdilTrasy"
 	set sada($increment(sada)) = "ZL_KOVED~1~0823995~mistenky,vyluky,poznamkyLinky,zony,mensitko,prazdno"
 	set sada($increment(sada)) = "ZL_KOVED~1~0823955~mistenky,vyluky,prazdno"
 }
@@ -236,6 +242,58 @@ Method TestZarovnaniVariantnichPoli()
 	}
 	do $$$AssertEquals(radku > 0, 1, "jádro sady nedalo žádnou zastávku - rozbitý fixture?")
 	do $$$AssertEquals(rozjezdu, 0, "variantní pole nesedí s počtem hlaviček ("_rozjezdu_" z "_radku_" řádků), první: "_kde)
+}
+
+/// Zastávka v seznamu musí být **dosažitelná z té vývěsky**: aspoň jeden časový sloupec (Čas nebo
+/// některá varianta) u ní musí mít číslo. Řádek, kde je všude „<" nebo prázdno, říká cestujícímu
+/// „tudy se jezdí, ale odtud se tam nedostanete" - zabíral místo a nešel k ničemu použít
+/// (TRANSDEV #7959, doloženo na `CB_CSADAD` 0330530, zastávka Střítež,žel.st.točna).
+///
+/// Platí i pro projeté zastávky a samotnou vývěsku - ty mají čas 0, což je číslo.
+Method TestSeznamNemaNedosazitelneZastavky()
+{
+	do ..SetupSys(.sys)
+	do ..Jadro(.jadro)
+	set sirotku = 0, kde = "", radku = 0, overeno = 0, i = ""
+	for  {
+		set i = $order(jadro(i))
+		quit:i=""
+		set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
+		kill parametry
+		continue:'..NactiLinku(.sys, db, sku, lin, .parametry)
+		set overeno = overeno + 1
+		set key = ""
+		for  {
+			set key = $order(^||ML("OUT", key))
+			quit:key=""
+			continue:key="ERR"
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			set zast = page.rows.ZASTAVKY
+			continue:'$isobject(zast)
+			set it = zast.%GetIterator()
+			while it.%GetNext(.j, .radek) {
+				set radku = radku + 1
+				set maCislo = $isvalidnum(radek.%Get("CAS_JIZDY"))
+				if 'maCislo {
+					set tm = radek.%Get("TRASA_MIN")
+					if $isobject(tm) {
+						for ti = 0:1:(tm.%Size() - 1) {
+							if $isvalidnum(tm.%Get(ti)) set maCislo = 1  quit
+						}
+					}
+				}
+				continue:maCislo
+				set sirotku = sirotku + 1
+				if kde = "" set kde = db_" "_lin_", stránka "_key_" ("_page.values.%Get("POPIS_ZASTAVKA")_") → "_radek.%Get("NAZEV_ZASTAVKY")
+			}
+		}
+	}
+	if 'overeno {
+		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
+		quit
+	}
+	do $$$AssertEquals(radku > 0, 1, "jádro sady nedalo žádnou zastávku - rozbitý fixture?")
+	do $$$AssertEquals(sirotku, 0, "zastávka v seznamu není z vývěsky dosažitelná ("_sirotku_" z "_radku_"), první: "_kde)
 }
 
 /// Každá značka varianty u minuty musí odkazovat na sloupec, který na vývěsce **existuje** - jinak

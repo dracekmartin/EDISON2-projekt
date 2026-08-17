@@ -239,11 +239,15 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
   - **(a) StopList filtr** - neobsluhovaná zastávka se nepřidá do seznamu: `ZastavkoveJrAd:296`
     `i '$d(servedPoradi(poradi)) continue` (`ObsluhovanePoradi`).
   - **(b) Stránka se negeneruje** - zastávka bez odjezdů: `:333` `odjezdy.%Size()=0 q ""` + `:278` terminus-skip.
-- **⚠️ Známá nuance k případnému doladění** (jen pokud klient nahlásí): AD filtr (a) je
-  **směrově-globální** (`servedPoradi` = staví tam aspoň 1 spoj směru), kdežto MHD je **from-current**
-  (`ObsluhaBitmap` = obsluha z aktuální zastávky). Pro přesný školní scénář (zastávka dosažitelná jen
-  spojem, který z tištěné zastávky nevyjíždí) by AD mohl zastávku ponechat. Pokud to vadí → přepnout AD
-  na from-current sémantiku. Zatím necháno (těžko se hledá testovací linka; klient ověří v praxi).
+- **✅ Dořešeno 17. 8. - AD přepnuto na from-current sémantiku.** Dřív tu stálo, že AD filtr je
+  **směrově-globální** (staví tam aspoň 1 spoj směru), kdežto MHD je **from-current**, takže pro
+  školní scénář mohl AD zastávku ponechat - a že se to nechává, protože se těžko hledá testovací
+  linka. **Linka se našla** (`CB_CSADAD` 0330530, zastávka Střítež,žel.st.točna měla „<" ve sloupci
+  časů i ve všech osmi variantách) a AD teď bere jen zastávky, kde staví aspoň jeden spoj stavící
+  i na té vývěsce (`ObsluhovanePoradiOd`). Agendy jsou tím srovnané.
+  ⚠️ Seznam zastávek se proto **liší mezi vývěskami téže linky**; hlídá to invariant
+  `TestSeznamNemaNedosazitelneZastavky` (každá zastávka v seznamu musí mít aspoň v jednom časovém
+  sloupci číslo). Detail → changelog 2026-08-17 (4).
 - **Opt-out** (kdyby chtěl vidět vše bez filtru) → param `TISK_VSECH_ZASTAVEK` (paralelní k `TISK_PROJETYCH_ZAST`), zatím YAGNI.
 
 ---

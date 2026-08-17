@@ -360,7 +360,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = "", prvniCzst = ""
     k atrSeen, prestupSeen                                      // atributy zastávek viděné na stránce (znak → text) pro legendu
     k servedPoradi
-    d ..ObsluhovanePoradi(dataDB, sku, lin, smer, .servedPoradi)   // filtr projížděných zastávek
+    // Jen zastávky dosažitelné z TÉTO vývěsky (#7959) - zastávka, kam odtud nic nejede, by zabrala
+    // řádek s „<" ve sloupci časů i ve všech variantách.
+    d ..ObsluhovanePoradiOd(dataDB, sku, lin, smer, currentPoradi, .servedPoradi)
     s jeTam = (smer = "T")
 
     // TR2 (opt-in SOUHRN_NA_ZNAMENI): když jsou VŠECHNY obsluhované neprojeté zastávky „na znamení" („x"),
@@ -1012,6 +1014,57 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
         }
     }
     i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
+}
+
+/// Naplní `served(poradi)` zastávkami, kde staví **aspoň jeden spoj, který staví i na vývěskové
+/// zastávce** (`currentPoradi`) - tedy zastávkami dosažitelnými odtud.
+///
+/// Proti `ObsluhovanePoradi` (stačí, že tam staví kdokoli ze směru) je to zúžení. Zastávku, kam se
+/// z téhle vývěsky nedá dojet, nemá cestující jak použít: v seznamu zabírala řádek, kde je `<`
+/// v sloupci časů i ve všech variantách. Požadavek TRANSDEV #7959 („aby zastávka nebyla v seznamu,
+/// pokud není aktuální") - směrově globální filtr z 30. 7. ten školní scénář nepokryl a dokončení
+/// se odložilo, protože se nedařilo najít testovací linku. Doloženo na `CB_CSADAD` lince `0330530`
+/// (Střítež,žel.st.točna). **MHD tuhle sémantiku má odjakživa** (`ObsluhaBitmap`), takže se tím
+/// agendy zároveň srovnávají.
+///
+/// ⚠️ Důsledek: seznam zastávek se **liší mezi vývěskami téže linky** - je to cena za to, že každá
+/// vývěska mluví jen o tom, co z ní jede (a přesně to zákazník žádal).
+///
+/// Invariant per (linka×směr×vývěska) → cache `^||TiskAd("servedOd",…)`.
+ClassMethod ObsluhovanePoradiOd(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ByRef served)
+{
+    k served
+    // Bez vývěskové zastávky není od čeho měřit (sonda, starší volání) → původní směrový filtr.
+    i currentPoradi = "" {
+        d ..ObsluhovanePoradi(dataDB, sku, lin, smer, .served)
+        q
+    }
+    i $d(^||TiskAd("servedOd",dataDB,sku,lin,smer,currentPoradi)) {
+        m served = ^||TiskAd("servedOd",dataDB,sku,lin,smer,currentPoradi)
+        q
+    }
+    k trasyOdtud
+    s sp = ""
+    f {
+        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+        q:sp=""
+        i '$isvalidnum(sp) continue
+        s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        i ct = "" continue
+        i $d(trasyOdtud(ct)) continue                    // trasu už známe (W-mapa je per trasa)
+        k wMapS
+        d ..WMapa(dataDB, sku, lin, ct, .wMapS)
+        i ..CasHodnota($g(wMapS(currentPoradi))) = "" { s trasyOdtud(ct) = 0  continue }   // odtud nejede
+        s trasyOdtud(ct) = 1
+        s pp = ""
+        f {
+            s pp = $o(wMapS(pp))
+            q:pp=""
+            i '$isvalidnum(pp) continue
+            i ..CasHodnota($g(wMapS(pp))) '= "" s served(pp) = ""
+        }
+    }
+    i $d(served) m ^||TiskAd("servedOd",dataDB,sku,lin,smer,currentPoradi) = served
 }
 
 /// Značka pokračování spoje pro daný spoj, nebo prázdno (#13093 bod 3).

@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-17 (4) - 🚏 seznam zastávek ukazuje jen zastávky dosažitelné z té vývěsky (#7959)
+
+Zastávka, kam **z dané vývěsky nic nejede**, zabírala v seznamu řádek, kde bylo „<" ve sloupci časů
+i ve všech variantách. Cestujícímu to říkalo „tudy se jezdí, ale odtud se tam nedostanete", takže
+řádek nešel k ničemu použít. Nově se do seznamu dostane jen zastávka, kde staví **aspoň jeden spoj,
+který staví i na té vývěsce**.
+
+**Není to nový požadavek, ale dokončení odloženého.** TRANSDEV to žádal v #7959 („aby zastávka nebyla
+v seznamu, pokud není aktuální", školní spoj z druhé zastávky). Filtr z 30. 7. byl **směrově
+globální** - stačilo, že tam staví kdokoli ze směru - a u nás byla zapsaná nuance, že pro ten školní
+scénář by bylo potřeba **from-current** sémantiku, jakou má MHD. Odložilo se to, protože se nedařilo
+najít testovací linku; Jan ji našel 17. 8. při přípravě ukázky pro jiného zákazníka
+(`CB_CSADAD` 0330530, zastávka Střítež,žel.st.točna měla „<" v časech i ve všech osmi variantách).
+Agendy se tím zároveň srovnávají - MHD to tak dělá odjakživa.
+
+⚠️ **Mění to tištěný výstup všem AD vývěskám**, kde takové zastávky jsou: na dvou kontrolních linkách
+ubylo 36 a 53 řádků zastávek. **Odjezdů se to nedotklo** (1236 → 1236 a 498 → 498), což je ten
+podstatný důkaz - neztratil se žádný spoj, ubyly jen nepoužitelné řádky.
+
+⚠️ **Důsledek:** seznam zastávek se teď **liší mezi vývěskami téže linky**. Je to cena za to, že
+každá vývěska mluví jen o tom, co z ní jede, a přesně to zákazník žádal.
+
+**Brány:** **110 Caché testů**, z toho **1 nový invariant**: každá zastávka v seznamu musí mít
+aspoň v jednom časovém sloupci číslo. Ověřeno mutací - vrácení filtru na směrově globální ten test
+shodí (a s ním i dva zlaté odtisky). **961 .NET** beze změny.
+
+**Přetypovaná testovací sada:** šest linek neslo stavy „<" / prázdno **právě přes ty nedosažitelné
+řádky**. Ověřeno měřením, že oba stavy vznikají dál (0330513 má 183 výskytů „<", 0320680 109
+prázdných) a že je sada dál pokrývá přes linky KOVEDu - featura tří stavů z `B67` tím není dotčená.
+
 ## 2026-08-17 (4) - 🎯 uvnitř tabulky patří panel vybrané buňce (`B76`, nález z proklikání)
 
 Po dopoledním kroku stály proti sobě **dvě zaškrtávátka „Tučné"**: v levém panelu (měnil celou
