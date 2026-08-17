@@ -22,6 +22,9 @@ podstatný důkaz - neztratil se žádný spoj, ubyly jen nepoužitelné řádky
 ⚠️ **Důsledek:** seznam zastávek se teď **liší mezi vývěskami téže linky**. Je to cena za to, že
 každá vývěska mluví jen o tom, co z ní jede, a přesně to zákazník žádal.
 
+**Ověřeno proklikem Jana 17. 8.** - na lince 0330530 zastávka Střítež,žel.st.točna ze seznamu
+zmizela. U změny, která ubírá řádky z tištěného výstupu, je to podstatnější než zelené testy.
+
 **Brány:** **110 Caché testů**, z toho **1 nový invariant**: každá zastávka v seznamu musí mít
 aspoň v jednom časovém sloupci číslo. Ověřeno mutací - vrácení filtru na směrově globální ten test
 shodí (a s ním i dva zlaté odtisky). **961 .NET** beze změny.
