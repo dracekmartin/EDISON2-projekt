@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-17 (7) - 🚆 linkový JŘ mluví stejným slovníkem jako vývěska (`B91`+`B95`)
+
+Zastávková vývěska a linkový jízdní řád nabízely **pro tutéž věc jiná pole**. Nebylo to vidět:
+skupiny polí se jmenovaly stejně (Zastávky, Skupiny dnů, Poznámky), takže sloupec s polem „Název
+zastávky" vypadal, že bude fungovat v obou - a v linkovém JŘ zůstal tiše prázdný. Totéž u zón
+a u data platnosti. Srovnáno; měnil se **výhradně linkový JŘ**, protože vývěska je vydaná.
+
+**Dvě věci, které jsou horší než jiný název a nešly poznat z popisku:**
+
+- **Číslo linky u MHD.** Vývěska tiskne pod „Číslo linky" licenční číslo, linkový JŘ tiskl veřejné.
+  Táž šablona tedy u jedné linky vytiskla dvě různá čísla podle toho, který jízdní řád se dělal.
+  Nově je to v obou licenční číslo a veřejné se nabízí zvlášť jako **„Veřejné označení linky"** -
+  opět pod stejným názvem jako na vývěsce. ⚠️ **Výchozí linková šablona MHD tím začne tisknout
+  licenční číslo** - kdo chce veřejné, přepne pole.
+- **Datum platnosti u MHD.** Linkový JŘ posílal datum v syrovém tvaru z databáze (`2018-11-01`),
+  vývěska v převedeném. Srovnáno na tentýž převod.
+
+**Co ještě zmizelo z nabídky:** pomocné spojovací klíče (ID skupiny dnů, číslo skupiny u spoje).
+Zůstávají v datech, takže tabulka je dál používá - jen se nenabízejí k vložení, protože v ploché
+tabulce s nimi uživatel nic neudělá. Stejně to má vývěska.
+
+**Aby se to nevrátilo:** popisky a typy polí agend hlídá nová pojistka (`AgendaSchemaDriftTests`) -
+tatáž věc musí mít ve všech agendách stejný název i popisek. Ověřená mutací, ne jen tím, že svítí
+zeleně. Doteď hlídala jen formuláře vlastností prvku, ne slovník dat - proto rozchod vznikl.
+
+⚠️ **Jedno tvrzení z revize neplatilo:** „dělení sloupců" se v obou JŘ jmenuje jinak **záměrně** -
+jsou to dvě různá nastavení s jinými volbami („Dělení spojů dle platnosti" × „Rozdělení sloupců
+(typy provozu)"). Sjednotit název nejde: ukládá se zobrazený text, takže by se uživateli při
+přepnutí agendy tiše ztratilo nastavení.
+
 ## 2026-08-17 (6) - 🔲 pevná tabulka: výběr více buněk tažením (`B76` krok 3)
 
 Formátovat, mazat a kopírovat šlo dosud jen buňku po buňce. Nově se **tažením myší označí

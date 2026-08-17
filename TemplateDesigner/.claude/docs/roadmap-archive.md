@@ -2,6 +2,27 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-17 ✅ - `B91`+`B95`: linkový JŘ mluví stejným slovníkem jako vývěska
+
+Detail → changelog 2026-08-17 (3). Obě rodiny agend posílaly stejně pojmenované kolekce, ale
+řádky uvnitř měly jiný tvar (`POPIS` × `NAZEV_ZASTAVKY`, `ZONA` × `ZONY`, `PLATNOST_OD` ×
+`DATUM_PLATNOSTI_OD`). Srovnáno na zastávkový tvar - měnila se výhradně linková strana.
+
+**Dvě věci, které nová pojistka principiálně nechytí a našly se čtením kódu:**
+
+1. **Číslo linky u MHD** - vývěska dávala do `CISLO_LINKY` licenční číslo, linkový JŘ veřejné.
+   Táž šablona tedy tiskla u jedné linky dvě různá čísla. Srovnáno; veřejné přibylo jako
+   `LOKALNI_OZNACENI_LINKY`, opět pod týmž názvem jako na vývěsce.
+2. **Datum platnosti u MHD** - linkový posílal syrový tvar z databáze (`2018-11-01`), vývěska
+   převedený. Srovnáno na tentýž převod.
+
+**Neodvoditelné:** spojovací klíče (`ID` skupiny, `SKUPINA` u spoje) zůstaly ve wire, ale zmizely
+z nabídky polí - vývěska je taky nenabízí a v ploché tabulce s nimi uživatel nic neudělá.
+
+⚠️ **`DELENI_SLOUPCU` × `ROZDELENI_SLOUPCU` se NEsjednocuje** - revize to zapsala jako dva názvy
+téhož, ale jsou to dvě různá nastavení s jinými volbami. U nich se ukládá zobrazený text, takže
+sloučení pod jeden název by při přepnutí agendy tiše shodilo uživateli nastavení na výchozí.
+
 ## 2026-08-17 ✅ - `B90`: písmena variant u odjezdů přestala být volba
 
 Detail → changelog 2026-08-17 (2). Vypnutý stav umožňoval vývěsku, ze které nešlo poznat, který

@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** sada `B91`-`B94` níže (revize 17. 8., krátké obecné body). Pak vybrat mezi
+> **Nejblíž na řadě:** zbytek sady `B92`-`B94` níže (revize 17. 8., krátké obecné body). Pak vybrat mezi
 > **pevnou tabulkou** (`B76`) a **linkovými JŘ** (`B10` + `B13`) jako dedikovaným slotem.
 > Zastávkový JŘ otevřený bod nemá - revize `B39` je uzavřená a proklikaná (17. 8.).
 >
@@ -24,19 +24,21 @@
 > a jsou zatím úvodní draft. Dotyk vydaného prvku je přípustný jen **aditivně** (nová vlastnost
 > defaultně vypnutá, odtisky beze změny).
 
-**Nález, ze kterého sada vychází:** obě rodiny agend posílají stejně pojmenované kolekce
-(`ZASTAVKY`, `SKUPINY_DNU`, `POZNAMKY`), ale **řádky uvnitř mají jiný tvar** - `POPIS` ×
-`NAZEV_ZASTAVKY`, `ZONA` × `ZONY`, `PLATNOST_OD/DO` (text) × `DATUM_PLATNOSTI_OD/DO` (date),
-`DELENI_SLOUPCU` × `ROZDELENI_SLOUPCU`, u poznámek týž klíč s jiným popiskem. Vypadá to
-kompatibilně a není: `{NAZEV_ZASTAVKY}` na vývěsce funguje, v linkovém tiše vykreslí prázdno.
-Srovnání slovníku samo je `B95` (patří k linkovým, ne sem).
+**Nález, ze kterého sada vychází** (`B91`+`B95` hotové 17. 8., detail v archivu): obě rodiny agend
+posílaly stejně pojmenované kolekce, ale **řádky uvnitř měly jiný tvar**, takže to vypadalo
+kompatibilně a nebylo.
+
+⚠️ **Jedno tvrzení z revize neplatilo:** `DELENI_SLOUPCU` × `ROZDELENI_SLOUPCU` **nejsou dva názvy
+téhož**. Jsou to dvě různá nastavení sestavy - „Dělení spojů dle platnosti" (linkový, 3 volby)
+a „Rozdělení sloupců (typy provozu)" (vývěska, 6 voleb). Sloučit je pod jeden název nejde: u těchhle
+voleb se ukládá zobrazený text, takže by přepnutí agendy tiše shodilo nastavení na výchozí.
 
 | # | Co | Vel. |
 |---|---|---|
-| **B91** | **Driftový test popisků i nad `Agendy/*.cls`.** Dnes `EDInputFormSchemaDriftTests` hlídá „stejný klíč = stejný popisek" jen nad `EDInputForm/*.cls`. Slovník polí, který uživatel vidí v nabídce dat a který jde do AI, žije v agendách a nehlídá ho nic - proto rozchod výše vůbec vznikl. Po rozšíření bude test červený na dnešních linkových rozporech; **seznam výjimek s komentářem „draft, srovnává se v `B95`" je zároveň zadáním pro `B95`** a maže se položku po položce. | S |
 | **B92** | **Sjednotit distribuci systémových šablon.** Zastávkové jdou přes `SystemTemplates/` (zabalí se do exe, nalijí se samy), `templates/linkovy-jr-ad-vychozi.json` leží mimo a nedistribuuje se. Nejsou to dva záměrné kanály, je to nedokončený jeden. Zároveň se ověří, že cesta unese víc než dvě šablony, dřív než jich bude šest. | S |
 | **B93** | **Parita tabulkových prvků - nejdřív rozhodnout, pak kód.** Střídání řádků má tabulka z dat, pevná tabulka i mřížka odjezdů, **nemá ho seznam zastávek ani linková tabulka** (dvě nejdelší a nejhůř čitelné tabulky); podmínku viditelnosti a zvýraznění řádku nemá pevná tabulka. Podle klasifikace v [`elementy-architektura.md §0b`](elementy-architektura.md) jsou obě **kategorie 1** (čte jen data řádku) → patří do všech řádkových tabulek, takže je to drift, ne rozhodnutí. Projít všech pět tabulkových prvků × generické featury a rozhodnout per featura. ⚠️ Doplnění sáhne na **vydaný** seznam zastávek - jen aditivně a defaultně vypnuté. Vedlejší efekt: co skončí v jádru, dostane linková tabulka zadarmo. | analýza S + kód S |
 | **B94** | **Tři zastaralá tvrzení v docs.** Hierarchie prvků v `elementy-architektura.md` neuvádí `StopScheduleElementBase` ani `LineTableElement`; §5 vede jako kandidáta na extrakci něco hotového (tabulka z dat už `RowPlan` používá); u linkových JŘ se tvrdí, že chybí výchozí šablona - existuje, jen není zapojená (viz `B92`). | XS |
+| **B96** | **Datum platnosti: MHD tiskne lomítka, AD tečky** (nález při `B95`, 17. 8.). Zastávková vývěska MHD dá do „Datum platnosti od" `01/11/2018`, AD `11.12.2022`. Česky se datum píše s tečkami, takže MHD tvar je pravděpodobně chyba - jen **je ve vydané verzi**, proto to `B95` nechalo být a linkový MHD srovnalo na tentýž (nesprávný) tvar, aby výstupy nešly proti sobě. Druhá polovina: zastávkový MHD má ve **vzorových datech pro náhled** tečky, ale s ostrými daty vyjde lomítko - náhled tedy ukazuje jiný tvar než tisk. ⚠️ **Nejdřív rozhodnout:** oprava se dotkne vydané vývěsky (zlaté odtisky se přebaselinují) a zákazník uvidí změnu tvaru data. | S + rozhodnutí |
 
 **Vědomě mimo tuhle sadu:** testy linkových agend (`B14b`) - dělají se průběžně, až se na linkové
 půjde, ne dopředu. Rozřezání `TemplateDesignerViewModel` (3 543 ř., 11 rolí) - **při dotyku**, ne
@@ -208,11 +210,17 @@ hotové. Výchozí linková šablona **existuje** (`templates/linkovy-jr-ad-vych
 nedistribuuje - zapojení řeší `B92`.
 
 ⚠️ **Agendy jsou úvodní draft** (`Released = 0`), takže se v nich smí měnit i to, co je jinde
-zamčené. Zastávkové se přitom nesmí dotknout - viz pravidlo u revizní sady nahoře.
+zamčené. Zastávkové se přitom nesmí dotknout - viz pravidlo u revizní sady nahoře. Slovník polí
+je od 17. 8. srovnaný se zastávkovým (`B95`, archiv) a hlídá ho `AgendaSchemaDriftTests`; nová
+pole přidávej pod týmž názvem, jaký pro tutéž věc používá vývěska.
+
+**Proklik odložený z `B95`** (rozhodnutí Jan 17. 8.: linkové teprve vznikají, kontroluje se, až se
+na ně půjde naostro) - **výchozí linková šablona MHD nově tiskne licenční číslo linky** místo
+veřejného, protože takhle to má vývěska; veřejné je k dispozici jako „Veřejné označení linky".
+Projít spolu s nabídkou polí (skupina Zastávky musí nabízet „Název zastávky" a „Zóny").
 
 | # | Blok | Vel. |
 |---|---|---|
-| **B95** | **Slovník polí srovnat na zastávkový** (nález revize 17. 8.). `POPIS` → `NAZEV_ZASTAVKY`, `ZONA` → `ZONY`, `PLATNOST_OD/DO` → `DATUM_PLATNOSTI_OD/DO` (i typ `date`), `DELENI_SLOUPCU` → `ROZDELENI_SLOUPCU`, popisky poznámek na jeden tvar. Autoritou je **zastávkový** - je vydaný, doladěný a pod testy; mění se výhradně linková strana. Zadáním je seznam výjimek, který vyrobí `B91`; hotovo = seznam je prázdný. **Dělat dřív, než linkové půjdou k zákazníkovi** - po vydání to R3 zamkne a zbydou trvale dvě jména pro jednu věc. | S |
 | **B10** | **Symbolový font - linková část** (gate R5). Linková tabulka dnes symboly **nekreslí vůbec** - agenda posílá legacy klíče (`|`, `<`, `m`, `u`…) a chybí převod na pozice ve fontu. ✅ **Podklady hotové:** katalog 66 symbolů, render-módy i **změřený repertoár fontu** (94 pozic z obou fontů) jsou v `elementy-architektura.md`, takže neznámá „který kód nese který piktogram" je pryč. ⚠️ Pozice `znak` z katalogu se s pozicí ve fontu často **neshoduje** (letadlo `n`, paragraf `P`, metro `#`) - musí jít přes mapu, ne přes písmeno. **Rozsah (rozhodnutí Jan 4. 8.):** sdílená mapa `značka → (render-mód, hodnota)` pro všechny prvky, nahradí i dnešní `SymbolGlyph` u zastávkových vývěsek → dotkne se běžícího zastávkového JŘ, chce zlaté odtisky. Culture rozlišení jen pro **3 pozice** (`D`, `w`, `x`). Ve fontu chybí loď, wifi a zásuvka. | M→S |
 | **B13** | **2D bin-packing / `Strih`** (gate R1/R2) - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce". Nutné pro reálný tisk MHD linek; zastávkový JŘ to nepotřebuje. Stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem řádků, ne pětkrát v per-element smyčkách. | L |
 | **B14** | **Dedup Caché tiskových enginů + jejich testy** - doprovod ostrého knižního JŘ, ne dopředu. (a) **Dedup** (*audit H1*): různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → vyextrahovat sdílené readery + `Build*` do `BaseAgenda`/`JrShared`; je to **Caché analog R1 extrakce jádra** (`B13` řeší .NET render-side, tohle Caché data-side). Korektnostní riziko. Menší výsek Build\* helperů = `B56` (v Backlogu); při realizaci jednoho zredukovat druhý. ⚠️ **Korekce z analýzy 5. 8.:** dřívější tvrzení „`CasHodnota` bere `"|"` jinak" **neplatí** - obě verze jsou funkčně identické, lišil se jen komentář. A objem duplikace je menší, než audit odhadoval: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků). (b) **Testy** (*audit H2*): `LinkovyJr*` (~2 000 ř.) 0 testů, `ZastavkoveJrMhd` 1 helper; AD gold gate tiše projde bez `CB_CSADAD`, křehký digest nad živými daty (pinuje 2/22 linek), `tools/compare-gold.ps1` neexistuje → smoke + frozen-input gold testy, bezpodmínečný gate (zmrazit vstup do izolovaného ns). | L + M |
