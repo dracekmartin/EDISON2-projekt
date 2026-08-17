@@ -73,6 +73,8 @@ ať se okna nové aplikace nemíchají se shellem.
   uvozovkami, **neescapují** - co může obsahovat mezeru či uvozovku, posílej zakódované
   (viz Base64 payload zástupce na ploše).
 - `WindowDimmer` - ztmavení okna, refcount per okno; UI-thread only.
+- `OwnerWindowCentering` - vycentrování na klientskou oblast ownera (volat z `Loaded`).
+  WPF `CenterOwner` u maximalizovaného ownera centruje podle restore bounds → mimo střed.
 - `ErrorReporting/` - hlášení chyb na `podpora.m-line.cz` (přímý HTTPS POST, **ne** přes
   Caché jako usage telemetrie). Vlastní `CLAUDE.md`.
 

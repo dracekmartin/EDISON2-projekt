@@ -125,7 +125,9 @@ před spuštěním agendy, shellový check před `OpenStartupWindowIfAny`; menu
 `ShowLegacyAsync`). Snooze (UserPrefs `ChangelogSnooze`) váže SHA-256 hash obsahu `_DIFF`,
 ne verzi - Caché-only patch nechává stale `_DIFF` na disku a DEBUG verze je konstantní.
 `InfKeyFor` zrcadlí legacy `EDConversion.Package.ToInformationFile` včetně výjimky NDMAIN
-(vlastní soubor).
+(vlastní soubor). Okno se vždy otvírá uprostřed shellu: pozice se nepersistuje
+(`PersistedFormId => null`) a centruje ho `OwnerWindowCentering` - samotné `CenterOwner`
+u maximalizovaného shellu centruje podle restore bounds.
 
 ## Legacy moduly - EDISONMAIN2API
 
