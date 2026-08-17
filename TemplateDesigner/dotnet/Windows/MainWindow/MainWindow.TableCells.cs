@@ -81,8 +81,10 @@ public partial class MainWindow
         // Vstup rovnou otevře buňku k psaní - F2 u textového prvku taky rovnou píše, ne že by
         // uživatel musel mačkat další klávesu. Výjimka je pravý klik: tam se buňka jen vybere,
         // protože uživatel míří na nabídku, ne na psaní.
-        if (beginEdit) BeginCellEdit(replace: false);
+        // Panel a lišta se přestaví **před** otevřením buňky k psaní - stavba panelu jinak přijde
+        // až po `InlineEditBox.Focus()` a fokus se z rozepsané buňky ztratí (nález Jan 17. 8.).
         SyncFormatToolbar();
+        if (beginEdit) BeginCellEdit(replace: false);
         InvalidateCanvas();
         return true;
     }
@@ -168,6 +170,13 @@ public partial class MainWindow
         InlineEditBox.Focus();
         InlineEditBox.CaretIndex = InlineEditBox.Text.Length;
         if (!replace) InlineEditBox.SelectAll();
+
+        // Fokus se pod probíhajícím kliknutím nemusí udržet - plátno si ho po dokončení obsluhy
+        // myši bere zpět a napsané znaky by spadly do prázdna. Proto ještě jednou, až vstup doběhne.
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (_cellEditing && !InlineEditBox.IsKeyboardFocusWithin) InlineEditBox.Focus();
+        }), System.Windows.Threading.DispatcherPriority.Input);
     }
 
     /// <summary>Zavře textové pole; při potvrzení zapíše obsah přes příkaz, takže funguje Ctrl+Z.</summary>
@@ -432,6 +441,10 @@ public partial class MainWindow
         InlinePropertiesPanel.SetContext(execute, invalidate);
         InlinePropertiesPanel.ShowDescriptors(formatting.PanelDescriptors(ExitToTableSettings));
         ShowInlineFormPanel(false);
+
+        // Panel se staví i při každém posunu po buňkách; rozepsaná buňka si musí fokus udržet,
+        // jinak napsané znaky spadnou do prázdna.
+        if (_cellEditing && !InlineEditBox.IsKeyboardFocusWithin) InlineEditBox.Focus();
     }
 
     /// <summary>Tlačítko „Nastavení celé tabulky…" - odejde z buňky, takže panel ukáže prvek.
