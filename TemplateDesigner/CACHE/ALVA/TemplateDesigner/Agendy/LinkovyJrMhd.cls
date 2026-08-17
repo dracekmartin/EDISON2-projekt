@@ -50,15 +50,19 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s def = ##class(%DynamicObject).%New()
 
     s fields = ##class(%DynamicArray).%New()
-    d ..AddField(fields, "CISLO_LINKY",           "Číslo linky",              "number")
-    d ..AddField(fields, "POPIS_LINKY",           "Název linky",              "text")
+    // Názvy i popisky polí drží slovník zastávkového JŘ (AgendaSchemaDriftTests) - táž věc se musí
+    // v obou agendách jmenovat stejně, jinak binding {NAZEV_ZASTAVKY} v jedné funguje a ve druhé
+    // tiše vykreslí prázdno.
+    d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
+    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
+    d ..AddField(fields, "POPIS_LINKY",           "Popis linky",              "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
-    d ..AddField(fields, "POPIS_DOPRAVCE",        "Dopravce",                 "text")
-    d ..AddField(fields, "PLATNOST_OD",           "Platnost od",              "text")
-    d ..AddField(fields, "PLATNOST_DO",           "Platnost do",              "text")
+    d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
     d ..AddField(fields, "POPIS_PLATNOSTI",       "Popis platnosti",          "text")
-    d ..AddField(fields, "TYP_JR",                "Typ JŘ (razítko)",         "text")
-    d ..AddField(fields, "QR_KOD",                "QR kód",                   "text")
+    d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
+    d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
+    d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
+    d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
     d ..AddField(fields, "POPIS_SMER",            "Konečná směru",            "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
@@ -69,18 +73,19 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g = ##class(%DynamicObject).%New()
     s g.name = "Zastávky", g.collectionKey = "ZASTAVKY"
     s gf = ##class(%DynamicArray).%New()
-    d ..AddField(gf, "PORADI",     "Pořadí",             "number")
-    d ..AddField(gf, "TYP",        "Typ řádku",          "text")
-    d ..AddField(gf, "POPIS",      "Název zastávky",     "text")
-    d ..AddField(gf, "ZONA",       "Zóna",               "text")
+    d ..AddField(gf, "PORADI",         "Pořadí",             "number")
+    d ..AddField(gf, "TYP",            "Typ řádku",          "text")
+    d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
+    d ..AddField(gf, "ZONY",           "Zóny",               "text")
     s g.fields = gf
     d collections.%Push(g)
 
     s g = ##class(%DynamicObject).%New()
     s g.name = "Spoje", g.collectionKey = "SPOJE"
     s gf = ##class(%DynamicArray).%New()
+    // SKUPINA (spojovací klíč na SKUPINY_DNU) zůstává ve wire, ale NEvystavuje se jako sloupec -
+    // stejně jako ZASTAVKA_ID/SKUPINA_DNU_ID u zastávkových odjezdů.
     d ..AddField(gf, "CISLO_SPOJE", "Číslo spoje",       "number")
-    d ..AddField(gf, "SKUPINA",     "Skupina (typ provozu)", "number")
     d ..AddField(gf, "NZ",          "Negativní značka",  "text")
     s g.fields = gf
     d collections.%Push(g)
@@ -88,8 +93,8 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g = ##class(%DynamicObject).%New()
     s g.name = "Skupiny dnů", g.collectionKey = "SKUPINY_DNU"
     s gf = ##class(%DynamicArray).%New()
-    d ..AddField(gf, "ID",     "ID skupiny", "number")
-    d ..AddField(gf, "NADPIS", "Nadpis",     "text")
+    // ID (spojovací klíč) zůstává ve wire, ale NEvystavuje se jako sloupec.
+    d ..AddField(gf, "NADPIS", "Nadpis skupiny", "text")
     s g.fields = gf
     d collections.%Push(g)
 
@@ -97,9 +102,9 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g.name = "Poznámky", g.collectionKey = "POZNAMKY"
     s gf = ##class(%DynamicArray).%New()
     d ..AddField(gf, "DRUH", "Druh (1-10)",       "number")
-    d ..AddField(gf, "TYP",  "Typ uvození",       "text")
+    d ..AddField(gf, "TYP",  "Typ poznámky",      "text")
     d ..AddField(gf, "ZNAK", "Znak",              "text")
-    d ..AddField(gf, "TEXT", "Text",              "text")
+    d ..AddField(gf, "TEXT", "Text poznámky",     "text")
     s g.fields = gf
     d collections.%Push(g)
 
@@ -240,13 +245,20 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
 {
     // ── hlavička linky ──────────────────────────────────────────────
     s vals = ##class(%DynamicObject).%New()
-    s cisloVerejne = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloVerejne"))
-    d vals.%Set("CISLO_LINKY",         $s(cisloVerejne'="":cisloVerejne, 1:linkaId))
+    // Rozdělení licenční × veřejné číslo je shodné se zastávkovou vývěskou (ZastavkoveJrMhd:318) -
+    // do 17. 8. tu bylo ve CISLO_LINKY veřejné číslo, takže táž linka měla na vývěsce a v linkovém
+    // JŘ jiné číslo, aniž to šlo poznat z popisku pole.
+    d vals.%Set("CISLO_LINKY",         $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloLinkyDleLicence")))
+    d vals.%Set("LOKALNI_OZNACENI_LINKY", $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloVerejne")))
     d vals.%Set("POPIS_LINKY",         $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"NazevLinky")))
+    // LSO drží datum v ISO tvaru; ven jde ve stejném tvaru jako ze zastávkové vývěsky
+    // (ZastavkoveJrMhd:1104), jinak by táž šablona vytiskla jednou "1.11.2018" a podruhé "2018-11-01".
     s platiOd = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiOd"))
     s platiDo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiDo"))
-    d vals.%Set("PLATNOST_OD",         platiOd)
-    d vals.%Set("PLATNOST_DO",         platiDo)
+    i platiOd '= "" { s platiOd = $zd($zdh(platiOd, 3), 4) }
+    i platiDo '= "" { s platiDo = $zd($zdh(platiDo, 3), 4) }
+    d vals.%Set("DATUM_PLATNOSTI_OD",  platiOd)
+    d vals.%Set("DATUM_PLATNOSTI_DO",  platiDo)
     s popisPlatnosti = ""
     i platiOd '= "" {
         s popisPlatnosti = "Platí od "_platiOd
@@ -411,8 +423,10 @@ ClassMethod BuildZastavkaRadek(bodVeta As %List, typ As %String, poradi As %Inte
     d z.%Set("PORADI",  poradi)
     d z.%Set("TYP",     typ)
     d z.%Set("CZST",    $lg(bodVeta,2))
-    d z.%Set("POPIS",   $s(typ="prijezd":"", 1:$lg(bodVeta,3)))
-    d z.%Set("ZONA",    $lg(bodVeta,4))
+    d z.%Set("NAZEV_ZASTAVKY", $s(typ="prijezd":"", 1:$lg(bodVeta,3)))
+    // Klíč je množné ZONY jako u zastávkového JŘ; tam je to pole zón, tady jedna hodnota -
+    // klient obojí čte přes GetString (pole spojí "/"), takže se binding chová stejně.
+    d z.%Set("ZONY",    $lg(bodVeta,4))
     d z.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
     d z.%Set("KM",      ##class(%DynamicArray).%New())
     q z

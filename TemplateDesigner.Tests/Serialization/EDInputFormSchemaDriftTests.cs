@@ -674,8 +674,10 @@ public class EDInputFormSchemaDriftTests
     // Zamyká kanon z ux-conventions §8: tentýž field key musí mít všude tentýž label
     // a zakázané tvary termínů se nesmí objevit v labelech, volbách ani panelových deskriptorech.
 
-    /// <summary>Zakázané tvary (kanon §8 + rozhodnutí Jan 2026-07-28). Exact = celý label.</summary>
-    private static readonly string[] BannedExactLabels =
+    /// <summary>Zakázané tvary (kanon §8 + rozhodnutí Jan 2026-07-28). Exact = celý label.
+    /// Sdílené s <see cref="AgendaSchemaDriftTests"/> - kanon je jeden, ať platí na formulářích
+    /// i na slovníku polí agend.</summary>
+    internal static readonly string[] BannedExactLabels =
     [
         "Zamčeno",          // → Uzamčeno
         "Viditelnost",      // → Podmínka viditelnosti (samostatná „Viditelnost řádku" je jiný pojem a je OK)
@@ -689,8 +691,9 @@ public class EDInputFormSchemaDriftTests
         "Pokročilé",        // skupina → Podmínky
     ];
 
-    /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive).</summary>
-    private static readonly string[] BannedLabelSubstrings =
+    /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive). Sdílené s
+    /// <see cref="AgendaSchemaDriftTests"/>.</summary>
+    internal static readonly string[] BannedLabelSubstrings =
     [
         "Šířka rámečku",    // → Tloušťka rámečku (Šířka patří elementu)
         "Zebra",            // → Střídání řádků

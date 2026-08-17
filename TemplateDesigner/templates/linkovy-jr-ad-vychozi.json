@@ -66,7 +66,7 @@
         },
         {
           "type": "TextElement",
-          "text": "Plat\u00ED od {PLATNOST_OD}",
+          "text": "Plat\u00ED od {DATUM_PLATNOSTI_OD}",
           "style": {
             "fontSize": 7,
             "hAlign": "Right"
@@ -86,7 +86,7 @@
         },
         {
           "type": "TextElement",
-          "text": "do {PLATNOST_DO}",
+          "text": "do {DATUM_PLATNOSTI_DO}",
           "style": {
             "fontSize": 7,
             "hAlign": "Right"

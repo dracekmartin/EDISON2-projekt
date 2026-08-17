@@ -140,9 +140,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         {
             Poradi = ParseInt(row.GetString("PORADI")),
             Typ = row.GetString("TYP"),
-            Popis = row.GetString("POPIS"),
+            Popis = row.GetString("NAZEV_ZASTAVKY"),
             Tc = row.GetString("TC"),
-            Zona = row.GetString("ZONA"),
+            Zona = row.GetString("ZONY"),
             Mhd = row.GetString("MHD"),
             Nastupiste = row.GetString("NASTUPISTE"),
             Atributy = ParseStringArray(row.GetValue("ATRIBUTY")),
