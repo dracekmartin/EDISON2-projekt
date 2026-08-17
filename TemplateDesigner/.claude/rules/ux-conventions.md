@@ -101,6 +101,13 @@ druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
 2. **Vnější hrana patří prvku, ne krajní buňce** - jinak by uživatel nevěděl, jestli mění tabulku,
    nebo sloupec (stejně to má Excel i Word). Krajní sloupec se rozšiřuje hranou vedle něj.
 
+⚠️ **O tom, komu patří klávesy, nesmí rozhodovat fokus plátna.** Kliknutí na tlačítko lišty
+(nebo na zaškrtávátko v panelu) fokus plátnu vezme, takže buňka zůstane zvýrazněná, ale psaní
+i Delete padají do prázdna - přesně tak to 17. 8. spadlo. Platí proto dvě pravidla: klávesy patří
+buňce, **dokud si je nenárokuje pole, kam se opravdu píše** (panel vlastností, formulář prvku, jiný
+textbox), a každá akce, která si vzala fokus (tlačítko lišty, zavřený dialog), ho **vrátí buňce** -
+do rozepsané buňky, jinak na plátno.
+
 **Uvnitř tabulky patří lišta i panel vlastností VYBRANÉ BUŇCE, ne prvku.** Rozsah editace musí jít
 poznat, jinak stojí proti sobě dvě sady týchž vlastností: do 17. 8. panel měnil celou tabulku,
 zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan). Platí proto:

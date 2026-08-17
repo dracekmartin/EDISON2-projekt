@@ -34,6 +34,19 @@ public partial class MainWindow
     private bool InTableCells => _cellTable is not null;
 
     /// <summary>
+    /// Klávesy patří vybrané buňce. **Nerozhoduje o tom fokus plátna** - ten mu vezme i kliknutí
+    /// na tlačítko formátovací lišty, takže po ztučnění se do buňky nedalo psát, přestože zůstala
+    /// zvýrazněná (nález Jan 17. 8.). Rozhoduje, jestli si klávesy nenárokuje něco, kam se opravdu
+    /// píše: panel vlastností, formulář prvku nebo jiné textové pole (třeba filtr stromu).
+    /// </summary>
+    private bool CellKeysActive =>
+        InTableCells
+        && !InlinePropertiesPanel.IsKeyboardFocusWithin
+        && !InlineElementForm.IsKeyboardFocusWithin
+        && Keyboard.FocusedElement is not System.Windows.Controls.Primitives.TextBoxBase
+        && Keyboard.FocusedElement is not ComboBox;
+
+    /// <summary>
     /// Poslední místo, kam se na prvek kliklo (mm relativně k prvku). Díky tomu F2 otevře **tu
     /// buňku, na kterou uživatel klikl**, ne pořád levou horní - klik prvek jen vybere, takže bez
     /// zapamatování by se ta informace ztratila.
@@ -287,10 +300,10 @@ public partial class MainWindow
         if (!InTableCells || _cellEditing || e.Text.Length == 0 || char.IsControl(e.Text[0])) return;
         if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) || Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) return;
 
-        // ⚠️ Jen když píše uživatel do plátna. Bez téhle podmínky ukradne psaní každému poli
-        // v panelu vlastností: režim buňky zůstává zapnutý i po potvrzení textu, takže první
-        // napsaný znak by spadl do tabulky místo do pole (nález revize 12. 8.).
-        if (!skCanvas.IsKeyboardFocusWithin) return;
+        // ⚠️ Ne, když si klávesy nárokuje pole, kam se píše: režim buňky zůstává zapnutý i po
+        // potvrzení textu, takže první napsaný znak by spadl do tabulky místo do pole v panelu
+        // (nález revize 12. 8.).
+        if (!CellKeysActive) return;
 
         BeginCellEdit(replace: true);
         if (!_cellEditing) return;
@@ -432,7 +445,9 @@ public partial class MainWindow
         Action<IDesignerCommand> execute = cmd => _vm!.Execute(cmd);
         Action invalidate = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
 
-        FormatToolbar.SetContext(execute, invalidate);
+        // Po akci z lišty se klávesy vrací buňce - tlačítko si jinak fokus nechá a psaní přestane
+        // fungovat (Excel se chová stejně: po formátování zůstane aktivní mřížka).
+        FormatToolbar.SetContext(execute, () => { invalidate(); ReturnKeysToCell(); });
         FormatToolbar.ShowDescriptors(formatting.Descriptors());
 
         // Panel patří uvnitř tabulky **té buňce**, ne prvku. Dokud ukazoval nastavení celé tabulky,
@@ -445,6 +460,17 @@ public partial class MainWindow
         // Panel se staví i při každém posunu po buňkách; rozepsaná buňka si musí fokus udržet,
         // jinak napsané znaky spadnou do prázdna.
         if (_cellEditing && !InlineEditBox.IsKeyboardFocusWithin) InlineEditBox.Focus();
+    }
+
+    /// <summary>
+    /// Vrátí klávesy tam, odkud přišly: do rozepsané buňky, jinak na plátno. Volá se po akci,
+    /// která si vzala fokus (tlačítko lišty, zavřený dialog) - bez toho zůstane buňka zvýrazněná,
+    /// ale psaní i Delete padají do prázdna.
+    /// </summary>
+    private void ReturnKeysToCell()
+    {
+        if (_cellEditing) InlineEditBox.Focus();
+        else skCanvas.Focus();
     }
 
     /// <summary>Tlačítko „Nastavení celé tabulky…" - odejde z buňky, takže panel ukáže prvek.
@@ -488,6 +514,7 @@ public partial class MainWindow
         vm.ResultCommand.Execute();
         _vm.Execute(formatting.Command("Vlastnosti buňky", before));
 
+        ReturnKeysToCell();
         SyncFormatToolbar();
         InvalidateCanvas();
         InvalidatePreview();
