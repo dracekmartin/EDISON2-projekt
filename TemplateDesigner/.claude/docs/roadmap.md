@@ -53,6 +53,10 @@ protože osu řídí nastavení sestavy). Stačí ji propsat do protokolu (`B42b
 | **JŘ import: ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
 
 Křivky/Bézier v obecném importu - low-prio, bez poptávky.
+⛔ **Import z PNG/JPG se dělat nebude** (rozhodnutí Jan 18. 8.). Technicky by to šlo skoro zadarmo
+(modelu se stejně posílá obrázek a měření mají všude náhradní hodnoty), ale z obrázku nejdou přesné
+rozměry, fonty ani texty - PDF dá výrazně lepší výsledek. Vrátit se k tomu, až o to někdo požádá
+(typicky „zákazník poslal fotku vývěsky").
 ⚠️ **Testy importu kryjí sloupce zastávek a zápis vzhledu z předlohy** (23) - pipeline jako celek ne;
 jestli model vlastnosti pozná, se zásadně **hodnotí okem nad reálnou předlohou** (rozhodnutí Jan 18. 8.,
 místo evaluační sady).
