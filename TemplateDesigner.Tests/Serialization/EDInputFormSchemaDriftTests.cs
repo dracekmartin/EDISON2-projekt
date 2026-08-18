@@ -36,6 +36,7 @@ public class EDInputFormSchemaDriftTests
         { "TableElementEdit.cls",         typeof(TableElement) },
         { "LineTableElementEdit.cls",     typeof(LineTableElement) },
         { "TableRowEdit.cls",             typeof(TableRow) },
+        { "TableInsertEdit.cls",          typeof(TableGridSize) },
         { "SectionEdit.cls",              typeof(Section) },
         { "PageEdit.cls",                 typeof(Template) },
     };

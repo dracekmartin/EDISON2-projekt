@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-18 (2) - 📐 rozměr pevné tabulky se zadává při vkládání
+
+Tabulka se vkládala **natvrdo jako 3 × 3**, takže kdo chtěl 12 × 10, musel se proklikat devatenácti
+vloženími sloupce a řádku (nález Jan 18. 8.). Vložení se nově ptá **rychlým formulářem** na počet
+sloupců a řádků, předvyplněným 3 × 3 - kdo rozměr neřeší, jen potvrdí a dostane, co dostával dřív.
+Platí pro obě cesty vložení (nabídka „Přidat" i tažení z palety); zrušení formuláře nevloží nic.
+
+**Výška roste s počtem řádků** - u desetiřádkové tabulky by výchozích 18 mm znamenalo, že se obsah
+hned po vložení zmenší, aby se vešel.
+
+⚠️ **Bez rychlého okna, ne mřížkovým výběrem jako Word.** Formulář jde přes tutéž generickou cestu
+jako ostatní (schéma na serveru + reflexe), takže nevznikla nová kontrolka ani nové okno; mřížkový
+výběr by byl hezčí, ale je to nová vlastní komponenta kvůli dvěma číslům.
+
+Řádky a sloupce jde pořád přidávat i později přes pravé tlačítko a **vložení bloku z Excelu tabulku
+dorovná samo** - kdo má obsah v sešitu, dostane rovnou správný tvar i s daty.
+
+**Brány:** build čistý, **2221 .NET testů** zelených (TD 1023, z toho 6 nových), Caché 110.
+Formulář ověřen voláním nasazené třídy. Driftový test si vynutil popisek „Počet sloupců" - týž klíč
+má stejný popisek i u legendy poznámek.
+
 ## 2026-08-18 - 👁 podmíněný řádek pevné tabulky jde konečně nastavit
 
 Řádek pevné tabulky umí mít **podmínku viditelnosti** („vytiskni ho, jen když platí") - tisk ji

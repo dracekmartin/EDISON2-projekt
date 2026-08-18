@@ -1423,12 +1423,13 @@ public partial class MainWindow : Window
         }
 
         var menu = new ContextMenu();
-        void Add(string label, Func<TemplateElement> factory)
+        void Add(string label, Func<TemplateElement?> factory)
         {
             var item = new MenuItem { Header = label };
             item.Click += (_, _) =>
             {
-                var element = factory();
+                // Null = uživatel vkládání zrušil (rozměr nové tabulky).
+                if (factory() is not { } element) return;
                 _vm.Execute(new AddElementCommand(_vm.State.ActiveSection!, element));
                 _vm.State.SelectedElements.Clear();
                 _vm.State.SelectedElements.Add(element);
@@ -1444,7 +1445,7 @@ public partial class MainWindow : Window
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
         Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
         Add("Tabulka (z dat)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
-        Add("Tabulka (pevná)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Table, 0, 0));
+        Add("Tabulka (pevná)", () => _vm.CreateElementInteractive(ElementTypes.Table, 0, 0));
 
         // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
         var kind = _vm.CurrentAgendaElementKind;

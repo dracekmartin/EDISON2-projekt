@@ -220,8 +220,9 @@ a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor
 
 ### Pevná tabulka
 Mřížka, kterou vyplňujete sami - typicky hlavička sestavy nebo blok údajů, se kterým chcete hýbat
-jako s jedním prvkem. Vloží se jako mřížka 3 × 3 bez řádku záhlaví; záhlaví si uděláte z prvního
-řádku tím, že ho ztučníte.
+jako s jedním prvkem. Při vložení se návrhář zeptá na **počet sloupců a řádků** (předvyplněno 3 × 3,
+přepište třeba na 12 × 10); přidávat je jde i později přes pravé tlačítko. Tabulka se vkládá bez
+řádku záhlaví - záhlaví si uděláte z prvního řádku tím, že ho ztučníte.
 
 **Vyplňování:** dovnitř se dostanete **Alt+klikem** na buňku, klávesou **F2** nebo položkou
 „Vyplnit tabulku" v místní nabídce. Uvnitř se píše jako v Excelu - psaní přepíše obsah, F2 upraví

@@ -41,6 +41,9 @@ Do palety přibyla **pevná tabulka** - mřížka, kterou vyplňujete sami. Je u
 za skládání hlaviček a bloků údajů z jednotlivých textových polí: místo šesti textů máte jeden
 prvek, se kterým se hýbe vcelku.
 
+**Rozměr zadáte při vkládání** - návrhář se zeptá na počet sloupců a řádků (předvyplněno 3 × 3),
+takže na větší tabulku se nemusíte proklikávat přidáváním sloupců.
+
 **Vyplňuje se přímo v ní.** Dovnitř Alt+klikem na buňku nebo klávesou F2, pak se píše jako
 v Excelu - Tab a Enter posouvají, šipky chodí po buňkách, Esc vede ven. Řádky a sloupce se přidávají
 z místní nabídky, šířky a výšky se táhnou myší za vnitřní hranici. Vložit jde i blok zkopírovaný

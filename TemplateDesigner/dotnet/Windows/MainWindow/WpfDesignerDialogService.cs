@@ -23,6 +23,16 @@ internal sealed class WpfDesignerDialogService(Window owner) : IDesignerDialogSe
     public bool ShowSaveToCache(SaveToCacheDialogViewModel vm) =>
         new SaveToCacheDialog(vm) { Owner = owner }.ShowDialog() == true;
 
+    /// <summary>Rychlý formulář = týž generický dialog jako u vlastností prvku, jen nad objektem,
+    /// který se nikam neukládá; hodnoty se zapíšou rovnou (žádný krok zpět není co vracet).</summary>
+    public bool ShowQuickForm(object target, string cacheClass, string title)
+    {
+        var dlg = new ElementEditDialog(target, cacheClass, title) { Owner = owner };
+        if (dlg.ShowDialog() != true) return false;
+        dlg.ResultCommand?.Execute();
+        return true;
+    }
+
     public string? PickOpenFile(string title, string filter)
     {
         var dlg = new OpenFileDialog { Title = title, Filter = filter };
