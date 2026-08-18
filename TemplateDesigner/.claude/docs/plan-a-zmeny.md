@@ -35,6 +35,32 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 18. 8. 2026 - Datum platnosti u MHD se píše s tečkami
+
+Zastávková vývěska MHD tiskla datum platnosti ve tvaru `01/11/2018`, zatímco vývěska linkové
+dopravy vedle ní `11.12.2022`. Nově mají obojí tečky, jak se česky datum píše. Týká se polí
+„Datum platnosti od / do" a „Popis platnosti"; mění se jen tvar hodnoty, takže vaše šablony
+není potřeba nijak upravovat.
+
+### 17. 8. 2026 - Písmeno varianty je u odjezdu vždy
+
+Když z vaší zastávky jedou spoje různými trasami, dostane každá trasa vlastní sloupec s časy
+a **písmeno, které se tiskne i u minuty odjezdu** - podle něj cestující pozná, který sloupec pro
+daný spoj platí. Dosud to byla volba, kterou šlo vypnout; vypnutá vývěska ale u minut neměla nic
+a někdy měla i nesrozumitelné nadpisy sloupců, takže nešlo poznat vůbec nic. Volba proto zmizela
+a písmena jsou vždy.
+
+Zůstává rozhodnutí **„První varianta bez písmene"** - nejčastější trasa může zůstat bez písmene
+a značí se až odchylky od A, aby vývěska s jedinou variantou nebyla zbytečně počmáraná.
+
+⚠️ Pokud jste volbu měli vypnutou, uvidíte na vývěsce u minut písmena, která tam dřív nebyla.
+
+### 17. 8. 2026 - V seznamu zastávek jsou jen zastávky, kam se odsud dostanete
+
+Zastávka, kam z dané vývěsky **nejede ani jeden spoj**, dosud v seznamu zabírala řádek, ve kterém
+byly u všech časů jen znaky „<". Cestujícímu to říkalo „tudy se jezdí, ale odsud se tam nedostanete".
+Nově se do seznamu dostane jen zastávka, kde staví aspoň jeden spoj, který staví i na té vývěsce.
+
 ### 17. 8. 2026 - Pevná tabulka: vyplňování na plátně a formátování buněk
 
 Do palety přibyla **pevná tabulka** - mřížka, kterou vyplňujete sami. Je určená hlavně jako náhrada
@@ -67,6 +93,20 @@ máte ve formátovací liště nad plátnem; kompletní nastavení (písmo, veli
 formát hodnoty) otevřete přes Alt+Enter nebo místní nabídkou „Vlastnosti buňky". Prázdné pole
 znamená, že se hodnota dědí z nastavení celé tabulky - proto si tabulku můžete nastavit jednou
 a odchýlit jen to, co potřebujete. Záhlaví si uděláte z prvního řádku tím, že ho ztučníte.
+
+### 14. 8. 2026 - Rozvržení sloupců vývěsky drží šablona
+
+Na otázku „jaké sloupce na vývěsce vzniknou" odpovídala dvě nastavení naráz - parametr sestavy
+**„Rozdělení sloupců (typy provozu)"** a vlastní definice sloupců u prvku odjezdů - a vlastní
+definice ten parametr tiše přebíjela. Kdo si jednou sloupce nadefinoval, měl z parametru mrtvé
+tlačítko.
+
+Nově je stav jen jeden a parametr je jeho **pohled i ovladač**: ukazuje název vzoru, který vaší
+definici odpovídá, „Automaticky (dle linky)", když žádnou definici nemáte, nebo „Vlastní sloupce",
+když jste si ji poskládali po svém. Přepnutím parametru se definice v šabloně rovnou přepíše.
+
+Zároveň se srovnalo **chování náhledu**: po otevření šablony nebo po přepnutí parametru odjinud
+než z panelu ukazoval náhled data předchozího nastavení, zatímco tisk už jel podle nového.
 
 ### 14. 8. 2026 - Vysvětlivky značek dnů podle vašeho číselníku
 

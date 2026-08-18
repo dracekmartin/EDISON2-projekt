@@ -40,6 +40,44 @@ a podmíněnou viditelností) a připravené bloky agend, které pohltí `B66` (
 výběru a sloučení. Formulář buňky je vědomě mimo driftové testy schémat (jeho výchozí hodnoty se
 nikdy nezobrazí) a nahrazuje je vlastní test pokrytí kaskádou.
 
+## 2026-08-18 ✅ - `B97`: chybějící font už není tichý
+
+Detail → changelog 2026-08-18 (2). V programu jsou zabalené jen symbolové fonty, všechno ostatní
+písmo se bere ze systému a nabídka jmenuje fonty **toho počítače, na kterém se navrhuje**. Při
+tisku se chybějící rodina tiše nahradí (embedded → OS → **Arial** → default), takže šablona sdílená
+přes databázi mohla u dvou lidí vypadat jinak, aniž by to kdokoli poznal.
+
+**Neodvoditelné - proč se hledá průchodem serializovanou šablonou:** font sedí na spoustě míst
+(styl prvku, sloupce, buňky, výchozí styl dokumentu, zóny JŘ prvků). Ruční výčet by při přidání
+další stylové vrstvy tiše zestárnul - přesně jak zestaraly výčty, které řešil `B94`. Průchod JSONem
+chytí každé pole `fontFamily`, které v šabloně je nebo kdy bude, včetně `CustomProperties`.
+
+**Neodvoditelné - kde se to spouští:** jediný hák je setter `DesignerState.CurrentTemplate`
+(nově volá `TemplateSwapped`). Je to jediné místo, kde se dá zachytit „teď je v návrháři něco
+jiného"; volajících je pět a šestý by se zapomněl. `InvalidateAll()` se na to použít nedá - volá
+ho jen jedna cesta (`LoadGeneratedTemplate`), ne otevření z DB ani import.
+
+**Psaní vlastního názvu fontu se záměrně nehlídá průběžně:** nabídka jmenuje jen dostupné rodiny
+a záměnu je vidět hned na plátně; před výstupem to navíc kontroluje tiskový dialog znovu, protože
+tisknout může někdo, kdo šablonu jen otevřel.
+
+## 2026-08-18 ⛔ - tlačítko „Zkontrolovat přetečení" se dělat nebude
+
+**Rozhodnutí Jan 18. 8.** Původní přání (samostatné tlačítko v tiskovém dialogu, které natáhne data
+a spočítá přetečení bez generování PDF) je **fakticky splněné jinou cestou**: tiskový dialog kontrolu
+přes všechny stránky spouští sám a napíše „⚠ PDF uloženo, ale 5 z 54 stránek přetéká". Liší se jen
+pořadí - výsledek dostaneš spolu s PDF, ne před ním. Přetečení navíc značí náhled červeným rámečkem.
+
+## 2026-08-18 ⛔ - `B65`: kalendářový výběr období se dělat nebude
+
+**Rozhodnutí Jan 18. 8.: nice to have, vyhozeno.** Rozsahy období u vlastního sloupce se píšou ručně
+(`14.2.-18.2., 1.7.-31.8.`), ale **tvar hlídá validace** (`JePlatneObdobi`) - špatný výstup z toho
+vzniknout nemůže, jde čistě o pohodlí při psaní, a jen v úzkém případě (dny školního vyučování).
+
+**Kdyby se to někdy otevíralo znovu:** stavební kámen existuje - EDInputForm má typ pole `DATE`,
+který se vykreslí jako skutečný kalendář (`DatePicker`, wire `yyyy-MM-dd`, vlastní validace) a TD ho
+už používá u parametrů sestavy typu datum. Chybí jen krok od **jednoho data** k **seznamu rozsahů**.
+
 ## 2026-08-18 ⛔ - `B93`: parita tabulkových prvků se dodělávat NEBUDE
 
 **Rozhodnutí Jan 18. 8.: není to fakticky díra, nedělá se.** Zapsáno sem, aby to příští revize

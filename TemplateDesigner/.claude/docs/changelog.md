@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-18 (5) - 🔤 upozornění, když šablona chce font, který v počítači není (`B97`)
+
+Když šablona používá písmo, které na daném počítači **není nainstalované**, program ho dosud tiše
+nahradil Arialem a nikde to neřekl. Protože se šablony sdílejí přes databázi, mohla **táž šablona
+u dvou lidí vytisknout jiné písmo** a nikdo to nepoznal - výstup vypadá v pořádku, jen není takový,
+jaký ho autor navrhl.
+
+Nově se to hlásí na dvou místech:
+
+- **ve stavovém řádku návrháře** hned po otevření šablony - oranžové upozornění, které **jmenuje
+  konkrétní fonty** a říká, co se místo nich vykreslí
+- **v hlášce po uložení PDF** - tisknout může někdo, kdo šablonu jen otevřel z databáze a v návrháři
+  ji neprohlížel
+
+Hláška vypadá takto: *Font „Roboto Condensed" není na tomto počítači nainstalovaný - tiskne se místo
+něj Arial.* Náprava je buď font doinstalovat, nebo v šabloně vybrat jiný; nabídka fontů vždy jmenuje
+jen ty, které k dispozici jsou.
+
+**Najde se i font schovaný hluboko** - ve stylu jednoho sloupce, jedné buňky nebo ve výchozím stylu
+dokumentu, nejen v nastavení prvku.
+
+## 2026-08-18 (4) - 🗓️ datum platnosti u MHD s tečkami, ne s lomítky (`B96`)
+
+Zastávková vývěska MHD tiskla datum platnosti jako **`01/11/2018`**, zatímco linková doprava
+vedle ní `11.12.2022`. Česky se datum píše s tečkami, takže to byla chyba - jen si jí nikdo
+nevšiml, protože každá agenda se dívala jinam. Nově mají obojí tečky.
+
+**Kde se to projeví:** pole „Datum platnosti od / do" a „Popis platnosti" na vyvěskách MHD.
+Zákaznickým šablonám se nic nerozbije - mění se jen tvar hodnoty, ne název pole.
+
+**Poznámka k jazykům:** tvar je zatím napevno český. Správně by šel z nastavení jazyka, ale
+všichni zákazníci tisknou česky, takže by to dnes byla vrstva, kterou nikdo nepoužije;
+formátování je na jednom místě, až bude potřeba, vymění se tam.
+
 ## 2026-08-18 (3) - ❓ nápověda F1 dohnala změny od 12. 8.
 
 Nápověda **nevěděla o pevné tabulce vůbec** (ve výčtu prvků byla jen tabulka z dat), takže kdo si ji
@@ -93,19 +127,6 @@ i obsah a sloučení, takže Ctrl+Z vrátí i spojený text zpátky do původní
 
 **Brány:** build čistý, **2203 .NET testů** zelených (TD 1005, z toho 10 nových). Mutace ověřily,
 že testy měří: zahození spojeného textu i kreslení po sloupcích místo sloučení své testy shodí.
-
-## 2026-08-18 - 🗓️ datum platnosti u MHD s tečkami, ne s lomítky (`B96`)
-
-Zastávková vývěska MHD tiskla datum platnosti jako **`01/11/2018`**, zatímco linková doprava
-vedle ní `11.12.2022`. Česky se datum píše s tečkami, takže to byla chyba - jen si jí nikdo
-nevšiml, protože každá agenda se dívala jinam. Nově mají obojí tečky.
-
-**Kde se to projeví:** pole „Datum platnosti od / do" a „Popis platnosti" na vyvěskách MHD.
-Zákaznickým šablonám se nic nerozbije - mění se jen tvar hodnoty, ne název pole.
-
-**Poznámka k jazykům:** tvar je zatím napevno český. Správně by šel z nastavení jazyka, ale
-všichni zákazníci tisknou česky, takže by to dnes byla vrstva, kterou nikdo nepoužije;
-formátování je na jednom místě, až bude potřeba, vymění se tam.
 
 ## 2026-08-17 (8) - 🚆 výchozí linková šablona se doručí sama (`B92`)
 

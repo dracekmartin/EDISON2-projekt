@@ -63,11 +63,6 @@ migrace starých Caché sestav · template linting v CI/CD.
 
 ### Ostatní
 
-- **`B65` Kalendářový výběr období u sloupce vývěsky** (S, rozhodnutí Jan 10. 8.: do první verze
-  stačí text). Dnes se rozsahy dat píšou ručně („14.2.-18.2., 1.7.-31.8.") a tvar hlídá validace
-  při OK. Až se featura usadí, nahradit vybíráním v kalendáři - u „dnů školního vyučování" je ruční
-  psaní desítek rozsahů otravné. Tvar zápisu na wire se tím nemění, jde čistě o zadávání.
-
 - **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
   prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do
   dalších šablon. **Co už existuje:** uložení **celé sekce** jako vlastní šablony a seskupení prvků
@@ -135,7 +130,6 @@ migrace starých Caché sestav · template linting v CI/CD.
   (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
   credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
 
-- Font warning + ad-hoc overflow (YAGNI).
 
 ---
 
