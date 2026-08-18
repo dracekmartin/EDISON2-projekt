@@ -10,86 +10,12 @@ using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDTesting;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
+using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
 
 namespace EDISONMAIN2.Tests;
 
 public class EdisonMainViewModelTests
 {
-    private static readonly CompanyStruct[] Companies =
-    [
-        new() { Id = "CB_DP", Database = "CB_DP" },
-        new() { Id = "JI_DP", Database = "JI_DP" },
-    ];
-
-    private static EDServices MockServices(
-        IMLRest? mlRest = null,
-        IWindowNavigator? nav = null,
-        IPopupDisplayer? popup = null) =>
-        new(mlRest,
-            nav ?? Substitute.For<IWindowNavigator>(),
-            popup ?? Substitute.For<IPopupDisplayer>());
-
-    private static IMLRest MockMLRest(string idfa = "CB_DP")
-    {
-        var mock = MLRestMocks.Create(idfa);
-        // AccessLoader volá GetEdisonAccess při initial / switch / refresh. Default mock
-        // vrátí apId=3 (admin, IsAllAccess=true) → access filter nepřebíjí ostatní testy.
-        // Specifické access testy si MockMLRest přepíší vlastním setupem.
-        mock.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
-            .Returns(MLRestMocks.Output("3"));
-        return mock;
-    }
-
-    private static EdisonMainViewModel CreateVM(
-        EDServices? services = null,
-        IModuleTreeGetter? treeGetter = null,
-        IPopupDisplayer? popup = null,
-        ILocalPrefs? prefs = null,
-        Action? closeAllWindows = null,
-        MiniAppCatalog? miniAppCatalog = null,
-        IMLRest? mlRest = null,
-        IRestCallRunner? restRunner = null,
-        Func<IReadOnlyList<RunningModuleInfo>>? getActiveModules = null,
-        CompanyStruct[]? companies = null,
-        Action? closeLegacyModules = null,
-        bool initialize = true)
-    {
-        var mockMLRest = mlRest ?? MockMLRest();
-        var mockTree = treeGetter ?? EmptyTreeGetter();
-        var svc = services ?? MockServices(popup: popup);
-        // CompanySwitcher i VM čtou MLRest z services lazily — musí být v services před konstrukcí.
-        svc.MLRest = mockMLRest;
-        var close = closeAllWindows ?? (() => { });
-        var p = prefs ?? Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, p, close, closeLegacyModules ?? (() => { }));
-        Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
-        var catalog = miniAppCatalog ?? MiniAppCatalog.Build([]);
-
-        EDServices.Initialize(svc);
-        EdisonMainViewModel vm;
-        try
-        {
-            vm = new EdisonMainViewModel(companies ?? Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p,
-                                         getActiveModules ?? (() => []), close, catalog,
-                                         restRunner: restRunner ?? new InlineRestCallRunner(mockMLRest));
-        }
-        finally
-        {
-            EDServices.Reset();
-        }
-        // Session state se plní až v InitializeAsync (v produkci z ContentRendered). S inline
-        // runnerem je load synchronní, takže GetResult tady nemá na co čekat ani na čem uváznout.
-        if (initialize) vm.InitializeAsync().GetAwaiter().GetResult();
-        return vm;
-    }
-
-    private static IModuleTreeGetter EmptyTreeGetter()
-    {
-        var mock = Substitute.For<IModuleTreeGetter>();
-        mock.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
-        return mock;
-    }
-
     // Confirm před přepnutím firmy se ukazuje jen když je otevřený aspoň jeden modul.
     private static Func<IReadOnlyList<RunningModuleInfo>> OneOpenWindow() =>
         () => [new RunningModuleInfo("Okno", () => { })];
@@ -441,23 +367,7 @@ public class EdisonMainViewModelTests
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
-        var svc = MockServices(popup: mockPopup);
-        svc.MLRest = mockMLRest;
-        var prefs = Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, prefs, () => { }, () => { });
-        Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
-        EDServices.Initialize(svc);
-        EdisonMainViewModel vm;
-        try
-        {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), null, switcher, switchUser, prefs, () => [], () => { }, MiniAppCatalog.Build([]),
-                                         restRunner: new InlineRestCallRunner(mockMLRest));
-        }
-        finally
-        {
-            EDServices.Reset();
-        }
-        await vm.InitializeAsync();
+        var vm = CreateVM(popup: mockPopup, mlRest: mockMLRest);
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
         await vm.SwitchCompanyAsync(target);
@@ -504,25 +414,10 @@ public class EdisonMainViewModelTests
             .Returns(MLRestMocks.Output("-1"));
         var licence = new Lic { CountsLOGIN = 5 };
         var svc = MockServices(popup: mockPopup);
-        svc.MLRest = mockMLRest;
         svc.ActiveLicence = licence;
         svc.LicenceLoader = () => licence;
         svc.IsAdmin = false;
-        var prefs = Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, prefs, () => { }, () => { });
-        Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
-        EDServices.Initialize(svc);
-        EdisonMainViewModel vm;
-        try
-        {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), licence, switcher, switchUser, prefs, () => [], () => { }, MiniAppCatalog.Build([]),
-                                         restRunner: new InlineRestCallRunner(mockMLRest));
-        }
-        finally
-        {
-            EDServices.Reset();
-        }
-        await vm.InitializeAsync();
+        var vm = CreateVM(services: svc, mlRest: mockMLRest, initialLicence: licence);
 
         int original = vm.SelectedCompanyIndex;
         await vm.SwitchCompanyAsync(original == 0 ? 1 : 0);
@@ -963,5 +858,66 @@ public class EdisonMainViewModelTests
 
         Assert.True(vm.ConfirmShellClose());
         mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+    }
+
+    // ---------- Programové ukončení jde přes ShellShutdown ----------
+    // Dřív VM volal Application.Current.Shutdown() přímo, takže tyhle tři cesty nešly otestovat.
+
+    [Fact]
+    public void Exit_Confirmed_ForcesShutdown()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var shutdown = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown);
+
+        vm.ExitCommand.Execute(null);
+
+        shutdown.Received(1).Invoke();
+    }
+
+    [Fact]
+    public void Exit_Declined_DoesNotShutdown()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        var shutdown = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown);
+
+        vm.ExitCommand.Execute(null);
+
+        shutdown.DidNotReceiveWithAnyArgs().Invoke();
+    }
+
+    [Theory]
+    [InlineData(SwitchUserResult.LicenceRefused)]
+    [InlineData(SwitchUserResult.LicenceCancelled)]
+    public async Task LoginAsAnotherUser_LicenceFailure_ForcesShutdown(SwitchUserResult result)
+    {
+        // Po neúspěšné licenci je stará session už zničená (closeAllWindows proběhlo),
+        // takže jediná bezpečná cesta je ukončit — a nesmí na ni jít potvrzovací dialog.
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var shutdown = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown,
+                          switchUser: () => new(result, null));
+
+        await vm.LoginAsAnotherUserAsync();
+
+        shutdown.Received(1).Invoke();
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_Cancelled_DoesNotShutdown()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var shutdown = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown,
+                          switchUser: () => new(SwitchUserResult.Cancelled, null));
+
+        await vm.LoginAsAnotherUserAsync();
+
+        shutdown.DidNotReceiveWithAnyArgs().Invoke();
     }
 }

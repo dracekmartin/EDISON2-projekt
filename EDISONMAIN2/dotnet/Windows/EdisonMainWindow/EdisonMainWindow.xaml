@@ -217,6 +217,9 @@
             <Grid.Resources>
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+                <!-- Obsah záložky je vidět, když se ConverterParameter shoduje s klíčem aktivní záložky. -->
+                <local:TabKeyToVisibilityConverter x:Key="TabKeyToVis"/>
+                <local:ResourceKeyConverter x:Key="ResourceKey"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
                     <!-- Tag = VM (přes VmProxy) — most pro ContextMenu mimo visual tree. Proxy, ne
                          ancestor: tenhle template se používá ve stromech i v ListBoxu Používané.
@@ -361,8 +364,8 @@
             </Grid.RowDefinitions>
 
             <!-- Přepínač záložek + akce nad aktivním stromem na jednom řádku. TabControl tu drží
-                 jen tab strip: TabItemy jsou záměrně bez Contentu (stromy jsou pod hledáním v kartě
-                 níž, přepínané Is*TabActive) — content row jeho šablony tak zkolabuje na nulu.
+                 jen tab strip: content skrývá prázdný ContentTemplate (stromy jsou pod hledáním
+                 v kartě níž, přepínané dle SelectedTab.Key) - content row tak zkolabuje na nulu.
                  Přetemplatovat TabControl lokálně nelze, viz EDControls/CLAUDE.md.
                  Záložky vs. akce se nesmí slít do jedné řady ikon (obě skupiny mají ★): taby sedí
                  na kartě (Bg.Surface, spojité s hledáním i stromem = patří k obsahu), akce zůstávají
@@ -377,25 +380,27 @@
                         BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,1,1,0">
                     <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených.
                          BorderThickness=0 — spodní linku kreslí až rámeček řádku s hledáním, spojitě přes celou šířku. -->
+                    <!-- Záložky jsou data (VM.TreeTabs), ne ručně psané TabItemy - pořadí i identita
+                         žijí v jednom seznamu. Ikona patří do Headeru; Content nastavuje generátor
+                         kontejnerů na datovou položku (record ToString!), skrývá ho prázdný
+                         ContentTemplate - Setter Content by generátor přebil lokální hodnotou. -->
                     <TabControl x:Name="TreeTabControl" BorderThickness="0"
-                                SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}"
-                                SelectionChanged="TreeTab_SelectionChanged">
-                        <!-- Ikona patří do Headeru, ne do Contentu — ten se vůbec nezobrazuje (viz výše). -->
-                        <TabItem Style="{StaticResource TreeTab}" ToolTip="Hlavní nabídka">
-                            <TabItem.Header><Image Source="{StaticResource EDIcons.Home}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/></TabItem.Header>
-                        </TabItem>
-                        <TabItem Style="{StaticResource TreeTab}" ToolTip="Správa systému">
-                            <TabItem.Header><Image Source="{StaticResource EDIcons.Gears}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/></TabItem.Header>
-                        </TabItem>
-                        <TabItem Style="{StaticResource TreeTab}" ToolTip="Partnerská řešení">
-                            <TabItem.Header><Image Source="{StaticResource EDIcons.Component}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/></TabItem.Header>
-                        </TabItem>
-                        <TabItem Style="{StaticResource TreeTab}" ToolTip="Oblíbené">
-                            <TabItem.Header><Image Source="{StaticResource EDIcons.Star}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/></TabItem.Header>
-                        </TabItem>
-                        <TabItem Style="{StaticResource TreeTab}" ToolTip="Používané">
-                            <TabItem.Header><Image Source="{StaticResource EDIcons.History}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/></TabItem.Header>
-                        </TabItem>
+                                ItemsSource="{Binding TreeTabs}"
+                                SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
+                        <TabControl.ItemContainerStyle>
+                            <Style TargetType="TabItem" BasedOn="{StaticResource TreeTab}">
+                                <Setter Property="ToolTip" Value="{Binding Title}"/>
+                            </Style>
+                        </TabControl.ItemContainerStyle>
+                        <TabControl.ItemTemplate>
+                            <DataTemplate>
+                                <Image Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"
+                                       Source="{Binding IconKey, Converter={StaticResource ResourceKey}}"/>
+                            </DataTemplate>
+                        </TabControl.ItemTemplate>
+                        <TabControl.ContentTemplate>
+                            <DataTemplate/>
+                        </TabControl.ContentTemplate>
                     </TabControl>
                 </Border>
                 <!-- Rozbalit/sbalit cílí na aktivní strom (VM.ActiveExpandableTree), zbytek na vybraný
@@ -440,14 +445,15 @@
             <Border Grid.Row="2" Margin="4,0,4,4" CornerRadius="0,0,3,3"
                     Background="{DynamicResource EDTheme.Bg.Surface}"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,1,1">
-                <Grid>
+                <!-- Výběr uzlu a Enter obsluhuje code-behind jedním handlerem na téhle kartě. -->
+                <Grid x:Name="TreeCard">
                     <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0"
-                              Visibility="{Binding IsMainMenuTabActive, Converter={StaticResource BoolToVis}}"/>
+                              Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=main}"/>
                     <TreeView x:Name="SystemAdminTreeView" ItemsSource="{Binding SystemAdminTree}" BorderThickness="0"
-                              Visibility="{Binding IsSystemAdminTabActive, Converter={StaticResource BoolToVis}}"/>
+                              Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=system}"/>
                     <TreeView x:Name="PartnerSolutionsTreeView" ItemsSource="{Binding PartnerSolutionsTree}" BorderThickness="0"
-                              Visibility="{Binding IsPartnerSolutionsTabActive, Converter={StaticResource BoolToVis}}"/>
-                    <Grid Visibility="{Binding IsFavoritesTabActive, Converter={StaticResource BoolToVis}}">
+                              Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=partners}"/>
+                    <Grid Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=favorites}">
                         <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0"/>
                         <!-- Empty-state coaching — nenucená pobídka k používání oblíbených. -->
                         <TextBlock Visibility="{Binding HasNoFavorites, Converter={StaticResource BoolToVis}}"
@@ -457,7 +463,7 @@
                     </Grid>
                     <ListBox x:Name="UsedModulesList" ItemsSource="{Binding UsedModules}" BorderThickness="0"
                              HorizontalContentAlignment="Stretch" Background="Transparent"
-                             Visibility="{Binding IsUsedModulesTabActive, Converter={StaticResource BoolToVis}}">
+                             Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=used}">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                 <Setter Property="Cursor" Value="Hand"/>

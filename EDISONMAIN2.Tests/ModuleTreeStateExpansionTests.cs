@@ -4,10 +4,10 @@ using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy rekurzivního rozbalování/sbalování stromu (<see cref="EdisonMainViewModel.SetExpandedRecursive"/>),
+/// Testy rekurzivního rozbalování/sbalování stromu (<see cref="ModuleTreeState.SetExpandedRecursive"/>),
 /// který pohání toolbar „Rozbalit/Sbalit vše" a kontextové „Rozbalit/Sbalit úroveň".
 /// </summary>
-public class EdisonMainViewModelExpansionTests
+public class ModuleTreeStateExpansionTests
 {
     private static ModuleFamily Family(string name, bool expanded, params IModule[] children)
     {
@@ -25,7 +25,7 @@ public class EdisonMainViewModelExpansionTests
         var inner = Family("Inner", expanded: false, Exe());
         var root = Family("Root", expanded: false, inner, Exe());
 
-        EdisonMainViewModel.SetExpandedRecursive(root, expanded: true);
+        ModuleTreeState.SetExpandedRecursive(root, expanded: true);
 
         Assert.True(root.IsExpanded);
         Assert.True(inner.IsExpanded);
@@ -37,7 +37,7 @@ public class EdisonMainViewModelExpansionTests
         var inner = Family("Inner", expanded: true, Exe());
         var root = Family("Root", expanded: true, inner);
 
-        EdisonMainViewModel.SetExpandedRecursive(root, expanded: false);
+        ModuleTreeState.SetExpandedRecursive(root, expanded: false);
 
         Assert.False(root.IsExpanded);
         Assert.False(inner.IsExpanded);
@@ -50,7 +50,7 @@ public class EdisonMainViewModelExpansionTests
         var level2 = Family("L2", expanded: false, level3);
         var level1 = Family("L1", expanded: false, level2);
 
-        EdisonMainViewModel.SetExpandedRecursive(level1, expanded: true);
+        ModuleTreeState.SetExpandedRecursive(level1, expanded: true);
 
         Assert.True(level1.IsExpanded);
         Assert.True(level2.IsExpanded);
@@ -63,7 +63,7 @@ public class EdisonMainViewModelExpansionTests
         // ExecutableModule nemá IsExpanded — musí se tiše přeskočit (ne spadnout).
         var leaf = Exe();
 
-        var ex = Record.Exception(() => EdisonMainViewModel.SetExpandedRecursive(leaf, expanded: true));
+        var ex = Record.Exception(() => ModuleTreeState.SetExpandedRecursive(leaf, expanded: true));
 
         Assert.Null(ex);
     }
@@ -74,7 +74,7 @@ public class EdisonMainViewModelExpansionTests
         var childFamily = Family("Child", expanded: false, Exe());
         var root = Family("Root", expanded: false, Exe("leaf1"), childFamily, Exe("leaf2"));
 
-        EdisonMainViewModel.SetExpandedRecursive(root, expanded: true);
+        ModuleTreeState.SetExpandedRecursive(root, expanded: true);
 
         Assert.True(root.IsExpanded);
         Assert.True(childFamily.IsExpanded);

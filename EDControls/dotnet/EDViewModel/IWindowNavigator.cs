@@ -31,6 +31,21 @@ public interface IWindowNavigator
     Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
 
     /// <summary>
+    /// Spustí zástupce na ploše (tisková sestava, uložený pohled) - host místo formy zavolá
+    /// proceduru agendy (<c>ProcedureIO.RunProcedure</c>). <paramref name="shortcutPayload"/> je
+    /// neprůhledný argv-safe string; skládá ho shell, formát viz <c>docs/DESKTOP_SHORTCUTS.md</c>.
+    /// Bez dedup a bez trackování mezi spuštěné moduly - je to tisk, ne okno modulu.
+    /// </summary>
+    Task ShowLegacyShortcutAsync(string exeName, string formFqn, string shortcutPayload,
+                                 bool shareShellSession = true, string inputParam = "");
+
+    /// <summary>
+    /// Skončil legacy modul. Agendy zapisují zástupce na plochu přímo do Caché (nemají na shell
+    /// spojení), takže tohle je moment, kdy si je shell má přenačíst.
+    /// </summary>
+    event Action? LegacyModuleExited;
+
+    /// <summary>
     /// Stejné jako <see cref="ShowLegacy"/>, ale blokuje až do zavření okna.
     /// Pre-login admin override (LicenceVerifier) volá s shareShellSession=false — shell ještě
     /// nemá VerifyLic zámek a CacheLocks=1 by každý request modulu padal na LockExist.

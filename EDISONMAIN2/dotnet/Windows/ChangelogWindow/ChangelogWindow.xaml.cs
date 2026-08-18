@@ -1,4 +1,5 @@
 using System.Windows;
+using EDControls;
 
 namespace EDISONMAIN2.Windows.ChangelogWindow
 {
@@ -11,6 +12,9 @@ namespace EDISONMAIN2.Windows.ChangelogWindow
             DataContext = _vm = new ChangelogViewModel(moduleTitle, content);
             InitializeComponent();
             Title = _vm.ModuleTitle;
+            // CenterOwner u maximalizovaného shellu centruje podle restore bounds - oprava
+            // přes skutečnou klientskou oblast ownera (vzor EDPopup).
+            Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
         }
 
         /// <summary>Stav „nezobrazovat do příští změny" - presenter ho čte po Closed.</summary>

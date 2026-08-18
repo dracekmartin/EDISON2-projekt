@@ -80,7 +80,7 @@ public class SessionDataLoaderTests
             ["Shortcuts"] = """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A","Slot":1}]""",
             ["ModuleUsage"] = """{"100":{"Count":7,"LastUsedUtc":"2026-01-01T00:00:00"}}""",
             ["TreeExpansion"] = """["main:0"]""",
-            ["SelectedTab"] = "2",
+            ["SelectedTab"] = "\"partners\"",
             ["ChangelogSnooze"] = """{"AD":"HASH1"}""",
         };
 
@@ -117,7 +117,7 @@ public class SessionDataLoaderTests
         Assert.Equal("100", Assert.Single(data.Shortcuts).ElementId);
         Assert.Equal(7, data.Usage["100"].Count);
         Assert.Equal(["main:0"], data.Expansion);
-        Assert.Equal(2, data.SelectedTab);
+        Assert.Equal("partners", data.SelectedTab);
         Assert.Equal("HASH1", data.ChangelogSnooze["AD"]);
     }
 

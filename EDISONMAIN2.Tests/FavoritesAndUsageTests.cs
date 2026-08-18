@@ -11,6 +11,7 @@ using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDTesting;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
+using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
 
 namespace EDISONMAIN2.Tests;
 
@@ -324,6 +325,29 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
+    public void TreeExpansion_NestedSuppress_PersistsOnlyAfterOutermostScopeEnds()
+    {
+        // Cesty potlačující persistenci se vnořují (přestavba Oblíbených uvnitř session loadu,
+        // re-filtrace při hledání). Plochý bool by po konci vnitřního bloku zápis odemkl
+        // a rozbalení vynucené programově by se uložilo jako uživatelská volba.
+        var prefs = Substitute.For<IUserPrefsService>();
+        var vm = CreateVM(prefs, tree: [Family("MHD", Exe("1"))]);
+        var family = vm.MainMenuTree.OfType<ModuleFamily>().Single();
+        prefs.ClearReceivedCalls();
+
+        using (vm.SuppressExpansionSave())
+        {
+            using (vm.SuppressExpansionSave()) { }
+
+            family.IsExpanded = true;   // vnitřní scope skončil, vnější pořád platí
+            prefs.DidNotReceive().SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
+        }
+
+        family.IsExpanded = false;
+        prefs.Received().SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
+    }
+
+    [Fact]
     public void ShortcutsLoadedAtStartup_PrebuildsFavoritesTree()
     {
         var prefs = Substitute.For<IUserPrefsService>();
@@ -335,7 +359,7 @@ public class FavoritesAndUsageTests
         var fav = Assert.IsType<ExecutableModule>(Assert.Single(vm.FavoritesTree));
         Assert.Equal("100", fav.ElementId);
         Assert.False(vm.HasNoFavorites);
-        Assert.Equal(3, vm.SelectedTreeTabIndex);   // bez uložené volby výchozí Oblíbené (3) když nějaké jsou
+        Assert.Equal("favorites", vm.SelectedTab.Key);   // bez uložené volby výchozí Oblíbené, když nějaké jsou
     }
 
     [Fact]
@@ -381,98 +405,71 @@ public class FavoritesAndUsageTests
     public void SelectedTab_RestoredFromPrefs()
     {
         var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "SelectedTab").Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("2")));
+        prefs.LoadAsync("EDISONMAIN2", "SelectedTab")
+             .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("\"partners\"")));
         var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
 
-        Assert.Equal(2, vm.SelectedTreeTabIndex);   // uložená volba má přednost před výchozí
+        Assert.Equal("partners", vm.SelectedTab.Key);   // uložená volba má přednost před výchozí
     }
 
     [Fact]
-    public void SelectedTab_UserChange_Persists()
+    public void SelectedTab_UnknownKey_FallsBackToFirstTab()
     {
+        // Zrušená / přejmenovaná záložka nesmí shodit shell ani nechat výběr prázdný.
         var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "SelectedTab")
+             .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("\"zruseno\"")));
+        var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
+
+        Assert.Equal(vm.TreeTabs[0].Key, vm.SelectedTab.Key);
+    }
+
+    [Fact]
+    public void SelectedTab_UserChange_PersistsKey()
+    {
+        JsonNode? written = null;
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.SaveAsync("EDISONMAIN2", "SelectedTab", Arg.Do<JsonNode>(n => written = n));
         var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
         prefs.ClearReceivedCalls();
 
-        vm.SelectedTreeTabIndex = 4;
+        vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "used");
 
         prefs.Received().SaveAsync("EDISONMAIN2", "SelectedTab", Arg.Any<JsonNode>());
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(4)]
-    public void SelectedTab_ActivatesExactlyOneContent(int tab)
-    {
-        // Obsah záložek nejsou Contenty TabItemů, ale sourozenci přepínaní těmito viditelnostmi —
-        // dvě aktivní najednou by se v kartě překryly.
-        var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
-
-        vm.SelectedTreeTabIndex = tab;
-
-        bool[] active =
-        [
-            vm.IsMainMenuTabActive, vm.IsSystemAdminTabActive, vm.IsPartnerSolutionsTabActive,
-            vm.IsFavoritesTabActive, vm.IsUsedModulesTabActive,
-        ];
-        Assert.Equal(tab, Array.IndexOf(active, true));
-        Assert.Single(active, a => a);
+        Assert.Equal("\"used\"", written!.ToJsonString());   // klíč, ne index — přeuspořádání záložek volbu nepřepne
     }
 
     [Fact]
-    public void SelectedTab_Change_NotifiesContentVisibilities()
+    public void TreeTabs_HaveUniqueKeys_AndExactlyOneNonExpandable()
     {
+        // Identita záložky je persistovaný klíč; duplicita by tiše přepsala uloženou volbu.
+        // Používané jsou ListBox bez stromu — jediná záložka, kam Rozbalit/Sbalit vše necílí.
         var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
-        vm.SelectedTreeTabIndex = 0;
-        List<string?> raised = [];
-        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
 
-        vm.SelectedTreeTabIndex = 2;
-
-        Assert.Contains(nameof(vm.IsMainMenuTabActive), raised);
-        Assert.Contains(nameof(vm.IsPartnerSolutionsTabActive), raised);
+        Assert.Equal(vm.TreeTabs.Count, vm.TreeTabs.Select(t => t.Key).Distinct().Count());
+        Assert.Single(vm.TreeTabs, t => !t.Expandable);
+        Assert.All(vm.TreeTabs, t => Assert.Equal(t.Expandable, t.Tree != null));
     }
 
-    // ---------- harness (mirror EdisonMainViewModelTests) -----------------
-
-    private static readonly CompanyStruct[] Companies = [new() { Id = "CB_DP", Database = "CB_DP" }];
-
-    private static EdisonMainViewModel CreateVM(IUserPrefsService prefs, IReadOnlyList<IModule> tree)
+    [Fact]
+    public void SelectedTab_Change_RestoresSelectionOfThatTab()
     {
-        var mlRest = MLRestMocks.Create("CB_DP");
-        mlRest.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
-            .Returns(MLRestMocks.Output("3"));
+        // Stromy zůstávají živé, takže toolbar akce musí po návratu cílit na uzel viditelné záložky.
+        var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
+        vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "main");
+        var module = vm.MainMenuTree.OfType<ExecutableModule>().Single();
+        vm.SelectedModule = module;
 
-        var treeGetter = Substitute.For<IModuleTreeGetter>();
-        treeGetter.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(tree);
-        treeGetter.GetModuleTree(Arg.Any<IMLRest>(), "system").Returns([]);
-        treeGetter.GetModuleTree(Arg.Any<IMLRest>(), "partners").Returns([]);
+        vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "used");
+        Assert.Null(vm.SelectedModule);
 
-        var svc = new EDServices(mlRest, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
-        {
-            UserPrefs = prefs,
-        };
-        var localPrefs = Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, localPrefs, () => { }, () => { });
-
-        EDServices.Initialize(svc);
-        EdisonMainViewModel vm;
-        try
-        {
-            vm = new EdisonMainViewModel(Companies, mlRest, treeGetter, initialLicence: null, switcher,
-                () => new(SwitchUserResult.Cancelled, null), localPrefs, () => [], () => { }, MiniAppCatalog.Build([]),
-                restRunner: new InlineRestCallRunner(mlRest));
-        }
-        finally
-        {
-            EDServices.Reset();
-        }
-        // Session state se plní až v InitializeAsync (v produkci z ContentRendered); s inline
-        // runnerem je load synchronní, takže GetResult tady nemá na co čekat.
-        vm.InitializeAsync().GetAwaiter().GetResult();
-        return vm;
+        vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "main");
+        Assert.Same(module, vm.SelectedModule);
     }
+
+    // ---------- harness ----------------------------------------------------
+
+    private static EdisonMainViewModel CreateVM(IUserPrefsService prefs, IReadOnlyList<IModule> tree) =>
+        EdisonMainViewModelHarness.CreateVM(
+            companies: OneCompany, treeGetter: TreeGetterWith(tree), userPrefs: prefs);
 }

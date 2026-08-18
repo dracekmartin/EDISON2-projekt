@@ -41,6 +41,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
         private readonly Func<IReadOnlyList<RunningModuleInfo>> _getActiveModules;
+        // Vynucené ukončení aplikace (ShellShutdown.Force) — obchází potvrzovací dialog shellu.
+        private readonly Action _forceShutdown;
         private readonly MiniAppCatalog _miniAppCatalog;
         // Manager žije až po AttachMiniAppHost (potřebuje DockingManager z view) — do té doby null.
         private MiniAppManager? _miniAppManager;
@@ -49,6 +51,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private Action<double>? _applyTreeWidth;
 
         public ICommand OpenModuleCommand { get; }
+        /// <summary>Spuštění zástupce mimo hlavní nabídku (tisková sestava, pohled DS) přes hosta.</summary>
+        public ICommand LaunchShortcutCommand { get; }
         public ICommand ToggleFavoriteCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
         public ICommand OpenEDListTestCommand { get; }
@@ -223,22 +227,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ILocalPrefs prefs,
             Func<IReadOnlyList<RunningModuleInfo>> getActiveModules,
             Action closeAllWindows,
+            Action forceShutdown,
             MiniAppCatalog miniAppCatalog,
-            ModuleShortcutsService? shortcuts = null,
-            IRestCallRunner? restRunner = null,
-            IChangelogSource? changelogSource = null)
+            ModuleShortcutsService shortcuts,
+            IChangelogSource? changelogSource,
+            IRestCallRunner? restRunner = null)
         {
             _switcher = switcher;
             _switchUser = switchUser;
             _prefs = prefs;
             _getActiveModules = getActiveModules;
+            _forceShutdown = forceShutdown;
             _miniAppCatalog = miniAppCatalog;
-            // Null (testy) = novinky vypnuté; produkci dává InfChangelogSource AppBootstrapper.
+            // Null = novinky vypnuté (testy); produkci dává InfChangelogSource AppBootstrapper.
             _changelogSource = changelogSource;
-            // Sdílená služba zástupců plochy (strom ★ ⇄ dlaždice). Bez ní (testy) VM drží vlastní instanci.
-            _shortcuts = shortcuts ?? new ModuleShortcutsService();
+            _shortcuts = shortcuts;
 
             OpenModuleCommand        = CommandAsync<IModule>(OpenModule);
+            LaunchShortcutCommand    = CommandAsync<DesktopShortcut>(LaunchShortcutViaHost);
             ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
@@ -268,7 +274,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ExitCommand                   = Command(ExitApplication);
 
             // Uživatel menu
-            LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUser);
+            LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUserAsync);
             ShowUserEditCommand           = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText())));
             ChangePasswordCommand         = Command(() =>
             {
@@ -316,7 +322,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PartnerSolutionsTree = [];
             FavoritesTree = [];
             UsedModules = [];
-            _sourceTrees = [("main", MainMenuTree), ("system", SystemAdminTree), ("partners", PartnerSolutionsTree)];
+            // Pořadí = pořadí záložek v UI. Přidání záložky je změna jen tady (+ případný control v XAML).
+            TreeTabs =
+            [
+                new("main",      "Hlavní nabídka",     "EDIcons.Home",      MainMenuTree,         Expandable: true,  ServerLoaded: true),
+                new("system",    "Správa systému",     "EDIcons.Gears",     SystemAdminTree,      Expandable: true,  ServerLoaded: true),
+                new("partners",  "Partnerská řešení",  "EDIcons.Component", PartnerSolutionsTree, Expandable: true,  ServerLoaded: true),
+                new("favorites", "Oblíbené",           "EDIcons.Star",      FavoritesTree,        Expandable: true,  ServerLoaded: false),
+                new("used",      "Používané",          "EDIcons.History",   null,                 Expandable: false, ServerLoaded: false),
+            ];
+            _selectedTab = TreeTabs[0];
+            _sourceTrees = [.. TreeTabs.Where(t => t.ServerLoaded).Select(t => (t.Key, t.Tree!))];
             // Runner drží politiku „klon per paralelní volání"; testy podstrčí sekvenční variantu.
             _sessionLoader = new SessionDataLoader(restRunner ?? new RestCallRunner(() => Rest),
                                                   treeService, [.. _sourceTrees.Select(t => t.Name)]);
@@ -335,6 +351,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _shortcuts.SlotsChanged += PersistShortcuts;
             // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
+            // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení
+            // si blob přečteme znovu, jinak by dlaždice naskočila až po restartu shellu.
+            WindowNavigator.LegacyModuleExited += () => _ = ReloadShortcutsAsync();
 
             _initialLicence = initialLicence;
         }
@@ -383,6 +402,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ApplySessionData(SessionData data)
         {
             _services.AccessTable = data.AccessTable;
+            // Uzly se nahradí novými instancemi, takže zapamatovaný výběr míří do prázdna.
+            ForgetSelection();
             foreach (var (name, tree) in _sourceTrees)
                 FillFilteredTree(tree, data.Trees[name]);
             ApplyPersonalization(data);
@@ -399,6 +420,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             new AccessTable([], isAllAccess: false),
             _sourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
             Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
+
+        private void ForgetSelection()
+        {
+            _selectionByTab.Clear();
+            SelectedModule = null;
+        }
 
         private int _defaultWindowId;
         /// <summary>Id uživatelova výchozího okna (EDISFormEnum) pro aktuální IDFa; 0 = žádný.</summary>
@@ -453,6 +480,27 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Oblíbené + používanost jsou per-user × IDFa → aplikují se po (pře)stavbě stromů.
+        /// <summary>
+        /// Přenačte plochu z Caché. Agendy zapisují zástupce přímo na server (nemají na shell
+        /// spojení), takže po jejich ukončení může mít blob víc, než co drží tenhle shell.
+        /// Ticho při chybě je záměr - kvůli nedostupnému serveru nemá smysl obtěžovat uživatele,
+        /// který zrovna zavřel agendu.
+        /// </summary>
+        private async Task ReloadShortcutsAsync()
+        {
+            if (_modulePrefs is null) return;
+            var stored = await _modulePrefs.LoadShortcutsAsync();
+            var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
+            _suppressFavoritesSync = true;
+            _shortcuts.Seed(AllExecutables(), stored, exe =>
+                labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
+                    ? label.Path : "");
+            _suppressFavoritesSync = false;
+
+            RefreshFamilyFavoriteFlags();
+            RebuildFavoritesTree();
+        }
+
         private void ApplyPersonalization(SessionData data)
         {
             _usage = data.Usage;
@@ -473,13 +521,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Obnoví uložené rozbalení a napojí persistenci na VŠECH stromech (vč. Oblíbených).
             // Suppress brání zápisu během programového apply.
-            _suppressExpansionSave = true;
-            ApplyTreeExpansion();
-            _suppressExpansionSave = false;
+            using (SuppressExpansionSave())
+                ApplyTreeExpansion();
 
             // Poslední otevřená záložka (per-user × IDFa); bez uložené volby výchozí dle oblíbených.
             _suppressTabSave = true;
-            SelectedTreeTabIndex = data.SelectedTab ?? DefaultTreeTab();
+            SelectedTab = data.SelectedTab is { } key ? TabByKey(key) : DefaultTreeTab();
             _suppressTabSave = false;
         }
 
@@ -490,16 +537,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 FavoritesTree.Add(root);
 
             // Po přestavbě (i mimo load — po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
-            bool prev = _suppressExpansionSave;
-            _suppressExpansionSave = true;
-            ApplyExpansion(FavoritesTree, "favorites");
+            using (SuppressExpansionSave())
+            {
+                ApplyExpansion(FavoritesTree, FavoritesTab.Key);
 
-            // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) — při aktivním hledání přefiltrovat.
-            var searchText = _treeSearchText.Trim();
-            if (searchText.Length > 0)
-                foreach (var root in FavoritesTree)
-                    ApplySearchToModule(root, searchText);
-            _suppressExpansionSave = prev;
+                // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) — při aktivním hledání přefiltrovat.
+                var searchText = _treeSearchText.Trim();
+                if (searchText.Length > 0)
+                    foreach (var root in FavoritesTree)
+                        ModuleTreeState.ApplySearchToModule(root, searchText);
+            }
 
             OnPropertyChanged(nameof(HasNoFavorites));
         }
@@ -522,30 +569,46 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 ApplyExpansion(tree, name);
         }
 
+        /// <summary>
+        /// Potlačí persistenci rozbalení po dobu programové změny stromu. Refcount, ne bool:
+        /// cesty se vnořují (přestavba Oblíbených uvnitř session loadu, re-filtrace při hledání)
+        /// a plochý reset na false by vnitřní blok odemkl dřív, než skončí ten vnější.
+        /// <c>internal</c> kvůli testu na vnoření.
+        /// </summary>
+        internal IDisposable SuppressExpansionSave()
+        {
+            _expansionSaveSuppressed++;
+            return new ExpansionSaveScope(this);
+        }
+
+        private sealed class ExpansionSaveScope(EdisonMainViewModel vm) : IDisposable
+        {
+            private bool _disposed;
+
+            public void Dispose()
+            {
+                if (_disposed) return;
+                _disposed = true;
+                vm._expansionSaveSuppressed--;
+            }
+        }
+
         // ---- rozbalit / sbalit vše (toolbar + kontextové menu) ---------------
 
-        // Strom aktivní záložky (index 0-2 zdrojové, 3 Oblíbené); Používané (ListBox) i cokoli mimo → null.
-        private ObservableCollection<IModule>? ActiveExpandableTree() => SelectedTreeTabIndex switch
-        {
-            0 => MainMenuTree,
-            1 => SystemAdminTree,
-            2 => PartnerSolutionsTree,
-            3 => FavoritesTree,
-            _ => null,
-        };
+        // Strom aktivní záložky; Používané (ListBox) strom nemá → null.
+        private ObservableCollection<IModule>? ActiveExpandableTree() =>
+            SelectedTab.Expandable ? SelectedTab.Tree : null;
 
         // Hromadné rozbalení/sbalení celého aktivního stromu. Suppress + jeden save na konci
         // (jinak by každá rodina zvlášť triggerovala SaveExpansionAsync — vzor jako ApplySearch).
         private void SetActiveTreeExpanded(bool expanded)
         {
             if (ActiveExpandableTree() is not { } tree) return;
-            _suppressExpansionSave = true;
-            try
+            using (SuppressExpansionSave())
             {
                 foreach (var module in tree)
-                    SetExpandedRecursive(module, expanded);
+                    ModuleTreeState.SetExpandedRecursive(module, expanded);
             }
-            finally { _suppressExpansionSave = false; }
             _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
         }
 
@@ -553,19 +616,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void SetSubtreeExpanded(IModule module, bool expanded)
         {
             if (module is not ModuleFamily) return;
-            _suppressExpansionSave = true;
-            try { SetExpandedRecursive(module, expanded); }
-            finally { _suppressExpansionSave = false; }
+            using (SuppressExpansionSave())
+                ModuleTreeState.SetExpandedRecursive(module, expanded);
             _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
-        }
-
-        // internal kvůli unit testům (InternalsVisibleTo EDISONMAIN2.Tests).
-        internal static void SetExpandedRecursive(IModule module, bool expanded)
-        {
-            if (module is not ModuleFamily family) return;
-            family.IsExpanded = expanded;
-            foreach (var child in family.NestedModules)
-                SetExpandedRecursive(child, expanded);
         }
 
         private void ApplyExpansion(IList<IModule> tree, string treeName)
@@ -580,7 +633,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // _expansion == null → první spuštění, ponech serverové výchozí rozbalení.
             if (_expansion is { } saved)
-                family.IsExpanded = saved.Contains(ExpansionPathKey(treeName, path));
+                family.IsExpanded = saved.Contains(ModuleTreeState.ExpansionPathKey(treeName, path));
 
             family.PropertyChanged -= OnFamilyPropertyChanged;
             family.PropertyChanged += OnFamilyPropertyChanged;
@@ -591,7 +644,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private void OnFamilyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && !_suppressExpansionSave)
+            if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && _expansionSaveSuppressed == 0)
                 _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
         }
 
@@ -599,26 +652,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             var keys = new List<string>();
             foreach (var (name, tree) in ExpandableTrees)
-                CollectExpanded(tree, name, keys);
+                ModuleTreeState.CollectExpanded(tree, name, keys);
             return keys;
         }
-
-        private static void CollectExpanded(IList<IModule> tree, string treeName, List<string> keys)
-        {
-            for (int i = 0; i < tree.Count; i++)
-                CollectExpandedNode(tree[i], treeName, [i], keys);
-        }
-
-        private static void CollectExpandedNode(IModule module, string treeName, List<int> path, List<string> keys)
-        {
-            if (module is not ModuleFamily family) return;
-            if (family.IsExpanded) keys.Add(ExpansionPathKey(treeName, path));
-            for (int i = 0; i < family.NestedModules.Count; i++)
-                CollectExpandedNode(family.NestedModules[i], treeName, [.. path, i], keys);
-        }
-
-        private static string ExpansionPathKey(string treeName, IReadOnlyList<int> path) =>
-            treeName + ":" + string.Join(".", path);
 
         private DispatcherTimer? _searchDebouncer;
 
@@ -643,54 +679,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ApplySearch()
         {
             var text = _treeSearchText.Trim();
-            _suppressExpansionSave = true;
-            try
+            using (SuppressExpansionSave())
             {
                 foreach (var (_, tree) in ExpandableTrees)
                     foreach (var root in tree)
-                        ApplySearchToModule(root, text);
+                        ModuleTreeState.ApplySearchToModule(root, text);
             }
-            finally { _suppressExpansionSave = false; }
 
             if (text.Length == 0) ApplyTreeExpansion();
         }
-
-        /// <summary>
-        /// Nastaví <see cref="IModule.IsVisibleBySearch"/> rekurzivně. Uzel je viditelný, když jeho
-        /// název obsahuje <paramref name="text"/> (case + diakritika insensitive) NEBO má viditelného
-        /// potomka (prázdný text = vše viditelné). Rodina nalezená podle vlastního názvu zpřístupní
-        /// celý svůj obsah; rodina s nalezeným potomkem se při aktivním hledání rozbalí.
-        /// Vrací, zda je modul viditelný.
-        /// </summary>
-        internal static bool ApplySearchToModule(IModule module, string text)
-        {
-            var needle = SearchNormalization.NormalizeForSearch(text);
-            bool selfMatch = needle.Length == 0
-                || SearchNormalization.NormalizeForSearch(module.DisplayedName).Contains(needle);
-
-            if (module is ModuleFamily family)
-            {
-                // Shoda na názvu skupiny zpřístupní celý její obsah - potomci hledané slovo v názvu
-                // nemají, takže by nález byl slepá ulička (skupina prázdná a spustit ji nejde).
-                // Prázdný needle v rekurzi = "všechno viditelné", proto stačí předat "".
-                bool wholeSubtree = selfMatch && needle.Length > 0;
-                bool anyChildVisible = false;
-                foreach (var child in family.NestedModules)
-                    if (ApplySearchToModule(child, wholeSubtree ? "" : text)) anyChildVisible = true;
-                selfMatch = selfMatch || anyChildVisible;
-                if (text.Length > 0 && anyChildVisible)
-                {
-                    if (wholeSubtree) SetExpandedRecursive(family, true);
-                    else family.IsExpanded = true;
-                }
-            }
-
-            module.IsVisibleBySearch = selfMatch;
-            return selfMatch;
-        }
-
-        // Per stanice konstantní (DNS doména / registry override) — stačí vyhodnotit jednou.
-        private static readonly bool IsMlineDomainStation = MlineDomainDetector.IsDomainMline();
 
         // Clear až tady (po úspěšném loadu, ne před requestem) — selhání jinak nechá záložku
         // trvale prázdnou a při přepnutí firmy zahodí i strom, který byl platný.
@@ -699,78 +696,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             target.Clear();
             foreach (var module in tree)
             {
-                if (TryFilter(module, _services.ActiveLicence, _services.AccessTable, IsMlineDomainStation) is { } filtered)
+                if (ModuleTreeState.TryFilter(module, _services.ActiveLicence, _services.AccessTable,
+                                              ModuleTreeState.IsMlineDomainStation) is { } filtered)
                 {
                     // Obarvit moduly dle launchovatelnosti (stub / chybí exe).
                     filtered = ModuleLaunchabilityCheck.Mark(filtered);
                     target.Add(filtered);
                 }
             }
-        }
-
-        /// <summary>
-        /// 5-vrstvá filtrace stromu (viz RESPONSIBILITIES § 5.2):
-        /// 1) licence — <see cref="ExecutableModule.IsLicensed"/> uzel musí být v <see cref="Lic.Elements"/>;
-        /// 2) hidden — <see cref="ExecutableModule.Hidden"/> uzly se vždy odfiltrují (legacy `hidden="1"`);
-        /// 3) mlineOnly — mimo doménu M-line skryto, v doméně suffix
-        ///    <see cref="MlineDomainDetector.Suffix"/> (legacy frmMain.vb:1204/1227);
-        /// 4) aplikační přístup — <c>AccessTable.Contains(ElementId)</c> pro každý EXE uzel;
-        /// 5) admin fallback — řešen v <see cref="AccessLoader"/> už při loadu (přidá konkrétní IDs).
-        /// Vrstvy 1+3+4 platí i pro FAMILY (package ID — legacy BuildTreeXML gate-oval skupiny
-        /// stejně jako formy, složka mimo licenci/AP/doménu skryje celou větev); FAMILY se navíc
-        /// auto-skryje, pokud jsou všechny děti odfiltrované.
-        /// </summary>
-        internal static IModule? TryFilter(IModule module, Lic? licence, AccessTable? access = null, bool isMlineDomain = false) => module switch
-        {
-            ExecutableModule exe => IsAllowed(exe, licence, access, isMlineDomain)
-                ? (exe.MlineOnly ? exe with { DisplayedName = exe.DisplayedName + MlineDomainDetector.Suffix } : exe)
-                : null,
-            ModuleFamily family  => FilterFamily(family, licence, access, isMlineDomain),
-            _                    => module,
-        };
-
-        internal static bool IsAllowed(ExecutableModule exe, Lic? licence, AccessTable? access = null, bool isMlineDomain = false)
-        {
-            if (exe.Hidden) return false;
-            if (exe.MlineOnly && !isMlineDomain) return false;
-            if (exe.IsLicensed && !(licence?.Elements?.Contains(exe.ElementId) ?? false))
-                return false;
-            // AccessTable null = load nebyl proveden (typicky testy) → pass-through (graceful degradation).
-            // ElementId "" = legacy 4-field řádek bez ID → bez AP gate (parita s FAMILY větví).
-            if (access != null && exe.ElementId.Length > 0 && !access.Contains(exe.ElementId))
-                return false;
-            return true;
-        }
-
-        internal static ModuleFamily? FilterFamily(ModuleFamily family, Lic? licence, AccessTable? access = null, bool isMlineDomain = false)
-        {
-            // Gate složky PŘED rekurzí — mimo licenci/AP/doménu je skrytá celá větev včetně
-            // jinak povolených dětí (např. admin fallback přidá formTMList, ale bez AP
-            // na package Kmenová evidence se nezobrazí — parita s legacy BuildTreeXML).
-            if (family.MlineOnly && !isMlineDomain) return null;
-            if (family.IsLicensed && !(licence?.Elements?.Contains(family.ElementId) ?? false))
-                return null;
-            // ElementId "" = syntetická složka bez gate; access null = pass-through (testy).
-            if (access != null && family.ElementId.Length > 0 && !access.Contains(family.ElementId))
-                return null;
-
-            var visibleChildren = family.NestedModules
-                .Select(child => TryFilter(child, licence, access, isMlineDomain))
-                .Where(child => child != null)
-                .ToList();
-
-            if (visibleChildren.Count == 0) return null;
-
-            var filtered = new ModuleFamily
-            {
-                DisplayedName = family.DisplayedName + (family.MlineOnly ? MlineDomainDetector.Suffix : ""),
-                IsExpanded    = family.IsExpanded,
-                ElementId     = family.ElementId,
-                IsLicensed    = family.IsLicensed,
-                MlineOnly     = family.MlineOnly,
-            };
-            foreach (var child in visibleChildren) filtered.NestedModules.Add(child!);
-            return filtered;
         }
 
         // StatusBar — Identity props z MLRest (per session konstantní).
@@ -825,16 +758,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public bool HasNoFavorites => FavoritesTree.Count == 0;
 
         private IModule? _selectedModule;
+        // Výběr si pamatujeme per záložka: stromy zůstávají živé, takže po návratu na záložku
+        // musí toolbar akce cílit na uzel, který je v ní vidět, ne na ten z minule aktivní.
+        private readonly Dictionary<string, IModule?> _selectionByTab = [];
 
         /// <summary>
-        /// Aktuálně vybraný uzel viditelného stromu (nastavuje code-behind ze <c>SelectedItemChanged</c> /
-        /// přepnutí záložky). Řídí toolbar akce (oblíbené, výchozí okno) — na kolekcích/ListBoxu <c>null</c>.
+        /// Aktuálně vybraný uzel viditelného stromu (nastavuje code-behind ze <c>SelectedItemChanged</c>).
+        /// Řídí toolbar akce (oblíbené, výchozí okno) — na kolekcích/ListBoxu <c>null</c>.
         /// </summary>
         public IModule? SelectedModule
         {
             get => _selectedModule;
             set
             {
+                _selectionByTab[SelectedTab.Key] = value;
                 if (!Set(ref _selectedModule, value)) return;
                 OnPropertyChanged(nameof(HasSelection));
                 OnPropertyChanged(nameof(CanSetStartup));
@@ -857,39 +794,37 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             set { if (Set(ref _treeSearchText, value)) ScheduleSearch(); }
         }
 
-        // Pořadí záložek: 0 Hlavní nabídka, 1 Správa systému, 2 Partnerská řešení, 3 Oblíbené, 4 Používané.
-        private int _selectedTreeTabIndex;
+        private TreeTab _selectedTab = null!;   // plní ctor po vytvoření TreeTabs
         private bool _suppressTabSave;
 
-        /// <summary>Aktuální záložka stromu. TwoWay-bound; persistuje se per-user × IDFa (poslední otevřená).</summary>
-        public int SelectedTreeTabIndex
+        /// <summary>
+        /// Pořadí i identita záložek launcher panelu - jediný seznam, ze kterého se odvozuje
+        /// tab strip, viditelnost obsahu, cíl Rozbalit/Sbalit vše i uložená volba.
+        /// </summary>
+        public IReadOnlyList<TreeTab> TreeTabs { get; }
+
+        /// <summary>Aktivní záložka. TwoWay-bound; persistuje se per-user × IDFa (poslední otevřená).</summary>
+        public TreeTab SelectedTab
         {
-            get => _selectedTreeTabIndex;
+            get => _selectedTab;
             set
             {
-                if (!Set(ref _selectedTreeTabIndex, value)) return;
-                foreach (var name in TabActiveProperties)
-                    OnPropertyChanged(name);
+                // TabControl při přestavbě ItemsSource krátce nastaví null - držíme poslední platnou.
+                if (value == null || !Set(ref _selectedTab, value)) return;
+                SelectedModule = _selectionByTab.GetValueOrDefault(value.Key);
                 if (!_suppressTabSave)
-                    _ = _modulePrefs?.SaveSelectedTabAsync(value);
+                    _ = _modulePrefs?.SaveSelectedTabAsync(value.Key);
             }
         }
 
-        // Záložky nesou jen strip; obsah je pod hledáním a přepíná se těmito viditelnostmi.
-        private static readonly string[] TabActiveProperties =
-        [
-            nameof(IsMainMenuTabActive), nameof(IsSystemAdminTabActive), nameof(IsPartnerSolutionsTabActive),
-            nameof(IsFavoritesTabActive), nameof(IsUsedModulesTabActive),
-        ];
+        // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené když nějaké jsou, jinak Hlavní nabídka.
+        private TreeTab DefaultTreeTab() => TabByKey(HasNoFavorites ? "main" : "favorites");
 
-        public bool IsMainMenuTabActive         => _selectedTreeTabIndex == 0;
-        public bool IsSystemAdminTabActive      => _selectedTreeTabIndex == 1;
-        public bool IsPartnerSolutionsTabActive => _selectedTreeTabIndex == 2;
-        public bool IsFavoritesTabActive        => _selectedTreeTabIndex == 3;
-        public bool IsUsedModulesTabActive      => _selectedTreeTabIndex == 4;
+        private TreeTab TabByKey(string? key) =>
+            TreeTabs.FirstOrDefault(t => t.Key == key) ?? TreeTabs[0];
 
-        // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené (3) když nějaké jsou, jinak Hlavní nabídka (0).
-        private int DefaultTreeTab() => HasNoFavorites ? 0 : 3;
+        // Oblíbené se nenačítají ze serveru, ale rozbalení se jim persistuje jako ostatním.
+        private TreeTab FavoritesTab => TabByKey("favorites");
 
         private readonly IChangelogSource? _changelogSource;
         // Auto-popup novinek (infotexty). Žije se session jako _modulePrefs; null = vypnuto (testy).
@@ -905,16 +840,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private Dictionary<string, UsageEntry> _usage = [];
         // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
         private List<string>? _expansion;
-        private bool _suppressExpansionSave;
+        private int _expansionSaveSuppressed;
         private const int UsedModulesCap = 20;
 
         // Zdrojové stromy plněné ze serveru (per-IdFa). Jedna kolekce pro společné operace (load, filtrace,
-        // oblíbené/používané, family flagy) místo opakování literálů. Inicializuje ctor po vytvoření kolekcí.
+        // oblíbené/používané, family flagy). Odvozené z TreeTabs, inicializuje je ctor.
         private readonly (string Name, ObservableCollection<IModule> Tree)[] _sourceTrees;
 
         // Všechny rozbalovatelné stromy = zdrojové + odvozený Oblíbené (persistence rozbalení i nad Oblíbenými).
         private IEnumerable<(string Name, ObservableCollection<IModule> Tree)> ExpandableTrees =>
-            [.. _sourceTrees, ("favorites", FavoritesTree)];
+            TreeTabs.Where(t => t.Expandable).Select(t => (t.Key, t.Tree!));
 
         public ObservableCollection<CompanyItem> VisibleIdfas { get; }
 
@@ -1141,8 +1076,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // docs/DESKTOP_SHORTCUTS.md, kanál spuštění přes EDISONMAIN2API.
         private void LaunchShortcut(DesktopShortcut shortcut)
         {
-            if (shortcut.Module is { } module) OpenModuleCommand.Execute(module);
-            else PopupDisplayer.Info("Tento typ zástupce zatím nelze z plochy spustit.");
+            if (shortcut.Module is { } module) { OpenModuleCommand.Execute(module); return; }
+            LaunchShortcutCommand.Execute(shortcut);
+        }
+
+        // Zástupce mimo hlavní nabídku (tisková sestava, uložený pohled): host ho místo formy
+        // pustí jako proceduru agendy. Exe i formu nese sama položka - hostitelská forma nemusí
+        // být ve stromu, takže se nedohledávají.
+        private async Task LaunchShortcutViaHost(DesktopShortcut shortcut)
+        {
+            if (shortcut.ExecutablePath.Length == 0 || shortcut.FormName.Length == 0)
+            {
+                PopupDisplayer.Info($"Zástupce „{shortcut.DisplayedName}\" nemá uloženou agendu ani formulář, "
+                                    + "nelze ho spustit. Vytvořte ho znovu z modulu.");
+                return;
+            }
+            using (ActionInProgress())
+                await WindowNavigator.ShowLegacyShortcutAsync(shortcut.ExecutablePath, shortcut.FormName,
+                    ShortcutLaunchPayloadCodec.Encode(shortcut), inputParam: shortcut.InputParam);
         }
 
         // Oblíbené = položky plochy, které jsou modulem hlavní nabídky (★ ve stromu jiné druhy nezná).
@@ -1291,19 +1242,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             return true;
         }
 
-        private void ShutdownWithoutConfirm()
-        {
-            SuppressCloseConfirm();
-            Application.Current.Shutdown();
-        }
-
         private void ExitApplication()
         {
             if (PopupDisplayer.Confirm(ExitConfirmMessage))
-                ShutdownWithoutConfirm();
+                _forceShutdown();
         }
 
-        private async Task LoginAsAnotherUser()
+        /// <summary><c>internal</c> kvůli testům — <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.</summary>
+        internal async Task LoginAsAnotherUserAsync()
         {
             if (!PopupDisplayer.Confirm("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
                 return;
@@ -1315,10 +1261,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
                 case SwitchUserResult.LicenceRefused:
                     PopupDisplayer.Info("Pro nového uživatele byl překročen počet licencí. Aplikace bude ukončena.");
-                    ShutdownWithoutConfirm();
+                    _forceShutdown();
                     return;
                 case SwitchUserResult.LicenceCancelled:
-                    ShutdownWithoutConfirm();
+                    _forceShutdown();
                     return;
                 case SwitchUserResult.Success:
                     // Selhání loadu po výměně uživatele: viz ClearSessionState — preference jsou

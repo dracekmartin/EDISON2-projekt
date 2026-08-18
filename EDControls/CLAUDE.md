@@ -68,8 +68,13 @@ ať se okna nové aplikace nemíchají se shellem.
   stranách); `CallAsync` = `Task.Run` nad blokujícím MLRest.
 - `EdisonLaunchArgs` - parser launch kontraktu shellu; **zrcadlí
   `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) - pořadí
-  a počet polí musí zůstat synchronní.
+  a počet polí musí zůstat synchronní. Producent je `WindowNavigator.BuildLauncherArguments`;
+  nové pole se **přidává na konec** (starší host ho ignoruje) a hodnoty se jen obalují
+  uvozovkami, **neescapují** - co může obsahovat mezeru či uvozovku, posílej zakódované
+  (viz Base64 payload zástupce na ploše).
 - `WindowDimmer` - ztmavení okna, refcount per okno; UI-thread only.
+- `OwnerWindowCentering` - vycentrování na klientskou oblast ownera (volat z `Loaded`).
+  WPF `CenterOwner` u maximalizovaného ownera centruje podle restore bounds → mimo střed.
 - `ErrorReporting/` - hlášení chyb na `podpora.m-line.cz` (přímý HTTPS POST, **ne** přes
   Caché jako usage telemetrie). Vlastní `CLAUDE.md`.
 
@@ -105,5 +110,5 @@ ať se okna nové aplikace nemíchají se shellem.
 
 `CACHE/EDInputForm.inc` - `#define` konstanty wire kontraktu (typy polí, separátory,
 viditelnosti) - **musí sedět s C# stranou**. Třídy per control v `CACHE/ALVA/EDControls/`
-(`EDInputForm/`, `EDList/`, `UserData.cls`) + testy v `Tests/` (viz root CLAUDE.md,
+(`EDInputForm/`, `EDList/`, `UserData.cls`, `DesktopShortcuts.cls`) + testy v `Tests/` (viz root CLAUDE.md,
 sekce Testy).

@@ -1598,7 +1598,8 @@
 
     <!-- CalendarItem = vnitřek kalendáře; default template má bílé pozadí napevno →
          plný token-driven template. PART_MonthView (7×7) / PART_YearView (4×3) musí mít
-         přesně tolik Row/Column definic, kolik Calendar kód plní. -->
+         přesně tolik Row/Column definic, kolik Calendar kód plní; jejich přepínání dle
+         DisplayMode dělají výhradně triggery šablony, kód CalendarItem viditelnost nemění. -->
     <Style x:Key="EDCalendarItemStyle" TargetType="prim:CalendarItem">
         <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="Template">
@@ -1663,6 +1664,21 @@
                             </Grid>
                         </Grid>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- WPF přepíná month/year view jen deklarativně - bez těchto triggerů
+                             klik na hlavičku DisplayMode změní, ale pohled zůstane na dnech.
+                             Year i Decade sdílejí PART_YearView, obsah buněk plní CalendarItem. -->
+                        <DataTrigger Binding="{Binding DisplayMode, RelativeSource={RelativeSource
+                                      FindAncestor, AncestorType={x:Type Calendar}}}" Value="Year">
+                            <Setter TargetName="PART_MonthView" Property="Visibility" Value="Hidden"/>
+                            <Setter TargetName="PART_YearView"  Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding DisplayMode, RelativeSource={RelativeSource
+                                      FindAncestor, AncestorType={x:Type Calendar}}}" Value="Decade">
+                            <Setter TargetName="PART_MonthView" Property="Visibility" Value="Hidden"/>
+                            <Setter TargetName="PART_YearView"  Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

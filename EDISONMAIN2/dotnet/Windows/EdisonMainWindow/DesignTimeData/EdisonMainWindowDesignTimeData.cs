@@ -66,6 +66,28 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
             new ExecutableModule { DisplayedName = "Telmax" },
         ];
 
+        public ObservableCollection<IModule> FavoritesTree { get; } = [];
+
+        public ObservableCollection<ExecutableModule> UsedModules { get; } = [];
+
+        // Zrcadlí TreeTabs ve VM — bez nich by designer ukázal prázdný pruh záložek.
+        public IReadOnlyList<TreeTab> TreeTabs { get; }
+
+        public TreeTab SelectedTab { get; set; }
+
+        public EdisonMainWindowDesignTimeData()
+        {
+            TreeTabs =
+            [
+                new("main",      "Hlavní nabídka",    "EDIcons.Home",      MainMenuTree,         Expandable: true,  ServerLoaded: true),
+                new("system",    "Správa systému",    "EDIcons.Gears",     SystemAdminTree,      Expandable: true,  ServerLoaded: true),
+                new("partners",  "Partnerská řešení", "EDIcons.Component", PartnerSolutionsTree, Expandable: true,  ServerLoaded: true),
+                new("favorites", "Oblíbené",          "EDIcons.Star",      FavoritesTree,        Expandable: true,  ServerLoaded: false),
+                new("used",      "Používané",         "EDIcons.History",   null,                 Expandable: false, ServerLoaded: false),
+            ];
+            SelectedTab = TreeTabs[0];
+        }
+
         public ObservableCollection<CompanyItem> VisibleIdfas { get; } =
         [
             new CompanyItem("CB_DP", "Dopravní podnik města České Budějovice", "CB_DB"),

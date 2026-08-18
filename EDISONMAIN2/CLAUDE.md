@@ -72,16 +72,24 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   zakulacení jen na krajích). V light je totiž `Bg.Base` == `Bg.Surface` a bez toho panel
   splyne s obsahem. Akční toolbar zůstává **vedle karty** na zapuštěném chrome - ikonové taby
   a ikonové akce by jinak splynuly v jednu řadu, navíc obě skupiny obsahují ★.
-  `TreeTabControl` nese **jen tab strip**: `TabItem`y jsou ikonové (text v ToolTipu) a záměrně
-  **bez Contentu** (ikona proto patří do `TabItem.Header`), stromy jsou sourozenci v kartě
-  a přepínají se `Is*TabActive`. Důsledek: všech pět stromů žije pořád → do `Tag` datových
-  šablon (most pro `ContextMenu`) nejde brát `AncestorType=TabControl`, jde tam `VmProxy`.
+  `TreeTabControl` nese **jen tab strip**: `TabItem`y jsou ikonové (text v ToolTipu, ikona
+  v `Header`) a content skrývá **prázdný `ContentTemplate`** - generátor kontejnerů nastavuje
+  `Content` na datovou položku (record ToString) a lokální hodnota by přebila Setter ve stylu;
+  stromy jsou sourozenci v kartě a přepínají se podle `SelectedTab.Key`. Důsledek: všech pět stromů žije pořád → do `Tag`
+  datových šablon (most pro `ContextMenu`) nejde brát `AncestorType=TabControl`, jde tam `VmProxy`.
+- **Identita záložky je `Modules/TreeTab`** - jeden seznam `TreeTabs` ve VM drží pořadí, klíč
+  (server + persistence), ikonu a příznaky `Expandable`/`ServerLoaded`. Přidání záložky je
+  změna toho seznamu (+ control v kartě), ne koordinovaná editace indexů. `Key` je
+  persistovaný, takže **přejmenování = ztráta uložené volby** uživatelů.
 - **Toolbar nad stromy** (Rozbalit/Sbalit vše + oblíbené/výchozí okno nad vybraným uzlem):
   jedna instance vpravo v řádku se záložkami. Rozbalit/Sbalit vše cílí na **aktivní** záložku
-  (`ActiveExpandableTree` dle `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna
-  obalena `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar
-  akce) plní code-behind - `TreeView.SelectedItem` nelze bindovat, jede přes
-  `SelectedItemChanged` + `TabControl.SelectionChanged`.
+  (`ActiveExpandableTree`; Používané nemá strom → vyp), bulk změna obalena
+  `SuppressExpansionSave()` + jeden `SaveExpansionAsync`. Ten scope je **refcountovaný** -
+  cesty se vnořují (přestavba Oblíbených uvnitř loadu, re-filtrace při hledání) a plochý bool
+  by vnitřní blok odemkl dřív než vnější. `SelectedModule` (řídí toolbar akce)
+  plní code-behind jedním handlerem na kartě - `TreeView.SelectedItem` nelze bindovat a
+  `SelectedItemChanged` i `KeyDown` bublají. VM si výběr pamatuje **per záložku**, aby akce
+  cílily na to, co je vidět; přestavba stromů ho zahazuje (uzly jsou nové instance).
 
 Mini-apps (AvalonDock, WebView2 widgety, persistence layoutu, karusel) mají vlastní
 [dotnet/MiniApps/CLAUDE.md](dotnet/MiniApps/CLAUDE.md).
@@ -91,8 +99,11 @@ Mini-apps (AvalonDock, WebView2 widgety, persistence layoutu, karusel) mají vla
 Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `DesktopShortcut` všech
 `ShortcutKind`, ★ ve stromu umí jen `MenuModule` (= záložka Oblíbené). Identita je `Key`
 (`Kind|ElementId|Id`). Položka, kterou aktuální strom nezná (licence, `hidden`), se
-**nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní
-druhy jde dnes jen uložit, ne vytvořit/spustit.
+**nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní druhy
+(tiskové sestavy, pohledy DS) zapisují agendy **přímo do Caché** (`ALVA.EDControls.DesktopShortcuts`,
+týž blob, který shell čte) a spouští se 14. argem hosta. Shell si blob přenačte po ukončení
+agendy (`LegacyModuleExited`), takže dlaždice nenaskočí okamžitě - obojí i s pastmi
+v [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md).
 Dlaždice ukazuje **dlouhý název** (`ExecutableModule.LongName`, legacy `nameEx`; fallback
 krátký) a cestu agendou v ToolTipu (`Seed` ji dostává delegátem) - mimo strom chybí kontext,
 který krátký název zjednoznačňuje. Obojí odvozené ze stromu, nepersistuje se
@@ -117,14 +128,18 @@ před spuštěním agendy, shellový check před `OpenStartupWindowIfAny`; menu
 `ShowLegacyAsync`). Snooze (UserPrefs `ChangelogSnooze`) váže SHA-256 hash obsahu `_DIFF`,
 ne verzi - Caché-only patch nechává stale `_DIFF` na disku a DEBUG verze je konstantní.
 `InfKeyFor` zrcadlí legacy `EDConversion.Package.ToInformationFile` včetně výjimky NDMAIN
-(vlastní soubor).
+(vlastní soubor). Okno se vždy otvírá uprostřed shellu: pozice se nepersistuje
+(`PersistedFormId => null`) a centruje ho `OwnerWindowCentering` - samotné `CenterOwner`
+u maximalizovaného shellu centruje podle restore bounds.
 
 ## Legacy moduly - EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`,
-.NET Framework 4.8, deploy do `C:\Edison\`). Args: sentinel `"EDISONMAIN2"` + 12 polí
+.NET Framework 4.8, deploy do `C:\Edison\`). Args: sentinel `"EDISONMAIN2"` + 13 polí
 (server, port, ns, idfa, login, fullName, mlp, formName, shellGuid, inputParam,
-assemblyPath, licensedElements). Dvě vstupní metody:
+assemblyPath, licensedElements, zástupce na ploše). Poslední pole je Base64 XML zástupce -
+prázdné u běžného launche; s `CallType=Procedura` host místo formy spustí `ProcedureIO`
+agendy (viz [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md)). Dvě vstupní metody:
 
 - `TryGetFormFromArgs` - typ hledá reflexí ve volajícím assembly; kontrakt pro
   retrofitnuté `.exe` (v `Sub Main` zavolat a předat do `Application.Run`; bez argů

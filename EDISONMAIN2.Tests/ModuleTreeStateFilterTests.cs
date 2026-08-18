@@ -10,7 +10,7 @@ namespace EDISONMAIN2.Tests;
 /// že strom modulů respektuje licenční flag (<see cref="ExecutableModule.IsLicensed"/>)
 /// a whitelist <see cref="Lic.Elements"/>, a že prázdné FAMILY se po filtraci ořezávají.
 /// </summary>
-public class EdisonMainViewModelFilterTests
+public class ModuleTreeStateFilterTests
 {
     private static Lic Licence(params string[] elements) =>
         new() { Elements = elements };
@@ -28,9 +28,9 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe(id: "100", licensed: false);
 
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null));
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, Licence()));
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, Licence("999")));
+        Assert.True(ModuleTreeState.IsAllowed(exe, licence: null));
+        Assert.True(ModuleTreeState.IsAllowed(exe, Licence()));
+        Assert.True(ModuleTreeState.IsAllowed(exe, Licence("999")));
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe(id: "100", licensed: true);
 
-        Assert.False(EdisonMainViewModel.IsAllowed(exe, licence: null));
+        Assert.False(ModuleTreeState.IsAllowed(exe, licence: null));
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe(id: "100", licensed: true);
 
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, Licence("50", "100", "200")));
+        Assert.True(ModuleTreeState.IsAllowed(exe, Licence("50", "100", "200")));
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe(id: "100", licensed: true);
 
-        Assert.False(EdisonMainViewModel.IsAllowed(exe, Licence("50", "200")));
+        Assert.False(ModuleTreeState.IsAllowed(exe, Licence("50", "200")));
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe(id: "100", licensed: true);
 
-        Assert.False(EdisonMainViewModel.IsAllowed(exe, Licence()));
+        Assert.False(ModuleTreeState.IsAllowed(exe, Licence()));
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class EdisonMainViewModelFilterTests
         // licence?.Elements?.Contains(...) ?? false — Elements == null spadne na false → drop.
         var exe = Exe(id: "100", licensed: true);
 
-        Assert.False(EdisonMainViewModel.IsAllowed(exe, new Lic { Elements = null! }));
+        Assert.False(ModuleTreeState.IsAllowed(exe, new Lic { Elements = null! }));
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class EdisonMainViewModelFilterTests
         // Legacy 4-polový EXE bez ElementId → AP gate se přeskočí (parita s FAMILY větví).
         var exe = Exe(id: "", licensed: false);
 
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null, Access("200", "300")));
+        Assert.True(ModuleTreeState.IsAllowed(exe, licence: null, Access("200", "300")));
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class EdisonMainViewModelFilterTests
         // Hidden flag má přednost — modul se vyfiltruje bez ohledu na licenci či access.
         var exe = new ExecutableModule { ElementId = "100", IsLicensed = true, Hidden = true };
 
-        Assert.False(EdisonMainViewModel.IsAllowed(exe, Licence("100")));
+        Assert.False(ModuleTreeState.IsAllowed(exe, Licence("100")));
     }
 
     // ---------- FilterFamily -----------------------------------------------
@@ -101,7 +101,7 @@ public class EdisonMainViewModelFilterTests
         family.NestedModules.Add(Exe("1", licensed: false));
         family.NestedModules.Add(Exe("2", licensed: false));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null);
+        var filtered = ModuleTreeState.FilterFamily(family, licence: null);
 
         Assert.NotNull(filtered);
         Assert.Equal("F", filtered.DisplayedName);
@@ -116,7 +116,7 @@ public class EdisonMainViewModelFilterTests
         family.NestedModules.Add(Exe("100", licensed: true, name: "Hidden"));
         family.NestedModules.Add(Exe("200", licensed: true, name: "Visible"));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, Licence("200"));
+        var filtered = ModuleTreeState.FilterFamily(family, Licence("200"));
 
         Assert.NotNull(filtered);
         var only = Assert.Single(filtered.NestedModules);
@@ -130,7 +130,7 @@ public class EdisonMainViewModelFilterTests
         family.NestedModules.Add(Exe("100", licensed: true));
         family.NestedModules.Add(Exe("200", licensed: true));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, Licence("999"));
+        var filtered = ModuleTreeState.FilterFamily(family, Licence("999"));
 
         Assert.Null(filtered);
     }
@@ -143,7 +143,7 @@ public class EdisonMainViewModelFilterTests
         var outer = new ModuleFamily { DisplayedName = "Outer" };
         outer.NestedModules.Add(inner);
 
-        var filtered = EdisonMainViewModel.FilterFamily(outer, Licence("999"));
+        var filtered = ModuleTreeState.FilterFamily(outer, Licence("999"));
 
         // Inner zmizel (žádné dítě nepovoleno) → Outer taky (nic nezbylo)
         Assert.Null(filtered);
@@ -158,7 +158,7 @@ public class EdisonMainViewModelFilterTests
         var outer = new ModuleFamily { DisplayedName = "Outer" };
         outer.NestedModules.Add(inner);
 
-        var filtered = EdisonMainViewModel.FilterFamily(outer, Licence("999"));
+        var filtered = ModuleTreeState.FilterFamily(outer, Licence("999"));
 
         Assert.NotNull(filtered);
         var preservedInner = Assert.IsType<ModuleFamily>(Assert.Single(filtered.NestedModules));
@@ -175,7 +175,7 @@ public class EdisonMainViewModelFilterTests
         // Access gate platí i pro nelicencované moduly — bez ElementId v AccessTable se nezobrazí.
         var exe = Exe(id: "100", licensed: false);
 
-        Assert.False(EdisonMainViewModel.IsAllowed(exe, licence: null, Access("200", "300")));
+        Assert.False(ModuleTreeState.IsAllowed(exe, licence: null, Access("200", "300")));
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe(id: "100", licensed: false);
 
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null, Access("100", "200")));
+        Assert.True(ModuleTreeState.IsAllowed(exe, licence: null, Access("100", "200")));
     }
 
     [Fact]
@@ -192,7 +192,7 @@ public class EdisonMainViewModelFilterTests
         // Licence whitelist projde, ale aplikační access ho zařízne — obě vrstvy musí povolit.
         var exe = Exe(id: "100", licensed: true);
 
-        Assert.False(EdisonMainViewModel.IsAllowed(exe, Licence("100"), Access("200")));
+        Assert.False(ModuleTreeState.IsAllowed(exe, Licence("100"), Access("200")));
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe(id: "100", licensed: true);
 
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, Licence("100"), Access("100")));
+        Assert.True(ModuleTreeState.IsAllowed(exe, Licence("100"), Access("100")));
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class EdisonMainViewModelFilterTests
         var allAccess = new AccessTable([], isAllAccess: true);
         var exe = Exe(id: "100", licensed: false);
 
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null, allAccess));
+        Assert.True(ModuleTreeState.IsAllowed(exe, licence: null, allAccess));
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class EdisonMainViewModelFilterTests
         family.NestedModules.Add(Exe("100", licensed: false));
         family.NestedModules.Add(Exe("101", licensed: false));
 
-        Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null, Access("999")));
+        Assert.Null(ModuleTreeState.FilterFamily(family, licence: null, Access("999")));
     }
 
     // ---------- FilterFamily — gate složky (licence + access na package ID) --
@@ -233,8 +233,8 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "Kmenová evidence", ElementId = "1", IsLicensed = true };
         family.NestedModules.Add(Exe("40001", licensed: false));
 
-        Assert.Null(EdisonMainViewModel.FilterFamily(family, Licence("999")));
-        Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null));
+        Assert.Null(ModuleTreeState.FilterFamily(family, Licence("999")));
+        Assert.Null(ModuleTreeState.FilterFamily(family, licence: null));
     }
 
     [Fact]
@@ -243,7 +243,7 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "F", ElementId = "1", IsLicensed = true };
         family.NestedModules.Add(Exe("40001", licensed: false));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, Licence("1"));
+        var filtered = ModuleTreeState.FilterFamily(family, Licence("1"));
 
         Assert.NotNull(filtered);
         Assert.Equal("1", filtered.ElementId);
@@ -258,7 +258,7 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "Kmenová evidence", ElementId = "1" };
         family.NestedModules.Add(Exe("40001", licensed: false));
 
-        Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null, Access("40001")));
+        Assert.Null(ModuleTreeState.FilterFamily(family, licence: null, Access("40001")));
     }
 
     [Fact]
@@ -267,7 +267,7 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "F", ElementId = "1" };
         family.NestedModules.Add(Exe("40001", licensed: false));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, Access("1", "40001"));
+        var filtered = ModuleTreeState.FilterFamily(family, licence: null, Access("1", "40001"));
 
         Assert.NotNull(filtered);
         Assert.Single(filtered.NestedModules);
@@ -280,7 +280,7 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "F", ElementId = "" };
         family.NestedModules.Add(Exe("100", licensed: false));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, Access("100"));
+        var filtered = ModuleTreeState.FilterFamily(family, licence: null, Access("100"));
 
         Assert.NotNull(filtered);
         Assert.Equal("100", Assert.IsType<ExecutableModule>(Assert.Single(filtered.NestedModules)).ElementId);
@@ -293,7 +293,7 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "F", ElementId = "1" };
         family.NestedModules.Add(Exe("100", licensed: false));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, allAccess);
+        var filtered = ModuleTreeState.FilterFamily(family, licence: null, allAccess);
 
         Assert.NotNull(filtered);
         Assert.Equal("100", Assert.IsType<ExecutableModule>(Assert.Single(filtered.NestedModules)).ElementId);
@@ -308,7 +308,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = new ExecutableModule { DisplayedName = "Doklady OLD", ElementId = "92101", MlineOnly = true };
 
-        Assert.Null(EdisonMainViewModel.TryFilter(exe, licence: null, access: null, isMlineDomain: false));
+        Assert.Null(ModuleTreeState.TryFilter(exe, licence: null, access: null, isMlineDomain: false));
     }
 
     [Fact]
@@ -316,7 +316,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = new ExecutableModule { DisplayedName = "Doklady OLD", ElementId = "92101", MlineOnly = true };
 
-        var filtered = EdisonMainViewModel.TryFilter(exe, licence: null, access: null, isMlineDomain: true);
+        var filtered = ModuleTreeState.TryFilter(exe, licence: null, access: null, isMlineDomain: true);
 
         Assert.NotNull(filtered);
         Assert.Equal("Doklady OLD [### M-line ###]", filtered.DisplayedName);
@@ -327,7 +327,7 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe("100", licensed: false, name: "Běžný");
 
-        var filtered = EdisonMainViewModel.TryFilter(exe, licence: null, access: null, isMlineDomain: true);
+        var filtered = ModuleTreeState.TryFilter(exe, licence: null, access: null, isMlineDomain: true);
 
         Assert.NotNull(filtered);
         Assert.Equal("Běžný", filtered.DisplayedName);
@@ -339,7 +339,7 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "Interní", MlineOnly = true };
         family.NestedModules.Add(Exe("100", licensed: false));
 
-        Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null, access: null, isMlineDomain: false));
+        Assert.Null(ModuleTreeState.FilterFamily(family, licence: null, access: null, isMlineDomain: false));
     }
 
     [Fact]
@@ -348,7 +348,7 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "Interní", MlineOnly = true };
         family.NestedModules.Add(Exe("100", licensed: false));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, access: null, isMlineDomain: true);
+        var filtered = ModuleTreeState.FilterFamily(family, licence: null, access: null, isMlineDomain: true);
 
         Assert.NotNull(filtered);
         Assert.Equal("Interní [### M-line ###]", filtered.DisplayedName);
@@ -364,7 +364,7 @@ public class EdisonMainViewModelFilterTests
         family.NestedModules.Add(new ExecutableModule { DisplayedName = "Interní", ElementId = "1", MlineOnly = true });
         family.NestedModules.Add(Exe("2", licensed: false, name: "Veřejný"));
 
-        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, access: null, isMlineDomain: false);
+        var filtered = ModuleTreeState.FilterFamily(family, licence: null, access: null, isMlineDomain: false);
 
         Assert.NotNull(filtered);
         Assert.Equal("Veřejný", Assert.Single(filtered.NestedModules).DisplayedName);
@@ -377,8 +377,8 @@ public class EdisonMainViewModelFilterTests
     {
         var exe = Exe("100", licensed: true);
 
-        Assert.NotNull(EdisonMainViewModel.TryFilter(exe, Licence("100")));
-        Assert.Null(EdisonMainViewModel.TryFilter(exe, Licence("200")));
+        Assert.NotNull(ModuleTreeState.TryFilter(exe, Licence("100")));
+        Assert.Null(ModuleTreeState.TryFilter(exe, Licence("200")));
     }
 
     [Fact]
@@ -387,7 +387,7 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "F" };
         family.NestedModules.Add(Exe("100", licensed: true));
 
-        Assert.NotNull(EdisonMainViewModel.TryFilter(family, Licence("100")));
-        Assert.Null(EdisonMainViewModel.TryFilter(family, Licence("999")));
+        Assert.NotNull(ModuleTreeState.TryFilter(family, Licence("100")));
+        Assert.Null(ModuleTreeState.TryFilter(family, Licence("999")));
     }
 }
