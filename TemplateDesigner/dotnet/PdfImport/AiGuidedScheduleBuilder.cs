@@ -1014,7 +1014,7 @@ public static class AiGuidedScheduleBuilder
         float dataFont = dataWords.Count > 0
             ? Median(dataWords.Select(w => w.FontSizePt)) : 0;
         float headerFont = headerWords.Count > 0
-            ? Median(headerWords.Select(w => w.FontSizePt)) : dataFont;
+            ? PrevazujiciVelikostPisma(headerWords) : dataFont;
 
         // Row height: medián vzdáleností mezi po sobě jdoucími Y
         float rowHeight = MeasureRowHeight(dataWords);
@@ -1118,7 +1118,7 @@ public static class AiGuidedScheduleBuilder
         {
             var headerWords = gridWords.Where(w => w.Y < hourWords[0].Y - 0.5f).ToList();
             if (headerWords.Count > 0)
-                headerFont = Median(headerWords.Select(w => w.FontSizePt));
+                headerFont = PrevazujiciVelikostPisma(headerWords);
         }
 
         string fontFamily = DetectDominantFontFamily(minuteWords.Count > 0 ? minuteWords : gridWords);
@@ -1126,16 +1126,30 @@ public static class AiGuidedScheduleBuilder
         return new GridMeasurements(minuteFont, headerFont, rowHeight, hourColWidth, minuteCellWidth, headerHeight, fontFamily);
     }
 
-    /// <summary>Medián výšek řádků (vzdáleností po sobě jdoucích Y) z PdfPig slov.</summary>
-    private static float MeasureRowHeight(List<ExtractedWord> words)
+    /// <summary>
+    /// Výška řádku = obvyklá vzdálenost mezi <b>řádky</b>, ne mezi jednotlivými slovy. Slova
+    /// jednoho řádku nemají v PDF přesně stejnou Y (různá velikost písma, dolní dotažnice), takže
+    /// brát každou odlišnou Y jako nový řádek vrací hodnotu menší, než jaká je ve skutečnosti -
+    /// řádky pak v šabloně vyjdou natěsno. Slova se proto nejdřív shluknou do řádků; hranice
+    /// shluku se odvozuje z výšky písma, aby pravidlo platilo pro drobné i velké sestavy.
+    /// </summary>
+    internal static float MeasureRowHeight(List<ExtractedWord> words)
     {
         if (words.Count < 2) return 0;
-        var sortedY = words.Select(w => w.Y).Distinct().OrderBy(y => y).ToList();
-        if (sortedY.Count < 2) return 0;
+
+        float typickaVyskaPisma = Median(words.Select(w => w.FontSizePt)) * ResolvedTextStyle.PtToMm;
+        float tolerance = Math.Max(typickaVyskaPisma * 0.6f, 0.4f);
+
+        var radky = new List<float>();
+        foreach (float y in words.Select(w => w.Y).OrderBy(y => y))
+            if (radky.Count == 0 || y - radky[^1] > tolerance)
+                radky.Add(y);
+
+        if (radky.Count < 2) return 0;
         var diffs = new List<float>();
-        for (int i = 1; i < sortedY.Count; i++)
+        for (int i = 1; i < radky.Count; i++)
         {
-            float diff = sortedY[i] - sortedY[i - 1];
+            float diff = radky[i] - radky[i - 1];
             if (diff > 1f && diff < 10f)
                 diffs.Add(diff);
         }
@@ -1152,6 +1166,23 @@ public static class AiGuidedScheduleBuilder
             .OrderByDescending(g => g.Count())
             .FirstOrDefault();
         return dominant?.Key ?? "Arial";
+    }
+
+    /// <summary>
+    /// Velikost písma, kterou je vysázená <b>většina znaků</b> dané oblasti. Prostřední hodnota
+    /// (medián) tu selhává: v pásu záhlaví bývá vedle popisku skupiny ještě několik drobných
+    /// pomocných popisků (nad sloupci) a těch je početně víc, takže se za písmo záhlaví vzalo to
+    /// nejmenší a nadpis se vytiskl drobně. Váha podle počtu znaků odpovídá tomu, co je na papíře
+    /// vidět; při shodě vyhrává větší písmo (nadpis, ne pomocný popisek).
+    /// </summary>
+    internal static float PrevazujiciVelikostPisma(List<ExtractedWord> words)
+    {
+        if (words.Count == 0) return 0;
+        return words
+            .GroupBy(w => MathF.Round(w.FontSizePt, 1))
+            .OrderByDescending(g => g.Sum(w => w.Text.Length))
+            .ThenByDescending(g => g.Key)
+            .First().Key;
     }
 
     /// <summary>Medián z kolekce floatů.</summary>

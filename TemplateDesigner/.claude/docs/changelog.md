@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-18 (15) - 📥 import: obecné zásady měření a mapování místo záplat
+
+Porovnání protokolu se skutečnými rozměry v předloze ukázalo dvě systematické odchylky. Obojí je
+opravené jako **pravidlo, ne jako hodnota naladěná na jednu vývěsku** (požadavek Jan 18. 8.):
+
+- **Výška řádku se měří mezi řádky, ne mezi slovy.** Slova jednoho řádku nemají v PDF stejnou
+  svislou pozici (jiná velikost písma, dolní dotažnice) a každá odchylka platila za další řádek -
+  vycházelo 2,8 mm tam, kde jsou řádky po 4,05 mm, takže by se tiskly natěsno. Slova se teď
+  shluknou do řádků a hranice shluku se odvozuje z výšky písma, aby pravidlo sedělo na drobnou
+  i velkou sestavu.
+- **Písmem oblasti je to, kterým je vysázená většina znaků.** V pásu záhlaví bývá vedle nadpisu
+  skupiny několik drobných popisků nad sloupci; těch je početně víc, takže prostřední hodnota
+  vybrala nejmenší písmo (6,2 pt místo 11,3 pt) a nadpis se tiskl drobně. Váha podle počtu znaků
+  odpovídá tomu, co je na papíře vidět; při shodě vyhrává větší písmo.
+
+Do zadání pro model přibyly **obecné zásady mapování** (platí pro každou agendu i předlohu):
+každé datové pole nejvýš jednou · radši žádné pole než špatné (prostý text uživatel přepíše, špatné
+pole vytiskne cizí údaj a nikdo si toho nevšimne) · hlásit jen to, co je opravdu vidět · obsah uvnitř
+jízdněřádových oblastí nehlásit jako samostatné texty · rozlišovat podle role, ne podle pořadí na
+stránce. Vzniklo to z chyb, které se opakovaly napříč běhy - totéž pole přiřazené dvěma textům
+a domýšlení obsahu podle toho, jak sestavy obvykle vypadají.
+
+Ověřeno: build 0 chyb, .NET 1082/1082 (+4 na obě měřicí pravidla).
+
 ## 2026-08-18 (14) - 📥 import: tři vady, které ukázal protokol
 
 První použití protokolu z předchozího zápisu (test Jan 18. 8.) rovnou vytáhlo tři konkrétní příčiny:

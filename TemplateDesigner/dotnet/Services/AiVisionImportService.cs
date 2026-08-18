@@ -234,8 +234,27 @@ Co nevidíš nebo si nejsi jistý, VYNECH - výchozí hodnota je lepší než h�
         sb.AppendLine($"{ctx.AdditionalRules.Count + 2}. Texty mimo hlavní oblast: role (title/header/validity/company/route/direction/footnote/unknown), mapování na DB pole z DataSchema. Pokud si nejsi jistý → dbField: null.");
         sb.AppendLine($"{ctx.AdditionalRules.Count + 3}. Obrázky: pro každé logo, QR kód nebo grafický prvek MIMO hlavní oblast vrať imageMappings s pozicí a rolí (\"logo\", \"qrCode\", \"decoration\"). Pokud odpovídá DB poli → nastav dbField. Roli \"qrCode\" hlas JEN pokud QR kód skutečně vidíš na obrázku nebo je v seznamu detekovaných grafických oblastí - NIKDY ho nevymýšlej. Každý fyzický objekt hlas právě jednou.");
         sb.AppendLine($"{ctx.AdditionalRules.Count + 4}. Použij POUZE pole z dodaného DataSchema. Nevymýšlej vlastní.");
+        sb.AppendLine(MappingPrinciples);
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Obecné zásady mapování - platí pro každou agendu i předlohu. Řeší chyby, které se opakují
+    /// napříč vývěskami: totéž pole přiřazené dvěma různým textům, dohadování se u textu, který
+    /// poli neodpovídá, a hlášení obsahu, který si prvek kreslí sám.
+    /// </summary>
+    private const string MappingPrinciples = @"
+ZÁSADY (platí vždy, bez ohledu na konkrétní předlohu):
+- KAŽDÉ datové pole použij NEJVÝŠ JEDNOU. Když se ke stejnému poli hlásí dva texty, vyber ten,
+  který mu odpovídá nejlépe, a druhý nech BEZ pole (dbField: null) jako prostý text.
+- Radši žádné pole než špatné. Nejsi-li si jistý, nech dbField: null - prostý text uživatel
+  přepíše za pár vteřin, špatně namapované pole vytiskne cizí údaj a nikdo si toho nevšimne.
+- Hlas jen to, co na obrázku SKUTEČNĚ vidíš. Nikdy nedomýšlej obrázky, QR kódy, sloupce ani
+  skupiny dnů podle toho, jak sestavy obvykle vypadají.
+- Obsah uvnitř jízdněřádových oblastí (názvy zastávek, časy, minuty, poznámky u zastávek)
+  NEHLAS jako samostatné texty - kreslí si ho prvek sám z dat.
+- Rozlišuj podle role, ne podle pořadí na stránce: nadpis sestavy, název linky, trasa a údaje
+  o dopravci jsou různé věci, i když jsou pod sebou a vypadají podobně.";
 
     private static string BuildPropertiesSection(AgendaPromptContext ctx)
     {
