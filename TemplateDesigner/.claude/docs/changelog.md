@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-18 - 👁 podmíněný řádek pevné tabulky jde konečně nastavit
+
+Řádek pevné tabulky umí mít **podmínku viditelnosti** („vytiskni ho, jen když platí") - tisk ji
+respektoval odjakživa, ale od zrušení pětizáložkového dialogu 12. 8. **nebylo odkud ji zadat**.
+Stejná díra jako u formátování buňky, jen o řádek výš.
+
+**Typický případ, kvůli kterému to má smysl:** buňky pevné tabulky nesou placeholdery, takže řádek
+„Variabilní symbol: `{VS}`" nemá co dělat na dokladu, který variabilní symbol nemá - jinak zbyde
+popisek s prázdnem za dvojtečkou. Prázdná hodnota je sama o sobě nepravda, takže jako podmínka
+stačí napsat `{VS}`.
+
+**Vlastnosti řádku** otevře místní nabídka řádku - kromě podmínky je v nich **barva pozadí řádku**,
+která taky žila jen v modelu. Zbytek (výška tažením, styl textu v buňce) zůstává tam, kde byl.
+
+⚠️ **Nic z toho není nová cesta.** Výraz se vyhodnocuje **toutéž funkcí** jako podmínka prvku,
+sekce nebo řádků tabulky z dat; pole vzniká ze **sdíleného balíčku** base polí, takže má stejný
+popisek i nápovědu jako u prvků (liší se jen slovo „řádek" místo „element"); formulář hostují titíž
+dva hostitelé jako u buňky. Na plátně dostane podmíněný řádek **týž odznak**, jaký má podmíněný
+prvek - jinak by v návrháři vypadal jako každý jiný a v tisku beze stopy zmizel.
+
+⚠️ **Nález, který to odhalilo dřív, než se na to dalo kliknout:** podmínka se vyhodnocovala i **bez
+dat**, takže řádek zmizel z plátna hned, jak mu uživatel podmínku dal - a nešel vybrat ani té
+podmínky zbavit. Nově se bez dat nefiltruje: schová se až v náhledu a při tisku, kde je proti čemu
+podmínku vyhodnotit.
+
+**Brány:** build čistý, **2212 .NET testů** zelených (TD 1014, z toho 6 nových), Caché 110.
+Formulář ověřen voláním nasazené třídy. Mutace „filtruj i bez dat" shodí dva testy.
+
 ## 2026-08-17 (9) - 🔗 pevná tabulka: sloučení buněk vodorovně (`B76` hotový)
 
 Poslední kus bloku. Označené buňky v řádku se z místní nabídky **sloučí do jedné** - typicky

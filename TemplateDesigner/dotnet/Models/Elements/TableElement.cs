@@ -237,9 +237,15 @@ public class TableElement : TemplateElement
 
     /// <summary>Řádky po filtru podmíněné viditelnosti - **jediné místo**, kudy jdou render i výpočet
     /// výšky, takže se nemůžou rozejít v počtu.</summary>
+    /// <summary>
+    /// Řádky, které se mají kreslit. **Bez dat se nefiltruje** - v návrháři žádná data nejsou,
+    /// takže by podmíněný řádek zmizel i z plátna a uživatel by ho nemohl vybrat ani zbavit
+    /// podmínky, kterou mu právě dal (nález 18. 8. při zavádění podmíněných řádků). Schovává se
+    /// tedy až tam, kde je proti čemu podmínku vyhodnotit: v náhledu a při tisku.
+    /// </summary>
     private List<TableRow> VisibleFixedRows(DataContext? data) =>
         Mode == TableMode.Fixed && Rows is { Count: > 0 }
-            ? [.. Rows.Where(r => ExpressionEvaluator.IsVisible(r.VisibilityExpression, data))]
+            ? [.. Rows.Where(r => data is null || ExpressionEvaluator.IsVisible(r.VisibilityExpression, data))]
             : [];
 
     /// <summary>
@@ -564,6 +570,32 @@ public class TableElement : TemplateElement
         for (int i = 0; i < row; i++) y += layout.RowHeights[i];
 
         return new SKRect(x, y, x + width, y + layout.RowHeights[row]);
+    }
+
+    /// <summary>Viditelné řádky mřížky - **objekty z modelu**, takže se do nich dá rovnou psát
+    /// (vlastnosti řádku). Řádek skrytý podmínkou mezi nimi není, stejně jako ho nevidí kreslení.</summary>
+    public IReadOnlyList<TableRow> VisibleRows(DataContext? data) => VisibleFixedRows(data);
+
+    /// <summary>Obdélník celého řádku v mm relativně k prvku - pro odznak podmíněného řádku
+    /// na plátně. Null = řádek mimo mřížku.</summary>
+    public SKRect? RowRectMm(DataContext? data, int row)
+    {
+        var layout = ComputeLayout(data);
+        if (row < 0 || row >= layout.Rows.Count) return null;
+
+        float y = ShowHeader ? layout.HeaderHeightMm : 0f;
+        for (int i = 0; i < row; i++) y += layout.RowHeights[i];
+        return new SKRect(0f, y, Width, y + layout.RowHeights[row]);
+    }
+
+    /// <summary>Řádky s podmínkou viditelnosti (index viditelného řádku + výraz) - plátno u nich
+    /// kreslí týž odznak jako u podmíněného prvku, aby bylo poznat, že se nemusí vytisknout.</summary>
+    public IEnumerable<(int Row, string Expression)> ConditionalRows(DataContext? data)
+    {
+        var rows = VisibleFixedRows(data);
+        for (int i = 0; i < rows.Count; i++)
+            if (rows[i].VisibilityExpression is { Length: > 0 } expression)
+                yield return (i, expression);
     }
 
     /// <summary>Buňka pod bodem (mm relativně k prvku), nebo null mimo mřížku a v záhlaví.</summary>

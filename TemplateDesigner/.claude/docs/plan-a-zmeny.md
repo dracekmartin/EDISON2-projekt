@@ -46,6 +46,10 @@ v Excelu - Tab a Enter posouvají, šipky chodí po buňkách, Esc vede ven. Ř�
 z místní nabídky, šířky a výšky se táhnou myší za vnitřní hranici. Vložit jde i blok zkopírovaný
 z Excelu a po napsání `{` se nabídnou datová pole.
 
+**Řádek se dá podmínit** - v jeho vlastnostech nastavíte, kdy se má vytisknout. Hodí se u řádků
+s údajem, který někdy chybí: řádek „Variabilní symbol" se pak na dokladu bez variabilního symbolu
+netiskne a nezůstane po něm prázdno. V návrháři řádek vidíte dál, zmizí až v náhledu a v tisku.
+
 **Buňky jde sloučit** - označené buňky v řádku spojíte místní nabídkou do jedné, například na
 nadpis přes celou šířku tabulky; texty se přitom nezahazují, ale spojí. Rozdělit je jde stejnou
 cestou zpátky.

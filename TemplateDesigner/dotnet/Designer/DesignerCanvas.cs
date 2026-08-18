@@ -543,6 +543,16 @@ public class DesignerCanvas
                     DrawConditionBadge(canvas, rect, invalid);
                 }
                 if (hasGroup) DrawGroupBadge(canvas, rect, el.GroupId!);
+
+                // Podmíněný řádek pevné tabulky dostane týž odznak jako podmíněný prvek - jinak
+                // by v návrháři vypadal jako každý jiný a při tisku beze stopy zmizel.
+                if (el is TableElement { Mode: TableMode.Fixed } table)
+                    foreach (var (rowIndex, expression) in table.ConditionalRows(null))
+                        if (table.RowRectMm(null, rowIndex) is { } rowMm)
+                            DrawConditionBadge(canvas, new SKRect(
+                                    ex + rowMm.Left  * MmToPx, ey + rowMm.Top    * MmToPx,
+                                    ex + rowMm.Right * MmToPx, ey + rowMm.Bottom * MmToPx),
+                                Models.Expressions.ExpressionEvaluator.Validate(expression) is not null);
             }
             canvas.Restore();
 

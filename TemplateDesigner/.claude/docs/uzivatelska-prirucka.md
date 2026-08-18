@@ -244,6 +244,12 @@ Totéž otevřete v samostatném okně přes **Alt+Enter** nebo místní nabídk
 Nejčastější úpravy jsou i ve **formátovací liště** nad plátnem a na **Ctrl+B / Ctrl+I / Ctrl+U**
 (tučné, kurzíva, podtržení - fungují i během psaní).
 
+**Vlastnosti řádku** (místní nabídka): **podmínka viditelnosti** a **barva pozadí řádku**.
+Podmínka znamená „vytiskni tenhle řádek, jen když platí" - typicky u řádku s datovým polem, které
+někdy chybí: `{VS}` jako podmínka schová řádek „Variabilní symbol: {VS}" na dokladu, který variabilní
+symbol nemá. V návrháři takový řádek vidíte pořád (jinak byste ho nemohli upravit) a pozná se podle
+odznaku v rohu; zmizí až v náhledu a v tisku.
+
 **Sloučení buněk:** označte buňky v řádku a v místní nabídce zvolte **Sloučit buňky** - vznikne
 jedna buňka přes celou šířku výběru, typicky nadpis. Případné texty ze slučovaných buněk se spojí
 mezerou, aby se nic neztratilo. **Rozdělit buňky** to vrátí zpět a obsah nechá v první buňce.

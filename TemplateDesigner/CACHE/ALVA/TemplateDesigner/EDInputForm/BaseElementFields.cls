@@ -78,12 +78,14 @@ ClassMethod AddPosition(form As ALVA.EDControls.EDInputForm.Form, defWidth As %S
 /// Podmínka viditelnosti elementu. Řádkové podmínky (viditelnost řádku, pravidla zvýraznění)
 /// přidává element sám za tímto blokem - jejich nápověda vyjmenovává pole konkrétního řádku,
 /// takže sdílet nejde.
-ClassMethod AddConditions(form As ALVA.EDControls.EDInputForm.Form)
+/// <var>subjekt</var> = čeho se podmínka týká (element, řádek) - mění jen nápovědu, aby řádek
+/// tabulky nemluvil o elementu. Pole i popisek zůstávají tytéž, ať se výraz zadává všude stejně.
+ClassMethod AddConditions(form As ALVA.EDControls.EDInputForm.Form, subjekt As %String = "element")
 {
     d form.AddGroup("advanced", "Podmínky")
     s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
     s f.placeholders = 1
-    s f.helpText = "Např. {POCET} > 0 - element se zobrazí jen když podmínka platí"
+    s f.helpText = "Např. {POCET} > 0 - " _ subjekt _ " se zobrazí jen když podmínka platí"
 }
 
 }
