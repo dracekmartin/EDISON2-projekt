@@ -1100,9 +1100,9 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni)
     d vals.%Set("POPIS_LINKY",            NazevLinky)
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(.sys, dataDB, IdFa, LinkaID))
-    d vals.%Set("POPIS_PLATNOSTI",        $zd(platnostOd,4)_" - "_$zd(platnostDo,4))
-    d vals.%Set("DATUM_PLATNOSTI_OD",     $zd(platnostOd,4))
-    d vals.%Set("DATUM_PLATNOSTI_DO",     $zd(platnostDo,4))
+    d vals.%Set("POPIS_PLATNOSTI",        ..FormatDatum(platnostOd)_" - "_..FormatDatum(platnostDo))
+    d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum(platnostOd))
+    d vals.%Set("DATUM_PLATNOSTI_DO",     ..FormatDatum(platnostDo))
     d vals.%Set("SMER",                   smerPopis)   // T/Z (A1); POPIS_SMER = konečná se nastaví po sestavení trasy
     d vals.%Set("TYP_JR",                 TypJR)
     d vals.%Set("QR_KOD",                 QRKod)
