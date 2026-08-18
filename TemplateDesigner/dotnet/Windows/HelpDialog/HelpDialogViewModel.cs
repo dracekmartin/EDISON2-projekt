@@ -235,6 +235,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
                 new("Kód - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
                 new("Dynamická tabulka - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
+                new("Pevná tabulka - mřížku vyplňujete sami (rozměr zadáte při vložení)", "paleta"),
                 new("Zastávky JŘ - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
                 new("Mřížka odjezdů JŘ - minuty po skupinách dnů", "paleta (JŘ agenda)"),
                 new("Legenda poznámek JŘ - značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
@@ -242,6 +243,28 @@ public class HelpDialogViewModel : EDViewModel
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
                   "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr), min/max počet řádků " +
                   "a souhrnné řádky (SUM, COUNT, AVG…). Vše v dialogu tabulky (dvojklik).",
+        },
+
+        new HelpSection
+        {
+            Title = "▦ Pevná tabulka - vyplňování",
+            Entries =
+            [
+                new("Dovnitř do buňky (rovnou do té, na kterou kliknete)", "Alt+klik"),
+                new("Dovnitř do naposledy kliknuté buňky / upravit obsah", "F2"),
+                new("Posun po buňkách / potvrdit a dál", "šipky / Tab / Enter"),
+                new("Psaní přepíše obsah buňky, Esc vede ven", "psaní / Esc"),
+                new("Nabídka datových polí uvnitř buňky", "napsat {"),
+                new("Výběr více buněk (obdélník)", "táhnout / Shift+klik / Shift+šipky / Ctrl+A"),
+                new("Tučné / kurzíva / podtržení buňky (i během psaní)", "Ctrl+B / Ctrl+I / Ctrl+U"),
+                new("Vlastnosti buňky - písmo, barvy, formát hodnoty", "Alt+Enter"),
+                new("Vymazat obsah buněk (ne prvek)", "Delete"),
+                new("Řádky a sloupce, sloučení buněk, vlastnosti řádku", "pravý klik"),
+                new("Šířka sloupce / výška řádku", "táhnout vnitřní hranici"),
+            ],
+            Tip = "Obsah z Excelu jde vložit rovnou (Ctrl+V) - tabulka se dorovná. Vlastnosti řádku "
+                  + "nabízejí podmínku viditelnosti: řádek se vytiskne, jen když podmínka platí "
+                  + "(např. {VS} schová řádek u dokladu bez variabilního symbolu).",
         },
 
         new HelpSection
@@ -262,12 +285,19 @@ public class HelpDialogViewModel : EDViewModel
                     "prvek Zastávky JŘ → Rozdělit na více oddílů"),
                 new("Zvýraznění aktuální zastávky, projeté zastávky, šipka směru", "prvek Zastávky JŘ"),
                 new("Skupiny dnů, šířka minuty, oddělovač skupin, značky u minut", "prvek Mřížka odjezdů"),
+                new("Které sloupce vývěsky vzniknou (vzory i vlastní definice)",
+                    "prvek Mřížka odjezdů → Definice sloupců"),
+                new("Písmeno varianty u minuty říká, který sloupec časů pro spoj platí; zda má "
+                    + "písmeno i první varianta", "tab Parametry → První varianta bez písmene"),
                 new("Kolik vývěsek se vytiskne (zastávka × směr) a co je na které", "lišta stránkování nad náhledem"),
             ],
             Tip = "Značky u odjezdů a souhrn bezbariérovosti se zapínají v prvku Legenda poznámek, " +
                   "NE v parametrech sestavy - dřív to byly parametry tisku. Značka u odjezdu a její vysvětlivka " +
                   "jsou jedna volba, takže nemůže vzniknout značka, kterou legenda nevysvětlí. " +
-                  "Když šablona prvek Legenda poznámek nemá, značky se nevytisknou vůbec.",
+                  "Když šablona prvek Legenda poznámek nemá, značky se nevytisknou vůbec. " +
+                  "Rozvržení sloupců drží šablona: parametr sestavy „Rozdělení sloupců (typy provozu)“ je jen pohled " +
+                  "na definici v prvku odjezdů, takže se ta dvě nastavení nemůžou přebíjet. " +
+                  "V seznamu zastávek jsou jen zastávky, kam z té vývěsky opravdu nějaký spoj jede.",
         },
 
         new HelpSection

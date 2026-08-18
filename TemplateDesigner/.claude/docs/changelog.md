@@ -1,5 +1,108 @@
 # Changelog
 
+## 2026-08-18 (5) - 🔤 upozornění, když šablona chce font, který v počítači není (`B97`)
+
+Když šablona používá písmo, které na daném počítači **není nainstalované**, program ho dosud tiše
+nahradil Arialem a nikde to neřekl. Protože se šablony sdílejí přes databázi, mohla **táž šablona
+u dvou lidí vytisknout jiné písmo** a nikdo to nepoznal - výstup vypadá v pořádku, jen není takový,
+jaký ho autor navrhl.
+
+Nově se to hlásí na dvou místech:
+
+- **ve stavovém řádku návrháře** hned po otevření šablony - oranžové upozornění, které **jmenuje
+  konkrétní fonty** a říká, co se místo nich vykreslí
+- **v hlášce po uložení PDF** - tisknout může někdo, kdo šablonu jen otevřel z databáze a v návrháři
+  ji neprohlížel
+
+Hláška vypadá takto: *Font „Roboto Condensed" není na tomto počítači nainstalovaný - tiskne se místo
+něj Arial.* Náprava je buď font doinstalovat, nebo v šabloně vybrat jiný; nabídka fontů vždy jmenuje
+jen ty, které k dispozici jsou.
+
+**Najde se i font schovaný hluboko** - ve stylu jednoho sloupce, jedné buňky nebo ve výchozím stylu
+dokumentu, nejen v nastavení prvku.
+
+## 2026-08-18 (4) - 🗓️ datum platnosti u MHD s tečkami, ne s lomítky (`B96`)
+
+Zastávková vývěska MHD tiskla datum platnosti jako **`01/11/2018`**, zatímco linková doprava
+vedle ní `11.12.2022`. Česky se datum píše s tečkami, takže to byla chyba - jen si jí nikdo
+nevšiml, protože každá agenda se dívala jinam. Nově mají obojí tečky.
+
+**Kde se to projeví:** pole „Datum platnosti od / do" a „Popis platnosti" na vyvěskách MHD.
+Zákaznickým šablonám se nic nerozbije - mění se jen tvar hodnoty, ne název pole.
+
+**Poznámka k jazykům:** tvar je zatím napevno český. Správně by šel z nastavení jazyka, ale
+všichni zákazníci tisknou česky, takže by to dnes byla vrstva, kterou nikdo nepoužije;
+formátování je na jednom místě, až bude potřeba, vymění se tam.
+
+## 2026-08-18 (3) - ❓ nápověda F1 dohnala změny od 12. 8.
+
+Nápověda **nevěděla o pevné tabulce vůbec** (ve výčtu prvků byla jen tabulka z dat), takže kdo si ji
+vložil, neměl kde zjistit, že se do buňky chodí Alt+klikem. Nová sekce **„Pevná tabulka -
+vyplňování"**: vstup do buňky, pohyb, výběr více buněk, Ctrl+B/I/U, vlastnosti buňky i řádku,
+sloučení, šířky tažením, vkládání z Excelu a podmínka viditelnosti řádku.
+
+Doplněné i tři letošní změny vývěsky, o kterých nápověda mlčela: **kde se definují sloupce**
+(prvek odjezdů → Definice sloupců), že **písmeno varianty u minuty** říká, který sloupec časů pro
+spoj platí (volba „První varianta bez písmene" v parametrech), že **rozvržení sloupců drží šablona**
+a parametr je jen její pohled, a že v **seznamu zastávek jsou jen zastávky, kam z té vývěsky
+opravdu něco jede**.
+
+⚠️ **Tvrzení nápovědy jsou testovaná**, ne jen napsaná: pole vlastností buňky, řádku a rozměru
+tabulky i oba parametry vývěsky musí ve schématech reálně existovat. Přejmenování by test shodilo -
+přesně proto, aby nápověda neposílala uživatele na místo, kde nic není. Test u toho hned chytil
+překlep: parametr se jmenuje „Rozdělení sloupců (typy provozu)", ne „Rozdělení sloupců".
+
+**Brány:** build čistý, **2231 .NET testů** zelených (TD 1033, z toho 3 nové).
+
+## 2026-08-18 (2) - 📐 rozměr pevné tabulky se zadává při vkládání
+
+Tabulka se vkládala **natvrdo jako 3 × 3**, takže kdo chtěl 12 × 10, musel se proklikat devatenácti
+vloženími sloupce a řádku (nález Jan 18. 8.). Vložení se nově ptá **rychlým formulářem** na počet
+sloupců a řádků, předvyplněným 3 × 3 - kdo rozměr neřeší, jen potvrdí a dostane, co dostával dřív.
+Platí pro obě cesty vložení (nabídka „Přidat" i tažení z palety); zrušení formuláře nevloží nic.
+
+**Výška roste s počtem řádků** - u desetiřádkové tabulky by výchozích 18 mm znamenalo, že se obsah
+hned po vložení zmenší, aby se vešel.
+
+⚠️ **Bez rychlého okna, ne mřížkovým výběrem jako Word.** Formulář jde přes tutéž generickou cestu
+jako ostatní (schéma na serveru + reflexe), takže nevznikla nová kontrolka ani nové okno; mřížkový
+výběr by byl hezčí, ale je to nová vlastní komponenta kvůli dvěma číslům.
+
+Řádky a sloupce jde pořád přidávat i později přes pravé tlačítko a **vložení bloku z Excelu tabulku
+dorovná samo** - kdo má obsah v sešitu, dostane rovnou správný tvar i s daty.
+
+**Brány:** build čistý, **2221 .NET testů** zelených (TD 1023, z toho 6 nových), Caché 110.
+Formulář ověřen voláním nasazené třídy. Driftový test si vynutil popisek „Počet sloupců" - týž klíč
+má stejný popisek i u legendy poznámek.
+
+## 2026-08-18 - 👁 podmíněný řádek pevné tabulky jde konečně nastavit
+
+Řádek pevné tabulky umí mít **podmínku viditelnosti** („vytiskni ho, jen když platí") - tisk ji
+respektoval odjakživa, ale od zrušení pětizáložkového dialogu 12. 8. **nebylo odkud ji zadat**.
+Stejná díra jako u formátování buňky, jen o řádek výš.
+
+**Typický případ, kvůli kterému to má smysl:** buňky pevné tabulky nesou placeholdery, takže řádek
+„Variabilní symbol: `{VS}`" nemá co dělat na dokladu, který variabilní symbol nemá - jinak zbyde
+popisek s prázdnem za dvojtečkou. Prázdná hodnota je sama o sobě nepravda, takže jako podmínka
+stačí napsat `{VS}`.
+
+**Vlastnosti řádku** otevře místní nabídka řádku - kromě podmínky je v nich **barva pozadí řádku**,
+která taky žila jen v modelu. Zbytek (výška tažením, styl textu v buňce) zůstává tam, kde byl.
+
+⚠️ **Nic z toho není nová cesta.** Výraz se vyhodnocuje **toutéž funkcí** jako podmínka prvku,
+sekce nebo řádků tabulky z dat; pole vzniká ze **sdíleného balíčku** base polí, takže má stejný
+popisek i nápovědu jako u prvků (liší se jen slovo „řádek" místo „element"); formulář hostují titíž
+dva hostitelé jako u buňky. Na plátně dostane podmíněný řádek **týž odznak**, jaký má podmíněný
+prvek - jinak by v návrháři vypadal jako každý jiný a v tisku beze stopy zmizel.
+
+⚠️ **Nález, který to odhalilo dřív, než se na to dalo kliknout:** podmínka se vyhodnocovala i **bez
+dat**, takže řádek zmizel z plátna hned, jak mu uživatel podmínku dal - a nešel vybrat ani té
+podmínky zbavit. Nově se bez dat nefiltruje: schová se až v náhledu a při tisku, kde je proti čemu
+podmínku vyhodnotit.
+
+**Brány:** build čistý, **2212 .NET testů** zelených (TD 1014, z toho 6 nových), Caché 110.
+Formulář ověřen voláním nasazené třídy. Mutace „filtruj i bez dat" shodí dva testy.
+
 ## 2026-08-17 (9) - 🔗 pevná tabulka: sloučení buněk vodorovně (`B76` hotový)
 
 Poslední kus bloku. Označené buňky v řádku se z místní nabídky **sloučí do jedné** - typicky

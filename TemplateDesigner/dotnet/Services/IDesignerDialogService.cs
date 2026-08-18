@@ -21,6 +21,12 @@ public interface IDesignerDialogService
 
     bool ShowSaveToCache(SaveToCacheDialogViewModel vm);
 
+    /// <summary>
+    /// Rychlý formulář nad libovolným objektem podle EDInputForm schématu (rozměr nové tabulky).
+    /// Po potvrzení jsou hodnoty zapsané do <paramref name="target"/>. Vrátí false = zrušeno.
+    /// </summary>
+    bool ShowQuickForm(object target, string cacheClass, string title);
+
     /// <summary>Otevírací souborový dialog. Vrátí vybranou cestu, nebo null při zrušení.</summary>
     string? PickOpenFile(string title, string filter);
 

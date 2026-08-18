@@ -21,17 +21,17 @@ Parameter GOLDIDFA = "CB_DP";
 
 Method TestGold1001()
 {
-	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=uxw0Fs/vn06q84ogLKEeBw==")
+	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=73PplNBN/vjhANqbR2nQig==")
 }
 
 Method TestGold1003()
 {
-	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=Ah8+48fKMFSgvGJhYX9S9Q==")
+	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=pFmFvT2GZjyzIy36Ah26cA==")
 }
 
 Method TestGold1006()
 {
-	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=71Cz6TDML8KgRFmcnLVB0g==")
+	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=LM715KPkromb/H4vAMqdhw==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

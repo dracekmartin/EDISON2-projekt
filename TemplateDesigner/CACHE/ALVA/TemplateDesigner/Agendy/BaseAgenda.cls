@@ -237,6 +237,23 @@ ClassMethod AddMockValue(vals As %DynamicObject, name As %String, val As %String
     d vals.%Set(name, val)
 }
 
+/// Datum z horologu na český tvar "dd.mm.yyyy" pro pole, která uživatel vidí v šabloně.
+/// Prázdný vstup → prázdný výstup.
+///
+/// Tvar je zatím **napevno český** (rozhodnutí Jan 2026-08-18). Správně by šel z lokalizace,
+/// ale všichni zákazníci tisknou česky, takže by to dnes byla vrstva bez konzumenta; až
+/// vznikne první jinojazyčná sestava, nahradí se tělo téhle metody a volající se nemění.
+///
+/// ⚠️ **Nepoužívat `$zd(h, 4)`** - dává "dd/mm/yyyy" s lomítky. Do 18. 8. tak MHD vývěska
+/// tiskla datum platnosti, zatímco AD vedle ní tečky; skládá se to z ISO tvaru záměrně,
+/// aby výstup nezáležel na tom, jaký oddělovač který $ZDATE formát zvolí.
+ClassMethod FormatDatum(horolog As %String) As %String
+{
+    i $g(horolog) = "" q ""
+    s iso = $zd(horolog, 3)          // yyyy-mm-dd
+    q $p(iso,"-",3)_"."_$p(iso,"-",2)_"."_$p(iso,"-",1)
+}
+
 /// Zapíše šablonu se dvěma sloupci (Položka | Hodnota) do OUT.
 /// rows = COS array ve formátu:
 ///   [["Label 1", "{FIELD1}", "format"], ["Label 2", "{FIELD2}", "format"], ...]

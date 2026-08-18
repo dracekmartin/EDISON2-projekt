@@ -624,6 +624,39 @@ public partial class MainWindow
             ? null
             : new(_cellTable, () => _vm!.State.CurrentPreviewData, TargetCells);
 
+    /// <summary>
+    /// Vlastnosti řádku - pozadí a **podmínka viditelnosti**. Tisk podmínku respektoval odjakživa,
+    /// ale od zrušení pětizáložkového dialogu nebylo odkud ji zadat; výraz se vyhodnocuje toutéž
+    /// funkcí jako u prvků, takže tu nevzniká druhá gramatika.
+    /// <para>Změna jde do historie jako **snímek struktury** - řádky se při každé úpravě mřížky
+    /// klonují, takže příkaz držící instanci řádku by po zpětném kroku psal do odpojeného objektu.</para>
+    /// </summary>
+    private void OpenRowProperties()
+    {
+        if (_vm is null || _cellTable is null) return;
+        if (_cellEditing) EndCellEdit(commit: true);
+
+        var table = _cellTable;
+        var rows  = table.VisibleRows(_vm.State.CurrentPreviewData);
+        if (_cellRow < 0 || _cellRow >= rows.Count) return;
+
+        var dlg = new ElementEditDialog(rows[_cellRow], "ALVA.TemplateDesigner.EDInputForm.TableRowEdit",
+            "Vlastnosti řádku") { Owner = this, PlaceholderFields = _vm.PlaceholderFieldItems() };
+
+        var before = table.CaptureStructure();
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is { } result)
+        {
+            result.Execute();
+            _vm.Execute(new SetPropertyCommand("Vlastnosti řádku", before, table.CaptureStructure(),
+                v => table.RestoreStructure((TableElement.StructureSnapshot)v!)));
+        }
+
+        ReturnKeysToCell();
+        SyncFormatToolbar();
+        InvalidateCanvas();
+        InvalidatePreview();
+    }
+
     /// <summary>Schéma vybrané buňky - **jedno** pro panel i pro okno vlastností, stejně jako
     /// u prvků. Dvě různá by se nutně rozešla.</summary>
     private const string CellCacheClass = "ALVA.TemplateDesigner.EDInputForm.TableCellEdit";
@@ -973,6 +1006,7 @@ public partial class MainWindow
         Add("Vložit řádek nad",  () => EditStructure("Vložení řádku", t => t.InsertRow(_cellRow), rowDelta: 1));
         Add("Vložit řádek pod",  () => EditStructure("Vložení řádku", t => t.InsertRow(_cellRow + 1)));
         Add("Smazat řádek",      () => EditStructure("Smazání řádku", t => t.RemoveRow(_cellRow)));
+        Add("Vlastnosti řádku…", OpenRowProperties);
         menu.Items.Add(new Separator());
 
         int modelCol = table.ModelColumnIndex(_vm.State.CurrentPreviewData, _cellCol);

@@ -220,8 +220,9 @@ a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor
 
 ### Pevná tabulka
 Mřížka, kterou vyplňujete sami - typicky hlavička sestavy nebo blok údajů, se kterým chcete hýbat
-jako s jedním prvkem. Vloží se jako mřížka 3 × 3 bez řádku záhlaví; záhlaví si uděláte z prvního
-řádku tím, že ho ztučníte.
+jako s jedním prvkem. Při vložení se návrhář zeptá na **počet sloupců a řádků** (předvyplněno 3 × 3,
+přepište třeba na 12 × 10); přidávat je jde i později přes pravé tlačítko. Tabulka se vkládá bez
+řádku záhlaví - záhlaví si uděláte z prvního řádku tím, že ho ztučníte.
 
 **Vyplňování:** dovnitř se dostanete **Alt+klikem** na buňku, klávesou **F2** nebo položkou
 „Vyplnit tabulku" v místní nabídce. Uvnitř se píše jako v Excelu - psaní přepíše obsah, F2 upraví
@@ -243,6 +244,12 @@ okraje, řádkování a **formát hodnoty** (např. `dd.MM.yyyy` nebo `N2` u bu�
 Totéž otevřete v samostatném okně přes **Alt+Enter** nebo místní nabídkou „Vlastnosti buňky".
 Nejčastější úpravy jsou i ve **formátovací liště** nad plátnem a na **Ctrl+B / Ctrl+I / Ctrl+U**
 (tučné, kurzíva, podtržení - fungují i během psaní).
+
+**Vlastnosti řádku** (místní nabídka): **podmínka viditelnosti** a **barva pozadí řádku**.
+Podmínka znamená „vytiskni tenhle řádek, jen když platí" - typicky u řádku s datovým polem, které
+někdy chybí: `{VS}` jako podmínka schová řádek „Variabilní symbol: {VS}" na dokladu, který variabilní
+symbol nemá. V návrháři takový řádek vidíte pořád (jinak byste ho nemohli upravit) a pozná se podle
+odznaku v rohu; zmizí až v náhledu a v tisku.
 
 **Sloučení buněk:** označte buňky v řádku a v místní nabídce zvolte **Sloučit buňky** - vznikne
 jedna buňka přes celou šířku výběru, typicky nadpis. Případné texty ze slučovaných buněk se spojí
@@ -591,10 +598,12 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   prázdniny / Pracovní o prázdninách / Sobota+Neděle+svátky (3 sloupce); Pracovní /
   Sobota+Neděle+svátky (2 sloupce); Pracovní mimo prázd. / Pracovní o prázd. / Sobota /
   Neděle+svátky (4 sloupce).
-- **Parametr „Rozdělení sloupců (typy provozu)"** v tiskovém dialogu - ruční přepsání
-  automatické volby: Automaticky (dle linky) / Pracovní-Sobota-Neděle+svátky /
-  Pracovní-víkend / Prázdniny (mimo+o prázdninách)-víkend / Prázdniny (mimo+o prázdninách)
-  -Sobota-Neděle+svátky.
+- **Parametr „Rozdělení sloupců (typy provozu)"** (záložka Parametry / tiskový dialog) - je to
+  **pohled na definici sloupců uložených v šabloně a zároveň její ovladač**: ukazuje název vzoru,
+  kterému vaše definice odpovídá, „Automaticky (dle linky)", když žádnou nemáte, nebo „Vlastní
+  sloupce", když jste si ji poskládali po svém. Přepnutím parametru se definice v šabloně přepíše
+  na zvolený vzor. Vzory: Pracovní-Sobota-Neděle+svátky / Pracovní-víkend / Prázdniny (mimo+o
+  prázdninách)-víkend / Prázdniny (mimo+o prázdninách)-Sobota-Neděle+svátky.
 - **Varianty tras** (sloupec „Varianty tras" na prvku Tabulka zastávek - zapíná se v jeho nastavení
   na záložce Sloupce) - když spoje jedou z dané zastávky různými trasami, dostane každá trasa
   vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek); v jejím sloupci je
@@ -611,12 +620,13 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"):
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
     zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
-  - **Písmena variant u odjezdů** - varianty se označí písmeny A-Z v záhlaví sloupců a totéž
+  - **Písmena variant se tisknou vždy** - varianty se označí písmeny A-Z v záhlaví sloupců a totéž
     písmeno se vytiskne u minut odjezdů; podle písmena tak dohledáte, kterou trasou spoj jede.
-    Zapnutím se **nahradí automatické poznámkování rozdílů tras** (aby na vývěsce nebyly dvě sady
-    písmen). Výchozí vypnuto.
-  - **První varianta bez písmene** (jen když jsou písmena zapnutá) - nejčastější trasa zůstane
-    bez písmene, odchylky se značí od A. Vypnuto = písmenkuje se už od první varianty.
+    Tím se **nahradí automatické poznámkování rozdílů tras** (aby na vývěsce nebyly dvě sady písmen).
+    Do 17. 8. to byl parametr, který šel vypnout - vypnutá vývěska ale u minut neměla nic, takže
+    nešlo poznat, který sloupec pro spoj platí; volba proto zmizela.
+  - **První varianta bez písmene** - nejčastější trasa zůstane bez písmene, odchylky se značí od A.
+    Vypnuto = písmenkuje se už od první varianty.
 - **Samostatná stránka pro každý označník** (parametr „Seznam zastávek") - zastávka obsluhovaná
   z více označníků se vytiskne jako **samostatná vývěska pro každý označník**, vždy jen s odjezdy
   spojů, které z daného sloupku jedou; číslo označníku je i v titulku stránky. Hodí se, když
@@ -630,7 +640,9 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 
 #### Tabulka zastávek
 
-Levý sloupec sestavy - seznam zastávek s časy a atributy.
+Levý sloupec sestavy - seznam zastávek s časy a atributy. Do seznamu se dostane jen zastávka, kde
+staví **aspoň jeden spoj, který staví i na té vývěsce** - zastávka, kam odsud nic nejede, by měla
+u všech časů jen „<" a cestujícímu by neřekla nic.
 
 - **Upravit sloupce…** - otevře editor sloupců (kap. 3)
 - **Všechny varianty tras** - zap. = víc časových sloupců podle skutečných variant tras (jen AD; viz „Varianty tras" níže); vyp. = jeden sloupec základní trasy
@@ -719,6 +731,37 @@ Dvoutabový dialog: **Obecné** (vlastnosti prvku) a **Sloupce**:
 - Varování při přesahu šířky (s přesnými čísly) + tlačítko „Přizpůsobit šířky" pro proporční
   přeškálování.
 - Tlačítka „Resetovat styl" (vybraný sloupec) a „Resetovat všechny styly".
+
+#### Vlastní definice sloupců vývěsky
+
+Které sloupce na vývěsce vzniknou, dosud určovala konfigurace linky. V editoru prvku **Mřížka
+odjezdů** je proto záložka **„Definice sloupců"** s přepínačem **Automaticky (dle linky)** ×
+**Vlastní sloupce** - vlastních jde nadefinovat až pět a **uloží se do šablony**, takže platí
+pro každou linku, kterou tou šablonou vytisknete.
+
+U každého sloupce nastavíte:
+
+- **Nadpis** - i dvouřádkový (Enter uvnitř pole).
+- **Týdenní platnost** - jednotlivé dny **Po až Ne** plus dvě samostatné volby podle vyhlášky
+  122/2014:
+  - **Pracovní dny (X)** - pracovní dny **bez svátků**. Není to zkratka za Po-Pá: spoj „jede
+    v pondělí" jede i o svátečním pondělí, spoj „jede v pracovních dnech" ne. Proto se „Pracovní
+    dny (X)" a vypsané Po-Pá **vzájemně vylučují** a editor tu kombinaci zašedne.
+  - **Neděle a svátky (+)** - značka podle vyhlášky pokrývá obojí, takže sloupec „Neděle a svátky"
+    zaškrtnete jednou volbou. S „Ne" se **nevylučuje**.
+- **Značky** - *jen s těmito* / *bez těchto* negativními značkami. Tím se dá vyřešit i „tenhle spoj
+  na vývěsce o víkendu nechci".
+- **Období** - seznam rozsahů dat („14. 2.-18. 2., 1. 7.-31. 8."). Datum **bez roku platí každý
+  rok** (šablona přežije překlopení jízdního řádu), datum **s rokem** platí jednou (výluka,
+  mimořádný provoz). Do sloupce patří spoj, který v období jede aspoň jeden den.
+- **Nevypisovat značky** - které negativní značky se v tom sloupci u minut netisknou.
+
+Čtyři dosavadní automatická rozvržení jsou připravená **jako vzory na jedno kliknutí**, takže
+obvykle stačí vzor vybrat a doladit; u prázdninových vzorů se čísla značek předvyplní z konfigurace
+aktuální linky. Když sloupce nedefinujete, řídí se vývěska konfigurací linky jako dosud. Pokud
+definici zadáte, seznamy značek u linky se pro vývěsku ignorují (jinak by proti sobě stála dvě
+nastavení). Totéž nastavení je vidět a přepínatelné i parametrem **„Rozdělení sloupců (typy
+provozu)"** - viz výše.
 
 #### Editor skupin dnů (sloupec hodin + skupiny)
 Analogický dvoutabový dialog:

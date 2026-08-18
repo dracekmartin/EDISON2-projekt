@@ -583,6 +583,18 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
 
+    private string? _fontWarning;
+    /// <summary>Fonty, které šablona chce a počítač je nemá. Null = nic → badge je skrytý.
+    /// Stejná třída vady jako <see cref="ColumnDataWarning"/>: výstup vypadá v pořádku a jen je
+    /// jiný, než autor zamýšlel (viz <see cref="FontWarnings"/>).</summary>
+    public string? FontWarning
+    {
+        get => _fontWarning;
+        private set { if (Set(ref _fontWarning, value)) OnPropertyChanged(nameof(HasFontWarning)); }
+    }
+
+    public bool HasFontWarning => !string.IsNullOrEmpty(_fontWarning);
+
     private string _selectionStatusText = "";
     /// <summary>Klidová „stav výběru" zóna status baru (aktuální element / sekce). Píše ji jen
     /// <see cref="UpdateStatusForSelection"/>; mění se volně s výběrem, nepřepíše akční hlášku.</summary>
@@ -718,6 +730,11 @@ public class TemplateDesignerViewModel : EDViewModel
                                      string? startupAgendaCode = null)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
+
+        // Výměna šablony je jediný okamžik, kdy může přibýt font, který tenhle počítač nemá.
+        // Psaní vlastního názvu do pole fontu se sem záměrně nenapojuje: nabídka jmenuje jen
+        // nainstalované a záměna je vidět hned na plátně; před tiskem to dialog kontroluje znovu.
+        State.TemplateSwapped = () => FontWarning = FontWarnings.Summarize(State.CurrentTemplate);
 
         Preferences = preferences;
 
@@ -1953,17 +1970,38 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
+    /// Vytvoří prvek k vložení; u pevné tabulky se **nejdřív zeptá na rozměr** (rychlý formulář,
+    /// předvyplněný 3 × 3). Vrací null, když uživatel vkládání zrušil - dřív se vždycky vložila
+    /// mřížka 3 × 3 a na 12 × 10 se muselo proklikat devatenáct vložení sloupce a řádku.
+    /// Bez dialogové služby (testy) se chová jako dřív, takže se nic nezablokuje.
+    /// </summary>
+    public TemplateElement? CreateElementInteractive(string type, float x, float y)
+    {
+        if (type != ElementTypes.Table || Dialogs is null) return CreateElementByType(type, x, y);
+
+        var size = new TableGridSize();
+        if (!Dialogs.ShowQuickForm(size, "ALVA.TemplateDesigner.EDInputForm.TableInsertEdit", "Vložit tabulku"))
+            return null;
+
+        var (w, h) = GetDefaultElementSize(type);
+        return NewFixedTable(x, y, w, h, size.Columns, size.Rows);
+    }
+
+    /// <summary>
     /// Nová pevná tabulka - mřížka 3 × 3 s **pevnou výškou**. Bez výšky (Height null) by prvek
     /// platil za dynamický a canvas by mu nabídl jen boční úchyty, takže by za něj nešlo táhnout
     /// do výšky - a to uživatel od ručně kreslené tabulky čeká (nahlášeno 12. 8.).
     /// </summary>
-    private static TableElement NewFixedTable(float x, float y, float w, float? h)
+    private static TableElement NewFixedTable(float x, float y, float w, float? h,
+        int columns = 3, int rows = 3)
     {
-        var table = TableElement.CreateGrid(columns: 3, rows: 3);
+        var table = TableElement.CreateGrid(columns, rows);
         table.X = x;
         table.Y = y;
         table.Width = w;
-        table.Height = h;
+        // Výška roste s počtem řádků - u desetiřádkové tabulky by výchozích 18 mm znamenalo,
+        // že se obsah hned po vložení zmenší, aby se vešel.
+        table.Height = h is null ? null : rows * table.RowHeight;
         return table;
     }
 
@@ -3247,7 +3285,9 @@ public class TemplateDesignerViewModel : EDViewModel
         }
         else
         {
-            element = CreateElementByType(elementType!, mmX, mmY);
+            // Pevná tabulka se cestou z palety zeptá na rozměr; zrušení = nevkládat nic.
+            if (CreateElementInteractive(elementType!, mmX, mmY) is not { } created) return;
+            element = created;
             // Výchozí vzor sloupců (rozhodnutí Jan 10. 8.: nové jedou z návrháře, linka je backup)
             // dostane jen PRVNÍ prvek odjezdů v šabloně a jen u agendy, jejíž server definici čte -
             // druhý prvek by definicí tiše přepnul data celé šablony a MHD by v dialogu tvrdila

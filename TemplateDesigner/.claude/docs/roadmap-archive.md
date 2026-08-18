@@ -1,6 +1,7 @@
 # 🗄️ Archiv - hotové kroky
 
-> Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
+> Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
+> Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
 ## 2026-08-17 ✅ - `B76`: pevná tabulka se dá naformátovat a slučovat (4 kroky)
 
@@ -38,6 +39,87 @@ a podmíněnou viditelností) a připravené bloky agend, které pohltí `B66` (
 (dohromady 44 kontrol) - kaskáda, vratnost podle souřadnic, nezapékání zděděných hodnot, geometrie
 výběru a sloučení. Formulář buňky je vědomě mimo driftové testy schémat (jeho výchozí hodnoty se
 nikdy nezobrazí) a nahrazuje je vlastní test pokrytí kaskádou.
+
+## 2026-08-18 ✅ - `B97`: chybějící font už není tichý
+
+Detail → changelog 2026-08-18 (2). V programu jsou zabalené jen symbolové fonty, všechno ostatní
+písmo se bere ze systému a nabídka jmenuje fonty **toho počítače, na kterém se navrhuje**. Při
+tisku se chybějící rodina tiše nahradí (embedded → OS → **Arial** → default), takže šablona sdílená
+přes databázi mohla u dvou lidí vypadat jinak, aniž by to kdokoli poznal.
+
+**Neodvoditelné - proč se hledá průchodem serializovanou šablonou:** font sedí na spoustě míst
+(styl prvku, sloupce, buňky, výchozí styl dokumentu, zóny JŘ prvků). Ruční výčet by při přidání
+další stylové vrstvy tiše zestárnul - přesně jak zestaraly výčty, které řešil `B94`. Průchod JSONem
+chytí každé pole `fontFamily`, které v šabloně je nebo kdy bude, včetně `CustomProperties`.
+
+**Neodvoditelné - kde se to spouští:** jediný hák je setter `DesignerState.CurrentTemplate`
+(nově volá `TemplateSwapped`). Je to jediné místo, kde se dá zachytit „teď je v návrháři něco
+jiného"; volajících je pět a šestý by se zapomněl. `InvalidateAll()` se na to použít nedá - volá
+ho jen jedna cesta (`LoadGeneratedTemplate`), ne otevření z DB ani import.
+
+**Psaní vlastního názvu fontu se záměrně nehlídá průběžně:** nabídka jmenuje jen dostupné rodiny
+a záměnu je vidět hned na plátně; před výstupem to navíc kontroluje tiskový dialog znovu, protože
+tisknout může někdo, kdo šablonu jen otevřel.
+
+## 2026-08-18 ⛔ - tlačítko „Zkontrolovat přetečení" se dělat nebude
+
+**Rozhodnutí Jan 18. 8.** Původní přání (samostatné tlačítko v tiskovém dialogu, které natáhne data
+a spočítá přetečení bez generování PDF) je **fakticky splněné jinou cestou**: tiskový dialog kontrolu
+přes všechny stránky spouští sám a napíše „⚠ PDF uloženo, ale 5 z 54 stránek přetéká". Liší se jen
+pořadí - výsledek dostaneš spolu s PDF, ne před ním. Přetečení navíc značí náhled červeným rámečkem.
+
+## 2026-08-18 ⛔ - `B65`: kalendářový výběr období se dělat nebude
+
+**Rozhodnutí Jan 18. 8.: nice to have, vyhozeno.** Rozsahy období u vlastního sloupce se píšou ručně
+(`14.2.-18.2., 1.7.-31.8.`), ale **tvar hlídá validace** (`JePlatneObdobi`) - špatný výstup z toho
+vzniknout nemůže, jde čistě o pohodlí při psaní, a jen v úzkém případě (dny školního vyučování).
+
+**Kdyby se to někdy otevíralo znovu:** stavební kámen existuje - EDInputForm má typ pole `DATE`,
+který se vykreslí jako skutečný kalendář (`DatePicker`, wire `yyyy-MM-dd`, vlastní validace) a TD ho
+už používá u parametrů sestavy typu datum. Chybí jen krok od **jednoho data** k **seznamu rozsahů**.
+
+## 2026-08-18 ⛔ - `B93`: parita tabulkových prvků se dodělávat NEBUDE
+
+**Rozhodnutí Jan 18. 8.: není to fakticky díra, nedělá se.** Zapsáno sem, aby to příští revize
+nenašla znovu jako nález - tohle už jednou posouzené bylo.
+
+Co se měřilo (stav 18. 8., po dokončení podmínky v pevné tabulce):
+
+- **střídání řádků** nemá **seznam zastávek** ani **linková tabulka**; má ho tabulka z dat, pevná
+  tabulka i mřížka odjezdů. Doplnění je malé a opsatelné (vlastnost + řádek renderu + pole formuláře
+  + deskriptor + `Clone`) a bylo by bezpečné (výchozí „nenastaveno" = beze změny výstupu, odtisky
+  zůstávají zelené) - **ale nikdo si o to neřekl.**
+- **podmínka viditelnosti řádku** v pevné tabulce doplněna souběžně, mimo tento blok.
+- **zvýraznění řádku podle dat** v pevné tabulce **nedává smysl** a není to mezera: zvýraznění
+  vyhodnocuje výraz nad daty konkrétního řádku (`SourceRow`), jenže řádky pevné tabulky napsal
+  uživatel do šablony a žádná řádková data nemají. Viditelnost tam smysl dává, protože se vyhodnotí
+  nad celkovými údaji sestavy. Kdyby to někdo chtěl, je to jiná featura (podmíněné formátování
+  buňky), ne tahle.
+
+⚠️ **Až se k tomu někdo vrátí:** u seznamu zastávek musí střídání ležet **pod** zvýrazněním aktuální
+zastávky a ztišením projetých, jinak aktuální zastávka na sudém řádku o zvýraznění přijde.
+
+## 2026-08-18 ✅ - `B96`: datum platnosti u MHD s tečkami, ne s lomítky
+
+Detail → changelog 2026-08-18. Zastávková vývěska MHD tiskla `01/11/2018`, AD vedle ní
+`11.12.2022`. Sjednoceno na český tvar; formátování je nově v jednom sdíleném helperu
+`BaseAgenda.FormatDatum` (dva konzumenti → extrakce oprávněná).
+
+**Neodvoditelné - past, kvůli které to vzniklo:** `$zd(h, 4)` vypadá jako evropský formát, ale
+dává `dd/mm/yyyy` **s lomítky**. Helper skládá datum z ISO tvaru (`$zd(h, 3)`) po kusech, aby
+výstup nezávisel na tom, jaký oddělovač který `$ZDATE` formát zvolí. Varování je u helperu.
+
+**Lokalizace vědomě ne** (rozhodnutí Jan 2026-08-18): tvar je napevno český, protože všichni
+zákazníci tisknou česky - lokalizační vrstva by dnes byla bez konzumenta. Až vznikne první
+jinojazyčná sestava, nahradí se tělo helperu a volání se nemění.
+
+**Druhá polovina bloku padla s tím:** vzorová data pro náhled už tečky měla, takže náhled
+ukazoval jiný tvar než tisk. Teď sedí obojí.
+
+⚠️ **Přebaselinovány tři zlaté odtisky MHD** (`ZastavkoveJrMhdGoldTest`) - doložené, ne odhadnuté:
+výstup linky 1003 sejmutý před a po změně se liší **160 znaky a všechny do jednoho jsou
+lomítko → tečka**; počty (stránky, zastávky, odjezdy, poznámky) zůstaly ve všech třech odtiscích
+shodné do jednoho. Caché sada 110/110.
 
 ## 2026-08-17 ✅ - `B94`: reference tabulkových prvků srovnaná s kódem
 

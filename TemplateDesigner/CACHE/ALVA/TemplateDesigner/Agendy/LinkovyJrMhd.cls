@@ -255,8 +255,8 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     // (ZastavkoveJrMhd:1104), jinak by táž šablona vytiskla jednou "1.11.2018" a podruhé "2018-11-01".
     s platiOd = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiOd"))
     s platiDo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiDo"))
-    i platiOd '= "" { s platiOd = $zd($zdh(platiOd, 3), 4) }
-    i platiDo '= "" { s platiDo = $zd($zdh(platiDo, 3), 4) }
+    i platiOd '= "" { s platiOd = ..FormatDatum($zdh(platiOd, 3)) }
+    i platiDo '= "" { s platiDo = ..FormatDatum($zdh(platiDo, 3)) }
     d vals.%Set("DATUM_PLATNOSTI_OD",  platiOd)
     d vals.%Set("DATUM_PLATNOSTI_DO",  platiDo)
     s popisPlatnosti = ""

@@ -80,6 +80,52 @@ public class NovackovaOrientaceTests
         Assert.Contains("\"SortDescending\", \"Směr\"", text);
     }
 
+    /// <summary>
+    /// Nápověda slibuje u pevné tabulky vlastnosti buňky (Alt+Enter) a vlastnosti řádku s podmínkou
+    /// viditelnosti - obojí jede na serverovém schématu, takže kdyby se pole přejmenovala, posílala
+    /// by nápověda uživatele na místo, kde nic není.
+    /// </summary>
+    [Fact]
+    public void Napoveda_VlastnostiBunkyARadkuOpravduExistuji()
+    {
+        Assert.Contains("\"Format\", \"Formát hodnoty\"", ClsText("TableCellEdit.cls"));
+        Assert.Contains("\"Style\", \"cellstyle\"", ClsText("TableCellEdit.cls"));
+
+        var radek = ClsText("TableRowEdit.cls");
+        Assert.Contains("\"BackgroundColor\", \"Barva pozadí\"", radek);
+        Assert.Contains("AddConditions(form, \"řádek\")", radek);
+    }
+
+    /// <summary>Nápověda i příručka tvrdí, že se rozměr tabulky zadává při vložení.</summary>
+    [Fact]
+    public void Napoveda_RozmerTabulkySeOpravduZadavaPriVlozeni()
+    {
+        var text = ClsText("TableInsertEdit.cls");
+
+        Assert.Contains("\"Columns\", \"Počet sloupců\"", text);
+        Assert.Contains("\"Rows\", \"Počet řádků\"", text);
+    }
+
+    /// <summary>
+    /// Nápověda posílá k písmenům variant do parametrů sestavy („První varianta bez písmene")
+    /// a k rozvržení sloupců do parametru „Rozdělení sloupců" - obojí definuje agenda, takže
+    /// přejmenování by z nápovědy udělalo slepou uličku.
+    /// </summary>
+    [Fact]
+    public void Napoveda_ParametryPisemVariantARozvrzeniSloupcuExistuji()
+    {
+        var agenda = AgendaText("ZastavkoveJrAd.cls");
+
+        Assert.Contains("\"První varianta bez písmene\"", agenda);
+        Assert.Contains("\"Rozdělení sloupců (typy provozu)\"", agenda);
+    }
+
+    /// <summary>Zdroják agendy - vedle složky formulářů, tedy stejnou cestou jako `ClsPath`.</summary>
+    private static string AgendaText(string clsFile) =>
+        File.ReadAllText(Path.Combine(
+            Directory.GetParent(Path.GetDirectoryName(ClsPath("TableCellEdit.cls"))!)!.FullName,
+            "Agendy", clsFile));
+
     // ── Parsování .cls (stejný zdroj pravdy jako drift testy schémat) ─────────
 
     private static readonly Regex GroupRx = new(
