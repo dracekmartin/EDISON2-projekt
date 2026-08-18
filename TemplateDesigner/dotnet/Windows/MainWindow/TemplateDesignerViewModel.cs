@@ -583,6 +583,18 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
 
+    private string? _fontWarning;
+    /// <summary>Fonty, které šablona chce a počítač je nemá. Null = nic → badge je skrytý.
+    /// Stejná třída vady jako <see cref="ColumnDataWarning"/>: výstup vypadá v pořádku a jen je
+    /// jiný, než autor zamýšlel (viz <see cref="FontWarnings"/>).</summary>
+    public string? FontWarning
+    {
+        get => _fontWarning;
+        private set { if (Set(ref _fontWarning, value)) OnPropertyChanged(nameof(HasFontWarning)); }
+    }
+
+    public bool HasFontWarning => !string.IsNullOrEmpty(_fontWarning);
+
     private string _selectionStatusText = "";
     /// <summary>Klidová „stav výběru" zóna status baru (aktuální element / sekce). Píše ji jen
     /// <see cref="UpdateStatusForSelection"/>; mění se volně s výběrem, nepřepíše akční hlášku.</summary>
@@ -1413,6 +1425,12 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private void InvalidateAll()
     {
+        // Šablona se právě vyměnila (nová / otevřená / importovaná) - to je jediný okamžik, kdy
+        // může přibýt font, který tenhle počítač nemá. Psaní vlastního názvu do pole fontu se sem
+        // záměrně nenapojuje: nabídka jmenuje jen nainstalované a záměna je vidět hned na plátně,
+        // a před tiskem to kontroluje tiskový dialog znovu.
+        FontWarning = FontWarnings.Summarize(State.CurrentTemplate);
+
         RequestTitleUpdate?.Invoke();
         RequestCanvasSizeUpdate?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();

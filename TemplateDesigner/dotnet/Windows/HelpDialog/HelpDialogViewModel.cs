@@ -285,12 +285,19 @@ public class HelpDialogViewModel : EDViewModel
                     "prvek Zastávky JŘ → Rozdělit na více oddílů"),
                 new("Zvýraznění aktuální zastávky, projeté zastávky, šipka směru", "prvek Zastávky JŘ"),
                 new("Skupiny dnů, šířka minuty, oddělovač skupin, značky u minut", "prvek Mřížka odjezdů"),
+                new("Které sloupce vývěsky vzniknou (vzory i vlastní definice)",
+                    "prvek Mřížka odjezdů → Definice sloupců"),
+                new("Písmeno varianty u minuty říká, který sloupec časů pro spoj platí; zda má "
+                    + "písmeno i první varianta", "tab Parametry → První varianta bez písmene"),
                 new("Kolik vývěsek se vytiskne (zastávka × směr) a co je na které", "lišta stránkování nad náhledem"),
             ],
             Tip = "Značky u odjezdů a souhrn bezbariérovosti se zapínají v prvku Legenda poznámek, " +
                   "NE v parametrech sestavy - dřív to byly parametry tisku. Značka u odjezdu a její vysvětlivka " +
                   "jsou jedna volba, takže nemůže vzniknout značka, kterou legenda nevysvětlí. " +
-                  "Když šablona prvek Legenda poznámek nemá, značky se nevytisknou vůbec.",
+                  "Když šablona prvek Legenda poznámek nemá, značky se nevytisknou vůbec. " +
+                  "Rozvržení sloupců drží šablona: parametr sestavy „Rozdělení sloupců (typy provozu)“ je jen pohled " +
+                  "na definici v prvku odjezdů, takže se ta dvě nastavení nemůžou přebíjet. " +
+                  "V seznamu zastávek jsou jen zastávky, kam z té vývěsky opravdu nějaký spoj jede.",
         },
 
         new HelpSection

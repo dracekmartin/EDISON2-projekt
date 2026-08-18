@@ -821,6 +821,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- 1) Agenda chip (klikatelný - ChangeAgendaCommand) -->
@@ -934,6 +935,20 @@
                         <!-- Black záměrně mimo theme: text na Semantic.Warning pozadí (oranžová je
                              v obou tématech světlá, černá na ní má vždy dostatečný kontrast). -->
                         <TextBlock Text="{Binding ColumnDataWarning}"
+                                   Foreground="Black" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                    </Border>
+
+                    <!-- 6) Šablona chce font, který na tomhle počítači není. Bez hlášky by se
+                         tiše tisklo Arialem a táž šablona by u kolegy vypadala jinak. -->
+                    <Border Grid.Column="8"
+                            Background="{DynamicResource EDTheme.Semantic.Warning}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
+                            VerticalAlignment="Stretch"
+                            Visibility="{Binding HasFontWarning, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Font ze šablony není na tomto počítači nainstalovaný - vykresluje se místo něj Arial. Buď font doinstalujte, nebo v šabloně vyberte jiný (nabídka fontů jmenuje jen ty dostupné).">
+                        <!-- Black záměrně mimo theme: viz badge vlastních sloupců výše. -->
+                        <TextBlock Text="{Binding FontWarning}"
                                    Foreground="Black" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"/>

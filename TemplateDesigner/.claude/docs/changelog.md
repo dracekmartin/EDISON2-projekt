@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-18 (3) - ❓ nápověda F1 dohnala změny od 12. 8.
+
+Nápověda **nevěděla o pevné tabulce vůbec** (ve výčtu prvků byla jen tabulka z dat), takže kdo si ji
+vložil, neměl kde zjistit, že se do buňky chodí Alt+klikem. Nová sekce **„Pevná tabulka -
+vyplňování"**: vstup do buňky, pohyb, výběr více buněk, Ctrl+B/I/U, vlastnosti buňky i řádku,
+sloučení, šířky tažením, vkládání z Excelu a podmínka viditelnosti řádku.
+
+Doplněné i tři letošní změny vývěsky, o kterých nápověda mlčela: **kde se definují sloupce**
+(prvek odjezdů → Definice sloupců), že **písmeno varianty u minuty** říká, který sloupec časů pro
+spoj platí (volba „První varianta bez písmene" v parametrech), že **rozvržení sloupců drží šablona**
+a parametr je jen její pohled, a že v **seznamu zastávek jsou jen zastávky, kam z té vývěsky
+opravdu něco jede**.
+
+⚠️ **Tvrzení nápovědy jsou testovaná**, ne jen napsaná: pole vlastností buňky, řádku a rozměru
+tabulky i oba parametry vývěsky musí ve schématech reálně existovat. Přejmenování by test shodilo -
+přesně proto, aby nápověda neposílala uživatele na místo, kde nic není. Test u toho hned chytil
+překlep: parametr se jmenuje „Rozdělení sloupců (typy provozu)", ne „Rozdělení sloupců".
+
+**Brány:** build čistý, **2231 .NET testů** zelených (TD 1033, z toho 3 nové).
+
 ## 2026-08-18 (2) - 📐 rozměr pevné tabulky se zadává při vkládání
 
 Tabulka se vkládala **natvrdo jako 3 × 3**, takže kdo chtěl 12 × 10, musel se proklikat devatenácti

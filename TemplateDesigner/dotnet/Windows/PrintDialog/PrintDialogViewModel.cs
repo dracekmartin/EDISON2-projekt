@@ -246,6 +246,11 @@ public class PrintDialogViewModel : EDViewModel
             // linka než v náhledu.
             var unassigned = DepartureColumnWarnings.Summarize(dataPages);
             string unassignedInfo = unassigned is null ? "" : $" · ⚠ {unassigned}";
+            // Chybějící font: tichá záměna za Arial, takže PDF vypadá v pořádku a jen je jiné,
+            // než autor zamýšlel. Kontroluje se i tady, ne jen v návrháři - tisknout může
+            // někdo, kdo šablonu jen otevřel z databáze.
+            var chybejiciFonty = FontWarnings.Summarize(_template);
+            string fontInfo = chybejiciFonty is null ? "" : $" · ⚠ {chybejiciFonty}";
 
             if (splitMode == ExportSplitMode.Single)
             {
@@ -255,7 +260,7 @@ public class PrintDialogViewModel : EDViewModel
                 OpenPdf(target);
                 StatusText = (overflow > 0
                     ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}{sheetInfo}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo;
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo;
                 return;
             }
 
@@ -277,7 +282,7 @@ public class PrintDialogViewModel : EDViewModel
             OpenFolder(target);
             StatusText = (overflow > 0
                 ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{sheetInfo}"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo;
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo;
         }
         catch (Exception ex)
         {

@@ -106,6 +106,26 @@ public class NovackovaOrientaceTests
         Assert.Contains("\"Rows\", \"Počet řádků\"", text);
     }
 
+    /// <summary>
+    /// Nápověda posílá k písmenům variant do parametrů sestavy („První varianta bez písmene")
+    /// a k rozvržení sloupců do parametru „Rozdělení sloupců" - obojí definuje agenda, takže
+    /// přejmenování by z nápovědy udělalo slepou uličku.
+    /// </summary>
+    [Fact]
+    public void Napoveda_ParametryPisemVariantARozvrzeniSloupcuExistuji()
+    {
+        var agenda = AgendaText("ZastavkoveJrAd.cls");
+
+        Assert.Contains("\"První varianta bez písmene\"", agenda);
+        Assert.Contains("\"Rozdělení sloupců (typy provozu)\"", agenda);
+    }
+
+    /// <summary>Zdroják agendy - vedle složky formulářů, tedy stejnou cestou jako `ClsPath`.</summary>
+    private static string AgendaText(string clsFile) =>
+        File.ReadAllText(Path.Combine(
+            Directory.GetParent(Path.GetDirectoryName(ClsPath("TableCellEdit.cls"))!)!.FullName,
+            "Agendy", clsFile));
+
     // ── Parsování .cls (stejný zdroj pravdy jako drift testy schémat) ─────────
 
     private static readonly Regex GroupRx = new(
