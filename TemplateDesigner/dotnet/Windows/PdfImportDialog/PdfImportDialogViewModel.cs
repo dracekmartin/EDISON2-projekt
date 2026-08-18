@@ -224,8 +224,9 @@ public class PdfImportDialogViewModel : EDViewModel
                 });
             }
 
-            // Nastavit agendu na šabloně pokud importujeme JŘ
-            if (scheduleType != ScheduleImportType.None && !string.IsNullOrEmpty(SelectedAgendaCode))
+            // Šablona zdědí agendu, ve které import běžel - i u obecného importu. Bez toho z něj
+            // vypadla šablona bez agendy: prázdný seznam polí a nutnost ji ručně přiřadit.
+            if (!string.IsNullOrEmpty(SelectedAgendaCode))
                 template.AgendaCode = SelectedAgendaCode;
 
             NormalizeImportedPage(template);

@@ -262,7 +262,7 @@ public static class ScheduleElementBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.TravelTime,
-                Header = "min.",
+                Header = StopColumnHeaders.TravelTime,
                 Width = detection.StopColumnWidths[0],
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Right
@@ -270,7 +270,7 @@ public static class ScheduleElementBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.StopName,
-                Header = "Zastávky",
+                Header = StopColumnHeaders.StopName,
                 Width = detection.StopColumnWidths[1],
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Left
@@ -282,13 +282,14 @@ public static class ScheduleElementBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.StopName,
-                Header = "Zastávky",
+                Header = StopColumnHeaders.StopName,
                 Width = detection.StopColumnWidths.FirstOrDefault(50f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Left
             });
         }
 
+        StopColumnHeaders.InsertVariantColumn(columns);
         return columns;
     }
 

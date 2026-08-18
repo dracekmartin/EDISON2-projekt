@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-18 (6) - 📥 import z předlohy: prázdný sloupec, popisky a zahozená agenda (`B42a`)
+
+Průchod importem PDF proti dnešnímu stavu návrháře. Co import z předlohy nastaví, se naposledy
+měnilo v půlce července, zatímco prvky jízdního řádu i nastavení sestavy mezitím povyrostly.
+Tahle dávka bere jen to, co je jasná vada a nepotřebuje rozhodnutí:
+
+- **Prázdný sloupec „tarifní číslo"** - když AI v předloze poznala sloupec s tarifním číslem, import
+  ho založil pod klíčem, který agendy nevydávají (nese jen interní klíč, ne reálné číslo). Sloupec
+  zabíral šířku a při tisku zůstal prázdný. Nově se mapuje na **pořadí zastávky**, což je údaj, který
+  poziční potřebu kryje.
+- **Popisky sloupců** se rozešly s ručně vloženým seznamem zastávek („min.", „Zastávky", „Nást."
+  proti „Čas", „Zastávka", „Označník"). Import je teď bere přímo z výchozích sloupců prvku, takže
+  se rozejít nemůžou; „Nást." navíc odporovalo dohodnutému názvosloví.
+- **Varianty jízdních dob** - importovaný seznam zastávek sloupec variant neměl, ručně vložený ano.
+  U linky s jedinou variantou se nevykreslí, u linky s víc variantami je teď importovaná šablona
+  zvládne stejně jako poskládaná ručně.
+- **Obecný import zahazoval agendu** - import jiné než jízdněřádové předlohy vracel šablonu bez
+  agendy, tedy s prázdným seznamem polí a nutností agendu ručně přiřadit. Nově šablona zdědí agendu,
+  ve které import běžel.
+- Z otázky na AI zmizel dotaz na šipku směru - **odpověď neměl kdo přečíst** (šipku řídí nastavení
+  sestavy, ne vlastnost prvku).
+
+Import dosud neměl **ani jeden test**; s touhle dávkou vzniklo prvních devět (sloupce a jejich
+popisky). Ověřeno: build 0 chyb, .NET 1044/1044.
+
+Co zůstává otevřené, drží roadmapa: rozpoznané **nastavení sestavy** se do šablony pořád nepromítne
+(`B42c`) a po importu **není kde ukázat, co se nepovedlo rozpoznat** (`B42b`).
+
 ## 2026-08-18 (5) - 🔤 upozornění, když šablona chce font, který v počítači není (`B97`)
 
 Když šablona používá písmo, které na daném počítači **není nainstalované**, program ho dosud tiše

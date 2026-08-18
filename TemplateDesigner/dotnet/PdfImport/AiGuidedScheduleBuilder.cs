@@ -1018,7 +1018,7 @@ public static class AiGuidedScheduleBuilder
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
-    private static List<StopColumn> BuildStopColumnsFromAi(AiVisionElement stopListAi, float totalWidthMm)
+    internal static List<StopColumn> BuildStopColumnsFromAi(AiVisionElement stopListAi, float totalWidthMm)
     {
         var columns = new List<StopColumn>();
 
@@ -1027,19 +1027,20 @@ public static class AiGuidedScheduleBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.TravelTime,
-                Header = "min.",
+                Header = StopColumnHeaders.TravelTime,
                 Width = Math.Min(totalWidthMm * 0.2f, 10f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Right
             });
         }
 
+        // Tarifní číslo agendy nevystavují (nese jen interní klíč) - poziční potřebu kryje PORADI.
         if (stopListAi.Columns.Contains("TariffNumber"))
         {
             columns.Add(new StopColumn
             {
-                Key = "TariffNumber",
-                Header = "č.",
+                Key = StopFields.Poradi,
+                Header = StopColumnHeaders.Poradi,
                 Width = Math.Min(totalWidthMm * 0.15f, 8f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Center
@@ -1051,7 +1052,7 @@ public static class AiGuidedScheduleBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.Nastupiste,
-                Header = "Nást.",
+                Header = StopColumnHeaders.Nastupiste,
                 Width = Math.Min(totalWidthMm * 0.15f, 10f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Center
@@ -1067,7 +1068,7 @@ public static class AiGuidedScheduleBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.StopName,
-                Header = "Zastávky",
+                Header = StopColumnHeaders.StopName,
                 Width = Math.Max(remainingWidth, 15f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Left
@@ -1086,13 +1087,14 @@ public static class AiGuidedScheduleBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.StopName,
-                Header = "Zastávky",
+                Header = StopColumnHeaders.StopName,
                 Width = Math.Max(remainingWidth, 15f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Left
             });
         }
 
+        StopColumnHeaders.InsertVariantColumn(columns);
         return columns;
     }
 

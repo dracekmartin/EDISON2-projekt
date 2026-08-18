@@ -268,8 +268,9 @@ public class AiVisionImportService
         ],
         ElementProperties:
         [
+            // Šipku směru řídí parametr sestavy TISK_SIPKY, ne vlastnost prvku - ptát se na ni
+            // v tomhle bloku nemělo smysl, odpověď neměl kdo přečíst.
             ("StopList", [
-                "showDirectionArrow (bool): true pokud vidíš šipku směru (▼ nebo ┌─▼) u zastávek",
                 "showRowSeparators (bool): true pokud jsou viditelné vodorovné čáry mezi řádky",
                 "headerBgColor (hex): barva pozadí záhlaví sloupců, null pokud není"
             ]),
@@ -300,7 +301,7 @@ public class AiVisionImportService
       ""left"": 0.02, ""top"": 0.15, ""right"": 0.25, ""bottom"": 0.85,
       ""columns"": [""TravelTime"", ""StopName""],
       ""hasHeader"": true,
-      ""properties"": { ""showDirectionArrow"": ""true"", ""showRowSeparators"": ""true"" }
+      ""properties"": { ""showRowSeparators"": ""true"" }
     },
     {
       ""type"": ""DepartureGrid"",
