@@ -202,6 +202,10 @@ public class TemplateDesignerViewModel : EDViewModel
         ("CB_CSADAD", "CB_CSADAD - ČSAD Autobusy (AD)"),
         ("CB_GWBUS",  "CB_GWBUS - GW BUS (AD)"),
         ("KV_DP",     "KV_DP - DP Karlovy Vary (MHD)"),
+        // Slovenská data: jediná firma, kde se pozná rozdíl mezi českou a slovenskou variantou
+        // symbolového fontu (na znamení = dlaň místo křížku) a kde jsou vyplněné per-linkové
+        // seznamy „nevypisovat značku ve sloupci". Podněty #12843 se testují tady.
+        ("SKNI_MHDNITRA", "SKNI_MHDNITRA - MHD Nitra (AD, slovenská data)"),
     ];
 
     /// <summary>Aktuální datová firma (Idfa). Null bez připojení k databázi.</summary>
@@ -273,13 +277,13 @@ public class TemplateDesignerViewModel : EDViewModel
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
             var columnsDefJson = CurrentColumnsDefinitionJson();
-            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson);
+            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson, JazykSablony);
             var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
             // zastaralý a nesmí dosednout do nové šablony.
             if (gen != _previewDataGeneration) return;
-            _lastColumnsDefinitionSnapshot = columnsDefJson;   // data odteď odpovídají této definici
+            _lastColumnsDefinitionSnapshot = CurrentWireSnapshot();   // data odteď odpovídají definici i jazyku
 
             if (pages is null || pages.Count == 0)
             {
@@ -304,6 +308,9 @@ public class TemplateDesignerViewModel : EDViewModel
                 StatusText = $"{instance.Display}: {pages.Count} stránek";
             }
             NotifyPreviewPagesChanged();
+            // Vzory sloupců chodí až s daty - teprve teď jde poznat, jestli definice v šabloně
+            // odpovídá některému z nich, a srovnat podle toho parametr rozvržení.
+            SyncLayoutParamFromTemplate();
             RequestPreviewRefresh?.Invoke();
         }
         catch (Exception ex)
@@ -866,7 +873,8 @@ public class TemplateDesignerViewModel : EDViewModel
             v => element.HourColumnStyle = (ColumnVisualStyle?)v));
         cmds.Add(new SetPropertyCommand("Vlastní sloupce", element.CustomColumns, resultCustomColumns,
             v => element.CustomColumns = (List<DepartureColumnDefinition>?)v));
-        ExecuteAsComposite("Nastavení odjezdů", cmds);   // re-fetch při změně definice řeší Execute
+        // Re-fetch i srovnání parametru rozvržení řeší Execute (RefetchIfColumnsDefinitionChanged).
+        ExecuteAsComposite("Nastavení odjezdů", cmds);
     }
 
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
@@ -908,20 +916,6 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>Statická tabulka (Fixed/Dynamic): sloupce + řádky (Fixed) + souhrnné řádky jako jeden undo krok.</summary>
-    public void ApplyTableEdit(TableElement element, List<TableColumn> resultColumns, List<TableRow>? resultRows, List<TableRow>? resultSummaryRows)
-    {
-        var cmds = new List<IDesignerCommand>
-        {
-            new SetPropertyCommand("Sloupce tabulky", element.Columns, resultColumns,
-                v => element.Columns = (List<TableColumn>)v!)
-        };
-        if (element.Mode == TableMode.Fixed)
-            cmds.Add(new SetPropertyCommand("Řádky tabulky", element.Rows, resultRows,
-                v => element.Rows = (List<TableRow>?)v));
-        cmds.Add(new SetPropertyCommand("Souhrnné řádky", element.SummaryRows, resultSummaryRows,
-            v => element.SummaryRows = (List<TableRow>?)v));
-        ExecuteAsComposite("Upravit tabulku", cmds);
-    }
 
     private void Undo()
     {
@@ -952,11 +946,24 @@ public class TemplateDesignerViewModel : EDViewModel
     /// znovu načíst, jinak náhled ukazuje sloupce staré definice.</summary>
     private string? _lastColumnsDefinitionSnapshot;
 
+    /// <summary>Co ze šablony ovlivňuje **data** z `GetData`: definice sloupců a jazyk textů značek.
+    /// Když se to pohne, náhled musí přenačíst - jinak ukazuje data staré definice / starý jazyk.</summary>
+    private string CurrentWireSnapshot() => ComposeWireSnapshot(CurrentColumnsDefinitionJson(), JazykSablony);
+
+    internal static string ComposeWireSnapshot(string? columnsDefinitionJson, string jazyk) =>
+        (columnsDefinitionJson ?? "") + "|" + jazyk;
+
     private void RefetchIfColumnsDefinitionChanged()
     {
+        // Definice se mohla pohnout jakkoli - dialogem, přidáním či smazáním prvku, vložením ze
+        // schránky, undo/redo. Parametr rozvržení ji zrcadlí, takže se srovnává tady, na jediném
+        // místě, které tyhle změny vidí všechny. (Bez toho zůstal po přidání prvku odjezdů na
+        // „Automaticky", i když prvek dostal sloupce předvyplněné.)
+        SyncLayoutParamFromTemplate();
+
         // Snapshot zapisuje až ÚSPĚŠNÝ fetch (RefreshDataForCurrentInstanceAsync) - kdyby se
         // zapsal tady a fetch spadl, další kontroly by se tvářily, že data definici odpovídají.
-        if (CurrentColumnsDefinitionJson() == _lastColumnsDefinitionSnapshot) return;
+        if (CurrentWireSnapshot() == _lastColumnsDefinitionSnapshot) return;
         if (CurrentActiveInstance is not null) _ = RefreshDataForCurrentInstanceAsync(keepPage: true);
     }
 
@@ -1911,7 +1918,7 @@ public class TemplateDesignerViewModel : EDViewModel
         ElementTypes.Rectangle     => (60f, 20f),
         ElementTypes.Line          => (190f, 1f),
         ElementTypes.Image         => (40f, 30f),
-        // ElementTypes.Table (Fixed) je spící - nevytváří se z UI (viz TableElement docstring)
+        ElementTypes.Table         => (90f, 18f),   // 3 řádky po 6 mm - viz CreateGrid
         ElementTypes.DynamicTable  => (190f, 30f),
         ElementTypes.Barcode       => (30f, 30f),
         ElementTypes.StopList      => (60f, 60f),
@@ -1930,7 +1937,7 @@ public class TemplateDesignerViewModel : EDViewModel
             ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
             ElementTypes.Line          => new LineElement      { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Image         => new ImageElement     { X = x, Y = y, Width = w, Height = h },
-            // ElementTypes.Table (Fixed) je spící - nevytváří se z UI (viz TableElement docstring)
+            ElementTypes.Table         => NewFixedTable(x, y, w, h),
             ElementTypes.DynamicTable  => new DynamicTableElement { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Barcode       => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
             ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
@@ -1943,6 +1950,21 @@ public class TemplateDesignerViewModel : EDViewModel
         el.BorderColor = "#FF000000";
         el.BorderWidth = 0.1f;
         return el;
+    }
+
+    /// <summary>
+    /// Nová pevná tabulka - mřížka 3 × 3 s **pevnou výškou**. Bez výšky (Height null) by prvek
+    /// platil za dynamický a canvas by mu nabídl jen boční úchyty, takže by za něj nešlo táhnout
+    /// do výšky - a to uživatel od ručně kreslené tabulky čeká (nahlášeno 12. 8.).
+    /// </summary>
+    private static TableElement NewFixedTable(float x, float y, float w, float? h)
+    {
+        var table = TableElement.CreateGrid(columns: 3, rows: 3);
+        table.X = x;
+        table.Y = y;
+        table.Width = w;
+        table.Height = h;
+        return table;
     }
 
     // ── Delete ──────────────────────────────────────────────────────────────────
@@ -2485,8 +2507,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// se kterými se inicializoval na začátku otevření.</summary>
     private void RefreshParamsUiAfterLoad()
     {
-        RebuildParametersPanel();          // lišta + RequestParamsFormReload (tab)
-        RequestPreviewRefresh?.Invoke();   // živý náhled
+        RebuildParametersPanel();            // lišta + RequestParamsFormReload (tab)
+        RefreshPreviewAfterParamChange();    // živý náhled; u server-side hodnot i nová data
     }
 
     /// <summary>
@@ -2505,7 +2527,7 @@ public class TemplateDesignerViewModel : EDViewModel
         _cachedParamValues = null;
         foreach (var vm in PreviewParameters) vm.NotifyValueChanged();
         NotifyParamsSummaryChanged();
-        RequestPreviewRefresh?.Invoke();
+        RefreshPreviewAfterParamChange();
     }
 
     /// <summary>Uloží aktuální <see cref="_previewParams"/> pro tuto agendu (fire-and-forget).</summary>
@@ -2514,7 +2536,11 @@ public class TemplateDesignerViewModel : EDViewModel
         if (Preferences is null) return Task.CompletedTask;
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode)) return Task.CompletedTask;
-        return Preferences.SavePrintParamsAsync(agendaCode, _previewParams);
+        // Rozvržení sloupců je vlastnost ŠABLONY (odvozuje se z definice sloupců prvku), ne
+        // předvolba agendy - uložené napříč šablonami by u každé další lhalo.
+        var perAgenda = _previewParams.Where(kv => kv.Key != LayoutParamName)
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+        return Preferences.SavePrintParamsAsync(agendaCode, perAgenda);
     }
 
     /// <summary>Callback do code-behindu: přenačti EDInputForm parametrů v levém tabu
@@ -2555,7 +2581,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </para>
     /// </summary>
     internal static readonly string[] ServerSideParams =
-        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
+        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
          "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
          "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
          "DELENI_SLOUPCU"];
@@ -2576,6 +2602,22 @@ public class TemplateDesignerViewModel : EDViewModel
         IsDirty = true;
         _cachedParamValues = null;
         NotifyParamsSummaryChanged();
+        ApplyLayoutParamPick();   // rozvržení sloupců drží šablona - parametr ho do ní promítne
+        RefreshPreviewAfterParamChange();
+    }
+
+    /// <summary>
+    /// Hodnoty parametrů se změnily → server-side parametr znovu načte data, ostatní jen překreslí
+    /// náhled. **Jediné místo, kde se to rozhoduje** - musí ji volat každá cesta, která hodnotami hne.
+    /// <para>
+    /// Když jedna cesta jen překreslí, náhled zůstane na datech předchozího nastavení, zatímco
+    /// ovladače i tisk už jedou podle nového - a uživatel nemá jak poznat, které z toho platí.
+    /// Potkávalo to dvě cesty: dialog Tisk a hlavně **otevření šablony** (data se natáhnou při
+    /// obnovení instance, tedy dřív, než se aplikují uložené hodnoty parametrů).
+    /// </para>
+    /// </summary>
+    private void RefreshPreviewAfterParamChange()
+    {
         var snapshot = ServerParamsSnapshot();
         if (CurrentActiveInstance is not null && snapshot != _lastServerParamsSnapshot)
         {
@@ -2692,6 +2734,11 @@ public class TemplateDesignerViewModel : EDViewModel
             culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent, columnsDefJson));
     }
 
+    /// <summary>Dvoumístný kód jazyka šablony pro server (`cs` / `sk`) - z kultury, kterou uživatel
+    /// vybírá ve vlastnostech stránky. Tou se řídí i symbolový font, takže jazyk textů a piktogramů
+    /// má jeden zdroj.</summary>
+    internal string JazykSablony => GetTemplateCulture().TwoLetterISOLanguageName.ToLowerInvariant();
+
     /// <summary>
     /// Parametry pro `GetData` jedné instance = parametry sestavy + klíč instance + skupina linek.
     /// **Jediné místo, kde se tahle mapa staví.** Náhled, export i tisk musí serveru poslat totéž,
@@ -2701,7 +2748,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     internal static Dictionary<string, object?> ComposeGetDataParams(
         IReadOnlyDictionary<string, object?> printParams, string instanceParamName,
-        string instanceValue, string? skupinaId, string? columnsDefinitionJson)
+        string instanceValue, string? skupinaId, string? columnsDefinitionJson, string? jazyk)
     {
         var p = new Dictionary<string, object?>(printParams, StringComparer.OrdinalIgnoreCase)
         {
@@ -2712,6 +2759,9 @@ public class TemplateDesignerViewModel : EDViewModel
         // _previewParams - tam by ji ApplyPersistedPrintParams mohl přepsat starou persistovanou
         // hodnotou a tisklo by se jiné rozvržení, než šablona říká (třída chyb B24).
         if (!string.IsNullOrEmpty(columnsDefinitionJson)) p["DEFINICE_SLOUPCU"] = columnsDefinitionJson;
+        // Jazyk textů značek (#12843) - jde ze šablony, ne z parametrů sestavy, ať ho persistovaná
+        // hodnota nemůže přepsat (třída chyb B24). Prázdný = server zůstane na češtině.
+        if (!string.IsNullOrEmpty(jazyk)) p["JAZYK"] = jazyk;
         return p;
     }
 
@@ -2740,6 +2790,109 @@ public class TemplateDesignerViewModel : EDViewModel
             .OfType<DepartureGridElement>()
             .Select(e => e.BuildColumnsDefinitionWireJson())
             .FirstOrDefault(j => j is not null);
+
+    // ── Rozvržení sloupců vývěsky: parametr je POHLED na stav šablony, ne druhé nastavení ────────
+    //
+    // Na otázku „jaké sloupce vzniknou" odpovídala dvě místa naráz - parametr sestavy a vlastní
+    // sloupce prvku - a vlastní sloupce parametr tiše přebíjely. Kdo je jednou měl (a nové prvky
+    // odjezdů je dostávají předvyplněné), měl z parametru navždy mrtvé tlačítko.
+    //
+    // Stav drží **jen šablona** (definice sloupců prvku); parametr ji zrcadlí a umí ji přepnout:
+    //   sloupce = některý vzor  → popisek toho vzoru      (vzory jsou 1:1 s volbami parametru)
+    //   žádné sloupce           → „Automaticky (dle linky)"
+    //   ručně upravené          → „Vlastní rozložení" (jen ukazatel, ručně vybrat nejde)
+
+    private const string LayoutParamName    = "ROZDELENI_SLOUPCU";
+    private const string LayoutAutoOption   = "Automaticky (dle linky)";
+    private const string LayoutCustomOption = "Vlastní rozložení";
+
+    private bool    _layoutParamSyncing;
+    private string? _lastLayoutParamValue;
+
+    /// <summary>Callback do code-behindu: sesyncuj hodnotu jednoho pole v tabu parametrů (bez
+    /// `Init()`, který je synchronní round-trip na Caché).</summary>
+    public Action<string, string>? RequestParamsFieldSync { get; set; }
+
+    private bool HasLayoutParam => _agendaParameters.Any(p => p.Name == LayoutParamName);
+
+    private string? LayoutParamValue() => _previewParams.GetValueOrDefault(LayoutParamName) as string;
+
+    /// <summary>Prvek odjezdů, jehož definice sloupců platí pro celou šablonu - stejná volba jako
+    /// <see cref="CurrentColumnsDefinitionJson"/> (první s definicí, jinak první vůbec).</summary>
+    private DepartureGridElement? LayoutOwner()
+    {
+        var grids = State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
+            .OfType<DepartureGridElement>().ToList();
+        return grids.FirstOrDefault(e => e.CustomColumns is { Count: > 0 }) ?? grids.FirstOrDefault();
+    }
+
+    private IReadOnlyDictionary<string, List<DepartureColumnDefinition>> LoadedColumnPresets() =>
+        DepartureColumnPresets.Parse(State.CurrentPreviewData?.GetValue("PRESETY_SLOUPCU")?.ToString());
+
+    /// <summary>Srovná parametr podle toho, co je v šabloně. Tichá cesta - šablonu nemění, jen
+    /// hlásí stav. Volat po každé změně definice sloupců i po dotažení dat (vzory chodí s nimi).</summary>
+    private void SyncLayoutParamFromTemplate()
+    {
+        if (!HasLayoutParam || _layoutParamSyncing) return;
+
+        var cols = LayoutOwner()?.CustomColumns;
+        var presety = LoadedColumnPresets();
+        // Bez načtených vzorů nejde poznat, jestli sloupce některému odpovídají. Radši nesahat,
+        // než chvíli hlásit „Vlastní rozložení" a po dotažení dat to zase přepsat.
+        if (cols is { Count: > 0 } && presety.Count == 0) return;
+
+        var odvozene = cols is { Count: > 0 }
+            ? DepartureColumnPresets.MatchLabel(cols, presety) ?? LayoutCustomOption
+            : LayoutAutoOption;
+        _lastLayoutParamValue = odvozene;
+        if (Equals(LayoutParamValue(), odvozene)) return;
+
+        _layoutParamSyncing = true;
+        try
+        {
+            _previewParams[LayoutParamName] = odvozene;
+            foreach (var vm in PreviewParameters) vm.NotifyValueChanged();
+            RequestParamsFieldSync?.Invoke(LayoutParamName, odvozene);
+            NotifyParamsSummaryChanged();
+        }
+        finally { _layoutParamSyncing = false; }
+    }
+
+    /// <summary>Uživatel vybral rozvržení v parametru → promítnout do šablony jako vratný krok.
+    /// Vlastní sloupce se tím přepíšou vzorem (Ctrl+Z je vrátí) - mazání prvku máme taky bez
+    /// potvrzení, protože změna je hned vidět a vratná.</summary>
+    private void ApplyLayoutParamPick()
+    {
+        if (!HasLayoutParam || _layoutParamSyncing) return;
+        var value = LayoutParamValue();
+        if (Equals(value, _lastLayoutParamValue)) return;
+        _lastLayoutParamValue = value;
+
+        var owner = LayoutOwner();
+        if (owner is null) return;
+
+        // „Vlastní rozložení" je ukazatel, ne volba - vrátí se hodnota odpovídající šabloně.
+        if (value == LayoutCustomOption) { SyncLayoutParamFromTemplate(); return; }
+
+        List<DepartureColumnDefinition>? nove = null;
+        if (value != LayoutAutoOption)
+        {
+            var klic = DepartureColumnPresets.All.FirstOrDefault(p => p.Label == value)?.Key;
+            var presety = LoadedColumnPresets();
+            if (klic is null || !presety.TryGetValue(klic, out var vzor) || vzor.Count == 0)
+            {
+                // Vzory chodí až s daty linky - ať to není tichý no-op jako dřív.
+                StatusText = "Rozvržení sloupců nejde nastavit, dokud nejsou načtená data linky.";
+                SyncLayoutParamFromTemplate();
+                return;
+            }
+            nove = [.. vzor.Select(c => c.Clone())];
+        }
+
+        if (DepartureColumnPresets.SameColumns(owner.CustomColumns, nove)) return;
+        Execute(new SetPropertyCommand("Rozvržení sloupců", owner.CustomColumns, nove,
+            v => owner.CustomColumns = (List<DepartureColumnDefinition>?)v));
+    }
 
     /// <summary>
     /// Přimíchá hodnoty parametrů sestavy do každé stránky - část parametrů vyhodnocuje až C#
@@ -2775,7 +2928,8 @@ public class TemplateDesignerViewModel : EDViewModel
                 var inst = instances[i];
                 progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
                 var fetched = CacheProvider.GetData(
-                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId, columnsDefinitionJson));
+                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId,
+                        columnsDefinitionJson, culture.TwoLetterISOLanguageName.ToLowerInvariant()));
                 if (fetched is null) continue;
                 foreach (var p in fetched) all.Add(p.WithCulture(culture));
             }

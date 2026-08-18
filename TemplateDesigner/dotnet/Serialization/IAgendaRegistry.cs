@@ -43,7 +43,7 @@ public record AgendaRegistryEntry(
 }
 
 /// <summary>
-/// Per-firma registr dostupných agend v TemplateDesigneru. Wave 2 nahradil
+/// Per-firma registr dostupných agend v TemplateDesigneru. Od 5/2026 nahrazuje
 /// `appsettings.json` agendas[] auto-discovery z Caché `BaseAgenda` subclasses
 /// (`ALVA.TemplateDesigner.API.AgendyRegistr.ListAgendy`).
 ///

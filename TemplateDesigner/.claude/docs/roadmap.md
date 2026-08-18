@@ -1,268 +1,68 @@
 # Roadmap
 
-> **Jen otevřená / akční práce** - co je hotové, patří do
-> [`roadmap-archive.md`](roadmap-archive.md) (průběžný changelog →
-> [`changelog.md`](changelog.md)); **výčet dokončených bloků sem nepiš**, drží ho archiv.
-> Follow-upy „na vyžádání zákazníka" žijí
-> v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
-
-> **Stav k 2026-08-10.**
+> **Jen otevřená / akční práce.** Hotové → [`roadmap-archive.md`](roadmap-archive.md), průběžný
+> changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
+> [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **▶ Zastávkový JŘ nemá otevřenou práci.** `B39` (vlastní sloupce vývěsky, #13045b) je hotová
-> oběma etapami 10. 8. - fronta KOVED je tím dojetá. **Další krok si vyber:** **Fáze B**
-> (tabulkové elementy, po nálezu 6. 8. menší, než vypadala, dá se vzít vcelku) nebo linkový JŘ
-> (**B10** + **B13**) jako dedikovaný slot.
+> **Nejblíž na řadě:** zbytek sady `B93` a `B96` níže (revize 17. 8.). Pak **linkové JŘ**
+> (`B10` + `B13`) jako dedikovaný slot - pevná tabulka je hotová (`B76`, 17. 8.).
+> Zastávkový JŘ otevřený bod nemá - revize `B39` je uzavřená a proklikaná (17. 8.).
 >
-> **Nedodělek k `B39`:** zákazníkovi poradit, jak sloupce skládat - nedělní a sváteční provoz se
-> rozliší rozdělením sloupce, ne značkami (v datech skoro žádný nedělní spoj o svátcích nejede,
-> značka by padla na 86 % odjezdů). Patří to do wiki seedu, ne do kódu.
+> ⚠️ **Nevydané a jen zčásti proklikané je všechno od 12. 8. včetně** - poslední vydaná verze je
+> z 11. 8. Seedy novinek čekají na vydání, dřív se nenahrávají.
 >
-> **Sada TRANSDEV je celá rozdělená** (10. 8.) - 5 hotových, cíl / obrácené poznámkování / odsazení
-> per směr berou **kolegové** (proto tady nejsou), skrývání spojů o víkendu pohltilo #13045, „<1"
-> je `B64`. Odložené velké věci **`B18`** a **`B56`** leží v Backlogu, **`B60`** u linkového JŘ.
->
-> **Zákaznická fronta KOVED je dojetá** - `B37` hotová 5. 8., takže **#13093 je celý uzavřený**.
-> Verze v produkci je ze **4. 8.** (body 1, 2, 4), nic z 5. 8. se k zákazníkům ještě nedostalo.
->
-> **Co sem nepatří** (rozhodnutí Jan 6. 8.): tikety řešené mimo návrhář a čekání na cizí lidi.
-> Roadmapa je seznam **naší otevřené práce**, ne zrcadlo helpdesku.
+> ⚠️ **Naše testovací šablony v DB s vlastními sloupci je potřeba přeuložit** - „Pracovní dny" se
+> od `B82` zapisují jako `X` (viz archiv). Zákaznických šablon se to netýká, ty vlastní sloupce
+> nenesou.
 
 ---
 
-## 🧭 Jak podle roadmapy pracovat
+## 🧹 Revize napříč vrstvami (17. 8.)
 
-Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B10`, `B13`, …). Sekce jsou seřazené
-podle priority (**vršek dokumentu = priorita**), uvnitř sekce platí pořadí řádků.
-Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
+> ⚠️ **Pravidlo pro celou sadu: zastávkové JŘ se nesmí rozbít.** Jsou vydané a kryté zlatými
+> odtisky. Kde se něco rozchází, **mění se linková strana** - linkové agendy mají `Released = 0`
+> a jsou zatím úvodní draft. Dotyk vydaného prvku je přípustný jen **aditivně** (nová vlastnost
+> defaultně vypnutá, odtisky beze změny).
 
-**Nová session:** vezmi první nezablokovaný blok odshora. Po dokončení:
-changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde).
+**Nález, ze kterého sada vychází** (`B91`+`B95` hotové 17. 8., detail v archivu): obě rodiny agend
+posílaly stejně pojmenované kolekce, ale **řádky uvnitř měly jiný tvar**, takže to vypadalo
+kompatibilně a nebylo.
 
-**Pravidla, aby roadmapa znovu nenarostla:**
-0. **Číslo bloku je globální a nikdy se nerecykluje** - před založením grepni `B<č>` v roadmapě
-   **i v archivu** (jinak vznikne druhý „B18“ a review se rozejde s tím, co kdo myslel).
-1. **Nic nevstoupí bez velikosti a čísla bloku** - volný text bez velikosti je přesně to, co se nahromadilo.
-2. **Zákaznická položka má uzavírací podmínku** („co ověřit, aby se dala zavřít") - jinak zůstane „hotová, ale otevřená".
-3. **Jedna práce = jeden záznam.** Priorita se řídí pořadím v dokumentu; nezakládej k témuž bloku
-   druhou evidenci (ukazatel `L‑1…L‑4` takhle vznikl a 4. 8. se zrušil - linkový JŘ byl v dokumentu 6×).
+⚠️ **Jedno tvrzení z revize neplatilo:** `DELENI_SLOUPCU` × `ROZDELENI_SLOUPCU` **nejsou dva názvy
+téhož**. Jsou to dvě různá nastavení sestavy - „Dělení spojů dle platnosti" (linkový, 3 volby)
+a „Rozdělení sloupců (typy provozu)" (vývěska, 6 voleb). Sloučit je pod jeden název nejde: u těchhle
+voleb se ukládá zobrazený text, takže by přepnutí agendy tiše shodilo nastavení na výchozí.
 
----
-
-## 🚌 Zastávkový JŘ - známé věci
-
-KOVED (IDZK, Lábsky) kreslí vývěsky v návrháři naostro; fronta z kola 30. 7. je **dojetá**.
-**Plný stav** (hotové featury + co otestovat pro uzavření helpdesk tiketů) →
-[`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md).
-
-`B37` (pokračující spoje) dokončena 5. 8., čímž je **#13093 celý hotový** (body 1, 2 a 4 šly do verze
-4. 8.). `B39` (vlastní sloupce vývěsky) hotová 10. 8. → **z kola KOVED nezbývá nic**.
-
-Tiketů, které se řeší **mimo návrhář** (legacy JŘ modul, cizí přiřazení), se roadmapa nedrží -
-patří do helpdesku, ne sem (rozhodnutí Jan 6. 8.).
-
-### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
-
-| # | Co | Vel. | Co potřebuje |
-|---|---|---|---|
-| B48 | Přepínač „Přestupy (vlak/autobus)" u MHD nefunguje - MHD posílá přestupy jako pozici ve fontu (`w`/`x`), ne jako písmeno, takže je `IsTransferAttr` nepozná a řídí je obecný přepínač „Atributy". Tisknou se správně, jen se ovládají jinak než u AD. Fix = tagovat ATRIBUTY kategorií `prestup` na wire. Měření gate 4. 8. → archiv | M | poptávku od firmy s modulem MHD (dnes DPCB/DPKV) |
-
-*(Follow-upy uzavřených tiketů „na vyžádání zákazníka" → [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)*
-
----
-
-## 🚆 Linkový / knižní JŘ - velký kus (dedikovaně)
-
-> Bere se **vcelku**, ne po kusech (rozhodnutí Jan 4. 8.): `B10` sám o sobě nic nedoručí, protože
-> bez `B13` se široká tabulka stejně nevytiskne. Podklady k `B10` jsou hotové, čeká na svůj slot.
-
-| # | Blok | Vel. |
+| # | Co | Vel. |
 |---|---|---|
-| **B10** | **Symbolový font - linková část** (gate R5). Linková tabulka dnes symboly **nekreslí vůbec** - agenda posílá legacy klíče (`|`, `<`, `m`, `u`…) a chybí převod na pozice ve fontu. ✅ **Podklady hotové:** katalog 66 symbolů, render-módy i **změřený repertoár fontu** (94 pozic z obou fontů) jsou v `elementy-architektura.md`, takže neznámá „který kód nese který piktogram" je pryč. ⚠️ Pozice `znak` z katalogu se s pozicí ve fontu často **neshoduje** (letadlo `n`, paragraf `P`, metro `#`) - musí jít přes mapu, ne přes písmeno. **Rozsah (rozhodnutí Jan 4. 8.):** sdílená mapa `značka → (render-mód, hodnota)` pro všechny prvky, nahradí i dnešní `SymbolGlyph` u zastávkových vývěsek → dotkne se běžícího zastávkového JŘ, chce zlaté odtisky. Culture rozlišení jen pro **3 pozice** (`D`, `w`, `x`). Ve fontu chybí loď, wifi a zásuvka. | M→S |
-| **B13** | **2D bin-packing / `Strih`** (gate R1/R2) - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce". Nutné pro reálný tisk MHD linek; zastávkový JŘ to nepotřebuje. | L |
-| **B14** | **Dedup Caché tiskových enginů + jejich testy** - doprovod ostrého knižního JŘ, ne dopředu. (a) **Dedup** (*audit H1*): různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → vyextrahovat sdílené readery + `Build*` do `BaseAgenda`/`JrShared`; je to **Caché analog R1 extrakce jádra** (`B13` řeší .NET render-side, tohle Caché data-side). Korektnostní riziko. Menší výsek Build\* helperů = `B56` (nález review, **odložen** - viz Backlog); při realizaci jednoho zredukovat druhý. ⚠️ **Korekce z analýzy 5. 8.:** dřívější tvrzení „`CasHodnota` bere `"|"` jinak" **neplatí** - obě verze jsou funkčně identické, lišil se jen komentář. A objem duplikace je menší, než audit odhadoval: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), zbytek sdílí jen název a dělá jinou věc. Podklad v Backlogu u `B56`. (b) **Testy** (*audit H2*, = `T1b`): `LinkovyJr*` (~2 000 ř.) 0 testů, `ZastavkoveJrMhd` 1 helper; AD gold gate tiše projde bez `CB_CSADAD`, křehký digest nad živými daty (pinuje 2/22 linek), `tools/compare-gold.ps1` neexistuje → smoke + frozen-input gold testy, bezpodmínečný gate (zmrazit vstup do izolovaného ns). | L + M |
-| **B60** | **Název zastávky se v linkovém JŘ tvoří jinak než na vývěsce** (nález analýzy `B56`, 5. 8.) - vývěska respektuje volbu tvaru názvu (#13089, 4 volby) i přepínač „použít upravený název pro MHD"; linkový JŘ bere název natvrdo, takže **táž zastávka může mít na dvou výstupech jiné jméno**. ⚠️ **Změřeno 5. 8. - není to malá věc:** tvarování visí na **dvou parametrech sestavy** (`TVAR_NAZVU_ZASTAVKY`, `NAZEV_PRO_MHD`) načítaných do `^||TiskAd`, takže srovnání = přidat linkovému JŘ dva uživatelsky viditelné parametry (popisky enumu jsou po vydání zamčené) + sdílet 5 helperů (`FormatNazvuZastavky`, `MezeryPoInterpunkci`, `TvarNazvuZastavky`, `PouzitNazevProMhd`, `NactiNastaveniNazvu`) - a to **bez jakéhokoli testu** (linkové agendy 0 testů, síť staví `B14b`). **Nejdřív rozhodnout, jestli ty parametry v linkovém JŘ chceme.** | M |
+| **B93** | **Parita tabulkových prvků - nejdřív rozhodnout, pak kód.** Střídání řádků má tabulka z dat, pevná tabulka i mřížka odjezdů, **nemá ho seznam zastávek ani linková tabulka** (dvě nejdelší a nejhůř čitelné tabulky); podmínku viditelnosti a zvýraznění řádku nemá pevná tabulka. Podle klasifikace v [`elementy-architektura.md §0b`](elementy-architektura.md) jsou obě **kategorie 1** (čte jen data řádku) → patří do všech řádkových tabulek, takže je to drift, ne rozhodnutí. Projít všech pět tabulkových prvků × generické featury a rozhodnout per featura. ⚠️ Doplnění sáhne na **vydaný** seznam zastávek - jen aditivně a defaultně vypnuté. Vedlejší efekt: co skončí v jádru, dostane linková tabulka zadarmo. | analýza S + kód S |
+| **B96** | **Datum platnosti: MHD tiskne lomítka, AD tečky** (nález při `B95`, 17. 8.). Zastávková vývěska MHD dá do „Datum platnosti od" `01/11/2018`, AD `11.12.2022`. Česky se datum píše s tečkami, takže MHD tvar je pravděpodobně chyba - jen **je ve vydané verzi**, proto to `B95` nechalo být a linkový MHD srovnalo na tentýž (nesprávný) tvar, aby výstupy nešly proti sobě. Druhá polovina: zastávkový MHD má ve **vzorových datech pro náhled** tečky, ale s ostrými daty vyjde lomítko - náhled tedy ukazuje jiný tvar než tisk. ⚠️ **Nejdřív rozhodnout:** oprava se dotkne vydané vývěsky (zlaté odtisky se přebaselinují) a zákazník uvidí změnu tvaru data. | S + rozhodnutí |
 
-`B13` stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem
-řádků, ne pětkrát v per-element smyčkách.
-
----
-
-### 📥 Backlog / budoucí velké tracky
-
-- **`B65` Kalendářový výběr období u sloupce vývěsky** (S, rozhodnutí Jan 10. 8.: do první verze
-  stačí text). Dnes se rozsahy dat píšou ručně („14.2.-18.2., 1.7.-31.8.") a tvar hlídá validace
-  při OK. Až se featura usadí, nahradit vybíráním v kalendáři - u „dnů školního vyučování" je ruční
-  psaní desítek rozsahů otravné. Tvar zápisu na wire se tím nemění, jde čistě o zadávání.
-
-- **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
-  věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,
-  ne featura návrháře). **Deklarativní pravidla EDInputFormu** (kapabilita sdílené komponenty, celý EDISON) - dnes umí formulář reagovat na vyplněné hodnoty jen kolem přes server (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt. Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data a dopočty). Rozhodnuto 29. 7.: samostatný blok, ne součást B4. **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; layout sjednocen v B6, háček je tri-state / reaktivní logika - bez B18 nejde). **Follow-up 2 (review 4. 8.):** rozšířit gramatiku o čtení **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs. `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - mikropravidlo §5.3 dnes plní jen helpTexty. **Follow-up 3 (z `B57`, 5. 8.):** parametr sestavy nemá pole pro **popis** (`TemplateParameter` má jen název/popisek/typ/default/volby/skupinu/viditelnost), takže krkolomné labely (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) nejde vysvětlit. Aditivní klíč na wire + vykreslení jako tooltip - dělat spolu s gramatikou, ne zvlášť kvůli dvěma tooltipům.
-
-- **`B56` Sjednocení opsaných pomocných funkcí agend** (odloženo - **rozhodnutí Jan 5. 8.**:
-  nedělat předčasnou deduplikaci, dokud se tvar výstupních dat neustálí; sjednocením by se zabetonoval
-  stav, který se ještě hýbe). **Podklad z analýzy 5. 8., aby se nemusela dělat znovu:** 27 pomocných
-  funkcí se stejným názvem ve 2+ agendách, ale jen **15 jsou doslovné kopie** (~97 řádků k odstranění,
-  ne 400-500, jak tvrdil původní odhad). 4 mají stejnou signaturu a rozešlé tělo - a to **záměrně**
-  (`AddStandardJRFields` se liší v uživatelských popiscích polí: AD „Číslo linky" × MHD „Číslo linky
-  (dle licence)"; `AddStandardJRParameters` nabízí jiné parametry sestavy). 8 sdílí jen název a dělá
-  jinou věc - `BuildPoznamka` má dvě rodiny s **jiným datovým kontraktem** (zastávková posílá
-  `KATEGORIE`+barvy, linková `DRUH`), `PopisDopravce` existuje 3× se třemi signaturami. Sloučit jde
-  bezpečně **jen skupinu doslovných kopií a jen u zastávkových agend**, které kryjí zlaté odtisky
-  a 46 testů helperů; **linkové agendy nemají ani jeden test** (2 000 řádků), takže tam by zásah jel
-  bez sítě. Vzor existuje - `BaseAgenda` už 4 sdílené helpery hostuje.
-
-- **Zastávkový JŘ business** (parkované helpdesk A2-A5/A6/B4 + TRANSDEV sada) → viz sekce „Zastávkový JŘ - známé věci" výše
-- **Fáze B - odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
-- **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
-  vnořené datasource (`_rows` v `_rows`).
-
-- **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR - velké
-  tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
-- **Externí datové zdroje** (analýza 2026-07-12, na poptávku) - architektura připravená (engine zná jen
-  `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda
-  (0 změn .NET) · .NET provider vedle Caché (vzor `JsonFileDataSchemaProvider` + Composite) · headless
-  A3 („POST šablona+JSON → PDF" = externí zdroj bez adaptéru; **A3 je nejpravděpodobnější nosič**).
-  První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** - tržní minimum
-  (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
-  credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
-- **`B42` Co všechno umí import z předlohy nastavit** (M, nejdřív analýza; podnět Jan 31. 7. při `B41`).
-  Import dnes umí **pozice a prvky** plus část vzhledu (fonty, výšky řádků, barvy záhlaví, sloupce).
-  Otevřená otázka: umí z předlohy rozumně odvodit i **parametry sestavy** a **další nastavení prvků**
-  (pozice značek, šipka, sloupce jako zóna/označník, varianty tras, skupiny dnů)? Je to velká
-  a netriviální část importu, takže se to má projít vědomě, ne po jedné vlastnosti.
-  ⚠️ **Klíčové omezení, na které to narazí:** hodnoty parametrů sestavy jsou uložené **per uživatel ×
-  agenda**, ne per šablona - kdyby je import nastavil, přepíše nastavení pro všechny ostatní šablony
-  té agendy. Buď se tedy musí zavést per-šablonové hodnoty parametrů (velké rozhodnutí, dotýká se
-  `ApplyPersistedPrintParamsAsync`), nebo import smí jen **navrhnout** (viz krok níže).
-  **Malý krok, který jde udělat hned (S):** detekci časové osy z předlohy vrátit a její výsledek
-  **napsat do protokolu importu** („předloha má osu 5-23, nastavte ji v parametrech"), ať se informace
-  neztratí a dostane se k tomu, kdo s ní může něco udělat. Původní detekce (`timeAxisRangeFrom/To`
-  v `AiGuidedScheduleBuilder`) je v gitu před commitem `B41`.
-- **`B51` EDList plní řádky po jednom - škubnutí při psaní** (S; nález Jan 4. 8., **první pokus
-  vrácen**). `ApplyRows` přidává řádky jeden po druhém do `ObservableCollection` navázané na
-  `DataGrid` s filtrem → 200 řádků = 200 přepočtů pohledu. Projeví se, když načtení dosedne, zatímco
-  uživatel píše do filtru skupiny. ⚠️ **`ICollectionView.DeferRefresh` NENÍ řešení** - zkoušeno
-  4. 8. a shodilo výběr linky (`CollectionChanged` chodí dál a view při něm sahá na currency, což je
-  během odkladu zakázané; detail v changelogu 2026-08-04 (15)). Schůdné cesty: odpojit `ItemsSource`
-  na dobu mutace a zase připojit, nebo kolekce s hromadnou výměnou (jeden `Reset` místo N `Add`).
-  **Podmínka: proklikat**, testy tuhle třídu chyb nechytí.
-- AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
-
-**Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
-v [`legacy-nahrada.md §7`](legacy-nahrada.md); vyřeší se
-při scope té fáze, ne teď.
+**Vědomě mimo tuhle sadu:** testy linkových agend (`B14b`) - dělají se průběžně, až se na linkové
+půjde, ne dopředu. Rozřezání `TemplateDesignerViewModel` (3 543 ř., 11 rolí) - **při dotyku**, ne
+jako položka; první přirozený řez je role „parametry sestavy a načítání dat", kam sáhne `B60`.
 
 ---
 
-## 🚀 Produkční / provozní - otevřené
+## 🚌 Zastávkové JŘ
 
-1. **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
-2. **Samostatný distribuční kanál** systémových šablon mimo .exe - v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
-3. **Další výchozí šablony** (MHD + linkový) = **`C4`** - jediná evidence tohoto bodu; linková
-   varianta je prerekvizita Fáze C+D. Mechanismus embed→MLINE hotový (governance v1, zastávková AD),
-   zbývá kurátorovat + přesunout JSON do `SystemTemplates/`. Vel. **S**.
-4. **Zákaznická dokumentace na wiki (post-release)** - seedy hotové (`uzivatelska-prirucka.md`,
-   `plan-a-zmeny.md`); zbývá **obrázky + publikace**.
+Stav tiketů, parkované položky i věci „jen na poptávku" drží
+[`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 ---
 
-## 🟠 Fáze B: Element flexibility - jen odložené body
+## 📥 Backlog
 
-Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
+### Import PDF - doladění
 
-**Fixní (statická) tabulka - implementace odložena na poptávku faktur / F3.** Analýza 2026-07-12
-rozhodla „koncept implementovat" (tabulka dává reflow podmíněných řádků, auto výšku řádku a
-strukturální editaci, což skupina elementů principiálně neumí). Model i render Fixed módu jsou hotové
-a na sdíleném jádru; pro JŘ to potřeba není.
-
-- **Krok 1 - střízlivé oživení (S–M):** paleta „Tabulka (pevná)" + factory (`Mode=Fixed`, Mode v UI
-  zamčený - dynamickou dělá `DynamicTableElement`); render dorovnat na **plán řádků** (`RowSpec`; `B11` ji vědomě vynechal - kreslí svislou čáru za
-  každým sloupcem včetně vnějšího a vrství dvě pozadí u pevných řádků, takže sjednocení jí výstup
-  změní a jako uspaný element není v odtiscích)
-  (sjednotí mřížku, auto-scale, **předpoklad pro merge**); drift-test allowlist zúžit.
-- **Krok 2 - UX modernizace + merge (M, s poptávkou):** inline editace buněk na plátně (dvojklik,
-  à la F2 na TextElementu - standardní pocit z FastReportu, řeší „5 tabů je moc"), redukce dialogu
-  na 2-tab vzor, **ColSpan** merged cells (aditivní JSON, span-aware DrawRow). **RowSpan vědomě
-  odložen** (vzácný, těžký - spanování výšek × zebra × VisibilityExpression) - až na poptávku / F3.
-
----
-
-## 🟠 Fáze C + D: Výlepový/knižní JŘ linky (náhrada TiskJR) - pravděpodobně JEDEN track
-
-> ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
-> [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md). Krok 43 začíná
-> designem sdíleného jádra (StopList + DynamicTable + LineTable), ne kódem elementu.
-
-Legacy `TiskJR` generuje vývěsní i knižní JŘ z téhož enginu → C + D je nejspíš jeden track. Formát:
-sloupcová tabulka celé linky (svislý seznam zastávek × sloupce spojů s časy; řádek platností se
-symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek). **Gold oracle `mkPLinWin`
-(ALVA.JRMAIN.MLAPI)**, metodika = čistá reimplementace à la `ZastavkoveJrAd` (~1 měsíc).
-
-**Zbývající prerekvizity jsou zaevidované jako bloky:** `B10` (symbolový font - linková část),
-`B13` (layout rozšíření: flow paketů, „dotisk poznámek z minulé stránky"), `C4` (per-linka šablony,
-vedený v provozní čtyřce). Datové jádro (`LinkovyJrAd`/`LinkovyJrMhd`), `LineTableElement`, plán řádků
-a auto-fit fontu jsou hotové.
-
-### Odložené body knižního/linkového JŘ (z pilotu, seřazené dle hodnoty pro ostré nasazení)
-
-| # | Co | Proč odloženo / dopad | Odhad |
-|---|---|---|---|
-| C5 | **Konfigurovatelné pořadí poznámek** (`PoznamkyPoradiDruh`) - legacy AD parametr; TD má pevné pořadí druhů | per-zákaznická variace, řešit až s poptávkou | S |
-| C6 | **Turnusy, obousměrný tisk, souhrnné JŘ (řádek zdrojové linky)** - legacy volby `in(arr,6/7)`, MHD `MakeData` je nemá | mimo scope pilotu; validovat, zda je zákazník chce, než portovat | - |
-| C7 | **Rozdvojení příjezd/odjezd - jemný layout** + fixed-width padding sloupce (legacy `arr,13`) | kosmetika; TD řeší podřádky, ne padding | S |
-
-Detail datových odchylek a mezer viz [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) §11–12.
-
----
-
-## 🟠 Fáze E: Vozový JŘ + Relace
-
-Layout TBD - hlavička oběhu, tabulka spojů, poznámky (pravděpodobně víc elementů). Legacy:
-`ALVA.MHD.ReportGenerator` (MHD) + `AD.ADREPORTGEN` (linky), viz
-[`legacy-nahrada.md`](legacy-nahrada.md). **Relace (TiskJRRELACE)** - vývěsky
-nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý use case (Q3)**.
-
-| Krok | Co | Stav |
-|---|---|---|
-| 48 | Analýza referenčních vozových JŘ - layout + wire formát | ⬜ |
-| 49 | `VehicleScheduleElement` (pravděpodobně víc elementů) | ⬜ |
-| 50 | Caché `VozovyJrAPI` - GetData/GetMockData + async (velký objem dat) | ⬜ |
-
----
-
-## 🟠 Fáze F: Náhrada REPORTGENERATOR (univerzální sestavy)
-
-> ⚠️ **Gate před F2: R3 (prezentační nápovědy v datovém kontraktu + aditivní evoluce)** -
-> [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
-
-Největší kus náhrady - ne kvůli featurám (TD je napřed), ale kvůli **ekosystému ~28 agend** s RG
-kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení: 33k textových elementů,
-774 tabulek. **Ne big-bang** - etapizovat. Detail:
-[`legacy-nahrada.md`](legacy-nahrada.md) §3.1 + §5 etapa 4.
-
-| Krok | Co | Stav |
-|---|---|---|
-| F1 | **Prioritizace podle usage** - legacy `Main.cls:161-188` drží reálná čísla použití; seřadit agendy | ⬜ první (levný) |
-| F2 | **Bridge vs čisté agendy (Q2)** - bridge `LegacyRgAgenda` (překlad `~`-protokolu na TD JSON, všech 28 najednou s omezenou věrností) vs čisté reimplementace; doporučení: **bridge nejdřív** | ⬜ rozhodnutí |
-| F3 | **TableElement na RG úroveň** (navazuje na dynamickou tabulku + Fáze B): per-řádek zvýraznění 0-5 z dat, custom barvy per řádek/buňka, overflow módy (zalamování → klonování řádků), opakování mezisoučtu na další stránce, datové typy sloupců (datum/minuty/záporné červeně/skrýt nuly), řádek-jako-layout | ⬜ L |
-| F4 | **Výstupní kanály fáze 2** - Excel export, PDF heslo + el. podpis (PDFSIGNER), Epson znakový tisk (Q1) | ⬜ dle poptávky |
-| F5 | **Jazykové varianty šablon** - per-jazyk kopie provázaná na CS zdroj (Q5) | ⬜ |
-| F6 | **Vědomě neportovat bez poptávky** - grafy (12×), AZTEC (2×), calculated (2× - výrazy TD nadmnožina), checkbox (8×); ověřit + škrtnout (Q4) | ⬜ validace |
-
----
-
-## 🟡 Import PDF - doladění
-
-| Krok | Co | Stav |
-|---|---|---|
-| 32 | **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. ⚠️ **Gated na oživení fixní tabulky (Fáze B)** - cíl importu statické tabulky je Fixed mód, který je dnes uspaný; do té doby nedělat | ⬜ |
-| 33 | JŘ import: **ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
+| Co | Stav |
+|---|---|
+| **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílová **pevná tabulka** je hotová (`B76`, i se sloučením buněk), takže záleží jen na prioritě | ⬜ |
+| **JŘ import: ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
 
 Křivky/Bézier v obecném importu - low-prio, bez poptávky.
 
----
-
-## 🤖 AI integrace - v pozadí
+### AI integrace - v pozadí
 
 > **Sekundární, ne core.** Aktuální funkce (pomocník, generátor šablon, AI Vision import PDF - vše Sonnet 5
 > přes EDISONAI/mlweb spravovaný klíč) zůstávají funkční; další rozšíření až budou reální uživatelé
@@ -279,14 +79,177 @@ sada) - u každé otázky hodnotit: správná cesta v UI / žádné vymyšlené 
   „stránka na A5" → Ctrl+Shift+P · „kopírovat styl" → Ctrl+Shift+C/V · „sloupec cena×počet" → výraz `{CENA}*{POCET}` ·
   „zvýraznit řádky >1000" → zvýraznění řádků · „víc linek k tisku" → chip Instance · „změnit agendu" → Ctrl+Shift+A ·
   „červený rámeček náhledu" → přetečení obsahu · „součet pod tabulku" → `SUM(...)` · „schovat sekci na 1. str." → VisibilityExpression ·
-  „vrátit smazaný prvek" → Ctrl+Z · „písmo celé tabulky" → dialog sloupců · „šablona pro kolegu" → Ctrl+S do DB.
+  „vrátit smazaný prvek" → Ctrl+Z · „písmo celé tabulky" → nastavení prvku, „Styl buněk" · „šablona pro kolegu" → Ctrl+S do DB.
 - *Chytáky* (očekává „zatím neumíme", ne vymyšlený návod): sloučení buněk · export do Excelu · PDF e-mailem ·
   brožura/duplex · vlastní font · import staré šablony z EDISONu.
-- *Nejistota* (odkázat na F1/podporu, ne halucinovat): „špatný čas u 3. zastávky linky 12" (datový problém, ne UI).
+- *Nejistota* (odkázat na podporu, ne halucinovat): „špatný čas u 3. zastávky linky 12" (datový problém, ne UI).
 
 **Budoucí:** MCP server (`get_template`/`apply_template`/`add_element`/… tenká vrstva nad ViewModelem, každý
 tool → `_vm.Execute(command)`) · onboarding průvodce · smart suggestions (TableElement → sloupce z DataSchema) ·
 migrace starých Caché sestav · template linting v CI/CD.
+
+### Ostatní
+
+- **`B65` Kalendářový výběr období u sloupce vývěsky** (S, rozhodnutí Jan 10. 8.: do první verze
+  stačí text). Dnes se rozsahy dat píšou ručně („14.2.-18.2., 1.7.-31.8.") a tvar hlídá validace
+  při OK. Až se featura usadí, nahradit vybíráním v kalendáři - u „dnů školního vyučování" je ruční
+  psaní desítek rozsahů otravné. Tvar zápisu na wire se tím nemění, jde čistě o zadávání.
+
+- **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
+  prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do
+  dalších šablon. **Co už existuje:** uložení **celé sekce** jako vlastní šablony a seskupení prvků
+  (Ctrl+G). Chybí mezistupeň mezi nimi - pojmenovaný blok menší než sekce. **Proč to čeká na pevnou
+  tabulku:** dokud je hlavička poskládaná z 6 samostatných textů, musí blok řešit relativní pozice a
+  vazby uvnitř skupiny; jako **jeden** prvek (pevná tabulka) je uložení skoro zadarmo. Otevřené:
+  kde bloky žijí (per uživatel × firma jako šablony sekcí, nebo sdílené v DB) a jestli se vkládají
+  z palety, nebo z nabídky „Přidat". **Pohltí i připravené bloky agend** (dřív `B77`): server pro
+  každou agendu drží hotové sestavy tabulek („Záhlaví linky", „Shrnutí faktury"), ale od zrušení
+  starého dialogu k nim z UI nevede cesta - je to titíž „pojmenovaný blok k vložení", jen dodaný
+  námi místo uživatelem, takže samostatnou cestu do UI nedostane (rozhodnutí Jan 17. 8.).
+
+- **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
+  věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,
+  ne featura návrháře). Dnes umí formulář reagovat na vyplněné hodnoty jen oklikou přes server
+  (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`),
+  gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt.
+  Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data
+  a dopočty). **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; háček je
+  tri-state / reaktivní logika - bez `B18` nejde). **Follow-up 2:** rozšířit gramatiku o čtení
+  **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs.
+  `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - dnes to plní jen helpTexty.
+  **Follow-up 3:** parametr sestavy nemá pole pro **popis**, takže krkolomné labely
+  (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) nejde vysvětlit. Aditivní klíč na wire + tooltip -
+  dělat spolu s gramatikou, ne zvlášť kvůli dvěma tooltipům.
+
+- **`B56` Sjednocení opsaných pomocných funkcí agend** (odloženo - **rozhodnutí Jan 5. 8.**:
+  nedělat předčasnou deduplikaci, dokud se tvar výstupních dat neustálí; sjednocením by se zabetonoval
+  stav, který se ještě hýbe). **Podklad z analýzy 5. 8., aby se nemusela dělat znovu:** 27 pomocných
+  funkcí se stejným názvem ve 2+ agendách, ale jen **15 jsou doslovné kopie** (~97 řádků k odstranění,
+  ne 400-500, jak tvrdil původní odhad). 4 mají stejnou signaturu a rozešlé tělo - a to **záměrně**
+  (`AddStandardJRFields` se liší v uživatelských popiscích polí: AD „Číslo linky" × MHD „Číslo linky
+  (dle licence)"; `AddStandardJRParameters` nabízí jiné parametry sestavy). 8 sdílí jen název a dělá
+  jinou věc - `BuildPoznamka` má dvě rodiny s **jiným datovým kontraktem** (zastávková posílá
+  `KATEGORIE`+barvy, linková `DRUH`), `PopisDopravce` existuje 3× se třemi signaturami. Sloučit jde
+  bezpečně **jen skupinu doslovných kopií a jen u zastávkových agend**, které kryjí zlaté odtisky
+  a 46 testů helperů; **linkové agendy nemají ani jeden test** (2 000 řádků), takže tam by zásah jel
+  bez sítě. Vzor existuje - `BaseAgenda` už 4 sdílené helpery hostuje.
+
+- **`B42` Co všechno umí import z předlohy nastavit** (M, nejdřív analýza; podnět Jan 31. 7. při `B41`).
+  Import dnes umí **pozice a prvky** plus část vzhledu (fonty, výšky řádků, barvy záhlaví, sloupce).
+  Otevřená otázka: umí z předlohy rozumně odvodit i **parametry sestavy** a **další nastavení prvků**
+  (pozice značek, šipka, sloupce jako zóna/označník, varianty tras, skupiny dnů)? Je to velká
+  a netriviální část importu, takže se to má projít vědomě, ne po jedné vlastnosti.
+  ⚠️ **Omezení už neplatí tak, jak se dřív psalo:** hodnoty parametrů sestavy se od 15. 7. ukládají
+  **i do šablony** a mají přednost před per-agenda nastavením (`SyncParametersToTemplate`), takže
+  import by je nastavit mohl, aniž rozhodí ostatní šablony té agendy. Zůstává druhá past: uloží se
+  i hodnoty, kterých se nikdo nedotkl - detail u #12843 v `customer-requirements §0.1`.
+  **Malý krok, který jde udělat hned (S):** detekci časové osy z předlohy vrátit a její výsledek
+  **napsat do protokolu importu** („předloha má osu 5-23, nastavte ji v parametrech"), ať se informace
+  neztratí a dostane se k tomu, kdo s ní může něco udělat. Původní detekce (`timeAxisRangeFrom/To`
+  v `AiGuidedScheduleBuilder`) je v gitu před commitem `B41`.
+
+- **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
+  bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
+
+- **Samostatný distribuční kanál** systémových šablon mimo `.exe` - v1 doručuje embed→MLINE;
+  „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
+
+- **Externí datové zdroje** (analýza 2026-07-12, na poptávku) - architektura připravená (engine zná jen
+  `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda
+  (0 změn .NET) · .NET provider vedle Caché (vzor `JsonFileDataSchemaProvider` + Composite) · headless
+  A3 („POST šablona+JSON → PDF" = externí zdroj bez adaptéru; **A3 je nejpravděpodobnější nosič**).
+  První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** - tržní minimum
+  (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
+  credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
+
+- **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
+  vnořené datasource (`_rows` v `_rows`).
+
+- Font warning + ad-hoc overflow (YAGNI).
+
+---
+
+## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
+
+> ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
+> [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md). Začíná se **designem
+> sdíleného jádra** (StopList + DynamicTable + LineTable), ne kódem elementu.
+>
+> Bere se **vcelku**, ne po kusech (rozhodnutí Jan 4. 8.): `B10` sám o sobě nic nedoručí, protože
+> bez `B13` se široká tabulka stejně nevytiskne.
+
+Legacy `TiskJR` generuje **vývěsní i knižní JŘ z téhož enginu**, takže je to jeden track. Formát:
+sloupcová tabulka celé linky (svislý seznam zastávek × sloupce spojů s časy; řádek platností se
+symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek). **Gold oracle `mkPLinWin`
+(ALVA.JRMAIN.MLAPI)**, metodika = čistá reimplementace à la `ZastavkoveJrAd` (~1 měsíc).
+
+Datové jádro (`LinkovyJrAd`/`LinkovyJrMhd`), `LineTableElement`, plán řádků a auto-fit fontu jsou
+hotové. Výchozí šablona pro **AD** se od `B92` distribuuje jako systémová (nalije se sama, v nabídce
+se ukáže až s `Released = 1`). **Pro MHD výchozí šablona zatím není** - až se bude dělat, pozor na
+dvě věci níže.
+
+⚠️ **Agendy jsou úvodní draft** (`Released = 0`), takže se v nich smí měnit i to, co je jinde
+zamčené. Zastávkové se přitom nesmí dotknout - viz pravidlo u revizní sady nahoře. Slovník polí
+je od 17. 8. srovnaný se zastávkovým (`B95`, archiv) a hlídá ho `AgendaSchemaDriftTests`; nová
+pole přidávej pod týmž názvem, jaký pro tutéž věc používá vývěska.
+
+**Pro budoucí linkovou šablonu MHD** (z `B95`): `{CISLO_LINKY}` je **licenční** číslo, protože tak
+to má vývěska - veřejné označení je pod `{LOKALNI_OZNACENI_LINKY}`. A `{DATUM_PLATNOSTI_OD}` vyjde
+u MHD s lomítky (`01/11/2018`), viz `B96`. Existující AD šablony se ani jedno netýká: AD posílá
+jediné číslo linky a datum už dřív s tečkami.
+
+| # | Blok | Vel. |
+|---|---|---|
+| **B10** | **Symbolový font - linková část** (gate R5). Linková tabulka dnes symboly **nekreslí vůbec** - agenda posílá legacy klíče (`|`, `<`, `m`, `u`…) a chybí převod na pozice ve fontu. ✅ **Podklady hotové:** katalog 66 symbolů, render-módy i **změřený repertoár fontu** (94 pozic z obou fontů) jsou v `elementy-architektura.md`, takže neznámá „který kód nese který piktogram" je pryč. ⚠️ Pozice `znak` z katalogu se s pozicí ve fontu často **neshoduje** (letadlo `n`, paragraf `P`, metro `#`) - musí jít přes mapu, ne přes písmeno. **Rozsah (rozhodnutí Jan 4. 8.):** sdílená mapa `značka → (render-mód, hodnota)` pro všechny prvky, nahradí i dnešní `SymbolGlyph` u zastávkových vývěsek → dotkne se běžícího zastávkového JŘ, chce zlaté odtisky. Culture rozlišení jen pro **3 pozice** (`D`, `w`, `x`). Ve fontu chybí loď, wifi a zásuvka. | M→S |
+| **B13** | **2D bin-packing / `Strih`** (gate R1/R2) - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce". Nutné pro reálný tisk MHD linek; zastávkový JŘ to nepotřebuje. Stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem řádků, ne pětkrát v per-element smyčkách. | L |
+| **B14** | **Dedup Caché tiskových enginů + jejich testy** - doprovod ostrého knižního JŘ, ne dopředu. (a) **Dedup** (*audit H1*): různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → vyextrahovat sdílené readery + `Build*` do `BaseAgenda`/`JrShared`; je to **Caché analog R1 extrakce jádra** (`B13` řeší .NET render-side, tohle Caché data-side). Korektnostní riziko. Menší výsek Build\* helperů = `B56` (v Backlogu); při realizaci jednoho zredukovat druhý. ⚠️ **Korekce z analýzy 5. 8.:** dřívější tvrzení „`CasHodnota` bere `"|"` jinak" **neplatí** - obě verze jsou funkčně identické, lišil se jen komentář. A objem duplikace je menší, než audit odhadoval: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků). (b) **Testy** (*audit H2*): `LinkovyJr*` (~2 000 ř.) 0 testů, `ZastavkoveJrMhd` 1 helper; AD gold gate tiše projde bez `CB_CSADAD`, křehký digest nad živými daty (pinuje 2/22 linek), `tools/compare-gold.ps1` neexistuje → smoke + frozen-input gold testy, bezpodmínečný gate (zmrazit vstup do izolovaného ns). | L + M |
+| **B60** | **Název zastávky se v linkovém JŘ tvoří jinak než na vývěsce** (nález analýzy `B56`, 5. 8.) - vývěska respektuje volbu tvaru názvu (#13089, 4 volby) i přepínač „použít upravený název pro MHD"; linkový JŘ bere název natvrdo, takže **táž zastávka může mít na dvou výstupech jiné jméno**. ⚠️ **Změřeno 5. 8. - není to malá věc:** tvarování visí na **dvou parametrech sestavy** (`TVAR_NAZVU_ZASTAVKY`, `NAZEV_PRO_MHD`) načítaných do `^||TiskAd`, takže srovnání = přidat linkovému JŘ dva uživatelsky viditelné parametry (popisky enumu jsou po vydání zamčené) + sdílet 5 helperů (`FormatNazvuZastavky`, `MezeryPoInterpunkci`, `TvarNazvuZastavky`, `PouzitNazevProMhd`, `NactiNastaveniNazvu`) - a to **bez jakéhokoli testu** (linkové agendy 0 testů, síť staví `B14b`). **Nejdřív rozhodnout, jestli ty parametry v linkovém JŘ chceme.** ⚠️ **Širší kontext z revize 17. 8.:** není to jen o názvu zastávky - linkový AD má **jeden** parametr sestavy a linkový MHD **žádný**, proti sedmi u zastávkového AD. Uživatel dnes dostane tabulku, se kterou nemůže nic udělat. Rozhodovat se má celá sada parametrů najednou, ne dva zvlášť; sveze se s `B95` (týž kód, totéž rozhodnutí „co má být stejné jako u zastávkového"). | M |
+
+### Odložené body z pilotu (seřazené dle hodnoty pro ostré nasazení)
+
+| # | Co | Proč odloženo / dopad | Odhad |
+|---|---|---|---|
+| C5 | **Konfigurovatelné pořadí poznámek** (`PoznamkyPoradiDruh`) - legacy AD parametr; TD má pevné pořadí druhů | per-zákaznická variace, řešit až s poptávkou | S |
+| C6 | **Turnusy, obousměrný tisk, souhrnné JŘ (řádek zdrojové linky)** - legacy volby `in(arr,6/7)`, MHD `MakeData` je nemá | mimo scope pilotu; validovat, zda je zákazník chce, než portovat | - |
+| C7 | **Rozdvojení příjezd/odjezd - jemný layout** + fixed-width padding sloupce (legacy `arr,13`) | kosmetika; TD řeší podřádky, ne padding | S |
+
+Detail datových odchylek a mezer viz [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) §11–12.
+
+---
+
+## 🚋 Relace a vozové JŘ
+
+Layout TBD - hlavička oběhu, tabulka spojů, poznámky (pravděpodobně víc elementů). Legacy:
+`ALVA.MHD.ReportGenerator` (MHD) + `AD.ADREPORTGEN` (linky), viz
+[`legacy-nahrada.md`](legacy-nahrada.md). **Relace (TiskJRRELACE)** - vývěsky
+nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý use case**.
+
+| Co | Stav |
+|---|---|
+| Analýza referenčních vozových JŘ - layout + wire formát | ⬜ |
+| `VehicleScheduleElement` (pravděpodobně víc elementů) | ⬜ |
+| Caché `VozovyJrAPI` - GetData/GetMockData + async (velký objem dat) | ⬜ |
+
+---
+
+## 📊 Report generátor (náhrada REPORTGENERATOR)
+
+> ⚠️ **Gate před `F2`: R3 (prezentační nápovědy v datovém kontraktu + aditivní evoluce)** -
+> [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
+
+Největší kus náhrady - ne kvůli featurám (TD je napřed), ale kvůli **ekosystému ~28 agend** s RG
+kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení: 33k textových elementů,
+774 tabulek. **Ne big-bang** - etapizovat. Detail:
+[`legacy-nahrada.md`](legacy-nahrada.md) §3.1 + §5 etapa 4.
+
+| # | Co | Stav |
+|---|---|---|
+| F1 | **Prioritizace podle usage** - legacy `Main.cls:161-188` drží reálná čísla použití; seřadit agendy | ⬜ první (levný) |
+| F2 | **Bridge vs čisté agendy** - bridge `LegacyRgAgenda` (překlad `~`-protokolu na TD JSON, všech 28 najednou s omezenou věrností) vs čisté reimplementace; doporučení: **bridge nejdřív** | ⬜ rozhodnutí |
+| F3 | **TableElement na RG úroveň** (navazuje na dynamickou tabulku + `B76`): per-řádek zvýraznění 0-5 z dat, custom barvy per řádek/buňka, overflow módy (zalamování → klonování řádků), opakování mezisoučtu na další stránce, datové typy sloupců (datum/minuty/záporné červeně/skrýt nuly), řádek-jako-layout | ⬜ L |
+| F4 | **Výstupní kanály fáze 2** - Excel export, PDF heslo + el. podpis (PDFSIGNER), Epson znakový tisk | ⬜ dle poptávky |
+| F5 | **Jazykové varianty šablon** - per-jazyk kopie provázaná na CS zdroj | ⬜ |
+| F6 | **Vědomě neportovat bez poptávky** - grafy (12×), AZTEC (2×), calculated (2× - výrazy TD nadmnožina), checkbox (8×); ověřit + škrtnout | ⬜ validace |
 
 ---
 

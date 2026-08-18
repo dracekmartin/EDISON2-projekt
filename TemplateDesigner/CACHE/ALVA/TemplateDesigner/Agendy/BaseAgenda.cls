@@ -18,7 +18,7 @@
 ///
 /// Caché kompilátor vynucuje implementaci Abstract metod; bez nich třída neprojde compile.
 ///
-/// Registrace agendy (Wave 2, 2026-05-20; dvouosý model 2026-07-11):
+/// Registrace agendy (2026-05-20; dvouosý model 2026-07-11):
 ///   Agenda se registruje **deklarativně** přes class parametry - kombinovaný klíč
 ///   AgendaVariantCode + osy Agenda/Variant (+ labely). ALVA.TemplateDesigner.API.AgendyRegistr
 ///   prochází %Dictionary, najde všechny subclassy BaseAgenda a vrátí jejich metadata

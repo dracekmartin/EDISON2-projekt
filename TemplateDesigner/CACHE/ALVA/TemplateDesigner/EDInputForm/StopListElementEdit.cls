@@ -45,14 +45,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddBool("ShowSubMinuteTravel", "Jízda pod minutu jako <1", 0)
         s f.helpText = "Jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů ""<1"" místo prázdna. Zastávka, kterou spoj neobsluhuje, zůstane prázdná."
 
-        // ── Stanoviště a varianty tras ────────────────────────────────────
-        d form.AddGroup("stopsplatform", "Stanoviště a varianty tras")
+        // ── Stanoviště ────────────────────────────────────────────────────
+        // Varianty tras se od 8/2026 zapínají jako sloupec v tabu Sloupce, ne zaškrtávátkem tady.
+        d form.AddGroup("stopsplatform", "Stanoviště")
         s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více stanovišť", $$$FieldTypeList, 0, 1)
         d f.AddListItem("FromRoute", "Z trasy linky"), f.AddListItem("MostFrequent", "Nejčetnější dle spojů"), f.AddListItem("All", "Výčet všech")
         d f.AddListItem("RowPerPlatform", "Řádek pro každé stanoviště")
-        s f.helpText = "Když spoje jedou z různých stanovišť zastávky: hodnota z trasy / to s nejvíce spoji / výčet všech dle četnosti / nebo řádek pro každé (časy jen variant daného stanoviště). Platí pro údaj zvolený v parametru sestavy Číslo stanoviště podle a zapněte si k tomu jeho sloupec v tabu Sloupce; řádky vyžadují zapnuté Všechny varianty tras."
-        s f = form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
-        s f.helpText = "Spoje jedoucí odlišnou trasou dostanou vlastní sloupec časů; vypnuto = jen hlavní trasa"
+        s f.helpText = "Když spoje jedou z různých stanovišť zastávky: hodnota z trasy / to s nejvíce spoji / výčet všech dle četnosti / nebo řádek pro každé (časy jen variant daného stanoviště). Platí pro údaj zvolený v parametru sestavy Číslo stanoviště podle a zapněte si k tomu jeho sloupec v tabu Sloupce; řádky vyžadují zapnutý sloupec Varianty tras."
 
         // ── Rozdělení dlouhé trasy ────────────────────────────────────────
         d form.AddGroup("stopsparts", "Rozdělení na oddíly")
@@ -84,6 +83,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
         s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
         s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Pozadí aktuální (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("CurrentStopTextColor", "Barva textu aktuální (prázdné = dle buňky)", $$$FieldTypeColor, 0, 0)
         // Zapnutí tisku projetých zastávek řídí parametr sestavy TISK_PROJETYCH_ZAST; tady je vzhled.
         s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Barva projetých", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF999999"

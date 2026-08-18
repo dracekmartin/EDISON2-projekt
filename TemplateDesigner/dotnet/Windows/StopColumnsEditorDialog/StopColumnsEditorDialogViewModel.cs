@@ -38,13 +38,26 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
     /// <summary>Čitelný název sloupce do editoru - odvozený z field ID, ať uživatel nemusí luštit zkratku záhlaví.</summary>
     private static string FriendlyName(string key, string header) => key switch
     {
-        StopFields.TravelTime => "Čas jízdy",
-        StopFields.StopName   => "Název zastávky",
-        StopFields.Zone       => "Zóny",
-        StopFields.Poradi     => "Pořadí",
-        StopFields.JeAktualni => "Aktuální zastávka",
-        _                     => string.IsNullOrWhiteSpace(header) ? key : header,
+        StopFields.TravelTime         => "Čas jízdy",
+        StopFields.TravelTimeVariants => "Varianty tras",
+        StopFields.StopName           => "Název zastávky",
+        StopFields.Zone               => "Zóny",
+        StopFields.Poradi             => "Pořadí",
+        StopFields.JeAktualni         => "Aktuální zastávka",
+        _                             => string.IsNullOrWhiteSpace(header) ? key : header,
     };
+
+    /// <summary>Jedna položka seznamu, ze které při tisku vznikne víc sloupců podle dat.
+    /// Uživatel to musí vidět dřív, než se diví, proč mu jedno zaškrtnutí udělalo dvanáct sloupců.</summary>
+    public bool ExpandsByData => _key == StopFields.TravelTimeVariants;
+
+    /// <summary>Záhlaví rozvíjené položky určují data (značky variant), takže se nedá přepsat.</summary>
+    public bool HeaderEditable => !ExpandsByData;
+
+    public string ExpandHint =>
+        "Rozvine se podle dat: linka dostane tolik sloupců, kolik má variant jízdních dob, a každý "
+        + "bude takto široký. Záhlaví určuje značka varianty, proto se nezadává. Linka s jedinou "
+        + "variantou žádný nedostane - to je sloupec Čas jízdy. Součet šířek vlevo počítá jeden.";
 
     private CellStyleVM _headerStyle = null!;
     public CellStyleVM HeaderStyle

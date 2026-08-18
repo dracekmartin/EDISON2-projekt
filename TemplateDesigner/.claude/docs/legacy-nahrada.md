@@ -23,7 +23,7 @@
 >
 > **⚠️ Status (2026-07-02): akční položky zamergovány do [`roadmap.md`](roadmap.md)** -
 > architektonický track (T1–T6), blok A (A4 výstupní kanály), blok B (B4/B5 governance detaily),
-> Fáze C+D (sloučeno, TiskJR náhrada), Fáze E (Relace), **Fáze F (REPORTGENERATOR)** a otevřené
+> linkové a knižní JŘ (náhrada TiskJR), Relace a vozové JŘ, **report generátor** a otevřené
 > otázky Q1–Q6. **Aktuální stav položek = roadmap; tento dokument = evergreen referenční detail**
 > (legacy inventář §3, průřezová témata §4, zdůvodnění etapizace §5) - neaktualizuje se per položka.
 
@@ -99,7 +99,7 @@ Největší soubory: `MainWindow.xaml.cs` 2 671, `MainWindowViewModel.cs` 2 471 
 | T2 | **Sync export na UI threadu** - ✅ **opraveno 2026-07-02** | Fetch + render na threadpoolu nad snapshotem šablony (`DeepClone` - editace během exportu výstup neovlivní), dvoufázový progress ve status baru, orchestrace z code-behind → VM (první řez T4). | Zbývá jen: první `GetSchema` hit sync (mitigován `_schemaCache`); cancel až na reálnou potřebu. |
 | T3 | **Versioning bez obsahu** - ✅ **guardy opraveny 2026-07-02** | Forward-compat guard (verze > current → odmítnout), selhání migrace → výjimka (ne tichý `Debug.WriteLine`), sémantické porovnání verzí, ctor pro test injection. V1 v DB neexistují (ověřeno: DB storage vznikl po TextStyle breaking change). | Zbývá jen: potvrdit neexistenci starých JSON souborů z éry před 2026-03-24 (bez `version` pole); pokud se objeví → H-19 migrace + heuristika detekce. |
 | T4 | **God objects** | `MainWindow.xaml.cs` (2 671, 167 členů) + `TemplateDesignerViewModel` (2 471, bez vnitřního členění). R4 porušení: `TableEditorDialogViewModel.cs:609-643` staví WPF UI ve VM; VM vytváří dialogy s `Owner=Application.Current.MainWindow` a sahá na `Clipboard`. | Postupný rozpad VM na služby (InstanceCoordinator, TemplatePersistence - shluky už de facto existují); nové featury nepřidávat do těchto dvou souborů. `TableEditorDialogViewModel` UI konstrukci přesunout do view. |
-| T5 | **Živé duplikace bez pojistky** | PropertyDescriptor (C#) × EDInputForm (Caché) ~1,1k LOC mirror (akceptovaný Wave 4 dluh, ale bez driftového testu); `EDList/Instance.cls:113` hardcoded kopie agend registru; `ZastavkoveJrAd.GetMockData:1174` čte živá firemní data. | Driftový test (reflexe: property path z *Edit.cls existuje na elementu); `Instance.cls` napojit na `AgendyRegistr`; statický mock pro AD. |
+| T5 | **Živé duplikace bez pojistky** | PropertyDescriptor (C#) × EDInputForm (Caché) ~1,1k LOC mirror (vědomě akceptovaný dluh, ale bez driftového testu); `EDList/Instance.cls:113` hardcoded kopie agend registru; `ZastavkoveJrAd.GetMockData:1174` čte živá firemní data. | Driftový test (reflexe: property path z *Edit.cls existuje na elementu); `Instance.cls` napojit na `AgendyRegistr`; statický mock pro AD. |
 | T6 | Drobnosti | `architecture.md` nezná `PdfImport/` (4,3k LOC) ani `Services/` (2,6k); `MessageBox.Show` v `MainWindow.xaml.cs:1021`; 96× `new SKPaint/SKFont` per-frame v Render() běžných elementů (schedule elementy to řeší, zbytek ne); `ScheduleDetectorTest.cs` kompilovaný do produkční assembly. | Úklid při příležitosti. |
 
 ---
@@ -239,11 +239,11 @@ jejich priorita čtením legacy kódu.
   (ekvivalent `ExportReportToGlb`/`AktualizujAgendu` - dnes JSON, ne GOF); audit log
   změn šablon; právo na designer (ECL). Roadmap B1/B2/B3 + P2-6.
 - Per-instance přiřazení šablony (linka → šablona A4/A5) - datový model
-  `InstanceDefaults` už existuje (Wave 1), rozšířit o šablonu.
+  `InstanceDefaults` už existuje, rozšířit o šablonu.
 
-### Etapa 3 - Knižní/výlepový JŘ (náhrada TiskJR; roadmap Fáze C/D sloučeně)
-- Legacy generuje vývěsní i knižní z téhož - **Fáze C (meziměstský) a D (knižní)
-  v roadmapě jsou pravděpodobně jeden track** s oracle `mkPLinWin` (JRMAIN).
+### Etapa 3 - Knižní/výlepový JŘ (náhrada TiskJR; v roadmapě „Linkové a knižní JŘ")
+- Legacy generuje vývěsní i knižní z téhož - **meziměstský i knižní jsou jeden track**
+  s oraclem `mkPLinWin` (JRMAIN).
 - Pořadí: (1) symbolový font Timetable do SkiaSharp + převodní tabulka
   (`ConvertSpecialniZnak` mapování už známe z obou legacy systémů);
   (2) agenda `KnizniJrAd` - čistá reimplementace à la ZastavkoveJrAd, gold oracle
@@ -260,17 +260,17 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
    `LegacyRgAgenda` třída by zpřístupnila všech 28 agend najednou s omezenou věrností;
    nebo čisté reimplementace vybraných agend (vzor Faktury). Pragmaticky: **bridge
    nejdřív** (rychlé pokrytí), čisté agendy tam, kde se investice vyplatí.
-3. **TableElement dorovnat na RG úroveň** (navazuje na Wave 4 W4-9 Dynamic-first):
+3. **TableElement dorovnat na RG úroveň** (navazuje na Dynamic-first tabulku):
    per-řádek zvýraznění/barvy z dat, overflow módy buňky, opakování mezisoučtového
    řádku, řádek-jako-designový-layout (koncepčně PerDataRow sekce), datové typy sloupců.
-   Merged cells + conditional formatting už jsou ve Fázi B roadmapy.
+   Merged cells + conditional formatting už jsou v backlogu roadmapy (tabulkové prvky).
 4. **Výstupní kanály fáze 2:** Excel export, PDF heslo/podpis, Epson znakový tisk -
    podle reálné poptávky (Epson = pokladny/jízdenky, ověřit zda vůbec migruje do TD
    nebo zůstane v legacy TISKu).
 5. **Vědomě neportovat bez poptávky:** grafy (12 použití), AZTEC (2), calculated pole
    (2 - TD výrazový jazyk je nadmnožina), checkbox (8). Ověřit se zákazníky a škrtnout.
 
-### Etapa 5 - Relace (TiskJRRELACE) + vozové JŘ (roadmap Fáze E)
+### Etapa 5 - Relace (TiskJRRELACE) + vozové JŘ (v roadmapě „Relace a vozové JŘ")
 - Nejdřív zodpovědět open questions (live use case Relace? priorita vozových?) -
   viz `legacy-nahrada.md`. Vozové JŘ mají vlastní legacy generátory
   (`ALVA.MHD.ReportGenerator`, `AD.ADREPORTGEN`) - samostatná analýza až bude aktuální.
@@ -311,7 +311,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
   (+ `ALVA.TISKJR.*` 5 tříd), `C:\DEV\EDISON\TiskJRRELACE`.
 - Navazuje na: [`legacy-nahrada.md`](legacy-nahrada.md)
   (TiskMHD mapovací matice - evergreen), [`legacy-nahrada.md`](legacy-nahrada.md),
-  [`roadmap.md`](roadmap.md) (blok A, Wave 4, Fáze B–E).
+  [`roadmap.md`](roadmap.md).
 
 
 
@@ -569,7 +569,7 @@ poznámky, sloupce), ne pixely. Místa nejnáchylnější k odlišnosti, která 
 
 # Legacy Caché generátory JŘ - reference pro TD migrace
 
-Mapování typů jízdních řádů na **legacy Caché report generátory** + business kontext per typ. Slouží jako reference před implementací nových agend v TD (Fáze C/D/E, PRIORITA 2 - zastávkový JŘ pro linkové JŘ data).
+Mapování typů jízdních řádů na **legacy Caché report generátory** + business kontext per typ. Slouží jako reference před implementací nových agend v TD (linkové a knižní JŘ, Relace a vozové - PRIORITA 2, zastávkový JŘ pro linkové JŘ data).
 
 > **Stav 2026-05-29.** Některé položky jsou open questions (?označené) - doptat se Martina Hubaty.
 
@@ -632,21 +632,21 @@ Dva legacy generátory podle typu:
 
 **Použití:** v linkové dopravě se tiskne **v turnusech** (oběhy vozidel - který spoj jede které vozidlo).
 
-**Stav v TD:** zatím **neimplementováno**. Fáze E v roadmap.
+**Stav v TD:** zatím **neimplementováno**. V roadmapě „Relace a vozové JŘ".
 
 ---
 
 ## Souhrn priority migrace v TD
 
-Per roadmap PRIORITA 2 (po dokončení Wave 4):
+Per roadmap PRIORITA 2:
 
 1. **Zastávkové JŘ pro linkové JŘ data** - rozšířit `ZastavkoveJrMhd` o linkový datový zdroj (nebo nová agenda). Zachovat dvojí formát „město × linková" stejně jako legacy `ALVA.TISKMHD`.
 
-Fáze C/D/E v roadmap (později, nižší priorita):
+V roadmapě linkové/knižní JŘ a Relace/vozové (později, nižší priorita):
 
-2. **Linkové vývěsní/knižní JŘ** - `ALVA.TISKJR` ekvivalent (Fáze C - meziměstský; ale legacy generuje obojí)
+2. **Linkové vývěsní/knižní JŘ** - `ALVA.TISKJR` ekvivalent (meziměstský; legacy generuje obojí)
 3. **Relace** - `ALVA.TiskJRRELACE` ekvivalent (specifický slovenský use case)
-4. **Vozové JŘ** - `ALVA.MHD.ReportGenerator` + `AD.ADREPORTGEN` ekvivalent (Fáze E - vozový)
+4. **Vozové JŘ** - `ALVA.MHD.ReportGenerator` + `AD.ADREPORTGEN` ekvivalent (vozové JŘ)
 
 ---
 

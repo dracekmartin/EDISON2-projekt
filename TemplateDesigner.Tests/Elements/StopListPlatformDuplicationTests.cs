@@ -1,3 +1,4 @@
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Tests.Elements;
@@ -22,6 +23,20 @@ public class StopListPlatformDuplicationTests
         new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform }
             .ExpandPlatformRows([.. stops]);
 
+    /// <summary>Zastávka **před** vývěskou (projetá) se rozpadá stejně jako ta za ní. Nitra 9,
+    /// vývěska Fraňa Mojtu: CENTRUM, Mlyny má dvě stanoviště, ale leží v projeté části - a rozpad
+    /// tam nebyl vidět (nahlásil Jan 13. 8.). Testy do té doby kryly jen zastávky za vývěskou.</summary>
+    [Fact]
+    public void ZastavkaPredVyveskou_SeRozviTaky()
+    {
+        var r = Expand(
+            Stop("CENTRUM, Mlyny", current: false, ["-9", "-9"], ["A", "B"]),
+            Stop("Fraňa Mojtu", current: true, ["0", "0"], ["B", "B"]),
+            Stop("Predmostie", current: false, ["2", "2"], ["B", "B"]));
+
+        Assert.Equal(["CENTRUM, Mlyny", "CENTRUM, Mlyny", "Fraňa Mojtu", "Predmostie"], r.Select(z => z.Popis));
+    }
+
     /// <summary>Po přepnutí na sloupek se řádky rozvíjejí podle sloupků variant a hodnota jde do
     /// sloupce Sloupek; označník zůstane, jak byl. Jinak by duplikované řádky nesly cizí číslo
     /// (KOVED #13088).</summary>
@@ -43,6 +58,21 @@ public class StopListPlatformDuplicationTests
         Assert.All(r, x => Assert.Equal("9", x.Nastupiste));   // označník se nepřepisuje
         Assert.Equal(["5", ""], r[0].TrasaMin);                // časy jen varianty sloupku 3
         Assert.Equal(["", "6"], r[1].TrasaMin);
+    }
+
+    /// <summary>Základní čas jízdy není vázaný na stanoviště (je to doba linky), takže zůstane jen na
+    /// prvním z rozvinutých řádků - stejně jako značka „projíždí". Zopakovaný na každém řádku vypadá
+    /// jako chyba dat (B67, sloupec časů se od variant oddělil a je vidět vždy).</summary>
+    [Fact]
+    public void ZakladniCasZustaneJenNaPrvnimRadku()
+    {
+        var s = Stop("Medlovice", current: false, ["5", "6"], ["1", "2"]);
+        s.CasJizdy = "5";
+
+        var r = Expand(s);
+
+        Assert.Equal(2, r.Count);
+        Assert.Equal(["5", ""], r.Select(x => x.CasJizdy));
     }
 
     /// <summary>Bez přepnutí se sloupky na řádky nerozvíjejí, i když je v datech má - řídí to
@@ -70,13 +100,25 @@ public class StopListPlatformDuplicationTests
     [Fact]
     public void BezVariantnichSloupcu_SeNerozpada()
     {
-        // Vypnuté „Všechny varianty tras" = jediný sloupec času (stejný na všech duplikátech)
+        // Skrytý sloupec „Varianty tras" = jediný sloupec času (stejný na všech duplikátech)
         // → rozpad by vypadal jako chyba; režim se pak neaplikuje.
         var stops = new List<ZastavkaData> { Stop("A", false, ["5", "6"], ["1", "2"]) };
-        var vysledek = new StopListElement
-            { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform, ShowAllRouteVariants = false }
-            .ExpandPlatformRows(stops);
-        Assert.Same(stops, vysledek);
+        var el = new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform };
+        el.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = false;
+
+        Assert.Same(stops, el.ExpandPlatformRows(stops));
+    }
+
+    /// <summary>Rozpad na řádky visí na sloupci variant, ne na sloupci „Čas jízdy" - ten si smí
+    /// uživatel skrýt, aniž tím tiše vypne něco jiného (past zrušená v `B80`).</summary>
+    [Fact]
+    public void SkrytySloupecCasu_RozpadNezrusi()
+    {
+        var stops = new List<ZastavkaData> { Stop("A", false, ["5", "6"], ["1", "2"]) };
+        var el = new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform };
+        el.Columns.Single(c => c.Key == StopFields.TravelTime).Visible = false;
+
+        Assert.Equal(2, el.ExpandPlatformRows(stops).Count);
     }
 
     [Fact]

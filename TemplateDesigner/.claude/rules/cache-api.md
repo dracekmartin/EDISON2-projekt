@@ -26,9 +26,17 @@
 literál a poslední `"` otevře nový → `<SYNTAX>` a **spadne to teprve uživateli při otevření
 formuláře**. Správně: `"… (výchozí ""×"")"`.
 
-Hlídá to `ObjectScriptSyntaxTests` (projede všechny `.cls` v repu a hlásí řádek, který končí
-uprostřed textu). Nic jiného to nezachytí: rozbitá třída se nasadí, .NET testy o Caché zdrojácích
-nevědí a `%UnitTest` kompiluje jen testovací package.
+Hlídá to `ObjectScriptSyntaxTests` (projede všechny `.cls` v repu). Nic jiného to nezachytí: rozbitá
+třída se nasadí, .NET testy o Caché zdrojácích nevědí a `%UnitTest` kompiluje jen testovací package.
+**Chyba se pak projeví jako Caché test padající bez hlášky** - na serveru zůstane stará verze třídy.
+
+Kontrola má dvě části, protože chyba má dvě podoby:
+
+1. **řádek končí uprostřed textu** (lichý počet uvozovek) - `s x = "neuzavřeno`
+2. **uvozovek je sudě, ale text skončil uprostřed** - `d Neco(x, "„<" nevzniklo (" _ y _ ")")`.
+   Tuhle půlku kontrola do 13. 8. neviděla. ⚠️ **Platí jen uvnitř závorek**: mimo ně je „text, mezera,
+   slovo" legitimní podmíněný příkaz (`s:group'="" param.group = group`), takže tam se pravidlo
+   neuplatní a chyba tohoto tvaru projde. V praxi vzniká v argumentu (hlášky testů, helpTexty).
 
 ## Caché namespace struktura
 
@@ -37,7 +45,7 @@ nevědí a `%UnitTest` kompiluje jen testovací package.
 - **`ALVA.TemplateDesigner.API.*`** - obecná business logika TD projektu (cross-cutting). Příklady: `Sablony` (CRUD šablon), v budoucnu `UserPreferences`, `SectionTemplates`.
 - **`ALVA.TemplateDesigner.Agendy.*`** - agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `Faktury`.
 - **`ALVA.TemplateDesigner.EDList.*`** - dispatch třídy pro EDList komponentu (UI contract). Příklady: `Sablony` (backing pro CacheTemplatePickerDialog), `Instance` (backing pro InstancePickerDialog).
-- **`ALVA.TemplateDesigner.EDInputForm.*`** - dispatch třídy pro EDInputForm komponentu (hlavní editační cesta elementů od Wave 4).
+- **`ALVA.TemplateDesigner.EDInputForm.*`** - dispatch třídy pro EDInputForm komponentu (hlavní editační cesta elementů).
 - **`ALVA.TemplateDesigner.EDInputGrid.*`** - dispatch třídy pro EDInputGrid (až bude potřeba).
 
 **Klíčový princip:** folder/namespace 1:1 mapuje na **roli třídy**. Doménový název může opakovat napříč rolemi - `API.Sablony` (CRUD) vs `EDList.Sablony` (EDList dispatch nad šablonami) jsou jasně rozlišené namespace prefixem.

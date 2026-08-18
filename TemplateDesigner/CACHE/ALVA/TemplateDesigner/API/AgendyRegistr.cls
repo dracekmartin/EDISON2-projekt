@@ -1,6 +1,6 @@
 Include GENERAL
 
-/// Registr dostupných agend TemplateDesigneru (Wave 2, 2026-05-20; dvouosý model 2026-07-11).
+/// Registr dostupných agend TemplateDesigneru (2026-05-20; dvouosý model 2026-07-11).
 ///
 /// Auto-discovery z %Dictionary - najde všechny subclassy
 /// ALVA.TemplateDesigner.Agendy.BaseAgenda a vrátí jejich metadata (kombinovaný klíč
@@ -39,7 +39,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
 
         // SQL nad %Dictionary: najdi všechny přímé subclasses BaseAgenda.
         // (Pokud bude víc úrovní dědičnosti, použít %Dictionary.ClassDefinitionQuery
-        // s rekurzí - pro Wave 2 stačí přímé subclasses.)
+        // s rekurzí - zatím stačí přímé subclasses.)
         s sql = "SELECT ID FROM %Dictionary.ClassDefinition WHERE Super = ? AND ID <> ? ORDER BY ID"
         s rs = ##class(%SQL.Statement).%ExecDirect(, sql, baseClass, baseClass)
         if rs.%SQLCODE < 0 {

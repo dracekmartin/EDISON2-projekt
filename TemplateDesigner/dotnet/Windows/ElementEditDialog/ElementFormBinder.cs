@@ -138,14 +138,44 @@ public static class ElementFormBinder
     // zápis, takže bez tohoto rozlišení by obsluhy změn (přepočet řezů) považovaly plnění za edit.
     private static int _prefilling;
 
+    /// <summary>
+    /// Přepíše výchozí hodnoty polí hodnotami z kaskády - pro cíl, jehož „nenastaveno" znamená
+    /// dědění (buňka tabulky dědí z nastavení celé tabulky). Volat PŘED <see cref="Prefill"/>:
+    /// ten prázdnou reflexi doplní právě z <c>Field.Value</c>, takže formulář ukáže, jak cíl reálně
+    /// vypadá, a protože se stejná hodnota stane baselinou změn, potvrzení beze změny nic nezapíše.
+    /// Bez toho by formulář nabízel výchozí hodnoty ze schématu, které pro buňku nic neznamenají.
+    /// </summary>
+    public static void ApplyInheritedValues(EDInputForm form, IReadOnlyDictionary<string, string>? inherited)
+        => ApplyInheritedValues([.. (form.Items ?? []).OfType<Field>()], inherited);
+
+    internal static void ApplyInheritedValues(List<Field> fields, IReadOnlyDictionary<string, string>? inherited)
+    {
+        if (inherited is null) return;
+        foreach (var field in fields)
+            if (inherited.TryGetValue(field.Key, out var value)) field.Value = value;
+    }
+
     public static Dictionary<string, string> Prefill(EDInputForm form, object target)
+        => Prefill([.. (form.Items ?? []).OfType<Field>()], target);
+
+    /// <summary>Testovatelné jádro <see cref="Prefill(EDInputForm, object)"/> nad holým seznamem
+    /// polí (bez WPF kontrolky).</summary>
+    internal static Dictionary<string, string> Prefill(List<Field> fields, object target)
     {
         _prefilling++;
         try
         {
             var preFilled = new Dictionary<string, string>();
-            foreach (var field in (form.Items ?? []).OfType<Field>())
+            foreach (var field in fields)
             {
+                // Povinnost u pole, které na cíli nemá property, by nešla splnit: prefill nemá co
+                // načíst a hodnotu stejně zahodí ExtractCommands. Potkává to starší program po
+                // přidání pole do schématu (schéma jde na server hned, program až s vydáním) -
+                // bez tohohle formulář nepustí OK a nejde uložit ani zbytek. Serverová Validate
+                // platí dál, tohle ruší jen klientskou hlášku.
+                if (field.Required && !ElementPropertyAccessor.Exists(target, field.Key))
+                    field.Required = false;
+
                 var reflected = ElementPropertyAccessor.Get(target, field.Key);
                 var display = !string.IsNullOrEmpty(reflected) ? reflected : (field.Value ?? "");
                 field.Value = display;
@@ -181,15 +211,18 @@ public static class ElementFormBinder
             if (newVal == preFilled.GetValueOrDefault(path, "")) continue;
             if (!ElementPropertyAccessor.Exists(target, path)) continue;
 
-            if (IsColorField(field))
-            {
-                // Nesmyslnou barvu do modelu nepustit (hlášku u pole hlásí EDInputForm).
-                if (IsInvalidColor(newVal)) continue;
+            // Nesmyslnou barvu do modelu nepustit (hlášku u pole hlásí EDInputForm).
+            if (IsColorField(field) && IsInvalidColor(newVal)) continue;
 
-                // Vymazaná barva: u zděditelné (nullable) znamená „dědit" → null, u ostatních
-                // „nic nekreslit" → průhledná. Prázdný string by byl uložený nesmysl.
-                if (string.IsNullOrWhiteSpace(newVal))
-                    newVal = ElementPropertyAccessor.AcceptsNull(target, path) ? null : Models.ColorHex.Transparent;
+            if (string.IsNullOrWhiteSpace(newVal))
+            {
+                // Vymazané pole u zděditelné (nullable) vlastnosti znamená „nenastaveno" → null,
+                // ne prázdný řetězec. Ten by se uložil do šablony a **přebil dědění**: prázdný font
+                // u buňky by neznamenal „vezmi z tabulky", ale „žádný font", a prázdný formát
+                // hodnoty by přepsal formát sloupce.
+                if (ElementPropertyAccessor.AcceptsNull(target, path)) newVal = null;
+                // Barva, která null nesmí být, znamená „nic nekreslit" → průhledná.
+                else if (IsColorField(field)) newVal = Models.ColorHex.Transparent;
             }
 
             var oldVal = ElementPropertyAccessor.Get(target, path);

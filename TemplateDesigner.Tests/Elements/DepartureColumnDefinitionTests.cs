@@ -54,15 +54,18 @@ public class DepartureColumnDefinitionTests
     // ── Vzory (presety) ─────────────────────────────────────────────────────────────
     // Obsah vzorů staví server (PresetySloupcu) a měří ho živá parita v Caché - klient je jen
     // čte, takže tady se testuje čtení, ne pravidla rozvržení.
+    // ⚠️ Tvar dnů musí odpovídat `PresetySloupcu` v `ZastavkoveJrAd.cls`. Když se rozešel (vzory
+    // přešly při `B82` z „12345"/„7+" na „X"/„+", fixture zůstala stará), testy dál potvrzovaly
+    // chování, které server už neposílá - na server se odtud nedosáhne, hlídá to jen tahle poznámka.
 
     internal const string PresetyJson = """
         {"PRAC_SO_NE":[
-            {"id":"1","nadpis":"Pracovní dny","dny":"12345","znackyBez":"","nevypisovatZnacky":"52"},
+            {"id":"1","nadpis":"Pracovní dny","dny":"X","znackyBez":"","nevypisovatZnacky":"52"},
             {"id":"2","nadpis":"Soboty","dny":"6","znackyBez":"","nevypisovatZnacky":""},
-            {"id":"3","nadpis":"Neděle a svátky","dny":"7+","znackyBez":"","nevypisovatZnacky":"53,54"}],
+            {"id":"3","nadpis":"Neděle a svátky","dny":"+","znackyBez":"","nevypisovatZnacky":"53,54"}],
          "PRAC_VIKEND":[
-            {"id":"1","nadpis":"Pracovní dny","dny":"12345","znackyBez":"21,32","nevypisovatZnacky":""},
-            {"id":"2","nadpis":"Soboty, neděle a svátky","dny":"67+","znackyBez":"","nevypisovatZnacky":""}]}
+            {"id":"1","nadpis":"Pracovní dny","dny":"X","znackyBez":"21,32","nevypisovatZnacky":""},
+            {"id":"2","nadpis":"Soboty, neděle a svátky","dny":"6+","znackyBez":"","nevypisovatZnacky":""}]}
         """;
 
     [Fact]
@@ -73,7 +76,7 @@ public class DepartureColumnDefinitionTests
         Assert.Equal(2, presety.Count);
         var cols = presety["PRAC_SO_NE"];
         Assert.Equal(["1", "2", "3"], cols.Select(c => c.Id));
-        Assert.Equal(["12345", "6", "7+"], cols.Select(c => c.Days));
+        Assert.Equal(["X", "6", "+"], cols.Select(c => c.Days));
         Assert.Equal(["Pracovní dny", "Soboty", "Neděle a svátky"], cols.Select(c => c.Header));
         Assert.Equal("53,54", cols[2].SuppressedMarks);
         Assert.Equal("21,32", presety["PRAC_VIKEND"][0].ExcludeMarks);
@@ -139,10 +142,10 @@ public class DepartureColumnDefinitionTests
     {
         var baseParams = new Dictionary<string, object?> { ["ROZDELENI_SLOUPCU"] = "x" };
 
-        var withDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, "{\"sloupce\":[]}");
+        var withDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, "{\"sloupce\":[]}", null);
         Assert.Equal("{\"sloupce\":[]}", withDef["DEFINICE_SLOUPCU"]);
 
-        var withoutDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, null);
+        var withoutDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, null, null);
         Assert.False(withoutDef.ContainsKey("DEFINICE_SLOUPCU"));
     }
 

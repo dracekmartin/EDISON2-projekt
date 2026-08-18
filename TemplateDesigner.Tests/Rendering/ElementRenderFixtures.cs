@@ -80,12 +80,12 @@ internal static class ElementRenderFixtures
     public static DataContext LineTableData() => RenderSnapshot.Data(
         ("ZASTAVKY",
         [
-            RenderSnapshot.Row(("ID", "1"), ("POPIS", "České Budějovice, aut.nádr."), ("TC", "1"),
-                ("ZONA", "1"), ("MHD", "x"), ("PORADI", "1"), ("NASTUPISTE", "12")),
-            RenderSnapshot.Row(("ID", "2"), ("POPIS", "Hluboká nad Vltavou"), ("TC", "3"),
-                ("ZONA", "2"), ("PORADI", "2")),
-            RenderSnapshot.Row(("ID", "3"), ("POPIS", "Týn nad Vltavou"), ("TC", "7"),
-                ("ZONA", "3"), ("PORADI", "3"), ("TYP", "prijezd")),
+            RenderSnapshot.Row(("ID", "1"), ("NAZEV_ZASTAVKY", "České Budějovice, aut.nádr."), ("TC", "1"),
+                ("ZONY", "1"), ("MHD", "x"), ("PORADI", "1"), ("NASTUPISTE", "12")),
+            RenderSnapshot.Row(("ID", "2"), ("NAZEV_ZASTAVKY", "Hluboká nad Vltavou"), ("TC", "3"),
+                ("ZONY", "2"), ("PORADI", "2")),
+            RenderSnapshot.Row(("ID", "3"), ("NAZEV_ZASTAVKY", "Týn nad Vltavou"), ("TC", "7"),
+                ("ZONY", "3"), ("PORADI", "3"), ("TYP", "prijezd")),
         ]),
         ("SPOJE",
         [

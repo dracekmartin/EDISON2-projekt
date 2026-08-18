@@ -180,7 +180,7 @@ public partial class PropertiesPanel : UserControl
             string newVal = box.Text;
             if (newVal == sd.Get()) return;
             string captured = oldVal;
-            Commit(sd.Label, captured, newVal, v => { sd.Set((string)v!); _invalidate?.Invoke(); });
+            Commit(sd, captured, newVal, v => { sd.Set((string)v!); _invalidate?.Invoke(); });
             oldVal = newVal;
         };
 
@@ -222,7 +222,7 @@ public partial class PropertiesPanel : UserControl
             string newVal = combo.Text;
             if (newVal == sd.Get()) return;
             string captured = oldVal;
-            Commit(sd.Label, captured, newVal, v => { sd.Set((string)v!); _invalidate?.Invoke(); });
+            Commit(sd, captured, newVal, v => { sd.Set((string)v!); _invalidate?.Invoke(); });
             oldVal = newVal;
         };
 
@@ -282,7 +282,7 @@ public partial class PropertiesPanel : UserControl
                     {
                         string oldText = tpd.Get();
                         string newText = oldText + $"{{{field.FieldName}}}";
-                        Commit(tpd.Label, oldText, newText, v =>
+                        Commit(tpd, oldText, newText, v =>
                         {
                             tpd.Set((string)v!);
                             box.Text = (string)v!;
@@ -304,7 +304,7 @@ public partial class PropertiesPanel : UserControl
             string newVal = box.Text;
             if (newVal == tpd.Get()) return;
             string captured = oldVal;
-            Commit(tpd.Label, captured, newVal, v => { tpd.Set((string)v!); _invalidate?.Invoke(); });
+            Commit(tpd, captured, newVal, v => { tpd.Set((string)v!); _invalidate?.Invoke(); });
             oldVal = newVal;
         };
 
@@ -382,7 +382,7 @@ public partial class PropertiesPanel : UserControl
             if (fd.Unit == "mm") parsed = MmMath.Round(parsed);
             if (Math.Abs(parsed - fd.Get()) < 0.0001f) return;
             float captured = oldVal;
-            Commit(fd.Label, captured, parsed, v => { fd.Set((float)v!); _invalidate?.Invoke(); });
+            Commit(fd, captured, parsed, v => { fd.Set((float)v!); _invalidate?.Invoke(); });
             oldVal    = parsed;
             box.Text  = parsed.ToString(fd.Format);
         };
@@ -408,7 +408,7 @@ public partial class PropertiesPanel : UserControl
             if (_suppressChanges) return;
             bool newVal = cb.IsChecked == true;
             bool oldVal = !newVal;
-            Commit(bd.Label, oldVal, newVal, v => { bd.Set((bool)v!); _invalidate?.Invoke(); });
+            Commit(bd, oldVal, newVal, v => { bd.Set((bool)v!); _invalidate?.Invoke(); });
         };
 
         ContentPanel.Children.Add(cb);
@@ -457,7 +457,7 @@ public partial class PropertiesPanel : UserControl
         {
             string captured = oldVal;
             oldVal = newHex;
-            Commit(cd.Label, captured, newHex, v =>
+            Commit(cd, captured, newHex, v =>
             {
                 cd.Set((string)v!);
                 UpdateSwatch(swatch, (string)v!);
@@ -532,7 +532,7 @@ public partial class PropertiesPanel : UserControl
             object newVal = item.Tag!;
             object oldVal = ed.Get();
             if (Equals(newVal, oldVal)) return;
-            Commit(ed.Label, oldVal, newVal, v => { ed.Set(v!); _invalidate?.Invoke(); });
+            Commit(ed, oldVal, newVal, v => { ed.Set(v!); _invalidate?.Invoke(); });
         };
 
         panel.Children.Add(combo);
@@ -559,9 +559,19 @@ public partial class PropertiesPanel : UserControl
         }
     }
 
-    private void Commit(string label, object? oldVal, object? newVal, Action<object?> apply)
+    private void Commit(PropertyDescriptor d, object? oldVal, object? newVal, Action<object?> apply)
     {
-        _execute?.Invoke(new SetPropertyCommand(label, oldVal, newVal, apply));
+        // Deskriptor smí dodat vlastní vratný příkaz (změna sahající na víc cílů - formátování
+        // skupiny buněk). Pak se hodnota nezapisuje přes `apply`, takže se musí překreslit ručně.
+        if (d.MakeCommand is { } make)
+        {
+            if (make(newVal) is { } custom) _execute?.Invoke(custom);
+            _invalidate?.Invoke();
+        }
+        else
+        {
+            _execute?.Invoke(new SetPropertyCommand(d.Label, oldVal, newVal, apply));
+        }
 
         // Pokud má panel deskriptory s VisibleWhen, rebuildni - změna jedné hodnoty
         // mohla ovlivnit viditelnost jiných řádků.

@@ -6,13 +6,13 @@ Každý element implementuje `GetPropertyDescriptors()` vracející seznam deskr
 
 ### Zúžená role descriptorů vůči EDInputFormu (evidence 2026-07-29)
 
-Od Wave 4 je hlavní editační cestou **Caché formulář** (`*Edit.cls`): u elementu se schématem ho
+Hlavní editační cestou je **Caché formulář** (`*Edit.cls`): u elementu se schématem ho
 `RefreshInlineProperties` ukáže v panelu i v dialogu. Descriptory tím **nepřestaly platit** - jsou
 živé ve třech konkrétních rolích a proto je nelze odstranit:
 
 1. **Formátovací lišta** (`FormatToolbar`) je potřebuje **vždy**, i když se zobrazuje Caché formulář.
 2. **Úprava více elementů naráz** jde jen přes ně (Caché formulář edituje jeden cíl).
-3. **Fallback** pro element bez `*Edit.cls` schématu (dnes uspaná pevná tabulka).
+3. **Fallback** pro element bez `*Edit.cls` schématu (dnes pevná tabulka).
 
 **Nejsou tedy druhý zdroj pravdy pro schéma** - u base polí je autoritou sdílený
 [`BaseElementFields.cls`](../../CACHE/ALVA/TemplateDesigner/EDInputForm/BaseElementFields.cls) a C#
@@ -27,6 +27,10 @@ Od Wave 4 je hlavní editační cestou **Caché formulář** (`*Edit.cls`): u el
 - `ColorPropertyDescriptor` - color picker (WinForms ColorDialog)
 - `EnumPropertyDescriptor` - dropdown s definovanými možnostmi `Options = [(label, value), ...]`
 - `SuggestStringPropertyDescriptor` - filtrovatelný editovatelný ComboBox; `GetSuggestions()` vrací `(Value, Label)` páry
+
+Deskriptor smí nést i **vlastní vratný příkaz** (`MakeCommand`) - pro změnu, která sahá na víc cílů
+najednou (formátování skupiny buněk pevné tabulky). Bez toho by zpětný krok vrátil všem jednu
+společnou hodnotu z lišty místo té jejich; vzor viz `Models/TableCellFormatting.cs`.
 
 **Příklad použití:**
 ```csharp

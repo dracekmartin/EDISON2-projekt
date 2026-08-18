@@ -1,4 +1,6 @@
+using SkiaSharp;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Models;
 
@@ -29,6 +31,29 @@ public class GridStyle
     public float? Width { get; set; }
 
     public LineStyle Style { get; set; } = LineStyle.Solid;
+
+    /// <summary>
+    /// Pero vnitřních čar. Tloušťka v mm (bez vlastní hodnoty z rámečku prvku), minimum 0,5 px,
+    /// ať je čára vidět i při oddáleném pohledu.
+    /// <para>
+    /// ⚠️ **Tenká čára se musí vyhlazovat**, jinak při posunu prvku po plátně mizí a zase se
+    /// objevuje: tah užší než pixel se bez vyhlazení kreslí jen tehdy, když zrovna trefí střed
+    /// pixelu, a to se při každém posunu o zlomek milimetru mění. Tabulky si pero stavěly samy bez
+    /// vyhlazení a blikaly (nahlášeno 12. 8.); JŘ prvky mají totéž pravidlo v <c>SchedulePaints</c>.
+    /// </para>
+    /// Volající musí dispose.
+    /// </summary>
+    public SKPaint CreatePaint(RenderContext ctx, float fallbackWidthMm)
+    {
+        float strokePx = MathF.Max(0.5f, (Width ?? fallbackWidthMm) * ctx.MmToPx);
+        return new SKPaint
+        {
+            Color       = ColorHex.ParseOrBlack(Color),
+            IsStroke    = true,
+            StrokeWidth = strokePx,
+            IsAntialias = strokePx < 1f,
+        };
+    }
 
     public GridStyle Clone() => (GridStyle)MemberwiseClone();
 }

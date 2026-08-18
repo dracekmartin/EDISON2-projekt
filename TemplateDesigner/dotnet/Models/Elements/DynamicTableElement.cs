@@ -159,15 +159,9 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         float tableHeight = Height ?? (ctx.Data is not null ? CalculateHeightFromData(ctx.Data) : EffectiveDesignerHeight);
         var tableRect = ctx.ToCanvasRect(X, Y, Width, tableHeight);
 
-        using var bgPaint     = new SKPaint { Color = SKColors.White };
+        using var bgPaint = new SKPaint { Color = SKColors.White };
         // Jediný paint pro všechny vnitřní čáry; vnější obrys kreslí RenderBorderPass z rámečku elementu.
-        // Tloušťka v mm (dřív natvrdo v px, takže čáry neškálovaly se zvětšením ani s tiskovým rozlišením).
-        using var sepPaint = new SKPaint
-        {
-            Color = ColorHex.ParseOrBlack(Grid.Color),
-            IsStroke = true,
-            StrokeWidth = MathF.Max(0.5f, (Grid.Width ?? BorderWidth) * ctx.MmToPx),
-        };
+        using var sepPaint = Grid.CreatePaint(ctx, BorderWidth);
 
         ctx.Canvas.DrawRect(tableRect, bgPaint);
 

@@ -81,6 +81,10 @@ public class TableRow
 
     public string? BackgroundColor { get; set; }
 
+    /// <summary>Vlastní výška řádku v mm. Null = společná výška tabulky (<c>RowHeight</c>);
+    /// vyplní se tažením vodorovné čáry.</summary>
+    public float? Height { get; set; }
+
     /// <summary>Podmíněná viditelnost vyhodnocovaná print enginem. Null = vždy viditelný.</summary>
     public string? VisibilityExpression { get; set; }
 
@@ -88,6 +92,7 @@ public class TableRow
     {
         Cells               = Cells.Select(c => c.Clone()).ToList(),
         BackgroundColor     = BackgroundColor,
+        Height              = Height,
         VisibilityExpression = VisibilityExpression
     };
 }
@@ -102,30 +107,35 @@ public class TableCell
     /// <summary>Per-cell styl. Null = výchozí. Jen nenullové properties přepisují default.</summary>
     public TextStyle? Style { get; set; }
 
+    /// <summary>
+    /// Přes kolik sloupců je buňka sloučená; 1 = běžná buňka. Aditivní pole - starší šablony ho
+    /// nemají a vypadají stejně jako dřív. Buňky, které sloučená překryla, v modelu **zůstávají**
+    /// (jen se nekreslí), takže rozdělení je prosté vrácení téhle hodnoty na 1.
+    /// </summary>
+    public int ColSpan { get; set; } = 1;
+
     public TableCell Clone() => new()
     {
         Content = Content,
         Format  = Format,
         Style   = Style?.Clone(),
+        ColSpan = ColSpan,
     };
 }
 
 // ─── TableElement ────────────────────────────────────────────────────────────
 
 /// <summary>
-/// Tabulkový element podporující dva módy:
-///   Fixed   - řádky definované v šabloně, buňky obsahují statický text nebo {PLACEHOLDER}.
-///   Dynamic - řádky generované za běhu z DataSource (klíč do DataContext._rows).
+/// Pevná (ručně vyplňovaná) tabulka - mřížka m × n, jejíž obsah zadává uživatel; buňka nese text
+/// nebo {PLACEHOLDER} vyhodnocený z dat. Nahrazuje skládání hlaviček a bloků (platební údaje,
+/// rekapitulace) z jednotlivých textových prvků: chová se jako **jeden** prvek.
 ///
-/// Height je vždy null u Dynamic módu - výšku vypočítá print engine.
-/// U Fixed módu je výška odvozena automaticky z počtu řádků.
+/// Řádky se generují z dat u <see cref="DynamicTableElement"/>, ne tady. Mód
+/// <see cref="TableMode.Dynamic"/> zůstal jen kvůli **starým šablonám** - z UI se nenastavuje
+/// (přepínač režimu v panelu není), nové tabulky vznikají přes <see cref="CreateGrid"/> jako Fixed.
 ///
-/// <b>SPÍCÍ element (jen legacy read).</b> Živá tabulka je <see cref="DynamicTableElement"/> - tuto
-/// třídu nelze z UI vytvořit (paleta ani „+Přidat" menu ji nenabízí, továrna <c>CreateElementByType</c>
-/// ji nevyrábí; zamčeno testem). Zůstává registrovaná (<c>JsonDerivedType</c>) + editovatelná
-/// (TableEditorDialog) jen kvůli otevření starých šablon. Oživení Fixed tabulky (roadmap, gated na
-/// merged cells): vrátit větev <c>ElementTypes.Table</c> do <c>CreateElementByType</c>/<c>GetDefaultElementSize</c>
-/// + položku do palety/menu. Neodstraňovat třídu ani JsonDerivedType - rozbilo by načtení legacy šablon.
+/// Výchozí nová tabulka je bez řádku záhlaví: záhlaví = první řádek, který si uživatel udělá tučný
+/// (rozhodnutí Jan 12. 8.). <see cref="ShowHeader"/> zůstává kvůli šablonám, které ho už mají.
 /// </summary>
 public class TableElement : TemplateElement
 {
@@ -137,6 +147,24 @@ public class TableElement : TemplateElement
     {
         BorderColor = "#FF999999";
         BorderWidth = 0.19f;
+    }
+
+    /// <summary>
+    /// Nová prázdná mřížka pro vložení z palety - viditelné čáry, bez řádku záhlaví, sloupce
+    /// stejně široké (auto). Bez tohohle by se vložil prvek bez sloupců, který se nevykreslí.
+    /// </summary>
+    public static TableElement CreateGrid(int columns, int rows)
+    {
+        var t = new TableElement
+        {
+            Mode    = TableMode.Fixed,
+            Columns = [.. Enumerable.Range(0, columns).Select(_ => new TableColumn { Header = "", Width = 0f })],
+        };
+        t.Rows = [.. Enumerable.Range(0, rows).Select(_ => new TableRow
+        {
+            Cells = [.. Enumerable.Range(0, columns).Select(_ => new TableCell())]
+        })];
+        return t;
     }
 
     public TableMode Mode { get; set; } = TableMode.Dynamic;
@@ -158,7 +186,10 @@ public class TableElement : TemplateElement
     /// <summary>Výška jednoho datového řádku v mm.</summary>
     public float RowHeight { get; set; } = 6f;
 
-    public bool ShowHeader { get; set; } = true;
+    /// <summary>Zvláštní řádek záhlaví. Výchozí je vypnutý - u ručně vyplňované tabulky si záhlaví
+    /// dělá uživatel z prvního řádku. Uložené šablony nesou hodnotu vždy explicitně, takže změna
+    /// výchozí hodnoty jim vzhled nemění.</summary>
+    public bool ShowHeader { get; set; }
 
     /// <summary>Výška řádku záhlaví v mm.</summary>
     public float HeaderHeight { get; set; } = 8f;
@@ -169,8 +200,9 @@ public class TableElement : TemplateElement
     /// <summary>Styl datových buněk tabulky. Null = výchozí (#222222 text, průhledné pozadí).</summary>
     public TextStyle? DataStyle { get; set; }
 
-    /// <summary>Mřížka = vnitřní čáry. Vnější obrys kreslí rámeček elementu (viz <see cref="GridStyle"/>).</summary>
-    public GridStyle Grid { get; set; } = new() { ShowRowLines = false, ShowColumnLines = false, Color = "#FFCCCCCC" };
+    /// <summary>Mřížka = vnitřní čáry. Vnější obrys kreslí rámeček elementu (viz <see cref="GridStyle"/>).
+    /// Zapnutá: bez čar by u prázdné ručně vyplňované tabulky nebylo poznat, kam se píše.</summary>
+    public GridStyle Grid { get; set; } = new() { ShowRowLines = true, ShowColumnLines = true, Color = "#FFCCCCCC" };
 
     /// <summary>Barva střídajících se řádků (#AARRGGBB). Null = bez střídání.</summary>
     public string? AlternatingRowColor { get; set; }
@@ -187,16 +219,28 @@ public class TableElement : TemplateElement
     /// <summary>Počet ukázkových řádků zobrazených v designeru pro Dynamic mód.</summary>
     private int DesignerPreviewRows => 3;
 
-    protected override float DesignerPlaceholderHeight
-    {
-        get
-        {
-            float summaryH = SummaryRows is { Count: > 0 } ? SummaryRows.Count * RowHeight : 0f;
-            if (Mode == TableMode.Fixed && Rows is { Count: > 0 })
-                return (ShowHeader ? HeaderHeight : 0f) + Rows.Count * RowHeight + summaryH;
-            return 40f + summaryH;
-        }
-    }
+    protected override float DesignerPlaceholderHeight => Mode == TableMode.Fixed
+        // Aspoň jeden řádek - prázdná tabulka by jinak měla nulovou výšku a nešlo by ji chytit myší.
+        ? (Rows is { Count: > 0 } r ? NaturalHeight(r) : NaturalHeight(1))
+        : 40f + (SummaryRows?.Count ?? 0) * RowHeight;
+
+    /// <summary>Neškálovaná výška obsahu v mm - každý řádek svou výškou (<see cref="TableRow.Height"/>,
+    /// bez ní společná <see cref="RowHeight"/>).</summary>
+    private float NaturalHeight(IReadOnlyList<TableRow> rows) =>
+        (ShowHeader ? HeaderHeight : 0f)
+        + rows.Sum(r => r.Height ?? RowHeight)
+        + (SummaryRows?.Count ?? 0) * RowHeight;
+
+    /// <summary>Totéž pro řádky z dat - ty vlastní výšku nemají, takže stačí počet.</summary>
+    private float NaturalHeight(int rowCount) =>
+        (ShowHeader ? HeaderHeight : 0f) + rowCount * RowHeight + (SummaryRows?.Count ?? 0) * RowHeight;
+
+    /// <summary>Řádky po filtru podmíněné viditelnosti - **jediné místo**, kudy jdou render i výpočet
+    /// výšky, takže se nemůžou rozejít v počtu.</summary>
+    private List<TableRow> VisibleFixedRows(DataContext? data) =>
+        Mode == TableMode.Fixed && Rows is { Count: > 0 }
+            ? [.. Rows.Where(r => ExpressionEvaluator.IsVisible(r.VisibilityExpression, data))]
+            : [];
 
     /// <summary>
     /// Dynamická výška v mm z dat - pro print engine (přes <c>SkiaHeightCalculator</c>, stejně jako
@@ -205,21 +249,10 @@ public class TableElement : TemplateElement
     /// </summary>
     public float CalculateHeightFromData(DataContext? data)
     {
-        float headerH = ShowHeader ? HeaderHeight : 0f;
-        float summaryH = SummaryRows is { Count: > 0 } ? SummaryRows.Count * RowHeight : 0f;
+        if (Mode == TableMode.Fixed) return NaturalHeight(VisibleFixedRows(data));
 
-        int rowCount;
-        if (Mode == TableMode.Fixed)
-        {
-            rowCount = Rows?.Count(r => ExpressionEvaluator.IsVisible(r.VisibilityExpression, data)) ?? 0;
-        }
-        else
-        {
-            var rows = data?.GetRows(DataSource ?? "") ?? [];
-            rowCount = rows.Count > 0 ? rows.Count : DesignerPreviewRows;
-        }
-
-        return headerH + rowCount * RowHeight + summaryH;
+        var rows = data?.GetRows(DataSource ?? "") ?? [];
+        return NaturalHeight(rows.Count > 0 ? rows.Count : DesignerPreviewRows);
     }
 
     // ─── Style resolution (kaskáda column → element → table defaults → CellDefaults) ──
@@ -277,38 +310,43 @@ public class TableElement : TemplateElement
 
     public override void Render(RenderContext ctx)
     {
-        if (Width <= 0 || Columns.Count == 0) return;
+        if (Width <= 0) return;
 
-        float tableHeight = EffectiveDesignerHeight;
+        float tableHeight = Height ?? (ctx.Data is not null ? CalculateHeightFromData(ctx.Data) : EffectiveDesignerHeight);
         var tableRect = ctx.ToCanvasRect(X, Y, Width, tableHeight);
 
-        using var bgPaint     = new SKPaint { Color = SKColors.White };
+        using var bgPaint = new SKPaint { Color = SKColors.White };
         // Jediný paint pro vnitřní čáry; vnější obrys kreslí RenderBorderPass z rámečku elementu.
-        // Tloušťka v mm (dřív natvrdo v px → čáry neškálovaly se zvětšením ani s tiskovým rozlišením).
-        using var sepPaint = new SKPaint
-        {
-            Color = ColorHex.ParseOrBlack(Grid.Color),
-            IsStroke = true,
-            StrokeWidth = MathF.Max(0.5f, (Grid.Width ?? BorderWidth) * ctx.MmToPx),
-        };
+        using var sepPaint = Grid.CreatePaint(ctx, BorderWidth);
 
         ctx.Canvas.DrawRect(tableRect, bgPaint);
 
-        var visibleColumns = Columns.Where(c => c.Visible).ToList();
-        if (visibleColumns.Count == 0)
+        var cols = Columns.Where(c => c.Visible).ToList();
+        if (cols.Count == 0)
         {
+            // Bez sloupců se dřív nevykreslilo vůbec nic - vložený prvek byl neviditelný a uživatel
+            // nevěděl, kam kliknul. Stejný naváděcí placeholder jako u dynamické tabulky.
+            ctx.Canvas.DrawRect(tableRect, sepPaint);
+            using var hintFont  = new SKFont { Size = 3.2f * ctx.MmToPx };
+            using var hintPaint = new SKPaint { Color = new SKColor(0xFF999999), IsAntialias = true };
+            ctx.Canvas.DrawText("Tabulka - přidejte sloupce", tableRect.MidX,
+                tableRect.MidY + hintFont.Size * 0.35f, SKTextAlign.Center, hintFont, hintPaint);
             return;
         }
 
-        // Šířky sloupců v mm přes sdílené jádro (TableLayout.ResolveWidths) - sjednoceno s
-        // DynamicTable/StopList. Width <= 0 = „auto" (rovnoměrné rozdělení zbytku), jinak pevná mm/%.
-        float[] colWidths = TableLayout.ResolveWidths(
-            visibleColumns.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode)).ToList(),
-            Width);
+        var layout = ComputeLayout(ctx.Data, cols);
+        float[] colWidths = layout.ColumnWidths;
+        float headerH = layout.HeaderHeightMm;
+        float rowH    = layout.RowHeightMm;
+        float fontScale = layout.FontScale;
 
         // Pre-resolve styly (kaskáda je deterministická)
-        var headerStyles = visibleColumns.Select(ResolveColumnHeaderStyle).ToArray();
-        var dataStyles   = visibleColumns.Select(ResolveColumnDataStyle).ToArray();
+        var headerStyles = cols.Select(ResolveColumnHeaderStyle).ToArray();
+        var dataStyles   = cols.Select(ResolveColumnDataStyle).ToArray();
+
+        var fixedRows = layout.Rows;
+        IReadOnlyList<DataContext> dataRows =
+            Mode == TableMode.Dynamic ? ctx.Data?.GetRows(DataSource ?? "") ?? [] : [];
 
         // Clip na hranice elementu - chrání před přesahem, pokud součet šířek sloupců
         // přesahuje Width (nekonzistentní konfigurace). Konzistentní s ostatními tabulkovými elementy.
@@ -316,23 +354,26 @@ public class TableElement : TemplateElement
         ctx.Canvas.ClipRect(tableRect);
         try
         {
-            float currentY = Y;
-
+            // Plán řádků (R1) - element tvaruje data, kreslí sdílená smyčka.
+            var plan = new List<RowSpec>();
             if (ShowHeader)
-                currentY = RenderHeader(ctx, visibleColumns, colWidths, headerStyles, currentY, sepPaint);
+                plan.Add(HeaderRow(cols, colWidths, headerStyles, sepPaint, headerH));
+            plan.AddRange(Mode == TableMode.Fixed
+                ? FixedRowSpecs(ctx, cols, colWidths, dataStyles, sepPaint, fixedRows, layout.RowHeights)
+                : DynamicRowSpecs(ctx, cols, colWidths, dataStyles, sepPaint, dataRows, rowH));
 
-            IReadOnlyList<DataContext> dataRows = [];
-            if (Mode == TableMode.Fixed)
-                currentY = RenderFixedRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint);
-            else
-            {
-                dataRows = ctx.Data?.GetRows(DataSource ?? "") ?? [];
-                currentY = RenderDynamicRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint, dataRows);
-            }
+            float currentY = RowPlanRenderer.DrawRows(ctx, X, Y, Width, plan, fontScale);
 
             if (SummaryRows is { Count: > 0 })
-                RenderSummaryRows(ctx, visibleColumns, colWidths, currentY, sepPaint, dataRows);
+            {
+                // Oddělovač bloku souhrnů se kreslí PŘED pozadím prvního souhrnného řádku - opačné
+                // pořadí než u řádkových čar, proto zůstává tady a nejde do plánu.
+                ctx.Canvas.DrawLine(ctx.ToCanvas(X, currentY), ctx.ToCanvas(X + Width, currentY), sepPaint);
 
+                RowPlanRenderer.DrawRows(ctx, X, currentY, Width,
+                    SummaryRows.Select(r => SummaryRow(ctx, cols, colWidths, r, dataRows, rowH, sepPaint)),
+                    fontScale);
+            }
         }
         finally
         {
@@ -340,139 +381,611 @@ public class TableElement : TemplateElement
         }
     }
 
-    private float RenderHeader(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        ResolvedTextStyle[] headerStyles, float startY, SKPaint sepPaint)
+    private static List<TableLayout.ColWidth> WidthProjection(List<TableColumn> cols) =>
+        [.. cols.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode))];
+
+    /// <summary>
+    /// Rozměry mřížky v mm relativně k prvku. **Jediný zdroj** pro kreslení i pro trefování myší -
+    /// kdyby si je editace na plátně počítala po svém, klikalo by se vedle při každém zmenšení
+    /// nebo roztažení tabulky.
+    /// </summary>
+    /// <param name="Rows">Viditelné řádky - **objekty z modelu**, takže se do nich dá rovnou psát.</param>
+    /// <param name="ColumnIndexes">Index viditelného sloupce → index v <see cref="Columns"/>. Buňky
+    /// v řádku jsou uložené podle modelu, takže bez tohohle by se u skryté ho sloupce psalo vedle.</param>
+    /// <param name="RowHeights">Výška každého viditelného řádku v mm (už naškálovaná).</param>
+    /// <param name="RowHeightMm">Společná výška - pro souhrnné řádky a pro režim „z dat".</param>
+    public readonly record struct GridLayout(
+        float[] ColumnWidths, float[] RowHeights, float RowHeightMm, float HeaderHeightMm,
+        float FontScale, IReadOnlyList<TableRow> Rows, int[] ColumnIndexes);
+
+    public GridLayout ComputeLayout(DataContext? data) =>
+        ComputeLayout(data, [.. Columns.Where(c => c.Visible)]);
+
+    private GridLayout ComputeLayout(DataContext? data, List<TableColumn> cols)
     {
-        // Full-width pozadí z table-level stylu - pokryje případný přesah nebo mezery
-        var tableHeaderStyle = ResolveColumnHeaderParent();
-        using var headerBgPaint = tableHeaderStyle.CreateBgPaint();
-        if (headerBgPaint is not null)
-        {
-            var headerBgRect = ctx.ToCanvasRect(X, startY, Width, HeaderHeight);
-            ctx.Canvas.DrawRect(headerBgRect, headerBgPaint);
-        }
+        float[] colWidths = TableLayout.ResolveWidths(WidthProjection(cols), Width);
+        var rows = VisibleFixedRows(data);
 
-        float colX = X;
-        for (int i = 0; i < cols.Count; i++)
-        {
-            float colW = colWidths[i];
-            var cellRect = new SKRect(colX, startY, colX + colW, startY + HeaderHeight);
-            CellRenderer.DrawCell(ctx, cellRect, Rendering.ColumnHeader.Resolve(cols[i].Header, ""), headerStyles[i]);
+        int rowCount = Mode == TableMode.Fixed
+            ? rows.Count
+            : ((data?.GetRows(DataSource ?? "").Count ?? 0) is var n && n > 0 ? n : DesignerPreviewRows);
+        float naturalH = Mode == TableMode.Fixed ? NaturalHeight(rows) : NaturalHeight(rowCount);
+        float heightRatio = Height.HasValue && naturalH > 0 ? Height.Value / naturalH : 1f;
+        float widthScale  = TableLayout.ComputeWidthScale(WidthProjection(cols), Width);
 
-            if (Grid.ShowColumnLines)
-            {
-                var top = ctx.ToCanvas(colX + colW, startY);
-                var bot = ctx.ToCanvas(colX + colW, startY + HeaderHeight);
-                ctx.Canvas.DrawLine(top, bot, sepPaint);
-            }
-            colX += colW;
-        }
+        // Písmo se jen **zmenšuje**, aby se obsah vešel (jako StopList/DepartureGrid/DynamicTable);
+        // nikdy se nezvětšuje - vyšší tabulka má mít vyšší řádky, ne větší text.
+        float fontScale = MathF.Min(1f, MathF.Min(heightRatio, widthScale));
 
-        // Čára pod záhlavím
-        var lineStart = ctx.ToCanvas(X, startY + HeaderHeight);
-        var lineEnd   = ctx.ToCanvas(X + Width, startY + HeaderHeight);
-        ctx.Canvas.DrawLine(lineStart, lineEnd, sepPaint);
+        float[] rowHeights = ResolveRowHeights(rows, rowCount, fontScale);
+        int[] columnIndexes = [.. cols.Select(c => Columns.IndexOf(c))];
 
-        return startY + HeaderHeight;
+        return new(colWidths, rowHeights, RowHeight * fontScale, HeaderHeight * fontScale,
+                   fontScale, rows, columnIndexes);
     }
 
-    private float RenderFixedRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        ResolvedTextStyle[] dataStyles, float startY, SKPaint sepPaint)
+    /// <summary>
+    /// Výšky řádků **stejnou mechanikou jako šířky sloupců** (<see cref="TableLayout.ResolveWidths"/>):
+    /// řádek s vlastní výškou si ji drží, ostatní si rovným dílem rozdělí zbytek prvku. Tažení
+    /// vodorovné hranice se tak chová přesně jako tažení svislé, jen kolmo - a celková výška prvku
+    /// se přitom nemění.
+    /// <para>
+    /// ⚠️ Dřív se místo rozdělení celý obsah **škáloval** na výšku prvku. Tažení hranice se tím
+    /// rozjelo samo proti sobě: vyšší řádek = vyšší obsah = větší zmenšení = jiné rozměry pod myší
+    /// při dalším pohybu (nahlášeno 12. 8.).
+    /// </para>
+    /// Bez pevné výšky prvku se nerozděluje nic - výška je prostě součet řádků.
+    /// </summary>
+    private float[] ResolveRowHeights(IReadOnlyList<TableRow> rows, int rowCount, float fontScale)
     {
-        if (Rows is null || Rows.Count == 0) return startY;
+        if (Mode != TableMode.Fixed)
+            return [.. Enumerable.Repeat(RowHeight * fontScale, rowCount)];
 
-        SKColor? altColor = ColorHex.ParseOrNull(AlternatingRowColor);
-        using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
+        if (!Height.HasValue)
+            return [.. rows.Select(r => r.Height ?? RowHeight)];
 
-        float currentY = startY;
-        int visibleIdx = 0;
-        foreach (var row in Rows)
+        // Záhlaví i souhrny se kreslí zmenšené stejnou škálou jako text, takže se musí odečítat
+        // zmenšené - jinak by řádkům zbylo méně, než kolik je reálně volného místa, a dole by
+        // zůstal pruh bílé (nález revize 12. 8.).
+        float proRadky = Height.Value
+                         - (ShowHeader ? HeaderHeight * fontScale : 0f)
+                         - (SummaryRows?.Count ?? 0) * RowHeight * fontScale;
+
+        // Minimum i pro řádky bez vlastní výšky: bez něj je sdílené jádro stáhne na nulu, jakmile
+        // samotné pevné výšky přerostou místo - a nulový řádek už nejde chytit myší.
+        return TableLayout.ResolveWidths(
+            [.. rows.Select(r => new TableLayout.ColWidth(r.Height, ColumnWidthMode.Mm))],
+            MathF.Max(0f, proRadky), MinRowHeightMm);
+    }
+
+    // ─── Editace na plátně ───────────────────────────────────────────
+
+    // ─── Sloučené buňky ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Sloupec, který dané místo **vlastní**: u sloučené buňky je to ta její levá, jinak sloupec
+    /// sám. Díky tomu klik doprostřed sloučeného nadpisu vybere nadpis, ne překrytou buňku pod ním.
+    /// </summary>
+    public int SpanAnchorColumn(DataContext? data, int row, int col)
+    {
+        var layout = ComputeLayout(data);
+        if (row < 0 || row >= layout.Rows.Count || col <= 0) return Math.Max(0, col);
+
+        // Zleva doprava se hledat nedá bez projití všech; stačí jít od kliknutého sloupce doleva
+        // a vzít první, jehož sloučení sahá až sem. Překryté buňky mají span 1, takže nepřekáží.
+        for (int i = col - 1; i >= 0; i--)
+            if (i + SpanOf(layout, row, i) > col) return i;
+        return col;
+    }
+
+    /// <summary>Přes kolik viditelných sloupců buňka sahá (nejméně 1, nejvýš do konce mřížky).</summary>
+    public int SpanAt(DataContext? data, int row, int col)
+    {
+        var layout = ComputeLayout(data);
+        if (row < 0 || row >= layout.Rows.Count || col < 0 || col >= layout.ColumnIndexes.Length) return 1;
+        return SpanOf(layout, row, col);
+    }
+
+    private static int SpanOf(GridLayout layout, int row, int visibleCol)
+    {
+        if (visibleCol < 0 || visibleCol >= layout.ColumnIndexes.Length) return 1;
+        var cells = layout.Rows[row].Cells;
+        int modelCol = layout.ColumnIndexes[visibleCol];
+        int span = modelCol < cells.Count ? cells[modelCol].ColSpan : 1;
+        return Math.Clamp(span, 1, layout.ColumnIndexes.Length - visibleCol);
+    }
+
+    /// <summary>
+    /// Sloučí buňky výběru - **po řádcích**, protože slučujeme jen vodorovně. Neprázdné obsahy se
+    /// spojí mezerou, ať se žádný text tiše neztratí (kdo slučuje, dělá to obvykle na prázdné
+    /// tabulce; tohle je pojistka). Vrací false, když není co slučovat.
+    /// </summary>
+    public bool MergeRange(DataContext? data, CellRange range)
+    {
+        if (range.ColumnCount < 2) return false;
+
+        bool zmena = false;
+        for (int row = range.Top; row <= range.Bottom; row++)
         {
-            if (!ExpressionEvaluator.IsVisible(row.VisibilityExpression, ctx.Data)) continue;
+            var texts = new List<string>();
+            for (int col = range.Left; col <= range.Right; col++)
+                if (EnsureCell(data, row, col) is { Content.Length: > 0 } cell) texts.Add(cell.Content);
 
-            // Zebra
-            if (altBgPaint is not null && visibleIdx % 2 == 1)
-                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), altBgPaint);
+            if (EnsureCell(data, row, range.Left) is not { } anchor) continue;
+            anchor.Content = string.Join(" ", texts);
+            anchor.ColSpan = range.ColumnCount;
 
-            // Row-level bg override
-            if (row.BackgroundColor is not null)
-            {
-                using var rowBg = new SKPaint { Color = ColorHex.ParseOrTransparent(row.BackgroundColor) };
-                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), rowBg);
-            }
-
-            float colX = X;
-            for (int colIdx = 0; colIdx < cols.Count; colIdx++)
-            {
-                var col = cols[colIdx];
-                float colW = colWidths[colIdx];
-                var cellStyle = dataStyles[colIdx];
-
-                string content = "";
-                if (colIdx < row.Cells.Count)
+            for (int col = range.Left + 1; col <= range.Right; col++)
+                if (EnsureCell(data, row, col) is { } covered)
                 {
-                    var cell = row.Cells[colIdx];
+                    covered.Content = "";
+                    covered.ColSpan = 1;
+                }
+            zmena = true;
+        }
+        return zmena;
+    }
+
+    /// <summary>Rozdělí sloučené buňky ve výběru; obsah zůstává v té první (nedělí se zpátky -
+    /// nešlo by poznat kam). Vrací false, když ve výběru žádná sloučená není.</summary>
+    public bool SplitRange(DataContext? data, CellRange range)
+    {
+        bool zmena = false;
+        foreach (var (row, col) in range.Cells())
+            if (EnsureCell(data, row, col) is { ColSpan: > 1 } cell)
+            {
+                cell.ColSpan = 1;
+                zmena = true;
+            }
+        return zmena;
+    }
+
+    /// <summary>Je ve výběru sloučená buňka? Řídí nabídku „Rozdělit buňky".</summary>
+    public bool HasMergedCell(DataContext? data, CellRange range) =>
+        range.Cells().Any(c => EnsureCell(data, c.Row, c.Col) is { ColSpan: > 1 });
+
+    /// <summary>Obdélník buňky v mm **relativně k prvku** (0,0 = levý horní roh tabulky).
+    /// Null = buňka mimo mřížku. Řádky i sloupce jsou indexované podle toho, co je vidět.
+    /// U sloučené buňky je obdélník přes všechny její sloupce - a překrytá souřadnice vrací
+    /// tentýž obdélník, takže se zvýrazní celý nadpis, ne kus pod kurzorem.</summary>
+    public SKRect? CellRectMm(DataContext? data, int row, int col)
+    {
+        var layout = ComputeLayout(data);
+        if (row < 0 || row >= layout.Rows.Count || col < 0 || col >= layout.ColumnWidths.Length) return null;
+
+        int anchor = SpanAnchorColumn(data, row, col);
+        int span   = SpanAt(data, row, anchor);
+
+        float x = 0f;
+        for (int i = 0; i < anchor; i++) x += layout.ColumnWidths[i];
+        float width = 0f;
+        for (int i = anchor; i < anchor + span && i < layout.ColumnWidths.Length; i++) width += layout.ColumnWidths[i];
+        float y = ShowHeader ? layout.HeaderHeightMm : 0f;
+        for (int i = 0; i < row; i++) y += layout.RowHeights[i];
+
+        return new SKRect(x, y, x + width, y + layout.RowHeights[row]);
+    }
+
+    /// <summary>Buňka pod bodem (mm relativně k prvku), nebo null mimo mřížku a v záhlaví.</summary>
+    public (int Row, int Col)? HitTestCell(DataContext? data, float xMm, float yMm)
+    {
+        var layout = ComputeLayout(data);
+        if (layout.Rows.Count == 0 || layout.ColumnWidths.Length == 0 || layout.RowHeightMm <= 0) return null;
+
+        float top = ShowHeader ? layout.HeaderHeightMm : 0f;
+        if (yMm < top) return null;
+
+        // Řádky mohou mít každý jinou výšku, takže se prochází, ne dělí.
+        int row = -1;
+        float y = top;
+        for (int i = 0; i < layout.RowHeights.Length; i++)
+        {
+            if (yMm >= y && yMm < y + layout.RowHeights[i]) { row = i; break; }
+            y += layout.RowHeights[i];
+        }
+        if (row < 0 || row >= layout.Rows.Count) return null;
+
+        float x = 0f;
+        for (int col = 0; col < layout.ColumnWidths.Length; col++)
+        {
+            // Klik do překryté buňky patří té sloučené - jinak by uživatel „vybral" něco,
+            // co na plátně vůbec nevidí.
+            if (xMm >= x && xMm < x + layout.ColumnWidths[col]) return (row, SpanAnchorColumn(data, row, col));
+            x += layout.ColumnWidths[col];
+        }
+        return null;
+    }
+
+    /// <summary>Nejmenší šířka sloupce v mm - pod ni tažení nepustí, jinak by sloupec zmizel
+    /// a nešel chytit zpět.</summary>
+    public const float MinColumnWidthMm = 3f;
+
+    /// <summary>
+    /// Sloupec, jehož **pravá hrana** je do tolerance od bodu - pro tažení šířky. Poslední (vnější)
+    /// hrana se vědomě nenabízí: to je okraj prvku a mění se tažením za úchyt prvku.
+    /// </summary>
+    public int? HitTestColumnDivider(DataContext? data, float xMm, float toleranceMm)
+    {
+        var layout = ComputeLayout(data);
+        float x = 0f;
+        for (int i = 0; i < layout.ColumnWidths.Length - 1; i++)
+        {
+            x += layout.ColumnWidths[i];
+            if (MathF.Abs(xMm - x) <= toleranceMm) return i;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Tažení svislé hranice: nastaví šířku sloupce **vlevo od ní** a zbytek dvojice dá sousedovi
+    /// vpravo. Součet dvojice zůstává, takže se ostatní sloupce vůbec nehnou - hrana se chová jako
+    /// v tabulkovém editoru, kde tažení mění právě ty dva sloupce, mezi kterými je.
+    /// </summary>
+    /// <param name="pairSumMm">Součet šířek dvojice zjištěný na začátku tažení.</param>
+    public void SetColumnPair(DataContext? data, int divider, float leftWidthMm, float pairSumMm)
+    {
+        int leva  = ModelColumnIndex(data, divider);
+        int prava = ModelColumnIndex(data, divider + 1);
+        if (leva < 0 || prava < 0) return;
+
+        float left = Math.Clamp(leftWidthMm, MinColumnWidthMm, pairSumMm - MinColumnWidthMm);
+        SetColumnWidthMm(leva,  left);
+        SetColumnWidthMm(prava, pairSumMm - left);
+    }
+
+    private void SetColumnWidthMm(int modelCol, float widthMm)
+    {
+        Columns[modelCol].Width     = widthMm;
+        Columns[modelCol].WidthMode = ColumnWidthMode.Mm;
+    }
+
+    /// <summary>Nejmenší výška řádku v mm.</summary>
+    public const float MinRowHeightMm = 2f;
+
+    /// <summary>
+    /// Řádek, jehož **dolní hrana** je do tolerance od bodu - pro tažení výšky. Poslední hrana
+    /// se nenabízí ze stejného důvodu jako u sloupců: je to okraj prvku.
+    /// </summary>
+    public int? HitTestRowDivider(DataContext? data, float yMm, float toleranceMm)
+    {
+        var layout = ComputeLayout(data);
+        float y = ShowHeader ? layout.HeaderHeightMm : 0f;
+        for (int i = 0; i < layout.RowHeights.Length - 1; i++)
+        {
+            y += layout.RowHeights[i];
+            if (MathF.Abs(yMm - y) <= toleranceMm) return i;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Tažení vodorovné hranice - kolmý protějšek <see cref="SetColumnPair"/>: mění se jen řádek
+    /// nad hranou a jeho soused pod ní, ostatní zůstávají, kde byly.
+    /// </summary>
+    public void SetRowPair(DataContext? data, int divider, float topHeightMm, float pairSumMm)
+    {
+        var rows = VisibleFixedRows(data);
+        if (divider < 0 || divider + 1 >= rows.Count) return;
+
+        float horni = Math.Clamp(topHeightMm, MinRowHeightMm, pairSumMm - MinRowHeightMm);
+        rows[divider].Height     = horni;
+        rows[divider + 1].Height = pairSumMm - horni;
+    }
+
+    /// <summary>Rozměry mřížky pro pohyb po buňkách (Tab/Enter/šipky).</summary>
+    public (int Rows, int Cols) GridSize(DataContext? data)
+    {
+        var layout = ComputeLayout(data);
+        return (layout.Rows.Count, layout.ColumnWidths.Length);
+    }
+
+    /// <summary>
+    /// Buňka k editaci; chybějící se doplní. Staré šablony mají řádky kratší než počet sloupců
+    /// (buňky se dopisovaly jen tam, kde byl obsah), takže bez dorovnání by do posledních sloupců
+    /// nešlo psát.
+    /// </summary>
+    public TableCell? EnsureCell(DataContext? data, int row, int col)
+    {
+        var layout = ComputeLayout(data);
+        if (row < 0 || row >= layout.Rows.Count || col < 0 || col >= layout.ColumnIndexes.Length) return null;
+
+        int modelCol = layout.ColumnIndexes[col];
+        var tableRow = layout.Rows[row];
+        while (tableRow.Cells.Count <= modelCol) tableRow.Cells.Add(new TableCell());
+        return tableRow.Cells[modelCol];
+    }
+
+    /// <summary>
+    /// Vyřešený rodičovský styl buňky = kaskáda sloupec → „Styl buněk" prvku → zapečené výchozí.
+    /// Dialog buňky ho ukazuje jako zděděné hodnoty a render z něj vychází (<see cref="FixedRowSpecs"/>),
+    /// takže formulář nemůže tvrdit jinou hodnotu, než se vytiskne.
+    /// </summary>
+    public ResolvedTextStyle ResolveCellParent(DataContext? data, int visibleCol)
+    {
+        var layout = ComputeLayout(data);
+        if (visibleCol < 0 || visibleCol >= layout.ColumnIndexes.Length) return ResolveColumnDataParent();
+        return ResolveColumnDataStyle(Columns[layout.ColumnIndexes[visibleCol]]);
+    }
+
+    /// <summary>Stav jedné buňky pro vratnou změnu - adresovaný souřadnicí, ne instancí. Nese
+    /// i obsah a sloučení, aby jedním snímkem šlo vrátit i sloučení buněk (spojený text zpět).</summary>
+    public readonly record struct CellState(
+        int Row, int Col, TextStyle? Style, string? Format, string Content = "", int ColSpan = 1);
+
+    /// <summary>
+    /// Snímek formátování skupiny buněk pro undo. Buňky se adresují **souřadnicí**: každá změna
+    /// struktury (vložení řádku, tažení hranice, vložení ze schránky) mřížku naklonuje, takže
+    /// příkaz držící instanci buňky by po zpětném kroku psal do odpojeného objektu.
+    /// </summary>
+    public sealed record CellSnapshot(List<CellState> Cells);
+
+    public CellSnapshot CaptureCells(DataContext? data, IEnumerable<(int Row, int Col)> cells) =>
+        new([.. cells.Select(c =>
+        {
+            var cell = EnsureCell(data, c.Row, c.Col);
+            return new CellState(c.Row, c.Col, cell?.Style?.Clone(), cell?.Format,
+                cell?.Content ?? "", cell?.ColSpan ?? 1);
+        })]);
+
+    public void RestoreCells(DataContext? data, CellSnapshot snapshot)
+    {
+        foreach (var state in snapshot.Cells)
+        {
+            if (EnsureCell(data, state.Row, state.Col) is not { } cell) continue;
+            cell.Style   = state.Style?.Clone();
+            cell.Format  = state.Format;
+            cell.Content = state.Content;
+            cell.ColSpan = state.ColSpan;
+        }
+    }
+
+    /// <summary>Index sloupce v modelu pro viditelný sloupec (vkládání a mazání sloupců).</summary>
+    public int ModelColumnIndex(DataContext? data, int visibleCol)
+    {
+        var layout = ComputeLayout(data);
+        return visibleCol >= 0 && visibleCol < layout.ColumnIndexes.Length
+            ? layout.ColumnIndexes[visibleCol] : -1;
+    }
+
+    // ─── Struktura (řádky a sloupce) ─────────────────────────────────
+
+    /// <summary>Snímek struktury pro undo - řádky, sloupce a výška v jednom.</summary>
+    public sealed record StructureSnapshot(List<TableRow> Rows, List<TableColumn> Columns, float? Height);
+
+    public StructureSnapshot CaptureStructure() =>
+        new([.. (Rows ?? []).Select(r => r.Clone())], [.. Columns.Select(c => c.Clone())], Height);
+
+    public void RestoreStructure(StructureSnapshot snapshot)
+    {
+        Rows    = [.. snapshot.Rows.Select(r => r.Clone())];
+        Columns = [.. snapshot.Columns.Select(c => c.Clone())];
+        Height  = snapshot.Height;
+    }
+
+    /// <summary>
+    /// Vloží řádek na danou pozici (index = pozice v modelu). Tabulka se o řádek **zvětší**, pokud
+    /// má pevnou výšku - jinak by přidání řádku zmenšilo obsah, což nikdo nečeká (roste jako ve Wordu).
+    /// </summary>
+    public void InsertRow(int index)
+    {
+        Rows ??= [];
+        index = Math.Clamp(index, 0, Rows.Count);
+        Rows.Insert(index, new TableRow { Cells = [.. Columns.Select(_ => new TableCell())] });
+        if (Height.HasValue) Height += RowHeight;
+    }
+
+    /// <summary>Smaže řádek; poslední řádek nechá být, prázdná tabulka by se nedala vyplnit.</summary>
+    public bool RemoveRow(int index)
+    {
+        if (Rows is null || Rows.Count <= 1 || index < 0 || index >= Rows.Count) return false;
+        Rows.RemoveAt(index);
+        if (Height.HasValue) Height = MathF.Max(RowHeight, Height.Value - RowHeight);
+        return true;
+    }
+
+    /// <summary>Vloží sloupec; šířku dostane „auto", takže se místo rozdělí rovným dílem.</summary>
+    public void InsertColumn(int index)
+    {
+        index = Math.Clamp(index, 0, Columns.Count);
+        Columns.Insert(index, new TableColumn { Header = "", Width = 0f });
+        foreach (var row in Rows ?? [])
+        {
+            while (row.Cells.Count < index) row.Cells.Add(new TableCell());
+            row.Cells.Insert(index, new TableCell());
+        }
+    }
+
+    /// <summary>
+    /// Vloží blok textu (řádky × sloupce) od dané buňky a **tabulku dorovná**, když se blok
+    /// nevejde. Bez dorovnání by se z vloženého bloku tiše ztratil přesah, což se pozná až
+    /// při kontrole výsledku.
+    /// </summary>
+    public void PasteBlock(DataContext? data, int startRow, int startCol,
+        IReadOnlyList<IReadOnlyList<string>> block)
+    {
+        if (block.Count == 0) return;
+        Rows ??= [];
+
+        // Indexy jsou **viditelné** (tak jak uživatel vidí mřížku), obsah se ale ukládá po modelu -
+        // se skrytým sloupcem nebo řádkem by se bez převodu psalo vedle (nález revize 12. 8.).
+        var viditelneRadky   = VisibleFixedRows(data);
+        var viditelneSloupce = Columns.Where(c => c.Visible).ToList();
+
+        while (viditelneRadky.Count < startRow + block.Count)
+        {
+            InsertRow(Rows.Count);
+            viditelneRadky = VisibleFixedRows(data);
+        }
+        while (viditelneSloupce.Count < startCol + block.Max(r => r.Count))
+        {
+            InsertColumn(Columns.Count);
+            viditelneSloupce = [.. Columns.Where(c => c.Visible)];
+        }
+
+        for (int r = 0; r < block.Count; r++)
+            for (int c = 0; c < block[r].Count; c++)
+            {
+                var row = viditelneRadky[startRow + r];
+                int modelCol = Columns.IndexOf(viditelneSloupce[startCol + c]);
+                while (row.Cells.Count <= modelCol) row.Cells.Add(new TableCell());
+                row.Cells[modelCol].Content = block[r][c];
+            }
+    }
+
+    /// <summary>
+    /// Rozseká text ze schránky na buňky. Excel a Sheets dávají do schránky **řádky oddělené
+    /// koncem řádku a buňky tabulátorem**, takže stačí tohle - uvozovkování hodnot s vnořeným
+    /// koncem řádku vědomě neřešíme (v tabulkách tohoto typu se nevyskytuje).
+    /// </summary>
+    /// <summary>
+    /// Obsah výběru ve tvaru, kterému rozumí Excel a Sheets (řádky konci řádku, buňky tabulátorem) -
+    /// tedy přesně to, co se z nich vkládá zpátky. Prázdná buňka je prázdné pole, ne vynechané.
+    /// </summary>
+    public string CopyRangeToText(DataContext? data, CellRange range)
+    {
+        var lines = new List<string>();
+        for (int row = range.Top; row <= range.Bottom; row++)
+        {
+            var cells = new List<string>();
+            for (int col = range.Left; col <= range.Right; col++)
+                cells.Add(EnsureCell(data, row, col)?.Content ?? "");
+            lines.Add(string.Join("\t", cells));
+        }
+        return string.Join("\r\n", lines);
+    }
+
+    /// <summary>Vyplní celý výběr jednou hodnotou - vložení jediné hodnoty do označené oblasti
+    /// se v Excelu chová takhle a je to jediný způsob, jak jedním krokem srovnat víc buněk.</summary>
+    public void FillRange(DataContext? data, CellRange range, string content)
+    {
+        foreach (var (row, col) in range.Cells())
+            if (EnsureCell(data, row, col) is { } cell) cell.Content = content;
+    }
+
+    /// <summary>Vymaže obsah buněk výběru; styl ani formát se nemažou (na to je „Resetovat styl").</summary>
+    public bool ClearRangeContent(DataContext? data, CellRange range)
+    {
+        bool zmena = false;
+        foreach (var (row, col) in range.Cells())
+            if (EnsureCell(data, row, col) is { Content.Length: > 0 } cell)
+            {
+                cell.Content = "";
+                zmena = true;
+            }
+        return zmena;
+    }
+
+    public static List<List<string>> ParseClipboardBlock(string text)
+    {
+        var radky = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').ToList();
+        while (radky.Count > 0 && radky[^1].Length == 0) radky.RemoveAt(radky.Count - 1);
+        return [.. radky.Select(r => r.Split('\t').ToList())];
+    }
+
+    /// <summary>Smaže sloupec i jeho buňky; poslední sloupec nechá být.</summary>
+    public bool RemoveColumn(int index)
+    {
+        if (Columns.Count <= 1 || index < 0 || index >= Columns.Count) return false;
+        Columns.RemoveAt(index);
+        foreach (var row in Rows ?? [])
+            if (index < row.Cells.Count) row.Cells.RemoveAt(index);
+        return true;
+    }
+
+    /// <summary>Pero svislých čar mezi sloupci; null = bez čar. Poslední (vnější) čáru DrawRow
+    /// nekreslí - dřív ji tabulka kreslila a zdvojovala tím vnější rámeček elementu.</summary>
+    private SKPaint? ColumnGridPaint(SKPaint sepPaint) => Grid.ShowColumnLines ? sepPaint : null;
+
+    /// <summary>Řádek záhlaví - pozadí z kaskády, dolní hrana je strukturální (kreslí se vždy).</summary>
+    private RowSpec HeaderRow(List<TableColumn> cols, float[] colWidths,
+        ResolvedTextStyle[] headerStyles, SKPaint sepPaint, float headerH)
+    {
+        var specs = new ColumnRenderer.CellSpec[cols.Count];
+        for (int i = 0; i < cols.Count; i++)
+            specs[i] = new(colWidths[i], Rendering.ColumnHeader.Resolve(cols[i].Header, ""), headerStyles[i]);
+
+        return new(RowKind.Header, headerH, specs)
+        {
+            Background        = ResolveColumnHeaderParent().ParsedBackgroundColor,
+            VerticalLinePaint = ColumnGridPaint(sepPaint),
+            LineBelowPaint    = sepPaint,
+        };
+    }
+
+    /// <summary>Ručně vyplněné řádky: text buňky = obsah s vyhodnocenými {POLE}, styl v kaskádě
+    /// buňka → sloupec → element.</summary>
+    private IEnumerable<RowSpec> FixedRowSpecs(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+        ResolvedTextStyle[] dataStyles, SKPaint sepPaint, IReadOnlyList<TableRow> rows, float[] rowHeights)
+    {
+        SKColor? altColor = ColorHex.ParseOrNull(AlternatingRowColor);
+        var gridPaint    = ColumnGridPaint(sepPaint);
+        var rowLinePaint = Grid.ShowRowLines ? sepPaint : null;
+
+        for (int i = 0; i < rows.Count; i++)
+        {
+            var row = rows[i];
+
+            // Sloučená buňka je **jedna** buňka široká přes své sloupce; překryté se přeskočí.
+            // Kreslicí smyčka se tím nemění - dostane prostě méně širších buněk.
+            var specs = new List<ColumnRenderer.CellSpec>(cols.Count);
+            for (int ci = 0; ci < cols.Count; ci++)
+            {
+                var cellStyle = dataStyles[ci];
+                string content = "";
+                int span = 1;
+                if (ci < row.Cells.Count)
+                {
+                    var cell = row.Cells[ci];
+                    span = Math.Clamp(cell.ColSpan, 1, cols.Count - ci);
                     content = ctx.Data?.ResolvePlaceholders(cell.Content) ?? cell.Content;
-                    var cellFormat = cell.Format ?? col.Format;
+                    var cellFormat = cell.Format ?? cols[ci].Format;
                     if (cellFormat is not null)
                         content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
-                    // Per-cell styl v kaskádě od column data stylu
-                    if (cell.Style is { } cs) cellStyle = cs.Resolve(dataStyles[colIdx]);
+                    if (cell.Style is { } cs) cellStyle = cs.Resolve(dataStyles[ci]);
                 }
 
-                var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
-                CellRenderer.DrawCell(ctx, cellRect, content, cellStyle);
-
-                if (Grid.ShowColumnLines)
-                {
-                    var top = ctx.ToCanvas(colX + colW, currentY);
-                    var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
-                    ctx.Canvas.DrawLine(top, bot, sepPaint);
-                }
-                colX += colW;
+                float width = 0f;
+                for (int k = ci; k < ci + span; k++) width += colWidths[k];
+                specs.Add(new(width, content, cellStyle));
+                ci += span - 1;
             }
 
-            if (Grid.ShowRowLines)
+            // Vlastní pozadí řádku přebíjí střídání řádků - dřív se kreslila obě přes sebe, takže
+            // průhledná vlastní barva propouštěla zebru pod sebou.
+            yield return new(RowKind.Data, rowHeights[i], specs)
             {
-                var a = ctx.ToCanvas(X, currentY + RowHeight);
-                var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
-                ctx.Canvas.DrawLine(a, b, sepPaint);
-            }
-
-            currentY += RowHeight;
-            visibleIdx++;
+                Background = ColorHex.ParseOrNull(row.BackgroundColor)
+                             ?? (altColor.HasValue && i % 2 == 1 ? altColor : null),
+                VerticalLinePaint = gridPaint,
+                LineBelowPaint    = rowLinePaint,
+            };
         }
-        return currentY;
     }
 
-    private float RenderDynamicRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        ResolvedTextStyle[] dataStyles, float startY, SKPaint sepPaint, IReadOnlyList<DataContext> rows)
+    /// <summary>Řádky z dat - jen pro staré šablony, které mají tenhle prvek v režimu Dynamic
+    /// (nové dynamické tabulky dělá <see cref="DynamicTableElement"/>).</summary>
+    private IEnumerable<RowSpec> DynamicRowSpecs(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+        ResolvedTextStyle[] dataStyles, SKPaint sepPaint, IReadOnlyList<DataContext> rows, float rowH)
     {
         bool hasRows = rows.Count > 0;
         int renderCount = hasRows ? rows.Count : DesignerPreviewRows;
 
         SKColor? altColor = ColorHex.ParseOrNull(AlternatingRowColor);
-        using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
+        var gridPaint    = ColumnGridPaint(sepPaint);
+        var rowLinePaint = Grid.ShowRowLines ? sepPaint : null;
 
         // Placeholder styl pro designer - šedivý text
         ResolvedTextStyle[] effectiveStyles = hasRows
             ? dataStyles
-            : dataStyles.Select(s => s with { TextColor = "#FF999999" }).ToArray();
+            : [.. dataStyles.Select(s => s with { TextColor = "#FF999999" })];
 
-        float tableBottom = Y + EffectiveDesignerHeight;
-        float currentY = startY;
-        for (int i = 0; i < renderCount && currentY + RowHeight <= tableBottom; i++)
+        for (int i = 0; i < renderCount; i++)
         {
-            if (altBgPaint is not null && i % 2 == 1)
-                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), altBgPaint);
-
-            float colX = X;
+            var specs = new ColumnRenderer.CellSpec[cols.Count];
             for (int ci = 0; ci < cols.Count; ci++)
             {
                 var col = cols[ci];
-                float colW = colWidths[ci];
-
                 string sample;
                 if (hasRows)
                 {
@@ -484,102 +997,58 @@ public class TableElement : TemplateElement
                 {
                     sample = $"{{{col.Field ?? col.Header}}}";
                 }
-
-                var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
-                CellRenderer.DrawCell(ctx, cellRect, sample, effectiveStyles[ci]);
-
-                if (Grid.ShowColumnLines)
-                {
-                    var top = ctx.ToCanvas(colX + colW, currentY);
-                    var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
-                    ctx.Canvas.DrawLine(top, bot, sepPaint);
-                }
-                colX += colW;
+                specs[ci] = new(colWidths[ci], sample, effectiveStyles[ci]);
             }
 
-            if (Grid.ShowRowLines)
+            yield return new(RowKind.Data, rowH, specs)
             {
-                var a = ctx.ToCanvas(X, currentY + RowHeight);
-                var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
-                ctx.Canvas.DrawLine(a, b, sepPaint);
-            }
-
-            currentY += RowHeight;
+                Background = altColor.HasValue && i % 2 == 1 ? altColor : null,
+                VerticalLinePaint = gridPaint,
+                LineBelowPaint    = rowLinePaint,
+            };
         }
-        return currentY;
     }
 
-    private void RenderSummaryRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        float startY, SKPaint sepPaint, IReadOnlyList<DataContext> dataRows)
+    /// <summary>Souhrnný řádek - obsah přes agregace (SUM/COUNT/…) nad datovými řádky.</summary>
+    private RowSpec SummaryRow(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+        TableRow row, IReadOnlyList<DataContext> dataRows, float rowH, SKPaint sepPaint)
     {
-        if (SummaryRows is null || SummaryRows.Count == 0) return;
-
-        // Oddělovací čára nad souhrnem
-        var topStart = ctx.ToCanvas(X, startY);
-        var topEnd   = ctx.ToCanvas(X + Width, startY);
-        ctx.Canvas.DrawLine(topStart, topEnd, sepPaint);
-
-        float currentY = startY;
-        foreach (var row in SummaryRows)
+        var specs = new ColumnRenderer.CellSpec[cols.Count];
+        for (int colIdx = 0; colIdx < cols.Count; colIdx++)
         {
-            // Pozadí řádku (buď custom, nebo default ze SummaryParent)
-            var rowBgColor = ColorHex.Parse(row.BackgroundColor, TableSummaryParent.ParsedBackgroundColor);
-            if (rowBgColor.Alpha > 0)
+            var col = cols[colIdx];
+            var cellStyle = TableSummaryParent;
+            string content = "";
+
+            if (colIdx < row.Cells.Count)
             {
-                using var sbg = new SKPaint { Color = rowBgColor };
-                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), sbg);
-            }
+                var cell = row.Cells[colIdx];
+                content = AggregationResolver.Resolve(cell.Content, dataRows);
+                content = ctx.Data?.ResolvePlaceholders(content) ?? content;
+                var cellFormat = cell.Format ?? col.Format;
+                if (cellFormat is not null)
+                    content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
-            float colX = X;
-            for (int colIdx = 0; colIdx < cols.Count; colIdx++)
-            {
-                var col = cols[colIdx];
-                float colW = colWidths[colIdx];
+                if (cell.Style is { } cs) cellStyle = cs.Resolve(TableSummaryParent);
 
-                var cellStyle = TableSummaryParent;
-                string content = "";
-
-                if (colIdx < row.Cells.Count)
-                {
-                    var cell = row.Cells[colIdx];
-                    content = AggregationResolver.Resolve(cell.Content, dataRows);
-                    content = ctx.Data?.ResolvePlaceholders(content) ?? content;
-                    var cellFormat = cell.Format ?? col.Format;
-                    if (cellFormat is not null)
-                        content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
-
-                    if (cell.Style is { } cs) cellStyle = cs.Resolve(TableSummaryParent);
-
-                    // Legacy col.Alignment fallback, jen pokud cell.Style neurčil HAlign
-                    if (cell.Style?.HAlign is null)
-                        cellStyle = cellStyle with { HAlign = col.Alignment };
-                }
-                else
-                {
+                // Legacy col.Alignment fallback, jen pokud cell.Style neurčil HAlign
+                if (cell.Style?.HAlign is null)
                     cellStyle = cellStyle with { HAlign = col.Alignment };
-                }
-
-                var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
-                CellRenderer.DrawCell(ctx, cellRect, content, cellStyle);
-
-                if (Grid.ShowColumnLines)
-                {
-                    var top = ctx.ToCanvas(colX + colW, currentY);
-                    var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
-                    ctx.Canvas.DrawLine(top, bot, sepPaint);
-                }
-                colX += colW;
             }
-
-            if (Grid.ShowRowLines)
+            else
             {
-                var a = ctx.ToCanvas(X, currentY + RowHeight);
-                var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
-                ctx.Canvas.DrawLine(a, b, sepPaint);
+                cellStyle = cellStyle with { HAlign = col.Alignment };
             }
 
-            currentY += RowHeight;
+            specs[colIdx] = new(colWidths[colIdx], content, cellStyle);
         }
+
+        return new(RowKind.Summary, rowH, specs)
+        {
+            Background        = ColorHex.Parse(row.BackgroundColor, TableSummaryParent.ParsedBackgroundColor),
+            VerticalLinePaint = ColumnGridPaint(sepPaint),
+            LineBelowPaint    = Grid.ShowRowLines ? sepPaint : null,
+        };
     }
 
     // ─── PropertyDescriptors ─────────────────────────────────────────
@@ -590,22 +1059,12 @@ public class TableElement : TemplateElement
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new ButtonPropertyDescriptor
-        {
-            Label       = "Sloupce",
-            Group       = "Tabulka",
-            ButtonLabel = "Upravit sloupce…",
-            ActionId    = ButtonPropertyDescriptor.ActionOpenTableEditor,
-        },
-        new EnumPropertyDescriptor
-        {
-            Label   = "Režim",
-            Group   = "Tabulka",
-            Get     = () => Mode,
-            Set     = v => Mode = (TableMode)v,
-            Options = [("Dynamická (z dat)", (object)TableMode.Dynamic),
-                       ("Pevná (definované řádky)", (object)TableMode.Fixed)]
-        },
+        // Tlačítko „Upravit sloupce" tu vědomě NENÍ (rozhodnutí Jan 12. 8.): sloupce, řádky
+        // i obsah se dělají na plátně (Alt+klik do buňky, pravý klik na řádky a sloupce).
+        // Druhá cesta k témuž by se s tou první nutně rozešla.
+        // Přepínač režimu tu vědomě NENÍ: dynamickou tabulku dělá DynamicTableElement, a přepnutí
+        // by uživatele dostalo do stavu, ze kterého se nedostane zpět. Zdroj dat zůstává viditelný
+        // jen u starých šablon, které tenhle prvek v režimu Dynamic mají.
         .. Mode == TableMode.Dynamic
             ? (PropertyDescriptor[])[new StringPropertyDescriptor
             {
@@ -648,7 +1107,7 @@ public class TableElement : TemplateElement
         },
 
         // ── Záhlaví / Datové buňky - element-level základní barvy.
-        // Detailní cascade (font, alignment, padding) je v TableEditorDialog.
+        // Detailní styl (font, zarovnání, vnitřní okraje) je ve formuláři TableElementEdit.cls.
         new BoolPropertyDescriptor
         {
             Label = "Tučné záhlaví",

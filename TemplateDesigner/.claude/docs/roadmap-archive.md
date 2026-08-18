@@ -2,6 +2,386 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-17 ✅ - `B76`: pevná tabulka se dá naformátovat a slučovat (4 kroky)
+
+Detail → changelog 2026-08-17 (3), (4), (5), (6) a (9). Cíl prvku **není faktura, ale náhrada
+„poskládám to z textových polí"** - hlavička sestavy jako jeden prvek, se kterým se hýbe vcelku.
+
+**Co blok přinesl:**
+
+1. **Formátování buňky** - do té doby šla tabulka nastavit jen jako celek, takže nefungoval ani
+   způsob práce, na kterém prvek stojí („záhlaví si udělám z prvního řádku tím, že ho ztuční").
+   Formátovací lišta uvnitř tabulky patří buňce, Ctrl+B/I/U funguje i během psaní.
+2. **Formulář vybrané buňky** (`TableCellEdit.cls`) - stejná stavba jako u prvků, **jedno schéma
+   pro panel i pro okno** pod Alt+Enter.
+3. **Výběr oblasti tažením** (Shift, Ctrl+A) a na něm hromadné formátování, mazání a schránka
+   čitelná Excelem.
+4. **Sloučení buněk vodorovně** z místní nabídky.
+
+⚠️ **Poučení, která stála nejvíc:**
+
+- **Rozsah editace musí být vidět.** Panel měnil celou tabulku, lišta nad ním jednu buňku a nešlo
+  je rozlišit - dokud to Jan nezkusil, vypadalo to hotově.
+- **O tom, komu patří klávesy, nesmí rozhodovat fokus plátna** - vezme mu ho každé tlačítko lišty,
+  takže buňka zůstala zvýrazněná, ale psaní padalo do prázdna („poprvé to jde, po odkliknutí ne").
+- **Formulář buňky musí dostat hodnoty z kaskády**, jinak by potvrzení beze změny zapeklo zděděné
+  hodnoty a odpojilo buňku od nastavení tabulky. Vymazané pole u zděditelné vlastnosti znamená
+  „nenastaveno" - opraveno rovnou pro všechny formuláře, dřív to platilo jen pro barvy.
+- **Výběr celého řádku a sloupce se zkusil a zrušil** (zkratky i položky nabídky): tažení a Shift
+  pokrývají totéž a excelové Shift/Ctrl+mezerník se uživatel nemá kde naučit. Klik u okraje
+  tabulky pro to nejde - tam sedí úchyty na změnu velikosti prvku.
+
+**Vědomě odložené:** sloučení přes řádky (míchá se se spanováním výšek, střídáním řádků
+a podmíněnou viditelností) a připravené bloky agend, které pohltí `B66` (vlastní bloky prvků).
+
+**Pojistky:** `FixedTableCellFormattingTests`, `FixedTableCellRangeTests`, `FixedTableMergeTests`
+(dohromady 44 kontrol) - kaskáda, vratnost podle souřadnic, nezapékání zděděných hodnot, geometrie
+výběru a sloučení. Formulář buňky je vědomě mimo driftové testy schémat (jeho výchozí hodnoty se
+nikdy nezobrazí) a nahrazuje je vlastní test pokrytí kaskádou.
+
+## 2026-08-17 ✅ - `B94`: reference tabulkových prvků srovnaná s kódem
+
+Blok mluvil o dvou zastaralých tvrzeních v `elementy-architektura.md`; **při čtení proti kódu jich
+bylo pět**, všechna v části 1:
+
+1. **Hierarchie prvků měla o dvě vrstvy méně** - chyběl `StopScheduleElementBase` (mezivrstva pro
+   zastávkový datový tvar) i `LineTableElement`. Doplněno včetně toho, **proč** ta mezivrstva je:
+   `LineTableElement` chce styly a auto-scale, ale zastávkové DataSource klíče a `Build*` helpery ne.
+2. **DataSource klíče a `Build*` helpery** byly přiřčené `ScheduleElementBase` - patří na
+   `StopScheduleElementBase`. Sekce přejmenovaná.
+3. **Ploché vlastnosti** (`FontFamily`, `FontSize`, `GridColor`, `HeaderBackgroundColor`…) na base
+   už neexistují, nahradila je kaskáda stylů. `BuildOdjezdyByGroup` se jmenuje `BuildOdjezdyBySkupina`.
+4. **§1 tabulka sdíleného jádra** neznala `RowPlanRenderer` (svislá smyčka) a tvrdila, že
+   `CellRenderer.DrawCell` volají všechny čtyři přímo - dnes jde přes `ColumnRenderer`, přímo už jen
+   pivot. `TableLayout.ResolveCascade` mělo o konzumenta méně.
+5. **§5 vedl jako kandidáta na extrakci hotovou věc** - „R1a render-loop orchestrátor" je
+   `RowPlanRenderer`. Přesunuto do „hotové, ať se to nenavrhuje znovu", protože právě na plánu řádků
+   stojí `B13` (řezání širokých tabulek).
+
+**Neodvoditelné - proč to zestaralo:** dokument nesl **výčty vlastností a signatur**, tedy přesně to,
+co `CLAUDE.md` do dokumentace zakazuje. Výčty u seznamu zastávek a mřížky odjezdů jsou nahrazené
+popisem doménových odlišností + odkazem na třídu a formulář; v hlavičce je varování, ať se výčty
+nezavádějí zpátky. Bez toho by se to rozešlo znovu a nikdo by si toho nevšiml (`.md` nehlídá test).
+
+## 2026-08-17 ✅ - `B92`: výchozí linková šablona se distribuuje jako systémová
+
+Detail → changelog 2026-08-17 (8). Šablona ležela v `templates/` (vývojová složka), takže se
+nezabalila do `.exe` a nenalila do MLINE - uživatel by ji musel naimportovat ze souboru, o kterém
+neví. Přesunutá do `SystemTemplates/`; kód se měnit nemusel, seeder i `.csproj` jdou přes wildcard.
+
+**Opravené při přesunu** (vidí uživatel v nabídce): jmenovala se „Knižní JŘ (AD)", ačkoli se agenda
+jmenuje Linkový JŘ - pojem „knižní" se přejmenoval už s `MigrationKnizniToLinkovy` a na šablonu se
+zapomnělo. V názvu byla **dlouhá pomlčka** a popis byl prázdný.
+
+**Neodvoditelné:** šablona se zabalí a nalije i s `Released = 0` agendou. Je to záměr - picker
+filtruje podle vydaných agend, takže ji uživatel neuvidí, ale kanál se nedodělává až s vydáním.
+
+**Pojistka:** `SystemTemplateSeedTests` (17 kontrol). Jádro je „soubor ve složce ještě neznamená
+soubor v `.exe`" - kontroluje se seznam zabalených resource, k tomu metadata (prázdný nebo
+překlepnutý `agendaCode` = šablona, kterou nikdo nenajde; shodné `Id` = jedna přepíše druhou,
+seeder je idempotentní přes Id) a že se šablona zmigruje na aktuální verzi. `agendaCode` se
+porovnává s kódy, které reálně deklarují `Agendy/*.cls`.
+
+## 2026-08-17 ✅ - `B91`+`B95`: linkový JŘ mluví stejným slovníkem jako vývěska
+
+Detail → changelog 2026-08-17 (3). Obě rodiny agend posílaly stejně pojmenované kolekce, ale
+řádky uvnitř měly jiný tvar (`POPIS` × `NAZEV_ZASTAVKY`, `ZONA` × `ZONY`, `PLATNOST_OD` ×
+`DATUM_PLATNOSTI_OD`). Srovnáno na zastávkový tvar - měnila se výhradně linková strana.
+
+**Dvě věci, které nová pojistka principiálně nechytí a našly se čtením kódu:**
+
+1. **Číslo linky u MHD** - vývěska dávala do `CISLO_LINKY` licenční číslo, linkový JŘ veřejné.
+   Táž šablona tedy tiskla u jedné linky dvě různá čísla. Srovnáno; veřejné přibylo jako
+   `LOKALNI_OZNACENI_LINKY`, opět pod týmž názvem jako na vývěsce.
+2. **Datum platnosti u MHD** - linkový posílal syrový tvar z databáze (`2018-11-01`), vývěska
+   převedený. Srovnáno na tentýž převod.
+
+**Neodvoditelné:** spojovací klíče (`ID` skupiny, `SKUPINA` u spoje) zůstaly ve wire, ale zmizely
+z nabídky polí - vývěska je taky nenabízí a v ploché tabulce s nimi uživatel nic neudělá.
+
+⚠️ **`DELENI_SLOUPCU` × `ROZDELENI_SLOUPCU` se NEsjednocuje** - revize to zapsala jako dva názvy
+téhož, ale jsou to dvě různá nastavení s jinými volbami. U nich se ukládá zobrazený text, takže
+sloučení pod jeden název by při přepnutí agendy tiše shodilo uživateli nastavení na výchozí.
+
+## 2026-08-17 ✅ - `B90`: písmena variant u odjezdů přestala být volba
+
+Detail → changelog 2026-08-17 (2). Vypnutý stav umožňoval vývěsku, ze které nešlo poznat, který
+časový sloupec pro odjezd platí (nadpisy `T1`/`T2`, u minut nic). Parametr zrušen, volbou zůstala
+jen „První varianta bez písmene".
+
+**Neodvoditelné:** u zbylé volby se musela odstranit i podmínka viditelnosti - odkazovala na
+zrušený parametr, takže by z UI vypadla i ona. Ověřeno voláním nasazené agendy, ne čtením zdroje.
+
+⚠️ **Zlaté odtisky do teď pinovaly vypnutou větev** - server čte nenastavený parametr jako `false`
+a gold posílá jen číslo linky. Přebaselinováno; počty shodné do jednoho, liší se jen md5.
+
+## 2026-08-17 ✅ - `B89`: vlastní sloupce proklikané, revize `B39` uzavřená
+
+Detail → changelog 2026-08-17. Sedm bodů sady (editor, vzor, sloupec „jen Ne", „jen pracovní dny",
+Pá+So+Ne, režim „Automaticky", období se svátkem na neděli) projeté Janem. Nejcennější důkaz:
+na lince `0330530` mají spoje **T239**/**T245** (platnost `6+`) ve sloupci Pá+So+Ne značky **⑥⑦**,
+dřív jen ⑥ - cestující se nedozvěděl o nedělním provozu. Minut se sedmičkou jsou čtyři, tedy tatáž
+čtveřice, kterou vrátí sloupec „jen Ne".
+
+**Doladěno při proklikávání:** „Ne" a „Neděle a svátky (+)" se **vylučují** (rozhodnutí Jan 17. 8.).
+Obhajoba dvojice stála na tom, že vzor posílá `7+`; od `B82` posílá samotné `+` a server si „7"
+doplní sám, takže dvojice nepřidávala nic - doloženo během, kde sloupce `7`, `+` i `7+` daly
+identický výstup. Starší uložený sloupec s `7+` se načte jako `+`.
+
+⚠️ **Nález mimo zadání:** testovací vzor v .NET testech nesl `12345`/`7+`, zatímco server od `B82`
+posílá `X`/`+` - testy potvrzovaly neexistující chování. Srovnáno, u fixture je varování; na server
+se z .NET testů nedosáhne, takže víc než poznámka to hlídat nemůže.
+
+## 2026-08-14 ✅ - `B87`+`B88`: rozvržení sloupců vývěsky má jeden zdroj pravdy
+
+Detail → changelog 2026-08-14 (4) a (5). Vzniklo z Janova pozorování, že přepnutí parametru
+„Rozdělení sloupců" náhledem nehne. Byly to **dvě nezávislé příčiny**:
+
+`B87` - server-side parametr přenačítala data jen jedna ze tří cest. Chybělo to hlavně při
+**otevření šablony**: data se tahají při obnovení instance, tedy dřív, než se aplikují uložené
+hodnoty parametrů. Ovladač pak ukazoval uloženou volbu, náhled patřil výchozí - a „změnit" volbu
+na tu zobrazenou nešlo, vyhodnotilo se to jako beze změny.
+
+`B88` - parametr a vlastní sloupce prvku odpovídaly na tutéž otázku a sloupce parametr tiše
+přebíjely. Stav teď drží **jen šablona**, parametr je její pohled i ovladač; přibyla volba
+„Vlastní rozložení", na kterou se překlopí sám.
+
+**Neodvoditelné rozhodnutí (Jan 14. 8.):** parametr se odvozuje **z obsahu** sloupců (shoda se
+vzorem → název vzoru), ne z pouhé existence vlastních sloupců. Bez toho by hlásil „Vlastní
+rozložení" na každé nové AD šabloně - nový prvek odjezdů dostává sloupce **předvyplněné**
+(rozhodnutí 10. 8. „nové jedou z návrháře, linka je backup"). Opřít se o vzory jde proto, že jsou
+1:1 náhrada pevných rozvržení (živý paritní test přes celý výstup).
+
+⚠️ **Schování sloupce ani přejmenování nadpisu v tabu „Sloupce" parametr nepřeklápí** - to je
+vzhled, ne existence sloupců. Kdyby překlápělo, muselo by výběrem rozvržení schované sloupce zase
+odkrýt a nadpisy zahodit, tedy mazat práci při nesouvisející akci. Přejmenování nadpisu **uvnitř
+vlastních sloupců** naopak shodu se vzorem ruší (nadpis jde na vývěsku).
+
+## 2026-08-14 ✅ - `B85`: nové povinné pole nezablokuje formulář staršímu programu
+
+Detail → changelog 2026-08-14 (3). Nález z revize `B39`, ale ne chyba `B39`: schéma formuláře jde
+na server hned, program až s vydáním, takže starší build dostane pole, ke kterému nemá vlastnost -
+a `required` u něj znamenalo, že formulář nešel potvrdit vůbec. Projevilo se to u „Rozestupu
+odjezdů" (kolega měl program o den starší, než je to pole).
+
+**Neodvoditelné:** povinnost se ruší jen klientsky a jen u pole **bez vlastnosti na cíli** - jeho
+hodnotu stejně zahodí `ExtractCommands`, takže povinnost neměla co vynutit. Serverová `Validate`
+platí dál. Druhá varianta (nedělat nová pole `required`) by znamenala vzdát se `required` jako
+způsobu, jak u výběrového pole potlačit prázdný řádek - ten idiom používají skoro všechny výčty.
+
+## 2026-08-14 ✅ - `B84`: zavřeno bez práce, značky `+` a `X` z MHD vyjít nemůžou
+
+Bod z revize `B39` předpokládal, že se u minuty vytiskne značka `+` / `X`, ke které chybí
+vysvětlivka. Ověřeno (zdroj kalendáře i běh nad daty `CB_DP`): `MakeRozpisTplProTypProvozuID`
+vrací rozpis **jen pro dny 1-7** - „pracovní dny" rozepíše na 1-5, „neděle a svátky" na 7. Znaky
+z vyhlášky tedy MHD neprodukuje a doplňovat pro ně vysvětlivku nemá co obsluhovat.
+
+⚠️ **Značky z vyhlášky jsou téma zastávkového JŘ AD, ne MHD** (upřesnění Jan 14. 8.): v MHD se
+platnost bere z **typu provozu**, ne z ručního zadávání dnů, takže se tam kolem `B39` nic nemění.
+Ostatní body revize (`B81`, `B82`) se MHD netýkají.
+
+## 2026-08-14 ✅ - `B83`: vysvětlivky dnů na vývěsce AD čtou zákaznický číselník
+
+Detail → changelog 2026-08-14 (1). Nález z revize `B39`: vývěska tiskla texty denních značek
+napevno, takže vlastní znění zákazníka ignorovala - přestože starý modul i náš **linkový** JŘ je
+z číselníku `^JRSET("NCOME")` berou. Dvě naše sestavy tedy u téže značky tiskly jiný text.
+
+Vestavěná znění zůstala jako záloha a znění `+` se srovnalo s vyhláškou 122/2014
+(„jede v neděli a ve státem uznané svátky"). **Neodvoditelné rozhodnutí:** záznam číselníku se
+vybírá podle **jazyka sestavy**, ne podle toho, kterou variantu má firma vyplněnou - firmy mají
+běžně obě (ověřeno na `CB_CSADAD`), takže legacy detekce „vezmi vyplněnou" by slovenské sestavě
+podstrčila české texty. Kvůli tomu se `NactiTextyZnacek` musí volat **až po** `NactiJazyk`.
+
+Ověřeno voláním nad reálnými daty (nový test čte oba jazykové záznamy firmy). Zlaté odtisky se
+nehnuly - na kontrolních linkách se `+` do legendy netiskne, protože ji říká už nadpis sloupce.
+
+## 2026-08-14 ✅ - `B82`: dny sloupce v abecedě vyhlášky včetně „pracovních dnů"
+
+Detail → changelog 2026-08-14 (4). Tím je uzavřená celá revize vlastních sloupců od kolegy (13. 8.).
+
+`X` (pracovní dny) nešlo zadat vůbec a týž zápis `12345` znamenal na dvou místech dvě různé věci -
+při zařazení spoje kalendářní Po-Pá, na ose Období „pracovní dny". Nově je `X` samostatná volba
+v editoru, `12345` znamená kalendářní Po-Pá **včetně svátků**, které na ně padnou, a `X` svátky
+nezahrnuje nikdy. Zakázané kombinace z vyhlášky (`X` s Po-Pá, „Svátek" s „Ne") nejdou zaškrtnout -
+protikus se zašedne, takže zákaz vyplývá z ovládání, ne z hlášky po potvrzení (rozhodnutí Jan 14. 8.).
+
+⚠️ **Vzory sloupců posílají u „Pracovních dnů" `X`**, takže se změnily zlaté odtisky - **jen md5,
+počty shodné**. Ověřeno izolovaně: s vzory vrácenými na `12345` projdou odtisky beze změny, takže
+rozdíl nepochází odjinud než z pole `PRESETY_SLOUPCU`. **Naše testovací šablony v DB je potřeba
+přeuložit**; zákaznických se to netýká (vlastní sloupce se do vydané verze nikdy nedostaly).
+
+## 2026-08-14 ✅ - `B81`: vlastní sloupec „Neděle" vracel prázdno
+
+Detail → changelog 2026-08-14 (3). Spoj s platností `+` („jede v neděli **a** ve státem uznané
+svátky") nespadl do vlastního sloupce s dny `7`, protože se dělal průnik holých znaků - zákazníkovi
+tak vyšel sloupec „Neděle" prázdný, přestože nedělní spoje na lince byly. Nově z `+` plyne i neděle;
+značka se u minut netiskne, protože spoj sloupec pokrývá celý (potvrdil Jiří Bžoch 14. 8. - značka
+patří do opačného případu, kdy spoj sloupec **ne**pokrývá).
+
+Druhá polovina byla na ose Období: svátek patřil jen do sloupce, který vyjmenoval `+`, takže
+velikonoční neděle nepatřila do sloupce „Ne". ⚠️ **U dnů 1-6 to vědomě neplatí** - „Pracovní dny"
+nesmí tvrdit, že pokrývají 1. květen, a rozlišit je od samostatného „pondělí" umí teprve `X`
+z vyhlášky (`B82`).
+
+⚠️ **Vedlejší dopad na značky:** spoj `6+` dostane ve vlastním sloupci Pá-Ne značky `67` místo
+dosavadní `6` - dřív se neděle zamlčela. Standardních rozvržení (`12345` / `6` / `7+` / `67+`) se to
+netýká.
+
+**Doloženo mutací:** vypnutí odvození neděle shodí end-to-end test hláškou, která je doslova
+zákazníkovým příznakem („vlastní sloupec Neděle nevrátil ani jeden odjezd"). Linku vybrala sonda
+`AdSloupekProbe.NajdiPlusSpoje` (4 840 spojů s `+` na 3 000 linkách CB_CSADAD) - **sondu nemazat**,
+u `B82` se bude hodit.
+
+## 2026-08-13 ✅ - `B78`: kontrola uvozovek chytá i druhou půlku té třídy chyb
+
+Detail → changelog 2026-08-13 (7). Statická kontrola `.cls` hlásila jen řádek, který **končí**
+uprostřed textu (lichý počet uvozovek). Uvozovka uvnitř textu, za kterou pokračuje další text
+v uvozovkách, je párná a prošla - a přesně ten tvar 13. 8. způsobil Caché test padající **bez
+hlášky** (na serveru zůstala nezkompilovaná třída), zatímco `cache-api.md` tvrdilo, že to test hlídá.
+
+⚠️ **Kontrola platí jen uvnitř závorek** a rozšířit ji nejde: mimo ně je „text, mezera, slovo"
+legitimní podmíněný příkaz (`s:group'="" param.group = group`) a v repu jich jsou desítky. V praxi
+chyba vzniká v argumentu (hlášky testů, helpTexty), kde závorky jsou. Mez je zapsaná v testu jako
+`[InlineData]` s očekáváním „projde", ať je vidět, a v `cache-api.md`.
+
+## 2026-08-13 ✅ - `B67`: jemnější zobrazení variant jízdních dob (TRANSDEV #12843)
+
+Detail → changelog 2026-08-12 (10) a 2026-08-13 (1)-(6). Původně `TR7`, podaný podruhé jako #12843
+bod 4. Hotové: nestabilní číslování · duplicitní sloupce · volba trasy pro jediný sloupec · oddělení
+sloupce „Čas jízdy" od variant · tři stavy `CAS_JIZDY` · jedno pravidlo výběru průběhu pro obě rodiny
+sloupců · značka u minuty vedle rozdílové poznámky · dvě volby řazení podle délky jízdy.
+
+**Ze Šimkova odstavce o jízdních dobách je hotové všechno kromě ruční zaškrtávací tabulky variant** -
+ta je **odložená po dohodě s kolegou** (13. 8.): není to jednoduchá změna, dá se mu nejdřív k
+vyzkoušení a domluví se potom. Evidence u tiketu, ne tady.
+
+⚠️ **Značky variant NEJSOU parita se starým modulem** a nesmí se tak tvrdit. Legacy je bere
+z nastavení u linky (`^JRL(sku,lin,"PATCH","mhd","par",2)`, `JRapiLinPrtMhd1.mac:26` a `:297`),
+které **nemá vyplněné ani jedna z 325 prověřených linek** - starý modul tedy značky netiskne vůbec.
+Dřívější tvrzení roadmapy „legacy má v kódu default UVWXYZ" bylo mylné, `UVWXYZ` je jen komentář.
+Naše řada jede od „A" stejně jako písmena rozdílových poznámek, takže se na minutě můžou potkat dvě
+stejná písmena v jiném významu - vědomý kompromis (rozhodnutí Jan 13. 8.), řeší se, až na to někdo
+narazí. Ta volba se možná časem přestěhuje z nastavení linky do návrháře.
+
+**Zázemí pro další změny variant** (nemazat, bude potřeba): typová sada `ZastavkoveJrAdSadaTest.Sada`
+(deset linek ze čtyř firem, u každé zapsané typy, které pokrývá; `Jadro` = pět linek pro drahé
+kontroly) a sondy v `AdSloupekProbe` - `NajdiVariantniPripady`, `ProfilyLinek`, `PripadyLinky`
+(linka → konkrétní zastávka k proklikání), `ViceStanovistLinky` (kde se zastávka rozpadá na řádky),
+`ZnakySloupcu` (kdo má vyplněné znaky sloupců u linky). ⚠️ Caché sada trvá ~1 min 45 s; zkrátit jde
+**sloučením průchodů** do jednoho testu, ne zúžením sady.
+
+⚠️ **Poučení z bran:** test na duplicitní sloupce byl napoprvé slepý - porovnával je přes celou
+stránku včetně projetých zastávek, kde se varianty legitimně liší, takže duplicitu v úseku za
+vývěskou nemohl najít a mutace ho neshodila. Absenci něčeho je potřeba měřit na tom výseku, kde to
+má vzniknout.
+
+**Na vyžádání** (výpočet i data budou připravené, není to nová featura): **2. až 4. sloupec Času**
+(legacy je v automatickém režimu má; dopad na lince, kde tentýž sled zastávek nese dva časové
+profily - Nitra `0000002` směr Zpět, trasy 2/4/6 končí na 35 min, trasa 3 s pobytem `19/5` na 40) ·
+**čtení ručně zadaných minut** u linek s vypnutým přepínačem (`^JRL(sku,lin,"J",poradi)` segment 8,
+`Tam:Zpět`, kumulativně od začátku směru; Nitra je udržuje, české firmy mají prázdné → starý modul
+jim tiskne prázdno, takže náš spočítaný sloupec je přínos, ne odchylka).
+
+## 2026-08-13 ✅ - `B80`: varianty tras jsou položka seznamu sloupců
+
+Detail → changelog 2026-08-13 (3). Podnět Jan při přípravě proklikání `B67`: zapínání variant
+zaškrtávátkem v panelu byl atyp. Byl to pozůstatek doby, kdy varianty sloupec „Čas jízdy"
+**nahrazovaly**; od 13. 8. stojí vedle sebe, takže šlo o nastavení sloupců schované mimo sloupce.
+Jako položka seznamu má poprvé nastavitelnou šířku (dosud zadrátovaných 6 mm) a vlastní styl místo
+parazitního dědění ze sloupce „Čas".
+
+⚠️ **Vedlejší past, kterou to ruší:** varianty se rozvíjely ZE sloupce „Čas", takže jeho skrytí je
+tiše vyplo - a s nimi i rozpad zastávky na řádky podle stanovišť. Do 12. 8. se to nedalo potkat
+(vylučovaly se), po jejich oddělení to byla reálná past.
+
+⚠️ **Zákazník nepozná nic** - migrace 1.7.0 → 1.8.0 zapne položku jen tam, kde se varianty reálně
+tiskly (tedy když byl viditelný i sloupec „Čas"), a zkopíruje na ni jeho zarovnání i styl.
+Rozhodnutí Jan 13. 8.: věrný převod vzhledu má přednost před zpětnou opravou pasti.
+
+⚠️ **Nasazovací hook se po editaci `.cls` nespustil** a server vracel starou třídu se zrušeným polem.
+Chytlo to jen ověření **voláním** (`cache-api.md`) - čtení zdroje v repu by tvrdilo, že je hotovo.
+
+## 2026-08-12 ✅ - `B69`: texty značek se řídí jazykem šablony
+
+Detail → changelog 2026-08-12 (8). TRANSDEV #12843: slovenský zákazník měl správné piktogramy, ale
+české popisky u nich. Jazyk textů legendy teď určuje **kultura šablony** (Vlastnosti stránky), ne
+firemní příznak starého modulu - rozhodnutí Jan 12. 8., jeden zdroj místo dvou a jedna firma může
+mít českou i slovenskou šablonu vedle sebe. Znění je doslova ze starého modulu (`MODE=1`).
+
+⚠️ **Nepřekládá se, co napsal uživatel** (poznámky z číselníku, názvy zastávek, nadpisy sloupců dnů)
+a znak bez slovenské varianty padá na češtinu - slovenská sada je override, ne náhrada.
+
+⚠️ **`JAZYK` NENÍ parametr sestavy**, i když ho `GetData` čte (roadmapa předpokládala allowlist
+`ServerSideParams`). Uživatel ho v parametrech nenastavuje; re-fetch po přepnutí kultury drží
+snapshot vedle definice sloupců. Driftový test si klíč vyžádal sám a je v něm zapsané proč.
+
+Ověřeno voláním nasazené třídy (0365001/CB_CSADAD): `JAZYK=sk` → všech 39 stránek slovensky, bez
+klíče česky, počet poznámek shodný. Zbývá porovnání s výtiskem zákazníka.
+
+## 2026-08-12 ✅ - `B73`: šířky sloupců a výšky řádků tažením
+
+Detail → changelog 2026-08-12 (9). Šířky sloupců po zrušení starého dialogu **nešly nastavit vůbec**,
+takže to nebyl komfort, ale díra po předchozím kroku. Táhne se za vnitřní hranici, funguje i na
+vybrané tabulce; řádek dostal vlastní nepovinnou výšku.
+
+⚠️ **Poučení, které stálo tři kola proklikání:** pro řádky jsem vymýšlel jinou mechaniku než pro
+sloupce (škálování obsahu místo rozdělení místa) a pokaždé to znamenalo zpětnou vazbu nebo pohyb
+tam, kde se hýbat nemělo. Kolmý protějšek se má počítat **týmž kódem**, ne analogicky. Pravidla
+(mění se jen dvojice u hrany; vnější hrana patří prvku) jsou v `ux-conventions.md`.
+
+## 2026-08-12 ✅ - `B74` + `B75`: vkládání z Excelu a našeptávač polí v buňce
+
+Detail → changelog 2026-08-12 (7). Ctrl+V vloží blok ze schránky od vybrané buňky a tabulku
+dorovná; schránka uvnitř tabulky pracuje s buňkami, ne s prvkem. Po `{` v buňce vyskočí nabídka
+polí agendy (filtr podle názvu i českého popisku, Enter/Tab doplní i s koncovou závorkou).
+
+⚠️ **Doplnění pole spadlo** (nahlásil Jan): zápis do textového pole spustí obsluhu změny textu
+synchronně, dřív než se posune kurzor. Kromě opravy z toho zbylo poučení - rozpoznání rozepsaného
+`{POLE` odešlo z code-behindu do `Models/PlaceholderToken`, protože jinak se nedalo otestovat.
+
+## 2026-08-12 ✅ - Fáze B krok 2: pevná tabulka se vyplňuje na plátně
+
+Detail → changelog 2026-08-12 (5). Obsah i struktura se dělají v tabulce (Alt+klik do buňky, psaní
+jako v Excelu, Tab a Enter posouvají, pravý klik na řádky a sloupce), dialog spadl na jedinou
+záložku „Obecné" (`TableElementEdit.cls`) a **starý pětizáložkový editor je smazaný**.
+
+⚠️ **Cesta dovnitř se hledala třikrát** - dvojklik i „druhý klik na vybranou tabulku" se zahodily
+(důvody v changelogu a v `ux-conventions.md`), zůstal **Alt+klik**. Nezkoušet znovu.
+
+⚠️ Drift testy schémat chytly tři rozpory nového formuláře proti C# - výchozí hodnoty, „Zdroj dat"
+jen v panelu, odlišný popisek téhož pole. Přesně ta třída chyb, kterou proklik neodhalí.
+
+## 2026-08-12 ✅ - Fáze B krok 1: pevná tabulka je zpátky v paletě
+
+Detail → changelog 2026-08-12 (3). Záměr upřesněn Janem: **není to featura pro faktury, je to
+náhrada „poskládám to z textových polí"** (jeden prvek místo šesti textů v hlavičce).
+
+Prvek v paletě i v nabídce „Přidat" (vloží mřížku 3 × 3 bez řádku záhlaví), přepínač režimu z panelu
+pryč, render převeden na sdílený plán řádků (zmizela svislá čára navíc na vnějším okraji a vrstvení
+dvou pozadí), prázdná tabulka je vidět, zmenšení i **roztažení** řádků na výšku prvku.
+
+⚠️ **Nález z proklikání, který platil pro obě tabulky:** čára tenčí než pixel se bez vyhlazení kreslí
+jen když trefí střed pixelu → mřížka při posunu prvku blikala (z deseti pozic chyběla v šesti).
+Pero mřížky je nově na jednom místě (`GridStyle.CreatePaint`) se stejným pravidlem, jaké měly JŘ
+prvky od začátku. Ověřeno proklikem Jana 12. 8.
+
+## 2026-08-11 ✅ - `B51` seznam se plní najednou, ne po jednom řádku
+
+Detail → changelog 2026-08-11 (2). Nález Jan 4. 8., **první pokus vrácen** (`DeferRefresh` shodil
+výběr linky - odklad neodkládá oznámení o změně kolekce, jen přepočet pohledu).
+
+Dvě stě řádků znamenalo dvě stě přepočtů navázaného pohledu; vidět to bylo ve chvíli, kdy načtení
+dosedlo, zatímco uživatel psal do filtru skupiny. Odkrylo to až async načítání pickeru - dřív to
+schoval zámrz synchronního načítání.
+
+Řešeno hromadnou výměnou obsahu (`BulkObservableCollection.ReplaceAll`) = jediný `Reset`, který
+pohled dostával i dosud z `Clear`. Past cestou: parsování řádků je **líný iterátor**, takže se musí
+zhmotnit před odběrem změn - jinak druhý průchod vyrobí jiné instance a odběr visí na řádcích,
+které v seznamu nejsou.
+
+⚠️ Sdílená komponenta (i EDISONMAIN2). **Ověřeno proklikem Jana 11. 8.** - testy tuhle třídu chyb
+nechytí, přesně na tom padl pokus ze 4. 8.
+
 ## 2026-08-10 ✅ - `B39` vlastní sloupce vývěsky (#13045b), obě etapy
 
 Detail → changelog 2026-08-10 (9) rozhodnutí, (10) etapa 1 = dny + značky, (12) etapa 2 = období.

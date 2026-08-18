@@ -27,9 +27,6 @@ Dílčí vylepšení a náměty.
 
 - **Napojení na externí zdroje dat** - možnost tisknout i z dat mimo EDISON (např. z tabulky
   nebo databáze). Zvažujeme jako budoucí směr; konkrétní zdroje a rozsah zatím nejsou dané.
-- **Pevná (Fixed) tabulka** - tabulka s ručně zadanými řádky a pevným počtem (typicky záhlaví
-  dokladu nebo faktura); dnes je k dispozici tabulka s řádky generovanými z dat.
-- **Sloučené buňky v tabulce** - spojení více buněk do jedné (navazuje na pevnou tabulku).
 - **Mezisoučty ve skupinách řádků** - souhrnný řádek za skupinu dat.
 - **Oboustranný / brožurový tisk** při skládání více vývěsek na list - dnes se skládá jednostranně,
   duplex řeší tiskárna.
@@ -38,53 +35,134 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
-### 10. 8. 2026 - Sloupce vývěsky si nadefinujete v šabloně
+### 17. 8. 2026 - Pevná tabulka: vyplňování na plátně a formátování buněk
 
-Dosud byly sloupce vývěsky (Pracovní dny / Soboty / Neděle a svátky…) dané napevno nastavením
-linky. Nově si je můžete nadefinovat přímo v šabloně: v dialogu prvku odjezdů přibyl tab
-**Vlastní definice sloupců**, kde každému sloupci (nejvýše pěti) určíte:
+Do palety přibyla **pevná tabulka** - mřížka, kterou vyplňujete sami. Je určená hlavně jako náhrada
+za skládání hlaviček a bloků údajů z jednotlivých textových polí: místo šesti textů máte jeden
+prvek, se kterým se hýbe vcelku.
 
-- **nadpis** (i dvouřádkový),
-- **dny v týdnu** včetně svátku,
-- **značky** - „jen spoje se značkami" nebo naopak „bez spojů se značkami" (tím jde třeba schovat
-  vybrané spoje z víkendového sloupce),
-- **nevypisovat značky** - spoj se vytiskne, jen se u minuty neopakuje značka, kterou už říká
-  nadpis sloupce.
+**Vyplňuje se přímo v ní.** Dovnitř Alt+klikem na buňku nebo klávesou F2, pak se píše jako
+v Excelu - Tab a Enter posouvají, šipky chodí po buňkách, Esc vede ven. Řádky a sloupce se přidávají
+z místní nabídky, šířky a výšky se táhnou myší za vnitřní hranici. Vložit jde i blok zkopírovaný
+z Excelu a po napsání `{` se nabídnou datová pole.
 
-Čtyři dosavadní rozvržení jsou připravená jako **vzory** jedním klikem (prázdninové vzory se
-předvyplní čísly značek z aktuální linky) a pátá volba **Prázdná** nechá stavbu sloupců úplně
-na vás. Existující šablony se nemění - dokud definici nezapnete, sloupce se dál řídí nastavením
-linky.
+**Buňky jde sloučit** - označené buňky v řádku spojíte místní nabídkou do jedné, například na
+nadpis přes celou šířku tabulky; texty se přitom nezahazují, ale spojí. Rozdělit je jde stejnou
+cestou zpátky.
 
-Když nadefinované sloupce nepokryjí všechny spoje, návrhář to ukáže ve stavovém řádku
-(„N odjezdů nespadá do žádného sloupce") a totéž zopakuje při exportu do PDF - žádný odjezd
-tak nezmizí bez povšimnutí.
+**Buněk jde označit víc najednou** - tažením myší přes ně, Shift+klikem, Shift+šipkami, nebo
+Ctrl+A pro celou tabulku. Označenou oblast pak
+naformátujete jedním krokem, Delete v ní vymaže obsah a Ctrl+C ji zkopíruje ve tvaru, který přečte
+Excel; vložení jedné hodnoty do označené oblasti ji celou vyplní.
 
-### 10. 8. 2026 - Sloupec vývěsky můžete omezit obdobím
+**Buňku jde nově naformátovat samostatně.** Tučné, kurzívu, podtržení, přeškrtnutí a zarovnání
+máte ve formátovací liště nad plátnem; kompletní nastavení (písmo, velikost, barvy, vnitřní okraje,
+formát hodnoty) otevřete přes Alt+Enter nebo místní nabídkou „Vlastnosti buňky". Prázdné pole
+znamená, že se hodnota dědí z nastavení celé tabulky - proto si tabulku můžete nastavit jednou
+a odchýlit jen to, co potřebujete. Záhlaví si uděláte z prvního řádku tím, že ho ztučníte.
 
-K dnům a značkám přibyla u sloupce třetí podmínka - **Období**. Zadáte do ní rozsahy dat oddělené
-čárkou, například `14.2.-18.2., 1.7.-31.8., 29.10.-30.10.` pro prázdninový sloupec. Do sloupce pak
-patří spoje, které v zadaném období aspoň jeden den jedou.
+### 14. 8. 2026 - Vysvětlivky značek dnů podle vašeho číselníku
 
-- **Datum bez roku** (`1.7.-31.8.`) platí každý rok - šablona vám vydrží i po překlopení jízdního
-  řádku na další období.
-- **Datum s rokem** (`27.12.2026-29.12.2026`) platí jednorázově, třeba pro výluku nebo mimořádný
-  provoz.
-- Sloupec „dny školního vyučování" se zadá stejně - jako rozsahy dat pro daný rok.
+Vysvětlivky u kroužkových značek dnů (např. „jede v sobotu") se na zastávkové vývěsce braly
+z pevného seznamu v programu. Nově se berou **z číselníku popisů v EDISONu** - tedy odtud, odkud je
+bere i dosavadní tisk jízdních řádků. Když si v číselníku znění upravíte, projeví se to i ve vývěsce;
+pokud v něm značka není, použije se vestavěné znění.
 
-**Negativní značky se přitom uklidí samy.** Když spoj jede celé období sloupce, značka u minuty
-se nevypisuje - nemá co vysvětlovat. Zůstane jen u spojů, které mají uvnitř období výjimku
-(„v létě nejede, na podzim ano").
+Zároveň se srovnalo vestavěné znění značky **„+"**: nově **„jede v neděli a ve státem uznané
+svátky"** místo dřívějšího „jede ve svátek". Značka podle vyhlášky pokrývá oba dny a stejné znění
+má i výchozí číselník v EDISONu.
 
-Období se vyhodnocuje proti skutečnému provozu spoje, tedy včetně svátků a sudých/lichých týdnů.
-Pokud zadané období leží mimo platnost jízdního řádku, sloupec zůstane prázdný a návrhář na to
-upozorní ve stavovém řádku i při exportu - typicky se to stane u šablony s pevným rokem po
-překlopení jízdního řádku.
+### 13. 8. 2026 - Jízdní doby variant tras: přehlednější a lépe čitelné
 
-> **Tip k rozlišení nedělního a svátkového provozu.** Ve sloupci, který slévá víc druhů dne
-> („Soboty, neděle a svátky"), poznáte podle kroužkové značky, který spoj jede jen část z nich.
-> Pokud potřebujete odlišit neděli od svátku, je čitelnější dát jim **vlastní sloupce** než
-> značkovat většinu odjezdů - v datech obvykle jede o svátcích jen zlomek nedělních spojů.
+Sloupce s jízdními dobami u zastávkových vývěsek se dočkaly několika úprav najednou.
+
+**Sloupec „Čas jízdy" už nezmizí.** Dosud ho na zastávkách s více variantami trasy variantní sloupce
+nahradily, takže z vývěsky zmizela deklarovaná doba jízdy linky. Nově zůstává a varianty se řadí
+za něj. Pokud ho na takové vývěsce nechcete, vypnete si ho jako kterýkoli jiný sloupec.
+
+**Nový znak „&lt;" v časech** znamená, že tudy spoj jede, ale nestaví. Dříve tam bylo prázdno stejně
+jako u trasy, kudy spoj vůbec nejede - tyhle dvě různé situace teď jdou rozeznat. Nula (jízda kratší
+než minuta) se vypisuje; kdo chce čitelnější tvar, zapne si v nastavení prvku „Jízda pod minutu
+jako &lt;1".
+
+**U minuty odjezdu je vidět, kterým sloupcem spoj jede.** Písmena variant se nově tisknou i u minut,
+a to **současně s poznámkami o rozdílech tras** - dosud se obojí vylučovalo, takže jste měli buď
+označení sloupce, nebo vysvětlení, kudy spoj jede. Značka říká „který sloupec", poznámka „kudy".
+
+**Řazení variant si volíte.** K dosavadnímu řazení podle četnosti a stabilnímu pořadí přibyly dvě
+volby podle délky jízdy - od nejkratší, nebo od nejdelší.
+
+**Zapínání variant se přesunulo mezi sloupce.** Dosud to bylo zaškrtávátko v nastavení prvku; nově
+je to položka **„Varianty tras"** v seznamu sloupců, takže má vlastní šířku, styl i pořadí jako
+každý jiný sloupec. Jedna položka se v tisku rozpadne na tolik sloupců, kolik má linka variant.
+**Vaše stávající šablony se převedou samy** a vytisknou se stejně jako dosud - nastavení, které jste
+měli, zůstává zachované.
+
+### 12. 8. 2026 - Slovenské vysvětlivky podle jazyka šablony
+
+Vysvětlivky, které Návrhář skládá sám (na znamenie, prestup, bezbariérovosť, „premáva len",
+„nepremáva cez zast. …", názvy dnů), se teď tisknou **v jazyce nastaveném v šabloně** - dialog
+`Vlastnosti stránky…`, pole „Formát čísel a datumů". Tím samým nastavením se řídí i znaková sada
+symbolů, takže texty a piktogramy drží jednu volbu.
+
+Nepřekládá se to, co jste napsali sami: poznámky zadané u linky, názvy zastávek ani vlastní nadpisy
+sloupců dnů. Jedna firma tak může mít českou i slovenskou šablonu vedle sebe.
+
+### 12. 8. 2026 - Sloupce vývěsky si můžete nadefinovat sami
+
+Dosud rozvržení sloupců mřížky odjezdů určovala konfigurace linky - jedno ze čtyř pevných schémat
+(pracovní dny / sobota / neděle a svátky, případně s rozpadem na prázdniny). Nově si sloupce můžete
+**nadefinovat v šabloně**, a to až pět.
+
+U prvku odjezdů v `Upravit sloupce…` je záložka **Vlastní definice sloupců** s přepínačem
+**Automaticky (dle linky)** / **Vlastní sloupce**. U každého sloupce nastavíte:
+
+- **Nadpis** (i dvouřádkový)
+- **Dny** - Po až Ne a Svátek
+- **Značky** - *jen s těmito* / *bez těchto* negativními značkami. Tím se dá vyřešit i „tenhle spoj
+  na vývěsce o víkendu nechci", což dosud nešlo.
+- **Období** - seznam rozsahů dat („14. 2.-18. 2., 1. 7.-31. 8."). Datum **bez roku platí každý rok**,
+  takže šablona přežije překlopení jízdního řádu; datum **s rokem** platí jednou (výluka, mimořádný
+  provoz). Do sloupce patří spoj, který v období jede aspoň jeden den.
+- **Nevypisovat značky** - které negativní značky se v tom sloupci u minut netisknou
+
+Čtyři dosavadní rozvržení jsou připravená **jako vzory na jedno kliknutí**, takže obvykle stačí vzor
+vybrat a doladit. U prázdninových vzorů se čísla značek předvyplní z konfigurace aktuální linky.
+
+**Když sloupce nedefinujete, nic se nemění** - šablona se řídí konfigurací linky jako dosud.
+Pokud naopak definici zadáte, seznamy značek u linky se pro vývěsku ignorují, aby nebylo nastavení
+na dvou místech. Nově přidaný prvek odjezdů začíná se vzorem pracovní dny / sobota / neděle a svátky.
+
+**Spoj, který nespadne do žádného sloupce, se neztratí potichu** - návrhář i tisk upozorní, kolik
+takových spojů je a které to jsou.
+
+> **Tip k zadávání:** nedělní a sváteční provoz rozlište **rozdělením na dva sloupce**, ne značkou.
+> V datech skoro žádný nedělní spoj o svátcích nejede, takže by značka padla téměř na všechny odjezdy.
+
+### 11. 8. 2026 - Drobnosti ze zastávkových vývěsek
+
+Tři věci z vašich podnětů k zastávkovým jízdním řádům.
+
+- **Šipka směru jízdy vlevo už nepřekrývá jízdní doby.** Dosud si brala místo od sousedního
+  sloupce a při užším prvku se do něj vešly i číslice. Nově má vyhrazený vlastní pruh, se kterým
+  počítá rozdělení šířky, takže se překryv nemůže stát bez ohledu na velikost prvku.
+- **Barva písma aktuální zastávky** - dosud šlo nastavit jen podbarvení. Najdete ji u seznamu
+  zastávek ve skupině **Zvýraznění** jako *Barva textu aktuální*; prázdná hodnota znamená
+  „stejná jako ostatní řádky", takže se stávající šablony nemění.
+- **Obrázek v záhlaví sloupce hodin** - u prvku odjezdů v záložce *Obecné* vyberete obrázek
+  (typicky ikonu hodin) a ten se vykreslí v záhlaví hodinového sloupce **u každé skupiny dnů**
+  sám, takže ho neumisťujete ručně a drží i při změně rozvržení. Když je obrázek nastavený,
+  nadpis sloupce se netiskne.
+
+### 10. 8. 2026 - Vývěska respektuje, které značky jste u linky vypnuli
+
+U linky lze určit, **které negativní značky se v kterém sloupci nemají vypisovat**. Toto nastavení
+jsme dosud nečetli, takže se na vývěsce tiskly značky, které jste měli vypnuté - a byly i v legendě.
+
+Nově se respektuje: značka potlačená ve všech sloupcích spoje zmizí i z legendy, protože tam nemá
+co vysvětlovat. Spoj se přitom tiskne dál - potlačuje se jen značka u minuty, ne odjezd.
+
+Nastavení zůstává tam, kde bylo, u linky - v návrháři není co zapínat.
 
 ### 10. 8. 2026 - Krátká jízdní doba se dá vytisknout jako „<1"
 

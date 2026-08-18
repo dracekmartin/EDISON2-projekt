@@ -71,7 +71,7 @@ public class DepartureGroupEditorCustomColumnsTests
 
         Assert.NotNull(vm.ResultCustomColumns);
         Assert.Equal(3, vm.ResultCustomColumns!.Count);
-        Assert.Equal(["12345", "6", "7+"], vm.ResultCustomColumns.Select(c => c.Days));
+        Assert.Equal(["X", "6", "+"], vm.ResultCustomColumns.Select(c => c.Days));
     }
 
     [Fact]

@@ -24,6 +24,15 @@ public abstract class PropertyDescriptor
     /// Po commitu hodnoty v panelu se kontroluje znovu - panel se rebuildne pokud existuje aspoň jeden deskriptor s VisibleWhen.
     /// </summary>
     public Func<bool>? VisibleWhen { get; init; }
+
+    /// <summary>
+    /// Vlastní vratný příkaz pro zápis hodnoty; null = obalit hodnotu <c>SetPropertyCommand</c>em.
+    /// Potřebné tam, kde jedna změna sahá na **víc cílů najednou** (formátování skupiny buněk):
+    /// zpětný krok musí každému vrátit jeho původní hodnotu, ne všem tu jednu z deskriptoru.
+    /// Metoda změnu **rovnou provede** a vrátí příkaz, jehož opětovné vykonání je bez efektu
+    /// (stejný vzor jako vratná změna struktury tabulky).
+    /// </summary>
+    public Func<object?, Commands.IDesignerCommand?>? MakeCommand { get; init; }
 }
 
 // ─── Konkrétní typy ────────────────────────────────────────────────────────────

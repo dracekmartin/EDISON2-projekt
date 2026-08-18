@@ -167,6 +167,7 @@ public partial class MainWindow : Window
                 CmbPreviewPage.SelectedItem = CmbPreviewPage.Items[idx];
         }), System.Windows.Threading.DispatcherPriority.Background);
         _vm.RequestParamsFormReload      = ReloadParamsTabForm;
+        _vm.RequestParamsFieldSync       = SyncParamsTabField;
         // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
         _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);
         // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
@@ -199,7 +200,6 @@ public partial class MainWindow : Window
         _propsVm.RequestOpenDepartureGridDialog = el => OpenDepartureGridDialog(el);
         _propsVm.RequestOpenStopColumnsDialog = el => OpenStopColumnsDialog(el);
         _propsVm.RequestOpenDynamicTableDialog = el => OpenDynamicTableDialog(el);
-        _propsVm.RequestOpenTableEditorDialog = el => OpenTableEditorDialog(el);
         _propsVm.RequestPickFile = (title, filter) =>
         {
             var dlg = new Microsoft.Win32.OpenFileDialog { Title = title, Filter = filter };
@@ -233,6 +233,7 @@ public partial class MainWindow : Window
             MenuAiAssistant.Visibility = Visibility.Collapsed;
 
         this.PreviewKeyDown += OnWindowKeyDown;
+        this.PreviewTextInput += OnWindowTextInput;   // psaní do vybrané buňky pevné tabulky
 
         // Field drag from schema tree - Window-level events for cross-panel drag
         SchemaTree.PreviewMouseLeftButtonDown += SchemaTree_PreviewMouseDown;
@@ -425,6 +426,8 @@ public partial class MainWindow : Window
             (float)(CanvasScrollViewer.HorizontalOffset + CanvasScrollViewer.ViewportWidth),
             (float)(CanvasScrollViewer.VerticalOffset + CanvasScrollViewer.ViewportHeight));
         _canvas.Render(surface.Canvas, (float)skCanvas.ActualWidth, (float)skCanvas.ActualHeight);
+
+        DrawTableCellOverlay(surface.Canvas, (float)skCanvas.ActualWidth);
 
         if (_mouseMode == MouseMode.RubberBand && _rubberBandRect.HasValue)
         {
@@ -1005,7 +1008,7 @@ public partial class MainWindow : Window
                     foreach (var inst in _vm.ActiveInstances)
                     {
                         var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
-                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson));
+                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson, _vm.JazykSablony));
                         if (instPages is null) continue;
                         all.AddRange(instPages);
                     }
@@ -1117,7 +1120,29 @@ public partial class MainWindow : Window
     {
         if (_vm is null || sender is not Field field || e.PropertyName != nameof(Field.Value)) return;
         _vm.SetAgendaParamValue(field.Key, field.Value ?? "");
+        RefreshParamsTabInitParams();  // jinak se hodnota po přepnutí tabu vrátí na starou
         ApplyParamsTabVisibility();   // visibleWhen (např. Hodiny od/do jen ve „Vlastní rozsah")
+    }
+
+    /// <summary>Přepíše hodnotu jednoho pole v tabu parametrů (bez `Init()`, který je synchronní
+    /// round-trip na Caché). Zápis vyvolá FieldChanged, ale ViewModel stejnou hodnotu zahodí.</summary>
+    private void SyncParamsTabField(string key, string value)
+    {
+        RefreshParamsTabInitParams();
+        var field = (ParamsTabForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == key);
+        if (field is not null && field.Value != value) field.Value = value;
+    }
+
+    /// <summary>
+    /// Přenese aktuální hodnoty parametrů do <c>InitParams</c>. **Nutné po každé změně hodnoty**:
+    /// formulář se sám inicializuje na `Loaded`, tedy i při návratu na tab, a bere je odtud - se
+    /// starým snímkem by se zobrazená hodnota vrátila na tu, se kterou se tab stavěl naposledy,
+    /// zatímco náhled i tisk už jedou podle nové.
+    /// </summary>
+    private void RefreshParamsTabInitParams()
+    {
+        if (_vm is null || string.IsNullOrEmpty(ParamsTabForm.CacheClass)) return;
+        ParamsTabForm.InitParams = _vm.BuildAgendaParamsInitParams();
     }
 
     private void ApplyParamsTabVisibility()
@@ -1418,7 +1443,8 @@ public partial class MainWindow : Window
         Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
         Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
-        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
+        Add("Tabulka (z dat)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
+        Add("Tabulka (pevná)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Table, 0, 0));
 
         // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
         var kind = _vm.CurrentAgendaElementKind;
@@ -1662,11 +1688,13 @@ public partial class MainWindow : Window
         Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
         Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
         Models.Elements.ImageElement       => ("ALVA.TemplateDesigner.EDInputForm.ImageElementEdit", "Vlastnosti obrázku"),
+        // Pevná tabulka má jediný tab (bez sloupců a řádků) - strukturu i obsah dělá plátno.
+        Models.Elements.TableElement       => ("ALVA.TemplateDesigner.EDInputForm.TableElementEdit", "Vlastnosti tabulky"),
         // LineTable NENÍ zde - má vlastní 2-tab dialog (Obecné + Sloupce), viz OpenLineTableColumnsDialog.
         _ => (null, null)
     };
 
-    /// <summary>Caché *Edit.cls schéma pro inline panel (W4-10) - pokrývá i komplexní elementy
+    /// <summary>Caché *Edit.cls schéma pro inline panel - pokrývá i komplexní elementy
     /// (StopList/DepartureGrid/Dynamic), jejichž „Obecné" tab modálu jede na tomtéž schématu.
     /// Sloupce komplexních zůstávají jen v dvojkliku (plný 2-tab dialog).</summary>
     private static string? PanelCacheClass(TemplateElement element)
@@ -1714,6 +1742,9 @@ public partial class MainWindow : Window
     /// <summary>EDInputForm button v inline panelu - otevře editor pravidel zvýraznění.</summary>
     private void OnInlineElementButtonClicked(string key)
     {
+        // Z formuláře buňky zpátky na nastavení celé tabulky (= odchod z buňky, jako Esc).
+        if (key == "__tableSettings") { ExitToTableSettings(); return; }
+
         if (key != "__highlightRules") return;
         if (_vm!.State.SelectedElements is [IRowHighlightable h])
             OpenHighlightRulesDialog(h);
@@ -1756,23 +1787,6 @@ public partial class MainWindow : Window
             _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
             if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
         }
-
-        InvalidateCanvas();
-        InvalidatePreview();
-        UpdatePropertiesPanel();
-    }
-
-    private void OpenTableEditorDialog(TableElement element)
-    {
-        var collections = _vm!.GetAvailableGroups();
-        IReadOnlyList<TemplateDesigner.Models.Schema.DataField>? collectionFields = collections.Count > 0
-            ? (collections.FirstOrDefault(c => c.CollectionKey == element.DataSource)?.Fields
-                   ?? collections.SelectMany(c => c.Fields).ToList())
-            : null;
-
-        var dlg = new TableEditorDialog(element, collectionFields, _vm.TableTemplateProvider) { Owner = this };
-        if (dlg.ShowDialog() == true)
-            _vm!.ApplyTableEdit(element, dlg.ResultColumns, dlg.ResultRows, dlg.ResultSummaryRows);
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -1877,9 +1891,14 @@ public partial class MainWindow : Window
         InlineElementForm.SetContext(execute, invalidate);
         FormatToolbar.SetContext(execute, invalidate);
 
+        // Uvnitř tabulky patří panel i lišta **vybrané buňce**, ne prvku - nastavení celé tabulky
+        // je za tlačítkem v panelu (a přes Esc). Jinak by proti sobě stály dvě sady týchž
+        // vlastností s jiným dosahem.
+        if (InTableCells && CellFormatting is not null) { SyncFormatToolbar(); return; }
+
         var selected = _vm!.State.SelectedElements;
 
-        // Jeden element se schématem → EDInputForm panel (W4-10). Descriptory se pořád počítají
+        // Jeden element se schématem → EDInputForm panel. Descriptory se pořád počítají
         // pro FormatToolbar. Více / žádný / bez schématu → starý PropertyDescriptor panel.
         string? panelSchema = selected.Count == 1 ? PanelCacheClass(selected[0]) : null;
 
@@ -1985,6 +2004,17 @@ public partial class MainWindow : Window
         // V inline edit modu nereagujeme na globální zkratky - TextBox si Enter/Esc obslouží sám.
         // Bez tohoto by PreviewKeyDown odchytil Enter dřív než TextBox a otevřel dialog místo commitu.
         if (_inlineEditElement is not null) return;
+
+        // Uvnitř tabulky patří klávesy buňce, ne prvku (jinak by Delete smazal celou tabulku).
+        // ⚠️ Jen když si je nenárokuje pole, kam se píše (`CellKeysActive`): režim buňky zůstává
+        // zapnutý i po potvrzení textu, takže bez téhle podmínky by po kliknutí do pole v panelu
+        // vlastností Delete mazal obsah buňky místo znaku v poli (nález revize 12. 8.).
+        if (InTableCells && (_cellEditing || CellKeysActive))
+        {
+            if (HandleCellFormatKey(e) || HandleCellEditKey(e) || HandleTableCellsKey(e))
+            { e.Handled = true; return; }
+            if (_cellEditing) return;   // zbytek psaní obslouží textové pole samo
+        }
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
 
         // Psaní v textovém poli (inline panel EDInputForm, filtr stromu, …): Enter potvrdí pole
@@ -2164,6 +2194,13 @@ public partial class MainWindow : Window
             EnterInlineEdit(te);
             e.Handled = true;
         }
+        // F2 = „uprav obsah na místě" i u pevné tabulky - dvojklik zůstává na nastavení, aby se
+        // tabulka nechovala jinak než ostatní prvky (námitka Jana 12. 8.).
+        else if (e.Key == Key.F2 && _vm.State.SelectedElements.Count == 1
+                 && TryEnterTableCells(_vm.State.SelectedElements[0]))
+        {
+            e.Handled = true;
+        }
         else if (e.Key == Key.F1)
         {
             ShowHelp();
@@ -2305,12 +2342,49 @@ public partial class MainWindow : Window
         }
 
         var hit = _canvas.HitTestElement(cx, cy, cw);
+
+        // Hrana sloupce má přednost před výběrem buňky i před posunem prvku - myš na ní ukazuje
+        // kurzor pro změnu šířky, takže uživatel míří na ni.
+        if (TryBeginDividerDrag(cx, cy, cw))
+        {
+            e.Handled = true;
+            return;
+        }
+
+        // Uvnitř tabulky: klik přepne buňku (Excel), klik jinam nás z tabulky pustí ven.
+        ExitTableCellsIfElsewhere(hit?.Element);
+        if (InTableCells && TrySelectCellAt(cx, cy, cw))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (hit is not null)
         {
             var (section, element) = hit.Value;
             bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
             bool alt  = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
 
+            // Kam se kliklo - F2 pak otevře tuhle buňku, ne pořád levou horní.
+            RememberElementClick(element, cx, cy, cw);
+
+            // Alt+klik = rovnou do té buňky. Alt v aplikaci znamená „o úroveň hloub" (vytáhnout
+            // prvek ze skupiny), takže obsah prvku je jeho přirozené pokračování - a je to jeden
+            // klik bez F-klávesy, což na noteboocích s Fn řadou rozhoduje.
+            if (alt && element is TableElement { Mode: TableMode.Fixed })
+            {
+                _vm.State.SelectedElements.Clear();
+                _vm.State.SelectedElements.Add(element);
+                _vm.ActivateSection(section);
+                if (TryEnterTableCells(element))
+                {
+                    UpdatePropertiesPanel();
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+    
             _vm.HandleElementHit(section, element, ctrl, alt);
 
             _dragElement           = element;
@@ -2343,6 +2417,22 @@ public partial class MainWindow : Window
         if (_vm is null || _canvas is null) return;
         var pos = e.GetPosition(skCanvas);
         float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
+
+        if (InDividerDrag)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed) { EndDividerDrag(true); return; }
+            UpdateDividerDrag(cx, cy, cw);
+            return;
+        }
+
+        // Tažení výběru buněk uvnitř tabulky - musí být před přesunem prvku, jinak by tah po
+        // buňkách hýbal celou tabulkou.
+        if (InCellRangeDrag)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed) { EndCellRangeDrag(); return; }
+            UpdateCellRangeDrag(cx, cy, cw);
+            return;
+        }
 
         if (_mouseMode == MouseMode.Dragging)
         {
@@ -2579,7 +2669,11 @@ public partial class MainWindow : Window
         }
 
         var handleHit2 = _canvas.HitTestHandle(cx, cy, cw);
-        if (handleHit2.HasValue)
+        // Hrana sloupce pevné tabulky má přednost před „posunout prvek" - jinak by o možnosti
+        // táhnout šířku uživatel nevěděl, protože kurzor by pořád ukazoval posun.
+        if (DividerAt(cx, cy, cw) is { } divider)
+            skCanvas.Cursor = divider.Kind == DividerKind.Column ? Cursors.SizeWE : Cursors.SizeNS;
+        else if (handleHit2.HasValue)
             skCanvas.Cursor = GetResizeCursor(handleHit2.Value.Handle);
         else
         {
@@ -2591,7 +2685,9 @@ public partial class MainWindow : Window
 
     private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
     {
-        if (_mouseMode == MouseMode.Dragging)       EndDrag(true);
+        if (InDividerDrag)                          { EndDividerDrag(true); return; }
+        if (InCellRangeDrag)                        EndCellRangeDrag();
+        else if (_mouseMode == MouseMode.Dragging)  EndDrag(true);
         else if (_mouseMode == MouseMode.Resizing)  EndResize(true);
         else if (_mouseMode == MouseMode.RubberBand) EndRubberBand();
         else if (_mouseMode == MouseMode.AddingElement) EndAddingElement();
@@ -2606,6 +2702,29 @@ public partial class MainWindow : Window
 
         var hit = _canvas.HitTestElement(cx, cy, cw);
         var menu = new ContextMenu();
+
+        // Pravý klik na pevnou tabulku nabízí práci s řádky a sloupci - i když uživatel zrovna
+        // není „uvnitř". Jinak by se k vkládání řádku dostal jen ten, kdo tuší Alt+klik.
+        if (hit?.Element is TableElement { Mode: TableMode.Fixed } rightClickedTable
+            && !ReferenceEquals(rightClickedTable, _cellTable))
+        {
+            _vm.State.SelectedElements.Clear();
+            _vm.State.SelectedElements.Add(rightClickedTable);
+            _vm.ActivateSection(hit.Value.Section);
+            RememberElementClick(rightClickedTable, cx, cy, cw);
+            TryEnterTableCells(rightClickedTable, beginEdit: false);
+            UpdatePropertiesPanel();
+        }
+
+        if (InTableCells && ReferenceEquals(hit?.Element, _cellTable)
+            && TryBuildCellContextMenu(menu, cx, cy, cw))
+        {
+            menu.PlacementTarget = skCanvas;
+            menu.IsOpen = true;
+            e.Handled = true;
+            return;
+        }
+        ExitTableCellsIfElsewhere(hit?.Element);
 
         if (hit.HasValue)
         {
@@ -2645,6 +2764,8 @@ public partial class MainWindow : Window
 
             if (el is TextElement te)
                 menu.Items.Add(new MenuItem { Header = "Upravit text (F2)", Command = new EDControls.EDViewModel.RelayCommand(() => EnterInlineEdit(te)) });
+            if (el is TableElement { Mode: TableMode.Fixed })
+                menu.Items.Add(new MenuItem { Header = "Vyplnit tabulku (Alt+klik, F2)", Command = new EDControls.EDViewModel.RelayCommand(() => TryEnterTableCells(el)) });
 
             menu.Items.Add(new Separator());
             menu.Items.Add(new MenuItem
@@ -3027,6 +3148,13 @@ public partial class MainWindow : Window
 
     private void InlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        // Buňka tabulky má vlastní pravidla (Enter a Tab potvrdí a posunou se dál).
+        if (_cellEditing)
+        {
+            if (HandleCellEditKey(e)) e.Handled = true;
+            return;
+        }
+
         // PreviewKeyDown - musí zachytit Enter dřív než TextBox.AcceptsReturn vloží newline.
         if (e.Key == Key.Escape)
         {
@@ -3043,6 +3171,13 @@ public partial class MainWindow : Window
 
     private void InlineEditBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
+        if (_cellEditing)
+        {
+            // Klik do nabídky polí přebere fokus - to není odchod z buňky, ale výběr položky.
+            if (CellFieldSuggestBox.IsMouseOver) return;
+            EndCellEdit(commit: true);
+            return;
+        }
         if (_inlineEditElement is not null)
             ExitInlineEdit(commit: true);
     }

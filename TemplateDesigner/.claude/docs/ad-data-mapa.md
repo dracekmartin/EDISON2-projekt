@@ -220,6 +220,61 @@ generují se dodatečné minutové sloupce s označením A/B/C. Detekce přes bi
 (`prutmbmp`) - shodné bitmapy = stejná trasa → reuse. (Analogie MHD alg. 1002 rozdílové
 trasy, ale tady přes časové průběhy, ne bitmapy obsluhy.)
 
+⚠️ **Bitmapa se staví jen od tištěné zastávky do konce** (`f mytc=Tc:Krok:TcDo`,
+`JRapiLinPrtMhd1.mac:274`) a uloží se pod klíč `(Tc, Smer)` - varianty jsou tedy vlastnictvím
+konkrétní zastávky. Rozdíl trasy PŘED tou zastávkou variantu zakládat nesmí: časy jsou rozdíl proti
+ní, takže zajezdka v první polovině linky by ve druhé polovině dala dva sloupce s identickými čísly.
+My jsme to do 12. 8. srovnávali přes celý směr (na gold 0365001 to bylo 56 duplicitních sloupců
+ze 116); dnes to drží `JeVUsekuVariant` + invariantní test `TestZadneDuplicitniVariantniSloupce`.
+
+⚠️ **Sloupec „Časy" ve starém modulu NENÍ „výchozí spoj".** Přepínač u linky
+`^JRL(sku,lin,"PATCH","mhd","par",1)` (legacy `arrprtlin("dta",73)`, popisek „mhd odjezdník -
+automaticky generovat časové průběhy tras") rozhoduje mezi dvěma zdroji: **vypnuto** = ručně zadané
+minuty u trasy (`^JRL(sku,lin,"J",poradi)`, 8. `#`-segment ve tvaru `Tam:Zpět`, přes `GetMin` na
+rozdíly proti vývěsce; **jediný sloupec**), **zapnuto** = spočítané průběhy, a to **až čtyři sloupce**
+(`JRapiExp10.mac:383-420` naplní `dta` 3/9/11/12 a ruční hodnotu zahodí).
+Jak vzniká pořadí: pro **každý spoj** se od tištěné zastávky do konce směru poskládá průběh
+kumulativních minut proti ní („<" = projíždí), shodné průběhy se sloučí a zbytek se seřadí **podle
+délky textového zápisu** průběhu (`$l(prutm)`, `JRapiLinPrtMhd1.mac:322-337`) - první sloupec je tedy
+ten, který **dosáhne nejdál**, ne „nejdelší čas" ani „nejvíc spojů". Kolik z těch čtyř se dostane na
+papír, drží tisková předloha (neověřeno).
+⚠️ **„Časy" a variantní „minutové sloupce" jsou v legacy dvě NEZÁVISLÉ rodiny**: Časy slučují shodné
+**časy** (1-4 sloupce), variantní sloupce shodný **sled zastávek** (až 15, značka z nastavení linky)
+a plní se **bez ohledu na přepínač**. Naše svázání „varianty nahradí sloupec Času" je vlastní
+konstrukce, ne parita.
+⚠️ **Přepínač je per LINKA, ne per firma, a Nitra ho má na obojí** (měřeno 13. 8., dřív tu stálo
+paušální „Nitra má zapnuto"): linka `0000001` = zapnuto, linka `0000002` = vypnuto a ruční minuty
+vyplněné (`J`-věta segment 8 = `0:34`) → **na téhle lince starý modul tiskne její ruční minuty, ne
+spočítané**. České firmy naopak mají vypnuto s **prázdnými** minutami (vzorek `CB_CSADAD`, `ZL_KOVED`
+0822995, `CB_GWBUS` 0320113 - segment 8 = `:`) → ve starém tiskne prázdno, náš spočítaný sloupec je
+tam tedy featura, ne odchylka. **My přepínač ignorujeme a vždy počítáme**; trasu vybíráme podle
+pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji. Ručně zadané minuty
+**nečteme vůbec** - u linek v ručním režimu s vyplněnými minutami (Nitra) proto tiskneme **jiná
+čísla** než jejich starý výtisk. Vzorek jsou 4 linky, ne plošné měření.
+
+✅ **Obsah sloupce už míchaný není** (`B67`, 13. 8.): variantní sloupec nese **průběh jedné vybrané
+trasy** - v rámci varianty vyhrává delší jízda (`DelkaProfilu`), při shodě nižší číslo trasy. Totéž
+pravidlo drží jediný sloupec „Časy" (`VyberZaklTrasu`: dosah, pak delší jízda), takže obě rodiny
+sloupců mají jedno pravidlo a vždy jde o skutečný spoj. Hlídá to invariantní test
+`TestVariantniSloupecJeProbehJedneTrasy` (ke každému sloupci musí existovat trasa, jejíž průběh mu
+odpovídá; pod mutací +1 minuta padne na 60 z 60 sloupců). Legacy dělá totéž
+(`necham prubeh s delsim casem`).
+
+**Co od legacy zbývá jinak:** (a) kritérium pro jediný sloupec „Časy" měříme jako **dosah** (počet
+obsloužených zastávek), legacy ho aproximuje **délkou textu průběhu** - koreluje to, totožné to není
+a oraclem to ověřené nemáme; (b) legacy v automatickém režimu plní **až čtyři** sloupce Času, my jeden
+(zbytek na vyžádání); (c) ruční minuty nečteme (viz výše)
+
+⚠️ **Sloupec „Čas jízdy" nese tři stavy** (`B67`): číslo, „<" (základní trasa zastávkou projíždí bez
+stání) nebo prázdno (mimo základní trasu). Dřív bylo prázdno v obou případech. Na wire je to od té
+doby **text, ne číslo** (schéma pole zůstalo `number`, protože MHD posílá jen čísla); na gold lince
+`0365001` stav „<" nevzniká, pravidlo proto drží jednotkový test `TestCasJizdySloupce`.
+
+⚠️ **Variantní sloupce sloupec „Časy" nenahrazují** (`B67`, dřív ho vytlačily): jsou to dvě nezávislé
+rodiny jako v legacy („Časy" vs „Trasa min. 1-15"), sloupec Času má vlastní viditelnost a varianty se
+řadí za něj. V režimu „Řádek pro každé stanoviště" se základní čas vypíše jen na prvním z rozvinutých
+řádků - na stanoviště vázaný není.
+
 ### Anotace u odjezdů + legenda
 
 Speciální znaky a NZ se generují jako horní indexy u minut; texty se sbírají do legendy
@@ -247,7 +302,7 @@ Pro čistou reimplementaci je otázka, zda číst `^JRL`/`^JRZ` přímo, nebo p�
 
 ## 6. Otevřené otázky (ověřit před implementací)
 
-> **Úklid:** tato sekce se ořeže/přepíše až po vyřešení otázek - typicky během Fáze C+D
+> **Úklid:** tato sekce se ořeže/přepíše až po vyřešení otázek - typicky během linkových a knižních JŘ
 > (linkové/knižní JŘ), kde se tyto otázky (FTL/Plk/CNZ, skupina linek, tarif) reálně řeší.
 > Do té doby zůstává jako referenční poznámky.
 
@@ -819,8 +874,10 @@ nastavení linky jako v legacy.
 - **Co to dělá:** když část spojů jede **jinou trasou / jinak rychle**, ukazujeme víc sloupců časů -
   každá varianta své časy (a „<" u zastávek, které varianta projíždí).
 - **Kde:** seznam zastávek vlevo (`StopListElement` - `ShowAllRouteVariants`, dynamické sloupce z `VARIANTY_TRAS`/`TrasaMin`).
-- **Stav:** ✅ **HOTOVO** - multi-varianta TrasaMin (L1): dynamický počet sloupců (N dle dat, ne 15 napevno),
-  1:1 ověřeno gold 0365005. *(Zbývá jen „jemnější výběr variant per-písmeno" = TRANSDEV TR7, jiný bod.)*
+- **Stav:** ✅ **HOTOVO** - multi-varianta TrasaMin (L1): dynamický počet sloupců (N dle dat, ne 15 napevno).
+  ⚠️ **„1:1 ověřeno gold 0365005" platilo pro písmena a jednosloupcový režim, NE pro počet variantních
+  sloupců** - tam se to od legacy lišilo od začátku (opraveno 12. 8., viz níže). Gold digest je hash
+  našeho výstupu, takže odchylku od starého modulu nemohl chytit. *(Zbývá „jemnější výběr variant" = `B67`.)*
 
 ### 🟢 Dormant (umíme, ale nemáme testovací data)
 - **Potlačit negativní značku v některých sloupcích** (AD-N5, legacy `MHD_NEZNZ123`) - vázané na NZ, dnes

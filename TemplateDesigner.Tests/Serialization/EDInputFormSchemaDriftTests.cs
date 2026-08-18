@@ -9,7 +9,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
-/// Driftová pojistka Wave 4 duplikace schémat: Caché <c>EDInputForm/*Edit.cls</c> třídy jsou
+/// Driftová pojistka duplikace schémat: Caché <c>EDInputForm/*Edit.cls</c> třídy jsou
 /// manuální mirror C# properties (field key = property path, čte/zapisuje ElementFormBinder
 /// reflexí). Přejmenování property v C# bez úpravy .cls = runtime chyba u zákazníka.
 ///
@@ -33,6 +33,7 @@ public class EDInputFormSchemaDriftTests
         { "StopListElementEdit.cls",      typeof(StopListElement) },
         { "DepartureGridElementEdit.cls", typeof(DepartureGridElement) },
         { "DynamicTableElementEdit.cls",  typeof(DynamicTableElement) },
+        { "TableElementEdit.cls",         typeof(TableElement) },
         { "LineTableElementEdit.cls",     typeof(LineTableElement) },
         { "SectionEdit.cls",              typeof(Section) },
         { "PageEdit.cls",                 typeof(Template) },
@@ -465,7 +466,7 @@ public class EDInputFormSchemaDriftTests
     }
 
     // ── Co jde nastavit v panelu, musí jít nastavit i ve formuláři ───────────
-    // Od Wave 4 je hlavní editační cestou Caché formulář; panelové deskriptory zůstaly pro
+    // Hlavní editační cestou je Caché formulář; panelové deskriptory zůstaly pro
     // formátovací lištu, úpravu více prvků a fallback. Když ale formulář nějakou vlastnost nemá,
     // je u jednoho prvku hlavní cestou nedosažitelná - přesně tak zmizely 3 vlastnosti mřížky
     // odjezdů (zarovnání záhlaví, dvojice barev negativní značky), nalezené 4. 8. ručně.
@@ -479,6 +480,9 @@ public class EDInputFormSchemaDriftTests
         // Šířka sloupce hodin se zadává v tabu Sloupce (řádek Hodiny) - formulář ji záměrně
         // nemá, aby existoval jediný zdroj (viz komentář v DepartureGridElementEdit.cls)
         ["DepartureGridElement.HourColumnWidth"] = "jediný zdroj je tab Sloupce",
+        // Pevná tabulka řádky z dat negeneruje (na to je DynamicTableElement). Pole zůstává jen
+        // v panelu kvůli starým šablonám, které tenhle prvek mají v režimu „z dat".
+        ["TableElement.DataSource"] = "jen pro staré šablony v režimu z dat; nový prvek ho nemá",
     };
 
     private static readonly Regex DescriptorGetterRx = new(
@@ -571,7 +575,12 @@ public class EDInputFormSchemaDriftTests
     {
         // Ne-elementové formy - needitují property elementu/sekce/šablony:
         //   StyleEdit = pod-formulář stylu (jeho pole ověřuje StyleFields expanze v rodičích).
-        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "StyleEdit.cls" };
+        //   TableCellEdit = formulář vybrané buňky pevné tabulky. Do kontroly výchozích hodnot
+        //     nepatří, protože se **nikdy nezobrazí**: klient je před vyplněním přepíše hodnotami
+        //     z kaskády (buňka je překryv nad nastavením celé tabulky). Vazbu na C# i pokrytí
+        //     kaskádou hlídá `FixedTableCellFormattingTests` - přísněji, než by uměl tenhle test.
+        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "StyleEdit.cls", "TableCellEdit.cls" };
 
         var covered = SchemaMap.Select(row => (string)row[0]!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -665,8 +674,10 @@ public class EDInputFormSchemaDriftTests
     // Zamyká kanon z ux-conventions §8: tentýž field key musí mít všude tentýž label
     // a zakázané tvary termínů se nesmí objevit v labelech, volbách ani panelových deskriptorech.
 
-    /// <summary>Zakázané tvary (kanon §8 + rozhodnutí Jan 2026-07-28). Exact = celý label.</summary>
-    private static readonly string[] BannedExactLabels =
+    /// <summary>Zakázané tvary (kanon §8 + rozhodnutí Jan 2026-07-28). Exact = celý label.
+    /// Sdílené s <see cref="AgendaSchemaDriftTests"/> - kanon je jeden, ať platí na formulářích
+    /// i na slovníku polí agend.</summary>
+    internal static readonly string[] BannedExactLabels =
     [
         "Zamčeno",          // → Uzamčeno
         "Viditelnost",      // → Podmínka viditelnosti (samostatná „Viditelnost řádku" je jiný pojem a je OK)
@@ -680,8 +691,9 @@ public class EDInputFormSchemaDriftTests
         "Pokročilé",        // skupina → Podmínky
     ];
 
-    /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive).</summary>
-    private static readonly string[] BannedLabelSubstrings =
+    /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive). Sdílené s
+    /// <see cref="AgendaSchemaDriftTests"/>.</summary>
+    internal static readonly string[] BannedLabelSubstrings =
     [
         "Šířka rámečku",    // → Tloušťka rámečku (Šířka patří elementu)
         "Zebra",            // → Střídání řádků
@@ -723,8 +735,11 @@ public class EDInputFormSchemaDriftTests
         //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Pozadí značky"), v mřížce
         //     odjezdů stojí hned vedle obecné barvy symbolu anotace, takže tam musí být v popisku
         //     rozlišené („Pozadí negativní značky"); bez toho se nedá poznat, co která barva řídí.
+        //   Format - u stránky je to formát papíru („Formát"), u buňky formát vypisované hodnoty
+        //     („Formát hodnoty"). Dvě různé věci, které jen shodou okolností mají stejný název
+        //     vlastnosti na svém cíli.
         var exempt = new HashSet<string>(StringComparer.Ordinal)
-            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor" };
+            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor", "Format" };
 
         var labelsPerKey = new Dictionary<string, Dictionary<string, List<string>>>();
         foreach (var file in AllEditClsFiles())

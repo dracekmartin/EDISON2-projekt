@@ -20,10 +20,7 @@ namespace TemplateDesigner.Tests.Elements;
 public class ElementRegistrationDriftTests
 {
     /// <summary>Typy záměrně serializovatelné, ale NEvytvářené z palety (load-only). Při oživení vyřaď.</summary>
-    private static readonly HashSet<string> DormantDiscriminators = new(StringComparer.Ordinal)
-    {
-        ElementTypes.Table,   // statická TableElement - uspaná (JsonDerivedType jen pro legacy načtení)
-    };
+    private static readonly HashSet<string> DormantDiscriminators = new(StringComparer.Ordinal);
 
     private static IEnumerable<(Type Type, string Discriminator)> DeclaredTypes() =>
         typeof(TemplateElement).GetCustomAttributes<JsonDerivedTypeAttribute>()

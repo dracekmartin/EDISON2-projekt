@@ -277,7 +277,7 @@ if (dlg.ShowDialog() == true)
   `GeneralForm.Save()` (commit polí formuláře) a teprve pak zavřít; `Command` binding by pořadí
   neuhlídal. Vědomé, nechává se.
 - **`TableEditorDialog` má 5 tabů** (limit `ux-conventions §1` je 3). TableElement je **uspaný**
-  element (paleta ho nenabízí) → řeší se až u jeho oživení (Fáze B), teď „neřešit".
+  element (paleta ho nenabízí) → řeší se až u tabulkových prvků v backlogu, teď „neřešit".
 - **~59 `Click=` v `MainWindow` menu/toolbaru** - migrovat na `Command` **postupně při dotyku**
   daného handleru, ne velký refaktor. Nová okna/dialogy standard dodržují.
 

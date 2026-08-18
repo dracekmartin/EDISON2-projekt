@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
   "id": "9f9d3d98-461d-40d5-86f5-9bfb191c180e",
-  "name": "Kni\u017En\u00ED J\u0158 (AD) \u2014 v\u00FDchoz\u00ED",
-  "description": "",
+  "name": "Linkový JŘ (AD) - výchozí",
+  "description": "Výchozí systémová šablona linkového jízdního řádu (AD): hlavička linky, tabulka celé linky se sloupci spojů a legenda poznámek. Formát A4 na výšku.",
   "pageSize": {
     "width": 210,
     "height": 297,
@@ -14,7 +14,7 @@
   "sections": [
     {
       "id": "e2454e56-e772-4a6a-9ea7-913aa277f451",
-      "name": "Hlavi\u010Dka",
+      "name": "Hlavička",
       "designerHeight": 24,
       "printBehavior": "OnEveryPage",
       "overflowBehavior": "KeepTogether",
@@ -66,7 +66,7 @@
         },
         {
           "type": "TextElement",
-          "text": "Plat\u00ED od {PLATNOST_OD}",
+          "text": "Platí od {DATUM_PLATNOSTI_OD}",
           "style": {
             "fontSize": 7,
             "hAlign": "Right"
@@ -86,7 +86,7 @@
         },
         {
           "type": "TextElement",
-          "text": "do {PLATNOST_DO}",
+          "text": "do {DATUM_PLATNOSTI_DO}",
           "style": {
             "fontSize": 7,
             "hAlign": "Right"
@@ -145,7 +145,7 @@
         },
         {
           "type": "TextElement",
-          "text": "{VYCHOZI_ZASTAVKA}  \u2192  {POPIS_SMER}",
+          "text": "{VYCHOZI_ZASTAVKA}  →  {POPIS_SMER}",
           "style": {
             "fontSize": 9,
             "bold": true
@@ -167,7 +167,7 @@
     },
     {
       "id": "b11d0282-abe8-42bd-a3b2-b8e0de91d140",
-      "name": "J\u00EDzdn\u00ED \u0159\u00E1d",
+      "name": "Jízdní řád",
       "designerHeight": 30,
       "printBehavior": "Once",
       "overflowBehavior": "SplitAcrossPages",
@@ -182,7 +182,7 @@
           "columns": [
             {
               "key": "Zone",
-              "header": "Z\u00F3na",
+              "header": "Zóna",
               "width": 8,
               "visible": true,
               "alignment": "Center"
@@ -196,14 +196,14 @@
             },
             {
               "key": "Tc",
-              "header": "T\u010D",
+              "header": "Tč",
               "width": 6,
               "visible": true,
               "alignment": "Center"
             },
             {
               "key": "StopName",
-              "header": "Zast\u00E1vka",
+              "header": "Zastávka",
               "width": 42,
               "visible": true,
               "alignment": "Left"
@@ -250,7 +250,7 @@
     },
     {
       "id": "0ac9f965-8fe1-4368-a6a5-5e587df80fdd",
-      "name": "Pozn\u00E1mky",
+      "name": "Poznámky",
       "designerHeight": 30,
       "printBehavior": "Once",
       "overflowBehavior": "SplitAcrossPages",

@@ -37,9 +37,9 @@ Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Cach�
 Otevřené tikety #12434 (BBSK - „Export Tisk JŘ") a #12260 (BUSLINE - „úprava šablony") jsou obecné tracker / dotazy, ne konkrétní featury - neuvedeny.
 
 Mimo scope zastávkového JŘ (protříděno proti živému HD 2026-07-20 - všechny tiskové „suspended" tikety
-mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD; **žádný zastávkový nechybí**):
+mimo tabulku výše jsou linkové/knižní JŘ, nebo úplně mimo TD; **žádný zastávkový nechybí**):
 
-**Linkové / knižní JŘ (→ Fáze C/D, ne sem):**
+**Linkové / knižní JŘ (řeší se s jejich trackem, ne sem):**
 - **#7487** (KORID) - NZ + týdenní platnost 4 na řádek.
 - **#8360** (KU HK) - přípojové řádky: kurzíva / barva / velikost písma, aby čas přípoje nesplýval s časem spoje.
 - **#8372** (KORID) - „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).
@@ -89,7 +89,9 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
 | #13048 | KOVED (IDZK/Lábsky) | Poznámky/sloupce zastávek (5 bodů) | ✅ **ZAVŘENO 30. 7. 2026** - všech 5 bodů v1; klient potvrdil i zmenšování textu (bod 2), což byl poslední otevřený bod | - | §0.3 |
 
-| #13045 | KOVED (IDZK/Lábsky) | Skupiny dnů - vlastní sloupce vývěsky | ✅ **HOTOVO 10. 8. 2026, obě části** - (a) denní značky dle rozvržení sloupců (`B29`, 31. 7.: spoj „sobota a svátek" nesl „6" i v nedělním sloupci); (b) vlastní definice sloupců = dny + značky + období (`B39`, 10. 8.) | Vlastní sloupce: dny, „jen/bez značek", „nevypisovat značky", období jako rozsahy dat (bez roku = každý rok). Ověřit na jejich lince, že vývěska sedí, a poradit jim, že nedělní a svátkový provoz se rozliší **rozdělením sloupce**, ne značkami | changelog 2026-07-31 (4) + 2026-08-10 (12) |
+| #13045 | KOVED (IDZK/Lábsky) | Skupiny dnů - vlastní sloupce vývěsky | ⚠️ **13. 8. částečně znovu otevřeno revizí kolegy** (`B81`-`B84` v roadmapě): zadávání dnů neodpovídá abecedě značek z vyhlášky 122/2014 a sloupec „Ne" nebere spoje s platností `+`, ačkoli `+` znamená „jede v neděli a ve státem uznané svátky". **Nezavírat, dokud `B81` nebude opravená** - rada „nedělní a svátkový provoz rozliš rozdělením sloupce" dnes vede na prázdný sloupec. ✅ **HOTOVO 10. 8. 2026, obě části** - (a) denní značky dle rozvržení sloupců (`B29`, 31. 7.: spoj „sobota a svátek" nesl „6" i v nedělním sloupci); (b) vlastní definice sloupců = dny + značky + období (`B39`, 10. 8.) | Vlastní sloupce: dny, „jen/bez značek", „nevypisovat značky", období jako rozsahy dat (bez roku = každý rok). Ověřit na jejich lince, že vývěska sedí, a poradit jim, že nedělní a svátkový provoz se rozliší **rozdělením sloupce**, ne značkami | changelog 2026-07-31 (4) + 2026-08-10 (12) |
+
+| #12843 | TRANSDEV (Šimko) | Podněty k zastávkovým JŘ - 9 bodů z testování šablony „Nitra" (MHD) | 🟡 **rozpracováno** - psáno 10. 8. proti verzi ze **4. 8.**, takže část už je hotová a jen se k němu nedostala | **Hotové, dostane s verzí:** negativní značky dle nastavení linky (body 5 a 8 = `B63`). **12. 8.:** ruční zlom v nadpisu skupiny dnů (Enter i token) a volba „Rozestup odjezdů = Rovnoměrný" (rastr za celý sloupec, aby značka nerozhodila svislice). **Slovenské texty značek** - jazyk legendy se teď řídí kulturou šablony (Vlastnosti stránky), znění je doslova ze starého modulu; nepřekládá se, co napsal on sám (poznámky z číselníku, nadpisy sloupců dnů). Ověřeno voláním serveru, **zbývá porovnat s jeho starým výtiskem**. **Projeté zastávky = nedorozumění, ne chyba** - parametr „Tisknout projeté zastávky" je výchozí vypnutý; ukládání i načítání ověřeno Janem 12. 8., reprodukce se nepodařila. Odpovědět: zapnout parametr + uložit; časy u nich zvlášť přes „Čas u projetých". ⚠️ **Kdyby se to překlápělo zpět, tady je diagnóza** (z roadmapy 13. 8. jako `B68`, odebráno - bez druhé stížnosti není co opravovat): uložení šablony zapíše hodnoty **všech** parametrů sestavy, i těch, kterých se uživatel nedotkl (`SyncParametersToTemplate`), a hodnota v šabloně **má přednost** před per-agenda nastavením. To je **záměr** - samonosná šablona se má kolegovi vytisknout stejně. Vedlejšek je, že se zabetonuje i to, co uživatel u té šablony vůbec neřešil, takže druhý člověk dostane jeho volbu. Oprava by byla „zapisovat jen hodnoty odlišné od výchozí" (nebo sledovat „dotčeno" per parametr), ale tím šablona přestane být plně samonosná - **je to rozhodnutí o produktu, ne oprava chyby**, a bez reprodukce by se dělalo naslepo. **Opraveno 11. 8.:** šipka vlevo přes jízdní doby (bod 1), barva písma aktuální zastávky (bod 2), ikona do záhlaví sloupce hodin (bod 9). **Odpadlo:** zalomení textu v záhlaví jde Enterem (bod 3). **Doloženo jako opravené (bod 6):** kolo místo vlaku už neplatí - ověřeno na jejich datech (Nitra, linka 0000001, zastávka „Nitra, Železničná stanica") v české i slovenské lokalizaci; klient testoval verzi z okna, kdy se ta série oprav teprve dělala. **Čeká na jeho upřesnění:** přesné kroky k vynulovanému poli výluk (bod 7 - u nás se nechová). **Otázka:** výběr variant tras (4) = **tentýž požadavek jako `TR7`** z června, jen podaný podruhé nad novým chováním; vést dál jako jeden bod (detail u TR7). ✅ **13. 8. odstavec o jízdních dobách uzavřen** (`B67` → archiv): jeden variant končící v půli trasy · zbytečně mnoho variant · **neukazovat shodné varianty za zachádzkou** (doloženo bránou přes pět linek, ne jen gold) · **řazení podle délky jízdy** obojím směrem. ⏸️ **Ruční zaškrtávací tabulka variant odložena** (dohoda Jan + kolega 13. 8.): není to jednoduchá změna, dá se mu nejdřív hotové k vyzkoušení a domluví se potom. ⚠️ **Zbývá z jeho zprávy 12. 8.:** zalomení záhlaví sloupců s minutami (`\n` ani Enter mu nefunguje - mřížka odjezdů, ne seznam zastávek) · rozestupy mezi spoji, kde značka odsouvá nastavené mezery a rozhazuje zarovnání (poslal screeny starý/nový) · checkbox souhrnu zastávek na znamení „som nenašiel" (parametr existuje, může jít o navigaci). **Ani jedno nejsou varianty** - než se z toho udělá blok, počkat na jeho reakci po vyzkoušení | changelog 2026-08-11 (3), 2026-08-12 (10), 2026-08-13 (1)-(6) |
 
 **Poznámka k uzavírání:** ready-to-close jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
 polovina 2026 - viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci
@@ -107,10 +109,10 @@ polovina 2026 - viz §H). Zavírat po ověření dané featury v releasu TD + od
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | ✅ **HOTOVO 2026-07-10** - pevná `DataRowHeight` se zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList + DepartureGrid). |
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🤝 **DOHODNUTO s kolegy 10. 8.** - do jízdních řádů přidají **sloupec pro zadání cíle**; naše část pak je pole přečíst a nabídnout v šabloně. ⚠️ Ověřit, že je **per zastávka × směr** (střední varianta) - jen per směr už umíme dnes přes `POPIS_SMER`=konečná. (min) HOTOVO, ideál = číselník cílů zůstává mimo |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | ✅ **HOTOVO 2026-08-03** (#12997): JŘ umí víc barev na linku (Petr), agenda je vydává jako `BARVA_LINKY` / `BARVA_LINKY_2` a jdou zapsat do každého barevného pole šablony. TRANSDEV jede AD (§A6), takže i jejich MHD Trenčín je pokryté. |
-| TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | S–M | ✅ **v návrháři ten problém neexistuje** (ověřeno 6. 8.): sloupce se nezapínají, rozvinou se samy a mají písmena variant, ne pozicová čísla - poslat k vyzkoušení. Předtím: **zčásti vyřešeno 2026-07-27** (#13048 bod 5): varianty dle sledu zastávek (málo sloupců) + parametr „Řazení variant tras: Stabilní". Zbývá jen případný per-písmeno výběr - až TRANSDEV potvrdí nad novým chováním |
+| TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | S–M | 🟡 **půl hotové, druhá půlka POTVRZENA zákazníkem 10. 8. jako #12843 bod 4 - je to týž požadavek dvakrát, vést dál jako jeden.** ✅ Hotová část: nestabilní číslování je pryč (#13048 bod 5, 27. 7.) - sloupce se nezapínají ručně, varianty se seskupují dle sledu zastávek (0330510: 33 → 11 sloupců), rozvinou se samy a mají **písmena variant** místo pozičních čísel; + parametr „Řazení variant tras: Stabilní". Tipování a tisk po úsecích tím odpadá. 🔴 **Zbývá to, na co se ptal znovu: vybrat, KTERÉ varianty tisknout** („jeden alebo všetky" je dnes jediná volba). ⚠️ Dřívější formulace „v návrháři ten problém neexistuje" (6. 8.) byla nepřesná - platila jen pro číslování. Před návrhem se doptat: ruční výběr per linka × pravidlo (nejčastější / obsluhující daný úsek), a jak často se volba mění |
 | TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | S | 🟢 **premisa vyjasněná 10. 8. (Jan) - je to NAŠE práce, blok `B64`.** Zákazník musí mít na mysli **první úsek**: doba jízdy se počítá od vývěskové zastávky, takže její vlastní řádek je 0 a hned následující zastávka je taky 0, jede-li se tam pod minutu. Jinde v tom sloupci nula pro jízdu nevzniká. Detail a past → §TR/8 |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | 🤝 **DOHODNUTO s kolegy 10. 8.** - zapracují do zadávání jízdních řádů; tisková strana se nemění, u nás žádná práce |
-| TR10 | Skrýt spoje o So/Ne/svátcích | S | 🟡 **malá varianta jde u nás** (přepínač „skrýt značené spoje i ve víkendových sloupcích" nad existujícím per-linkovým seznamem `MHD_NENZ1_NENZ2`); vlastní seznam per sloupec = kolegové. Detail §TR |
+| TR10 | Skrýt spoje o So/Ne/svátcích | S | ✅ **HOTOVO - pohlceno `B39`** (rozhodnutí Jan 7. 8., dokončeno 10. 8.): vlastní sloupce umí „bez spojů se značkami" per sloupec, takže samostatný přepínač nad linkovým seznamem se nedělal. Dřívější zápis „malá varianta jde u nás" tím padá |
 
 **Z prezentací zákazníkům - §P:**
 
@@ -132,7 +134,7 @@ Excel od IDZK (Lábsky) k zastávkovému JŘ z našeho návrháře. Body:
 | 2 | Per-buňka zmenšení fontu na šířku (shrink-to-fit) | S–M | 🟡 **IMPLEMENTOVÁNO 2026-07-27 jako vestavěné chování** (bez checkboxu, rozhodnutí Jan) - přetékající text buňky se v `CellRenderer` zmenší na šířku (trigger až skutečné přetečení; rezerva 0,6 mm, u názvů zastávek dle geometrie šipky 2,6 mm; značky za názvem se posouvají a škálují s textem). Platí pro buňky přes CellRenderer (StopList/DynamicTable/LineTable/záhlaví); NE legenda a minuty (vlastní render). Čeká finální vizuální ověření |
 | 3 | Sloupec nástupiště | S | ✅ **OVĚŘENO 2026-07-27** - KOVED chce „čísla sloupků z trasy" = přesně TR3 (J-věta `#3` per směr, sloupec „Nástupiště" opt-in). Část „příp. z detailu spoje" = per-spoj nástupiště z **W-trasy** (zatím nečteme) → splývá s bodem 4 |
 | 4 | Zastávka s více nástupišti (více řádků/hodnot) | M | ✅ **HOTOVO 2026-07-27 - všechny 3 režimy.** Přepínač „Více nástupišť" na StopListu: nejčetnější / výčet „2,3" / **duplikace řádku per stanoviště** (`RowPerPlatform`). Duplikace: klientská expanze `ExpandPlatformRows` nad aditivním serverovým polem `NASTUPISTE_VARIANT` (nástupiště per varianta, W pozice 7). Zastávka se ≥2 stanovišti → N řádků na místě v trase, časy jen variant daného stanoviště, vývěska/jednostanovištní = 1 řádek. Ověřeno daty 0330510 (`TestNastupisteVariantEmit` + 5 xUnit). Vývěsky per sloupek (samostatné stránky) = #8828 |
-| 5 | Varianty tras (řazení dle četnosti, max čas, písmena, MHD parita) | M–L | ✅ **HOTOVO 2026-07-27, vizuálně ověřeno Janem na 0330510** - seskupování variant předěláno na **sled zastávek s max časy** (= legacy `prutmbmp` dedup; 0330510: 33 sloupců → 11; smoke test odhalil i letitou chybu `|`=„čas 0" a bool parametry na wire). Parametry (skupina Seznam zastávek): „Řazení variant tras" (dle četnosti default / stabilní - TR7), „Písmena variant u odjezdů" (default vyp; písmeno u minuty nahrazuje automatické rozdílové poznámky), „První varianta bez písmene" (default zap). **Nástupiště v identitě varianty vědomě NE** (duplicitní vizuálně identické sloupce) - „jiné stanoviště" řeší duplikace řádku (bod 4 `RowPerPlatform`) + #8828 vývěska per označník. MHD parita variant = mimo scope v1. Symbol „↓" u výchozí zastávky = odložený drobný vizuál |
+| 5 | Varianty tras (řazení dle četnosti, max čas, písmena, MHD parita) | M–L | ✅ **HOTOVO 2026-07-27, vizuálně ověřeno Janem na 0330510** - seskupování variant předěláno na **sled zastávek s max časy** (= legacy `prutmbmp` dedup; 0330510: 33 sloupců → 11; smoke test odhalil i letitou chybu `|`=„čas 0" a bool parametry na wire). Parametry (skupina Seznam zastávek): „Řazení variant tras" (od 13. 8. čtyři volby - dle četnosti, stabilní, dle délky jízdy oběma směry) a „První varianta bez písmene" (default zap). ⚠️ **Zápis „Písmena variant u odjezdů (default vyp; písmeno u minuty nahrazuje rozdílové poznámky)" už neplatí dvakrát:** od 13. 8. se písmeno a rozdílová poznámka tisknou **vedle sebe** (`B67`) a 17. 8. ten parametr **zrušen** - písmena jsou vždy, protože bez nich nešlo minutu spárovat se sloupcem (`B90`). **Nástupiště v identitě varianty vědomě NE** (duplicitní vizuálně identické sloupce) - „jiné stanoviště" řeší duplikace řádku (bod 4 `RowPerPlatform`) + #8828 vývěska per označník. MHD parita variant = mimo scope v1. Symbol „↓" u výchozí zastávky = odložený drobný vizuál |
 
 Detaily hotových: changelog 2026-07-24 (zóny) + 2026-07-26 (přestupy) + 2026-07-27/28 (body 2, 4, 5, titulek, slovník „označník"). **Tiket ZAVŘEN - klient 30. 7. potvrdil, že zmenšování textu funguje, jak čekal** (poslední otevřený bod 2). Reklamace = znovuotevření tiketu.
 
@@ -170,6 +172,11 @@ odpovědi na případné znovuotevření/dotaz:
 Není to nedodělek, ale práce, která se vyplatí až s konkrétním zákazníkem - v aktivní roadmapě
 jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do hodiny, M = půl dne.
 
+- **Odlišit písmena variant tras od písmen rozdílů tras** (S–M, zjištěno 17. 8.) - varianty berou
+  `A, B, C…`, rozdíly tras sadu `BCEFGHIJOQRW…`, takže **od „B" se překrývají**: na lince, která má
+  obojí, může „B" u jedné minuty znamenat sloupec a u jiné rozdíl trasy. Starý modul na to měl
+  číselník. **Rozhodnutí Jan 17. 8.: čekat, až to někdo nahlásí jako reálný problém** - projeví se
+  tiše a jen tam, kde se obojí sejde na jedné vývěsce
 - **Tiskový parametr „Rozdělení sloupců" pro MHD agendu** (M) - sjednocení s AD, kde už je
   (MHD SMO fáze 3)
 - **Parita variant tras + písmen u odjezdů pro MHD agendu** (S–M) - AD hotové 27. 7. (#13048 bod 5),
@@ -179,6 +186,17 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
   převod na šablonu má smysl, až někdo bude mít dvě šablony téže agendy s jiným exportem
 - **Per-sloupcové zvýraznění řádků** (`HighlightRule.TargetColumn` - model to pole nese, render
   barví celý řádek) + **barva textu / kurzíva** pravidla zvýraznění
+- **Přepínač „Přestupy (vlak/autobus)" u MHD neovládá to, co má** (M; z roadmapy 13. 8. jako `B48`,
+  odebráno stejným rozhodnutím jako `B79`). MHD posílá přestupy jako **pozici ve fontu** (`w`/`x`),
+  ne jako písmeno, takže je `IsTransferAttr` nepozná a řídí je obecný přepínač „Atributy". **Tisknou
+  se správně**, jen se ovládají jinak než u AD. Fix = tagovat ATRIBUTY kategorií `prestup` na wire.
+  Dopadne to na firmu s MHD modulem (dnes DPCB/DPKV), která bude chtít přestupy vypnout zvlášť.
+- **Jazyk tří automatických vět v MHD agendě** (S; z roadmapy 13. 8. jako `B79`, odebráno na
+  rozhodnutí Jan - žádná slovenská firma dnes MHD modul nemá). Dny v týdnu u kroužkových značek
+  („jede v pondělí"), automatická poznámka typu provozu („jede jen &lt;typ&gt;") a automatické rozdíly
+  tras („končí v zast. X") jsou napevno česky; parametr `JAZYK` se do MHD agendy posílá, ale
+  ignoruje se. Fix je stejný vzor jako `B69` u AD (přepínač jazyka + texty). Dopadne to teprve na
+  slovenského zákazníka s MHD modulem - dnes ho mají DPCB a DPKV, MHD Nitra jede na AD agendě.
 
 ---
 
@@ -221,11 +239,15 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
   - **(a) StopList filtr** - neobsluhovaná zastávka se nepřidá do seznamu: `ZastavkoveJrAd:296`
     `i '$d(servedPoradi(poradi)) continue` (`ObsluhovanePoradi`).
   - **(b) Stránka se negeneruje** - zastávka bez odjezdů: `:333` `odjezdy.%Size()=0 q ""` + `:278` terminus-skip.
-- **⚠️ Známá nuance k případnému doladění** (jen pokud klient nahlásí): AD filtr (a) je
-  **směrově-globální** (`servedPoradi` = staví tam aspoň 1 spoj směru), kdežto MHD je **from-current**
-  (`ObsluhaBitmap` = obsluha z aktuální zastávky). Pro přesný školní scénář (zastávka dosažitelná jen
-  spojem, který z tištěné zastávky nevyjíždí) by AD mohl zastávku ponechat. Pokud to vadí → přepnout AD
-  na from-current sémantiku. Zatím necháno (těžko se hledá testovací linka; klient ověří v praxi).
+- **✅ Dořešeno 17. 8. - AD přepnuto na from-current sémantiku.** Dřív tu stálo, že AD filtr je
+  **směrově-globální** (staví tam aspoň 1 spoj směru), kdežto MHD je **from-current**, takže pro
+  školní scénář mohl AD zastávku ponechat - a že se to nechává, protože se těžko hledá testovací
+  linka. **Linka se našla** (`CB_CSADAD` 0330530, zastávka Střítež,žel.st.točna měla „<" ve sloupci
+  časů i ve všech osmi variantách) a AD teď bere jen zastávky, kde staví aspoň jeden spoj stavící
+  i na té vývěsce (`ObsluhovanePoradiOd`). Agendy jsou tím srovnané.
+  ⚠️ Seznam zastávek se proto **liší mezi vývěskami téže linky**; hlídá to invariant
+  `TestSeznamNemaNedosazitelneZastavky` (každá zastávka v seznamu musí mít aspoň v jednom časovém
+  sloupci číslo). Detail → changelog 2026-08-17 (4).
 - **Opt-out** (kdyby chtěl vidět vše bez filtru) → param `TISK_VSECH_ZASTAVEK` (paralelní k `TISK_PROJETYCH_ZAST`), zatím YAGNI.
 
 ---
@@ -696,8 +718,13 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 Souhrnný wishlist k zastávkovému CP (SK legislativa + praxe MHD Trenčín). U každého bodu stav na
 naší straně. **TRANSDEV jede AD agendu** (§A6) - i jejich MHD Trenčín, takže „AD-only" je pro ně OK.
 
-**Stav sady k 2026-08-06: 5 z 10 hotových** (TR1 osa přes půlnoc, TR2 souhrn na-znamení, TR3
-nástupiště, TR4 auto výška řádku, TR6 barva linky), TR7 zčásti, TR5 v minimální variantě.
+**Stav sady k 2026-08-11: 7 z 10 hotových** (TR1 osa přes půlnoc, TR2 souhrn na-znamení, TR3
+nástupiště, TR4 auto výška řádku, TR6 barva linky, **TR8 „<1"** hotové 10. 8. jako `B64`,
+**TR10 skrývání spojů** vyřešené obecným definováním sloupců v `B39` - ale to jde do verze
+**zhasnuté**, dokud neprojde testováním). TR5 v minimální variantě (zbytek kolegové), TR9 kolegové.
+
+⚠️ **TR7 je jediný, který u nás zůstává otevřený** - a zákazník ho 10. 8. potvrdil znovu
+(#12843 bod 4). Hotová je jen půlka (nestabilní číslování), chybí výběr variant.
 
 **Kdo drží zbytek** (poctivě prověřeno v kódu 6. 8. - dvě věci se posunuly proti prvnímu odhadu).
 Tabulka je podklad pro #13098:

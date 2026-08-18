@@ -1,10 +1,483 @@
 Include (%occInclude, GENERAL)
 
-/// Read-only sonda k #13048 bodu 3 / #13088: kde v datech AD leží „sloupek" (KOVED ho odlišuje
-/// od nástupiště = našeho označníku). Umí fulltext přes legacy rutiny (`^rMAC`) a rozpad
-/// `#`-segmentů J-věty trasy linky. Nic nemění, po vytěžení smazat.
+/// Read-only sondy nad AD daty. Původně k #13048 bodu 3 / #13088 (kde v datech leží „sloupek", který
+/// KOVED odlišuje od nástupiště = našeho označníku); fulltext přes legacy rutiny (`^rMAC`) a rozpad
+/// `#`-segmentů J-věty. Od `B67` navíc `NajdiVariantniPripady` + `PripadyLinky`, kterými se vybírají
+/// linky do testovací sady (`ZastavkoveJrAdGoldTest.Pripady`) - **ty dvě si nech**, hledání kandidátů
+/// bude potřeba u každé další změny variantních sloupců. Nic nemění.
 Class ALVA.TemplateDesigner.Tests.AdSloupekProbe
 {
+
+/// Read-only hledání linek pro testovací sadu (`B67`): kde vznikají variantní sloupce, kde v základním
+/// sloupci časů vzniká „<" (vybraná trasa zastávkou projíždí bez stání) a kde má **tentýž sled zastávek
+/// dva různé časové průběhy** - právě tam rozhoduje pravidlo „vyhrává delší jízda". Jedna gold linka
+/// pokrývá jen svůj tvar dat, proto se kandidáti hledají napříč firmami.
+///
+/// Signatury se skládají přes celý směr (ne per vývěskovou zastávku), takže je to **hrubý filtr** na
+/// kandidáty - potvrzuje se pak spuštěním agendy nad konkrétní linkou (`PripadyLinky`).
+/// IN: DB, SKU (default 1), MAXLIN (default 300), MAXOUT (default 30). Read-only.
+ClassMethod NajdiVariantniPripady(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinne"))
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 300
+		set maxOut = +$get(^||ML("IN","MAXOUT")) if maxOut < 1 set maxOut = 30
+		kill ^||ML("OUT")
+
+		set linek = 0, vypsanych = 0, lin = ""
+		for {
+			set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+			quit:linek'<maxLin
+			quit:vypsanych'<maxOut
+			continue:'$data(^[db]JRL(sku,lin,"W"))
+			set linek = linek + 1
+			kill ^||TiskAd                       // cache agendy je per linka, ať v tomhle běhu neroste
+			set variant = 0, projizdeni = 0, stejnyVzor = 0, tras = 0
+			for smer = "T", "Z" {
+				kill served, sig
+				do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).ObsluhovanePoradi(db, sku, lin, smer, .served)
+				continue:'$data(served)
+				kill ct
+				set sp = ""
+				for {
+					set sp = $order(^[db]JRL(sku,lin,smer,sp)) quit:sp=""
+					continue:'$isvalidnum(sp)
+					set c = $piece($piece($get(^[db]JRL(sku,lin,smer,sp)),"#",1),":",3)
+					if c '= "" set ct(c) = ""
+				}
+				set pocetVzoru = 0, c = ""
+				for {
+					set c = $order(ct(c)) quit:c=""
+					set tras = tras + 1
+					kill wMap
+					do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).WMapa(db, sku, lin, c, .wMap)
+					set vzor = "", casy = "", pp = ""
+					for {
+						set pp = $order(served(pp)) quit:pp=""
+						set v = $get(wMap(pp))
+						set stav = $select(v="":"-", (v="<")||(v="|"):"<", 1:"S")
+						if stav = "<" set projizdeni = 1
+						set vzor = vzor_stav
+						set casy = casy_"~"_##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota(v)
+					}
+					if '$data(sig(vzor)) { set pocetVzoru = pocetVzoru + 1 }
+					elseif sig(vzor) '= casy { set stejnyVzor = 1 }
+					set sig(vzor) = casy
+				}
+				if pocetVzoru > 1 set variant = 1
+			}
+			continue:('variant)&&('projizdeni)&&('stejnyVzor)
+			set vypsanych = vypsanych + 1
+			set ^||ML("OUT", "K"_vypsanych) = db_" lin="_lin_" tras="_tras_" varianty="_variant_" projizdeni="_projizdeni_" stejnyVzorJineCasy="_stejnyVzor_" prepinacAuto="_$get(^[db]JRL(sku,lin,"PATCH","mhd","par",1))
+		}
+		set ^||ML("OUT", "Z_SOUHRN") = "prohledano linek: "_linek_", vypsano: "_vypsanych
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// **Typový profil linek** - pro každou linku firmy pustí agendu a změří, které situace v jejím
+/// výstupu vůbec vznikají. Slouží k sestavení testovací sady tak, aby každý typ situace držela nějaká
+/// linka (jedna linka pokrývá jen svůj tvar dat).
+/// IN: DB, SKU (default 1), MAXLIN (default 40). Read-only.
+ClassMethod ProfilyLinek(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinne"))
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 40
+
+		kill profil
+		set linek = 0, lin = ""
+		for {
+			set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+			quit:linek'<maxLin
+			continue:'$data(^[db]JRL(sku,lin,"I"))
+			continue:'$data(^[db]JRL(sku,lin,"W"))
+			set linek = linek + 1
+			kill ^||TiskAd, ^||ML("OUT")
+			set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+			set ^||ML("IN","LINKA_ID") = lin
+			do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+			kill p
+			set p("stranek") = 0, key = ""
+			for {
+				set key = $order(^||ML("OUT", key)) quit:key=""
+				continue:key="ERR"
+				set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+				set zast = page.rows.ZASTAVKY
+				continue:'$isobject(zast)
+				set p("stranek") = p("stranek") + 1
+				set sloupcu = 0
+				if $isobject(page.values.%Get("VARIANTY_TRAS")) set sloupcu = page.values.%Get("VARIANTY_TRAS").%Size()
+				if sloupcu > $get(p("maxSloupcu")) set p("maxSloupcu") = sloupcu
+				if sloupcu > 1 set p("sVariantami") = $get(p("sVariantami")) + 1
+				// zastávky: stavy Času, víc stanovišť u jedné zastávky, atributy
+				set it = zast.%GetIterator()
+				while it.%GetNext(.i, .radek) {
+					set c = radek.%Get("CAS_JIZDY")
+					if c = "<" { set p("mensitko") = $get(p("mensitko")) + 1 }
+					elseif c = "" { set p("prazdnoCas") = $get(p("prazdnoCas")) + 1 }
+					set nv = radek.%Get("NASTUPISTE_VARIANT")
+					if $isobject(nv) {
+						kill stan
+						for ni = 0:1:nv.%Size()-1 { set v = nv.%Get(ni)  if v '= "" set stan(v) = "" }
+						set pocetStan = 0, sv = ""
+						for { set sv = $order(stan(sv)) quit:sv=""  set pocetStan = pocetStan + 1 }
+						if pocetStan > 1 set p("viceStanovist") = $get(p("viceStanovist")) + 1
+					}
+					if radek.%Get("ZONY") '= "" , $isobject(radek.%Get("ZONY")), radek.%Get("ZONY").%Size() > 0 set p("zony") = $get(p("zony")) + 1
+					set atr = radek.%Get("ATRIBUTY")
+					if $isobject(atr) {
+						for ai = 0:1:atr.%Size()-1 {
+							set znak = atr.%Get(ai).%Get("ZNAK")
+							if (znak = "A") || (znak = "L") { set p("prestupy") = $get(p("prestupy")) + 1 }
+							elseif znak = "x" { set p("naZnameni") = $get(p("naZnameni")) + 1 }
+						}
+					}
+				}
+				// anotace u odjezdů podle kategorie
+				set odj = page.rows.ODJEZDY
+				if $isobject(odj) {
+					set io = odj.%GetIterator()
+					while io.%GetNext(.i2, .o) {
+						set an = o.%Get("ANOTACE")
+						continue:'$isobject(an)
+						for ai = 0:1:an.%Size()-1 {
+							set kat = an.%Get(ai).%Get("KATEGORIE")
+							continue:kat=""
+							set p("kat_"_kat) = $get(p("kat_"_kat)) + 1
+						}
+					}
+				}
+				// legenda podle kategorie
+				set pozn = page.rows.POZNAMKY
+				if $isobject(pozn) {
+					set ip = pozn.%GetIterator()
+					while ip.%GetNext(.i3, .r) {
+						set kat = r.%Get("KATEGORIE")
+						continue:kat=""
+						set p("legenda_"_kat) = $get(p("legenda_"_kat)) + 1
+					}
+				}
+			}
+			set radek = "lin=" _ lin
+			set k = ""
+			for { set k = $order(p(k)) quit:k=""  set radek = radek _ " " _ k _ "=" _ p(k) }
+			set profil(lin) = radek
+		}
+		kill ^||ML("OUT")
+		set lin = ""
+		for {
+			set lin = $order(profil(lin)) quit:lin=""
+			set ^||ML("OUT", "P_" _ lin) = profil(lin)
+		}
+		set ^||ML("OUT","Z_SOUHRN") = "firma " _ db _ ", linek " _ linek
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Co na jedné lince reálně vznikne, když se pustí agenda (`B67`): kolik stránek má variantní sloupce,
+/// kde v základním sloupci časů je „<" a kde prázdno. Slouží k výběru linek do testovací sady a k tomu,
+/// aby šlo říct **konkrétní zastávku**, na které se to dá vizuálně zkontrolovat.
+/// IN: SKU (default 1), LIN. Read-only (jen čte, co vrátí GetData).
+ClassMethod PripadyLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set lin = $get(^||ML("IN","LIN"))
+		if lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LIN je povinne"))
+
+		kill ^||ML("OUT")
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+		set stranek = 0, sVariantami = 0, maxSloupcu = 0, mensitek = 0, prazdnych = 0, ukazek = 0
+		kill vzorky
+		set key = ""
+		for {
+			set key = $order(^||ML("OUT", key)) quit:key=""
+			continue:key="ERR"
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			set zast = page.rows.ZASTAVKY
+			continue:'$isobject(zast)
+			set stranek = stranek + 1
+			set sloupcu = 0
+			if $isobject(page.values.%Get("VARIANTY_TRAS")) set sloupcu = page.values.%Get("VARIANTY_TRAS").%Size()
+			if sloupcu > maxSloupcu set maxSloupcu = sloupcu
+			if sloupcu > 1 set sVariantami = sVariantami + 1
+			set kdeMensitko = "", it = zast.%GetIterator()
+			while it.%GetNext(.i, .radek) {
+				set c = radek.%Get("CAS_JIZDY")
+				if c = "<" {
+					set mensitek = mensitek + 1
+					if kdeMensitko = "" set kdeMensitko = radek.%Get("NAZEV_ZASTAVKY")
+				}
+				elseif c = "" { set prazdnych = prazdnych + 1 }
+			}
+			if (kdeMensitko '= "") && (ukazek < 5) {
+				set ukazek = ukazek + 1
+				set vzorky(ukazek) = "vyveska " _ page.values.%Get("POPIS_ZASTAVKA") _ " (smer " _ page.values.SMER _ ", sloupcu variant " _ sloupcu _ ") ma < u zastavky " _ kdeMensitko
+			}
+		}
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_LINKA") = "sku=" _ sku _ " lin=" _ lin
+		set ^||ML("OUT","B_SOUHRN") = "stranek=" _ stranek _ " sVariantami=" _ sVariantami _ " maxSloupcuVariant=" _ maxSloupcu _ " mensitekVCase=" _ mensitek _ " prazdnychVCase=" _ prazdnych
+		set u = ""
+		for {
+			set u = $order(vzorky(u)) quit:u=""
+			set ^||ML("OUT","C_VZOREK_" _ u) = vzorky(u)
+		}
+	}
+	// Bez úklidu OUT by chyba v sondě poslala klientovi celý výstup GetData (megabajty stránek).
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Plní zákazníci **znaky variantních sloupců** u linky (`B67` krok 3)? Starý modul je bere ze
+/// stringu `^JRL(sku,lin,"PATCH","mhd","par",2)` - i-tý znak patří i-tému sloupci
+/// (`JRapiLinPrtMhd1.mac:26` a `:297`). Žádný default v kódu není; prázdné nastavení = sloupce
+/// zůstanou bez značky. Podle toho, kolik linek ho reálně má, se rozhoduje, jestli TD stačí
+/// parita (číst nastavení), nebo potřebuje i vlastní záložní řadu.
+/// IN: DB, SKU (default 1), MAXLIN (default 500). Read-only.
+ClassMethod ZnakySloupcu(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")) if db = "" set db = dataDB
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin = 0 set maxLin = 500
+
+		kill ^||ML("OUT")
+		set linek = 0, sZnaky = 0, ukazek = 0, lin = ""
+		kill vzorky, delky
+		for {
+			set lin = $order(^[db]JRL(sku, lin)) quit:lin=""
+			quit:linek'<maxLin
+			continue:'$data(^[db]JRL(sku, lin, "I"))
+			set linek = linek + 1
+			set znaky = $get(^[db]JRL(sku, lin, "PATCH", "mhd", "par", 2))
+			continue:znaky=""
+			set sZnaky = sZnaky + 1
+			set delky($length(znaky)) = $get(delky($length(znaky))) + 1
+			if ukazek < 8 {
+				set ukazek = ukazek + 1
+				set vzorky(ukazek) = "lin=" _ lin _ " znaky=""" _ znaky _ """"
+			}
+		}
+
+		set ^||ML("OUT","A_FIRMA") = db _ " sku=" _ sku
+		set ^||ML("OUT","B_SOUHRN") = "linek=" _ linek _ " sVyplnenymiZnaky=" _ sZnaky
+		set d = "", prehled = ""
+		for {
+			set d = $order(delky(d)) quit:d=""
+			set prehled = prehled _ $select(prehled="":"", 1:", ") _ d _ " znaku: " _ delky(d) _ "x"
+		}
+		set ^||ML("OUT","C_DELKY") = prehled
+		set u = ""
+		for {
+			set u = $order(vzorky(u)) quit:u=""
+			set ^||ML("OUT","D_VZOREK_" _ u) = vzorky(u)
+		}
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Kde na lince se zastávka obsluhuje z **víc stanovišť** - tedy kde se v režimu „Řádek pro každé
+/// stanoviště" rozpadne na víc řádků. Slouží k tomu, aby šlo říct konkrétní vývěsku a zastávku
+/// k proklikání; bez toho se hledá ručně listováním stránek.
+/// IN: SKU (default 1), LIN. Read-only.
+ClassMethod ViceStanovistLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set lin = $get(^||ML("IN","LIN"))
+		if lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LIN je povinne"))
+
+		kill ^||ML("OUT")
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+		set stranek = 0, nalezu = 0, ukazek = 0, key = ""
+		kill vzorky
+		for {
+			set key = $order(^||ML("OUT", key)) quit:key=""
+			continue:key="ERR"
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			set zast = page.rows.ZASTAVKY
+			continue:'$isobject(zast)
+			set stranek = stranek + 1
+			// Zastávky PŘED vývěskou jsou projeté - tisknou se šedě a jen na vyžádání, takže rozpad
+			// na řádky tam nikdo neuvidí. Pro proklikání jsou k ničemu; hledáme ty za vývěskou.
+			set zaVyveskou = 0
+			set it = zast.%GetIterator()
+			while it.%GetNext(.i, .radek) {
+				if radek.%Get("AKTUALNI_ZASTAVKA") = "true" set zaVyveskou = 1  continue
+				continue:'zaVyveskou
+				set nv = radek.%Get("NASTUPISTE_VARIANT")
+				continue:'$isobject(nv)
+				kill ruzne
+				set pocet = 0
+				for vi = 0:1:nv.%Size()-1 {
+					set hodnota = nv.%Get(vi)
+					continue:hodnota=""
+					continue:$data(ruzne(hodnota))
+					set ruzne(hodnota) = "", pocet = pocet + 1
+				}
+				continue:pocet<2
+				set nalezu = nalezu + 1
+				continue:ukazek'<8
+				set ukazek = ukazek + 1
+				// Délka TRASA_MIN je tu podstatná: klient rozvíjí řádky jen po délku pole časů
+				// (`Math.Min(varianty, TrasaMin)`), takže kratší pole rozpad tiše vypne.
+				set tm = radek.%Get("TRASA_MIN")
+				set delkaCasu = $select($isobject(tm):tm.%Size(), 1:-1)
+				set vzorky(ukazek) = "vyveska " _ page.values.%Get("POPIS_ZASTAVKA") _ " (smer " _ page.values.SMER _ ") -> zastavka " _ radek.%Get("NAZEV_ZASTAVKY") _ " ma " _ pocet _ " stanovist, TRASA_MIN delka " _ delkaCasu
+			}
+		}
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_LINKA") = "sku=" _ sku _ " lin=" _ lin
+		set ^||ML("OUT","B_SOUHRN") = "stranek=" _ stranek _ " zastavekSViceStanovisti=" _ nalezu
+		set u = ""
+		for {
+			set u = $order(vzorky(u)) quit:u=""
+			set ^||ML("OUT","C_VZOREK_" _ u) = vzorky(u)
+		}
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Linky se spoji s platností **„+"** (jede v neděli a ve státem uznané svátky) - `B81`. Takový spoj
+/// dnes nespadne do vlastního sloupce s dny „7", takže sloupec „Neděle" vyjde prázdný. Sonda dá
+/// konkrétní linku a čísla spojů, na kterých se to dá doložit i po opravě.
+/// IN: DB, MAXLIN (default 3000). Read-only.
+ClassMethod NajdiPlusSpoje(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 3000
+
+		kill ^||ML("OUT")
+		set linek = 0, plusSpoju = 0, ukazek = 0, sku = ""
+		kill vzorky
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek'<maxLin
+				continue:'$data(^[db]JRL(sku,lin,"I"))
+				set linek = linek + 1
+				set naLince = "", pocetNaLince = 0
+				for smerIdx = "T","Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)),"#",1),":",7)
+						continue:'(plk["+")
+						set plusSpoju = plusSpoju + 1
+						set pocetNaLince = pocetNaLince + 1
+						if $length(naLince,",") < 6 set naLince = naLince_$select(naLince="":"", 1:",")_smerIdx_sp_"("_plk_")"
+					}
+				}
+				continue:'pocetNaLince
+				continue:ukazek'<8
+				set ukazek = ukazek + 1
+				set vzorky(ukazek) = "sku="_sku_" lin="_lin_" · spojů s ""+""="_pocetNaLince_" · "_naLince
+			}
+		}
+		set ^||ML("OUT","A_FIRMA") = db
+		set ^||ML("OUT","B_SOUHRN") = "linek="_linek_" spojů s platností ""+""="_plusSpoju
+		set u = ""
+		for {
+			set u = $order(vzorky(u)) quit:u=""
+			set ^||ML("OUT","C_VZOREK_"_u) = vzorky(u)
+		}
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Přehled **týdenních platností** v datech firmy - které tvary `Plk` reálně existují, jak často
+/// a na které lince se dá každý ukázat. Slouží k výběru linek pro vizuální kontrolu vlastních
+/// sloupců (`B81`/`B82`): pro sloupec „pracovní dny" je potřeba spoj jedoucí jen v jeden den,
+/// pro nedělní sloupec spoj s „+" apod.
+/// IN: DB, MAXLIN (default 3000), MAXOUT (default 20). Read-only.
+ClassMethod PrehledPlatnosti(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+		set maxLin = +$get(^||ML("IN","MAXLIN")) if maxLin < 1 set maxLin = 3000
+		set maxOut = +$get(^||ML("IN","MAXOUT")) if maxOut < 1 set maxOut = 20
+
+		kill ^||ML("OUT"), pocet, kde
+		set linek = 0, sku = ""
+		for {
+			set sku = $order(^[db]JRL(sku)) quit:sku=""
+			set lin = ""
+			for {
+				set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+				quit:linek'<maxLin
+				continue:'$data(^[db]JRL(sku,lin,"I"))
+				set linek = linek + 1
+				for smerIdx = "T","Z" {
+					set sp = ""
+					for {
+						set sp = $order(^[db]JRL(sku,lin,smerIdx,sp)) quit:sp=""
+						continue:'$isvalidnum(sp)
+						set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)),"#",1),":",7)
+						continue:plk=""
+						set pocet(plk) = $get(pocet(plk)) + 1
+						if '$data(kde(plk)) set kde(plk) = "lin="_lin_" spoj="_smerIdx_sp
+					}
+				}
+			}
+		}
+		// seřadit dle četnosti sestupně
+		kill dle
+		set plk = ""
+		for { set plk = $order(pocet(plk)) quit:plk=""  set dle(-pocet(plk),plk) = "" }
+		set ^||ML("OUT","A_FIRMA") = db_" linek="_linek
+		set n = 0, c = ""
+		for {
+			set c = $order(dle(c)) quit:c=""
+			set plk = ""
+			for {
+				set plk = $order(dle(c,plk)) quit:plk=""
+				quit:n'<maxOut
+				set n = n + 1
+				set ^||ML("OUT","B_"_$translate($justify(n,3)," ","0")) = """"_plk_""" = "_pocet(plk)_"x · "_kde(plk)
+			}
+			quit:n'<maxOut
+		}
+	}
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
 
 /// Je zastávka v uzlu 32 **cíl** pokračování, nebo předávací bod? (#13093 bod 3, otázka na kolegy.)
 /// Pro pár spojů s uzlem 32 dohledá trasu pokračujícího spoje a vypíše její první a poslední
@@ -866,6 +1339,125 @@ ClassMethod ZnackyStranek(ByRef sys As %String, db As %String, sku As %String, l
 		}
 	}
 	kill ^||ML("OUT")
+}
+
+/// Sonda k #12843: jaké linky MHD modul v dané firmě zná (`ALVA.MHD.LSO`) - potřeba k dohledání
+/// linky, na které jde vizuálně porovnat značky. IN: DB, IDFA, MAX. Read-only.
+ClassMethod MhdLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set fa = $get(^||ML("IN","IDFA")) set:fa="" fa = IdFa
+		set max = +$get(^||ML("IN","MAX")) if max < 1 set max = 15
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set n = 0, id = ""
+		for {
+			set id = $order(^[db]ALVA.MHD.LSO(fa,1,"DTA",id)) quit:id=""
+			set n = n + 1
+			quit:n>max
+			set ^||ML("OUT","LINKA",$translate($justify(n,2)," ",0)) = "id="_id_
+				" cislo="_$get(^[db]ALVA.MHD.LSO(fa,1,"DTA",id,"DTA",1,"CisloLinky"))_
+				" nazev="_$extract($get(^[db]ALVA.MHD.LSO(fa,1,"DTA",id,"DTA",1,"Nazev")),1,40)_
+				" plati="_$get(^[db]ALVA.MHD.LSO(fa,1,"DTA",id,"DTA",1,"PlatiOd"))
+		}
+		set ^||ML("OUT","SOUHRN") = db_" firma="_fa_" linek(prvnich "_max_")="_$select(n>max:max, 1:n)
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sonda k #12843 bodu 6: které značky MHD vývěska reálně vydá - u zastávek i v legendě - a jaký
+/// piktogram jim ve fontu odpovídá. Slouží k porovnání „co je v datech" × „co se nakreslí".
+/// IN: DB, LINKA (id linky MHD), MAXZAST. Read-only.
+ClassMethod MhdZnackyLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set linka = $get(^||ML("IN","LINKA"))
+		set maxZast = +$get(^||ML("IN","MAXZAST")) if maxZast < 1 set maxZast = 12
+		kill ^||ML("OUT")
+		if (db = "") || (linka = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "DB a LINKA jsou povinné"))
+
+		set sys("U","DATA") = db
+		kill ^||ML("IN")
+		set ^||ML("IN","LINKA_ID") = linka
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
+		set chyba = $get(^||ML("OUT","ERR"))
+		set prvni = "", klic = "", stranek = 0
+		for {
+			set klic = $order(^||ML("OUT",klic)) quit:klic=""
+			continue:'$isvalidnum(klic)
+			set stranek = stranek + 1
+			if prvni = "" set prvni = $get(^||ML("OUT",klic))
+		}
+		kill ^||ML("OUT")
+		set ^||ML("OUT","A_SOUHRN") = db_" linka="_linka_" stranek="_stranek
+		if chyba '= "" set ^||ML("OUT","A_CHYBA") = chyba
+		if prvni = "" ret $$$OK
+
+		set page = ##class(%DynamicObject).%FromJSON(prvni)
+		set ^||ML("OUT","B_ZASTAVKA") = page.values.%Get("POPIS_ZASTAVKA")_" · smer "_page.values.%Get("POPIS_SMER")
+		// značky u zastávek
+		set n = 0, it = page.rows.%Get("ZASTAVKY").%GetIterator()
+		while it.%GetNext(.k, .z) {
+			set znaky = "", ita = z.%Get("ATRIBUTY").%GetIterator()
+			while ita.%GetNext(.ak, .a) { set znaky = znaky_a.%Get("ZNAK")_"("_$ascii(a.%Get("ZNAK"))_") " }
+			continue:znaky=""
+			set n = n + 1
+			quit:n>maxZast
+			set ^||ML("OUT","C_ZASTAVKA",n) = $extract(z.%Get("NAZEV_ZASTAVKY"),1,28)_" → "_znaky
+		}
+		set ^||ML("OUT","C_POCET") = "zastavek se znackou="_n
+		// legenda
+		set p = 0, itp = page.rows.%Get("POZNAMKY").%GetIterator()
+		while itp.%GetNext(.pk, .pz) {
+			set p = p + 1
+			quit:p>20
+			set zn = pz.%Get("ZNAK")
+			set ^||ML("OUT","D_LEGENDA",p) = "znak="""_zn_""" ("_$select(zn="":"-",1:$ascii(zn))_") typ="_pz.%Get("TYP")_
+				" kat="_pz.%Get("KATEGORIE")_" text="_$extract(pz.%Get("TEXT"),1,45)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Sonda k #12843 bodu 6: číselník atributů MHD - jaký `SpecZnak` nese který popis a co z něj
+/// udělá `ConvertSpecialniZnak` (kód > 31 se překlápí na znak, tedy na **pozici ve fontu**).
+/// Odpovídá na „proč se u ‚prestup na vlak' kreslí kolo". IN: DB, IDFA. Read-only.
+ClassMethod MhdAtributyEnums(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB"))
+		set fa = $get(^||ML("IN","IDFA")) set:fa="" fa = IdFa
+		kill ^||ML("OUT")
+		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
+
+		set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+		set n = 0, id = ""
+		for {
+			set id = $order(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id)) quit:id=""
+			set spec = $get(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id,"SpecZnak"))
+			set popis = $get(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id,"Popis"))
+			set nazev = $get(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id,"Nazev"))
+			set n = n + 1
+			quit:n>30
+			set znak = $classmethod(cls, "ConvertSpecialniZnak", spec)
+			set ^||ML("OUT","ATRIBUT",$translate($justify(n,2)," ",0)) =
+				"id="_id_" SpecZnak="""_spec_""" → kresli se znak """_znak_"""  popis="_$extract(popis_nazev,1,60)
+		}
+		set ^||ML("OUT","SOUHRN") = db_" firma="_fa_" atributu="_n
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
 }
 
 /// Sonda k `B39`: přesné zadání pro ruční zkoušku období. Pro první stránky vývěsky vypíše časy

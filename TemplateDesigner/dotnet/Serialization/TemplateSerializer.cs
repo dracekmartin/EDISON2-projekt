@@ -113,7 +113,7 @@ public static class TemplateSerializer
 
     /// <summary>
     /// Přejmenované agenda kódy: starý kód → aktuální kód v registru.
-    /// Wave 2 (2026-05-20) zavedla konvenci <c>&lt;TYP_SESTAVY&gt;_&lt;ZDROJ&gt;</c> - staré
+    /// Konvence zavedená 2026-05-20: <c>&lt;TYP_SESTAVY&gt;_&lt;ZDROJ&gt;</c> - staré
     /// šablony uložené s původním <c>"MHD"</c> jinak po loadu nesedí s registrem
     /// (prázdné instance, prázdná pole agendy, nefunkční data). FAKTURY se neměnilo.
     /// </summary>

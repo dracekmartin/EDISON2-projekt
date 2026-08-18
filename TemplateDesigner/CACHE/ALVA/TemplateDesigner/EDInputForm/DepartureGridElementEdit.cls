@@ -31,6 +31,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         s f = form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f.helpText = "Sloupec s hodinami se zopakuje u každé skupiny dnů. Vypnuto = jeden sloupec hodin vlevo pro všechny skupiny."
+        s f = form.AddFieldToLastGroup("HourColumnHeaderImageBase64", "Obrázek v záhlaví hodin", $$$FieldTypeImage, 0, 0)
+        s f.helpText = "Ikona se vykreslí v záhlaví sloupce hodin u každé skupiny dnů. Když je nastavená, nadpis sloupce se netískne."
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
         s f.helpText = "Kolik skupin dnů se vejde do prvku; další se nevykreslí. 0 = bez omezení."
 
@@ -38,6 +40,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("layout", "Rozměry a mřížka")
         s f = form.AddDecimal("MinuteWidth", "Šířka minuty", 5, 3, 15, "mm")
         s f.helpText = "Šířka jednoho políčka s minutou - určuje, kolik minut se vejde na řádek"
+        s f = form.AddFieldToLastGroup("MinuteSpacing", "Rozestup odjezdů", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("ByContent", "Podle obsahu"), f.AddListItem("Even", "Rovnoměrný")
+        s f.helpText = "Podle obsahu: minuta se značkou zabere víc místa a odsune odjezdy za sebou. Rovnoměrný: jeden rozestup pro celou skupinu podle nejširšího odjezdu, takže minuty stojí ve svislici a značka nerozhodí zarovnání ostatních (Šířka minuty je pak spodní mez rastru)."
         s f = form.AddDecimal("GroupSeparatorWidth", "Oddělovač skupin", 0.5, 0, 5, "mm")
         s f.helpText = "Mezera mezi bloky jednotlivých skupin dnů. 0 = bez mezery."
         s f = form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")

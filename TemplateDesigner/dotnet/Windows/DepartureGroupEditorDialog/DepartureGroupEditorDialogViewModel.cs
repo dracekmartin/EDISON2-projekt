@@ -114,16 +114,33 @@ public class CustomColumnVM : INotifyPropertyChanged
     private string _header2 = "";
     public string Header2 { get => _header2; set { _header2 = value; OnChanged(); } }
 
-    // Dny v týdnu - zaškrtávátka 1:1 s abecedou platnosti (1-7, + = svátek)
-    private bool _po, _ut, _st, _ct, _pa, _so, _ne, _svatek;
-    public bool Po     { get => _po;     set { _po = value;     OnChanged(); } }
-    public bool Ut     { get => _ut;     set { _ut = value;     OnChanged(); } }
-    public bool St     { get => _st;     set { _st = value;     OnChanged(); } }
-    public bool Ct     { get => _ct;     set { _ct = value;     OnChanged(); } }
-    public bool Pa     { get => _pa;     set { _pa = value;     OnChanged(); } }
+    // Dny v týdnu - zaškrtávátka 1:1 s abecedou platnosti podle vyhlášky 122/2014
+    // (1-7 = Po až Ne, X = pracovní dny, + = neděle a státem uznané svátky).
+    private bool _po, _ut, _st, _ct, _pa, _so, _ne, _svatek, _pracovni;
+    public bool Po     { get => _po;     set { _po = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
+    public bool Ut     { get => _ut;     set { _ut = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
+    public bool St     { get => _st;     set { _st = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
+    public bool Ct     { get => _ct;     set { _ct = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
+    public bool Pa     { get => _pa;     set { _pa = value;     OnChanged(); OnChanged(nameof(LzePracovni)); } }
     public bool So     { get => _so;     set { _so = value;     OnChanged(); } }
-    public bool Ne     { get => _ne;     set { _ne = value;     OnChanged(); } }
-    public bool Svatek { get => _svatek; set { _svatek = value; OnChanged(); } }
+    public bool Ne     { get => _ne;     set { _ne = value;     OnChanged(); OnChanged(nameof(LzeSvatek)); } }
+    public bool Svatek { get => _svatek; set { _svatek = value; OnChanged(); OnChanged(nameof(LzeNe)); } }
+
+    /// <summary>„X" = pracovní dny (vyhláška 122/2014). Liší se od zaškrtnutého Po-Pá tím, že
+    /// **nezahrnuje svátky** - spoj jedoucí „v pondělí" jede i o svátečním pondělí, spoj „v pracovní
+    /// dny" ne. Proto to jsou dvě různé volby, ne zkratka jedné za druhou.</summary>
+    public bool Pracovni { get => _pracovni; set { _pracovni = value; OnChanged(); OnChanged(nameof(LzePoPa)); } }
+
+    // Vzájemně se vylučující dvojice - 1:1 se zákazem kombinací z vyhlášky (`X` s 1-5, `+` se `7`):
+    //   „X" (svátky nikdy) × vypsané Po-Pá (svátky, které na ně padnou, ano) - odporují si
+    //   „+" (neděle a svátky) × „Ne" - „+" neděli obsahuje, takže dvojice nic nepřidá
+    // U druhé dvojice to donedávna zaslepené nebylo, protože vzor „Neděle a svátky" posílal `7+`.
+    // Od `B82` posílá samotné `+` a server si `7` doplní sám, takže zaškrtnutí obojího je jen
+    // matoucí - ověřeno během: sloupce `7`, `+` i `7+` dají nad toutéž linkou identický výstup.
+    public bool LzePracovni => !(_po || _ut || _st || _ct || _pa);
+    public bool LzePoPa     => !_pracovni;
+    public bool LzeNe       => !_svatek;
+    public bool LzeSvatek   => !_ne;
 
     private string _includeMarks = "";
     public string IncludeMarks { get => _includeMarks; set { _includeMarks = value; OnChanged(); } }
@@ -148,8 +165,9 @@ public class CustomColumnVM : INotifyPropertyChanged
         Id = Id,
         Header = Header.Trim(),
         Header2 = Header2.Trim(),
-        Days = (Po ? "1" : "") + (Ut ? "2" : "") + (St ? "3" : "") + (Ct ? "4" : "")
-             + (Pa ? "5" : "") + (So ? "6" : "") + (Ne ? "7" : "") + (Svatek ? "+" : ""),
+        Days = (Pracovni ? "X" : "") + (Po ? "1" : "") + (Ut ? "2" : "") + (St ? "3" : "")
+             + (Ct ? "4" : "") + (Pa ? "5" : "") + (So ? "6" : "") + (Ne ? "7" : "")
+             + (Svatek ? "+" : ""),
         IncludeMarks = IncludeMarks.Trim(),
         ExcludeMarks = ExcludeMarks.Trim(),
         SuppressedMarks = SuppressedMarks.Trim(),
@@ -163,7 +181,10 @@ public class CustomColumnVM : INotifyPropertyChanged
         Header2 = d.Header2,
         Po = d.Days.Contains('1'), Ut = d.Days.Contains('2'), St = d.Days.Contains('3'),
         Ct = d.Days.Contains('4'), Pa = d.Days.Contains('5'), So = d.Days.Contains('6'),
-        Ne = d.Days.Contains('7'), Svatek = d.Days.Contains('+'),
+        // Starší uložený sloupec může mít `7+` (dřívější tvar vzoru). „+" je z těch dvou širší
+        // a znamená totéž, takže se načte jen ono - jinak by dialog otevřel stav, který sám zakazuje.
+        Ne = d.Days.Contains('7') && !d.Days.Contains('+'), Svatek = d.Days.Contains('+'),
+        Pracovni = d.Days.Contains('X'),
         IncludeMarks = d.IncludeMarks,
         ExcludeMarks = d.ExcludeMarks,
         SuppressedMarks = d.SuppressedMarks,
@@ -218,6 +239,9 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
     public bool HasCustomSelection => _selectedCustomVM is not null;
     public bool CanAddCustomColumn => CustomColumnVMs.Count < DepartureGridElement.MaxCustomColumns;
+
+    /// <summary>Ukázat tab „Vlastní definice sloupců"? Featura jde do verze zhasnutá (#13045b),
+    /// rozsvítí ji lokální config. Skrytý tab definici v šabloně nemaže - OK ji vrátí beze změny.</summary>
 
     /// <summary>Nabídka vzorů + prázdná varianta pro stavbu od začátku. Vzory drží server
     /// (pole PRESETY_SLOUPCU), takže bez načtených dat zůstane jen prázdná varianta - vzor
@@ -449,20 +473,14 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     private DepartureColumnPresets.Preset? DetectPreset()
     {
         if (CustomColumnVMs.Count == 0) return null;
+        // Porovnání je sdílené s parametrem „Rozdělení sloupců" - kdyby si každé místo odpovídalo
+        // po svém, editor by ukazoval vzor a parametr nad týmiž sloupci „Vlastní rozložení".
+        var aktualni = CustomColumnVMs.Select(vm => vm.ToModel()).ToList();
         foreach (var preset in Presets)
         {
-            if (!_presety.TryGetValue(preset.Key, out var built)) continue;
-            if (built.Count != CustomColumnVMs.Count) continue;
-            var match = true;
-            for (int i = 0; i < built.Count && match; i++)
-            {
-                var a = built[i];
-                var b = CustomColumnVMs[i].ToModel();
-                match = a.Header == b.Header && a.Header2 == b.Header2 && a.Days == b.Days
-                     && a.IncludeMarks == b.IncludeMarks && a.ExcludeMarks == b.ExcludeMarks
-                     && a.SuppressedMarks == b.SuppressedMarks && a.Period == b.Period;
-            }
-            if (match) return preset;
+            if (_presety.TryGetValue(preset.Key, out var built)
+                && DepartureColumnPresets.SameLayout(aktualni, built))
+                return preset;
         }
         return null;
     }

@@ -1,5 +1,7 @@
 # Návrhář sestav - uživatelská příručka
 
+*aktuálně umožňuje navrhovat šablony ZASTÁVKOVÝCH (MHD) jízdních řádů, linkové JŘ jsou v přípravě*
+
 > Vizuální editor tiskových sestav v EDISONu. Navrhnete vzhled šablony, systém k ní doplní
 > data a vytiskne PDF. **Část I** pokrývá obecné ovládání aplikace - práci se šablonou,
 > sekcemi, prvky, styly, daty a exportem - bez ohledu na typ sestavy. **Část II** popisuje
@@ -201,7 +203,9 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
 - **Kód** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí
-- **Tabulka (dynamická)** - řádky se generují automaticky z datové kolekce (viz níže); nabízí se jako jediná varianta tabulky v paletě
+- **Tabulka (dynamická)** - řádky se generují automaticky z datové kolekce (viz níže)
+- **Tabulka (pevná)** - mřížku vyplňujete ručně přímo na plátně; náhrada za skládání hlaviček
+  a bloků z jednotlivých textových prvků (viz níže)
 - **Prvky jízdního řádu** - specializované prvky pro tisk JŘ - objeví se v paletě jen u agend jízdních řádů; viz část II
 
 ### Dynamická tabulka
@@ -213,6 +217,40 @@ barvy pozadí a textu záhlaví i dat. Buňka může obsahovat souhrnný výraz 
 Editor sloupců (dialog „Tabulka - nastavení") má záložky **Obecné** a **Sloupce**: přidání/
 odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce elementu",
 a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor stylu (viz kap. 7).
+
+### Pevná tabulka
+Mřížka, kterou vyplňujete sami - typicky hlavička sestavy nebo blok údajů, se kterým chcete hýbat
+jako s jedním prvkem. Vloží se jako mřížka 3 × 3 bez řádku záhlaví; záhlaví si uděláte z prvního
+řádku tím, že ho ztučníte.
+
+**Vyplňování:** dovnitř se dostanete **Alt+klikem** na buňku, klávesou **F2** nebo položkou
+„Vyplnit tabulku" v místní nabídce. Uvnitř se píše jako v Excelu - psaní přepíše obsah, F2 upraví
+stávající, **Tab** a **Enter** potvrdí a posunou dál, šipky chodí po buňkách, **Esc** vede ven.
+**Delete** uvnitř maže obsah buňky, ne prvek. Ctrl+C/X/V pracují s buňkou; vložit jde i blok
+zkopírovaný z Excelu (tabulka se dorovná). Po napsání `{` se nabídnou datová pole.
+
+**Řádky a sloupce** se přidávají a mažou z místní nabídky; šířku sloupce a výšku řádku změníte
+tažením vnitřní hranice (vnější hrana mění velikost celého prvku).
+
+**Výběr více buněk:** tažením myší označíte obdélníkovou oblast, Shift+klik a Shift+šipky ji
+rozšíří a **Ctrl+A** vybere celou tabulku. Nad výběrem pak funguje formátování najednou, **Delete**
+vymaže obsah všech vybraných buněk a **Ctrl+C** je zkopíruje ve tvaru, který přečte Excel. Vložíte-li
+do označené oblasti jedinou hodnotu, vyplní se jí celá oblast.
+
+**Formátování buňky:** jakmile jste uvnitř, **levý panel ukazuje vybranou buňku** - písmo
+a velikost, řez, tučné, kurzívu, podtržení, přeškrtnutí, zarovnání, barvu textu a pozadí, vnitřní
+okraje, řádkování a **formát hodnoty** (např. `dd.MM.yyyy` nebo `N2` u buňky s datovým polem).
+Totéž otevřete v samostatném okně přes **Alt+Enter** nebo místní nabídkou „Vlastnosti buňky".
+Nejčastější úpravy jsou i ve **formátovací liště** nad plátnem a na **Ctrl+B / Ctrl+I / Ctrl+U**
+(tučné, kurzíva, podtržení - fungují i během psaní).
+
+**Sloučení buněk:** označte buňky v řádku a v místní nabídce zvolte **Sloučit buňky** - vznikne
+jedna buňka přes celou šířku výběru, typicky nadpis. Případné texty ze slučovaných buněk se spojí
+mezerou, aby se nic neztratilo. **Rozdělit buňky** to vrátí zpět a obsah nechá v první buňce.
+
+**Prázdné pole znamená „dědí se" z nastavení celé tabulky.** Panel proto u nevyplněného pole
+ukazuje hodnotu, kterou buňka reálně má; vymazáním pole se dědění vrátí. Nastavení celé tabulky
+je za tlačítkem **„Nastavení celé tabulky"** v prvním řádku panelu (nebo klávesou Esc).
 
 ### Přidání prvku
 - Klik na tlačítko v paletě vloží prvek do aktivní sekce (souřadnice 5, 5 mm).
@@ -370,6 +408,11 @@ a datumů": Čeština (cs-CZ), Slovenština (sk-SK), Angličtina (en-US), Němč
 čísel a datumů se řídí tímto nastavením nezávisle na tom, na jakém počítači se tiskne - tisk tak
 vypadá stejně na každé stanici.
 
+U jízdních řádů se tímtéž nastavením řídí i **jazyk vysvětlivek v legendě** (u slovenštiny tedy
+„premáva len", „na znamenie") a **znaková sada symbolů**. Nepřekládá se to, co jste napsali sami -
+poznámky zadané u linky, názvy zastávek ani vlastní nadpisy sloupců dnů zůstávají tak, jak jsou
+uložené.
+
 ---
 
 ## 9. Náhled, export a tisk
@@ -473,7 +516,10 @@ operaci).
 - **Delete** - Smazat výběr
 - **Ctrl+A** - Vybrat vše v aktivní sekci
 - **Enter / dvojklik** - Vlastnosti výběru (1 prvek = dialog; víc prvků = dialog společných vlastností)
-- **F2** - Rychlá editace textu (jen textový prvek, jeden vybraný)
+- **F2** - Rychlá editace textu (textový prvek), nebo vstup do buňky pevné tabulky
+- **Alt+klik na buňku** - Vstup do pevné tabulky rovnou do té buňky
+- **Alt+Enter (v buňce)** - Vlastnosti buňky (styl, formát hodnoty)
+- **Ctrl+B / Ctrl+I / Ctrl+U (v buňce)** - Tučné / kurzíva / podtržení buňky
 - **Ctrl+G / Ctrl+Shift+G** - Seskupit / Rozeskupit
 - **Alt+klik** - Vybrat jeden prvek ze skupiny
 - **Ctrl+Shift+H / Ctrl+Shift+J** - Rozdělit prvek vodorovně / svisle
@@ -484,7 +530,7 @@ operaci).
 - **Ctrl+0** - Přizpůsobit zobrazení stránce („Fit")
 - **Ctrl+1** - Skutečná velikost 100 % („1:1")
 - **Ctrl + kolečko myši** - Plynulý zoom (k pozici kurzoru)
-- **Ctrl+B** - Sbalit/rozbalit levý panel
+- **Ctrl+B** - Sbalit/rozbalit levý panel (uvnitř tabulky ztuční buňku)
 - **Ctrl+P** - Tisk
 - **Ctrl+Shift+P** - Vlastnosti stránky
 - **Ctrl+Shift+A** - Změnit agendu
@@ -549,12 +595,15 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   automatické volby: Automaticky (dle linky) / Pracovní-Sobota-Neděle+svátky /
   Pracovní-víkend / Prázdniny (mimo+o prázdninách)-víkend / Prázdniny (mimo+o prázdninách)
   -Sobota-Neděle+svátky.
-- **Varianty tras** (přepínač „Všechny varianty tras" na prvku Tabulka zastávek) - když spoje
-  jedou z dané zastávky různými trasami, zobrazí se pro každou trasu vlastní časový sloupec.
-  Varianta = jedna trasa (sled obsluhovaných zastávek); v jejím sloupci je **nejdelší jízdní doba
-  přes spoje té varianty** (bezpečný údaj „dojede nejpozději za…"). Počet sloupců je dynamický -
-  tolik, kolik je skutečně tras v datech. Vypnuto = jeden sloupec základní trasy. Řazení a písmenné
-  označení variant se nastavuje parametry sestavy (viz níže).
+- **Varianty tras** (sloupec „Varianty tras" na prvku Tabulka zastávek - zapíná se v jeho nastavení
+  na záložce Sloupce) - když spoje jedou z dané zastávky různými trasami, dostane každá trasa
+  vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek); v jejím sloupci je
+  **průběh jedné skutečné trasy** - té s delší jízdní dobou, takže údaj odpovídá spoji, který
+  opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže **jedna položka
+  v seznamu sloupců se v tisku rozpadne na víc sloupců**; šířka a styl, které u ní nastavíte, platí
+  pro každý z nich. Linka s jedinou variantou žádný nedostane - to je sloupec „Čas jízdy", který
+  stojí vedle variant samostatně. Řazení a písmenné označení variant se nastavuje parametry sestavy
+  (viz níže).
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
@@ -597,17 +646,18 @@ Levý sloupec sestavy - seznam zastávek s časy a atributy.
   Znak „<" se přitom vysune doleva, aby číslice zůstaly ve svislici s ostatními časy (při zarovnání sloupce vpravo se srovnají samy, tam se nic nevysouvá)
 - **Nastavení sloupce Čas se dědí na varianty** - když má linka víc variant tras a sloupec se rozpadne na víc časových sloupců, platí pro všechny zarovnání i styl (font, barvy, okraje) nastavený u sloupce „Čas"
 - **Pozice značek** - Za zastávkou (výchozí) / Před zastávkou
-- **Šipka směru + Pozice šipky + Barva šipky + Tučná šipka** - grafická šipka ukazující směr jízdy od aktuální zastávky dál po trase
+- **Šipka směru + Pozice šipky + Barva šipky + Tučná šipka** - grafická šipka ukazující směr jízdy od aktuální zastávky dál po trase. Při pozici vlevo má šipka vyhrazený vlastní pruh, takže se ani u úzkého prvku nepřekryje s jízdními dobami
 - **Záhlaví sloupců** - zap/vyp řádek záhlaví
-- **Podtržení aktuální / Tučně aktuální / Velikost aktuální / Pozadí aktuální** - zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku)
+- **Podtržení aktuální / Tučně aktuální / Velikost aktuální / Pozadí aktuální / Barva textu aktuální** - zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná barva = stejná jako ostatní řádky)
 - **Projeté zastávky + Barva projetých** - zda tisknout i zastávky, které vozidlo od aktuální zastávky již projelo (ztlumeně)
 
 #### Mřížka odjezdů
 
 Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle…).
 
-- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
+- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Rozestup odjezdů (Podle obsahu / Rovnoměrný - viz níže), Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, nadpis sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
 - **Časová osa** - Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah (+ pole Hodiny od/do); Roztáhnout na výšku - když je mřížka nižší, než by odpovídalo datům, řádky (a font) se proporcionálně zvětší (strop 1,5× přirozené výšky)
+- **Rozestup odjezdů** - *Podle obsahu* (výchozí): minuta se značkou zabere víc místa a odsune odjezdy za sebou. *Rovnoměrný*: jeden rastr pro celý sloupec podle nejširšího odjezdu, takže minuty stojí pod sebou napříč hodinami a značka nerozhodí zarovnání ostatních. „Šířka minuty" je pak spodní mez rastru; jedna hodina s víc značkami rozestup zvětší celému sloupci
 - **Řádky dat** - Výška řádku, Střídavé podbarvení (sudé řádky)
 - **Záhlaví - 2. řádek** - Velikost, Tučné, Kurzíva, Barva textu pro druhý řádek nadpisu skupiny (např. „den" v „Pracovní / den") - pokud nevyplněno, dědí z prvního řádku
 - **Styl minuty** - Font, Velikost, Tučné, Kurzíva, Barva textu
@@ -678,6 +728,11 @@ Analogický dvoutabový dialog:
 - Pro skupinu: viditelnost, pořadí (▲/▼), **přepis nadpisu** (jinak se použije nadpis z dat, u
   sloupce hodin výchozí „Hod"), pevná šířka (prázdné = automatický výpočet + rovnoměrné dofill),
   vlastní barva zebry pro danou skupinu.
+- **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `
+`)
+  a nadpis se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
+  jízdní řád u skupiny vyplněný i druhý nadpis, přidá se pod ně jako další řádek s vlastním
+  stylem (viz *Záhlaví - 2. řádek* ve vlastnostech prvku).
 - Per-sloupec styl barev a zarovnání zvlášť pro záhlaví a data. **Typografie záhlaví (font,
   velikost, řez) je ale jednotná pro celý prvek** - nedá se nastavit odlišně po jednotlivých
   skupinách, aby šla velikost písma měnit z jednoho místa v panelu.

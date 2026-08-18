@@ -41,7 +41,10 @@ public class ZastavkaData
 {
     public string Id { get; set; } = "";
     public string Popis { get; set; } = "";
-    public int CasJizdy { get; set; }
+    /// <summary>Čas jízdy základní trasy - tři stavy jako <see cref="TrasaMin"/>: číslo, „&lt;"
+    /// (základní trasa projíždí bez stání) nebo "" (mimo základní trasu). Kumulativní od vývěskové
+    /// zastávky, takže u projetých vychází záporný.</summary>
+    public string CasJizdy { get; set; } = "";
     public int Poradi { get; set; }
     public bool JeAktualni { get; set; }
     public int Odsazeni { get; set; }
@@ -263,8 +266,12 @@ public class DepartureColumnDefinition
     /// <summary>Druhý řádek nadpisu. Prázdné = jednořádkové záhlaví.</summary>
     public string Header2 { get; set; } = "";
 
-    /// <summary>Dny v týdnu jako znaky 1-7 a "+" (svátek). Prázdné = dny neomezují.
-    /// Platnost spoje "X" server počítá jako pracovní dny 1-5.</summary>
+    /// <summary>Dny sloupce v abecedě vyhlášky 122/2014: znaky 1-7 (Po-Ne), "X" (pracovní dny)
+    /// a "+" (neděle a státem uznané svátky). Prázdné = dny neomezují.
+    ///
+    /// <para>⚠️ "X" **není zkratka za 1-5**: pracovní dny nezahrnují svátky, kdežto kalendářní
+    /// "12345" ano (spoj „v pondělí" jede i o svátečním pondělí, spoj „v pracovní dny" ne). Proto
+    /// vyhláška zakazuje kombinaci "X" s 1-5 a "+" se "7" - editor je nenabídne zároveň.</para></summary>
     public string Days { get; set; } = "";
 
     /// <summary>Jen spoje s těmito značkami (CSV čísel). Prázdné = neomezuje.</summary>

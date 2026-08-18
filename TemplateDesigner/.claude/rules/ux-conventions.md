@@ -58,6 +58,83 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 | F2 | Inline editace textu (jen TextElement, 1 vybraný) |
 | Dvojklik | Vlastnosti elementu (dvojklik do prázdna = zrušit výběr) |
 
+### Uvnitř pevné tabulky (editace buněk na plátně)
+
+⚠️ **Dvojklik zůstává na nastavení i tady** (rozhodnutí Jan 12. 8.). První návrh na něj věsil vstup
+do buňky, jenže uživatel má z ostatních tabulek (zastávky, odjezdy, tabulka z dat) naučené, že
+dvojklik otevře nastavení - tabulka by byla jediná výjimka **uvnitř naší aplikace**, a ta shoda váží
+víc než zvyk z Wordu. Do obsahu se proto vchází **F2** (u textového prvku znamená totéž: „uprav
+obsah na místě"), **Alt+klikem** rovnou do zvolené buňky, nebo položkou **„Vyplnit tabulku"**
+v místní nabídce. Alt je zvolený záměrně: v aplikaci už znamená „o úroveň hloub" (vytáhnout prvek
+ze skupiny) a je to **jeden klik bez F-klávesy** - na noteboocích s Fn řadou to rozhoduje
+(rozhodnutí Jan 12. 8. po zkoušení).
+
+⚠️ **Myší cesta dovnitř „druhý klik na už vybranou tabulku" se zkusila a zahodila** (12. 8.):
+první klik dvojkliku ji spustil dřív, než dorazil druhý, takže na vybrané tabulce vlezl do buňky
+a na nevybrané otevřel nastavení - nepředvídatelné. Odlišit obojí jde jen čekáním na případný
+druhý klik, což by vstup do buňky pokaždé zdrželo. **Nezavádět znovu.**
+
+| Zkratka | Akce |
+|---|---|
+| Alt+klik | dovnitř rovnou do té buňky (hlavní cesta) |
+| F2 (nebo místní nabídka) | dovnitř do naposledy kliknuté buňky |
+| Dvojklik | vlastnosti prvku (jako u všech ostatních prvků) |
+| Alt+Enter (nebo místní nabídka) | **vlastnosti buňky** - týž formulář jako v panelu, jen v okně; samotný Enter musí zůstat posunu o buňku níž |
+| Ctrl+B / Ctrl+I / Ctrl+U | tučné / kurzíva / podtržení buňky, i během psaní. **Uvnitř tabulky přebíjejí globální význam** (Ctrl+B jinak sbaluje levý panel) - v tabulce čeká uživatel tučné a globální zkratka mimo tabulku nikam nezmizí |
+| Klik (uvnitř) | přepnout buňku |
+| tažení přes buňky | **obdélníkový výběr**; Shift+klik ho rozšíří od kotvy |
+| Shift+šipky | rozšířit výběr (bez Shiftu se smrskne na jednu buňku) |
+| Ctrl+A (uvnitř) | vybrat všechny buňky tabulky |
+| místní nabídka | **Sloučit / Rozdělit buňky** (vodorovně). Sloučení spojí neprázdné obsahy mezerou, rozdělení nechá obsah v první buňce; klik do sloučené buňky vybere ji, ne tu překrytou |
+
+⚠️ **Výběr celého řádku a sloupce vědomě není** (rozhodnutí Jan 17. 8. po vyzkoušení): tažení
+a Shift pokrývají totéž a excelové Shift/Ctrl+mezerník se uživatel nemá kde naučit. Klik u okraje
+tabulky pro to použít nejde - tam sedí úchyty na změnu velikosti prvku.
+| psaní | přepíše obsah buňky (jako Excel) |
+| F2 | upravit stávající obsah buňky |
+| Tab / Shift+Tab | buňka vedle / předchozí (přes konec řádku na další) |
+| Enter / Shift+Enter | potvrdit a o buňku níž / výš |
+| Šipky | pohyb po buňkách |
+| Delete / Backspace | vymazat **obsah výběru** (ne prvek - to je ta past); styl zůstává |
+| Ctrl+C / Ctrl+X / Ctrl+V | schránka pracuje s **buňkami**, ne s prvkem; kopíruje se celý výběr ve tvaru čitelném Excelem. Ctrl+V vloží blok od levého horního rohu výběru a tabulku dorovná; **jedna hodnota do označené oblasti ji vyplní** |
+| `{` při psaní | nabídka datových polí; šipky vybírají, Enter nebo Tab doplní i s koncovou závorkou, Esc zavře nabídku (teprve druhý Esc zahodí úpravu) |
+| tažení vnitřní hranice | šířka sloupce / výška řádku; funguje i na **vybrané** tabulce, nemusí se dovnitř |
+| Esc | ven z buňky na prvek, podruhé zrušit výběr |
+
+**Tažení hranic - dvě pravidla, obě vydřená zkoušením 12. 8.:**
+
+1. **Mění se jen dvojice u hrany** - co jeden získá, druhý ztratí, zbytek tabulky se nehne.
+   První návrh dal tažené položce pevný rozměr a zbytek nechal rozdělit mezi všechny ostatní,
+   takže se při tažení dolů hýbalo i to nad hranou. U sloupců to nebylo vidět, dokud se táhla
+   první hrana.
+2. **Vnější hrana patří prvku, ne krajní buňce** - jinak by uživatel nevěděl, jestli mění tabulku,
+   nebo sloupec (stejně to má Excel i Word). Krajní sloupec se rozšiřuje hranou vedle něj.
+
+⚠️ **O tom, komu patří klávesy, nesmí rozhodovat fokus plátna.** Kliknutí na tlačítko lišty
+(nebo na zaškrtávátko v panelu) fokus plátnu vezme, takže buňka zůstane zvýrazněná, ale psaní
+i Delete padají do prázdna - přesně tak to 17. 8. spadlo. Platí proto dvě pravidla: klávesy patří
+buňce, **dokud si je nenárokuje pole, kam se opravdu píše** (panel vlastností, formulář prvku, jiný
+textbox), a každá akce, která si vzala fokus (tlačítko lišty, zavřený dialog), ho **vrátí buňce** -
+do rozepsané buňky, jinak na plátno.
+
+**Aktivní buňka musí zůstat rozpoznatelná i ve výběru** (silný rámeček × podbarvená oblast) -
+je to ta, do které se píše, podle které se vkládají řádky a sloupce a od které se počítá nová
+hodnota při hromadném formátování. Formulář zapisuje do ní a ostatní buňky výběru se dorovnají
+**jen v tom, co se reálně změnilo** - jinak by změna barvy srovnala i písmo.
+
+**Uvnitř tabulky patří lišta i panel vlastností VYBRANÉ BUŇCE, ne prvku.** Rozsah editace musí jít
+poznat, jinak stojí proti sobě dvě sady týchž vlastností: do 17. 8. panel měnil celou tabulku,
+zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan). Platí proto:
+
+- panel u buňky ukazuje **týž formulář jako okno Alt+Enter** (jedno schéma, dva hostitelé - jako
+  u prvků; dvě různá by se rozešla) a začíná skupinou **„Vybraná buňka"** s tlačítkem
+  **„Nastavení celé tabulky"** (= odchod z buňky, táž cesta jako Esc, jen pojmenovaná),
+- formulář prvku má skupinu **„Styl všech buněk"** - z popisku je vidět, že je to výchozí pro celou
+  tabulku, ne pro tu jednu,
+- pole ukazují **vyřešenou** hodnotu (i tu zděděnou - formulář ji dostane z kaskády, ne ze schématu),
+  ale zapisuje se **jen změněná vlastnost**; vymazané pole vrací dědění a zpětný krok nesmí
+  zobrazenou hodnotu zapsat natvrdo.
+
 ### Grouping / layout
 
 | Zkratka | Akce |

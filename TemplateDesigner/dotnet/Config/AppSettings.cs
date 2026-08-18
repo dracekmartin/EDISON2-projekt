@@ -22,6 +22,9 @@ public class AppSettings
     public CacheConnectionSettings? Cache    { get; set; }
     public AiAssistantSettings AiAssistant   { get; set; } = new();
 
+    /// <summary>Smí uživatel na vlastní definici sloupců vývěsky? Výchozí ne - featura jde do verze
+    /// zhasnutá a rozsvítí se lokálním configem u toho, kdo ji testuje.</summary>
+
     /// <summary>Zdroj nakonec použitého configu (pro diagnostiku startu).</summary>
     [JsonIgnore]
     public ConfigSource Source { get; private set; } = ConfigSource.None;
