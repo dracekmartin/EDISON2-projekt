@@ -584,7 +584,7 @@ public partial class MainWindow
         // Panel patří uvnitř tabulky **té buňce**, ne prvku. Dokud ukazoval nastavení celé tabulky,
         // stála v něm a v liště dvě zaškrtávátka „Tučné" s jiným dosahem a nešlo je od sebe poznat
         // (nález Jan 17. 8.). Nastavení celé tabulky je za tlačítkem v prvním řádku panelu.
-        if (_cellTable.EnsureCell(_vm!.State.CurrentPreviewData, _cellRow, _cellCol) is { } cell)
+        if (_cellTable!.EnsureCell(_vm!.State.CurrentPreviewData, _cellRow, _cellCol) is { } cell)
         {
             InlineElementForm.SetContext(CellCommandExecutor(formatting), invalidate);
             InlineElementForm.PlaceholderFields = _vm.PlaceholderFieldItems();
