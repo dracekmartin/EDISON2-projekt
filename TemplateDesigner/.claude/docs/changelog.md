@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-18 (9) - 🔤 „Font Arial není nainstalovaný" po importu - byl to font s čárkou v názvu
+
+Po importu z předlohy svítilo upozornění *Font „Arial" není na tomto počítači nainstalovaný -
+tiskne se místo něj Arial*. Věta si protiřečila a Arial samozřejmě nainstalovaný je.
+
+**Příčina:** PDF nese řez přímo v názvu fontu („Arial,Bold"). Import z názvu odloupl slovo „Bold",
+ale **čárku v něm nechal**, takže do šablony zapsal rodinu **„Arial,"**. Tu systém nezná - a protože
+se v hlášce zobrazuje v uvozovkách, vypadala jako obyčejný Arial. Šablona tím držela font, který
+neměl nikdo, takže by se to samé stalo i kolegovi po otevření z databáze.
+
+Nově se řez odloupne i s oddělovačem a opakovaně („Arial,BoldItalic" → Arial), takže z běžných
+PDF vycházejí rodiny, které systém zná. Zpětně to nespraví už naimportované šablony - tam font
+přenastavte, nebo šablonu naimportujte znovu.
+
+Vedle toho **upozornění na chybějící font říká pravdu o náhradě**: jmenuje font, který se opravdu
+použije, místo natvrdo napsaného Arialu, a když by náhrada byla týž font, nehlásí nic.
+
+**Protokol importu** navíc nově vypisuje, kolik textů z předlohy se do šablony vložilo a kolik jich
+model našel - bez toho čísla nešlo poznat, jestli texty nenašel model, nebo jsme je zahodili sami
+(text uvnitř jízdního řádu si kreslí prvek sám, dekorace bez datového pole se nevkládá).
+
+Ověřeno: build 0 chyb, .NET 1074/1074 (+16).
+
 ## 2026-08-18 (8) - 📥 import se ptá na vzhled seznamu zastávek a řekne, co nastavil (`B42b`/`B42c`, 1. kolo)
 
 Import dosud uměl z předlohy jen to, co měl **ručně vypsané v otázce pro AI** - tři vlastnosti.

@@ -27,43 +27,60 @@ public static class PdfFontMapper
         if (string.IsNullOrWhiteSpace(pdfFontName))
             return ("Arial", false, false);
 
-        // Odstranit trailing čárky/mezery (PdfPig občas vrátí "Arial,")
-        string name = pdfFontName.TrimEnd(',', ' ');
-
-        // Odstranit subset prefix (vše před '+')
+        // Subset prefix („ABCDEF+Arial") a okrajové oddělovače pryč - PdfPig je vrací tak, jak jsou v PDF.
+        string name = pdfFontName.Trim(Separators);
         int plusIndex = name.IndexOf('+');
         if (plusIndex >= 0 && plusIndex < name.Length - 1)
-            name = name[(plusIndex + 1)..];
+            name = name[(plusIndex + 1)..].Trim(Separators);
 
-        // Detekce Bold/Italic z názvu
         bool isBold = ContainsAny(name, "Bold", "Heavy", "Black");
         bool isItalic = ContainsAny(name, "Italic", "Oblique");
 
-        // Odstranit style suffixy pro mapování
-        string cleanName = name;
-        foreach (var suffix in new[] { "-BoldItalic", "-Bold", "-Italic", "-BoldOblique",
-            "-Oblique", "Bold", "Italic", "MT", "PS", "PSMT", "-Regular" })
+        string cleanName = StripStyleSuffixes(name);
+
+        // Známé mapování - nejdřív vyčištěný název, pak původní (kvůli „Arial-BoldMT").
+        if (KnownMappings.TryGetValue(cleanName, out var mapped)
+            || KnownMappings.TryGetValue(name, out mapped))
+            return (mapped, isBold, isItalic);
+
+        if (cleanName.Length > 1) return (cleanName, isBold, isItalic);
+
+        return ("Arial", isBold, isItalic);
+    }
+
+    /// <summary>Oddělovače, které v PDF názvu oddělují řez od rodiny („Arial,Bold", „Arial-Bold").</summary>
+    private static readonly char[] Separators = [',', '-', ' ', '.'];
+
+    private static readonly string[] StyleSuffixes =
+        ["BoldItalic", "BoldOblique", "Bold", "Italic", "Oblique", "Regular", "MT", "PS", "PSMT"];
+
+    /// <summary>
+    /// Odloupne z názvu řezy i s oddělovačem, dokud je co loupat („Arial,BoldItalic" → „Arial").
+    /// Loop je nutný: řez bývá složený a jedno kolo nechá zpátky „Arial,Bold". Zbylý oddělovač se
+    /// musí uříznout taky - do 18. 8. zůstával v názvu rodiny („Arial,"), takže font vypadal jako
+    /// nenainstalovaný a šablona po importu hlásila „Font Arial není na tomto počítači".
+    /// </summary>
+    private static string StripStyleSuffixes(string name)
+    {
+        string result = name;
+        bool stripped;
+        do
         {
-            if (cleanName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            stripped = false;
+            result = result.TrimEnd(Separators);
+            foreach (var suffix in StyleSuffixes)
             {
-                cleanName = cleanName[..^suffix.Length];
+                if (!result.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) continue;
+                // „MT" jen jako přípona za oddělovačem nebo za písmenem - ne když je to celý název.
+                if (result.Length == suffix.Length) continue;
+                result = result[..^suffix.Length];
+                stripped = true;
                 break;
             }
         }
+        while (stripped);
 
-        // Zkusit známé mapování
-        if (KnownMappings.TryGetValue(cleanName, out var mapped))
-            return (mapped, isBold, isItalic);
-
-        // Zkusit i s původním názvem
-        if (KnownMappings.TryGetValue(name, out mapped))
-            return (mapped, isBold, isItalic);
-
-        // Vrátit vyčištěný název, nebo fallback na Arial
-        if (!string.IsNullOrWhiteSpace(cleanName) && cleanName.Length > 1)
-            return (cleanName, isBold, isItalic);
-
-        return ("Arial", isBold, isItalic);
+        return result.TrimEnd(Separators);
     }
 
     private static bool ContainsAny(string text, params string[] keywords)

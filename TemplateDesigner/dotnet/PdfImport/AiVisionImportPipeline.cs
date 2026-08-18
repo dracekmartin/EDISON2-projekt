@@ -159,6 +159,7 @@ public class AiVisionImportPipeline
             visionResult, firstPage, 0, 0, schema);
 
         ApplyElementSettings(visionResult, scheduleElements);
+        LogTextCoverage(visionResult, scheduleElements);
 
         if (AiGuidedScheduleBuilder.LastDebugInfo is not null)
             AiDebugLog = (visionDebugLog ?? "") + "\n\n── AiGuidedScheduleBuilder ──\n" + AiGuidedScheduleBuilder.LastDebugInfo;
@@ -236,6 +237,23 @@ public class AiVisionImportPipeline
             ImportLog.Add("Seznam zastávek - z předlohy nastaveno:");
             ImportLog.AddRange(applied.Select(l => "   " + l));
         }
+    }
+
+    /// <summary>
+    /// Kolik textů z předlohy skončilo v šabloně. Bez tohohle čísla nejde poznat, jestli model
+    /// texty nenašel, nebo jsme je zahodili sami (text uvnitř jízdního řádu si kreslí prvek sám,
+    /// dekorace bez datového pole se nevkládá) - a to je první otázka, když v šabloně texty chybí.
+    /// </summary>
+    private void LogTextCoverage(AiVisionResult vision, List<TemplateElement> elements)
+    {
+        int found = vision.TextMappings.Count;
+        int placed = elements.OfType<TextElement>().Count();
+        if (found == 0 && placed == 0) return;
+
+        ImportLog.Add(placed >= found
+            ? $"Texty z předlohy: {placed}"
+            : $"Texty z předlohy: {placed} z {found}, které model našel "
+              + "(zbytek leží uvnitř jízdního řádu, kde si texty kreslí prvek sám, nebo je to dekorace).");
     }
 
     /// <summary>Na co se u seznamu zastávek ptát - soupis jeho vlastních vlastností.</summary>

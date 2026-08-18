@@ -1,3 +1,4 @@
+using SkiaSharp;
 using System.Text.Json.Nodes;
 using TemplateDesigner.Serialization;
 
@@ -73,9 +74,18 @@ public static class FontWarnings
         var missing = MissingFamilies(template);
         if (missing.Count == 0) return null;
 
-        string vyjmenovane = string.Join(", ", missing.Select(f => $"„{f}\""));
-        return missing.Count == 1
-            ? $"Font {vyjmenovane} není na tomto počítači nainstalovaný - tiskne se místo něj Arial."
-            : $"Tyto fonty nejsou na tomto počítači nainstalované: {vyjmenovane} - tiskne se místo nich Arial.";
+        // Náhradník se ptáme resolveru, ne pevného textu - jinak hláška tvrdí „tiskne se místo něj
+        // Arial" i tam, kde Arial vůbec nepadne. Když by náhradník byl týž font, není co hlásit.
+        var reported = missing
+            .Select(f => (Family: f, Substitute: FontResolver.Resolve(f, SKFontStyle.Normal).FamilyName))
+            .Where(x => !string.Equals(x.Family, x.Substitute, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (reported.Count == 0) return null;
+
+        string vyjmenovane = string.Join(", ", reported.Select(x => $"„{x.Family}\""));
+        string nahradnici = string.Join(", ", reported.Select(x => x.Substitute).Distinct());
+        return reported.Count == 1
+            ? $"Font {vyjmenovane} není na tomto počítači nainstalovaný - tiskne se místo něj {nahradnici}."
+            : $"Tyto fonty nejsou na tomto počítači nainstalované: {vyjmenovane} - tiskne se místo nich {nahradnici}.";
     }
 }
