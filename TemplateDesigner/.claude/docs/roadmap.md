@@ -4,16 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** **linkové JŘ** (`B10` + `B13`) jako dedikovaný slot - revizní sada
-> ze 17.-18. 8. je uzavřená (`B91`-`B96`, archiv) a pevná tabulka hotová (`B76`).
-> Zastávkový JŘ otevřený bod nemá - revize `B39` je uzavřená a proklikaná (17. 8.).
->
-> ⚠️ **Nevydané a jen zčásti proklikané je všechno od 12. 8. včetně** - poslední vydaná verze je
-> z 11. 8. Seedy novinek čekají na vydání, dřív se nenahrávají.
->
-> ⚠️ **Naše testovací šablony v DB s vlastními sloupci je potřeba přeuložit** - „Pracovní dny" se
-> od `B82` zapisují jako `X` (viz archiv). Zákaznických šablon se to netýká, ty vlastní sloupce
-> nenesou.
+> **Nejblíž na řadě:** **linkové JŘ** (`B10` + `B13`) jako dedikovaný slot.
 
 ---
 
