@@ -22,8 +22,14 @@ public class DesignerState
             // Při swapu šablony (Open/New/Import) by přežila → nová šablona se stejným Guid sekce
             // (systémová šablona má pevné Guidy) by dostala stará data předchozí. Invalidovat na swapu.
             InvalidateElementCache();
+            TemplateSwapped?.Invoke();
         }
     }
+
+    /// <summary>Volá se při výměně šablony (Open / New / Import / generovaná). Jediné místo, kde
+    /// se dá zachytit „teď je v návrháři něco jiného" - proto sem, ne do jednotlivých volajících,
+    /// kterých je pět a šestý by se zapomněl.</summary>
+    public Action? TemplateSwapped { get; set; }
 
     /// <summary>Aktuálně aktivní sekce (do které se přidávají elementy). Null = žádná.</summary>
     public Section? ActiveSection { get; set; }

@@ -731,6 +731,11 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
 
+        // Výměna šablony je jediný okamžik, kdy může přibýt font, který tenhle počítač nemá.
+        // Psaní vlastního názvu do pole fontu se sem záměrně nenapojuje: nabídka jmenuje jen
+        // nainstalované a záměna je vidět hned na plátně; před tiskem to dialog kontroluje znovu.
+        State.TemplateSwapped = () => FontWarning = FontWarnings.Summarize(State.CurrentTemplate);
+
         Preferences = preferences;
 
         var settings   = AppSettings.Load();
@@ -1425,12 +1430,6 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private void InvalidateAll()
     {
-        // Šablona se právě vyměnila (nová / otevřená / importovaná) - to je jediný okamžik, kdy
-        // může přibýt font, který tenhle počítač nemá. Psaní vlastního názvu do pole fontu se sem
-        // záměrně nenapojuje: nabídka jmenuje jen nainstalované a záměna je vidět hned na plátně,
-        // a před tiskem to kontroluje tiskový dialog znovu.
-        FontWarning = FontWarnings.Summarize(State.CurrentTemplate);
-
         RequestTitleUpdate?.Invoke();
         RequestCanvasSizeUpdate?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();

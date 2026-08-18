@@ -95,3 +95,31 @@ public class FontWarningsTests
         Assert.Null(FontWarnings.Summarize(null));
     }
 }
+
+/// <summary>
+/// Že se varování vůbec spustí, drží jediný hák: setter <c>DesignerState.CurrentTemplate</c>.
+/// Kdyby ho někdo obešel (nebo hák odstranil), detekce sice dál funguje, ale nikdo ji nezavolá -
+/// a to je přesně ten druh regrese, který není vidět.
+/// </summary>
+public class TemplateSwapHookTests
+{
+    [Fact]
+    public void VymenaSablony_OhlasiSe()
+    {
+        var state = new TemplateDesigner.Designer.DesignerState();
+        int volani = 0;
+        state.TemplateSwapped = () => volani++;
+
+        state.CurrentTemplate = new Template { Name = "A" };
+        state.CurrentTemplate = new Template { Name = "B" };
+
+        Assert.Equal(2, volani);
+    }
+
+    [Fact]
+    public void BezOdberatele_VymenaNespadne()
+    {
+        var state = new TemplateDesigner.Designer.DesignerState();
+        state.CurrentTemplate = new Template { Name = "A" };   // TemplateSwapped je null
+    }
+}
