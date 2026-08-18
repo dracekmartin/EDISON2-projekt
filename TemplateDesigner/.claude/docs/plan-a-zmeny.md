@@ -35,11 +35,6 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
-### 18. 8. 2026 - Datum platnosti u MHD se píše s tečkami
-
-Zastávková vývěska MHD tiskla datum platnosti s lomítky (`01/11/2018`), linková s tečkami. Nově
-mají obojí tečky. Mění se jen tvar hodnoty, šablony není potřeba upravovat.
-
 ### 17. 8. 2026 - Písmeno varianty je u odjezdu vždy
 
 Když ze zastávky jedou spoje různými trasami, má každá trasa vlastní sloupec s časy a písmeno,
@@ -68,7 +63,7 @@ Ovládání a všechna nastavení popisuje příručka.
 
 Jaké sloupce na vývěsce vzniknou, určuje jen definice uložená v šabloně; parametr sestavy
 **„Rozdělení sloupců (typy provozu)"** je jejím pohledem i ovladačem. Dosud šlo totéž nastavit ze
-dvou míst a jedno druhé tiše přebíjelo. Zároveň se srovnalo, že náhled ukazuje totéž co tisk.
+dvou míst a jedno druhé tiše přebíjelo, takže parametr býval mrtvé tlačítko.
 
 ### 14. 8. 2026 - Vysvětlivky značek dnů podle vašeho číselníku
 

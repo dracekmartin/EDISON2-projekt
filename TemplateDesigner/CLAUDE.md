@@ -122,6 +122,12 @@ Linkované wiki články drží **`.claude/wiki-map.json`** (allow-list). Pravid
 - Krok 6: pokud featura mění **user-facing chování** pokryté některým `seed`em z mapy → aktualizuj
   ten seed. Co v mapě není, se netkne (folder-level: platí nejbližší `wiki-map.json` nad měněným
   souborem; dnes jedna na úrovni TD). Jinak wiki přeskoč.
+- **Do „Novinek" jen změny, které uživatel pozná** (rozhodnutí Jan 2026-08-18): jiné ovládání,
+  nová volba, jiný výstup na tisku. **Tiché opravy tam nepatří** - „v MHD jsme spravili, co bylo
+  špatně" zákazníkovi nic neříká a zaplevelí to seznam. A i to, co tam patří, je **high level**:
+  co je nově a co to pro uživatele znamená, tři až čtyři věty. Ovládání, zkratky, cesty v dialozích
+  a výčty polí patří do **příručky**, na kterou Novinky odkazují v úvodu; do 18. 8. je Novinky
+  duplikovaly a ze 153 řádků zbylo po škrtu 35.
 - **TipTap-safe markdown:** konvertor **NEUMÍ tabulky** (slije je do jednoho odstavce) → piš odrážky / definiční seznamy. OK: nadpisy, seznamy, odkazy, tučné/kurzíva, blockquote, `---`.
 - **Seed = source of truth, wiki = zrcadlo** - na wiki needitovat ručně.
 
