@@ -17,13 +17,6 @@
 
 ---
 
-## 🚌 Zastávkové JŘ
-
-Stav tiketů, parkované položky i věci „jen na poptávku" drží
-[`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
-
----
-
 ## 📥 Backlog
 
 ### Import PDF - doladění
@@ -52,9 +45,13 @@ sada) - u každé otázky hodnotit: správná cesta v UI / žádné vymyšlené 
   „stránka na A5" → Ctrl+Shift+P · „kopírovat styl" → Ctrl+Shift+C/V · „sloupec cena×počet" → výraz `{CENA}*{POCET}` ·
   „zvýraznit řádky >1000" → zvýraznění řádků · „víc linek k tisku" → chip Instance · „změnit agendu" → Ctrl+Shift+A ·
   „červený rámeček náhledu" → přetečení obsahu · „součet pod tabulku" → `SUM(...)` · „schovat sekci na 1. str." → VisibilityExpression ·
-  „vrátit smazaný prvek" → Ctrl+Z · „písmo celé tabulky" → nastavení prvku, „Styl buněk" · „šablona pro kolegu" → Ctrl+S do DB.
-- *Chytáky* (očekává „zatím neumíme", ne vymyšlený návod): sloučení buněk · export do Excelu · PDF e-mailem ·
-  brožura/duplex · vlastní font · import staré šablony z EDISONu.
+  „vrátit smazaný prvek" → Ctrl+Z · „písmo celé tabulky" → nastavení prvku, „Styl buněk" · „šablona pro kolegu" → Ctrl+S do DB ·
+  „tabulka 12×10" → rozměr se zadává při vložení · „nadpis přes tři sloupce" → pravý klik, Sloučit buňky ·
+  „řádek jen když je vyplněný VS" → vlastnosti řádku, Podmínka viditelnosti.
+- *Chytáky* (očekává „zatím neumíme", ne vymyšlený návod): export do Excelu · PDF e-mailem ·
+  brožura/duplex · vlastní font (vložení do PDF; **hlášku o chybějícím fontu** od `B97` naopak umíme) ·
+  import staré šablony z EDISONu. ⚠️ **Sloučení buněk odsud odešlo** - od `B76` to je reálná funkce
+  (pravý klik v tabulce), takže „to neumíme" by dnes byla špatná odpověď.
 - *Nejistota* (odkázat na podporu, ne halucinovat): „špatný čas u 3. zastávky linky 12" (datový problém, ne UI).
 
 **Budoucí:** MCP server (`get_template`/`apply_template`/`add_element`/… tenká vrstva nad ViewModelem, každý
