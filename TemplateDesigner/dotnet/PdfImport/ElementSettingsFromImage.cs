@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.PdfImport;
 
@@ -127,6 +128,54 @@ internal static class ElementSettingsFromImage
             .Where(o => o.Label.StartsWith(value, StringComparison.OrdinalIgnoreCase))
             .ToList();
         return byPrefix.Count == 1 ? byPrefix[0].Value : null;
+    }
+
+    /// <summary>
+    /// Čím se prvek liší od čerstvě vloženého téhož typu - tedy co všechno import z předlohy
+    /// nastavil, ať už z odpovědi modelu, nebo změřením z PDF. Slouží ke kontrole importu:
+    /// z protokolu jde porovnat s předlohou i s předchozím během.
+    /// </summary>
+    internal static List<string> DiffFromDefault(TemplateElement element)
+    {
+        var result = new List<string>();
+
+        TemplateElement vychozi;
+        try { vychozi = (TemplateElement)Activator.CreateInstance(element.GetType())!; }
+        catch { return result; }
+
+        var vychoziPodleKlice = vychozi.GetPropertyDescriptors()
+            .Where(IsOfferable)
+            .GroupBy(KeyOf)
+            .ToDictionary(g => g.Key, g => Describe(g.First()));
+
+        foreach (var d in element.GetPropertyDescriptors().Where(IsOfferable))
+        {
+            string ted = Describe(d);
+            if (!vychoziPodleKlice.TryGetValue(KeyOf(d), out var puvodne) || ted == puvodne) continue;
+            result.Add($"{d.Label} = {ted}   (výchozí: {puvodne})");
+        }
+
+        return result;
+    }
+
+    /// <summary>Hodnota deskriptoru jako text - u výběru popiskem volby, ne názvem z kódu.</summary>
+    private static string Describe(PropertyDescriptor d)
+    {
+        try
+        {
+            return d switch
+            {
+                EnumPropertyDescriptor e =>
+                    e.Options.FirstOrDefault(o => Equals(o.Value, e.Get())).Label ?? e.Get()?.ToString() ?? "",
+                BoolPropertyDescriptor b => b.Get() ? "ano" : "ne",
+                ColorPropertyDescriptor c => c.Get(),
+                FloatPropertyDescriptor f => f.Get().ToString("0.##", CultureInfo.InvariantCulture)
+                                             + (f.Unit.Length > 0 ? " " + f.Unit : ""),
+                StringPropertyDescriptor s => s.Get(),
+                _ => ""
+            };
+        }
+        catch { return ""; }
     }
 
     private static bool TryParseBool(string value, out bool result)

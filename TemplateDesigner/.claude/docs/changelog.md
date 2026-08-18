@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-18 (13) - 📥 protokol importu vedle PDF: co přesně se nastavilo
+
+Hlášku po importu jde jen přečíst a zavřít, takže se nedala porovnat s předlohou ani s předchozím
+během - a přitom právě to je jediná cesta, jak poznat, že se rozpoznávání zlepšilo (podnět Jan 18. 8.).
+
+Nově vzniká vedle importovaného PDF soubor **`<název>.import-protokol.txt`** a hláška na něj odkazuje.
+Je v něm víc než v hlášce: u **každého vzniklého prvku** soupis, čím se liší od čerstvě vloženého -
+tedy i to, co import **změřil z PDF** (písma, výšky řádků, šířky sloupců, barvy), ne jen to, co
+odpověděl model. Pozice a velikost se do soupisu nepočítají, ty jsou u každého importu jiné.
+
+Ověřeno: build 0 chyb, .NET 1078/1078 (+4).
+
 ## 2026-08-18 (12) - 📥 import: záhlaví tabulky se nesmí rozpadnout na dvacet textů
 
 Model vyznačil oblast jízdněřádového prvku **až od dat**, takže řádek s popisky sloupců („min.",

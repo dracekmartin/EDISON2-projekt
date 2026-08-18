@@ -22,6 +22,10 @@ public class AiVisionImportPipeline
     /// <summary>Co import z předlohy nastavil a co nerozpoznal - pro uživatele, ne pro vývojáře.</summary>
     public List<string> ImportLog { get; } = [];
 
+    /// <summary>Úplný soupis vzniklých prvků a jejich nastavení - pro kontrolu proti předloze
+    /// a pro porovnání dvou běhů mezi sebou. Ukládá se vedle PDF.</summary>
+    public List<string> DetailedLog { get; } = [];
+
     public AiVisionImportPipeline(
         string apiKey, IDataSchemaProvider? schemaProvider, string? agendaCode,
         IReadOnlyList<TemplateParameter>? knownParameters = null)
@@ -176,6 +180,7 @@ public class AiVisionImportPipeline
 
         ApplyElementSettings(visionResult, scheduleElements);
         LogTextCoverage(visionResult, scheduleElements);
+        LogElementSettings(scheduleElements);
 
         if (AiGuidedScheduleBuilder.LastDebugInfo is not null)
             AiDebugLog = (visionDebugLog ?? "") + "\n\n── AiGuidedScheduleBuilder ──\n" + AiGuidedScheduleBuilder.LastDebugInfo;
@@ -275,6 +280,38 @@ public class AiVisionImportPipeline
             ImportLog.Add($"Vynecháno {cisla} samostatných čísel - patří do jízdního řádu, "
                           + "data si prvek při tisku načte sám.");
     }
+
+    /// <summary>
+    /// Do podrobného protokolu vypíše u každého vzniklého prvku, čím se liší od čerstvě vloženého -
+    /// tedy co všechno import nastavil, ať už z odpovědi modelu, nebo změřením z PDF. Bez toho jde
+    /// zkontrolovat jen to, co řekl model, a ne skutečný výsledek.
+    /// </summary>
+    private void LogElementSettings(List<TemplateElement> elements)
+    {
+        foreach (var el in elements)
+        {
+            var rozdily = ElementSettingsFromImage.DiffFromDefault(el);
+            DetailedLog.Add("");
+            DetailedLog.Add($"{ElementNazev(el)} - pozice {el.X:0.#}, {el.Y:0.#} mm, "
+                            + $"velikost {el.Width:0.#} × {el.Height?.ToString("0.#") ?? "auto"} mm");
+            if (rozdily.Count == 0)
+            {
+                DetailedLog.Add("   (vše ponecháno na výchozích hodnotách)");
+                continue;
+            }
+            foreach (var r in rozdily) DetailedLog.Add("   " + r);
+        }
+    }
+
+    private static string ElementNazev(TemplateElement el) => el switch
+    {
+        StopListElement      => "Seznam zastávek",
+        DepartureGridElement => "Mřížka odjezdů",
+        NotesLegendElement   => "Legenda poznámek",
+        TextElement t        => "Text: " + t.Text,
+        ImageElement         => "Obrázek",
+        _                    => el.GetType().Name
+    };
 
     /// <summary>Na co se u seznamu zastávek ptát - soupis jeho vlastních vlastností.</summary>
     private static string? StopListSettingsCatalog(ScheduleImportType scheduleType) =>
