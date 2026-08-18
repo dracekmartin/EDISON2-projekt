@@ -270,6 +270,10 @@ public class AiVisionImportPipeline
             ? $"Texty z předlohy: {placed}"
             : $"Texty z předlohy: {placed} z {found}, které model našel "
               + "(zbytek leží uvnitř jízdního řádu, kde si texty kreslí prvek sám, nebo je to dekorace).");
+
+        if (AiGuidedScheduleBuilder.SkippedNumericBlocks is > 0 and var cisla)
+            ImportLog.Add($"Vynecháno {cisla} samostatných čísel - patří do jízdního řádu, "
+                          + "data si prvek při tisku načte sám.");
     }
 
     /// <summary>Na co se u seznamu zastávek ptát - soupis jeho vlastních vlastností.</summary>

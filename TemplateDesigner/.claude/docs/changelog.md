@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-18 (11) - 📥 import: hromada samotných čísel patří do jízdního řádu, ne do textů
+
+Doplňování textů, které model nezmíní (viz zápis (10)), vkládalo i **odjezdy, které se modelu nevešly
+do vyznačené mřížky** - v šabloně pak pod tabulkou visely textové prvky „17", „18", „18 40"
+(nález Jan 18. 8.).
+
+Nově platí: **zbyde-li mimo vyznačené oblasti tři a víc samostatných čísel, žádné z nich se nevkládá.**
+Je to obsah jízdního řádu a data si prvek při tisku načte sám. Jedno až dvě čísla se nechávají -
+číslo linky je taky číslo a v šabloně chybět nesmí. V protokolu importu je o tom řádek.
+
+Ověřeno: build 0 chyb, .NET 1074/1074. Ze stejného testu: model poprvé nastavil vzhled seznamu
+zastávek podle předlohy (značky před zastávkou, šipka vlevo, čáry mezi řádky, symbol na znamení).
+
 ## 2026-08-18 (10) - 📥 import bez AI skončí hláškou, chybějící texty se doplní z předlohy
 
 **Nález z testu (Jan 18. 8.):** import vývěsky KV_DP vynechal většinu textů, poznámky umístil jinam

@@ -86,6 +86,7 @@ public static class AiGuidedScheduleBuilder
         }
 
         // 4. Textové elementy z AI mapování
+        SkippedNumericBlocks = 0;
         var consumedBlocks = new HashSet<ExtractedTextBlock>();
         var textElements = BuildTextElements(vision, page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks);
         textElements.AddRange(BuildUnmappedTextElements(
@@ -458,15 +459,29 @@ public static class AiGuidedScheduleBuilder
             L: e.Left * pageW, T: e.Top * pageH, R: e.Right * pageW, B: e.Bottom * pageH
         )).ToList();
 
-        foreach (var block in PdfTextGrouper.GroupWords(page.Words))
+        var candidates = PdfTextGrouper.GroupWords(page.Words)
+            .Where(b => !consumedBlocks.Contains(b) && !string.IsNullOrWhiteSpace(b.Text))
+            .Where(b =>
+            {
+                float cx = b.X + b.Width / 2;
+                float cy = b.Y + b.Height / 2;
+                return !scheduleBoxes.Any(box => cx >= box.L && cx <= box.R && cy >= box.T && cy <= box.B);
+            })
+            .ToList();
+
+        // Roj samotných čísel = obsah jízdního řádu, který se modelu nevešel do vyznačené oblasti
+        // (odjezdy pod mřížkou, časy vedle ní). Jako texty by v šabloně byly vždycky špatně - data
+        // si prvek při tisku vezme sám. Jedno dvě čísla naopak nechat: číslo linky je taky číslo.
+        var cislaBezTextu = candidates.Where(b => !b.Text.Any(char.IsLetter)).ToList();
+        if (cislaBezTextu.Count >= 3)
         {
-            if (consumedBlocks.Contains(block)) continue;
-            if (string.IsNullOrWhiteSpace(block.Text)) continue;
+            debug.Add($"Vynecháno samostatných čísel (obsah jízdního řádu): {cislaBezTextu.Count}");
+            SkippedNumericBlocks = cislaBezTextu.Count;
+            candidates = [.. candidates.Except(cislaBezTextu)];
+        }
 
-            float cx = block.X + block.Width / 2;
-            float cy = block.Y + block.Height / 2;
-            if (scheduleBoxes.Any(b => cx >= b.L && cx <= b.R && cy >= b.T && cy <= b.B)) continue;
-
+        foreach (var block in candidates)
+        {
             float x = block.X - marginLeft;
             float y = block.Y - marginTop;
             if (alreadyPlaced.Any(t => Overlaps(t, x, y, block.Width, block.Height))) continue;
@@ -501,6 +516,9 @@ public static class AiGuidedScheduleBuilder
     private static int LineCount(string text) => text.Split(NewLine).Length;
 
     private const char NewLine = '\n';
+
+    /// <summary>Kolik samostatných čísel se při posledním importu vynechalo - pro protokol.</summary>
+    public static int SkippedNumericBlocks { get; private set; }
 
     /// <summary>Překryv obdélníků v mm - dvě třetiny plochy stačí na „je to tentýž text".</summary>
     private static bool Overlaps(TextElement placed, float x, float y, float w, float h)
