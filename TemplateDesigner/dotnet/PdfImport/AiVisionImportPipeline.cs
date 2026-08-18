@@ -74,6 +74,7 @@ public class AiVisionImportPipeline
         setStatus("AI analyzuje strukturu...");
         var visionService = new AiVisionImportService();
         AiVisionResult? visionResult = null;
+        string? visionError = null;
 
         DataSchema? schema = null;
         try
@@ -87,7 +88,8 @@ public class AiVisionImportPipeline
         }
         catch (Exception ex)
         {
-            setStatus($"AI Vision selhala ({ex.Message}), přepínám na heuristiku...");
+            visionError = ex.Message;
+            setStatus($"AI se nepodařilo zavolat ({ex.Message}).");
         }
         finally
         {
@@ -116,6 +118,17 @@ public class AiVisionImportPipeline
         // 4. Sestavit šablonu
         setStatus("Vytvářím elementy...");
 
+        // Jízdní řád bez AI nemá cenu dodělávat náhradním rozpoznáním: vznikne z něj hrubá šablona,
+        // která vypadá jako výsledek importu, jen je špatně - a uživatel se to nedozví, protože
+        // hláška zmizí se zavřením dialogu. Přesně takhle prošel 18. 8. import s neplatným klíčem.
+        if (scheduleType != ScheduleImportType.None && visionResult is null)
+            throw new Exception(
+                "Jízdní řád se nepodařilo rozpoznat - AI služba neodpověděla"
+                + (visionError is null ? "." : $": {visionError}")
+                + Environment.NewLine + Environment.NewLine
+                + "Import jízdního řádu bez ní nedává smysl (vznikla by hrubá šablona bez zastávek "
+                + "a odjezdů). Zkuste to prosím znovu; pokud potíž trvá, kontaktujte podporu M-line.");
+
         Template template;
         if (visionResult is not null && visionResult.Confidence >= 0.5f && visionResult.Elements.Count > 0)
         {
@@ -134,8 +147,11 @@ public class AiVisionImportPipeline
         }
         else
         {
-            // Fallback na heuristiku
-            setStatus("AI Vision nedostatečná, přepínám na heuristiku...");
+            // Sem se dojde jen u obecného importu (bez agendy JŘ) nebo když AI odpověděla, ale
+            // s nízkou jistotou - tam je hrubý výsledek pořád lepší než nic.
+            setStatus("AI rozpoznání nestačilo, skládám šablonu z rozvržení PDF...");
+            ImportLog.Add("⚠ AI rozpoznání nestačilo - šablona vznikla jen z rozvržení PDF, "
+                          + "bez zastávek a odjezdů. Zkuste import zopakovat.");
             template = await Task.Run(() =>
             {
                 var converter = new PdfToTemplateConverter

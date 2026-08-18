@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-18 (10) - 📥 import bez AI skončí hláškou, chybějící texty se doplní z předlohy
+
+**Nález z testu (Jan 18. 8.):** import vývěsky KV_DP vynechal většinu textů, poznámky umístil jinam
+a záhlaví skupin dnů vysypal jako volné texty. Příčina nebyla v rozpoznávání - **import vůbec neběžel
+přes AI**. Klíč se bere nejdřív z lokálního nastavení vývojáře a až pak z mlwebu; ten lokální byl
+neplatný (401), volání selhalo a import **tiše přepnul na náhradní rozpoznání bez modelu**. Hláška
+o tom šla do stavového řádku dialogu, který se v tu chvíli zavírá, takže se to nikdo nedozvěděl.
+
+Dvě opravy:
+
+- **Jízdní řád se bez AI nedoimportuje.** Import skončí hláškou „Jízdní řád se nepodařilo rozpoznat -
+  AI služba neodpověděla: …" a šablona nevznikne. Hrubá náhražka, která vypadá jako výsledek importu
+  a přitom v ní chybí zastávky a odjezdy, je horší než žádná. U obecného importu (bez agendy jízdního
+  řádu) náhradní cesta zůstává, jen se to napíše do protokolu.
+- **Texty, které model nezmíní, doplní import sám.** Geometrii textu má z PDF přesnou (v testované
+  vývěsce 97 textových bloků), takže co leží mimo jízdní řád a model to nevrátil, se vloží jako
+  obyčejný text se správnou pozicí, písmem a řezem - typicky číslo linky, trasa nebo řádek s dopravcem.
+  Doplněné texty jsou bez role a bez napojení na datové pole; význam určuje model, ne my.
+
+Ověřeno: build 0 chyb, .NET 1074/1074. **Kvalita rozpoznání se tím neměří** - předchozí test jel bez
+modelu, takže srovnání „dřív to bylo přesnější" zatím nemá s čím.
+
 ## 2026-08-18 (9) - 🔤 „Font Arial není nainstalovaný" po importu - byl to font s čárkou v názvu
 
 Po importu z předlohy svítilo upozornění *Font „Arial" není na tomto počítači nainstalovaný -

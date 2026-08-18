@@ -86,7 +86,10 @@ public static class AiGuidedScheduleBuilder
         }
 
         // 4. Textové elementy z AI mapování
-        var textElements = BuildTextElements(vision, page, marginLeft, marginTop, ref zIndex, debugLines);
+        var consumedBlocks = new HashSet<ExtractedTextBlock>();
+        var textElements = BuildTextElements(vision, page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks);
+        textElements.AddRange(BuildUnmappedTextElements(
+            vision, page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks, textElements));
         elements.AddRange(textElements);
 
         // 4b. Korekce překryvu
@@ -301,7 +304,8 @@ public static class AiGuidedScheduleBuilder
     /// <summary>Vytvoří TextElement-y z AI text mapování, přeskočí texty uvnitř schedule oblastí.</summary>
     private static List<TextElement> BuildTextElements(
         AiVisionResult vision, ExtractedPage page,
-        float marginLeft, float marginTop, ref int zIndex, List<string> debug)
+        float marginLeft, float marginTop, ref int zIndex, List<string> debug,
+        HashSet<ExtractedTextBlock>? consumedBlocks = null)
     {
         float pageW = page.WidthMm;
         float pageH = page.HeightMm;
@@ -338,6 +342,7 @@ public static class AiGuidedScheduleBuilder
             float mappingXMm = mapping.X * pageW;
             float mappingYMm = mapping.Y * pageH;
             var matchedBlock = FindMatchingTextBlock(page, mapping, mappingXMm, mappingYMm);
+            if (matchedBlock is not null) consumedBlocks?.Add(matchedBlock);
 
             float elX, elY, elW, elH;
             string fontFamily = "Arial";
@@ -428,6 +433,85 @@ public static class AiGuidedScheduleBuilder
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Doplní texty, které v předloze prokazatelně jsou, ale model je nezmínil. Model vrací
+    /// <b>význam</b> (co je nadpis, co je pole agendy), geometrii textu má PDF přesnou - a když
+    /// model text vynechá, uživateli po importu chybí (číslo linky, trasa, řádek s dopravcem).
+    /// Doplněné texty jsou prosté: bez role a bez napojení na datové pole, ať se nepředstírá
+    /// význam, který nikdo neurčil.
+    ///
+    /// <para>Vynechá se, co si kreslí jízdněřádový prvek sám (leží uvnitř jeho oblasti) a co už
+    /// v šabloně je - i když to model pojmenoval jinak, než jak to stojí v PDF.</para>
+    /// </summary>
+    private static List<TextElement> BuildUnmappedTextElements(
+        AiVisionResult vision, ExtractedPage page,
+        float marginLeft, float marginTop, ref int zIndex, List<string> debug,
+        HashSet<ExtractedTextBlock> consumedBlocks, List<TextElement> alreadyPlaced)
+    {
+        float pageW = page.WidthMm;
+        float pageH = page.HeightMm;
+        var result = new List<TextElement>();
+
+        var scheduleBoxes = vision.Elements.Select(e => (
+            L: e.Left * pageW, T: e.Top * pageH, R: e.Right * pageW, B: e.Bottom * pageH
+        )).ToList();
+
+        foreach (var block in PdfTextGrouper.GroupWords(page.Words))
+        {
+            if (consumedBlocks.Contains(block)) continue;
+            if (string.IsNullOrWhiteSpace(block.Text)) continue;
+
+            float cx = block.X + block.Width / 2;
+            float cy = block.Y + block.Height / 2;
+            if (scheduleBoxes.Any(b => cx >= b.L && cx <= b.R && cy >= b.T && cy <= b.B)) continue;
+
+            float x = block.X - marginLeft;
+            float y = block.Y - marginTop;
+            if (alreadyPlaced.Any(t => Overlaps(t, x, y, block.Width, block.Height))) continue;
+
+            result.Add(new TextElement
+            {
+                Id = Guid.NewGuid(),
+                X = Math.Max(0, x),
+                Y = Math.Max(0, y),
+                Width = Math.Max(block.Width, 2f),
+                Height = Math.Max(block.FontSizePt * ResolvedTextStyle.PtToMm * 1.3f * LineCount(block.Text), 2f),
+                ZIndex = zIndex++,
+                Text = block.Text,
+                Style = new TextStyle
+                {
+                    FontFamily = block.FontFamily,
+                    FontSize = block.FontSizePt,
+                    Bold = block.IsBold,
+                    Italic = block.IsItalic,
+                    TextColor = block.ColorHex,
+                    VAlign = TextVerticalAlignment.Middle,
+                },
+                WordWrap = LineCount(block.Text) > 1,
+            });
+        }
+
+        if (result.Count > 0)
+            debug.Add($"Doplněno textů, které AI nezmínila: {result.Count}");
+        return result;
+    }
+
+    private static int LineCount(string text) => text.Split(NewLine).Length;
+
+    private const char NewLine = '\n';
+
+    /// <summary>Překryv obdélníků v mm - dvě třetiny plochy stačí na „je to tentýž text".</summary>
+    private static bool Overlaps(TextElement placed, float x, float y, float w, float h)
+    {
+        float ph = placed.Height ?? 0;
+        float ix = Math.Min(placed.X + placed.Width, x + w) - Math.Max(placed.X, x);
+        float iy = Math.Min(placed.Y + ph, y + h) - Math.Max(placed.Y, y);
+        if (ix <= 0 || iy <= 0) return false;
+
+        float smaller = Math.Min(placed.Width * ph, w * h);
+        return smaller > 0 && ix * iy / smaller > 0.66f;
     }
 
     /// <summary>
