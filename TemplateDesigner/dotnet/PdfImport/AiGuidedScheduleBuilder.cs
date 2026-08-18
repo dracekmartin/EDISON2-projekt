@@ -461,12 +461,7 @@ public static class AiGuidedScheduleBuilder
 
         var candidates = PdfTextGrouper.GroupWords(page.Words)
             .Where(b => !consumedBlocks.Contains(b) && !string.IsNullOrWhiteSpace(b.Text))
-            .Where(b =>
-            {
-                float cx = b.X + b.Width / 2;
-                float cy = b.Y + b.Height / 2;
-                return !scheduleBoxes.Any(box => cx >= box.L && cx <= box.R && cy >= box.T && cy <= box.B);
-            })
+            .Where(b => !PatriKJizdnimuRadu(b, scheduleBoxes))
             .ToList();
 
         // Roj samotných čísel = obsah jízdního řádu, který se modelu nevešel do vyznačené oblasti
@@ -516,6 +511,25 @@ public static class AiGuidedScheduleBuilder
     private static int LineCount(string text) => text.Split(NewLine).Length;
 
     private const char NewLine = '\n';
+
+    /// <summary>Pás nad vyznačenou oblastí, který k prvku ještě patří (mm).</summary>
+    /// <remarks>Model často vyznačí oblast až od dat a záhlaví (popisky sloupců, skupiny dnů,
+    /// „hod") nechá venku. Jako samostatné texty je to vždycky špatně - je to záhlaví jedné
+    /// tabulky, ne dvacet popisků. Rozpadlo se to takhle 18. 8. u vývěsky ČSAD.</remarks>
+    private const float ZahlaviPasMm = 8f;
+
+    /// <summary>
+    /// Leží blok uvnitř jízdněřádového prvku, nebo v pásu jeho záhlaví těsně nad ním? Pak si ho
+    /// prvek kreslí sám a jako text do šablony nepatří.
+    /// </summary>
+    private static bool PatriKJizdnimuRadu(
+        ExtractedTextBlock b, List<(float L, float T, float R, float B)> boxes)
+    {
+        float cy = b.Y + b.Height / 2;
+        return boxes.Any(box =>
+            b.X + b.Width > box.L && b.X < box.R          // vodorovně se překrývá s prvkem
+            && cy >= box.T - ZahlaviPasMm && cy <= box.B); // svisle uvnitř nebo v pásu záhlaví
+    }
 
     /// <summary>Kolik samostatných čísel se při posledním importu vynechalo - pro protokol.</summary>
     public static int SkippedNumericBlocks { get; private set; }

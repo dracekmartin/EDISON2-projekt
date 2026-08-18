@@ -285,7 +285,12 @@ Co nevidíš nebo si nejsi jistý, VYNECH - výchozí hodnota je lepší než h�
         [
             "2. DepartureGrid: identifikuj skupiny dnů. Rozepiš zkratky (\"Prac.\" → \"Pracovní den\").",
             "3. StopList: identifikuj sloupce (\"TravelTime\", \"TariffNumber\", \"StopName\", \"Zone\", \"Platform\" = nástupiště/stanoviště).",
-            "4. POVINNÉ: vrať VŠECHNY hlavní oblasti, které na obrázku jsou - StopList (tabulka zastávek) ani DepartureGrid (minutová mřížka) NESMÍ v odpovědi chybět, pokud jsou vidět."
+            "4. POVINNÉ: vrať VŠECHNY hlavní oblasti, které na obrázku jsou - StopList (tabulka zastávek) ani DepartureGrid (minutová mřížka) NESMÍ v odpovědi chybět, pokud jsou vidět.",
+            "5. Oblast prvku MUSÍ zahrnovat i jeho ZÁHLAVÍ a VŠECHNY jeho řádky - u StopListu řádek "
+                + "s popisky sloupců (\"min.\", \"Zastávky\") a první i poslední zastávku, u DepartureGridu "
+                + "řádek se skupinami dnů a popisky \"hod\". NIKDY nevracej oblast, která začíná až u dat: "
+                + "co zůstane venku, skončí jako samostatné textové prvky, a záhlaví jedné tabulky "
+                + "rozpadlé na dvacet popisků je vždycky špatně."
         ],
         ElementProperties:
         [

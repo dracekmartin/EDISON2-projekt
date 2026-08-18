@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-18 (12) - 📥 import: záhlaví tabulky se nesmí rozpadnout na dvacet textů
+
+Model vyznačil oblast jízdněřádového prvku **až od dat**, takže řádek s popisky sloupců („min.",
+„Zastávky"), řádek se skupinami dnů a první dvě zastávky zůstaly venku - a doplňování zapomenutých
+textů je vložilo jako samostatné textové prvky (nález Jan 18. 8.).
+
+Řeší se to ze dvou stran, protože samotné doladění zadání pro model spolehlivé nebude:
+
+- **v zadání pro model**: oblast prvku musí zahrnovat i své záhlaví a všechny řádky - u seznamu
+  zastávek popisky sloupců a první i poslední zastávku, u mřížky řádek se skupinami dnů. Včetně
+  důvodu: co zůstane venku, skončí jako samostatné texty.
+- **v doplňování textů**: blok, který se vodorovně kryje s prvkem a leží uvnitř nebo v pásu 8 mm
+  nad ním, k tomu prvku patří a nevkládá se. Zabere i tehdy, když model oblast vyznačí o kus níž.
+
+Ten pás je vědomý kompromis: nadpis a řádek s dopravcem bývají výš, takže zůstanou, ale záhlaví
+tabulky těsně nad daty se už nevloží.
+
+Ověřeno: build 0 chyb, .NET 1074/1074.
+
 ## 2026-08-18 (11) - 📥 import: hromada samotných čísel patří do jízdního řádu, ne do textů
 
 Doplňování textů, které model nezmíní (viz zápis (10)), vkládalo i **odjezdy, které se modelu nevešly
