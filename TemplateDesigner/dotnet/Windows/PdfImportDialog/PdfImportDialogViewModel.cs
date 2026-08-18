@@ -103,8 +103,14 @@ public class PdfImportDialogViewModel : EDViewModel
 
     public string SelectedAgendaCode { get; }
 
-    /// <summary>Sloučení grafiky u obecného importu - pevný rozumný default (bez UI volby).</summary>
-    public GraphicsMergeMode MergeMode { get; } = GraphicsMergeMode.LinesOnly;
+    /// <summary>
+    /// Grafika u obecného importu: každá čára, obdélník i obrázek jako vlastní prvek (bez UI volby).
+    /// Slévání čar do jednoho obrázku na pozadí (dosavadní výchozí stav) dávalo zamčený rastr, který
+    /// nešel upravit a v tisku byl rozmazaný proti zbytku šablony - obrázek má v šabloně vzniknout
+    /// jen z toho, co obrázek opravdu je (logo, QR). Čáry se vkládají seskupené; početnost čar má
+    /// řešit rozpoznání tabulky z jejich mřížky, ne rastr.
+    /// </summary>
+    public GraphicsMergeMode MergeMode { get; } = GraphicsMergeMode.None;
 
     private bool _importAllPages = true;
     public bool ImportAllPages { get => _importAllPages; set { Set(ref _importAllPages, value); OnPropertyChanged(nameof(ImportPageRange)); } }

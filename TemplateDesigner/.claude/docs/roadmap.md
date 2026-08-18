@@ -44,7 +44,7 @@ jen zahazuje (vědomě, protože osu řídí nastavení sestavy). Stačí ji pro
 
 | Další | Stav |
 |---|---|
-| **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílová **pevná tabulka** je hotová (`B76`, i se sloučením buněk), takže záleží jen na prioritě | ⬜ |
+| **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílová **pevná tabulka** je hotová (`B76`, i se sloučením buněk). ⬆️ **Priorita vzrostla 18. 8.**: od zrušení slévání čar do rastru je počet samostatných čar to jediné, co uklizený výsledek drží zpátky | ⬜ |
 | **JŘ import: ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
 
 Křivky/Bézier v obecném importu - low-prio, bez poptávky.

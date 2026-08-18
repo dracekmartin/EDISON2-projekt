@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-18 (7) - 📥 import z předlohy už nedělá z čar zamčený obrázek
+
+Čáry z předlohy (rámečky, linky tabulek) se při obecném importu slévaly do **jednoho obrázku na
+pozadí** - zamčeného, neupravitelného a v tisku rozmazaného proti zbytku šablony, protože to byl
+rastr 150 DPI. Obrázek má v šabloně vzniknout jen z toho, co je obrázek i v předloze (logo, QR kód).
+
+Nově je z každé čáry čára a z každého obdélníku obdélník, se kterými jde normálně pracovat; čáry
+a obdélníky se automaticky seskupí, aby se s nimi dalo hýbat vcelku (rozhodnutí Jan 18. 8.).
+
+⚠️ **U složitější předlohy tak vznikne i pár desítek čar.** Uklidit to má rozpoznání tabulky z jejich
+mřížky (roadmapa, sekce Import PDF) - slévání do rastru bylo obcházení téhož problému.
+Kód pro slévání zůstává, ale žádná cesta ho už nezapíná.
+
 ## 2026-08-18 (6) - 📥 import z předlohy: prázdný sloupec, popisky a zahozená agenda (`B42a`)
 
 Průchod importem PDF proti dnešnímu stavu návrháře. Co import z předlohy nastaví, se naposledy
