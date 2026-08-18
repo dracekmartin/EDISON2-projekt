@@ -115,8 +115,9 @@ architektonických položek se zastav a nech rozhodnutí na uživateli.
 
 Linkované wiki články drží **`.claude/wiki-map.json`** (allow-list). Pravidla:
 
-- 🚫 **Agent na podporu NENAHRÁVÁ** (rozhodnutí Jan 2026-07-31). Krok 6 končí u **seedu v repu**;
-  `update_wiki_article` nevolat. Článek „Novinky" je reálně **public** (mapa u něj tvrdí `internal`),
+- 🚫 **Agent na podporu nenahrává sám od sebe** (rozhodnutí Jan 2026-07-31, upřesněno 2026-08-18).
+  Krok 6 končí u **seedu v repu**; `update_wiki_article` nevolat **automaticky** - jen když Jan
+  výslovně potvrdí, že je to ve verzi vhodné ke zveřejnění. Článek „Novinky" je reálně **public** (mapa u něj tvrdí `internal`),
   takže sync by zákazníkům ukázal featuru, která ještě není ve vydané verzi - načasování publikace
   je vázané na release, ne na commit. Do reportu napiš „seed připravený k nahrání".
 - Krok 6: pokud featura mění **user-facing chování** pokryté některým `seed`em z mapy → aktualizuj
