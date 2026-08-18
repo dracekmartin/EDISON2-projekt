@@ -87,10 +87,9 @@ public static class AiGuidedScheduleBuilder
 
         // 4. Textové elementy z AI mapování
         SkippedNumericBlocks = 0;
+        UserNotes.Clear();
         var consumedBlocks = new HashSet<ExtractedTextBlock>();
         var textElements = BuildTextElements(vision, page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks);
-        textElements.AddRange(BuildUnmappedTextElements(
-            vision, page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks, textElements));
         elements.AddRange(textElements);
 
         // 4b. Korekce překryvu
@@ -109,6 +108,14 @@ public static class AiGuidedScheduleBuilder
 
         // Natáhnout StopList po spodní okraj
         StretchStopList(elements, debugLines);
+
+        // Texty, které model nezmínil, doplnit až TEĎ - podle skutečných rozměrů prvků. Dokud se
+        // porovnávalo s oblastmi od modelu, propadly texty, které do prvku spadly až po natažení
+        // seznamu zastávek (v šabloně pak ležel název zastávky přes tabulku - nález Jan 18. 8.).
+        var doplnene = BuildUnmappedTextElements(
+            page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks,
+            [.. elements.OfType<TextElement>()], ScheduleRects(elements));
+        elements.AddRange(doplnene);
 
         debugLines.Add($"Final elements: {elements.Count}");
         foreach (var el in elements)
@@ -446,18 +453,21 @@ public static class AiGuidedScheduleBuilder
     /// <para>Vynechá se, co si kreslí jízdněřádový prvek sám (leží uvnitř jeho oblasti) a co už
     /// v šabloně je - i když to model pojmenoval jinak, než jak to stojí v PDF.</para>
     /// </summary>
-    private static List<TextElement> BuildUnmappedTextElements(
-        AiVisionResult vision, ExtractedPage page,
-        float marginLeft, float marginTop, ref int zIndex, List<string> debug,
-        HashSet<ExtractedTextBlock> consumedBlocks, List<TextElement> alreadyPlaced)
-    {
-        float pageW = page.WidthMm;
-        float pageH = page.HeightMm;
-        var result = new List<TextElement>();
+    /// <summary>Obdélníky jízdněřádových prvků tak, jak nakonec v šabloně leží (v mm).</summary>
+    private static List<(float L, float T, float R, float B)> ScheduleRects(List<TemplateElement> elements) =>
+    [
+        .. elements
+            .Where(e => e is StopListElement or DepartureGridElement or NotesLegendElement)
+            .Select(e => (e.X, e.Y, e.X + e.Width, e.Y + (e.Height ?? 0)))
+    ];
 
-        var scheduleBoxes = vision.Elements.Select(e => (
-            L: e.Left * pageW, T: e.Top * pageH, R: e.Right * pageW, B: e.Bottom * pageH
-        )).ToList();
+    private static List<TextElement> BuildUnmappedTextElements(
+        ExtractedPage page,
+        float marginLeft, float marginTop, ref int zIndex, List<string> debug,
+        HashSet<ExtractedTextBlock> consumedBlocks, List<TextElement> alreadyPlaced,
+        List<(float L, float T, float R, float B)> scheduleBoxes)
+    {
+        var result = new List<TextElement>();
 
         var candidates = PdfTextGrouper.GroupWords(page.Words)
             .Where(b => !consumedBlocks.Contains(b) && !string.IsNullOrWhiteSpace(b.Text))
@@ -512,6 +522,17 @@ public static class AiGuidedScheduleBuilder
 
     private const char NewLine = '\n';
 
+    /// <summary>Pod touto výškou je „vyplněný obdélník" v PDF čára, ne pozadí hlavičky (mm).</summary>
+    private const float MinHeaderRectHeightMm = 1.5f;
+
+    /// <summary>Tmavá výplň = čára nebo rámeček, ne pozadí záhlaví (text na ní není čitelný).</summary>
+    private static bool JeTmava(string? hex)
+    {
+        var c = ColorHex.ParseOrNull(hex);
+        if (c is null) return false;
+        return (c.Value.Red + c.Value.Green + c.Value.Blue) / 3 < 0x50;
+    }
+
     /// <summary>Pás nad vyznačenou oblastí, který k prvku ještě patří (mm).</summary>
     /// <remarks>Model často vyznačí oblast až od dat a záhlaví (popisky sloupců, skupiny dnů,
     /// „hod") nechá venku. Jako samostatné texty je to vždycky špatně - je to záhlaví jedné
@@ -533,6 +554,16 @@ public static class AiGuidedScheduleBuilder
 
     /// <summary>Kolik samostatných čísel se při posledním importu vynechalo - pro protokol.</summary>
     public static int SkippedNumericBlocks { get; private set; }
+
+    /// <summary>Co si má uživatel z posledního importu dodělat ručně - do protokolu.</summary>
+    public static List<string> UserNotes { get; } = [];
+
+    private static string RoleCesky(string role) => role switch
+    {
+        "logo"   => "logo",
+        "qrCode" => "QR kód",
+        _        => "grafiku"
+    };
 
     /// <summary>Překryv obdélníků v mm - dvě třetiny plochy stačí na „je to tentýž text".</summary>
     private static bool Overlaps(TextElement placed, float x, float y, float w, float h)
@@ -705,19 +736,13 @@ public static class AiGuidedScheduleBuilder
                     debug.Add($"    → placeholder se překrývá s existujícím obrázkem - skip");
                     continue;
                 }
-                result.Add(new RectangleElement
-                {
-                    Id = Guid.NewGuid(),
-                    X = Math.Max(0, imgX),
-                    Y = Math.Max(0, imgY),
-                    Width = imgW,
-                    Height = imgH,
-                    ZIndex = zIndex++,
-                    BorderColor = "#FF999999",
-                    BorderWidth = 0.2f,
-                    BackgroundColor = "#FFF0F0F0",
-                });
-                debug.Add($"    → created placeholder RectangleElement (no PdfPig image data)");
+                // Zástupný šedý rámeček se nevkládá: v předloze na tom místě žádný obrázek není
+                // (model si ho vymyslel, nebo je to jen orámovaná plocha) a prázdný čtverec
+                // v šabloně vypadá jako chyba importu. Informace se místo toho napíše do protokolu.
+                UserNotes.Add($"Model hlásil obrázek ({RoleCesky(imgMap.Role)}) na pozici "
+                              + $"{imgX:0.#}, {imgY:0.#} mm, ale v předloze tam žádný není - "
+                              + "pokud tam patří, vložte ho ručně.");
+                debug.Add($"    → bez obrázku v PDF: nevkládám nic, jen do protokolu");
             }
         }
 
@@ -875,9 +900,13 @@ public static class AiGuidedScheduleBuilder
                 continue;
             }
 
-            // Hlavička = horní obdélník (nejblíž k gridTop)
+            // Hlavička = horní obdélník (nejblíž k gridTop). Vodorovné čáry a tmavé pruhy se
+            // musí přeskočit: čára je v PDF taky „vyplněný obdélník", jen tenká, a když se vzala
+            // jako pozadí hlavičky, vyšlo záhlaví skupiny dnů celé černé (nález Jan 18. 8.).
             var headerRect = groupRects
-                .Where(r => r.Y < gridTop + HeaderRectYToleranceMm)
+                .Where(r => r.Y < gridTop + HeaderRectYToleranceMm
+                            && r.Height >= MinHeaderRectHeightMm
+                            && !JeTmava(r.FillColorHex))
                 .OrderBy(r => r.Y)
                 .FirstOrDefault();
             string headerColor = headerRect?.FillColorHex is not null

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-18 (14) - 📥 import: tři vady, které ukázal protokol
+
+První použití protokolu z předchozího zápisu (test Jan 18. 8.) rovnou vytáhlo tři konkrétní příčiny:
+
+- **Název zastávky ležel jako samostatný text přes tabulku.** Doplňování zapomenutých textů se
+  porovnávalo s oblastmi, které vyznačil model, jenže seznam zastávek se **potom ještě natahuje**
+  dolů - text, který propadl vedle krátké oblasti, nakonec ležel uvnitř tabulky. Doplňování se
+  proto dělá až **za natažením** a porovnává se se skutečnými rozměry prvků.
+- **Záhlaví skupiny dnů vyšlo celé černé.** Barva pozadí záhlaví se bere z vyplněného obdélníku
+  v předloze a **čára je v PDF taky vyplněný obdélník**, jen tenká. Nově se přeskakují obdélníky
+  nižší než 1,5 mm a tmavé výplně.
+- **Prázdné šedé čtverce místo obrázků.** Import vkládal zástupný rámeček tam, kde model hlásí
+  logo nebo grafiku, ale v předloze žádný obrázek není (v testované vývěsce jich PDF nemá ani
+  jeden). Rámeček se už nevkládá - místo něj je v protokolu řádek „Model hlásil obrázek (logo)
+  na pozici …, ale v předloze tam žádný není - pokud tam patří, vložte ho ručně."
+
+Ověřeno: build 0 chyb, .NET 1078/1078.
+
 ## 2026-08-18 (13) - 📥 protokol importu vedle PDF: co přesně se nastavilo
 
 Hlášku po importu jde jen přečíst a zavřít, takže se nedala porovnat s předlohou ani s předchozím
