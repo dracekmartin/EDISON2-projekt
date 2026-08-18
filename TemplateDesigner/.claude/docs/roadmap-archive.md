@@ -1,6 +1,7 @@
 # 🗄️ Archiv - hotové kroky
 
-> Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
+> Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
+> Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
 ## 2026-08-17 ✅ - `B76`: pevná tabulka se dá naformátovat a slučovat (4 kroky)
 
@@ -38,6 +39,27 @@ a podmíněnou viditelností) a připravené bloky agend, které pohltí `B66` (
 (dohromady 44 kontrol) - kaskáda, vratnost podle souřadnic, nezapékání zděděných hodnot, geometrie
 výběru a sloučení. Formulář buňky je vědomě mimo driftové testy schémat (jeho výchozí hodnoty se
 nikdy nezobrazí) a nahrazuje je vlastní test pokrytí kaskádou.
+
+## 2026-08-18 ⛔ - `B93`: parita tabulkových prvků se dodělávat NEBUDE
+
+**Rozhodnutí Jan 18. 8.: není to fakticky díra, nedělá se.** Zapsáno sem, aby to příští revize
+nenašla znovu jako nález - tohle už jednou posouzené bylo.
+
+Co se měřilo (stav 18. 8., po dokončení podmínky v pevné tabulce):
+
+- **střídání řádků** nemá **seznam zastávek** ani **linková tabulka**; má ho tabulka z dat, pevná
+  tabulka i mřížka odjezdů. Doplnění je malé a opsatelné (vlastnost + řádek renderu + pole formuláře
+  + deskriptor + `Clone`) a bylo by bezpečné (výchozí „nenastaveno" = beze změny výstupu, odtisky
+  zůstávají zelené) - **ale nikdo si o to neřekl.**
+- **podmínka viditelnosti řádku** v pevné tabulce doplněna souběžně, mimo tento blok.
+- **zvýraznění řádku podle dat** v pevné tabulce **nedává smysl** a není to mezera: zvýraznění
+  vyhodnocuje výraz nad daty konkrétního řádku (`SourceRow`), jenže řádky pevné tabulky napsal
+  uživatel do šablony a žádná řádková data nemají. Viditelnost tam smysl dává, protože se vyhodnotí
+  nad celkovými údaji sestavy. Kdyby to někdo chtěl, je to jiná featura (podmíněné formátování
+  buňky), ne tahle.
+
+⚠️ **Až se k tomu někdo vrátí:** u seznamu zastávek musí střídání ležet **pod** zvýrazněním aktuální
+zastávky a ztišením projetých, jinak aktuální zastávka na sudém řádku o zvýraznění přijde.
 
 ## 2026-08-18 ✅ - `B96`: datum platnosti u MHD s tečkami, ne s lomítky
 

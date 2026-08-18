@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** zbytek sady - už jen `B93` níže (revize 17. 8.). Pak **linkové JŘ**
-> (`B10` + `B13`) jako dedikovaný slot - pevná tabulka je hotová (`B76`, 17. 8.).
+> **Nejblíž na řadě:** **linkové JŘ** (`B10` + `B13`) jako dedikovaný slot - revizní sada
+> ze 17.-18. 8. je uzavřená (`B91`-`B96`, archiv) a pevná tabulka hotová (`B76`).
 > Zastávkový JŘ otevřený bod nemá - revize `B39` je uzavřená a proklikaná (17. 8.).
 >
 > ⚠️ **Nevydané a jen zčásti proklikané je všechno od 12. 8. včetně** - poslední vydaná verze je
@@ -14,32 +14,6 @@
 > ⚠️ **Naše testovací šablony v DB s vlastními sloupci je potřeba přeuložit** - „Pracovní dny" se
 > od `B82` zapisují jako `X` (viz archiv). Zákaznických šablon se to netýká, ty vlastní sloupce
 > nenesou.
-
----
-
-## 🧹 Revize napříč vrstvami (17. 8.)
-
-> ⚠️ **Pravidlo pro celou sadu: zastávkové JŘ se nesmí rozbít.** Jsou vydané a kryté zlatými
-> odtisky. Kde se něco rozchází, **mění se linková strana** - linkové agendy mají `Released = 0`
-> a jsou zatím úvodní draft. Dotyk vydaného prvku je přípustný jen **aditivně** (nová vlastnost
-> defaultně vypnutá, odtisky beze změny).
-
-**Nález, ze kterého sada vychází** (`B91`+`B95` hotové 17. 8., detail v archivu): obě rodiny agend
-posílaly stejně pojmenované kolekce, ale **řádky uvnitř měly jiný tvar**, takže to vypadalo
-kompatibilně a nebylo.
-
-⚠️ **Jedno tvrzení z revize neplatilo:** `DELENI_SLOUPCU` × `ROZDELENI_SLOUPCU` **nejsou dva názvy
-téhož**. Jsou to dvě různá nastavení sestavy - „Dělení spojů dle platnosti" (linkový, 3 volby)
-a „Rozdělení sloupců (typy provozu)" (vývěska, 6 voleb). Sloučit je pod jeden název nejde: u těchhle
-voleb se ukládá zobrazený text, takže by přepnutí agendy tiše shodilo nastavení na výchozí.
-
-| # | Co | Vel. |
-|---|---|---|
-| **B93** | **Parita tabulkových prvků - nejdřív rozhodnout, pak kód.** Střídání řádků má tabulka z dat, pevná tabulka i mřížka odjezdů, **nemá ho seznam zastávek ani linková tabulka** (dvě nejdelší a nejhůř čitelné tabulky); podmínku viditelnosti a zvýraznění řádku nemá pevná tabulka. Podle klasifikace v [`elementy-architektura.md §0b`](elementy-architektura.md) jsou obě **kategorie 1** (čte jen data řádku) → patří do všech řádkových tabulek, takže je to drift, ne rozhodnutí. Projít všech pět tabulkových prvků × generické featury a rozhodnout per featura. ⚠️ Doplnění sáhne na **vydaný** seznam zastávek - jen aditivně a defaultně vypnuté. Vedlejší efekt: co skončí v jádru, dostane linková tabulka zadarmo. | analýza S + kód S |
-
-**Vědomě mimo tuhle sadu:** testy linkových agend (`B14b`) - dělají se průběžně, až se na linkové
-půjde, ne dopředu. Rozřezání `TemplateDesignerViewModel` (3 543 ř., 11 rolí) - **při dotyku**, ne
-jako položka; první přirozený řez je role „parametry sestavy a načítání dat", kam sáhne `B60`.
 
 ---
 
@@ -198,7 +172,7 @@ netýká, AD posílá jediné číslo linky. Datum platnosti je od `B96` v obou 
 | **B10** | **Symbolový font - linková část** (gate R5). Linková tabulka dnes symboly **nekreslí vůbec** - agenda posílá legacy klíče (`|`, `<`, `m`, `u`…) a chybí převod na pozice ve fontu. ✅ **Podklady hotové:** katalog 66 symbolů, render-módy i **změřený repertoár fontu** (94 pozic z obou fontů) jsou v `elementy-architektura.md`, takže neznámá „který kód nese který piktogram" je pryč. ⚠️ Pozice `znak` z katalogu se s pozicí ve fontu často **neshoduje** (letadlo `n`, paragraf `P`, metro `#`) - musí jít přes mapu, ne přes písmeno. **Rozsah (rozhodnutí Jan 4. 8.):** sdílená mapa `značka → (render-mód, hodnota)` pro všechny prvky, nahradí i dnešní `SymbolGlyph` u zastávkových vývěsek → dotkne se běžícího zastávkového JŘ, chce zlaté odtisky. Culture rozlišení jen pro **3 pozice** (`D`, `w`, `x`). Ve fontu chybí loď, wifi a zásuvka. | M→S |
 | **B13** | **2D bin-packing / `Strih`** (gate R1/R2) - široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce". Nutné pro reálný tisk MHD linek; zastávkový JŘ to nepotřebuje. Stojí na hotovém `B11`: řádková vrstva existuje, takže rozřezání se píše **jednou** nad plánem řádků, ne pětkrát v per-element smyčkách. | L |
 | **B14** | **Dedup Caché tiskových enginů + jejich testy** - doprovod ostrého knižního JŘ, ne dopředu. (a) **Dedup** (*audit H1*): různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → vyextrahovat sdílené readery + `Build*` do `BaseAgenda`/`JrShared`; je to **Caché analog R1 extrakce jádra** (`B13` řeší .NET render-side, tohle Caché data-side). Korektnostní riziko. Menší výsek Build\* helperů = `B56` (v Backlogu); při realizaci jednoho zredukovat druhý. ⚠️ **Korekce z analýzy 5. 8.:** dřívější tvrzení „`CasHodnota` bere `"|"` jinak" **neplatí** - obě verze jsou funkčně identické, lišil se jen komentář. A objem duplikace je menší, než audit odhadoval: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků). (b) **Testy** (*audit H2*): `LinkovyJr*` (~2 000 ř.) 0 testů, `ZastavkoveJrMhd` 1 helper; AD gold gate tiše projde bez `CB_CSADAD`, křehký digest nad živými daty (pinuje 2/22 linek), `tools/compare-gold.ps1` neexistuje → smoke + frozen-input gold testy, bezpodmínečný gate (zmrazit vstup do izolovaného ns). | L + M |
-| **B60** | **Název zastávky se v linkovém JŘ tvoří jinak než na vývěsce** (nález analýzy `B56`, 5. 8.) - vývěska respektuje volbu tvaru názvu (#13089, 4 volby) i přepínač „použít upravený název pro MHD"; linkový JŘ bere název natvrdo, takže **táž zastávka může mít na dvou výstupech jiné jméno**. ⚠️ **Změřeno 5. 8. - není to malá věc:** tvarování visí na **dvou parametrech sestavy** (`TVAR_NAZVU_ZASTAVKY`, `NAZEV_PRO_MHD`) načítaných do `^||TiskAd`, takže srovnání = přidat linkovému JŘ dva uživatelsky viditelné parametry (popisky enumu jsou po vydání zamčené) + sdílet 5 helperů (`FormatNazvuZastavky`, `MezeryPoInterpunkci`, `TvarNazvuZastavky`, `PouzitNazevProMhd`, `NactiNastaveniNazvu`) - a to **bez jakéhokoli testu** (linkové agendy 0 testů, síť staví `B14b`). **Nejdřív rozhodnout, jestli ty parametry v linkovém JŘ chceme.** ⚠️ **Širší kontext z revize 17. 8.:** není to jen o názvu zastávky - linkový AD má **jeden** parametr sestavy a linkový MHD **žádný**, proti sedmi u zastávkového AD. Uživatel dnes dostane tabulku, se kterou nemůže nic udělat. Rozhodovat se má celá sada parametrů najednou, ne dva zvlášť; sveze se s `B95` (týž kód, totéž rozhodnutí „co má být stejné jako u zastávkového"). | M |
+| **B60** | **Název zastávky se v linkovém JŘ tvoří jinak než na vývěsce** (nález analýzy `B56`, 5. 8.) - vývěska respektuje volbu tvaru názvu (#13089, 4 volby) i přepínač „použít upravený název pro MHD"; linkový JŘ bere název natvrdo, takže **táž zastávka může mít na dvou výstupech jiné jméno**. ⚠️ **Změřeno 5. 8. - není to malá věc:** tvarování visí na **dvou parametrech sestavy** (`TVAR_NAZVU_ZASTAVKY`, `NAZEV_PRO_MHD`) načítaných do `^||TiskAd`, takže srovnání = přidat linkovému JŘ dva uživatelsky viditelné parametry (popisky enumu jsou po vydání zamčené) + sdílet 5 helperů (`FormatNazvuZastavky`, `MezeryPoInterpunkci`, `TvarNazvuZastavky`, `PouzitNazevProMhd`, `NactiNastaveniNazvu`) - a to **bez jakéhokoli testu** (linkové agendy 0 testů, síť staví `B14b`). **Nejdřív rozhodnout, jestli ty parametry v linkovém JŘ chceme.** ⚠️ **Širší kontext z revize 17. 8.:** není to jen o názvu zastávky - linkový AD má **jeden** parametr sestavy a linkový MHD **žádný**, proti sedmi u zastávkového AD. Uživatel dnes dostane tabulku, se kterou nemůže nic udělat. Rozhodovat se má celá sada parametrů najednou, ne dva zvlášť. Slovník polí je od `B95` už srovnaný, takže zbývají právě jen parametry - a je to totéž rozhodnutí „co má být stejné jako u zastávkového". ⚠️ **Sáhne to do `TemplateDesignerViewModel`** (3 543 ř., jedenáct rolí) - role „parametry sestavy a načítání dat" je jeho přirozený první řez. Rozřezávat **při dotyku**, ne jako samostatnou položku; jinak to v roadmapě jen visí, jako viselo sjednocování dialogů. | M |
 
 ### Odložené body z pilotu (seřazené dle hodnoty pro ostré nasazení)
 
