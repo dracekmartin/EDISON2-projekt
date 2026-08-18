@@ -204,6 +204,7 @@
                 <MenuItem Header="Vyvolat chybu" Command="{Binding TriggerErrorCommand}"/>
                 <Separator/>
                 <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
+                <MenuItem Header="Spustit starý shell (EDISONMAIN)" Command="{Binding OpenLegacyShellCommand}"/>
             </MenuItem>
             </Menu>
         </DockPanel>

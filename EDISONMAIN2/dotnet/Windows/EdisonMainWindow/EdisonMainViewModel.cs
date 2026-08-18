@@ -60,6 +60,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenLogoutCountdownTestCommand { get; }
         public ICommand TriggerErrorCommand { get; }
         public ICommand OpenTemplateDesignerCommand { get; }
+        public ICommand OpenLegacyShellCommand { get; }
         public ICommand CloseAllCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
         public ICommand OpenDefaultMiniAppsCommand { get; }
@@ -254,6 +255,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Test trigger pro error popup — výjimka projde RelayCommand handlerem do EDErrorPopup.
             TriggerErrorCommand = Command(() => throw new InvalidOperationException("Testovací výjimka z toolbaru."));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
+            OpenLegacyShellCommand = Command(OpenLegacyShell);
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
             OpenDefaultMiniAppsCommand = Command(OpenDefaultMiniApps);
@@ -348,7 +350,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Seed při loadu je pod _suppressFavoritesSync (nemá znovu ukládat načtené).
             _shortcuts.Items.CollectionChanged += (_, _) => { if (!_suppressFavoritesSync) SyncFavorites(); };
             // Přesun dlaždice (reorder v miniaplikaci) → persistuj pozice (bez změny členství).
-            _shortcuts.SlotsChanged += PersistShortcuts;
+            _shortcuts.PositionsChanged += PersistShortcuts;
             // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
             // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení
@@ -1304,11 +1306,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // nesdílí shell session. Pro plnou integraci by TD musel implementovat EDISONMAIN2API kontrakt.
         private static void OpenTemplateDesigner()
         {
-            var path = System.IO.Path.Combine(AppContext.BaseDirectory, "TemplateDesigner.exe");
-            if (!System.IO.File.Exists(path))
-                path = System.IO.Path.Combine(EDControls.EDViewModel.WindowNavigator.EdisonDeployRoot, "TemplateDesigner.exe");
+            var path = EDControls.EDViewModel.WindowNavigator.ResolveExecutablePath("TemplateDesigner.exe");
             Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
         }
+
+        private const string LegacyShellExe = "EDISONMAIN.exe";
+        // reason=2 je EdisonLaunchReasonEnum.RunEdison; bez něj frmNoMDI ohlásí "nelze spustit
+        // samostatně" a zavře se (kontrola, že shell spustil loader, ne uživatel ručně).
+        private const string LegacyShellArgs = "reason=2";
+
+        // Starý shell zůstává dostupný i po přepnutí EDLOADERu na EDISONMAIN2. Záměrně plain
+        // Process.Start, ne WindowNavigator: ten child váže na KillOnExit job (starý shell by
+        // umřel s tímhle), ukazuje ho ve "Spuštěné moduly" a dedupuje modeless launche.
+        private static void OpenLegacyShell() => Process.Start(LegacyShellStartInfo());
+
+        internal static ProcessStartInfo LegacyShellStartInfo() =>
+            new(EDControls.EDViewModel.WindowNavigator.ResolveExecutablePath(LegacyShellExe))
+            {
+                Arguments = LegacyShellArgs,
+                UseShellExecute = true,
+            };
 
         private async Task RefreshLicense()
         {

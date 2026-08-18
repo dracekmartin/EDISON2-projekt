@@ -85,20 +85,33 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>Identita položky napříč druhy (dva různé druhy nad týmž modulem koexistují).</summary>
         public string Key => $"{Kind}|{ElementId}|{Id}";
 
-        private int _slot;
+        private int _col;
+        private int _row;
 
         /// <summary>
-        /// Pozice dlaždice v mřížce (0-based, prázdné sloty = mezery). Řídí
-        /// <see cref="ModuleShortcutsService"/>; observable - změna přeskládá mřížku.
+        /// Sloupec dlaždice (0-based). Absolutní pozice, mřížka se nepřeskládává podle šířky -
+        /// přesah řeší vodorovný scroll. Řídí <see cref="ModuleShortcutsService"/>; observable.
         /// </summary>
-        public int Slot
+        public int Col
         {
-            get => _slot;
+            get => _col;
             set
             {
-                if (_slot == value) return;
-                _slot = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Slot)));
+                if (_col == value) return;
+                _col = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Col)));
+            }
+        }
+
+        /// <summary>Řádek dlaždice (0-based); prázdné buňky = mezery.</summary>
+        public int Row
+        {
+            get => _row;
+            set
+            {
+                if (_row == value) return;
+                _row = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Row)));
             }
         }
 
@@ -120,13 +133,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         };
 
         public DesktopShortcutDto ToDto() => new(Kind.ToString(), Id, ElementId, DisplayedName,
-            ExecutablePath, FormName, InputParam, Slot, Report);
+            ExecutablePath, FormName, InputParam, Col, Row, Report);
     }
 
     /// <summary>
     /// Serializovaná podoba položky plochy (blob <c>Shortcuts</c> ve scope <c>EDISONMAIN2</c>).
     /// <c>Kind</c> je string, ne enum - přeskládání <see cref="ShortcutKind"/> nesmí přeznačit uložená data.
-    /// Chybějící <c>Slot</c> = doplní se z pořadí.
+    /// Chybějící <c>Col</c>/<c>Row</c> = doplní se z pořadí.
     /// </summary>
     public record DesktopShortcutDto(
         string Kind = nameof(ShortcutKind.MenuModule),
@@ -136,6 +149,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         string Exe = "",
         string Form = "",
         string Input = "",
-        int? Slot = null,
+        int? Col = null,
+        int? Row = null,
         ReportPayload? Report = null);
 }

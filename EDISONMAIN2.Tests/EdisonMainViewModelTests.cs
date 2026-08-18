@@ -920,4 +920,24 @@ public class EdisonMainViewModelTests
 
         shutdown.DidNotReceiveWithAnyArgs().Invoke();
     }
+
+    [Fact]
+    public void OpenLegacyShellCommand_IsWired()
+    {
+        var vm = CreateVM();
+
+        Assert.NotNull(vm.OpenLegacyShellCommand);
+        Assert.True(vm.OpenLegacyShellCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void LegacyShellStartInfo_PassesRunEdisonReason()
+    {
+        // Bez reason=2 (RunEdison) frmNoMDI ohlásí "nelze spustit samostatně" a zavře se.
+        var info = EdisonMainViewModel.LegacyShellStartInfo();
+
+        Assert.Equal("EDISONMAIN.exe", System.IO.Path.GetFileName(info.FileName));
+        Assert.Equal("reason=2", info.Arguments);
+        Assert.True(info.UseShellExecute);
+    }
 }

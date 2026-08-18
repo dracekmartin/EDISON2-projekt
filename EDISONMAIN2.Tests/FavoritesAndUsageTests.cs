@@ -162,13 +162,13 @@ public class FavoritesAndUsageTests
         var prefs = Substitute.For<IUserPrefsService>();
         prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
             .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
-                """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A","Slot":3}]""")));
+                """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A","Col":1,"Row":3}]""")));
         var svc = new ModulePreferencesService(prefs);
 
         var dto = Assert.Single(await svc.LoadShortcutsAsync());
         Assert.Equal("MenuModule", dto.Kind);
         Assert.Equal("100", dto.ElementId);
-        Assert.Equal(3, dto.Slot);
+        Assert.Equal((1, 3), (dto.Col, dto.Row));
     }
 
     [Fact]
@@ -203,13 +203,13 @@ public class FavoritesAndUsageTests
         var report = new ReportPayload("AD", "EkonomickySystem", "1", "S12", "P7", JeVerejny: true);
 
         await svc.SaveShortcutsAsync([new DesktopShortcutDto(nameof(ShortcutKind.PrintReport), "PrehledSkod",
-            "31001", "Přehled škod", "VOZIDLA2.exe", Slot: 2, Report: report)]);
+            "31001", "Přehled škod", "VOZIDLA2.exe", Col: 2, Row: 1, Report: report)]);
 
         prefs.LoadAsync("EDISONMAIN2", "Shortcuts").Returns(Task.FromResult(written));
         var dto = Assert.Single(await svc.LoadShortcutsAsync());
         Assert.Equal(nameof(ShortcutKind.PrintReport), dto.Kind);
         Assert.Equal("PrehledSkod", dto.Id);
-        Assert.Equal(2, dto.Slot);
+        Assert.Equal((2, 1), (dto.Col, dto.Row));
         Assert.Equal(report, dto.Report);
     }
 
@@ -231,7 +231,7 @@ public class FavoritesAndUsageTests
         var prefs = Substitute.For<IUserPrefsService>();
         var svc = new ModulePreferencesService(prefs);
 
-        await svc.SaveShortcutsAsync([new DesktopShortcutDto(nameof(ShortcutKind.MenuModule), "100", "100", "A", Slot: 2)]);
+        await svc.SaveShortcutsAsync([new DesktopShortcutDto(nameof(ShortcutKind.MenuModule), "100", "100", "A", Col: 2, Row: 0)]);
 
         await prefs.Received().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
     }
