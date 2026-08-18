@@ -25,6 +25,19 @@ i obsah a sloučení, takže Ctrl+Z vrátí i spojený text zpátky do původní
 **Brány:** build čistý, **2203 .NET testů** zelených (TD 1005, z toho 10 nových). Mutace ověřily,
 že testy měří: zahození spojeného textu i kreslení po sloupcích místo sloučení své testy shodí.
 
+## 2026-08-18 - 🗓️ datum platnosti u MHD s tečkami, ne s lomítky (`B96`)
+
+Zastávková vývěska MHD tiskla datum platnosti jako **`01/11/2018`**, zatímco linková doprava
+vedle ní `11.12.2022`. Česky se datum píše s tečkami, takže to byla chyba - jen si jí nikdo
+nevšiml, protože každá agenda se dívala jinam. Nově mají obojí tečky.
+
+**Kde se to projeví:** pole „Datum platnosti od / do" a „Popis platnosti" na vyvěskách MHD.
+Zákaznickým šablonám se nic nerozbije - mění se jen tvar hodnoty, ne název pole.
+
+**Poznámka k jazykům:** tvar je zatím napevno český. Správně by šel z nastavení jazyka, ale
+všichni zákazníci tisknou česky, takže by to dnes byla vrstva, kterou nikdo nepoužije;
+formátování je na jednom místě, až bude potřeba, vymění se tam.
+
 ## 2026-08-17 (8) - 🚆 výchozí linková šablona se doručí sama (`B92`)
 
 Zastávkové výchozí šablony jsou zabalené v programu a při spuštění se samy nalijí do databáze, takže

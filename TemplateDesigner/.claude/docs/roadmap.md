@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** zbytek sady `B93` a `B96` níže (revize 17. 8.). Pak **linkové JŘ**
+> **Nejblíž na řadě:** zbytek sady - už jen `B93` níže (revize 17. 8.). Pak **linkové JŘ**
 > (`B10` + `B13`) jako dedikovaný slot - pevná tabulka je hotová (`B76`, 17. 8.).
 > Zastávkový JŘ otevřený bod nemá - revize `B39` je uzavřená a proklikaná (17. 8.).
 >
@@ -36,7 +36,6 @@ voleb se ukládá zobrazený text, takže by přepnutí agendy tiše shodilo nas
 | # | Co | Vel. |
 |---|---|---|
 | **B93** | **Parita tabulkových prvků - nejdřív rozhodnout, pak kód.** Střídání řádků má tabulka z dat, pevná tabulka i mřížka odjezdů, **nemá ho seznam zastávek ani linková tabulka** (dvě nejdelší a nejhůř čitelné tabulky); podmínku viditelnosti a zvýraznění řádku nemá pevná tabulka. Podle klasifikace v [`elementy-architektura.md §0b`](elementy-architektura.md) jsou obě **kategorie 1** (čte jen data řádku) → patří do všech řádkových tabulek, takže je to drift, ne rozhodnutí. Projít všech pět tabulkových prvků × generické featury a rozhodnout per featura. ⚠️ Doplnění sáhne na **vydaný** seznam zastávek - jen aditivně a defaultně vypnuté. Vedlejší efekt: co skončí v jádru, dostane linková tabulka zadarmo. | analýza S + kód S |
-| **B96** | **Datum platnosti: MHD tiskne lomítka, AD tečky** (nález při `B95`, 17. 8.). Zastávková vývěska MHD dá do „Datum platnosti od" `01/11/2018`, AD `11.12.2022`. Česky se datum píše s tečkami, takže MHD tvar je pravděpodobně chyba - jen **je ve vydané verzi**, proto to `B95` nechalo být a linkový MHD srovnalo na tentýž (nesprávný) tvar, aby výstupy nešly proti sobě. Druhá polovina: zastávkový MHD má ve **vzorových datech pro náhled** tečky, ale s ostrými daty vyjde lomítko - náhled tedy ukazuje jiný tvar než tisk. ⚠️ **Nejdřív rozhodnout:** oprava se dotkne vydané vývěsky (zlaté odtisky se přebaselinují) a zákazník uvidí změnu tvaru data. | S + rozhodnutí |
 
 **Vědomě mimo tuhle sadu:** testy linkových agend (`B14b`) - dělají se průběžně, až se na linkové
 půjde, ne dopředu. Rozřezání `TemplateDesignerViewModel` (3 543 ř., 11 rolí) - **při dotyku**, ne
@@ -191,9 +190,8 @@ je od 17. 8. srovnaný se zastávkovým (`B95`, archiv) a hlídá ho `AgendaSche
 pole přidávej pod týmž názvem, jaký pro tutéž věc používá vývěska.
 
 **Pro budoucí linkovou šablonu MHD** (z `B95`): `{CISLO_LINKY}` je **licenční** číslo, protože tak
-to má vývěska - veřejné označení je pod `{LOKALNI_OZNACENI_LINKY}`. A `{DATUM_PLATNOSTI_OD}` vyjde
-u MHD s lomítky (`01/11/2018`), viz `B96`. Existující AD šablony se ani jedno netýká: AD posílá
-jediné číslo linky a datum už dřív s tečkami.
+to má vývěska - veřejné označení je pod `{LOKALNI_OZNACENI_LINKY}`. Existující AD šablony se to
+netýká, AD posílá jediné číslo linky. Datum platnosti je od `B96` v obou agendách české.
 
 | # | Blok | Vel. |
 |---|---|---|

@@ -39,6 +39,28 @@ a podmíněnou viditelností) a připravené bloky agend, které pohltí `B66` (
 výběru a sloučení. Formulář buňky je vědomě mimo driftové testy schémat (jeho výchozí hodnoty se
 nikdy nezobrazí) a nahrazuje je vlastní test pokrytí kaskádou.
 
+## 2026-08-18 ✅ - `B96`: datum platnosti u MHD s tečkami, ne s lomítky
+
+Detail → changelog 2026-08-18. Zastávková vývěska MHD tiskla `01/11/2018`, AD vedle ní
+`11.12.2022`. Sjednoceno na český tvar; formátování je nově v jednom sdíleném helperu
+`BaseAgenda.FormatDatum` (dva konzumenti → extrakce oprávněná).
+
+**Neodvoditelné - past, kvůli které to vzniklo:** `$zd(h, 4)` vypadá jako evropský formát, ale
+dává `dd/mm/yyyy` **s lomítky**. Helper skládá datum z ISO tvaru (`$zd(h, 3)`) po kusech, aby
+výstup nezávisel na tom, jaký oddělovač který `$ZDATE` formát zvolí. Varování je u helperu.
+
+**Lokalizace vědomě ne** (rozhodnutí Jan 2026-08-18): tvar je napevno český, protože všichni
+zákazníci tisknou česky - lokalizační vrstva by dnes byla bez konzumenta. Až vznikne první
+jinojazyčná sestava, nahradí se tělo helperu a volání se nemění.
+
+**Druhá polovina bloku padla s tím:** vzorová data pro náhled už tečky měla, takže náhled
+ukazoval jiný tvar než tisk. Teď sedí obojí.
+
+⚠️ **Přebaselinovány tři zlaté odtisky MHD** (`ZastavkoveJrMhdGoldTest`) - doložené, ne odhadnuté:
+výstup linky 1003 sejmutý před a po změně se liší **160 znaky a všechny do jednoho jsou
+lomítko → tečka**; počty (stránky, zastávky, odjezdy, poznámky) zůstaly ve všech třech odtiscích
+shodné do jednoho. Caché sada 110/110.
+
 ## 2026-08-17 ✅ - `B94`: reference tabulkových prvků srovnaná s kódem
 
 Blok mluvil o dvou zastaralých tvrzeních v `elementy-architektura.md`; **při čtení proti kódu jich
