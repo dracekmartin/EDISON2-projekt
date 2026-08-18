@@ -80,6 +80,32 @@ public class NovackovaOrientaceTests
         Assert.Contains("\"SortDescending\", \"Směr\"", text);
     }
 
+    /// <summary>
+    /// Nápověda slibuje u pevné tabulky vlastnosti buňky (Alt+Enter) a vlastnosti řádku s podmínkou
+    /// viditelnosti - obojí jede na serverovém schématu, takže kdyby se pole přejmenovala, posílala
+    /// by nápověda uživatele na místo, kde nic není.
+    /// </summary>
+    [Fact]
+    public void Napoveda_VlastnostiBunkyARadkuOpravduExistuji()
+    {
+        Assert.Contains("\"Format\", \"Formát hodnoty\"", ClsText("TableCellEdit.cls"));
+        Assert.Contains("\"Style\", \"cellstyle\"", ClsText("TableCellEdit.cls"));
+
+        var radek = ClsText("TableRowEdit.cls");
+        Assert.Contains("\"BackgroundColor\", \"Barva pozadí\"", radek);
+        Assert.Contains("AddConditions(form, \"řádek\")", radek);
+    }
+
+    /// <summary>Nápověda i příručka tvrdí, že se rozměr tabulky zadává při vložení.</summary>
+    [Fact]
+    public void Napoveda_RozmerTabulkySeOpravduZadavaPriVlozeni()
+    {
+        var text = ClsText("TableInsertEdit.cls");
+
+        Assert.Contains("\"Columns\", \"Počet sloupců\"", text);
+        Assert.Contains("\"Rows\", \"Počet řádků\"", text);
+    }
+
     // ── Parsování .cls (stejný zdroj pravdy jako drift testy schémat) ─────────
 
     private static readonly Regex GroupRx = new(

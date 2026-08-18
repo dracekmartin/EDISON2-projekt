@@ -235,6 +235,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
                 new("Kód - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
                 new("Dynamická tabulka - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
+                new("Pevná tabulka - mřížku vyplňujete sami (rozměr zadáte při vložení)", "paleta"),
                 new("Zastávky JŘ - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
                 new("Mřížka odjezdů JŘ - minuty po skupinách dnů", "paleta (JŘ agenda)"),
                 new("Legenda poznámek JŘ - značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
@@ -242,6 +243,28 @@ public class HelpDialogViewModel : EDViewModel
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
                   "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr), min/max počet řádků " +
                   "a souhrnné řádky (SUM, COUNT, AVG…). Vše v dialogu tabulky (dvojklik).",
+        },
+
+        new HelpSection
+        {
+            Title = "▦ Pevná tabulka - vyplňování",
+            Entries =
+            [
+                new("Dovnitř do buňky (rovnou do té, na kterou kliknete)", "Alt+klik"),
+                new("Dovnitř do naposledy kliknuté buňky / upravit obsah", "F2"),
+                new("Posun po buňkách / potvrdit a dál", "šipky / Tab / Enter"),
+                new("Psaní přepíše obsah buňky, Esc vede ven", "psaní / Esc"),
+                new("Nabídka datových polí uvnitř buňky", "napsat {"),
+                new("Výběr více buněk (obdélník)", "táhnout / Shift+klik / Shift+šipky / Ctrl+A"),
+                new("Tučné / kurzíva / podtržení buňky (i během psaní)", "Ctrl+B / Ctrl+I / Ctrl+U"),
+                new("Vlastnosti buňky - písmo, barvy, formát hodnoty", "Alt+Enter"),
+                new("Vymazat obsah buněk (ne prvek)", "Delete"),
+                new("Řádky a sloupce, sloučení buněk, vlastnosti řádku", "pravý klik"),
+                new("Šířka sloupce / výška řádku", "táhnout vnitřní hranici"),
+            ],
+            Tip = "Obsah z Excelu jde vložit rovnou (Ctrl+V) - tabulka se dorovná. Vlastnosti řádku "
+                  + "nabízejí podmínku viditelnosti: řádek se vytiskne, jen když podmínka platí "
+                  + "(např. {VS} schová řádek u dokladu bez variabilního symbolu).",
         },
 
         new HelpSection
