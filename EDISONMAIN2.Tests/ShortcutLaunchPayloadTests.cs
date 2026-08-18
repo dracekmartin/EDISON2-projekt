@@ -97,11 +97,4 @@ public class ShortcutLaunchPayloadTests
 
         Assert.False(payload.JdeOReportShortcut);
     }
-
-    [Fact]
-    public void NeedsPayload_OnlyForNonMenuKinds()
-    {
-        Assert.False(ShortcutLaunchPayloadCodec.NeedsPayload(Report("1003", ShortcutKind.MenuModule)));
-        Assert.True(ShortcutLaunchPayloadCodec.NeedsPayload(Report("1003", ShortcutKind.PrintReport)));
-    }
 }

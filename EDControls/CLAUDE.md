@@ -110,5 +110,5 @@ ať se okna nové aplikace nemíchají se shellem.
 
 `CACHE/EDInputForm.inc` - `#define` konstanty wire kontraktu (typy polí, separátory,
 viditelnosti) - **musí sedět s C# stranou**. Třídy per control v `CACHE/ALVA/EDControls/`
-(`EDInputForm/`, `EDList/`, `UserData.cls`) + testy v `Tests/` (viz root CLAUDE.md,
+(`EDInputForm/`, `EDList/`, `UserData.cls`, `DesktopShortcuts.cls`) + testy v `Tests/` (viz root CLAUDE.md,
 sekce Testy).

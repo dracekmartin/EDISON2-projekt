@@ -100,8 +100,10 @@ Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `Desktop
 `ShortcutKind`, ★ ve stromu umí jen `MenuModule` (= záložka Oblíbené). Identita je `Key`
 (`Kind|ElementId|Id`). Položka, kterou aktuální strom nezná (licence, `hidden`), se
 **nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní druhy
-už jde **spustit** (14. arg hosta, `ShortcutLaunchPayloadCodec`), ale ne vytvořit z agendy -
-kanál modul→shell chybí, viz [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md).
+(tiskové sestavy, pohledy DS) zapisují agendy **přímo do Caché** (`ALVA.EDControls.DesktopShortcuts`,
+týž blob, který shell čte) a spouští se 14. argem hosta. Shell si blob přenačte po ukončení
+agendy (`LegacyModuleExited`), takže dlaždice nenaskočí okamžitě - obojí i s pastmi
+v [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md).
 Dlaždice ukazuje **dlouhý název** (`ExecutableModule.LongName`, legacy `nameEx`; fallback
 krátký) a cestu agendou v ToolTipu (`Seed` ji dostává delegátem) - mimo strom chybí kontext,
 který krátký název zjednoznačňuje. Obojí odvozené ze stromu, nepersistuje se

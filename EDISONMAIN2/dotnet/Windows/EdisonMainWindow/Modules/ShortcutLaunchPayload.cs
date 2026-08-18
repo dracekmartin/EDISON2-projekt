@@ -54,12 +54,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>Tiskovou sestavu spouští procedura balíku (1), ostatní druhy forma (0).</summary>
         private static int CallTypeOf(ShortcutKind kind) => kind == ShortcutKind.PrintReport ? 1 : 0;
 
-        /// <summary>
-        /// <c>true</c> = zástupce se spouští přes 14. argument (procedura / forma s payloadem).
-        /// Modul hlavní nabídky se spouští běžnou cestou, payload nepotřebuje.
-        /// </summary>
-        public static bool NeedsPayload(DesktopShortcut shortcut) => shortcut.Kind != ShortcutKind.MenuModule;
-
         public static string Encode(DesktopShortcut shortcut)
         {
             var payload = new ShortcutLaunchPayload
@@ -89,12 +83,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(buffer.ToString()));
         }
 
-        /// <summary>Zpětný převod - jen pro testy kontraktu; za běhu dekóduje host.</summary>
+        /// <summary>Zpětný převod - jen pro testy kontraktu, za běhu dekóduje host.</summary>
         public static ShortcutLaunchPayload Decode(string encoded)
         {
             var xml = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
             using var reader = new StringReader(xml);
             return (ShortcutLaunchPayload)Serializer.Deserialize(reader)!;
         }
+
     }
 }

@@ -32,6 +32,24 @@ public class WindowNavigator : IWindowNavigator
 
     private readonly List<LegacyProcessEntry> _legacyProcesses = [];
 
+    public event Action? LegacyModuleExited;
+
+    /// <summary>
+    /// Napojí notifikaci o konci modulu. `EnableRaisingEvents` je nutné zapnout explicitně;
+    /// `Exited` chodí z thread poolu, takže se marshaluje na UI vlákno (a při shutdownu, kdy
+    /// `Application.Current` je null, se zahodí - není komu doručit).
+    /// </summary>
+    private void WatchForExit(Process prc)
+    {
+        try
+        {
+            prc.EnableRaisingEvents = true;
+            prc.Exited += (_, _) =>
+                Application.Current?.Dispatcher.BeginInvoke(() => LegacyModuleExited?.Invoke());
+        }
+        catch { /* proces mohl skončit dřív, než jsme se stihli napojit */ }
+    }
+
     public void Show(Window window)
     {
         WireUp(window);
@@ -50,7 +68,9 @@ public class WindowNavigator : IWindowNavigator
     {
         if (TryFocusExistingLegacy(exeName, formFqn, inputParam)) return;
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        if (prc != null) _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
+        if (prc == null) return;
+        _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
+        WatchForExit(prc);
     }
 
     public async Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
@@ -61,6 +81,7 @@ public class WindowNavigator : IWindowNavigator
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
         _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
+        WatchForExit(prc);
         await WaitForModuleWindowAsync(prc);
     }
 

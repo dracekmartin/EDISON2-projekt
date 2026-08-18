@@ -351,6 +351,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _shortcuts.SlotsChanged += PersistShortcuts;
             // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
+            // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení
+            // si blob přečteme znovu, jinak by dlaždice naskočila až po restartu shellu.
+            WindowNavigator.LegacyModuleExited += () => _ = ReloadShortcutsAsync();
 
             _initialLicence = initialLicence;
         }
@@ -477,6 +480,27 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Oblíbené + používanost jsou per-user × IDFa → aplikují se po (pře)stavbě stromů.
+        /// <summary>
+        /// Přenačte plochu z Caché. Agendy zapisují zástupce přímo na server (nemají na shell
+        /// spojení), takže po jejich ukončení může mít blob víc, než co drží tenhle shell.
+        /// Ticho při chybě je záměr - kvůli nedostupnému serveru nemá smysl obtěžovat uživatele,
+        /// který zrovna zavřel agendu.
+        /// </summary>
+        private async Task ReloadShortcutsAsync()
+        {
+            if (_modulePrefs is null) return;
+            var stored = await _modulePrefs.LoadShortcutsAsync();
+            var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
+            _suppressFavoritesSync = true;
+            _shortcuts.Seed(AllExecutables(), stored, exe =>
+                labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
+                    ? label.Path : "");
+            _suppressFavoritesSync = false;
+
+            RefreshFamilyFavoriteFlags();
+            RebuildFavoritesTree();
+        }
+
         private void ApplyPersonalization(SessionData data)
         {
             _usage = data.Usage;
@@ -1054,35 +1078,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (shortcut.Module is { } module) { OpenModuleCommand.Execute(module); return; }
             LaunchShortcutCommand.Execute(shortcut);
-        }
-
-        /// <summary>
-        /// Obsluha registračního kanálu (agenda → shell, <see cref="ShortcutPipeServer"/>).
-        /// Volá se z thread poolu, ale plocha je <c>ObservableCollection</c> - proto všechno přes
-        /// dispatcher. `Invoke` (ne Begin): modul čeká na odpověď, hlavně u dotazu Exists.
-        /// </summary>
-        public string HandleShortcutRequest(ShortcutPipeRequest request)
-        {
-            var payload = ShortcutLaunchPayloadCodec.Decode(request.Payload);
-            var shortcut = ShortcutLaunchPayloadCodec.ToShortcut(payload, request.Exe, request.FormFqn);
-            if (shortcut is null)
-                return ShortcutPipeProtocol.Error("neznámý typ zástupce");
-
-            return Application.Current.Dispatcher.Invoke(() =>
-            {
-                // Uložení neřešíme - změna kolekce spustí SyncFavorites, který persistuje.
-                switch (request.Op)
-                {
-                    case ShortcutPipeOp.Exists:
-                        return ShortcutPipeProtocol.Bool(_shortcuts.ContainsKey(shortcut.Key));
-                    case ShortcutPipeOp.Create:
-                        _shortcuts.AddOrUpdate(shortcut);
-                        return ShortcutPipeProtocol.Ok;
-                    default:
-                        _shortcuts.RemoveKey(shortcut.Key);
-                        return ShortcutPipeProtocol.Ok;
-                }
-            });
         }
 
         // Zástupce mimo hlavní nabídku (tisková sestava, uložený pohled): host ho místo formy

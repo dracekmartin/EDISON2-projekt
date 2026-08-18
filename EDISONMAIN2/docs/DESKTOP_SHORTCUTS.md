@@ -1,17 +1,17 @@
-# Plocha se zástupci - model a chybějící kanály
+# Plocha se zástupci - model a kanály k legacy modulům
 
 Proč tento dokument: v legacy EDISONu jsou **oblíbené** a **plocha se zástupci** dvě různé
 věci a plocha je nadmnožina. EDISONMAIN2 je zpočátku sloučil do jedné dlaždicové plochy
 klíčované `ElementId`, takže položka mimo hlavní nabídku (tisková sestava, pohled DS) neměla
-jak vzniknout. Model už je obecný (`DesktopShortcut`), ale **kanály k legacy modulům chybí** -
-tady je jejich návrh, ať se legacy kontrakty nemusí dohledávat znovu.
+jak vzniknout. Dnes je model obecný (`DesktopShortcut`) a oba kanály k legacy modulům stojí;
+tady jsou jejich kontrakty a pasti, ať se legacy strana nemusí dohledávat znovu.
 
 ## Model položky
 
 | legacy `DesktopShortcutItemType` | `ShortcutKind` | legacy `CallType` | odkud vzniká |
 | --- | --- | --- | --- |
 | `FormularHlavniNabidky` | `MenuModule` | `Formular` | ★ ve stromu / DnD na plochu (**hotovo**) |
-| `FormularDanehoBaliku` | `PackageForm` | `Formular` | modul |
+| `FormularDanehoBaliku` | `PackageForm` | `Formular` | modul (registrační kanál) |
 | `SestavaTiskova` | `PrintReport` | `Procedura` | modul (`ProcedureIO.GetDesktopShortcut`) |
 | `SestavaVyberova` | `SelectReport` | `Formular` + `ReportShortcut` | správce sestav (ESREPORT, HIM, SKLADYREPORT) |
 | `PohledDatovehoSkladu` | `DwhView` | `Formular` + `ReportShortcut` | DSVIEWER |
@@ -29,31 +29,47 @@ server dohledává uložené parametry tisku (`TISK/frmReportShow.vb`
 kterou formu spustit. „Umístit na plochu" je jen per-user zaškrtnutí v dialogu
 `formEDISONMAINShortcutList` (remove-all-then-recreate nad zaškrtnutými).
 
-## Kanál registrace (modul → shell)
+## Kanál registrace (agenda → plocha) - HOTOVO
 
 Legacy: modul běžící v procesu shellu volá `clsForm.CreateShortcut`; samostatně spuštěný
 posílá `SerializableShortcut` .NET Remotingem (`EDLIBRARY/clsForm.vb`, případy 4 = create,
-5 = remove). V EDISONMAIN2 jsou moduly **vždy** samostatné procesy a Remoting neexistuje.
+5 = remove). V EDISONMAIN2 jsou moduly **vždy** samostatné procesy a Remoting neexistuje,
+takže dialog „Sestavy na ploše" (v agendě pod tlačítkem tisku) se sice otevřel, ale OK
+**tiše neudělalo nic**: celé tělo těch metod je uvnitř `If Me.MainEdisonForm IsNot Nothing`,
+bez else a bez chyby, a `MainEdisonForm` je pod EDISONMAIN2 vždy `Nothing` (getter hledá MDI
+kontejner, který samostatné okno nemá).
 
-**Dnes to tiše nedělá nic** a to je horší než chybějící featura: dialog „Sestavy na ploše"
-(v agendě pod tlačítkem tisku) se normálně otevře, zaškrtávátka jsou prázdná a OK neudělá nic.
-`ShortcutExists`/`CreateShortcut`/`RemoveShortcut` mají celé tělo uvnitř
-`If Me.MainEdisonForm IsNot Nothing`, bez else a bez chyby, a `MainEdisonForm` je pod
-EDISONMAIN2 vždy `Nothing` (getter hledá MDI kontejner, který samostatné okno nemá).
+Řešení: **agenda zapisuje rovnou na server**, ne shellu. Modul má vlastní MLRest session pod
+týmž uživatelem, takže píše do stejného blobu, který shell čte. Mezi procesy tak neexistuje
+žádné živé spojení, které by mohlo vypadnout.
 
-Zvolený směr: **named pipe** (jeden server na shell session, jméno odvozené od `shellGuid`,
-který modul už dostává v `args[9]`, takže nový argument netřeba). Transport patří do
-`EDISONMAIN2API`, `EDLIBRARY` dostane jen aditivní seam - interface `IShortcutSink` a
-`Public Shared ShortcutSink` na `EDForm`, nová **první** větev ve všech třech metodách.
-Aditivní proto, že `EDLibrary.dll` referencuje 185 projektů bez strong name a s pevnou
-`AssemblyVersion` - dokud se nemění existující signatury, jde o drop-in výměnu dvou souborů
-a agendy se nepřebuildovávají.
+- `ALVA.EDControls.DesktopShortcuts` (`Add` / `Remove` / `Exists`) je **doménová operace nad
+  blobem** `UserData(scope "EDISONMAIN2", key "Shortcuts")`. Read-modify-write proběhne
+  v jednom Caché jobu - přes generické `UserData.Save` by si souběžný zápis modulu a shellu
+  přepsal celý seznam.
+- **Slot server nepřiděluje** (klient chybějící pozici doplní v `Seed`), ale při přepisu
+  existujícího klíče ho **zachová** - jinak by aktualizace z modulu přestěhovala dlaždici.
+- `EDLIBRARY` dostala **jen aditivní seam** - `EDFormInterface.IShortcutSink` a
+  `EDForm.ShortcutSink` (shared), plus **první** větev ve všech třech metodách (do stávajícího
+  těla se pod EDISONMAIN2 stejně nedojde). O úložišti neví nic. Aditivní proto, že
+  `EDLibrary.dll` referencuje 185 projektů bez strong name a s pevnou `AssemblyVersion` -
+  dokud se nemění existující signatury, jde o drop-in výměnu a agendy se nepřebuildovávají.
+- Implementace je `EDISONMAIN2API/CacheShortcutSink`: doplní **cestu k agendě** (`args[11]`)
+  a **FQN hostitelské formy** (`EDConversion.Form.GetTypeString`, což umí jen legacy strana),
+  JSON skládá ručně, aby host nepotřeboval JSON knihovnu.
 
-Varianta „modul zapíše rovnou do Caché" byla zvažovaná a zamítnutá: `UserData.Save` přepisuje
-celý blob pro daný klíč, takže by si zápis modulu a přesouvání dlaždic v shellu navzájem
-přepisovaly, a shell by se o novince dozvěděl až při dalším čtení. Pipe navíc umožní
-`ShortcutExists` (zaškrtávátka v dialogu odpovídají skutečnosti), což přes blob jde taky,
-ale s tím rozdílem, že dlaždice naskočí okamžitě.
+**Cena: dlaždice nenaskočí okamžitě.** Shell si blob přenačte, až agenda skončí
+(`IWindowNavigator.LegacyModuleExited` → `ReloadShortcutsAsync`).
+
+### Proč ne named pipe
+
+Zkoušeno a zahozeno. Roura fungovala v testech, ale v provozu **zmrazila dialog v agendě**:
+`ShortcutExists` se volá pro každý řádek seznamu (VOZIDLA2 jich nabízí přes třicet), takže
+každý výpadek kanálu se násobil. Postupně padly tři různé příčiny (dlouhý connect timeout,
+accept smyčka, která po výjimce nechala viset rouru bez acceptoru, a čtení odpovědi bez
+timeoutu) a po každé opravě se zaseklo jinde. Živý kanál mezi procesy je tu prostě víc
+pohyblivých dílů, než featura unese - MLRest je request/response s vlastním timeoutem
+a stejnou cestou agenda mluví se serverem celou dobu.
 
 ## Kanál spuštění (shell → modul) - HOTOVO
 

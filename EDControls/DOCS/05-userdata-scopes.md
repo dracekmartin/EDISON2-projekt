@@ -296,8 +296,9 @@ sestavy / pohledu DS, `Slot` je pozice dlaždice (chybí → pořadí), `Report`
 Záložka stromu „Oblíbené" = položky s `Kind = MenuModule` (★), „Používané" = žebříček dle
 `ModuleUsage`. ElementId = numerické ID z EDISFormEnum (string). **Položku, kterou aktuální
 strom nezná (licence, hidden), klient nezobrazí, ale uloží zpátky** - filtrace při ukládání
-by ji tiše smazala. Model a chybějící kanály k legacy modulům:
-`EDISONMAIN2/docs/DESKTOP_SHORTCUTS.md`.
+by ji tiše smazala. **Do téhož klíče zapisují i legacy agendy** - ne přes `UserData.Save`
+(ten přepisuje celý blob), ale přes `ALVA.EDControls.DesktopShortcuts` (`Add`/`Remove`/`Exists`),
+která sloučení udělá v jednom jobu. Model i kanály: `EDISONMAIN2/docs/DESKTOP_SHORTCUTS.md`.
 
 **Stav:** ✅ Implementováno (2026-06-22); `Shortcuts` nahradilo `Favorites`+`FavoriteSlots` (2026-08-03).
 

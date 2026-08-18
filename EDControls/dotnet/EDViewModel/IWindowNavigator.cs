@@ -40,6 +40,12 @@ public interface IWindowNavigator
                                  bool shareShellSession = true, string inputParam = "");
 
     /// <summary>
+    /// Skončil legacy modul. Agendy zapisují zástupce na plochu přímo do Caché (nemají na shell
+    /// spojení), takže tohle je moment, kdy si je shell má přenačíst.
+    /// </summary>
+    event Action? LegacyModuleExited;
+
+    /// <summary>
     /// Stejné jako <see cref="ShowLegacy"/>, ale blokuje až do zavření okna.
     /// Pre-login admin override (LicenceVerifier) volá s shareShellSession=false — shell ještě
     /// nemá VerifyLic zámek a CacheLocks=1 by každý request modulu padal na LockExist.
