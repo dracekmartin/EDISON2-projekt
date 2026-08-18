@@ -736,78 +736,30 @@ public static class AiGuidedScheduleBuilder
                     debug.Add($"    → placeholder se překrývá s existujícím obrázkem - skip");
                     continue;
                 }
-                // Zástupný šedý rámeček se nevkládá: v předloze na tom místě žádný obrázek není
-                // (model si ho vymyslel, nebo je to jen orámovaná plocha) a prázdný čtverec
-                // v šabloně vypadá jako chyba importu. Informace se místo toho napíše do protokolu.
-                UserNotes.Add($"Model hlásil obrázek ({RoleCesky(imgMap.Role)}) na pozici "
-                              + $"{imgX:0.#}, {imgY:0.#} mm, ale v předloze tam žádný není - "
-                              + "pokud tam patří, vložte ho ručně.");
-                debug.Add($"    → bez obrázku v PDF: nevkládám nic, jen do protokolu");
-            }
-        }
-
-        // 7. Detekce nepokrytých grafických oblastí - oblasti stránky kde nejsou ani texty
-        //    ani schedule elementy, ale mohly by obsahovat vektorovou grafiku (logo, QR kód)
-        {
-            var coveredAreas = new List<(float Left, float Top, float Right, float Bottom)>();
-
-            // Schedule elementy pokrývají oblast
-            foreach (var el in vision.Elements)
-                coveredAreas.Add((el.Left * pageW, el.Top * pageH, el.Right * pageW, el.Bottom * pageH));
-
-            // Textové elementy pokrývají oblast (z existingElements, ne z result)
-            foreach (var te in existingElements.OfType<TextElement>())
-                coveredAreas.Add((te.X, te.Y, te.X + te.Width, te.Y + (te.Height ?? 6)));
-
-            // Obrázky/QR/placeholdery z kroků 5+6 pokrývají oblast - bez toho krok 7 položí
-            // prázdný placeholder přes už přidané logo (překrývající se „falešný element").
-            foreach (var el in result)
-                coveredAreas.Add((el.X, el.Y, el.X + el.Width, el.Y + (el.Height ?? 6)));
-
-            // Najít prázdné oblasti v záhlaví stránky (nad schedule elementy)
-            float scheduleTop = vision.Elements.Count > 0
-                ? vision.Elements.Min(e => e.Top) * pageH
-                : pageH * 0.15f;
-
-            if (scheduleTop > MinHeaderSpaceAboveScheduleMm)
-            {
-                // Rozdělit záhlaví na sloupce a najít nepokryté
-                const int cols = 6;
-                float colW = pageW / cols;
-
-                for (int c = 0; c < cols; c++)
+                // Obrázek v předloze nejde vytáhnout (bývá nakreslený čarami, ne vložený jako
+                // bitmapa), ale model ho vidí a ví KDE je - vloží se prázdný rámeček na tu pozici,
+                // aby uživateli stačilo nahrát soubor. Šedý „placeholder" to není: prázdný rámeček
+                // je regulérní obrázkový prvek, jen zatím bez obsahu.
+                result.Add(new ImageElement
                 {
-                    float colLeft = c * colW;
-                    float colRight = (c + 1) * colW;
-                    float colMidX = (colLeft + colRight) / 2;
-                    float colMidY = scheduleTop / 2;
-
-                    bool isCovered = coveredAreas.Any(a =>
-                        colMidX >= a.Left - 2 && colMidX <= a.Right + 2
-                        && colMidY >= a.Top - 2 && colMidY <= a.Bottom + 2);
-
-                    if (!isCovered)
-                    {
-                        // Nepokrytá oblast - vytvořit prázdný ImageElement placeholder
-                        float placeholderW = colW - 4;
-                        float placeholderH = Math.Min(scheduleTop - 4, placeholderW); // max čtverec
-                        if (placeholderW < 8 || placeholderH < 8) continue;
-
-                        result.Add(new ImageElement
-                        {
-                            Id = Guid.NewGuid(),
-                            X = Math.Max(0, colLeft + 2 - marginLeft),
-                            Y = Math.Max(0, 2 - marginTop),
-                            Width = placeholderW,
-                            Height = placeholderH,
-                            ZIndex = zIndex++,
-                            ImageBase64 = null, // prázdný placeholder - uživatel nahraje obrázek
-                        });
-                        debug.Add($"  → Empty area ImageElement placeholder at col {c}: ({colLeft + 2:0.#},{2:0.#}) {placeholderW:0.#}×{placeholderH:0.#}mm");
-                    }
-                }
+                    Id = Guid.NewGuid(),
+                    X = Math.Max(0, imgX),
+                    Y = Math.Max(0, imgY),
+                    Width = imgW,
+                    Height = imgH,
+                    ZIndex = zIndex++,
+                    ImageBase64 = null,
+                });
+                UserNotes.Add($"Na pozici {imgX:0.#}, {imgY:0.#} mm je v předloze "
+                              + $"{RoleCesky(imgMap.Role)} - vložen prázdný rámeček, nahrajte do něj obrázek.");
+                debug.Add($"    → prázdný rámeček na pozici z předlohy (obrázek nejde z PDF vytáhnout)");
             }
         }
+
+        // Krok „prázdné místo v záhlaví = nejspíš logo" byl zrušen (Jan 18. 8.): dělil záhlaví
+        // na šest stejných sloupců a do prázdného položil rámeček, takže jeho pozice nevycházela
+        // z předlohy, ale ze šířky stránky - v šabloně pak seděl jinde než logo na papíře.
+        // Prázdný rámeček vzniká jen tam, kde model obrázek opravdu viděl (krok 6).
 
         return result;
     }

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-18 (16) - 📥 rámeček pro logo se vkládá podle předlohy, ne do vymyšlené mezery
+
+Uživatel si všiml, že **obrázek je po importu vždycky trochu posunutý**, zatímco texty sedí
+(nález Jan 18. 8.). Nebyla to nepřesnost: rámeček neměl v předloze žádnou oporu. Import rozdělil
+pruh nad jízdním řádem na **šest stejných sloupců**, zjistil, který je prázdný, a doprostřed něj
+rámeček položil - pozice tedy vycházela ze šířky stránky, ne z papíru. V testu to bylo vidět
+číselně: model logo hlásil na 168 mm, rámeček vznikl na 177 mm (začátek šestého sloupce).
+
+Nově vzniká prázdný rámeček **jen tam, kde model obrázek opravdu vidí**, v jeho rozměrech; když
+žádný nehlásí, nevznikne nic. Zároveň je to **prázdný obrázkový prvek**, ne šedý obdélník - stačí
+do něj nahrát soubor, není potřeba ho mazat a vkládat obrázek znovu. Do protokolu se připíše
+„na pozici X, Y je v předloze logo - vložen prázdný rámeček".
+
+Obrázky nakreslené čarami (typicky logo dopravce) z PDF vytáhnout nejdou, proto rámeček zůstává
+prázdný - to je záměr, ne chyba.
+
+Ověřeno: build 0 chyb, .NET 1082/1082.
+
 ## 2026-08-18 (15) - 📥 import: obecné zásady měření a mapování místo záplat
 
 Porovnání protokolu se skutečnými rozměry v předloze ukázalo dvě systematické odchylky. Obojí je
