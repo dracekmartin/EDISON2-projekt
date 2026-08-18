@@ -539,6 +539,13 @@ public static class AiGuidedScheduleBuilder
     /// tabulky, ne dvacet popisků. Rozpadlo se to takhle 18. 8. u vývěsky ČSAD.</remarks>
     private const float ZahlaviPasMm = 8f;
 
+    /// <summary>Přesah pod vyznačenou oblastí, který k prvku ještě patří (mm).</summary>
+    /// <remarks>Spodní hrana je od modelu taky jen odhad. Pokračovací řádek legendy poznámek
+    /// (dlouhá poznámka zalomená na víc řádků) nebo poslední řádek tabulky spadne těsně pod ni
+    /// a jako samostatný text v šabloně přebývá - nález Jan 18. 8. Menší než pás záhlaví: pod
+    /// prvkem bývají legitimní popisky (tarifní doložka pod jízdním řádem), nad ním ne.</remarks>
+    private const float PresahPodPrvkemMm = 4f;
+
     /// <summary>
     /// Leží blok uvnitř jízdněřádového prvku, nebo v pásu jeho záhlaví těsně nad ním? Pak si ho
     /// prvek kreslí sám a jako text do šablony nepatří.
@@ -548,8 +555,9 @@ public static class AiGuidedScheduleBuilder
     {
         float cy = b.Y + b.Height / 2;
         return boxes.Any(box =>
-            b.X + b.Width > box.L && b.X < box.R          // vodorovně se překrývá s prvkem
-            && cy >= box.T - ZahlaviPasMm && cy <= box.B); // svisle uvnitř nebo v pásu záhlaví
+            b.X + b.Width > box.L && b.X < box.R           // vodorovně se překrývá s prvkem
+            && cy >= box.T - ZahlaviPasMm                  // uvnitř nebo v pásu záhlaví nad prvkem
+            && cy <= box.B + PresahPodPrvkemMm);           // nebo těsně pod jeho spodní hranou
     }
 
     /// <summary>Kolik samostatných čísel se při posledním importu vynechalo - pro protokol.</summary>
@@ -756,11 +764,72 @@ public static class AiGuidedScheduleBuilder
             }
         }
 
+        // 7. Prázdné orámované boxy z předlohy = místo pro obrázek (logo). Bere se geometrie
+        //    papíru, ne odhad modelu: model logo hlásí jen někdy a pokaždé jinde, kdežto rámeček
+        //    v PDF má přesnou pozici i velikost. Text uvnitř = rámeček kolem textu, ne slot.
+        foreach (var ramecek in PrazdneRamecky(page, vision, result, existingElements))
+        {
+            result.Add(new ImageElement
+            {
+                Id = Guid.NewGuid(),
+                X = Math.Max(0, ramecek.X - marginLeft),
+                Y = Math.Max(0, ramecek.Y - marginTop),
+                Width = ramecek.Width,
+                Height = ramecek.Height,
+                ZIndex = zIndex++,
+                ImageBase64 = null,
+            });
+            UserNotes.Add($"V předloze je prázdný rámeček na pozici {ramecek.X:0.#}, {ramecek.Y:0.#} mm "
+                          + "(bývá to místo pro logo) - vložen prázdný obrázek, nahrajte do něj soubor.");
+            debug.Add($"  → prázdný rámeček z předlohy: ({ramecek.X:0.#},{ramecek.Y:0.#}) {ramecek.Width:0.#}×{ramecek.Height:0.#}mm");
+        }
+
         // Krok „prázdné místo v záhlaví = nejspíš logo" byl zrušen (Jan 18. 8.): dělil záhlaví
         // na šest stejných sloupců a do prázdného položil rámeček, takže jeho pozice nevycházela
         // z předlohy, ale ze šířky stránky - v šabloně pak seděl jinde než logo na papíře.
         // Prázdný rámeček vzniká jen tam, kde model obrázek opravdu viděl (krok 6).
 
+        return result;
+    }
+
+    /// <summary>Nejmenší rozumný rámeček pro obrázek (mm) - menší bývá rámeček kolem hodnoty.</summary>
+    private const float MinRamecekMm = 8f;
+
+    /// <summary>
+    /// Prázdné orámované boxy předlohy - obdélník, který je vidět (má obrys), nic v něm není
+    /// napsané a nepřekrývá se s jízdněřádovým prvkem ani s tím, co už v šabloně je. V tiskových
+    /// sestavách to bývá místo vyhrazené pro logo; import z něj udělá prázdný obrázkový prvek,
+    /// takže uživateli stačí nahrát soubor.
+    /// </summary>
+    private static List<ExtractedRectangle> PrazdneRamecky(
+        ExtractedPage page, AiVisionResult vision,
+        List<TemplateElement> jizVlozene, List<TemplateElement> existujici)
+    {
+        var scheduleBoxes = vision.Elements
+            .Select(e => (L: e.Left * page.WidthMm, T: e.Top * page.HeightMm,
+                          R: e.Right * page.WidthMm, B: e.Bottom * page.HeightMm))
+            .ToList();
+
+        var result = new List<ExtractedRectangle>();
+        foreach (var r in page.Rectangles)
+        {
+            if (r.Width < MinRamecekMm || r.Height < MinRamecekMm) continue;
+            if (r.StrokeColorHex is null || r.StrokeColorHex == ColorHex.Transparent) continue;
+
+            bool obsahujeText = page.Words.Any(w =>
+                w.X + w.Width / 2 > r.X && w.X + w.Width / 2 < r.X + r.Width
+                && w.Y + w.Height / 2 > r.Y && w.Y + w.Height / 2 < r.Y + r.Height);
+            if (obsahujeText) continue;
+
+            float cx = r.X + r.Width / 2, cy = r.Y + r.Height / 2;
+            if (scheduleBoxes.Any(b => cx >= b.L && cx <= b.R && cy >= b.T && cy <= b.B)) continue;
+
+            bool prekryv = jizVlozene.Concat(existujici).Any(e =>
+                cx >= e.X && cx <= e.X + e.Width && cy >= e.Y && cy <= e.Y + (e.Height ?? 0));
+            if (prekryv) continue;
+
+            result.Add(r);
+        }
         return result;
     }
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-18 (17) - 📥 místo pro logo z rámečku v předloze, ne z odhadu modelu
+
+Po předchozí opravě obrázek z importu **zmizel úplně** - model ho v té odpovědi nehlásil (nález
+Jan 18. 8.). Model logo vidí jen někdy a pokaždé jinde, takže se na něj u obrázků spolehnout nedá.
+
+Změřením předlohy se ukázalo, že tam **rámeček doopravdy je**: obdélník s obrysem, bez výplně
+a **bez jakéhokoli textu uvnitř**. To je v tiskových sestavách typické místo vyhrazené pro logo -
+a má přesnou pozici i velikost, na rozdíl od odhadu. Import z něj proto udělá **prázdný obrázkový
+prvek**; stačí nahrát soubor. Rámeček, ve kterém text je, se nebere (to je orámování hodnoty),
+stejně jako rámeček uvnitř jízdněřádového prvku nebo přes už vložený obrázek.
+
+Druhá oprava: **pokračovací řádek dlouhé poznámky** (zalomená legenda) spadl těsně pod legendu
+a přebýval v šabloně jako samostatný text. K prvku se proto počítá i pás **4 mm pod jeho spodní
+hranou** - hranice od modelu je odhad. Je menší než pás nad prvkem záměrně: pod jízdním řádem
+bývají legitimní popisky (tarifní doložka), nad ním ne.
+
+Ověřeno: build 0 chyb, .NET 1082/1082.
+
 ## 2026-08-18 (16) - 📥 rámeček pro logo se vkládá podle předlohy, ne do vymyšlené mezery
 
 Uživatel si všiml, že **obrázek je po importu vždycky trochu posunutý**, zatímco texty sedí
