@@ -19,28 +19,33 @@
 > než co návrhář umí. Pořadí níže je podle toho, co uživatel pozná.
 
 **`B42` Co všechno umí import z předlohy nastavit** (M, analýza hotová 18. 8.; podnět Jan 31. 7.).
-Drobné vady (`B42a`) hotové 18. 8., zbývají dva kusy:
+Drobné vady (`B42a`) a slévání čar do rastru hotové 18. 8.; zbytek:
 
 | Co | Rozsah | Stav |
 |---|---|---|
-| **`B42b` Co se z předlohy pozná, ať se neztratí** - dnes import hlásí výsledek i to, co nerozpoznal, do stavového řádku dialogu, který se v tu chvíli zavírá. Potřebuje **protokol importu** (co vzniklo, co AI nerozpoznala, co si má uživatel dodělat). Nese i „časovou osu 5-23" z odstavce níže | S–M | ⬜ |
-| **`B42c` Nastavení sestavy a vzhled prvků z předlohy** - vlastní velká otázka, viz rozbor pod tabulkou | M | ⬜ |
+| **`B42b` Protokol importu** - hotové 18. 8. v základní podobě (hláška po importu: co nastaveno, co nerozpoznáno). **Zbývá:** doplnit do něj časovou osu z předlohy („předloha má osu 5-23, nastavte si ji") a nastavení sestavy, až je bude umět `B42c` | S | 🟡 |
+| **`B42c` Vzhled prvků z předlohy** - 1. kolo hotové 18. 8. pro **seznam zastávek** (otázka i zápis se skládají z vlastností prvku). **Zbývá:** vyhodnotit na reálných předlohách, pak rozhodnout, kde se vede seznam „tohle jde poznat z obrázku", a rozšířit na mřížku odjezdů a legendu | M | 🟡 |
+| **`B42d` Nastavení sestavy z předlohy** - rozpoznaná hodnota se dnes zapíše na místo, které se při tisku nečte, a otevření importované šablony neprojde cestou, která hodnoty aplikuje. Bez téhle opravy nemá smysl se na víc voleb ptát | M | ⬜ |
 
-**K `B42c` - co analýza zjistila:** import se AI ptá **jen na tři volby** (šipka směru, hodiny od/do)
-a otázka je psaná pro MHD, přestože tímtéž režimem jde i zastávkový JŘ z AD s patnácti volbami.
-Definice všech voleb včetně popisků si přitom import ze serveru **už tahá** - používá je jen
-k dourčení typu hodnoty, ne k otázce; poskládat otázku z nich je přímočaré.
-Druhá polovina: rozpoznaná hodnota **stejně nedojede** - zapisuje se vedle hodnot, které se při tisku
-čtou, a otevření importované šablony navíc nejde cestou, která uložené hodnoty aplikuje. Bez téhle
-opravy nemá smysl se ptát na víc voleb. Hodiny od/do navíc bez přepnutí volby „Časová osa odjezdů"
-na „Vlastní rozsah" nic neudělají.
-U **vzhledu prvků** jde hlavně o to, co je z předlohy vidět na první pohled a dnes se nepřenese:
-rozdělení seznamu zastávek do oddílů vedle sebe, značky před názvem zastávky (layout DPKV),
-víc sloupců legendy poznámek, nadpis sloupce hodin.
-⚠️ Zůstává past z #12843 (`customer-requirements §0.1`): uloží se i hodnoty, kterých se nikdo nedotkl.
+**Jak se to škáluje (rozhodnuto 18. 8.):** otázka pro AI i zápis odpovědi se **generují z vlastností
+prvku** - z týchž, ze kterých se staví panel vlastností. Nová vlastnost prvku je tím pro import
+dostupná bez zásahu do importu; ručně psaný seznam v otázce byl důvod, proč import zamrzl v červenci.
+Model odpovídá popiskem volby, zápis má stejné pojistky jako formulář (nesmyslná hodnota neprojde).
 
-**Časová osa (dřívější „malý krok"):** detekci není potřeba vracet - AI ji vrací dodnes, import ji
-jen zahazuje (vědomě, protože osu řídí nastavení sestavy). Stačí ji propsat do protokolu (`B42b`).
+**Otevřeno:** kde se vede seznam „tohle jde poznat z obrázku" a podle čeho (příznak u pole v Caché
+schématu × seznam v aplikaci). **Rozhodne se až podle zkoušky na reálných předlohách** - 1. kolo
+posílá u seznamu zastávek všechny vlastnosti a v protokolu je vidět, co model trefil. Dělící čára,
+na které jsme se shodli: **vizuální ano, business ne** - co se vizuálně neliší (které zastávky se
+tisknou, odkud se bere číslo stanoviště, název pro MHD), do importu nepatří.
+
+**K `B42d`:** ptáme se jen na tři volby a otázka je psaná pro MHD, i když tímtéž režimem jde i AD
+s patnácti. Definice všech voleb včetně popisků si import ze serveru **už tahá** (dnes je používá
+jen k dourčení typu hodnoty). Hodiny od/do navíc bez přepnutí „Časová osa odjezdů" na „Vlastní
+rozsah" nic neudělají. ⚠️ Past z #12843 (`customer-requirements §0.1`): uloží se i hodnoty,
+kterých se nikdo nedotkl.
+
+**Časová osa:** detekci není potřeba vracet - AI ji vrací dodnes, import ji jen zahazuje (vědomě,
+protože osu řídí nastavení sestavy). Stačí ji propsat do protokolu (`B42b`).
 
 | Další | Stav |
 |---|---|
@@ -48,7 +53,9 @@ jen zahazuje (vědomě, protože osu řídí nastavení sestavy). Stačí ji pro
 | **JŘ import: ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
 
 Křivky/Bézier v obecném importu - low-prio, bez poptávky.
-⚠️ **Testy importu existují jen na sloupce zastávek** (9 z `B42a`) - pipeline jako celek pokrytá není.
+⚠️ **Testy importu kryjí sloupce zastávek a zápis vzhledu z předlohy** (23) - pipeline jako celek ne;
+jestli model vlastnosti pozná, se zásadně **hodnotí okem nad reálnou předlohou** (rozhodnutí Jan 18. 8.,
+místo evaluační sady).
 
 ### AI integrace - v pozadí
 

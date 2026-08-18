@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-08-18 (8) - 📥 import se ptá na vzhled seznamu zastávek a řekne, co nastavil (`B42b`/`B42c`, 1. kolo)
+
+Import dosud uměl z předlohy jen to, co měl **ručně vypsané v otázce pro AI** - tři vlastnosti.
+Proto zamrzl v červenci: každá nová vlastnost prvku by se musela dopsat na dvě místa v importu
+a nikdo na to nemyslel.
+
+Nově se otázka **skládá z prvku samotného** - z týchž vlastností, ze kterých se staví panel
+vlastností, včetně povolených hodnot. Odpověď se zapisuje týmž způsobem. Import tedy nemá vlastní
+seznam, který by se s prvky rozešel. **První kolo jde jen na seznam zastávek** (rozhodnutí Jan
+18. 8.) - na něm se pozná, co model z obrázku opravdu zvládne: stranu šipky, značky před názvem
+zastávky nebo za ním, rozdělení na oddíly vedle sebe, barvy, čáry.
+
+Na co se model **neptáme**: pozice a velikost (ty se z PDF měří přesně) a podmínky viditelnosti
+(to jsou data, ne vzhled).
+
+**Po importu vyskočí protokol** - co se z předlohy nastavilo a co se nerozpoznalo. Dosud se tyhle
+hlášky ztratily se zavřením dialogu, takže když AI něco vynechala, vypadalo to, že to import
+neumí, a nebylo jak zjistit proč.
+
+Nesmysl se do šablony nepustí: barva „tmavě modrá" ani počet oddílů 999 se nezapíšou, jen se
+vypíšou v protokolu a zůstane výchozí hodnota. Model odpovídá volným textem, takže se u výběru
+z nabídky bere i zkrácený tvar („Vlevo" místo „Vlevo (u levého okraje elementu)"), ale jen když
+sedí na jedinou volbu.
+
+Ověřeno: build 0 chyb, .NET 1058/1058 (+13). **Co model reálně pozná, ukáže až import reálné
+vývěsky** - v protokolu je vidět, co nastavil, a stačí to porovnat s předlohou.
+
 ## 2026-08-18 (7) - 📥 import z předlohy už nedělá z čar zamčený obrázek
 
 Čáry z předlohy (rámečky, linky tabulek) se při obecném importu slévaly do **jednoho obrázku na

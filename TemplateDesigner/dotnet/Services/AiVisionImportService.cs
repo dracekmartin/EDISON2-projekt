@@ -28,15 +28,18 @@ public class AiVisionImportService
     /// Analyzuje screenshot PDF stránky pomocí AI vision.
     /// Vrací sémantickou strukturu s relativními souřadnicemi nebo null při selhání.
     /// </summary>
+    /// <param name="elementSettingsCatalog">Soupis nastavitelných vlastností prvku (klíč → povolené
+    /// hodnoty) sestavený z prvku samotného; null = na vzhled prvků se neptáme.</param>
     public async Task<AiVisionResult?> AnalyzeAsync(
         string base64Png,
         ExtractedPage page,
         DataSchema? schema,
         ScheduleImportType scheduleType,
-        string apiKey)
+        string apiKey,
+        string? elementSettingsCatalog = null)
     {
         var log = new StringBuilder();
-        var systemPrompt = GetSystemPrompt(scheduleType);
+        var systemPrompt = GetSystemPrompt(scheduleType, elementSettingsCatalog);
         var userPrompt = BuildUserPrompt(page, schema);
 
         log.AppendLine("╔══════════════════════════════════════════════════════════════╗");
@@ -161,7 +164,7 @@ public class AiVisionImportService
 
     // ── System prompt - composable per agenda type ────────────────────
 
-    private static string GetSystemPrompt(ScheduleImportType type)
+    private static string GetSystemPrompt(ScheduleImportType type, string? elementSettingsCatalog = null)
     {
         var sb = new StringBuilder();
         var context = GetAgendaPromptContext(type);
@@ -181,10 +184,28 @@ public class AiVisionImportService
             sb.AppendLine(BuildTemplateParametersSection(context));
             sb.AppendLine();
         }
+        if (!string.IsNullOrWhiteSpace(elementSettingsCatalog))
+        {
+            sb.AppendLine(BuildElementSettingsSection(elementSettingsCatalog));
+            sb.AppendLine();
+        }
         sb.AppendLine(BuildOutputSection(context));
 
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Otázka na vzhled prvku poskládaná z jeho vlastních vlastností (ne ručně psaný seznam - ten
+    /// se s prvky rozešel). Model má odpovídat jen na to, co z obrázku **opravdu vidí**; nastavení,
+    /// která se vizuálně neliší, patří uživateli, ne odhadu.
+    /// </summary>
+    private static string BuildElementSettingsSection(string catalog) =>
+        @"NASTAVENÍ VZHLEDU SEZNAMU ZASTÁVEK (""elementSettings"" → ""StopList""):
+Projdi obrázek a vyplň JEN ty vlastnosti, které z něj bezpečně poznáš (šipka vlevo/vpravo, značky
+před názvem zastávky nebo za ním, počet oddílů vedle sebe, barvy…). Klíč použij PŘESNĚ tak, jak je
+uvedený níže, hodnotu právě v uvedeném tvaru.
+Co nevidíš nebo si nejsi jistý, VYNECH - výchozí hodnota je lepší než hádaná.
+" + catalog;
 
     /// <summary>
     /// Kontextové informace pro generování promptu per agenda.
@@ -524,8 +545,29 @@ public class AiVisionImportService
             TextMappings = ParseTextMappings(root),
             ImageMappings = ParseImageMappings(root),
             TemplateParameters = ParseStringDictionary(root, "templateParameters"),
+            ElementSettings = ParseElementSettings(root),
             Notes = root.GetStringOrNull("notes")
         };
+    }
+
+    /// <summary>„elementSettings": { "StopList": { "Skupina · Popisek": "hodnota" } }.</summary>
+    private static Dictionary<string, Dictionary<string, string>> ParseElementSettings(JsonElement root)
+    {
+        var result = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty("elementSettings", out var obj) || obj.ValueKind != JsonValueKind.Object)
+            return result;
+
+        foreach (var elementType in obj.EnumerateObject())
+        {
+            if (elementType.Value.ValueKind != JsonValueKind.Object) continue;
+            var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var prop in elementType.Value.EnumerateObject())
+                if (prop.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number
+                    or JsonValueKind.True or JsonValueKind.False)
+                    values[prop.Name] = prop.Value.ToString();
+            if (values.Count > 0) result[elementType.Name] = values;
+        }
+        return result;
     }
 
     private static List<AiVisionElement> ParseElements(JsonElement root)
@@ -653,6 +695,9 @@ public class AiVisionResult
     public List<AiVisionImageMapping> ImageMappings { get; init; } = [];
     /// <summary>Detekované vizuální vlastnosti → hodnoty parametrů šablony.</summary>
     public Dictionary<string, string> TemplateParameters { get; init; } = [];
+
+    /// <summary>Vzhled prvku poznaný z předlohy: typ prvku → („Skupina · Popisek" → hodnota).</summary>
+    public Dictionary<string, Dictionary<string, string>> ElementSettings { get; init; } = [];
     public string? Notes { get; init; }
 }
 

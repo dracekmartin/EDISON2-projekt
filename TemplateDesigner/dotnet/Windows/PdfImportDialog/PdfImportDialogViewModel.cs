@@ -136,6 +136,9 @@ public class PdfImportDialogViewModel : EDViewModel
 
     public Template? ImportedTemplate { get; private set; }
 
+    /// <summary>Protokol posledního importu - co se z předlohy nastavilo a co se nerozpoznalo.</summary>
+    public List<string> ImportLog { get; } = [];
+
     // Callbacky - View je napojí v konstruktoru
     public Func<string?>? RequestOpenFile { get; set; }
 
@@ -269,6 +272,7 @@ public class PdfImportDialogViewModel : EDViewModel
                 StatusText = $"Import dokončen: {template.Sections.Count} sekcí, {elementCount} elementů";
             }
 
+            ReportImportLog();
             CloseDialog(true);
         }
         catch (Exception ex)
@@ -280,6 +284,17 @@ public class PdfImportDialogViewModel : EDViewModel
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Ukáže, co import z předlohy převzal a co nerozpoznal. Bez toho se hlášky ztratily se
+    /// zavřením dialogu a uživatel neměl jak zjistit, co si má dodělat ručně.
+    /// </summary>
+    private void ReportImportLog()
+    {
+        if (ImportLog.Count == 0) return;
+        PopupDisplayer.Info("Protokol importu:" + Environment.NewLine + Environment.NewLine
+            + string.Join(Environment.NewLine, ImportLog));
     }
 
     /// <summary>Normalizuje stránku importované šablony, ať sekce po importu rozumně vyplní stránku
@@ -361,6 +376,7 @@ public class PdfImportDialogViewModel : EDViewModel
             pdfPath, pages, scheduleType, enableDebug, setStatus);
 
         setAiLog(pipeline.AiDebugLog);
+        ImportLog.AddRange(pipeline.ImportLog);
         return template;
     }
 }

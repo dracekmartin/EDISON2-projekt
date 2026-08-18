@@ -19,6 +19,9 @@ public class AiVisionImportPipeline
 
     public string? AiDebugLog { get; private set; }
 
+    /// <summary>Co import z předlohy nastavil a co nerozpoznal - pro uživatele, ne pro vývojáře.</summary>
+    public List<string> ImportLog { get; } = [];
+
     public AiVisionImportPipeline(
         string apiKey, IDataSchemaProvider? schemaProvider, string? agendaCode,
         IReadOnlyList<TemplateParameter>? knownParameters = null)
@@ -80,7 +83,7 @@ public class AiVisionImportPipeline
                 : null;
 
             visionResult = await visionService.AnalyzeAsync(
-                base64Png, firstPage, schema, scheduleType, _apiKey);
+                base64Png, firstPage, schema, scheduleType, _apiKey, StopListSettingsCatalog(scheduleType));
         }
         catch (Exception ex)
         {
@@ -100,7 +103,7 @@ public class AiVisionImportPipeline
             try
             {
                 var retryResult = await visionService.AnalyzeAsync(
-                    base64Png, firstPage, schema, scheduleType, _apiKey);
+                    base64Png, firstPage, schema, scheduleType, _apiKey, StopListSettingsCatalog(scheduleType));
                 AiDebugLog += "\n\n══ RETRY (chyběly klíčové elementy) ══\n" + visionService.DebugLog;
                 if (retryResult is not null
                     && (MissingCoreElements(retryResult).Length == 0
@@ -125,6 +128,8 @@ public class AiVisionImportPipeline
             string missingWarn = MissingCoreElements(visionResult) is { Length: > 0 } m
                 ? $" · ⚠ AI nerozpoznalo: {m} - doplňte ručně z palety"
                 : "";
+            if (missingWarn.Length > 0)
+                ImportLog.Add($"⚠ Nerozpoznáno: {MissingCoreElements(visionResult)} - doplňte ručně z palety.");
             setStatus($"AI Vision: {visionResult.Elements.Count} JŘ elementů, {mappedFields} polí namapováno, celkem {elCount} elementů{missingWarn}");
         }
         else
@@ -152,6 +157,8 @@ public class AiVisionImportPipeline
     {
         var scheduleElements = AiGuidedScheduleBuilder.BuildFromVision(
             visionResult, firstPage, 0, 0, schema);
+
+        ApplyElementSettings(visionResult, scheduleElements);
 
         if (AiGuidedScheduleBuilder.LastDebugInfo is not null)
             AiDebugLog = (visionDebugLog ?? "") + "\n\n── AiGuidedScheduleBuilder ──\n" + AiGuidedScheduleBuilder.LastDebugInfo;
@@ -213,6 +220,29 @@ public class AiVisionImportPipeline
             ModifiedAt = DateTime.UtcNow
         };
     }
+
+    /// <summary>
+    /// Zapíše do prvků vzhled, který AI poznala z předlohy, a zaznamená to do protokolu importu.
+    /// Zatím jen seznam zastávek - na něm se ověřuje, co model zvládne poznat (rozhodnutí Jan 18. 8.).
+    /// </summary>
+    private void ApplyElementSettings(AiVisionResult vision, List<TemplateElement> elements)
+    {
+        if (elements.OfType<StopListElement>().FirstOrDefault() is not { } stopList) return;
+        if (!vision.ElementSettings.TryGetValue("StopList", out var settings)) return;
+
+        var applied = ElementSettingsFromImage.Apply(stopList, settings);
+        if (applied.Count > 0)
+        {
+            ImportLog.Add("Seznam zastávek - z předlohy nastaveno:");
+            ImportLog.AddRange(applied.Select(l => "   " + l));
+        }
+    }
+
+    /// <summary>Na co se u seznamu zastávek ptát - soupis jeho vlastních vlastností.</summary>
+    private static string? StopListSettingsCatalog(ScheduleImportType scheduleType) =>
+        scheduleType == ScheduleImportType.None
+            ? null
+            : ElementSettingsFromImage.BuildCatalog(new StopListElement());
 
     /// <summary>
     /// Převede AI-detekované parametry na TemplateParameter objekty.
