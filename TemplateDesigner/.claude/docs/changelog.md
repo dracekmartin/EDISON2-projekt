@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-18 (18) - 📥 rámeček pro logo jen v záhlaví, protokol jen o skutečných změnách
+
+Rozpoznávání prázdných rámečků z předlohy vzalo i **box pod legendou poznámek** - v předloze
+opravdu je, ale je to vyhrazená plocha rozvržení, ne místo pro logo (nález Jan 18. 8.).
+
+Místo pro obrázek se proto hledá **jen v záhlaví sestavy**, tedy nad jízdním řádem; vedle něj a pod
+ním bývají prázdné boxy součástí rozvržení. Cena je vědomá: logo v patičce import nevloží - lepší
+než falešné rámečky v každé šabloně.
+
+Druhá úprava: **do protokolu jdou jen skutečné změny.** Model často potvrdí i hodnotu, kterou prvek
+stejně má („Rozdělit na více oddílů = 1"), a v soupisu to vypadalo, že se z předlohy přeneslo víc,
+než kolik se doopravdy změnilo.
+
+Ověřeno: build 0 chyb, .NET 1082/1082.
+
 ## 2026-08-18 (17) - 📥 místo pro logo z rámečku v předloze, ne z odhadu modelu
 
 Po předchozí opravě obrázek z importu **zmizel úplně** - model ho v té odpovědi nehlásil (nález

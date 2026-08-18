@@ -810,10 +810,18 @@ public static class AiGuidedScheduleBuilder
                           R: e.Right * page.WidthMm, B: e.Bottom * page.HeightMm))
             .ToList();
 
+        // Místo pro obrázek se hledá jen v ZÁHLAVÍ sestavy (nad jízdním řádem). Prázdných
+        // orámovaných boxů bývá v předloze víc - vedle jízdního řádu a pod ním jsou to jen
+        // vyhrazené plochy rozvržení (pokračování sloupce poznámek), ne sloty na logo.
+        float zahlaviDo = scheduleBoxes.Count > 0
+            ? scheduleBoxes.Min(b => b.T)
+            : page.HeightMm * 0.2f;
+
         var result = new List<ExtractedRectangle>();
         foreach (var r in page.Rectangles)
         {
             if (r.Width < MinRamecekMm || r.Height < MinRamecekMm) continue;
+            if (r.Y + r.Height / 2 >= zahlaviDo) continue;
             if (r.StrokeColorHex is null || r.StrokeColorHex == ColorHex.Transparent) continue;
 
             bool obsahujeText = page.Words.Any(w =>

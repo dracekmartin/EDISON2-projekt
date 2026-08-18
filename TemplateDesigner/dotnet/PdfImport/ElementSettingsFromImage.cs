@@ -71,10 +71,19 @@ internal static class ElementSettingsFromImage
             }
 
             var value = raw?.Trim() ?? "";
-            if (TryWrite(d, value))
-                log.Add($"{d.Label} = {value}");
-            else
+            string pred = Describe(d);
+
+            if (!TryWrite(d, value))
+            {
                 log.Add($"⚠ {d.Label}: hodnotě „{value}\" nerozumím, ponechána výchozí");
+                continue;
+            }
+
+            // Do protokolu jen skutečné změny: „nastaveno" má znamenat, že se něco změnilo.
+            // Model často potvrdí i hodnotu, kterou prvek stejně má, a v soupisu to pak vypadá,
+            // že z předlohy vzešlo víc, než kolik se doopravdy přeneslo.
+            if (Describe(d) != pred)
+                log.Add($"{d.Label} = {value}");
         }
 
         return log;
