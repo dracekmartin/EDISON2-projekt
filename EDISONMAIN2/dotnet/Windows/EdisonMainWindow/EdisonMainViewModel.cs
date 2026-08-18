@@ -350,7 +350,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Seed při loadu je pod _suppressFavoritesSync (nemá znovu ukládat načtené).
             _shortcuts.Items.CollectionChanged += (_, _) => { if (!_suppressFavoritesSync) SyncFavorites(); };
             // Přesun dlaždice (reorder v miniaplikaci) → persistuj pozice (bez změny členství).
-            _shortcuts.SlotsChanged += PersistShortcuts;
+            _shortcuts.PositionsChanged += PersistShortcuts;
             // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
             // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení

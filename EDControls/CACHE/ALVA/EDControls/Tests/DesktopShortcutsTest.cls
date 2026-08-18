@@ -63,16 +63,17 @@ Method TestAddThenExists()
 	do ..Cleanup()
 }
 
-Method TestAddSameKeyReplacesAndKeepsSlot()
+Method TestAddSameKeyReplacesAndKeepsPosition()
 {
 	do ..Cleanup()
-	// Slot je uživatelovo umístění dlaždice - aktualizace z modulu ho nesmí zahodit.
-	do ..Call("Add", ..Item("PrintReport", "1003", "Puvodni", ",""Slot"":7"), "count")
+	// Col/Row je uživatelovo umístění dlaždice - aktualizace z modulu ho nesmí zahodit.
+	do ..Call("Add", ..Item("PrintReport", "1003", "Puvodni", ",""Col"":3,""Row"":7"), "count")
 	do $$$AssertEquals(..Call("Add", ..Item("PrintReport", "1003", "Prejmenovano"), "count"), 1, "Stejný klíč nesmí vyrobit duplicitu")
 
 	set arr = ..Desktop()
 	do $$$AssertEquals(arr.%Get(0).Name, "Prejmenovano", "Aktualizace musí přepsat data")
-	do $$$AssertEquals(arr.%Get(0).Slot, 7, "Slot musí zůstat zachovaný")
+	do $$$AssertEquals(arr.%Get(0).Col, 3, "Sloupec musí zůstat zachovaný")
+	do $$$AssertEquals(arr.%Get(0).Row, 7, "Řádek musí zůstat zachovaný")
 	do ..Cleanup()
 }
 

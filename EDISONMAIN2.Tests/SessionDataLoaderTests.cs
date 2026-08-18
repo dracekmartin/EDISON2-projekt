@@ -77,7 +77,7 @@ public class SessionDataLoaderTests
     {
         private static readonly Dictionary<string, string> Blobs = new()
         {
-            ["Shortcuts"] = """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A","Slot":1}]""",
+            ["Shortcuts"] = """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A","Col":1,"Row":0}]""",
             ["ModuleUsage"] = """{"100":{"Count":7,"LastUsedUtc":"2026-01-01T00:00:00"}}""",
             ["TreeExpansion"] = """["main:0"]""",
             ["SelectedTab"] = "\"partners\"",

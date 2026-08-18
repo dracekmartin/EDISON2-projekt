@@ -15,6 +15,9 @@ namespace EDISONMAIN2.MiniApps;
 
 public partial class DesktopMiniAppView : UserControl
 {
+    private const double TileCellWidth = 140;   // shodné s TileGridPanel.CellWidth (default v šabloně panelu)
+    private const double TilesHostMargin = 12;  // Margin="6" ItemsControlu na obou stranách
+
     private Point _dragStart;
     private DesktopShortcut? _dragTile;
     private bool _suppressClick;   // po reorder tažení potlačí následný klik (jinak by dlaždice i spustila)
@@ -61,25 +64,35 @@ public partial class DesktopMiniAppView : UserControl
     {
         if (Vm?.Shortcuts is not { } svc) return;
 
-        // Cílový slot z pozice dropu (mřížka; -1 když panel není realizovaný = prázdná plocha).
+        // Cílová buňka z pozice dropu; na prázdné ploše je ScrollViewer collapsed a souřadnice
+        // vůči nezobrazenému panelu nic neříkají - položka pak zůstane na první volné buňce.
         var panel = FindPanel();
-        int slot = panel is not null ? panel.SlotAt(e.GetPosition(panel)) : -1;
+        (int Column, int Row)? cell = panel is { IsVisible: true } ? panel.CellAt(e.GetPosition(panel)) : null;
 
         if (e.Data.GetData(ModuleDrag.ReorderTile) is DesktopShortcut dragged)
         {
-            if (slot >= 0) svc.PlaceAt(dragged, slot);
+            if (cell is { } target) svc.PlaceAt(dragged, target.Column, target.Row);
         }
         else if (e.Data.GetData(ModuleDrag.FromTree) is ExecutableModule fromTree)
         {
-            svc.Add(fromTree);                       // přidá (assign next free slot) - idempotentní
+            svc.Add(fromTree);                       // přidá (na první volnou buňku) - idempotentní
             // …a přesune na místo dropu; instanci dlaždice zná až služba (Add ji vytvořila).
-            if (slot >= 0 && svc.Items.FirstOrDefault(i => ReferenceEquals(i.Module, fromTree)) is { } tile)
-                svc.PlaceAt(tile, slot);
+            if (cell is { } target
+                && svc.Items.FirstOrDefault(i => ReferenceEquals(i.Module, fromTree)) is { } tile)
+                svc.PlaceAt(tile, target.Column, target.Row);
         }
         e.Handled = true;
     }
 
-    private SlotGridPanel? FindPanel() => FindVisualChild<SlotGridPanel>(TilesHost);
+    // Nové dlaždice (★ ve stromu) mají padat do viditelné části - rozložení samo šířku nečte.
+    // Šířka z eventu, ne z TilesHost: ten je ve scrollujícím ScrollVieweru široký jako obsah.
+    private void Desktop_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (Vm?.Shortcuts is { } svc)
+            svc.GridColumns = TileGridPanel.ColumnsFor(e.NewSize.Width - TilesHostMargin, TileCellWidth);
+    }
+
+    private TileGridPanel? FindPanel() => FindVisualChild<TileGridPanel>(TilesHost);
 
     private static T? FindVisualChild<T>(DependencyObject? root) where T : DependencyObject
     {

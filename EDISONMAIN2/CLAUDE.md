@@ -102,12 +102,15 @@ Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `Desktop
 **nezobrazí, ale uloží zpátky** - jinak by ji první změna členství tiše smazala. Ostatní druhy
 (tiskové sestavy, pohledy DS) zapisují agendy **přímo do Caché** (`ALVA.EDControls.DesktopShortcuts`,
 týž blob, který shell čte) a spouští se 14. argem hosta. Shell si blob přenačte po ukončení
-agendy (`LegacyModuleExited`), takže dlaždice nenaskočí okamžitě - obojí i s pastmi
-v [docs/DESKTOP_SHORTCUTS.md](docs/DESKTOP_SHORTCUTS.md).
+agendy (`LegacyModuleExited`), takže dlaždice nenaskočí okamžitě.
 Dlaždice ukazuje **dlouhý název** (`ExecutableModule.LongName`, legacy `nameEx`; fallback
 krátký) a cestu agendou v ToolTipu (`Seed` ji dostává delegátem) - mimo strom chybí kontext,
 který krátký název zjednoznačňuje. Obojí odvozené ze stromu, nepersistuje se
-do `DesktopShortcutDto`.
+do `DesktopShortcutDto`. Zmenšení textu drží `Viewbox` (`DownOnly`), `MaxHeight` `TextBlocku`
+je jeho podlaha (z tokenu `FontSize` se spočítat nedá, proto fixní).
+Pozice je **absolutní `Col`/`Row`** (`TileGridPanel`) - mřížka se nepřeskládává podle šířky,
+přesah řeší scroll; `GridColumns` slouží **jen** přidělování pozice novým položkám a Caché `Add`
+musí při přepisu zachovat **obě** složky, jinak modul shodí uživatelovo rozložení.
 
 ## Výchozí okno (startup window)
 

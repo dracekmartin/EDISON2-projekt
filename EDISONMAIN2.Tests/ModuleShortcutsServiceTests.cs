@@ -13,8 +13,10 @@ public class ModuleShortcutsServiceTests
         new() { DisplayedName = name, ElementId = id, ExecutablePath = id + ".exe" };
 
     // Uložený zástupce modulu hlavní nabídky (jak ho zapíše ★ / DnD ze stromu).
-    private static DesktopShortcutDto Menu(string elementId, int? slot = null) =>
-        new(nameof(ShortcutKind.MenuModule), elementId, elementId, "M", Slot: slot);
+    private static DesktopShortcutDto Menu(string elementId, int? col = null, int? row = null) =>
+        new(nameof(ShortcutKind.MenuModule), elementId, elementId, "M", Col: col, Row: row);
+
+    private static (int Col, int Row) Cell(DesktopShortcut s) => (s.Col, s.Row);
 
     [Fact]
     public void Seed_PopulatesInOrder_AndSetsIsFavorite()
@@ -70,40 +72,40 @@ public class ModuleShortcutsServiceTests
     }
 
     [Fact]
-    public void Add_DoesNotReuseSlotOfHiddenItem()
+    public void Add_DoesNotReuseCellOfHiddenItem()
     {
-        // Skrytá položka (modul mimo strom) se ukládá se svým slotem; kdyby ho nová dlaždice
-        // převzala, po návratu licence by obě seděly na téže pozici v mřížce.
+        // Skrytá položka (modul mimo strom) se ukládá se svou pozicí; kdyby ji nová dlaždice
+        // převzala, po návratu licence by obě seděly na téže buňce mřížky.
         var a = Exe("100");
         var svc = new ModuleShortcutsService();
-        svc.Seed([a], [Menu("999", slot: 0)]);
+        svc.Seed([a], [Menu("999", col: 0, row: 0)]);
 
         svc.Add(a);
 
-        Assert.Equal(1, Assert.Single(svc.Items).Slot);
+        Assert.Equal((1, 0), Cell(Assert.Single(svc.Items)));
     }
 
     [Fact]
-    public void Seed_CollidingSlots_AreSeparated()
+    public void Seed_CollidingCells_AreSeparated()
     {
-        // Kolizi umí vyrobit ruční editace blobu i mix uloženého slotu s doplněným pořadím.
+        // Kolizi umí vyrobit ruční editace blobu i mix uložené pozice s doplněným pořadím.
         var a = Exe("100"); var b = Exe("200");
         var svc = new ModuleShortcutsService();
 
-        svc.Seed([a, b], [Menu("100", slot: 2), Menu("200", slot: 2)]);
+        svc.Seed([a, b], [Menu("100", col: 2, row: 0), Menu("200", col: 2, row: 0)]);
 
-        Assert.Equal([2, 3], svc.Items.Select(i => i.Slot));
+        Assert.Equal([(2, 0), (3, 0)], svc.Items.Select(Cell));
     }
 
     [Fact]
-    public void Seed_HiddenItemSlot_IsNotTakenByShownItem()
+    public void Seed_HiddenItemCell_IsNotTakenByShownItem()
     {
         var a = Exe("100");
         var svc = new ModuleShortcutsService();
 
-        svc.Seed([a], [Menu("999", slot: 0), Menu("100", slot: 0)]);
+        svc.Seed([a], [Menu("999", col: 0, row: 0), Menu("100", col: 0, row: 0)]);
 
-        Assert.Equal(1, Assert.Single(svc.Items).Slot);   // slot 0 drží skrytá "999"
+        Assert.Equal((1, 0), Cell(Assert.Single(svc.Items)));   // buňku (0,0) drží skrytá "999"
     }
 
     [Fact]
@@ -254,40 +256,41 @@ public class ModuleShortcutsServiceTests
     }
 
     [Fact]
-    public void Seed_AssignsOrderSlots_WhenSlotMissing()
+    public void Seed_AssignsOrderCells_WhenPositionMissing()
     {
         var a = Exe("100"); var b = Exe("200");
         var svc = new ModuleShortcutsService();
 
         svc.Seed([a, b], [Menu("200"), Menu("100")]);
 
-        Assert.Equal(0, svc.Items[0].Slot);   // první v pořadí
-        Assert.Equal(1, svc.Items[1].Slot);
+        Assert.Equal((0, 0), Cell(svc.Items[0]));   // první v pořadí
+        Assert.Equal((1, 0), Cell(svc.Items[1]));
     }
 
     [Fact]
-    public void Seed_UsesPersistedSlots_WhenProvided()
+    public void Seed_UsesPersistedCells_WhenProvided()
     {
         var a = Exe("100"); var b = Exe("200");
         var svc = new ModuleShortcutsService();
 
-        svc.Seed([a, b], [Menu("100", slot: 5), Menu("200", slot: 2)]);
+        svc.Seed([a, b], [Menu("100", col: 5, row: 1), Menu("200", col: 2, row: 0)]);
 
-        Assert.Equal(5, svc.Items[0].Slot);
-        Assert.Equal(2, svc.Items[1].Slot);
+        Assert.Equal((5, 1), Cell(svc.Items[0]));
+        Assert.Equal((2, 0), Cell(svc.Items[1]));
     }
 
     [Fact]
-    public void Seed_MissingSlotForOneItem_FallsBackToInsertionOrder()
+    public void Seed_HalfCoordinate_FallsBackToInsertionOrder()
     {
-        // Uložený slot pro "100" je 3; u "200" chybí → spadne na pořadí (order=1).
+        // Půlka souřadnice (jen Col) je horší než pořadí - dlaždice by skončila v řádku 0 klidně
+        // na cizí buňce. "200" pozici nemá vůbec → pořadí (order=1).
         var a = Exe("100"); var b = Exe("200");
         var svc = new ModuleShortcutsService();
 
-        svc.Seed([a, b], [Menu("100", slot: 3), Menu("200")]);
+        svc.Seed([a, b], [Menu("100", col: 3), Menu("200")]);
 
-        Assert.Equal(3, svc.Items[0].Slot);
-        Assert.Equal(1, svc.Items[1].Slot);
+        Assert.Equal((0, 0), Cell(svc.Items[0]));
+        Assert.Equal((1, 0), Cell(svc.Items[1]));
     }
 
     [Fact]
@@ -302,20 +305,21 @@ public class ModuleShortcutsServiceTests
     }
 
     [Fact]
-    public void PlaceAt_Guards_NoOp_DoNotRaiseSlotsChanged()
+    public void PlaceAt_Guards_NoOp_DoNotRaisePositionsChanged()
     {
         var a = Exe("100"); var b = Exe("200");
         var svc = new ModuleShortcutsService();
-        svc.Seed([a, b], [Menu("100")]);   // a=slot 0, b není na ploše
+        svc.Seed([a, b], [Menu("100")]);   // a=(0,0), b není na ploše
         var orphan = DesktopShortcut.ForModule(b);
         var raised = false;
-        svc.SlotsChanged += () => raised = true;
+        svc.PositionsChanged += () => raised = true;
 
-        svc.PlaceAt(svc.Items[0], -1);   // záporný slot
-        svc.PlaceAt(orphan, 2);          // dlaždice mimo plochu
-        svc.PlaceAt(svc.Items[0], 0);    // stejný slot
+        svc.PlaceAt(svc.Items[0], -1, 0);   // záporná souřadnice
+        svc.PlaceAt(svc.Items[0], 0, -1);
+        svc.PlaceAt(orphan, 2, 0);          // dlaždice mimo plochu
+        svc.PlaceAt(svc.Items[0], 0, 0);    // stejná buňka
 
-        Assert.Equal(0, svc.Items[0].Slot);
+        Assert.Equal((0, 0), Cell(svc.Items[0]));
         Assert.False(raised);
     }
 
@@ -330,53 +334,65 @@ public class ModuleShortcutsServiceTests
         var stale = svc.Items[0];
         svc.Seed([a], [Menu("100")]);   // nové instance téhož klíče
 
-        svc.PlaceAt(stale, 4);
+        svc.PlaceAt(stale, 4, 1);
 
-        Assert.Equal(4, Assert.Single(svc.Items).Slot);
+        Assert.Equal((4, 1), Cell(Assert.Single(svc.Items)));
     }
 
     [Fact]
-    public void PlaceAt_Swap_RaisesSlotsChangedOnce()
+    public void PlaceAt_Swap_ExchangesBothCoordinates_AndRaisesOnce()
     {
         var a = Exe("100"); var b = Exe("200");
         var svc = new ModuleShortcutsService();
-        svc.Seed([a, b], [Menu("100"), Menu("200")]);   // a=0, b=1
+        svc.Seed([a, b], [Menu("100", col: 0, row: 0), Menu("200", col: 3, row: 2)]);
         int raised = 0;
-        svc.SlotsChanged += () => raised++;
+        svc.PositionsChanged += () => raised++;
 
-        svc.PlaceAt(svc.Items[0], 1);   // obsazeno b → swap
+        svc.PlaceAt(svc.Items[0], 3, 2);   // obsazeno b → swap
 
-        Assert.Equal(1, svc.Items[0].Slot);
-        Assert.Equal(0, svc.Items[1].Slot);
+        Assert.Equal((3, 2), Cell(svc.Items[0]));
+        Assert.Equal((0, 0), Cell(svc.Items[1]));
         Assert.Equal(1, raised);
     }
 
     [Fact]
-    public void Add_AssignsLowestFreeSlot()
+    public void Add_AssignsLowestFreeCell()
     {
         var a = Exe("100"); var b = Exe("200"); var c = Exe("300");
         var svc = new ModuleShortcutsService();
         svc.Seed([a, b, c], []);
 
-        svc.Add(a);   // slot 0
-        svc.Add(b);   // slot 1
+        svc.Add(a);   // (0,0)
+        svc.Add(b);   // (1,0)
         svc.Remove(a);
-        svc.Add(c);   // znovu nejnižší volný = 0
+        svc.Add(c);   // znovu nejnižší volná = (0,0)
 
-        Assert.Equal(0, svc.Items.Single(i => i.ElementId == "300").Slot);
-        Assert.Equal(1, svc.Items.Single(i => i.ElementId == "200").Slot);
+        Assert.Equal((0, 0), Cell(svc.Items.Single(i => i.ElementId == "300")));
+        Assert.Equal((1, 0), Cell(svc.Items.Single(i => i.ElementId == "200")));
     }
 
     [Fact]
-    public void PlaceAt_MovesToEmptySlot_LeavingGap()
+    public void Add_WrapsToNextRow_AtGridColumns()
+    {
+        var a = Exe("100"); var b = Exe("200"); var c = Exe("300");
+        var svc = new ModuleShortcutsService { GridColumns = 2 };
+        svc.Seed([a, b, c], []);
+
+        svc.Add(a); svc.Add(b); svc.Add(c);
+
+        Assert.Equal([(0, 0), (1, 0), (0, 1)], svc.Items.Select(Cell));
+    }
+
+    [Fact]
+    public void PlaceAt_MovesToEmptyCell_LeavingGap()
     {
         var a = Exe("100");
         var svc = new ModuleShortcutsService();
-        svc.Seed([a], [Menu("100")]);   // slot 0
+        svc.Seed([a], [Menu("100")]);   // (0,0)
 
-        svc.PlaceAt(svc.Items[0], 4);
+        svc.PlaceAt(svc.Items[0], 4, 2);
 
-        Assert.Equal(4, svc.Items[0].Slot);   // mezera 0–3
+        Assert.Equal((4, 2), Cell(svc.Items[0]));   // mezery zůstanou prázdné
     }
 
     [Fact]

@@ -9,8 +9,8 @@ Include GENERAL
 /// zápisy modulu a shellu přepisovaly celý blob. Tady proběhne v jednom Caché jobu.
 ///
 /// Identita položky = "Kind|ElementId|Id" (mirror DesktopShortcut.Key na klientovi).
-/// Pole "Slot" server záměrně **nepřiděluje** - klient chybějící slot doplní při načtení
-/// (viz ModuleShortcutsService.Seed), takže server nemusí znát rozložení mřížky.
+/// Pozici ("Col"/"Row") server záměrně **nepřiděluje** - klient chybějící pozici doplní při
+/// načtení (viz ModuleShortcutsService.Seed), takže server nemusí znát rozložení mřížky.
 Class ALVA.EDControls.DesktopShortcuts Extends %RegisteredObject
 {
 
@@ -18,7 +18,7 @@ Parameter SCOPE = "EDISONMAIN2";
 
 Parameter KEY = "Shortcuts";
 
-/// Přidá zástupce, nebo přepíše stávající se stejným klíčem (slot si ponechá).
+/// Přidá zástupce, nebo přepíše stávající se stejným klíčem (pozici si ponechá).
 /// IN["item"] = JSON objekt jedné položky (Kind, Id, ElementId, Name, Exe, Form, Input, Report)
 ClassMethod Add(ByRef sys As %String) As %Status
 {
@@ -40,7 +40,8 @@ ClassMethod Add(ByRef sys As %String) As %Status
         while it.%GetNext(.i, .existing) {
             if ..KeyOf(existing) = key {
                 // Pozice dlaždice je uživatelovo nastavení - aktualizace z modulu ji nesmí zahodit.
-                if existing.%IsDefined("Slot") s obj.Slot = existing.Slot
+                if existing.%IsDefined("Col") s obj.Col = existing.Col
+                if existing.%IsDefined("Row") s obj.Row = existing.Row
                 d out.%Push(obj)
                 s replaced = 1
             } else {
