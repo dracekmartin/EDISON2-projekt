@@ -10,61 +10,6 @@
 
 ## 📥 Backlog
 
-### Import PDF - doladění
-
-> **Průchod 18. 8. (analýza `B42`).** Co import z předlohy nastaví, se naposledy hnulo v půlce
-> července; od té doby povyrostly prvky JŘ (rozdělení seznamu do oddílů, strana značek, více
-> stanovišť, projeté zastávky, varianty jízdních dob), přibyla pevná tabulka a nastavení sestavy
-> se rozrostlo na patnáct voleb u AD. Import o ničem z toho neví, takže výsledek je dnes hrubší,
-> než co návrhář umí. Pořadí níže je podle toho, co uživatel pozná.
-
-**`B42` Co všechno umí import z předlohy nastavit** (M, analýza hotová 18. 8.; podnět Jan 31. 7.).
-Drobné vady (`B42a`) a slévání čar do rastru hotové 18. 8.; zbytek:
-
-| Co | Rozsah | Stav |
-|---|---|---|
-| **`B42c` Vzhled prvků z předlohy** - hotové 19. 8. (seznam zastávek, mřížka odjezdů, legenda; příznak „na tohle se smí ptát" u definice vlastnosti). **Zbývá jen vyzkoušet** na širší sadě předloh a podle výsledku doladit, které vlastnosti příznak mají | S | 🟡 |
-
-**Jak se to škáluje (rozhodnuto 18. 8.):** otázka pro AI i zápis odpovědi se **generují z vlastností
-prvku** - z týchž, ze kterých se staví panel vlastností. Nová vlastnost prvku je tím pro import
-dostupná bez zásahu do importu; ručně psaný seznam v otázce byl důvod, proč import zamrzl v červenci.
-Model odpovídá popiskem volby, zápis má stejné pojistky jako formulář (nesmyslná hodnota neprojde).
-
-**Otevřeno:** kde se vede seznam „tohle jde poznat z obrázku" a podle čeho (příznak u pole v Caché
-schématu × seznam v aplikaci). **Rozhodne se až podle zkoušky na reálných předlohách** - 1. kolo
-posílá u seznamu zastávek všechny vlastnosti a v protokolu je vidět, co model trefil. Dělící čára,
-na které jsme se shodli: **vizuální ano, business ne** - co se vizuálně neliší (které zastávky se
-tisknou, odkud se bere číslo stanoviště, název pro MHD), do importu nepatří.
-
-✅ **`B42d` hotové 19. 8.** - rozpoznané volby se ukládají tam, odkud je čte tisk, otevření
-importované šablony je aplikuje i do ovladačů a otázka na volby se skládá z popisu agendy (platí
-tedy i pro AD s patnácti volbami). Past z #12843 pokrytá: ukládá se **jen to, co model poznal**,
-ne celá sada.
-
-⛔ **Hláška „co si po importu dodělej" se dělat nebude** (`B42b`, rozhodnutí Jan 19. 8.). Stála na
-předpokladu, že víme, co má být hotovo - jenže import je **rychlý start, ne dokončená šablona**,
-takže bychom museli rozlišit, co v ní chybí záměrně a co ne. Výpis by měl čtyřicet položek a
-uživateli by neřekl nic použitelného. Podrobný protokol zůstává jako **vývojářská pomůcka za
-zaškrtávátkem Debug** (porovnání dvou importů). Chyby, které uživatel vědět musí (nepodařilo se
-zavolat AI), hlásí dál chybová hláška.
-
-**Časová osa:** detekci není potřeba vracet - AI ji vrací dodnes, import ji jen zahazuje (vědomě,
-protože osu řídí nastavení sestavy). Až bude `B42d`, propíše se do nastavení sestavy rovnou.
-
-| Další | Stav |
-|---|---|
-| **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílová **pevná tabulka** je hotová (`B76`, i se sloučením buněk). ⬆️ **Priorita vzrostla 18. 8.**: od zrušení slévání čar do rastru je počet samostatných čar to jediné, co uklizený výsledek drží zpátky | ⬜ |
-| **JŘ import: ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
-
-Křivky/Bézier v obecném importu - low-prio, bez poptávky.
-⛔ **Import z PNG/JPG se dělat nebude** (rozhodnutí Jan 18. 8.). Technicky by to šlo skoro zadarmo
-(modelu se stejně posílá obrázek a měření mají všude náhradní hodnoty), ale z obrázku nejdou přesné
-rozměry, fonty ani texty - PDF dá výrazně lepší výsledek. Vrátit se k tomu, až o to někdo požádá
-(typicky „zákazník poslal fotku vývěsky").
-⚠️ **Testy importu kryjí sloupce zastávek a zápis vzhledu z předlohy** (23) - pipeline jako celek ne;
-jestli model vlastnosti pozná, se zásadně **hodnotí okem nad reálnou předlohou** (rozhodnutí Jan 18. 8.,
-místo evaluační sady).
-
 ### AI integrace - v pozadí
 
 > **Sekundární, ne core.** Aktuální funkce (pomocník, generátor šablon, AI Vision import PDF - vše Sonnet 5

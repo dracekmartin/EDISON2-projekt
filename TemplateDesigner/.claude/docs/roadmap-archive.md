@@ -3,6 +3,40 @@
 > Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
 > Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-19 ⏸️ - Import PDF: sekce uzavřena, otevřené body čekají na moduly
+
+Detail → changelog 2026-08-18 (6)-(18) a 2026-08-19 (1)-(3). Sekce **Import PDF - doladění** je
+z roadmapy pryč celá (rozhodnutí Jan 19. 8.): pro zastávkové jízdní řády je import hotový
+a **zbylé body nečekají na nás, ale na moduly, které zatím neexistují**.
+
+**Co je hotové (18.-19. 8.):**
+
+- `B42a` drobné vady (prázdný sloupec, popisky, varianty jízdních dob, zděděná agenda)
+- `B42c` vzhled prvků z předlohy - seznam zastávek, mřížka odjezdů i legenda; otázka pro model
+  i zápis odpovědi se **generují z vlastností prvku**, u každé vlastnosti je příznak
+  „na tohle se smí ptát" (pravidlo: *nepřítomnost nic nedokazuje*)
+- `B42d` nastavení sestavy z předlohy se ukládá tam, odkud ho čte tisk, a hned se projeví
+  v ovladačích; ukládá se jen to, co model poznal (past #12843)
+- `B42b` hláška „co si dodělej" ⛔ **nebude** - import je rychlý start, ne hotová šablona, takže
+  nejde rozlišit, co v ní chybí záměrně; podrobný protokol zůstal jako vývojářská pomůcka za Debugem
+- jednotlivé opravy: font s čárkou v názvu rodiny · čáry místo zamčeného rastru · jízdní řád se bez
+  AI raději nenaimportuje · roj samotných čísel a záhlaví tabulky nekončí jako volné texty · měření
+  výšky řádku a písma záhlaví jako obecná pravidla · prázdný rámeček pro logo z geometrie předlohy
+
+**Co zůstalo otevřené a proč to čeká:**
+
+- **rozpoznání tabulky z mřížky čar** (obecný import) - týká se nejízdněřádových předloh; faktury
+  ani podobné sestavy zatím neexistují, takže by se návrh dělal bez předlohy. ⚠️ Zároveň je to
+  jediná dnešní cena za zrušení slévání čar do rastru: u složité nejízdněřádové předlohy vznikne
+  pár desítek samostatných čar. Návrat zpátky je jeden řádek (`GraphicsMergeMode` v dialogu importu).
+- **ladění na širší sadě jízdních řádů** (jiná města, SK, netypické legendy) - není to vývoj, ale
+  zkoušení; z něj vyplyne doladění příznaků u vlastností
+- **linkové a knižní JŘ se neimportují** - režim rozpoznávání se zapíná jen u agend zastávkového JŘ
+
+**Kdy to znovu otevřít:** až vznikne linkový/knižní JŘ nebo faktury. Import je na to připravený -
+nový prvek se do něj zapojí tím, že se u jeho vlastností označí, které jdou z obrázku poznat;
+do samotného importu se nesahá.
+
 ## 2026-08-19 ✅ - `B42d`: nastavení sestavy z předlohy se uplatní
 
 Detail → changelog 2026-08-19 (2). Co model z předlohy pozná o nastavení tisku (šipky směru, rozsah
