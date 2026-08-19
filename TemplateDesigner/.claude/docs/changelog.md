@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-19 (9) - 🧹 import: pryč cesta, která slévala grafiku do obrázku
+
+Slévání čar do jednoho obrázku na pozadí se 18. 8. přestalo používat, ale kód pro něj v importu
+zůstal - včetně kreslení rastru a tří rozhodovacích větví. Nikdo ho nezapínal; byl to jen kus, který
+by příště někdo četl s dojmem, že se používá (analýza stavu 19. 8.).
+
+Odstraněn celý režim slučování grafiky: `PdfToTemplateConverter` **620 → 405 řádků**, z dialogu
+importu zmizela mrtvá volba. Chování se nemění - každá čára, obdélník i obrázek předlohy je vlastní
+prvek šablony, čáry a obdélníky se automaticky seskupí.
+
+Zrušený test hlídal, že je *výchozí* volba „neslévat". Záruka je teď silnější: taková cesta v kódu
+neexistuje.
+
+Ověřeno: build 0 chyb, .NET 1121/1121.
+
 ## 2026-08-19 (8) - 🕒 „změněno" u systémových šablon konečně znamená změnu
 
 V přehledu šablon měly **všechny systémové šablony čas změny „před dvěma minutami"**, i když se
