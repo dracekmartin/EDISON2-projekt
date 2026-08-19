@@ -29,8 +29,14 @@ public static class SessionFactory
             LoginName = login.UserName,
             FullName = login.FullName,
             Mlp = login.Mlp.ToString(),
+#if DEBUG
+            // Dev verze 999999.9 nikdy nesedí s Caché → per-request version gate (Locks=1)
+            // by shodil každý request. Prázdná verze = gate na serveru neběží.
+            EdisonVersion = ""
+#else
             // Aktivuje server-side per-request version gate (prázdná verze = gate neběží).
             EdisonVersion = VerzeInf.Current
+#endif
         };
 #if DEBUG
         // Deterministický GUID v dev: Stop Debugging (hard-kill) ACTIVITY zámek neuvolní, ale

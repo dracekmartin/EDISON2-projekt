@@ -37,7 +37,14 @@ public static class LicenceVerifier
             // object[]: VerifyLic je legacy endpoint s numerickými subscripty (IN(1), OUT(1)).
             var output = mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", new object[] { countOfLicenses });
             int result = int.Parse(output[1]?.ToString() ?? "0");
-            if (result == 1) return (LicenceAcquireOutcome.Accepted, licence);
+            if (result == 1)
+            {
+                // Parita s legacy shellem (EDUsers.VerifyLic): ACTIVITY zámek existuje → od teď
+                // každý request session obnovuje idle timer (UpdateHistory) a detekuje zaniklý
+                // zámek / verzi (EdisonActivityFailed / EdisonVersionFailed → shutdown).
+                mlRest.CacheLocks = 1;
+                return (LicenceAcquireOutcome.Accepted, licence);
+            }
 
             if (result == -1 && isAdmin)
             {

@@ -40,6 +40,15 @@ public interface IMLRest
     char Delimiter { get; }
 
     /// <summary>
+    /// Režim serverových kontrol per request (sys <c>"U","Locks"</c>): 0 = žádné,
+    /// 1 = obnova ACTIVITY historie + LockExist + version gate, 2 = jen idle reaper (poll).
+    /// Sdílená session jede po úspěšném VerifyLic s 1 (nastavuje <c>LicenceVerifier</c>);
+    /// jednorázové odchylky dělej klonem přes <see cref="With"/>, tohle mutuj jen tam,
+    /// kde se mění session (přepnutí firmy).
+    /// </summary>
+    int CacheLocks { get; set; }
+
+    /// <summary>
     /// Vrátí **novou** instanci se stejnou identitou (server/port/login/mlp/GUID/verze/delimiter),
     /// ale s přepsaným <paramref name="cacheLocks"/> / <paramref name="idfa"/> /
     /// <paramref name="dataNamespace"/> (null = ponechat). Pro jednorázové requesty, které nesmí
