@@ -361,7 +361,11 @@ public class AppBootstrapper
     protected virtual void SavePostLoginState(ILocalPrefs prefs, string idfa, string? loginName)
     {
         prefs.LastIdfa = idfa;
+#if !DEBUG
+        // Debug login je syntetický (TryLogin bez dialogu) - nesmí přepsat předvyplnění
+        // jména (a tím zneplatnit RememberedPassword) pro ostrý exe na témže stroji.
         prefs.LastLoginName = loginName;
+#endif
         prefs.Save();
     }
 
