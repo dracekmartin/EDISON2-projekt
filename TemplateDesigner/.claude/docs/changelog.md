@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-19 (6) - 🚚 kanál zapojen naživo: klíč, obsah odpovědi, skloňování
+
+Zkouška s reálným klíčem (Jan 19. 8.) vytáhla tři vady, které by jinak vypadaly jako „kanál nic
+nenabízí":
+
+- **Klíč z lokálního nastavení se zahazoval.** Lokální konfigurace se slučuje **vyjmenovaně** (Caché
+  a AI) a nový oddíl se do slučování nedostal - klíč byl v souboru, ale ne v aplikaci. Nová sekce
+  konfigurace tam patří vždycky; hlídá to test.
+- **Obsah šablony se v odpovědi jmenuje `data`**, ne `content` - a leží uvnitř obálky, která má taky
+  `data`. Stahování by tiše vracelo prázdno.
+- **Skloňování**: „K dispozici je 1 nových šablon" → nově „1 nová šablona / 3 nové šablony /
+  7 nových šablon", se slovesem podle celku.
+
+Navíc: klient kanálu dostává nastavení **předané**, ne ze statického stavu. Test „bez klíče nic
+nevrací" jinak platil podle toho, jestli v procesu někdo načetl konfiguraci s klíčem - tedy podle
+pořadí testů, ne podle kódu.
+
+Ověřeno naživo proti helpdesku: nahrání šablony (HTTP 201), seznam i stažení vrací **obsah bajt
+v bajt shodný** se souborem v repu. Build 0 chyb, .NET 1118/1118 (+13).
+
 ## 2026-08-19 (5) - 🚚 systémové šablony se doručují kanálem z helpdesku
 
 Systémové (M-line) šablony byly zabalené v `.exe`, takže **nová šablona znamenala vydat program**.

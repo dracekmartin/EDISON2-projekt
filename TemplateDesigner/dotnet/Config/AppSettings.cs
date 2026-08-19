@@ -104,7 +104,13 @@ public class AppSettings
     }
 
     /// <summary>Přepíše hodnoty v target hodnotami z local (jen pokud jsou v local explicitně nastavené).</summary>
-    private static void MergeLocal(AppSettings target, AppSettings local)
+    /// <remarks>
+    /// ⚠️ Slučuje se <b>vyjmenovaně</b>, ne celý objekt - kdo přidá nový oddíl konfigurace, musí ho
+    /// přidat i sem, jinak se hodnota z lokálního souboru **tiše zahodí** a featura se tváří jako
+    /// vypnutá (stalo se 19. 8. klíči k distribučnímu kanálu: nastavený klíč, a přehled šablon nic
+    /// nenabídl). Hlídá to <c>AppSettingsLocalMergeTests</c>.
+    /// </remarks>
+    internal static void MergeLocal(AppSettings target, AppSettings local)
     {
         if (local.Cache is not null)
             target.Cache = local.Cache;
@@ -112,6 +118,13 @@ public class AppSettings
             target.AiAssistant.AnthropicApiKey = local.AiAssistant.AnthropicApiKey;
         if (local.AiAssistant.Enabled != target.AiAssistant.Enabled)
             target.AiAssistant.Enabled = local.AiAssistant.Enabled;
+
+        if (!string.IsNullOrWhiteSpace(local.TemplateChannel.ApiKey))
+            target.TemplateChannel.ApiKey = local.TemplateChannel.ApiKey;
+        if (!string.IsNullOrWhiteSpace(local.TemplateChannel.BaseUrl))
+            target.TemplateChannel.BaseUrl = local.TemplateChannel.BaseUrl;
+        if (local.TemplateChannel.Enabled != target.TemplateChannel.Enabled)
+            target.TemplateChannel.Enabled = local.TemplateChannel.Enabled;
     }
 }
 

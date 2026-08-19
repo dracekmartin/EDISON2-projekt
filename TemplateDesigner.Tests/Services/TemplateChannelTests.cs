@@ -1,6 +1,7 @@
 using System.Text.Json;
 using TemplateDesigner.Models;
 using TemplateDesigner.Serialization;
+using TemplateDesigner.Config;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner.Tests.Services;
@@ -81,13 +82,51 @@ public class TemplateChannelTests
         Assert.Equal(new DateTime(2026, 8, 14, 11, 40, 0, DateTimeKind.Utc), polozka.UpdatedAt.ToUniversalTime());
     }
 
+    /// <summary>
+    /// Obsah šablony se na drátě jmenuje „data" - a leží uvnitř obálky, která má taky „data".
+    /// Splést se v tom znamená, že se stahuje prázdno a kanál mlčí (chyceno 19. 8. při zapojování).
+    /// </summary>
+    [Fact]
+    public void ObsahSablonySeCteZPoleData()
+    {
+        const string odpoved = """
+        {
+          "success": true,
+          "data": {
+            "id": "6f1b3c2e", "name": "Zastávkový JR - standard",
+            "updatedAt": "2026-08-14T11:40:00.000Z",
+            "data": "{\"version\":\"1.0\",\"name\":\"Test\"}"
+          }
+        }
+        """;
+
+        using var doc = JsonDocument.Parse(odpoved);
+        var detail = JsonSerializer.Deserialize<ChannelTemplateDetail>(
+            doc.RootElement.GetProperty("data").GetRawText(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.NotNull(detail);
+        Assert.Contains("\"name\":\"Test\"", detail!.Content);
+    }
+
     /// <summary>Bez klíče se kanál mlčky přeskočí - přehled šablon musí fungovat i tak.</summary>
     [Fact]
     public async Task BezKliceKanalNicNevraci()
     {
-        var klient = new TemplateChannelClient();
+        var klient = new TemplateChannelClient(new TemplateChannelSettings { ApiKey = "" });
 
+        Assert.False(klient.IsConfigured);
         Assert.Empty(await klient.ListAsync());
         Assert.Null(await klient.DownloadAsync("cokoli"));
+    }
+
+    /// <summary>Vypnutý kanál se nezeptá, ani když je klíč vyplněný.</summary>
+    [Fact]
+    public void VypnutyKanalSeNepouzije()
+    {
+        var klient = new TemplateChannelClient(
+            new TemplateChannelSettings { Enabled = false, ApiKey = "klic" });
+
+        Assert.False(klient.IsConfigured);
     }
 }

@@ -52,18 +52,30 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Je co stáhnout? Řídí viditelnost nabídky nad seznamem.</summary>
     public bool HasAvailable => _available?.Any == true;
 
-    /// <summary>Věta pro uživatele - kolik a čeho je k dispozici.</summary>
+    /// <summary>Věta pro uživatele - kolik a čeho je k dispozici, se správným skloňováním.</summary>
     public string AvailableText
     {
         get
         {
             if (_available is not { Any: true } a) return "";
+
             var casti = new List<string>();
-            if (a.New.Count > 0) casti.Add($"{a.New.Count} nových");
-            if (a.Updated.Count > 0) casti.Add($"{a.Updated.Count} aktualizovaných");
-            return $"K dispozici je {string.Join(" a ", casti)} šablon od M-line.";
+            if (a.New.Count > 0) casti.Add(Pocet(a.New.Count, "nová", "nové", "nových"));
+            if (a.Updated.Count > 0) casti.Add(Pocet(a.Updated.Count, "aktualizovaná", "aktualizované", "aktualizovaných"));
+
+            // Sloveso se řídí celkem: 1 → „je", 2-4 → „jsou", 5 a víc → zase „je".
+            string sloveso = a.Count is >= 2 and <= 4 ? "jsou" : "je";
+            return $"K dispozici {sloveso} {string.Join(" a ", casti)} od M-line.";
         }
     }
+
+    /// <summary>Počet se šablonami v české deklinaci: 1 šablona, 2-4 šablony, 5+ šablon.</summary>
+    internal static string Pocet(int n, string jedna, string dve, string vic) => n switch
+    {
+        1 => $"1 {jedna} šablona",
+        >= 2 and <= 4 => $"{n} {dve} šablony",
+        _ => $"{n} {vic} šablon"
+    };
 
     private AsyncRelayCommand? _download;
     public AsyncRelayCommand DownloadCommand => _download ??= CommandAsync(DownloadAsync);

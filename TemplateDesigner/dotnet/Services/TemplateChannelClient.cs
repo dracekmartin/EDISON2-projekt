@@ -15,7 +15,7 @@ namespace TemplateDesigner.Services;
 /// vrátí prázdno a aplikace pokračuje s tím, co má v databázi. Kanál nikdy nesmí zdržet start
 /// ani otevření přehledu šablon.</para>
 /// </summary>
-public class TemplateChannelClient(HttpClient? http = null)
+public class TemplateChannelClient(TemplateChannelSettings? settings = null, HttpClient? http = null)
 {
     private const string ListPath = "/api/external/print-templates";
     private const string ApiKeyHeader = "X-API-Key";
@@ -24,11 +24,14 @@ public class TemplateChannelClient(HttpClient? http = null)
     private static readonly HttpClient Shared = new() { Timeout = TimeSpan.FromSeconds(30) };
     private readonly HttpClient _http = http ?? Shared;
 
-    private static TemplateChannelSettings? Settings => AppSettings.Current?.TemplateChannel;
+    // Nastavení se předává, ne bere ze statického stavu: jinak výsledek závisí na tom, jestli
+    // v procesu někdo načetl konfiguraci s klíčem - a test „bez klíče nic nevrací" pak platí
+    // podle pořadí testů, ne podle kódu (spadlo přesně takhle 19. 8.).
+    private readonly TemplateChannelSettings? _settings = settings ?? AppSettings.Current?.TemplateChannel;
 
     /// <summary>Je kanál nakonfigurovaný? Bez klíče nebo vypnutý se mlčky přeskakuje.</summary>
-    public static bool IsConfigured =>
-        Settings is { Enabled: true } s
+    public bool IsConfigured =>
+        _settings is { Enabled: true } s
         && !string.IsNullOrWhiteSpace(s.BaseUrl)
         && !string.IsNullOrWhiteSpace(s.ApiKey);
 
@@ -62,7 +65,7 @@ public class TemplateChannelClient(HttpClient? http = null)
 
     private async Task<Stream?> SendAsync(string path, CancellationToken ct)
     {
-        var s = Settings;
+        var s = _settings;
         if (s is null) return null;
 
         using var request = new HttpRequestMessage(HttpMethod.Get, s.BaseUrl.TrimEnd('/') + path);
@@ -98,5 +101,8 @@ public class ChannelTemplateInfo
 /// <summary>Jedna šablona i s obsahem. Obsah je JSON šablony jako řetězec, bajt v bajt.</summary>
 public class ChannelTemplateDetail : ChannelTemplateInfo
 {
+    /// <summary>Obsah šablony. Na drátě se pole jmenuje <c>data</c> - uvnitř obálky, která má
+    /// taky <c>data</c>. Bez toho mapování se stahovalo prázdno a kanál mlčel.</summary>
+    [JsonPropertyName("data")]
     public string? Content { get; set; }
 }
