@@ -4,48 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** **vyzkoušet distribuční kanál systémových šablon** (níže), pak **linkové JŘ**
-> (`B10` + `B13`) jako dedikovaný slot.
-
----
-
-## 🚚 Distribuce systémových šablon kanálem (návrh 19. 8.)
-
-Kolega postavil na Podpoře rozhraní pro tiskové šablony (seznam / uložení / stažení podle GUID,
-verzování, `X-API-Key`). Tím se z dosavadní položky „samostatný distribuční kanál" stává konkrétní
-práce: **šablony přestanou být svázané s vydáním programu**.
-
-**Proč to zapadá:** dnes jsou systémové šablony zabalené v `.exe` a při startu se nalijí do větve
-**MLINE** v zákaznické databázi; přehled je ukáže jako systémové, read-only, a Ctrl+S z nich udělá
-kopii do firmy. Kanál **jen vymění zdroj** téhož řetězu - picker, chování ani datový model se nemění.
-
-**Směr toku (rozhodnutí Jan 19. 8.):** u zákazníka **jen čtení** (úložiště na helpdesku → klient).
-Nahrávat a měnit smíme **jen my ve vývoji**, nikdy ne z buildu, který jde k zákazníkovi.
-Klíč zadrátovaný v klientovi je tím pádem v pořádku - ale **musí být omezený na čtení**: `.exe` je
-balík spravovaných knihoven, takže řetězec z něj jde vytáhnout, obfuskace na tom nic nezmění a jeden
-klíč platí pro všechny zákazníky naráz (odvolat = vydat program všem). U čtecího klíče je nejhorší
-následek úniku „někdo si přečte naše šablony"; u klíče se zápisem „kdokoli smaže knihovnu všem".
-
-**Tři věci, bez kterých to nebude fungovat:**
-
-1. **Seed z `.exe` nesmí přepsat novější verzi z kanálu.** Dnes přepisuje MLINE při každém startu,
-   takže by se stažená šablona při příštím spuštění tiše vrátila zpátky. Postup: kanál nejdřív jako
-   doplněk, po ověření se přestane balit do `.exe` a embedded kopie zůstane jen jako záchrana pro
-   první spuštění bez sítě (postupná migrace, rozhodnutí Jan).
-2. **Identita šablony je GUID uvnitř JSONu**, ne ten, který přidělí Podpora - podle něj se zapisuje
-   do MLINE, takže je stažení opakovatelné bez duplicit. Pravidlo pro nahrávání: aktualizace = táž
-   šablona se stejným vnitřním GUID.
-3. **Stav „co už máme" patří do databáze firmy**, ne na počítač uživatele; jinak by každý uživatel
-   stahoval znovu. Aditivní pole u MLINE záznamu.
-
-**Z pohledu uživatele:** kontrola na pozadí, **nikdy neblokuje** (bez sítě přehled funguje jako dnes).
-V přehledu řádek „K dispozici jsou nové šablony od M-line · Stáhnout" a odznak „aktualizováno"
-u změněných - **ne** modální otázka při každém Ctrl+O. Stažení je jedno kliknutí pro celou firmu.
-Kdo si systémovou šablonu už zkopíroval a upravil, o svou verzi nepřijde (kopie je samostatný záznam).
-
-**První krok (nic nerozhoduje, jde udělat hned):** projít kanál ručně - nahrát jednu naši systémovou
-šablonu, stáhnout ji zpátky, ověřit, že obsah sedí bajt v bajt a že se po vložení do MLINE chová jako
-systémová (read-only, Ctrl+S dělá kopii). Ukáže to, jestli formát sedí, a nevyžaduje řádek v aplikaci.
+> **Nejblíž na řadě:** **linkové JŘ** (`B10` + `B13`) jako dedikovaný slot.
 
 ---
 

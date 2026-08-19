@@ -3,6 +3,45 @@
 > Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
 > Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-19 ✅ - Distribuce systémových šablon kanálem (hotovo a vyzkoušeno naživo)
+
+Detail → changelog 2026-08-19 (5)-(8). Systémové (M-line) šablony byly zabalené v `.exe`, takže nová
+šablona znamenala **vydat program**. Nově je doručuje kanál z úložiště na helpdesku (rozhraní
+postavil kolega) a přehled šablon je nabídne ke stažení.
+
+**Jak to funguje:** kanál **vyměnil zdroj** dosavadního řetězu - cíl (větev MLINE v zákaznické
+databázi), přehled i chování zůstaly. V přehledu se nad seznamem objeví „K dispozici je 1 nová
+šablona od M-line" s tlačítkem Stáhnout, jen když je co stáhnout; stažení doplní šablony **celé
+firmě**. Bez sítě nebo bez klíče se nabídka neukáže a přehled funguje jako dřív.
+
+**Rozhodnutí, která platí dál:**
+
+- **U zákazníka jen čtení** (úložiště → klient); nahrávat smíme jen my ve vývoji, proto v aplikaci
+  není žádná cesta k zápisu a klíč v ní je čtecí.
+- **Identitu šablony určuje GUID uvnitř JSONu**, ne identifikátor v úložišti - kdo publikuje, musí
+  vnitřní GUID zachovat, jinak u zákazníka vznikne druhá šablona vedle první.
+- **Stav „co už máme" cestuje v šabloně** (`channelOrigin`), takže patří databázi firmy, ne počítači.
+- **`.exe` zůstává jako záchrana pro první spuštění** (instalace bez sítě, zavřený firewall);
+  aktualizace chodí kanálem a seed z programu už nepřepisuje, co doručil kanál.
+
+**Ověřeno naživo (19. 8.):** nahrání (HTTP 201) i aktualizace (HTTP 200, verze 2) · seznam a stažení
+vrací obsah bajt v bajt · v databázi sedí `channelOrigin` · nabídka, stažení i aktualizace projdou
+z UI · po aktualizaci dorazil opravdu nový obsah (zmizela hláška o chybějícím fontu).
+
+**Provozní postup pro další šablony:** autorovat v návrháři → vyexportovat do repa
+(`SystemTemplates/*.json`, tam je verzované a hlídané drift testy) → publikovat do kanálu **z toho
+souboru**, ne kopírováním JSONu rukou. Publikační skript (`tools/`) a „seed jen doplní, co chybí"
+se vědomě **nedělaly** - zatím se publikuje ručně a je to v pořádku, dokud šablon není víc
+(rozhodnutí Jan 19. 8.).
+
+⚠️ **Dvě věci, které je potřeba mít na paměti při publikování:**
+
+- Kanál doručuje **i zákazníkům se starším programem**; šablona uložená v novějším formátu se u nich
+  odmítne otevřít (aplikace to hlídá). Publikovat tedy až ve chvíli, kdy je funkce ve vydané verzi.
+- **Zákaznických kopií se aktualizace nikdy nedotkne** (kopie má vlastní identifikátor). Oprava
+  systémové šablony se k rozkopírovaným verzím nedostane - ty se musí opravit ručně, nebo si je
+  uživatel založí znovu z aktualizované systémové.
+
 ## 2026-08-19 ⏸️ - AI integrace: sekce uzavřena, pomocník ověřen
 
 Sekce **AI integrace - v pozadí** je z roadmapy pryč (rozhodnutí Jan 19. 8.). Důvod: co z ní bylo
