@@ -33,6 +33,38 @@ public class SessionLogoutTests
     }
 
     [Fact]
+    public void Logout_ClearsBusinessLocksByGuid()
+    {
+        var mlRest = MLRestMocks.Create();
+        var clone = MLRestMocks.Create();
+        clone.Guid.Returns("g-1");
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+
+        SessionLogout.Logout(mlRest);
+
+        // Parita s legacy EDUsers.Logout: po ACTIVITY logoutu spadnou i business zámky session
+        // (pod shell GUID zamykají i killnuté hostované moduly).
+        clone.Received(1).QueryOrThrow("ALWA.SYS.Lock", "LockClearExt",
+            Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == "g-1"));
+    }
+
+    [Fact]
+    public void Logout_ActivityLogoutThrows_LockClearStillRuns()
+    {
+        // Selhání ACTIVITY logoutu nesmí přeskočit úklid business zámků - ty žádný
+        // server-side reaper neuklidí.
+        var mlRest = MLRestMocks.Create();
+        var clone = MLRestMocks.Create();
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+        clone.QueryOrThrow("ALVA.SYS.Login", "Logout", Arg.Any<object[]>())
+             .Returns(_ => throw new InvalidOperationException("boom"));
+
+        SessionLogout.Logout(mlRest);
+
+        clone.Received(1).QueryOrThrow("ALWA.SYS.Lock", "LockClearExt", Arg.Any<object[]>());
+    }
+
+    [Fact]
     public void Logout_Null_NoThrow()
     {
         SessionLogout.Logout(null);

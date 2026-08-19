@@ -27,7 +27,7 @@ public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
 public class CompanySwitcher(
     EDServices services,
     ILocalPrefs localPrefs,
-    Action closeShellWindows,
+    Func<bool> closeShellWindows,
     Action closeLegacyModules)
 {
     /// <summary>
@@ -48,7 +48,10 @@ public class CompanySwitcher(
     /// licenci přes <see cref="LicenceVerifier"/> (s admin USERS.exe retry). Legacy moduly
     /// se zavírají až po <see cref="LicenceAcquireOutcome.Accepted"/> - neúspěšné přepnutí
     /// tak nezabije rozpracovanou práci v nich. Při neúspěchu rollbackuje MLRest na původní
-    /// hodnoty. <see cref="ILocalPrefs.LastIdfa"/> aktualizuje při Accepted. Confirm popup
+    /// hodnoty. Když okno odmítne zavření (veto v Closing), vrací
+    /// <see cref="LicenceAcquireOutcome.Cancelled"/> ještě před swapem Idfa - přeživší okno
+    /// by jinak přes sdílený MLRest mluvilo s cizí firmou.
+    /// <see cref="ILocalPrefs.LastIdfa"/> aktualizuje při Accepted. Confirm popup
     /// je odpovědnost callsite (VM ho zobrazí před voláním).
     /// </summary>
     /// <param name="newIdfa">Cílová Idfa.</param>
@@ -63,7 +66,8 @@ public class CompanySwitcher(
         // WPF okna shellu volají server přes sdílený MLRest - po swapu Idfa by jejich requesty
         // (save při zavření, refresh) šly do cizí firmy, proto se zavírají před ním. Legacy
         // moduly mají vlastní spojení (Idfa v launch args), swap se jich netýká → až po Accepted.
-        closeShellWindows();
+        if (!closeShellWindows())
+            return new SwitchOutcome(LicenceAcquireOutcome.Cancelled, currentLicence);
         mlRest.Idfa = newIdfa;
         mlRest.DataNamespace = newNamespace;
 

@@ -24,7 +24,7 @@ public class CompanySwitcherTests
         IPopupDisplayer? popup = null,
         IWindowNavigator? nav = null,
         ILocalPrefs? prefs = null,
-        Action? closeShellWindows = null,
+        Func<bool>? closeShellWindows = null,
         Action? closeLegacyModules = null)
     {
         var services = new EDServices(
@@ -37,7 +37,7 @@ public class CompanySwitcherTests
         };
         return new CompanySwitcher(services,
             prefs ?? Substitute.For<ILocalPrefs>(),
-            closeShellWindows ?? (() => { }),
+            closeShellWindows ?? (() => true),
             closeLegacyModules ?? (() => { }));
     }
 
@@ -298,7 +298,8 @@ public class CompanySwitcherTests
         // ještě pod starou Idfa, jinak by requesty šly do cizí firmy.
         var mlRest = MLRestMocks.Create();   // start Idfa = CB_DP
         string? idfaAtClose = null;
-        var switcher = CreateSwitcher(mlRest, () => null, closeShellWindows: () => idfaAtClose = mlRest.Idfa);
+        var switcher = CreateSwitcher(mlRest, () => null,
+                                      closeShellWindows: () => { idfaAtClose = mlRest.Idfa; return true; });
 
         switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
 
@@ -314,7 +315,8 @@ public class CompanySwitcherTests
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
-        var closeShell = Substitute.For<Action>();
+        var closeShell = Substitute.For<Func<bool>>();
+        closeShell.Invoke().Returns(true);
         var closeLegacy = Substitute.For<Action>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false,
                                       closeShellWindows: closeShell, closeLegacyModules: closeLegacy);
@@ -360,6 +362,28 @@ public class CompanySwitcherTests
             closeLegacy.Invoke();
             mlRest.With(cacheLocks: 0, idfa: "CB_DP", dataNamespace: "CB_DP");
         });
+    }
+
+    [Fact]
+    public void Switch_OknoVetovaloZavreni_CancelledBezeZmeny()
+    {
+        // Přeživší okno by přes sdílený MLRest mluvilo s cizí firmou - veto (e.Cancel
+        // v Closing, typicky neuložená data) proto ruší switch ještě před swapem Idfa.
+        var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
+        var licence = new Lic { CountsLOGIN = 5 };
+        var closeLegacy = Substitute.For<Action>();
+        var prefs = Substitute.For<ILocalPrefs>();
+        var switcher = CreateSwitcher(mlRest, () => licence, prefs: prefs,
+                                      closeShellWindows: () => false, closeLegacyModules: closeLegacy);
+
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        Assert.Equal(LicenceAcquireOutcome.Cancelled, result.Outcome);
+        Assert.Equal("CB_DP", mlRest.Idfa);
+        Assert.Equal("CB_DP", mlRest.DataNamespace);
+        mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
+        closeLegacy.DidNotReceive().Invoke();
+        prefs.DidNotReceive().Save();
     }
 
     // ---------- Switch — prefs persistence ----------

@@ -95,7 +95,7 @@ internal static class EdisonMainViewModelHarness
         if (userPrefs != null) svc.UserPrefs = userPrefs;
         var close = closeAllWindows ?? (() => { });
         var p = prefs ?? Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, p, close, closeLegacyModules ?? (() => { }));
+        var switcher = new CompanySwitcher(svc, p, () => { close(); return true; }, closeLegacyModules ?? (() => { }));
         var catalog = miniAppCatalog ?? MiniAppCatalog.Build([]);
 
         EDServices.Initialize(svc);

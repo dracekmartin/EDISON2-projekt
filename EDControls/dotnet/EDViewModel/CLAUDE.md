@@ -74,6 +74,9 @@ AvalonDocku) ViewModel nemá, takže vypadne bez druhé attached property. Guard
   ne - ztmavují shell, druhý klik tam nejde.
 - `CloseAll()` je záměrně jen na konkrétní třídě `WindowNavigator`, ne na interface; totéž
   jeho fáze `CloseShellWindows()` / `CloseLegacyModules()` (přepnutí firmy je volá odděleně).
+  Varianty `TryCloseAll()`/`TryCloseShellWindows()` hlásí veto okna (`e.Cancel` v Closing) -
+  výměna session je musí respektovat, jinak přeživší okno mluví s cizí session přes sdílený
+  MLRest. Void verze existují kvůli aditivnímu API (sdílená DLL).
 - **Owned overlay okna EDControls (`IOverlayWindow`) `CloseAll()` ani „Spuštěné moduly"
   nevidí** - panel Podpora a „Akce probíhá" jsou top-level okna, takže by se jinak nabídly
   jako modul a `CloseAll` by je zavřel (panel nevratně). Nové owned overlay okno tenhle

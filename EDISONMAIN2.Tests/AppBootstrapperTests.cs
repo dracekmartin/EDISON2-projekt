@@ -407,6 +407,31 @@ public class AppBootstrapperTests
         Assert.True(b.WireActivityCalled);
     }
 
+    // ---------- SavePostLoginState (reálné tělo, TestableBootstrapper ho overriduje) ----------
+
+    private class RealSaveBootstrapper : AppBootstrapper
+    {
+        public void CallSave(ILocalPrefs prefs, string idfa, string? name)
+            => SavePostLoginState(prefs, idfa, name);
+    }
+
+    [Fact]
+    public void SavePostLoginState_Debug_NeprepiseLastLoginName()
+    {
+        var prefs = Substitute.For<ILocalPrefs>();
+
+        new RealSaveBootstrapper().CallSave(prefs, "CB_DP", "jan.novak");
+
+        prefs.Received().LastIdfa = "CB_DP";
+        prefs.Received(1).Save();
+#if DEBUG
+        // Debug login je syntetický - jméno v local.json patří poslednímu ostrému přihlášení.
+        prefs.DidNotReceive().LastLoginName = Arg.Any<string?>();
+#else
+        prefs.Received().LastLoginName = "jan.novak";
+#endif
+    }
+
     // ---------- Handoff login okna ----------
 
     [Fact]
