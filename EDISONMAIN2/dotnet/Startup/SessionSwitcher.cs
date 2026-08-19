@@ -15,7 +15,8 @@ public record SwitchUserOutcome(SwitchUserResult Outcome, Lic? Licence);
 
 public enum SwitchUserResult
 {
-    /// <summary>Uživatel zrušil login dialog. Shell pokračuje s původním session beze změny.</summary>
+    /// <summary>Uživatel zrušil login dialog, nebo okno s neuloženými daty odmítlo zavření.
+    /// Shell pokračuje s původním session beze změny.</summary>
     Cancelled,
     /// <summary>Licence pro nového uživatele přesáhla limit (admin retry / non-admin). Caller obvykle ukončí app.</summary>
     LicenceRefused,
@@ -36,12 +37,13 @@ public enum SwitchUserResult
 /// <param name="services">Session služby; <see cref="EDServices.MLRest"/> se při úspěchu swapne.</param>
 /// <param name="ownerWindow">Owner login dialogu - shell okno; čte se lazily, po startu se mění.</param>
 /// <param name="wireActivityFailed">Napojení force-logout / version gate handlerů na nový MLRest.</param>
-/// <param name="closeAllWindows">Zavření všech oken a legacy modulů staré session.</param>
+/// <param name="closeAllWindows">Zavření všech oken a legacy modulů staré session;
+/// <c>false</c> = okno zavření vetovalo a switch se musí zrušit.</param>
 public class SessionSwitcher(
     EDServices services,
     Func<System.Windows.Window?> ownerWindow,
     Action<IMLRest> wireActivityFailed,
-    Action closeAllWindows)
+    Func<bool> closeAllWindows)
 {
     /// <summary>
     /// Prompt → close all → <see cref="SessionFactory.Establish"/> (drží UserPrefs cache
@@ -55,7 +57,9 @@ public class SessionSwitcher(
         var login = PromptLogin(current);
         if (login == null) return new(SwitchUserResult.Cancelled, null);
 
-        closeAllWindows();
+        // Veto okna (neuložená data) ruší switch PŘED logoutem - přeživší okno by jinak
+        // pracovalo pod session, která už na serveru neexistuje.
+        if (!closeAllWindows()) return new(SwitchUserResult.Cancelled, null);
 
         // Odhlásit starého uživatele — jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
         // do server-side timeoutu. Až po confirmu (login != null), před swapem session.

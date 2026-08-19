@@ -24,7 +24,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   jiná volba rozbije koexistenci shell ↔ moduly. Startupní výběr:
   `CompanySwitcher.PickInitial` (priorita `LastIdfa` → `IsDefault` → první).
 - `SessionLogout.Logout` se volá na **klonu** `IMLRest.With(...)` - lze odhlásit
-  starou firmu / session bez mutace sdílené instance.
+  starou firmu / session bez mutace sdílené instance. Kromě ACTIVITY zámku uklízí
+  i **business zámky session** (`ALWA.SYS.Lock.LockClearExt` dle GUID, parita s legacy
+  `EDUsers.Logout`) - pod shell GUID zamykají i hostované moduly a ty se zavírají killem.
 - `LogoutWatcher` pollí `maSeUkoncit` s `CacheLocks=2`, aby poll neobnovoval
   server-side idle timer.
 - Session-scoped stav (access, tři stromy, preference, výchozí okno) načítá
@@ -40,7 +42,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   retry; VM ho obaluje `ActionInProgress` + yield, aby se overlay stihl vykreslit.
   Zavírání dvoufázově: WPF okna shellu **před** swapem Idfa (volají server přes sdílený
   MLRest), legacy moduly až po `Accepted` těsně před logoutem staré firmy - neúspěšné
-  přepnutí je tak nezabije. Confirm se ukazuje jen s otevřenými moduly.
+  přepnutí je tak nezabije. Veto okna (`e.Cancel` v Closing) switch ruší (`Cancelled`) -
+  přeživší okno by přes sdílený MLRest mluvilo s cizí firmou; totéž u switch user.
+  Confirm se ukazuje jen s otevřenými moduly.
 - DEBUG build má verzi `999999.9` - netriggeruje update check.
 - Zavření shellu (= ukončení aplikace i všech agend) se potvrzuje v `Closing` přes
   `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu

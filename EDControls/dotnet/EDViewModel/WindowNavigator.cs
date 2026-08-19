@@ -207,7 +207,8 @@ public class WindowNavigator : IWindowNavigator
     /// <summary>
     /// Zavře všechna modeless WPF okna (kromě <c>MainWindow</c>) + kill tracked legacy
     /// child procesy. Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> —
-    /// shell-only operace, agenda VMs ji nemají vidět.
+    /// shell-only operace, agenda VMs ji nemají vidět. Případné veto okna ignoruje;
+    /// kde na něm záleží (výměna session), volej <see cref="TryCloseAll"/>.
     /// </summary>
     public void CloseAll()
     {
@@ -216,14 +217,41 @@ public class WindowNavigator : IWindowNavigator
     }
 
     /// <summary>
+    /// Jako <see cref="CloseAll"/>, ale respektuje veto: když některé shell okno odmítne
+    /// zavření (<c>e.Cancel</c> v Closing), vrátí <c>false</c> a legacy moduly NEzabíjí -
+    /// caller musí výměnu session zrušit, přeživší okno by jinak mluvilo s cizí session.
+    /// </summary>
+    public bool TryCloseAll()
+    {
+        if (!TryCloseShellWindows()) return false;
+        CloseLegacyModules();
+        return true;
+    }
+
+    /// <summary>
     /// Jen WPF část <see cref="CloseAll"/>: modeless okna shellu (kromě <c>MainWindow</c>).
     /// Oddělené kvůli přepnutí firmy - tato okna volají server přes sdílený MLRest, takže se
     /// musí zavřít před swapem Idfa; legacy moduly (vlastní spojení) až po úspěchu.
+    /// Veto ignoruje (viz <see cref="TryCloseShellWindows"/>).
     /// </summary>
-    public void CloseShellWindows()
+    public void CloseShellWindows() => TryCloseShellWindows();
+
+    /// <summary>
+    /// Jako <see cref="CloseShellWindows"/>, ale vrátí <c>false</c>, když některé okno
+    /// zavření odmítlo (<c>e.Cancel</c> v Closing - typicky dotaz na neuložená data).
+    /// Zbylá okna se přesto zkusí zavřít; rozhodnutí o abortu je na callerovi.
+    /// </summary>
+    public bool TryCloseShellWindows()
     {
+        var allClosed = true;
         foreach (var w in Application.Current.Windows.OfType<Window>().ToList())
-            if (ShouldClose(w, Application.Current.MainWindow)) w.Close();
+            if (ShouldClose(w, Application.Current.MainWindow))
+            {
+                w.Close();
+                // Vetované Close() nechá okno naživu - IsLoaded je jediný spolehlivý signál.
+                allClosed &= !w.IsLoaded;
+            }
+        return allClosed;
     }
 
     /// <summary>Jen legacy část <see cref="CloseAll"/>: kill tracked child procesů.</summary>

@@ -26,10 +26,10 @@ public class SessionSwitcherTests
     {
         private readonly WireSpy _wire;
 
-        private TestableSessionSwitcher(EDServices services, WireSpy wire, Action closeAllWindows)
+        private TestableSessionSwitcher(EDServices services, WireSpy wire, Func<bool> closeAllWindows)
             : base(services, () => null, wire.Attach, closeAllWindows) => _wire = wire;
 
-        public static TestableSessionSwitcher Create(EDServices services, Action closeAllWindows)
+        public static TestableSessionSwitcher Create(EDServices services, Func<bool> closeAllWindows)
             => new(services, new WireSpy(), closeAllWindows);
 
         public IMLRest? WiredMLRest => _wire.Wired;
@@ -70,7 +70,8 @@ public class SessionSwitcherTests
     {
         var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
         var originalMLRest = services.MLRest;
-        var closeAll = Substitute.For<Action>();
+        var closeAll = Substitute.For<Func<bool>>();
+        closeAll.Invoke().Returns(true);
         var s = TestableSessionSwitcher.Create(services, closeAll);
         s.PromptResult = null;
 
@@ -86,7 +87,7 @@ public class SessionSwitcherTests
     [Fact]
     public void Switch_PromptReceivesCurrentConnection()
     {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
+        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
         s.PromptResult = null;
 
         s.Switch();
@@ -101,7 +102,8 @@ public class SessionSwitcherTests
     [Fact]
     public void Switch_LoginAndLicenceAccepted_ReturnsSuccess_ClosesWindows()
     {
-        var closeAll = Substitute.For<Action>();
+        var closeAll = Substitute.For<Func<bool>>();
+        closeAll.Invoke().Returns(true);
         var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), closeAll);
         s.PromptResult = ReauthLogin();
         s.SessionOutcome = LicenceAcquireOutcome.Accepted;
@@ -117,7 +119,7 @@ public class SessionSwitcherTests
     public void Switch_NewSessionKeepsCompanyAndConnection()
     {
         // Mění se uživatel, ne firma - nová session musí zdědit server/port/namespace/idfa staré.
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
+        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
         s.PromptResult = ReauthLogin();
 
         s.Switch();
@@ -126,9 +128,26 @@ public class SessionSwitcherTests
     }
 
     [Fact]
+    public void Switch_OknoVetovaloZavreni_Cancelled_BezSwapuSession()
+    {
+        // Veto okna (neuložená data) ruší switch před logoutem staré session - přeživší okno
+        // by jinak pracovalo pod session, která už na serveru neexistuje.
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var originalMLRest = services.MLRest;
+        var s = TestableSessionSwitcher.Create(services, () => false);
+        s.PromptResult = ReauthLogin();
+
+        var outcome = s.Switch();
+
+        Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
+        Assert.Same(originalMLRest, services.MLRest);
+        Assert.Null(s.WiredMLRest);   // nová session nevznikla
+    }
+
+    [Fact]
     public void Switch_LicenceRefused_MapsToLicenceRefused()
     {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
+        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
         s.PromptResult = ReauthLogin();
         s.SessionOutcome = LicenceAcquireOutcome.Refused;
 
@@ -141,7 +160,7 @@ public class SessionSwitcherTests
     [Fact]
     public void Switch_LicenceCancelled_MapsToLicenceCancelled()
     {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
+        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
         s.PromptResult = ReauthLogin();
         s.SessionOutcome = LicenceAcquireOutcome.Cancelled;
 

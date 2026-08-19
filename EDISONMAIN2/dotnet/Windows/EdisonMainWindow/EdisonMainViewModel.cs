@@ -919,8 +919,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             {
                 // Combobox si drží cílovou firmu z vlastního editu → notifikací ho vrať na platnou.
                 RaiseSessionPropertiesChanged();
-                // Cancelled bez hlášky záměrně: vzniká jen tak, že admin sám odmítl licenční
-                // retry dialog - akci aktivně zrušil, další popup by byl jen friction.
+                // Cancelled bez hlášky záměrně: admin odmítl licenční retry dialog, nebo okno
+                // s neuloženými daty vetovalo zavření - obojí aktivní volba uživatele,
+                // další popup by byl jen friction.
                 if (result.Outcome == LicenceAcquireOutcome.Refused)
                     PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 return;

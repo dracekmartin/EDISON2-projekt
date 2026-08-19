@@ -5,16 +5,19 @@ using EDControls;
 namespace EDISONMAIN2;
 
 /// <summary>
-/// Uvolnění ACTIVITY zámku přes <c>ALVA.SYS.Login.Logout</c> (idfa/ip/guid ze sys kontextu).
-/// Zámek je v temp globálu — se zánikem spojení se neuvolní, musí se explicitně odhlásit.
-/// Best-effort: selhání logoutu nesmí blokovat zavření ani přepnutí.
+/// Uvolnění ACTIVITY zámku (<c>ALVA.SYS.Login.Logout</c>, idfa/ip/guid ze sys kontextu)
+/// + business zámků session (<c>ALWA.SYS.Lock.LockClearExt</c> dle GUID) — parita s legacy
+/// <c>EDUsers.Logout</c>. Zámky se zánikem spojení nezaniknou, musí se explicitně uklidit;
+/// pod shell GUID zamykají i hostované legacy moduly (CacheLocks=1), které se zavírají
+/// killem, takže jejich zámky uklidí až tenhle logout.
+/// Best-effort: selhání nesmí blokovat zavření ani přepnutí.
 /// </summary>
 internal static class SessionLogout
 {
     /// <summary>
     /// Odhlásí session. Volá se na klonu (<see cref="IMLRest.With"/>) s <c>CacheLocks=0</c> (request
     /// nesmí padnout na LockExist) — sdílenou instanci nemutuje. <paramref name="idfa"/> /
-    /// <paramref name="dataNamespace"/> přepíší cílovou firmu (company switch uvolňuje zámek staré
+    /// <paramref name="dataNamespace"/> přepíší cílovou firmu (company switch uvolňuje zámky staré
     /// firmy mid-session); null = aktuální session (close / switch-user).
     /// </summary>
     internal static void Logout(IMLRest? mlRest, string? idfa = null, string? dataNamespace = null)
@@ -22,9 +25,19 @@ internal static class SessionLogout
         if (mlRest is null) return;
         try
         {
-            // object[]: legacy endpoint bez vstupních parametrů (identita jde v sys kontextu).
-            mlRest.With(cacheLocks: 0, idfa: idfa, dataNamespace: dataNamespace)
-                  .QueryOrThrow("ALVA.SYS.Login", "Logout", new object[] { });
+            var clone = mlRest.With(cacheLocks: 0, idfa: idfa, dataNamespace: dataNamespace);
+            try
+            {
+                // object[]: legacy endpoint bez vstupních parametrů (identita jde v sys kontextu).
+                clone.QueryOrThrow("ALVA.SYS.Login", "Logout", new object[] { });
+            }
+            catch (Exception ex)
+            {
+                // Nezávislé na LockClearExt níž — selhání ACTIVITY logoutu nesmí nechat viset
+                // business zámky (ty neuklidí ani server-side idle reaper, ten bere jen ACTIVITY).
+                Debug.WriteLine($"SessionLogout (ACTIVITY) failed: {ex.Message}");
+            }
+            clone.QueryOrThrow("ALWA.SYS.Lock", "LockClearExt", new object[] { clone.Guid });
         }
         catch (Exception ex)
         {
