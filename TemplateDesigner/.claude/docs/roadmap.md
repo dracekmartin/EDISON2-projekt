@@ -42,6 +42,8 @@ odložené body pilotu, **§13 inventář nastavení starého modulu** (tři vrs
 zda ho čteme), **§14 pozastavené tikety helpdesku** (8 požadavků, u všech máme zákazníkovi slíbeno
 „vyřešíme v novém návrháři").
 
+> 📄 **Zkušební vzor pro celý track: linka 940 Kroměříž-Přerov (IDZK).** Reálné zadání zákazníka, ne vymyšlený případ - starý modul ho nedokázal vyrobit (analýza §15). Až bude šablona stát, ověřuj proti němu.
+>
 > ✅ **`L1` (síť pro porovnání se starým modulem) je hotová** - detail v archivu. Porovnání, zlatý odtisk i smoke test běží v `run-cache-tests.ps1`; nálezy z prvního běhu jsou rozdělené do `L2` a `L3` níže.
 
 | # | Vlna | Vel. |
@@ -53,6 +55,7 @@ zda ho čteme), **§14 pozastavené tikety helpdesku** (8 požadavků, u všech 
 | **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **vícesloupcová legenda s přetékáním** (#7487 - dnes jeden sloupec, chtějí čtyři), **turnusy** a **výchozí šablona pro MHD**. | M |
 | **L7** | **Sdružený JŘ více linek** (dřív část `C6`) - jedna sestava přes víc linek s řádkem zdrojové linky, včetně výlukové varianty. ⚠️ **Přestalo být „ověřit, jestli to zákazník chce":** KOVED si o to řekl (#9283) a čeká kalkulaci, tedy placená práce. Rozsah a cenu rozhodnout s Pavlem, ne odvodit z kódu. | L |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
+| **L9** | **Aby tabulka nevypadala jako jedna souvislá mřížka** (podklad Zlín, analýza §15 - kolega to zkoušel ve starém modulu a nešlo to). Tři drobnosti, které patří k sobě: **ohraničení per sloupec** (dnes se svislé čáry kreslí buď všude, nebo nikde, takže km podsloupce nejdou slít do jednoho bloku), **popisek nad info sloupci** (pás nad nimi už existuje, jen má natvrdo prázdný text - vzor tam má „↓ Směr jízdy ↓") a **mezera mezi bloky** info × pracovní dny × víkendy. Volitelně různá barva vodorovných a svislých čar (dnes jedna pro obojí). ⚠️ Šest dalších bodů ze Zlína **návrhář už umí** (pořadí sloupců, vypnutí MHD, barva pásu nadpisů, popisky, rostoucí záhlaví u víc dopravců) - patří do ověření na šabloně, ne do práce. | S–M |
 
 ### Odložené body z pilotu
 

@@ -571,6 +571,61 @@ Pět samostatných věcí v jednom tiketu:
   režim „nejmíň stránek"). Zapsat jako podnět k vlně 5, ne slibovat.
 
 
+---
+
+## 15. Co ve starém modulu nešlo nastavit (podklad Zlín, 2026-08-19)
+
+Kolega zkoušel ve **starém** modulu vyrobit linkový JŘ podle vzoru IDZK a narazil na řadu věcí,
+které se nedaly nastavit. Zapsáno od Jana 19. 8. včetně dvou PDF: cílový vzor (linka 940
+Kroměříž-Přerov) a to, co ze starého modulu reálně vyšlo (linka 439 Konice-Olomouc).
+
+⚠️ **Nejsou to požadavky na paritu.** Skoro všechno níže je **vzhled**, a ten porovnání se starým
+modulem (`L1`) záměrně neměří - v novém návrháři je to práce šablony, ne dat. Otázka tedy nezní
+„chováme se jako starý modul", ale „umí to návrhář nastavit". U většiny bodů je odpověď ano, a to
+je samo o sobě argument pro náhradu.
+
+### 15.1 Rozdíl obou PDF na první pohled
+
+| Vzor (940) | Co vyrobil starý modul (439) |
+|---|---|
+| info sloupce **km, zastávka, zóny** | **zóny, km, zastávka, MHD** + úzký sloupec se šipkou |
+| jeden nadpis **„↓ Směr jízdy ↓"** přes všechny info sloupce | každý info sloupec má vlastní popisek, společný nadpis nejde |
+| **mezery mezi bloky** info × pracovní dny × víkendy | souvislá mřížka bez mezer |
+| km bez vnitřního ohraničení | každý km podsloupec orámovaný zvlášť |
+| jemné vodorovné linky, střídavé podbarvení | plná mřížka všude |
+| legenda ve dvou sloupcích pod tabulkou | (na první straně není) |
+
+### 15.2 Body ze zadání a stav v návrháři
+
+Ověřeno čtením kódu 19. 8., ne odhadem.
+
+| # | Co ve starém modulu nešlo | Stav v návrháři |
+|---|---|---|
+| 1 | odstranit **šedivý pruh nad nadpisy** | ✅ **umíme** - pás skupin dnů i řádek záhlaví berou barvu z `HeaderStyle` prvku (pozadí i text), nastavuje se v panelu |
+| 2 | **změnit pořadí info sloupců** (zóny, km, zastávky…) | ✅ **umíme** - sloupce jsou seznam a dialog je umí přesouvat (`ColumnListEditor`, `MoveUpCommand`) |
+| 3 | **odstranit sloupec MHD a sloupec se šipkou** | ✅ **umíme** - MHD má zaškrtávátko viditelnosti a navíc zmizí sám, když je pro celou linku prázdný; **sloupec se šipkou v prvku vůbec není** (přidat ho má naopak `L6`) |
+| 4 | **odstranit ohraničení jednotlivých km sloupců** | ❌ **mezera** - svislé čáry se kreslí buď všude, nebo nikde (`GridStyle.ShowColumnLines` platí pro celý prvek). Potřeba **per sloupec**, ať jde km podsloupce slít do jednoho bloku |
+| 5 | **jiný styl čar mezi spoji** pro celou sekci | 🟡 **částečně** - `GridStyle` má zvlášť vodorovné a svislé čáry, ale **jednu barvu, tloušťku a styl pro obojí**. Vzor má jemné vodorovné a žádné svislé, což už jde; různá barva pro každý směr ne |
+| 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ❌ **mezera, ale malá** - pás skupin dnů nad info sloupci **existuje**, jen má natvrdo prázdný text (`LineTableElement.BuildRowPlan`). Chce to popisek a jeho styl |
+| 7 | **mezera mezi bloky** (info × pracovní dny × víkendy) | ❌ **mezera** - prvek kreslí souvislou mřížku, pojem „mezera mezi skupinami sloupců" nemá |
+| 8 | **popisky info sloupců podle vzoru** | ✅ **umíme** - hlavička sloupce je volný text |
+| 9 | **záhlaví napevno; pruh dopravce se nevejde, když je dopravců víc** | ✅ **umíme lépe** - záhlaví je v návrháři složené z běžných prvků, textový prvek má dynamickou výšku a roste podle obsahu. ⚠️ Ověřit na lince s víc dopravci, že to pole s výčtem opravdu naroste a nepřekryje tabulku |
+| 10 | **levé ohraničení, které leze, i když ho nikde nemám** | ✅ **odpadá** - vada starého modulu; v návrháři je vnější obrys rámeček prvku a ten se dá vypnout |
+
+### 15.3 Co z toho plyne
+
+- **Šest z deseti bodů návrhář už dnes umí** a jsou to přesně ty, kvůli kterým se starý modul
+  nahrazuje. Do roadmapy nepatří jako práce, ale **do ověření na reálné šabloně** (Zlín 940 je
+  dobrý zkušební vzor - je to reálné zadání zákazníka, ne vymyšlený případ).
+- **Tři mezery jsou drobné a patří k sobě** (ohraničení per sloupec, nadpis nad info sloupci,
+  mezera mezi bloky) - všechny jsou o tom, aby tabulka nevypadala jako jedna souvislá mřížka.
+  Vedeny jako `L9`.
+- **Sloupec se šipkou** má `L6` v plánu přidat; tady je doklad, že se hodí i **vypnout**.
+- ⚠️ **Neověřeno:** v PDF ze starého modulu jsou v buňkách písmena (`K`, `A`, `J`, `D`) tam, kde
+  vzor má piktogramy (`|`, `⟨`). Může to být nevložený symbolový font v tom konkrétním PDF, nebo
+  jiný obsah - **rozhodne se to až s `L4`**, netvrdit nic dopředu.
+
+
 ## Zdrojové soubory citované v této analýze
 
 ```
