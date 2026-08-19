@@ -4,18 +4,26 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** **linkové JŘ** (`B10` + `B13`) jako dedikovaný slot.
+> **Nejblíž na řadě:** **vyzkoušet distribuční kanál systémových šablon** (níže), pak **linkové JŘ**
+> (`B10` + `B13`) jako dedikovaný slot.
+
+---
+
+## 🚚 Distribuce systémových šablon - vyzkoušet kanál
+
+**Kolega kanál vytvořil, teď ho projít v praxi** (Jan 19. 8.). Do teď jsme systémové (M-line)
+šablony doručovali zabalené v `.exe` a distribuce mimo něj byla jen záměr; „jiný kanál" byl vždy
+myšlený tak, že **jen vymění zdroj** - picker ani ovládání se nemění.
+
+Co ověřit: že se šablona z kanálu objeví v přehledu mezi systémovými, že zůstane **read-only**
+(Ctrl+S ji uloží jako kopii do firmy, ne přes originál), a co se stane při aktualizaci téže
+šablony, kterou si zákazník už zkopíroval a upravil.
 
 ---
 
 ## 📥 Backlog
 
 ### Ostatní
-
-- **Provozní kontroly k vydání AI funkcí** (zbytek po zrušené sekci AI, 19. 8.): ostrá zkouška cesty
-  přes EDISONAI/mlweb **bez lokálního klíče** u první firmy · potvrzení evidence spotřeby u autora
-  mlwebu · zveřejnění generátoru šablon z popisu (dnes skrytý, jen pro vývojáře) až po otestování
-  na reálných zadáních. Není to vývoj, ale nesmí se to zapomenout při vydání.
 
 - **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
   prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do
@@ -58,9 +66,6 @@
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
-
-- **Samostatný distribuční kanál** systémových šablon mimo `.exe` - v1 doručuje embed→MLINE;
-  „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
 
 - **Externí datové zdroje** (analýza 2026-07-12, na poptávku) - architektura připravená (engine zná jen
   `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda

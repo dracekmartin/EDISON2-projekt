@@ -23,6 +23,11 @@ akční, je hotové, a zbytek jsou nápady bez poptávky.
 Kontrakt pro AI zůstává stabilní (JSON šablona + DataSchema), takže rozšíření kdykoli bez breaking
 changes - to byl vždycky hlavní argument, proč to nespěchá.
 
+**Provozní kontroly k vydání** (v roadmapě viselo do 19. 8., pak odstraněno jako neaktuální):
+ostrá zkouška cesty přes EDISONAI/mlweb **bez lokálního klíče** u první firmy · potvrzení evidence
+spotřeby u autora mlwebu · zveřejnění generátoru šablon z popisu (dnes skrytý). Vytáhnout, až se
+budou AI funkce reálně vydávat zákazníkovi.
+
 ## 2026-08-19 ⏸️ - Import PDF: sekce uzavřena, otevřené body čekají na moduly
 
 Detail → changelog 2026-08-18 (6)-(18) a 2026-08-19 (1)-(3). Sekce **Import PDF - doladění** je
