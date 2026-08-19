@@ -20,6 +20,11 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 - Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - nezaniká se spojením,
   hard-kill ho neuvolní (uklidí až server idle timeout). V dev to tlumí deterministický
   session GUID (`#if DEBUG` v `EstablishSession`) - re-run přepíše týž klíč.
+- Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty
+  obnovují idle timer (jinak aktivní shell vypadá pro server jako idle) a detekují zaniklý
+  zámek/verzi. Přepnutí firmy jede po dobu verify s `CacheLocks=0` (zámek nové firmy ještě
+  neexistuje, LockExist by session shodil). Server-side version gate běží jen při Locks=1;
+  DEBUG posílá prázdnou `EdisonVersion` (dev 999999.9 by gate shodila).
 - `SelectedCompanyIndex` musí odpovídat `MLRest.Idfa` - tam má bootstrapper zámek;
   jiná volba rozbije koexistenci shell ↔ moduly. Startupní výběr:
   `CompanySwitcher.PickInitial` (priorita `LastIdfa` → `IsDefault` → první).

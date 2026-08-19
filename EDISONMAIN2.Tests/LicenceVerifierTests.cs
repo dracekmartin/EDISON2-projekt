@@ -32,6 +32,35 @@ public class LicenceVerifierTests
     }
 
     [Fact]
+    public void Accepted_SetsCacheLocksOne()
+    {
+        // Parita s legacy EDUsers.VerifyLic: po vzniku ACTIVITY zámku session obnovuje
+        // idle timer a detekuje zaniklý zámek (bez toho vypadá aktivní shell pro server jako idle).
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, 1);
+
+        LicenceVerifier.TryAcquireSession(
+            mlRest, () => new Lic { CountsLOGIN = 5 }, isAdmin: false,
+            Substitute.For<IPopupDisplayer>(), Substitute.For<IWindowNavigator>());
+
+        Assert.Equal(1, mlRest.CacheLocks);
+    }
+
+    [Fact]
+    public void Refused_LeavesCacheLocksUntouched()
+    {
+        // Bez zámku by LockExist při Locks=1 shodil každý další request.
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, -1);
+
+        LicenceVerifier.TryAcquireSession(
+            mlRest, () => new Lic { CountsLOGIN = 5 }, isAdmin: false,
+            Substitute.For<IPopupDisplayer>(), Substitute.For<IWindowNavigator>());
+
+        Assert.Equal(0, mlRest.CacheLocks);
+    }
+
+    [Fact]
     public void NonAdmin_OverLimit_ReturnsRefused_NoConfirm()
     {
         var mlRest = MLRestMocks.Create();

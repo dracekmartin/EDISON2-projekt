@@ -35,6 +35,12 @@ public class MLRestAdapter(MLRest inner) : IMLRest
         set => Inner.Idfa = value;
     }
 
+    public int CacheLocks
+    {
+        get => Inner.CacheLocks;
+        set => Inner.CacheLocks = value;
+    }
+
     public string Server    => Inner.Server;
     public int    Port      => Inner.Port;
     public string LoginName => Inner.LoginName;

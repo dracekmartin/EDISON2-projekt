@@ -28,7 +28,10 @@ namespace EDISONMAIN2
 
         private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            new PopupDisplayer().Error(e.Exception);
+            // Dispatcher výjimka žádné okno nenese - aktivní okno dá reportu identitu okna
+            // (WindowNamespace/Title) a chybovému dialogu ownera.
+            var owner = Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive) ?? MainWindow;
+            new PopupDisplayer(owner).Error(e.Exception);
             e.Handled = true;
         }
     }

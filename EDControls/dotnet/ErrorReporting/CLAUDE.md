@@ -47,6 +47,10 @@ EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_Ca
 
 ## Drobné
 
+- **Neodeslaná hlášení** (offline, VPN, 500) zachytí `ErrorFallbackLog`:
+  `%APPDATA%\m-line\common\error-reports.log`, NDJSON **bez příloh**, rotace nad ~1 MB
+  do `.old`. Nic se zpětně neodesílá - podpora si soubor vyžádá ručně.
+
 - `IngestUrl` / `ApiKey` jsou `static readonly`, ne `const` - `const` se inlinuje do
   konzumenta, takže samostatně nasazená `EDControls.dll` by hodnotu nezměnila exe, které se
   nepřebuildilo (stejný důvod jako u `SupportActions.WidgetKey`).

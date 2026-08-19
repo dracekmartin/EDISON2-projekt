@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json.Nodes;
@@ -28,10 +29,22 @@ public class ErrorReporterTests : IDisposable
     }
 
     private readonly FakeHandler _handler = new();
+    private readonly string _fallbackPath = Path.Combine(Path.GetTempPath(), $"ed-fallback-{Guid.NewGuid():N}.log");
 
-    public ErrorReporterTests() => ErrorReporter.ClientOverride = new HttpClient(_handler);
+    public ErrorReporterTests()
+    {
+        ErrorReporter.ClientOverride = new HttpClient(_handler);
+        ErrorFallbackLog.PathOverride = _fallbackPath;
+    }
 
-    public void Dispose() => ErrorReporter.ClientOverride = null;
+    public void Dispose()
+    {
+        ErrorReporter.ClientOverride = null;
+        ErrorFallbackLog.PathOverride = null;
+        ErrorFallbackLog.MaxBytes = 1_000_000;
+        if (File.Exists(_fallbackPath)) File.Delete(_fallbackPath);
+        if (File.Exists(_fallbackPath + ".old")) File.Delete(_fallbackPath + ".old");
+    }
 
     private static ErrorReport Report(string refId = "xabc") => new()
     {
@@ -114,5 +127,75 @@ public class ErrorReporterTests : IDisposable
         await ErrorReporter.SendAsync([]);
 
         Assert.Empty(_handler.Requests);
+    }
+
+    // ---------- lokální fallback log ----------
+
+    [Fact]
+    public async Task NetworkFailure_WritesFallbackLog()
+    {
+        _handler.ThrowOnSend = new HttpRequestException("VPN je dole");
+
+        await ErrorReporter.SendAsync([Report("xfall")]);
+
+        var line = Assert.Single(File.ReadAllLines(_fallbackPath));
+        var node = JsonNode.Parse(line)!.AsObject();
+        Assert.Equal("EDISON2", node["source"]?.GetValue<string>());
+        Assert.Contains("xfall", node["description"]?.GetValue<string>());
+        Assert.NotNull(node["loggedAt"]);
+    }
+
+    [Fact]
+    public async Task ServerError_WritesFallbackLog()
+    {
+        ErrorReporter.ClientOverride = new HttpClient(new FakeHandler(HttpStatusCode.InternalServerError));
+
+        await ErrorReporter.SendAsync([Report()]);
+
+        Assert.True(File.Exists(_fallbackPath));
+    }
+
+    [Fact]
+    public async Task Success_DoesNotWriteFallbackLog()
+    {
+        await ErrorReporter.SendAsync([Report()]);
+
+        Assert.False(File.Exists(_fallbackPath));
+    }
+
+    [Fact]
+    public async Task FallbackLog_StripsAttachments()
+    {
+        // Base64 snímky oken by log nafoukly o stovky KB na záznam.
+        _handler.ThrowOnSend = new HttpRequestException("offline");
+        var report = new ErrorReport
+        {
+            RefId = "xatt",
+            Source = "EDISON2",
+            Type = "error",
+            Module = "M",
+            Name = "N",
+            Description = "xatt | test",
+            Attachments = [new ErrorAttachment("w.png", "image/png", "AAAA")],
+        };
+
+        await ErrorReporter.SendAsync([report]);
+
+        var node = JsonNode.Parse(File.ReadAllLines(_fallbackPath)[0])!.AsObject();
+        Assert.False(node.ContainsKey("attachments"));
+    }
+
+    [Fact]
+    public async Task FallbackLog_OverLimit_RotatesToOld()
+    {
+        _handler.ThrowOnSend = new HttpRequestException("offline");
+        ErrorFallbackLog.MaxBytes = 10;
+        File.WriteAllText(_fallbackPath, new string('x', 50));
+
+        await ErrorReporter.SendAsync([Report("xrot")]);
+
+        Assert.Equal(new string('x', 50), File.ReadAllText(_fallbackPath + ".old"));
+        var line = Assert.Single(File.ReadAllLines(_fallbackPath));
+        Assert.Contains("xrot", line);
     }
 }

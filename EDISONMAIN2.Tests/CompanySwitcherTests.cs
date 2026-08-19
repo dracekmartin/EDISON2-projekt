@@ -386,6 +386,55 @@ public class CompanySwitcherTests
         prefs.DidNotReceive().Save();
     }
 
+    // ---------- Switch — CacheLocks režim ----------
+
+    [Fact]
+    public void Switch_VerifyLicBeziBezCacheLocks_PoAcceptedJeJedna()
+    {
+        // Zámek nové firmy vznikne až ve VerifyLic - request pod novou Idfa s Locks=1
+        // by padl na LockExist (EdisonActivityFailed → shutdown).
+        var mlRest = MLRestMocks.Create();
+        mlRest.CacheLocks = 1;
+        int? locksAtVerify = null;
+        mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
+              .Returns(_ => { locksAtVerify = mlRest.CacheLocks; return MLRestMocks.Output("1"); });
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        Assert.Equal(0, locksAtVerify);
+        Assert.Equal(1, mlRest.CacheLocks);   // nastavil LicenceVerifier po Accepted
+    }
+
+    [Fact]
+    public void Switch_Refused_RestoresCacheLocks()
+    {
+        // Zámek staré firmy pořád existuje - session se vrací do původního režimu.
+        var mlRest = MLRestMocks.Create();
+        mlRest.CacheLocks = 1;
+        SetupVerifyLic(mlRest, -1);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        Assert.Equal(1, mlRest.CacheLocks);
+    }
+
+    [Fact]
+    public void Switch_NullLicence_KeepsCacheLocks()
+    {
+        // Verify přeskočen → LicenceVerifier režim nenastavil, musí se vrátit původní.
+        var mlRest = MLRestMocks.Create();
+        mlRest.CacheLocks = 1;
+        var switcher = CreateSwitcher(mlRest, () => null);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
+
+        Assert.Equal(1, mlRest.CacheLocks);
+    }
+
     // ---------- Switch — prefs persistence ----------
 
     [Fact]

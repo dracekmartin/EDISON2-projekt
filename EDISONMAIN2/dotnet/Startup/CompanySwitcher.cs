@@ -68,6 +68,12 @@ public class CompanySwitcher(
         // moduly mají vlastní spojení (Idfa v launch args), swap se jich netýká → až po Accepted.
         if (!closeShellWindows())
             return new SwitchOutcome(LicenceAcquireOutcome.Cancelled, currentLicence);
+
+        // Requesty pod novou Idfa (licenceLoader, VerifyLic) běží PŘED vznikem jejího ACTIVITY
+        // zámku - LockExist při CacheLocks=1 by session shodil. Po dobu switche tedy bez kontrol;
+        // při Accepted vrátí režim 1 LicenceVerifier, jinak se vrací původní hodnota.
+        var originalCacheLocks = mlRest.CacheLocks;
+        mlRest.CacheLocks = 0;
         mlRest.Idfa = newIdfa;
         mlRest.DataNamespace = newNamespace;
 
@@ -84,6 +90,10 @@ public class CompanySwitcher(
 
         if (outcome == LicenceAcquireOutcome.Accepted)
         {
+            // Null licence = verify přeskočen (testy / pre-licence stav) → LicenceVerifier
+            // CacheLocks nenastavil, vrať původní režim.
+            if (currentLicence == null) mlRest.CacheLocks = originalCacheLocks;
+
             // Kill legacy modulů PŘED logoutem staré firmy: sdílejí shell GUID s CacheLocks=1,
             // po zániku jejího ACTIVITY zámku by jim padal každý request na LockExist.
             closeLegacyModules();
@@ -102,6 +112,7 @@ public class CompanySwitcher(
 
         mlRest.Idfa = originalIdfa;
         mlRest.DataNamespace = originalNamespace;
+        mlRest.CacheLocks = originalCacheLocks;   // zámek staré firmy pořád existuje
         return new SwitchOutcome(outcome, newLicence);
     }
 }

@@ -60,6 +60,7 @@ public class SessionDataLoaderTests
         public string Mlp => "mlp";
         public string Guid => "guid";
         public char Delimiter => '~';
+        public int CacheLocks { get; set; }
     }
 
     // Strom se čte přes IModuleTreeGetter, ne přes MLRest → vlastní fake, taky thread-safe.
