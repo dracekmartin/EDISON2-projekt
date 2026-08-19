@@ -28,15 +28,18 @@ public class AiVisionImportService
     /// Analyzuje screenshot PDF stránky pomocí AI vision.
     /// Vrací sémantickou strukturu s relativními souřadnicemi nebo null při selhání.
     /// </summary>
+    /// <param name="elementSettingsCatalog">Soupis nastavitelných vlastností prvku (klíč → povolené
+    /// hodnoty) sestavený z prvku samotného; null = na vzhled prvků se neptáme.</param>
     public async Task<AiVisionResult?> AnalyzeAsync(
         string base64Png,
         ExtractedPage page,
         DataSchema? schema,
         ScheduleImportType scheduleType,
-        string apiKey)
+        string apiKey,
+        string? elementSettingsCatalog = null)
     {
         var log = new StringBuilder();
-        var systemPrompt = GetSystemPrompt(scheduleType);
+        var systemPrompt = GetSystemPrompt(scheduleType, elementSettingsCatalog);
         var userPrompt = BuildUserPrompt(page, schema);
 
         log.AppendLine("╔══════════════════════════════════════════════════════════════╗");
@@ -161,7 +164,7 @@ public class AiVisionImportService
 
     // ── System prompt - composable per agenda type ────────────────────
 
-    private static string GetSystemPrompt(ScheduleImportType type)
+    private static string GetSystemPrompt(ScheduleImportType type, string? elementSettingsCatalog = null)
     {
         var sb = new StringBuilder();
         var context = GetAgendaPromptContext(type);
@@ -181,10 +184,28 @@ public class AiVisionImportService
             sb.AppendLine(BuildTemplateParametersSection(context));
             sb.AppendLine();
         }
+        if (!string.IsNullOrWhiteSpace(elementSettingsCatalog))
+        {
+            sb.AppendLine(BuildElementSettingsSection(elementSettingsCatalog));
+            sb.AppendLine();
+        }
         sb.AppendLine(BuildOutputSection(context));
 
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Otázka na vzhled prvku poskládaná z jeho vlastních vlastností (ne ručně psaný seznam - ten
+    /// se s prvky rozešel). Model má odpovídat jen na to, co z obrázku **opravdu vidí**; nastavení,
+    /// která se vizuálně neliší, patří uživateli, ne odhadu.
+    /// </summary>
+    private static string BuildElementSettingsSection(string catalog) =>
+        @"NASTAVENÍ VZHLEDU SEZNAMU ZASTÁVEK (""elementSettings"" → ""StopList""):
+Projdi obrázek a vyplň JEN ty vlastnosti, které z něj bezpečně poznáš (šipka vlevo/vpravo, značky
+před názvem zastávky nebo za ním, počet oddílů vedle sebe, barvy…). Klíč použij PŘESNĚ tak, jak je
+uvedený níže, hodnotu právě v uvedeném tvaru.
+Co nevidíš nebo si nejsi jistý, VYNECH - výchozí hodnota je lepší než hádaná.
+" + catalog;
 
     /// <summary>
     /// Kontextové informace pro generování promptu per agenda.
@@ -213,8 +234,27 @@ public class AiVisionImportService
         sb.AppendLine($"{ctx.AdditionalRules.Count + 2}. Texty mimo hlavní oblast: role (title/header/validity/company/route/direction/footnote/unknown), mapování na DB pole z DataSchema. Pokud si nejsi jistý → dbField: null.");
         sb.AppendLine($"{ctx.AdditionalRules.Count + 3}. Obrázky: pro každé logo, QR kód nebo grafický prvek MIMO hlavní oblast vrať imageMappings s pozicí a rolí (\"logo\", \"qrCode\", \"decoration\"). Pokud odpovídá DB poli → nastav dbField. Roli \"qrCode\" hlas JEN pokud QR kód skutečně vidíš na obrázku nebo je v seznamu detekovaných grafických oblastí - NIKDY ho nevymýšlej. Každý fyzický objekt hlas právě jednou.");
         sb.AppendLine($"{ctx.AdditionalRules.Count + 4}. Použij POUZE pole z dodaného DataSchema. Nevymýšlej vlastní.");
+        sb.AppendLine(MappingPrinciples);
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Obecné zásady mapování - platí pro každou agendu i předlohu. Řeší chyby, které se opakují
+    /// napříč vývěskami: totéž pole přiřazené dvěma různým textům, dohadování se u textu, který
+    /// poli neodpovídá, a hlášení obsahu, který si prvek kreslí sám.
+    /// </summary>
+    private const string MappingPrinciples = @"
+ZÁSADY (platí vždy, bez ohledu na konkrétní předlohu):
+- KAŽDÉ datové pole použij NEJVÝŠ JEDNOU. Když se ke stejnému poli hlásí dva texty, vyber ten,
+  který mu odpovídá nejlépe, a druhý nech BEZ pole (dbField: null) jako prostý text.
+- Radši žádné pole než špatné. Nejsi-li si jistý, nech dbField: null - prostý text uživatel
+  přepíše za pár vteřin, špatně namapované pole vytiskne cizí údaj a nikdo si toho nevšimne.
+- Hlas jen to, co na obrázku SKUTEČNĚ vidíš. Nikdy nedomýšlej obrázky, QR kódy, sloupce ani
+  skupiny dnů podle toho, jak sestavy obvykle vypadají.
+- Obsah uvnitř jízdněřádových oblastí (názvy zastávek, časy, minuty, poznámky u zastávek)
+  NEHLAS jako samostatné texty - kreslí si ho prvek sám z dat.
+- Rozlišuj podle role, ne podle pořadí na stránce: nadpis sestavy, název linky, trasa a údaje
+  o dopravci jsou různé věci, i když jsou pod sebou a vypadají podobně.";
 
     private static string BuildPropertiesSection(AgendaPromptContext ctx)
     {
@@ -264,12 +304,18 @@ public class AiVisionImportService
         [
             "2. DepartureGrid: identifikuj skupiny dnů. Rozepiš zkratky (\"Prac.\" → \"Pracovní den\").",
             "3. StopList: identifikuj sloupce (\"TravelTime\", \"TariffNumber\", \"StopName\", \"Zone\", \"Platform\" = nástupiště/stanoviště).",
-            "4. POVINNÉ: vrať VŠECHNY hlavní oblasti, které na obrázku jsou - StopList (tabulka zastávek) ani DepartureGrid (minutová mřížka) NESMÍ v odpovědi chybět, pokud jsou vidět."
+            "4. POVINNÉ: vrať VŠECHNY hlavní oblasti, které na obrázku jsou - StopList (tabulka zastávek) ani DepartureGrid (minutová mřížka) NESMÍ v odpovědi chybět, pokud jsou vidět.",
+            "5. Oblast prvku MUSÍ zahrnovat i jeho ZÁHLAVÍ a VŠECHNY jeho řádky - u StopListu řádek "
+                + "s popisky sloupců (\"min.\", \"Zastávky\") a první i poslední zastávku, u DepartureGridu "
+                + "řádek se skupinami dnů a popisky \"hod\". NIKDY nevracej oblast, která začíná až u dat: "
+                + "co zůstane venku, skončí jako samostatné textové prvky, a záhlaví jedné tabulky "
+                + "rozpadlé na dvacet popisků je vždycky špatně."
         ],
         ElementProperties:
         [
+            // Šipku směru řídí parametr sestavy TISK_SIPKY, ne vlastnost prvku - ptát se na ni
+            // v tomhle bloku nemělo smysl, odpověď neměl kdo přečíst.
             ("StopList", [
-                "showDirectionArrow (bool): true pokud vidíš šipku směru (▼ nebo ┌─▼) u zastávek",
                 "showRowSeparators (bool): true pokud jsou viditelné vodorovné čáry mezi řádky",
                 "headerBgColor (hex): barva pozadí záhlaví sloupců, null pokud není"
             ]),
@@ -300,7 +346,7 @@ public class AiVisionImportService
       ""left"": 0.02, ""top"": 0.15, ""right"": 0.25, ""bottom"": 0.85,
       ""columns"": [""TravelTime"", ""StopName""],
       ""hasHeader"": true,
-      ""properties"": { ""showDirectionArrow"": ""true"", ""showRowSeparators"": ""true"" }
+      ""properties"": { ""showRowSeparators"": ""true"" }
     },
     {
       ""type"": ""DepartureGrid"",
@@ -523,8 +569,29 @@ public class AiVisionImportService
             TextMappings = ParseTextMappings(root),
             ImageMappings = ParseImageMappings(root),
             TemplateParameters = ParseStringDictionary(root, "templateParameters"),
+            ElementSettings = ParseElementSettings(root),
             Notes = root.GetStringOrNull("notes")
         };
+    }
+
+    /// <summary>„elementSettings": { "StopList": { "Skupina · Popisek": "hodnota" } }.</summary>
+    private static Dictionary<string, Dictionary<string, string>> ParseElementSettings(JsonElement root)
+    {
+        var result = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty("elementSettings", out var obj) || obj.ValueKind != JsonValueKind.Object)
+            return result;
+
+        foreach (var elementType in obj.EnumerateObject())
+        {
+            if (elementType.Value.ValueKind != JsonValueKind.Object) continue;
+            var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var prop in elementType.Value.EnumerateObject())
+                if (prop.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number
+                    or JsonValueKind.True or JsonValueKind.False)
+                    values[prop.Name] = prop.Value.ToString();
+            if (values.Count > 0) result[elementType.Name] = values;
+        }
+        return result;
     }
 
     private static List<AiVisionElement> ParseElements(JsonElement root)
@@ -652,6 +719,9 @@ public class AiVisionResult
     public List<AiVisionImageMapping> ImageMappings { get; init; } = [];
     /// <summary>Detekované vizuální vlastnosti → hodnoty parametrů šablony.</summary>
     public Dictionary<string, string> TemplateParameters { get; init; } = [];
+
+    /// <summary>Vzhled prvku poznaný z předlohy: typ prvku → („Skupina · Popisek" → hodnota).</summary>
+    public Dictionary<string, Dictionary<string, string>> ElementSettings { get; init; } = [];
     public string? Notes { get; init; }
 }
 

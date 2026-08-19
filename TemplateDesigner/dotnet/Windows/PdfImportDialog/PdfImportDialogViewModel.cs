@@ -103,8 +103,14 @@ public class PdfImportDialogViewModel : EDViewModel
 
     public string SelectedAgendaCode { get; }
 
-    /// <summary>Sloučení grafiky u obecného importu - pevný rozumný default (bez UI volby).</summary>
-    public GraphicsMergeMode MergeMode { get; } = GraphicsMergeMode.LinesOnly;
+    /// <summary>
+    /// Grafika u obecného importu: každá čára, obdélník i obrázek jako vlastní prvek (bez UI volby).
+    /// Slévání čar do jednoho obrázku na pozadí (dosavadní výchozí stav) dávalo zamčený rastr, který
+    /// nešel upravit a v tisku byl rozmazaný proti zbytku šablony - obrázek má v šabloně vzniknout
+    /// jen z toho, co obrázek opravdu je (logo, QR). Čáry se vkládají seskupené; početnost čar má
+    /// řešit rozpoznání tabulky z jejich mřížky, ne rastr.
+    /// </summary>
+    public GraphicsMergeMode MergeMode { get; } = GraphicsMergeMode.None;
 
     private bool _importAllPages = true;
     public bool ImportAllPages { get => _importAllPages; set { Set(ref _importAllPages, value); OnPropertyChanged(nameof(ImportPageRange)); } }
@@ -129,6 +135,12 @@ public class PdfImportDialogViewModel : EDViewModel
     public string StatusText { get => _statusText; set => Set(ref _statusText, value); }
 
     public Template? ImportedTemplate { get; private set; }
+
+    /// <summary>Protokol posledního importu - co se z předlohy nastavilo a co se nerozpoznalo.</summary>
+    public List<string> ImportLog { get; } = [];
+
+    /// <summary>Úplný soupis vzniklých prvků a jejich nastavení - ukládá se vedle PDF.</summary>
+    public List<string> DetailedLog { get; } = [];
 
     // Callbacky - View je napojí v konstruktoru
     public Func<string?>? RequestOpenFile { get; set; }
@@ -224,8 +236,9 @@ public class PdfImportDialogViewModel : EDViewModel
                 });
             }
 
-            // Nastavit agendu na šabloně pokud importujeme JŘ
-            if (scheduleType != ScheduleImportType.None && !string.IsNullOrEmpty(SelectedAgendaCode))
+            // Šablona zdědí agendu, ve které import běžel - i u obecného importu. Bez toho z něj
+            // vypadla šablona bez agendy: prázdný seznam polí a nutnost ji ručně přiřadit.
+            if (!string.IsNullOrEmpty(SelectedAgendaCode))
                 template.AgendaCode = SelectedAgendaCode;
 
             NormalizeImportedPage(template);
@@ -262,6 +275,8 @@ public class PdfImportDialogViewModel : EDViewModel
                 StatusText = $"Import dokončen: {template.Sections.Count} sekcí, {elementCount} elementů";
             }
 
+            string? protokol = SaveProtocolFile(pdfPath);
+            ReportImportLog(protokol);
             CloseDialog(true);
         }
         catch (Exception ex)
@@ -273,6 +288,52 @@ public class PdfImportDialogViewModel : EDViewModel
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Ukáže, co import z předlohy převzal a co nerozpoznal. Bez toho se hlášky ztratily se
+    /// zavřením dialogu a uživatel neměl jak zjistit, co si má dodělat ručně.
+    /// </summary>
+    private void ReportImportLog(string? protocolPath)
+    {
+        if (ImportLog.Count == 0) return;
+        string text = "Protokol importu:" + Environment.NewLine + Environment.NewLine
+            + string.Join(Environment.NewLine, ImportLog);
+        if (protocolPath is not null)
+            text += Environment.NewLine + Environment.NewLine
+                  + "Podrobný soupis všech prvků a jejich nastavení:" + Environment.NewLine + protocolPath;
+        PopupDisplayer.Info(text);
+    }
+
+    /// <summary>
+    /// Uloží podrobný protokol vedle PDF. Hláška se dá jen přečíst a zavřít; na kontrolu proti
+    /// předloze a na porovnání dvou importů mezi sebou je potřeba soubor, který zůstane.
+    /// Nezdaří-li se zápis (jen pro čtení, síťová cesta), import to nesmí shodit.
+    /// </summary>
+    private string? SaveProtocolFile(string pdfPath)
+    {
+        if (ImportLog.Count == 0 && DetailedLog.Count == 0) return null;
+        try
+        {
+            string path = Path.ChangeExtension(pdfPath, ".import-protokol.txt");
+            var text = new List<string>
+            {
+                $"Protokol importu z předlohy - {Path.GetFileName(pdfPath)}",
+                new('=', 60),
+                ""
+            };
+            text.AddRange(ImportLog);
+            if (DetailedLog.Count > 0)
+            {
+                text.Add("");
+                text.Add("Prvky a jejich nastavení (oproti čerstvě vloženému prvku)");
+                text.Add(new string('-', 60));
+                text.AddRange(DetailedLog);
+            }
+            File.WriteAllLines(path, text);
+            return path;
+        }
+        catch (Exception) { return null; }
     }
 
     /// <summary>Normalizuje stránku importované šablony, ať sekce po importu rozumně vyplní stránku
@@ -354,6 +415,8 @@ public class PdfImportDialogViewModel : EDViewModel
             pdfPath, pages, scheduleType, enableDebug, setStatus);
 
         setAiLog(pipeline.AiDebugLog);
+        ImportLog.AddRange(pipeline.ImportLog);
+        DetailedLog.AddRange(pipeline.DetailedLog);
         return template;
     }
 }

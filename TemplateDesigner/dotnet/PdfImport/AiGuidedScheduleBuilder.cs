@@ -86,7 +86,10 @@ public static class AiGuidedScheduleBuilder
         }
 
         // 4. Textové elementy z AI mapování
-        var textElements = BuildTextElements(vision, page, marginLeft, marginTop, ref zIndex, debugLines);
+        SkippedNumericBlocks = 0;
+        UserNotes.Clear();
+        var consumedBlocks = new HashSet<ExtractedTextBlock>();
+        var textElements = BuildTextElements(vision, page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks);
         elements.AddRange(textElements);
 
         // 4b. Korekce překryvu
@@ -105,6 +108,14 @@ public static class AiGuidedScheduleBuilder
 
         // Natáhnout StopList po spodní okraj
         StretchStopList(elements, debugLines);
+
+        // Texty, které model nezmínil, doplnit až TEĎ - podle skutečných rozměrů prvků. Dokud se
+        // porovnávalo s oblastmi od modelu, propadly texty, které do prvku spadly až po natažení
+        // seznamu zastávek (v šabloně pak ležel název zastávky přes tabulku - nález Jan 18. 8.).
+        var doplnene = BuildUnmappedTextElements(
+            page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks,
+            [.. elements.OfType<TextElement>()], ScheduleRects(elements));
+        elements.AddRange(doplnene);
 
         debugLines.Add($"Final elements: {elements.Count}");
         foreach (var el in elements)
@@ -301,7 +312,8 @@ public static class AiGuidedScheduleBuilder
     /// <summary>Vytvoří TextElement-y z AI text mapování, přeskočí texty uvnitř schedule oblastí.</summary>
     private static List<TextElement> BuildTextElements(
         AiVisionResult vision, ExtractedPage page,
-        float marginLeft, float marginTop, ref int zIndex, List<string> debug)
+        float marginLeft, float marginTop, ref int zIndex, List<string> debug,
+        HashSet<ExtractedTextBlock>? consumedBlocks = null)
     {
         float pageW = page.WidthMm;
         float pageH = page.HeightMm;
@@ -338,6 +350,7 @@ public static class AiGuidedScheduleBuilder
             float mappingXMm = mapping.X * pageW;
             float mappingYMm = mapping.Y * pageH;
             var matchedBlock = FindMatchingTextBlock(page, mapping, mappingXMm, mappingYMm);
+            if (matchedBlock is not null) consumedBlocks?.Add(matchedBlock);
 
             float elX, elY, elW, elH;
             string fontFamily = "Arial";
@@ -428,6 +441,148 @@ public static class AiGuidedScheduleBuilder
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Doplní texty, které v předloze prokazatelně jsou, ale model je nezmínil. Model vrací
+    /// <b>význam</b> (co je nadpis, co je pole agendy), geometrii textu má PDF přesnou - a když
+    /// model text vynechá, uživateli po importu chybí (číslo linky, trasa, řádek s dopravcem).
+    /// Doplněné texty jsou prosté: bez role a bez napojení na datové pole, ať se nepředstírá
+    /// význam, který nikdo neurčil.
+    ///
+    /// <para>Vynechá se, co si kreslí jízdněřádový prvek sám (leží uvnitř jeho oblasti) a co už
+    /// v šabloně je - i když to model pojmenoval jinak, než jak to stojí v PDF.</para>
+    /// </summary>
+    /// <summary>Obdélníky jízdněřádových prvků tak, jak nakonec v šabloně leží (v mm).</summary>
+    private static List<(float L, float T, float R, float B)> ScheduleRects(List<TemplateElement> elements) =>
+    [
+        .. elements
+            .Where(e => e is StopListElement or DepartureGridElement or NotesLegendElement)
+            .Select(e => (e.X, e.Y, e.X + e.Width, e.Y + (e.Height ?? 0)))
+    ];
+
+    private static List<TextElement> BuildUnmappedTextElements(
+        ExtractedPage page,
+        float marginLeft, float marginTop, ref int zIndex, List<string> debug,
+        HashSet<ExtractedTextBlock> consumedBlocks, List<TextElement> alreadyPlaced,
+        List<(float L, float T, float R, float B)> scheduleBoxes)
+    {
+        var result = new List<TextElement>();
+
+        var candidates = PdfTextGrouper.GroupWords(page.Words)
+            .Where(b => !consumedBlocks.Contains(b) && !string.IsNullOrWhiteSpace(b.Text))
+            .Where(b => !PatriKJizdnimuRadu(b, scheduleBoxes))
+            .ToList();
+
+        // Roj samotných čísel = obsah jízdního řádu, který se modelu nevešel do vyznačené oblasti
+        // (odjezdy pod mřížkou, časy vedle ní). Jako texty by v šabloně byly vždycky špatně - data
+        // si prvek při tisku vezme sám. Jedno dvě čísla naopak nechat: číslo linky je taky číslo.
+        var cislaBezTextu = candidates.Where(b => !b.Text.Any(char.IsLetter)).ToList();
+        if (cislaBezTextu.Count >= 3)
+        {
+            debug.Add($"Vynecháno samostatných čísel (obsah jízdního řádu): {cislaBezTextu.Count}");
+            SkippedNumericBlocks = cislaBezTextu.Count;
+            candidates = [.. candidates.Except(cislaBezTextu)];
+        }
+
+        foreach (var block in candidates)
+        {
+            float x = block.X - marginLeft;
+            float y = block.Y - marginTop;
+            if (alreadyPlaced.Any(t => Overlaps(t, x, y, block.Width, block.Height))) continue;
+
+            result.Add(new TextElement
+            {
+                Id = Guid.NewGuid(),
+                X = Math.Max(0, x),
+                Y = Math.Max(0, y),
+                Width = Math.Max(block.Width, 2f),
+                Height = Math.Max(block.FontSizePt * ResolvedTextStyle.PtToMm * 1.3f * LineCount(block.Text), 2f),
+                ZIndex = zIndex++,
+                Text = block.Text,
+                Style = new TextStyle
+                {
+                    FontFamily = block.FontFamily,
+                    FontSize = block.FontSizePt,
+                    Bold = block.IsBold,
+                    Italic = block.IsItalic,
+                    TextColor = block.ColorHex,
+                    VAlign = TextVerticalAlignment.Middle,
+                },
+                WordWrap = LineCount(block.Text) > 1,
+            });
+        }
+
+        if (result.Count > 0)
+            debug.Add($"Doplněno textů, které AI nezmínila: {result.Count}");
+        return result;
+    }
+
+    private static int LineCount(string text) => text.Split(NewLine).Length;
+
+    private const char NewLine = '\n';
+
+    /// <summary>Pod touto výškou je „vyplněný obdélník" v PDF čára, ne pozadí hlavičky (mm).</summary>
+    private const float MinHeaderRectHeightMm = 1.5f;
+
+    /// <summary>Tmavá výplň = čára nebo rámeček, ne pozadí záhlaví (text na ní není čitelný).</summary>
+    private static bool JeTmava(string? hex)
+    {
+        var c = ColorHex.ParseOrNull(hex);
+        if (c is null) return false;
+        return (c.Value.Red + c.Value.Green + c.Value.Blue) / 3 < 0x50;
+    }
+
+    /// <summary>Pás nad vyznačenou oblastí, který k prvku ještě patří (mm).</summary>
+    /// <remarks>Model často vyznačí oblast až od dat a záhlaví (popisky sloupců, skupiny dnů,
+    /// „hod") nechá venku. Jako samostatné texty je to vždycky špatně - je to záhlaví jedné
+    /// tabulky, ne dvacet popisků. Rozpadlo se to takhle 18. 8. u vývěsky ČSAD.</remarks>
+    private const float ZahlaviPasMm = 8f;
+
+    /// <summary>Přesah pod vyznačenou oblastí, který k prvku ještě patří (mm).</summary>
+    /// <remarks>Spodní hrana je od modelu taky jen odhad. Pokračovací řádek legendy poznámek
+    /// (dlouhá poznámka zalomená na víc řádků) nebo poslední řádek tabulky spadne těsně pod ni
+    /// a jako samostatný text v šabloně přebývá - nález Jan 18. 8. Menší než pás záhlaví: pod
+    /// prvkem bývají legitimní popisky (tarifní doložka pod jízdním řádem), nad ním ne.</remarks>
+    private const float PresahPodPrvkemMm = 4f;
+
+    /// <summary>
+    /// Leží blok uvnitř jízdněřádového prvku, nebo v pásu jeho záhlaví těsně nad ním? Pak si ho
+    /// prvek kreslí sám a jako text do šablony nepatří.
+    /// </summary>
+    private static bool PatriKJizdnimuRadu(
+        ExtractedTextBlock b, List<(float L, float T, float R, float B)> boxes)
+    {
+        float cy = b.Y + b.Height / 2;
+        return boxes.Any(box =>
+            b.X + b.Width > box.L && b.X < box.R           // vodorovně se překrývá s prvkem
+            && cy >= box.T - ZahlaviPasMm                  // uvnitř nebo v pásu záhlaví nad prvkem
+            && cy <= box.B + PresahPodPrvkemMm);           // nebo těsně pod jeho spodní hranou
+    }
+
+    /// <summary>Kolik samostatných čísel se při posledním importu vynechalo - pro protokol.</summary>
+    public static int SkippedNumericBlocks { get; private set; }
+
+    /// <summary>Co si má uživatel z posledního importu dodělat ručně - do protokolu.</summary>
+    public static List<string> UserNotes { get; } = [];
+
+    private static string RoleCesky(string role) => role switch
+    {
+        "logo"   => "logo",
+        "qrCode" => "QR kód",
+        _        => "grafiku"
+    };
+
+    /// <summary>Překryv obdélníků v mm - dvě třetiny plochy stačí na „je to tentýž text".</summary>
+    private static bool Overlaps(TextElement placed, float x, float y, float w, float h)
+    {
+        float ph = placed.Height ?? 0;
+        float ix = Math.Min(placed.X + placed.Width, x + w) - Math.Max(placed.X, x);
+        float iy = Math.Min(placed.Y + ph, y + h) - Math.Max(placed.Y, y);
+        if (ix <= 0 || iy <= 0) return false;
+
+        float smaller = Math.Min(placed.Width * ph, w * h);
+        return smaller > 0 && ix * iy / smaller > 0.66f;
     }
 
     /// <summary>
@@ -589,7 +744,11 @@ public static class AiGuidedScheduleBuilder
                     debug.Add($"    → placeholder se překrývá s existujícím obrázkem - skip");
                     continue;
                 }
-                result.Add(new RectangleElement
+                // Obrázek v předloze nejde vytáhnout (bývá nakreslený čarami, ne vložený jako
+                // bitmapa), ale model ho vidí a ví KDE je - vloží se prázdný rámeček na tu pozici,
+                // aby uživateli stačilo nahrát soubor. Šedý „placeholder" to není: prázdný rámeček
+                // je regulérní obrázkový prvek, jen zatím bez obsahu.
+                result.Add(new ImageElement
                 {
                     Id = Guid.NewGuid(),
                     X = Math.Max(0, imgX),
@@ -597,77 +756,88 @@ public static class AiGuidedScheduleBuilder
                     Width = imgW,
                     Height = imgH,
                     ZIndex = zIndex++,
-                    BorderColor = "#FF999999",
-                    BorderWidth = 0.2f,
-                    BackgroundColor = "#FFF0F0F0",
+                    ImageBase64 = null,
                 });
-                debug.Add($"    → created placeholder RectangleElement (no PdfPig image data)");
+                UserNotes.Add($"Na pozici {imgX:0.#}, {imgY:0.#} mm je v předloze "
+                              + $"{RoleCesky(imgMap.Role)} - vložen prázdný rámeček, nahrajte do něj obrázek.");
+                debug.Add($"    → prázdný rámeček na pozici z předlohy (obrázek nejde z PDF vytáhnout)");
             }
         }
 
-        // 7. Detekce nepokrytých grafických oblastí - oblasti stránky kde nejsou ani texty
-        //    ani schedule elementy, ale mohly by obsahovat vektorovou grafiku (logo, QR kód)
+        // 7. Prázdné orámované boxy z předlohy = místo pro obrázek (logo). Bere se geometrie
+        //    papíru, ne odhad modelu: model logo hlásí jen někdy a pokaždé jinde, kdežto rámeček
+        //    v PDF má přesnou pozici i velikost. Text uvnitř = rámeček kolem textu, ne slot.
+        foreach (var ramecek in PrazdneRamecky(page, vision, result, existingElements))
         {
-            var coveredAreas = new List<(float Left, float Top, float Right, float Bottom)>();
-
-            // Schedule elementy pokrývají oblast
-            foreach (var el in vision.Elements)
-                coveredAreas.Add((el.Left * pageW, el.Top * pageH, el.Right * pageW, el.Bottom * pageH));
-
-            // Textové elementy pokrývají oblast (z existingElements, ne z result)
-            foreach (var te in existingElements.OfType<TextElement>())
-                coveredAreas.Add((te.X, te.Y, te.X + te.Width, te.Y + (te.Height ?? 6)));
-
-            // Obrázky/QR/placeholdery z kroků 5+6 pokrývají oblast - bez toho krok 7 položí
-            // prázdný placeholder přes už přidané logo (překrývající se „falešný element").
-            foreach (var el in result)
-                coveredAreas.Add((el.X, el.Y, el.X + el.Width, el.Y + (el.Height ?? 6)));
-
-            // Najít prázdné oblasti v záhlaví stránky (nad schedule elementy)
-            float scheduleTop = vision.Elements.Count > 0
-                ? vision.Elements.Min(e => e.Top) * pageH
-                : pageH * 0.15f;
-
-            if (scheduleTop > MinHeaderSpaceAboveScheduleMm)
+            result.Add(new ImageElement
             {
-                // Rozdělit záhlaví na sloupce a najít nepokryté
-                const int cols = 6;
-                float colW = pageW / cols;
-
-                for (int c = 0; c < cols; c++)
-                {
-                    float colLeft = c * colW;
-                    float colRight = (c + 1) * colW;
-                    float colMidX = (colLeft + colRight) / 2;
-                    float colMidY = scheduleTop / 2;
-
-                    bool isCovered = coveredAreas.Any(a =>
-                        colMidX >= a.Left - 2 && colMidX <= a.Right + 2
-                        && colMidY >= a.Top - 2 && colMidY <= a.Bottom + 2);
-
-                    if (!isCovered)
-                    {
-                        // Nepokrytá oblast - vytvořit prázdný ImageElement placeholder
-                        float placeholderW = colW - 4;
-                        float placeholderH = Math.Min(scheduleTop - 4, placeholderW); // max čtverec
-                        if (placeholderW < 8 || placeholderH < 8) continue;
-
-                        result.Add(new ImageElement
-                        {
-                            Id = Guid.NewGuid(),
-                            X = Math.Max(0, colLeft + 2 - marginLeft),
-                            Y = Math.Max(0, 2 - marginTop),
-                            Width = placeholderW,
-                            Height = placeholderH,
-                            ZIndex = zIndex++,
-                            ImageBase64 = null, // prázdný placeholder - uživatel nahraje obrázek
-                        });
-                        debug.Add($"  → Empty area ImageElement placeholder at col {c}: ({colLeft + 2:0.#},{2:0.#}) {placeholderW:0.#}×{placeholderH:0.#}mm");
-                    }
-                }
-            }
+                Id = Guid.NewGuid(),
+                X = Math.Max(0, ramecek.X - marginLeft),
+                Y = Math.Max(0, ramecek.Y - marginTop),
+                Width = ramecek.Width,
+                Height = ramecek.Height,
+                ZIndex = zIndex++,
+                ImageBase64 = null,
+            });
+            UserNotes.Add($"V předloze je prázdný rámeček na pozici {ramecek.X:0.#}, {ramecek.Y:0.#} mm "
+                          + "(bývá to místo pro logo) - vložen prázdný obrázek, nahrajte do něj soubor.");
+            debug.Add($"  → prázdný rámeček z předlohy: ({ramecek.X:0.#},{ramecek.Y:0.#}) {ramecek.Width:0.#}×{ramecek.Height:0.#}mm");
         }
 
+        // Krok „prázdné místo v záhlaví = nejspíš logo" byl zrušen (Jan 18. 8.): dělil záhlaví
+        // na šest stejných sloupců a do prázdného položil rámeček, takže jeho pozice nevycházela
+        // z předlohy, ale ze šířky stránky - v šabloně pak seděl jinde než logo na papíře.
+        // Prázdný rámeček vzniká jen tam, kde model obrázek opravdu viděl (krok 6).
+
+        return result;
+    }
+
+    /// <summary>Nejmenší rozumný rámeček pro obrázek (mm) - menší bývá rámeček kolem hodnoty.</summary>
+    private const float MinRamecekMm = 8f;
+
+    /// <summary>
+    /// Prázdné orámované boxy předlohy - obdélník, který je vidět (má obrys), nic v něm není
+    /// napsané a nepřekrývá se s jízdněřádovým prvkem ani s tím, co už v šabloně je. V tiskových
+    /// sestavách to bývá místo vyhrazené pro logo; import z něj udělá prázdný obrázkový prvek,
+    /// takže uživateli stačí nahrát soubor.
+    /// </summary>
+    private static List<ExtractedRectangle> PrazdneRamecky(
+        ExtractedPage page, AiVisionResult vision,
+        List<TemplateElement> jizVlozene, List<TemplateElement> existujici)
+    {
+        var scheduleBoxes = vision.Elements
+            .Select(e => (L: e.Left * page.WidthMm, T: e.Top * page.HeightMm,
+                          R: e.Right * page.WidthMm, B: e.Bottom * page.HeightMm))
+            .ToList();
+
+        // Místo pro obrázek se hledá jen v ZÁHLAVÍ sestavy (nad jízdním řádem). Prázdných
+        // orámovaných boxů bývá v předloze víc - vedle jízdního řádu a pod ním jsou to jen
+        // vyhrazené plochy rozvržení (pokračování sloupce poznámek), ne sloty na logo.
+        float zahlaviDo = scheduleBoxes.Count > 0
+            ? scheduleBoxes.Min(b => b.T)
+            : page.HeightMm * 0.2f;
+
+        var result = new List<ExtractedRectangle>();
+        foreach (var r in page.Rectangles)
+        {
+            if (r.Width < MinRamecekMm || r.Height < MinRamecekMm) continue;
+            if (r.Y + r.Height / 2 >= zahlaviDo) continue;
+            if (r.StrokeColorHex is null || r.StrokeColorHex == ColorHex.Transparent) continue;
+
+            bool obsahujeText = page.Words.Any(w =>
+                w.X + w.Width / 2 > r.X && w.X + w.Width / 2 < r.X + r.Width
+                && w.Y + w.Height / 2 > r.Y && w.Y + w.Height / 2 < r.Y + r.Height);
+            if (obsahujeText) continue;
+
+            float cx = r.X + r.Width / 2, cy = r.Y + r.Height / 2;
+            if (scheduleBoxes.Any(b => cx >= b.L && cx <= b.R && cy >= b.T && cy <= b.B)) continue;
+
+            bool prekryv = jizVlozene.Concat(existujici).Any(e =>
+                cx >= e.X && cx <= e.X + e.Width && cy >= e.Y && cy <= e.Y + (e.Height ?? 0));
+            if (prekryv) continue;
+
+            result.Add(r);
+        }
         return result;
     }
 
@@ -759,9 +929,13 @@ public static class AiGuidedScheduleBuilder
                 continue;
             }
 
-            // Hlavička = horní obdélník (nejblíž k gridTop)
+            // Hlavička = horní obdélník (nejblíž k gridTop). Vodorovné čáry a tmavé pruhy se
+            // musí přeskočit: čára je v PDF taky „vyplněný obdélník", jen tenká, a když se vzala
+            // jako pozadí hlavičky, vyšlo záhlaví skupiny dnů celé černé (nález Jan 18. 8.).
             var headerRect = groupRects
-                .Where(r => r.Y < gridTop + HeaderRectYToleranceMm)
+                .Where(r => r.Y < gridTop + HeaderRectYToleranceMm
+                            && r.Height >= MinHeaderRectHeightMm
+                            && !JeTmava(r.FillColorHex))
                 .OrderBy(r => r.Y)
                 .FirstOrDefault();
             string headerColor = headerRect?.FillColorHex is not null
@@ -869,7 +1043,7 @@ public static class AiGuidedScheduleBuilder
         float dataFont = dataWords.Count > 0
             ? Median(dataWords.Select(w => w.FontSizePt)) : 0;
         float headerFont = headerWords.Count > 0
-            ? Median(headerWords.Select(w => w.FontSizePt)) : dataFont;
+            ? PrevazujiciVelikostPisma(headerWords) : dataFont;
 
         // Row height: medián vzdáleností mezi po sobě jdoucími Y
         float rowHeight = MeasureRowHeight(dataWords);
@@ -973,7 +1147,7 @@ public static class AiGuidedScheduleBuilder
         {
             var headerWords = gridWords.Where(w => w.Y < hourWords[0].Y - 0.5f).ToList();
             if (headerWords.Count > 0)
-                headerFont = Median(headerWords.Select(w => w.FontSizePt));
+                headerFont = PrevazujiciVelikostPisma(headerWords);
         }
 
         string fontFamily = DetectDominantFontFamily(minuteWords.Count > 0 ? minuteWords : gridWords);
@@ -981,16 +1155,30 @@ public static class AiGuidedScheduleBuilder
         return new GridMeasurements(minuteFont, headerFont, rowHeight, hourColWidth, minuteCellWidth, headerHeight, fontFamily);
     }
 
-    /// <summary>Medián výšek řádků (vzdáleností po sobě jdoucích Y) z PdfPig slov.</summary>
-    private static float MeasureRowHeight(List<ExtractedWord> words)
+    /// <summary>
+    /// Výška řádku = obvyklá vzdálenost mezi <b>řádky</b>, ne mezi jednotlivými slovy. Slova
+    /// jednoho řádku nemají v PDF přesně stejnou Y (různá velikost písma, dolní dotažnice), takže
+    /// brát každou odlišnou Y jako nový řádek vrací hodnotu menší, než jaká je ve skutečnosti -
+    /// řádky pak v šabloně vyjdou natěsno. Slova se proto nejdřív shluknou do řádků; hranice
+    /// shluku se odvozuje z výšky písma, aby pravidlo platilo pro drobné i velké sestavy.
+    /// </summary>
+    internal static float MeasureRowHeight(List<ExtractedWord> words)
     {
         if (words.Count < 2) return 0;
-        var sortedY = words.Select(w => w.Y).Distinct().OrderBy(y => y).ToList();
-        if (sortedY.Count < 2) return 0;
+
+        float typickaVyskaPisma = Median(words.Select(w => w.FontSizePt)) * ResolvedTextStyle.PtToMm;
+        float tolerance = Math.Max(typickaVyskaPisma * 0.6f, 0.4f);
+
+        var radky = new List<float>();
+        foreach (float y in words.Select(w => w.Y).OrderBy(y => y))
+            if (radky.Count == 0 || y - radky[^1] > tolerance)
+                radky.Add(y);
+
+        if (radky.Count < 2) return 0;
         var diffs = new List<float>();
-        for (int i = 1; i < sortedY.Count; i++)
+        for (int i = 1; i < radky.Count; i++)
         {
-            float diff = sortedY[i] - sortedY[i - 1];
+            float diff = radky[i] - radky[i - 1];
             if (diff > 1f && diff < 10f)
                 diffs.Add(diff);
         }
@@ -1009,6 +1197,23 @@ public static class AiGuidedScheduleBuilder
         return dominant?.Key ?? "Arial";
     }
 
+    /// <summary>
+    /// Velikost písma, kterou je vysázená <b>většina znaků</b> dané oblasti. Prostřední hodnota
+    /// (medián) tu selhává: v pásu záhlaví bývá vedle popisku skupiny ještě několik drobných
+    /// pomocných popisků (nad sloupci) a těch je početně víc, takže se za písmo záhlaví vzalo to
+    /// nejmenší a nadpis se vytiskl drobně. Váha podle počtu znaků odpovídá tomu, co je na papíře
+    /// vidět; při shodě vyhrává větší písmo (nadpis, ne pomocný popisek).
+    /// </summary>
+    internal static float PrevazujiciVelikostPisma(List<ExtractedWord> words)
+    {
+        if (words.Count == 0) return 0;
+        return words
+            .GroupBy(w => MathF.Round(w.FontSizePt, 1))
+            .OrderByDescending(g => g.Sum(w => w.Text.Length))
+            .ThenByDescending(g => g.Key)
+            .First().Key;
+    }
+
     /// <summary>Medián z kolekce floatů.</summary>
     private static float Median(IEnumerable<float> values)
     {
@@ -1018,7 +1223,7 @@ public static class AiGuidedScheduleBuilder
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
-    private static List<StopColumn> BuildStopColumnsFromAi(AiVisionElement stopListAi, float totalWidthMm)
+    internal static List<StopColumn> BuildStopColumnsFromAi(AiVisionElement stopListAi, float totalWidthMm)
     {
         var columns = new List<StopColumn>();
 
@@ -1027,19 +1232,20 @@ public static class AiGuidedScheduleBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.TravelTime,
-                Header = "min.",
+                Header = StopColumnHeaders.TravelTime,
                 Width = Math.Min(totalWidthMm * 0.2f, 10f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Right
             });
         }
 
+        // Tarifní číslo agendy nevystavují (nese jen interní klíč) - poziční potřebu kryje PORADI.
         if (stopListAi.Columns.Contains("TariffNumber"))
         {
             columns.Add(new StopColumn
             {
-                Key = "TariffNumber",
-                Header = "č.",
+                Key = StopFields.Poradi,
+                Header = StopColumnHeaders.Poradi,
                 Width = Math.Min(totalWidthMm * 0.15f, 8f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Center
@@ -1051,7 +1257,7 @@ public static class AiGuidedScheduleBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.Nastupiste,
-                Header = "Nást.",
+                Header = StopColumnHeaders.Nastupiste,
                 Width = Math.Min(totalWidthMm * 0.15f, 10f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Center
@@ -1067,7 +1273,7 @@ public static class AiGuidedScheduleBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.StopName,
-                Header = "Zastávky",
+                Header = StopColumnHeaders.StopName,
                 Width = Math.Max(remainingWidth, 15f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Left
@@ -1086,13 +1292,14 @@ public static class AiGuidedScheduleBuilder
             columns.Add(new StopColumn
             {
                 Key = StopFields.StopName,
-                Header = "Zastávky",
+                Header = StopColumnHeaders.StopName,
                 Width = Math.Max(remainingWidth, 15f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Left
             });
         }
 
+        StopColumnHeaders.InsertVariantColumn(columns);
         return columns;
     }
 

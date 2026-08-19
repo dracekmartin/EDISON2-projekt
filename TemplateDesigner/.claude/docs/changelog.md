@@ -1,5 +1,255 @@
 # Changelog
 
+## 2026-08-18 (18) - 📥 rámeček pro logo jen v záhlaví, protokol jen o skutečných změnách
+
+Rozpoznávání prázdných rámečků z předlohy vzalo i **box pod legendou poznámek** - v předloze
+opravdu je, ale je to vyhrazená plocha rozvržení, ne místo pro logo (nález Jan 18. 8.).
+
+Místo pro obrázek se proto hledá **jen v záhlaví sestavy**, tedy nad jízdním řádem; vedle něj a pod
+ním bývají prázdné boxy součástí rozvržení. Cena je vědomá: logo v patičce import nevloží - lepší
+než falešné rámečky v každé šabloně.
+
+Druhá úprava: **do protokolu jdou jen skutečné změny.** Model často potvrdí i hodnotu, kterou prvek
+stejně má („Rozdělit na více oddílů = 1"), a v soupisu to vypadalo, že se z předlohy přeneslo víc,
+než kolik se doopravdy změnilo.
+
+Ověřeno: build 0 chyb, .NET 1082/1082.
+
+## 2026-08-18 (17) - 📥 místo pro logo z rámečku v předloze, ne z odhadu modelu
+
+Po předchozí opravě obrázek z importu **zmizel úplně** - model ho v té odpovědi nehlásil (nález
+Jan 18. 8.). Model logo vidí jen někdy a pokaždé jinde, takže se na něj u obrázků spolehnout nedá.
+
+Změřením předlohy se ukázalo, že tam **rámeček doopravdy je**: obdélník s obrysem, bez výplně
+a **bez jakéhokoli textu uvnitř**. To je v tiskových sestavách typické místo vyhrazené pro logo -
+a má přesnou pozici i velikost, na rozdíl od odhadu. Import z něj proto udělá **prázdný obrázkový
+prvek**; stačí nahrát soubor. Rámeček, ve kterém text je, se nebere (to je orámování hodnoty),
+stejně jako rámeček uvnitř jízdněřádového prvku nebo přes už vložený obrázek.
+
+Druhá oprava: **pokračovací řádek dlouhé poznámky** (zalomená legenda) spadl těsně pod legendu
+a přebýval v šabloně jako samostatný text. K prvku se proto počítá i pás **4 mm pod jeho spodní
+hranou** - hranice od modelu je odhad. Je menší než pás nad prvkem záměrně: pod jízdním řádem
+bývají legitimní popisky (tarifní doložka), nad ním ne.
+
+Ověřeno: build 0 chyb, .NET 1082/1082.
+
+## 2026-08-18 (16) - 📥 rámeček pro logo se vkládá podle předlohy, ne do vymyšlené mezery
+
+Uživatel si všiml, že **obrázek je po importu vždycky trochu posunutý**, zatímco texty sedí
+(nález Jan 18. 8.). Nebyla to nepřesnost: rámeček neměl v předloze žádnou oporu. Import rozdělil
+pruh nad jízdním řádem na **šest stejných sloupců**, zjistil, který je prázdný, a doprostřed něj
+rámeček položil - pozice tedy vycházela ze šířky stránky, ne z papíru. V testu to bylo vidět
+číselně: model logo hlásil na 168 mm, rámeček vznikl na 177 mm (začátek šestého sloupce).
+
+Nově vzniká prázdný rámeček **jen tam, kde model obrázek opravdu vidí**, v jeho rozměrech; když
+žádný nehlásí, nevznikne nic. Zároveň je to **prázdný obrázkový prvek**, ne šedý obdélník - stačí
+do něj nahrát soubor, není potřeba ho mazat a vkládat obrázek znovu. Do protokolu se připíše
+„na pozici X, Y je v předloze logo - vložen prázdný rámeček".
+
+Obrázky nakreslené čarami (typicky logo dopravce) z PDF vytáhnout nejdou, proto rámeček zůstává
+prázdný - to je záměr, ne chyba.
+
+Ověřeno: build 0 chyb, .NET 1082/1082.
+
+## 2026-08-18 (15) - 📥 import: obecné zásady měření a mapování místo záplat
+
+Porovnání protokolu se skutečnými rozměry v předloze ukázalo dvě systematické odchylky. Obojí je
+opravené jako **pravidlo, ne jako hodnota naladěná na jednu vývěsku** (požadavek Jan 18. 8.):
+
+- **Výška řádku se měří mezi řádky, ne mezi slovy.** Slova jednoho řádku nemají v PDF stejnou
+  svislou pozici (jiná velikost písma, dolní dotažnice) a každá odchylka platila za další řádek -
+  vycházelo 2,8 mm tam, kde jsou řádky po 4,05 mm, takže by se tiskly natěsno. Slova se teď
+  shluknou do řádků a hranice shluku se odvozuje z výšky písma, aby pravidlo sedělo na drobnou
+  i velkou sestavu.
+- **Písmem oblasti je to, kterým je vysázená většina znaků.** V pásu záhlaví bývá vedle nadpisu
+  skupiny několik drobných popisků nad sloupci; těch je početně víc, takže prostřední hodnota
+  vybrala nejmenší písmo (6,2 pt místo 11,3 pt) a nadpis se tiskl drobně. Váha podle počtu znaků
+  odpovídá tomu, co je na papíře vidět; při shodě vyhrává větší písmo.
+
+Do zadání pro model přibyly **obecné zásady mapování** (platí pro každou agendu i předlohu):
+každé datové pole nejvýš jednou · radši žádné pole než špatné (prostý text uživatel přepíše, špatné
+pole vytiskne cizí údaj a nikdo si toho nevšimne) · hlásit jen to, co je opravdu vidět · obsah uvnitř
+jízdněřádových oblastí nehlásit jako samostatné texty · rozlišovat podle role, ne podle pořadí na
+stránce. Vzniklo to z chyb, které se opakovaly napříč běhy - totéž pole přiřazené dvěma textům
+a domýšlení obsahu podle toho, jak sestavy obvykle vypadají.
+
+Ověřeno: build 0 chyb, .NET 1082/1082 (+4 na obě měřicí pravidla).
+
+## 2026-08-18 (14) - 📥 import: tři vady, které ukázal protokol
+
+První použití protokolu z předchozího zápisu (test Jan 18. 8.) rovnou vytáhlo tři konkrétní příčiny:
+
+- **Název zastávky ležel jako samostatný text přes tabulku.** Doplňování zapomenutých textů se
+  porovnávalo s oblastmi, které vyznačil model, jenže seznam zastávek se **potom ještě natahuje**
+  dolů - text, který propadl vedle krátké oblasti, nakonec ležel uvnitř tabulky. Doplňování se
+  proto dělá až **za natažením** a porovnává se se skutečnými rozměry prvků.
+- **Záhlaví skupiny dnů vyšlo celé černé.** Barva pozadí záhlaví se bere z vyplněného obdélníku
+  v předloze a **čára je v PDF taky vyplněný obdélník**, jen tenká. Nově se přeskakují obdélníky
+  nižší než 1,5 mm a tmavé výplně.
+- **Prázdné šedé čtverce místo obrázků.** Import vkládal zástupný rámeček tam, kde model hlásí
+  logo nebo grafiku, ale v předloze žádný obrázek není (v testované vývěsce jich PDF nemá ani
+  jeden). Rámeček se už nevkládá - místo něj je v protokolu řádek „Model hlásil obrázek (logo)
+  na pozici …, ale v předloze tam žádný není - pokud tam patří, vložte ho ručně."
+
+Ověřeno: build 0 chyb, .NET 1078/1078.
+
+## 2026-08-18 (13) - 📥 protokol importu vedle PDF: co přesně se nastavilo
+
+Hlášku po importu jde jen přečíst a zavřít, takže se nedala porovnat s předlohou ani s předchozím
+během - a přitom právě to je jediná cesta, jak poznat, že se rozpoznávání zlepšilo (podnět Jan 18. 8.).
+
+Nově vzniká vedle importovaného PDF soubor **`<název>.import-protokol.txt`** a hláška na něj odkazuje.
+Je v něm víc než v hlášce: u **každého vzniklého prvku** soupis, čím se liší od čerstvě vloženého -
+tedy i to, co import **změřil z PDF** (písma, výšky řádků, šířky sloupců, barvy), ne jen to, co
+odpověděl model. Pozice a velikost se do soupisu nepočítají, ty jsou u každého importu jiné.
+
+Ověřeno: build 0 chyb, .NET 1078/1078 (+4).
+
+## 2026-08-18 (12) - 📥 import: záhlaví tabulky se nesmí rozpadnout na dvacet textů
+
+Model vyznačil oblast jízdněřádového prvku **až od dat**, takže řádek s popisky sloupců („min.",
+„Zastávky"), řádek se skupinami dnů a první dvě zastávky zůstaly venku - a doplňování zapomenutých
+textů je vložilo jako samostatné textové prvky (nález Jan 18. 8.).
+
+Řeší se to ze dvou stran, protože samotné doladění zadání pro model spolehlivé nebude:
+
+- **v zadání pro model**: oblast prvku musí zahrnovat i své záhlaví a všechny řádky - u seznamu
+  zastávek popisky sloupců a první i poslední zastávku, u mřížky řádek se skupinami dnů. Včetně
+  důvodu: co zůstane venku, skončí jako samostatné texty.
+- **v doplňování textů**: blok, který se vodorovně kryje s prvkem a leží uvnitř nebo v pásu 8 mm
+  nad ním, k tomu prvku patří a nevkládá se. Zabere i tehdy, když model oblast vyznačí o kus níž.
+
+Ten pás je vědomý kompromis: nadpis a řádek s dopravcem bývají výš, takže zůstanou, ale záhlaví
+tabulky těsně nad daty se už nevloží.
+
+Ověřeno: build 0 chyb, .NET 1074/1074.
+
+## 2026-08-18 (11) - 📥 import: hromada samotných čísel patří do jízdního řádu, ne do textů
+
+Doplňování textů, které model nezmíní (viz zápis (10)), vkládalo i **odjezdy, které se modelu nevešly
+do vyznačené mřížky** - v šabloně pak pod tabulkou visely textové prvky „17", „18", „18 40"
+(nález Jan 18. 8.).
+
+Nově platí: **zbyde-li mimo vyznačené oblasti tři a víc samostatných čísel, žádné z nich se nevkládá.**
+Je to obsah jízdního řádu a data si prvek při tisku načte sám. Jedno až dvě čísla se nechávají -
+číslo linky je taky číslo a v šabloně chybět nesmí. V protokolu importu je o tom řádek.
+
+Ověřeno: build 0 chyb, .NET 1074/1074. Ze stejného testu: model poprvé nastavil vzhled seznamu
+zastávek podle předlohy (značky před zastávkou, šipka vlevo, čáry mezi řádky, symbol na znamení).
+
+## 2026-08-18 (10) - 📥 import bez AI skončí hláškou, chybějící texty se doplní z předlohy
+
+**Nález z testu (Jan 18. 8.):** import vývěsky KV_DP vynechal většinu textů, poznámky umístil jinam
+a záhlaví skupin dnů vysypal jako volné texty. Příčina nebyla v rozpoznávání - **import vůbec neběžel
+přes AI**. Klíč se bere nejdřív z lokálního nastavení vývojáře a až pak z mlwebu; ten lokální byl
+neplatný (401), volání selhalo a import **tiše přepnul na náhradní rozpoznání bez modelu**. Hláška
+o tom šla do stavového řádku dialogu, který se v tu chvíli zavírá, takže se to nikdo nedozvěděl.
+
+Dvě opravy:
+
+- **Jízdní řád se bez AI nedoimportuje.** Import skončí hláškou „Jízdní řád se nepodařilo rozpoznat -
+  AI služba neodpověděla: …" a šablona nevznikne. Hrubá náhražka, která vypadá jako výsledek importu
+  a přitom v ní chybí zastávky a odjezdy, je horší než žádná. U obecného importu (bez agendy jízdního
+  řádu) náhradní cesta zůstává, jen se to napíše do protokolu.
+- **Texty, které model nezmíní, doplní import sám.** Geometrii textu má z PDF přesnou (v testované
+  vývěsce 97 textových bloků), takže co leží mimo jízdní řád a model to nevrátil, se vloží jako
+  obyčejný text se správnou pozicí, písmem a řezem - typicky číslo linky, trasa nebo řádek s dopravcem.
+  Doplněné texty jsou bez role a bez napojení na datové pole; význam určuje model, ne my.
+
+Ověřeno: build 0 chyb, .NET 1074/1074. **Kvalita rozpoznání se tím neměří** - předchozí test jel bez
+modelu, takže srovnání „dřív to bylo přesnější" zatím nemá s čím.
+
+## 2026-08-18 (9) - 🔤 „Font Arial není nainstalovaný" po importu - byl to font s čárkou v názvu
+
+Po importu z předlohy svítilo upozornění *Font „Arial" není na tomto počítači nainstalovaný -
+tiskne se místo něj Arial*. Věta si protiřečila a Arial samozřejmě nainstalovaný je.
+
+**Příčina:** PDF nese řez přímo v názvu fontu („Arial,Bold"). Import z názvu odloupl slovo „Bold",
+ale **čárku v něm nechal**, takže do šablony zapsal rodinu **„Arial,"**. Tu systém nezná - a protože
+se v hlášce zobrazuje v uvozovkách, vypadala jako obyčejný Arial. Šablona tím držela font, který
+neměl nikdo, takže by se to samé stalo i kolegovi po otevření z databáze.
+
+Nově se řez odloupne i s oddělovačem a opakovaně („Arial,BoldItalic" → Arial), takže z běžných
+PDF vycházejí rodiny, které systém zná. Zpětně to nespraví už naimportované šablony - tam font
+přenastavte, nebo šablonu naimportujte znovu.
+
+Vedle toho **upozornění na chybějící font říká pravdu o náhradě**: jmenuje font, který se opravdu
+použije, místo natvrdo napsaného Arialu, a když by náhrada byla týž font, nehlásí nic.
+
+**Protokol importu** navíc nově vypisuje, kolik textů z předlohy se do šablony vložilo a kolik jich
+model našel - bez toho čísla nešlo poznat, jestli texty nenašel model, nebo jsme je zahodili sami
+(text uvnitř jízdního řádu si kreslí prvek sám, dekorace bez datového pole se nevkládá).
+
+Ověřeno: build 0 chyb, .NET 1074/1074 (+16).
+
+## 2026-08-18 (8) - 📥 import se ptá na vzhled seznamu zastávek a řekne, co nastavil (`B42b`/`B42c`, 1. kolo)
+
+Import dosud uměl z předlohy jen to, co měl **ručně vypsané v otázce pro AI** - tři vlastnosti.
+Proto zamrzl v červenci: každá nová vlastnost prvku by se musela dopsat na dvě místa v importu
+a nikdo na to nemyslel.
+
+Nově se otázka **skládá z prvku samotného** - z týchž vlastností, ze kterých se staví panel
+vlastností, včetně povolených hodnot. Odpověď se zapisuje týmž způsobem. Import tedy nemá vlastní
+seznam, který by se s prvky rozešel. **První kolo jde jen na seznam zastávek** (rozhodnutí Jan
+18. 8.) - na něm se pozná, co model z obrázku opravdu zvládne: stranu šipky, značky před názvem
+zastávky nebo za ním, rozdělení na oddíly vedle sebe, barvy, čáry.
+
+Na co se model **neptáme**: pozice a velikost (ty se z PDF měří přesně) a podmínky viditelnosti
+(to jsou data, ne vzhled).
+
+**Po importu vyskočí protokol** - co se z předlohy nastavilo a co se nerozpoznalo. Dosud se tyhle
+hlášky ztratily se zavřením dialogu, takže když AI něco vynechala, vypadalo to, že to import
+neumí, a nebylo jak zjistit proč.
+
+Nesmysl se do šablony nepustí: barva „tmavě modrá" ani počet oddílů 999 se nezapíšou, jen se
+vypíšou v protokolu a zůstane výchozí hodnota. Model odpovídá volným textem, takže se u výběru
+z nabídky bere i zkrácený tvar („Vlevo" místo „Vlevo (u levého okraje elementu)"), ale jen když
+sedí na jedinou volbu.
+
+Ověřeno: build 0 chyb, .NET 1058/1058 (+13). **Co model reálně pozná, ukáže až import reálné
+vývěsky** - v protokolu je vidět, co nastavil, a stačí to porovnat s předlohou.
+
+## 2026-08-18 (7) - 📥 import z předlohy už nedělá z čar zamčený obrázek
+
+Čáry z předlohy (rámečky, linky tabulek) se při obecném importu slévaly do **jednoho obrázku na
+pozadí** - zamčeného, neupravitelného a v tisku rozmazaného proti zbytku šablony, protože to byl
+rastr 150 DPI. Obrázek má v šabloně vzniknout jen z toho, co je obrázek i v předloze (logo, QR kód).
+
+Nově je z každé čáry čára a z každého obdélníku obdélník, se kterými jde normálně pracovat; čáry
+a obdélníky se automaticky seskupí, aby se s nimi dalo hýbat vcelku (rozhodnutí Jan 18. 8.).
+
+⚠️ **U složitější předlohy tak vznikne i pár desítek čar.** Uklidit to má rozpoznání tabulky z jejich
+mřížky (roadmapa, sekce Import PDF) - slévání do rastru bylo obcházení téhož problému.
+Kód pro slévání zůstává, ale žádná cesta ho už nezapíná.
+
+## 2026-08-18 (6) - 📥 import z předlohy: prázdný sloupec, popisky a zahozená agenda (`B42a`)
+
+Průchod importem PDF proti dnešnímu stavu návrháře. Co import z předlohy nastaví, se naposledy
+měnilo v půlce července, zatímco prvky jízdního řádu i nastavení sestavy mezitím povyrostly.
+Tahle dávka bere jen to, co je jasná vada a nepotřebuje rozhodnutí:
+
+- **Prázdný sloupec „tarifní číslo"** - když AI v předloze poznala sloupec s tarifním číslem, import
+  ho založil pod klíčem, který agendy nevydávají (nese jen interní klíč, ne reálné číslo). Sloupec
+  zabíral šířku a při tisku zůstal prázdný. Nově se mapuje na **pořadí zastávky**, což je údaj, který
+  poziční potřebu kryje.
+- **Popisky sloupců** se rozešly s ručně vloženým seznamem zastávek („min.", „Zastávky", „Nást."
+  proti „Čas", „Zastávka", „Označník"). Import je teď bere přímo z výchozích sloupců prvku, takže
+  se rozejít nemůžou; „Nást." navíc odporovalo dohodnutému názvosloví.
+- **Varianty jízdních dob** - importovaný seznam zastávek sloupec variant neměl, ručně vložený ano.
+  U linky s jedinou variantou se nevykreslí, u linky s víc variantami je teď importovaná šablona
+  zvládne stejně jako poskládaná ručně.
+- **Obecný import zahazoval agendu** - import jiné než jízdněřádové předlohy vracel šablonu bez
+  agendy, tedy s prázdným seznamem polí a nutností agendu ručně přiřadit. Nově šablona zdědí agendu,
+  ve které import běžel.
+- Z otázky na AI zmizel dotaz na šipku směru - **odpověď neměl kdo přečíst** (šipku řídí nastavení
+  sestavy, ne vlastnost prvku).
+
+Import dosud neměl **ani jeden test**; s touhle dávkou vzniklo prvních devět (sloupce a jejich
+popisky). Ověřeno: build 0 chyb, .NET 1044/1044.
+
+Co zůstává otevřené, drží roadmapa: rozpoznané **nastavení sestavy** se do šablony pořád nepromítne
+(`B42c`) a po importu **není kde ukázat, co se nepovedlo rozpoznat** (`B42b`).
+
 ## 2026-08-18 (5) - 🔤 upozornění, když šablona chce font, který v počítači není (`B97`)
 
 Když šablona používá písmo, které na daném počítači **není nainstalované**, program ho dosud tiše

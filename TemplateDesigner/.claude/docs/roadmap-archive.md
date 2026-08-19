@@ -3,6 +3,23 @@
 > Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
 > Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-18 ✅ - `B42a`: drobné vady importu z předlohy
+
+Detail → changelog 2026-08-18 (6). První dávka z průchodu importem PDF - jen to, co je jasná vada
+a nepotřebuje rozhodnutí:
+
+- **prázdný sloupec „tarifní číslo"** v seznamu zastávek - import ho zakládal pod klíčem, který
+  agendy nevydávají (nesou jen interní klíč, ne reálné číslo), takže sloupec zabíral šířku a při
+  tisku zůstal prázdný → mapuje se na **pořadí zastávky**
+- **popisky sloupců mimo dohodnuté názvosloví** („min.", „Zastávky", „Nást.") → berou se z výchozích
+  sloupců prvku, takže se rozejít nemůžou
+- **chybějící sloupec variant jízdních dob** - ručně vložený prvek ho má, importovaný ne
+- **obecný (nejízdněřádový) import zahazoval agendu** otevřené šablony → šablona ji zdědí
+- z otázky na AI zmizel dotaz na šipku směru (odpověď neměl kdo přečíst - šipku řídí nastavení sestavy)
+
+Import dosud neměl ani jeden test, vzniklo prvních devět (sloupce a popisky). Zbytek `B42`
+(`B42b` protokol importu, `B42c` nastavení sestavy a vzhled prvků) zůstává v roadmapě.
+
 ## 2026-08-17 ✅ - `B76`: pevná tabulka se dá naformátovat a slučovat (4 kroky)
 
 Detail → changelog 2026-08-17 (3), (4), (5), (6) a (9). Cíl prvku **není faktura, ale náhrada

@@ -19,6 +19,13 @@ public class AiVisionImportPipeline
 
     public string? AiDebugLog { get; private set; }
 
+    /// <summary>Co import z předlohy nastavil a co nerozpoznal - pro uživatele, ne pro vývojáře.</summary>
+    public List<string> ImportLog { get; } = [];
+
+    /// <summary>Úplný soupis vzniklých prvků a jejich nastavení - pro kontrolu proti předloze
+    /// a pro porovnání dvou běhů mezi sebou. Ukládá se vedle PDF.</summary>
+    public List<string> DetailedLog { get; } = [];
+
     public AiVisionImportPipeline(
         string apiKey, IDataSchemaProvider? schemaProvider, string? agendaCode,
         IReadOnlyList<TemplateParameter>? knownParameters = null)
@@ -71,6 +78,7 @@ public class AiVisionImportPipeline
         setStatus("AI analyzuje strukturu...");
         var visionService = new AiVisionImportService();
         AiVisionResult? visionResult = null;
+        string? visionError = null;
 
         DataSchema? schema = null;
         try
@@ -80,11 +88,12 @@ public class AiVisionImportPipeline
                 : null;
 
             visionResult = await visionService.AnalyzeAsync(
-                base64Png, firstPage, schema, scheduleType, _apiKey);
+                base64Png, firstPage, schema, scheduleType, _apiKey, StopListSettingsCatalog(scheduleType));
         }
         catch (Exception ex)
         {
-            setStatus($"AI Vision selhala ({ex.Message}), přepínám na heuristiku...");
+            visionError = ex.Message;
+            setStatus($"AI se nepodařilo zavolat ({ex.Message}).");
         }
         finally
         {
@@ -100,7 +109,7 @@ public class AiVisionImportPipeline
             try
             {
                 var retryResult = await visionService.AnalyzeAsync(
-                    base64Png, firstPage, schema, scheduleType, _apiKey);
+                    base64Png, firstPage, schema, scheduleType, _apiKey, StopListSettingsCatalog(scheduleType));
                 AiDebugLog += "\n\n══ RETRY (chyběly klíčové elementy) ══\n" + visionService.DebugLog;
                 if (retryResult is not null
                     && (MissingCoreElements(retryResult).Length == 0
@@ -112,6 +121,17 @@ public class AiVisionImportPipeline
 
         // 4. Sestavit šablonu
         setStatus("Vytvářím elementy...");
+
+        // Jízdní řád bez AI nemá cenu dodělávat náhradním rozpoznáním: vznikne z něj hrubá šablona,
+        // která vypadá jako výsledek importu, jen je špatně - a uživatel se to nedozví, protože
+        // hláška zmizí se zavřením dialogu. Přesně takhle prošel 18. 8. import s neplatným klíčem.
+        if (scheduleType != ScheduleImportType.None && visionResult is null)
+            throw new Exception(
+                "Jízdní řád se nepodařilo rozpoznat - AI služba neodpověděla"
+                + (visionError is null ? "." : $": {visionError}")
+                + Environment.NewLine + Environment.NewLine
+                + "Import jízdního řádu bez ní nedává smysl (vznikla by hrubá šablona bez zastávek "
+                + "a odjezdů). Zkuste to prosím znovu; pokud potíž trvá, kontaktujte podporu M-line.");
 
         Template template;
         if (visionResult is not null && visionResult.Confidence >= 0.5f && visionResult.Elements.Count > 0)
@@ -125,12 +145,17 @@ public class AiVisionImportPipeline
             string missingWarn = MissingCoreElements(visionResult) is { Length: > 0 } m
                 ? $" · ⚠ AI nerozpoznalo: {m} - doplňte ručně z palety"
                 : "";
+            if (missingWarn.Length > 0)
+                ImportLog.Add($"⚠ Nerozpoznáno: {MissingCoreElements(visionResult)} - doplňte ručně z palety.");
             setStatus($"AI Vision: {visionResult.Elements.Count} JŘ elementů, {mappedFields} polí namapováno, celkem {elCount} elementů{missingWarn}");
         }
         else
         {
-            // Fallback na heuristiku
-            setStatus("AI Vision nedostatečná, přepínám na heuristiku...");
+            // Sem se dojde jen u obecného importu (bez agendy JŘ) nebo když AI odpověděla, ale
+            // s nízkou jistotou - tam je hrubý výsledek pořád lepší než nic.
+            setStatus("AI rozpoznání nestačilo, skládám šablonu z rozvržení PDF...");
+            ImportLog.Add("⚠ AI rozpoznání nestačilo - šablona vznikla jen z rozvržení PDF, "
+                          + "bez zastávek a odjezdů. Zkuste import zopakovat.");
             template = await Task.Run(() =>
             {
                 var converter = new PdfToTemplateConverter
@@ -152,6 +177,10 @@ public class AiVisionImportPipeline
     {
         var scheduleElements = AiGuidedScheduleBuilder.BuildFromVision(
             visionResult, firstPage, 0, 0, schema);
+
+        ApplyElementSettings(visionResult, scheduleElements);
+        LogTextCoverage(visionResult, scheduleElements);
+        LogElementSettings(scheduleElements);
 
         if (AiGuidedScheduleBuilder.LastDebugInfo is not null)
             AiDebugLog = (visionDebugLog ?? "") + "\n\n── AiGuidedScheduleBuilder ──\n" + AiGuidedScheduleBuilder.LastDebugInfo;
@@ -213,6 +242,85 @@ public class AiVisionImportPipeline
             ModifiedAt = DateTime.UtcNow
         };
     }
+
+    /// <summary>
+    /// Zapíše do prvků vzhled, který AI poznala z předlohy, a zaznamená to do protokolu importu.
+    /// Zatím jen seznam zastávek - na něm se ověřuje, co model zvládne poznat (rozhodnutí Jan 18. 8.).
+    /// </summary>
+    private void ApplyElementSettings(AiVisionResult vision, List<TemplateElement> elements)
+    {
+        if (elements.OfType<StopListElement>().FirstOrDefault() is not { } stopList) return;
+        if (!vision.ElementSettings.TryGetValue("StopList", out var settings)) return;
+
+        var applied = ElementSettingsFromImage.Apply(stopList, settings);
+        if (applied.Count > 0)
+        {
+            ImportLog.Add("Seznam zastávek - z předlohy nastaveno:");
+            ImportLog.AddRange(applied.Select(l => "   " + l));
+        }
+    }
+
+    /// <summary>
+    /// Kolik textů z předlohy skončilo v šabloně. Bez tohohle čísla nejde poznat, jestli model
+    /// texty nenašel, nebo jsme je zahodili sami (text uvnitř jízdního řádu si kreslí prvek sám,
+    /// dekorace bez datového pole se nevkládá) - a to je první otázka, když v šabloně texty chybí.
+    /// </summary>
+    private void LogTextCoverage(AiVisionResult vision, List<TemplateElement> elements)
+    {
+        int found = vision.TextMappings.Count;
+        int placed = elements.OfType<TextElement>().Count();
+        if (found == 0 && placed == 0) return;
+
+        ImportLog.Add(placed >= found
+            ? $"Texty z předlohy: {placed}"
+            : $"Texty z předlohy: {placed} z {found}, které model našel "
+              + "(zbytek leží uvnitř jízdního řádu, kde si texty kreslí prvek sám, nebo je to dekorace).");
+
+        foreach (var note in AiGuidedScheduleBuilder.UserNotes)
+            ImportLog.Add("⚠ " + note);
+
+        if (AiGuidedScheduleBuilder.SkippedNumericBlocks is > 0 and var cisla)
+            ImportLog.Add($"Vynecháno {cisla} samostatných čísel - patří do jízdního řádu, "
+                          + "data si prvek při tisku načte sám.");
+    }
+
+    /// <summary>
+    /// Do podrobného protokolu vypíše u každého vzniklého prvku, čím se liší od čerstvě vloženého -
+    /// tedy co všechno import nastavil, ať už z odpovědi modelu, nebo změřením z PDF. Bez toho jde
+    /// zkontrolovat jen to, co řekl model, a ne skutečný výsledek.
+    /// </summary>
+    private void LogElementSettings(List<TemplateElement> elements)
+    {
+        foreach (var el in elements)
+        {
+            var rozdily = ElementSettingsFromImage.DiffFromDefault(el);
+            DetailedLog.Add("");
+            DetailedLog.Add($"{ElementNazev(el)} - pozice {el.X:0.#}, {el.Y:0.#} mm, "
+                            + $"velikost {el.Width:0.#} × {el.Height?.ToString("0.#") ?? "auto"} mm");
+            if (rozdily.Count == 0)
+            {
+                DetailedLog.Add("   (vše ponecháno na výchozích hodnotách)");
+                continue;
+            }
+            foreach (var r in rozdily) DetailedLog.Add("   " + r);
+        }
+    }
+
+    private static string ElementNazev(TemplateElement el) => el switch
+    {
+        StopListElement      => "Seznam zastávek",
+        DepartureGridElement => "Mřížka odjezdů",
+        NotesLegendElement   => "Legenda poznámek",
+        TextElement t        => "Text: " + t.Text,
+        ImageElement         => "Obrázek",
+        _                    => el.GetType().Name
+    };
+
+    /// <summary>Na co se u seznamu zastávek ptát - soupis jeho vlastních vlastností.</summary>
+    private static string? StopListSettingsCatalog(ScheduleImportType scheduleType) =>
+        scheduleType == ScheduleImportType.None
+            ? null
+            : ElementSettingsFromImage.BuildCatalog(new StopListElement());
 
     /// <summary>
     /// Převede AI-detekované parametry na TemplateParameter objekty.

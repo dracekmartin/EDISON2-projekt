@@ -12,12 +12,54 @@
 
 ### Import PDF - doladění
 
-| Co | Stav |
+> **Průchod 18. 8. (analýza `B42`).** Co import z předlohy nastaví, se naposledy hnulo v půlce
+> července; od té doby povyrostly prvky JŘ (rozdělení seznamu do oddílů, strana značek, více
+> stanovišť, projeté zastávky, varianty jízdních dob), přibyla pevná tabulka a nastavení sestavy
+> se rozrostlo na patnáct voleb u AD. Import o ničem z toho neví, takže výsledek je dnes hrubší,
+> než co návrhář umí. Pořadí níže je podle toho, co uživatel pozná.
+
+**`B42` Co všechno umí import z předlohy nastavit** (M, analýza hotová 18. 8.; podnět Jan 31. 7.).
+Drobné vady (`B42a`) a slévání čar do rastru hotové 18. 8.; zbytek:
+
+| Co | Rozsah | Stav |
+|---|---|---|
+| **`B42b` Protokol importu** - hotové 18. 8. v základní podobě (hláška po importu: co nastaveno, co nerozpoznáno). **Zbývá:** doplnit do něj časovou osu z předlohy („předloha má osu 5-23, nastavte si ji") a nastavení sestavy, až je bude umět `B42c` | S | 🟡 |
+| **`B42c` Vzhled prvků z předlohy** - 1. kolo hotové 18. 8. pro **seznam zastávek** (otázka i zápis se skládají z vlastností prvku). **Zbývá:** vyhodnotit na reálných předlohách, pak rozhodnout, kde se vede seznam „tohle jde poznat z obrázku", a rozšířit na mřížku odjezdů a legendu | M | 🟡 |
+| **`B42d` Nastavení sestavy z předlohy** - rozpoznaná hodnota se dnes zapíše na místo, které se při tisku nečte, a otevření importované šablony neprojde cestou, která hodnoty aplikuje. Bez téhle opravy nemá smysl se na víc voleb ptát | M | ⬜ |
+
+**Jak se to škáluje (rozhodnuto 18. 8.):** otázka pro AI i zápis odpovědi se **generují z vlastností
+prvku** - z týchž, ze kterých se staví panel vlastností. Nová vlastnost prvku je tím pro import
+dostupná bez zásahu do importu; ručně psaný seznam v otázce byl důvod, proč import zamrzl v červenci.
+Model odpovídá popiskem volby, zápis má stejné pojistky jako formulář (nesmyslná hodnota neprojde).
+
+**Otevřeno:** kde se vede seznam „tohle jde poznat z obrázku" a podle čeho (příznak u pole v Caché
+schématu × seznam v aplikaci). **Rozhodne se až podle zkoušky na reálných předlohách** - 1. kolo
+posílá u seznamu zastávek všechny vlastnosti a v protokolu je vidět, co model trefil. Dělící čára,
+na které jsme se shodli: **vizuální ano, business ne** - co se vizuálně neliší (které zastávky se
+tisknou, odkud se bere číslo stanoviště, název pro MHD), do importu nepatří.
+
+**K `B42d`:** ptáme se jen na tři volby a otázka je psaná pro MHD, i když tímtéž režimem jde i AD
+s patnácti. Definice všech voleb včetně popisků si import ze serveru **už tahá** (dnes je používá
+jen k dourčení typu hodnoty). Hodiny od/do navíc bez přepnutí „Časová osa odjezdů" na „Vlastní
+rozsah" nic neudělají. ⚠️ Past z #12843 (`customer-requirements §0.1`): uloží se i hodnoty,
+kterých se nikdo nedotkl.
+
+**Časová osa:** detekci není potřeba vracet - AI ji vrací dodnes, import ji jen zahazuje (vědomě,
+protože osu řídí nastavení sestavy). Stačí ji propsat do protokolu (`B42b`).
+
+| Další | Stav |
 |---|---|
-| **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílová **pevná tabulka** je hotová (`B76`, i se sloučením buněk), takže záleží jen na prioritě | ⬜ |
+| **Obecný import: detekce tabulek z mřížky čar** - místo 50 čar + 20 textů jeden tabulkový element. Cílová **pevná tabulka** je hotová (`B76`, i se sloučením buněk). ⬆️ **Priorita vzrostla 18. 8.**: od zrušení slévání čar do rastru je počet samostatných čar to jediné, co uklizený výsledek drží zpátky | ⬜ |
 | **JŘ import: ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor - jiná města, SK, netypické legendy) | 🟡 |
 
 Křivky/Bézier v obecném importu - low-prio, bez poptávky.
+⛔ **Import z PNG/JPG se dělat nebude** (rozhodnutí Jan 18. 8.). Technicky by to šlo skoro zadarmo
+(modelu se stejně posílá obrázek a měření mají všude náhradní hodnoty), ale z obrázku nejdou přesné
+rozměry, fonty ani texty - PDF dá výrazně lepší výsledek. Vrátit se k tomu, až o to někdo požádá
+(typicky „zákazník poslal fotku vývěsky").
+⚠️ **Testy importu kryjí sloupce zastávek a zápis vzhledu z předlohy** (23) - pipeline jako celek ne;
+jestli model vlastnosti pozná, se zásadně **hodnotí okem nad reálnou předlohou** (rozhodnutí Jan 18. 8.,
+místo evaluační sady).
 
 ### AI integrace - v pozadí
 
@@ -89,20 +131,6 @@ migrace starých Caché sestav · template linting v CI/CD.
   bezpečně **jen skupinu doslovných kopií a jen u zastávkových agend**, které kryjí zlaté odtisky
   a 46 testů helperů; **linkové agendy nemají ani jeden test** (2 000 řádků), takže tam by zásah jel
   bez sítě. Vzor existuje - `BaseAgenda` už 4 sdílené helpery hostuje.
-
-- **`B42` Co všechno umí import z předlohy nastavit** (M, nejdřív analýza; podnět Jan 31. 7. při `B41`).
-  Import dnes umí **pozice a prvky** plus část vzhledu (fonty, výšky řádků, barvy záhlaví, sloupce).
-  Otevřená otázka: umí z předlohy rozumně odvodit i **parametry sestavy** a **další nastavení prvků**
-  (pozice značek, šipka, sloupce jako zóna/označník, varianty tras, skupiny dnů)? Je to velká
-  a netriviální část importu, takže se to má projít vědomě, ne po jedné vlastnosti.
-  ⚠️ **Omezení už neplatí tak, jak se dřív psalo:** hodnoty parametrů sestavy se od 15. 7. ukládají
-  **i do šablony** a mají přednost před per-agenda nastavením (`SyncParametersToTemplate`), takže
-  import by je nastavit mohl, aniž rozhodí ostatní šablony té agendy. Zůstává druhá past: uloží se
-  i hodnoty, kterých se nikdo nedotkl - detail u #12843 v `customer-requirements §0.1`.
-  **Malý krok, který jde udělat hned (S):** detekci časové osy z předlohy vrátit a její výsledek
-  **napsat do protokolu importu** („předloha má osu 5-23, nastavte ji v parametrech"), ať se informace
-  neztratí a dostane se k tomu, kdo s ní může něco udělat. Původní detekce (`timeAxisRangeFrom/To`
-  v `AiGuidedScheduleBuilder`) je v gitu před commitem `B41`.
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
