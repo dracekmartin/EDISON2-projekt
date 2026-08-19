@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-19 (4) - 🤖 AI průvodce dohnal změny: sloučené buňky, rohy, fonty, práce v tabulce
+
+Průvodce tvrdil, že **neumíme sloučit buňky** (umíme od 17. 8.) a že **neumíme zaoblené rohy**
+(má je dnes každý prvek, pole „Rohy" a „Velikost rohu" u rámečku). To je nejdražší druh chyby
+v nápovědě: uživatel, kterému průvodce řekne „to neumíme", tu funkci přestane hledat.
+
+Dál se doplnilo:
+
+- **práce uvnitř pevné tabulky** - nejmíň objevitelná část aplikace (dovnitř Alt+klikem nebo F2,
+  panel vlastností patří vybrané buňce, sloučení a vlastnosti řádku pod pravým tlačítkem, šířky
+  tažením vnitřní hranice, `{` vyvolá nabídku polí). Průvodce o ní nevěděl vůbec.
+- **fonty** - nabídka jsou rodiny nainstalované v počítači (ne „vestavěné"), font si uživatel může
+  doinstalovat do Windows, a když šablona chce font, který na počítači není, aplikace to hlásí.
+  Vložit soubor s fontem do šablony nejde - to zůstává mezi „zatím neumíme".
+- **generátor šablon z popisu** je u zákazníka skrytý, průvodce ho přestal nabízet jako cestu.
+
+Katalog vlastností prvků se generuje z prvků samotných, takže nedriftuje; hlídaný je nově i ručně
+psaný úvod - ban list drží, že se do „zatím neumíme" nevrátí featura, kterou jsme dodělali.
+
+Ověřeno: build 0 chyb, .NET 1100/1100 (+6).
+
 ## 2026-08-19 (3) - 📥 import se ptá jen na to, co jde z předlohy potvrdit (`B42c` dokončeno)
 
 Otázka na vzhled prvků posílala modelu **všechny** jejich vlastnosti (přes sedmdesát) a spoléhala
