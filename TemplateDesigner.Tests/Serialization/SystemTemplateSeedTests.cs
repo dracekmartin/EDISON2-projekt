@@ -1,6 +1,8 @@
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Serialization;
 using TemplateDesigner.Services;
 
@@ -176,4 +178,65 @@ public class SystemTemplateSeedTests
     }
 
     private static string ThisFile([CallerFilePath] string path = "") => path;
+
+    // ── Kdy má seed vůbec zapisovat ───────────────────────────────────────────
+
+    private static Template Vzor() => new()
+    {
+        Id = Guid.Parse("5b1e0000-0000-4000-8000-000000000001"),
+        Name = "Systémová",
+        Sections = [new Section { Name = "Tělo", Elements = [new TextElement { Text = "{CISLO_LINKY}" }] }]
+    };
+
+    /// <summary>Kopie téže šablony - přes serializaci, aby měla i shodné identifikátory prvků.</summary>
+    private static Template Kopie(Template t) => TemplateSerializer.Deserialize(TemplateSerializer.Serialize(t));
+
+    /// <summary>
+    /// Táž šablona, jen jiné časy → není to změna obsahu a zapisovat se nemá. Seed přepisoval při
+    /// každém startu, takže „změněno" v přehledu ukazovalo čas posledního spuštění programu, ne
+    /// skutečnou změnu (nález Jan 19. 8.) - a nešlo poznat, co se doopravdy měnilo.
+    /// </summary>
+    [Fact]
+    public void JinyCasZmenyNeniZmenaObsahu()
+    {
+        var zExe = Vzor();
+        var vDatabazi = Kopie(zExe);
+        vDatabazi.ModifiedAt = zExe.ModifiedAt.AddDays(3);
+        vDatabazi.CreatedAt = zExe.CreatedAt.AddDays(-30);
+
+        Assert.False(SystemTemplateSeeder.SeLisiObsah(zExe, vDatabazi));
+    }
+
+    [Fact]
+    public void ZmenaNazvuJeZmenaObsahu()
+    {
+        var zExe = Vzor();
+        var vDatabazi = Kopie(zExe);
+        vDatabazi.Name = "Stará";
+
+        Assert.True(SystemTemplateSeeder.SeLisiObsah(zExe, vDatabazi));
+    }
+
+    /// <summary>Změna hluboko uvnitř (text prvku) se pozná taky - proto se porovnává celý tvar,
+    /// ne vyjmenované vlastnosti, které by při další vlastnosti zestaraly.</summary>
+    [Fact]
+    public void ZmenaUvnitrPrvkuSePozna()
+    {
+        var zExe = Vzor();
+        var vDatabazi = Kopie(zExe);
+        ((TextElement)vDatabazi.Sections[0].Elements[0]).Text = "{POPIS_LINKY}";
+
+        Assert.True(SystemTemplateSeeder.SeLisiObsah(zExe, vDatabazi));
+    }
+
+    /// <summary>I změna fontu (přesně ta, co se 19. 8. opravovala) musí projít jako změna.</summary>
+    [Fact]
+    public void ZmenaFontuSePozna()
+    {
+        var zExe = Vzor();
+        var vDatabazi = Kopie(zExe);
+        ((TextElement)vDatabazi.Sections[0].Elements[0]).Style = new TextStyle { FontFamily = "Arial," };
+
+        Assert.True(SystemTemplateSeeder.SeLisiObsah(zExe, vDatabazi));
+    }
 }

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-19 (8) - 🕒 „změněno" u systémových šablon konečně znamená změnu
+
+V přehledu šablon měly **všechny systémové šablony čas změny „před dvěma minutami"**, i když se
+jich nikdo nedotkl (nález Jan 19. 8.). Nebyla to náhoda: seed z programu je **přepisoval při každém
+spuštění**, takže sloupec ukazoval čas posledního startu, ne změnu obsahu - a nešlo tedy poznat,
+co se doopravdy měnilo.
+
+Nově se zapisuje **jen když se liší obsah**. Do porovnání se nepočítají časy uložení ani verze
+formátu, protože to jsou razítka, ne obsah.
+
+Cestou se ukázalo, proč to nešlo udělat naivně: **`Serialize` při každém volání přepíše čas změny
+na „teď"**, takže porovnáním dvou serializací by rozdíl vycházel vždycky. Přidán tvar bez razítkování,
+používaný jen k porovnání.
+
+Ověřeno: build 0 chyb, .NET 1122/1122 (+4 na rozhodnutí „co je změna obsahu").
+
 ## 2026-08-19 (7) - 🔤 systémové šablony rozesílaly font „Arial," s čárkou
 
 Při kontrole databáze po prvním stažení kanálem se ukázalo, že **naše vlastní systémové šablony**
