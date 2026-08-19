@@ -69,12 +69,15 @@ zda ho čteme), **§14 pozastavené tikety helpdesku** (8 požadavků, u všech 
 >
 > - **mění hodnoty, řádky nebo texty** → respektuje se při načítání dat (`L2`)
 > - **je to volba uživatele u tisku** → parametr sestavy (`L3`)
-> - **něco schovává** → **třístavový parametr** „Podle nastavení linky / Tisknout / Netisknout",
->   výchozí je první. ⚠️ **Výchozí hodnota je konstanta, ne hodnota z linky** - parametry se ze
+> - **něco schovává** → **třístavový parametr** „Automaticky (dle linky) / Tisknout / Netisknout",
+>   výchozí je první. **Popisek je zavedený, ne nový** - týž tvar má u vývěsek „Rozdělení sloupců
+>   (typy provozu)" (`ROZDELENI_SLOUPCU`), včetně toho, že server u neznámé hodnoty spadne zpátky
+>   do „dle linky". ⚠️ **Výchozí hodnota je konstanta, ne hodnota z linky** - parametry se ze
 >   serveru načítají bez znalosti instance a cachují se per agenda, takže „default podle linky" by
 >   znamenal přenačítání při každé změně linky a souboj s uloženou volbou uživatele (třída chyby
 >   `B24`: v panelu jedno, tiskne se druhé). Takhle linku rozhodne **server při tisku**, kde ji zná,
->   a v panelu je poctivě vidět, že to řídí linka.
+>   a v panelu je poctivě vidět, že to řídí linka. Dokud budou u linek nějaká nastavení, tahle
+>   možnost tam musí být - abychom je respektovali a zároveň se daly přebít (rozhodnutí Jan 19. 8.).
 > - **je to stránkování nebo celá chybějící featura** → `L5` (ruční zlom, ruční sekce),
 >   `L6` (turnusy, obousměrný tisk - přidávají zrcadlené sloupce, nejsou to přepínače)
 > - **měřicí řetězce a šířka tiskové plochy** → vědomě nikdy, měříme si sami
