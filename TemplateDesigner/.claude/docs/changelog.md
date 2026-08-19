@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-19 (7) - 🔤 systémové šablony rozesílaly font „Arial," s čárkou
+
+Při kontrole databáze po prvním stažení kanálem se ukázalo, že **naše vlastní systémové šablony**
+mají na 13 místech `fontFamily: "Arial,"` - zbytek po chybě importu z předlohy, opravené 18. 8.
+(šablony z ní vznikly). Každý, kdo si takovou šablonu otevřel, dostal hlášku o chybějícím fontu
+a tisklo se náhradní písmo.
+
+Opraveno v obou zastávkových šablonách (AD 7×, MHD 6×); linková byla čistá. Opravená AD šablona
+je zároveň nahraná do kanálu jako verze 2 - posloužila jako první ostrá zkouška aktualizace.
+
+Ověřeno: build 0 chyb, .NET 1118/1118.
+
 ## 2026-08-19 (6) - 🚚 kanál zapojen naživo: klíč, obsah odpovědi, skloňování
 
 Zkouška s reálným klíčem (Jan 19. 8.) vytáhla tři vady, které by jinak vypadaly jako „kanál nic
