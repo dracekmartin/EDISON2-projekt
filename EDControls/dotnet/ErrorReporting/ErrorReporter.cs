@@ -6,7 +6,8 @@ namespace EDControls.ErrorReporting;
 /// <summary>
 /// Odeslání hlášení na <c>podpora.m-line.cz/api/telemetry/ingest</c>. Best-effort:
 /// nikdy nehází a nikdy neblokuje UI vlákno - selhání hlášení nesmí být druhá chyba
-/// nad tou první. Uživateli zbývá tlačítko „Uložit do souboru" v chybovém dialogu.
+/// nad tou první. Neodeslané hlášení zachytí <see cref="ErrorFallbackLog"/>; uživateli
+/// navíc zbývá tlačítko „Uložit do souboru" v chybovém dialogu.
 /// </summary>
 public static class ErrorReporter
 {
@@ -62,6 +63,7 @@ public static class ErrorReporter
         for (var offset = 0; offset < reports.Count; offset += MaxBatchSize)
         {
             var chunk = reports.Skip(offset).Take(MaxBatchSize).ToList();
+            var chunkOk = false;
             try
             {
                 // Jeden záznam se posílá jako objekt, víc jako pole - obojí ingest umí.
@@ -77,12 +79,17 @@ public static class ErrorReporter
                 request.Headers.Add("X-API-Key", ApiKey);
 
                 using var response = await Client.SendAsync(request).ConfigureAwait(false);
-                if (!response.IsSuccessStatusCode) allOk = false;
+                chunkOk = response.IsSuccessStatusCode;
             }
             catch
             {
                 // Best-effort - výpadek sítě, VPN ani 500 nesmí nic shodit.
+            }
+
+            if (!chunkOk)
+            {
                 allOk = false;
+                ErrorFallbackLog.Append(chunk);
             }
         }
 
