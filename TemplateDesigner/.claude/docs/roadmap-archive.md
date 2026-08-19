@@ -3,6 +3,26 @@
 > Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
 > Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-19 ⏸️ - AI integrace: sekce uzavřena, pomocník ověřen
+
+Sekce **AI integrace - v pozadí** je z roadmapy pryč (rozhodnutí Jan 19. 8.). Důvod: co z ní bylo
+akční, je hotové, a zbytek jsou nápady bez poptávky.
+
+- **AI průvodce ověřen** 19. 8. proklikáním sady otázek (nové featury, práce uvnitř tabulky,
+  složené dotazy přes dvě obrazovky, chytáky na „to zatím neumíme"). Odpovídá správně, nevymýšlí
+  si cesty a hlásí, co neumíme. Znalostní bázi průvodce před tím dohnal changelog 2026-08-19 (4);
+  katalog vlastností se generuje z prvků, ručně psaný úvod hlídá ban list v testech.
+- **Evaluační sada** se dělat nebude - hodnotí se proklikáním, ne skriptem (viz i rozhodnutí
+  u importu). Otázky, na kterých se to zkoušelo, jsou v historii konverzace, ne v repu.
+- ⛔ **MCP server** (nástroje nad ViewModelem) a **aktivní agent, který mění šablonu** - neděláme.
+  MCP dává smysl, až bude něco, co má sahat na návrhář zvenčí; aktivní agent jde proti principu
+  **copilot, ne autopilot**. Otevřít znovu, až o to někdo požádá.
+- Odložené nápady bez poptávky: onboarding průvodce, návrhy sloupců podle schématu, migrace starých
+  Caché sestav, template linting v CI.
+
+Kontrakt pro AI zůstává stabilní (JSON šablona + DataSchema), takže rozšíření kdykoli bez breaking
+changes - to byl vždycky hlavní argument, proč to nespěchá.
+
 ## 2026-08-19 ⏸️ - Import PDF: sekce uzavřena, otevřené body čekají na moduly
 
 Detail → changelog 2026-08-18 (6)-(18) a 2026-08-19 (1)-(3). Sekce **Import PDF - doladění** je
