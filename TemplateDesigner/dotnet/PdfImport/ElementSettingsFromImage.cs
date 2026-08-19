@@ -17,9 +17,23 @@ internal static class ElementSettingsFromImage
 {
     private const string KeySeparator = " · ";
 
-    /// <summary>Vlastnosti, na které nemá smysl se ptát: pozice a velikost se měří z PDF přesně,
-    /// podmínky jsou data (ne vzhled) a tlačítka otevírají editor, ne hodnotu.</summary>
+    /// <summary>
+    /// Na co se import z předlohy smí ptát: vlastnost to musí mít povolené u své definice
+    /// (<see cref="PropertyDescriptor.FromImage"/>) - tedy jít z papíru potvrdit. Pozice a velikost
+    /// se navíc měří z PDF přesně a tlačítka otevírají editor, ne hodnotu.
+    /// </summary>
     private static bool IsOfferable(PropertyDescriptor d) =>
+        d.FromImage
+        && d is not ButtonPropertyDescriptor
+        && d.Group != TemplateElement.PositionGroup
+        && d.Group != TemplateElement.ConditionsGroup;
+
+    /// <summary>
+    /// Co patří do protokolu - tedy do soupisu „čím se prvek liší od čerstvě vloženého". Je to
+    /// širší množina než <see cref="IsOfferable"/>: protokol má ukázat i to, co se z PDF **změřilo**
+    /// (písma, výšky řádků), protože právě podle toho se kontroluje, jestli import měří správně.
+    /// </summary>
+    private static bool IsReportable(PropertyDescriptor d) =>
         d is not ButtonPropertyDescriptor
         && d.Group != TemplateElement.PositionGroup
         && d.Group != TemplateElement.ConditionsGroup;
@@ -153,11 +167,11 @@ internal static class ElementSettingsFromImage
         catch { return result; }
 
         var vychoziPodleKlice = vychozi.GetPropertyDescriptors()
-            .Where(IsOfferable)
+            .Where(IsReportable)
             .GroupBy(KeyOf)
             .ToDictionary(g => g.Key, g => Describe(g.First()));
 
-        foreach (var d in element.GetPropertyDescriptors().Where(IsOfferable))
+        foreach (var d in element.GetPropertyDescriptors().Where(IsReportable))
         {
             string ted = Describe(d);
             if (!vychoziPodleKlice.TryGetValue(KeyOf(d), out var puvodne) || ted == puvodne) continue;

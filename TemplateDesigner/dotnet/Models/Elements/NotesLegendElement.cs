@@ -412,20 +412,20 @@ public class NotesLegendElement : StopScheduleElementBase
         .. GetScheduleBaseDescriptors(withLineToggles: false),   // mřížkou kreslí jen čáru pod záhlavím
         .. GetCellZoneBaseColorDescriptors(),
 
-        new StringPropertyDescriptor { Label = "Nadpis",               Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
+        new StringPropertyDescriptor { FromImage = true, Label = "Nadpis",               Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
 
         new StringPropertyDescriptor { Label = "Font",                Group = "Datové buňky", Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new StringPropertyDescriptor { Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
+        new StringPropertyDescriptor { FromImage = true, Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
         new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Datové buňky", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
         new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Datové buňky", Get = () => NoteLineHeight, Set = v => NoteLineHeight = v, Min = 2, Max = 15, Unit = "mm" },
 
-        new FloatPropertyDescriptor  { Label = "Počet sloupců",       Group = "Rozložení", Get = () => Columns,     Set = v => Columns = (int)v, Min = 1, Max = 4, Format = "0" },
-        new EnumPropertyDescriptor   { Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
+        new FloatPropertyDescriptor  { FromImage = true, Label = "Počet sloupců",       Group = "Rozložení", Get = () => Columns,     Set = v => Columns = (int)v, Min = 1, Max = 4, Format = "0" },
+        new EnumPropertyDescriptor   { FromImage = true, Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
             Options = [("Po sloupcích", (object)LegendWrap.PoSloupcich), ("Po řádcích", (object)LegendWrap.PoRadcich)] },
         new EnumPropertyDescriptor   { Label = "Řazení",             Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
             Options = [("Dle typu (značky → atributy → text)", (object)LegendRazeni.DleTypu), ("Výchozí (dle dat)", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
-        new FloatPropertyDescriptor  { Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
+        new FloatPropertyDescriptor  { FromImage = true, Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
         new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Filtrování", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
@@ -449,8 +449,8 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Místenky u odjezdů",           Group = "Filtrování", Get = () => ShowZnackaMistenky,        Set = v => ShowZnackaMistenky = v },
         new BoolPropertyDescriptor  { Label = "Pokračující spoje",            Group = "Filtrování", Get = () => ShowPokracujiciSpoje,      Set = v => ShowPokracujiciSpoje = v },
 
-        new ColorPropertyDescriptor { Label = "Pozadí značky",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
-        new ColorPropertyDescriptor { Label = "Barva textu značky", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Pozadí značky",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Barva textu značky", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
         .. GetPositionDescriptors()
     ];

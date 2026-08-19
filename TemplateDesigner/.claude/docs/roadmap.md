@@ -23,7 +23,7 @@ Drobné vady (`B42a`) a slévání čar do rastru hotové 18. 8.; zbytek:
 
 | Co | Rozsah | Stav |
 |---|---|---|
-| **`B42c` Vzhled prvků z předlohy** - čte se u seznamu zastávek, mřížky odjezdů i legendy poznámek (19. 8.). **Zbývá:** vyhodnotit na širší sadě předloh a podle výsledku rozhodnout, kde se vede seznam „tohle jde poznat z obrázku" (příznak u pole v Caché schématu × seznam v aplikaci) | S | 🟡 |
+| **`B42c` Vzhled prvků z předlohy** - hotové 19. 8. (seznam zastávek, mřížka odjezdů, legenda; příznak „na tohle se smí ptát" u definice vlastnosti). **Zbývá jen vyzkoušet** na širší sadě předloh a podle výsledku doladit, které vlastnosti příznak mají | S | 🟡 |
 
 **Jak se to škáluje (rozhodnuto 18. 8.):** otázka pro AI i zápis odpovědi se **generují z vlastností
 prvku** - z týchž, ze kterých se staví panel vlastností. Nová vlastnost prvku je tím pro import

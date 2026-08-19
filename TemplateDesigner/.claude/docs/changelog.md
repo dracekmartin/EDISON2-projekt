@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-19 (3) - 📥 import se ptá jen na to, co jde z předlohy potvrdit (`B42c` dokončeno)
+
+Otázka na vzhled prvků posílala modelu **všechny** jejich vlastnosti (přes sedmdesát) a spoléhala
+na to, že si nejisté sám odpustí. Nově má každá vlastnost **u své definice** příznak, jestli se na
+ni import smí ptát.
+
+**Rozhodovací pravidlo: nepřítomnost nic nedokazuje.** Že na vývěsce nejsou značky přestupů, může
+znamenat vypnutou volbu i linku bez přestupů - to z jedné předlohy nerozlišíš a špatný odhad se
+vytiskne. Ptáme se proto na strany, počty a barvy (strana šipky, značky před názvem zastávky nebo
+za ním, rozdělení seznamu do oddílů, počet sloupců legendy, střídání řádků, čáry), ne na zapnutí
+featur závislých na datech.
+
+**Rozměry a písma příznak nemají záměrně** - ty se z PDF měří přesně, takže ptát se na ně modelu
+by výsledek jen zhoršilo.
+
+Příznak sedí **u definice vlastnosti**, ne ve zvlášť vedeném seznamu: jinak by se to s prvky
+rozešlo, což je přesně důvod, proč import zamrzl v červenci. Nová vlastnost prvku se tím rozhoduje
+při vzniku a mlčky se do otázky nedostane.
+
+Protokol (vývojářský) naopak ukazuje **všechny** odchylky včetně změřených hodnot - podle nich se
+kontroluje, jestli import měří správně.
+
+Ověřeno: build 0 chyb, .NET 1094/1094 (+8 na hranici „na tohle se ptáme × na tohle ne").
+
 ## 2026-08-19 (2) - 📥 nastavení sestavy z předlohy se uplatní, vzhled se čte u všech prvků JŘ (`B42c`/`B42d`)
 
 **`B42d`:** co model z předlohy pozná o nastavení tisku (jestli jsou u zastávek šipky směru, v jakém

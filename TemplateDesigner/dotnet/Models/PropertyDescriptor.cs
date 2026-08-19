@@ -19,6 +19,24 @@ public abstract class PropertyDescriptor
     public required string Group { get; init; }
 
     /// <summary>
+    /// Smí se na tuhle vlastnost ptát import z předlohy? Výchozí <c>false</c> - ptáme se jen na to,
+    /// co jde z papíru <b>potvrdit</b>.
+    ///
+    /// <para>Rozhodovací pravidlo: <b>nepřítomnost nic nedokazuje.</b> Že na vývěsce nejsou značky
+    /// přestupů, může znamenat vypnutou volbu i linku bez přestupů - to z jedné předlohy nerozlišíš
+    /// a špatný odhad se vytiskne. Naopak strana šipky, počet oddílů vedle sebe nebo počet sloupců
+    /// legendy jsou z obrázku jednoznačné.</para>
+    ///
+    /// <para>Příznak je <b>u definice vlastnosti</b>, ne ve zvlášť vedeném seznamu - jinak by se to
+    /// s prvky rozešlo, což je přesně důvod, proč import zamrzl v červenci. Nová vlastnost se tím
+    /// rozhoduje při vzniku a mlčky se do otázky nedostane.</para>
+    ///
+    /// <para>Velikosti písma, výšky řádků a šířky sloupců příznak <b>nemají záměrně</b>: ty se z PDF
+    /// měří přesně, takže ptát se na ně modelu by výsledek jen zhoršilo.</para>
+    /// </summary>
+    public bool FromImage { get; init; }
+
+    /// <summary>
     /// Volitelná podmínka viditelnosti deskriptoru v panelu.
     /// Null = vždy viditelný. Vrátí false = řádek se skryje (např. závisí na jiné property).
     /// Po commitu hodnoty v panelu se kontroluje znovu - panel se rebuildne pokud existuje aspoň jeden deskriptor s VisibleWhen.
