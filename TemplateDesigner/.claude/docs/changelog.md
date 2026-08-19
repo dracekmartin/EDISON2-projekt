@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-19 (2) - 📥 nastavení sestavy z předlohy se uplatní, vzhled se čte u všech prvků JŘ (`B42c`/`B42d`)
+
+**`B42d`:** co model z předlohy pozná o nastavení tisku (jestli jsou u zastávek šipky směru, v jakém
+rozsahu hodin je mřížka), se dosud zapsalo **vedle místa, ze kterého se to při tisku čte** - vývěska
+bez šipek se tedy stejně vytiskla se šipkami. Nově se hodnoty ukládají tam, kam patří, a otevření
+importované šablony projde toutéž cestou jako otevření z databáze, takže se změna hned projeví
+i v ovladačích nastavení (jinak by se tisklo něco jiného, než co je vidět).
+
+Ukládá se **jen to, co model opravdu poznal** (rozhodnutí Jan 19. 8.). Hodnoty v šabloně mají přednost
+před tím, co si uživatel nastavil pro agendu - kdyby import uložil celou sadu, začala by šablona
+přebíjet nastavení uživatele (past z #12843). Volbu, kterou agenda nemá, import zahodí.
+
+Otázka na volby se navíc **skládá z popisu agendy** (popisek, typ, nabídka, podmínka platnosti)
+místo tří napevno vypsaných. Platí tedy i pro zastávkový JŘ z AD, který má voleb kolem patnácti -
+dosud se ho import ptal na tři a psané byly pro MHD.
+
+**`B42c`:** vzhled z předlohy se čte nejen u seznamu zastávek, ale i u **mřížky odjezdů a legendy
+poznámek** - otázka i zápis se generují z prvku, takže to jsou další prvky bez další mechaniky.
+Do zadání přibylo pravidlo: hodnotu, která je na obrázku **napsaná** (symbol v legendě, nadpis),
+má model přečíst, ne dosadit podobný znak.
+
+Ověřeno: build 0 chyb, .NET 1086/1086 (+4 na pravidlo „ukládej jen poznané volby").
+
 ## 2026-08-19 - 📥 po importu se nic nehlásí, protokol je nástroj pro vývoj
 
 Hláška po importu („co se z předlohy nastavilo, co se nerozpoznalo") **skončila** - rozhodnutí Jan

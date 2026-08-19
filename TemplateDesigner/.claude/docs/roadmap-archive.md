@@ -3,6 +3,21 @@
 > Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
 > Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-19 ✅ - `B42d`: nastavení sestavy z předlohy se uplatní
+
+Detail → changelog 2026-08-19 (2). Co model z předlohy pozná o nastavení tisku (šipky směru, rozsah
+hodin), se zapisovalo vedle místa, ze kterého to čte tisk - vývěska bez šipek se stejně vytiskla se
+šipkami. Nově:
+
+- hodnoty jdou tam, odkud je čte tisk, a otevření importované šablony je aplikuje i do ovladačů
+  (jinak by se tisklo jiné nastavení, než jaké je vidět)
+- ukládá se **jen to, co model opravdu poznal** - hodnoty v šabloně mají přednost před nastavením
+  uživatele pro agendu, takže celá sada by ho tiše přebila (past z #12843)
+- otázka na volby se skládá **z popisu agendy** (popisek, typ, nabídka, podmínka), ne ze tří
+  napevno vypsaných voleb psaných pro MHD - platí tedy i pro AD s patnácti
+
+Zamčeno testy na pravidlo „ukládej jen poznané volby".
+
 ## 2026-08-18 ✅ - `B42a`: drobné vady importu z předlohy
 
 Detail → changelog 2026-08-18 (6). První dávka z průchodu importem PDF - jen to, co je jasná vada

@@ -36,10 +36,11 @@ public class AiVisionImportService
         DataSchema? schema,
         ScheduleImportType scheduleType,
         string apiKey,
-        string? elementSettingsCatalog = null)
+        string? elementSettingsCatalog = null,
+        string? reportParametersCatalog = null)
     {
         var log = new StringBuilder();
-        var systemPrompt = GetSystemPrompt(scheduleType, elementSettingsCatalog);
+        var systemPrompt = GetSystemPrompt(scheduleType, elementSettingsCatalog, reportParametersCatalog);
         var userPrompt = BuildUserPrompt(page, schema);
 
         log.AppendLine("╔══════════════════════════════════════════════════════════════╗");
@@ -164,7 +165,8 @@ public class AiVisionImportService
 
     // ── System prompt - composable per agenda type ────────────────────
 
-    private static string GetSystemPrompt(ScheduleImportType type, string? elementSettingsCatalog = null)
+    private static string GetSystemPrompt(ScheduleImportType type, string? elementSettingsCatalog = null,
+        string? reportParametersCatalog = null)
     {
         var sb = new StringBuilder();
         var context = GetAgendaPromptContext(type);
@@ -179,7 +181,14 @@ public class AiVisionImportService
         sb.AppendLine();
         sb.AppendLine(BuildPropertiesSection(context));
         sb.AppendLine();
-        if (context.TemplateParameters.Count > 0)
+        // Volby sestavy popisuje agenda sama (popisek, typ, nabídka, podmínka) - ručně psaný
+        // výčet v promptu uměl jen tři z patnácti a u druhé agendy neplatil vůbec.
+        if (!string.IsNullOrWhiteSpace(reportParametersCatalog))
+        {
+            sb.AppendLine(BuildReportParametersSection(reportParametersCatalog));
+            sb.AppendLine();
+        }
+        else if (context.TemplateParameters.Count > 0)
         {
             sb.AppendLine(BuildTemplateParametersSection(context));
             sb.AppendLine();
@@ -200,11 +209,12 @@ public class AiVisionImportService
     /// která se vizuálně neliší, patří uživateli, ne odhadu.
     /// </summary>
     private static string BuildElementSettingsSection(string catalog) =>
-        @"NASTAVENÍ VZHLEDU SEZNAMU ZASTÁVEK (""elementSettings"" → ""StopList""):
-Projdi obrázek a vyplň JEN ty vlastnosti, které z něj bezpečně poznáš (šipka vlevo/vpravo, značky
-před názvem zastávky nebo za ním, počet oddílů vedle sebe, barvy…). Klíč použij PŘESNĚ tak, jak je
-uvedený níže, hodnotu právě v uvedeném tvaru.
+        @"NASTAVENÍ VZHLEDU PRVKŮ (""elementSettings"" → typ prvku v hranaté závorce → vlastnost):
+Projdi obrázek a u každého prvku vyplň JEN ty vlastnosti, které z něj bezpečně poznáš (strana šipky,
+značky před názvem zastávky nebo za ním, počet oddílů vedle sebe, sloupce legendy, barvy, čáry…).
+Klíč použij PŘESNĚ tak, jak je uvedený níže, hodnotu právě v uvedeném tvaru.
 Co nevidíš nebo si nejsi jistý, VYNECH - výchozí hodnota je lepší než hádaná.
+Hodnotu, která je na obrázku NAPSANÁ (symbol v legendě, nadpis), přečti; nedosazuj podobný znak.
 " + catalog;
 
     /// <summary>
@@ -276,6 +286,19 @@ ZÁSADY (platí vždy, bez ohledu na konkrétní předlohu):
             sb.AppendLine($"- {key}: {desc}");
         return sb.ToString();
     }
+
+    /// <summary>
+    /// Volby sestavy k vyplnění („templateParameters"). Jsou to nastavení tisku, ne vlastnosti
+    /// prvku - vyplnit se mají jen ty, které jsou z předlohy vidět; ostatní si řídí uživatel.
+    /// </summary>
+    private static string BuildReportParametersSection(string catalog) =>
+        @"NASTAVENÍ SESTAVY (""templateParameters""):
+Volby tisku, které si jinak nastavuje uživatel. Vyplň JEN ty, jejichž hodnotu z obrázku bezpečně
+poznáš (typicky jestli jsou u zastávek šipky směru, nebo v jakém rozsahu hodin je mřížka odjezdů).
+Volbu, která se na papíře nijak neprojeví, VYNECH - hodnota v šabloně přebije nastavení uživatele,
+takže špatný odhad je horší než nevyplněno.
+Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možností, u ano/ne ""true"" nebo ""false"".
+" + catalog;
 
     private static string BuildOutputSection(AgendaPromptContext ctx)
     {

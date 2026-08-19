@@ -23,8 +23,7 @@ Drobné vady (`B42a`) a slévání čar do rastru hotové 18. 8.; zbytek:
 
 | Co | Rozsah | Stav |
 |---|---|---|
-| **`B42c` Vzhled prvků z předlohy** - 1. kolo hotové 18. 8. pro **seznam zastávek** (otázka i zápis se skládají z vlastností prvku). **Zbývá:** vyhodnotit na reálných předlohách, pak rozhodnout, kde se vede seznam „tohle jde poznat z obrázku", a rozšířit na mřížku odjezdů a legendu | M | 🟡 |
-| **`B42d` Nastavení sestavy z předlohy** - rozpoznaná hodnota se dnes zapíše na místo, které se při tisku nečte, a otevření importované šablony neprojde cestou, která hodnoty aplikuje. Bez téhle opravy nemá smysl se na víc voleb ptát | M | ⬜ |
+| **`B42c` Vzhled prvků z předlohy** - čte se u seznamu zastávek, mřížky odjezdů i legendy poznámek (19. 8.). **Zbývá:** vyhodnotit na širší sadě předloh a podle výsledku rozhodnout, kde se vede seznam „tohle jde poznat z obrázku" (příznak u pole v Caché schématu × seznam v aplikaci) | S | 🟡 |
 
 **Jak se to škáluje (rozhodnuto 18. 8.):** otázka pro AI i zápis odpovědi se **generují z vlastností
 prvku** - z týchž, ze kterých se staví panel vlastností. Nová vlastnost prvku je tím pro import
@@ -37,11 +36,10 @@ posílá u seznamu zastávek všechny vlastnosti a v protokolu je vidět, co mod
 na které jsme se shodli: **vizuální ano, business ne** - co se vizuálně neliší (které zastávky se
 tisknou, odkud se bere číslo stanoviště, název pro MHD), do importu nepatří.
 
-**K `B42d`:** ptáme se jen na tři volby a otázka je psaná pro MHD, i když tímtéž režimem jde i AD
-s patnácti. Definice všech voleb včetně popisků si import ze serveru **už tahá** (dnes je používá
-jen k dourčení typu hodnoty). Hodiny od/do navíc bez přepnutí „Časová osa odjezdů" na „Vlastní
-rozsah" nic neudělají. ⚠️ Past z #12843 (`customer-requirements §0.1`): uloží se i hodnoty,
-kterých se nikdo nedotkl.
+✅ **`B42d` hotové 19. 8.** - rozpoznané volby se ukládají tam, odkud je čte tisk, otevření
+importované šablony je aplikuje i do ovladačů a otázka na volby se skládá z popisu agendy (platí
+tedy i pro AD s patnácti volbami). Past z #12843 pokrytá: ukládá se **jen to, co model poznal**,
+ne celá sada.
 
 ⛔ **Hláška „co si po importu dodělej" se dělat nebude** (`B42b`, rozhodnutí Jan 19. 8.). Stála na
 předpokladu, že víme, co má být hotovo - jenže import je **rychlý start, ne dokončená šablona**,

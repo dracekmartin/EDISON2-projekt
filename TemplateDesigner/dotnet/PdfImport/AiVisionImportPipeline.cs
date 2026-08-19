@@ -88,7 +88,8 @@ public class AiVisionImportPipeline
                 : null;
 
             visionResult = await visionService.AnalyzeAsync(
-                base64Png, firstPage, schema, scheduleType, _apiKey, StopListSettingsCatalog(scheduleType));
+                base64Png, firstPage, schema, scheduleType, _apiKey,
+                ScheduleSettingsCatalog(scheduleType), ReportParametersCatalog());
         }
         catch (Exception ex)
         {
@@ -109,7 +110,8 @@ public class AiVisionImportPipeline
             try
             {
                 var retryResult = await visionService.AnalyzeAsync(
-                    base64Png, firstPage, schema, scheduleType, _apiKey, StopListSettingsCatalog(scheduleType));
+                    base64Png, firstPage, schema, scheduleType, _apiKey,
+                ScheduleSettingsCatalog(scheduleType), ReportParametersCatalog());
                 AiDebugLog += "\n\n══ RETRY (chyběly klíčové elementy) ══\n" + visionService.DebugLog;
                 if (retryResult is not null
                     && (MissingCoreElements(retryResult).Length == 0
@@ -221,6 +223,7 @@ public class AiVisionImportPipeline
         }
 
         var templateParams = BuildTemplateParameters(visionResult);
+        var printParams = BuildPrintParameters(visionResult);
 
         return new Template
         {
@@ -238,6 +241,7 @@ public class AiVisionImportPipeline
             },
             Sections = sections,
             Parameters = templateParams,
+            PrintParameters = printParams,
             CreatedAt = DateTime.UtcNow,
             ModifiedAt = DateTime.UtcNow
         };
@@ -249,13 +253,16 @@ public class AiVisionImportPipeline
     /// </summary>
     private void ApplyElementSettings(AiVisionResult vision, List<TemplateElement> elements)
     {
-        if (elements.OfType<StopListElement>().FirstOrDefault() is not { } stopList) return;
-        if (!vision.ElementSettings.TryGetValue("StopList", out var settings)) return;
-
-        var applied = ElementSettingsFromImage.Apply(stopList, settings);
-        if (applied.Count > 0)
+        foreach (var (typ, vzor) in SettingsTargets())
         {
-            ImportLog.Add("Seznam zastávek - z předlohy nastaveno:");
+            var cil = elements.FirstOrDefault(e => e.GetType() == vzor.GetType());
+            if (cil is null) continue;
+            if (!vision.ElementSettings.TryGetValue(typ, out var settings)) continue;
+
+            var applied = ElementSettingsFromImage.Apply(cil, settings);
+            if (applied.Count == 0) continue;
+
+            ImportLog.Add($"{ElementNazev(cil)} - z předlohy nastaveno:");
             ImportLog.AddRange(applied.Select(l => "   " + l));
         }
     }
@@ -316,11 +323,102 @@ public class AiVisionImportPipeline
         _                    => el.GetType().Name
     };
 
-    /// <summary>Na co se u seznamu zastávek ptát - soupis jeho vlastních vlastností.</summary>
-    private static string? StopListSettingsCatalog(ScheduleImportType scheduleType) =>
-        scheduleType == ScheduleImportType.None
-            ? null
-            : ElementSettingsFromImage.BuildCatalog(new StopListElement());
+    /// <summary>
+    /// Na co se u jízdněřádových prvků ptát - soupis jejich vlastních nastavitelných vlastností.
+    /// Klíč skupiny je typ prvku, jak ho model používá v odpovědi (StopList, DepartureGrid…).
+    /// </summary>
+    private static string? ScheduleSettingsCatalog(ScheduleImportType scheduleType)
+    {
+        if (scheduleType == ScheduleImportType.None) return null;
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var (typ, prvek) in SettingsTargets())
+        {
+            sb.AppendLine($"[{typ}] {ElementNazev(prvek)}:");
+            sb.Append(ElementSettingsFromImage.BuildCatalog(prvek));
+            sb.AppendLine();
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Volby sestavy tak, jak je popisuje agenda - popisek, typ, nabídka i podmínka platnosti.
+    /// Ručně psaný výčet v promptu uměl tři volby z patnácti a u druhé jízdněřádové agendy
+    /// neplatil vůbec; agenda přitom každou volbu popisuje sama.
+    /// </summary>
+    private string? ReportParametersCatalog()
+    {
+        if (_knownParameters is null || _knownParameters.Count == 0) return null;
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var p in _knownParameters)
+        {
+            string tvar = p.Type switch
+            {
+                "bool"   => "\"true\" nebo \"false\"",
+                "number" => "číslo",
+                "enum" when p.Options is { Count: > 0 } o => "jedna z hodnot " + string.Join(" / ", o.Select(x => $"\"{x}\"")),
+                _        => "text"
+            };
+            sb.Append($"- \"{p.Name}\" ({p.Label}): {tvar}");
+            if (!string.IsNullOrWhiteSpace(p.VisibleWhen))
+                sb.Append($"; uplatní se jen při {p.VisibleWhen}");
+            sb.AppendLine();
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>Prvky, na jejichž vzhled se model ptá - typ v odpovědi × čerstvý prvek jako vzor.</summary>
+    private static IEnumerable<(string Typ, TemplateElement Prvek)> SettingsTargets()
+    {
+        yield return ("StopList", new StopListElement());
+        yield return ("DepartureGrid", new DepartureGridElement());
+        yield return ("NotesLegend", new NotesLegendElement());
+    }
+
+    /// <summary>
+    /// Hodnoty nastavení sestavy, které model poznal z předlohy - do místa, ze kterého je čte tisk.
+    /// Do 19. 8. se ukládaly jen k definicím parametrů, kam se při tisku nekouká, takže rozpoznaná
+    /// hodnota se zahodila (vývěska bez šipek se stejně vytiskla se šipkami).
+    ///
+    /// <para>Zapisuje se <b>jen to, co model opravdu poznal</b>, ne celá sada (rozhodnutí Jan
+    /// 19. 8.). Hodnoty uložené v šabloně mají přednost před tím, co si uživatel nastavil pro
+    /// agendu - kdyby import uložil i volby, kterých se nikdo nedotkl, začala by šablona přebíjet
+    /// nastavení uživatele (#12843).</para>
+    /// </summary>
+    internal Dictionary<string, string>? BuildPrintParameters(AiVisionResult vision)
+    {
+        if (vision.TemplateParameters.Count == 0) return null;
+
+        var znameParametry = new HashSet<string>(
+            (_knownParameters ?? []).Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
+
+        var hodnoty = new Dictionary<string, string>();
+        foreach (var (klic, hodnota) in vision.TemplateParameters)
+        {
+            // Volbu, kterou agenda nezná, tisk stejně zahodí - a v šabloně by jen mátla.
+            if (znameParametry.Count > 0 && !znameParametry.Contains(klic))
+            {
+                ImportLog.Add($"⚠ Volbu {klic} tahle agenda nemá - přeskočena.");
+                continue;
+            }
+            hodnoty[klic] = hodnota;
+        }
+
+        if (hodnoty.Count > 0)
+        {
+            ImportLog.Add("Nastavení sestavy z předlohy:");
+            foreach (var (klic, hodnota) in hodnoty)
+                ImportLog.Add($"   {PopisParametru(klic)} = {hodnota}");
+        }
+
+        return hodnoty.Count > 0 ? hodnoty : null;
+    }
+
+    /// <summary>Popisek volby tak, jak ho zná uživatel z nastavení tisku; jinak holý klíč.</summary>
+    private string PopisParametru(string name) =>
+        _knownParameters?.FirstOrDefault(p =>
+            string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))?.Label ?? name;
 
     /// <summary>
     /// Převede AI-detekované parametry na TemplateParameter objekty.
