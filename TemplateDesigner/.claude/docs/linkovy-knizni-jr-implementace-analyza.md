@@ -399,6 +399,178 @@ distribuce šablon = blok B2/R6 (zatím ruční Import JSON).
 
 ---
 
+---
+
+## 13. Revize stavu 2026-08-19 - co reálně máme a inventář nastavení starého modulu
+
+> Účel revize: před dalším kolem implementace zjistit, **kolik z chování starého modulu už
+> pokrýváme** a hlavně **která nastavení EDISONu do výstupu mluví**. U zastávkového JŘ se ta
+> nastavení objevovala jedno po druhém jako zákaznické tikety; tady je chceme mít vyjmenovaná
+> dopředu, i ta, která vědomě neděláme.
+
+### 13.1 Co je dnes v repu
+
+| Vrstva | Stav |
+|---|---|
+| Caché agenda `LinkovyJrAd` (1 343 ř.) | data celé linky, 1 stránka per (linka × směr), řazení spojů, zdvojené řádky příjezd/odjezd, řádek platnosti, NZ, návaznosti, poznámky druhů 1/2/3/7/8/9/10 |
+| Caché agenda `LinkovyJrMhd` (692 ř.) | týž wire formát nad MHD daty; bez Km/Tč/MHD sloupců a bez návazností (zdroj je nemá) |
+| `LineTableElement` (596 ř.) | matice zastávka × spoj, plán řádků, kaskáda stylů, škálování na šířku i výšku, podmíněná viditelnost a zvýraznění řádku |
+| Výchozí šablona | `dotnet/SystemTemplates/linkovy-jr-ad.json` (AD). **MHD nemá.** |
+| Testy | **žádné** - ani Caché, ani .NET (mimo drift testy slovníku a registrace prvku). Diff harness proti legacy byl ve scratchpadu, v repu není. |
+
+Sloupcový repertoár prvku: Zóna, Km, Tč, Zastávka, MHD, Spoj. Legacy jich má devět
+(`gMSArrPLinWin`, `JRapiLinPrtWin.mac`): navíc **Šipky za zastávkou** (typ 5), **Šipky před
+zastávkou** (typ 8) a **Spoj před zastávkou** (typ 9) - poslední dva jsou zrcadlo pro obousměrný
+tisk (opačný směr nalevo od názvů).
+
+### 13.2 Tři vrstvy nastavení, které starý modul čte
+
+Nastavení nejsou na jednom místě. Tisk knižního JŘ je skládá ze tří zdrojů, než začne stavět data:
+
+1. **Parametry sestavy** (uživatel je nastavuje před tiskem, klient je posílá jako `in("A",2,...)`;
+   `TISKJR/Data.cls:113-154`)
+2. **Globální nastavení programu** (`gPGSetWin` → `gMainSet^JRapiSet` → `^JRSET("Definice",...)`;
+   `JRapiLinPrtWin.mac:1810-1837`)
+3. **Nastavení u konkrétní linky** (`gPLSetWin` → `^JRL(sku,lin,"PATCH",...)` a `^JRL(...,"MHD2",...)`;
+   `JRapiLinPrtWin.mac:1840-1897`)
+
+#### A. Parametry sestavy (klient → `in("A",2,...)`)
+
+| Legacy klíč | Co dělá | U nás |
+|---|---|---|
+| `arr,3` RozdelovatSpojePodlePlatnosti | dělení sloupců na skupiny dnů (0 / PD+víkend / PD+So+Ne) | ✅ parametr „Dělení spojů dle platnosti" |
+| `arr,4` PoznamkyZpusobTisku | kam jde legenda (per blok / per směr / souhrnně / + odstránkovat) | ❌ - legenda je vždy jednou na konci |
+| `arr,5` ZvyraznenaZastavka | zvýraznit řádek zvolené zastávky | ❌ |
+| `arr,6` TiskTurnusuKeSpojum | tisk turnusů ke spojům | ❌ (vědomě, `C6`) |
+| `arr,7` TiskObousmernychJR | oba směry na jednu sestavu (zrcadlené sloupce) | ❌ (vědomě, `C6`) |
+| `arr,8` ZalamovatOznaceniTurnusuZaTeckou | zalomení označení turnusu | ❌ (v legacy „todo") |
+| `arr,9` NavaznostiVPripojnychRadcich | tisknout číslo linky/vlaku v přípojném řádku | ❌ - tiskneme vždy |
+| `arr,10` TC | zvýraznit konkrétní tarifní číslo (inverzní řádek) | ❌ |
+| `arr,12` NekreslitRameckyKolemCiselSpoju | bez rámečků kolem čísel spojů; **v MHD navíc vypne i čísla spojů** | ❌ (u nás řeší styl prvku, ale MHD vedlejší efekt chybí) |
+| `arr,13` VkladatPrazdneSloupce | dorovnání šířky prázdnými sloupci | ❌ (patří k `B13`) |
+| `PoznamkyPoradiDruh` | uživatelské pořadí druhů poznámek | ❌ (vědomě, `C5`) |
+| `arr,11` (jen MHD) | výběr typů provozu a směrů k tisku | ❌ - tiskneme vše |
+| `dta,1` / `dta,2` / `MS` | měřicí řetězce, šířka plochy, počet řádků | ⛔ nepřenášíme vědomě (layout měří klient) |
+
+#### B. Globální nastavení (`^JRSET("Definice",…)`)
+
+Z celého číselníku `gMainSet` (9 skupin) si knižní JŘ bere **deset** hodnot:
+
+| Klíč v `^JRSET("Definice",…)` | Co ovlivňuje | U nás |
+|---|---|---|
+| `TiskDtm` | tvar datumů v omezeních (0-3) | ✅ vč. per-linka override |
+| `PAtrSp` | které atributy nad spojem se vůbec tisknou (bezb. přístupné, kola, samoobslužný, nízkokapacitní) | ❌ - `TODO` v kódu |
+| `MistOR` / `MistNOD` | tvar tisku místenkování (odřádkování, dvojtečky) | ❌ |
+| `MHDPZ("P")` / `MHDPZ("Z")` | **vlastní text** místo „IDP-P" / „IDP-Z" ve sloupci MHD + jeho řádek legendy | ❌ - máme napevno IDP-P/IDP-Z |
+| `ZonaIdsDelZnk` | odstranit písmena z označení zóny | ❌ (zastávkový JŘ to umí) |
+| `Print_Dopr_First`, `SDOP`, `PS_PrintSouhrnDoprLinYes` | pořadí a tisk dopravců/provozů, seznam linek k dopravci | ❌ - `PopisDopravce` má vlastní logiku, neověřenou proti nastavení |
+| jazyková verze (`gMode`) | číselníky textů CZ vs. SK | ✅ |
+
+#### C. Nastavení u linky (`^JRL(sku,lin,"PATCH",…)` a `"MHD2"`)
+
+Tohle je nejnebezpečnější vrstva: mění výstup **jen u některých linek**, takže se to na testovací
+lince nemusí nikdy projevit.
+
+| Klíč | Co dělá | U nás |
+|---|---|---|
+| `KmsSmer` | počet km sloupců per směr | ✅ |
+| `linIDS` | **čtyřstavový přepínač** zóny × km (0 = jen km, 1 = jen zóna, 2 = obojí, 3 = nic) | ⚠️ **částečně a chybně** - čteme jen „je neprázdné → tiskni zónu"; hodnoty `0` a `3` u nás zónu vytisknou, ačkoli legacy ne, a km sloupce neřídíme vůbec (`LinkovyJrAd.cls:348,453`) |
+| `nazMHD` | u MHD linky použít ručně upravený název zastávky | ❌ - týž problém jako `B60` |
+| `netisknoutSloupecTC` | schovat sloupec tarifních čísel | ❌ |
+| `tisknoutJenTcKdeSpojeZastavuji` | **vyhodit řádky**, kde žádný spoj nestaví (legacy to používá na 5 místech) | ❌ |
+| `podtrzeniPaJ` | způsob podtržení u zdvojených řádků příjezd/odjezd | ❌ |
+| `barevnyTiskSpoju` | vypnout barvy spojů (barva je na spoji, `gSpLin dta,38`) | ❌ - **barvy spojů neposíláme vůbec**, agenda nemá jediné `FORE_COLOR` (zastávková jich má 9) |
+| `cisIDS` | jak se skládá tištěné číslo linky (3místné, vlastní číslo, tablo) | ❌ |
+| `ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ (patří k `B13`) |
+| `TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ❌ |
+| `MHD2("netisknoutTC" / "netisknoutCislaSpoju" / "netisknoutSipky" / "netisknoutKladivkaAPodobne")` | schová sloupec Tč, čísla spojů, šipky, značky | ❌ |
+| `MHD2("umeleDatDoSekci" / "rozdelitUmeleSekceNaVlastniStranky")` | ruční přiřazení spojů do skupin a jejich stránkování | ❌ |
+
+U MHD zdroje čte legacy `MakeData` z linky navíc `TypLinkyID` a rozsah negativních značek
+z `^ALVA.MHD.SETTINGS(idfa,"Obecne","DTA",1001,"RozsahNegativnichZnacek*")` - ani jedno nemáme.
+
+### 13.3 Co z toho plyne pro testy
+
+Dnešní zlaté odtisky zastávkového JŘ (`ZastavkoveJrAdGoldTest`) hlídají **náš výstup proti
+včerejšku**, ne proti starému modulu - to je pojmenované v `R6`. Pro linkový JŘ potřebujeme obojí
+a ani jedno zatím neexistuje:
+
+- **Oracle test proti legacy.** `ALVA.TISKJR.Data.LoadData` s `VOLANO_Z~JRMAIN` je volatelný ze
+  serveru a vrací týž stream, kterým se krmil starý klient. Diff harness (spoje, pořadí, časy,
+  km, zóny, poznámky) existoval ve scratchpadu a **není v repu** - to je první věc k nápravě.
+- **Zlatý odtisk** (`GoldUtil.Digest` počítá `ZASTAVKY`/`ODJEZDY`/`POZNAMKY`; linkový wire má
+  `ZASTAVKY`/`SPOJE`/`SKUPINY_DNU`/`POZNAMKY`, takže digest potřebuje linkovou variantu).
+- **Matice nastavení.** Odtisk na jedné lince s výchozím nastavením nedokáže chytit nic z §13.2 C.
+  Test musí každé nastavení **zapnout a vypnout** a ověřit, že se výstup změnil právě tak, jak ho
+  změní legacy - jinak platí totéž, co u zastávkového: „funguje to", dokud nepřijde zákazník,
+  který si to nastavení zapnul.
+
+
+---
+
+## 14. Pozastavené tikety helpdesku k linkovému JŘ (projito 2026-08-19)
+
+Projito **všech 28 pozastavených** tiketů v agendách Jízdní řády + MHD. Roztřídění samo nebylo nové
+(seznam „Mimo scope zastávkového JŘ" v `customer-requirements-zastavkovy-jr.md` ho drží od 20. 7.);
+nové je, **co v nich zákazník konkrétně chce**. Detail tady, ne tam, protože zastávkový dokument
+u nich vědomě říká „řeší se se svým trackem".
+
+Všech osm dole má od nás v tiketu slíbeno „vyřešíme v novém návrháři". Nejsou to tedy volitelné
+podněty - je to náš vydaný závazek a při plánování vln s nimi tak zacházej.
+
+### 14.1 Požadavky, které mají být pokryté
+
+| Tiket | Zákazník | Co chce | Kam patří |
+|---|---|---|---|
+| **#9088** | TRANSDEV (SK) | Nejbohatší podnět, pět věcí naráz (viz §14.2) | vlny 2, 3, 5 |
+| **#8360** | KU HK | **Přípojné řádky potřebují vlastní vzhled** - kurzívu, tučnost, velikost a barvu textu nezávisle na časech spojů. Dnes čas přípoje splývá s časem spoje a je to matoucí. Zákazník výslovně nechce řešit barvou (tiskne černobíle), chce **řez a velikost** | vlna 2 (u nás levné - kaskáda stylů existuje, přípojný řádek jen nemá vlastní vrstvu) |
+| **#11300** | KORID | **Prázdný přípojný řádek nemá zabírat místo.** Uzel má celotýdenní provoz, ale přípoje jen v pracovní dny; při rozdělení na bloky PD × víkend zůstane v druhém bloku prázdný řádek | vlna 2, ale **až po dělení na bloky** - „prázdný" má smysl teprve vůči bloku |
+| **#8576** | KU HK | **Zóny do více sloupců**, když má zastávka víc zón (hraniční zastávka mezi zónami jednoho IDS - PID, IDZK). Dnes je zóna jedna hodnota v jednom sloupci | vlna 2 (datová část) + vlna 6 (sloupce jako u km) |
+| **#8372** | KORID | **„Vkládat prázdné sloupce" má být volba u tisku, ne v šabloně** - jinak si na to musí dělat druhou šablonu. Navíc u linek s málo spoji to dnes roztáhne rozestupy „do absurdna" | vlna 5 (`Strih`), a rozhoduje o tom, že to bude **parametr sestavy** |
+| **#9417** | KORID | **Dopravci v záhlaví jen za spoje na dané stránce.** U velkých linek na A4 (Praha-Rumburk) se vypisují všichni a hlavička přeteče pod tabulku | vlna 5 - **architektonický důsledek:** po rozřezání musí být hlavička počítaná **per blok**, ne per (linka × směr), jak je dnes |
+| **#7487** | KORID | **Legenda do 4 sloupců** (dnes 1-3) s přetékáním delší poznámky do dalšího sloupce. Motivace je táž jako u #9417: šetřit místo, aby legenda nespadla pod tabulku | vlna 6 (vícesloupcová legenda; dnes je legenda tabulka z dat, sloupcový tok nemá) |
+| **#9283** | KOVED | **Sdružený JŘ více linek** včetně výlukové varianty, v grafické podobě IDZK. Zákazník si sám řekl o kalkulaci, čeká placenou práci | ⚠️ **mění zařazení `C6`** - „souhrnné JŘ" v roadmapě viselo jako „nejdřív ověřit, jestli to zákazník chce". Chce |
+
+### 14.2 #9088 rozepsaný (TRANSDEV, slovenská instalace)
+
+Pět samostatných věcí v jednom tiketu:
+
+1. **Chyba: stránky se slévají do jedné**, když nejsou povolené žádné z poznámek (týdenní / negativní /
+   stálé). Zákazník to sám dvakrát zpřesňoval. Je to legacy layoutová chyba, u nás ji dědit nemáme -
+   ale je to **testovací případ pro vlnu 5**: prázdná legenda nesmí zamíchat stránkováním.
+2. **Směrová zastávka nerespektuje směr** - ukazuje poslední tarifní číslo v obou směrech, čekal
+   poslední pro Tam a první pro Zpět. Týká se hlavičkového pole, tedy naší datové části.
+3. **Přání: ručně zadaný „název směru" u linky**, vkládaný do šablony jako datové pole - a to
+   **i pro zastávkové JŘ**. Vyžaduje nové pole u linky v jízdních řádech, ne jen v návrháři.
+4. **Směrová zastávka v podobě názvu MHD** (bez obce) - je to týž problém jako `B60`, tvar názvu
+   zastávky se v linkovém JŘ nedá ovlivnit.
+5. **Volby, které se dají nastavit, ale nefungují:** „nevypisovat čísla spojů", „tisk turnusů ke spojům",
+   „návaznosti v přípojných řádcích". Přesně tři z položek inventáře v §13.2 - potvrzuje, že ta vrstva
+   není teoretická, zákazník si ji zapnul a nic se nestalo. (K bodu 5 jsme mu v roce 2024 napsali, že
+   turnusy fungují a návaznosti řídí nastavení „Tisk na JŘ jako" = „Přípoj. řádek".)
+6. **Texty generovaných poznámek** (vyčká / navazuje) jsou v slovenštině „kostrbaté" a nejdou upravit.
+   U nás je ta věta **napevno česky v kódu prvku** (`LineTableElement.PripojText`), takže na SK
+   instalaci vyjde česky - horší než legacy. Patří k jazykové variantě číselníků, kterou agenda
+   už řeší (`Jazyk()` → `CZ` / `*SK`).
+
+### 14.3 Co se ukázalo jako mimo tento track
+
+- **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky, ne pod ní. V TD to **umíme už dnes**:
+  legenda je samostatný prvek, který si uživatel položí, kam chce. Ověřit na reálné šabloně a tiket
+  zavřít, ne plánovat.
+- **#13070** (BBSK) - vypadá jako linkový, ale zákazníkova předloha je **odjezdová relace**;
+  patří tracku Relace, kde ještě nic není.
+- **#8175** (TRANSDEV) + bod 12 z **#8785** (POVED) - řazení spojů volitelně per linka a ruční pořadí.
+  Je to **editor jízdních řádů** (Studio JŘ), ne tisk. Pro nás z toho plyne jen tolik, že pořadí spojů
+  máme napevno podle času odjezdu (`SeradSpoje` = legacy `mkPoradiSp`) a je otevřená otázka,
+  jestli existuje nastavení, které to v legacy přebíjí.
+- **#12803**, **#7929**, **#8067**, **#8457**, **#9481**, **#9483**, **#10442**, **#12854**, **#11796**,
+  **#6386**, **#13025** - editace dat a jiné moduly, netýká se návrháře.
+- **#8785** bod 5 (POVED) - „vejdi výstup na jednu nebo dvě strany podle mé volby". Ve starém modulu to
+  odmítnuto jako principiálně nemožné, ale **náš engine na to má lepší pozici** (legacy `Strih` už umí
+  režim „nejmíň stránek"). Zapsat jako podnět k vlně 5, ne slibovat.
+
+
 ## Zdrojové soubory citované v této analýze
 
 ```

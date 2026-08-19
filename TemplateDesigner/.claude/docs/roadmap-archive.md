@@ -3,6 +3,50 @@
 > Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
 > Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-19 ✅ - `L1`: linkový JŘ se poprvé měří proti starému modulu
+
+Detail → changelog 2026-08-19 (10). Linkové agendy neměly **ani jeden test** (2 000 řádků) a
+porovnání se starým modulem existovalo jen jako pomocný nástroj mimo repo. Bez sítě by další vlny
+(nastavení, parametry, symboly, rozřezání) jely naslepo, proto byla `L1` bezpodmínečně první.
+
+**Co je v repu:**
+
+- **Porovnání se starým modulem** - volá legacy engine `mkPLinWin` (ne překladovou vrstvu
+  `TISKJR/Data`, ta měří formát, ne data) i naši agendu nad toutéž linkou a srovnává **pole po poli**:
+  pořadí spojů, názvy zastávek, km, zóny, sloupec MHD, časy včetně značek, legendu. Čtyři linky tří
+  firem, **~9 500 porovnaných hodnot**.
+- **Zlatý odtisk pro linkový tvar dat** - vlastní digest (`SPOJE`/`SKUPINY_DNU` místo `ODJEZDY`),
+  navíc počítá časové buňky, aby ztráta celého sloupce nezůstala jen v md5.
+- **Smoke test obou agend** (AD i MHD) + kontrola, že schéma popisuje tytéž kolekce, jaké data posílají.
+- **Typová sada linek** sestavená měřením 48 linek pěti firem, s pojistkou proti vyhnití fixture.
+
+**Rozhodnutí, která platí dál:**
+
+- **Layout se s legacy neporovnává.** Starému modulu se dá záměrně obrovská tisková plocha, takže
+  vyrobí jeden blok na směr; porovnává se **obsah dat**. Rozřezání na stránky je naše vrstva (`L5`).
+- **Tři druhy rozdílu, jen jeden je pád.** *Odchylka* = chceme se lišit (s důvodem), *dluh* = zatím
+  se lišíme omylem (s vlnou, ve které zmizí), *rozdíl* = nikdo o něm nerozhodl → pád. Bez toho by
+  síť zabetonovala starý modul a vylepšení z helpdesku by začínala bojem s vlastními testy
+  (požadavek Jan 19. 8.).
+- **Deklarovaná výjimka nesmí zůstat mrtvá** - když ji na celé sadě nekryje ani jeden rozdíl, test
+  ji nahlásí ke smazání. Jinak by pod ní jednou prošla skutečná chyba.
+
+**Co první běh našel:**
+
+- ✅ **Opraveno hned:** navazující spoj se v legendě označoval značkou pro vyčkání (značka se brala
+  z dat, kde je u obou druhů stejná; význam ji přitom určuje jednoznačně).
+- ⏳ **Dluh do `L2`:** pořadí sloupců spojů se u dvou linek liší od starého tisku. ⚠️ Dřívější
+  vysvětlení „jsou to spoje se shodným časem, obsah 1:1" **neplatí** - ověřeno, že ty dva spoje
+  vyjíždějí z různých zastávek a jeden na druhý čeká.
+- ⏳ **Dluh do `L2`:** generická věta u atributů spoje má proti starému modulu navíc sloveso.
+- ⏳ **Dluh do `L3`:** tvar názvu zastávky (v seznamu i v textech návazností).
+
+**Vedlejší nález pro `L4`:** číselník 66 dopravních značek je opsatelný přímo ze zdroje starého
+modulu (`GSId^JRapiLinPrtWin`), nemusí vznikat měřením. Dosavadní podklad měl čísla z překladové
+vrstvy klienta, která proti enginu neplatí.
+
+---
+
 ## 2026-08-19 ✅ - Distribuce systémových šablon kanálem (hotovo a vyzkoušeno naživo)
 
 Detail → changelog 2026-08-19 (5)-(8). Systémové (M-line) šablony byly zabalené v `.exe`, takže nová

@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-08-19 (10) - 🕸️ linkový JŘ se poprvé měří proti starému modulu
+
+Linkové agendy neměly do dneška **ani jeden test** (2 000 řádků kódu) a porovnání se starým modulem
+existovalo jen jako pomocný nástroj mimo repo, takže ho nikdo nespustil. Vlna `L1` to staví do repa.
+
+**Co vzniklo.** Porovnání volá starý engine (`mkPLinWin`) i naši agendu nad toutéž linkou a srovnává
+je **pole po poli**: pořadí spojů, názvy zastávek, kilometry, zóny, sloupec MHD, časy v buňkách včetně
+značek a legendu poznámek. Běží na čtyřech linkách tří firem, dohromady **~9 500 porovnaných hodnot**.
+K tomu zlatý odtisk pro linkový tvar dat a smoke test obou agend (AD i MHD).
+
+**Síť nezabetonovává starý modul.** Rozdíl může být trojího druhu a každý znamená něco jiného:
+*odchylka* (chceme se lišit, s důvodem - třeba proto, aby šla návaznost v šabloně stylovat),
+*dluh* (nechceme se lišit, ale zatím se lišíme; má přiřazenou vlnu, ve které zmizí) a *rozdíl*
+(o kterém nikdo nerozhodl) - a jen ten je pád. Bez toho rozdělení by každé vylepšení podle
+požadavků zákazníků začínalo bojem s vlastními testy.
+
+**První běh rovnou našel dvě chyby:**
+
+- **Navazující spoj se v legendě označoval značkou pro vyčkání.** Značku jsme brali z dat, kde je
+  u obou druhů návaznosti stejná; význam ji přitom určuje jednoznačně. **Opraveno** - navazuje má
+  nově vlastní značku, jak to má i starý tisk.
+- **Pořadí sloupců spojů se u některých linek liší od starého tisku** (dvě dvojice na lince
+  Karlovarského dopravního podniku). Netýká se to obsahu - časy sedí do jednoho - ale uživatel
+  uvidí sloupce v jiném pořadí. Zavedeno jako dluh do další vlny; dřívější vysvětlení „jsou to jen
+  spoje se shodným časem" **neplatí**, ty dva spoje vyjíždějí z různých zastávek.
+
+Cestou se ukázalo, že číselník 66 dopravních značek je opsatelný přímo ze zdroje starého modulu -
+pro chystaný symbolový font tedy nemusí vznikat měřením.
+
+Ověřeno: Caché 122/122, .NET 1121/1121, build 0 chyb. Test si sám hlídá, že něco reálně změřil,
+takže zelená neznamená „přeskočeno".
+
 ## 2026-08-19 (9) - 🧹 import: pryč cesta, která slévala grafiku do obrázku
 
 Slévání čar do jednoho obrázku na pozadí se 18. 8. přestalo používat, ale kód pro něj v importu

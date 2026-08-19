@@ -40,6 +40,11 @@ Mimo scope zastávkového JŘ (protříděno proti živému HD 2026-07-20 - vše
 mimo tabulku výše jsou linkové/knižní JŘ, nebo úplně mimo TD; **žádný zastávkový nechybí**):
 
 **Linkové / knižní JŘ (řeší se s jejich trackem, ne sem):**
+
+> Co v nich zákazník konkrétně chce, je rozepsané v
+> [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) §14
+> (projito 2026-08-19, navázané na vlny `L1`-`L8` roadmapy). Sem se to nekopíruje.
+
 - **#7487** (KORID) - NZ + týdenní platnost 4 na řádek.
 - **#8360** (KU HK) - přípojové řádky: kurzíva / barva / velikost písma, aby čas přípoje nesplýval s časem spoje.
 - **#8372** (KORID) - „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).
