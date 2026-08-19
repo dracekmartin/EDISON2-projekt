@@ -23,7 +23,6 @@ Drobné vady (`B42a`) a slévání čar do rastru hotové 18. 8.; zbytek:
 
 | Co | Rozsah | Stav |
 |---|---|---|
-| **`B42b` Protokol importu** - hotové 18. 8. v základní podobě (hláška po importu: co nastaveno, co nerozpoznáno). **Zbývá:** doplnit do něj časovou osu z předlohy („předloha má osu 5-23, nastavte si ji") a nastavení sestavy, až je bude umět `B42c` | S | 🟡 |
 | **`B42c` Vzhled prvků z předlohy** - 1. kolo hotové 18. 8. pro **seznam zastávek** (otázka i zápis se skládají z vlastností prvku). **Zbývá:** vyhodnotit na reálných předlohách, pak rozhodnout, kde se vede seznam „tohle jde poznat z obrázku", a rozšířit na mřížku odjezdů a legendu | M | 🟡 |
 | **`B42d` Nastavení sestavy z předlohy** - rozpoznaná hodnota se dnes zapíše na místo, které se při tisku nečte, a otevření importované šablony neprojde cestou, která hodnoty aplikuje. Bez téhle opravy nemá smysl se na víc voleb ptát | M | ⬜ |
 
@@ -44,8 +43,15 @@ jen k dourčení typu hodnoty). Hodiny od/do navíc bez přepnutí „Časová o
 rozsah" nic neudělají. ⚠️ Past z #12843 (`customer-requirements §0.1`): uloží se i hodnoty,
 kterých se nikdo nedotkl.
 
+⛔ **Hláška „co si po importu dodělej" se dělat nebude** (`B42b`, rozhodnutí Jan 19. 8.). Stála na
+předpokladu, že víme, co má být hotovo - jenže import je **rychlý start, ne dokončená šablona**,
+takže bychom museli rozlišit, co v ní chybí záměrně a co ne. Výpis by měl čtyřicet položek a
+uživateli by neřekl nic použitelného. Podrobný protokol zůstává jako **vývojářská pomůcka za
+zaškrtávátkem Debug** (porovnání dvou importů). Chyby, které uživatel vědět musí (nepodařilo se
+zavolat AI), hlásí dál chybová hláška.
+
 **Časová osa:** detekci není potřeba vracet - AI ji vrací dodnes, import ji jen zahazuje (vědomě,
-protože osu řídí nastavení sestavy). Stačí ji propsat do protokolu (`B42b`).
+protože osu řídí nastavení sestavy). Až bude `B42d`, propíše se do nastavení sestavy rovnou.
 
 | Další | Stav |
 |---|---|

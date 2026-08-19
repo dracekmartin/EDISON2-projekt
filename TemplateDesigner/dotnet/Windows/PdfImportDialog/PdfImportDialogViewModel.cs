@@ -275,8 +275,7 @@ public class PdfImportDialogViewModel : EDViewModel
                 StatusText = $"Import dokončen: {template.Sections.Count} sekcí, {elementCount} elementů";
             }
 
-            string? protokol = SaveProtocolFile(pdfPath);
-            ReportImportLog(protokol);
+            SaveProtocolFile(pdfPath, enableDebug);
             CloseDialog(true);
         }
         catch (Exception ex)
@@ -294,25 +293,17 @@ public class PdfImportDialogViewModel : EDViewModel
     /// Ukáže, co import z předlohy převzal a co nerozpoznal. Bez toho se hlášky ztratily se
     /// zavřením dialogu a uživatel neměl jak zjistit, co si má dodělat ručně.
     /// </summary>
-    private void ReportImportLog(string? protocolPath)
-    {
-        if (ImportLog.Count == 0) return;
-        string text = "Protokol importu:" + Environment.NewLine + Environment.NewLine
-            + string.Join(Environment.NewLine, ImportLog);
-        if (protocolPath is not null)
-            text += Environment.NewLine + Environment.NewLine
-                  + "Podrobný soupis všech prvků a jejich nastavení:" + Environment.NewLine + protocolPath;
-        PopupDisplayer.Info(text);
-    }
-
     /// <summary>
-    /// Uloží podrobný protokol vedle PDF. Hláška se dá jen přečíst a zavřít; na kontrolu proti
-    /// předloze a na porovnání dvou importů mezi sebou je potřeba soubor, který zůstane.
+    /// Uloží podrobný protokol vedle PDF - <b>jen se zaškrtnutým Debugem</b>, tedy pro vývoj.
+    /// Je to nástroj na porovnání dvou importů, ne informace pro uživatele: import je rychlý start,
+    /// ne hotová šablona, takže výpis „co všechno se nastavilo" neumí říct, co ještě chybí - jen
+    /// vysype čtyřicet položek, ze kterých nejde nic vyvodit (rozhodnutí Jan 19. 8.).
     /// Nezdaří-li se zápis (jen pro čtení, síťová cesta), import to nesmí shodit.
     /// </summary>
-    private string? SaveProtocolFile(string pdfPath)
+    private void SaveProtocolFile(string pdfPath, bool enableDebug)
     {
-        if (ImportLog.Count == 0 && DetailedLog.Count == 0) return null;
+        if (!enableDebug) return;
+        if (ImportLog.Count == 0 && DetailedLog.Count == 0) return;
         try
         {
             string path = Path.ChangeExtension(pdfPath, ".import-protokol.txt");
@@ -331,9 +322,8 @@ public class PdfImportDialogViewModel : EDViewModel
                 text.AddRange(DetailedLog);
             }
             File.WriteAllLines(path, text);
-            return path;
         }
-        catch (Exception) { return null; }
+        catch (Exception) { /* protokol je pomůcka, ne brána */ }
     }
 
     /// <summary>Normalizuje stránku importované šablony, ať sekce po importu rozumně vyplní stránku

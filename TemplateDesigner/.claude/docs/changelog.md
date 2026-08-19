@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-19 - 📥 po importu se nic nehlásí, protokol je nástroj pro vývoj
+
+Hláška po importu („co se z předlohy nastavilo, co se nerozpoznalo") **skončila** - rozhodnutí Jan
+19. 8. Stála na předpokladu, že víme, co má být hotovo, jenže **import je rychlý start, ne dokončená
+šablona**: aby taková hláška dávala smysl, musel by import rozlišit, co v šabloně chybí záměrně
+a co omylem. Výpis by měl čtyřicet položek a uživateli by z něj nic použitelného nevyplynulo.
+
+Podrobný protokol vedle PDF zůstává, ale **jen se zaškrtnutým Debugem** - stejně jako ostatní ladicí
+soubory importu. Je to nástroj na porovnání dvou importů při vývoji, ne informace pro zákazníka;
+navíc se tím přestane zakládat soubor vedle uživatelova PDF.
+
+Chyby, které uživatel vědět **musí** (nepodařilo se zavolat AI, jízdní řád nelze rozpoznat), hlásí
+dál chybová hláška - ty se nemění.
+
+Ověřeno: build 0 chyb, .NET 1082/1082.
+
 ## 2026-08-18 (18) - 📥 rámeček pro logo jen v záhlaví, protokol jen o skutečných změnách
 
 Rozpoznávání prázdných rámečků z předlohy vzalo i **box pod legendou poznámek** - v předloze
