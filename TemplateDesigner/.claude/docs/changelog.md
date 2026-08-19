@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-19 (5) - 🚚 systémové šablony se doručují kanálem z helpdesku
+
+Systémové (M-line) šablony byly zabalené v `.exe`, takže **nová šablona znamenala vydat program**.
+Nově je doručuje kanál z úložiště na helpdesku a přehled šablon je nabídne ke stažení.
+
+**Jak to vypadá pro uživatele:** v přehledu (Ctrl+O) se nad seznamem objeví řádek *„K dispozici je
+N nových šablon od M-line"* s tlačítkem **Stáhnout** - jen když je opravdu co stáhnout. Stažení
+doplní šablony **celé firmě naráz**; chovají se dál jako systémové (read-only, Ctrl+S z nich udělá
+kopii do firmy) a vlastní upravené kopie zůstávají nedotčené, protože jsou to samostatné záznamy.
+Není to modální otázka a nic neblokuje: bez sítě nebo bez klíče se nabídka prostě neukáže.
+
+**Směr toku:** u zákazníka **jen čtení** (úložiště → klient). Nahrávat a měnit smíme jen my ve
+vývoji, proto v aplikaci žádná cesta k zápisu není a klíč v nastavení je čtecí.
+
+**Tři věci, na kterých to stojí:**
+
+- **Identitu šablony určuje GUID uvnitř JSONu**, ne identifikátor v úložišti - podle něj se zapisuje,
+  takže opakované stažení nic nezduplikuje. Kdo šablonu nahrává, musí vnitřní GUID zachovat.
+- **Stav „co už máme" cestuje v šabloně**, takže patří databázi firmy, ne počítači uživatele - jinak
+  by si každý uživatel stahoval totéž znovu.
+- **Seed z `.exe` nepřepíše, co doručil kanál.** Dosud se MLINE větev přepisovala při každém startu;
+  bez téhle pojistky by se stažená šablona po restartu tiše vrátila na verzi z programu.
+
+Ověřeno: build 0 chyb, .NET 1105/1105 (+5). **Nevyzkoušeno naživo** - chybí klíč do úložiště; do té
+doby je kanál mlčky vypnutý a aplikace se chová jako dřív.
+
 ## 2026-08-19 (4) - 🤖 AI průvodce dohnal změny: sloučené buňky, rohy, fonty, práce v tabulce
 
 Průvodce tvrdil, že **neumíme sloučit buňky** (umíme od 17. 8.) a že **neumíme zaoblené rohy**

@@ -78,6 +78,13 @@ public class Template
     /// </summary>
     public TemplateEditorPreferences? EditorPreferences { get; set; }
 
+    /// <summary>
+    /// Odkud šablona přišla, když ji doručil distribuční kanál M-line. Cestuje **uvnitř šablony**,
+    /// takže se uloží do databáze firmy s ní - stav „co už máme" tím patří firmě, ne počítači
+    /// uživatele (jinak by si každý uživatel stahoval totéž znovu). Null = šablona z kanálu nepřišla.
+    /// </summary>
+    public TemplateChannelOrigin? ChannelOrigin { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
 }
@@ -85,6 +92,14 @@ public class Template
 /// <summary>
 /// Co se schová u spoje v rozsahu „Spoje, nepoznámkovat" (zastávkový JŘ AD).
 /// </summary>
+/// <summary>
+/// Záznam kanálu, ze kterého šablona přišla. <paramref name="Id"/> je identifikátor v úložišti
+/// na helpdesku (adresa), <paramref name="UpdatedAt"/> jeho čas poslední změny - podle něj se pozná,
+/// že je k dispozici novější verze. Identitu šablony určuje <see cref="Template.Id"/>, ne tenhle
+/// klíč: díky tomu je opakované stažení idempotentní a nevzniknou duplicity.
+/// </summary>
+public record TemplateChannelOrigin(string Id, DateTime UpdatedAt);
+
 public enum NoteRangeSuppression
 {
     /// <summary>Schovat ruční komentáře spoje (výchozí = legacy chování).</summary>

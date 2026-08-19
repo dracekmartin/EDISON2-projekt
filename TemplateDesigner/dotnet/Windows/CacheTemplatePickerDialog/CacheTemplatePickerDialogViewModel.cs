@@ -44,6 +44,62 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     public AsyncRelayCommand DeleteCommand { get; }
     public AsyncRelayCommand RenameCommand { get; }
 
+    // ── Nové šablony od M-line (distribuční kanál) ────────────────────────────
+
+    private readonly SystemTemplateChannelSync _channel;
+    private SystemTemplateChannelSync.Available? _available;
+
+    /// <summary>Je co stáhnout? Řídí viditelnost nabídky nad seznamem.</summary>
+    public bool HasAvailable => _available?.Any == true;
+
+    /// <summary>Věta pro uživatele - kolik a čeho je k dispozici.</summary>
+    public string AvailableText
+    {
+        get
+        {
+            if (_available is not { Any: true } a) return "";
+            var casti = new List<string>();
+            if (a.New.Count > 0) casti.Add($"{a.New.Count} nových");
+            if (a.Updated.Count > 0) casti.Add($"{a.Updated.Count} aktualizovaných");
+            return $"K dispozici je {string.Join(" a ", casti)} šablon od M-line.";
+        }
+    }
+
+    private AsyncRelayCommand? _download;
+    public AsyncRelayCommand DownloadCommand => _download ??= CommandAsync(DownloadAsync);
+
+    /// <summary>
+    /// Zeptá se kanálu, co je k dispozici. Běží na pozadí a <b>nikdy neblokuje</b> - bez sítě, bez
+    /// klíče nebo při výpadku helpdesku se nabídka prostě neukáže a přehled funguje jako dřív.
+    /// </summary>
+    public async Task CheckChannelAsync()
+    {
+        try { _available = await _channel.CheckAsync(); }
+        catch (Exception) { _available = null; }
+        OnPropertyChanged(nameof(HasAvailable));
+        OnPropertyChanged(nameof(AvailableText));
+    }
+
+    /// <summary>
+    /// Stáhne vše, co je k dispozici, do sdílené větve - tedy <b>pro celou firmu naráz</b>, ne jen
+    /// pro toho, kdo klikl. Vlastní kopie, které si kdokoli ze systémové šablony udělal, zůstávají
+    /// nedotčené (jsou to samostatné záznamy).
+    /// </summary>
+    private async Task DownloadAsync()
+    {
+        if (_available is not { Any: true } a) return;
+
+        int ulozeno = await _channel.DownloadAsync([.. a.New, .. a.Updated]);
+        _available = null;
+        OnPropertyChanged(nameof(HasAvailable));
+        OnPropertyChanged(nameof(AvailableText));
+
+        RequestReload?.Invoke();
+        PopupDisplayer.Info(ulozeno > 0
+            ? $"Staženo šablon: {ulozeno}. Najdete je v přehledu mezi systémovými (M-line)."
+            : "Šablony se nepodařilo stáhnout - zkuste to prosím později.");
+    }
+
     /// <summary>Code-behind napojí - VM žádá o reload EDListu (po Delete / Rename). EDFilter sebere current filter.</summary>
     public Action? RequestReload { get; set; }
 
@@ -53,6 +109,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     public CacheTemplatePickerDialogViewModel(CacheTemplateService service, IReadOnlyList<AgendaRegistryEntry> agendas)
     {
         _service = service;
+        _channel = new SystemTemplateChannelSync(service);
 
         // Dvouosé popisky seřazené po agendách (Zastávkový JŘ · AD / · MHD vedle sebe).
         // Jen zveřejněné agendy (Released) - pilotní se ve filtru nenabízí; jejich šablony

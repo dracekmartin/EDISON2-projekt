@@ -9,6 +9,10 @@
         ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
     <DockPanel Margin="12">
 
         <!-- Akce -->
@@ -31,6 +35,19 @@
                     Padding="14,4" Width="90" Margin="0,0,8,0"/>
             <Button Grid.Column="4" Content="{StaticResource EDStrings.Cancel}"  IsCancel="True" Width="80"/>
         </Grid>
+
+        <!-- Nabídka nových šablon z kanálu M-line. Není to modální otázka: zobrazí se, jen když
+             je co stáhnout, a přehled je použitelný i bez ní (bez sítě se prostě neukáže). -->
+        <Border DockPanel.Dock="Top" Margin="0,0,0,8" Padding="10,6"
+                Background="{DynamicResource EDTheme.Bg.InfoBanner}"
+                BorderBrush="{DynamicResource EDTheme.Accent.Blue}" BorderThickness="1" CornerRadius="3"
+                Visibility="{Binding HasAvailable, Converter={StaticResource BoolToVis}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Stáhnout" Padding="12,3" Margin="12,0,0,0"
+                        Command="{Binding DownloadCommand}"/>
+                <TextBlock Text="{Binding AvailableText}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </DockPanel>
+        </Border>
 
         <!-- Filter - deklarativní přes EDFilter komponentu -->
         <edf:EDFilter x:Name="TheFilter" DockPanel.Dock="Top" Target="{Binding ElementName=TheList}" Margin="0,0,0,8">

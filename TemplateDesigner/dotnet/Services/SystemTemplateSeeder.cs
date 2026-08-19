@@ -21,6 +21,12 @@ public static class SystemTemplateSeeder
 {
     public static async Task SeedAsync(CacheTemplateService storage)
     {
+        // Co už doručil kanál, se z .exe NEPŘEPISUJE - jinak by se novější šablona z helpdesku
+        // při každém startu tiše vrátila na verzi zabalenou v programu, a celý kanál by byl k ničemu.
+        HashSet<Guid> zKanalu;
+        try { zKanalu = await SystemTemplateChannelSync.ChannelBackedIdsAsync(storage); }
+        catch (Exception) { zKanalu = []; }
+
         var asm = typeof(SystemTemplateSeeder).Assembly;
         foreach (var name in asm.GetManifestResourceNames())
         {
@@ -36,6 +42,11 @@ public static class SystemTemplateSeeder
 
                 // Deserialize spustí TemplateMigrator → šablona je při seedu vždy v aktuální verzi.
                 var template = TemplateSerializer.Deserialize(json);
+                if (zKanalu.Contains(template.Id))
+                {
+                    Debug.WriteLine($"[SystemTemplateSeeder] '{template.Name}' už doručil kanál - přeskakuji.");
+                    continue;
+                }
                 // distribution: true → jediná cesta, jak server povolí zápis do read-only MLINE větve.
                 await storage.SaveAsync(template, CacheTemplateService.MlineIdFa, distribution: true);
             }

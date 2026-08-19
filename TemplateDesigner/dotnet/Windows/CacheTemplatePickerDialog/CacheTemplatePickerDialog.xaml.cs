@@ -41,6 +41,10 @@ public partial class CacheTemplatePickerDialog : Window
         {
             try { await TheList.InitializeListAsync(); }
             catch (Exception ex) { _vm.PopupDisplayer.Error(ex); }
+
+            // Dotaz na kanál až po zobrazení seznamu a bez čekání: nabídka nových šablon se
+            // doplní, až přijde odpověď. Přehled se kvůli helpdesku nesmí zdržet ani spadnout.
+            await _vm.CheckChannelAsync();
         };
     }
 }

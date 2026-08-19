@@ -22,6 +22,9 @@ public class AppSettings
     public CacheConnectionSettings? Cache    { get; set; }
     public AiAssistantSettings AiAssistant   { get; set; } = new();
 
+    /// <summary>Kanál, kterým M-line doručuje systémové šablony (úložiště na helpdesku).</summary>
+    public TemplateChannelSettings TemplateChannel { get; set; } = new();
+
     /// <summary>Smí uživatel na vlastní definici sloupců vývěsky? Výchozí ne - featura jde do verze
     /// zhasnutá a rozsvítí se lokálním configem u toho, kdo ji testuje.</summary>
 
@@ -150,6 +153,24 @@ public class CacheConnectionSettings
 }
 
 /// <summary>Nastavení AI asistenta pro generování šablon.</summary>
+/// <summary>
+/// Distribuční kanál systémových šablon. U zákazníka je **jen pro čtení** (úložiště → klient);
+/// nahrávat a měnit smíme jen my ve vývoji, nikdy ne z buildu, který jde ven - proto tady žádná
+/// cesta k zápisu není. Klíč smí být zadrátovaný v aplikaci, ale musí být omezený na čtení:
+/// `.exe` je balík spravovaných knihoven, takže řetězec z něj jde vytáhnout, a jeden klíč platí
+/// pro všechny zákazníky naráz (rozhodnutí Jan 19. 8.).
+/// </summary>
+public class TemplateChannelSettings
+{
+    /// <summary>Vypnuto = aplikace se kanálu neptá a chová se jako dřív (šablony jen z .exe).</summary>
+    public bool Enabled { get; set; } = true;
+
+    public string BaseUrl { get; set; } = "https://podpora.m-line.cz";
+
+    /// <summary>Klíč pro ČTENÍ. Prázdný = kanál se přeskočí (tichá degradace, ne chyba).</summary>
+    public string ApiKey { get; set; } = "";
+}
+
 public class AiAssistantSettings
 {
     /// <summary>Povolení AI asistenta (false = skryje menu položku).</summary>
