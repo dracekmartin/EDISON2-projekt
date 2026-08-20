@@ -47,8 +47,6 @@ public class EDThemeDataGridRowColorTests
         RunSta(() => Assert.Equal(Marker, CellForeground(viaRowStyle: false)));
     }
 
-    // ---------- Helpers ----------
-
     private static ResourceDictionary Load(string uri) => new() { Source = new Uri(uri) };
 
     /// <summary>Vykreslená barva textu první buňky při obarvení přes RowStyle, resp. CellStyle.</summary>

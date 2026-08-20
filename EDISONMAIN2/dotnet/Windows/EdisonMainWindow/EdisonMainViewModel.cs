@@ -18,7 +18,7 @@ using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.UserProfileWindow;
-// Alias — class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
+// Alias - class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
 using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
@@ -41,12 +41,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
         private readonly Func<IReadOnlyList<RunningModuleInfo>> _getActiveModules;
-        // Vynucené ukončení aplikace (ShellShutdown.Force) — obchází potvrzovací dialog shellu.
+        // Vynucené ukončení aplikace (ShellShutdown.Force) - obchází potvrzovací dialog shellu.
         private readonly Action _forceShutdown;
         private readonly MiniAppCatalog _miniAppCatalog;
-        // Manager žije až po AttachMiniAppHost (potřebuje DockingManager z view) — do té doby null.
+        // Manager žije až po AttachMiniAppHost (potřebuje DockingManager z view) - do té doby null.
         private MiniAppManager? _miniAppManager;
-        // Přístup k šířce stromu (ColumnDefinition ve view) — registruje code-behind přes AttachTreeLayout.
+        // Přístup k šířce stromu (ColumnDefinition ve view) - registruje code-behind přes AttachTreeLayout.
         private Func<double>? _getTreeWidth;
         private Action<double>? _applyTreeWidth;
 
@@ -69,45 +69,39 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand ShowDesktopMiniAppCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
-        // EDISON menu
         public ICommand ConnectToDatabaseCommand { get; }
         public ICommand RunEdisonCopyCommand { get; }
         public ICommand ExitCommand { get; }
         // Přepínač firem v horní liště (setter SelectedCompanyId ho spouští za binding).
         public ICommand SwitchCompanyCommand { get; }
-        // Uživatel menu
         public ICommand LoginAsAnotherUserCommand { get; }
         public ICommand ShowUserEditCommand { get; }
         public ICommand ChangePasswordCommand { get; }
-        // Kontextové menu stromu — výchozí okno (auto-open po loginu)
+        // Kontextové menu stromu - výchozí okno (auto-open po loginu)
         public ICommand SetStartupWindowCommand { get; }
         public ICommand ClearStartupWindowCommand { get; }
-        // Toolbar stromu — rozbalit/sbalit celý aktivní strom + rozbalit/sbalit podstrom rodiny.
+        // Toolbar stromu - rozbalit/sbalit celý aktivní strom + rozbalit/sbalit podstrom rodiny.
         public ICommand ExpandAllCommand { get; }
         public ICommand CollapseAllCommand { get; }
         public ICommand ExpandSubtreeCommand { get; }
         public ICommand CollapseSubtreeCommand { get; }
-        // Nástroje menu
         public ICommand ShowBgTasksCommand { get; }
         public ICommand RefreshLicenseCommand { get; }
         public ICommand ShowUsersLocksCommand { get; }
         public ICommand ShowUsersActivityCommand { get; }
-        // Nastavení menu (+ toggle ShowWindowsAsDialogs níže jako bool property)
         public ICommand FontSettingsCommand { get; }
         public ICommand ShowLanguageSettingsCommand { get; }
         public ICommand ResetFormsCommand { get; }
-        // Nápověda menu
         public ICommand ShowInfoCommand { get; }
         public ICommand OpenHelpdeskWebCommand { get; }
         public ICommand SendSystemLogCommand { get; }
-        // Spuštěné moduly menu
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
 
         /// <summary>Mini-apps seskupené podle providerů pro launcher (menu „Miniaplikace").</summary>
         public IReadOnlyList<MiniAppGroup> MiniAppGroups => _miniAppCatalog.Groups;
 
-        // Výchozí sada: pinned karusel Podpora M-line (cyklí Novinky/Wiki/Školení) — samostatné
+        // Výchozí sada: pinned karusel Podpora M-line (cyklí Novinky/Wiki/Školení) - samostatné
         // widgety by vedle něj duplikovaly obsah, uživatel si je může otevřít z menu.
         private static readonly string[] DefaultMiniAppIds = ["Core.Podpora"];
 
@@ -141,7 +135,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         /// <summary>
         /// Napojí přístup k šířce stromu z view (ColumnDefinition). Šířka se persistuje per IDFa
-        /// společně s layoutem miniaplikací. Volat **před** <see cref="AttachMiniAppHost"/> — ten
+        /// společně s layoutem miniaplikací. Volat **před** <see cref="AttachMiniAppHost"/> - ten
         /// spouští první restore, který už šířku aplikuje.
         /// </summary>
         public void AttachTreeLayout(Func<double> getWidth, Action<double> applyWidth)
@@ -180,7 +174,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void RestoreMiniAppLayout(string idfa)
         {
             if (_miniAppManager is null) return;
-            // Šířka stromu (nezávislá na tom, zda je uložený layout miniaplikací) — bez uložené
+            // Šířka stromu (nezávislá na tom, zda je uložený layout miniaplikací) - bez uložené
             // hodnoty zůstane XAML default (*).
             if (_applyTreeWidth is not null && _prefs.TreeWidths?.TryGetValue(idfa, out var width) == true && width > 0)
                 _applyTreeWidth(width);
@@ -202,7 +196,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 // Zahodíme ho; další uložení (close/switch) zapíše čistý.
                 _prefs.MiniAppLayouts?.Remove(idfa);
                 _prefs.Save();
-                // Ani po zahozeném layoutu nesmí chybět pinned komunikační kanál. Vlastní guard —
+                // Ani po zahozeném layoutu nesmí chybět pinned komunikační kanál. Vlastní guard -
                 // stav docku po nezdařeném Deserialize je nedefinovaný a druhý pád by shodil start.
                 try { _miniAppManager.EnsurePinnedOpen(); }
                 catch { }
@@ -250,9 +244,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog(new EDCompTestWnd()));
-            // Test trigger pro cooperative logout — countdown se po vypršení sám zavře (onExpired no-op).
+            // Test trigger pro cooperative logout - countdown se po vypršení sám zavře (onExpired no-op).
             OpenLogoutCountdownTestCommand = Command(() => WindowNavigator.Show(new LogoutCountdownWnd(15, () => { })));
-            // Test trigger pro error popup — výjimka projde RelayCommand handlerem do EDErrorPopup.
+            // Test trigger pro error popup - výjimka projde RelayCommand handlerem do EDErrorPopup.
             TriggerErrorCommand = Command(() => throw new InvalidOperationException("Testovací výjimka z toolbaru."));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
             OpenLegacyShellCommand = Command(OpenLegacyShell);
@@ -298,10 +292,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             SwitchCompanyCommand          = CommandAsync<int>(SwitchCompanyAsync);
 
-            // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
+            // Nástroje menu - Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
             ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
             RefreshLicenseCommand         = CommandAsync(RefreshLicense);
-            // Admin-only — legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
+            // Admin-only - legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
             ShowUsersLocksCommand         = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
             ShowUsersActivityCommand      = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
 
@@ -315,7 +309,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenHelpdeskWebCommand        = Command(() => OpenWebUrl("http://podpora.m-line.cz"));
             SendSystemLogCommand          = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
-            // Spuštěné moduly menu — dynamický seznam, refresh při SubmenuOpened.
+            // Spuštěné moduly menu - dynamický seznam, refresh při SubmenuOpened.
             RefreshRunningModulesCommand  = Command(RefreshRunningModules);
             ActivateModuleCommand         = Command<RunningModuleInfo>(m => m.Activate());
 
@@ -341,7 +335,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
-            // Index musí odpovídat MLRest.Idfa — tam má AppBootstrapper vytvořený ACTIVITY zámek.
+            // Index musí odpovídat MLRest.Idfa - tam má AppBootstrapper vytvořený ACTIVITY zámek.
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == mlRest.Idfa).i;
 
             _services.MLRest = mlRest;
@@ -364,7 +358,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private Task? _initialization;
 
         /// <summary>
-        /// První naplnění session-scoped stavu. Ctor ho záměrně nedělá — shell se ukáže hned
+        /// První naplnění session-scoped stavu. Ctor ho záměrně nedělá - shell se ukáže hned
         /// a data dorazí pod overlayem. Volá code-behind z <c>ContentRendered</c> PŘED
         /// <see cref="OpenStartupWindowIfAny"/> (to potřebuje hotové stromy). Idempotentní.
         /// </summary>
@@ -373,7 +367,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>
         /// Po změně session state (initial load, switch firmy, switch uživatele, manual refresh
         /// licence) přebuduje VEŠKERÝ session-scoped derived state. Jediný bod rozšíření pro budoucí
-        /// session-scoped data (ECL, user settings, font scheme per firma, …) — přidá se sem,
+        /// session-scoped data (ECL, user settings, font scheme per firma, …) - přidá se sem,
         /// callsity nepotřebují vědět.
         /// </summary>
         private async Task RebuildSessionStateAsync(Lic? licence)
@@ -392,7 +386,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 ApplySessionData(data);
             }
 
-            // Nové instance uzlů mají IsVisibleBySearch=true — trvající hledaný text je nutné znovu aplikovat.
+            // Nové instance uzlů mají IsVisibleBySearch=true - trvající hledaný text je nutné znovu aplikovat.
             if (_treeSearchText.Trim().Length > 0) ApplySearch();
         }
 
@@ -440,7 +434,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ApplyStartupWindowMark();
         }
 
-        // Přeznačí uzly stromu — právě jeden (nebo žádný) modul má IsStartupWindow=true.
+        // Přeznačí uzly stromu - právě jeden (nebo žádný) modul má IsStartupWindow=true.
         private void ApplyStartupWindowMark()
         {
             var id = DefaultWindowId.ToString();
@@ -467,7 +461,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private bool _startupWindowOpened;
         /// <summary>
-        /// Po prvním vykreslení shellu otevře uživatelův výchozí okno — jednou za běh (ne po
+        /// Po prvním vykreslení shellu otevře uživatelův výchozí okno - jednou za běh (ne po
         /// přepnutí firmy). Nepovolený/chybějící modul (není ve stromu) se tiše přeskočí.
         /// Volá code-behind shellu z <c>ContentRendered</c>.
         /// </summary>
@@ -538,12 +532,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             foreach (var root in BuildFavoritesTree(_sourceTrees.Select(t => t.Tree), FavoriteIdSet()))
                 FavoritesTree.Add(root);
 
-            // Po přestavbě (i mimo load — po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
+            // Po přestavbě (i mimo load - po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
             using (SuppressExpansionSave())
             {
                 ApplyExpansion(FavoritesTree, FavoritesTab.Key);
 
-                // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) — při aktivním hledání přefiltrovat.
+                // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) - při aktivním hledání přefiltrovat.
                 var searchText = _treeSearchText.Trim();
                 if (searchText.Length > 0)
                     foreach (var root in FavoritesTree)
@@ -560,8 +554,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 UsedModules.Add(module);
         }
 
-        // ---- persistence rozbalení stromu ------------------------------------
-        // Klíč uzlu = "<tree>:<index-cesta>" (např. "main:5.2") — stabilní vůči přejmenování i suffixům
+        // Klíč uzlu = "<tree>:<index-cesta>" (např. "main:5.2") - stabilní vůči přejmenování i suffixům
         // z ModuleLaunchabilityCheck, na rozdíl od cesty přes DisplayedName. Save běží na každou změnu
         // rozbalení (IDFa je tehdy stabilní), proto switch/close nepotřebují zvláštní obsluhu.
 
@@ -595,14 +588,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        // ---- rozbalit / sbalit vše (toolbar + kontextové menu) ---------------
-
         // Strom aktivní záložky; Používané (ListBox) strom nemá → null.
         private ObservableCollection<IModule>? ActiveExpandableTree() =>
             SelectedTab.Expandable ? SelectedTab.Tree : null;
 
         // Hromadné rozbalení/sbalení celého aktivního stromu. Suppress + jeden save na konci
-        // (jinak by každá rodina zvlášť triggerovala SaveExpansionAsync — vzor jako ApplySearch).
+        // (jinak by každá rodina zvlášť triggerovala SaveExpansionAsync - vzor jako ApplySearch).
         private void SetActiveTreeExpanded(bool expanded)
         {
             if (ActiveExpandableTree() is not { } tree) return;
@@ -660,7 +651,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private DispatcherTimer? _searchDebouncer;
 
-        // Filtrace se pouští ~150 ms po posledním stisku — synchronní průchod všemi stromy
+        // Filtrace se pouští ~150 ms po posledním stisku - synchronní průchod všemi stromy
         // na každý znak jinak sekal UI. Programový re-apply (po přepnutí firmy) volá ApplySearch přímo.
         private void ScheduleSearch()
         {
@@ -691,7 +682,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (text.Length == 0) ApplyTreeExpansion();
         }
 
-        // Clear až tady (po úspěšném loadu, ne před requestem) — selhání jinak nechá záložku
+        // Clear až tady (po úspěšném loadu, ne před requestem) - selhání jinak nechá záložku
         // trvale prázdnou a při přepnutí firmy zahodí i strom, který byl platný.
         private void FillFilteredTree(ObservableCollection<IModule> target, IReadOnlyList<IModule> tree)
         {
@@ -708,7 +699,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        // StatusBar — Identity props z MLRest (per session konstantní).
+        // StatusBar - Identity props z MLRest (per session konstantní).
         public string Server    => Rest.Server;
         public int    RestPort  => Rest.Port;
         public string UserName  => Rest.LoginName;
@@ -750,7 +741,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ObservableCollection<IModule> SystemAdminTree { get; }
         public ObservableCollection<IModule> PartnerSolutionsTree { get; }
 
-        /// <summary>Ořezaný strom jen s oblíbenými (ruční ★) — zachovává hierarchii hlavních stromů.</summary>
+        /// <summary>Ořezaný strom jen s oblíbenými (ruční ★) - zachovává hierarchii hlavních stromů.</summary>
         public ObservableCollection<IModule> FavoritesTree { get; }
 
         /// <summary>Žebříček nejpoužívanějších modulů (automaticky dle počtu spuštění × recency).</summary>
@@ -766,7 +757,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         /// <summary>
         /// Aktuálně vybraný uzel viditelného stromu (nastavuje code-behind ze <c>SelectedItemChanged</c>).
-        /// Řídí toolbar akce (oblíbené, výchozí okno) — na kolekcích/ListBoxu <c>null</c>.
+        /// Řídí toolbar akce (oblíbené, výchozí okno) - na kolekcích/ListBoxu <c>null</c>.
         /// </summary>
         public IModule? SelectedModule
         {
@@ -833,7 +824,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private ChangelogPromptService? _changelogPrompt;
 
         // Per-user × IDFa stav (plocha + používanost). _modulePrefs se re-vytváří v každém rebuildu
-        // (UserPrefs se může po switch-user vyměnit); null do prvního initu — bindingy okna jedou dřív
+        // (UserPrefs se může po switch-user vyměnit); null do prvního initu - bindingy okna jedou dřív
         // než on, takže save cesty musí být null-safe (jinak NRE z TwoWay bindingu záložky).
         private ModulePreferencesService? _modulePrefs;
         private readonly ModuleShortcutsService _shortcuts;
@@ -856,7 +847,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ObservableCollection<CompanyItem> VisibleIdfas { get; }
 
         private int _selectedCompanyIndex;
-        /// <summary>Vybraná firma jako čistý stav — přepnutí dělá <see cref="SwitchCompanyCommand"/>.</summary>
+        /// <summary>Vybraná firma jako čistý stav - přepnutí dělá <see cref="SwitchCompanyCommand"/>.</summary>
         public int SelectedCompanyIndex
         {
             get => _selectedCompanyIndex;
@@ -867,7 +858,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        // Derived properties nad vybranou firmou — jeden seznam pro přepnutí i pro odmítnutí.
+        // Derived properties nad vybranou firmou - jeden seznam pro přepnutí i pro odmítnutí.
         private void RaiseSessionPropertiesChanged()
         {
             OnPropertyChanged(nameof(Namespace));
@@ -890,7 +881,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// Přepnutí firmy: potvrzení → <see cref="CompanySwitcher"/> (zavře okna, vymění Idfa,
         /// licence) → async rebuild session state → výměna layoutu miniaplikací. Index se nastaví
         /// teprve po <c>Accepted</c>, takže odmítnutí ani cancel nepotřebují rollback.
-        /// <c>internal</c> kvůli testům — <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.
+        /// <c>internal</c> kvůli testům - <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.
         /// </summary>
         internal async Task SwitchCompanyAsync(int index)
         {
@@ -994,7 +985,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (_changelogPrompt is { } prompt)
                 await prompt.ShowIfNewAsync(path, em.DisplayedName);
 
-            // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces — čekáme na jeho okno).
+            // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces - čekáme na jeho okno).
             using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
         }
@@ -1075,8 +1066,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void PersistShortcuts() => _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
 
         // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModule (usage + overlay); ostatní
-        // druhy zástupců (tiskové sestavy, pohledy DS) shell zatím spustit neumí - viz
-        // docs/DESKTOP_SHORTCUTS.md, kanál spuštění přes EDISONMAIN2API.
+        // druhy zástupců (tiskové sestavy, pohledy DS) shell zatím spustit neumí; kanál
+        // spuštění jde přes EDISONMAIN2API.
         private void LaunchShortcut(DesktopShortcut shortcut)
         {
             if (shortcut.Module is { } module) { OpenModuleCommand.Execute(module); return; }
@@ -1153,7 +1144,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private string? ResolveModuleName(int formId) =>
             AllExecutables().FirstOrDefault(e => e.ElementId == formId.ToString())?.DisplayedName;
 
-        // Text výchozího okna pro dialog (server ho nezná — dodáváme z modulového stromu).
+        // Text výchozího okna pro dialog (server ho nezná - dodáváme z modulového stromu).
         // Prázdné = nenastaveno (pole zůstane prázdné, kontext dá helpText pole).
         private string StartupWindowDisplayText() =>
             DefaultWindowId == 0 ? "" : ResolveModuleName(DefaultWindowId) ?? $"#{DefaultWindowId}";
@@ -1168,7 +1159,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>
         /// Ořezané stromy jen s oblíbenými listy (predikát <c>favoriteIds.Contains(ElementId)</c>).
         /// Zachovává hierarchii, prázdné rodiny se vynechají. Listy se SDÍLEJÍ (ne kopírují) s hlavními
-        /// stromy — přepnutí IsFavorite se projeví v obou. Rodiny jsou nové (rozbalené pro přehled).
+        /// stromy - přepnutí IsFavorite se projeví v obou. Rodiny jsou nové (rozbalené pro přehled).
         /// </summary>
         internal static List<IModule> BuildFavoritesTree(
             IEnumerable<IEnumerable<IModule>> sourceTrees, ISet<string> favoriteIds)
@@ -1206,7 +1197,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>
         /// Plochý žebříček nejpoužívanějších modulů: řazení dle počtu spuštění (desc), tie-break dle
         /// posledního použití (desc), cap na <paramref name="cap"/>. Mapuje na EXISTUJÍCÍ leaf instance
-        /// z hlavních stromů — tím respektuje aktuální licenci/přístup (nezobrazený modul se přeskočí)
+        /// z hlavních stromů - tím respektuje aktuální licenci/přístup (nezobrazený modul se přeskočí)
         /// a sdílí IsFavorite. Každý ElementId právě jednou.
         /// </summary>
         internal static List<ExecutableModule> BuildUsedList(
@@ -1234,7 +1225,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private bool _closeConfirmSuppressed;
 
-        /// <summary>Programové ukončení (force logout, licence, menu Ukončit) — Closing se už neptá.</summary>
+        /// <summary>Programové ukončení (force logout, licence, menu Ukončit) - Closing se už neptá.</summary>
         public void SuppressCloseConfirm() => _closeConfirmSuppressed = true;
 
         /// <summary>Closing shellu: false = zavření zrušit.</summary>
@@ -1251,7 +1242,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 _forceShutdown();
         }
 
-        /// <summary><c>internal</c> kvůli testům — <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.</summary>
+        /// <summary><c>internal</c> kvůli testům - <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.</summary>
         internal async Task LoginAsAnotherUserAsync()
         {
             if (!PopupDisplayer.Confirm("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
@@ -1270,7 +1261,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     _forceShutdown();
                     return;
                 case SwitchUserResult.Success:
-                    // Selhání loadu po výměně uživatele: viz ClearSessionState — preference jsou
+                    // Selhání loadu po výměně uživatele: viz ClearSessionState - preference jsou
                     // per-user, takže stará data by se zapisovala pod nového uživatele.
                     try { await RebuildSessionStateAsync(outcome.Licence); }
                     catch { ClearSessionState(); throw; }
@@ -1291,7 +1282,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (!PopupDisplayer.Confirm("Obnovit výchozí pozice a velikosti všech oken?"))
                 return;
-            // Reset persistovaných pozic/velikostí oken (per MLP × IDFa) — legacy endpoint.
+            // Reset persistovaných pozic/velikostí oken (per MLP × IDFa) - legacy endpoint.
             Rest.QueryOrThrow("ALVA.LIBRARY.Form", "ResetSettings", new CVar());
             PopupDisplayer.Info("Nastavení oken bylo obnoveno. Změna se projeví po jejich příštím otevření.");
         }
@@ -1303,7 +1294,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
         }
 
-        // Spustí TemplateDesigner.exe standalone — používá vlastní MLRest z templatedesigner.appsettings.json,
+        // Spustí TemplateDesigner.exe standalone - používá vlastní MLRest z templatedesigner.appsettings.json,
         // nesdílí shell session. Pro plnou integraci by TD musel implementovat EDISONMAIN2API kontrakt.
         private static void OpenTemplateDesigner()
         {
@@ -1334,9 +1325,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PopupDisplayer.Info("Licence byla aktualizována.");
         }
 
-        // Uživatel → Možnosti — toggles uložené do LocalPrefs. Setter persistuje a notifikuje.
-        // ShowWindowsAsDialogs zatím bez behaviorálního efektu (dialog mode nikdo nečte) — flag
-        // se ukládá pro budoucnost.
+        // ShowWindowsAsDialogs nikdo nečte - flag se jen persistuje do LocalPrefs.
         public bool ShowWindowsAsDialogs
         {
             get => _prefs.ShowWindowsAsDialogs;
@@ -1349,7 +1338,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        // Tmavý režim — sdílená preference (%APPDATA%\m-line\common\theme.json) přes ThemeService;
+        // Tmavý režim - sdílená preference (%APPDATA%\m-line\common\theme.json) přes ThemeService;
         // přepne živě + propaguje do ostatních m-line procesů (TemplateDesigner) přes watcher.
         public bool IsDarkMode
         {
@@ -1363,7 +1352,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
 
-        // Nastavení → Nastavení fontu — dialog v EDControls (uložení i aplikaci řeší sám).
+        // Nastavení → Nastavení fontu - dialog v EDControls (uložení i aplikaci řeší sám).
         // Storage je shared font.json, takže ostatní m-line tooly (TemplateDesigner) přes
         // FileSystemWatcher okamžitě reagují na změnu.
         private static void ShowFontSettings()
@@ -1374,14 +1363,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
 
-        // Týž text jako tlačítko „Informace o verzi" v panelu Podpora — jeden zdroj pravdy.
+        // Týž text jako tlačítko „Informace o verzi" v panelu Podpora - jeden zdroj pravdy.
         private void ShowAppInfo() =>
             PopupDisplayer.Info(SupportActions.BuildVersionInfo(
                 MLRest, _services.AppDisplayName, _services.AppVersion));
 
-        // INFO label (vpravo v menu). Stálý text bez timer refreshe — typicky se shell
-        // znovu spustí denně, půlnoční rollover neřešíme. Pokud bude potřeba, přidá se
-        // DispatcherTimer naplánovaný na další půlnoc.
+        // Stálý text bez timer refreshe - shell se typicky spouští denně, půlnoční rollover neřešíme.
         public string InformationText { get; } = BuildInformationText(DateOnly.FromDateTime(DateTime.Today));
 
         internal static string BuildInformationText(DateOnly today)
@@ -1479,8 +1466,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PopupDisplayer.Info("Tato funkce zatím není v EDISONu 2 dostupná.");
         }
 
-        // Ctrl+W+W chord — skrytá zkratka pro M-line utility (RESPONSIBILITIES §15.1).
-        // Stav perzistuje v UI threadu, není potřeba timeout — jakákoliv jiná klávesa chord resetuje.
+        // Ctrl+W+W chord - skrytá zkratka pro M-line utility.
+        // Stav perzistuje v UI threadu, není potřeba timeout - jakákoliv jiná klávesa chord resetuje.
         private bool _isChordWaiting;
         public bool IsChordWaiting
         {
@@ -1498,7 +1485,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (IsChordWaiting)
             {
                 IsChordWaiting = false;
-                // UTILITIES.exe ukáže vlastní FrmPassword (legacy date-dependent vzorec) —
+                // UTILITIES.exe ukáže vlastní FrmPassword (legacy date-dependent vzorec) -
                 // shell jen detekuje chord a spustí. Single source of truth pro formuli.
                 WindowNavigator.ShowLegacy("UTILITIES.exe", "ALVA.UTILITIES.formUTILITIESMain");
             }

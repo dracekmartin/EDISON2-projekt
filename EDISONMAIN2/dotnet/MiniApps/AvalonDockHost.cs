@@ -39,7 +39,7 @@ public sealed class AvalonDockHost : IMiniAppHost
     {
         // CanClose=false skryje křížek a blokuje uživatelské zavření (i v plovoucím okně);
         // programové document.Close() (přepnutí session, CloseAll) AvalonDock pouští dál.
-        // CanFloat=false navrch — odtržený pinned by šel schovat za okno / minimalizovat.
+        // CanFloat=false navrch - odtržený pinned by šel schovat za okno / minimalizovat.
         var document = new LayoutDocument
         {
             ContentId = contentId,
@@ -61,8 +61,7 @@ public sealed class AvalonDockHost : IMiniAppHost
         return new Pane(document);
     }
 
-    // ---- pinned = solo pane ------------------------------------------------
-    // Pinned (CanClose=false) dokument nesmí ve svém pane sdílet záložky — jiný aktivní tab
+    // Pinned (CanClose=false) dokument nesmí ve svém pane sdílet záložky - jiný aktivní tab
     // by ho překryl a komunikační kanál by zmizel z očí. Po každé změně stromu (drag & drop,
     // restore) se kolizní dokumenty odsunou do jiného/nového sloupce.
 
@@ -72,7 +71,7 @@ public sealed class AvalonDockHost : IMiniAppHost
     {
         if (_normalizeScheduled) return;
         _normalizeScheduled = true;
-        // Odloženě — Updated letí uprostřed layout operace, přímá mutace stromu by cyklila.
+        // Odloženě - Updated letí uprostřed layout operace, přímá mutace stromu by cyklila.
         _dock.Dispatcher.BeginInvoke(new Action(() =>
         {
             _normalizeScheduled = false;
@@ -90,7 +89,7 @@ public sealed class AvalonDockHost : IMiniAppHost
                      .Where(d => !d.CanClose).ToList())
         {
             if (pinned.Parent is not LayoutDocumentPane pane) continue;
-            // Razítko po každé změně stromu — drag přesune dokument do jiného (nového) pane.
+            // Razítko po každé změně stromu - drag přesune dokument do jiného (nového) pane.
             pane.DockMinWidth = PinnedPaneMinWidth;
             pane.DockMinHeight = PinnedPaneMinHeight;
             if (pane.ChildrenCount <= 1) continue;
@@ -110,13 +109,13 @@ public sealed class AvalonDockHost : IMiniAppHost
         }
         from.RemoveChild(document);
         target.Children.Add(document);
-        // Odsunutý tab nechat aktivní — uživatel s ním právě pracoval (typicky ho sem dropnul).
+        // Odsunutý tab nechat aktivní - uživatel s ním právě pracoval (typicky ho sem dropnul).
         document.IsActive = true;
     }
 
     public void ResetToDefaultSkeleton()
     {
-        // Plně kvalifikované — WPF markup temp projekt (_wpftmp) importuje i System.Windows.Forms,
+        // Plně kvalifikované - WPF markup temp projekt (_wpftmp) importuje i System.Windows.Forms,
         // takže holé `Orientation` je tam dvojznačné (CS0104), i když hlavní compile projde.
         var columns = new LayoutPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, DockHeight = new GridLength(2, GridUnitType.Star) };
         columns.Children.Add(new LayoutDocumentPane());
@@ -129,8 +128,8 @@ public sealed class AvalonDockHost : IMiniAppHost
     private LayoutPanel ColumnsPanel =>
         _dock.Layout.RootPanel.Children.OfType<LayoutPanel>().FirstOrDefault() ?? _dock.Layout.RootPanel;
 
-    // První (levý) document pane — cíl pro taby a první sloupec. Když žádný není (všechny dokumenty
-    // odtržené do plovoucích oken), vyrobit ho — otevření další mini-app nesmí spadnout.
+    // První (levý) document pane - cíl pro taby a první sloupec. Když žádný není (všechny dokumenty
+    // odtržené do plovoucích oken), vyrobit ho - otevření další mini-app nesmí spadnout.
     private LayoutDocumentPane DocumentPane
     {
         get
@@ -163,7 +162,7 @@ public sealed class AvalonDockHost : IMiniAppHost
                 e.Cancel = true;
                 return;
             }
-            // Z deskriptoru, ne z uloženého XML — změna pinned sady se retro-aplikuje na staré layouty.
+            // Z deskriptoru, ne z uloženého XML - změna pinned sady se retro-aplikuje na staré layouty.
             document.CanClose = resolved.CanClose;
             document.CanFloat = resolved.CanClose;
             e.Content = resolved.Content;

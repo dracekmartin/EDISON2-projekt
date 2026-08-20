@@ -24,8 +24,6 @@ public class RunningModulesLabelTests
     private static RunningModuleInfo Running(string title, string exe = "", string form = "", string input = "") =>
         new(title, () => { }) { ExeName = exe, FormFqn = form, InputParam = input };
 
-    // ---------- BuildModuleLabels ----------
-
     [Fact]
     public void BuildModuleLabels_PrefixesModuleWithItsFamily()
     {
@@ -103,8 +101,6 @@ public class RunningModulesLabelTests
         Assert.Equal("Fakturace - zpracování AD", label.LongName);
     }
 
-    // ---------- StripIdfaSuffix ----------
-
     [Theory]
     [InlineData("Zaměstnanci [CKSCHWAN]", "Zaměstnanci")]
     [InlineData("Zaměstnanci [CK_SCHWAN]", "Zaměstnanci")]
@@ -114,8 +110,6 @@ public class RunningModulesLabelTests
     [InlineData("[CK_DP]", "[CK_DP]")]                                       // celý název = závorka → nechat
     public void StripIdfaSuffix_RemovesTrailingBracketOnly(string title, string expected) =>
         Assert.Equal(expected, EdisonMainViewModel.StripIdfaSuffix(title));
-
-    // ---------- ResolveRunningLabel ----------
 
     // Dlouhý název má přednost před cestou - je kratší a disambiguuje sám o sobě.
     [Fact]

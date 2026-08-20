@@ -3,12 +3,11 @@ using EDControls.EDList;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Typové řazení EDList — sort klíče z raw hodnot (EDListSort.BuildSortKey)
+/// Typové řazení EDList - sort klíče z raw hodnot (EDListSort.BuildSortKey)
 /// a EDListRowComparer pro ListCollectionView.CustomSort.
 /// </summary>
 public class EDListSortTests
 {
-    // ─── BuildSortKey ─────────────────────────────────────────────────────────
 
     [Theory]
     [InlineData("142.5", "142,5", 142.5)]
@@ -16,7 +15,7 @@ public class EDListSortTests
     public void BuildSortKey_Number_ParsesInvariantDecimal(string raw, string formatted, double expected)
     {
         var key = EDListSort.BuildSortKey(raw, EListColumnType.Number, formatted);
-        // Přesná hodnota, ne jen typ — culture bug parsující "142.5" jako 1425 musí spadnout.
+        // Přesná hodnota, ne jen typ - culture bug parsující "142.5" jako 1425 musí spadnout.
         Assert.Equal((decimal)expected, Assert.IsType<decimal>(key));
     }
 
@@ -52,7 +51,7 @@ public class EDListSortTests
     [Fact]
     public void BuildSortKey_Date_UnparseableFallsBackToFormatted()
     {
-        // Jen Number fallback byl pokrytý — Date musí padnout na formátovaný string taky.
+        // Neparsovatelné datum padá na formátovaný string, stejně jako Number.
         var key = EDListSort.BuildSortKey("not-a-date", EListColumnType.Date, "??");
         Assert.Equal("??", key);
     }
@@ -72,8 +71,6 @@ public class EDListSortTests
         Assert.Null(EDListSort.BuildSortKey(null, EListColumnType.Text, null));
     }
 
-    // ─── EDListRowComparer ────────────────────────────────────────────────────
-
     private static EDListRow Row(string id, string col, string raw, EListColumnType type, string? formatted = null)
     {
         formatted ??= raw;
@@ -85,7 +82,7 @@ public class EDListSortTests
     [Fact]
     public void Number_SortsNumerically_NotLexicographically()
     {
-        // Lexikograficky by "142,5" < "98" — typově musí být 98 první
+        // Lexikograficky by "142,5" < "98" - typově musí být 98 první
         var a = Row("a", "km", "142.5", EListColumnType.Number, "142,5");
         var b = Row("b", "km", "98", EListColumnType.Number, "98");
         var cmp = new EDListRowComparer([("km", false)]);
@@ -95,7 +92,7 @@ public class EDListSortTests
     [Fact]
     public void Date_SortsChronologically()
     {
-        // Formátovaně "02.01.2025" < "31.12.2024" lexikograficky — chronologicky je to obráceně
+        // Formátovaně "02.01.2025" < "31.12.2024" lexikograficky - chronologicky je to obráceně
         var older = Row("a", "d", "2024-12-31", EListColumnType.Date, "31.12.2024");
         var newer = Row("b", "d", "2025-01-02", EListColumnType.Date, "02.01.2025");
         var cmp = new EDListRowComparer([("d", false)]);
@@ -160,7 +157,7 @@ public class EDListSortTests
     [Fact]
     public void RowWithoutSortKeys_FallsBackToFormattedValue()
     {
-        // Starý ctor (testy, ruční konstrukce) — porovnává se formátovaný string
+        // Starý ctor (testy, ruční konstrukce) - porovnává se formátovaný string
         var a = new EDListRow("a", new Dictionary<string, string?> { ["t"] = "Brno" });
         var b = new EDListRow("b", new Dictionary<string, string?> { ["t"] = "Praha" });
         var cmp = new EDListRowComparer([("t", false)]);

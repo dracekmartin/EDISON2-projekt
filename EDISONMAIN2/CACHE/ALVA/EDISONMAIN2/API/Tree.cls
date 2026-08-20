@@ -13,13 +13,13 @@ Class ALVA.EDISONMAIN2.API.Tree Extends %RegisteredObject
 ///
 /// Formát položek v ^||ML("OUT", i) jako CList ($lb). Konstruují je helpery
 /// <see cref="AddFamily">..AddFamily</see>, <see cref="AddFamilyEnd">..AddFamilyEnd</see>
-/// a <see cref="AddExe">..AddExe</see>; přímý $lb se v Fill* metodách už nepoužívá.
+/// a <see cref="AddExe">..AddExe</see>.
 ///
 ///   $lb("FAMILY", nazev, expanded, elementId, licensed, mlineOnly)          ... složka
 ///       elementId  = package ID z EDPackageEnum / EDMainPackageEnum jako string
 ///                    (legacy `id` atribut skupiny); "" = bez gate (např. syntetické složky).
 ///       licensed   = "1" → složka se kontroluje proti Lic.Elements; navíc se VŽDY
-///                    (i při licensed="0") kontroluje proti AccessTable — legacy
+///                    (i při licensed="0") kontroluje proti AccessTable - legacy
 ///                    BuildTreeXML gate-oval skupiny stejně jako formy, takže složka
 ///                    mimo licenci/AP skryje i své jinak povolené děti.
 ///       mlineOnly  = "1" → mimo doménu M-line se složka (vč. dětí) nezobrazí;
@@ -31,11 +31,11 @@ Class ALVA.EDISONMAIN2.API.Tree Extends %RegisteredObject
 ///       inputParam = volitelný string předaný formě jako EDParamIn (např. "AdminMode=1").
 ///       hidden     = "1" → modul se odfiltruje v UI (legacy `hidden="1"` atribut).
 ///       color      = hex "#RRGGBB" pro Foreground v stromu; "" = výchozí barva tématu.
-///                    V autorovaných datech vždy "" — stub/launchability barvu odvozuje
+///                    V autorovaných datech vždy "" - stub/launchability barvu odvozuje
 ///                    runtime ModuleLaunchabilityCheck z existence exe.
 ///       mlineOnly  = "1" → mimo doménu M-line se modul nezobrazí; v doméně suffix.
 ///       dlouhyNazev = disambiguovaný název (legacy `nameEx`) pro plochu a menu spuštěných
-///                    modulů — krátký název je ve stromu nejednoznačný (dvoje "Zaměstnanci").
+///                    modulů - krátký název je ve stromu nejednoznačný (dvoje "Zaměstnanci").
 ///                    "" = nemá ho v legacy datech, použij `nazev`.
 ///   $lb("FAMILY_END")                                                       ... konec složky
 ///
@@ -60,26 +60,24 @@ ClassMethod GetTree(ByRef sys As %String) As %Status
 	ret ret
 }
 
-/// Helper — přidá FAMILY uzel (složka). isExpanded=1 → strom defaultně rozbalený.
+/// Helper - přidá FAMILY uzel (složka). isExpanded=1 → strom defaultně rozbalený.
 /// elementId + isLicensed + mlineOnly viz wire format v doc GetTree.
 ClassMethod AddFamily(name As %String, isExpanded As %Boolean = 0, elementId As %String = "", isLicensed As %Boolean = 0, mlineOnly As %Boolean = 0) [ Private ]
 {
 	s ^||ML("OUT", $i(^||ML("OUT"))) = $lb("FAMILY", name, $s(isExpanded:"1", 1:"0"), elementId, $s(isLicensed:"1", 1:"0"), $s(mlineOnly:"1", 1:"0"))
 }
 
-/// Helper — uzavře FAMILY uzel.
 ClassMethod AddFamilyEnd() [ Private ]
 {
 	s ^||ML("OUT", $i(^||ML("OUT"))) = $lb("FAMILY_END")
 }
 
-/// Helper — přidá EXE uzel (modul). Viz wire format v doc GetTree pro popis polí.
+/// Helper - přidá EXE uzel (modul). Viz wire format v doc GetTree pro popis polí.
 ClassMethod AddExe(name As %String, exePath As %String, formName As %String, elementId As %String, isLicensed As %Boolean = 1, inputParam As %String = "", hidden As %Boolean = 0, color As %String = "", mlineOnly As %Boolean = 0, longName As %String = "") [ Private ]
 {
 	s ^||ML("OUT", $i(^||ML("OUT"))) = $lb("EXE", name, exePath, formName, elementId, $s(isLicensed:"1", 1:"0"), inputParam, $s(hidden:"1", 1:"0"), color, $s(mlineOnly:"1", 1:"0"), longName)
 }
 
-/// Naplní strom "Hlavní nabídka" — Hlavní nabídka (modulární agenda).
 /// Generováno z legacy edisonnavbar.xml id=-2 (tools/GenerateTree.cs).
 ClassMethod FillMain() [ Private ]
 {
@@ -739,7 +737,6 @@ ClassMethod FillMain() [ Private ]
 	d ..AddFamilyEnd()
 }
 
-/// Naplní strom "Správa systému" — Správa systému (admin nástroje).
 /// Generováno z legacy edisonnavbar.xml id=-3 (tools/GenerateTree.cs).
 ClassMethod FillSystem() [ Private ]
 {
@@ -772,7 +769,6 @@ ClassMethod FillSystem() [ Private ]
 	d ..AddFamilyEnd()
 }
 
-/// Naplní strom "Partnerská řešení" — Partnerská řešení (3rd party agendy).
 /// Generováno z legacy edisonnavbar.xml id=-4 (tools/GenerateTree.cs).
 ClassMethod FillPartners() [ Private ]
 {

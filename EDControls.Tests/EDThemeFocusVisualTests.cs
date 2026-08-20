@@ -23,8 +23,6 @@ public class EDThemeFocusVisualTests
     private const string DarkUri   = "pack://application:,,,/EDControls;component/EDTheme/EDThemeDark.xaml";
     private const string StylesUri = "pack://application:,,,/EDControls;component/EDControlStyles/EDControlStyles.xaml";
 
-    // ---------- Tokeny ----------
-
     [Theory]
     [InlineData("EDTheme.Focus.Ring")]
     [InlineData("EDTheme.Focus.Ring.Color")]
@@ -55,8 +53,6 @@ public class EDThemeFocusVisualTests
             Assert.Empty(missing);
         });
     }
-
-    // ---------- Ring ----------
 
     [Fact]
     public void SystemFocusVisualStyle_IsOverriddenByEDControlStyles()
@@ -98,10 +94,9 @@ public class EDThemeFocusVisualTests
     [InlineData(typeof(DataGridColumnHeader))]
     public void ImplicitStyle_SetsFocusVisualExplicitly(Type controlType)
     {
-        // Past, kterou to hlídá: samotný override SystemParameters.FocusVisualStyleKey nestačí,
-        // protože theme style Aera nastavuje FocusVisualStyle vlastní hodnotou s vyšší prioritou
-        // (u TextBoxu null). Styl, který setter vynechá, tiše spadne na tečkovaný rámeček
-        // v barvě SystemColors.ControlText — tedy zpátky na neviditelný focus v dark modu.
+        // Past: override SystemParameters.FocusVisualStyleKey nestačí, theme style Aera nastavuje
+        // FocusVisualStyle vlastní hodnotou s vyšší prioritou (u TextBoxu null) - styl, který setter
+        // vynechá, spadne na tečkovaný rámeček, tedy neviditelný focus v dark modu.
         RunSta(() =>
         {
             var style = Load(StylesUri)[controlType] as Style;
@@ -128,8 +123,6 @@ public class EDThemeFocusVisualTests
             Assert.All(withSetter, s => Assert.IsType<Style>(s.Value));
         });
     }
-
-    // ---------- Helpers ----------
 
     private static IEnumerable<Setter> FocusVisualSetters(Style style) =>
         style.Setters.OfType<Setter>()

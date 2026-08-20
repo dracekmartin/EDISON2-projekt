@@ -130,8 +130,6 @@ public class ErrorReporterTests : IDisposable
         Assert.Empty(_handler.Requests);
     }
 
-    // ---------- lokální fallback log ----------
-
     [Fact]
     public async Task NetworkFailure_WritesFallbackLog()
     {

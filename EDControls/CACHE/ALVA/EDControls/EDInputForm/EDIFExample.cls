@@ -1,15 +1,9 @@
 Include (GENERAL, EDInputForm)
 
-/// Referenční příklad EDInputFormu — ukazuje všechny dostupné featury.
+/// Referenční příklad EDInputFormu - ukazuje všechny dostupné featury.
 /// Při přidání nové featury do EDInputFormu přidej odpovídající příklad i sem.
 Class ALVA.EDControls.EDInputForm.EDIFExample Extends %RegisteredObject
 {
-
-// =============================================================================
-
-//  Init — definice formuláře
-
-// =============================================================================
 
 ClassMethod Init(ByRef sys As %String) As %Status
 {
@@ -21,18 +15,18 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
 		// ── Skupina 1: Typy polí ─────────────────────────────────────────────
-		// Každý typ pole jednou, bez dalších featur — čistá ukázka typu.
+		// Každý typ pole jednou, bez dalších featur - čistá ukázka typu.
 		// Helpery (AddText, AddBool, AddNumber, AddDecimal) pro simple fieldy;
 		// AddFieldToLastGroup + property setters pro komplex (Date, List, Color, File, ComboBox).
 
 		d form.AddGroup("types", "Typy polí")
 
-		// Helpery — jeden řádek per field
+		// Helpery - jeden řádek per field
 		d form.AddText("text", "Text")
 		d form.AddNumber("number", "Celé číslo", "", "0", "999", "ks")
 		d form.AddDecimal("decimal", "Velikost fontu", "10", "4", "200", "pt", "N2")
 
-		// Verbose — AddFieldToLastGroup + post-setting (Date nemá vlastní helper)
+		// Verbose - AddFieldToLastGroup + post-setting (Date nemá vlastní helper)
 		s f = form.AddFieldToLastGroup("date", "Datum", $$$FieldTypeDate, 0, 0)
 		s f.value = "2025-01-15"
 
@@ -56,11 +50,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f = form.AddFieldToLastGroup("color", "Barva", $$$FieldTypeColor, 0, 0)
 		s f.value = "#FF003366"
 
-		; Image: value = Base64 — drží se jen na klientovi, na server se neposílá (limit MLRest)
+		; Image: value = Base64 - drží se jen na klientovi, na server se neposílá (limit MLRest)
 		s f = form.AddFieldToLastGroup("image", "Obrázek", $$$FieldTypeImage, 0, 0)
 		s f.helpText = "Náhled + Nahrát/Vymazat; picker dodává host přes PickImageImpl"
 
-		; ComboBox: editable s autocomplete — user může napsat libovolný text, list je nápověda
+		; ComboBox: editable s autocomplete - user může napsat libovolný text, list je nápověda
 		s f = form.AddFieldToLastGroup("combo", "Pole agendy (combo)", $$$FieldTypeComboBox, 0, 0)
 		d f.AddListItem("CISLO_LINKY",  "Číslo linky")
 		d f.AddListItem("NAZEV_LINKY",  "Název linky")
@@ -86,7 +80,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s form.GetGroup("helptext").helpText = "Tato skupina ukazuje helpText na úrovni skupiny"
 
 		s f = form.AddFieldToLastGroup("htField", "Pole s nápovědou", $$$FieldTypeText, 0, 0)
-		s f.helpText = "Toto je nápověda k poli — zobrazí se jako tooltip nebo ve sloupci"
+		s f.helpText = "Toto je nápověda k poli - zobrazí se jako tooltip nebo ve sloupci"
 
 		s f = form.AddFieldToLastGroup("htToggle", "Režim nápovědy", $$$FieldTypeButton, 1, 0)
 		s f.value = "Přepnout na sloupec"
@@ -167,12 +161,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
 	ret ret
 }
 
-// =============================================================================
-
-//  Validate — validace a dynamické chování
-
-// =============================================================================
-
 ClassMethod Validate(ByRef sys As %String) As %Status
 {
 	$$$Init
@@ -197,13 +185,13 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 				i (+f.value<0)||(+f.value>100) s f.validationError = "Hodnota musí být 0 až 100"
 			}
 
-			// Formát — přesně 5 znaků
+			// Formát - přesně 5 znaků
 			s f = form.GetField("valFormat")
 			i f.value'="" {
 				i $l(f.value)'=5 s f.validationError = "Kód musí mít přesně 5 znaků"
 			}
 
-			// Dropdown validace — volba ERR je neplatná
+			// Dropdown validace - volba ERR je neplatná
 			s f = form.GetField("comboListVal")
 			i f.value="ERR" s f.validationError = "Tato volba není povolena"
 		}
@@ -245,7 +233,7 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 				}
 			}
 
-			// Ukázkové tlačítko (button field) — jen echo zpět
+			// Ukázkové tlačítko (button field) - jen echo zpět
 			i form.changedKey = "button" {
 				s form.GetField("text").value = "Tlačítko bylo stisknuto"
 			}
@@ -314,12 +302,6 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 	catch (ex) { $$$CatchErrRest }
 	ret ret
 }
-
-// =============================================================================
-
-//  Save — uložení dat
-
-// =============================================================================
 
 ClassMethod Save(ByRef sys As %String) As %Status
 {

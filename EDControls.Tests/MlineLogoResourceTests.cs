@@ -74,8 +74,6 @@ public class MlineLogoResourceTests
         });
     }
 
-    // ---------- Helpers ----------
-
     private static IEnumerable<Drawing> Flatten(Drawing drawing)
     {
         if (drawing is DrawingGroup group)

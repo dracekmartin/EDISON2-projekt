@@ -9,10 +9,9 @@ namespace EDISONMAIN2;
 public record LogoutSignal(bool ShouldClose, int Seconds);
 
 /// <summary>
-/// Cooperative logout — periodicky se ptá serveru (<c>ALVA.SYSTEM.Main.maSeUkoncit</c>),
+/// Cooperative logout - periodicky se ptá serveru (<c>ALVA.SYSTEM.Main.maSeUkoncit</c>),
 /// jestli má klient skončit (idle timeout / admin remote-logout). Při signálu zavolá
-/// <c>onLogoutRequested(sekundy)</c> a přestane pollovat. Detaily mechanismu:
-/// RESPONSIBILITIES §3.5/3.9, legacy <c>frmNoMDI.MainTimerProc</c>.
+/// <c>onLogoutRequested(sekundy)</c> a přestane pollovat. Legacy <c>frmNoMDI.MainTimerProc</c>.
 /// </summary>
 public class LogoutWatcher
 {
@@ -57,7 +56,7 @@ public class LogoutWatcher
     }
 
     /// <summary>
-    /// Jeden poll na klonu s <c>CacheLocks=2</c> — poll nesmí obnovit ACTIVITY historii, jinak by
+    /// Jeden poll na klonu s <c>CacheLocks=2</c> - poll nesmí obnovit ACTIVITY historii, jinak by
     /// se server-side idle timer resetoval a logout by nikdy nenastal. Klon (ne mutace sdílené
     /// instance) → žádný race se souběžnými voláními.
     /// </summary>

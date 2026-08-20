@@ -3,7 +3,7 @@ Include EDInputForm
 Class ALVA.EDControls.EDInputForm.Form Extends %RegisteredObject
 {
 
-// ─── Konstanty validačního triggeru (zrcadlí C# EValidationTrigger) ───────────
+// Zrcadlí C# EValidationTrigger.
 
 Parameter TriggerInit = "Init";
 
@@ -24,11 +24,9 @@ Property items As list Of ALVA.EDControls.EDInputForm.Item;
 /// Řídí zobrazení nápovědy na .NET straně: $$$HelpTextModeTooltip (default) nebo $$$HelpTextModeColumn.
 Property helpTextMode As %String [ InitialExpression = {$$$HelpTextModeTooltip} ];
 
-// ─── Builder ─────────────────────────────────────────────────────────────────
-
 /// Přidá oddělovač skupiny; visibility řídí zobrazení na .NET straně
 /// ($$$ItemVisibilityVisible, $$$ItemVisibilityCollapsed, ...). Skupina nemá viditelné
-/// číslo (0); pole se číslují průběžně napříč skupinami — po insertu nastaví Renumber.
+/// číslo (0); pole se číslují průběžně napříč skupinami - po insertu nastaví Renumber.
 Method AddGroup(key As %String, groupName As %String, visibility As %String = {$$$ItemVisibilityVisible})
 {
 	s g = ##class(ALVA.EDControls.EDInputForm.Group).%New()
@@ -40,7 +38,7 @@ Method AddGroup(key As %String, groupName As %String, visibility As %String = {$
 }
 
 /// Přidá pole do poslední skupiny a vrátí ho (caller doplní value / validationError).
-/// Číslo pole je průběžné napříč skupinami (1-based) — po insertu nastaví Renumber;
+/// Číslo pole je průběžné napříč skupinami (1-based) - po insertu nastaví Renumber;
 /// skupiny čítač polí neinkrementují.
 Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {$$$FieldTypeText}, validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
 {
@@ -54,13 +52,6 @@ Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {
 	d ..Renumber()
 	q f
 }
-
-/// ─── Convenience helpers pro nejčastější field typy ─────────────────────────
-/// Vrací nový Field — caller může nastavit další properties (helpText, format,
-/// validationError, ...). Pro complex typy (List/ComboBox/Color/File) použij
-/// AddFieldToLastGroup + post-setting properties (viz EDIFExample.cls).
-///
-/// Pro skupinu — nejprve volej AddGroup(...), helpery přidají field do poslední.
 
 /// Text field. value=initial obsah, required=povinnost.
 Method AddText(key As %String, label As %String, value As %String = "", required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
@@ -114,7 +105,6 @@ Method AddFieldToSpecificGroup(groupKey As %String, key As %String, label As %St
 	s f.validateOnChange = validateOnChange
 	s f.required = required
 
-	// Najdi skupinu, pak doskenuj na konec jejích polí
 	s insertAt = 0, cnt = ..items.Count()
 	f idx=1:1:cnt {
 		s item = ..items.GetAt(idx)
@@ -155,8 +145,6 @@ Method Renumber() [ Private ]
 	}
 }
 
-// ─── Přístup ────────────────────────────────────────────────────────────────
-
 /// Vrátí první Field se shodným key, nebo "" když není nalezen.
 Method GetField(key As %String) As ALVA.EDControls.EDInputForm.Field
 {
@@ -181,8 +169,6 @@ Method GetGroup(key As %String) As ALVA.EDControls.EDInputForm.Group
 	q result
 }
 
-// ─── Trigger helpery ──────────────────────────────────────────────────────────
-
 Method IsInitValidation() As %Boolean
 {
 	q ..trigger=..#TriggerInit
@@ -198,13 +184,11 @@ Method IsBeforeSaveValidation() As %Boolean
 	q ..trigger=..#TriggerBeforeSave
 }
 
-/// True pro Init a BeforeSave — round-trip celého formuláře, ne změna jednoho pole.
+/// True pro Init a BeforeSave - round-trip celého formuláře, ne změna jednoho pole.
 Method IsWholeFormValidation() As %Boolean
 {
 	q (..trigger=..#TriggerInit)||(..trigger=..#TriggerBeforeSave)
 }
-
-// ─── Helpery změněného pole ────────────────────────────────────────────────
 
 /// True, když tuto Change validaci spustilo konkrétní pole.
 Method HasChangedField() As %Boolean
@@ -219,8 +203,6 @@ Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 	i ..changedKey="" q ""
 	q ..GetField(..changedKey)
 }
-
-// ─── Serializace ──────────────────────────────────────────────────────────────
 
 /// Zapíše všechny položky do ^||ML("OUT",...) jako CList ($lb) hodnoty na subscriptech
 /// 1, 2, ... (na .NET CVar["1"], CVar["2"]). Formát položky (number je vždy pozice 2):
@@ -261,7 +243,6 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 		i type="GROUP" {
 			s visibility = $s($ll(listVal)>=5:$li(listVal,5),1:$$$ItemVisibilityVisible)
 			d form.AddGroup($li(listVal,3),$li(listVal,4),visibility)
-			// helpText pro právě přidanou skupinu
 			i $ll(listVal)>=6 s form.items.GetAt(form.items.Count()).helpText = $li(listVal,6)
 		}
 		i type="FIELD" {

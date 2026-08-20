@@ -10,14 +10,14 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Loader pouští větve souběžně, takže mocky tady musí být ručně psané a thread-safe
-/// (NSubstitute není). Kryje kontrakt, na kterém stojí R2: kompletní data, klon per větev,
+/// (NSubstitute není). Kryje kontrakt: kompletní data, klon per větev,
 /// selhání větve propadne volajícímu (VM pak nic neaplikuje) a chyba preferencí degraduje.
 /// </summary>
 public class SessionDataLoaderTests
 {
     private static readonly string[] TreeNames = ["main", "system", "partners"];
 
-    // Sdílený záznam volání napříč klony — kdo (identita instance) co volal.
+    // Sdílený záznam volání napříč klony - kdo (identita instance) co volal.
     private sealed class CallLog
     {
         private readonly ConcurrentBag<(string Instance, string Method)> _calls = [];
@@ -154,7 +154,7 @@ public class SessionDataLoaderTests
     [Fact]
     public async Task LoadAsync_PrefsFailure_DegradesToEmptyState()
     {
-        // Preference jsou best-effort (persistence nesmí shodit shell) — strom musí dorazit i tak.
+        // Preference jsou best-effort (persistence nesmí shodit shell) - strom musí dorazit i tak.
         var (loader, prefs, _) = Create(failPrefs: true);
 
         var data = await loader.LoadAsync(licence: null, isAdmin: false, prefs);

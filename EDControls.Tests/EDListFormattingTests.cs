@@ -6,7 +6,6 @@ namespace EDControls.Tests;
 
 public class EDListFormattingTests
 {
-    // ─── FormatHHMM ─────────────────────────────────────────────────────────────
 
     [Theory]
     [InlineData("830", "08:30")]
@@ -30,8 +29,6 @@ public class EDListFormattingTests
     {
         Assert.Null(EDList.EDList.FormatHHMM(null));
     }
-
-    // ─── FormatDate ─────────────────────────────────────────────────────────────
 
     [Fact]
     public void FormatDate_ValidIsoDate_FormatsCorrectly()
@@ -65,8 +62,6 @@ public class EDListFormattingTests
         Assert.Equal("", EDList.EDList.FormatDate("", "dd.MM.yyyy"));
     }
 
-    // ─── FormatNumber ───────────────────────────────────────────────────────────
-
     [Fact]
     public void FormatNumber_ValidNumber_FormatsCorrectly()
     {
@@ -91,8 +86,6 @@ public class EDListFormattingTests
     {
         Assert.Null(EDList.EDList.FormatNumber(null, "N2"));
     }
-
-    // ─── ParseColumns ───────────────────────────────────────────────────────────
 
     [Fact]
     public void ParseColumns_EmptyOutput_ReturnsEmpty()

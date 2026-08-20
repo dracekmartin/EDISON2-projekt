@@ -7,13 +7,9 @@ using EDCombo = EDControls.EDFilterComboBox.EDFilterComboBox;
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Výběr datového pole pro vložení do textu (`{POLE}`). Vyhledávání drží sdílený
-/// <see cref="EDCombo"/> - žádná další vyhledávací logika, jen se rozbalí u tlačítka a vrátí
-/// vybraný token.
-/// <para>
-/// Proč výběr a ne psaní: název pole napsaný rukou se překlepne a chyba se pozná **až v tisku**.
+/// Výběr datového pole pro vložení do textu (`{POLE}`) nad sdíleným <see cref="EDCombo"/>.
+/// Proč výběr a ne psaní: název pole napsaný rukou se překlepne a chyba se pozná až v tisku.
 /// Proč vkládání a ne náhrada hodnoty: pole bývá věta s tokeny uvnitř, ne jen samotný token.
-/// </para>
 /// </summary>
 internal static class PlaceholderPicker
 {

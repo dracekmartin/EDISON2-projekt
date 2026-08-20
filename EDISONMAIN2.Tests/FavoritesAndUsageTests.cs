@@ -31,8 +31,6 @@ public class FavoritesAndUsageTests
         return f;
     }
 
-    // ---------- BuildFavoritesTree ----------------------------------------
-
     [Fact]
     public void BuildFavoritesTree_KeepsOnlyFavoritedLeaves_PrunesEmptyFamilies()
     {
@@ -80,8 +78,6 @@ public class FavoritesAndUsageTests
 
         Assert.Equal(2, result.Count);
     }
-
-    // ---------- BuildUsedList ---------------------------------------------
 
     [Fact]
     public void BuildUsedList_RanksByCountDesc_ThenRecency()
@@ -153,8 +149,6 @@ public class FavoritesAndUsageTests
 
         Assert.Same(a, Assert.Single(result));
     }
-
-    // ---------- ModulePreferencesService ----------------------------------
 
     [Fact]
     public async Task Prefs_LoadShortcuts_ParsesList()
@@ -235,8 +229,6 @@ public class FavoritesAndUsageTests
 
         await prefs.Received().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
     }
-
-    // ---------- VM integrace: toggle + usage ------------------------------
 
     [Fact]
     public void ToggleFavorite_AddsAndRemoves_FromFavoritesTree_AndPersists()
@@ -436,14 +428,14 @@ public class FavoritesAndUsageTests
         vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "used");
 
         prefs.Received().SaveAsync("EDISONMAIN2", "SelectedTab", Arg.Any<JsonNode>());
-        Assert.Equal("\"used\"", written!.ToJsonString());   // klíč, ne index — přeuspořádání záložek volbu nepřepne
+        Assert.Equal("\"used\"", written!.ToJsonString());   // klíč, ne index - přeuspořádání záložek volbu nepřepne
     }
 
     [Fact]
     public void TreeTabs_HaveUniqueKeys_AndExactlyOneNonExpandable()
     {
         // Identita záložky je persistovaný klíč; duplicita by tiše přepsala uloženou volbu.
-        // Používané jsou ListBox bez stromu — jediná záložka, kam Rozbalit/Sbalit vše necílí.
+        // Používané jsou ListBox bez stromu - jediná záložka, kam Rozbalit/Sbalit vše necílí.
         var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
 
         Assert.Equal(vm.TreeTabs.Count, vm.TreeTabs.Select(t => t.Key).Distinct().Count());
@@ -466,8 +458,6 @@ public class FavoritesAndUsageTests
         vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "main");
         Assert.Same(module, vm.SelectedModule);
     }
-
-    // ---------- harness ----------------------------------------------------
 
     private static EdisonMainViewModel CreateVM(IUserPrefsService prefs, IReadOnlyList<IModule> tree) =>
         EdisonMainViewModelHarness.CreateVM(

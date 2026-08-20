@@ -11,7 +11,6 @@ namespace EDControls.EDInputForm;
 /// </summary>
 internal static class EDInputFormWire
 {
-    // ─── List wire format ────────────────────────────────────────────────────
     internal const char ListItemSep = '|';
     internal const char ListKeyValSep = '~';
 
@@ -27,7 +26,7 @@ internal static class EDInputFormWire
                 Field f => new CList(
                     "FIELD", f.Number, f.Key, f.Label,
                     f.FieldType.ToWire(),
-                    // Image hodnota (velký Base64) se NIKDY neposílá na server — MLRest
+                    // Image hodnota (velký Base64) se NIKDY neposílá na server - MLRest
                     // StreamToGlobal to neukočíruje (<SYNTAX>/limit) a obrázek se server-side
                     // nevaliduje. Drží se jen client-side (viz EDInputFormController.ApplyOutput).
                     f.FieldType == EFieldType.Image ? "" : (f.Value ?? ""),
@@ -123,8 +122,6 @@ internal static class EDInputFormWire
         string? wire = output["helpTextMode"]?.Value?.ToString();
         return EHelpTextModeWire.FromWire(wire);
     }
-
-    // ─── List items serialization ────────────────────────────────────────────
 
     internal static string SerializeListItems(List<ListItem> items)
     {

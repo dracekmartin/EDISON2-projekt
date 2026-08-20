@@ -6,16 +6,10 @@ using System.Windows.Media.Imaging;
 namespace EDControls.ErrorReporting;
 
 /// <summary>
-/// Snímek oken aplikace jako příloha hlášení.
-/// <para>
-/// Záměrně **nesnímá obrazovku** (na rozdíl od legacy <c>CaptureScreenToFile</c>, které sešije
-/// všechny monitory): kreslí jen vlastní okna přes <see cref="RenderTargetBitmap"/>, takže se
-/// cizí aplikace do přílohy nemají jak dostat. Není to politika, je to vlastnost metody.
-/// </para>
-/// <para>
-/// Důsledek: HWND obsah se nevykreslí, takže WebView2 miniaplikace shellu zůstanou v snímku
-/// prázdné. Snímek proto nikdy není přesně to, co uživatel viděl.
-/// </para>
+/// Snímek oken aplikace jako příloha hlášení. Záměrně nesnímá obrazovku (na rozdíl od legacy
+/// <c>CaptureScreenToFile</c>): kreslí jen vlastní okna přes <see cref="RenderTargetBitmap"/>,
+/// takže cizí aplikace se do přílohy nemají jak dostat - ale HWND obsah (WebView2 miniaplikace)
+/// zůstane prázdný, snímek proto nikdy není přesně to, co uživatel viděl.
 /// </summary>
 public static class WindowSnapshot
 {

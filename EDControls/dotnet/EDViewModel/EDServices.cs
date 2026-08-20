@@ -5,15 +5,9 @@ namespace EDControls.EDViewModel;
 
 /// <summary>
 /// Sdílené služby pro každý <see cref="EDViewModel"/>. Vytváří se jednou při startu aplikace,
-/// testy si dělají vlastní instanci.
-/// <para>
-/// <see cref="MLRest"/> je mutable — composition-root VM ji nastaví po výběru firmy a aktualizuje
-/// při přepnutí. Všechny VM sdílející stejnou <see cref="EDServices"/> vidí změnu.
-/// </para>
-/// <para>
-/// <see cref="ActiveLicence"/> je mutable — shell ji načte po loginu, případně refreshuje
-/// (admin „Refresh licence"). VM ji čtou pro per-window licence checky.
-/// </para>
+/// testy si dělají vlastní instanci. <see cref="MLRest"/> i <see cref="ActiveLicence"/> jsou
+/// mutable - shell je nastaví po výběru firmy / po loginu a aktualizuje při přepnutí, takže
+/// změnu vidí všechny VM sdílející tuhle instanci.
 /// </summary>
 public class EDServices(
     IMLRest? mlRest,
@@ -36,7 +30,7 @@ public class EDServices(
     /// <summary>
     /// Loader aktuální licence ze serveru. Composition-root nastavuje při <see cref="MLRest"/>
     /// swapu (initial bootstrap, S2 user switch), takže consumeři čtou loader vázaný na current
-    /// MLRest — bez stale captures z ctoru.
+    /// MLRest - bez stale captures z ctoru.
     /// </summary>
     public Func<Lic?>? LicenceLoader { get; set; }
     /// <summary>Aplikační přístup uživatele (per-IdFa). Načteno post-login, refresh při switch firmy.</summary>
@@ -52,7 +46,7 @@ public class EDServices(
     public string? AppVersion { get; set; }
 
     /// <summary>
-    /// Prefix form ID (persistence stavu okna, usage telemetrie) — odděluje okna jednotlivých
+    /// Prefix form ID (persistence stavu okna, usage telemetrie) - odděluje okna jednotlivých
     /// m-line aplikací od sebe i od legacy numerických ID z <c>EDISFormEnum</c>. Nastavuje
     /// composition-root (TemplateDesigner <c>"TD"</c>), default patří shellu.
     /// </summary>
@@ -77,7 +71,7 @@ public class EDServices(
 
     /// <summary>
     /// Jako <see cref="Current"/>, ale bez výjimky. Pro infrastrukturu, která běží na každé okno
-    /// a nesmí kvůli pořadí startupu nic shodit (panel Podpora) — chybějící služby = neděláme nic.
+    /// a nesmí kvůli pořadí startupu nic shodit (panel Podpora) - chybějící služby = neděláme nic.
     /// </summary>
     internal static EDServices? CurrentOrNull => _current;
 
@@ -85,6 +79,6 @@ public class EDServices(
     public static void Initialize(EDServices services) =>
         _current = services;
 
-    /// <summary>Smaže static singleton. Pouze pro testy — zabraňuje úniku stavu mezi testy.</summary>
+    /// <summary>Smaže static singleton. Pouze pro testy - zabraňuje úniku stavu mezi testy.</summary>
     internal static void Reset() => _current = null;
 }

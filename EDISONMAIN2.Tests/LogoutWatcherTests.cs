@@ -17,8 +17,6 @@ public class LogoutWatcherTests
         return result;
     }
 
-    // ---------- Parse ----------
-
     [Fact]
     public void Parse_UkoncitOne_ShouldClose_WithSeconds()
     {
@@ -69,8 +67,6 @@ public class LogoutWatcherTests
         Assert.False(signal.ShouldClose);
     }
 
-    // ---------- Poll ----------
-
     // Poll volá maSeUkoncit na klonu s CacheLocks=2 (mlRest.With(2)); shared instance se nemutuje.
     private static IMLRest MockPoll(params string[] rows)
     {
@@ -101,8 +97,6 @@ public class LogoutWatcherTests
         Assert.True(signal.ShouldClose);
         Assert.Equal(90, signal.Seconds);
     }
-
-    // ---------- Tick (glue: provider null / swallow / signal → callback) ----------
 
     [Fact]
     public void Tick_NullProvider_DoesNotInvokeCallback()

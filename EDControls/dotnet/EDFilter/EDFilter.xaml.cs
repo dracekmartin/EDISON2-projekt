@@ -54,7 +54,7 @@ public partial class EDFilter : UserControl
         set => SetValue(AutoTriggerProperty, value);
     }
 
-    /// <summary>Filter pole — typicky vyplněná v XAML přes &lt;el:FilterCombo/&gt; atd.</summary>
+    /// <summary>Filter pole - typicky vyplněná v XAML přes &lt;el:FilterCombo/&gt; atd.</summary>
     public ObservableCollection<FilterFieldBase> Fields { get; }
 
     /// <summary>Vyvoláno před každým <c>Target.LoadList(filter)</c>. Host může observovat pro vlastní logiku.</summary>
@@ -68,7 +68,7 @@ public partial class EDFilter : UserControl
         _initialLoadDone = true;
         // Subscribe je zajištěn přes OnFieldsCollectionChanged (XAML [ContentProperty]
         // přidává child přes Fields.Add() který fires CollectionChanged).
-        AutoRefresh();   // initial load — bez filteru nebo s default hodnotami fields
+        AutoRefresh();   // initial load - bez filteru nebo s default hodnotami fields
     }
 
     private void OnFieldsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -88,7 +88,7 @@ public partial class EDFilter : UserControl
 
     /// <summary>
     /// Automatický reload (Loaded / změna hodnoty pole) - jde přes <see cref="RefreshAsync"/>, aby
-    /// pomalá linka nezmrazila celou aplikaci (R1). Výjimku musí spolknout tady: je to
+    /// pomalá linka nezmrazila celou aplikaci. Výjimku musí spolknout tady: je to
     /// fire-and-forget z event handleru, takže by jinak spadla mimo jakýkoli catch.
     /// </summary>
     private async void AutoRefresh()
@@ -117,7 +117,7 @@ public partial class EDFilter : UserControl
         return dict;
     }
 
-    /// <summary>Manuální trigger reload — sebere aktuální hodnoty a zavolá <c>Target.LoadList(filter)</c>.</summary>
+    /// <summary>Manuální trigger reload - sebere aktuální hodnoty a zavolá <c>Target.LoadList(filter)</c>.</summary>
     public void Refresh()
     {
         if (Target is null) return;
@@ -127,7 +127,7 @@ public partial class EDFilter : UserControl
     }
 
     /// <summary>
-    /// Async varianta <see cref="Refresh"/> (R1) — tou jede i automatický reload. Synchronní
+    /// Async varianta <see cref="Refresh"/> - tou jede i automatický reload. Synchronní
     /// varianta drží UI vlákno po celý round-trip, takže na pomalé lince zmrazí **celou aplikaci**,
     /// ne jen okno s filtrem.
     /// </summary>

@@ -59,7 +59,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             Items.Clear();
             _unresolved.Clear();
 
-            // 1) roztřídit na zobrazitelné a jen přenášené (skryté) položky
             var shown = new List<(DesktopShortcutDto Dto, ShortcutKind Kind, ExecutableModule? Module)>();
             var keys = new HashSet<string>();
             foreach (var dto in stored)

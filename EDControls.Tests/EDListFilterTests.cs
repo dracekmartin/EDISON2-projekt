@@ -60,7 +60,6 @@ public class EDListFilterTests
     public void MissingColumnKey_Skipped()
     {
         var row = Row(("name", "Praha"));
-        // klíč "nonexistent" v řádku není — Matches ho prostě přeskočí
         Assert.True(EDListFilter.Matches(row, "Pra", ["nonexistent", "name"]));
         Assert.False(EDListFilter.Matches(row, "Brno", ["nonexistent"]));
     }

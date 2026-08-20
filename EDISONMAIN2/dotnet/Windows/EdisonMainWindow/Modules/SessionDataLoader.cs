@@ -30,7 +30,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// <summary>
     /// Jediné místo, kde session rebuild sahá na síť. Devět round-tripů jede na jeden zátah
     /// (~4 sekvenční latence), protože na hotových stromech závisí až *aplikace* dat ve VM,
-    /// ne jejich načtení. Nic tady nemutuje stav VM — selhání kterékoli větve tedy nechá
+    /// ne jejich načtení. Nic tady nemutuje stav VM - selhání kterékoli větve tedy nechá
     /// předchozí stav shellu nedotčený.
     /// </summary>
     public sealed class SessionDataLoader(
@@ -47,7 +47,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             var defaultWindow = runner.RunAsync(UserProfileService.LoadDefaultWindow);
             var preferences = LoadPreferencesAsync(prefs);
 
-            // WhenAll (ne postupné awaity) — dokončí všechny větve a označí jejich výjimky za
+            // WhenAll (ne postupné awaity) - dokončí všechny větve a označí jejich výjimky za
             // observované, takže selhání jedné nezůstane jako UnobservedTaskException.
             await Task.WhenAll([access, defaultWindow, preferences, .. trees.Select(t => (Task)t.Task)]);
 
@@ -61,7 +61,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         // Preference jdou sekvenčně v jedné větvi: IUserPrefsService drží sdílenou instanci MLRest
         // z composition rootu, takže jim runner nemá kam podstrčit klon a souběžně by si praly
-        // RestStatus. Paralelizace by chtěla aditivní přetížení v EDControls (kandidát na vlnu 4).
+        // RestStatus.
         private static async Task<(List<DesktopShortcutDto>, Dictionary<string, UsageEntry>, List<string>?, string?, Dictionary<string, string>)>
             LoadPreferencesAsync(ModulePreferencesService prefs)
         {

@@ -25,7 +25,7 @@
             </Grid.RowDefinitions>
 
             <!-- Column header bar: Položka | Hodnota | toolbar (hledání + nápověda).
-                 Modern PropertyGrid layout: 2 logické sloupce — label + input. Errors/help
+                 Modern PropertyGrid layout: 2 logické sloupce - label + input. Errors/help
                  inline pod inputem (Material Design pattern).
                  Responzivní šířka: label Auto (fit obsahu, floor MinWidth), hodnota "*" s
                  MaxWidth → při dostatku místa se zastaví na 320 a přebytek zůstane prázdný
@@ -55,8 +55,7 @@
 
                     <!-- EDComponentToolbar - sdílená komponenta napříč EDInputForm / EDList /
                          budoucími tabulkovými komponentami; Flat, protože pruh kreslí Border výš.
-                         Ikona nápovědy otevírá popup zkratek přes HelpCommand (WireToolbarSearch).
-                         Settings vypnutý dokud nemá reálný Command. -->
+                         Ikona nápovědy otevírá popup zkratek přes HelpCommand (WireToolbarSearch). -->
                     <edct:EDComponentToolbar Grid.Column="2"
                                              x:Name="Toolbar"
                                              Flat="True"
@@ -125,7 +124,7 @@
                     </Style.Triggers>
                 </Style>
 
-                <!-- Help text ve sloupci Status (column mode, jen když není chyba — chyba má prioritu).
+                <!-- Help text ve sloupci Status (column mode, jen když není chyba - chyba má prioritu).
                      Používá se pro Field (s podmínkou HasError) i Group (chybu mít nemůže). -->
                 <Style x:Key="HelpTextColumnStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -140,7 +139,7 @@
                     </Style.Triggers>
                 </Style>
 
-                <!-- Help text pole ve sloupci Status — skryje se při HasError=True (chyba má prioritu). -->
+                <!-- Help text pole ve sloupci Status - skryje se při HasError=True (chyba má prioritu). -->
                 <Style x:Key="FieldHelpTextColumnStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
@@ -271,7 +270,7 @@
                     </Grid>
                 </DataTemplate>
 
-                <!-- ComboBox: editovatelný s autocomplete — uživatel může napsat i hodnotu mimo list -->
+                <!-- ComboBox: editovatelný s autocomplete - uživatel může napsat i hodnotu mimo list -->
                 <DataTemplate x:Key="ComboBoxFieldTemplate">
                     <edfc:EDFilterComboBox
                         Suggestions="{Binding ListItems}"
@@ -364,7 +363,7 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                            <!-- Col 0 / Row 0: Položka — label + help/validate ikona + asterisk.
+                            <!-- Col 0 / Row 0: Položka - label + help/validate ikona + asterisk.
                                  StackPanel s HorizontalAlignment="Left" → hugs left edge, nedrift. -->
                             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal"
                                         HorizontalAlignment="Left" VerticalAlignment="Center"
@@ -378,7 +377,7 @@
                                        ToolTip="{Binding HelpText}" Cursor="Help"
                                        VerticalAlignment="Center"
                                        Style="{StaticResource HelpIconStyle}"/>
-                                <!-- Zámek u needitovatelných polí — monochromatický glyph (Segoe MDL2),
+                                <!-- Zámek u needitovatelných polí - monochromatický glyph (Segoe MDL2),
                                      barví se z tokenu → čitelný v light i dark. -->
                                 <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
                                            FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="0,0,4,0" VerticalAlignment="Center"
@@ -388,7 +387,7 @@
                                 <TextBlock Text="{Binding Label}" TextWrapping="Wrap"
                                            MaxWidth="280" VerticalAlignment="Center">
                                     <TextBlock.Style>
-                                        <!-- BasedOn povinné — bez něj se v editable stavu ztratí themed Foreground → v dark černý (neviditelný) label. -->
+                                        <!-- BasedOn povinné - bez něj se v editable stavu ztratí themed Foreground → v dark černý (neviditelný) label. -->
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Editable}" Value="False">
@@ -404,7 +403,7 @@
                                            VerticalAlignment="Center"/>
                             </StackPanel>
 
-                            <!-- Col 1 / Row 0: Hodnota — input (template per FieldType).
+                            <!-- Col 1 / Row 0: Hodnota - input (template per FieldType).
                                  Needitovatelné: recessed pozadí (Field.ReadOnly.Bg) obalí hodnotu
                                  nezávisle na typu pole (text i disabled controly) → sjednocený
                                  „vypnutý" vzhled v light i dark. Editovatelné = Transparent (beze změny). -->
@@ -463,7 +462,7 @@
 
                             <!-- Row 1 / Col 1: inline error/help pod inputem (Material Design pattern).
                                  Error má prioritu (červený text), jinak help text (italic muted).
-                                 Žádný layout shift — Row 1 je Auto height, prázdná = 0px. -->
+                                 Žádný layout shift - Row 1 je Auto height, prázdná = 0px. -->
                             <TextBlock Grid.Row="1" Grid.Column="1"
                                        Text="{Binding ValidationError}"
                                        Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontSize="{DynamicResource EDTheme.FontSize.Caption}"
@@ -508,7 +507,7 @@
                                 <ToggleButton.RenderTransformOrigin>0.5,0.5</ToggleButton.RenderTransformOrigin>
                                 <ToggleButton.Style>
                                     <Style TargetType="ToggleButton">
-                                        <!-- Vlastní flat template — default template kreslí v checked
+                                        <!-- Vlastní flat template - default template kreslí v checked
                                              stavu modré chrome pozadí (ošklivé, netémované). -->
                                         <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
                                         <Setter Property="Template">
@@ -556,7 +555,7 @@
                                    ToolTip="{Binding HelpText}" Cursor="Help"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource HelpIconStyle}"/>
-                            <!-- Help text (column mode) — zarovnán s help texty polí přes SharedSizeGroup -->
+                            <!-- Help text (column mode) - zarovnán s help texty polí přes SharedSizeGroup -->
                             <TextBlock Grid.Column="3"
                                        Text="{Binding HelpText}" TextWrapping="Wrap"
                                        Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Caption}"

@@ -6,7 +6,7 @@ using EDISONMAIN2.Windows.EdisonMainWindow;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy filtračních helperů v <see cref="EdisonMainViewModel"/>: kontrolují,
+/// Testy filtračních helperů v <see cref="ModuleTreeState"/>: kontrolují,
 /// že strom modulů respektuje licenční flag (<see cref="ExecutableModule.IsLicensed"/>)
 /// a whitelist <see cref="Lic.Elements"/>, a že prázdné FAMILY se po filtraci ořezávají.
 /// </summary>
@@ -20,8 +20,6 @@ public class ModuleTreeStateFilterTests
 
     private static AccessTable Access(params string[] allowed) =>
         new([.. allowed], isAllAccess: false);
-
-    // ---------- IsAllowed ---------------------------------------------------
 
     [Fact]
     public void IsAllowed_NotLicensed_AlwaysTrue_EvenWithoutLicence()
@@ -68,7 +66,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void IsAllowed_LicensedAndNullElements_False()
     {
-        // licence?.Elements?.Contains(...) ?? false — Elements == null spadne na false → drop.
+        // licence?.Elements?.Contains(...) ?? false - Elements == null spadne na false → drop.
         var exe = Exe(id: "100", licensed: true);
 
         Assert.False(ModuleTreeState.IsAllowed(exe, new Lic { Elements = null! }));
@@ -86,13 +84,11 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void IsAllowed_Hidden_FalseEvenWithLicenceAndAccess()
     {
-        // Hidden flag má přednost — modul se vyfiltruje bez ohledu na licenci či access.
+        // Hidden flag má přednost - modul se vyfiltruje bez ohledu na licenci či access.
         var exe = new ExecutableModule { ElementId = "100", IsLicensed = true, Hidden = true };
 
         Assert.False(ModuleTreeState.IsAllowed(exe, Licence("100")));
     }
-
-    // ---------- FilterFamily -----------------------------------------------
 
     [Fact]
     public void FilterFamily_AllChildrenAllowed_ReturnsFamilyWithAll()
@@ -167,12 +163,10 @@ public class ModuleTreeStateFilterTests
         Assert.Equal("200", preservedExe.ElementId);
     }
 
-    // ---------- IsAllowed — aplikační access (3. vrstva) -------------------
-
     [Fact]
     public void IsAllowed_NotLicensed_ButElementNotInAccess_False()
     {
-        // Access gate platí i pro nelicencované moduly — bez ElementId v AccessTable se nezobrazí.
+        // Access gate platí i pro nelicencované moduly - bez ElementId v AccessTable se nezobrazí.
         var exe = Exe(id: "100", licensed: false);
 
         Assert.False(ModuleTreeState.IsAllowed(exe, licence: null, Access("200", "300")));
@@ -189,7 +183,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void IsAllowed_LicensedAndInWhitelist_ButNotInAccess_False()
     {
-        // Licence whitelist projde, ale aplikační access ho zařízne — obě vrstvy musí povolit.
+        // Licence whitelist projde, ale aplikační access ho zařízne - obě vrstvy musí povolit.
         var exe = Exe(id: "100", licensed: true);
 
         Assert.False(ModuleTreeState.IsAllowed(exe, Licence("100"), Access("200")));
@@ -223,9 +217,8 @@ public class ModuleTreeStateFilterTests
         Assert.Null(ModuleTreeState.FilterFamily(family, licence: null, Access("999")));
     }
 
-    // ---------- FilterFamily — gate složky (licence + access na package ID) --
     // Legacy BuildTreeXML kontroloval licenci i accessTable na každém uzlu včetně
-    // skupin — složka mimo licenci/AP skryje celou větev i s povolenými dětmi.
+    // skupin - složka mimo licenci/AP skryje celou větev i s povolenými dětmi.
 
     [Fact]
     public void FilterFamily_LicensedFamilyNotInWhitelist_DroppedWithAllowedChildren()
@@ -276,7 +269,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_EmptyElementId_SkipsAccessGate()
     {
-        // Syntetické složky (bez package ID) access gate nemají — filtrují se jen přes děti.
+        // Syntetické složky (bez package ID) access gate nemají - filtrují se jen přes děti.
         var family = new ModuleFamily { DisplayedName = "F", ElementId = "" };
         family.NestedModules.Add(Exe("100", licensed: false));
 
@@ -299,9 +292,8 @@ public class ModuleTreeStateFilterTests
         Assert.Equal("100", Assert.IsType<ExecutableModule>(Assert.Single(filtered.NestedModules)).ElementId);
     }
 
-    // ---------- mlineOnly (legacy frmMain.vb:1204/1227) ----------------------
-    // Mimo doménu M-line se mlineOnly uzel vůbec nezobrazí; v doméně dostane
-    // suffix " [### M-line ###]". Platí pro listy i složky.
+    // mlineOnly (legacy frmMain.vb:1204/1227): mimo doménu M-line se uzel vůbec nezobrazí,
+    // v doméně dostane suffix " [### M-line ###]". Platí pro listy i složky.
 
     [Fact]
     public void TryFilter_MlineOnlyExe_OutsideDomain_Hidden()
@@ -369,8 +361,6 @@ public class ModuleTreeStateFilterTests
         Assert.NotNull(filtered);
         Assert.Equal("Veřejný", Assert.Single(filtered.NestedModules).DisplayedName);
     }
-
-    // ---------- TryFilter (router) -----------------------------------------
 
     [Fact]
     public void TryFilter_Exe_RoutesToIsAllowed()

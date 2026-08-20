@@ -4,9 +4,7 @@ using EDControls.MiniApps;
 namespace EDISONMAIN2.LegacyMiniApps;
 
 /// <summary>
-/// Placeholder mini-app pro MHD (nepředělaná agenda) — zatím jen stub, ověřuje cross-assembly
-/// pipeline (provider + VM + View + DataTemplate z této assembly → shell). Nahradí ji reálná
-/// MHD mini-app nad daty (přes MLRest z <c>EDServices</c>).
+/// Placeholder ověřující cross-assembly pipeline (provider + VM + View + DataTemplate → shell).
 /// </summary>
 public sealed class MhdSampleMiniAppViewModel : EDMiniAppViewModel
 {

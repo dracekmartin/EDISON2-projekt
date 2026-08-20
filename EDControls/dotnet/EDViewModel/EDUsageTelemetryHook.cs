@@ -6,19 +6,15 @@ namespace EDControls.EDViewModel;
 
 /// <summary>
 /// Napojení <see cref="EDUsageTelemetry"/> na okna: class handler na <c>Window.Loaded</c>
-/// registrovaný z <c>EDAppearance.Initialize</c>, stejný vzor jako panel Podpora.
-/// <para>
-/// **Na <see cref="EDViewModel.AttachToWindow"/> to viset nemůže**: TemplateDesigner ho nevolá
-/// vůbec (okna otevírá přímo, ne přes <see cref="WindowNavigator"/>) — telemetrie tam pak
-/// nesbírala nic. Časování je narozdíl od persistence stavu okna volné: OPEN i hook na klik
-/// jsou platné i po zobrazení okna.
-/// </para>
+/// registrovaný z <c>EDAppearance.Initialize</c>, stejný vzor jako panel Podpora. Na
+/// <see cref="EDViewModel.AttachToWindow"/> viset nemůže - TemplateDesigner ho nevolá vůbec
+/// (okna otevírá přímo) a telemetrie tam pak nesbírala nic.
 /// </summary>
 internal static class EDUsageTelemetryHook
 {
     private static bool _initialized;
 
-    /// <summary>Okno už hooknuté — <c>Loaded</c> může fírovat opakovaně a handlery by se hromadily.</summary>
+    /// <summary>Okno už hooknuté - <c>Loaded</c> může fírovat opakovaně a handlery by se hromadily.</summary>
     private static readonly DependencyProperty IsHookedProperty =
         DependencyProperty.RegisterAttached("IsHooked", typeof(bool), typeof(Window),
             new PropertyMetadata(false));
@@ -51,7 +47,7 @@ internal static class EDUsageTelemetryHook
     /// <summary>
     /// OPEN + kliky na <b>pojmenované</b> controly (obdoba WinForms <c>Name</c> v legacy EDForm;
     /// nepojmenované se přeskočí), flush dávky při zavření okna. ContextMenu/Popup stromy nemusí
-    /// routovat až na okno — telemetrie je best-effort, přesnost tam neřešíme.
+    /// routovat až na okno - telemetrie je best-effort, přesnost tam neřešíme.
     /// </summary>
     internal static void Hook(Window window, string formId)
     {

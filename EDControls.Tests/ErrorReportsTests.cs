@@ -81,8 +81,6 @@ public class ErrorReportsTests : IDisposable
 
     private JsonObject Body(int index) => JsonNode.Parse(_handler.Bodies[index])!.AsObject();
 
-    // ---------- co se zahodí ----------
-
     [Fact]
     public void Report_Disabled_ReturnsNullAndSendsNothing()
     {
@@ -127,8 +125,6 @@ public class ErrorReportsTests : IDisposable
 
         AssertNothingSent();
     }
-
-    // ---------- deduplikace ----------
 
     [Fact]
     public void Report_FirstOccurrence_ReturnsRefIdAndSends()
@@ -180,8 +176,6 @@ public class ErrorReportsTests : IDisposable
         Assert.True(body["attachments"] is null || body["attachments"]!.AsArray().Count == 0);
     }
 
-    // ---------- fatální cesta ----------
-
     [Fact]
     public void ReportFatal_SendsSynchronouslyAndMarksFatal()
     {
@@ -202,8 +196,6 @@ public class ErrorReportsTests : IDisposable
 
         Assert.Equal(2, _handler.Count);
     }
-
-    // ---------- dobrovolné doplnění ----------
 
     [Fact]
     public void ReportFollowUp_SendsInfoRecordWithSameRefId()
@@ -226,8 +218,6 @@ public class ErrorReportsTests : IDisposable
 
         WaitForRequests(2);
     }
-
-    // ---------- kontext ----------
 
     [Fact]
     public void Report_WithoutEDServices_FallsBackToEdison2Source()

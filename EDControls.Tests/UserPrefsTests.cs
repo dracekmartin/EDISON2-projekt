@@ -8,7 +8,7 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Testy <see cref="CacheUserPrefsService"/> + <see cref="NullUserPrefsService"/>.
-/// MLRest mockujeme přes NSubstitute — testuje se kontrakt volání ne sítová komunikace.
+/// MLRest mockujeme přes NSubstitute - testuje se kontrakt volání ne sítová komunikace.
 /// </summary>
 public class UserPrefsTests
 {
@@ -18,8 +18,6 @@ public class UserPrefsTests
         return (new CacheUserPrefsService(mlRest), mlRest);
     }
 
-    // ─── NullUserPrefsService ────────────────────────────────────────────────
-
     [Fact]
     public async Task Null_LoadReturnsNull()
     {
@@ -27,8 +25,6 @@ public class UserPrefsTests
         var result = await svc.LoadAsync("EDControls.EDList", "TD.TemplatePicker");
         Assert.Null(result);
     }
-
-    // ─── CacheUserPrefsService — argument validation ─────────────────────────
 
     [Fact]
     public async Task Load_EmptyScope_Throws()
@@ -60,7 +56,7 @@ public class UserPrefsTests
             () => svc.SaveAsync("scope", "   ", JsonNode.Parse("{}")!));
     }
 
-    // Delete sdílí stejný ValidateArgs jako Load/Save — pin, ať refactor rozdělující
+    // Delete sdílí stejný ValidateArgs jako Load/Save - pin, ať refactor rozdělující
     // validaci na jednotlivé metody spadne.
     [Fact]
     public async Task Delete_EmptyScope_Throws()
@@ -75,8 +71,6 @@ public class UserPrefsTests
         var (svc, _) = Setup();
         await Assert.ThrowsAsync<ArgumentException>(() => svc.DeleteAsync("scope", "   "));
     }
-
-    // ─── CacheUserPrefsService — Caché komunikace ────────────────────────────
 
     [Fact]
     public async Task Load_PassesScopeAndKeyToMLRest()
@@ -187,7 +181,7 @@ public class UserPrefsTests
         ml.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>())
           .Throws(new InvalidOperationException("Caché down"));
 
-        // Nemělo by hodit — Save je fire-and-forget vůči errorům
+        // Nemělo by hodit - Save je fire-and-forget vůči errorům
         await svc.SaveAsync("scope", "key", JsonNode.Parse("{}")!);
     }
 
@@ -217,8 +211,6 @@ public class UserPrefsTests
 
         await svc.DeleteAsync("scope", "key");
     }
-
-    // ─── Complex JSON round-trip ─────────────────────────────────────────────
 
     [Fact]
     public async Task Save_ComplexNestedJson_SerializesCorrectly()

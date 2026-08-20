@@ -70,8 +70,6 @@ public class EDThemeProgressBarTests
         });
     }
 
-    // ---------- Helpers ----------
-
     private static ResourceDictionary Load(string uri) => new() { Source = new Uri(uri) };
 
     private static (Color Track, Color Indicator) RenderedBrushes(bool dark)

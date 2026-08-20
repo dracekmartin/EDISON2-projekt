@@ -4,7 +4,6 @@ namespace EDISONMAIN2.Tests;
 
 public class VerzeInfTests
 {
-    // ---------- ParseLast ----------
 
     [Fact]
     public void ParseLast_SingleKey_ReturnsValue()
@@ -36,8 +35,6 @@ public class VerzeInfTests
         Assert.Equal("", VerzeInf.ParseLast(""));
     }
 
-    // ---------- ParseValue ----------
-
     [Fact]
     public void ParseValue_ArbitraryKey_ReturnsValueOrEmpty()
     {
@@ -45,8 +42,6 @@ public class VerzeInfTests
         Assert.Equal("1", VerzeInf.ParseValue(content, VerzeInf.BlockKey));
         Assert.Equal("", VerzeInf.ParseValue(content, "TYPE"));
     }
-
-    // ---------- ReadVersion ----------
 
     [Fact]
     public void ReadVersion_MissingFile_ReturnsEmpty()
@@ -70,15 +65,13 @@ public class VerzeInfTests
         }
     }
 
-    // ---------- IsNewVersion ----------
-
     [Theory]
     [InlineData("20260601.0.0", "20260526.1.0", true)]   // novější datum
     [InlineData("20260526.1.0", "20260601.0.0", false)]  // starší datum
     [InlineData("20260526.1.0", "20260526.1.0", false)]  // stejné
     [InlineData("20260526.2", "20260526.1.5", true)]     // vyšší full segment rozhodne dřív než patch
     [InlineData("1.2.3", "1.2", true)]                   // nová má víc segmentů při shodě společných
-    [InlineData("1.2", "1.2.3", false)]                  // stará má víc segmentů — ne-newer
+    [InlineData("1.2", "1.2.3", false)]                  // stará má víc segmentů - ne-newer
     public void IsNewVersion_Cases(string newVer, string oldVer, bool expected)
     {
         Assert.Equal(expected, VerzeInf.IsNewVersion(newVer, oldVer));
@@ -91,8 +84,6 @@ public class VerzeInfTests
         Assert.False(VerzeInf.IsNewVersion("abc.0", "xyz.0"));
         Assert.True(VerzeInf.IsNewVersion("abc.1", "xyz.0"));
     }
-
-    // ---------- IsSameVersion ----------
 
     [Theory]
     [InlineData("20260526.1.0", "20260526.1.0", true)]

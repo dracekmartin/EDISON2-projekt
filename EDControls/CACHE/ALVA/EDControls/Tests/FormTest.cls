@@ -3,7 +3,7 @@ Include (%occInclude, EDInputForm)
 Class ALVA.EDControls.Tests.FormTest Extends ALVA.EDTesting.MLTestCase
 {
 
-/// %UnitTest pro ALVA.EDControls.EDInputForm.Form — round-trip WriteToOut/ReadFromIn,
+/// %UnitTest pro ALVA.EDControls.EDInputForm.Form - round-trip WriteToOut/ReadFromIn,
 /// Renumber (čísla polí napříč skupinami) a AddFieldToSpecificGroup (pozice vložení).
 
 /// Postaví form, WriteToOut, simuluje .NET round-trip (OUT→IN), ReadFromIn a ověří zachování.
@@ -17,7 +17,7 @@ Method TestWriteReadRoundTrip()
 
 	d form.WriteToOut()
 
-	// .NET by OUT poslal zpět jako IN — zkopíruj numerické i string subscripty.
+	// .NET by OUT poslal zpět jako IN - zkopíruj numerické i string subscripty.
 	s idx = ""
 	f { s idx = $o(^||ML("OUT", idx)) q:idx=""  s ^||ML("IN", idx) = ^||ML("OUT", idx) }
 	s ^||ML("IN", "trigger") = "BeforeSave"
@@ -77,7 +77,7 @@ Method TestAddFieldToSpecificGroupInsertsAfterGroupFields()
 }
 
 /// List field: listItems (pozice 13) se serializují přes $$$ListItemSep/$$$ListKeyValSep
-/// a round-trip je zparsuje zpět. Položka bez ~label dostane label = key (Form.cls:286).
+/// a round-trip je zparsuje zpět. Položka bez ~label dostane label = key.
 /// Toto je |/~ wire kontrakt sdílený s C# ParseItems + EDInputForm.inc.
 Method TestListItemsRoundTrip()
 {
@@ -100,7 +100,7 @@ Method TestListItemsRoundTrip()
 	do $$$AssertEquals($li(lf2.listItems.GetAt(2), 2), "B", "prázdný label -> label = key")
 }
 
-/// Decimal format (pozice 17) round-trip — dosud se testovalo jen min/max/unit.
+/// Decimal format (pozice 17) round-trip.
 Method TestDecimalFormatRoundTrip()
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
@@ -196,7 +196,7 @@ Method TestUnknownTriggerMatchesNothing()
 	do $$$AssertEquals(form.IsWholeFormValidation(), 0)
 }
 
-/// AddFieldToSpecificGroup s neexistujícím group key -> fallback append na konec (Form.cls:135).
+/// AddFieldToSpecificGroup s neexistujícím group key -> fallback append na konec.
 Method TestAddFieldToSpecificGroupUnknownGroupAppends()
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()

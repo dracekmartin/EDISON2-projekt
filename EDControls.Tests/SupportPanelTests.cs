@@ -27,8 +27,6 @@ public class SupportPanelTests
         return ml;
     }
 
-    // ---------- Veřejné URL ----------
-
     [Fact]
     public void PublicUrls_AreAbsoluteHttpsInMlineDomain()
     {
@@ -43,8 +41,6 @@ public class SupportPanelTests
             Assert.EndsWith("m-line.cz", uri.Host);
         });
     }
-
-    // ---------- Feedback URL ----------
 
     [Fact]
     public void FeedbackUrl_ContainsKeyAndEscapedParams()
@@ -61,7 +57,7 @@ public class SupportPanelTests
     [Fact]
     public void FeedbackUrl_EmptyIdentity_OmitsParams()
     {
-        // Pre-login / chybějící identita — widget se má načíst bez personalizace, ne s prázdnými parametry.
+        // Pre-login / chybějící identita - widget se má načíst bez personalizace, ne s prázdnými parametry.
         var url = SupportActions.BuildFeedbackUrl(null, "", "EDISONMAIN2", null);
 
         Assert.DoesNotContain("idfa=", url);
@@ -69,8 +65,6 @@ public class SupportPanelTests
         Assert.DoesNotContain("context=", url);
         Assert.Contains("&agenda=EDISONMAIN2", url);
     }
-
-    // ---------- Context ----------
 
     [Fact]
     public void Context_JoinsPartsWithPipe()
@@ -92,7 +86,7 @@ public class SupportPanelTests
     [Fact]
     public void Context_TitlePipeReplacedBySlash()
     {
-        // Svislítko je oddělovač polí — v titulku by rozbilo parsování na straně widgetu.
+        // Svislítko je oddělovač polí - v titulku by rozbilo parsování na straně widgetu.
         var ctx = SupportActions.BuildContext("Okno", "Firma | Agenda", null, null);
 
         Assert.Equal("form=Okno|title=Firma / Agenda", ctx);
@@ -105,8 +99,6 @@ public class SupportPanelTests
 
         Assert.Equal(255, ctx.Length);
     }
-
-    // ---------- Informace o verzi ----------
 
     [Fact]
     public void VersionInfo_WithMLRest_ListsSessionIdentity()
@@ -148,8 +140,6 @@ public class SupportPanelTests
         Assert.Contains("Verze: 1.0", info);
     }
 
-    // ---------- Geometrie vysouvání ----------
-
     private const double Tab = SupportPanelGeometry.TabWidth;
     private const double Card = SupportPanelGeometry.CardWidth;
 
@@ -176,7 +166,7 @@ public class SupportPanelTests
     [Fact]
     public void Geometry_RightEdgeStaysAnchoredWhileOpening()
     {
-        // Panel roste doleva — pravá hrana (Left+Width) musí zůstat na hraně klientské oblasti,
+        // Panel roste doleva - pravá hrana (Left+Width) musí zůstat na hraně klientské oblasti,
         // jinak by se úchyt při otevírání odsouval od okraje.
         foreach (var offset in new[] { 0d, 40d, 120d, Card })
         {
@@ -204,7 +194,7 @@ public class SupportPanelTests
     [Fact]
     public void Geometry_NeverOverhangsBelowClientArea()
     {
-        // Karta žije ve vlastním okně, takže by přečnívala mimo okno ownera — třeba přes
+        // Karta žije ve vlastním okně, takže by přečnívala mimo okno ownera - třeba přes
         // footer s tlačítky. Spodní hrana panelu musí zůstat v klientské oblasti.
         var p = SupportPanelGeometry.Compute(0, 100, 800, 200, 160, 0);
 
@@ -241,9 +231,8 @@ public class SupportPanelTests
         Assert.Equal(Tab + expectedVisibleCard, p.Width);
     }
 
-    // ---------- Napojení na okno ----------
     // Panel připojuje class handler na Window.Loaded (EDAppearance.Initialize); testuje se jeho
-    // rozhodnutí, ne event — zobrazovat okna v testech není potřeba.
+    // rozhodnutí, ne event - zobrazovat okna v testech není potřeba.
 
     [Fact]
     public void ShouldAttach_PlainWindow_True()

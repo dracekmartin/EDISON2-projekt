@@ -390,8 +390,6 @@ public class EDInputFormParsingTests
         Assert.Equal(0, count);
     }
 
-    // ─── Visibility tests ────────────────────────────────────────────────────
-
     [Theory]
     [InlineData("0", EItemVisibility.Visible)]
     [InlineData("1", EItemVisibility.Collapsed)]
@@ -486,8 +484,6 @@ public class EDInputFormParsingTests
         var field = new Field { Visibility = EItemVisibility.Visible };
         Assert.Equal(System.Windows.Visibility.Visible, field.EffectiveVisibility);
     }
-
-    // ─── HelpText tests ──────────────────────────────────────────────────────
 
     [Fact]
     public void ParseItems_ParsesFieldHelpText()
@@ -610,8 +606,6 @@ public class EDInputFormParsingTests
         Assert.Equal(System.Windows.Visibility.Collapsed, field.HelpTextVisibility);
     }
 
-    // ─── HelpTextMode testy ──────────────────────────────────────────────────
-
     [Fact]
     public void ParseHelpTextMode_Tooltip_ReturnsTooltip()
     {
@@ -666,8 +660,6 @@ public class EDInputFormParsingTests
         Assert.Equal("tooltip", EHelpTextMode.Tooltip.ToWire());
         Assert.Equal("column", EHelpTextMode.Column.ToWire());
     }
-
-    // ─── List field testy ─────────────────────────────────────────────────────
 
     [Fact]
     public void ParseItems_ParsesListField()
@@ -741,8 +733,6 @@ public class EDInputFormParsingTests
         Assert.Equal("N", f.ListItems[1].Key);
         Assert.Equal("Neaktivní", f.ListItems[1].Label);
     }
-
-    // ─── File field testy ─────────────────────────────────────────────────────
 
     [Fact]
     public void ParseItems_ParsesFileFieldWithFilter()
@@ -825,8 +815,6 @@ public class EDInputFormParsingTests
         Assert.Equal("$FOLDER", f.FileFilter);
     }
 
-    // ─── GetRequiredError tests ───────────────────────────────────────────────
-
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -859,8 +847,6 @@ public class EDInputFormParsingTests
         var field = new Field { Required = true, FieldType = EFieldType.Bool, Value = value };
         Assert.Null(field.GetRequiredError());
     }
-
-    // ─── ComputeSearchMatches tests (hledání podle pole i názvu sekce) ────────
 
     private static (List<Group> groups, List<Field> fields) BuildTwoGroupForm()
     {
@@ -938,8 +924,6 @@ public class EDInputFormParsingTests
         Assert.All(groups, g => Assert.True(g.IsFilteredBySearch));
     }
 
-    // ─── Nápověda klávesových zkratek ─────────────────────────────────────────
-
     [Fact]
     public void FormatShortcutsHelp_ListsEveryShortcut()
     {
@@ -963,8 +947,6 @@ public class EDInputFormParsingTests
         Assert.DoesNotContain("Shift+Enter", text);
         Assert.DoesNotContain("Esc", text);
     }
-
-    // ─── Min / Max / Format / Unit (pozice 15–18) ─────────────────────────────
 
     [Fact]
     public void ParseItems_ParsesMinMaxFormatUnit()
@@ -1003,13 +985,11 @@ public class EDInputFormParsingTests
         Assert.Equal("mm", f.Unit);
     }
 
-    // ─── ComboBox listItems (sdílená pozice 13 s List) ────────────────────────
-
     [Fact]
     public void ParseItems_ParsesComboBoxListItems()
     {
         var data = new CVar();
-        // Position 13 = listItems — ComboBox sdílí storage s List.
+        // Position 13 = listItems - ComboBox sdílí storage s List.
         data["1"] = new CList("FIELD", "1", "mesto", "Město", "COMBOBOX", "Praha", "0", "0",
             "", "1", "0", "", "Praha|Brno|Ostrava");
 
@@ -1098,9 +1078,8 @@ public class EDInputFormPlaceholderWireTests
     }
 
     /// <summary>
-    /// Po drátě jede **jen příznak**, ne seznam nabízených polí: ten zná pouze klient (ze schématu
-    /// agendy) a drží ho <c>EDInputForm.PlaceholderFields</c>. Kdyby se vezl v poli, server by ho
-    /// na zpáteční cestě přepsal prázdnem a tlačítko by po prvním kole nabízelo prázdno.
+    /// Po drátě jede jen příznak, ne seznam nabízených polí - ten zná jen klient
+    /// (<c>EDInputForm.PlaceholderFields</c>) a server by ho na zpáteční cestě přepsal prázdnem.
     /// </summary>
     [Fact]
     public void SeznamPoliPoDratuNejede()

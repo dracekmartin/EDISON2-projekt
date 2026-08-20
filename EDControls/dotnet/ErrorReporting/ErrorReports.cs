@@ -4,13 +4,10 @@ using EDControls.EDViewModel;
 namespace EDControls.ErrorReporting;
 
 /// <summary>
-/// Vstupní bod hlášení chyb: složí kontext, projde deduplikací, přiloží snímek okna
-/// a odešle. Volá se z <see cref="PopupDisplayer"/>, ne přímo z aplikací.
-/// <para>
-/// Hybridní režim: technické jádro odejde **automaticky** hned při chybě, dobrovolný popis
-/// okolností posílá uživatel z chybového dialogu jako navazující záznam se stejným
-/// referenčním číslem.
-/// </para>
+/// Vstupní bod hlášení chyb: složí kontext, projde deduplikací, přiloží snímek okna a odešle.
+/// Volá se z <see cref="PopupDisplayer"/>, ne přímo z aplikací. Hybridní režim: technické jádro
+/// odejde automaticky hned při chybě, dobrovolný popis okolností posílá uživatel z chybového
+/// dialogu jako navazující záznam se stejným referenčním číslem.
 /// </summary>
 public static class ErrorReports
 {
@@ -48,7 +45,7 @@ public static class ErrorReports
     }
 
     /// <summary>
-    /// Chyba mimo UI vlákno (neodchycená task výjimka). Bez dialogu a bez snímku okna —
+    /// Chyba mimo UI vlákno (neodchycená task výjimka). Bez dialogu a bez snímku okna -
     /// běží na cizím vlákně, kde by <see cref="WindowSnapshot"/> stejně nefungoval.
     /// </summary>
     public static void ReportBackground(Exception ex)
@@ -71,7 +68,7 @@ public static class ErrorReports
 
     /// <summary>
     /// Fatální chyba, po které proces končí (<c>AppDomain.UnhandledException</c>). Na rozdíl
-    /// od ostatních cest se odesílá **synchronně** s krátkým timeoutem — fire-and-forget by
+    /// od ostatních cest se odesílá **synchronně** s krátkým timeoutem - fire-and-forget by
     /// se nestihl, protože runtime proces vzápětí ukončí.
     /// </summary>
     public static void ReportFatal(Exception ex)
@@ -86,7 +83,7 @@ public static class ErrorReports
         }
         catch
         {
-            // Padáme tak jako tak — hlášení nesmí přidat druhou výjimku.
+            // Padáme tak jako tak - hlášení nesmí přidat druhou výjimku.
         }
     }
 

@@ -6,24 +6,18 @@ using Microsoft.Web.WebView2.Wpf;
 namespace EDISONMAIN2.MiniApps;
 
 /// <summary>
-/// WebView2 respektující user velikost fontu přes <see cref="WebView2.ZoomFactor"/> —
+/// WebView2 respektující user velikost fontu přes <see cref="WebView2.ZoomFactor"/> -
 /// HTML obsah je mimo dosah WPF font tokenů. Rodina fontu se nepropaguje
 /// (CSS injektáž do cizí stránky je křehká).
-/// V dark modu injektuje inverzní CSS filtr — widgety podpora.m-line.cz jsou natvrdo světlé
+/// V dark modu injektuje inverzní CSS filtr - widgety podpora.m-line.cz jsou natvrdo světlé
 /// (bg-white, žádný prefers-color-scheme), takže tmavou variantu musí vyrobit klient.
 /// </summary>
-/// <remarks>
-/// HWND <see cref="WebView2"/>, ne <see cref="WebView2CompositionControl"/> — composition
-/// nepřežije reparent do plovoucího okna AvalonDocku (drag/reorder tabu → crash na
-/// Direct3D11CaptureFramePool) a tahá 23 MB WinRT projekci (Microsoft.Windows.SDK.NET).
-/// Cena HWND: kreslí přes WPF (airspace) — WPF závoj dimu ho nepokryje, takže widgety
-/// zůstávají při čekání viditelné (nezatmavené) i interaktivní. Záměr: read-only obsah
-/// podpora.m-line.cz, uživatel si je při dimu může číst; kartu „Akce probíhá" nad nimi
-/// kreslí owned okno (viz EDActionInProgress).
-/// </remarks>
+/// <remarks>HWND <see cref="WebView2"/>, ne <see cref="WebView2CompositionControl"/> - composition
+/// nepřežije reparent do plovoucího okna AvalonDocku (crash na Direct3D11CaptureFramePool).
+/// Cena airspace: WPF závoj dimu HWND nepokryje, kartu „Akce probíhá" nad ním kreslí owned okno.</remarks>
 internal sealed class FontZoomWebView : WebView2, IDisposable
 {
-    // Základní text widgetů podpora.m-line.cz je 14 CSS px (Tailwind `text-sm` na <body>) —
+    // Základní text widgetů podpora.m-line.cz je 14 CSS px (Tailwind `text-sm` na <body>) -
     // zoom ho přepočítá na aktuální WPF Body velikost, aby text seděl se zbytkem aplikace.
     private const double WidgetBaseFontPx = 14;
 
@@ -43,7 +37,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
     private const string RemoveDarkJs =
         "(function(){var s=document.getElementById('ed-dark');if(s)s.remove();})();";
 
-    // Id pre-create skriptu (AddScriptToExecuteOnDocumentCreated) — null = neregistrován.
+    // Id pre-create skriptu (AddScriptToExecuteOnDocumentCreated) - null = neregistrován.
     private string? _darkScriptId;
 
     // URL k navigaci až po inicializaci Core + registraci dark skriptu (viz Navigate).
@@ -63,7 +57,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         CoreWebView2InitializationCompleted += OnCoreWebView2Ready;
     }
 
-    /// <summary>Pozadí pod HTML obsahem — v dark tmavé (EDTheme.Bg.Base), jinak by při
+    /// <summary>Pozadí pod HTML obsahem - v dark tmavé (EDTheme.Bg.Base), jinak by při
     /// načítání widgetu probleskovala bílá. Čte živý token pro aktuálně aplikované téma;
     /// fallback literály drží per-téma význam i bez WPF Application (testy).</summary>
     internal static System.Drawing.Color BackgroundFor(AppTheme theme)
@@ -95,7 +89,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
     private async void OnCoreWebView2Ready(object? sender, CoreWebView2InitializationCompletedEventArgs e)
     {
         if (!e.IsSuccess) return;
-        // NavigationCompleted je pojistka — první dokument může vzniknout dřív, než se
+        // NavigationCompleted je pojistka - první dokument může vzniknout dřív, než se
         // pre-create skript stihne zaregistrovat (JS je idempotentní, dvojí běh nevadí).
         CoreWebView2.NavigationCompleted += OnNavigationCompleted;
         ApplyPreferredColorScheme();
@@ -111,7 +105,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
     {
         if (ThemeService.Current == AppTheme.Dark)
             await TryExecuteAsync(ApplyDarkJs);
-        // Odkryj až teď — obsah je vykreslený a (v dark) invertovaný, takže žádné bílé bliknutí.
+        // Odkryj až teď - obsah je vykreslený a (v dark) invertovaný, takže žádné bílé bliknutí.
         Visibility = System.Windows.Visibility.Visible;
     }
 
@@ -120,7 +114,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         DefaultBackgroundColor = BackgroundFor(ThemeService.Current);
         ApplyPreferredColorScheme();
         await SyncDarkScriptAsync();
-        // Přepnutí za běhu — už načtený dokument se přestyluje hned, bez reloadu.
+        // Přepnutí za běhu - už načtený dokument se přestyluje hned, bez reloadu.
         await TryExecuteAsync(ThemeService.Current == AppTheme.Dark ? ApplyDarkJs : RemoveDarkJs);
     }
 
@@ -136,7 +130,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
             : CoreWebView2PreferredColorScheme.Light;
     }
 
-    /// <summary>Drží pre-create skript v souladu s theme — nové navigace se vykreslí rovnou tmavě.</summary>
+    /// <summary>Drží pre-create skript v souladu s theme - nové navigace se vykreslí rovnou tmavě.</summary>
     private async Task SyncDarkScriptAsync()
     {
         var core = CoreWebView2;
@@ -153,7 +147,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         }
         catch (Exception)
         {
-            // Zavíraný widget / ukončený browser proces — příští theme toggle to dožene.
+            // Zavíraný widget / ukončený browser proces - příští theme toggle to dožene.
         }
     }
 
@@ -168,7 +162,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         }
     }
 
-    // Base Dispose() není virtuální — re-deklarace IDisposable přesměruje i interface
+    // Base Dispose() není virtuální - re-deklarace IDisposable přesměruje i interface
     // dispatch (SimpleMiniAppViewModel.OnClosed) na tuhle verzi.
     public new void Dispose()
     {

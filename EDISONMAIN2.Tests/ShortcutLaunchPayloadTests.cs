@@ -35,7 +35,7 @@ public class ShortcutLaunchPayloadTests
     [Fact]
     public void Encode_KeepsReportIdVerbatim()
     {
-        // Nález z M0: legacy převádí ID sestavy přes Conversion.Val, takže nečíselná hodnota
+        // Legacy převádí ID sestavy přes Conversion.Val, takže nečíselná hodnota
         // tiše spadne na 0 a tisk mlčky neudělá nic. ID musí projít beze změny až do payloadu.
         var payload = ShortcutLaunchPayloadCodec.Decode(ShortcutLaunchPayloadCodec.Encode(Report("1003")));
 

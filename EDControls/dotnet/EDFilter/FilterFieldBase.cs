@@ -5,11 +5,10 @@ using System.Windows.Controls;
 namespace EDControls.EDFilter;
 
 /// <summary>
-/// Abstraktní základ filter polí v <see cref="EDFilter"/>. Konkrétní typy (FilterCombo, příště
-/// FilterText/FilterDate/...) implementují <see cref="GetValue"/> a vystřelují
-/// <see cref="ValueChanged"/> event při změně hodnoty.
+/// Abstraktní základ filter polí v <see cref="EDFilter"/>: potomek implementuje
+/// <see cref="GetValue"/> a při změně vystřelí <see cref="ValueChanged"/>.
 ///
-/// Konvence: <see cref="Key"/> odpovídá Caché IN filter sub-subscriptu —
+/// Konvence: <see cref="Key"/> odpovídá Caché IN filter sub-subscriptu -
 /// <c>^||ML("IN","filter",Key) = GetValue()</c>. Prázdná hodnota → klíč se neposílá.
 /// </summary>
 public abstract class FilterFieldBase : UserControl

@@ -10,9 +10,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
     /// Per-user × IDFa stav stromu modulů (oblíbené + používanost) přes <see cref="IUserPrefsService"/>.
-    /// Schémata blobů a registr scope viz <c>EDControls/DOCS/05-userdata-scopes.md</c> (scope "EDISONMAIN2").
-    /// IdFa izolace je automatická — server klíčuje z sys kontextu MLRest, instance se používá per session.
-    /// Load i Save jsou async (nesmí blokovat UI thread — session rebuild jich dělá pět);
+    /// Scope userdata blobů = "EDISONMAIN2".
+    /// IdFa izolace je automatická - server klíčuje z sys kontextu MLRest, instance se používá per session.
+    /// Load i Save jsou async (nesmí blokovat UI thread - session rebuild jich dělá pět);
     /// chyby se logují a degradují na prázdno, persistence nesmí shodit UI.
     /// </summary>
     public class ModulePreferencesService
@@ -108,6 +108,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         }
     }
 
-    /// <summary>Záznam používanosti modulu — počet spuštění + čas posledního (UTC). Defaults pro backward-compat.</summary>
+    /// <summary>Záznam používanosti modulu - počet spuštění + čas posledního (UTC). Defaults pro backward-compat.</summary>
     public record UsageEntry(int Count = 0, DateTime LastUsedUtc = default);
 }

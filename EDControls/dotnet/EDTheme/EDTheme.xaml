@@ -2,44 +2,32 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
-    <!--
-        EDTheme — sdílené design tokens pro EDControls knihovnu a konzumující aplikace.
-        Konzumuj přes DynamicResource (umožňuje runtime swap, např. dark mode).
-
-        Naming: EDTheme.<Group>.<Variant> (např. EDTheme.Border.Light, EDTheme.Text.Primary).
-        Brushes mají sufix bez .Color; raw Color s .Color sufixem (pro místa kde stačí Color).
-
-        Konzumace v aplikacích:
-          <Application.Resources>
-            <ResourceDictionary.MergedDictionaries>
-              <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDTheme/EDTheme.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-          </Application.Resources>
-    -->
+    <!-- Design tokens. Konzumuj přes DynamicResource - runtime swap (dark mode) jinak neprojde.
+         Naming EDTheme.<Group>.<Variant>; brush bez sufixu, raw Color se sufixem .Color. -->
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Borders
+         COLORS - Borders
          ═══════════════════════════════════════════════════════════════════ -->
     <!-- Světlé okraje panelů, sekcí, oddělovače mezi prvky -->
     <Color x:Key="EDTheme.Border.Light.Color">#FFE5E7EB</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Light" Color="{StaticResource EDTheme.Border.Light.Color}"/>
 
-    <!-- Středně silné okraje — stránka v designeru, dividery -->
+    <!-- Středně silné okraje - stránka v designeru, dividery -->
     <Color x:Key="EDTheme.Border.Medium.Color">#FFD1D5DB</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Medium" Color="{StaticResource EDTheme.Border.Medium.Color}"/>
 
-    <!-- Silné okraje — toolbar separátory, větší kontrast -->
+    <!-- Silné okraje - toolbar separátory, větší kontrast -->
     <Color x:Key="EDTheme.Border.Strong.Color">#FF9CA3AF</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Strong" Color="{StaticResource EDTheme.Border.Strong.Color}"/>
 
-    <!-- Maximální kontrast — rámeček plovoucích karet (EDActionInProgress) -->
+    <!-- Maximální kontrast - rámeček plovoucích karet (EDActionInProgress) -->
     <Color x:Key="EDTheme.Border.Contrast.Color">#FF6B7280</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Contrast" Color="{StaticResource EDTheme.Border.Contrast.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Backgrounds
+         COLORS - Backgrounds
          ═══════════════════════════════════════════════════════════════════ -->
-    <!-- Povrch — bílé plochy: inputy, karty, dropdowny, popup pozadí (v dark režimu tmavší vrstva) -->
+    <!-- Povrch - bílé plochy: inputy, karty, dropdowny, popup pozadí (v dark režimu tmavší vrstva) -->
     <Color x:Key="EDTheme.Bg.Surface.Color">#FFFFFFFF</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Surface" Color="{StaticResource EDTheme.Bg.Surface.Color}"/>
 
@@ -47,7 +35,7 @@
     <Color x:Key="EDTheme.Bg.Base.Color">#FFFFFFFF</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Base" Color="{StaticResource EDTheme.Bg.Base.Color}"/>
 
-    <!-- Zapuštěná chrome vrstva pod obsahem (levý panel launcheru) — obsah na ní leží
+    <!-- Zapuštěná chrome vrstva pod obsahem (levý panel launcheru) - obsah na ní leží
          jako karta z Bg.Surface. V light je Bg.Base == Bg.Surface, takže bez tohoto
          tokenu by panel s obsahem splynul; v dark elevaci nese už Base vs. Surface. -->
     <Color x:Key="EDTheme.Bg.Sunken.Color">#FFF3F4F6</Color>
@@ -81,37 +69,36 @@
     <Color x:Key="EDTheme.Bg.Canvas.Color">#FFE4E4E4</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Canvas" Color="{StaticResource EDTheme.Bg.Canvas.Color}"/>
 
-    <!-- Info banner background — soft bluish-grey pro dialog hlavičky vysvětlující účel dialogu -->
+    <!-- Hlavičky vysvětlující účel dialogu -->
     <Color x:Key="EDTheme.Bg.InfoBanner.Color">#FFF0F4F8</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.InfoBanner" Color="{StaticResource EDTheme.Bg.InfoBanner.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Text
+         COLORS - Text
          ═══════════════════════════════════════════════════════════════════ -->
-    <!-- Hlavní text (#333) — body, hlavní popisky -->
+    <!-- Hlavní text (#333) - body, hlavní popisky -->
     <Color x:Key="EDTheme.Text.Primary.Color">#FF1F2937</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Primary" Color="{StaticResource EDTheme.Text.Primary.Color}"/>
 
-    <!-- Sekundární text (#555) — popisky polí, méně důležitý obsah -->
+    <!-- Sekundární text (#555) - popisky polí, méně důležitý obsah -->
     <Color x:Key="EDTheme.Text.Secondary.Color">#FF4B5563</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Secondary" Color="{StaticResource EDTheme.Text.Secondary.Color}"/>
 
-    <!-- Tlumený text (#888) — tipy, hints, sekundární info -->
+    <!-- Tlumený text (#888) - tipy, hints, sekundární info -->
     <Color x:Key="EDTheme.Text.Muted.Color">#FF6B7280</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Muted" Color="{StaticResource EDTheme.Text.Muted.Color}"/>
 
-    <!-- Header text (#444) — nadpisy panelů, sekcí -->
+    <!-- Header text (#444) - nadpisy panelů, sekcí -->
     <Color x:Key="EDTheme.Text.Header.Color">#FF374151</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Header" Color="{StaticResource EDTheme.Text.Header.Color}"/>
 
-    <!-- Disabled text -->
     <Color x:Key="EDTheme.Text.Disabled.Color">#FFAAAAAA</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Disabled" Color="{StaticResource EDTheme.Text.Disabled.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Field states (needitovatelná / readonly pole)
+         COLORS - Field states (needitovatelná / readonly pole)
          Laděno per-motiv: v light jemně recessed, v dark agresivnější „vypnuto"
-         (tmavší pozadí + výrazně ztlumený text) — jinak by v dark splynulo se surface.
+         (tmavší pozadí + výrazně ztlumený text) - jinak by v dark splynulo se surface.
          ═══════════════════════════════════════════════════════════════════ -->
     <Color x:Key="EDTheme.Field.ReadOnly.Bg.Color">#FFEBEDF0</Color>
     <SolidColorBrush x:Key="EDTheme.Field.ReadOnly.Bg" Color="{StaticResource EDTheme.Field.ReadOnly.Bg.Color}"/>
@@ -119,70 +106,69 @@
     <SolidColorBrush x:Key="EDTheme.Field.ReadOnly.Fg" Color="{StaticResource EDTheme.Field.ReadOnly.Fg.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Accent: Blue (primary action color v TD i EDList selekci)
+         COLORS - Accent: Blue (primary action color v TD i EDList selekci)
          ═══════════════════════════════════════════════════════════════════ -->
-    <!-- Primary accent — focus, active section border, selection -->
+    <!-- Focus, rámeček aktivní sekce, výběr -->
     <Color x:Key="EDTheme.Accent.Blue.Color">#FF2563EB</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.Blue" Color="{StaticResource EDTheme.Accent.Blue.Color}"/>
 
-    <!-- Tmavá modrá — text na světle modrém pozadí (chip texty) -->
+    <!-- Tmavá modrá - text na světle modrém pozadí (chip texty) -->
     <Color x:Key="EDTheme.Accent.BlueDark.Color">#FF0D47A1</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueDark" Color="{StaticResource EDTheme.Accent.BlueDark.Color}"/>
 
-    <!-- Světlé pozadí — instance chip, info badges -->
+    <!-- Světlé pozadí - instance chip, info badges -->
     <Color x:Key="EDTheme.Accent.BlueBg.Color">#FFEFF6FF</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBg" Color="{StaticResource EDTheme.Accent.BlueBg.Color}"/>
 
-    <!-- Selected section background — vybraná sekce v listu -->
+    <!-- Vybraná sekce v listu -->
     <Color x:Key="EDTheme.Accent.BlueSelected.Color">#FFDBEAFE</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueSelected" Color="{StaticResource EDTheme.Accent.BlueSelected.Color}"/>
 
-    <!-- Soft accent border — pro non-active stavy s náznakem accent barvy (např. dynamic section item) -->
+    <!-- Non-active stavy s náznakem accent barvy (např. dynamic section item) -->
     <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FF93C5FD</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
 
-    <!-- Header bar pozadí (EDComponentToolbar) — brandová tmavě modrá s bílým textem.
+    <!-- Header bar pozadí (EDComponentToolbar) - brandová tmavě modrá s bílým textem.
          Záměrně se v dark režimu NEpřepisuje (stabilní barevný pruh v obou režimech). -->
     <Color x:Key="EDTheme.Accent.Header.Color">#FF0D47A1</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.Header" Color="{StaticResource EDTheme.Accent.Header.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Focus (klávesový focus ring, EDTheme.FocusVisual)
+         COLORS - Focus (klávesový focus ring, EDTheme.FocusVisual)
          Vlastní tokeny, ne Accent.Blue: ring potřebuje v dark vyšší jasnost než accent
          a Accent.Blue už nese selekci, takže by se ladění obou pralo.
          ═══════════════════════════════════════════════════════════════════ -->
     <Color x:Key="EDTheme.Focus.Ring.Color">#FF2563EB</Color>
     <SolidColorBrush x:Key="EDTheme.Focus.Ring" Color="{StaticResource EDTheme.Focus.Ring.Color}"/>
 
-    <!-- Kontrastní halo pod ringem — bez něj ring zmizí na brandovém pruhu
+    <!-- Kontrastní halo pod ringem - bez něj ring zmizí na brandovém pruhu
          EDTheme.Accent.Header (#0D47A1, v dark se nepřepisuje), kde sedí tlačítka
          EDComponentToolbaru. Dvoubarevný ring je vidět na libovolném pozadí. -->
     <Color x:Key="EDTheme.Focus.RingContrast.Color">#FFFFFFFF</Color>
     <SolidColorBrush x:Key="EDTheme.Focus.RingContrast" Color="{StaticResource EDTheme.Focus.RingContrast.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Accent: Green (agenda status, success)
+         COLORS - Accent: Green (agenda status, success)
          ═══════════════════════════════════════════════════════════════════ -->
     <!-- Agenda chip text (tmavě zelená pro kontrast) -->
     <Color x:Key="EDTheme.Accent.GreenDark.Color">#FF1B5E20</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.GreenDark" Color="{StaticResource EDTheme.Accent.GreenDark.Color}"/>
 
-    <!-- Agenda chip background -->
     <Color x:Key="EDTheme.Accent.GreenBg.Color">#FFE8F5E9</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.GreenBg" Color="{StaticResource EDTheme.Accent.GreenBg.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Brand (M-line firemní accent)
+         COLORS - Brand (M-line firemní accent)
          ═══════════════════════════════════════════════════════════════════ -->
-    <!-- M-line hnědá — Molecule ikona, EDFooter accent -->
+    <!-- M-line hnědá - Molecule ikona, EDFooter accent -->
     <Color x:Key="EDTheme.Brand.Color">#FFA07840</Color>
     <SolidColorBrush x:Key="EDTheme.Brand" Color="{StaticResource EDTheme.Brand.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Support panel (EDSupportPanel)
+         COLORS - Support panel (EDSupportPanel)
          Hodnoty přebírají legacy SideMenu, aby panel vypadal stejně jako
          v EDISONu 1. Accent (úchyt, titulek) je záměrně jiná zelená než
-         Portal (tlačítko) — tak to má legacy.
+         Portal (tlačítko) - tak to má legacy.
          ═══════════════════════════════════════════════════════════════════ -->
     <Color x:Key="EDTheme.Support.Accent.Color">#FF16A34A</Color>
     <SolidColorBrush x:Key="EDTheme.Support.Accent" Color="{StaticResource EDTheme.Support.Accent.Color}"/>
@@ -197,9 +183,9 @@
     <SolidColorBrush x:Key="EDTheme.Support.Version" Color="{StaticResource EDTheme.Support.Version.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Semantic (status indikátory)
+         COLORS - Semantic (status indikátory)
          ═══════════════════════════════════════════════════════════════════ -->
-    <!-- Danger / error / delete -->
+    <!-- Chyby, mazání, destruktivní akce -->
     <Color x:Key="EDTheme.Semantic.Danger.Color">#FFC62828</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Danger" Color="{StaticResource EDTheme.Semantic.Danger.Color}"/>
 
@@ -207,20 +193,20 @@
     <Color x:Key="EDTheme.Semantic.Warning.Color">#FFFF8C00</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Warning" Color="{StaticResource EDTheme.Semantic.Warning.Color}"/>
 
-    <!-- Success — pozitivní feedback -->
+    <!-- Pozitivní feedback -->
     <Color x:Key="EDTheme.Semantic.Success.Color">#FF2E7D32</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Success" Color="{StaticResource EDTheme.Semantic.Success.Color}"/>
 
-    <!-- Condition badge — fialová pro VisibilityExpression (TD specific) -->
+    <!-- Condition badge - fialová pro VisibilityExpression (TD specific) -->
     <Color x:Key="EDTheme.Semantic.Condition.Color">#FF7B1FA2</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Condition" Color="{StaticResource EDTheme.Semantic.Condition.Color}"/>
 
-    <!-- Favorite — zlatá hvězda oblíbených modulů -->
+    <!-- Favorite - zlatá hvězda oblíbených modulů -->
     <Color x:Key="EDTheme.Semantic.Favorite.Color">#FFFFC107</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Favorite" Color="{StaticResource EDTheme.Semantic.Favorite.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — On-accent (obsah na brandovém header pruhu)
+         COLORS - On-accent (obsah na brandovém header pruhu)
          Header (EDTheme.Accent.Header) je stabilní v obou režimech, proto se tyto
          tokeny v EDThemeDark.xaml NEpřepisují (bílá zůstává bílá).
          ═══════════════════════════════════════════════════════════════════ -->
@@ -233,7 +219,7 @@
     <SolidColorBrush x:Key="EDTheme.OnAccent.PressedOverlay" Color="#44FFFFFF"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         COLORS — Module diagnostika (launchovatelnost modulu)
+         COLORS - Module diagnostika (launchovatelnost modulu)
          Proudí jako hex string do HexToBrush (datový Color kanál stromu).
          Hodnoty shodné v light i dark (dokumentovaná konvence, kryto testy).
          ═══════════════════════════════════════════════════════════════════ -->
@@ -241,51 +227,51 @@
     <Color x:Key="EDTheme.Module.Broken.Color">#FFFF0000</Color>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         TYPOGRAPHY — Font family + sizes
+         TYPOGRAPHY - Font family + sizes
          FontFamily je single token (uživatel může runtime override; viz FontService
          v EDControls/dotnet/UserFonts). FontSize tokeny jsou samostatné per UI rola
          (Small/Caption/...) a FontService je škáluje proporcionálně k user-zvolenému
-         Body size. Hodnoty jsou v px (WPF FontSize), user prefs v pt — konverze
+         Body size. Hodnoty jsou v px (WPF FontSize), user prefs v pt - konverze
          výhradně ve FontService.
          ═══════════════════════════════════════════════════════════════════ -->
     <FontFamily x:Key="EDTheme.FontFamily">Segoe UI</FontFamily>
 
-    <!-- Monospace — funkční požadavek (zarovnání hex hodnot, stack trace), NE user-volitelná
+    <!-- Monospace - funkční požadavek (zarovnání hex hodnot, stack trace), NE user-volitelná
          rodina: FontService přepisuje jen přesný klíč EDTheme.FontFamily, tenhle zůstane. -->
     <FontFamily x:Key="EDTheme.FontFamily.Mono">Consolas</FontFamily>
 
-    <!-- Drobné popisky — ruler ticks, badge texts, group labels v toolbaru -->
+    <!-- Drobné popisky - ruler ticks, badge texts, group labels v toolbaru -->
     <sys:Double x:Key="EDTheme.FontSize.Small">12</sys:Double>
 
-    <!-- Caption — tipy, hints, sekundární popisky -->
+    <!-- Caption - tipy, hints, sekundární popisky -->
     <sys:Double x:Key="EDTheme.FontSize.Caption">13</sys:Double>
 
-    <!-- Body — defaultní velikost textu UI. Legacy EDISON standardizoval Segoe UI
+    <!-- Body - defaultní velikost textu UI. Legacy EDISON standardizoval Segoe UI
          9,75 pt = 13 px (ALVA.CORE MlineFont_SegoeUI_9_75); WPF kreslí text opticky
          drobněji než GDI+, proto 14 px, ne holá parita. Celý ladder je od Body. -->
     <sys:Double x:Key="EDTheme.FontSize.Body">14</sys:Double>
 
-    <!-- Header — nadpisy panelů, dialog titulky -->
+    <!-- Header - nadpisy panelů, dialog titulky -->
     <sys:Double x:Key="EDTheme.FontSize.Header">15</sys:Double>
 
-    <!-- Title — prominentní titulek: header pruh komponent (EDComponentToolbar title
+    <!-- Title - prominentní titulek: header pruh komponent (EDComponentToolbar title
          + akční glyphy), karta „Akce probíhá" -->
     <sys:Double x:Key="EDTheme.FontSize.Title">16</sys:Double>
 
-    <!-- Large — zvýraznění (výjimečně) -->
+    <!-- Large - zvýraznění (výjimečně) -->
     <sys:Double x:Key="EDTheme.FontSize.Large">17</sys:Double>
 
-    <!-- Display — hero wordmark login okna (mimo ladder běžného UI textu) -->
+    <!-- Display - hero wordmark login okna (mimo ladder běžného UI textu) -->
     <sys:Double x:Key="EDTheme.FontSize.Display">26</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         ICON SIZE — rozměr ikon v toolbarech a menu. FontService škáluje
+         ICON SIZE - rozměr ikon v toolbarech a menu. FontService škáluje
          proporcionálně k user Body size (stejný poměr jako FontSize.*).
          ═══════════════════════════════════════════════════════════════════ -->
     <sys:Double x:Key="EDTheme.IconSize.Default">16</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         SPACING — Padding / Margin tokens
+         SPACING - Padding / Margin tokens
          (Thickness pro Padding/Margin atributy. Pro symetrické hodnoty.)
          ═══════════════════════════════════════════════════════════════════ -->
     <Thickness x:Key="EDTheme.Spacing.XS">2</Thickness>

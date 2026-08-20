@@ -17,9 +17,7 @@ public readonly record struct ThrottleDecision(ThrottleAction Action, int Repeat
 /// Deduplikace hlášení. Bez ní je automatické odesílání zahlcení vlastní podpory: chyba
 /// v <c>OnPaint</c> nebo v timeru se umí opakovat stokrát za minutu a suppression list
 /// vědomě nemáme, takže projde i běžný provozní stav typu <c>Lock exist failed!</c>.
-/// <para>
-/// Čisté jádro - čas se předává zvenčí, aby šlo testovat bez čekání.
-/// </para>
+/// Čas se předává zvenčí, aby šlo testovat bez čekání.
 /// </summary>
 public sealed class ErrorThrottle
 {
