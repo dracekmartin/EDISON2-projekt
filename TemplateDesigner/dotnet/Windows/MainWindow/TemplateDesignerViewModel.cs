@@ -1412,6 +1412,16 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>Loads a template that was generated externally (e.g. AI assistant).</summary>
+    public async Task LoadGeneratedTemplateAsync(Template template)
+    {
+        LoadGeneratedTemplate(template);
+        // Hodnoty nastavení sestavy, které vznikly při importu z předlohy, se musí projevit
+        // i v ovladačích - jinak se tiskne něco jiného, než co je v nastavení vidět (viz
+        // ApplyPersistedPrintParamsAsync). Import do 19. 8. touhle cestou vůbec neprošel.
+        await RefreshFieldsList();
+        await ApplyPersistedPrintParamsAsync();
+    }
+
     public void LoadGeneratedTemplate(Template template)
     {
         State.CurrentTemplate = template;

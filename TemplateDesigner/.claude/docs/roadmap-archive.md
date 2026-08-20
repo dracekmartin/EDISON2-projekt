@@ -3,6 +3,163 @@
 > Vše pod touto čarou je uzavřené: ✅ = implementováno, ⛔ = vědomě se dělat nebude.
 > Horní část roadmapy obsahuje jen to, co je potřeba dělat.
 
+## 2026-08-19 ✅ - `L1`: linkový JŘ se poprvé měří proti starému modulu
+
+Detail → changelog 2026-08-19 (10). Linkové agendy neměly **ani jeden test** (2 000 řádků) a
+porovnání se starým modulem existovalo jen jako pomocný nástroj mimo repo. Bez sítě by další vlny
+(nastavení, parametry, symboly, rozřezání) jely naslepo, proto byla `L1` bezpodmínečně první.
+
+**Co je v repu:**
+
+- **Porovnání se starým modulem** - volá legacy engine `mkPLinWin` (ne překladovou vrstvu
+  `TISKJR/Data`, ta měří formát, ne data) i naši agendu nad toutéž linkou a srovnává **pole po poli**:
+  pořadí spojů, názvy zastávek, km, zóny, sloupec MHD, časy včetně značek, legendu. Čtyři linky tří
+  firem, **~9 500 porovnaných hodnot**.
+- **Zlatý odtisk pro linkový tvar dat** - vlastní digest (`SPOJE`/`SKUPINY_DNU` místo `ODJEZDY`),
+  navíc počítá časové buňky, aby ztráta celého sloupce nezůstala jen v md5.
+- **Smoke test obou agend** (AD i MHD) + kontrola, že schéma popisuje tytéž kolekce, jaké data posílají.
+- **Typová sada linek** sestavená měřením 48 linek pěti firem, s pojistkou proti vyhnití fixture.
+
+**Rozhodnutí, která platí dál:**
+
+- **Layout se s legacy neporovnává.** Starému modulu se dá záměrně obrovská tisková plocha, takže
+  vyrobí jeden blok na směr; porovnává se **obsah dat**. Rozřezání na stránky je naše vrstva (`L5`).
+- **Tři druhy rozdílu, jen jeden je pád.** *Odchylka* = chceme se lišit (s důvodem), *dluh* = zatím
+  se lišíme omylem (s vlnou, ve které zmizí), *rozdíl* = nikdo o něm nerozhodl → pád. Bez toho by
+  síť zabetonovala starý modul a vylepšení z helpdesku by začínala bojem s vlastními testy
+  (požadavek Jan 19. 8.).
+- **Deklarovaná výjimka nesmí zůstat mrtvá** - když ji na celé sadě nekryje ani jeden rozdíl, test
+  ji nahlásí ke smazání. Jinak by pod ní jednou prošla skutečná chyba.
+
+**Co první běh našel:**
+
+- ✅ **Opraveno hned:** navazující spoj se v legendě označoval značkou pro vyčkání (značka se brala
+  z dat, kde je u obou druhů stejná; význam ji přitom určuje jednoznačně).
+- ⏳ **Dluh do `L2`:** pořadí sloupců spojů se u dvou linek liší od starého tisku. ⚠️ Dřívější
+  vysvětlení „jsou to spoje se shodným časem, obsah 1:1" **neplatí** - ověřeno, že ty dva spoje
+  vyjíždějí z různých zastávek a jeden na druhý čeká.
+- ⏳ **Dluh do `L2`:** generická věta u atributů spoje má proti starému modulu navíc sloveso.
+- ⏳ **Dluh do `L3`:** tvar názvu zastávky (v seznamu i v textech návazností).
+
+**Vedlejší nález pro `L4`:** číselník 66 dopravních značek je opsatelný přímo ze zdroje starého
+modulu (`GSId^JRapiLinPrtWin`), nemusí vznikat měřením. Dosavadní podklad měl čísla z překladové
+vrstvy klienta, která proti enginu neplatí.
+
+---
+
+## 2026-08-19 ✅ - Distribuce systémových šablon kanálem (hotovo a vyzkoušeno naživo)
+
+Detail → changelog 2026-08-19 (5)-(8). Systémové (M-line) šablony byly zabalené v `.exe`, takže nová
+šablona znamenala **vydat program**. Nově je doručuje kanál z úložiště na helpdesku (rozhraní
+postavil kolega) a přehled šablon je nabídne ke stažení.
+
+**Jak to funguje:** kanál **vyměnil zdroj** dosavadního řetězu - cíl (větev MLINE v zákaznické
+databázi), přehled i chování zůstaly. V přehledu se nad seznamem objeví „K dispozici je 1 nová
+šablona od M-line" s tlačítkem Stáhnout, jen když je co stáhnout; stažení doplní šablony **celé
+firmě**. Bez sítě nebo bez klíče se nabídka neukáže a přehled funguje jako dřív.
+
+**Rozhodnutí, která platí dál:**
+
+- **U zákazníka jen čtení** (úložiště → klient); nahrávat smíme jen my ve vývoji, proto v aplikaci
+  není žádná cesta k zápisu a klíč v ní je čtecí.
+- **Identitu šablony určuje GUID uvnitř JSONu**, ne identifikátor v úložišti - kdo publikuje, musí
+  vnitřní GUID zachovat, jinak u zákazníka vznikne druhá šablona vedle první.
+- **Stav „co už máme" cestuje v šabloně** (`channelOrigin`), takže patří databázi firmy, ne počítači.
+- **`.exe` zůstává jako záchrana pro první spuštění** (instalace bez sítě, zavřený firewall);
+  aktualizace chodí kanálem a seed z programu už nepřepisuje, co doručil kanál.
+
+**Ověřeno naživo (19. 8.):** nahrání (HTTP 201) i aktualizace (HTTP 200, verze 2) · seznam a stažení
+vrací obsah bajt v bajt · v databázi sedí `channelOrigin` · nabídka, stažení i aktualizace projdou
+z UI · po aktualizaci dorazil opravdu nový obsah (zmizela hláška o chybějícím fontu).
+
+**Provozní postup pro další šablony:** autorovat v návrháři → vyexportovat do repa
+(`SystemTemplates/*.json`, tam je verzované a hlídané drift testy) → publikovat do kanálu **z toho
+souboru**, ne kopírováním JSONu rukou. Publikační skript (`tools/`) a „seed jen doplní, co chybí"
+se vědomě **nedělaly** - zatím se publikuje ručně a je to v pořádku, dokud šablon není víc
+(rozhodnutí Jan 19. 8.).
+
+⚠️ **Dvě věci, které je potřeba mít na paměti při publikování:**
+
+- Kanál doručuje **i zákazníkům se starším programem**; šablona uložená v novějším formátu se u nich
+  odmítne otevřít (aplikace to hlídá). Publikovat tedy až ve chvíli, kdy je funkce ve vydané verzi.
+- **Zákaznických kopií se aktualizace nikdy nedotkne** (kopie má vlastní identifikátor). Oprava
+  systémové šablony se k rozkopírovaným verzím nedostane - ty se musí opravit ručně, nebo si je
+  uživatel založí znovu z aktualizované systémové.
+
+## 2026-08-19 ⏸️ - AI integrace: sekce uzavřena, pomocník ověřen
+
+Sekce **AI integrace - v pozadí** je z roadmapy pryč (rozhodnutí Jan 19. 8.). Důvod: co z ní bylo
+akční, je hotové, a zbytek jsou nápady bez poptávky.
+
+- **AI průvodce ověřen** 19. 8. proklikáním sady otázek (nové featury, práce uvnitř tabulky,
+  složené dotazy přes dvě obrazovky, chytáky na „to zatím neumíme"). Odpovídá správně, nevymýšlí
+  si cesty a hlásí, co neumíme. Znalostní bázi průvodce před tím dohnal changelog 2026-08-19 (4);
+  katalog vlastností se generuje z prvků, ručně psaný úvod hlídá ban list v testech.
+- **Evaluační sada** se dělat nebude - hodnotí se proklikáním, ne skriptem (viz i rozhodnutí
+  u importu). Otázky, na kterých se to zkoušelo, jsou v historii konverzace, ne v repu.
+- ⛔ **MCP server** (nástroje nad ViewModelem) a **aktivní agent, který mění šablonu** - neděláme.
+  MCP dává smysl, až bude něco, co má sahat na návrhář zvenčí; aktivní agent jde proti principu
+  **copilot, ne autopilot**. Otevřít znovu, až o to někdo požádá.
+- Odložené nápady bez poptávky: onboarding průvodce, návrhy sloupců podle schématu, migrace starých
+  Caché sestav, template linting v CI.
+
+Kontrakt pro AI zůstává stabilní (JSON šablona + DataSchema), takže rozšíření kdykoli bez breaking
+changes - to byl vždycky hlavní argument, proč to nespěchá.
+
+**Provozní kontroly k vydání** (v roadmapě viselo do 19. 8., pak odstraněno jako neaktuální):
+ostrá zkouška cesty přes EDISONAI/mlweb **bez lokálního klíče** u první firmy · potvrzení evidence
+spotřeby u autora mlwebu · zveřejnění generátoru šablon z popisu (dnes skrytý). Vytáhnout, až se
+budou AI funkce reálně vydávat zákazníkovi.
+
+## 2026-08-19 ⏸️ - Import PDF: sekce uzavřena, otevřené body čekají na moduly
+
+Detail → changelog 2026-08-18 (6)-(18) a 2026-08-19 (1)-(3). Sekce **Import PDF - doladění** je
+z roadmapy pryč celá (rozhodnutí Jan 19. 8.): pro zastávkové jízdní řády je import hotový
+a **zbylé body nečekají na nás, ale na moduly, které zatím neexistují**.
+
+**Co je hotové (18.-19. 8.):**
+
+- `B42a` drobné vady (prázdný sloupec, popisky, varianty jízdních dob, zděděná agenda)
+- `B42c` vzhled prvků z předlohy - seznam zastávek, mřížka odjezdů i legenda; otázka pro model
+  i zápis odpovědi se **generují z vlastností prvku**, u každé vlastnosti je příznak
+  „na tohle se smí ptát" (pravidlo: *nepřítomnost nic nedokazuje*)
+- `B42d` nastavení sestavy z předlohy se ukládá tam, odkud ho čte tisk, a hned se projeví
+  v ovladačích; ukládá se jen to, co model poznal (past #12843)
+- `B42b` hláška „co si dodělej" ⛔ **nebude** - import je rychlý start, ne hotová šablona, takže
+  nejde rozlišit, co v ní chybí záměrně; podrobný protokol zůstal jako vývojářská pomůcka za Debugem
+- jednotlivé opravy: font s čárkou v názvu rodiny · čáry místo zamčeného rastru · jízdní řád se bez
+  AI raději nenaimportuje · roj samotných čísel a záhlaví tabulky nekončí jako volné texty · měření
+  výšky řádku a písma záhlaví jako obecná pravidla · prázdný rámeček pro logo z geometrie předlohy
+
+**Co zůstalo otevřené a proč to čeká:**
+
+- **rozpoznání tabulky z mřížky čar** (obecný import) - týká se nejízdněřádových předloh; faktury
+  ani podobné sestavy zatím neexistují, takže by se návrh dělal bez předlohy. ⚠️ Zároveň je to
+  jediná dnešní cena za zrušení slévání čar do rastru: u složité nejízdněřádové předlohy vznikne
+  pár desítek samostatných čar. Návrat zpátky je jeden řádek (`GraphicsMergeMode` v dialogu importu).
+- **ladění na širší sadě jízdních řádů** (jiná města, SK, netypické legendy) - není to vývoj, ale
+  zkoušení; z něj vyplyne doladění příznaků u vlastností
+- **linkové a knižní JŘ se neimportují** - režim rozpoznávání se zapíná jen u agend zastávkového JŘ
+
+**Kdy to znovu otevřít:** až vznikne linkový/knižní JŘ nebo faktury. Import je na to připravený -
+nový prvek se do něj zapojí tím, že se u jeho vlastností označí, které jdou z obrázku poznat;
+do samotného importu se nesahá.
+
+## 2026-08-19 ✅ - `B42d`: nastavení sestavy z předlohy se uplatní
+
+Detail → changelog 2026-08-19 (2). Co model z předlohy pozná o nastavení tisku (šipky směru, rozsah
+hodin), se zapisovalo vedle místa, ze kterého to čte tisk - vývěska bez šipek se stejně vytiskla se
+šipkami. Nově:
+
+- hodnoty jdou tam, odkud je čte tisk, a otevření importované šablony je aplikuje i do ovladačů
+  (jinak by se tisklo jiné nastavení, než jaké je vidět)
+- ukládá se **jen to, co model opravdu poznal** - hodnoty v šabloně mají přednost před nastavením
+  uživatele pro agendu, takže celá sada by ho tiše přebila (past z #12843)
+- otázka na volby se skládá **z popisu agendy** (popisek, typ, nabídka, podmínka), ne ze tří
+  napevno vypsaných voleb psaných pro MHD - platí tedy i pro AD s patnácti
+
+Zamčeno testy na pravidlo „ukládej jen poznané volby".
+
 ## 2026-08-18 ✅ - `B42a`: drobné vady importu z předlohy
 
 Detail → changelog 2026-08-18 (6). První dávka z průchodu importem PDF - jen to, co je jasná vada

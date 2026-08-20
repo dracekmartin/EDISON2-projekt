@@ -1272,13 +1272,13 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce…", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
         new FloatPropertyDescriptor
         {
-            Label = "Rozdělit na více oddílů", Group = "Zastávky",
+            FromImage = true, Label = "Rozdělit na více oddílů", Group = "Zastávky",
             Get = () => PartCount, Set = v => PartCount = (int)MathF.Round(v),
             Min = 1, Max = MaxPartCount, Format = "0"
         },
         new FloatPropertyDescriptor
         {
-            Label = "Mezera mezi oddíly", Group = "Zastávky",
+            FromImage = true, Label = "Mezera mezi oddíly", Group = "Zastávky",
             Get = () => PartGap, Set = v => PartGap = v,
             Min = 0, Max = 50, Unit = "mm", Format = "0.##"
         },
@@ -1286,7 +1286,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
-        new StringPropertyDescriptor { Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
+        new StringPropertyDescriptor { FromImage = true, Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
         new BoolPropertyDescriptor  { Label = "Atributy",          Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
         new BoolPropertyDescriptor  { Label = "Přestupy (vlak/autobus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
         new EnumPropertyDescriptor
@@ -1305,7 +1305,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor  { Label = "Jízda pod minutu jako <1", Group = "Zastávky", Get = () => ShowSubMinuteTravel, Set = v => ShowSubMinuteTravel = v },
         new EnumPropertyDescriptor
         {
-            Label = "Pozice značek", Group = "Zastávky",
+            FromImage = true, Label = "Pozice značek", Group = "Zastávky",
             Get = () => MarkersPosition,
             Set = v => MarkersPosition = (StopMarkersSide)v,
             Options =
@@ -1319,7 +1319,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // vlastnost prvku přebíjí. Vzhled šipky (barva, tloušťka, hrot, styl) do šablony patří.
         new EnumPropertyDescriptor
         {
-            Label = "Pozice šipky", Group = "Směr jízdy",
+            FromImage = true, Label = "Pozice šipky", Group = "Směr jízdy",
             Get = () => DirectionArrowPosition,
             Set = v => DirectionArrowPosition = (DirectionArrowSide)v,
             // „u okraje elementu" v labelu záměrně - šipka se kreslí na hraně elementu, ne u sloupců;
@@ -1330,22 +1330,22 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 ("Vlevo (u levého okraje elementu)",   (object)DirectionArrowSide.Left),
             ]
         },
-        new ColorPropertyDescriptor { Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },
         new FloatPropertyDescriptor
         {
-            Label = "Tloušťka šipky", Group = "Směr jízdy",
+            FromImage = true, Label = "Tloušťka šipky", Group = "Směr jízdy",
             Get = () => DirectionArrowWidth, Set = v => DirectionArrowWidth = v,
             Min = 0.05f, Max = 5, Unit = "mm", Format = "0.##"
         },
         new FloatPropertyDescriptor
         {
-            Label = "Velikost hrotu", Group = "Směr jízdy",
+            FromImage = true, Label = "Velikost hrotu", Group = "Směr jízdy",
             Get = () => DirectionArrowHeadSize, Set = v => DirectionArrowHeadSize = v,
             Min = 0.5f, Max = 20, Unit = "mm", Format = "0.##"
         },
         new EnumPropertyDescriptor
         {
-            Label = "Hrot šipky", Group = "Směr jízdy",
+            FromImage = true, Label = "Hrot šipky", Group = "Směr jízdy",
             Get = () => DirectionArrowHead,
             Set = v => DirectionArrowHead = (ArrowHeadShape)v,
             Options =
@@ -1357,7 +1357,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         },
         new EnumPropertyDescriptor
         {
-            Label = "Styl čáry šipky", Group = "Směr jízdy",
+            FromImage = true, Label = "Styl čáry šipky", Group = "Směr jízdy",
             Get = () => DirectionArrowLineStyle,
             Set = v => DirectionArrowLineStyle = (LineStyle)v,
             Options =
@@ -1368,16 +1368,16 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ]
         },
 
-        new BoolPropertyDescriptor  { Label = "Záhlaví sloupců",      Group = "Záhlaví",    Get = () => ShowHeader,            Set = v => ShowHeader = v },
+        new BoolPropertyDescriptor  { FromImage = true, Label = "Záhlaví sloupců",      Group = "Záhlaví",    Get = () => ShowHeader,            Set = v => ShowHeader = v },
 
-        new BoolPropertyDescriptor  { Label = "Podtržení aktuální",  Group = "Zvýraznění", Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
-        new BoolPropertyDescriptor  { Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
-        new ColorPropertyDescriptor { Label = "Barva textu aktuální", Group = "Zvýraznění", Get = () => CurrentStopTextColor ?? "", Set = v => CurrentStopTextColor = string.IsNullOrWhiteSpace(v) ? null : v },
+        new BoolPropertyDescriptor  { FromImage = true, Label = "Podtržení aktuální",  Group = "Zvýraznění", Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
+        new BoolPropertyDescriptor  { FromImage = true, Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Barva textu aktuální", Group = "Zvýraznění", Get = () => CurrentStopTextColor ?? "", Set = v => CurrentStopTextColor = string.IsNullOrWhiteSpace(v) ? null : v },
         new FloatPropertyDescriptor { Label = "Velikost aktuální",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
-        new ColorPropertyDescriptor { Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         // „Projeté zastávky" (zapnutí) tu záměrně není - řídí ji parametr sestavy
         // TISK_PROJETYCH_ZAST. Barva a čas u projetých jsou vzhled, ty do šablony patří.
-        new ColorPropertyDescriptor { Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
         new EnumPropertyDescriptor
         {
             Label = "Čas u projetých", Group = "Zvýraznění",

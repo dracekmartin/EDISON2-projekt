@@ -1,5 +1,210 @@
 # Changelog
 
+## 2026-08-19 (10) - 🕸️ linkový JŘ se poprvé měří proti starému modulu
+
+Linkové agendy neměly do dneška **ani jeden test** (2 000 řádků kódu) a porovnání se starým modulem
+existovalo jen jako pomocný nástroj mimo repo, takže ho nikdo nespustil. Vlna `L1` to staví do repa.
+
+**Co vzniklo.** Porovnání volá starý engine (`mkPLinWin`) i naši agendu nad toutéž linkou a srovnává
+je **pole po poli**: pořadí spojů, názvy zastávek, kilometry, zóny, sloupec MHD, časy v buňkách včetně
+značek a legendu poznámek. Běží na čtyřech linkách tří firem, dohromady **~9 500 porovnaných hodnot**.
+K tomu zlatý odtisk pro linkový tvar dat a smoke test obou agend (AD i MHD).
+
+**Síť nezabetonovává starý modul.** Rozdíl může být trojího druhu a každý znamená něco jiného:
+*odchylka* (chceme se lišit, s důvodem - třeba proto, aby šla návaznost v šabloně stylovat),
+*dluh* (nechceme se lišit, ale zatím se lišíme; má přiřazenou vlnu, ve které zmizí) a *rozdíl*
+(o kterém nikdo nerozhodl) - a jen ten je pád. Bez toho rozdělení by každé vylepšení podle
+požadavků zákazníků začínalo bojem s vlastními testy.
+
+**První běh rovnou našel dvě chyby:**
+
+- **Navazující spoj se v legendě označoval značkou pro vyčkání.** Značku jsme brali z dat, kde je
+  u obou druhů návaznosti stejná; význam ji přitom určuje jednoznačně. **Opraveno** - navazuje má
+  nově vlastní značku, jak to má i starý tisk.
+- **Pořadí sloupců spojů se u některých linek liší od starého tisku** (dvě dvojice na lince
+  Karlovarského dopravního podniku). Netýká se to obsahu - časy sedí do jednoho - ale uživatel
+  uvidí sloupce v jiném pořadí. Zavedeno jako dluh do další vlny; dřívější vysvětlení „jsou to jen
+  spoje se shodným časem" **neplatí**, ty dva spoje vyjíždějí z různých zastávek.
+
+Cestou se ukázalo, že číselník 66 dopravních značek je opsatelný přímo ze zdroje starého modulu -
+pro chystaný symbolový font tedy nemusí vznikat měřením.
+
+Ověřeno: Caché 122/122, .NET 1121/1121, build 0 chyb. Test si sám hlídá, že něco reálně změřil,
+takže zelená neznamená „přeskočeno".
+
+## 2026-08-19 (9) - 🧹 import: pryč cesta, která slévala grafiku do obrázku
+
+Slévání čar do jednoho obrázku na pozadí se 18. 8. přestalo používat, ale kód pro něj v importu
+zůstal - včetně kreslení rastru a tří rozhodovacích větví. Nikdo ho nezapínal; byl to jen kus, který
+by příště někdo četl s dojmem, že se používá (analýza stavu 19. 8.).
+
+Odstraněn celý režim slučování grafiky: `PdfToTemplateConverter` **620 → 405 řádků**, z dialogu
+importu zmizela mrtvá volba. Chování se nemění - každá čára, obdélník i obrázek předlohy je vlastní
+prvek šablony, čáry a obdélníky se automaticky seskupí.
+
+Zrušený test hlídal, že je *výchozí* volba „neslévat". Záruka je teď silnější: taková cesta v kódu
+neexistuje.
+
+Ověřeno: build 0 chyb, .NET 1121/1121.
+
+## 2026-08-19 (8) - 🕒 „změněno" u systémových šablon konečně znamená změnu
+
+V přehledu šablon měly **všechny systémové šablony čas změny „před dvěma minutami"**, i když se
+jich nikdo nedotkl (nález Jan 19. 8.). Nebyla to náhoda: seed z programu je **přepisoval při každém
+spuštění**, takže sloupec ukazoval čas posledního startu, ne změnu obsahu - a nešlo tedy poznat,
+co se doopravdy měnilo.
+
+Nově se zapisuje **jen když se liší obsah**. Do porovnání se nepočítají časy uložení ani verze
+formátu, protože to jsou razítka, ne obsah.
+
+Cestou se ukázalo, proč to nešlo udělat naivně: **`Serialize` při každém volání přepíše čas změny
+na „teď"**, takže porovnáním dvou serializací by rozdíl vycházel vždycky. Přidán tvar bez razítkování,
+používaný jen k porovnání.
+
+Ověřeno: build 0 chyb, .NET 1122/1122 (+4 na rozhodnutí „co je změna obsahu").
+
+## 2026-08-19 (7) - 🔤 systémové šablony rozesílaly font „Arial," s čárkou
+
+Při kontrole databáze po prvním stažení kanálem se ukázalo, že **naše vlastní systémové šablony**
+mají na 13 místech `fontFamily: "Arial,"` - zbytek po chybě importu z předlohy, opravené 18. 8.
+(šablony z ní vznikly). Každý, kdo si takovou šablonu otevřel, dostal hlášku o chybějícím fontu
+a tisklo se náhradní písmo.
+
+Opraveno v obou zastávkových šablonách (AD 7×, MHD 6×); linková byla čistá. Opravená AD šablona
+je zároveň nahraná do kanálu jako verze 2 - posloužila jako první ostrá zkouška aktualizace.
+
+Ověřeno: build 0 chyb, .NET 1118/1118.
+
+## 2026-08-19 (6) - 🚚 kanál zapojen naživo: klíč, obsah odpovědi, skloňování
+
+Zkouška s reálným klíčem (Jan 19. 8.) vytáhla tři vady, které by jinak vypadaly jako „kanál nic
+nenabízí":
+
+- **Klíč z lokálního nastavení se zahazoval.** Lokální konfigurace se slučuje **vyjmenovaně** (Caché
+  a AI) a nový oddíl se do slučování nedostal - klíč byl v souboru, ale ne v aplikaci. Nová sekce
+  konfigurace tam patří vždycky; hlídá to test.
+- **Obsah šablony se v odpovědi jmenuje `data`**, ne `content` - a leží uvnitř obálky, která má taky
+  `data`. Stahování by tiše vracelo prázdno.
+- **Skloňování**: „K dispozici je 1 nových šablon" → nově „1 nová šablona / 3 nové šablony /
+  7 nových šablon", se slovesem podle celku.
+
+Navíc: klient kanálu dostává nastavení **předané**, ne ze statického stavu. Test „bez klíče nic
+nevrací" jinak platil podle toho, jestli v procesu někdo načetl konfiguraci s klíčem - tedy podle
+pořadí testů, ne podle kódu.
+
+Ověřeno naživo proti helpdesku: nahrání šablony (HTTP 201), seznam i stažení vrací **obsah bajt
+v bajt shodný** se souborem v repu. Build 0 chyb, .NET 1118/1118 (+13).
+
+## 2026-08-19 (5) - 🚚 systémové šablony se doručují kanálem z helpdesku
+
+Systémové (M-line) šablony byly zabalené v `.exe`, takže **nová šablona znamenala vydat program**.
+Nově je doručuje kanál z úložiště na helpdesku a přehled šablon je nabídne ke stažení.
+
+**Jak to vypadá pro uživatele:** v přehledu (Ctrl+O) se nad seznamem objeví řádek *„K dispozici je
+N nových šablon od M-line"* s tlačítkem **Stáhnout** - jen když je opravdu co stáhnout. Stažení
+doplní šablony **celé firmě naráz**; chovají se dál jako systémové (read-only, Ctrl+S z nich udělá
+kopii do firmy) a vlastní upravené kopie zůstávají nedotčené, protože jsou to samostatné záznamy.
+Není to modální otázka a nic neblokuje: bez sítě nebo bez klíče se nabídka prostě neukáže.
+
+**Směr toku:** u zákazníka **jen čtení** (úložiště → klient). Nahrávat a měnit smíme jen my ve
+vývoji, proto v aplikaci žádná cesta k zápisu není a klíč v nastavení je čtecí.
+
+**Tři věci, na kterých to stojí:**
+
+- **Identitu šablony určuje GUID uvnitř JSONu**, ne identifikátor v úložišti - podle něj se zapisuje,
+  takže opakované stažení nic nezduplikuje. Kdo šablonu nahrává, musí vnitřní GUID zachovat.
+- **Stav „co už máme" cestuje v šabloně**, takže patří databázi firmy, ne počítači uživatele - jinak
+  by si každý uživatel stahoval totéž znovu.
+- **Seed z `.exe` nepřepíše, co doručil kanál.** Dosud se MLINE větev přepisovala při každém startu;
+  bez téhle pojistky by se stažená šablona po restartu tiše vrátila na verzi z programu.
+
+Ověřeno: build 0 chyb, .NET 1105/1105 (+5). **Nevyzkoušeno naživo** - chybí klíč do úložiště; do té
+doby je kanál mlčky vypnutý a aplikace se chová jako dřív.
+
+## 2026-08-19 (4) - 🤖 AI průvodce dohnal změny: sloučené buňky, rohy, fonty, práce v tabulce
+
+Průvodce tvrdil, že **neumíme sloučit buňky** (umíme od 17. 8.) a že **neumíme zaoblené rohy**
+(má je dnes každý prvek, pole „Rohy" a „Velikost rohu" u rámečku). To je nejdražší druh chyby
+v nápovědě: uživatel, kterému průvodce řekne „to neumíme", tu funkci přestane hledat.
+
+Dál se doplnilo:
+
+- **práce uvnitř pevné tabulky** - nejmíň objevitelná část aplikace (dovnitř Alt+klikem nebo F2,
+  panel vlastností patří vybrané buňce, sloučení a vlastnosti řádku pod pravým tlačítkem, šířky
+  tažením vnitřní hranice, `{` vyvolá nabídku polí). Průvodce o ní nevěděl vůbec.
+- **fonty** - nabídka jsou rodiny nainstalované v počítači (ne „vestavěné"), font si uživatel může
+  doinstalovat do Windows, a když šablona chce font, který na počítači není, aplikace to hlásí.
+  Vložit soubor s fontem do šablony nejde - to zůstává mezi „zatím neumíme".
+- **generátor šablon z popisu** je u zákazníka skrytý, průvodce ho přestal nabízet jako cestu.
+
+Katalog vlastností prvků se generuje z prvků samotných, takže nedriftuje; hlídaný je nově i ručně
+psaný úvod - ban list drží, že se do „zatím neumíme" nevrátí featura, kterou jsme dodělali.
+
+Ověřeno: build 0 chyb, .NET 1100/1100 (+6).
+
+## 2026-08-19 (3) - 📥 import se ptá jen na to, co jde z předlohy potvrdit (`B42c` dokončeno)
+
+Otázka na vzhled prvků posílala modelu **všechny** jejich vlastnosti (přes sedmdesát) a spoléhala
+na to, že si nejisté sám odpustí. Nově má každá vlastnost **u své definice** příznak, jestli se na
+ni import smí ptát.
+
+**Rozhodovací pravidlo: nepřítomnost nic nedokazuje.** Že na vývěsce nejsou značky přestupů, může
+znamenat vypnutou volbu i linku bez přestupů - to z jedné předlohy nerozlišíš a špatný odhad se
+vytiskne. Ptáme se proto na strany, počty a barvy (strana šipky, značky před názvem zastávky nebo
+za ním, rozdělení seznamu do oddílů, počet sloupců legendy, střídání řádků, čáry), ne na zapnutí
+featur závislých na datech.
+
+**Rozměry a písma příznak nemají záměrně** - ty se z PDF měří přesně, takže ptát se na ně modelu
+by výsledek jen zhoršilo.
+
+Příznak sedí **u definice vlastnosti**, ne ve zvlášť vedeném seznamu: jinak by se to s prvky
+rozešlo, což je přesně důvod, proč import zamrzl v červenci. Nová vlastnost prvku se tím rozhoduje
+při vzniku a mlčky se do otázky nedostane.
+
+Protokol (vývojářský) naopak ukazuje **všechny** odchylky včetně změřených hodnot - podle nich se
+kontroluje, jestli import měří správně.
+
+Ověřeno: build 0 chyb, .NET 1094/1094 (+8 na hranici „na tohle se ptáme × na tohle ne").
+
+## 2026-08-19 (2) - 📥 nastavení sestavy z předlohy se uplatní, vzhled se čte u všech prvků JŘ (`B42c`/`B42d`)
+
+**`B42d`:** co model z předlohy pozná o nastavení tisku (jestli jsou u zastávek šipky směru, v jakém
+rozsahu hodin je mřížka), se dosud zapsalo **vedle místa, ze kterého se to při tisku čte** - vývěska
+bez šipek se tedy stejně vytiskla se šipkami. Nově se hodnoty ukládají tam, kam patří, a otevření
+importované šablony projde toutéž cestou jako otevření z databáze, takže se změna hned projeví
+i v ovladačích nastavení (jinak by se tisklo něco jiného, než co je vidět).
+
+Ukládá se **jen to, co model opravdu poznal** (rozhodnutí Jan 19. 8.). Hodnoty v šabloně mají přednost
+před tím, co si uživatel nastavil pro agendu - kdyby import uložil celou sadu, začala by šablona
+přebíjet nastavení uživatele (past z #12843). Volbu, kterou agenda nemá, import zahodí.
+
+Otázka na volby se navíc **skládá z popisu agendy** (popisek, typ, nabídka, podmínka platnosti)
+místo tří napevno vypsaných. Platí tedy i pro zastávkový JŘ z AD, který má voleb kolem patnácti -
+dosud se ho import ptal na tři a psané byly pro MHD.
+
+**`B42c`:** vzhled z předlohy se čte nejen u seznamu zastávek, ale i u **mřížky odjezdů a legendy
+poznámek** - otázka i zápis se generují z prvku, takže to jsou další prvky bez další mechaniky.
+Do zadání přibylo pravidlo: hodnotu, která je na obrázku **napsaná** (symbol v legendě, nadpis),
+má model přečíst, ne dosadit podobný znak.
+
+Ověřeno: build 0 chyb, .NET 1086/1086 (+4 na pravidlo „ukládej jen poznané volby").
+
+## 2026-08-19 - 📥 po importu se nic nehlásí, protokol je nástroj pro vývoj
+
+Hláška po importu („co se z předlohy nastavilo, co se nerozpoznalo") **skončila** - rozhodnutí Jan
+19. 8. Stála na předpokladu, že víme, co má být hotovo, jenže **import je rychlý start, ne dokončená
+šablona**: aby taková hláška dávala smysl, musel by import rozlišit, co v šabloně chybí záměrně
+a co omylem. Výpis by měl čtyřicet položek a uživateli by z něj nic použitelného nevyplynulo.
+
+Podrobný protokol vedle PDF zůstává, ale **jen se zaškrtnutým Debugem** - stejně jako ostatní ladicí
+soubory importu. Je to nástroj na porovnání dvou importů při vývoji, ne informace pro zákazníka;
+navíc se tím přestane zakládat soubor vedle uživatelova PDF.
+
+Chyby, které uživatel vědět **musí** (nepodařilo se zavolat AI, jízdní řád nelze rozpoznat), hlásí
+dál chybová hláška - ty se nemění.
+
+Ověřeno: build 0 chyb, .NET 1082/1082.
+
 ## 2026-08-18 (18) - 📥 rámeček pro logo jen v záhlaví, protokol jen o skutečných změnách
 
 Rozpoznávání prázdných rámečků z předlohy vzalo i **box pod legendou poznámek** - v předloze

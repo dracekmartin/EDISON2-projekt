@@ -83,11 +83,29 @@ s daty z agendy → PDF.
 - Kompletní nastavení: Enter nebo dvojklik na element → dialog; u tabulkových
   elementů má dialog záložku/tlačítko 'Sloupce' (pořadí, šířky, viditelnost,
   per-sloupec styl písma a barev).
+- Zaoblené nebo zkosené rohy: nastavení prvku → skupina rámečku → 'Rohy' + 'Velikost rohu'
+  (platí pro každý prvek, nejen pro obdélník).
 - Kopírování stylu mezi elementy: Ctrl+Shift+C / Ctrl+Shift+V.
 - Hromadná úprava: vybrat víc elementů (rubber band / Ctrl+klik) → Enter → dialog
   společných vlastností.
 - Podmíněné zvýraznění řádků tabulky: dialog tabulky → 'Zvýraznění řádků' → pravidla
   s výrazem nad daty řádku (např. {CENA} > 1000 → barva pozadí).
+
+### Chci pracovat uvnitř pevné tabulky
+- Rozměr (počet sloupců a řádků) se zadává rovnou při vkládání tabulky.
+- Dovnitř: Alt+klik do buňky, nebo F2, nebo pravý klik → 'Vyplnit tabulku'. Ven Esc.
+  Dvojklik zůstává na nastavení prvku, stejně jako u ostatních prvků.
+- Uvnitř: psaní přepíše buňku, F2 upraví stávající obsah, Tab/Enter posunou, šipky chodí
+  po buňkách, Delete vymaže obsah (ne prvek), Ctrl+B/I/U formátují buňku i během psaní.
+- Výběr: tažení přes buňky = obdélníková oblast, Shift+šipky rozšíří, Ctrl+A vybere celou
+  tabulku. Schránka pracuje s buňkami ve tvaru čitelném Excelem; jedna hodnota vyplní
+  označenou oblast.
+- Panel vlastností i lišta patří uvnitř tabulky VYBRANÉ BUŇCE; nastavení celé tabulky je
+  přes tlačítko 'Nastavení celé tabulky' (nebo Esc ven). Vlastnosti buňky i v okně: Alt+Enter.
+- Pravý klik: 'Sloučit / Rozdělit buňky' (vodorovně) a 'Vlastnosti řádku' (podmínka
+  viditelnosti řádku + pozadí).
+- Šířky sloupců a výšky řádků: tažením vnitřní hranice; vnější hrana mění velikost prvku.
+- Datové pole do buňky: napiš '{' a vyber z nabídky (Enter/Tab doplní i koncovou závorku).
 
 ### Chci spravovat šablony
 - Otevřít z databáze: Ctrl+O → přehled šablon (sloupce Agenda + Varianta, filtr,
@@ -123,14 +141,22 @@ s daty z agendy → PDF.
 - F5 - obnovit data z databáze; F1 - nápověda; Esc - zrušit probíhající akci
 
 ## Menu Nástroje
-Změnit agendu, Šablony v databázi (správce), AI Asistent šablon (vygeneruje šablonu
-z popisu), Import PDF (existující PDF → šablona, volitelně s AI), AI průvodce (tento chat).
+Změnit agendu, Šablony v databázi (správce), Import PDF (z existujícího PDF vznikne
+editovatelná šablona - u jízdních řádů rozpozná strukturu AI), AI průvodce (tento chat).
+(Generátor šablon z popisu je zatím skrytý, nenabízej ho.)
+
+## Písmo
+- Nabídka fontů = rodiny nainstalované v tomhle počítači (+ pár vestavěných). Font, který
+  si uživatel do Windows nainstaluje, se v nabídce objeví.
+- Když šablona chce font, který na počítači není, aplikace to řekne (status bar po otevření
+  a hláška po uložení PDF) a vykreslí místo něj náhradu. Šablony se sdílejí přes databázi,
+  takže táž šablona může u kolegy vypadat jinak - proto to upozornění.
+- Vložit soubor s fontem do šablony NEJDE; font musí být nainstalovaný.
 
 ## Co aplikace ZATÍM neumí (odpovídej 'zatím neumíme')
-Sloučené buňky tabulky (merge / colspan / rowspan), Excel export, odeslání PDF e-mailem
-přímo z aplikace, brožura/duplex řazení stránek při imposici, zaoblené rohy rámečků
-elementů (samostatný obdélník zaoblení má), fonty nahrané uživatelem (k dispozici jsou
-vestavěné rodiny).";
+Excel export, odeslání PDF e-mailem přímo z aplikace, brožura/duplex řazení stránek při
+imposici, vložení vlastního souboru s fontem do šablony, svislé sloučení buněk (vodorovné
+umí), import starých šablon z EDISONu.";
 
     // ─── Pokyny pro model (jak má odpovídat) ──────────────────────────────────
 

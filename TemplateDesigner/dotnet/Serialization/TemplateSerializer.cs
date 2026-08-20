@@ -25,6 +25,14 @@ public static class TemplateSerializer
         return JsonSerializer.Serialize(template, Options);
     }
 
+    /// <summary>
+    /// Tvar šablony <b>bez razítkování</b> - pro porovnání dvou šablon. <see cref="Serialize"/> při
+    /// každém volání přepíše čas změny na „teď", takže se jím dvě šablony nikdy nerovnají (a seed
+    /// pak přepisoval systémové šablony při každém startu).
+    /// </summary>
+    internal static string SerializeForCompare(Template template) =>
+        JsonSerializer.Serialize(template, Options);
+
     /// <summary>Razítko při uložení: čas změny + aktuální verze formátu (uložením se šablona
     /// zapisuje v aktuálním schématu, ne v tom, ze kterého byla načtena).</summary>
     private static void StampForSave(Template template)

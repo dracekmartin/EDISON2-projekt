@@ -41,14 +41,14 @@ public class ElementSettingsFromImageTests
     [Theory]
     [InlineData("ano", true)]
     [InlineData("ne", false)]
-    [InlineData("true", true)]
+    [InlineData("false", false)]
     public void AnoNeSeZapiseJakoPrepinac(string value, bool expected)
     {
         var el = new StopListElement();
 
-        Apply(el, ("Zastávky · Přestupy (vlak/autobus)", value));
+        Apply(el, ("Záhlaví · Záhlaví sloupců", value));
 
-        Assert.Equal(expected, el.ShowTransferAttributes);
+        Assert.Equal(expected, el.ShowHeader);
     }
 
     [Fact]
@@ -111,6 +111,47 @@ public class ElementSettingsFromImageTests
 
         Assert.Contains("Vlevo", catalog);
         Assert.Contains("\"ano\" nebo \"ne\"", catalog);
+    }
+
+    /// <summary>Ptáme se jen na to, co jde z předlohy POTVRDIT. Nepřítomnost nic nedokazuje:
+    /// chybějící značky přestupů můžou znamenat vypnutou volbu i linku bez přestupů.</summary>
+    [Theory]
+    [InlineData("Zastávky · Přestupy (vlak/autobus)")]
+    [InlineData("Zastávky · Poznámky zastávky")]
+    [InlineData("Zastávky · Více stanovišť")]
+    [InlineData("Zvýraznění · Čas u projetých")]
+    public void NaVeciNeodvoditelneZObrazkuSeNeptame(string klic)
+    {
+        var catalog = ElementSettingsFromImage.BuildCatalog(new StopListElement());
+
+        Assert.DoesNotContain(klic, catalog);
+    }
+
+    /// <summary>Rozměry a písma se z PDF měří přesně - hádat je od modelu by výsledek zhoršilo.</summary>
+    [Fact]
+    public void NaRozmeryAPismaSeNeptame()
+    {
+        var catalog = ElementSettingsFromImage.BuildCatalog(new DepartureGridElement());
+
+        Assert.DoesNotContain("Velikost záhlaví", catalog);
+        Assert.DoesNotContain("Min. výška řádku", catalog);
+    }
+
+    [Theory]
+    [InlineData("Pozice šipky")]
+    [InlineData("Rozdělit na více oddílů")]
+    public void NaJednoznacneVizualniVeciSeNaopakPtameStale(string popisek)
+    {
+        var catalog = ElementSettingsFromImage.BuildCatalog(new StopListElement());
+
+        Assert.Contains(popisek, catalog);
+    }
+
+    [Fact]
+    public void MrizkaOdjezduILegendaMajiSvojiNabidku()
+    {
+        Assert.Contains("Střídání řádků", ElementSettingsFromImage.BuildCatalog(new DepartureGridElement()));
+        Assert.Contains("Počet sloupců", ElementSettingsFromImage.BuildCatalog(new NotesLegendElement()));
     }
 
     [Fact]

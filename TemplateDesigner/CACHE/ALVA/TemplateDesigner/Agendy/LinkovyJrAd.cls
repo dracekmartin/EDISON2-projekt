@@ -711,7 +711,10 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
         i omz = "" continue
         s typ = $s(omzId=31:"vycka", 1:"navazuje")
-        s znak = $p(omz,"@",1)
+        // Značku určuje VÝZNAM, ne první kus věty - ta nese u obou druhů "m", takže se navazující
+        // spoj tiskl značkou pro vyčkání (nalezeno porovnáním se starým modulem, L1).
+        // 1:1 legacy arr3132: omz31 → "m" (vyčká), omz32 → "^" (navazuje), JRapiLinPrtWin.mac:2210,2226.
+        s znak = $s(omzId=31:"m", 1:"^")
         f sekceIdx=2:1:$l(omz,"@") {
             s sekce = $p(omz,"@",sekceIdx)
             i sekce = "" continue

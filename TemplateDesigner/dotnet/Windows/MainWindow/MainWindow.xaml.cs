@@ -1294,7 +1294,7 @@ public partial class MainWindow : Window
             if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)
             {
                 if (!await _vm.ConfirmUnsavedChangesAsync()) return;
-                _vm.LoadGeneratedTemplate(vm.ImportedTemplate);
+                await _vm.LoadGeneratedTemplateAsync(vm.ImportedTemplate);
             }
         }
         catch (System.Exception ex)

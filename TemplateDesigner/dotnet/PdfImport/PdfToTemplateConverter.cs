@@ -21,9 +21,6 @@ public class PdfToTemplateConverter
     /// <summary>Zapnout detailní debug výpis.</summary>
     public bool EnableDebug { get; set; }
 
-    /// <summary>Režim sloučení grafiky do pozadí obrázku.</summary>
-    public GraphicsMergeMode MergeMode { get; set; } = GraphicsMergeMode.None;
-
     /// <summary>Typ JŘ importu - uživatel volí apriorně. None = obecný import.</summary>
     public ScheduleImportType ScheduleImportType { get; set; } = ScheduleImportType.None;
 
@@ -127,7 +124,7 @@ public class PdfToTemplateConverter
                     log.AppendLine($"\n--- SCHEDULE DETECTION FAILED (confidence={detection?.Confidence:0.##}) → fallback to generic ---");
             }
 
-            var section = BuildSection(pageNum, extracted, textBlocks, pageWidthMm, pageHeightMm, MergeMode);
+            var section = BuildSection(pageNum, extracted, textBlocks, pageWidthMm, pageHeightMm);
             sections.Add(section);
             extractedPages.Add(extracted);
         }
@@ -147,68 +144,8 @@ public class PdfToTemplateConverter
         foreach (var section in sections)
             section.DesignerHeight = Math.Max(contentHeight, 10f);
 
-        // Merge mode: vykreslení sloučené grafiky s offset na margin
-        // JŘ import grafiku přeskakuje - mřížku/čáry renderují JŘ elementy samy
-        if (MergeMode != GraphicsMergeMode.None && ScheduleImportType == ScheduleImportType.None)
-        {
-            float contentWidth = pageWidthMm - marginLeft - marginRight;
-            for (int i = 0; i < sections.Count; i++)
-            {
-                var bgImage = RenderGraphicsToBackground(
-                    extractedPages[i],
-                    marginLeft, marginTop, contentWidth, contentHeight, MergeMode);
-                if (bgImage != null)
-                {
-                    sections[i].Elements.Insert(0, new ImageElement
-                    {
-                        Id = Guid.NewGuid(),
-                        X = 0, Y = 0,
-                        Width = contentWidth,
-                        Height = contentHeight,
-                        ZIndex = -1,
-                        ImageBase64 = bgImage,
-                        IsLocked = true
-                    });
-                }
-
-                // LinesOnly: obdélníky a obrázky se přidají jako samostatné elementy
-                if (MergeMode == GraphicsMergeMode.LinesOnly)
-                {
-                    int zIdx = 0;
-                    var extraElements = new List<TemplateElement>();
-                    foreach (var rect in extractedPages[i].Rectangles)
-                    {
-                        extraElements.Add(new RectangleElement
-                        {
-                            Id = Guid.NewGuid(),
-                            X = Math.Max(0, rect.X - marginLeft), Y = Math.Max(0, rect.Y - marginTop),
-                            Width = rect.Width, Height = rect.Height,
-                            ZIndex = zIdx++,
-                            BackgroundColor = rect.FillColorHex ?? Transparent,
-                            StrokeColor = rect.StrokeColorHex ?? Black,
-                            StrokeWidth = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f)
-                        });
-                    }
-                    zIdx = 50;
-                    foreach (var img in extractedPages[i].Images)
-                    {
-                        extraElements.Add(new ImageElement
-                        {
-                            Id = Guid.NewGuid(),
-                            X = Math.Max(0, img.X - marginLeft), Y = Math.Max(0, img.Y - marginTop),
-                            Width = img.Width, Height = img.Height,
-                            ZIndex = zIdx++,
-                            ImageBase64 = img.Base64Png
-                        });
-                    }
-                    // Vložit za background obrázek (index 0), před texty
-                    sections[i].Elements.InsertRange(1, extraElements);
-                }
-            }
-        }
-
         // Automatické skupiny podle typu elementu (po merge, kdy jsou všechny elementy na místě)
-        AssignAutoGroups(sections, MergeMode);
+        AssignAutoGroups(sections);
 
         return new Template
         {
@@ -230,18 +167,14 @@ public class PdfToTemplateConverter
     }
 
     private static Section BuildSection(int pageNum, ExtractedPage page,
-        List<ExtractedTextBlock> textBlocks, float pageWidthMm, float pageHeightMm,
-        GraphicsMergeMode mergeMode)
+        List<ExtractedTextBlock> textBlocks, float pageWidthMm, float pageHeightMm)
     {
         var elements = new List<TemplateElement>();
         int zIndex = 0;
 
-        if (mergeMode == GraphicsMergeMode.None)
-        {
-            // Žádné sloučení: jednotlivé grafické elementy
-            BuildGraphicElements(page, elements, ref zIndex);
-        }
-        // Merge/LinesOnly: grafika se přidá později v Convert() po margin detection
+        // Každý grafický prvek předlohy jako vlastní prvek šablony - čáry se do obrázku neslévají
+        // (18. 8.): zamčený rastr nešel upravit a v tisku byl rozmazaný proti zbytku.
+        BuildGraphicElements(page, elements, ref zIndex);
 
         // Textové bloky (ZIndex 200+)
         zIndex = 200;
@@ -357,162 +290,23 @@ public class PdfToTemplateConverter
     /// Vykreslí veškerou grafiku (čáry, obdélníky, obrázky) do jedné bitmapy → Base64 PNG.
     /// Rozlišení: 150 DPI. Souřadnice se posouvají o margin → výstup pokrývá jen content area.
     /// </summary>
-    private static string? RenderGraphicsToBackground(ExtractedPage page,
-        float marginLeft, float marginTop, float contentWidthMm, float contentHeightMm,
-        GraphicsMergeMode mode)
-    {
-        // LinesOnly: pouze čáry do bitmapy; All: vše do bitmapy
-        bool includeRects = mode == GraphicsMergeMode.All;
-        bool includeImages = mode == GraphicsMergeMode.All;
-        bool includeLines = true; // čáry vždy
-
-        bool hasContent = (includeLines && page.Lines.Count > 0)
-            || (includeRects && page.Rectangles.Count > 0)
-            || (includeImages && page.Images.Count > 0);
-        if (!hasContent) return null;
-
-        // 150 DPI: 1mm = 150/25.4 ≈ 5.9 px
-        const float dpi = 150f;
-        float scale = dpi / 25.4f;
-        int width = (int)(contentWidthMm * scale);
-        int height = (int)(contentHeightMm * scale);
-        // Offset pro posun souřadnic z absolutních do content-relative
-        float ox = marginLeft * scale;
-        float oy = marginTop * scale;
-
-        if (width < 1 || height < 1) return null;
-
-        using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
-        using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.Transparent);
-
-        // Obdélníky (jen v režimu All)
-        if (includeRects)
-        {
-            foreach (var rect in page.Rectangles)
-            {
-                var skRect = new SKRect(
-                    rect.X * scale - ox, rect.Y * scale - oy,
-                    (rect.X + rect.Width) * scale - ox, (rect.Y + rect.Height) * scale - oy);
-
-                if (rect.FillColorHex is not null && rect.FillColorHex != Transparent)
-                {
-                    using var fillPaint = new SKPaint { Color = SKColor.Parse(rect.FillColorHex), Style = SKPaintStyle.Fill };
-                    canvas.DrawRect(skRect, fillPaint);
-                }
-
-                if (rect.StrokeColorHex is not null && rect.StrokeColorHex != Transparent)
-                {
-                    float sw = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f) * scale;
-                    using var strokePaint = new SKPaint
-                    {
-                        Color = SKColor.Parse(rect.StrokeColorHex),
-                        Style = SKPaintStyle.Stroke,
-                        StrokeWidth = Math.Max(1f, sw),
-                        IsAntialias = true
-                    };
-                    canvas.DrawRect(skRect, strokePaint);
-                }
-            }
-        }
-
-        // Obrázky (jen v režimu All)
-        if (includeImages)
-        {
-            foreach (var img in page.Images)
-            {
-                try
-                {
-                    var pngBytes = System.Convert.FromBase64String(img.Base64Png);
-                    using var skBitmap = SKBitmap.Decode(pngBytes);
-                    if (skBitmap == null) continue;
-
-                    var destRect = new SKRect(
-                        img.X * scale - ox, img.Y * scale - oy,
-                        (img.X + img.Width) * scale - ox, (img.Y + img.Height) * scale - oy);
-
-                    using var skImage = SKImage.FromBitmap(skBitmap);
-                    var sampling = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
-                    using var paint = new SKPaint { IsAntialias = true };
-                    canvas.DrawImage(skImage, destRect, sampling, paint);
-                }
-                catch { /* neplatná data */ }
-            }
-        }
-
-        // Čáry
-        foreach (var line in page.Lines)
-        {
-            float sw = Math.Clamp(line.StrokeWidth, 0.1f, 0.5f) * scale;
-            using var paint = new SKPaint
-            {
-                Color = SKColor.Parse(line.ColorHex),
-                StrokeWidth = Math.Max(1f, sw),
-                IsAntialias = true
-            };
-
-            if (line.Style != LineStyle.Solid)
-            {
-                var (dashMm, gapMm) = LineElement.GetDefaultDashPattern(line.Style);
-                float dash = dashMm * scale;
-                float gap  = gapMm * scale;
-                var effect = SKPathEffect.CreateDash([dash, gap], 0);
-                paint.PathEffect = effect;
-            }
-
-            canvas.DrawLine(
-                line.X1 * scale - ox, line.Y1 * scale - oy,
-                line.X2 * scale - ox, line.Y2 * scale - oy,
-                paint);
-
-            paint.PathEffect?.Dispose();
-        }
-
-        // Encode to PNG → Base64
-        using var image = SKImage.FromBitmap(bitmap);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 90);
-        return System.Convert.ToBase64String(data.ToArray());
-    }
-
-    /// <summary>
-    /// Přiřadí automatické GroupId importovaným elementům podle typu a merge mode.
-    /// Texty vždy bez skupiny.
-    /// </summary>
-    private static void AssignAutoGroups(List<Section> sections, GraphicsMergeMode mergeMode)
+    private static void AssignAutoGroups(List<Section> sections)
     {
         foreach (var section in sections)
         {
-            if (mergeMode == GraphicsMergeMode.LinesOnly)
-            {
-                // Background image + obdélníky + importované obrázky → společná skupina "Grafika"
-                var graphicsElements = section.Elements
-                    .Where(e => e is ImageElement or RectangleElement)
-                    .ToList();
-                if (graphicsElements.Count > 1)
-                {
-                    var gid = ElementGroupHelper.NewGroupId();
-                    foreach (var el in graphicsElements)
-                        el.GroupId = gid;
-                }
-            }
-            else if (mergeMode == GraphicsMergeMode.None)
-            {
-                // Čáry → jedna skupina, obdélníky → druhá skupina
-                var lines = section.Elements.Where(e => e is LineElement).ToList();
-                var rects = section.Elements.Where(e => e is RectangleElement).ToList();
+            var lines = section.Elements.Where(e => e is LineElement).ToList();
+            var rects = section.Elements.Where(e => e is RectangleElement).ToList();
 
-                if (lines.Count > 1)
-                {
-                    var gid = ElementGroupHelper.NewGroupId();
-                    foreach (var el in lines) el.GroupId = gid;
-                }
-                if (rects.Count > 1)
-                {
-                    var gid = ElementGroupHelper.NewGroupId();
-                    foreach (var el in rects) el.GroupId = gid;
-                }
+            if (lines.Count > 1)
+            {
+                var gid = ElementGroupHelper.NewGroupId();
+                foreach (var el in lines) el.GroupId = gid;
             }
-            // All: background image je jen jeden prvek - skupina nemá smysl
+            if (rects.Count > 1)
+            {
+                var gid = ElementGroupHelper.NewGroupId();
+                foreach (var el in rects) el.GroupId = gid;
+            }
         }
     }
 
@@ -609,12 +403,3 @@ public class PdfToTemplateConverter
 }
 
 /// <summary>Režim sloučení grafiky při PDF importu.</summary>
-public enum GraphicsMergeMode
-{
-    /// <summary>Každý grafický prvek jako samostatný element.</summary>
-    None,
-    /// <summary>Pouze čáry se sloučí do pozadí; obdélníky a obrázky zůstanou jako elementy.</summary>
-    LinesOnly,
-    /// <summary>Veškerá grafika (čáry, obdélníky, obrázky) se sloučí do jednoho pozadí.</summary>
-    All
-}

@@ -22,6 +22,9 @@ public class AppSettings
     public CacheConnectionSettings? Cache    { get; set; }
     public AiAssistantSettings AiAssistant   { get; set; } = new();
 
+    /// <summary>Kanál, kterým M-line doručuje systémové šablony (úložiště na helpdesku).</summary>
+    public TemplateChannelSettings TemplateChannel { get; set; } = new();
+
     /// <summary>Smí uživatel na vlastní definici sloupců vývěsky? Výchozí ne - featura jde do verze
     /// zhasnutá a rozsvítí se lokálním configem u toho, kdo ji testuje.</summary>
 
@@ -101,7 +104,13 @@ public class AppSettings
     }
 
     /// <summary>Přepíše hodnoty v target hodnotami z local (jen pokud jsou v local explicitně nastavené).</summary>
-    private static void MergeLocal(AppSettings target, AppSettings local)
+    /// <remarks>
+    /// ⚠️ Slučuje se <b>vyjmenovaně</b>, ne celý objekt - kdo přidá nový oddíl konfigurace, musí ho
+    /// přidat i sem, jinak se hodnota z lokálního souboru **tiše zahodí** a featura se tváří jako
+    /// vypnutá (stalo se 19. 8. klíči k distribučnímu kanálu: nastavený klíč, a přehled šablon nic
+    /// nenabídl). Hlídá to <c>AppSettingsLocalMergeTests</c>.
+    /// </remarks>
+    internal static void MergeLocal(AppSettings target, AppSettings local)
     {
         if (local.Cache is not null)
             target.Cache = local.Cache;
@@ -109,6 +118,13 @@ public class AppSettings
             target.AiAssistant.AnthropicApiKey = local.AiAssistant.AnthropicApiKey;
         if (local.AiAssistant.Enabled != target.AiAssistant.Enabled)
             target.AiAssistant.Enabled = local.AiAssistant.Enabled;
+
+        if (!string.IsNullOrWhiteSpace(local.TemplateChannel.ApiKey))
+            target.TemplateChannel.ApiKey = local.TemplateChannel.ApiKey;
+        if (!string.IsNullOrWhiteSpace(local.TemplateChannel.BaseUrl))
+            target.TemplateChannel.BaseUrl = local.TemplateChannel.BaseUrl;
+        if (local.TemplateChannel.Enabled != target.TemplateChannel.Enabled)
+            target.TemplateChannel.Enabled = local.TemplateChannel.Enabled;
     }
 }
 
@@ -150,6 +166,24 @@ public class CacheConnectionSettings
 }
 
 /// <summary>Nastavení AI asistenta pro generování šablon.</summary>
+/// <summary>
+/// Distribuční kanál systémových šablon. U zákazníka je **jen pro čtení** (úložiště → klient);
+/// nahrávat a měnit smíme jen my ve vývoji, nikdy ne z buildu, který jde ven - proto tady žádná
+/// cesta k zápisu není. Klíč smí být zadrátovaný v aplikaci, ale musí být omezený na čtení:
+/// `.exe` je balík spravovaných knihoven, takže řetězec z něj jde vytáhnout, a jeden klíč platí
+/// pro všechny zákazníky naráz (rozhodnutí Jan 19. 8.).
+/// </summary>
+public class TemplateChannelSettings
+{
+    /// <summary>Vypnuto = aplikace se kanálu neptá a chová se jako dřív (šablony jen z .exe).</summary>
+    public bool Enabled { get; set; } = true;
+
+    public string BaseUrl { get; set; } = "https://podpora.m-line.cz";
+
+    /// <summary>Klíč pro ČTENÍ. Prázdný = kanál se přeskočí (tichá degradace, ne chyba).</summary>
+    public string ApiKey { get; set; } = "";
+}
+
 public class AiAssistantSettings
 {
     /// <summary>Povolení AI asistenta (false = skryje menu položku).</summary>
