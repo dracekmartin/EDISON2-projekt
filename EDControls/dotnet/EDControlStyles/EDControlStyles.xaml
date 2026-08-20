@@ -1168,6 +1168,42 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         ProgressBar - default Aero2 template kreslí přes indikátor pevně danou bílou
+         "glass" vrstvu (v dark modu světlý flek), proto flat retemplate: track + indikátor
+         z tokenů, nic navíc. Determinate i indeterminate kreslí stejně - shell používá
+         jen determinate (auto-posun karuselu Podpora).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Style TargetType="ProgressBar">
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Sunken}"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Accent.Blue}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Light}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Height"          Value="6"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="2"
+                            SnapsToDevicePixels="True">
+                        <!-- PART_Track/PART_Indicator jsou povinná jména - ProgressBar si je hledá
+                             a bez nich indikátor vůbec nepočítá šířku. -->
+                        <Grid ClipToBounds="True">
+                            <Decorator x:Name="PART_Track"/>
+                            <Border x:Name="PART_Indicator"
+                                    Background="{TemplateBinding Foreground}"
+                                    CornerRadius="2"
+                                    HorizontalAlignment="Left"/>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          TreeView / TreeViewItem — chevron expander, bez tečkovaných spojnic,
          hover + selekce v accent barvě. Odsazení dětí dělá Auto sloupec expanderu.
          ═══════════════════════════════════════════════════════════════════ -->
@@ -1617,7 +1653,7 @@
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{DynamicResource EDTheme.Border.Strong}"
                             BorderThickness="1" CornerRadius="4" Padding="6"
-                            Margin="4" Effect="{DynamicResource EDTheme.Shadow.Popup}">
+                            Margin="4" Effect="{StaticResource EDTheme.Shadow.Popup}">
                         <Grid x:Name="PART_Root">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>

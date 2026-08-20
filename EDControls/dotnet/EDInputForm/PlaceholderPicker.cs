@@ -30,20 +30,24 @@ internal static class PlaceholderPicker
             MaxDropDownHeight = 320,
         };
 
+        // Popup má vlastní visual tree, implicitní styly na něj nedosáhnou - barvy musí jít
+        // přes SetResourceReference (= DynamicResource), jinak popup zamrzne ve light barvě.
+        var chrome = new Border
+        {
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(4),
+            Child = combo,
+        };
+        chrome.SetResourceReference(Border.BackgroundProperty, "EDTheme.Bg.Surface");
+        chrome.SetResourceReference(Border.BorderBrushProperty, "EDTheme.Border.Medium");
+
         var popup = new Popup
         {
             PlacementTarget = anchor,
             Placement = PlacementMode.Bottom,
             StaysOpen = false,
             AllowsTransparency = true,
-            Child = new Border
-            {
-                Background = SystemColors.WindowBrush,
-                BorderBrush = SystemColors.ActiveBorderBrush,
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(4),
-                Child = combo,
-            },
+            Child = chrome,
         };
 
         // Výběr fixuje EDFilterComboBox ve svém DropDownClosed; náš handler je registrovaný

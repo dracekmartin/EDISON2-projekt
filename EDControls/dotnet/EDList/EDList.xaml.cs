@@ -568,7 +568,9 @@ namespace EDControls.EDList
                 tb.SetBinding(TextBlock.TextProperty, new Binding($"[{col.Key}]"));
                 tb.SetValue(TextBlock.TextDecorationsProperty, TextDecorations.Underline);
                 tb.SetValue(TextBlock.CursorProperty, Cursors.Hand);
-                tb.SetValue(TextBlock.ForegroundProperty, SystemColors.HotTrackBrush);
+                // SetResourceReference (= DynamicResource): SystemColors.HotTrackBrush je
+                // systémová barva, kterou dark mode nepřepne.
+                tb.SetResourceReference(TextBlock.ForegroundProperty, "EDTheme.Accent.Blue");
                 if (align == EListColumnAlign.Right)
                     tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
                 else if (align == EListColumnAlign.Center)
@@ -616,8 +618,11 @@ namespace EDControls.EDList
                 var ha = align == EListColumnAlign.Right
                     ? HorizontalAlignment.Right
                     : HorizontalAlignment.Center;
+                // ElementStyle implicitní <Style TargetType="TextBlock"> nahrazuje, nedědí -
+                // bez BasedOn by zarovnané sloupce minuly typografii z EDControlStyles.
                 textCol.ElementStyle = new Style(typeof(TextBlock))
                 {
+                    BasedOn = Application.Current?.TryFindResource(typeof(TextBlock)) as Style,
                     Setters = { new Setter(TextBlock.HorizontalAlignmentProperty, ha) }
                 };
             }

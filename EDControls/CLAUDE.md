@@ -49,6 +49,10 @@ ať se okna nové aplikace nemíchají se shellem.
   `Role`) žije v implicitním stylu a explicitní styl ho *nedědí, nahrazuje celý*.
   Bez `BasedOn` = systémový default template → v dark modu bílé pozadí/text. Past nejvíc
   bije u submenu/`ContextMenu`/`ToolTip` popupů (vlastní visual tree).
+- **`DataGrid.RowStyle` s `Foreground` nefunguje** - implicitní `DataGridCell` styl si
+  `Foreground` nastavuje setterem a ten přebíjí hodnotu děděnou z řádku (ve stock WPF setter
+  není, proto to legacy vzor dělal přes řádek). Barvu řádku dej na `CellStyle` (s `BasedOn`) -
+  ale pozor, legacy barvy jsou navržené na bílé pozadí a v dark modu jsou nečitelné.
 
 ## EDIcons / EDStrings
 
