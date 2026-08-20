@@ -6,7 +6,7 @@ namespace EDControls.EDViewModel;
 /// Async varianta <see cref="RelayCommand"/>. Napojí <c>async Task</c> handler na
 /// <see cref="ICommand"/> a chytá výjimky přes <see cref="IPopupDisplayer"/> místo aby
 /// propadly na UI thread jako <c>async void</c>. Během běhu tasku <see cref="CanExecute"/>
-/// vrací false — brání double-clicku.
+/// vrací false - brání double-clicku.
 /// </summary>
 public class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null, IPopupDisplayer? popupDisplayer = null) : ICommand
 {
@@ -18,7 +18,7 @@ public class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    // canExecute nesmí házet — WPF ho volá při každé UI interakci a výjimka by propadla
+    // canExecute nesmí házet - WPF ho volá při každé UI interakci a výjimka by propadla
     // na DispatcherUnhandledException, ne do našeho catch-u.
     public bool CanExecute(object? parameter) => !_isRunning && (canExecute == null || canExecute());
 
@@ -29,7 +29,7 @@ public class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null
         _isRunning = true;
         CommandManager.InvalidateRequerySuggested();
         try { await execute(); }
-        // Fallback na EDServices.Current.PopupDisplayer (composition root) — ne new PopupDisplayer():
+        // Fallback na EDServices.Current.PopupDisplayer (composition root) - ne new PopupDisplayer():
         // App.xaml.cs wiring zajistí owner, takže popup neletí jako orphan top-level dialog.
         catch (Exception ex) { (popupDisplayer ?? EDServices.Current.PopupDisplayer).Error(ex); }
         finally
@@ -40,7 +40,7 @@ public class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null
     }
 }
 
-/// <summary>Generická varianta <see cref="AsyncRelayCommand"/> — <c>async Task</c> handler s parametrem.</summary>
+/// <summary>Generická varianta <see cref="AsyncRelayCommand"/> - <c>async Task</c> handler s parametrem.</summary>
 public class AsyncRelayCommand<T>(Func<T, Task> execute, Func<T, bool>? canExecute = null, IPopupDisplayer? popupDisplayer = null) : ICommand
 {
     private bool _isRunning;

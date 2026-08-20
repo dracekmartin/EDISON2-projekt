@@ -7,7 +7,7 @@ namespace EDControls.EDList;
 public static class EDListFilter
 {
     /// <summary>
-    /// Vrátí true pokud řádek odpovídá search textu — alespoň jeden ze zadaných klíčů obsahuje
+    /// Vrátí true pokud řádek odpovídá search textu - alespoň jeden ze zadaných klíčů obsahuje
     /// substring. Prázdný/null search vrací vždy true (žádný filter).
     /// </summary>
     public static bool Matches(EDListRow row, string? searchText, IEnumerable<string> columnKeys)

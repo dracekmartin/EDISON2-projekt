@@ -87,8 +87,6 @@ public class ErrorThrottleTests
         Assert.Equal(2, throttle.SentCount);
     }
 
-    // ---------- Klíč ----------
-
     [Fact]
     public void Key_SameExceptionSamePlace_IsStable()
     {

@@ -12,7 +12,7 @@ namespace EDISONMAIN2;
 /// Výsledek pokusu o přepnutí firmy. <see cref="LicenceAcquireOutcome.Accepted"/> značí, že
 /// MLRest má novou Idfa+Namespace a <see cref="Licence"/> je platná pro cílovou firmu.
 /// Při neúspěchu je MLRest vrácen na původní firmu, ale <see cref="Licence"/> nese čerstvě
-/// načtenou licenci CÍLOVÉ firmy (z LicenceLoaderu), ne původní — caller ji na non-Accepted
+/// načtenou licenci CÍLOVÉ firmy (z LicenceLoaderu), ne původní - caller ji na non-Accepted
 /// ignoruje.
 /// </summary>
 public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
@@ -21,7 +21,7 @@ public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
 /// Sdílená logika pro výběr a přepnutí firmy. <see cref="PickInitial"/> řeší startup
 /// (<see cref="AppBootstrapper"/>), <see cref="Switch"/> runtime přepnutí ve VM. Drift mezi oběma cestami
 /// (priorita firmy, ACTIVITY zámek, licenční retry, rollback) byl historicky zdrojem
-/// bugů — proto společný service. Čte MLRest/LicenceLoader/IsAdmin/Popup/Nav lazily z
+/// bugů - proto společný service. Čte MLRest/LicenceLoader/IsAdmin/Popup/Nav lazily z
 /// <see cref="EDServices"/>, takže po user switch automaticky vidí novou session.
 /// </summary>
 public class CompanySwitcher(
@@ -44,15 +44,11 @@ public class CompanySwitcher(
     }
 
     /// <summary>
-    /// Přepne firmu: zavře WPF okna shellu, vymění Idfa+Namespace v MLRest a získá
-    /// licenci přes <see cref="LicenceVerifier"/> (s admin USERS.exe retry). Legacy moduly
-    /// se zavírají až po <see cref="LicenceAcquireOutcome.Accepted"/> - neúspěšné přepnutí
-    /// tak nezabije rozpracovanou práci v nich. Při neúspěchu rollbackuje MLRest na původní
-    /// hodnoty. Když okno odmítne zavření (veto v Closing), vrací
-    /// <see cref="LicenceAcquireOutcome.Cancelled"/> ještě před swapem Idfa - přeživší okno
-    /// by jinak přes sdílený MLRest mluvilo s cizí firmou.
-    /// <see cref="ILocalPrefs.LastIdfa"/> aktualizuje při Accepted. Confirm popup
-    /// je odpovědnost callsite (VM ho zobrazí před voláním).
+    /// Přepne firmu: WPF okna shellu se zavírají PŘED swapem Idfa, legacy moduly až po
+    /// <see cref="LicenceAcquireOutcome.Accepted"/> - neúspěch tak nezabije rozpracovanou práci.
+    /// Veto v Closing → <see cref="LicenceAcquireOutcome.Cancelled"/> ještě před swapem (přeživší
+    /// okno by přes sdílený MLRest mluvilo s cizí firmou); při neúspěchu rollback MLRest na
+    /// původní hodnoty. Confirm popup je odpovědnost callsite.
     /// </summary>
     /// <param name="newIdfa">Cílová Idfa.</param>
     /// <param name="newNamespace">Cílový DataNamespace.</param>
@@ -77,7 +73,7 @@ public class CompanySwitcher(
         mlRest.Idfa = newIdfa;
         mlRest.DataNamespace = newNamespace;
 
-        // ACTIVITY zámek + počet licencí jsou per-IdFa — pro VerifyLic potřebujeme
+        // ACTIVITY zámek + počet licencí jsou per-IdFa - pro VerifyLic potřebujeme
         // licenci cílové firmy, ne původní (jinak bychom kontrolovali špatný limit).
         // Při překročení licencí + admin nabídne LicenceVerifier okno aktivity uživatelů.
         // Null currentLicence (typicky testy) → skip verify, switch je auto-accept.
@@ -98,9 +94,9 @@ public class CompanySwitcher(
             // po zániku jejího ACTIVITY zámku by jim padal každý request na LockExist.
             closeLegacyModules();
 
-            // Uvolnit ACTIVITY zámek staré firmy (per-IdFa) — jinak drží licenční slot té firmy
+            // Uvolnit ACTIVITY zámek staré firmy (per-IdFa) - jinak drží licenční slot té firmy
             // do server timeoutu. Až po Accepted (nová firma má zámek), aby rollback zůstal bezpečný.
-            // Logout běží na klonu se starou idfa/namespace — sdílený MLRest (už na nové firmě) se nemění.
+            // Logout běží na klonu se starou idfa/namespace - sdílený MLRest (už na nové firmě) se nemění.
             // Skip při null licenci (testy / pre-licence stav) a při shodné firmě.
             if (currentLicence != null && originalIdfa != newIdfa)
                 SessionLogout.Logout(mlRest, originalIdfa, originalNamespace);

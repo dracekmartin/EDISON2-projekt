@@ -1,7 +1,7 @@
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Nese typ triggeru a — pro <see cref="EValidationTrigger.Change"/> — klíč pole které
+/// Nese typ triggeru a - pro <see cref="EValidationTrigger.Change"/> - klíč pole které
 /// změnu způsobilo.
 /// </summary>
 public sealed class ValidationContext(EValidationTrigger trigger, string? changedKey = null)

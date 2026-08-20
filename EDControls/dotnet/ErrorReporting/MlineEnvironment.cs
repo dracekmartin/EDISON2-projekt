@@ -7,10 +7,7 @@ namespace EDControls.ErrorReporting;
 /// Rozpoznání „tohle je náš vlastní stroj, ne zákazníkův". Zrcadlí legacy
 /// <c>ALVA.CORE.Network.IsDomainMline</c> včetně registrového klíče - ten tam je kvůli
 /// virtuálům mimo doménu a bez něj by nám vývojářské VM padaly do zákaznických statistik.
-/// <para>
-/// Na rozdíl od legacy se interní běh **nezahazuje**, jen označí (viz
-/// <c>ErrorReport.InternalSuffix</c>) - zahodit se dá vždycky na serveru, vrátit nikdy.
-/// </para>
+/// Na rozdíl od legacy se interní běh nezahazuje, jen označí (<c>ErrorReport.InternalSuffix</c>).
 /// </summary>
 public static class MlineEnvironment
 {

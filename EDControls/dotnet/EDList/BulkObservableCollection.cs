@@ -6,18 +6,10 @@ using System.ComponentModel;
 namespace EDControls.EDList
 {
     /// <summary>
-    /// Kolekce, která umí vyměnit celý obsah **jedním** oznámením o změně.
-    /// <para>
-    /// Plnění po jednom (<c>Clear</c> + N× <c>Add</c>) znamená N+1 přepočtů navázaného pohledu -
-    /// u dvou set řádků je to vidět jako škubnutí, když načtení dosedne, zatímco uživatel píše
-    /// do filtru. <c>ReplaceAll</c> zmutuje vnitřní seznam a pošle jediný <c>Reset</c>.
-    /// </para>
-    /// <para>
-    /// ⚠️ Není to totéž co <c>ICollectionView.DeferRefresh</c>, který se na tohle zkoušel 4. 8. 2026
-    /// a hned se vracel: odklad neodkládá <c>CollectionChanged</c>, takže mutace zdrojové kolekce
-    /// pod ním shodí <c>ListCollectionView</c> na currency. Tady se žádný odklad nekoná - jen se
-    /// místo N+1 oznámení pošle jedno, a <c>Reset</c> samotný posílá i dnešní <c>Clear</c>.
-    /// </para>
+    /// Kolekce, která umí vyměnit celý obsah jediným <c>Reset</c> místo N+1 oznámení -
+    /// u stovek řádků je rozdíl vidět jako škubnutí. <c>ICollectionView.DeferRefresh</c> to
+    /// neřeší: odklad neodkládá <c>CollectionChanged</c>, takže mutace zdroje pod ním shodí
+    /// <c>ListCollectionView</c> na currency.
     /// </summary>
     internal sealed class BulkObservableCollection<T> : ObservableCollection<T>
     {

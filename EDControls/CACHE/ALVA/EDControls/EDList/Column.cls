@@ -1,16 +1,14 @@
 Class ALVA.EDControls.EDList.Column Extends %RegisteredObject
 {
 
-/// Identifikátor sloupce — používá se jako klíč v datech řádku.
+/// Identifikátor sloupce - používá se jako klíč v datech řádku.
 Property key As %String;
 
-/// Zobrazovaný nadpis sloupce.
 Property label As %String;
 
 /// Datový typ: TEXT | NUMBER | DATE | DATETIME | BOOL | IMAGE | COLOR | HHMM | CODEBOOK
 Property type As %String [ InitialExpression = "TEXT" ];
 
-/// Formátovací řetězec.
 /// NUMBER: "N0", "N2" apod.  DATE/DATETIME: "dd.MM.yyyy" apod.  Ostatní: prázdný.
 Property format As %String;
 

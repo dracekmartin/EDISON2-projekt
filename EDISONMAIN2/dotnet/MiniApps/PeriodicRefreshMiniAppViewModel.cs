@@ -82,7 +82,7 @@ public sealed class PeriodicRefreshMiniAppViewModel : EDMiniAppViewModel, IMiniA
     {
         var refreshed = _refreshAll?.Invoke() ?? [];
         LastRefresh = refreshed.Count == 0
-            ? $"{DateTime.Now:HH:mm:ss} — nic k obnovení"
-            : $"{DateTime.Now:HH:mm:ss} — {string.Join(", ", refreshed)}";
+            ? $"{DateTime.Now:HH:mm:ss} - nic k obnovení"
+            : $"{DateTime.Now:HH:mm:ss} - {string.Join(", ", refreshed)}";
     }
 }

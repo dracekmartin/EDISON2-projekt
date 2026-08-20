@@ -4,7 +4,7 @@ using EDControls.EDList;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Hromadná výměna obsahu seznamu (`B51`). Plnění po jednom znamenalo N+1 přepočtů navázaného
+/// Hromadná výměna obsahu seznamu. Plnění po jednom znamenalo N+1 přepočtů navázaného
 /// pohledu a bylo vidět jako škubnutí, když načtení dosedlo, zatímco uživatel psal do filtru.
 /// </summary>
 public class BulkObservableCollectionTests

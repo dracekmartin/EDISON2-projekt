@@ -7,13 +7,11 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Kdo okno vlastní a co s ním shell smí dělat: <see cref="FrameworkWindows"/> + jeho konzument
-/// <see cref="WindowNavigator.ShouldClose"/>. Regrese: `CloseAll` zavíral skryté overlay okno
-/// AvalonDocku, `DockingManager` si ho ale cachuje → každý další drag přes dock skončil výjimkou
-/// „po zavření okna nelze nastavit Visibility".
+/// <see cref="WindowNavigator.ShouldClose"/>. Regrese: <c>CloseAll</c> zavíral skryté overlay okno
+/// AvalonDocku, které si <c>DockingManager</c> cachuje → další drag padal na „nelze nastavit Visibility".
 /// </summary>
 public class WindowOwnershipTests
 {
-    // ---------- IsFrameworkNamespace ----------
 
     [Theory]
     [InlineData("MS.Win32")]
@@ -38,8 +36,6 @@ public class WindowOwnershipTests
         Assert.False(FrameworkWindows.IsFrameworkNamespace(null));
     }
 
-    // ---------- IsFrameworkOwned / IsInternalWindow ----------
-
     [Fact]
     public void IsFrameworkOwned_DockWindow_True()
     {
@@ -49,7 +45,7 @@ public class WindowOwnershipTests
     [Fact]
     public void IsFrameworkOwned_PlainWindow_False()
     {
-        // Holé `Window` leží v System.Windows, ale patří aplikaci — panel Podpora ho dostat má
+        // Holé `Window` leží v System.Windows, ale patří aplikaci - panel Podpora ho dostat má
         // a `CloseAll` ho zavřít smí. Okna frameworku jsou vždy podtypy.
         RunSta(() => Assert.False(FrameworkWindows.IsFrameworkOwned(new Window())));
     }
@@ -57,12 +53,10 @@ public class WindowOwnershipTests
     [Fact]
     public void IsInternalWindow_DockWindow_True()
     {
-        // Marker IOverlayWindow EDControls tohle nepokryje — AvalonDock má vlastní typ téhož
+        // Marker IOverlayWindow EDControls tohle nepokryje - AvalonDock má vlastní typ téhož
         // krátkého názvu, takže `w is not IOverlayWindow` na okně docku projde.
         RunSta(() => Assert.True(WindowNavigator.IsInternalWindow(new FakeDockWindow())));
     }
-
-    // ---------- ShouldClose ----------
 
     [Fact]
     public void ShouldClose_DockWindow_False()

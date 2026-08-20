@@ -2,10 +2,10 @@ Include %occInclude
 
 /// %UnitTest pro ALVA.EDISONMAIN2.EDInputForm.UserProfile (EDInputForm schema).
 /// Ověřuje strukturu formuláře (Init) a validační chování (editovatelnost cesty dle
-/// přepínače, neprázdnost při ukládání). Data samotná drží .NET klient — netestuje se tu.
+/// přepínače, neprázdnost při ukládání). Data samotná drží .NET klient - netestuje se tu.
 ///
 /// OnBeforeOneTest (kill ^||ML) + SetupSys zděděny z MLTestCase. Chyba je v návratové
-/// hodnotě (ret="1~..."), ne v ^||ML("ERR") — testy zachytávají ret.
+/// hodnotě (ret="1~..."), ne v ^||ML("ERR") - testy zachytávají ret.
 Class ALVA.EDISONMAIN2.Tests.UserProfileTest Extends ALVA.EDTesting.MLTestCase
 {
 
@@ -30,7 +30,6 @@ ClassMethod OutField(key As %String) As %List [ Private ]
 	q result
 }
 
-/// Init vytvoří všechna očekávaná pole + správné typy klíčových prvků.
 Method TestInitBuildsExpectedFields()
 {
 	do ..SetupSys(.sys)
@@ -41,19 +40,15 @@ Method TestInitBuildsExpectedFields()
 		do $$$AssertNotTrue((..OutField(key)=""), "Init musí obsahovat pole: "_key)
 	}
 
-	// Osobní adresář = FILE s folder-picker filtrem.
 	set pd = ..OutField("personDir")
 	do $$$AssertEquals($lg(pd,5), "FILE", "personDir musí být typu FILE")
 	do $$$AssertEquals($lg(pd,14), "$FOLDER", "personDir musí mít folder-picker filtr")
 
-	// Přepínač validuje při změně (živě přepočítá editovatelnost cesty).
 	do $$$AssertEquals($lg(..OutField("usePersonDir"),7), 1, "usePersonDir musí mít validateOnChange=1")
 
-	// Read-only přehledová pole.
 	do $$$AssertEquals($lg(..OutField("fullName"),10), 0, "fullName musí být read-only")
 }
 
-/// usePersonDir=0 → osobní adresář read-only.
 Method TestPersonDirReadonlyWhenUnchecked()
 {
 	do ..SetupSys(.sys)
@@ -66,7 +61,6 @@ Method TestPersonDirReadonlyWhenUnchecked()
 	do $$$AssertEquals($lg(..OutField("personDir"),10), 0, "personDir musí být read-only když usePersonDir=0")
 }
 
-/// usePersonDir=1 → osobní adresář editovatelný.
 Method TestPersonDirEditableWhenChecked()
 {
 	do ..SetupSys(.sys)
@@ -79,7 +73,6 @@ Method TestPersonDirEditableWhenChecked()
 	do $$$AssertEquals($lg(..OutField("personDir"),10), 1, "personDir musí být editovatelný když usePersonDir=1")
 }
 
-/// BeforeSave + použít osobní adresář + prázdná cesta → validační chyba na personDir.
 Method TestBeforeSaveEmptyPersonDirErrors()
 {
 	do ..SetupSys(.sys)
@@ -92,7 +85,6 @@ Method TestBeforeSaveEmptyPersonDirErrors()
 	do $$$AssertNotTrue(($lg(..OutField("personDir"),9)=""), "prázdná cesta při zaškrtnutém použití musí dát chybu")
 }
 
-/// BeforeSave + použít osobní adresář + vyplněná cesta → bez chyby.
 Method TestBeforeSaveFilledPersonDirOk()
 {
 	do ..SetupSys(.sys)
@@ -105,7 +97,6 @@ Method TestBeforeSaveFilledPersonDirOk()
 	do $$$AssertEquals($lg(..OutField("personDir"),9), "", "vyplněná cesta nesmí dát chybu")
 }
 
-/// BeforeSave + odškrtnuté použití → prázdná cesta je OK (nevaliduje se).
 Method TestBeforeSaveUncheckedEmptyOk()
 {
 	do ..SetupSys(.sys)
@@ -118,7 +109,7 @@ Method TestBeforeSaveUncheckedEmptyOk()
 	do $$$AssertEquals($lg(..OutField("personDir"),9), "", "odškrtnuté použití + prázdná cesta je OK")
 }
 
-/// Save je no-op (persist řeší klient) — jen nesmí vrátit chybu.
+/// Save je no-op (persist řeší klient) - jen nesmí vrátit chybu.
 Method TestSaveIsNoOp()
 {
 	do ..SetupSys(.sys)

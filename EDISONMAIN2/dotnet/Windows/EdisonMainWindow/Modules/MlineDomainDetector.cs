@@ -5,7 +5,7 @@ using Microsoft.Win32;
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
-    /// Port legacy <c>ALVA.CORE.Network.IsDomainMline</c> (EDCORE/clsCore.vb) — gate pro
+    /// Port legacy <c>ALVA.CORE.Network.IsDomainMline</c> (EDCORE/clsCore.vb) - gate pro
     /// mlineOnly uzly stromu: interní M-line nástroje se mimo doménu M-line nezobrazují.
     /// </summary>
     internal static class MlineDomainDetector
@@ -37,7 +37,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             catch { return false; }
         }
 
-        // Legacy zapisuje "0"/"1" a čte přes VB CBool — nenulové číslo i "True" je true.
+        // Legacy zapisuje "0"/"1" a čte přes VB CBool - nenulové číslo i "True" je true.
         internal static bool ParseVirtualDomainValue(string? value)
         {
             if (value == null) return false;

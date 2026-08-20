@@ -5,7 +5,7 @@ namespace EDISONMAIN2;
 
 /// <summary>
 /// Čtení <c>VERZE.INF</c> + porovnávání verzí. Port legacy algoritmů z
-/// <c>EDISON\EDISONMAIN\clsUpdate.vb</c> — sémantika viz docs/UPDATE_FLOW.md §1.
+/// <c>EDISON\EDISONMAIN\clsUpdate.vb</c>.
 /// </summary>
 public static class VerzeInf
 {
@@ -15,7 +15,7 @@ public static class VerzeInf
     public const string BlockKey = "BlokovatAktualizace";
 
     /// <summary>
-    /// Vývojová verze — numericky vyšší než jakékoli reálné yyMMdd datum (do r. 2100),
+    /// Vývojová verze - numericky vyšší než jakékoli reálné yyMMdd datum (do r. 2100),
     /// takže IsNewVersion nikdy netriggne update; Caché mismatch řeší dev guard v Updater.
     /// </summary>
     public const string DevVersion = "999999.9";
@@ -75,7 +75,7 @@ public static class VerzeInf
         return false;
     }
 
-    /// <summary>Striktní shoda — stejný počet segmentů + textová rovnost všech.</summary>
+    /// <summary>Striktní shoda - stejný počet segmentů + textová rovnost všech.</summary>
     public static bool IsSameVersion(string a, string b)
     {
         var p1 = a.Split('.');

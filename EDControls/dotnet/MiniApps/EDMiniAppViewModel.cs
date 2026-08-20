@@ -4,7 +4,7 @@ namespace EDControls.MiniApps;
 
 /// <summary>
 /// Báze pro mini-app ViewModely. Mini-app je hostovaná v docku (AvalonDock), ne ve vlastním
-/// okně — proto <see cref="PersistedFormId"/> vrací null: geometrii drží layout docku, ne
+/// okně - proto <see cref="PersistedFormId"/> vrací null: geometrii drží layout docku, ne
 /// <c>WindowStatePersistence</c>. Lifecycle panelu řídí <c>MiniAppManager</c> přes
 /// <see cref="OnOpened"/> / <see cref="OnClosed"/>.
 /// </summary>

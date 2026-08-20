@@ -5,7 +5,7 @@ using System.Xml.Serialization;
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
-    /// Wire tvar zástupce pro 14. argument launch kontraktu (viz <c>docs/DESKTOP_SHORTCUTS.md</c>).
+    /// Wire tvar zástupce pro 14. argument launch kontraktu.
     /// Pole odpovídají legacy <c>ALVA.LIBRARY.Remote.SerializableShortcut</c> (XML nad veřejnými
     /// poli) - host je deserializuje toutéž třídou, takže **jména ani typy polí se nesmí měnit**.
     /// </summary>

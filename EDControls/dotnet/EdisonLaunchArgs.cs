@@ -5,7 +5,7 @@ namespace EDControls;
 /// Zrcadlí <c>EDISONMAIN2API.FormToRunGetter</c> (c:\MLineRepos\EDISON\EDISONMAIN2API):
 /// [0]="EDISONMAIN2", [1]=server, [2]=restPort, [3]=namespace, [4]=idfa,
 /// [5]=loginName, [6]=fullName, [7]=mlp, [8]=formName, [9]=shellGuid, [10]=inputParam (volitelný).
-/// FormName a ShellGuid jsou součástí kontraktu kvůli legacy WinForms modulům —
+/// FormName a ShellGuid jsou součástí kontraktu kvůli legacy WinForms modulům -
 /// WPF aplikace (TemplateDesigner) je ignorují.
 /// </summary>
 public sealed record EdisonLaunchArgs(

@@ -7,10 +7,8 @@ using NSubstitute;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Testy `FormatLegacyLabel` — fallback chain (MainWindowTitle → FormFqn last segment → ExeName).
-/// MainWindowTitle nelze v unit-testu spolehlivě nastavit (Process je sealed-ish, vlastní proces
-/// nemáme), takže testujeme jen scénář prázdného titulu skrz aktuální `Process.GetCurrentProcess()`
-/// — ten v xUnit kontextu obvykle MainWindowTitle nemá (testhost.exe bez okna).
+/// Fallback chain <c>FormatLegacyLabel</c> (MainWindowTitle → FormFqn → ExeName). MainWindowTitle
+/// nejde v unit-testu spolehlivě nastavit, takže se ověřuje jen prázdná větev (testhost.exe okno nemá).
 /// </summary>
 public class WindowNavigatorTests
 {
@@ -45,22 +43,19 @@ public class WindowNavigatorTests
 
         var label = WindowNavigator.FormatLegacyLabel(entry);
 
-        // Path.GetFileNameWithoutExtension odstraní .exe.
         Assert.Equal("MyApp", label);
     }
 
     [Fact]
     public void FormatLegacyLabel_FqnEndingWithDot_FallsBackToWholeFqn()
     {
-        // Edge case: FQN končí tečkou (validní edge — last segment by byl prázdný).
+        // Edge case: FQN končí tečkou (validní edge - last segment by byl prázdný).
         var entry = MakeEntry("ALVA.");
 
         var label = WindowNavigator.FormatLegacyLabel(entry);
 
         Assert.Equal("ALVA.", label);
     }
-
-    // ---------- MatchesTarget (dedup „už běžícího" modulu) ----------
 
     [Fact]
     public void MatchesTarget_SameExeFormParam_True()
@@ -98,13 +93,11 @@ public class WindowNavigatorTests
     [Fact]
     public void MatchesTarget_FormCaseSensitive_False()
     {
-        // Forma je FQN Caché třídy — case-sensitive.
+        // Forma je FQN Caché třídy - case-sensitive.
         var entry = MakeEntry("ALVA.USERS.formUSERSLocks", "USERS.exe");
 
         Assert.False(WindowNavigator.MatchesTarget(entry, "USERS.exe", "alva.users.formuserslocks", ""));
     }
-
-    // ---------- LaunchesDirectly ----------
 
     [Theory]
     [InlineData("EDISONMAIN.exe", true)]
@@ -116,8 +109,6 @@ public class WindowNavigatorTests
     {
         Assert.Equal(expected, WindowNavigator.LaunchesDirectly(exeName));
     }
-
-    // ---------- BuildLauncherArguments ----------
 
     private static IMLRest MakeMlRest()
     {
@@ -139,7 +130,7 @@ public class WindowNavigatorTests
         var args = WindowNavigator.BuildLauncherArguments(
             MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001");
 
-        // Prázdný inputParam zůstává jako "" na pozici [10] — pořadí polí se neposune.
+        // Prázdný inputParam zůstává jako "" na pozici [10] - pořadí polí se neposune.
         Assert.Equal(
             "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\"",
             args);
@@ -149,7 +140,7 @@ public class WindowNavigatorTests
     public void BuildLauncherArguments_EmbeddedQuote_NotEscaped()
     {
         // Známý limit wire formátu: uvozovka uvnitř hodnoty se needukuje ani neescapuje.
-        // Legacy parser kontrakt je zmrazený — produkci NEměnit.
+        // Legacy parser kontrakt je zmrazený - produkci NEměnit.
         var m = MakeMlRest();
         m.FullName.Returns("Jan \"Boss\" Novák");
 
@@ -182,12 +173,10 @@ public class WindowNavigatorTests
 
     // Vlastnictví oken (IsInternalWindow / ShouldClose) → WindowOwnershipTests.
 
-    // ---------- ResolveExecutablePath ----------
-
     [Fact]
     public void ResolveExecutablePath_FileExistsLocally_ReturnsLocalPath()
     {
-        // Test dll je v AppContext.BaseDirectory — File.Exists hit, vrátí local path.
+        // Test dll je v AppContext.BaseDirectory - File.Exists hit, vrátí local path.
         var existing = Path.GetFileName(typeof(WindowNavigator).Assembly.Location);
 
         var result = WindowNavigator.ResolveExecutablePath(existing);

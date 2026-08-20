@@ -27,7 +27,7 @@ public class EDFilterComboBoxLogicTests
 
     [Theory]
     [InlineData("A", "", "A")]        // prázdný Label → jen Key
-    [InlineData("A", "A", "A")]       // Label == Key → jen Key (ne "A — A")
+    [InlineData("A", "A", "A")]       // Label == Key → jen Key (ne "A - A")
     public void Display_NoMeaningfulLabel_ReturnsKeyOnly(string key, string label, string expected)
     {
         Assert.Equal(expected, EDFilterComboBoxLogic.Display(new ListItem(key, label)));

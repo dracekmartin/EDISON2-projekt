@@ -10,7 +10,7 @@ public partial class UserProfileWindow : Window
 {
     private readonly UserProfileViewModel _vm;
 
-    // Zobrazený název výchozího okna (server ho nezná — dodá shell z modulového stromu).
+    // Zobrazený název výchozího okna (server ho nezná - dodá shell z modulového stromu).
     private readonly string _defaultWindowDisplay;
 
     /// <param name="defaultWindowDisplay">Název výchozího okna k zobrazení (prázdné = nenastaveno).</param>

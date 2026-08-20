@@ -18,11 +18,8 @@ namespace EDISONMAIN2.Tests;
 /// </summary>
 public class AppBootstrapperTests
 {
-    /// <remarks>
-    /// Jede přes bezparametrický ctor, takže <c>Application</c> uvnitř je null. Nový krok
-    /// v <see cref="AppBootstrapper.Run"/>, který na něj sáhne (dialog, Dispatcher, ShutdownMode),
-    /// tady spadne na NRE až za běhu testu - takový krok patří za <c>protected virtual</c> hook.
-    /// </remarks>
+    /// <remarks>Bezparametrický ctor → <c>Application</c> je null; nový krok v Run(), který na něj
+    /// sáhne (dialog, Dispatcher, ShutdownMode), musí jít za <c>protected virtual</c> hook.</remarks>
     private class TestableBootstrapper : AppBootstrapper
     {
         public bool ShutdownCalled { get; private set; }
@@ -49,13 +46,10 @@ public class AppBootstrapperTests
 
         protected override (WindowNavigator Nav, PopupDisplayer Popup, EDServices Services) InitializeServices()
         {
-            // Tady bychom v produkci založili EDServices.Initialize(services). Test mock
-            // místo toho vrátí stub WindowNavigator + PopupDisplayer + EDServices se svými
-            // mock referenced fields. EDServices.Initialize je side effect, ale test neuvolňuje
-            // a další testy si přepíší.
+            // EDServices.Initialize je proces-wide side effect - testy si ho navzájem přepisují.
             var nav = new WindowNavigator();
             var popup = new PopupDisplayer();
-            // Wrap mock impls jako EDServices fields — base Run() je čte přes 'services' parametr.
+            // Wrap mock impls jako EDServices fields - base Run() je čte přes 'services' parametr.
             var svc = new EDServices(MLRest, Nav, Popup);
             return (nav, popup, svc);
         }
@@ -144,8 +138,6 @@ public class AppBootstrapperTests
         protected override void Shutdown() => ShutdownCalled = true;
     }
 
-    // ---------- First-launch setup ----------
-
     [Fact]
     public void Run_NotConfigured_CallsShutdown_ReturnsNull()
     {
@@ -169,8 +161,6 @@ public class AppBootstrapperTests
         Assert.True(b.EnsureConfiguredCalled);
         Assert.True(b.BuildShellCalled);
     }
-
-    // ---------- Auto-login ----------
 
     [Fact]
     public void Run_AutoLoginSucceeds_SkipsDialog_BuildsShell()
@@ -196,7 +186,7 @@ public class AppBootstrapperTests
         Assert.True(b.BuildShellCalled);
     }
 
-    // ---------- Vynucená změna hesla (feature #17) ----------
+    // Vynucená změna hesla = Caché user flag #17.
 
     [Fact]
     public void Run_ChangePasswordNeeded_ForcesChange_ThenProceeds()
@@ -248,8 +238,6 @@ public class AppBootstrapperTests
         Assert.False(b.ForcePasswordChangeCalled);
     }
 
-    // ---------- Path 1: Login cancelled ----------
-
     [Fact]
     public void Run_LoginCancelled_CallsShutdown_ReturnsNull()
     {
@@ -268,14 +256,12 @@ public class AppBootstrapperTests
 
         b.Run();
 
-        // EstablishSession by se nemělo dostat ke slovu — výsledkem by byl unused real MLRest.
+        // EstablishSession by se nemělo dostat ke slovu - výsledkem by byl unused real MLRest.
         // Sledujeme přes AcquireSession (volá se po EstablishSession).
         Assert.False(b.AcquireSessionCalled);
         Assert.False(b.BuildShellCalled);
         Assert.False(b.WireActivityCalled);
     }
-
-    // ---------- Path 2: Licence Refused ----------
 
     [Fact]
     public void Run_LicenceRefused_ShowsPopupInfo_CallsShutdown_ReturnsNull()
@@ -301,8 +287,6 @@ public class AppBootstrapperTests
         Assert.Null(b.SavedIdfa);
     }
 
-    // ---------- Path 3: Licence Cancelled ----------
-
     [Fact]
     public void Run_LicenceCancelled_CallsShutdown_NoPopup()
     {
@@ -312,7 +296,7 @@ public class AppBootstrapperTests
 
         Assert.Null(result);
         Assert.True(b.ShutdownCalled);
-        // Cancelled je admin volba — žádná zpráva (admin už ví že rušil sám).
+        // Cancelled je admin volba - žádná zpráva (admin už ví že rušil sám).
         b.Popup.DidNotReceive().Info(Arg.Any<string>());
     }
 
@@ -327,8 +311,6 @@ public class AppBootstrapperTests
         Assert.False(b.WireActivityCalled);
         Assert.Null(b.SavedIdfa);
     }
-
-    // ---------- Path 4: Success ----------
 
     [Fact]
     public void Run_Success_DoesNotCallShutdown()
@@ -366,8 +348,6 @@ public class AppBootstrapperTests
         Assert.Equal("test", b.SavedLoginName);   // jméno z úspěšného loginu
     }
 
-    // ---------- Step ordering ----------
-
     [Fact]
     public void Run_LoginCancelled_DoesNotSavePrefs()
     {
@@ -378,8 +358,6 @@ public class AppBootstrapperTests
 
         Assert.Null(b.SavedIdfa);
     }
-
-    // ---------- CheckForUpdate ----------
 
     [Fact]
     public void Run_UpdateTriggered_CallsShutdown_DoesNotBuildShell()
@@ -396,7 +374,7 @@ public class AppBootstrapperTests
     [Fact]
     public void Run_UpdateTriggered_RunsAfterSavePrefs()
     {
-        // Update check je až po SavePostLoginState — LastIdfa musí být uložená
+        // Update check je až po SavePostLoginState - LastIdfa musí být uložená
         // i když shell hned skončí updatem (příští start ji načte).
         var b = new TestableBootstrapper { UpdateTriggered = true };
 
@@ -406,8 +384,6 @@ public class AppBootstrapperTests
         Assert.NotNull(b.SavedIdfa);
         Assert.True(b.WireActivityCalled);
     }
-
-    // ---------- SavePostLoginState (reálné tělo, TestableBootstrapper ho overriduje) ----------
 
     private class RealSaveBootstrapper : AppBootstrapper
     {
@@ -431,8 +407,6 @@ public class AppBootstrapperTests
         prefs.Received().LastLoginName = "jan.novak";
 #endif
     }
-
-    // ---------- Handoff login okna ----------
 
     [Fact]
     public void Run_Success_CallsHandOffAfterBuildShell()

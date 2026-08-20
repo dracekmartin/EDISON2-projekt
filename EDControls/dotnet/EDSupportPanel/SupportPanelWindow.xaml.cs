@@ -9,7 +9,7 @@ using EDControls.EDViewModel;
 namespace EDControls.EDSupportPanel;
 
 /// <summary>
-/// Vysouvací panel Podpora ve vlastním owned okně — jediná cesta, jak úchyt i kartu
+/// Vysouvací panel Podpora ve vlastním owned okně - jediná cesta, jak úchyt i kartu
 /// vykreslit nad HWND obsahem (WebView2 miniaplikace u pravého okraje shellu), který WPF
 /// kvůli airspace nepřekreslí. Owned okno drží window manager nad ownerem i bez Topmost.
 /// </summary>
@@ -36,7 +36,7 @@ internal sealed partial class SupportPanelWindow : Window, IOverlayWindow
     }
 
     /// <summary>
-    /// Napojení na ownera je až tady, ne v konstruktoru — dokud panel neprošel testem
+    /// Napojení na ownera je až tady, ne v konstruktoru - dokud panel neprošel testem
     /// velikosti, nesmí se zapsat do <c>owner.OwnedWindows</c> ani na jeho eventy
     /// (nezobrazený panel by je držel po celý život okna).
     /// </summary>
@@ -62,7 +62,7 @@ internal sealed partial class SupportPanelWindow : Window, IOverlayWindow
     }
 
     /// <summary>
-    /// Zobrazí panel. Vrací false, když se karta do klientské oblasti ownera nevejde —
+    /// Zobrazí panel. Vrací false, když se karta do klientské oblasti ownera nevejde -
     /// volající objekt zahodí (panel se k takovému oknu vůbec nepřipojí).
     /// </summary>
     internal bool TryShowPanel()
@@ -83,7 +83,7 @@ internal sealed partial class SupportPanelWindow : Window, IOverlayWindow
         Reposition();
     }
 
-    /// <summary>Výška karty. Před prvním zobrazením se musí změřit — <c>ActualHeight</c> je 0.</summary>
+    /// <summary>Výška karty. Před prvním zobrazením se musí změřit - <c>ActualHeight</c> je 0.</summary>
     private double MeasuredHeight()
     {
         if (ActualHeight > 0) return ActualHeight;
@@ -120,7 +120,7 @@ internal sealed partial class SupportPanelWindow : Window, IOverlayWindow
         _popups.Info(SupportActions.BuildVersionInfo(
             _services.MLRest, _services.AppDisplayName, _services.AppVersion), _owner));
 
-    // Chyba akce nesmí shodit aplikaci (panel je v každém okně) — mirror legacy, které
+    // Chyba akce nesmí shodit aplikaci (panel je v každém okně) - mirror legacy, které
     // výjimky handlerů polykalo; tady je ale aspoň ukážeme.
     private void Guarded(Action action)
     {

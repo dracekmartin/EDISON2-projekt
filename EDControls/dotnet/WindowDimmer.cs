@@ -8,15 +8,15 @@ using System.Windows.Media;
 namespace EDControls;
 
 /// <summary>
-/// Jednotné ztmavení okna (#1A000000) — stejný závoj jako EDActionInProgress. Adorner spolkne
+/// Jednotné ztmavení okna (#1A000000) - stejný závoj jako EDActionInProgress. Adorner spolkne
 /// myš (klik ale pořád aktivuje okno → bounce handlery fungují), Preview handlery blokují
 /// klávesnici včetně window-level KeyBindings. Refcount per okno: vnořené dimy nesčítají tint.
-/// HWND obsah (WebView2 widgety) závoj kvůli airspace nepokryje — záměr: zůstávají při čekání
+/// HWND obsah (WebView2 widgety) závoj kvůli airspace nepokryje - záměr: zůstávají při čekání
 /// čitelné (kartu „Akce probíhá" nad nimi řeší owned okno, viz EDActionInProgress).
 /// </summary>
 public static class WindowDimmer
 {
-    /// <summary>Single source of truth pro závoj — míra ztmavení se mění na jednom místě.</summary>
+    /// <summary>Single source of truth pro závoj - míra ztmavení se mění na jednom místě.</summary>
     public static readonly SolidColorBrush TintBrush = CreateTint();
 
     private static SolidColorBrush CreateTint()
@@ -42,7 +42,7 @@ public static class WindowDimmer
     private static void Attach(Window owner)
     {
         // Default Window template obsahuje AdornerDecorator; layer chybí jen u nezobrazeného
-        // okna — pak se přeskočí vizuál, blokace vstupu platí dál.
+        // okna - pak se přeskočí vizuál, blokace vstupu platí dál.
         AdornerLayer? layer = null;
         DimAdorner? adorner = null;
         if (owner.Content is UIElement content && AdornerLayer.GetAdornerLayer(content) is { } l)
@@ -85,7 +85,7 @@ public static class WindowDimmer
     }
 }
 
-/// <summary>Refcount izolovaný od WPF (unit-testovatelný). Není thread-safe — UI thread only.</summary>
+/// <summary>Refcount izolovaný od WPF (unit-testovatelný). Není thread-safe - UI thread only.</summary>
 internal sealed class RefCountRegistry
 {
     private sealed class Entry(Action onLast)
@@ -108,7 +108,7 @@ internal sealed class RefCountRegistry
         return new Scope(this, key, entry);
     }
 
-    /// <summary>Okamžité uvolnění (zavření okna) — pozdější Dispose přeživších scope je no-op.</summary>
+    /// <summary>Okamžité uvolnění (zavření okna) - pozdější Dispose přeživších scope je no-op.</summary>
     public void ForceRelease(object key)
     {
         if (!_entries.Remove(key, out var entry) || entry.Released) return;

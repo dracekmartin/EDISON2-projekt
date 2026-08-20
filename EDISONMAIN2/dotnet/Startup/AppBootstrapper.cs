@@ -23,15 +23,10 @@ namespace EDISONMAIN2;
 
 /// <summary>
 /// Pojmenované kroky startup workflow s jasnými error/cancel exit pointy (login zrušený,
-/// licence Refused/Cancelled, connection error). App.xaml.cs jen vytvoří bootstrapper,
-/// zavolá <see cref="Run"/> a ukáže okno (nebo nic pokud Run vrátil null — Shutdown už
-/// proběhl uvnitř). Po návratu z <see cref="Run"/> bootstrapper dožil: co má běžet dál,
-/// dostane vlastní objekt (<see cref="SessionSwitcher"/>, <see cref="ShellShutdown"/>).
-///
-/// Testovatelnost: každý krok je <c>protected virtual</c>, testovatelný subclass přepíše
-/// jen ty které potřebuje (typicky <see cref="InitializeServices"/>, <see cref="PrepareLogin"/>,
-/// <see cref="TryLogin"/>, <see cref="EstablishSession"/>, <see cref="AcquireSession"/>,
-/// <see cref="WireActivityFailedHandler"/>, <see cref="BuildShellWindow"/>, <see cref="Shutdown"/>).
+/// licence Refused/Cancelled, connection error); null z <see cref="Run"/> = Shutdown už proběhl.
+/// Po návratu bootstrapper dožil - co běží dál, dostane vlastní objekt
+/// (<see cref="SessionSwitcher"/>, <see cref="ShellShutdown"/>). Kroky jsou
+/// <c>protected virtual</c> kvůli testovatelným subclassům.
 /// </summary>
 public class AppBootstrapper
 {
@@ -44,7 +39,7 @@ public class AppBootstrapper
         _shutdown = new ShellShutdown(application);
     }
 
-    /// <summary>Pro test-only subclassy — neinjektuje <see cref="Application"/>, takže
+    /// <summary>Pro test-only subclassy - neinjektuje <see cref="Application"/>, takže
     /// derived class MUSÍ přepsat všechny metody co by ho použily (Shutdown, BuildShellWindow,
     /// WireActivityFailedHandler, Release branch TryLogin).</summary>
     protected AppBootstrapper() : this(null!)
@@ -61,7 +56,7 @@ public class AppBootstrapper
         var (nav, popup, services) = InitializeServices();
         var prefs = LoadLocalPrefs();
 
-        // Sdílený vzhled (font + světlý/tmavý režim) — jedna registrace, čte %APPDATA%\m-line\common
+        // Sdílený vzhled (font + světlý/tmavý režim) - jedna registrace, čte %APPDATA%\m-line\common
         // a propaguje mezi procesy (TemplateDesigner). Před login dialogem, ať ho téma taky pokryje.
         EDControls.EDAppearance.Initialize(_application);
 
@@ -106,7 +101,7 @@ public class AppBootstrapper
         SavePostLoginState(prefs, session.MLRest.Idfa, login.UserName);
         WireActivityFailedHandler(session, services);
 
-        // Až po SavePostLoginState — LastIdfa musí být uložená i když teď shell skončí updatem.
+        // Až po SavePostLoginState - LastIdfa musí být uložená i když teď shell skončí updatem.
         _startupLoginWindow?.ShowProgress("Kontroluji aktualizace…");
         var update = CheckForUpdate(session, services);
         if (update.ShouldExit)
@@ -122,7 +117,7 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Předání role hlavního okna z login okna na shell. MainWindow se musí přiřadit explicitně —
+    /// Předání role hlavního okna z login okna na shell. MainWindow se musí přiřadit explicitně -
     /// implicitní WPF pravidlo ho dalo login oknu (první zkonstruované) a dokud je otevřené,
     /// shell by roli nezískal; pořadí (MainWindow → OnMainWindowClose) chrání před shutdownem
     /// při pozdějším zavření login okna. To se zavře až po prvním vykreslení shellu, aby
@@ -137,10 +132,9 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Klientský update check — mandatory, bez user volby (stanice nemá co rozhodovat).
+    /// Klientský update check - mandatory, bez user volby (stanice nemá co rozhodovat).
     /// <c>ShouldExit</c> = shell se má ukončit (spawnutý EDUPDATE / rozbitý stav);
     /// <c>Notice</c> = běžící notice-only kontrola release serveru pro status bar.
-    /// Viz docs/UPDATE_FLOW.md §7.
     /// </summary>
     protected virtual (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) CheckForUpdate(
         SessionContext session, EDServices services)
@@ -169,7 +163,7 @@ public class AppBootstrapper
                 return (true, null);
             default:
                 // Notice-only kontrola release serveru M-line běží paralelně se stavbou shellu;
-                // výsledek napojí BuildShellWindow do status baru. Viz docs/UPDATE_FLOW.md §7.
+                // výsledek napojí BuildShellWindow do status baru.
                 return (false, Task.Run(() => updater.GetReleaseNotice(settings, VerzeInf.Current)));
         }
     }
@@ -186,22 +180,20 @@ public class AppBootstrapper
         string Server,
         int Port);
 
-    // ----- Virtual hooks: production defaults, test overrides -----
-
     protected virtual (WindowNavigator Nav, PopupDisplayer Popup, EDServices Services) InitializeServices()
     {
         var nav = new WindowNavigator();
         var popup = new PopupDisplayer();
         var services = new EDServices(null, nav, popup)
         {
-            // Pro „Informace o verzi" (panel Podpora, menu Nápověda) — verze assembly je
+            // Pro „Informace o verzi" (panel Podpora, menu Nápověda) - verze assembly je
             // 1.0.0.0, jediná pravdivá je VERZE.INF vedle exe.
             AppDisplayName = "M-line EDISON 2",
             AppVersion = VerzeInf.Current == "" ? "nezjištěna" : VerzeInf.Current
         };
         EDServices.Initialize(services);
 
-        // EDInputForm pole Color — jako picker registrujeme prostý WinForms ColorDialog.
+        // EDInputForm pole Color - jako picker registrujeme prostý WinForms ColorDialog.
         EDControls.EDInputForm.EDInputForm.PickColorImpl = WinFormsColorPicker.Pick;
 
         return (nav, popup, services);
@@ -211,9 +203,9 @@ public class AppBootstrapper
 
     /// <summary>
     /// First-launch setup: když chybí <c>appsettings.json</c>, zobrazí
-    /// <see cref="Windows.SetupWindow.SetupWindow"/> (jen připojení — server + REST port).
+    /// <see cref="Windows.SetupWindow.SetupWindow"/> (jen připojení - server + REST port).
     /// Vrací false = uživatel zrušil → shutdown. DEBUG má config v repu → wizard se přeskočí.
-    /// Greenfield server-init (firma/licence/admin) je mimo scope — zůstává na legacy frmSetup.
+    /// Greenfield server-init (firma/licence/admin) je mimo scope - zůstává na legacy frmSetup.
     /// </summary>
     protected virtual bool EnsureConfigured()
     {
@@ -237,7 +229,7 @@ public class AppBootstrapper
         string server = config.Server.Host;
         int port = config.Server.Port;
 
-        // Pre-login MLRest — potřebné aby GetCompanyList šla zavolat (vlastní fallback Idfa="").
+        // Pre-login MLRest - potřebné aby GetCompanyList šla zavolat (vlastní fallback Idfa="").
         var loginRest = new MLRest(server, port, "", "");
 
         string errState = "";
@@ -294,7 +286,7 @@ public class AppBootstrapper
         login = loginWindow.Result;
         _startupLoginWindow = loginWindow;
 
-        // Ulož / zapomeň. Při vynucené změně hesla (feature #17) heslo neukládej — za chvíli
+        // Ulož / zapomeň. Při vynucené změně hesla (feature #17) heslo neukládej - za chvíli
         // se změní a zapamatované by bylo neplatné. Persist proběhne v SavePostLoginState.
         prefs.RememberedPassword = loginWindow.RememberPassword && !login.ChangePasswordNeeded
             ? PasswordProtector.Protect(login.UserName, loginWindow.EnteredPassword)
@@ -306,11 +298,11 @@ public class AppBootstrapper
     /// <summary>
     /// Vynucená změna hesla (feature #17). Dialog si sám ověří změnu proti serveru a zavře se
     /// jen při úspěchu; vrací true = změněno, false = uživatel zrušil (→ abort loginu).
-    /// ShutdownMode toggle jako u <see cref="TryLogin"/> — dialog běží před existencí shell okna.
+    /// ShutdownMode toggle jako u <see cref="TryLogin"/> - dialog běží před existencí shell okna.
     /// </summary>
     protected virtual bool ForcePasswordChange(MLRest loginRest, string username)
     {
-        // Restore na předchozí mode, ne hardcoded — po dialog loginu je OnExplicitShutdown v platnosti až do handoffu.
+        // Restore na předchozí mode, ne hardcoded - po dialog loginu je OnExplicitShutdown v platnosti až do handoffu.
         var previousMode = _application.ShutdownMode;
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
@@ -330,12 +322,8 @@ public class AppBootstrapper
     /// heslem - server tak přihlásí jen LDAP-AUTO uživatele. Neúspěch (jiný mód / nepovoleno)
     /// → false → fallback na <see cref="TryLogin"/> dialog. Vrací true = přihlášeno bez dialogu.
     /// </summary>
-    /// <remarks>
-    /// Zkouší se **vždy**, jako ve starém spouštěči. LDAP-AUTO účet jinak nemá jak projít: server
-    /// ho při neprázdném heslu překlopí na plný LDAP bind (`ALVA.SYS.Login:1138`), takže dialogem,
-    /// kde uživatel heslo napíše, se přihlásit nedá. Cena je jeden request na startu i pro účty
-    /// typu EDISON, které tudy neprojdou.
-    /// </remarks>
+/// <remarks>Zkouší se vždy - server při neprázdném heslu překlopí LDAP-AUTO účet na plný LDAP
+/// bind (<c>ALVA.SYS.Login:1138</c>), takže dialogem se takový účet přihlásit nedá.</remarks>
     protected virtual bool TryAutoLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
     {
         login = null!;
@@ -370,7 +358,7 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Wire-up server force-logout — když server odstraní ACTIVITY zámek (timeout, výpadek,
+    /// Wire-up server force-logout - když server odstraní ACTIVITY zámek (timeout, výpadek,
     /// admin disconnect), graceful shutdown s informační hláškou.
     /// </summary>
     protected virtual void WireActivityFailedHandler(SessionContext session, EDServices services)
@@ -395,7 +383,7 @@ public class AppBootstrapper
                     services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
                     shutdown.Force();
                 });
-            // Server per-request version gate (date+full segmenty) — viz docs/UPDATE_FLOW.md §5.
+            // Server per-request version gate (date+full segmenty).
             adapter.Inner.EdisonVersionFailed += (_, _) =>
                 app.Dispatcher.Invoke(() =>
                 {
@@ -421,7 +409,7 @@ public class AppBootstrapper
             new DevSampleMiniApps(),
 #endif
         ]);
-        // Owner login dialogu se čte lazily — MainWindow ukazuje na shell až po HandOffLoginWindow.
+        // Owner login dialogu se čte lazily - MainWindow ukazuje na shell až po HandOffLoginWindow.
         var sessionSwitcher = new SessionSwitcher(services, () => _application.MainWindow,
                                                   BuildActivityFailedWire(services), nav.TryCloseAll);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
@@ -434,7 +422,7 @@ public class AppBootstrapper
         popup.DefaultOwner = wnd;
         viewModel.AttachToWindow(wnd);
 
-        // Notice z release serveru (nová verze / potvrzení aktuálnosti) — doběhne typicky
+        // Notice z release serveru (nová verze / potvrzení aktuálnosti) - doběhne typicky
         // až po zobrazení okna.
         releaseNotice?.ContinueWith(t =>
         {
@@ -442,7 +430,7 @@ public class AppBootstrapper
                 wnd.Dispatcher.BeginInvoke(() => viewModel.ReleaseNotice = t.Result);
         }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
-        // Cooperative logout — poll běží přes services.MLRest (následuje swap při switch user).
+        // Cooperative logout - poll běží přes services.MLRest (následuje swap při switch user).
         var shutdown = _shutdown;
         var logoutWatcher = new LogoutWatcher(
             () => services.MLRest,
@@ -452,7 +440,7 @@ public class AppBootstrapper
 
         // Graceful close → uvolnit ACTIVITY zámek (jinak visí do server-side idle timeoutu, jelikož
         // je v temp globálu, ne nativním Caché locku). services.MLRest = aktuální (po switch user).
-        // Před logoutem flush usage telemetrie — pojistka na záznamy po posledním zavření okna
+        // Před logoutem flush usage telemetrie - pojistka na záznamy po posledním zavření okna
         // (typicky legacy launche); potřebuje živou session kvůli userID.
         _application.Exit += (_, _) =>
         {

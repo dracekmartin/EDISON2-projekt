@@ -14,9 +14,9 @@ namespace EDControls.EDFilterComboBox;
 /// (shoda na Key i Label, case-insensitive). Dva režimy:
 /// <list type="bullet">
 ///   <item><b>volný</b> (<see cref="StrictSelection"/> = false, výchozí): hodnotou je <c>Text</c>;
-///   uživatel smí napsat i text mimo <see cref="Suggestions"/> — ty jsou jen nápověda.</item>
+///   uživatel smí napsat i text mimo <see cref="Suggestions"/> - ty jsou jen nápověda.</item>
 ///   <item><b>striktní</b> (<see cref="StrictSelection"/> = true): hodnotou je <see cref="SelectedKey"/>;
-///   commituje se jen platná položka, v klidu se zobrazí čitelný „Key — Label", při vstupu do pole se
+///   commituje se jen platná položka, v klidu se zobrazí čitelný „Key - Label", při vstupu do pole se
 ///   vybere celý text (první napsaný znak ho přepíše → hledání jiné položky bez mazání), Enter potvrdí
 ///   i napsaný text (exaktní nebo jednoznačná shoda) a neplatný text se po opuštění vrátí na aktuální výběr.</item>
 /// </list>
@@ -28,11 +28,10 @@ namespace EDControls.EDFilterComboBox;
 /// <c>TextChanged</c> by přestavělo <c>Items</c> a smazalo <see cref="Selector.SelectedItem"/> dřív,
 /// než ho <c>DropDownClosed</c> stihne přečíst. Aby výběr přežil i případný takový Refilter (např. když
 /// se příznak psaní zasekne), commit nečte <c>SelectedItem</c>, ale Key zachycený už v
-/// <c>SelectionChanged</c> (<c>_committedKey</c>) — ten dorazí před osudným <c>TextChanged</c>.
+/// <c>SelectionChanged</c> (<c>_committedKey</c>) - ten dorazí před osudným <c>TextChanged</c>.
 /// </remarks>
 public class EDFilterComboBox : ComboBox
 {
-    // ---- Dependency properties -------------------------------------------
 
     public static readonly DependencyProperty SuggestionsProperty = DependencyProperty.Register(
         nameof(Suggestions), typeof(IEnumerable<ListItem>), typeof(EDFilterComboBox),
@@ -48,7 +47,7 @@ public class EDFilterComboBox : ComboBox
     public static readonly DependencyProperty StrictSelectionProperty = DependencyProperty.Register(
         nameof(StrictSelection), typeof(bool), typeof(EDFilterComboBox), new PropertyMetadata(false));
 
-    /// <summary>Režim výběru — viz dokumentace třídy. Default false = volný režim.</summary>
+    /// <summary>Režim výběru - viz dokumentace třídy. Default false = volný režim.</summary>
     public bool StrictSelection
     {
         get => (bool)GetValue(StrictSelectionProperty);
@@ -76,8 +75,6 @@ public class EDFilterComboBox : ComboBox
         get => (string)GetValue(KeyLabelSeparatorProperty);
         set => SetValue(KeyLabelSeparatorProperty, value);
     }
-
-    // ---- chování (event wiring) ------------------------------------------
 
     // True jen mezi PreviewKeyDown/Up uživatele → rozliší jeho psaní od interních změn Textu (viz remarks).
     private bool _userIsTyping;
@@ -116,7 +113,7 @@ public class EDFilterComboBox : ComboBox
             {
                 IsDropDownOpen = true;
                 // Editovatelný ComboBox při otevření dropdownu vybere text v poli (default WPF) → další
-                // znak by ho přepsal. Vrať kurzor na konec SYNCHRONNĚ (ne odloženě) — odložené vrácení
+                // znak by ho přepsal. Vrať kurzor na konec SYNCHRONNĚ (ne odloženě) - odložené vrácení
                 // prohrávalo závod s rychlým psaním (druhý znak dorazil dřív a přepsal první).
                 if (_editableTextBox is { } tb) { tb.SelectionLength = 0; tb.CaretIndex = tb.Text.Length; }
             }
@@ -136,7 +133,7 @@ public class EDFilterComboBox : ComboBox
         };
 
         // Select-all na fokus řeší OnApplyTemplate napojením na PART_EditableTextBox (synchronně,
-        // s pohlcením prvního kliku) — odložený SelectAll na ComboBoxu se spouštěl až po prvním stisku
+        // s pohlcením prvního kliku) - odložený SelectAll na ComboBoxu se spouštěl až po prvním stisku
         // klávesy (první písmeno se "snědlo", druhé přepsalo).
 
         // Striktní režim: napsaný neplatný text se po OPUŠTĚNÍ controlu vrátí na aktuální výběr.
@@ -229,7 +226,7 @@ public class EDFilterComboBox : ComboBox
         k is Key.Up or Key.Down or Key.PageUp or Key.PageDown or Key.Enter or Key.Escape or Key.Tab;
 
     // Zafixuje výběr po zavření dropdownu. Commituje _committedKey zachycený v SelectionChanged (NE
-    // aktuální SelectedItem — ten může být mezitím zahozen Refilterem, viz remarks třídy). Striktní:
+    // aktuální SelectedItem - ten může být mezitím zahozen Refilterem, viz remarks třídy). Striktní:
     // vybraný Key → SelectedKey + čitelný klidový display. Volný: Text = holý Key (čte ho konzument
     // přes Text binding, např. EDInputForm Field.Value). Bez výběru ve striktním režimu = napsaný
     // neplatný text (nebo jen otevřít+zavřít) → revert na aktuální SelectedKey.
@@ -253,10 +250,8 @@ public class EDFilterComboBox : ComboBox
         }
     }
 
-    // ---- zobrazení & filtrování ------------------------------------------
-
-    // Klidové zobrazení striktního režimu: čitelný „Key — Label" aktuálního SelectedKey.
-    // Kurzor na konec — jinak po revertu (klik mimo) zůstane blikat na začátku pole.
+    // Klidové zobrazení striktního režimu: čitelný „Key - Label" aktuálního SelectedKey.
+    // Kurzor na konec - jinak po revertu (klik mimo) zůstane blikat na začátku pole.
     private void ShowSelectedKeyText()
     {
         SetText(DisplayFor(SelectedKey));
@@ -322,7 +317,7 @@ public class EDFilterComboBox : ComboBox
         return -1;
     }
 
-    // „Key — Label" pro daný Key dohledaný v aktuálních Suggestions; neznámý Key vrátí beze změny.
+    // „Key - Label" pro daný Key dohledaný v aktuálních Suggestions; neznámý Key vrátí beze změny.
     private string DisplayFor(string? key)
     {
         if (string.IsNullOrEmpty(key)) return "";
@@ -331,7 +326,7 @@ public class EDFilterComboBox : ComboBox
     }
 
     // Přestaví obsah dropdownu na položky odpovídající psanému textu (prázdný text = vše).
-    // Každá položka je ComboBoxItem: Content = čitelný „Key — Label", ale Tag nese čistý Key —
+    // Každá položka je ComboBoxItem: Content = čitelný „Key - Label", ale Tag nese čistý Key -
     // CommitSelection tak přečte vybraný Key nezávisle na zobrazeném textu.
     private void Refilter(string? text)
     {

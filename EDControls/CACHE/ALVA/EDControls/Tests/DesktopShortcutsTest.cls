@@ -37,15 +37,18 @@ Method Cleanup()
 	do ##class(ALVA.EDControls.UserData).Delete(.sys)
 }
 
+/// Návratová hodnota posledního Call - chyba metody je tam ("1~zpráva"), ne v ^||ML("ERR").
+Property lastRet As %String;
+
 /// Zavolá Add/Remove/Exists s daným JSON a vrátí hodnotu z OUT.
 Method Call(pMethod As %String, pItem As %String, pOut As %String) As %String
 {
 	do ..SetupSys(.sys)
 	kill ^||ML("IN"), ^||ML("OUT")
 	set ^||ML("IN","item") = pItem
-	if pMethod = "Add" { do ##class(ALVA.EDControls.DesktopShortcuts).Add(.sys) }
-	elseif pMethod = "Remove" { do ##class(ALVA.EDControls.DesktopShortcuts).Remove(.sys) }
-	else { do ##class(ALVA.EDControls.DesktopShortcuts).Exists(.sys) }
+	if pMethod = "Add" { set ..lastRet = ##class(ALVA.EDControls.DesktopShortcuts).Add(.sys) }
+	elseif pMethod = "Remove" { set ..lastRet = ##class(ALVA.EDControls.DesktopShortcuts).Remove(.sys) }
+	else { set ..lastRet = ##class(ALVA.EDControls.DesktopShortcuts).Exists(.sys) }
 	ret $get(^||ML("OUT",pOut))
 }
 
@@ -99,7 +102,7 @@ Method TestRemoveMissingIsNoError()
 {
 	do ..Cleanup()
 	do ..Call("Remove", ..Item("PrintReport", "9999"), "count")
-	do $$$AssertEquals($get(^||ML("ERR")), "", "Odebrání neexistující položky není chyba")
+	do $$$AssertEquals($p(..lastRet, "~"), 0, "Odebrání neexistující položky není chyba")
 	do ..Cleanup()
 }
 
@@ -108,8 +111,42 @@ Method TestCorruptBlobDoesNotBreakAdd()
 	do ..Cleanup()
 	do ..WriteRaw("{tohle neni pole}")
 	do $$$AssertEquals(..Call("Add", ..Item("PrintReport", "1003"), "count"), 1, "Poškozený blob se nahradí novým seznamem")
-	do $$$AssertEquals($get(^||ML("ERR")), "", "Poškozený blob nesmí shodit registraci")
+	do $$$AssertEquals($p(..lastRet, "~"), 0, "Poškozený blob nesmí shodit registraci")
 	do ..Cleanup()
+}
+
+/// Chybějící item je chyba - a musí být poznat na návratové hodnotě, jinak by předchozí
+/// dva testy „bez chyby" procházely i kdyby metoda padala.
+Method TestMissingItemIsReportedOnReturnValue()
+{
+	do ..Cleanup()
+	do ..Call("Add", "", "count")
+	do $$$AssertEquals($p(..lastRet, "~"), 1, "Chybějící item -> ret začíná 1~")
+	do $$$AssertNotEquals($p(..lastRet, "~", 2), "", "Chyba nese zprávu")
+	do ..Cleanup()
+}
+
+/// Identita položky = "Kind|ElementId|Id" - musí sedět s DesktopShortcut.Key na klientovi,
+/// jinak by shell a agenda každá viděly jinou množinu dlaždic.
+Method TestKeyOfIdentity()
+{
+	set obj = ##class(%DynamicObject).%FromJSON("{""Kind"":""PrintReport"",""Id"":""1003"",""ElementId"":""145008""}")
+	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(obj), "PrintReport|145008|1003")
+}
+
+/// Chybějící property nesmí hodit <PROPERTY DOES NOT EXIST> - blob píšou i agendy.
+Method TestKeyOfToleratesMissingProperties()
+{
+	set obj = ##class(%DynamicObject).%FromJSON("{""Kind"":""MenuModule""}")
+	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(obj), "MenuModule||")
+}
+
+/// Bez Kind není identita - položka se nesmí tvářet jako platná.
+Method TestKeyOfWithoutKindIsEmpty()
+{
+	set obj = ##class(%DynamicObject).%FromJSON("{""Id"":""1003""}")
+	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(obj), "")
+	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(""), "", "Neobjekt -> prázdný klíč")
 }
 
 }

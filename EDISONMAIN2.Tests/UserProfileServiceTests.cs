@@ -6,7 +6,7 @@ using NSubstitute;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy wire vrstvy okna „Vlastnosti uživatele" — parsování delimited object[] z
+/// Testy wire vrstvy okna „Vlastnosti uživatele" - parsování delimited object[] z
 /// Main.LoadUser / Main.LoadSettings a odesílané payloady SaveUser / (Set|Get)UserDefaultForm.
 /// </summary>
 public class UserProfileServiceTests

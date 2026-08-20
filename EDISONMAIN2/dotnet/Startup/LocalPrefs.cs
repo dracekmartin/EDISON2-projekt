@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace EDISONMAIN2;
 
 /// <summary>
-/// Lokální preference per Windows-user. Injectable abstrakce — produkce
+/// Lokální preference per Windows-user. Injectable abstrakce - produkce
 /// <see cref="LocalPrefs"/> persistuje do <c>%APPDATA%\m-line\EDISONMAIN2\local.json</c>,
 /// testy substituují in-memory implementaci.
 /// </summary>
@@ -12,10 +12,10 @@ public interface ILocalPrefs
 {
     string? LastIdfa { get; set; }
 
-    /// <summary>Poslední přihlašovací jméno — předvyplní se v login dialogu. Null = žádné.</summary>
+    /// <summary>Poslední přihlašovací jméno - předvyplní se v login dialogu. Null = žádné.</summary>
     string? LastLoginName { get; set; }
 
-    /// <summary>Zapamatované heslo posledního uživatele — DPAPI blob (viz <see cref="PasswordProtector"/>).
+    /// <summary>Zapamatované heslo posledního uživatele - DPAPI blob (viz <see cref="PasswordProtector"/>).
     /// Null = nezapamatováno. Předvyplní se jen když jméno uložené v blobu == <see cref="LastLoginName"/>.</summary>
     string? RememberedPassword { get; set; }
 
@@ -42,7 +42,7 @@ public class LocalPrefs : ILocalPrefs
     public string? LastLoginName { get; set; }
     public string? RememberedPassword { get; set; }
 
-    // Uživatel → Možnosti — ShowWindowsAsDialogs zatím bez behaviorálního efektu (uloženo pro budoucnost).
+    // Uživatel → Možnosti - ShowWindowsAsDialogs zatím bez behaviorálního efektu (uloženo pro budoucnost).
     public bool ShowWindowsAsDialogs { get; set; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
@@ -55,7 +55,8 @@ public class LocalPrefs : ILocalPrefs
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly string FilePath = Path.Combine(
+    /// <summary>Cíl persistence. Settable jen kvůli testům (jinak by šly proti reálnému %APPDATA%).</summary>
+    internal static string FilePath { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "m-line", "EDISONMAIN2", "local.json");
 

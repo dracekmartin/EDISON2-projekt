@@ -5,18 +5,11 @@ Class ALVA.EDISONMAIN2.Tests.TreeTest Extends ALVA.EDTesting.MLTestCase
 
 /// %UnitTest pro ALVA.EDISONMAIN2.API.Tree.GetTree.
 /// OnBeforeOneTest (kill ^||ML) a SetupSys (sys array boilerplate) zděděny z MLTestCase.
-///
-/// Spuštění (jednou per namespace):
-///   set ^UnitTestRoot = "c:\temp\unittests\"
-///   do ##class(%UnitTest.Manager).RunTest(":ALVA.EDISONMAIN2.Tests.TreeTest", "/noload")
-/// Nebo programově:
-///   do ##class(ALVA.EDTesting.TestRunner).RunPackage(.sys)   ; package="ALVA.EDISONMAIN2.Tests"
-///
 /// Pozn.: chyba je nesena návratovou hodnotou GetTree (ret="1~zpráva"), NE v ^||ML("ERR")
-/// — ten plní až MLRest HTTP vrstva, ne in-process. Testy proto vždy zachytávají ret.
+/// - ten plní až MLRest HTTP vrstva, ne in-process. Testy proto vždy zachytávají ret.
 
 /// Default input (tree="") -> main tree. První záznam je validní wire-format uzel
-/// (FAMILY nebo EXE — main začíná rozbalenou agendou-rodinou po materializaci z legacy XML).
+/// (FAMILY nebo EXE - main začíná rozbalenou agendou-rodinou po materializaci z legacy XML).
 Method TestDefaultInputReturnsMainTree()
 {
 	do ..SetupSys(.sys)
@@ -105,7 +98,7 @@ Method TestFamilyOpenCloseBalance()
 }
 
 /// FAMILY záznamy (napříč VŠEMI stromy) musí mít 6 polí dle wire-format kontraktu
-/// (type, name, expanded, elementId, licensed, mlineOnly) — elementId neprázdné u
+/// (type, name, expanded, elementId, licensed, mlineOnly) - elementId neprázdné u
 /// gate-ovaných složek. Gating z package IDs bije hlavně v main/partners, ne jen v system.
 Method TestFamilyRecordsHaveSixFieldsAllTrees()
 {
@@ -129,7 +122,7 @@ Method TestFamilyRecordsHaveSixFieldsAllTrees()
 }
 
 /// EXE záznamy musí mít 11 polí dle wire-format kontraktu (i když volání AddExe dlouhý
-/// název neuvádí — default parametru ho doplní, aby byl řádek uniformní).
+/// název neuvádí - default parametru ho doplní, aby byl řádek uniformní).
 Method TestExeRecordsHaveElevenFields()
 {
 	do ..SetupSys(.sys)
@@ -148,7 +141,7 @@ Method TestExeRecordsHaveElevenFields()
 	}
 }
 
-/// Dlouhý název (legacy nameEx) musí přežít regeneraci z XML — bez něj by plocha i menu
+/// Dlouhý název (legacy nameEx) musí přežít regeneraci z XML - bez něj by plocha i menu
 /// spuštěných modulů tiše spadly na krátký název. Pin na "Fakturace" ze zpracování AD.
 Method TestLongNameSurvivesGeneration()
 {
@@ -172,7 +165,7 @@ Method TestLongNameSurvivesGeneration()
 
 /// Wire hodnoty (ne jen počet polí): AddExe/AddFamily mapuje %Boolean → "1"/"0" string,
 /// na kterém závisí .NET parser (row.GetString(n)=="1"). Kontroluje mlineOnly EXE
-/// "Doklady OLD" (92101, mlineOnly=1) v main stromu — field 10="1", hidden field 8="0".
+/// "Doklady OLD" (92101, mlineOnly=1) v main stromu - field 10="1", hidden field 8="0".
 Method TestMlineOnlyExeHasWireFlagsSet()
 {
 	do ..SetupSys(.sys)
@@ -195,7 +188,7 @@ Method TestMlineOnlyExeHasWireFlagsSet()
 }
 
 /// Licencovaná složka: alespoň jedna FAMILY v main má licensed field 5 = "1"
-/// (package ID gate — legacy BuildTreeXML kontroloval složky proti licenci stejně jako formy).
+/// (package ID gate - legacy BuildTreeXML kontroloval složky proti licenci stejně jako formy).
 Method TestMainTreeHasLicensedFamily()
 {
 	do ..SetupSys(.sys)

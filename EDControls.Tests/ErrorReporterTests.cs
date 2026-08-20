@@ -11,6 +11,7 @@ namespace EDControls.Tests;
 /// Odeslání na ingest endpoint proti fake handleru - hlídá hlavičku, tvar dávky
 /// a to, že se výpadek sítě spolkne (hlášení chyby nesmí být druhá chyba).
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class ErrorReporterTests : IDisposable
 {
     private sealed class FakeHandler(HttpStatusCode status = HttpStatusCode.Created) : HttpMessageHandler
@@ -128,8 +129,6 @@ public class ErrorReporterTests : IDisposable
 
         Assert.Empty(_handler.Requests);
     }
-
-    // ---------- lokální fallback log ----------
 
     [Fact]
     public async Task NetworkFailure_WritesFallbackLog()

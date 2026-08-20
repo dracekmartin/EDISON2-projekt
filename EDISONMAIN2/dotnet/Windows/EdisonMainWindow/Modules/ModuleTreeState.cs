@@ -15,19 +15,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>Per stanice konstantní (DNS doména / registry override) - stačí vyhodnotit jednou.</summary>
         internal static readonly bool IsMlineDomainStation = MlineDomainDetector.IsDomainMline();
 
-        // ---- filtrace --------------------------------------------------------
-
         /// <summary>
-        /// 5-vrstvá filtrace stromu:
-        /// 1) licence — <see cref="ExecutableModule.IsLicensed"/> uzel musí být v <see cref="Lic.Elements"/>;
-        /// 2) hidden — <see cref="ExecutableModule.Hidden"/> uzly se vždy odfiltrují (legacy `hidden="1"`);
-        /// 3) mlineOnly — mimo doménu M-line skryto, v doméně suffix
-        ///    <see cref="MlineDomainDetector.Suffix"/> (legacy frmMain.vb:1204/1227);
-        /// 4) aplikační přístup — <c>AccessTable.Contains(ElementId)</c> pro každý EXE uzel;
-        /// 5) admin fallback — řešen v <see cref="AccessLoader"/> už při loadu (přidá konkrétní IDs).
-        /// Vrstvy 1+3+4 platí i pro FAMILY (package ID — legacy BuildTreeXML gate-oval skupiny
-        /// stejně jako formy, složka mimo licenci/AP/doménu skryje celou větev); FAMILY se navíc
-        /// auto-skryje, pokud jsou všechny děti odfiltrované.
+        /// Filtrace stromu: licence (<see cref="ExecutableModule.IsLicensed"/> ∈ <see cref="Lic.Elements"/>),
+        /// <see cref="ExecutableModule.Hidden"/>, mlineOnly a aplikační přístup (<c>AccessTable</c>);
+        /// admin fallback řeší už <see cref="AccessLoader"/> při loadu.
+        /// Gate platí i na FAMILY (package ID) - složka mimo licenci/AP/doménu skryje celou větev,
+        /// parita s legacy <c>BuildTreeXML</c>; prázdná FAMILY se navíc auto-skryje.
         /// </summary>
         internal static IModule? TryFilter(IModule module, Lic? licence, AccessTable? access = null, bool isMlineDomain = false) => module switch
         {
@@ -53,9 +46,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         internal static ModuleFamily? FilterFamily(ModuleFamily family, Lic? licence, AccessTable? access = null, bool isMlineDomain = false)
         {
-            // Gate složky PŘED rekurzí — mimo licenci/AP/doménu je skrytá celá větev včetně
+            // Gate složky PŘED rekurzí - mimo licenci/AP/doménu je skrytá celá větev včetně
             // jinak povolených dětí (např. admin fallback přidá formTMList, ale bez AP
-            // na package Kmenová evidence se nezobrazí — parita s legacy BuildTreeXML).
+            // na package Kmenová evidence se nezobrazí - parita s legacy BuildTreeXML).
             if (family.MlineOnly && !isMlineDomain) return null;
             if (family.IsLicensed && !(licence?.Elements?.Contains(family.ElementId) ?? false))
                 return null;
@@ -81,8 +74,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             foreach (var child in visibleChildren) filtered.NestedModules.Add(child!);
             return filtered;
         }
-
-        // ---- hledání ---------------------------------------------------------
 
         /// <summary>
         /// Nastaví <see cref="IModule.IsVisibleBySearch"/> rekurzivně. Uzel je viditelný, když jeho
@@ -118,7 +109,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             return selfMatch;
         }
 
-        // ---- rozbalení -------------------------------------------------------
         // Klíč uzlu = "<tree>:<index-cesta>" (např. "main:5.2") - stabilní vůči přejmenování i suffixům
         // z ModuleLaunchabilityCheck, na rozdíl od cesty přes DisplayedName.
 

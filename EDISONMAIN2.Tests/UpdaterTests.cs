@@ -31,8 +31,6 @@ public class UpdaterTests
         return mock;
     }
 
-    // ---------- LoadSettings ----------
-
     [Fact]
     public void LoadSettings_AllFields_ParsedCorrectly()
     {
@@ -82,8 +80,6 @@ public class UpdaterTests
         Assert.Equal(@"\\share", new UpdateSettings(true, "", @"\\edison", @"\\share").SourceDir);
         Assert.Equal(@"\\edison", new UpdateSettings(true, "", @"\\edison", "").SourceDir);
     }
-
-    // ---------- Check — decision matrix ----------
 
     [Fact]
     public void Check_Disabled_None()
@@ -166,7 +162,7 @@ public class UpdaterTests
     [Fact]
     public void Check_CacheMismatchButNewerSource_UpdateWins()
     {
-        // Nová verze na zdroji řeší i Caché mismatch — update má přednost před Broken.
+        // Nová verze na zdroji řeší i Caché mismatch - update má přednost před Broken.
         var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260601.1" };
 
         var result = updater.Check(new UpdateSettings(true, "20260601.1", @"\\edison", ""));
@@ -177,15 +173,13 @@ public class UpdaterTests
     [Fact]
     public void Check_EmptyCacheVersion_NoMismatchCheck()
     {
-        // Dev server má version~ prázdné — mismatch check se přeskakuje.
+        // Dev server má version~ prázdné - mismatch check se přeskakuje.
         var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260526.1" };
 
         var result = updater.Check(new UpdateSettings(true, "", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
-
-    // ---------- Release notice (notice-only) ----------
 
     private class NoticeUpdater : Updater
     {
@@ -243,7 +237,7 @@ public class UpdaterTests
     [Fact]
     public void ReleaseNotice_DownloadFails_Unknown()
     {
-        // Notice-only — nedostupný release server (stanice bez internetu) nesmí nic rozbít.
+        // Notice-only - nedostupný release server (stanice bez internetu) nesmí nic rozbít.
         var updater = new NoticeUpdater { Content = null };
 
         Assert.Equal(ReleaseNoticeOutcome.Unknown, updater.GetReleaseNotice(NoticeSettings, "20260526.1").Outcome);

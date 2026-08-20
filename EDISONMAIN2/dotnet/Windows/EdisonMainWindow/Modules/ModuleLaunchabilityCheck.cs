@@ -4,8 +4,8 @@ using EDControls.EDViewModel;
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
-    /// Kontrola launchovatelnosti modulů. Tree.cls neautoruje barvu — odvozuje se zde z exe
-    /// a promítá do barvy + textového suffixu v názvu. Běží v DEBUG i Release — kolegové
+    /// Kontrola launchovatelnosti modulů. Tree.cls neautoruje barvu - odvozuje se zde z exe
+    /// a promítá do barvy + textového suffixu v názvu. Běží v DEBUG i Release - kolegové
     /// validují stav stromu na Release buildu z testovacího procesu.
     ///
     /// Stavy: prázdné exe = autorský stub (oranžová); exe vyplněné ale soubor chybí = červená
@@ -15,9 +15,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     internal static class ModuleLaunchabilityCheck
     {
         // Diagnostické barvy z theme (EDTheme.Module.*); fallback na literál, když slovník
-        // není mergnutý (unit testy bez WPF Application) — proto asserty na #FFA500/#FF0000 platí.
-        private static string StubColor => ResolveThemeColor("EDTheme.Module.Stub.Color", "#FFA500");    // oranžová — záměrný stub bez exe
-        private static string BrokenColor => ResolveThemeColor("EDTheme.Module.Broken.Color", "#FF0000"); // červená — tvrdí launchovatelný, ale exe chybí
+        // není mergnutý (unit testy bez WPF Application) - proto asserty na #FFA500/#FF0000 platí.
+        private static string StubColor => ResolveThemeColor("EDTheme.Module.Stub.Color", "#FFA500");    // oranžová - záměrný stub bez exe
+        private static string BrokenColor => ResolveThemeColor("EDTheme.Module.Broken.Color", "#FF0000"); // červená - tvrdí launchovatelný, ale exe chybí
 
         private static string ResolveThemeColor(string key, string fallback)
             => System.Windows.Application.Current?.TryFindResource(key) is System.Windows.Media.Color c
@@ -66,21 +66,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             if (anyBroken)
             {
                 marked.Color = BrokenColor;
-                marked.DisplayedName += " — rozbité";
+                marked.DisplayedName += " - rozbité";
                 return (marked, Category.Broken);
             }
             if (anyLaunchable) return (marked, Category.Launchable);
 
             marked.Color = StubColor;
-            marked.DisplayedName += " — stuby";
+            marked.DisplayedName += " - stuby";
             return (marked, Category.Stub);
         }
 
         private static (IModule, Category) MarkExe(ExecutableModule exe) => Evaluate(exe) switch
         {
             State.Launchable => (exe, Category.Launchable),
-            State.Stub => (exe with { Color = StubColor, DisplayedName = exe.DisplayedName + " — stub" }, Category.Stub),
-            _ => (exe with { Color = BrokenColor, DisplayedName = exe.DisplayedName + " — chybí exe" }, Category.Broken),
+            State.Stub => (exe with { Color = StubColor, DisplayedName = exe.DisplayedName + " - stub" }, Category.Stub),
+            _ => (exe with { Color = BrokenColor, DisplayedName = exe.DisplayedName + " - chybí exe" }, Category.Broken),
         };
 
         private static State Evaluate(ExecutableModule exe)

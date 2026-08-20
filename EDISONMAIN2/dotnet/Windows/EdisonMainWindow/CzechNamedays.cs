@@ -3,9 +3,9 @@ using System;
 namespace EDISONMAIN2.Windows.EdisonMainWindow;
 
 /// <summary>
-/// Český kalendář jmen pro INFO label v menu shellu. Statický seznam — neuložený v Caché,
+/// Český kalendář jmen pro INFO label v menu shellu. Statický seznam - neuložený v Caché,
 /// neměnný napříč zákazníky. Pro státní svátky bez jmenného nositele (Den vítězství, …) je
-/// hodnota prázdná — caller pak format string vynechá " svátek má X" suffix.
+/// hodnota prázdná - caller pak format string vynechá " svátek má X" suffix.
 /// </summary>
 internal static class CzechNamedays
 {

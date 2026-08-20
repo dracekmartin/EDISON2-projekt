@@ -15,7 +15,7 @@ namespace EDControls;
 /// </summary>
 /// <remarks>
 /// FormID se default odvozuje z názvu VM (viz <see cref="EDViewModel.PersistedFormId"/>) a
-/// dostává prefix <c>"EDISON2."</c> — odděluje od starých numerických IDs z <c>EDISFormEnum</c>
+/// dostává prefix <c>"EDISON2."</c> - odděluje od starých numerických IDs z <c>EDISFormEnum</c>
 /// (tam VB moduly ukládají vlastní state).
 /// </remarks>
 public static class WindowStatePersistence
@@ -23,7 +23,7 @@ public static class WindowStatePersistence
     public static void Attach(Window window, string formId)
     {
         // Před Show(): PresentationSource je null, hookne se SourceInitialized event,
-        // který se synchronně vyvolá uvnitř Show() ještě před prvním paintem — restore
+        // který se synchronně vyvolá uvnitř Show() ještě před prvním paintem - restore
         // dorazí včas a nenastane flicker z XAML defaults na uložený stav.
         if (PresentationSource.FromVisual(window) is null)
             window.SourceInitialized += (_, _) => TryRestore(window, formId);
@@ -31,7 +31,7 @@ public static class WindowStatePersistence
             TryRestore(window, formId);
 
         // Guard na e.Cancel: WPF pustí i zbylé Closing handlery, když jiný zavření zrušil
-        // (potvrzovací dialog shellu) — bez guardu by každé odmítnuté zavření platilo SaveParams.
+        // (potvrzovací dialog shellu) - bez guardu by každé odmítnuté zavření platilo SaveParams.
         window.Closing += (_, e) => { if (!e.Cancel) TrySave(window, formId); };
     }
 
@@ -53,7 +53,7 @@ public static class WindowStatePersistence
         }
         catch
         {
-            // Best-effort restore — chyba neblokuje start okna, použijí se XAML defaults.
+            // Best-effort restore - chyba neblokuje start okna, použijí se XAML defaults.
         }
     }
 
@@ -75,7 +75,7 @@ public static class WindowStatePersistence
         }
         catch
         {
-            // Best-effort save — neblokujeme zavírání okna.
+            // Best-effort save - neblokujeme zavírání okna.
         }
     }
 

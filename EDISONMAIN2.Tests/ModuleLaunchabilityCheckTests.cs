@@ -5,11 +5,11 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Testy obarvení stromu dle launchovatelnosti. Po zavedení generického hosta
-/// (EDISONMAIN2API.exe) je každá existující exe launchovatelná — odpadl stav „neretrofitnuto".
+/// (EDISONMAIN2API.exe) je každá existující exe launchovatelná - odpadl stav „neretrofitnuto".
 /// </summary>
 public class ModuleLaunchabilityCheckTests
 {
-    // Existující soubor v AppContext.BaseDirectory (testovací dll) — ResolveExecutablePath ho najde.
+    // Existující soubor v AppContext.BaseDirectory (testovací dll) - ResolveExecutablePath ho najde.
     private static string ExistingExeName => Path.GetFileName(typeof(ModuleLaunchabilityCheckTests).Assembly.Location);
 
     [Fact]
@@ -32,7 +32,7 @@ public class ModuleLaunchabilityCheckTests
         var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
 
         Assert.Equal("#FFA500", marked.Color);
-        Assert.EndsWith(" — stub", marked.DisplayedName);
+        Assert.EndsWith(" - stub", marked.DisplayedName);
     }
 
     [Fact]
@@ -43,10 +43,8 @@ public class ModuleLaunchabilityCheckTests
         var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
 
         Assert.Equal("#FF0000", marked.Color);
-        Assert.EndsWith(" — chybí exe", marked.DisplayedName);
+        Assert.EndsWith(" - chybí exe", marked.DisplayedName);
     }
-
-    // ---------- Agregace rodiny (MarkFamily) --------------------------------
 
     private static ExecutableModule Launchable(string name = "Live") =>
         new() { DisplayedName = name, ExecutablePath = ExistingExeName, FormName = "X" };
@@ -69,10 +67,10 @@ public class ModuleLaunchabilityCheckTests
         var markedGp = (ModuleFamily)ModuleLaunchabilityCheck.Mark(grandparent);
 
         Assert.Equal("#FF0000", markedGp.Color);
-        Assert.Equal("GP — rozbité", markedGp.DisplayedName);
+        Assert.Equal("GP - rozbité", markedGp.DisplayedName);
         var markedParent = Assert.IsType<ModuleFamily>(Assert.Single(markedGp.NestedModules));
         Assert.Equal("#FF0000", markedParent.Color);
-        Assert.Equal("P — rozbité", markedParent.DisplayedName);
+        Assert.Equal("P - rozbité", markedParent.DisplayedName);
     }
 
     [Fact]
@@ -98,13 +96,13 @@ public class ModuleLaunchabilityCheckTests
         var marked = (ModuleFamily)ModuleLaunchabilityCheck.Mark(family);
 
         Assert.Equal("#FFA500", marked.Color);
-        Assert.Equal("F — stuby", marked.DisplayedName);
+        Assert.Equal("F - stuby", marked.DisplayedName);
     }
 
     [Fact]
     public void MarkFamily_CopiesNodeMetadata()
     {
-        // Ruční kopie v MarkFamily musí zachovat všechna pole uzlu — jinak by se při obarvení
+        // Ruční kopie v MarkFamily musí zachovat všechna pole uzlu - jinak by se při obarvení
         // stromu ztratil ElementId / licenční / mlineOnly flag. Launchovatelné dítě → beze suffixu.
         var family = new ModuleFamily
         {

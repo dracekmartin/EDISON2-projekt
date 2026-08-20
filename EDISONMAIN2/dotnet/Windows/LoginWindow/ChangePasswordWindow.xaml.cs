@@ -21,7 +21,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
         {
             ErrorText.Visibility = Visibility.Collapsed;
 
-            // Shodu nového hesla kontroluje klient — server dostává jen jedno nové heslo.
+            // Shodu nového hesla kontroluje klient - server dostává jen jedno nové heslo.
             if (NewPasswordBox.Password.Length == 0) { ShowError("Zadejte nové heslo."); return; }
             if (NewPasswordBox.Password != ConfirmPasswordBox.Password) { ShowError("Nová hesla se neshodují."); return; }
 

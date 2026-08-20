@@ -4,7 +4,7 @@ using NSubstitute;
 namespace EDControls.Tests;
 
 // Sdílí serializovanou kolekci s ostatními třídami sahajícími na EDServices.Current
-// (Initialize/Reset v *_FallsBackToEDServicesCurrent + fallback v Execute catch) — viz SharedStaticStateCollection.
+// (Initialize/Reset v *_FallsBackToEDServicesCurrent + fallback v Execute catch) - viz SharedStaticStateCollection.
 [Collection(SharedStaticStateCollection.Name)]
 public class AsyncRelayCommandTests
 {
@@ -58,7 +58,7 @@ public class AsyncRelayCommandTests
         var cmd = new AsyncRelayCommand(() => gate.Task);
 
         cmd.Execute(null);
-        // Po startu, ale před dokončením — running, CanExecute=false.
+        // Po startu, ale před dokončením - running, CanExecute=false.
         Assert.False(cmd.CanExecute(null));
 
         gate.SetResult();
@@ -141,7 +141,7 @@ public class AsyncRelayCommandTests
     }
 }
 
-// Generický AsyncRelayCommand<T> je samostatná (duplikovaná) implementace — vlastní pokrytí.
+// Generický AsyncRelayCommand<T> je samostatná (duplikovaná) implementace - vlastní pokrytí.
 // Ve stejné serializované kolekci, protože jeho Execute catch také fallbackuje na EDServices.Current.
 [Collection(SharedStaticStateCollection.Name)]
 public class AsyncRelayCommandGenericTests
@@ -222,7 +222,7 @@ public class AsyncRelayCommandGenericTests
         var cmd = new AsyncRelayCommand<string>(async _ => { invocations++; await gate.Task; });
 
         cmd.Execute("a");
-        cmd.Execute("b");   // ignorováno — první ještě běží
+        cmd.Execute("b");   // ignorováno - první ještě běží
 
         Assert.Equal(1, invocations);  // invocations se inkrementuje synchronně na startu handleru
 

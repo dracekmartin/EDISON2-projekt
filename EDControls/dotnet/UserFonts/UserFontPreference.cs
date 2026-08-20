@@ -6,12 +6,12 @@ namespace EDControls.UserFonts;
 
 /// <summary>
 /// User-zvolený font (FontFamily + FontSize + toggle Apply) sdílený napříč všemi
-/// m-line WPF nástroji — uložen v <c>%APPDATA%\m-line\common\font.json</c>.
+/// m-line WPF nástroji - uložen v <c>%APPDATA%\m-line\common\font.json</c>.
 /// Při změně shellem se přes <see cref="FileSystemWatcher"/> propaguje do otevřených
-/// procesů (TemplateDesigner atd.) — viz <see cref="Changed"/> event.
+/// procesů (TemplateDesigner atd.) - viz <see cref="Changed"/> event.
 ///
 /// Storage je úmyslně v "common" složce (ne EDISONMAIN2-specific), aby preference
-/// nezůstala vázaná na konkrétní aplikaci. Nová m-line apka nic z toho nevolá přímo —
+/// nezůstala vázaná na konkrétní aplikaci. Nová m-line apka nic z toho nevolá přímo -
 /// stačí <c>EDAppearance.Initialize(app)</c>.
 /// </summary>
 public class UserFontPreference
@@ -28,7 +28,7 @@ public class UserFontPreference
     /// <summary>
     /// Verze schématu. Chybí = soubor psaný verzí, která pt hodnotu vykreslovala jako px
     /// (viz <see cref="MigrateLegacy"/>). Novější verze než <see cref="CurrentVersion"/>
-    /// se nechává být — starší build cizí data nepřepisuje, dokud user sám neuloží.
+    /// se nechává být - starší build cizí data nepřepisuje, dokud user sám neuloží.
     /// </summary>
     public int? Version { get; set; }
 
@@ -41,7 +41,7 @@ public class UserFontPreference
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    /// <summary>Cesta k <c>font.json</c>. Přepisovatelná (internal seam pro testy) — produkce
+    /// <summary>Cesta k <c>font.json</c>. Přepisovatelná (internal seam pro testy) - produkce
     /// používá default v <c>%APPDATA%\m-line\common</c>.</summary>
     internal static string FilePath { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -53,7 +53,7 @@ public class UserFontPreference
 
     /// <summary>
     /// Vyvolá se po změně <c>font.json</c> z jiného procesu (typicky shell změnil user font).
-    /// Marshal na UI thread je odpovědnost subscriberu — viz <see cref="FontService.Initialize"/>.
+    /// Marshal na UI thread je odpovědnost subscriberu - viz <see cref="FontService.Initialize"/>.
     /// </summary>
     internal static event Action? Changed;
 
@@ -67,17 +67,17 @@ public class UserFontPreference
         }
         catch
         {
-            // Poškozený soubor — držíme default, další Save() ho přepíše.
+            // Poškozený soubor - držíme default, další Save() ho přepíše.
         }
     }
 
     /// <summary>
     /// Zahodí velikost uloženou verzí, která pt hodnotu vykreslovala jako px: uživatelé si ji
     /// tehdy nastavovali podle výsledku na obrazovce, takže to není jejich zamýšlená velikost
-    /// v pt, ale kompenzace chyby — po opravě by dala nesmysl (menší než default, nebo skok
+    /// v pt, ale kompenzace chyby - po opravě by dala nesmysl (menší než default, nebo skok
     /// o třetinu nahoru). Rodina se drží (chyba se jí netýkala), pokud je na whitelistu;
     /// symbolový font z původního pickeru se zahodí taky. Běží v paměti při každém načtení,
-    /// dokud uživatel neuloží — startup záměrně nic nezapisuje.
+    /// dokud uživatel neuloží - startup záměrně nic nezapisuje.
     /// </summary>
     internal static UserFontPreference MigrateLegacy(UserFontPreference prefs)
     {
@@ -92,7 +92,7 @@ public class UserFontPreference
 
     public void Save()
     {
-        // Co zapisujeme, je podle definice aspoň aktuální schéma — bez razítka by čerstvě
+        // Co zapisujeme, je podle definice aspoň aktuální schéma - bez razítka by čerstvě
         // uloženou velikost při dalším startu zahodila MigrateLegacy. Max drží razítko
         // novějšího buildu, ať mu tenhle uložení nesrazí soubor na starší verzi.
         Version = Math.Max(Version ?? 0, CurrentVersion);
@@ -104,7 +104,7 @@ public class UserFontPreference
 
     /// <summary>
     /// Spustí <see cref="FileSystemWatcher"/> na adresáři. Při změně <c>font.json</c> načte aktuální
-    /// hodnoty a vyvolá <see cref="Changed"/>. Idempotentní — opakované volání nic neudělá.
+    /// hodnoty a vyvolá <see cref="Changed"/>. Idempotentní - opakované volání nic neudělá.
     /// Listener je odpovědný za marshal na UI thread (FileSystemWatcher používá thread pool).
     /// </summary>
     internal static void BeginListening()
@@ -122,9 +122,9 @@ public class UserFontPreference
 
     private static void OnFileChanged(object sender, FileSystemEventArgs e)
     {
-        // Krátká pauza — soubor může být ještě v půlce zápisu (truncate před content write).
+        // Krátká pauza - soubor může být ještě v půlce zápisu (truncate před content write).
         // 50ms je heuristika; pokud reload selže, další event v sekvenci to dožene.
         try { System.Threading.Thread.Sleep(50); Load(); Changed?.Invoke(); }
-        catch { /* sharing violation nebo poškozený JSON — ignorovat, příští event dožene */ }
+        catch { /* sharing violation nebo poškozený JSON - ignorovat, příští event dožene */ }
     }
 }

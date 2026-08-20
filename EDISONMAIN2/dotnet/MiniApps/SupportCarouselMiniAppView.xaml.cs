@@ -21,7 +21,7 @@ public partial class SupportCarouselMiniAppView : UserControl
     private void OnSizeChanged(object sender, SizeChangedEventArgs e) =>
         (DataContext as SupportCarouselMiniAppViewModel)?.UpdateViewportWidth(e.NewSize.Width);
 
-    /// <summary>Hover nelze brát z <c>IsMouseOver</c> — obsah stránek je HWND WebView2 (airspace),
+    /// <summary>Hover nelze brát z <c>IsMouseOver</c> - obsah stránek je HWND WebView2 (airspace),
     /// WPF nad ním mouse eventy nedostane; proto fyzická pozice kurzoru proti bounds controlu.
     /// Pohyb kurzoru odlišuje čtení od odloženého kurzoru (VM podle něj nechá pauzu vypršet).</summary>
     private CarouselEngagement SampleEngagement()

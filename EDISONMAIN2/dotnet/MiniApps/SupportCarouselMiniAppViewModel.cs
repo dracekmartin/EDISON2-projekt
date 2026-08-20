@@ -6,19 +6,19 @@ using EDControls.MiniApps;
 
 namespace EDISONMAIN2.MiniApps;
 
-/// <summary>Jedna stránka karuselu — titulek + továrna na obsah (invokuje se lazy, viz
+/// <summary>Jedna stránka karuselu - titulek + továrna na obsah (invokuje se lazy, viz
 /// <see cref="SupportCarouselMiniAppViewModel.VisiblePages"/>).</summary>
 public sealed record CarouselPage(string Title, Func<FrameworkElement> ContentFactory);
 
 /// <summary>Viditelná stránka pro view (sloupec: popisek + živý obsah).</summary>
 public sealed record CarouselPageView(string Title, FrameworkElement Content);
 
-/// <summary>Vzorek „uživatel je v panelu" od view — surová platformní data, politiku pauzy
+/// <summary>Vzorek „uživatel je v panelu" od view - surová platformní data, politiku pauzy
 /// (kdy vyprší) drží VM.</summary>
 internal readonly record struct CarouselEngagement(bool PointerInside, bool FocusWithin, bool PointerMoved);
 
 /// <summary>
-/// Pinned karusel „Podpora M-line" — garantovaný komunikační kanál IT → uživatelé. Responzivní:
+/// Pinned karusel „Podpora M-line" - garantovaný komunikační kanál IT → uživatelé. Responzivní:
 /// podle šířky zobrazí 1–N stránek (Novinky/Wiki/Školení) vedle sebe; vejdou-li se všechny,
 /// cyklení se vypne (mirror starých 3 sloupců). Jinak šipky pro ruční posun a lišta, která se
 /// za <see cref="PageDuration"/> naplní a přeskočí na další stránku. Obsah stránky se vytváří
@@ -27,14 +27,14 @@ internal readonly record struct CarouselEngagement(bool PointerInside, bool Focu
 public sealed class SupportCarouselMiniAppViewModel : EDMiniAppViewModel
 {
     /// <summary>Krátká právě proto, že odpočet stojí, když je uživatel v panelu
-    /// (<see cref="EngagementProbe"/>) — čtení stránka nepřeskočí pod rukama.</summary>
+    /// (<see cref="EngagementProbe"/>) - čtení stránka nepřeskočí pod rukama.</summary>
     internal static readonly TimeSpan PageDuration = TimeSpan.FromSeconds(15);
     internal static readonly TimeSpan TickInterval = TimeSpan.FromMilliseconds(250);
-    /// <summary>Po jak dlouhém klidu pauza vyprší. Konečná být musí (WPF fokus je „sticky" — jedno
+    /// <summary>Po jak dlouhém klidu pauza vyprší. Konečná být musí (WPF fokus je „sticky" - jedno
     /// kliknutí na šipku by cyklení zastavilo navždy), ale ne krátká: klid ≠ nezájem, čtení
     /// kolečkem ani klávesami kurzorem nehýbe a nad HWND WebView2 ho WPF nevidí.</summary>
     internal static readonly TimeSpan PauseIdleTimeout = TimeSpan.FromMinutes(3);
-    /// <summary>Minimální šířka jednoho sloupce — pod ní se stránky stackují do cyklení.</summary>
+    /// <summary>Minimální šířka jednoho sloupce - pod ní se stránky stackují do cyklení.</summary>
     internal const double MinPageWidth = 420;
 
     private readonly IReadOnlyList<CarouselPage> _pages;
@@ -44,7 +44,7 @@ public sealed class SupportCarouselMiniAppViewModel : EDMiniAppViewModel
     public SupportCarouselMiniAppViewModel(IReadOnlyList<CarouselPage> pages)
         : this(EDServices.Current, pages) { }
 
-    /// <summary>DI/test overload — předá vlastní <c>EDServices</c> místo <c>EDServices.Current</c>.</summary>
+    /// <summary>DI/test overload - předá vlastní <c>EDServices</c> místo <c>EDServices.Current</c>.</summary>
     public SupportCarouselMiniAppViewModel(EDServices services, IReadOnlyList<CarouselPage> pages)
         : base(services)
     {
@@ -85,7 +85,7 @@ public sealed class SupportCarouselMiniAppViewModel : EDMiniAppViewModel
     public string PageIndicator => $"{_currentIndex + 1}/{_pages.Count}";
 
     /// <summary>Okno viditelných stránek od <see cref="CurrentIndex"/> (s wrapem). Počítá se
-    /// v getteru — obsah se materializuje až přístupem (binding), ctor továrny nevolá.</summary>
+    /// v getteru - obsah se materializuje až přístupem (binding), ctor továrny nevolá.</summary>
     public IReadOnlyList<CarouselPageView> VisiblePages =>
         [.. Enumerable.Range(0, _visibleCount).Select(offset =>
         {
@@ -130,7 +130,7 @@ public sealed class SupportCarouselMiniAppViewModel : EDMiniAppViewModel
     public override void OnClosed()
     {
         _timer.Stop();
-        // Vytvořený obsah může držet browser proces (WebView2) — uklidit při zavření panelu.
+        // Vytvořený obsah může držet browser proces (WebView2) - uklidit při zavření panelu.
         foreach (var content in _contents)
             (content as IDisposable)?.Dispose();
     }

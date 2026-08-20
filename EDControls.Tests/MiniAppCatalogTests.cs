@@ -4,7 +4,7 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Testy agregace <see cref="MiniAppCatalog"/>. Katalog továrnu (<c>CreateViewModel</c>) nikdy
-/// nevolá — proto stačí descriptory s no-op factory.
+/// nevolá - proto stačí descriptory s no-op factory.
 /// </summary>
 public class MiniAppCatalogTests
 {

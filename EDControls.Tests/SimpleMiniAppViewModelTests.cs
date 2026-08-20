@@ -13,7 +13,7 @@ public class SimpleMiniAppViewModelTests
     [Fact]
     public void Ctor_DoesNotInvokeContentFactory()
     {
-        // Kontrakt: VM továrnu jen drží, invokuje ji až view (viz OnContentCreated) — kvůli
+        // Kontrakt: VM továrnu jen drží, invokuje ji až view (viz OnContentCreated) - kvůli
         // vícenásobnému otevření a dock/float re-parentingu. Kdyby ji ctor zavolal, throwing
         // factory by vybublala výjimku.
         var ex = Record.Exception(() => new SimpleMiniAppViewModel(MockServices(), "x", DummyFactory));

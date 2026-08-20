@@ -41,8 +41,6 @@ public class CompanySwitcherTests
             closeLegacyModules ?? (() => { }));
     }
 
-    // ---------- PickInitial ----------
-
     [Fact]
     public void PickInitial_PreferredMatch_ReturnsMatch()
     {
@@ -99,8 +97,6 @@ public class CompanySwitcherTests
         Assert.Equal("CB_DP", pick.Id);
     }
 
-    // ---------- Switch — null licence (skip verify) ----------
-
     [Fact]
     public void Switch_NullLicence_AutoAccepts_NoVerifyCall()
     {
@@ -125,8 +121,6 @@ public class CompanySwitcherTests
         Assert.Equal("JI_DP", mlRest.DataNamespace);
     }
 
-    // ---------- Switch — VerifyLic Accepted ----------
-
     [Fact]
     public void Switch_VerifyAccepted_ReturnsAccepted()
     {
@@ -147,7 +141,7 @@ public class CompanySwitcherTests
     public void Switch_Accepted_ReleasesOldFirmLock()
     {
         // Po úspěšném přepnutí se uvolní ACTIVITY zámek staré firmy (jinak drží její licenční slot).
-        // Logout běží na klonu se starou idfa/namespace — ověřujeme přes mlRest.With(...).
+        // Logout běží na klonu se starou idfa/namespace - ověřujeme přes mlRest.With(...).
         var mlRest = MLRestMocks.Create();   // start Idfa = CB_DP
         SetupVerifyLic(mlRest, 1);
         var licence = new Lic { CountsLOGIN = 5 };
@@ -162,7 +156,7 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_SameFirm_DoesNotLogout()
     {
-        // Přepnutí na tutéž firmu (originalIdfa == newIdfa) nesmí odhlásit — jinak by shell
+        // Přepnutí na tutéž firmu (originalIdfa == newIdfa) nesmí odhlásit - jinak by shell
         // uvolnil vlastní ACTIVITY zámek pod aktuální Idfa.
         var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
         SetupVerifyLic(mlRest, 1);
@@ -178,7 +172,7 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_NullLicence_DoesNotLogout()
     {
-        // Bez licence (testy / pre-licence stav) se neodhlašuje — žádný reálný zámek staré firmy.
+        // Bez licence (testy / pre-licence stav) se neodhlašuje - žádný reálný zámek staré firmy.
         var mlRest = MLRestMocks.Create();
         var switcher = CreateSwitcher(mlRest, () => null);
 
@@ -186,8 +180,6 @@ public class CompanySwitcherTests
 
         mlRest.DidNotReceive().With(Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>());
     }
-
-    // ---------- Switch — non-admin over-limit ----------
 
     [Fact]
     public void Switch_NonAdminOverLimit_Refused()
@@ -222,7 +214,7 @@ public class CompanySwitcherTests
     public void Switch_Refused_CarriesFreshTargetLicence()
     {
         // Na Refused vrací SwitchOutcome čerstvě načtenou licenci CÍLOVÉ firmy (z loaderu),
-        // ne původní currentLicence — LicenceVerifier vrací licenceLoader() i při odmítnutí.
+        // ne původní currentLicence - LicenceVerifier vrací licenceLoader() i při odmítnutí.
         var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
         SetupVerifyLic(mlRest, -1);
         var currentLicence = new Lic { CountsLOGIN = 5 };
@@ -235,8 +227,6 @@ public class CompanySwitcherTests
         Assert.Same(freshLicence, result.Licence);
         Assert.NotSame(currentLicence, result.Licence);
     }
-
-    // ---------- Switch — admin retry path ----------
 
     [Fact]
     public void Switch_AdminConfirmDenied_Cancelled()
@@ -288,8 +278,6 @@ public class CompanySwitcherTests
         nav.Received(1).ShowLegacyAndWait("USERS.exe", "ALVA.USERS.formUSERSActivity", shareShellSession: false);
         Assert.Equal("JI_DP", mlRest.Idfa);
     }
-
-    // ---------- Switch - zavírání oken a modulů ----------
 
     [Fact]
     public void Switch_ZavreShellOkna_PredSwapemMLRest()
@@ -386,8 +374,6 @@ public class CompanySwitcherTests
         prefs.DidNotReceive().Save();
     }
 
-    // ---------- Switch — CacheLocks režim ----------
-
     [Fact]
     public void Switch_VerifyLicBeziBezCacheLocks_PoAcceptedJeJedna()
     {
@@ -435,8 +421,6 @@ public class CompanySwitcherTests
         Assert.Equal(1, mlRest.CacheLocks);
     }
 
-    // ---------- Switch — prefs persistence ----------
-
     [Fact]
     public void Switch_Accepted_SavesLastIdfaToPrefs()
     {
@@ -463,8 +447,6 @@ public class CompanySwitcherTests
 
         prefs.DidNotReceive().Save();
     }
-
-    // ---------- Switch — licenceLoader interaction ----------
 
     [Fact]
     public void Switch_VerifyAccepted_UsesLoaderResultForCountsLogin()

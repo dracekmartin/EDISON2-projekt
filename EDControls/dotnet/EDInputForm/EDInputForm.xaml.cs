@@ -22,9 +22,7 @@ namespace EDControls.EDInputForm
         /// </summary>
         public IReadOnlyList<ListItem> PlaceholderFields { get; set; } = [];
 
-        // ─── Configuration ────────────────────────────────────────────────────────
-
-        // MLRest a PopupDisplayer ze sdíleného EDServices.Current — nezávislé na Window.DataContext.
+        // MLRest a PopupDisplayer ze sdíleného EDServices.Current - nezávislé na Window.DataContext.
         // Dialogy hostující EDInputForm tak nemusí mít VM dědící z EDViewModel jen kvůli těmto
         // službám (mohou mít vlastní VM se svými properties, nebo žádný VM).
         private IMLRest? MLRest => EDViewModel.EDServices.Current.MLRest;
@@ -66,8 +64,6 @@ namespace EDControls.EDInputForm
             }
         }
 
-        // ─── Dependency properties ───────────────────────────────────────────────
-
         public static readonly DependencyProperty ItemsProperty =
             DependencyProperty.Register(
                 nameof(Items),
@@ -105,11 +101,9 @@ namespace EDControls.EDInputForm
             };
         }
 
-        // ─── Search filter & navigation ──────────────────────────────────────────
-
         private readonly List<Field> _searchMatches = [];
 
-        /// <summary>Stav rozbalení skupin před začátkem hledání — pro obnovení po smazání dotazu.</summary>
+        /// <summary>Stav rozbalení skupin před začátkem hledání - pro obnovení po smazání dotazu.</summary>
         private Dictionary<Group, bool>? _expandStateBeforeSearch;
 
         private void WireToolbarSearch()
@@ -124,11 +118,7 @@ namespace EDControls.EDInputForm
             Toolbar.HelpCommand = new RelayCommand(ShowShortcutsHelp);
         }
 
-        // ─── Nápověda klávesových zkratek ────────────────────────────────────────
-
-        /// <summary>Jediný zdroj pravdy pro popup nápovědy (? v toolbaru). Vypisují se jen
-        /// reálně nadrátované zkratky. Při přidání/změně zkratky aktualizuj tento seznam
-        /// — viz CLAUDE.md.</summary>
+        /// <summary>Jediný zdroj pravdy pro popup nápovědy - vypisují se jen reálně nadrátované zkratky.</summary>
         internal static readonly (string Keys, string Description)[] KeyboardShortcuts =
         [
             ("Ctrl+F", "Skok do vyhledávacího pole"),
@@ -141,7 +131,7 @@ namespace EDControls.EDInputForm
         {
             var sb = new System.Text.StringBuilder("Klávesové zkratky:\n");
             foreach (var (keys, description) in KeyboardShortcuts)
-                sb.Append('\n').Append(keys).Append("  —  ").Append(description);
+                sb.Append('\n').Append(keys).Append("  -  ").Append(description);
             return sb.ToString();
         }
 
@@ -239,8 +229,6 @@ namespace EDControls.EDInputForm
             container?.BringIntoView();
         }
 
-        // ─── Public API ───────────────────────────────────────────────────────────
-
         /// <summary>
         /// Volitelné initial parametry předané do Caché <c>Init</c> (čtené přes
         /// <c>^||ML("IN","key")</c>). Slouží pro pre-fill polí initial hodnotami
@@ -261,11 +249,11 @@ namespace EDControls.EDInputForm
         [Obsolete("Stíní FrameworkElement.Initialized - použij SchemaLoaded.")]
         public new event Action? Initialized;
 
-        /// <summary>Klik na BUTTON pole — host dostane klíč pole a může spustit client-side akci
+        /// <summary>Klik na BUTTON pole - host dostane klíč pole a může spustit client-side akci
         /// (např. otevřít sub-dialog). Doplňuje server-side Validate (ValidateOnChange).</summary>
         public event Action<string>? ButtonClicked;
 
-        /// <summary>Změna hodnoty libovolného pole (klíč pole) — host může aplikovat živě (např.
+        /// <summary>Změna hodnoty libovolného pole (klíč pole) - host může aplikovat živě (např.
         /// inline properties panel zapisuje do elementu per změnu, ne až na OK). Nezávislé na
         /// ValidateOnChange (fire vždy při změně Field.Value).</summary>
         public event Action<string>? FieldChanged;
@@ -309,8 +297,7 @@ namespace EDControls.EDInputForm
             return result;
         }
 
-        // ─── Klávesová navigace ───────────────────────────────────────────────────
-        // Tab / Shift+Tab: native WPF — skáče přímo mezi vnitřními controly.
+        // Tab / Shift+Tab: native WPF - skáče přímo mezi vnitřními controly.
         // Enter (bez Ctrl): posun na další control (jako Tab); na Button → click.
         // Ctrl+Enter: bublá na OkCommand (window-level InputBinding).
         // Ctrl+číslice: buffer 200 ms, pak navigace na položku podle Number.
@@ -322,10 +309,8 @@ namespace EDControls.EDInputForm
         {
             base.OnPreviewKeyDown(e);
 
-            // Enter (bez Ctrl) → posun na další control, případně klik na Button
             if (e.Key == Key.Return && (Keyboard.Modifiers & ModifierKeys.Control) == 0)
             {
-                // Pokud jsme na Button poli, klikni a pak skoč dál
                 if (GetCurrentField() is { FieldType: EFieldType.Button } btnField)
                 {
                     if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(btnField)
@@ -340,7 +325,6 @@ namespace EDControls.EDInputForm
                 return;
             }
 
-            // Bufferování Ctrl+číslic (200 ms okno pro víceciferné Number)
             if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
 
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
@@ -376,8 +360,6 @@ namespace EDControls.EDInputForm
             };
             _navTimer.Start();
         }
-
-        // ─── Navigation helpers ─────────────────────────────────────────────────
 
         private Field? GetCurrentField()
         {
@@ -419,7 +401,6 @@ namespace EDControls.EDInputForm
 
             if (item is Field field)
             {
-                // Pokud je rodičovská skupina sbalená, rozbal ji
                 if (field.ParentGroup is { IsExpanded: false } group)
                     group.IsExpanded = true;
                 FocusField(field);
@@ -440,8 +421,6 @@ namespace EDControls.EDInputForm
             return null;
         }
 
-        // ─── Button click ────────────────────────────────────────────────────────
-
         private void ButtonField_Click(object sender, RoutedEventArgs e)
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
@@ -449,13 +428,11 @@ namespace EDControls.EDInputForm
             if (field.ValidateOnChange) Controller.Validate(field.Key);   // server-side akce
         }
 
-        // ─── File browse ──────────────────────────────────────────────────────────
-
         internal const string FolderModeSentinel = "$FOLDER";
 
         /// <summary>
         /// Implementace color pickeru. Host (např. TemplateDesigner) musí nastavit
-        /// — EDControls je WPF-only, nemá vestavěný color dialog.
+        /// - EDControls je WPF-only, nemá vestavěný color dialog.
         /// TD wire-up: <c>EDInputForm.PickColorImpl = (owner, hex) => ColorPickerHelper.PickColor(owner, hex);</c>
         /// Když null, klik na color picker button nic neudělá (user může psát hex ručně).
         /// </summary>
@@ -476,10 +453,9 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
-        /// Implementace výběru obrázku. Host (TemplateDesigner) musí nastavit — EDControls
+        /// Implementace výběru obrázku. Host (TemplateDesigner) musí nastavit - EDControls
         /// nemá obrázkové zpracování (file dialog + downscale + Base64). Vrací Base64 string
         /// nového obrázku, nebo null pokud uživatel zrušil. Analogie <see cref="PickColorImpl"/>.
-        /// TD wire-up: <c>EDInputForm.PickImageImpl = owner => ImageUploadHelper.PickBase64(owner);</c>
         /// Když null, tlačítko „Nahrát…" nic neudělá.
         /// </summary>
         public static Func<Window, string?>? PickImageImpl { get; set; }
@@ -577,8 +553,6 @@ namespace EDControls.EDInputForm
 
         }
 
-        // ─── Internal ─────────────────────────────────────────────────────────────
-
         private void EnsureConfigured()
         {
             if (MLRest == null || string.IsNullOrEmpty(CacheClass))
@@ -604,7 +578,7 @@ namespace EDControls.EDInputForm
             if (e.PropertyName != nameof(Field.Value)) return;
             if (sender is not Field field) return;
 
-            // Živý write-back pro host (inline panel) — nezávislé na server-side validaci.
+            // Živý write-back pro host (inline panel) - nezávislé na server-side validaci.
             FieldChanged?.Invoke(field.Key);
 
             if (!field.ValidateOnChange) return;

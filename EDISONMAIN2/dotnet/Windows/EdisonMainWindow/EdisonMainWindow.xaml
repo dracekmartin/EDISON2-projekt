@@ -22,18 +22,18 @@
             <b:InvokeCommandAction Command="{Binding CloseAllCommand}"/>
         </b:EventTrigger>
     </b:Interaction.Triggers>
-    <!-- Skryté klávesové zkratky (RESPONSIBILITIES §15.1). Ctrl+W+W chord řeší
+    <!-- Skryté klávesové zkratky. Ctrl+W+W chord řeší
          PreviewKeyDown v code-behind (víc-krokový stav, nelze přes KeyBinding). -->
     <Window.InputBindings>
         <KeyBinding Key="B" Modifiers="Control+Shift" Command="{Binding ShowBgTasksCommand}"/>
     </Window.InputBindings>
     <Window.Resources>
         <!-- Most na VM pro bindingy mimo vizuální strom (CompositeCollection v menu Miniaplikace).
-             x:Reference na TopMenu nejde — při BAML loadu skončí cyklickou závislostí. -->
+             x:Reference na TopMenu nejde - při BAML loadu skončí cyklickou závislostí. -->
         <edvm:BindingProxy x:Key="VmProxy" Data="{Binding}"/>
         <!-- Prázdný transientní text musí segment status baru sbalit, ne nechat mezeru s dividerem. -->
         <edct:NonEmptyStringToVisibleConverter x:Key="NonEmptyToVis"/>
-        <!-- Velikost z tokenu — FontService ji škáluje s user fontem (natvrdo 16 by nerostla). -->
+        <!-- Velikost z tokenu - FontService ji škáluje s user fontem (natvrdo 16 by nerostla). -->
         <Style x:Key="StatusIcon" TargetType="Image">
             <Setter Property="Width"  Value="{DynamicResource EDTheme.IconSize.Default}"/>
             <Setter Property="Height" Value="{DynamicResource EDTheme.IconSize.Default}"/>
@@ -45,8 +45,8 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager).
-                 Šířku stromu persistuje VM per IDFa (viz AttachTreeLayout) — restore ji přepíše na px.
-                 Min. šířku plochy miniaplikací drží code-behind (MiniAppArea_SizeChanged) — GridSplitter
+                 Šířku stromu persistuje VM per IDFa (viz AttachTreeLayout) - restore ji přepíše na px.
+                 Min. šířku plochy miniaplikací drží code-behind (MiniAppArea_SizeChanged) - GridSplitter
                  MinWidth star sloupce u fixní px šířky stromu obchází, layout MinWidth by přetékal. -->
             <ColumnDefinition x:Name="TreeColumn" Width="*" MinWidth="150"/>
             <ColumnDefinition Width="Auto"/>
@@ -55,12 +55,12 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <!-- Auto — StatusBar musí růst se zvolenou velikostí fontu (user preference).
+            <!-- Auto - StatusBar musí růst se zvolenou velikostí fontu (user preference).
                  Pevná výška by ořízla text při větším fontu. -->
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Top-level menu — obsah vychází z legacy frmNoMDI.mnuMain, seskupení je vlastní:
+        <!-- Top-level menu - obsah vychází z legacy frmNoMDI.mnuMain, seskupení je vlastní:
              Uživatel = jen identita/session, Nastavení konsoliduje preference (font, jazyk,
              okna), support diagnostika pod Nápovědou, Nápověda předposlední (Windows konvence).
              Combobox firem nahrazuje legacy "Firma" label (původně jen statický).
@@ -116,15 +116,15 @@
             </MenuItem>
             <MenuItem Header="Spuštěné moduly" ItemsSource="{Binding RunningModules}">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Module}" Width="16" Height="16"/></MenuItem.Icon>
-                <!-- MouseEnter, ne SubmenuOpened — prázdný submenu by se neotevřel a chicken-and-egg by zablokoval refresh. -->
+                <!-- MouseEnter, ne SubmenuOpened - prázdný submenu by se neotevřel a chicken-and-egg by zablokoval refresh. -->
                 <b:Interaction.Triggers>
                     <b:EventTrigger EventName="MouseEnter">
                         <b:InvokeCommandAction Command="{Binding RefreshRunningModulesCommand}"/>
                     </b:EventTrigger>
                 </b:Interaction.Triggers>
                 <MenuItem.ItemContainerStyle>
-                    <!-- ElementName ne AncestorType=Menu — submenu items jsou v Popup mimo Menu's visual tree.
-                         BasedOn povinné — bez něj explicitní styl přebije implicitní themed styl (Role→template) → dark mode bílé submenu. -->
+                    <!-- ElementName ne AncestorType=Menu - submenu items jsou v Popup mimo Menu's visual tree.
+                         BasedOn povinné - bez něj explicitní styl přebije implicitní themed styl (Role→template) → dark mode bílé submenu. -->
                     <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                         <Setter Property="Header" Value="{Binding DisplayName}"/>
                         <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
@@ -136,14 +136,14 @@
             <MenuItem Header="Miniaplikace">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Panels}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
-                    <!-- Skupiny (per provider) — jen rozbalují, žádný Command. Statické položky dole
+                    <!-- Skupiny (per provider) - jen rozbalují, žádný Command. Statické položky dole
                          mají lokální Style, takže se na ně tenhle ItemContainerStyle nepoužije.
-                         BasedOn povinné — bez něj se ztratí implicitní themed styl (Role→template) → dark mode bílé submenu. -->
+                         BasedOn povinné - bez něj se ztratí implicitní themed styl (Role→template) → dark mode bílé submenu. -->
                     <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                         <Setter Property="Header" Value="{Binding Title}"/>
                         <Setter Property="ItemsSource" Value="{Binding Apps}"/>
-                        <!-- Explicitní vnitřní styl přebije děděný — Command jen na listech.
-                             ElementName=TopMenu — položky jsou v Popup mimo Menu's visual tree (jako Spuštěné moduly). -->
+                        <!-- Explicitní vnitřní styl přebije děděný - Command jen na listech.
+                             ElementName=TopMenu - položky jsou v Popup mimo Menu's visual tree (jako Spuštěné moduly). -->
                         <Setter Property="ItemContainerStyle">
                             <Setter.Value>
                                 <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
@@ -157,7 +157,7 @@
                 </MenuItem.ItemContainerStyle>
                 <MenuItem.ItemsSource>
                     <CompositeCollection>
-                        <!-- Statické položky nejsou ve stromu/namescope (CompositeCollection) —
+                        <!-- Statické položky nejsou ve stromu/namescope (CompositeCollection) -
                              DataContext ani ElementName nefungují, vše jde přes VmProxy.
                              Lokální Style na nich zamezí aplikaci ItemContainerStyle skupin. -->
                         <CollectionContainer Collection="{Binding Data.MiniAppGroups, Source={StaticResource VmProxy}}"/>
@@ -174,7 +174,7 @@
                 <MenuItem Header="Úlohy na pozadí"      Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenseCommand}"/>
                 <Separator/>
-                <!-- Admin-only (command gate přes IsAdmin) — separator je odděluje od běžných nástrojů. -->
+                <!-- Admin-only (command gate přes IsAdmin) - separator je odděluje od běžných nástrojů. -->
                 <MenuItem Header="Správa zámků"         Command="{Binding ShowUsersLocksCommand}"/>
                 <MenuItem Header="Aktivita uživatelů"   Command="{Binding ShowUsersActivityCommand}"/>
             </MenuItem>
@@ -193,7 +193,7 @@
                 <MenuItem Header="Informace o verzi" Command="{Binding ShowInfoCommand}"/>
                 <MenuItem Header="Helpdesk, Wiki"    Command="{Binding OpenHelpdeskWebCommand}"/>
                 <Separator/>
-                <!-- Support diagnostika — dělá se na vyžádání helpdesku, proto u Nápovědy. -->
+                <!-- Support diagnostika - dělá se na vyžádání helpdesku, proto u Nápovědy. -->
                 <MenuItem Header="Odeslat systémové soubory" Command="{Binding SendSystemLogCommand}"/>
             </MenuItem>
             <MenuItem Header="Test funkcí">
@@ -222,7 +222,7 @@
                 <local:TabKeyToVisibilityConverter x:Key="TabKeyToVis"/>
                 <local:ResourceKeyConverter x:Key="ResourceKey"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
-                    <!-- Tag = VM (přes VmProxy) — most pro ContextMenu mimo visual tree. Proxy, ne
+                    <!-- Tag = VM (přes VmProxy) - most pro ContextMenu mimo visual tree. Proxy, ne
                          ancestor: tenhle template se používá ve stromech i v ListBoxu Používané.
                          Transparent → hit-test i napravo od textu (ContextMenu na celém řádku). -->
                     <StackPanel Orientation="Horizontal" Background="Transparent"
@@ -277,7 +277,7 @@
                     </StackPanel>
                 </HierarchicalDataTemplate>
                 <DataTemplate DataType="{x:Type modules:ExecutableModule}">
-                    <!-- Tag = VM (přes VmProxy) — most pro ContextMenu, který není ve visual tree.
+                    <!-- Tag = VM (přes VmProxy) - most pro ContextMenu, který není ve visual tree.
                          Transparent → hit-test i napravo od textu (ContextMenu na celém řádku). -->
                     <StackPanel Orientation="Horizontal" Background="Transparent"
                                 Tag="{Binding Data, Source={StaticResource VmProxy}}">
@@ -351,7 +351,7 @@
                     <EventSetter Event="MouseMove" Handler="TreeItem_MouseMove"/>
                 </Style>
 
-                <!-- Ikonový tab — text nese ToolTip, aby se všech pět záložek vešlo na jeden řádek
+                <!-- Ikonový tab - text nese ToolTip, aby se všech pět záložek vešlo na jeden řádek
                      vedle akčního toolbaru. BasedOn povinné (theming + FocusVisual žijí v implicitním stylu). -->
                 <Style x:Key="TreeTab" TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
                     <Setter Property="Padding" Value="4,6"/>
@@ -380,7 +380,7 @@
                         Background="{DynamicResource EDTheme.Bg.Surface}"
                         BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,1,1,0">
                     <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených.
-                         BorderThickness=0 — spodní linku kreslí až rámeček řádku s hledáním, spojitě přes celou šířku. -->
+                         BorderThickness=0 - spodní linku kreslí až rámeček řádku s hledáním, spojitě přes celou šířku. -->
                     <!-- Záložky jsou data (VM.TreeTabs), ne ručně psané TabItemy - pořadí i identita
                          žijí v jednom seznamu. Ikona patří do Headeru; Content nastavuje generátor
                          kontejnerů na datovou položku (record ToString!), skrývá ho prázdný
@@ -405,7 +405,7 @@
                     </TabControl>
                 </Border>
                 <!-- Rozbalit/sbalit cílí na aktivní strom (VM.ActiveExpandableTree), zbytek na vybraný
-                     uzel — jedna instance pro všechny záložky. -->
+                     uzel - jedna instance pro všechny záložky. -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,2,4,2">
                     <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Rozbalit vše"
                             Command="{Binding ExpandAllCommand}">
@@ -429,7 +429,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Vyhledávání napříč všemi stromy — filtruje uzly dle názvu (VM.TreeSearchText).
+            <!-- Vyhledávání napříč všemi stromy - filtruje uzly dle názvu (VM.TreeSearchText).
                  Rámeček navazuje na pruh záložek i na kartu se stromem (jedna spojitá plocha). -->
             <Border Grid.Row="1" Margin="4,0,4,0" Padding="4"
                     Background="{DynamicResource EDTheme.Bg.Surface}"
@@ -439,9 +439,9 @@
                                        Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
             </Border>
 
-            <!-- Karta s obsahem aktivní záložky — Bg.Surface proti zapuštěnému Bg.Sunken panelu.
+            <!-- Karta s obsahem aktivní záložky - Bg.Surface proti zapuštěnému Bg.Sunken panelu.
                  Přepínání viditelností (ne TabControl.Content): tab strip a hledání musí zůstat
-                 nad kartou. Vedlejší efekt je žádoucí — stromy zůstávají živé, stav rozbalení
+                 nad kartou. Vedlejší efekt je žádoucí - stromy zůstávají živé, stav rozbalení
                  přepnutí záložky přežije. -->
             <Border Grid.Row="2" Margin="4,0,4,4" CornerRadius="0,0,3,3"
                     Background="{DynamicResource EDTheme.Bg.Surface}"
@@ -456,11 +456,11 @@
                               Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=partners}"/>
                     <Grid Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=favorites}">
                         <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0"/>
-                        <!-- Empty-state coaching — nenucená pobídka k používání oblíbených. -->
+                        <!-- Empty-state coaching - nenucená pobídka k používání oblíbených. -->
                         <TextBlock Visibility="{Binding HasNoFavorites, Converter={StaticResource BoolToVis}}"
                                    Margin="16" TextWrapping="Wrap" VerticalAlignment="Top"
                                    Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                   Text="Zatím nemáte oblíbené moduly. Klikněte pravým tlačítkem na modul a zvolte „Přidat do oblíbených“ (nebo ho připněte v záložce Používané) — zobrazí se jen ty, které opravdu potřebujete."/>
+                                   Text="Zatím nemáte oblíbené moduly. Klikněte pravým tlačítkem na modul a zvolte „Přidat do oblíbených“ (nebo ho připněte v záložce Používané) - zobrazí se jen ty, které opravdu potřebujete."/>
                     </Grid>
                     <ListBox x:Name="UsedModulesList" ItemsSource="{Binding UsedModules}" BorderThickness="0"
                              HorizontalContentAlignment="Stretch" Background="Transparent"
@@ -468,7 +468,7 @@
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                 <Setter Property="Cursor" Value="Hand"/>
-                                <!-- Single-click spustí modul — konzistentní se stromy výše. -->
+                                <!-- Single-click spustí modul - konzistentní se stromy výše. -->
                                 <EventSetter Event="MouseLeftButtonUp" Handler="UsedModuleItem_MouseLeftButtonUp"/>
                             </Style>
                         </ListBox.ItemContainerStyle>
@@ -540,7 +540,7 @@
         </StackPanel>
 
         <!-- Segment = ikona + hodnota, technika (namespace, port, login, Mlp) je v ToolTipu.
-             Separator jen mezi vždy viditelnými segmenty — u sbalitelných by zůstal viset. -->
+             Separator jen mezi vždy viditelnými segmenty - u sbalitelných by zůstal viset. -->
         <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
             <!-- Značka aplikace (stejný molecule jako ikona okna a hero pruh přihlášení) - brand,
                  ne segment, proto bez hodnoty; velikost z tokenu, ať roste s user fontem. -->
@@ -642,7 +642,7 @@
             </StatusBarItem>
         </StatusBar>
 
-        <!-- Overlay „akce probíhá" (náběh spouštěného modulu) — neviditelný controller,
+        <!-- Overlay „akce probíhá" (náběh spouštěného modulu) - neviditelný controller,
              karta se kreslí ve vlastním owned okně (nad WebView2 widgety).
              Auto-binduje se na VM.IsActionInProgress. -->
         <edaip:EDActionInProgress/>

@@ -3,7 +3,7 @@ using EDControls.MiniApps;
 namespace EDISONMAIN2.LegacyMiniApps;
 
 /// <summary>
-/// Mini-apps nepředělaných (legacy) agend — čistě WPF nad Caché daty přes MLRest, bez WinForms
+/// Mini-apps nepředělaných (legacy) agend - čistě WPF nad Caché daty přes MLRest, bez WinForms
 /// hostování. Registruje se v shellu (<c>AppBootstrapper</c>).
 /// </summary>
 public sealed class LegacyMiniAppProvider : IMiniAppProvider

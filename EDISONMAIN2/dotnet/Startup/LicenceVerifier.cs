@@ -7,7 +7,7 @@ namespace EDISONMAIN2;
 
 public enum LicenceAcquireOutcome
 {
-    /// <summary>VerifyLic vrátil 1 — server vytvořil ACTIVITY zámek pod aktuální IdFa.</summary>
+    /// <summary>VerifyLic vrátil 1 - server vytvořil ACTIVITY zámek pod aktuální IdFa.</summary>
     Accepted,
     /// <summary>Admin zrušil retry-loop přes Confirm dialog.</summary>
     Cancelled,
@@ -49,7 +49,7 @@ public static class LicenceVerifier
             if (result == -1 && isAdmin)
             {
                 if (!popup.Confirm(
-                    "Byl překročen počet licencí. Otevřu okno aktivity uživatelů — můžete někoho odhlásit. Po zavření okna zkusím znovu. Pokračovat?"))
+                    "Byl překročen počet licencí. Otevřu okno aktivity uživatelů - můžete někoho odhlásit. Po zavření okna zkusím znovu. Pokračovat?"))
                     return (LicenceAcquireOutcome.Cancelled, licence);
                 // shareShellSession=false: retry-loop běží před úspěšným VerifyLic, shell ještě
                 // nemá ACTIVITY zámek pod aktuální IdFa. CacheLocks=1 by každý request modulu padal na LockExist.

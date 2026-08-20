@@ -24,7 +24,7 @@ public partial class EDComponentToolbar : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         // Ctrl+F focusne search box (window-level binding, pokud parent Window existuje).
-        // Unsubscribe nutný v OnUnloaded — jinak při re-load akumulují binding kopie.
+        // Unsubscribe nutný v OnUnloaded - jinak při re-load akumulují binding kopie.
         var parentWindow = Window.GetWindow(this);
         if (parentWindow is null || _ctrlFBinding is not null) return;
 
@@ -52,8 +52,6 @@ public partial class EDComponentToolbar : UserControl
         SearchTextBox.SelectAll();
     }
 
-    // ─── Title ──────────────────────────────────────────────────────────────
-
     public static readonly DependencyProperty TitleProperty =
         DependencyProperty.Register(nameof(Title), typeof(string), typeof(EDComponentToolbar),
             new PropertyMetadata(null));
@@ -64,8 +62,6 @@ public partial class EDComponentToolbar : UserControl
         get => (string?)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
     }
-
-    // ─── Vzhled ─────────────────────────────────────────────────────────────
 
     public static readonly DependencyProperty FlatProperty =
         DependencyProperty.Register(nameof(Flat), typeof(bool), typeof(EDComponentToolbar),
@@ -78,8 +74,6 @@ public partial class EDComponentToolbar : UserControl
         get => (bool)GetValue(FlatProperty);
         set => SetValue(FlatProperty, value);
     }
-
-    // ─── Search ─────────────────────────────────────────────────────────────
 
     public static readonly DependencyProperty ShowSearchProperty =
         DependencyProperty.Register(nameof(ShowSearch), typeof(bool), typeof(EDComponentToolbar),
@@ -116,7 +110,7 @@ public partial class EDComponentToolbar : UserControl
         DependencyProperty.Register(nameof(CurrentMatchIndex), typeof(int), typeof(EDComponentToolbar),
             new PropertyMetadata(0));
 
-    /// <summary>1-based index aktuálního matche (0 = žádný). Host updates jak iteruje.</summary>
+    /// <summary>1-based index aktuálního výskytu (0 = žádný). Nastavuje host při iteraci.</summary>
     public int CurrentMatchIndex
     {
         get => (int)GetValue(CurrentMatchIndexProperty);
@@ -127,7 +121,7 @@ public partial class EDComponentToolbar : UserControl
         DependencyProperty.Register(nameof(TotalMatches), typeof(int), typeof(EDComponentToolbar),
             new PropertyMetadata(0));
 
-    /// <summary>Celkový počet matchů. Host updates. 0 = counter neviditelný.</summary>
+    /// <summary>Celkový počet výskytů; nastavuje host. 0 = počitadlo skryté.</summary>
     public int TotalMatches
     {
         get => (int)GetValue(TotalMatchesProperty);
@@ -153,8 +147,6 @@ public partial class EDComponentToolbar : UserControl
         get => (ICommand?)GetValue(FindPreviousCommandProperty);
         set => SetValue(FindPreviousCommandProperty, value);
     }
-
-    // ─── Right-side actions (opt-in) ────────────────────────────────────────
 
     public static readonly DependencyProperty ShowExportProperty =
         DependencyProperty.Register(nameof(ShowExport), typeof(bool), typeof(EDComponentToolbar),

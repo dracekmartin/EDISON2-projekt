@@ -100,7 +100,7 @@ public partial class EDFooter : UserControl
                 window.DialogResult = dialogResult;
                 return;     // setting DialogResult zároveň okno zavře
             }
-            catch (InvalidOperationException) { }   // okno není ShowDialog() — fallback níž
+            catch (InvalidOperationException) { }   // okno není ShowDialog() - fallback níž
         }
         window.Owner?.Activate();   // dáme focus ownerovi předtím než toto okno zavřeme
         window.Close();

@@ -11,7 +11,7 @@ namespace EDControls.Tests;
 /// </summary>
 public class WindowSnapshotTests
 {
-    /// <summary>Změřený a naaranžovaný prvek — nezobrazené okno má ActualWidth nulovou.</summary>
+    /// <summary>Změřený a naaranžovaný prvek - nezobrazené okno má ActualWidth nulovou.</summary>
     private static FrameworkElement Laid(double width, double height, UIElement? content = null)
     {
         var root = new Border { Width = width, Height = height, Child = content };

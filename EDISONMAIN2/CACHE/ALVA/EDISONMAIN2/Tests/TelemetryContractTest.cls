@@ -8,7 +8,7 @@ Class ALVA.EDISONMAIN2.Tests.TelemetryContractTest Extends ALVA.EDTesting.MLTest
 /// Vstup: ^||ML("IN",i) = "usage" del form del control del ts(yyyy-MM-dd HH:mm:ss);
 /// úložiště: ^[dataSys]ALVA.ISY.ISYCloud.Client.Telemetry("usage",idfa,userid,form,control)
 ///         = $lb(count, firstHorolog, lastHorolog).
-/// ISYCloud třídy patří do repa EDISON — když na serveru nejsou, test se přeskočí.
+/// ISYCloud třídy patří do repa EDISON - když na serveru nejsou, test se přeskočí.
 
 Parameter TESTIDFA = "TEST_EDISON2_TELEMETRY";
 
@@ -26,7 +26,7 @@ Method KillTestData()
 /// Dávka se agreguje na čítač per (idfa, userid, form, control) + první/poslední horolog.
 Method TestLogUsageBatchAggregatesCounts()
 {
-	if '..HasISYCloud() { do $$$AssertTrue(1, "ISYCloud není na serveru — skip") quit }
+	if '..HasISYCloud() { do $$$AssertTrue(1, "ISYCloud není na serveru - skip") quit }
 	do ..KillTestData()
 
 	do ..SetupSys(.sys, ..#TESTIDFA, "999")
@@ -52,7 +52,7 @@ Method TestLogUsageBatchAggregatesCounts()
 /// Záznamy bez prefixu "usage" metoda ignoruje (a nesmí spadnout).
 Method TestLogUsageBatchIgnoresNonUsageRecords()
 {
-	if '..HasISYCloud() { do $$$AssertTrue(1, "ISYCloud není na serveru — skip") quit }
+	if '..HasISYCloud() { do $$$AssertTrue(1, "ISYCloud není na serveru - skip") quit }
 	do ..KillTestData()
 
 	do ..SetupSys(.sys, ..#TESTIDFA, "999")

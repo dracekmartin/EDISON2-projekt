@@ -79,6 +79,6 @@ public class SessionLogoutTests
         clone.QueryOrThrow("ALVA.SYS.Login", "Logout", Arg.Any<object[]>())
              .Returns(_ => throw new InvalidOperationException("boom"));
 
-        SessionLogout.Logout(mlRest);   // best-effort — výjimka se spolkne
+        SessionLogout.Logout(mlRest);   // best-effort - výjimka se spolkne
     }
 }

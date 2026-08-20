@@ -6,13 +6,13 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
     /// <summary>
     /// Profil uživatele ze serveru: osobní export adresář (+ příznak použití), centrální
     /// export adresář a id výchozího okna. Výchozí okno je per-uživatel × IDFa
-    /// (Caché feature #25) — přepnutí firmy může vrátit jiný.
+    /// (Caché feature #25) - přepnutí firmy může vrátit jiný.
     /// </summary>
     public record UserProfileData(bool UsePersonDir, string PersonDir, string CentralExportDir, int DefaultWindowId);
 
     /// <summary>
     /// Wire vrstva okna „Vlastnosti uživatele". Legacy Caché metody čtou/píšou přes numerické
-    /// subscripty <c>^||ML("IN",N)</c>, proto <c>object[]</c> (ne CVar) — stejný důvod jako
+    /// subscripty <c>^||ML("IN",N)</c>, proto <c>object[]</c> (ne CVar) - stejný důvod jako
     /// <see cref="EDISONMAIN2.Windows.LoginWindow.UserAuthenticator"/>.
     /// </summary>
     public static class UserProfileService
@@ -61,7 +61,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         }
 
         /// <summary>
-        /// <c>ALVA.EDISON.Main.SaveUser</c> — uloží osobní export adresář jako řádek
+        /// <c>ALVA.EDISON.Main.SaveUser</c> - uloží osobní export adresář jako řádek
         /// <c>personDir~0/1~cesta</c> (příznak ukládáme kanonicky 0/1).
         /// </summary>
         public static void SaveExportDir(IMLRest mlRest, bool usePersonDir, string personDir)
@@ -71,11 +71,9 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         }
 
         /// <summary>
-        /// <c>ALVA.USERS.ApiEdison.GetUserDefaultForm</c> — id výchozího okna (0 = žádný),
+        /// <c>ALVA.USERS.ApiEdison.GetUserDefaultForm</c> - id výchozího okna (0 = žádný),
         /// per-uživatel × aktuální IDFa. Dedikovaná metoda pro startup-form logiku shellu.
         /// </summary>
-        // ApiEdison je nový endpoint, object[] tu tedy není vynucené legacy protokolem -
-        // kandidát na převod na CVar (spolu s Set níž a Caché stranou).
         public static int LoadDefaultWindow(IMLRest mlRest)
         {
             var output = mlRest.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", new object[] { });
@@ -83,7 +81,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         }
 
         /// <summary>
-        /// <c>ALVA.USERS.ApiEdison.SetUserDefaultForm</c> — nastaví (0 = zruší) výchozí okno
+        /// <c>ALVA.USERS.ApiEdison.SetUserDefaultForm</c> - nastaví (0 = zruší) výchozí okno
         /// pro aktuální IDFa.
         /// </summary>
         public static void SetDefaultWindow(IMLRest mlRest, int formId) =>

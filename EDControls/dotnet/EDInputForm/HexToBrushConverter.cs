@@ -6,7 +6,7 @@ using System.Windows.Media;
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Converter pro Color field swatch — parsuje hex string `"#AARRGGBB"` (SkiaSharp formát)
+/// Converter pro Color field swatch - parsuje hex string `"#AARRGGBB"` (SkiaSharp formát)
 /// na <see cref="SolidColorBrush"/>. Neplatný / null input → transparent brush.
 /// </summary>
 public class HexToBrushConverter : IValueConverter
@@ -23,7 +23,6 @@ public class HexToBrushConverter : IValueConverter
             return DataBoundBrush;
 
         string h = hex.TrimStart('#');
-        // Podpora #AARRGGBB (8 znaků) a #RRGGBB (6 znaků)
         byte a = 0xFF, r, g, b;
         try
         {

@@ -80,7 +80,7 @@ public class ListItemsSerializationTests
     {
         // Známý limit wire formátu: oddělovač položek '|' v popisku se neescapuje, takže
         // round-trip se rozpadne na víc položek ("A~a|b" → "A"/"a" + "b"/"b"). Dokumentační
-        // pin — produkci NEměnit (escaping by změnil kontrakt na obou stranách).
+        // pin - produkci NEměnit (escaping by změnil kontrakt na obou stranách).
         var original = new List<ListItem> { new("A", "a|b") };
 
         var wire = EDInputForm.EDInputFormWire.SerializeListItems(original);

@@ -43,17 +43,15 @@ public class EdisonMainViewModelTests
 
         var vm = CreateVM(treeGetter: mockTree);
 
-        // StartsWith — ModuleLaunchabilityCheck připojuje k názvu suffix (" — chybí exe" apod.);
+        // StartsWith - ModuleLaunchabilityCheck připojuje k názvu suffix (" - chybí exe" apod.);
         // test ověřuje routing stromů do správných kolekcí, ne přesný label.
         Assert.StartsWith("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
         Assert.StartsWith("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
         Assert.StartsWith("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
     }
 
-    // ── Dvoufázový init a async rebuild ────────────────────────────────────────────
-
     /// <summary>
-    /// Runner, kterému lze mezi fázemi testu zavřít bránu — drží load rozpracovaný, aby šlo
+    /// Runner, kterému lze mezi fázemi testu zavřít bránu - drží load rozpracovaný, aby šlo
     /// sledovat stav VM „během" rebuildu. <c>Gate == null</c> = synchronní jako inline runner.
     /// </summary>
     private sealed class SwitchableGateRunner(IMLRest rest) : IRestCallRunner
@@ -88,7 +86,7 @@ public class EdisonMainViewModelTests
         await vm.InitializeAsync();
         await vm.InitializeAsync();
 
-        // Tři stromy jednou, ne dvakrát — druhé volání vrací týž task.
+        // Tři stromy jednou, ne dvakrát - druhé volání vrací týž task.
         Assert.Equal(3, mockTree.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IModuleTreeGetter.GetModuleTree)));
         Assert.Single(vm.MainMenuTree);
     }
@@ -108,7 +106,7 @@ public class EdisonMainViewModelTests
         Assert.False(vm.IsActionInProgress);
     }
 
-    // Strom napoprvé projde, podruhé (rebuild) spadne — simuluje server mimo provoz při přepnutí.
+    // Strom napoprvé projde, podruhé (rebuild) spadne - simuluje server mimo provoz při přepnutí.
     private static IModuleTreeGetter TreeFailingOnSecondLoad()
     {
         var mockTree = Substitute.For<IModuleTreeGetter>();
@@ -141,7 +139,7 @@ public class EdisonMainViewModelTests
     [Fact]
     public async Task SwitchCompany_LoadFailure_ClearsSessionState()
     {
-        // Tady naopak: session už patří nové firmě, takže strom staré je cizí — šel by spustit
+        // Tady naopak: session už patří nové firmě, takže strom staré je cizí - šel by spustit
         // mimo licenci nové firmy a fire-and-forget save by jeho data zapsal do jejích blobů.
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
@@ -158,7 +156,7 @@ public class EdisonMainViewModelTests
     [Fact]
     public async Task SwitchCompany_ShellClosedDuringLoad_DoesNotSaveOldLayoutUnderNewIdfa()
     {
-        // Mezi posunem Idfa a restore layoutu je await, ve kterém je UI thread volný — zavření
+        // Mezi posunem Idfa a restore layoutu je await, ve kterém je UI thread volný - zavření
         // shellu (nebo force logout) tam volá PersistMiniAppLayout(Idfa), tedy už NOVOU firmu,
         // zatímco dock drží ještě mini-apps té staré.
         var mockPopup = Substitute.For<IPopupDisplayer>();
@@ -180,8 +178,6 @@ public class EdisonMainViewModelTests
         Assert.DoesNotContain("JI_DP", layouts.Keys);
         Assert.Contains("CB_DP", layouts.Keys);
     }
-
-    // ── Výchozí okno (startup window) ──────────────────────────────────────────────
 
     private static IModuleTreeGetter MainTreeWith(params ExecutableModule[] modules)
     {
@@ -344,7 +340,7 @@ public class EdisonMainViewModelTests
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockTree = Substitute.For<IModuleTreeGetter>();
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
-        // Čerstvé instance při každém volání — simuluje přestavbu stromu při přepnutí firmy.
+        // Čerstvé instance při každém volání - simuluje přestavbu stromu při přepnutí firmy.
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(_ => new IModule[]
         {
             new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
@@ -355,7 +351,7 @@ public class EdisonMainViewModelTests
 
         await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex == 0 ? 1 : 0);
 
-        // StartsWith — ModuleLaunchabilityCheck může připojit suffix k názvu.
+        // StartsWith - ModuleLaunchabilityCheck může připojit suffix k názvu.
         var modules = vm.MainMenuTree.Cast<ExecutableModule>().ToList();
         Assert.True(modules.Single(m => m.DisplayedName.StartsWith("Turnusy")).IsVisibleBySearch);
         Assert.False(modules.Single(m => m.DisplayedName.StartsWith("Objednávky")).IsVisibleBySearch);
@@ -455,7 +451,7 @@ public class EdisonMainViewModelTests
     [Fact]
     public void SelectedCompanyId_SetConfirmDenied_NotifiesBack()
     {
-        // Combobox si drží vlastní editovanou hodnotu — bez notifikace by zůstal na firmě,
+        // Combobox si drží vlastní editovanou hodnotu - bez notifikace by zůstal na firmě,
         // na kterou se nepřepnulo (getter sám nestačí, WPF se nezeptá).
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(false);
@@ -552,7 +548,7 @@ public class EdisonMainViewModelTests
     [Fact]
     public void RestoreMiniAppLayout_SavedLayoutWithoutPinned_ReopensPinned()
     {
-        // Layout uložený před zavedením pinned sady pinned mini-app neobsahuje — musí se dootevřít.
+        // Layout uložený před zavedením pinned sady pinned mini-app neobsahuje - musí se dootevřít.
         var services = MockServices();
         var pinned = new MiniAppDescriptor("P", "Pinned", () => new StubMiniApp(services), Pinned: true);
         var prefs = Substitute.For<ILocalPrefs>();
@@ -689,7 +685,7 @@ public class EdisonMainViewModelTests
             => throw new InvalidOperationException("simulovaný rozbitý layout");
     }
 
-    // Neškodný host — prázdný katalog v testech znamená, že AddPane se nikdy nezavolá.
+    // Neškodný host - prázdný katalog v testech znamená, že AddPane se nikdy nezavolá.
     private sealed class NullHost : IMiniAppHost
     {
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
@@ -798,8 +794,6 @@ public class EdisonMainViewModelTests
         Assert.Equal("Jde o nejnovější verzi.", vm.UpToDateText);
     }
 
-    // ---------- ConfirmShellClose — potvrzení zavření shellu ----------
-
     [Fact]
     public void ConfirmShellClose_UserConfirms_ReturnsTrue()
     {
@@ -847,7 +841,7 @@ public class EdisonMainViewModelTests
         prefs.Received().Save();
     }
 
-    // Regrese na force logout / version gate — vynucené ukončení se uživatele ptát nesmí.
+    // Regrese na force logout / version gate - vynucené ukončení se uživatele ptát nesmí.
     [Fact]
     public void ConfirmShellClose_AfterSuppress_DoesNotPrompt()
     {
@@ -859,9 +853,6 @@ public class EdisonMainViewModelTests
         Assert.True(vm.ConfirmShellClose());
         mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
     }
-
-    // ---------- Programové ukončení jde přes ShellShutdown ----------
-    // Dřív VM volal Application.Current.Shutdown() přímo, takže tyhle tři cesty nešly otestovat.
 
     [Fact]
     public void Exit_Confirmed_ForcesShutdown()
@@ -895,7 +886,7 @@ public class EdisonMainViewModelTests
     public async Task LoginAsAnotherUser_LicenceFailure_ForcesShutdown(SwitchUserResult result)
     {
         // Po neúspěšné licenci je stará session už zničená (closeAllWindows proběhlo),
-        // takže jediná bezpečná cesta je ukončit — a nesmí na ni jít potvrzovací dialog.
+        // takže jediná bezpečná cesta je ukončit - a nesmí na ni jít potvrzovací dialog.
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var shutdown = Substitute.For<Action>();

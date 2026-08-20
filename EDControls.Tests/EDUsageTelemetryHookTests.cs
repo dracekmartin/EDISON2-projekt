@@ -10,7 +10,7 @@ namespace EDControls.Tests;
 /// <summary>
 /// Napojení usage telemetrie na okno (<c>EDUsageTelemetryHook</c>). Hook visí na class handleru
 /// <c>Window.Loaded</c> z <c>EDAppearance.Initialize</c>; testuje se jeho rozhodnutí a efekt,
-/// ne event — zobrazovat okna v testech není potřeba.
+/// ne event - zobrazovat okna v testech není potřeba.
 /// </summary>
 [Collection(SharedStaticStateCollection.Name)]
 public class EDUsageTelemetryHookTests
@@ -22,8 +22,6 @@ public class EDUsageTelemetryHookTests
 
     private static Window WindowWithVm() => new() { DataContext = new EDViewModel.EDViewModel(MockServices()) };
 
-    // ---------- ShouldTrack ----------
-
     [Fact]
     public void ShouldTrack_WindowWithViewModel_True()
     {
@@ -33,7 +31,7 @@ public class EDUsageTelemetryHookTests
     [Fact]
     public void ShouldTrack_WindowWithoutViewModel_False()
     {
-        // Popupy EDControls, overlay okna a chrome AvalonDocku ViewModel nemají — šum se odfiltruje sám.
+        // Popupy EDControls, overlay okna a chrome AvalonDocku ViewModel nemají - šum se odfiltruje sám.
         RunSta(() => Assert.False(EDUsageTelemetryHook.ShouldTrack(new Window())));
     }
 
@@ -61,8 +59,6 @@ public class EDUsageTelemetryHookTests
             Assert.False(EDUsageTelemetryHook.ShouldTrack(window));
         });
     }
-
-    // ---------- Hook ----------
 
     [Fact]
     public void Hook_TracksOpen()
@@ -126,8 +122,7 @@ public class EDUsageTelemetryHookTests
     [Fact]
     public void AttachToWindow_DoesNotTrack()
     {
-        // Hook se z AttachToWindow PŘESUNUL na class handler. Kdyby zůstal na obou místech,
-        // okna shellu (ta jdou přes WindowNavigator) by hlásila OPEN i kliky dvakrát.
+        // Hook smí být jen na class handleru - na obou místech by okna shellu hlásila OPEN i kliky dvakrát.
         RunSta(() =>
         {
             var vm = new EDViewModel.EDViewModel(MockServices());

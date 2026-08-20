@@ -12,7 +12,7 @@ namespace EDISONMAIN2
             InitializeComponent();
             TheList.CacheClass = "ALVA.EDControls.EDList.MockList";
             TheList.HostId = "EDISONMAIN2.EDListTestWindow";  // persist layoutu sloupců
-            TheList.Title  = "Test EDList — mock data";       // header + vyhledávání
+            TheList.Title  = "Test EDList - mock data";       // header + vyhledávání
 
             TheList.SelectionChanged    += (_, id) => StatusText.Text  = $"Výběr: {id ?? "(žádný)"}";
             TheList.RowDoubleClicked    += (_, id) => StatusText.Text  = $"Dvojklik: {id}";
@@ -24,7 +24,7 @@ namespace EDISONMAIN2
         {
             TheList.InitializeList();
             int count = TheList.Columns?.Count ?? 0;
-            StatusText.Text = $"InitializeList OK — {count} sloupců";
+            StatusText.Text = $"InitializeList OK - {count} sloupců";
         }
 
         private void LoadList_Click(object sender, RoutedEventArgs e)

@@ -5,10 +5,10 @@ using System.Text.Json;
 namespace EDControls.EDTheme;
 
 /// <summary>
-/// Sdílená volba vzhledu (zatím tmavý režim) napříč všemi m-line WPF nástroji —
+/// Sdílená volba vzhledu (zatím tmavý režim) napříč všemi m-line WPF nástroji -
 /// uložená v <c>%APPDATA%\m-line\common\theme.json</c> (stejný vzor jako
 /// <see cref="EDControls.UserFonts.UserFontPreference"/>). Při změně jedním procesem se přes
-/// <see cref="FileSystemWatcher"/> propaguje do ostatních (shell ↔ TemplateDesigner) — viz <see cref="Changed"/>.
+/// <see cref="FileSystemWatcher"/> propaguje do ostatních (shell ↔ TemplateDesigner) - viz <see cref="Changed"/>.
 ///
 /// Storage je úmyslně v "common" (ne app-specific), aby dark mode nebyl vázaný na jednu aplikaci.
 /// Registruje se přes <see cref="ThemeService.Initialize"/>.
@@ -25,11 +25,12 @@ public class UserThemePreference
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly string Dir = Path.Combine(
+    /// <summary>Cíl persistence. Settable jen kvůli testům (jinak by šly proti reálnému %APPDATA%).</summary>
+    internal static string FilePath { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "m-line", "common");
+        "m-line", "common", "theme.json");
 
-    private static readonly string FilePath = Path.Combine(Dir, "theme.json");
+    private static string Dir => Path.GetDirectoryName(FilePath)!;
 
     public static UserThemePreference Current { get; private set; } = new();
 
@@ -46,7 +47,7 @@ public class UserThemePreference
         }
         catch
         {
-            // Poškozený soubor — držíme default, další Save() ho přepíše.
+            // Poškozený soubor - držíme default, další Save() ho přepíše.
         }
     }
 
@@ -63,7 +64,7 @@ public class UserThemePreference
     {
         if (_watcher != null) return;
         Directory.CreateDirectory(Dir);
-        _watcher = new FileSystemWatcher(Dir, "theme.json")
+        _watcher = new FileSystemWatcher(Dir, Path.GetFileName(FilePath))
         {
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime,
             EnableRaisingEvents = true,
@@ -74,8 +75,8 @@ public class UserThemePreference
 
     private static void OnFileChanged(object sender, FileSystemEventArgs e)
     {
-        // Krátká pauza — soubor může být v půlce zápisu (stejná heuristika jako UserFontPreference).
+        // Krátká pauza - soubor může být v půlce zápisu (stejná heuristika jako UserFontPreference).
         try { System.Threading.Thread.Sleep(50); Load(); Changed?.Invoke(); }
-        catch { /* sharing violation / poškozený JSON — příští event dožene */ }
+        catch { /* sharing violation / poškozený JSON - příští event dožene */ }
     }
 }

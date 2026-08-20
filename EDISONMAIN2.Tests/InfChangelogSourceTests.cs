@@ -24,18 +24,16 @@ public class InfChangelogSourceTests : IDisposable
     private void Write(DirectoryInfo dir, string file, string text) =>
         File.WriteAllText(Path.Combine(dir.FullName, file), text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
 
-    // ---------- mapování modul → INF klíč (zrcadlo legacy clsConversion.ToInformationFile) ----------
+    // Mapování modul -> INF klíč zrcadlí legacy clsConversion.ToInformationFile.
 
     [Theory]
     // AD* catch-all (Left 2) - per-agenda ADSETTINGS.INF na disku legacy runtime nečetl
     [InlineData("ADSETTINGS.exe", "AD")]
     [InlineData("ADZPRACOVANI.exe", "AD")]
     [InlineData("ADCALCULATOR.exe", "AD")]
-    // JR* + TISKMHD kolabují na JR
     [InlineData("JRMAIN.exe", "JR")]
     [InlineData("JRZAST.exe", "JR")]
     [InlineData("TISKMHD.exe", "JR")]
-    // DS* a MHD*/MHD2*
     [InlineData("DSINPUT.exe", "DS")]
     [InlineData("DSVIEWER.exe", "DS")]
     [InlineData("MHD2PlanDopravy.exe", "MHD")]
@@ -44,7 +42,6 @@ public class InfChangelogSourceTests : IDisposable
     [InlineData("NAKLADNIDOPRAVA.exe", "ND")]
     [InlineData("NDOBJEDNAVKY.exe", "ND")]
     [InlineData("NDMAIN.exe", "NDMAIN")]
-    // explicitní aliasy
     [InlineData("POKLADNAEX.exe", "POKLADNA")]
     [InlineData("VOZIDLA2.exe", "VOZIDLA")]
     [InlineData("AUTOOPRAVNA2.exe", "AUTOOPRAVNA")]
@@ -52,18 +49,13 @@ public class InfChangelogSourceTests : IDisposable
     [InlineData("ZAUCTOVANIMzdy.exe", "ZAUCTOVANI")]
     [InlineData("DISPECINK2.exe", "DISPECINK")]
     [InlineData("ISYCiselniky.exe", "ISY")]
-    // ISY balíky (mimo Ciselniky) mapují samy na sebe, jen uppercase
     [InlineData("ISYObehy.exe", "ISYOBEHY")]
-    // default: vlastní jméno
     [InlineData("MZDY2.exe", "MZDY2")]
     [InlineData("USERS.exe", "USERS")]
     [InlineData("EDISONMAIN", "EDISONMAIN")]
-    // plná cesta se normalizuje na basename
     [InlineData(@"C:\Edison\ADSETTINGS.exe", "AD")]
     public void InfKeyFor_MirrorsLegacyAliasTable(string moduleKey, string expected) =>
         Assert.Equal(expected, InfChangelogSource.InfKeyFor(moduleKey));
-
-    // ---------- discovery ----------
 
     [Fact]
     public async Task Load_FullAndDiff_ReturnsBoth()
@@ -133,8 +125,6 @@ public class InfChangelogSourceTests : IDisposable
         Assert.Equal("AD změny", content.ChangesText);
     }
 
-    // ---------- pořadí adresářů ----------
-
     [Fact]
     public async Task Load_FirstDirWins()
     {
@@ -159,8 +149,6 @@ public class InfChangelogSourceTests : IDisposable
         Assert.Null(content.ChangesText);
     }
 
-    // ---------- kódování ----------
-
     [Fact]
     public async Task Load_Utf8Bom_RoundTripsDiacritics()
     {
@@ -183,8 +171,6 @@ public class InfChangelogSourceTests : IDisposable
 
         Assert.Equal(text, content!.FullText);
     }
-
-    // ---------- hash change-setu ----------
 
     [Fact]
     public void ComputeChangeSetId_DeterministicAndContentSensitive()

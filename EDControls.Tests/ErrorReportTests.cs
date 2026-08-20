@@ -29,8 +29,6 @@ public class ErrorReportTests
         catch (Exception ex) { return ex; }
     }
 
-    // ---------- Povinná pole ----------
-
     [Fact]
     public void Json_HasAllRequiredFields()
     {
@@ -65,8 +63,6 @@ public class ErrorReportTests
         Assert.Equal("info", ErrorReportBuilder.BuildFollowUp("x123", "klikal jsem na Uložit", Ctx()).Type);
     }
 
-    // ---------- Past: přepsání verze EDISONu u firmy ----------
-
     [Fact]
     public void Never_LooksLikeInstallEvent()
     {
@@ -99,8 +95,6 @@ public class ErrorReportTests
         Assert.Equal("2.1.3", report.Data["version"]?.GetValue<string>());
     }
 
-    // ---------- Interní běhy ----------
-
     [Fact]
     public void InternalRun_GetsSuffixedSource()
     {
@@ -119,8 +113,6 @@ public class ErrorReportTests
         Assert.True(report.Data["internal"]?.GetValue<bool>());
     }
 
-    // ---------- Obsah ----------
-
     [Fact]
     public void Description_StartsWithRefId()
     {
@@ -133,7 +125,7 @@ public class ErrorReportTests
     [Fact]
     public void Description_IsSingleLine()
     {
-        // Description jde do předmětu tiketu — víceřádkový by ho rozbil.
+        // Description jde do předmětu tiketu - víceřádkový by ho rozbil.
         var report = ErrorReportBuilder.Build(Thrown("první řádek\r\ndruhý řádek"), Ctx());
 
         Assert.DoesNotContain('\n', report.Description);
@@ -162,8 +154,6 @@ public class ErrorReportTests
         Assert.Equal(500, ids.Count);
     }
 
-    // ---------- Přílohy ----------
-
     [Fact]
     public void Attachments_UseServerFieldNames()
     {
@@ -185,8 +175,6 @@ public class ErrorReportTests
 
         Assert.False(json.ContainsKey("attachments"));
     }
-
-    // ---------- Doplnění uživatele ----------
 
     [Fact]
     public void FollowUp_KeepsSameRefIdAndCarriesText()

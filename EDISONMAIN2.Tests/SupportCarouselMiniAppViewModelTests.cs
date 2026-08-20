@@ -7,7 +7,7 @@ using NSubstitute;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy karuselu Podpora M-line. Časovač (DispatcherTimer) se netestuje — logika kroku je
+/// Testy karuselu Podpora M-line. Časovač (DispatcherTimer) se netestuje - logika kroku je
 /// v interním <c>Tick()</c>, který testy volají přímo (vzor PeriodicRefresh).
 /// </summary>
 public class SupportCarouselMiniAppViewModelTests
@@ -18,7 +18,7 @@ public class SupportCarouselMiniAppViewModelTests
     private static CarouselPage ThrowingPage(string title) =>
         new(title, () => throw new InvalidOperationException("factory se nemá volat"));
 
-    // Null obsah — čtení VisiblePages nesmí vyžadovat STA (FrameworkElement se nevytváří).
+    // Null obsah - čtení VisiblePages nesmí vyžadovat STA (FrameworkElement se nevytváří).
     private static CarouselPage Page(string title) => new(title, () => null!);
 
     private static SupportCarouselMiniAppViewModel Build() =>
@@ -108,7 +108,7 @@ public class SupportCarouselMiniAppViewModelTests
     private static CarouselEngagement Reading => new(PointerInside: true, FocusWithin: false, PointerMoved: true);
     private static CarouselEngagement ParkedInside => new(PointerInside: true, FocusWithin: false, PointerMoved: false);
 
-    // Ticky, po kterých pauza bez pohybu kurzoru vyprší — z konstant VM, ne magické číslo.
+    // Ticky, po kterých pauza bez pohybu kurzoru vyprší - z konstant VM, ne magické číslo.
     private static int IdleTicks =>
         (int)(SupportCarouselMiniAppViewModel.PauseIdleTimeout / SupportCarouselMiniAppViewModel.TickInterval);
 
@@ -154,7 +154,7 @@ public class SupportCarouselMiniAppViewModelTests
     [Fact]
     public void Tick_StickyFocusWithoutPointer_PauseExpires()
     {
-        // WPF fokus je sticky — po kliknutí na šipku zůstane na tlačítku i po odjetí myši.
+        // WPF fokus je sticky - po kliknutí na šipku zůstane na tlačítku i po odjetí myši.
         var vm = Build();
         vm.EngagementProbe = () => new(PointerInside: false, FocusWithin: true, PointerMoved: true);
 
@@ -259,7 +259,7 @@ public class SupportCarouselMiniAppViewModelTests
     [Fact]
     public void OnClosed_DisposesCreatedContents_LeavesUncreatedAlone()
     {
-        // WPF elementy vyžadují STA — dedikované vlákno (vzor EDFilterComboBoxCommitTests).
+        // WPF elementy vyžadují STA - dedikované vlákno (vzor EDFilterComboBoxCommitTests).
         RunSta(() =>
         {
             var created = new DisposableElement();

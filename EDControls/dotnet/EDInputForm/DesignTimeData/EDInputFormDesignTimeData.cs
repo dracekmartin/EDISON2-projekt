@@ -5,7 +5,7 @@ namespace EDControls.EDInputForm.DesignTimeData
 {
     /// <summary>
     /// Design-time ukázková data pro <see cref="EDInputForm"/>. Reference jen z <c>d:ItemsSource</c>
-    /// v EDInputForm.xaml — za běhu se neinstanciuje.
+    /// v EDInputForm.xaml - za běhu se neinstanciuje.
     /// </summary>
     public class EDInputFormDesignTimeData
     {

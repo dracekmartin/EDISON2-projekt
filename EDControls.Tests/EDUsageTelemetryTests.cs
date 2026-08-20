@@ -5,11 +5,9 @@ using NSubstitute;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Sdílená serializovaná kolekce pro třídy sahající na proces-wide static state: singleton
-/// <c>EDServices.Current</c> (fallback RelayCommand/AsyncRelayCommand na PopupDisplayer přes
-/// Initialize/Reset) a statický buffer <see cref="EDUsageTelemetry"/> (Track/Flush). xUnit dává
-/// každé třídě vlastní kolekci a ty běží paralelně — tyhle instance ale nejsou izolované per-test,
-/// takže bez společné non-parallel kolekce by si stav navzájem přepisovaly.
+/// Serializovaná kolekce pro třídy sahající na proces-wide static state (<c>EDServices.Current</c>,
+/// statický buffer <see cref="EDUsageTelemetry"/>) - nejsou izolované per-test, takže bez společné
+/// non-parallel kolekce by si stav navzájem přepisovaly.
 /// </summary>
 [CollectionDefinition(SharedStaticStateCollection.Name, DisableParallelization = true)]
 public class SharedStaticStateCollection
@@ -49,7 +47,7 @@ public class EDUsageTelemetryTests
 
         Assert.NotNull(batch);
         Assert.Equal(2, batch!.Length);
-        // "usage" ~ form ~ control ~ ts(yyyy-MM-dd HH:mm:ss) — kontrakt LogUsageBatch
+        // "usage" ~ form ~ control ~ ts(yyyy-MM-dd HH:mm:ss) - kontrakt LogUsageBatch
         Assert.Matches(new Regex(@"^usage~EDISON2\.TestWindow~OPEN~\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"),
             (string)batch[0]);
         Assert.Matches(new Regex(@"^usage~EDISON2\.TestWindow~BtnSave~\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"),
@@ -89,7 +87,7 @@ public class EDUsageTelemetryTests
         EDUsageTelemetry.Flush(_mlRest);   // nesmí vyhodit
         EDUsageTelemetry.Flush(_mlRest);
 
-        // Záznamy se při chybě zahodí (best-effort) — druhý flush už nevolá server.
+        // Záznamy se při chybě zahodí (best-effort) - druhý flush už nevolá server.
         _mlRest.Received(1).QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<object[]>());
     }
 
@@ -146,7 +144,7 @@ public class EDUsageTelemetryTests
     [Fact]
     public void Cap_IsNotLatch_TrackAfterFlushResumes()
     {
-        // Cap kontroluje živý počet (_buffer.Count), ne kumulativní latch — po Flush se zase nabírá.
+        // Cap kontroluje živý počet (_buffer.Count), ne kumulativní latch - po Flush se zase nabírá.
         for (int i = 0; i < 10_000; i++)
             EDUsageTelemetry.Track("EDISON2.TestWindow", $"Btn{i}");
         Assert.Equal(10_000, EDUsageTelemetry.BufferCountForTests);

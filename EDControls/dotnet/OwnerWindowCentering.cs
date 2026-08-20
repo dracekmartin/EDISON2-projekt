@@ -37,7 +37,7 @@ public static class OwnerWindowCentering
         window.Top = topLeft.Y;
     }
 
-    /// <summary>Levý horní roh vycentrovaného okna. Čistá aritmetika (bez WPF/HWND) — testovatelná.</summary>
+    /// <summary>Levý horní roh vycentrovaného okna. Čistá aritmetika (bez WPF/HWND) - testovatelná.</summary>
     internal static Point ComputeTopLeft(Point clientOrigin, Size clientSize, Size windowSize)
         => new(clientOrigin.X + (clientSize.Width - windowSize.Width) / 2,
                clientOrigin.Y + (clientSize.Height - windowSize.Height) / 2);

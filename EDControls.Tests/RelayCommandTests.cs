@@ -4,7 +4,7 @@ using NSubstitute;
 namespace EDControls.Tests;
 
 // Sdílí serializovanou kolekci s ostatními třídami sahajícími na EDServices.Current
-// (Initialize/Reset ve *_FallsBackToEDServicesCurrent testech) — viz SharedStaticStateCollection.
+// (Initialize/Reset ve *_FallsBackToEDServicesCurrent testech) - viz SharedStaticStateCollection.
 [Collection(SharedStaticStateCollection.Name)]
 public class RelayCommandTests
 {
@@ -12,8 +12,6 @@ public class RelayCommandTests
         new(mlRest: null,
             windowNavigator: Substitute.For<IWindowNavigator>(),
             popupDisplayer: popup);
-
-    // ---------- Non-generic ----------
 
     [Fact]
     public void Execute_InvokesAction()
@@ -61,7 +59,7 @@ public class RelayCommandTests
     public void Execute_Exception_NullPopup_FallsBackToEDServicesCurrent()
     {
         // Fallback z `new PopupDisplayer()` (orphan) na composition root přes
-        // EDServices.Current.PopupDisplayer — ověřujeme, že sahá na Current, ne na vlastní instanci.
+        // EDServices.Current.PopupDisplayer - ověřujeme, že sahá na Current, ne na vlastní instanci.
         var popup = Substitute.For<IPopupDisplayer>();
         EDServices.Initialize(ServicesWith(popup));
         try
@@ -78,8 +76,6 @@ public class RelayCommandTests
             EDServices.Reset();
         }
     }
-
-    // ---------- Generic ----------
 
     [Fact]
     public void Generic_Execute_PassesParameter()

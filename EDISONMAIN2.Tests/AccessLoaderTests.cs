@@ -84,7 +84,7 @@ public class AccessLoaderTests
     [Fact]
     public void ApId3_IsAdminFalse_StillAllAccess()
     {
-        // Server-side flag apId=3 (SuperUser) přebíjí client isAdmin — IsAllAccess
+        // Server-side flag apId=3 (SuperUser) přebíjí client isAdmin - IsAllAccess
         // se nastavuje pouze podle serveru, ne podle client-side hodnoty.
         var mlRest = MockAccessCall(apId: 3);
         var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
@@ -108,7 +108,7 @@ public class AccessLoaderTests
     public void EmptyOrNullIds_InOutput_AreSkipped()
     {
         // Server občas vrátí null/empty entries (např. mezery v allowedIds). Loader je smaže
-        // — nikdy by AccessTable.Contains("") neměl trefovat.
+        // - nikdy by AccessTable.Contains("") neměl trefovat.
         var mlRest = MLRestMocks.Create();
         mlRest.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
             .Returns(MLRestMocks.Output("1", "8", null, "", "12"));

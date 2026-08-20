@@ -21,9 +21,8 @@ namespace EDControls.EDList
 {
     public partial class EDList : UserControl
     {
-        // ─── Konfigurace (DependencyProperties pro XAML attribute setování) ──────
 
-        // MLRest + UserPrefs ze sdíleného EDServices.Current — nezávislé na Window.DataContext.
+        // MLRest + UserPrefs ze sdíleného EDServices.Current - nezávislé na Window.DataContext.
         // Host hostující EDList tak nemusí mít VM dědící z EDViewModel jen kvůli těmto službám
         // (shodný pattern jako EDInputForm). EDServices.UserPrefs defaultuje na NullUserPrefsService.
         private IMLRest? MLRest => EDViewModel.EDServices.Current.MLRest;
@@ -55,8 +54,6 @@ namespace EDControls.EDList
         }
 
         private const string PrefsScope = "EDControls.EDList";
-
-        // ─── Title + Search (L3) ──────────────────────────────────────────────────
 
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(nameof(Title), typeof(string), typeof(EDList),
@@ -119,8 +116,6 @@ namespace EDControls.EDList
                 : row => row is EDListRow r && EDListFilter.Matches(r, search, searchableKeys);
         }
 
-        // ─── Stav ─────────────────────────────────────────────────────────────────
-
         private IReadOnlyList<ListColumn>? _columns;
         public IReadOnlyList<ListColumn>? Columns => _columns;
 
@@ -134,8 +129,6 @@ namespace EDControls.EDList
 
         /// <summary>Aktuálně vybraný řádek (jeho data přes indexer), nebo null.</summary>
         public EDListRow? SelectedRow => dataGrid.SelectedItem as EDListRow;
-
-        // ─── Multi-select (L1) ────────────────────────────────────────────────────
 
         /// <summary>Mode výběru: Single (klasický), Check (checkbox sloupec, multi-select).</summary>
         public static readonly DependencyProperty SelectionModeProperty =
@@ -160,14 +153,10 @@ namespace EDControls.EDList
 
         private bool _suppressCheckedEvents;
 
-        // ─── Eventy ───────────────────────────────────────────────────────────────
-
         public event EventHandler<string>? RowDoubleClicked;
         public event EventHandler<string?>? SelectionChanged;
         public event EventHandler<(string RowId, string ColKey)>? CellLinkClicked;
         public event EventHandler<IReadOnlyList<string>>? CheckedRowsChanged;
-
-        // ─── Inicializace ─────────────────────────────────────────────────────────
 
         public EDList()
         {
@@ -179,7 +168,7 @@ namespace EDControls.EDList
 
         private async void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            // Force save layout — pokud byl debouncer ještě běžel, dokončit teď.
+            // Force save layout - pokud byl debouncer ještě běžel, dokončit teď.
             if (_saveDebouncer is { IsEnabled: true })
             {
                 _saveDebouncer.Stop();
@@ -187,8 +176,6 @@ namespace EDControls.EDList
             }
             UnhookColumnEvents();
         }
-
-        // ─── Multi-select API ─────────────────────────────────────────────────────
 
         /// <summary>Nastaví checked stav konkrétního řádku.</summary>
         public void SetChecked(string rowId, bool isChecked)
@@ -275,14 +262,12 @@ namespace EDControls.EDList
                 FireCheckedRowsChanged();
         }
 
-        // ─── Veřejné API ──────────────────────────────────────────────────────────
-
         public void InitializeList() =>
             ApplyColumns(EnsureConfigured().QueryOrThrow(CacheClass, "InitializeList", new CVar()));
 
         /// <summary>
-        /// Async varianta <see cref="InitializeList"/> — dotaz běží na threadpoolu, výsledek dosedne
-        /// na UI vlákně (R1). Preferuj ji všude, kde host běží nad pomalou linkou: synchronní varianta
+        /// Async varianta <see cref="InitializeList"/> - dotaz běží na threadpoolu, výsledek dosedne
+        /// na UI vlákně. Preferuj ji všude, kde host běží nad pomalou linkou: synchronní varianta
         /// zmrazí **celou aplikaci** na dobu round-tripu, ne jen hostující okno.
         /// </summary>
         public async Task InitializeListAsync()
@@ -303,14 +288,14 @@ namespace EDControls.EDList
         /// </summary>
         public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {
-            _loadGeneration++;   // sync načtení je autoritativní — případná async odpověď v letu se zahodí
+            _loadGeneration++;   // sync načtení je autoritativní - případná async odpověď v letu se zahodí
             ApplyRows(EnsureConfigured().QueryOrThrow(CacheClass, "LoadList", BuildLoadInput(filter)));
         }
 
         public Task LoadListAsync() => LoadListAsync(filter: null);
 
         /// <summary>
-        /// Async varianta <see cref="LoadList(IReadOnlyDictionary{string, string}?)"/> (R1) — viz
+        /// Async varianta <see cref="LoadList(IReadOnlyDictionary{string, string}?)"/> - viz
         /// <see cref="InitializeListAsync"/>. Rychlé přepínání filtru je ošetřené: dotazy se serializují
         /// (sdílený <c>MLRest</c> jede přes procesní globály <c>^||ML</c>, dva souběžné by si je přepsaly)
         /// a odpověď staršího dotazu už do seznamu nedosedne.
@@ -359,33 +344,22 @@ namespace EDControls.EDList
 
         private void ApplyRows(CVar output)
         {
-            // Unsubscribe stará data — žádné spying na zaniklé řádky
+            // Unsubscribe stará data - žádné spying na zaniklé řádky
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _checkAnchor = null;
 
-            // Hromadná výměna = jedno oznámení místo N+1. Plnění po jednom bylo vidět jako škubnutí,
-            // když načtení dosedlo, zatímco uživatel psal do filtru skupiny (odkrylo to až async
-            // načítání pickeru; dřív to schoval zámrz synchronního).
-            //
-            // ⚠️ NEOBALOVAT do ICollectionView.DeferRefresh (zkoušeno 4. 8. 2026 a hned VRÁCENO):
-            // odklad neodkládá CollectionChanged, takže mutace zdrojové kolekce pod ním shodí
-            // `ListCollectionView` na „Nelze změnit nebo zkontrolovat obsah nebo Current pozici
-            // CollectionView během odkladu Refresh". Tohle je jiná cesta - žádný odklad, jen jedno
-            // oznámení; `Reset` posílal i dosavadní `Clear`, takže to pro pohled není nový stav.
-            // ToList je nutné: ParseRows je líný iterátor, takže druhý průchod by vyrobil jiné
-            // instance řádků a odběr změn by visel na těch, které v seznamu nejsou
+            // ToList: ParseRows je líný iterátor - druhý průchod by vyrobil jiné instance řádků
+            // a odběr změn by visel mimo seznam.
             var newRows = ParseRows(output).ToList();
             foreach (var row in newRows) row.PropertyChanged += OnRowPropertyChanged;
             _rows.ReplaceAll(newRows);
 
             FireCheckedRowsChanged();
             RefreshFilter();  // re-apply current search po LoadList (nový dataset)
-            // Aplikuj persistent column layout asynchronně po data load — minor flicker (default
+            // Aplikuj persistent column layout asynchronně po data load - minor flicker (default
             // sloupce → persistované), ale UI neblokuje.
             _ = LoadLayoutAsync();
         }
-
-        // ─── Parsování ────────────────────────────────────────────────────────────
 
         internal static IReadOnlyList<ListColumn> ParseColumns(CVar output)
         {
@@ -458,8 +432,6 @@ namespace EDControls.EDList
             }
         }
 
-        // ─── Formátování hodnot ───────────────────────────────────────────────────
-
         private string? FormatValue(string? raw, string colKey)
         {
             if (raw is null) return null;
@@ -499,8 +471,6 @@ namespace EDControls.EDList
                 : raw;
         }
 
-        // ─── Generování sloupců DataGridu ─────────────────────────────────────────
-
         private void RebuildColumns()
         {
             UnhookColumnEvents();
@@ -523,7 +493,7 @@ namespace EDControls.EDList
             checkBox.SetValue(CheckBox.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             checkBox.SetValue(CheckBox.VerticalAlignmentProperty, VerticalAlignment.Center);
             // OneWay binding: source (EDListRow.IsChecked) → CheckBox (programmatic změny propagují
-            // do UI přes INotifyPropertyChanged). User click řeší explicit ClickEvent handler níže —
+            // do UI přes INotifyPropertyChanged). User click řeší explicit ClickEvent handler níže -
             // DataGridTemplateColumn.CellTemplate má známé problémy s reverzní cestou TwoWay binding.
             checkBox.SetBinding(CheckBox.IsCheckedProperty,
                 new Binding(nameof(EDListRow.IsChecked)) { Mode = BindingMode.OneWay });
@@ -568,7 +538,9 @@ namespace EDControls.EDList
                 tb.SetBinding(TextBlock.TextProperty, new Binding($"[{col.Key}]"));
                 tb.SetValue(TextBlock.TextDecorationsProperty, TextDecorations.Underline);
                 tb.SetValue(TextBlock.CursorProperty, Cursors.Hand);
-                tb.SetValue(TextBlock.ForegroundProperty, SystemColors.HotTrackBrush);
+                // SetResourceReference (= DynamicResource): SystemColors.HotTrackBrush je
+                // systémová barva, kterou dark mode nepřepne.
+                tb.SetResourceReference(TextBlock.ForegroundProperty, "EDTheme.Accent.Blue");
                 if (align == EListColumnAlign.Right)
                     tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
                 else if (align == EListColumnAlign.Center)
@@ -616,8 +588,11 @@ namespace EDControls.EDList
                 var ha = align == EListColumnAlign.Right
                     ? HorizontalAlignment.Right
                     : HorizontalAlignment.Center;
+                // ElementStyle implicitní <Style TargetType="TextBlock"> nahrazuje, nedědí -
+                // bez BasedOn by zarovnané sloupce minuly typografii z EDControlStyles.
                 textCol.ElementStyle = new Style(typeof(TextBlock))
                 {
+                    BasedOn = Application.Current?.TryFindResource(typeof(TextBlock)) as Style,
                     Setters = { new Setter(TextBlock.HorizontalAlignmentProperty, ha) }
                 };
             }
@@ -635,12 +610,10 @@ namespace EDControls.EDList
             _                            => EListColumnAlign.Left,
         };
 
-        // ─── Řazení ───────────────────────────────────────────────────────────────
-
         private readonly List<(string Key, ListSortDirection Dir)> _sortSpecs = [];
 
         /// <summary>
-        /// Vlastní řazení místo DataGrid defaultu — SortDescriptions by řadily formátované
+        /// Vlastní řazení místo DataGrid defaultu - SortDescriptions by řadily formátované
         /// stringy (NUMBER/DATE lexikograficky). CustomSort porovnává typované sort klíče
         /// z raw hodnot. Shift+klik přidává další sloupec (multi-sort jako WPF default).
         /// </summary>
@@ -671,8 +644,6 @@ namespace EDControls.EDList
                 : new EDListRowComparer([.. _sortSpecs.Select(s => (s.Key, s.Dir == ListSortDirection.Descending))]);
         }
 
-        // ─── Obsluha eventů DataGridu ─────────────────────────────────────────────
-
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // V Check mode dvojklik na řádek přepne zaškrtnutí (rychlejší než trefit úzký checkbox).
@@ -690,8 +661,6 @@ namespace EDControls.EDList
             SelectionChanged?.Invoke(this, SelectedRowId);
         }
 
-        // ─── Helpers ──────────────────────────────────────────────────────────────
-
         /// <summary>Stráž pro veřejné API - vrací MLRest, aby ho volající nemusel dereferencovat sám.</summary>
         private IMLRest EnsureConfigured()
         {
@@ -700,12 +669,10 @@ namespace EDControls.EDList
             return MLRest;
         }
 
-        // ─── Column layout persist (L2) ──────────────────────────────────────────
-
         private DispatcherTimer? _saveDebouncer;
-        private bool _suppressLayoutSave;  // true během ApplyLayout — eventy nesmí trigger save
+        private bool _suppressLayoutSave;  // true během ApplyLayout - eventy nesmí trigger save
 
-        /// <summary>Subscribe na width/displayIndex/sort změny sloupců — trigger debounced save.</summary>
+        /// <summary>Subscribe na width/displayIndex/sort změny sloupců - trigger debounced save.</summary>
         private void HookColumnEvents()
         {
             foreach (var col in dataGrid.Columns)
@@ -813,14 +780,14 @@ namespace EDControls.EDList
             _suppressLayoutSave = true;
             try
             {
-                // 1) Šířky — apply v current pořadí
+                // 1) Šířky - apply v current pořadí
                 foreach (var pref in layout.Columns)
                 {
                     var col = FindColumnByKey(pref.Key);
                     if (col is null) continue;
                     if (pref.Width > 0) col.Width = new DataGridLength(pref.Width);
                 }
-                // 2) DisplayIndex — apply v cílovém pořadí (low → high), DataGrid přesype zbytek
+                // 2) DisplayIndex - apply v cílovém pořadí (low → high), DataGrid přesype zbytek
                 foreach (var pref in layout.Columns.OrderBy(p => p.DisplayIndex))
                 {
                     var col = FindColumnByKey(pref.Key);
@@ -828,7 +795,7 @@ namespace EDControls.EDList
                     if (pref.DisplayIndex >= 0 && pref.DisplayIndex < dataGrid.Columns.Count)
                         col.DisplayIndex = pref.DisplayIndex;
                 }
-                // 3) Sort — vizuální šipka + typovaný CustomSort (viz OnDataGridSorting)
+                // 3) Sort - vizuální šipka + typovaný CustomSort (viz OnDataGridSorting)
                 if (layout.Sort is { Count: > 0 })
                 {
                     _sortSpecs.Clear();
@@ -850,8 +817,6 @@ namespace EDControls.EDList
             dataGrid.Columns.FirstOrDefault(c => c.GetValue(FrameworkElement.TagProperty) as string == key);
     }
 
-    // ─── Extension metody pro JsonElement ─────────────────────────────────────────
-
     internal static class JsonElementExtensions
     {
         public static string Str(this JsonElement el, string key) =>
@@ -871,8 +836,6 @@ namespace EDControls.EDList
                 }
                 : defaultValue;
     }
-
-    // ─── Converter: "R;G;B" → SolidColorBrush ────────────────────────────────────
 
     internal class RgbStringToBrushConverter : IValueConverter
     {

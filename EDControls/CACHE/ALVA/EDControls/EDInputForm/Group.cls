@@ -4,7 +4,6 @@ Class ALVA.EDControls.EDInputForm.Group Extends ALVA.EDControls.EDInputForm.Item
 /// Stabilní identifikátor pro lookup AddFieldToGroup / GetGroup.
 Property key As %String;
 
-/// Text zobrazený v hlavičce skupiny na .NET straně.
 Property groupName As %String;
 
 Method Serialize() As %List

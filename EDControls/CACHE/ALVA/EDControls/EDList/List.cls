@@ -5,15 +5,11 @@ Property columns As list Of ALVA.EDControls.EDList.Column;
 
 Property rows As %DynamicArray;
 
-// ─── Inicializace ─────────────────────────────────────────────────────────────
-
 Method %OnNew() As %Status
 {
     s ..rows = ##class(%DynamicArray).%New()
     q 1
 }
-
-// ─── Builder — sloupce ────────────────────────────────────────────────────────
 
 /// Přidá sloupec a vrátí ho pro případné další nastavení (isLink apod.).
 /// format: NUMBER → "N0"/"N2", DATE/DATETIME → "dd.MM.yyyy", ostatní prázdný.
@@ -31,8 +27,6 @@ Method AddColumn(key As %String, label As %String, type As %String = "TEXT", wid
     q col
 }
 
-// ─── Builder — řádky ──────────────────────────────────────────────────────────
-
 /// Vytvoří nový řádek s daným id, přidá ho do interní %DynamicArray a vrátí ho.
 /// Volající nastaví pole přímo:  s row.nazev = "Praha"
 Method AddRow(id As %String) As %DynamicObject
@@ -42,8 +36,6 @@ Method AddRow(id As %String) As %DynamicObject
     d ..rows.%Push(row)
     q row
 }
-
-// ─── Výstup ───────────────────────────────────────────────────────────────────
 
 /// Zapíše OUT[n] = JSON pole definic sloupců (jedno volání = jeden OUT záznam).
 Method WriteColumnsToOut()

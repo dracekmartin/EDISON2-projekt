@@ -3,7 +3,7 @@ using System.Windows;
 namespace EDControls.MiniApps;
 
 /// <summary>
-/// Lightweight mini-app pro čistě obsahové panely (nástěnka, statický přehled…) — bez vlastní
+/// Lightweight mini-app pro čistě obsahové panely (nástěnka, statický přehled…) - bez vlastní
 /// VM/View/DataTemplate třídy. Vystaví <see cref="Title"/> a továrnu na obsah; renderuje se
 /// sdílenou <see cref="SimpleMiniAppView"/>.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class SimpleMiniAppViewModel : EDMiniAppViewModel
         ContentFactory = contentFactory;
     }
 
-    /// <summary>DI/test overload — předá vlastní <c>EDServices</c> místo <c>EDServices.Current</c>.</summary>
+    /// <summary>DI/test overload - předá vlastní <c>EDServices</c> místo <c>EDServices.Current</c>.</summary>
     public SimpleMiniAppViewModel(EDViewModel.EDServices services, string title, Func<FrameworkElement> contentFactory)
         : base(services)
     {
@@ -34,7 +34,7 @@ public sealed class SimpleMiniAppViewModel : EDMiniAppViewModel
     private IDisposable? _disposableContent;
 
     /// <summary>
-    /// View předá vytvořený obsah, ať ho při zavření panelu můžeme uklidit (je-li IDisposable —
+    /// View předá vytvořený obsah, ať ho při zavření panelu můžeme uklidit (je-li IDisposable -
     /// např. WebView2 drží browser proces). Nelze vázat na <c>Unloaded</c>, to padá i při
     /// dock/float re-parentingu (AvalonDock přesouvá tutéž instanci).
     /// </summary>

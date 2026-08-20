@@ -9,7 +9,7 @@ namespace EDControls.EDFilterComboBox;
 /// </summary>
 internal static class EDFilterComboBoxLogic
 {
-    // Oddělovač "Key - Label" — sdílený dropdownem i klidovým zobrazením; lze přebít per instanci.
+    // Oddělovač "Key - Label" - sdílený dropdownem i klidovým zobrazením; lze přebít per instanci.
     internal const string DisplaySeparator = " - ";
 
     /// <summary>Zobrazovaný řetězec položky: „Key - Label", nebo jen Key když Label chybí / je shodný.</summary>

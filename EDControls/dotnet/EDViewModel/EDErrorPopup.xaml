@@ -21,7 +21,7 @@
             </Grid.RowDefinitions>
 
             <!-- Referenční číslo: uživatel ho hlásí na podporu, doplnění se páruje přes něj.
-                 Skryté, když se hlášení neodeslalo — číslo, které nikam nedorazilo, jen mate. -->
+                 Skryté, když se hlášení neodeslalo - číslo, které nikam nedorazilo, jen mate. -->
             <Border Grid.Row="0"
                     x:Name="RefIdPanel"
                     Visibility="Collapsed"

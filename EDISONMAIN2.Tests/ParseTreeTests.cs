@@ -52,7 +52,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_LegacyFormat_DefaultsElementIdAndIsLicensed()
     {
-        // Starý 4-polový EXE řádek (bez elementId/isLicensed) — zpětná kompatibilita
+        // Starý 4-polový EXE řádek (bez elementId/isLicensed) - zpětná kompatibilita
         var data = new CVar();
         data["1"] = new CList("EXE", "Legacy", "legacy.exe", "LegacyForm");
 
@@ -186,7 +186,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_FamilyLegacyFormat_DefaultsElementIdAndIsLicensed()
     {
-        // Starý 3-polový FAMILY řádek (bez elementId/isLicensed) — zpětná kompatibilita.
+        // Starý 3-polový FAMILY řádek (bez elementId/isLicensed) - zpětná kompatibilita.
         var data = new CVar();
         data["1"] = new CList("FAMILY", "Doprava", "1");
         data["2"] = new CList("FAMILY_END");
@@ -245,7 +245,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_ExeNineFields_MlineOnlyDefaultsFalse()
     {
-        // 9polový záznam (před mlineOnly) — zpětná kompatibilita.
+        // 9polový záznam (před mlineOnly) - zpětná kompatibilita.
         var data = new CVar();
         data["1"] = new CList("EXE", "X", "x.exe", "F", "1", "0", "", "0", "");
 
@@ -362,7 +362,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_LegacyFormat_HiddenAndColorDefault()
     {
-        // 7-field row (před S8/S9) — Hidden/Color musí default na false / "".
+        // 7-field row (před S8/S9) - Hidden/Color musí default na false / "".
         var data = new CVar();
         data["1"] = new CList("EXE", "Legacy", "l.exe", "L", "1", "1", "input");
 
@@ -390,7 +390,7 @@ public class ParseTreeTests
     public void ParseTree_RowOrderPreserved_TenPlusRows()
     {
         // CVar zachovává pořadí subscriptů z wire (Caché posílá numerické subscripty v numerickém
-        // pořadí) — ParseTree je nesmí přeskládat na řetězcové řazení: "10" patří za "9", ne za "1".
+        // pořadí) - ParseTree je nesmí přeskládat na řetězcové řazení: "10" patří za "9", ne za "1".
         var data = new CVar();
         for (int i = 1; i <= 12; i++)
             data[i.ToString()] = new CList("EXE", "M" + i, "m" + i + ".exe", "F");
@@ -405,7 +405,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_IsLicensedMinusOne_ParsesAsFalse()
     {
-        // isLicensed je striktní == "1" — narozdíl od VB-style login booleanů (commit 02765e9),
+        // isLicensed je striktní == "1" - narozdíl od VB-style login booleanů,
         // kde -1 = true. Tady "-1" (ani jiné nenulové) NEznačí licencováno.
         var data = new CVar();
         data["1"] = new CList("EXE", "X", "x.exe", "F", "100", "-1");

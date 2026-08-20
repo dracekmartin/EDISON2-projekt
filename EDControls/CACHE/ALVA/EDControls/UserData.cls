@@ -5,11 +5,7 @@ Include GENERAL
 /// Storage: ^ALVA.EDControls.UserData(IdFa, userID, scope, key) = <JSON blob>
 ///
 /// (IdFa, userID) se získají automaticky z $$$FillParams (MLRest sys context).
-/// (scope, key) předává klient. Hodnota je opaque JSON blob — server nezná strukturu.
-///
-/// Použití:
-///   scope = "EDControls.EDList", key = "TemplateDesigner.TemplatePicker"
-///   scope = "EDControls.EDInputForm", key = "TemplateDesigner.SaveDialog"
+/// (scope, key) předává klient. Hodnota je opaque JSON blob - server nezná strukturu.
 Class ALVA.EDControls.UserData Extends %RegisteredObject
 {
 

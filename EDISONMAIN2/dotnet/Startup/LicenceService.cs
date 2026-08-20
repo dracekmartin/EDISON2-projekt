@@ -5,7 +5,7 @@ namespace EDISONMAIN2;
 
 /// <summary>
 /// Wrapper kolem legacy VB <see cref="Activation"/> z EDLicence.dll.
-/// Single-threaded — Activation přepisuje modul-level globál v EDLicence.
+/// Single-threaded - Activation přepisuje modul-level globál v EDLicence.
 /// </summary>
 public class LicenceService(MLRest mlRest)
 {
@@ -26,7 +26,7 @@ public class LicenceService(MLRest mlRest)
     }
 
     /// <summary>
-    /// Default licence "Nezadána" — legacy frmNoMDI.GetActiveLicense. Bez ní by VerifyLic
+    /// Default licence "Nezadána" - legacy frmNoMDI.GetActiveLicense. Bez ní by VerifyLic
     /// s CountsLOGIN=0 vždy vrátil -1 (nikdo se nepřihlásí) a instalace bez licence by se
     /// zamkla; takhle se jeden uživatel dostane do shellu a admin přes Správa systému >
     /// Společná evidence > EDISON licenci naimportuje.

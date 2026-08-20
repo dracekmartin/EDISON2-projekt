@@ -4,13 +4,13 @@ using System.Runtime.InteropServices;
 namespace EDControls.EDViewModel;
 
 /// <summary>
-/// Bind child process tak, aby zemřel společně se shellem — i při hard-killu (VS Stop debugging,
+/// Bind child process tak, aby zemřel společně se shellem - i při hard-killu (VS Stop debugging,
 /// crash, taskkill), kdy <c>WindowNavigator.CloseAll()</c> nestihne proběhnout.
 /// </summary>
 /// <remarks>
 /// Mechanika: Win32 Job Object s flagem <c>KILL_ON_JOB_CLOSE</c>. Static handle žije s shellem.
 /// Když shell zemře jakkoli, Windows automaticky uvolní handle → kernel killne celý Job →
-/// všechny přiřazené procesy. Žádné polling / heartbeat / cleanup eventy nejsou potřeba —
+/// všechny přiřazené procesy. Žádné polling / heartbeat / cleanup eventy nejsou potřeba -
 /// vše dělá kernel synchronně při process termination, bez ohledu na to jak shell skončí.
 /// </remarks>
 internal static class KillOnExit
@@ -21,7 +21,7 @@ internal static class KillOnExit
     {
         if (_handle == IntPtr.Zero) return;
         try { AssignProcessToJobObject(_handle, process.Handle); }
-        catch { /* může selhat ve VS sandboxu / starších Windows — best effort, ne fatální */ }
+        catch { /* může selhat ve VS sandboxu / starších Windows - best effort, ne fatální */ }
     }
 
     private static IntPtr Initialize()

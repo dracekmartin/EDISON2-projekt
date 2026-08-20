@@ -5,13 +5,13 @@ namespace EDISONMAIN2;
 
 /// <summary>
 /// Lokální šifrování zapamatovaného hesla přes Windows DPAPI (<see cref="DataProtectionScope.CurrentUser"/>).
-/// Klíč spravuje OS a je vázaný na Windows účet + stanici — blob nejde rozšifrovat jiným
+/// Klíč spravuje OS a je vázaný na Windows účet + stanici - blob nejde rozšifrovat jiným
 /// Windows uživatelem ani na jiném stroji. Žádný klíč se neukládá (na rozdíl od legacy shellu,
 /// který AES klíč ukládal vedle šifry = jen obfuskace).
 /// </summary>
 public static class PasswordProtector
 {
-    // App-specific entropy — oddělí náš blob od jiných DPAPI blobů (není to tajemství).
+    // App-specific entropy - oddělí náš blob od jiných DPAPI blobů (není to tajemství).
     private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("EDISONMAIN2.RememberPassword.v1");
     private const char Sep = '\0';
 

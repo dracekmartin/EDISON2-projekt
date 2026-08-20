@@ -11,7 +11,7 @@ orchestrace bez WPF je `EDInputFormController.cs`, kodek wire formátu `EDInputF
 ## Wire formát (pořadí pozic = protokol, neměnit!)
 
 - `FIELD`: `number, key, label, type, value, validateOnChange, required, validationError,
-  editable, visibility, helpText, listItems, fileFilter, min, max, format, unit`
+  editable, visibility, helpText, listItems, fileFilter, min, max, format, unit, placeholders`
   (`Field.cls::Serialize` ⟷ `ParseItems`).
 - `GROUP`: `number, key, groupName, visibility, helpText`.
 - Visibility: `"0"`=Visible (default, i když chybí), `"1"`=Collapsed, `"2"`=UserHidden,

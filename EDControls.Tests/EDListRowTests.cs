@@ -42,8 +42,6 @@ public class EDListRowTests
         Assert.Equal(0, fired);
     }
 
-    // ─── GetSortKey ───────────────────────────────────────────────────────────
-
     [Fact]
     public void GetSortKey_NoSortKeys_FallsBackToFormattedValue()
     {

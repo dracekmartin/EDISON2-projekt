@@ -6,7 +6,6 @@
     <!-- AllowDrop na kořeni: přetažení modulu ze stromu (přidání) i dlaždice (přemístění na buňku). -->
     <Grid AllowDrop="True" Background="Transparent" DragOver="Desktop_DragOver" Drop="Desktop_Drop"
           SizeChanged="Desktop_SizeChanged">
-        <!-- Prázdný stav: výzva k přetažení modulů ze stromu. -->
         <TextBlock Text="Přetáhněte sem moduly ze stromu, nebo je přidejte přes ★ v kontextovém menu."
                    TextWrapping="Wrap" TextAlignment="Center" MaxWidth="320"
                    HorizontalAlignment="Center" VerticalAlignment="Center"

@@ -6,7 +6,7 @@ using NSubstitute;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy fallback licence "Nezadána" (legacy frmNoMDI.GetActiveLicense) — instalace bez
+/// Testy fallback licence "Nezadána" (legacy frmNoMDI.GetActiveLicense) - instalace bez
 /// vystavené licence se nesmí zamknout: jeden login musí projít a admin musí vidět
 /// EDISON (nastavení, import licence) ve Správě systému.
 /// </summary>

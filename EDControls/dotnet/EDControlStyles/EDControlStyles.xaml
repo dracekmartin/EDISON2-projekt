@@ -6,45 +6,20 @@
                     xmlns:edib="clr-namespace:EDControls.EDInfoBar"
                     xmlns:edtb="clr-namespace:EDControls.EDToolbar">
 
-    <!--
-        EDControlStyles — implicitní styly pro WPF kontrolky.
+    <!-- Implicitní styly WPF kontrolek nad tokeny z EDTheme.xaml; vše přes DynamicResource,
+         aby runtime override tokenu (FontService, ThemeService) propadl do celé aplikace.
+         Nový control typ patří sem, jinam ne - jinde by propagace fontu nefungovala. -->
 
-        Sjednocuje vzhled tlačítek, textboxů, comboboxů atd. napříč EDControls knihovnou
-        a hostitelskou aplikací. Používá design tokens z EDTheme.xaml.
-
-        Charakter: moderní desktop look (flat, jemně zaoblené rohy 3px, žádné gradienty,
-        subtilní hover/pressed). Referenční inspirace: Fluent UI / Office 365 / VS Code.
-
-        Font: každý style bere FontFamily i FontSize z EDTheme tokenů (DynamicResource).
-        Aplikace overridne tokeny v Application.Resources runtime (např. FontService
-        v EDISONMAIN2 podle uživatelské preference) a všechny ovládací prvky se okamžitě
-        překreslí — FontFamily i FontSize.
-
-        Když potřebuješ rozšířit o nový control typ (DataGrid, GroupBox, RadioButton, ...),
-        přidej implicit Style sem; jiná místa nikoli (aby propagace fontu fungovala globálně).
-
-        Konzumace v aplikacích (opt-in):
-          <Application.Resources>
-            <ResourceDictionary.MergedDictionaries>
-              <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDTheme/EDTheme.xaml"/>
-              <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDControlStyles/EDControlStyles.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-          </Application.Resources>
-
-        Buttons s explicit Style="..." nejsou ovlivněny (mají vlastní vizuál — ToolbarButton,
-        PaletteButton apod.). Inline atributy (Background, BorderThickness) také vítězí.
-    -->
-
-    <!-- Sdílený jemný stín pod plovoucími plochami (menu, dropdown, contextmenu) — hloubka.
+    <!-- Sdílený jemný stín pod plovoucími plochami (menu, dropdown, contextmenu) - hloubka.
          Směr dolů-doprava → pravý/spodní margin borderu dá stínu prostor bez posunu zarovnání. -->
     <DropShadowEffect x:Key="EDTheme.Shadow.Popup" Color="#000000" Direction="315" ShadowDepth="2" BlurRadius="8" Opacity="0.22"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         Focus ring — jediný indikátor klávesového focusu v celé knihovně
+         Focus ring - jediný indikátor klávesového focusu v celé knihovně
 
          Nese ho FocusVisualStyle (adorner), ne triggery v templatech, ze dvou důvodů:
          WPF kreslí FocusVisualStyle jen když focus přišel z klávesnice (po kliknutí myší
-         nic — IsKeyboardFocused trigger by svítil i tam), a adorner funguje i na
+         nic - IsKeyboardFocused trigger by svítil i tam), a adorner funguje i na
          kontrolkách bez custom template (PasswordBox, DataGridRow, RadioButton).
 
          Ring je dvoubarevný: kontrastní halo + accent linka nad ním. Halo drží
@@ -67,7 +42,7 @@
     </Style>
 
     <!-- Inset varianta pro items ve scrollovaných kontejnerech (ListBoxItem, DataGridCell,
-         TreeViewItem, ...) — adorner layer nerespektuje clip ScrollVieweru, takže vnější
+         TreeViewItem, ...) - adorner layer nerespektuje clip ScrollVieweru, takže vnější
          ring u krajní položky přeteče přes hranu. Kreslí se proto uvnitř bounds. -->
     <Style x:Key="EDTheme.FocusVisual.Inset">
         <Setter Property="Control.Template">
@@ -87,7 +62,7 @@
 
          Past: tenhle override sám nestačí. Theme style Aera u většiny kontrolek nastavuje
          FocusVisualStyle vlastní hodnotou (u TextBoxu dokonce null) a ta má vyšší prioritu
-         než default value, ze které se override čte — chytí se tedy jen prvky, kterým ho
+         než default value, ze které se override čte - chytí se tedy jen prvky, kterým ho
          theme style nesetuje (DatePicker). Proto ho každý styl níž nastavuje explicitně;
          bez toho zůstane tečkovaný rámeček. Ověřeno přes
          DependencyPropertyHelper.GetValueSource: Button/CheckBox/TextBox = DefaultStyle.
@@ -108,10 +83,10 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         MenuItem — flat menu s 4 role templates + Separator
+         MenuItem - flat menu s 4 role templates + Separator
          ═══════════════════════════════════════════════════════════════════ -->
 
-    <!-- Submenu Popup container — sdílený border pro submenu popups -->
+    <!-- Submenu Popup container - sdílený border pro submenu popups -->
     <ControlTemplate x:Key="EDTheme.MenuItem.SubmenuPopup" TargetType="ContentControl">
         <Border Background="{DynamicResource EDTheme.Bg.Surface}"
                 BorderBrush="{DynamicResource EDTheme.Border.Medium}"
@@ -347,7 +322,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <!-- MenuItem hlavní style — vybírá template podle Role -->
+    <!-- MenuItem hlavní style - vybírá template podle Role -->
     <Style TargetType="MenuItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -371,7 +346,7 @@
         </Style.Triggers>
     </Style>
 
-    <!-- Menu (horní strip) — odstranit gradient + sjednotit pozadí -->
+    <!-- Menu (horní strip) - odstranit gradient + sjednotit pozadí -->
     <Style TargetType="Menu">
         <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Footer}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Light}"/>
@@ -382,14 +357,14 @@
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
-    <!-- TextBlock — sjednocuje typografii i mimo styled container (DP inheritance pokrývá jen TextBlocky uvnitř Menu/StatusBar/atd.). -->
+    <!-- TextBlock - sjednocuje typografii i mimo styled container (DP inheritance pokrývá jen TextBlocky uvnitř Menu/StatusBar/atd.). -->
     <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="FontFamily" Value="{DynamicResource EDTheme.FontFamily}"/>
         <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Body}"/>
     </Style>
 
-    <!-- ContextMenu — popup pro right-click menus -->
+    <!-- ContextMenu - popup pro right-click menus -->
     <Style TargetType="ContextMenu">
         <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Medium}"/>
@@ -422,9 +397,6 @@
         </Setter>
     </Style>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         CheckBox — flat box + accent checkmark
-         ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="CheckBox">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -487,9 +459,6 @@
         </Setter>
     </Style>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         TabItem — moderní underline tabs (Chrome/VS Code styl)
-         ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="TabItem">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="Padding"    Value="12,6"/>
@@ -501,7 +470,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
-                    <!-- Cursor jen na header Border — na TabItem by se dědil do Content. -->
+                    <!-- Cursor jen na header Border - na TabItem by se dědil do Content. -->
                     <Border x:Name="Bd"
                             Background="{TemplateBinding Background}"
                             BorderBrush="Transparent"
@@ -539,7 +508,7 @@
         </Setter>
     </Style>
 
-    <!-- TabControl — odstranění defaultního borderu/pozadí, čistá tab strip area -->
+    <!-- TabControl - odstranění defaultního borderu/pozadí, čistá tab strip area -->
     <Style TargetType="TabControl">
         <Setter Property="Background"      Value="Transparent"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Light}"/>
@@ -559,7 +528,7 @@
                                 Background="Transparent"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
-                            <!-- WrapPanel místo TabPanelu — ten při zalomení tabů do více řádků
+                            <!-- WrapPanel místo TabPanelu - ten při zalomení tabů do více řádků
                                  přesouvá řádek s vybraným tabem dolů k obsahu (taby „skáčou"). -->
                             <WrapPanel IsItemsHost="True"
                                        Margin="0"
@@ -578,11 +547,7 @@
         </Setter>
     </Style>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         ComboBox — flat dropdown s focus accent
-         ═══════════════════════════════════════════════════════════════════ -->
-
-    <!-- Interní ToggleButton ComboBoxu — pokrývá celou šířku, šipka vpravo.
+    <!-- Interní ToggleButton ComboBoxu - pokrývá celou šířku, šipka vpravo.
          Kliknutí kdekoliv na ComboBox toggluje dropdown (standard WPF chování). -->
     <Style x:Key="EDTheme.ComboBox.ToggleStyle" TargetType="ToggleButton">
         <Setter Property="Focusable" Value="False"/>
@@ -668,13 +633,13 @@
                                 CornerRadius="3"
                                 SnapsToDevicePixels="True">
                             <Grid>
-                                <!-- ToggleButton pokrývá celou plochu — klik kdekoliv otevře dropdown.
+                                <!-- ToggleButton pokrývá celou plochu - klik kdekoliv otevře dropdown.
                                      Šipka uvnitř jeho template je vpravo (20px sloupec). -->
                                 <ToggleButton x:Name="PART_ToggleButton"
                                               Style="{StaticResource EDTheme.ComboBox.ToggleStyle}"
                                               IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"/>
 
-                                <!-- Selected item display — překryv ToggleButton, IsHitTestVisible=False
+                                <!-- Selected item display - překryv ToggleButton, IsHitTestVisible=False
                                      aby kliknutí prošlo na ToggleButton pod ním. Margin vpravo 20px = místo pro šipku. -->
                                 <ContentPresenter x:Name="ContentSite"
                                                   IsHitTestVisible="False"
@@ -688,8 +653,7 @@
                                     <!-- Stretch + ellipsis: při zvětšeném fontu se dlouhý text neořízne natvrdo,
                                          ale zkrátí na "…". Platí pro string položky (auto-generovaný TextBlock);
                                          combo s vlastním ItemTemplate si trimming řeší samo. ToolTip-on-trim
-                                         nelze deklarativně (WPF nemá IsTextTrimmed + ContentSite je hit-test
-                                         invisible) — řešitelné jen attached behaviorem, zatím vynecháno. -->
+                                         deklarativně nejde (WPF nemá IsTextTrimmed). -->
                                     <ContentPresenter.Resources>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -697,7 +661,7 @@
                                     </ContentPresenter.Resources>
                                 </ContentPresenter>
 
-                                <!-- Editable TextBox — pro IsEditable=True ComboBox -->
+                                <!-- Editable TextBox - pro IsEditable=True ComboBox -->
                                 <TextBox x:Name="PART_EditableTextBox"
                                          Visibility="Collapsed"
                                          Background="Transparent"
@@ -761,9 +725,6 @@
          BasedOn ji napojí na stejný vzhled i font tokeny (template má PART_EditableTextBox). -->
     <Style TargetType="{x:Type edfc:EDFilterComboBox}" BasedOn="{StaticResource {x:Type ComboBox}}"/>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         TextBox — flat input s focus accent
-         ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="TextBox">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding"         Value="6,4"/>
@@ -809,7 +770,7 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         EDSearchTextBox — TextBox s placeholderem uvnitř pole, křížkem a Esc.
+         EDSearchTextBox - TextBox s placeholderem uvnitř pole, křížkem a Esc.
          Template se nahrazuje celý → triggery z TextBoxu se replikují.
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="{x:Type edstx:EDSearchTextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
@@ -841,7 +802,7 @@
                                            Foreground="{DynamicResource EDTheme.Text.Secondary}"
                                            Visibility="Collapsed"/>
                             </Grid>
-                            <!-- Clear (✕) — viditelný jen při neprázdném textu (trigger níže). -->
+                            <!-- Clear (✕) - viditelný jen při neprázdném textu (trigger níže). -->
                             <Button x:Name="PART_ClearButton" Grid.Column="1"
                                     Focusable="False" Cursor="Hand"
                                     Background="Transparent" BorderThickness="0"
@@ -896,7 +857,7 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         EDInfoBar — nenápadný info proužek: ikona + text + akční odkaz.
+         EDInfoBar - nenápadný info proužek: ikona + text + akční odkaz.
          Prázdný ActionText / null Icon příslušnou část schová (triggery).
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="{x:Type edib:EDInfoBar}">
@@ -948,7 +909,7 @@
         </Setter>
     </Style>
 
-    <!-- PasswordBox — minimální styl. WPF default šablona stačí, jen sjednotit typografii. -->
+    <!-- PasswordBox - minimální styl. WPF default šablona stačí, jen sjednotit typografii. -->
     <Style TargetType="PasswordBox">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding"         Value="6,4"/>
@@ -961,9 +922,6 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         Button — flat moderní desktop look
-         ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
         <Setter Property="Padding"         Value="12,4"/>
@@ -1007,7 +965,7 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         StatusBar / StatusBarItem / divider segmentů — font z user-theme
+         StatusBar / StatusBarItem / divider segmentů - font z user-theme
          tokenů + rozestupy, aby segmenty nelepily text na text
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="StatusBar">
@@ -1039,7 +997,7 @@
 
     <!-- Svislý divider segmentů; klíč si StatusBar přiřadí každému <Separator/> sám.
          Stock Aero verze nečte theme tokeny (v dark modu světlá linka).
-         Height nenastavovat — zrušilo by vertikální roztažení. -->
+         Height nenastavovat - zrušilo by vertikální roztažení. -->
     <Style TargetType="Separator" x:Key="{x:Static prim:StatusBar.SeparatorStyleKey}">
         <Setter Property="Width"      Value="1"/>
         <Setter Property="Margin"     Value="0,4"/>
@@ -1054,7 +1012,7 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         ScrollBar — tenký moderní (rounded thumb, bez koncových šipek).
+         ScrollBar - tenký moderní (rounded thumb, bez koncových šipek).
          Thumb ztmavne při hoveru/tažení. Track je průhledný (RepeatButtons
          jen pro page-scroll klik, bez vizuálu).
          ═══════════════════════════════════════════════════════════════════ -->
@@ -1140,7 +1098,7 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         ToolTip — flat bílá karta místo default bledě žlutého rámečku
+         ToolTip - flat bílá karta místo default bledě žlutého rámečku
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="ToolTip">
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
@@ -1168,7 +1126,43 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         TreeView / TreeViewItem — chevron expander, bez tečkovaných spojnic,
+         ProgressBar - default Aero2 template kreslí přes indikátor pevně danou bílou
+         "glass" vrstvu (v dark modu světlý flek), proto flat retemplate: track + indikátor
+         z tokenů, nic navíc. Determinate i indeterminate kreslí stejně - shell používá
+         jen determinate (auto-posun karuselu Podpora).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Style TargetType="ProgressBar">
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Sunken}"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Accent.Blue}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Light}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Height"          Value="6"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="2"
+                            SnapsToDevicePixels="True">
+                        <!-- PART_Track/PART_Indicator jsou povinná jména - ProgressBar si je hledá
+                             a bez nich indikátor vůbec nepočítá šířku. -->
+                        <Grid ClipToBounds="True">
+                            <Decorator x:Name="PART_Track"/>
+                            <Border x:Name="PART_Indicator"
+                                    Background="{TemplateBinding Foreground}"
+                                    CornerRadius="2"
+                                    HorizontalAlignment="Left"/>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TreeView / TreeViewItem - chevron expander, bez tečkovaných spojnic,
          hover + selekce v accent barvě. Odsazení dětí dělá Auto sloupec expanderu.
          ═══════════════════════════════════════════════════════════════════ -->
     <Style x:Key="EDTheme.TreeView.ExpandCollapseToggle" TargetType="ToggleButton">
@@ -1281,9 +1275,6 @@
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         ListBox / ListBoxItem — flat, hover + selekce v accent barvě
-         ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="ListBox">
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Light}"/>
@@ -1331,7 +1322,7 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         DataGrid — flat, tenké horizontální linky, bez row-header gutteru,
+         DataGrid - flat, tenké horizontální linky, bez row-header gutteru,
          moderní hlavička. Selekce se řeší na buňce (funguje i pro FullRow).
          Konzervativní: NEretemplatuje celý DataGrid (default drží scrollviewer/
          řazení/resize), jen setters + hlavička + buňka.
@@ -1398,7 +1389,7 @@
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         ToolBar — default WPF chrome je šedý gradient + overflow, netémovaný.
+         ToolBar - default WPF chrome je šedý gradient + overflow, netémovaný.
          Flat themovaný template. Tlačítka uvnitř nejsou přímé ToolBar items
          (EDToolbar je hostí přes vnitřní ItemsControl) → berou implicit Button styl,
          ToolBar.ButtonStyleKey se neuplatní. Overflow vynechán (ikonové toolbary krátké).
@@ -1431,12 +1422,12 @@
     <Style TargetType="{x:Type edtb:EDToolbar}" BasedOn="{StaticResource {x:Type ToolBar}}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         DatePicker / Calendar — defaultní WPF templaty mají zadrátované bílé pozadí
+         DatePicker / Calendar - defaultní WPF templaty mají zadrátované bílé pozadí
          (VisualState storyboardy) a stock kalendářový glyph, takže pouhé Background/
          Foreground settery je nepřebijou. Proto plné ControlTemplaty s tokeny.
          ═══════════════════════════════════════════════════════════════════ -->
 
-    <!-- Tlačítko rozbalení kalendáře — vektorová ikona kreslená token brushem (reaguje
+    <!-- Tlačítko rozbalení kalendáře - vektorová ikona kreslená token brushem (reaguje
          na dark mode); nahrazuje ošklivý stock glyph z defaultního DatePicker templatu. -->
     <Style x:Key="DatePickerCalendarButtonStyle" TargetType="Button">
         <Setter Property="Background"      Value="Transparent"/>
@@ -1551,7 +1542,7 @@
          explicitně na null → implicitní styl se NEuplatní. Proto musí být tyto styly
          keyed a přiřazené přes settery na Calendar (ne implicitně dle typu). -->
 
-    <!-- Šipky prev/next v hlavičce kalendáře — vektorové glyphy token brushem. -->
+    <!-- Šipky prev/next v hlavičce kalendáře - vektorové glyphy token brushem. -->
     <Style x:Key="CalendarPrevNextButtonStyle" TargetType="Button">
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="Width"     Value="26"/>
@@ -1573,7 +1564,7 @@
         </Setter>
     </Style>
 
-    <!-- Hlavička (měsíc/rok) — text button přepínající zobrazení. -->
+    <!-- Hlavička (měsíc/rok) - text button přepínající zobrazení. -->
     <Style x:Key="CalendarHeaderButtonStyle" TargetType="Button">
         <Setter Property="Focusable"  Value="False"/>
         <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -1617,7 +1608,7 @@
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{DynamicResource EDTheme.Border.Strong}"
                             BorderThickness="1" CornerRadius="4" Padding="6"
-                            Margin="4" Effect="{DynamicResource EDTheme.Shadow.Popup}">
+                            Margin="4" Effect="{StaticResource EDTheme.Shadow.Popup}">
                         <Grid x:Name="PART_Root">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -1684,7 +1675,7 @@
         </Setter>
     </Style>
 
-    <!-- Den v měsíci — stavy přes read-only DP (IsToday/IsSelected/IsInactive/…). -->
+    <!-- Den v měsíci - stavy přes read-only DP (IsToday/IsSelected/IsInactive/…). -->
     <Style x:Key="EDCalendarDayButtonStyle" TargetType="prim:CalendarDayButton">
         <Setter Property="FocusVisualStyle"           Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="MinWidth"                   Value="30"/>
@@ -1763,7 +1754,7 @@
     </Style>
 
     <!-- Keyed (ne jen implicitní), protože DatePicker si Style svého interního Calendaru
-         BINDuje na DatePicker.CalendarStyle — ta lokální hodnota potlačí implicitní styl
+         BINDuje na DatePicker.CalendarStyle - ta lokální hodnota potlačí implicitní styl
          dle typu. Proto se přiřazuje i přes DatePicker.CalendarStyle (viz DatePicker styl). -->
     <Style x:Key="EDCalendarStyle" TargetType="Calendar">
         <Setter Property="Background"             Value="{DynamicResource EDTheme.Bg.Surface}"/>
@@ -1779,7 +1770,7 @@
     <Style TargetType="Calendar" BasedOn="{StaticResource EDCalendarStyle}"/>
 
     <!-- Sdílené ikonové tlačítko toolbaru (nad seznamy/stromy): ploché, transparentní,
-         jemný hover/pressed z theme tokenů (dark mode přes DynamicResource). Keyed —
+         jemný hover/pressed z theme tokenů (dark mode přes DynamicResource). Keyed -
          opt-in, nepřebíjí implicitní Button. Obsah = <Image> s ikonou. -->
     <Style x:Key="EDTheme.ToolbarButton" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>
@@ -1842,7 +1833,7 @@
     </Style>
 
     <!-- Barevné tlačítko panelu Podpora (EDSupportPanel). Barvu plochy dodává volající
-         z tokenů EDTheme.Support.* — hover/pressed jsou průhledné bílé overlaye nad ní,
+         z tokenů EDTheme.Support.* - hover/pressed jsou průhledné bílé overlaye nad ní,
          takže se nemusí dopočítávat světlejší odstín pro každou barvu zvlášť. -->
     <Style x:Key="EDTheme.SupportPanelButton" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual}"/>

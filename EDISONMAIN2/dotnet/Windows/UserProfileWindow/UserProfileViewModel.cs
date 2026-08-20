@@ -7,7 +7,7 @@ using EDISONMAIN2.Windows.LoginWindow;
 namespace EDISONMAIN2.Windows.UserProfileWindow
 {
     /// <summary>
-    /// „Vlastnosti uživatele" — hostuje EDInputForm (schema
+    /// „Vlastnosti uživatele" - hostuje EDInputForm (schema
     /// <c>ALVA.EDISONMAIN2.EDInputForm.UserProfile</c>). Data (přehled, osobní/centrální
     /// export adresář) prefilluje a ukládá code-behind přes <see cref="UserProfileService"/>;
     /// VM drží jen akce tlačítek formuláře (změna hesla, certifikáty) a OK→save most.

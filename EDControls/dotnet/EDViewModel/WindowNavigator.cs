@@ -9,7 +9,7 @@ namespace EDControls.EDViewModel;
 /// <summary>
 /// Otevírá WPF okna (caller předá instanci přes <c>new</c>) + legacy WinForms formuláře
 /// z externích .exe přes generický host <c>EDISONMAIN2API.exe</c> (12-arg kontrakt:
-/// host agendu načte přes <c>Assembly.LoadFrom</c> a roztočí formu — agenda nepotřebuje
+/// host agendu načte přes <c>Assembly.LoadFrom</c> a roztočí formu - agenda nepotřebuje
 /// žádný retrofit). Trackuje child procesy, <see cref="CloseAll"/> kill při shell close.
 /// </summary>
 public class WindowNavigator : IWindowNavigator
@@ -25,7 +25,7 @@ public class WindowNavigator : IWindowNavigator
     /// místo agenda .exe; cesta k agendě jde do argů, takže agenda nemusí být retrofitnutá.</summary>
     private const string LauncherExe = "EDISONMAIN2API.exe";
 
-    /// <summary>Sledování legacy child procesů — Process + původní spawn args (exe, formFqn).
+    /// <summary>Sledování legacy child procesů - Process + původní spawn args (exe, formFqn).
     /// FormFqn slouží jako fallback display label, když <c>Process.MainWindowTitle</c> je prázdný
     /// (typicky brzy po startu child procesu, než se vytvoří window).</summary>
     internal record LegacyProcessEntry(Process Process, string ExeName, string FormFqn, string InputParam);
@@ -75,7 +75,7 @@ public class WindowNavigator : IWindowNavigator
 
     public async Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
-        // Už běžící modul (stejné exe+forma+param) neotvírej znovu — jen na něj přenes focus.
+        // Už běžící modul (stejné exe+forma+param) neotvírej znovu - jen na něj přenes focus.
         if (TryFocusExistingLegacy(exeName, formFqn, inputParam)) return;
         // Launch synchronně (případný fail Process.Start faultne task → caller ho chytne v popup).
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
@@ -104,7 +104,7 @@ public class WindowNavigator : IWindowNavigator
     /// <paramref name="exeName"/>+<paramref name="formFqn"/>+<paramref name="inputParam"/>,
     /// přenese na jeho okno focus a vrátí <c>true</c> (duplikát se nespustí). Mrtvé procesy
     /// z registru cestou vyčistí. Vrací <c>true</c> i když okno ještě nenaběhlo
-    /// (<c>MainWindowHandle == 0</c>) — duplikát se ani tak spustit nesmí, focus je best-effort.
+    /// (<c>MainWindowHandle == 0</c>) - duplikát se ani tak spustit nesmí, focus je best-effort.
     /// </summary>
     private bool TryFocusExistingLegacy(string exeName, string formFqn, string inputParam)
     {
@@ -116,7 +116,7 @@ public class WindowNavigator : IWindowNavigator
         return true;
     }
 
-    /// <summary>Shoda tracked legacy procesu s cílovým launchem — „stejné okno" = stejné exe
+    /// <summary>Shoda tracked legacy procesu s cílovým launchem - „stejné okno" = stejné exe
     /// (case-insensitive path), forma i EDParamIn.</summary>
     internal static bool MatchesTarget(LegacyProcessEntry e, string exe, string form, string param) =>
         string.Equals(e.ExeName, exe, StringComparison.OrdinalIgnoreCase)
@@ -206,7 +206,7 @@ public class WindowNavigator : IWindowNavigator
 
     /// <summary>
     /// Zavře všechna modeless WPF okna (kromě <c>MainWindow</c>) + kill tracked legacy
-    /// child procesy. Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> —
+    /// child procesy. Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> -
     /// shell-only operace, agenda VMs ji nemají vidět. Případné veto okna ignoruje;
     /// kde na něm záleží (výměna session), volej <see cref="TryCloseAll"/>.
     /// </summary>
@@ -272,9 +272,9 @@ public class WindowNavigator : IWindowNavigator
     }
 
     /// <summary>
-    /// Snapshot právě běžících modulů — legacy child procesy + WPF okna (kromě shell
+    /// Snapshot právě běžících modulů - legacy child procesy + WPF okna (kromě shell
     /// <c>MainWindow</c>). Pro menu "Spuštěné moduly" (binding přes refresh při open).
-    /// Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> — shell-only feature.
+    /// Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> - shell-only feature.
     /// </summary>
     public IReadOnlyList<RunningModuleInfo> GetActiveModules()
     {
@@ -311,7 +311,7 @@ public class WindowNavigator : IWindowNavigator
         return [.. legacy, .. wpf];
     }
 
-    /// <summary>Okno, které aplikace nevlastní: overlay okna EDControls (<see cref="IOverlayWindow"/> —
+    /// <summary>Okno, které aplikace nevlastní: overlay okna EDControls (<see cref="IOverlayWindow"/> -
     /// panel Podpora / „Akce probíhá") a okna frameworku (<see cref="FrameworkWindows"/>, včetně chrome
     /// AvalonDocku). Nejsou to moduly a nesmí se zavírat.</summary>
     internal static bool IsInternalWindow(Window w) =>
@@ -348,7 +348,7 @@ public class WindowNavigator : IWindowNavigator
     {
         var mlRest = EDServices.Current.MLRest
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
-        // Launch modulu jako usage telemetrie shellu. Záměrně ne (formFqn, "OPEN") —
+        // Launch modulu jako usage telemetrie shellu. Záměrně ne (formFqn, "OPEN") -
         // hostovaná legacy forma si OPEN trackne sama přes EDForm, jinak by byl dvakrát.
         EDUsageTelemetry.Track("EDISON2.LegacyLaunch", string.IsNullOrEmpty(formFqn) ? exeName : formFqn);
         var shellGuid = shareShellSession ? mlRest.Guid : "";
@@ -387,7 +387,7 @@ public class WindowNavigator : IWindowNavigator
     /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable - starší host je ignoruje),
     /// zástupce na ploše [13] (opaque, host ho místo formy spustí jako proceduru; prázdné = běžný launch).
     /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
-    /// argv-safe (bez uvozovek a mezer), formát viz <c>EDISONMAIN2/docs/DESKTOP_SHORTCUTS.md</c>.
+    /// argv-safe (bez uvozovek a mezer).
     /// </summary>
     internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
         string inputParam, string agendaPath, string licensedElements, string shortcutPayload = "") =>

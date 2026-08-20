@@ -10,7 +10,7 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Regresní testy commit cesty EDCombo (WPF → STA vlákno). Hlídají, že výběr přežije
-/// Refilter, který mezi SelectionChanged a DropDownClosed zahodí SelectedItem — dřív se v takové
+/// Refilter, který mezi SelectionChanged a DropDownClosed zahodí SelectedItem - dřív se v takové
 /// session přepnutí „nic neudělalo" (commit četl už prázdný SelectedItem).
 /// </summary>
 public class EDFilterComboBoxCommitTests
@@ -242,10 +242,10 @@ public class EDFilterComboBoxCommitTests
             // Napsaný filtr má přežít do otevřeného dropdownu (jinak by psaní nic nefiltrovalo).
             SetField(combo, "_textIsUserFilter", true);
             Invoke(combo, "Refilter", ["B"]);
-            Assert.Equal(1, combo.Items.Count);
+            Assert.Single(combo.Items);
 
             combo.IsDropDownOpen = true;   // → DropDownOpened; napsaný filtr se nesmí zahodit
-            Assert.Equal(1, combo.Items.Count);
+            Assert.Single(combo.Items);
         });
     }
 

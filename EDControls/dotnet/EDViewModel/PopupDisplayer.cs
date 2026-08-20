@@ -25,7 +25,7 @@ public class PopupDisplayer(Window? defaultOwner = null) : IPopupDisplayer
 
     public void Error(Exception ex, Window? owner = null)
     {
-        // Nahlásit PŘED zobrazením dialogu — snímek okna má zachytit stav v okamžiku chyby,
+        // Nahlásit PŘED zobrazením dialogu - snímek okna má zachytit stav v okamžiku chyby,
         // ne chybový dialog přes něj.
         var resolvedOwner = owner ?? DefaultOwner;
         var refId = ErrorReporting.ErrorReports.Report(ex, resolvedOwner);

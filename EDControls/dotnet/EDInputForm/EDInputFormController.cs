@@ -4,7 +4,7 @@ using ALWA.SYS;
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Testovatelná orchestrace EDInputFormu: Init, Validate, Save. Bez WPF závislosti —
+/// Testovatelná orchestrace EDInputFormu: Init, Validate, Save. Bez WPF závislosti -
 /// bere <see cref="IMLRest"/> a <c>cacheClass</c> jako parametry konstruktoru. Vyvolává
 /// <see cref="StateChanged"/> po každém Caché roundtripu, aby view synchronizoval bez
 /// znalosti které property se změnily.
@@ -21,7 +21,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     /// <summary>
     /// Volá Caché <c>Init</c> pro načtení definice formuláře, hned nato Init-trigger validaci
     /// pro naplnění případných výchozích chyb. Volitelně lze předat <paramref name="initParams"/>
-    /// — Caché Init je čte přes <c>^||ML("IN","key")</c> (např. pro pre-fill polí
+    /// - Caché Init je čte přes <c>^||ML("IN","key")</c> (např. pro pre-fill polí
     /// initial hodnotami z hostitelského contextu).
     /// </summary>
     public void Init(CVar? initParams = null)
@@ -38,17 +38,8 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     /// Validuje s BeforeSave triggerem a pokud nejsou chyby, volá Caché <c>Save</c>.
     /// Vrátí true při úspěchu.
     /// </summary>
-    /// <remarks>
-    /// <para><b>Cache Save contract:</b> Caché Save může buď:</para>
-    /// <list type="bullet">
-    /// <item><b>Round-trip form</b> — ReadFromIn() + WriteToOut(). Pak Items se aktualizují
-    /// na server stav (např. po server-side persist).</item>
-    /// <item><b>No-op</b> — pouze vrátí <c>$$$OK</c>, žádný WriteToOut. Items zůstávají
-    /// po validaci (host řeší persist sám, např. TextElementEditDialog).</item>
-    /// </list>
-    /// <para>Detekce: hledáme číselné subscripty 1, 2, ... v OUT (= form items). Pokud
-    /// existují, Save round-tripoval → ApplyOutput; jinak preserve.</para>
-    /// </remarks>
+    /// <remarks>Caché Save smí OUT nechat prázdný (host persistuje sám) - proto se Items přepisují
+    /// jen když OUT nese číselné subscripty, jinak by se ztratil stav po validaci.</remarks>
     public bool Save()
     {
         if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
@@ -87,7 +78,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     {
         var errors = items.OfType<Field>()
             .Where(f => f.HasError)
-            .Select(f => $"• {f.Label} — {f.ValidationError}")
+            .Select(f => $"• {f.Label} - {f.ValidationError}")
             .ToList();
 
         if (errors.Count == 0) return null;
@@ -97,7 +88,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
     /// <summary>
     /// Aplikuje client-side validaci (type + required) na pole bez serverové chyby.
-    /// Server/programmer chyby mají přednost — ovlivňujeme pouze pole bez chyb.
+    /// Server/programmer chyby mají přednost - ovlivňujeme pouze pole bez chyb.
     /// Type chyba (Min/Max/Format/parsing) má přednost před Required (povinné prázdné pole).
     /// </summary>
     private void ApplyRequiredValidation()
@@ -113,7 +104,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
     private void ApplyOutput(CVar output)
     {
-        // Image pole se na server neposílají (viz SerializeItemsCVar) — server by je echem
+        // Image pole se na server neposílají (viz SerializeItemsCVar) - server by je echem
         // přepsal prázdnem. Zachovat jejich client-side hodnotu (Base64) přes round-trip.
         var preservedImages = Items.OfType<Field>()
             .Where(f => f.FieldType == EFieldType.Image && !string.IsNullOrEmpty(f.Value))

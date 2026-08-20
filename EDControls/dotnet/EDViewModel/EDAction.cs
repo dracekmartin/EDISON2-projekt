@@ -10,7 +10,7 @@ public class EDAction(string label, ICommand command, ImageSource? icon = null, 
     public ICommand Command { get; } = command;
     public ImageSource? Icon { get; } = icon;
     /// <summary>
-    /// Vrací nový <see cref="Image"/> při každém přístupu — WPF <c>MenuItem.Icon</c> přes
+    /// Vrací nový <see cref="Image"/> při každém přístupu - WPF <c>MenuItem.Icon</c> přes
     /// <c>ItemContainerStyle</c> setter nesnáší sdílení jednoho UIElement instance napříč MenuItems
     /// (UIElement smí mít právě jednoho rodiče). Computed property obejde tím že každý MenuItem
     /// dostane vlastní <c>Image</c>.

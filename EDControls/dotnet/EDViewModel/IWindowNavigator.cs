@@ -5,7 +5,7 @@ namespace EDControls.EDViewModel;
 public interface IWindowNavigator
 {
     /// <summary>
-    /// Otevře okno modeless. Okno se předává jako instance — caller vytvoří přes <c>new</c>
+    /// Otevře okno modeless. Okno se předává jako instance - caller vytvoří přes <c>new</c>
     /// (compile-time type safety, Find Usages funguje). Navigator nastaví Owner, append
     /// <c>[Idfa]</c> na Title a zavolá <c>AttachToWindow</c> na VM (pokud je <c>EDViewModel</c>).
     /// </summary>
@@ -19,7 +19,7 @@ public interface IWindowNavigator
     /// Fire-and-forget. Default <paramref name="shareShellSession"/>=true → modul sdílí shellův
     /// ACTIVITY zámek (CacheLocks=1, vázáno na shell GUID).
     /// <paramref name="inputParam"/> = volitelný string předaný formě jako <c>EDParamIn</c>
-    /// (např. "AdminMode=1" — legacy navbar input atribut).
+    /// (např. "AdminMode=1" - legacy navbar input atribut).
     /// </summary>
     void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
 
@@ -33,7 +33,7 @@ public interface IWindowNavigator
     /// <summary>
     /// Spustí zástupce na ploše (tisková sestava, uložený pohled) - host místo formy zavolá
     /// proceduru agendy (<c>ProcedureIO.RunProcedure</c>). <paramref name="shortcutPayload"/> je
-    /// neprůhledný argv-safe string; skládá ho shell, formát viz <c>docs/DESKTOP_SHORTCUTS.md</c>.
+    /// neprůhledný argv-safe string; skládá ho shell.
     /// Bez dedup a bez trackování mezi spuštěné moduly - je to tisk, ne okno modulu.
     /// </summary>
     Task ShowLegacyShortcutAsync(string exeName, string formFqn, string shortcutPayload,
@@ -47,7 +47,7 @@ public interface IWindowNavigator
 
     /// <summary>
     /// Stejné jako <see cref="ShowLegacy"/>, ale blokuje až do zavření okna.
-    /// Pre-login admin override (LicenceVerifier) volá s shareShellSession=false — shell ještě
+    /// Pre-login admin override (LicenceVerifier) volá s shareShellSession=false - shell ještě
     /// nemá VerifyLic zámek a CacheLocks=1 by každý request modulu padal na LockExist.
     /// </summary>
     void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");

@@ -8,18 +8,18 @@ using System.Windows.Media.Animation;
 namespace EDControls.EDActionInProgress;
 
 /// <summary>
-/// Karta „Akce probíhá" ve vlastním top-level okně — jediná cesta, jak ji vykreslit nad
+/// Karta „Akce probíhá" ve vlastním top-level okně - jediná cesta, jak ji vykreslit nad
 /// HWND obsahem (WebView2 widgety): child HWND nikdy nepřekreslí cizí top-level a owned
 /// okno drží window manager vždy nad ownerem, bez Topmost (žádný únik nad cizí aplikace;
-/// WPF Popup by topmost byl). Okno je jen velikosti karty — celoplošné AllowsTransparency
+/// WPF Popup by topmost byl). Okno je jen velikosti karty - celoplošné AllowsTransparency
 /// okno by na 4K znamenalo ~33MB layered surface překreslovanou animací 60 fps.
 /// Klik propadá skrz (WS_EX_TRANSPARENT) na DimAdorner / widgety, aktivaci nekrade.
-/// Vytváří se per akci (ne recyklace přes Hide/Show) — skryté okno by na příštím Show()
+/// Vytváří se per akci (ne recyklace přes Hide/Show) - skryté okno by na příštím Show()
 /// na jeden frame přehrálo poslední složený obraz (sprite v půli cesty z minula).
 /// </summary>
 internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOverlayWindow
 {
-    // Prefix klíče spritů v Window.Resources — nový sprite stačí přidat do XAML s tímto prefixem.
+    // Prefix klíče spritů v Window.Resources - nový sprite stačí přidat do XAML s tímto prefixem.
     private const string SpriteKeyPrefix = "Sprite.";
 
     private readonly Window _owner;
@@ -35,7 +35,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         owner.LocationChanged += OnOwnerBoundsChanged;
         owner.SizeChanged += OnOwnerSizeChanged;
         owner.StateChanged += OnOwnerStateChanged;
-        // SizeToContent — velikost karty se změní i za běhu (font/theme swap).
+        // SizeToContent - velikost karty se změní i za běhu (font/theme swap).
         SizeChanged += OnOwnSizeChanged;
         PickRandomSprite();   // jednou per okno (= per akci)
     }
@@ -51,7 +51,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
     public void ShowOverlay()
     {
         _active = true;
-        // Minimalizovaný owner — Show() by kartu vykreslil nad plochu; dožene OnOwnerStateChanged.
+        // Minimalizovaný owner - Show() by kartu vykreslil nad plochu; dožene OnOwnerStateChanged.
         if (_owner.WindowState == WindowState.Minimized) return;
         Show();
         Reposition();
@@ -93,7 +93,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
     private void OnOwnSizeChanged(object sender, SizeChangedEventArgs e) => Reposition();
 
     // Střed KLIENTSKÉ oblasti ownera. PointToScreen(0,0) = levý horní roh klientské oblasti
-    // v device px — funguje i pro Maximized, kde Left/Top drží restore bounds
+    // v device px - funguje i pro Maximized, kde Left/Top drží restore bounds
     // (WindowStartupLocation=CenterOwner je proto pro maximalizovaný owner nepoužitelné).
     private void Reposition()
     {
@@ -109,7 +109,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         Top = origin.Y + (client.Y - ActualHeight) / 2;
     }
 
-    // Storyboard řídí code-behind — Begin(..., isControllable) při aktivaci resetuje kapybaru.
+    // Storyboard řídí code-behind - Begin(..., isControllable) při aktivaci resetuje kapybaru.
     private void ToggleWalk(bool active)
     {
         var walk = (Storyboard)Resources["WalkAnimation"];

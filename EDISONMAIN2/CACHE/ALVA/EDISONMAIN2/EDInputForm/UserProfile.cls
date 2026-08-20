@@ -4,7 +4,7 @@ Include (GENERAL, EDInputForm)
 /// Data drží .NET klient: prefill hodnot v Initialized (přehled z MLRest, export adresář
 /// z ALVA.EDISON.Main.LoadUser/LoadSettings) a persist osobního adresáře po OK
 /// (Main.SaveUser). Tato třída definuje jen strukturu formuláře a validaci
-/// (editovatelnost cesty dle přepínače, neprázdnost při ukládání) — nevolá legacy
+/// (editovatelnost cesty dle přepínače, neprázdnost při ukládání) - nevolá legacy
 /// MLRest metody (kolidovaly by na ^||ML). Výchozí okno je read-only pole, jeho
 /// název dodá host z modulového stromu shellu.
 Class ALVA.EDISONMAIN2.EDInputForm.UserProfile Extends %RegisteredObject
@@ -61,7 +61,7 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 	ret ret
 }
 
-/// Persist řeší .NET klient (Main.SaveUser) — Caché Save je no-op (bez WriteToOut,
+/// Persist řeší .NET klient (Main.SaveUser) - Caché Save je no-op (bez WriteToOut,
 /// controller si ponechá klientské Items), jen potvrdí úspěch.
 ClassMethod Save(ByRef sys As %String) As %Status
 {

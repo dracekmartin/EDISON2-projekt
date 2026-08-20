@@ -70,7 +70,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 
         public ObservableCollection<ExecutableModule> UsedModules { get; } = [];
 
-        // Zrcadlí TreeTabs ve VM — bez nich by designer ukázal prázdný pruh záložek.
+        // Zrcadlí TreeTabs ve VM - bez nich by designer ukázal prázdný pruh záložek.
         public IReadOnlyList<TreeTab> TreeTabs { get; }
 
         public TreeTab SelectedTab { get; set; }

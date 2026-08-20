@@ -6,11 +6,11 @@ using WpfVisibility = System.Windows.Visibility;
 
 namespace EDControls.EDInputForm
 {
-    // ListItem (Key, Label) je sdílený typ v root namespace EDControls — viz ListItem.cs.
+    // ListItem (Key, Label) je sdílený typ v root namespace EDControls - viz ListItem.cs.
 
     public class Field : Item
     {
-        /// <summary>Stabilní identifikátor — klíč pro komunikaci s Caché.</summary>
+        /// <summary>Stabilní identifikátor - klíč pro komunikaci s Caché.</summary>
         public string Key { get; set; } = "";
 
         public string Label { get; set; } = "";
@@ -59,11 +59,6 @@ namespace EDControls.EDInputForm
         private List<ListItem> _listItems = [];
 
         /// <summary>
-        /// Konfigurace pro pole typu File: filtr dialogu (např. <c>"PDF (*.pdf)|*.pdf"</c>),
-        /// nebo speciální <c>"$FOLDER"</c> pro výběr složky. Prázdné = všechny soubory.
-        /// Ignoruje se pro ostatní typy.
-        /// </summary>
-        /// <summary>
         /// Textové pole, do kterého patří datové placeholdery <c>{POLE}</c> - vedle něj se ukáže
         /// „vložit pole". Nastavuje server v <c>.cls</c> (ví, kam placeholdery patří), **seznam
         /// polí ale dodává klient** do <see cref="ListItems"/>, protože Caché agendu nezná.
@@ -83,6 +78,7 @@ namespace EDControls.EDInputForm
         public WpfVisibility PlaceholderPickerVisibility =>
             Placeholders ? WpfVisibility.Visible : WpfVisibility.Collapsed;
 
+        /// <summary>Filtr file dialogu; <c>"$FOLDER"</c> = výběr složky.</summary>
         public string FileFilter { get; set; } = "";
 
         /// <summary>
@@ -103,11 +99,11 @@ namespace EDControls.EDInputForm
 
         /// <summary>
         /// Jednotka zobrazená jako suffix vedle inputu (např. <c>"mm"</c>, <c>"pt"</c>).
-        /// Pouze visualní — nemění Value. Null/prázdné = bez jednotky.
+        /// Pouze visualní - nemění Value. Null/prázdné = bez jednotky.
         /// </summary>
         public string? Unit { get; set; }
 
-        /// <summary>WPF binding helper — Visible pokud <see cref="Unit"/> není null/prázdné.</summary>
+        /// <summary>WPF binding helper - Visible pokud <see cref="Unit"/> není null/prázdné.</summary>
         public WpfVisibility UnitVisibility =>
             string.IsNullOrEmpty(Unit) ? WpfVisibility.Collapsed : WpfVisibility.Visible;
 
@@ -130,9 +126,8 @@ namespace EDControls.EDInputForm
                 OnPropertyChanged(nameof(BoolValue));
                 OnPropertyChanged(nameof(DateValue));
                 OnPropertyChanged(nameof(SwatchValue));
-                // Immediate client-side type/range validation pro UX feedback.
-                // Server response (ExecuteValidate → ApplyOutput) případně přepíše s podrobnější chybou.
-                // GetTypeError vrací null pro prázdné hodnoty — required se kontroluje až při BeforeSave.
+                // Klientská kontrola hned; serverová odpověď ji pak případně přepíše podrobnější
+                // chybou. GetTypeError vrací null pro prázdné hodnoty - required až při BeforeSave.
                 ValidationError = GetTypeError();
             }
         }
@@ -175,7 +170,7 @@ namespace EDControls.EDInputForm
 
         /// <summary>
         /// Validační error pro povinné pole pokud je <see cref="Required"/> a prázdné.
-        /// Bool a Button typy nemají "prázdný" stav — vždy validní.
+        /// Bool a Button typy nemají "prázdný" stav - vždy validní.
         /// </summary>
         public string? GetRequiredError()
         {
@@ -187,8 +182,8 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
-        /// Klientská typová validace — vrátí chybu pokud hodnota neodpovídá typu, jinak null.
-        /// Prázdné hodnoty netestuje — od toho je <see cref="Required"/>.
+        /// Klientská typová validace - vrátí chybu pokud hodnota neodpovídá typu, jinak null.
+        /// Prázdné hodnoty netestuje - od toho je <see cref="Required"/>.
         /// </summary>
         public string? GetTypeError()
         {

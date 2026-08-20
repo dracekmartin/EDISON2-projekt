@@ -70,7 +70,7 @@ Method TestSaveWithoutKeyReturnsError()
 	do $$$AssertTrue((sc [ "key is required"), "Chyba musí zmínit chybějící key, dostal: "_sc)
 }
 
-/// Load má stejný scope/key guard jako Save — samostatná cesta, samostatný test.
+/// Load má stejný scope/key guard jako Save - samostatná cesta, samostatný test.
 Method TestLoadWithoutScopeReturnsError()
 {
 	do ..SetupSys(.sys)
@@ -80,7 +80,7 @@ Method TestLoadWithoutScopeReturnsError()
 	do $$$AssertTrue((sc [ "scope is required"), "Chyba musí zmínit chybějící scope, dostal: "_sc)
 }
 
-/// Delete má stejný scope/key guard jako Save — samostatná cesta, samostatný test.
+/// Delete má stejný scope/key guard jako Save - samostatná cesta, samostatný test.
 Method TestDeleteWithoutKeyReturnsError()
 {
 	do ..SetupSys(.sys)
@@ -120,7 +120,7 @@ Method TestSaveOverwritesExistingValue()
 	do ##class(ALVA.EDControls.UserData).Delete(.sys)
 }
 
-/// Storage je klíčovaný (IdFa, userID, scope, key) — uložení pod jednou firmou
+/// Storage je klíčovaný (IdFa, userID, scope, key) - uložení pod jednou firmou
 /// nesmí být viditelné pod jinou (ModulePreferencesService spoléhá na automatickou IdFa izolaci).
 Method TestDataIsolatedByIdFa()
 {
@@ -137,7 +137,6 @@ Method TestDataIsolatedByIdFa()
 	do ##class(ALVA.EDControls.UserData).Load(.sys)
 	do $$$AssertTrue(($data(^||ML("OUT","data")) = 0), "Data z CB_DP nesmí být vidět pod JI_DP")
 
-	// cleanup
 	kill ^||ML
 	do ..SetupSys(.sys, "CB_DP")
 	set ^||ML("IN","scope") = "EDControls.Tests"
@@ -146,7 +145,7 @@ Method TestDataIsolatedByIdFa()
 }
 
 /// Hranice missing vs empty: Save prázdného blobu vytvoří definovaný uzel s "",
-/// Load pak zapíše OUT("data")="" ($d=1) — .NET to mapuje na empty-not-null.
+/// Load pak zapíše OUT("data")="" ($d=1) - .NET to mapuje na empty-not-null.
 /// (Na tomto rozdílu stojí null-vs-empty kontrakt ModulePreferencesService.)
 Method TestEmptyBlobIsStoredAsDefinedEmpty()
 {

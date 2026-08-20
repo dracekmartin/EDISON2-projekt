@@ -23,7 +23,7 @@ public class FontCatalogTests
     [Fact]
     public void Families_PutsDefaultFirst()
     {
-        // Pořadí whitelistu, ne pořadí enumerace systému — výchozí musí být první volba.
+        // Pořadí whitelistu, ne pořadí enumerace systému - výchozí musí být první volba.
         Assert.Equal(FontCatalog.DefaultFamily, FontCatalog.Families(TypicalWindows, current: null)[0]);
     }
 
@@ -38,7 +38,7 @@ public class FontCatalogTests
     [Fact]
     public void Families_KeepsCurrentOutsideWhitelist()
     {
-        // Starší font.json / ruční edit — combo musí ukazovat, co je opravdu nastavené.
+        // Starší font.json / ruční edit - combo musí ukazovat, co je opravdu nastavené.
         var families = FontCatalog.Families(TypicalWindows, current: "Wingdings");
 
         Assert.Contains("Wingdings", families);
@@ -79,7 +79,7 @@ public class FontCatalogTests
     [Fact]
     public void SizesPt_KeepsCurrentOutsideOffer()
     {
-        // Ruční edit font.json — combo nesmí tvrdit jinou velikost, než jaká je aplikovaná.
+        // Ruční edit font.json - combo nesmí tvrdit jinou velikost, než jaká je aplikovaná.
         var sizes = FontCatalog.SizesPt(10.5, current: 13);
 
         Assert.Contains(13, sizes);

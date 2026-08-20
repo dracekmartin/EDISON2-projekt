@@ -6,13 +6,13 @@ using System.Globalization;
 namespace EDControls.EDList;
 
 /// <summary>
-/// Typové řazení EDList — sort klíče se staví z raw hodnot (server formát), ne z formátovaných
+/// Typové řazení EDList - sort klíče se staví z raw hodnot (server formát), ne z formátovaných
 /// stringů, takže NUMBER/HHMM řadí numericky a DATE/DATETIME chronologicky.
 /// </summary>
 internal static class EDListSort
 {
     /// <summary>
-    /// Typovaný sort klíč buňky. Neparsovatelná hodnota spadne na formátovaný string —
+    /// Typovaný sort klíč buňky. Neparsovatelná hodnota spadne na formátovaný string -
     /// comparer pak mezi nestejnými typy porovnává stringově, takže se nic nerozbije.
     /// </summary>
     internal static object? BuildSortKey(string? raw, EListColumnType type, string? formatted)
@@ -33,7 +33,7 @@ internal static class EDListSort
 }
 
 /// <summary>
-/// Komparátor pro <c>ListCollectionView.CustomSort</c> — řadí podle sekvence (klíč, směr).
+/// Komparátor pro <c>ListCollectionView.CustomSort</c> - řadí podle sekvence (klíč, směr).
 /// Prázdné hodnoty jdou na konec (asc); nestejné typy klíčů se porovnají stringově.
 /// </summary>
 internal sealed class EDListRowComparer(IReadOnlyList<(string Key, bool Descending)> specs)

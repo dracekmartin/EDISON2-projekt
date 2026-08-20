@@ -6,7 +6,7 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Testy parsování login response z ALVA.SYS.Login.Login (delimited object[]). Bezpečnostně
-/// relevantní vstup — poziční pole, mapování chybových kódů, fallbacky při krátké odpovědi.
+/// relevantní vstup - poziční pole, mapování chybových kódů, fallbacky při krátké odpovědi.
 /// </summary>
 public class UserAuthenticatorTests
 {

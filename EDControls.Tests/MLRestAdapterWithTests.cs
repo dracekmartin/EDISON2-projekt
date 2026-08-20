@@ -4,10 +4,9 @@ using ALWA.SYS;
 namespace EDControls.Tests;
 
 /// <summary>
-/// <see cref="MLRestAdapter.With"/> ručně kopíruje pole identity do klonu — při přidání
-/// property do MLRest se na kopii snadno zapomene a hodnota se tiše ztratí v klonech
-/// (poll, logout jiné firmy). Reflection test tu past zavírá: každá public settable
-/// property MLRest musí být po With() shodná, nebo explicitně vyjmenovaná níže.
+/// <see cref="MLRestAdapter.With"/> kopíruje identitu ručně - na novou property MLRest se snadno
+/// zapomene a hodnota se tiše ztratí v klonech (poll, logout jiné firmy). Reflection test hlídá,
+/// že každá public settable property je po With() shodná, nebo je vyjmenovaná níž.
 /// </summary>
 public class MLRestAdapterWithTests
 {
@@ -16,8 +15,8 @@ public class MLRestAdapterWithTests
     [
         "ClientIP",      // dopočítává se v konstruktoru MLRest
         "SysNamespace",  // dopočítává se v konstruktoru MLRest
-        "RestStatus",    // stav posledního requestu — klon začíná čistý
-        "UserStatus",    // stav posledního requestu (MLRStatus) — klon začíná čistý
+        "RestStatus",    // stav posledního requestu - klon začíná čistý
+        "UserStatus",    // stav posledního requestu (MLRStatus) - klon začíná čistý
     ];
 
     [Fact]
@@ -30,7 +29,7 @@ public class MLRestAdapterWithTests
             .Where(p => p.CanRead && p.CanWrite && p.SetMethod!.IsPublic && !Excluded.Contains(p.Name))
             .ToList();
 
-        // Nastav každé property unikátní sentinel — nepodporovaný typ musí test rozbít,
+        // Nastav každé property unikátní sentinel - nepodporovaný typ musí test rozbít,
         // aby se sem doplnil (jinak by property tiše vypadla z pokrytí).
         var covered = new List<PropertyInfo>();
         int i = 0;
@@ -45,7 +44,7 @@ public class MLRestAdapterWithTests
                 var t when t == typeof(KeyValuePair<string, string>) =>
                     new KeyValuePair<string, string>($"key{i}", $"val{i}"),
                 _ => throw new Xunit.Sdk.XunitException(
-                    $"MLRest.{p.Name} má nepodporovaný typ {p.PropertyType.Name} — doplň sentinel do testu."),
+                    $"MLRest.{p.Name} má nepodporovaný typ {p.PropertyType.Name} - doplň sentinel do testu."),
             };
             p.SetValue(source, value);
             covered.Add(p);
@@ -60,7 +59,7 @@ public class MLRestAdapterWithTests
             .Select(p => p.Name)
             .ToList();
         Assert.True(missed.Count == 0,
-            $"MLRestAdapter.With() nekopíruje: {string.Join(", ", missed)} — doplň do initializeru klonu.");
+            $"MLRestAdapter.With() nekopíruje: {string.Join(", ", missed)} - doplň do initializeru klonu.");
     }
 
     [Fact]
@@ -77,7 +76,6 @@ public class MLRestAdapterWithTests
         Assert.Equal("srv", clone.Server);
         Assert.Equal(1234, clone.Port);
         Assert.Equal("g-1", clone.GUID);
-        // Zdroj zůstal nedotčený
         Assert.Equal(1, source.CacheLocks);
         Assert.Equal("IDFA", source.Idfa);
     }

@@ -6,7 +6,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
     <DockPanel>
-        <!-- Ovládání cyklení — jen když se nevejdou všechny stránky vedle sebe. -->
+        <!-- Ovládání cyklení - jen když se nevejdou všechny stránky vedle sebe. -->
         <DockPanel DockPanel.Dock="Top" Margin="4,2"
                    Visibility="{Binding ShowCycleControls, Converter={StaticResource BoolToVis}}">
             <Button DockPanel.Dock="Left" Style="{StaticResource EDTheme.ToolbarButton}"
@@ -23,14 +23,11 @@
         </DockPanel>
 
         <!-- Lišta auto-posunu: doběhne za 15 s → skok na další stránku; při hoveru/fokusu stojí (ztmavená). -->
-        <ProgressBar DockPanel.Dock="Top" Height="3" BorderThickness="0"
+        <ProgressBar DockPanel.Dock="Top" Height="3"
                      Visibility="{Binding ShowCycleControls, Converter={StaticResource BoolToVis}}"
-                     Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
-                     Background="{DynamicResource EDTheme.Bg.Pressed}"
-                     Foreground="{DynamicResource EDTheme.Accent.Blue}">
+                     Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}">
             <ProgressBar.Style>
-                <!-- ProgressBar není themovaný (stock template) → lokální Style bez BasedOn. -->
-                <Style TargetType="ProgressBar">
+                <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsPaused}" Value="True">
                             <Setter Property="Opacity" Value="0.3"/>

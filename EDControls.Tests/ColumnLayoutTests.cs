@@ -5,7 +5,6 @@ namespace EDControls.Tests;
 
 public class ColumnLayoutTests
 {
-    // ─── Round-trip ──────────────────────────────────────────────────────────
 
     [Fact]
     public void RoundTrip_PreservesAllFields()
@@ -64,8 +63,6 @@ public class ColumnLayoutTests
         Assert.Empty(back!.Columns);
     }
 
-    // ─── Best-effort čtení ───────────────────────────────────────────────────
-
     [Fact]
     public void Deserialize_Null_ReturnsNull()
     {
@@ -106,7 +103,7 @@ public class ColumnLayoutTests
     [Fact]
     public void Deserialize_FutureVersion_StillRead()
     {
-        // Best-effort — neignoruj data jen kvůli version mismatch
+        // Best-effort - neignoruj data jen kvůli version mismatch
         var json = JsonNode.Parse("""
             {
               "version": 999,
@@ -120,12 +117,10 @@ public class ColumnLayoutTests
         Assert.Single(layout.Columns);
     }
 
-    // ─── Malformed / defenzivní čtení ────────────────────────────────────────
-
     [Fact]
     public void Deserialize_MalformedColumnsShape_ReturnsNull()
     {
-        // "columns" má být pole — string tam deserializaci shodí → best-effort null.
+        // "columns" má být pole - string tam deserializaci shodí → best-effort null.
         var json = JsonNode.Parse("""{"version":1,"columns":"not-an-array"}""");
 
         Assert.Null(ColumnLayoutSerializer.Deserialize(json));

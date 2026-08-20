@@ -4,14 +4,14 @@ using System.Reflection;
 namespace EDControls.EDSupportPanel;
 
 /// <summary>
-/// Akce panelu Podpora bez závislosti na WPF — skládání URL widgetů podpora.m-line.cz
+/// Akce panelu Podpora bez závislosti na WPF - skládání URL widgetů podpora.m-line.cz
 /// a textu „Informace o verzi". Testuje se přímo, panel jen volá.
 /// </summary>
 public static class SupportActions
 {
     // Záměrně static readonly, ne const: const se inlinuje do konzumenta při buildu, takže
     // samostatně nasazená EDControls.dll (viz root CLAUDE.md) by klíč nezměnila shellu, který
-    // se nepřebuildil — a „jedna kopie" by platila jen ve zdrojáku.
+    // se nepřebuildil - a „jedna kopie" by platila jen ve zdrojáku.
 
     /// <summary>Base widgetů podpora.m-line.cz. Sdílí ho i shell (<c>WidgetUrls</c>).</summary>
     public static readonly string WidgetBaseUrl = "https://podpora.m-line.cz/api/widgets/";

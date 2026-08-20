@@ -13,13 +13,11 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- LEVO: brandovaná přihlašovací karta -->
         <Border Grid.Column="0"
                 Background="{DynamicResource EDTheme.Bg.Panel}"
                 BorderBrush="{DynamicResource EDTheme.Border.Light}"
                 BorderThickness="0,0,1,0">
             <Grid>
-                <!-- Hero pruh: jemné odlišné pozadí (dle tématu) + molecule + wordmark -->
                 <Border VerticalAlignment="Top" Height="160"
                         Background="{DynamicResource EDTheme.Bg.PanelAlt}"
                         BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
@@ -32,7 +30,6 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Formulář vycentrovaný v celém sloupci (nezávisle na hero logu nahoře) -->
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="360">
                     <TextBlock Text="Uživatel:" Foreground="{DynamicResource EDTheme.Text.Primary}"
                                Margin="0,0,0,4"/>
@@ -90,7 +87,7 @@
             </Grid>
         </Border>
 
-        <!-- PRAVO: 3 sloupce M-line widgetů (Novinky | Wiki | Školení) — mirror výchozí sady miniaplikací -->
+        <!-- Mirror výchozí sady miniaplikací shellu. -->
         <Grid Grid.Column="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
