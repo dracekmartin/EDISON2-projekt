@@ -118,6 +118,84 @@ Method TestDecimalFormatRoundTrip()
 	do $$$AssertEquals(df.max, 9.9, "max round-trip")
 }
 
+/// Postaví minimální formulář v ^||ML("IN") a vrátí ho přečtený s daným triggerem.
+/// Trigger i changedKey jsou wire klíče (^||ML("IN","trigger") / ("changedKey")) - stejné
+/// jméno posílá C# strana, takže test drží i tenhle kontrakt.
+Method ReadWithTrigger(pTrigger As %String, pChangedKey As %String = "") As ALVA.EDControls.EDInputForm.Form
+{
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+	d form.AddGroup("g", "Skupina")
+	d form.AddText("t", "Text", "hello")
+	d form.AddText("u", "Text2", "world")
+	d form.WriteToOut()
+	s idx = ""
+	f { s idx = $o(^||ML("OUT", idx)) q:idx=""  s ^||ML("IN", idx) = ^||ML("OUT", idx) }
+	s ^||ML("IN", "trigger") = pTrigger
+	s ^||ML("IN", "changedKey") = pChangedKey
+	ret ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()
+}
+
+/// Change validaci spouští konkrétní pole - helpery ho musí najít a Init/BeforeSave neplést.
+Method TestChangeValidationHelpers()
+{
+	s form = ..ReadWithTrigger("Change", "u")
+
+	do $$$AssertEquals(form.IsChangeValidation(), 1)
+	do $$$AssertEquals(form.IsInitValidation(), 0)
+	do $$$AssertEquals(form.IsBeforeSaveValidation(), 0)
+	do $$$AssertEquals(form.IsWholeFormValidation(), 0, "Change je změna jednoho pole")
+	do $$$AssertEquals(form.HasChangedField(), 1)
+	do $$$AssertEquals(form.GetChangedField().key, "u", "GetChangedField vrací pole, které změnu spustilo")
+	do $$$AssertEquals(form.GetChangedField().value, "world")
+}
+
+/// Ruční Change bez konkrétního pole (změnu nespustilo pole) - žádné changed field.
+Method TestChangeValidationWithoutChangedKey()
+{
+	s form = ..ReadWithTrigger("Change", "")
+
+	do $$$AssertEquals(form.IsChangeValidation(), 1)
+	do $$$AssertEquals(form.HasChangedField(), 0)
+	do $$$AssertEquals(form.GetChangedField(), "", "Bez changedKey není co vrátit")
+}
+
+/// Init i BeforeSave jsou round-trip celého formuláře, ne změna pole.
+Method TestWholeFormValidationTriggers()
+{
+	s init = ..ReadWithTrigger("Init")
+	do $$$AssertEquals(init.IsInitValidation(), 1)
+	do $$$AssertEquals(init.IsWholeFormValidation(), 1)
+	do $$$AssertEquals(init.IsChangeValidation(), 0)
+	do $$$AssertEquals(init.HasChangedField(), 0)
+
+	k ^||ML("IN"), ^||ML("OUT")
+	s save = ..ReadWithTrigger("BeforeSave")
+	do $$$AssertEquals(save.IsBeforeSaveValidation(), 1)
+	do $$$AssertEquals(save.IsWholeFormValidation(), 1)
+	do $$$AssertEquals(save.IsInitValidation(), 0)
+}
+
+/// Konstanty triggeru zrcadlí C# EValidationTrigger - hodnoty jdou po wire jako stringy,
+/// takže přejmenování na jedné straně rozbije validace bez chyby při buildu.
+Method TestTriggerConstantsMatchWireContract()
+{
+	do $$$AssertEquals(##class(ALVA.EDControls.EDInputForm.Form).#TriggerInit, "Init")
+	do $$$AssertEquals(##class(ALVA.EDControls.EDInputForm.Form).#TriggerChange, "Change")
+	do $$$AssertEquals(##class(ALVA.EDControls.EDInputForm.Form).#TriggerBeforeSave, "BeforeSave")
+}
+
+/// Neznámý trigger nesmí projít jako Change ani jako whole-form - jinak by se validace
+/// pustila v režimu, na který není napsaná.
+Method TestUnknownTriggerMatchesNothing()
+{
+	s form = ..ReadWithTrigger("")
+
+	do $$$AssertEquals(form.IsInitValidation(), 0)
+	do $$$AssertEquals(form.IsChangeValidation(), 0)
+	do $$$AssertEquals(form.IsBeforeSaveValidation(), 0)
+	do $$$AssertEquals(form.IsWholeFormValidation(), 0)
+}
+
 /// AddFieldToSpecificGroup s neexistujícím group key -> fallback append na konec (Form.cls:135).
 Method TestAddFieldToSpecificGroupUnknownGroupAppends()
 {

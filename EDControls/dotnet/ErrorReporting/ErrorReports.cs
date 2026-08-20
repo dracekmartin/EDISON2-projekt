@@ -14,7 +14,8 @@ namespace EDControls.ErrorReporting;
 /// </summary>
 public static class ErrorReports
 {
-    private static readonly ErrorThrottle Throttle = new();
+    /// <summary>Deduplikace je per-běh aplikace; settable jen kvůli testům (statický stav mezi nimi prosakuje).</summary>
+    internal static ErrorThrottle Throttle { get; set; } = new();
 
     /// <summary>Vypínač pro testy a pro případ, že by hlášení dělalo problém v provozu.</summary>
     public static bool Enabled { get; set; } = true;

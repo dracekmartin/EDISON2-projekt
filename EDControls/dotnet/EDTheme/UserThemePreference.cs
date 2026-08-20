@@ -25,11 +25,12 @@ public class UserThemePreference
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly string Dir = Path.Combine(
+    /// <summary>Cíl persistence. Settable jen kvůli testům (jinak by šly proti reálnému %APPDATA%).</summary>
+    internal static string FilePath { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "m-line", "common");
+        "m-line", "common", "theme.json");
 
-    private static readonly string FilePath = Path.Combine(Dir, "theme.json");
+    private static string Dir => Path.GetDirectoryName(FilePath)!;
 
     public static UserThemePreference Current { get; private set; } = new();
 
@@ -63,7 +64,7 @@ public class UserThemePreference
     {
         if (_watcher != null) return;
         Directory.CreateDirectory(Dir);
-        _watcher = new FileSystemWatcher(Dir, "theme.json")
+        _watcher = new FileSystemWatcher(Dir, Path.GetFileName(FilePath))
         {
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime,
             EnableRaisingEvents = true,

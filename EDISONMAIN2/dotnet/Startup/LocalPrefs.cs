@@ -55,7 +55,8 @@ public class LocalPrefs : ILocalPrefs
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly string FilePath = Path.Combine(
+    /// <summary>Cíl persistence. Settable jen kvůli testům (jinak by šly proti reálnému %APPDATA%).</summary>
+    internal static string FilePath { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "m-line", "EDISONMAIN2", "local.json");
 

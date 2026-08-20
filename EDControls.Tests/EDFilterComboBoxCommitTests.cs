@@ -242,10 +242,10 @@ public class EDFilterComboBoxCommitTests
             // Napsaný filtr má přežít do otevřeného dropdownu (jinak by psaní nic nefiltrovalo).
             SetField(combo, "_textIsUserFilter", true);
             Invoke(combo, "Refilter", ["B"]);
-            Assert.Equal(1, combo.Items.Count);
+            Assert.Single(combo.Items);
 
             combo.IsDropDownOpen = true;   // → DropDownOpened; napsaný filtr se nesmí zahodit
-            Assert.Equal(1, combo.Items.Count);
+            Assert.Single(combo.Items);
         });
     }
 
