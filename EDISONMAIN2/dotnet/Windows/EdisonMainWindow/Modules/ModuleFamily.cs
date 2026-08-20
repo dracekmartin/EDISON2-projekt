@@ -44,7 +44,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         /// <summary>
         /// Hex barva (<c>"#RRGGBB"</c>) pro Foreground rodiny ve stromu; "" = výchozí barva tématu.
-        /// V autorovaných datech vždy "" — nastavuje ji runtime ModuleLaunchabilityCheck
+        /// V autorovaných datech vždy "" - nastavuje ji runtime ModuleLaunchabilityCheck
         /// agregací stavu dětí (sbalená rodina pak signalizuje stub/broken bez rozbalení).
         /// </summary>
         public string Color { get; set; } = "";
@@ -68,7 +68,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         private bool _isVisibleBySearch = true;
 
-        /// <summary>Viditelnost při vyhledávání — nastavuje VM (název matchne / má viditelného potomka).</summary>
+        /// <summary>Viditelnost při vyhledávání - nastavuje VM (název matchne / má viditelného potomka).</summary>
         public bool IsVisibleBySearch
         {
             get => _isVisibleBySearch;

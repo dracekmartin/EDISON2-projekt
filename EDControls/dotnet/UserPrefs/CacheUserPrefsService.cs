@@ -5,7 +5,7 @@ using ALWA.SYS;
 namespace EDControls.UserPrefs;
 
 /// <summary>
-/// Caché-backed implementace <see cref="IUserPrefsService"/> — volá ALVA.EDControls.UserData
+/// Caché-backed implementace <see cref="IUserPrefsService"/> - volá ALVA.EDControls.UserData
 /// přes MLRest. IdFa + userID si Caché class bere automaticky z $$$FillParams (sys kontextu MLRest).
 ///
 /// MLRest.QueryOrThrow je sync (HTTP); wrap v Task.Run uvolní UI thread.

@@ -2,7 +2,7 @@ using EDControls.EDInputForm;
 
 namespace EDControls.Tests;
 
-/// <summary>Testy klientské validace Field — typová kontrola + Min/Max range (CheckRange přes GetTypeError).</summary>
+/// <summary>Testy klientské validace Field - typová kontrola + Min/Max range (CheckRange přes GetTypeError).</summary>
 public class FieldValidationTests
 {
     [Theory]

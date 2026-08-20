@@ -33,7 +33,7 @@ public static class EDSupportPanel
 
     /// <summary>
     /// Jednorázová registrace class handleru. Class handler na <c>typeof(Window)</c> chytá
-    /// i odděděné třídy oken — implicitní styl `Window` v WPF ne, proto tento vzor
+    /// i odděděné třídy oken - implicitní styl `Window` v WPF ne, proto tento vzor
     /// (stejně ho používá <c>ThemeService.Initialize</c>).
     /// </summary>
     internal static void AttachToAllWindows()
@@ -74,7 +74,7 @@ public static class EDSupportPanel
             return;
         }
 
-        // Pojistka pro přímé volání před Show() — setter Owner na nezobrazené okno hází.
+        // Pojistka pro přímé volání před Show() - setter Owner na nezobrazené okno hází.
         // Z class handleru se nepoužije, tam je okno na Loaded už zobrazené.
         void OnVisibleChanged(object s, DependencyPropertyChangedEventArgs e)
         {

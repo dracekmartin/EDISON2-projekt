@@ -18,7 +18,7 @@ public class CzechNamedaysTests
     }
 
     [Theory]
-    [InlineData(2026, 1, 1)]   // Nový rok — státní svátek, bez nameday entry
+    [InlineData(2026, 1, 1)]   // Nový rok - státní svátek, bez nameday entry
     [InlineData(2026, 5, 1)]   // Svátek práce
     [InlineData(2026, 12, 25)] // 1. svátek vánoční
     public void GetByDate_StateHoliday_ReturnsNull(int year, int month, int day)
@@ -40,7 +40,7 @@ public class CzechNamedaysTests
     {
         // Integrita měsíčních polí (přestupný rok = i 29.2): každý platný kalendářní den se musí
         // trefit do záznamu. Null smí vrátit jen státní svátek bez jmenného nositele (prázdný
-        // string) — špatná délka pole by přes guard Day > month.Length vrátila null i pro validní den.
+        // string) - špatná délka pole by přes guard Day > month.Length vrátila null i pro validní den.
         var expectedNull = new HashSet<DateOnly>
         {
             new(2024, 1, 1),  new(2024, 1, 6),

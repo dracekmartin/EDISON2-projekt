@@ -15,12 +15,12 @@ namespace EDISONMAIN2;
 public static class AccessLoader
 {
     /// <summary>
-    /// apId=3 (server-side APVse / SuperUser) — admin má všechen přístup,
+    /// apId=3 (server-side APVse / SuperUser) - admin má všechen přístup,
     /// klient si nemusí enumerovat vyčísleně, stačí flag v <see cref="AccessTable"/>.
     /// </summary>
     private const int ApIdAdmin = 3;
 
-    // EDFormInterfaceLic.vb konstanty potřebné pro admin fallback (internal — sdílí je
+    // EDFormInterfaceLic.vb konstanty potřebné pro admin fallback (internal - sdílí je
     // fallback licence v LicenceService):
     internal const string SpolecnaEvidence = "0";          // EDMainPackageEnum.SpolecnaEvidence
     internal const string FormEdisonmainSettingsShow = "2002"; // EDPackageEnum.EDISONMAIN(2000)+2
@@ -46,10 +46,10 @@ public static class AccessLoader
             }
         }
 
-        // Admin fallback — viz frmMain.AddAdminRights. Aplikuje se i pokud
+        // Admin fallback - viz frmMain.AddAdminRights. Aplikuje se i pokud
         // user není apId=3, ale je IsAdmin (např. lokálně označený admin jinou cestou).
         // Pravidlo: doplňuje pouze accessTable, NIKDY licence (admin nevidí moduly
-        // mimo licenci firmy — jen se neuzamkne sám sobě přístup k user mgmt).
+        // mimo licenci firmy - jen se neuzamkne sám sobě přístup k user mgmt).
         if (isAdmin && !isAllAccess)
         {
             allowed.Add(SpolecnaEvidence);

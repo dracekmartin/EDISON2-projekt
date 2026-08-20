@@ -4,7 +4,7 @@ namespace EDControls.EDViewModel;
 
 /// <summary>
 /// Most pro binding mimo vizuální strom (např. <c>CollectionContainer</c> v
-/// <c>CompositeCollection</c> nedědí DataContext). Deklaruje se v Resources —
+/// <c>CompositeCollection</c> nedědí DataContext). Deklaruje se v Resources -
 /// Freezable dostane inheritance context, takže <c>Data="{Binding}"</c> vidí DataContext
 /// elementu; konzument pak binduje <c>{Binding Data.X, Source={StaticResource ...}}</c>.
 /// </summary>

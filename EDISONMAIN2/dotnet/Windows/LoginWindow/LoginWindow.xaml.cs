@@ -18,7 +18,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
         // Startup progress fáze - okno zůstává otevřené pod dobíhajícím bootstrapem, nesmí ho zavřít uživatel.
         private bool _inProgress;
 
-        // WebView2 widgety novinek/wiki/školení — pre-login (bez session).
+        // WebView2 widgety novinek/wiki/školení - pre-login (bez session).
         private readonly List<FontZoomWebView> _widgets = new();
 
         public LoginResult? Result { get; private set; }
@@ -29,10 +29,10 @@ namespace EDISONMAIN2.Windows.LoginWindow
         /// <summary>Uživatel chce zapamatovat heslo (checkbox). Čte caller po úspěšném loginu.</summary>
         public bool RememberPassword => RememberBox.IsChecked == true;
 
-        /// <summary>Zadané heslo — caller ho po úspěchu zašifruje k uložení.</summary>
+        /// <summary>Zadané heslo - caller ho po úspěchu zašifruje k uložení.</summary>
         public string EnteredPassword => PasswordBox.Password;
 
-        /// <summary>Předvyplněné (zapamatované) heslo bylo serverem odmítnuto — caller ho má zapomenout,
+        /// <summary>Předvyplněné (zapamatované) heslo bylo serverem odmítnuto - caller ho má zapomenout,
         /// ať se příště automaticky nevyplní znovu a login zbytečně nepadá.</summary>
         public bool RememberedPasswordRejected { get; private set; }
 
@@ -69,7 +69,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
             }
 
             // Novinky/Wiki jsou auth-free; Školení pre-login bez personalizace (prázdná identita).
-            // Widgety jsou čistě dekorativní — jejich (ne)načtení nesmí blokovat login.
+            // Widgety jsou čistě dekorativní - jejich (ne)načtení nesmí blokovat login.
             AddWidget(NovinkyHost, WidgetUrls.Novinky);
             AddWidget(WikiHost, WidgetUrls.Wiki);
             AddWidget(SkoleniHost, WidgetUrls.Trainings("", ""));
@@ -150,7 +150,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
             RememberBox.IsEnabled = false;
             OkBtn.IsEnabled = false;
             CancelBtn.IsEnabled = false;
-            // Plně kvalifikované — UseWindowsForms dělá z Cursors ambiguitu s WinForms.
+            // Plně kvalifikované - UseWindowsForms dělá z Cursors ambiguitu s WinForms.
             Cursor = System.Windows.Input.Cursors.Wait;
             ShowProgress("Přihlašování…");
         }

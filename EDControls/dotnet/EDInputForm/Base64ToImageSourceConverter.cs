@@ -7,7 +7,7 @@ using System.Windows.Media.Imaging;
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Converter pro Image field náhled — dekóduje Base64 string (PNG/JPG) na
+/// Converter pro Image field náhled - dekóduje Base64 string (PNG/JPG) na
 /// <see cref="BitmapImage"/>. Null / prázdný / neplatný input → null (Image se nezobrazí).
 /// Jednosměrný. Obrázek se načítá celý do paměti (CacheOption.OnLoad), aby se neuzamkl stream.
 /// </summary>

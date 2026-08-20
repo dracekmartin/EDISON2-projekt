@@ -7,7 +7,7 @@ using EDControls.MiniApps;
 namespace EDISONMAIN2.LegacyMiniApps;
 
 /// <summary>
-/// Generická legacy dashboardová miniaplikace (labely + tabulky). Parametrizovaná <c>appType</c> —
+/// Generická legacy dashboardová miniaplikace (labely + tabulky). Parametrizovaná <c>appType</c> -
 /// všech 15 legacy miniaplikací sdílí tuto třídu (titulek + appType dodá descriptor). Data čte přes
 /// legacy <c>ALVA.EDISON.MiniAplikaceAPI.LoadData</c>, které vrací delimited <c>object[]</c>
 /// (object[] = dokumentovaně povolené pro integraci s legacy delimited metodou; parsing v
@@ -48,7 +48,7 @@ public sealed class LegacyDashboardMiniAppViewModel : EDMiniAppViewModel, IRefre
 
     public override void OnOpened() => Load();
 
-    /// <summary>Hromadný refresh ze shellu (<see cref="IRefreshableMiniApp"/>) — stejná cesta jako „Načíst".</summary>
+    /// <summary>Hromadný refresh ze shellu (<see cref="IRefreshableMiniApp"/>) - stejná cesta jako „Načíst".</summary>
     public void Refresh() => Load();
 
     private void Load()

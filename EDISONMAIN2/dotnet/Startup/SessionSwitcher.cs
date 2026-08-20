@@ -61,9 +61,9 @@ public class SessionSwitcher(
         // pracovalo pod session, která už na serveru neexistuje.
         if (!closeAllWindows()) return new(SwitchUserResult.Cancelled, null);
 
-        // Odhlásit starého uživatele — jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
+        // Odhlásit starého uživatele - jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
         // do server-side timeoutu. Až po confirmu (login != null), před swapem session.
-        // Flush telemetrie ještě pod starou session — server bere userID z ní.
+        // Flush telemetrie ještě pod starou session - server bere userID z ní.
         EDUsageTelemetry.Flush(services.MLRest);
         SessionLogout.Logout(services.MLRest);
 
@@ -80,7 +80,7 @@ public class SessionSwitcher(
         };
     }
 
-    /// <summary>Login dialog pro user switch — owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
+    /// <summary>Login dialog pro user switch - owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
     protected virtual LoginResult? PromptLogin(MLRest connection)
     {
         var loginWindow = new Windows.LoginWindow.LoginWindow(connection, showRemember: false)

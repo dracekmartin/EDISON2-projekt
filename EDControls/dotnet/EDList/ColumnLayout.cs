@@ -11,14 +11,14 @@ namespace EDControls.EDList;
 /// </summary>
 public sealed class ColumnLayout
 {
-    /// <summary>Verze JSON schématu — informativní, čtení je best-effort.</summary>
+    /// <summary>Verze JSON schématu - informativní, čtení je best-effort.</summary>
     [JsonPropertyName("version")]
     public int Version { get; set; } = 1;
 
     [JsonPropertyName("columns")]
     public List<ColumnPref> Columns { get; set; } = [];
 
-    /// <summary>Sort descriptions — null nebo prázdné = bez sortu.</summary>
+    /// <summary>Sort descriptions - null nebo prázdné = bez sortu.</summary>
     [JsonPropertyName("sort")]
     public List<SortPref>? Sort { get; set; }
 }
@@ -48,7 +48,7 @@ public sealed class SortPref
 }
 
 /// <summary>
-/// JSON serializace pro <see cref="ColumnLayout"/>. Best-effort čtení — neznámá pole
+/// JSON serializace pro <see cref="ColumnLayout"/>. Best-effort čtení - neznámá pole
 /// se ignorují, malformed JSON vrátí null.
 /// </summary>
 public static class ColumnLayoutSerializer
@@ -71,7 +71,7 @@ public static class ColumnLayoutSerializer
         {
             var layout = node.Deserialize<ColumnLayout>(Options);
             if (layout is null) return null;
-            // Defenzivně — nullovat pokud server vrátí prázdné kolekce ve špatném tvaru
+            // Defenzivně - nullovat pokud server vrátí prázdné kolekce ve špatném tvaru
             layout.Columns ??= [];
             return layout;
         }

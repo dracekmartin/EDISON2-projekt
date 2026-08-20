@@ -15,7 +15,7 @@ public enum AppTheme { Light, Dark }
 ///
 /// <see cref="Initialize"/> je jednorázová registrace pro hostitelskou aplikaci (analogie
 /// <c>FontService.Initialize</c>): načte sdílenou preferenci (<see cref="UserThemePreference"/>,
-/// <c>%APPDATA%\m-line\common\theme.json</c>), aplikuje ji a spustí cross-process propagaci —
+/// <c>%APPDATA%\m-line\common\theme.json</c>), aplikuje ji a spustí cross-process propagaci -
 /// když jeden proces (shell) přepne dark, ostatní (TemplateDesigner) se přepnou přes FileSystemWatcher.
 /// </summary>
 public static class ThemeService
@@ -29,13 +29,13 @@ public static class ThemeService
     /// <summary>Aktuální stav sdílené preference (pro binding přepínače v menu).</summary>
     public static bool IsDark => UserThemePreference.Current.DarkMode;
 
-    /// <summary>Vyvolá se po každém <see cref="Apply"/> (i cross-process propagaci) — pro imperativní
+    /// <summary>Vyvolá se po každém <see cref="Apply"/> (i cross-process propagaci) - pro imperativní
     /// konzumenty mimo DynamicResource pipeline (např. WebView2 obsah). Handlery musí být idempotentní.</summary>
     public static event Action? Applied;
 
     /// <summary>
     /// Jednorázový bootstrap: class handler na <see cref="FrameworkElement.LoadedEvent"/> pro
-    /// <see cref="Window"/> (obarví pozadí i podtříd — implicitní styl cílí jen přesný typ),
+    /// <see cref="Window"/> (obarví pozadí i podtříd - implicitní styl cílí jen přesný typ),
     /// načte + aplikuje sdílenou preferenci a spustí watcher pro cross-process propagaci
     /// (jiný proces přepne → tento re-Apply přes Dispatcher). Volat v startupu před prvním oknem.
     /// </summary>
@@ -95,7 +95,7 @@ public static class ThemeService
         }
         Current = theme;
 
-        // OS titulková lišta (caption) nečte EDTheme tokeny — přebarvit každé otevřené okno ručně.
+        // OS titulková lišta (caption) nečte EDTheme tokeny - přebarvit každé otevřené okno ručně.
         bool dark = theme == AppTheme.Dark;
         foreach (Window win in app.Windows)
             WindowTitleBar.Apply(win, dark);

@@ -7,10 +7,10 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600">
     <DockPanel>
-        <!-- Toolbar bar — sdílená EDComponentToolbar komponenta.
+        <!-- Toolbar bar - sdílená EDComponentToolbar komponenta.
              Default Collapsed; UpdateHeaderVisibility ji zobrazí podle Title / SearchVisible.
              Title a SearchText jsou bindovány na EDList DependencyProperties (TwoWay pro SearchText).
-             ShowHelp/Settings vypnuté — EDList nemá per-component help/settings akce. -->
+             ShowHelp/Settings vypnuté - EDList nemá per-component help/settings akce. -->
         <edct:EDComponentToolbar DockPanel.Dock="Top"
                                  x:Name="headerToolbar"
                                  Visibility="Collapsed"

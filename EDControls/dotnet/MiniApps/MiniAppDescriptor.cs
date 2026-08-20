@@ -7,7 +7,7 @@ namespace EDControls.MiniApps;
 /// <param name="Id">
 /// Stabilní <b>typový</b> identifikátor mini-app (ne identita panelu). Mini-app jde otevřít
 /// vícekrát; <c>MiniAppManager</c> z něj skládá unikátní AvalonDock <c>ContentId</c>
-/// (<c>"{Id}#{instance}"</c>). Musí být stabilní napříč verzemi — slouží k obnově layoutu.
+/// (<c>"{Id}#{instance}"</c>). Musí být stabilní napříč verzemi - slouží k obnově layoutu.
 /// </param>
 /// <param name="Title">
 /// Název v launcheru / katalogu (statický, bez nutnosti instancovat VM). Liší se od živého
@@ -18,7 +18,7 @@ namespace EDControls.MiniApps;
 /// (bezparametrický ctor čte z <c>EDServices.Current</c>).
 /// </param>
 /// <param name="Pinned">
-/// Nezavíratelná uživatelem (bez křížku, jedna instance) a shell ji drží vždy otevřenou —
+/// Nezavíratelná uživatelem (bez křížku, jedna instance) a shell ji drží vždy otevřenou -
 /// garantovaný komunikační kanál (např. karusel Podpora M-line). Programové zavření
 /// (přepnutí firmy, zavření shellu) funguje dál.
 /// </param>

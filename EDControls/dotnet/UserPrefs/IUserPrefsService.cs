@@ -9,7 +9,7 @@ namespace EDControls.UserPrefs;
 /// scope = jmenný prostor komponenty, fully qualified, např. "EDControls.EDList".
 /// key   = identifikátor instance, např. "TemplateDesigner.TemplatePicker".
 ///
-/// Hodnota je opaque JSON — každá komponenta si definuje vlastní strukturu, service ji neinterpretuje.
+/// Hodnota je opaque JSON - každá komponenta si definuje vlastní strukturu, service ji neinterpretuje.
 /// </summary>
 public interface IUserPrefsService
 {

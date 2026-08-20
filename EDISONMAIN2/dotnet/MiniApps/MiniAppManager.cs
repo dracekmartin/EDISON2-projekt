@@ -5,7 +5,7 @@ namespace EDISONMAIN2.MiniApps;
 /// <summary>
 /// Otevírá, trackuje a zavírá mini-apps v docku. Multi-instance: tutéž mini-app jde otevřít
 /// vícekrát, každá instance dostane unikátní <c>ContentId "{Id}#{n}"</c>. Záměrně samostatný
-/// (nerozšiřuje <c>WindowNavigator</c> — viz MINIAPPS.md §5); shell ho volá explicitně.
+/// (nerozšiřuje <c>WindowNavigator</c> - viz MINIAPPS.md §5); shell ho volá explicitně.
 /// </summary>
 public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 {
@@ -35,7 +35,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     /// <param name="newRow">true → panel jde do nové řady přes celou šířku pod sloupci.</param>
     public MiniAppInstance Open(MiniAppDescriptor descriptor, bool newColumn = false, bool newRow = false)
     {
-        // Pinned je single-instance — duplikát by nešel zavřít a zůstal by v layoutu napořád.
+        // Pinned je single-instance - duplikát by nešel zavřít a zůstal by v layoutu napořád.
         if (descriptor.Pinned && _open.FirstOrDefault(i => i.DescriptorId == descriptor.Id) is { } existing)
         {
             existing.Pane.Activate();
@@ -49,7 +49,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     }
 
     /// <summary>
-    /// Otevře sadu mini-apps vedle sebe do sloupců — první do stávajícího pane, další každá do
+    /// Otevře sadu mini-apps vedle sebe do sloupců - první do stávajícího pane, další každá do
     /// nového sloupce.
     /// </summary>
     public IReadOnlyList<MiniAppInstance> OpenColumns(IEnumerable<MiniAppDescriptor> descriptors)
@@ -62,7 +62,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 
     /// <summary>
     /// Výchozí layout: čistý skeleton → sloupce nahoře + volitelná řada přes celou šířku dole
-    /// (např. 3 web widgety nahoře, Oblíbené dole — mirror starého shellu).
+    /// (např. 3 web widgety nahoře, Oblíbené dole - mirror starého shellu).
     /// </summary>
     public void OpenDefaultLayout(IEnumerable<MiniAppDescriptor> columns, MiniAppDescriptor? bottomRow)
     {
@@ -79,7 +79,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     }
 
     /// <summary>
-    /// Zavře všechny kromě pinned — uživatelská akce „Zavřít miniaplikace" nesmí být zadní
+    /// Zavře všechny kromě pinned - uživatelská akce „Zavřít miniaplikace" nesmí být zadní
     /// vrátka, jak se zbavit garantovaného komunikačního kanálu.
     /// </summary>
     public void CloseUnpinned()
@@ -104,7 +104,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     public string SaveLayout() => host.SaveLayout();
 
     /// <summary>
-    /// Obnoví layout — pro každý uložený panel najde podle <c>ContentId</c> prefixu descriptor
+    /// Obnoví layout - pro každý uložený panel najde podle <c>ContentId</c> prefixu descriptor
     /// v katalogu a vyrobí novou instanci VM (s výchozím stavem). Neznámé descriptory se zahodí.
     /// </summary>
     public void RestoreLayout(string layoutXml) => host.RestoreLayout(layoutXml, ResolveRestored);
@@ -163,7 +163,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 
 /// <summary>
 /// Řídicí mini-app, která ovládá hromadný refresh ostatních. <see cref="MiniAppManager"/> jí při
-/// mountu předá svůj <c>RefreshAll</c> (vrací názvy obnovených) — žádná závislost na EDServices.
+/// mountu předá svůj <c>RefreshAll</c> (vrací názvy obnovených) - žádná závislost na EDServices.
 /// </summary>
 public interface IMiniAppRefreshController
 {

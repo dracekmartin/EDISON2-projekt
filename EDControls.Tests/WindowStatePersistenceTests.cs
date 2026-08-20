@@ -5,7 +5,7 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Testy čisté wire logiky persistence stavu okna (ParseOutput / TryParsePair / BuildSaveParams).
-/// ApplyToWindow se netestuje — vyžaduje Window (STA).
+/// ApplyToWindow se netestuje - vyžaduje Window (STA).
 /// </summary>
 public class WindowStatePersistenceTests
 {
@@ -16,7 +16,7 @@ public class WindowStatePersistenceTests
     {
         object[] output =
         [
-            "STATUS",                       // index 0 — přeskočí se
+            "STATUS",                       // index 0 - přeskočí se
             $"param{D}location{D}100;200",
             $"param{D}size{D}800;600",
             $"param{D}state{D}1",
@@ -35,7 +35,7 @@ public class WindowStatePersistenceTests
     [Fact]
     public void ParseOutput_SkipsIndexZero()
     {
-        // Index 0 je status slot — i kdyby vypadal jako param, nesmí se číst.
+        // Index 0 je status slot - i kdyby vypadal jako param, nesmí se číst.
         object[] output = [$"param{D}location{D}999;999"];
 
         var dict = WindowStatePersistence.ParseOutput(output, D);

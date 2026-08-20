@@ -4,7 +4,7 @@ namespace EDISONMAIN2.LegacyMiniApps;
 
 /// <summary>
 /// Zpřístupní všech 15 legacy dashboardových miniaplikací (pravý panel starého shellu) jako
-/// EDISONMAIN2 mini-apps. Všechny sdílí <see cref="LegacyDashboardMiniAppViewModel"/> — liší se jen
+/// EDISONMAIN2 mini-apps. Všechny sdílí <see cref="LegacyDashboardMiniAppViewModel"/> - liší se jen
 /// <c>appType</c> a titulkem. appType id + názvy = legacy <c>ALVAMINIAPLIKACE.inc</c> /
 /// <c>EDMiniApplication.GetApplicationName</c>.
 /// </summary>
@@ -12,7 +12,7 @@ public sealed class LegacyDashboardMiniAppProvider : IMiniAppProvider
 {
     public string GroupTitle => "Přehledy";
 
-    // (appType, titulek) — pořadí dle ALVAMINIAPLIKACE.inc (52001..52015).
+    // (appType, titulek) - pořadí dle ALVAMINIAPLIKACE.inc (52001..52015).
     private static readonly (string AppType, string Title)[] Apps =
     [
         ("52001", "Fluktuace zaměstnanců"),
@@ -28,7 +28,7 @@ public sealed class LegacyDashboardMiniAppProvider : IMiniAppProvider
         ("52011", "Plán údržby"),
         ("52012", "Statistika faktur"),
         ("52013", "Statistika objednávek spedice"),
-        ("52014", "Sklady MTZ — období a zásoby"),
+        ("52014", "Sklady MTZ - období a zásoby"),
         ("52015", "Motohodiny vozidel"),
     ];
 

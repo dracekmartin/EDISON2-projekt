@@ -7,7 +7,7 @@ public class CoreMiniAppsTests
     [Fact]
     public void Provides_WebWidgetsAndAutoRefresh()
     {
-        // Factory se neinvokují (žádný WebView2/STA, žádné EDServices.Current) — jen registrace.
+        // Factory se neinvokují (žádný WebView2/STA, žádné EDServices.Current) - jen registrace.
         var apps = new CoreMiniApps().GetMiniApps().ToList();
 
         Assert.Equal("Podpora M-line", new CoreMiniApps().GroupTitle);

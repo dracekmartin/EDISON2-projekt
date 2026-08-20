@@ -10,7 +10,7 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Regresní testy commit cesty EDCombo (WPF → STA vlákno). Hlídají, že výběr přežije
-/// Refilter, který mezi SelectionChanged a DropDownClosed zahodí SelectedItem — dřív se v takové
+/// Refilter, který mezi SelectionChanged a DropDownClosed zahodí SelectedItem - dřív se v takové
 /// session přepnutí „nic neudělalo" (commit četl už prázdný SelectedItem).
 /// </summary>
 public class EDFilterComboBoxCommitTests

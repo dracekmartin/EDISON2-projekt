@@ -8,19 +8,19 @@ namespace EDControls.UserFonts;
 
 /// <summary>
 /// Dialog nastavení UI fontu: rodina z whitelistu (<see cref="FontCatalog"/>) + velikost
-/// v pt, s živým náhledem. Aplikace se mění až potvrzením — Storno tedy nemusí nic vracet.
+/// v pt, s živým náhledem. Aplikace se mění až potvrzením - Storno tedy nemusí nic vracet.
 /// Nahrazuje WinForms <c>FontDialog</c>, který nabízel i symbolové fonty a neukazoval,
 /// co je vlastně výchozí.
 /// </summary>
 public partial class FontSettingsWindow : Window
 {
-    /// <summary>Položka comba velikostí — <see cref="Label"/> nese označení výchozí hodnoty.</summary>
+    /// <summary>Položka comba velikostí - <see cref="Label"/> nese označení výchozí hodnoty.</summary>
     private sealed record SizeChoice(double Pt, string Label);
 
     private FontSettingsWindow()
     {
         InitializeComponent();
-        // CenterOwner mine maximalizovaný shell (restore bounds) — centrujeme ručně po layoutu.
+        // CenterOwner mine maximalizovaný shell (restore bounds) - centrujeme ručně po layoutu.
         Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
 
         OkBtn.Content = Str("EDStrings.Ok", "OK");
@@ -43,7 +43,7 @@ public partial class FontSettingsWindow : Window
     private static string DefaultLabel =>
         $"{FontCatalog.DefaultFamily}, {FormatPt(FontService.DefaultBodyPt)} pt";
 
-    // Necelá výchozí hodnota plyne z px tokenu (14 px = 10,5 pt) — nezaokrouhlovat, jinak
+    // Necelá výchozí hodnota plyne z px tokenu (14 px = 10,5 pt) - nezaokrouhlovat, jinak
     // by se popisek rozešel s tím, co dialog opravdu nastaví.
     private static string FormatPt(double pt) => pt.ToString("0.##");
 
@@ -95,7 +95,7 @@ public partial class FontSettingsWindow : Window
             : $"Aktuálně: výchozí ({DefaultLabel})";
     }
 
-    // Jen přehodí volbu na výchozí — aplikuje se stejně jako cokoli jiného až přes OK,
+    // Jen přehodí volbu na výchozí - aplikuje se stejně jako cokoli jiného až přes OK,
     // ať dialog nemá dvě různá pravidla, kdy se zapisuje.
     private void ResetBtn_Click(object sender, RoutedEventArgs e)
     {

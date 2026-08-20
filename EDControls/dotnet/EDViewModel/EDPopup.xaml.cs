@@ -10,7 +10,7 @@ public partial class EDPopup : Window
     private EDPopup(string message, EDPopupButtons buttons, string? title)
     {
         InitializeComponent();
-        // CenterOwner mine maximalizovaný shell (restore bounds) — centrujeme ručně po layoutu.
+        // CenterOwner mine maximalizovaný shell (restore bounds) - centrujeme ručně po layoutu.
         Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
         MessageText.Text = message;
 
@@ -46,14 +46,14 @@ public partial class EDPopup : Window
     private void NegativeBtn_Click(object sender, RoutedEventArgs e) { _result = false; DialogResult = false; }
     private void CancelBtn_Click  (object sender, RoutedEventArgs e) { _result = null;  Close(); }
 
-    /// <summary>2-button popup (Ok, AnoNe) — vrátí true/false. Title volitelný (default "Informace"/"Potvrzení").</summary>
+    /// <summary>2-button popup (Ok, AnoNe) - vrátí true/false. Title volitelný (default "Informace"/"Potvrzení").</summary>
     internal static bool Show(Window? owner, string message, EDPopupButtons buttons, string? title = null)
     {
         var popup = new EDPopup(message, buttons, title) { Owner = owner };
         return popup.ShowDialog() == true;
     }
 
-    /// <summary>3-button popup (AnoNeStorno) — vrátí true (Ano) / false (Ne) / null (Storno nebo Esc). Title volitelný.</summary>
+    /// <summary>3-button popup (AnoNeStorno) - vrátí true (Ano) / false (Ne) / null (Storno nebo Esc). Title volitelný.</summary>
     internal static bool? ShowYesNoCancel(Window? owner, string message, string? title = null)
     {
         var popup = new EDPopup(message, EDPopupButtons.AnoNeStorno, title) { Owner = owner };

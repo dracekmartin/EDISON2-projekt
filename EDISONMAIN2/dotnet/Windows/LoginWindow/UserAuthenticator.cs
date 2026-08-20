@@ -15,7 +15,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
     public class LoginException(string message) : Exception(message);
 
-    /// <summary>Výsledek změny hesla — úspěch, nebo chybová hláška k zobrazení uživateli.</summary>
+    /// <summary>Výsledek změny hesla - úspěch, nebo chybová hláška k zobrazení uživateli.</summary>
     public record ChangePasswordResult(bool Success, string Message);
 
     public static class UserAuthenticator
@@ -27,7 +27,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
         public static LoginResult Login(IMLRest mlRest, string username, string password)
         {
             if (string.IsNullOrEmpty(username)) throw new LoginException("Prázdné jméno uživatele.");
-            // Prázdné heslo se NEblokuje — pro LDAP-AUTO / Windows SSO je legitimní (jen jméno).
+            // Prázdné heslo se NEblokuje - pro LDAP-AUTO / Windows SSO je legitimní (jen jméno).
             // O přijatelnosti rozhoduje server podle login módu uživatele (feature #23):
             // EDISON/LDAP prázdné heslo odmítnou (-107), LDAP-AUTO ho přijme.
 
@@ -61,7 +61,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
         /// <summary>
         /// Volá <c>ALVA.SYS.Login.ChangePassword</c> (IN: jméno, staré heslo, nové heslo).
-        /// Výstup <c>OUT(1)="status'text"</c> — status 1 = OK, jinak chyba (server dodá text).
+        /// Výstup <c>OUT(1)="status'text"</c> - status 1 = OK, jinak chyba (server dodá text).
         /// </summary>
         public static ChangePasswordResult ChangePassword(IMLRest mlRest, string username, string oldPassword, string newPassword)
         {
@@ -78,7 +78,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
         }
 
         // Statusy z ALVA.SYS.Login.ChangePassword: 2=staré neplatné, 3=nové nesplňuje formát,
-        // 4=nemožné (uživatel neexistuje), 99=chyba. Server u 2/3 posílá vlastní text — preferuj ho.
+        // 4=nemožné (uživatel neexistuje), 99=chyba. Server u 2/3 posílá vlastní text - preferuj ho.
         private static string ChangePasswordMessage(int status, string serverText) => status switch
         {
             2 => serverText.Length > 0 ? serverText : "Původní heslo je neplatné.",

@@ -7,7 +7,7 @@ namespace EDControls.Tests;
 /// <summary>
 /// UserFontPreference je shared-file-by-design (cross-process sync mezi shell a TD).
 /// FileSystemWatcher debounce je integration territory (FontService smoke test v produkci);
-/// tady se ověřuje wire kontrakt font.json — přesný camelCase tvar na disku — přes přesměrovanou
+/// tady se ověřuje wire kontrakt font.json - přesný camelCase tvar na disku - přes přesměrovanou
 /// <see cref="UserFontPreference.FilePath"/> (internal seam), ne přes reálné %APPDATA%.
 /// </summary>
 public class UserFontPreferenceTests
@@ -35,7 +35,7 @@ public class UserFontPreferenceTests
     [Fact]
     public void Load_DeserializesOnDiskCamelCaseShape()
     {
-        // Pinned tvar sdílený s TemplateDesigner — přejmenování property (bez JsonPropertyName)
+        // Pinned tvar sdílený s TemplateDesigner - přejmenování property (bez JsonPropertyName)
         // nebo změna naming policy tenhle kontrakt rozbije.
         WithTempFontFile("""{"fontApplied":true,"fontFamily":"Calibri","fontSize":14.5,"version":1}""", _ =>
         {
@@ -50,7 +50,7 @@ public class UserFontPreferenceTests
     [Fact]
     public void Load_LegacyFileWithoutVersion_DropsSizeKeepsWhitelistedFamily()
     {
-        // Velikost bez verze pochází z buildu, který pt vykresloval jako px — uživatel ji
+        // Velikost bez verze pochází z buildu, který pt vykresloval jako px - uživatel ji
         // ladil podle výsledku, takže po opravě nedává smysl. Rodina chybou zasažená nebyla.
         WithTempFontFile("""{"fontApplied":true,"fontFamily":"Calibri","fontSize":10}""", _ =>
         {
@@ -65,7 +65,7 @@ public class UserFontPreferenceTests
     [Fact]
     public void Load_LegacyFileWithSymbolFont_DropsOverrideEntirely()
     {
-        // Původní systémový picker pustil i symbolové fonty — whitelist je má uklidit.
+        // Původní systémový picker pustil i symbolové fonty - whitelist je má uklidit.
         WithTempFontFile("""{"fontApplied":true,"fontFamily":"Wingdings","fontSize":10}""", _ =>
         {
             UserFontPreference.Load();
@@ -105,7 +105,7 @@ public class UserFontPreferenceTests
     [Fact]
     public void Load_MalformedJson_DoesNotThrow_KeepsCurrentNonNull()
     {
-        // Filesystem corruption / partial write — Load catch blok drží Current jako default
+        // Filesystem corruption / partial write - Load catch blok drží Current jako default
         // / poslední úspěšný stav, aby aplikace nepadla na startu kvůli rozbitému font.json.
         WithTempFontFile("{ not valid json", _ =>
         {

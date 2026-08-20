@@ -3,7 +3,7 @@ Include %occInclude
 Class ALVA.EDControls.Tests.ListTest Extends ALVA.EDTesting.MLTestCase
 {
 
-/// %UnitTest pro ALVA.EDControls.EDList.List — JSON serializace sloupců a řádků do ^||ML("OUT").
+/// %UnitTest pro ALVA.EDControls.EDList.List - JSON serializace sloupců a řádků do ^||ML("OUT").
 
 Method TestColumnsJson()
 {
@@ -39,7 +39,7 @@ Method TestRowsJson()
 	do $$$AssertEquals(o2.nazev, "Brno")
 }
 
-/// isLink + visible se serializují do JSON sloupce (List.cls:62-63) — live featura (MockList isLink=1).
+/// isLink + visible se serializují do JSON sloupce (List.cls:62-63) - live featura (MockList isLink=1).
 /// Defaulty: visible=1, sortable=0, width=0.
 Method TestColumnLinkAndVisibleFlags()
 {

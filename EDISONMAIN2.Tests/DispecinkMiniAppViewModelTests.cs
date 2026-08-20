@@ -7,7 +7,7 @@ using NSubstitute;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testuje parsování CVar výstupu z dispečink API do VM přes mock <see cref="IMLRest"/> —
+/// Testuje parsování CVar výstupu z dispečink API do VM přes mock <see cref="IMLRest"/> -
 /// bez živé Caché. Ověřuje kontrakt (pořadí polí GetJizdy / GetPracoviste).
 /// </summary>
 public class DispecinkMiniAppViewModelTests

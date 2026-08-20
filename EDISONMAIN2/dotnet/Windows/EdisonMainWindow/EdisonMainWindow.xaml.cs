@@ -27,14 +27,14 @@ namespace EDISONMAIN2
         {
             InitializeComponent();
             PreviewKeyDown += OnPreviewKeyDown;
-            // Výběr uzlu i Enter řešíme jednou na kartě, ne per strom — obojí bublá, takže
+            // Výběr uzlu i Enter řešíme jednou na kartě, ne per strom - obojí bublá, takže
             // přidání záložky nevyžaduje další wiring. SelectedItem TreeView nelze bindovat.
             TreeCard.AddHandler(TreeView.SelectedItemChangedEvent,
                                 new RoutedPropertyChangedEventHandler<object>(TreeSelectedItemChanged));
             TreeCard.AddHandler(KeyDownEvent, new System.Windows.Input.KeyEventHandler(TreeCard_KeyDown));
             Loaded += WireMiniAppHost;
             ContentRendered += OnContentRendered;
-            // Drží plochu miniaplikací nad minimem při zúžení (splitter i okno) — viz handler.
+            // Drží plochu miniaplikací nad minimem při zúžení (splitter i okno) - viz handler.
             DockManager.SizeChanged += MiniAppArea_SizeChanged;
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
@@ -51,7 +51,7 @@ namespace EDISONMAIN2
         }
 
         // Vestavěný generic theme AvalonDocku má chrome (taby, bordery, pozadí dokumentů) natvrdo
-        // světlý a EDTheme tokeny nečte — dark mode řeší výměna celého Theme; VS2013 dark paleta
+        // světlý a EDTheme tokeny nečte - dark mode řeší výměna celého Theme; VS2013 dark paleta
         // odpovídá EDTheme dark (#1E1E1E/#252526). Guard: Applied chodí i bez změny theme.
         private void ApplyDockTheme()
         {
@@ -62,12 +62,12 @@ namespace EDISONMAIN2
 
         // Po prvním vykreslení (WPF analog legacy frmMain_Shown) načti session state a otevři
         // uživatelův výchozí okno. ContentRendered fíruje jednou po prvním paintu; okno se tedy
-        // ukáže hned a stromy dorazí pod overlayem. Pořadí je invariant — výchozí okno se hledá
+        // ukáže hned a stromy dorazí pod overlayem. Pořadí je invariant - výchozí okno se hledá
         // ve stromu, takže init musí dobíhnout první.
         private async void OnContentRendered(object? sender, System.EventArgs e)
         {
             ContentRendered -= OnContentRendered;
-            // Až teď je okno v cílové (maximalizované) velikosti a restore šířky stromu proběhl —
+            // Až teď je okno v cílové (maximalizované) velikosti a restore šířky stromu proběhl -
             // od teď smí SizeChanged clamp zasahovat (dřív by přepsal restorovanou šířku).
             _layoutReady = true;
             if (DataContext is not EdisonMainViewModel vm) return;
@@ -77,7 +77,7 @@ namespace EDISONMAIN2
             }
             catch (Exception ex)
             {
-                // async void z eventu — bez catch by výjimka letěla na DispatcherUnhandledException.
+                // async void z eventu - bez catch by výjimka letěla na DispatcherUnhandledException.
                 vm.PopupDisplayer.Error(ex);
                 return;
             }
@@ -93,7 +93,7 @@ namespace EDISONMAIN2
             Loaded -= WireMiniAppHost;
             if (DataContext is EdisonMainViewModel vm)
             {
-                // Před AttachMiniAppHost — ten spouští první restore, který už šířku stromu aplikuje.
+                // Před AttachMiniAppHost - ten spouští první restore, který už šířku stromu aplikuje.
                 vm.AttachTreeLayout(
                     () => TreeColumn.ActualWidth,
                     w => TreeColumn.Width = new GridLength(w));
@@ -121,7 +121,7 @@ namespace EDISONMAIN2
         }
 
         // Single-click ve stromu: složka toggle expand, modul spustí. Event bubluje přes
-        // vnořené TreeViewItemy — Handled=true zastaví rodiče, aby klik na modul
+        // vnořené TreeViewItemy - Handled=true zastaví rodiče, aby klik na modul
         // zároveň nesbalil jeho složku. Chevron neprojde (ToggleButton si MouseUp zpracuje sám).
         private void TreeItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
@@ -206,14 +206,14 @@ namespace EDISONMAIN2
                 OpenModule(module);
         }
 
-        // CanExecute guard — AsyncRelayCommand během běhu vrací false, brání dvojímu spuštění.
+        // CanExecute guard - AsyncRelayCommand během běhu vrací false, brání dvojímu spuštění.
         private void OpenModule(ExecutableModule module)
         {
             if (DataContext is EdisonMainViewModel vm && vm.OpenModuleCommand.CanExecute(module))
                 vm.OpenModuleCommand.Execute(module);
         }
 
-        // Ctrl+W+W chord detection. PreviewKeyDown (ne KeyDown) — chytá klávesy předtím,
+        // Ctrl+W+W chord detection. PreviewKeyDown (ne KeyDown) - chytá klávesy předtím,
         // než je child controls (menu, TextBox) zpracují. Bez Preview by Ctrl+W v Menu
         // zavřel popup místo aby spustil chord.
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)

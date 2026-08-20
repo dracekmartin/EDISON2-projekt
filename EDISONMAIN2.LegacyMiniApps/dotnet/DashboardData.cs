@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace EDISONMAIN2.LegacyMiniApps;
 
-/// <summary>Sekce dashboardu legacy miniaplikace — buď textový label, nebo tabulka.</summary>
+/// <summary>Sekce dashboardu legacy miniaplikace - buď textový label, nebo tabulka.</summary>
 public abstract record DashboardSection;
 
 public sealed record DashboardLabel(string Text) : DashboardSection;
@@ -69,7 +69,7 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
 
                 case "data" when inTargetApp && t.Length > 4:
                     int section = int.TryParse(t[3], out var s) ? s : 0;
-                    // Hodnota smí obsahovat primární oddělovač jen teoreticky — rejoin pro jistotu.
+                    // Hodnota smí obsahovat primární oddělovač jen teoreticky - rejoin pro jistotu.
                     string value = string.Join(delimiter, t.Skip(4));
                     switch (section)
                     {

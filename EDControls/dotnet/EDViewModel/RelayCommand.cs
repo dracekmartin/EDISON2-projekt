@@ -10,10 +10,10 @@ public class RelayCommand(Action execute, Func<bool>? canExecute = null, IPopupD
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    // canExecute nesmí házet — WPF ho volá při každé UI interakci a výjimka by propadla
+    // canExecute nesmí házet - WPF ho volá při každé UI interakci a výjimka by propadla
     // na DispatcherUnhandledException, ne do našeho catch-u.
     public bool CanExecute(object? parameter) => canExecute == null || canExecute();
-    // Fallback na EDServices.Current.PopupDisplayer (composition root) — ne new PopupDisplayer():
+    // Fallback na EDServices.Current.PopupDisplayer (composition root) - ne new PopupDisplayer():
     // App.xaml.cs wiring zajistí owner, takže popup neletí jako orphan top-level dialog.
     public void Execute(object? parameter) { try { execute(); } catch (Exception ex) { (popupDisplayer ?? EDServices.Current.PopupDisplayer).Error(ex); } }
 }
@@ -29,7 +29,7 @@ public class RelayCommand<T>(Action<T> execute, Func<T, bool>? canExecute = null
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    // canExecute nesmí házet — WPF ho volá při každé UI interakci a výjimka by propadla
+    // canExecute nesmí házet - WPF ho volá při každé UI interakci a výjimka by propadla
     // na DispatcherUnhandledException, ne do našeho catch-u.
     public bool CanExecute(object? parameter) => _canExecute == null || (parameter is T t && _canExecute(t));
     public void Execute(object? parameter) { try { if (parameter is T t) _execute(t); } catch (Exception ex) { (popupDisplayer ?? EDServices.Current.PopupDisplayer).Error(ex); } }

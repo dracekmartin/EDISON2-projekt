@@ -6,7 +6,7 @@ namespace EDISONMAIN2.Tests;
 /// <summary>
 /// Testovací <see cref="IRestCallRunner"/>: volá synchronně na předané instanci, bez klonu
 /// a bez <c>Task.Run</c>. Produkční runner pouští větve souběžně, což NSubstitute (není
-/// thread-safe) dělá flaky; orchestrace loaderu je jinak stejná — <c>WhenAll</c> nad
+/// thread-safe) dělá flaky; orchestrace loaderu je jinak stejná - <c>WhenAll</c> nad
 /// hotovými tasky. Výjimku vrací ve tasku, ne synchronně, aby chování odpovídalo produkci.
 /// </summary>
 internal sealed class InlineRestCallRunner(IMLRest rest) : IRestCallRunner

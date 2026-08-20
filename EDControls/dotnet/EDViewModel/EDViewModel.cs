@@ -23,14 +23,14 @@ public class EDViewModel : INotifyPropertyChanged
     /// </summary>
     protected IMLRest Rest => _services.RequireMLRest;
 
-    /// <summary>Navigator pro otevírání oken — <c>WindowNavigator.Show(...)</c> / <c>ShowDialog(...)</c>.</summary>
+    /// <summary>Navigator pro otevírání oken - <c>WindowNavigator.Show(...)</c> / <c>ShowDialog(...)</c>.</summary>
     protected IWindowNavigator WindowNavigator => _services.WindowNavigator;
 
     private IPopupDisplayer? _scopedPopupDisplayer;
 
     /// <summary>
     /// Služba pro popupy. Po <see cref="AttachToWindow"/> vrací wrapper, který do popupů
-    /// automaticky injektuje VM-vlastní okno jako owner — agendová okna tak nedostávají
+    /// automaticky injektuje VM-vlastní okno jako owner - agendová okna tak nedostávají
     /// popupy nad shellem. Před attach (nebo když VM není window-bound) fallback na globální
     /// instanci z <see cref="EDServices"/>.
     /// Použití: <c>PopupDisplayer.Confirm(...)</c> nebo <c>PopupDisplayer.Info(...)</c> z VM.
@@ -101,7 +101,7 @@ public class EDViewModel : INotifyPropertyChanged
     public ICommand DeleteCommand { get; }
 
     /// <summary>
-    /// Bezparametrický konstruktor — čte z <see cref="EDServices.Current"/>.
+    /// Bezparametrický konstruktor - čte z <see cref="EDServices.Current"/>.
     /// Používá se pro okna vytvářená přes <see cref="WindowNavigator"/>.
     /// </summary>
     public EDViewModel() : this(EDServices.Current) { }
@@ -136,7 +136,7 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// <see cref="PersistedFormId"/> pro <see cref="EDUsageTelemetryHook"/> — ten visí na class
+    /// <see cref="PersistedFormId"/> pro <see cref="EDUsageTelemetryHook"/> - ten visí na class
     /// handleru <c>Window.Loaded</c>, takže na protected člen nedosáhne.
     /// </summary>
     internal string? UsageFormId => PersistedFormId;
@@ -144,7 +144,7 @@ public class EDViewModel : INotifyPropertyChanged
     /// <summary>
     /// Volat **před** <c>window.Show()</c> / <c>ShowDialog()</c> aby se klávesové zkratky
     /// a perzistence stavu okna napojily na <c>SourceInitialized</c> ještě před prvním paintem
-    /// (jinak by se zobrazila XAML default velikost a pak teprve restored — flicker).
+    /// (jinak by se zobrazila XAML default velikost a pak teprve restored - flicker).
     /// <see cref="WindowNavigator"/> volá automaticky pro Show/ShowDialog;
     /// composition-root v App.xaml.cs musí volat ručně pro shell okno.
     /// </summary>
@@ -157,10 +157,10 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Pokud false, k oknu se nepřipojí vysouvací panel Podpora. Default true — panel má být
+    /// Pokud false, k oknu se nepřipojí vysouvací panel Podpora. Default true - panel má být
     /// všude (obdoba legacy <c>BaseForm.ShowSideMenu</c>); vypínej jen pro okna, kde nemá
     /// smysl (odpočty, splash). Připojení samo řeší class handler z <c>EDAppearance.Initialize</c>,
-    /// ne <see cref="AttachToWindow"/> — okno bez ViewModelu má opt-out
+    /// ne <see cref="AttachToWindow"/> - okno bez ViewModelu má opt-out
     /// <c>EDSupportPanel.Suppress</c>.
     /// </summary>
     public bool ShowSupportPanel { get; protected set; } = true;
@@ -179,14 +179,14 @@ public class EDViewModel : INotifyPropertyChanged
     /// <summary>
     /// Aplikační přístup uživatele pro <paramref name="elementId"/> (string ID z legacy
     /// EDISFormEnum / EDPackageEnum / EDMainPackageEnum). Pokud <c>AccessTable</c> nebyl
-    /// loadnut (testy, pre-login UI), vrací <c>true</c> — degrade gracefully.
+    /// loadnut (testy, pre-login UI), vrací <c>true</c> - degrade gracefully.
     /// </summary>
     protected bool HasAccess(string elementId) =>
         _services.AccessTable?.Contains(elementId) ?? true;
 
     /// <summary>
     /// Vytvoří <see cref="AsyncRelayCommand"/> s napojeným <see cref="PopupDisplayer"/> pro výjimky.
-    /// Pro <c>async Task</c> handlery — vyhni se <c>async void</c>. Pojmenování
+    /// Pro <c>async Task</c> handlery - vyhni se <c>async void</c>. Pojmenování
     /// <c>CommandAsync</c> (ne overload <c>Command</c>) drží overload resolution jasné.
     /// </summary>
     protected AsyncRelayCommand CommandAsync(Func<Task> execute, Func<bool>? canExecute = null) =>

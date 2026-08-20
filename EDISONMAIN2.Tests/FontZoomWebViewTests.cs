@@ -9,9 +9,9 @@ public class FontZoomWebViewTests
     [Fact]
     public void DerivesFromHwndWebView2_NotComposition()
     {
-        // HWND varianta — composition nepřežije reparent do plovoucího okna AvalonDocku
+        // HWND varianta - composition nepřežije reparent do plovoucího okna AvalonDocku
         // (drag tabu) a tahá 23 MB WinRT projekci. Airspace řeší owned okno EDActionInProgress
-        // (karta nad widgety) — widgety se při dimu neschovávají, viz FontZoomWebView remarks.
+        // (karta nad widgety) - widgety se při dimu neschovávají, viz FontZoomWebView remarks.
         Assert.True(typeof(WebView2).IsAssignableFrom(typeof(FontZoomWebView)));
         Assert.False(typeof(WebView2CompositionControl).IsAssignableFrom(typeof(FontZoomWebView)));
     }
@@ -19,7 +19,7 @@ public class FontZoomWebViewTests
     [Fact]
     public void ReimplementsIDisposable_InterfaceDispatchHitsDerivedDispose()
     {
-        // Base Dispose() není virtuální — bez re-implementace IDisposable by
+        // Base Dispose() není virtuální - bez re-implementace IDisposable by
         // SimpleMiniAppViewModel.OnClosed (interface dispatch) volal base
         // a odhlášení z FontService.Applied by se tiše přeskočilo.
         var map = typeof(FontZoomWebView).GetInterfaceMap(typeof(IDisposable));

@@ -7,7 +7,7 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Testy základní třídy <see cref="EDViewModel"/>. Každý test si vytváří vlastní
-/// <c>EDServices</c> s mocky — žádný sdílený static state.
+/// <c>EDServices</c> s mocky - žádný sdílený static state.
 /// </summary>
 public class EDViewModelTests
 {

@@ -16,7 +16,7 @@ public interface IPopupDisplayer
     /// <summary>
     /// Yes/No/Cancel potvrzení. Vrátí true (Ano) / false (Ne) / null (Storno nebo Esc).
     /// Typický use case: "Šablona obsahuje neuložené změny. Chcete je uložit?"
-    /// Title volitelný — default "Potvrzení". Lze nastavit kontextově (např. "Neuložené změny").
+    /// Title volitelný - default "Potvrzení". Lze nastavit kontextově (např. "Neuložené změny").
     /// </summary>
     bool? ConfirmYesNoCancel(string message, string? title = null, Window? owner = null);
 

@@ -5,7 +5,7 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Save/Load round-trip + Exists() (first-launch detekce). Píše reálný
-/// appsettings.json vedle test exe — po každém testu uklidíme.
+/// appsettings.json vedle test exe - po každém testu uklidíme.
 /// </summary>
 public class SettingsLoaderTests : IDisposable
 {

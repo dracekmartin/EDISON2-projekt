@@ -12,7 +12,7 @@ internal partial class EDErrorPopup : Window
     private EDErrorPopup(Exception ex, string? refId)
     {
         InitializeComponent();
-        // CenterOwner mine maximalizovaný shell (restore bounds) — centrujeme ručně po layoutu.
+        // CenterOwner mine maximalizovaný shell (restore bounds) - centrujeme ručně po layoutu.
         Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
         ErrorText.Text = ex.ToString();
 
@@ -37,7 +37,7 @@ internal partial class EDErrorPopup : Window
 
         ErrorReports.ReportFollowUp(_refId, text, Owner);
 
-        // Odesílá se na pozadí a výsledek se nezjišťuje — potvrzení je o tom, že jsme text
+        // Odesílá se na pozadí a výsledek se nezjišťuje - potvrzení je o tom, že jsme text
         // převzali. Druhé kliknutí by poslalo duplicitu, proto se ovládání schová.
         FollowUpText.IsEnabled = false;
         SendFollowUpBtn.Visibility = Visibility.Collapsed;
@@ -62,7 +62,7 @@ internal partial class EDErrorPopup : Window
         }
         catch (Exception ex)
         {
-            // jsme uvnitř error popupu — nevoláme PopupDisplayer (re-entrance), jen MessageBox
+            // jsme uvnitř error popupu - nevoláme PopupDisplayer (re-entrance), jen MessageBox
             MessageBox.Show(this, $"Soubor se nepodařilo uložit:\n{ex.Message}",
                 "Chyba", MessageBoxButton.OK, MessageBoxImage.Warning);
         }

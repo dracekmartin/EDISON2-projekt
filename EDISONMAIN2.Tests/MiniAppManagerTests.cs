@@ -7,7 +7,7 @@ using NSubstitute;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy <see cref="MiniAppManager"/> přes fake host — manager je tak testovatelný mimo STA
+/// Testy <see cref="MiniAppManager"/> přes fake host - manager je tak testovatelný mimo STA
 /// vlákno (AvalonDock-specifika jsou v <c>AvalonDockHost</c>, ten se netestuje unit testy).
 /// </summary>
 public class MiniAppManagerTests

@@ -16,7 +16,7 @@ public class FontServiceTests
         var settings = FontService.ComputeFromPrefs(prefs);
 
         Assert.Equal("Arial", settings.FontFamily);
-        // Prefs jsou v pt, tokeny v px — 12 pt = 16 px.
+        // Prefs jsou v pt, tokeny v px - 12 pt = 16 px.
         Assert.Equal(16, settings.FontSize);
     }
 
@@ -122,7 +122,7 @@ public class FontServiceTests
     [Fact]
     public void DefaultBodyPt_MatchesThemeTokenInPoints()
     {
-        // Dialog z toho staví popisek „(výchozí)" — nesmí se rozejít s tokenem.
+        // Dialog z toho staví popisek „(výchozí)" - nesmí se rozejít s tokenem.
         Assert.Equal(10.5, FontService.DefaultBodyPt);
     }
 }

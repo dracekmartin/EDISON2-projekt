@@ -23,7 +23,7 @@ public static class EDAppearance
         if (app is null) return;   // testy bez WPF Application
         FontService.Initialize(app);
         ThemeService.Initialize(app);
-        // Panel Podpora a usage telemetrie se váží na Window.Loaded, ne na ViewModel — okno je
+        // Panel Podpora a usage telemetrie se váží na Window.Loaded, ne na ViewModel - okno je
         // dostane i tam, kde se nespouští přes WindowNavigator (hlavní okno a dialogy TemplateDesigneru).
         EDSupportPanel.EDSupportPanel.AttachToAllWindows();
         EDViewModel.EDUsageTelemetryHook.AttachToAllWindows();

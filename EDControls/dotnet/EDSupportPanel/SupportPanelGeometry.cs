@@ -5,13 +5,13 @@ internal readonly record struct SupportPanelPlacement(double Left, double Top, d
 
 /// <summary>
 /// Výpočet pozice vysouvacího panelu bez WPF závislostí. Panel je okno u pravého okraje
-/// klientské oblasti ownera, které podle <c>slideOffset</c> roste **doleva** — obsah
+/// klientské oblasti ownera, které podle <c>slideOffset</c> roste **doleva** - obsah
 /// (úchyt vlevo, karta vpravo) zůstává zarovnaný vlevo a hranice okna ho klipuje, takže
 /// v zavřeném stavu je vidět jen úchyt a karta se odkrývá směrem doleva.
 /// </summary>
 internal static class SupportPanelGeometry
 {
-    /// <summary>Šířka úchytu — jediné, co je vidět v zavřeném stavu.</summary>
+    /// <summary>Šířka úchytu - jediné, co je vidět v zavřeném stavu.</summary>
     internal const double TabWidth = 12;
 
     /// <summary>Šířka karty s tlačítky (bez úchytu).</summary>
@@ -19,7 +19,7 @@ internal static class SupportPanelGeometry
 
     /// <summary>
     /// Vejde se panel do klientské oblasti ownera? Karta žije v samostatném okně, takže by
-    /// u menšího okna přečnívala mimo jeho hranu (přes footer s tlačítky) — tam panel radši
+    /// u menšího okna přečnívala mimo jeho hranu (přes footer s tlačítky) - tam panel radši
     /// nepřipojíme vůbec, než abychom kreslili kartu mimo dialog.
     /// </summary>
     internal static bool Fits(double clientWidth, double clientHeight, double panelHeight) =>
@@ -34,7 +34,7 @@ internal static class SupportPanelGeometry
         var left = clientLeft + clientWidth - width;
 
         // Svisle na střed, ale nikdy pod spodní hranou klientské oblasti (owner se může
-        // zmenšit pod výšku karty i po připojení panelu — resize, změna fontu).
+        // zmenšit pod výšku karty i po připojení panelu - resize, změna fontu).
         var top = clientTop + Math.Max(0, Math.Min(
             (clientHeight - panelHeight) / 2,
             clientHeight - panelHeight));

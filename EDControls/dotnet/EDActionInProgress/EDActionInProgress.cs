@@ -6,10 +6,10 @@ using EDVm = EDControls.EDViewModel.EDViewModel;
 namespace EDControls.EDActionInProgress;
 
 /// <summary>
-/// Neviditelný controller overlay „Akce probíhá" — vlož kamkoli do okna (konvence: poslední
+/// Neviditelný controller overlay „Akce probíhá" - vlož kamkoli do okna (konvence: poslední
 /// child root Gridu). Na Loaded se sám naváže na <see cref="EDVm.IsActionInProgress"/>;
 /// při aktivaci ztmaví okno (<see cref="WindowDimmer"/>) a zobrazí kartu s kapybarou
-/// v owned okně <see cref="ActionInProgressWindow"/> — jediný způsob, jak ji vykreslit
+/// v owned okně <see cref="ActionInProgressWindow"/> - jediný způsob, jak ji vykreslit
 /// nad HWND widgety (WebView2), které WPF obsah kvůli airspace nepřekreslí.
 /// </summary>
 public sealed class EDActionInProgress : FrameworkElement
@@ -40,17 +40,17 @@ public sealed class EDActionInProgress : FrameworkElement
     {
         if (active)
         {
-            // Před Loaded / design time — OnLoaded zavolá Apply(IsActive) znovu.
+            // Před Loaded / design time - OnLoaded zavolá Apply(IsActive) znovu.
             if (Window.GetWindow(this) is not { } owner) return;
             _dimScope ??= WindowDimmer.Dim(owner);
-            // Owner ještě nezobrazený (akce před ShowDialog) — setter Owner by hodil výjimku
+            // Owner ještě nezobrazený (akce před ShowDialog) - setter Owner by hodil výjimku
             // a karta by se vykreslila nad plochu; odlož na IsVisibleChanged.
             if (!owner.IsVisible)
             {
                 DeferUntilVisible(owner);
                 return;
             }
-            // Nové okno per akci (ne recyklace) — jinak by Show() přehrálo starý frame spritu.
+            // Nové okno per akci (ne recyklace) - jinak by Show() přehrálo starý frame spritu.
             if (_overlay is null)
             {
                 _overlay = new ActionInProgressWindow(owner);

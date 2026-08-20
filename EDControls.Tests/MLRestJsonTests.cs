@@ -7,7 +7,7 @@ namespace EDControls.Tests;
 /// <summary>
 /// <see cref="MLRestJson.CallAsync"/> je jediný wire kontrakt JSON-envelope volání: request se
 /// serializuje pod sdílený klíč <c>"payload"</c>, response se čte ze stejného klíče. Obě strany
-/// (Caché) se na klíči musí shodnout — proto ho fixujeme testem.
+/// (Caché) se na klíči musí shodnout - proto ho fixujeme testem.
 /// </summary>
 public class MLRestJsonTests
 {

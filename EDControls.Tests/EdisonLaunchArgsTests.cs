@@ -54,7 +54,7 @@ public class EdisonLaunchArgsTests
     [Fact]
     public void TryParse_TooFewArgs_ReturnsNull()
     {
-        // Sentinel + 8 hodnot = 9 argů — kontrakt vyžaduje minimálně 10.
+        // Sentinel + 8 hodnot = 9 argů - kontrakt vyžaduje minimálně 10.
         var args = ValidArgs()[..9];
 
         Assert.Null(EdisonLaunchArgs.TryParse(args));
@@ -88,7 +88,7 @@ public class EdisonLaunchArgsTests
     public void TryParse_MlpWithLeadingZeros_Normalized()
     {
         // Mlp jde přes int round-trip (parse → ToString), takže "0167" se normalizuje na "167"
-        // — a v této podobě se posílá dál do launcher argů.
+        // - a v této podobě se posílá dál do launcher argů.
         var args = ValidArgs();
         args[7] = "0167";
 

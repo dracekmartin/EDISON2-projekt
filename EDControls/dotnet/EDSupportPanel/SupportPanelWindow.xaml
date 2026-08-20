@@ -9,7 +9,7 @@
 
     <!-- Klip na hranici okna = karta „vyjíždí zpod" pravé hrany; šířku okna řídí code-behind. -->
     <Grid ClipToBounds="True">
-        <!-- Pevná šířka odpojuje měření obsahu od (měnící se) šířky okna — bez ní by
+        <!-- Pevná šířka odpojuje měření obsahu od (měnící se) šířky okna - bez ní by
              SizeToContent="Height" počítal výšku pro 12px široký obsah. -->
         <Grid x:Name="Root" Width="182" HorizontalAlignment="Left" VerticalAlignment="Top">
             <!-- Karta -->
@@ -52,7 +52,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- Úchyt. Je 2px širší než TabWidth a leží NAD kartou — přesah zakryje šev
+            <!-- Úchyt. Je 2px širší než TabWidth a leží NAD kartou - přesah zakryje šev
                  s jejím levým rámečkem (mirror legacy TabFillOverlap). -->
             <Border x:Name="Tab" Width="14" Height="60"
                     HorizontalAlignment="Left" VerticalAlignment="Center"

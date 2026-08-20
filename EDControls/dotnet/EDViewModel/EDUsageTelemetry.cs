@@ -3,7 +3,7 @@ using System.Globalization;
 namespace EDControls.EDViewModel;
 
 /// <summary>
-/// Usage telemetrie — zrcadlo <c>EDUsageTracker</c> z legacy EDISONu (EDLIBRARY).
+/// Usage telemetrie - zrcadlo <c>EDUsageTracker</c> z legacy EDISONu (EDLIBRARY).
 /// Sbírá do paměti záznamy „které okno / který control byl použit" a při zavření okna je
 /// dávkově odešle do Caché (<c>ALVA.ISY.ISYCloud.APIdotNet.Telemetry.LogUsageBatch</c>);
 /// idfa+userid doplní server ze session. Agregaci do globalu a push na portál m-line při
@@ -39,7 +39,7 @@ public static class EDUsageTelemetry
         }
         catch
         {
-            // best-effort — polknout
+            // best-effort - polknout
         }
     }
 
@@ -75,7 +75,7 @@ public static class EDUsageTelemetry
         }
         catch
         {
-            // Odeslání selhalo (odpojený server / chybí ISYCloud) — zahodit, best-effort.
+            // Odeslání selhalo (odpojený server / chybí ISYCloud) - zahodit, best-effort.
         }
     }
 

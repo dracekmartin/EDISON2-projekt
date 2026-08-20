@@ -6,7 +6,7 @@ namespace EDISONMAIN2.Windows.LogoutCountdownWindow
 {
     /// <summary>
     /// Non-modální top-most odpočet před vynuceným ukončením (cooperative logout).
-    /// Informativní — bez možnosti zrušit (server rozhodl). Po vypršení zavolá <c>onExpired</c>.
+    /// Informativní - bez možnosti zrušit (server rozhodl). Po vypršení zavolá <c>onExpired</c>.
     /// Countdown timer je inherentně view-driven, proto v code-behind.
     /// </summary>
     public partial class LogoutCountdownWindow : Window

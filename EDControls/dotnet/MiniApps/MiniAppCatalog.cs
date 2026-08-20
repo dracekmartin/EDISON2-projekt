@@ -14,7 +14,7 @@ public sealed class MiniAppCatalog
 
     /// <summary>
     /// Posbírá deskriptory ze všech providerů. <see cref="MiniAppDescriptor.Id"/> musí být unikátní
-    /// napříč všemi providery — duplicita je chyba registrace, vyhodí výjimku (fail fast).
+    /// napříč všemi providery - duplicita je chyba registrace, vyhodí výjimku (fail fast).
     /// </summary>
     public static MiniAppCatalog Build(IEnumerable<IMiniAppProvider> providers)
     {
@@ -26,7 +26,7 @@ public sealed class MiniAppCatalog
             foreach (var descriptor in apps)
                 if (!byId.TryAdd(descriptor.Id, descriptor))
                     throw new InvalidOperationException(
-                        $"Duplicitní MiniAppDescriptor.Id \"{descriptor.Id}\" — Id musí být unikátní napříč všemi providery.");
+                        $"Duplicitní MiniAppDescriptor.Id \"{descriptor.Id}\" - Id musí být unikátní napříč všemi providery.");
             if (apps.Count > 0)
                 groups.Add(new MiniAppGroup(provider.GroupTitle, apps));
         }

@@ -90,7 +90,7 @@ internal static class EdisonMainViewModelHarness
         var mockMLRest = mlRest ?? MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
         var svc = services ?? MockServices(popup: popup);
-        // CompanySwitcher i VM čtou MLRest z services lazily — musí být v services před konstrukcí.
+        // CompanySwitcher i VM čtou MLRest z services lazily - musí být v services před konstrukcí.
         svc.MLRest = mockMLRest;
         if (userPrefs != null) svc.UserPrefs = userPrefs;
         var close = closeAllWindows ?? (() => { });

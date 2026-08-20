@@ -60,7 +60,7 @@ public class ModuleTreeStateExpansionTests
     [Fact]
     public void SetExpandedRecursive_LeafModule_NoOpNoThrow()
     {
-        // ExecutableModule nemá IsExpanded — musí se tiše přeskočit (ne spadnout).
+        // ExecutableModule nemá IsExpanded - musí se tiše přeskočit (ne spadnout).
         var leaf = Exe();
 
         var ex = Record.Exception(() => ModuleTreeState.SetExpandedRecursive(leaf, expanded: true));

@@ -5,7 +5,7 @@ namespace EDISONMAIN2.Tests;
 /// <summary>
 /// <see cref="MlineDomainDetector.ParseVirtualDomainValue"/> replikuje VB <c>CBool</c> nad registry
 /// hodnotou <c>MlineDomain</c>: <c>"1"</c>/<c>"True"</c>/nenulové číslo → true, jinak false.
-/// Legacy parita — dev override viditelnosti mlineOnly uzlů závisí na těchto edge-casech.
+/// Legacy parita - dev override viditelnosti mlineOnly uzlů závisí na těchto edge-casech.
 /// </summary>
 public class MlineDomainDetectorTests
 {

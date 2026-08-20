@@ -19,7 +19,7 @@ public sealed record PracovisteItem(string Id, string Nazev)
 }
 
 /// <summary>
-/// MHD dispečink — read-only seznam jízd pro zvolené pracoviště a den. Čte přes MLRest z
+/// MHD dispečink - read-only seznam jízd pro zvolené pracoviště a den. Čte přes MLRest z
 /// <c>ALVA.MHD2.PlanDopravy.API.DispecinkMiniApp</c> (GetPracoviste / GetJizdy).
 /// </summary>
 public sealed class DispecinkMiniAppViewModel : EDMiniAppViewModel, IRefreshableMiniApp
@@ -47,7 +47,7 @@ public sealed class DispecinkMiniAppViewModel : EDMiniAppViewModel, IRefreshable
     // Po otevření panelu naplň selektor pracovišť (a vyber první).
     public override void OnOpened() => LoadPracoviste();
 
-    /// <summary>Hromadný refresh ze shellu (<see cref="IRefreshableMiniApp"/>) — znovu načte jízdy.</summary>
+    /// <summary>Hromadný refresh ze shellu (<see cref="IRefreshableMiniApp"/>) - znovu načte jízdy.</summary>
     public void Refresh() => LoadJizdy();
 
     private void LoadPracoviste()

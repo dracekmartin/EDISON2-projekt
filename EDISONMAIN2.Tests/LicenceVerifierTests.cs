@@ -120,7 +120,7 @@ public class LicenceVerifierTests
             mlRest, () => new Lic { CountsLOGIN = 5 }, isAdmin: true, popup, nav);
 
         Assert.Equal(LicenceAcquireOutcome.Accepted, outcome);
-        // shareShellSession=false je kritické — shell ještě nemá ACTIVITY zámek pod aktuální Idfa.
+        // shareShellSession=false je kritické - shell ještě nemá ACTIVITY zámek pod aktuální Idfa.
         nav.Received(1).ShowLegacyAndWait("USERS.exe", "ALVA.USERS.formUSERSActivity", shareShellSession: false);
     }
 
