@@ -5,17 +5,16 @@ Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP 
 Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se
 dostávají pouze přes `dotnet publish` s profilem „SingleFileCEdison"
 (`Properties/PublishProfiles/`) - bundle bez volných NuGet DLL. Výjimky drží sdílený
-`SingleFilePublish.targets` v rootu (importují ho oba aplikační csproj): **`EDControls.dll`
-je vedle exe volný soubor** sdílený oběma aplikacemi, aby šla nasadit samostatně (nové
-pole v EDInputFormu → do produkce jde DLL + exe, který ho používá; druhý exe se
-nepřebuildí a novou DLL převezme). Cena: veřejné API EDControls a klíče theme resource
-měň **aditivně** - viz `EDControls/CLAUDE.md`.
+`SingleFilePublish.targets` v rootu (importují ho oba aplikační csproj i `EDControls.csproj`):
+**`EDControls.dll` je vedle exe volný soubor** sdílený oběma aplikacemi, aby šla nasadit
+samostatně (nové pole v EDInputFormu → do produkce jde DLL + exe, který ho používá; druhý
+exe se nepřebuildí a novou DLL převezme). Cena: veřejné API EDControls a klíče theme
+resource měň **aditivně** - viz `EDControls/CLAUDE.md`.
 
-Týmž profilem se vydává i **EDControls samostatně**. U knihovny by publish jinak vyplivl celý
-uzávěr závislostí (MLRest, EDLicence, EDCore, Newtonsoft) a přepsal v `C:\Edison\` soubory
-legacy repa - proto `PublishOwnAssemblyOnly` propustí jen vlastní assembly a nezávislá
-kontrola počtu publish **shodí**, než něco zapíše. `C:\Edison\` je staging: do produkce jde
-až explicitní klik na položku v Compileru.
+Týmž profilem se vydává i **EDControls samostatně**: `PublishOwnAssemblyOnly` propustí jen
+vlastní assembly (plný uzávěr závislostí - MLRest, EDLicence, EDCore, Newtonsoft - by
+v `C:\Edison\` přepsal soubory legacy repa) a nezávislá kontrola počtu publish **shodí**,
+než něco zapíše. `C:\Edison\` je staging: do produkce jde až explicitní klik v Compileru.
 
 ## Struktura a pravidla pro CLAUDE.md
 
@@ -44,10 +43,10 @@ až explicitní klik na položku v Compileru.
 `MLRest` serializuje .NET hodnoty do Caché process-private globals (`^||ML("IN",...)`)
 a odpověď (`^||ML("OUT",...)`) zpět. DLL odkazována přímo: `C:\Edison\MLRest.dll`.
 
-Instance se nikdy nevytváří ve windows/ViewModelech - přístup přes `IMLRest`
-a `EDServices.Current` (inicializuje `AppBootstrapper`). ViewModely mají `MLRest` property
-z `EDViewModel`; ovládací prvky (`EDInputForm`, `EDList`) čtou `EDServices.Current` samy;
-testy si vytvářejí vlastní `EDServices` s mockem.
+Instance se nikdy nevytváří ve windows/ViewModelech - přístup přes `IMLRest` a
+`EDServices.Current` (inicializuje `AppBootstrapper`): ViewModely mají `MLRest` property
+z `EDViewModel`, controls (`EDInputForm`, `EDList`) čtou `EDServices.Current` samy, testy
+si vytvářejí vlastní `EDServices` s mockem.
 
 **Vždy používej `CVar`** (idiomatický strukturovaný typ). `object[]` jen v legacy kódu
 s existujícími numerickými subscripty - důvod zdokumentuj; v novém kódu nikdy. Referenční
@@ -57,15 +56,14 @@ Pasti wire formátu: subscripty jsou **stringy** (`cVar["1"]` → `^||ML("IN","1
 numerické 1); `CList` ↔ `$lb()`, čte se `$li(^||ML("IN","i"), n)` (1-based); v named
 foreach přeskoč klíč `"ERR"` (MLRest metadata, ne data).
 
-`QueryOrThrow` = `Query` + `ThrowIfError()`. Na `IMLRest` (ViewModely) i jako extension na
-konkrétním `MLRest` (legacy) - extension deleguje na `MLRestAdapter`, aby překlad chyby na
-výjimku žil na jednom místě. Odděleně volej jen pro graceful degradation.
+`QueryOrThrow` = `Query` + `ThrowIfError()` - na `IMLRest` i jako extension na konkrétním
+`MLRest` (legacy; deleguje na `MLRestAdapter`, překlad chyby na výjimku žije na jednom
+místě). Odděleně volej jen pro graceful degradation.
 **Souběžné requesty jen na klonech** (`With()`) - `RestStatus` je per-instance a čte se až po
 `Query`, takže paralelní volání na téže instanci si stavy prohodí (spolknutá chyba / cizí
 výjimka). Klon má stejný GUID (pro server tatáž session) a každý request běží ve vlastním
 Caché procesu, takže si nešlapou ani po `^||ML`. Vzor: `Modules/RestCallRunner` v EDISONMAIN2.
-Binární data: `BinarySave(bytes)` → GUID, `BinaryLoad(guid)` (server `$$$SYSBinary(GUID)`,
-uvolní se automaticky).
+Binární data: `BinarySave(bytes)` → GUID, `BinaryLoad(guid)` (server `$$$SYSBinary(GUID)`, uvolní se samo).
 
 ## Kostra Caché metody
 
@@ -106,11 +104,10 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 
 ## Persistence stavu
 
-- **Per-machine JSON** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`), přístup
-  přes injektovaný `ILocalPrefs` (composition root `AppBootstrapper`). Nové preference =
-  nullable property; chybějící klíče zůstanou null (kompatibilní upgrade).
-  `RememberedPassword` je DPAPI blob a předvyplní se jen když jméno v blobu ==
-  `LastLoginName`; `ShowWindowsAsDialogs` je zatím no-op.
+- **Per-machine JSON** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`) přes
+  injektovaný `ILocalPrefs` (composition root `AppBootstrapper`). Nové preference = nullable
+  property (chybějící klíč zůstane null - kompatibilní upgrade). `RememberedPassword` je DPAPI
+  blob, předvyplní se jen když jméno v blobu == `LastLoginName`; `ShowWindowsAsDialogs` = no-op.
 - **Per-user × IDFa (Caché)** - stav oken automaticky přes `EDViewModel` /
   `WindowStatePersistence`; detaily v `EDControls/dotnet/EDViewModel/CLAUDE.md`.
 - **Cross-process (font, theme)** - `%APPDATA%\m-line\common\`; viz `EDControls/CLAUDE.md`.
@@ -120,11 +117,10 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
 ## Testy
 
 - **.NET**: `dotnet test EDISON2.sln` (xUnit + NSubstitute).
-- **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` +
-  `SetupSys(.sys)` pro `$$$FillParams` boilerplate), metody `TestXxx()`. Běh
-  `pwsh -File tools/run-cache-tests.ps1 [-Package ...]`.
-  Nový package mimo default list skriptu (EDISONMAIN2/EDControls/TemplateDesigner
-  Tests) tam přidej, jinak ho pre-push hook nepokryje.
+- **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)`
+  pro `$$$FillParams` boilerplate), metody `TestXxx()`. Běh `pwsh -File
+  tools/run-cache-tests.ps1 [-Package ...]`; nový package mimo default list skriptu
+  (EDISONMAIN2/EDControls/TemplateDesigner Tests) tam přidej, jinak ho pre-push hook nepokryje.
 - **Nasazení `.cls` na server dělá hook sám** (`.claude/hooks/compile-objectscript.sh`,
   PostToolUse na Edit/Write) - upload + compile, chyby na stderr. `cache_compile` (MCP) volej
   jen na to, co hook nepokryje; **ne na týž soubor po editaci** - dvojí nasazení si přepisuje
@@ -142,9 +138,9 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
 
 ## Typografie a komentáře
 
-**Nepoužívat dlouhou pomlčku** (em dash, U+2014) - v kódu, komentářích, UI textech,
-dokumentaci i odpovědích vždy běžná pomlčka „-". Pravidlo znak záměrně nezobrazuje, aby šlo
-hlídat grepem; v TemplateDesigneru hlídají UI labely drift testy.
+**Nepoužívat dlouhou pomlčku** (em dash, U+2014) - v kódu, komentářích, UI textech, dokumentaci
+i odpovědích vždy běžná „-". Pravidlo znak záměrně nezobrazuje, aby šlo hlídat grepem;
+v TemplateDesigneru hlídají UI labely drift testy.
 
 Komentáře v `EDISONMAIN2/` a `EDControls/` jsou **česky** (výjimka: stock VS šablony).
 Defaultně nekomentovat; přidávej jen netriviální WHY (skrytá invarianta, workaround bugu)
