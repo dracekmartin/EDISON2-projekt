@@ -484,7 +484,7 @@ Výčet je **uzavřený a ověřený**: knižní JŘ si z celého číselníku b
 | Klíč | Co ovlivňuje | U nás |
 |---|---|---|
 | `TiskDtm` | tvar datumů v omezeních (0-3) | ✅ včetně per-linka override |
-| `PAtrSp` | které atributy nad spojem se vůbec tisknou (bezbariérově přístupné, kola, samoobslužný, nízkokapacitní) | ❌ v kódu `TODO` |
+| `PAtrSp` | které atributy nad spojem se vůbec tisknou (bezbariérově přístupné, kola, samoobslužný, nízkokapacitní) | ✅ hotovo 21. 8., u bezbariérového přebíjí linka (`TZPA,BBP`) |
 | `MistOR` / `MistNOD` | tvar tisku místenkování (odřádkování, dvojtečky) | ❌ |
 | `MHDPZ("P")` / `MHDPZ("Z")` | vlastní text místo „IDP-P" / „IDP-Z" ve sloupci MHD + jeho řádek legendy | ❌ máme napevno IDP-P/IDP-Z |
 | `ZonaIdsDelZnk` | odstranit písmena z označení zóny | ❌ (zastávkový JŘ to umí) |
@@ -713,9 +713,12 @@ Opis: máme kontrolu, ale zákazníkova úprava se neprojeví a slovenštinu ře
 **Návrh:** brát z číselníku.
 Je to zároveň oprava nálezu z `L1`, kde nám u textu atributu přebývalo sloveso.
 
-**Rozhodnuto:** brát **z číselníku**. Zákazníkova úprava textu se projeví v tisku a slovenština
-funguje bez další práce - což je přímo stížnost z #9088 („slovenský preklad trochu kostrbatý"
-a nejde upravit). Opravuje to zároveň nález z `L1`, kde nám u textu atributu přebývalo sloveso.
+⛔ **PůVODNĚ rozhodnuto „brát z číselníku", ZRUŠENO 21. 8. - návrh stál na omylu.**
+Texty atributů spoje **v číselníku nejsou**: v `NCOME` a `STALCOME` jsou předložky omezení a stálé
+značky, kdežto věty atributů má legacy **zadrátované ve zdroji** (`gAtrNZLi^JRapiNZUtl3:161-192`),
+zvlášť česky a zvlášť slovensky. Zákazník je tedy nemůže upravit ani ve starém modulu.
+Řešením je **doslovný opis obou sad** - hotovo 21. 8., čímž je vyřešená i stížnost #9088 na
+kostrbatou slovenštinu.
 
 #### 7. Kde končí „respektujeme nastavení" a začíná „to řeší šablona"
 
@@ -810,7 +813,7 @@ odvozovat, jestli je to data, šablona, parametr, nebo jiná vlna.
 | vlastní text sloupce MHD místo „IDP-P"/„IDP-Z" | **data** | + jeho řádek legendy |
 | odstranit písmena z označení zóny | **data** | pozor, **linka to přebíjí** |
 | pořadí a tisk dopravců, souhrn linek k dopravci | **data** | dorovnat naši vlastní logiku `PopisDopravce` |
-| texty značek a atributů z číselníku | **data** | §13.4 bod 6; opravuje nález `L1` (přebývající sloveso) |
+| texty atributů spoje | **data** | ✅ hotovo 21. 8. **doslovným opisem legacy šablon**, ne z číselníku - ten je nemá (viz bod 6) |
 | počet druhů místenkování dle jazyka (2 × 4) | **data** | odvozuje se z jazyka, ne ze samostatného přepínače |
 
 #### C. Nastavení u konkrétní linky
@@ -945,7 +948,8 @@ s nulovou hodnotou; stačí o nich vědět.
    „Automaticky (dle linky)" v linkovém JŘ a s ním pravidlo „prázdný sloupec se netiskne" v prvku
 5. ✅ **hotovo 21. 8.** barvy spojů - 24 linek vypnuto, 3 926 spojů barvu má; matice se k tomu
    naučila předpoklad nad zdrojovými daty
-6. atributy nad spojem - oba stavy ve všech šesti firmách
+6. ✅ **hotovo 21. 8.** atributy nad spojem - včetně nastavení „značka atributu nad spoj"
+   a čtyř tvarů věty; ⚠️ texty **nejsou v číselníku** (viz bod 6 výše, rozhodnutí se tím ruší)
 7. tvar datumů v omezeních - už umíme, jen doplnit do matice
 
 **Do backlogu** (`B98`): tvar místenkování, vlastní texty sloupce MHD, tisk provozů dopravce,
