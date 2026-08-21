@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-21 (6) - 🏷️ legenda atributů spojů se chová jako starý tisk (`L2` krok 3)
+
+Věty v legendě u atributů spoje („spoj s bezbariérově přístupným vozidlem", „spoje 1, 2 přepravují
+jízdní kola") jsme měli opsané po svém. Nově se skládají ze **šablon opsaných ze starého modulu**,
+a v jeho pořadí. Porovnání se starým tiskem je díky tomu u poznámek na třech ze čtyř kontrolních
+linek **beze zbytku** (43/43, 18/18, 20/20).
+
+**Porovnání přitom našlo dvě chyby, o kterých jsme nevěděli:**
+
+- **Legendu o bezbariérovém vozidle jsme tiskli i tam, kde ji starý modul netiskne.** Čtyři atributy
+  (bezbariérové vozidlo, kola, samoobslužné odbavení, nízkokapacitní autobus) se tisknou jen podle
+  nastavení „značka atributu nad spoj" a u bezbariérového to navíc **linka přebíjí**.
+- **Věta má čtyři tvary, ne jeden** - podle toho, jestli atribut nese jeden spoj, několik, nebo
+  všechny, a jestli je zapnutá ta značka nad spojem. My posílali vždy generickou větu.
+
+⚠️ **Rozhodnutí „texty brát z číselníku EDISONu" bylo postavené na omylu** a tímto se ruší.
+V číselníku ty texty nejsou - starý modul je má zadrátované ve zdroji, zvlášť česky a slovensky,
+takže si je zákazník nemůže upravit ani tam. **Slovenská sada je teď opsaná taky**, čímž je vyřešená
+stížnost z helpdesku na kostrbatou slovenštinu - jen jinou cestou, než jsme mysleli.
+
+⚠️ **Přepsány zmrazené odtisky tří linek** (rozhodnutí Jan): počty stránek, zastávek, spojů, časů
+i poznámek zůstaly do jednoho shodné, změnil se jen text a pořadí řádků legendy. Odtisk se hnul
+proto, že jsme se starému modulu **přiblížili**.
+
+Ověřeno: Caché 124/124, .NET 1121/1121.
+
 ## 2026-08-21 (5) - 🔢 z označení zóny se dají odstranit písmena (`L2` krok 2)
 
 Zóna může být v datech označená i písmenem (`51A`) a nastavení říká, jestli se má v tisku vypsat

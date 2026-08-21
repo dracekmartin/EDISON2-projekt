@@ -324,13 +324,8 @@ ClassMethod ZnameOdchylky(ByRef odch)
 	set odch("zast", "*", "vlna") = "L3"
 	set odch("zast", "*", "duvod") = "tvar názvu zastávky se neřídí parametry sestavy (dřívější B60, #9088 bod 4)"
 
-	// Poznámky druhu 5 (atributy spojů) mají v generické větě navíc sloveso: my „spoj **jede** s
-	// bezbariérově přístupným vozidlem", starý modul „spoj s bezbariérově přístupným vozidlem".
-	// Týká se to všech třinácti atributů, ne jen jednoho, a legacy texty je potřeba opsat celé
-	// (gAtrNZLi) - patří to k vlně, která bere atributy a jejich nastavení (PAtrSp/TZPA) vcelku.
-	set odch("pozn", "druh5", "druh") = "dluh"
-	set odch("pozn", "druh5", "vlna") = "L2"
-	set odch("pozn", "druh5", "duvod") = "generická věta atributu má navíc sloveso proti starému modulu"
+	// (dluh na poznámky druhu 5 splacen 21. 8. - věty atributů se skládají ze šablon opsaných
+	// z legacy, takže se hlídají normálně)
 }
 
 /// Odchylky dané **tvarem hodnot**, ne konkrétní linkou - platí všude, kde ta dvojice hodnot padne.
