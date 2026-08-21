@@ -394,32 +394,49 @@ ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, B
 	}
 
 	// ── poziční kategorie (hodnota na zastávkový řádek) ─────────────────
+	// ⚠️ Iteruje se **sjednocení** klíčů obou stran, ne jen klíče legacy. Kdyby se šlo jen podle
+	// legacy, byla by hodnota, kterou pošleme **navíc**, neviditelná - a to je zrádnější než
+	// rozdíl v hodnotě: sloupec, který u starého modulu vůbec není (zóna u linky, která ji tisknout
+	// nemá), by prošel jako zelený. Našlo se to při opravě čtyřstavového přepínače zóny × km.
 	for kat = "zast", "km", "zona", "mhd" {
+		kill smery, indexy
+		do ..SjednoceniSmeru(kat, .leg, .nase, .smery)
 		set sm = ""
 		for  {
-			set sm = $order(leg(kat, sm))
+			set sm = $order(smery(sm))
 			quit:sm=""
+			kill indexy
+			do ..SjednoceniIndexu(kat, sm, .leg, .nase, .indexy)
 			set idx = ""
 			for  {
-				set idx = $order(leg(kat, sm, idx))
+				set idx = $order(indexy(idx))
 				quit:idx=""
 				do ..PorovnejHodnotu(kat, kontext_" směr "_sm_" řádek "_idx, $get(leg(kat, sm, idx)), $get(nase(kat, sm, idx)), kontext, .odch, .res)
 			}
 		}
 	}
 
-	// ── časy (řádek × spoj) ─────────────────────────────────────────────
+	// ── časy (řádek × spoj), taky přes sjednocení ───────────────────────
+	kill smery
+	do ..SjednoceniSmeru("cas", .leg, .nase, .smery)
 	set sm = ""
 	for  {
-		set sm = $order(leg("cas", sm))
+		set sm = $order(smery(sm))
 		quit:sm=""
+		kill indexy
+		do ..SjednoceniIndexu("cas", sm, .leg, .nase, .indexy)
 		set idx = ""
 		for  {
-			set idx = $order(leg("cas", sm, idx))
+			set idx = $order(indexy(idx))
 			quit:idx=""
+			kill spoje
+			set spoj = ""
+			for  { set spoj = $order(leg("cas", sm, idx, spoj))  quit:spoj=""  set spoje(spoj) = "" }
+			set spoj = ""
+			for  { set spoj = $order(nase("cas", sm, idx, spoj))  quit:spoj=""  set spoje(spoj) = "" }
 			set spoj = ""
 			for  {
-				set spoj = $order(leg("cas", sm, idx, spoj))
+				set spoj = $order(spoje(spoj))
 				quit:spoj=""
 				do ..PorovnejHodnotu("cas", kontext_" směr "_sm_" řádek "_idx_" spoj "_spoj, $get(leg("cas", sm, idx, spoj)), $get(nase("cas", sm, idx, spoj)), kontext, .odch, .res)
 			}
@@ -444,6 +461,26 @@ ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, B
 		do ..PorovnejHodnotu("pozn", kontext_" poznámka „"_klic_"""", ($get(leg("pozn", klic))>0), ($get(nase("pozn", klic))>0), "druh"_$piece(klic, "~", 1), .odch, .res)
 	}
 	quit 1
+}
+
+/// Směry, které v dané kategorii má **kterákoli** strana.
+ClassMethod SjednoceniSmeru(kat As %String, ByRef leg, ByRef nase, ByRef smery)
+{
+	kill smery
+	set sm = ""
+	for  { set sm = $order(leg(kat, sm))  quit:sm=""  set smery(sm) = "" }
+	set sm = ""
+	for  { set sm = $order(nase(kat, sm))  quit:sm=""  set smery(sm) = "" }
+}
+
+/// Indexy řádků, které v dané kategorii a směru má **kterákoli** strana.
+ClassMethod SjednoceniIndexu(kat As %String, sm As %String, ByRef leg, ByRef nase, ByRef indexy)
+{
+	kill indexy
+	set idx = ""
+	for  { set idx = $order(leg(kat, sm, idx))  quit:idx=""  set indexy(idx) = "" }
+	set idx = ""
+	for  { set idx = $order(nase(kat, sm, idx))  quit:idx=""  set indexy(idx) = "" }
 }
 
 /// Jedno porovnání dvou hodnot - jediné místo, kde se rozhoduje „shoda / vědomá odchylka / rozdíl".
