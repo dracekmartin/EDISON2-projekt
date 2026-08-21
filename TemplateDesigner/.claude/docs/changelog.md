@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-21 (8) - 🏷️ dvě značky v legendě dostávaly špatný tvar věty
+
+Dořešení včerejšího nálezu. Nastavení „značka atributu nad spoj" neřídí, **jestli** se řádek legendy
+vytiskne, ale **jakým tvarem** - buď obecně („spoje s bezbariérově přístupným vozidlem"), nebo
+s výčtem („spoj 19 přepravuje…"). Měli jsme to jako „tiskni / netiskni", což u bezbariérového
+vozidla vyšlo náhodou správně, ale u dvou značek ne:
+
+- **zásilky za zvláštních podmínek** a **spoj v systému integrované dopravy** mají ve starém tisku
+  **vždy výčet spojů** a obecnou větu nikdy. Týká se to konkrétních spojů, ne celé linky, takže to
+  tak i dává smysl.
+
+⚠️ **Opsané ze zdroje starého modulu, ale porovnáním neověřené** - na žádné ze čtyř kontrolních linek
+se ty dvě značky nevyskytly. Až se objeví linka, která je má, porovnání to potvrdí nebo vyvrátí.
+
+Ověřeno: Caché 125/125 (odtisky se nehnuly, kontrolní linky ty značky nemají).
+
 ## 2026-08-21 (7) - 🔢 pořadí spojů se skládá jako ve starém tisku (`L2` krok 4, poslední dluh)
 
 Porovnání se starým modulem hlásilo na dvou linkách jinak seřazené sloupce spojů. Hledání příčiny

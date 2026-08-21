@@ -1219,17 +1219,8 @@ ClassMethod PridatPoznamkyNZ(dataDB As %String, sku As %String, lin As %String, 
 /// **Pořadí je legacy pořadí**, ne naše abecední: řádky legendy jdou v tom pořadí, v jakém je
 /// starý modul prochází (POS, IDS, BEV, SAO, PCZ, OBC, PJI, NKA, RBU, CBE, RBP, wifi, zasu).
 ///
-/// **Čtyři atributy se tisknou jen podle nastavení** „značka atributu nad spoj" (`PAtrSp`,
-/// `~`-věta bezbariérové~kola~samoobslužný~nízkokapacitní): BEV, PJI, SAO, NKA. U BEV navíc
-/// **linka nastavení přebíjí** (`PATCH,TZPA,BBP`: 1 = ano, 2 = ne, jinak platí globální).
-/// Zbytek se tiskne vždy. 1:1 legacy `gAtrNZLi^JRapiNZUtl3` (`:196-215`).
-///
-/// ⚠️ **Našlo to porovnání se starým modulem** (21. 8.): bez tohoto gatingu jsme tiskli řádek
-/// legendy o bezbariérovém vozidle i tam, kde ho starý modul netiskne.
-///
-/// TODO: režim s výčtem spojů (u POS, IDS, wifi, zasu legacy vypisuje čísla spojů, my dáváme
-/// generickou větu; na testovaných linkách se ty atributy nevyskytly, takže to porovnání
-/// zatím nepotvrdilo ani nevyvrátilo).
+/// Řádek dostane **každý** atribut, který se na stránce vyskytl - nastavení „značka atributu nad
+/// spoj" neřídí, **jestli** se vytiskne, ale **jakým tvarem** (viz `VetaAtributu`).
 ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %String, poznamky As %DynamicArray, ByRef atributSeen, ByRef spojeSeen, rec As %String = "CZ")
 {
     s patrSp = $g(^[dataDB]JRSET("Definice","PAtrSp"))
@@ -1248,16 +1239,29 @@ ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %St
             s pocet = pocet + 1
             s vycet = vycet_$s(vycet="":"", 1:", ")_sp
         }
-        s veta = ..VetaAtributu(klic, rec, ..TisknoutAtribut(klic, patrSp, bbpLinka), vycet, pocet, spojuCelkem)
+        s veta = ..VetaAtributu(klic, rec, ..GenerickaVeta(klic, patrSp, bbpLinka), vycet, pocet, spojuCelkem)
         i veta = "" continue
         d poznamky.%Push(..BuildPoznamka(5, "znak", klic, veta))
     }
 }
 
-/// Má se generická věta atributu vůbec vypsat? Čtyři atributy visí na nastavení „značka atributu
-/// nad spoj", ostatní se tisknou vždy (1:1 legacy `gAtrNZLi`).
-ClassMethod TisknoutAtribut(klic As %String, patrSp As %String, bbpLinka As %Integer) As %Boolean
+/// Má se u atributu použít **generická věta** (bez výčtu spojů), nebo věta s výčtem?
+/// 1:1 legacy `gAtrNZLi^JRapiNZUtl3` (`:196-215`), kde se generický tvar přepisuje přes vypočtený:
+///
+/// - **BEV, PJI, SAO, NKA** - generická jen když je zapnutá „značka atributu nad spoj" (`PAtrSp`,
+///   `~`-věta bezbariérové~kola~samoobslužný~nízkokapacitní). U BEV navíc **linka nastavení
+///   přebíjí** (`PATCH,TZPA,BBP`: 1 = ano, 2 = ne, jinak platí globální).
+/// - **POS a IDS** - generickou větu nemají **nikdy**, vždy se vypisují čísla spojů. Legacy pro ně
+///   žádný přepis nemá, a je to smysluplné: „za zvláštních podmínek zásilky" a „v systému
+///   integrované dopravy" se týkají konkrétních spojů, ne linky.
+/// - **zbytek** - generická vždy.
+///
+/// ⚠️ **Našlo to porovnání se starým modulem** (21. 8.): u bezbariérového vozidla jsme posílali
+/// generickou větu i tam, kde starý modul vypisuje spoje. **U POS a IDS je oprava opsaná ze zdroje
+/// legacy, ale porovnáním neověřená** - na kontrolních linkách se ty dva atributy nevyskytly.
+ClassMethod GenerickaVeta(klic As %String, patrSp As %String, bbpLinka As %Integer) As %Boolean
 {
+    i (klic = "POS") || (klic = "IDS") q 0
     // BEV: linka přebíjí globální nastavení (1 = tisknout, 2 = netisknout, jinak globální).
     i klic = "BEV" {
         i bbpLinka = 1 q 1
