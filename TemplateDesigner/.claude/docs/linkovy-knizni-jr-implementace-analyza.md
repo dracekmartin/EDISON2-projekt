@@ -927,21 +927,31 @@ z jiného důvodu, než se čekalo: ne že se těžko hledá, ale že **v dostup
 Nedá se tedy porovnat se starým modulem na reálné lince - buď se pro ni vyrobí vlastní případ,
 nebo se implementuje proti čtení legacy zdroje a označí jako neověřená.
 
-#### Co z toho plyne pro pořadí práce
+#### Co z toho plyne pro rozsah `L2`
 
-Pořadí z §13.5 se **mění**: nejdřív to, co je doložitelné.
+**Rozhodnutí Jan 21. 8.: co není nastavené nikde, se teď nedělá** a jde do backlogu.
 
-1. **Doložitelné hned** (kroky 2-4 z §13.5): zóny × km (1 126 linek s hodnotou `3`), barvy spojů,
-   řádky bez zastavení (362 linek), schování sloupce Tč (377 linek), odstranění písmen ze zóny
-   u linky, atributy nad spojem, tvar datumů. Sem směřovat práci první - každá položka má
-   v datech doklad.
-2. **Implementovat, ale bez důkazu z dat**: místenkování, texty sloupce MHD, provozy dopravce,
-   `MHD2` klíče u linky. Dělat podle čtení legacy zdroje a **v reportu psát neověřeno**.
-3. **Rozhodnout znovu u vrstvy D**: rozhodnutí z §13.4 bodu 2 („skrývání řádků do `L2`") padlo
-   za předpokladu, že to jde ověřit. Neplatí. Buď se vyrobí vlastní testovací případ (a pak to
-   `L2` unese), nebo se to odloží, dokud si o to zákazník neřekne. **Otázka pro Jana.**
-4. **Nechat být**: podtržení (1 linka) a ruční zlom (3 linky) - u obojího navíc platí, že to má
-   jinou vlnu nebo žádnou poptávku.
+Důvod je doménový, ne technický: **řada těchto nastavení vznikla v legacy pro jednoho zákazníka**
+a nikdo jiný je nepoužívá, takže tam jen visí. Dělat je naslepo a bez možnosti ověření je práce
+s nulovou hodnotou; stačí o nich vědět.
+
+`L2` tedy dělá **jen ta nastavení, která jsou v datech reálně zapnutá**:
+
+1. zóny × km - 1 126 linek s hodnotou `3` doloží naši chybu
+2. odstranění písmen ze zóny u linky - 28 747 nastavení ve třech hodnotách
+3. řádky bez zastavení - 362 linek zapnuto
+4. schování sloupce tarifních čísel - 377 linek zapnuto
+5. barvy spojů - 24 linek vypnuto
+6. atributy nad spojem - oba stavy ve všech šesti firmách
+7. tvar datumů v omezeních - už umíme, jen doplnit do matice
+
+**Do backlogu** (`B98`): tvar místenkování, vlastní texty sloupce MHD, tisk provozů dopravce,
+`MHD2` klíče schovávání u linky, **celá vrstva D** (skrývání řádků u tarifního čísla i per směr,
+umělá sekce u spoje). Tím se **ruší rozhodnutí §13.4 bodu 2** - „skrývání řádků do `L2`" padlo
+za předpokladu, že to jde ověřit; neplatí.
+
+**Nechat být i dál:** podtržení u zdvojených řádků (zapnuto na jediné lince ze 93 tisíc) a ruční
+zlom stránky (3 linky) - u obojího navíc platí, že to má jinou vlnu nebo žádnou poptávku.
 
 ## 14. Pozastavené tikety helpdesku k linkovému JŘ (projito 2026-08-19)
 

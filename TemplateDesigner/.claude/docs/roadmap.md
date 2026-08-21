@@ -119,11 +119,13 @@ v novém návrháři").
 > [`§13.5`](linkovy-knizni-jr-implementace-analyza.md).
 >
 > 📊 **Krok 1 `L2` hotový: změřen výskyt nastavení v datech** (93 133 linek, 6 firem;
-> [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Sedm nastavení jde ověřit hned, protože jsou
-> v datech oba stavy - včetně 1 126 linek, na kterých se ukazuje naše chyba u zón a kilometrů.
-> ⛔ Šest nastavení a **celá vrstva pod linkou nejsou v datech nikde** - jdou implementovat, ale
-> v reportu u nich musí být **neověřeno**. ❓ **Rozhodnutí o vrstvě D padlo za předpokladu, že to jde
-> ověřit; neplatí** - buď se pro ni vyrobí vlastní testovací případ, nebo se odloží.
+> [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)).
+>
+> ✂️ **Rozsah `L2` se tím zúžil (rozhodnutí Jan 21. 8.): dělá se jen to, co je v datech reálně
+> zapnuté** - sedm nastavení. Co není nastavené nikde, jde do backlogu (`B98`): řada těch nastavení
+> vznikla v legacy pro jednoho zákazníka a nikdo jiný je nepoužívá, takže dělat je naslepo a bez
+> možnosti ověření je práce s nulovou hodnotou. Ruší to i rozhodnutí „skrývání řádků do `L2`" -
+> celá vrstva pod linkou má **nula výskytů** na 93 tisících linek.
 >
 > Co z nich platí pro `L2`:
 >
@@ -173,6 +175,16 @@ legenda je samostatný prvek. Ověřit na reálné šabloně a tiket zavřít.
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,
+  [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Na 93 133 linkách šesti firem nejsou nikde
+  nastavené: **tvar tisku místenkování**, **vlastní texty sloupce MHD** místo „IDP-P"/„IDP-Z",
+  **tisk provozů dopravce**, čtyři přepínače **schovávání u linky** (`MHD2,netisknout*`) a **celá
+  vrstva pod linkou** (řádek se v knižním JŘ netiskne, i zvlášť per směr; umělá sekce u spoje).
+  Řada z nich vznikla v legacy **pro jednoho zákazníka** a nikdo jiný je nepoužívá. Vytáhnout, až
+  si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
+  proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
+  první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
 
 - **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
   prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do

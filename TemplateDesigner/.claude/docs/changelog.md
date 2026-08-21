@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-21 - 🗺️ linkový JŘ: zóny a kilometry podle nastavení linky (`L2` kroky 1-2)
+
+**Krok 1: změřeno, co je vůbec nastavené.** Nová sonda projde všechny linky dostupných firem
+a spočítá, které přepínače tisku má někdo reálně zapnuté - **93 133 linek v šesti firmách**. Bez
+toho čísla by u nastavení uložených v datech platilo „ověřili jsme, co bylo v datech" a nikdo by
+nevěděl, co zůstalo nepokryté.
+
+Výsledek zúžil `L2`: **sedm nastavení má v datech oba stavy** a jde je ověřit hned, zatímco šest
+dalších a **celá vrstva pod linkou nejsou nastavené nikde**. Ty jdou do backlogu - řada z nich
+vznikla v legacy pro jednoho zákazníka a nikdo jiný je nepoužívá, takže dělat je naslepo a bez
+možnosti ověření nemá hodnotu.
+
+**Krok 2: opraven čtyřstavový přepínač zón a kilometrů.** Nastavení u linky říká jednu ze čtyř věcí:
+jen kilometry · jen zóna · obojí · ani jedno. Čtli jsme z něj jen „něco je vyplněno, tiskni zónu",
+takže na **1 126 linkách**, kde má zákazník nastavené „ani jedno", jsme zónu tiskli - a kilometrové
+sloupce jsme neřídili vůbec. Nově se tiskne přesně to, co linka říká, a prázdný sloupec se v tabulce
+neukáže.
+
+Ověřeno na reálných datech ve všech čtyřech stavech (čtvrtý stav se v datech nevyskytuje a test to
+**hlásí jako neověřený**, netváří se to jako pokryté).
+
+**Cestou se našla mezera v samotné síti proti starému modulu.** Porovnání šlo přes hodnoty, které má
+**starý modul**, takže hodnotu, kterou pošleme **navíc**, vůbec nevidělo - sloupec, který u starého
+tisku není, by prošel jako zelený. Teď se porovnává sjednocení obou stran; na kontrolní sadě to
+rozšířilo pokrytí o zóny a sloupec MHD, a nic se nerozbilo.
+
+Ověřeno: Caché 123/123, .NET 1121/1121.
+
 ## 2026-08-19 (10) - 🕸️ linkový JŘ se poprvé měří proti starému modulu
 
 Linkové agendy neměly do dneška **ani jeden test** (2 000 řádků kódu) a porovnání se starým modulem
