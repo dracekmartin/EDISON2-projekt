@@ -159,6 +159,43 @@ ClassMethod NajdiLinkuSPismenemVZone(odstranit As %Boolean, ByRef db, ByRef sku,
 	quit 0
 }
 
+/// Vypíše linky, na kterých je nová práce `L2` vidět - podklad pro ruční zkoušku v návrháři.
+ClassMethod KdeToZkouset(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        if ..NajdiLinkuSRucnimPoradim(1, .db, .sku, .lin) {
+            set radky($increment(radky)) = "ruční pořadí spojů: "_db_" sku="_sku_" linka="_lin
+        }
+        if ..NajdiLinkuSBarvouSpoje(.db, .sku, .lin) {
+            set radky($increment(radky)) = "barevné spoje: "_db_" sku="_sku_" linka="_lin
+        }
+        if ..NajdiLinkuSPismenemVZone(1, .db, .sku, .lin) {
+            set radky($increment(radky)) = "písmena ze zóny se odstraňují: "_db_" sku="_sku_" linka="_lin
+        }
+        if ..NajdiLinku("linIDS", 3, .db, .sku, .lin) {
+            set radky($increment(radky)) = "bez zón i bez km: "_db_" sku="_sku_" linka="_lin
+        }
+        if ..NajdiLinku("netisknoutSloupecTC", 1, .db, .sku, .lin) {
+            set radky($increment(radky)) = "schovaný sloupec tarifních čísel: "_db_" sku="_sku_" linka="_lin
+        }
+        if ..NajdiLinku("tisknoutJenTcKdeSpojeZastavuji", 1, .db, .sku, .lin) {
+            set radky($increment(radky)) = "bez zastávek, kde nikdo nestaví: "_db_" sku="_sku_" linka="_lin
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Najde linku s **ručně nastaveným pořadím spojů**. `platne` = 1 hledá pořadí, které projde
 /// kontrolou (a tedy se použije), 0 hledá rozbité (spoj v datech chybí v pořadí nebo naopak) -
 /// tam se musí pořadí spočítat. Ručně nastavené je na 4 409 linkách z měřených firem.
