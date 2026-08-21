@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-21 (5) - 🔢 z označení zóny se dají odstranit písmena (`L2` krok 2)
+
+Zóna může být v datech označená i písmenem (`51A`) a nastavení říká, jestli se má v tisku vypsat
+celá, nebo jen číslo. Dosud jsme to nastavení nečetli, takže zákazník viděl písmena i tam, kde je
+nechtěl.
+
+⚠️ **Nastavení je globální, ale linka ho přebíjí** - a ukládá se u ní posunuté o jedničku, takže
+„1" u linky znamená *neodstraňovat* a „2" *odstraňovat*. Kdo to bude čtít jako obyčejný přepínač,
+udělá to naopak.
+
+Ověřeno v obou směrech na reálných linkách: na lince s odstraňováním v zóně po tisku písmeno není,
+na lince bez odstraňování zůstává.
+
+Ověřeno: Caché 124/124, .NET 1121/1121.
+
 ## 2026-08-21 (4) - 🎨 barvy spojů se konečně tisknou (`L2` krok 5)
 
 Spoj může mít v jízdních řádech nastavenou barvu a my ji v linkovém JŘ **vůbec neposílali** - časy

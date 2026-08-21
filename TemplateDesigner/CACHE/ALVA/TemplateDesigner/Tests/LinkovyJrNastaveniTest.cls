@@ -88,10 +88,11 @@ ClassMethod Matice(ByRef m)
 	// ── odstranit písmena z označení zóny ───────────────────────────────
 	// U linky se ukládá hodnota+1 a přebíjí globální (`:1847`): 1 → neodstraňovat, 2 → odstraňovat,
 	// 0 nebo nenastaveno → platí globální nastavení.
-	// ⚠️ Táž past jako u barev: „v zóně nejsou písmena" vyjde i na lince, jejíž zóny žádná písmena
-	// nemají. Potřebuje předpoklad „linka má v zóně písmeno", proto zatím jen měříme.
-	set m($increment(m)) = "ZonaIdsDelZnk|2|zonaPismena|?|plati"
-	set m($increment(m)) = "ZonaIdsDelZnk|1|zonaPismena|?|plati"
+	// ⚠️ Táž past jako u barev, proto **předpoklad nad zdrojovými daty**: hledá se linka, která
+	// v zóně písmeno skutečně má a zóny se u ní tisknou. Bez toho by „nejsou písmena" vyšlo i tam,
+	// kde žádná nebyla, a nedokazovalo by nic.
+	set m($increment(m)) = "@pismenoVZone-odstranit||zonaPismena|0|plati"
+	set m($increment(m)) = "@pismenoVZone-nechat||zonaPismena|1|plati"
 }
 
 /// Hlavní brána matice: **žádný rozdíl u nastavení, které už umíme**.
@@ -181,6 +182,12 @@ ClassMethod NajdiPripad(klic As %String, hodnota As %String, mereni As %String, 
 	// a zákazník je může upravit, takže by řádek jednou tiše přestal měřit to, co má.
 	if klic = "@barvaVDatech" {
 		quit ##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinkuSBarvouSpoje(.db, .sku, .lin)
+	}
+	if klic = "@pismenoVZone-odstranit" {
+		quit ##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinkuSPismenemVZone(1, .db, .sku, .lin)
+	}
+	if klic = "@pismenoVZone-nechat" {
+		quit ##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinkuSPismenemVZone(0, .db, .sku, .lin)
 	}
 	quit ##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinku(klic, hodnota, .db, .sku, .lin, mereni = "km")
 }

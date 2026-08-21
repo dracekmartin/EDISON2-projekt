@@ -426,6 +426,11 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     i 'tiskBezZastaveni d ..ZastavujiciTc(dataDB, sku, lin, smer, .zastavuje)
     // Barvy spojů: u linky 1 = tisknout černě, tedy barvy potlačit.
     s tiskBarvy = ..TristavDleLinky(volbaBarvy, '+$g(^[dataDB]JRL(sku,lin,"PATCH","barevnyTiskSpoju")))
+    // Odstranit z označení zóny písmena. Nastavení je globální, ale linka ho **přebíjí** - a ukládá
+    // se u ní jako hodnota+1, takže 1 = neodstraňovat, 2 = odstraňovat, 0 nebo prázdno = platí
+    // globální (1:1 legacy gPLSetWin `:1847`, kde je `hodnota-1`).
+    s zonaDelZnkLinka = +$g(^[dataDB]JRL(sku,lin,"PATCH","ZonaIdsDelZnk"))
+    s bezPismenVZone = $s(zonaDelZnkLinka:zonaDelZnkLinka - 1, 1:+$g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk")))
     s pocetKmSloupcu = $s(tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)), 1:0)
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
@@ -452,12 +457,12 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i zdvojit {
             s idx = idx + 1
             s rowMeta(idx) = $lb(poradi, "P")
-            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc))
+            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone))
         }
 
         s idx = idx + 1
         s rowMeta(idx) = $lb(poradi, "O")
-        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc)
+        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone)
         d zastavky.%Push(z)
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
@@ -553,7 +558,7 @@ ClassMethod ZastavujiciTc(dataDB As %String, sku As %String, lin As %String, sme
 }
 
 /// JSON objekt jednoho zastávkového řádku (hlavní "zastavka" nebo vložený "prijezd").
-ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1) As %DynamicObject
+ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1, bezPismenVZone As %Boolean = 0) As %DynamicObject
 {
     s czst = $p(veta,":",1)
     s z = ##class(%DynamicObject).%New()
@@ -568,6 +573,7 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     // tady jedna hodnota - klient obojí čte přes GetString (pole spojí "/"), takže se binding
     // chová stejně.
     s zona = $p($p(veta,":",5),"#",2)
+    i bezPismenVZone s zona = ..ZonaBezPismen(zona)
     s zona = $s('tiskZony:"", zona="":"-", 1:zona)
     d z.%Set("ZONY",       zona)
     // MHD/IDS text z kódu v "#"-poli 4 J-věty (legacy gTrsLin dta,6 → gTrsLinDta2ToText)
@@ -590,6 +596,13 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     }
     d z.%Set("KM", km)
     q z
+}
+
+/// Označení zóny bez písmen (`51A` → `51`). Seznam znaků je 1:1 legacy `delZnk^JRapiLinPrtPS2`
+/// (`:105`) - jen ASCII písmena, diakritika se v označení zón nevyskytuje.
+ClassMethod ZonaBezPismen(zona As %String) As %String
+{
+    q $tr(zona, "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm", "")
 }
 
 /// MHD kód → zobrazovaný text (1:1 legacy gTrsLinDta2ToText; bez IDP-P/Z overridů z nastavení).

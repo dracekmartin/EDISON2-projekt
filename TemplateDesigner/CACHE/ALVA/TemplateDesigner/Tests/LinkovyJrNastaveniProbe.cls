@@ -111,6 +111,54 @@ ClassMethod NajdiLinkuSBarvouSpoje(ByRef db, ByRef sku, ByRef lin) As %Boolean
 	quit 0
 }
 
+/// Najde linku, která má **v označení zóny písmeno** a zóny se u ní tisknou. Druhý „předpoklad nad
+/// zdrojovými daty": bez něj by „v zóně nejsou písmena" vyšlo i tam, kde žádná nebyla.
+/// `odstranit` = 1 hledá linku, která má odstranění zapnuté, 0 vypnuté (přes vlastní i globální
+/// nastavení - u linky se ukládá hodnota+1, 0 znamená „platí globální").
+ClassMethod NajdiLinkuSPismenemVZone(odstranit As %Boolean, ByRef db, ByRef sku, ByRef lin) As %Boolean
+{
+	set db = "", sku = "", lin = ""
+	for fi = 1:1:$length(..#FIRMY, ",") {
+		set firma = $piece(..#FIRMY, ",", fi)
+		continue:'##class(%SYS.Namespace).Exists(firma)
+		set globalne = +$get(^[firma]JRSET("Definice", "ZonaIdsDelZnk"))
+		set s1 = ""
+		for  {
+			set s1 = $order(^[firma]JRL(s1))
+			quit:s1=""
+			continue:'$isvalidnum(s1)
+			set l1 = ""
+			for  {
+				set l1 = $order(^[firma]JRL(s1, l1))
+				quit:l1=""
+				continue:'$data(^[firma]JRL(s1, l1, "I"))
+				// zóny se musí vůbec tisknout, jinak by výstup neměl kde písmeno mít
+				set linIds = +$get(^[firma]JRL(s1, l1, "PATCH", "linIDS"))
+				continue:(linIds'=1)&&(linIds'=2)
+				set uLinky = +$get(^[firma]JRL(s1, l1, "PATCH", "ZonaIdsDelZnk"))
+				set plati = $select(uLinky:uLinky - 1, 1:globalne)
+				continue:plati'=odstranit
+				// a v datech musí být písmeno, jinak tvrzení nic nedokazuje
+				set poradi = "", maPismeno = 0
+				for  {
+					set poradi = $order(^[firma]JRL(s1, l1, "J", poradi))
+					quit:poradi=""
+					continue:'$isvalidnum(poradi)
+					set zona = $piece($piece($get(^[firma]JRL(s1, l1, "J", poradi)), ":", 5), "#", 2)
+					continue:zona=""
+					continue:$zconvert(zona,"U")=$zconvert(zona,"L")
+					set maPismeno = 1
+					quit
+				}
+				continue:'maPismeno
+				set db = firma, sku = s1, lin = l1
+				ret 1
+			}
+		}
+	}
+	quit 0
+}
+
 /// Najde linky, na kterých má daný klíč danou hodnotu - podklad pro test, který se má o ten stav
 /// opřít. IN: `KLIC` (klíč pod `PATCH`), `HODNOTA`, `FIRMY` (nepovinné), `MAX` (nepovinné).
 ClassMethod Priklady(ByRef sys As %String) As %Status
