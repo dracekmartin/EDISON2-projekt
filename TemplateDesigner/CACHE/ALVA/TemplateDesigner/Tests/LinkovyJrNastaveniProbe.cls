@@ -123,6 +123,77 @@ ClassMethod Priklady(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Kolik spojů má v datech **nastavenou barvu**. Odpověď na otázku, jestli má smysl barvy spojů
+/// vůbec posílat: přepínač „barevný tisk spojů" je u 1 662 linek, ale sám o sobě neříká, že někdo
+/// barvu reálně zadal. IN: `FIRMY`, `MAX` (kolik linek per firma; 0 = vše). OUT: rozložení hodnot.
+ClassMethod BarvySpoju(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set firmy = $get(^||ML("IN","FIRMY"))
+		if firmy = "" set firmy = ..#FIRMY
+		set maxLinek = +$get(^||ML("IN","MAX"))
+		kill ^||ML, radky, rozlozeni
+		set spoju = 0, sBarvou = 0, prvni = ""
+		for fi = 1:1:$length(firmy, ",") {
+			set db = $zstrip($piece(firmy, ",", fi), "<>W")
+			continue:db=""
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set linek = 0, lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					quit:maxLinek&&(linek'<maxLinek)
+					continue:'$data(^[db]JRL(sku, lin, "I"))
+					set linek = linek + 1
+					for smer = "T", "Z" {
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set spoju = spoju + 1
+							// Barva spoje je 12. „#"-pole záznamu ve tvaru „r;g;b"; 0;0;0 = černá,
+							// tedy „nenastaveno". Ověřuje se hodnotou, ne jménem pole.
+							set barva = $piece($get(^[db]JRL(sku, lin, smer, sp)), "#", 12)
+							// Prázdný podskript ObjectScript nebere (<SUBSCRIPT>), proto zástupná hodnota.
+							set klicB = $select(barva="":"(prázdné)", 1:barva)
+							set rozlozeni(klicB) = $get(rozlozeni(klicB)) + 1
+							continue:(barva="")||(barva="0;0;0")
+							set sBarvou = sBarvou + 1
+							if prvni = "" set prvni = db_" "_lin_" spoj "_sp_" = "_barva
+						}
+					}
+				}
+			}
+		}
+		set radky($increment(radky)) = "spojů "_spoju_", s nastavenou barvou "_sBarvou
+		if prvni '= "" set radky($increment(radky)) = "první: "_prvni
+		set h = "", vypsano = 0
+		for  {
+			set h = $order(rozlozeni(h))
+			quit:h=""
+			set vypsano = vypsano + 1
+			continue:vypsano>12
+			set radky($increment(radky)) = "   „"_h_""" x "_rozlozeni(h)
+		}
+		set idx = ""
+		for  {
+			set idx = $order(radky(idx))
+			quit:idx=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Spočítá výskyt přepínačů. IN: `FIRMY` (nepovinné). OUT: řádky souhrnu.
 ClassMethod Vyskyt(ByRef sys As %String) As %Status
 {

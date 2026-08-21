@@ -968,6 +968,30 @@ matice zatím neumí a doplní se s tím krokem, který tu vlastnost implementuj
 Dotčené dnes: **barvy spojů** a **odstranění písmen ze zóny**. U schování sloupce tarifních čísel
 past nehrozí - tarifní čísla posíláme vždy, takže nula je tam skutečný doklad potlačení.
 
+#### Barvy spojů: v datech jsou, i když se to nezdálo (změřeno 21. 8.)
+
+Předpoklad byl, že barvu u spoje **nejde zadat** (barva se přidávala u linky, ne u spoje), a tím
+by celá věc padla. Měření (`LinkovyJrNastaveniProbe.BarvySpoju`) říká něco jiného:
+
+- **1 100 482 spojů** prohledáno, **3 926 z nich má barvu nastavenou** (12. `#`-pole záznamu spoje
+  ve tvaru `r;g;b`; `0;0;0` a prázdno = nenastaveno)
+- v **deseti různých barvách**, takže to nikdo neklikl omylem jednou
+- konkrétní případ k testu: `CB_CSADAD 0380751` spoj 19 = `255;128;255`
+
+Je to necelé procento spojů, tedy niche - ale na lince, kde zákazník spoje obarvil, o tu informaci
+v tisku přijde celou. **A hlavně: tím padá důvod, proč to nešlo ověřit.** Existuje linka s barvami
+v datech, takže se dá tvrdit obojí - že barvy posíláme, i že je přepínač u linky potlačí.
+
+#### Tvar datumů: dvě různé věci, které se pletou
+
+- **Formát** (tečky vs. lomítka, pořadí složek) je otázka lokalizace, ne nastavení. Opraveno v `B96`
+  (datum platnosti s tečkami). Číselníky textů už jazyk rozlišují (`gMode` → CZ / `*SK`), takže
+  případné další lokalizace se má věšet tam, ne na nový přepínač.
+- **`TiskDtm`** je jiná osa: **jestli a jak se tiskne rok** v textech omezení (0 = jak zadáno,
+  1 = rok dvoumístně, 2 = v rozsazích se u „od" rok vynechá, 3 = bez roku). Není to formátování
+  na český tvar a **nastavené to je ve všech šesti firmách** ve třech ze čtyř hodnot, takže je to
+  živé nastavení a už ho čteme. Neplést s tím prvním.
+
 ## 14. Pozastavené tikety helpdesku k linkovému JŘ (projito 2026-08-19)
 
 Projito **všech 28 pozastavených** tiketů v agendách Jízdní řády + MHD. Roztřídění samo nebylo nové
