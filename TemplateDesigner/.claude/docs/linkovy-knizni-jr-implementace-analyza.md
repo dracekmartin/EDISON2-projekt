@@ -584,13 +584,11 @@ Co ta síť **nekryje**, je právě matice nastavení, a to ze dvou důvodů:
 
 ---
 
-### 13.4 Otevřená rozhodnutí před `L2` (stav 2026-08-20)
+### 13.4 Rozhodnutí před `L2` (rozhodnuto Janem 2026-08-21)
 
-Sedm věcí, u kterých se z inventáře nedá odvodit, co je správně.
-Zapsané tak, aby na ně šlo odpovědět bez opakování průzkumu; u každé je i to, k čemu se kloní agent,
-ať je vidět výchozí návrh a nemusí se vymýšlet znovu.
-**Dokud nejsou rozhodnuté, není `L2` vzatelná jako celek** - rutinní část jde dělat i bez nich
-(seznam na konci).
+Sedm věcí, u kterých se z inventáře nedalo odvodit, co je správně. **Všech sedm je rozhodnuto**
+(Jan, 21. 8.) - `L2` je tím vzatelná celá. Varianty a ceny zůstávají zapsané, aby bylo vidět, co se
+zvažovalo a proč vyhrálo to, co vyhrálo; u dvou bodů (5, 7) se rozhodnutí od návrhu agenta **liší**.
 
 #### 1. Jak v testu přepnout nastavení, které je uložené u linky
 
@@ -609,6 +607,14 @@ Bez rozhodnutí ověříme jen ty přepínače, které někdo v testovacích dat
 **Návrh:** třetí varianta jako první krok (změří, kolik přepínačů v datech vůbec je), druhá jako
 cílový stav. První nedělat.
 
+**Rozhodnuto:** nastavení se bere **tak, jak je u linky nastavené**. Pokrytí obou stavů zajistí
+sama různost zákazníků - někdo to nastavené má, někdo ne, a porovnává se obojí. Testovací linku
+si stavět nezačínáme.
+
+⚠️ **Povinný doplněk, aby to nebylo tvrzení bez důkazu:** změřit, které přepínače se v datech
+reálně vyskytují, a u těch, které nikde zapnuté nejsou, napsat **neověřeno** - ne mlčet a nechat to
+vypadat jako pokryté. To je totéž pravidlo jako R6.
+
 #### 2. Nastavení pod úrovní linky (vrstva D)
 
 U konkrétní zastávky v lince jde zaškrtnout „tuhle v knižním JŘ netiskni", zvlášť pro každý směr.
@@ -618,6 +624,9 @@ zastávka, kterou tam nechtěl.
 
 **Návrh:** skrývání řádků do `L2`, ruční přiřazení spojů do skupin až do vlny se stránkováním
 (`L5`), protože to ovlivňuje rozřezání na stránky.
+
+**Rozhodnuto:** skrývání řádků pod úrovní linky **do `L2`**. Ruční přiřazení spojů do skupin
+zůstává v `L5`, protože ovlivňuje rozřezání na stránky.
 
 #### 3. Tři položky, které neumí ani starý modul
 
@@ -632,6 +641,19 @@ Vedli jsme je jako svůj dluh; čtení zdroje ukázalo, že v legacy nejsou funk
 
 **Návrh:** pořadí poznámek ano (je za tím tiket), ostatní dvě vyřadit ze seznamu dluhů.
 
+**Rozhodnuto** (po upřesnění, co která položka je - jsou to tři různé případy, ne jeden):
+
+- **Pořadí druhů poznámek** - v EDISONu **nastavit jde** a starý tisk to ignoruje (klient volbu
+  načte a do tisku ji nikdy nevloží). Platí tedy pravidlo „co jde nastavit, musíme brát v potaz",
+  navíc je za tím tiket → **děláme**, jako parametr v `L3`.
+- **Zalamování označení turnusu** - dtto, klient volbu i posílá, ale žádný engine ji nečte
+  (legacy si u ní sám píše „todo"). Nastavit jde, takže brát ji budeme - ale **až s turnusy**
+  v `L6`, samostatně nemá co zalamovat.
+- **„Vyčká / Navazuje jako řádek"** - tohle **nastavit nejde**: legacy si hodnotu natvrdo nuluje
+  s poznámkou „není zatím nikde uloženo", takže v EDISONu pro to není místo. Není co respektovat.
+  My přípojné řádky tiskneme, takže jsme v tomhle **napřed z vlastního rozhodnutí** - přestává to
+  být náš dluh.
+
 #### 4. Kolik voleb dát uživateli u městských linek
 
 Starý modul nabízel u příměstských a dálkových linek asi deset voleb, u městských reálně **tři**
@@ -642,6 +664,11 @@ Proti tomu stojí, že uživatel po přepnutí agendy čeká stejný panel.
 
 **Návrh:** dát MHD tutéž sadu tam, kde má význam; rozdíly nechat jen s doménovým důvodem
 (typy provozu MHD má, vlastní sloupce tam smysl nemají - viz `L3`).
+
+**Rozhodnuto:** MHD dostane **tutéž sadu voleb tam, kde má význam**. Uživatel po přepnutí agendy
+čeká stejný panel. ⚠️ Eviduje se to jako **nová featura, ne dorovnání** - u MHD se tedy proti
+starému modulu **neměří**, protože ten svých jedenáct voleb v okně z většiny ignoroval (jeho MHD
+engine čte tři).
 
 #### 5. Kam se tiskne legenda poznámek
 
@@ -654,6 +681,16 @@ rozřezáním tabulky na stránkové bloky.
 **Návrh:** volbu zavést mezi parametry (`L3`), varianty závislé na blocích zapnout až s `L5`.
 Do `L2` to netahat.
 
+**Rozhodnuto - jinak, než agent navrhoval:** **není to parametr sestavy, ale nastavení v šabloně**
+u hlavního prvku (rozhodnutí Jan 21. 8.).
+
+Důvod je silnější než původní návrh: v návrháři je legenda **samostatný prvek**, který si uživatel
+položí, kam chce. Starý modul tu volbu měl právě proto, že tuhle svobodu neměl. Přidávat k tomu
+ještě parametr by byly dvě pravdy o jedné věci.
+
+Varianta „pod každý blok" se stane vlastností **opakování** až nad rozřezáním na bloky (`L5`) -
+i pak je to vlastnost sekce, ne parametr.
+
 #### 6. Texty značek: číselník, nebo opis do našeho kódu
 
 Popisky značek a texty atributů spoje jsou ve starém modulu v číselníku, zvlášť pro češtinu
@@ -664,6 +701,10 @@ Opis: máme kontrolu, ale zákazníkova úprava se neprojeví a slovenštinu ře
 
 **Návrh:** brát z číselníku.
 Je to zároveň oprava nálezu z `L1`, kde nám u textu atributu přebývalo sloveso.
+
+**Rozhodnuto:** brát **z číselníku**. Zákazníkova úprava textu se projeví v tisku a slovenština
+funguje bez další práce - což je přímo stížnost z #9088 („slovenský preklad trochu kostrbatý"
+a nejde upravit). Opravuje to zároveň nález z `L1`, kde nám u textu atributu přebývalo sloveso.
 
 #### 7. Kde končí „respektujeme nastavení" a začíná „to řeší šablona"
 
@@ -680,6 +721,17 @@ Tři případy stojí na hraně, protože u nich vzhled řídí naše šablona:
 Podtržení řešit **prezentační nápovědou** v datovém kontraktu (R3) - data řeknou „tady se podtrhává
 takto", šablona to smí respektovat.
 Byl by to druhý případ téhož mechanismu po barvách spojů.
+
+**Rozhodnuto - směr od Jana 21. 8.:** **vizuální věci patří do šablony, business logika do dat.**
+
+- **tvar tisku místenkování** a **skládání tištěného čísla linky** → **data** (mění tištěný text)
+- **podtržení u zastávek s rozděleným příjezdem a odjezdem** → **šablona** (je to čistý vzhled)
+
+⚠️ **Zbývá napětí, které se vědomě neřeší teď:** u podtržení jde o vzhled, ale zároveň je to
+nastavené **u linky** - a platí, že co je nastavené, máme brát v potaz. Čistá cesta je táž jako
+u schovávání sloupců: vlastnost v šabloně, jejíž výchozí hodnota je **„Automaticky (dle linky)"**.
+Zavádět ten mechanismus kvůli podtržení ale nemá smysl, dokud o něj nikdo nepožádal - **na tuhle
+jednu položku není poptávka ani tiket**. Řeší se, až se ozve. (Jan 21. 8.: „teď neumím říci".)
 
 #### Co jde dělat i bez těchto rozhodnutí
 

@@ -4,9 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> **Nejblíž na řadě:** **linkové JŘ** - `L1` (síť) hotová, inventář nastavení starého modulu
-> hotový (20. 8.). `L2` **čeká na sedm rozhodnutí** (§13.4 podkladu, návrh u každého je připravený);
-> rutinní část `L2` jde dělat i bez nich.
+> **Nejblíž na řadě:** **linkové JŘ** - `L1` (síť) hotová, inventář nastavení hotový (20. 8.),
+> **rozhodnutí před `L2` hotová** (21. 8.). `L2` je vzatelná celá.
 
 ---
 
@@ -106,14 +105,26 @@ v novém návrháři").
 >    „Vyčká/Navazuje jako řádek místo poznámky" je popsaná, ale natvrdo vypnutá. Přestává to být
 >    parita a stává se to rozhodnutím, jestli to chceme.
 >
-> ⛔ **Než se `L2` vezme jako celek, je potřeba sedm rozhodnutí** - jak v testu přepínat nastavení
-> uložené u linky, jestli děláme vrstvu pod linkou, co s třemi položkami, které neumí ani legacy,
-> kolik voleb dát městským linkám, kam s legendou, jestli brát texty značek z číselníku EDISONu
-> a kde končí „respektujeme nastavení" a začíná „řeší šablona".
-> Rozepsané včetně variant, ceny a navrženého řešení:
-> [`§13.4`](linkovy-knizni-jr-implementace-analyza.md).
-> **Rutinní část `L2` na nich nevisí** a je vyjmenovaná na konci téže sekce (přepínač zóny × km,
-> barvy spojů, tarifní čísla bez zastavení, texty sloupce MHD, pořadí sloupců spojů).
+> ✅ **Všech sedm rozhodnutí před `L2` je hotových** (Jan 21. 8., detail a varianty v
+> [`§13.4`](linkovy-knizni-jr-implementace-analyza.md)). Co z nich platí pro `L2`:
+>
+> - **Nastavení se bere tak, jak je u linky nastavené**; oba stavy pokryje různost zákazníků, testovací
+>   linku si nestavíme. ⚠️ Povinně změřit, které přepínače se v datech vyskytují, a u zbytku napsat
+>   **neověřeno** - ne nechat to vypadat jako pokryté.
+> - **Vrstva pod linkou** (skrývání řádků u tarifního čísla, per směr) **patří do `L2`**; ruční
+>   přiřazení spojů do skupin zůstává v `L5`.
+> - **Co v EDISONu nastavit jde, bereme v potaz, i když to starý tisk ignoroval** - pořadí druhů
+>   poznámek do `L3` (je za tím tiket), zalamování označení turnusu až s turnusy v `L6`. Naopak
+>   „Vyčká/Navazuje jako řádek" **nastavit nejde** (legacy hodnotu natvrdo nuluje), takže není co
+>   respektovat a přestává to být náš dluh.
+> - **Texty značek a atributů brát z číselníku EDISONu**, ne z opisu v našem kódu - zákazníkova
+>   úprava se pak projeví a slovenština funguje bez další práce (#9088).
+> - **Vizuální věci patří do šablony, business logika do dat.** Tvar místenkování a skládání čísla
+>   linky = data; podtržení u rozdělených zastávek = šablona, a řeší se, až o něj někdo požádá.
+> - **Legenda: kam se tiskne, je nastavení šablony u hlavního prvku, ne parametr sestavy** - v návrháři
+>   je legenda samostatný prvek, který si uživatel položí, kam chce.
+> - **MHD dostane tutéž sadu voleb tam, kde má význam**, ale eviduje se jako **nová featura** - proti
+>   starému modulu se u MHD neměří, jeho MHD engine z jedenácti voleb čte tři.
 
 | **L2** | **Matice nastavení: vzít všechno, co je v EDISONu nastavené** (podklad §13.2). Ke každému přepínači ze **čtyř** vrstev test, který ho **zapne i vypne** a porovná obojí s legacy; co vědomě neděláme, se **zapíše jako neděláme**, ne zapomene. V téže vlně opravit tři tiché odchylky, které už jsou změřené: **zóny × km řídí jeden čtyřstavový přepínač** (`linIDS`; čteme ho zjednodušeně a u hodnot 0/3 tiskneme zónu, kterou legacy netiskne, km neřídíme vůbec), **barvy spojů neposíláme vůbec** (agenda nemá jediné `FORE_COLOR`, vývěsková jich má 9; legacy je bere ze spoje a linka je umí vypnout) a **volba „jen tarifní čísla, kde spoje staví" vyhazuje řádky** (legacy ji používá na 5 místech, my ji neznáme, takže zákazník dostane delší tabulku než dřív). **Nálezy z `L1`, které tu mají zmizet:** pořadí sloupců spojů se u dvou linek liší od starého tisku (spoje začínající na různých zastávkách - `SeradSpoje` × legacy `mkPoradiSp`; obsah sedí, liší se pořadí) a generická věta atributu spoje má navíc sloveso („spoj **jede** s bezbariérově přístupným vozidlem" místo „spoj s…") - texty všech třinácti atributů jsou v jazykovém číselníku EDISONu, brát je odtud (rozhodnutí 6 v §13.4), ne opisovat jeden. **Odsouhlaseno 19. 8. jako „uděláme":** zvýraznění zvolené zastávky i konkrétního tarifního čísla, volba tisku čísla linky/vlaku v přípojném řádku, a **dorovnání skládání pruhu s dopravcem na starý modul** (dnes na to máme vlastní logiku, kterou proti třem nastavením nikdo neporovnal). Sem patří i **vlastní texty sloupce MHD** (dnes napevno IDP-P/IDP-Z), **přípojný řádek s vlastním řezem a velikostí** (#8360) a **prázdný přípojný řádek se netiskne** (#11300 - má smysl teprve vůči bloku, viz `L5`). | L |
 | **L3** | **Volby uživatele = parametry sestavy.** Linkový AD má **jeden** parametr, linkový MHD **žádný**, proti sedmi u zastávkového - uživatel dnes dostane tabulku, se kterou nemůže nic udělat. Rozhoduje se **celá sada najednou** (co má být stejné jako u vývěsky, co jinak), ne jeden parametr po druhém; kandidáti jsou v §13.2 A. **Pohlcuje `B60`** (tvar názvu zastávky a „název pro MHD" jsou dva z těch parametrů; totéž chce #9088 bod 4; `L1` to změřila - na jedné lince 38 z 62 názvů, a týká se to i textů návazností, kde starý modul tiskne u městských linek zkrácený místní tvar) a `C5` (pořadí poznámek). **Součástí je i flexibilní zadávání sloupců** jako u vývěsek: dnešní tříhodnotový přepínač dělení je chudší varianta téhož, co tam řeší vlastní sloupce (množina denních značek + značky, které spoj ze sloupce vyřadí + nadpis, se čtyřmi hotovými vzory ze `PresetySloupcu`). **Definice je přenositelná beze zbytku, spotřeba ne** - u vývěsky je skupina jeden sloupec, v lince je to pás nad několika sloupci spojů a spoj ve dvou skupinách se vypisuje dvakrát; navíc skupiny ovlivňují rozřezání na stránky (`L5`). ⚠️ **Jen pro AD** - MHD má skupiny v datech jako typ provozu i s nadpisem z číselníku, vlastní sloupce by tam byly druhá cesta k témuž. ⚠️ Popisky enum voleb jsou po vydání **zamčené** (persistuje se zobrazovaný text). ⚠️ Sáhne to do `TemplateDesignerViewModel` (3 543 ř.) - role „parametry sestavy a načítání dat" je jeho přirozený první řez, rozřezat **při dotyku**. | M |
