@@ -713,7 +713,7 @@ Opis: máme kontrolu, ale zákazníkova úprava se neprojeví a slovenštinu ře
 **Návrh:** brát z číselníku.
 Je to zároveň oprava nálezu z `L1`, kde nám u textu atributu přebývalo sloveso.
 
-⛔ **PůVODNĚ rozhodnuto „brát z číselníku", ZRUŠENO 21. 8. - návrh stál na omylu.**
+⛔ **PŮVODNĚ rozhodnuto „brát z číselníku", ZRUŠENO 21. 8. - návrh stál na omylu.**
 Texty atributů spoje **v číselníku nejsou**: v `NCOME` a `STALCOME` jsou předložky omezení a stálé
 značky, kdežto věty atributů má legacy **zadrátované ve zdroji** (`gAtrNZLi^JRapiNZUtl3:161-192`),
 zvlášť česky a zvlášť slovensky. Zákazník je tedy nemůže upravit ani ve starém modulu.
