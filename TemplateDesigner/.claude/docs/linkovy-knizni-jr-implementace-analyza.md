@@ -757,6 +757,123 @@ Rutinní část `L2`, na kterou nemá ani jedno rozhodnutí vliv:
 
 ---
 
+### 13.5 Zadání `L2` - kam patří která položka (projito 2026-08-21)
+
+Průchod celým inventářem §13.2 po rozhodnutích §13.4. Cíl: aby se u každé položky nemuselo znovu
+odvozovat, jestli je to data, šablona, parametr, nebo jiná vlna.
+
+#### Rozhodovací pravidlo pro sporné případy
+
+> **Když to jde rozumně mít v šabloně, patří to do šablony** - na úroveň linky jen to, co tam být
+> opravdu musí (rozhodnutí Jan 21. 8.).
+>
+> Důvod je situační a stojí za to ho říct nahlas: **starý modul se přepisuje a část nastavení se
+> může přesunout jinam.** Čím méně věcí visí na konkrétní lince, tím méně se toho bude přetahovat.
+>
+> ⚠️ Neruší to pravidlo z 19. 8. „co je nastavené, bereme v potaz". Obojí drží **třístav**: vlastnost
+> žije v šabloně (nebo jako parametr), ale její výchozí hodnota je **„Automaticky (dle linky)"**,
+> takže nastavení u linky se respektuje, dokud ho uživatel nepřebije.
+
+#### Kategorie použité v tabulce
+
+| Značka | Znamená |
+|---|---|
+| **data** | respektuje se při načítání dat - mění hodnoty, řádky nebo texty |
+| **třístav** | vlastnost šablony nebo parametr s výchozí hodnotou „Automaticky (dle linky)" |
+| **šablona** | vlastnost prvku nebo šablony; z nastavení linky se nebere |
+| **parametr** | volba uživatele u tisku (patří do `L3`) |
+| **jiná vlna** | `L5` layout · `L6` turnusy a obousměrný tisk · `L7` sdružený JŘ · MHD kolo |
+| ⛔ | vědomě nikdy |
+
+#### A. Volby uživatele u tisku
+
+| Položka | Kam | Poznámka k práci |
+|---|---|---|
+| dělení sloupců na skupiny dnů | ✅ hotovo (parametr) | `L3` to rozšíří na vlastní sloupce |
+| kam jde legenda | **šablona** | legenda je samostatný prvek; „pod každý blok" je vlastnost opakování až s `L5` |
+| zvýraznit zvolenou zastávku | **parametr** + **data** | parametr říká kterou, data řádek označí příznakem, vzhled řeší šablona (týž vzor jako vývěsková „aktuální zastávka") |
+| zvýraznit konkrétní tarifní číslo | **parametr** + **data** | dtto |
+| číslo linky/vlaku v přípojném řádku | **šablona** | wire už nese `LINKA` a `SPOJ` zvlášť, takže je to skládání textu; ⚠️ samotnou větu vzít z číselníku (§13.4 bod 6) |
+| bez rámečků kolem čísel spojů | **šablona** | u nás mřížka prvku; vedlejší efekt „vypne i čísla spojů" je MHD, do MHD kola |
+| turnusy · obousměrný tisk | **`L6`** | nejsou to přepínače, ale chybějící kusy tabulky |
+| výběr typů provozu a směrů | **MHD kolo** | AD engine to nečte vůbec |
+| dorovnání prázdnými sloupci | **`L5`** | jako parametr - KORID (#8372) chce volbu u tisku, ne v šabloně |
+| šířka plochy, počet řádků, měřicí řetězce | ⛔ | layout měříme sami |
+
+#### B. Globální nastavení programu
+
+| Položka | Kam | Poznámka k práci |
+|---|---|---|
+| tvar datumů v omezeních | ✅ hotovo | včetně per-linka override |
+| které atributy se tisknou nad spojem | **data** | dnes `TODO` v kódu |
+| tvar tisku místenkování | **data** | mění tištěný text |
+| vlastní text sloupce MHD místo „IDP-P"/„IDP-Z" | **data** | + jeho řádek legendy |
+| odstranit písmena z označení zóny | **data** | pozor, **linka to přebíjí** |
+| pořadí a tisk dopravců, souhrn linek k dopravci | **data** | dorovnat naši vlastní logiku `PopisDopravce` |
+| texty značek a atributů z číselníku | **data** | §13.4 bod 6; opravuje nález `L1` (přebývající sloveso) |
+| počet druhů místenkování dle jazyka (2 × 4) | **data** | odvozuje se z jazyka, ne ze samostatného přepínače |
+
+#### C. Nastavení u konkrétní linky
+
+| Položka | Kam | Poznámka k práci |
+|---|---|---|
+| počet km sloupců per směr | ✅ počet hotový | **obsah** jednotlivého sloupce neověřen → do matice |
+| čtyřstavový přepínač zóny × km | **data** | ⚠️ oprava: u hodnot `0` a `3` tiskneme zónu, legacy ne; km neřídíme vůbec |
+| ručně upravený název zastávky u MHD linky | **parametr** | jde s tvarem názvu do `L3` |
+| schovat sloupec tarifních čísel | **třístav** | |
+| schovat Tč / čísla spojů / šipky / značky (`MHD2` klíče) | **třístav** | ⚠️ **jsou to AD nastavení**, jen mají v globálu podklíč `MHD2` - čte je AD engine |
+| vyhodit řádky, kde žádný spoj nestaví | **třístav**, vyhodnocuje server | ubírá řádky, takže výchozí „dle linky" musí fungovat i bez zásahu uživatele |
+| vypnout barvy spojů | **data** + **třístav** | barvy jako prezentační nápověda, přepínač je může potlačit |
+| skládání tištěného čísla linky | **data** | mění hodnotu |
+| kam s bezbariérovým vozidlem (nad spoj / do poznámek) | **data** | rozhoduje, která kolekce to nese |
+| podtržení u zdvojených řádků | **šablona** | není poptávka ani tiket → řeší se, až se ozve |
+| ruční zlom stránky na tarifním čísle | **`L5`** | |
+| ruční přiřazení spojů do sekcí + jejich stránkování | **`L5`** | |
+| záhlaví, objížďkový příznak, poznámka pod dopravce, platnost | **data** | ⚠️ **čteme je, ale v inventáři starého modulu nebyly** - do matice patří stejně, protože i ony mění výstup jen u některých linek |
+
+#### D. Nastavení pod úrovní linky
+
+| Položka | Kam | Poznámka k práci |
+|---|---|---|
+| řádek se v knižním JŘ netiskne (u tarifního čísla) | **data** | |
+| totéž zvlášť pro každý směr | **data** | při zapnutí obou se tarifní číslo přeskočí |
+| do které umělé sekce spoj patří | **`L5`** | ovlivňuje rozřezání |
+
+⚠️ **Tuhle vrstvu porovnání celé linky nenajde.** Nastavení není u linky, ale u konkrétního řádku,
+takže na lince, kde si ho nikdo nenastavil, se neprojeví vůbec. Chce to **cílený test**, ne odtisk -
+a je to zároveň nastavení, které **ubírá řádky**, tedy odchylka, kterou zákazník pozná na první pohled.
+
+#### E. MHD zdroj
+
+Celé do **MHD kola**. Zapsané mezery pro to kolo: typ linky a rozsah negativních značek nečteme
+(ověřeno grepem, nula výskytů).
+
+#### Jak se to testuje
+
+Tři různé způsoby, ne jeden:
+
+1. **Přepínače, které jde podstrčit z testu** (volby u tisku) - test je nastaví oběma stranám
+   a porovná obojí. Plné pokrytí.
+2. **Nastavení uložená v datech** (globální, u linky) - porovnává se **tak, jak je nastavené**,
+   pokrytí obou stavů zajistí různost zákazníků. ⚠️ **Povinně změřit, které přepínače jsou v datech
+   reálně zapnuté**, a u zbytku napsat **neověřeno** (§13.4 bod 1).
+3. **Vrstva pod linkou** - cílený test nad linkou, kde to nastavené je; když taková není, vyrobit
+   si vlastní případ, ne tvrdit pokrytí.
+
+#### Doporučené pořadí práce
+
+1. **Změřit výskyt** všech přepínačů vrstev B, C, D v dostupných firmách. Bez toho čísla se neví,
+   co jde ověřit hned - a je to podklad pro rozhodnutí, jestli je nakonec potřeba testovací linka.
+2. **Opravit tři změřené tiché odchylky** - zóny × km, barvy spojů, řádky bez zastavení. Jsou
+   rozhodnuté, mají doklad z `L1` a nezávisí na ničem dalším.
+3. **Texty z číselníku** (značky, atributy, sloupec MHD, dopravci) - jeden celek, opravuje nález `L1`
+   a rozbíhá slovenštinu.
+4. **Třístavy** - schovávání sloupců a řádků; první uplatnění mechanismu „Automaticky (dle linky)"
+   v linkovém JŘ, takže sem patří i pravidlo „prázdný sloupec se netiskne" v prvku.
+5. **Vrstva pod linkou** - skrývání řádků u tarifního čísla, s cíleným testem.
+6. **Zbytek dat** - atributy nad spojem, místenkování, číslo linky, bezbariérové vozidlo, obsah
+   km sloupce, naše čtyři nezaevidované klíče.
+
 ## 14. Pozastavené tikety helpdesku k linkovému JŘ (projito 2026-08-19)
 
 Projito **všech 28 pozastavených** tiketů v agendách Jízdní řády + MHD. Roztřídění samo nebylo nové

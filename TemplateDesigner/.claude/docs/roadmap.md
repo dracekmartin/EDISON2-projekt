@@ -110,7 +110,13 @@ v novém návrháři").
 >
 > 🧭 **Vůdčí linie, která z nich vyšla:** *to, jak je výstup složený, patří do návrháře; z nastavení
 > u linky se bere jen to, co mění data.* Proto ani umístění legendy, ani pořadí druhů poznámek nejsou
-> parametry sestavy, ale vlastnosti šablony.
+> parametry sestavy, ale vlastnosti šablony. **Sporné případy řeš směrem do šablony** - na úroveň
+> linky jen to, co tam být opravdu musí (starý modul se přepisuje a část nastavení se může přesunout,
+> takže čím méně věcí na lince visí, tím méně se toho bude přetahovat).
+>
+> 📋 **`L2` je projitá položku po položce** - u každého nastavení z inventáře je určeno, jestli je to
+> data, šablona, třístav, parametr, nebo jiná vlna, a v jakém pořadí se to má dělat:
+> [`§13.5`](linkovy-knizni-jr-implementace-analyza.md).
 >
 > Co z nich platí pro `L2`:
 >
