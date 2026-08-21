@@ -13,78 +13,50 @@
 
 > ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
->
-> **Postup je vlnový a každá vlna se poměřuje se starým modulem** (rozhodnutí Jan 19. 8.). Vlny se
-> berou v pořadí; `L1` je bezpodmínečně první, protože dnes nemají linkové agendy **žádný test**
-> a bez sítě by se sahání do nastavení dělalo naslepo.
 
 Legacy `TiskJR` generuje **vývěsní i knižní JŘ z téhož enginu**, takže je to jeden track. Formát:
 sloupcová tabulka celé linky (svislý seznam zastávek × sloupce spojů s časy; řádek platností se
-symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek). **Oracle `mkPLinWin`
-(ALVA.JRMAIN.MLAPI)**, resp. volatelná fasáda `ALVA.TISKJR.Data/LoadData` s `VOLANO_Z~JRMAIN`.
+symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek).
 
-Datové jádro (`LinkovyJrAd`/`LinkovyJrMhd`), `LineTableElement`, plán řádků a auto-fit fontu jsou
-hotové; ověřeno bylo na 22 z 24 linek ze čtyř firem, ale **jen obsah dat při výchozím nastavení**
-a nástrojem, který v repu není. Výchozí šablona pro **AD** se od `B92` distribuuje jako systémová
-(nalije se sama, v nabídce se ukáže až s `Released = 1`). **Pro MHD výchozí šablona zatím není.**
+**Hotové:** datové jádro (`LinkovyJrAd`/`LinkovyJrMhd`), `LineTableElement`, plán řádků a auto-fit
+fontu; **síť pro porovnání se starým modulem** (`L1`, oracle `mkPLinWin`); výchozí šablona pro AD
+se distribuuje jako systémová. **Pro MHD výchozí šablona zatím není.**
 
 ⚠️ **Agendy jsou úvodní draft** (`Released = 0`), takže se v nich smí měnit i to, co je jinde
-zamčené. Zastávkové se přitom nesmí dotknout. Slovník polí je od 17. 8. srovnaný se zastávkovým
-(`B95`, archiv) a hlídá ho `AgendaSchemaDriftTests`; nová pole přidávej pod týmž názvem, jaký pro
-tutéž věc používá vývěska.
+zamčené - zastávkové se přitom nesmí dotknout. Slovník polí je srovnaný s vývěskou a hlídá ho
+`AgendaSchemaDriftTests`; nové pole přidávej pod týmž názvem, jaký pro tutéž věc používá vývěska.
+Do budoucí **MHD** šablony: `{CISLO_LINKY}` je **licenční** číslo, veřejné je
+`{LOKALNI_OZNACENI_LINKY}`.
 
-**Pro budoucí linkovou šablonu MHD** (z `B95`): `{CISLO_LINKY}` je **licenční** číslo, protože tak
-to má vývěska - veřejné označení je pod `{LOKALNI_OZNACENI_LINKY}`. Existující AD šablony se to
-netýká, AD posílá jediné číslo linky. Datum platnosti je od `B96` v obou agendách české.
+**Vlny se berou v pořadí a každá se poměřuje se starým modulem** (rozhodnutí Jan 19. 8.), **nejdřív
+AD, MHD až po něm**: porovnání pro AD běží, AD má výchozí šablonu a oba zákaznické vzory jsou AD.
+⚠️ **„Dodělám AD a MHD spadne samo" neplatí** - AD je nadmnožina v obsahu tabulky, ne v konceptech
+(MHD má licenční × veřejné číslo linky, typ provozu jako datový pojem a vlastní vrstvu nastavení),
+takže MHD si nese **vlastní inventář a vlastní oracle**.
 
-**Podklady, ze kterých vlny čerpají** (nedělat znovu):
-[`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) - §11-12
-odložené body pilotu, **§13.2 kompletní inventář nastavení starého modulu** (přepsán 20. 8. čtením
-legacy zdroje: **čtyři** vrstvy, u každého přepínače který engine ho čte a zda ho čteme my),
-**§14 pozastavené tikety helpdesku** (8 požadavků, u všech máme zákazníkovi slíbeno „vyřešíme
-v novém návrháři").
+📄 **Zkušební vzor pro celý track: linka 940 Kroměříž-Přerov (IDZK)** - reálné zadání zákazníka,
+které starý modul nedokázal vyrobit (analýza §15). Až bude šablona stát, ověřuj proti němu.
 
-> 🅰️ **Nejdřív AD, MHD až po něm** (rozhodnutí Jan 19. 8.). Vlny `L2` a `L3` se zavírají nejprve
-> pro **AD**; MHD se do nich přibírá jako druhý krok. Důvod: porovnání se starým modulem pro AD
-> už běží (pro MHD je jiný starý generátor a ten zapojený není), AD má výchozí šablonu a oba
-> zákaznické vzory jsou AD. AD je zároveň ta těžší polovina, takže hotové AD = hotové sdílené jádro.
->
-> ⚠️ **„Dodělám AD a MHD spadne samo" neplatí.** AD je nadmnožina v **obsahu tabulky** (má navíc km,
-> tarifní čísla, sloupec MHD, označník, návaznosti a devět druhů poznámek proti třem), ale ne
-> v **konceptech**: MHD má licenční × veřejné číslo linky, typ provozu jako datový pojem, vlastní
-> vrstvu nastavení a volbu, které typy provozu a směry se tisknou. MHD si nese **vlastní inventář
-> nastavení a vlastní oracle**.
->
-> 📄 **Zkušební vzor pro celý track: linka 940 Kroměříž-Přerov (IDZK).** Reálné zadání zákazníka, ne vymyšlený případ - starý modul ho nedokázal vyrobit (analýza §15). Až bude šablona stát, ověřuj proti němu.
->
-> ✅ **`L1` (síť pro porovnání se starým modulem) je hotová** - detail v archivu. Porovnání, zlatý odtisk i smoke test běží v `run-cache-tests.ps1`; nálezy z prvního běhu jsou rozdělené do `L2` a `L3` níže.
+⚖️ **Jak se nakládá s nastavením starého modulu** (platí dál pro `L3`+): **co uměl starý modul, musí
+umět i nový**, a nastavení se **neignoruje proto, že je to vzhled** - když si ho zákazník u linky
+nastavil, tisk ho musí respektovat. Podle toho, co dělá: **mění data** → načtení dat · **volba
+uživatele** → parametr sestavy · **něco schovává** → třístav „Automaticky (dle linky)"
+([`ux-conventions §8`](../rules/ux-conventions.md), i s důvodem, proč je výchozí hodnota konstanta)
+· **stránkování / chybějící featura** → `L5`/`L6` · **měřicí řetězce a šířka plochy** → vědomě nikdy.
+V prvku k tomu patří pravidlo **prázdný sloupec se netiskne**.
+
+🧭 **Vůdčí linie:** *to, jak je výstup složený, patří do návrháře; z nastavení u linky se bere jen
+to, co mění data.* **Sporné případy řeš směrem do šablony** - starý modul se přepisuje a část
+nastavení se může přesunout. Rozhodnutí položku po položce, jejich důvody a změřený výskyt
+nastavení v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md); pozastavené
+tikety helpdesku (8 požadavků se slíbeným „vyřešíme v novém návrháři") [`§14`](linkovy-knizni-jr-implementace-analyza.md).
+
+⚠️ **Sada voleb pro městské linky se rozhoduje až po AD** - starý modul u nich většinu voleb
+ignoroval (jeho MHD engine čte tři z jedenácti), takže parita tam nemá čím se řídit a jakákoli
+sada voleb je **nová featura**, ne dorovnání.
 
 | # | Vlna | Vel. |
 |---|---|---|
-> ⚖️ **Jak se nakládá s nastavením starého modulu** (rozhodnutí Jan 19. 8., platí dál pro `L3`+):
->
-> **Co uměl starý modul, musí umět i nový** - pokud to není nesmysl, na který si někdo stěžoval.
-> Nastavení se **neignoruje proto, že je to vzhled**: když si ho zákazník u linky nastavil, tisk
-> ho musí respektovat. Podle toho, co nastavení dělá: **mění data** → načtení dat · **volba
-> uživatele** → parametr sestavy (`L3`) · **něco schovává** → třístavový parametr
-> „Automaticky (dle linky)" (konvence i s důvodem, proč je výchozí hodnota konstanta, je
-> v [`ux-conventions §8`](../rules/ux-conventions.md)) · **stránkování / chybějící featura** → `L5`/`L6`
-> · **měřicí řetězce a šířka plochy** → vědomě nikdy, měříme si sami.
->
-> **V prvku k tomu patří jedno pravidlo: prázdný sloupec se netiskne.** Když linka řekne
-> „netisknout", server hodnoty nepošle a sloupec zmizí sám.
->
-> 🧭 **Vůdčí linie z rozhodnutí před `L2`:** *to, jak je výstup složený, patří do návrháře;
-> z nastavení u linky se bere jen to, co mění data.* **Sporné případy řeš směrem do šablony** -
-> starý modul se přepisuje a část nastavení se může přesunout, takže čím méně věcí na lince visí,
-> tím méně se toho bude přetahovat. Rozhodnutí položku po položce a jejich důvody:
-> [`§13.4`](linkovy-knizni-jr-implementace-analyza.md) a [`§13.5`](linkovy-knizni-jr-implementace-analyza.md);
-> změřený výskyt nastavení v datech [`§13.6`](linkovy-knizni-jr-implementace-analyza.md).
->
-> ⚠️ **Sada voleb pro městské linky se rozhoduje až po AD** - starý modul u nich většinu voleb
-> ignoroval (jeho MHD engine čte tři z jedenácti), takže parita tam nemá čím se řídit a jakákoli
-> sada voleb je **nová featura**, ne dorovnání.
-
 | **L2** | **Zbytek matice nastavení - tři věci odsouhlasené 19. 8. jako „uděláme".** Sedm nastavení, která jsou v datech reálně zapnutá, i oba nálezy z `L1` jsou hotové (detail v archivu) - zůstává: **zvýraznění zvolené zastávky i konkrétního tarifního čísla**, **volba tisku čísla linky/vlaku v přípojném řádku** a **dorovnání skládání pruhu s dopravcem na starý modul** (dnes na to máme vlastní logiku, kterou proti třem nastavením nikdo neporovnal). Sem patří i **přípojný řádek s vlastním řezem a velikostí** (#8360). ⚠️ **Prázdný přípojný řádek se netiskne** (#11300) má smysl teprve vůči bloku → `L5`. | S |
 | **L3** | **Volby uživatele = parametry sestavy.** Linkový AD má **jeden** parametr, linkový MHD **žádný**, proti sedmi u zastávkového - uživatel dnes dostane tabulku, se kterou nemůže nic udělat. Rozhoduje se **celá sada najednou** (co má být stejné jako u vývěsky, co jinak), ne jeden parametr po druhém; kandidáti jsou v §13.2 A. **Pohlcuje `B60`** (tvar názvu zastávky a „název pro MHD" jsou dva z těch parametrů; totéž chce #9088 bod 4; `L1` to změřila - na jedné lince 38 z 62 názvů, a týká se to i textů návazností, kde starý modul tiskne u městských linek zkrácený místní tvar) a `C5` (pořadí poznámek). **Součástí je i flexibilní zadávání sloupců** jako u vývěsek: dnešní tříhodnotový přepínač dělení je chudší varianta téhož, co tam řeší vlastní sloupce (množina denních značek + značky, které spoj ze sloupce vyřadí + nadpis, se čtyřmi hotovými vzory ze `PresetySloupcu`). **Definice je přenositelná beze zbytku, spotřeba ne** - u vývěsky je skupina jeden sloupec, v lince je to pás nad několika sloupci spojů a spoj ve dvou skupinách se vypisuje dvakrát; navíc skupiny ovlivňují rozřezání na stránky (`L5`). ⚠️ **Jen pro AD** - MHD má skupiny v datech jako typ provozu i s nadpisem z číselníku, vlastní sloupce by tam byly druhá cesta k témuž. ⚠️ Popisky enum voleb jsou po vydání **zamčené** (persistuje se zobrazovaný text). ⚠️ Sáhne to do `TemplateDesignerViewModel` (3 543 ř.) - role „parametry sestavy a načítání dat" je jeho přirozený první řez, rozřezat **při dotyku**. | M |
 | **L4** | **Symbolový font** (gate R5, dřív `B10`). Linková tabulka symboly **nekreslí vůbec** - agenda posílá legacy klíče a chybí převod na pozice ve fontu. ✅ Podklady hotové: katalog 66 symbolů, render-módy i **změřený repertoár fontu** (94 pozic) v `elementy-architektura.md`. ⚠️ **Z `L1`:** mapa značka → číslo je **opsatelná přímo ze zdroje starého modulu** (`GSId^JRapiLinPrtWin`), nemusí vznikat měřením - a dosavadní čísla „74 = projíždí, 75 = jede jinudy" platí jen pro překladovou vrstvu starého klienta, proti enginu je to 1 a 2. Hotový opis je v `LinkovyJrLegacyOracle` (parametr `ZNACKY`). ⚠️ Pozice `znak` z katalogu se s pozicí ve fontu často **neshoduje** (letadlo `n`, paragraf `P`, metro `#`) - přes mapu, ne přes písmeno. **Rozsah:** sdílená mapa značka → (render-mód, hodnota) pro všechny prvky, nahradí i dnešní `SymbolGlyph` u zastávkových vývěsek → dotkne se běžícího zastávkového JŘ, chce zlaté odtisky. Culture rozlišení jen pro **3 pozice** (`D`, `w`, `x`). Ve fontu chybí loď, wifi a zásuvka. | M→S |
