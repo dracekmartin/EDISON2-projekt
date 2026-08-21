@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-21 (2) - 🔀 sloupec tarifních čísel: uživatel může přebít nastavení linky (`L2` krok 4)
+
+**Nastavení u linky se respektuje, ale nemá poslední slovo.** Na 377 linkách má zákazník nastavené,
+že se sloupec tarifních čísel netiskne - dosud jsme to ignorovali. Nově se to bere, a zároveň je
+v panelu parametrů volba **„Sloupec tarifních čísel"** se třemi stavy: *Automaticky (dle linky)*,
+*Tisknout*, *Netisknout*.
+
+Výchozí je „Automaticky", takže bez zásahu uživatele platí to, co je u linky. Popisek je zavedený,
+ne nový - stejný tvar má u vývěsek volba „Rozdělení sloupců (typy provozu)".
+
+**Proč není výchozí hodnota přímo hodnota z linky:** parametry se ze serveru berou bez znalosti
+vybrané linky, takže default podle linky by znamenal přenačítání při každé změně linky a souboj
+s hodnotou, kterou má uživatel uloženou. Takhle rozhodne linku **server při tisku**, kde ji zná,
+a v panelu je poctivě vidět, že to řídí linka.
+
+**V prvku k tomu platí nové pravidlo: prázdný sloupec se netiskne.** Když server hodnoty nepošle,
+sloupec zmizí sám - o nastavení tedy nemusí vědět ani šablona, ani prvek. Dosud to platilo jen
+pro kilometry a sloupec MHD, teď pro všechny popisové sloupce, stejně jako to dělá starý modul.
+Vedlejší efekt, který je správně: u linky bez zón zmizí i sloupec zón.
+
+Ověřeno: Caché 124/124, .NET 1121/1121. Zlaté odtisky se nehnuly, takže se nezměnilo nic na
+linkách, kde tohle nastavení není.
+
+⚠️ Nový parametr sestavy musel jít do allowlistu server-side parametrů - jinak by jeho změna v UI
+data znovu nenačetla a klik by nic neudělal. Chytil to drift test, ne člověk.
+
 ## 2026-08-21 - 🗺️ linkový JŘ: zóny a kilometry podle nastavení linky (`L2` kroky 1-2)
 
 **Krok 1: změřeno, co je vůbec nastavené.** Nová sonda projde všechny linky dostupných firem

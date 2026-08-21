@@ -57,8 +57,12 @@ ClassMethod Matice(ByRef m)
 	set m($increment(m)) = "linIDS|3|km|0|plati"
 
 	// ── schovat sloupec tarifních čísel ─────────────────────────────────
-	// U linky 1 = schovat. Zapnuto na 377 linkách.
-	set m($increment(m)) = "netisknoutSloupecTC|1|tc|0|dluh:L2-krok4 třístav „Automaticky (dle linky)"" ještě není"
+	// U linky 1 = schovat. Zapnuto na 377 linkách. Uživatel to smí přebít parametrem `SLOUPEC_TC`
+	// („Automaticky (dle linky)" / „Tisknout" / „Netisknout"); tady se ověřuje výchozí volba,
+	// tedy že se bez zásahu uživatele respektuje linka.
+	// Past z jiných řádků tu nehrozí: tarifní čísla posíláme vždy, takže nula je skutečný doklad
+	// potlačení, ne důsledek toho, že nemáme co potlačit.
+	set m($increment(m)) = "netisknoutSloupecTC|1|tc|0|plati"
 	set m($increment(m)) = "netisknoutSloupecTC|0|tc|1|plati"
 
 	// ── vyhodit řádky, kde žádný spoj nestaví ───────────────────────────

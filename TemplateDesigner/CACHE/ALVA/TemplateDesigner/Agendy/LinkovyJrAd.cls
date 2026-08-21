@@ -175,8 +175,38 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s p.defaultValue = "Pracovní dny / Soboty / Neděle+svátky"
     d arr.%Push(p)
 
+    // Sloupec tarifních čísel: nastavení je u linky (`PATCH,netisknoutSloupecTC`, zapnuto na 377
+    // linkách), ale uživatel ho má jít přebít. Výchozí volba je proto **konstanta** „Automaticky
+    // (dle linky)" a linku rozhodne server při tisku - parametry se ze serveru berou bez znalosti
+    // instance, takže default načtený z linky by znamenal přenačítání při každé změně linky
+    // a souboj s uloženou volbou uživatele. Zavedený tvar, stejný jako `ROZDELENI_SLOUPCU`
+    // u vývěsek; konvence v `ux-conventions.md`.
+    s pTc = ##class(%DynamicObject).%New()
+    s pTc.name         = "SLOUPEC_TC"
+    s pTc.label        = "Sloupec tarifních čísel"
+    s pTc.type         = "enum"
+    s pTc.group        = "Linkový JŘ"
+    s pTc.defaultValue = "Automaticky (dle linky)"
+    s pTc.description  = "Zda se tiskne sloupec tarifních čísel. Automaticky = podle nastavení u linky v jízdních řádech; volbou Tisknout nebo Netisknout se to dá přebít pro tuhle sestavu."
+    s optsTc = ##class(%DynamicArray).%New()
+    d optsTc.%Push("Automaticky (dle linky)")
+    d optsTc.%Push("Tisknout")
+    d optsTc.%Push("Netisknout")
+    s pTc.options = optsTc
+    d arr.%Push(pTc)
+
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
+}
+
+/// Třístavová volba „Automaticky (dle linky) / Tisknout / Netisknout" → 1 tiskne, 0 netiskne.
+/// U neznámé hodnoty se spadne do „dle linky" (tolerantně, stejně jako to dělá starý modul
+/// u `ROZDELENI_SLOUPCU`) - starší klient, který parametr neposílá, se tak chová jako dřív.
+ClassMethod TristavDleLinky(volba As %String, dleLinky As %Boolean) As %Boolean
+{
+    i volba = "Tisknout" q 1
+    i volba = "Netisknout" q 0
+    q dleLinky
 }
 
 /// Vrátí seznam linek pro Instance Picker (shodné se ZastavkoveJrAd - stejný zdroj ^JRL).
@@ -243,9 +273,10 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i '$d(^[dataDB]JRL(sku,lin,"I")) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_sku_"/"_lin_" neexistuje v ^JRL"))
 
         s deleni = ..DeleniZParametru($g(^||ML("IN","DELENI_SLOUPCU")))
+        s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
 
         f smer = "T", "Z" {
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni)
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
@@ -263,7 +294,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 
         d ..PrvniLinka(dataDB, .sku, .lin)
         s page = ""
-        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2)
+        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "")
 
         i page = "" {
             s page = ##class(%DynamicObject).%New()
@@ -308,7 +339,7 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 }
 
 /// Sestaví JSON stránku knižního JŘ pro jednu linku a směr. "" když směr nemá spoje.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer) As %DynamicObject
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     i '..MaSpoje(dataDB, sku, lin, smer) q ""
@@ -351,6 +382,8 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s linIds = +$g(^[dataDB]JRL(sku,lin,"PATCH","linIDS"))
     s tiskZony = (linIds = 1) || (linIds = 2)
     s tiskKm = (linIds = 0) || (linIds = 2)
+    // Sloupec tarifních čísel: u linky 1 = schovat; parametr sestavy to smí přebít.
+    s tiskTc = ..TristavDleLinky(volbaTc, '+$g(^[dataDB]JRL(sku,lin,"PATCH","netisknoutSloupecTC")))
     s pocetKmSloupcu = $s(tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)), 1:0)
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
@@ -373,12 +406,12 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i zdvojit {
             s idx = idx + 1
             s rowMeta(idx) = $lb(poradi, "P")
-            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony))
+            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc))
         }
 
         s idx = idx + 1
         s rowMeta(idx) = $lb(poradi, "O")
-        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony)
+        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc)
         d zastavky.%Push(z)
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
@@ -448,7 +481,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 }
 
 /// JSON objekt jednoho zastávkového řádku (hlavní "zastavka" nebo vložený "prijezd").
-ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0) As %DynamicObject
+ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1) As %DynamicObject
 {
     s czst = $p(veta,":",1)
     s z = ##class(%DynamicObject).%New()
@@ -456,7 +489,8 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     d z.%Set("TYP",        typ)
     d z.%Set("CZST",       czst)
     d z.%Set("NAZEV_ZASTAVKY", ..NazevZastavky(dataDB, czst))
-    d z.%Set("TC",         +poradi)
+    // Prázdné TC = sloupec se netiskne; prvek sloupec bez hodnot sám schová.
+    d z.%Set("TC",         $s(tiskTc:+poradi, 1:""))
     // zóna: tiskne se, jen když to říká `linIDS` (viz BuildStrankaLinky); prázdná → "-"
     // (1:1 legacy gInfoTc). Klíč je množné ZONY jako u zastávkového JŘ; tam je to pole zón,
     // tady jedna hodnota - klient obojí čte přes GetString (pole spojí "/"), takže se binding

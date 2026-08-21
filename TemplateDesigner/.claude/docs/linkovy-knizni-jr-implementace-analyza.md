@@ -937,10 +937,11 @@ s nulovou hodnotou; stačí o nich vědět.
 
 `L2` tedy dělá **jen ta nastavení, která jsou v datech reálně zapnutá**:
 
-1. zóny × km - 1 126 linek s hodnotou `3` doloží naši chybu
+1. ✅ **hotovo 21. 8.** zóny × km - 1 126 linek s hodnotou `3` doložilo naši chybu
 2. odstranění písmen ze zóny u linky - 28 747 nastavení ve třech hodnotách
 3. řádky bez zastavení - 362 linek zapnuto
-4. schování sloupce tarifních čísel - 377 linek zapnuto
+4. ✅ **hotovo 21. 8.** schování sloupce tarifních čísel - 377 linek zapnuto; první třístav
+   „Automaticky (dle linky)" v linkovém JŘ a s ním pravidlo „prázdný sloupec se netiskne" v prvku
 5. barvy spojů - 24 linek vypnuto
 6. atributy nad spojem - oba stavy ve všech šesti firmách
 7. tvar datumů v omezeních - už umíme, jen doplnit do matice
