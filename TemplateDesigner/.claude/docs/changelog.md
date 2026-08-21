@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-08-21 (4) - 🎨 barvy spojů se konečně tisknou (`L2` krok 5)
+
+Spoj může mít v jízdních řádech nastavenou barvu a my ji v linkovém JŘ **vůbec neposílali** - časy
+se tiskly černě, i když si zákazník spoje obarvil. Nově barvu nese datový kontrakt a prvek ji
+použije na časy toho spoje.
+
+**Vzniklo to z nedorozumění, které stálo za změření:** vypadalo to, že barvu u spoje zadat nejde
+(barva se přidávala u linky). Měření ale našlo **3 926 obarvených spojů v deseti různých barvách**,
+takže to nikdo neklikl omylem. Je to necelé procento spojů, ale na lince, kde se to používá, o tu
+informaci tisk přicházel celou.
+
+K tomu volba **„Barvy spojů"** (*Automaticky (dle linky)* / *Tisknout* / *Netisknout*) - linka umí
+barvy potlačit a uživatel to smí přebít. `0;0;0` se posílá jako „nenastaveno", ne jako černá, jinak
+by nešlo poznat obarvený spoj od neobarveného.
+
+**Matice nastavení se přitom naučila novou věc.** Tvrzení „barvy posíláme" nešlo opřít o nastavení
+u linky - „žádné barvy" vyjde i na lince, jejíž spoje barvu nemají. Matice proto umí **předpoklad
+nad zdrojovými daty**: najdi linku, u které spoje barvu skutečně mají, a teprve na ní tvrď. Je to
+odolnější než pevně zadaná linka, protože čísla linek se v jednotlivých skupinách opakují a zákazník
+je může upravit.
+
+Ověřeno: Caché 124/124, .NET 1121/1121.
+
 ## 2026-08-21 (3) - 🚫 zastávky, kde nikdo nestaví, se dají vyhodit (`L2` krok 6)
 
 Na **362 linkách** má zákazník nastavené, že se do tabulky nemají dostat zastávky, na kterých žádný

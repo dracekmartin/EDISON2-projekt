@@ -212,6 +212,22 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBez.options = optsBez
     d arr.%Push(pBez)
 
+    // Barvy spojů: barva je u spoje (3 926 spojů ji v datech má), linka ji umí potlačit
+    // (`PATCH,barevnyTiskSpoju` = 1 → tisknout černě). Týž třístav.
+    s pBar = ##class(%DynamicObject).%New()
+    s pBar.name         = "BARVY_SPOJU"
+    s pBar.label        = "Barvy spojů"
+    s pBar.type         = "enum"
+    s pBar.group        = "Linkový JŘ"
+    s pBar.defaultValue = "Automaticky (dle linky)"
+    s pBar.description  = "Zda se časy spoje tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Automaticky = podle nastavení u linky; Netisknout = celá tabulka černě."
+    s optsBar = ##class(%DynamicArray).%New()
+    d optsBar.%Push("Automaticky (dle linky)")
+    d optsBar.%Push("Tisknout")
+    d optsBar.%Push("Netisknout")
+    s pBar.options = optsBar
+    d arr.%Push(pBar)
+
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
 }
@@ -292,9 +308,10 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s deleni = ..DeleniZParametru($g(^||ML("IN","DELENI_SLOUPCU")))
         s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
         s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
+        s volbaBarvy = $g(^||ML("IN","BARVY_SPOJU"))
 
         f smer = "T", "Z" {
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez)
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
@@ -312,7 +329,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 
         d ..PrvniLinka(dataDB, .sku, .lin)
         s page = ""
-        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "", "")
+        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "", "", "")
 
         i page = "" {
             s page = ##class(%DynamicObject).%New()
@@ -357,7 +374,7 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 }
 
 /// Sestaví JSON stránku knižního JŘ pro jednu linku a směr. "" když směr nemá spoje.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "") As %DynamicObject
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     i '..MaSpoje(dataDB, sku, lin, smer) q ""
@@ -407,6 +424,8 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s tiskBezZastaveni = ..TristavDleLinky(volbaBezZastaveni, '+$g(^[dataDB]JRL(sku,lin,"PATCH","tisknoutJenTcKdeSpojeZastavuji")))
     k zastavuje
     i 'tiskBezZastaveni d ..ZastavujiciTc(dataDB, sku, lin, smer, .zastavuje)
+    // Barvy spojů: u linky 1 = tisknout černě, tedy barvy potlačit.
+    s tiskBarvy = ..TristavDleLinky(volbaBarvy, '+$g(^[dataDB]JRL(sku,lin,"PATCH","barevnyTiskSpoju")))
     s pocetKmSloupcu = $s(tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)), 1:0)
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
@@ -471,7 +490,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
             i plk = "" s plk = ..PlatnostZDatumu(dataDB, sku, lin, smer, sp)
             s skupiny = ..ZarazeniSpojeKnizni(deleni, plk)
             i (","_skupiny_",") '[ (","_skupina_",") continue
-            s spojObj = ..BuildSpoj(dataDB, sku, lin, smer, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen)
+            s spojObj = ..BuildSpoj(dataDB, sku, lin, smer, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, tiskBarvy)
             i spojObj '= "" d spoje.%Push(spojObj)
         }
     }
@@ -696,7 +715,7 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
 
 /// Sestaví JSON objekt jednoho spoje (sloupec matice): řádek platnosti (plný klíčový systém
 /// legacy Platnost/Spoj2Tb), NZ, časy per řádek, návaznosti.
-ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, skupina As %Integer, pocetRadku As %Integer, ByRef rowMeta, rec As %String, ByRef platnostZnakySeen, ByRef nzSeen, ByRef pripojePoznamky, ByRef markerSeen, ByRef atributSeen, ByRef mistenkaSeen, ByRef trasaZnakySeen) As %DynamicObject
+ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, skupina As %Integer, pocetRadku As %Integer, ByRef rowMeta, rec As %String, ByRef platnostZnakySeen, ByRef nzSeen, ByRef pripojePoznamky, ByRef markerSeen, ByRef atributSeen, ByRef mistenkaSeen, ByRef trasaZnakySeen, tiskBarvy As %Boolean = 1) As %DynamicObject
 {
     s spoj = $g(^[dataDB]JRL(sku,lin,smer,sp))
     s hlava = $p(spoj,"#",1)
@@ -720,6 +739,13 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     d o.%Set("CISLO_SPOJE", +sp)
     d o.%Set("SKUPINA", skupina)
     d o.%Set("NZ", cnz)
+    // Barva spoje jako prezentační nápověda (R3): 12. „#"-pole záznamu ve tvaru „r;g;b".
+    // Prázdno = šablona rozhodne; `0;0;0` je v legacy „nenastaveno", ne černá, takže se neposílá.
+    // Nastavení u linky (a parametr sestavy) barvy potlačí - pak se neposílá nic.
+    i tiskBarvy {
+        s barva = ..RgbNaHex($p(spoj,"#",12))
+        i barva '= "" d o.%Set("FORE_COLOR", barva)
+    }
 
     // ── klíče řádku platnosti (1:1 legacy Platnost → Spoj2Tb pevné pořadí) ──
     k klice

@@ -73,15 +73,17 @@ ClassMethod Matice(ByRef m)
 	set m($increment(m)) = "tisknoutJenTcKdeSpojeZastavuji|0|radkyBezZastaveni|?|plati"
 
 	// ── barvy spojů ─────────────────────────────────────────────────────
-	// U linky 1 = tiskni černě (barvy potlačit). Zapnuto na 24 linkách.
+	// U linky 1 = tiskni černě (barvy potlačit). Zapnuto na 24 linkách; barvu má v datech 3 926 spojů.
 	//
-	// ⚠️ **Obojí je `?`, a je to poctivější než „OK".** Nulové měření je u potlačovacího nastavení
-	// splněné i tehdy, když tu vlastnost **vůbec neumíme**: barvy neposíláme, takže „žádné barvy"
-	// vyjde samo a tvrdilo by to něco, co jsme neudělali. Tvrdit to půjde teprve nad linkou, u které
-	// se ví, že **spoje barvu v datech mají** - to je předpoklad nad zdrojovými daty, který matice
-	// zatím neumí vyjádřit. Dluh je vedený v `§13.6`, ne tady jako falešná zelená.
+	// ⚠️ Řádek „potlačeno" **zůstává na `?`**, a to schválně: „žádné barvy" by vyšlo i na lince,
+	// jejíž spoje barvu vůbec nemají, takže by to netvrdilo nic o potlačení. Tvrdit se dá **opačný
+	// směr** - na lince, kde barvy povolené jsou a spoje je mají, musí v datech být. Tím je
+	// pokrytá i ta část, na kterou byl dřív dluh (barvy jsme neposílali vůbec).
 	set m($increment(m)) = "barevnyTiskSpoju|1|barvySpoju|?|plati"
 	set m($increment(m)) = "barevnyTiskSpoju|0|barvySpoju|?|plati"
+	// Předpoklad nad zdrojovými daty: linka, jejíž spoje barvu skutečně mají (3 926 spojů v datech
+	// ji má). Bez toho by hledač trefil jakoukoli linku a nula by nedokazovala nic.
+	set m($increment(m)) = "@barvaVDatech||barvySpoju|1|plati"
 
 	// ── odstranit písmena z označení zóny ───────────────────────────────
 	// U linky se ukládá hodnota+1 a přebíjí globální (`:1847`): 1 → neodstraňovat, 2 → odstraňovat,
@@ -107,11 +109,11 @@ Method TestMaticeNastaveni()
 		set mereni = $piece(m(i), "|", 3)
 		set cekano = $piece(m(i), "|", 4)
 		set stav = $piece(m(i), "|", 5)
-		set popis = klic_"=„"_hodnota_""" → "_mereni
+		set popis = $select($extract(klic)="@":"předpoklad "_$extract(klic,2,*), 1:klic_"=„"_hodnota_"""")_" → "_mereni
 
 		// Km sloupce musí být u linky nakonfigurované, jinak by tvrzení „km se netisknou" vyšlo
 		// triviálně i tam, kde žádné nejsou.
-		if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinku(klic, hodnota, .db, .sku, .lin, mereni = "km") {
+		if '..NajdiPripad(klic, hodnota, mereni, .db, .sku, .lin) {
 			set neovereno = neovereno _ $select(neovereno="":"", 1:", ") _ popis
 			continue
 		}
@@ -159,13 +161,28 @@ Method TestZadnyDluhNeniJizSplneny()
 		continue:$piece($piece(m(i), "|", 5), ":", 1)'="dluh"
 		set klic = $piece(m(i), "|", 1), hodnota = $piece(m(i), "|", 2)
 		set mereni = $piece(m(i), "|", 3), cekano = $piece(m(i), "|", 4)
-		continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinku(klic, hodnota, .db, .sku, .lin, mereni = "km")
+		continue:'..NajdiPripad(klic, hodnota, mereni, .db, .sku, .lin)
 		kill parametry
 		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
 		continue:..Zmer(mereni)'=cekano
 		set splnene = splnene _ $select(splnene="":"", 1:", ") _ klic_"=„"_hodnota_""" → "_mereni
 	}
 	do $$$AssertEquals(splnene, "", "tyhle dluhy už jsou splněné, přepiš je v matici na „plati"": "_splnene)
+}
+
+/// Najde linku pro řádek matice. Klíč začínající `@` je **pevně zadaná linka** ve tvaru
+/// `@firma~skupina~linka` - pro případ, kdy tvrzení stojí na konkrétní vlastnosti zdrojových dat
+/// (spoje mají barvu), kterou hledač podle nastavení u linky nepozná. Jinak se hledá podle
+/// nastavení. Vrací 1 = má na čem měřit.
+ClassMethod NajdiPripad(klic As %String, hodnota As %String, mereni As %String, ByRef db, ByRef sku, ByRef lin) As %Boolean
+{
+	// Klíč `@<předpoklad>` = linku hledá **předpoklad nad zdrojovými daty**, ne nastavení u linky.
+	// Pinovat konkrétní linku by bylo křehké: čísla linek se v jednotlivých skupinách opakují
+	// a zákazník je může upravit, takže by řádek jednou tiše přestal měřit to, co má.
+	if klic = "@barvaVDatech" {
+		quit ##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinkuSBarvouSpoje(.db, .sku, .lin)
+	}
+	quit ##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinku(klic, hodnota, .db, .sku, .lin, mereni = "km")
 }
 
 /// Změří jednu vlastnost výstupu v `^||ML("OUT")`. Vrací 0/1.
@@ -240,7 +257,7 @@ ClassMethod Diag(ByRef sys As %String) As %Status
 			quit:i=""
 			set klic = $piece(m(i), "|", 1), hodnota = $piece(m(i), "|", 2)
 			set mereni = $piece(m(i), "|", 3), cekano = $piece(m(i), "|", 4), stav = $piece(m(i), "|", 5)
-			if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe).NajdiLinku(klic, hodnota, .db, .sku, .lin, mereni = "km") {
+			if '..NajdiPripad(klic, hodnota, mereni, .db, .sku, .lin) {
 				set radky($increment(radky)) = klic_"=„"_hodnota_""" "_mereni_" -> V DATECH NENÍ"
 				continue
 			}

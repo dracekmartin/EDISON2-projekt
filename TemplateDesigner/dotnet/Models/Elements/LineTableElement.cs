@@ -114,6 +114,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         public string CisloSpoje = "";
         public int Skupina = 1;
         public string Nz = "";
+        /// <summary>Barva textu časů spoje (prezentační nápověda z dat, R3). Null = řeší šablona.
+        /// Server ji posílá jen u spoje, který barvu skutečně má, a jen když ji linka nepotlačila.</summary>
+        public string? ForeColor;
         public List<string> Platnost = [];
         public List<string> Casy = [];
         public List<LinePripojData> Pripoje = [];
@@ -155,6 +158,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             CisloSpoje = row.GetString("CISLO_SPOJE"),
             Skupina = ParseInt(row.GetString("SKUPINA")),
             Nz = row.GetString("NZ"),
+            ForeColor = row.GetString("FORE_COLOR") is { Length: > 0 } fc ? fc : null,
             Platnost = ParseStringArray(row.GetValue("PLATNOST")),
             Casy = ParseStringArray(row.GetValue("CASY")),
             Pripoje = ParsePripoje(row.GetValue("PRIPOJE")),
@@ -474,7 +478,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
                 specs.Add(new(c.Width, c.Value(stop), OddTc(c.DataStyle, oddTc)));
             var tripCellStyle = OddTc(tripDataStyle, oddTc);
             foreach (var t in trips)
-                specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", tripCellStyle));
+            {
+                // Barva spoje z dat přebíjí barvu textu z kaskády - je to prezentační nápověda,
+                // kterou prvek smí respektovat (R3). Spoj bez barvy nechá kaskádu být.
+                var cellStyle = t.ForeColor is null ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor };
+                specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", cellStyle));
+            }
 
             // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
             string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);

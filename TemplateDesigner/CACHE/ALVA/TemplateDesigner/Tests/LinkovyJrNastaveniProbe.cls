@@ -72,6 +72,45 @@ ClassMethod NajdiLinku(klic As %String, hodnota As %String, ByRef db, ByRef sku,
 	quit 0
 }
 
+/// Najde linku, u které **spoje mají v datech nastavenou barvu** (a linka je nepotlačuje).
+/// Je to „předpoklad nad zdrojovými daty": bez něj by tvrzení „barvy posíláme" vyšlo nula i tam,
+/// kde není co posílat, a nic by nedokazovalo. Vrací 1 = našel.
+ClassMethod NajdiLinkuSBarvouSpoje(ByRef db, ByRef sku, ByRef lin) As %Boolean
+{
+	set db = "", sku = "", lin = ""
+	for fi = 1:1:$length(..#FIRMY, ",") {
+		set firma = $piece(..#FIRMY, ",", fi)
+		continue:'##class(%SYS.Namespace).Exists(firma)
+		set s1 = ""
+		for  {
+			set s1 = $order(^[firma]JRL(s1))
+			quit:s1=""
+			continue:'$isvalidnum(s1)
+			set l1 = ""
+			for  {
+				set l1 = $order(^[firma]JRL(s1, l1))
+				quit:l1=""
+				continue:'$data(^[firma]JRL(s1, l1, "I"))
+				// linka, která barvy potlačuje, by tvrzení popřela z jiného důvodu
+				continue:+$get(^[firma]JRL(s1, l1, "PATCH", "barevnyTiskSpoju"))
+				for smer = "T", "Z" {
+					set sp = ""
+					for  {
+						set sp = $order(^[firma]JRL(s1, l1, smer, sp))
+						quit:sp=""
+						continue:'$isvalidnum(sp)
+						set barva = $piece($get(^[firma]JRL(s1, l1, smer, sp)), "#", 12)
+						continue:(barva="")||(barva="0;0;0")
+						set db = firma, sku = s1, lin = l1
+						ret 1
+					}
+				}
+			}
+		}
+	}
+	quit 0
+}
+
 /// Najde linky, na kterých má daný klíč danou hodnotu - podklad pro test, který se má o ten stav
 /// opřít. IN: `KLIC` (klíč pod `PATCH`), `HODNOTA`, `FIRMY` (nepovinné), `MAX` (nepovinné).
 ClassMethod Priklady(ByRef sys As %String) As %Status

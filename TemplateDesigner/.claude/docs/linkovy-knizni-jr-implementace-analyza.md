@@ -942,7 +942,8 @@ s nulovou hodnotou; stačí o nich vědět.
 3. ✅ **hotovo 21. 8.** řádky bez zastavení - 362 linek zapnuto; třístav a filtr per směr
 4. ✅ **hotovo 21. 8.** schování sloupce tarifních čísel - 377 linek zapnuto; první třístav
    „Automaticky (dle linky)" v linkovém JŘ a s ním pravidlo „prázdný sloupec se netiskne" v prvku
-5. barvy spojů - 24 linek vypnuto
+5. ✅ **hotovo 21. 8.** barvy spojů - 24 linek vypnuto, 3 926 spojů barvu má; matice se k tomu
+   naučila předpoklad nad zdrojovými daty
 6. atributy nad spojem - oba stavy ve všech šesti firmách
 7. tvar datumů v omezeních - už umíme, jen doplnit do matice
 
