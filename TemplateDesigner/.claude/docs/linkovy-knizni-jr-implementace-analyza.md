@@ -586,9 +586,13 @@ Co ta síť **nekryje**, je právě matice nastavení, a to ze dvou důvodů:
 
 ### 13.4 Rozhodnutí před `L2` (rozhodnuto Janem 2026-08-21)
 
-Sedm věcí, u kterých se z inventáře nedalo odvodit, co je správně. **Všech sedm je rozhodnuto**
-(Jan, 21. 8.) - `L2` je tím vzatelná celá. Varianty a ceny zůstávají zapsané, aby bylo vidět, co se
-zvažovalo a proč vyhrálo to, co vyhrálo; u dvou bodů (5, 7) se rozhodnutí od návrhu agenta **liší**.
+Sedm věcí, u kterých se z inventáře nedalo odvodit, co je správně. **Šest je rozhodnuto**
+(Jan, 21. 8.), **bod 4 se vědomě odkládá do MHD kola** - `L2` je tím pro AD vzatelná celá.
+Varianty a ceny zůstávají zapsané, aby bylo vidět, co se zvažovalo a proč vyhrálo to, co vyhrálo.
+
+⚠️ **U tří bodů se rozhodnutí od návrhu agenta liší** (3, 5, 7) a všechny tři míří stejným směrem:
+**to, jak je výstup složený, patří do návrháře; z nastavení u linky se bere jen to, co mění data.**
+Umístění legendy ani pořadí druhů poznámek tedy nejsou parametry sestavy, ale vlastnosti šablony.
 
 #### 1. Jak v testu přepnout nastavení, které je uložené u linky
 
@@ -643,12 +647,16 @@ Vedli jsme je jako svůj dluh; čtení zdroje ukázalo, že v legacy nejsou funk
 
 **Rozhodnuto** (po upřesnění, co která položka je - jsou to tři různé případy, ne jeden):
 
-- **Pořadí druhů poznámek** - v EDISONu **nastavit jde** a starý tisk to ignoruje (klient volbu
-  načte a do tisku ji nikdy nevloží). Platí tedy pravidlo „co jde nastavit, musíme brát v potaz",
-  navíc je za tím tiket → **děláme**, jako parametr v `L3`.
-- **Zalamování označení turnusu** - dtto, klient volbu i posílá, ale žádný engine ji nečte
-  (legacy si u ní sám píše „todo"). Nastavit jde, takže brát ji budeme - ale **až s turnusy**
-  v `L6`, samostatně nemá co zalamovat.
+- **Pořadí druhů poznámek** → **nastavení v návrháři, ne u linky** (rozhodnutí Jan 21. 8.).
+  ⚠️ **A tak to bylo i ve starém modulu** - hodnota se ukládá `^AlvaTiskJR(KEY, SekceId,
+  "stDL_PoznamkyPoradiDruh")`, tedy **u sekce šablony** (`TISKJR/Designer.cls:156,785`), ne u linky.
+  Nepřesouváme to tedy nikam: patřilo to do návrháře vždycky a chyba byla, že to **tisk nikdy
+  nepoužil** (klient hodnotu načte a do `in` ji nevloží). U nás je to **vlastnost prvku legendy**
+  (pořadí druhů), ne parametr sestavy a ne čtení nastavení linky - stejnou logikou jako umístění
+  legendy v bodu 5.
+- **Zalamování označení turnusu** - klient volbu posílá, ale žádný engine ji nečte (legacy si u ní
+  sám píše „todo"). Nastavit jde, takže brát ji budeme - ale **až s turnusy** v `L6`, samostatně
+  nemá co zalamovat.
 - **„Vyčká / Navazuje jako řádek"** - tohle **nastavit nejde**: legacy si hodnotu natvrdo nuluje
   s poznámkou „není zatím nikde uloženo", takže v EDISONu pro to není místo. Není co respektovat.
   My přípojné řádky tiskneme, takže jsme v tomhle **napřed z vlastního rozhodnutí** - přestává to
@@ -665,10 +673,13 @@ Proti tomu stojí, že uživatel po přepnutí agendy čeká stejný panel.
 **Návrh:** dát MHD tutéž sadu tam, kde má význam; rozdíly nechat jen s doménovým důvodem
 (typy provozu MHD má, vlastní sloupce tam smysl nemají - viz `L3`).
 
-**Rozhodnuto:** MHD dostane **tutéž sadu voleb tam, kde má význam**. Uživatel po přepnutí agendy
-čeká stejný panel. ⚠️ Eviduje se to jako **nová featura, ne dorovnání** - u MHD se tedy proti
-starému modulu **neměří**, protože ten svých jedenáct voleb v okně z většiny ignoroval (jeho MHD
-engine čte tři).
+**Nerozhoduje se teď** (Jan 21. 8.): **řeší se v MHD kole, ne v AD.** Sada voleb pro městské linky
+je rozhodnutí o MHD variantě a to celé jde po AD - jinak bychom teď rozhodovali o modulu, na kterém
+nepracujeme.
+
+Co si z průzkumu nese MHD kolo jako vstup: **starý modul u městských linek většinu voleb ignoroval**
+(jeho MHD engine čte tři z jedenácti, které má v okně vypsané), takže parita tam nemá čím se řídit
+a jakákoli sada voleb je u MHD **nová featura**, ne dorovnání.
 
 #### 5. Kam se tiskne legenda poznámek
 
