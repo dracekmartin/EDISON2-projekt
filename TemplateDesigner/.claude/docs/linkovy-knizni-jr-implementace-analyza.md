@@ -874,6 +874,75 @@ Tři různé způsoby, ne jeden:
 6. **Zbytek dat** - atributy nad spojem, místenkování, číslo linky, bezbariérové vozidlo, obsah
    km sloupce, naše čtyři nezaevidované klíče.
 
+### 13.6 Změřený výskyt nastavení v datech (2026-08-21, krok 1 vlny `L2`)
+
+Změřeno sondou `LinkovyJrNastaveniProbe` nad **93 133 linkami v šesti firmách** (CB_CSADAD,
+CB_GWBUS, KV_DP, VS_CSAD, ZL_KOVED, SKNI_MHDNITRA). Sonda jen čte globály, nevolá `GetData`.
+
+Účel: `L2` má u každého nastavení ověřit **oba stavy**, ale nastavení uložená v datech z testu
+přepnout nejde. Tohle měření říká, co jde ověřit hned a u čeho se musí napsat **neověřeno**.
+
+⚠️ **Co číslo neříká:** počítají se všechny linky včetně dávno neplatných. „Vyskytuje se" tedy
+neznamená „vyskytuje se na aktuálně platné lince".
+
+#### Ověřitelné hned - oba stavy jsou v datech
+
+| Nastavení | Výskyt |
+|---|---|
+| které atributy se tisknou nad spojem (`PAtrSp`) | 6 firem ze 6, tři mají `0~0~0~0`, tři `1~1~0~0` |
+| tvar datumů v omezeních (`TiskDtm`) | 6 firem, hodnoty `0`×3, `1`×2, `3`×1 |
+| **schovat sloupec tarifních čísel** | 1 736 linek nastaveno, z toho **377 zapnuto** |
+| **vyhodit řádky, kde žádný spoj nestaví** | 1 145 nastaveno, z toho **362 zapnuto** |
+| vypnout barvy spojů | 1 662 nastaveno, z toho **24 zapnuto** |
+| odstranit písmena ze zóny - **u linky** | 28 747 nastaveno, hodnoty `0`×25 010, `1`×370, `2`×3 367 |
+| čtyřstavový přepínač zóny × km (`linIDS`) | 56 525 nastaveno, hodnoty `1`×1 420, `2`×53 979, **`3`×1 126** |
+
+⚠️ **U `linIDS` se hodnota `0` v datech nevyskytuje ani jednou** - a to je polovina naší chyby.
+Druhá polovina ale ověřitelná je: **1 126 linek má `3` („netisknout ani zónu, ani km")** a my u nich
+zónu tiskneme. Oprava je tedy doložitelná na reálných datech.
+
+#### Nastaveno tak vzácně, že to samo o sobě nic nedoloží
+
+| Nastavení | Výskyt |
+|---|---|
+| podtržení u zdvojených řádků | 1 736 nastaveno, ale zapnuto na **jediné lince** |
+| ruční zlom stránky na tarifním čísle | **3 linky** |
+
+#### ⛔ Nikde nenastaveno - ověřit proti legacy nejde
+
+Tohle je hlavní výsledek měření. U všech níže platí, že po implementaci půjde napsat jen
+**„neověřeno proti starému modulu"**, ne „ověřeno":
+
+| Nastavení | Vrstva |
+|---|---|
+| tvar tisku místenkování (`MistOR`, `MistNOD`) | globální - **0 firem** |
+| vlastní text sloupce MHD (`MHDPZ` P/Z) | globální - **0 firem** |
+| tisk provozů dopravce (`SDOP`) | globální - **0 firem** |
+| schovat Tč / čísla spojů / šipky / značky (`MHD2` klíče u linky) | u linky - **0 linek** |
+| ruční přiřazení spojů do sekcí (`MHD2,umeleDatDoSekci`) | u linky - **0 linek** |
+| **celá vrstva D** - řádek se v knižním JŘ netiskne (i per směr), umělá sekce u spoje | pod linkou - **0 výskytů** |
+
+⚠️ **Vrstva D je prázdná úplně.** Byla označená jako „nejtvrdší část matice" a to platí dál, ale
+z jiného důvodu, než se čekalo: ne že se těžko hledá, ale že **v dostupných datech neexistuje**.
+Nedá se tedy porovnat se starým modulem na reálné lince - buď se pro ni vyrobí vlastní případ,
+nebo se implementuje proti čtení legacy zdroje a označí jako neověřená.
+
+#### Co z toho plyne pro pořadí práce
+
+Pořadí z §13.5 se **mění**: nejdřív to, co je doložitelné.
+
+1. **Doložitelné hned** (kroky 2-4 z §13.5): zóny × km (1 126 linek s hodnotou `3`), barvy spojů,
+   řádky bez zastavení (362 linek), schování sloupce Tč (377 linek), odstranění písmen ze zóny
+   u linky, atributy nad spojem, tvar datumů. Sem směřovat práci první - každá položka má
+   v datech doklad.
+2. **Implementovat, ale bez důkazu z dat**: místenkování, texty sloupce MHD, provozy dopravce,
+   `MHD2` klíče u linky. Dělat podle čtení legacy zdroje a **v reportu psát neověřeno**.
+3. **Rozhodnout znovu u vrstvy D**: rozhodnutí z §13.4 bodu 2 („skrývání řádků do `L2`") padlo
+   za předpokladu, že to jde ověřit. Neplatí. Buď se vyrobí vlastní testovací případ (a pak to
+   `L2` unese), nebo se to odloží, dokud si o to zákazník neřekne. **Otázka pro Jana.**
+4. **Nechat být**: podtržení (1 linka) a ruční zlom (3 linky) - u obojího navíc platí, že to má
+   jinou vlnu nebo žádnou poptávku.
+
 ## 14. Pozastavené tikety helpdesku k linkovému JŘ (projito 2026-08-19)
 
 Projito **všech 28 pozastavených** tiketů v agendách Jízdní řády + MHD. Roztřídění samo nebylo nové

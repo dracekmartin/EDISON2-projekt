@@ -118,6 +118,13 @@ v novém návrháři").
 > data, šablona, třístav, parametr, nebo jiná vlna, a v jakém pořadí se to má dělat:
 > [`§13.5`](linkovy-knizni-jr-implementace-analyza.md).
 >
+> 📊 **Krok 1 `L2` hotový: změřen výskyt nastavení v datech** (93 133 linek, 6 firem;
+> [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Sedm nastavení jde ověřit hned, protože jsou
+> v datech oba stavy - včetně 1 126 linek, na kterých se ukazuje naše chyba u zón a kilometrů.
+> ⛔ Šest nastavení a **celá vrstva pod linkou nejsou v datech nikde** - jdou implementovat, ale
+> v reportu u nich musí být **neověřeno**. ❓ **Rozhodnutí o vrstvě D padlo za předpokladu, že to jde
+> ověřit; neplatí** - buď se pro ni vyrobí vlastní testovací případ, nebo se odloží.
+>
 > Co z nich platí pro `L2`:
 >
 > - **Nastavení se bere tak, jak je u linky nastavené**; oba stavy pokryje různost zákazníků, testovací
