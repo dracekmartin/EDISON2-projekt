@@ -95,6 +95,60 @@ ClassMethod Matice(ByRef m)
 	set m($increment(m)) = "@pismenoVZone-nechat||zonaPismena|1|plati"
 }
 
+/// **Ruční pořadí spojů u linky** - dvě tvrzení naráz, protože jedno bez druhého nic neříká:
+/// platné pořadí se použije **a** rozbité se zahodí. Kdyby platilo jen první, stačilo by pořadí
+/// slepě opsat; kdyby jen druhé, stačilo by ho ignorovat (což jsme do 21. 8. dělali).
+///
+/// Není to řádek matice schválně: matice měří výstup `GetData`, kdežto tohle je tvrzení o pořadí
+/// sloupců, které by se z JSON muselo zpětně rekonstruovat přes skupiny dnů. Přímé srovnání
+/// se seznamem z EDISONu je čitelnější i přesnější.
+Method TestRucniPoradiSpoju()
+{
+	set sonda = "ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe"
+	set agenda = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
+
+	// ── platné pořadí se použije ────────────────────────────────────────
+	if $classmethod(sonda, "NajdiLinkuSRucnimPoradim", 1, .db, .sku, .lin) {
+		kill serazene
+		do $classmethod(agenda, "SeradSpoje", db, sku, lin, "T", .serazene, .pocet)
+		set nase = "", i = ""
+		for  {
+			set i = $order(serazene(i))
+			quit:i=""
+			set nase = nase _ $select(nase="":"", 1:",") _ serazene(i)
+		}
+		set rucne = "", poradi = ""
+		for  {
+			set poradi = $order(^[db]JRL(sku, lin, "PATCH", "SORT", "T", poradi))
+			quit:poradi=""
+			set rucne = rucne _ $select(rucne="":"", 1:",") _ +$get(^[db]JRL(sku, lin, "PATCH", "SORT", "T", poradi))
+		}
+		do $$$AssertEquals(nase, rucne, "ruční pořadí u linky "_db_" "_lin_" se musí použít")
+	}
+	else {
+		do $$$AssertTrue(1, "na tomto serveru není linka s platným ručním pořadím - přeskočeno")
+	}
+
+	// ── rozbité pořadí se zahodí a spočítá ──────────────────────────────
+	// Kontrola je tvrdší, než se zdá: rozbité pořadí typicky vznikne přidáním spoje, takže
+	// nesmí chybět **žádný** spoj - kdybychom neplatné pořadí použili, tenhle počet by nesedl.
+	if $classmethod(sonda, "NajdiLinkuSRucnimPoradim", 0, .db2, .sku2, .lin2) {
+		kill serazene2
+		do $classmethod(agenda, "SeradSpoje", db2, sku2, lin2, "T", .serazene2, .pocet2)
+		set vDatech = 0, sp = ""
+		for  {
+			set sp = $order(^[db2]JRL(sku2, lin2, "T", sp))
+			quit:sp=""
+			continue:'$isvalidnum(sp)
+			set vDatech = vDatech + 1
+		}
+		do $$$AssertEquals(pocet2, vDatech, "rozbité ruční pořadí ("_db2_" "_lin2_") se musí zahodit a spočítat - všechny spoje")
+	}
+	else {
+		do $$$AssertTrue(1, "na tomto serveru není linka s rozbitým ručním pořadím - přeskočeno")
+	}
+}
+
 /// Hlavní brána matice: **žádný rozdíl u nastavení, které už umíme**.
 Method TestMaticeNastaveni()
 {

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-21 (7) - 🔢 pořadí spojů se skládá jako ve starém tisku (`L2` krok 4, poslední dluh)
+
+Porovnání se starým modulem hlásilo na dvou linkách jinak seřazené sloupce spojů. Hledání příčiny
+odhalilo **čtyři různé odchylky** - a jednu z nich zásadní.
+
+**Ruční pořadí spojů u linky jsme ignorovali úplně.** Uživatel si smí sloupce spojů přeskládat
+a starý modul to respektuje; my jsme si pořadí vždy počítali sami. **Nastavené to je na 4 409
+linkách** ze šesti měřených firem, takže to nebyla okrajová věc. Nově se ruční pořadí použije -
+a stejně jako ve starém modulu se **zahodí celé, jakmile nesedí se skutečnými spoji** (typicky
+po přidání spoje); pak se pořadí spočítá.
+
+Tři menší, ale plošné odchylky ve výpočtu pořadí:
+
+- **Tarifními čísly se u směru „tam" jde od konce**, ne od začátku. Měli jsme to obráceně.
+- **Pro řazení se bere příjezd, ne odjezd.** U zastávky s pobytem jsme přičítali čekání - pobyt
+  v trase má 38 655 měřených linek.
+- **Trasa vedená přes víc záznamů** se pro řazení skládá dohromady (3 linky).
+
+Pořadí spojů teď proti starému modulu sedí **na všech čtyřech kontrolních linkách do jednoho spoje**
+(7/7), takže poslední dluh z porovnání je splacený.
+
+⚠️ **Přepsány zmrazené odtisky dvou linek**: počty stránek, zastávek, spojů, časů i poznámek zůstaly
+shodné, změnilo se jen pořadí sloupců.
+
+Do backlogu (`B98`) šly tři přepínače řazení, které nemá zapnuté žádná ze šesti firem.
+
+Ověřeno: Caché 125/125, .NET 1121/1121.
+
 ## 2026-08-21 (6) - 🏷️ legenda atributů spojů se chová jako starý tisk (`L2` krok 3)
 
 Věty v legendě u atributů spoje („spoj s bezbariérově přístupným vozidlem", „spoje 1, 2 přepravují

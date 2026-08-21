@@ -51,13 +51,21 @@ Method TestGold0330511()
 /// Záměrně z jiné firmy než dvě předchozí - jeden zákazník nese jen svůj tvar dat.
 Method TestGold0410107()
 {
+	// Re-baseline 2026-08-21 (`L2`, pořadí spojů): řazení se skládá jako legacy `mkPoradiSp` -
+	// tarifními čísly se u „tam" jde od konce, pro řazení se bere příjezd (ne odjezd) a respektuje
+	// se ruční pořadí u linky. ⚠️ **Mění se JEN md5**, všechny počty jsou shodné: je to přeskládané
+	// pořadí sloupců, ne ztracená data. Porovnání se starým modulem je u pořadí spojů teď 7/7.
 	// Baseline 2026-08-19 (`L1`).
-	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=KD39UGaj+PtQfuNInz0Mdg==")
+	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=MZTUNUaRJGYwvw31/fMmcw==")
 }
 
 /// Čtvrtý tvar: 109 spojů na **jediné** stránce (jeden směr), bez zón a bez sloupce MHD.
 Method TestGold0945001()
 {
+	// Re-baseline 2026-08-21 (`L2`, pořadí spojů): řazení se skládá jako legacy `mkPoradiSp` -
+	// tarifními čísly se u „tam" jde od konce, pro řazení se bere příjezd (ne odjezd) a respektuje
+	// se ruční pořadí u linky. ⚠️ **Mění se JEN md5**, všechny počty jsou shodné: je to přeskládané
+	// pořadí sloupců, ne ztracená data. Porovnání se starým modulem je u pořadí spojů teď 7/7.
 	// Re-baseline 2026-08-21 (`L2`, texty atributů spojů): věty legendy se skládají ze šablon
 	// opsaných ze starého modulu a v jeho pořadí, ne z našeho volného opisu. ⚠️ **Mění se JEN md5** -
 	// stránky, zastávky, spoje, časy i počet poznámek jsou do jednoho shodné, takže se nic
@@ -66,7 +74,7 @@ Method TestGold0945001()
 	// beze zbytku (43/43, 18/18, 20/20). Rozhodnutí Jan 21. 8.: v základu se to musí chovat
 	// stejně jako starý modul.
 	// Baseline 2026-08-19 (`L1`).
-	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=s2ij7fhAp6NyQy0LZd+vWw==")
+	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=eOnI10o+5YEJ9lgadi6XVg==")
 }
 
 /// Ověří digest jedné linky proti očekávané hodnotě. Rozlišuje:

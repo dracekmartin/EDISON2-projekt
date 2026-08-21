@@ -654,6 +654,9 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
     k serazeneSpoje
     s pocetSpoju = 0
 
+    // ruční pořadí nastavené u linky má přednost (legacy volá mkPoradiSp s par=1)
+    i ..RucniPoradiSpoju(dataDB, sku, lin, smer, .serazeneSpoje, .pocetSpoju) q
+
     // primární pořadí: odjezd (hlava:4), při shodě číslo spoje
     k razeni
     s sp = ""
@@ -683,12 +686,12 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
         s sp = serazeneSpoje(i)
         s hlava = $p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1)
         s odj = +$p(hlava,":",4)
-        d ..WMapa(dataDB, sku, lin, $p(hlava,":",3), .wMap)
+        d ..WMapaProRazeni(dataDB, sku, lin, $p(hlava,":",3), .wMap)
         s pp = ""
         f {
             s pp = $o(wMap(pp))
             q:pp=""
-            s c = ..CasHodnota($g(wMap(pp)))
+            s c = ..CasProRazeni($g(wMap(pp)))
             i c '= "" s cas(sp, pp) = odj + c
         }
     }
@@ -696,7 +699,10 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
     // bublinové doseřazení 1:1 legacy mkPoradiSp: fáze 1 přes odjezdová tč spojů (TcOd = hlava:1),
     // fáze 2 přes příjezdová (TcDo = hlava:2), tč v pořadí směru jízdy; v každém tč se sousedé
     // s definovaným časem prohodí, je-li dřívější spoj pozdější.
-    s jeTam = (smer = "T")
+    // ⚠️ Směr průchodu je proti intuici: u „tam" se jde tarifními čísly **od konce**
+    // (legacy `Par=-1` pro T, `Par=1` pro Z). Měli jsme to obráceně a projevilo se to
+    // prohozenými sousedními spoji (43/45 na KV_DP 0410107).
+    s odKonce = (smer = "T")
     k tcOdSet, tcDoSet
     f i=1:1:pocetSpoju {
         s hlava = $p($g(^[dataDB]JRL(sku,lin,smer,serazeneSpoje(i))),"#",1)
@@ -706,8 +712,8 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
     f faze=1,2 {
         s tc = ""
         f {
-            i faze=1 { s tc = $s(jeTam:$o(tcOdSet(tc)), 1:$o(tcOdSet(tc),-1)) }
-            else     { s tc = $s(jeTam:$o(tcDoSet(tc)), 1:$o(tcDoSet(tc),-1)) }
+            i faze=1 { s tc = $s(odKonce:$o(tcOdSet(tc),-1), 1:$o(tcOdSet(tc))) }
+            else     { s tc = $s(odKonce:$o(tcDoSet(tc),-1), 1:$o(tcDoSet(tc))) }
             q:tc=""
             f pass=1:1:pocetSpoju {
                 s zmena = 0
@@ -724,6 +730,93 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
             }
         }
     }
+}
+
+/// **Ruční pořadí spojů nastavené u linky** (`PATCH,SORT`) - vrátí 1, když se použilo.
+///
+/// Uživatel si smí pořadí spojů přeskládat ručně a starý modul to respektuje. Zahodí ho ale
+/// **celé a pro oba směry**, jakmile nesedí se skutečnými spoji: buď je v pořadí spoj, který
+/// v datech není, nebo v datech je spoj, který v pořadí chybí (typicky po přidání spoje).
+/// Pak se pořadí spočítá. 1:1 legacy `PoradiSpRucne^JRapiSpUtl1`.
+///
+/// ⚠️ **Kontrola musí jít přes oba směry, i když plníme jeden** - jinak by u linky s rozbitým
+/// pořadím jednoho směru druhý směr ruční pořadí použil a starý modul ne.
+///
+/// ⚠️ **Reálně nastavené na 4 409 linkách** ze šesti měřených firem (21. 8.), takže to není
+/// okrajová věc - do 21. 8. jsme ruční pořadí ignorovali úplně.
+ClassMethod RucniPoradiSpoju(dataDB As %String, sku As %String, lin As %String, smer As %String, ByRef serazeneSpoje, ByRef pocetSpoju) As %Boolean
+{
+    // výstup si drží metoda sama - volá se i mimo `SeradSpoje` (z testu)
+    k serazeneSpoje
+    s pocetSpoju = 0
+    q:'$d(^[dataDB]JRL(sku,lin,"PATCH","SORT")) 0
+
+    k jeVRucnim
+    s chyba = 0, sm = ""
+    f {
+        s sm = $o(^[dataDB]JRL(sku,lin,"PATCH","SORT",sm))
+        q:sm=""
+        q:chyba
+        s poradi = ""
+        f {
+            s poradi = $o(^[dataDB]JRL(sku,lin,"PATCH","SORT",sm,poradi))
+            q:poradi=""
+            s sp = +$g(^[dataDB]JRL(sku,lin,"PATCH","SORT",sm,poradi))
+            i '$d(^[dataDB]JRL(sku,lin,sm,sp)) s chyba = 1  q
+            s jeVRucnim(sm,sp) = ""
+        }
+    }
+    q:chyba 0
+
+    // druhá polovina kontroly: každý spoj v datech musí být v ručním pořadí
+    f sm = "T","Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,sm,sp))
+            q:sp=""
+            i '$d(jeVRucnim(sm,sp)) s chyba = 1  q
+        }
+        q:chyba
+    }
+    q:chyba 0
+
+    s poradi = ""
+    f {
+        s poradi = $o(^[dataDB]JRL(sku,lin,"PATCH","SORT",smer,poradi))
+        q:poradi=""
+        s pocetSpoju = pocetSpoju + 1
+        s serazeneSpoje(pocetSpoju) = +$g(^[dataDB]JRL(sku,lin,"PATCH","SORT",smer,poradi))
+    }
+    q pocetSpoju > 0
+}
+
+/// Trasa pro **řazení spojů**, složená přes všechny navazující záznamy (`W(c)`, `W(c+.01)`, …).
+/// Legacy skládá trasu takhle **jen tady** (`mkOdjCas^JRapiSpUtl1`), v tiskové cestě ne - proto
+/// se to nesmí slévat s `WMapa`, kterou se kreslí časy. Dotčené jsou 3 linky ze 93 tisíc měřených.
+ClassMethod WMapaProRazeni(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef wMap)
+{
+    k wMap
+    i cisloTrasy = "" q
+    s trasa = "", c = +cisloTrasy
+    f {
+        q:'$d(^[dataDB]JRL(sku,lin,"W",c))
+        s trasa = trasa_$g(^[dataDB]JRL(sku,lin,"W",c))
+        s c = c + .01
+    }
+    f i=1:1:$l(trasa,"#") {
+        s seg = $p(trasa,"#",i)
+        s pom = $p(seg,":",1)
+        i pom '= "" s wMap(+pom) = $p(seg,":",2)
+    }
+}
+
+/// Čas zastávky **pro řazení spojů**. ⚠️ Legacy tu bere u pobytové zastávky **příjezd**, ne odjezd
+/// (`+$p(kus,":",2)` nad „12/2" dá 12), takže se nesmí použít `CasHodnota`, která přičítá čekání.
+/// Rozdíl se projeví prohozením sousedních spojů; pobyt má v trase 38 655 linek z měřených firem.
+ClassMethod CasProRazeni(cas As %String) As %String
+{
+    i (cas = "") || (cas = "<") || (cas = "|") q ""
+    q +$p(cas,"/",1)
 }
 
 /// Sestaví JSON objekt jednoho spoje (sloupec matice): řádek platnosti (plný klíčový systém

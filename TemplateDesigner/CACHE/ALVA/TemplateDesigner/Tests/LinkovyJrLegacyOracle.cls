@@ -297,18 +297,8 @@ ClassMethod ZnameOdchylky(ByRef odch)
 	// (dnes žádná mimo pravidel podle tvaru hodnot - viz `PravidloOdchylky`)
 
 	// ── známé dluhy ────────────────────────────────────────────────────
-	// Pořadí sloupců spojů se na dvou linkách liší od starého modulu. ⚠️ **Není to neškodná shoda
-	// časů**, jak tvrdil dřívější rozbor: na KV_DP 0410107 jsou prohozené spoje 43 a 45, které
-	// vyjíždějí od různých tarifních čísel (6 a 29) a 45 na 43 dokonce čeká. Časy v buňkách sedí,
-	// takže jde čistě o řazení (`SeradSpoje` × legacy `mkPoradiSp`) - a uživatel to uvidí jako jinak
-	// seřazené sloupce. U VS_CSAD 0945001 je rozdíl téhož tvaru; tvrzení „obsah 1:1" z analýzy §12
-	// tu **znovu ověřené nebylo**, proto se vede jako dluh, ne jako odsouhlasená odchylka.
-	set odch("spoje", "KV_DP~0410107", "druh") = "dluh"
-	set odch("spoje", "KV_DP~0410107", "vlna") = "L2"
-	set odch("spoje", "KV_DP~0410107", "duvod") = "řazení spojů začínajících na různých zastávkách se rozchází s mkPoradiSp"
-	set odch("spoje", "VS_CSAD~0945001", "druh") = "dluh"
-	set odch("spoje", "VS_CSAD~0945001", "vlna") = "L2"
-	set odch("spoje", "VS_CSAD~0945001", "duvod") = "řazení spojů - týž tvar rozdílu jako KV_DP 0410107"
+	// (dluh na pořadí spojů splacen 21. 8. - řazení se skládá jako v legacy `mkPoradiSp`,
+	// včetně ručního pořadí u linky, takže se hlídá normálně)
 
 	// Název zastávky v textu návaznosti: starý modul u městských linek tiskne místní zkrácený tvar
 	// („v zastávce aut.nádr."), my plný s obcí („v zastávce Vsetín,aut.nádr."). Je to táž otázka
@@ -559,6 +549,37 @@ ClassMethod Souhrn(ByRef sys As %String) As %Status
 /// Diagnostika (mimo runner, přes `cache_query_cvar`): vypíše strukturu legacy výstupu jedné linky,
 /// aby šlo psát normalizaci proti skutečnosti, ne proti dokumentaci.
 /// IN: `DB`, `SKU`, `LIN`, `MAX` (kolik uzlů), `FILTR` (nepovinný podřetězec uzlu)
+/// Vypíše pořadí spojů obou směrů vedle sebe - starý modul vs my. IN: `DB`, `SKU`, `LIN`.
+ClassMethod PoradiSpoju(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+		kill ^||ML, radky
+		if '..NactiLegacy(db, sku, lin, 2, .leg) {
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = "SKIP: starý modul nebo firma "_db_" není na serveru"
+			ret $$$OK
+		}
+		kill parametry
+		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+		do ..NactiNase(.nase)
+		for sm = "T", "Z" {
+			set radky($increment(radky)) = sm_" stary: "_$extract($get(leg("spoje", sm)), 1, 400)
+			set radky($increment(radky)) = sm_" nas:   "_$extract($get(nase("spoje", sm)), 1, 400)
+		}
+		kill ^||ML
+		set idx = ""
+		for  {
+			set idx = $order(radky(idx))
+			quit:idx=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 ClassMethod Dump(ByRef sys As %String) As %Status
 {
 	set err = ""

@@ -159,6 +159,130 @@ ClassMethod NajdiLinkuSPismenemVZone(odstranit As %Boolean, ByRef db, ByRef sku,
 	quit 0
 }
 
+/// Najde linku s **ručně nastaveným pořadím spojů**. `platne` = 1 hledá pořadí, které projde
+/// kontrolou (a tedy se použije), 0 hledá rozbité (spoj v datech chybí v pořadí nebo naopak) -
+/// tam se musí pořadí spočítat. Ručně nastavené je na 4 409 linkách z měřených firem.
+ClassMethod NajdiLinkuSRucnimPoradim(platne As %Boolean, ByRef db, ByRef sku, ByRef lin) As %Boolean
+{
+    set db = "", sku = "", lin = ""
+    for fi = 1:1:$length(..#FIRMY, ",")  {
+        set firma = $piece(..#FIRMY, ",", fi)
+        continue:'##class(%SYS.Namespace).Exists(firma)
+        set s1 = ""
+        for  {
+            set s1 = $order(^[firma]JRL(s1))
+            quit:s1=""
+            continue:'$isvalidnum(s1)
+            set l1 = ""
+            for  {
+                set l1 = $order(^[firma]JRL(s1, l1))
+                quit:l1=""
+                continue:'$data(^[firma]JRL(s1, l1, "I"))
+                continue:'$data(^[firma]JRL(s1, l1, "PATCH", "SORT"))
+                continue:'+$get(^[firma]JRL(s1, l1, "T"))
+                set jePlatne = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).RucniPoradiSpoju(firma, s1, l1, "T", .poradi, .pocet)
+                continue:''jePlatne'=''platne
+                set db = firma, sku = s1, lin = l1
+                ret 1
+            }
+        }
+    }
+    quit 0
+}
+
+/// Vypíše ručně nastavené pořadí spojů jedné linky. IN: `DB`, `SKU`, `LIN`.
+ClassMethod RucniPoradi(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky
+        for smer = "T", "Z" {
+            set vDatech = "", sp = ""
+            for  {
+                set sp = $order(^[db]JRL(sku, lin, smer, sp))
+                quit:sp=""
+                set vDatech = vDatech_$select(vDatech="":"", 1:",")_sp
+            }
+            set rucne = "", poradi = ""
+            for  {
+                set poradi = $order(^[db]JRL(sku, lin, "PATCH", "SORT", smer, poradi))
+                quit:poradi=""
+                set rucne = rucne_$select(rucne="":"", 1:",")_$get(^[db]JRL(sku, lin, "PATCH", "SORT", smer, poradi))
+            }
+            set radky($increment(radky)) = smer_" vDatech: "_$extract(vDatech,1,300)
+            set radky($increment(radky)) = smer_" rucne:   "_$extract(rucne,1,300)
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Měření k **pořadí spojů**: kolik linek má ruční pořadí, kolik jich je souhrnných, jak často
+/// vede trasa přes víc záznamů a jak často je v trase pobyt (příjezd/čekání). Podklad k tomu,
+/// které z pěti možných odchylek řazení má cenu řešit.
+ClassMethod RazeniVyskyt(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set db = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(db)
+            set linek = 0, sSort = 0, souhrn = 0, viceW = 0, pobyt = 0
+            set sku = ""
+            for  {
+                set sku = $order(^[db]JRL(sku))
+                quit:sku=""
+                continue:'$isvalidnum(sku)
+                set lin = ""
+                for  {
+                    set lin = $order(^[db]JRL(sku, lin))
+                    quit:lin=""
+                    continue:'$data(^[db]JRL(sku, lin, "I"))
+                    set linek = linek + 1
+                    if $data(^[db]JRL(sku, lin, "PATCH", "SORT")) set sSort = sSort + 1
+                    if +$get(^[db]JRL(sku, lin, "I")) = 50 set souhrn = souhrn + 1
+                    // trasa přes víc záznamů: legacy skládá W(c), W(c+.01), ... my čteme jen první
+                    set c = ""
+                    for  {
+                        set c = $order(^[db]JRL(sku, lin, "W", c))
+                        quit:c=""
+                        if $data(^[db]JRL(sku, lin, "W", c + .01)) set viceW = viceW + 1  quit
+                    }
+                    // pobyt v trase: čas ve tvaru „příjezd/čekání"
+                    set c = ""
+                    for  {
+                        set c = $order(^[db]JRL(sku, lin, "W", c))
+                        quit:c=""
+                        if $get(^[db]JRL(sku, lin, "W", c)) [ "/" set pobyt = pobyt + 1  quit
+                    }
+                }
+            }
+            set radky($increment(radky)) = db_": linek="_linek_" rucniPoradi="_sSort_" souhrnnych="_souhrn_" viceZaznamuTrasy="_viceW_" pobytVTrase="_pobyt
+            set radky($increment(radky)) = db_": PS_PrintPorSpTR="_$get(^[db]JRSET("Definice","PS_PrintPorSpTR"))_" PS_PrintSouhrnPorSpPri="_$get(^[db]JRSET("Definice","PS_PrintSouhrnPorSpPri"))_" PS_PrintSouhrnPorSpTR="_$get(^[db]JRSET("Definice","PS_PrintSouhrnPorSpTR"))
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Najde linky, na kterých má daný klíč danou hodnotu - podklad pro test, který se má o ten stav
 /// opřít. IN: `KLIC` (klíč pod `PATCH`), `HODNOTA`, `FIRMY` (nepovinné), `MAX` (nepovinné).
 ClassMethod Priklady(ByRef sys As %String) As %Status
