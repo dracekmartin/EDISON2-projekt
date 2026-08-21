@@ -953,6 +953,20 @@ za předpokladu, že to jde ověřit; neplatí.
 **Nechat být i dál:** podtržení u zdvojených řádků (zapnuto na jediné lince ze 93 tisíc) a ruční
 zlom stránky (3 linky) - u obojího navíc platí, že to má jinou vlnu nebo žádnou poptávku.
 
+#### ⚠️ Past, kterou matice sama odhalila (21. 8.)
+
+U nastavení, které něco **potlačuje**, je nulové měření splněné i tehdy, když tu vlastnost **vůbec
+neumíme**. „Žádné barvy spojů" vyjde samo, protože barvy neposíláme; „v zóně nejsou písmena" vyjde
+na lince, jejíž zóny žádná písmena nemají. Matice by tak tvrdila něco, co jsme neudělali - a test
+mrtvých dluhů by k tomu ještě vyzval, ať se z toho udělá hlídané tvrzení.
+
+**Řešení:** takový řádek zůstává na „jen změřit" (`?`), dokud k němu nejde doplnit **předpoklad nad
+zdrojovými daty** - „linka má u spojů nastavenou barvu", „linka má v zóně písmeno". Předpoklady
+matice zatím neumí a doplní se s tím krokem, který tu vlastnost implementuje.
+
+Dotčené dnes: **barvy spojů** a **odstranění písmen ze zóny**. U schování sloupce tarifních čísel
+past nehrozí - tarifní čísla posíláme vždy, takže nula je tam skutečný doklad potlačení.
+
 ## 14. Pozastavené tikety helpdesku k linkovému JŘ (projito 2026-08-19)
 
 Projito **všech 28 pozastavených** tiketů v agendách Jízdní řády + MHD. Roztřídění samo nebylo nové
