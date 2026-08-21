@@ -343,9 +343,16 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s zastavky = ##class(%DynamicArray).%New()
     k rowMeta
     s prvniNazev = "", posledniNazev = ""
-    s pocetKmSloupcu = +$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer))
+    // `linIDS` je ČTYŘSTAVOVÝ přepínač zóny × km, ne příznak „je to IDS linka":
+    //   0 (i nenastaveno) = jen km · 1 = jen zóna · 2 = obojí · 3 = ani jedno
+    // 1:1 legacy gPLSetWin (JRapiLinPrtWin.mac:1861-1868). Dřív se tu čtlo jen „je neprázdné →
+    // tiskni zónu", takže u hodnoty 3 (1 126 linek v datech) jsme zónu tiskli, legacy ne, a km
+    // sloupce jsme neřídili vůbec.
+    s linIds = +$g(^[dataDB]JRL(sku,lin,"PATCH","linIDS"))
+    s tiskZony = (linIds = 1) || (linIds = 2)
+    s tiskKm = (linIds = 0) || (linIds = 2)
+    s pocetKmSloupcu = $s(tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)), 1:0)
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu)
-    s linIds = $g(^[dataDB]JRL(sku,lin,"PATCH","linIDS"))     // zóny se tisknou jen u IDS linek
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
     k atributyZastavek                        // atributy z číselníku zastávek (^JRZ $8, CSV) - legenda druhu 7
     s maMhd = 0
@@ -366,12 +373,12 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i zdvojit {
             s idx = idx + 1
             s rowMeta(idx) = $lb(poradi, "P")
-            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, linIds))
+            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony))
         }
 
         s idx = idx + 1
         s rowMeta(idx) = $lb(poradi, "O")
-        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, linIds)
+        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony)
         d zastavky.%Push(z)
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
@@ -441,7 +448,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 }
 
 /// JSON objekt jednoho zastávkového řádku (hlavní "zastavka" nebo vložený "prijezd").
-ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, linIds As %String = "") As %DynamicObject
+ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0) As %DynamicObject
 {
     s czst = $p(veta,":",1)
     s z = ##class(%DynamicObject).%New()
@@ -450,11 +457,12 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     d z.%Set("CZST",       czst)
     d z.%Set("NAZEV_ZASTAVKY", ..NazevZastavky(dataDB, czst))
     d z.%Set("TC",         +poradi)
-    // zóna: tiskne se jen u IDS linek (PATCH linIDS); prázdná → "-" (1:1 legacy gInfoTc)
-    // Klíč je množné ZONY jako u zastávkového JŘ; tam je to pole zón, tady jedna hodnota -
-    // klient obojí čte přes GetString (pole spojí "/"), takže se binding chová stejně.
+    // zóna: tiskne se, jen když to říká `linIDS` (viz BuildStrankaLinky); prázdná → "-"
+    // (1:1 legacy gInfoTc). Klíč je množné ZONY jako u zastávkového JŘ; tam je to pole zón,
+    // tady jedna hodnota - klient obojí čte přes GetString (pole spojí "/"), takže se binding
+    // chová stejně.
     s zona = $p($p(veta,":",5),"#",2)
-    s zona = $s(linIds="":"", zona="":"-", 1:zona)
+    s zona = $s('tiskZony:"", zona="":"-", 1:zona)
     d z.%Set("ZONY",       zona)
     // MHD/IDS text z kódu v "#"-poli 4 J-věty (legacy gTrsLin dta,6 → gTrsLinDta2ToText)
     d z.%Set("MHD",        ..MhdText($p(veta,"#",4)))

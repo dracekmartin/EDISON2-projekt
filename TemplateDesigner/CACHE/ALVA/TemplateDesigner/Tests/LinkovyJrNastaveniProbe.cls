@@ -38,6 +38,91 @@ ClassMethod SledovatHodnoty(klic As %String) As %Boolean
 	quit (","_..#HODNOTYKLICE_",") [ (","_klic_",")
 }
 
+/// Najde **jednu** linku, kde má klíč pod `PATCH` danou hodnotu. `hodnota` = `""` hledá linku,
+/// kde klíč **není nastavený vůbec**. `jenSKm` = jen linka, která má nakonfigurované km sloupce
+/// (bez toho by tvrzení „km se netisknou" vyšlo triviálně i tam, kde žádné nejsou).
+/// Vrací 1 = našel, a plní `db`/`sku`/`lin`.
+ClassMethod NajdiLinku(klic As %String, hodnota As %String, ByRef db, ByRef sku, ByRef lin, jenSKm As %Boolean = 0) As %Boolean
+{
+	set db = "", sku = "", lin = ""
+	for fi = 1:1:$length(..#FIRMY, ",") {
+		set firma = $piece(..#FIRMY, ",", fi)
+		continue:'##class(%SYS.Namespace).Exists(firma)
+		set s1 = ""
+		for  {
+			set s1 = $order(^[firma]JRL(s1))
+			quit:s1=""
+			continue:'$isvalidnum(s1)
+			set l1 = ""
+			for  {
+				set l1 = $order(^[firma]JRL(s1, l1))
+				quit:l1=""
+				continue:'$data(^[firma]JRL(s1, l1, "I"))
+				continue:$get(^[firma]JRL(s1, l1, "PATCH", klic))'=hodnota
+				continue:jenSKm&&('+$get(^[firma]JRL(s1, l1, "PATCH", "KmsSmer", "T")))
+				// Linka bez spojů by neřekla nic - výstup by byl prázdný z jiného důvodu.
+				continue:'+$get(^[firma]JRL(s1, l1, "T"))
+				// `quit` s argumentem uvnitř bloku `{ }` padá na <COMMAND> - vyskočí se přes `ret`,
+				// což je tady i čitelnější: první nalezená linka je ta, kterou chceme.
+				set db = firma, sku = s1, lin = l1
+				ret 1
+			}
+		}
+	}
+	quit 0
+}
+
+/// Najde linky, na kterých má daný klíč danou hodnotu - podklad pro test, který se má o ten stav
+/// opřít. IN: `KLIC` (klíč pod `PATCH`), `HODNOTA`, `FIRMY` (nepovinné), `MAX` (nepovinné).
+ClassMethod Priklady(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set klic = $get(^||ML("IN","KLIC")), hledana = $get(^||ML("IN","HODNOTA"))
+		set firmy = $get(^||ML("IN","FIRMY"))
+		if firmy = "" set firmy = ..#FIRMY
+		set maxPrikladu = +$get(^||ML("IN","MAX"))
+		if 'maxPrikladu set maxPrikladu = 10
+		kill ^||ML, radky
+		set nalezeno = 0
+		for fi = 1:1:$length(firmy, ",") {
+			set db = $zstrip($piece(firmy, ",", fi), "<>W")
+			continue:db=""
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				quit:nalezeno'<maxPrikladu
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					quit:nalezeno'<maxPrikladu
+					continue:'$data(^[db]JRL(sku, lin, "I"))
+					continue:$get(^[db]JRL(sku, lin, "PATCH", klic))'=hledana
+					set nalezeno = nalezeno + 1
+					set radky($increment(radky)) = db_"~"_sku_"~"_lin
+						_"   spoju T="_+$get(^[db]JRL(sku,lin,"T"))_" Z="_+$get(^[db]JRL(sku,lin,"Z"))
+						_"   tc="_+$get(^[db]JRL(sku,lin,"J"))
+						_"   kmSmer="_+$get(^[db]JRL(sku,lin,"PATCH","KmsSmer","T"))
+				}
+			}
+		}
+		if 'nalezeno set radky($increment(radky)) = "žádná linka s "_klic_" = "_hledana
+		set idx = ""
+		for  {
+			set idx = $order(radky(idx))
+			quit:idx=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Spočítá výskyt přepínačů. IN: `FIRMY` (nepovinné). OUT: řádky souhrnu.
 ClassMethod Vyskyt(ByRef sys As %String) As %Status
 {
