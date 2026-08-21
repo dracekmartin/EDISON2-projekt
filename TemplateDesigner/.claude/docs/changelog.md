@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-21 (3) - 🚫 zastávky, kde nikdo nestaví, se dají vyhodit (`L2` krok 6)
+
+Na **362 linkách** má zákazník nastavené, že se do tabulky nemají dostat zastávky, na kterých žádný
+spoj linky nestaví - jen je projíždí nebo jedou jinudy. Dosud jsme to ignorovali, takže tabulka byla
+delší než ve starém tisku a byly v ní řádky, které tam zákazník nechtěl.
+
+Nově se to bere, a jako u sloupce tarifních čísel je k tomu volba **„Zastávky, kde žádný spoj
+nestaví"** se stavy *Automaticky (dle linky)* / *Tisknout* / *Netisknout*.
+
+Ověřeno na lince, kde to zákazník zapnuté má: před opravou tam takové řádky byly, teď nejsou.
+
+Ověřeno: Caché 124/124, .NET 1121/1121, zlaté odtisky bez pohybu.
+
+⚠️ Nový parametr sestavy zase musel do allowlistu server-side parametrů; chytil to týž drift test
+jako u předchozí volby. Je to spolehlivá past a spolehlivá pojistka.
+
 ## 2026-08-21 (2) - 🔀 sloupec tarifních čísel: uživatel může přebít nastavení linky (`L2` krok 4)
 
 **Nastavení u linky se respektuje, ale nemá poslední slovo.** Na 377 linkách má zákazník nastavené,

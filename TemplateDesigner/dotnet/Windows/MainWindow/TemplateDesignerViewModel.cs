@@ -2632,7 +2632,7 @@ public class TemplateDesignerViewModel : EDViewModel
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
          "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
          "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
-         "DELENI_SLOUPCU", "SLOUPEC_TC"];
+         "DELENI_SLOUPCU", "SLOUPEC_TC", "ZASTAVKY_BEZ_ZASTAVENI"];
 
     private string? _lastServerParamsSnapshot;
 

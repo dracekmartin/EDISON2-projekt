@@ -939,7 +939,7 @@ s nulovou hodnotou; stačí o nich vědět.
 
 1. ✅ **hotovo 21. 8.** zóny × km - 1 126 linek s hodnotou `3` doložilo naši chybu
 2. odstranění písmen ze zóny u linky - 28 747 nastavení ve třech hodnotách
-3. řádky bez zastavení - 362 linek zapnuto
+3. ✅ **hotovo 21. 8.** řádky bez zastavení - 362 linek zapnuto; třístav a filtr per směr
 4. ✅ **hotovo 21. 8.** schování sloupce tarifních čísel - 377 linek zapnuto; první třístav
    „Automaticky (dle linky)" v linkovém JŘ a s ním pravidlo „prázdný sloupec se netiskne" v prvku
 5. barvy spojů - 24 linek vypnuto

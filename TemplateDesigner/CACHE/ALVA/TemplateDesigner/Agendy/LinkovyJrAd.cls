@@ -195,6 +195,23 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pTc.options = optsTc
     d arr.%Push(pTc)
 
+    // Zastávky, na kterých žádný spoj nestaví: nastavení u linky
+    // (`PATCH,tisknoutJenTcKdeSpojeZastavuji`, zapnuto na 362 linkách) ubírá řádky, takže je
+    // z celého inventáře nejvíc vidět. Týž třístav jako u sloupce tarifních čísel.
+    s pBez = ##class(%DynamicObject).%New()
+    s pBez.name         = "ZASTAVKY_BEZ_ZASTAVENI"
+    s pBez.label        = "Zastávky, kde žádný spoj nestaví"
+    s pBez.type         = "enum"
+    s pBez.group        = "Linkový JŘ"
+    s pBez.defaultValue = "Automaticky (dle linky)"
+    s pBez.description  = "Zda se v tabulce objeví i zastávky, na kterých žádný spoj linky nestaví (jen je projíždí nebo jedou jinudy). Automaticky = podle nastavení u linky v jízdních řádech."
+    s optsBez = ##class(%DynamicArray).%New()
+    d optsBez.%Push("Automaticky (dle linky)")
+    d optsBez.%Push("Tisknout")
+    d optsBez.%Push("Netisknout")
+    s pBez.options = optsBez
+    d arr.%Push(pBez)
+
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
 }
@@ -274,9 +291,10 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         s deleni = ..DeleniZParametru($g(^||ML("IN","DELENI_SLOUPCU")))
         s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
+        s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
 
         f smer = "T", "Z" {
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc)
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
@@ -294,7 +312,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 
         d ..PrvniLinka(dataDB, .sku, .lin)
         s page = ""
-        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "")
+        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "", "")
 
         i page = "" {
             s page = ##class(%DynamicObject).%New()
@@ -339,7 +357,7 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 }
 
 /// Sestaví JSON stránku knižního JŘ pro jednu linku a směr. "" když směr nemá spoje.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "") As %DynamicObject
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     i '..MaSpoje(dataDB, sku, lin, smer) q ""
@@ -384,6 +402,11 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s tiskKm = (linIds = 0) || (linIds = 2)
     // Sloupec tarifních čísel: u linky 1 = schovat; parametr sestavy to smí přebít.
     s tiskTc = ..TristavDleLinky(volbaTc, '+$g(^[dataDB]JRL(sku,lin,"PATCH","netisknoutSloupecTC")))
+    // Zastávky, kde žádný spoj nestaví: u linky 1 = vyhodit je. Mapu obsluhovaných tarifních čísel
+    // stavíme jen když je to potřeba - je to průchod všemi spoji směru.
+    s tiskBezZastaveni = ..TristavDleLinky(volbaBezZastaveni, '+$g(^[dataDB]JRL(sku,lin,"PATCH","tisknoutJenTcKdeSpojeZastavuji")))
+    k zastavuje
+    i 'tiskBezZastaveni d ..ZastavujiciTc(dataDB, sku, lin, smer, .zastavuje)
     s pocetKmSloupcu = $s(tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)), 1:0)
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
@@ -398,6 +421,10 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         s veta = $g(^[dataDB]JRL(sku,lin,"J",poradi))
         s czst = $p(veta,":",1)
         i czst = "" continue
+        // Řádek, na kterém v tomhle směru nikdo nestaví (všichni projíždějí nebo jedou jinudy).
+        // Vypuštěním z téhle smyčky se řádek neobjeví ani v `rowMeta`, takže se s ním samo zarovná
+        // i pole časů u spojů - jinak by se časy rozjely o vypuštěné řádky.
+        i 'tiskBezZastaveni, '$g(zastavuje(poradi)) continue
 
         s atrZnaky = $p($p(veta,":",2),"#",1)
         s zdvojit = (atrZnaky [ "P") || (atrZnaky [ "J")
@@ -478,6 +505,32 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d rows.%Set("POZNAMKY", poznamky)
     d out.%Set("rows", rows)
     q out
+}
+
+/// Tarifní čísla, na kterých v daném směru **aspoň jeden spoj staví** - `zastavuje(poradi) = 1`.
+/// Staví = má v trase reálný čas; „projíždí" (`|`) ani „jede jinudy" (`&lt;`) se nepočítá.
+/// 1:1 legacy `linkaZastavujeTc` (`JRapiLinPrtWin.mac:1637-1659`), včetně toho, že se to počítá
+/// **per směr** - zastávka obsluhovaná jen v jednom směru zmizí jen z toho druhého.
+ClassMethod ZastavujiciTc(dataDB As %String, sku As %String, lin As %String, smer As %String, ByRef zastavuje)
+{
+    k zastavuje
+    s sp = ""
+    f {
+        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+        q:sp=""
+        i '$isvalidnum(sp) continue
+        s cisloTrasy = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        i cisloTrasy = "" continue
+        k wMap
+        d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
+        s pp = ""
+        f {
+            s pp = $o(wMap(pp))
+            q:pp=""
+            i ..CasHodnota($g(wMap(pp))) = "" continue
+            s zastavuje(pp) = 1
+        }
+    }
 }
 
 /// JSON objekt jednoho zastávkového řádku (hlavní "zastavka" nebo vložený "prijezd").

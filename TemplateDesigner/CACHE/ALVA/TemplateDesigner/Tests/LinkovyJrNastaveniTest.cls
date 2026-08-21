@@ -66,8 +66,10 @@ ClassMethod Matice(ByRef m)
 	set m($increment(m)) = "netisknoutSloupecTC|0|tc|1|plati"
 
 	// ── vyhodit řádky, kde žádný spoj nestaví ───────────────────────────
-	// U linky 1 = vyhodit. Zapnuto na 362 linkách.
-	set m($increment(m)) = "tisknoutJenTcKdeSpojeZastavuji|1|radkyBezZastaveni|0|dluh:L2-krok6 filtr řádků ještě neumíme"
+	// U linky 1 = vyhodit. Zapnuto na 362 linkách. Přebíjí parametr `ZASTAVKY_BEZ_ZASTAVENI`.
+	// Past tu nehrozí: na lince s tímhle zapnutým bylo před opravou 21. 8. změřeno 1, takže nula
+	// je skutečný doklad filtru, ne důsledek toho, že tam nebylo co vyhodit.
+	set m($increment(m)) = "tisknoutJenTcKdeSpojeZastavuji|1|radkyBezZastaveni|0|plati"
 	set m($increment(m)) = "tisknoutJenTcKdeSpojeZastavuji|0|radkyBezZastaveni|?|plati"
 
 	// ── barvy spojů ─────────────────────────────────────────────────────
