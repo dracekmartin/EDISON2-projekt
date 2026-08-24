@@ -458,6 +458,9 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
+    // Vzory rozložení sloupců - obsah drží **server**, klient zná jen klíče a popisky. Bez toho
+    // by parametr uměl jen hlásit stav, ale ne přepnout (a klientský opis pravidel by se rozešel).
+    d vals.%Set("PRESETY_SLOUPCU",        ..PresetySloupcuLinky(dataDB, rec))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1), platiDo = $p(plati,"~",2)
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
@@ -1190,6 +1193,39 @@ ClassMethod ZarazeniSpojeKnizni(deleni As %Integer, plk As %String) As %String
         i maNe s skupiny = skupiny_$s(skupiny'="":",",1:"")_"3"
     }
     q skupiny
+}
+
+/// Vzory rozložení sloupců spojů - **jediný zdroj pravdy je server**, klient je nestaví sám.
+/// Klíče jsou stabilní (visí na nich volba parametru), nadpisy jdou z téhož číselníku jako pásy
+/// skupin, aby vzor vypadal stejně jako dnešní hrubé dělení.
+ClassMethod PresetySloupcuLinky(dataDB As %String, rec As %String) As %String
+{
+    s dsc = $g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC"))
+    s tPD = $p(dsc,"~",2)  i tPD = "" s tPD = "pracovní dny"
+    s tSo = $p(dsc,"~",3)  i tSo = "" s tSo = "soboty"
+    s tNe = $p(dsc,"~",4)  i tNe = "" s tNe = "neděle a svátky"
+    s tVik = $p(dsc,"~",7) i tVik = "" s tVik = "soboty, neděle a svátky"
+
+    s out = ##class(%DynamicObject).%New()
+    d out.%Set("BEZ_ROZLISENI", ..PresetSloupceLinky($lb($lb("1","",""))))
+    d out.%Set("PRAC_VIKEND",   ..PresetSloupceLinky($lb($lb("1",tPD,"X"), $lb("2",tVik,"6+"))))
+    d out.%Set("PRAC_SO_NE",    ..PresetSloupceLinky($lb($lb("1",tPD,"X"), $lb("2",tSo,"6"), $lb("3",tNe,"+"))))
+    q out.%ToJSON()
+}
+
+/// Jeden vzor: seznam `$lb(id, nadpis, dny)` → pole sloupců ve wire tvaru `DEFINICE_SLOUPCU`.
+ClassMethod PresetSloupceLinky(sloupce As %List) As %DynamicArray
+{
+    s arr = ##class(%DynamicArray).%New()
+    f i=1:1:$ll(sloupce) {
+        s def = $li(sloupce, i)
+        s sl = ##class(%DynamicObject).%New()
+        d sl.%Set("id", $li(def,1))
+        d sl.%Set("nadpis", $li(def,2))
+        d sl.%Set("dny", $li(def,3))
+        d arr.%Push(sl)
+    }
+    q arr
 }
 
 /// Zařazení spoje podle **vlastní definice sloupců** ze šablony. Význam definice (dny, značky
