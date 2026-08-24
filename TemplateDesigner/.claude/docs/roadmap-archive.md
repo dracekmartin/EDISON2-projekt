@@ -1,5 +1,25 @@
 # 🗄️ Archiv - hotové kroky
 
+## 2026-08-24 - `L2` linkový JŘ: zbytek vlny (zvýraznění, přípoje, dopravce)
+
+Dokončeno: **zvýraznění zvolené zastávky** i jejího tarifního čísla · **přípojný řádek s vlastním
+řezem a velikostí** (#8360) · **pruh s dopravcem dorovnaný na starý tisk**. Cestou opraveno
+zdvojování přípojných řádků u rozdvojené zastávky. Detail v `changelog.md`.
+
+**Slučování přípojných řádků** přesunuto do `L5` (mění počet řádků, tedy stránkování; nikdo si
+o ně neřekl).
+
+⚠️ **Tři nastavení dopravců, kvůli kterým se to zadávalo, jsou slepá ulička:** `Print_Dopr_First`
+a `PS_PrintSouhrnDoprLinYes` čte HTML a PostScript tisk, **ne ten Windows engine**, se kterým se
+porovnáváme; `SDOP` nemá nastavené žádná firma. Nešlo tedy o dorovnání proti nastavením, ale proti
+samotnému skládání textu - a to porovnání hlavičky do 24. 8. vůbec nedělalo.
+
+**Původní zadání vlny:**
+
+| **L2** | **Zbytek vlny - tři body.** ✅ Hotové 24. 8.: zvýraznění zvolené zastávky i tarifního čísla. Zbývá: **přípojný řádek s vlastním řezem a velikostí** (#8360; vlastnost prvku - dnes se kreslí stylem datového řádku, chce to vlastní styl v kaskádě, výšku řádku z něj a pole ve formuláři prvku na obou stranách) · **dorovnání pruhu s dopravcem na starý modul** (`Print_Dopr_First` a souhrn linek k dopravci jsou nastavené vždy u jedné z šesti firem, takže je proti čemu porovnávat; `SDOP` nemá nikdo → `B98`). ⚠️ **Slučování přípojných řádků z `L2` vypadlo** (rozhodnutí Jan 24. 8.) - přesunuto do `L5`, viz tam. | S–M |
+
+---
+
 ## 2026-08-24 - `L2b` linkový JŘ: tvar názvu zastávky (poslední datový rozdíl)
 
 Názvy zastávek se skládají jako ve starém tisku: plný tvar ve sloupci, zkrácený ve větách poznámek,

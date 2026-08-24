@@ -132,6 +132,9 @@ ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As
 	kill n
 	quit:'..SpustLegacy(db, sku, lin, deleni, .legOut) 0
 
+	// Hlavička: text dopravce drží legacy v out("dta",10,1) - viz Dump.
+	set n("dopravce") = ..Norm($get(legOut("dta", 10, 1)))
+
 	set glb = ..#GLB, idobj = ""
 	for  {
 		set idobj = $order(@glb@(idobj))
@@ -215,6 +218,8 @@ ClassMethod NactiNase(ByRef n)
 		continue:key="ERR"
 		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
 		set sm = page.values.%Get("SMER")
+		// Pruh s dopravcem je hlavičkové pole, tedy per linku, ne per směr.
+		set n("dopravce") = ..Norm(page.values.%Get("POPIS_DOPRAVCE"))
 		set zast = page.rows.%Get("ZASTAVKY")
 		set spoje = page.rows.%Get("SPOJE")
 		continue:'$isobject(zast)
@@ -392,6 +397,11 @@ ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, B
 		do ..PorovnejHodnotu("spoje", kontext_" směr "_sm, $get(leg("spoje", sm)), $get(nase("spoje", sm)), kontext, .odch, .res)
 	}
 
+	// ── hlavička: pruh s dopravcem ──────────────────────────────────────
+	// Porovnává se od 24. 8. Do té doby se hlavička nekontrolovala vůbec, takže „naše vlastní
+	// logika skládání dopravců" nebyla proti starému modulu ověřená ani náhodou.
+	do ..PorovnejHodnotu("dopravce", kontext, $get(leg("dopravce")), $get(nase("dopravce")), kontext, .odch, .res)
+
 	// ── poziční kategorie (hodnota na zastávkový řádek) ─────────────────
 	// ⚠️ Iteruje se **sjednocení** klíčů obou stran, ne jen klíče legacy. Kdyby se šlo jen podle
 	// legacy, byla by hodnota, kterou pošleme **navíc**, neviditelná - a to je zrádnější než
@@ -532,7 +542,7 @@ ClassMethod Souhrn(ByRef sys As %String) As %Status
 				set radky($increment(radky)) = d_" "_l_" SKIP (starý modul nebo firma tu není)"
 				continue
 			}
-			for kat = "spoje", "zast", "km", "zona", "mhd", "cas", "pozn" {
+			for kat = "spoje", "dopravce", "zast", "km", "zona", "mhd", "cas", "pozn" {
 				continue:'$data(res(kat))
 				set radky($increment(radky)) = d_" "_l_" "_kat
 					_" porovnano="_+$get(res(kat,"leg"))

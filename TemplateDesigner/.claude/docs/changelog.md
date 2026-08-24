@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-24 (7) - 🏢 pruh s dopravcem se skládá jako ve starém tisku (`L2` hotová)
+
+Poslední bod vlny. U dopravce s provozem bez ulice jsme tiskli **„…,,tel:386100111"** - dvojčárku
+a jinou zkratku, než má starý tisk („…, tel. 386100111"). Nově se části lepí stejně: přes čárku
+s mezerou, prázdná se přeskočí, telefon má „tel. " a přibyl i **fax**, který jsme neposílali vůbec.
+
+⚠️ **Odhalilo to porovnání hlavičky, které se do dneška nedělalo vůbec** - síť kontrolovala tabulku
+a poznámky, ale ne hlavičková pole. Text dopravce se proto teď porovnává taky; na všech šesti
+kontrolních linkách sedí.
+
+⚠️ **Tři nastavení, kvůli kterým byl bod zadaný, jsou slepá ulička** a je to zapsané, ať se
+nehledají znovu: pořadí dopravců a souhrn linek k dopravci čte HTML a PostScript tisk, **ne ten
+engine, se kterým se porovnáváme**, a tisk provozů nemá zapnutý nikdo. Šlo tedy o skládání textu,
+ne o nastavení.
+
+Ověřeno: Caché 127/127, .NET 1121/1121. Odtisky tří linek přebaselinovány (počty shodné).
+
 ## 2026-08-24 (6) - 🅰️ přípojný řádek jde odlišit vlastním písmem (`L2`, #8360)
 
 Přípoje se kreslily stejným písmem jako časy spojů, takže v tabulce křičely stejně jako odjezdy.

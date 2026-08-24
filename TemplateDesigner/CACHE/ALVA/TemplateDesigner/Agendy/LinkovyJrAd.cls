@@ -1736,16 +1736,24 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
 
     s jmeno = $p(firma,"~",7)
     i jmeno = "" s jmeno = $p(firma,"~",1)
-    s sidlo = "", ulice = "", tel = ""
+    s sidlo = "", ulice = "", tel = "", fax = ""
     i pr '= "" {
         s provoz = $g(^[dataDB]JRSET("DOP",fa,pr))
         s sidlo = $p(provoz,"~",1)
         s ulice = $p(provoz,"~",2)
         s tel   = $p(provoz,"~",3)
+        s fax   = $p(provoz,"~",5)
     }
+    // Skládání 1:1 legacy `JRapiLinPrtWin:2803-2807`: každá část se lepí přes „, ", prázdná se
+    // **přeskočí**, telefon má předponu „tel. " a fax „fax ".
+    // ⚠️ Do 24. 8. tu bylo `text_","_ulice_",tel:"_tel`, takže u provozu bez ulice vycházelo
+    // „…,,tel:386100111" - dvojčárka a jiná zkratka než ve starém tisku. Odhalilo to porovnání
+    // hlavičky, které se do té doby nedělalo vůbec.
     s text = jmeno
     i sidlo '= "" s text = text_", "_sidlo
-    i tel '= ""   s text = text_","_ulice_",tel:"_tel
+    i ulice '= "" s text = text_", "_ulice
+    i tel '= ""   s text = text_", tel. "_tel
+    i fax '= ""   s text = text_", fax "_fax
     q text
 }
 
