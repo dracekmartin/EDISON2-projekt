@@ -1,5 +1,30 @@
 # 🗄️ Archiv - hotové kroky
 
+## 2026-08-24 - `L3` vlastní rozložení sloupců spojů
+
+Linkový JŘ uměl jen tři hrubé možnosti dělení spojů. Nově si jde **nadefinovat vlastní sloupce**
+(nadpis, dny, značky, které spoj do sloupce pustí nebo z něj vyřadí) - definici drží šablona
+u prvku, parametr ji zrcadlí a umí přepnout mezi vzory.
+
+⚠️ **Vlna byla po projití mnohem menší, než jak byla napsaná.** Původní zadání znělo „rozhodnout
+celou sadu voleb"; po probrání voleb starého linkového tisku z nich zbyla **jediná** - tahle.
+Ostatní jsou hotové, patří do šablony, nebo přijdou s vlnou, která tu schopnost přinese.
+Zapsané pravidlo: **parametry se odvozují od starého linkového tisku, ne od vývěsky** - jsou to
+samostatné agendy; vývěska je vzor jen pro pojmenování a chování téže věci.
+
+Vedlejší efekt: význam definice sloupců i její wire tvar mají teď **jedno místo** pro obě rodiny
+agend (server v `BaseAgenda`, klient v `ColumnLayoutWire`). Liší se až spotřeba - vývěsce je
+skupina jeden sloupec, lince pás nad několika sloupci spojů se zdvojením spoje.
+
+**Otevřené:** osa Období se v lince nevyhodnocuje (není pro ni podklad); editor definice zatím
+jen přes vzory v parametru.
+
+**Původní zadání vlny:**
+
+| **L3** | **Vlastní rozložení sloupců spojů.** ⚠️ **Vlna je po projití menší, než byla napsaná** (24. 8.): volby starého linkového tisku jsou rozebrané a zbývá z nich **jediná** - dnešní hrubý přepínač dělení (tři možnosti) nahradit vlastní definicí, jako to má vývěska u odjezdů (množina denních značek + značky, které spoj ze sloupce vyřadí + nadpis, s hotovými vzory). ⚠️ **Nesrovnávat sadu parametrů s vývěskou** - jsou to samostatné agendy, každá s vlastní doménou; vývěska je vzor **jen pro pojmenování a chování téže věci** (rozhodnutí Jan 24. 8.). **Tvar řešení = jako u odjezdů** (rozhodnutí Jan 24. 8., viz `TemplateDesignerViewModel` §Rozdělení sloupců): **definici drží šablona** u prvku, **parametr ji zrcadlí a umí přepnout**; „Vlastní rozložení" je jen ukazatel, ručně vybrat nejde. Vzniklo to z chyby, kdy na „jaké sloupce vzniknou" odpovídala dvě místa a parametr tiše přebíjel vlastní sloupce. ⚠️ **Jen pro AD** - MHD má skupiny v datech jako typ provozu i s nadpisem, vlastní sloupce by byly druhá cesta k témuž. ⚠️ Skupiny ovlivňují, kde se tabulka zalomí → dotýká se `L5`. ⚠️ Popisky voleb jsou po vydání **zamčené** (persistuje se zobrazovaný text). | M |
+
+---
+
 ## 2026-08-24 - `L4` symbolový font linkového JŘ
 
 Linková tabulka kreslí symboly: **denní značky** (zkřížená kladiva, kroužkové číslice),

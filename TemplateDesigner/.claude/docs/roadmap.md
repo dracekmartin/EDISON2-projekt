@@ -62,11 +62,12 @@ sada voleb je **nová featura**, ne dorovnání.
 🎯 **Pořadí prací (rozhodnutí Jan 24. 8.): nejdřív dotáhnout paritu se starým tiskem, teprve pak
 uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procházet z business hlediska -
 každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Proto se pořadí vln mění na
-**`L2`, `L2b` a `L4` hotové (24. 8.) → testovací linky → `L3` → `L5` → `L9` → `L6`**.
+**`L2`, `L2b`, `L3` a `L4` hotové (24. 8.) → testovací linky → `L5` → `L9` → `L6`**.
 
 ✅ **`L2` i `L2b` hotové** (24. 8., detail v archivu) - parita dat je uzavřená až na tři deklarované
 dluhy, které si nesou vlnu. **Symboly (`L4`) se kreslí** včetně značek návazností a přestupů.
-Na řadě je **sada testovacích linek**, pak `L3` (volby uživatele).
+Sloupce spojů si jde nadefinovat vlastní (`L3`). Na řadě je **sada testovacích linek**,
+pak `L5` (stránkování - široká linka se dnes zmáčkne místo rozřezání).
 
 📋 **Po `L2b` a zbytku `L2` přijde sada testovacích linek** - pojmenovaný seznam linek, kde je vidět
 každé nastavení, aby šlo procházet business logiku v aplikaci a sledovat, jak přibývá. Dnes to
@@ -75,7 +76,6 @@ které lince ukázat.
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L3** | **Vlastní rozložení sloupců spojů.** ⚠️ **Vlna je po projití menší, než byla napsaná** (24. 8.): volby starého linkového tisku jsou rozebrané a zbývá z nich **jediná** - dnešní hrubý přepínač dělení (tři možnosti) nahradit vlastní definicí, jako to má vývěska u odjezdů (množina denních značek + značky, které spoj ze sloupce vyřadí + nadpis, s hotovými vzory). ⚠️ **Nesrovnávat sadu parametrů s vývěskou** - jsou to samostatné agendy, každá s vlastní doménou; vývěska je vzor **jen pro pojmenování a chování téže věci** (rozhodnutí Jan 24. 8.). **Tvar řešení = jako u odjezdů** (rozhodnutí Jan 24. 8., viz `TemplateDesignerViewModel` §Rozdělení sloupců): **definici drží šablona** u prvku, **parametr ji zrcadlí a umí přepnout**; „Vlastní rozložení" je jen ukazatel, ručně vybrat nejde. Vzniklo to z chyby, kdy na „jaké sloupce vzniknou" odpovídala dvě místa a parametr tiše přebíjel vlastní sloupce. ⚠️ **Jen pro AD** - MHD má skupiny v datech jako typ provozu i s nadpisem, vlastní sloupce by byly druhá cesta k témuž. ⚠️ Skupiny ovlivňují, kde se tabulka zalomí → dotýká se `L5`. ⚠️ Popisky voleb jsou po vydání **zamčené** (persistuje se zobrazovaný text). | M |
 | **L5** | **Rozřezání široké tabulky / `Strih`** (gate R1/R2, dřív `B13`). Široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce". Stojí na hotovém `B11`: rozřezání se píše **jednou** nad plánem řádků. Vlna nese tři zákaznické závazky: **hlavička per blok, ne per směr** (#9417 - dnes se vypisují všichni dopravci linky a hlavička přeteče pod tabulku), **dorovnání šířky prázdnými sloupci jako parametr sestavy, ne vlastnost šablony** (#8372 - u řídkých linek se navíc nesmí roztáhnout „do absurdna") a **ruční zlom na zvoleném tarifním čísle** (`ZLOM` z §13.2 C). Testovací případ z #9088: prázdná legenda nesmí zamíchat stránkováním. **Sem patří i slučování přípojných řádků** (přesunuto z `L2` 24. 8.): starý modul přípoje různých spojů **balí na společný řádek** (změřeno na 0330510 Z: legacy 5 řádků, my 8), protože každý zabírá jiný sloupec spoje. Ušetří to řádky, ale **popisek vlevo je jen jeden**, takže u přípojů na různé linky nejde pojmenovat všechny - proto to není samozřejmé vylepšení. ⚠️ **Nikdo si o to neřekl**; patří sem, protože mění počet řádků, tedy stránkování, a je to totéž téma jako #11300 (prázdný přípojný řádek nemá zabírat místo). Náš dnešní tvar (řádek na přípoj) odpovídá druhému režimu starého modulu, takže to není mezera vůči němu. | L |
 | **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **vícesloupcová legenda s přetékáním** (#7487 - dnes jeden sloupec, chtějí čtyři), **turnusy** a **výchozí šablona pro MHD**. | M |
 | **L7** | **Sdružený JŘ více linek** (dřív část `C6`) - jedna sestava přes víc linek s řádkem zdrojové linky, včetně výlukové varianty. ⚠️ **Přestalo být „ověřit, jestli to zákazník chce":** KOVED si o to řekl (#9283) a čeká kalkulaci, tedy placená práce. Rozsah a cenu rozhodnout s Pavlem, ne odvodit z kódu. | L |
