@@ -95,6 +95,110 @@ ClassMethod Matice(ByRef m)
 	set m($increment(m)) = "@pismenoVZone-nechat||zonaPismena|1|plati"
 }
 
+/// **Zvýraznění zastávky, ze které se uživatel dívá** - tři tvrzení, protože každé samo o sobě jde
+/// splnit i špatnou implementací: bez volby se nezvýrazní nic, s kusem názvu se označí právě ty
+/// zastávky, které ho v názvu mají, a přidané tarifní číslo to zúží na jediný řádek.
+///
+/// Bez toho prvního by prošlo i „označ všechno", bez toho třetího „označ celou zastávku vždycky".
+Method TestZvyrazneniZastavky()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330511"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka pro zvýraznění není na tomto serveru - přeskočeno")
+		quit
+	}
+
+	// ── bez volby se nezvýrazní nic ─────────────────────────────────────
+	kill parametry
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..PocetZvyraznenych(.nazev), 0, "bez volby se nesmí zvýraznit žádná zastávka")
+
+	// ── kus názvu označí právě ty své ───────────────────────────────────
+	kill parametry
+	set parametry("ZVYRAZNIT_ZASTAVKU") = "velešín"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set oznacenych = ..PocetZvyraznenych(.jmena)
+	do $$$AssertTrue(oznacenych > 0, "kus názvu musí zvýraznit aspoň jednu zastávku")
+	// všechna označená jména musí ten kus opravdu obsahovat - jinak označujeme naslepo
+	set spatne = "", i = ""
+	for  {
+		set i = $order(jmena(i))
+		quit:i=""
+		// podmínka za `continue:` končí první mezerou, proto běžný `if`
+		if '($zconvert(jmena(i), "L") [ "velešín") {
+			set spatne = spatne _ $select(spatne="":"", 1:", ") _ jmena(i)
+		}
+	}
+	do $$$AssertEquals(spatne, "", "zvýrazněné bez hledaného textu v názvu: "_spatne)
+
+	// ── tarifní číslo to zúží na ten jeden řádek ────────────────────────
+	// ⚠️ Ne na jediný řádek v celé sestavě: tarifní číslo je v obou směrech totéž, takže se
+	// označí jeden řádek **v každém směru**. Tvrzení je proto „všechny označené mají to číslo".
+	set prvniTc = ..PrvniZvyrazneneTc()
+	if prvniTc '= "" {
+		kill parametry
+		set parametry("ZVYRAZNIT_ZASTAVKU") = "velešín"
+		set parametry("ZVYRAZNIT_TC") = prvniTc
+		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+		set uzsi = ..PocetZvyraznenych(.jmena2, .tcecka)
+		do $$$AssertTrue(uzsi > 0, "zúžené zvýraznění nesmí zmizet úplně")
+		do $$$AssertTrue(uzsi < oznacenych, "tarifní číslo musí počet zvýrazněných řádků snížit")
+		set jina = "", i = ""
+		for  {
+			set i = $order(tcecka(i))
+			quit:i=""
+			if +tcecka(i) '= +prvniTc {
+				set jina = jina _ $select(jina="":"", 1:", ") _ tcecka(i)
+			}
+		}
+		do $$$AssertEquals(jina, "", "zvýrazněné s jiným tarifním číslem než zvoleným: "_jina)
+	}
+}
+
+/// Kolik řádků zastávek je označených jako zvýrazněné; `jmena` naplní jejich názvy.
+ClassMethod PocetZvyraznenych(ByRef jmena, ByRef tcecka) As %Integer
+{
+	kill jmena, tcecka
+	set pocet = 0, key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.%Get("ZASTAVKY")
+		continue:'$isobject(zast)
+		set it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			continue:radek.%Get("AKTUALNI_ZASTAVKA")'="true"
+			set pocet = pocet + 1
+			set jmena(pocet) = radek.%Get("NAZEV_ZASTAVKY")
+			set tcecka(pocet) = radek.%Get("PORADI")
+		}
+	}
+	quit pocet
+}
+
+/// Tarifní číslo prvního zvýrazněného řádku z posledního běhu - podklad pro zúžení.
+ClassMethod PrvniZvyrazneneTc() As %String
+{
+	set key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.%Get("ZASTAVKY")
+		continue:'$isobject(zast)
+		set it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			continue:radek.%Get("AKTUALNI_ZASTAVKA")'="true"
+			ret radek.%Get("PORADI")
+		}
+	}
+	quit ""
+}
+
 /// **Ruční pořadí spojů u linky** - dvě tvrzení naráz, protože jedno bez druhého nic neříká:
 /// platné pořadí se použije **a** rozbité se zahodí. Kdyby platilo jen první, stačilo by pořadí
 /// slepě opsat; kdyby jen druhé, stačilo by ho ignorovat (což jsme do 21. 8. dělali).

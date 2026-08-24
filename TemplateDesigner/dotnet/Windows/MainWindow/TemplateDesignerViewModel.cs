@@ -2633,7 +2633,8 @@ public class TemplateDesignerViewModel : EDViewModel
          "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
          "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
          "DELENI_SLOUPCU", "SLOUPEC_TC", "ZASTAVKY_BEZ_ZASTAVENI", "BARVY_SPOJU",
-        "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD"];
+        "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD",
+        "ZVYRAZNIT_ZASTAVKU", "ZVYRAZNIT_TC"];
 
     private string? _lastServerParamsSnapshot;
 

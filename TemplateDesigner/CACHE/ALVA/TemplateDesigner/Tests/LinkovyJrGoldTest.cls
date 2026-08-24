@@ -20,6 +20,9 @@ Class ALVA.TemplateDesigner.Tests.LinkovyJrGoldTest Extends ALVA.EDTesting.MLTes
 /// Nejbohatší linka jádra: přípojné řádky, sloupec MHD, tři skupiny dnů, 43 spojů na stránku.
 Method TestGold0330510()
 {
+	// Re-baseline 2026-08-24 (`L2`, zvýrazněná zastávka): do řádku zastávky přibylo pole
+	// „Zvýrazněná zastávka". Nové pole mění md5 a nechává počty - přesně případ popsaný
+	// v hlavičce téhle třídy, přebaselinováno v témž commitu.
 	// Re-baseline 2026-08-24 (`L2b`, tvar názvu zastávky): název se skládá jako ve starém tisku -
 	// plný tvar s dvojčárkou ve sloupci, zkrácený ve větě poznámky, a upravený název pro MHD jen
 	// na městských linkách. ⚠️ **Mění se JEN md5**, počty jsou shodné: jde o jiný text jména,
@@ -34,12 +37,15 @@ Method TestGold0330510()
 	// Baseline 2026-08-19 (`L1`, první odtisk linkového JŘ). Sejmuto po opravě značky návaznosti
 	// (navazující spoj se tiskl značkou pro vyčkání) - to je jediná změna výstupu, kterou tenhle
 	// odtisk oproti stavu před L1 nese.
-	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=CQ1diMjxsaN9FC0D2HEzkg==")
+	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=Rr4Y9Vi2vrbXS2qWUMfZew==")
 }
 
 /// Druhý tvar: bez skupin dnů, zdvojené řádky příjezd/odjezd, šest km sloupců.
 Method TestGold0330511()
 {
+	// Re-baseline 2026-08-24 (`L2`, zvýrazněná zastávka): do řádku zastávky přibylo pole
+	// „Zvýrazněná zastávka". Nové pole mění md5 a nechává počty - přesně případ popsaný
+	// v hlavičce téhle třídy, přebaselinováno v témž commitu.
 	// Re-baseline 2026-08-24 (`L2b`, tvar názvu zastávky): název se skládá jako ve starém tisku -
 	// plný tvar s dvojčárkou ve sloupci, zkrácený ve větě poznámky, a upravený název pro MHD jen
 	// na městských linkách. ⚠️ **Mění se JEN md5**, počty jsou shodné: jde o jiný text jména,
@@ -52,13 +58,16 @@ Method TestGold0330511()
 	// beze zbytku (43/43, 18/18, 20/20). Rozhodnutí Jan 21. 8.: v základu se to musí chovat
 	// stejně jako starý modul.
 	// Baseline 2026-08-19 (`L1`) - dtto.
-	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=N1wAh5wbzisJsTb7qq1kqQ==")
+	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=+VICjiugA0mYgsTYCd2U+Q==")
 }
 
 /// Třetí tvar, jiná firma: největší linka jádra (99 spojů, 53 na stránku, osm km sloupců).
 /// Záměrně z jiné firmy než dvě předchozí - jeden zákazník nese jen svůj tvar dat.
 Method TestGold0410107()
 {
+	// Re-baseline 2026-08-24 (`L2`, zvýrazněná zastávka): do řádku zastávky přibylo pole
+	// „Zvýrazněná zastávka". Nové pole mění md5 a nechává počty - přesně případ popsaný
+	// v hlavičce téhle třídy, přebaselinováno v témž commitu.
 	// Re-baseline 2026-08-24 (`L2b`, tvar názvu zastávky): název se skládá jako ve starém tisku -
 	// plný tvar s dvojčárkou ve sloupci, zkrácený ve větě poznámky, a upravený název pro MHD jen
 	// na městských linkách. ⚠️ **Mění se JEN md5**, počty jsou shodné: jde o jiný text jména,
@@ -68,12 +77,15 @@ Method TestGold0410107()
 	// se ruční pořadí u linky. ⚠️ **Mění se JEN md5**, všechny počty jsou shodné: je to přeskládané
 	// pořadí sloupců, ne ztracená data. Porovnání se starým modulem je u pořadí spojů teď 7/7.
 	// Baseline 2026-08-19 (`L1`).
-	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=9arPTuFUF7OFC0X1iOtyUA==")
+	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=sbQy8Et4GJ2qaejaRQwz6w==")
 }
 
 /// Čtvrtý tvar: 109 spojů na **jediné** stránce (jeden směr), bez zón a bez sloupce MHD.
 Method TestGold0945001()
 {
+	// Re-baseline 2026-08-24 (`L2`, zvýrazněná zastávka): do řádku zastávky přibylo pole
+	// „Zvýrazněná zastávka". Nové pole mění md5 a nechává počty - přesně případ popsaný
+	// v hlavičce téhle třídy, přebaselinováno v témž commitu.
 	// Re-baseline 2026-08-24 (`L2b`, tvar názvu zastávky): název se skládá jako ve starém tisku -
 	// plný tvar s dvojčárkou ve sloupci, zkrácený ve větě poznámky, a upravený název pro MHD jen
 	// na městských linkách. ⚠️ **Mění se JEN md5**, počty jsou shodné: jde o jiný text jména,
@@ -90,7 +102,7 @@ Method TestGold0945001()
 	// beze zbytku (43/43, 18/18, 20/20). Rozhodnutí Jan 21. 8.: v základu se to musí chovat
 	// stejně jako starý modul.
 	// Baseline 2026-08-19 (`L1`).
-	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=ijDjFQhA7ft7+2xKrPsLwQ==")
+	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=TIMW7rardzuOXPnW5VlSrQ==")
 }
 
 /// Ověří digest jedné linky proti očekávané hodnotě. Rozlišuje:
