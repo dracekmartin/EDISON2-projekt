@@ -370,13 +370,17 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i '$d(^[dataDB]JRL(sku,lin,"I")) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_sku_"/"_lin_" neexistuje v ^JRL"))
 
         d ..NactiNastaveniNazvu(dataDB, sku, lin)
+        // Vlastní definice sloupců ze šablony (`DEFINICE_SLOUPCU`) přebíjí hrubý přepínač dělení.
+        // Když nepřijde, chová se všechno jako dosud - proto je to aditivní.
+        k defSloupcu
+        s maDefinici = ..ParseDefiniceSloupcu(.defSloupcu)
         s deleni = ..DeleniZParametru($g(^||ML("IN","DELENI_SLOUPCU")))
         s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
         s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
         s volbaBarvy = $g(^||ML("IN","BARVY_SPOJU"))
 
         f smer = "T", "Z" {
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy)
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
@@ -439,7 +443,7 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 }
 
 /// Sestaví JSON stránku knižního JŘ pro jednu linku a směr. "" když směr nemá spoje.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "") As %DynamicObject
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu) As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     i '..MaSpoje(dataDB, sku, lin, smer) q ""
@@ -551,7 +555,8 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 
     s spoje = ##class(%DynamicArray).%New()
     k platnostZnakySeen, nzSeen, pripojePoznamky, markerSeen, atributSeen, mistenkaSeen, trasaZnakySeen
-    f skupina = 1:1:$s(deleni=0:1, deleni=1:2, 1:3) {
+    s pocetSkupin = $s(+$g(defSloupcu):+$g(defSloupcu), deleni=0:1, deleni=1:2, 1:3)
+    f skupina = 1:1:pocetSkupin {
         f si=1:1:pocetSpoju {
             s sp = serazeneSpoje(si)
             s plk = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",7)
@@ -565,7 +570,13 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
             // se v tabulce opakoval jednou míň a **zákazníkovi chyběl sloupec** (VS_CSAD 0883637).
             // Odhad byl navíc naše vlastní logika, kterou nic nedokládalo - tohle je chování
             // starého modulu a porovnání ho potvrdilo.
-            s skupiny = ..ZarazeniSpojeKnizni(deleni, plk)
+            i +$g(defSloupcu) {
+                // Vlastní definice: den + značky, které spoj do sloupce pustí nebo z něj vyřadí.
+                // Období (osa ISY) tu vědomě není - linkový JŘ pro ně nemá podklad, viz roadmapa.
+                s cnz = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8)
+                s skupiny = ..ZarazeniSpojeDleDefiniceLinky(.defSloupcu, plk, cnz)
+            }
+            else { s skupiny = ..ZarazeniSpojeKnizni(deleni, plk) }
             i (","_skupiny_",") '[ (","_skupina_",") continue
             s spojObj = ..BuildSpoj(dataDB, sku, lin, smer, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy)
             i spojObj '= "" d spoje.%Push(spojObj)
@@ -597,7 +608,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s rows = ##class(%DynamicObject).%New()
     d rows.%Set("ZASTAVKY", zastavky)
     d rows.%Set("SPOJE", spoje)
-    d rows.%Set("SKUPINY_DNU", ..BuildSkupinyDnu(dataDB, rec, deleni))
+    d rows.%Set("SKUPINY_DNU", $s(+$g(defSloupcu):..BuildSkupinyZDefinice(.defSloupcu), 1:..BuildSkupinyDnu(dataDB, rec, deleni)))
     d rows.%Set("POZNAMKY", poznamky)
     d out.%Set("rows", rows)
     q out
@@ -1179,6 +1190,39 @@ ClassMethod ZarazeniSpojeKnizni(deleni As %Integer, plk As %String) As %String
         i maNe s skupiny = skupiny_$s(skupiny'="":",",1:"")_"3"
     }
     q skupiny
+}
+
+/// Zařazení spoje podle **vlastní definice sloupců** ze šablony. Význam definice (dny, značky
+/// „jen s těmito", značky „bez těchto") drží `BaseAgenda`, aby táž definice znamenala v obou
+/// rodinách agend totéž.
+///
+/// ⚠️ **Osa Období se tu vědomě nevyhodnocuje** - vývěska k ní má podklad z ISY, linkový JŘ ne.
+/// Sloupec s obdobím proto v lince omezí jen dny a značky; je to zapsané v roadmapě.
+///
+/// Vrací CSV pořadí sloupců (1..N), ne jejich `id` - prvek pracuje s pořadím pásu.
+ClassMethod ZarazeniSpojeDleDefiniceLinky(ByRef defArr, plk As %String, cnz As %String) As %String
+{
+    s dnySpoje = ..DnySpoje(plk)
+    s out = ""
+    f i=1:1:+$g(defArr) {
+        i '..SedneDoSloupceDny(dnySpoje, defArr(i,"dny")) continue
+        i (defArr(i,"jen") '= "") && ((cnz = "") || (defArr(i,"jen") '[ (","_(+cnz)_","))) continue
+        i (defArr(i,"bez") '= "") && (cnz '= "") && (defArr(i,"bez") [ (","_(+cnz)_",")) continue
+        s out = out_$s(out="":"", 1:",")_i
+    }
+    q out
+}
+
+/// Nadpisy pásů podle vlastní definice - v pořadí, v jakém je uživatel nadefinoval.
+ClassMethod BuildSkupinyZDefinice(ByRef defArr) As %DynamicArray
+{
+    s arr = ##class(%DynamicArray).%New()
+    f i=1:1:+$g(defArr) {
+        s nadpis = defArr(i,"nadpis")
+        i $g(defArr(i,"nadpis2")) '= "" s nadpis = nadpis_" "_defArr(i,"nadpis2")
+        d arr.%Push(..BuildSkupina(i, nadpis))
+    }
+    q arr
 }
 
 /// Definice skupin dnů - nadpisy z číselníku WinMHD DSC (^JRSET("Definice","WinMHD",rec,"DSC"),

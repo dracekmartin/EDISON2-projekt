@@ -199,6 +199,101 @@ ClassMethod PrvniZvyrazneneTc() As %String
 	quit ""
 }
 
+/// **Vlastní definice sloupců spojů** ze šablony přebíjí hrubý přepínač dělení.
+///
+/// Tři tvrzení, protože každé samo o sobě jde splnit i špatnou implementací: bez definice se nic
+/// nemění (aditivita), s definicí vzniknou **její** pásy a jejich nadpisy, a spoj patřící do dvou
+/// pásů se vypíše **dvakrát** - to je právě to, čím se linka liší od vývěsky, kde je skupina
+/// jeden sloupec.
+Method TestVlastniDefiniceSloupcu()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330511"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka pro definici sloupců není na tomto serveru - přeskočeno")
+		quit
+	}
+
+	// ── bez definice: chování jako dosud ────────────────────────────────
+	kill parametry
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set bezDefinice = ..NadpisySkupin()
+
+	// ── s definicí: dva pásy podle ní, druhý bere všechny dny ───────────
+	kill parametry
+	set parametry("DEFINICE_SLOUPCU") = "{""sloupce"":[{""id"":1,""nadpis"":""Jen pondělí"",""dny"":""1""},{""id"":2,""nadpis"":""Celý týden"",""dny"":""1234567+""}]}"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set sDefinici = ..NadpisySkupin()
+
+	do $$$AssertNotEquals(sDefinici, bezDefinice, "definice sloupců musí změnit pásy skupin")
+	do $$$AssertEquals(sDefinici, "Jen pondělí|Celý týden", "pásy mají být z definice, v jejím pořadí")
+
+	// ── spoj patřící do obou pásů se vypíše dvakrát ─────────────────────
+	// Spoj jedoucí v pondělí sedne do obou sloupců, takže v tabulce musí být dvakrát.
+	set pocet = ..PocetVyskytuSpoje()
+	do $$$AssertTrue(pocet > 0, "s definicí musí vzniknout aspoň jeden spoj")
+	do $$$AssertTrue(..MaOpakovanySpoj(), "spoj patřící do obou pásů se musí vypsat dvakrát")
+}
+
+/// Nadpisy pásů z posledního běhu, spojené „|" - jen z první stránky.
+ClassMethod NadpisySkupin() As %String
+{
+	set key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set sk = page.rows.%Get("SKUPINY_DNU")
+		continue:'$isobject(sk)
+		set out = "", it = sk.%GetIterator()
+		while it.%GetNext(.i, .s) {
+			set out = out _ $select(out="":"", 1:"|") _ s.%Get("NADPIS")
+		}
+		ret out
+	}
+	quit ""
+}
+
+/// Kolik spojů je na první stránce.
+ClassMethod PocetVyskytuSpoje() As %Integer
+{
+	set key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set sp = page.rows.%Get("SPOJE")
+		continue:'$isobject(sp)
+		ret sp.%Size()
+	}
+	quit 0
+}
+
+/// Je na první stránce spoj, který se opakuje (patří do víc pásů)?
+ClassMethod MaOpakovanySpoj() As %Boolean
+{
+	set key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set sp = page.rows.%Get("SPOJE")
+		continue:'$isobject(sp)
+		kill videno
+		set it = sp.%GetIterator()
+		while it.%GetNext(.i, .s) {
+			set cislo = s.%Get("CISLO_SPOJE")
+			if $data(videno(cislo)) ret 1
+			set videno(cislo) = ""
+		}
+		ret 0
+	}
+	quit 0
+}
+
 /// **Ruční pořadí spojů u linky** - dvě tvrzení naráz, protože jedno bez druhého nic neříká:
 /// platné pořadí se použije **a** rozbité se zahodí. Kdyby platilo jen první, stačilo by pořadí
 /// slepě opsat; kdyby jen druhé, stačilo by ho ignorovat (což jsme do 21. 8. dělali).

@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-24 (13) - 🧱 server umí vlastní rozložení sloupců spojů (`L3`, první půle)
+
+Linkový JŘ uměl jen tři hrubé možnosti dělení spojů. Server nově přijme **vlastní definici sloupců
+ze šablony** - tutéž, jakou už umí vývěska: nadpis, dny a značky, které spoj do sloupce pustí nebo
+z něj vyřadí.
+
+**Význam definice je teď na jednom místě pro obě rodiny agend.** Jinak by táž definice udělala ve
+vývěsce jiné sloupce než v lince. Liší se až to, co s výsledkem prvek udělá: vývěsce je skupina
+**jeden sloupec**, linkovému JŘ **pás nad několika sloupci spojů** - a spoj patřící do dvou pásů se
+vypíše **dvakrát**.
+
+⚠️ **Je to aditivní**: dokud šablona definici neposílá, chová se všechno přesně jako dosud
+(ověřeno porovnáním se starým modulem).
+
+⚠️ **Osa Období se v lince nevyhodnocuje** - vývěska k ní má podklad z jízdních řádů, linkový JŘ ne.
+Sloupec s obdobím tedy v lince omezí jen dny a značky.
+
+**Zbývá druhá půle**: definici musí umět zadat prvek v šabloně a parametr ji má zrcadlit.
+
+Ověřeno: Caché 128/128.
+
 ## 2026-08-24 (12) - 📅 spoji chyběl sloupec ve skupinách dnů (`L3`)
 
 Spoj, který nemá zadanou týdenní platnost, jsme zařazovali do skupin dnů podle **odhadu ze zadaných
