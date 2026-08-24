@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-24 (3) - 🔓 linkový JŘ (AD) jde v návrháři vybrat
+
+Agenda se dosud v nabídce vůbec neukazovala, takže na ni nešlo překliknout a linkový tisk nebylo
+jak vyzkoušet. Nově je **zveřejněná** a nabízí se v „Změnit agendu" i ve filtru šablon.
+
+⚠️ **Městská varianta zůstává skrytá** - neprošla porovnáním se starým modulem.
+⚠️ Zveřejněná agenda se ukáže i zákazníkům, jakmile se vydá nová verze.
+
+Návrhář si pamatuje **naposledy použitou agendu**, takže po prvním přepnutí startuje rovnou v ní;
+zvláštní nastavení výchozí agendy proto není potřeba.
+
 ## 2026-08-24 (2) - 🔦 zvýraznění zastávky, ze které se uživatel dívá (`L2`)
 
 Starý tisk umí zvýraznit řádek zvolené zastávky a zúžit to na konkrétní tarifní číslo; návrhář

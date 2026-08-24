@@ -22,7 +22,11 @@ symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek
 fontu; **síť pro porovnání se starým modulem** (`L1`, oracle `mkPLinWin`); výchozí šablona pro AD
 se distribuuje jako systémová. **Pro MHD výchozí šablona zatím není.**
 
-⚠️ **Agendy jsou úvodní draft** (`Released = 0`), takže se v nich smí měnit i to, co je jinde
+⚠️ **Linková AD agenda je od 24. 8. zveřejněná** (`Released = 1`, žádost Jan) - bez toho na ni
+nešlo v návrháři ani překliknout, takže nebylo jak zkoušet. **Městská zůstává skrytá**, neprošla
+porovnáním se starým modulem. Pozor: zveřejněná agenda se ukáže i zákazníkům, jakmile se vydá.
+
+⚠️ **Agendy jsou pořád úvodní draft**, takže se v nich smí měnit i to, co je jinde
 zamčené - zastávkové se přitom nesmí dotknout. Slovník polí je srovnaný s vývěskou a hlídá ho
 `AgendaSchemaDriftTests`; nové pole přidávej pod týmž názvem, jaký pro tutéž věc používá vývěska.
 Do budoucí **MHD** šablony: `{CISLO_LINKY}` je **licenční** číslo, veřejné je

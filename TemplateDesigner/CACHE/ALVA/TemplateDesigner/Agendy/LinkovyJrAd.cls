@@ -58,6 +58,11 @@ Parameter Variant As %String = "AD";
 
 Parameter VariantLabel As %String = "AD (linková doprava)";
 
+/// ⚠️ **Zveřejněná pro uživatele od 24. 8.** (žádost Jan) - do té doby se agenda v nabídce
+/// vůbec neukázala, takže na ni nešlo ani překliknout a nebylo jak zkoušet linkový tisk.
+/// Městská varianta (`LinkovyJrMhd`) zveřejněná **není**: neprošla porovnáním se starým modulem.
+Parameter Released = 1;
+
 Parameter InstanceParamName As %String = "LINKA_ID";
 
 Parameter ElementKind As %String = "LINE";
