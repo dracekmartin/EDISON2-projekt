@@ -159,6 +159,68 @@ ClassMethod NajdiLinkuSPismenemVZone(odstranit As %Boolean, ByRef db, ByRef sku,
 	quit 0
 }
 
+/// Projde jádro sady a vypíše, jak vypadají **přípojné řádky** (vyčká/navazuje zobrazené jako
+/// řádek v tabulce, ne jako poznámka pod ní) - podklad k rozhodnutí o jejich slučování.
+ClassMethod PripojneRadky(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro)
+        kill parametry
+        set i = ""
+        for  {
+            set i = $order(jadro(i))
+            quit:i=""
+            set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
+            continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+            set radku = 0, ukazka = "", key = ""
+            kill naTc
+            for  {
+                set key = $order(^||ML("OUT", key))
+                quit:key=""
+                continue:key="ERR"
+                set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+                set spoje = page.rows.%Get("SPOJE")
+                continue:'$isobject(spoje)
+                set it = spoje.%GetIterator()
+                while it.%GetNext(.si, .spoj) {
+                    set pr = spoj.%Get("PRIPOJE")
+                    continue:'$isobject(pr)
+                    set it2 = pr.%GetIterator()
+                    while it2.%GetNext(.pi, .p) {
+                        continue:p.%Get("RADEK")'=1
+                        set radku = radku + 1
+                        set naTc(p.%Get("PORADI")) = $get(naTc(p.%Get("PORADI"))) + 1
+                        if ukazka = "" {
+                            set ukazka = "tč "_p.%Get("PORADI")_" | "_p.%Get("TYP")_" | linka "_p.%Get("LINKA")_" spoj "_p.%Get("SPOJ")_" | "_p.%Get("CAS")_" | "_p.%Get("TEXT")
+                        }
+                    }
+                }
+            }
+            // kolik tarifních čísel nese víc než jeden přípojný řádek - tam by se slučovalo
+            set viceNaJednom = 0, tc = ""
+            for  {
+                set tc = $order(naTc(tc))
+                quit:tc=""
+                if naTc(tc) > 1 set viceNaJednom = viceNaJednom + 1
+            }
+            set radky($increment(radky)) = db_" "_lin_": přípojných řádků="_radku_", tč s víc než jedním="_viceNaJednom
+            if ukazka '= "" set radky($increment(radky)) = "    "_ukazka
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Najde linku, jejíž spoje nesou daný **atribut** (`POS`, `IDS`, `BEV`…). Slouží k rozšíření
 /// porovnávací sady tam, kde je věta legendy opsaná ze zdroje, ale porovnáním nepotvrzená.
 /// Pozice atributu v hlavičce spoje: POS=12, IDS=14, BEV=15, SAO=16, PCZ=17, OBC=18, PJI=19,
