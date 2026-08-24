@@ -616,6 +616,58 @@ ClassMethod RozdilyZastavek(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Najde v jádru sady místa, kde **starý modul** vypisuje v buňce značku návaznosti
+/// (vyčká `m`, pokračuje `u`, navazuje `^`) místo času - podklad k tomu, aby si šlo v původním
+/// tisku ověřit, jestli se kreslí piktogramem, nebo písmenem.
+ClassMethod KdeJsouZnackyNavaznosti(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML, radky
+		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro)
+		set i = ""
+		for  {
+			set i = $order(jadro(i))
+			quit:i=""
+			set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
+			continue:'..NactiLegacy(db, sku, lin, 2, .leg)
+			kill videno
+			set sm = ""
+			for  {
+				set sm = $order(leg("cas", sm))
+				quit:sm=""
+				set radek = ""
+				for  {
+					set radek = $order(leg("cas", sm, radek))
+					quit:radek=""
+					set sp = ""
+					for  {
+						set sp = $order(leg("cas", sm, radek, sp))
+						quit:sp=""
+						set hod = $get(leg("cas", sm, radek, sp))
+						continue:(hod'="m")&&(hod'="u")&&(hod'="^")
+						// stačí první výskyt každé značky na lince - víc by jen zahltilo
+						continue:$data(videno(hod))
+						set videno(hod) = ""
+						set radky($increment(radky)) = db_" linka "_lin_" · značka ["_hod_"] · směr "_sm_" · tarifní číslo "_radek_" · spoj "_sp
+					}
+				}
+			}
+		}
+		if '$data(radky) set radky(1) = "V jádru sady se žádná značka návaznosti nevyskytuje."
+		kill ^||ML
+		set idx = ""
+		for  {
+			set idx = $order(radky(idx))
+			quit:idx=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Vypíše pořadí spojů obou směrů vedle sebe - starý modul vs my. IN: `DB`, `SKU`, `LIN`.
 ClassMethod PoradiSpoju(ByRef sys As %String) As %Status
 {
