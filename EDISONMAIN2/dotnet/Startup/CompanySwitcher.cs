@@ -99,7 +99,15 @@ public class CompanySwitcher(
             // Logout běží na klonu se starou idfa/namespace - sdílený MLRest (už na nové firmě) se nemění.
             // Skip při null licenci (testy / pre-licence stav) a při shodné firmě.
             if (currentLicence != null && originalIdfa != newIdfa)
+            {
+                // Úklid business zámků v Logoutu je GUID-wide a shell GUID přepnutí firmy přežije,
+                // takže smete i ACTIVITY zámek nové firmy z VerifyLic. Po tu dobu musí jít session
+                // s Locks=0 (jinak ji shodí LockExist) a zámek se pak zakládá znovu; ReacquireLock
+                // vrátí Locks=1 sám, při selhání zůstane 0 - bez zámku se nemá co kontrolovat.
+                mlRest.CacheLocks = 0;
                 SessionLogout.Logout(mlRest, originalIdfa, originalNamespace);
+                LicenceVerifier.ReacquireLock(mlRest, newLicence);
+            }
 
             localPrefs.LastIdfa = newIdfa;
             localPrefs.Save();

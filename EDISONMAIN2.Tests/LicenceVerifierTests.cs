@@ -1,4 +1,5 @@
-﻿using ALVA.LICENCE.EDLicence;
+﻿using System;
+using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
 using EDTesting;
@@ -184,5 +185,68 @@ public class LicenceVerifierTests
 
         mlRest.Received().QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
             Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 42));
+    }
+
+    [Fact]
+    public void ReacquireLock_RunsVerifyLicOnCloneAndSetsCacheLocksOne()
+    {
+        // Request pod chybějícím ACTIVITY zámkem by s Locks=1 padl na LockExist ještě před
+        // tělem metody - obnova proto musí jet na klonu s CacheLocks=0.
+        var mlRest = MLRestMocks.Create();
+        mlRest.CacheLocks = 0;
+        var clone = MLRestMocks.Create();
+        SetupVerifyLic(clone, 1);
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+
+        bool ok = LicenceVerifier.ReacquireLock(mlRest, new Lic { CountsLOGIN = 7 });
+
+        Assert.True(ok);
+        clone.Received(1).QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 7));
+        mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
+        Assert.Equal(1, mlRest.CacheLocks);   // zámek je zpátky → kontroly zapnout
+    }
+
+    [Fact]
+    public void ReacquireLock_ServerRefuses_ReturnsFalseAndLeavesCacheLocksZero()
+    {
+        // Bez zámku nemá LockExist co kontrolovat - Locks=1 by session jen shodil.
+        var mlRest = MLRestMocks.Create();
+        mlRest.CacheLocks = 0;
+        var clone = MLRestMocks.Create();
+        SetupVerifyLic(clone, -1);
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+
+        Assert.False(LicenceVerifier.ReacquireLock(mlRest, new Lic { CountsLOGIN = 7 }));
+        Assert.Equal(0, mlRest.CacheLocks);
+    }
+
+    [Fact]
+    public void ReacquireLock_QueryThrows_SwallowedAndCacheLocksZero()
+    {
+        // Přepnutí firmy už proběhlo - výjimka z obnovy ho nesmí shodit.
+        var mlRest = MLRestMocks.Create();
+        mlRest.CacheLocks = 0;
+        var clone = MLRestMocks.Create();
+        clone.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
+             .Returns(_ => throw new InvalidOperationException("boom"));
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+
+        Assert.False(LicenceVerifier.ReacquireLock(mlRest, new Lic { CountsLOGIN = 7 }));
+        Assert.Equal(0, mlRest.CacheLocks);
+    }
+
+    [Fact]
+    public void ReacquireLock_NullLicence_SendsZero()
+    {
+        var mlRest = MLRestMocks.Create();
+        var clone = MLRestMocks.Create();
+        SetupVerifyLic(clone, 1);
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+
+        LicenceVerifier.ReacquireLock(mlRest, null);
+
+        clone.Received(1).QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 0));
     }
 }

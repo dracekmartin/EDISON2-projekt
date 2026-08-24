@@ -384,13 +384,17 @@ public class CompanySwitcherTests
         int? locksAtVerify = null;
         mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
               .Returns(_ => { locksAtVerify = mlRest.CacheLocks; return MLRestMocks.Output("1"); });
+        // Obnova zámku po logoutu staré firmy vrací session zpátky na Locks=1.
+        var reacquireClone = MLRestMocks.Create();
+        SetupVerifyLic(reacquireClone, 1);
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(reacquireClone);
         var licence = new Lic { CountsLOGIN = 5 };
         var switcher = CreateSwitcher(mlRest, () => licence);
 
         switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         Assert.Equal(0, locksAtVerify);
-        Assert.Equal(1, mlRest.CacheLocks);   // nastavil LicenceVerifier po Accepted
+        Assert.Equal(1, mlRest.CacheLocks);
     }
 
     [Fact]
@@ -460,5 +464,107 @@ public class CompanySwitcherTests
 
         mlRest.Received().QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
             Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 42));
+    }
+
+    [Fact]
+    public void Switch_Accepted_ObnoviActivityZamekPoLogoutu()
+    {
+        // Logout uklízí business zámky GUID-wide, takže smete i ACTIVITY zámek nové firmy;
+        // bez obnovy padne první další request session na LockExist.
+        var mlRest = MLRestMocks.Create();   // start Idfa = CB_DP
+        SetupVerifyLic(mlRest, 1);
+        var oldClone = MLRestMocks.Create();
+        var reacquireClone = MLRestMocks.Create();
+        SetupVerifyLic(reacquireClone, 1);
+        mlRest.With(cacheLocks: 0, idfa: "CB_DP", dataNamespace: "CB_DP").Returns(oldClone);
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(reacquireClone);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        Received.InOrder(() =>
+        {
+            oldClone.QueryOrThrow("ALWA.SYS.Lock", "LockClearExt", Arg.Any<object[]>());
+            reacquireClone.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
+        });
+        Assert.Equal(1, mlRest.CacheLocks);   // obnovený zámek → kontroly zpátky
+    }
+
+    [Fact]
+    public void Switch_ObnovaZamku_NecteLicenciZeServeru()
+    {
+        // LicenceLoader je sám request na SDÍLENÉ instanci (LicenceService drží MLRest.Inner);
+        // v okně bez ACTIVITY zámku by shodil session ještě před VerifyLic. Počet licencí proto
+        // musí jít z už načtené licence, ne z dalšího čtení.
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, 1);
+        var oldClone = MLRestMocks.Create();
+        var reacquireClone = MLRestMocks.Create();
+        SetupVerifyLic(reacquireClone, 1);
+        mlRest.With(cacheLocks: 0, idfa: "CB_DP", dataNamespace: "CB_DP").Returns(oldClone);
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(reacquireClone);
+        var licence = new Lic { CountsLOGIN = 5 };
+        int loaderCalls = 0;
+        var switcher = CreateSwitcher(mlRest, () => { loaderCalls++; return licence; });
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        // Jediné čtení licence je to v TryAcquireSession, které běží ještě s Locks=0.
+        Assert.Equal(1, loaderCalls);
+        reacquireClone.Received(1).QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 5));
+    }
+
+    [Fact]
+    public void Switch_ObnovaZamkuSelze_CacheLocksZustaneNula()
+    {
+        // Bez zámku nemá smysl LockExist kontrolovat - Locks=1 by session jen shodil.
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, 1);
+        var oldClone = MLRestMocks.Create();
+        var reacquireClone = MLRestMocks.Create();
+        SetupVerifyLic(reacquireClone, -1);
+        mlRest.With(cacheLocks: 0, idfa: "CB_DP", dataNamespace: "CB_DP").Returns(oldClone);
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(reacquireClone);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence);
+
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);   // přepnutí platí dál
+        Assert.Equal(0, mlRest.CacheLocks);
+    }
+
+    [Fact]
+    public void Switch_Refused_NeobnovujeZamek()
+    {
+        // Rollback nechává zámek staré firmy naživu - Logout ani obnova neproběhly.
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, -1);
+        var clone = MLRestMocks.Create();
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        clone.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
+    }
+
+    [Fact]
+    public void Switch_StejnaFirma_NeobnovujeZamek()
+    {
+        // Bez Logoutu není co obnovovat - druhé VerifyLic by bylo jen zbytečný request.
+        var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
+        SetupVerifyLic(mlRest, 1);
+        var clone = MLRestMocks.Create();
+        mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence);
+
+        switcher.Switch("CB_DP", "CB_DP", currentLicence: licence);
+
+        clone.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
     }
 }

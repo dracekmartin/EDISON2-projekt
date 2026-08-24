@@ -23,8 +23,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   session GUID (`#if DEBUG` v `EstablishSession`) - re-run přepíše týž klíč.
 - Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty obnovují
   idle timer (jinak aktivní shell vypadá pro server jako idle) a detekují zaniklý zámek/verzi.
-  Přepnutí firmy jede po dobu verify s `CacheLocks=0` (zámek nové firmy ještě neexistuje,
-  LockExist by session shodil). Version gate běží jen při Locks=1; DEBUG posílá prázdnou
+  Přepnutí firmy jede s `CacheLocks=0` po dobu verify **i logoutu staré firmy** (zámek nové
+  firmy ještě / už neexistuje, LockExist by session shodil; `LicenceLoader` je taky request
+  na sdílené instanci). Version gate běží jen při Locks=1; DEBUG posílá prázdnou
   `EdisonVersion` (dev verze `999999.9` by gate shodila; táž verze netriggeruje ani update check).
 - `SelectedCompanyIndex` musí odpovídat `MLRest.Idfa` - tam má bootstrapper zámek;
   jiná volba rozbije koexistenci shell ↔ moduly. Startupní výběr:
@@ -32,7 +33,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 - `SessionLogout.Logout` se volá na **klonu** `IMLRest.With(...)` - lze odhlásit starou
   firmu / session bez mutace sdílené instance. Kromě ACTIVITY zámku uklízí i **business
   zámky session** (`ALWA.SYS.Lock.LockClearExt` dle GUID, parita s legacy `EDUsers.Logout`) -
-  pod shell GUID zamykají i hostované moduly a ty se zavírají killem.
+  pod shell GUID zamykají i hostované moduly a ty se zavírají killem. Ten úklid je ale
+  **GUID-wide, ne per-IdFa** (`^CacheTempSYSLock` drží i `ACTIVITY/<idfa>~…`) a shell GUID
+  přepnutí firmy přežije, proto `CompanySwitcher` po logoutu obnovuje zámek nové firmy
+  (`LicenceVerifier.ReacquireLock` s už načtenou licencí); guard `Tests/SessionLockTest`.
 - `LogoutWatcher` pollí `maSeUkoncit` s `CacheLocks=2`, aby poll neobnovoval idle timer.
 - Session-scoped stav (access, stromy, preference, výchozí okno) načítá
   `Modules/SessionDataLoader` na jeden zátah přes klony (`RestCallRunner`, viz root CLAUDE.md);
