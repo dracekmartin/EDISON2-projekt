@@ -8,8 +8,8 @@ dostávají pouze přes `dotnet publish` s profilem „SingleFileCEdison"
 `SingleFilePublish.targets` v rootu (importují ho oba aplikační csproj i `EDControls.csproj`):
 **`EDControls.dll` je vedle exe volný soubor** sdílený oběma aplikacemi, aby šla nasadit
 samostatně (nové pole v EDInputFormu → do produkce jde DLL + exe, který ho používá; druhý
-exe se nepřebuildí a novou DLL převezme). Cena: veřejné API EDControls a klíče theme
-resource měň **aditivně** - viz `EDControls/CLAUDE.md`.
+exe se nepřebuildí a novou DLL převezme). Cena: **breaking change API znamená publikovat
+i konzumenty** (DLL nikdy samotnou) - viz `EDControls/CLAUDE.md`.
 
 Týmž profilem se vydává i **EDControls samostatně**: `PublishOwnAssemblyOnly` propustí jen
 vlastní assembly (plný uzávěr závislostí - MLRest, EDLicence, EDCore, Newtonsoft - by

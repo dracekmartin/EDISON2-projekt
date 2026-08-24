@@ -5,10 +5,15 @@ prvky, base třída ViewModelů a infrastruktura. `.NET` strana v `dotnet/`, ser
 Caché strana v `CACHE/` (ALVA projekt `ALVA_EDControls`), hlubší dokumentace
 v `DOCS/` (wire formáty → `DOCS/01-wire-formats.md`).
 
-**Veřejné API a klíče theme resource měň aditivně.** `EDControls.dll` se nasazuje jako
-jedna volná DLL vedle obou exe (viz root CLAUDE.md), takže ji načte i exe, který se
-nepřebuildil - odebraný/přejmenovaný public člen nebo resource key by shodil až za běhu,
-build to nezachytí. Skutečný breaking change ⇒ publikovat všechny konzumenty.
+**Breaking change veřejného API ⇒ publikovat i konzumenty.** Uvnitř repa se všichni
+(EDISONMAIN2, TemplateDesigner, LegacyMiniApps, EDTesting, ThemeRender) buildí spolu, takže
+odebraný člen je hned compile error - API se měnit smí. Nebezpečné je samostatné vydání
+`EDControls.dll` (`PublishOwnAssemblyOnly`, viz root CLAUDE.md): ta potká starý exe a shodí ho
+až za běhu. **TemplateDesigner běží u zákazníků**, EDISONMAIN2 zatím ne.
+
+**Klíče `EDTheme.*` / `EDIcons.*` / `EDStrings.*` měň aditivně.** Ty nezachytí ani plný
+rebuild - `{DynamicResource}` na neznámý klíč tiše nevrátí nic. Přejmenování = ruční grep
+XAML všech konzumentů.
 
 ## Nová m-line aplikace
 

@@ -51,7 +51,7 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
   `DisplayName` je doslovný `MainWindowTitle`, stejnojmenné moduly rozliší až tahle identita.
 - `CloseAll()` a fáze `CloseShellWindows()`/`CloseLegacyModules()` jsou záměrně jen na konkrétní
   třídě, ne interface; `Try*` varianty hlásí veto okna (`e.Cancel`) - výměna session ho musí
-  respektovat, jinak přeživší okno mluví s cizí session. Void verze = aditivní API (sdílená DLL).
+  respektovat, jinak přeživší okno mluví s cizí session.
 - `CloseAll()` ani „Spuštěné moduly" nevidí owned overlay okna (`IOverlayWindow`: panel
   Podpora, „Akce probíhá" - jinak by se nabídly jako modul a zavřely, panel nevratně; nové
   owned overlay okno marker potřebuje) a nezavírá okna frameworku (`FrameworkWindows`:
