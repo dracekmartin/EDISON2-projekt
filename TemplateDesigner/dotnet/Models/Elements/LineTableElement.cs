@@ -189,6 +189,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         })];
     }
 
+    /// <summary>Tarifní čísla, která mají odjezdový řádek zastávky.</summary>
+    private static HashSet<int> PoradiSOdjezdem(IEnumerable<LineStopData> stops) =>
+        [.. stops.Where(s => !s.JePrijezdovy).Select(s => s.Poradi)];
+
+    /// <summary>Vypisují se u tohohle řádku přípojné řádky?</summary>
+    /// <remarks>
+    /// Přípoje se párují na <b>tarifní číslo</b>, ne na řádek. U zastávky rozdvojené na příjezd
+    /// a odjezd sedí obě půlky na totéž číslo, takže se celý blok přípojů vypsal <b>dvakrát</b> -
+    /// jednou nad zastávkou a jednou pod ní (nahlásil Jan 24. 8. na lince 330511). Patří
+    /// k <b>odjezdovému</b> řádku: „navazuje" i „vyčká" se vztahují k odjezdu.
+    /// Zastávka, která má jen příjezdový řádek (konečná), si je nechává - jinak by zmizely.
+    /// </remarks>
+    private static bool NesePripoje(LineStopData stop, HashSet<int> poradiSOdjezdem) =>
+        !stop.JePrijezdovy || !poradiSOdjezdem.Contains(stop.Poradi);
+
     // ─── Style resolution (kaskáda column → element → CellDefaults; vzor StopList) ─────────
 
     /// <summary>Parent kaskády pro per-column header override (co sloupec dědí bez vlastního stylu).</summary>
@@ -337,7 +352,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         var visibleStops = RowConditions.VisibleRows(stops, s => s.SourceRow, RowVisibilityExpression);
         h += visibleStops.Count * rowH;
         if (ShowPripojeRows)
-            h += visibleStops.Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * rowH;
+        {
+            var sOdjezdem = PoradiSOdjezdem(visibleStops);
+            h += visibleStops.Where(s => NesePripoje(s, sOdjezdem))
+                             .Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * rowH;
+        }
         return h;
     }
 
@@ -463,6 +482,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
 
         // řádky zastávek (+ vložené přípojné řádky)
+        var poradiSOdjezdem = PoradiSOdjezdem(
+            stops.Where(s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow)));
         for (int si = 0; si < stops.Count; si++)
         {
             var stop = stops[si];
@@ -494,6 +515,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             });
 
             if (!ShowPripojeRows) continue;
+            if (!NesePripoje(stop, poradiSOdjezdem)) continue;
 
             // přípojné řádky (vyčká/navazuje) za touto zastávkou
             foreach (var t in trips)

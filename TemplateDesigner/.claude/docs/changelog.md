@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-24 (5) - 🐛 přípojné řádky se tiskly dvakrát
+
+Na lince s rozdvojenými zastávkami (příjezd zvlášť, odjezd zvlášť) se celý blok přípojů vypsal
+**dvakrát** - jednou nad zastávkou a jednou pod ní. Přípoje se totiž párují na **tarifní číslo**,
+a obě půlky rozdvojené zastávky mají totéž číslo.
+
+Nově patří **odjezdovému** řádku, protože „navazuje" i „vyčká" se vztahují k odjezdu. Zastávka,
+která má jen příjezdový řádek (konečná), si přípoje nechává, aby nezmizely.
+
+⚠️ Opraveno i ve výpočtu výšky tabulky, ne jen v kreslení - kdyby se ty dva rozešly, tabulka by
+měla jinou výšku než obsah.
+
+Nahlásil Jan 24. 8. na `CB_CSADAD` 330511, hned po zpřístupnění agendy.
+
+Ověřeno: .NET 1121/1121 a vizuálně na té lince.
+
 ## 2026-08-24 (4) - 🐛 výběr linek u linkového JŘ byl prázdný
 
 Po zveřejnění agendy se ukázalo, že **výběr linek nic nenabízí**. Server přitom 200 linek posílal -
