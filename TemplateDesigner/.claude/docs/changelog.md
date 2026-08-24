@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-24 (2) - 🔦 zvýraznění zastávky, ze které se uživatel dívá (`L2`)
+
+Starý tisk umí zvýraznit řádek zvolené zastávky a zúžit to na konkrétní tarifní číslo; návrhář
+z toho neuměl nic. Nově se dá v nastavení sestavy zadat **kus názvu zastávky** (nerozlišují se velká
+a malá písmena) a volitelně **tarifní číslo**, které výběr zúží.
+
+Data řádek jen **označí**, jak vypadá zvýraznění si řídí šablona - prvek už podmíněné zvýraznění
+řádku uměl, takže stačilo dodat příznak. Pole se jmenuje stejně jako u vývěsky, aby stejné
+nastavení šablony fungovalo v obou.
+
+⚠️ Zastávka se nezadává vnitřním číslem jako ve starém modulu (uživatel ho nezná a v panelu není
+odkud vybírat). Projíždí-li linka jedno město víckrát, označí se všechny jeho zastávky - přesně to
+starý modul dělá výběrem zastávky. Tarifní číslo pak vybere jednu z nich, ale **v každém směru
+jednu**, protože tarifní číslo je pro oba směry stejné.
+
+**Nález, který mění zadání zbytku vlny:** přepínač vedený jako „tisk čísla linky v přípojném řádku"
+ve skutečnosti řídí něco jiného - jestli se přípoje na různé linky u téže zastávky slijí do jednoho
+řádku. Číslo linky se tiskne tak jako tak. Je to tedy nová logika, ne doplnění volby; zapsáno
+do roadmapy k rozhodnutí o rozsahu.
+
+Ověřeno: Caché 126/126, .NET 1121/1121. Odtisky přebaselinovány kvůli novému poli.
+
 ## 2026-08-24 - 🚏 názvy zastávek v linkovém JŘ jako ve starém tisku (`L2b`)
 
 Poslední datový rozdíl proti starému modulu. Táž zastávka se dosud jmenovala na vývěsce jinak než
