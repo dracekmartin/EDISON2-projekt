@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-24 (10) - 🔣 legenda linkového JŘ kreslila cizí piktogramy
+
+Legenda používala **vývěsková** pravidla i pro poznámky linkového JŘ, který má jiný slovník značek.
+Důsledek: „pokračuje" má značku `p`, na které je ve fontu **kufr**, a návaznosti by vyšly jako
+půlkruh a kosočtverec místo trojúhelníků.
+
+Legenda teď pozná, odkud poznámka je, podle **druhu poznámky** - ten posílá jen linkový JŘ - a podle
+toho vybere mapu. Vývěskám se nemění nic.
+
+Ověřeno: .NET 1139/1139, Caché 127/127. Vizuální kontrola legendy zbývá.
+
 ## 2026-08-24 (9) - 🔺 návaznosti se kreslí trojúhelníky vedle času
 
 Dořešeno tištěným vzorem staré sestavy (linka 330511): u „vyčká" je **dutý** trojúhelník, u

@@ -221,6 +221,41 @@ ClassMethod PripojneRadky(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Vypíše prvních pár poznámek linky tak, jak jdou na wire - kontrola, že nesou druh i značku.
+ClassMethod PoznamkyNaWire(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky, parametry
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+        set key = ""
+        for  {
+            set key = $order(^||ML("OUT", key))
+            quit:key=""
+            continue:key="ERR"
+            set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+            set pozn = page.rows.%Get("POZNAMKY")
+            continue:'$isobject(pozn)
+            set it = pozn.%GetIterator()
+            while it.%GetNext(.i, .p) {
+                quit:$get(radky)>11
+                set radky($increment(radky)) = "DRUH=["_p.%Get("DRUH")_"] TYP=["_p.%Get("TYP")_"] ZNAK=["_p.%Get("ZNAK")_"] "_$extract(p.%Get("TEXT"),1,60)
+            }
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Najde linku, jejíž spoje nesou daný **atribut** (`POS`, `IDS`, `BEV`…). Slouží k rozšíření
 /// porovnávací sady tam, kde je věta legendy opsaná ze zdroje, ale porovnáním nepotvrzená.
 /// Pozice atributu v hlavičce spoje: POS=12, IDS=14, BEV=15, SAO=16, PCZ=17, OBC=18, PJI=19,

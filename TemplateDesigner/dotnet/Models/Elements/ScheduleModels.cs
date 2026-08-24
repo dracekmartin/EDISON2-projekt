@@ -147,6 +147,15 @@ public class PoznamkaData
     /// prvek legendy. Prázdná u agend, které kategorie neposílají (MHD).</summary>
     public string Kategorie { get; set; } = "";
 
+    /// <summary>Druh poznámky podle číselníku linkového JŘ (1-10). Posílá ho <b>jen linková</b>
+    /// agenda, takže je to zároveň příznak „tahle poznámka je z linkového JŘ".</summary>
+    /// <remarks>
+    /// Legenda podle toho vybírá, kterou mapou značku přeložit: linkový JŘ má jiný slovník
+    /// a opačné výchozí pravidlo než vývěska. Bez toho by se „pokračuje" nakreslilo jako
+    /// <b>kufr</b> a návaznosti jako cizí tvary.
+    /// </remarks>
+    public string Druh { get; set; } = "";
+
     /// <summary>
     /// Volitelná barva textu znaku (hex „#FFRRGGBB", null = default render).
     /// Pochází z Caché <c>PoznamkaSpoj.TiskJRMHDVozoveBarvaZnakuRGB</c> přes <c>BuildPoznamka</c>.

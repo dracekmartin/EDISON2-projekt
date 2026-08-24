@@ -253,7 +253,8 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             Text      = row.GetString("TEXT"),
             ForeColor = NullIfEmpty(row.GetString("FORE_COLOR")),
             BackColor = NullIfEmpty(row.GetString("BACK_COLOR")),
-            Kategorie = row.GetString("KATEGORIE")
+            Kategorie = row.GetString("KATEGORIE"),
+            Druh      = row.GetString("DRUH")
         }).ToList();
 
         _cachedPoznamky = result;
