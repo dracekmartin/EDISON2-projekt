@@ -5,6 +5,11 @@ Produktový/UX backlog z interního testování shellu - helpdesk ticket **HD 13
 Nemíchat s [arch-backlog.md](arch-backlog.md) - ten má uzavřený scope nálezů z review
 2026-07-29; tenhle dokument sbírá uživatelský feedback.
 
+**Pozor na číslování:** požadavek byl 20. 8. 2026 převeden na projekt a uzavřen jako
+vyřešený (post #25 projektu); posty se tím přečíslovaly (starý #20 = nový #23, posun
+cca +3). Odkazy `#N` v tomto dokumentu = **původní** číslování ticketu; nové posty
+projektu jsou značené explicitně („nový post #N").
+
 ## Jak s dokumentem pracovat
 
 - ID řada `F*`, aby nekolidovala s `R*` (arch-backlog) a `B*` (TD roadmapa).
@@ -226,7 +231,9 @@ Nemíchat s [arch-backlog.md](arch-backlog.md) - ten má uzavřený scope nález
 - **Partnerská řešení** (#4, #6-#13) - řeší PM/MM mimo tento repo, stav z konverzace:
   - KARAT → Správce úloh: **hotovo v masteru** (MM, #12), licence Karat odebrány (PM, #13);
     do verze patří EDCore.dll, TM.exe, TRANSDEV.exe, TRANSDEVAPI.dll, ALVA_TM.
-  - AURIS (jen Polkost?), FS: zakáže PM.
+  - AURIS: v Polkost vypnut po domluvě s p. Holubem (20. 8., nový post #24) - neví,
+    jestli to používají, zjistí se z reakcí.
+  - FS: zakáže PM.
   - BC: licence odebrány vč. EKOBUS/UH (PM, #9, #11); 🔸 zbývá rozhodnout odebrání ze
     stromu + souborů verze.
   - EmTest: vyhodit z EDISONu, nikdo nepoužívá (PM, #9).
@@ -244,11 +251,11 @@ Podklad pro odpověď do ticketu - body z #3 (Kaska) a #4 (Zeman):
   commit, filtr bez diakritiky).
 - **Enter ve stromu spustí modul** a **nalezená skupina není slepá ulička** (zpřístupní
   celý podstrom) - `0d12d5a`.
-- **Spuštěné moduly: rozlišení duplicit** - `52c95c9` (cesta agendou místo IdFa)
-  + `66138dc` (dlouhý název `nameEx`); v titulcích oken IdFa zatím zůstává → F14.
+- **Spuštěné moduly: rozlišení duplicit** - `52c95c9` (cesta agendou místo IdFa) a
+  `66138dc` (dlouhý název `nameEx`); v titulcích oken IdFa zatím zůstává → F14.
 - **Nastavení: Font/Rodina → Písmo** - `ac9b0d1`.
-- **Ikony na ploše: dlouhý název** (rozliší „Zaměstnanci" MZDY/ZAM) - `66138dc`
-  + `f62ca99` (auto-shrink labelu).
+- **Ikony na ploše: dlouhý název** (rozliší „Zaměstnanci" MZDY/ZAM) - `66138dc` a
+  `f62ca99` (auto-shrink labelu).
 - **Min šířka dock area miniaplikací** - `ca3f5b3` + `e248164` (28. 7.); nové hlášení → F6.
 - **Karusel podpory: pomalejší cyklus, pauza na hover** - `04a4c1c` (29. 7.); definitivně
   řeší F1.
