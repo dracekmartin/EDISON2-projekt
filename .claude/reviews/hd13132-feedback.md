@@ -34,15 +34,13 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F2 - Okno miniaplikací s jednoúrovňovým seznamem + vizuál
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - `Windows/MiniAppPickerWindow` s plochým seznamem (řádek =
+  název + skupina jako popisek), dvojklik i OK otvírají. Menu „Miniaplikace" na okno jen
+  odkazuje, seskupené submenu i jeho `CompositeCollection`/`BindingProxy` zmizely.
 - **P2 · M**
-- **Co udělat:** Výběr miniaplikací přesunout z menu (dnes `EdisonMainWindow.xaml:137-170`,
-  CompositeCollection seskupená per `IMiniAppProvider.GroupTitle`) do samostatného okna
-  s **jednoúrovňovým** seznamem. Katalog je `MiniAppCatalog.cs`. Součást zadání i „upravit
-  vizuál miniaplikace".
-- **Pozor:** 🔸 „Vizuál" není v ticketu specifikován - vyžádat upřesnění od DZ.
-- **Hotovo když:** Miniaplikace se vybírají z okna s plochým seznamem; menu „Miniaplikace"
-  na něj jen odkazuje (nebo zmizí).
+- **Deferred:** po review (2026-08-24) - „upravit vizuál miniaplikace" z původního zadání;
+  rozsah není v ticketu specifikován a rozhodnuto bylo udělat zatím jen okno výběru. Pokud jde
+  o vzhled panelů v docku, je to retemplate chrome AvalonDocku - vlastní položka.
 - **Zdroj:** HD 13132 #4 (Zeman)
 
 ### F3 - Upravit updater

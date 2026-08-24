@@ -23,6 +23,7 @@ using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDCo
 using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
 using ChangelogWnd = EDISONMAIN2.Windows.ChangelogWindow.ChangelogWindow;
+using MiniAppPickerWnd = EDISONMAIN2.Windows.MiniAppPickerWindow.MiniAppPickerWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -100,8 +101,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
 
-        /// <summary>Mini-apps seskupené podle providerů pro launcher (menu „Miniaplikace").</summary>
-        public IReadOnlyList<MiniAppGroup> MiniAppGroups => _miniAppCatalog.Groups;
+        /// <summary>Otevře okno s jednoúrovňovým výběrem miniaplikace.</summary>
+        public ICommand PickMiniAppCommand { get; }
 
         private bool _hasOpenMiniApps;
         /// <summary>Je v docku alespoň jedna mini-app? False → shell ukáže prázdný placeholder.</summary>
@@ -137,6 +138,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             _getTreeWidth = getWidth;
             _applyTreeWidth = applyWidth;
+        }
+
+        // Výběr miniaplikace je vlastní okno, ne vnořené submenu - katalog roste a seskupení
+        // per provider se v menu neosvědčilo (HD 13132/F2).
+        private void PickMiniApp()
+        {
+            var picker = new MiniAppPickerWnd(_miniAppCatalog);
+            if (WindowNavigator.ShowDialog(picker) == true && picker.Picked is { } descriptor)
+                OpenMiniAppCommand.Execute(descriptor);
         }
 
         // Výchozí rozložení: Plocha jako jediný sloupec přes celou plochu docku. Podpora tu
@@ -245,6 +255,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenLegacyShellCommand = Command(OpenLegacyShell);
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
+            PickMiniAppCommand       = Command(PickMiniApp);
             OpenDefaultMiniAppsCommand = Command(OpenDefaultMiniApps);
             CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseAll());
             // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.

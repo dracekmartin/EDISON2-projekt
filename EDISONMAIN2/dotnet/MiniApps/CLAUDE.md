@@ -26,8 +26,6 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,
   stejný lifecycle přes `AttachTreeLayout`); chybí-li nebo je poškozený → výchozí rozložení
   (jen Plocha). Prázdný dock ukáže placeholder s tlačítkem na výchozí sadu.
-- Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`, pořadí =
-  pořadí registrace v `AppBootstrapper`). Statické akce dole (Zavřít/Resetovat) jsou
-  v `CompositeCollection` - bindingy tam jdou jen přes `BindingProxy` (`VmProxy`):
-  `x:Reference` na TopMenu při BAML loadu cyklí, `ElementName`/DataContext jsou mimo
-  namescope/strom; lokální `Style` na nich blokuje `ItemContainerStyle` skupin.
+- Výběr miniaplikace je vlastní okno (`Windows/MiniAppPickerWindow`) s **jednoúrovňovým**
+  seznamem; `IMiniAppProvider.GroupTitle` (pořadí = pořadí registrace v `AppBootstrapper`)
+  z něj zbyl jen popisek řádku. Menu „Miniaplikace" na okno jen odkazuje.
