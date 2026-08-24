@@ -13,8 +13,8 @@ pro MHD. Starý modul to má jinak a teď to má i návrhář:
 
 Do voleb u tisku přibyly **Tvar názvu zastávky** a **Použít název pro MHD** - stejné, jaké má
 vývěska. ⚠️ Výchozí tvar je ale **plný**, kdežto vývěska má zkrácený: ty dva staré moduly se lišily
-a tady je přednější parita. Rozhodnutí o výchozí hodnotě zůstalo otevřené, dá se otočit jednou
-konstantou.
+a tady je přednější parita - **potvrzeno Janem 24. 8.**: plný tvar je standard. Kdyby to někdo
+chtěl jinak, řešilo by se to nastavením šablony, ne jinou výchozí hodnotou.
 
 Formátování názvu je nově **sdílené oběma rodinami agend** - kdyby si ho každá dělala po svém,
 zase by se rozešly. Vývěsce se chování nezměnilo.

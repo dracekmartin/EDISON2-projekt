@@ -232,7 +232,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // starý linkový tisk skládá název čárkami a prázdnou část obce nechává jako dvojčárku
     // („Český Krumlov,,aut. nádraží"), kdežto starý vývěskový modul ji srážel. Ty dva staré moduly
     // se lišily a parita je tu přednější; komu dvojčárka vadí, přepne si tvar.
-    // ⚠️ Rozhodnutí o výchozí hodnotě zůstalo 24. 8. otevřené - tohle je volba agenta.
+    // Potvrzeno Janem 24. 8.: plný tvar je standard a zůstává výchozí.
     s pTvar = ##class(%DynamicObject).%New()
     s pTvar.name         = "TVAR_NAZVU_ZASTAVKY"
     s pTvar.label        = "Tvar názvu zastávky"
