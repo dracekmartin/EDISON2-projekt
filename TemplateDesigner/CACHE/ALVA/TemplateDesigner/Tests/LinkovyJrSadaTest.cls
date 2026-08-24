@@ -40,8 +40,14 @@ ClassMethod Sada(ByRef sada)
 }
 
 /// Jádro sady pro **drahé** kontroly (každý průchod = GetData nad celou linkou i legacy oracle):
-/// čtyři linky ze tří firem s nejrozdílnějším tvarem - nejbohatší (přípoje, MHD, skupiny dnů),
-/// bez skupin dnů, největší podle počtu spojů a nejširší jednostránková.
+/// linky s nejrozdílnějším tvarem - nejbohatší (přípoje, MHD, skupiny dnů), bez skupin dnů,
+/// největší podle počtu spojů a nejširší jednostránková.
+///
+/// **Poslední dvě jsou tu kvůli konkrétním značkám**, ne kvůli tvaru: zásilky za zvláštních
+/// podmínek (`POS`) a spoj v systému integrované dopravy (`IDS`) se na první čtyřce nevyskytují,
+/// takže věta jejich legendy byla jen opsaná ze zdroje legacy a **porovnáním nepotvrzená**.
+/// ⚠️ Tři značky (`SAO`, `CBE`, `zasu`) nemá v datech **nikdo ze šesti firem**, takže jejich věty
+/// ověřit nejde a zůstávají opsané - viz `AtributyLinky` v sondě nastavení.
 ClassMethod Jadro(ByRef jadro)
 {
 	kill jadro
@@ -49,6 +55,8 @@ ClassMethod Jadro(ByRef jadro)
 	set jadro($increment(jadro)) = "CB_CSADAD~1~0330511"
 	set jadro($increment(jadro)) = "KV_DP~1~0410107"
 	set jadro($increment(jadro)) = "VS_CSAD~1~0945001"
+	set jadro($increment(jadro)) = "VS_CSAD~13~0883637"     // POS
+	set jadro($increment(jadro)) = "CB_CSADAD~4~0380780"    // IDS
 }
 
 /// Změří, co ve výstupu jedné linky (už načtené v `^||ML("OUT")`) reálně je. Klíče `p(...)`:

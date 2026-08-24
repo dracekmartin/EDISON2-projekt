@@ -228,6 +228,37 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBar.options = optsBar
     d arr.%Push(pBar)
 
+    // Tvar názvu zastávky. ⚠️ **Výchozí „Plný CIS", jinak než u vývěsky**, kde je „Zkrácený":
+    // starý linkový tisk skládá název čárkami a prázdnou část obce nechává jako dvojčárku
+    // („Český Krumlov,,aut. nádraží"), kdežto starý vývěskový modul ji srážel. Ty dva staré moduly
+    // se lišily a parita je tu přednější; komu dvojčárka vadí, přepne si tvar.
+    // ⚠️ Rozhodnutí o výchozí hodnotě zůstalo 24. 8. otevřené - tohle je volba agenta.
+    s pTvar = ##class(%DynamicObject).%New()
+    s pTvar.name         = "TVAR_NAZVU_ZASTAVKY"
+    s pTvar.label        = "Tvar názvu zastávky"
+    s pTvar.type         = "enum"
+    s pTvar.group        = "Obecné"
+    s pTvar.defaultValue = "Plný CIS"
+    s pTvar.description  = "Plný CIS zachová dvojčárku podle číselníku zastávek (tak to tiskne starý modul), s okresem i jeho zkratku · Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou)."
+    s optsTvar = ##class(%DynamicArray).%New()
+    d optsTvar.%Push("Plný CIS")
+    d optsTvar.%Push("Plný CIS s okresem")
+    d optsTvar.%Push("Zkrácený")
+    d optsTvar.%Push("Typograficky upravený")
+    s pTvar.options = optsTvar
+    d arr.%Push(pTvar)
+
+    // Název pro MHD. Legacy ho bere jen u městských linek, které to mají zapnuté - tahle volba
+    // umí navíc i to vypnout (stejně jako u vývěsky). Výchozí zapnuto = chování starého modulu.
+    s pMhd = ##class(%DynamicObject).%New()
+    s pMhd.name         = "NAZEV_PRO_MHD"
+    s pMhd.label        = "Použít název pro MHD"
+    s pMhd.type         = "bool"
+    s pMhd.group        = "Obecné"
+    s pMhd.defaultValue = "true"
+    s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté; vypnutím se všude použije název podle CIS."
+    d arr.%Push(pMhd)
+
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
 }
@@ -305,6 +336,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
         i '$d(^[dataDB]JRL(sku,lin,"I")) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_sku_"/"_lin_" neexistuje v ^JRL"))
 
+        d ..NactiNastaveniNazvu(dataDB, sku, lin)
         s deleni = ..DeleniZParametru($g(^||ML("IN","DELENI_SLOUPCU")))
         s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
         s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
@@ -983,15 +1015,15 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                     i omzId = 31 {
                         // „spoje 25 linky 330510" / vlak: „vlaku 20880" (bez čísla spoje); [ z SMĚR]
                         s slovoAvl = $case(avl, "V":"vlaku", "L":"lodě", :"linky")
-                        s f31 = $s(+spoj2:"spoje "_(+spoj2)_" ", 1:"")_slovoAvl_" "_(+linka2)
+                        s f31 = $s(+spoj2:"spoje "_(+spoj2)_" ", 1:"")_slovoAvl_" "_..OznaceniLinky(linka2)
                         i kam '= "" s f31 = f31_" z "_kam
                         s fraze = fraze_$s(fraze="":"", 1:",")_f31
                     }
                     else {
                         // „spoj 24 linky 330530 do X" / vlak: „vlak 20875 do X" (NCOME 32 piece 6)
-                        i avl = "V" { s f32 = "vlak "_(+linka2) }
-                        elseif avl = "L" { s f32 = "lodní doprava "_(+linka2) }
-                        else { s f32 = "spoj "_(+spoj2)_" linky "_(+linka2) }
+                        i avl = "V" { s f32 = "vlak "_..OznaceniLinky(linka2) }
+                        elseif avl = "L" { s f32 = "lodní doprava "_..OznaceniLinky(linka2) }
+                        else { s f32 = "spoj "_(+spoj2)_" linky "_..OznaceniLinky(linka2) }
                         i kam '= "" s f32 = f32_" do "_kam
                         s fraze = fraze_$s(fraze="":"", 1:", ")_f32
                     }
@@ -1470,15 +1502,21 @@ ClassMethod FormatCas(minuty As %Integer) As %String
     q $tr($j(hod,2)," ",0)_":"_$tr($j(min,2)," ",0)
 }
 
-/// Název zastávky podle pořadí (tarifního čísla) v trase linky - CIS tvar s obcí
-/// („České Budějovice,aut.nádr."), jak ho v návaznostech tiskne legacy (gZst/gTskNaZst).
+/// Název zastávky podle pořadí (tarifního čísla) v trase linky - do **textů návazností**
+/// („spoj 21 vyčká v zastávce …").
+///
+/// ⚠️ **Bere týž zdroj jako seznam zastávek, ale vždy zkrácený tvar.** Starý modul to tak má:
+/// ve sloupci zastávek tiskne plný tvar s dvojčárkou, ve větě poznámky jedinou čárku. Doloženo
+/// porovnáním na třech firmách - do 24. 8. tu byl natvrdo CIS název, takže na městských linkách
+/// (kde legacy bere upravený název pro MHD) vycházelo v poznámce jiné jméno než ve sloupci.
+///
+/// Volba „Tvar názvu zastávky" se sem **záměrně nepromítá**: řídí sloupec, kde je tvar vidět,
+/// kdežto ve větě by dvojčárka vypadala jako překlep. Kdyby to někdo chtěl jinak, je to featura.
 ClassMethod NazevZastavkyPoradi(dataDB As %String, sku As %String, lin As %String, poradi As %String) As %String
 {
     s czst = $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1)
     i czst = "" q ""
-    s nazev = $p($g(^[dataDB]JRZ(czst)), "$", 2)
-    i nazev = "" q ..NazevZastavky(dataDB, czst)
-    q $replace(nazev, ",,", ",")
+    q ..FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), "", "Zkrácený", ..Jazyk(dataDB))
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -1674,14 +1712,66 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
     q text
 }
 
-/// Název zastávky z ^JRZ(czst) - odbav/MHD název ($7), fallback CIS ($2).
+/// Název zastávky z registru (`^JRZ`), ve tvaru, v jakém ho tiskne starý modul.
+///
+/// **Upravený název pro MHD** (pole 7) použije legacy **jen u městských linek, a jen když to má
+/// linka zapnuté** (`gPLSetWin` „nazMHD" × typ linky MEST/MESP) - jinak bere složený název podle
+/// registru (pole 2). My jsme do 24. 8. brali název pro MHD **vždycky**, takže se zhruba u poloviny
+/// zastávek tisklo jiné jméno než ve starém modulu; rozhodnutí přebírá `NactiNastaveniNazvu`.
+///
+/// Samotný tvar (dvojčárka × jedna čárka × okres) řeší sdílené `FormatNazvuZastavky` v `BaseAgenda`,
+/// společné s vývěskou - aby se táž zastávka nejmenovala v každé sestavě jinak.
 ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 {
     i czst = "" q ""
+    q ..FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), $p($g(^[dataDB]JRZ(czst)), "$", 3), $g(^||TiskKnizni("nazev","tvar")), ..Jazyk(dataDB))
+}
+
+/// Označení navazující linky do textu poznámky. U autobusu je to číslo a vede se bez vodicích nul
+/// („0330510" → „330510"), u vlaku ale bývá **nečíselné** („R 627") - a to se převodem na číslo
+/// scvrklo na nulu, takže v tisku stálo „vyčká příjezdu vlaku 0".
+/// ⚠️ Našlo to rozšíření porovnávací sady 24. 8.; na původních čtyřech linkách vlakový přípoj nebyl.
+ClassMethod OznaceniLinky(hodnota As %String) As %String
+{
+    i $isvalidnum(hodnota) q +hodnota
+    q $zstrip(hodnota, "<>W")
+}
+
+/// Ze kterého pole registru se vezme jméno zastávky - upravený název pro MHD, nebo složený název
+/// podle registru. Rozhodnuto jednou za požadavek v `NactiNastaveniNazvu`; **tvar** se řeší až nad
+/// tímhle, protože sloupec a text poznámky ho mají každý jiný.
+ClassMethod ZdrojNazvuZastavky(dataDB As %String, czst As %String) As %String
+{
+    i czst = "" q ""
     s rec = $g(^[dataDB]JRZ(czst))
-    s nazev = $p(rec, "$", 7)
+    s nazev = ""
+    i $g(^||TiskKnizni("nazev","mhd")) s nazev = $p(rec, "$", 7)
     i nazev = "" s nazev = $p(rec, "$", 2)
-    q $replace(nazev, ",,", ",")
+    q nazev
+}
+
+/// Rozhodne **jednou za požadavek**, jak se skládají názvy zastávek, a uloží to do cache.
+/// Volba u tisku i vlastnost linky se protahovaly všemi voláními jména, což je nepřehledné.
+///
+/// „Použít název pro MHD" je **volba nad rámec starého modulu** (má ji i vývěska): legacy tu
+/// podmínku nemá jak vypnout. Výchozí zapnuto = chování starého modulu zůstává.
+ClassMethod NactiNastaveniNazvu(dataDB As %String, sku As %String, lin As %String)
+{
+    // ⚠️ Výchozí hodnotu musí doplnit **server**, ne jen deklarace parametru: tisk z jiného
+    // klienta (a testy) parametr nepošlou vůbec, a prázdná hodnota znamená ve sdíleném
+    // formátování „Zkrácený" - tedy tichý rozchod se starým modulem.
+    s tvarNazvu = $g(^||ML("IN","TVAR_NAZVU_ZASTAVKY"))
+    i tvarNazvu = "" s tvarNazvu = "Plný CIS"
+    s ^||TiskKnizni("nazev","tvar") = tvarNazvu
+    // Typ linky je zakódovaný: surová hodnota / 10 je index do převodní tabulky starého modulu
+    // (`TYPLINKYREAD`). Městská linka = MEST (2) nebo MESP (9).
+    s surovy = +$p($g(^[dataDB]JRL(sku,lin,"I")), "#", 1)
+    s typLinky = $p("0~1~2~3~5~7~6~8~4~9~10~11", "~", (surovy \ 10) + 1)
+    s jeMestska = (typLinky = 2) || (typLinky = 9)
+    s maNazevMhd = +$g(^[dataDB]JRL(sku,lin,"PATCH","nazMHD"))
+    // Tolerantně jako ostatní bool parametry (starší klient posílal „True"); prázdné = zapnuto.
+    s dovoleno = ($zcvt($g(^||ML("IN","NAZEV_PRO_MHD")),"L") '= "false")
+    s ^||TiskKnizni("nazev","mhd") = jeMestska && maNazevMhd && dovoleno
 }
 
 }

@@ -159,6 +159,136 @@ ClassMethod NajdiLinkuSPismenemVZone(odstranit As %Boolean, ByRef db, ByRef sku,
 	quit 0
 }
 
+/// Najde linku, jejíž spoje nesou daný **atribut** (`POS`, `IDS`, `BEV`…). Slouží k rozšíření
+/// porovnávací sady tam, kde je věta legendy opsaná ze zdroje, ale porovnáním nepotvrzená.
+/// Pozice atributu v hlavičce spoje: POS=12, IDS=14, BEV=15, SAO=16, PCZ=17, OBC=18, PJI=19,
+/// NKA=20, RBU=21, CBE=22, RBP=23, wifi=25, zasu=26.
+ClassMethod NajdiLinkuSAtributem(klic As %String, ByRef db, ByRef sku, ByRef lin) As %Boolean
+{
+    set db = "", sku = "", lin = ""
+    set poz = $piece("12,14,15,16,17,18,19,20,21,22,23,25,26", ",",
+        $listfind($listfromstring("POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu", ","), klic))
+    quit:poz="" 0
+    for fi = 1:1:$length(..#FIRMY, ",") {
+        set firma = $piece(..#FIRMY, ",", fi)
+        continue:'##class(%SYS.Namespace).Exists(firma)
+        set s1 = ""
+        for  {
+            set s1 = $order(^[firma]JRL(s1))
+            quit:s1=""
+            continue:'$isvalidnum(s1)
+            set l1 = ""
+            for  {
+                set l1 = $order(^[firma]JRL(s1, l1))
+                quit:l1=""
+                continue:'$data(^[firma]JRL(s1, l1, "I"))
+                for smer = "T", "Z" {
+                    set sp = ""
+                    for  {
+                        set sp = $order(^[firma]JRL(s1, l1, smer, sp))
+                        quit:sp=""
+                        continue:'$isvalidnum(sp)
+                        set hlava = $piece($get(^[firma]JRL(s1, l1, smer, sp)), "#", 1)
+                        continue:'+$piece(hlava, ":", poz)
+                        set db = firma, sku = s1, lin = l1
+                        ret 1
+                    }
+                }
+            }
+        }
+    }
+    quit 0
+}
+
+/// Vypíše ke každému atributu spoje jednu linku, kde se vyskytuje - podklad pro rozšíření sady.
+ClassMethod AtributyLinky(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        for ai = 1:1:13 {
+            set klic = $piece("POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu", ",", ai)
+            if ..NajdiLinkuSAtributem(klic, .db, .sku, .lin) {
+                set radky($increment(radky)) = klic_": "_db_"~"_sku_"~"_lin
+            }
+            else {
+                set radky($increment(radky)) = klic_": nikde"
+            }
+        }
+        kill ^||ML
+        set i = ""
+        for  {
+            set i = $order(radky(i))
+            quit:i=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(i)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Měření k **tvaru názvu zastávky**: kolik linek má zapnutý název pro MHD, kolik z nich je
+/// městských (jen u těch ho starý modul použije), a kolik názvů v registru nese dvojčárku,
+/// tedy prázdnou část obce („Zlín,,aut.nádr.").
+ClassMethod NazvyVyskyt(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set db = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(db)
+            set linek = 0, nazMHD = 0, nazMHDmestska = 0, mestskych = 0
+            set sku = ""
+            for  {
+                set sku = $order(^[db]JRL(sku))
+                quit:sku=""
+                continue:'$isvalidnum(sku)
+                set lin = ""
+                for  {
+                    set lin = $order(^[db]JRL(sku, lin))
+                    quit:lin=""
+                    continue:'$data(^[db]JRL(sku, lin, "I"))
+                    set linek = linek + 1
+                    // Typ linky je zakódovaný: surová hodnota / 10 je index do převodní
+                    // tabulky (legacy `TYPLINKYREAD`). Městská = 2 (MEST) nebo 9 (MESP).
+                    set surovy = +$piece($get(^[db]JRL(sku, lin, "I")), "#", 1)
+                    set typ = $piece("0~1~2~3~5~7~6~8~4~9~10~11", "~", (surovy \ 10) + 1)
+                    set jeMestska = (typ = 2) || (typ = 9)
+                    if jeMestska set mestskych = mestskych + 1
+                    continue:'+$get(^[db]JRL(sku, lin, "PATCH", "nazMHD"))
+                    set nazMHD = nazMHD + 1
+                    if jeMestska set nazMHDmestska = nazMHDmestska + 1
+                }
+            }
+            // registr zastávek: dvojčárka a vyplněný název pro MHD
+            set zast = 0, dvojcarka = 0, maMhdNazev = 0, czst = ""
+            for  {
+                set czst = $order(^[db]JRZ(czst))
+                quit:czst=""
+                continue:'$isvalidnum(czst)
+                set rec = $get(^[db]JRZ(czst))
+                set zast = zast + 1
+                if $piece(rec, "$", 2) [ ",," set dvojcarka = dvojcarka + 1
+                if $piece(rec, "$", 7) '= "" set maMhdNazev = maMhdNazev + 1
+            }
+            set radky($increment(radky)) = db_": linek="_linek_" mestskych="_mestskych_" nazevProMhdZapnut="_nazMHD_" ztohoMestskych="_nazMHDmestska
+            set radky($increment(radky)) = db_": zastavek="_zast_" sDvojcarkou="_dvojcarka_" sNazvemProMhd="_maMhdNazev
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše linky, na kterých je nová práce `L2` vidět - podklad pro ruční zkoušku v návrháři.
 ClassMethod KdeToZkouset(ByRef sys As %String) As %Status
 {

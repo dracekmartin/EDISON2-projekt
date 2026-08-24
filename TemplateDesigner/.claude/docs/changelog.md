@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-08-24 - 🚏 názvy zastávek v linkovém JŘ jako ve starém tisku (`L2b`)
+
+Poslední datový rozdíl proti starému modulu. Táž zastávka se dosud jmenovala na vývěsce jinak než
+v linkovém jízdním řádu, protože jsme název **zkracovali** a **vždycky** brali upravený název
+pro MHD. Starý modul to má jinak a teď to má i návrhář:
+
+- **ve sloupci zastávek plný tvar** včetně obce („Český Krumlov,,aut. nádraží"),
+- **ve větách poznámek zkrácený** („vyčká v zastávce Strakonice,aut. nádraží"),
+- **upravený název pro MHD jen na městských linkách, které ho mají zapnuté** - tak to dělá starý
+  tisk. Dosud jsme ho brali všude, což byla polovina rozdílu.
+
+Do voleb u tisku přibyly **Tvar názvu zastávky** a **Použít název pro MHD** - stejné, jaké má
+vývěska. ⚠️ Výchozí tvar je ale **plný**, kdežto vývěska má zkrácený: ty dva staré moduly se lišily
+a tady je přednější parita. Rozhodnutí o výchozí hodnotě zůstalo otevřené, dá se otočit jednou
+konstantou.
+
+Formátování názvu je nově **sdílené oběma rodinami agend** - kdyby si ho každá dělala po svém,
+zase by se rozešly. Vývěsce se chování nezměnilo.
+
+**Porovnávací sada rozšířena o dvě linky** se značkami, které se na původní čtyřce nevyskytovaly,
+a hned to našlo dvě věci:
+
+- **U vlakového přípoje se tisklo „vyčká příjezdu vlaku 0"** místo označení vlaku („R 627").
+  Označení se převádělo na číslo, což u nečíselného označení dá nulu. Opraveno.
+- **Jeden spoj patří podle starého modulu do tří skupin dnů, u nás do dvou** - v tabulce se
+  opakuje jednou méně, takže chybí sloupec. Vedeno jako dluh do vlny, která řeší definici sloupců.
+
+Názvy zastávek proti starému modulu sedí **100 % na třech linkách ze čtyř**; na čtvrté zbývá
+32 buněk, kde má starý modul místo jména značku a zatím není jasné proč (vedeno jako dluh, ne jako
+parita). Tři značky (`SAO`, `CBE`, `zasu`) nemá v datech nikdo ze šesti firem, takže jejich věty
+zůstávají opsané ze zdroje a neověřené.
+
+Ověřeno: Caché 125/125, .NET 1121/1121. Zmrazené odtisky všech čtyř linek přepsány - počty shodné,
+změnila se jen jména.
+
 ## 2026-08-21 (8) - 🏷️ dvě značky v legendě dostávaly špatný tvar věty
 
 Dořešení včerejšího nálezu. Nastavení „značka atributu nad spoj" neřídí, **jestli** se řádek legendy

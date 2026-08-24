@@ -1,5 +1,25 @@
 # 🗄️ Archiv - hotové kroky
 
+## 2026-08-24 - `L2b` linkový JŘ: tvar názvu zastávky (poslední datový rozdíl)
+
+Názvy zastávek se skládají jako ve starém tisku: plný tvar ve sloupci, zkrácený ve větách poznámek,
+upravený název pro MHD jen na městských linkách, které ho mají zapnuté. Přibyly volby „Tvar názvu
+zastávky" a „Použít název pro MHD"; formátování je sdílené s vývěskou, aby se obě rodiny agend
+nerozešly. Detail v `changelog.md`.
+
+Zadání vlny bylo postavené na omylu („převzít dvě volby, které má vývěska") - starý linkový tisk
+žádnou takovou volbu nemá, název skládá ze tří polí registru a tvar řídí režim státu. Rozdíl proti
+nám byl ve **zdroji** jména, ne ve volbě.
+
+Rozšíření porovnávací sady o dvě linky se značkami POS a IDS našlo dvě věci navíc: chybu
+„vyčká příjezdu vlaku 0" (opravena) a rozdíl v zařazení spoje do skupin dnů (dluh do `L3`).
+
+**Původní zadání vlny:**
+
+| **L2b** | **Dorovnat poslední datový rozdíl: tvar názvu zastávky.** Starý modul tiskne plný tvar s obcí („Český Krumlov,,aut. nádraží"), my zkrácený („Autobusové nádraží") - týká se to zhruba **poloviny zastávek** na kontrolních linkách a stejně tak **textů návazností**, kde starý modul u městských linek tiskne ještě jiný, místní tvar. Důsledek pro zákazníka: **táž zastávka má na vývěsce a v linkovém JŘ jiné jméno**. Řídí se to dvěma volbami u tisku, které vývěska má a linkový JŘ ne - **převzít je doslova**, ne navrhovat znovu. Chce to i zákazník (#9088 bod 4). Zavírá dluhy `zast` a `pozn/druh3` v registru odchylek. **Součástí je i rozšíření porovnávací sady o linku se značkami POS/IDS**, aby se potvrdil tvar věty, který je dnes opsaný ze zdroje, ale neověřený. | S–M |
+
+---
+
 ## 2026-08-21 - `L2` linkový JŘ: matice nastavení (hotová část) + rozhodnutí před ní
 
 Hotovo: **sedm nastavení, která jsou v datech reálně zapnutá** (zóny × km jako jeden čtyřstavový

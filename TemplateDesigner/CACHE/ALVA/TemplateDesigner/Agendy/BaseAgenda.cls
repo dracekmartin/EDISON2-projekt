@@ -325,4 +325,56 @@ ClassMethod WriteTemplate2Col(rows As %List)
     s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
 }
 
+/// Tvar názvu zastávky pro tisk. Vstup je název z registru zastávek, kde jsou obec, část obce
+/// a lokalita spojené **čárkami** - prázdná část obce se tak projeví **dvojčárkou**
+/// („Zlín,,aut.nádr."). <var>okres</var> = pole 3 registru.
+///
+/// Tvary: „Zkrácený" = dvojčárka na jednu · „Plný CIS" = dvojčárka zůstane (technické exporty,
+/// soutěže) · „Plný CIS s okresem" = a navíc okres na konci · „Typograficky upravený" = zkrácený
+/// + mezera za čárkou a tečkou.
+///
+/// **Slovenský režim skládá název jinak** (legacy `gTskNaZst^JRapiZst`): nikoli čárkami, ale
+/// spojením neprázdných částí přes „, ". Prochází to přes týž vstup, takže se prázdné části
+/// prostě vynechají. ⚠️ **Neověřené porovnáním** - v porovnávací sadě není slovenská firma.
+///
+/// ⚠️ **Sdílené oběma rodinami agend schválně**: kdyby si zastávková vývěska a linkový JŘ
+/// formátovaly název každá po svém, rozešly by se a táž zastávka by se v jedné sestavě jmenovala
+/// jinak než v druhé. Právě to byl stav do 24. 8.
+ClassMethod FormatNazvuZastavky(nazev As %String, okres As %String = "", tvar As %String = "", jazyk As %String = "CZ") As %String
+{
+    i nazev = "" ret ""
+    i jazyk = "*SK" {
+        s vysledek = ""
+        f di=1:1:$l(nazev, ",") {
+            s cast = $zstrip($p(nazev, ",", di), "<>W")
+            i cast '= "" s vysledek = vysledek_$s(vysledek="":"", 1:", ")_cast
+        }
+        ret vysledek
+    }
+    i tvar = "Plný CIS" ret nazev
+    i tvar = "Plný CIS s okresem" ret nazev_$s(okres'="":","_okres, 1:"")
+    s zkraceny = $replace(nazev, ",,", ",")
+    i tvar = "Typograficky upravený" ret ..MezeryPoInterpunkci(zkraceny)
+    ret zkraceny
+}
+
+/// Doplní mezeru za čárku a tečku - „Zlín,aut.nádr." → „Zlín, aut. nádr.". Před číslicí se mezera
+/// nedoplňuje, aby zůstalo „č.1" a desetinná čísla. Záměrně jen pro **názvy zastávek**: na volný
+/// text se pustit nesmí, rozbila by webovou adresu („www.idzk.cz" → „www. idzk. cz").
+ClassMethod MezeryPoInterpunkci(txt As %String) As %String
+{
+    s vysledek = ""
+    f i=1:1:$l(txt) {
+        s znak = $e(txt, i)
+        s vysledek = vysledek_znak
+        i (znak '= ",") && (znak '= ".") continue
+        s dalsi = $e(txt, i + 1)
+        i dalsi = "" continue            // konec textu
+        i dalsi = " " continue           // mezera už tam je
+        i dalsi ? 1N continue            // číslice
+        s vysledek = vysledek_" "
+    }
+    ret vysledek
+}
+
 }

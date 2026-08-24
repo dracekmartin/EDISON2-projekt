@@ -2863,41 +2863,6 @@ ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
     q ..FormatNazvuZastavky(nazev, $p(rec, "$", 3), ..TvarNazvuZastavky())
 }
 
-/// Tvar názvu zastávky pro tisk (KOVED #13089). Vstup je název z registru zastávek, kde je
-/// obec a místo oddělené **dvojčárkou** („Zlín,,aut.nádr."). <var>okres</var> = pole 3 registru.
-///
-/// Tvary: prázdný / „Zkrácený" = dvojčárka na jednu (dosavadní chování a výchozí hodnota) ·
-/// „Plný CIS" = dvojčárka zůstane (technické exporty, soutěže) · „Plný CIS s okresem" = a navíc
-/// okres na konci · „Typograficky upravený" = zkrácený + mezera za čárkou a tečkou.
-ClassMethod FormatNazvuZastavky(nazev As %String, okres As %String = "", tvar As %String = "") As %String
-{
-    i nazev = "" ret ""
-    i tvar = "Plný CIS" ret nazev
-    i tvar = "Plný CIS s okresem" ret nazev_$s(okres'="":","_okres, 1:"")
-    s zkraceny = $replace(nazev, ",,", ",")
-    i tvar = "Typograficky upravený" ret ..MezeryPoInterpunkci(zkraceny)
-    ret zkraceny
-}
-
-/// Doplní mezeru za čárku a tečku - „Zlín,aut.nádr." → „Zlín, aut. nádr.". Před číslicí se mezera
-/// nedoplňuje, aby zůstalo „č.1" a desetinná čísla. Záměrně jen pro **názvy zastávek**: na volný
-/// text se pustit nesmí, rozbila by webová adresa („www.idzk.cz" → „www. idzk. cz").
-ClassMethod MezeryPoInterpunkci(txt As %String) As %String
-{
-    s vysledek = ""
-    f i=1:1:$l(txt) {
-        s znak = $e(txt, i)
-        s vysledek = vysledek_znak
-        i (znak '= ",") && (znak '= ".") continue
-        s dalsi = $e(txt, i + 1)
-        i dalsi = "" continue            // konec textu
-        i dalsi = " " continue           // mezera už tam je
-        i dalsi ? 1N continue            // číslice
-        s vysledek = vysledek_" "
-    }
-    ret vysledek
-}
-
 /// Tvar názvu zastávky z parametru sestavy - per požadavek uložený do `^||TiskAd` (nastavuje
 /// `GetData`/`GetMockData`, ať se nemusí protahovat všemi voláními jména).
 ClassMethod TvarNazvuZastavky() As %String
