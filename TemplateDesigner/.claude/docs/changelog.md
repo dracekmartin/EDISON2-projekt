@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-24 (12) - 📅 spoji chyběl sloupec ve skupinách dnů (`L3`)
+
+Spoj, který nemá zadanou týdenní platnost, jsme zařazovali do skupin dnů podle **odhadu ze zadaných
+datumů omezení**. Vypadalo to chytřeji, ale bylo to horší: na kontrolní lince zařadil odhad spoj do
+**dvou** skupin místo tří, takže se v tabulce opakoval jednou míň a **zákazníkovi chyběl sloupec**.
+
+Starý modul to řeší jinak: zkusí dopočítat skutečnou platnost kalendářem, a **když mu to nevyjde,
+dá spoj do všech skupin**. Nově to děláme stejně. Náš odhad byl vlastní logika, kterou nic
+nedokládalo; tohle je doložené chováním starého tisku.
+
+Porovnání se starým modulem to potvrdilo: na dotčené lince je shoda úplná a **na žádné jiné se nic
+nezhoršilo**.
+
+Ověřeno: Caché 127/127, .NET 1139/1139.
+
 ## 2026-08-24 (11) - 🚏 zastávka s přestupem má piktogram (`L4` uzavřena)
 
 Poslední kus symbolů. U zastávky, kde jde přestoupit na linkovou dopravu, se **vpravo ve sloupci

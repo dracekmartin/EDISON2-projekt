@@ -555,9 +555,16 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         f si=1:1:pocetSpoju {
             s sp = serazeneSpoje(si)
             s plk = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",7)
-            // spoj bez týdenní platnosti: legacy ověřuje skutečnou platnost kalendářem
-            // (mkStaLinSp) - aproximace: odvodit dny ze zadaných datumů omezení (jede jen/také)
-            i plk = "" s plk = ..PlatnostZDatumu(dataDB, sku, lin, smer, sp)
+            // ⚠️ **Spoj bez týdenní platnosti patří do všech skupin dnů** - prázdné `plk` si
+            // `ZarazeniSpojeKnizni` přeloží samo. Legacy zkusí dopočítat skutečnou platnost
+            // kalendářem (`mkStaLinSp`) a **když mu to nevyjde, dá spoj do všech sekcí**
+            // (`JRapiLinPrtWin:476-481`, komentář HD 10183).
+            //
+            // Do 24. 8. jsme místo kalendáře odhadovali dny ze zadaných datumů omezení. Vypadalo
+            // to chytřeji, ale bylo to horší: odhad spoj zařadil do dvou skupin místo tří, takže
+            // se v tabulce opakoval jednou míň a **zákazníkovi chyběl sloupec** (VS_CSAD 0883637).
+            // Odhad byl navíc naše vlastní logika, kterou nic nedokládalo - tohle je chování
+            // starého modulu a porovnání ho potvrdilo.
             s skupiny = ..ZarazeniSpojeKnizni(deleni, plk)
             i (","_skupiny_",") '[ (","_skupina_",") continue
             s spojObj = ..BuildSpoj(dataDB, sku, lin, smer, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy)
@@ -1106,35 +1113,6 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     q o
 }
 
-/// Odvození platnostních znaků z datumů omezení „jede jen/také/jede" (omz 11/12/13) pro spoj
-/// bez týdenní platnosti - aproximace legacy kalendáře (mkStaLinSp): den → 1-7, státní svátek
-/// (vč. Velikonoc) → "+". Prázdný výsledek = fallback „jede všude".
-ClassMethod PlatnostZDatumu(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String) As %String
-{
-    k klice
-    f omzId = 11, 12, 13 {
-        s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
-        i omz = "" continue
-        s data = $s(omz["@":$p(omz,"@",2), 1:omz)
-        f i=1:1:$l(data,"#") {
-            s item = $p(data,"#",i)
-            i item = "" continue
-            s od = $p(item,":",1), do = $p(item,":",2)
-            i do = "" s do = od
-            s dhOd = ..DatumNaDh(od), dhDo = ..DatumNaDh(do)
-            i (dhOd = "") || (dhDo = "") continue
-            i dhDo - dhOd > 400 s dhDo = dhOd + 400        // pojistka proti nesmyslným rozsahům
-            f dh = dhOd:1:dhDo s klice(..DhNaKlic(dh)) = ""
-        }
-    }
-    s vysledek = "", k = ""
-    f {
-        s k = $o(klice(k))
-        q:k=""
-        s vysledek = vysledek_k
-    }
-    q vysledek
-}
 
 /// Datum "d.m.rrrr" → $H počet dnů. "" při nevalidním vstupu.
 ClassMethod DatumNaDh(dat As %String) As %String

@@ -302,14 +302,8 @@ ClassMethod ZnameOdchylky(ByRef odch)
 	// (dnes žádná mimo pravidel podle tvaru hodnot - viz `PravidloOdchylky`)
 
 	// ── známé dluhy ────────────────────────────────────────────────────
-	// Na VS_CSAD 0883637 zařadí starý modul jeden spoj v každém směru do **tří** skupin dnů,
-	// my do dvou - spoj se v tabulce opakuje jednou méně, takže zákazníkovi chybí sloupec.
-	// Našlo to rozšíření sady 24. 8.; na původních čtyřech linkách se to neprojevilo, protože
-	// tam žádný spoj takovou platnost nemá. Týká se `ZarazeniSpojeKnizni` × legacy dělení podle
-	// platnosti, což je totéž téma jako vlastní definice sloupců, proto stejná vlna.
-	set odch("spoje", "VS_CSAD~0883637", "druh") = "dluh"
-	set odch("spoje", "VS_CSAD~0883637", "vlna") = "L3"
-	set odch("spoje", "VS_CSAD~0883637", "duvod") = "spoj patří podle starého modulu do tří skupin dnů, u nás do dvou"
+	// (dluh na zařazení spoje do skupin dnů splacen 24. 8. - spoj bez týdenní platnosti jde do
+	// všech skupin, jako v legacy; náš dřívější odhad z datumů omezení ho zařadil do dvou)
 
 	// (dluh na pořadí spojů splacen 21. 8. - řazení se skládá jako v legacy `mkPoradiSp`,
 	// včetně ručního pořadí u linky, takže se hlídá normálně)
