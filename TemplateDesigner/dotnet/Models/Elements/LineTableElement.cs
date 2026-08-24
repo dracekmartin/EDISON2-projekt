@@ -439,7 +439,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         {
             var plan = BuildRowPlan(stops, trips, groups, fixedCols, tripW, nameIndex, fixedSum,
                 headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
-                tripHeaderStyle, tripDataStyle, FontResolver.SymbolFontFamily(ctx.Data?.Culture));
+                tripHeaderStyle, tripDataStyle,
+                ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
 
             RowPlanRenderer.DrawRows(ctx, X, Y, Width, plan, scale);
         }
@@ -460,7 +461,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         List<RenderCol> fixedCols, float tripW, int nameIndex, float fixedSum,
         float headerH, float rowH, float pripojRowH, SKPaint gridPaint,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
-        ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle, string symbolFamily)
+        ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle,
+        RenderContext ctx, SKTypeface symbolFace, float scale)
     {
         var plan = new List<RowSpec>();
 
@@ -491,9 +493,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
         // řádek platnosti (znaky X/6/7/+ nad spojem)
         if (HasPlatnostRow(trips))
-            plan.Add(new(RowKind.HeaderExtra, rowH,
-                PlatnostRow(fixedCols, trips, tripW, tripDataStyle, symbolFamily))
-            { VerticalLinePaint = gridPaint });
+        {
+            // Značky se kreslí ručně nad hotovým řádkem, aby šel v jedné buňce střídat symbolový
+            // a běžný font („⚒ BEV"). Buňky proto zůstávají prázdné - jinak by se text zdvojil.
+            var platnostRuns = trips
+                .Select(t => SymbolRunRenderer.BuildRuns(t.Platnost, SymbolMap.ResolveLinkovy))
+                .ToList();
+            var prazdne = TripTextRow(fixedCols, trips, tripW, tripDataStyle, _ => "");
+            plan.Add(new(RowKind.HeaderExtra, rowH, prazdne)
+            {
+                VerticalLinePaint = gridPaint,
+                // `DrawRows` kreslí buňky od X prvku, takže i ruční kreslení musí začít tam.
+                Decorate = rowY => DrawPlatnostRuns(ctx, rowY, rowH, X + fixedSum, tripW,
+                    platnostRuns, tripDataStyle, symbolFace, scale),
+            });
+        }
 
         // řádek NZ (negativní značky)
         if (HasNzRow(trips))
@@ -563,28 +577,25 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
     /// <summary>Řádek, kde popisové sloupce jsou prázdné a spojové nesou znak z <paramref name="text"/>
     /// (platnost, negativní značky).</summary>
-    /// <summary>Řádek platnosti - denní značky se kreslí <b>symbolovým</b> fontem, protože to jsou
-    /// piktogramy (pracovní dny = zkřížená kladiva, soboty/neděle = kroužkové číslice).</summary>
+    /// <summary>Nakreslí značky platnosti do sloupců spojů - piktogramy symbolovým fontem,
+    /// zkratky běžným, i když jsou v jedné buňce vedle sebe.</summary>
     /// <remarks>
-    /// ⚠️ <c>CellRenderer</c> neumí míchat font uvnitř jedné buňky, takže se symbolový font použije,
-    /// jen když jsou piktogramy <b>všechny</b> značky toho spoje. Smíšená buňka zůstane textem -
-    /// radši celá čitelně, než půlka jako cizí obrázek. Které značky jsou ověřené, drží
-    /// <c>SymbolMap.ResolveLinkovy</c>; co ověřené není, se kreslí textem jako dosud.
+    /// ⚠️ Dělá se to ručně, protože buňka umí jen jeden font. První verze proto přepínala font
+    /// „buď celá buňka, nebo nic" a v jednom řádku pak stálo u spoje 5 kladivo a u spoje 9 písmeno
+    /// „X", protože ten měl v buňce navíc „BEV" (nález Jan 24. 8.).
     /// </remarks>
-    private static List<ColumnRenderer.CellSpec> PlatnostRow(
-        List<RenderCol> fixedCols, List<LineTripData> trips, float tripW,
-        ResolvedTextStyle tripDataStyle, string symbolFamily)
+    private static void DrawPlatnostRuns(RenderContext ctx, float rowTopMm, float rowH,
+        float fixedSumMm, float tripW, List<List<SymbolRunRenderer.Run>> runsPerTrip,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
     {
-        var specs = new List<ColumnRenderer.CellSpec>();
-        foreach (var c in fixedCols) specs.Add(new(c.Width, "", c.DataStyle));
-        foreach (var t in trips)
+        for (int i = 0; i < runsPerTrip.Count; i++)
         {
-            var resolved = t.Platnost.Select(SymbolMap.ResolveLinkovy).ToList();
-            bool vseGlyf = resolved.Count > 0 && resolved.All(r => r.Mode == SymbolRenderMode.FontGlyf);
-            string text = string.Join(" ", vseGlyf ? resolved.Select(r => r.Value) : t.Platnost);
-            specs.Add(new(tripW, text, vseGlyf ? tripDataStyle with { FontFamily = symbolFamily } : tripDataStyle));
+            var runs = runsPerTrip[i];
+            if (runs.Count == 0) continue;
+            float leftMm = fixedSumMm + i * tripW;
+            var cellMm = new SKRect(leftMm, rowTopMm, leftMm + tripW, rowTopMm + rowH);
+            SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style), runs, style, symbolFace, scale);
         }
-        return specs;
     }
 
     private static List<ColumnRenderer.CellSpec> TripTextRow(

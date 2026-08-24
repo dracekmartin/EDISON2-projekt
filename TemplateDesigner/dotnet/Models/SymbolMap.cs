@@ -73,6 +73,8 @@ public static class SymbolMap
     /// „pokračuje" má v číselníku značku <c>p</c>, jenže na <c>p</c> je ve fontu <b>kufr</b>.
     /// Denní značky naopak sedí a v jízdních řádech se tak opravdu tisknou: <c>X</c> = zkřížená
     /// kladiva (pracovní dny), <c>6</c>/<c>7</c> = kroužkové číslice, <c>+</c> = kříž (svátky).
+    /// <para>Seznam rozhoduje <b>o každé značce zvlášť</b>, ne o celé buňce: „⚒ BEV" vyjde
+    /// kladivem a zkratkou vedle sebe. Kreslí to <c>SymbolRunRenderer</c>.</para>
     /// <para>Co v seznamu není, se kreslí <b>textem</b> - tedy jako dosud. Týká se to i značek
     /// <c>|</c> (projíždí) a <c>&lt;</c> (jede jinudy), které jsou typografická konvence, ne
     /// piktogram, a značek <c>m</c>/<c>u</c>/<c>^</c> (návaznosti), jejichž pozice <b>měřená

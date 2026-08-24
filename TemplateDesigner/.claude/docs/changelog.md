@@ -20,7 +20,12 @@ jako dosud, ne hůř.
 
 ⚠️ Loď, wifi a zásuvka v tom fontu **nejsou vůbec** - vypisují se textem, provizorně.
 
-Ověřeno: .NET 1139/1139, Caché 127/127. Vizuální kontrola zbývá.
+⚠️ **Piktogram a zkratka se míchají uvnitř jedné buňky.** První verze přepínala font „buď celá
+buňka, nebo nic" a v jednom řádku pak stálo u jednoho spoje kladivo a u vedlejšího písmeno „X",
+protože ten měl v buňce navíc „BEV" (nález Jan při vizuální kontrole). Buňka umí jen jeden font,
+takže se smíšený obsah kreslí ručně nad hotovým řádkem.
+
+Ověřeno: .NET 1139/1139, Caché 127/127.
 
 ## 2026-08-24 (7) - 🏢 pruh s dopravcem se skládá jako ve starém tisku (`L2` hotová)
 
