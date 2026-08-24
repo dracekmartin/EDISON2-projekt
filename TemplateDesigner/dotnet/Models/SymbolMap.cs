@@ -75,14 +75,33 @@ public static class SymbolMap
     /// kladiva (pracovní dny), <c>6</c>/<c>7</c> = kroužkové číslice, <c>+</c> = kříž (svátky).
     /// <para>Seznam rozhoduje <b>o každé značce zvlášť</b>, ne o celé buňce: „⚒ BEV" vyjde
     /// kladivem a zkratkou vedle sebe. Kreslí to <c>SymbolRunRenderer</c>.</para>
-    /// <para>Co v seznamu není, se kreslí <b>textem</b> - tedy jako dosud. Týká se to i značek
-    /// <c>|</c> (projíždí) a <c>&lt;</c> (jede jinudy), které jsou typografická konvence, ne
-    /// piktogram, a značek <c>m</c>/<c>u</c>/<c>^</c> (návaznosti), jejichž pozice <b>měřená
-    /// není</b>. Doplnit je smí až někdo, kdo je ověří v <b>obou</b> fontech - postup
-    /// v <c>elementy-architektura.md</c>. Hádat je znamená vytisknout cizí piktogram.</para>
+    /// <para>Co v seznamu není, se kreslí <b>textem</b>. Značky <c>|</c> (projíždí) a <c>&lt;</c>
+    /// (jede jinudy) tam nebudou nikdy - <b>font je nemá</b> (na jejich pozicích je čtverec
+    /// a osmiúhelník), takže je i starý tisk kreslí znakem. „Pokračuje" <c>u</c> zůstává textem,
+    /// dokud se nenajde stará sestava, kde se vyskytuje - v jádru sady není.</para>
+    /// <para>Novou položku smí přidat jen ten, kdo pozici ověří v <b>obou</b> fontech; postup
+    /// v <c>elementy-architektura.md</c>. Hádat ji znamená vytisknout cizí piktogram.</para>
     /// </remarks>
+    private static readonly Dictionary<string, string> PiktogramyLinky = new()
+    {
+        // Denní značky - pozice sedí na písmenu.
+        ["X"] = "X",   // pracovní dny - zkřížená kladiva
+        ["+"] = "+",   // svátky - kříž
+        // Návaznosti: doloženo tiskem staré linky 330511 (24. 8.) - „vyčká" má **dutý** trojúhelník,
+        // „navazuje" **plný**. Který je který, se poznalo počtem obrysů glyfu: `A` má dva (dutý),
+        // `B` jeden (plný). V CZ i SK fontu shodně.
+        ["m"] = "A",   // vyčká - dutý trojúhelník △
+        ["^"] = "B",   // navazuje - plný trojúhelník ▲
+        // Atributy sdílené s vývěskou.
+        ["H"] = "H",   // bezbariér
+        ["F"] = "F",   // částečně bezbariér
+        ["L"] = "x",   // vlak - lokomotiva
+        ["A"] = "z",   // autobus - na `w` je vagon
+        ["K"] = "L",   // jízdní kolo
+    };
+
     private static bool JeOverenyPiktogramLinky(string znak) =>
-        znak is "X" or "+" or "H" or "F" or "L" or "A" or "K"
+        PiktogramyLinky.ContainsKey(znak)
         || (znak.Length == 1 && znak[0] >= '0' && znak[0] <= '9');
 
     /// <summary>Jak nakreslit značku v <b>linkovém</b> JŘ - viz <see cref="JeOverenyPiktogramLinky"/>,
@@ -91,7 +110,9 @@ public static class SymbolMap
     {
         if (string.IsNullOrEmpty(znak)) return (SymbolRenderMode.Text, znak ?? "");
         if (!JeOverenyPiktogramLinky(znak)) return (SymbolRenderMode.Text, znak);
-        return (SymbolRenderMode.FontGlyf, NaPoziciVeFontu(znak));
+        // ⚠️ Cíl se bere z tabulky, **ne** přes `NaPoziciVeFontu`: značka „vyčká" míří na pozici
+        // `A`, kterou by vývěskový překlad poslal dál na autobus.
+        return (SymbolRenderMode.FontGlyf, PiktogramyLinky.TryGetValue(znak, out var poz) ? poz : znak);
     }
 
     /// <summary>Kreslí se značka piktogramem ze symbolového fontu?</summary>

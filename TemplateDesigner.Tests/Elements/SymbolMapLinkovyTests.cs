@@ -43,12 +43,24 @@ public class SymbolMapLinkovyTests
     [Theory]
     [InlineData("|")]    // projíždí - typografická konvence, ne piktogram
     [InlineData("<")]    // jede jinudy - dtto
-    [InlineData("m")]    // vyčká - pozice neměřená
-    [InlineData("u")]    // pokračuje jako - pozice neměřená
-    [InlineData("^")]    // navazuje - pozice neměřená
+    [InlineData("u")]    // pokračuje - v jádru sady se nevyskytuje, tvar neověřený
     public void NeoverenaZnacka_ZustavaTextem(string znak)
     {
         Assert.Equal(SymbolRenderMode.Text, SymbolMap.ResolveLinkovy(znak).Mode);
+    }
+
+    /// <summary>Návaznosti jsou trojúhelníky - doloženo tiskem staré linky 330511: „vyčká" dutý,
+    /// „navazuje" plný. ⚠️ Cíl se bere z tabulky značek linky, ne přes vývěskový překlad - ten by
+    /// „vyčká" (pozice <c>A</c>) poslal dál na autobus.</summary>
+    [Theory]
+    [InlineData("m", "A")]   // vyčká - dutý trojúhelník
+    [InlineData("^", "B")]   // navazuje - plný trojúhelník
+    public void Navaznost_JeTrojuhelnik(string znak, string pozice)
+    {
+        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+
+        Assert.Equal(SymbolRenderMode.FontGlyf, mode);
+        Assert.Equal(pozice, value);
     }
 
     /// <summary>Víceznakové značky jsou zkratky (BEV, IDS, WC…), ne piktogramy.</summary>

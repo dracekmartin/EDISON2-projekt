@@ -602,10 +602,15 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
   ⛔ **Tím padají dvě dosavadní domněnky:** „paragrafy `a`/`b`/`c`" a „metro `e`/`f`/`g`". Řada
   `a`-`j` je prostě **číslice 0-9 v rámečku**, jak tvrdí tabulka výš - `e`=4, `f`=5, `g`=6 to potvrzuje.
 
-  ⚠️ **Měření říká, co v té pozici je - ne že ji starý tisk používá.** U „projíždí"/„jede jinudy"
-  je odpověď jasná (font tam ty znaky nemá, takže je legacy kreslí textem). U návazností
-  `m`/`u`/`^` jsou v té pozici geometrické tvary a **jestli je starý modul kreslí, se z dat poznat
-  nedá** - rozhoduje se to podle tištěného vzoru.
+  ✅ **Návaznosti rozhodnuty tištěným vzorem** (stará sestava linky 330511, 24. 8.): „vyčká" má
+  **dutý** trojúhelník △, „navazuje" **plný** ▲, a tisknou se **vedle času**, ne místo něj.
+  Který glyf je který, se pozná počtem obrysů: `A` má dva (dutý), `B` jeden (plný) - v CZ i SK
+  shodně. Mapa proto vede `m` → `A` a `^` → `B`.
+  ⚠️ Cíl se v mapě linky bere **z tabulky**, ne přes vývěskový překlad - ten by „vyčká" (pozice `A`)
+  poslal dál na autobus. „Pokračuje" `u` zůstává neověřené, v jádru sady se nevyskytuje.
+
+  ⚠️ **Měření samo říká jen, co v pozici je - ne že ji starý tisk používá.** U „projíždí"/„jede
+  jinudy" je odpověď jasná z fontu (znaky tam nejsou), u návazností ji dal až tištěný vzor.
 
   ⚠️ **Neověřené zůstávají** už jen `G` a `a`/`b`/`c`. `H`/`F` (bezbariér) a kroužkové dny sedí na písmenu.
 
