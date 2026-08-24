@@ -3387,10 +3387,16 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── Sample template ───────────────────────────────────────────────────────
     /// <summary>Fallback startovní šablona - agendu typicky přepíše EDISON kontrakt nebo
-    /// poslední použitá agenda uživatele (viz ctor); AD je default pro první spuštění.</summary>
+    /// poslední použitá agenda uživatele (viz ctor).</summary>
+    /// <remarks>
+    /// Výchozí je <b>linkový JŘ</b> (žádost Jan 24. 8.), protože se na něm teď pracuje a přepínat
+    /// ho po každém startu zdržuje. Uplatní se jen při <b>prvním</b> spuštění: jakmile uživatel
+    /// jednou agendu přepne, má přednost jeho poslední volba. Vrátit zpět = přepsat tuhle jednu
+    /// konstantu.
+    /// </remarks>
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "LINKOVY_JR_AD" };
         t.Sections.Add(CreateDefaultSection(t.PageSize));
         return t;
     }

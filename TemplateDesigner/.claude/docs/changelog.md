@@ -8,8 +8,10 @@ jak vyzkoušet. Nově je **zveřejněná** a nabízí se v „Změnit agendu" i 
 ⚠️ **Městská varianta zůstává skrytá** - neprošla porovnáním se starým modulem.
 ⚠️ Zveřejněná agenda se ukáže i zákazníkům, jakmile se vydá nová verze.
 
-Návrhář si pamatuje **naposledy použitou agendu**, takže po prvním přepnutí startuje rovnou v ní;
-zvláštní nastavení výchozí agendy proto není potřeba.
+Návrhář si pamatuje **naposledy použitou agendu**, takže po prvním přepnutí startuje rovnou v ní.
+Na žádost Jana je linkový JŘ navíc **výchozí i pro první spuštění** (dřív zastávkový) - uplatní se
+jen tehdy, když uživatel ještě nikdy agendu nepřepnul. ⚠️ Než se to vydá zákazníkům, zvážit vrácení
+zpátky: nový uživatel dnes přistane v pilotní agendě, ne v hotové vývěskové.
 
 ## 2026-08-24 (2) - 🔦 zvýraznění zastávky, ze které se uživatel dívá (`L2`)
 
