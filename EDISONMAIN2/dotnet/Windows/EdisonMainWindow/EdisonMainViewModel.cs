@@ -682,6 +682,23 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (text.Length == 0) ApplyTreeExpansion();
         }
 
+        /// <summary>
+        /// První modul odpovídající hledání v aktivní záložce, nebo <c>null</c> (prázdné hledání,
+        /// záložka bez stromu, žádný nález). Okno na něj po Enteru v poli hledání přenese fokus.
+        /// </summary>
+        internal ExecutableModule? FirstSearchResult()
+        {
+            if (_treeSearchText.Trim().Length == 0) return null;
+            // Enter hned po psaní by jinak četl IsVisibleBySearch z předchozího běhu - filtrace
+            // je debouncovaná a čekající tick ještě nedoběhl.
+            if (_searchDebouncer is { IsEnabled: true })
+            {
+                _searchDebouncer.Stop();
+                ApplySearch();
+            }
+            return SelectedTab.Tree is { } tree ? ModuleTreeState.FirstVisibleExecutable(tree) : null;
+        }
+
         // Clear až tady (po úspěšném loadu, ne před requestem) - selhání jinak nechá záložku
         // trvale prázdnou a při přepnutí firmy zahodí i strom, který byl platný.
         private void FillFilteredTree(ObservableCollection<IModule> target, IReadOnlyList<IModule> tree)
@@ -810,8 +827,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené když nějaké jsou, jinak Hlavní nabídka.
-        private TreeTab DefaultTreeTab() => TabByKey(HasNoFavorites ? "main" : "favorites");
+        // Výchozí záložka při prvním spuštění (bez uložené volby) - vždy Hlavní nabídka; existující
+        // oblíbené ji nepřebíjejí, protože skok jinam než do plné nabídky uživatele překvapil.
+        private TreeTab DefaultTreeTab() => TabByKey("main");
 
         private TreeTab TabByKey(string? key) =>
             TreeTabs.FirstOrDefault(t => t.Key == key) ?? TreeTabs[0];

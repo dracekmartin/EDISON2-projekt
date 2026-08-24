@@ -32,7 +32,7 @@ public sealed class PeriodicRefreshMiniAppViewModel : EDMiniAppViewModel, IMiniA
 
     public void AttachRefresher(Func<IReadOnlyList<string>> refreshAll) => _refreshAll = refreshAll;
 
-    public override string Title => "Automatický refresh";
+    public override string Title => "Automatická obnova";
 
     public IReadOnlyList<RefreshInterval> Intervals { get; } =
     [

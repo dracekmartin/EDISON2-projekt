@@ -26,7 +26,7 @@ public sealed class CoreMiniApps : IMiniAppProvider
             "Wiki", () => Widget(WidgetUrls.Wiki))),
         new("Core.Skoleni", "Školení", () => new SimpleMiniAppViewModel(
             "Školení", TrainingsWidget)),
-        new("Core.AutoRefresh", "Automatický refresh", () => new PeriodicRefreshMiniAppViewModel()),
+        new("Core.AutoRefresh", "Automatická obnova", () => new PeriodicRefreshMiniAppViewModel()),
     ];
 
     private static IReadOnlyList<CarouselPage> CarouselPages() =>

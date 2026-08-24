@@ -109,6 +109,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             return selfMatch;
         }
 
+        /// <summary>
+        /// První spustitelný modul v pořadí stromu, který přežil hledání (DFS). Do skryté rodiny
+        /// se nesestupuje - její potomci mají <see cref="IModule.IsVisibleBySearch"/> false také.
+        /// </summary>
+        internal static ExecutableModule? FirstVisibleExecutable(IEnumerable<IModule> tree)
+        {
+            foreach (var module in tree)
+            {
+                if (!module.IsVisibleBySearch) continue;
+                switch (module)
+                {
+                    case ExecutableModule exe:
+                        return exe;
+                    case ModuleFamily family when FirstVisibleExecutable(family.NestedModules) is { } hit:
+                        return hit;
+                }
+            }
+            return null;
+        }
+
         // Klíč uzlu = "<tree>:<index-cesta>" (např. "main:5.2") - stabilní vůči přejmenování i suffixům
         // z ModuleLaunchabilityCheck, na rozdíl od cesty přes DisplayedName.
 

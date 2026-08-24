@@ -28,6 +28,16 @@ public class PeriodicRefreshMiniAppViewModelTests
     }
 
     [Fact]
+    public void Title_MatchesCatalogDescriptor()
+    {
+        // Název žije na dvou místech (descriptor v katalogu, Title VM ve výpisu „Poslední obnova")
+        // a rozejít se smí jen omylem.
+        var descriptor = new CoreMiniApps().GetMiniApps().Single(a => a.Id == "Core.AutoRefresh");
+
+        Assert.Equal(descriptor.Title, Build().Title);
+    }
+
+    [Fact]
     public void RefreshNow_WithoutRefresher_DoesNotThrow()
     {
         var vm = Build();

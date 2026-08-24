@@ -129,6 +129,49 @@ public class ModuleTreeStateSearchTests
         Assert.False(fam.IsVisibleBySearch);
     }
 
+    // FirstVisibleExecutable - cíl Enteru v poli „Hledat modul".
+
+    [Fact]
+    public void FirstVisibleExecutable_ReturnsFirstMatchInTreeOrder()
+    {
+        var deep = Exe("Turnusy");
+        var later = Exe("Turnusové skupiny");
+        IModule[] tree = [Fam("Doprava", Exe("Objednávky"), deep), later];
+        foreach (var root in tree) ModuleTreeState.ApplySearchToModule(root, "turnus");
+
+        Assert.Same(deep, ModuleTreeState.FirstVisibleExecutable(tree));
+    }
+
+    [Fact]
+    public void FirstVisibleExecutable_SkipsFamiliesAndHiddenNodes()
+    {
+        var match = Exe("Turnusy");
+        IModule[] tree = [Exe("Objednávky"), Fam("Doprava", match)];
+        foreach (var root in tree) ModuleTreeState.ApplySearchToModule(root, "turnus");
+
+        // Skrytý sourozenec se přeskočí a rodina sama se nevrací - spustit ji nejde.
+        Assert.Same(match, ModuleTreeState.FirstVisibleExecutable(tree));
+    }
+
+    [Fact]
+    public void FirstVisibleExecutable_NullWhenNothingMatches()
+    {
+        IModule[] tree = [Fam("Doprava", Exe("Turnusy"))];
+        foreach (var root in tree) ModuleTreeState.ApplySearchToModule(root, "xyz");
+
+        Assert.Null(ModuleTreeState.FirstVisibleExecutable(tree));
+    }
+
+    [Fact]
+    public void FirstVisibleExecutable_NullForFamilyWithoutExecutable()
+    {
+        // Skupina nalezená podle vlastního názvu, ale bez modulu uvnitř - Enter nemá kam skočit.
+        IModule[] tree = [Fam("Mzdy", Fam("Výpočet"))];
+        foreach (var root in tree) ModuleTreeState.ApplySearchToModule(root, "mzdy");
+
+        Assert.Null(ModuleTreeState.FirstVisibleExecutable(tree));
+    }
+
     [Fact]
     public void EmptyText_ResetsVisibilityToTrue()
     {

@@ -379,7 +379,7 @@
                 <Border Grid.Column="0" HorizontalAlignment="Left" Margin="4,4,0,0" CornerRadius="3,3,0,0"
                         Background="{DynamicResource EDTheme.Bg.Surface}"
                         BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,1,1,0">
-                    <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených.
+                    <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění Hlavní nabídka.
                          BorderThickness=0 - spodní linku kreslí až rámeček řádku s hledáním, spojitě přes celou šířku. -->
                     <!-- Záložky jsou data (VM.TreeTabs), ne ručně psané TabItemy - pořadí i identita
                          žijí v jednom seznamu. Ikona patří do Headeru; Content nastavuje generátor
@@ -434,8 +434,10 @@
             <Border Grid.Row="1" Margin="4,0,4,0" Padding="4"
                     Background="{DynamicResource EDTheme.Bg.Surface}"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,1,1,0">
+                <!-- Enter = fokus na první nález ve stromu (Esc si řeší EDSearchTextBox sám). -->
                 <edstx:EDSearchTextBox x:Name="TreeSearchBox"
                                        Placeholder="Hledat modul…"
+                                       KeyDown="TreeSearchBox_KeyDown"
                                        Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
             </Border>
 

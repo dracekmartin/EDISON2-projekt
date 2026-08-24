@@ -357,6 +357,48 @@ public class EdisonMainViewModelTests
         Assert.False(modules.Single(m => m.DisplayedName.StartsWith("Objednávky")).IsVisibleBySearch);
     }
 
+    // FirstSearchResult - cíl Enteru v poli „Hledat modul" (HD 13132/F15).
+
+    private static EdisonMainViewModel SearchableVM() =>
+        CreateVM(treeGetter: TreeGetterWith(
+        [
+            new ExecutableModule { DisplayedName = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
+            new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
+        ]));
+
+    [Fact]
+    public void FirstSearchResult_DoesNotWaitForDebouncer()
+    {
+        // Enter přijde dřív, než doběhne 150ms debounce (v testech DispatcherTimer nikdo nepumpuje,
+        // takže by bez flushe filtrace neproběhla nikdy).
+        var vm = SearchableVM();
+        vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "main");
+        vm.TreeSearchText = "turnus";
+
+        Assert.StartsWith("Turnusy", vm.FirstSearchResult()!.DisplayedName);
+    }
+
+    [Fact]
+    public void FirstSearchResult_NullWithoutSearchText()
+    {
+        var vm = SearchableVM();
+        vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "main");
+
+        // Prázdné hledání = vše viditelné; Enter nemá „první nález" a nesmí skočit na první uzel.
+        Assert.Null(vm.FirstSearchResult());
+    }
+
+    [Fact]
+    public void FirstSearchResult_NullOnTabWithoutTree()
+    {
+        // Používané je ListBox mimo filtr hledání - Enter tam nemá co dělat.
+        var vm = SearchableVM();
+        vm.TreeSearchText = "turnus";
+        vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "used");
+
+        Assert.Null(vm.FirstSearchResult());
+    }
+
     [Fact]
     public async Task SwitchCompany_UpdatesMLRestProperties()
     {

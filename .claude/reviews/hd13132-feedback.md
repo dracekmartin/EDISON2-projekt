@@ -77,14 +77,12 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F5 - Menu se po startu přepne na záložku Oblíbené
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - `DefaultTreeTab()` vrací vždy „Hlavní nabídka"; oblíbené
+  default nepřebíjejí, uložená volba má dál přednost.
 - **P3 · S** 🔸
-- **Co udělat:** Rozhodnout default. Dnes záměrně: bez uložené volby → Oblíbené, když
-  nějaké existují (`DefaultTreeTab()`, `EdisonMainViewModel.cs:823`); vybraná záložka se
-  od `a4c86bc` (17. 8.) persistuje per uživatel, takže překvapení nastane jen napoprvé.
-  Buď změnit default na „Hlavní nabídka" vždy, nebo chování obhájit v odpovědi do ticketu.
-- **Pozor:** `TreeTab.Key` je persistovaný - nepřejmenovávat klíče.
-- **Hotovo když:** Rozhodnuto + případná jednořádková změna defaultu + odpověď v ticketu.
+- **Zbývá odeslat do ticketu:** „Po startu se nově vždy otevře Hlavní nabídka. Dřív shell
+  skočil na Oblíbené, pokud jste nějaké měl - to jsme zrušili. Poslední otevřenou záložku
+  si shell pamatuje per uživatel a firmu, takže si ji stačí jednou přepnout."
 - **Zdroj:** HD 13132 #20 (Kaska)
 
 ### F6 - Miniaplikaci jde zúžit až není nic vidět
@@ -108,14 +106,10 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F8 - „Automatický refresh" přejmenovat česky
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - „Automatická obnova" v descriptoru i v `Title` VM
+  (objevuje se ve výpisu „Poslední obnova"); Id `Core.AutoRefresh` zůstalo. V UI shellu
+  už anglické „refresh" není.
 - **P3 · S**
-- **Co udělat:** Jediný uživatelsky viditelný „refresh" je Title miniaplikace
-  `Core.AutoRefresh` (`EDISONMAIN2/dotnet/MiniApps/CoreMiniApps.cs:31`) - přejmenovat
-  (např. „Automatická obnova"; DZ navrhuje „obnovení"). Zbytek UI už je česky
-  („Obnovit teď", „Poslední obnova", „Aktualizovat licenci").
-- **Pozor:** Měnit jen `Title`; Id `Core.AutoRefresh` je v persistenci layoutu.
-- **Hotovo když:** V UI shellu není anglické „refresh".
 - **Zdroj:** HD 13132 #16 (Zeman)
 
 ### F9 - Kapybara v okně „Akce probíhá"
@@ -207,13 +201,10 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F15 - Enter v poli „Hledat modul" spustí první výsledek
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - Enter označí první nález v aktivní záložce a dá mu fokus
+  ve stromu; spustí ho až druhý Enter (parita s legacy `frmMain`, žádný nechtěný start
+  agendy). Vybráno z varianty „pouze fokus", ne „rovnou spustit".
 - **P3 · S**
-- **Co udělat:** Nález z průzkumu (v ticketu explicitně není): Enter spouští jen ve
-  stromu (`EdisonMainWindow.xaml.cs:186`), search box umí jen Esc. Doplnit Enter =
-  spustit první nalezený modul (nebo přenést fokus do stromu na první výsledek).
-  Nice-to-have doplněk Kaskových bodů 2-5; klidně vyřadit.
-- **Hotovo když:** Enter v search boxu má smysluplnou akci.
 - **Zdroj:** vlastní nález při triáži HD 13132
 
 ## Mimo EDISON2 (jiné repo / jiný vlastník)
@@ -259,10 +250,10 @@ Podklad pro odpověď do ticketu - body z #3 (Kaska) a #4 (Zeman):
 - **Min šířka dock area miniaplikací** - `ca3f5b3` + `e248164` (28. 7.); nové hlášení → F6.
 - **Karusel podpory: pomalejší cyklus, pauza na hover** - `04a4c1c` (29. 7.); definitivně
   řeší F1.
-- **Záložka menu se persistuje per uživatel** - `a4c86bc`; default „Oblíbené" → F5.
+- **Záložka menu se persistuje per uživatel** - `a4c86bc`; výchozí je vždy Hlavní nabídka (F5).
 - **Business zámky při logout + veto zavírání oken** - `6e49feb`.
 - **Crash telemetrie + dialog + fallback log** - `3cd3fc7`, `77fb84e`.
 - **Server idle timer / CacheLocks=1** (session nevypadá idle) - `9feb252`.
 
-Poznámky bez úkolu: „prase" = kapybara (→ F9); jediný zbylý „refresh" je
-`Core.AutoRefresh` (→ F8); tmavý režim - pochvala od Kasky (#18), bez úkolu.
+Poznámky bez úkolu: „prase" = kapybara (→ F9); tmavý režim - pochvala od Kasky (#18),
+bez úkolu.

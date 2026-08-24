@@ -351,7 +351,8 @@ public class FavoritesAndUsageTests
         var fav = Assert.IsType<ExecutableModule>(Assert.Single(vm.FavoritesTree));
         Assert.Equal("100", fav.ElementId);
         Assert.False(vm.HasNoFavorites);
-        Assert.Equal("favorites", vm.SelectedTab.Key);   // bez uložené volby výchozí Oblíbené, když nějaké jsou
+        // Bez uložené volby vždy Hlavní nabídka - existující oblíbené default nepřebíjejí.
+        Assert.Equal("main", vm.SelectedTab.Key);
     }
 
     [Fact]

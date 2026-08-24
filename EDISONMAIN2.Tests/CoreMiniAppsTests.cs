@@ -16,7 +16,8 @@ public class CoreMiniAppsTests
         Assert.Contains(apps, a => a.Id == "Core.Novinky" && a.Title == "Novinky");
         Assert.Contains(apps, a => a.Id == "Core.Wiki" && a.Title == "Wiki");
         Assert.Contains(apps, a => a.Id == "Core.Skoleni" && a.Title == "Školení");
-        Assert.Contains(apps, a => a.Id == "Core.AutoRefresh" && a.Title == "Automatický refresh");
+        // Id zůstává "Core.AutoRefresh" i po přejmenování titulku - je v persistenci layoutu.
+        Assert.Contains(apps, a => a.Id == "Core.AutoRefresh" && a.Title == "Automatická obnova");
     }
 
     [Fact]

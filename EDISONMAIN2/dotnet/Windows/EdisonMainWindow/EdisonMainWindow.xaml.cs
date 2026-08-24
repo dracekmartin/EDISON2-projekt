@@ -199,6 +199,48 @@ namespace EDISONMAIN2
             }
         }
 
+        // Enter v poli hledání označí první nález a dá mu fokus ve stromu; spustí ho až druhý Enter
+        // (TreeCard_KeyDown výš) - jistota proti nechtěnému startu agendy při obecném hledaném textu.
+        private void TreeSearchBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter || DataContext is not EdisonMainViewModel vm) return;
+            if (vm.FirstSearchResult() is not { } hit || ActiveTreeView() is not { } tree) return;
+            if (ContainerFor(tree, hit) is not { } item) return;
+
+            item.IsSelected = true;
+            item.BringIntoView();
+            item.Focus();
+            e.Handled = true;
+        }
+
+        // Klíče záložek drží VM.TreeTabs; stromy jsou pojmenovaní sourozenci v kartě (Používané
+        // je ListBox mimo filtr hledání, proto null).
+        private TreeView? ActiveTreeView() =>
+            (DataContext as EdisonMainViewModel)?.SelectedTab.Key switch
+            {
+                "main"      => MainMenuTreeView,
+                "system"    => SystemAdminTreeView,
+                "partners"  => PartnerSolutionsTreeView,
+                "favorites" => FavoritesTreeView,
+                _           => null,
+            };
+
+        // Kontejner uzlu se hledá shora dolů - potomci vzniknou až když je rodič rozbalený
+        // a proběhl jeho layout (hledání rodiče na cestě rozbalí, generátor je ale líný).
+        // Přes index, ne ContainerFromItem: moduly jsou record s hodnotovou rovností, takže
+        // dva shodně vyplněné uzly by si kontejnery prohodily.
+        private static TreeViewItem? ContainerFor(ItemsControl parent, IModule target)
+        {
+            parent.UpdateLayout();
+            for (int i = 0; i < parent.Items.Count; i++)
+            {
+                if (parent.ItemContainerGenerator.ContainerFromIndex(i) is not TreeViewItem container) continue;
+                if (ReferenceEquals(parent.Items[i], target)) return container;
+                if (parent.Items[i] is ModuleFamily && ContainerFor(container, target) is { } hit) return hit;
+            }
+            return null;
+        }
+
         private void UsedModuleItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
