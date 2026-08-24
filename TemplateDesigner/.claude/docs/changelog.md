@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-24 (14) - 🧱 vlastní rozložení sloupců spojů v šabloně (`L3` dokončena)
+
+Druhá půle. Linková tabulka **drží vlastní definici sloupců** v šabloně a posílá ji serveru, a
+**parametr ji zrcadlí** - přesně tím způsobem, jaký má vývěska u odjezdů: definici vlastní šablona,
+parametr ukazuje, kterému vzoru odpovídá, a „Vlastní rozložení" je **ukazatel, ne volba**.
+
+Tvar definice i její význam jsou pro obě rodiny agend **jedno a totéž místo**, nabídka vzorů je
+naopak vlastní - linka má tři, vývěska čtyři, a jinak pojmenované.
+
+⚠️ **U linky se do volby dělení nesahá, dokud definice neexistuje.** Vývěska má pro ten stav
+popisek „Automaticky (dle linky)", linka ne - její dělení jsou tři konkrétní hodnoty a je to volba
+uživatele. Přepsat mu ji „automaticky" by byla táž chyba naruby, kvůli které to zrcadlo vzniklo.
+
+Ověřeno: Caché 128/128, .NET 1139/1139. Vizuální zkouška zbývá.
+
 ## 2026-08-24 (13) - 🧱 server umí vlastní rozložení sloupců spojů (`L3`, první půle)
 
 Linkový JŘ uměl jen tři hrubé možnosti dělení spojů. Server nově přijme **vlastní definici sloupců

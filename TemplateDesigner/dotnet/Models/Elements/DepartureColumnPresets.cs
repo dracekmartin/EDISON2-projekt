@@ -25,6 +25,17 @@ public static class DepartureColumnPresets
         new("PRAZDNINY_SO_NE",  "Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky"),
     ];
 
+    /// <summary>Vzory <b>linkového</b> JŘ - jiná agenda, jiné volby. Klíče odpovídají tomu, co
+    /// posílá server, popisky volbám parametru „Dělení spojů dle platnosti".</summary>
+    /// <remarks>⚠️ Nesplývá to s vývěskovými vzory schválně: linka jich má tři a jinak pojmenované.
+    /// Společný je jen <b>tvar</b> definice, ne její nabídka.</remarks>
+    public static IReadOnlyList<Preset> Linkove { get; } =
+    [
+        new("BEZ_ROZLISENI", "Bez rozlišení"),
+        new("PRAC_VIKEND",   "Pracovní dny / víkend+svátky"),
+        new("PRAC_SO_NE",    "Pracovní dny / Soboty / Neděle+svátky"),
+    ];
+
     /// <summary>Vzory z pole PRESETY_SLOUPCU (klíč vzoru → sloupce). Prázdný/neplatný vstup =
     /// prázdná mapa; volající pak vzory nenabízí.</summary>
     public static IReadOnlyDictionary<string, List<DepartureColumnDefinition>> Parse(string? json)
@@ -69,12 +80,14 @@ public static class DepartureColumnPresets
     /// druhé nezávislé nastavení. Porovnává se všechno, co jde na server - i nadpis, protože
     /// přejmenovaný sloupec už není ten vzor.
     /// </summary>
+    /// <param name="nabidka">Vzory té agendy - vývěska a linka mají jiné. Null = vývěskové.</param>
     public static string? MatchLabel(
         IReadOnlyList<DepartureColumnDefinition>? sloupce,
-        IReadOnlyDictionary<string, List<DepartureColumnDefinition>> vzory)
+        IReadOnlyDictionary<string, List<DepartureColumnDefinition>> vzory,
+        IReadOnlyList<Preset>? nabidka = null)
     {
         if (sloupce is not { Count: > 0 }) return null;
-        foreach (var vzor in All)
+        foreach (var vzor in nabidka ?? All)
         {
             if (vzory.TryGetValue(vzor.Key, out var definice) && SameLayout(sloupce, definice))
                 return vzor.Label;

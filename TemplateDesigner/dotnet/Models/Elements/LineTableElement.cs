@@ -19,7 +19,7 @@ namespace TemplateDesigner.Models.Elements;
 /// První řez: bez 2D bin-packingu přes stránky (stránkuje PageLayoutEngine per sekce),
 /// symboly jako textový fallback (Timetable font = roadmap 42b).
 /// </summary>
-public class LineTableElement : ScheduleElementBase, IRowHighlightable
+public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnLayoutOwner
 {
     // ─── DataSource ──────────────────────────────────────────────────────────
     // Vlastní DataSource klíče (linkový formát) - NE zastávkové z base. LineTable dědí jen
@@ -66,6 +66,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
     /// <summary>Podbarvení řádků s lichým tarifním číslem (legacy 25% šedá).</summary>
     public bool HighlightOddTc { get; set; } = true;
+
+    /// <summary>Vlastní definice sloupců spojů. Null nebo prázdné = server rozdělí spoje podle
+    /// hrubého přepínače dělení, jako dosud.</summary>
+    /// <remarks>
+    /// ⚠️ Definice je táž jako u vývěskových odjezdů (i wire tvar), ale **spotřebuje se jinak**:
+    /// tady je skupina <b>pás nad několika sloupci spojů</b> a spoj patřící do dvou skupin se
+    /// vypíše <b>dvakrát</b>. Význam definice drží server, aby se obě rodiny agend nerozešly.
+    /// </remarks>
+    public List<DepartureColumnDefinition>? CustomColumns { get; set; }
+
+    /// <summary>Wire JSON definice sloupců pro parametr DEFINICE_SLOUPCU.</summary>
+    public string? BuildColumnsDefinitionWireJson() => ColumnLayoutWire.Build(CustomColumns);
 
     /// <summary>Styl přípojných řádků (vyčká/navazuje). Nevyplněné = dědí se z datových buněk.</summary>
     /// <remarks>
@@ -740,6 +752,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             RowVisibilityExpression = RowVisibilityExpression,
             HighlightRules = HighlightRules?.Select(r => r.Clone()).ToList(),
             PripojStyle = PripojStyle.Clone(),
+            CustomColumns = CustomColumns?.Select(c => c.Clone()).ToList(),
         };
         CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);

@@ -2837,7 +2837,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// který ji má. Null = režim „Automaticky (dle linky)".</summary>
     internal string? CurrentColumnsDefinitionJson() =>
         State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
-            .OfType<DepartureGridElement>()
+            .OfType<IColumnLayoutOwner>()
             .Select(e => e.BuildColumnsDefinitionWireJson())
             .FirstOrDefault(j => j is not null);
 
@@ -2852,9 +2852,28 @@ public class TemplateDesignerViewModel : EDViewModel
     //   žádné sloupce           → „Automaticky (dle linky)"
     //   ručně upravené          → „Vlastní rozložení" (jen ukazatel, ručně vybrat nejde)
 
-    private const string LayoutParamName    = "ROZDELENI_SLOUPCU";
+    private const string LayoutParamVyveska = "ROZDELENI_SLOUPCU";
+    private const string LayoutParamLinka   = "DELENI_SLOUPCU";
     private const string LayoutAutoOption   = "Automaticky (dle linky)";
     private const string LayoutCustomOption = "Vlastní rozložení";
+
+    /// <summary>Který parametr zrcadlí definici sloupců - liší se podle agendy. Vývěska i linka
+    /// mají tutéž mechaniku, jen jinak pojmenovanou volbu.</summary>
+    private string LayoutParamName =>
+        _agendaParameters.Any(p => p.Name == LayoutParamVyveska) ? LayoutParamVyveska : LayoutParamLinka;
+
+    /// <summary>Popisek, kterým se hlásí „prvek žádnou definici nemá".
+    /// ⚠️ **U linky žádný takový popisek není** - její volba dělení má tři konkrétní hodnoty a je
+    /// to volba uživatele, ne stav prvku. Zrcadlo jí proto do ní nesahá (null) a hlásí jen to,
+    /// když definice existuje. Přepsat uživateli jeho volbu na „automaticky" by byla ta stará
+    /// chyba naruby.</summary>
+    private string? LayoutAutoOptionProAgendu =>
+        LayoutParamName == LayoutParamVyveska ? LayoutAutoOption : null;
+
+    /// <summary>Vzory rozložení nabízené v parametru - klíče musí odpovídat tomu, co posílá server
+    /// v poli vzorů, popisky volbám parametru.</summary>
+    private IReadOnlyList<DepartureColumnPresets.Preset> LayoutPresety =>
+        LayoutParamName == LayoutParamVyveska ? DepartureColumnPresets.All : DepartureColumnPresets.Linkove;
 
     private bool    _layoutParamSyncing;
     private string? _lastLayoutParamValue;
@@ -2869,10 +2888,10 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Prvek odjezdů, jehož definice sloupců platí pro celou šablonu - stejná volba jako
     /// <see cref="CurrentColumnsDefinitionJson"/> (první s definicí, jinak první vůbec).</summary>
-    private DepartureGridElement? LayoutOwner()
+    private IColumnLayoutOwner? LayoutOwner()
     {
         var grids = State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
-            .OfType<DepartureGridElement>().ToList();
+            .OfType<IColumnLayoutOwner>().ToList();
         return grids.FirstOrDefault(e => e.CustomColumns is { Count: > 0 }) ?? grids.FirstOrDefault();
     }
 
@@ -2892,8 +2911,9 @@ public class TemplateDesignerViewModel : EDViewModel
         if (cols is { Count: > 0 } && presety.Count == 0) return;
 
         var odvozene = cols is { Count: > 0 }
-            ? DepartureColumnPresets.MatchLabel(cols, presety) ?? LayoutCustomOption
-            : LayoutAutoOption;
+            ? DepartureColumnPresets.MatchLabel(cols, presety, LayoutPresety) ?? LayoutCustomOption
+            : LayoutAutoOptionProAgendu;
+        if (odvozene is null) return;   // linka: bez definice se uživatelova volba nechává být
         _lastLayoutParamValue = odvozene;
         if (Equals(LayoutParamValue(), odvozene)) return;
 
@@ -2925,9 +2945,9 @@ public class TemplateDesignerViewModel : EDViewModel
         if (value == LayoutCustomOption) { SyncLayoutParamFromTemplate(); return; }
 
         List<DepartureColumnDefinition>? nove = null;
-        if (value != LayoutAutoOption)
+        if (value != LayoutAutoOptionProAgendu)
         {
-            var klic = DepartureColumnPresets.All.FirstOrDefault(p => p.Label == value)?.Key;
+            var klic = LayoutPresety.FirstOrDefault(p => p.Label == value)?.Key;
             var presety = LoadedColumnPresets();
             if (klic is null || !presety.TryGetValue(klic, out var vzor) || vzor.Count == 0)
             {

@@ -10,7 +10,7 @@ namespace TemplateDesigner.Models.Elements;
 /// SkupinaDnuId = "SMO1,SMO2" → zobrazí vybrané skupiny.
 /// Height = null → dynamická výška; Height = pevná → auto-scale fontu při přetečení.
 /// </summary>
-public class DepartureGridElement : StopScheduleElementBase
+public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 {
     // ═══════════════════════════════════════════
     // Filtr skupin dnů
@@ -165,31 +165,9 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Maximální počet vlastních sloupců - víc se na vývěsku rozumně nevejde.</summary>
     public const int MaxCustomColumns = 5;
 
-    private static readonly System.Text.Json.JsonSerializerOptions WireJsonOptions =
-        new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
-
-    /// <summary>Wire JSON definice sloupců pro parametr DEFINICE_SLOUPCU (klíče čte
-    /// ParseDefiniceSloupcu v ZastavkoveJrAd.cls). Null = definice není → automaticky.</summary>
-    public string? BuildColumnsDefinitionWireJson()
-    {
-        if (CustomColumns is not { Count: > 0 } cols) return null;
-        var arr = new System.Text.Json.Nodes.JsonArray();
-        foreach (var c in cols)
-        {
-            arr.Add(new System.Text.Json.Nodes.JsonObject
-            {
-                ["id"] = c.Id,
-                ["nadpis"] = c.Header,
-                ["nadpis2"] = c.Header2,
-                ["dny"] = c.Days,
-                ["znackyJen"] = c.IncludeMarks,
-                ["znackyBez"] = c.ExcludeMarks,
-                ["nevypisovatZnacky"] = c.SuppressedMarks,
-                ["obdobi"] = c.Period
-            });
-        }
-        return new System.Text.Json.Nodes.JsonObject { ["sloupce"] = arr }.ToJsonString(WireJsonOptions);
-    }
+    /// <summary>Wire JSON definice sloupců pro parametr DEFINICE_SLOUPCU. Skládá ho sdílené
+    /// <see cref="ColumnLayoutWire"/>, ať se tvar nerozejde mezi prvky.</summary>
+    public string? BuildColumnsDefinitionWireJson() => ColumnLayoutWire.Build(CustomColumns);
 
     // ─── Designer ───────────────────────────────────────────────────────────
 

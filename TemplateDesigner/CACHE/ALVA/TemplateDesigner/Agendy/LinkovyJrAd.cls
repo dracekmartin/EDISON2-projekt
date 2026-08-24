@@ -179,6 +179,10 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d opts.%Push("Bez rozlišení")
     d opts.%Push("Pracovní dny / víkend+svátky")
     d opts.%Push("Pracovní dny / Soboty / Neděle+svátky")
+    // „Vlastní rozložení" je **ukazatel stavu šablony**, ne volba: vybrat ho ručně nejde,
+    // objeví se, když si uživatel sloupce upraví u prvku. Bez téhle položky by parametr neměl
+    // co hlásit a musel by lhát některým ze vzorů.
+    d opts.%Push("Vlastní rozložení")
     d p.%Set("options", opts)
     s p.defaultValue = "Pracovní dny / Soboty / Neděle+svátky"
     d arr.%Push(p)
@@ -422,6 +426,8 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 /// Mapování labelu parametru „Dělení spojů dle platnosti" na legacy mód 0/1/2.
 ClassMethod DeleniZParametru(label As %String) As %Integer
 {
+    // „Vlastní rozložení" sem nemá jak dojít jako skutečná volba - je to jen ukazatel a objeví se,
+    // až když šablona definici má; grupování pak řídí ta definice, ne tenhle přepínač.
     q $case(label, "Bez rozlišení":0, "Pracovní dny / víkend+svátky":1, :2)
 }
 
