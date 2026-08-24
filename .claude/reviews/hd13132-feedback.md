@@ -87,12 +87,11 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F6 - Miniaplikaci jde zúžit až není nic vidět
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - nebyla to regrese červencového fixu (ten hlídal jen plochu
+  docku proti stromu). `AvalonDockHost` razítkoval `DockMinWidth/Height` pouze na pane
+  s pinned dokumentem, ostatní AvalonDock pouštěl na svých 25 px - teď se razítkuje každému
+  (pinned 340×200, ostatní 200×120), tedy i splitter mezi miniaplikacemi a řádek s Plochou.
 - **P3 · S**
-- **Co udělat:** Reprodukovat. Min šířka dock area se řešila 28. 7. (`ca3f5b3`, `e248164`)
-  a min rozměry má jen pinned pane (`AvalonDockHost.cs:84`) - Kaska to hlásí 18. 8.,
-  takže buď regrese, nebo jiný panel (splitter mezi miniaplikacemi navzájem).
-- **Hotovo když:** Žádný panel miniaplikace nejde zúžit pod čitelné minimum.
 - **Zdroj:** HD 13132 #18 (Kaska)
 
 ### F7 - CPU/RAM špička po přidání miniaplikací

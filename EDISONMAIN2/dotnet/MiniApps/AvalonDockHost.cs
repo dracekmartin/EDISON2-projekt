@@ -82,19 +82,31 @@ public sealed class AvalonDockHost : IMiniAppHost
     // Splitter nesmí pinned zmenšit pod čitelnost (jedna stránka karuselu + hlavička).
     private const double PinnedPaneMinWidth = 340;
     private const double PinnedPaneMinHeight = 200;
+    // Ostatním stačí, aby zůstala vidět hlavička s tabem a pruh obsahu - bez razítka je pustí
+    // AvalonDock na svých 25 px a miniaplikace fakticky zmizí (uživatel ji pak nenajde ani myší).
+    private const double PaneMinWidth = 200;
+    private const double PaneMinHeight = 120;
 
     private void NormalizeSoloPanes()
     {
+        StampMinSizes(_dock.Layout);
         foreach (var pinned in _dock.Layout.Descendents().OfType<LayoutDocument>()
                      .Where(d => !d.CanClose).ToList())
         {
-            if (pinned.Parent is not LayoutDocumentPane pane) continue;
-            // Razítko po každé změně stromu - drag přesune dokument do jiného (nového) pane.
-            pane.DockMinWidth = PinnedPaneMinWidth;
-            pane.DockMinHeight = PinnedPaneMinHeight;
-            if (pane.ChildrenCount <= 1) continue;
+            if (pinned.Parent is not LayoutDocumentPane pane || pane.ChildrenCount <= 1) continue;
             foreach (var intruder in pane.Children.OfType<LayoutDocument>().Where(d => d != pinned).ToList())
                 MoveToOtherPane(intruder, pane);
+        }
+    }
+
+    // Razítko po každé změně stromu - drag i restore vyrábějí nové pane a ty by šly zúžit na nic.
+    internal static void StampMinSizes(LayoutRoot layout)
+    {
+        foreach (var pane in layout.Descendents().OfType<LayoutDocumentPane>().ToList())
+        {
+            bool pinned = pane.Children.OfType<LayoutDocument>().Any(d => !d.CanClose);
+            pane.DockMinWidth = pinned ? PinnedPaneMinWidth : PaneMinWidth;
+            pane.DockMinHeight = pinned ? PinnedPaneMinHeight : PaneMinHeight;
         }
     }
 

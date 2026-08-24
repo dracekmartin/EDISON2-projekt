@@ -5,8 +5,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 
 - `MiniAppDescriptor.Pinned` = uživatel ji nezavře ani neodtrhne (programové `Close()`
   funguje dál - session switch OK), single-instance a **solo pane**: `AvalonDockHost`
-  po `Layout.Updated` odsune cizí taby jinam a razítkuje pane `DockMinWidth/Height`
-  (hook nutno obnovovat přes `LayoutChanged` - Deserialize mění celý LayoutRoot).
+  po `Layout.Updated` odsune cizí taby jinam (hook nutno obnovovat přes `LayoutChanged` -
+  Deserialize mění celý LayoutRoot). `DockMinWidth/Height` se razítkuje **každému** pane
+  (pinned víc), jinak ho AvalonDock pustí na svých 25 px a miniaplikace zmizí z očí.
   „Zavřít miniaplikace" jde přes `CloseUnpinned`; `EnsurePinnedOpen` ji dootevře
   po restore / defaultu / resetu. Bez otevřené mini-app Plocha (`HasOpenDesktop`) se pod
   stromem ukáže `EDInfoBar` s akcí na její zobrazení.
