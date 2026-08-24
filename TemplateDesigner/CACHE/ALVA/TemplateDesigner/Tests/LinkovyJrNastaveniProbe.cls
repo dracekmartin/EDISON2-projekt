@@ -221,6 +221,49 @@ ClassMethod PripojneRadky(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Vypíše zastávky, které mají na wire nějaký atribut - kontrola, co se dá v tabulce zobrazit.
+ClassMethod AtributyZastavekNaWire(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky, parametry
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+        set key = ""
+        for  {
+            set key = $order(^||ML("OUT", key))
+            quit:key=""
+            continue:key="ERR"
+            set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+            set zast = page.rows.%Get("ZASTAVKY")
+            continue:'$isobject(zast)
+            set it = zast.%GetIterator()
+            while it.%GetNext(.i, .z) {
+                set atr = z.%Get("ATRIBUTY")
+                continue:'$isobject(atr)
+                continue:atr.%Size()=0
+                set vypis = "", ai = ""
+                for ai = 0:1:atr.%Size()-1 {
+                    set vypis = vypis_$select(vypis="":"", 1:",")_atr.%Get(ai)
+                }
+                quit:$get(radky)>11
+                set radky($increment(radky)) = "tč "_z.%Get("PORADI")_" ["_vypis_"] "_$extract(z.%Get("NAZEV_ZASTAVKY"),1,45)
+            }
+        }
+        if '$data(radky) set radky(1) = "Žádná zastávka na téhle lince nemá atribut."
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše prvních pár poznámek linky tak, jak jdou na wire - kontrola, že nesou druh i značku.
 ClassMethod PoznamkyNaWire(ByRef sys As %String) As %Status
 {

@@ -564,12 +564,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
             string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
             var znackyRadku = znackyVBunce;
+            // Piktogram zastávky (přestup na linkovou dopravu) se v původním tisku kreslí
+            // **vpravo ve sloupci zastávek**, za názvem - proto overlay, ne předsazení před název.
+            var znakZastavky = SymbolRunRenderer.BuildRuns(
+                stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveLinkovy);
             plan.Add(new(RowKind.Data, rowH, specs)
             {
                 Background = ColorHex.ParseOrNull(rowHl),
                 VerticalLinePaint = gridPaint,
-                Decorate = znackyRadku.Count == 0 ? null : rowY => DrawBunkySeZnackou(
-                    ctx, rowY, rowH, X + fixedSum, tripW, znackyRadku, tripCellStyle, symbolFace, scale),
+                Decorate = (znackyRadku.Count == 0) && (znakZastavky.Count == 0) ? null : rowY =>
+                {
+                    if (znackyRadku.Count > 0)
+                        DrawBunkySeZnackou(ctx, rowY, rowH, X + fixedSum, tripW, znackyRadku, tripCellStyle, symbolFace, scale);
+                    if (znakZastavky.Count > 0 && nameIndex >= 0)
+                        DrawZnakZastavky(ctx, rowY, rowH, X, fixedCols, nameIndex, znakZastavky,
+                            OddTc(fixedCols[nameIndex].DataStyle, oddTc), symbolFace, scale);
+                },
             });
 
             if (!ShowPripojeRows) continue;
@@ -598,6 +608,28 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
     /// <summary>Řádek, kde popisové sloupce jsou prázdné a spojové nesou znak z <paramref name="text"/>
     /// (platnost, negativní značky).</summary>
+    /// <summary>Atribut zastávky, který se kreslí piktogramem (dnes „přestup na linkovou dopravu").
+    /// Řídicí atributy (T, P, S, E…) se netisknou - v tisku pro cestujícího nemají význam.</summary>
+    private static bool JePiktogramZastavky(string znak) =>
+        znak != "x" && SymbolMap.ResolveLinkovy(znak).Mode == SymbolRenderMode.FontGlyf;
+
+    /// <summary>Nakreslí piktogram zastávky vpravo ve sloupci zastávek - jako v původním tisku.</summary>
+    /// <remarks>
+    /// ⚠️ Je to <b>overlay nad hotovou buňkou</b>, ne součást jejího textu: název se kreslí vlevo
+    /// a zmenšuje se, aby se vešel, kdežto piktogram má sedět u pravého okraje. U velmi dlouhého
+    /// názvu se můžou potkat - kdyby se to ukázalo, patří to řešit rezervací místa v buňce.
+    /// </remarks>
+    private static void DrawZnakZastavky(RenderContext ctx, float rowTopMm, float rowH, float xMm,
+        List<RenderCol> fixedCols, int nameIndex, List<SymbolRunRenderer.Run> runs,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
+    {
+        float leftMm = xMm;
+        for (int i = 0; i < nameIndex; i++) leftMm += fixedCols[i].Width;
+        var cellMm = new SKRect(leftMm, rowTopMm, leftMm + fixedCols[nameIndex].Width, rowTopMm + rowH);
+        SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style),
+            runs, style with { HAlign = TextHorizontalAlignment.Right }, symbolFace, scale);
+    }
+
     /// <summary>Značka návaznosti, kterou má spoj u tohohle tarifního čísla - prázdné, když žádná.
     /// „Vyčká" je dutý trojúhelník, „navazuje" plný (doloženo tiskem staré linky 330511).</summary>
     private static string ZnakNavaznosti(LineTripData t, int poradi)

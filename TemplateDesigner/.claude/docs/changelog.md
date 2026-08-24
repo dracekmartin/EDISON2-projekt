@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-24 (11) - 🚏 zastávka s přestupem má piktogram (`L4` uzavřena)
+
+Poslední kus symbolů. U zastávky, kde jde přestoupit na linkovou dopravu, se **vpravo ve sloupci
+zastávek** kreslí piktogram - jako v původním tisku. Na kontrolní lince to sedí na tři zastávky
+(Český Krumlov, Velešín, Kaplice), shodně se starou sestavou.
+
+Řídicí atributy (`T`, `P`) se netisknou, protože pro cestujícího nic neznamenají - stejně jako
+ve starém modulu.
+
+⚠️ Piktogram je **overlay nad hotovou buňkou**: název se kreslí vlevo a umí se zmenšit, aby se
+vešel, kdežto značka sedí u pravého okraje. U hodně dlouhého názvu se můžou potkat; kdyby to
+někdo uviděl, řeší se to rezervací místa v buňce.
+
+Ověřeno: .NET 1139/1139, Caché 127/127. Vizuální kontrola zbývá.
+
 ## 2026-08-24 (10) - 🔣 legenda linkového JŘ kreslila cizí piktogramy
 
 Legenda používala **vývěsková** pravidla i pro poznámky linkového JŘ, který má jiný slovník značek.
