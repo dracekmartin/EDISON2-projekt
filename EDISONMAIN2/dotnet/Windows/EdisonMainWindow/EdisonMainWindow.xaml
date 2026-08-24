@@ -190,8 +190,9 @@
             </MenuItem>
             <MenuItem Header="Nápověda">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Help}" Width="16" Height="16"/></MenuItem.Icon>
-                <MenuItem Header="Informace o verzi" Command="{Binding ShowInfoCommand}"/>
-                <MenuItem Header="Helpdesk, Wiki"    Command="{Binding OpenHelpdeskWebCommand}"/>
+                <MenuItem Header="Informace o verzi"     Command="{Binding ShowInfoCommand}"/>
+                <MenuItem Header="Novinky v aktualizaci" Command="{Binding ShowShellChangelogCommand}"/>
+                <MenuItem Header="Helpdesk, Wiki"        Command="{Binding OpenHelpdeskWebCommand}"/>
                 <Separator/>
                 <!-- Support diagnostika - dělá se na vyžádání helpdesku, proto u Nápovědy. -->
                 <MenuItem Header="Odeslat systémové soubory" Command="{Binding SendSystemLogCommand}"/>
@@ -323,6 +324,11 @@
                                         </Style>
                                     </MenuItem.Style>
                                 </MenuItem>
+                                <Separator/>
+                                <!-- Novinky agendy na vyžádání - auto-popup před spuštěním jde odložit. -->
+                                <MenuItem Header="Novinky v aktualizaci"
+                                          Command="{Binding PlacementTarget.Tag.ShowModuleChangelogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                                 <Separator/>
                                 <!-- Výchozí okno: nastaví tento modul / zruší jakýkoli. Command na VM přes Tag. -->
                                 <MenuItem Header="Nastavit jako výchozí okno"

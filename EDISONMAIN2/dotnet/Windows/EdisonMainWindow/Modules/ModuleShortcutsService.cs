@@ -9,7 +9,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// Čistě in-memory: členství + pozice (<see cref="DesktopShortcut.Col"/>/<see cref="DesktopShortcut.Row"/>) + <b>sdílené</b>
     /// <see cref="ExecutableModule"/> instance (tytéž jako ve stromu → flip <c>IsFavorite</c> se
     /// projeví všude). Persistenci a spouštění NEřeší - obsluhuje <c>EdisonMainViewModel</c> přes
-    /// <see cref="LaunchRequested"/>, <c>Items.CollectionChanged</c> a <see cref="PositionsChanged"/>.
+    /// <see cref="LaunchRequested"/>, <see cref="ChangelogRequested"/>, <c>Items.CollectionChanged</c>
+    /// a <see cref="PositionsChanged"/>.
     /// </summary>
     public sealed class ModuleShortcutsService
     {
@@ -39,10 +40,18 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// </summary>
         public event Action<DesktopShortcut>? LaunchRequested;
 
+        /// <summary>
+        /// Miniaplikace si vyžádá novinky položky; obsluhuje <c>EdisonMainViewModel</c>
+        /// (vynucené zobrazení mimo auto-popup).
+        /// </summary>
+        public event Action<DesktopShortcut>? ChangelogRequested;
+
         /// <summary>Změna pozice dlaždice (<see cref="PlaceAt"/>) - shell persistuje.</summary>
         public event Action? PositionsChanged;
 
         public void RequestLaunch(DesktopShortcut shortcut) => LaunchRequested?.Invoke(shortcut);
+
+        public void RequestChangelog(DesktopShortcut shortcut) => ChangelogRequested?.Invoke(shortcut);
 
         /// <summary>
         /// Re-inicializace po (pře)stavbě stromů (login, přepnutí firmy). Moduly hlavní nabídky se

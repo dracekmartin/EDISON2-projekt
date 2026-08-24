@@ -14,8 +14,10 @@
     <DockPanel>
         <ef:EDFooter DockPanel.Dock="Bottom">
             <ef:EDFooter.LeftContent>
+                <!-- Bez _DIFF (vynucené zobrazení celé historie) není co odložit - hash chybí. -->
                 <CheckBox Content="Nezobrazovat do příští změny"
                           IsChecked="{Binding SnoozeChecked}"
+                          IsEnabled="{Binding HasChanges, Mode=OneTime}"
                           VerticalAlignment="Center"/>
             </ef:EDFooter.LeftContent>
         </ef:EDFooter>

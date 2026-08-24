@@ -7,11 +7,12 @@ namespace EDISONMAIN2.Windows.ChangelogWindow
     {
         private readonly ChangelogContent _content;
 
-        public ChangelogViewModel(string moduleTitle, ChangelogContent content)
+        public ChangelogViewModel(string moduleTitle, ChangelogContent content, bool snoozed = false)
         {
             _content = content;
             ModuleTitle = $"Novinky - {moduleTitle}";
             _showChangesOnly = HasChanges;
+            _snoozeChecked = snoozed;
         }
 
         public string ModuleTitle { get; }
@@ -43,7 +44,10 @@ namespace EDISONMAIN2.Windows.ChangelogWindow
         public string DisplayText => ShowChangesOnly && HasChanges ? _content.ChangesText! : _content.FullText;
 
         private bool _snoozeChecked;
-        /// <summary>„Nezobrazovat do příští změny" - čte ho presenter po zavření okna.</summary>
+        /// <summary>
+        /// „Nezobrazovat do příští změny" - presenter ho čte po zavření okna. Dvoucestný:
+        /// vynucené zobrazení startuje s uloženým stavem, odškrtnutí odložení ruší.
+        /// </summary>
         public bool SnoozeChecked
         {
             get => _snoozeChecked;

@@ -7,9 +7,9 @@ namespace EDISONMAIN2.Windows.ChangelogWindow
     {
         private readonly ChangelogViewModel _vm;
 
-        public ChangelogWindow(string moduleTitle, ChangelogContent content)
+        public ChangelogWindow(string moduleTitle, ChangelogContent content, bool snoozed = false)
         {
-            DataContext = _vm = new ChangelogViewModel(moduleTitle, content);
+            DataContext = _vm = new ChangelogViewModel(moduleTitle, content, snoozed);
             InitializeComponent();
             Title = _vm.ModuleTitle;
             // CenterOwner u maximalizovaného shellu centruje podle restore bounds - oprava

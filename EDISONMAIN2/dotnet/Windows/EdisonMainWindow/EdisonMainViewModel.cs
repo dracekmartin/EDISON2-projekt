@@ -93,6 +93,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand ShowLanguageSettingsCommand { get; }
         public ICommand ResetFormsCommand { get; }
         public ICommand ShowInfoCommand { get; }
+        public ICommand ShowShellChangelogCommand { get; }
+        public ICommand ShowModuleChangelogCommand { get; }
         public ICommand OpenHelpdeskWebCommand { get; }
         public ICommand SendSystemLogCommand { get; }
         public ICommand RefreshRunningModulesCommand { get; }
@@ -306,6 +308,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Nápověda menu
             ShowInfoCommand               = Command(ShowAppInfo);
+            ShowShellChangelogCommand     = CommandAsync(() => ShowChangelogFor("EDISONMAIN", "EDISON"));
+            ShowModuleChangelogCommand    = CommandAsync<IModule>(ShowModuleChangelog);
             OpenHelpdeskWebCommand        = Command(() => OpenWebUrl("http://podpora.m-line.cz"));
             SendSystemLogCommand          = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
@@ -347,6 +351,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _shortcuts.PositionsChanged += PersistShortcuts;
             // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
+            // Novinky z dlaždice: klíč nese sama položka (i u zástupců mimo strom), modul se nedohledává.
+            _shortcuts.ChangelogRequested += s => _ = ShowChangelogFor(s.ExecutablePath, s.DisplayedName);
             // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení
             // si blob přečteme znovu, jinak by dlaždice naskočila až po restartu shellu.
             WindowNavigator.LegacyModuleExited += () => _ = ReloadShortcutsAsync();
@@ -1012,9 +1018,23 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public Task ShowShellChangelogIfAnyAsync() =>
             _changelogPrompt?.ShowIfNewAsync("EDISONMAIN", "EDISON") ?? Task.CompletedTask;
 
-        private void ShowChangelogWindow(string title, ChangelogContent content, Action<bool> onClosed)
+        // Novinky agendy na vyžádání (kontextové menu stromu). Rodina modulů nemá exe - žádný INF.
+        private Task ShowModuleChangelog(IModule module) =>
+            module is ExecutableModule { ExecutablePath: { Length: > 0 } path } em
+                ? ShowChangelogFor(path, em.DisplayedName)
+                : Task.CompletedTask;
+
+        // Vynucené novinky: obcházejí snooze i session dedup, protože si o ně uživatel řekl sám.
+        // Chybějící INF nesmí skončit „klik nic neudělal".
+        private async Task ShowChangelogFor(string moduleKey, string displayName)
         {
-            var wnd = new ChangelogWnd(title, content);
+            if (_changelogPrompt is { } prompt && await prompt.ShowAlwaysAsync(moduleKey, displayName)) return;
+            PopupDisplayer.Info($"Pro „{displayName}\" nejsou k dispozici informace o změnách.");
+        }
+
+        private void ShowChangelogWindow(string title, ChangelogContent content, bool snoozed, Action<bool> onClosed)
+        {
+            var wnd = new ChangelogWnd(title, content, snoozed);
             // Modální: ShowIfNewAsync se vrátí až po zavření, volající tak čeká s dalším otvíráním.
             WindowNavigator.ShowDialog(wnd);
             onClosed(wnd.SnoozeChecked);

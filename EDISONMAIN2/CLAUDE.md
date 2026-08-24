@@ -121,6 +121,9 @@ před spuštěním agendy, shellový check před `OpenStartupWindowIfAny`; menu
 `ShowLegacyAsync`). Snooze (UserPrefs `ChangelogSnooze`) váže SHA-256 hash obsahu `_DIFF`,
 ne verzi - Caché-only patch nechává stale `_DIFF` na disku a DEBUG verze je konstantní.
 `InfKeyFor` zrcadlí legacy `EDConversion.Package.ToInformationFile` včetně výjimky NDMAIN.
+Vynucená cesta `ShowAlwaysAsync` (Nápověda, kontextové menu stromu i dlaždice) obchází dedup
+i snooze, bez `_DIFF` dá celou historii a bez INF vrací `false` - volající to **musí** říct
+popupem, jinak klik nic neudělá. Snooze checkbox je proto dvoucestný a bez `_DIFF` zakázaný.
 Okno se otvírá vždy uprostřed shellu: pozice se nepersistuje (`PersistedFormId => null`),
 centruje ho `OwnerWindowCentering` (`CenterOwner` u maximalizovaného ownera míří na restore bounds).
 

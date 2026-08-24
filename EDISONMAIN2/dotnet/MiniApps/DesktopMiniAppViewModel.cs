@@ -23,6 +23,7 @@ public sealed class DesktopMiniAppViewModel : EDMiniAppViewModel
         Shortcuts = shortcuts;
         LaunchCommand = Command<DesktopShortcut>(s => Shortcuts.RequestLaunch(s));
         RemoveCommand = Command<DesktopShortcut>(s => Shortcuts.Remove(s));
+        ShowChangelogCommand = Command<DesktopShortcut>(s => Shortcuts.RequestChangelog(s));
         Shortcuts.Items.CollectionChanged += OnItemsChanged;
     }
 
@@ -38,6 +39,7 @@ public sealed class DesktopMiniAppViewModel : EDMiniAppViewModel
 
     public ICommand LaunchCommand { get; }
     public ICommand RemoveCommand { get; }
+    public ICommand ShowChangelogCommand { get; }
 
     private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         OnPropertyChanged(nameof(HasItems));

@@ -66,6 +66,10 @@
                             </Viewbox>
                             <Border.ContextMenu>
                                 <ContextMenu>
+                                    <MenuItem Header="Novinky v aktualizaci"
+                                              Command="{Binding PlacementTarget.Tag.ShowChangelogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                    <Separator/>
                                     <MenuItem Header="Odebrat z plochy"
                                               Command="{Binding PlacementTarget.Tag.RemoveCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
