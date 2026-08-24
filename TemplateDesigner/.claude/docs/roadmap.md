@@ -4,6 +4,20 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
+> 🐛 **HNED ZÍTRA - dvě chyby ve vlastním rozložení sloupců** (nahlásil Jan 24. 8. při zkoušce,
+> `L3` je jinak hotová). Obojí je v **klientské** části, server je ověřený testy:
+>
+> 1. **Přepnutí volby „Dělení spojů dle platnosti" nezmění náhled.** Parametr je v seznamu těch,
+>    které spouštějí nové načtení dat, takže řetěz „vyber volbu → zapiš sloupce do prvku → přenačti"
+>    se někde trhá. ⚠️ **Neověřený tip, kde hledat:** volba se promítá do šablony jen tehdy, když
+>    jsou načtené **vzory** ze serveru (`PRESETY_SLOUPCU`); bez nich to vypíše hlášku do stavového
+>    řádku a skončí. Vzory se přidaly dnes, takže je možné, že v datech ještě nejsou nebo se čtou
+>    dřív, než dorazí.
+> 2. **Levý panel po přepnutí voliče odskočí ze záložky Parametry na Vlastnosti.** ⚠️ Neověřený tip:
+>    zápis sloupců jde přes vratný příkaz, a ten si vyžádá obnovu panelu vlastností.
+>
+> Zkouška: linkový JŘ (AD), libovolná linka, záložka **Parametry** → přepnout dělení spojů.
+
 > **Nejblíž na řadě:** **linkové JŘ** - parita dat proti starému tisku je hotová (`L1`, `L2`, `L2b`;
 > 24. 8.) a agenda jde v návrháři vybrat. Dál: sada testovacích linek, pak `L4` (symboly).
 
