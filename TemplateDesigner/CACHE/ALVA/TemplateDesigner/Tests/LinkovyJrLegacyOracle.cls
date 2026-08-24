@@ -297,18 +297,8 @@ ClassMethod ZnameOdchylky(ByRef odch)
 	// (dnes žádná mimo pravidel podle tvaru hodnot - viz `PravidloOdchylky`)
 
 	// ── známé dluhy ────────────────────────────────────────────────────
-	// Pořadí sloupců spojů se na dvou linkách liší od starého modulu. ⚠️ **Není to neškodná shoda
-	// časů**, jak tvrdil dřívější rozbor: na KV_DP 0410107 jsou prohozené spoje 43 a 45, které
-	// vyjíždějí od různých tarifních čísel (6 a 29) a 45 na 43 dokonce čeká. Časy v buňkách sedí,
-	// takže jde čistě o řazení (`SeradSpoje` × legacy `mkPoradiSp`) - a uživatel to uvidí jako jinak
-	// seřazené sloupce. U VS_CSAD 0945001 je rozdíl téhož tvaru; tvrzení „obsah 1:1" z analýzy §12
-	// tu **znovu ověřené nebylo**, proto se vede jako dluh, ne jako odsouhlasená odchylka.
-	set odch("spoje", "KV_DP~0410107", "druh") = "dluh"
-	set odch("spoje", "KV_DP~0410107", "vlna") = "L2"
-	set odch("spoje", "KV_DP~0410107", "duvod") = "řazení spojů začínajících na různých zastávkách se rozchází s mkPoradiSp"
-	set odch("spoje", "VS_CSAD~0945001", "druh") = "dluh"
-	set odch("spoje", "VS_CSAD~0945001", "vlna") = "L2"
-	set odch("spoje", "VS_CSAD~0945001", "duvod") = "řazení spojů - týž tvar rozdílu jako KV_DP 0410107"
+	// (dluh na pořadí spojů splacen 21. 8. - řazení se skládá jako v legacy `mkPoradiSp`,
+	// včetně ručního pořadí u linky, takže se hlídá normálně)
 
 	// Název zastávky v textu návaznosti: starý modul u městských linek tiskne místní zkrácený tvar
 	// („v zastávce aut.nádr."), my plný s obcí („v zastávce Vsetín,aut.nádr."). Je to táž otázka
@@ -324,13 +314,8 @@ ClassMethod ZnameOdchylky(ByRef odch)
 	set odch("zast", "*", "vlna") = "L3"
 	set odch("zast", "*", "duvod") = "tvar názvu zastávky se neřídí parametry sestavy (dřívější B60, #9088 bod 4)"
 
-	// Poznámky druhu 5 (atributy spojů) mají v generické větě navíc sloveso: my „spoj **jede** s
-	// bezbariérově přístupným vozidlem", starý modul „spoj s bezbariérově přístupným vozidlem".
-	// Týká se to všech třinácti atributů, ne jen jednoho, a legacy texty je potřeba opsat celé
-	// (gAtrNZLi) - patří to k vlně, která bere atributy a jejich nastavení (PAtrSp/TZPA) vcelku.
-	set odch("pozn", "druh5", "druh") = "dluh"
-	set odch("pozn", "druh5", "vlna") = "L2"
-	set odch("pozn", "druh5", "duvod") = "generická věta atributu má navíc sloveso proti starému modulu"
+	// (dluh na poznámky druhu 5 splacen 21. 8. - věty atributů se skládají ze šablon opsaných
+	// z legacy, takže se hlídají normálně)
 }
 
 /// Odchylky dané **tvarem hodnot**, ne konkrétní linkou - platí všude, kde ta dvojice hodnot padne.
@@ -394,32 +379,49 @@ ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, B
 	}
 
 	// ── poziční kategorie (hodnota na zastávkový řádek) ─────────────────
+	// ⚠️ Iteruje se **sjednocení** klíčů obou stran, ne jen klíče legacy. Kdyby se šlo jen podle
+	// legacy, byla by hodnota, kterou pošleme **navíc**, neviditelná - a to je zrádnější než
+	// rozdíl v hodnotě: sloupec, který u starého modulu vůbec není (zóna u linky, která ji tisknout
+	// nemá), by prošel jako zelený. Našlo se to při opravě čtyřstavového přepínače zóny × km.
 	for kat = "zast", "km", "zona", "mhd" {
+		kill smery, indexy
+		do ..SjednoceniSmeru(kat, .leg, .nase, .smery)
 		set sm = ""
 		for  {
-			set sm = $order(leg(kat, sm))
+			set sm = $order(smery(sm))
 			quit:sm=""
+			kill indexy
+			do ..SjednoceniIndexu(kat, sm, .leg, .nase, .indexy)
 			set idx = ""
 			for  {
-				set idx = $order(leg(kat, sm, idx))
+				set idx = $order(indexy(idx))
 				quit:idx=""
 				do ..PorovnejHodnotu(kat, kontext_" směr "_sm_" řádek "_idx, $get(leg(kat, sm, idx)), $get(nase(kat, sm, idx)), kontext, .odch, .res)
 			}
 		}
 	}
 
-	// ── časy (řádek × spoj) ─────────────────────────────────────────────
+	// ── časy (řádek × spoj), taky přes sjednocení ───────────────────────
+	kill smery
+	do ..SjednoceniSmeru("cas", .leg, .nase, .smery)
 	set sm = ""
 	for  {
-		set sm = $order(leg("cas", sm))
+		set sm = $order(smery(sm))
 		quit:sm=""
+		kill indexy
+		do ..SjednoceniIndexu("cas", sm, .leg, .nase, .indexy)
 		set idx = ""
 		for  {
-			set idx = $order(leg("cas", sm, idx))
+			set idx = $order(indexy(idx))
 			quit:idx=""
+			kill spoje
+			set spoj = ""
+			for  { set spoj = $order(leg("cas", sm, idx, spoj))  quit:spoj=""  set spoje(spoj) = "" }
+			set spoj = ""
+			for  { set spoj = $order(nase("cas", sm, idx, spoj))  quit:spoj=""  set spoje(spoj) = "" }
 			set spoj = ""
 			for  {
-				set spoj = $order(leg("cas", sm, idx, spoj))
+				set spoj = $order(spoje(spoj))
 				quit:spoj=""
 				do ..PorovnejHodnotu("cas", kontext_" směr "_sm_" řádek "_idx_" spoj "_spoj, $get(leg("cas", sm, idx, spoj)), $get(nase("cas", sm, idx, spoj)), kontext, .odch, .res)
 			}
@@ -444,6 +446,26 @@ ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, B
 		do ..PorovnejHodnotu("pozn", kontext_" poznámka „"_klic_"""", ($get(leg("pozn", klic))>0), ($get(nase("pozn", klic))>0), "druh"_$piece(klic, "~", 1), .odch, .res)
 	}
 	quit 1
+}
+
+/// Směry, které v dané kategorii má **kterákoli** strana.
+ClassMethod SjednoceniSmeru(kat As %String, ByRef leg, ByRef nase, ByRef smery)
+{
+	kill smery
+	set sm = ""
+	for  { set sm = $order(leg(kat, sm))  quit:sm=""  set smery(sm) = "" }
+	set sm = ""
+	for  { set sm = $order(nase(kat, sm))  quit:sm=""  set smery(sm) = "" }
+}
+
+/// Indexy řádků, které v dané kategorii a směru má **kterákoli** strana.
+ClassMethod SjednoceniIndexu(kat As %String, sm As %String, ByRef leg, ByRef nase, ByRef indexy)
+{
+	kill indexy
+	set idx = ""
+	for  { set idx = $order(leg(kat, sm, idx))  quit:idx=""  set indexy(idx) = "" }
+	set idx = ""
+	for  { set idx = $order(nase(kat, sm, idx))  quit:idx=""  set indexy(idx) = "" }
 }
 
 /// Jedno porovnání dvou hodnot - jediné místo, kde se rozhoduje „shoda / vědomá odchylka / rozdíl".
@@ -527,6 +549,37 @@ ClassMethod Souhrn(ByRef sys As %String) As %Status
 /// Diagnostika (mimo runner, přes `cache_query_cvar`): vypíše strukturu legacy výstupu jedné linky,
 /// aby šlo psát normalizaci proti skutečnosti, ne proti dokumentaci.
 /// IN: `DB`, `SKU`, `LIN`, `MAX` (kolik uzlů), `FILTR` (nepovinný podřetězec uzlu)
+/// Vypíše pořadí spojů obou směrů vedle sebe - starý modul vs my. IN: `DB`, `SKU`, `LIN`.
+ClassMethod PoradiSpoju(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+		kill ^||ML, radky
+		if '..NactiLegacy(db, sku, lin, 2, .leg) {
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = "SKIP: starý modul nebo firma "_db_" není na serveru"
+			ret $$$OK
+		}
+		kill parametry
+		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+		do ..NactiNase(.nase)
+		for sm = "T", "Z" {
+			set radky($increment(radky)) = sm_" stary: "_$extract($get(leg("spoje", sm)), 1, 400)
+			set radky($increment(radky)) = sm_" nas:   "_$extract($get(nase("spoje", sm)), 1, 400)
+		}
+		kill ^||ML
+		set idx = ""
+		for  {
+			set idx = $order(radky(idx))
+			quit:idx=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 ClassMethod Dump(ByRef sys As %String) As %Status
 {
 	set err = ""

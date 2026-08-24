@@ -202,6 +202,27 @@ ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, ty
 /// defaultVal = výchozí hodnota (0/1 nebo true/false)
 /// group      = volitelná skupina pro vizuální seskupení v UI (aditivní klíč kontraktu)
 /// desc       = volitelná nápověda (aditivní klíč `description` → helpText bublina ve formuláři)
+/// Barva z legacy tvaru `r;g;b` na `#AARRGGBB` pro SkiaSharp; prázdno, když barva není zadaná.
+/// **`0;0;0` je v legacy „nenastaveno", ne černá** - kdyby se posílalo, dostal by každý spoj
+/// výslovnou černou a nešlo by poznat obarvený spoj od neobarveného.
+///
+/// ⚠️ `ZastavkoveJrAd` má vlastní kopii téhož (`RgbToHex`). Vědomě se teď nesjednocuje: zastávková
+/// agenda je vydaná a kryjí ji zlaté odtisky, takže refaktor v ní patří k `B56`, ne sem.
+ClassMethod RgbNaHex(rgb As %String) As %String
+{
+    q:rgb="" ""
+    q:rgb="0;0;0" ""
+    s hex = "0123456789ABCDEF"
+    s out = "#FF"
+    f i=1:1:3 {
+        s n = +$p(rgb,";",i)
+        i n < 0 s n = 0
+        i n > 255 s n = 255
+        s out = out_$e(hex,(n\16)+1)_$e(hex,(n#16)+1)
+    }
+    q out
+}
+
 ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "", desc As %String = "")
 {
     s param = ##class(%DynamicObject).%New()

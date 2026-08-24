@@ -1,5 +1,183 @@
 # Changelog
 
+## 2026-08-21 (8) - 🏷️ dvě značky v legendě dostávaly špatný tvar věty
+
+Dořešení včerejšího nálezu. Nastavení „značka atributu nad spoj" neřídí, **jestli** se řádek legendy
+vytiskne, ale **jakým tvarem** - buď obecně („spoje s bezbariérově přístupným vozidlem"), nebo
+s výčtem („spoj 19 přepravuje…"). Měli jsme to jako „tiskni / netiskni", což u bezbariérového
+vozidla vyšlo náhodou správně, ale u dvou značek ne:
+
+- **zásilky za zvláštních podmínek** a **spoj v systému integrované dopravy** mají ve starém tisku
+  **vždy výčet spojů** a obecnou větu nikdy. Týká se to konkrétních spojů, ne celé linky, takže to
+  tak i dává smysl.
+
+⚠️ **Opsané ze zdroje starého modulu, ale porovnáním neověřené** - na žádné ze čtyř kontrolních linek
+se ty dvě značky nevyskytly. Až se objeví linka, která je má, porovnání to potvrdí nebo vyvrátí.
+
+Ověřeno: Caché 125/125 (odtisky se nehnuly, kontrolní linky ty značky nemají).
+
+## 2026-08-21 (7) - 🔢 pořadí spojů se skládá jako ve starém tisku (`L2` krok 4, poslední dluh)
+
+Porovnání se starým modulem hlásilo na dvou linkách jinak seřazené sloupce spojů. Hledání příčiny
+odhalilo **čtyři různé odchylky** - a jednu z nich zásadní.
+
+**Ruční pořadí spojů u linky jsme ignorovali úplně.** Uživatel si smí sloupce spojů přeskládat
+a starý modul to respektuje; my jsme si pořadí vždy počítali sami. **Nastavené to je na 4 409
+linkách** ze šesti měřených firem, takže to nebyla okrajová věc. Nově se ruční pořadí použije -
+a stejně jako ve starém modulu se **zahodí celé, jakmile nesedí se skutečnými spoji** (typicky
+po přidání spoje); pak se pořadí spočítá.
+
+Tři menší, ale plošné odchylky ve výpočtu pořadí:
+
+- **Tarifními čísly se u směru „tam" jde od konce**, ne od začátku. Měli jsme to obráceně.
+- **Pro řazení se bere příjezd, ne odjezd.** U zastávky s pobytem jsme přičítali čekání - pobyt
+  v trase má 38 655 měřených linek.
+- **Trasa vedená přes víc záznamů** se pro řazení skládá dohromady (3 linky).
+
+Pořadí spojů teď proti starému modulu sedí **na všech čtyřech kontrolních linkách do jednoho spoje**
+(7/7), takže poslední dluh z porovnání je splacený.
+
+⚠️ **Přepsány zmrazené odtisky dvou linek**: počty stránek, zastávek, spojů, časů i poznámek zůstaly
+shodné, změnilo se jen pořadí sloupců.
+
+Do backlogu (`B98`) šly tři přepínače řazení, které nemá zapnuté žádná ze šesti firem.
+
+Ověřeno: Caché 125/125, .NET 1121/1121.
+
+## 2026-08-21 (6) - 🏷️ legenda atributů spojů se chová jako starý tisk (`L2` krok 3)
+
+Věty v legendě u atributů spoje („spoj s bezbariérově přístupným vozidlem", „spoje 1, 2 přepravují
+jízdní kola") jsme měli opsané po svém. Nově se skládají ze **šablon opsaných ze starého modulu**,
+a v jeho pořadí. Porovnání se starým tiskem je díky tomu u poznámek na třech ze čtyř kontrolních
+linek **beze zbytku** (43/43, 18/18, 20/20).
+
+**Porovnání přitom našlo dvě chyby, o kterých jsme nevěděli:**
+
+- **Legendu o bezbariérovém vozidle jsme tiskli i tam, kde ji starý modul netiskne.** Čtyři atributy
+  (bezbariérové vozidlo, kola, samoobslužné odbavení, nízkokapacitní autobus) se tisknou jen podle
+  nastavení „značka atributu nad spoj" a u bezbariérového to navíc **linka přebíjí**.
+- **Věta má čtyři tvary, ne jeden** - podle toho, jestli atribut nese jeden spoj, několik, nebo
+  všechny, a jestli je zapnutá ta značka nad spojem. My posílali vždy generickou větu.
+
+⚠️ **Rozhodnutí „texty brát z číselníku EDISONu" bylo postavené na omylu** a tímto se ruší.
+V číselníku ty texty nejsou - starý modul je má zadrátované ve zdroji, zvlášť česky a slovensky,
+takže si je zákazník nemůže upravit ani tam. **Slovenská sada je teď opsaná taky**, čímž je vyřešená
+stížnost z helpdesku na kostrbatou slovenštinu - jen jinou cestou, než jsme mysleli.
+
+⚠️ **Přepsány zmrazené odtisky tří linek** (rozhodnutí Jan): počty stránek, zastávek, spojů, časů
+i poznámek zůstaly do jednoho shodné, změnil se jen text a pořadí řádků legendy. Odtisk se hnul
+proto, že jsme se starému modulu **přiblížili**.
+
+Ověřeno: Caché 124/124, .NET 1121/1121.
+
+## 2026-08-21 (5) - 🔢 z označení zóny se dají odstranit písmena (`L2` krok 2)
+
+Zóna může být v datech označená i písmenem (`51A`) a nastavení říká, jestli se má v tisku vypsat
+celá, nebo jen číslo. Dosud jsme to nastavení nečetli, takže zákazník viděl písmena i tam, kde je
+nechtěl.
+
+⚠️ **Nastavení je globální, ale linka ho přebíjí** - a ukládá se u ní posunuté o jedničku, takže
+„1" u linky znamená *neodstraňovat* a „2" *odstraňovat*. Kdo to bude čtít jako obyčejný přepínač,
+udělá to naopak.
+
+Ověřeno v obou směrech na reálných linkách: na lince s odstraňováním v zóně po tisku písmeno není,
+na lince bez odstraňování zůstává.
+
+Ověřeno: Caché 124/124, .NET 1121/1121.
+
+## 2026-08-21 (4) - 🎨 barvy spojů se konečně tisknou (`L2` krok 5)
+
+Spoj může mít v jízdních řádech nastavenou barvu a my ji v linkovém JŘ **vůbec neposílali** - časy
+se tiskly černě, i když si zákazník spoje obarvil. Nově barvu nese datový kontrakt a prvek ji
+použije na časy toho spoje.
+
+**Vzniklo to z nedorozumění, které stálo za změření:** vypadalo to, že barvu u spoje zadat nejde
+(barva se přidávala u linky). Měření ale našlo **3 926 obarvených spojů v deseti různých barvách**,
+takže to nikdo neklikl omylem. Je to necelé procento spojů, ale na lince, kde se to používá, o tu
+informaci tisk přicházel celou.
+
+K tomu volba **„Barvy spojů"** (*Automaticky (dle linky)* / *Tisknout* / *Netisknout*) - linka umí
+barvy potlačit a uživatel to smí přebít. `0;0;0` se posílá jako „nenastaveno", ne jako černá, jinak
+by nešlo poznat obarvený spoj od neobarveného.
+
+**Matice nastavení se přitom naučila novou věc.** Tvrzení „barvy posíláme" nešlo opřít o nastavení
+u linky - „žádné barvy" vyjde i na lince, jejíž spoje barvu nemají. Matice proto umí **předpoklad
+nad zdrojovými daty**: najdi linku, u které spoje barvu skutečně mají, a teprve na ní tvrď. Je to
+odolnější než pevně zadaná linka, protože čísla linek se v jednotlivých skupinách opakují a zákazník
+je může upravit.
+
+Ověřeno: Caché 124/124, .NET 1121/1121.
+
+## 2026-08-21 (3) - 🚫 zastávky, kde nikdo nestaví, se dají vyhodit (`L2` krok 6)
+
+Na **362 linkách** má zákazník nastavené, že se do tabulky nemají dostat zastávky, na kterých žádný
+spoj linky nestaví - jen je projíždí nebo jedou jinudy. Dosud jsme to ignorovali, takže tabulka byla
+delší než ve starém tisku a byly v ní řádky, které tam zákazník nechtěl.
+
+Nově se to bere, a jako u sloupce tarifních čísel je k tomu volba **„Zastávky, kde žádný spoj
+nestaví"** se stavy *Automaticky (dle linky)* / *Tisknout* / *Netisknout*.
+
+Ověřeno na lince, kde to zákazník zapnuté má: před opravou tam takové řádky byly, teď nejsou.
+
+Ověřeno: Caché 124/124, .NET 1121/1121, zlaté odtisky bez pohybu.
+
+⚠️ Nový parametr sestavy zase musel do allowlistu server-side parametrů; chytil to týž drift test
+jako u předchozí volby. Je to spolehlivá past a spolehlivá pojistka.
+
+## 2026-08-21 (2) - 🔀 sloupec tarifních čísel: uživatel může přebít nastavení linky (`L2` krok 4)
+
+**Nastavení u linky se respektuje, ale nemá poslední slovo.** Na 377 linkách má zákazník nastavené,
+že se sloupec tarifních čísel netiskne - dosud jsme to ignorovali. Nově se to bere, a zároveň je
+v panelu parametrů volba **„Sloupec tarifních čísel"** se třemi stavy: *Automaticky (dle linky)*,
+*Tisknout*, *Netisknout*.
+
+Výchozí je „Automaticky", takže bez zásahu uživatele platí to, co je u linky. Popisek je zavedený,
+ne nový - stejný tvar má u vývěsek volba „Rozdělení sloupců (typy provozu)".
+
+**Proč není výchozí hodnota přímo hodnota z linky:** parametry se ze serveru berou bez znalosti
+vybrané linky, takže default podle linky by znamenal přenačítání při každé změně linky a souboj
+s hodnotou, kterou má uživatel uloženou. Takhle rozhodne linku **server při tisku**, kde ji zná,
+a v panelu je poctivě vidět, že to řídí linka.
+
+**V prvku k tomu platí nové pravidlo: prázdný sloupec se netiskne.** Když server hodnoty nepošle,
+sloupec zmizí sám - o nastavení tedy nemusí vědět ani šablona, ani prvek. Dosud to platilo jen
+pro kilometry a sloupec MHD, teď pro všechny popisové sloupce, stejně jako to dělá starý modul.
+Vedlejší efekt, který je správně: u linky bez zón zmizí i sloupec zón.
+
+Ověřeno: Caché 124/124, .NET 1121/1121. Zlaté odtisky se nehnuly, takže se nezměnilo nic na
+linkách, kde tohle nastavení není.
+
+⚠️ Nový parametr sestavy musel jít do allowlistu server-side parametrů - jinak by jeho změna v UI
+data znovu nenačetla a klik by nic neudělal. Chytil to drift test, ne člověk.
+
+## 2026-08-21 - 🗺️ linkový JŘ: zóny a kilometry podle nastavení linky (`L2` kroky 1-2)
+
+**Krok 1: změřeno, co je vůbec nastavené.** Nová sonda projde všechny linky dostupných firem
+a spočítá, které přepínače tisku má někdo reálně zapnuté - **93 133 linek v šesti firmách**. Bez
+toho čísla by u nastavení uložených v datech platilo „ověřili jsme, co bylo v datech" a nikdo by
+nevěděl, co zůstalo nepokryté.
+
+Výsledek zúžil `L2`: **sedm nastavení má v datech oba stavy** a jde je ověřit hned, zatímco šest
+dalších a **celá vrstva pod linkou nejsou nastavené nikde**. Ty jdou do backlogu - řada z nich
+vznikla v legacy pro jednoho zákazníka a nikdo jiný je nepoužívá, takže dělat je naslepo a bez
+možnosti ověření nemá hodnotu.
+
+**Krok 2: opraven čtyřstavový přepínač zón a kilometrů.** Nastavení u linky říká jednu ze čtyř věcí:
+jen kilometry · jen zóna · obojí · ani jedno. Čtli jsme z něj jen „něco je vyplněno, tiskni zónu",
+takže na **1 126 linkách**, kde má zákazník nastavené „ani jedno", jsme zónu tiskli - a kilometrové
+sloupce jsme neřídili vůbec. Nově se tiskne přesně to, co linka říká, a prázdný sloupec se v tabulce
+neukáže.
+
+Ověřeno na reálných datech ve všech čtyřech stavech (čtvrtý stav se v datech nevyskytuje a test to
+**hlásí jako neověřený**, netváří se to jako pokryté).
+
+**Cestou se našla mezera v samotné síti proti starému modulu.** Porovnání šlo přes hodnoty, které má
+**starý modul**, takže hodnotu, kterou pošleme **navíc**, vůbec nevidělo - sloupec, který u starého
+tisku není, by prošel jako zelený. Teď se porovnává sjednocení obou stran; na kontrolní sadě to
+rozšířilo pokrytí o zóny a sloupec MHD, a nic se nerozbilo.
+
+Ověřeno: Caché 123/123, .NET 1121/1121.
+
 ## 2026-08-19 (10) - 🕸️ linkový JŘ se poprvé měří proti starému modulu
 
 Linkové agendy neměly do dneška **ani jeden test** (2 000 řádků kódu) a porovnání se starým modulem

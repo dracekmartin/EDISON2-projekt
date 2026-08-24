@@ -175,8 +175,71 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s p.defaultValue = "Pracovní dny / Soboty / Neděle+svátky"
     d arr.%Push(p)
 
+    // Sloupec tarifních čísel: nastavení je u linky (`PATCH,netisknoutSloupecTC`, zapnuto na 377
+    // linkách), ale uživatel ho má jít přebít. Výchozí volba je proto **konstanta** „Automaticky
+    // (dle linky)" a linku rozhodne server při tisku - parametry se ze serveru berou bez znalosti
+    // instance, takže default načtený z linky by znamenal přenačítání při každé změně linky
+    // a souboj s uloženou volbou uživatele. Zavedený tvar, stejný jako `ROZDELENI_SLOUPCU`
+    // u vývěsek; konvence v `ux-conventions.md`.
+    s pTc = ##class(%DynamicObject).%New()
+    s pTc.name         = "SLOUPEC_TC"
+    s pTc.label        = "Sloupec tarifních čísel"
+    s pTc.type         = "enum"
+    s pTc.group        = "Linkový JŘ"
+    s pTc.defaultValue = "Automaticky (dle linky)"
+    s pTc.description  = "Zda se tiskne sloupec tarifních čísel. Automaticky = podle nastavení u linky v jízdních řádech; volbou Tisknout nebo Netisknout se to dá přebít pro tuhle sestavu."
+    s optsTc = ##class(%DynamicArray).%New()
+    d optsTc.%Push("Automaticky (dle linky)")
+    d optsTc.%Push("Tisknout")
+    d optsTc.%Push("Netisknout")
+    s pTc.options = optsTc
+    d arr.%Push(pTc)
+
+    // Zastávky, na kterých žádný spoj nestaví: nastavení u linky
+    // (`PATCH,tisknoutJenTcKdeSpojeZastavuji`, zapnuto na 362 linkách) ubírá řádky, takže je
+    // z celého inventáře nejvíc vidět. Týž třístav jako u sloupce tarifních čísel.
+    s pBez = ##class(%DynamicObject).%New()
+    s pBez.name         = "ZASTAVKY_BEZ_ZASTAVENI"
+    s pBez.label        = "Zastávky, kde žádný spoj nestaví"
+    s pBez.type         = "enum"
+    s pBez.group        = "Linkový JŘ"
+    s pBez.defaultValue = "Automaticky (dle linky)"
+    s pBez.description  = "Zda se v tabulce objeví i zastávky, na kterých žádný spoj linky nestaví (jen je projíždí nebo jedou jinudy). Automaticky = podle nastavení u linky v jízdních řádech."
+    s optsBez = ##class(%DynamicArray).%New()
+    d optsBez.%Push("Automaticky (dle linky)")
+    d optsBez.%Push("Tisknout")
+    d optsBez.%Push("Netisknout")
+    s pBez.options = optsBez
+    d arr.%Push(pBez)
+
+    // Barvy spojů: barva je u spoje (3 926 spojů ji v datech má), linka ji umí potlačit
+    // (`PATCH,barevnyTiskSpoju` = 1 → tisknout černě). Týž třístav.
+    s pBar = ##class(%DynamicObject).%New()
+    s pBar.name         = "BARVY_SPOJU"
+    s pBar.label        = "Barvy spojů"
+    s pBar.type         = "enum"
+    s pBar.group        = "Linkový JŘ"
+    s pBar.defaultValue = "Automaticky (dle linky)"
+    s pBar.description  = "Zda se časy spoje tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Automaticky = podle nastavení u linky; Netisknout = celá tabulka černě."
+    s optsBar = ##class(%DynamicArray).%New()
+    d optsBar.%Push("Automaticky (dle linky)")
+    d optsBar.%Push("Tisknout")
+    d optsBar.%Push("Netisknout")
+    s pBar.options = optsBar
+    d arr.%Push(pBar)
+
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
+}
+
+/// Třístavová volba „Automaticky (dle linky) / Tisknout / Netisknout" → 1 tiskne, 0 netiskne.
+/// U neznámé hodnoty se spadne do „dle linky" (tolerantně, stejně jako to dělá starý modul
+/// u `ROZDELENI_SLOUPCU`) - starší klient, který parametr neposílá, se tak chová jako dřív.
+ClassMethod TristavDleLinky(volba As %String, dleLinky As %Boolean) As %Boolean
+{
+    i volba = "Tisknout" q 1
+    i volba = "Netisknout" q 0
+    q dleLinky
 }
 
 /// Vrátí seznam linek pro Instance Picker (shodné se ZastavkoveJrAd - stejný zdroj ^JRL).
@@ -243,9 +306,12 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i '$d(^[dataDB]JRL(sku,lin,"I")) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_sku_"/"_lin_" neexistuje v ^JRL"))
 
         s deleni = ..DeleniZParametru($g(^||ML("IN","DELENI_SLOUPCU")))
+        s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
+        s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
+        s volbaBarvy = $g(^||ML("IN","BARVY_SPOJU"))
 
         f smer = "T", "Z" {
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni)
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
@@ -263,7 +329,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 
         d ..PrvniLinka(dataDB, .sku, .lin)
         s page = ""
-        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2)
+        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "", "", "")
 
         i page = "" {
             s page = ##class(%DynamicObject).%New()
@@ -308,7 +374,7 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 }
 
 /// Sestaví JSON stránku knižního JŘ pro jednu linku a směr. "" když směr nemá spoje.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer) As %DynamicObject
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     i '..MaSpoje(dataDB, sku, lin, smer) q ""
@@ -343,9 +409,30 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s zastavky = ##class(%DynamicArray).%New()
     k rowMeta
     s prvniNazev = "", posledniNazev = ""
-    s pocetKmSloupcu = +$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer))
+    // `linIDS` je ČTYŘSTAVOVÝ přepínač zóny × km, ne příznak „je to IDS linka":
+    //   0 (i nenastaveno) = jen km · 1 = jen zóna · 2 = obojí · 3 = ani jedno
+    // 1:1 legacy gPLSetWin (JRapiLinPrtWin.mac:1861-1868). Dřív se tu čtlo jen „je neprázdné →
+    // tiskni zónu", takže u hodnoty 3 (1 126 linek v datech) jsme zónu tiskli, legacy ne, a km
+    // sloupce jsme neřídili vůbec.
+    s linIds = +$g(^[dataDB]JRL(sku,lin,"PATCH","linIDS"))
+    s tiskZony = (linIds = 1) || (linIds = 2)
+    s tiskKm = (linIds = 0) || (linIds = 2)
+    // Sloupec tarifních čísel: u linky 1 = schovat; parametr sestavy to smí přebít.
+    s tiskTc = ..TristavDleLinky(volbaTc, '+$g(^[dataDB]JRL(sku,lin,"PATCH","netisknoutSloupecTC")))
+    // Zastávky, kde žádný spoj nestaví: u linky 1 = vyhodit je. Mapu obsluhovaných tarifních čísel
+    // stavíme jen když je to potřeba - je to průchod všemi spoji směru.
+    s tiskBezZastaveni = ..TristavDleLinky(volbaBezZastaveni, '+$g(^[dataDB]JRL(sku,lin,"PATCH","tisknoutJenTcKdeSpojeZastavuji")))
+    k zastavuje
+    i 'tiskBezZastaveni d ..ZastavujiciTc(dataDB, sku, lin, smer, .zastavuje)
+    // Barvy spojů: u linky 1 = tisknout černě, tedy barvy potlačit.
+    s tiskBarvy = ..TristavDleLinky(volbaBarvy, '+$g(^[dataDB]JRL(sku,lin,"PATCH","barevnyTiskSpoju")))
+    // Odstranit z označení zóny písmena. Nastavení je globální, ale linka ho **přebíjí** - a ukládá
+    // se u ní jako hodnota+1, takže 1 = neodstraňovat, 2 = odstraňovat, 0 nebo prázdno = platí
+    // globální (1:1 legacy gPLSetWin `:1847`, kde je `hodnota-1`).
+    s zonaDelZnkLinka = +$g(^[dataDB]JRL(sku,lin,"PATCH","ZonaIdsDelZnk"))
+    s bezPismenVZone = $s(zonaDelZnkLinka:zonaDelZnkLinka - 1, 1:+$g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk")))
+    s pocetKmSloupcu = $s(tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)), 1:0)
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu)
-    s linIds = $g(^[dataDB]JRL(sku,lin,"PATCH","linIDS"))     // zóny se tisknou jen u IDS linek
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
     k atributyZastavek                        // atributy z číselníku zastávek (^JRZ $8, CSV) - legenda druhu 7
     s maMhd = 0
@@ -358,6 +445,10 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         s veta = $g(^[dataDB]JRL(sku,lin,"J",poradi))
         s czst = $p(veta,":",1)
         i czst = "" continue
+        // Řádek, na kterém v tomhle směru nikdo nestaví (všichni projíždějí nebo jedou jinudy).
+        // Vypuštěním z téhle smyčky se řádek neobjeví ani v `rowMeta`, takže se s ním samo zarovná
+        // i pole časů u spojů - jinak by se časy rozjely o vypuštěné řádky.
+        i 'tiskBezZastaveni, '$g(zastavuje(poradi)) continue
 
         s atrZnaky = $p($p(veta,":",2),"#",1)
         s zdvojit = (atrZnaky [ "P") || (atrZnaky [ "J")
@@ -366,12 +457,12 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i zdvojit {
             s idx = idx + 1
             s rowMeta(idx) = $lb(poradi, "P")
-            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, linIds))
+            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone))
         }
 
         s idx = idx + 1
         s rowMeta(idx) = $lb(poradi, "O")
-        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, linIds)
+        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone)
         d zastavky.%Push(z)
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
@@ -404,7 +495,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
             i plk = "" s plk = ..PlatnostZDatumu(dataDB, sku, lin, smer, sp)
             s skupiny = ..ZarazeniSpojeKnizni(deleni, plk)
             i (","_skupiny_",") '[ (","_skupina_",") continue
-            s spojObj = ..BuildSpoj(dataDB, sku, lin, smer, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen)
+            s spojObj = ..BuildSpoj(dataDB, sku, lin, smer, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy)
             i spojObj '= "" d spoje.%Push(spojObj)
         }
     }
@@ -423,7 +514,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
             d poznamky.%Push(pripojePoznamky(poradiDruhu3, seq))
         }
     }
-    d ..PridatPoznamkyAtributu(poznamky, .atributSeen)
+    d ..PridatPoznamkyAtributu(dataDB, sku, lin, poznamky, .atributSeen, .spojeSeen, rec)
     d ..PridatPoznamkyMistenkovani(poznamky, .mistenkaSeen)
     d ..PridatStaleZnacky(dataDB, rec, poznamky, .markerSeen, .atributyZobrazene, .atributyZastavek, .trasaZnakySeen, maMhd)
     d ..PridatPoznamkyLinky(dataDB, sku, lin, poznamky)
@@ -440,8 +531,34 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     q out
 }
 
+/// Tarifní čísla, na kterých v daném směru **aspoň jeden spoj staví** - `zastavuje(poradi) = 1`.
+/// Staví = má v trase reálný čas; „projíždí" (`|`) ani „jede jinudy" (`&lt;`) se nepočítá.
+/// 1:1 legacy `linkaZastavujeTc` (`JRapiLinPrtWin.mac:1637-1659`), včetně toho, že se to počítá
+/// **per směr** - zastávka obsluhovaná jen v jednom směru zmizí jen z toho druhého.
+ClassMethod ZastavujiciTc(dataDB As %String, sku As %String, lin As %String, smer As %String, ByRef zastavuje)
+{
+    k zastavuje
+    s sp = ""
+    f {
+        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+        q:sp=""
+        i '$isvalidnum(sp) continue
+        s cisloTrasy = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        i cisloTrasy = "" continue
+        k wMap
+        d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
+        s pp = ""
+        f {
+            s pp = $o(wMap(pp))
+            q:pp=""
+            i ..CasHodnota($g(wMap(pp))) = "" continue
+            s zastavuje(pp) = 1
+        }
+    }
+}
+
 /// JSON objekt jednoho zastávkového řádku (hlavní "zastavka" nebo vložený "prijezd").
-ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, linIds As %String = "") As %DynamicObject
+ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1, bezPismenVZone As %Boolean = 0) As %DynamicObject
 {
     s czst = $p(veta,":",1)
     s z = ##class(%DynamicObject).%New()
@@ -449,12 +566,15 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     d z.%Set("TYP",        typ)
     d z.%Set("CZST",       czst)
     d z.%Set("NAZEV_ZASTAVKY", ..NazevZastavky(dataDB, czst))
-    d z.%Set("TC",         +poradi)
-    // zóna: tiskne se jen u IDS linek (PATCH linIDS); prázdná → "-" (1:1 legacy gInfoTc)
-    // Klíč je množné ZONY jako u zastávkového JŘ; tam je to pole zón, tady jedna hodnota -
-    // klient obojí čte přes GetString (pole spojí "/"), takže se binding chová stejně.
+    // Prázdné TC = sloupec se netiskne; prvek sloupec bez hodnot sám schová.
+    d z.%Set("TC",         $s(tiskTc:+poradi, 1:""))
+    // zóna: tiskne se, jen když to říká `linIDS` (viz BuildStrankaLinky); prázdná → "-"
+    // (1:1 legacy gInfoTc). Klíč je množné ZONY jako u zastávkového JŘ; tam je to pole zón,
+    // tady jedna hodnota - klient obojí čte přes GetString (pole spojí "/"), takže se binding
+    // chová stejně.
     s zona = $p($p(veta,":",5),"#",2)
-    s zona = $s(linIds="":"", zona="":"-", 1:zona)
+    i bezPismenVZone s zona = ..ZonaBezPismen(zona)
+    s zona = $s('tiskZony:"", zona="":"-", 1:zona)
     d z.%Set("ZONY",       zona)
     // MHD/IDS text z kódu v "#"-poli 4 J-věty (legacy gTrsLin dta,6 → gTrsLinDta2ToText)
     d z.%Set("MHD",        ..MhdText($p(veta,"#",4)))
@@ -476,6 +596,13 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     }
     d z.%Set("KM", km)
     q z
+}
+
+/// Označení zóny bez písmen (`51A` → `51`). Seznam znaků je 1:1 legacy `delZnk^JRapiLinPrtPS2`
+/// (`:105`) - jen ASCII písmena, diakritika se v označení zón nevyskytuje.
+ClassMethod ZonaBezPismen(zona As %String) As %String
+{
+    q $tr(zona, "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm", "")
 }
 
 /// MHD kód → zobrazovaný text (1:1 legacy gTrsLinDta2ToText; bez IDP-P/Z overridů z nastavení).
@@ -527,6 +654,9 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
     k serazeneSpoje
     s pocetSpoju = 0
 
+    // ruční pořadí nastavené u linky má přednost (legacy volá mkPoradiSp s par=1)
+    i ..RucniPoradiSpoju(dataDB, sku, lin, smer, .serazeneSpoje, .pocetSpoju) q
+
     // primární pořadí: odjezd (hlava:4), při shodě číslo spoje
     k razeni
     s sp = ""
@@ -556,12 +686,12 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
         s sp = serazeneSpoje(i)
         s hlava = $p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1)
         s odj = +$p(hlava,":",4)
-        d ..WMapa(dataDB, sku, lin, $p(hlava,":",3), .wMap)
+        d ..WMapaProRazeni(dataDB, sku, lin, $p(hlava,":",3), .wMap)
         s pp = ""
         f {
             s pp = $o(wMap(pp))
             q:pp=""
-            s c = ..CasHodnota($g(wMap(pp)))
+            s c = ..CasProRazeni($g(wMap(pp)))
             i c '= "" s cas(sp, pp) = odj + c
         }
     }
@@ -569,7 +699,10 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
     // bublinové doseřazení 1:1 legacy mkPoradiSp: fáze 1 přes odjezdová tč spojů (TcOd = hlava:1),
     // fáze 2 přes příjezdová (TcDo = hlava:2), tč v pořadí směru jízdy; v každém tč se sousedé
     // s definovaným časem prohodí, je-li dřívější spoj pozdější.
-    s jeTam = (smer = "T")
+    // ⚠️ Směr průchodu je proti intuici: u „tam" se jde tarifními čísly **od konce**
+    // (legacy `Par=-1` pro T, `Par=1` pro Z). Měli jsme to obráceně a projevilo se to
+    // prohozenými sousedními spoji (43/45 na KV_DP 0410107).
+    s odKonce = (smer = "T")
     k tcOdSet, tcDoSet
     f i=1:1:pocetSpoju {
         s hlava = $p($g(^[dataDB]JRL(sku,lin,smer,serazeneSpoje(i))),"#",1)
@@ -579,8 +712,8 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
     f faze=1,2 {
         s tc = ""
         f {
-            i faze=1 { s tc = $s(jeTam:$o(tcOdSet(tc)), 1:$o(tcOdSet(tc),-1)) }
-            else     { s tc = $s(jeTam:$o(tcDoSet(tc)), 1:$o(tcDoSet(tc),-1)) }
+            i faze=1 { s tc = $s(odKonce:$o(tcOdSet(tc),-1), 1:$o(tcOdSet(tc))) }
+            else     { s tc = $s(odKonce:$o(tcDoSet(tc),-1), 1:$o(tcDoSet(tc))) }
             q:tc=""
             f pass=1:1:pocetSpoju {
                 s zmena = 0
@@ -599,9 +732,96 @@ ClassMethod SeradSpoje(dataDB As %String, sku As %String, lin As %String, smer A
     }
 }
 
+/// **Ruční pořadí spojů nastavené u linky** (`PATCH,SORT`) - vrátí 1, když se použilo.
+///
+/// Uživatel si smí pořadí spojů přeskládat ručně a starý modul to respektuje. Zahodí ho ale
+/// **celé a pro oba směry**, jakmile nesedí se skutečnými spoji: buď je v pořadí spoj, který
+/// v datech není, nebo v datech je spoj, který v pořadí chybí (typicky po přidání spoje).
+/// Pak se pořadí spočítá. 1:1 legacy `PoradiSpRucne^JRapiSpUtl1`.
+///
+/// ⚠️ **Kontrola musí jít přes oba směry, i když plníme jeden** - jinak by u linky s rozbitým
+/// pořadím jednoho směru druhý směr ruční pořadí použil a starý modul ne.
+///
+/// ⚠️ **Reálně nastavené na 4 409 linkách** ze šesti měřených firem (21. 8.), takže to není
+/// okrajová věc - do 21. 8. jsme ruční pořadí ignorovali úplně.
+ClassMethod RucniPoradiSpoju(dataDB As %String, sku As %String, lin As %String, smer As %String, ByRef serazeneSpoje, ByRef pocetSpoju) As %Boolean
+{
+    // výstup si drží metoda sama - volá se i mimo `SeradSpoje` (z testu)
+    k serazeneSpoje
+    s pocetSpoju = 0
+    q:'$d(^[dataDB]JRL(sku,lin,"PATCH","SORT")) 0
+
+    k jeVRucnim
+    s chyba = 0, sm = ""
+    f {
+        s sm = $o(^[dataDB]JRL(sku,lin,"PATCH","SORT",sm))
+        q:sm=""
+        q:chyba
+        s poradi = ""
+        f {
+            s poradi = $o(^[dataDB]JRL(sku,lin,"PATCH","SORT",sm,poradi))
+            q:poradi=""
+            s sp = +$g(^[dataDB]JRL(sku,lin,"PATCH","SORT",sm,poradi))
+            i '$d(^[dataDB]JRL(sku,lin,sm,sp)) s chyba = 1  q
+            s jeVRucnim(sm,sp) = ""
+        }
+    }
+    q:chyba 0
+
+    // druhá polovina kontroly: každý spoj v datech musí být v ručním pořadí
+    f sm = "T","Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,sm,sp))
+            q:sp=""
+            i '$d(jeVRucnim(sm,sp)) s chyba = 1  q
+        }
+        q:chyba
+    }
+    q:chyba 0
+
+    s poradi = ""
+    f {
+        s poradi = $o(^[dataDB]JRL(sku,lin,"PATCH","SORT",smer,poradi))
+        q:poradi=""
+        s pocetSpoju = pocetSpoju + 1
+        s serazeneSpoje(pocetSpoju) = +$g(^[dataDB]JRL(sku,lin,"PATCH","SORT",smer,poradi))
+    }
+    q pocetSpoju > 0
+}
+
+/// Trasa pro **řazení spojů**, složená přes všechny navazující záznamy (`W(c)`, `W(c+.01)`, …).
+/// Legacy skládá trasu takhle **jen tady** (`mkOdjCas^JRapiSpUtl1`), v tiskové cestě ne - proto
+/// se to nesmí slévat s `WMapa`, kterou se kreslí časy. Dotčené jsou 3 linky ze 93 tisíc měřených.
+ClassMethod WMapaProRazeni(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef wMap)
+{
+    k wMap
+    i cisloTrasy = "" q
+    s trasa = "", c = +cisloTrasy
+    f {
+        q:'$d(^[dataDB]JRL(sku,lin,"W",c))
+        s trasa = trasa_$g(^[dataDB]JRL(sku,lin,"W",c))
+        s c = c + .01
+    }
+    f i=1:1:$l(trasa,"#") {
+        s seg = $p(trasa,"#",i)
+        s pom = $p(seg,":",1)
+        i pom '= "" s wMap(+pom) = $p(seg,":",2)
+    }
+}
+
+/// Čas zastávky **pro řazení spojů**. ⚠️ Legacy tu bere u pobytové zastávky **příjezd**, ne odjezd
+/// (`+$p(kus,":",2)` nad „12/2" dá 12), takže se nesmí použít `CasHodnota`, která přičítá čekání.
+/// Rozdíl se projeví prohozením sousedních spojů; pobyt má v trase 38 655 linek z měřených firem.
+ClassMethod CasProRazeni(cas As %String) As %String
+{
+    i (cas = "") || (cas = "<") || (cas = "|") q ""
+    q +$p(cas,"/",1)
+}
+
 /// Sestaví JSON objekt jednoho spoje (sloupec matice): řádek platnosti (plný klíčový systém
 /// legacy Platnost/Spoj2Tb), NZ, časy per řádek, návaznosti.
-ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, skupina As %Integer, pocetRadku As %Integer, ByRef rowMeta, rec As %String, ByRef platnostZnakySeen, ByRef nzSeen, ByRef pripojePoznamky, ByRef markerSeen, ByRef atributSeen, ByRef mistenkaSeen, ByRef trasaZnakySeen) As %DynamicObject
+ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, skupina As %Integer, pocetRadku As %Integer, ByRef rowMeta, rec As %String, ByRef platnostZnakySeen, ByRef nzSeen, ByRef pripojePoznamky, ByRef markerSeen, ByRef atributSeen, ByRef mistenkaSeen, ByRef trasaZnakySeen, ByRef spojeSeen, tiskBarvy As %Boolean = 1) As %DynamicObject
 {
     s spoj = $g(^[dataDB]JRL(sku,lin,smer,sp))
     s hlava = $p(spoj,"#",1)
@@ -625,6 +845,13 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     d o.%Set("CISLO_SPOJE", +sp)
     d o.%Set("SKUPINA", skupina)
     d o.%Set("NZ", cnz)
+    // Barva spoje jako prezentační nápověda (R3): 12. „#"-pole záznamu ve tvaru „r;g;b".
+    // Prázdno = šablona rozhodne; `0;0;0` je v legacy „nenastaveno", ne černá, takže se neposílá.
+    // Nastavení u linky (a parametr sestavy) barvy potlačí - pak se neposílá nic.
+    i tiskBarvy {
+        s barva = ..RgbNaHex($p(spoj,"#",12))
+        i barva '= "" d o.%Set("FORE_COLOR", barva)
+    }
 
     // ── klíče řádku platnosti (1:1 legacy Platnost → Spoj2Tb pevné pořadí) ──
     k klice
@@ -651,6 +878,7 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         i +$p(hlava,":",piece) {
             s klice(klic) = ""
             s atributSeen(klic, +sp) = ""
+            s spojeSeen(+sp) = ""
         }
     }
     // PLATNOST = klíče v pevném legacy pořadí (Spoj2Tb ř.3754)
@@ -986,35 +1214,148 @@ ClassMethod PridatPoznamkyNZ(dataDB As %String, sku As %String, lin As %String, 
 
 /// Poznámky druhu 5 - atributy spojů (BEV, PJI, SAO…). Legacy v režimu „značka nad spojem"
 /// (pozorovaný gold) tiskne jednu generickou větu bez výčtu spojů - značky u konkrétních spojů
-/// nese řádek platnosti. Texty dle legacy gAtrNZLi (hardcoded v legacy kódu, ne číselník).
-/// TODO: režim s výčtem spojů + gating nastavením PAtrSp/TZPA.
-ClassMethod PridatPoznamkyAtributu(poznamky As %DynamicArray, ByRef atributSeen)
+/// nese řádek platnosti.
+///
+/// **Pořadí je legacy pořadí**, ne naše abecední: řádky legendy jdou v tom pořadí, v jakém je
+/// starý modul prochází (POS, IDS, BEV, SAO, PCZ, OBC, PJI, NKA, RBU, CBE, RBP, wifi, zasu).
+///
+/// Řádek dostane **každý** atribut, který se na stránce vyskytl - nastavení „značka atributu nad
+/// spoj" neřídí, **jestli** se vytiskne, ale **jakým tvarem** (viz `VetaAtributu`).
+ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %String, poznamky As %DynamicArray, ByRef atributSeen, ByRef spojeSeen, rec As %String = "CZ")
 {
+    s patrSp = $g(^[dataDB]JRSET("Definice","PAtrSp"))
+    s bbpLinka = +$g(^[dataDB]JRL(sku,lin,"PATCH","TZPA","BBP"))
+    // kolik spojů je na stránce celkem - podle toho se pozná tvar „všechny spoje"
+    s spojuCelkem = 0, sp = ""
+    f { s sp = $o(spojeSeen(sp))  q:sp=""  s spojuCelkem = spojuCelkem + 1 }
     f ki=1:1:13 {
-        s klic = $p("BEV,IDS,NKA,OBC,PCZ,PJI,POS,RBU,SAO,CBE,RBP,wifi,zasu", ",", ki)
+        s klic = $p("POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu", ",", ki)
         i '$d(atributSeen(klic)) continue
-        d poznamky.%Push(..BuildPoznamka(5, "znak", klic, "spoj "_..PopisAtributu(klic, 1)))
+        // spoje, které atribut mají - v pořadí čísla spoje
+        s vycet = "", pocet = 0, sp = ""
+        f {
+            s sp = $o(atributSeen(klic, sp))
+            q:sp=""
+            s pocet = pocet + 1
+            s vycet = vycet_$s(vycet="":"", 1:", ")_sp
+        }
+        s veta = ..VetaAtributu(klic, rec, ..GenerickaVeta(klic, patrSp, bbpLinka), vycet, pocet, spojuCelkem)
+        i veta = "" continue
+        d poznamky.%Push(..BuildPoznamka(5, "znak", klic, veta))
     }
 }
 
-/// Popis atributu spoje (CZ, dle legacy gAtrNZLi) - tvar dle počtu spojů (j.č. / mn.č.).
-ClassMethod PopisAtributu(klic As %String, pocet As %Integer) As %String
+/// Má se u atributu použít **generická věta** (bez výčtu spojů), nebo věta s výčtem?
+/// 1:1 legacy `gAtrNZLi^JRapiNZUtl3` (`:196-215`), kde se generický tvar přepisuje přes vypočtený:
+///
+/// - **BEV, PJI, SAO, NKA** - generická jen když je zapnutá „značka atributu nad spoj" (`PAtrSp`,
+///   `~`-věta bezbariérové~kola~samoobslužný~nízkokapacitní). U BEV navíc **linka nastavení
+///   přebíjí** (`PATCH,TZPA,BBP`: 1 = ano, 2 = ne, jinak platí globální).
+/// - **POS a IDS** - generickou větu nemají **nikdy**, vždy se vypisují čísla spojů. Legacy pro ně
+///   žádný přepis nemá, a je to smysluplné: „za zvláštních podmínek zásilky" a „v systému
+///   integrované dopravy" se týkají konkrétních spojů, ne linky.
+/// - **zbytek** - generická vždy.
+///
+/// ⚠️ **Našlo to porovnání se starým modulem** (21. 8.): u bezbariérového vozidla jsme posílali
+/// generickou větu i tam, kde starý modul vypisuje spoje. **U POS a IDS je oprava opsaná ze zdroje
+/// legacy, ale porovnáním neověřená** - na kontrolních linkách se ty dva atributy nevyskytly.
+ClassMethod GenerickaVeta(klic As %String, patrSp As %String, bbpLinka As %Integer) As %Boolean
 {
-    s jc = (pocet = 1)
+    i (klic = "POS") || (klic = "IDS") q 0
+    // BEV: linka přebíjí globální nastavení (1 = tisknout, 2 = netisknout, jinak globální).
+    i klic = "BEV" {
+        i bbpLinka = 1 q 1
+        i bbpLinka = 2 q 0
+        q ''+$p(patrSp,"~",1)
+    }
+    i klic = "PJI" q ''+$p(patrSp,"~",2)
+    i klic = "SAO" q ''+$p(patrSp,"~",3)
+    i klic = "NKA" q ''+$p(patrSp,"~",4)
+    q 1
+}
+
+/// Věta atributu spoje, složená ze **šablony starého modulu**. Čtyři tvary, 1:1 legacy
+/// `gAtrNZLi^JRapiNZUtl3` (`:193-215`); šablona je `|`-věta
+/// `znak|všechny|spoj|spoje|j.č.|mn.č.|doplněk`:
+///
+/// - **značka nad spojem zapnutá** → generická věta bez výčtu: `3. + 5. + 7. díl`
+/// - **všechny spoje stránky** ho mají → `2. + 4. + 6. + 7. díl` („všechny spoje s…")
+/// - **víc spojů, ne všechny** → `4. díl + výčet + 6. + 7. díl` („spoje 1, 2 s…")
+/// - **jediný spoj** → `3. díl + číslo + 5. + 7. díl` („spoj 19 přepravuje…")
+///
+/// U některých atributů je 5. nebo 6. díl prázdný (BEV, CBE), takže věta vyjde **bez slovesa** -
+/// „spoj s bezbariérově přístupným vozidlem". Prázdný díl proto nesmí nechat dvojitou mezeru.
+///
+/// ⚠️ **Dvě chyby, které tady našlo porovnání se starým modulem** (`L1` a 21. 8.): měli jsme věty
+/// opsané po svém a u BEV nám přebývalo „jede"; a tiskli jsme generickou větu i tam, kde starý
+/// modul vypisuje čísla spojů. Šablony proto neopisovat volně - jen doslova.
+///
+/// ⚠️ **Texty NEJSOU v číselníku.** Rozhodnutí „brát je z `^JRSET("NCOME")`" (analýza §13.4 bod 6)
+/// bylo postavené na omylu: v číselníku jsou předložky omezení a stálé značky, kdežto tyhle věty
+/// má legacy **zadrátované ve zdroji**, zvlášť pro češtinu a slovenštinu. Zákazník je tedy upravit
+/// nemůže ani ve starém modulu - a slovenština funguje tím, že se vezme druhá sada.
+///
+/// ⚠️ **Otevřené:** legacy počítá spoje přes **celou linku**, my přes stránku (jeden směr). Na
+/// jednosměrné lince to vyjde stejně; u obousměrné se to může rozejít v tom, kdy padne tvar
+/// „všechny spoje". Porovnání to zatím nenahlásilo.
+ClassMethod VetaAtributu(klic As %String, rec As %String = "CZ", znackaNadSpojem As %Boolean = 0, vycetSpoju As %String = "", pocetSpoju As %Integer = 0, spojuCelkem As %Integer = 0) As %String
+{
+    s sablona = ..AtributSablona(klic, rec)
+    q:sablona="" ""
+    i znackaNadSpojem q ..SlozVetu(sablona, 3, "", 5)
+    i (pocetSpoju > 1) && (pocetSpoju = spojuCelkem) q ..SlozVetu(sablona, 2, $p(sablona,"|",4), 6)
+    i pocetSpoju > 1 q ..SlozVetu(sablona, 4, vycetSpoju, 6)
+    q ..SlozVetu(sablona, 3, vycetSpoju, 5)
+}
+
+/// Poskládá větu z dílů šablony: `<uvodniDil> <vlozka> <slovesnyDil> <7. díl>`.
+/// Prázdný díl se přeskočí, ať nezůstane dvojitá mezera.
+ClassMethod SlozVetu(sablona As %String, uvodniDil As %Integer, vlozka As %String, slovesnyDil As %Integer) As %String
+{
+    s veta = ""
+    f kus = $p(sablona,"|",uvodniDil), vlozka, $p(sablona,"|",slovesnyDil), $p(sablona,"|",7) {
+        s cast = $zstrip(kus, "<>W")
+        i cast '= "" s veta = veta_$s(veta="":"", 1:" ")_cast
+    }
+    q veta
+}
+
+/// Šablona věty atributu, opsaná **doslova** z legacy `gAtrNZLi^JRapiNZUtl3` (`:161-192`).
+/// Dvě jazykové sady, protože je tak má i starý modul; `rec` = „CZ" nebo „*SK" (viz `Jazyk`).
+ClassMethod AtributSablona(klic As %String, rec As %String = "CZ") As %String
+{
+    i rec = "*SK" {
+        q $case(klic,
+            "POS":"POS|všetky|spoj|spoje|prepravuje|prepravujú|za osobitných podmienok zásielky, bez sprievodu cestujúceho",
+            "IDS":"IDS|všetky|spoj|spoje|je|sú|v systéme integrovanej dopravy",
+            "BEV":"BEV|všetky|spoj|spoje|||s bezbariérovým prístupom do vozidla",
+            "SAO":"SAO|všetky|spoj|spoje|||so samoobslužným spôsobom odbavovania cestujúcich",
+            "PCZ":"PCZ|všetky|spoj|spoje|prepravuje|prepravujú|cestovnú batožinu",
+            "OBC":"OBC|všetky|spoj|spoje|s možnosťou|s možnosťou|občerstvenia",
+            "PJI":"PJI|všetkými|spojom|spoji|možno prepravovať|možno přepravovať|bicykle|najviac|bicykel(ov)",
+            "NKA":"NKA|všetky|spoj|spoje|je obsluhovaný|sú obsluhované|nízkokapacitnej autobusom",
+            "RBU":"RBU|všetky|spoj|spoje|je obsluhovaný|sú obsluhované|radiobusom",
+            "CBE":"CBE|všetky|spoj|spoje|||s čiastočne bezbariérovým prístupným vozidlom, nutná dopomoc sprievodcu",
+            "RBP":"RBP|všetky|spoj|spoje|jede len podmienečne|idú len podmienečne|",
+            "wifi":"wifi|všetky|spoj|spoje|s bezdrôtovým pripojením k internetu",
+            "zasu":"zasu|všetky|spoj|spoje|s prípojkou 230 V",
+            :"")
+    }
     q $case(klic,
-        "BEV":$s(jc:"jede s bezbariérově přístupným vozidlem", 1:"jedou s bezbariérově přístupným vozidlem"),
-        "IDS":$s(jc:"jede v systému integrované dopravy", 1:"jedou v systému integrované dopravy"),
-        "NKA":$s(jc:"jede nízkokapacitním autobusem", 1:"jedou nízkokapacitním autobusem"),
-        "OBC":$s(jc:"jede s možností občerstvení", 1:"jedou s možností občerstvení"),
-        "PCZ":$s(jc:"přepravuje cestovní zavazadla", 1:"přepravují cestovní zavazadla"),
-        "PJI":$s(jc:"přepravuje jízdní kola", 1:"přepravují jízdní kola"),
-        "POS":$s(jc:"přepravuje zásilky, bez doprovodu cestujícího", 1:"přepravují zásilky, bez doprovodu cestujícího"),
-        "RBU":$s(jc:"jede jen na objednání", 1:"jedou jen na objednání"),
-        "SAO":$s(jc:"má samoobslužný způsob odbavování cestujících", 1:"mají samoobslužný způsob odbavování cestujících"),
-        "CBE":$s(jc:"jede s částečne bezbariérově přístupným vozidlem, nutná dopomoc průvodce", 1:"jedou s částečne bezbariérově přístupným vozidlem, nutná dopomoc průvodce"),
-        "RBP":$s(jc:"jede jen podmínečně", 1:"jedou jen podmínečně"),
-        "wifi":$s(jc:"jede s bezdrátovým připojením k internetu", 1:"jedou s bezdrátovým připojením k internetu"),
-        "zasu":$s(jc:"jede s přípojkou 230 V", 1:"jedou s přípojkou 230 V"), :"")
+        "POS":"POS|všechny|spoj|spoje|přepravuje|přepravují|za zvláštních podmínek zásilky, bez doprovodu cestujícího",
+        "IDS":"IDS|všechny|spoj|spoje|je|jsou|v systému integrované dopravy",
+        "BEV":"BEV|všechny|spoj|spoje|||s bezbariérově přístupným vozidlem",
+        "SAO":"SAO|všechny|spoj|spoje|má|mají|samoobslužný způsob odbavování cestujících",
+        "PCZ":"PCZ|všechny|spoj|spoje|přepravuje|přepravují|cestovní zavazadla",
+        "OBC":"OBC|všechny|spoj|spoje|s možností|s možností|občerstvení",
+        "PJI":"PJI|všechny|spoj|spoje|přepravuje|přepravují|jízdní kola|nejvýše|kol(a)",
+        "NKA":"NKA|všechny|spoj|spoje|je obsluhován|jsou obsluhovány|nízkokapacitním autobusem",
+        "RBU":"RBU|všechny|spoj|spoje|jede jen na objednání|jedou jen na objednání|",
+        "CBE":"CBE|všechny|spoj|spoje|||s částečne bezbariérově přístupným vozidlem, nutná dopomoc průvodce",
+        "RBP":"RBP|všechny|spoj|spoje|jede jen podmínečně|jedou jen podmínečně|",
+        "wifi":"wifi|všechny|spoj|spoje|s bezdrátovým připojením k internetu",
+        "zasu":"zasu|všechny|spoj|spoje|s přípojkou 230 V",
+        :"")
 }
 
 /// Poznámky druhu 6 - místenkování (texty hardcoded CZ, 1:1 gMstNZLi).

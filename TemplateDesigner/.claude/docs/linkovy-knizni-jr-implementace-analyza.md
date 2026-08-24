@@ -416,97 +416,587 @@ distribuce šablon = blok B2/R6 (zatím ruční Import JSON).
 | Caché agenda `LinkovyJrMhd` (692 ř.) | týž wire formát nad MHD daty; bez Km/Tč/MHD sloupců a bez návazností (zdroj je nemá) |
 | `LineTableElement` (596 ř.) | matice zastávka × spoj, plán řádků, kaskáda stylů, škálování na šířku i výšku, podmíněná viditelnost a zvýraznění řádku |
 | Výchozí šablona | `dotnet/SystemTemplates/linkovy-jr-ad.json` (AD). **MHD nemá.** |
-| Testy | **žádné** - ani Caché, ani .NET (mimo drift testy slovníku a registrace prvku). Diff harness proti legacy byl ve scratchpadu, v repu není. |
+| Testy | Síť z `L1` v repu: porovnání se starým modulem (`LinkovyJrAdLegacyTest` nad oraclem `LinkovyJrLegacyOracle`), zlatý odtisk, typová sada linek, smoke. Běží v `run-cache-tests.ps1`. **Nekryje nastavení** - viz §13.3. |
 
 Sloupcový repertoár prvku: Zóna, Km, Tč, Zastávka, MHD, Spoj. Legacy jich má devět
 (`gMSArrPLinWin`, `JRapiLinPrtWin.mac`): navíc **Šipky za zastávkou** (typ 5), **Šipky před
 zastávkou** (typ 8) a **Spoj před zastávkou** (typ 9) - poslední dva jsou zrcadlo pro obousměrný
 tisk (opačný směr nalevo od názvů).
 
-### 13.2 Tři vrstvy nastavení, které starý modul čte
+### 13.2 Nastavení, která starý modul čte (kompletní inventář)
 
-Nastavení nejsou na jednom místě. Tisk knižního JŘ je skládá ze tří zdrojů, než začne stavět data:
+> Přepsáno 2026-08-20 čtením zdroje starého modulu, protože předchozí verze inventáře měla tři
+> mezery a jednu vrstvu neznala vůbec. Cíl: mít vstupní kontrakt starého modulu vyjmenovaný celý,
+> ať se u `L2` nezjišťuje po jednom z tiketů.
 
-1. **Parametry sestavy** (uživatel je nastavuje před tiskem, klient je posílá jako `in("A",2,...)`;
-   `TISKJR/Data.cls:113-154`)
-2. **Globální nastavení programu** (`gPGSetWin` → `gMainSet^JRapiSet` → `^JRSET("Definice",...)`;
-   `JRapiLinPrtWin.mac:1810-1837`)
-3. **Nastavení u konkrétní linky** (`gPLSetWin` → `^JRL(sku,lin,"PATCH",...)` a `^JRL(...,"MHD2",...)`;
-   `JRapiLinPrtWin.mac:1840-1897`)
+Cesta nastavení do tisku má dva úseky.
+Klient (VB) posbírá volby uživatele a pošle je do `ALVA.TISKJR.Data.LoadData`, ta z nich složí
+pole `in("A",2,...)` a zavolá engine (`TISKJR/CACHE/ALVA/TISKJR/Data.cls:145-160`).
+Zbytek si engine načte sám z globálů, dvěma vstupními body do pole `SET`:
+`gPGSetWin` (globální nastavení) a `gPLSetWin` (nastavení u linky), oba
+v `JRMAIN/CACHE/JRapiLinPrtWin.mac:1809-1897`.
 
-#### A. Parametry sestavy (klient → `in("A",2,...)`)
+**Enginy jsou dva a kontrakt mají různý.**
+AD: `mkPLinWin^JRapiLinPrtWin` (4 224 řádků).
+MHD: `ALVA.MHD.LinkyPrintFormatJR.MakeData` (1 400 řádků).
+MHD engine má v hlavičce opsaný celý seznam parametrů od AD, ale reálně čte jen tři z nich.
+To je důležité pro plánování: „linkový MHD nemá žádné parametry" není jen naše mezera, starý modul
+je tam taky ignoroval.
 
-| Legacy klíč | Co dělá | U nás |
+#### A. Volby uživatele u tisku (`in("A",2,...)`)
+
+| Legacy klíč | Co dělá | AD engine | MHD engine | U nás |
+|---|---|---|---|---|
+| `arr,3` RozdelovatSpojePodlePlatnosti | dělení sloupců na skupiny dnů (0 / PD+víkend / PD+So+Ne) | ✅ `:423,441,504` | ❌ nečte | ✅ parametr „Dělení spojů dle platnosti" |
+| `arr,4` PoznamkyZpusobTisku | kam jde legenda (per blok / per směr / souhrnně / + odstránkovat) | ✅ `:713-761` | ✅ `:301` | ❌ legenda je vždy jednou na konci |
+| `arr,5` ZvyraznenaZastavka | zvýraznit řádek zvolené zastávky | ✅ `:392,1212,1240` | ❌ nečte | ❌ |
+| `arr,6` TiskTurnusuKeSpojum | tisk turnusů ke spojům | ✅ `:354` → `SET,2,arr,1,3` | ❌ nečte | ❌ (vědomě, `L6`) |
+| `arr,7` TiskObousmernychJR | oba směry na jednu sestavu (zrcadlené sloupce) | ✅ `:598` | ❌ nečte | ❌ (vědomě, `L6`) |
+| `arr,9` NavaznostiVPripojnychRadcich | tisknout číslo linky/vlaku v přípojném řádku | ✅ `:2771` | ❌ nečte | ❌ tiskneme vždy |
+| `arr,10` TC | zvýraznit konkrétní tarifní číslo (inverzní řádek) | ✅ `:1214,1242` | ❌ nečte | ❌ |
+| `arr,11` FilterDTA | výběr **typů provozu a směrů** k tisku (`TypProvozuID#id~0/1`, `SmerID#id~0/1`) | ❌ nečte | ✅ `:305-321` | ❌ tiskneme vše |
+| `arr,12` NekreslitRameckyKolemCiselSpoju | bez rámečků kolem čísel spojů; v MHD navíc **vypne i čísla spojů** | ❌ nečte | ✅ `:324` | ❌ (u nás řeší styl prvku, vedlejší efekt MHD chybí) |
+| `arr,13` VkladatPrazdneSloupce | dorovnání šířky prázdnými sloupci | ✅ `:1038` | ❌ nečte | ❌ (patří k `L5`) |
+| `dta,1` / `dta,2` / `MS` | šířka tiskové plochy, počet řádků, měřicí řetězce | ✅ | ✅ | ⛔ nepřenášíme vědomě (layout měříme sami) |
+
+**Mrtvé položky kontraktu** (aby se nehledaly znovu):
+`arr,1` (zóny) a `arr,2` (km sloupce) jsou v hlavičce označené „zrušeno, bere se z linky" a engine je
+nečte, nahradilo je nastavení u linky `linIDS`.
+`arr,8` ZalamovatOznaceniTurnusuZaTeckou klient posílá, ale **žádný engine ho nečte** a legacy si
+u něj sám píše „todo" (`:178`).
+`PoznamkyPoradiDruh` klient načte, ale do `in` ho nikdy nevloží, takže se do tisku nedostane.
+
+**Volby, které zůstávají u klienta** a do enginu se nedostanou vůbec:
+`CelkovaSirkaSekce`, `SirkaSloupceSeznamZastavek`, `SirkaSloupceSipky`, `PocetMoznychRadku`
+a `MericiRetezec` se přepočítají na `dta,1`/`dta,2`/`MS`; `Preteceni` klient přečte a dál nepošle.
+To je ta hranice, kterou u nás drží prvek a šablona.
+
+⚠️ **Kontrakt umí víc linek v jedné sestavě už dnes.**
+`ValueId` nese `SeznamSkupinALinek` ve tvaru `4|820701#4|820741` a klient nad ním cykluje
+(`Data.cls:125-133`), takže engine se volá per linka a výstupy se skládají za sebe.
+Pro `L7` (sdružený JŘ) to znamená, že se nevymýšlí nový kontrakt, jen se opakuje volání.
+
+#### B. Globální nastavení programu (`^JRSET("Definice",...)`)
+
+Výčet je **uzavřený a ověřený**: knižní JŘ si z celého číselníku bere právě těchto deset hodnot
+(`JRapiLinPrtWin.mac:1817-1826`, mapování klíčů `JRapiSet.mac:288-342`).
+
+| Klíč | Co ovlivňuje | U nás |
 |---|---|---|
-| `arr,3` RozdelovatSpojePodlePlatnosti | dělení sloupců na skupiny dnů (0 / PD+víkend / PD+So+Ne) | ✅ parametr „Dělení spojů dle platnosti" |
-| `arr,4` PoznamkyZpusobTisku | kam jde legenda (per blok / per směr / souhrnně / + odstránkovat) | ❌ - legenda je vždy jednou na konci |
-| `arr,5` ZvyraznenaZastavka | zvýraznit řádek zvolené zastávky | ❌ |
-| `arr,6` TiskTurnusuKeSpojum | tisk turnusů ke spojům | ❌ (vědomě, `C6`) |
-| `arr,7` TiskObousmernychJR | oba směry na jednu sestavu (zrcadlené sloupce) | ❌ (vědomě, `C6`) |
-| `arr,8` ZalamovatOznaceniTurnusuZaTeckou | zalomení označení turnusu | ❌ (v legacy „todo") |
-| `arr,9` NavaznostiVPripojnychRadcich | tisknout číslo linky/vlaku v přípojném řádku | ❌ - tiskneme vždy |
-| `arr,10` TC | zvýraznit konkrétní tarifní číslo (inverzní řádek) | ❌ |
-| `arr,12` NekreslitRameckyKolemCiselSpoju | bez rámečků kolem čísel spojů; **v MHD navíc vypne i čísla spojů** | ❌ (u nás řeší styl prvku, ale MHD vedlejší efekt chybí) |
-| `arr,13` VkladatPrazdneSloupce | dorovnání šířky prázdnými sloupci | ❌ (patří k `B13`) |
-| `PoznamkyPoradiDruh` | uživatelské pořadí druhů poznámek | ❌ (vědomě, `C5`) |
-| `arr,11` (jen MHD) | výběr typů provozu a směrů k tisku | ❌ - tiskneme vše |
-| `dta,1` / `dta,2` / `MS` | měřicí řetězce, šířka plochy, počet řádků | ⛔ nepřenášíme vědomě (layout měří klient) |
-
-#### B. Globální nastavení (`^JRSET("Definice",…)`)
-
-Z celého číselníku `gMainSet` (9 skupin) si knižní JŘ bere **deset** hodnot:
-
-| Klíč v `^JRSET("Definice",…)` | Co ovlivňuje | U nás |
-|---|---|---|
-| `TiskDtm` | tvar datumů v omezeních (0-3) | ✅ vč. per-linka override |
-| `PAtrSp` | které atributy nad spojem se vůbec tisknou (bezb. přístupné, kola, samoobslužný, nízkokapacitní) | ❌ - `TODO` v kódu |
+| `TiskDtm` | tvar datumů v omezeních (0-3) | ✅ včetně per-linka override |
+| `PAtrSp` | které atributy nad spojem se vůbec tisknou (bezbariérově přístupné, kola, samoobslužný, nízkokapacitní) | ✅ hotovo 21. 8., u bezbariérového přebíjí linka (`TZPA,BBP`) |
 | `MistOR` / `MistNOD` | tvar tisku místenkování (odřádkování, dvojtečky) | ❌ |
-| `MHDPZ("P")` / `MHDPZ("Z")` | **vlastní text** místo „IDP-P" / „IDP-Z" ve sloupci MHD + jeho řádek legendy | ❌ - máme napevno IDP-P/IDP-Z |
+| `MHDPZ("P")` / `MHDPZ("Z")` | vlastní text místo „IDP-P" / „IDP-Z" ve sloupci MHD + jeho řádek legendy | ❌ máme napevno IDP-P/IDP-Z |
 | `ZonaIdsDelZnk` | odstranit písmena z označení zóny | ❌ (zastávkový JŘ to umí) |
-| `Print_Dopr_First`, `SDOP`, `PS_PrintSouhrnDoprLinYes` | pořadí a tisk dopravců/provozů, seznam linek k dopravci | ❌ - `PopisDopravce` má vlastní logiku, neověřenou proti nastavení |
-| jazyková verze (`gMode`) | číselníky textů CZ vs. SK | ✅ |
+| `Print_Dopr_First` / `SDOP` / `PS_PrintSouhrnDoprLinYes` | pořadí a tisk dopravců a provozů, souhrn linek k dopravci | ❌ `PopisDopravce` má vlastní logiku, proti nastavení neověřenou |
 
-#### C. Nastavení u linky (`^JRL(sku,lin,"PATCH",…)` a `"MHD2"`)
+Z jazykové verze (`gMode`) engine odvozuje dvě věci, ne jednu:
+číselník textů CZ vs. SK a **počet druhů místenkování** (dva `R`, `R1` versus čtyři `R`..`R3`,
+`SET,2,arr,1,2`).
 
-Tohle je nejnebezpečnější vrstva: mění výstup **jen u některých linek**, takže se to na testovací
-lince nemusí nikdy projevit.
+**Texty značek nejsou v kódu, jsou v číselníku** a jsou per jazyk:
+`^JRSET("NCOME",rec,id)` a `^JRSET("STALCOME",rec,id)` (`JRapiLinPrtWin.mac:2350-2361`).
+Tam se má brát i těch třináct textů atributů spoje z nálezu `L1`, ne opisovat je do našeho kódu.
+
+#### C. Nastavení u konkrétní linky (`^JRL(sku,lin,...)`)
+
+Tohle je nejnebezpečnější vrstva: mění výstup jen u některých linek, takže se na testovací lince
+nemusí nikdy projevit.
+Kompletní seznam toho, co tisková cesta reálně čte (`gPLSetWin` plus přímá čtení v enginu):
 
 | Klíč | Co dělá | U nás |
 |---|---|---|
-| `KmsSmer` | počet km sloupců per směr | ✅ |
-| `linIDS` | **čtyřstavový přepínač** zóny × km (0 = jen km, 1 = jen zóna, 2 = obojí, 3 = nic) | ⚠️ **částečně a chybně** - čteme jen „je neprázdné → tiskni zónu"; hodnoty `0` a `3` u nás zónu vytisknou, ačkoli legacy ne, a km sloupce neřídíme vůbec (`LinkovyJrAd.cls:348,453`) |
-| `nazMHD` | u MHD linky použít ručně upravený název zastávky | ❌ - týž problém jako `B60` |
-| `netisknoutSloupecTC` | schovat sloupec tarifních čísel | ❌ |
-| `tisknoutJenTcKdeSpojeZastavuji` | **vyhodit řádky**, kde žádný spoj nestaví (legacy to používá na 5 místech) | ❌ |
-| `podtrzeniPaJ` | způsob podtržení u zdvojených řádků příjezd/odjezd | ❌ |
-| `barevnyTiskSpoju` | vypnout barvy spojů (barva je na spoji, `gSpLin dta,38`) | ❌ - **barvy spojů neposíláme vůbec**, agenda nemá jediné `FORE_COLOR` (zastávková jich má 9) |
-| `cisIDS` | jak se skládá tištěné číslo linky (3místné, vlastní číslo, tablo) | ❌ |
-| `ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ (patří k `B13`) |
-| `TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ❌ |
-| `MHD2("netisknoutTC" / "netisknoutCislaSpoju" / "netisknoutSipky" / "netisknoutKladivkaAPodobne")` | schová sloupec Tč, čísla spojů, šipky, značky | ❌ |
-| `MHD2("umeleDatDoSekci" / "rozdelitUmeleSekceNaVlastniStranky")` | ruční přiřazení spojů do skupin a jejich stránkování | ❌ |
+| `PATCH,KmsSmer,T/Z` a `PATCH,KmsSmer,sm,sl` | počet km sloupců per směr a obsah jednotlivého sloupce | ✅ počet; obsah sloupce neověřen |
+| `PATCH,linIDS` | **čtyřstavový přepínač** zóny × km (0 = jen km, 1 = jen zóna, 2 = obojí, 3 = nic) | ⚠️ **částečně a chybně** - čteme jen „je neprázdné → tiskni zónu"; u hodnot `0` a `3` zónu tiskneme, legacy ne, a km sloupce neřídíme vůbec (`LinkovyJrAd.cls:348,453`) |
+| `PATCH,nazMHD` | u MHD linky použít ručně upravený název zastávky | ❌ týž problém jako tvar názvu v `L3` |
+| `PATCH,netisknoutSloupecTC` | schovat sloupec tarifních čísel | ❌ |
+| `PATCH,tisknoutJenTcKdeSpojeZastavuji` | **vyhodit řádky**, kde žádný spoj nestaví (legacy to používá na 5 místech) | ❌ |
+| `PATCH,podtrzeniPaJ` | podtržení u zdvojených řádků příjezd/odjezd (0 obě zastávky nad i pod / 1 první zastávka pod) | ❌ |
+| `PATCH,barevnyTiskSpoju` | vypnout barvy spojů (barva je na spoji) | ❌ barvy spojů neposíláme vůbec, agenda nemá jediné `FORE_COLOR` (zastávková jich má 9) |
+| `PATCH,cisIDS` | jak se skládá tištěné číslo linky (3místné, vlastní číslo, tablo) | ❌ |
+| `PATCH,ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ (patří k `L5`) |
+| `PATCH,TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ❌ |
+| `PATCH,ZonaIdsDelZnk` | **přebíjí** globální hodnotu téhož jména (`:1847`) | ❌ |
+| `MHD2,netisknoutTC` / `netisknoutCislaSpoju` / `netisknoutSipky` / `netisknoutKladivkaAPodobne` | schová sloupec Tč, čísla spojů, šipky, značky | ❌ |
+| `MHD2,umeleDatDoSekci` / `rozdelitUmeleSekceNaVlastniStranky` | ruční přiřazení spojů do skupin a jejich stránkování | ❌ |
 
-U MHD zdroje čte legacy `MakeData` z linky navíc `TypLinkyID` a rozsah negativních značek
-z `^ALVA.MHD.SETTINGS(idfa,"Obecne","DTA",1001,"RozsahNegativnichZnacek*")` - ani jedno nemáme.
+**Dvě mrtvé položky, které vypadají živě.**
+`SET,3,arr,1,3` a `1,4` mají v hlavičce dokumentovaný význam „Vyčká / Navazuje jako řádek v tabulce
+odjezdů místo v poznámkách", ale `gPLSetWin` je natvrdo nastaví na `0` s poznámkou „není zatím nikde
+uloženo" a engine je nikdy nečte (`:1856-1859`).
+Legacy tedy tuhle volbu **neumí**, ačkoli ji má popsanou.
+My přípojné řádky tiskneme, takže se v tomhle od starého modulu lišíme z vlastního rozhodnutí,
+ne kvůli nastavení.
+
+⚠️ **My čteme u linky i to, co v tomhle inventáři nebylo.**
+Naše AD agenda sahá navíc na `PATCH,Head`, `PATCH,OBJ`, `PATCH,PoznPodDopr` a `PATCH,Plati`
+(`LinkovyJrAd.cls:208,323,324,336`), tedy záhlaví, objížďkový příznak, poznámka pod dopravce
+a platnost.
+Jsou to klíče sdílené s vývěskovou agendou; do matice patří stejně jako ostatní, protože i ony
+mění výstup jen u některých linek.
+
+#### D. Nastavení **pod** úrovní linky (chybělo úplně)
+
+Vrstvy nejsou tři, ale čtyři.
+Starý modul čte nastavení i na jednotlivém řádku a jednotlivém spoji, mimo pole `SET`:
+
+| Klíč | Granularita | Co dělá |
+|---|---|---|
+| `^JRL(sku,lin,"J",tc,"MHD2","KnizniNetisknout")` | tarifní číslo | řádek se v knižním JŘ netiskne (`:3262`) |
+| `^JRL(sku,lin,"J",tc,"MHD2","KnizniNetisknoutTam"/"Zpet")` | tarifní číslo × směr | při zapnutí obou se tarifní číslo přeskočí (`:1965`) |
+| `^JRL(sku,lin,sm,sp,"MHD2","umeleDatDoSekce")` | spoj | do které umělé sekce spoj patří (`:582`) |
+
+Tohle je pro testování nejtvrdší část matice.
+Nastavení není u linky, ale u konkrétního řádku nebo spoje, takže ho neodhalí ani porovnání celé
+linky, pokud si ho na ní nikdo nenastavil.
+Zároveň je to nastavení, které **ubírá řádky** - přesně ta třída odchylky, kterou zákazník pozná
+na první pohled.
+
+#### E. MHD zdroj má vlastní vrstvu
+
+MHD engine kromě `arr,4`, `arr,11` a `arr,12` čte nastavení ze svých vlastních globálů:
+
+| Klíč | Úroveň | U nás |
+|---|---|---|
+| `AutomatickyPoznamkovatOdlisnostiVPlatnostechSpoju` | linka | ✅ čteme (`LinkovyJrMhd.cls:574`) |
+| `QRCode`, `CisloVerejne`, `IDSID` | linka | ✅ čteme |
+| `TypLinkyID` | linka | ❌ ověřeno grepem, nula výskytů |
+| `RozsahNegativnichZnacekOd` / `Do` (`^ALVA.MHD.SETTINGS(idfa,"Obecne","DTA",1001,...)`) | firma | ❌ ověřeno grepem, nula výskytů |
 
 ### 13.3 Co z toho plyne pro testy
 
-Dnešní zlaté odtisky zastávkového JŘ (`ZastavkoveJrAdGoldTest`) hlídají **náš výstup proti
-včerejšku**, ne proti starému modulu - to je pojmenované v `R6`. Pro linkový JŘ potřebujeme obojí
-a ani jedno zatím neexistuje:
+Zlaté odtisky hlídají **náš výstup proti včerejšku**, ne proti starému modulu - to je
+pojmenované v `R6`, takže pro linkový JŘ potřebujeme obojí.
+Odtisk i porovnání se starým modulem **jsou od `L1` hotové** (`LinkovyJrAdLegacyTest`,
+`LinkovyJrGoldTest`, oracle volá `mkPLinWin` přímo, ne překladovou vrstvu `LoadData`).
+Co ta síť **nekryje**, je právě matice nastavení, a to ze dvou důvodů:
 
-- **Oracle test proti legacy.** `ALVA.TISKJR.Data.LoadData` s `VOLANO_Z~JRMAIN` je volatelný ze
-  serveru a vrací týž stream, kterým se krmil starý klient. Diff harness (spoje, pořadí, časy,
-  km, zóny, poznámky) existoval ve scratchpadu a **není v repu** - to je první věc k nápravě.
-- **Zlatý odtisk** (`GoldUtil.Digest` počítá `ZASTAVKY`/`ODJEZDY`/`POZNAMKY`; linkový wire má
-  `ZASTAVKY`/`SPOJE`/`SKUPINY_DNU`/`POZNAMKY`, takže digest potřebuje linkovou variantu).
-- **Matice nastavení.** Odtisk na jedné lince s výchozím nastavením nedokáže chytit nic z §13.2 C.
-  Test musí každé nastavení **zapnout a vypnout** a ověřit, že se výstup změnil právě tak, jak ho
-  změní legacy - jinak platí totéž, co u zastávkového: „funguje to", dokud nepřijde zákazník,
-  který si to nastavení zapnul.
+- **Odtisk ani porovnání na výchozím nastavení nechytí nic z vrstev C a D.** Test musí každé
+  nastavení **zapnout a vypnout** a ověřit, že se výstup změnil právě tak, jak ho změní legacy.
+  Jinak platí totéž, co u zastávkového JŘ: „funguje to", dokud nepřijde zákazník, který si to
+  nastavení zapnul.
+- **Přepnout jde dnes jen vrstva A.** Oracle podstrčí starému modulu pole `in("A",2,...)`, takže
+  volby uživatele u tisku umíme nastavit z testu. Vrstvy B, C a D jsou ale **data na serveru** -
+  globální číselník, nastavení u linky, příznaky u tarifního čísla a u spoje. Bez rozhodnutí, jak
+  je v testu přepnout, se z „matice nastavení" stane „změřili jsme, co bylo v datech" (varianty
+  a jejich cena v §13.4 bod 1).
 
 
 ---
+
+### 13.4 Rozhodnutí před `L2` (rozhodnuto Janem 2026-08-21)
+
+Sedm věcí, u kterých se z inventáře nedalo odvodit, co je správně. **Šest je rozhodnuto**
+(Jan, 21. 8.), **bod 4 se vědomě odkládá do MHD kola** - `L2` je tím pro AD vzatelná celá.
+Varianty a ceny zůstávají zapsané, aby bylo vidět, co se zvažovalo a proč vyhrálo to, co vyhrálo.
+
+⚠️ **U tří bodů se rozhodnutí od návrhu agenta liší** (3, 5, 7) a všechny tři míří stejným směrem:
+**to, jak je výstup složený, patří do návrháře; z nastavení u linky se bere jen to, co mění data.**
+Umístění legendy ani pořadí druhů poznámek tedy nejsou parametry sestavy, ale vlastnosti šablony.
+
+#### 1. Jak v testu přepnout nastavení, které je uložené u linky
+
+Volby, které si uživatel zaškrtne před tiskem, umíme starému modulu podstrčit z testu (vrstva A).
+Nastavení u linky a globální číselník (vrstvy B, C, D) jsou **uložená data** - test je nemá jak
+na chvíli změnit, aniž by sáhl do databáze.
+Bez rozhodnutí ověříme jen ty přepínače, které někdo v testovacích datech náhodou zapnuté má.
+
+| Varianta | Cena |
+|---|---|
+| Test si nastavení u linky přepne a po sobě vrátí | plné pokrytí, ale zapisuje do zákaznických dev dat a dva běhy naráz si šlápnou |
+| **Testovací kopie linky** pod vlastním číslem, po testu smazaná | nic cizího se nemění a odpovídá to pravidlu „test si vytvoří svoje pod unikátním jménem"; otevřené je, jak hluboko kopie musí jít (trasa, zastávky, spoje) |
+| Porovnávat jen linky, které to nastavené **už mají** | nejrychlejší a bezpečné, ale pokrytí je dané tím, co je v datech |
+| Podstrčit nastavení oběma stranám mimo databázi | u nás snadné, u starého modulu zásah do jeho kódu (čte si je sám a hluboko) |
+
+**Návrh:** třetí varianta jako první krok (změří, kolik přepínačů v datech vůbec je), druhá jako
+cílový stav. První nedělat.
+
+**Rozhodnuto:** nastavení se bere **tak, jak je u linky nastavené**. Pokrytí obou stavů zajistí
+sama různost zákazníků - někdo to nastavené má, někdo ne, a porovnává se obojí. Testovací linku
+si stavět nezačínáme.
+
+⚠️ **Povinný doplněk, aby to nebylo tvrzení bez důkazu:** změřit, které přepínače se v datech
+reálně vyskytují, a u těch, které nikde zapnuté nejsou, napsat **neověřeno** - ne mlčet a nechat to
+vypadat jako pokryté. To je totéž pravidlo jako R6.
+
+#### 2. Nastavení pod úrovní linky (vrstva D)
+
+U konkrétní zastávky v lince jde zaškrtnout „tuhle v knižním JŘ netiskni", zvlášť pro každý směr.
+U jednotlivého spoje jde ručně určit, do které skupiny sloupců patří.
+Když to neuděláme, zákazník uvidí schovaný řádek zpátky - tabulka bude delší než dřív a bude v ní
+zastávka, kterou tam nechtěl.
+
+**Návrh:** skrývání řádků do `L2`, ruční přiřazení spojů do skupin až do vlny se stránkováním
+(`L5`), protože to ovlivňuje rozřezání na stránky.
+
+**Rozhodnuto:** skrývání řádků pod úrovní linky **do `L2`**. Ruční přiřazení spojů do skupin
+zůstává v `L5`, protože ovlivňuje rozřezání na stránky.
+
+#### 3. Tři položky, které neumí ani starý modul
+
+Vedli jsme je jako svůj dluh; čtení zdroje ukázalo, že v legacy nejsou funkční.
+
+- **Pořadí druhů poznámek** - starý klient volbu nabídl a do tisku ji nikdy neposlal. Zákazník si
+  o to říká (#9088), takže proti škrtnutí stojí tiket.
+- **Zalamování označení turnusu** - nedodělek, který si takto sám starý modul označuje. Turnusy
+  jako celek jsou až v `L6`.
+- **„Vyčká / Navazuje" jako řádek tabulky místo poznámky** - v kontraktu popsané včetně obou stavů,
+  natvrdo vypnuté, nikdy nečtené.
+
+**Návrh:** pořadí poznámek ano (je za tím tiket), ostatní dvě vyřadit ze seznamu dluhů.
+
+**Rozhodnuto** (po upřesnění, co která položka je - jsou to tři různé případy, ne jeden):
+
+- **Pořadí druhů poznámek** → **nastavení v návrháři, ne u linky** (rozhodnutí Jan 21. 8.).
+  ⚠️ **A tak to bylo i ve starém modulu** - hodnota se ukládá `^AlvaTiskJR(KEY, SekceId,
+  "stDL_PoznamkyPoradiDruh")`, tedy **u sekce šablony** (`TISKJR/Designer.cls:156,785`), ne u linky.
+  Nepřesouváme to tedy nikam: patřilo to do návrháře vždycky a chyba byla, že to **tisk nikdy
+  nepoužil** (klient hodnotu načte a do `in` ji nevloží). U nás je to **vlastnost prvku legendy**
+  (pořadí druhů), ne parametr sestavy a ne čtení nastavení linky - stejnou logikou jako umístění
+  legendy v bodu 5.
+- **Zalamování označení turnusu** - klient volbu posílá, ale žádný engine ji nečte (legacy si u ní
+  sám píše „todo"). Nastavit jde, takže brát ji budeme - ale **až s turnusy** v `L6`, samostatně
+  nemá co zalamovat.
+- **„Vyčká / Navazuje jako řádek"** - tohle **nastavit nejde**: legacy si hodnotu natvrdo nuluje
+  s poznámkou „není zatím nikde uloženo", takže v EDISONu pro to není místo. Není co respektovat.
+  My přípojné řádky tiskneme, takže jsme v tomhle **napřed z vlastního rozhodnutí** - přestává to
+  být náš dluh.
+
+#### 4. Kolik voleb dát uživateli u městských linek
+
+Starý modul nabízel u příměstských a dálkových linek asi deset voleb, u městských reálně **tři**
+(kam legenda, rámečky kolem čísel spojů, které typy provozu a směry tisknout).
+Zbytek si do okna přečetl a engine ho ignoroval.
+Parita tedy pro MHD nedává skoro nic a sada voleb je tam **nová featura**, ne dorovnání.
+Proti tomu stojí, že uživatel po přepnutí agendy čeká stejný panel.
+
+**Návrh:** dát MHD tutéž sadu tam, kde má význam; rozdíly nechat jen s doménovým důvodem
+(typy provozu MHD má, vlastní sloupce tam smysl nemají - viz `L3`).
+
+**Nerozhoduje se teď** (Jan 21. 8.): **řeší se v MHD kole, ne v AD.** Sada voleb pro městské linky
+je rozhodnutí o MHD variantě a to celé jde po AD - jinak bychom teď rozhodovali o modulu, na kterém
+nepracujeme.
+
+Co si z průzkumu nese MHD kolo jako vstup: **starý modul u městských linek většinu voleb ignoroval**
+(jeho MHD engine čte tři z jedenácti, které má v okně vypsané), takže parita tam nemá čím se řídit
+a jakákoli sada voleb je u MHD **nová featura**, ne dorovnání.
+
+#### 5. Kam se tiskne legenda poznámek
+
+Starý modul umí legendu pod každý blok, jednou za směr, nebo celou na konec, volitelně na vlastní
+stránku.
+My ji dáváme vždy jednou na konec.
+Je to volba uživatele, ale varianty „pod každý blok" a „na vlastní stránku" mají smysl teprve nad
+rozřezáním tabulky na stránkové bloky.
+
+**Návrh:** volbu zavést mezi parametry (`L3`), varianty závislé na blocích zapnout až s `L5`.
+Do `L2` to netahat.
+
+**Rozhodnuto - jinak, než agent navrhoval:** **není to parametr sestavy, ale nastavení v šabloně**
+u hlavního prvku (rozhodnutí Jan 21. 8.).
+
+Důvod je silnější než původní návrh: v návrháři je legenda **samostatný prvek**, který si uživatel
+položí, kam chce. Starý modul tu volbu měl právě proto, že tuhle svobodu neměl. Přidávat k tomu
+ještě parametr by byly dvě pravdy o jedné věci.
+
+Varianta „pod každý blok" se stane vlastností **opakování** až nad rozřezáním na bloky (`L5`) -
+i pak je to vlastnost sekce, ne parametr.
+
+#### 6. Texty značek: číselník, nebo opis do našeho kódu
+
+Popisky značek a texty atributů spoje jsou ve starém modulu v číselníku, zvlášť pro češtinu
+a slovenštinu (`^JRSET("NCOME",rec,id)`, `^JRSET("STALCOME",rec,id)`).
+Část máme opsanou u sebe.
+Z číselníku: zákazníkova úprava textu se v tisku projeví a slovenština funguje bez další práce.
+Opis: máme kontrolu, ale zákazníkova úprava se neprojeví a slovenštinu řešíme zvlášť.
+
+**Návrh:** brát z číselníku.
+Je to zároveň oprava nálezu z `L1`, kde nám u textu atributu přebývalo sloveso.
+
+⛔ **PŮVODNĚ rozhodnuto „brát z číselníku", ZRUŠENO 21. 8. - návrh stál na omylu.**
+Texty atributů spoje **v číselníku nejsou**: v `NCOME` a `STALCOME` jsou předložky omezení a stálé
+značky, kdežto věty atributů má legacy **zadrátované ve zdroji** (`gAtrNZLi^JRapiNZUtl3:161-192`),
+zvlášť česky a zvlášť slovensky. Zákazník je tedy nemůže upravit ani ve starém modulu.
+Řešením je **doslovný opis obou sad** - hotovo 21. 8., čímž je vyřešená i stížnost #9088 na
+kostrbatou slovenštinu.
+
+#### 7. Kde končí „respektujeme nastavení" a začíná „to řeší šablona"
+
+Pravidlo z 19. 8. říká, že nastavení se neignoruje jen proto, že je to vzhled.
+Tři případy stojí na hraně, protože u nich vzhled řídí naše šablona:
+
+| Nastavení | Co říká | Povaha |
+|---|---|---|
+| Podtržení u zastávek s rozděleným příjezdem a odjezdem | podtrhnout obě zastávky, nebo jen první | čistý vzhled, ale je to u linky a šablona to nemá odkud vědět |
+| Tvar tisku místenkování | odřádkovat po částech, vkládat dvojtečky | mění tištěný text, tedy data |
+| Skládání tištěného čísla linky | třímístné číslo / vlastní číslo / varianta pro tablo | mění hodnotu, tedy data |
+
+**Návrh:** místenkování a číslo linky jako data.
+Podtržení řešit **prezentační nápovědou** v datovém kontraktu (R3) - data řeknou „tady se podtrhává
+takto", šablona to smí respektovat.
+Byl by to druhý případ téhož mechanismu po barvách spojů.
+
+**Rozhodnuto - směr od Jana 21. 8.:** **vizuální věci patří do šablony, business logika do dat.**
+
+- **tvar tisku místenkování** a **skládání tištěného čísla linky** → **data** (mění tištěný text)
+- **podtržení u zastávek s rozděleným příjezdem a odjezdem** → **šablona** (je to čistý vzhled)
+
+⚠️ **Zbývá napětí, které se vědomě neřeší teď:** u podtržení jde o vzhled, ale zároveň je to
+nastavené **u linky** - a platí, že co je nastavené, máme brát v potaz. Čistá cesta je táž jako
+u schovávání sloupců: vlastnost v šabloně, jejíž výchozí hodnota je **„Automaticky (dle linky)"**.
+Zavádět ten mechanismus kvůli podtržení ale nemá smysl, dokud o něj nikdo nepožádal - **na tuhle
+jednu položku není poptávka ani tiket**. Řeší se, až se ozve. (Jan 21. 8.: „teď neumím říci".)
+
+#### Co jde dělat i bez těchto rozhodnutí
+
+Rutinní část `L2`, na kterou nemá ani jedno rozhodnutí vliv:
+
+- oprava čtyřstavového přepínače zóny × km (dnes čteme zjednodušeně a u dvou hodnot tiskneme zónu,
+  kterou legacy netiskne, km neřídíme vůbec)
+- barvy spojů do datového kontraktu (že je posílat máme, je rozhodnuté; otevřené je jen **kde**)
+- vyhazování řádků u tarifních čísel, kde spoje nestaví
+- vlastní texty sloupce MHD místo dnešních napevno zadaných
+- pořadí sloupců spojů proti starému modulu (nález z `L1`, dvě linky)
+
+---
+
+### 13.5 Zadání `L2` - kam patří která položka (projito 2026-08-21)
+
+Průchod celým inventářem §13.2 po rozhodnutích §13.4. Cíl: aby se u každé položky nemuselo znovu
+odvozovat, jestli je to data, šablona, parametr, nebo jiná vlna.
+
+#### Rozhodovací pravidlo pro sporné případy
+
+> **Když to jde rozumně mít v šabloně, patří to do šablony** - na úroveň linky jen to, co tam být
+> opravdu musí (rozhodnutí Jan 21. 8.).
+>
+> Důvod je situační a stojí za to ho říct nahlas: **starý modul se přepisuje a část nastavení se
+> může přesunout jinam.** Čím méně věcí visí na konkrétní lince, tím méně se toho bude přetahovat.
+>
+> ⚠️ Neruší to pravidlo z 19. 8. „co je nastavené, bereme v potaz". Obojí drží **třístav**: vlastnost
+> žije v šabloně (nebo jako parametr), ale její výchozí hodnota je **„Automaticky (dle linky)"**,
+> takže nastavení u linky se respektuje, dokud ho uživatel nepřebije.
+
+#### Kategorie použité v tabulce
+
+| Značka | Znamená |
+|---|---|
+| **data** | respektuje se při načítání dat - mění hodnoty, řádky nebo texty |
+| **třístav** | vlastnost šablony nebo parametr s výchozí hodnotou „Automaticky (dle linky)" |
+| **šablona** | vlastnost prvku nebo šablony; z nastavení linky se nebere |
+| **parametr** | volba uživatele u tisku (patří do `L3`) |
+| **jiná vlna** | `L5` layout · `L6` turnusy a obousměrný tisk · `L7` sdružený JŘ · MHD kolo |
+| ⛔ | vědomě nikdy |
+
+#### A. Volby uživatele u tisku
+
+| Položka | Kam | Poznámka k práci |
+|---|---|---|
+| dělení sloupců na skupiny dnů | ✅ hotovo (parametr) | `L3` to rozšíří na vlastní sloupce |
+| kam jde legenda | **šablona** | legenda je samostatný prvek; „pod každý blok" je vlastnost opakování až s `L5` |
+| zvýraznit zvolenou zastávku | **parametr** + **data** | parametr říká kterou, data řádek označí příznakem, vzhled řeší šablona (týž vzor jako vývěsková „aktuální zastávka") |
+| zvýraznit konkrétní tarifní číslo | **parametr** + **data** | dtto |
+| číslo linky/vlaku v přípojném řádku | **šablona** | wire už nese `LINKA` a `SPOJ` zvlášť, takže je to skládání textu; ⚠️ samotnou větu vzít z číselníku (§13.4 bod 6) |
+| bez rámečků kolem čísel spojů | **šablona** | u nás mřížka prvku; vedlejší efekt „vypne i čísla spojů" je MHD, do MHD kola |
+| turnusy · obousměrný tisk | **`L6`** | nejsou to přepínače, ale chybějící kusy tabulky |
+| výběr typů provozu a směrů | **MHD kolo** | AD engine to nečte vůbec |
+| dorovnání prázdnými sloupci | **`L5`** | jako parametr - KORID (#8372) chce volbu u tisku, ne v šabloně |
+| šířka plochy, počet řádků, měřicí řetězce | ⛔ | layout měříme sami |
+
+#### B. Globální nastavení programu
+
+| Položka | Kam | Poznámka k práci |
+|---|---|---|
+| tvar datumů v omezeních | ✅ hotovo | včetně per-linka override |
+| které atributy se tisknou nad spojem | **data** | dnes `TODO` v kódu |
+| tvar tisku místenkování | **data** | mění tištěný text |
+| vlastní text sloupce MHD místo „IDP-P"/„IDP-Z" | **data** | + jeho řádek legendy |
+| odstranit písmena z označení zóny | **data** | pozor, **linka to přebíjí** |
+| pořadí a tisk dopravců, souhrn linek k dopravci | **data** | dorovnat naši vlastní logiku `PopisDopravce` |
+| texty atributů spoje | **data** | ✅ hotovo 21. 8. **doslovným opisem legacy šablon**, ne z číselníku - ten je nemá (viz bod 6) |
+| počet druhů místenkování dle jazyka (2 × 4) | **data** | odvozuje se z jazyka, ne ze samostatného přepínače |
+
+#### C. Nastavení u konkrétní linky
+
+| Položka | Kam | Poznámka k práci |
+|---|---|---|
+| počet km sloupců per směr | ✅ počet hotový | **obsah** jednotlivého sloupce neověřen → do matice |
+| čtyřstavový přepínač zóny × km | **data** | ⚠️ oprava: u hodnot `0` a `3` tiskneme zónu, legacy ne; km neřídíme vůbec |
+| ručně upravený název zastávky u MHD linky | **parametr** | jde s tvarem názvu do `L3` |
+| schovat sloupec tarifních čísel | **třístav** | |
+| schovat Tč / čísla spojů / šipky / značky (`MHD2` klíče) | **třístav** | ⚠️ **jsou to AD nastavení**, jen mají v globálu podklíč `MHD2` - čte je AD engine |
+| vyhodit řádky, kde žádný spoj nestaví | **třístav**, vyhodnocuje server | ubírá řádky, takže výchozí „dle linky" musí fungovat i bez zásahu uživatele |
+| vypnout barvy spojů | **data** + **třístav** | barvy jako prezentační nápověda, přepínač je může potlačit |
+| skládání tištěného čísla linky | **data** | mění hodnotu |
+| kam s bezbariérovým vozidlem (nad spoj / do poznámek) | **data** | rozhoduje, která kolekce to nese |
+| podtržení u zdvojených řádků | **šablona** | není poptávka ani tiket → řeší se, až se ozve |
+| ruční zlom stránky na tarifním čísle | **`L5`** | |
+| ruční přiřazení spojů do sekcí + jejich stránkování | **`L5`** | |
+| záhlaví, objížďkový příznak, poznámka pod dopravce, platnost | **data** | ⚠️ **čteme je, ale v inventáři starého modulu nebyly** - do matice patří stejně, protože i ony mění výstup jen u některých linek |
+
+#### D. Nastavení pod úrovní linky
+
+| Položka | Kam | Poznámka k práci |
+|---|---|---|
+| řádek se v knižním JŘ netiskne (u tarifního čísla) | **data** | |
+| totéž zvlášť pro každý směr | **data** | při zapnutí obou se tarifní číslo přeskočí |
+| do které umělé sekce spoj patří | **`L5`** | ovlivňuje rozřezání |
+
+⚠️ **Tuhle vrstvu porovnání celé linky nenajde.** Nastavení není u linky, ale u konkrétního řádku,
+takže na lince, kde si ho nikdo nenastavil, se neprojeví vůbec. Chce to **cílený test**, ne odtisk -
+a je to zároveň nastavení, které **ubírá řádky**, tedy odchylka, kterou zákazník pozná na první pohled.
+
+#### E. MHD zdroj
+
+Celé do **MHD kola**. Zapsané mezery pro to kolo: typ linky a rozsah negativních značek nečteme
+(ověřeno grepem, nula výskytů).
+
+#### Jak se to testuje
+
+Tři různé způsoby, ne jeden:
+
+1. **Přepínače, které jde podstrčit z testu** (volby u tisku) - test je nastaví oběma stranám
+   a porovná obojí. Plné pokrytí.
+2. **Nastavení uložená v datech** (globální, u linky) - porovnává se **tak, jak je nastavené**,
+   pokrytí obou stavů zajistí různost zákazníků. ⚠️ **Povinně změřit, které přepínače jsou v datech
+   reálně zapnuté**, a u zbytku napsat **neověřeno** (§13.4 bod 1).
+3. **Vrstva pod linkou** - cílený test nad linkou, kde to nastavené je; když taková není, vyrobit
+   si vlastní případ, ne tvrdit pokrytí.
+
+#### Doporučené pořadí práce
+
+1. **Změřit výskyt** všech přepínačů vrstev B, C, D v dostupných firmách. Bez toho čísla se neví,
+   co jde ověřit hned - a je to podklad pro rozhodnutí, jestli je nakonec potřeba testovací linka.
+2. **Opravit tři změřené tiché odchylky** - zóny × km, barvy spojů, řádky bez zastavení. Jsou
+   rozhodnuté, mají doklad z `L1` a nezávisí na ničem dalším.
+3. **Texty z číselníku** (značky, atributy, sloupec MHD, dopravci) - jeden celek, opravuje nález `L1`
+   a rozbíhá slovenštinu.
+4. **Třístavy** - schovávání sloupců a řádků; první uplatnění mechanismu „Automaticky (dle linky)"
+   v linkovém JŘ, takže sem patří i pravidlo „prázdný sloupec se netiskne" v prvku.
+5. **Vrstva pod linkou** - skrývání řádků u tarifního čísla, s cíleným testem.
+6. **Zbytek dat** - atributy nad spojem, místenkování, číslo linky, bezbariérové vozidlo, obsah
+   km sloupce, naše čtyři nezaevidované klíče.
+
+### 13.6 Změřený výskyt nastavení v datech (2026-08-21, krok 1 vlny `L2`)
+
+Změřeno sondou `LinkovyJrNastaveniProbe` nad **93 133 linkami v šesti firmách** (CB_CSADAD,
+CB_GWBUS, KV_DP, VS_CSAD, ZL_KOVED, SKNI_MHDNITRA). Sonda jen čte globály, nevolá `GetData`.
+
+Účel: `L2` má u každého nastavení ověřit **oba stavy**, ale nastavení uložená v datech z testu
+přepnout nejde. Tohle měření říká, co jde ověřit hned a u čeho se musí napsat **neověřeno**.
+
+⚠️ **Co číslo neříká:** počítají se všechny linky včetně dávno neplatných. „Vyskytuje se" tedy
+neznamená „vyskytuje se na aktuálně platné lince".
+
+#### Ověřitelné hned - oba stavy jsou v datech
+
+| Nastavení | Výskyt |
+|---|---|
+| které atributy se tisknou nad spojem (`PAtrSp`) | 6 firem ze 6, tři mají `0~0~0~0`, tři `1~1~0~0` |
+| tvar datumů v omezeních (`TiskDtm`) | 6 firem, hodnoty `0`×3, `1`×2, `3`×1 |
+| **schovat sloupec tarifních čísel** | 1 736 linek nastaveno, z toho **377 zapnuto** |
+| **vyhodit řádky, kde žádný spoj nestaví** | 1 145 nastaveno, z toho **362 zapnuto** |
+| vypnout barvy spojů | 1 662 nastaveno, z toho **24 zapnuto** |
+| odstranit písmena ze zóny - **u linky** | 28 747 nastaveno, hodnoty `0`×25 010, `1`×370, `2`×3 367 |
+| čtyřstavový přepínač zóny × km (`linIDS`) | 56 525 nastaveno, hodnoty `1`×1 420, `2`×53 979, **`3`×1 126** |
+
+⚠️ **U `linIDS` se hodnota `0` v datech nevyskytuje ani jednou** - a to je polovina naší chyby.
+Druhá polovina ale ověřitelná je: **1 126 linek má `3` („netisknout ani zónu, ani km")** a my u nich
+zónu tiskneme. Oprava je tedy doložitelná na reálných datech.
+
+#### Nastaveno tak vzácně, že to samo o sobě nic nedoloží
+
+| Nastavení | Výskyt |
+|---|---|
+| podtržení u zdvojených řádků | 1 736 nastaveno, ale zapnuto na **jediné lince** |
+| ruční zlom stránky na tarifním čísle | **3 linky** |
+
+#### ⛔ Nikde nenastaveno - ověřit proti legacy nejde
+
+Tohle je hlavní výsledek měření. U všech níže platí, že po implementaci půjde napsat jen
+**„neověřeno proti starému modulu"**, ne „ověřeno":
+
+| Nastavení | Vrstva |
+|---|---|
+| tvar tisku místenkování (`MistOR`, `MistNOD`) | globální - **0 firem** |
+| vlastní text sloupce MHD (`MHDPZ` P/Z) | globální - **0 firem** |
+| tisk provozů dopravce (`SDOP`) | globální - **0 firem** |
+| schovat Tč / čísla spojů / šipky / značky (`MHD2` klíče u linky) | u linky - **0 linek** |
+| ruční přiřazení spojů do sekcí (`MHD2,umeleDatDoSekci`) | u linky - **0 linek** |
+| **celá vrstva D** - řádek se v knižním JŘ netiskne (i per směr), umělá sekce u spoje | pod linkou - **0 výskytů** |
+
+⚠️ **Vrstva D je prázdná úplně.** Byla označená jako „nejtvrdší část matice" a to platí dál, ale
+z jiného důvodu, než se čekalo: ne že se těžko hledá, ale že **v dostupných datech neexistuje**.
+Nedá se tedy porovnat se starým modulem na reálné lince - buď se pro ni vyrobí vlastní případ,
+nebo se implementuje proti čtení legacy zdroje a označí jako neověřená.
+
+#### Co z toho plyne pro rozsah `L2`
+
+**Rozhodnutí Jan 21. 8.: co není nastavené nikde, se teď nedělá** a jde do backlogu.
+
+Důvod je doménový, ne technický: **řada těchto nastavení vznikla v legacy pro jednoho zákazníka**
+a nikdo jiný je nepoužívá, takže tam jen visí. Dělat je naslepo a bez možnosti ověření je práce
+s nulovou hodnotou; stačí o nich vědět.
+
+`L2` tedy dělá **jen ta nastavení, která jsou v datech reálně zapnutá**:
+
+1. ✅ **hotovo 21. 8.** zóny × km - 1 126 linek s hodnotou `3` doložilo naši chybu
+2. ✅ **hotovo 21. 8.** odstranění písmen ze zóny - 28 747 nastavení ve třech hodnotách; ⚠️ u linky
+   se ukládá posunuté o jedničku (1 = neodstraňovat, 2 = odstraňovat) a přebíjí globální
+3. ✅ **hotovo 21. 8.** řádky bez zastavení - 362 linek zapnuto; třístav a filtr per směr
+4. ✅ **hotovo 21. 8.** schování sloupce tarifních čísel - 377 linek zapnuto; první třístav
+   „Automaticky (dle linky)" v linkovém JŘ a s ním pravidlo „prázdný sloupec se netiskne" v prvku
+5. ✅ **hotovo 21. 8.** barvy spojů - 24 linek vypnuto, 3 926 spojů barvu má; matice se k tomu
+   naučila předpoklad nad zdrojovými daty
+6. ✅ **hotovo 21. 8.** atributy nad spojem - včetně nastavení „značka atributu nad spoj"
+   a čtyř tvarů věty; ⚠️ texty **nejsou v číselníku** (viz bod 6 výše, rozhodnutí se tím ruší)
+7. tvar datumů v omezeních - už umíme, jen doplnit do matice
+
+**Do backlogu** (`B98`): tvar místenkování, vlastní texty sloupce MHD, tisk provozů dopravce,
+`MHD2` klíče schovávání u linky, **celá vrstva D** (skrývání řádků u tarifního čísla i per směr,
+umělá sekce u spoje). Tím se **ruší rozhodnutí §13.4 bodu 2** - „skrývání řádků do `L2`" padlo
+za předpokladu, že to jde ověřit; neplatí.
+
+**Nechat být i dál:** podtržení u zdvojených řádků (zapnuto na jediné lince ze 93 tisíc) a ruční
+zlom stránky (3 linky) - u obojího navíc platí, že to má jinou vlnu nebo žádnou poptávku.
+
+#### ⚠️ Past, kterou matice sama odhalila (21. 8.)
+
+U nastavení, které něco **potlačuje**, je nulové měření splněné i tehdy, když tu vlastnost **vůbec
+neumíme**. „Žádné barvy spojů" vyjde samo, protože barvy neposíláme; „v zóně nejsou písmena" vyjde
+na lince, jejíž zóny žádná písmena nemají. Matice by tak tvrdila něco, co jsme neudělali - a test
+mrtvých dluhů by k tomu ještě vyzval, ať se z toho udělá hlídané tvrzení.
+
+**Řešení:** takový řádek zůstává na „jen změřit" (`?`), dokud k němu nejde doplnit **předpoklad nad
+zdrojovými daty** - „linka má u spojů nastavenou barvu", „linka má v zóně písmeno". Předpoklady
+matice zatím neumí a doplní se s tím krokem, který tu vlastnost implementuje.
+
+Dotčené dnes: **barvy spojů** a **odstranění písmen ze zóny**. U schování sloupce tarifních čísel
+past nehrozí - tarifní čísla posíláme vždy, takže nula je tam skutečný doklad potlačení.
+
+#### Barvy spojů: v datech jsou, i když se to nezdálo (změřeno 21. 8.)
+
+Předpoklad byl, že barvu u spoje **nejde zadat** (barva se přidávala u linky, ne u spoje), a tím
+by celá věc padla. Měření (`LinkovyJrNastaveniProbe.BarvySpoju`) říká něco jiného:
+
+- **1 100 482 spojů** prohledáno, **3 926 z nich má barvu nastavenou** (12. `#`-pole záznamu spoje
+  ve tvaru `r;g;b`; `0;0;0` a prázdno = nenastaveno)
+- v **deseti různých barvách**, takže to nikdo neklikl omylem jednou
+- konkrétní případ k testu: `CB_CSADAD 0380751` spoj 19 = `255;128;255`
+
+Je to necelé procento spojů, tedy niche - ale na lince, kde zákazník spoje obarvil, o tu informaci
+v tisku přijde celou. **A hlavně: tím padá důvod, proč to nešlo ověřit.** Existuje linka s barvami
+v datech, takže se dá tvrdit obojí - že barvy posíláme, i že je přepínač u linky potlačí.
+
+#### Tvar datumů: dvě různé věci, které se pletou
+
+- **Formát** (tečky vs. lomítka, pořadí složek) je otázka lokalizace, ne nastavení. Opraveno v `B96`
+  (datum platnosti s tečkami). Číselníky textů už jazyk rozlišují (`gMode` → CZ / `*SK`), takže
+  případné další lokalizace se má věšet tam, ne na nový přepínač.
+- **`TiskDtm`** je jiná osa: **jestli a jak se tiskne rok** v textech omezení (0 = jak zadáno,
+  1 = rok dvoumístně, 2 = v rozsazích se u „od" rok vynechá, 3 = bez roku). Není to formátování
+  na český tvar a **nastavené to je ve všech šesti firmách** ve třech ze čtyř hodnot, takže je to
+  živé nastavení a už ho čteme. Neplést s tím prvním.
 
 ## 14. Pozastavené tikety helpdesku k linkovému JŘ (projito 2026-08-19)
 

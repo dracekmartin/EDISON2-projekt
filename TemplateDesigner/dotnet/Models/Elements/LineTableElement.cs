@@ -114,6 +114,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         public string CisloSpoje = "";
         public int Skupina = 1;
         public string Nz = "";
+        /// <summary>Barva textu časů spoje (prezentační nápověda z dat, R3). Null = řeší šablona.
+        /// Server ji posílá jen u spoje, který barvu skutečně má, a jen když ji linka nepotlačila.</summary>
+        public string? ForeColor;
         public List<string> Platnost = [];
         public List<string> Casy = [];
         public List<LinePripojData> Pripoje = [];
@@ -155,6 +158,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             CisloSpoje = row.GetString("CISLO_SPOJE"),
             Skupina = ParseInt(row.GetString("SKUPINA")),
             Nz = row.GetString("NZ"),
+            ForeColor = row.GetString("FORE_COLOR") is { Length: > 0 } fc ? fc : null,
             Platnost = ParseStringArray(row.GetValue("PLATNOST")),
             Casy = ParseStringArray(row.GetValue("CASY")),
             Pripoje = ParsePripoje(row.GetValue("PRIPOJE")),
@@ -240,18 +244,26 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
     };
 
     /// <summary>
-    /// Sestaví vyřešené popisové sloupce (Km expandované na kmCount sub-sloupců, MHD auto-remove když
-    /// prázdné) + spočítá šířku spojového sloupce. Auto (Width==null) sdílí zbytek šířky s auto-spoji.
+    /// Sestaví vyřešené popisové sloupce (Km expandované na kmCount sub-sloupců) + spočítá šířku
+    /// spojového sloupce. Auto (Width==null) sdílí zbytek šířky s auto-spoji.
+    /// <para>
+    /// <b>Prázdný sloupec se netiskne.</b> Když pro něj nemá hodnotu ani jedna zastávka, zmizí -
+    /// stejně jako to dělá starý modul. Je to zároveň cesta, kterou se uplatní nastavení u linky:
+    /// když linka řekne „netiskni tarifní čísla", server hodnoty nepošle a sloupec se schová sám,
+    /// takže o tom nemusí vědět ani šablona, ani prvek. Dřív to platilo jen pro km a MHD.
+    /// </para>
     /// </summary>
-    private (List<RenderCol> Fixed, float TripWidth, int NameIndex) BuildColumns(int kmCount, bool anyMhd, int tripCount)
+    private (List<RenderCol> Fixed, float TripWidth, int NameIndex) BuildColumns(
+        List<LineStopData> stops, int kmCount, int tripCount)
     {
         var structural = StructuralColumns();
         var trip = TripColumn();
 
-        // km auto-remove když žádná zastávka nemá km; MHD auto-remove když prázdné (legacy)
-        structural = structural.Where(c =>
-            (c.Key != ColumnKeys.Km || kmCount > 0) &&
-            (c.Key != ColumnKeys.Mhd || anyMhd)).ToList();
+        // Km má vlastní podmínku - jeho hodnoty jsou pole, ne jedna hodnota, a počet sub-sloupců
+        // se odvozuje z dat (kmCount == 0 znamená „žádné km sloupce", ne „prázdné hodnoty").
+        structural = structural.Where(c => c.Key == ColumnKeys.Km
+            ? kmCount > 0
+            : stops.Any(st => ValueFor(c.Key, 0)(st).Length > 0)).ToList();
 
         // šířky: pevné (Width != null) honorovány; auto (null) sdílí zbytek se spoji
         float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == ColumnKeys.Km ? c.Width!.Value * kmCount : c.Width!.Value);
@@ -360,8 +372,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         var dataCentered = dataResolved with { HAlign = TextHorizontalAlignment.Center };
 
         int kmCount = MaxKmCount(stops);
-        bool anyMhd = stops.Any(s => s.Mhd.Length > 0);
-        var (fixedCols, tripW, nameIndex) = BuildColumns(kmCount, anyMhd, trips.Count);
+        var (fixedCols, tripW, nameIndex) = BuildColumns(stops, kmCount, trips.Count);
         var tripCol = TripColumn();
         var tripHeaderStyle = ResolveHeaderStyle(tripCol);
         var tripDataStyle = ResolveDataStyle(tripCol);
@@ -467,7 +478,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
                 specs.Add(new(c.Width, c.Value(stop), OddTc(c.DataStyle, oddTc)));
             var tripCellStyle = OddTc(tripDataStyle, oddTc);
             foreach (var t in trips)
-                specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", tripCellStyle));
+            {
+                // Barva spoje z dat přebíjí barvu textu z kaskády - je to prezentační nápověda,
+                // kterou prvek smí respektovat (R3). Spoj bez barvy nechá kaskádu být.
+                var cellStyle = t.ForeColor is null ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor };
+                specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", cellStyle));
+            }
 
             // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
             string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
