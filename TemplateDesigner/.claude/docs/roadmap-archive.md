@@ -1,5 +1,31 @@
 # 🗄️ Archiv - hotové kroky
 
+## 2026-08-24 - `L4` symbolový font linkového JŘ
+
+Linková tabulka kreslí symboly: **denní značky** (zkřížená kladiva, kroužkové číslice),
+**návaznosti** jako trojúhelníky vedle času, **legendu** i **přestup u zastávky**. Vzniklá
+**sdílená mapa značek** je jediný zdroj pravdy pro zastávkové i linkové JŘ; vývěskám se chování
+nezměnilo (podmínka Jana), první commit vlny byl proto schválně bez změny chování.
+
+⚠️ **Linkový JŘ má opačné výchozí pravidlo než vývěska** - piktogram jen z ověřeného seznamu,
+zbytek textem. Bez toho by „pokračuje" (značka `p`) vyšlo jako **kufr**.
+
+**Co rozhodl tištěný vzor** (stará sestava linky 330511, dodal Jan): návaznosti jsou trojúhelníky -
+„vyčká" dutý, „navazuje" plný - a tisknou se **vedle času**, ne místo něj. Tím se zároveň opravilo
+naše tvrzení, že starý modul čas přepisuje značkou.
+
+**Doměřeno:** pozice `|`, `<`, `m`, `u`, `^`, `C`, `e`, `f`, `g`, `O` v obou fontech. Padly dvě
+dosavadní domněnky (`e`/`f`/`g` nejsou metro, ale číslice v rámečku; `O` není letadlo).
+
+**Otevřené:** „pokračuje" `u` (v jádru sady se nevyskytuje), složené značky (piktogram + číslo)
+a `B99` (loď, wifi, zásuvka v tiskovém fontu nejsou).
+
+**Původní zadání vlny:**
+
+| **L4** | **Symbolový font - zbytek** (gate R5, dřív `B10`). ✅ Hotový základ 24. 8.: **sdílená mapa značek** (zastávkové JŘ na ni jen delegují, chování beze změny) a **řádek platnosti** kreslený piktogramy, včetně míchání piktogramu a zkratky v jedné buňce (`SymbolRunRenderer`). Zbývá: **doměřit pozice**, které dnes zůstávají textem - projíždí `\|`, jede jinudy `<`, návaznosti `m`/`u`/`^`, a dřív evidované clo `C`, paragrafy `G`/`a`/`b`/`c`, metro `e`/`f`/`g`, letadlo `O`. ⚠️ **Bez doměření je nepřidávat** - pozice se s písmeny číselníku neshodují (past: „pokračuje" je `p`, ale na `p` je **kufr**) a **CZ a SK font se u dvou pozic liší významem**, takže ověření musí proběhnout v obou; postup je v `elementy-architektura.md`. Pak napojit **další místa se značkami** (legenda poznámek, atributy zastávek, buňky časů) a **složené značky** (piktogram + číslo), vědomě odložené z prvního kola. | S–M |
+
+---
+
 ## 2026-08-24 - `L2` linkový JŘ: zbytek vlny (zvýraznění, přípoje, dopravce)
 
 Dokončeno: **zvýraznění zvolené zastávky** i jejího tarifního čísla · **přípojný řádek s vlastním
