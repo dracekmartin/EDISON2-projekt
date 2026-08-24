@@ -535,20 +535,41 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             foreach (var c in fixedCols)
                 specs.Add(new(c.Width, c.Value(stop), OddTc(c.DataStyle, oddTc)));
             var tripCellStyle = OddTc(tripDataStyle, oddTc);
-            foreach (var t in trips)
+            // Značka návaznosti se tiskne **vedle času** ve stejné buňce (doloženo tiskem staré
+            // linky 330511). Buňka umí jen jeden font, takže se taková buňka nechá prázdná
+            // a nakreslí se ručně - stejně jako řádek platnosti.
+            var znackyVBunce = new Dictionary<int, List<SymbolRunRenderer.Run>>();
+            for (int ti = 0; ti < trips.Count; ti++)
             {
+                var t = trips[ti];
+                string znak = ZnakNavaznosti(t, stop.Poradi);
+                if (znak == "") continue;
+                string cas = si < t.Casy.Count ? t.Casy[si] : "";
+                if (cas == "") continue;
+                var runs = SymbolRunRenderer.BuildRuns([znak], SymbolMap.ResolveLinkovy);
+                if (!SymbolRunRenderer.MaPiktogram(runs)) continue;   // neověřená značka → nech text
+                runs.Add(new(" " + cas, false));
+                znackyVBunce[ti] = runs;
+            }
+            for (int ti = 0; ti < trips.Count; ti++)
+            {
+                var t = trips[ti];
                 // Barva spoje z dat přebíjí barvu textu z kaskády - je to prezentační nápověda,
                 // kterou prvek smí respektovat (R3). Spoj bez barvy nechá kaskádu být.
                 var cellStyle = t.ForeColor is null ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor };
-                specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", cellStyle));
+                string text = znackyVBunce.ContainsKey(ti) ? "" : (si < t.Casy.Count ? t.Casy[si] : "");
+                specs.Add(new(tripW, text, cellStyle));
             }
 
             // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
             string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
+            var znackyRadku = znackyVBunce;
             plan.Add(new(RowKind.Data, rowH, specs)
             {
                 Background = ColorHex.ParseOrNull(rowHl),
                 VerticalLinePaint = gridPaint,
+                Decorate = znackyRadku.Count == 0 ? null : rowY => DrawBunkySeZnackou(
+                    ctx, rowY, rowH, X + fixedSum, tripW, znackyRadku, tripCellStyle, symbolFace, scale),
             });
 
             if (!ShowPripojeRows) continue;
@@ -577,6 +598,33 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
     /// <summary>Řádek, kde popisové sloupce jsou prázdné a spojové nesou znak z <paramref name="text"/>
     /// (platnost, negativní značky).</summary>
+    /// <summary>Značka návaznosti, kterou má spoj u tohohle tarifního čísla - prázdné, když žádná.
+    /// „Vyčká" je dutý trojúhelník, „navazuje" plný (doloženo tiskem staré linky 330511).</summary>
+    private static string ZnakNavaznosti(LineTripData t, int poradi)
+    {
+        foreach (var pr in t.Pripoje)
+        {
+            if (pr.Poradi != poradi) continue;
+            if (pr.Typ == "vycka") return "m";
+            if (pr.Typ == "navazuje") return "^";
+        }
+        return "";
+    }
+
+    /// <summary>Nakreslí buňky, kde je vedle času značka návaznosti - piktogram symbolovým fontem,
+    /// čas běžným.</summary>
+    private static void DrawBunkySeZnackou(RenderContext ctx, float rowTopMm, float rowH,
+        float prvniSloupecMm, float tripW, Dictionary<int, List<SymbolRunRenderer.Run>> znacky,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
+    {
+        foreach (var (ti, runs) in znacky)
+        {
+            float leftMm = prvniSloupecMm + ti * tripW;
+            var cellMm = new SKRect(leftMm, rowTopMm, leftMm + tripW, rowTopMm + rowH);
+            SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style), runs, style, symbolFace, scale);
+        }
+    }
+
     /// <summary>Nakreslí značky platnosti do sloupců spojů - piktogramy symbolovým fontem,
     /// zkratky běžným, i když jsou v jedné buňce vedle sebe.</summary>
     /// <remarks>

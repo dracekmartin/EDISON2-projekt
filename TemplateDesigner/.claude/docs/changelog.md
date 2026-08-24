@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-24 (9) - 🔺 návaznosti se kreslí trojúhelníky vedle času
+
+Dořešeno tištěným vzorem staré sestavy (linka 330511): u „vyčká" je **dutý** trojúhelník, u
+„navazuje" **plný**, a tisknou se **vedle času** v téže buňce. Návrhář to teď dělá stejně.
+
+Který glyf je který, se poznalo počtem obrysů: dutý má dva, plný jeden - v českém i slovenském
+fontu shodně. ⚠️ Past, kterou hlídá test: „vyčká" míří na pozici, kterou by vývěskový překlad
+poslal dál na **autobus**.
+
+**Projíždí a jede jinudy jsou tím uzavřené jako text** - font ty znaky vůbec nemá (na jejich
+pozicích je čtverec a osmiúhelník), takže je znakem kreslí i starý tisk. „Pokračuje" zůstává
+textem, dokud se nenajde sestava, kde se vyskytuje.
+
+⚠️ Tištěný vzor navíc opravil naše tvrzení, že starý modul **přepisuje čas značkou**. Netiskne -
+tiskne obojí; naše porovnání z buňky čte jen první položku, proto to tak vypadalo. Čas jsme tedy
+neztráceli.
+
+Ověřeno: .NET 1139/1139, Caché 127/127. Vizuální kontrola zbývá.
+
 ## 2026-08-24 (8) - 🔣 značky platnosti se kreslí piktogramy (`L4`, základ)
 
 Linková tabulka nekreslila ani jeden symbol - značky se vypisovaly jako holá písmena. Nově jde
