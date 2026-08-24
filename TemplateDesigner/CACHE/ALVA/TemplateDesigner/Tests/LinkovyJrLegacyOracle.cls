@@ -624,8 +624,16 @@ ClassMethod KdeJsouZnackyNavaznosti(ByRef sys As %String) As %Status
 	set err = ""
 	try {
 		$$$FillParams
+		// ⚠️ Parametry se musí přečíst **před** `kill ^||ML`, jinak už tam nejsou.
+		// Bez nich projde jádro sady a z každé linky ukáže první výskyt každé značky;
+		// se zadanou linkou vypíše na ní **všechny** - podklad k porovnání s tištěným vzorem.
+		set jenLinka = $get(^||ML("IN","LIN"))
+		set vstupDb = $get(^||ML("IN","DB")), vstupSku = $get(^||ML("IN","SKU"))
 		kill ^||ML, radky
-		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro)
+		if jenLinka '= "" {
+			set jadro(1) = vstupDb_"~"_vstupSku_"~"_jenLinka
+		}
+		else { do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro) }
 		set i = ""
 		for  {
 			set i = $order(jadro(i))
@@ -647,8 +655,8 @@ ClassMethod KdeJsouZnackyNavaznosti(ByRef sys As %String) As %Status
 						quit:sp=""
 						set hod = $get(leg("cas", sm, radek, sp))
 						continue:(hod'="m")&&(hod'="u")&&(hod'="^")
-						// stačí první výskyt každé značky na lince - víc by jen zahltilo
-						continue:$data(videno(hod))
+						// u konkrétní linky chceme všechny, jinak stačí první výskyt každé značky
+						continue:(jenLinka="")&&$data(videno(hod))
 						set videno(hod) = ""
 						set radky($increment(radky)) = db_" linka "_lin_" · značka ["_hod_"] · směr "_sm_" · tarifní číslo "_radek_" · spoj "_sp
 					}
