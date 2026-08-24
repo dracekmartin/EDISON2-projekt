@@ -66,6 +66,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
     /// <summary>Podbarvení řádků s lichým tarifním číslem (legacy 25% šedá).</summary>
     public bool HighlightOddTc { get; set; } = true;
+
+    /// <summary>Styl přípojných řádků (vyčká/navazuje). Nevyplněné = dědí se z datových buněk.</summary>
+    /// <remarks>
+    /// #8360 (KU HK): přípojný řádek má být od časů spojů odlišitelný - obvykle menším a kurzívním
+    /// písmem, aby v tabulce „nekřičel" stejně jako odjezdy. Je to <b>vlastnost šablony</b>, ne dat:
+    /// data nesou, že přípoj existuje, jak vypadá rozhoduje návrhář.
+    /// </remarks>
+    public TextStyle PripojStyle { get; set; } = new();
     public string OddTcBackColor { get; set; } = "#FFEEEEEE";
 
     // Podmíněné řádkové featury (sdílené přes RowConditions, výraz nad daty zastávky = stop.SourceRow).
@@ -188,6 +196,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             Radek = o["RADEK"]?.ToString() == "1",
         })];
     }
+
+    /// <summary>Co přípojný řádek dědí, když si nic nenastaví - datové buňky.
+    /// Čte to i drift test formuláře, aby ověřil, že panel neukazuje jinou hodnotu, než se vykreslí.</summary>
+    public ResolvedTextStyle ResolveElementPripojParent() => ResolveColumnDataParent();
+
+    /// <summary>Vyřešený styl přípojného řádku - dědí z datových buněk, dokud si ho někdo nepřebije.</summary>
+    public ResolvedTextStyle ResolvePripojStyle() => PripojStyle.Resolve(ResolveElementPripojParent());
+
+    /// <summary>Výška přípojného řádku. Řídí se <b>vlastním</b> písmem, aby menší přípoj zabral
+    /// míň místa - proto se nepočítá z výšky datového řádku.</summary>
+    private float PripojRowH() => DataRowHeight ?? ComputeRowH(ResolvePripojStyle().FontSize);
 
     /// <summary>Tarifní čísla, která mají odjezdový řádek zastávky.</summary>
     private static HashSet<int> PoradiSOdjezdem(IEnumerable<LineStopData> stops) =>
@@ -355,7 +374,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         {
             var sOdjezdem = PoradiSOdjezdem(visibleStops);
             h += visibleStops.Where(s => NesePripoje(s, sOdjezdem))
-                             .Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * rowH;
+                             .Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * PripojRowH();
         }
         return h;
     }
@@ -419,7 +438,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         try
         {
             var plan = BuildRowPlan(stops, trips, groups, fixedCols, tripW, nameIndex, fixedSum,
-                headerH, rowH, paints.Grid, headerResolved, headerCentered, tripHeaderStyle, tripDataStyle);
+                headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
+                tripHeaderStyle, tripDataStyle);
 
             RowPlanRenderer.DrawRows(ctx, X, Y, Width, plan, scale);
         }
@@ -438,7 +458,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
     private List<RowSpec> BuildRowPlan(
         List<LineStopData> stops, List<LineTripData> trips, List<LineSkupinaData> groups,
         List<RenderCol> fixedCols, float tripW, int nameIndex, float fixedSum,
-        float headerH, float rowH, SKPaint gridPaint,
+        float headerH, float rowH, float pripojRowH, SKPaint gridPaint,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
         ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle)
     {
@@ -484,6 +504,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         // řádky zastávek (+ vložené přípojné řádky)
         var poradiSOdjezdem = PoradiSOdjezdem(
             stops.Where(s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow)));
+        // Přípojný řádek má vlastní styl (#8360) - jinak vypadá stejně jako čas spoje.
+        // Výška chodí zvenčí už přeškálovaná, ať se nepočítá dvakrát jinak než v `Render`.
+        var pripojStyle = ResolvePripojStyle();
         for (int si = 0; si < stops.Count; si++)
         {
             var stop = stops[si];
@@ -525,11 +548,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
                     var prSpecs = new List<ColumnRenderer.CellSpec>();
                     for (int ci = 0; ci < fixedCols.Count; ci++)
                         prSpecs.Add(new(fixedCols[ci].Width,
-                            ci == nameIndex ? PripojText(pr) : "", fixedCols[ci].DataStyle));
+                            ci == nameIndex ? PripojText(pr) : "", pripojStyle));
                     foreach (var t2 in trips)
-                        prSpecs.Add(new(tripW, ReferenceEquals(t2, t) ? pr.Cas : "", tripDataStyle));
+                        prSpecs.Add(new(tripW, ReferenceEquals(t2, t) ? pr.Cas : "", pripojStyle));
 
-                    plan.Add(new(RowKind.SubRow, rowH, prSpecs)
+                    plan.Add(new(RowKind.SubRow, pripojRowH, prSpecs)
                     { VerticalLinePaint = gridPaint, LineAbovePaint = gridPaint, LineBelowPaint = gridPaint });
                 }
             }
@@ -601,6 +624,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
             OddTcBackColor = OddTcBackColor,
             RowVisibilityExpression = RowVisibilityExpression,
             HighlightRules = HighlightRules?.Select(r => r.Clone()).ToList(),
+            PripojStyle = PripojStyle.Clone(),
         };
         CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);
@@ -610,6 +634,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
     public override void ApplyScale(float scale)
     {
         base.ApplyScale(scale);   // DataRowHeight + Header/Data styl škáluje base
+        PripojStyle.ApplyScale(scale);
         foreach (var c in Columns)
         {
             if (c.Width is float w) c.Width = w * scale;
@@ -626,6 +651,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
+        // #8360: přípojný řádek se má dát odlišit od časů spojů. Prázdné = dědí se z buněk.
+        new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 4, Max = 200,
+            Get = () => PripojStyle.FontSize ?? ResolveElementPripojParent().FontSize, Set = v => PripojStyle.FontSize = v },
+        new BoolPropertyDescriptor { Label = "Tučné", Group = "Přípojné řádky",
+            Get = () => PripojStyle.Bold ?? ResolveElementPripojParent().Bold, Set = v => PripojStyle.Bold = v },
+        new BoolPropertyDescriptor { Label = "Kurzíva", Group = "Přípojné řádky",
+            Get = () => PripojStyle.Italic ?? ResolveElementPripojParent().Italic, Set = v => PripojStyle.Italic = v },
+        new ColorPropertyDescriptor { Label = "Barva textu", Group = "Přípojné řádky",
+            Get = () => PripojStyle.TextColor ?? ResolveElementPripojParent().TextColor, Set = v => PripojStyle.TextColor = v },
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
         GetDataRowHeightDescriptor(),

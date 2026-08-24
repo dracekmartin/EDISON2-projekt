@@ -54,6 +54,16 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("OddTcBackColor", "Barva lichých Tč", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFEEEEEE"
 
+        // ── Skupina "Přípojné řádky" (#8360) ──────────────────────────────
+        // Přípoj má jít odlišit od časů spojů - obvykle menším kurzívním písmem, aby v tabulce
+        // „nekřičel" stejně jako odjezdy. Prázdné = dědí se z datových buněk.
+        d form.AddGroup("pripoj", "Přípojné řádky")
+        s f = form.AddDecimal("PripojStyle.FontSize", "Velikost", "", 4, 200, "pt")
+        s f.helpText = "Prázdné = jako datové buňky"
+        d form.AddBool("PripojStyle.Bold", "Tučné", 0)
+        d form.AddBool("PripojStyle.Italic", "Kurzíva", 0)
+        s f = form.AddFieldToLastGroup("PripojStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
+
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 1, 1, 1)

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-24 (6) - 🅰️ přípojný řádek jde odlišit vlastním písmem (`L2`, #8360)
+
+Přípoje se kreslily stejným písmem jako časy spojů, takže v tabulce křičely stejně jako odjezdy.
+Nastavení prvku má nově skupinu **Přípojné řádky**: velikost, tučné, kurzíva a barva textu.
+Nevyplněné se dědí z datových buněk, takže se beze změny nic nehne.
+
+Menší písmo zároveň **zmenší výšku toho řádku** - přípoje tak zaberou míň místa, o což v požadavku
+šlo. ⚠️ Výška se počítá na dvou místech (kreslení a výpočet výšky tabulky) a obě musí dát totéž,
+proto chodí jedním výpočtem.
+
+Požadavek KU HK (#8360).
+
+Ověřeno: .NET 1121/1121, Caché 127/127.
+
 ## 2026-08-24 (5) - 🐛 přípojné řádky se tiskly dvakrát
 
 Na lince s rozdvojenými zastávkami (příjezd zvlášť, odjezd zvlášť) se celý blok přípojů vypsal
