@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-24 (4) - 🐛 výběr linek u linkového JŘ byl prázdný
+
+Po zveřejnění agendy se ukázalo, že **výběr linek nic nenabízí**. Server přitom 200 linek posílal -
+jenže bez čísla a názvu. Seznam je vypisuje jako sloupce, takže se otevřel prázdný.
+
+Opraveno u obou linkových agend (městská měla tutéž chybu, jen ji nikdo neviděl, protože je skrytá).
+Nově se posílají stejná pole a ve stejném tvaru jako u vývěsky.
+
+Přibyl test, který u každé agendy kontroluje **tvar** odpovědi výběru instancí. Tahle chyba se
+z dat nepoznala: ze serveru chodily řádky, jen prázdné, takže testy počtu by prošly.
+
+Ověřeno: Caché 127/127.
+
 ## 2026-08-24 (3) - 🔓 linkový JŘ (AD) jde v návrháři vybrat
 
 Agenda se dosud v nabídce vůbec neukazovala, takže na ni nešlo překliknout a linkový tisk nebylo
