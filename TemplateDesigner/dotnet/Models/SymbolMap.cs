@@ -66,6 +66,32 @@ public static class SymbolMap
         return (SymbolRenderMode.FontGlyf, NaPoziciVeFontu(znak));
     }
 
+    /// <summary>Značky <b>linkového</b> JŘ, u kterých je pozice ve fontu ověřená měřením.</summary>
+    /// <remarks>
+    /// ⚠️ Tady se schválně jede na <b>povolený seznam</b>, ne na pravidlo „jednoznakové = piktogram",
+    /// které platí u vývěsek. Slovník linkového JŘ je jiný a hned první pokus by šlápl vedle:
+    /// „pokračuje" má v číselníku značku <c>p</c>, jenže na <c>p</c> je ve fontu <b>kufr</b>.
+    /// Denní značky naopak sedí a v jízdních řádech se tak opravdu tisknou: <c>X</c> = zkřížená
+    /// kladiva (pracovní dny), <c>6</c>/<c>7</c> = kroužkové číslice, <c>+</c> = kříž (svátky).
+    /// <para>Co v seznamu není, se kreslí <b>textem</b> - tedy jako dosud. Týká se to i značek
+    /// <c>|</c> (projíždí) a <c>&lt;</c> (jede jinudy), které jsou typografická konvence, ne
+    /// piktogram, a značek <c>m</c>/<c>u</c>/<c>^</c> (návaznosti), jejichž pozice <b>měřená
+    /// není</b>. Doplnit je smí až někdo, kdo je ověří v <b>obou</b> fontech - postup
+    /// v <c>elementy-architektura.md</c>. Hádat je znamená vytisknout cizí piktogram.</para>
+    /// </remarks>
+    private static bool JeOverenyPiktogramLinky(string znak) =>
+        znak is "X" or "+" or "H" or "F" or "L" or "A" or "K"
+        || (znak.Length == 1 && znak[0] >= '0' && znak[0] <= '9');
+
+    /// <summary>Jak nakreslit značku v <b>linkovém</b> JŘ - viz <see cref="JeOverenyPiktogramLinky"/>,
+    /// proč se tu nepoužívá totéž pravidlo jako u vývěsek.</summary>
+    public static (SymbolRenderMode Mode, string Value) ResolveLinkovy(string znak)
+    {
+        if (string.IsNullOrEmpty(znak)) return (SymbolRenderMode.Text, znak ?? "");
+        if (!JeOverenyPiktogramLinky(znak)) return (SymbolRenderMode.Text, znak);
+        return (SymbolRenderMode.FontGlyf, NaPoziciVeFontu(znak));
+    }
+
     /// <summary>Kreslí se značka piktogramem ze symbolového fontu?</summary>
     public static bool JePiktogram(string znak) => Resolve(znak).Mode == SymbolRenderMode.FontGlyf;
 

@@ -439,7 +439,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         {
             var plan = BuildRowPlan(stops, trips, groups, fixedCols, tripW, nameIndex, fixedSum,
                 headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
-                tripHeaderStyle, tripDataStyle);
+                tripHeaderStyle, tripDataStyle, FontResolver.SymbolFontFamily(ctx.Data?.Culture));
 
             RowPlanRenderer.DrawRows(ctx, X, Y, Width, plan, scale);
         }
@@ -460,7 +460,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         List<RenderCol> fixedCols, float tripW, int nameIndex, float fixedSum,
         float headerH, float rowH, float pripojRowH, SKPaint gridPaint,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
-        ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle)
+        ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle, string symbolFamily)
     {
         var plan = new List<RowSpec>();
 
@@ -492,7 +492,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         // řádek platnosti (znaky X/6/7/+ nad spojem)
         if (HasPlatnostRow(trips))
             plan.Add(new(RowKind.HeaderExtra, rowH,
-                TripTextRow(fixedCols, trips, tripW, tripDataStyle, t => string.Join(" ", t.Platnost)))
+                PlatnostRow(fixedCols, trips, tripW, tripDataStyle, symbolFamily))
             { VerticalLinePaint = gridPaint });
 
         // řádek NZ (negativní značky)
@@ -563,6 +563,30 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
     /// <summary>Řádek, kde popisové sloupce jsou prázdné a spojové nesou znak z <paramref name="text"/>
     /// (platnost, negativní značky).</summary>
+    /// <summary>Řádek platnosti - denní značky se kreslí <b>symbolovým</b> fontem, protože to jsou
+    /// piktogramy (pracovní dny = zkřížená kladiva, soboty/neděle = kroužkové číslice).</summary>
+    /// <remarks>
+    /// ⚠️ <c>CellRenderer</c> neumí míchat font uvnitř jedné buňky, takže se symbolový font použije,
+    /// jen když jsou piktogramy <b>všechny</b> značky toho spoje. Smíšená buňka zůstane textem -
+    /// radši celá čitelně, než půlka jako cizí obrázek. Které značky jsou ověřené, drží
+    /// <c>SymbolMap.ResolveLinkovy</c>; co ověřené není, se kreslí textem jako dosud.
+    /// </remarks>
+    private static List<ColumnRenderer.CellSpec> PlatnostRow(
+        List<RenderCol> fixedCols, List<LineTripData> trips, float tripW,
+        ResolvedTextStyle tripDataStyle, string symbolFamily)
+    {
+        var specs = new List<ColumnRenderer.CellSpec>();
+        foreach (var c in fixedCols) specs.Add(new(c.Width, "", c.DataStyle));
+        foreach (var t in trips)
+        {
+            var resolved = t.Platnost.Select(SymbolMap.ResolveLinkovy).ToList();
+            bool vseGlyf = resolved.Count > 0 && resolved.All(r => r.Mode == SymbolRenderMode.FontGlyf);
+            string text = string.Join(" ", vseGlyf ? resolved.Select(r => r.Value) : t.Platnost);
+            specs.Add(new(tripW, text, vseGlyf ? tripDataStyle with { FontFamily = symbolFamily } : tripDataStyle));
+        }
+        return specs;
+    }
+
     private static List<ColumnRenderer.CellSpec> TripTextRow(
         List<RenderCol> fixedCols, List<LineTripData> trips, float tripW,
         ResolvedTextStyle tripDataStyle, Func<LineTripData, string> text)

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-24 (8) - 🔣 značky platnosti se kreslí piktogramy (`L4`, základ)
+
+Linková tabulka nekreslila ani jeden symbol - značky se vypisovaly jako holá písmena. Nově jde
+**řádek platnosti** přes symbolový font, takže pracovní dny jsou zkřížená kladiva, sobota a neděle
+kroužkové číslice a svátky kříž, jak se to v jízdních řádech tiskne.
+
+Vzniklá **sdílená mapa značek** je jediný zdroj pravdy pro zastávkové i linkové JŘ. Zastávkovým se
+chování **nezměnilo** (podmínka Jana) - jen delegují na mapu; hlídají to jejich testy.
+
+⚠️ **Linkový JŘ má opačné výchozí pravidlo než vývěska: piktogram jen z ověřeného seznamu, zbytek
+textem.** Důvod je konkrétní: „pokračuje" má v číselníku značku `p`, ale na pozici `p` je ve fontu
+**kufr**. Naivní „jednoznakové = piktogram" by cestujícímu nakreslilo zavazadlo.
+
+⚠️ **Textem proto zatím zůstávají** značky pro projíždí, jede jinudy, vyčká, pokračuje a navazuje -
+u prvních dvou je to typografická konvence, u zbytku **není pozice ve fontu změřená**. Doplnit je
+smí až někdo, kdo je ověří v obou fontech (CZ i SK se u dvou pozic liší významem). Vypadají tedy
+jako dosud, ne hůř.
+
+⚠️ Loď, wifi a zásuvka v tom fontu **nejsou vůbec** - vypisují se textem, provizorně.
+
+Ověřeno: .NET 1139/1139, Caché 127/127. Vizuální kontrola zbývá.
+
 ## 2026-08-24 (7) - 🏢 pruh s dopravcem se skládá jako ve starém tisku (`L2` hotová)
 
 Poslední bod vlny. U dopravce s provozem bez ulice jsme tiskli **„…,,tel:386100111"** - dvojčárku
