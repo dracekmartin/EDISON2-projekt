@@ -87,12 +87,16 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F7 - CPU/RAM špička po přidání miniaplikací
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - změřeno po F1 (`tools/measure-shell-processes.ps1`,
+  shell 12 min v běhu, idle): 7 procesů, ustálená RAM ~250 MB, **historický peak 921 MB**
+  (z toho 467 MB samotný WPF proces, zbytek WebView2), idle CPU ~3 %.
+  Závěr **won't fix** u paměti: špička je startovní (načtení XAML/BAML a stromů + init
+  Chromia) a srovná se, jak Kaska popsal. **Miniaplikace s tím po F1 nemají nic společného** -
+  žádná už WebView2 nepoužívá, přidání Plochy/Dispečinku/Přehledu je čistý WPF.
 - **P3 · S**
-- **Co udělat:** Změřit (pravděpodobně inicializace WebView2 procesů). Kaska: po sekundách
-  se to srovná - možná stačí zdokumentovat/odpovědět. **F1 mezitím ubral 3 WebView2**
-  z výchozího rozložení (zbyl jeden v pruhu podpory), takže měřit až proti novému stavu.
-- **Hotovo když:** Změřeno a rozhodnuto (fix / won't fix s odpovědí do ticketu).
+- **Vypadl z toho nový nález → F16:** idle CPU ~3 % nejde z naší strany (WPF proces 0,2 %),
+  ale z WebView2 rendereru + GPU procesu, tedy widget v pruhu podpory něco animuje **pořád**.
+  Na statické stránce by to bylo ~0. Souvisí s výtkou #18 „věčný progress".
 - **Zdroj:** HD 13132 #18 (Kaska)
 
 ### F8 - „Automatický refresh" přejmenovat česky
@@ -197,6 +201,18 @@ projektu jsou značené explicitně („nový post #N").
   agendy). Vybráno z varianty „pouze fokus", ne „rovnou spustit".
 - **P3 · S**
 - **Zdroj:** vlastní nález při triáži HD 13132
+
+### F16 - Widget podpory žere ~3 % CPU trvale
+
+- [ ] **Stav:** Open
+- **P3 · S** 🔸
+- **Co udělat:** Měření z F7: renderer + GPU proces WebView2 drží ~3 % CPU i na nečinném
+  shellu, WPF strana 0,2 %. Statická stránka by byla na nule, takže widget `edison2` běží
+  v nekonečné animaci (Kaskův „věčný progress" z #18). Běží to celý pracovní den.
+- **Pozor:** Je to obsah `podpora.m-line.cz`, ne náš kód - opravit to musí strana podpory.
+  Ověřit lze `tools/measure-shell-processes.ps1` (rozpad po procesech).
+- **Hotovo když:** Widget na nečinné stránce neanimuje a idle CPU shellu spadne k nule.
+- **Zdroj:** vlastní nález při měření F7
 
 ## Mimo EDISON2 (jiné repo / jiný vlastník)
 
