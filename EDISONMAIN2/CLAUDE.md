@@ -87,7 +87,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   plní code-behind jedním handlerem na kartě (`TreeView.SelectedItem` nejde bindovat,
   eventy bublají); VM ho drží **per záložku** a přestavba stromů ho zahazuje (nové instance).
 
-Mini-apps (AvalonDock, WebView2 widgety, persistence layoutu, karusel): [dotnet/MiniApps/CLAUDE.md](dotnet/MiniApps/CLAUDE.md).
+Mini-apps (AvalonDock, pruh podpory, persistence layoutu): [dotnet/MiniApps/CLAUDE.md](dotnet/MiniApps/CLAUDE.md).
 
 ## Plocha se zástupci
 
@@ -136,8 +136,8 @@ licensedElements, zástupce na ploše); poslední je Base64 XML zástupce - prá
 launche, s `CallType=Procedura` host místo formy spustí `ProcedureIO` agendy. Dvě vstupní metody:
 
 - `TryGetFormFromArgs` - typ hledá reflexí ve volajícím assembly; kontrakt pro retrofitnuté
-  `.exe` (v `Sub Main` zavolat a předat do `Application.Run`; bez argů původní standalone
-  chování). Reference: `MHD2PlanDopravy/Program.cs`, `USERS/Users-v4/Program.vb`.
+  `.exe` (v `Sub Main` zavolat, formu zobrazit `ShowDialog`; bez argů původní standalone
+  chování). Jediná reference: `EDISONMAIN/ApplicationEvents.vb`.
 - `TryRunFromArgs` - `Assembly.LoadFrom(assemblyPath)`; generický host `EDISONMAIN2API.exe`
   pro `.exe` bez retrofitu.
 
@@ -147,6 +147,9 @@ Pasti:
   shodí i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks.
 - `ConfigureForm` staví `MLProps.AccessTable` z `licensedElements` - bez nich moduly
   gate-ující obsah přes `RightGranted` (např. DSINPUT Plánování) nezobrazí data.
+- Host roztáčí formu přes **`ShowDialog`, ne `Application.Run`** (parita se starým `EDPROCESS`):
+  legacy formy se zavírají samy - `DialogResult`, nebo `Close()` před otevřením sesterské
+  formy přes `ShowEdisonForm` (ISYJR → ISYJR2) - a v `Application.Run` loopu tím umře proces.
 
 Shell strana: `WindowNavigator.ShowLegacy*` (viz
 [EDControls/dotnet/EDViewModel/CLAUDE.md](../EDControls/dotnet/EDViewModel/CLAUDE.md)); admin

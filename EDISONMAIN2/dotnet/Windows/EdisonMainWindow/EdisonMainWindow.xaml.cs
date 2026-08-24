@@ -40,6 +40,17 @@ namespace EDISONMAIN2
             ThemeService.Applied += ApplyDockTheme;
             Closing += OnShellClosing;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
+            FillSupportStrip();
+        }
+
+        // Widget v pruhu podpory. Drží statické Font/Theme eventy, takže se musí uklidit se
+        // zavřením okna - jinak přežije shell. Nenačtení widgetu shell neblokuje (dekorace).
+        private void FillSupportStrip()
+        {
+            var widget = new FontZoomWebView();
+            SupportStrip.Child = widget;
+            widget.Navigate(WidgetUrls.Edison2);
+            Closed += (_, _) => widget.Dispose();
         }
 
         // Zavření shellu ukončí aplikaci (ShutdownMode=OnMainWindowClose) i všechny agendy,

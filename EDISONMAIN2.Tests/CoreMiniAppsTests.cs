@@ -5,28 +5,17 @@ namespace EDISONMAIN2.Tests;
 public class CoreMiniAppsTests
 {
     [Fact]
-    public void Provides_WebWidgetsAndAutoRefresh()
+    public void ProvidesOnlyAutoRefresh()
     {
-        // Factory se neinvokují (žádný WebView2/STA, žádné EDServices.Current) - jen registrace.
-        var apps = new CoreMiniApps().GetMiniApps().ToList();
+        // Widgety podpora.m-line.cz už tu nejsou - kanál nese fixní pruh v shellu, mimo dock.
+        // Factory se neinvokuje (žádný WebView2/STA, žádné EDServices.Current) - jen registrace.
+        var provider = new CoreMiniApps();
 
-        Assert.Equal("Podpora M-line", new CoreMiniApps().GroupTitle);
-        Assert.Equal(5, apps.Count);
-        Assert.Contains(apps, a => a.Id == "Core.Podpora" && a.Title == "Podpora M-line");
-        Assert.Contains(apps, a => a.Id == "Core.Novinky" && a.Title == "Novinky");
-        Assert.Contains(apps, a => a.Id == "Core.Wiki" && a.Title == "Wiki");
-        Assert.Contains(apps, a => a.Id == "Core.Skoleni" && a.Title == "Školení");
-        // Id zůstává "Core.AutoRefresh" i po přejmenování titulku - je v persistenci layoutu.
-        Assert.Contains(apps, a => a.Id == "Core.AutoRefresh" && a.Title == "Automatická obnova");
-    }
+        var app = Assert.Single(provider.GetMiniApps());
 
-    [Fact]
-    public void OnlyCarousel_IsPinned()
-    {
-        // Karusel = garantovaný komunikační kanál; ostatní widgety musí zůstat zavíratelné.
-        var apps = new CoreMiniApps().GetMiniApps().ToList();
-
-        Assert.True(apps.Single(a => a.Id == "Core.Podpora").Pinned);
-        Assert.All(apps.Where(a => a.Id != "Core.Podpora"), a => Assert.False(a.Pinned));
+        Assert.Equal("Nástroje", provider.GroupTitle);
+        // Id zůstává i po přejmenování titulku - je v persistenci layoutu.
+        Assert.Equal("Core.AutoRefresh", app.Id);
+        Assert.Equal("Automatická obnova", app.Title);
     }
 }

@@ -7,6 +7,17 @@ public class WidgetUrlsTests
     private const string WidgetsBase = "https://podpora.m-line.cz/api/widgets/";
 
     [Fact]
+    public void Edison2_IsAuthFree()
+    {
+        var url = WidgetUrls.Edison2;
+
+        Assert.StartsWith($"{WidgetsBase}edison2?", url);
+        Assert.Contains("key=", url);
+        Assert.DoesNotContain("idfa=", url);
+        Assert.DoesNotContain("user=", url);
+    }
+
+    [Fact]
     public void Novinky_IsAuthFree()
     {
         var url = WidgetUrls.Novinky;

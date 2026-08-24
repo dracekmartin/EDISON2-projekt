@@ -13,10 +13,9 @@ public interface IMiniAppHost
     /// panel zavře - uživatelem (křížek) i programově (<see cref="IMiniAppPane.Close"/>).
     /// <paramref name="newColumn"/> true → nový sloupec vedle stávajících; <paramref name="newRow"/>
     /// true → nová řada přes celou šířku pod sloupci (výchozí layout: sloupce + Oblíbené dole).
-    /// <paramref name="canClose"/> false → panel bez křížku, uživatel ho nezavře (pinned).
     /// </summary>
     IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                         bool newColumn = false, bool newRow = false, bool canClose = true);
+                         bool newColumn = false, bool newRow = false);
 
     /// <summary>
     /// Vynuluje layout na prázdný skeleton pro výchozí rozložení: svislý root s vodorovným pásem
@@ -39,11 +38,7 @@ public interface IMiniAppHost
 public interface IMiniAppPane
 {
     void Close();
-
-    /// <summary>Přepne na panel (aktivuje tab) - pinned mini-app se místo duplikace aktivuje.</summary>
-    void Activate();
 }
 
-/// <summary>Obsah obnoveného panelu - VM a handler jeho zavření (z <see cref="MiniAppManager"/>).
-/// <c>CanClose</c> false = pinned (descriptor je zdroj pravdy, ne uložené XML).</summary>
-public sealed record RestoredContent(object Content, Action OnClosed, bool CanClose = true);
+/// <summary>Obsah obnoveného panelu - VM a handler jeho zavření (z <see cref="MiniAppManager"/>).</summary>
+public sealed record RestoredContent(object Content, Action OnClosed);

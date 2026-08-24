@@ -18,7 +18,7 @@ namespace EDISONMAIN2.MiniApps;
 public sealed class AvalonDockHost : IMiniAppHost
 {
     private readonly DockingManager _dock;
-    private bool _normalizeScheduled;
+    private bool _stampScheduled;
 
     public AvalonDockHost(DockingManager dock)
     {
@@ -35,19 +35,14 @@ public sealed class AvalonDockHost : IMiniAppHost
     }
 
     public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                               bool newColumn = false, bool newRow = false, bool canClose = true)
+                               bool newColumn = false, bool newRow = false)
     {
-        // CanClose=false skryje křížek a blokuje uživatelské zavření (i v plovoucím okně);
-        // programové document.Close() (přepnutí session, CloseAll) AvalonDock pouští dál.
-        // CanFloat=false navrch - odtržený pinned by šel schovat za okno / minimalizovat.
         var document = new LayoutDocument
         {
             ContentId = contentId,
             Title = title,
             IconSource = icon,
             Content = content,
-            CanClose = canClose,
-            CanFloat = canClose,
         };
         document.Closed += (_, _) => onClosed();
         if (newRow)
@@ -61,68 +56,34 @@ public sealed class AvalonDockHost : IMiniAppHost
         return new Pane(document);
     }
 
-    // Pinned (CanClose=false) dokument nesmí ve svém pane sdílet záložky - jiný aktivní tab
-    // by ho překryl a komunikační kanál by zmizel z očí. Po každé změně stromu (drag & drop,
-    // restore) se kolizní dokumenty odsunou do jiného/nového sloupce.
+    private void OnLayoutUpdated(object? sender, EventArgs e) => ScheduleMinSizeStamp();
 
-    private void OnLayoutUpdated(object? sender, EventArgs e) => ScheduleNormalize();
-
-    private void ScheduleNormalize()
+    private void ScheduleMinSizeStamp()
     {
-        if (_normalizeScheduled) return;
-        _normalizeScheduled = true;
+        if (_stampScheduled) return;
+        _stampScheduled = true;
         // Odloženě - Updated letí uprostřed layout operace, přímá mutace stromu by cyklila.
         _dock.Dispatcher.BeginInvoke(new Action(() =>
         {
-            _normalizeScheduled = false;
-            NormalizeSoloPanes();
+            _stampScheduled = false;
+            StampMinSizes(_dock.Layout);
         }), DispatcherPriority.Background);
     }
 
-    // Splitter nesmí pinned zmenšit pod čitelnost (jedna stránka karuselu + hlavička).
-    private const double PinnedPaneMinWidth = 340;
-    private const double PinnedPaneMinHeight = 200;
-    // Ostatním stačí, aby zůstala vidět hlavička s tabem a pruh obsahu - bez razítka je pustí
-    // AvalonDock na svých 25 px a miniaplikace fakticky zmizí (uživatel ji pak nenajde ani myší).
+    // Pane musí zůstat aspoň tak velký, aby byla vidět hlavička s tabem a pruh obsahu - bez
+    // razítka ho AvalonDock pustí na svých 25 px a miniaplikace fakticky zmizí (uživatel ji
+    // pak nenajde ani myší).
     private const double PaneMinWidth = 200;
     private const double PaneMinHeight = 120;
-
-    private void NormalizeSoloPanes()
-    {
-        StampMinSizes(_dock.Layout);
-        foreach (var pinned in _dock.Layout.Descendents().OfType<LayoutDocument>()
-                     .Where(d => !d.CanClose).ToList())
-        {
-            if (pinned.Parent is not LayoutDocumentPane pane || pane.ChildrenCount <= 1) continue;
-            foreach (var intruder in pane.Children.OfType<LayoutDocument>().Where(d => d != pinned).ToList())
-                MoveToOtherPane(intruder, pane);
-        }
-    }
 
     // Razítko po každé změně stromu - drag i restore vyrábějí nové pane a ty by šly zúžit na nic.
     internal static void StampMinSizes(LayoutRoot layout)
     {
         foreach (var pane in layout.Descendents().OfType<LayoutDocumentPane>().ToList())
         {
-            bool pinned = pane.Children.OfType<LayoutDocument>().Any(d => !d.CanClose);
-            pane.DockMinWidth = pinned ? PinnedPaneMinWidth : PaneMinWidth;
-            pane.DockMinHeight = pinned ? PinnedPaneMinHeight : PaneMinHeight;
+            pane.DockMinWidth = PaneMinWidth;
+            pane.DockMinHeight = PaneMinHeight;
         }
-    }
-
-    private void MoveToOtherPane(LayoutDocument document, LayoutDocumentPane from)
-    {
-        var target = _dock.Layout.Descendents().OfType<LayoutDocumentPane>()
-            .FirstOrDefault(p => p != from && !p.Children.Any(c => c is LayoutDocument { CanClose: false }));
-        if (target is null)
-        {
-            target = new LayoutDocumentPane();
-            ColumnsPanel.Children.Add(target);
-        }
-        from.RemoveChild(document);
-        target.Children.Add(document);
-        // Odsunutý tab nechat aktivní - uživatel s ním právě pracoval (typicky ho sem dropnul).
-        document.IsActive = true;
     }
 
     public void ResetToDefaultSkeleton()
@@ -174,9 +135,6 @@ public sealed class AvalonDockHost : IMiniAppHost
                 e.Cancel = true;
                 return;
             }
-            // Z deskriptoru, ne z uloženého XML - změna pinned sady se retro-aplikuje na staré layouty.
-            document.CanClose = resolved.CanClose;
-            document.CanFloat = resolved.CanClose;
             e.Content = resolved.Content;
             document.Closed += (_, _) => resolved.OnClosed();
         };
@@ -187,7 +145,5 @@ public sealed class AvalonDockHost : IMiniAppHost
     private sealed class Pane(LayoutDocument document) : IMiniAppPane
     {
         public void Close() => document.Close();
-
-        public void Activate() => document.IsActive = true;
     }
 }

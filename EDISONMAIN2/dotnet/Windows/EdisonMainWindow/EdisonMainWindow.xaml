@@ -54,6 +54,8 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <!-- Pruh podpory nad dockem - Auto, výšku drží Border níž; strom tuhle řadu přesahuje. -->
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <!-- Auto - StatusBar musí růst se zvolenou velikostí fontu (user preference).
                  Pevná výška by ořízla text při větším fontu. -->
@@ -211,11 +213,20 @@
         </DockPanel>
         </Border>
 
+        <!-- Fixní pruh podpory: jeden centrální widget podpora.m-line.cz nad plochou miniaplikací.
+             Záměrně MIMO dokovací komponentu - je to garantovaný kanál IT → uživatelé, uvnitř docku
+             si ho uživatel zavřel nebo zúžil. Jen nad dockem, ne přes celou šířku: strom si drží
+             celou levou část okna (RowSpan níž). Obsah plní code-behind (WebView2). -->
+        <Border x:Name="SupportStrip" Grid.Column="2" Grid.Row="1" Height="400"
+                Background="{DynamicResource EDTheme.Bg.Base}"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                BorderThickness="0,0,0,1"/>
+
         <!-- Tři stromy odpovídají legacy edisonnavbar.xml: Hlavní nabídka (id=-2),
              Správa systému (id=-3), Partnerská řešení (id=-4).
              Bg.Sunken → chrome panelu je zapuštěné a strom na něm leží jako karta z Bg.Surface;
              v light je totiž Bg.Base == Bg.Surface a bez toho by celý panel splynul s obsahem. -->
-        <Grid Grid.Column="0" Grid.Row="1" Background="{DynamicResource EDTheme.Bg.Sunken}">
+        <Grid Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Background="{DynamicResource EDTheme.Bg.Sunken}">
             <Grid.Resources>
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -503,14 +514,14 @@
                 </edib:EDInfoBar.Style>
             </edib:EDInfoBar>
         </Grid>
-        <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+        <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                       Background="{DynamicResource EDTheme.Border.Light}"/>
         <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
              AvalonDockHost nad tímto DockingManagerem). -->
         <!-- AllowMixedOrientation: bez něj AvalonDock skryje boční drop targety, jakmile by
-             vyžadovaly vnořený panel s jinou orientací (např. dokovat vedle karuselu, který
-             po collect-garbage sedí přímo ve svislém rootu; nebo nad/pod pane ve vodorovném pásu). -->
-        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1"
+             vyžadovaly vnořený panel s jinou orientací (např. dokovat vedle pane, který po
+             collect-garbage sedí přímo ve svislém rootu; nebo nad/pod pane ve vodorovném pásu). -->
+        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="2"
                                    AllowMixedOrientation="True"
                                    Background="{DynamicResource EDTheme.Bg.Panel}"
                                    Foreground="{DynamicResource EDTheme.Text.Primary}"
@@ -526,7 +537,7 @@
         </avalonDock:DockingManager>
 
         <!-- Prázdný dock: výzva + tlačítko na výchozí rozložení. Skryje se, jakmile je otevřená mini-app. -->
-        <StackPanel Grid.Column="2" Grid.Row="1"
+        <StackPanel Grid.Column="2" Grid.Row="2"
                     HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360">
             <StackPanel.Style>
                 <Style TargetType="StackPanel">
@@ -549,7 +560,7 @@
 
         <!-- Segment = ikona + hodnota, technika (namespace, port, login, Mlp) je v ToolTipu.
              Separator jen mezi vždy viditelnými segmenty - u sbalitelných by zůstal viset. -->
-        <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
+        <StatusBar Grid.Row="3" Grid.ColumnSpan="100">
             <!-- Značka aplikace (stejný molecule jako ikona okna a hero pruh přihlášení) - brand,
                  ne segment, proto bez hodnoty; velikost z tokenu, ať roste s user fontem. -->
             <StatusBarItem Padding="8,3,4,3" ToolTip="EDISON">

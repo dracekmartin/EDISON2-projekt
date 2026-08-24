@@ -1,8 +1,8 @@
 namespace EDISONMAIN2.MiniApps;
 
 /// <summary>
-/// URL widgetů podpora.m-line.cz na jednom místě - sdílí je dockované Core mini-apps
-/// (<see cref="CoreMiniApps"/>) i přihlašovací obrazovka (<see cref="Windows.LoginWindow.LoginWindow"/>).
+/// URL widgetů podpora.m-line.cz na jednom místě - sdílí je fixní pruh podpory v shellu
+/// i přihlašovací obrazovka (<see cref="Windows.LoginWindow.LoginWindow"/>).
 /// </summary>
 internal static class WidgetUrls
 {
@@ -11,6 +11,9 @@ internal static class WidgetUrls
     // by shellu klíč nezměnil.
     private static readonly string Base = EDControls.EDSupportPanel.SupportActions.WidgetBaseUrl;
     private static readonly string Key = EDControls.EDSupportPanel.SupportActions.WidgetKey;
+
+    /// <summary>Centrální widget shellu - jeden blok místo tří dílčích (fixní pruh nahoře).</summary>
+    internal static string Edison2 => $"{Base}edison2?key={Key}";
 
     // Novinky/Wiki jsou auth-free (jen statický klíč) → bezpečné zobrazit i před loginem.
     internal static string Novinky => $"{Base}info?key={Key}";

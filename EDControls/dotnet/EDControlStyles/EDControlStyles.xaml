@@ -1128,8 +1128,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════
          ProgressBar - default Aero2 template kreslí přes indikátor pevně danou bílou
          "glass" vrstvu (v dark modu světlý flek), proto flat retemplate: track + indikátor
-         z tokenů, nic navíc. Determinate i indeterminate kreslí stejně - shell používá
-         jen determinate (auto-posun karuselu Podpora).
+         z tokenů, nic navíc. Determinate i indeterminate kreslí stejně.
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="ProgressBar">
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Sunken}"/>

@@ -103,13 +103,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Mini-apps seskupené podle providerů pro launcher (menu „Miniaplikace").</summary>
         public IReadOnlyList<MiniAppGroup> MiniAppGroups => _miniAppCatalog.Groups;
 
-        // Výchozí sada: pinned karusel Podpora M-line (cyklí Novinky/Wiki/Školení) - samostatné
-        // widgety by vedle něj duplikovaly obsah, uživatel si je může otevřít z menu.
-        private static readonly string[] DefaultMiniAppIds = ["Core.Podpora"];
-
-        private IEnumerable<MiniAppDescriptor> DefaultMiniApps =>
-            DefaultMiniAppIds.Select(_miniAppCatalog.Find).OfType<MiniAppDescriptor>();
-
         private bool _hasOpenMiniApps;
         /// <summary>Je v docku alespoň jedna mini-app? False → shell ukáže prázdný placeholder.</summary>
         public bool HasOpenMiniApps { get => _hasOpenMiniApps; private set => Set(ref _hasOpenMiniApps, value); }
@@ -146,12 +139,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _applyTreeWidth = applyWidth;
         }
 
-        // Výchozí rozložení: web widgety ve sloupcích nahoře + Plocha přes celou šířku dole.
+        // Výchozí rozložení: Plocha jako jediný sloupec přes celou plochu docku. Podpora tu
+        // není - kanál IT → uživatelé nese fixní pruh v shellu, mimo dock.
         private void OpenDefaultMiniApps()
         {
-            _miniAppManager?.OpenDefaultLayout(DefaultMiniApps, _miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId));
-            // Pinned mimo výchozí sadu nesmí zmizet ani po resetu / prvním spuštění.
-            _miniAppManager?.EnsurePinnedOpen();
+            var desktop = _miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId);
+            _miniAppManager?.OpenDefaultLayout(desktop is null ? [] : [desktop], bottomRow: null);
         }
 
         // Po dobu výměny session (persist staré → CloseAll → async rebuild → restore nové) nesmí
@@ -189,8 +182,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             try
             {
                 _miniAppManager.RestoreLayout(xml);
-                // Layout z doby před pinned sadou (nebo s dříve zavřeným pinned widgetem) ho neobsahuje.
-                _miniAppManager.EnsurePinnedOpen();
             }
             catch
             {
@@ -198,9 +189,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 // Zahodíme ho; další uložení (close/switch) zapíše čistý.
                 _prefs.MiniAppLayouts?.Remove(idfa);
                 _prefs.Save();
-                // Ani po zahozeném layoutu nesmí chybět pinned komunikační kanál. Vlastní guard -
+                // Po zahozeném layoutu postavit výchozí, ať dock nezůstane prázdný. Vlastní guard -
                 // stav docku po nezdařeném Deserialize je nedefinovaný a druhý pád by shodil start.
-                try { _miniAppManager.EnsurePinnedOpen(); }
+                try { OpenDefaultMiniApps(); }
                 catch { }
             }
         }
@@ -255,11 +246,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
             OpenDefaultMiniAppsCommand = Command(OpenDefaultMiniApps);
-            // Uživatelské „Zavřít miniaplikace" nechá pinned otevřené (CloseAll zůstává pro session/shutdown).
-            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseUnpinned());
+            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseAll());
             // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.
             ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
-            // Proužek pod stromem: otevře Plochu jako řadu dole (mirror výchozího umístění).
+            // Proužek pod stromem: Plocha jako řada dole, ať nepřekryje už otevřené sloupce.
             ShowDesktopMiniAppCommand = Command(() =>
             {
                 if (_miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId) is { } d)

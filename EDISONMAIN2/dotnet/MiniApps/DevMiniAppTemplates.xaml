@@ -16,8 +16,4 @@
         <ma:DesktopMiniAppView/>
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type ma:SupportCarouselMiniAppViewModel}">
-        <ma:SupportCarouselMiniAppView/>
-    </DataTemplate>
-
 </ResourceDictionary>

@@ -23,20 +23,13 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F1 - Centrální widget podpory + fixní horní pruh
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - fixní pruh `SupportStrip` v shellu (řada 1 root gridu)
+  s jedním widgetem `edison2`, mimo dock. Karusel i descriptory Novinky/Wiki/Školení zrušeny
+  (rozhodnuto: všechny tři), s nimi padl **celý pinned mechanismus** - garanci kanálu teď nese
+  pruh. Výchozí rozložení docku = jen Plocha. Ubyly 3 WebView2 procesy → viz F7.
 - **P1 · L**
-- **Co udělat:** Místo tří widgetů (Novinky/Wiki/Školení v karuselu `Core.Podpora`) jeden
-  centrální widget `https://podpora.m-line.cz/api/widgets/edison2?key=<WidgetKey>`
-  a umístit ho **mimo dockovací komponentu** - fixní pruh nahoře v shellu (DZ: zprvu
-  klidně mock). Klíč už je v `EDControls/dotnet/EDSupportPanel/SupportActions.cs:20`
-  (shodný s ticketem), URL skládá `EDISONMAIN2/dotnet/MiniApps/WidgetUrls.cs`.
-- **Pozor:** Id `Core.Podpora` je v persistenci layoutu (pinned pane,
-  `AvalonDockHost.cs:84`); karusel má Win32 hover workaround kvůli HWND airspace
-  (`SupportCarouselMiniAppView.xaml.cs`). 🔸 Co s descriptory Novinky/Wiki/Školení -
-  zrušit, nebo nechat jako samostatné miniaplikace?
-- **Hotovo když:** V shellu je nahoře fixní pruh s jedním widgetem `edison2`, karusel
-  zmizel; tím odpadají i výtky z #18 (věčný progress, střídání bloků 1/3, „záložka
-  nezapadá do kontextu").
+- **Pozor při ověření:** ostrá URL, ne mock - když endpoint na podpoře ještě neběží, pruh
+  ukáže chybu widgetu.
 - **Zdroj:** HD 13132 #4 + #15 (Zeman), #18 (Kaska)
 
 ### F2 - Okno miniaplikací s jednoúrovňovým seznamem + vizuál
@@ -99,7 +92,8 @@ projektu jsou značené explicitně („nový post #N").
 - [ ] **Stav:** Open
 - **P3 · S**
 - **Co udělat:** Změřit (pravděpodobně inicializace WebView2 procesů). Kaska: po sekundách
-  se to srovná - možná stačí zdokumentovat/odpovědět, možná zanikne s F1 (méně WebView).
+  se to srovná - možná stačí zdokumentovat/odpovědět. **F1 mezitím ubral 3 WebView2**
+  z výchozího rozložení (zbyl jeden v pruhu podpory), takže měřit až proti novému stavu.
 - **Hotovo když:** Změřeno a rozhodnuto (fix / won't fix s odpovědí do ticketu).
 - **Zdroj:** HD 13132 #18 (Kaska)
 

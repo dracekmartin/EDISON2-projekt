@@ -10,6 +10,9 @@ namespace EDISONMAIN2.Tests;
 /// </summary>
 public class AvalonDockHostMinSizeTests
 {
+    private const double MinWidth = 200;
+    private const double MinHeight = 120;
+
     private static LayoutRoot RootWith(params LayoutDocumentPane[] panes)
     {
         var root = new LayoutRoot();
@@ -19,43 +22,29 @@ public class AvalonDockHostMinSizeTests
         return root;
     }
 
-    private static LayoutDocumentPane PaneWith(bool canClose) =>
-        new(new LayoutDocument { ContentId = canClose ? "x" : "pinned", CanClose = canClose });
+    private static LayoutDocumentPane Pane() => new(new LayoutDocument { ContentId = "x" });
 
     [Fact]
-    public void UnpinnedPane_GetsMinSize()
+    public void Pane_GetsMinSize()
     {
-        var pane = PaneWith(canClose: true);
+        var pane = Pane();
         // Výchozí minimum AvalonDocku je pár pixelů - bez razítka miniaplikace zmizí z očí.
-        Assert.True(pane.DockMinWidth < 200);
-        Assert.True(pane.DockMinHeight < 120);
+        Assert.True(pane.DockMinWidth < MinWidth);
+        Assert.True(pane.DockMinHeight < MinHeight);
 
         AvalonDockHost.StampMinSizes(RootWith(pane));
 
-        Assert.True(pane.DockMinWidth >= 200);
-        Assert.True(pane.DockMinHeight >= 120);
-    }
-
-    [Fact]
-    public void PinnedPane_KeepsLargerMinimum()
-    {
-        // Karusel potřebuje víc než ostatní - jednu stránku a hlavičku.
-        var pinned = PaneWith(canClose: false);
-        var plain = PaneWith(canClose: true);
-
-        AvalonDockHost.StampMinSizes(RootWith(pinned, plain));
-
-        Assert.True(pinned.DockMinWidth > plain.DockMinWidth);
-        Assert.True(pinned.DockMinHeight > plain.DockMinHeight);
+        Assert.True(pane.DockMinWidth >= MinWidth);
+        Assert.True(pane.DockMinHeight >= MinHeight);
     }
 
     [Fact]
     public void EveryPane_IsStamped_NotJustTheFirst()
     {
-        var panes = new[] { PaneWith(true), PaneWith(true), PaneWith(true) };
+        var panes = new[] { Pane(), Pane(), Pane() };
 
         AvalonDockHost.StampMinSizes(RootWith(panes));
 
-        Assert.All(panes, p => Assert.True(p.DockMinWidth >= 200 && p.DockMinHeight >= 120));
+        Assert.All(panes, p => Assert.True(p.DockMinWidth >= MinWidth && p.DockMinHeight >= MinHeight));
     }
 }
