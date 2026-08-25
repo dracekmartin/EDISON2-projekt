@@ -610,6 +610,73 @@ ClassMethod RozdilyZastavek(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Kolik **stránkových bloků** vyrobí starý modul při různě široké tiskové ploše - podklad
+/// k vlně `L5`. Náš oracle jinde dává plochu záměrně obrovskou, aby neřezal; tady se zkoumá
+/// právě to řezání. IN: `DB`, `SKU`, `LIN`.
+ClassMethod BlokyDleSirky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+		kill ^||ML, radky
+		for sirka = 120, 200, 400, 1000000 {
+			kill legOut
+			kill @..#GLB
+			kill in
+			set in("A",2,"arr",3) = 2
+			set in("A",2,"arr",4) = 2
+			set in("A",2,"arr",13) = 0
+			kill ms
+			do ##class(ALVA.JRMAIN.MLAPI).gMSArrPLinWin(.ms)
+			set typ = ""
+			for  {
+				set typ = $order(ms(typ))
+				quit:typ=""
+				set ptyp = ""
+				for  {
+					set ptyp = $order(ms(typ, ptyp))
+					quit:ptyp=""
+					set in("A",2,"MS",typ,ptyp) = $length($get(ms(typ, ptyp, "MS")))
+				}
+			}
+			set in("A",2,"dta",1) = sirka
+			set in("A",2,"dta",2) = 60
+			set chyba = ##class(ALVA.JRMAIN.MLAPI).mkPLinWin(db, db, sku, lin, ..#GLB, .in, .legOut)
+			if chyba '= "" {
+				set radky($increment(radky)) = "šířka "_sirka_": chyba "_chyba
+				continue
+			}
+			set glb = ..#GLB, idobj = "", bloku = 0, popis = ""
+			for  {
+				set idobj = $order(@glb@(idobj))
+				quit:idobj=""
+				continue:$get(@glb@(idobj,"arr",1))'=2
+				set bloku = bloku + 1
+				set sloupcu = 0, sl = ""
+				for  {
+					set sl = $order(@glb@(idobj,"column",sl))
+					quit:sl=""
+					continue:$get(@glb@(idobj,"column",sl,"arr",1))'=7
+					set sloupcu = sloupcu + 1
+				}
+				if bloku < 7 set popis = popis_$select(popis="":"", 1:", ")_"["_$get(@glb@(idobj,"arr",2))_"/"_sloupcu_" spojů]"
+			}
+			set radky($increment(radky)) = "šířka "_sirka_" → bloků="_bloku_"  "_popis
+		}
+		kill @..#GLB
+		kill ^||ML
+		set i = ""
+		for  {
+			set i = $order(radky(i))
+			quit:i=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(i)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Najde v jádru sady místa, kde **starý modul** vypisuje v buňce značku návaznosti
 /// (vyčká `m`, pokračuje `u`, navazuje `^`) místo času - podklad k tomu, aby si šlo v původním
 /// tisku ověřit, jestli se kreslí piktogramem, nebo písmenem.
