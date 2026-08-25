@@ -182,16 +182,19 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F14 - Titulky oken: `[IdFa]` suffix a nekonzistence CKSCHWAN/CK_SCHWAN
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-25) - rozhodnuto „IdFa jen v shellu": `WindowNavigator` už
+  titulek nerazítkuje, okna EDISON2 mají čistý název, `M-line EDISON [IdFa]` zůstalo jen
+  hlavnímu oknu (jedno sezení = jedna firma, firma je i ve status baru). Legacy hostovaná
+  okna suffix dál mají - přidává si ho base forma sama (`clsForm.ShowIDFA`, repo EDISON),
+  vědomě nesaháno; `StripIdfaSuffix` proto ve „Spuštěných modulech" zůstává.
 - **P3 · M** 🔸
-- **Co udělat:** Štítky ve „Spuštěných modulech" už IdFa nemají (`52c95c9` + `66138dc` -
-  dlouhý název/cesta agendou), ale **titulky oken** si `[idfa]` drží
-  (`WindowNavigator.cs:410`), shell okno má vlastní mechanismus
-  (`EdisonMainViewModel.cs:962`) a legacy out-of-process okna title neřídí vůbec -
-  odtud i nekonzistence CKSCHWAN vs CK_SCHWAN. Rozhodnout: sjednotit (jeden mechanismus,
-  jednotný tvar), nebo IdFa z titulků odstranit úplně.
-- **Pozor:** Je to bývalý deferred `L3` ze starého PLAN.md (archiv).
-- **Hotovo když:** Titulky všech oken jednoho sezení mají jednotný tvar.
+- **Nekonzistence CKSCHWAN/CK_SCHWAN nebyla chyba titulků:** `TestIdFa` (`apiFIRMA.vb`)
+  vyžaduje v IdFa právě jeden `_`, takže `CKSCHWAN` platné IdFa být nemůže - je to jméno
+  namespace nebo ručně vyplněná hodnota z legacy setupu (`frmSetup.vb`, registry).
+  Dohledání u zákazníka → viz Mimo EDISON2.
+- **Zbývá odeslat do ticketu:** „Firmu už v titulcích jednotlivých oken neuvidíte - je
+  jednou v titulku hlavního okna a ve stavovém řádku, protože v jednom přihlášení pracujete
+  vždy v jedné firmě. Okna starých agend si zkratku firmy zatím přidávají sama."
 - **Zdroj:** HD 13132 #3 bod 6 (Kaska), zbytek po `52c95c9`/`66138dc`
 
 ### F15 - Enter v poli „Hledat modul" spustí první výsledek
@@ -222,6 +225,9 @@ projektu jsou značené explicitně („nový post #N").
 - **Chyba nastavení jazyka** (#18, Kaska - „odesláno") - legacy forma
   `ALVA.EDISONMAIN.formEDISONMAINLanguageList` z `EDISONMAIN.exe`. Dohledat Kaskův error
   report v telemetrii podpory. Vlastník: MH.
+- **CKSCHWAN vs CK_SCHWAN u zákazníka** (#3 bod 6, Kaska) - `CKSCHWAN` není platné IdFa
+  (chybí `_`), takže jde o jméno namespace nebo ručně vyplněnou hodnotu v legacy setupu
+  (`frmSetup.vb` → registry). Dohledat skutečnou konfiguraci instance. Vlastník: MH.
 - **IdFa výjimky do legacy EDISON.exe** (#4, Zeman) - pro zákazníky testující
   EDISONMAIN2; repo `c:\MLineRepos\EDISON`. Vlastník: MH. Až budou hotové připomínky.
 - **Ikona autobusu - upravit** (#4, Zeman) - bez detailu; 🔸 upřesnit, které ikony se
@@ -250,7 +256,7 @@ Podklad pro odpověď do ticketu - body z #3 (Kaska) a #4 (Zeman):
 - **Enter ve stromu spustí modul** a **nalezená skupina není slepá ulička** (zpřístupní
   celý podstrom) - `0d12d5a`.
 - **Spuštěné moduly: rozlišení duplicit** - `52c95c9` (cesta agendou místo IdFa) a
-  `66138dc` (dlouhý název `nameEx`); v titulcích oken IdFa zatím zůstává → F14.
+  `66138dc` (dlouhý název `nameEx`); IdFa zůstal jen v titulku shellu (F14).
 - **Nastavení: Font/Rodina → Písmo** - `ac9b0d1`.
 - **Ikony na ploše: dlouhý název** (rozliší „Zaměstnanci" MZDY/ZAM) - `66138dc` a
   `f62ca99` (auto-shrink labelu).

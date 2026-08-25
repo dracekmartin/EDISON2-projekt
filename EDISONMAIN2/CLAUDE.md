@@ -63,7 +63,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   mezi menu nepřejde. `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
 - **Spuštěné moduly** se značí dlouhým názvem modulu, jinak cestou agendou (`BuildModuleLabels`,
   klíč `exe|forma|param`) - krátký název mají dvě agendy běžně shodný. Fallback (mimo strom,
-  WPF okno) = titulek bez koncového `[IDFa]`; **titulky oken si `[IDFa]` drží** (`WindowNavigator`).
+  WPF okno) = titulek bez koncového `[IDFa]` - strip drží **legacy** okna, ta si suffix přidávají
+  sama (`clsForm.ShowIDFA`, repo EDISON). **Firma v titulku je jen u shellu** (`WindowTitle`),
+  okna EDISON2 ji nemají; titulek jde do jména tiketu v hlášení chyb (firma zvlášť polem `firma`).
 - Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
   nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají).
 - **Status bar** = segmenty ikona + hodnota, technika jen v ToolTipu. `DockPanel.Dock="Right"`

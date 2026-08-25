@@ -1491,7 +1491,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 ? (label.LongName.Length > 0 ? label.LongName : label.Path)
                 : StripIdfaSuffix(info.DisplayName);
 
-        /// <summary>Odřízne jeden koncový <c>[...]</c> (suffix s firmou). Hranatá závorka uvnitř názvu zůstane.</summary>
+        /// <summary>Odřízne jeden koncový <c>[...]</c> (suffix s firmou). Hranatá závorka uvnitř názvu zůstane.
+        /// Suffix přidávají legacy formy samy (<c>clsForm.ShowIDFA</c>), okna EDISON2 ho nemají.</summary>
         internal static string StripIdfaSuffix(string title)
         {
             var trimmed = title.TrimEnd();

@@ -400,16 +400,13 @@ public class WindowNavigator : IWindowNavigator
         return Path.Combine(EdisonDeployRoot, relativePath);
     }
 
-    // Sdílené wire-up před Show()/ShowDialog(): Owner, [Idfa] title suffix, AttachToWindow VM-if.
+    // Sdílené wire-up před Show()/ShowDialog(): Owner + AttachToWindow VM-if. Firma v titulku
+    // záměrně není - jedno sezení = jedna firma, identitu nese titulek shellu a status bar.
     // SourceInitialized fíruje synchronně uvnitř Show() před prvním paintem, restore stavu okna
     // tedy stihne aplikovat hodnoty.
     private static void WireUp(Window window)
     {
         window.Owner = Application.Current.MainWindow;
-
-        var idfa = EDServices.Current.MLRest?.Idfa;
-        if (!string.IsNullOrEmpty(idfa))
-            window.Title = $"{window.Title} [{idfa}]";
 
         if (window.DataContext is EDViewModel vm)
             vm.AttachToWindow(window);
