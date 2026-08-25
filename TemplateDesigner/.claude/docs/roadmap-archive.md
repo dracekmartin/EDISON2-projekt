@@ -1,5 +1,48 @@
 # 🗄️ Archiv - hotové kroky
 
+## 2026-08-25 - `L5` rozřezání široké tabulky (Strih)
+
+Linka se 100+ spoji se dosud zmáčkla do šířky, až z ní nebylo nic vidět. Nově se **rozřeže na
+bloky pod sebou**, každý zopakuje popisné sloupce a stránkování se láme na jejich hranicích.
+
+**Co se udělalo** (v pořadí, v jakém to vznikalo):
+
+- rozdělení sloupců spojů do bloků a jejich kreslení pod sebou;
+- **dno šířky sloupce se měří z písma** (šířka času i s odsazením) - dokud bylo pevných 3 mm,
+  dělení nasypalo do bloku tolik spojů, kolik se jich při nečitelné šířce vešlo;
+- pás skupin dnů, řádek platnosti i negativních značek se rozhodují **ze všech spojů linky**,
+  ne ze spojů bloku, takže je má každý blok;
+- **zlomy mají dvě síly** - hranice bloku (silná) a hranice řádku zastávky (slabá, pro blok vyšší
+  než stránka); silná má přednost, i když je výš;
+- pokračovací stránka **zopakuje hlavu bloku** a stránkování jí na to vyhradí místo;
+- sloupce spojů jsou **ve všech blocích stejně široké**, neúplný blok nechá místo vpravo;
+- prázdná legenda nezamíchá stránkováním (#9088);
+- volba **„Dorovnat prázdnými sloupci"** to místo umí vyplnit (#8372) - vlastnost prvku,
+  ne parametr sestavy (rozhodnutí Jan);
+- výška sekce už **nerezervuje místo na posun, ke kterému nedojde**.
+
+**Krok, který odpadl:** vodorovné opakování sekce. Bloky pod sebou proteče stávající svislé
+stránkování - doloženo testem, ne úvahou (200 spojů × 25 zastávek = 9 bloků → 3 stránky).
+
+**Odloženo:** ruční zlom na tarifním čísle → `B100` (3 linky z ~93 tisíc); dopravci v záhlaví jen
+za viditelné spoje (#9417) → potřebuje na drátě vazbu dopravce↔spoj a zákazníkův případ stojí
+na `L7`. **Uzavřeno jako „ne":** slučování přípojných řádků - nikdo si o to neřekl a u přípojů
+na různé linky by se ztratil popisek.
+
+⚠️ **Poučení, které stojí za zapamatování:** čtyři z chyb téhle vlny prošly zelenou sadou testů,
+protože se model porovnával **sám se sebou** - výška i místa pro řez se braly z téhož čísla.
+Chytily je až testy, které porovnávají výpočet **s vykresleným obrázkem**, a mutační kontrola
+(vrátit chybu a ověřit, že test spadne). Několik testů prošlo i s vrácenou chybou.
+
+## 2026-08-25 - dva nálezy z 24. 8. dořešené
+
+1. **Odskok ze záložky Parametry** byl skutečná chyba - pravidlo „netaháme uživatele pryč z tabu,
+   kde pracuje" mělo ve výčtu jen Pole agendy a Průvodce; Parametry přibyly později a zapomněly se.
+2. **„Přepnutí dělení nezmění náhled" chyba nebyla** - na lince 330511 jedou všechny spoje jen
+   v pracovní dny, takže vznikne jediná skupina a pás se nemá podle čeho rozdělit. Změřeno:
+   0330511 dá při všech třech volbách 9 spojů a 1 skupinu, 0330510 dá 37/1, 38/2 a 41/3.
+   Zbylo z toho drobné zlepšení v backlogu (`B101`).
+
 ## 2026-08-24 - `L3` vlastní rozložení sloupců spojů
 
 Linkový JŘ uměl jen tři hrubé možnosti dělení spojů. Nově si jde **nadefinovat vlastní sloupce**

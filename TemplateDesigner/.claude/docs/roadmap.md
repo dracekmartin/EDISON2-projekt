@@ -3,21 +3,9 @@
 > **Jen otevřená / akční práce.** Hotové → [`roadmap-archive.md`](roadmap-archive.md), průběžný
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
->
-> ✅ **Oba nálezy z 24. 8. vyřešené** (25. 8.):
->
-> 1. **Odskok ze záložky Parametry** byl skutečná chyba - pravidlo „netaháme uživatele pryč z tabu,
->    kde pracuje" mělo ve výčtu jen Pole agendy a Průvodce; Parametry přibyly později a zapomněly se.
->    Opraveno.
-> 2. **„Přepnutí dělení nezmění náhled" chyba nebyla** - na zkoušené lince 330511 jedou **všechny
->    spoje jen v pracovní dny**, takže vznikne jediná skupina a pás se nemá podle čeho rozdělit.
->    Změřeno: 0330511 dá při všech třech volbách 9 spojů a 1 skupinu, kdežto **0330510** dá 37/1,
->    38/2 a 41/3. ⚠️ Na tuhle otázku („mám to vůbec nastavené dobře?") **nešlo odpovědět z aplikace** -
->    prvek pás nekreslí, když je skupina jedna, a uživatel nemá jak poznat, jestli je to jeho
->    nastavením, nebo daty linky. Kandidát na drobné zlepšení, ne chyba.
 
-> **Nejblíž na řadě:** **linkové JŘ** - parita dat proti starému tisku je hotová (`L1`, `L2`, `L2b`;
-> 24. 8.) a agenda jde v návrháři vybrat. Dál: sada testovacích linek, pak `L4` (symboly).
+> **Nejblíž na řadě:** **sada testovacích linek** pro linkové JŘ - parita dat i stránkování jsou
+> hotové (`L1`-`L5`), takže je na čem procházet business logiku.
 
 ---
 
@@ -30,9 +18,10 @@ Legacy `TiskJR` generuje **vývěsní i knižní JŘ z téhož enginu**, takže 
 sloupcová tabulka celé linky (svislý seznam zastávek × sloupce spojů s časy; řádek platností se
 symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek).
 
-**Hotové:** datové jádro (`LinkovyJrAd`/`LinkovyJrMhd`), `LineTableElement`, plán řádků a auto-fit
-fontu; **síť pro porovnání se starým modulem** (`L1`, oracle `mkPLinWin`); výchozí šablona pro AD
-se distribuuje jako systémová. **Pro MHD výchozí šablona zatím není.**
+**Na čem zbývající vlny stojí** (kontext, ne seznam úkolů): datové jádro
+(`LinkovyJrAd`/`LinkovyJrMhd`), `LineTableElement` s plánem řádků, síť pro porovnání se starým
+modulem (oracle `mkPLinWin`) a systémová výchozí šablona pro AD. ⚠️ **Pro MHD výchozí šablona
+zatím není.**
 
 ⚠️ **Linková AD agenda je od 24. 8. zveřejněná** (`Released = 1`, žádost Jan) - bez toho na ni
 nešlo v návrháři ani překliknout, takže nebylo jak zkoušet. **Městská zůstává skrytá**, neprošla
@@ -73,12 +62,8 @@ sada voleb je **nová featura**, ne dorovnání.
 
 🎯 **Pořadí prací (rozhodnutí Jan 24. 8.): nejdřív dotáhnout paritu se starým tiskem, teprve pak
 uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procházet z business hlediska -
-každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Proto se pořadí vln mění na
-**`L2`, `L2b`, `L3`, `L4` a klientská část `L5` hotové (25. 8.) → testovací linky → `L9` → `L6`**.
-
-✅ **`L2`, `L2b`, `L3`, `L4` hotové** (24. 8.) a **`L5` z klientské strany** (25. 8.) - široká linka
-se rozřeže na čitelné bloky a stránkuje se po jejich hranicích. Ze `L5` zbývají tři body, které
-potřebují rozhodnutí nebo serverovou část (viz řádek níže). Na řadě je **sada testovacích linek**.
+každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Pořadí vln je proto
+**testovací linky → `L9` → `L6`**.
 
 📋 **Na řadě je sada testovacích linek** - pojmenovaný seznam linek, kde je vidět
 každé nastavení, aby šlo procházet business logiku v aplikaci a sledovat, jak přibývá. Dnes to
@@ -87,35 +72,10 @@ které lince ukázat.
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L5** | ✅ **Hotovo 25. 8.** Rozřezání široké tabulky / `Strih` (gate R1/R2, dřív `B13`) - bloky, stránkování po jejich hranicích, zopakovaná hlavička, dorovnání prázdnými sloupci. Rozpis a doklady v [`§16`](linkovy-knizni-jr-implementace-analyza.md) a pod tabulkou; ruční zlom odložen do `B100`. | - |
 | **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **vícesloupcová legenda s přetékáním** (#7487 - dnes jeden sloupec, chtějí čtyři), **turnusy** a **výchozí šablona pro MHD**. | M |
 | **L7** | **Sdružený JŘ více linek** (dřív část `C6`) - jedna sestava přes víc linek s řádkem zdrojové linky, včetně výlukové varianty. ⚠️ **Přestalo být „ověřit, jestli to zákazník chce":** KOVED si o to řekl (#9283) a čeká kalkulaci, tedy placená práce. Rozsah a cenu rozhodnout s Pavlem, ne odvodit z kódu. | L |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
 | **L9** | **Aby tabulka nevypadala jako jedna souvislá mřížka** (podklad Zlín, analýza §15 - kolega to zkoušel ve starém modulu a nešlo to). Tři drobnosti, které patří k sobě: **ohraničení per sloupec** (dnes se svislé čáry kreslí buď všude, nebo nikde, takže km podsloupce nejdou slít do jednoho bloku), **popisek nad info sloupci** (pás nad nimi už existuje, jen má natvrdo prázdný text - vzor tam má „↓ Směr jízdy ↓") a **mezera mezi bloky** info × pracovní dny × víkendy. Volitelně různá barva vodorovných a svislých čar (dnes jedna pro obojí). ⚠️ Šest dalších bodů ze Zlína **návrhář už umí** (pořadí sloupců, vypnutí MHD, barva pásu nadpisů, popisky, rostoucí záhlaví u víc dopravců) - patří do ověření na šabloně, ne do práce. | S–M |
-
-#### `L5` - co zbývá (rozpis 25. 8.)
-
-✅ **Vlna dokončená 25. 8.** Ruční zlom na tarifním čísle šel do backlogu (`B100`) - viz níže.
-Čísla jsou pořadí, ve kterém se to dělalo.
-
-**1. Prázdná legenda nesmí zamíchat stránkováním** (#9088) - ✅ **hotovo 25. 8.**
-Testovací případ, ne featura: linka bez poznámek složí legendu na nulu a nesmí kvůli ní vyjet
-stránka navíc. Bez závislostí, bez rozhodnutí.
-
-**2. Dorovnání neúplného bloku prázdnými sloupci** (#8372) - ✅ **hotovo 25. 8.**
-Volba „Dorovnat prázdnými sloupci" u prvku doplní neúplnému bloku sloupce na počet plného bloku.
-Rozhodnutí Jan: **vlastnost prvku**, parametr ji může zrcadlit později.
-
-**3. Úklid „fantomového" odsazení** - ✅ **hotovo 25. 8.**
-Výška sekce už nerezervuje místo na posun, ke kterému při kreslení nedojde. Projeví se jen tam,
-kde prvek pod dynamickou tabulkou leží níž než její zástupný box.
-
-**Odloženo:** dopravci v záhlaví jen za viditelné spoje (#9417) - potřebuje na drátě vazbu
-dopravce↔spoj a zákazníkův případ je souhrnný JŘ dvou linek, tedy `L7`. Půlka toho tiketu
-(hlavička přetékající pod tabulku) je vyřešená dvěma výchozími sekcemi.
-
-**Uzavřeno jako „ne":** slučování přípojných řádků - nikdo si o to neřekl, ztratil by se popisek
-u přípojů na různé linky a náš tvar odpovídá druhému režimu starého modulu.
 
 ### Odložené body z pilotu
 
@@ -133,6 +93,12 @@ legenda je samostatný prvek. Ověřit na reálné šabloně a tiket zavřít.
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B101` Není poznat, jestli je jedna skupina dnů nastavením, nebo daty linky** (z 25. 8.).
+  Prvek pás skupin nekreslí, když vyjde jediná skupina - a uživatel pak nemá jak poznat, jestli
+  si dělení nastavil špatně, nebo jestli tak prostě vypadá linka (na 0330511 jedou všechny spoje
+  jen v pracovní dny). Otázku „mám to vůbec nastavené dobře?" dnes **nejde zodpovědět z aplikace**.
+  Drobné zlepšení, ne chyba.
 
 - **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
   U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
