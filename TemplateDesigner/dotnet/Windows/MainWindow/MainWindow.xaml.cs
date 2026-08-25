@@ -1925,9 +1925,14 @@ public partial class MainWindow : Window
 
             // Přepnout na záložku Vlastnosti pokud jsme na Sekce nebo Strom.
             // Netaháme uživatele pryč z tabů, kde aktivně pracuje s něčím jiným
-            // (Pole agendy = drag polí, Průvodce = chat).
+            // (Pole agendy = drag polí, Průvodce = chat, Parametry = nastavení před tiskem).
+            // ⚠️ **Parametry sem přibyly až 25. 8.** a chyběly tu od jejich zavedení: změna
+            // parametru, která sáhne do šablony (rozvržení sloupců), vyvolá obnovu panelu
+            // vlastností - a uživateli to pod rukama odskočilo ze záložky, ve které zrovna
+            // přepínal volbu (nahlásil Jan 24. 8.).
             if (LeftTabControl.SelectedItem != TabFields
-                && LeftTabControl.SelectedItem != TabAiGuide)
+                && LeftTabControl.SelectedItem != TabAiGuide
+                && LeftTabControl.SelectedItem != TabParams)
                 LeftTabControl.SelectedItem = TabProperties;
         }
         else
