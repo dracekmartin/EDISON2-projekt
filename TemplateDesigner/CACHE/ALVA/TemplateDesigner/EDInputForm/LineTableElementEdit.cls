@@ -37,6 +37,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 20, "mm")
         s f.helpText = "Prázdné = auto podle velikosti písma"
 
+        // ── Skupina "Sloupce" ─────────────────────────────────────────────
+        // Viditelnost, šířky a pořadí jednotlivých sloupců se editují v tabu „Sloupce";
+        // sem patří jen volba, která platí pro celý prvek.
+        d form.AddGroup("columns", "Sloupce")
+        s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
+        s f.helpText = "Poslední blok bývá neúplný a nechá vpravo volné místo. Zapnuté = doplní se prázdné sloupce, aby měly všechny bloky stejně širokou tabulku."
+
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-25 (23) - 🧱 dorovnání neúplného bloku prázdnými sloupci (#8372)
+
+Poslední blok bývá neúplný a nechá vpravo volné místo. Nová volba **„Dorovnat prázdnými sloupci"**
+ho vyplní, takže mají všechny bloky stejně širokou tabulku a sestava končí rovně.
+
+Kolik dorovnat se nemusí vymýšlet: doplní se na počet sloupců plného bloku. Odpovídá to tomu,
+co dělá starý modul - jeho „padding sloupce" sjednocují počet sloupců napříč stránkami.
+
+**Volba je vlastnost prvku** (rozhodnutí Jan 25. 8.), tedy týž vzor jako vlastní rozložení sloupců:
+definici vlastní šablona, parametr ji může zrcadlit, až to bude potřeba. Protahovat parametry
+sestavy až ke kreslení kvůli jedné volbě by byl velký zásah bez druhého konzumenta.
+
+Ověřeno: .NET 1181/1181, Caché 128/128, formulář ověřen voláním serveru (vrací novou skupinu
+„Sloupce" i pole). Test porovnává obě varianty proti sobě - měřit absolutní šířku nejde, poslední
+prázdný sloupec nemá vpravo čáru a test by hlídal artefakt měření.
+
 ## 2026-08-25 (22) - 🐞 rámeček dynamického prvku vedl přes tabulku
 
 Rámeček, pozadí i ořez zaoblených rohů si braly výšku **z návrháře**, ne tu, do které prvek

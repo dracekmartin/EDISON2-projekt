@@ -60,6 +60,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public bool ShowNzRow { get; set; } = true;
     /// <summary>Přípojné řádky Vyčká/Navazuje vložené za zastávku.</summary>
     public bool ShowPripojeRows { get; set; } = true;
+
+    /// <summary>
+    /// Dorovnat neúplný blok prázdnými sloupci, aby měly všechny bloky stejný počet sloupců.
+    /// </summary>
+    /// <remarks>
+    /// Poslední blok bývá neúplný a nechá vpravo volné místo. Starý modul umí to místo vyplnit
+    /// prázdnými sloupci, takže tabulka končí rovně a bloky vypadají stejně (#8372; v legacy
+    /// „padding sloupce", které sjednocují počet sloupců napříč stránkami).
+    /// </remarks>
+    public bool PadEmptyColumns { get; set; }
     /// <summary>Pás názvů skupin dnů (Pracovní dny / Soboty / …) nad čísly spojů.</summary>
     public bool ShowGroupHeaders { get; set; } = true;
 
@@ -643,6 +653,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
 
+                // Neúplný blok dorovnat prázdnými sloupci, ať mají všechny bloky stejný počet
+                // sloupců a tabulka končí rovně (#8372). Styl podle druhu řádku, jinak by prázdné
+                // buňky v záhlaví vypadly z jeho podbarvení.
+                int prazdnych = PadEmptyColumns ? naBlok - blok.Pocet : 0;
+                if (prazdnych > 0)
+                    plan = [.. plan.Select(r => r with
+                    {
+                        Cells = [.. r.Cells, .. Enumerable.Repeat(
+                            new ColumnRenderer.CellSpec(tripW, "",
+                                r.Kind is RowKind.Header or RowKind.GroupHeader ? tripHeaderStyle : tripDataStyle),
+                            prazdnych)]
+                    })];
+
                 float konecBloku = y + plan.Sum(r => r.HeightMm);
 
                 // Řez padl doprostřed tohohle bloku → jeho hlavu zopakovat nad pokračováním.
@@ -958,6 +981,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ShowPlatnostRow = ShowPlatnostRow,
             ShowNzRow = ShowNzRow,
             ShowPripojeRows = ShowPripojeRows,
+            PadEmptyColumns = PadEmptyColumns,
             ShowGroupHeaders = ShowGroupHeaders,
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
@@ -987,6 +1011,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
         new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
         new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
+        new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },

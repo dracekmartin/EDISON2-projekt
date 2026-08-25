@@ -254,4 +254,67 @@ public class LineTableBlokyTests
         }
         return zacatky;
     }
+
+    /// <summary>
+    /// Zapnuté dorovnání doplní neúplnému bloku prázdné sloupce, takže je jeho tabulka stejně
+    /// široká jako u plných bloků (#8372). Vypnuté = blok končí u posledního spoje, jako dnes.
+    /// </summary>
+    /// <remarks>
+    /// Porovnávají se obě varianty proti sobě, ne proti absolutní šířce: úplně poslední prázdný
+    /// sloupec nemá vpravo čáru, takže by měření z obrázku vycházelo o jeden sloupec kratší
+    /// a test by hlídal artefakt měření místo chování.
+    /// </remarks>
+    [Fact]
+    public void DorovnaniVyplniNeuplnyBlok()
+    {
+        var data = SirokaLinkaData(41, pocetZastavek: 12);
+
+        LineTableElement Prvek(bool dorovnat)
+        {
+            var p = LineTableBlokyTests.Prvek();
+            p.Width = 277;
+            p.PadEmptyColumns = dorovnat;
+            return p;
+        }
+
+        var bez = Prvek(dorovnat: false);
+        var sDorovnanim = Prvek(dorovnat: true);
+        var bloky = bez.Rozvrzeni(data);
+        float sloupec = bloky[0].SloupecSpojeMm;
+        float zacatekPosledniho = ((INedelitelneDily)bez).ZlomyMm(data)
+            .Where(z => z.Silny).Select(z => z.Mm).Max();
+
+        float sirkaBez = SirkaNejsirsihoRadkuMm(bez, data, zacatekPosledniho);
+        float sirkaS = SirkaNejsirsihoRadkuMm(sDorovnanim, data, zacatekPosledniho);
+
+        int chybi = bloky[0].Pocet - bloky[^1].Pocet;
+        Assert.True(chybi > 0, "poslední blok má být neúplný, jinak test nic neměří");
+        Assert.True(sirkaS - sirkaBez > (chybi - 1) * sloupec,
+            $"dorovnání má přidat {chybi} sloupců po {sloupec:0.0} mm, přidalo {sirkaS - sirkaBez:0.0} mm");
+        Assert.True(sirkaS >= bloky[0].SirkaMm - sloupec - 0.5f,
+            $"s dorovnáním má blok sahat k plné šířce ({bloky[0].SirkaMm:0.0} mm), sahá k {sirkaS:0.0} mm");
+    }
+
+    /// <summary>Jak daleko doprava sahá nakreslený obsah <b>od zadaného odsazení dolů</b> - měří se
+    /// jen poslední blok, jinak by do měření vstoupil plný blok nad ním.</summary>
+    private static float SirkaNejsirsihoRadkuMm(LineTableElement prvek, DataContext data, float odMm)
+    {
+        const float MmToPx = 6f;
+        float vyska = prvek.CalculateHeightFromData(data);
+        int w = (int)MathF.Ceiling((prvek.X + prvek.Width + 10f) * MmToPx);
+        int h = (int)MathF.Ceiling((prvek.Y + vyska + 5f) * MmToPx);
+        using var bmp = new SKBitmap(w, h, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using (var canvas = new SKCanvas(bmp))
+        {
+            canvas.Clear(SKColors.White);
+            prvek.Render(new RenderContext(canvas, MmToPx, data));
+        }
+
+        int yOd = (int)((prvek.Y + odMm) * MmToPx);
+        for (int x = w - 1; x >= 0; x--)
+            for (int y = yOd; y < h; y++)
+                if (bmp.GetPixel(x, y) != SKColors.White)
+                    return (x + 1) / MmToPx - prvek.X;
+        return 0f;
+    }
 }

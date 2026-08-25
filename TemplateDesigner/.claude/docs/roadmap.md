@@ -107,12 +107,9 @@ takže se takové linky tisknou jinak než dřív. **Server i klient** - server 
 klient vynutí zlom (klientská strana pro zlomy hotová, `INedelitelneDily`). Chování určuje starý
 modul, takže není co rozhodovat. Střední.
 
-**3. Dorovnání neúplného bloku prázdnými sloupci** (#8372)
-Poslední blok nechá volné místo vpravo (od 25. 8.; dřív se roztahoval). Zákazník chce možnost ho
-vyplnit prázdnými sloupci. Čistě kreslení, bez závislostí. ⚠️ **Čeká na rozhodnutí, kde ta volba
-sedí:** vlastnost prvku (týž vzor jako vlastní rozložení sloupců - definici vlastní šablona,
-parametr ji zrcadlí), nebo protáhnout parametry až ke kreslení (dnes to neumí ani jeden parametr
-a druhý konzument pro tu cestu není). Malá.
+**3. Dorovnání neúplného bloku prázdnými sloupci** (#8372) - ✅ **hotovo 25. 8.**
+Volba „Dorovnat prázdnými sloupci" u prvku doplní neúplnému bloku sloupce na počet plného bloku.
+Rozhodnutí Jan: **vlastnost prvku**, parametr ji může zrcadlit později.
 
 **4. Úklid „fantomového" odsazení**
 Výpočet výšky sekce předstírá posun prvků, ke kterému při kreslení nedojde. Naměřeno na sedmi
