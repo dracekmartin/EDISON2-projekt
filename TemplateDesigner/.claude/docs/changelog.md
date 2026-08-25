@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-25 (24) - 🧹 výška sekce už nerezervuje místo na posun, ke kterému nedojde
+
+Výpočet výšky sekce rostoucímu prvku přičítal přírůstek k pozici všech prvků pod ním, jenže
+kreslení je nechává na jejich souřadnicích. Sekce si tím nárokovala místo pro posun, ke kterému
+nikdy nedošlo. Odstraněno; tok patří **mezi sekce** a tam funguje.
+
+Uživatel to pozná jen tam, kde prvek pod dynamickou tabulkou leží níž než její zástupný box -
+sekce tam byla o ten rozdíl vyšší.
+
+⚠️ **Test k tomu jsem musel psát třikrát** a pokaždé to odhalila až mutace:
+- s textovým prvkem nešlo nic naměřit (zástupnou výšku počítá **týmž vzorcem** jako tu z dat, rozdíl je nula),
+- s tabulkou, ale prvkem pod ní na 12 mm, se rozdíl schoval pod vlastní výšku tabulky,
+- teprve prvek **pod zástupným boxem tabulky** (60 mm) ten rozdíl ukáže.
+
+Ověřeno: .NET 1182/1182, ověřeno mutací.
+
 ## 2026-08-25 (23) - 🧱 dorovnání neúplného bloku prázdnými sloupci (#8372)
 
 Poslední blok bývá neúplný a nechá vpravo volné místo. Nová volba **„Dorovnat prázdnými sloupci"**

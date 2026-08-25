@@ -96,6 +96,7 @@ které lince ukázat.
 #### `L5` - co zbývá (rozpis 25. 8.)
 
 Pořadí je dané tím, co na ničem nestojí. Čísla jsou pořadí práce, ne priorita požadavku.
+**Zbývá už jen bod 2**, a u něj je otevřená otázka, jestli se do něj vůbec pouštět - viz níže.
 
 **1. Prázdná legenda nesmí zamíchat stránkováním** (#9088) - ✅ **hotovo 25. 8.**
 Testovací případ, ne featura: linka bez poznámek složí legendu na nulu a nesmí kvůli ní vyjet
@@ -105,16 +106,17 @@ stránka navíc. Bez závislostí, bez rozhodnutí.
 U linky je uložené tarifní číslo, na kterém se má tisk rozdělit; starý modul to respektuje, my ne,
 takže se takové linky tisknou jinak než dřív. **Server i klient** - server hodnotu přečte a pošle,
 klient vynutí zlom (klientská strana pro zlomy hotová, `INedelitelneDily`). Chování určuje starý
-modul, takže není co rozhodovat. Střední.
+modul, takže není co rozhodovat. Střední. ⚠️ **Nastaveno na 3 linkách z ~93 tisíc** (měření
+21. 8.), a tehdejší závěr zněl „nechat být". Za cenu zásahu do serveru i klienta je to slabý
+důvod - **rozhodnout, jestli to nepřesunout do backlogu**.
 
 **3. Dorovnání neúplného bloku prázdnými sloupci** (#8372) - ✅ **hotovo 25. 8.**
 Volba „Dorovnat prázdnými sloupci" u prvku doplní neúplnému bloku sloupce na počet plného bloku.
 Rozhodnutí Jan: **vlastnost prvku**, parametr ji může zrcadlit později.
 
-**4. Úklid „fantomového" odsazení**
-Výpočet výšky sekce předstírá posun prvků, ke kterému při kreslení nedojde. Naměřeno na sedmi
-velikostech linky: **nemění počet stránek ani o jednu**. Úklid, ne oprava - uživatel nic nepozná.
-Drobnost.
+**4. Úklid „fantomového" odsazení** - ✅ **hotovo 25. 8.**
+Výška sekce už nerezervuje místo na posun, ke kterému při kreslení nedojde. Projeví se jen tam,
+kde prvek pod dynamickou tabulkou leží níž než její zástupný box.
 
 **Odloženo:** dopravci v záhlaví jen za viditelné spoje (#9417) - potřebuje na drátě vazbu
 dopravce↔spoj a zákazníkův případ je souhrnný JŘ dvou linek, tedy `L7`. Půlka toho tiketu

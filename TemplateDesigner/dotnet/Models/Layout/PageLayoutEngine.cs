@@ -169,13 +169,17 @@ public class PageLayoutEngine
         if (visibleElements.Count == 0)
             return (section.DesignerHeight ?? 0f, zlomy, opakovanaHlavicka);
 
-        // Flow layout: dynamické elementy posouvají elementy pod sebou
+        // ⚠️ **Uvnitř sekce se prvky neposouvají** - výška sekce sahá tam, kam se doopravdy kreslí.
+        // Do 25. 8. se tu rostoucímu prvku přičítal přírůstek k pozici všech prvků pod ním, jenže
+        // kreslení je nechává na jejich souřadnicích: sekce si nárokovala místo pro posun, ke
+        // kterému nikdy nedošlo. Změřeno: text narostl na 75,4 mm, prvek pod ním zůstal na 12 mm.
+        // Tok patří **mezi sekce** a tam funguje - sekce pod rostoucí se odsune o její výšku;
+        // proto má nová šablona záhlaví a obsah jako dvě sekce.
         var effectiveHeights = new Dictionary<Guid, float>();
         float maxBottom = 0f;
 
-        // Seřadit podle Y (shora dolů)
         var sorted = visibleElements.OrderBy(e => e.Y).ToList();
-        float cumulativeDeltaY = 0f;
+        const float cumulativeDeltaY = 0f;
 
         foreach (var element in sorted)
         {
@@ -194,14 +198,6 @@ public class PageLayoutEngine
                 opakovanaHlavicka = Math.Max(opakovanaHlavicka, deleny.OpakovanaHlavickaMm(data));
             }
 
-            // Pokud je dynamický a výška se liší od designer výšky, posunout elementy pod ním
-            if (!element.Height.HasValue)
-            {
-                float designerH = element.EffectiveDesignerHeight;
-                float deltaY = elementHeight - designerH;
-                if (Math.Abs(deltaY) > 0.01f)
-                    cumulativeDeltaY += deltaY;
-            }
         }
 
         // Výška sekce = max z vypočítaného obsahu a DesignerHeight

@@ -375,6 +375,41 @@ public class SirokaLinkaStrankovaniTests
         Assert.Equal(bez.TotalPages, s.TotalPages);
     }
 
+    /// <summary>
+    /// Výška sekce sahá tam, kam se doopravdy kreslí - <b>nerezervuje se místo pro posun, ke
+    /// kterému nedojde</b>.
+    /// </summary>
+    /// <remarks>
+    /// Do 25. 8. výpočet rostoucímu prvku přičítal přírůstek k pozici všech prvků pod ním, jenže
+    /// kreslení je nechává na jejich souřadnicích (viz <see cref="UvnitrSekceSePrvkyNeposouvaji"/>).
+    /// Sekce tím vycházela vyšší než její obsah. Naměřeno bez dopadu na počet stránek, ale byla to
+    /// lež v modelu, o kterou se opíralo uvažování o překryvu.
+    /// </remarks>
+    [Fact]
+    public void VyskaSekceNerezervujeMistoNaPosun()
+    {
+        // ⚠️ Schválně tabulka, ne text: textový prvek má výšku z plátna počítanou **stejným
+        // vzorcem** jako z dat, takže by rozdíl vyšel nula a test by neměřil nic. Tabulka má
+        // z plátna zástupnou výšku, která se od té z dat liší o desítky milimetrů.
+        var data = LineTableBlokyTests.SirokaLinkaData(41, pocetZastavek: 20);
+        var tabulka = ElementRenderFixtures.LineTable();
+        tabulka.X = 0; tabulka.Y = 0; tabulka.Height = null; tabulka.Width = 190;
+        // Prvek musí ležet **těsně pod zástupnou výškou tabulky** (v návrháři hned za jejím boxem,
+        // který má 60 mm), jinak by se fantomový posun schoval pod vlastní výšku tabulky a test by
+        // ho nechytil - ověřeno mutací.
+        var pod = Text(y: 62, vyska: 5, "POD TABULKOU");
+        var sekce = Sekce("Obsah", null, tabulka, pod);   // dynamická sekce = výška z obsahu
+
+        float vyskaTabulky = new SkiaHeightCalculator().CalculateHeight(tabulka, 190, data);
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator())
+            .Layout(new Template { PageSize = PageSize.A4Portrait, Sections = [sekce] }, data);
+
+        Assert.True(vyskaTabulky > tabulka.EffectiveDesignerHeight + 20f,
+            "tabulka má být z dat výrazně vyšší než zástupná výška, jinak test nic neměří");
+        float ocekavana = MathF.Max(vyskaTabulky, pod.Y + pod.Height!.Value);
+        Assert.Equal(ocekavana, vysledek.Pages[0].Sections[0].Height, 2);
+    }
+
     private static string DlouhyText() =>
         string.Join(" ", Enumerable.Repeat("Dopravce s dlouhým názvem a adresou", 40));
 
