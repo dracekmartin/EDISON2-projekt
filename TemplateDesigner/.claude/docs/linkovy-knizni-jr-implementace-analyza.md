@@ -116,6 +116,35 @@ in("A",2,"dta",2)  = počet řádků pro tisk JŘ
 in("A",2,"MS",typ,podtyp) = šířka sloupce daného typu - VIZ NÍŽE, klient-driven layout
 ```
 
+## 16. Plán vlny `L5` (rozřezání tabulky) - po blocích
+
+**Stav, ze kterého se vychází** (ověřeno čtením kódu 25. 8.):
+
+- **Svisle už se řeže**: `PageLayoutEngine` rozseká sekci přes stránky (`ClipTop`/`ClipBottom`)
+  a `PreviewCanvas` posune počátek nahoru. Prvek o tom **neví** - kreslí se celý a přebytek se
+  ořízne. ⛔ Důsledek: na pokračovací stránce **chybí řádek s čísly spojů**, protože se odroluje.
+- **Vodorovně se neřeže vůbec**: `LineTableElement` místo toho spočítá `widthScale` a **zmenší
+  sloupce i písmo**, aby se vešly. Odtud „u širokých dat není nic vidět".
+- Řez podle šířky je **čistě geometrický** (viz měření níže), takže ho musí spočítat **klient** -
+  jen on zná fonty a šířky. Serverová cesta se tím nemění.
+
+**Bloky v pořadí, každý samostatně ověřitelný:**
+
+| # | Co | Hotovo když |
+|---|---|---|
+| `L5-1` | **Spočítat rozdělení sloupců spojů do bloků** podle skutečných šířek a písma. Zatím jen výpočet, kreslení beze změny. | test: široká linka dá N bloků, každý se vejde do šířky; úzká dá jeden |
+| `L5-2` | **Vykreslit jeden zvolený blok** - sloupec zastávek se zopakuje, spoje jen z toho bloku. | vizuálně + snapshot; součet spojů přes bloky = původní počet |
+| `L5-3` | **Opakovat sekci po blocích** - architektonický kus: engine musí umět „tuhle sekci vysázej N× vedle sebe do stránek". Analogie svislého `ClipTop`, jen na vodorovné ose. | široká linka vyjede na víc stránek místo zmáčknutí |
+| `L5-4` | **Hlavička per blok, ne per směr** (#9417) - dnes se vypisují všichni dopravci linky a hlavička přeteče pod tabulku. Vypadne z `L5-3`. | hlavička sedí na každé stránce |
+| `L5-5` | **Pás skupin dnů rozseknout a zopakovat** nad dalším blokem. ⚠️ Nutné, protože řez **nepadá na hranice skupin** (měření níže). | blok začínající uprostřed skupiny má nad sebou její nadpis |
+| `L5-6` | **Zopakovat řádek s čísly spojů i při svislém řezu** - dnes se odroluje pryč. | druhá stránka dlouhé linky má čísla spojů |
+| `L5-7` | **Ruční zlom na tarifním čísle** (`ZLOM` z §13.2 C) - jediné místo, kde do řezání mluví doména. | zadaný zlom se respektuje |
+| `L5-8` | **Dorovnání šířky prázdnými sloupci** jako parametr (#8372) ⚠️ u řídkých linek se nesmí roztáhnout „do absurdna". | volba funguje a nedorovnává donekonečna |
+| `L5-9` | **Slučování přípojných řádků** (přesunuto z `L2` 24. 8.) - mění počet řádků, tedy kam řez padne. | podle rozhodnutí; dnes nechat po jednom |
+
+⚠️ **Testovací případ z #9088**: prázdná legenda nesmí zamíchat stránkováním.
+⚠️ **Zkušební vzor**: linka 940 Kroměříž-Přerov (IDZK), §15.
+
 📐 **Jak starý modul řeže tabulku - změřeno 25. 8.** (podklad pro `L5`, sonda `BlokyDleSirky`):
 
 Rozřezává **sloupce spojů podle šířky plochy**, ne podle skupin dnů, a v každém bloku zopakuje
