@@ -124,8 +124,10 @@ projektu jsou značené explicitně („nový post #N").
 - **P2 · L**
 - **Co udělat:** Definovat a implementovat chování při výpadku spojení. Dnes reconnect
   neexistuje (`ConnectToDatabaseCommand = Command(NotYetImplemented)`,
-  `EdisonMainViewModel.cs:274`); zánik ACTIVITY zámku → řízený shutdown
-  (`LogoutWatcher.cs`). Session GUID je stabilní po celé přihlášení (vzniká jen
+  `EdisonMainViewModel.cs:271`); zánik ACTIVITY zámku → řízený shutdown přes event
+  `EdisonActivityFailed` (`AppBootstrapper.BuildActivityFailedWire`); `LogoutWatcher` je
+  jen kooperativní kanál (`maSeUkoncit`, poll na klonu s `CacheLocks=2`, aktivitu
+  nerefreshuje). Session GUID je stabilní po celé přihlášení (vzniká jen
   v `SessionFactory.Establish` - start a přihlášení jiného uživatele), takže obnova na
   témže GUID je proveditelná; `9feb252` už drží server-side idle timer živý.
 - **Pozor:** Kauza ARRIVA (ztráta pracovních dat v ^MZR po novém GUID) je přesně to, co
@@ -142,6 +144,8 @@ projektu jsou značené explicitně („nový post #N").
   (`6e49feb`, `SessionLogout.cs`) a zavírání oken honoruje veto. Po hard-killu ale zámky
   visí do server idle timeoutu (známé, `EDISONMAIN2/CLAUDE.md`). Zvážit zkrácení
   timeoutu / heartbeat / úklid při dalším startu klienta pod týmž uživatelem.
+- **Pozor:** server sklízí jen ACTIVITY (`Activity.LockDel` v timeout+3 min), business
+  zámky nikdy; s vypnutým idle timeoutem po hard-killu visí **neomezeně**.
 - **Hotovo když:** Zámky po pádu klienta zaniknou v řádu minut bez zásahu admina
   (LockClearExt ručně už není potřeba).
 - **Zdroj:** HD 13132 #17/3 (Kaska)
@@ -160,25 +164,47 @@ projektu jsou značené explicitně („nový post #N").
 - **Hotovo když:** Pád legacy okna zobrazí chybový dialog a dorazí do telemetrie podpory.
 - **Zdroj:** HD 13132 #17/4 (Kaska), souvisí #5 (Zeman)
 
-### F13 - Odpovědět Kaskovi do ticketu na #17
+### F13 - Odpovědět do ticketu: #17 (Kaska, nový #20) + doplňující ticket DZ
 
-- [ ] **Stav:** Open
+- [ ] **Stav:** Open - odpověď prověřena proti kódu 2026-08-25 (GUID lifecycle, aktivita,
+  zámky, distribuce), společný text pro oba tickety níže. Nálezy z prověrky → F17, F18.
 - **P1 · S**
-- **Co udělat:** Odeslat do HD 13132 připravené odpovědi:
-  1. **Session GUID:** vzniká jen při startu a při přihlášení jiného uživatele
-     (`SessionFactory.Establish`); přepnutí firmy ho **nemění** (mění se jen Idfa na téže
-     instanci, `CompanySwitcher`). Obnova spojení zatím neexistuje - až bude, poběží na
-     témže GUID (→ F10). Kauza ARRIVA se tedy nezopakuje.
-  2. **Sdílení mezi okny:** všechna okna jednoho přihlášení sdílí shell GUID - předává se
-     hostu v launch argumentech (`WindowNavigator.cs:354`), mezimodulové předávání přes
-     `^MZR("FiltrZam2",...)` funguje dál.
-  3. **Zámky:** korektní odhlášení/přepnutí firmy uklízí ACTIVITY i business zámky
-     (LockClearExt dle GUID) a zavírání oken jde přes standardní Closing s vetem
-     a dotazem na neuložená data (`6e49feb`). Hard-kill → server idle timeout (→ F11).
-  4. **Pády:** EDPROCESS se nepoužívá, hostem je EDISONMAIN2API.exe; shell má crash
+- **Co udělat:** Odeslat do HD 13132 jednu odpověď pokrývající #17 (= nový #20) i tři
+  stěžejní problémy z doplňujícího ticketu DZ (aktivita v multioknech, sdílení GUID,
+  pomalá nástěnka):
+  1. **Aktivita v režimu více oken (odhlašování aktivních uživatelů, ARRIVA):** všechna
+     okna jednoho přihlášení - shell i hostované staré agendy - běží na jednom session
+     GUID a s aktivními kontrolami (`CacheLocks=1`; host je nastavuje v
+     `FormToRunGetter.cs:106-110`, repo EDISON). Aktivitu serveru hlásí každý request
+     kteréhokoli okna, server vidí jedinou session s jedinou historií aktivity. Původní
+     příčina (každá agenda si vytvořila vlastní GUID bez ACTIVITY zámku, server ji
+     vyhodnotil jako neaktivní a ukončil uživatele uprostřed práce) zaniká konstrukčně -
+     není co agregovat.
+  2. **Sdílení GUID mezi okny:** GUID vzniká jen při startu a při přihlášení jiného
+     uživatele (`SessionFactory.Establish`); přepnutí firmy ho **nemění** (mění se jen
+     Idfa na téže instanci, `CompanySwitcher`). Hostovaným agendám ho shell předává
+     v launch argumentech (`WindowNavigator.cs:354`), agenda má v sysu MLRestu totéž GUID
+     jako shell. Mezimodulové předávání přes `^MZR("FiltrZam2",...)` funguje dál - a čtení
+     má nově fallback na per-user kopii (dual-write GUID + userID, repo EDISON), takže ani
+     změna GUID při novém přihlášení rozpracovaná data nezahodí.
+  3. **Pomalé načítání nástěnky / stahování knihoven ze serveru:** nový shell je jeden exe
+     (~4 MB) + jedna DLL - při startu se nestahují ani lazy nenačítají stovky knihoven
+     jako u starého klienta. Nástěnka po startu je jen Plocha (žádné serverové volání),
+     okno se vykreslí hned a data se donačítají asynchronně v jedné paralelní vlně;
+     kontrola verze proběhne před startem shellu s viditelným průběhem. Staré agendy si
+     své knihovny berou z instalace jako dosud - startu shellu se to netýká.
+  4. **Zámky:** korektní odhlášení/přepnutí firmy uklízí ACTIVITY i business zámky
+     (LockClearExt dle GUID) a zavírání oken respektuje veto okna (`6e49feb`).
+     Hard-kill → server idle timeout (→ F11).
+  5. **Výpadek spojení:** reconnect zatím neexistuje - až bude, poběží na témže GUID
+     (→ F10), takže se kauza ARRIVA nezopakuje ani tudy.
+  6. **Pády:** EDPROCESS se nepoužívá, hostem je EDISONMAIN2API.exe; shell má crash
      dialog + telemetrii do podpory (`3cd3fc7`, `77fb84e`); pokrytí hostovaných oken → F12.
+- **Pozor:** původní návrh sliboval „dotaz na neuložená data" při zavírání - vypuštěno,
+  není implementováno (veto mechanismus existuje a honoruje se, ale žádné okno shellu
+  prompt nezvedá; legacy moduly se zavírají `Process.Kill()` bez veta).
 - **Hotovo když:** Odpověď odeslána v ticketu.
-- **Zdroj:** HD 13132 #17 (Kaska)
+- **Zdroj:** HD 13132 #17 (Kaska) + doplňující ticket DZ (2026-08-25)
 
 ### F14 - Titulky oken: `[IdFa]` suffix a nekonzistence CKSCHWAN/CK_SCHWAN
 
@@ -216,6 +242,39 @@ projektu jsou značené explicitně („nový post #N").
   Ověřit lze `tools/measure-shell-processes.ps1` (rozpad po procesech).
 - **Hotovo když:** Widget na nečinné stránce neanimuje a idle CPU shellu spadne k nule.
 - **Zdroj:** vlastní nález při měření F7
+
+### F17 - Modul s vlastním GUID negeneruje aktivitu shell session
+
+- [ ] **Stav:** Open
+- **P2 · M**
+- **Co udělat:** TemplateDesigner záměrně nepřebírá shell GUID
+  (`TemplateDesigner/dotnet/Config/CacheSchemaWiring.cs:13-24`), takže jeho requesty
+  nerefreshují ACTIVITY historii shellu. Uživatel hodinu pracující jen v TD → idle timeout
+  shellu → force shutdown a `KillOnExit` sundá i TD. Stejný tvar chyby jako kauza ARRIVA,
+  jinými dveřmi; platí pro každý budoucí modul s vlastním MLRest.
+- **Pozor:** shell navíc nemá žádný keepalive - legacy 60s poll běžel s `Locks=1` a byl
+  nechtěný keepalive (timeout byl prakticky nedosažitelný), dnes poll běží s `Locks=2`.
+  Shell je tedy přísnější než legacy; u zákazníků se zapnutým timeoutem čekat nová
+  hlášení „odhlásilo mě to".
+- **Hotovo když:** Práce v TD (a obecně v modulu s vlastním GUID) drží shell session
+  živou, nebo je rozhodnuto, že timeout se má měřit jen na shellu, a je to zdokumentováno.
+- **Zdroj:** vlastní nález při prověrce F13 (2026-08-25)
+
+### F18 - Legacy dashboardy v layoutu: blokující load při startu + ztracené dávkování
+
+- [ ] **Stav:** Open
+- **P2 · M**
+- **Co udělat:** Obnova uloženého layoutu běží z `Loaded`, před prvním paint;
+  `MiniAppManager.Mount` volá `OnOpened()` a `LegacyDashboardMiniAppViewModel.Load` je
+  blokující `QueryOrThrow` s `refresh=1` (server recompute). N dashboardů v layoutu =
+  N sekvenčních round-tripů na UI vlákně bez progresu. Navíc se ztratilo legacy dávkování
+  (`clsMiniApplication.LoadData` = 1 request na N panelů). Load zasynchronnit mimo paint
+  path a vrátit dávkování.
+- **Pozor:** stejný tvar stížnosti jako bod 3 doplňujícího ticketu (pomalá nástěnka) -
+  F7 řešil jen RAM/WebView2, tenhle path nepokrývá.
+- **Hotovo když:** Start s uloženými dashboardy vykreslí okno hned, panely se plní
+  asynchronně a N panelů nestojí N round-tripů.
+- **Zdroj:** vlastní nález při prověrce doplňujícího ticketu (2026-08-25)
 
 ## Mimo EDISON2 (jiné repo / jiný vlastník)
 

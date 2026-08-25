@@ -20,7 +20,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 
 - Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - nezaniká se spojením,
   hard-kill ho neuvolní (uklidí až server idle timeout). V dev to tlumí deterministický
-  session GUID (`#if DEBUG` v `EstablishSession`) - re-run přepíše týž klíč.
+  session GUID (`#if DEBUG` v `SessionFactory.Establish`) - re-run přepíše týž klíč.
 - Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty obnovují
   idle timer (jinak aktivní shell vypadá pro server jako idle) a detekují zaniklý zámek/verzi.
   Přepnutí firmy jede s `CacheLocks=0` po dobu verify **i logoutu staré firmy** (zámek nové
