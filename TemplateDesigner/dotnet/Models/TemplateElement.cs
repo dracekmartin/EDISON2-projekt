@@ -159,10 +159,20 @@ public abstract class TemplateElement
         }
     }
 
-    /// <summary>Rect elementu v canvas px pro ořez obsahu na tvar rohů. Dynamické elementy
-    /// (např. TextElement) přepíšou skutečnou výškou obsahu.</summary>
-    public virtual SKRect GetContentClipRect(RenderContext ctx) =>
-        ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+    /// <summary>
+    /// Výška, do které je prvek <b>právě teď</b> vysoký (mm) - u dynamických roste s daty.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Jedno místo pro rámeček, pozadí, ořez rohů i střed otáčení.</b> Do 25. 8. si každý
+    /// z nich bral výšku z plátna, takže u prvku, který narostl s daty, vedl rámeček přes tabulku
+    /// a zaoblené rohy ji uřízly na výšku z návrháře (nahlásil Jan). Prvek, který svoji výšku umí
+    /// spočítat, tuhle metodu přepíše; ostatní zůstanou na výšce z plátna.
+    /// </remarks>
+    public virtual float RenderedHeightMm(RenderContext ctx) => Height ?? EffectiveDesignerHeight;
+
+    /// <summary>Rect elementu v canvas px pro ořez obsahu na tvar rohů.</summary>
+    public SKRect GetContentClipRect(RenderContext ctx) =>
+        ctx.ToCanvasRect(X, Y, Width, RenderedHeightMm(ctx));
 
     /// <summary>Ořez obsahu elementu na tvar rohů (zaoblené/zkosené) - no-op bez rohů. Volá render loop
     /// kolem obsahu (uvnitř Save/Restore), aby výplně ani obsah nepřetekly mimo zaoblení/zkosení.
@@ -195,7 +205,7 @@ public abstract class TemplateElement
     public virtual void RenderBackgroundPass(RenderContext ctx)
     {
         if (SkBackgroundColor.Alpha == 0) return;
-        var rect = ctx.ToCanvasRect(X, Y, Width, EffectiveDesignerHeight);
+        var rect = ctx.ToCanvasRect(X, Y, Width, RenderedHeightMm(ctx));
         bool corners = CornerStyle != ElementCornerStyle.None && CornerSize > 0;
         using var fill = new SKPaint { Color = SkBackgroundColor, IsAntialias = corners };
 
@@ -219,7 +229,7 @@ public abstract class TemplateElement
     /// </summary>
     public virtual void RenderBorderPass(RenderContext ctx)
     {
-        var rect = ctx.ToCanvasRect(X, Y, Width, EffectiveDesignerHeight);
+        var rect = ctx.ToCanvasRect(X, Y, Width, RenderedHeightMm(ctx));
         if (IsRotated)
         {
             var (cx, cy) = GetCenterPx(ctx);
@@ -237,7 +247,7 @@ public abstract class TemplateElement
     /// <summary>Střed elementu v canvas px - pivot pro rotaci.</summary>
     public (float cx, float cy) GetCenterPx(RenderContext ctx) =>
         (ctx.SectionOriginX + (X + Width / 2f) * ctx.MmToPx,
-         ctx.SectionOriginY + (Y + EffectiveDesignerHeight / 2f) * ctx.MmToPx);
+         ctx.SectionOriginY + (Y + RenderedHeightMm(ctx) / 2f) * ctx.MmToPx);
 
     // ---------------------------------------------------------------------------
 

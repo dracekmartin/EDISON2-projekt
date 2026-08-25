@@ -95,6 +95,12 @@ public abstract class ScheduleElementBase : TemplateElement
     /// <summary>Přirozená (neořezaná) výška obsahu v mm - počítá konkrétní JŘ element.</summary>
     public abstract float CalculateHeightFromData(DataContext? data);
 
+    /// <summary>Výška z dat - aby rámeček, pozadí i ořez rohů obepnuly celý prvek, ne jen plochu
+    /// z návrháře.</summary>
+    public override float RenderedHeightMm(RenderContext ctx) =>
+        Height ?? (ctx.Data is not null ? CalculateHeightFromData(ctx.Data) : EffectiveDesignerHeight);
+
+
     /// <summary>
     /// Přetéká obsah pevnou Height? Funguje i bez renderu (pre-detekce pro varování v preview).
     /// Dynamické elementy (Height == null) se neořezávají → false (geometrickou kontrolu řeší PreviewCanvas).

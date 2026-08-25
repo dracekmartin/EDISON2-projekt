@@ -66,4 +66,51 @@ public class VyskaOdpovidaVykreslenemuTests
                     return (y + 1) / MmToPx - prvek.Y;
         return 0f;
     }
+
+    /// <summary>
+    /// ⚠️ Rámeček a pozadí musí obepnout <b>celý</b> prvek, i když narostl s daty.
+    /// </summary>
+    /// <remarks>
+    /// Do 25. 8. si rámeček, pozadí i ořez rohů braly výšku z návrháře, takže u dynamického prvku
+    /// vedl rámeček přes tabulku a zaoblené rohy ji uřízly (nahlásil Jan). Odtisky to nemohly
+    /// chytit - fixtury mají pevnou výšku, kde se obě čísla rovnají; proto ten test výslovně
+    /// pracuje s <c>Height = null</c>.
+    /// </remarks>
+    [Theory]
+    [MemberData(nameof(Prvky))]
+    public void RamecekObepneCelyPrvek(string druh)
+    {
+        var (prvek, data) = Fixtura(druh);
+        prvek.Height = null;
+        prvek.BorderColor = "#FFFF00FF";
+        prvek.BorderWidth = 0.5f;
+
+        float vyska = new SkiaHeightCalculator().CalculateHeight(prvek, prvek.Width, data);
+        float spodekRamecku = SpodekRameckuMm(prvek, data, vyska, SKColor.Parse("#FFFF00FF"));
+
+        Assert.True(Math.Abs(spodekRamecku - vyska) < 1f,
+            $"{druh}: prvek je vysoký {vyska:0.0} mm, ale rámeček končí na {spodekRamecku:0.0} mm");
+    }
+
+    /// <summary>Kam až sahá rámeček - hledá se poslední řádek obrázku s jeho barvou.</summary>
+    private static float SpodekRameckuMm(TemplateElement prvek, DataContext data, float vyska, SKColor barva)
+    {
+        int w = (int)((prvek.X + prvek.Width + 5f) * MmToPx);
+        int h = (int)MathF.Ceiling((prvek.Y + vyska + 60f) * MmToPx);
+        using var bmp = new SKBitmap(w, h, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using (var canvas = new SKCanvas(bmp))
+        {
+            canvas.Clear(SKColors.White);
+            var ctx = new RenderContext(canvas, MmToPx, data);
+            prvek.RenderBackgroundPass(ctx);
+            prvek.Render(ctx);
+            prvek.RenderBorderPass(ctx);
+        }
+
+        for (int y = h - 1; y >= 0; y--)
+            for (int x = 0; x < w; x++)
+                if (bmp.GetPixel(x, y) == barva)
+                    return (y + 1) / MmToPx - prvek.Y;
+        return 0f;
+    }
 }

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-25 (22) - 🐞 rámeček dynamického prvku vedl přes tabulku
+
+Rámeček, pozadí i ořez zaoblených rohů si braly výšku **z návrháře**, ne tu, do které prvek
+narostl s daty. U dynamické tabulky proto rámeček vedl přes ni a zaoblené rohy ji uřízly ve výšce
+plochy z plátna (nahlásil Jan).
+
+Nově je „jak je prvek právě teď vysoký" na **jednom místě** a bere ho rámeček, pozadí, ořez rohů
+i střed otáčení. Prvek, který svoji výšku umí spočítat, ho přepíše; ostatní zůstávají na výšce
+z plátna.
+
+⚠️ **Odtisky to nemohly chytit** - všechny fixtury mají pevnou výšku, kde se obě čísla rovnají.
+Nový test proto výslovně pracuje s dynamickou výškou a hledá v obrázku, kam až rámeček sahá.
+
+Ověřeno: .NET 1180/1180, pět nových testů (jeden na prvek), ověřeno mutací.
+
 ## 2026-08-25 (21) - 🧱 nová šablona má záhlaví a obsah jako dvě sekce
 
 Prvky uvnitř sekce se navzájem **neposouvají**, takže text, který roste s daty (výčet dopravců),
