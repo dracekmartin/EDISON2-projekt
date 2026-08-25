@@ -81,4 +81,51 @@ public class SirokaLinkaStrankovaniTests
             konecPredchoziho = sekce.ClipBottom;
         }
     }
+
+    /// <summary>
+    /// ⚠️ Řez stránky musí padnout <b>na hranici bloku</b>, ne kam zrovna dojde stránka.
+    /// </summary>
+    /// <remarks>
+    /// Změřeno 25. 8. na A4 na šířku: dva bloky po 105,7 mm na ploše 210 mm daly první stránku
+    /// s blokem a půl a druhou s <b>1,4 mm proužkem</b> - tabulka useknutá pár řádků před koncem.
+    /// Geometrický řez o blocích nevěděl; prvek je teď nabízí přes <c>INedelitelneDily</c>.
+    /// </remarks>
+    [Fact]
+    public void RezPadneNaHraniciBloku()
+    {
+        var prvek = ElementRenderFixtures.LineTable();
+        prvek.X = 0; prvek.Y = 0; prvek.Height = null; prvek.Width = 277;
+        var data = LineTableBlokyTests.SirokaLinkaData(41, pocetZastavek: 28);
+        var sablona = Sablona(prvek);
+        sablona.PageSize = PageSize.A4Landscape;
+
+        var zlomy = ((INedelitelneDily)prvek).ZlomyMm(data);
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(sablona, data);
+
+        Assert.NotEmpty(zlomy);
+        Assert.True(vysledek.TotalPages > 1, "linka se má rozpadnout na víc stránek");
+        foreach (var stranka in vysledek.Pages.Skip(1))
+        {
+            float rez = stranka.Sections[0].ClipTop!.Value;
+            Assert.True(zlomy.Any(z => Math.Abs(z - rez) < 0.05f),
+                $"řez na {rez:0.0} mm nepadl na žádnou hranici bloku ({string.Join(", ", zlomy.Select(z => $"{z:0.0}"))})");
+        }
+    }
+
+    /// <summary>Díl vyšší než celá stránka se rozřízne i tak - jinak by se nevešel nikdy
+    /// a stránkování by se zacyklilo.</summary>
+    [Fact]
+    public void BlokVyssiNezStranka_SePrestoRozrizne()
+    {
+        var prvek = ElementRenderFixtures.LineTable();
+        prvek.X = 0; prvek.Y = 0; prvek.Height = null; prvek.Width = 277;
+        var sablona = Sablona(prvek);
+        sablona.PageSize = PageSize.A4Landscape;
+
+        // jeden blok (málo spojů) a tolik zastávek, že sám přeroste stránku
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator())
+            .Layout(sablona, LineTableBlokyTests.SirokaLinkaData(4, pocetZastavek: 200));
+
+        Assert.True(vysledek.TotalPages > 1);
+    }
 }

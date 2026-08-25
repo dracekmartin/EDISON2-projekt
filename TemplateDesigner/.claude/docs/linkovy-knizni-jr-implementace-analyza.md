@@ -137,10 +137,15 @@ in("A",2,"MS",typ,podtyp) = šířka sloupce daného typu - VIZ NÍŽE, klient-d
 | ~~`L5-3`~~ | ✅ 25. 8. **Odpadl** - bloky pod sebou proteče **stávající svislé** stránkování (`ClipTop`/`ClipBottom` v sekci `SplitAcrossPages`), takže druhá (vodorovná) osa v enginu nevznikla. ⚠️ **Doloženo testem, ne úvahou** (`SirokaLinkaStrankovaniTests`): 200 spojů × 25 zastávek = 9 bloků → 3 stránky, chunky na sebe navazují bez díry i překryvu. | - |
 | `L5-4` | **Hlavička per blok, ne per směr** (#9417) - dnes se vypisují všichni dopravci linky a hlavička přeteče pod tabulku. Vypadne z `L5-3`. | hlavička sedí na každé stránce |
 | ~~`L5-5`~~ | ✅ 25. 8. Pás skupin dnů (i řádek platnosti a negativních značek) je nad **každým** blokem. O tom, které řádky tabulka má, rozhodují všechny spoje linky, ne spoje bloku - dřív blok padlý celý do jedné skupiny nadpis neměl. | - |
-| `L5-6` | **Zopakovat řádek s čísly spojů i při svislém řezu** - dnes se odroluje pryč. | druhá stránka dlouhé linky má čísla spojů |
+| `L5-6` | **Zopakovat řádek s čísly spojů i při svislém řezu.** ⚠️ **Zúženo 25. 8.:** běžný případ vyřešilo to, že se **řez drží hranic bloků** (`INedelitelneDily` + `PageLayoutEngine`) - blok se dál nekrájí a čísla spojů má nahoře každý. Zbývá jen případ, kdy **jediný blok je vyšší než stránka** (hodně zastávek); tam se řezat musí a čísla spojů se odrolují. | dlouhá linka: pokračovací stránka má čísla spojů |
 | `L5-7` | **Ruční zlom na tarifním čísle** (`ZLOM` z §13.2 C) - jediné místo, kde do řezání mluví doména. | zadaný zlom se respektuje |
 | `L5-8` | **Dorovnání šířky prázdnými sloupci** jako parametr (#8372) ⚠️ u řídkých linek se nesmí roztáhnout „do absurdna". | volba funguje a nedorovnává donekonečna |
 | `L5-9` | **Slučování přípojných řádků** (přesunuto z `L2` 24. 8.) - mění počet řádků, tedy kam řez padne. | podle rozhodnutí; dnes nechat po jednom |
+
+⚠️ **Řez stránky se musí držet hranic bloků** (zjištěno měřením 25. 8.): geometrický řez o blocích
+nevěděl, takže na A4 na šířku vyšly dva bloky po 105,7 mm na plochu 210 mm jako „blok a půl + **1,4 mm
+proužek**". Prvek proto nabízí místa, kudy se řezat smí (`INedelitelneDily`), a engine na ně řez
+přichytí; díl vyšší než celá stránka se rozřízne i tak. Hlídá `SirokaLinkaStrankovaniTests`.
 
 ⚠️ **Dno šířky sloupce řídí, kam řez padne** (zjištěno 25. 8.): dokud bylo pevné (3 mm), nasypalo
 dělení do bloku tolik spojů, kolik se jich při nečitelné šířce vešlo - bloky vycházely, ale text v nich

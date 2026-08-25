@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-25 (16) - 🧱 stránka se láme mezi bloky, ne uprostřed tabulky
+
+Rozřezaná linka se lámala tam, kde zrovna došla stránka. Na A4 na šířku to znamenalo první stránku
+s blokem a půl a druhou s **1,4 mm proužkem** - tabulku useknutou pár řádků před koncem.
+
+Prvek teď umí říct, **kudy se řezat smí**, a stránkování se toho drží. Je to obecná vlastnost
+(`INedelitelneDily`), ne záplata na linkový JŘ: kterýkoli prvek složený z dílů, které nemají smysl
+rozříznuté, ji může nabídnout. Díl vyšší než celá stránka se rozřízne i tak - jinak by se nevešel
+nikdy.
+
+⚠️ **Zúžilo to plánovaný krok „zopakovat čísla spojů na pokračovací stránce"**: v běžném případě se
+blok už nekrájí, takže čísla spojů má nahoře každý. Zbývá jediný případ - linka s tolika zastávkami,
+že jeden blok přeroste stránku.
+
+Ověřeno: .NET 1159/1159 (řez na hranici bloku ověřen mutací - bez přichycení test padá).
+
 ## 2026-08-25 (15) - 🧱 široká linka se rozřeže na čitelné bloky (`L5-2`, `L5-3`, `L5-5`)
 
 Linka se 100+ spoji se dosud zmáčkla do šířky, až z ní nebylo nic vidět. Nově se **rozřeže na

@@ -19,7 +19,8 @@ namespace TemplateDesigner.Models.Elements;
 /// První řez: bez 2D bin-packingu přes stránky (stránkuje PageLayoutEngine per sekce),
 /// symboly jako textový fallback (Timetable font = roadmap 42b).
 /// </summary>
-public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnLayoutOwner
+public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnLayoutOwner,
+    INedelitelneDily
 {
     // ─── DataSource ──────────────────────────────────────────────────────────
     // Vlastní DataSource klíče (linkový formát) - NE zastávkové z base. LineTable dědí jen
@@ -486,6 +487,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                              .Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * PripojRowH();
         }
         return (h * pocetBloku) + (MezeraMeziBlokyMm * (pocetBloku - 1));
+    }
+
+    /// <summary>Řezat se smí jen mezi bloky - blok useknutý uprostřed je tabulka bez konce.</summary>
+    public IReadOnlyList<float> ZlomyMm(DataContext? data)
+    {
+        if (data is null) return [];
+        float celkem = CalculateHeightFromData(data);
+        EnsureParsed(data);
+        int pocet = _cachedStops!.Count == 0 || _cachedTrips!.Count == 0
+            ? 1
+            : SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!), _cachedTrips!.Count).Count;
+        if (pocet <= 1) return [];
+
+        float krok = (celkem + MezeraMeziBlokyMm) / pocet;   // blok i s mezerou pod ním
+        return [.. Enumerable.Range(1, pocet - 1).Select(i => i * krok)];
     }
 
     // ─── Render ─────────────────────────────────────────────────────────────

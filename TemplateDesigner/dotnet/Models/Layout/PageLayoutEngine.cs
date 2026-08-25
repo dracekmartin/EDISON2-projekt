@@ -1,4 +1,5 @@
 using System.Globalization;
+using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Expressions;
 
 namespace TemplateDesigner.Models.Layout;
@@ -10,6 +11,10 @@ namespace TemplateDesigner.Models.Layout;
 public class PageLayoutEngine
 {
     private readonly IElementHeightCalculator _heightCalc;
+
+    /// <summary>Místa (mm od horního okraje sekce), kde se sekce smí rozříznout - nasbíraná od
+    /// prvků, které se skládají z nedělitelných dílů. Prázdné = řez kdekoli, jako dřív.</summary>
+    private Dictionary<Guid, List<float>> _sectionBreaks = [];
 
     public PageLayoutEngine(IElementHeightCalculator heightCalculator)
     {
@@ -36,8 +41,15 @@ public class PageLayoutEngine
         var sectionHeights = new Dictionary<Guid, float>();
         float printableWidth = template.PageSize.PrintableWidth;
 
+        var sectionBreaks = new Dictionary<Guid, List<float>>();
+
         foreach (var section in allSections)
-            sectionHeights[section.Id] = CalculateSectionHeight(section, printableWidth, data);
+        {
+            var (vyska, zlomy) = CalculateSectionHeight(section, printableWidth, data);
+            sectionHeights[section.Id] = vyska;
+            sectionBreaks[section.Id] = zlomy;
+        }
+        _sectionBreaks = sectionBreaks;
 
         // Krok 2: Dvouprůchodový layout
         // První průchod: bez OnLastPageOnly → zjistíme totalPages
@@ -117,15 +129,28 @@ public class PageLayoutEngine
     // ─────────────────────────────────────────────────────────────────────
     // Výpočet výšky sekce
 
-    private float CalculateSectionHeight(Section section, float printableWidth, DataContext? data)
+    /// <summary>Poslední nabídnutý zlom, který ještě padne do zbytku stránky; null = žádný se
+    /// nevejde. Zlom musí posunout o kus dál, jinak by se smyčka řezala na místě.</summary>
+    private static float? PosledniZlomDo(List<float> zlomy, float od, float doKam)
     {
+        float? nejlepsi = null;
+        foreach (float z in zlomy)
+            if (z > od + 0.01f && z <= doKam + 0.01f && (nejlepsi is null || z > nejlepsi))
+                nejlepsi = z;
+        return nejlepsi;
+    }
+
+    private (float Vyska, List<float> Zlomy) CalculateSectionHeight(
+        Section section, float printableWidth, DataContext? data)
+    {
+        var zlomy = new List<float>();
         // Odfiltrovat neviditelné elementy
         var visibleElements = section.Elements
             .Where(e => ExpressionEvaluator.IsVisible(e.VisibilityExpression, data))
             .ToList();
 
         if (visibleElements.Count == 0)
-            return section.DesignerHeight ?? 0f;
+            return (section.DesignerHeight ?? 0f, zlomy);
 
         // Flow layout: dynamické elementy posouvají elementy pod sebou
         var effectiveHeights = new Dictionary<Guid, float>();
@@ -144,6 +169,11 @@ public class PageLayoutEngine
             float bottom = effectiveY + elementHeight;
             maxBottom = Math.Max(maxBottom, bottom);
 
+            // Prvek složený z nedělitelných dílů (linková tabulka rozřezaná na bloky) nabídne
+            // místa, kudy se řezat smí - přepočtená z jeho souřadnic do souřadnic sekce.
+            if (element is INedelitelneDily deleny)
+                zlomy.AddRange(deleny.ZlomyMm(data).Select(z => effectiveY + z));
+
             // Pokud je dynamický a výška se liší od designer výšky, posunout elementy pod ním
             if (!element.Height.HasValue)
             {
@@ -156,9 +186,10 @@ public class PageLayoutEngine
 
         // Výška sekce = max z vypočítaného obsahu a DesignerHeight
         float computedHeight = maxBottom;
+        zlomy.Sort();
         if (section.DesignerHeight.HasValue)
-            return Math.Max(section.DesignerHeight.Value, computedHeight);
-        return computedHeight > 0 ? computedHeight : 0f;
+            return (Math.Max(section.DesignerHeight.Value, computedHeight), zlomy);
+        return (computedHeight > 0 ? computedHeight : 0f, zlomy);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -241,9 +272,15 @@ public class PageLayoutEngine
             if (!ExpressionEvaluator.IsVisible(section.VisibilityExpression, sectionData ?? data))
                 continue;
 
-            float sectionH = section.PrintBehavior == SectionPrintBehavior.PerDataRow
-                ? CalculateSectionHeight(section, printableWidth, sectionData)
-                : sectionHeights[section.Id];
+            float sectionH;
+            List<float> zlomySekce;
+            if (section.PrintBehavior == SectionPrintBehavior.PerDataRow)
+                (sectionH, zlomySekce) = CalculateSectionHeight(section, printableWidth, sectionData);
+            else
+            {
+                sectionH = sectionHeights[section.Id];
+                zlomySekce = _sectionBreaks.TryGetValue(section.Id, out var z) ? z : [];
+            }
 
             // Vejde se na stránku?
             if (cursorY + sectionH <= headerH + availableHeight)
@@ -307,6 +344,22 @@ public class PageLayoutEngine
                     }
 
                     float chunk = Math.Min(remaining, spaceOnPage);
+                    if (remaining - chunk > 0.01f)   // opravdu se řeže, ne poslední díl
+                    {
+                        float? zlom = PosledniZlomDo(zlomySekce, clipTop, clipTop + chunk);
+                        if (zlom is float z)
+                            chunk = z - clipTop;
+                        else if (cursorY > headerH + 0.01f)
+                        {
+                            // Nedělitelný díl se do zbytku stránky nevejde. Zkusit ho na čisté
+                            // stránce - vynucením prázdného místa se o ni postará začátek smyčky.
+                            // Na čisté stránce už `cursorY == headerH`, takže se díl rozřízne
+                            // geometricky (je vyšší než celá stránka) a smyčka se nezacyklí.
+                            cursorY = headerH + availableHeight;
+                            continue;
+                        }
+                    }
+
                     currentPage.Sections.Add(new PlacedSection
                     {
                         Source = section,
