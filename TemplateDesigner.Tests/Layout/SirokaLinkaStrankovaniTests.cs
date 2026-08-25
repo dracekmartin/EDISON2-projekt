@@ -4,6 +4,7 @@ using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Layout;
 using TemplateDesigner.Tests.Rendering;
 
+
 namespace TemplateDesigner.Tests.Layout;
 
 /// <summary>
@@ -279,4 +280,80 @@ public class SirokaLinkaStrankovaniTests
         canvas.Restore();
         return bmp;
     }
+
+    /// <summary>
+    /// ⚠️ <b>Prvky uvnitř sekce se navzájem neposouvají</b> - rostoucí prvek ten pod sebou přetiskne.
+    /// </summary>
+    /// <remarks>
+    /// Není to nedodělek, ale důsledek absolutního pozicování (zásada projektu). Test to drží
+    /// zapsané, protože na tom stojí rozhodnutí z 25. 8., proč má nová šablona <b>dvě</b> výchozí
+    /// sekce: záhlaví, které roste s daty, nesmí sdílet sekci s tabulkou. Analýza do té doby
+    /// tvrdila opak („textový prvek naroste a tabulku odsune"), což měření vyvrátilo.
+    /// </remarks>
+    [Fact]
+    public void UvnitrSekceSePrvkyNeposouvaji()
+    {
+        var rostouci = Text(y: 0, vyska: null, DlouhyText());
+        var pod = Text(y: 12, vyska: 5, "TABULKA");
+        var sekce = Sekce("Obsah", 100, rostouci, pod);
+
+        float vyskaTextu = new SkiaHeightCalculator().CalculateHeight(rostouci, 100, null);
+
+        Assert.True(vyskaTextu > pod.Y, "text má narůst přes pozici prvku pod ním, jinak test nic neměří");
+        Assert.Equal(12f, pod.Y);   // prvek zůstává, kam ho autor položil
+        Assert.Contains(pod, sekce.Elements);
+    }
+
+    /// <summary>
+    /// Mezi sekcemi tok naopak <b>funguje</b>: sekce pod rostoucí se odsune přesně o její výšku.
+    /// Tohle je ta cesta, kterou se překryv řeší - proto má nová šablona záhlaví ve vlastní sekci.
+    /// </summary>
+    [Fact]
+    public void SekcePodRostouciSeOdsune()
+    {
+        var prvni = Sekce("Záhlaví", null, Text(y: 0, vyska: null, DlouhyText()));
+        var druha = Sekce("Obsah", 20, Text(y: 0, vyska: 5, "NÁSLEDUJÍCÍ SEKCE"));
+
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator())
+            .Layout(new Template { PageSize = PageSize.A4Portrait, Sections = [prvni, druha] }, null);
+
+        var s1 = vysledek.Pages[0].Sections[0];
+        var s2 = vysledek.Pages[0].Sections[1];
+        Assert.True(s1.Height > 30f, "záhlaví má narůst, jinak test nic neměří");
+        Assert.Equal(s1.Y + s1.Height, s2.Y, 2);
+    }
+
+    /// <summary>
+    /// Nová šablona má <b>záhlaví a obsah jako dvě sekce</b>. Kdyby se to sloučilo zpátky do jedné,
+    /// vrátí se překryv rostoucího záhlaví přes tabulku - proto to hlídá test, ne jen komentář.
+    /// </summary>
+    [Fact]
+    public void NovaSablonaMaZahlaviVeVlastniSekci()
+    {
+        var sablona = TemplateDesignerViewModel.CreateSampleTemplate();
+
+        Assert.True(sablona.Sections.Count >= 2,
+            "nová šablona má mít záhlaví a obsah zvlášť, ne všechno v jedné sekci");
+        var zahlavi = sablona.Sections[0];
+        Assert.True(zahlavi.DesignerHeight < sablona.PageSize.PrintableHeight,
+            "sekce záhlaví nesmí zabírat celou stránku, jinak se pod ni obsah nevejde");
+        Assert.All(sablona.Sections,
+            sek => Assert.Equal(SectionOverflowBehavior.SplitAcrossPages, sek.OverflowBehavior));
+    }
+
+    private static string DlouhyText() =>
+        string.Join(" ", Enumerable.Repeat("Dopravce s dlouhým názvem a adresou", 40));
+
+    private static TextElement Text(float y, float? vyska, string text) => new()
+    {
+        X = 0, Y = y, Width = 100, Height = vyska, WordWrap = vyska is null, Text = text,
+        Style = new TextStyle { FontFamily = "Arial", FontSize = 8 }
+    };
+
+    private static Section Sekce(string nazev, float? vyska, params TemplateElement[] prvky) => new()
+    {
+        Name = nazev, PrintBehavior = SectionPrintBehavior.Once,
+        OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+        DesignerHeight = vyska, Elements = [.. prvky]
+    };
 }

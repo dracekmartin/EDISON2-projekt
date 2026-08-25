@@ -1158,7 +1158,7 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
 | 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ❌ **mezera, ale malá** - pás skupin dnů nad info sloupci **existuje**, jen má natvrdo prázdný text (`LineTableElement.BuildRowPlan`). Chce to popisek a jeho styl |
 | 7 | **mezera mezi bloky** (info × pracovní dny × víkendy) | ❌ **mezera** - prvek kreslí souvislou mřížku, pojem „mezera mezi skupinami sloupců" nemá |
 | 8 | **popisky info sloupců podle vzoru** | ✅ **umíme** - hlavička sloupce je volný text |
-| 9 | **záhlaví napevno; pruh dopravce se nevejde, když je dopravců víc** | ✅ **umíme lépe** - záhlaví je v návrháři složené z běžných prvků, textový prvek má dynamickou výšku a roste podle obsahu. ⚠️ Ověřit na lince s víc dopravci, že to pole s výčtem opravdu naroste a nepřekryje tabulku |
+| 9 | **záhlaví napevno; pruh dopravce se nevejde, když je dopravců víc** | ⚠️ **Ověřeno 25. 8. vykreslením - tvrzení „umíme lépe" NEPLATILO.** Textový prvek sice roste, ale **prvky uvnitř sekce se neposouvají**, takže záhlaví s 26 dopravci leželo přes tabulku stejně jako v legacy. Řeší to **rozdělení na dvě sekce** (tok mezi sekcemi funguje), a tak to teď zakládá nová šablona. |
 | 10 | **levé ohraničení, které leze, i když ho nikde nemám** | ✅ **odpadá** - vada starého modulu; v návrháři je vnější obrys rámeček prvku a ten se dá vypnout |
 
 ### 15.3 Co z toho plyne

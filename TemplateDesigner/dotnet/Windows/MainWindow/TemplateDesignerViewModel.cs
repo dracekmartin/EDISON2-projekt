@@ -1177,7 +1177,8 @@ public class TemplateDesignerViewModel : EDViewModel
         configure?.Invoke(t);
         State.CurrentTemplate = t;
         // Výchozí sekce, ať uživatel nezačíná na prázdné šabloně bez plochy k editaci.
-        State.CurrentTemplate.Sections.Add(CreateDefaultSection(State.CurrentTemplate.PageSize));
+        // Dvě, ne jedna - důvod viz `CreateDefaultSections`.
+        State.CurrentTemplate.Sections.AddRange(CreateDefaultSections(State.CurrentTemplate.PageSize));
         CurrentFilePath = null;
         _loadedFromCache = false;
         IsDirty = false;
@@ -3417,18 +3418,41 @@ public class TemplateDesignerViewModel : EDViewModel
     public static Template CreateSampleTemplate()
     {
         var t = new Template { Name = "Nová šablona", AgendaCode = "LINKOVY_JR_AD" };
-        t.Sections.Add(CreateDefaultSection(t.PageSize));
+        t.Sections.AddRange(CreateDefaultSections(t.PageSize));
         return t;
     }
 
-    /// <summary>Výchozí sekce „Obsah" přes celou tiskovou plochu stránky - sdílená novou i sample šablonou.</summary>
-    private static Section CreateDefaultSection(PageSize pageSize) => new()
-    {
-        Name = "Obsah",
-        PrintBehavior = SectionPrintBehavior.Once,
-        OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
-        DesignerHeight = pageSize.PrintableHeight
-    };
+    /// <summary>Výška výchozí sekce záhlaví (mm). Sekce roste s obsahem, tohle je jen startovní
+    /// plocha, aby do ní šlo něco položit.</summary>
+    private const float VychoziVyskaZahlavi = 30f;
+
+    /// <summary>
+    /// Výchozí sekce nové šablony: <b>záhlaví a obsah zvlášť</b> - sdílené novou i sample šablonou.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Proč dvě a ne jedna.** Prvky uvnitř sekce se navzájem <b>neposouvají</b>, takže text,
+    /// který roste s daty (výčet dopravců), přetiskne tabulku pod sebou. Změřeno 25. 8.: záhlaví
+    /// s 26 dopravci leželo přes řádek se zastávkami; přesně na to si stěžuje KORID v #9417.
+    /// Sekce se naopak posouvají správně - ta pod rostoucí se odsune o její výšku - takže rozdělení
+    /// na dvě sekce ten překryv řeší samo, bez zásahu do stránkování.
+    /// </remarks>
+    private static List<Section> CreateDefaultSections(PageSize pageSize) =>
+    [
+        new()
+        {
+            Name = "Záhlaví",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+            DesignerHeight = VychoziVyskaZahlavi
+        },
+        new()
+        {
+            Name = "Obsah",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+            DesignerHeight = MathF.Max(20f, pageSize.PrintableHeight - VychoziVyskaZahlavi)
+        }
+    ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

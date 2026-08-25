@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-25 (21) - 🧱 nová šablona má záhlaví a obsah jako dvě sekce
+
+Prvky uvnitř sekce se navzájem **neposouvají**, takže text, který roste s daty (výčet dopravců),
+přetiskne tabulku pod sebou. Změřeno vykreslením: záhlaví s 26 dopravci leželo přes řádek se
+zastávkami - přesně to, na co si stěžuje KORID (#9417) slovy „tisknou se skrytě pod JŘ".
+
+Sekce se naopak posouvají správně: ta pod rostoucí se odsune o její výšku. Nová šablona proto
+zakládá **„Záhlaví" a „Obsah" zvlášť** a překryv tím mizí bez zásahu do stránkování.
+
+⚠️ **Analýza do dneška tvrdila opak** - že u nás problém nenastane, protože textový prvek naroste
+a tabulku odsune. U toho tvrzení stálo „ověřit" a nikdo to neudělal; měření ho vyvrátilo.
+
+⚠️ **Odebrání „fantomového" odsazení z výpočtu výšky se ukázalo jako slepá ulička.** Výpočet sice
+předstírá posun, ke kterému při kreslení nedojde, ale na sedmi velikostech linky to nezměnilo počet
+stránek ani o jednu. Zůstává jako úklid, ne jako oprava - a překryv neřeší.
+
+Ověřeno: .NET 1174/1174, tři nové testy (dva drží změřené chování, jeden strukturu nové šablony),
+všechny ověřené mutací.
+
 ## 2026-08-25 (20) - 🐞 stránkování počítalo bloky jinak, než se kreslí
 
 Na konci stránky osiřel samotný pás skupin dnů a na další stránce byla hlavička dvakrát. Řez padl
