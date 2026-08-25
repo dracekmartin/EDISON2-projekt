@@ -1122,6 +1122,34 @@ Pět samostatných věcí v jednom tiketu:
 
 ---
 
+## 15b. Sada testovacích linek (změřeno 25. 8.)
+
+Konkrétní linky, na kterých je vidět **jedno určité nastavení**. Vyhledala je sonda
+`LinkovyJrNastaveniProbe.KdeToZkouset` (běh 25. 8.) plus linky, na kterých se ladilo stránkování.
+Smysl: procházet business logiku v aplikaci proti něčemu, co to nastavení opravdu má - ne hledat
+naslepo.
+
+| Firma | Skupina | Linka | Co je na ní vidět |
+|---|---|---|---|
+| CB_CSADAD | 1 | 0370618 | **ruční pořadí spojů** u linky (a že se použije, ne dopočítá) |
+| CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit) |
+| CB_CSADAD | 801 | 0345062 | **bez zón i bez km** (čtyřstavový přepínač `linIDS` = 3) |
+| VS_CSAD | 5 | 0771901 | **písmena ze zóny se odstraňují** |
+| CB_GWBUS | 106 | 0320144 | **schovaný sloupec tarifních čísel** |
+| CB_GWBUS | 104 | 0320157 | **bez zastávek, kde žádný spoj nestaví** (ubírá řádky, nejvíc vidět) |
+| CB_CSADAD | 1 | 0330510 | **rozřezání na bloky**: 41 spojů, přípojné řádky, tři skupiny dnů (37/1, 38/2, 41/3 podle volby dělení) |
+| CB_CSADAD | 1 | 0330511 | **jediná skupina dnů** - všechny spoje jen v pracovní dny, pás se nemá podle čeho rozdělit (viz `B101`) |
+
+⚠️ **Tři linky jsou v jiné firmě než CB_CSADAD** (VS_CSAD, CB_GWBUS). Sonda prohledává víc firem,
+ale návrhář pracuje s tou, do které je uživatel přihlášený - na ty tři je potřeba se přihlásit jinam,
+nebo si k témuž nastavení najít linku ve vlastní firmě.
+
+⚠️ **Sada nepokrývá nastavení, která nikdo nemá zapnutá** (analýza §13.4) - u nich není proti čemu
+porovnávat a žádná linka je neukáže.
+
+**Co k sadě chybí:** šablona, na které se to prochází. Bez ní jde vidět jen to, co nakreslí výchozí
+rozvržení; nastavení typu „schovaný sloupec Tč" se pozná až na šabloně, která ten sloupec má.
+
 ## 15. Co ve starém modulu nešlo nastavit (podklad Zlín, 2026-08-19)
 
 Kolega zkoušel ve **starém** modulu vyrobit linkový JŘ podle vzoru IDZK a narazil na řadu věcí,

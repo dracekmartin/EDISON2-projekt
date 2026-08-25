@@ -65,10 +65,11 @@ uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procháze
 každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Pořadí vln je proto
 **testovací linky → `L9` → `L6`**.
 
-📋 **Na řadě je sada testovacích linek** - pojmenovaný seznam linek, kde je vidět
-každé nastavení, aby šlo procházet business logiku v aplikaci a sledovat, jak přibývá. Dnes to
-vypisuje sonda `LinkovyJrNastaveniProbe.KdeToZkouset`, ale bez šablony a bez popisu, co se má na
-které lince ukázat.
+📋 **Na řadě je sada testovacích linek.** Seznam s popisem, co je na které vidět, je změřený
+a zapsaný v [`§15b`](linkovy-knizni-jr-implementace-analyza.md) (8 linek). **Zbývá k němu šablona**,
+na které se to prochází - bez ní je vidět jen to, co nakreslí výchozí rozvržení, a nastavení typu
+„schovaný sloupec tarifních čísel" se nepozná. ⚠️ Tři z těch linek jsou v jiné firmě, než do které
+se běžně přihlašuješ.
 
 | # | Vlna | Vel. |
 |---|---|---|
