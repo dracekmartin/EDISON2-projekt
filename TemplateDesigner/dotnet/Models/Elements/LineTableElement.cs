@@ -340,6 +340,28 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return (result, tripW, nameIndex);
     }
 
+    /// <summary>Mezera mezi stránkovými bloky, ať na sebe tabulky nenavazují bez předělu.</summary>
+    private const float MezeraMeziBlokyMm = 4f;
+
+    /// <summary>
+    /// Rozdělení sloupců spojů do stránkových bloků - <b>místo dřívějšího mačkání</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>Do 25. 8. se tabulka, která se nevešla, celá <b>zmenšila</b> (sloupce i písmo), takže
+    /// u linky se stovkou spojů nebylo vidět nic. Starý modul místo toho <b>řeže</b> - a protože
+    /// prvek má automatickou výšku a jeho sekce se umí rozdělit přes stránky, stačí bloky vysázet
+    /// <b>pod sebe</b> a stránkování je rozřeže samo.</para>
+    /// <para>Šířka sloupce spoje se pro dělení bere <b>minimální</b> - tolik se jich vejde nejvíc.
+    /// Při kreslení se pak sloupce toho bloku roztáhnou na celou šířku, takže se blok nedrží
+    /// při levém okraji.</para>
+    /// </remarks>
+    private List<TableLayout.SloupcovyBlok> SloupcoveBloky(List<LineStopData> stops, int kmCount, int pocetSpoju)
+    {
+        var (fixedCols, _, _) = BuildColumns(stops, kmCount, pocetSpoju);
+        float tripMin = TripColumn().Width ?? MinAutoColumnWidthMm;
+        return TableLayout.RozdelSpojeDoBloku(pocetSpoju, fixedCols.Sum(c => c.Width), tripMin, Width);
+    }
+
     /// <summary>Atributy trasy k zobrazení před názvem - jen významové značky pro cestujícího
     /// (x = na znamení). Řídicí atributy (T/P/S/E/…) se v prvním řezu netisknou.</summary>
     private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
@@ -373,6 +395,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         float headerH = ComputeHeaderH(MaxHeaderFontPt());
         float rowH = DataRowHeight ?? ComputeRowH(MaxDataFontPt());
+        // Bloky se sázejí pod sebe a **každý zopakuje celou tabulku zastávek**, takže výška roste
+        // násobkem jejich počtu. Musí to být týž výpočet jako v `Render`, jinak nesedí stránkování.
+        int pocetBloku = SloupcoveBloky(stops, MaxKmCount(stops), trips.Count).Count;
 
         float h = headerH;                                            // řádek čísel spojů
         if (HasGroupHeaderBand(trips, _cachedGroups!)) h += headerH;  // pás skupin dnů
@@ -388,7 +413,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             h += visibleStops.Where(s => NesePripoje(s, sOdjezdem))
                              .Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * PripojRowH();
         }
-        return h;
+        return (h * pocetBloku) + (MezeraMeziBlokyMm * (pocetBloku - 1));
     }
 
     // ─── Render ─────────────────────────────────────────────────────────────
@@ -422,39 +447,37 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var dataCentered = dataResolved with { HAlign = TextHorizontalAlignment.Center };
 
         int kmCount = MaxKmCount(stops);
-        var (fixedCols, tripW, nameIndex) = BuildColumns(stops, kmCount, trips.Count);
         var tripCol = TripColumn();
         var tripHeaderStyle = ResolveHeaderStyle(tripCol);
         var tripDataStyle = ResolveDataStyle(tripCol);
+        var bloky = SloupcoveBloky(stops, kmCount, trips.Count);
 
-        // Škála: svisle (pevná Height × obsah) i vodorovně (kolik šířky sloupce reálně potřebují -
-        // u linky s mnoha spoji dosednou na minimum a jejich součet přeteče Width). Bere se ta horší
-        // ze stran a platí pro šířky sloupců, výšky řádků i fonty, takže tabulka dosedne na Width
-        // místo oříznutí (dřív z pravé strany tiše zmizely spoje).
-        float widthScale = TableLayout.ComputeWidthScale(
-            fixedCols.Sum(c => c.Width) + trips.Count * tripW, Width);
-        float scale = MathF.Min(ComputeFontScale(CalculateHeightFromData(ctx.Data)), widthScale);
-        if (widthScale < 1f)
-        {
-            fixedCols = fixedCols.Select(c => c with { Width = c.Width * widthScale }).ToList();
-            tripW *= widthScale;
-        }
-
-        float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
-        float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
-        float fixedSum = fixedCols.Sum(c => c.Width);
+        float scale = ComputeFontScale(CalculateHeightFromData(ctx.Data));
 
         var clipRect = ctx.ToCanvasRect(X, Y, Width, Height ?? CalculateHeightFromData(ctx.Data));
         ctx.Canvas.Save();
         ctx.Canvas.ClipRect(clipRect);
         try
         {
-            var plan = BuildRowPlan(stops, trips, groups, fixedCols, tripW, nameIndex, fixedSum,
-                headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
-                tripHeaderStyle, tripDataStyle,
-                ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
+            float y = Y;
+            foreach (var blok in bloky)
+            {
+                // Sloupce se počítají pro **tenhle** blok, takže se jeho spoje roztáhnou na celou
+                // šířku; popisné sloupce se v každém bloku zopakují (jako ve starém tisku).
+                var (fixedCols, tripW, nameIndex) = BuildColumns(stops, kmCount, blok.Pocet);
+                var spojeBloku = trips.GetRange(blok.Od, blok.Pocet);
 
-            RowPlanRenderer.DrawRows(ctx, X, Y, Width, plan, scale);
+                float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
+                float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
+                float fixedSum = fixedCols.Sum(c => c.Width);
+
+                var plan = BuildRowPlan(stops, spojeBloku, groups, fixedCols, tripW, nameIndex, fixedSum,
+                    headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
+                    tripHeaderStyle, tripDataStyle,
+                    ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
+
+                y = RowPlanRenderer.DrawRows(ctx, X, y, Width, plan, scale) + MezeraMeziBlokyMm;
+            }
         }
         finally
         {
