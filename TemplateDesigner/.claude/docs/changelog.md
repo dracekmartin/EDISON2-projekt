@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-25 (18) - 🧱 dlouhá linka: řez mezi řádky a zopakovaná hlavička (`L5-6` hotová)
+
+Linka s tolika zastávkami, že jeden blok přeroste stránku, se rozřezat musí. Dosud se řezalo, kde
+zrovna došlo místo - tedy **doprostřed řádku zastávky** - a na pokračovací stránce zůstaly řádky
+**bez čísel spojů**, takže nešlo poznat, který sloupec je který spoj.
+
+Zlomy proto mají dvě síly: hranice bloku je **silná** (přirozený konec stránky), hranice řádku
+**slabá** (náhrada, když se blok celý nevejde). Silná má přednost, i když je výš - jinak by řez padl
+doprostřed bloku pokaždé, když v něm zbyl nějaký řádek.
+
+Když řez přesto padne dovnitř bloku, **pokračovací stránka zopakuje jeho hlavu** (pás skupin dnů,
+čísla spojů, platnost, negativní značky). Místo na ni vyhradí stránkování, aby ji prvek nepřetiskl
+přes obsah; stránka začínající novým blokem si hlavičku přinese sama a neopakuje se.
+
+Ověřeno: .NET 1164/1164, každá ze tří změn ověřená mutací.
+
 ## 2026-08-25 (17) - 🧱 sloupce spojů jsou ve všech blocích stejně široké
 
 Neúplný blok si šířku počítal podle **svého** počtu spojů, takže se poslední čtyři spoje roztáhly

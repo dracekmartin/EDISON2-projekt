@@ -468,42 +468,91 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var trips = _cachedTrips!;
         if (stops.Count == 0 || trips.Count == 0) return EffectiveDesignerHeight;
 
-        float headerH = ComputeHeaderH(MaxHeaderFontPt());
-        float rowH = DataRowHeight ?? ComputeRowH(MaxDataFontPt());
         // Bloky se sázejí pod sebe a **každý zopakuje celou tabulku zastávek**, takže výška roste
         // násobkem jejich počtu. Musí to být týž výpočet jako v `Render`, jinak nesedí stránkování.
         int pocetBloku = SloupcoveBloky(stops, MaxKmCount(stops), trips.Count).Count;
-
-        float h = headerH;                                            // řádek čísel spojů
-        if (HasGroupHeaderBand(trips, _cachedGroups!)) h += headerH;  // pás skupin dnů
-        if (HasPlatnostRow(trips)) h += rowH;
-        if (HasNzRow(trips)) h += rowH;
-        // Počítá se přesně jako v Render (parita výška↔render): jen viditelné zastávky a jejich
-        // přípojné řádky (matched na Poradi zastávky - jako render). Prázdný výraz → všechny zastávky.
-        var visibleStops = RowConditions.VisibleRows(stops, s => s.SourceRow, RowVisibilityExpression);
-        h += visibleStops.Count * rowH;
-        if (ShowPripojeRows)
-        {
-            var sOdjezdem = PoradiSOdjezdem(visibleStops);
-            h += visibleStops.Where(s => NesePripoje(s, sOdjezdem))
-                             .Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * PripojRowH();
-        }
+        var (hlava, radky) = VyskyRadkuBloku();
+        float h = hlava.Sum() + radky.Sum();
         return (h * pocetBloku) + (MezeraMeziBlokyMm * (pocetBloku - 1));
     }
 
-    /// <summary>Řezat se smí jen mezi bloky - blok useknutý uprostřed je tabulka bez konce.</summary>
-    public IReadOnlyList<float> ZlomyMm(DataContext? data)
+    /// <summary>
+    /// Výšky řádků jednoho bloku ve stejném pořadí, v jakém je skládá <see cref="BuildRowPlan"/>:
+    /// hlava (pás skupin, čísla spojů, platnost, negativní značky) a pod ní řádky zastávek
+    /// i s jejich přípojnými podřádky.
+    /// </summary>
+    /// <remarks>
+    /// Jeden zdroj pro výšku prvku i pro místa, kudy se smí řezat. Kdyby to byly dva výpočty,
+    /// rozešly by se a stránkování by řezalo jinam, než kde jsou doopravdy hranice řádků.
+    /// Volá se až po <c>EnsureParsed</c>.
+    /// </remarks>
+    private (List<float> Hlava, List<float> Radky) VyskyRadkuBloku()
+    {
+        var trips = _cachedTrips!;
+        float headerH = ComputeHeaderH(MaxHeaderFontPt());
+        float rowH = DataRowHeight ?? ComputeRowH(MaxDataFontPt());
+
+        var hlava = new List<float>();
+        if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
+        hlava.Add(headerH);                                                  // řádek čísel spojů
+        if (HasPlatnostRow(trips)) hlava.Add(rowH);
+        if (HasNzRow(trips)) hlava.Add(rowH);
+
+        // Jen viditelné zastávky a jejich přípojné řádky (matched na Poradi zastávky - jako render).
+        var visibleStops = RowConditions.VisibleRows(_cachedStops!, s => s.SourceRow, RowVisibilityExpression);
+        var sOdjezdem = ShowPripojeRows ? PoradiSOdjezdem(visibleStops) : null;
+        var radky = new List<float>();
+        foreach (var zastavka in visibleStops)
+        {
+            radky.Add(rowH);
+            if (sOdjezdem is null || !NesePripoje(zastavka, sOdjezdem)) continue;
+            int pripoju = trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == zastavka.Poradi));
+            for (int i = 0; i < pripoju; i++) radky.Add(PripojRowH());
+        }
+        return (hlava, radky);
+    }
+
+    /// <summary>Pokračovací stránka zopakuje hlavu bloku - pás skupin dnů, čísla spojů,
+    /// platnost a negativní značky. Bez ní nejde poznat, který sloupec je který spoj.</summary>
+    public float OpakovanaHlavickaMm(DataContext? data)
+    {
+        if (data is null) return 0f;
+        EnsureParsed(data);
+        if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return 0f;
+        return VyskyRadkuBloku().Hlava.Sum();
+    }
+
+    /// <summary>
+    /// Řezat se má mezi bloky (silný zlom) - blok useknutý uprostřed je tabulka bez konce.
+    /// Uvnitř bloku se nabízejí ještě hranice řádků zastávek (slabý zlom) pro případ, kdy je
+    /// blok sám vyšší než stránka a rozříznout se musí; bez nich by řez padl doprostřed textu.
+    /// </summary>
+    public IReadOnlyList<Zlom> ZlomyMm(DataContext? data)
     {
         if (data is null) return [];
-        float celkem = CalculateHeightFromData(data);
         EnsureParsed(data);
-        int pocet = _cachedStops!.Count == 0 || _cachedTrips!.Count == 0
-            ? 1
-            : SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!), _cachedTrips!.Count).Count;
-        if (pocet <= 1) return [];
+        if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return [];
 
-        float krok = (celkem + MezeraMeziBlokyMm) / pocet;   // blok i s mezerou pod ním
-        return [.. Enumerable.Range(1, pocet - 1).Select(i => i * krok)];
+        int pocetBloku = SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!), _cachedTrips!.Count).Count;
+        var (hlava, radky) = VyskyRadkuBloku();
+        float vyskaBloku = hlava.Sum() + radky.Sum();
+        float krok = vyskaBloku + MezeraMeziBlokyMm;
+
+        var zlomy = new List<Zlom>();
+        for (int b = 0; b < pocetBloku; b++)
+        {
+            float zacatekBloku = b * krok;
+            if (b > 0) zlomy.Add(new Zlom(zacatekBloku, Silny: true));
+
+            // hranice mezi řádky zastávek - první vynechat, jinak by zůstala hlava sama na stránce
+            float y = zacatekBloku + hlava.Sum();
+            for (int i = 0; i < radky.Count - 1; i++)
+            {
+                y += radky[i];
+                zlomy.Add(new Zlom(y, Silny: false));
+            }
+        }
+        return zlomy;
     }
 
     // ─── Render ─────────────────────────────────────────────────────────────
@@ -569,6 +618,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
+
+                float konecBloku = y + plan.Sum(r => r.HeightMm);
+
+                // Řez padl doprostřed tohohle bloku → zopakovat jeho hlavu nad pokračováním.
+                // Místo pro ni vyhradil engine, proto se kreslí těsně nad viditelný pás.
+                if (ctx.OpakovanaHlavickaMm > 0.01f && ctx.ClipTopMm > y && ctx.ClipTopMm < konecBloku)
+                {
+                    int hlavaRadku = VyskyRadkuBloku().Hlava.Count;
+                    RowPlanRenderer.DrawRows(ctx, X, ctx.ClipTopMm - ctx.OpakovanaHlavickaMm, Width,
+                        plan.Take(hlavaRadku).ToList(), scale);
+                }
 
                 y = RowPlanRenderer.DrawRows(ctx, X, y, Width, plan, scale) + MezeraMeziBlokyMm;
             }

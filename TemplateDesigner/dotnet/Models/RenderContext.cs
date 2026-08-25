@@ -22,6 +22,13 @@ public class RenderContext
     /// <summary>Absolutní Y pozice levého horního rohu aktuální sekce na canvasu (px).</summary>
     public float SectionOriginY { get; init; }
 
+    /// <summary>Kde na sekci začíná pás viditelný na téhle stránce (mm). 0 = sekce začíná tady.</summary>
+    public float ClipTopMm { get; init; }
+
+    /// <summary>Výška hlavičky, kterou má prvek na téhle stránce zopakovat (mm; 0 = žádnou).
+    /// Nenulová jen tam, kde řez padl doprostřed nedělitelného dílu.</summary>
+    public float OpakovanaHlavickaMm { get; init; }
+
     public RenderContext(SKCanvas canvas, float mmToPx, DataContext? data = null)
     {
         Canvas = canvas;

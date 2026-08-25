@@ -40,4 +40,8 @@ public class PlacedSection
 
     /// <summary>Data pro resolvování placeholderů (obohacená o PAGE/TOTAL_PAGES).</summary>
     public DataContext? Data { get; set; }
+
+    /// <summary>Výška hlavičky zopakované na téhle stránce (0 = žádná). Nenulová jen tam, kde řez
+    /// padl <b>doprostřed</b> nedělitelného dílu; obsah je o tolik posunutý dolů.</summary>
+    public float OpakovanaHlavickaMm { get; set; }
 }
