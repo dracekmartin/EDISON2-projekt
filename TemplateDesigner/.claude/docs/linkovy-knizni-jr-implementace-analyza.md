@@ -116,6 +116,22 @@ in("A",2,"dta",2)  = počet řádků pro tisk JŘ
 in("A",2,"MS",typ,podtyp) = šířka sloupce daného typu - VIZ NÍŽE, klient-driven layout
 ```
 
+📐 **Jak starý modul řeže tabulku - změřeno 25. 8.** (podklad pro `L5`, sonda `BlokyDleSirky`):
+
+Rozřezává **sloupce spojů podle šířky plochy**, ne podle skupin dnů, a v každém bloku zopakuje
+sloupec zastávek. Na `CB_CSADAD` 0330510 (směr T má 41 spojů: 30 pracovní + 5 soboty + 6 neděle):
+
+| Šířka plochy | Bloků | Dělení směru T |
+|---|---|---|
+| 120 | 4 | 21 + 20 |
+| 200 | 4 | 39 + 2 |
+| 400+ | 2 | 41 (vejde se) |
+
+⛔ **Řez nepadá na hranice skupin** (ty by byly 30 a 35) - blok tedy běžně obsahuje **konec jedné
+skupiny a začátek další**. Domněnka „každá stránka má svůj typ provozu" **neplatí** a `L5` se podle
+ní nesmí navrhnout: pás s nadpisy skupin se musí umět **rozseknout a zopakovat nad dalším blokem**.
+Přesně proto je v `L5` zákaznický požadavek „hlavička per blok, ne per směr" (#9417).
+
 **⚠️ Architektonická past, kterou nechceme replikovat:** legacy je **klient-driven, dvoufázový
 layout** - VB.NET klient nejdřív *měří text ve skutečném tiskovém fontu* a posílá zpět serveru
 „počet měřicích znaků" (`in("A",2,"MS",...)`), server podle toho určuje zlomy stránek. To je

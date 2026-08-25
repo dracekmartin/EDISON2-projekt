@@ -221,6 +221,51 @@ ClassMethod PripojneRadky(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Kolik spojů je v které skupině dnů - podklad k tomu, jestli starý modul řeže po skupinách,
+/// nebo podle šířky. IN: `DB`, `SKU`, `LIN`.
+ClassMethod SpojuVeSkupinach(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky, parametry
+        set parametry("DELENI_SLOUPCU") = "Pracovní dny / Soboty / Neděle+svátky"
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+        set key = ""
+        for  {
+            set key = $order(^||ML("OUT", key))
+            quit:key=""
+            continue:key="ERR"
+            set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+            set spoje = page.rows.%Get("SPOJE")
+            continue:'$isobject(spoje)
+            kill poc
+            set it = spoje.%GetIterator()
+            while it.%GetNext(.i, .sp) {
+                set g = sp.%Get("SKUPINA")
+                set poc(g) = $get(poc(g)) + 1
+            }
+            set vypis = "", g = ""
+            for  {
+                set g = $order(poc(g))
+                quit:g=""
+                set vypis = vypis_$select(vypis="":"", 1:", ")_"skupina "_g_": "_poc(g)_" spojů"
+            }
+            set radky($increment(radky)) = "směr "_page.values.%Get("SMER")_" → "_vypis
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Najde linky, jejichž spoje spadnou do **víc než jedné** skupiny dnů - jen na nich je rozdělení
 /// sloupců vidět. Hledá se **ve zdrojových datech** (týdenní platnost spojů), ne přes GetData,
 /// aby to prošlo tisíce linek rychle.
