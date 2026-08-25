@@ -468,12 +468,23 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var trips = _cachedTrips!;
         if (stops.Count == 0 || trips.Count == 0) return EffectiveDesignerHeight;
 
-        // Bloky se sázejí pod sebe a **každý zopakuje celou tabulku zastávek**, takže výška roste
-        // násobkem jejich počtu. Musí to být týž výpočet jako v `Render`, jinak nesedí stránkování.
-        int pocetBloku = SloupcoveBloky(stops, MaxKmCount(stops), trips.Count).Count;
-        var (hlava, radky) = VyskyRadkuBloku();
-        float h = hlava.Sum() + radky.Sum();
-        return (h * pocetBloku) + (MezeraMeziBlokyMm * (pocetBloku - 1));
+        // Bloky se sázejí pod sebe a **každý zopakuje celou tabulku zastávek**. Musí to být týž
+        // výpočet jako v `Render`, jinak nesedí stránkování.
+        var vysky = VyskyBloku();
+        return vysky.Sum() + (MezeraMeziBlokyMm * (vysky.Count - 1));
+    }
+
+    /// <summary>Výška každého bloku zvlášť - bloky <b>nejsou stejně vysoké</b>, protože přípojné
+    /// řádky patří ke spojům a ty jsou v každém bloku jiné. Volá se až po <c>EnsureParsed</c>.</summary>
+    private List<float> VyskyBloku()
+    {
+        var trips = _cachedTrips!;
+        return [.. SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!), trips.Count)
+            .Select(b =>
+            {
+                var (hlava, radky) = VyskyRadkuBloku(trips.GetRange(b.Od, b.Pocet));
+                return hlava.Sum() + radky.Sum();
+            })];
     }
 
     /// <summary>
@@ -486,7 +497,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// rozešly by se a stránkování by řezalo jinam, než kde jsou doopravdy hranice řádků.
     /// Volá se až po <c>EnsureParsed</c>.
     /// </remarks>
-    private (List<float> Hlava, List<float> Radky) VyskyRadkuBloku()
+    private (List<float> Hlava, List<float> Radky) VyskyRadkuBloku(IReadOnlyList<LineTripData> spojeBloku)
     {
         var trips = _cachedTrips!;
         float headerH = ComputeHeaderH(MaxHeaderFontPt());
@@ -506,7 +517,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             radky.Add(rowH);
             if (sOdjezdem is null || !NesePripoje(zastavka, sOdjezdem)) continue;
-            int pripoju = trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == zastavka.Poradi));
+            // ⚠️ Jen ze spojů **tohohle bloku** - kreslí se taky tak. Počítat je ze všech spojů
+            // linky znamenalo, že se bloky ve výpočtu posouvaly dopředu proti tomu, kde se opravdu
+            // kreslí, a řez stránky padl doprostřed hlavičky dalšího bloku (nahlásil Jan 25. 8.:
+            // na konci stránky osiřelý pás skupin, na další hlavička dvakrát).
+            int pripoju = spojeBloku.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == zastavka.Poradi));
             for (int i = 0; i < pripoju; i++) radky.Add(PripojRowH());
         }
         return (hlava, radky);
@@ -519,7 +534,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (data is null) return 0f;
         EnsureParsed(data);
         if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return 0f;
-        return VyskyRadkuBloku().Hlava.Sum();
+        return VyskyRadkuBloku(_cachedTrips!).Hlava.Sum();
     }
 
     /// <summary>
@@ -533,15 +548,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         EnsureParsed(data);
         if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return [];
 
-        int pocetBloku = SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!), _cachedTrips!.Count).Count;
-        var (hlava, radky) = VyskyRadkuBloku();
-        float vyskaBloku = hlava.Sum() + radky.Sum();
-        float krok = vyskaBloku + MezeraMeziBlokyMm;
+        var trips = _cachedTrips!;
+        var bloky = SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!), trips.Count);
 
         var zlomy = new List<Zlom>();
-        for (int b = 0; b < pocetBloku; b++)
+        float zacatekBloku = 0f;
+        for (int b = 0; b < bloky.Count; b++)
         {
-            float zacatekBloku = b * krok;
+            var (hlava, radky) = VyskyRadkuBloku(trips.GetRange(bloky[b].Od, bloky[b].Pocet));
             if (b > 0) zlomy.Add(new Zlom(zacatekBloku, Silny: true));
 
             // hranice mezi řádky zastávek - první vynechat, jinak by zůstala hlava sama na stránce
@@ -551,6 +565,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 y += radky[i];
                 zlomy.Add(new Zlom(y, Silny: false));
             }
+            zacatekBloku += hlava.Sum() + radky.Sum() + MezeraMeziBlokyMm;
         }
         return zlomy;
     }
@@ -633,7 +648,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // Řez padl doprostřed tohohle bloku → jeho hlavu zopakovat nad pokračováním.
                 // Kreslí se až po obsahu, mimo jeho ořez - viz `orezOd` výše.
                 if (ctx.OpakovanaHlavickaMm > 0.01f && ctx.ClipTopMm > y && ctx.ClipTopMm < konecBloku)
-                    hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku().Hlava.Count)];
+                    hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku(spojeBloku).Hlava.Count)];
 
                 y = RowPlanRenderer.DrawRows(ctx, X, y, Width, plan, scale) + MezeraMeziBlokyMm;
             }

@@ -1,4 +1,5 @@
 using SkiaSharp;
+using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
@@ -24,9 +25,23 @@ public class LineTableBlokyTests
 
     private static DataContext SirokaLinka(int pocetSpoju, int pocetZastavek = 3)
     {
+        // ⚠️ Přípojné řádky jen u **některých** spojů: patří ke spoji, takže každý blok jich má
+        // jiný počet. Bez nich by fixtura neuměla ukázat rozdíl mezi „počítat ze všech spojů"
+        // a „počítat ze spojů bloku" - a přesně na tom se výpočet rozešel s kreslením.
         var spoje = Enumerable.Range(1, pocetSpoju)
-            .Select(i => RenderSnapshot.Row(("CISLO_SPOJE", (i * 2).ToString()),
-                                            ("SKUPINA", i <= pocetSpoju * 2 / 3 ? "1" : "2")))
+            .Select(i =>
+            {
+                var pole = new List<(string, object?)>
+                {
+                    ("CISLO_SPOJE", (i * 2).ToString()),
+                    ("SKUPINA", i <= pocetSpoju * 2 / 3 ? "1" : "2")
+                };
+                if (i % 5 == 0)
+                    pole.Add(("PRIPOJE", RenderSnapshot.Nested(
+                        [[("TYP", "vycka"), ("PORADI", "2"), ("RADEK", "1"),
+                          ("CAS", "12:30"), ("LINKA", "330520"), ("SPOJ", "7"), ("TEXT", "Kaplice")]])));
+                return RenderSnapshot.Row([.. pole]);
+            })
             .ToArray();
         var zastavky = Enumerable.Range(1, pocetZastavek)
             .Select(i => RenderSnapshot.Row(("ID", i.ToString()),
@@ -171,5 +186,72 @@ public class LineTableBlokyTests
         Assert.True(bloky[^1].Pocet < bloky[0].Pocet, "poslední blok má být neúplný");
         Assert.True(bloky[^1].SirkaMm < prvek.Width - 1f,
             $"neúplný blok má nechat místo vpravo, zabral {bloky[^1].SirkaMm:0.0} z {prvek.Width} mm");
+    }
+
+    /// <summary>
+    /// ⚠️ Nejdůležitější podmínka celého dělení: <b>kde výpočet tvrdí, že blok začíná, tam se musí
+    /// opravdu nakreslit</b>. Ověřuje se vykreslením - model se porovná s obrázkem, ne sám se sebou.
+    /// </summary>
+    /// <remarks>
+    /// Rozešlo se to na přípojných řádcích: kreslí se jen ze spojů daného bloku, ale výška je
+    /// počítala ze všech spojů linky. Bloky se tím ve výpočtu posouvaly dopředu a řez stránky padl
+    /// doprostřed hlavičky dalšího bloku - na konci stránky osiřelý pás skupin dnů, na další stránce
+    /// hlavička dvakrát (nahlásil Jan 25. 8.). Žádný test to nechytil, protože se výpočet i zlomy
+    /// braly z téhož špatného čísla.
+    /// </remarks>
+    [Fact]
+    public void ZacatkyBlokuOdpovidajiVykreslenemu()
+    {
+        const float MmToPx = 8f;
+        const string Znacka = "#FFFF00FF";   // barva pozadí záhlaví, podle níž se blok v obrázku pozná
+
+        var prvek = Prvek();
+        prvek.X = 0; prvek.Y = 0; prvek.Height = null; prvek.Width = 277;
+        prvek.HeaderStyle.BackgroundColor = Znacka;
+        var data = SirokaLinkaData(41, pocetZastavek: 12);
+
+        float celkem = prvek.CalculateHeightFromData(data);
+        var tvrzene = new List<float> { 0f };
+        tvrzene.AddRange(((INedelitelneDily)prvek).ZlomyMm(data).Where(z => z.Silny).Select(z => z.Mm));
+        Assert.True(tvrzene.Count > 1, "linka se má rozřezat na víc bloků");
+
+        var nalezene = ZacatkyZahlaviMm(prvek, data, celkem, MmToPx, SKColor.Parse(Znacka));
+
+        Assert.Equal(tvrzene.Count, nalezene.Count);
+        for (int i = 0; i < tvrzene.Count; i++)
+            Assert.True(Math.Abs(tvrzene[i] - nalezene[i]) < 0.3f,
+                $"blok {i + 1}: výpočet tvrdí {tvrzene[i]:0.00} mm, nakreslený je na {nalezene[i]:0.00} mm");
+    }
+
+    /// <summary>Vykreslí prvek a vrátí odsazení, kde v obrázku začínají pruhy se záhlavím - tedy
+    /// kde doopravdy začínají bloky.</summary>
+    private static List<float> ZacatkyZahlaviMm(LineTableElement prvek, DataContext data,
+        float vyskaMm, float mmToPx, SKColor znacka)
+    {
+        int w = (int)(prvek.Width * mmToPx), h = (int)MathF.Ceiling(vyskaMm * mmToPx);
+        using var bmp = new SKBitmap(w, h, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using (var canvas = new SKCanvas(bmp))
+        {
+            canvas.Clear(SKColors.White);
+            prvek.Render(new RenderContext(canvas, mmToPx, data));
+        }
+
+        var zacatky = new List<float>();
+        float posledniZahlaviMm = -1000f;   // ne int.MinValue: rozdíl by přetekl
+        for (int y = 0; y < h; y++)
+        {
+            bool jeZahlavi = false;
+            for (int x = 0; x < w && !jeZahlavi; x++)
+                if (bmp.GetPixel(x, y) == znacka) jeZahlavi = true;
+            if (!jeZahlavi) continue;
+
+            // Hlava bloku je z několika řádků oddělených čarami mřížky, takže se v obrázku jeví
+            // jako několik pruhů těsně za sebou - patří k témuž bloku. Nový blok začíná až po
+            // řádcích zastávek, tedy po pořádné mezeře.
+            float mm = y / mmToPx;
+            if (mm - posledniZahlaviMm > 5f) zacatky.Add(mm);
+            posledniZahlaviMm = mm;
+        }
+        return zacatky;
     }
 }

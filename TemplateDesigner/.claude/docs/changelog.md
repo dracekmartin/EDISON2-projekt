@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-25 (20) - 🐞 stránkování počítalo bloky jinak, než se kreslí
+
+Na konci stránky osiřel samotný pás skupin dnů a na další stránce byla hlavička dvakrát. Řez padl
+doprostřed hlavičky dalšího bloku, protože **stránkování si myslelo, že blok začíná jinde, než se
+opravdu nakreslí**.
+
+Příčina: přípojné řádky patří ke spoji, takže se kreslí jen ze spojů daného bloku - výška je ale
+počítala ze **všech spojů linky**. Bloky se tím ve výpočtu posouvaly dopředu a rozdíl se sčítal.
+Výška se proto počítá pro každý blok podle jeho vlastních spojů; **bloky nejsou stejně vysoké**.
+
+⚠️ **Žádný dosavadní test to nemohl chytit** - výška i zlomy se braly z téhož špatného čísla, takže
+si odpovídaly. Nový test proto model **porovnává s obrázkem**: vykreslí prvek a hledá, kde v něm
+doopravdy začínají hlavičky bloků. A fixtura dostala přípojné řádky jen u některých spojů - bez nich
+se rozdíl nemá jak projevit (první verze testu prošla i s vrácenou chybou).
+
+Ověřeno: .NET 1166/1166, oprava ověřená mutací.
+
 ## 2026-08-25 (19) - 🐞 pod zopakovanou hlavičkou prosvítal konec předchozí stránky
 
 Zopakovaná hlavička na pokračovací stránce měla pod sebou **poslední řádky předchozí stránky**.
