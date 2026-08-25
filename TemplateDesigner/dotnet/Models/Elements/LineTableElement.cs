@@ -593,7 +593,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         float scale = ComputeFontScale(CalculateHeightFromData(ctx.Data));
 
-        var clipRect = ctx.ToCanvasRect(X, Y, Width, Height ?? CalculateHeightFromData(ctx.Data));
+        float vyskaObsahu = Height ?? CalculateHeightFromData(ctx.Data);
+
+        // ⚠️ Kreslí-li stránka zopakovanou hlavičku, je obsah posunutý o její výšku dolů - a tím
+        // by se do viditelného pásu dostal **konec předchozí stránky** a prosvítal zpod hlavičky
+        // (nahlásil Jan 25. 8.: „obrovská mezera mezi hlavičkou a daty"; ve skutečnosti přes sebe
+        // ležely tři řádky zastávek). Obsah se proto ořízne až od řezu; hlavička se kreslí zvlášť
+        // nad ním, mimo tenhle ořez.
+        float orezOd = ctx.OpakovanaHlavickaMm > 0.01f ? MathF.Max(Y, ctx.ClipTopMm) : Y;
+        var clipRect = ctx.ToCanvasRect(X, orezOd, Width, Y + vyskaObsahu - orezOd);
+        List<RowSpec>? hlavaKZopakovani = null;
         ctx.Canvas.Save();
         ctx.Canvas.ClipRect(clipRect);
         try
@@ -621,14 +630,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
                 float konecBloku = y + plan.Sum(r => r.HeightMm);
 
-                // Řez padl doprostřed tohohle bloku → zopakovat jeho hlavu nad pokračováním.
-                // Místo pro ni vyhradil engine, proto se kreslí těsně nad viditelný pás.
+                // Řez padl doprostřed tohohle bloku → jeho hlavu zopakovat nad pokračováním.
+                // Kreslí se až po obsahu, mimo jeho ořez - viz `orezOd` výše.
                 if (ctx.OpakovanaHlavickaMm > 0.01f && ctx.ClipTopMm > y && ctx.ClipTopMm < konecBloku)
-                {
-                    int hlavaRadku = VyskyRadkuBloku().Hlava.Count;
-                    RowPlanRenderer.DrawRows(ctx, X, ctx.ClipTopMm - ctx.OpakovanaHlavickaMm, Width,
-                        plan.Take(hlavaRadku).ToList(), scale);
-                }
+                    hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku().Hlava.Count)];
 
                 y = RowPlanRenderer.DrawRows(ctx, X, y, Width, plan, scale) + MezeraMeziBlokyMm;
             }
@@ -636,6 +641,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         finally
         {
             ctx.Canvas.Restore();
+        }
+
+        if (hlavaKZopakovani is not null)
+        {
+            float vrch = ctx.ClipTopMm - ctx.OpakovanaHlavickaMm;
+            ctx.Canvas.Save();
+            ctx.Canvas.ClipRect(ctx.ToCanvasRect(X, vrch, Width, ctx.OpakovanaHlavickaMm));
+            try { RowPlanRenderer.DrawRows(ctx, X, vrch, Width, hlavaKZopakovani, scale); }
+            finally { ctx.Canvas.Restore(); }
         }
     }
 

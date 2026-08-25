@@ -1,3 +1,4 @@
+using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Layout;
@@ -199,5 +200,83 @@ public class SirokaLinkaStrankovaniTests
 
         Assert.True(vysledek.TotalPages > 1);
         Assert.All(vysledek.Pages, s => Assert.Equal(0f, s.Sections[0].OpakovanaHlavickaMm));
+    }
+
+    /// <summary>
+    /// ⚠️ Zopakovaná hlavička nesmí mít pod sebou <b>konec předchozí stránky</b>.
+    /// </summary>
+    /// <remarks>
+    /// Posunutí obsahu dolů o výšku hlavičky okno jen přesunulo - do viditelného pásu se tím
+    /// dostaly poslední řádky předchozí stránky a prosvítaly zpod hlavičky (nahlásil Jan 25. 8.,
+    /// potvrzeno vykreslením: přes hlavičku ležely tři řádky zastávek). Obsah se proto ořezává
+    /// až od řezu a hlavička se kreslí zvlášť nad ním.
+    /// <para>Testuje se porovnáním pruhu s hlavičkou proti témuž pruhu na první stránce, kde ji
+    /// blok nese sám: musí vyjít <b>pixel po pixelu stejně</b>. Cokoli prosáklého se liší.</para>
+    /// </remarks>
+    [Fact]
+    public void ZopakovanaHlavickaNemaPodSebouKonecPredchoziStranky()
+    {
+        const float MmToPx = 4f;
+        var prvek = ElementRenderFixtures.LineTable();
+        prvek.X = 0; prvek.Y = 0; prvek.Height = null; prvek.Width = 277;
+        // ⚠️ Průhledné pozadí záhlaví je tu **schválně**: s neprůhledným by hlavička prosáklý
+        // obsah sama překryla a test by chybu neviděl (ověřeno mutací - s plným pozadím projde).
+        prvek.HeaderStyle.BackgroundColor = "#00FFFFFF";
+        var ps = PageSize.A4Landscape;
+        var sablona = new Template
+        {
+            PageSize = ps,
+            Sections = [ new Section {
+                Name = "Obsah",
+                PrintBehavior = SectionPrintBehavior.Once,
+                OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+                DesignerHeight = ps.PrintableHeight,
+                Elements = [prvek] } ]
+        };
+        // tolik zastávek, že jeden blok přeroste stránku → řez uvnitř bloku
+        var data = LineTableBlokyTests.SirokaLinkaData(41, pocetZastavek: 90);
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(sablona, data);
+
+        var pokracovani = vysledek.Pages.Select(x => x.Sections[0])
+                                        .First(x => x.OpakovanaHlavickaMm > 0.01f);
+        int pruhPx = (int)(pokracovani.OpakovanaHlavickaMm * MmToPx);
+        Assert.True(pruhPx > 2, "hlavička musí mít měřitelnou výšku");
+
+        var prvni = Vykresli(prvek, vysledek.Pages[0].Sections[0], ps, MmToPx);
+        var druha = Vykresli(prvek, pokracovani, ps, MmToPx);
+
+        int sirka = (int)(ps.PrintableWidth * MmToPx);
+        int x0 = (int)(ps.MarginLeft * MmToPx), y0 = (int)(ps.MarginTop * MmToPx);
+        for (int y = y0; y < y0 + pruhPx; y++)
+            for (int x = x0; x < x0 + sirka; x++)
+                if (prvni.GetPixel(x, y) != druha.GetPixel(x, y))
+                    Assert.Fail($"pruh s hlavičkou se liší na {x},{y} - zpod hlavičky prosvítá obsah");
+
+        prvni.Dispose();
+        druha.Dispose();
+    }
+
+    /// <summary>Vykreslí jednu stránku stejnou cestou jako náhled (posun originu, ořez sekce).</summary>
+    private static SKBitmap Vykresli(LineTableElement prvek, PlacedSection placed, PageSize ps, float mmToPx)
+    {
+        var bmp = new SKBitmap((int)(ps.Width * mmToPx), (int)(ps.Height * mmToPx),
+                               SKColorType.Rgba8888, SKAlphaType.Premul);
+        using var canvas = new SKCanvas(bmp);
+        canvas.Clear(SKColors.White);
+        float topPx = (ps.MarginTop + placed.Y) * mmToPx;
+        canvas.Save();
+        canvas.ClipRect(new SKRect(ps.MarginLeft * mmToPx, topPx,
+            (ps.MarginLeft + ps.PrintableWidth) * mmToPx, topPx + placed.Height * mmToPx));
+        float posun = (placed.ClipTop.HasValue ? -placed.ClipTop.Value * mmToPx : 0f)
+                      + placed.OpakovanaHlavickaMm * mmToPx;
+        prvek.Render(new RenderContext(canvas, mmToPx, placed.Data)
+        {
+            SectionOriginX = ps.MarginLeft * mmToPx,
+            SectionOriginY = topPx + posun,
+            ClipTopMm = placed.ClipTop ?? 0f,
+            OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm
+        });
+        canvas.Restore();
+        return bmp;
     }
 }

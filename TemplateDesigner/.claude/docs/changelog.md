@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-25 (19) - 🐞 pod zopakovanou hlavičkou prosvítal konec předchozí stránky
+
+Zopakovaná hlavička na pokračovací stránce měla pod sebou **poslední řádky předchozí stránky**.
+Posunutí obsahu dolů o její výšku okno jen přesunulo, místo aby obsah nad řezem odřízlo - takže
+tři řádky zastávek ležely přes hlavičku (nahlásil Jan, potvrzeno vykreslením stránek do obrázků).
+
+Obsah se teď ořezává **až od řezu** a hlavička se kreslí zvlášť nad ním.
+
+⚠️ **První verze testu chybu neviděla.** Hlavička se kreslí až po obsahu, takže prosáklé řádky
+překryla svým pozadím a pruh vyšel stejně. Test proto záhlaví **zprůhledňuje** - jinak by hlídal
+prázdno (odhaleno mutací).
+
+Ověřeno: .NET 1165/1165, oprava ověřená mutací.
+
 ## 2026-08-25 (18) - 🧱 dlouhá linka: řez mezi řádky a zopakovaná hlavička (`L5-6` hotová)
 
 Linka s tolika zastávkami, že jeden blok přeroste stránku, se rozřezat musí. Dosud se řezalo, kde
