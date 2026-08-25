@@ -221,6 +221,120 @@ ClassMethod PripojneRadky(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Najde linky, jejichž spoje spadnou do **víc než jedné** skupiny dnů - jen na nich je rozdělení
+/// sloupců vidět. Hledá se **ve zdrojových datech** (týdenní platnost spojů), ne přes GetData,
+/// aby to prošlo tisíce linek rychle.
+ClassMethod KdeJeVidetDeleni(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        set maxLinek = 6
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set db = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(db)
+            quit:$get(radky)'<maxLinek
+            set sku = ""
+            for  {
+                set sku = $order(^[db]JRL(sku))
+                quit:sku=""
+                quit:$get(radky)'<maxLinek
+                continue:'$isvalidnum(sku)
+                set lin = ""
+                for  {
+                    set lin = $order(^[db]JRL(sku, lin))
+                    quit:lin=""
+                    quit:$get(radky)'<maxLinek
+                    continue:'$data(^[db]JRL(sku, lin, "I"))
+                    set maPD = 0, maSo = 0, maNe = 0, sp = ""
+                    for  {
+                        set sp = $order(^[db]JRL(sku, lin, "T", sp))
+                        quit:sp=""
+                        continue:'$isvalidnum(sp)
+                        set plk = $piece($piece($get(^[db]JRL(sku, lin, "T", sp)), "#", 1), ":", 7)
+                        continue:plk=""
+                        for di = 1:1:$length(plk) {
+                            set z = $extract(plk, di)
+                            if "X12345" [ z set maPD = 1
+                            if z = 6 set maSo = 1
+                            if "7+" [ z set maNe = 1
+                        }
+                    }
+                    // podmínka za `continue:` končí první mezerou, proto mezisoučet a `if`
+                    set skupin = maPD + maSo + maNe
+                    if skupin < 2 continue
+                    set radky($increment(radky)) = db_" sku="_sku_" linka="_lin_"  (pracovní="_maPD_" soboty="_maSo_" neděle="_maNe_")"
+                }
+            }
+        }
+        if '$data(radky) set radky(1) = "Žádná linka s víc skupinami dnů nenalezena."
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Projde všechny hodnoty volby dělení spojů a u každé vypíše, kolik vznikne pásů, jak se jmenují
+/// a kolik spojů je na stránce - podklad k tomu, jestli se mění data, nebo až vykreslení.
+ClassMethod DeleniPorovnani(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky
+        for volba = "Bez rozlišení", "Pracovní dny / víkend+svátky", "Pracovní dny / Soboty / Neděle+svátky" {
+            kill parametry
+            set parametry("DELENI_SLOUPCU") = volba
+            do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+            set key = ""
+            for  {
+                set key = $order(^||ML("OUT", key))
+                quit:key=""
+                continue:key="ERR"
+                set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+                set sk = page.rows.%Get("SKUPINY_DNU"), spoje = page.rows.%Get("SPOJE")
+                set nadpisy = ""
+                if $isobject(sk) {
+                    set it = sk.%GetIterator()
+                    while it.%GetNext(.i, .g) {
+                        set nadpisy = nadpisy_$select(nadpisy="":"", 1:" | ")_g.%Get("NADPIS")
+                    }
+                }
+                // kolik různých skupin spoje reálně nesou
+                kill videno
+                set ruzn = 0
+                if $isobject(spoje) {
+                    set it2 = spoje.%GetIterator()
+                    while it2.%GetNext(.j, .sp) {
+                        set g = sp.%Get("SKUPINA")
+                        continue:$data(videno(g))
+                        set videno(g) = "", ruzn = ruzn + 1
+                    }
+                }
+                set radky($increment(radky)) = volba_" → spojů="_$select($isobject(spoje):spoje.%Size(),1:0)_" různých skupin="_ruzn_" nadpisy: ["_nadpisy_"]"
+                quit
+            }
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše hodnotu vzorů rozložení sloupců tak, jak jde na klienta. IN: `DB`, `SKU`, `LIN`.
 ClassMethod VzoryNaWire(ByRef sys As %String) As %Status
 {

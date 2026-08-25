@@ -4,19 +4,17 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 >
-> 🐛 **HNED ZÍTRA - dvě chyby ve vlastním rozložení sloupců** (nahlásil Jan 24. 8. při zkoušce,
-> `L3` je jinak hotová). Obojí je v **klientské** části, server je ověřený testy:
+> ✅ **Oba nálezy z 24. 8. vyřešené** (25. 8.):
 >
-> 1. **Přepnutí volby „Dělení spojů dle platnosti" nezmění náhled.** Parametr je v seznamu těch,
->    které spouštějí nové načtení dat, takže řetěz „vyber volbu → zapiš sloupce do prvku → přenačti"
->    se někde trhá. ⚠️ **Neověřený tip, kde hledat:** volba se promítá do šablony jen tehdy, když
->    jsou načtené **vzory** ze serveru (`PRESETY_SLOUPCU`); bez nich to vypíše hlášku do stavového
->    řádku a skončí. Vzory se přidaly dnes, takže je možné, že v datech ještě nejsou nebo se čtou
->    dřív, než dorazí.
-> 2. **Levý panel po přepnutí voliče odskočí ze záložky Parametry na Vlastnosti.** ⚠️ Neověřený tip:
->    zápis sloupců jde přes vratný příkaz, a ten si vyžádá obnovu panelu vlastností.
->
-> Zkouška: linkový JŘ (AD), libovolná linka, záložka **Parametry** → přepnout dělení spojů.
+> 1. **Odskok ze záložky Parametry** byl skutečná chyba - pravidlo „netaháme uživatele pryč z tabu,
+>    kde pracuje" mělo ve výčtu jen Pole agendy a Průvodce; Parametry přibyly později a zapomněly se.
+>    Opraveno.
+> 2. **„Přepnutí dělení nezmění náhled" chyba nebyla** - na zkoušené lince 330511 jedou **všechny
+>    spoje jen v pracovní dny**, takže vznikne jediná skupina a pás se nemá podle čeho rozdělit.
+>    Změřeno: 0330511 dá při všech třech volbách 9 spojů a 1 skupinu, kdežto **0330510** dá 37/1,
+>    38/2 a 41/3. ⚠️ Na tuhle otázku („mám to vůbec nastavené dobře?") **nešlo odpovědět z aplikace** -
+>    prvek pás nekreslí, když je skupina jedna, a uživatel nemá jak poznat, jestli je to jeho
+>    nastavením, nebo daty linky. Kandidát na drobné zlepšení, ne chyba.
 
 > **Nejblíž na řadě:** **linkové JŘ** - parita dat proti starému tisku je hotová (`L1`, `L2`, `L2b`;
 > 24. 8.) a agenda jde v návrháři vybrat. Dál: sada testovacích linek, pak `L4` (symboly).
