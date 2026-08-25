@@ -138,7 +138,7 @@ in("A",2,"MS",typ,podtyp) = šířka sloupce daného typu - VIZ NÍŽE, klient-d
 | `L5-4` | **Dopravci v záhlaví jen za spoje, které jsou vidět** (#9417). ⚠️ **Zpřesněno 25. 8. čtením tiketu:** zákazník žádá **per stránka** („jen ty spoje které na listu jsou"), ne per blok, jak si to přepsala roadmapa. Potřebuje ze serveru **vazbu dopravce↔spoj** (dnes `PopisDopravce` projde všechny spoje obou směrů a vrátí jeden text). ⚠️ Druhá polovina tiketu, **přetečení hlavičky pod tabulku, je vyřešená jinak** - viz níže. | v záhlaví jsou jen dopravci vidět spojů |
 | ~~`L5-5`~~ | ✅ 25. 8. Pás skupin dnů (i řádek platnosti a negativních značek) je nad **každým** blokem. O tom, které řádky tabulka má, rozhodují všechny spoje linky, ne spoje bloku - dřív blok padlý celý do jedné skupiny nadpis neměl. | - |
 | ~~`L5-6`~~ | ✅ 25. 8. Řez se drží hranic bloků; uvnitř bloku (linka s tolika zastávkami, že blok přeroste stránku) padne mezi řádky zastávek a pokračovací stránka **zopakuje hlavu bloku** - pás skupin, čísla spojů, platnost, negativní značky. Místo na ni vyhradí stránkování, aby ji prvek nepřetiskl přes obsah. | - |
-| `L5-7` | **Ruční zlom na tarifním čísle** (`ZLOM` z §13.2 C) - jediné místo, kde do řezání mluví doména. | zadaný zlom se respektuje |
+| ~~`L5-7`~~ | **Vědomě odloženo 25. 8. do `B100`** - nastaveno na 3 linkách z ~93 tisíc, což na zásah do serveru i klienta nestačí (rozhodnutí Jan). Neblokuje: vynucený zlom by k dnešním silným a slabým zlomům jen přibyl. | - |
 | `L5-8` | **Dorovnání šířky prázdnými sloupci** jako parametr (#8372). ✅ **Předpoklad hotový 25. 8.**: sloupce spojů jsou ve všech blocích stejně široké a neúplný blok nechá místo vpravo (dřív se čtyři spoje roztáhly na sloupce 58,8 mm proti 6,4 mm v prvním bloku - přesně to „roztažení do absurdna"). Zbývá **volba**, jestli se to místo vyplní prázdnými sloupci. | volba funguje a nedorovnává donekonečna |
 | `L5-9` | **Slučování přípojných řádků** (přesunuto z `L2` 24. 8.) - mění počet řádků, tedy kam řez padne. | podle rozhodnutí; dnes nechat po jednom |
 
@@ -573,7 +573,7 @@ Kompletní seznam toho, co tisková cesta reálně čte (`gPLSetWin` plus přím
 | `PATCH,podtrzeniPaJ` | podtržení u zdvojených řádků příjezd/odjezd (0 obě zastávky nad i pod / 1 první zastávka pod) | ❌ |
 | `PATCH,barevnyTiskSpoju` | vypnout barvy spojů (barva je na spoji) | ❌ barvy spojů neposíláme vůbec, agenda nemá jediné `FORE_COLOR` (zastávková jich má 9) |
 | `PATCH,cisIDS` | jak se skládá tištěné číslo linky (3místné, vlastní číslo, tablo) | ❌ |
-| `PATCH,ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ (patří k `L5`) |
+| `PATCH,ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ **vědomě odloženo** do `B100` (rozhodnutí Jan 25. 8.) - nastaveno na 3 linkách z ~93 tisíc. Ty se u nás tisknou jinak než ve starém modulu; **není to nedodělek, který by někdo hledal**, je to zapsané rozhodnutí |
 | `PATCH,TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ❌ |
 | `PATCH,ZonaIdsDelZnk` | **přebíjí** globální hodnotu téhož jména (`:1847`) | ❌ |
 | `MHD2,netisknoutTC` / `netisknoutCislaSpoju` / `netisknoutSipky` / `netisknoutKladivkaAPodobne` | schová sloupec Tč, čísla spojů, šipky, značky | ❌ |

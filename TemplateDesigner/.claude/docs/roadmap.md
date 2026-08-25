@@ -87,7 +87,7 @@ které lince ukázat.
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L5** | **Rozřezání široké tabulky / `Strih`** (gate R1/R2, dřív `B13`). ✅ **Šest z devíti kroků hotových 25. 8.** - rozdělení do bloků, kreslení pod sebou, pás skupin nad každým, řez na hranici bloku i mezi řádky, zopakovaná hlavička na pokračovací stránce, stejné šířky sloupců ve všech blocích; krok „opakovat sekci vodorovně" odpadl. Rozpis kroků a doklady v [`§16`](linkovy-knizni-jr-implementace-analyza.md), **zbytek rozepsaný pod tabulkou**. | M |
+| **L5** | ✅ **Hotovo 25. 8.** Rozřezání široké tabulky / `Strih` (gate R1/R2, dřív `B13`) - bloky, stránkování po jejich hranicích, zopakovaná hlavička, dorovnání prázdnými sloupci. Rozpis a doklady v [`§16`](linkovy-knizni-jr-implementace-analyza.md) a pod tabulkou; ruční zlom odložen do `B100`. | - |
 | **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **vícesloupcová legenda s přetékáním** (#7487 - dnes jeden sloupec, chtějí čtyři), **turnusy** a **výchozí šablona pro MHD**. | M |
 | **L7** | **Sdružený JŘ více linek** (dřív část `C6`) - jedna sestava přes víc linek s řádkem zdrojové linky, včetně výlukové varianty. ⚠️ **Přestalo být „ověřit, jestli to zákazník chce":** KOVED si o to řekl (#9283) a čeká kalkulaci, tedy placená práce. Rozsah a cenu rozhodnout s Pavlem, ne odvodit z kódu. | L |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
@@ -95,26 +95,18 @@ které lince ukázat.
 
 #### `L5` - co zbývá (rozpis 25. 8.)
 
-Pořadí je dané tím, co na ničem nestojí. Čísla jsou pořadí práce, ne priorita požadavku.
-**Zbývá už jen bod 2**, a u něj je otevřená otázka, jestli se do něj vůbec pouštět - viz níže.
+✅ **Vlna dokončená 25. 8.** Ruční zlom na tarifním čísle šel do backlogu (`B100`) - viz níže.
+Čísla jsou pořadí, ve kterém se to dělalo.
 
 **1. Prázdná legenda nesmí zamíchat stránkováním** (#9088) - ✅ **hotovo 25. 8.**
 Testovací případ, ne featura: linka bez poznámek složí legendu na nulu a nesmí kvůli ní vyjet
 stránka navíc. Bez závislostí, bez rozhodnutí.
 
-**2. Ruční zlom na tarifním čísle** (`PATCH,ZLOM`)
-U linky je uložené tarifní číslo, na kterém se má tisk rozdělit; starý modul to respektuje, my ne,
-takže se takové linky tisknou jinak než dřív. **Server i klient** - server hodnotu přečte a pošle,
-klient vynutí zlom (klientská strana pro zlomy hotová, `INedelitelneDily`). Chování určuje starý
-modul, takže není co rozhodovat. Střední. ⚠️ **Nastaveno na 3 linkách z ~93 tisíc** (měření
-21. 8.), a tehdejší závěr zněl „nechat být". Za cenu zásahu do serveru i klienta je to slabý
-důvod - **rozhodnout, jestli to nepřesunout do backlogu**.
-
-**3. Dorovnání neúplného bloku prázdnými sloupci** (#8372) - ✅ **hotovo 25. 8.**
+**2. Dorovnání neúplného bloku prázdnými sloupci** (#8372) - ✅ **hotovo 25. 8.**
 Volba „Dorovnat prázdnými sloupci" u prvku doplní neúplnému bloku sloupce na počet plného bloku.
 Rozhodnutí Jan: **vlastnost prvku**, parametr ji může zrcadlit později.
 
-**4. Úklid „fantomového" odsazení** - ✅ **hotovo 25. 8.**
+**3. Úklid „fantomového" odsazení** - ✅ **hotovo 25. 8.**
 Výška sekce už nerezervuje místo na posun, ke kterému při kreslení nedojde. Projeví se jen tam,
 kde prvek pod dynamickou tabulkou leží níž než její zástupný box.
 
@@ -141,6 +133,15 @@ legenda je samostatný prvek. Ověřit na reálné šabloně a tiket zavřít.
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
+  U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
+  to respektuje, my ne, takže se takové linky tisknou jinak. **Odloženo kvůli frekvenci**
+  (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ~93 tisíc** (měření 21. 8.), což je za cenu
+  zásahu do serveru i klienta slabý důvod. ⚠️ **Neblokuje nic dalšího** - klientská strana pro
+  zlomy existuje (`INedelitelneDily`, silné a slabé zlomy) a vynucený zlom by k ní jen přibyl;
+  na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
+  nebo až se bude stejně sahat na přenos nastavení linky.
 
 - **`B99` Tři značky, které v tiskovém fontu nejsou** (loď, wifi, zásuvka; z `L4` 24. 8.).
   Dnes se vypisují **textem** - provizorium podle rozhodnutí Jana, ať se informace aspoň neztratí,
