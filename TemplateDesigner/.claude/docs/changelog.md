@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-25 (15) - 🧱 široká linka se rozřeže na čitelné bloky (`L5-2`, `L5-3`, `L5-5`)
+
+Linka se 100+ spoji se dosud zmáčkla do šířky, až z ní nebylo nic vidět. Nově se **rozřeže na
+bloky pod sebou** a v každém se zopakují popisné sloupce - tak, jak to dělá starý tisk.
+
+**Kolik spojů blok unese, určuje písmo.** Dno šířky sloupce bylo pevné (3 mm) a čas se do 3 mm
+nevejde v žádném písmu: bloky sice vycházely, ale slité (nahlásil Jan). Dno se proto měří ze
+šířky času „00:00" i s odsazením - zvětšení fontu teď ubere spojů na blok místo aby tabulku
+zhustilo. Na zkušební lince to znamená 23 spojů na blok místo ~60.
+
+**Pás skupin dnů je nad každým blokem.** O tom, které řádky tabulka má (pás skupin, platnost,
+negativní značky), rozhodují **všechny spoje linky**, ne spoje jednoho bloku - jinak blok, který
+padl celý do jedné skupiny, neměl nad sebou nadpis a nešlo poznat, ke kterým dnům patří.
+
+⚠️ **Vodorovné opakování sekce se ukázalo jako zbytečné** (plánovaný `L5-3`). Bloky pod sebou
+proteče stávající svislé stránkování, takže druhá osa v enginu nevznikla.
+
+Ověřeno: .NET 1154/1154 (8 nových na rozvržení bloků, ověřené mutací - se starým dnem šířky
+padají). Vizuální zkouška na lince 0330510 zbývá.
+
 ## 2026-08-24 (14) - 🧱 vlastní rozložení sloupců spojů v šabloně (`L3` dokončena)
 
 Druhá půle. Linková tabulka **drží vlastní definici sloupců** v šabloně a posílá ji serveru, a

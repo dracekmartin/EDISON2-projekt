@@ -255,10 +255,25 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     // ─── Layout ─────────────────────────────────────────────────────────────
 
     /// <summary>Vyřešený popisový sloupec připravený k renderu (šířka + styly + hodnota z dat).</summary>
-    /// <summary>Nejmenší rozumná šířka sloupce bez vlastní šířky (mm) - pod ní je čas nečitelný.
-    /// Když se při ní tabulka nevejde do <c>Width</c>, zmenší se šířky i fonty jednou škálou
-    /// (dřív se přebytek tiše oříznul, takže z pravé strany zmizely spoje).</summary>
+    /// <summary>Nouzové dno šířky sloupce (mm) pro případ, že se písmo nepodaří změřit.</summary>
     private const float MinAutoColumnWidthMm = 3f;
+
+    /// <summary>
+    /// Nejmenší šířka automatického sloupce (mm) - tolik, aby se do ní vešel čas „00:00" i s odsazením.
+    /// </summary>
+    /// <remarks>
+    /// Dokud tu stála pevná 3 mm, řídila **kde se tabulka rozřízne**: dělení nasypalo do bloku tolik
+    /// spojů, kolik se jich při té šířce vešlo - a čas se do 3 mm nevejde v žádném písmu, takže bloky
+    /// sice vycházely, ale byly nečitelné (nahlásil Jan 25. 8.). Dno musí vycházet z písma, jinak
+    /// zvětšení fontu tabulku jen zhustí, místo aby ubralo spojů na blok.
+    /// </remarks>
+    private float MinAutoSloupecMm()
+    {
+        var st = ResolveDataStyle(TripColumn());
+        using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
+        float mm = (font.MeasureText("00:00") * PtToMm) + st.PaddingLeft + st.PaddingRight;
+        return MathF.Max(MinAutoColumnWidthMm, mm);
+    }
 
     private sealed record RenderCol(float Width, string Header, ResolvedTextStyle HeaderStyle,
         ResolvedTextStyle DataStyle, Func<LineStopData, string> Value);
@@ -315,7 +330,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == ColumnKeys.Km ? c.Width!.Value * kmCount : c.Width!.Value);
         int autoStructural = structural.Count(c => !c.Width.HasValue);
         int autoUnits = autoStructural + (trip.Width.HasValue ? 0 : tripCount);
-        float autoEach = autoUnits > 0 ? MathF.Max(MinAutoColumnWidthMm, (Width - fixedSum) / autoUnits) : 8f;
+        float autoEach = autoUnits > 0 ? MathF.Max(MinAutoSloupecMm(), (Width - fixedSum) / autoUnits) : 8f;
 
         var result = new List<RenderCol>();
         int nameIndex = -1;
@@ -357,9 +372,66 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     private List<TableLayout.SloupcovyBlok> SloupcoveBloky(List<LineStopData> stops, int kmCount, int pocetSpoju)
     {
-        var (fixedCols, _, _) = BuildColumns(stops, kmCount, pocetSpoju);
-        float tripMin = TripColumn().Width ?? MinAutoColumnWidthMm;
-        return TableLayout.RozdelSpojeDoBloku(pocetSpoju, fixedCols.Sum(c => c.Width), tripMin, Width);
+        if (pocetSpoju <= 0) return [];
+
+        // Kolik spojů se vejde, **nejde spočítat jedním výpočtem**: popisné sloupce jsou z větší
+        // části automatické, takže jejich šířka závisí na tom, kolik spojů s nimi sdílí místo.
+        // Hledá se proto největší počet, který se **při vlastním rozvržení** opravdu vejde - kdyby
+        // se pravidlo pro šířky sloupců změnilo, dělení se přizpůsobí samo místo aby se rozešlo.
+        // O čitelnost bloku se stará dno šířky sloupce, viz `MinAutoSloupecMm`.
+        int naBlok = NejvicSpojuNaBlok(stops, kmCount, pocetSpoju);
+        var bloky = new List<TableLayout.SloupcovyBlok>();
+        for (int od = 0; od < pocetSpoju; od += naBlok)
+            bloky.Add(new TableLayout.SloupcovyBlok(od, Math.Min(naBlok, pocetSpoju - od)));
+        return bloky;
+    }
+
+    /// <summary>Jak vyjde jeden blok: které spoje nese, jak je široký a kolik místa zbylo
+    /// na jeden sloupec spoje.</summary>
+    internal readonly record struct BlokRozvrh(int Od, int Pocet, float SirkaMm, float SloupecSpojeMm);
+
+    /// <summary>
+    /// Rozřezání tabulky do bloků i s výslednou šířkou každého z nich.
+    /// </summary>
+    /// <remarks>
+    /// Existuje kvůli jediné podmínce, kterou nejde ověřit zvenčí a jejíž porušení je hned vidět
+    /// v tisku: <b>každý blok se musí do šířky prvku vejít</b>. Když se počet spojů na blok počítal
+    /// z popisných sloupců zmáčknutých na minimum, první blok jich pobral skoro všechny a přetekl.
+    /// </remarks>
+    internal IReadOnlyList<BlokRozvrh> Rozvrzeni(DataContext data)
+    {
+        EnsureParsed(data);
+        var stops = _cachedStops!;
+        var trips = _cachedTrips!;
+        if (stops.Count == 0 || trips.Count == 0) return [];
+
+        int kmCount = MaxKmCount(stops);
+        return SloupcoveBloky(stops, kmCount, trips.Count).Select(b =>
+        {
+            var (cols, tripW, _) = BuildColumns(stops, kmCount, b.Pocet);
+            return new BlokRozvrh(b.Od, b.Pocet, cols.Sum(c => c.Width) + (b.Pocet * tripW), tripW);
+        }).ToList();
+    }
+
+    /// <summary>Největší počet spojů, který se do šířky vejde i s popisnými sloupci spočítanými
+    /// pro týž počet. Půlením intervalu, ať se `BuildColumns` nevolá pro každý počet zvlášť.</summary>
+    private int NejvicSpojuNaBlok(List<LineStopData> stops, int kmCount, int pocetSpoju)
+    {
+        bool Vejde(int n)
+        {
+            var (cols, tripW, _) = BuildColumns(stops, kmCount, n);
+            return cols.Sum(c => c.Width) + n * tripW <= Width + 0.01f;
+        }
+
+        if (Vejde(pocetSpoju)) return pocetSpoju;
+
+        int dolni = 1, horni = pocetSpoju;
+        while (dolni < horni)
+        {
+            int stred = (dolni + horni + 1) / 2;
+            if (Vejde(stred)) dolni = stred; else horni = stred - 1;
+        }
+        return dolni;   // aspoň jeden, jinak by dělení nikdy neskončilo
     }
 
     /// <summary>Atributy trasy k zobrazení před názvem - jen významové značky pro cestujícího
@@ -471,7 +543,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
                 float fixedSum = fixedCols.Sum(c => c.Width);
 
-                var plan = BuildRowPlan(stops, spojeBloku, groups, fixedCols, tripW, nameIndex, fixedSum,
+                var plan = BuildRowPlan(stops, spojeBloku, trips, groups, fixedCols, tripW, nameIndex, fixedSum,
                     headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
@@ -492,7 +564,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <see cref="RowSpec"/>, samotné kreslení <see cref="RowPlanRenderer"/>.
     /// </summary>
     private List<RowSpec> BuildRowPlan(
-        List<LineStopData> stops, List<LineTripData> trips, List<LineSkupinaData> groups,
+        List<LineStopData> stops, List<LineTripData> trips, List<LineTripData> vsechnySpoje,
+        List<LineSkupinaData> groups,
         List<RenderCol> fixedCols, float tripW, int nameIndex, float fixedSum,
         float headerH, float rowH, float pripojRowH, SKPaint gridPaint,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
@@ -503,7 +576,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         // pás názvů skupin dnů - spojité úseky sloupců spojů stejné skupiny (sloučené buňky,
         // proto bez svislých čar, které by nadpis rozsekaly)
-        if (HasGroupHeaderBand(trips, groups))
+        // ⚠️ O tom, které řádky tabulka MÁ, rozhodují **všechny spoje linky**, ne spoje bloku.
+        // Podle bloku to znamenalo, že pás skupin dnů byl jen nad prvním blokem (nahlásil Jan
+        // 25. 8.) - druhý blok padl celý do jedné skupiny, takže nad ním nebylo poznat, ke kterým
+        // dnům patří. Totéž by potkalo řádek platnosti a negativních značek a rozešlo by to výšku
+        // s `CalculateHeightFromData`, které počítá z celé linky.
+        if (HasGroupHeaderBand(vsechnySpoje, groups))
         {
             var band = new List<ColumnRenderer.CellSpec> { new(fixedSum, "", headerResolved) };
             int i = 0;
@@ -527,7 +605,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
 
         // řádek platnosti (znaky X/6/7/+ nad spojem)
-        if (HasPlatnostRow(trips))
+        if (HasPlatnostRow(vsechnySpoje))
         {
             // Značky se kreslí ručně nad hotovým řádkem, aby šel v jedné buňce střídat symbolový
             // a běžný font („⚒ BEV"). Buňky proto zůstávají prázdné - jinak by se text zdvojil.
@@ -545,7 +623,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
 
         // řádek NZ (negativní značky)
-        if (HasNzRow(trips))
+        if (HasNzRow(vsechnySpoje))
             plan.Add(new(RowKind.HeaderExtra, rowH,
                 TripTextRow(fixedCols, trips, tripW, tripDataStyle, t => t.Nz))
             { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
