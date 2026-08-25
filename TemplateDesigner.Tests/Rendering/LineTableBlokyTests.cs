@@ -137,4 +137,39 @@ public class LineTableBlokyTests
         using var font = new SKFont(face, fontPt);            // velikost v pt → míra vyjde v pt
         return font.MeasureText("00:00") * 0.3528f;
     }
+
+
+    /// <summary>
+    /// ⚠️ Sloupce spojů jsou ve <b>všech blocích stejně široké</b>. Podle vlastního počtu spojů
+    /// vycházel poslední blok se čtyřmi spoji se sloupci 58,8 mm proti 6,4 mm v prvním (změřeno
+    /// 25. 8.) - čas uprostřed šesticentimetrového pole a dva bloky, které vedle sebe nevypadají
+    /// jako táž tabulka. Zbylé místo vpravo zůstane prázdné.
+    /// </summary>
+    [Fact]
+    public void SloupceSpojuJsouVeVsechBlocichStejne()
+    {
+        var prvek = Prvek();
+        prvek.Width = 277;
+
+        var bloky = prvek.Rozvrzeni(SirokaLinkaData(41, pocetZastavek: 28));
+
+        Assert.True(bloky.Count > 1, "41 spojů na 277 mm se má rozřezat");
+        float prvni = bloky[0].SloupecSpojeMm;
+        Assert.All(bloky, b => Assert.Equal(prvni, b.SloupecSpojeMm, 2));
+    }
+
+    /// <summary>Neúplný blok proto tabulku nevyplní až k pravému okraji - a je to tak správně.
+    /// Dorovnání prázdnými sloupci je samostatné přání zákazníka (#8372), ne dnešní chování.</summary>
+    [Fact]
+    public void NeuplnyBlokNechaMistoVpravo()
+    {
+        var prvek = Prvek();
+        prvek.Width = 277;
+
+        var bloky = prvek.Rozvrzeni(SirokaLinkaData(41, pocetZastavek: 28));
+
+        Assert.True(bloky[^1].Pocet < bloky[0].Pocet, "poslední blok má být neúplný");
+        Assert.True(bloky[^1].SirkaMm < prvek.Width - 1f,
+            $"neúplný blok má nechat místo vpravo, zabral {bloky[^1].SirkaMm:0.0} z {prvek.Width} mm");
+    }
 }

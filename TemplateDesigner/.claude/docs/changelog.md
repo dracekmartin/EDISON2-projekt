@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-25 (17) - 🧱 sloupce spojů jsou ve všech blocích stejně široké
+
+Neúplný blok si šířku počítal podle **svého** počtu spojů, takže se poslední čtyři spoje roztáhly
+na sloupce 58,8 mm proti 6,4 mm v prvním bloku - čas uprostřed šesticentimetrového pole a dvě
+tabulky pod sebou, které nevypadaly jako táž tabulka.
+
+Šířky teď platí pro všechny bloky stejné a **neúplný blok nechá místo vpravo**, jako ve starém
+tisku. Jestli se to místo má vyplnit prázdnými sloupci, je samostatné přání zákazníka (#8372) -
+tenhle krok je jeho předpoklad.
+
+Ověřeno: .NET 1161/1161 (ověřeno mutací).
+
 ## 2026-08-25 (16) - 🧱 stránka se láme mezi bloky, ne uprostřed tabulky
 
 Rozřezaná linka se lámala tam, kde zrovna došla stránka. Na A4 na šířku to znamenalo první stránku

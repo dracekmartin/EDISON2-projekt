@@ -407,9 +407,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (stops.Count == 0 || trips.Count == 0) return [];
 
         int kmCount = MaxKmCount(stops);
-        return SloupcoveBloky(stops, kmCount, trips.Count).Select(b =>
+        var bloky = SloupcoveBloky(stops, kmCount, trips.Count);
+        int naBlok = bloky.Count > 0 ? bloky.Max(b => b.Pocet) : 0;
+        return bloky.Select(b =>
         {
-            var (cols, tripW, _) = BuildColumns(stops, kmCount, b.Pocet);
+            var (cols, tripW, _) = BuildColumns(stops, kmCount, naBlok);
             return new BlokRozvrh(b.Od, b.Pocet, cols.Sum(c => c.Width) + (b.Pocet * tripW), tripW);
         }).ToList();
     }
@@ -547,12 +549,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         ctx.Canvas.ClipRect(clipRect);
         try
         {
+            // ⚠️ Šířky se počítají pro **nejplnější** blok, ne pro ten kreslený, a platí pro
+            // všechny stejně. Podle vlastního počtu spojů vycházel poslední blok se čtyřmi spoji
+            // se sloupci 58,8 mm proti 6,4 mm v prvním - čas uprostřed šesticentimetrového pole
+            // (změřeno 25. 8.). Zbylé místo vpravo zůstane prázdné, jako ve starém tisku; jeho
+            // dorovnání prázdnými sloupci je samostatné přání zákazníka (#8372).
+            int naBlok = bloky.Max(b => b.Pocet);
             float y = Y;
             foreach (var blok in bloky)
             {
-                // Sloupce se počítají pro **tenhle** blok, takže se jeho spoje roztáhnou na celou
-                // šířku; popisné sloupce se v každém bloku zopakují (jako ve starém tisku).
-                var (fixedCols, tripW, nameIndex) = BuildColumns(stops, kmCount, blok.Pocet);
+                var (fixedCols, tripW, nameIndex) = BuildColumns(stops, kmCount, naBlok);
                 var spojeBloku = trips.GetRange(blok.Od, blok.Pocet);
 
                 float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
