@@ -134,7 +134,7 @@ in("A",2,"MS",typ,podtyp) = šířka sloupce daného typu - VIZ NÍŽE, klient-d
 |---|---|---|
 | ~~`L5-1`~~ | ✅ 24. 8. Rozdělení sloupců spojů do bloků podle skutečných šířek a písma. | - |
 | ~~`L5-2`~~ | ✅ 25. 8. Bloky se sázejí pod sebe, popisné sloupce se v každém zopakují. | - |
-| ~~`L5-3`~~ | ✅ 25. 8. **Odpadl** - bloky pod sebou proteče **stávající svislé** stránkování (`ClipTop`/`ClipBottom` v sekci `SplitAcrossPages`). Vodorovné opakování sekce se ukázalo jako zbytečná druhá osa. | - |
+| ~~`L5-3`~~ | ✅ 25. 8. **Odpadl** - bloky pod sebou proteče **stávající svislé** stránkování (`ClipTop`/`ClipBottom` v sekci `SplitAcrossPages`), takže druhá (vodorovná) osa v enginu nevznikla. ⚠️ **Doloženo testem, ne úvahou** (`SirokaLinkaStrankovaniTests`): 200 spojů × 25 zastávek = 9 bloků → 3 stránky, chunky na sebe navazují bez díry i překryvu. | - |
 | `L5-4` | **Hlavička per blok, ne per směr** (#9417) - dnes se vypisují všichni dopravci linky a hlavička přeteče pod tabulku. Vypadne z `L5-3`. | hlavička sedí na každé stránce |
 | ~~`L5-5`~~ | ✅ 25. 8. Pás skupin dnů (i řádek platnosti a negativních značek) je nad **každým** blokem. O tom, které řádky tabulka má, rozhodují všechny spoje linky, ne spoje bloku - dřív blok padlý celý do jedné skupiny nadpis neměl. | - |
 | `L5-6` | **Zopakovat řádek s čísly spojů i při svislém řezu** - dnes se odroluje pryč. | druhá stránka dlouhé linky má čísla spojů |

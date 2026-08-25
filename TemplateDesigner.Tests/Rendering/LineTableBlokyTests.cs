@@ -18,19 +18,23 @@ namespace TemplateDesigner.Tests.Rendering;
 public class LineTableBlokyTests
 {
     /// <summary>Linka s tolika spoji, že se do šířky nevejdou - právě na téhle se to lámalo.</summary>
-    private static DataContext SirokaLinka(int pocetSpoju)
+    /// <summary>Sdíleno se stránkovacím testem - táž linka, dva pohledy na ni.</summary>
+    internal static DataContext SirokaLinkaData(int pocetSpoju, int pocetZastavek = 3) =>
+        SirokaLinka(pocetSpoju, pocetZastavek);
+
+    private static DataContext SirokaLinka(int pocetSpoju, int pocetZastavek = 3)
     {
         var spoje = Enumerable.Range(1, pocetSpoju)
             .Select(i => RenderSnapshot.Row(("CISLO_SPOJE", (i * 2).ToString()),
                                             ("SKUPINA", i <= pocetSpoju * 2 / 3 ? "1" : "2")))
             .ToArray();
+        var zastavky = Enumerable.Range(1, pocetZastavek)
+            .Select(i => RenderSnapshot.Row(("ID", i.ToString()),
+                                            ("NAZEV_ZASTAVKY", $"Zastávka {i}, rozcestí"),
+                                            ("PORADI", i.ToString())))
+            .ToArray();
         return RenderSnapshot.Data(
-            ("ZASTAVKY",
-            [
-                RenderSnapshot.Row(("ID", "1"), ("NAZEV_ZASTAVKY", "České Budějovice, aut.nádr."), ("PORADI", "1")),
-                RenderSnapshot.Row(("ID", "2"), ("NAZEV_ZASTAVKY", "Velešín, náměstí"), ("PORADI", "2")),
-                RenderSnapshot.Row(("ID", "3"), ("NAZEV_ZASTAVKY", "Kaplice, aut.st."), ("PORADI", "3")),
-            ]),
+            ("ZASTAVKY", zastavky),
             ("SPOJE", spoje),
             ("SKUPINY_DNU",
             [

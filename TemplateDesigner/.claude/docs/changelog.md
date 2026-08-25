@@ -15,7 +15,8 @@ negativní značky), rozhodují **všechny spoje linky**, ne spoje jednoho bloku
 padl celý do jedné skupiny, neměl nad sebou nadpis a nešlo poznat, ke kterým dnům patří.
 
 ⚠️ **Vodorovné opakování sekce se ukázalo jako zbytečné** (plánovaný `L5-3`). Bloky pod sebou
-proteče stávající svislé stránkování, takže druhá osa v enginu nevznikla.
+proteče stávající svislé stránkování, takže druhá osa v enginu nevznikla. Doloženo testem, ne
+úvahou: 200 spojů × 25 zastávek = 9 bloků → 3 stránky, které na sebe navazují.
 
 Ověřeno: .NET 1154/1154 (8 nových na rozvržení bloků, ověřené mutací - se starým dnem šířky
 padají). Vizuální zkouška na lince 0330510 zbývá.
