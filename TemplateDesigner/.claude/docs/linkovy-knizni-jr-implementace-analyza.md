@@ -135,7 +135,7 @@ in("A",2,"MS",typ,podtyp) = šířka sloupce daného typu - VIZ NÍŽE, klient-d
 | ~~`L5-1`~~ | ✅ 24. 8. Rozdělení sloupců spojů do bloků podle skutečných šířek a písma. | - |
 | ~~`L5-2`~~ | ✅ 25. 8. Bloky se sázejí pod sebe, popisné sloupce se v každém zopakují. | - |
 | ~~`L5-3`~~ | ✅ 25. 8. **Odpadl** - bloky pod sebou proteče **stávající svislé** stránkování (`ClipTop`/`ClipBottom` v sekci `SplitAcrossPages`), takže druhá (vodorovná) osa v enginu nevznikla. ⚠️ **Doloženo testem, ne úvahou** (`SirokaLinkaStrankovaniTests`): 200 spojů × 25 zastávek = 9 bloků → 3 stránky, chunky na sebe navazují bez díry i překryvu. | - |
-| `L5-4` | **Hlavička per blok, ne per směr** (#9417) - dnes se vypisují všichni dopravci linky a hlavička přeteče pod tabulku. Vypadne z `L5-3`. | hlavička sedí na každé stránce |
+| `L5-4` | **Dopravci v záhlaví jen za spoje, které jsou vidět** (#9417). ⚠️ **Zpřesněno 25. 8. čtením tiketu:** zákazník žádá **per stránka** („jen ty spoje které na listu jsou"), ne per blok, jak si to přepsala roadmapa. Potřebuje ze serveru **vazbu dopravce↔spoj** (dnes `PopisDopravce` projde všechny spoje obou směrů a vrátí jeden text). ⚠️ Druhá polovina tiketu, **přetečení hlavičky pod tabulku, je vyřešená jinak** - viz níže. | v záhlaví jsou jen dopravci vidět spojů |
 | ~~`L5-5`~~ | ✅ 25. 8. Pás skupin dnů (i řádek platnosti a negativních značek) je nad **každým** blokem. O tom, které řádky tabulka má, rozhodují všechny spoje linky, ne spoje bloku - dřív blok padlý celý do jedné skupiny nadpis neměl. | - |
 | ~~`L5-6`~~ | ✅ 25. 8. Řez se drží hranic bloků; uvnitř bloku (linka s tolika zastávkami, že blok přeroste stránku) padne mezi řádky zastávek a pokračovací stránka **zopakuje hlavu bloku** - pás skupin, čísla spojů, platnost, negativní značky. Místo na ni vyhradí stránkování, aby ji prvek nepřetiskl přes obsah. | - |
 | `L5-7` | **Ruční zlom na tarifním čísle** (`ZLOM` z §13.2 C) - jediné místo, kde do řezání mluví doména. | zadaný zlom se respektuje |
@@ -173,7 +173,7 @@ sloupec zastávek. Na `CB_CSADAD` 0330510 (směr T má 41 spojů: 30 pracovní +
 ⛔ **Řez nepadá na hranice skupin** (ty by byly 30 a 35) - blok tedy běžně obsahuje **konec jedné
 skupiny a začátek další**. Domněnka „každá stránka má svůj typ provozu" **neplatí** a `L5` se podle
 ní nesmí navrhnout: pás s nadpisy skupin se musí umět **rozseknout a zopakovat nad dalším blokem**.
-Přesně proto je v `L5` zákaznický požadavek „hlavička per blok, ne per směr" (#9417).
+S tím souvisí zákaznický požadavek #9417 (dopravci v záhlaví jen za spoje, které jsou vidět).
 
 **⚠️ Architektonická past, kterou nechceme replikovat:** legacy je **klient-driven, dvoufázový
 layout** - VB.NET klient nejdřív *měří text ve skutečném tiskovém fontu* a posílá zpět serveru
@@ -1076,7 +1076,7 @@ podněty - je to náš vydaný závazek a při plánování vln s nimi tak zach�
 | **#11300** | KORID | **Prázdný přípojný řádek nemá zabírat místo.** Uzel má celotýdenní provoz, ale přípoje jen v pracovní dny; při rozdělení na bloky PD × víkend zůstane v druhém bloku prázdný řádek | vlna 2, ale **až po dělení na bloky** - „prázdný" má smysl teprve vůči bloku |
 | **#8576** | KU HK | **Zóny do více sloupců**, když má zastávka víc zón (hraniční zastávka mezi zónami jednoho IDS - PID, IDZK). Dnes je zóna jedna hodnota v jednom sloupci | vlna 2 (datová část) + vlna 6 (sloupce jako u km) |
 | **#8372** | KORID | **„Vkládat prázdné sloupce" má být volba u tisku, ne v šabloně** - jinak si na to musí dělat druhou šablonu. Navíc u linek s málo spoji to dnes roztáhne rozestupy „do absurdna" | vlna 5 (`Strih`), a rozhoduje o tom, že to bude **parametr sestavy** |
-| **#9417** | KORID | **Dopravci v záhlaví jen za spoje na dané stránce.** U velkých linek na A4 (Praha-Rumburk) se vypisují všichni a hlavička přeteče pod tabulku | vlna 5 - **architektonický důsledek:** po rozřezání musí být hlavička počítaná **per blok**, ne per (linka × směr), jak je dnes |
+| **#9417** | KORID | **Dopravci v záhlaví jen za spoje na dané stránce.** U velkých linek na A4 (Praha-Rumburk) se vypisují všichni a hlavička přeteče pod tabulku | ⚠️ **Rozpadá se na dvě věci** (rozbor 25. 8.): **přetečení pod tabulku** ✅ vyřešeno - nová šablona má záhlaví ve vlastní sekci, takže tabulku odsune. **Filtrování dopravců** zbývá; tiket žádá **per stránka**, ne per blok. ⚠️ Zákazníkův případ je **souhrnný JŘ dvou linek** (100 400 + 104 400), tedy `L7`; a náš výčet zatím nevypisuje čísla spojů u dopravce, takže je kratší než ten, kvůli kterému tiket vznikl |
 | **#7487** | KORID | **Legenda do 4 sloupců** (dnes 1-3) s přetékáním delší poznámky do dalšího sloupce. Motivace je táž jako u #9417: šetřit místo, aby legenda nespadla pod tabulku | vlna 6 (vícesloupcová legenda; dnes je legenda tabulka z dat, sloupcový tok nemá) |
 | **#9283** | KOVED | **Sdružený JŘ více linek** včetně výlukové varianty, v grafické podobě IDZK. Zákazník si sám řekl o kalkulaci, čeká placenou práci | ⚠️ **mění zařazení `C6`** - „souhrnné JŘ" v roadmapě viselo jako „nejdřív ověřit, jestli to zákazník chce". Chce |
 
