@@ -341,6 +341,40 @@ public class SirokaLinkaStrankovaniTests
             sek => Assert.Equal(SectionOverflowBehavior.SplitAcrossPages, sek.OverflowBehavior));
     }
 
+    /// <summary>
+    /// Prázdná legenda poznámek nesmí zamíchat stránkováním (testovací případ z #9088).
+    /// </summary>
+    /// <remarks>
+    /// Legenda se bez poznámek složí na nulu, takže sekce pod ní nedostane žádné místo navíc
+    /// a linka nevyjede na stránku víc. Zní to samozřejmě, ale je to přesně ten druh věci,
+    /// který se rozbije při první úpravě výpočtu výšky - a v tisku se pozná až podle stránky
+    /// navíc s prázdným pruhem.
+    /// </remarks>
+    [Fact]
+    public void PrazdnaLegendaNezamichaStrankovanim()
+    {
+        var data = LineTableBlokyTests.SirokaLinkaData(41, pocetZastavek: 26);   // bez poznámek
+
+        var legenda = ElementRenderFixtures.NotesLegend();
+        legenda.X = 0; legenda.Y = 0; legenda.Height = null;
+        float vyskaLegendy = new SkiaHeightCalculator().CalculateHeight(legenda, legenda.Width, data);
+
+        Template Sablona(bool sLegendou)
+        {
+            var tabulka = ElementRenderFixtures.LineTable();
+            tabulka.X = 0; tabulka.Y = 0; tabulka.Height = null; tabulka.Width = PageSize.A4Landscape.PrintableWidth;
+            var sekce = new List<Section> { Sekce("Jízdní řád", null, tabulka) };
+            if (sLegendou) sekce.Add(Sekce("Legenda", null, legenda));
+            return new Template { PageSize = PageSize.A4Landscape, Sections = sekce };
+        }
+
+        var bez = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(Sablona(false), data);
+        var s = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(Sablona(true), data);
+
+        Assert.Equal(0f, vyskaLegendy, 2);
+        Assert.Equal(bez.TotalPages, s.TotalPages);
+    }
+
     private static string DlouhyText() =>
         string.Join(" ", Enumerable.Repeat("Dopravce s dlouhým názvem a adresou", 40));
 
