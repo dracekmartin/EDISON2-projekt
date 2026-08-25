@@ -1147,8 +1147,15 @@ nebo si k témuž nastavení najít linku ve vlastní firmě.
 ⚠️ **Sada nepokrývá nastavení, která nikdo nemá zapnutá** (analýza §13.4) - u nich není proti čemu
 porovnávat a žádná linka je neukáže.
 
-**Co k sadě chybí:** šablona, na které se to prochází. Bez ní jde vidět jen to, co nakreslí výchozí
-rozvržení; nastavení typu „schovaný sloupec Tč" se pozná až na šabloně, která ten sloupec má.
+**Šablona k procházení:** `templates/prochazeni-linkovy-jr.json` (Soubor → Importovat).
+Vychází ze systémové šablony pro AD, ale je **na šířku** a má **všechny popisné sloupce zapnuté** -
+jinak není poznat, že je linka schovává. Dorovnání prázdnými sloupci je schválně vypnuté, ať jde
+porovnat obojí. Ověřeno načtením: 3 sekce, 6 viditelných sloupců, šířka tabulky 277 mm.
+
+**Jak porovnávat:** ke každé lince pustit starý tisk a dát vedle sebe s naším náhledem (Jan má
+starý modul k dispozici). Rozdíly zapisovat do tří škatulek, které projekt používá jinde:
+**odchylka** (chceme se lišit, s důvodem), **dluh** (nechceme, ale zatím ano - patří k vlně),
+**rozdíl** (chyba, opravit). Bez toho rozlišení se za měsíc nepozná, co byl záměr a co nedodělek.
 
 ## 15. Co ve starém modulu nešlo nastavit (podklad Zlín, 2026-08-19)
 

@@ -66,9 +66,9 @@ každý nález by mohl být „ještě to neumíme" místo „takhle to má být
 **testovací linky → `L9` → `L6`**.
 
 📋 **Na řadě je sada testovacích linek.** Seznam s popisem, co je na které vidět, je změřený
-a zapsaný v [`§15b`](linkovy-knizni-jr-implementace-analyza.md) (8 linek). **Zbývá k němu šablona**,
-na které se to prochází - bez ní je vidět jen to, co nakreslí výchozí rozvržení, a nastavení typu
-„schovaný sloupec tarifních čísel" se nepozná. ⚠️ Tři z těch linek jsou v jiné firmě, než do které
+a zapsaný v [`§15b`](linkovy-knizni-jr-implementace-analyza.md) (8 linek). Šablona k procházení je
+připravená (`templates/prochazeni-linkovy-jr.json`, import ze souboru). **Zbývá samotné projití**:
+ke každé lince starý tisk vedle našeho náhledu a rozdíly do tří škatulek (odchylka / dluh / rozdíl). ⚠️ Tři z těch linek jsou v jiné firmě, než do které
 se běžně přihlašuješ.
 
 | # | Vlna | Vel. |
