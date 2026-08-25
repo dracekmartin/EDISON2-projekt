@@ -116,4 +116,43 @@ public static class TableLayout
             resolved = resolved with { HAlign = legacyAlignment };
         return resolved;
     }
+
+    /// <summary>Jeden stránkový blok tabulky: které sloupce spojů do něj patří.</summary>
+    /// <param name="Od">Index prvního sloupce spoje (0-based).</param>
+    /// <param name="Pocet">Kolik sloupců spojů blok nese.</param>
+    public readonly record struct SloupcovyBlok(int Od, int Pocet);
+
+    /// <summary>
+    /// Rozdělí sloupce spojů do <b>stránkových bloků</b>, které se vejdou na šířku - to, čemu starý
+    /// modul říká „střih". Popisové sloupce (zastávky, zóny, km…) se opakují v <b>každém</b> bloku,
+    /// takže na spoje zbývá jen zbytek šířky.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Řez je čistě geometrický</b> - podle šířek a písma, ne podle skupin dnů. Změřeno
+    /// na starém modulu (analýza §16): na lince s 30 pracovními, 5 sobotními a 6 nedělními spoji
+    /// padl řez na 21+20 a 39+2, tedy nikdy na hranici skupiny. Blok proto běžně obsahuje konec
+    /// jedné skupiny a začátek další.</para>
+    /// <para><b>Vejde-li se všechno, vrátí jediný blok</b> - volající pak nemusí řešit zvláštní
+    /// případ.</para>
+    /// <para>⚠️ Do bloku jde <b>vždy aspoň jeden</b> sloupec spoje, i když se nevejde ani ten:
+    /// jinak by dělení nikdy neskončilo. Takový blok přeteče a je to lepší než zacyklení nebo
+    /// tiše zahozený spoj.</para>
+    /// </remarks>
+    public static List<SloupcovyBlok> RozdelSpojeDoBloku(
+        int pocetSpoju, float popisneSloupceMm, float sloupecSpojeMm, float sirkaMm)
+    {
+        var bloky = new List<SloupcovyBlok>();
+        if (pocetSpoju <= 0) return bloky;
+
+        float proSpoje = sirkaMm - popisneSloupceMm;
+        int naBlok = sloupecSpojeMm > 0.01f && proSpoje > 0.01f
+            ? (int)MathF.Floor(proSpoje / sloupecSpojeMm)
+            : 0;
+        if (naBlok < 1) naBlok = 1;
+
+        for (int od = 0; od < pocetSpoju; od += naBlok)
+            bloky.Add(new SloupcovyBlok(od, Math.Min(naBlok, pocetSpoju - od)));
+        return bloky;
+    }
+
 }
