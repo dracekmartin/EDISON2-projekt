@@ -107,12 +107,11 @@ public class TextElement : TemplateElement
         ctx.Canvas.Restore();
     }
 
-    /// <summary>Skutečná výška textu (dynamická) pro ořez na tvar rohů - shodně s výpočtem v Render.</summary>
-    public override SKRect GetContentClipRect(RenderContext ctx)
+    /// <summary>Skutečná výška textu - shodně s výpočtem v Render.</summary>
+    public override float RenderedHeightMm(RenderContext ctx)
     {
         var resolved = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
-        float h = Height ?? (WordWrap ? CalculateTextHeight(resolved) : EffectiveDesignerHeight);
-        return ctx.ToCanvasRect(X, Y, Width, h);
+        return Height ?? (WordWrap ? CalculateTextHeight(resolved) : EffectiveDesignerHeight);
     }
 
     public override void ApplyScale(float scale)

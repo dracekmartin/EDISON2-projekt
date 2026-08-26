@@ -116,6 +116,65 @@ in("A",2,"dta",2)  = počet řádků pro tisk JŘ
 in("A",2,"MS",typ,podtyp) = šířka sloupce daného typu - VIZ NÍŽE, klient-driven layout
 ```
 
+## 16. Plán vlny `L5` (rozřezání tabulky) - po blocích
+
+**Stav, ze kterého se vychází** (ověřeno čtením kódu 25. 8.):
+
+- **Svisle už se řeže**: `PageLayoutEngine` rozseká sekci přes stránky (`ClipTop`/`ClipBottom`)
+  a `PreviewCanvas` posune počátek nahoru. Prvek o tom **neví** - kreslí se celý a přebytek se
+  ořízne. ⛔ Důsledek: na pokračovací stránce **chybí řádek s čísly spojů**, protože se odroluje.
+- **Vodorovně se neřeže vůbec**: `LineTableElement` místo toho spočítá `widthScale` a **zmenší
+  sloupce i písmo**, aby se vešly. Odtud „u širokých dat není nic vidět".
+- Řez podle šířky je **čistě geometrický** (viz měření níže), takže ho musí spočítat **klient** -
+  jen on zná fonty a šířky. Serverová cesta se tím nemění.
+
+**Bloky v pořadí, každý samostatně ověřitelný:**
+
+| # | Co | Hotovo když |
+|---|---|---|
+| ~~`L5-1`~~ | ✅ 24. 8. Rozdělení sloupců spojů do bloků podle skutečných šířek a písma. | - |
+| ~~`L5-2`~~ | ✅ 25. 8. Bloky se sázejí pod sebe, popisné sloupce se v každém zopakují. | - |
+| ~~`L5-3`~~ | ✅ 25. 8. **Odpadl** - bloky pod sebou proteče **stávající svislé** stránkování (`ClipTop`/`ClipBottom` v sekci `SplitAcrossPages`), takže druhá (vodorovná) osa v enginu nevznikla. ⚠️ **Doloženo testem, ne úvahou** (`SirokaLinkaStrankovaniTests`): 200 spojů × 25 zastávek = 9 bloků → 3 stránky, chunky na sebe navazují bez díry i překryvu. | - |
+| `L5-4` | **Dopravci v záhlaví jen za spoje, které jsou vidět** (#9417). ⚠️ **Zpřesněno 25. 8. čtením tiketu:** zákazník žádá **per stránka** („jen ty spoje které na listu jsou"), ne per blok, jak si to přepsala roadmapa. Potřebuje ze serveru **vazbu dopravce↔spoj** (dnes `PopisDopravce` projde všechny spoje obou směrů a vrátí jeden text). ⚠️ Druhá polovina tiketu, **přetečení hlavičky pod tabulku, je vyřešená jinak** - viz níže. | v záhlaví jsou jen dopravci vidět spojů |
+| ~~`L5-5`~~ | ✅ 25. 8. Pás skupin dnů (i řádek platnosti a negativních značek) je nad **každým** blokem. O tom, které řádky tabulka má, rozhodují všechny spoje linky, ne spoje bloku - dřív blok padlý celý do jedné skupiny nadpis neměl. | - |
+| ~~`L5-6`~~ | ✅ 25. 8. Řez se drží hranic bloků; uvnitř bloku (linka s tolika zastávkami, že blok přeroste stránku) padne mezi řádky zastávek a pokračovací stránka **zopakuje hlavu bloku** - pás skupin, čísla spojů, platnost, negativní značky. Místo na ni vyhradí stránkování, aby ji prvek nepřetiskl přes obsah. | - |
+| ~~`L5-7`~~ | **Vědomě odloženo 25. 8. do `B100`** - nastaveno na 3 linkách z ~93 tisíc, což na zásah do serveru i klienta nestačí (rozhodnutí Jan). Neblokuje: vynucený zlom by k dnešním silným a slabým zlomům jen přibyl. | - |
+| `L5-8` | **Dorovnání šířky prázdnými sloupci** jako parametr (#8372). ✅ **Předpoklad hotový 25. 8.**: sloupce spojů jsou ve všech blocích stejně široké a neúplný blok nechá místo vpravo (dřív se čtyři spoje roztáhly na sloupce 58,8 mm proti 6,4 mm v prvním bloku - přesně to „roztažení do absurdna"). Zbývá **volba**, jestli se to místo vyplní prázdnými sloupci. | volba funguje a nedorovnává donekonečna |
+| `L5-9` | **Slučování přípojných řádků** (přesunuto z `L2` 24. 8.) - mění počet řádků, tedy kam řez padne. | podle rozhodnutí; dnes nechat po jednom |
+
+⚠️ **Zlomy mají dvě síly.** Hranice bloku je **silná** (přirozený konec stránky), hranice řádku
+zastávky **slabá** - náhrada pro blok, který se na stránku nevejde celý. Silná má přednost, i když je
+výš; brát prostě „poslední, co se vejde" by řezalo doprostřed bloku pokaždé, když v něm zbyl řádek.
+
+⚠️ **Řez stránky se musí držet hranic bloků** (zjištěno měřením 25. 8.): geometrický řez o blocích
+nevěděl, takže na A4 na šířku vyšly dva bloky po 105,7 mm na plochu 210 mm jako „blok a půl + **1,4 mm
+proužek**". Prvek proto nabízí místa, kudy se řezat smí (`INedelitelneDily`), a engine na ně řez
+přichytí; díl vyšší než celá stránka se rozřízne i tak. Hlídá `SirokaLinkaStrankovaniTests`.
+
+⚠️ **Dno šířky sloupce řídí, kam řez padne** (zjištěno 25. 8.): dokud bylo pevné (3 mm), nasypalo
+dělení do bloku tolik spojů, kolik se jich při nečitelné šířce vešlo - bloky vycházely, ale text v nich
+byl slitý. Dno se proto **měří z písma** (šířka času „00:00" i s odsazením), takže zvětšení fontu ubere
+spojů na blok místo aby tabulku zhustilo. Hlídá `LineTableBlokyTests`.
+
+⚠️ **Testovací případ z #9088**: prázdná legenda nesmí zamíchat stránkováním.
+⚠️ **Zkušební vzor**: linka 940 Kroměříž-Přerov (IDZK), §15.
+
+📐 **Jak starý modul řeže tabulku - změřeno 25. 8.** (podklad pro `L5`, sonda `BlokyDleSirky`):
+
+Rozřezává **sloupce spojů podle šířky plochy**, ne podle skupin dnů, a v každém bloku zopakuje
+sloupec zastávek. Na `CB_CSADAD` 0330510 (směr T má 41 spojů: 30 pracovní + 5 soboty + 6 neděle):
+
+| Šířka plochy | Bloků | Dělení směru T |
+|---|---|---|
+| 120 | 4 | 21 + 20 |
+| 200 | 4 | 39 + 2 |
+| 400+ | 2 | 41 (vejde se) |
+
+⛔ **Řez nepadá na hranice skupin** (ty by byly 30 a 35) - blok tedy běžně obsahuje **konec jedné
+skupiny a začátek další**. Domněnka „každá stránka má svůj typ provozu" **neplatí** a `L5` se podle
+ní nesmí navrhnout: pás s nadpisy skupin se musí umět **rozseknout a zopakovat nad dalším blokem**.
+S tím souvisí zákaznický požadavek #9417 (dopravci v záhlaví jen za spoje, které jsou vidět).
+
 **⚠️ Architektonická past, kterou nechceme replikovat:** legacy je **klient-driven, dvoufázový
 layout** - VB.NET klient nejdřív *měří text ve skutečném tiskovém fontu* a posílá zpět serveru
 „počet měřicích znaků" (`in("A",2,"MS",...)`), server podle toho určuje zlomy stránek. To je
@@ -514,7 +573,7 @@ Kompletní seznam toho, co tisková cesta reálně čte (`gPLSetWin` plus přím
 | `PATCH,podtrzeniPaJ` | podtržení u zdvojených řádků příjezd/odjezd (0 obě zastávky nad i pod / 1 první zastávka pod) | ❌ |
 | `PATCH,barevnyTiskSpoju` | vypnout barvy spojů (barva je na spoji) | ❌ barvy spojů neposíláme vůbec, agenda nemá jediné `FORE_COLOR` (zastávková jich má 9) |
 | `PATCH,cisIDS` | jak se skládá tištěné číslo linky (3místné, vlastní číslo, tablo) | ❌ |
-| `PATCH,ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ (patří k `L5`) |
+| `PATCH,ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ **vědomě odloženo** do `B100` (rozhodnutí Jan 25. 8.) - nastaveno na 3 linkách z ~93 tisíc. Ty se u nás tisknou jinak než ve starém modulu; **není to nedodělek, který by někdo hledal**, je to zapsané rozhodnutí |
 | `PATCH,TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ❌ |
 | `PATCH,ZonaIdsDelZnk` | **přebíjí** globální hodnotu téhož jména (`:1847`) | ❌ |
 | `MHD2,netisknoutTC` / `netisknoutCislaSpoju` / `netisknoutSipky` / `netisknoutKladivkaAPodobne` | schová sloupec Tč, čísla spojů, šipky, značky | ❌ |
@@ -1017,9 +1076,9 @@ podněty - je to náš vydaný závazek a při plánování vln s nimi tak zach�
 | **#11300** | KORID | **Prázdný přípojný řádek nemá zabírat místo.** Uzel má celotýdenní provoz, ale přípoje jen v pracovní dny; při rozdělení na bloky PD × víkend zůstane v druhém bloku prázdný řádek | vlna 2, ale **až po dělení na bloky** - „prázdný" má smysl teprve vůči bloku |
 | **#8576** | KU HK | **Zóny do více sloupců**, když má zastávka víc zón (hraniční zastávka mezi zónami jednoho IDS - PID, IDZK). Dnes je zóna jedna hodnota v jednom sloupci | vlna 2 (datová část) + vlna 6 (sloupce jako u km) |
 | **#8372** | KORID | **„Vkládat prázdné sloupce" má být volba u tisku, ne v šabloně** - jinak si na to musí dělat druhou šablonu. Navíc u linek s málo spoji to dnes roztáhne rozestupy „do absurdna" | vlna 5 (`Strih`), a rozhoduje o tom, že to bude **parametr sestavy** |
-| **#9417** | KORID | **Dopravci v záhlaví jen za spoje na dané stránce.** U velkých linek na A4 (Praha-Rumburk) se vypisují všichni a hlavička přeteče pod tabulku | vlna 5 - **architektonický důsledek:** po rozřezání musí být hlavička počítaná **per blok**, ne per (linka × směr), jak je dnes |
+| **#9417** | KORID | **Dopravci v záhlaví jen za spoje na dané stránce.** U velkých linek na A4 (Praha-Rumburk) se vypisují všichni a hlavička přeteče pod tabulku | ⚠️ **Rozpadá se na dvě věci** (rozbor 25. 8.): **přetečení pod tabulku** ✅ vyřešeno - nová šablona má záhlaví ve vlastní sekci, takže tabulku odsune. **Filtrování dopravců** zbývá; tiket žádá **per stránka**, ne per blok. ⚠️ Zákazníkův případ je **souhrnný JŘ dvou linek** (100 400 + 104 400); sdružování se řeší **v jízdních řádech, ne u nás** (upřesnil Jan 25. 8.), takže k návrháři může dorazit jako **jedna linka s mnoha dopravci** - pak odklad padá. Náš výčet navíc zatím nevypisuje čísla spojů u dopravce, takže je kratší než ten, kvůli kterému tiket vznikl |
 | **#7487** | KORID | **Legenda do 4 sloupců** (dnes 1-3) s přetékáním delší poznámky do dalšího sloupce. Motivace je táž jako u #9417: šetřit místo, aby legenda nespadla pod tabulku | vlna 6 (vícesloupcová legenda; dnes je legenda tabulka z dat, sloupcový tok nemá) |
-| **#9283** | KOVED | **Sdružený JŘ více linek** včetně výlukové varianty, v grafické podobě IDZK. Zákazník si sám řekl o kalkulaci, čeká placenou práci | ⚠️ **mění zařazení `C6`** - „souhrnné JŘ" v roadmapě viselo jako „nejdřív ověřit, jestli to zákazník chce". Chce |
+| **#9283** | KOVED | **Sdružený JŘ více linek** včetně výlukové varianty, v grafické podobě IDZK. Zákazník si sám řekl o kalkulaci, čeká placenou práci | ⚠️ **mění zařazení `C6`** - „souhrnné JŘ" v roadmapě viselo jako „nejdřív ověřit, jestli to zákazník chce". Chce ⚠️ **Není naše práce** (upřesnil Jan 25. 8.): sdružování linek se řeší v jízdních řádech, návrhář dostane výslednou linku a tiskne ji jako každou jinou. |
 
 ### 14.2 #9088 rozepsaný (TRANSDEV, slovenská instalace)
 
@@ -1063,6 +1122,41 @@ Pět samostatných věcí v jednom tiketu:
 
 ---
 
+## 15b. Sada testovacích linek (změřeno 25. 8.)
+
+Konkrétní linky, na kterých je vidět **jedno určité nastavení**. Vyhledala je sonda
+`LinkovyJrNastaveniProbe.KdeToZkouset` (běh 25. 8.) plus linky, na kterých se ladilo stránkování.
+Smysl: procházet business logiku v aplikaci proti něčemu, co to nastavení opravdu má - ne hledat
+naslepo.
+
+| Firma | Skupina | Linka | Co je na ní vidět |
+|---|---|---|---|
+| CB_CSADAD | 1 | 0370618 | **ruční pořadí spojů** u linky (a že se použije, ne dopočítá) |
+| CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit) |
+| CB_CSADAD | 801 | 0345062 | **bez zón i bez km** (čtyřstavový přepínač `linIDS` = 3) |
+| VS_CSAD | 5 | 0771901 | **písmena ze zóny se odstraňují** |
+| CB_GWBUS | 106 | 0320144 | **schovaný sloupec tarifních čísel** |
+| CB_GWBUS | 104 | 0320157 | **bez zastávek, kde žádný spoj nestaví** (ubírá řádky, nejvíc vidět) |
+| CB_CSADAD | 1 | 0330510 | **rozřezání na bloky**: 41 spojů, přípojné řádky, tři skupiny dnů (37/1, 38/2, 41/3 podle volby dělení) |
+| CB_CSADAD | 1 | 0330511 | **jediná skupina dnů** - všechny spoje jen v pracovní dny, pás se nemá podle čeho rozdělit (viz `B101`) |
+
+⚠️ **Tři linky jsou v jiné firmě než CB_CSADAD** (VS_CSAD, CB_GWBUS). Sonda prohledává víc firem,
+ale návrhář pracuje s tou, do které je uživatel přihlášený - na ty tři je potřeba se přihlásit jinam,
+nebo si k témuž nastavení najít linku ve vlastní firmě.
+
+⚠️ **Sada nepokrývá nastavení, která nikdo nemá zapnutá** (analýza §13.4) - u nich není proti čemu
+porovnávat a žádná linka je neukáže.
+
+**Šablona k procházení:** `templates/prochazeni-linkovy-jr.json` (Soubor → Importovat).
+Vychází ze systémové šablony pro AD, ale je **na šířku** a má **všechny popisné sloupce zapnuté** -
+jinak není poznat, že je linka schovává. Dorovnání prázdnými sloupci je schválně vypnuté, ať jde
+porovnat obojí. Ověřeno načtením: 3 sekce, 6 viditelných sloupců, šířka tabulky 277 mm.
+
+**Jak porovnávat:** ke každé lince pustit starý tisk a dát vedle sebe s naším náhledem (Jan má
+starý modul k dispozici). Rozdíly zapisovat do tří škatulek, které projekt používá jinde:
+**odchylka** (chceme se lišit, s důvodem), **dluh** (nechceme, ale zatím ano - patří k vlně),
+**rozdíl** (chyba, opravit). Bez toho rozlišení se za měsíc nepozná, co byl záměr a co nedodělek.
+
 ## 15. Co ve starém modulu nešlo nastavit (podklad Zlín, 2026-08-19)
 
 Kolega zkoušel ve **starém** modulu vyrobit linkový JŘ podle vzoru IDZK a narazil na řadu věcí,
@@ -1099,7 +1193,7 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
 | 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ❌ **mezera, ale malá** - pás skupin dnů nad info sloupci **existuje**, jen má natvrdo prázdný text (`LineTableElement.BuildRowPlan`). Chce to popisek a jeho styl |
 | 7 | **mezera mezi bloky** (info × pracovní dny × víkendy) | ❌ **mezera** - prvek kreslí souvislou mřížku, pojem „mezera mezi skupinami sloupců" nemá |
 | 8 | **popisky info sloupců podle vzoru** | ✅ **umíme** - hlavička sloupce je volný text |
-| 9 | **záhlaví napevno; pruh dopravce se nevejde, když je dopravců víc** | ✅ **umíme lépe** - záhlaví je v návrháři složené z běžných prvků, textový prvek má dynamickou výšku a roste podle obsahu. ⚠️ Ověřit na lince s víc dopravci, že to pole s výčtem opravdu naroste a nepřekryje tabulku |
+| 9 | **záhlaví napevno; pruh dopravce se nevejde, když je dopravců víc** | ⚠️ **Ověřeno 25. 8. vykreslením - tvrzení „umíme lépe" NEPLATILO.** Textový prvek sice roste, ale **prvky uvnitř sekce se neposouvají**, takže záhlaví s 26 dopravci leželo přes tabulku stejně jako v legacy. Řeší to **rozdělení na dvě sekce** (tok mezi sekcemi funguje), a tak to teď zakládá nová šablona. |
 | 10 | **levé ohraničení, které leze, i když ho nikde nemám** | ✅ **odpadá** - vada starého modulu; v návrháři je vnější obrys rámeček prvku a ten se dá vypnout |
 
 ### 15.3 Co z toho plyne

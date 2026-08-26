@@ -132,6 +132,9 @@ ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As
 	kill n
 	quit:'..SpustLegacy(db, sku, lin, deleni, .legOut) 0
 
+	// Hlavička: text dopravce drží legacy v out("dta",10,1) - viz Dump.
+	set n("dopravce") = ..Norm($get(legOut("dta", 10, 1)))
+
 	set glb = ..#GLB, idobj = ""
 	for  {
 		set idobj = $order(@glb@(idobj))
@@ -215,6 +218,8 @@ ClassMethod NactiNase(ByRef n)
 		continue:key="ERR"
 		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
 		set sm = page.values.%Get("SMER")
+		// Pruh s dopravcem je hlavičkové pole, tedy per linku, ne per směr.
+		set n("dopravce") = ..Norm(page.values.%Get("POPIS_DOPRAVCE"))
 		set zast = page.rows.%Get("ZASTAVKY")
 		set spoje = page.rows.%Get("SPOJE")
 		continue:'$isobject(zast)
@@ -297,22 +302,17 @@ ClassMethod ZnameOdchylky(ByRef odch)
 	// (dnes žádná mimo pravidel podle tvaru hodnot - viz `PravidloOdchylky`)
 
 	// ── známé dluhy ────────────────────────────────────────────────────
+	// (dluh na zařazení spoje do skupin dnů splacen 24. 8. - spoj bez týdenní platnosti jde do
+	// všech skupin, jako v legacy; náš dřívější odhad z datumů omezení ho zařadil do dvou)
+
 	// (dluh na pořadí spojů splacen 21. 8. - řazení se skládá jako v legacy `mkPoradiSp`,
 	// včetně ručního pořadí u linky, takže se hlídá normálně)
 
-	// Název zastávky v textu návaznosti: starý modul u městských linek tiskne místní zkrácený tvar
-	// („v zastávce aut.nádr."), my plný s obcí („v zastávce Vsetín,aut.nádr."). Je to táž otázka
-	// jako tvar názvu v seznamu zastávek, proto stejná vlna.
-	set odch("pozn", "druh3", "druh") = "dluh"
-	set odch("pozn", "druh3", "vlna") = "L3"
-	set odch("pozn", "druh3", "duvod") = "název zastávky v návaznosti je plný s obcí, starý modul má u městských linek zkrácený"
-	// Starý modul tiskne plný CIS tvar s obcí („Český Krumlov,,aut.nádr."), my bereme název natvrdo
-	// a vyjde zkrácený („Autobusové nádraží"). Táž zastávka tak má na vývěsce a v linkovém JŘ jiné
-	// jméno. Vývěska to řídí dvěma parametry sestavy, linkový JŘ je nemá - doplní je vlna L3.
-	// Chce to i zákazník (#9088 bod 4).
-	set odch("zast", "*", "druh") = "dluh"
-	set odch("zast", "*", "vlna") = "L3"
-	set odch("zast", "*", "duvod") = "tvar názvu zastávky se neřídí parametry sestavy (dřívější B60, #9088 bod 4)"
+	// (dluh na název zastávky v textu návaznosti splacen 24. 8. - věta bere týž zdroj jména jako
+	// sloupec, jen vždy ve zkráceném tvaru, přesně jako starý modul)
+	// (dluh na tvar názvu zastávky splacen 24. 8. - název se skládá jako v legacy, včetně toho,
+	// že upravený název pro MHD platí jen na městských linkách, a že text poznámky má zkrácený
+	// tvar tam, kde sloupec má plný)
 
 	// (dluh na poznámky druhu 5 splacen 21. 8. - věty atributů se skládají ze šablon opsaných
 	// z legacy, takže se hlídají normálně)
@@ -329,6 +329,19 @@ ClassMethod PravidloOdchylky(kat As %String, legHodnota As %String, naseHodnota 
 	if kat = "cas" {
 		if ((legHodnota="m")||(legHodnota="^")||(legHodnota="u")) && (naseHodnota[":") {
 			quit "odchylka~návaznost nese wire zvlášť (PRIPOJE), aby ji šlo v šabloně odlišit - #8360; čas v buňce zůstává"
+		}
+	}
+	// Starý modul má na některých řádcích v buňce **zastávky** samotnou značku („x"), ne jméno -
+	// systematicky, ne na jedné lince (32 buněk na dvou linkách sady). Buňka přitom není jiný
+	// sloupec, sloupec zastávek je v bloku jediný. Dokud není jasné, jestli je to řádek jiného
+	// druhu, nebo chyba čtení v téhle síti, **netvrdíme paritu**: je to dluh s krokem, ne
+	// odsouhlasená odchylka. Pravidlo je úzké schválně (legacy = jediná známá značka × naše =
+	// text s písmenem), aby nezakrylo skutečný rozdíl ve jméně.
+	if kat = "zast" {
+		if (naseHodnota '= "") && ($zcvt(naseHodnota,"U") '= $zcvt(naseHodnota,"L")) {
+			if (legHodnota '= "") && ((";"_..#ZNACKY_";") [ (";"_legHodnota_";")) {
+				quit "dluh~L2b starý modul má v buňce zastávky značku místo jména - nerozklíčováno"
+			}
 		}
 	}
 	quit ""
@@ -377,6 +390,11 @@ ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, B
 		quit:sm=""
 		do ..PorovnejHodnotu("spoje", kontext_" směr "_sm, $get(leg("spoje", sm)), $get(nase("spoje", sm)), kontext, .odch, .res)
 	}
+
+	// ── hlavička: pruh s dopravcem ──────────────────────────────────────
+	// Porovnává se od 24. 8. Do té doby se hlavička nekontrolovala vůbec, takže „naše vlastní
+	// logika skládání dopravců" nebyla proti starému modulu ověřená ani náhodou.
+	do ..PorovnejHodnotu("dopravce", kontext, $get(leg("dopravce")), $get(nase("dopravce")), kontext, .odch, .res)
 
 	// ── poziční kategorie (hodnota na zastávkový řádek) ─────────────────
 	// ⚠️ Iteruje se **sjednocení** klíčů obou stran, ne jen klíče legacy. Kdyby se šlo jen podle
@@ -518,7 +536,7 @@ ClassMethod Souhrn(ByRef sys As %String) As %Status
 				set radky($increment(radky)) = d_" "_l_" SKIP (starý modul nebo firma tu není)"
 				continue
 			}
-			for kat = "spoje", "zast", "km", "zona", "mhd", "cas", "pozn" {
+			for kat = "spoje", "dopravce", "zast", "km", "zona", "mhd", "cas", "pozn" {
 				continue:'$data(res(kat))
 				set radky($increment(radky)) = d_" "_l_" "_kat
 					_" porovnano="_+$get(res(kat,"leg"))
@@ -549,6 +567,176 @@ ClassMethod Souhrn(ByRef sys As %String) As %Status
 /// Diagnostika (mimo runner, přes `cache_query_cvar`): vypíše strukturu legacy výstupu jedné linky,
 /// aby šlo psát normalizaci proti skutečnosti, ne proti dokumentaci.
 /// IN: `DB`, `SKU`, `LIN`, `MAX` (kolik uzlů), `FILTR` (nepovinný podřetězec uzlu)
+/// Vypíše prvních N rozdílných názvů zastávek vedle sebe. IN: `DB`, `SKU`, `LIN`, `MAX`.
+ClassMethod RozdilyZastavek(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+		set maxRadku = +$get(^||ML("IN","MAX"))
+		if 'maxRadku set maxRadku = 12
+		kill ^||ML, radky
+		if '..NactiLegacy(db, sku, lin, 2, .leg) {
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = "SKIP"
+			ret $$$OK
+		}
+		kill parametry
+		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+		do ..NactiNase(.nase)
+		set pocet = 0
+		for sm = "T", "Z" {
+			set idx = ""
+			for  {
+				set idx = $order(leg("zast", sm, idx))
+				quit:idx=""
+				quit:pocet'<maxRadku
+				set l = $get(leg("zast", sm, idx)), n = $get(nase("zast", sm, idx))
+				continue:l=n
+				set pocet = pocet + 1
+				set radky($increment(radky)) = sm_"/"_idx_" stary: "_l
+				set radky($increment(radky)) = sm_"/"_idx_" nas:   "_n
+			}
+		}
+		kill ^||ML
+		set i = ""
+		for  {
+			set i = $order(radky(i))
+			quit:i=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(i)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Kolik **stránkových bloků** vyrobí starý modul při různě široké tiskové ploše - podklad
+/// k vlně `L5`. Náš oracle jinde dává plochu záměrně obrovskou, aby neřezal; tady se zkoumá
+/// právě to řezání. IN: `DB`, `SKU`, `LIN`.
+ClassMethod BlokyDleSirky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+		kill ^||ML, radky
+		for sirka = 120, 200, 400, 1000000 {
+			kill legOut
+			kill @..#GLB
+			kill in
+			set in("A",2,"arr",3) = 2
+			set in("A",2,"arr",4) = 2
+			set in("A",2,"arr",13) = 0
+			kill ms
+			do ##class(ALVA.JRMAIN.MLAPI).gMSArrPLinWin(.ms)
+			set typ = ""
+			for  {
+				set typ = $order(ms(typ))
+				quit:typ=""
+				set ptyp = ""
+				for  {
+					set ptyp = $order(ms(typ, ptyp))
+					quit:ptyp=""
+					set in("A",2,"MS",typ,ptyp) = $length($get(ms(typ, ptyp, "MS")))
+				}
+			}
+			set in("A",2,"dta",1) = sirka
+			set in("A",2,"dta",2) = 60
+			set chyba = ##class(ALVA.JRMAIN.MLAPI).mkPLinWin(db, db, sku, lin, ..#GLB, .in, .legOut)
+			if chyba '= "" {
+				set radky($increment(radky)) = "šířka "_sirka_": chyba "_chyba
+				continue
+			}
+			set glb = ..#GLB, idobj = "", bloku = 0, popis = ""
+			for  {
+				set idobj = $order(@glb@(idobj))
+				quit:idobj=""
+				continue:$get(@glb@(idobj,"arr",1))'=2
+				set bloku = bloku + 1
+				set sloupcu = 0, sl = ""
+				for  {
+					set sl = $order(@glb@(idobj,"column",sl))
+					quit:sl=""
+					continue:$get(@glb@(idobj,"column",sl,"arr",1))'=7
+					set sloupcu = sloupcu + 1
+				}
+				if bloku < 7 set popis = popis_$select(popis="":"", 1:", ")_"["_$get(@glb@(idobj,"arr",2))_"/"_sloupcu_" spojů]"
+			}
+			set radky($increment(radky)) = "šířka "_sirka_" → bloků="_bloku_"  "_popis
+		}
+		kill @..#GLB
+		kill ^||ML
+		set i = ""
+		for  {
+			set i = $order(radky(i))
+			quit:i=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(i)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Najde v jádru sady místa, kde **starý modul** vypisuje v buňce značku návaznosti
+/// (vyčká `m`, pokračuje `u`, navazuje `^`) místo času - podklad k tomu, aby si šlo v původním
+/// tisku ověřit, jestli se kreslí piktogramem, nebo písmenem.
+ClassMethod KdeJsouZnackyNavaznosti(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		// ⚠️ Parametry se musí přečíst **před** `kill ^||ML`, jinak už tam nejsou.
+		// Bez nich projde jádro sady a z každé linky ukáže první výskyt každé značky;
+		// se zadanou linkou vypíše na ní **všechny** - podklad k porovnání s tištěným vzorem.
+		set jenLinka = $get(^||ML("IN","LIN"))
+		set vstupDb = $get(^||ML("IN","DB")), vstupSku = $get(^||ML("IN","SKU"))
+		kill ^||ML, radky
+		if jenLinka '= "" {
+			set jadro(1) = vstupDb_"~"_vstupSku_"~"_jenLinka
+		}
+		else { do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro) }
+		set i = ""
+		for  {
+			set i = $order(jadro(i))
+			quit:i=""
+			set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
+			continue:'..NactiLegacy(db, sku, lin, 2, .leg)
+			kill videno
+			set sm = ""
+			for  {
+				set sm = $order(leg("cas", sm))
+				quit:sm=""
+				set radek = ""
+				for  {
+					set radek = $order(leg("cas", sm, radek))
+					quit:radek=""
+					set sp = ""
+					for  {
+						set sp = $order(leg("cas", sm, radek, sp))
+						quit:sp=""
+						set hod = $get(leg("cas", sm, radek, sp))
+						continue:(hod'="m")&&(hod'="u")&&(hod'="^")
+						// u konkrétní linky chceme všechny, jinak stačí první výskyt každé značky
+						continue:(jenLinka="")&&$data(videno(hod))
+						set videno(hod) = ""
+						set radky($increment(radky)) = db_" linka "_lin_" · značka ["_hod_"] · směr "_sm_" · tarifní číslo "_radek_" · spoj "_sp
+					}
+				}
+			}
+		}
+		if '$data(radky) set radky(1) = "V jádru sady se žádná značka návaznosti nevyskytuje."
+		kill ^||ML
+		set idx = ""
+		for  {
+			set idx = $order(radky(idx))
+			quit:idx=""
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Vypíše pořadí spojů obou směrů vedle sebe - starý modul vs my. IN: `DB`, `SKU`, `LIN`.
 ClassMethod PoradiSpoju(ByRef sys As %String) As %Status
 {

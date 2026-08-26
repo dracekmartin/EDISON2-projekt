@@ -159,6 +159,466 @@ ClassMethod NajdiLinkuSPismenemVZone(odstranit As %Boolean, ByRef db, ByRef sku,
 	quit 0
 }
 
+/// Projde jádro sady a vypíše, jak vypadají **přípojné řádky** (vyčká/navazuje zobrazené jako
+/// řádek v tabulce, ne jako poznámka pod ní) - podklad k rozhodnutí o jejich slučování.
+ClassMethod PripojneRadky(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro)
+        kill parametry
+        set i = ""
+        for  {
+            set i = $order(jadro(i))
+            quit:i=""
+            set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
+            continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+            set radku = 0, ukazka = "", key = ""
+            kill naTc
+            for  {
+                set key = $order(^||ML("OUT", key))
+                quit:key=""
+                continue:key="ERR"
+                set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+                set spoje = page.rows.%Get("SPOJE")
+                continue:'$isobject(spoje)
+                set it = spoje.%GetIterator()
+                while it.%GetNext(.si, .spoj) {
+                    set pr = spoj.%Get("PRIPOJE")
+                    continue:'$isobject(pr)
+                    set it2 = pr.%GetIterator()
+                    while it2.%GetNext(.pi, .p) {
+                        continue:p.%Get("RADEK")'=1
+                        set radku = radku + 1
+                        set naTc(p.%Get("PORADI")) = $get(naTc(p.%Get("PORADI"))) + 1
+                        if ukazka = "" {
+                            set ukazka = "tč "_p.%Get("PORADI")_" | "_p.%Get("TYP")_" | linka "_p.%Get("LINKA")_" spoj "_p.%Get("SPOJ")_" | "_p.%Get("CAS")_" | "_p.%Get("TEXT")
+                        }
+                    }
+                }
+            }
+            // kolik tarifních čísel nese víc než jeden přípojný řádek - tam by se slučovalo
+            set viceNaJednom = 0, tc = ""
+            for  {
+                set tc = $order(naTc(tc))
+                quit:tc=""
+                if naTc(tc) > 1 set viceNaJednom = viceNaJednom + 1
+            }
+            set radky($increment(radky)) = db_" "_lin_": přípojných řádků="_radku_", tč s víc než jedním="_viceNaJednom
+            if ukazka '= "" set radky($increment(radky)) = "    "_ukazka
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Kolik spojů je v které skupině dnů - podklad k tomu, jestli starý modul řeže po skupinách,
+/// nebo podle šířky. IN: `DB`, `SKU`, `LIN`.
+ClassMethod SpojuVeSkupinach(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky, parametry
+        set parametry("DELENI_SLOUPCU") = "Pracovní dny / Soboty / Neděle+svátky"
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+        set key = ""
+        for  {
+            set key = $order(^||ML("OUT", key))
+            quit:key=""
+            continue:key="ERR"
+            set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+            set spoje = page.rows.%Get("SPOJE")
+            continue:'$isobject(spoje)
+            kill poc
+            set it = spoje.%GetIterator()
+            while it.%GetNext(.i, .sp) {
+                set g = sp.%Get("SKUPINA")
+                set poc(g) = $get(poc(g)) + 1
+            }
+            set vypis = "", g = ""
+            for  {
+                set g = $order(poc(g))
+                quit:g=""
+                set vypis = vypis_$select(vypis="":"", 1:", ")_"skupina "_g_": "_poc(g)_" spojů"
+            }
+            set radky($increment(radky)) = "směr "_page.values.%Get("SMER")_" → "_vypis
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Najde linky, jejichž spoje spadnou do **víc než jedné** skupiny dnů - jen na nich je rozdělení
+/// sloupců vidět. Hledá se **ve zdrojových datech** (týdenní platnost spojů), ne přes GetData,
+/// aby to prošlo tisíce linek rychle.
+ClassMethod KdeJeVidetDeleni(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        set maxLinek = 6
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set db = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(db)
+            quit:$get(radky)'<maxLinek
+            set sku = ""
+            for  {
+                set sku = $order(^[db]JRL(sku))
+                quit:sku=""
+                quit:$get(radky)'<maxLinek
+                continue:'$isvalidnum(sku)
+                set lin = ""
+                for  {
+                    set lin = $order(^[db]JRL(sku, lin))
+                    quit:lin=""
+                    quit:$get(radky)'<maxLinek
+                    continue:'$data(^[db]JRL(sku, lin, "I"))
+                    set maPD = 0, maSo = 0, maNe = 0, sp = ""
+                    for  {
+                        set sp = $order(^[db]JRL(sku, lin, "T", sp))
+                        quit:sp=""
+                        continue:'$isvalidnum(sp)
+                        set plk = $piece($piece($get(^[db]JRL(sku, lin, "T", sp)), "#", 1), ":", 7)
+                        continue:plk=""
+                        for di = 1:1:$length(plk) {
+                            set z = $extract(plk, di)
+                            if "X12345" [ z set maPD = 1
+                            if z = 6 set maSo = 1
+                            if "7+" [ z set maNe = 1
+                        }
+                    }
+                    // podmínka za `continue:` končí první mezerou, proto mezisoučet a `if`
+                    set skupin = maPD + maSo + maNe
+                    if skupin < 2 continue
+                    set radky($increment(radky)) = db_" sku="_sku_" linka="_lin_"  (pracovní="_maPD_" soboty="_maSo_" neděle="_maNe_")"
+                }
+            }
+        }
+        if '$data(radky) set radky(1) = "Žádná linka s víc skupinami dnů nenalezena."
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Projde všechny hodnoty volby dělení spojů a u každé vypíše, kolik vznikne pásů, jak se jmenují
+/// a kolik spojů je na stránce - podklad k tomu, jestli se mění data, nebo až vykreslení.
+ClassMethod DeleniPorovnani(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky
+        for volba = "Bez rozlišení", "Pracovní dny / víkend+svátky", "Pracovní dny / Soboty / Neděle+svátky" {
+            kill parametry
+            set parametry("DELENI_SLOUPCU") = volba
+            do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+            set key = ""
+            for  {
+                set key = $order(^||ML("OUT", key))
+                quit:key=""
+                continue:key="ERR"
+                set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+                set sk = page.rows.%Get("SKUPINY_DNU"), spoje = page.rows.%Get("SPOJE")
+                set nadpisy = ""
+                if $isobject(sk) {
+                    set it = sk.%GetIterator()
+                    while it.%GetNext(.i, .g) {
+                        set nadpisy = nadpisy_$select(nadpisy="":"", 1:" | ")_g.%Get("NADPIS")
+                    }
+                }
+                // kolik různých skupin spoje reálně nesou
+                kill videno
+                set ruzn = 0
+                if $isobject(spoje) {
+                    set it2 = spoje.%GetIterator()
+                    while it2.%GetNext(.j, .sp) {
+                        set g = sp.%Get("SKUPINA")
+                        continue:$data(videno(g))
+                        set videno(g) = "", ruzn = ruzn + 1
+                    }
+                }
+                set radky($increment(radky)) = volba_" → spojů="_$select($isobject(spoje):spoje.%Size(),1:0)_" různých skupin="_ruzn_" nadpisy: ["_nadpisy_"]"
+                quit
+            }
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Vypíše hodnotu vzorů rozložení sloupců tak, jak jde na klienta. IN: `DB`, `SKU`, `LIN`.
+ClassMethod VzoryNaWire(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky, parametry
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+        set key = ""
+        for  {
+            set key = $order(^||ML("OUT", key))
+            quit:key=""
+            continue:key="ERR"
+            set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+            set vzory = page.values.%Get("PRESETY_SLOUPCU")
+            set radky($increment(radky)) = "stránka "_key_": PRESETY_SLOUPCU = "_$extract(vzory, 1, 600)
+            quit
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Vypíše zastávky, které mají na wire nějaký atribut - kontrola, co se dá v tabulce zobrazit.
+ClassMethod AtributyZastavekNaWire(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky, parametry
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+        set key = ""
+        for  {
+            set key = $order(^||ML("OUT", key))
+            quit:key=""
+            continue:key="ERR"
+            set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+            set zast = page.rows.%Get("ZASTAVKY")
+            continue:'$isobject(zast)
+            set it = zast.%GetIterator()
+            while it.%GetNext(.i, .z) {
+                set atr = z.%Get("ATRIBUTY")
+                continue:'$isobject(atr)
+                continue:atr.%Size()=0
+                set vypis = "", ai = ""
+                for ai = 0:1:atr.%Size()-1 {
+                    set vypis = vypis_$select(vypis="":"", 1:",")_atr.%Get(ai)
+                }
+                quit:$get(radky)>11
+                set radky($increment(radky)) = "tč "_z.%Get("PORADI")_" ["_vypis_"] "_$extract(z.%Get("NAZEV_ZASTAVKY"),1,45)
+            }
+        }
+        if '$data(radky) set radky(1) = "Žádná zastávka na téhle lince nemá atribut."
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Vypíše prvních pár poznámek linky tak, jak jdou na wire - kontrola, že nesou druh i značku.
+ClassMethod PoznamkyNaWire(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+        kill ^||ML, radky, parametry
+        do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+        set key = ""
+        for  {
+            set key = $order(^||ML("OUT", key))
+            quit:key=""
+            continue:key="ERR"
+            set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+            set pozn = page.rows.%Get("POZNAMKY")
+            continue:'$isobject(pozn)
+            set it = pozn.%GetIterator()
+            while it.%GetNext(.i, .p) {
+                quit:$get(radky)>11
+                set radky($increment(radky)) = "DRUH=["_p.%Get("DRUH")_"] TYP=["_p.%Get("TYP")_"] ZNAK=["_p.%Get("ZNAK")_"] "_$extract(p.%Get("TEXT"),1,60)
+            }
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Najde linku, jejíž spoje nesou daný **atribut** (`POS`, `IDS`, `BEV`…). Slouží k rozšíření
+/// porovnávací sady tam, kde je věta legendy opsaná ze zdroje, ale porovnáním nepotvrzená.
+/// Pozice atributu v hlavičce spoje: POS=12, IDS=14, BEV=15, SAO=16, PCZ=17, OBC=18, PJI=19,
+/// NKA=20, RBU=21, CBE=22, RBP=23, wifi=25, zasu=26.
+ClassMethod NajdiLinkuSAtributem(klic As %String, ByRef db, ByRef sku, ByRef lin) As %Boolean
+{
+    set db = "", sku = "", lin = ""
+    set poz = $piece("12,14,15,16,17,18,19,20,21,22,23,25,26", ",",
+        $listfind($listfromstring("POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu", ","), klic))
+    quit:poz="" 0
+    for fi = 1:1:$length(..#FIRMY, ",") {
+        set firma = $piece(..#FIRMY, ",", fi)
+        continue:'##class(%SYS.Namespace).Exists(firma)
+        set s1 = ""
+        for  {
+            set s1 = $order(^[firma]JRL(s1))
+            quit:s1=""
+            continue:'$isvalidnum(s1)
+            set l1 = ""
+            for  {
+                set l1 = $order(^[firma]JRL(s1, l1))
+                quit:l1=""
+                continue:'$data(^[firma]JRL(s1, l1, "I"))
+                for smer = "T", "Z" {
+                    set sp = ""
+                    for  {
+                        set sp = $order(^[firma]JRL(s1, l1, smer, sp))
+                        quit:sp=""
+                        continue:'$isvalidnum(sp)
+                        set hlava = $piece($get(^[firma]JRL(s1, l1, smer, sp)), "#", 1)
+                        continue:'+$piece(hlava, ":", poz)
+                        set db = firma, sku = s1, lin = l1
+                        ret 1
+                    }
+                }
+            }
+        }
+    }
+    quit 0
+}
+
+/// Vypíše ke každému atributu spoje jednu linku, kde se vyskytuje - podklad pro rozšíření sady.
+ClassMethod AtributyLinky(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        for ai = 1:1:13 {
+            set klic = $piece("POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu", ",", ai)
+            if ..NajdiLinkuSAtributem(klic, .db, .sku, .lin) {
+                set radky($increment(radky)) = klic_": "_db_"~"_sku_"~"_lin
+            }
+            else {
+                set radky($increment(radky)) = klic_": nikde"
+            }
+        }
+        kill ^||ML
+        set i = ""
+        for  {
+            set i = $order(radky(i))
+            quit:i=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(i)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Měření k **tvaru názvu zastávky**: kolik linek má zapnutý název pro MHD, kolik z nich je
+/// městských (jen u těch ho starý modul použije), a kolik názvů v registru nese dvojčárku,
+/// tedy prázdnou část obce („Zlín,,aut.nádr.").
+ClassMethod NazvyVyskyt(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set db = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(db)
+            set linek = 0, nazMHD = 0, nazMHDmestska = 0, mestskych = 0
+            set sku = ""
+            for  {
+                set sku = $order(^[db]JRL(sku))
+                quit:sku=""
+                continue:'$isvalidnum(sku)
+                set lin = ""
+                for  {
+                    set lin = $order(^[db]JRL(sku, lin))
+                    quit:lin=""
+                    continue:'$data(^[db]JRL(sku, lin, "I"))
+                    set linek = linek + 1
+                    // Typ linky je zakódovaný: surová hodnota / 10 je index do převodní
+                    // tabulky (legacy `TYPLINKYREAD`). Městská = 2 (MEST) nebo 9 (MESP).
+                    set surovy = +$piece($get(^[db]JRL(sku, lin, "I")), "#", 1)
+                    set typ = $piece("0~1~2~3~5~7~6~8~4~9~10~11", "~", (surovy \ 10) + 1)
+                    set jeMestska = (typ = 2) || (typ = 9)
+                    if jeMestska set mestskych = mestskych + 1
+                    continue:'+$get(^[db]JRL(sku, lin, "PATCH", "nazMHD"))
+                    set nazMHD = nazMHD + 1
+                    if jeMestska set nazMHDmestska = nazMHDmestska + 1
+                }
+            }
+            // registr zastávek: dvojčárka a vyplněný název pro MHD
+            set zast = 0, dvojcarka = 0, maMhdNazev = 0, czst = ""
+            for  {
+                set czst = $order(^[db]JRZ(czst))
+                quit:czst=""
+                continue:'$isvalidnum(czst)
+                set rec = $get(^[db]JRZ(czst))
+                set zast = zast + 1
+                if $piece(rec, "$", 2) [ ",," set dvojcarka = dvojcarka + 1
+                if $piece(rec, "$", 7) '= "" set maMhdNazev = maMhdNazev + 1
+            }
+            set radky($increment(radky)) = db_": linek="_linek_" mestskych="_mestskych_" nazevProMhdZapnut="_nazMHD_" ztohoMestskych="_nazMHDmestska
+            set radky($increment(radky)) = db_": zastavek="_zast_" sDvojcarkou="_dvojcarka_" sNazvemProMhd="_maMhdNazev
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše linky, na kterých je nová práce `L2` vidět - podklad pro ruční zkoušku v návrháři.
 ClassMethod KdeToZkouset(ByRef sys As %String) As %Status
 {

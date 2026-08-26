@@ -400,13 +400,17 @@ public class PreviewCanvas
             canvas.Save();
             canvas.ClipRect(clipRect);
 
-            // Pro split sekce: posunout origin nahoru o ClipTop
+            // Pro split sekce: posunout origin nahoru o ClipTop. Když stránka opakuje hlavičku
+            // rozříznutého dílu, posunout obsah ještě o ni dolů - místo pro ni vyhradil engine.
             float originYOffset = placed.ClipTop.HasValue ? -placed.ClipTop.Value * mmToPx : 0f;
+            originYOffset += placed.OpakovanaHlavickaMm * mmToPx;
 
             var ctx = new RenderContext(canvas, mmToPx, placed.Data)
             {
                 SectionOriginX = ox,
-                SectionOriginY = sectionTopPx + originYOffset
+                SectionOriginY = sectionTopPx + originYOffset,
+                ClipTopMm = placed.ClipTop ?? 0f,
+                OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm
             };
 
             // Barvy z dat („pozadí = barva linky") se čtou z property elementu, kam se DataContext

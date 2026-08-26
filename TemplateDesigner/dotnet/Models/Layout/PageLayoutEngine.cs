@@ -1,4 +1,5 @@
 using System.Globalization;
+using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Expressions;
 
 namespace TemplateDesigner.Models.Layout;
@@ -10,6 +11,13 @@ namespace TemplateDesigner.Models.Layout;
 public class PageLayoutEngine
 {
     private readonly IElementHeightCalculator _heightCalc;
+
+    /// <summary>Místa (mm od horního okraje sekce), kde se sekce smí rozříznout - nasbíraná od
+    /// prvků, které se skládají z nedělitelných dílů. Prázdné = řez kdekoli, jako dřív.</summary>
+    private Dictionary<Guid, List<Zlom>> _sectionBreaks = [];
+
+    /// <summary>Výška hlavičky, kterou sekce opakuje na pokračovací stránce (0 = žádná).</summary>
+    private Dictionary<Guid, float> _sectionHeaders = [];
 
     public PageLayoutEngine(IElementHeightCalculator heightCalculator)
     {
@@ -36,8 +44,18 @@ public class PageLayoutEngine
         var sectionHeights = new Dictionary<Guid, float>();
         float printableWidth = template.PageSize.PrintableWidth;
 
+        var sectionBreaks = new Dictionary<Guid, List<Zlom>>();
+        var sectionHeaders = new Dictionary<Guid, float>();
+
         foreach (var section in allSections)
-            sectionHeights[section.Id] = CalculateSectionHeight(section, printableWidth, data);
+        {
+            var (vyska, zlomy, hlavicka) = CalculateSectionHeight(section, printableWidth, data);
+            sectionHeights[section.Id] = vyska;
+            sectionBreaks[section.Id] = zlomy;
+            sectionHeaders[section.Id] = hlavicka;
+        }
+        _sectionBreaks = sectionBreaks;
+        _sectionHeaders = sectionHeaders;
 
         // Krok 2: Dvouprůchodový layout
         // První průchod: bez OnLastPageOnly → zjistíme totalPages
@@ -117,23 +135,51 @@ public class PageLayoutEngine
     // ─────────────────────────────────────────────────────────────────────
     // Výpočet výšky sekce
 
-    private float CalculateSectionHeight(Section section, float printableWidth, DataContext? data)
+    /// <summary>
+    /// Poslední nabídnutý zlom, který ještě padne do zbytku stránky; null = žádný se nevejde.
+    /// </summary>
+    /// <remarks>
+    /// <b>Silný zlom má přednost, i když je výš.</b> Hranice bloku je přirozený konec stránky;
+    /// hranice řádku je jen náhrada pro blok, který se na stránku nevejde celý. Brát prostě
+    /// „poslední, co se vejde" by řezalo uprostřed bloku pokaždé, když v něm nějaký řádek zbyl.
+    /// Zlom musí posunout o kus dál, jinak by se smyčka řezala na místě.
+    /// </remarks>
+    private static float? PosledniZlomDo(List<Zlom> zlomy, float od, float doKam)
     {
+        float? silny = null, slaby = null;
+        foreach (var z in zlomy)
+        {
+            if (z.Mm <= od + 0.01f || z.Mm > doKam + 0.01f) continue;
+            if (z.Silny) { if (silny is null || z.Mm > silny) silny = z.Mm; }
+            else if (slaby is null || z.Mm > slaby) slaby = z.Mm;
+        }
+        return silny ?? slaby;
+    }
+
+    private (float Vyska, List<Zlom> Zlomy, float Hlavicka) CalculateSectionHeight(
+        Section section, float printableWidth, DataContext? data)
+    {
+        var zlomy = new List<Zlom>();
+        float opakovanaHlavicka = 0f;
         // Odfiltrovat neviditelné elementy
         var visibleElements = section.Elements
             .Where(e => ExpressionEvaluator.IsVisible(e.VisibilityExpression, data))
             .ToList();
 
         if (visibleElements.Count == 0)
-            return section.DesignerHeight ?? 0f;
+            return (section.DesignerHeight ?? 0f, zlomy, opakovanaHlavicka);
 
-        // Flow layout: dynamické elementy posouvají elementy pod sebou
+        // ⚠️ **Uvnitř sekce se prvky neposouvají** - výška sekce sahá tam, kam se doopravdy kreslí.
+        // Do 25. 8. se tu rostoucímu prvku přičítal přírůstek k pozici všech prvků pod ním, jenže
+        // kreslení je nechává na jejich souřadnicích: sekce si nárokovala místo pro posun, ke
+        // kterému nikdy nedošlo. Změřeno: text narostl na 75,4 mm, prvek pod ním zůstal na 12 mm.
+        // Tok patří **mezi sekce** a tam funguje - sekce pod rostoucí se odsune o její výšku;
+        // proto má nová šablona záhlaví a obsah jako dvě sekce.
         var effectiveHeights = new Dictionary<Guid, float>();
         float maxBottom = 0f;
 
-        // Seřadit podle Y (shora dolů)
         var sorted = visibleElements.OrderBy(e => e.Y).ToList();
-        float cumulativeDeltaY = 0f;
+        const float cumulativeDeltaY = 0f;
 
         foreach (var element in sorted)
         {
@@ -144,21 +190,22 @@ public class PageLayoutEngine
             float bottom = effectiveY + elementHeight;
             maxBottom = Math.Max(maxBottom, bottom);
 
-            // Pokud je dynamický a výška se liší od designer výšky, posunout elementy pod ním
-            if (!element.Height.HasValue)
+            // Prvek složený z nedělitelných dílů (linková tabulka rozřezaná na bloky) nabídne
+            // místa, kudy se řezat smí - přepočtená z jeho souřadnic do souřadnic sekce.
+            if (element is INedelitelneDily deleny)
             {
-                float designerH = element.EffectiveDesignerHeight;
-                float deltaY = elementHeight - designerH;
-                if (Math.Abs(deltaY) > 0.01f)
-                    cumulativeDeltaY += deltaY;
+                zlomy.AddRange(deleny.ZlomyMm(data).Select(z => z with { Mm = effectiveY + z.Mm }));
+                opakovanaHlavicka = Math.Max(opakovanaHlavicka, deleny.OpakovanaHlavickaMm(data));
             }
+
         }
 
         // Výška sekce = max z vypočítaného obsahu a DesignerHeight
         float computedHeight = maxBottom;
+        zlomy.Sort((a, b) => a.Mm.CompareTo(b.Mm));
         if (section.DesignerHeight.HasValue)
-            return Math.Max(section.DesignerHeight.Value, computedHeight);
-        return computedHeight > 0 ? computedHeight : 0f;
+            return (Math.Max(section.DesignerHeight.Value, computedHeight), zlomy, opakovanaHlavicka);
+        return (computedHeight > 0 ? computedHeight : 0f, zlomy, opakovanaHlavicka);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -241,9 +288,17 @@ public class PageLayoutEngine
             if (!ExpressionEvaluator.IsVisible(section.VisibilityExpression, sectionData ?? data))
                 continue;
 
-            float sectionH = section.PrintBehavior == SectionPrintBehavior.PerDataRow
-                ? CalculateSectionHeight(section, printableWidth, sectionData)
-                : sectionHeights[section.Id];
+            float sectionH;
+            List<Zlom> zlomySekce;
+            float hlavickaSekce;
+            if (section.PrintBehavior == SectionPrintBehavior.PerDataRow)
+                (sectionH, zlomySekce, hlavickaSekce) = CalculateSectionHeight(section, printableWidth, sectionData);
+            else
+            {
+                sectionH = sectionHeights[section.Id];
+                zlomySekce = _sectionBreaks.TryGetValue(section.Id, out var z) ? z : [];
+                hlavickaSekce = _sectionHeaders.TryGetValue(section.Id, out var hh) ? hh : 0f;
+            }
 
             // Vejde se na stránku?
             if (cursorY + sectionH <= headerH + availableHeight)
@@ -292,7 +347,14 @@ public class PageLayoutEngine
 
                 while (remaining > 0.01f)
                 {
-                    float spaceOnPage = headerH + availableHeight - cursorY;
+                    // Pokračovací stránka, která začíná uprostřed nedělitelného dílu, zopakuje
+                    // jeho hlavičku - a musí si na ni napřed ubrat místo, jinak by ji přetiskla
+                    // přes obsah.
+                    float hlavicka = clipTop > 0.01f && hlavickaSekce > 0.01f
+                                     && !zlomySekce.Any(z => z.Silny && Math.Abs(z.Mm - clipTop) < 0.05f)
+                        ? hlavickaSekce
+                        : 0f;
+                    float spaceOnPage = headerH + availableHeight - cursorY - hlavicka;
                     if (spaceOnPage <= 0.01f)
                     {
                         currentPageNum++;
@@ -303,23 +365,40 @@ public class PageLayoutEngine
                         footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
                         availableHeight = printableHeight - headerH - footerH;
                         cursorY = headerH;
-                        spaceOnPage = availableHeight;
+                        spaceOnPage = availableHeight - hlavicka;
                     }
 
                     float chunk = Math.Min(remaining, spaceOnPage);
+                    if (remaining - chunk > 0.01f)   // opravdu se řeže, ne poslední díl
+                    {
+                        float? zlom = PosledniZlomDo(zlomySekce, clipTop, clipTop + chunk);
+                        if (zlom is float z)
+                            chunk = z - clipTop;
+                        else if (cursorY > headerH + 0.01f)
+                        {
+                            // Nedělitelný díl se do zbytku stránky nevejde. Zkusit ho na čisté
+                            // stránce - vynucením prázdného místa se o ni postará začátek smyčky.
+                            // Na čisté stránce už `cursorY == headerH`, takže se díl rozřízne
+                            // geometricky (je vyšší než celá stránka) a smyčka se nezacyklí.
+                            cursorY = headerH + availableHeight;
+                            continue;
+                        }
+                    }
+
                     currentPage.Sections.Add(new PlacedSection
                     {
                         Source = section,
                         Y = cursorY,
-                        Height = chunk,
+                        Height = chunk + hlavicka,
                         ClipTop = clipTop,
                         ClipBottom = clipTop + chunk,
-                        Data = sectionData ?? data
+                        Data = sectionData ?? data,
+                        OpakovanaHlavickaMm = hlavicka
                     });
 
                     clipTop += chunk;
                     remaining -= chunk;
-                    cursorY += chunk;
+                    cursorY += chunk + hlavicka;
 
                     if (remaining > 0.01f)
                     {

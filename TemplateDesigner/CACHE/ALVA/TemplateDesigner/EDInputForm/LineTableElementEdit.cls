@@ -37,6 +37,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 20, "mm")
         s f.helpText = "Prázdné = auto podle velikosti písma"
 
+        // ── Skupina "Sloupce" ─────────────────────────────────────────────
+        // Viditelnost, šířky a pořadí jednotlivých sloupců se editují v tabu „Sloupce";
+        // sem patří jen volba, která platí pro celý prvek.
+        d form.AddGroup("columns", "Sloupce")
+        s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
+        s f.helpText = "Poslední blok bývá neúplný a nechá vpravo volné místo. Zapnuté = doplní se prázdné sloupce, aby měly všechny bloky stejně širokou tabulku."
+
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
@@ -53,6 +60,16 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("HighlightOddTc", "Podbarvit lichá Tč", 1)
         s f = form.AddFieldToLastGroup("OddTcBackColor", "Barva lichých Tč", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFEEEEEE"
+
+        // ── Skupina "Přípojné řádky" (#8360) ──────────────────────────────
+        // Přípoj má jít odlišit od časů spojů - obvykle menším kurzívním písmem, aby v tabulce
+        // „nekřičel" stejně jako odjezdy. Prázdné = dědí se z datových buněk.
+        d form.AddGroup("pripoj", "Přípojné řádky")
+        s f = form.AddDecimal("PripojStyle.FontSize", "Velikost", "", 4, 200, "pt")
+        s f.helpText = "Prázdné = jako datové buňky"
+        d form.AddBool("PripojStyle.Bold", "Tučné", 0)
+        d form.AddBool("PripojStyle.Italic", "Kurzíva", 0)
+        s f = form.AddFieldToLastGroup("PripojStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)

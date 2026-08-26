@@ -585,9 +585,34 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
   nakreslit kontaktní list s popisky kódů. `fontTools` přečte `cmap` (font je mapovaný v symbolové
   oblasti `0xF020`+, takže znak = kód − `0xF000`; jména glyfů jsou obecná typu `exclam`, sémantiku
   nenesou), obrysy pak stačí vykreslit `PIL`em jako polylinie. Jednorázový skript, do repa nepatří.
-  ⚠️ **Neověřené zůstávají** pozice pro clo `C`, paragrafy `G`/`a`/`b`/`c`, metro `e`/`f`/`g`
-  a letadlo `O` - dnes je nemá v datech žádná firma, ale první, kdo je bude mít, musí projít
-  stejnou kontrolou, jinak dostane cizí piktogram. `H`/`F` (bezbariér) a kroužkové dny sedí na písmenu.
+  📐 **Doměřeno 24. 8. 2026** (`L4`, znovu vytažením obrysů; **CZ i SK font jsou v těchto pozicích
+  identické**). Kontrola metody: na `p` vyšel kufr a na `M` příbor, tedy shodně s dřívějším měřením.
+
+  | Pozice | Co tam doopravdy je | Poznámka |
+  |---|---|---|
+  | `\|` 0x7C | čtverec (rámeček) | **není svislá čára** - „projíždí" fontem nakreslit nejde |
+  | `<` 0x3C | osmiúhelník s vodorovnou čárou | **není „menší než"** |
+  | `m` 0x6D | půlkruhový tvar („D") | |
+  | `u` 0x75 | prázdný osmiúhelník | |
+  | `^` 0x5E | kosočtverec | |
+  | `C` 0x43 | písmeno „C" | ne piktogram cla |
+  | `e`/`f`/`g` 0x65-67 | číslice **4/5/6 v rámečku** | ⛔ **ne metro** - dřívější domněnka byla mylná |
+  | `O` 0x4F | obdélník s šikmou čarou | ⛔ **ne letadlo** (to je na `n`) |
+
+  ⛔ **Tím padají dvě dosavadní domněnky:** „paragrafy `a`/`b`/`c`" a „metro `e`/`f`/`g`". Řada
+  `a`-`j` je prostě **číslice 0-9 v rámečku**, jak tvrdí tabulka výš - `e`=4, `f`=5, `g`=6 to potvrzuje.
+
+  ✅ **Návaznosti rozhodnuty tištěným vzorem** (stará sestava linky 330511, 24. 8.): „vyčká" má
+  **dutý** trojúhelník △, „navazuje" **plný** ▲, a tisknou se **vedle času**, ne místo něj.
+  Který glyf je který, se pozná počtem obrysů: `A` má dva (dutý), `B` jeden (plný) - v CZ i SK
+  shodně. Mapa proto vede `m` → `A` a `^` → `B`.
+  ⚠️ Cíl se v mapě linky bere **z tabulky**, ne přes vývěskový překlad - ten by „vyčká" (pozice `A`)
+  poslal dál na autobus. „Pokračuje" `u` zůstává neověřené, v jádru sady se nevyskytuje.
+
+  ⚠️ **Měření samo říká jen, co v pozici je - ne že ji starý tisk používá.** U „projíždí"/„jede
+  jinudy" je odpověď jasná z fontu (znaky tam nejsou), u návazností ji dal až tištěný vzor.
+
+  ⚠️ **Neověřené zůstávají** už jen `G` a `a`/`b`/`c`. `H`/`F` (bezbariér) a kroužkové dny sedí na písmenu.
 
   📐 **Měření CZ × SK (4. 8. 2026, `B49`)** - obrysy vytažené z obou fontů, ať se to nemusí opakovat:
 

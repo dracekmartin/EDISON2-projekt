@@ -1,5 +1,139 @@
 # 🗄️ Archiv - hotové kroky
 
+## 2026-08-25 - `L5` rozřezání široké tabulky (Strih)
+
+Linka se 100+ spoji se dosud zmáčkla do šířky, až z ní nebylo nic vidět. Nově se **rozřeže na
+bloky pod sebou**, každý zopakuje popisné sloupce a stránkování se láme na jejich hranicích.
+
+**Co se udělalo** (v pořadí, v jakém to vznikalo):
+
+- rozdělení sloupců spojů do bloků a jejich kreslení pod sebou;
+- **dno šířky sloupce se měří z písma** (šířka času i s odsazením) - dokud bylo pevných 3 mm,
+  dělení nasypalo do bloku tolik spojů, kolik se jich při nečitelné šířce vešlo;
+- pás skupin dnů, řádek platnosti i negativních značek se rozhodují **ze všech spojů linky**,
+  ne ze spojů bloku, takže je má každý blok;
+- **zlomy mají dvě síly** - hranice bloku (silná) a hranice řádku zastávky (slabá, pro blok vyšší
+  než stránka); silná má přednost, i když je výš;
+- pokračovací stránka **zopakuje hlavu bloku** a stránkování jí na to vyhradí místo;
+- sloupce spojů jsou **ve všech blocích stejně široké**, neúplný blok nechá místo vpravo;
+- prázdná legenda nezamíchá stránkováním (#9088);
+- volba **„Dorovnat prázdnými sloupci"** to místo umí vyplnit (#8372) - vlastnost prvku,
+  ne parametr sestavy (rozhodnutí Jan);
+- výška sekce už **nerezervuje místo na posun, ke kterému nedojde**.
+
+**Krok, který odpadl:** vodorovné opakování sekce. Bloky pod sebou proteče stávající svislé
+stránkování - doloženo testem, ne úvahou (200 spojů × 25 zastávek = 9 bloků → 3 stránky).
+
+**Odloženo:** ruční zlom na tarifním čísle → `B100` (3 linky z ~93 tisíc); dopravci v záhlaví jen
+za viditelné spoje (#9417) → potřebuje na drátě vazbu dopravce↔spoj a zákazníkův případ stojí
+na `L7`. **Uzavřeno jako „ne":** slučování přípojných řádků - nikdo si o to neřekl a u přípojů
+na různé linky by se ztratil popisek.
+
+⚠️ **Poučení, které stojí za zapamatování:** čtyři z chyb téhle vlny prošly zelenou sadou testů,
+protože se model porovnával **sám se sebou** - výška i místa pro řez se braly z téhož čísla.
+Chytily je až testy, které porovnávají výpočet **s vykresleným obrázkem**, a mutační kontrola
+(vrátit chybu a ověřit, že test spadne). Několik testů prošlo i s vrácenou chybou.
+
+## 2026-08-25 - dva nálezy z 24. 8. dořešené
+
+1. **Odskok ze záložky Parametry** byl skutečná chyba - pravidlo „netaháme uživatele pryč z tabu,
+   kde pracuje" mělo ve výčtu jen Pole agendy a Průvodce; Parametry přibyly později a zapomněly se.
+2. **„Přepnutí dělení nezmění náhled" chyba nebyla** - na lince 330511 jedou všechny spoje jen
+   v pracovní dny, takže vznikne jediná skupina a pás se nemá podle čeho rozdělit. Změřeno:
+   0330511 dá při všech třech volbách 9 spojů a 1 skupinu, 0330510 dá 37/1, 38/2 a 41/3.
+   Zbylo z toho drobné zlepšení v backlogu (`B101`).
+
+## 2026-08-24 - `L3` vlastní rozložení sloupců spojů
+
+Linkový JŘ uměl jen tři hrubé možnosti dělení spojů. Nově si jde **nadefinovat vlastní sloupce**
+(nadpis, dny, značky, které spoj do sloupce pustí nebo z něj vyřadí) - definici drží šablona
+u prvku, parametr ji zrcadlí a umí přepnout mezi vzory.
+
+⚠️ **Vlna byla po projití mnohem menší, než jak byla napsaná.** Původní zadání znělo „rozhodnout
+celou sadu voleb"; po probrání voleb starého linkového tisku z nich zbyla **jediná** - tahle.
+Ostatní jsou hotové, patří do šablony, nebo přijdou s vlnou, která tu schopnost přinese.
+Zapsané pravidlo: **parametry se odvozují od starého linkového tisku, ne od vývěsky** - jsou to
+samostatné agendy; vývěska je vzor jen pro pojmenování a chování téže věci.
+
+Vedlejší efekt: význam definice sloupců i její wire tvar mají teď **jedno místo** pro obě rodiny
+agend (server v `BaseAgenda`, klient v `ColumnLayoutWire`). Liší se až spotřeba - vývěsce je
+skupina jeden sloupec, lince pás nad několika sloupci spojů se zdvojením spoje.
+
+**Otevřené:** osa Období se v lince nevyhodnocuje (není pro ni podklad); editor definice zatím
+jen přes vzory v parametru.
+
+**Původní zadání vlny:**
+
+| **L3** | **Vlastní rozložení sloupců spojů.** ⚠️ **Vlna je po projití menší, než byla napsaná** (24. 8.): volby starého linkového tisku jsou rozebrané a zbývá z nich **jediná** - dnešní hrubý přepínač dělení (tři možnosti) nahradit vlastní definicí, jako to má vývěska u odjezdů (množina denních značek + značky, které spoj ze sloupce vyřadí + nadpis, s hotovými vzory). ⚠️ **Nesrovnávat sadu parametrů s vývěskou** - jsou to samostatné agendy, každá s vlastní doménou; vývěska je vzor **jen pro pojmenování a chování téže věci** (rozhodnutí Jan 24. 8.). **Tvar řešení = jako u odjezdů** (rozhodnutí Jan 24. 8., viz `TemplateDesignerViewModel` §Rozdělení sloupců): **definici drží šablona** u prvku, **parametr ji zrcadlí a umí přepnout**; „Vlastní rozložení" je jen ukazatel, ručně vybrat nejde. Vzniklo to z chyby, kdy na „jaké sloupce vzniknou" odpovídala dvě místa a parametr tiše přebíjel vlastní sloupce. ⚠️ **Jen pro AD** - MHD má skupiny v datech jako typ provozu i s nadpisem, vlastní sloupce by byly druhá cesta k témuž. ⚠️ Skupiny ovlivňují, kde se tabulka zalomí → dotýká se `L5`. ⚠️ Popisky voleb jsou po vydání **zamčené** (persistuje se zobrazovaný text). | M |
+
+---
+
+## 2026-08-24 - `L4` symbolový font linkového JŘ
+
+Linková tabulka kreslí symboly: **denní značky** (zkřížená kladiva, kroužkové číslice),
+**návaznosti** jako trojúhelníky vedle času, **legendu** i **přestup u zastávky**. Vzniklá
+**sdílená mapa značek** je jediný zdroj pravdy pro zastávkové i linkové JŘ; vývěskám se chování
+nezměnilo (podmínka Jana), první commit vlny byl proto schválně bez změny chování.
+
+⚠️ **Linkový JŘ má opačné výchozí pravidlo než vývěska** - piktogram jen z ověřeného seznamu,
+zbytek textem. Bez toho by „pokračuje" (značka `p`) vyšlo jako **kufr**.
+
+**Co rozhodl tištěný vzor** (stará sestava linky 330511, dodal Jan): návaznosti jsou trojúhelníky -
+„vyčká" dutý, „navazuje" plný - a tisknou se **vedle času**, ne místo něj. Tím se zároveň opravilo
+naše tvrzení, že starý modul čas přepisuje značkou.
+
+**Doměřeno:** pozice `|`, `<`, `m`, `u`, `^`, `C`, `e`, `f`, `g`, `O` v obou fontech. Padly dvě
+dosavadní domněnky (`e`/`f`/`g` nejsou metro, ale číslice v rámečku; `O` není letadlo).
+
+**Otevřené:** „pokračuje" `u` (v jádru sady se nevyskytuje), složené značky (piktogram + číslo)
+a `B99` (loď, wifi, zásuvka v tiskovém fontu nejsou).
+
+**Původní zadání vlny:**
+
+| **L4** | **Symbolový font - zbytek** (gate R5, dřív `B10`). ✅ Hotový základ 24. 8.: **sdílená mapa značek** (zastávkové JŘ na ni jen delegují, chování beze změny) a **řádek platnosti** kreslený piktogramy, včetně míchání piktogramu a zkratky v jedné buňce (`SymbolRunRenderer`). Zbývá: **doměřit pozice**, které dnes zůstávají textem - projíždí `\|`, jede jinudy `<`, návaznosti `m`/`u`/`^`, a dřív evidované clo `C`, paragrafy `G`/`a`/`b`/`c`, metro `e`/`f`/`g`, letadlo `O`. ⚠️ **Bez doměření je nepřidávat** - pozice se s písmeny číselníku neshodují (past: „pokračuje" je `p`, ale na `p` je **kufr**) a **CZ a SK font se u dvou pozic liší významem**, takže ověření musí proběhnout v obou; postup je v `elementy-architektura.md`. Pak napojit **další místa se značkami** (legenda poznámek, atributy zastávek, buňky časů) a **složené značky** (piktogram + číslo), vědomě odložené z prvního kola. | S–M |
+
+---
+
+## 2026-08-24 - `L2` linkový JŘ: zbytek vlny (zvýraznění, přípoje, dopravce)
+
+Dokončeno: **zvýraznění zvolené zastávky** i jejího tarifního čísla · **přípojný řádek s vlastním
+řezem a velikostí** (#8360) · **pruh s dopravcem dorovnaný na starý tisk**. Cestou opraveno
+zdvojování přípojných řádků u rozdvojené zastávky. Detail v `changelog.md`.
+
+**Slučování přípojných řádků** přesunuto do `L5` (mění počet řádků, tedy stránkování; nikdo si
+o ně neřekl).
+
+⚠️ **Tři nastavení dopravců, kvůli kterým se to zadávalo, jsou slepá ulička:** `Print_Dopr_First`
+a `PS_PrintSouhrnDoprLinYes` čte HTML a PostScript tisk, **ne ten Windows engine**, se kterým se
+porovnáváme; `SDOP` nemá nastavené žádná firma. Nešlo tedy o dorovnání proti nastavením, ale proti
+samotnému skládání textu - a to porovnání hlavičky do 24. 8. vůbec nedělalo.
+
+**Původní zadání vlny:**
+
+| **L2** | **Zbytek vlny - tři body.** ✅ Hotové 24. 8.: zvýraznění zvolené zastávky i tarifního čísla. Zbývá: **přípojný řádek s vlastním řezem a velikostí** (#8360; vlastnost prvku - dnes se kreslí stylem datového řádku, chce to vlastní styl v kaskádě, výšku řádku z něj a pole ve formuláři prvku na obou stranách) · **dorovnání pruhu s dopravcem na starý modul** (`Print_Dopr_First` a souhrn linek k dopravci jsou nastavené vždy u jedné z šesti firem, takže je proti čemu porovnávat; `SDOP` nemá nikdo → `B98`). ⚠️ **Slučování přípojných řádků z `L2` vypadlo** (rozhodnutí Jan 24. 8.) - přesunuto do `L5`, viz tam. | S–M |
+
+---
+
+## 2026-08-24 - `L2b` linkový JŘ: tvar názvu zastávky (poslední datový rozdíl)
+
+Názvy zastávek se skládají jako ve starém tisku: plný tvar ve sloupci, zkrácený ve větách poznámek,
+upravený název pro MHD jen na městských linkách, které ho mají zapnuté. Přibyly volby „Tvar názvu
+zastávky" a „Použít název pro MHD"; formátování je sdílené s vývěskou, aby se obě rodiny agend
+nerozešly. Detail v `changelog.md`.
+
+Zadání vlny bylo postavené na omylu („převzít dvě volby, které má vývěska") - starý linkový tisk
+žádnou takovou volbu nemá, název skládá ze tří polí registru a tvar řídí režim státu. Rozdíl proti
+nám byl ve **zdroji** jména, ne ve volbě.
+
+Rozšíření porovnávací sady o dvě linky se značkami POS a IDS našlo dvě věci navíc: chybu
+„vyčká příjezdu vlaku 0" (opravena) a rozdíl v zařazení spoje do skupin dnů (dluh do `L3`).
+
+**Původní zadání vlny:**
+
+| **L2b** | **Dorovnat poslední datový rozdíl: tvar názvu zastávky.** Starý modul tiskne plný tvar s obcí („Český Krumlov,,aut. nádraží"), my zkrácený („Autobusové nádraží") - týká se to zhruba **poloviny zastávek** na kontrolních linkách a stejně tak **textů návazností**, kde starý modul u městských linek tiskne ještě jiný, místní tvar. Důsledek pro zákazníka: **táž zastávka má na vývěsce a v linkovém JŘ jiné jméno**. Řídí se to dvěma volbami u tisku, které vývěska má a linkový JŘ ne - **převzít je doslova**, ne navrhovat znovu. Chce to i zákazník (#9088 bod 4). Zavírá dluhy `zast` a `pozn/druh3` v registru odchylek. **Součástí je i rozšíření porovnávací sady o linku se značkami POS/IDS**, aby se potvrdil tvar věty, který je dnes opsaný ze zdroje, ale neověřený. | S–M |
+
+---
+
 ## 2026-08-21 - `L2` linkový JŘ: matice nastavení (hotová část) + rozhodnutí před ní
 
 Hotovo: **sedm nastavení, která jsou v datech reálně zapnutá** (zóny × km jako jeden čtyřstavový

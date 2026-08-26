@@ -58,6 +58,11 @@ Parameter Variant As %String = "AD";
 
 Parameter VariantLabel As %String = "AD (linková doprava)";
 
+/// ⚠️ **Zveřejněná pro uživatele od 24. 8.** (žádost Jan) - do té doby se agenda v nabídce
+/// vůbec neukázala, takže na ni nešlo ani překliknout a nebylo jak zkoušet linkový tisk.
+/// Městská varianta (`LinkovyJrMhd`) zveřejněná **není**: neprošla porovnáním se starým modulem.
+Parameter Released = 1;
+
 Parameter InstanceParamName As %String = "LINKA_ID";
 
 Parameter ElementKind As %String = "LINE";
@@ -101,6 +106,9 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(gf, "TYP",            "Typ řádku",          "text")
     d ..AddField(gf, "CZST",           "Číslo zastávky",     "number")
     d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
+    // Popisek je kanonický z vývěsky - stejné pole se nesmí v nabídce dat jmenovat dvakrát jinak
+    // (hlídá AgendaSchemaDriftTests, který to při zavedení hned chytil).
+    d ..AddField(gf, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
     d ..AddField(gf, "TC",             "Tarifní číslo",      "number")
     d ..AddField(gf, "ZONY",           "Zóny",               "text")
     d ..AddField(gf, "MHD",            "MHD/IDS",            "text")
@@ -171,6 +179,10 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d opts.%Push("Bez rozlišení")
     d opts.%Push("Pracovní dny / víkend+svátky")
     d opts.%Push("Pracovní dny / Soboty / Neděle+svátky")
+    // „Vlastní rozložení" je **ukazatel stavu šablony**, ne volba: vybrat ho ručně nejde,
+    // objeví se, když si uživatel sloupce upraví u prvku. Bez téhle položky by parametr neměl
+    // co hlásit a musel by lhát některým ze vzorů.
+    d opts.%Push("Vlastní rozložení")
     d p.%Set("options", opts)
     s p.defaultValue = "Pracovní dny / Soboty / Neděle+svátky"
     d arr.%Push(p)
@@ -228,6 +240,56 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBar.options = optsBar
     d arr.%Push(pBar)
 
+    // Tvar názvu zastávky. ⚠️ **Výchozí „Plný CIS", jinak než u vývěsky**, kde je „Zkrácený":
+    // starý linkový tisk skládá název čárkami a prázdnou část obce nechává jako dvojčárku
+    // („Český Krumlov,,aut. nádraží"), kdežto starý vývěskový modul ji srážel. Ty dva staré moduly
+    // se lišily a parita je tu přednější; komu dvojčárka vadí, přepne si tvar.
+    // Potvrzeno Janem 24. 8.: plný tvar je standard a zůstává výchozí.
+    s pTvar = ##class(%DynamicObject).%New()
+    s pTvar.name         = "TVAR_NAZVU_ZASTAVKY"
+    s pTvar.label        = "Tvar názvu zastávky"
+    s pTvar.type         = "enum"
+    s pTvar.group        = "Obecné"
+    s pTvar.defaultValue = "Plný CIS"
+    s pTvar.description  = "Plný CIS zachová dvojčárku podle číselníku zastávek (tak to tiskne starý modul), s okresem i jeho zkratku · Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou)."
+    s optsTvar = ##class(%DynamicArray).%New()
+    d optsTvar.%Push("Plný CIS")
+    d optsTvar.%Push("Plný CIS s okresem")
+    d optsTvar.%Push("Zkrácený")
+    d optsTvar.%Push("Typograficky upravený")
+    s pTvar.options = optsTvar
+    d arr.%Push(pTvar)
+
+    // Název pro MHD. Legacy ho bere jen u městských linek, které to mají zapnuté - tahle volba
+    // umí navíc i to vypnout (stejně jako u vývěsky). Výchozí zapnuto = chování starého modulu.
+    s pMhd = ##class(%DynamicObject).%New()
+    s pMhd.name         = "NAZEV_PRO_MHD"
+    s pMhd.label        = "Použít název pro MHD"
+    s pMhd.type         = "bool"
+    s pMhd.group        = "Obecné"
+    s pMhd.defaultValue = "true"
+    s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté; vypnutím se všude použije název podle CIS."
+    d arr.%Push(pMhd)
+
+    // Zvýraznění zastávky, ze které se uživatel dívá (legacy `arr,5` + `arr,10`). Data řádek jen
+    // **označí**, vzhled si řeší šablona pravidlem zvýraznění nad polem „Zvýrazněná zastávka" -
+    // stejný vzor jako aktuální zastávka u vývěsky.
+    s pZvZ = ##class(%DynamicObject).%New()
+    s pZvZ.name         = "ZVYRAZNIT_ZASTAVKU"
+    s pZvZ.label        = "Zvýraznit zastávku"
+    s pZvZ.type         = "text"
+    s pZvZ.group        = "Linkový JŘ"
+    s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. Projíždí-li linka město víckrát, označí se všechny jeho zastávky; jednu z nich vybere Zvýraznit tarifní číslo."
+    d arr.%Push(pZvZ)
+
+    s pZvT = ##class(%DynamicObject).%New()
+    s pZvT.name         = "ZVYRAZNIT_TC"
+    s pZvT.label        = "Zvýraznit tarifní číslo"
+    s pZvT.type         = "text"
+    s pZvT.group        = "Linkový JŘ"
+    s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
+    d arr.%Push(pZvT)
+
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
 }
@@ -264,8 +326,9 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             i '$d(^[dataDB]JRL(sku,lin,"I")) continue
 
             s nazev   = ..NazevLinky(dataDB, sku, lin)
-            s display = +lin
-            i nazev '= "" s display = (+lin)_" - "_nazev
+            s cislo   = +lin                          // bez vedoucí nuly (subscript ^JRL ji drží)
+            s display = cislo
+            i nazev '= "" s display = cislo_" - "_nazev
             i (search '= "") && ('$f($zcvt(display,"L"), search)) continue
 
             s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
@@ -276,9 +339,14 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             }
 
             s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value", lin)
-            d obj.%Set("display", display)
-            i subtitle '= "" d obj.%Set("subtitle", subtitle)
+            // ⚠️ `cislo` a `nazev` musí být ve výstupu, i když je nese `display`: výběr instancí
+            // je vypisuje jako sloupce, takže bez nich vyjde seznam **prázdný** (nahlásil Jan 24. 8.).
+            // "string" type - .NET čte přes GetString(); bez toho číselné cislo/value → JSON number → chyba.
+            d obj.%Set("value", lin, "string")
+            d obj.%Set("cislo", cislo, "string")
+            d obj.%Set("nazev", nazev, "string")
+            d obj.%Set("display", display, "string")
+            i subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
             d arr.%Push(obj)
 
             s count = count + 1
@@ -305,13 +373,18 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
         i '$d(^[dataDB]JRL(sku,lin,"I")) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_sku_"/"_lin_" neexistuje v ^JRL"))
 
+        d ..NactiNastaveniNazvu(dataDB, sku, lin)
+        // Vlastní definice sloupců ze šablony (`DEFINICE_SLOUPCU`) přebíjí hrubý přepínač dělení.
+        // Když nepřijde, chová se všechno jako dosud - proto je to aditivní.
+        k defSloupcu
+        s maDefinici = ..ParseDefiniceSloupcu(.defSloupcu)
         s deleni = ..DeleniZParametru($g(^||ML("IN","DELENI_SLOUPCU")))
         s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
         s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
         s volbaBarvy = $g(^||ML("IN","BARVY_SPOJU"))
 
         f smer = "T", "Z" {
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy)
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
@@ -353,6 +426,8 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 /// Mapování labelu parametru „Dělení spojů dle platnosti" na legacy mód 0/1/2.
 ClassMethod DeleniZParametru(label As %String) As %Integer
 {
+    // „Vlastní rozložení" sem nemá jak dojít jako skutečná volba - je to jen ukazatel a objeví se,
+    // až když šablona definici má; grupování pak řídí ta definice, ne tenhle přepínač.
     q $case(label, "Bez rozlišení":0, "Pracovní dny / víkend+svátky":1, :2)
 }
 
@@ -374,7 +449,7 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 }
 
 /// Sestaví JSON stránku knižního JŘ pro jednu linku a směr. "" když směr nemá spoje.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "") As %DynamicObject
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu) As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     i '..MaSpoje(dataDB, sku, lin, smer) q ""
@@ -389,6 +464,9 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
+    // Vzory rozložení sloupců - obsah drží **server**, klient zná jen klíče a popisky. Bez toho
+    // by parametr uměl jen hlásit stav, ale ne přepnout (a klientský opis pravidel by se rozešel).
+    d vals.%Set("PRESETY_SLOUPCU",        ..PresetySloupcuLinky(dataDB, rec))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1), platiDo = $p(plati,"~",2)
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
@@ -486,14 +564,28 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 
     s spoje = ##class(%DynamicArray).%New()
     k platnostZnakySeen, nzSeen, pripojePoznamky, markerSeen, atributSeen, mistenkaSeen, trasaZnakySeen
-    f skupina = 1:1:$s(deleni=0:1, deleni=1:2, 1:3) {
+    s pocetSkupin = $s(+$g(defSloupcu):+$g(defSloupcu), deleni=0:1, deleni=1:2, 1:3)
+    f skupina = 1:1:pocetSkupin {
         f si=1:1:pocetSpoju {
             s sp = serazeneSpoje(si)
             s plk = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",7)
-            // spoj bez týdenní platnosti: legacy ověřuje skutečnou platnost kalendářem
-            // (mkStaLinSp) - aproximace: odvodit dny ze zadaných datumů omezení (jede jen/také)
-            i plk = "" s plk = ..PlatnostZDatumu(dataDB, sku, lin, smer, sp)
-            s skupiny = ..ZarazeniSpojeKnizni(deleni, plk)
+            // ⚠️ **Spoj bez týdenní platnosti patří do všech skupin dnů** - prázdné `plk` si
+            // `ZarazeniSpojeKnizni` přeloží samo. Legacy zkusí dopočítat skutečnou platnost
+            // kalendářem (`mkStaLinSp`) a **když mu to nevyjde, dá spoj do všech sekcí**
+            // (`JRapiLinPrtWin:476-481`, komentář HD 10183).
+            //
+            // Do 24. 8. jsme místo kalendáře odhadovali dny ze zadaných datumů omezení. Vypadalo
+            // to chytřeji, ale bylo to horší: odhad spoj zařadil do dvou skupin místo tří, takže
+            // se v tabulce opakoval jednou míň a **zákazníkovi chyběl sloupec** (VS_CSAD 0883637).
+            // Odhad byl navíc naše vlastní logika, kterou nic nedokládalo - tohle je chování
+            // starého modulu a porovnání ho potvrdilo.
+            i +$g(defSloupcu) {
+                // Vlastní definice: den + značky, které spoj do sloupce pustí nebo z něj vyřadí.
+                // Období (osa ISY) tu vědomě není - linkový JŘ pro ně nemá podklad, viz roadmapa.
+                s cnz = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8)
+                s skupiny = ..ZarazeniSpojeDleDefiniceLinky(.defSloupcu, plk, cnz)
+            }
+            else { s skupiny = ..ZarazeniSpojeKnizni(deleni, plk) }
             i (","_skupiny_",") '[ (","_skupina_",") continue
             s spojObj = ..BuildSpoj(dataDB, sku, lin, smer, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy)
             i spojObj '= "" d spoje.%Push(spojObj)
@@ -525,7 +617,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s rows = ##class(%DynamicObject).%New()
     d rows.%Set("ZASTAVKY", zastavky)
     d rows.%Set("SPOJE", spoje)
-    d rows.%Set("SKUPINY_DNU", ..BuildSkupinyDnu(dataDB, rec, deleni))
+    d rows.%Set("SKUPINY_DNU", $s(+$g(defSloupcu):..BuildSkupinyZDefinice(.defSloupcu), 1:..BuildSkupinyDnu(dataDB, rec, deleni)))
     d rows.%Set("POZNAMKY", poznamky)
     d out.%Set("rows", rows)
     q out
@@ -565,7 +657,11 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     d z.%Set("PORADI",     +poradi)
     d z.%Set("TYP",        typ)
     d z.%Set("CZST",       czst)
-    d z.%Set("NAZEV_ZASTAVKY", ..NazevZastavky(dataDB, czst))
+    s nazevZast = ..NazevZastavky(dataDB, czst)
+    d z.%Set("NAZEV_ZASTAVKY", nazevZast)
+    // Zvýrazněná zastávka: příznak nese řádek, **vzhled si určí šablona** pravidlem zvýraznění
+    // nad tímhle polem (prvek to už umí). Klíč je týž jako u vývěsky, ať binding funguje v obou.
+    d z.%Set("AKTUALNI_ZASTAVKA", $s(..JeZvyraznena(nazevZast, poradi):"true", 1:"false"))
     // Prázdné TC = sloupec se netiskne; prvek sloupec bez hodnot sám schová.
     d z.%Set("TC",         $s(tiskTc:+poradi, 1:""))
     // zóna: tiskne se, jen když to říká `linIDS` (viz BuildStrankaLinky); prázdná → "-"
@@ -983,15 +1079,15 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                     i omzId = 31 {
                         // „spoje 25 linky 330510" / vlak: „vlaku 20880" (bez čísla spoje); [ z SMĚR]
                         s slovoAvl = $case(avl, "V":"vlaku", "L":"lodě", :"linky")
-                        s f31 = $s(+spoj2:"spoje "_(+spoj2)_" ", 1:"")_slovoAvl_" "_(+linka2)
+                        s f31 = $s(+spoj2:"spoje "_(+spoj2)_" ", 1:"")_slovoAvl_" "_..OznaceniLinky(linka2)
                         i kam '= "" s f31 = f31_" z "_kam
                         s fraze = fraze_$s(fraze="":"", 1:",")_f31
                     }
                     else {
                         // „spoj 24 linky 330530 do X" / vlak: „vlak 20875 do X" (NCOME 32 piece 6)
-                        i avl = "V" { s f32 = "vlak "_(+linka2) }
-                        elseif avl = "L" { s f32 = "lodní doprava "_(+linka2) }
-                        else { s f32 = "spoj "_(+spoj2)_" linky "_(+linka2) }
+                        i avl = "V" { s f32 = "vlak "_..OznaceniLinky(linka2) }
+                        elseif avl = "L" { s f32 = "lodní doprava "_..OznaceniLinky(linka2) }
+                        else { s f32 = "spoj "_(+spoj2)_" linky "_..OznaceniLinky(linka2) }
                         i kam '= "" s f32 = f32_" do "_kam
                         s fraze = fraze_$s(fraze="":"", 1:", ")_f32
                     }
@@ -1037,35 +1133,6 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     q o
 }
 
-/// Odvození platnostních znaků z datumů omezení „jede jen/také/jede" (omz 11/12/13) pro spoj
-/// bez týdenní platnosti - aproximace legacy kalendáře (mkStaLinSp): den → 1-7, státní svátek
-/// (vč. Velikonoc) → "+". Prázdný výsledek = fallback „jede všude".
-ClassMethod PlatnostZDatumu(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String) As %String
-{
-    k klice
-    f omzId = 11, 12, 13 {
-        s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
-        i omz = "" continue
-        s data = $s(omz["@":$p(omz,"@",2), 1:omz)
-        f i=1:1:$l(data,"#") {
-            s item = $p(data,"#",i)
-            i item = "" continue
-            s od = $p(item,":",1), do = $p(item,":",2)
-            i do = "" s do = od
-            s dhOd = ..DatumNaDh(od), dhDo = ..DatumNaDh(do)
-            i (dhOd = "") || (dhDo = "") continue
-            i dhDo - dhOd > 400 s dhDo = dhOd + 400        // pojistka proti nesmyslným rozsahům
-            f dh = dhOd:1:dhDo s klice(..DhNaKlic(dh)) = ""
-        }
-    }
-    s vysledek = "", k = ""
-    f {
-        s k = $o(klice(k))
-        q:k=""
-        s vysledek = vysledek_k
-    }
-    q vysledek
-}
 
 /// Datum "d.m.rrrr" → $H počet dnů. "" při nevalidním vstupu.
 ClassMethod DatumNaDh(dat As %String) As %String
@@ -1132,6 +1199,72 @@ ClassMethod ZarazeniSpojeKnizni(deleni As %Integer, plk As %String) As %String
         i maNe s skupiny = skupiny_$s(skupiny'="":",",1:"")_"3"
     }
     q skupiny
+}
+
+/// Vzory rozložení sloupců spojů - **jediný zdroj pravdy je server**, klient je nestaví sám.
+/// Klíče jsou stabilní (visí na nich volba parametru), nadpisy jdou z téhož číselníku jako pásy
+/// skupin, aby vzor vypadal stejně jako dnešní hrubé dělení.
+ClassMethod PresetySloupcuLinky(dataDB As %String, rec As %String) As %String
+{
+    s dsc = $g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC"))
+    s tPD = $p(dsc,"~",2)  i tPD = "" s tPD = "pracovní dny"
+    s tSo = $p(dsc,"~",3)  i tSo = "" s tSo = "soboty"
+    s tNe = $p(dsc,"~",4)  i tNe = "" s tNe = "neděle a svátky"
+    s tVik = $p(dsc,"~",7) i tVik = "" s tVik = "soboty, neděle a svátky"
+
+    s out = ##class(%DynamicObject).%New()
+    d out.%Set("BEZ_ROZLISENI", ..PresetSloupceLinky($lb($lb("1","",""))))
+    d out.%Set("PRAC_VIKEND",   ..PresetSloupceLinky($lb($lb("1",tPD,"X"), $lb("2",tVik,"6+"))))
+    d out.%Set("PRAC_SO_NE",    ..PresetSloupceLinky($lb($lb("1",tPD,"X"), $lb("2",tSo,"6"), $lb("3",tNe,"+"))))
+    q out.%ToJSON()
+}
+
+/// Jeden vzor: seznam `$lb(id, nadpis, dny)` → pole sloupců ve wire tvaru `DEFINICE_SLOUPCU`.
+ClassMethod PresetSloupceLinky(sloupce As %List) As %DynamicArray
+{
+    s arr = ##class(%DynamicArray).%New()
+    f i=1:1:$ll(sloupce) {
+        s def = $li(sloupce, i)
+        s sl = ##class(%DynamicObject).%New()
+        d sl.%Set("id", $li(def,1))
+        d sl.%Set("nadpis", $li(def,2))
+        d sl.%Set("dny", $li(def,3))
+        d arr.%Push(sl)
+    }
+    q arr
+}
+
+/// Zařazení spoje podle **vlastní definice sloupců** ze šablony. Význam definice (dny, značky
+/// „jen s těmito", značky „bez těchto") drží `BaseAgenda`, aby táž definice znamenala v obou
+/// rodinách agend totéž.
+///
+/// ⚠️ **Osa Období se tu vědomě nevyhodnocuje** - vývěska k ní má podklad z ISY, linkový JŘ ne.
+/// Sloupec s obdobím proto v lince omezí jen dny a značky; je to zapsané v roadmapě.
+///
+/// Vrací CSV pořadí sloupců (1..N), ne jejich `id` - prvek pracuje s pořadím pásu.
+ClassMethod ZarazeniSpojeDleDefiniceLinky(ByRef defArr, plk As %String, cnz As %String) As %String
+{
+    s dnySpoje = ..DnySpoje(plk)
+    s out = ""
+    f i=1:1:+$g(defArr) {
+        i '..SedneDoSloupceDny(dnySpoje, defArr(i,"dny")) continue
+        i (defArr(i,"jen") '= "") && ((cnz = "") || (defArr(i,"jen") '[ (","_(+cnz)_","))) continue
+        i (defArr(i,"bez") '= "") && (cnz '= "") && (defArr(i,"bez") [ (","_(+cnz)_",")) continue
+        s out = out_$s(out="":"", 1:",")_i
+    }
+    q out
+}
+
+/// Nadpisy pásů podle vlastní definice - v pořadí, v jakém je uživatel nadefinoval.
+ClassMethod BuildSkupinyZDefinice(ByRef defArr) As %DynamicArray
+{
+    s arr = ##class(%DynamicArray).%New()
+    f i=1:1:+$g(defArr) {
+        s nadpis = defArr(i,"nadpis")
+        i $g(defArr(i,"nadpis2")) '= "" s nadpis = nadpis_" "_defArr(i,"nadpis2")
+        d arr.%Push(..BuildSkupina(i, nadpis))
+    }
+    q arr
 }
 
 /// Definice skupin dnů - nadpisy z číselníku WinMHD DSC (^JRSET("Definice","WinMHD",rec,"DSC"),
@@ -1470,15 +1603,21 @@ ClassMethod FormatCas(minuty As %Integer) As %String
     q $tr($j(hod,2)," ",0)_":"_$tr($j(min,2)," ",0)
 }
 
-/// Název zastávky podle pořadí (tarifního čísla) v trase linky - CIS tvar s obcí
-/// („České Budějovice,aut.nádr."), jak ho v návaznostech tiskne legacy (gZst/gTskNaZst).
+/// Název zastávky podle pořadí (tarifního čísla) v trase linky - do **textů návazností**
+/// („spoj 21 vyčká v zastávce …").
+///
+/// ⚠️ **Bere týž zdroj jako seznam zastávek, ale vždy zkrácený tvar.** Starý modul to tak má:
+/// ve sloupci zastávek tiskne plný tvar s dvojčárkou, ve větě poznámky jedinou čárku. Doloženo
+/// porovnáním na třech firmách - do 24. 8. tu byl natvrdo CIS název, takže na městských linkách
+/// (kde legacy bere upravený název pro MHD) vycházelo v poznámce jiné jméno než ve sloupci.
+///
+/// Volba „Tvar názvu zastávky" se sem **záměrně nepromítá**: řídí sloupec, kde je tvar vidět,
+/// kdežto ve větě by dvojčárka vypadala jako překlep. Kdyby to někdo chtěl jinak, je to featura.
 ClassMethod NazevZastavkyPoradi(dataDB As %String, sku As %String, lin As %String, poradi As %String) As %String
 {
     s czst = $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1)
     i czst = "" q ""
-    s nazev = $p($g(^[dataDB]JRZ(czst)), "$", 2)
-    i nazev = "" q ..NazevZastavky(dataDB, czst)
-    q $replace(nazev, ",,", ",")
+    q ..FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), "", "Zkrácený", ..Jazyk(dataDB))
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -1661,27 +1800,113 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
 
     s jmeno = $p(firma,"~",7)
     i jmeno = "" s jmeno = $p(firma,"~",1)
-    s sidlo = "", ulice = "", tel = ""
+    s sidlo = "", ulice = "", tel = "", fax = ""
     i pr '= "" {
         s provoz = $g(^[dataDB]JRSET("DOP",fa,pr))
         s sidlo = $p(provoz,"~",1)
         s ulice = $p(provoz,"~",2)
         s tel   = $p(provoz,"~",3)
+        s fax   = $p(provoz,"~",5)
     }
+    // Skládání 1:1 legacy `JRapiLinPrtWin:2803-2807`: každá část se lepí přes „, ", prázdná se
+    // **přeskočí**, telefon má předponu „tel. " a fax „fax ".
+    // ⚠️ Do 24. 8. tu bylo `text_","_ulice_",tel:"_tel`, takže u provozu bez ulice vycházelo
+    // „…,,tel:386100111" - dvojčárka a jiná zkratka než ve starém tisku. Odhalilo to porovnání
+    // hlavičky, které se do té doby nedělalo vůbec.
     s text = jmeno
     i sidlo '= "" s text = text_", "_sidlo
-    i tel '= ""   s text = text_","_ulice_",tel:"_tel
+    i ulice '= "" s text = text_", "_ulice
+    i tel '= ""   s text = text_", tel. "_tel
+    i fax '= ""   s text = text_", fax "_fax
     q text
 }
 
-/// Název zastávky z ^JRZ(czst) - odbav/MHD název ($7), fallback CIS ($2).
+/// Název zastávky z registru (`^JRZ`), ve tvaru, v jakém ho tiskne starý modul.
+///
+/// **Upravený název pro MHD** (pole 7) použije legacy **jen u městských linek, a jen když to má
+/// linka zapnuté** (`gPLSetWin` „nazMHD" × typ linky MEST/MESP) - jinak bere složený název podle
+/// registru (pole 2). My jsme do 24. 8. brali název pro MHD **vždycky**, takže se zhruba u poloviny
+/// zastávek tisklo jiné jméno než ve starém modulu; rozhodnutí přebírá `NactiNastaveniNazvu`.
+///
+/// Samotný tvar (dvojčárka × jedna čárka × okres) řeší sdílené `FormatNazvuZastavky` v `BaseAgenda`,
+/// společné s vývěskou - aby se táž zastávka nejmenovala v každé sestavě jinak.
 ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 {
     i czst = "" q ""
+    q ..FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), $p($g(^[dataDB]JRZ(czst)), "$", 3), $g(^||TiskKnizni("nazev","tvar")), ..Jazyk(dataDB))
+}
+
+/// Označení navazující linky do textu poznámky. U autobusu je to číslo a vede se bez vodicích nul
+/// („0330510" → „330510"), u vlaku ale bývá **nečíselné** („R 627") - a to se převodem na číslo
+/// scvrklo na nulu, takže v tisku stálo „vyčká příjezdu vlaku 0".
+/// ⚠️ Našlo to rozšíření porovnávací sady 24. 8.; na původních čtyřech linkách vlakový přípoj nebyl.
+ClassMethod OznaceniLinky(hodnota As %String) As %String
+{
+    i $isvalidnum(hodnota) q +hodnota
+    q $zstrip(hodnota, "<>W")
+}
+
+/// Má se řádek zastávky označit jako zvýrazněný?
+///
+/// Starý modul zvýrazňuje **řádky zvolené zastávky** (`in("A",2,"arr",5)`), a je-li navíc zadané
+/// tarifní číslo (`arr,10`), zúží to na ten jediný řádek - 1:1 `JRapiLinPrtWin:1212-1218`.
+/// Zastávka se u nás nezadává vnitřním číslem jako v legacy (uživatel ho nezná a v panelu voleb
+/// není odkud vybírat), ale **kusem názvu**: linka projíždí jedno město víckrát, takže „Krumlov"
+/// označí všechny jeho zastávky - přesně to legacy dělá volbou přes číslo zastávky.
+///
+/// Samotné tarifní číslo bez zastávky zvýrazní ten řádek taky; legacy to sice takhle nezná
+/// (u něj `arr,10` jen zužuje), ale prázdná zastávka + zadané číslo by jinak neudělaly nic,
+/// což by z panelu voleb vypadalo jako porucha.
+ClassMethod JeZvyraznena(nazevZastavky As %String, poradi As %String) As %Boolean
+{
+    s hledanaZast = $g(^||TiskKnizni("zvyraznit","zastavka"))
+    s hledaneTc = $g(^||TiskKnizni("zvyraznit","tc"))
+    // ⚠️ Podmínka za `q:` končí první mezerou, proto se tu rozhoduje běžnými `if` bloky.
+    i (hledanaZast = "") && (hledaneTc = "") q 0
+    i hledanaZast '= "" {
+        i '($zcvt(nazevZastavky,"L") [ hledanaZast) q 0
+    }
+    i hledaneTc '= "" q (+hledaneTc = +poradi)
+    q 1
+}
+
+/// Ze kterého pole registru se vezme jméno zastávky - upravený název pro MHD, nebo složený název
+/// podle registru. Rozhodnuto jednou za požadavek v `NactiNastaveniNazvu`; **tvar** se řeší až nad
+/// tímhle, protože sloupec a text poznámky ho mají každý jiný.
+ClassMethod ZdrojNazvuZastavky(dataDB As %String, czst As %String) As %String
+{
+    i czst = "" q ""
     s rec = $g(^[dataDB]JRZ(czst))
-    s nazev = $p(rec, "$", 7)
+    s nazev = ""
+    i $g(^||TiskKnizni("nazev","mhd")) s nazev = $p(rec, "$", 7)
     i nazev = "" s nazev = $p(rec, "$", 2)
-    q $replace(nazev, ",,", ",")
+    q nazev
+}
+
+/// Rozhodne **jednou za požadavek**, jak se skládají názvy zastávek, a uloží to do cache.
+/// Volba u tisku i vlastnost linky se protahovaly všemi voláními jména, což je nepřehledné.
+///
+/// „Použít název pro MHD" je **volba nad rámec starého modulu** (má ji i vývěska): legacy tu
+/// podmínku nemá jak vypnout. Výchozí zapnuto = chování starého modulu zůstává.
+ClassMethod NactiNastaveniNazvu(dataDB As %String, sku As %String, lin As %String)
+{
+    // ⚠️ Výchozí hodnotu musí doplnit **server**, ne jen deklarace parametru: tisk z jiného
+    // klienta (a testy) parametr nepošlou vůbec, a prázdná hodnota znamená ve sdíleném
+    // formátování „Zkrácený" - tedy tichý rozchod se starým modulem.
+    s tvarNazvu = $g(^||ML("IN","TVAR_NAZVU_ZASTAVKY"))
+    i tvarNazvu = "" s tvarNazvu = "Plný CIS"
+    s ^||TiskKnizni("nazev","tvar") = tvarNazvu
+    s ^||TiskKnizni("zvyraznit","zastavka") = $zcvt($zstrip($g(^||ML("IN","ZVYRAZNIT_ZASTAVKU")), "<>W"), "L")
+    s ^||TiskKnizni("zvyraznit","tc") = $zstrip($g(^||ML("IN","ZVYRAZNIT_TC")), "<>W")
+    // Typ linky je zakódovaný: surová hodnota / 10 je index do převodní tabulky starého modulu
+    // (`TYPLINKYREAD`). Městská linka = MEST (2) nebo MESP (9).
+    s surovy = +$p($g(^[dataDB]JRL(sku,lin,"I")), "#", 1)
+    s typLinky = $p("0~1~2~3~5~7~6~8~4~9~10~11", "~", (surovy \ 10) + 1)
+    s jeMestska = (typLinky = 2) || (typLinky = 9)
+    s maNazevMhd = +$g(^[dataDB]JRL(sku,lin,"PATCH","nazMHD"))
+    // Tolerantně jako ostatní bool parametry (starší klient posílal „True"); prázdné = zapnuto.
+    s dovoleno = ($zcvt($g(^||ML("IN","NAZEV_PRO_MHD")),"L") '= "false")
+    s ^||TiskKnizni("nazev","mhd") = jeMestska && maNazevMhd && dovoleno
 }
 
 }

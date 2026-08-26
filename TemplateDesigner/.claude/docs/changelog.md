@@ -1,5 +1,420 @@
 # Changelog
 
+## 2026-08-25 (24) - 🧹 výška sekce už nerezervuje místo na posun, ke kterému nedojde
+
+Výpočet výšky sekce rostoucímu prvku přičítal přírůstek k pozici všech prvků pod ním, jenže
+kreslení je nechává na jejich souřadnicích. Sekce si tím nárokovala místo pro posun, ke kterému
+nikdy nedošlo. Odstraněno; tok patří **mezi sekce** a tam funguje.
+
+Uživatel to pozná jen tam, kde prvek pod dynamickou tabulkou leží níž než její zástupný box -
+sekce tam byla o ten rozdíl vyšší.
+
+⚠️ **Test k tomu jsem musel psát třikrát** a pokaždé to odhalila až mutace:
+- s textovým prvkem nešlo nic naměřit (zástupnou výšku počítá **týmž vzorcem** jako tu z dat, rozdíl je nula),
+- s tabulkou, ale prvkem pod ní na 12 mm, se rozdíl schoval pod vlastní výšku tabulky,
+- teprve prvek **pod zástupným boxem tabulky** (60 mm) ten rozdíl ukáže.
+
+Ověřeno: .NET 1182/1182, ověřeno mutací.
+
+## 2026-08-25 (23) - 🧱 dorovnání neúplného bloku prázdnými sloupci (#8372)
+
+Poslední blok bývá neúplný a nechá vpravo volné místo. Nová volba **„Dorovnat prázdnými sloupci"**
+ho vyplní, takže mají všechny bloky stejně širokou tabulku a sestava končí rovně.
+
+Kolik dorovnat se nemusí vymýšlet: doplní se na počet sloupců plného bloku. Odpovídá to tomu,
+co dělá starý modul - jeho „padding sloupce" sjednocují počet sloupců napříč stránkami.
+
+**Volba je vlastnost prvku** (rozhodnutí Jan 25. 8.), tedy týž vzor jako vlastní rozložení sloupců:
+definici vlastní šablona, parametr ji může zrcadlit, až to bude potřeba. Protahovat parametry
+sestavy až ke kreslení kvůli jedné volbě by byl velký zásah bez druhého konzumenta.
+
+Ověřeno: .NET 1181/1181, Caché 128/128, formulář ověřen voláním serveru (vrací novou skupinu
+„Sloupce" i pole). Test porovnává obě varianty proti sobě - měřit absolutní šířku nejde, poslední
+prázdný sloupec nemá vpravo čáru a test by hlídal artefakt měření.
+
+## 2026-08-25 (22) - 🐞 rámeček dynamického prvku vedl přes tabulku
+
+Rámeček, pozadí i ořez zaoblených rohů si braly výšku **z návrháře**, ne tu, do které prvek
+narostl s daty. U dynamické tabulky proto rámeček vedl přes ni a zaoblené rohy ji uřízly ve výšce
+plochy z plátna (nahlásil Jan).
+
+Nově je „jak je prvek právě teď vysoký" na **jednom místě** a bere ho rámeček, pozadí, ořez rohů
+i střed otáčení. Prvek, který svoji výšku umí spočítat, ho přepíše; ostatní zůstávají na výšce
+z plátna.
+
+⚠️ **Odtisky to nemohly chytit** - všechny fixtury mají pevnou výšku, kde se obě čísla rovnají.
+Nový test proto výslovně pracuje s dynamickou výškou a hledá v obrázku, kam až rámeček sahá.
+
+Ověřeno: .NET 1180/1180, pět nových testů (jeden na prvek), ověřeno mutací.
+
+## 2026-08-25 (21) - 🧱 nová šablona má záhlaví a obsah jako dvě sekce
+
+Prvky uvnitř sekce se navzájem **neposouvají**, takže text, který roste s daty (výčet dopravců),
+přetiskne tabulku pod sebou. Změřeno vykreslením: záhlaví s 26 dopravci leželo přes řádek se
+zastávkami - přesně to, na co si stěžuje KORID (#9417) slovy „tisknou se skrytě pod JŘ".
+
+Sekce se naopak posouvají správně: ta pod rostoucí se odsune o její výšku. Nová šablona proto
+zakládá **„Záhlaví" a „Obsah" zvlášť** a překryv tím mizí bez zásahu do stránkování.
+
+⚠️ **Analýza do dneška tvrdila opak** - že u nás problém nenastane, protože textový prvek naroste
+a tabulku odsune. U toho tvrzení stálo „ověřit" a nikdo to neudělal; měření ho vyvrátilo.
+
+⚠️ **Odebrání „fantomového" odsazení z výpočtu výšky se ukázalo jako slepá ulička.** Výpočet sice
+předstírá posun, ke kterému při kreslení nedojde, ale na sedmi velikostech linky to nezměnilo počet
+stránek ani o jednu. Zůstává jako úklid, ne jako oprava - a překryv neřeší.
+
+Ověřeno: .NET 1174/1174, tři nové testy (dva drží změřené chování, jeden strukturu nové šablony),
+všechny ověřené mutací.
+
+## 2026-08-25 (20) - 🐞 stránkování počítalo bloky jinak, než se kreslí
+
+Na konci stránky osiřel samotný pás skupin dnů a na další stránce byla hlavička dvakrát. Řez padl
+doprostřed hlavičky dalšího bloku, protože **stránkování si myslelo, že blok začíná jinde, než se
+opravdu nakreslí**.
+
+Příčina: přípojné řádky patří ke spoji, takže se kreslí jen ze spojů daného bloku - výška je ale
+počítala ze **všech spojů linky**. Bloky se tím ve výpočtu posouvaly dopředu a rozdíl se sčítal.
+Výška se proto počítá pro každý blok podle jeho vlastních spojů; **bloky nejsou stejně vysoké**.
+
+⚠️ **Žádný dosavadní test to nemohl chytit** - výška i zlomy se braly z téhož špatného čísla, takže
+si odpovídaly. Nový test proto model **porovnává s obrázkem**: vykreslí prvek a hledá, kde v něm
+doopravdy začínají hlavičky bloků. A fixtura dostala přípojné řádky jen u některých spojů - bez nich
+se rozdíl nemá jak projevit (první verze testu prošla i s vrácenou chybou).
+
+Ověřeno: .NET 1166/1166, oprava ověřená mutací.
+
+## 2026-08-25 (19) - 🐞 pod zopakovanou hlavičkou prosvítal konec předchozí stránky
+
+Zopakovaná hlavička na pokračovací stránce měla pod sebou **poslední řádky předchozí stránky**.
+Posunutí obsahu dolů o její výšku okno jen přesunulo, místo aby obsah nad řezem odřízlo - takže
+tři řádky zastávek ležely přes hlavičku (nahlásil Jan, potvrzeno vykreslením stránek do obrázků).
+
+Obsah se teď ořezává **až od řezu** a hlavička se kreslí zvlášť nad ním.
+
+⚠️ **První verze testu chybu neviděla.** Hlavička se kreslí až po obsahu, takže prosáklé řádky
+překryla svým pozadím a pruh vyšel stejně. Test proto záhlaví **zprůhledňuje** - jinak by hlídal
+prázdno (odhaleno mutací).
+
+Ověřeno: .NET 1165/1165, oprava ověřená mutací.
+
+## 2026-08-25 (18) - 🧱 dlouhá linka: řez mezi řádky a zopakovaná hlavička (`L5-6` hotová)
+
+Linka s tolika zastávkami, že jeden blok přeroste stránku, se rozřezat musí. Dosud se řezalo, kde
+zrovna došlo místo - tedy **doprostřed řádku zastávky** - a na pokračovací stránce zůstaly řádky
+**bez čísel spojů**, takže nešlo poznat, který sloupec je který spoj.
+
+Zlomy proto mají dvě síly: hranice bloku je **silná** (přirozený konec stránky), hranice řádku
+**slabá** (náhrada, když se blok celý nevejde). Silná má přednost, i když je výš - jinak by řez padl
+doprostřed bloku pokaždé, když v něm zbyl nějaký řádek.
+
+Když řez přesto padne dovnitř bloku, **pokračovací stránka zopakuje jeho hlavu** (pás skupin dnů,
+čísla spojů, platnost, negativní značky). Místo na ni vyhradí stránkování, aby ji prvek nepřetiskl
+přes obsah; stránka začínající novým blokem si hlavičku přinese sama a neopakuje se.
+
+Ověřeno: .NET 1164/1164, každá ze tří změn ověřená mutací.
+
+## 2026-08-25 (17) - 🧱 sloupce spojů jsou ve všech blocích stejně široké
+
+Neúplný blok si šířku počítal podle **svého** počtu spojů, takže se poslední čtyři spoje roztáhly
+na sloupce 58,8 mm proti 6,4 mm v prvním bloku - čas uprostřed šesticentimetrového pole a dvě
+tabulky pod sebou, které nevypadaly jako táž tabulka.
+
+Šířky teď platí pro všechny bloky stejné a **neúplný blok nechá místo vpravo**, jako ve starém
+tisku. Jestli se to místo má vyplnit prázdnými sloupci, je samostatné přání zákazníka (#8372) -
+tenhle krok je jeho předpoklad.
+
+Ověřeno: .NET 1161/1161 (ověřeno mutací).
+
+## 2026-08-25 (16) - 🧱 stránka se láme mezi bloky, ne uprostřed tabulky
+
+Rozřezaná linka se lámala tam, kde zrovna došla stránka. Na A4 na šířku to znamenalo první stránku
+s blokem a půl a druhou s **1,4 mm proužkem** - tabulku useknutou pár řádků před koncem.
+
+Prvek teď umí říct, **kudy se řezat smí**, a stránkování se toho drží. Je to obecná vlastnost
+(`INedelitelneDily`), ne záplata na linkový JŘ: kterýkoli prvek složený z dílů, které nemají smysl
+rozříznuté, ji může nabídnout. Díl vyšší než celá stránka se rozřízne i tak - jinak by se nevešel
+nikdy.
+
+⚠️ **Zúžilo to plánovaný krok „zopakovat čísla spojů na pokračovací stránce"**: v běžném případě se
+blok už nekrájí, takže čísla spojů má nahoře každý. Zbývá jediný případ - linka s tolika zastávkami,
+že jeden blok přeroste stránku.
+
+Ověřeno: .NET 1159/1159 (řez na hranici bloku ověřen mutací - bez přichycení test padá).
+
+## 2026-08-25 (15) - 🧱 široká linka se rozřeže na čitelné bloky (`L5-2`, `L5-3`, `L5-5`)
+
+Linka se 100+ spoji se dosud zmáčkla do šířky, až z ní nebylo nic vidět. Nově se **rozřeže na
+bloky pod sebou** a v každém se zopakují popisné sloupce - tak, jak to dělá starý tisk.
+
+**Kolik spojů blok unese, určuje písmo.** Dno šířky sloupce bylo pevné (3 mm) a čas se do 3 mm
+nevejde v žádném písmu: bloky sice vycházely, ale slité (nahlásil Jan). Dno se proto měří ze
+šířky času „00:00" i s odsazením - zvětšení fontu teď ubere spojů na blok místo aby tabulku
+zhustilo. Na zkušební lince to znamená 23 spojů na blok místo ~60.
+
+**Pás skupin dnů je nad každým blokem.** O tom, které řádky tabulka má (pás skupin, platnost,
+negativní značky), rozhodují **všechny spoje linky**, ne spoje jednoho bloku - jinak blok, který
+padl celý do jedné skupiny, neměl nad sebou nadpis a nešlo poznat, ke kterým dnům patří.
+
+⚠️ **Vodorovné opakování sekce se ukázalo jako zbytečné** (plánovaný `L5-3`). Bloky pod sebou
+proteče stávající svislé stránkování, takže druhá osa v enginu nevznikla. Doloženo testem, ne
+úvahou: 200 spojů × 25 zastávek = 9 bloků → 3 stránky, které na sebe navazují.
+
+Ověřeno: .NET 1154/1154 (8 nových na rozvržení bloků, ověřené mutací - se starým dnem šířky
+padají). Vizuální zkouška na lince 0330510 zbývá.
+
+## 2026-08-24 (14) - 🧱 vlastní rozložení sloupců spojů v šabloně (`L3` dokončena)
+
+Druhá půle. Linková tabulka **drží vlastní definici sloupců** v šabloně a posílá ji serveru, a
+**parametr ji zrcadlí** - přesně tím způsobem, jaký má vývěska u odjezdů: definici vlastní šablona,
+parametr ukazuje, kterému vzoru odpovídá, a „Vlastní rozložení" je **ukazatel, ne volba**.
+
+Tvar definice i její význam jsou pro obě rodiny agend **jedno a totéž místo**, nabídka vzorů je
+naopak vlastní - linka má tři, vývěska čtyři, a jinak pojmenované.
+
+⚠️ **U linky se do volby dělení nesahá, dokud definice neexistuje.** Vývěska má pro ten stav
+popisek „Automaticky (dle linky)", linka ne - její dělení jsou tři konkrétní hodnoty a je to volba
+uživatele. Přepsat mu ji „automaticky" by byla táž chyba naruby, kvůli které to zrcadlo vzniklo.
+
+Ověřeno: Caché 128/128, .NET 1139/1139. Vizuální zkouška zbývá.
+
+## 2026-08-24 (13) - 🧱 server umí vlastní rozložení sloupců spojů (`L3`, první půle)
+
+Linkový JŘ uměl jen tři hrubé možnosti dělení spojů. Server nově přijme **vlastní definici sloupců
+ze šablony** - tutéž, jakou už umí vývěska: nadpis, dny a značky, které spoj do sloupce pustí nebo
+z něj vyřadí.
+
+**Význam definice je teď na jednom místě pro obě rodiny agend.** Jinak by táž definice udělala ve
+vývěsce jiné sloupce než v lince. Liší se až to, co s výsledkem prvek udělá: vývěsce je skupina
+**jeden sloupec**, linkovému JŘ **pás nad několika sloupci spojů** - a spoj patřící do dvou pásů se
+vypíše **dvakrát**.
+
+⚠️ **Je to aditivní**: dokud šablona definici neposílá, chová se všechno přesně jako dosud
+(ověřeno porovnáním se starým modulem).
+
+⚠️ **Osa Období se v lince nevyhodnocuje** - vývěska k ní má podklad z jízdních řádů, linkový JŘ ne.
+Sloupec s obdobím tedy v lince omezí jen dny a značky.
+
+**Zbývá druhá půle**: definici musí umět zadat prvek v šabloně a parametr ji má zrcadlit.
+
+Ověřeno: Caché 128/128.
+
+## 2026-08-24 (12) - 📅 spoji chyběl sloupec ve skupinách dnů (`L3`)
+
+Spoj, který nemá zadanou týdenní platnost, jsme zařazovali do skupin dnů podle **odhadu ze zadaných
+datumů omezení**. Vypadalo to chytřeji, ale bylo to horší: na kontrolní lince zařadil odhad spoj do
+**dvou** skupin místo tří, takže se v tabulce opakoval jednou míň a **zákazníkovi chyběl sloupec**.
+
+Starý modul to řeší jinak: zkusí dopočítat skutečnou platnost kalendářem, a **když mu to nevyjde,
+dá spoj do všech skupin**. Nově to děláme stejně. Náš odhad byl vlastní logika, kterou nic
+nedokládalo; tohle je doložené chováním starého tisku.
+
+Porovnání se starým modulem to potvrdilo: na dotčené lince je shoda úplná a **na žádné jiné se nic
+nezhoršilo**.
+
+Ověřeno: Caché 127/127, .NET 1139/1139.
+
+## 2026-08-24 (11) - 🚏 zastávka s přestupem má piktogram (`L4` uzavřena)
+
+Poslední kus symbolů. U zastávky, kde jde přestoupit na linkovou dopravu, se **vpravo ve sloupci
+zastávek** kreslí piktogram - jako v původním tisku. Na kontrolní lince to sedí na tři zastávky
+(Český Krumlov, Velešín, Kaplice), shodně se starou sestavou.
+
+Řídicí atributy (`T`, `P`) se netisknou, protože pro cestujícího nic neznamenají - stejně jako
+ve starém modulu.
+
+⚠️ Piktogram je **overlay nad hotovou buňkou**: název se kreslí vlevo a umí se zmenšit, aby se
+vešel, kdežto značka sedí u pravého okraje. U hodně dlouhého názvu se můžou potkat; kdyby to
+někdo uviděl, řeší se to rezervací místa v buňce.
+
+Ověřeno: .NET 1139/1139, Caché 127/127. Vizuální kontrola zbývá.
+
+## 2026-08-24 (10) - 🔣 legenda linkového JŘ kreslila cizí piktogramy
+
+Legenda používala **vývěsková** pravidla i pro poznámky linkového JŘ, který má jiný slovník značek.
+Důsledek: „pokračuje" má značku `p`, na které je ve fontu **kufr**, a návaznosti by vyšly jako
+půlkruh a kosočtverec místo trojúhelníků.
+
+Legenda teď pozná, odkud poznámka je, podle **druhu poznámky** - ten posílá jen linkový JŘ - a podle
+toho vybere mapu. Vývěskám se nemění nic.
+
+Ověřeno: .NET 1139/1139, Caché 127/127. Vizuální kontrola legendy zbývá.
+
+## 2026-08-24 (9) - 🔺 návaznosti se kreslí trojúhelníky vedle času
+
+Dořešeno tištěným vzorem staré sestavy (linka 330511): u „vyčká" je **dutý** trojúhelník, u
+„navazuje" **plný**, a tisknou se **vedle času** v téže buňce. Návrhář to teď dělá stejně.
+
+Který glyf je který, se poznalo počtem obrysů: dutý má dva, plný jeden - v českém i slovenském
+fontu shodně. ⚠️ Past, kterou hlídá test: „vyčká" míří na pozici, kterou by vývěskový překlad
+poslal dál na **autobus**.
+
+**Projíždí a jede jinudy jsou tím uzavřené jako text** - font ty znaky vůbec nemá (na jejich
+pozicích je čtverec a osmiúhelník), takže je znakem kreslí i starý tisk. „Pokračuje" zůstává
+textem, dokud se nenajde sestava, kde se vyskytuje.
+
+⚠️ Tištěný vzor navíc opravil naše tvrzení, že starý modul **přepisuje čas značkou**. Netiskne -
+tiskne obojí; naše porovnání z buňky čte jen první položku, proto to tak vypadalo. Čas jsme tedy
+neztráceli.
+
+Ověřeno: .NET 1139/1139, Caché 127/127. Vizuální kontrola zbývá.
+
+## 2026-08-24 (8) - 🔣 značky platnosti se kreslí piktogramy (`L4`, základ)
+
+Linková tabulka nekreslila ani jeden symbol - značky se vypisovaly jako holá písmena. Nově jde
+**řádek platnosti** přes symbolový font, takže pracovní dny jsou zkřížená kladiva, sobota a neděle
+kroužkové číslice a svátky kříž, jak se to v jízdních řádech tiskne.
+
+Vzniklá **sdílená mapa značek** je jediný zdroj pravdy pro zastávkové i linkové JŘ. Zastávkovým se
+chování **nezměnilo** (podmínka Jana) - jen delegují na mapu; hlídají to jejich testy.
+
+⚠️ **Linkový JŘ má opačné výchozí pravidlo než vývěska: piktogram jen z ověřeného seznamu, zbytek
+textem.** Důvod je konkrétní: „pokračuje" má v číselníku značku `p`, ale na pozici `p` je ve fontu
+**kufr**. Naivní „jednoznakové = piktogram" by cestujícímu nakreslilo zavazadlo.
+
+⚠️ **Textem proto zatím zůstávají** značky pro projíždí, jede jinudy, vyčká, pokračuje a navazuje -
+u prvních dvou je to typografická konvence, u zbytku **není pozice ve fontu změřená**. Doplnit je
+smí až někdo, kdo je ověří v obou fontech (CZ i SK se u dvou pozic liší významem). Vypadají tedy
+jako dosud, ne hůř.
+
+⚠️ Loď, wifi a zásuvka v tom fontu **nejsou vůbec** - vypisují se textem, provizorně.
+
+⚠️ **Piktogram a zkratka se míchají uvnitř jedné buňky.** První verze přepínala font „buď celá
+buňka, nebo nic" a v jednom řádku pak stálo u jednoho spoje kladivo a u vedlejšího písmeno „X",
+protože ten měl v buňce navíc „BEV" (nález Jan při vizuální kontrole). Buňka umí jen jeden font,
+takže se smíšený obsah kreslí ručně nad hotovým řádkem.
+
+Ověřeno: .NET 1139/1139, Caché 127/127.
+
+## 2026-08-24 (7) - 🏢 pruh s dopravcem se skládá jako ve starém tisku (`L2` hotová)
+
+Poslední bod vlny. U dopravce s provozem bez ulice jsme tiskli **„…,,tel:386100111"** - dvojčárku
+a jinou zkratku, než má starý tisk („…, tel. 386100111"). Nově se části lepí stejně: přes čárku
+s mezerou, prázdná se přeskočí, telefon má „tel. " a přibyl i **fax**, který jsme neposílali vůbec.
+
+⚠️ **Odhalilo to porovnání hlavičky, které se do dneška nedělalo vůbec** - síť kontrolovala tabulku
+a poznámky, ale ne hlavičková pole. Text dopravce se proto teď porovnává taky; na všech šesti
+kontrolních linkách sedí.
+
+⚠️ **Tři nastavení, kvůli kterým byl bod zadaný, jsou slepá ulička** a je to zapsané, ať se
+nehledají znovu: pořadí dopravců a souhrn linek k dopravci čte HTML a PostScript tisk, **ne ten
+engine, se kterým se porovnáváme**, a tisk provozů nemá zapnutý nikdo. Šlo tedy o skládání textu,
+ne o nastavení.
+
+Ověřeno: Caché 127/127, .NET 1121/1121. Odtisky tří linek přebaselinovány (počty shodné).
+
+## 2026-08-24 (6) - 🅰️ přípojný řádek jde odlišit vlastním písmem (`L2`, #8360)
+
+Přípoje se kreslily stejným písmem jako časy spojů, takže v tabulce křičely stejně jako odjezdy.
+Nastavení prvku má nově skupinu **Přípojné řádky**: velikost, tučné, kurzíva a barva textu.
+Nevyplněné se dědí z datových buněk, takže se beze změny nic nehne.
+
+Menší písmo zároveň **zmenší výšku toho řádku** - přípoje tak zaberou míň místa, o což v požadavku
+šlo. ⚠️ Výška se počítá na dvou místech (kreslení a výpočet výšky tabulky) a obě musí dát totéž,
+proto chodí jedním výpočtem.
+
+Požadavek KU HK (#8360).
+
+Ověřeno: .NET 1121/1121, Caché 127/127.
+
+## 2026-08-24 (5) - 🐛 přípojné řádky se tiskly dvakrát
+
+Na lince s rozdvojenými zastávkami (příjezd zvlášť, odjezd zvlášť) se celý blok přípojů vypsal
+**dvakrát** - jednou nad zastávkou a jednou pod ní. Přípoje se totiž párují na **tarifní číslo**,
+a obě půlky rozdvojené zastávky mají totéž číslo.
+
+Nově patří **odjezdovému** řádku, protože „navazuje" i „vyčká" se vztahují k odjezdu. Zastávka,
+která má jen příjezdový řádek (konečná), si přípoje nechává, aby nezmizely.
+
+⚠️ Opraveno i ve výpočtu výšky tabulky, ne jen v kreslení - kdyby se ty dva rozešly, tabulka by
+měla jinou výšku než obsah.
+
+Nahlásil Jan 24. 8. na `CB_CSADAD` 330511, hned po zpřístupnění agendy.
+
+Ověřeno: .NET 1121/1121 a vizuálně na té lince.
+
+## 2026-08-24 (4) - 🐛 výběr linek u linkového JŘ byl prázdný
+
+Po zveřejnění agendy se ukázalo, že **výběr linek nic nenabízí**. Server přitom 200 linek posílal -
+jenže bez čísla a názvu. Seznam je vypisuje jako sloupce, takže se otevřel prázdný.
+
+Opraveno u obou linkových agend (městská měla tutéž chybu, jen ji nikdo neviděl, protože je skrytá).
+Nově se posílají stejná pole a ve stejném tvaru jako u vývěsky.
+
+Přibyl test, který u každé agendy kontroluje **tvar** odpovědi výběru instancí. Tahle chyba se
+z dat nepoznala: ze serveru chodily řádky, jen prázdné, takže testy počtu by prošly.
+
+Ověřeno: Caché 127/127.
+
+## 2026-08-24 (3) - 🔓 linkový JŘ (AD) jde v návrháři vybrat
+
+Agenda se dosud v nabídce vůbec neukazovala, takže na ni nešlo překliknout a linkový tisk nebylo
+jak vyzkoušet. Nově je **zveřejněná** a nabízí se v „Změnit agendu" i ve filtru šablon.
+
+⚠️ **Městská varianta zůstává skrytá** - neprošla porovnáním se starým modulem.
+⚠️ Zveřejněná agenda se ukáže i zákazníkům, jakmile se vydá nová verze.
+
+Návrhář si pamatuje **naposledy použitou agendu**, takže po prvním přepnutí startuje rovnou v ní.
+Na žádost Jana je linkový JŘ navíc **výchozí i pro první spuštění** (dřív zastávkový) - uplatní se
+jen tehdy, když uživatel ještě nikdy agendu nepřepnul. ⚠️ Než se to vydá zákazníkům, zvážit vrácení
+zpátky: nový uživatel dnes přistane v pilotní agendě, ne v hotové vývěskové.
+
+## 2026-08-24 (2) - 🔦 zvýraznění zastávky, ze které se uživatel dívá (`L2`)
+
+Starý tisk umí zvýraznit řádek zvolené zastávky a zúžit to na konkrétní tarifní číslo; návrhář
+z toho neuměl nic. Nově se dá v nastavení sestavy zadat **kus názvu zastávky** (nerozlišují se velká
+a malá písmena) a volitelně **tarifní číslo**, které výběr zúží.
+
+Data řádek jen **označí**, jak vypadá zvýraznění si řídí šablona - prvek už podmíněné zvýraznění
+řádku uměl, takže stačilo dodat příznak. Pole se jmenuje stejně jako u vývěsky, aby stejné
+nastavení šablony fungovalo v obou.
+
+⚠️ Zastávka se nezadává vnitřním číslem jako ve starém modulu (uživatel ho nezná a v panelu není
+odkud vybírat). Projíždí-li linka jedno město víckrát, označí se všechny jeho zastávky - přesně to
+starý modul dělá výběrem zastávky. Tarifní číslo pak vybere jednu z nich, ale **v každém směru
+jednu**, protože tarifní číslo je pro oba směry stejné.
+
+**Nález, který mění zadání zbytku vlny:** přepínač vedený jako „tisk čísla linky v přípojném řádku"
+ve skutečnosti řídí něco jiného - jestli se přípoje na různé linky u téže zastávky slijí do jednoho
+řádku. Číslo linky se tiskne tak jako tak. Je to tedy nová logika, ne doplnění volby; zapsáno
+do roadmapy k rozhodnutí o rozsahu.
+
+Ověřeno: Caché 126/126, .NET 1121/1121. Odtisky přebaselinovány kvůli novému poli.
+
+## 2026-08-24 - 🚏 názvy zastávek v linkovém JŘ jako ve starém tisku (`L2b`)
+
+Poslední datový rozdíl proti starému modulu. Táž zastávka se dosud jmenovala na vývěsce jinak než
+v linkovém jízdním řádu, protože jsme název **zkracovali** a **vždycky** brali upravený název
+pro MHD. Starý modul to má jinak a teď to má i návrhář:
+
+- **ve sloupci zastávek plný tvar** včetně obce („Český Krumlov,,aut. nádraží"),
+- **ve větách poznámek zkrácený** („vyčká v zastávce Strakonice,aut. nádraží"),
+- **upravený název pro MHD jen na městských linkách, které ho mají zapnuté** - tak to dělá starý
+  tisk. Dosud jsme ho brali všude, což byla polovina rozdílu.
+
+Do voleb u tisku přibyly **Tvar názvu zastávky** a **Použít název pro MHD** - stejné, jaké má
+vývěska. ⚠️ Výchozí tvar je ale **plný**, kdežto vývěska má zkrácený: ty dva staré moduly se lišily
+a tady je přednější parita - **potvrzeno Janem 24. 8.**: plný tvar je standard. Kdyby to někdo
+chtěl jinak, řešilo by se to nastavením šablony, ne jinou výchozí hodnotou.
+
+Formátování názvu je nově **sdílené oběma rodinami agend** - kdyby si ho každá dělala po svém,
+zase by se rozešly. Vývěsce se chování nezměnilo.
+
+**Porovnávací sada rozšířena o dvě linky** se značkami, které se na původní čtyřce nevyskytovaly,
+a hned to našlo dvě věci:
+
+- **U vlakového přípoje se tisklo „vyčká příjezdu vlaku 0"** místo označení vlaku („R 627").
+  Označení se převádělo na číslo, což u nečíselného označení dá nulu. Opraveno.
+- **Jeden spoj patří podle starého modulu do tří skupin dnů, u nás do dvou** - v tabulce se
+  opakuje jednou méně, takže chybí sloupec. Vedeno jako dluh do vlny, která řeší definici sloupců.
+
+Názvy zastávek proti starému modulu sedí **100 % na třech linkách ze čtyř**; na čtvrté zbývá
+32 buněk, kde má starý modul místo jména značku a zatím není jasné proč (vedeno jako dluh, ne jako
+parita). Tři značky (`SAO`, `CBE`, `zasu`) nemá v datech nikdo ze šesti firem, takže jejich věty
+zůstávají opsané ze zdroje a neověřené.
+
+Ověřeno: Caché 125/125, .NET 1121/1121. Zmrazené odtisky všech čtyř linek přepsány - počty shodné,
+změnila se jen jména.
+
 ## 2026-08-21 (8) - 🏷️ dvě značky v legendě dostávaly špatný tvar věty
 
 Dořešení včerejšího nálezu. Nastavení „značka atributu nad spoj" neřídí, **jestli** se řádek legendy

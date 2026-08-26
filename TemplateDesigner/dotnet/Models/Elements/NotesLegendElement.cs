@@ -196,8 +196,8 @@ public class NotesLegendElement : StopScheduleElementBase
                         RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, paints.Text, colRight, textStartX),
                     TypPoznamky.SpecialniZnak =>
                         RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
-                            JePiktogram(pozn.Znak) ? symbolFont : boldFont, noteFont, paints.Text, false, colRight, textStartX,
-                            JePiktogram(pozn.Znak)),
+                            JePiktogramPoznamky(pozn) ? symbolFont : boldFont, noteFont, paints.Text, false, colRight, textStartX,
+                            JePiktogramPoznamky(pozn)),
                     _ when pozn.Znak.Length > 0 =>
                         RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, paints.Text, true, colRight, textStartX,
                             piktogram: false),
@@ -267,7 +267,7 @@ public class NotesLegendElement : StopScheduleElementBase
             // ve fontu neshoduje s písmenem číselníku (autobus „A" → „z", kolo „K" → „L"). Překlad
             // se řídí kategorií, ne písmenem: značky MHD jsou v datech už jako pozice ve fontu.
             // A jen u piktogramů: značka kreslená normálním fontem je písmeno zadané zákazníkem.
-            string znak = piktogram ? GlyfDleKategorie(pozn.Znak, pozn.Kategorie) : pozn.Znak;
+            string znak = piktogram ? GlyfPoznamky(pozn) : pozn.Znak;
             ctx.Canvas.DrawText(znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
             lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f;
 
@@ -355,6 +355,24 @@ public class NotesLegendElement : StopScheduleElementBase
             && KategorieLinkyProjde(p)
         ).ToList();
     }
+
+    /// <summary>Je značka poznámky piktogram? <b>Linkový JŘ má jiný slovník značek než vývěska</b>
+    /// a poznává se podle toho, že posílá druh poznámky.</summary>
+    /// <remarks>
+    /// ⚠️ Bez tohohle rozlišení kreslila legenda linkového JŘ cizí piktogramy: „pokračuje" má
+    /// značku <c>p</c>, na které je ve fontu <b>kufr</b>, a návaznosti <c>m</c>/<c>^</c> by vyšly
+    /// jako půlkruh a kosočtverec místo trojúhelníků.
+    /// </remarks>
+    private static bool JePiktogramPoznamky(PoznamkaData pozn) =>
+        pozn.Druh != ""
+            ? SymbolMap.ResolveLinkovy(pozn.Znak).Mode == SymbolRenderMode.FontGlyf
+            : JePiktogram(pozn.Znak);
+
+    /// <summary>Co se pro značku poznámky reálně vypíše - viz <see cref="JePiktogramPoznamky"/>.</summary>
+    private static string GlyfPoznamky(PoznamkaData pozn) =>
+        pozn.Druh != ""
+            ? SymbolMap.ResolveLinkovy(pozn.Znak).Value
+            : GlyfDleKategorie(pozn.Znak, pozn.Kategorie);
 
     /// <summary>Kategorie, kterou Caché dává výlukovým poznámkám linky (text začíná „Výluka").</summary>
     private const string VylukaKategorie = NoteCategories.Vyluka;

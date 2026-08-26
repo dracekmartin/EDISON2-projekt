@@ -160,8 +160,11 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             i (search '= "") && ('$f($zcvt(display,"L"), search)) continue
 
             s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value", linkaId)
-            d obj.%Set("display", display)
+            // Viz LinkovyJrAd: bez `cislo`/`nazev` je výběr instancí prázdný.
+            d obj.%Set("value", linkaId, "string")
+            d obj.%Set("cislo", cislo, "string")
+            d obj.%Set("nazev", nazev, "string")
+            d obj.%Set("display", display, "string")
             d arr.%Push(obj)
             s count = count + 1
             q:count>=limit

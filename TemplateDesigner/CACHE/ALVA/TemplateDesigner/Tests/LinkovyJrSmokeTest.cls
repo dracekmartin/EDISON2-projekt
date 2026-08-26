@@ -79,6 +79,39 @@ Method ProjdiKontrakt(ByRef sys, trida As %String, popis As %String)
 	}
 }
 
+/// Výběr instancí musí u **každé** agendy vracet číslo i název - ne jen vnitřní hodnotu.
+///
+/// ⚠️ **Přesně tohle bylo 24. 8. rozbité**: linková agenda posílala jen `value`, `display`
+/// a `subtitle`, jenže seznam vypisuje sloupce `cislo` a `nazev`, takže se uživateli otevřel
+/// **prázdný** výběr linek. Ze serveru přitom chodilo 200 řádků, takže na tom nebylo nic vidět,
+/// dokud to někdo nezkusil v aplikaci. Test kontroluje **tvar** odpovědi, ne počet.
+Method TestVyberInstanciMaCisloINazev()
+{
+	do ..SetupSys(.sys)
+	set chybi = "", overeno = 0
+	for trida = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd", "ALVA.TemplateDesigner.Agendy.LinkovyJrMhd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd" {
+		kill ^||ML
+		set ^||ML("IN","search") = ""
+		set ^||ML("IN","limit") = 5
+		do $classmethod(trida, "GetAvailableInstances", .sys)
+		set json = $get(^||ML("OUT", 1))
+		continue:json=""
+		set arr = ##class(%DynamicArray).%FromJSON(json)
+		continue:arr.%Size()=0
+		set overeno = overeno + 1
+		set prvni = arr.%Get(0)
+		for pole = "value", "cislo", "nazev" {
+			continue:prvni.%Get(pole)'=""
+			set chybi = chybi _ $select(chybi="":"", 1:", ") _ $piece(trida, ".", *) _ ":" _ pole
+		}
+	}
+	if 'overeno {
+		do $$$AssertTrue(1, "žádná agenda na tomto serveru nevrátila instance - přeskočeno")
+		quit
+	}
+	do $$$AssertEquals(chybi, "", "výběr instancí vrací prázdná pole (seznam by byl prázdný): "_chybi)
+}
+
 /// Schéma musí popisovat **tytéž kolekce**, jaké `GetData` reálně posílá. Rozejít se můžou tiše:
 /// uživatel pak v nabídce dat vidí skupinu, která v datech není (nebo naopak), a tabulka zůstane
 /// prázdná. Kontroluje se u obou agend, protože sdílejí jeden prvek.

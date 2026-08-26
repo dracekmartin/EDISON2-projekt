@@ -1177,7 +1177,8 @@ public class TemplateDesignerViewModel : EDViewModel
         configure?.Invoke(t);
         State.CurrentTemplate = t;
         // Výchozí sekce, ať uživatel nezačíná na prázdné šabloně bez plochy k editaci.
-        State.CurrentTemplate.Sections.Add(CreateDefaultSection(State.CurrentTemplate.PageSize));
+        // Dvě, ne jedna - důvod viz `CreateDefaultSections`.
+        State.CurrentTemplate.Sections.AddRange(CreateDefaultSections(State.CurrentTemplate.PageSize));
         CurrentFilePath = null;
         _loadedFromCache = false;
         IsDirty = false;
@@ -2632,7 +2633,9 @@ public class TemplateDesignerViewModel : EDViewModel
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
          "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
          "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
-         "DELENI_SLOUPCU", "SLOUPEC_TC", "ZASTAVKY_BEZ_ZASTAVENI", "BARVY_SPOJU"];
+         "DELENI_SLOUPCU", "SLOUPEC_TC", "ZASTAVKY_BEZ_ZASTAVENI", "BARVY_SPOJU",
+        "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD",
+        "ZVYRAZNIT_ZASTAVKU", "ZVYRAZNIT_TC"];
 
     private string? _lastServerParamsSnapshot;
 
@@ -2835,7 +2838,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// který ji má. Null = režim „Automaticky (dle linky)".</summary>
     internal string? CurrentColumnsDefinitionJson() =>
         State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
-            .OfType<DepartureGridElement>()
+            .OfType<IColumnLayoutOwner>()
             .Select(e => e.BuildColumnsDefinitionWireJson())
             .FirstOrDefault(j => j is not null);
 
@@ -2850,9 +2853,28 @@ public class TemplateDesignerViewModel : EDViewModel
     //   žádné sloupce           → „Automaticky (dle linky)"
     //   ručně upravené          → „Vlastní rozložení" (jen ukazatel, ručně vybrat nejde)
 
-    private const string LayoutParamName    = "ROZDELENI_SLOUPCU";
+    private const string LayoutParamVyveska = "ROZDELENI_SLOUPCU";
+    private const string LayoutParamLinka   = "DELENI_SLOUPCU";
     private const string LayoutAutoOption   = "Automaticky (dle linky)";
     private const string LayoutCustomOption = "Vlastní rozložení";
+
+    /// <summary>Který parametr zrcadlí definici sloupců - liší se podle agendy. Vývěska i linka
+    /// mají tutéž mechaniku, jen jinak pojmenovanou volbu.</summary>
+    private string LayoutParamName =>
+        _agendaParameters.Any(p => p.Name == LayoutParamVyveska) ? LayoutParamVyveska : LayoutParamLinka;
+
+    /// <summary>Popisek, kterým se hlásí „prvek žádnou definici nemá".
+    /// ⚠️ **U linky žádný takový popisek není** - její volba dělení má tři konkrétní hodnoty a je
+    /// to volba uživatele, ne stav prvku. Zrcadlo jí proto do ní nesahá (null) a hlásí jen to,
+    /// když definice existuje. Přepsat uživateli jeho volbu na „automaticky" by byla ta stará
+    /// chyba naruby.</summary>
+    private string? LayoutAutoOptionProAgendu =>
+        LayoutParamName == LayoutParamVyveska ? LayoutAutoOption : null;
+
+    /// <summary>Vzory rozložení nabízené v parametru - klíče musí odpovídat tomu, co posílá server
+    /// v poli vzorů, popisky volbám parametru.</summary>
+    private IReadOnlyList<DepartureColumnPresets.Preset> LayoutPresety =>
+        LayoutParamName == LayoutParamVyveska ? DepartureColumnPresets.All : DepartureColumnPresets.Linkove;
 
     private bool    _layoutParamSyncing;
     private string? _lastLayoutParamValue;
@@ -2867,10 +2889,10 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Prvek odjezdů, jehož definice sloupců platí pro celou šablonu - stejná volba jako
     /// <see cref="CurrentColumnsDefinitionJson"/> (první s definicí, jinak první vůbec).</summary>
-    private DepartureGridElement? LayoutOwner()
+    private IColumnLayoutOwner? LayoutOwner()
     {
         var grids = State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
-            .OfType<DepartureGridElement>().ToList();
+            .OfType<IColumnLayoutOwner>().ToList();
         return grids.FirstOrDefault(e => e.CustomColumns is { Count: > 0 }) ?? grids.FirstOrDefault();
     }
 
@@ -2890,8 +2912,9 @@ public class TemplateDesignerViewModel : EDViewModel
         if (cols is { Count: > 0 } && presety.Count == 0) return;
 
         var odvozene = cols is { Count: > 0 }
-            ? DepartureColumnPresets.MatchLabel(cols, presety) ?? LayoutCustomOption
-            : LayoutAutoOption;
+            ? DepartureColumnPresets.MatchLabel(cols, presety, LayoutPresety) ?? LayoutCustomOption
+            : LayoutAutoOptionProAgendu;
+        if (odvozene is null) return;   // linka: bez definice se uživatelova volba nechává být
         _lastLayoutParamValue = odvozene;
         if (Equals(LayoutParamValue(), odvozene)) return;
 
@@ -2923,9 +2946,9 @@ public class TemplateDesignerViewModel : EDViewModel
         if (value == LayoutCustomOption) { SyncLayoutParamFromTemplate(); return; }
 
         List<DepartureColumnDefinition>? nove = null;
-        if (value != LayoutAutoOption)
+        if (value != LayoutAutoOptionProAgendu)
         {
-            var klic = DepartureColumnPresets.All.FirstOrDefault(p => p.Label == value)?.Key;
+            var klic = LayoutPresety.FirstOrDefault(p => p.Label == value)?.Key;
             var presety = LoadedColumnPresets();
             if (klic is null || !presety.TryGetValue(klic, out var vzor) || vzor.Count == 0)
             {
@@ -3385,22 +3408,51 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── Sample template ───────────────────────────────────────────────────────
     /// <summary>Fallback startovní šablona - agendu typicky přepíše EDISON kontrakt nebo
-    /// poslední použitá agenda uživatele (viz ctor); AD je default pro první spuštění.</summary>
+    /// poslední použitá agenda uživatele (viz ctor).</summary>
+    /// <remarks>
+    /// Výchozí je <b>linkový JŘ</b> (žádost Jan 24. 8.), protože se na něm teď pracuje a přepínat
+    /// ho po každém startu zdržuje. Uplatní se jen při <b>prvním</b> spuštění: jakmile uživatel
+    /// jednou agendu přepne, má přednost jeho poslední volba. Vrátit zpět = přepsat tuhle jednu
+    /// konstantu.
+    /// </remarks>
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
-        t.Sections.Add(CreateDefaultSection(t.PageSize));
+        var t = new Template { Name = "Nová šablona", AgendaCode = "LINKOVY_JR_AD" };
+        t.Sections.AddRange(CreateDefaultSections(t.PageSize));
         return t;
     }
 
-    /// <summary>Výchozí sekce „Obsah" přes celou tiskovou plochu stránky - sdílená novou i sample šablonou.</summary>
-    private static Section CreateDefaultSection(PageSize pageSize) => new()
-    {
-        Name = "Obsah",
-        PrintBehavior = SectionPrintBehavior.Once,
-        OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
-        DesignerHeight = pageSize.PrintableHeight
-    };
+    /// <summary>Výška výchozí sekce záhlaví (mm). Sekce roste s obsahem, tohle je jen startovní
+    /// plocha, aby do ní šlo něco položit.</summary>
+    private const float VychoziVyskaZahlavi = 30f;
+
+    /// <summary>
+    /// Výchozí sekce nové šablony: <b>záhlaví a obsah zvlášť</b> - sdílené novou i sample šablonou.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Proč dvě a ne jedna.** Prvky uvnitř sekce se navzájem <b>neposouvají</b>, takže text,
+    /// který roste s daty (výčet dopravců), přetiskne tabulku pod sebou. Změřeno 25. 8.: záhlaví
+    /// s 26 dopravci leželo přes řádek se zastávkami; přesně na to si stěžuje KORID v #9417.
+    /// Sekce se naopak posouvají správně - ta pod rostoucí se odsune o její výšku - takže rozdělení
+    /// na dvě sekce ten překryv řeší samo, bez zásahu do stránkování.
+    /// </remarks>
+    private static List<Section> CreateDefaultSections(PageSize pageSize) =>
+    [
+        new()
+        {
+            Name = "Záhlaví",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+            DesignerHeight = VychoziVyskaZahlavi
+        },
+        new()
+        {
+            Name = "Obsah",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+            DesignerHeight = MathF.Max(20f, pageSize.PrintableHeight - VychoziVyskaZahlavi)
+        }
+    ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

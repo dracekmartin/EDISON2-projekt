@@ -589,4 +589,9 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         CopyBaseTo(clone);
         return clone;
     }
+
+    /// <summary>Výška z dat - aby rámeček, pozadí i ořez rohů obepnuly celý prvek, ne jen plochu
+    /// z návrháře.</summary>
+    public override float RenderedHeightMm(RenderContext ctx) =>
+        Height ?? (ctx.Data is not null ? CalculateHeightFromData(ctx.Data) : EffectiveDesignerHeight);
 }

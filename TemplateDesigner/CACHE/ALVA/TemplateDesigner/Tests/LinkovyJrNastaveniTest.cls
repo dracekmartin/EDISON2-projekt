@@ -95,6 +95,205 @@ ClassMethod Matice(ByRef m)
 	set m($increment(m)) = "@pismenoVZone-nechat||zonaPismena|1|plati"
 }
 
+/// **Zvýraznění zastávky, ze které se uživatel dívá** - tři tvrzení, protože každé samo o sobě jde
+/// splnit i špatnou implementací: bez volby se nezvýrazní nic, s kusem názvu se označí právě ty
+/// zastávky, které ho v názvu mají, a přidané tarifní číslo to zúží na jediný řádek.
+///
+/// Bez toho prvního by prošlo i „označ všechno", bez toho třetího „označ celou zastávku vždycky".
+Method TestZvyrazneniZastavky()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330511"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka pro zvýraznění není na tomto serveru - přeskočeno")
+		quit
+	}
+
+	// ── bez volby se nezvýrazní nic ─────────────────────────────────────
+	kill parametry
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..PocetZvyraznenych(.nazev), 0, "bez volby se nesmí zvýraznit žádná zastávka")
+
+	// ── kus názvu označí právě ty své ───────────────────────────────────
+	kill parametry
+	set parametry("ZVYRAZNIT_ZASTAVKU") = "velešín"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set oznacenych = ..PocetZvyraznenych(.jmena)
+	do $$$AssertTrue(oznacenych > 0, "kus názvu musí zvýraznit aspoň jednu zastávku")
+	// všechna označená jména musí ten kus opravdu obsahovat - jinak označujeme naslepo
+	set spatne = "", i = ""
+	for  {
+		set i = $order(jmena(i))
+		quit:i=""
+		// podmínka za `continue:` končí první mezerou, proto běžný `if`
+		if '($zconvert(jmena(i), "L") [ "velešín") {
+			set spatne = spatne _ $select(spatne="":"", 1:", ") _ jmena(i)
+		}
+	}
+	do $$$AssertEquals(spatne, "", "zvýrazněné bez hledaného textu v názvu: "_spatne)
+
+	// ── tarifní číslo to zúží na ten jeden řádek ────────────────────────
+	// ⚠️ Ne na jediný řádek v celé sestavě: tarifní číslo je v obou směrech totéž, takže se
+	// označí jeden řádek **v každém směru**. Tvrzení je proto „všechny označené mají to číslo".
+	set prvniTc = ..PrvniZvyrazneneTc()
+	if prvniTc '= "" {
+		kill parametry
+		set parametry("ZVYRAZNIT_ZASTAVKU") = "velešín"
+		set parametry("ZVYRAZNIT_TC") = prvniTc
+		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+		set uzsi = ..PocetZvyraznenych(.jmena2, .tcecka)
+		do $$$AssertTrue(uzsi > 0, "zúžené zvýraznění nesmí zmizet úplně")
+		do $$$AssertTrue(uzsi < oznacenych, "tarifní číslo musí počet zvýrazněných řádků snížit")
+		set jina = "", i = ""
+		for  {
+			set i = $order(tcecka(i))
+			quit:i=""
+			if +tcecka(i) '= +prvniTc {
+				set jina = jina _ $select(jina="":"", 1:", ") _ tcecka(i)
+			}
+		}
+		do $$$AssertEquals(jina, "", "zvýrazněné s jiným tarifním číslem než zvoleným: "_jina)
+	}
+}
+
+/// Kolik řádků zastávek je označených jako zvýrazněné; `jmena` naplní jejich názvy.
+ClassMethod PocetZvyraznenych(ByRef jmena, ByRef tcecka) As %Integer
+{
+	kill jmena, tcecka
+	set pocet = 0, key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.%Get("ZASTAVKY")
+		continue:'$isobject(zast)
+		set it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			continue:radek.%Get("AKTUALNI_ZASTAVKA")'="true"
+			set pocet = pocet + 1
+			set jmena(pocet) = radek.%Get("NAZEV_ZASTAVKY")
+			set tcecka(pocet) = radek.%Get("PORADI")
+		}
+	}
+	quit pocet
+}
+
+/// Tarifní číslo prvního zvýrazněného řádku z posledního běhu - podklad pro zúžení.
+ClassMethod PrvniZvyrazneneTc() As %String
+{
+	set key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set zast = page.rows.%Get("ZASTAVKY")
+		continue:'$isobject(zast)
+		set it = zast.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			continue:radek.%Get("AKTUALNI_ZASTAVKA")'="true"
+			ret radek.%Get("PORADI")
+		}
+	}
+	quit ""
+}
+
+/// **Vlastní definice sloupců spojů** ze šablony přebíjí hrubý přepínač dělení.
+///
+/// Tři tvrzení, protože každé samo o sobě jde splnit i špatnou implementací: bez definice se nic
+/// nemění (aditivita), s definicí vzniknou **její** pásy a jejich nadpisy, a spoj patřící do dvou
+/// pásů se vypíše **dvakrát** - to je právě to, čím se linka liší od vývěsky, kde je skupina
+/// jeden sloupec.
+Method TestVlastniDefiniceSloupcu()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330511"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka pro definici sloupců není na tomto serveru - přeskočeno")
+		quit
+	}
+
+	// ── bez definice: chování jako dosud ────────────────────────────────
+	kill parametry
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set bezDefinice = ..NadpisySkupin()
+
+	// ── s definicí: dva pásy podle ní, druhý bere všechny dny ───────────
+	kill parametry
+	set parametry("DEFINICE_SLOUPCU") = "{""sloupce"":[{""id"":1,""nadpis"":""Jen pondělí"",""dny"":""1""},{""id"":2,""nadpis"":""Celý týden"",""dny"":""1234567+""}]}"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set sDefinici = ..NadpisySkupin()
+
+	do $$$AssertNotEquals(sDefinici, bezDefinice, "definice sloupců musí změnit pásy skupin")
+	do $$$AssertEquals(sDefinici, "Jen pondělí|Celý týden", "pásy mají být z definice, v jejím pořadí")
+
+	// ── spoj patřící do obou pásů se vypíše dvakrát ─────────────────────
+	// Spoj jedoucí v pondělí sedne do obou sloupců, takže v tabulce musí být dvakrát.
+	set pocet = ..PocetVyskytuSpoje()
+	do $$$AssertTrue(pocet > 0, "s definicí musí vzniknout aspoň jeden spoj")
+	do $$$AssertTrue(..MaOpakovanySpoj(), "spoj patřící do obou pásů se musí vypsat dvakrát")
+}
+
+/// Nadpisy pásů z posledního běhu, spojené „|" - jen z první stránky.
+ClassMethod NadpisySkupin() As %String
+{
+	set key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set sk = page.rows.%Get("SKUPINY_DNU")
+		continue:'$isobject(sk)
+		set out = "", it = sk.%GetIterator()
+		while it.%GetNext(.i, .s) {
+			set out = out _ $select(out="":"", 1:"|") _ s.%Get("NADPIS")
+		}
+		ret out
+	}
+	quit ""
+}
+
+/// Kolik spojů je na první stránce.
+ClassMethod PocetVyskytuSpoje() As %Integer
+{
+	set key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set sp = page.rows.%Get("SPOJE")
+		continue:'$isobject(sp)
+		ret sp.%Size()
+	}
+	quit 0
+}
+
+/// Je na první stránce spoj, který se opakuje (patří do víc pásů)?
+ClassMethod MaOpakovanySpoj() As %Boolean
+{
+	set key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set sp = page.rows.%Get("SPOJE")
+		continue:'$isobject(sp)
+		kill videno
+		set it = sp.%GetIterator()
+		while it.%GetNext(.i, .s) {
+			set cislo = s.%Get("CISLO_SPOJE")
+			if $data(videno(cislo)) ret 1
+			set videno(cislo) = ""
+		}
+		ret 0
+	}
+	quit 0
+}
+
 /// **Ruční pořadí spojů u linky** - dvě tvrzení naráz, protože jedno bez druhého nic neříká:
 /// platné pořadí se použije **a** rozbité se zahodí. Kdyby platilo jen první, stačilo by pořadí
 /// slepě opsat; kdyby jen druhé, stačilo by ho ignorovat (což jsme do 21. 8. dělali).

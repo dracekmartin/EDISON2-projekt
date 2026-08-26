@@ -20,11 +20,11 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
     /// jednoznakové symboly (bezbariér `H`/`F`…) jdou přes symbolový font.
     /// Viz <c>.claude/docs/elementy-architektura.md</c> (render-mód „text" vs „font-glyf").
     /// </summary>
-    internal static bool SymbolJeText(string znak) => znak is "x" or "y" or "z";
+    internal static bool SymbolJeText(string znak) => !SymbolMap.JePiktogram(znak);
 
     /// <summary>Značka se kreslí symbolovým fontem jako piktogram (a jen tehdy se překládá přes
     /// <see cref="SymbolGlyph"/>). Víceznakové značky a „na znamení" jdou normálním fontem.</summary>
-    internal static bool JePiktogram(string znak) => znak.Length == 1 && !SymbolJeText(znak);
+    internal static bool JePiktogram(string znak) => SymbolMap.JePiktogram(znak);
 
     /// <summary>
     /// Znak, který se pro daný datový atribut skutečně kreslí ze symbolového fontu. Pozice glyfů
@@ -39,13 +39,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
     /// ⚠️ Pozice pro clo, paragrafy, metro, letadlo a loď **ověřené nejsou** - až je někdo bude mít
     /// v datech, musí projít stejnou kontrolou, jinak vyjede cizí piktogram.
     /// </summary>
-    internal static string SymbolGlyph(string znak) => znak switch
-    {
-        "A" => "z",   // autobus (0x7A) - na 0x77 je vagon, ne autobus
-        "L" => "x",   // vlak - lokomotiva (0x78)
-        "K" => "L",   // přeprava jízdních kol (0x4C); „K" je náš marker, číselník pro kola znak nemá
-        _   => znak,
-    };
+    internal static string SymbolGlyph(string znak) => SymbolMap.Glyf(znak);
 
     /// <summary>Znak k vykreslení pro značku dané kategorie - přeloží jen sémantické značky
     /// (<see cref="NoteCategories.Semanticke"/>), ostatní vrátí nezměněné. Agenda MHD posílá značku
@@ -259,7 +253,8 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             Text      = row.GetString("TEXT"),
             ForeColor = NullIfEmpty(row.GetString("FORE_COLOR")),
             BackColor = NullIfEmpty(row.GetString("BACK_COLOR")),
-            Kategorie = row.GetString("KATEGORIE")
+            Kategorie = row.GetString("KATEGORIE"),
+            Druh      = row.GetString("DRUH")
         }).ToList();
 
         _cachedPoznamky = result;
