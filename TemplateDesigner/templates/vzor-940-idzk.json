@@ -1,0 +1,309 @@
+{
+  "version": "1.0.0",
+  "name": "Vzor IDZK 940 - zkušební",
+  "description": "Pracovní šablona pro porovnání se starým tiskem: A4 na šířku, všechny popisné sloupce zapnuté, aby bylo poznat i to, co linka schovává. Sada linek viz analýza §15b.",
+  "pageSize": {
+    "width": 297,
+    "height": 210,
+    "marginTop": 10,
+    "marginBottom": 10,
+    "marginLeft": 10,
+    "marginRight": 10
+  },
+  "sections": [
+    {
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Hlavička",
+      "designerHeight": 24,
+      "printBehavior": "OnEveryPage",
+      "overflowBehavior": "KeepTogether",
+      "role": "Header",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "{CISLO_LINKY}",
+          "style": {
+            "fontSize": 16,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "598a88a0-ef36-401f-a2e5-18f048d9102e",
+          "x": 0.0,
+          "y": 1,
+          "width": 40.8,
+          "height": 10,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POPIS_LINKY}",
+          "style": {
+            "fontSize": 11,
+            "bold": true,
+            "hAlign": "Center"
+          },
+          "wordWrap": true,
+          "id": "ba3eea90-e14a-4ef7-bb62-b1808e68039e",
+          "x": 43.7,
+          "y": 1,
+          "width": 189.5,
+          "height": 7,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Platí od {DATUM_PLATNOSTI_OD}",
+          "style": {
+            "fontSize": 7,
+            "hAlign": "Right"
+          },
+          "wordWrap": true,
+          "id": "f35acb66-e2e6-436e-8334-99e3032ee5dd",
+          "x": 233.3,
+          "y": 1,
+          "width": 43.7,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "do {DATUM_PLATNOSTI_DO}",
+          "style": {
+            "fontSize": 7,
+            "hAlign": "Right"
+          },
+          "wordWrap": true,
+          "id": "5b9e025f-0a95-4c37-b241-2609e71959d1",
+          "x": 233.3,
+          "y": 5,
+          "width": 43.7,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POZNAMKA_NAD_LINKU}",
+          "style": {
+            "fontSize": 8,
+            "hAlign": "Center"
+          },
+          "wordWrap": true,
+          "id": "66897567-8863-4d6c-b0ed-be538841f775",
+          "x": 43.7,
+          "y": 9,
+          "width": 189.5,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POPIS_DOPRAVCE}",
+          "style": {
+            "fontSize": 7
+          },
+          "wordWrap": true,
+          "id": "f35ea2b5-f933-4b4b-8661-06f2434ed547",
+          "x": 0.0,
+          "y": 14,
+          "width": 277.0,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{VYCHOZI_ZASTAVKA}  →  {POPIS_SMER}",
+          "style": {
+            "fontSize": 9,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "b7f1fc79-5dee-4b13-9ac1-0b22a581f2af",
+          "x": 0.0,
+          "y": 19,
+          "width": 277.0,
+          "height": 5,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Jízdní řád",
+      "designerHeight": 30,
+      "printBehavior": "Once",
+      "overflowBehavior": "SplitAcrossPages",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "LineTableElement",
+          "spojeDataSource": "SPOJE",
+          "columns": [
+            {
+              "key": "Km",
+              "header": "km",
+              "width": 7,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "StopName",
+              "header": "Zastávka",
+              "width": 46,
+              "visible": true,
+              "alignment": "Left"
+            },
+            {
+              "key": "Zone",
+              "header": "Zóna",
+              "width": 9,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "Tc",
+              "header": "Tč",
+              "width": 6,
+              "visible": false,
+              "alignment": "Center"
+            },
+            {
+              "key": "Mhd",
+              "header": "MHD",
+              "width": 8,
+              "visible": false,
+              "alignment": "Center"
+            },
+            {
+              "key": "Trip",
+              "header": "Spoj",
+              "visible": true,
+              "alignment": "Center"
+            }
+          ],
+          "showPlatnostRow": true,
+          "showNzRow": true,
+          "showPripojeRows": true,
+          "showGroupHeaders": true,
+          "highlightOddTc": true,
+          "oddTcBackColor": "#FFF4F4F4",
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {},
+          "headerStyle": {},
+          "id": "a1b2c3d4-1000-4000-8000-000000000010",
+          "x": 0.0,
+          "y": 0,
+          "width": 277.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0,
+          "padEmptyColumns": false,
+          "grid": {
+            "showRowLines": true,
+            "showColumnLines": false,
+            "color": "#FFE0E0E0",
+            "width": 0.12,
+            "style": "Solid"
+          }
+        }
+      ]
+    },
+    {
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Poznámky",
+      "designerHeight": 30,
+      "printBehavior": "Once",
+      "overflowBehavior": "SplitAcrossPages",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "NotesLegendElement",
+          "headerText": "Poznámky",
+          "noteSeparator": " - ",
+          "noteFontSize": 7,
+          "noteLineHeight": 3.5,
+          "columns": 2,
+          "razeni": "DleTypu",
+          "negativniZnackaBackColor": "#FF000000",
+          "negativniZnackaForeColor": "#FFFFFFFF",
+          "showNegativniZnacky": true,
+          "showSpecialniZnaky": true,
+          "showTextovePoznamky": true,
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 7
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true
+          },
+          "gridColor": "#FFD0D0D0",
+          "id": "a1b2c3d4-2000-4000-8000-000000000020",
+          "x": 0.0,
+          "y": 2,
+          "width": 277.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        }
+      ]
+    }
+  ],
+  "agendaCode": "LINKOVY_JR_AD",
+  "createdAt": "2026-07-04T11:06:02.9525214Z",
+  "modifiedAt": "2026-07-04T11:06:02.9528786Z"
+}
