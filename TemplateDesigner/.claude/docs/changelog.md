@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-26 (4) - ✨ popisné sloupce linkového JŘ jsou jedna skupina (`L9`)
+
+Kolega si na starém modulu stěžoval, že „ohraničení jednotlivých km sloupců nejde odstranit" a že
+„nelze mít jeden nadpis pro info sloupce". Obojí teď jde, a je to **jedna věc**: popisné sloupce
+(zóna, km, Tč, zastávka, MHD) se chovají jako **jedna skupina**.
+
+- **Nadpis popisných sloupců** - jeden text nad všemi, vzor IDZK 940 tam má „↓ Směr jízdy ↓".
+- **Popisné sloupce bez vnitřních čar** - kreslí se jako jeden slitý blok, ale **čáry mezi sloupci
+  spojů zůstanou**. Do teď šlo vypnout jen celou mřížku prvku, tedy i je - a to byla ta stížnost.
+
+Obojí je i v Caché formuláři, tedy v hlavní editační cestě, ne jen v panelu.
+
+⚠️ **Nadpis se odvázal od skupin dnů.** Pás nad sloupci se dosud kreslil jen tehdy, když měla linka
+víc než jednu skupinu dnů - takže na lince s jedinou skupinou by se nadpis popisných sloupců vůbec
+neobjevil. Nadpis je vlastnost popisné skupiny, ne skupin dnů. **Odhalil to test, ne úvaha.**
+
+⚠️ **Mezera mezi bloky sloupců ve vlně zbývá** a je to větší kus, než to vypadá: šířka popisného
+bloku slouží zároveň jako odsazení, od kterého se počítají sloupce spojů, a čtyři ruční kreslicí
+cesty (řádek platnosti, značky v buňce, piktogram zastávky, dělení na bloky) z toho čísla vycházejí.
+Vloženou mezerou se ten souřadnicový model rozejde, takže tomu patří vlastní krok.
+
+Ověřeno: .NET 1192/1192 + 690 + 595, ověřeno mutací obou vlastností zvlášť, formulář ověřen
+voláním serveru. Chování s prázdným nadpisem zůstává jako dřív (`L9-R4` je nerozhodnutá).
+
+
 ## 2026-08-26 (3) - 🐞 zlom odstavce v poznámce se tiskl jako znak `#`
 
 V legendě vyšlo „…jsou k nahlédnutí u řidiče.**#**INTEGROVANÉHO SYSTÉMU…" (nahlásil Jan). Agenda

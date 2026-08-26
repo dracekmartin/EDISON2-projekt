@@ -246,11 +246,13 @@
           "padEmptyColumns": false,
           "grid": {
             "showRowLines": false,
-            "showColumnLines": false,
+            "showColumnLines": true,
             "color": "#FFE0E0E0",
             "width": 0.12,
             "style": "Solid"
-          }
+          },
+          "popisneSloupceNadpis": "↓ Směr jízdy ↓",
+          "popisneSloupceBezVnitrnichCar": true
         }
       ]
     },

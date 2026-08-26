@@ -73,6 +73,26 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Pás názvů skupin dnů (Pracovní dny / Soboty / …) nad čísly spojů.</summary>
     public bool ShowGroupHeaders { get; set; } = true;
 
+    /// <summary>
+    /// Nadpis nad popisnými sloupci (zóna, km, Tč, zastávka, MHD) v pásu skupin dnů - vzor IDZK 940
+    /// tam má „↓ Směr jízdy ↓". Prázdné = pás nad nimi zůstane bez textu, jako dosud.
+    /// </summary>
+    /// <remarks>
+    /// Popisné sloupce jsou <b>jedna skupina</b> (změřeno na vzoru 940: km, zastávka a zóny mají
+    /// jeden společný nadpis, ne každý svůj) - proto jeden text, ne text per sloupec.
+    /// </remarks>
+    public string PopisneSloupceNadpis { get; set; } = "";
+
+    /// <summary>
+    /// Popisné sloupce se kreslí jako <b>jeden slitý blok</b> - svislé čáry mezi nimi se potlačí,
+    /// mezi sloupci spojů zůstanou. Vzor 940 to tak má (km má dva podsloupce a nejsou oddělené).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Bez tohohle šel vypnout jen <b>celý</b> <c>Grid.ShowColumnLines</c>, tedy i čáry mezi
+    /// spoji - a to je právě ta stížnost, že „ohraničení jednotlivých km sloupců nejde odstranit".
+    /// </remarks>
+    public bool PopisneSloupceBezVnitrnichCar { get; set; }
+
     // ─── Vzhled ─────────────────────────────────────────────────────────────
 
     /// <summary>Podbarvení řádků s lichým tarifním číslem (legacy 25% šedá).</summary>
@@ -456,9 +476,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     private bool HasPlatnostRow(List<LineTripData> trips) => ShowPlatnostRow && trips.Any(t => t.Platnost.Count > 0);
     private bool HasNzRow(List<LineTripData> trips) => ShowNzRow && trips.Any(t => t.Nz.Length > 0);
+    /// <summary>
+    /// Kreslí se pás nad sloupci? Buď proto, že je co rozdělit na skupiny dnů, <b>nebo</b> proto,
+    /// že má popisný blok svůj nadpis.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Ta druhá půlka podmínky není kosmetika: nadpis popisných sloupců je vlastnost
+    /// <b>popisné skupiny</b>, ne skupin dnů. Bez ní by se „↓ Směr jízdy ↓" nevykreslil na lince,
+    /// která má všechny spoje v jedné skupině dnů - a to je vazba, kterou by nikdo nehledal
+    /// (odhalil test 26. 8., ne úvaha).
+    /// </remarks>
     private bool HasGroupHeaderBand(List<LineTripData> trips, List<LineSkupinaData> groups) =>
-        ShowGroupHeaders && trips.Select(t => t.Skupina).Distinct().Count() > 1
-        && groups.Any(g => g.Nadpis.Length > 0);
+        ShowGroupHeaders
+        && ((trips.Select(t => t.Skupina).Distinct().Count() > 1 && groups.Any(g => g.Nadpis.Length > 0))
+            || PopisneSloupceNadpis.Length > 0);
 
     /// <summary>Největší resolved font záhlaví/dat napříč viditelnými sloupci (vč. spoje) - pro výšky.</summary>
     private float MaxHeaderFontPt() => MaxFontPt(ResolveHeaderStyle, HeaderStyle.FontSize ?? 9f);
@@ -717,7 +748,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // s `CalculateHeightFromData`, které počítá z celé linky.
         if (HasGroupHeaderBand(vsechnySpoje, groups))
         {
-            var band = new List<ColumnRenderer.CellSpec> { new(fixedSum, "", headerResolved) };
+            // Popisné sloupce jsou jedna skupina, takže jedna sloučená buňka s jedním nadpisem.
+            var band = new List<ColumnRenderer.CellSpec>
+                { new(fixedSum, PopisneSloupceNadpis, PopisneSloupceNadpis == "" ? headerResolved : headerCentered) };
             int i = 0;
             while (i < trips.Count)
             {
@@ -733,7 +766,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
         var headerSpecs = new List<ColumnRenderer.CellSpec>();
-        foreach (var c in fixedCols) headerSpecs.Add(new(c.Width, c.Header, c.HeaderStyle));
+        for (int ci = 0; ci < fixedCols.Count; ci++)
+            headerSpecs.Add(new(fixedCols[ci].Width, fixedCols[ci].Header, fixedCols[ci].HeaderStyle,
+                SuppressLeadingLine: BezCaryVlevo(ci)));
         foreach (var t in trips) headerSpecs.Add(new(tripW, t.CisloSpoje, tripHeaderStyle));
         plan.Add(new(RowKind.Header, headerH, headerSpecs)
             { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
@@ -779,8 +814,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
 
             var specs = new List<ColumnRenderer.CellSpec>();
-            foreach (var c in fixedCols)
-                specs.Add(new(c.Width, c.Value(stop), OddTc(c.DataStyle, oddTc)));
+            for (int ci = 0; ci < fixedCols.Count; ci++)
+                specs.Add(new(fixedCols[ci].Width, fixedCols[ci].Value(stop),
+                    OddTc(fixedCols[ci].DataStyle, oddTc), SuppressLeadingLine: BezCaryVlevo(ci)));
             var tripCellStyle = OddTc(tripDataStyle, oddTc);
             // Značka návaznosti se tiskne **vedle času** ve stejné buňce (doloženo tiskem staré
             // linky 330511). Buňka umí jen jeden font, takže se taková buňka nechá prázdná
@@ -840,7 +876,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     var prSpecs = new List<ColumnRenderer.CellSpec>();
                     for (int ci = 0; ci < fixedCols.Count; ci++)
                         prSpecs.Add(new(fixedCols[ci].Width,
-                            ci == nameIndex ? PripojText(pr) : "", pripojStyle));
+                            ci == nameIndex ? PripojText(pr) : "", pripojStyle,
+                            SuppressLeadingLine: BezCaryVlevo(ci)));
                     foreach (var t2 in trips)
                         prSpecs.Add(new(tripW, ReferenceEquals(t2, t) ? pr.Cas : "", pripojStyle));
 
@@ -925,15 +962,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
     }
 
-    private static List<ColumnRenderer.CellSpec> TripTextRow(
+    private List<ColumnRenderer.CellSpec> TripTextRow(
         List<RenderCol> fixedCols, List<LineTripData> trips, float tripW,
         ResolvedTextStyle tripDataStyle, Func<LineTripData, string> text)
     {
         var specs = new List<ColumnRenderer.CellSpec>();
-        foreach (var c in fixedCols) specs.Add(new(c.Width, "", c.DataStyle));
+        for (int ci = 0; ci < fixedCols.Count; ci++)
+            specs.Add(new(fixedCols[ci].Width, "", fixedCols[ci].DataStyle,
+                SuppressLeadingLine: BezCaryVlevo(ci)));
         foreach (var t in trips) specs.Add(new(tripW, text(t), tripDataStyle));
         return specs;
     }
+
+    /// <summary>Má se na levé hraně popisného sloupce potlačit svislá čára? První sloupec bloku
+    /// nikdy - tam je vnější hrana, kterou kreslí rámeček prvku, ne mřížka.</summary>
+    private bool BezCaryVlevo(int indexPopisnehoSloupce) =>
+        PopisneSloupceBezVnitrnichCar && indexPopisnehoSloupce > 0;
 
     private ResolvedTextStyle OddTc(ResolvedTextStyle style, bool odd) =>
         odd ? style with { BackgroundColor = OddTcBackColor } : style;
@@ -983,6 +1027,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ShowPripojeRows = ShowPripojeRows,
             PadEmptyColumns = PadEmptyColumns,
             ShowGroupHeaders = ShowGroupHeaders,
+            PopisneSloupceNadpis = PopisneSloupceNadpis,
+            PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
             RowVisibilityExpression = RowVisibilityExpression,
@@ -1013,6 +1059,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
+        new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = "Sloupce",
+            Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },
+        new BoolPropertyDescriptor { Label = "Popisné sloupce bez vnitřních čar", Group = "Sloupce",
+            Get = () => PopisneSloupceBezVnitrnichCar, Set = v => PopisneSloupceBezVnitrnichCar = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
