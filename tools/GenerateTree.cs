@@ -32,6 +32,10 @@ const string EdisonRoot = @"c:\MLineRepos\EDISON";
 const string Edison2Root = @"c:\MLineRepos\EDISON2";
 const string DeployRoot = @"C:\Edison";
 
+// Splice anchor generovaného bloku. Záměrně provenance, ne WHAT narrace - předchozí
+// anchor smazal komentářový audit jako opis jména metody a tím generátor tiše rozbil.
+const string Marker = "/// Generováno z legacy edisonnavbar.xml id=";
+
 string navbarPath = Path.Combine(EdisonRoot, @"EDCORE\Resources\edisonnavbar.xml");
 string treePath = Path.Combine(EdisonRoot, @"EDCORE\Resources\edisontree.xml");
 string enumPath = Path.Combine(EdisonRoot, @"EDCORE\EDFormInterfaceLic.vb");
@@ -104,17 +108,17 @@ var navbar = XDocument.Load(navbarPath);
 MoveNode("21", fromSection: "-4", toSection: "-2");
 
 var sb = new StringBuilder();
-EmitSection("-2", "FillMain", "Hlavní nabídka (modulární agenda)");
-EmitSection("-3", "FillSystem", "Správa systému (admin nástroje)");
-EmitSection("-4", "FillPartners", "Partnerská řešení (3rd party agendy)");
+EmitSection("-2", "FillMain");
+EmitSection("-3", "FillSystem");
+EmitSection("-4", "FillPartners");
 
 // Splice vygenerovaných Fill* metod do Tree.cls in-place: hlava (GetTree + Add* helpery)
-// zůstává, blok od první "/// Naplní strom" po konec třídy se nahradí. Zachovává UTF-8 bez BOM.
+// zůstává, blok od prvního Marker po konec třídy se nahradí. Zachovává UTF-8 bez BOM.
 string clsText = File.ReadAllText(currentTreeCls);
-int idx = clsText.IndexOf("/// Naplní strom", StringComparison.Ordinal);
+int idx = clsText.IndexOf(Marker, StringComparison.Ordinal);
 if (idx < 0)
 {
-    Console.Error.WriteLine("// CHYBA: marker '/// Naplní strom' v Tree.cls nenalezen — zapisuji na stdout místo in-place.");
+    Console.Error.WriteLine($"// CHYBA: marker '{Marker}' v Tree.cls nenalezen - zapisuji na stdout místo in-place.");
     Console.Write(sb.ToString());
 }
 else
@@ -130,13 +134,12 @@ if (mismatchCount > 0)
     Console.Error.WriteLine($"// POZOR: {mismatchCount} ručně ověřených FQN se liší od auto-derivace (viz výše).");
 return;
 
-void EmitSection(string sectionId, string method, string desc)
+void EmitSection(string sectionId, string method)
 {
     var section = navbar.Descendants("node").FirstOrDefault(n => (string?)n.Attribute("id") == sectionId);
     if (section is null) { Console.Error.WriteLine($"// VAROVÁNÍ: sekce {sectionId} nenalezena"); return; }
 
-    sb.AppendLine($"/// Naplní strom \"{NodeName(section)}\" — {desc}.");
-    sb.AppendLine($"/// Generováno z legacy edisonnavbar.xml id={sectionId} (tools/GenerateTree.cs).");
+    sb.AppendLine($"{Marker}{sectionId} (tools/GenerateTree.cs).");
     sb.AppendLine($"ClassMethod {method}() [ Private ]");
     sb.AppendLine("{");
     foreach (var child in section.Elements("node"))
