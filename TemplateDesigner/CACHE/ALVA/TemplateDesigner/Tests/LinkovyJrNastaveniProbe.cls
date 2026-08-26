@@ -842,7 +842,7 @@ ClassMethod BarvySpoju(ByRef sys As %String) As %Status
 		set firmy = $get(^||ML("IN","FIRMY"))
 		if firmy = "" set firmy = ..#FIRMY
 		set maxLinek = +$get(^||ML("IN","MAX"))
-		kill ^||ML, radky, rozlozeni
+		kill ^||ML, radky, rozlozeni, nejbarevnejsi
 		set spoju = 0, sBarvou = 0, prvni = ""
 		for fi = 1:1:$length(firmy, ",") {
 			set db = $zstrip($piece(firmy, ",", fi), "<>W")
@@ -875,7 +875,11 @@ ClassMethod BarvySpoju(ByRef sys As %String) As %Status
 							set rozlozeni(klicB) = $get(rozlozeni(klicB)) + 1
 							continue:(barva="")||(barva="0;0;0")
 							set sBarvou = sBarvou + 1
-							if prvni = "" set prvni = db_" "_lin_" spoj "_sp_" = "_barva
+							// Skupina linek patří do výpisu: bez ní se linka v návrháři nedá najít,
+							// protože výběr instance filtruje právě podle ní (naběhlo 26. 8., kdy
+							// odkaz bez skupiny poslal uživatele hledat linku, na kterou nešlo dojít).
+							if prvni = "" set prvni = db_" sku="_sku_" linka="_lin_" spoj "_sp_" = "_barva
+							set nejbarevnejsi(db, sku, lin) = $get(nejbarevnejsi(db, sku, lin)) + 1
 						}
 					}
 				}
@@ -883,6 +887,34 @@ ClassMethod BarvySpoju(ByRef sys As %String) As %Status
 		}
 		set radky($increment(radky)) = "spojů "_spoju_", s nastavenou barvou "_sBarvou
 		if prvni '= "" set radky($increment(radky)) = "první: "_prvni
+
+		// Linka s **nejvíc** obarvenými spoji, ne první nalezená: na lince s dvěma obarvenými
+		// spoji z tisíce není přepnutí volby v tabulce poznat a jako testovací případ neslouží.
+		set nejD = "", nejS = "", nejL = "", nejPocet = 0
+		set d1 = ""
+		for  {
+			set d1 = $order(nejbarevnejsi(d1))
+			quit:d1=""
+			set s1 = ""
+			for  {
+				set s1 = $order(nejbarevnejsi(d1, s1))
+				quit:s1=""
+				set l1 = ""
+				for  {
+					set l1 = $order(nejbarevnejsi(d1, s1, l1))
+					quit:l1=""
+					// Podmínku nese `if`, ne postconditional: `continue:pole(a, b, c)>x` neprojde
+					// kompilací (mezery v podskriptech ukončí argument příkazu).
+					set pocet = nejbarevnejsi(d1, s1, l1)
+					if pocet > nejPocet {
+						set nejPocet = pocet, nejD = d1, nejS = s1, nejL = l1
+					}
+				}
+			}
+		}
+		if nejPocet > 0 {
+			set radky($increment(radky)) = "nejvíc obarvená linka: "_nejD_" sku="_nejS_" linka="_nejL_" ("_nejPocet_" spojů)"
+		}
 		set h = "", vypsano = 0
 		for  {
 			set h = $order(rozlozeni(h))

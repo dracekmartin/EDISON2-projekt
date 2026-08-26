@@ -1139,6 +1139,8 @@ naslepo.
 | CB_GWBUS | 104 | 0320157 | **bez zastávek, kde žádný spoj nestaví** (ubírá řádky, nejvíc vidět) |
 | CB_CSADAD | 1 | 0330510 | **rozřezání na bloky**: 41 spojů, přípojné řádky, tři skupiny dnů (37/1, 38/2, 41/3 podle volby dělení) |
 | CB_CSADAD | 1 | 0330511 | **jediná skupina dnů** - všechny spoje jen v pracovní dny, pás se nemá podle čeho rozdělit (viz `B101`) |
+| ZL_KOVED | 260 | 0000621 | **barevné spoje, kde je to vidět** - 48 obarvených spojů (změřeno 26. 8.). Náhrada za 0380751, kde jsou dva světle růžové a přepnutí volby není v tabulce poznat. |
+| CB_GWBUS | 21 | 0322993 | **barevné spoje** - 9 obarvených spojů; drží se, když už jsi v téhle firmě kvůli sloupci Tč a zastávkám |
 
 ⚠️ **Tři linky jsou v jiné firmě než CB_CSADAD** (VS_CSAD, CB_GWBUS). Sonda prohledává víc firem,
 ale návrhář pracuje s tou, do které je uživatel přihlášený - na ty tři je potřeba se přihlásit jinam,
