@@ -508,14 +508,14 @@ je tam taky ignoroval.
 |---|---|---|---|---|
 | `arr,3` RozdelovatSpojePodlePlatnosti | dělení sloupců na skupiny dnů (0 / PD+víkend / PD+So+Ne) | ✅ `:423,441,504` | ❌ nečte | ✅ parametr „Dělení spojů dle platnosti" |
 | `arr,4` PoznamkyZpusobTisku | kam jde legenda (per blok / per směr / souhrnně / + odstránkovat) | ✅ `:713-761` | ✅ `:301` | ❌ legenda je vždy jednou na konci |
-| `arr,5` ZvyraznenaZastavka | zvýraznit řádek zvolené zastávky | ✅ `:392,1212,1240` | ❌ nečte | ❌ |
+| `arr,5` ZvyraznenaZastavka | zvýraznit řádek zvolené zastávky | ✅ `:392,1212,1240` | ❌ nečte | ✅ parametr „Zvýraznit zastávku“ (data řádek jen označí, vzhled řeší šablona) |
 | `arr,6` TiskTurnusuKeSpojum | tisk turnusů ke spojům | ✅ `:354` → `SET,2,arr,1,3` | ❌ nečte | ❌ (vědomě, `L6`) |
-| `arr,7` TiskObousmernychJR | oba směry na jednu sestavu (zrcadlené sloupce) | ✅ `:598` | ❌ nečte | ❌ (vědomě, `L6`) |
+| `arr,7` TiskObousmernychJR | oba směry na jednu sestavu (zrcadlené sloupce). ⚠️ **Není to „chci zrcadlo“, ale „zrcadlo, pokud se vejde“** - engine ho vypne, když v jednom směru nejsou spoje (`:601`), a znovu po střihu: když `Strih` zrcadlený blok musí řezat, tiše spadne na směr zvlášť (`:627`) | ✅ `:598` | ❌ nečte | ❌ (vědomě, `L6`) |
 | `arr,9` NavaznostiVPripojnychRadcich | tisknout číslo linky/vlaku v přípojném řádku | ✅ `:2771` | ❌ nečte | ❌ tiskneme vždy |
-| `arr,10` TC | zvýraznit konkrétní tarifní číslo (inverzní řádek) | ✅ `:1214,1242` | ❌ nečte | ❌ |
+| `arr,10` TC | zvýraznit konkrétní tarifní číslo (inverzní řádek) | ✅ `:1214,1242` | ❌ nečte | ✅ parametr „Zvýraznit tarifní číslo“ |
 | `arr,11` FilterDTA | výběr **typů provozu a směrů** k tisku (`TypProvozuID#id~0/1`, `SmerID#id~0/1`) | ❌ nečte | ✅ `:305-321` | ❌ tiskneme vše |
 | `arr,12` NekreslitRameckyKolemCiselSpoju | bez rámečků kolem čísel spojů; v MHD navíc **vypne i čísla spojů** | ❌ nečte | ✅ `:324` | ❌ (u nás řeší styl prvku, vedlejší efekt MHD chybí) |
-| `arr,13` VkladatPrazdneSloupce | dorovnání šířky prázdnými sloupci | ✅ `:1038` | ❌ nečte | ❌ (patří k `L5`) |
+| `arr,13` VkladatPrazdneSloupce | dorovnání šířky prázdnými sloupci | ✅ `:1038` | ❌ nečte | ✅ volba prvku „Dorovnat prázdnými sloupci“. ⚠️ **Parita neověřená** - oracle layout vědomě neměří (dává legacy obrovskou plochu, aby vyrobil jeden blok), takže dorovnáním síť nikdy neprošla; shoda se starým modulem je zatím jen ze čtení `:1038` |
 | `dta,1` / `dta,2` / `MS` | šířka tiskové plochy, počet řádků, měřicí řetězce | ✅ | ✅ | ⛔ nepřenášíme vědomě (layout měříme sami) |
 
 **Mrtvé položky kontraktu** (aby se nehledaly znovu):
