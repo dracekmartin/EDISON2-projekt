@@ -73,6 +73,37 @@ public class DashboardDataTests
     }
 
     [Fact]
+    public void ParseAll_SplitsBatchIntoBlocksPerAppType()
+    {
+        object[] output =
+        [
+            "",
+            $"appType{D}52005",
+            $"param{D}1{D}21.06.2026 09:00",
+            $"data{D}1{D}C1{D}1{D}Patří 52005",
+            $"appType{D}52006",
+            $"data{D}1{D}C1{D}1{D}Patří 52006",
+        ];
+
+        var all = DashboardData.ParseAll(output, D);
+
+        Assert.Equal(["52005", "52006"], all.Keys.Order());
+        Assert.Equal("21.06.2026 09:00", all["52005"].LastUpdated);
+        Assert.Equal("Patří 52005", Assert.IsType<DashboardLabel>(Assert.Single(all["52005"].Sections)).Text);
+        // Časové razítko prvního bloku nesmí přetéct do druhého.
+        Assert.Null(all["52006"].LastUpdated);
+        Assert.Equal("Patří 52006", Assert.IsType<DashboardLabel>(Assert.Single(all["52006"].Sections)).Text);
+    }
+
+    [Fact]
+    public void ParseAll_AppTypeWithoutBlock_IsAbsent()
+    {
+        var all = DashboardData.ParseAll(["", $"appType{D}52005"], D);
+
+        Assert.False(all.ContainsKey("52014"));
+    }
+
+    [Fact]
     public void Parse_MultipleTablesAndLabels_PreserveOrder()
     {
         object[] output =

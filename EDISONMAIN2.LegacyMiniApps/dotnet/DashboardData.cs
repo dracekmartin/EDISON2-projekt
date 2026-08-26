@@ -27,20 +27,29 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
     private const int SectionLabel = 1, SectionTable = 2, SectionCols = 3, SectionRows = 4, SectionRowStyles = 5;
 
     /// <summary>
-    /// Naparsuje delimited výstup <c>LoadData</c> pro daný <paramref name="appType"/>. Primární oddělovač
-    /// polí = <paramref name="delimiter"/> (z MLRest), sekundární <c>~</c> (buňky/sloupce), styl <c>:</c>
-    /// (ikona:barva). Řádky výstupu: <c>appType{D}id</c>, <c>param{D}i{D}value</c>,
-    /// <c>data{D}objType{D}key{D}section{D}value</c>.
+    /// Naparsuje delimited výstup <c>LoadData</c> pro daný <paramref name="appType"/>.
+    /// Chybějící blok (firma agendu nemá / nejsou data) = <see cref="Empty"/>.
     /// </summary>
-    public static DashboardData Parse(object[]? output, char delimiter, string appType)
-    {
-        if (output is null) return Empty;
+    public static DashboardData Parse(object[]? output, char delimiter, string appType) =>
+        ParseAll(output, delimiter).GetValueOrDefault(appType, Empty);
 
+    /// <summary>
+    /// Naparsuje dávkovou odpověď <c>LoadData</c> (N miniaplikací v jednom requestu) na bloky
+    /// podle markeru <c>appType</c>. Primární oddělovač polí = <paramref name="delimiter"/>
+    /// (z MLRest), sekundární <c>~</c> (buňky/sloupce), styl <c>:</c> (ikona:barva). Řádky výstupu:
+    /// <c>appType{D}id</c>, <c>param{D}i{D}value</c>, <c>data{D}objType{D}key{D}section{D}value</c>.
+    /// Klíč v odpovědi chybí, když pro appType nejsou data - server pro něj blok vůbec nevrátí.
+    /// </summary>
+    public static IReadOnlyDictionary<string, DashboardData> ParseAll(object[]? output, char delimiter)
+    {
+        var result = new Dictionary<string, DashboardData>();
+        if (output is null) return result;
+
+        string? currentApp = null;
         string? lastUpdated = null;
         var sections = new List<DashboardSection>();
         List<string>? cols = null;
         List<DashboardRow>? rows = null;
-        bool inTargetApp = false;
 
         // Rozpracovaná tabulka se přidá do sekcí až při dalším objektu / konci bloku (zachová pořadí).
         void FlushTable()
@@ -51,6 +60,15 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
             rows = null;
         }
 
+        void FlushApp()
+        {
+            FlushTable();
+            if (currentApp is not null) result[currentApp] = new DashboardData(lastUpdated, sections);
+            // Nový seznam, ne Clear - hotový blok si drží ten svůj.
+            sections = [];
+            lastUpdated = null;
+        }
+
         foreach (var raw in output)
         {
             if (raw is not string line || line.Length == 0) continue;
@@ -59,15 +77,15 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
             switch (t[0])
             {
                 case "appType":
-                    FlushTable();
-                    inTargetApp = t.Length > 1 && t[1] == appType;
+                    FlushApp();
+                    currentApp = t.Length > 1 ? t[1] : null;
                     break;
 
-                case "param" when inTargetApp && t.Length > 2:
+                case "param" when currentApp is not null && t.Length > 2:
                     if (int.TryParse(t[1], out var pi) && pi == ParamTimeStamp) lastUpdated = t[2];
                     break;
 
-                case "data" when inTargetApp && t.Length > 4:
+                case "data" when currentApp is not null && t.Length > 4:
                     int section = int.TryParse(t[3], out var s) ? s : 0;
                     // Hodnota smí obsahovat primární oddělovač jen teoreticky - rejoin pro jistotu.
                     string value = string.Join(delimiter, t.Skip(4));
@@ -99,7 +117,7 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
             }
         }
 
-        FlushTable();
-        return new DashboardData(lastUpdated, sections);
+        FlushApp();
+        return result;
     }
 }

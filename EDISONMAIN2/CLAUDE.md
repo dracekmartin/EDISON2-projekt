@@ -20,7 +20,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
 
 - Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - nezaniká se spojením,
   hard-kill ho neuvolní (uklidí až server idle timeout). V dev to tlumí deterministický
-  session GUID (`#if DEBUG` v `EstablishSession`) - re-run přepíše týž klíč.
+  session GUID (`#if DEBUG` v `SessionFactory.Establish`) - re-run přepíše týž klíč.
 - Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty obnovují
   idle timer (jinak aktivní shell vypadá pro server jako idle) a detekují zaniklý zámek/verzi.
   Přepnutí firmy jede s `CacheLocks=0` po dobu verify **i logoutu staré firmy** (zámek nové
@@ -63,7 +63,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   mezi menu nepřejde. `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
 - **Spuštěné moduly** se značí dlouhým názvem modulu, jinak cestou agendou (`BuildModuleLabels`,
   klíč `exe|forma|param`) - krátký název mají dvě agendy běžně shodný. Fallback (mimo strom,
-  WPF okno) = titulek bez koncového `[IDFa]`; **titulky oken si `[IDFa]` drží** (`WindowNavigator`).
+  WPF okno) = titulek bez koncového `[IDFa]` - strip drží **legacy** okna, ta si suffix přidávají
+  sama (`clsForm.ShowIDFA`, repo EDISON). **Firma v titulku je jen u shellu** (`WindowTitle`),
+  okna EDISON2 ji nemají; titulek jde do jména tiketu v hlášení chyb (firma zvlášť polem `firma`).
 - Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
   nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají).
 - **Status bar** = segmenty ikona + hodnota, technika jen v ToolTipu. `DockPanel.Dock="Right"`

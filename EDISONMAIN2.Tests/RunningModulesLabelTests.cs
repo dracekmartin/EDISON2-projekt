@@ -146,13 +146,13 @@ public class RunningModulesLabelTests
         Assert.Equal("Něco jiného", label);
     }
 
-    // WPF okna shellu nemají exe ani formu → jen titulek bez suffixu, který jim přidal WindowNavigator.
+    // WPF okna shellu nemají exe ani formu ani suffix s firmou - titulek jde do menu doslova.
     [Fact]
-    public void ResolveRunningLabel_WpfWindow_StripsShellSuffix()
+    public void ResolveRunningLabel_WpfWindow_UsesTitleVerbatim()
     {
-        var label = EdisonMainViewModel.ResolveRunningLabel(Running("EDInputForm [CK_SCHWAN]"), NoLabels);
+        var label = EdisonMainViewModel.ResolveRunningLabel(Running("Uživatelský profil"), NoLabels);
 
-        Assert.Equal("EDInputForm", label);
+        Assert.Equal("Uživatelský profil", label);
     }
 
     private static readonly Dictionary<string, EdisonMainViewModel.ModuleLabel> NoLabels = [];

@@ -10,6 +10,14 @@ namespace EDISONMAIN2.LegacyMiniApps;
 /// </summary>
 public sealed class LegacyDashboardMiniAppProvider : IMiniAppProvider
 {
+    // Jeden dávkovač pro všechny descriptory - právě přes něj se požadavky panelů spojí do
+    // jednoho requestu. Vlastní instance per panel by dávkování zrušila.
+    private readonly LegacyDashboardLoader _loader;
+
+    public LegacyDashboardMiniAppProvider() : this(new LegacyDashboardLoader()) { }
+
+    public LegacyDashboardMiniAppProvider(LegacyDashboardLoader loader) => _loader = loader;
+
     public string GroupTitle => "Přehledy";
 
     // (appType, titulek) - pořadí dle ALVAMINIAPLIKACE.inc (52001..52015).
@@ -35,5 +43,5 @@ public sealed class LegacyDashboardMiniAppProvider : IMiniAppProvider
     public IEnumerable<MiniAppDescriptor> GetMiniApps() =>
         Apps.Select(a => new MiniAppDescriptor(
             $"Legacy.{a.AppType}", a.Title,
-            () => new LegacyDashboardMiniAppViewModel(a.AppType, a.Title)));
+            () => new LegacyDashboardMiniAppViewModel(_loader, a.AppType, a.Title)));
 }

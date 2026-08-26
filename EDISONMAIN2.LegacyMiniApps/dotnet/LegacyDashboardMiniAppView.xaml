@@ -2,10 +2,12 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:lma="clr-namespace:EDISONMAIN2.LegacyMiniApps"
+             xmlns:edct="clr-namespace:EDControls.EDComponentToolbar;assembly=EDControls"
              xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls">
     <UserControl.Resources>
         <edvm:HexToBrushConverter x:Key="HexToBrush"/>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <edct:NonEmptyStringToVisibleConverter x:Key="TextToVis"/>
 
         <DataTemplate DataType="{x:Type lma:DashboardLabel}">
             <TextBlock Text="{Binding Text}" Margin="6,3" TextWrapping="Wrap" FontWeight="SemiBold"/>
@@ -37,7 +39,14 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Sections}"/>
             </ScrollViewer>
-            <TextBlock Text="Žádná data k zobrazení." Margin="6" Opacity="0.6"
+            <TextBlock Text="Načítám data…" Margin="6"
+                       Foreground="{DynamicResource EDTheme.Text.Muted}"
+                       Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
+            <TextBlock Text="{Binding ErrorText}" Margin="6" TextWrapping="Wrap"
+                       Foreground="{DynamicResource EDTheme.Semantic.Danger}"
+                       Visibility="{Binding ErrorText, Converter={StaticResource TextToVis}}"/>
+            <TextBlock Text="Žádná data k zobrazení." Margin="6"
+                       Foreground="{DynamicResource EDTheme.Text.Muted}"
                        Visibility="{Binding HasNoData, Converter={StaticResource BoolToVis}}"/>
         </Grid>
     </DockPanel>

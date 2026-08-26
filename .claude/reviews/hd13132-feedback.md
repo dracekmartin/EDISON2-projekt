@@ -34,15 +34,13 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F2 - Okno miniaplikací s jednoúrovňovým seznamem + vizuál
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - `Windows/MiniAppPickerWindow` s plochým seznamem (řádek =
+  název + skupina jako popisek), dvojklik i OK otvírají. Menu „Miniaplikace" na okno jen
+  odkazuje, seskupené submenu i jeho `CompositeCollection`/`BindingProxy` zmizely.
 - **P2 · M**
-- **Co udělat:** Výběr miniaplikací přesunout z menu (dnes `EdisonMainWindow.xaml:137-170`,
-  CompositeCollection seskupená per `IMiniAppProvider.GroupTitle`) do samostatného okna
-  s **jednoúrovňovým** seznamem. Katalog je `MiniAppCatalog.cs`. Součást zadání i „upravit
-  vizuál miniaplikace".
-- **Pozor:** 🔸 „Vizuál" není v ticketu specifikován - vyžádat upřesnění od DZ.
-- **Hotovo když:** Miniaplikace se vybírají z okna s plochým seznamem; menu „Miniaplikace"
-  na něj jen odkazuje (nebo zmizí).
+- **Deferred:** po review (2026-08-24) - „upravit vizuál miniaplikace" z původního zadání;
+  rozsah není v ticketu specifikován a rozhodnuto bylo udělat zatím jen okno výběru. Pokud jde
+  o vzhled panelů v docku, je to retemplate chrome AvalonDocku - vlastní položka.
 - **Zdroj:** HD 13132 #4 (Zeman)
 
 ### F3 - Upravit updater
@@ -89,12 +87,16 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F7 - CPU/RAM špička po přidání miniaplikací
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-24) - změřeno po F1 (`tools/measure-shell-processes.ps1`,
+  shell 12 min v běhu, idle): 7 procesů, ustálená RAM ~250 MB, **historický peak 921 MB**
+  (z toho 467 MB samotný WPF proces, zbytek WebView2), idle CPU ~3 %.
+  Závěr **won't fix** u paměti: špička je startovní (načtení XAML/BAML a stromů + init
+  Chromia) a srovná se, jak Kaska popsal. **Miniaplikace s tím po F1 nemají nic společného** -
+  žádná už WebView2 nepoužívá, přidání Plochy/Dispečinku/Přehledu je čistý WPF.
 - **P3 · S**
-- **Co udělat:** Změřit (pravděpodobně inicializace WebView2 procesů). Kaska: po sekundách
-  se to srovná - možná stačí zdokumentovat/odpovědět. **F1 mezitím ubral 3 WebView2**
-  z výchozího rozložení (zbyl jeden v pruhu podpory), takže měřit až proti novému stavu.
-- **Hotovo když:** Změřeno a rozhodnuto (fix / won't fix s odpovědí do ticketu).
+- **Vypadl z toho nový nález → F16:** idle CPU ~3 % nejde z naší strany (WPF proces 0,2 %),
+  ale z WebView2 rendereru + GPU procesu, tedy widget v pruhu podpory něco animuje **pořád**.
+  Na statické stránce by to bylo ~0. Souvisí s výtkou #18 „věčný progress".
 - **Zdroj:** HD 13132 #18 (Kaska)
 
 ### F8 - „Automatický refresh" přejmenovat česky
@@ -122,8 +124,10 @@ projektu jsou značené explicitně („nový post #N").
 - **P2 · L**
 - **Co udělat:** Definovat a implementovat chování při výpadku spojení. Dnes reconnect
   neexistuje (`ConnectToDatabaseCommand = Command(NotYetImplemented)`,
-  `EdisonMainViewModel.cs:274`); zánik ACTIVITY zámku → řízený shutdown
-  (`LogoutWatcher.cs`). Session GUID je stabilní po celé přihlášení (vzniká jen
+  `EdisonMainViewModel.cs:271`); zánik ACTIVITY zámku → řízený shutdown přes event
+  `EdisonActivityFailed` (`AppBootstrapper.BuildActivityFailedWire`); `LogoutWatcher` je
+  jen kooperativní kanál (`maSeUkoncit`, poll na klonu s `CacheLocks=2`, aktivitu
+  nerefreshuje). Session GUID je stabilní po celé přihlášení (vzniká jen
   v `SessionFactory.Establish` - start a přihlášení jiného uživatele), takže obnova na
   témže GUID je proveditelná; `9feb252` už drží server-side idle timer živý.
 - **Pozor:** Kauza ARRIVA (ztráta pracovních dat v ^MZR po novém GUID) je přesně to, co
@@ -140,6 +144,8 @@ projektu jsou značené explicitně („nový post #N").
   (`6e49feb`, `SessionLogout.cs`) a zavírání oken honoruje veto. Po hard-killu ale zámky
   visí do server idle timeoutu (známé, `EDISONMAIN2/CLAUDE.md`). Zvážit zkrácení
   timeoutu / heartbeat / úklid při dalším startu klienta pod týmž uživatelem.
+- **Pozor:** server sklízí jen ACTIVITY (`Activity.LockDel` v timeout+3 min), business
+  zámky nikdy; s vypnutým idle timeoutem po hard-killu visí **neomezeně**.
 - **Hotovo když:** Zámky po pádu klienta zaniknou v řádu minut bez zásahu admina
   (LockClearExt ručně už není potřeba).
 - **Zdroj:** HD 13132 #17/3 (Kaska)
@@ -158,38 +164,63 @@ projektu jsou značené explicitně („nový post #N").
 - **Hotovo když:** Pád legacy okna zobrazí chybový dialog a dorazí do telemetrie podpory.
 - **Zdroj:** HD 13132 #17/4 (Kaska), souvisí #5 (Zeman)
 
-### F13 - Odpovědět Kaskovi do ticketu na #17
+### F13 - Odpovědět do ticketu: #17 (Kaska, nový #20) + doplňující ticket DZ
 
-- [ ] **Stav:** Open
+- [ ] **Stav:** Open - odpověď prověřena proti kódu 2026-08-25 (GUID lifecycle, aktivita,
+  zámky, distribuce), společný text pro oba tickety níže. Nálezy z prověrky → F17, F18.
 - **P1 · S**
-- **Co udělat:** Odeslat do HD 13132 připravené odpovědi:
-  1. **Session GUID:** vzniká jen při startu a při přihlášení jiného uživatele
-     (`SessionFactory.Establish`); přepnutí firmy ho **nemění** (mění se jen Idfa na téže
-     instanci, `CompanySwitcher`). Obnova spojení zatím neexistuje - až bude, poběží na
-     témže GUID (→ F10). Kauza ARRIVA se tedy nezopakuje.
-  2. **Sdílení mezi okny:** všechna okna jednoho přihlášení sdílí shell GUID - předává se
-     hostu v launch argumentech (`WindowNavigator.cs:354`), mezimodulové předávání přes
-     `^MZR("FiltrZam2",...)` funguje dál.
-  3. **Zámky:** korektní odhlášení/přepnutí firmy uklízí ACTIVITY i business zámky
-     (LockClearExt dle GUID) a zavírání oken jde přes standardní Closing s vetem
-     a dotazem na neuložená data (`6e49feb`). Hard-kill → server idle timeout (→ F11).
-  4. **Pády:** EDPROCESS se nepoužívá, hostem je EDISONMAIN2API.exe; shell má crash
+- **Co udělat:** Odeslat do HD 13132 jednu odpověď pokrývající #17 (= nový #20) i tři
+  stěžejní problémy z doplňujícího ticketu DZ (aktivita v multioknech, sdílení GUID,
+  pomalá nástěnka):
+  1. **Aktivita v režimu více oken (odhlašování aktivních uživatelů, ARRIVA):** všechna
+     okna jednoho přihlášení - shell i hostované staré agendy - běží na jednom session
+     GUID a s aktivními kontrolami (`CacheLocks=1`; host je nastavuje v
+     `FormToRunGetter.cs:106-110`, repo EDISON). Aktivitu serveru hlásí každý request
+     kteréhokoli okna, server vidí jedinou session s jedinou historií aktivity. Původní
+     příčina (každá agenda si vytvořila vlastní GUID bez ACTIVITY zámku, server ji
+     vyhodnotil jako neaktivní a ukončil uživatele uprostřed práce) zaniká konstrukčně -
+     není co agregovat.
+  2. **Sdílení GUID mezi okny:** GUID vzniká jen při startu a při přihlášení jiného
+     uživatele (`SessionFactory.Establish`); přepnutí firmy ho **nemění** (mění se jen
+     Idfa na téže instanci, `CompanySwitcher`). Hostovaným agendám ho shell předává
+     v launch argumentech (`WindowNavigator.cs:354`), agenda má v sysu MLRestu totéž GUID
+     jako shell. Mezimodulové předávání přes `^MZR("FiltrZam2",...)` funguje dál - a čtení
+     má nově fallback na per-user kopii (dual-write GUID + userID, repo EDISON), takže ani
+     změna GUID při novém přihlášení rozpracovaná data nezahodí.
+  3. **Pomalé načítání nástěnky / stahování knihoven ze serveru:** nový shell je jeden exe
+     (~4 MB) + jedna DLL - při startu se nestahují ani lazy nenačítají stovky knihoven
+     jako u starého klienta. Nástěnka po startu je jen Plocha (žádné serverové volání),
+     okno se vykreslí hned a data se donačítají asynchronně v jedné paralelní vlně;
+     kontrola verze proběhne před startem shellu s viditelným průběhem. Staré agendy si
+     své knihovny berou z instalace jako dosud - startu shellu se to netýká.
+  4. **Zámky:** korektní odhlášení/přepnutí firmy uklízí ACTIVITY i business zámky
+     (LockClearExt dle GUID) a zavírání oken respektuje veto okna (`6e49feb`).
+     Hard-kill → server idle timeout (→ F11).
+  5. **Výpadek spojení:** reconnect zatím neexistuje - až bude, poběží na témže GUID
+     (→ F10), takže se kauza ARRIVA nezopakuje ani tudy.
+  6. **Pády:** EDPROCESS se nepoužívá, hostem je EDISONMAIN2API.exe; shell má crash
      dialog + telemetrii do podpory (`3cd3fc7`, `77fb84e`); pokrytí hostovaných oken → F12.
+- **Pozor:** původní návrh sliboval „dotaz na neuložená data" při zavírání - vypuštěno,
+  není implementováno (veto mechanismus existuje a honoruje se, ale žádné okno shellu
+  prompt nezvedá; legacy moduly se zavírají `Process.Kill()` bez veta).
 - **Hotovo když:** Odpověď odeslána v ticketu.
-- **Zdroj:** HD 13132 #17 (Kaska)
+- **Zdroj:** HD 13132 #17 (Kaska) + doplňující ticket DZ (2026-08-25)
 
 ### F14 - Titulky oken: `[IdFa]` suffix a nekonzistence CKSCHWAN/CK_SCHWAN
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-25) - rozhodnuto „IdFa jen v shellu": `WindowNavigator` už
+  titulek nerazítkuje, okna EDISON2 mají čistý název, `M-line EDISON [IdFa]` zůstalo jen
+  hlavnímu oknu (jedno sezení = jedna firma, firma je i ve status baru). Legacy hostovaná
+  okna suffix dál mají - přidává si ho base forma sama (`clsForm.ShowIDFA`, repo EDISON),
+  vědomě nesaháno; `StripIdfaSuffix` proto ve „Spuštěných modulech" zůstává.
 - **P3 · M** 🔸
-- **Co udělat:** Štítky ve „Spuštěných modulech" už IdFa nemají (`52c95c9` + `66138dc` -
-  dlouhý název/cesta agendou), ale **titulky oken** si `[idfa]` drží
-  (`WindowNavigator.cs:410`), shell okno má vlastní mechanismus
-  (`EdisonMainViewModel.cs:962`) a legacy out-of-process okna title neřídí vůbec -
-  odtud i nekonzistence CKSCHWAN vs CK_SCHWAN. Rozhodnout: sjednotit (jeden mechanismus,
-  jednotný tvar), nebo IdFa z titulků odstranit úplně.
-- **Pozor:** Je to bývalý deferred `L3` ze starého PLAN.md (archiv).
-- **Hotovo když:** Titulky všech oken jednoho sezení mají jednotný tvar.
+- **Nekonzistence CKSCHWAN/CK_SCHWAN nebyla chyba titulků:** `TestIdFa` (`apiFIRMA.vb`)
+  vyžaduje v IdFa právě jeden `_`, takže `CKSCHWAN` platné IdFa být nemůže - je to jméno
+  namespace nebo ručně vyplněná hodnota z legacy setupu (`frmSetup.vb`, registry).
+  Dohledání u zákazníka → viz Mimo EDISON2.
+- **Zbývá odeslat do ticketu:** „Firmu už v titulcích jednotlivých oken neuvidíte - je
+  jednou v titulku hlavního okna a ve stavovém řádku, protože v jednom přihlášení pracujete
+  vždy v jedné firmě. Okna starých agend si zkratku firmy zatím přidávají sama."
 - **Zdroj:** HD 13132 #3 bod 6 (Kaska), zbytek po `52c95c9`/`66138dc`
 
 ### F15 - Enter v poli „Hledat modul" spustí první výsledek
@@ -200,6 +231,51 @@ projektu jsou značené explicitně („nový post #N").
 - **P3 · S**
 - **Zdroj:** vlastní nález při triáži HD 13132
 
+### F16 - Widget podpory žere ~3 % CPU trvale
+
+- [ ] **Stav:** Open
+- **P3 · S** 🔸
+- **Co udělat:** Měření z F7: renderer + GPU proces WebView2 drží ~3 % CPU i na nečinném
+  shellu, WPF strana 0,2 %. Statická stránka by byla na nule, takže widget `edison2` běží
+  v nekonečné animaci (Kaskův „věčný progress" z #18). Běží to celý pracovní den.
+- **Pozor:** Je to obsah `podpora.m-line.cz`, ne náš kód - opravit to musí strana podpory.
+  Ověřit lze `tools/measure-shell-processes.ps1` (rozpad po procesech).
+- **Hotovo když:** Widget na nečinné stránce neanimuje a idle CPU shellu spadne k nule.
+- **Zdroj:** vlastní nález při měření F7
+
+### F17 - Modul s vlastním GUID negeneruje aktivitu shell session
+
+- [ ] **Stav:** Open
+- **P2 · M**
+- **Co udělat:** TemplateDesigner záměrně nepřebírá shell GUID
+  (`TemplateDesigner/dotnet/Config/CacheSchemaWiring.cs:13-24`), takže jeho requesty
+  nerefreshují ACTIVITY historii shellu. Uživatel hodinu pracující jen v TD → idle timeout
+  shellu → force shutdown a `KillOnExit` sundá i TD. Stejný tvar chyby jako kauza ARRIVA,
+  jinými dveřmi; platí pro každý budoucí modul s vlastním MLRest.
+- **Pozor:** shell navíc nemá žádný keepalive - legacy 60s poll běžel s `Locks=1` a byl
+  nechtěný keepalive (timeout byl prakticky nedosažitelný), dnes poll běží s `Locks=2`.
+  Shell je tedy přísnější než legacy; u zákazníků se zapnutým timeoutem čekat nová
+  hlášení „odhlásilo mě to".
+- **Hotovo když:** Práce v TD (a obecně v modulu s vlastním GUID) drží shell session
+  živou, nebo je rozhodnuto, že timeout se má měřit jen na shellu, a je to zdokumentováno.
+- **Zdroj:** vlastní nález při prověrce F13 (2026-08-25)
+
+### F18 - Legacy dashboardy v layoutu: blokující load při startu + ztracené dávkování
+
+- [x] **Stav:** Done (2026-08-25) - sdílený `LegacyDashboardLoader`: požadavky panelů, které se
+  přihlásí v téže dispatcher operaci, odejdou jako **jeden** `MiniAplikaceAPI.LoadData` s N
+  parametry `appType` (vrácená parita s `clsMiniApplication.LoadData`) na klonu mimo UI vlákno.
+  Vrátila se i druhá ztracená legacy sémantika: otevření panelu jede `refresh=0` (data
+  předpočítává serverová úloha `TaskTypeALVAEDISONMiniAppRefresh`), přepočet `refresh=1` jde jen
+  z „Načíst" a z hromadné obnovy - server-side recompute při každém startu byl větší brzda než
+  počet round-tripů. Panel má stavy „Načítám" / chyba v těle (popup by se u dávky násobil).
+  Zasynchronněn i **Dispečink** (táž vada v `OnOpened`, dávkovat nejde - jiná Caché třída);
+  `IRestCallRunner` se kvůli sdílení přesunul do EDControls.
+- **P2 · M**
+- **Dopad na F13:** bod 3 doplňujícího ticketu (pomalá nástěnka) je tímhle pokrytý i pro
+  uložený layout s dashboardy, nejen pro Plochu.
+- **Zdroj:** vlastní nález při prověrce doplňujícího ticketu (2026-08-25)
+
 ## Mimo EDISON2 (jiné repo / jiný vlastník)
 
 - **Pád „Aktivita uživatelů" z menu** (#5, Zeman) - `ShowUsersActivityCommand` spouští
@@ -208,6 +284,9 @@ projektu jsou značené explicitně („nový post #N").
 - **Chyba nastavení jazyka** (#18, Kaska - „odesláno") - legacy forma
   `ALVA.EDISONMAIN.formEDISONMAINLanguageList` z `EDISONMAIN.exe`. Dohledat Kaskův error
   report v telemetrii podpory. Vlastník: MH.
+- **CKSCHWAN vs CK_SCHWAN u zákazníka** (#3 bod 6, Kaska) - `CKSCHWAN` není platné IdFa
+  (chybí `_`), takže jde o jméno namespace nebo ručně vyplněnou hodnotu v legacy setupu
+  (`frmSetup.vb` → registry). Dohledat skutečnou konfiguraci instance. Vlastník: MH.
 - **IdFa výjimky do legacy EDISON.exe** (#4, Zeman) - pro zákazníky testující
   EDISONMAIN2; repo `c:\MLineRepos\EDISON`. Vlastník: MH. Až budou hotové připomínky.
 - **Ikona autobusu - upravit** (#4, Zeman) - bez detailu; 🔸 upřesnit, které ikony se
@@ -236,7 +315,7 @@ Podklad pro odpověď do ticketu - body z #3 (Kaska) a #4 (Zeman):
 - **Enter ve stromu spustí modul** a **nalezená skupina není slepá ulička** (zpřístupní
   celý podstrom) - `0d12d5a`.
 - **Spuštěné moduly: rozlišení duplicit** - `52c95c9` (cesta agendou místo IdFa) a
-  `66138dc` (dlouhý název `nameEx`); v titulcích oken IdFa zatím zůstává → F14.
+  `66138dc` (dlouhý název `nameEx`); IdFa zůstal jen v titulku shellu (F14).
 - **Nastavení: Font/Rodina → Písmo** - `ac9b0d1`.
 - **Ikony na ploše: dlouhý název** (rozliší „Zaměstnanci" MZDY/ZAM) - `66138dc` a
   `f62ca99` (auto-shrink labelu).

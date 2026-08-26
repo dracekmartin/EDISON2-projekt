@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using ALWA.SYS;
+using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
 
@@ -20,15 +21,29 @@ public sealed record PracovisteItem(string Id, string Nazev)
 
 /// <summary>
 /// MHD dispečink - read-only seznam jízd pro zvolené pracoviště a den. Čte přes MLRest z
-/// <c>ALVA.MHD2.PlanDopravy.API.DispecinkMiniApp</c> (GetPracoviste / GetJizdy).
+/// <c>ALVA.MHD2.PlanDopravy.API.DispecinkMiniApp</c> (GetPracoviste / GetJizdy). Requesty jedou
+/// přes <see cref="IRestCallRunner"/> (klon, mimo UI vlákno) - obnova uloženého layoutu mountuje
+/// panely před prvním paintem, blokující volání by tam zdrželo start shellu.
 /// </summary>
 public sealed class DispecinkMiniAppViewModel : EDMiniAppViewModel, IRefreshableMiniApp
 {
     private const string CacheClass = "ALVA.MHD2.PlanDopravy.API.DispecinkMiniApp";
 
-    public DispecinkMiniAppViewModel() => LoadCommand = Command(LoadJizdy);
+    private readonly IRestCallRunner _runner;
+    private readonly ICommand _openCommand;
 
-    public DispecinkMiniAppViewModel(EDServices services) : base(services) => LoadCommand = Command(LoadJizdy);
+    public DispecinkMiniAppViewModel() : this(EDServices.Current) { }
+
+    public DispecinkMiniAppViewModel(EDServices services)
+        : this(services, new RestCallRunner(() => services.RequireMLRest)) { }
+
+    /// <summary>DI/test overload - vlastní runner (testy volají synchronně, bez klonu).</summary>
+    public DispecinkMiniAppViewModel(EDServices services, IRestCallRunner runner) : base(services)
+    {
+        _runner = runner;
+        LoadCommand = CommandAsync(LoadJizdyAsync);
+        _openCommand = CommandAsync(LoadPracovisteAsync);
+    }
 
     public override string Title => "Dispečink";
 
@@ -45,14 +60,14 @@ public sealed class DispecinkMiniAppViewModel : EDMiniAppViewModel, IRefreshable
     public ICommand LoadCommand { get; }
 
     // Po otevření panelu naplň selektor pracovišť (a vyber první).
-    public override void OnOpened() => LoadPracoviste();
+    public override void OnOpened() => _openCommand.Execute(null);
 
     /// <summary>Hromadný refresh ze shellu (<see cref="IRefreshableMiniApp"/>) - znovu načte jízdy.</summary>
-    public void Refresh() => LoadJizdy();
+    public void Refresh() => LoadCommand.Execute(null);
 
-    private void LoadPracoviste()
+    private async Task LoadPracovisteAsync()
     {
-        CVar output = MLRest!.QueryOrThrow(CacheClass, "GetPracoviste", new CVar());
+        CVar output = await _runner.RunAsync(rest => rest.QueryOrThrow(CacheClass, "GetPracoviste", new CVar()));
         Pracoviste.Clear();
         foreach (KeyValuePair<string, CVar> kvp in output)
         {
@@ -63,7 +78,7 @@ public sealed class DispecinkMiniAppViewModel : EDMiniAppViewModel, IRefreshable
         SelectedPracoviste = Pracoviste.FirstOrDefault();
     }
 
-    private void LoadJizdy()
+    private async Task LoadJizdyAsync()
     {
         if (SelectedPracoviste is null) return;
 
@@ -71,7 +86,7 @@ public sealed class DispecinkMiniAppViewModel : EDMiniAppViewModel, IRefreshable
         input["pracoviste"] = new CVar(SelectedPracoviste.Id);
         input["datum"] = new CVar(Datum.ToString("yyyy-MM-dd"));
 
-        CVar output = MLRest!.QueryOrThrow(CacheClass, "GetJizdy", input);
+        CVar output = await _runner.RunAsync(rest => rest.QueryOrThrow(CacheClass, "GetJizdy", input));
         Jizdy.Clear();
         foreach (KeyValuePair<string, CVar> kvp in output)
         {

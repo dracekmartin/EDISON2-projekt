@@ -23,11 +23,20 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   drag (hlídá `FrameworkWindows` v EDControls, detail v jeho
   [EDViewModel/CLAUDE.md](../../../EDControls/dotnet/EDViewModel/CLAUDE.md)).
   Odtržené mini-apps zavírej přes `document.Close()` (`MiniAppManager`), ne přes okno.
+- **Legacy dashboardy jedou přes sdílený `LegacyDashboardLoader`** (`EDISONMAIN2.LegacyMiniApps`):
+  požadavky panelů, které se přihlásí v téže dispatcher operaci, odejdou jako **jeden**
+  `MiniAplikaceAPI.LoadData` s N parametry `appType` (parita s legacy `clsMiniApplication.LoadData`),
+  na klonu mimo UI vlákno. Obnova layoutu běží z `Loaded` = **před prvním paintem**, takže
+  blokující load tam stál N round-tripů bez progresu. Provider proto musí dát všem descriptorům
+  **tutéž** instanci loaderu - vlastní per panel dávkování zruší.
+- **`refresh=0` při otevření panelu, `refresh=1` jen z „Načíst" / hromadné obnovy.** Data
+  předpočítává serverová úloha (`ALVA.EDISON.Task`, `TaskTypeALVAEDISONMiniAppRefresh`); přepočet
+  při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.
+  Chybu ukazuje panel sám (`ErrorText`), ne popup - dávka o N panelech by jich zvedla N.
+  `MiniAppManager.RefreshAll` proto vrací názvy **spuštěných**, ne dokončených obnov.
 - Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,
   stejný lifecycle přes `AttachTreeLayout`); chybí-li nebo je poškozený → výchozí rozložení
   (jen Plocha). Prázdný dock ukáže placeholder s tlačítkem na výchozí sadu.
-- Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`, pořadí =
-  pořadí registrace v `AppBootstrapper`). Statické akce dole (Zavřít/Resetovat) jsou
-  v `CompositeCollection` - bindingy tam jdou jen přes `BindingProxy` (`VmProxy`):
-  `x:Reference` na TopMenu při BAML loadu cyklí, `ElementName`/DataContext jsou mimo
-  namescope/strom; lokální `Style` na nich blokuje `ItemContainerStyle` skupin.
+- Výběr miniaplikace je vlastní okno (`Windows/MiniAppPickerWindow`) s **jednoúrovňovým**
+  seznamem; `IMiniAppProvider.GroupTitle` (pořadí = pořadí registrace v `AppBootstrapper`)
+  z něj zbyl jen popisek řádku. Menu „Miniaplikace" na okno jen odkazuje.

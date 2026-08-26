@@ -10,7 +10,8 @@ Základní třída ViewModelů + infrastruktura (`EDServices` - DI singleton `Cu
    samotný Enter slouží EDInputFormu k navigaci mezi poli);
 2. persistenci stavu okna - hook `SourceInitialized` (fíruje synchronně uvnitř `Show()`
    před prvním paintem → žádný flicker); restore size → location → Maximize **poslední**
-   (jinak se ztratí normal-velikost), save z `RestoreBounds`; best-effort, okno se otevře vždy;
+   (jinak se ztratí normal-velikost), save z `RestoreBounds`; **uložená pozice mimo dnešní
+   plochu** (odpojený monitor) se zahodí a platí XAML default; best-effort, okno se otevře vždy;
 3. window-scoped `PopupDisplayer` (owner: per-call → okno VM → globální default) -
    agendová okna nedostávají popupy nad shellem.
 

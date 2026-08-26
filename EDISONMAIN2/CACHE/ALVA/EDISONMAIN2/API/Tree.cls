@@ -326,6 +326,7 @@ ClassMethod FillMain() [ Private ]
 			d ..AddExe("Emise CO2", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniEmiseCO2Main", "177009", 1, "", 0, "", 0, "ISYBUS Emise CO2")
 			d ..AddExe("Fakturace", "FAKTURACEEX.exe", "ALVA.FAKTURACEEX.formFAKTURACEEXExterniDoklady", "108016", 1, "AD", 0, "", 0, "ISYBUS Fakturace")
 			d ..AddExe("Řidiči - Grafikon", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniRidiciGrafikonMain", "177006", 1, "", 0, "", 0, "ISYBUS Řidiči - Grafikon")
+			d ..AddExe("Řidiči - Odměny", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniRidiciOdmenyMain", "177010", 1, "", 0, "", 0, "ISYBUS Řidiči - Odměny")
 			d ..AddExe("Řidiči - Prémie", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniRidiciPremieMain", "177001", 1, "", 0, "", 0, "ISYBUS Řidiči - Prémie")
 			d ..AddExe("Vozidla - Grafikon", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniVozidlaGrafikonMain", "177007", 1, "", 0, "", 0, "ISYBUS Vozidla - Grafikon")
 		d ..AddFamilyEnd()
@@ -801,9 +802,6 @@ ClassMethod FillPartners() [ Private ]
 	d ..AddFamilyEnd()
 	d ..AddFamily("T-MAPY", 0, "44", 1, 0)
 		d ..AddExe("Export pro dispečink", "ADPARTNERSKARESENI.exe", "ALVA.ADPARTNERSKARESENI.formADPARTNERSKARESENITMAPYEdit", "95002", 1, "", 0, "", 0)
-	d ..AddFamilyEnd()
-	d ..AddFamily("TRANSDEV", 0, "64", 1, 0)
-		d ..AddExe("KARAT", "TRANSDEV.exe", "ALVA.TRANSDEV.formTRANSDEVNastaveniKarat", "200001", 1, "", 0, "", 0)
 	d ..AddFamilyEnd()
 }
 

@@ -86,4 +86,78 @@ public class WindowStatePersistenceTests
 
         Assert.Equal($"param{D}state{D}1", input[^1].ToString());
     }
+
+    [Fact]
+    public void BuildSaveParams_NegativeLocationSurvives()
+    {
+        // Monitor vlevo od primárního má negativní X - nesmí se cestou ztratit.
+        var input = WindowStatePersistence.BuildSaveParams("F", new Rect(-1800, -120, 800, 600), 0, D);
+
+        Assert.Equal($"param{D}location{D}-1800;-120", input[2].ToString());
+    }
+
+    [Fact]
+    public void SaveLoadRoundTrip_KeepsNegativeLocation()
+    {
+        var saved = WindowStatePersistence.BuildSaveParams("F", new Rect(-1800, -120, 800, 600), 0, D);
+
+        // ParseOutput přeskakuje index 0 (status slot), takže formID zastoupí status.
+        var dict = WindowStatePersistence.ParseOutput(saved, D);
+
+        Assert.True(WindowStatePersistence.TryParsePair(dict["location"], out var x, out var y));
+        Assert.Equal(-1800, x);
+        Assert.Equal(-120, y);
+    }
+
+    /// <summary>Plocha jednoho monitoru 1920x1080 v počátku (0;0).</summary>
+    private static readonly Rect SingleScreen = new(0, 0, 1920, 1080);
+
+    /// <summary>Dva monitory 1920x1080, sekundární vlevo od primárního (negativní origin).</summary>
+    private static readonly Rect SecondaryOnLeft = new(-1920, 0, 3840, 1080);
+
+    [Theory]
+    [InlineData(100, 100, true)]        // uvnitř plochy
+    [InlineData(0, 0, true)]            // levý horní roh
+    [InlineData(1800, 1048, true)]      // pruh titulku končí přesně na hraně
+    [InlineData(1801, 1048, false)]     // o pixel za pravou hranou
+    [InlineData(1800, 1049, false)]     // o pixel za spodní hranou
+    [InlineData(2100, 200, false)]      // odpojený monitor vpravo
+    [InlineData(-1800, 100, false)]     // odpojený monitor vlevo
+    [InlineData(100, -50, false)]       // nad plochou
+    public void IsLocationReachable_SingleScreen(double left, double top, bool expected)
+    {
+        Assert.Equal(expected, WindowStatePersistence.IsLocationReachable(left, top, SingleScreen));
+    }
+
+    /// <summary>Dva monitory 1920x1080, sekundární vpravo od primárního (hlášený případ).</summary>
+    private static readonly Rect SecondaryOnRight = new(0, 0, 3840, 1080);
+
+    [Theory]
+    [InlineData(-1800, 100, true)]      // okno na sekundárním monitoru vlevo
+    [InlineData(-1920, 0, true)]        // levý horní roh plochy
+    [InlineData(1000, 100, true)]       // přes hranu obou monitorů
+    [InlineData(-2000, 100, false)]     // vlevo mimo plochu
+    [InlineData(1900, 100, false)]      // za pravou hranou plochy
+    public void IsLocationReachable_SecondaryOnLeft(double left, double top, bool expected)
+    {
+        Assert.Equal(expected, WindowStatePersistence.IsLocationReachable(left, top, SecondaryOnLeft));
+    }
+
+    [Theory]
+    [InlineData(2000, 100, true)]       // pravá polovina plochy - přesně to, co legacy zahazoval
+    [InlineData(3700, 1000, true)]      // u pravého dolního okraje sekundárního monitoru
+    [InlineData(3800, 100, false)]      // pruh titulku už nemá kam
+    public void IsLocationReachable_SecondaryOnRight(double left, double top, bool expected)
+    {
+        Assert.Equal(expected, WindowStatePersistence.IsLocationReachable(left, top, SecondaryOnRight));
+    }
+
+    [Fact]
+    public void IsLocationReachable_RejectsNonFinite()
+    {
+        // "NaN" projde TryParsePair (NumberStyles.Float), zastavit ho musí až tahle kontrola.
+        Assert.False(WindowStatePersistence.IsLocationReachable(double.NaN, 100, SingleScreen));
+        Assert.False(WindowStatePersistence.IsLocationReachable(100, double.NaN, SingleScreen));
+        Assert.False(WindowStatePersistence.IsLocationReachable(double.PositiveInfinity, 0, SingleScreen));
+    }
 }

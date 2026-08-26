@@ -6,8 +6,8 @@ public interface IWindowNavigator
 {
     /// <summary>
     /// Otevře okno modeless. Okno se předává jako instance - caller vytvoří přes <c>new</c>
-    /// (compile-time type safety, Find Usages funguje). Navigator nastaví Owner, append
-    /// <c>[Idfa]</c> na Title a zavolá <c>AttachToWindow</c> na VM (pokud je <c>EDViewModel</c>).
+    /// (compile-time type safety, Find Usages funguje). Navigator nastaví Owner a zavolá
+    /// <c>AttachToWindow</c> na VM (pokud je <c>EDViewModel</c>). Title nechává být.
     /// </summary>
     void Show(Window window);
 
