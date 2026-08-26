@@ -1047,6 +1047,14 @@ Je to necelé procento spojů, tedy niche - ale na lince, kde zákazník spoje o
 v tisku přijde celou. **A hlavně: tím padá důvod, proč to nešlo ověřit.** Existuje linka s barvami
 v datech, takže se dá tvrdit obojí - že barvy posíláme, i že je přepínač u linky potlačí.
 
+**Co presne se barví** (čteno v legacy 26. 8., `JRapiLinPrtWin.mac:1422,1428,1434`): barva je
+vlastnost **položky uvnitř buňky** (pole `dta,6`) a dostane ji jen **čas**, značka **projíždí** (`|`)
+a značka **jede jinudy** (`<`). Obyčejný text barvu nedostává a **pozadí se nebarví vůbec** -
+kontrakt na ně pole nemá. Naše `CASY` nesou přesně jen tyhle tři hodnoty plus prázdno, takže se
+množina obarvených buněk s legacy kryje beze zbytku; číslo spoje v záhlaví ani řádek platnosti
+obarvené nejsou. Přepínač u linky legacy řeší tím, že barvu **vymaže** (`:2102`), tedy `1` = černě -
+shodné s naší volbou „Netisknout“.
+
 #### Tvar datumů: dvě různé věci, které se pletou
 
 - **Formát** (tečky vs. lomítka, pořadí složek) je otázka lokalizace, ne nastavení. Opraveno v `B96`
