@@ -250,7 +250,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
         {
             Typ       = ParseTypPoznamky(row.GetString("TYP")),
             Znak      = row.GetString("ZNAK"),
-            Text      = row.GetString("TEXT"),
+            Text      = OdstavcePoznamky(row.GetString("TEXT")),
             ForeColor = NullIfEmpty(row.GetString("FORE_COLOR")),
             BackColor = NullIfEmpty(row.GetString("BACK_COLOR")),
             Kategorie = row.GetString("KATEGORIE"),
@@ -260,6 +260,20 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
         _cachedPoznamky = result;
         return result;
     }
+
+    /// <summary>
+    /// Rozdělí text poznámky na odstavce. Agenda posílá <c>#</c> jako <b>oddělovač odstavců</b>
+    /// (prázdný odstavec už normalizuje na mezeru, protože tak ho tiskne starý modul).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 26. 8. to klient neinterpretoval nikde a <c>#</c> se tisklo jako písmeno uprostřed
+    /// věty („…u řidiče.#INTEGROVANÉHO SYSTÉMU…", nahlásil Jan).
+    /// <para>Převod je <b>tady, na jednom místě</b>, ne u kreslení: výška poznámky se počítá
+    /// jinou cestou než render (<c>CalculateHeightFromData</c> vs <c>DrawWrappedBody</c>) a obě
+    /// jdou přes <c>TextWrapHelper</c>, který na <c>\n</c> lámat umí. Kdyby se odstavce dělily
+    /// u kreslení, výška by o nich nevěděla a legenda by přetékala.</para>
+    /// </remarks>
+    private static string OdstavcePoznamky(string text) => text.Replace("#", "\n");
 
     // ─── Parse helpery (typy poznámek/anotací - zastávkové POCO) ────────────
 

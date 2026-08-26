@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-26 (3) - 🐞 zlom odstavce v poznámce se tiskl jako znak `#`
+
+V legendě vyšlo „…jsou k nahlédnutí u řidiče.**#**INTEGROVANÉHO SYSTÉMU…" (nahlásil Jan). Agenda
+posílá `#` jako **oddělovač odstavců** - má u toho i komentář, že prázdný odstavec starý modul
+tiskne jako mezeru, a kvůli tomu ho normalizuje - ale klient ten oddělovač **nikde
+neinterpretoval**, takže se vypsal jako písmeno uprostřed věty.
+
+Převod na zlom řádku je při **parsování poznámky**, tedy na jednom místě. Záměrně ne u kreslení:
+výška poznámky se počítá jinou cestou než render a obojí jde přes tentýž wrap, který na zlom
+řádku lámat umí. Kdyby se odstavce dělily až u kreslení, výška by o nich nevěděla a legenda by
+přetékala - a to je v projektu opakovaná třída chyb.
+
+⚠️ **První verze testu neměřila nic** a odhalila to až mutace: na realisticky dlouhém textu se
+odstavce zalomí na dva řádky tak i tak, takže výška se zalomením i bez něj vyšla stejně. Test teď
+používá dvě krátké věty, které se spojené vejdou na jeden řádek. Je to potřetí za den, co fixtura
+vypadala rozumně a neověřovala nic.
+
+Ověřeno: .NET 1189/1189 + 690 + 595, ověřeno mutací (bez opravy padnou 2 testy ze 3).
+
+
 ## 2026-08-26 (2) - 🐞 značky v legendě linkového JŘ se kreslily písmeny
 
 V legendě vyšlo „vyčká“ jako `m`, pracovní dny jako `X` a svátky jako `+` - místo dutého
