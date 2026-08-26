@@ -262,18 +262,18 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F18 - Legacy dashboardy v layoutu: blokující load při startu + ztracené dávkování
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-25) - sdílený `LegacyDashboardLoader`: požadavky panelů, které se
+  přihlásí v téže dispatcher operaci, odejdou jako **jeden** `MiniAplikaceAPI.LoadData` s N
+  parametry `appType` (vrácená parita s `clsMiniApplication.LoadData`) na klonu mimo UI vlákno.
+  Vrátila se i druhá ztracená legacy sémantika: otevření panelu jede `refresh=0` (data
+  předpočítává serverová úloha `TaskTypeALVAEDISONMiniAppRefresh`), přepočet `refresh=1` jde jen
+  z „Načíst" a z hromadné obnovy - server-side recompute při každém startu byl větší brzda než
+  počet round-tripů. Panel má stavy „Načítám" / chyba v těle (popup by se u dávky násobil).
+  Zasynchronněn i **Dispečink** (táž vada v `OnOpened`, dávkovat nejde - jiná Caché třída);
+  `IRestCallRunner` se kvůli sdílení přesunul do EDControls.
 - **P2 · M**
-- **Co udělat:** Obnova uloženého layoutu běží z `Loaded`, před prvním paint;
-  `MiniAppManager.Mount` volá `OnOpened()` a `LegacyDashboardMiniAppViewModel.Load` je
-  blokující `QueryOrThrow` s `refresh=1` (server recompute). N dashboardů v layoutu =
-  N sekvenčních round-tripů na UI vlákně bez progresu. Navíc se ztratilo legacy dávkování
-  (`clsMiniApplication.LoadData` = 1 request na N panelů). Load zasynchronnit mimo paint
-  path a vrátit dávkování.
-- **Pozor:** stejný tvar stížnosti jako bod 3 doplňujícího ticketu (pomalá nástěnka) -
-  F7 řešil jen RAM/WebView2, tenhle path nepokrývá.
-- **Hotovo když:** Start s uloženými dashboardy vykreslí okno hned, panely se plní
-  asynchronně a N panelů nestojí N round-tripů.
+- **Dopad na F13:** bod 3 doplňujícího ticketu (pomalá nástěnka) je tímhle pokrytý i pro
+  uložený layout s dashboardy, nejen pro Plochu.
 - **Zdroj:** vlastní nález při prověrce doplňujícího ticketu (2026-08-25)
 
 ## Mimo EDISON2 (jiné repo / jiný vlastník)

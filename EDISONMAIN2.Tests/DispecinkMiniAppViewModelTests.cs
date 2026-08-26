@@ -14,8 +14,10 @@ public class DispecinkMiniAppViewModelTests
 {
     private const string CacheClass = "ALVA.MHD2.PlanDopravy.API.DispecinkMiniApp";
 
+    // InlineRestCallRunner místo produkčního (klon + Task.Run) - volá mock synchronně.
     private static DispecinkMiniAppViewModel NewVm(IMLRest mlRest) =>
-        new(new EDServices(mlRest, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
+        new(new EDServices(mlRest, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+            new InlineRestCallRunner(mlRest));
 
     [Fact]
     public void OnOpened_LoadsPracoviste_AndSelectsFirst()

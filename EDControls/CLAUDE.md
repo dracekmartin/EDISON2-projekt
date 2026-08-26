@@ -73,6 +73,9 @@ ať se okna nové aplikace nemíchají se shellem.
 - `IMLRest` / `MLRestAdapter` - abstrakce nad MLRest. `With(...)` vrací klon pro
   jednorázové requesty; **ručně kopíruje pole identity** - nové pole v MLRest doplň
   i tam (hlídá reflection test `MLRestAdapterWithTests`).
+- `IRestCallRunner` / `RestCallRunner` - blokující MLRest volání mimo UI thread, vždy na
+  **klonu** (`RestStatus` je per-instance, souběžná volání na téže instanci si stavy prohodí);
+  instanci snapshotuje na volajícím threadu, takže celá dávka jede proti téže session.
 - `MLRestJson` - JSON-envelope volání přes sdílený klíč `"payload"` (kontrakt na obou
   stranách); `CallAsync` = `Task.Run` nad blokujícím MLRest.
 - `EdisonLaunchArgs` - parser launch kontraktu shellu; **zrcadlí
