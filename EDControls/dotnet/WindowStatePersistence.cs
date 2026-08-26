@@ -20,6 +20,10 @@ namespace EDControls;
 /// </remarks>
 public static class WindowStatePersistence
 {
+    // Kolik z titulku musí zůstat na ploše, aby šlo okno uchopit myší (DIP).
+    private const double MinVisibleCaptionWidth = 120;
+    private const double CaptionStripHeight = 32;
+
     public static void Attach(Window window, string formId)
     {
         // Před Show(): PresentationSource je null, hookne se SourceInitialized event,
@@ -110,13 +114,38 @@ public static class WindowStatePersistence
             if (w > 0) window.Width = w;
             if (h > 0) window.Height = h;
         }
-        if (prefs.TryGetValue("location", out var loc) && TryParsePair(loc, out var x, out var y))
+        if (prefs.TryGetValue("location", out var loc) && TryParsePair(loc, out var x, out var y)
+            && IsLocationReachable(x, y, VirtualScreen()))
         {
             window.Left = x;
             window.Top = y;
         }
         if (prefs.TryGetValue("state", out var state))
             window.WindowState = state == "1" ? WindowState.Maximized : WindowState.Normal;
+    }
+
+    private static Rect VirtualScreen() => new(
+        SystemParameters.VirtualScreenLeft,
+        SystemParameters.VirtualScreenTop,
+        SystemParameters.VirtualScreenWidth,
+        SystemParameters.VirtualScreenHeight);
+
+    /// <summary>
+    /// Leží uložený levý horní roh na dnešní ploše? Bez téhle kontroly vyjede okno uložené
+    /// na později odpojeném monitoru mimo obrazovku a uživatel se k němu nedostane.
+    /// </summary>
+    /// <remarks>
+    /// Testuje se pruh titulku od levého horního rohu, ne celé okno - velikost tu ještě nemusí
+    /// být známá (<c>Width</c>/<c>Height</c> je NaN, dokud ji někdo nenastaví). Plocha je jen
+    /// obálka všech monitorů, takže mrtvý kout mezi monitory různé výšky projde; na odpojený
+    /// monitor to nicméně stačí.
+    /// </remarks>
+    internal static bool IsLocationReachable(double left, double top, Rect virtualScreen)
+    {
+        // NaN projde TryParsePair jako platné číslo (NumberStyles.Float zná symbol NaN).
+        if (!double.IsFinite(left) || !double.IsFinite(top)) return false;
+
+        return virtualScreen.Contains(new Rect(left, top, MinVisibleCaptionWidth, CaptionStripHeight));
     }
 
     internal static bool TryParsePair(string s, out double a, out double b)
