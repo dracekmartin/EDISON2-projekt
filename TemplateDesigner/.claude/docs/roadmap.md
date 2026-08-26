@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** **sada testovacích linek** pro linkové JŘ - parita dat i stránkování jsou
-> hotové (`L1`-`L5`), takže je na čem procházet business logiku.
+> **Nejblíž na řadě:** **`L9`** - aby linková tabulka nevypadala jako jedna souvislá mřížka.
+> Průchod testovacími linkami je za námi a datový rozdíl proti starému tisku nenašel žádný.
 
 ---
 
@@ -65,11 +65,15 @@ uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procháze
 každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Pořadí vln je proto
 **testovací linky → `L9` → `L6`**.
 
-📋 **Na řadě je sada testovacích linek.** Seznam s popisem, co je na které vidět, je změřený
-a zapsaný v [`§15b`](linkovy-knizni-jr-implementace-analyza.md) (8 linek). Šablona k procházení je
-připravená (`templates/prochazeni-linkovy-jr.json`, import ze souboru). **Zbývá samotné projití**:
-ke každé lince starý tisk vedle našeho náhledu a rozdíly do tří škatulek (odchylka / dluh / rozdíl). ⚠️ Tři z těch linek jsou v jiné firmě, než do které
-se běžně přihlašuješ.
+✅ **Průchod testovacími linkami je hotový** (26. 8., detail v archivu). **Datový rozdíl proti
+starému tisku nenašel žádný** - jediný nález je chybějící **obousměrný tisk** (patří do `L6`).
+Zbývají z něj **dva drobné dluhy**:
+
+- **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618` neprojité** - mělo se srovnat sloupec po
+  sloupci proti starému tisku, ale ten tiskne oba směry v jedné tabulce, takže není co k čemu
+  přiložit. **Vyjde až s obousměrným tiskem** (`L6`), nebo na jiné lince s ručním pořadím.
+- **Písmena ze zóny (`VS_CSAD 5 / 0771901`) neověřená** - v testovacích datech pro Vsetín není,
+  na čem to zkusit. Vzít, až ta data budou.
 
 | # | Vlna | Vel. |
 |---|---|---|
