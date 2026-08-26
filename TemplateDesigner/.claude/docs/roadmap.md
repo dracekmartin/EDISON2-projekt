@@ -82,6 +82,38 @@ Zbývají z něj **dva drobné dluhy**:
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
 | **L9** | **Aby tabulka nevypadala jako jedna souvislá mřížka** (podklad Zlín, analýza §15 - kolega to zkoušel ve starém modulu a nešlo to). Tři drobnosti, které patří k sobě: **ohraničení per sloupec** (dnes se svislé čáry kreslí buď všude, nebo nikde, takže km podsloupce nejdou slít do jednoho bloku), **popisek nad info sloupci** (pás nad nimi už existuje, jen má natvrdo prázdný text - vzor tam má „↓ Směr jízdy ↓") a **mezera mezi bloky** info × pracovní dny × víkendy. Volitelně různá barva vodorovných a svislých čar (dnes jedna pro obojí). ⚠️ Šest dalších bodů ze Zlína **návrhář už umí** (pořadí sloupců, vypnutí MHD, barva pásu nadpisů, popisky, rostoucí záhlaví u víc dopravců) - patří do ověření na šabloně, ne do práce. | S–M |
 
+### `L9` - co je změřeno a co čeká na rozhodnutí
+
+📐 **Vzor 940 IDZK je přečtený** (PDF od Jana, 26. 8.), takže tvar tří mezer už není dohad:
+
+- **Uvnitř popisného bloku žádné svislé čáry** - km (má **dva podsloupce**), zastávka a zóny běží slitě.
+- **Na pravém okraji popisného bloku jedna** čára, **mezi sloupci spojů tečkované**, mezi pracovními dny
+  a víkendem silnější / s mezerou.
+- **Popisné sloupce jsou JEDNA skupina** s jedním nadpisem „↓ Směr jízdy ↓“. Celkem tři skupiny:
+  popisná × Pracovní dny × Víkendy a svátky - přesně ty, mezi kterými má být mezera.
+
+✅ **Tím se potvrdilo, že ty tři mezery jsou jeden pojem - `skupina sloupců`**: nadpis nad sebou,
+potlačené vnitřní svislé čáry s vnějším obrysem, mezera za sebou. Prvek už jednu takovou skupinu
+**má** (pás skupin dnů nad sloupci spojů), jen není k dispozici pro popisné sloupce.
+
+⚠️ **Popis vzoru v [`§15.1`](linkovy-knizni-jr-implementace-analyza.md) nesouhlasí s PDF** ve dvou věcech:
+tvrdí „jemné vodorovné linky, střídavé podbarvení“, ale vzor **nemá ani jedno**. Zkušební šablona
+`templates/vzor-940-idzk.json` je srovnaná podle PDF.
+
+**Čtyři rozhodnutí, která blokují návrh** (bez nich se to dá postavit jen odhadem):
+
+| # | Rozhodnutí | Varianty | Poznámka |
+|---|---|---|---|
+| `L9-R1` | **Skupiny sloupců, nebo tři samostatné volby?** | (a) jeden pojem `skupina sloupců` · (b) tři nezávislá nastavení | Vzor potřebuje všechny tři naráz. Samostatné volby by si šlapaly - „ohraničení per sloupec“ i „mezera mezi bloky“ musí vědět, kde skupina končí, a definovalo by se to dvakrát |
+| `L9-R2` | **Kdo skupiny určuje?** | (a) spoje daty, popisné uživatelem · (b) uživatel přeskládá i skupiny dnů | Dnes jsou skupiny dnů čistě z dat. Dva zdroje téhož pojmu vedle sebe |
+| `L9-R3` | **Oddělený styl vodorovných a svislých čar - kde?** | (a) u všech tabulkových prvků · (b) jen u linkového | `GridStyle` je **sdílený** (tabulka z dat, pevná tabulka, vývěskové prvky) a má dnes jednu barvu, tloušťku i styl pro obojí. Aditivní změna, ale jen tady = rozejde se to |
+| `L9-R4` | **Co dělá prázdný popisek pásu?** | (a) pás se schová · (b) kreslí se prázdný pruh (dnes) | Vzor bude chtít obojí - nad popisnými sloupci nadpis, jinde ne. Týž problém má legenda poznámek |
+
+**Nad rámec tří mezer se ze vzoru vynořily ještě tři věci** (evidence, ne závazek): km jako **dva
+podsloupce**; zóny v **jednom** sloupci oddělené čárkou (takže `#8576` „zóny do více sloupců“ tenhle
+vzor **nepotřebuje**); a značka „na znamení“ jako **vlastní úzký sloupec** před názvem zastávky
+(my ji dáváme k názvu).
+
 ### Odložené body z pilotu
 
 | # | Co | Proč odloženo / dopad | Odhad |

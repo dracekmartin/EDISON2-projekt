@@ -225,7 +225,7 @@
           "showNzRow": true,
           "showPripojeRows": true,
           "showGroupHeaders": true,
-          "highlightOddTc": true,
+          "highlightOddTc": false,
           "oddTcBackColor": "#FFF4F4F4",
           "zastavkyDataSource": "ZASTAVKY",
           "skupinyDnuDataSource": "SKUPINY_DNU",
@@ -245,7 +245,7 @@
           "rotation": 0,
           "padEmptyColumns": false,
           "grid": {
-            "showRowLines": true,
+            "showRowLines": false,
             "showColumnLines": false,
             "color": "#FFE0E0E0",
             "width": 0.12,

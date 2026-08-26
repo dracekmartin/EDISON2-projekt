@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-26 (2) - 🐞 značky v legendě linkového JŘ se kreslily písmeny
+
+V legendě vyšlo „vyčká“ jako `m`, pracovní dny jako `X` a svátky jako `+` - místo dutého
+trojúhelníku, zkřížených kladiv a kříže. V tabulce se přitom ty samé značky kreslily správně, takže
+táž značka vypadala jinak v tabulce a jinak ve své vlastní legendě (našel Jan při průchodu).
+
+Příčina byl rozpojený drát: linkové agendy posílají typ poznámky jako `"znak"`, vývěskové jako
+`"specialni"`, a klient znal jen to druhé. Neznámé slovo padne na „obyčejný text“, takže se vypsalo
+surové písmeno - a **celý aparát piktogramů linkového JŘ se v legendě nikdy nespustil**.
+
+Tolerance k neznámému typu zůstává záměrem (starší agenda nesmí prvek shodit), a proto to teď
+hlídá `PoznamkaTypDriftTests`: vyparsuje typy posílané v `.cls` a ověří, že klient zná každý
+z nich. **Dosud to nehlídalo nic** - ostatní driftové testy kontrolují jména polí, ne slovník
+jejich hodnot.
+
+Ověřeno: .NET 1186/1186 + 690 + 595, ověřeno mutací (bez opravy spadne 1 test ze 4).
+
+
 ## 2026-08-26 (1) - 🐞 ve výběru linky nešlo přepnout skupinu linek
 
 U linkového JŘ nabídl výběr instance vždy jen první skupinu linek a přepnout ji nešlo, takže na
