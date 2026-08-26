@@ -100,14 +100,15 @@ potlačené vnitřní svislé čáry s vnějším obrysem, mezera za sebou. Prve
 tvrdí „jemné vodorovné linky, střídavé podbarvení“, ale vzor **nemá ani jedno**. Zkušební šablona
 `templates/vzor-940-idzk.json` je srovnaná podle PDF.
 
-**Čtyři rozhodnutí, která blokují návrh** (bez nich se to dá postavit jen odhadem):
+**Rozhodnuto Janem 26. 8. - `R1`-`R3` ano, `R4` zůstává otevřená.** `L9` je tím vzatelná:
+jádro stojí na `R1`+`R2`, `R3` se doplánuje až u samé práce a `R4` nechává dnešní chování.
 
 | # | Rozhodnutí | Varianty | Poznámka |
 |---|---|---|---|
-| `L9-R1` | **Skupiny sloupců, nebo tři samostatné volby?** | (a) jeden pojem `skupina sloupců` · (b) tři nezávislá nastavení | Vzor potřebuje všechny tři naráz. Samostatné volby by si šlapaly - „ohraničení per sloupec“ i „mezera mezi bloky“ musí vědět, kde skupina končí, a definovalo by se to dvakrát |
-| `L9-R2` | **Kdo skupiny určuje?** | (a) spoje daty, popisné uživatelem · (b) uživatel přeskládá i skupiny dnů | Dnes jsou skupiny dnů čistě z dat. Dva zdroje téhož pojmu vedle sebe |
-| `L9-R3` | **Oddělený styl vodorovných a svislých čar - kde?** | (a) u všech tabulkových prvků · (b) jen u linkového | `GridStyle` je **sdílený** (tabulka z dat, pevná tabulka, vývěskové prvky) a má dnes jednu barvu, tloušťku i styl pro obojí. Aditivní změna, ale jen tady = rozejde se to |
-| `L9-R4` | **Co dělá prázdný popisek pásu?** | (a) pás se schová · (b) kreslí se prázdný pruh (dnes) | Vzor bude chtít obojí - nad popisnými sloupci nadpis, jinde ne. Týž problém má legenda poznámek |
+| `L9-R1` ✅ | **Skupiny sloupců** (rozhodnuto 26. 8.) | zvolena (a) jeden pojem `skupina sloupců` | Vzor potřebuje všechny tři naráz. Samostatné volby by si šlapaly - „ohraničení per sloupec“ i „mezera mezi bloky“ musí vědět, kde skupina končí, a definovalo by se to dvakrát |
+| `L9-R2` ✅ | **Spoje daty, popisné uživatelem** (rozhodnuto 26. 8.) | skupiny dnů zůstávají čistě z dat - jejich přeskládávání je featura, kterou nikdo nežádal | Dnes jsou skupiny dnů čistě z dat. Dva zdroje téhož pojmu vedle sebe |
+| `L9-R3` ✅ | **U všech tabulkových prvků** (rozhodnuto 26. 8.) | ⚠️ **Tvar se doplánuje společně, až na to přijde řada** (žádost Jan) - jen u linkového by se dvě tabulky v téže šabloně nastavovaly jinak | `GridStyle` je **sdílený** (tabulka z dat, pevná tabulka, vývěskové prvky) a má dnes jednu barvu, tloušťku i styl pro obojí. Aditivní změna, ale jen tady = rozejde se to |
+| `L9-R4` ⏸ | **Co dělá prázdný popisek pásu?** – **otevřené** | (a) pás se schová · (b) kreslí se prázdný pruh (dnes). Přeskočeno 26. 8. - do rozhodnutí platí **(b)**, tedy dnešní chování | Vzor bude chtít obojí - nad popisnými sloupci nadpis, jinde ne. Týž problém má legenda poznámek |
 
 **Nad rámec tří mezer se ze vzoru vynořily ještě tři věci** (evidence, ne závazek): km jako **dva
 podsloupce**; zóny v **jednom** sloupci oddělené čárkou (takže `#8576` „zóny do více sloupců“ tenhle
