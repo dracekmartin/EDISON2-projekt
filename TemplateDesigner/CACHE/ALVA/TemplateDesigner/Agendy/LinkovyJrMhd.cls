@@ -134,6 +134,35 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     q $$$OK
 }
 
+/// Skupiny linek pro filtr Instance Pickeru - ENUMS "SkupinyLinek" mimo zablokované.
+/// Bez téhle metody dialog přepínač skryje a uživatel zůstane na výchozí skupině, i když
+/// GetAvailableInstances filtr přijímá. ⚠️ Vědomá kopie ZastavkoveJrMhd (týž zdroj ENUMS);
+/// zastávkových agend se podle CLAUDE.md nedotýkáme, sjednocení readerů patří do `L8`.
+ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s arr = ##class(%DynamicArray).%New()
+        s id = ""
+        f {
+            s id = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id))
+            q:id=""
+            i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Blocked")) continue
+
+            s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Nazev"))
+            s obj = ##class(%DynamicObject).%New()
+            d obj.%Set("value", id)
+            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_id))
+            d arr.%Push(obj)
+        }
+        s ^||ML("OUT","1") = arr.%ToJSON()
+    }
+    catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
 /// Vrátí seznam linek pro Instance Picker - linky aktivní skupiny linek (vzor ZastavkoveJrMhd).
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {

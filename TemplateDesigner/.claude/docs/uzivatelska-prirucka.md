@@ -788,6 +788,10 @@ Dialog výběru instancí - vyhledávací pole (Enter spustí filtr), seznam lin
 výběr více najednou, tlačítka „Vybrat vše" / „Odznačit vše". Otevře se klikem na modrý štítek
 „Instance: X - Y (N/M)" ve status baru.
 
+Nad seznamem je **skupina linek** - seznam ukazuje linky zvolené skupiny a přepnutím se
+načtou linky jiné. Linky téže firmy bývají rozdělené do víc skupin, takže bez přepnutí část z nich
+v seznamu není. U agend, které skupiny linek nemají, se volba nezobrazuje.
+
 Po výběru více linek se mezi nimi v hlavním okně přepínáte šipkami ◀ / ▶ vedle štítku - každá
 změna přenačte data pro danou instanci a živě aktualizuje náhled. Vybrané linky slouží i pro
 dávkový export/tisk (kap. 5).

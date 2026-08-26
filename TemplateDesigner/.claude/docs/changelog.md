@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-26 (1) - 🐞 ve výběru linky nešlo přepnout skupinu linek
+
+U linkového JŘ nabídl výběr instance vždy jen první skupinu linek a přepnout ji nešlo, takže na
+linku z jiné skupiny se uživatel nedostal (nahlásil Jan). Ve firmě CB_CSADAD to znamenalo, že dvě
+z pěti testovacích linek byly z jednoho přihlášení nedosažitelné - leží ve skupinách 591 a 801.
+
+Přepínač v dialogu přitom **existoval celou dobu** a schovává se, když agenda žádné skupiny
+nevrátí. Chyběl jediný kus: linkové agendy neměly metodu, která seznam skupin dodá, i když filtr
+podle skupiny už přijímaly. Doplněna u AD i u městské varianty.
+
+Městská je zatím skrytá, ale dostala to taky - je to stejná chybějící metoda a jinak by se
+zveřejnila s tímtéž problémem.
+
+⚠️ **Vědomá kopie ze zastávkových agend** (obě AD čtou týž `^JRL`, obě MHD týž číselník). Zastávkových
+se podle CLAUDE.md nedotýkáme, takže sjednocení readerů zůstává na vlnu dedup Caché enginů (`L8`).
+
+Ověřeno: Caché 128/128, .NET 1182/1182, obě změněné třídy ověřené voláním serveru.
+⚠️ **Kolik skupin se v dialogu ukáže, stroj neověří** - volání přes vývojový profil vidí jiná data
+než přihlášená session (i zastávková agenda v něm vrátí jednu skupinu, i když sonda najde v téže
+firmě tři). Zbývá proklikat.
+
+
 ## 2026-08-25 (24) - 🧹 výška sekce už nerezervuje místo na posun, ke kterému nedojde
 
 Výpočet výšky sekce rostoucímu prvku přičítal přírůstek k pozici všech prvků pod ním, jenže
