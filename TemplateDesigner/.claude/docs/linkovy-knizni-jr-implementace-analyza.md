@@ -1132,7 +1132,7 @@ naslepo.
 | Firma | Skupina | Linka | Co je na ní vidět |
 |---|---|---|---|
 | CB_CSADAD | 1 | 0370618 | **ruční pořadí spojů** u linky (a že se použije, ne dopočítá) |
-| CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit) |
+| CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit). ⚠️ **Slabý doklad** (změřeno 26. 8.): v celé firmě má barvu **2 spoje z 483 246**, oba na téhle lince a oba světle růžové `255;128;255` - jeden z nich je **spoj 19**. Změna volby tedy přebarví dva sloupce z tisíců, takže na plné tabulce vypadá, že se neděje nic. Sledovat přímo spoj 19, ne celkový dojem. |
 | CB_CSADAD | 801 | 0345062 | **bez zón i bez km** (čtyřstavový přepínač `linIDS` = 3) |
 | VS_CSAD | 5 | 0771901 | **písmena ze zóny se odstraňují** |
 | CB_GWBUS | 106 | 0320144 | **schovaný sloupec tarifních čísel** |
@@ -1146,6 +1146,11 @@ nebo si k témuž nastavení najít linku ve vlastní firmě.
 
 ⚠️ **Sada nepokrývá nastavení, která nikdo nemá zapnutá** (analýza §13.4) - u nich není proti čemu
 porovnávat a žádná linka je neukáže.
+
+⚠️ **„Linka to nastavení má“ ještě neznamená „je to na ní vidět“** (naučeno 26. 8. na barvách spojů). Sonda
+hledá **výskyt** hodnoty, ne její dopad na výstup - u nastavení, které se týká jednotlivých spojů,
+může být zasažený jeden sloupec z tisíce. U každé linky v sadě proto patří **i to, kde se to na ní
+projeví**; bez toho se hlásí „nemění se nic“ tam, kde se mění dva spoje.
 
 **Šablona k procházení:** `templates/prochazeni-linkovy-jr.json` (Soubor → Importovat).
 Vychází ze systémové šablony pro AD, ale je **na šířku** a má **všechny popisné sloupce zapnuté** -
