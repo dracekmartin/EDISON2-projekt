@@ -44,6 +44,8 @@ Vloženou mezerou se ten souřadnicový model rozejde, takže tomu patří vlast
 
 Ověřeno: .NET 1192/1192 + 690 + 595, ověřeno mutací obou vlastností zvlášť, formulář ověřen
 voláním serveru. Chování s prázdným nadpisem zůstává jako dřív (`L9-R4` je nerozhodnutá).
+**Proklikáno 27. 8. (Jan)** na linkách s jednou i více skupinami dnů, v panelu i ve formuláři prvku,
+včetně linek, kde většina popisných sloupců chybí; zapnutí i vypnutí slití.
 
 
 ## 2026-08-26 (3) - 🐞 zlom odstavce v poznámce se tiskl jako znak `#`
@@ -103,7 +105,7 @@ se podle CLAUDE.md nedotýkáme, takže sjednocení readerů zůstává na vlnu 
 Ověřeno: Caché 128/128, .NET 1182/1182, obě změněné třídy ověřené voláním serveru.
 ⚠️ **Kolik skupin se v dialogu ukáže, stroj neověří** - volání přes vývojový profil vidí jiná data
 než přihlášená session (i zastávková agenda v něm vrátí jednu skupinu, i když sonda najde v téže
-firmě tři). Zbývá proklikat.
+firmě tři). **Proklikáno 27. 8. (Jan): přepínání skupin funguje.**
 
 
 ## 2026-08-25 (24) - 🧹 výška sekce už nerezervuje místo na posun, ke kterému nedojde
