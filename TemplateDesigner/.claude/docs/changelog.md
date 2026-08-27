@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-27 (5) - 🐞 vodorovné čáry pokračovaly za konec tabulky do volného místa
+
+Nález Jan na vzoru 940: „vpravo, když skončí ta tabulka, tak tam pak takhle pokračují do pravého
+okraje stránky ty vodorovné čáry, ale žádné vertikální."
+
+Nebyl to záměr - jen se za poslední sloupec dosud nikdo nepodíval. Vodorovné čáry a podbarvení řádku
+se kreslily přes **šířku prvku**, kdežto buňky jen po konec tabulky. Kreslí se teď po **šířku
+tabulky**, se stropem na šířce prvku (kdyby se tabulka nevešla, nesmí malovat vedle).
+
+**Volné místo vpravo samo záměr je** a zůstává: blok nemusí vyjít na celou šířku a dorovnání
+prázdnými sloupci je samostatná volba (#8372). Jen má být opravdu volné.
+
+⚠️ Je to **stejná třída jako mezera** (mřížka kreslená mimo tabulku) a přišlo se na to jen proto, že
+mezery přinutily oko podívat se na okraje. Kontrola zůstává v sadě k mezerám, ať se to nevrátí.
+
+Ověřeno: .NET 1205/1205 + 709 + 612, ověřeno mutací (s šířkou prvku místo šířky tabulky nový test
+padne).
+
+
 ## 2026-08-27 (4) - 🐞 hranice skupin sloupců začínala až pod pásem s nadpisy
 
 Nález Jan na vzoru 940: „v té první subtabulce Směr jízdy to má pravý okraj vykreslený, ale levý ne."

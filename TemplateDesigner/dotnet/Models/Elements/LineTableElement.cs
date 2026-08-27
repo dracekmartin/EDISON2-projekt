@@ -808,7 +808,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 if (ctx.OpakovanaHlavickaMm > 0.01f && ctx.ClipTopMm > y && ctx.ClipTopMm < konecBloku)
                     hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku(spojeBloku).Hlava.Count)];
 
-                y = RowPlanRenderer.DrawRows(ctx, X, y, Width, plan, scale) + MezeraMeziBlokyMm;
+                y = RowPlanRenderer.DrawRows(ctx, X, y, SirkaTabulkyMm(plan), plan, scale)
+                    + MezeraMeziBlokyMm;
             }
         }
         finally
@@ -821,10 +822,25 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             float vrch = ctx.ClipTopMm - ctx.OpakovanaHlavickaMm;
             ctx.Canvas.Save();
             ctx.Canvas.ClipRect(ctx.ToCanvasRect(X, vrch, Width, ctx.OpakovanaHlavickaMm));
-            try { RowPlanRenderer.DrawRows(ctx, X, vrch, Width, hlavaKZopakovani, scale); }
+            try { RowPlanRenderer.DrawRows(ctx, X, vrch, SirkaTabulkyMm(hlavaKZopakovani), hlavaKZopakovani, scale); }
             finally { ctx.Canvas.Restore(); }
         }
     }
+
+    /// <summary>
+    /// Šířka, po kterou tabulka opravdu sahá - <b>ne šířka prvku</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Vodorovné čáry a podbarvení řádku se kreslí přes šířku, která se sem předá, kdežto buňky
+    /// jen po poslední sloupec. Když se předala šířka prvku, čáry pokračovaly do volného místa
+    /// vpravo za tabulkou (nález Jan 27. 8.: „pokračují do pravého okraje stránky ty vodorovné čáry,
+    /// ale žádné vertikální"). Volné místo vpravo <b>záměr je</b> - blok nemusí vyjít na celou šířku
+    /// a dorovnání prázdnými sloupci je samostatná volba (#8372) - ale má být opravdu volné.
+    /// <para>Strop je šířka prvku: kdyby se tabulka nevešla, nesmí přetečením malovat vedle.</para>
+    /// </remarks>
+    private float SirkaTabulkyMm(List<RowSpec> plan) =>
+        plan.Count == 0 ? 0f
+            : MathF.Min(Width, plan.Max(r => r.Cells.Sum(c => c.WidthMm)));
 
     /// <summary>
     /// Popíše tabulku jako **plán řádků** (R1 řádkové jádro) - jen tvaruje data, nic nekreslí.

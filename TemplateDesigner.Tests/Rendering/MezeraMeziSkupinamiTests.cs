@@ -366,6 +366,33 @@ public class MezeraMeziSkupinamiTests
             + $"{vrch:0.#} mm) - pás s nadpisy zůstal bez svislých čar");
     }
 
+    /// <summary>
+    /// Za posledním sloupcem tabulky už nesmí být <b>nic</b> - ani vodorovná čára, ani podbarvení.
+    /// </summary>
+    /// <remarks>
+    /// Nález Jan 27. 8.: „vpravo, když skončí ta tabulka, tak tam pak takhle pokračují do pravého
+    /// okraje stránky ty vodorovné čáry, ale žádné vertikální". Není to záměr - vodorovné čáry
+    /// a pozadí řádku se kreslily přes <b>celou šířku prvku</b>, kdežto buňky jen po konec tabulky.
+    /// Volné místo vpravo <b>záměr je</b> (blok nemusí vyjít na celou šířku, dorovnání prázdnými
+    /// sloupci je samostatná volba, #8372) - ale má být opravdu volné, ne prošpikované čarami.
+    /// </remarks>
+    [Fact]
+    public void ZaPoslednimSloupcem_NeniAniCara()
+    {
+        var prvek = Prvek();
+        prvek.Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FF000000", Width = 0.3f };
+        prvek.MezeraMeziSkupinamiMm = MezeraMm;
+
+        using var bmp = Vykresli(prvek, DataSPripojnymRadkem());
+
+        // tabulka končí na 30 + 2*16 + 3*11 = 95 mm, prvek je 100 mm široký
+        float konecTabulky = SirkaZastavky + 2 * MezeraMm + 3 * SirkaSpoje;
+        for (int x = Sloupec(konecTabulky + 1f); x < bmp.Width; x++)
+            Assert.True(InkoustVeSloupci(bmp, x) == 0,
+                $"za koncem tabulky ({konecTabulky:0.#} mm) je inkoust na {x / MmToPx:0.#} mm - "
+                + "vodorovná čára nebo pozadí řádku pokračuje do volného místa vpravo");
+    }
+
     // ── měření ────────────────────────────────────────────────────────────────
 
     private static int Sloupec(float mm) => (int)(mm * MmToPx);
