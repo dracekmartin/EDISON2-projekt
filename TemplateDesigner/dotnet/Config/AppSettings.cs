@@ -25,8 +25,8 @@ public class AppSettings
     /// <summary>Kanál, kterým M-line doručuje systémové šablony (úložiště na helpdesku).</summary>
     public TemplateChannelSettings TemplateChannel { get; set; } = new();
 
-    /// <summary>Smí uživatel na vlastní definici sloupců vývěsky? Výchozí ne - featura jde do verze
-    /// zhasnutá a rozsvítí se lokálním configem u toho, kdo ji testuje.</summary>
+    /// <summary>Vývojářské nástroje. Výchozí vypnuté - zapíná se configem u toho, kdo testuje.</summary>
+    public DevSettings Dev { get; set; } = new();
 
     /// <summary>Zdroj nakonec použitého configu (pro diagnostiku startu).</summary>
     [JsonIgnore]
@@ -125,6 +125,8 @@ public class AppSettings
             target.TemplateChannel.BaseUrl = local.TemplateChannel.BaseUrl;
         if (local.TemplateChannel.Enabled != target.TemplateChannel.Enabled)
             target.TemplateChannel.Enabled = local.TemplateChannel.Enabled;
+
+        if (local.Dev.FirmSwitch) target.Dev.FirmSwitch = true;
     }
 }
 
@@ -134,6 +136,21 @@ public enum ConfigSource
     None,           // Nic se nepodařilo načíst (chyba při buildu)
     Embedded,       // Z embedded resource v .exe
     ExternalFile    // Z externího souboru vedle .exe
+}
+
+/// <summary>
+/// Vývojářské nástroje, které se zákazníkovi ukázat nesmí.
+/// </summary>
+/// <remarks>
+/// ⚠️ Zapíná se <b>vlastním klíčem</b>, ne přítomností klíče k AI. Do 27. 8. viselo přepínání firmy
+/// na neprázdném <c>aiAssistant.anthropicApiKey</c>, takže se z publikovaného .exe nešlo přepnout
+/// nikdy: klíč žije v lokálním (gitignored) configu vedle buildu ve zdrojích, ne v C:\Edison\.
+/// Testovací linky přitom leží ve víc firmách, takže to blokovalo procházení.
+/// </remarks>
+public class DevSettings
+{
+    /// <summary>Zobrazit v Nástrojích přepínání datové firmy (Idfa).</summary>
+    public bool FirmSwitch { get; set; }
 }
 
 /// <summary>Nastavení připojení k Caché / IRIS serveru přes MLRest.</summary>

@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-08-27 (1) - 🐞 přepínání firmy pro vývojáře se z publikované verze nedalo zapnout
+
+Nástroj **Nástroje → Přepnout firmu (DEV)** je v aplikaci od začátku, ale z `.exe` v `C:\Edison\`
+se nikdy neukázal (našel Jan při zkoušení). Visel na neprázdném klíči k AI asistentovi - a ten žije
+jen v **lokálním, gitignorovaném** configu vedle buildu ve zdrojích, ne vedle publikovaného exe.
+Dvě věci, které spolu nemají nic společného.
+
+Teď to zapíná **vlastní klíč** `dev.firmSwitch` v configu (výchozí vypnuto, aby to zákazník nikdy
+neviděl). Zapnuté je v lokálním configu i v tom u publikované verze.
+
+⚠️ **Blokovalo to procházení testovacích linek** - z osmi linek sady leží tři v jiné firmě
+(`CB_GWBUS`, `VS_CSAD`), takže bez přepínače na ně nebylo jak se dostat.
+
+⚠️ **`VS_CSAD` v seznamu firem není** (`DevFirms`), takže „písmena ze zóny" zůstávají nedosažitelná
+i tak - týká se to ale linky, na kterou v testovacích datech není vzorek, tedy už evidovaného dluhu.
+
+Ověřeno: .NET 1194/1194 (2 nové na slučování nového oddílu configu - zapomenutý oddíl se **tiše
+zahodí**, přesně tak zmizel 19. 8. klíč k distribučnímu kanálu). ⚠️ **Samotnou viditelnost menu
+test nekryje** - je v code-behind okna; ověřeno spuštěním publikované verze.
+
+
 ## 2026-08-26 (4) - ✨ popisné sloupce linkového JŘ jsou jedna skupina (`L9`)
 
 Kolega si na starém modulu stěžoval, že „ohraničení jednotlivých km sloupců nejde odstranit" a že
