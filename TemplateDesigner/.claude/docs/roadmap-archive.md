@@ -1,5 +1,27 @@
 # 🗄️ Archiv - hotové kroky
 
+## `C7` - rozdvojení příjezd/odjezd a padding sloupců: hotové (uzavřeno 27. 8. 2026)
+
+Viselo to jako odložený bod z pilotu, ale **obě jmenované půlky jsou dávno hotové** a jen to nikdo
+neodškrtl:
+
+- **Padding sloupců** (legacy `arr,13` „vkladat prazdne sloupce") = volba **„Dorovnat prázdnými
+  sloupci"**, hotová 25. 8. u tiketu #8372.
+- **Rozdvojení příjezd/odjezd** prvek modeluje - příjezdový řádek má vlastní typ (`prijezd`)
+  a popisné sloupce se v něm nechávají prázdné; má na to i testy.
+
+⚠️ Zbytek položky byl **„jemný layout"** bez jediného konkrétního hlášení. To není nedodělek, ale
+pocit z doby, kdy featura ještě nebyla. Vytáhnout, až někdo ukáže konkrétní rozdíl na tisku -
+do té doby to v roadmapě jen kalilo obrázek toho, co zbývá.
+
+Původní zadání bodu:
+
+| # | Co | Proč odloženo / dopad | Odhad |
+|---|---|---|---|
+| C7 | **Rozdvojení příjezd/odjezd - jemný layout** + fixed-width padding sloupce (legacy `arr,13`) | kosmetika; TD řeší podřádky, ne padding. Padding sloupce jsou ve `L5` | S |
+| C8 | **Vejdi výstup na zadaný počet stran** (podnět POVED #8785 bod 5) - starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim „nejmíň stránek") | podnět, ne závazek - nabídnout až po `L5` | M |
+| C9 | **Ručně zadaný „název směru" u linky** jako datové pole (#9088 bod 3, chtěné i pro vývěsky) | vyžaduje **nové pole u linky v jízdních řádech**, ne jen v návrháři - součinnost s kolegy z JŘ | S + cizí |
+
 ## `L7` - sdružený JŘ více linek: není naše práce (rozhodnuto 25. 8. 2026)
 
 Viselo to ve vlnách jako přeškrtnutá položka, což není otevřená práce. Rozhodnutí i s důsledkem:
