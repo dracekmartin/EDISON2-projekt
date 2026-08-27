@@ -867,11 +867,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 string nadpis = groups.FirstOrDefault(g => g.Id == skupina)?.Nadpis ?? "";
                 // Mezera je i v pásu, jinak by nad ní pokračovalo podbarvení záhlaví a skupiny
                 // by se v pruhu slily zpátky do jednoho.
-                if (mrizka.MezeraPred(start)) band.Add(BunkaMezery(mrizka.MezeraMm, headerResolved));
-                band.Add(new((i - start) * tripW, nadpis, headerCentered));
+                bool mezera = mrizka.MezeraPred(start);
+                if (mezera) band.Add(BunkaMezery(mrizka.MezeraMm, headerResolved));
+                // Za mezerou už skupina svoji čáru vlevo nekreslí - nese ji buňka mezery, ať je
+                // na hraně jedna čára a ne dvě (totéž dělá `PridejSpoje` v ostatních řádcích).
+                band.Add(new((i - start) * tripW, nadpis, headerCentered, SuppressLeadingLine: mezera));
             }
-            // sloucene bunky -> bez svislych car (rozsekaly by nadpis pres nekolik sloupcu spoju)
-            plan.Add(new(RowKind.GroupHeader, headerH, band) { LineBelowPaint = gridPaint });
+            // ⚠️ Svislé čáry v pásu **jsou** - ale jen mezi jeho buňkami, a těch je jedna na
+            // skupinu, takže padnou přesně na hranice skupin a žádný nadpis neprotnou. Do 27. 8.
+            // se tu vypínaly celé „aby nerozsekaly nadpis přes několik sloupců spojů", a hranice
+            // skupiny pak začínala až o řádek níž - vypadalo to jako rámeček s chybějícím kusem
+            // boku (nález Jan na vzoru 940).
+            plan.Add(new(RowKind.GroupHeader, headerH, band)
+                { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
         }
 
         // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce

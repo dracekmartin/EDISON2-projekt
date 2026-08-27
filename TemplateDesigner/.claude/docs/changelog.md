@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-27 (4) - 🐞 hranice skupin sloupců začínala až pod pásem s nadpisy
+
+Nález Jan na vzoru 940: „v té první subtabulce Směr jízdy to má pravý okraj vykreslený, ale levý ne."
+
+Rozpadlo se to na dvě věci. **Chybějící levý okraj je v pořádku** - vnější hrana tabulky patří
+rámečku prvku a vzor 940 ho podle PDF nemá (tloušťka 0), takže tam okraj není nikde, nejen u té
+skupiny. Svislé čáry jsou mřížka a ta se kreslí jen **mezi** sloupci.
+
+**Vada byla jinde:** hranice skupiny opravdu začínala až **pod** pásem s nadpisy (změřeno: čára
+běžela y 51-168 ze 169 px, pás nad ní žádné svislé čáry neměl). Vypnuly se tam kdysi celé, aby
+„nerozsekaly nadpis přes několik sloupců spojů" - jenže v pásu je **jedna buňka na skupinu**, takže
+čára mezi nimi padne přesně na hranici skupiny a žádný nadpis neprotne. Skupina proto vypadala jako
+rámeček s chybějícím horním kusem boku.
+
+⚠️ **Projeví se i v šablonách bez mezer** (rozhodnutí Jan 27. 8.): mezi pásy „Pracovní dny" a
+„Soboty" je nově čára, která tam dosud nebyla. Je to změna vzhledu existujících šablon, proto na to
+jde vlastní test.
+
+Na hraně skupiny zůstává **jedna** čára i v pásu - nese ji buňka mezery a skupina za ní už svoji
+vlevo nekreslí, stejně jako v ostatních řádcích.
+
+Ověřeno: .NET 1204/1204 + 709 + 612, ověřeno mutací obou částí zvlášť (bez čar v pásu padnou
+2 testy, bez potlačení druhé čáry 1). ⚠️ Měření v testu hledá čáru v **okně ±2 px**, ne v jednom
+sloupci pixelů: svislou čáru kreslí `ColumnRenderer` **před** buňkou, takže pozadí buňky vpravo
+překryje její pravou polovinu a vzorkování přesně na hraně půlku čáry mine. První verze testu na to
+naletěla a hlásila „čára chybí", i když se kreslila.
+
+
 ## 2026-08-27 (3) - 🐞 mezerou mezi skupinami sloupců procházely vodorovné čáry
 
 Nález Jan na vzoru 940, hned jak mezery zapnul: „zůstane tam spojující úsečka mezi levou částí

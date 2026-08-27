@@ -311,9 +311,91 @@ public class MezeraMeziSkupinamiTests
         Assert.Equal(bezMezery, sMezerou, 0.01f);
     }
 
+    /// <summary>
+    /// Hranice skupin sloupců musí být vidět i v <b>pásu s nadpisy</b>, tedy od horního okraje
+    /// tabulky - ne až o řádek níž.
+    /// </summary>
+    /// <remarks>
+    /// Nález Jan 27. 8.: „v té první subtabulce Směr jízdy to má pravý okraj vykreslený, ale levý
+    /// ne". Levý okraj je vnější hrana a tu kreslí rámeček prvku (ve vzoru 940 vypnutý) - ale
+    /// změřením se ukázalo, že hranice skupiny opravdu začíná až <b>pod</b> pásem: čára běžela
+    /// y 51-168 ze 169 px, pás nad ní žádné svislé čáry neměl. Vypnuly se tam celé, aby
+    /// „nerozsekaly nadpis přes několik sloupců spojů" - jenže v pásu je <b>jedna buňka na
+    /// skupinu</b>, takže čára mezi nimi padne přesně na hranici skupiny a žádný nadpis neprotne.
+    /// <para>⚠️ Platí i <b>bez</b> mezer: mezi pásy „Pracovní dny" a „Soboty" se čára objeví taky
+    /// (rozhodnutí Jan 27. 8.) - je to změna vzhledu existujících šablon, proto vlastní test.</para>
+    /// </remarks>
+    [Fact]
+    public void HraniceSkupin_JdeOdVrchuTabulky_TedyIVPasuSNadpisy()
+    {
+        var sMezerou = Prvek();
+        sMezerou.Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FF000000", Width = 0.3f };
+        sMezerou.MezeraMeziSkupinamiMm = MezeraMm;
+
+        using var bmp = Vykresli(sMezerou, Data());
+
+        // hrana popisného bloku (= levá hrana první mezery) a hrana mezi skupinami dnů
+        foreach (float hranaMm in new[] { SirkaZastavky, SirkaZastavky + MezeraMm + 2 * SirkaSpoje })
+        {
+            float vrch = PrvniInkoustMm(bmp, Sloupec(hranaMm));
+            Assert.True(vrch >= 0 && vrch < 1f,
+                $"hranice skupiny na {hranaMm:0.#} mm nezačíná u horního okraje tabulky "
+                + $"(první inkoust {vrch:0.#} mm) - v pásu s nadpisy se nekreslí");
+
+            // Na hraně skupiny má být jedna čára, ne dvě kolem mezery - i v pásu.
+            float zaMezerou = PrvniInkoustMm(bmp, Sloupec(hranaMm + MezeraMm));
+            Assert.True(zaMezerou < 0 || zaMezerou >= 1f,
+                $"za mezerou na {hranaMm + MezeraMm:0.#} mm je v pásu druhá čára "
+                + $"(inkoust už na {zaMezerou:0.#} mm) - na hraně skupiny mají být dvě čáry vedle sebe");
+        }
+    }
+
+    /// <summary>Bez mezer platí totéž - hranice mezi skupinami dnů je vidět i v pásu.</summary>
+    [Fact]
+    public void HraniceSkupinDnu_JdeOdVrchu_IBezMezer()
+    {
+        var prvek = Prvek();
+        prvek.Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FF000000", Width = 0.3f };
+
+        using var bmp = Vykresli(prvek, Data());
+
+        float hranaMm = SirkaZastavky + 2 * SirkaSpoje;   // spoje jsou 1, 1, 2
+        float vrch = PrvniInkoustMm(bmp, Sloupec(hranaMm));
+        Assert.True(vrch >= 0 && vrch < 1f,
+            $"hranice skupin dnů na {hranaMm:0.#} mm nezačíná u horního okraje (první inkoust "
+            + $"{vrch:0.#} mm) - pás s nadpisy zůstal bez svislých čar");
+    }
+
     // ── měření ────────────────────────────────────────────────────────────────
 
     private static int Sloupec(float mm) => (int)(mm * MmToPx);
+
+    /// <summary>
+    /// Y prvního tmavého pixelu na hraně sloupce (mm od horní hrany), -1 když tam nic není.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Hledá v <b>okně ±2 px</b>, ne v jednom sloupci pixelů: svislou čáru kreslí
+    /// <c>ColumnRenderer</c> <b>před</b> buňkou, takže pozadí buňky vpravo od ní překryje její
+    /// pravou polovinu. Vzorkování přesně na hraně tak může minout půlku čáry a test by hlásil
+    /// „čára chybí", i když se kreslí.
+    /// </remarks>
+    private static float PrvniInkoustMm(SKBitmap bmp, int x)
+    {
+        float nejvyse = -1f;
+        for (int dx = -2; dx <= 2; dx++)
+        {
+            int sx = x + dx;
+            if (sx < 0 || sx >= bmp.Width) continue;
+            for (int y = 0; y < bmp.Height; y++)
+            {
+                var c = bmp.GetPixel(sx, y);
+                if (c.Red >= 100 || c.Green >= 100 || c.Blue >= 100) continue;
+                if (nejvyse < 0 || y / MmToPx < nejvyse) nejvyse = y / MmToPx;
+                break;
+            }
+        }
+        return nejvyse;
+    }
 
     /// <summary>Počet tmavých pixelů ve svislém pásu obrázku - inkoust textu a značek.</summary>
     private static int InkoustVeSloupci(SKBitmap bmp, int x)
