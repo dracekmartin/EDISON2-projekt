@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-08-27 (6) - 🐞 značka u minuty vylézala ze sloupce (parita s legacy: sloupec se rozšíří)
+
+Nález Jan na vzoru 940: „když má minuta u sebe nějakou značku, tak ta značka to posune doprava, ale
+šířka sloupce se počítá na základě šířky pouze minut, takže značka + minuta pak tu minutu posune ven
+mimo šířku sloupce." Přesně tak to bylo - minimální šířka se měřila ze `"00:00"`, značka se do ní
+nezapočítala, a značka s časem se navíc kreslí ručně, takže se ani nezmenšuje na buňku.
+
+**Řešení vzaté ze starého modulu, ne vymyšlené** (žádost Jan: nejdřív se podívat do legacy).
+Starý modul má pro sloupec spoje **čtyři šířky** a vybírá mezi nimi podle **největšího počtu značek
+v tom sloupci** - text tedy nezmenšuje, dělá místo:
+
+- `JRapiLinPrtWin.mac:1793-1798` - volba šířky (0 značek → 1, jedna → 2, dvě → 3, tři a víc → 4)
+- `JRapiLinPrtWin.mac:1769-1771` - počet se bere jako maximum přes řádky **toho** sloupce
+- `JRapiLinPrtWin.mac:2611` - slot, ze kterého se počítá, je `column-0.01` = „znacky spoje"
+
+⚠️ **Sloupce spojů proto přestaly být stejně široké** (rozhodnutí Jan 27. 8. po přečtení legacy):
+širší je jen ten, který značku nese. Šetří to místem, takže se na řádek vejde víc spojů - a starý
+tisk tak vypadá taky. Šířky samotné si legacy neměří, dostává je zvenčí (`MS,7,1..4`), takže se
+z něj přebírá **pravidlo**, ne čísla; my si značku měříme sami tím fontem, kterým ji kreslíme.
+
+Místo na značky se odečítá ze zbytku šířky **před** jeho rozdělením mezi automatické sloupce, jinak
+by tabulka přetekla. Rezerva se bere jako maximum přes okna po sobě jdoucích spojů - základ sloupce
+tak zůstává pro všechny bloky stejný (invariant z 25. 8.) a žádný blok nepřeteče.
+
+Ověřeno: .NET 1209/1209 + 709 + 612, **mutací všech čtyř nových cest** (bez místa na značku, bez
+odečtení rezervy, značka kreslená do jinak širokého rámu, pás počítající šířku skupiny ze staré
+jednotné šířky). ⚠️ Dvě z těch mutací neprošly na první pokus, protože testy měřily moc hrubě:
+podbarvení pásu se hledalo v celém svislém pásu, kde ho má i řádek pod ním, a vystředění značky
+ve sloupci se nekontrolovalo vůbec.
+
+
 ## 2026-08-27 (5) - 🐞 vodorovné čáry pokračovaly za konec tabulky do volného místa
 
 Nález Jan na vzoru 940: „vpravo, když skončí ta tabulka, tak tam pak takhle pokračují do pravého

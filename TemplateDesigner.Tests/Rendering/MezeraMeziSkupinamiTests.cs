@@ -41,7 +41,8 @@ public class MezeraMeziSkupinamiTests
         Columns =
         [
             new StopColumn { Key = ColumnKeys.StopName, Header = "Zastávka", Width = SirkaZastavky, Visible = true },
-            new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj", Width = SirkaSpoje, Visible = true },
+            new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj", Width = SirkaSpoje,
+                Visible = true, Alignment = TextHorizontalAlignment.Center },
         ],
     };
 
@@ -60,11 +61,14 @@ public class MezeraMeziSkupinamiTests
             RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"),
                 ("CASY", new JsonArray("8:00", "8:20", "8:40"))),
             RenderSnapshot.Row(("CISLO_SPOJE", "3"), ("SKUPINA", "1"),
-                ("CASY", new JsonArray("9:00", "9:20", "9:40")),
-                ("PRIPOJE", RenderSnapshot.Nested([("TYP", "vycka"), ("PORADI", "2"), ("CAS", "9:25")]))),
+                ("CASY", new JsonArray("9:00", "9:20", "9:40"))),
+            // ⚠️ Značka návaznosti je na **posledním** spoji záměrně: sloupec se značkou je o ni
+            // širší (parita s legacy), takže na spoji uprostřed by posunula všechny mezery za ním
+            // a testy pozic mezer by měřily jiná čísla, než která si spočítaly.
             RenderSnapshot.Row(("CISLO_SPOJE", "5"), ("SKUPINA", "2"),
                 ("CASY", new JsonArray("10:00", "10:20", "10:40")),
-                ("PLATNOST", new JsonArray("X"))),
+                ("PLATNOST", new JsonArray("X")),
+                ("PRIPOJE", RenderSnapshot.Nested([("TYP", "vycka"), ("PORADI", "2"), ("CAS", "10:25")]))),
         ]),
         ("SKUPINY_DNU",
         [
@@ -138,12 +142,12 @@ public class MezeraMeziSkupinamiTests
             RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"),
                 ("CASY", new JsonArray("8:00", "8:40"))),
             RenderSnapshot.Row(("CISLO_SPOJE", "3"), ("SKUPINA", "1"),
-                ("CASY", new JsonArray("9:00", "9:40")),
-                ("PRIPOJE", RenderSnapshot.Nested(
-                    [("TYP", "vycka"), ("PORADI", "1"), ("CAS", "9:05"), ("RADEK", "1")]))),
+                ("CASY", new JsonArray("9:00", "9:40"))),
             RenderSnapshot.Row(("CISLO_SPOJE", "5"), ("SKUPINA", "2"),
                 ("CASY", new JsonArray("10:00", "10:40")),
-                ("PLATNOST", new JsonArray("X"))),
+                ("PLATNOST", new JsonArray("X")),
+                ("PRIPOJE", RenderSnapshot.Nested(
+                    [("TYP", "vycka"), ("PORADI", "1"), ("CAS", "10:05"), ("RADEK", "1")]))),
         ]),
         ("SKUPINY_DNU",
         [
@@ -227,9 +231,9 @@ public class MezeraMeziSkupinamiTests
         using var bmpS = Vykresli(s, Data());
 
         // Bez mezery začínají spoje hned za popisným blokem, s mezerou o mezeru dál.
-        Assert.True(InkoustVeSloupci(bmpBez, Sloupec(SirkaZastavky + 1f)) > 0,
+        Assert.True(InkoustVeSloupci(bmpBez, Sloupec(SirkaZastavky + SirkaSpoje / 2)) > 0,
             "bez mezery nemá hned za popisným blokem nic - fixtura nekreslí časy spojů");
-        Assert.True(InkoustVeSloupci(bmpS, Sloupec(SirkaZastavky + MezeraMm + 1f)) > 0,
+        Assert.True(InkoustVeSloupci(bmpS, Sloupec(SirkaZastavky + MezeraMm + SirkaSpoje / 2)) > 0,
             "s mezerou nezačíná obsah spojů za mezerou");
     }
 
@@ -260,7 +264,7 @@ public class MezeraMeziSkupinamiTests
         // šablon u zákazníků změnil.
         foreach (var (od, _) in OcekavaneMezery())
             Assert.True(InkoustVeSloupci(bmp, Sloupec(od + 0.5f)) >= 0);
-        Assert.True(InkoustVeSloupci(bmp, Sloupec(SirkaZastavky + 1f)) > 0,
+        Assert.True(InkoustVeSloupci(bmp, Sloupec(SirkaZastavky + SirkaSpoje / 2)) > 0,
             "bez mezery se za popisným blokem nekreslí obsah spojů");
     }
 
@@ -383,14 +387,157 @@ public class MezeraMeziSkupinamiTests
         prvek.Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FF000000", Width = 0.3f };
         prvek.MezeraMeziSkupinamiMm = MezeraMm;
 
-        using var bmp = Vykresli(prvek, DataSPripojnymRadkem());
+        var data = DataSPripojnymRadkem();
+        using var bmp = Vykresli(prvek, data);
 
-        // tabulka končí na 30 + 2*16 + 3*11 = 95 mm, prvek je 100 mm široký
-        float konecTabulky = SirkaZastavky + 2 * MezeraMm + 3 * SirkaSpoje;
+        // Kam tabulka sahá, si řekne sám prvek - sloupec se značkou je širší, takže konstanta by
+        // tady lhala. Test tím zároveň hlídá, že se kreslí jen tam, kam si rozvrh řekl.
+        float konecTabulky = prvek.Rozvrzeni(data).Max(b => b.SirkaMm);
         for (int x = Sloupec(konecTabulky + 1f); x < bmp.Width; x++)
             Assert.True(InkoustVeSloupci(bmp, x) == 0,
                 $"za koncem tabulky ({konecTabulky:0.#} mm) je inkoust na {x / MmToPx:0.#} mm - "
                 + "vodorovná čára nebo pozadí řádku pokračuje do volného místa vpravo");
+    }
+
+    /// <summary>
+    /// Sloupec, ve kterém je někde <b>značka návaznosti</b> vedle času, je o ni <b>širší</b> - a jen on.
+    /// </summary>
+    /// <remarks>
+    /// Parita se starým modulem, doložená čtením legacy (rozhodnutí Jan 27. 8.): sloupec spoje má
+    /// v <c>JRapiLinPrtWin.mac:1793</c> čtyři šířky a vybírá se podle největšího počtu značek
+    /// ve sloupci (<c>:1769</c>, slot „znacky spoje" viz <c>:2611</c>). Text se tedy
+    /// <b>nezmenšuje</b>, dělá se místo - a jen v tom sloupci, který značku nese.
+    /// <para>Nález Jan 27. 8.: „značka + minuta pak tu minutu posune ven mimo šířku sloupce" -
+    /// minimální šířka se počítala jen z „00:00".</para>
+    /// </remarks>
+    [Fact]
+    public void SloupecSeZnackou_JeSirsiNezSloupecBezNi()
+    {
+        var prvek = Prvek();
+        var data = Data();   // značka návaznosti je na posledním ze tří spojů
+
+        var rozvrh = prvek.Rozvrzeni(data);
+        float sirkaSeZnackou = rozvrh.Max(b => b.SirkaMm)
+            - (SirkaZastavky + 2 * rozvrh[0].SloupecSpojeMm);
+
+        Assert.True(sirkaSeZnackou > rozvrh[0].SloupecSpojeMm + 0.1f,
+            $"sloupec se značkou ({sirkaSeZnackou:0.##} mm) není širší než sloupec bez ní "
+            + $"({rozvrh[0].SloupecSpojeMm:0.##} mm) - značka pak z buňky vyleze");
+    }
+
+    /// <summary>
+    /// Táž linka, ale poslední sloupec je prázdný až na značku vedle času - spoj nemá číslo
+    /// a jeho skupina nemá nadpis.
+    /// </summary>
+    private static DataContext DataJenZnackaNavaznosti() => RenderSnapshot.Data(
+        ("ZASTAVKY",
+        [
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Přerov"), ("PORADI", "2")),
+        ]),
+        ("SPOJE",
+        [
+            RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"),
+                ("CASY", new JsonArray("8:00", "8:40"))),
+            RenderSnapshot.Row(("CISLO_SPOJE", "3"), ("SKUPINA", "1"),
+                ("CASY", new JsonArray("9:00", "9:40"))),
+            RenderSnapshot.Row(("CISLO_SPOJE", ""), ("SKUPINA", "2"),
+                ("CASY", new JsonArray("", "10:40")),
+                ("PRIPOJE", RenderSnapshot.Nested([("TYP", "vycka"), ("PORADI", "2"), ("CAS", "10:40")]))),
+        ]),
+        ("SKUPINY_DNU",
+        [
+            RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1")),
+            RenderSnapshot.Row(("ID", "2"), ("NADPIS", ""), ("PORADI", "2")),
+        ]));
+
+    /// <summary>Značka návaznosti se kreslí ručně mimo buňky, takže o mezerách i o vlastní šířce
+    /// sloupce musí vědět sama - jinak skončí ve sloupci cizího spoje.</summary>
+    [Fact]
+    public void ZnackaNavaznosti_JeVeSloupciSvehoSpoje()
+    {
+        var prvek = Prvek();
+        prvek.MezeraMeziSkupinamiMm = MezeraMm;
+        var data = DataJenZnackaNavaznosti();
+
+        using var bmp = Vykresli(prvek, data);
+
+        float odMm = SirkaZastavky + 2 * MezeraMm + 2 * SirkaSpoje;
+        float doMm = prvek.Rozvrzeni(data).Max(b => b.SirkaMm);
+        int inkoust = 0;
+        for (int x = Sloupec(odMm + 0.5f); x <= Sloupec(doMm - 0.5f); x++)
+            inkoust += InkoustVeSloupci(bmp, x);
+
+        Assert.True(inkoust > 0,
+            $"ve sloupci spoje se značkou návaznosti ({odMm:0.#}-{doMm:0.#} mm) není nic - "
+            + "značka s časem se nakreslila jinam");
+
+        // Sloupec je prázdný až na tuhle jednu buňku, takže její inkoust musí být ve sloupci
+        // vystředěný. Kdyby se značka kreslila do rámu jiné šířky než sám sloupec, sedí vlevo.
+        int prvni = -1, posledni = -1;
+        for (int x = Sloupec(odMm); x <= Sloupec(doMm); x++)
+        {
+            if (InkoustVeSloupci(bmp, x) == 0) continue;
+            if (prvni < 0) prvni = x;
+            posledni = x;
+        }
+        float vlevoMm = prvni / MmToPx - odMm;
+        float vpravoMm = doMm - posledni / MmToPx;
+        Assert.True(MathF.Abs(vlevoMm - vpravoMm) < 0.5f,
+            $"značka s časem není ve sloupci vystředěná (vlevo {vlevoMm:0.##} mm, vpravo "
+            + $"{vpravoMm:0.##} mm) - kreslí se do rámu jiné šířky, než jakou má sloupec");
+    }
+
+    /// <summary>
+    /// U <b>automatické</b> šířky sloupce spoje se místo na značku musí odečíst ze zbytku šířky -
+    /// jinak vyjdou sloupce širší, než je místo, a tabulka přeteče přes hranu prvku.
+    /// </summary>
+    [Fact]
+    public void MistoNaZnacku_SeOdectePredRozdelenimSirky()
+    {
+        var prvek = Prvek();
+        prvek.MezeraMeziSkupinamiMm = MezeraMm;
+        prvek.Columns =
+        [
+            new StopColumn { Key = ColumnKeys.StopName, Header = "Zastávka", Width = SirkaZastavky, Visible = true },
+            new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj", Width = null,
+                Visible = true, Alignment = TextHorizontalAlignment.Center },
+        ];
+        var data = Data();
+
+        float sirkaBloku = prvek.Rozvrzeni(data).Max(b => b.SirkaMm);
+        Assert.True(sirkaBloku <= prvek.Width + 0.01f,
+            $"blok je široký {sirkaBloku:0.##} mm, prvek jen {prvek.Width:0.##} mm - místo na značku "
+            + "se neodečetlo ze zbytku šířky");
+
+        using var bmp = Vykresli(prvek, data);
+        for (int x = Sloupec(prvek.Width + 0.5f); x < bmp.Width; x++)
+            Assert.True(InkoustVeSloupci(bmp, x) == 0,
+                $"tabulka přetekla přes hranu prvku - inkoust na {x / MmToPx:0.#} mm");
+    }
+
+    /// <summary>
+    /// Pás s nadpisy musí sahat až na <b>konec tabulky</b> - jeho sloučené buňky se skládají
+    /// z týchž sloupců jako řádky pod ním.
+    /// </summary>
+    /// <remarks>
+    /// Kdyby pás počítal šířku skupiny z jednotné šířky sloupce, byl by u linky se značkou kratší
+    /// než tabulka a hranice skupin by v něm ležely jinde než v datech pod ním. Měří se
+    /// <b>podbarvení</b> pásu, ne inkoust - je to jediná věc, která na tom místě má být.
+    /// </remarks>
+    [Fact]
+    public void PasSNadpisy_SahaAzNaKonecTabulky()
+    {
+        var prvek = Prvek();
+        prvek.MezeraMeziSkupinamiMm = MezeraMm;
+        var data = Data();
+
+        float konecTabulky = prvek.Rozvrzeni(data).Max(b => b.SirkaMm);
+        using var bmp = Vykresli(prvek, data);
+
+        Assert.True(PodbarveneVPasu(bmp, Sloupec(konecTabulky - 1f)) > 0,
+            $"na konci tabulky ({konecTabulky:0.##} mm) není podbarvení pásu - pás je kratší než "
+            + "tabulka, takže hranice skupin v něm neleží nad hranicemi sloupců");
     }
 
     // ── měření ────────────────────────────────────────────────────────────────
@@ -422,6 +569,32 @@ public class MezeraMeziSkupinamiTests
             }
         }
         return nejvyse;
+    }
+
+    /// <summary>
+    /// Počet podbarvených pixelů <b>v pásu s nadpisy</b>, tedy v horním řádku tabulky.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Měřit celý svislý pás nestačí: podbarvení má i řádek čísel spojů pod ním, a ten má
+    /// šířky sloupců správně, takže by test prošel i s vadným pásem. Rozsah 0,2-1 mm je bezpečně
+    /// uvnitř prvního řádku pro každou rozumnou velikost písma.
+    /// </remarks>
+    private static int PodbarveneVPasu(SKBitmap bmp, int x) =>
+        PodbarveneVeSloupci(bmp, x, (int)(0.2f * MmToPx), (int)(1.0f * MmToPx));
+
+    /// <summary>Počet podbarvených pixelů ve svislém pásu - tedy ani bílá stránka, ani inkoust.</summary>
+    private static int PodbarveneVeSloupci(SKBitmap bmp, int x, int odY = 0, int doY = int.MaxValue)
+    {
+        if (x < 0 || x >= bmp.Width) return 0;
+        int n = 0;
+        for (int y = Math.Max(0, odY); y < bmp.Height && y <= doY; y++)
+        {
+            var c = bmp.GetPixel(x, y);
+            bool bila = c.Red > 240 && c.Green > 240 && c.Blue > 240;
+            bool inkoust = c.Red < 100 && c.Green < 100 && c.Blue < 100;
+            if (!bila && !inkoust) n++;
+        }
+        return n;
     }
 
     /// <summary>Počet tmavých pixelů ve svislém pásu obrázku - inkoust textu a značek.</summary>
