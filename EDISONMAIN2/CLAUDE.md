@@ -16,6 +16,14 @@ restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo 
 `Services/` složka neexistuje záměrně - single-consumer infrastruktura je ko-lokovaná
 se svým consumerem, cross-cutting věci jdou do `EDControls`.
 
+## Strom modulů = generovaný snapshot
+
+`Fill*` v `CACHE/ALVA/EDISONMAIN2/API/Tree.cls` **needitovat ručně** - generuje je
+`tools/GenerateTree.cs` z legacy XML (`edisontree`/`edisonnavbar`) + `EDFormInterfaceLic.vb`
+v repu EDISON; sync i **vynucený** deploy dělá `tools/sync-tree.ps1` (generátor zapisuje mimo
+Edit/Write, takže `compile-objectscript.sh` sám nefiruje). Splice anchor je komentář
+`/// Generováno z legacy edisonnavbar.xml id=` - smazat ho znamená tiše rozbitý generátor.
+
 ## Session / ACTIVITY zámek
 
 - Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - nezaniká se spojením,

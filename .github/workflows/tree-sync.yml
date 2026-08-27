@@ -1,0 +1,140 @@
+# Strom modulu: kdyz se pohnou legacy zdroje, otevri PR s uz zregenerovanym Tree.cls.
+#
+# Proc PR a ne jen upozorneni: udrzba se tim zmeni na "reviewnout a mergnout" misto
+# "vzpomen si, ze mas pustit skript". Lokalni .claude/hooks/tree-drift.sh zustava jako
+# rychly signal, autoritou je tenhle workflow - porovnava proti mlinecz/EDISON@main,
+# tedy proti spolecne pravde, ne proti lokalni kopii legacy repa.
+#
+# Runner: ubuntu staci. Generator ma cesty pres promenne prostredi a neni na Windows
+# vazany; EDISON_DEPLOY_ROOT smeruje na neexistujici cestu zamerne - viz krok Regenerovat.
+
+name: tree sync
+
+on:
+  repository_dispatch:
+    types: [legacy-tree-changed]
+  schedule:
+    - cron: "0 4 * * 1-5"   # zaloha, kdyby dispatch nedorazil
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  BRANCH: bot/tree-sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout EDISON2
+        uses: actions/checkout@v4
+
+      - name: Checkout legacy zdroju (jen tri soubory)
+        uses: actions/checkout@v4
+        with:
+          repository: mlinecz/EDISON
+          ref: main
+          token: ${{ secrets.LEGACY_REPO_TOKEN }}
+          path: legacy
+          # Legacy .git ma ~335 MB, proto sparse + depth 1.
+          sparse-checkout: |
+            EDCORE/Resources/edisonnavbar.xml
+            EDCORE/Resources/edisontree.xml
+            EDCORE/EDFormInterfaceLic.vb
+          sparse-checkout-cone-mode: false
+          fetch-depth: 1
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Regenerovat Tree.cls z legacy zdroju
+        id: gen
+        env:
+          EDISON_LEGACY_ROOT: legacy
+          EDISON2_ROOT: .
+          # C:\Edison na runneru neexistuje a nema byt. ResolveExe pak vraci "" a launch
+          # info se bere z override mapy v soucasnem Tree.cls - overeno, ze to dava
+          # bit-identicky vystup jako beh na dev stroji. Vyjimka: NOVY uzel, ktery
+          # v override mape jeste neni, by exe nedostal - proto se nize hlida pocet stubu.
+          EDISON_DEPLOY_ROOT: /nonexistent-on-ci
+        run: |
+          set -euo pipefail
+          # Generator vraci nenulovy kod, kdyz nezapsal (napr. smazany splice anchor).
+          dotnet run tools/GenerateTree.cs 2> gen-report.txt
+          echo "--- report generatoru ---"
+          cat gen-report.txt
+          # Vzor zachytava jen ASCII cast - generator pise "oranzovych stubu" s diakritikou.
+          stubs=$(sed -n 's/.*(bez exe): \([0-9]*\).*/\1/p' gen-report.txt | tail -1)
+          echo "stubs=${stubs:-0}" >> "$GITHUB_OUTPUT"
+
+      - name: Je co commitnout?
+        id: diff
+        run: |
+          if git diff --quiet -- EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls tools/tree-sources.sha256; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Snapshot je srovnany, nic k otevirani."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls tools/tree-sources.sha256
+          fi
+
+      - name: Otevrit / aktualizovat PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STUBS: ${{ steps.gen.outputs.stubs }}
+        run: |
+          set -euo pipefail
+          git config user.name  "tree-sync bot"
+          git config user.email "noreply@github.com"
+          git checkout -B "$BRANCH"
+          git add EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls tools/tree-sources.sha256
+          git -c commit.gpgsign=false commit -m "EDISON2 - regenerate module tree from legacy XML"
+          git push --force origin "$BRANCH"
+
+          {
+            echo "Legacy zdroje stromu se pohnuly, tohle je vysledek regenerace."
+            echo
+            echo "Diff zkontroluj proti legacy commitum - polozka, ktera zmizela, tam"
+            echo "zmizet MA (napr. modul presunuty jinam), ale ma to byt videt v historii"
+            echo "mlinecz/EDISON."
+            echo
+            if [ "${STUBS:-0}" != "0" ]; then
+              echo "> [!WARNING]"
+              echo "> Generator ohlasil **${STUBS} modulu bez exe cesty**. Na CI runneru"
+              echo "> neni C:\\Edison, takze novy uzel, ktery jeste neni v override mape,"
+              echo "> exe nedostane a ve stromu z nej bude oranzovy stub. Tenhle PR"
+              echo "> **nemergovat** - pust tools/sync-tree.ps1 na dev stroji, kde se"
+              echo "> exe dohleda."
+              echo
+            fi
+            echo "**Po mergnuti je jeste potreba nasadit na Cache** - Atelier API neni"
+            echo "z internetu dostupne (IIS proxa propousti jen alwa/sys/rest), takze"
+            echo "to bot udelat neumi:"
+            echo
+            echo '```'
+            echo "powershell -File tools/sync-tree.ps1"
+            echo '```'
+            echo
+            echo "<details><summary>report generatoru</summary>"
+            echo
+            echo '```'
+            cat gen-report.txt
+            echo '```'
+            echo
+            echo "</details>"
+          } > pr-body.md
+
+          open=$(gh pr list --head "$BRANCH" --state open --json number --jq 'length')
+          if [ "$open" != "0" ]; then
+            n=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+            gh pr edit "$n" --body-file pr-body.md
+            echo "PR #$n aktualizovan."
+          else
+            gh pr create --head "$BRANCH" --base main \
+              --title "Strom modulu: regenerace z legacy XML" \
+              --body-file pr-body.md
+          fi

@@ -462,17 +462,34 @@ jednou, ne po každém úkolu.
 
 ### R10 - `tools/GenerateTree` mimo build, žádný drift guard
 
-- [ ] **Stav:** Open
+- [ ] **Stav:** Částečně hotovo (2026-08-26), zbytek Open
 - **P3 · M** · Závisí na: - · Blokuje: -
-- **Co udělat:** `tools/GenerateTree` udělat `.csproj` v `EDISON2.sln`, vstupní
-  `edisonnavbar.xml` (nebo jeho snapshot) do repa, a přidat kontrolu, že vygenerovaný
-  výstup je identický s `Tree.cls` (parita test proti driftu; kandidát na pre-push).
-  Do `EDISONMAIN2/CLAUDE.md` doplnit větu, že `Tree.cls` je generovaný a jak se
-  regeneruje - dnes to ví jen doc komentář uvnitř třídy.
-- **Záměrně NE:** Přesun katalogu modulů do Caché globálu (runtime editability).
-  To bylo dřív explicitně zamítnuto do doby, než přijde reálný požadavek; tenhle úkol
-  to neotvírá, řeší jen to, že generovaný soubor nikdo nehlídá a `elementId` v něm
-  řídí licenční gate a aplikační přístup.
+- **Hotovo 2026-08-26:** advisory detekce driftu (`.claude/hooks/tree-drift.sh` +
+  fingerprint `tools/tree-sources.sha256`, který píše generátor), `tools/sync-tree.ps1`
+  (regenerace + vynucený deploy + diff), nenulový exit generátoru při nezapsání,
+  a poznámka v `EDISONMAIN2/CLAUDE.md`. Blokující pre-push brána **vědomě ne**:
+  fingerprint se porovnává proti lokální kopii legacy repa, takže by se mýlila oběma
+  směry (kolega nepushnul / já nepullnul) a padala by na cizí commit.
+- **Zbývá:** `tools/GenerateTree` jako `.csproj` v `EDISON2.sln` + parita test, že
+  vygenerovaný výstup je identický s `Tree.cls`. Pozor, `ResolveExe` sonduje `C:\Edison`,
+  takže bit-parita je závislá na stroji - test musí porovnávat jen část odvozenou z dat.
+- **Proč to není kosmetika (incident 2026-08-26):** splice anchor byl doc komentář
+  `/// Naplní strom ...` (s em dashem); comment audit (`9f68304`) ho smazal jako WHAT
+  narraci s zakázaným em dashem a generátor tím **tiše rozbil na 6 dní** - nezapsal
+  a skončil s exit 0. Snapshot byl mezitím stale o tři legacy commity. Anchor je teď
+  provenance komentář a nezapsání vrací nenulový kód, ale parita test by to chytil dřív.
+- **Vstupní podmínka migrace do Caché:** dnešní `Tree.cls` je **ztrátová** projekce XML -
+  chybí `info` (343 uzlů), `form` (31), `color` (28), `icon`/`iconFav` (7 v navbaru)
+  a roots `-1` Oblíbené + `-101` Systém (generují se jen `-2`/`-3`/`-4`). Caché nemůže být
+  master, dokud se to nedoplní.
+- **Druhý konzument (jiné repo!):** `ALWA.LICENCE.API.Catalog` (repo EDISON) volá
+  `ALVA.EDISONMAIN2.API.Tree.GetTree` pro všechny tři stromy, tj. Caché jako master už
+  bere - a chybějící `-101` si drátuje ručně (`..push` na 999 / 999.1 / 15). První
+  konkrétní krok migrace je proto doplnit `-101` do `Tree.cls` a ten hardcode smazat.
+  Drift testy EDISON2 tenhle konzument **nevidí**; změna wire formátu `GetTree` ho rozbije.
+- **Záměrně NE (revidovat):** přesun katalogu do Caché globálu byl dřív zamítnut do
+  příchodu reálného požadavku. Směr „master do Caché" je teď žádaný, ale cesta
+  (obrácený generátor vs. legacy čte z Caché za běhu) je k 2026-08-26 **nerozhodnutá**.
 - **Hotovo když:** Ruční editace `Tree.cls` shodí kontrolu.
 - **Detail:** [nález 10](arch-EDISONMAIN2-EDControls-2026-07-29.md#10-treefillmain-je-656řádková-generovaná-classmethod-generátor-mimo-build)
 

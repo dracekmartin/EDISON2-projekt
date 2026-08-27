@@ -8,41 +8,45 @@
 // ..AddFamily / ..AddExe / ..AddFamilyEnd) pro vložení do
 // EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls.
 //
-// formName (FQN) se odvozuje AUTOMATICKY z elementId — port legacy
+// formName (FQN) se odvozuje AUTOMATICKY z elementId - port legacy
 // EDConversion.Form.GetTypeString (clsConversion.vb) nad jmény členů enumů
 // EDISFormEnum / EDPackageEnum (parsované z EDFormInterfaceLic.vb). Stejná čistá
 // funkce, kterou legacy používá při spouštění formy, takže FQN je korektní všude,
 // kde legacy umí formu otevřít.
 //
-// exePath se spolehlivě z dat odvodit NELZE (je to fakt o nasazení — .exe vs .dll,
+// exePath se spolehlivě z dat odvodit NELZE (je to fakt o nasazení - .exe vs .dll,
 // bundling, subadresáře). Proto: (1) ručně ověřený override z aktuálního Tree.cls
 // má přednost; (2) jinak best-effort sonda do C:\Edison (legacy LoadAssembly probe
-// pořadí seg1+seg2 / seg2 / seg1, .exe pak .dll) — emituje se jen když soubor reálně
+// pořadí seg1+seg2 / seg2 / seg1, .exe pak .dll) - emituje se jen když soubor reálně
 // existuje; (3) jinak "" → runtime ModuleLaunchabilityCheck ho zobrazí jako oranžový
 // stub. Žádná fabrikace exe, která by spadla při kliknutí.
 //
-// Snapshot — re-run při změně legacy XML nebo enumů.
+// Snapshot - re-run při změně legacy XML nebo enumů.
 
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-const string EdisonRoot = @"c:\MLineRepos\EDISON";
-const string Edison2Root = @"c:\MLineRepos\EDISON2";
-const string DeployRoot = @"C:\Edison";
+// Cesty jde prepsat prostredim, aby generator sel pustit i na CI runneru, kde zadne
+// c:\MLineRepos ani C:\Edison neexistuje. EDISON_LEGACY_ROOT je zamerne stejna
+// promenna, jakou cte .claude/hooks/tree-drift.sh.
+string EdisonRoot = Environment.GetEnvironmentVariable("EDISON_LEGACY_ROOT") ?? @"c:\MLineRepos\EDISON";
+string Edison2Root = Environment.GetEnvironmentVariable("EDISON2_ROOT") ?? @"c:\MLineRepos\EDISON2";
+string DeployRoot = Environment.GetEnvironmentVariable("EDISON_DEPLOY_ROOT") ?? @"C:\Edison";
 
 // Splice anchor generovaného bloku. Záměrně provenance, ne WHAT narrace - předchozí
 // anchor smazal komentářový audit jako opis jména metody a tím generátor tiše rozbil.
 const string Marker = "/// Generováno z legacy edisonnavbar.xml id=";
 
-string navbarPath = Path.Combine(EdisonRoot, @"EDCORE\Resources\edisonnavbar.xml");
-string treePath = Path.Combine(EdisonRoot, @"EDCORE\Resources\edisontree.xml");
-string enumPath = Path.Combine(EdisonRoot, @"EDCORE\EDFormInterfaceLic.vb");
-string currentTreeCls = Path.Combine(Edison2Root, @"EDISONMAIN2\CACHE\ALVA\EDISONMAIN2\API\Tree.cls");
+string navbarPath = Path.Combine(EdisonRoot, "EDCORE", "Resources", "edisonnavbar.xml");
+string treePath = Path.Combine(EdisonRoot, "EDCORE", "Resources", "edisontree.xml");
+string enumPath = Path.Combine(EdisonRoot, "EDCORE", "EDFormInterfaceLic.vb");
+string currentTreeCls = Path.Combine(Edison2Root, "EDISONMAIN2", "CACHE", "ALVA", "EDISONMAIN2", "API", "Tree.cls");
 
 // ---- override tabulka: elementId -> (exe, fqn, input) z aktuálního Tree.cls ----
-// Drží ručně ověřené launch info (přednost před auto-derivací — nikdy neregresuje).
+// Drží ručně ověřené launch info (přednost před auto-derivací - nikdy neregresuje).
 var overrides = ExtractOverrides(File.ReadAllText(currentTreeCls));
 Console.Error.WriteLine($"// Override (ručně ověřené moduly) z Tree.cls: {overrides.Count}");
 
@@ -104,7 +108,7 @@ int leaves = 0, withFqn = 0, withExe = 0, mismatchCount = 0;
 var navbar = XDocument.Load(navbarPath);
 
 // EDISONMAIN2 chce Telmax v hlavní nabídce, ne v partnerských řešeních. Legacy XML
-// zůstává beze změny (sdílí ho starý EDISON) — přesun dělá generátor in-memory.
+// zůstává beze změny (sdílí ho starý EDISON) - přesun dělá generátor in-memory.
 MoveNode("21", fromSection: "-4", toSection: "-2");
 
 var sb = new StringBuilder();
@@ -118,21 +122,43 @@ string clsText = File.ReadAllText(currentTreeCls);
 int idx = clsText.IndexOf(Marker, StringComparison.Ordinal);
 if (idx < 0)
 {
-    Console.Error.WriteLine($"// CHYBA: marker '{Marker}' v Tree.cls nenalezen - zapisuji na stdout místo in-place.");
+    // Marker už jednou smazal komentářový audit jako opis jména metody; generátor tehdy
+    // skončil s exit 0 a tiše nezapsal. Nenulový kód zastaví sync-tree.ps1 před deployem.
+    Console.Error.WriteLine($"// CHYBA: marker '{Marker}' v Tree.cls nenalezen - NEZAPSANO, vypisuji na stdout.");
     Console.Write(sb.ToString());
+    return 1;
 }
-else
-{
-    string result = clsText[..idx] + sb.ToString() + "}" + Environment.NewLine;
-    File.WriteAllText(currentTreeCls, result, new UTF8Encoding(false));
-    Console.Error.WriteLine($"// Zapsáno in-place do {currentTreeCls}");
-}
+
+string result = clsText[..idx] + sb.ToString() + "}" + Environment.NewLine;
+File.WriteAllText(currentTreeCls, result, new UTF8Encoding(false));
+Console.Error.WriteLine($"// Zapsáno in-place do {currentTreeCls}");
+WriteSourceFingerprint();
 
 Console.Error.WriteLine($"// Leaves: {leaves}, s formName: {withFqn}, s exePath: {withExe}, " +
                         $"oranžových stubů (bez exe): {leaves - withExe}");
 if (mismatchCount > 0)
     Console.Error.WriteLine($"// POZOR: {mismatchCount} ručně ověřených FQN se liší od auto-derivace (viz výše).");
-return;
+return 0;
+
+// Fingerprint legacy zdrojů pro tree-drift.sh - bez něj se stale snapshot pozná až tím,
+// že modul chybí v aplikaci. Zapisuje se jen po úspěšném splicu, aby nelhal.
+void WriteSourceFingerprint()
+{
+    var lines = new List<string>
+    {
+        "# Fingerprint legacy zdroju, ze kterych je generovan Tree.cls (tools/GenerateTree.cs).",
+        "# Kontroluje .claude/hooks/tree-drift.sh pri startu chatu. Needitovat rucne.",
+    };
+    foreach (var src in new[] { navbarPath, treePath, enumPath })
+    {
+        string hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(src))).ToLowerInvariant();
+        lines.Add($"{hash}  {Path.GetRelativePath(EdisonRoot, src).Replace(Path.DirectorySeparatorChar, '/')}");
+    }
+    // LF a bez BOM: čte to bash hook, CRLF by zůstal v parsovaném hashi.
+    string fpPath = Path.Combine(Edison2Root, "tools", "tree-sources.sha256");
+    File.WriteAllText(fpPath, string.Join("\n", lines) + "\n", new UTF8Encoding(false));
+    Console.Error.WriteLine($"// Fingerprint zapsán do {fpPath}");
+}
 
 void EmitSection(string sectionId, string method)
 {
@@ -159,7 +185,7 @@ void EmitNode(XElement node, int depth)
         var id = (string?)node.Attribute("id");
         if (id is null || !byId.TryGetValue(id, out var resolved))
         {
-            Console.Error.WriteLine($"// VAROVÁNÍ: type=4 ref id={id} nenalezeno v edisontree.xml — přeskakuji");
+            Console.Error.WriteLine($"// VAROVÁNÍ: type=4 ref id={id} nenalezeno v edisontree.xml - přeskakuji");
             return;
         }
         effective = resolved;
@@ -170,12 +196,12 @@ void EmitNode(XElement node, int depth)
     string name = NodeName(effective);
     string id2 = (string?)effective.Attribute("id") ?? "";
 
-    // mlineOnly je per-UMÍSTĚNÍ atribut (jako input) — vždy z XML uzlu, nikdy z override.
+    // mlineOnly je per-UMÍSTĚNÍ atribut (jako input) - vždy z XML uzlu, nikdy z override.
     bool mlineOnly = (string?)effective.Attribute("mlineOnly") == "1";
 
     if (type == "0")
     {
-        // skupina → FAMILY. elementId (package ID) + licensed z legacy XML — legacy
+        // skupina → FAMILY. elementId (package ID) + licensed z legacy XML - legacy
         // BuildTreeXML gate-oval i skupiny proti licenci/accessTable, klient to replikuje.
         bool famLicensed = (string?)effective.Attribute("licensed") == "1";
         sb.AppendLine($"{indent}d ..AddFamily({Q(name)}, 0, {Q(id2)}, {(famLicensed ? 1 : 0)}, {(mlineOnly ? 1 : 0)})");
@@ -206,11 +232,11 @@ void EmitNode(XElement node, int depth)
 
         // exePath: ručně ověřený override má přednost; jinak best-effort sonda (jen pokud soubor existuje).
         string exe = !string.IsNullOrEmpty(ov.exe) ? ov.exe : ResolveExe(fqn);
-        // input je per-UMÍSTĚNÍ (stejné id může být ve stromu vícekrát s jiným inputem —
+        // input je per-UMÍSTĚNÍ (stejné id může být ve stromu vícekrát s jiným inputem -
         // Události agd=..., Převody AD/AO/MHD/ND), override mapa je ale per-id (poslední
         // výskyt vyhrává) → XML input má přednost, override jen doplní chybějící.
         string input = xmlInput.Length > 0 ? xmlInput : ov.input ?? "";
-        // Barvu (stub/broken) NEautorujeme — odvozuje ji runtime ModuleLaunchabilityCheck
+        // Barvu (stub/broken) NEautorujeme - odvozuje ji runtime ModuleLaunchabilityCheck
         // z exe/launchovatelnosti. Tree.cls = čistá data.
         string color = "";
 
@@ -218,7 +244,7 @@ void EmitNode(XElement node, int depth)
         if (fqn.Length > 0) withFqn++;
         if (exe.Length > 0) withExe++;
 
-        // Dlouhý název je poslední (volitelný) argument — emituje se jen když v XML je,
+        // Dlouhý název je poslední (volitelný) argument - emituje se jen když v XML je,
         // ať se do generovaného Tree.cls nesypou stovky prázdných řetězců.
         string longName = NodeNameEx(effective, name);
         string longNameArg = longName.Length > 0 ? $", {Q(longName)}" : "";
@@ -255,17 +281,17 @@ string NodeName(XElement node)
 }
 
 // <nameEx> dítě = disambiguovaný dlouhý název (legacy ho ukazuje na ploše). "" když chybí
-// nebo se neliší od <name> — takový nenese informaci navíc. Pomlčky sjednoceny na "-".
+// nebo se neliší od <name> - takový nenese informaci navíc. Pomlčky sjednoceny na "-".
 string NodeNameEx(XElement node, string name)
 {
     var nameEx = node.Elements("nameEx").FirstOrDefault()?.Value?.Trim().Replace('–', '-').Replace('—', '-');
     return string.IsNullOrEmpty(nameEx) || nameEx == name ? "" : nameEx;
 }
 
-// ObjectScript string literal — escapuje " → "".
+// ObjectScript string literal - escapuje " → "".
 string Q(string s) => "\"" + s.Replace("\"", "\"\"") + "\"";
 
-// Port legacy EDConversion.Form.GetTypeString(id) — id → FQN třídy formy.
+// Port legacy EDConversion.Form.GetTypeString(id) - id → FQN třídy formy.
 // Závisí jen na jménech členů enumů (formName, packageName), které legacy zřetězuje
 // dle konvence package. Vrací "" pro neznámé id / package (neportovaná agenda).
 string GetTypeString(long id)
@@ -295,7 +321,7 @@ string GetTypeString(long id)
     };
 }
 
-// Case Else z clsConversion.vb — formy, jejichž třída neodpovídá konvenci package.
+// Case Else z clsConversion.vb - formy, jejichž třída neodpovídá konvenci package.
 string CaseElse(string form) => form switch
 {
     "formTISKPredtiskyShow" => "ALVA.TISK.frmPredtiskShow",
@@ -341,7 +367,7 @@ string ResolveExe(string fqn)
 static Dictionary<string, (string exe, string fqn, string input)> ExtractOverrides(string cls)
 {
     var map = new Dictionary<string, (string, string, string)>();
-    // ..AddExe("name", "exe", "fqn", "id", licensed, "input", ...) — 6. arg (input) volitelný.
+    // ..AddExe("name", "exe", "fqn", "id", licensed, "input", ...) - 6. arg (input) volitelný.
     var rx = new Regex(
         """\.\.AddExe\(\s*"((?:[^"]|"")*)"\s*,\s*"((?:[^"]|"")*)"\s*,\s*"((?:[^"]|"")*)"\s*,\s*"((?:[^"]|"")*)"(?:\s*,\s*[01])?(?:\s*,\s*"((?:[^"]|"")*)")?""");
     foreach (Match m in rx.Matches(cls))
