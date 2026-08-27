@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-27 (7) - ✨ bezbariérové vozidlo se tiskne vozíčkem, ne zkratkou „BEV"
+
+Nález Jan na vzoru 940: „ve starém je ta ikonka vozíčku, teď vypíšeme textem BEV."
+
+Platilo u nás pravidlo „víceznakový kód je zkratka, ne piktogram" - a to je **proti starému
+modulu**: ten má celou rodinu atributů spoje v číselníku znaků jako **symboly**
+(`JRapiLinPrtWin.mac:1556` a dál; BEV je id 22 „bezbarierovy", CBE id 56 „castecne bezbarierovy
+vuz"). Pravidlo tedy padlo; rozhoduje jen povolený seznam a to, jestli je pozice ve fontu ověřená.
+
+- **BEV → vozíček**, **CBE → vozíček s doprovodem** (částečně bezbariérové vozidlo).
+- Platí to i v **legendě** poznámek, protože jde přes tutéž mapu značek.
+- Vedlejší efekt: v řádku platnosti zabere piktogram **méně místa** než tříznaková zkratka.
+
+Pozice ve fontu ověřená tak, jak to pravidlo u seznamu vyžaduje - vykreslením tabulky glyfů
+**v obou** fontech (CZ i SK): 72 je vozíček, 70 vozíček s doprovodem, shodně v obou. ⚠️ Zbytek
+rodiny (IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, RBP) zůstává textem: starý modul pro ně symboly má,
+ale pozici ve fontu jsem u nich neurčil, a hádat ji znamená vytisknout cizí piktogram.
+
+Ověřeno: .NET 1210/1210 + 709 + 612.
+
+⚠️ **Při čtení legacy vypadl další rozdíl, neopravený:** starý modul tiskne **nejvýš dvě značky
+na řádek platnosti** a zbytek zalomí na další řádky (`#define POCETZNAKUPLATNOSTI 2`,
+`JRapiLinPrtWin.mac:25` a `:3763`). My posíláme značky jako jedno pole a kreslíme je do jednoho
+řádku, takže u spoje s víc značkami se řádek přeplní. Vedeno v roadmapě.
+
+
 ## 2026-08-27 (6) - 🐞 značka u minuty vylézala ze sloupce (parita s legacy: sloupec se rozšíří)
 
 Nález Jan na vzoru 940: „když má minuta u sebe nějakou značku, tak ta značka to posune doprava, ale
