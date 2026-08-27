@@ -19,7 +19,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
         private bool _inProgress;
 
         // WebView2 widgety novinek/wiki/školení - pre-login (bez session).
-        private readonly List<FontZoomWebView> _widgets = new();
+        private readonly List<IDisposable> _widgets = new();
 
         public LoginResult? Result { get; private set; }
 
@@ -70,19 +70,17 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
             // Novinky/Wiki jsou auth-free; Školení pre-login bez personalizace (prázdná identita).
             // Widgety jsou čistě dekorativní - jejich (ne)načtení nesmí blokovat login.
-            AddWidget(NovinkyHost, WidgetUrls.Novinky);
-            AddWidget(WikiHost, WidgetUrls.Wiki);
-            AddWidget(SkoleniHost, WidgetUrls.Trainings("", ""));
+            AddWidget(NovinkyHost, WidgetUrls.Novinky, "Novinky z portálu podpory");
+            AddWidget(WikiHost, WidgetUrls.Wiki, "Uživatelská nápověda a wiki");
+            AddWidget(SkoleniHost, WidgetUrls.Trainings("", ""), "Nabídka školení");
             // FontZoomWebView drží statické eventy (Font/Theme) → bez dispose leak; Closed jde na OK i Cancel.
             Closed += (_, _) => { foreach (var w in _widgets) w.Dispose(); };
         }
 
-        private void AddWidget(Border host, string url)
+        private void AddWidget(Border host, string url, string placeholder)
         {
-            var wv = new FontZoomWebView();
-            wv.Navigate(url);
-            host.Child = wv;
-            _widgets.Add(wv);
+            if (SupportWidgetHost.Fill(host, url, placeholder) is { } widget)
+                _widgets.Add(widget);
         }
 
         private void MlineWeb_Click(object sender, RoutedEventArgs e) => OpenExternal(SupportActions.WebUrl);

@@ -47,10 +47,10 @@ namespace EDISONMAIN2
         // zavřením okna - jinak přežije shell. Nenačtení widgetu shell neblokuje (dekorace).
         private void FillSupportStrip()
         {
-            var widget = new FontZoomWebView();
-            SupportStrip.Child = widget;
-            widget.Navigate(WidgetUrls.Edison2);
-            Closed += (_, _) => widget.Dispose();
+            var widget = SupportWidgetHost.Fill(SupportStrip, WidgetUrls.Edison2,
+                "Informační panel podpory - novinky a upozornění IT pro uživatele");
+            if (widget is not null)
+                Closed += (_, _) => widget.Dispose();
         }
 
         // Zavření shellu ukončí aplikaci (ShutdownMode=OnMainWindowClose) i všechny agendy,

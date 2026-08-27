@@ -1,0 +1,26 @@
+using EDISONMAIN2.MiniApps;
+
+namespace EDISONMAIN2.Tests;
+
+public class SupportWidgetHostTests
+{
+    [Theory]
+    [InlineData("1")]
+    [InlineData("true")]
+    [InlineData(" True ")]
+    public void IsEnabled_AcceptsOneAndTrue(string value)
+    {
+        Assert.True(SupportWidgetHost.IsEnabled(value));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("0")]
+    [InlineData("false")]
+    [InlineData("yes")]
+    public void IsEnabled_RejectsEverythingElse(string? value)
+    {
+        Assert.False(SupportWidgetHost.IsEnabled(value));
+    }
+}
