@@ -123,6 +123,66 @@ public class MezeraMeziSkupinamiTests
             + "značka se nakreslila jinam, protože její kreslicí cesta o mezerách neví");
     }
 
+    /// <summary>
+    /// Táž fixtura, ale s <b>přípojným řádkem</b> (vyčká jako vložený řádek matice) - ten má
+    /// vodorovnou čáru nad i pod sebou, takže se na něm nejdřív projevilo, že čáry mezeru přemostí.
+    /// </summary>
+    private static DataContext DataSPripojnymRadkem() => RenderSnapshot.Data(
+        ("ZASTAVKY",
+        [
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Přerov"), ("PORADI", "2")),
+        ]),
+        ("SPOJE",
+        [
+            RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"),
+                ("CASY", new JsonArray("8:00", "8:40"))),
+            RenderSnapshot.Row(("CISLO_SPOJE", "3"), ("SKUPINA", "1"),
+                ("CASY", new JsonArray("9:00", "9:40")),
+                ("PRIPOJE", RenderSnapshot.Nested(
+                    [("TYP", "vycka"), ("PORADI", "1"), ("CAS", "9:05"), ("RADEK", "1")]))),
+            RenderSnapshot.Row(("CISLO_SPOJE", "5"), ("SKUPINA", "2"),
+                ("CASY", new JsonArray("10:00", "10:40")),
+                ("PLATNOST", new JsonArray("X"))),
+        ]),
+        ("SKUPINY_DNU",
+        [
+            RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1")),
+            RenderSnapshot.Row(("ID", "2"), ("NADPIS", "V"), ("PORADI", "2")),
+        ]));
+
+    /// <summary>
+    /// V mezeře nesmí být <b>ani vodorovná čára</b> - ani u přípojných řádků, které mají čáru nad
+    /// i pod sebou.
+    /// </summary>
+    /// <remarks>
+    /// Nález Jan 27. 8. na vzoru 940: „zůstane tam spojující úsečka mezi levou částí pravého okraje
+    /// a pravou částí levého" a u přípojek „ta mezera udělána není vůbec". Obojí měla jednu příčinu -
+    /// vodorovné čáry i pozadí řádku se kreslily přes <b>celou šířku prvku</b>, takže mezeru
+    /// přemostily. Tenhle test jede se <b>černou</b> mřížkou, na rozdíl od
+    /// <see cref="VMezereNeniNic_AniZjedneZeCtyrCestSkladaniSloupcu"/>, který bílou mřížkou měří
+    /// jen obsah buněk.
+    /// </remarks>
+    [Fact]
+    public void VMezereNeniAniVodorovnaCara_AniUPripojnychRadku()
+    {
+        var prvek = Prvek();
+        prvek.Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FF000000", Width = 0.3f };
+        prvek.MezeraMeziSkupinamiMm = MezeraMm;
+
+        using var bmp = Vykresli(prvek, DataSPripojnymRadkem());
+
+        foreach (var (od, do_) in OcekavaneMezery())
+        {
+            int x = Sloupec(od + 1f);
+            int konec = Sloupec(do_ - 1f);
+            for (; x <= konec; x++)
+                Assert.True(InkoustVeSloupci(bmp, x) == 0,
+                    $"v mezeře ({od:0.#}-{do_:0.#} mm) je čára - sloupec {x / MmToPx:0.#} mm má "
+                    + "inkoust, takže vodorovná čára nebo pozadí řádku mezeru přemostilo");
+        }
+    }
+
     /// <summary>Kde mají mezery ležet: za popisným blokem a před spojem, kterým začíná druhá
     /// skupina dnů (spoje jsou 1, 1, 2 - hranice je před třetím).</summary>
     private static (float Od, float Do)[] OcekavaneMezery() =>

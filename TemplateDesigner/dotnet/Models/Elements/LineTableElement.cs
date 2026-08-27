@@ -1116,7 +1116,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Prázdná buňka mezery mezi skupinami sloupců - bez pozadí, ať mezerou prosvítá
     /// stránka a pruh záhlaví se v ní přeruší.</summary>
     private static ColumnRenderer.CellSpec BunkaMezery(float sirkaMm, ResolvedTextStyle vzor) =>
-        new(sirkaMm, "", vzor with { BackgroundColor = ColorHex.Transparent });
+        new(sirkaMm, "", vzor with { BackgroundColor = ColorHex.Transparent }, Mezera: true);
 
     /// <summary>Má se na levé hraně popisného sloupce potlačit svislá čára? První sloupec bloku
     /// nikdy - tam je vnější hrana, kterou kreslí rámeček prvku, ne mřížka.</summary>

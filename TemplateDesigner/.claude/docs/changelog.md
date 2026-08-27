@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-27 (3) - 🐞 mezerou mezi skupinami sloupců procházely vodorovné čáry
+
+Nález Jan na vzoru 940, hned jak mezery zapnul: „zůstane tam spojující úsečka mezi levou částí
+pravého okraje a pravou částí levého", a u přípojných řádků „ta mezera udělána není vůbec".
+
+Obojí mělo **jednu příčinu**: vodorovné čáry a pozadí řádku se kreslí přes **celou šířku prvku**,
+takže mezeru přemostily. U přípojného řádku, který má čáru nad i pod sebou, se tím mezera zavřela
+z obou stran a nebyla vidět vůbec - proto to vypadalo jako dvě různé vady.
+
+Řádkové jádro teď umí buňku označit jako **mezeru** a čáry i pozadí kreslí po úsecích mezi nimi.
+Je to ve sdíleném jádru, ne v linkovém prvku: mezery jsou pojem `skupiny sloupců` a ten má podle
+`L9-R3` platit pro všechny tabulkové prvky. Ostatní prvky mezery neposílají, takže se jim nic nemění.
+
+Pozadí řádku se odděluje z téhož důvodu jako čáry: podbarvení buněk se v mezeře přeruší samo, takže
+průchozí podbarvení celého řádku by proti němu vypadalo jako chyba.
+
+Ověřeno: .NET 1202/1202 + 709 + 612, ověřeno mutací (bez označení buňky i s čarou přes celou šířku
+padne nový test), potvrzeno okem na vzoru 940.
+
+
 ## 2026-08-27 (2) - ✨ mezera mezi skupinami sloupců linkového JŘ (`L9` dokončeno)
 
 Poslední ze tří mezer `L9`. Tabulka už nemusí vypadat jako jedna souvislá mřížka: **popisný blok,
