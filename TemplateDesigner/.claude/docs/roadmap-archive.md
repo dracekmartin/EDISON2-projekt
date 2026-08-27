@@ -1,5 +1,40 @@
 # 🗄️ Archiv - hotové kroky
 
+## 2026-08-26 - průchod testovacími linkami linkového JŘ
+
+Osm linek, každá na jedno konkrétní nastavení starého tisku, projitých v návrháři proti starému
+tisku. Smysl byl zjistit, jestli se někde liší **data** - dokud se liší, nemá cenu řešit vzhled,
+protože u každého nálezu není jasné, jestli je to chyba nebo nedodělek.
+
+**Výsledek: žádný datový rozdíl.** Co se ověřilo:
+
+- **dělení spojů do skupin dnů** včetně toho, že spoj jedící v sobotu i v neděli je **v obou
+  skupinách** (0330510), a že linka s jedinou skupinou pás nekreslí (0330511);
+- **rozdělení široké linky na bloky** i **dorovnání prázdnými sloupci**;
+- **zóny a km se schovají podle linky**, i když je šablona má zapnuté (0345062);
+- **sloupec tarifních čísel** ve všech třech stavech - a že **Automaticky** ho na lince
+  s „netisknout Tč“ schová (0320144);
+- **zastávky, kde nikdo nestaví** (0320157);
+- **barvy spojů**: červený font minut je správně - legacy barví **položku v buňce**, a jen čas,
+  „projíždí“ a „jede jinudy“ (doloženo řádky zdroje v analýze).
+
+**Jediný nález: chybí obousměrný tisk** (oba směry v jedné tabulce, zrcadlené sloupce). Byla to
+známá mezera odložená do `L6`; průchod k ní přidal pravidlo z legacy, že **je to podmíněné, ne
+přepínač** - po střihu starý modul tiše spadne na směr zvlášť.
+
+**Co průchod odhalil na sobě samém** (a bylo opraveno rovnou):
+
+- ve výběru linky nešlo přepnout **skupinu linek**, takže dvě z pěti linek CB\_CSADAD nebyly
+  z jednoho přihlášení dosažitelné;
+- šablona k procházení kreslila **značky poznámek textem** (měla legendu jako obyčejnou
+  dynamickou tabulku);
+- testovací linka na barvy měla obarvené **dva spoje z půl milionu**, takže jako doklad
+  nesloužila - sonda teď hlásí linku s **nejvíc** obarvenými spoji a **vždy i skupinu linek**.
+
+**Nedojeté** (zužené v roadmapě): pořadí sloupců na 0370618 (není co k čemu přiložit, dokud
+není obousměrný tisk) a písmena ze zóny na 0771901 (nejsou testovací data pro Vsetín).
+
+
 ## 2026-08-25 - `L5` rozřezání široké tabulky (Strih)
 
 Linka se 100+ spoji se dosud zmáčkla do šířky, až z ní nebylo nic vidět. Nově se **rozřeže na

@@ -508,14 +508,14 @@ je tam taky ignoroval.
 |---|---|---|---|---|
 | `arr,3` RozdelovatSpojePodlePlatnosti | dělení sloupců na skupiny dnů (0 / PD+víkend / PD+So+Ne) | ✅ `:423,441,504` | ❌ nečte | ✅ parametr „Dělení spojů dle platnosti" |
 | `arr,4` PoznamkyZpusobTisku | kam jde legenda (per blok / per směr / souhrnně / + odstránkovat) | ✅ `:713-761` | ✅ `:301` | ❌ legenda je vždy jednou na konci |
-| `arr,5` ZvyraznenaZastavka | zvýraznit řádek zvolené zastávky | ✅ `:392,1212,1240` | ❌ nečte | ❌ |
+| `arr,5` ZvyraznenaZastavka | zvýraznit řádek zvolené zastávky | ✅ `:392,1212,1240` | ❌ nečte | ✅ parametr „Zvýraznit zastávku“ (data řádek jen označí, vzhled řeší šablona) |
 | `arr,6` TiskTurnusuKeSpojum | tisk turnusů ke spojům | ✅ `:354` → `SET,2,arr,1,3` | ❌ nečte | ❌ (vědomě, `L6`) |
-| `arr,7` TiskObousmernychJR | oba směry na jednu sestavu (zrcadlené sloupce) | ✅ `:598` | ❌ nečte | ❌ (vědomě, `L6`) |
+| `arr,7` TiskObousmernychJR | oba směry na jednu sestavu (zrcadlené sloupce). ⚠️ **Není to „chci zrcadlo“, ale „zrcadlo, pokud se vejde“** - engine ho vypne, když v jednom směru nejsou spoje (`:601`), a znovu po střihu: když `Strih` zrcadlený blok musí řezat, tiše spadne na směr zvlášť (`:627`) | ✅ `:598` | ❌ nečte | ❌ (vědomě, `L6`) |
 | `arr,9` NavaznostiVPripojnychRadcich | tisknout číslo linky/vlaku v přípojném řádku | ✅ `:2771` | ❌ nečte | ❌ tiskneme vždy |
-| `arr,10` TC | zvýraznit konkrétní tarifní číslo (inverzní řádek) | ✅ `:1214,1242` | ❌ nečte | ❌ |
+| `arr,10` TC | zvýraznit konkrétní tarifní číslo (inverzní řádek) | ✅ `:1214,1242` | ❌ nečte | ✅ parametr „Zvýraznit tarifní číslo“ |
 | `arr,11` FilterDTA | výběr **typů provozu a směrů** k tisku (`TypProvozuID#id~0/1`, `SmerID#id~0/1`) | ❌ nečte | ✅ `:305-321` | ❌ tiskneme vše |
 | `arr,12` NekreslitRameckyKolemCiselSpoju | bez rámečků kolem čísel spojů; v MHD navíc **vypne i čísla spojů** | ❌ nečte | ✅ `:324` | ❌ (u nás řeší styl prvku, vedlejší efekt MHD chybí) |
-| `arr,13` VkladatPrazdneSloupce | dorovnání šířky prázdnými sloupci | ✅ `:1038` | ❌ nečte | ❌ (patří k `L5`) |
+| `arr,13` VkladatPrazdneSloupce | dorovnání šířky prázdnými sloupci | ✅ `:1038` | ❌ nečte | ✅ volba prvku „Dorovnat prázdnými sloupci“. ⚠️ **Parita neověřená** - oracle layout vědomě neměří (dává legacy obrovskou plochu, aby vyrobil jeden blok), takže dorovnáním síť nikdy neprošla; shoda se starým modulem je zatím jen ze čtení `:1038` |
 | `dta,1` / `dta,2` / `MS` | šířka tiskové plochy, počet řádků, měřicí řetězce | ✅ | ✅ | ⛔ nepřenášíme vědomě (layout měříme sami) |
 
 **Mrtvé položky kontraktu** (aby se nehledaly znovu):
@@ -1047,6 +1047,14 @@ Je to necelé procento spojů, tedy niche - ale na lince, kde zákazník spoje o
 v tisku přijde celou. **A hlavně: tím padá důvod, proč to nešlo ověřit.** Existuje linka s barvami
 v datech, takže se dá tvrdit obojí - že barvy posíláme, i že je přepínač u linky potlačí.
 
+**Co presne se barví** (čteno v legacy 26. 8., `JRapiLinPrtWin.mac:1422,1428,1434`): barva je
+vlastnost **položky uvnitř buňky** (pole `dta,6`) a dostane ji jen **čas**, značka **projíždí** (`|`)
+a značka **jede jinudy** (`<`). Obyčejný text barvu nedostává a **pozadí se nebarví vůbec** -
+kontrakt na ně pole nemá. Naše `CASY` nesou přesně jen tyhle tři hodnoty plus prázdno, takže se
+množina obarvených buněk s legacy kryje beze zbytku; číslo spoje v záhlaví ani řádek platnosti
+obarvené nejsou. Přepínač u linky legacy řeší tím, že barvu **vymaže** (`:2102`), tedy `1` = černě -
+shodné s naší volbou „Netisknout“.
+
 #### Tvar datumů: dvě různé věci, které se pletou
 
 - **Formát** (tečky vs. lomítka, pořadí složek) je otázka lokalizace, ne nastavení. Opraveno v `B96`
@@ -1132,13 +1140,15 @@ naslepo.
 | Firma | Skupina | Linka | Co je na ní vidět |
 |---|---|---|---|
 | CB_CSADAD | 1 | 0370618 | **ruční pořadí spojů** u linky (a že se použije, ne dopočítá) |
-| CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit) |
+| CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit). ⚠️ **Slabý doklad** (změřeno 26. 8.): v celé firmě má barvu **2 spoje z 483 246**, oba na téhle lince a oba světle růžové `255;128;255` - jeden z nich je **spoj 19**. Změna volby tedy přebarví dva sloupce z tisíců, takže na plné tabulce vypadá, že se neděje nic. Sledovat přímo spoj 19, ne celkový dojem. |
 | CB_CSADAD | 801 | 0345062 | **bez zón i bez km** (čtyřstavový přepínač `linIDS` = 3) |
 | VS_CSAD | 5 | 0771901 | **písmena ze zóny se odstraňují** |
 | CB_GWBUS | 106 | 0320144 | **schovaný sloupec tarifních čísel** |
 | CB_GWBUS | 104 | 0320157 | **bez zastávek, kde žádný spoj nestaví** (ubírá řádky, nejvíc vidět) |
 | CB_CSADAD | 1 | 0330510 | **rozřezání na bloky**: 41 spojů, přípojné řádky, tři skupiny dnů (37/1, 38/2, 41/3 podle volby dělení) |
 | CB_CSADAD | 1 | 0330511 | **jediná skupina dnů** - všechny spoje jen v pracovní dny, pás se nemá podle čeho rozdělit (viz `B101`) |
+| ZL_KOVED | 260 | 0000621 | **barevné spoje, kde je to vidět** - 48 obarvených spojů (změřeno 26. 8.). Náhrada za 0380751, kde jsou dva světle růžové a přepnutí volby není v tabulce poznat. |
+| CB_GWBUS | 21 | 0322993 | **barevné spoje** - 9 obarvených spojů; drží se, když už jsi v téhle firmě kvůli sloupci Tč a zastávkám |
 
 ⚠️ **Tři linky jsou v jiné firmě než CB_CSADAD** (VS_CSAD, CB_GWBUS). Sonda prohledává víc firem,
 ale návrhář pracuje s tou, do které je uživatel přihlášený - na ty tři je potřeba se přihlásit jinam,
@@ -1146,6 +1156,11 @@ nebo si k témuž nastavení najít linku ve vlastní firmě.
 
 ⚠️ **Sada nepokrývá nastavení, která nikdo nemá zapnutá** (analýza §13.4) - u nich není proti čemu
 porovnávat a žádná linka je neukáže.
+
+⚠️ **„Linka to nastavení má“ ještě neznamená „je to na ní vidět“** (naučeno 26. 8. na barvách spojů). Sonda
+hledá **výskyt** hodnoty, ne její dopad na výstup - u nastavení, které se týká jednotlivých spojů,
+může být zasažený jeden sloupec z tisíce. U každé linky v sadě proto patří **i to, kde se to na ní
+projeví**; bez toho se hlásí „nemění se nic“ tam, kde se mění dva spoje.
 
 **Šablona k procházení:** `templates/prochazeni-linkovy-jr.json` (Soubor → Importovat).
 Vychází ze systémové šablony pro AD, ale je **na šířku** a má **všechny popisné sloupce zapnuté** -

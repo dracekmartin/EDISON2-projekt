@@ -250,7 +250,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
         {
             Typ       = ParseTypPoznamky(row.GetString("TYP")),
             Znak      = row.GetString("ZNAK"),
-            Text      = row.GetString("TEXT"),
+            Text      = OdstavcePoznamky(row.GetString("TEXT")),
             ForeColor = NullIfEmpty(row.GetString("FORE_COLOR")),
             BackColor = NullIfEmpty(row.GetString("BACK_COLOR")),
             Kategorie = row.GetString("KATEGORIE"),
@@ -261,12 +261,43 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
         return result;
     }
 
+    /// <summary>
+    /// Rozdělí text poznámky na odstavce. Agenda posílá <c>#</c> jako <b>oddělovač odstavců</b>
+    /// (prázdný odstavec už normalizuje na mezeru, protože tak ho tiskne starý modul).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 26. 8. to klient neinterpretoval nikde a <c>#</c> se tisklo jako písmeno uprostřed
+    /// věty („…u řidiče.#INTEGROVANÉHO SYSTÉMU…", nahlásil Jan).
+    /// <para>Převod je <b>tady, na jednom místě</b>, ne u kreslení: výška poznámky se počítá
+    /// jinou cestou než render (<c>CalculateHeightFromData</c> vs <c>DrawWrappedBody</c>) a obě
+    /// jdou přes <c>TextWrapHelper</c>, který na <c>\n</c> lámat umí. Kdyby se odstavce dělily
+    /// u kreslení, výška by o nich nevěděla a legenda by přetékala.</para>
+    /// </remarks>
+    private static string OdstavcePoznamky(string text) => text.Replace("#", "\n");
+
     // ─── Parse helpery (typy poznámek/anotací - zastávkové POCO) ────────────
+
+    /// <summary>
+    /// Slovník typů poznámek, jak je posílají agendy. Obě rodiny agend pojmenovávají značku
+    /// <b>jinak</b> - vývěskové „specialni", linkové „znak" - a obojí musí projít.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 26. 8. tady „znak" nebyl, takže značky linkového JŘ padaly na <c>Text</c> a legenda je
+    /// kreslila <b>surovým písmenem</b>: „vyčká" vyšlo jako <c>m</c> místo dutého trojúhelníku,
+    /// pracovní dny jako <c>X</c> místo zkřížených kladiv. V tabulce se přitom kreslily správně
+    /// (řádek platnosti jde přes <c>SymbolMap</c> napřímo), takže táž značka vypadala v tabulce
+    /// jinak než ve své vlastní legendě. Celý aparát piktogramů linkového JŘ se nikdy nespustil.
+    /// <para>Neznámé slovo padá na <c>Text</c> záměrně - starší agenda nesmí spadnout. Proto to
+    /// nehlásí chybu za běhu a hlídá to <c>PoznamkaTypDriftTests</c>: nový typ v <c>.cls</c> musí
+    /// být i tady, jinak test spadne.</para>
+    /// </remarks>
+    internal static readonly string[] ZnameTypyPoznamky =
+        ["nz", "negativniznacka", "specialni", "specialniznak", "znak", "text"];
 
     protected static TypPoznamky ParseTypPoznamky(string? s) => s?.ToLowerInvariant() switch
     {
         "nz" or "negativniznacka" => TypPoznamky.NegativniZnacka,
-        "specialni" or "specialniznak" => TypPoznamky.SpecialniZnak,
+        "specialni" or "specialniznak" or "znak" => TypPoznamky.SpecialniZnak,
         _ => TypPoznamky.Text
     };
 

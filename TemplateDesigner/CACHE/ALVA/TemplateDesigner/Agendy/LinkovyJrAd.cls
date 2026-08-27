@@ -304,6 +304,36 @@ ClassMethod TristavDleLinky(volba As %String, dleLinky As %Boolean) As %Boolean
     q dleLinky
 }
 
+/// Skupiny linek pro filtr Instance Pickeru - první subscript ^JRL(sku), název je 1. `~`-piece.
+/// Bez téhle metody vrátí BaseAgenda prázdno, dialog přepínač skryje a uživatel zůstane trvale
+/// na první skupině (nahlásil Jan 26. 8.) - přitom GetAvailableInstances filtr přijímá.
+/// ⚠️ Vědomá kopie ZastavkoveJrAd: obě AD agendy čtou týž ^JRL, ale zastávkové se podle
+/// CLAUDE.md nesmíme dotknout. Sjednocení readerů patří do vlny dedup Caché enginů (`L8`).
+ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s arr = ##class(%DynamicArray).%New()
+        s sku = ""
+        f {
+            s sku = $o(^[dataDB]JRL(sku))
+            q:sku=""
+            i 'sku continue                  // přeskoč nenumerický / konfig uzel
+
+            s nazev = $p($g(^[dataDB]JRL(sku)), "~", 1)
+            s obj = ##class(%DynamicObject).%New()
+            d obj.%Set("value", sku)
+            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_sku))
+            d arr.%Push(obj)
+        }
+        s ^||ML("OUT","1") = arr.%ToJSON()
+    }
+    catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
 /// Vrátí seznam linek pro Instance Picker (shodné se ZastavkoveJrAd - stejný zdroj ^JRL).
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {

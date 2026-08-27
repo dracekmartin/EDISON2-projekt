@@ -1,5 +1,90 @@
 # Changelog
 
+## 2026-08-26 (4) - ✨ popisné sloupce linkového JŘ jsou jedna skupina (`L9`)
+
+Kolega si na starém modulu stěžoval, že „ohraničení jednotlivých km sloupců nejde odstranit" a že
+„nelze mít jeden nadpis pro info sloupce". Obojí teď jde, a je to **jedna věc**: popisné sloupce
+(zóna, km, Tč, zastávka, MHD) se chovají jako **jedna skupina**.
+
+- **Nadpis popisných sloupců** - jeden text nad všemi, vzor IDZK 940 tam má „↓ Směr jízdy ↓".
+- **Popisné sloupce bez vnitřních čar** - kreslí se jako jeden slitý blok, ale **čáry mezi sloupci
+  spojů zůstanou**. Do teď šlo vypnout jen celou mřížku prvku, tedy i je - a to byla ta stížnost.
+
+Obojí je i v Caché formuláři, tedy v hlavní editační cestě, ne jen v panelu.
+
+⚠️ **Nadpis se odvázal od skupin dnů.** Pás nad sloupci se dosud kreslil jen tehdy, když měla linka
+víc než jednu skupinu dnů - takže na lince s jedinou skupinou by se nadpis popisných sloupců vůbec
+neobjevil. Nadpis je vlastnost popisné skupiny, ne skupin dnů. **Odhalil to test, ne úvaha.**
+
+⚠️ **Mezera mezi bloky sloupců ve vlně zbývá** a je to větší kus, než to vypadá: šířka popisného
+bloku slouží zároveň jako odsazení, od kterého se počítají sloupce spojů, a čtyři ruční kreslicí
+cesty (řádek platnosti, značky v buňce, piktogram zastávky, dělení na bloky) z toho čísla vycházejí.
+Vloženou mezerou se ten souřadnicový model rozejde, takže tomu patří vlastní krok.
+
+Ověřeno: .NET 1192/1192 + 690 + 595, ověřeno mutací obou vlastností zvlášť, formulář ověřen
+voláním serveru. Chování s prázdným nadpisem zůstává jako dřív (`L9-R4` je nerozhodnutá).
+
+
+## 2026-08-26 (3) - 🐞 zlom odstavce v poznámce se tiskl jako znak `#`
+
+V legendě vyšlo „…jsou k nahlédnutí u řidiče.**#**INTEGROVANÉHO SYSTÉMU…" (nahlásil Jan). Agenda
+posílá `#` jako **oddělovač odstavců** - má u toho i komentář, že prázdný odstavec starý modul
+tiskne jako mezeru, a kvůli tomu ho normalizuje - ale klient ten oddělovač **nikde
+neinterpretoval**, takže se vypsal jako písmeno uprostřed věty.
+
+Převod na zlom řádku je při **parsování poznámky**, tedy na jednom místě. Záměrně ne u kreslení:
+výška poznámky se počítá jinou cestou než render a obojí jde přes tentýž wrap, který na zlom
+řádku lámat umí. Kdyby se odstavce dělily až u kreslení, výška by o nich nevěděla a legenda by
+přetékala - a to je v projektu opakovaná třída chyb.
+
+⚠️ **První verze testu neměřila nic** a odhalila to až mutace: na realisticky dlouhém textu se
+odstavce zalomí na dva řádky tak i tak, takže výška se zalomením i bez něj vyšla stejně. Test teď
+používá dvě krátké věty, které se spojené vejdou na jeden řádek. Je to potřetí za den, co fixtura
+vypadala rozumně a neověřovala nic.
+
+Ověřeno: .NET 1189/1189 + 690 + 595, ověřeno mutací (bez opravy padnou 2 testy ze 3).
+
+
+## 2026-08-26 (2) - 🐞 značky v legendě linkového JŘ se kreslily písmeny
+
+V legendě vyšlo „vyčká“ jako `m`, pracovní dny jako `X` a svátky jako `+` - místo dutého
+trojúhelníku, zkřížených kladiv a kříže. V tabulce se přitom ty samé značky kreslily správně, takže
+táž značka vypadala jinak v tabulce a jinak ve své vlastní legendě (našel Jan při průchodu).
+
+Příčina byl rozpojený drát: linkové agendy posílají typ poznámky jako `"znak"`, vývěskové jako
+`"specialni"`, a klient znal jen to druhé. Neznámé slovo padne na „obyčejný text“, takže se vypsalo
+surové písmeno - a **celý aparát piktogramů linkového JŘ se v legendě nikdy nespustil**.
+
+Tolerance k neznámému typu zůstává záměrem (starší agenda nesmí prvek shodit), a proto to teď
+hlídá `PoznamkaTypDriftTests`: vyparsuje typy posílané v `.cls` a ověří, že klient zná každý
+z nich. **Dosud to nehlídalo nic** - ostatní driftové testy kontrolují jména polí, ne slovník
+jejich hodnot.
+
+Ověřeno: .NET 1186/1186 + 690 + 595, ověřeno mutací (bez opravy spadne 1 test ze 4).
+
+
+## 2026-08-26 (1) - 🐞 ve výběru linky nešlo přepnout skupinu linek
+
+U linkového JŘ nabídl výběr instance vždy jen první skupinu linek a přepnout ji nešlo, takže na
+linku z jiné skupiny se uživatel nedostal (nahlásil Jan). Ve firmě CB_CSADAD to znamenalo, že dvě
+z pěti testovacích linek byly z jednoho přihlášení nedosažitelné - leží ve skupinách 591 a 801.
+
+Přepínač v dialogu přitom **existoval celou dobu** a schovává se, když agenda žádné skupiny
+nevrátí. Chyběl jediný kus: linkové agendy neměly metodu, která seznam skupin dodá, i když filtr
+podle skupiny už přijímaly. Doplněna u AD i u městské varianty.
+
+Městská je zatím skrytá, ale dostala to taky - je to stejná chybějící metoda a jinak by se
+zveřejnila s tímtéž problémem.
+
+⚠️ **Vědomá kopie ze zastávkových agend** (obě AD čtou týž `^JRL`, obě MHD týž číselník). Zastávkových
+se podle CLAUDE.md nedotýkáme, takže sjednocení readerů zůstává na vlnu dedup Caché enginů (`L8`).
+
+Ověřeno: Caché 128/128, .NET 1182/1182, obě změněné třídy ověřené voláním serveru.
+⚠️ **Kolik skupin se v dialogu ukáže, stroj neověří** - volání přes vývojový profil vidí jiná data
+než přihlášená session (i zastávková agenda v něm vrátí jednu skupinu, i když sonda najde v téže
+firmě tři). Zbývá proklikat.
+
+
 ## 2026-08-25 (24) - 🧹 výška sekce už nerezervuje místo na posun, ke kterému nedojde
 
 Výpočet výšky sekce rostoucímu prvku přičítal přírůstek k pozici všech prvků pod ním, jenže

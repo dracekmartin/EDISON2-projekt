@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** **sada testovacích linek** pro linkové JŘ - parita dat i stránkování jsou
-> hotové (`L1`-`L5`), takže je na čem procházet business logiku.
+> **Nejblíž na řadě:** **`L9`** - aby linková tabulka nevypadala jako jedna souvislá mřížka.
+> Průchod testovacími linkami je za námi a datový rozdíl proti starému tisku nenašel žádný.
 
 ---
 
@@ -65,18 +65,55 @@ uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procháze
 každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Pořadí vln je proto
 **testovací linky → `L9` → `L6`**.
 
-📋 **Na řadě je sada testovacích linek.** Seznam s popisem, co je na které vidět, je změřený
-a zapsaný v [`§15b`](linkovy-knizni-jr-implementace-analyza.md) (8 linek). Šablona k procházení je
-připravená (`templates/prochazeni-linkovy-jr.json`, import ze souboru). **Zbývá samotné projití**:
-ke každé lince starý tisk vedle našeho náhledu a rozdíly do tří škatulek (odchylka / dluh / rozdíl). ⚠️ Tři z těch linek jsou v jiné firmě, než do které
-se běžně přihlašuješ.
+✅ **Průchod testovacími linkami je hotový** (26. 8., detail v archivu). **Datový rozdíl proti
+starému tisku nenašel žádný** - jediný nález je chybějící **obousměrný tisk** (patří do `L6`).
+Zbývají z něj **dva drobné dluhy**:
+
+- **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618` neprojité** - mělo se srovnat sloupec po
+  sloupci proti starému tisku, ale ten tiskne oba směry v jedné tabulce, takže není co k čemu
+  přiložit. **Vyjde až s obousměrným tiskem** (`L6`), nebo na jiné lince s ručním pořadím.
+- **Písmena ze zóny (`VS_CSAD 5 / 0771901`) neověřená** - v testovacích datech pro Vsetín není,
+  na čem to zkusit. Vzít, až ta data budou.
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **vícesloupcová legenda s přetékáním** (#7487 - dnes jeden sloupec, chtějí čtyři), **turnusy** a **výchozí šablona pro MHD**. | M |
+| **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). ⚠️ **Obousměrný tisk je podmíněný, ne přepínač** (změřeno čtením legacy 26. 8.): starý modul ho vypne, když v jednom směru nejsou spoje, a znovu po střihu - jakmile se zrcadlený blok nevejde na stránku bez řezu, tiše spadne na „každý směr zvlášť“. Bez toho pravidla bychom zrcadlili i tam, kde legacy nezrcadlí; zdrojové řádky v [`§13.2 arr,7`](linkovy-knizni-jr-implementace-analyza.md). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **turnusy** a **výchozí šablona pro MHD**. ⚠️ **Vícesloupcová legenda (#7487) z vlny odpadla** - prvek legendy umí 1-4 sloupce včetně zalamování textu a výšky (zjištěno 26. 8., výchozí hodnota je 1, proto si toho nikdo nevšiml). Zbývá jen ověřit na reálné sestavě. | M |
 | **L7** | ~~Sdružený JŘ více linek~~ - **není naše práce** (upřesnil Jan 25. 8.). Sdružování linek se řeší **v jízdních řádech**; návrhář dostane až výslednou linku a tiskne ji jako každou jinou. Logiku, o kterou si řekl KOVED (#9283), tady neimplementujeme. ⚠️ **Důsledek pro #9417:** zákazníkův případ (souhrnný JŘ dvou linek s dlouhým výčtem dopravců) se k nám může dostat jako **jedna linka s mnoha dopravci**, tedy bez čekání na cokoli dalšího - až se to stane, filtrování dopravců přestane být odložené. | - |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
-| **L9** | **Aby tabulka nevypadala jako jedna souvislá mřížka** (podklad Zlín, analýza §15 - kolega to zkoušel ve starém modulu a nešlo to). Tři drobnosti, které patří k sobě: **ohraničení per sloupec** (dnes se svislé čáry kreslí buď všude, nebo nikde, takže km podsloupce nejdou slít do jednoho bloku), **popisek nad info sloupci** (pás nad nimi už existuje, jen má natvrdo prázdný text - vzor tam má „↓ Směr jízdy ↓") a **mezera mezi bloky** info × pracovní dny × víkendy. Volitelně různá barva vodorovných a svislých čar (dnes jedna pro obojí). ⚠️ Šest dalších bodů ze Zlína **návrhář už umí** (pořadí sloupců, vypnutí MHD, barva pásu nadpisů, popisky, rostoucí záhlaví u víc dopravců) - patří do ověření na šabloně, ne do práce. | S–M |
+| **L9** | **Aby tabulka nevypadala jako jedna souvislá mřížka.** ✅ **Hotové 26. 8.: nadpis popisných sloupců a jejich slití bez vnitřních čar** (dvě ze tří mezer, detail v changelogu). **Zbývá mezera mezi bloky sloupců** - ⚠️ větší kus, než to vypadá: šířka popisného bloku slouží zároveň jako odsazení, od kterého se počítají sloupce spojů, a vycházejí z něj čtyři ruční kreslicí cesty (řádek platnosti, značky v buňce, piktogram zastávky, dělení na bloky). Vloženou mezerou se ten souřadnicový model rozejde, takže se to nejdřív musí soustředit na jedno místo. Dál pak (podklad Zlín, analýza §15 - kolega to zkoušel ve starém modulu a nešlo to). Tři drobnosti, které patří k sobě: **ohraničení per sloupec** (dnes se svislé čáry kreslí buď všude, nebo nikde, takže km podsloupce nejdou slít do jednoho bloku), **popisek nad info sloupci** (pás nad nimi už existuje, jen má natvrdo prázdný text - vzor tam má „↓ Směr jízdy ↓") a **mezera mezi bloky** info × pracovní dny × víkendy. Volitelně různá barva vodorovných a svislých čar (dnes jedna pro obojí). ⚠️ Šest dalších bodů ze Zlína **návrhář už umí** (pořadí sloupců, vypnutí MHD, barva pásu nadpisů, popisky, rostoucí záhlaví u víc dopravců) - patří do ověření na šabloně, ne do práce. | S–M |
+
+### `L9` - co je změřeno a co čeká na rozhodnutí
+
+📐 **Vzor 940 IDZK je přečtený** (PDF od Jana, 26. 8.), takže tvar tří mezer už není dohad:
+
+- **Uvnitř popisného bloku žádné svislé čáry** - km (má **dva podsloupce**), zastávka a zóny běží slitě.
+- **Na pravém okraji popisného bloku jedna** čára, **mezi sloupci spojů tečkované**, mezi pracovními dny
+  a víkendem silnější / s mezerou.
+- **Popisné sloupce jsou JEDNA skupina** s jedním nadpisem „↓ Směr jízdy ↓“. Celkem tři skupiny:
+  popisná × Pracovní dny × Víkendy a svátky - přesně ty, mezi kterými má být mezera.
+
+✅ **Tím se potvrdilo, že ty tři mezery jsou jeden pojem - `skupina sloupců`**: nadpis nad sebou,
+potlačené vnitřní svislé čáry s vnějším obrysem, mezera za sebou. Prvek už jednu takovou skupinu
+**má** (pás skupin dnů nad sloupci spojů), jen není k dispozici pro popisné sloupce.
+
+⚠️ **Popis vzoru v [`§15.1`](linkovy-knizni-jr-implementace-analyza.md) nesouhlasí s PDF** ve dvou věcech:
+tvrdí „jemné vodorovné linky, střídavé podbarvení“, ale vzor **nemá ani jedno**. Zkušební šablona
+`templates/vzor-940-idzk.json` je srovnaná podle PDF.
+
+**Rozhodnuto Janem 26. 8. - `R1`-`R3` ano, `R4` zůstává otevřená.** `L9` je tím vzatelná:
+jádro stojí na `R1`+`R2`, `R3` se doplánuje až u samé práce a `R4` nechává dnešní chování.
+
+| # | Rozhodnutí | Varianty | Poznámka |
+|---|---|---|---|
+| `L9-R1` ✅ | **Skupiny sloupců** (rozhodnuto 26. 8.) | zvolena (a) jeden pojem `skupina sloupců` | Vzor potřebuje všechny tři naráz. Samostatné volby by si šlapaly - „ohraničení per sloupec“ i „mezera mezi bloky“ musí vědět, kde skupina končí, a definovalo by se to dvakrát |
+| `L9-R2` ✅ | **Spoje daty, popisné uživatelem** (rozhodnuto 26. 8.) | skupiny dnů zůstávají čistě z dat - jejich přeskládávání je featura, kterou nikdo nežádal | Dnes jsou skupiny dnů čistě z dat. Dva zdroje téhož pojmu vedle sebe |
+| `L9-R3` ✅ | **U všech tabulkových prvků** (rozhodnuto 26. 8.) | ⚠️ **Tvar se doplánuje společně, až na to přijde řada** (žádost Jan) - jen u linkového by se dvě tabulky v téže šabloně nastavovaly jinak | `GridStyle` je **sdílený** (tabulka z dat, pevná tabulka, vývěskové prvky) a má dnes jednu barvu, tloušťku i styl pro obojí. Aditivní změna, ale jen tady = rozejde se to |
+| `L9-R4` ⏸ | **Co dělá prázdný popisek pásu?** – **otevřené** | (a) pás se schová · (b) kreslí se prázdný pruh (dnes). Přeskočeno 26. 8. - do rozhodnutí platí **(b)**, tedy dnešní chování | Vzor bude chtít obojí - nad popisnými sloupci nadpis, jinde ne. Týž problém má legenda poznámek |
+
+**Nad rámec tří mezer se ze vzoru vynořily ještě tři věci** (evidence, ne závazek): km jako **dva
+podsloupce**; zóny v **jednom** sloupci oddělené čárkou (takže `#8576` „zóny do více sloupců“ tenhle
+vzor **nepotřebuje**); a značka „na znamení“ jako **vlastní úzký sloupec** před názvem zastávky
+(my ji dáváme k názvu).
 
 ### Odložené body z pilotu
 

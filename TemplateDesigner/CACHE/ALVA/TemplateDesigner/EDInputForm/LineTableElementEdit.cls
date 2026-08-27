@@ -43,6 +43,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("columns", "Sloupce")
         s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
         s f.helpText = "Poslední blok bývá neúplný a nechá vpravo volné místo. Zapnuté = doplní se prázdné sloupce, aby měly všechny bloky stejně širokou tabulku."
+        // Popisné sloupce (zóna, km, Tč, zastávka, MHD) jsou jedna skupina - jeden nadpis nad nimi
+        // a jeden slitý blok bez vnitřních čar. Změřeno na vzoru IDZK 940.
+        s f = form.AddText("PopisneSloupceNadpis", "Nadpis popisných sloupců")
+        s f.helpText = "Text nad zónou, km, Tč, zastávkou a MHD - všechny mají jeden společný nadpis. Prázdné = bez nadpisu."
+        s f = form.AddBool("PopisneSloupceBezVnitrnichCar", "Popisné sloupce bez vnitřních čar", 0)
+        s f.helpText = "Popisné sloupce se kreslí jako jeden slitý blok. Svislé čáry mezi sloupci spojů zůstanou."
 
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
