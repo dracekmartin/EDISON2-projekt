@@ -67,28 +67,32 @@ každý nález by mohl být „ještě to neumíme" místo „takhle to má být
 
 ✅ **Průchod testovacími linkami je hotový** (26. 8., detail v archivu). **Datový rozdíl proti
 starému tisku nenašel žádný** - jediný nález je chybějící **obousměrný tisk** (patří do `L6`).
-Zbývají z něj **dva drobné dluhy**:
-
-- **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618` neprojité** - mělo se srovnat sloupec po
-  sloupci proti starému tisku, ale ten tiskne oba směry v jedné tabulce, takže není co k čemu
-  přiložit. **Vyjde až s obousměrným tiskem** (`L6`), nebo na jiné lince s ručním pořadím.
-- **Písmena ze zóny (`VS_CSAD 5 / 0771901`) neověřená** - v testovacích datech pro Vsetín není,
-  na čem to zkusit. Vzít, až ta data budou.
+Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-sestavě) níže.
 
 | # | Vlna | Vel. |
 |---|---|---|
+| **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). ⚠️ **Obousměrný tisk je podmíněný, ne přepínač** (změřeno čtením legacy 26. 8.): starý modul ho vypne, když v jednom směru nejsou spoje, a znovu po střihu - jakmile se zrcadlený blok nevejde na stránku bez řezu, tiše spadne na „každý směr zvlášť“. Bez toho pravidla bychom zrcadlili i tam, kde legacy nezrcadlí; zdrojové řádky v [`§13.2 arr,7`](linkovy-knizni-jr-implementace-analyza.md). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **turnusy** a **výchozí šablona pro MHD**. ⚠️ **Vícesloupcová legenda (#7487) z vlny odpadla** - prvek to umí, zbývá doklad; viz § K ověření. | M |
 | **L11** | **Značky spoje: dvě věci doložené čtením legacy 27. 8.** (1) **Nejvýš dvě značky na řádek platnosti**, zbytek se zalomí na další řádek - starý modul to tak dělá (`POCETZNAKUPLATNOSTI 2`, `JRapiLinPrtWin.mac:25` a `:3763`), my kreslíme všechny do jednoho řádku, takže se u spoje s víc značkami přeplní. (2) **Zbytek rodiny atributů jako piktogramy** - starý modul má v číselníku znaků symboly i pro IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, RBP (`:1556` a dál); u nás se tisknou zkratkou, protože jim nikdo neurčil pozici ve fontu. BEV a CBE hotové 27. 8. Postup: vykreslit tabulku glyfů obou fontů a pozici ověřit okem, ne uhádnout. | S |
 | **L10** | **Mřížka linkové tabulky: dvě volby, které nic nedělají.** „Čáry mezi řádky" a „Čáry mezi sloupci" jsou v panelu i v Caché formuláři, ale prvek je **vůbec nečte** - mřížku kreslí vždy (ověřeno vykreslením 27. 8.: všechny čtyři kombinace zapnuto/vypnuto dají shodný obrázek). ⚠️ **Rozsvítit je není bezpečná oprava**: hodnota je uložená v šablonách, takže komu je dnes odškrtnuté, tomu z tisku zmizí mřížka. Patří k tomu i odložené `L9-R3` - **oddělená barva a tloušťka vodorovných × svislých čar** (`GridStyle` má dnes jednu pro obojí a je **sdílený** se všemi tabulkovými prvky, takže se to má doplánovat pro všechny naráz, ne jen tady). | S |
-| **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). ⚠️ **Obousměrný tisk je podmíněný, ne přepínač** (změřeno čtením legacy 26. 8.): starý modul ho vypne, když v jednom směru nejsou spoje, a znovu po střihu - jakmile se zrcadlený blok nevejde na stránku bez řezu, tiše spadne na „každý směr zvlášť“. Bez toho pravidla bychom zrcadlili i tam, kde legacy nezrcadlí; zdrojové řádky v [`§13.2 arr,7`](linkovy-knizni-jr-implementace-analyza.md). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **turnusy** a **výchozí šablona pro MHD**. ⚠️ **Vícesloupcová legenda (#7487) z vlny odpadla** - prvek legendy umí 1-4 sloupce včetně zalamování textu a výšky (zjištěno 26. 8., výchozí hodnota je 1, proto si toho nikdo nevšiml). Zbývá jen ověřit na reálné sestavě. | M |
-| **L7** | ~~Sdružený JŘ více linek~~ - **není naše práce** (upřesnil Jan 25. 8.). Sdružování linek se řeší **v jízdních řádech**; návrhář dostane až výslednou linku a tiskne ji jako každou jinou. Logiku, o kterou si řekl KOVED (#9283), tady neimplementujeme. ⚠️ **Důsledek pro #9417:** zákazníkův případ (souhrnný JŘ dvou linek s dlouhým výčtem dopravců) se k nám může dostat jako **jedna linka s mnoha dopravci**, tedy bez čekání na cokoli dalšího - až se to stane, filtrování dopravců přestane být odložené. | - |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
 
-### Otevřená rozhodnutí, která přežila `L9`
+### Otevřené rozhodnutí
 
 | # | Rozhodnutí | Stav |
 |---|---|---|
 | `L9-R4` ⏸ | **Co dělá prázdný popisek pásu nad sloupci?** (a) pás se schová · (b) kreslí se prázdný pruh | **Otevřené**, do rozhodnutí platí **(b)**, tedy dnešní chování. Vzor bude chtít obojí - nad popisnými sloupci nadpis, jinde ne. Týž problém má legenda poznámek |
-| `L9-R3` ⏸ | **Oddělená barva / tloušťka vodorovných × svislých čar** | Přesunuto do `L10` - `GridStyle` je sdílený se všemi tabulkovými prvky, takže se tvar doplánuje pro všechny naráz (žádost Jan 26. 8.) |
+
+### K ověření na reálné sestavě
+
+Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
+takže nejde o práci, ale o doklad.
+
+| Co | Proč to čeká |
+|---|---|
+| **Vícesloupcová legenda (#7487)** - zákazník chtěl čtyři sloupce | Prvek umí 1-4 sloupce včetně zalamování (zjištěno 26. 8.); výchozí je 1, proto si toho nikdo nevšiml |
+| **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
+| **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618`** | Starý tisk dává oba směry do jedné tabulky, takže není co k čemu přiložit. **Vyjde až s obousměrným tiskem** (`L6`), nebo na jiné lince s ručním pořadím |
+| **Písmena ze zóny (`VS_CSAD 5 / 0771901`)** | V testovacích datech pro Vsetín na to není vzorek; firma navíc není v přepínači firem. Vzít, až ta data budou |
 
 ### Odložené body z pilotu
 
@@ -98,14 +102,16 @@ Zbývají z něj **dva drobné dluhy**:
 | C8 | **Vejdi výstup na zadaný počet stran** (podnět POVED #8785 bod 5) - starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim „nejmíň stránek") | podnět, ne závazek - nabídnout až po `L5` | M |
 | C9 | **Ručně zadaný „název směru" u linky** jako datové pole (#9088 bod 3, chtěné i pro vývěsky) | vyžaduje **nové pole u linky v jízdních řádech**, ne jen v návrháři - součinnost s kolegy z JŘ | S + cizí |
 
-⚠️ **Hotovo bez plánování:** #11373 (KAD - poznámky **vedle** tabulky, ne pod ní) v TD **umíme dnes**,
-legenda je samostatný prvek. Ověřit na reálné šabloně a tiket zavřít.
-
 ---
 
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B102` Filtrování dopravců v hlavičce** (z důsledku zrušené vlny `L7`, 25. 8.). Sdružování linek
+  není naše práce, ale zákazníkův případ z #9417 (souhrnný JŘ dvou linek s dlouhým výčtem dopravců)
+  se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
+  Až se to stane, filtrování dopravců přestane být odložené.
 
 - **`B101` Není poznat, jestli je jedna skupina dnů nastavením, nebo daty linky** (z 25. 8.).
   Prvek pás skupin nekreslí, když vyjde jediná skupina - a uživatel pak nemá jak poznat, jestli
@@ -122,11 +128,13 @@ legenda je samostatný prvek. Ověřit na reálné šabloně a tiket zavřít.
   na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
   nebo až se bude stejně sahat na přenos nastavení linky.
 
-- **`B99` Tři značky, které v tiskovém fontu nejsou** (loď, wifi, zásuvka; z `L4` 24. 8.).
-  Dnes se vypisují **textem** - provizorium podle rozhodnutí Jana, ať se informace aspoň neztratí,
-  ale v tisku vypadají jinak než ostatní značky. Pořádné řešení znamená buď je do fontu doplnit
-  (zásah do `TimeTable2.ttf` i `TimeTable2SK.ttf`), nebo je kreslit jako vlastní obrázek. Vytáhnout,
-  až o ně někdo zakopne v reálné sestavě - dnes je v datech nemá žádná z měřených firem.
+- **`B99` Loď a wifi ve fontu JSOU, jen se nepoužívají; chybí jen zásuvka** (z `L4` 24. 8.,
+  **opraveno 27. 8.**). ⚠️ Dosud tu stálo, že ve fontu nejsou všechny tři - to **neplatí**:
+  vykreslením tabulky glyfů se v **obou** fontech shodně našla **loď na 180** a **WiFi na 186**.
+  Stačí je tedy zapsat do povoleného seznamu značek (`SymbolMap`), ne kreslit vlastní obrázek.
+  **Zásuvka ve fontu opravdu není** - u ní zůstává buď doplnit glyf do `TimeTable2.ttf`
+  i `TimeTable2SK.ttf`, nebo vlastní obrázek. Souvisí s `L11` (zbytek rodiny atributů), dělat spolu.
+  V datech měřených firem tyhle značky nemá nikdo, takže to nikoho netlačí.
 
 - **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,
   [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Na 93 133 linkách šesti firem nejsou nikde

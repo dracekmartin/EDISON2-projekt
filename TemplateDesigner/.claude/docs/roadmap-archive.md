@@ -1,5 +1,13 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L7` - sdružený JŘ více linek: není naše práce (rozhodnuto 25. 8. 2026)
+
+Viselo to ve vlnách jako přeškrtnutá položka, což není otevřená práce. Rozhodnutí i s důsledkem:
+
+| **L7** | ~~Sdružený JŘ více linek~~ - **není naše práce** (upřesnil Jan 25. 8.). Sdružování linek se řeší **v jízdních řádech**; návrhář dostane až výslednou linku a tiskne ji jako každou jinou. Logiku, o kterou si řekl KOVED (#9283), tady neimplementujeme. ⚠️ **Důsledek pro #9417:** zákazníkův případ (souhrnný JŘ dvou linek s dlouhým výčtem dopravců) se k nám může dostat jako **jedna linka s mnoha dopravci**, tedy bez čekání na cokoli dalšího - až se to stane, filtrování dopravců přestane být odložené. | - |
+
+Živý důsledek pro tiket #9417 zůstává v Backlogu roadmapy.
+
 ## `L9` - aby linková tabulka nevypadala jako jedna souvislá mřížka (hotovo 27. 8. 2026)
 
 Tři mezery, které patřily k sobě, všechny hotové: **nadpis popisných sloupců** a **jejich slití bez
