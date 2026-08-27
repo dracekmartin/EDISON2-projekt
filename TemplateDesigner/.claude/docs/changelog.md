@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-27 (2) - ✨ mezera mezi skupinami sloupců linkového JŘ (`L9` dokončeno)
+
+Poslední ze tří mezer `L9`. Tabulka už nemusí vypadat jako jedna souvislá mřížka: **popisný blok,
+Pracovní dny a Víkendy se dají od sebe odsadit volným místem**, tak jak to má vzor IDZK 940.
+Nastavuje se v mm („Mezera mezi skupinami sloupců"), v panelu i v Caché formuláři.
+
+- **Výchozí 0 = beze změny.** Existující šablony vypadají stejně jako dosud; nenulová výchozí
+  hodnota by zúžila sloupce spojů všem a u linek na hraně šířky ubrala spoj z bloku.
+- **Na hraně skupiny zůstane jedna čára**, pak volno - ne dvě čáry kolem mezery. Vzor to tak má
+  a dvě čáry těsně u sebe čtou jako chyba tisku.
+- **Mezera se bere ze šířky prvku**, takže se do řádku vejde méně spojů; u dlouhé linky se tím
+  může přidat blok pod tabulku.
+
+⚠️ **Souřadnice sloupců spojů se soustředily na jedno místo** (`SloupcovaMrizka`). Do teď si
+odsazení počítala každá cesta sama jako „šířka popisných + index × šířka sloupce" - buňky, značky
+platnosti, značka návaznosti vedle času. Mezera ten vzorec ruší, takže cesta, která by o ní nevěděla,
+kreslí značku do sloupce cizího spoje. Proto jedno místo, které o mezerách ví, a cesty, které se ho
+jen ptají.
+
+⚠️ **Rezervuje se za celou linku, ne za kreslený blok.** Kolik mezer blok má, závisí na tom, které
+skupiny dnů do něj padly - podle bloku by tedy měl každý blok jinak široké sloupce, a to je přesně
+vada z 25. 8. (poslední blok se sloupci 58,8 mm proti 6,4 mm v prvním). Cena: blok s méně skupinami
+nechá vpravo o mezeru víc volna.
+
+Ověřeno: .NET 1201/1201 + 709 + 612, **mutací všech pěti cest zvlášť** (každá zapomenutá mezera
+shodí aspoň jeden test), formulář ověřen voláním serveru. ⚠️ Dvě děravá místa v testech odhalila
+až mutace: „v mezeře nesmí být nic" nechytilo značky platnosti (zapomenutá mezera je nehodí do
+mezery, ale do cizího sloupce) a zapomenutá rezerva šířky nepřeteče, jen zbytečně přidá blok.
+
+⚠️ **Vodorovné čáry mezerou procházejí** - stejně jako dnes procházejí volným místem vpravo za
+poslední tabulkou. Vzor 940 vodorovné linky nemá, takže se to na něm neprojeví; u šablony, která je
+má, to chce tvoje oči.
+
+
 ## 2026-08-27 (1) - 🐞 přepínání firmy pro vývojáře se z publikované verze nedalo zapnout
 
 Nástroj **Nástroje → Přepnout firmu (DEV)** je v aplikaci od začátku, ale z `.exe` v `C:\Edison\`

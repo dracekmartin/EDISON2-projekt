@@ -93,6 +93,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public bool PopisneSloupceBezVnitrnichCar { get; set; }
 
+    /// <summary>
+    /// Mezera mezi <b>skupinami sloupců</b> v mm - za popisným blokem a mezi skupinami dnů.
+    /// 0 = bez mezery, tedy dosavadní souvislá mřížka.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Mezera se <b>rezervuje ze šířky prvku</b>, takže se do řádku vejde o tolik méně spojů;
+    /// u dlouhé linky se tím může přidat blok. Rezervuje se za <b>celou linku</b>, ne za kreslený
+    /// blok - jinak by každý blok vyšel s jinak širokými sloupci (viz `RezervaMezerMm`).
+    /// </remarks>
+    public float MezeraMeziSkupinamiMm { get; set; }
+
     // ─── Vzhled ─────────────────────────────────────────────────────────────
 
     /// <summary>Podbarvení řádků s lichým tarifním číslem (legacy 25% šedá).</summary>
@@ -346,7 +357,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </para>
     /// </summary>
     private (List<RenderCol> Fixed, float TripWidth, int NameIndex) BuildColumns(
-        List<LineStopData> stops, int kmCount, int tripCount)
+        List<LineStopData> stops, int kmCount, int tripCount, float rezervaMezerMm = 0f)
     {
         var structural = StructuralColumns();
         var trip = TripColumn();
@@ -361,7 +372,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == ColumnKeys.Km ? c.Width!.Value * kmCount : c.Width!.Value);
         int autoStructural = structural.Count(c => !c.Width.HasValue);
         int autoUnits = autoStructural + (trip.Width.HasValue ? 0 : tripCount);
-        float autoEach = autoUnits > 0 ? MathF.Max(MinAutoSloupecMm(), (Width - fixedSum) / autoUnits) : 8f;
+        // Mezery mezi skupinami sloupců jdou ze stejné šířky jako sloupce, takže je automatické
+        // sloupce nesmí rozdělit mezi sebe - jinak by tabulka přetekla přes pravou hranu prvku.
+        float autoEach = autoUnits > 0
+            ? MathF.Max(MinAutoSloupecMm(), (Width - fixedSum - rezervaMezerMm) / autoUnits) : 8f;
 
         var result = new List<RenderCol>();
         int nameIndex = -1;
@@ -385,6 +399,90 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float tripW = trip.Width ?? autoEach;
         return (result, tripW, nameIndex);
     }
+
+    /// <summary>
+    /// Rozvržení sloupců kresleného bloku - <b>jediné místo, kde se ze šířek stávají souřadnice</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 27. 8. si odsazení sloupce spoje počítala každá cesta sama jako `fixedSum + i * tripW`:
+    /// řádek platnosti, značky vedle času i piktogram zastávky. Mezera mezi skupinami sloupců ten
+    /// vzorec ruší - odsazení už není lineární v indexu spoje. Proto jedno místo, které o mezerách
+    /// ví, a cesty, které se ho jen ptají; jinak by se každá musela opravit zvlášť a ta, na kterou
+    /// by se zapomnělo, by kreslila značky mimo svůj sloupec.
+    /// </remarks>
+    private sealed class SloupcovaMrizka
+    {
+        private readonly List<int> _mezeraPred;
+
+        public SloupcovaMrizka(IReadOnlyList<RenderCol> popisne, float sloupecSpojeMm,
+            float mezeraMm, IEnumerable<int> hraniceSkupin)
+        {
+            Popisne = popisne;
+            SloupecSpojeMm = sloupecSpojeMm;
+            MezeraMm = mezeraMm;
+            _mezeraPred = mezeraMm > 0f ? [.. hraniceSkupin] : [];
+            PopisneSirkaMm = popisne.Sum(c => c.Width);
+        }
+
+        public IReadOnlyList<RenderCol> Popisne { get; }
+        public float SloupecSpojeMm { get; }
+        public float MezeraMm { get; }
+        public float PopisneSirkaMm { get; }
+
+        /// <summary>Začíná před tímto sloupcem spoje nová skupina, tedy mezera? Index 0 je hranice
+        /// mezi popisným blokem a spoji.</summary>
+        public bool MezeraPred(int indexSpoje) => _mezeraPred.Contains(indexSpoje);
+
+        /// <summary>Odsazení levé hrany sloupce spoje od levé hrany prvku.</summary>
+        public float XSpojeMm(int indexSpoje) =>
+            PopisneSirkaMm + indexSpoje * SloupecSpojeMm
+            + MezeraMm * _mezeraPred.Count(m => m <= indexSpoje);
+
+        /// <summary>Odsazení levé hrany popisného sloupce od levé hrany prvku.</summary>
+        public float XPopisnehoMm(int indexSloupce)
+        {
+            float x = 0f;
+            for (int i = 0; i < indexSloupce && i < Popisne.Count; i++) x += Popisne[i].Width;
+            return x;
+        }
+    }
+
+    /// <summary>
+    /// Indexy sloupců spojů, před kterými začíná nová skupina sloupců. <b>0 je vždy uvnitř</b> -
+    /// je to hranice mezi popisným blokem a spoji.
+    /// </summary>
+    /// <remarks>
+    /// Skupiny dnů se do hranic počítají jen se zapnutými nadpisy skupin: bez pásu není z tisku
+    /// poznat, že tam nějaká skupina začíná, a mezera by vypadala jako náhodná díra v tabulce.
+    /// </remarks>
+    private List<int> HraniceSkupin(IReadOnlyList<LineTripData> spoje)
+    {
+        var hranice = new List<int> { 0 };
+        if (!ShowGroupHeaders) return hranice;
+        for (int i = 1; i < spoje.Count; i++)
+            if (spoje[i].Skupina != spoje[i - 1].Skupina) hranice.Add(i);
+        return hranice;
+    }
+
+    /// <summary>
+    /// Kolik šířky si vezmou mezery mezi skupinami. Počítá se z <b>celé linky</b>, ne z kresleného
+    /// bloku.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Kdyby se rezervovalo podle bloku, měl by každý blok jinak široké sloupce - a to je přesně
+    /// vada, kterou řeší invariant z 25. 8. (poslední blok vycházel se sloupci 58,8 mm proti 6,4 mm
+    /// v prvním a čas stál uprostřed šesticentimetrového pole). Cena: blok, do kterého padne méně
+    /// skupin, nechá vpravo o mezeru víc volna - stejně jako to volné místo, které tam tabulka
+    /// nechává i dnes.
+    /// </remarks>
+    private float RezervaMezerMm(IReadOnlyList<LineTripData> vsechnySpoje) =>
+        MezeraMeziSkupinamiMm <= 0f ? 0f : MezeraMeziSkupinamiMm * HraniceSkupin(vsechnySpoje).Count;
+
+    /// <summary>Šířka, kterou zabere blok s daným počtem spojů - s rezervou na mezery, ne
+    /// s mezerami toho bloku, ať se každý blok do prvku vejde.</summary>
+    private static float SirkaBlokuMm(IReadOnlyList<RenderCol> popisne, float sloupecSpojeMm,
+        float rezervaMezerMm, int pocetSpoju) =>
+        popisne.Sum(c => c.Width) + rezervaMezerMm + pocetSpoju * sloupecSpojeMm;
 
     /// <summary>Mezera mezi stránkovými bloky, ať na sebe tabulky nenavazují bez předělu.</summary>
     private const float MezeraMeziBlokyMm = 4f;
@@ -410,7 +508,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // Hledá se proto největší počet, který se **při vlastním rozvržení** opravdu vejde - kdyby
         // se pravidlo pro šířky sloupců změnilo, dělení se přizpůsobí samo místo aby se rozešlo.
         // O čitelnost bloku se stará dno šířky sloupce, viz `MinAutoSloupecMm`.
-        int naBlok = NejvicSpojuNaBlok(stops, kmCount, pocetSpoju);
+        int naBlok = NejvicSpojuNaBlok(stops, kmCount, pocetSpoju, RezervaMezerMm(_cachedTrips ?? []));
         var bloky = new List<TableLayout.SloupcovyBlok>();
         for (int od = 0; od < pocetSpoju; od += naBlok)
             bloky.Add(new TableLayout.SloupcovyBlok(od, Math.Min(naBlok, pocetSpoju - od)));
@@ -439,21 +537,23 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         int kmCount = MaxKmCount(stops);
         var bloky = SloupcoveBloky(stops, kmCount, trips.Count);
         int naBlok = bloky.Count > 0 ? bloky.Max(b => b.Pocet) : 0;
+        float rezerva = RezervaMezerMm(trips);
         return bloky.Select(b =>
         {
-            var (cols, tripW, _) = BuildColumns(stops, kmCount, naBlok);
-            return new BlokRozvrh(b.Od, b.Pocet, cols.Sum(c => c.Width) + (b.Pocet * tripW), tripW);
+            var (cols, tripW, _) = BuildColumns(stops, kmCount, naBlok, rezerva);
+            return new BlokRozvrh(b.Od, b.Pocet, SirkaBlokuMm(cols, tripW, rezerva, b.Pocet), tripW);
         }).ToList();
     }
 
     /// <summary>Největší počet spojů, který se do šířky vejde i s popisnými sloupci spočítanými
     /// pro týž počet. Půlením intervalu, ať se `BuildColumns` nevolá pro každý počet zvlášť.</summary>
-    private int NejvicSpojuNaBlok(List<LineStopData> stops, int kmCount, int pocetSpoju)
+    private int NejvicSpojuNaBlok(List<LineStopData> stops, int kmCount, int pocetSpoju,
+        float rezervaMezerMm)
     {
         bool Vejde(int n)
         {
-            var (cols, tripW, _) = BuildColumns(stops, kmCount, n);
-            return cols.Sum(c => c.Width) + n * tripW <= Width + 0.01f;
+            var (cols, tripW, _) = BuildColumns(stops, kmCount, n, rezervaMezerMm);
+            return SirkaBlokuMm(cols, tripW, rezervaMezerMm, n) <= Width + 0.01f;
         }
 
         if (Vejde(pocetSpoju)) return pocetSpoju;
@@ -669,17 +769,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // (změřeno 25. 8.). Zbylé místo vpravo zůstane prázdné, jako ve starém tisku; jeho
             // dorovnání prázdnými sloupci je samostatné přání zákazníka (#8372).
             int naBlok = bloky.Max(b => b.Pocet);
+            float rezervaMezer = RezervaMezerMm(trips);
             float y = Y;
             foreach (var blok in bloky)
             {
-                var (fixedCols, tripW, nameIndex) = BuildColumns(stops, kmCount, naBlok);
+                var (fixedCols, tripW, nameIndex) = BuildColumns(stops, kmCount, naBlok, rezervaMezer);
                 var spojeBloku = trips.GetRange(blok.Od, blok.Pocet);
+                // Hranice skupin se berou ze spojů **tohoto** bloku - mezera se kreslí tam, kde
+                // v bloku opravdu začíná nová skupina. Rezerva na šířku je naopak z celé linky.
+                var mrizka = new SloupcovaMrizka(fixedCols, tripW, MezeraMeziSkupinamiMm,
+                    HraniceSkupin(spojeBloku));
 
                 float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
                 float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
-                float fixedSum = fixedCols.Sum(c => c.Width);
 
-                var plan = BuildRowPlan(stops, spojeBloku, trips, groups, fixedCols, tripW, nameIndex, fixedSum,
+                var plan = BuildRowPlan(stops, spojeBloku, trips, groups, mrizka, nameIndex,
                     headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
@@ -692,7 +796,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     plan = [.. plan.Select(r => r with
                     {
                         Cells = [.. r.Cells, .. Enumerable.Repeat(
-                            new ColumnRenderer.CellSpec(tripW, "",
+                            new ColumnRenderer.CellSpec(mrizka.SloupecSpojeMm, "",
                                 r.Kind is RowKind.Header or RowKind.GroupHeader ? tripHeaderStyle : tripDataStyle),
                             prazdnych)]
                     })];
@@ -731,13 +835,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private List<RowSpec> BuildRowPlan(
         List<LineStopData> stops, List<LineTripData> trips, List<LineTripData> vsechnySpoje,
         List<LineSkupinaData> groups,
-        List<RenderCol> fixedCols, float tripW, int nameIndex, float fixedSum,
+        SloupcovaMrizka mrizka, int nameIndex,
         float headerH, float rowH, float pripojRowH, SKPaint gridPaint,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
         ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle,
         RenderContext ctx, SKTypeface symbolFace, float scale)
     {
         var plan = new List<RowSpec>();
+        var fixedCols = mrizka.Popisne;
+        float tripW = mrizka.SloupecSpojeMm;
 
         // pás názvů skupin dnů - spojité úseky sloupců spojů stejné skupiny (sloučené buňky,
         // proto bez svislých čar, které by nadpis rozsekaly)
@@ -750,7 +856,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             // Popisné sloupce jsou jedna skupina, takže jedna sloučená buňka s jedním nadpisem.
             var band = new List<ColumnRenderer.CellSpec>
-                { new(fixedSum, PopisneSloupceNadpis, PopisneSloupceNadpis == "" ? headerResolved : headerCentered) };
+                { new(mrizka.PopisneSirkaMm, PopisneSloupceNadpis,
+                    PopisneSloupceNadpis == "" ? headerResolved : headerCentered) };
             int i = 0;
             while (i < trips.Count)
             {
@@ -758,6 +865,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 int skupina = trips[i].Skupina;
                 while (i < trips.Count && trips[i].Skupina == skupina) i++;
                 string nadpis = groups.FirstOrDefault(g => g.Id == skupina)?.Nadpis ?? "";
+                // Mezera je i v pásu, jinak by nad ní pokračovalo podbarvení záhlaví a skupiny
+                // by se v pruhu slily zpátky do jednoho.
+                if (mrizka.MezeraPred(start)) band.Add(BunkaMezery(mrizka.MezeraMm, headerResolved));
                 band.Add(new((i - start) * tripW, nadpis, headerCentered));
             }
             // sloucene bunky -> bez svislych car (rozsekaly by nadpis pres nekolik sloupcu spoju)
@@ -769,7 +879,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         for (int ci = 0; ci < fixedCols.Count; ci++)
             headerSpecs.Add(new(fixedCols[ci].Width, fixedCols[ci].Header, fixedCols[ci].HeaderStyle,
                 SuppressLeadingLine: BezCaryVlevo(ci)));
-        foreach (var t in trips) headerSpecs.Add(new(tripW, t.CisloSpoje, tripHeaderStyle));
+        PridejSpoje(headerSpecs, mrizka, trips.Count, headerResolved,
+            ti => (trips[ti].CisloSpoje, tripHeaderStyle));
         plan.Add(new(RowKind.Header, headerH, headerSpecs)
             { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
 
@@ -781,20 +892,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var platnostRuns = trips
                 .Select(t => SymbolRunRenderer.BuildRuns(t.Platnost, SymbolMap.ResolveLinkovy))
                 .ToList();
-            var prazdne = TripTextRow(fixedCols, trips, tripW, tripDataStyle, _ => "");
+            var prazdne = TripTextRow(mrizka, trips, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, rowH, prazdne)
             {
                 VerticalLinePaint = gridPaint,
                 // `DrawRows` kreslí buňky od X prvku, takže i ruční kreslení musí začít tam.
-                Decorate = rowY => DrawPlatnostRuns(ctx, rowY, rowH, X + fixedSum, tripW,
-                    platnostRuns, tripDataStyle, symbolFace, scale),
+                Decorate = rowY => DrawPlatnostRuns(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
+                    mrizka.SloupecSpojeMm, platnostRuns, tripDataStyle, symbolFace, scale),
             });
         }
 
         // řádek NZ (negativní značky)
         if (HasNzRow(vsechnySpoje))
             plan.Add(new(RowKind.HeaderExtra, rowH,
-                TripTextRow(fixedCols, trips, tripW, tripDataStyle, t => t.Nz))
+                TripTextRow(mrizka, trips, tripDataStyle, t => t.Nz))
             { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
 
         // řádky zastávek (+ vložené přípojné řádky)
@@ -834,15 +945,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 runs.Add(new(" " + cas, false));
                 znackyVBunce[ti] = runs;
             }
-            for (int ti = 0; ti < trips.Count; ti++)
+            int siRadku = si;
+            PridejSpoje(specs, mrizka, trips.Count, tripCellStyle, ti =>
             {
                 var t = trips[ti];
                 // Barva spoje z dat přebíjí barvu textu z kaskády - je to prezentační nápověda,
                 // kterou prvek smí respektovat (R3). Spoj bez barvy nechá kaskádu být.
                 var cellStyle = t.ForeColor is null ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor };
-                string text = znackyVBunce.ContainsKey(ti) ? "" : (si < t.Casy.Count ? t.Casy[si] : "");
-                specs.Add(new(tripW, text, cellStyle));
-            }
+                string text = znackyVBunce.ContainsKey(ti) ? "" : (siRadku < t.Casy.Count ? t.Casy[siRadku] : "");
+                return (text, cellStyle);
+            });
 
             // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
             string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
@@ -858,9 +970,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 Decorate = (znackyRadku.Count == 0) && (znakZastavky.Count == 0) ? null : rowY =>
                 {
                     if (znackyRadku.Count > 0)
-                        DrawBunkySeZnackou(ctx, rowY, rowH, X + fixedSum, tripW, znackyRadku, tripCellStyle, symbolFace, scale);
+                        DrawBunkySeZnackou(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
+                            mrizka.SloupecSpojeMm, znackyRadku, tripCellStyle, symbolFace, scale);
                     if (znakZastavky.Count > 0 && nameIndex >= 0)
-                        DrawZnakZastavky(ctx, rowY, rowH, X, fixedCols, nameIndex, znakZastavky,
+                        DrawZnakZastavky(ctx, rowY, rowH, X, mrizka, nameIndex, znakZastavky,
                             OddTc(fixedCols[nameIndex].DataStyle, oddTc), symbolFace, scale);
                 },
             });
@@ -878,8 +991,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                         prSpecs.Add(new(fixedCols[ci].Width,
                             ci == nameIndex ? PripojText(pr) : "", pripojStyle,
                             SuppressLeadingLine: BezCaryVlevo(ci)));
-                    foreach (var t2 in trips)
-                        prSpecs.Add(new(tripW, ReferenceEquals(t2, t) ? pr.Cas : "", pripojStyle));
+                    var spoj = t;
+                    PridejSpoje(prSpecs, mrizka, trips.Count, pripojStyle,
+                        ti => (ReferenceEquals(trips[ti], spoj) ? pr.Cas : "", pripojStyle));
 
                     plan.Add(new(RowKind.SubRow, pripojRowH, prSpecs)
                     { VerticalLinePaint = gridPaint, LineAbovePaint = gridPaint, LineBelowPaint = gridPaint });
@@ -904,12 +1018,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// názvu se můžou potkat - kdyby se to ukázalo, patří to řešit rezervací místa v buňce.
     /// </remarks>
     private static void DrawZnakZastavky(RenderContext ctx, float rowTopMm, float rowH, float xMm,
-        List<RenderCol> fixedCols, int nameIndex, List<SymbolRunRenderer.Run> runs,
+        SloupcovaMrizka mrizka, int nameIndex, List<SymbolRunRenderer.Run> runs,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
     {
-        float leftMm = xMm;
-        for (int i = 0; i < nameIndex; i++) leftMm += fixedCols[i].Width;
-        var cellMm = new SKRect(leftMm, rowTopMm, leftMm + fixedCols[nameIndex].Width, rowTopMm + rowH);
+        float leftMm = xMm + mrizka.XPopisnehoMm(nameIndex);
+        var cellMm = new SKRect(leftMm, rowTopMm, leftMm + mrizka.Popisne[nameIndex].Width, rowTopMm + rowH);
         SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style),
             runs, style with { HAlign = TextHorizontalAlignment.Right }, symbolFace, scale);
     }
@@ -930,12 +1043,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Nakreslí buňky, kde je vedle času značka návaznosti - piktogram symbolovým fontem,
     /// čas běžným.</summary>
     private static void DrawBunkySeZnackou(RenderContext ctx, float rowTopMm, float rowH,
-        float prvniSloupecMm, float tripW, Dictionary<int, List<SymbolRunRenderer.Run>> znacky,
+        Func<int, float> xSpojeMm, float tripW, Dictionary<int, List<SymbolRunRenderer.Run>> znacky,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
     {
         foreach (var (ti, runs) in znacky)
         {
-            float leftMm = prvniSloupecMm + ti * tripW;
+            float leftMm = xSpojeMm(ti);
             var cellMm = new SKRect(leftMm, rowTopMm, leftMm + tripW, rowTopMm + rowH);
             SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style), runs, style, symbolFace, scale);
         }
@@ -949,30 +1062,61 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// „X", protože ten měl v buňce navíc „BEV" (nález Jan 24. 8.).
     /// </remarks>
     private static void DrawPlatnostRuns(RenderContext ctx, float rowTopMm, float rowH,
-        float fixedSumMm, float tripW, List<List<SymbolRunRenderer.Run>> runsPerTrip,
+        Func<int, float> xSpojeMm, float tripW, List<List<SymbolRunRenderer.Run>> runsPerTrip,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
     {
         for (int i = 0; i < runsPerTrip.Count; i++)
         {
             var runs = runsPerTrip[i];
             if (runs.Count == 0) continue;
-            float leftMm = fixedSumMm + i * tripW;
+            float leftMm = xSpojeMm(i);
             var cellMm = new SKRect(leftMm, rowTopMm, leftMm + tripW, rowTopMm + rowH);
             SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style), runs, style, symbolFace, scale);
         }
     }
 
     private List<ColumnRenderer.CellSpec> TripTextRow(
-        List<RenderCol> fixedCols, List<LineTripData> trips, float tripW,
+        SloupcovaMrizka mrizka, List<LineTripData> trips,
         ResolvedTextStyle tripDataStyle, Func<LineTripData, string> text)
     {
         var specs = new List<ColumnRenderer.CellSpec>();
-        for (int ci = 0; ci < fixedCols.Count; ci++)
-            specs.Add(new(fixedCols[ci].Width, "", fixedCols[ci].DataStyle,
+        for (int ci = 0; ci < mrizka.Popisne.Count; ci++)
+            specs.Add(new(mrizka.Popisne[ci].Width, "", mrizka.Popisne[ci].DataStyle,
                 SuppressLeadingLine: BezCaryVlevo(ci)));
-        foreach (var t in trips) specs.Add(new(tripW, text(t), tripDataStyle));
+        PridejSpoje(specs, mrizka, trips.Count, tripDataStyle, ti => (text(trips[ti]), tripDataStyle));
         return specs;
     }
+
+    /// <summary>
+    /// Vysází buňky sloupců spojů i s mezerami mezi skupinami sloupců.
+    /// </summary>
+    /// <remarks>
+    /// Existuje proto, že sloupce spojů se skládají na <b>čtyřech</b> místech (čísla spojů, časy
+    /// u zastávek, přípojné řádky, řádky platnosti a negativních značek) a mezera musí na všech
+    /// padnout na tentýž pixel - jinak se svislé čáry rozejdou o šířku mezery a tabulka vypadá
+    /// rozsypaně. Šířky sloupců i mezer proto nikdo nesčítá sám, drží je
+    /// <see cref="SloupcovaMrizka"/>.
+    /// <para>Čára na hraně skupiny: nese ji <b>buňka mezery</b> (její levá hrana = pravý okraj
+    /// předchozí skupiny) a sloupec za mezerou už svoji vlevo nekreslí. Vzor 940 má na okraji
+    /// popisného bloku jednu čáru, ne dvě kolem mezery.</para>
+    /// </remarks>
+    private static void PridejSpoje(List<ColumnRenderer.CellSpec> specs, SloupcovaMrizka mrizka,
+        int pocetSpoju, ResolvedTextStyle stylMezery,
+        Func<int, (string Text, ResolvedTextStyle Style)> bunka)
+    {
+        for (int ti = 0; ti < pocetSpoju; ti++)
+        {
+            bool mezera = mrizka.MezeraPred(ti);
+            if (mezera) specs.Add(BunkaMezery(mrizka.MezeraMm, stylMezery));
+            var (text, style) = bunka(ti);
+            specs.Add(new(mrizka.SloupecSpojeMm, text, style, SuppressLeadingLine: mezera));
+        }
+    }
+
+    /// <summary>Prázdná buňka mezery mezi skupinami sloupců - bez pozadí, ať mezerou prosvítá
+    /// stránka a pruh záhlaví se v ní přeruší.</summary>
+    private static ColumnRenderer.CellSpec BunkaMezery(float sirkaMm, ResolvedTextStyle vzor) =>
+        new(sirkaMm, "", vzor with { BackgroundColor = ColorHex.Transparent });
 
     /// <summary>Má se na levé hraně popisného sloupce potlačit svislá čára? První sloupec bloku
     /// nikdy - tam je vnější hrana, kterou kreslí rámeček prvku, ne mřížka.</summary>
@@ -1029,6 +1173,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
             PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
+            MezeraMeziSkupinamiMm = MezeraMeziSkupinamiMm,
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
             RowVisibilityExpression = RowVisibilityExpression,
@@ -1063,6 +1208,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },
         new BoolPropertyDescriptor { Label = "Popisné sloupce bez vnitřních čar", Group = "Sloupce",
             Get = () => PopisneSloupceBezVnitrnichCar, Set = v => PopisneSloupceBezVnitrnichCar = v },
+        new FloatPropertyDescriptor { Label = "Mezera mezi skupinami sloupců", Group = "Sloupce",
+            Unit = "mm", Min = 0, Max = 20, Format = "0.#",
+            Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
