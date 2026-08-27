@@ -76,12 +76,6 @@ Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-ses
 | **L10** | **Mřížka linkové tabulky: dvě volby, které nic nedělají.** „Čáry mezi řádky" a „Čáry mezi sloupci" jsou v panelu i v Caché formuláři, ale prvek je **vůbec nečte** - mřížku kreslí vždy (ověřeno vykreslením 27. 8.: všechny čtyři kombinace zapnuto/vypnuto dají shodný obrázek). ⚠️ **Rozsvítit je není bezpečná oprava**: hodnota je uložená v šablonách, takže komu je dnes odškrtnuté, tomu z tisku zmizí mřížka. Patří k tomu i odložené `L9-R3` - **oddělená barva a tloušťka vodorovných × svislých čar** (`GridStyle` má dnes jednu pro obojí a je **sdílený** se všemi tabulkovými prvky, takže se to má doplánovat pro všechny naráz, ne jen tady). | S |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
 
-### Otevřené rozhodnutí
-
-| # | Rozhodnutí | Stav |
-|---|---|---|
-| `L9-R4` ⏸ | **Co dělá prázdný popisek pásu nad sloupci?** (a) pás se schová · (b) kreslí se prázdný pruh | **Otevřené**, do rozhodnutí platí **(b)**, tedy dnešní chování. Vzor bude chtít obojí - nad popisnými sloupci nadpis, jinde ne. Týž problém má legenda poznámek |
-
 ### K ověření na reálné sestavě
 
 Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,

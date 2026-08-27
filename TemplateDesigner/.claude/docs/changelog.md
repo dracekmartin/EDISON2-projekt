@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-27 (8) - ✨ bez nadpisu se nad popisnými sloupci nekreslí nic (`L9-R4` rozhodnuto)
+
+Poslední otevřené rozhodnutí z `L9`: co má dělat pás nad popisnými sloupci, když je jeho popisek
+prázdný. Dosud se kreslila **prázdná šedá krabice**.
+
+**Rozhodl to legacy, ne vkus** (dotaz Jan: „řešilo se tohle nějak v legacy systému?"). Starý modul
+nad popisnými sloupci pás **vůbec nemá** - skupina odjezdů je v jeho kontraktu atribut *jen* sloupců
+spojů („pouze pro typ sloupce 7,9", `JRapiLinPrtWin.mac:246`), takže z popisných sloupců není z čeho
+ho nakreslit. Je to zároveň důvod původní stížnosti kolegy: „nelze mít jeden nadpis pro info
+sloupce" nebyla vada nastavení, ten pojem tam neexistoval.
+
+Nové chování je tedy obojí naráz:
+
+- **prázdný popisek = chování starého modulu** (nad popisnými sloupci nic, ani podbarvení),
+- **vyplněný popisek = featura nad rámec legacy**, objeví se, když si o ni uživatel řekne textem.
+
+⚠️ **Zaškrtávátko se nezavedlo, i když byl návrh** (Jan: „když si nejsme jistí, dává smysl to udělat
+na checkbox"). Podmínka „nejsme jistí" po přečtení legacy nepadla - a byla by to třetí volba k pásu
+vedle nadpisu a slití, která nastavuje něco, co se rozhodne samo z toho, jestli je text prázdný.
+
+Ověřeno: .NET 1211/1211 + 709 + 612, ověřeno mutací (s vrácenou šedou krabicí test padá). Případ,
+kdy popisek nemá **žádná** skupina, se nemění - tam se pás nekreslil ani dosud.
+
+
 ## 2026-08-27 (7) - ✨ bezbariérové vozidlo se tiskne vozíčkem, ne zkratkou „BEV"
 
 Nález Jan na vzoru 940: „ve starém je ta ikonka vozíčku, teď vypíšeme textem BEV."

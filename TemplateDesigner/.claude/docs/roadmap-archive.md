@@ -1,5 +1,21 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L9-R4` - prázdný popisek pásu nad popisnými sloupci (rozhodnuto 27. 8. 2026)
+
+**Zvoleno: bez popisku se nad popisnými sloupci nekreslí nic** (ani podbarvení). Rozhodl to legacy,
+ne vkus - starý modul tam pás vůbec nemá, protože skupina odjezdů je atribut jen sloupců spojů
+(„pouze pro typ sloupce 7,9", `JRapiLinPrtWin.mac:246`). Prázdný popisek = chování starého modulu,
+vyplněný = featura nad rámec legacy.
+
+Návrh udělat z toho zaškrtávátko padl: byl podmíněný tím, že si nejsme jistí, a legacy tu nejistotu
+odstranil. Detail v changelogu 27. 8. (8).
+
+Původní zadání rozhodnutí:
+
+| # | Rozhodnutí | Stav |
+|---|---|---|
+| `L9-R4` ⏸ | **Co dělá prázdný popisek pásu nad sloupci?** (a) pás se schová · (b) kreslí se prázdný pruh | **Otevřené**, do rozhodnutí platí **(b)**, tedy dnešní chování. Vzor bude chtít obojí - nad popisnými sloupci nadpis, jinde ne. Týž problém má legenda poznámek |
+
 ## `C7` - rozdvojení příjezd/odjezd a padding sloupců: hotové (uzavřeno 27. 8. 2026)
 
 Viselo to jako odložený bod z pilotu, ale **obě jmenované půlky jsou dávno hotové** a jen to nikdo

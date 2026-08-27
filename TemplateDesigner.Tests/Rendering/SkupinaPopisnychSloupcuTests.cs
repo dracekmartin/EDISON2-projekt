@@ -68,15 +68,58 @@ public class SkupinaPopisnychSloupcuTests
     }
 
     [Fact]
-    public void PrazdnyNadpis_KresliJakoDosud()
+    public void PrazdnyNadpis_JeVychozi()
     {
-        // R4 zůstává nerozhodnutá, takže výchozí stav se nesmí změnit: prázdný nadpis = jako dřív.
         var data = ElementRenderFixtures.LineTableData();
         var prvek = Prvek();
 
         Assert.Equal("", prvek.PopisneSloupceNadpis);
         Assert.False(prvek.PopisneSloupceBezVnitrnichCar);
         Assert.True(Pixely(prvek, data) > 0, "prvek s výchozím nastavením nekreslí vůbec nic");
+    }
+
+    /// <summary>
+    /// Bez nadpisu se nad popisnými sloupci nekreslí <b>nic</b>, ani podbarvení pásu.
+    /// </summary>
+    /// <remarks>
+    /// `L9-R4`, rozhodnuto 27. 8. podle legacy: starý modul nad popisnými sloupci pás vůbec nemá -
+    /// skupina odjezdů je atribut <b>jen</b> sloupců spojů („pouze pro typ sloupce 7,9",
+    /// <c>JRapiLinPrtWin.mac:246</c>). Prázdný nadpis = chování starého modulu, vyplněný = featura
+    /// nad rámec legacy. Měří se <b>podbarvení</b>, protože prázdná buňka nemá žádný inkoust.
+    /// </remarks>
+    [Fact]
+    public void BezNadpisu_SeNadPopisnymiSloupciNekresliAniPodbarveni()
+    {
+        var data = ElementRenderFixtures.LineTableData();
+        // Šedý pás musí být čím poznat, a nadpisy skupin dnů ho drží nahoře i bez našeho nadpisu.
+        var bez = Prvek();  bez.HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 8, BackgroundColor = "#FFE0E0E0" };
+        var s = Prvek();    s.HeaderStyle = bez.HeaderStyle.Clone();
+        s.PopisneSloupceNadpis = "SMER";
+
+        int bezPodbarveni = PodbarveneVPasu(bez, data);
+        int sPodbarvenim = PodbarveneVPasu(s, data);
+
+        Assert.True(bezPodbarveni == 0,
+            $"nad popisnými sloupci je bez nadpisu podbarvení ({bezPodbarveni} px) - má tam být nic");
+        Assert.True(sPodbarvenim > 0,
+            "s nadpisem se pás nad popisnými sloupci nekreslí vůbec");
+    }
+
+    /// <summary>Podbarvené pixely v levé části <b>prvního</b> řádku prvku, tedy v pásu nad
+    /// popisnými sloupci - ne inkoust, prázdná buňka žádný nemá.</summary>
+    private static int PodbarveneVPasu(LineTableElement prvek, DataContext data)
+    {
+        using var bmp = Vykresli(prvek, data);
+        int n = 0;
+        for (int y = (int)(0.2f * MmToPx); y <= (int)(1.0f * MmToPx); y++)
+            for (int x = (int)(2f * MmToPx); x <= (int)(20f * MmToPx); x++)
+            {
+                var c = bmp.GetPixel(x, y);
+                bool bila = c.Red > 240 && c.Green > 240 && c.Blue > 240;
+                bool inkoust = c.Red < 100 && c.Green < 100 && c.Blue < 100;
+                if (!bila && !inkoust) n++;
+            }
+        return n;
     }
 
     /// <summary>Počet svislých čar v řádku záhlaví - hledá se ve výšce, kde už je tabulka.</summary>

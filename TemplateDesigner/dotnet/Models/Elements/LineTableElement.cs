@@ -990,9 +990,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (HasGroupHeaderBand(vsechnySpoje, groups))
         {
             // Popisné sloupce jsou jedna skupina, takže jedna sloučená buňka s jedním nadpisem.
+            // ⚠️ **Bez nadpisu se nekreslí nic** - ani podbarvení (`L9-R4`, rozhodnuto 27. 8.).
+            // Starý modul nad popisnými sloupci pás vůbec nemá: skupina odjezdů je v jeho kontraktu
+            // atribut *jen* sloupců spojů („pouze pro typ sloupce 7,9", `JRapiLinPrtWin.mac:246`),
+            // takže z popisných sloupců není z čeho ho nakreslit. Prázdný nadpis = chování legacy,
+            // vyplněný = naše featura nad rámec legacy, která se objeví, když si o ni uživatel řekne.
             var band = new List<ColumnRenderer.CellSpec>
                 { new(mrizka.PopisneSirkaMm, PopisneSloupceNadpis,
-                    PopisneSloupceNadpis == "" ? headerResolved : headerCentered) };
+                    PopisneSloupceNadpis == ""
+                        ? headerResolved with { BackgroundColor = ColorHex.Transparent }
+                        : headerCentered) };
             int i = 0;
             while (i < trips.Count)
             {
