@@ -9,7 +9,7 @@ public class TypographyGuardTests
     private const char EmDash = '\u2014';
 
     [Fact]
-    public void ZdrojeNeobsahujiEmDash()
+    public void Sources_ContainNoEmDash()
     {
         var root = RepoRoot();
         var hits = Sources(root)

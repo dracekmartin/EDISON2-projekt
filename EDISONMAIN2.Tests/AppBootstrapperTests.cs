@@ -392,7 +392,7 @@ public class AppBootstrapperTests
     }
 
     [Fact]
-    public void SavePostLoginState_Debug_NeprepiseLastLoginName()
+    public void SavePostLoginState_Debug_DoesNotOverwriteLastLoginName()
     {
         var prefs = Substitute.For<ILocalPrefs>();
 

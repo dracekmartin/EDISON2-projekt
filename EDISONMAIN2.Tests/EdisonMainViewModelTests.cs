@@ -272,7 +272,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public async Task SwitchCompany_BezOtevrenychOken_NeptaSeNaPotvrzeni()
+    public async Task SwitchCompany_NoOpenWindows_DoesNotAskForConfirmation()
     {
         // Bez otevřených oken je přepnutí nedestruktivní - dialog by byl jen zbytečné friction.
         var mockPopup = Substitute.For<IPopupDisplayer>();
@@ -304,7 +304,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void CompanyItem_DisplayName_FormatIdfaPomlckaNazev()
+    public void CompanyItem_DisplayName_FormatsAsIdfaDashName()
     {
         // Jednotný formát s displayem přepínače (EDFilterComboBox "Key - Label").
         Assert.Equal("CB - České Budějovice", new CompanyItem("CB", "České Budějovice", "DB").DisplayName);
@@ -748,7 +748,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void UserDisplay_PrazdneFullName_PadaNaLogin()
+    public void UserDisplay_EmptyFullName_FallsBackToLogin()
     {
         var mlRest = MockMLRest();
         mlRest.LoginName.Returns("mhubata");
@@ -758,7 +758,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void UserDisplay_VyplneneFullName_VraciPlneJmeno()
+    public void UserDisplay_FilledFullName_ReturnsFullName()
     {
         var mlRest = MockMLRest();
         mlRest.LoginName.Returns("mhubata");
@@ -778,7 +778,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void NewVersionText_NovaVerze_KratkyTextBezTecky()
+    public void NewVersionText_NewVersion_ShortTextWithoutPeriod()
     {
         var vm = CreateVM();
 
@@ -791,7 +791,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void NewVersionText_UpToDate_ZustavaPrazdny()
+    public void NewVersionText_UpToDate_StaysEmpty()
     {
         var vm = CreateVM();
 

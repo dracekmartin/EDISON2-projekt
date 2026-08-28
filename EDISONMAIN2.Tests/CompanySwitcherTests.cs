@@ -280,7 +280,7 @@ public class CompanySwitcherTests
     }
 
     [Fact]
-    public void Switch_ZavreShellOkna_PredSwapemMLRest()
+    public void Switch_ClosesShellWindows_BeforeMLRestSwap()
     {
         // WPF okna shellu volají server přes sdílený MLRest - zavření (save) musí proběhnout
         // ještě pod starou Idfa, jinak by requesty šly do cizí firmy.
@@ -295,7 +295,7 @@ public class CompanySwitcherTests
     }
 
     [Fact]
-    public void Switch_Refused_NechaLegacyModulyBezet()
+    public void Switch_Refused_LeavesLegacyModulesRunning()
     {
         // Neúspěšné přepnutí nesmí zabít rozpracovanou práci v legacy modulech - mají vlastní
         // spojení se starou Idfa a shell zůstává na původní firmě. Shell okna se obětují
@@ -316,7 +316,7 @@ public class CompanySwitcherTests
     }
 
     [Fact]
-    public void Switch_AdminCancelled_NechaLegacyModulyBezet()
+    public void Switch_AdminCancelled_LeavesLegacyModulesRunning()
     {
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
@@ -333,7 +333,7 @@ public class CompanySwitcherTests
     }
 
     [Fact]
-    public void Switch_Accepted_ZavreLegacyModulyPredLogoutem()
+    public void Switch_Accepted_ClosesLegacyModulesBeforeLogout()
     {
         // Pořadí kill → logout je nutné: moduly sdílejí shell GUID s CacheLocks=1, po zániku
         // ACTIVITY zámku staré firmy by jim padal každý request na LockExist.
@@ -353,7 +353,7 @@ public class CompanySwitcherTests
     }
 
     [Fact]
-    public void Switch_OknoVetovaloZavreni_CancelledBezeZmeny()
+    public void Switch_WindowVetoedClose_CancelledWithoutChange()
     {
         // Přeživší okno by přes sdílený MLRest mluvilo s cizí firmou - veto (e.Cancel
         // v Closing, typicky neuložená data) proto ruší switch ještě před swapem Idfa.
@@ -375,7 +375,7 @@ public class CompanySwitcherTests
     }
 
     [Fact]
-    public void Switch_VerifyLicBeziBezCacheLocks_PoAcceptedJeJedna()
+    public void Switch_VerifyLicRunsWithoutCacheLocks_SingleCallAfterAccepted()
     {
         // Zámek nové firmy vznikne až ve VerifyLic - request pod novou Idfa s Locks=1
         // by padl na LockExist (EdisonActivityFailed → shutdown).

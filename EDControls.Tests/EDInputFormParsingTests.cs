@@ -1044,7 +1044,7 @@ public class EDInputFormPlaceholderWireTests
     }
 
     [Fact]
-    public void StarsiServerBezSloupce_NerozbijeParsovani()
+    public void OlderServerWithoutColumn_DoesNotBreakParsing()
     {
         // 12 sloupců = stav před rozšířením; příznak musí vyjít jako vypnutý, ne spadnout.
         var field = ParseSingleField(FieldRow());
@@ -1053,7 +1053,7 @@ public class EDInputFormPlaceholderWireTests
     }
 
     [Fact]
-    public void PriznakSePrenese()
+    public void ParseItems_CarriesPlaceholdersFlag()
     {
         // 13-18 = listItems, fileFilter, min, max, format, unit; 19 = placeholders
         var field = ParseSingleField(FieldRow("", "", "", "", "", "", "1"));
@@ -1067,14 +1067,14 @@ public class EDInputFormPlaceholderWireTests
     /// se po prvním kole schovalo. Tenhle test hlídá .NET stranu round-tripu.
     /// </summary>
     [Fact]
-    public void PriznakPrezijeCestuTamIZpet()
+    public void PlaceholdersFlag_SurvivesRoundTrip()
     {
-        var odeslane = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
+        var sent = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
 
-        var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([odeslane]);
-        var vraceny = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
+        var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([sent]);
+        var returned = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
 
-        Assert.True(vraceny.Placeholders);
+        Assert.True(returned.Placeholders);
     }
 
     /// <summary>
@@ -1082,13 +1082,13 @@ public class EDInputFormPlaceholderWireTests
     /// (<c>EDInputForm.PlaceholderFields</c>) a server by ho na zpáteční cestě přepsal prázdnem.
     /// </summary>
     [Fact]
-    public void SeznamPoliPoDratuNejede()
+    public void PlaceholderFields_NotSentOverWire()
     {
-        var odeslane = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
+        var sent = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
 
-        var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([odeslane]);
-        var vraceny = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
+        var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([sent]);
+        var returned = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
 
-        Assert.Empty(vraceny.ListItems);
+        Assert.Empty(returned.ListItems);
     }
 }

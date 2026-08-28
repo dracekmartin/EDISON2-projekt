@@ -9,72 +9,72 @@ namespace EDControls.Tests;
 /// </summary>
 public class BulkObservableCollectionTests
 {
-    private static (BulkObservableCollection<string> kolekce, List<NotifyCollectionChangedAction> udalosti) Sledovana()
+    private static (BulkObservableCollection<string> collection, List<NotifyCollectionChangedAction> events) Watched()
     {
-        var kolekce = new BulkObservableCollection<string>();
-        var udalosti = new List<NotifyCollectionChangedAction>();
-        kolekce.CollectionChanged += (_, e) => udalosti.Add(e.Action);
-        return (kolekce, udalosti);
+        var collection = new BulkObservableCollection<string>();
+        var events = new List<NotifyCollectionChangedAction>();
+        collection.CollectionChanged += (_, e) => events.Add(e.Action);
+        return (collection, events);
     }
 
     [Fact]
-    public void ReplaceAll_PosleJedinouUdalost()
+    public void ReplaceAll_RaisesSingleResetEvent()
     {
-        var (kolekce, udalosti) = Sledovana();
+        var (collection, events) = Watched();
 
-        kolekce.ReplaceAll(["a", "b", "c", "d"]);
+        collection.ReplaceAll(["a", "b", "c", "d"]);
 
-        Assert.Equal([NotifyCollectionChangedAction.Reset], udalosti);
-        Assert.Equal(["a", "b", "c", "d"], kolekce);
+        Assert.Equal([NotifyCollectionChangedAction.Reset], events);
+        Assert.Equal(["a", "b", "c", "d"], collection);
     }
 
     /// <summary>Dosavadní cesta (Clear + Add) je to, co se nahrazuje - pro srovnání, ať je vidět,
     /// o kolik oznámení jde.</summary>
     [Fact]
-    public void PlneniPoJednom_PosleOznameniZaKazdyRadek()
+    public void AddingOneByOne_RaisesEventPerRow()
     {
-        var (kolekce, udalosti) = Sledovana();
+        var (collection, events) = Watched();
 
-        kolekce.Clear();
-        foreach (var polozka in new[] { "a", "b", "c", "d" }) kolekce.Add(polozka);
+        collection.Clear();
+        foreach (var item in new[] { "a", "b", "c", "d" }) collection.Add(item);
 
-        Assert.Equal(5, udalosti.Count);   // 1 Reset z Clear + 4 Add
+        Assert.Equal(5, events.Count);   // 1 Reset z Clear + 4 Add
     }
 
     [Fact]
-    public void ReplaceAll_ZahodiPuvodniObsah()
+    public void ReplaceAll_DiscardsPreviousContent()
     {
-        var kolekce = new BulkObservableCollection<string> { "stare1", "stare2" };
+        var collection = new BulkObservableCollection<string> { "stare1", "stare2" };
 
-        kolekce.ReplaceAll(["nove"]);
+        collection.ReplaceAll(["nove"]);
 
-        Assert.Equal(["nove"], kolekce);
+        Assert.Equal(["nove"], collection);
     }
 
     [Fact]
-    public void ReplaceAll_PrazdnymSeznamemVyprazdni()
+    public void ReplaceAll_EmptyList_Clears()
     {
-        var (kolekce, udalosti) = Sledovana();
-        kolekce.ReplaceAll(["a", "b"]);
-        udalosti.Clear();
+        var (collection, events) = Watched();
+        collection.ReplaceAll(["a", "b"]);
+        events.Clear();
 
-        kolekce.ReplaceAll([]);
+        collection.ReplaceAll([]);
 
-        Assert.Empty(kolekce);
-        Assert.Equal([NotifyCollectionChangedAction.Reset], udalosti);
+        Assert.Empty(collection);
+        Assert.Equal([NotifyCollectionChangedAction.Reset], events);
     }
 
     /// <summary>Počet se musí ohlásit taky - bez toho by ukazatel „N řádků" zůstal na staré hodnotě.</summary>
     [Fact]
-    public void ReplaceAll_OhlasiZmenuPoctu()
+    public void ReplaceAll_RaisesCountChange()
     {
-        var kolekce = new BulkObservableCollection<string>();
-        var zmeneneVlastnosti = new List<string?>();
-        ((System.ComponentModel.INotifyPropertyChanged)kolekce).PropertyChanged += (_, e) => zmeneneVlastnosti.Add(e.PropertyName);
+        var collection = new BulkObservableCollection<string>();
+        var changedProperties = new List<string?>();
+        ((System.ComponentModel.INotifyPropertyChanged)collection).PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName);
 
-        kolekce.ReplaceAll(["a", "b"]);
+        collection.ReplaceAll(["a", "b"]);
 
-        Assert.Contains("Count", zmeneneVlastnosti);
-        Assert.Contains("Item[]", zmeneneVlastnosti);
+        Assert.Contains("Count", changedProperties);
+        Assert.Contains("Item[]", changedProperties);
     }
 }

@@ -69,7 +69,7 @@ public class EDFilterComboBoxCommitTests
     }
 
     [Fact]
-    public void Enter_PoNapsaniJednoznacnehoTextu_CommitujeKeyDoTwoWayZdroje()
+    public void Enter_AfterTypingUnambiguousText_CommitsKeyToTwoWaySource()
     {
         RunSta(() =>
         {
@@ -89,7 +89,7 @@ public class EDFilterComboBoxCommitTests
     }
 
     [Fact]
-    public void Enter_NejednoznacnyText_RevertujeNaPuvodniKey()
+    public void Enter_AmbiguousText_RevertsToOriginalKey()
     {
         RunSta(() =>
         {
@@ -108,7 +108,7 @@ public class EDFilterComboBoxCommitTests
     }
 
     [Fact]
-    public void Enter_PoVyberuSipkou_NeprepisujeZachycenyPick()
+    public void Enter_AfterArrowSelection_DoesNotOverwriteCapturedPick()
     {
         RunSta(() =>
         {
@@ -128,7 +128,7 @@ public class EDFilterComboBoxCommitTests
     // HD 13132/3: Enter po šipce se ZAVŘENÝM dropdownem propadal early-returnem
     // (Text už byl display picku) a commit se nikdy nezavolal - LostKeyboardFocus pak revertnul.
     [Fact]
-    public void Enter_PoSipceSeZavrenymDropdownem_Commituje()
+    public void Enter_AfterArrowWithClosedDropdown_Commits()
     {
         RunSta(() =>
         {
@@ -148,7 +148,7 @@ public class EDFilterComboBoxCommitTests
     // Pozn.: IsDropDownOpen tu nelze ověřit - ComboBox ho coercuje na false, dokud control není
     // naloadovaný v okně. Testujeme tedy posun výběru, který je na otevření nezávislý.
     [Fact]
-    public void SipkaDolu_ZacneUAktualnihoVyberu()
+    public void ArrowDown_StartsAtCurrentSelection()
     {
         RunSta(() =>
         {
@@ -161,7 +161,7 @@ public class EDFilterComboBoxCommitTests
     }
 
     [Fact]
-    public void SipkaDolu_BezVyberu_VezmePrvniPolozku()
+    public void ArrowDown_WithoutSelection_TakesFirstItem()
     {
         RunSta(() =>
         {
@@ -174,7 +174,7 @@ public class EDFilterComboBoxCommitTests
     }
 
     [Fact]
-    public void Sipky_NaKrajichStoji()
+    public void Arrows_StopAtBoundaries()
     {
         RunSta(() =>
         {
@@ -190,7 +190,7 @@ public class EDFilterComboBoxCommitTests
     }
 
     [Fact]
-    public void Escape_ZahodiRozpracovanyVyberARevertneDisplay()
+    public void Escape_DiscardsPendingSelectionAndRevertsDisplay()
     {
         RunSta(() =>
         {
@@ -208,7 +208,7 @@ public class EDFilterComboBoxCommitTests
 
     // Volný režim nesmí Enter polykat - EDInputForm ho používá na navigaci mezi poli.
     [Fact]
-    public void VolnyRezim_EnterNechaKlavesuProbublat()
+    public void FreeMode_EnterLetsKeyBubble()
     {
         RunSta(() =>
         {

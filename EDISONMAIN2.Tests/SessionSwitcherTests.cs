@@ -128,7 +128,7 @@ public class SessionSwitcherTests
     }
 
     [Fact]
-    public void Switch_OknoVetovaloZavreni_Cancelled_BezSwapuSession()
+    public void Switch_WindowVetoedClose_Cancelled_WithoutSessionSwap()
     {
         // Veto okna (neuložená data) ruší switch před logoutem staré session - přeživší okno
         // by jinak pracovalo pod session, která už na serveru neexistuje.

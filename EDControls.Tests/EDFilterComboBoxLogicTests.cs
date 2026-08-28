@@ -54,7 +54,7 @@ public class EDFilterComboBoxLogicTests
     }
 
     [Fact]
-    public void Matches_TextSDiakritikou_NajdeLabelBezDiakritiky()
+    public void Matches_TextWithDiacritics_FindsLabelWithout()
     {
         Assert.True(EDFilterComboBoxLogic.Matches(new ListItem("PL", "Plzen"), "plzeň"));
     }
@@ -73,7 +73,7 @@ public class EDFilterComboBoxLogicTests
     [InlineData("plzeň", "PL")]                     // exaktní Label
     [InlineData("budejo", "CB")]                    // jediný kandidát filtru
     [InlineData(" cb ", "CB")]                      // trim okrajů
-    public void ResolveTyped_JednoznacnyText_VratiPolozku(string text, string expectedKey)
+    public void ResolveTyped_UnambiguousText_ReturnsItem(string text, string expectedKey)
     {
         Assert.Equal(expectedKey, EDFilterComboBoxLogic.ResolveTyped(Firmy, text, " - ")?.Key);
     }
@@ -83,20 +83,20 @@ public class EDFilterComboBoxLogicTests
     [InlineData("xyz")]    // žádná shoda
     [InlineData("")]       // prázdný text
     [InlineData(null)]
-    public void ResolveTyped_NejednoznacnyNeboPrazdnyText_VratiNull(string? text)
+    public void ResolveTyped_AmbiguousOrEmptyText_ReturnsNull(string? text)
     {
         Assert.Null(EDFilterComboBoxLogic.ResolveTyped(Firmy, text, " - "));
     }
 
     [Fact]
-    public void ResolveTyped_ExaktniKeyMaPrednostPredFiltrem()
+    public void ResolveTyped_ExactKey_WinsOverFilter()
     {
         // "PL" je exaktní Key a zároveň substring "PL..." obou P-firem → vyhrává exakt.
         Assert.Equal("PL", EDFilterComboBoxLogic.ResolveTyped(Firmy, "PL", " - ")?.Key);
     }
 
     [Fact]
-    public void ResolveTyped_NullSuggestions_VratiNull()
+    public void ResolveTyped_NullSuggestions_ReturnsNull()
     {
         Assert.Null(EDFilterComboBoxLogic.ResolveTyped(null, "cb", " - "));
     }
