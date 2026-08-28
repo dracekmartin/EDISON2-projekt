@@ -7,10 +7,11 @@ spojů, počet řádků podle nejbohatšího spoje, prázdné u spojů s méně 
 Parametr (a ne trvalá data) proto, že dotaz do modulu turnusů stojí 40-550 ms na linku - kdo turnusy
 netiskne, nemá to platit. Legacy zapíná totéž stejnou pákou.
 
-⚠️ **Starý modul turnusy vůbec netiskne** - posílá do dotazu číslo linky s vodicími nulami, ale
-odpověď filtruje číslem bez nich (`TUmax` zůstane 0). Doloženo sondou oběma tvary. Hodnoty se proto
-neověřují oraclem (není proti čemu), ale proti témuž zdroji, jaký volá legacy; pozice řádků je
-odvozená z kontraktu enginu. Zapsáno i v `legacy-nahrada.md §3.3`.
+⚠️ **Starý engine s naším tvarem čísla linky turnusy nevrátí** - odpověď dotazu filtruje číslem bez
+vodicích nul, takže s klíčem z `^JRL` („0108360") nespáruje nic (`TUmax` = 0). Změřeno oběma tvary.
+**Co posílá skutečný klient TiskJR, ověřené není** - rozhodne až tisk ze starého modulu. Hodnoty se
+proto neověřují oraclem (v našem tvaru není proti čemu), ale proti témuž zdroji, jaký volá legacy;
+pozice řádků je odvozená z kontraktu enginu. Zapsáno i v `legacy-nahrada.md §3.3`.
 
 **Zbytky ze `L6b`:** zrcadlený blok má **vlastní šipku směru** - sloupec „Šipka směru" **za** názvy
 zastávek ukazuje nahoru (obsluhuje protijedoucí blok), před nimi dolů; legacy na to má druhý typ

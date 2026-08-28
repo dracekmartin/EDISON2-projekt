@@ -41,11 +41,17 @@ turnusy mají zbylé řádky prázdné - a jsou **nad** řádkem platnosti, jak 
 turnusů (`gSplTur` - týmž, jaký volá starý tisk) a ten **stojí 40-550 ms na linku** (změřeno sondou).
 Kdo turnusy netiskne, nemá půl sekundy platit. Legacy to zapíná stejnou pákou.
 
-⚠️ **Starý modul turnusy netiskne - má v tom chybu.** Do dotazu posílá číslo linky v indexovém tvaru
-s nulami („0108360"), ale odpověď se filtruje číslem z turnusového záznamu (`108360`), takže se nic
-nespáruje a `TUmax` zůstane 0. Doloženo dvakrát: pracovní global starého enginu po běhu (`TUmax=0`)
-a sonda oběma tvary („0108360" → 0 spojů, `108360` → 3 spoje). **Bug-kompatibilní nejsme** - featura
-má tisknout. Důsledek pro `R6`: **hodnoty se neověřují oraclem** (není proti čemu), ale proti
+⚠️ **Turnusy starého modulu závisí na tvaru čísla linky a v našem oracle nevyjdou.** Engine předá
+do dotazu `lin`, jak ho dostal, ale odpověď filtruje **číslem z turnusového záznamu** (`108360`),
+takže s indexovým tvarem s nulami („0108360") se nespáruje nic a `TUmax` zůstane 0. Změřeno oběma
+tvary („0108360" → 0 spojů, `108360` → 3 spoje) a doloženo pracovním globalem enginu po běhu.
+**Náš oracle (a klíč v `^JRL`) používá tvar s nulami, takže tam turnusy nevyjdou nikdy.**
+
+⚠️ **Neověřeno: co posílá skutečný klient TiskJR.** Komentář v jeho překladové vrstvě ukazuje seznam
+„4|820701" **bez** vodicí nuly (`ALVA.TISKJR.Data:125`), takže je možné, že v produkci legacy turnusy
+tiskne. Rozhodne to jedině **tisk ze starého modulu se zapnutou volbou** (je to nastavení sekce
+„Data linky" v návrháři sestav, ne u linky). Do té doby platí: **netvrdit, že se featura
+nepoužívala.** Důsledek pro `R6`: **hodnoty se neověřují oraclem** (v našem tvaru není proti čemu), ale proti
 **témuž zdroji, jaký volá legacy** - stejné datum platnosti linky, stejné sjednocení podle označení.
 Pozice řádků je odvozená z kontraktu enginu, ne z výstupu. Oracle test zůstává a přeskočí se, dokud
 starý modul nic nevytiskne; kdyby se spravil, porovnání se rozjede samo.

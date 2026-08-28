@@ -7,12 +7,13 @@ Include (%occInclude, GENERAL)
 /// proto ho **zapíná parametr sestavy** `TURNUSY_KE_SPOJUM` - stejnou pákou jako legacy
 /// (`in("A",2,"arr",6)`). Vypnutý parametr tedy musí znamenat, že se nevolá **a nic nepřijde**.
 ///
-/// ⚠️ **Oracle na hodnoty tady nesedne, protože starý modul turnusy netiskne** (doloženo 28. 8.).
-/// Jeho vlastní chyba: do dotazu posílá číslo linky v **indexovém tvaru s nulami** („0108360"),
-/// jenže odpověď se filtruje číslem z turnusového záznamu (`108360`), takže se nic nespáruje
-/// (`gSplTur`, `MLAPI.cls:545`) a `TUmax` zůstane 0. Změřeno oběma tvary sondou
+/// ⚠️ **Oracle na hodnoty tady nesedne: starý engine s naším tvarem čísla linky nevrátí nic.**
+/// Do dotazu předá `lin`, jak ho dostal, ale odpověď filtruje číslem z turnusového záznamu
+/// (`108360`), takže s indexovým tvarem s nulami („0108360" - ten je v `^JRL` i v oracle) se
+/// nespáruje nic a `TUmax` zůstane 0 (`gSplTur`, `MLAPI.cls:545`). Změřeno oběma tvary sondou
 /// `LinkovyJrNastaveniProbe.TurnusyTvarLinky`: „0108360" → 0 spojů, `108360` → 3 spoje.
-/// Bug-kompatibilní být nechceme - featura má tisknout.
+/// **Co posílá skutečný klient TiskJR, ověřené není** - jeho překladová vrstva má v komentáři
+/// „4|820701" bez vodicí nuly, takže v produkci turnusy tisknout mohou.
 ///
 /// Ověřuje se proto **proti témuž zdroji, jaký volá legacy** (`gSplTur`, stejné datum, stejné
 /// sjednocení podle označení): `TestZapnutyParametrPosilaTurnusy`. `TestParitaSLegacy` zůstává
