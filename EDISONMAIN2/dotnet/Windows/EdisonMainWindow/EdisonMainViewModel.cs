@@ -241,8 +241,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _changelogSource = changelogSource;
             _shortcuts = shortcuts;
 
-            OpenModuleCommand        = CommandAsync<IModule>(OpenModule);
-            LaunchShortcutCommand    = CommandAsync<DesktopShortcut>(LaunchShortcutViaHost);
+            OpenModuleCommand        = CommandAsync<IModule>(OpenModuleAsync);
+            LaunchShortcutCommand    = CommandAsync<DesktopShortcut>(LaunchShortcutViaHostAsync);
             ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
@@ -296,23 +296,23 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             SwitchCompanyCommand          = CommandAsync<int>(SwitchCompanyAsync);
 
             // Nástroje menu - Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
-            ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
-            RefreshLicenseCommand         = CommandAsync(RefreshLicense);
+            ShowBgTasksCommand            = CommandAsync(() => LaunchDialogAsync("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
+            RefreshLicenseCommand         = CommandAsync(RefreshLicenceAsync);
             // Admin-only - legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
-            ShowUsersLocksCommand         = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
-            ShowUsersActivityCommand      = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
+            ShowUsersLocksCommand         = CommandAsync(() => LaunchModelessAsync("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
+            ShowUsersActivityCommand      = CommandAsync(() => LaunchModelessAsync("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
 
             // Nastavení menu
             FontSettingsCommand           = Command(ShowFontSettings);
-            ShowLanguageSettingsCommand   = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
+            ShowLanguageSettingsCommand   = CommandAsync(() => LaunchDialogAsync("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
             ResetFormsCommand             = Command(ResetForms);
 
             // Nápověda menu
             ShowInfoCommand               = Command(ShowAppInfo);
-            ShowShellChangelogCommand     = CommandAsync(() => ShowChangelogFor("EDISONMAIN", "EDISON"));
-            ShowModuleChangelogCommand    = CommandAsync<IModule>(ShowModuleChangelog);
+            ShowShellChangelogCommand     = CommandAsync(() => ShowChangelogForAsync("EDISONMAIN", "EDISON"));
+            ShowModuleChangelogCommand    = CommandAsync<IModule>(ShowModuleChangelogAsync);
             OpenHelpdeskWebCommand        = Command(() => OpenWebUrl("http://podpora.m-line.cz"));
-            SendSystemLogCommand          = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
+            SendSystemLogCommand          = CommandAsync(() => LaunchDialogAsync("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
             // Spuštěné moduly menu - dynamický seznam, refresh při SubmenuOpened.
             RefreshRunningModulesCommand  = Command(RefreshRunningModules);
@@ -350,10 +350,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _shortcuts.Items.CollectionChanged += (_, _) => { if (!_suppressFavoritesSync) SyncFavorites(); };
             // Přesun dlaždice (reorder v miniaplikaci) → persistuj pozice (bez změny členství).
             _shortcuts.PositionsChanged += PersistShortcuts;
-            // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
+            // Spuštění z dlaždice jde přes OpenModuleAsync (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
             // Novinky z dlaždice: klíč nese sama položka (i u zástupců mimo strom), modul se nedohledává.
-            _shortcuts.ChangelogRequested += s => _ = ShowChangelogFor(s.ExecutablePath, s.DisplayedName);
+            _shortcuts.ChangelogRequested += s => _ = ShowChangelogForAsync(s.ExecutablePath, s.DisplayedName);
             // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení
             // si blob přečteme znovu, jinak by dlaždice naskočila až po restartu shellu.
             WindowNavigator.LegacyModuleExited += () => _ = ReloadShortcutsAsync();
@@ -896,7 +896,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Pustí render (overlay) před blokující synchronní prací. Guard na běžící Application,
         // ne jen na dispatcher vlákna: DispatcherTimer ve VM dispatcher testovacímu vláknu
         // vytvoří, ale nikdo ho nepumpuje - await Yield by tam nikdy nedoběhl.
-        private static async Task YieldToRender()
+        private static async Task YieldToRenderAsync()
         {
             if (Application.Current?.Dispatcher is { } d && d.CheckAccess())
                 await Dispatcher.Yield(DispatcherPriority.Background);
@@ -927,7 +927,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // refcounted) ani pod popupy níž.
             using (ActionInProgress())
             {
-                await YieldToRender();
+                await YieldToRenderAsync();
                 result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
             }
 
@@ -1001,7 +1001,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Jediná firma → přepínač se zdisabluje (zůstává jako indikace aktuální firmy).</summary>
         public bool HasMultipleCompanies => VisibleIdfas.Count > 1;
 
-        private async Task OpenModule(IModule module)
+        private async Task OpenModuleAsync(IModule module)
         {
             if (module is not ExecutableModule { ExecutablePath: { Length: > 0 } path } em) return;
 
@@ -1020,14 +1020,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _changelogPrompt?.ShowIfNewAsync("EDISONMAIN", "EDISON") ?? Task.CompletedTask;
 
         // Novinky agendy na vyžádání (kontextové menu stromu). Rodina modulů nemá exe - žádný INF.
-        private Task ShowModuleChangelog(IModule module) =>
+        private Task ShowModuleChangelogAsync(IModule module) =>
             module is ExecutableModule { ExecutablePath: { Length: > 0 } path } em
-                ? ShowChangelogFor(path, em.DisplayedName)
+                ? ShowChangelogForAsync(path, em.DisplayedName)
                 : Task.CompletedTask;
 
         // Vynucené novinky: obcházejí snooze i session dedup, protože si o ně uživatel řekl sám.
         // Chybějící INF nesmí skončit „klik nic neudělal".
-        private async Task ShowChangelogFor(string moduleKey, string displayName)
+        private async Task ShowChangelogForAsync(string moduleKey, string displayName)
         {
             if (_changelogPrompt is { } prompt && await prompt.ShowAlwaysAsync(moduleKey, displayName)) return;
             PopupDisplayer.Info($"Pro „{displayName}\" nejsou k dispozici informace o změnách.");
@@ -1042,13 +1042,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
-        private async Task LaunchModeless(string exe, string formFqn)
+        private async Task LaunchModelessAsync(string exe, string formFqn)
         {
             using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(exe, formFqn);
         }
 
-        private async Task LaunchDialog(string exe, string formFqn)
+        private async Task LaunchDialogAsync(string exe, string formFqn)
         {
             using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
@@ -1104,7 +1104,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Uloží plochu (druh, identita, pozice). Volá se při změně členství i při přesunu dlaždice.
         private void PersistShortcuts() => _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
 
-        // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModule (usage + overlay); ostatní
+        // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModuleAsync (usage + overlay); ostatní
         // druhy zástupců (tiskové sestavy, pohledy DS) shell zatím spustit neumí; kanál
         // spuštění jde přes EDISONMAIN2API.
         private void LaunchShortcut(DesktopShortcut shortcut)
@@ -1116,7 +1116,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Zástupce mimo hlavní nabídku (tisková sestava, uložený pohled): host ho místo formy
         // pustí jako proceduru agendy. Exe i formu nese sama položka - hostitelská forma nemusí
         // být ve stromu, takže se nedohledávají.
-        private async Task LaunchShortcutViaHost(DesktopShortcut shortcut)
+        private async Task LaunchShortcutViaHostAsync(DesktopShortcut shortcut)
         {
             if (shortcut.ExecutablePath.Length == 0 || shortcut.FormName.Length == 0)
             {
@@ -1358,7 +1358,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 UseShellExecute = true,
             };
 
-        private async Task RefreshLicense()
+        private async Task RefreshLicenceAsync()
         {
             await RebuildSessionStateAsync(_services.LicenceLoader?.Invoke());
             PopupDisplayer.Info("Licence byla aktualizována.");

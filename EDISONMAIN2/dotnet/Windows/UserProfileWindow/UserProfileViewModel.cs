@@ -18,7 +18,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         public UserProfileViewModel()
         {
             ChangePasswordCommand   = Command(OpenChangePassword);
-            ShowCertificatesCommand = CommandAsync(ShowCertificates);
+            ShowCertificatesCommand = CommandAsync(ShowCertificatesAsync);
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
             if (changed == true) PopupDisplayer.Info("Heslo bylo změněno.");
         }
 
-        private async Task ShowCertificates()
+        private async Task ShowCertificatesAsync()
         {
             using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsDialogAsync("USERS.exe", "ALVA.USERS.formUSERSCertificates");

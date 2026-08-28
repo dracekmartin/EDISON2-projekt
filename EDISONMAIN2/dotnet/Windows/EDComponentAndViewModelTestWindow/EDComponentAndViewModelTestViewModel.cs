@@ -26,14 +26,14 @@ class EDComponentAndViewModelTestViewModel : EDViewModel
     private void OnCar() => Status = "Auto";
 
     public AsyncRelayCommand SimulateActionCommand => _simulateActionCommand
-        ??= CommandAsync(SimulateAction);
+        ??= CommandAsync(SimulateActionAsync);
     private AsyncRelayCommand? _simulateActionCommand;
 
     public RelayCommand ThrowCommand => _throwCommand
         ??= Command(() => throw new InvalidOperationException("Testovací výjimka z RelayCommand."));
     private RelayCommand? _throwCommand;
 
-    private async Task SimulateAction()
+    private async Task SimulateActionAsync()
     {
         using var _ = ActionInProgress();
         await Task.Delay(3000);
