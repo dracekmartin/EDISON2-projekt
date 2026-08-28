@@ -164,8 +164,19 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F12 - Pády hostovaných legacy oken: dialog + telemetrie
 
-- [x] **Stav:** Vyřazeno (2026-08-28) - řeší se v samostatném chatu / worktree (repo EDISON,
-  host EDISONMAIN2API).
+- [x] **Stav:** Done (2026-08-28) - host neměl žádný handler běhových výjimek (generický WinForms
+  dialog / tichý pád), přímý `EDISONMAIN.exe` v args módu končil tiše s kódem 0. Repo EDISON:
+  `HostedErrorReporter` (ThreadException + AppDomain + try/catch kolem `ShowDialog`) volá legacy
+  `EDForm.MLError.ShowError` - dialog „Neočekávaná situace" s telemetrií na tlačítko, po fatal
+  `Environment.Exit(3)`, launch-fail exit 2 s českým textem bez výpisu args; `ApplicationEvents.vb`
+  totéž. Repo EDISON2: shell hlásí nenulový exit kód hosta (`TrackExit` → `ReportLegacyExit`,
+  seskupení podle formy, stabilní throttle klíč), opraveno pořadí subscribe/`EnableRaisingEvents`
+  (okamžitý pád se dřív ztratil). Ověřeno Debug hostem s `EDISONMAIN2API_CRASHTEST=ui|bg` na
+  Aktivitě uživatelů i Jazykovém nastavení (přímý EDISONMAIN): dialog + exit 3. **Limit:** výjimku
+  z `Form.Load` na x64 spolkne Windows, nedostane se k žádnému handleru.
+- **Zbývá odeslat do ticketu:** „Pád okna staré agendy pod novým spouštěčem už neprobliká: zobrazí
+  se stejný chybový dialog jako ve starém EDISONu (referenční číslo, tlačítko Odeslat hlášení)
+  a tvrdý pád procesu navíc nahlásí spouštěč sám do telemetrie podpory."
 - **P2 · M**
 - **Co udělat:** Nový shell EDPROCESS nepoužívá - legacy okna hostuje generický
   `EDISONMAIN2API.exe` (`WindowNavigator.cs:26`, žije v repu `c:\MLineRepos\EDISON`).
@@ -308,9 +319,13 @@ projektu jsou značené explicitně („nový post #N").
 - **Pád „Aktivita uživatelů" z menu** (#5, Zeman) - `ShowUsersActivityCommand` spouští
   legacy `USERS.exe` přes hosta; šetřit v repu `c:\MLineRepos\EDISON`. Pravděpodobně
   stejný projev jako F12 (tichý pád hosta) - řešit spolu s F12. Vlastník: MH.
+  **2026-08-28:** přes host s účtem MH/CB_DP se otevře bez pádu (nereprodukováno); po F12 by
+  případný pád ukázal dialog a dorazil do telemetrie - čekat na další výskyt.
 - **Chyba nastavení jazyka** (#18, Kaska - „odesláno") - legacy forma
   `ALVA.EDISONMAIN.formEDISONMAINLanguageList` z `EDISONMAIN.exe`. Dohledat Kaskův error
-  report v telemetrii podpory. Vlastník: MH.
+  report v telemetrii podpory. Vlastník: MH. **2026-08-28:** přímý launch se otevře bez pádu
+  (nereprodukováno); před F12 by tam pád skončil tichým zavřením s kódem 0 - Kaskovo „odesláno"
+  tedy šlo z dialogu uvnitř formy, ne z neošetřené výjimky.
 - **CKSCHWAN vs CK_SCHWAN u zákazníka** (#3 bod 6, Kaska) - `CKSCHWAN` není platné IdFa
   (chybí `_`), takže jde o jméno namespace nebo ručně vyplněnou hodnotu v legacy setupu
   (`frmSetup.vb` → registry). Dohledat skutečnou konfiguraci instance. Vlastník: MH.

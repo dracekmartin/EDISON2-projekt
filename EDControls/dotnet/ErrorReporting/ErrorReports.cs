@@ -87,6 +87,36 @@ public static class ErrorReports
         }
     }
 
+    /// <summary>
+    /// Hostovaný legacy modul skončil nenulovým kódem (pád před jakýmkoli handlerem, nativní
+    /// crash, host po fatal chybě). Kontext okna nese forma a exe modulu, ne shell - Přehled
+    /// telemetrie tak seskupí podle modulu. Throttle klíč je stabilní (výjimka se nikdy nehodila,
+    /// takže <see cref="ErrorThrottle.BuildKey"/> by bez stacku slepil všechny moduly do jednoho).
+    /// Volatelné z libovolného vlákna. Nikdy nehází.
+    /// </summary>
+    public static void ReportLegacyExit(string exeName, string formFqn, int exitCode)
+    {
+        try
+        {
+            if (!Enabled) return;
+
+            var decision = Throttle.Register($"LegacyExit|{exeName}|{formFqn}|{exitCode}", DateTime.UtcNow);
+            if (decision.Action == ThrottleAction.Suppress) return;
+
+            var ctx = BuildContext(null) with { WindowNamespace = formFqn, WindowTitle = exeName };
+            var report = ErrorReportBuilder.Build(
+                new LegacyHostCrashedException(exeName, formFqn, exitCode), ctx, null, decision.RepeatCount);
+            report.Data["legacyHost"] = true;
+            report.Data["exitCode"] = exitCode;
+            report.Data["exitCodeHex"] = $"0x{exitCode:X8}";
+            ErrorReporter.Send(report);
+        }
+        catch
+        {
+            // best-effort
+        }
+    }
+
     /// <summary>Odešle dobrovolné doplnění od uživatele k už nahlášené chybě.</summary>
     public static void ReportFollowUp(string refId, string userText, Window? owner = null)
     {

@@ -171,6 +171,21 @@ public class WindowNavigatorTests
         Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\"", args);
     }
 
+    [Theory]
+    [InlineData(0, false, false)]            // normální konec i Application.Exit
+    [InlineData(0, true, false)]
+    [InlineData(-1, true, false)]            // náš Process.Kill
+    [InlineData(-1, false, true)]            // kill zvenku
+    [InlineData(1, false, true)]             // taskkill /F
+    [InlineData(2, false, true)]             // host: LaunchFailed
+    [InlineData(3, false, true)]             // host: FatalReported
+    [InlineData(-532462766, false, true)]    // 0xE0434352 neošetřená CLR výjimka
+    [InlineData(-1073741819, false, true)]   // 0xC0000005 access violation
+    public void ShouldReportExit_NonZeroCodeNotKilledByShell(int exitCode, bool killedByShell, bool expected)
+    {
+        Assert.Equal(expected, WindowNavigator.ShouldReportExit(exitCode, killedByShell));
+    }
+
     // Vlastnictví oken (IsInternalWindow / ShouldClose) → WindowOwnershipTests.
 
     [Fact]

@@ -32,23 +32,62 @@ public class WindowNavigator : IWindowNavigator
 
     private readonly List<LegacyProcessEntry> _legacyProcesses = [];
 
+    /// <summary>Příznak „zabil ho shell sám" (<see cref="CloseLegacyModules"/>) - takový nenulový
+    /// exit kód není pád. Vázaný na objekt Process, ne na PID (reuse PID, žádný úklid).</summary>
+    private sealed class ExitWatch { public volatile bool KilledByShell; }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Process, ExitWatch> _exitWatches = new();
+
     public event Action? LegacyModuleExited;
 
     /// <summary>
-    /// Napojí notifikaci o konci modulu. `EnableRaisingEvents` je nutné zapnout explicitně;
-    /// `Exited` chodí z thread poolu, takže se marshaluje na UI vlákno (a při shutdownu, kdy
-    /// `Application.Current` je null, se zahodí - není komu doručit).
+    /// Napojí notifikaci o konci modulu. `EnableRaisingEvents` je nutné zapnout explicitně a až
+    /// **po** přihlášení handleru - u procesu, který mezitím skončil, vystřelí callback hned
+    /// a do prázdného delegátu by se ztratil. `Exited` chodí z thread poolu, takže se marshaluje
+    /// na UI vlákno (a při shutdownu, kdy `Application.Current` je null, se zahodí).
     /// </summary>
     private void WatchForExit(Process prc)
     {
         try
         {
-            prc.EnableRaisingEvents = true;
             prc.Exited += (_, _) =>
                 Application.Current?.Dispatcher.BeginInvoke(() => LegacyModuleExited?.Invoke());
+            prc.EnableRaisingEvents = true;
         }
         catch { /* proces mohl skončit dřív, než jsme se stihli napojit */ }
     }
+
+    /// <summary>
+    /// Hlídá tvrdý pád hosta: nenulový exit kód, který nezpůsobil shell killem, jde do hlášení
+    /// chyb shellu (host sám dosáhne jen na managed výjimky - viz FormToRunGetter v repu EDISON).
+    /// Pořadí subscribe → EnableRaisingEvents viz <see cref="WatchForExit"/>.
+    /// </summary>
+    private static void TrackExit(Process prc, string exeName, string formFqn)
+    {
+        try
+        {
+            var watch = _exitWatches.GetOrCreateValue(prc);
+            prc.Exited += (_, _) => ReportAbnormalExit(prc, watch, exeName, formFqn);
+            prc.EnableRaisingEvents = true;
+        }
+        catch { /* best-effort */ }
+    }
+
+    private static void ReportAbnormalExit(Process prc, ExitWatch watch, string exeName, string formFqn)
+    {
+        try
+        {
+            var exitCode = prc.ExitCode;
+            if (ShouldReportExit(exitCode, watch.KilledByShell))
+                ErrorReporting.ErrorReports.ReportLegacyExit(exeName, formFqn, exitCode);
+        }
+        catch { /* Process už může být disposed - hlášení pádu nesmí být druhá chyba */ }
+    }
+
+    /// <summary>0 = normální konec i `Application.Exit`; náš `Kill` dává -1, ale poznává se podle PID,
+    /// ne kódu - `taskkill /F` zvenku (kód 1) hlásit chceme.</summary>
+    internal static bool ShouldReportExit(int exitCode, bool killedByShell) =>
+        exitCode != 0 && !killedByShell;
 
     public void Show(Window window)
     {
@@ -141,7 +180,8 @@ public class WindowNavigator : IWindowNavigator
 
     public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
-        using var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
+        // Bez using: Exited (hlášení pádu) chodí z poolu a mohl by přijít až po dispose.
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         prc?.WaitForExit();
     }
 
@@ -185,7 +225,6 @@ public class WindowNavigator : IWindowNavigator
             owner.Activated += bounce;
         }
 
-        prc.EnableRaisingEvents = true;
         prc.Exited += (_, _) =>
         {
             // Exited fire-uje na thread pool; Application.Current je null pokud shell už doběhl
@@ -199,6 +238,7 @@ public class WindowNavigator : IWindowNavigator
                 if (owner is { IsLoaded: true }) owner.Activate();
             });
         };
+        prc.EnableRaisingEvents = true;
     }
 
     [DllImport("user32.dll")]
@@ -261,7 +301,9 @@ public class WindowNavigator : IWindowNavigator
         {
             try
             {
-                if (!entry.Process.HasExited) entry.Process.Kill();
+                if (entry.Process.HasExited) continue;
+                if (_exitWatches.TryGetValue(entry.Process, out var watch)) watch.KilledByShell = true;
+                entry.Process.Kill();
             }
             catch (Exception ex)
             {
@@ -370,7 +412,11 @@ public class WindowNavigator : IWindowNavigator
             FileName = direct ? agendaPath : ResolveExecutablePath(LauncherExe),
             Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath, licensedElements, shortcutPayload),
         });
-        if (prc != null) KillOnExit.Bind(prc);
+        if (prc != null)
+        {
+            KillOnExit.Bind(prc);
+            TrackExit(prc, exeName, formFqn);
+        }
         return prc;
     }
 
