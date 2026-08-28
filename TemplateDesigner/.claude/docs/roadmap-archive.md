@@ -2,7 +2,9 @@
 
 ## `L6b` - obousměrný tisk (hotovo 28. 8. 2026)
 
-Oba směry na jedné sestavě: spoje opačného směru nalevo od zastávek. **Parametr sestavy, ne tichý
+Oba směry na jedné sestavě: sloupce spojů po obou stranách zastávek. **Nalevo jde směr, jehož pořadí
+sleduje seznam zastávek** - doloženo tiskem ze starého modulu 28. 8., ne čtením zdroje (odvození
+z indexů sloupců v `MT2A` vyšlo obráceně, o straně rozhoduje typ sloupce). **Parametr sestavy, ne tichý
 fallback** (rozhodnutí Jan) - starý modul zrcadlo vypne, když se blok nevejde na stránku bez řezu,
 ale ten fallback mít **musel**, protože tiskl naslepo do pevné stránky.
 
@@ -10,7 +12,7 @@ ale ten fallback mít **musel**, protože tiskl naslepo do pevné stránky.
 směrů nad společným seznamem zastávek, každý se svým `SMER`. Návrh se dvěma kolekcemi byl zahozen -
 propašovával layout do dat.
 
-Detail v changelogu 28. 8. (4) a (5). Zbývá z toho **vlastní šipka směru pro zrcadlený blok**
+Detail v changelogu 28. 8. (4), (5) a (7). Zbývá z toho **vlastní šipka směru pro zrcadlený blok**
 (legacy má na to druhý sloupec, typ 8) a dorovnání prázdnými sloupci jen vpravo - vedeno u `L6c`.
 
 Původní zadání:

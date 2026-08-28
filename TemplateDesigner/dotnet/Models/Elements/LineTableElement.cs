@@ -266,15 +266,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var trips = _cachedTrips!;
         if (trips.Count == 0) { _cachedHlavni = []; _cachedZrcadlene = []; return; }
 
-        string hlavni = trips[0].Smer;
-        if (trips.TrueForAll(t => t.Smer == hlavni))
+        string prvni = trips[0].Smer;
+        if (trips.TrueForAll(t => t.Smer == prvni))
         {
+            // Jednosměrná stránka: všechno vpravo, nic se nemění.
             _cachedHlavni = trips;
             _cachedZrcadlene = [];
             return;
         }
-        _cachedHlavni = [.. trips.Where(t => t.Smer == hlavni)];
-        _cachedZrcadlene = [.. trips.Where(t => t.Smer != hlavni)];
+        // ⚠️ **Nalevo jde směr, jehož pořadí sleduje seznam zastávek** - tedy ten, jehož časy jdou
+        // odshora dolů. Doloženo tiskem obousměrné linky ze starého modulu (28. 8.): vlevo stojí
+        // spoj s časy 07:33 → 07:38 a u první zastávky značka „od", vpravo spoj s časy 07:53 → 07:39
+        // a značka „př". Do 28. 8. jsme to měli obráceně.
+        _cachedZrcadlene = [.. trips.Where(t => t.Smer == prvni)];
+        _cachedHlavni = [.. trips.Where(t => t.Smer != prvni)];
     }
 
     /// <summary>Kolik sloupců spojů zabere jeden „slot" dělení - u obousměrné sestavy dva

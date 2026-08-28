@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-28 (7) - 🔁 obousměrný tisk: strany prohozené podle tisku ze starého modulu
+
+Jan vytiskl obousměrný JŘ ve starém modulu (linka `0680042`, 1+1 spoje) a papír rozhodl otázku, kterou
+**nešlo rozhodnout ze zdroje**: nalevo stojí spoj **71** s časy 07:33 → 07:38 a značkou „od" u první
+zastávky, napravo spoj **72** s časy 07:53 → 07:39 a značkou „př".
+
+**Nalevo tedy patří směr, jehož pořadí sleduje seznam zastávek** (časy jdou odshora dolů), napravo
+opačný. Měli jsme to obráceně - prohozeno.
+
+⚠️ **Odvození ze zdroje bylo chybné a znělo přesvědčivě**: v obousměrném bloku začínají sloupce spojů
+na indexu 5 a popisné mají 1-4 (`JRapiLinPrtWin.mac:3429`), z čehož jsem usoudil „oba směry vpravo za
+sebou". Jenže **index sloupce v tom mezikroku není vizuální pořadí** - o straně rozhoduje **typ**
+sloupce (7 „Spoj" × 9 „Spoj před zastávkou"). Přesně ten případ, na který je `R6`: paritu doloží
+porovnání se starým modulem, ne čtení kódu ani náš vlastní odtisk.
+
+Dva testy polohy stran padly hned po prohození (kódovaly ten obrácený předpoklad) - to je zároveň
+doklad, že tu stranu opravdu měří. .NET **1235/1235**.
+
 ## 2026-08-28 (6) - 🔍 sonda: nejmenší linky se spoji v obou směrech
 
 Jan zapnul u linky „Tisk obousměrných JŘ" na A4, vytiskl - a **výstup se nezměnil**. Sonda hledá
@@ -25,17 +43,16 @@ projevila jako `<SYNTAX>` **ze staré verze třídy** - server si nechal tu pře
 že se změna nenasadila. Vynucený běh hooku vypsal skutečné chyby.
 
 
-## 2026-08-28 (5) - ✨ obousměrný tisk: spoje opačného směru nalevo od zastávek (`L6b` hotovo)
+## 2026-08-28 (5) - ✨ obousměrný tisk: spoje po obou stranách zastávek (`L6b` hotovo)
 
 Druhá polovina `L6b` - **kreslení**. Se zapnutým parametrem „Obousměrný tisk" dostane linková tabulka
-sloupce spojů **po obou stranách** zastávek: hlavní směr vpravo jako dosud, opačný nalevo (legacy
-sloupec „Spoj před zastávkou", typ 9). Zrcadlený blok dostal i vlastní pás skupin dnů, čísla spojů,
+sloupce spojů **po obou stranách** zastávek (legacy sloupec „Spoj před zastávkou", typ 9). *Která
+strana je která, se srovnalo podle tisku ze starého modulu až v (7) - do té chvíle to bylo obráceně.* Zrcadlený blok dostal i vlastní pás skupin dnů, čísla spojů,
 řádek platnosti se značkami a značky návaznosti u času - jinak by jeho sloupce neřekly, ve které dny
 spoj jede.
 
-**Která strana je která, rozhoduje prvek** (tvůj požadavek): hlavní směr je ten **prvního** spoje,
-protože seznam zastávek je v jeho pořadí. Nenastavuje se to - dvě volby téhož (pořadí zastávek ×
-strana) by si šlapaly.
+**Která strana je která, rozhoduje prvek** (tvůj požadavek), a nenastavuje se to - dvě volby téhož
+(pořadí zastávek × strana) by si šlapaly.
 
 ⚠️ **Dělení na bloky jde po „slotech", ne po spojích.** Blok bere týž úsek z **obou** stran, takže
 je z něj celá tabulka; kdyby se dělilo po jednom seznamu, první blok by vyšel jen se spoji tam

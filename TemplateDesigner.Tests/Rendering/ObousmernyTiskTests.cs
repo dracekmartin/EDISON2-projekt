@@ -10,8 +10,12 @@ namespace TemplateDesigner.Tests.Rendering;
 /// </summary>
 /// <remarks>
 /// Data přicházejí jako <b>jedna</b> stránka, kde každý spoj nese `SMER`; o tom, která strana je
-/// která, rozhoduje prvek (požadavek Jan 28. 8.: layout drží klient, ne Caché). Hlavní směr je ten
-/// <b>prvního</b> spoje - seznam zastávek je v jeho pořadí.
+/// která, rozhoduje prvek (požadavek Jan 28. 8.: layout drží klient, ne Caché).
+/// <para>⚠️ <b>Nalevo jde směr, jehož pořadí sleduje seznam zastávek</b> (jeho časy jdou odshora
+/// dolů). Doloženo <b>tiskem obousměrné linky ze starého modulu</b> 28. 8.: vlevo spoj s časy
+/// 07:33 → 07:38 a značkou „od" u první zastávky, vpravo spoj 07:53 → 07:39 se značkou „př".
+/// Do té chvíle jsme to měli obráceně - a obě strany byly „rozumné", takže to bez papíru nešlo
+/// rozhodnout.</para>
 /// <para>⚠️ Fixtury jsou schválně <b>skoro prázdné</b>: v obrázku je vždy jen jedna věc, takže
 /// „kde je inkoust" znamená „kde je ta věc". První verze těchto testů měřila jen <b>množství</b>
 /// inkoustu a <b>neprošla ani jedna ze čtyř mutací</b> - při dvou spojích má tabulka stejnou šířku,
@@ -92,44 +96,43 @@ public class ObousmernyTiskTests
     }
 
     /// <summary>
-    /// Časy opačného směru se kreslí <b>nalevo</b> od zastávek, ne mezi sloupce spojů vpravo.
+    /// Směr, jehož pořadí sleduje seznam zastávek, se kreslí <b>nalevo</b> - jako v legacy.
     /// </summary>
     /// <remarks>
-    /// V obrázku jsou jen časy zpětného spoje (názvy zastávek i časy tam prázdné), takže veškerý
-    /// inkoust musí ležet v levém pásu. Kdyby se zrcadlený spoj kreslil jako obyčejný sloupec,
-    /// vyšel by vpravo za zastávkami, tedy nad 40 mm.
+    /// V obrázku jsou jen jeho časy (názvy zastávek i druhý směr prázdné), takže veškerý inkoust
+    /// musí ležet v levém pásu.
     /// </remarks>
     [Fact]
-    public void CasyOpacnehoSmeru_JsouNaleveOdZastavek()
+    public void SmerPodlePoradiZastavek_JeNalevo()
     {
         using var bmp = Vykresli(Prvek(),
-            Data(obousmerne: true, nazvyZastavek: false, casyTam: false, casyZpet: true));
+            Data(obousmerne: true, nazvyZastavek: false, casyTam: true, casyZpet: false));
 
         float prvni = PrvniInkoustXMm(bmp);
         float posledni = PosledniInkoustXMm(bmp);
 
-        Assert.True(prvni >= 0f, "časy zpětného spoje se nenakreslily vůbec");
+        Assert.True(prvni >= 0f, "časy se nenakreslily vůbec");
         Assert.True(posledni < SirkaSpoje + 0.5f,
-            $"časy zpětného spoje sahají až na {posledni:0.##} mm - nejsou v levém pásu (0-{SirkaSpoje} mm)");
+            $"časy sahají až na {posledni:0.##} mm - nejsou v levém pásu (0-{SirkaSpoje} mm)");
     }
 
     /// <summary>
-    /// Časy hlavního směru zůstávají <b>vpravo</b> za zastávkami - kontrola druhé strany.
+    /// Opačný směr zůstává <b>vpravo</b> za zastávkami - kontrola druhé strany.
     /// </summary>
     /// <remarks>
     /// ⚠️ Názvy zastávek tu být **musí**: s prázdnými by sloupec zastávek zmizel („prázdný sloupec
     /// se netiskne") a s ním i celé odsazení, které se měří. Na to naletěla první verze testu.
     /// </remarks>
     [Fact]
-    public void CasyHlavnihoSmeru_ZustavajiVpravo()
+    public void OpacnySmer_ZustavaVpravo()
     {
         using var bmp = Vykresli(Prvek(),
-            Data(obousmerne: true, nazvyZastavek: true, casyTam: true, casyZpet: false));
+            Data(obousmerne: true, nazvyZastavek: true, casyTam: false, casyZpet: true));
 
         float posledni = PosledniInkoustXMm(bmp);
 
         Assert.True(posledni > SirkaSpoje + SirkaZastavky,
-            $"nejpravější inkoust je na {posledni:0.##} mm - časy směru tam nejsou za zastávkami "
+            $"nejpravější inkoust je na {posledni:0.##} mm - časy opačného směru nejsou za zastávkami "
             + $"(ty končí na {SirkaSpoje + SirkaZastavky} mm)");
     }
 
