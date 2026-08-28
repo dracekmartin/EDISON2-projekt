@@ -12,12 +12,12 @@
              Title a SearchText jsou bindovány na EDList DependencyProperties (TwoWay pro SearchText).
              ShowHelp/Settings vypnuté - EDList nemá per-component help/settings akce. -->
         <edct:EDComponentToolbar DockPanel.Dock="Top"
-                                 x:Name="headerToolbar"
+                                 x:Name="HeaderToolbar"
                                  Visibility="Collapsed"
                                  ShowHelp="False" ShowSettings="False"
                                  Title="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                  SearchText="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
-        <DataGrid x:Name="dataGrid"
+        <DataGrid x:Name="DataGrid"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"

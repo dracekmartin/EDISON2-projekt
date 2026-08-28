@@ -4,11 +4,11 @@
                        xmlns:local="clr-namespace:EDControls.EDFilter"
                        MinWidth="150">
     <StackPanel Orientation="Vertical" Margin="0,0,8,0">
-        <TextBlock x:Name="labelText"
+        <TextBlock x:Name="LabelText"
                    Text="{Binding Label, RelativeSource={RelativeSource AncestorType=local:FilterCombo}}"
                    FontSize="{DynamicResource EDTheme.FontSize.Body}"
                    Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,0,0,2"/>
-        <ComboBox x:Name="combo"
+        <ComboBox x:Name="Combo"
                   ItemsSource="{Binding ItemsSource,        RelativeSource={RelativeSource AncestorType=local:FilterCombo}}"
                   SelectedValue="{Binding SelectedValue,    RelativeSource={RelativeSource AncestorType=local:FilterCombo}, Mode=TwoWay}"
                   SelectedValuePath="{Binding SelectedValuePath, RelativeSource={RelativeSource AncestorType=local:FilterCombo}}"

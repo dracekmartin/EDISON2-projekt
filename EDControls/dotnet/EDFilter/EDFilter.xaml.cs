@@ -25,7 +25,7 @@ public partial class EDFilter : UserControl
         InitializeComponent();
         Fields = new ObservableCollection<FilterFieldBase>();
         Fields.CollectionChanged += OnFieldsCollectionChanged;
-        fieldsHost.ItemsSource = Fields;
+        FieldsHost.ItemsSource = Fields;
         Loaded += OnLoaded;
     }
 

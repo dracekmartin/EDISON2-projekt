@@ -96,17 +96,17 @@ namespace EDControls.EDList
         {
             bool showTitle  = !string.IsNullOrEmpty(Title);
             bool showSearch = SearchVisible ?? !string.IsNullOrEmpty(Title);   // null = auto z Title
-            headerToolbar.ShowSearch = showSearch;
-            headerToolbar.Visibility = (showTitle || showSearch) ? Visibility.Visible : Visibility.Collapsed;
+            HeaderToolbar.ShowSearch = showSearch;
+            HeaderToolbar.Visibility = (showTitle || showSearch) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void RefreshFilter()
         {
-            var view = CollectionViewSource.GetDefaultView(dataGrid.ItemsSource);
+            var view = CollectionViewSource.GetDefaultView(DataGrid.ItemsSource);
             if (view is null) return;
             var search = SearchText;
             // Filtruje napříč všemi viditelnými data sloupci (skipuje checkbox column, který nemá Tag=key)
-            var searchableKeys = dataGrid.Columns
+            var searchableKeys = DataGrid.Columns
                 .Select(c => c.GetValue(FrameworkElement.TagProperty) as string)
                 .Where(k => !string.IsNullOrEmpty(k))
                 .Select(k => k!)
@@ -125,10 +125,10 @@ namespace EDControls.EDList
         public IReadOnlyList<EDListRow> Rows => _rows;
 
         public string? SelectedRowId =>
-            dataGrid.SelectedItem is EDListRow row ? row.Id : null;
+            DataGrid.SelectedItem is EDListRow row ? row.Id : null;
 
         /// <summary>Aktuálně vybraný řádek (jeho data přes indexer), nebo null.</summary>
-        public EDListRow? SelectedRow => dataGrid.SelectedItem as EDListRow;
+        public EDListRow? SelectedRow => DataGrid.SelectedItem as EDListRow;
 
         /// <summary>Mode výběru: Single (klasický), Check (checkbox sloupec, multi-select).</summary>
         public static readonly DependencyProperty SelectionModeProperty =
@@ -161,8 +161,8 @@ namespace EDControls.EDList
         public EDList()
         {
             InitializeComponent();
-            dataGrid.ItemsSource = _rows;
-            dataGrid.Sorting += OnDataGridSorting;
+            DataGrid.ItemsSource = _rows;
+            DataGrid.Sorting += OnDataGridSorting;
             Unloaded += OnUnloaded;
         }
 
@@ -222,7 +222,7 @@ namespace EDControls.EDList
             if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift && _checkAnchor is not null)
             {
                 // Rozsah v zobrazeném pořadí (respektuje řazení i filtr).
-                var items = dataGrid.Items.OfType<EDListRow>().ToList();
+                var items = DataGrid.Items.OfType<EDListRow>().ToList();
                 int a = items.IndexOf(_checkAnchor);
                 int b = items.IndexOf(row);
                 if (a >= 0 && b >= 0)
@@ -474,15 +474,15 @@ namespace EDControls.EDList
         private void RebuildColumns()
         {
             UnhookColumnEvents();
-            dataGrid.Columns.Clear();
+            DataGrid.Columns.Clear();
             if (SelectionMode == EListSelectionMode.Check)
-                dataGrid.Columns.Add(BuildCheckBoxColumn());
+                DataGrid.Columns.Add(BuildCheckBoxColumn());
             if (_columns is null) return;
             foreach (var col in _columns.Where(c => c.Visible))
             {
                 var dgCol = BuildDataGridColumn(col);
                 dgCol.SetValue(FrameworkElement.TagProperty, col.Key);  // mapping zpět při SnapshotLayout
-                dataGrid.Columns.Add(dgCol);
+                DataGrid.Columns.Add(dgCol);
             }
             HookColumnEvents();
         }
@@ -627,7 +627,7 @@ namespace EDControls.EDList
             if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
             {
                 _sortSpecs.Clear();
-                foreach (var col in dataGrid.Columns)
+                foreach (var col in DataGrid.Columns)
                     if (!ReferenceEquals(col, e.Column)) col.SortDirection = null;
             }
             _sortSpecs.RemoveAll(s => s.Key == key);
@@ -638,7 +638,7 @@ namespace EDControls.EDList
 
         private void ApplySort()
         {
-            if (CollectionViewSource.GetDefaultView(dataGrid.ItemsSource) is not ListCollectionView view) return;
+            if (CollectionViewSource.GetDefaultView(DataGrid.ItemsSource) is not ListCollectionView view) return;
             view.CustomSort = _sortSpecs.Count == 0
                 ? null
                 : new EDListRowComparer([.. _sortSpecs.Select(s => (s.Key, s.Dir == ListSortDirection.Descending))]);
@@ -675,7 +675,7 @@ namespace EDControls.EDList
         /// <summary>Subscribe na width/displayIndex/sort změny sloupců - trigger debounced save.</summary>
         private void HookColumnEvents()
         {
-            foreach (var col in dataGrid.Columns)
+            foreach (var col in DataGrid.Columns)
             {
                 if (col.GetValue(FrameworkElement.TagProperty) is not string) continue;
                 DependencyPropertyDescriptor.FromProperty(DataGridColumn.ActualWidthProperty, typeof(DataGridColumn))
@@ -689,7 +689,7 @@ namespace EDControls.EDList
 
         private void UnhookColumnEvents()
         {
-            foreach (var col in dataGrid.Columns)
+            foreach (var col in DataGrid.Columns)
             {
                 if (col.GetValue(FrameworkElement.TagProperty) is not string) continue;
                 DependencyPropertyDescriptor.FromProperty(DataGridColumn.ActualWidthProperty, typeof(DataGridColumn))
@@ -741,7 +741,7 @@ namespace EDControls.EDList
         private ColumnLayout SnapshotLayout()
         {
             var columns = new List<ColumnPref>();
-            foreach (var col in dataGrid.Columns)
+            foreach (var col in DataGrid.Columns)
             {
                 if (col.GetValue(FrameworkElement.TagProperty) is not string key) continue;
                 columns.Add(new ColumnPref
@@ -751,7 +751,7 @@ namespace EDControls.EDList
                     DisplayIndex = col.DisplayIndex,
                 });
             }
-            var sort = dataGrid.Columns
+            var sort = DataGrid.Columns
                 .Where(c => c.SortDirection.HasValue && c.GetValue(FrameworkElement.TagProperty) is string)
                 .Select(c => new SortPref
                 {
@@ -792,7 +792,7 @@ namespace EDControls.EDList
                 {
                     var col = FindColumnByKey(pref.Key);
                     if (col is null) continue;
-                    if (pref.DisplayIndex >= 0 && pref.DisplayIndex < dataGrid.Columns.Count)
+                    if (pref.DisplayIndex >= 0 && pref.DisplayIndex < DataGrid.Columns.Count)
                         col.DisplayIndex = pref.DisplayIndex;
                 }
                 // 3) Sort - vizuální šipka + typovaný CustomSort (viz OnDataGridSorting)
@@ -814,7 +814,7 @@ namespace EDControls.EDList
         }
 
         private DataGridColumn? FindColumnByKey(string key) =>
-            dataGrid.Columns.FirstOrDefault(c => c.GetValue(FrameworkElement.TagProperty) as string == key);
+            DataGrid.Columns.FirstOrDefault(c => c.GetValue(FrameworkElement.TagProperty) as string == key);
     }
 
     internal static class JsonElementExtensions

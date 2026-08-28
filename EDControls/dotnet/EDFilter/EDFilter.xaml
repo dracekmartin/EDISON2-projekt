@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Background="{DynamicResource EDTheme.Bg.Footer}"
             BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1" Padding="8,6">
-        <ItemsControl x:Name="fieldsHost">
+        <ItemsControl x:Name="FieldsHost">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel Orientation="Horizontal"/>
