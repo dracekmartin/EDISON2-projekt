@@ -88,7 +88,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
             SelectedTab = TreeTabs[0];
         }
 
-        public ObservableCollection<CompanyItem> VisibleIdfas { get; } =
+        public ObservableCollection<CompanyItem> Companies { get; } =
         [
             new CompanyItem("CB_DP", "Dopravní podnik města České Budějovice", "CB_DB"),
         ];

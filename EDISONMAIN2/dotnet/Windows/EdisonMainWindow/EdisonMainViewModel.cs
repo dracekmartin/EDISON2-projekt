@@ -218,7 +218,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
-            IModuleTreeGetter treeService,
+            IModuleTreeGetter treeGetter,
             Lic? initialLicence,
             CompanySwitcher switcher,
             Func<SwitchUserOutcome> switchUser,
@@ -336,12 +336,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _sourceTrees = [.. TreeTabs.Where(t => t.ServerLoaded).Select(t => (t.Key, t.Tree!))];
             // Runner drží politiku „klon per paralelní volání"; testy podstrčí sekvenční variantu.
             _sessionLoader = new SessionDataLoader(restRunner ?? new RestCallRunner(() => Rest),
-                                                  treeService, [.. _sourceTrees.Select(t => t.Name)]);
+                                                  treeGetter, [.. _sourceTrees.Select(t => t.Name)]);
 
             // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
-            VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
+            Companies = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
             // Index musí odpovídat MLRest.Idfa - tam má AppBootstrapper vytvořený ACTIVITY zámek.
-            _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == mlRest.Idfa).i;
+            _selectedCompanyIndex = Companies.Select((c, i) => (c, i)).First(x => x.c.Id == mlRest.Idfa).i;
 
             _services.MLRest = mlRest;
 
@@ -869,7 +869,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private IEnumerable<(string Name, ObservableCollection<IModule> Tree)> ExpandableTrees =>
             TreeTabs.Where(t => t.Expandable).Select(t => (t.Key, t.Tree!));
 
-        public ObservableCollection<CompanyItem> VisibleIdfas { get; }
+        public ObservableCollection<CompanyItem> Companies { get; }
 
         private int _selectedCompanyIndex;
         /// <summary>Vybraná firma jako čistý stav - přepnutí dělá <see cref="SwitchCompanyCommand"/>.</summary>
@@ -910,9 +910,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         internal async Task SwitchCompanyAsync(int index)
         {
-            if (index < 0 || index >= VisibleIdfas.Count || index == _selectedCompanyIndex) return;
+            if (index < 0 || index >= Companies.Count || index == _selectedCompanyIndex) return;
 
-            var target = VisibleIdfas[index];
+            var target = Companies[index];
             // Potvrzení jen když je co ztratit - bez otevřených oken je přepnutí nedestruktivní
             // (layout miniaplikací se persistuje per IDFa a při návratu obnoví).
             if (_getActiveModules().Count > 0
@@ -969,7 +969,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             RestoreMiniAppLayout(Idfa);
         }
 
-        public CompanyItem SelectedCompany => VisibleIdfas[_selectedCompanyIndex];
+        public CompanyItem SelectedCompany => Companies[_selectedCompanyIndex];
 
         public string Namespace => SelectedCompany.Database;
 
@@ -987,7 +987,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             get => SelectedCompany.Id;
             set
             {
-                int index = VisibleIdfas.ToList().FindIndex(c => c.Id == value);
+                int index = Companies.ToList().FindIndex(c => c.Id == value);
                 if (index >= 0 && index != _selectedCompanyIndex && SwitchCompanyCommand.CanExecute(index))
                     SwitchCompanyCommand.Execute(index);
                 OnPropertyChanged(nameof(SelectedCompanyId));
@@ -996,10 +996,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         /// <summary>Firmy jako nápověda pro filtrovatelný přepínač (Key = IDFa, Label = název).</summary>
         public IEnumerable<ListItem> CompanySuggestions =>
-            VisibleIdfas.Select(c => new ListItem(c.Id, c.Name));
+            Companies.Select(c => new ListItem(c.Id, c.Name));
 
         /// <summary>Jediná firma → přepínač se zdisabluje (zůstává jako indikace aktuální firmy).</summary>
-        public bool HasMultipleCompanies => VisibleIdfas.Count > 1;
+        public bool HasMultipleCompanies => Companies.Count > 1;
 
         private async Task OpenModuleAsync(IModule module)
         {
@@ -1419,20 +1419,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Initial = placeholder: WPF neotevře prázdný submenu, takže MouseEnter refresh by se nevyvolal.
-        private IReadOnlyList<RunningModuleInfo> _runningModules = [_emptyPlaceholder];
+        private IReadOnlyList<RunningModuleInfo> _runningModules = [EmptyPlaceholder];
         public IReadOnlyList<RunningModuleInfo> RunningModules
         {
             get => _runningModules;
             private set => Set(ref _runningModules, value);
         }
 
-        private static readonly RunningModuleInfo _emptyPlaceholder =
+        private static readonly RunningModuleInfo EmptyPlaceholder =
             new("Žádné moduly nejsou spuštěné", () => { }, IsEnabled: false);
 
         private void RefreshRunningModules()
         {
             var modules = _getActiveModules();
-            if (modules.Count == 0) { RunningModules = [_emptyPlaceholder]; return; }
+            if (modules.Count == 0) { RunningModules = [EmptyPlaceholder]; return; }
 
             var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
             RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, labels) })];

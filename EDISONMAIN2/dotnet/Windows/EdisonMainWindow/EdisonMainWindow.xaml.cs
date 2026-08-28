@@ -173,7 +173,7 @@ namespace EDISONMAIN2
             var module = _treeDragModule;
             _treeDragModule = null;
             _treeDragActive = true;
-            DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(ModuleDrag.FromTree, module), DragDropEffects.Copy);
+            DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(DesktopDragFormats.FromTree, module), DragDropEffects.Copy);
         }
 
         // Pravý klik defaultně selekci nemění → kontextové menu by se vizuálně nevztahovalo

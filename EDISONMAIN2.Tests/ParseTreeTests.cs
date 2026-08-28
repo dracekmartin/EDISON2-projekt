@@ -425,8 +425,8 @@ public class ParseTreeTests
         data["3"] = new CList("FAMILY_END");
         var mockMLRest = MockTreeCall(data);
 
-        var service = new ModuleTreeGetter();
-        var tree = service.GetModuleTree(mockMLRest);
+        var getter = new ModuleTreeGetter();
+        var tree = getter.GetModuleTree(mockMLRest);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("Doprava", fam.DisplayedName);

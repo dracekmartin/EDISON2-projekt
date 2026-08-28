@@ -25,7 +25,7 @@ public class EdisonMainViewModelTests
     {
         var vm = CreateVM();
 
-        Assert.Equal(2, vm.VisibleIdfas.Count);
+        Assert.Equal(2, vm.Companies.Count);
         Assert.Equal("CB_DP", vm.Idfa);
         Assert.Equal("CB_DP", vm.Namespace);
     }

@@ -49,13 +49,13 @@ public partial class DesktopMiniAppView : UserControl
         var tile = _dragTile;
         _dragTile = null;
         _suppressClick = true;
-        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(ModuleDrag.ReorderTile, tile), DragDropEffects.Move);
+        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(DesktopDragFormats.ReorderTile, tile), DragDropEffects.Move);
     }
 
     private void Desktop_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(ModuleDrag.ReorderTile) ? DragDropEffects.Move
-                  : e.Data.GetDataPresent(ModuleDrag.FromTree) ? DragDropEffects.Copy
+        e.Effects = e.Data.GetDataPresent(DesktopDragFormats.ReorderTile) ? DragDropEffects.Move
+                  : e.Data.GetDataPresent(DesktopDragFormats.FromTree) ? DragDropEffects.Copy
                   : DragDropEffects.None;
         e.Handled = true;
     }
@@ -69,11 +69,11 @@ public partial class DesktopMiniAppView : UserControl
         var panel = FindPanel();
         (int Column, int Row)? cell = panel is { IsVisible: true } ? panel.CellAt(e.GetPosition(panel)) : null;
 
-        if (e.Data.GetData(ModuleDrag.ReorderTile) is DesktopShortcut dragged)
+        if (e.Data.GetData(DesktopDragFormats.ReorderTile) is DesktopShortcut dragged)
         {
             if (cell is { } target) svc.PlaceAt(dragged, target.Column, target.Row);
         }
-        else if (e.Data.GetData(ModuleDrag.FromTree) is ExecutableModule fromTree)
+        else if (e.Data.GetData(DesktopDragFormats.FromTree) is ExecutableModule fromTree)
         {
             svc.Add(fromTree);                       // přidá (na první volnou buňku) - idempotentní
             // …a přesune na místo dropu; instanci dlaždice zná až služba (Add ji vytvořila).
