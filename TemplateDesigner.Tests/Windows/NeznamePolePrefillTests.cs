@@ -14,7 +14,7 @@ public class NeznamePolePrefillTests
 {
     private static List<Field> Required(string key) =>
     [
-        new Field { Key = key, Label = key, FieldType = EFieldType.Text, Required = true }
+        new Field { Key = key, Label = key, FieldType = FieldType.Text, Required = true }
     ];
 
     [Fact]

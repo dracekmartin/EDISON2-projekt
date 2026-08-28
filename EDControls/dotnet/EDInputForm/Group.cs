@@ -13,8 +13,8 @@ namespace EDControls.EDInputForm
         /// </summary>
         public bool IsExpanded
         {
-            get => Visibility == EItemVisibility.Visible;
-            set => Visibility = value ? EItemVisibility.Visible : EItemVisibility.Collapsed;
+            get => Visibility == ItemVisibility.Visible;
+            set => Visibility = value ? ItemVisibility.Visible : ItemVisibility.Collapsed;
         }
 
         protected override void OnVisibilityChanged()
@@ -25,7 +25,7 @@ namespace EDControls.EDInputForm
         /// Skrytý pro UserHidden / ProgrammerHidden nebo když skupina neprošla search filtrem.
         /// </summary>
         public override WpfVisibility EffectiveVisibility =>
-            !IsFilteredBySearch && Visibility is EItemVisibility.Visible or EItemVisibility.Collapsed
+            !IsFilteredBySearch && Visibility is ItemVisibility.Visible or ItemVisibility.Collapsed
                 ? WpfVisibility.Visible
                 : WpfVisibility.Collapsed;
     }

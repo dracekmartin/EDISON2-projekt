@@ -1,6 +1,6 @@
 namespace EDControls.EDInputForm
 {
-    public enum EValidationTrigger
+    public enum ValidationTrigger
     {
         /// <summary>Volá se jednou hned po načtení formuláře.</summary>
         Init,

@@ -95,8 +95,8 @@ public class FixedTableRowConditionTests
         var row = new TableRow { VisibilityExpression = "{VS}", BackgroundColor = "#FFEEEEEE" };
         List<Field> fields =
         [
-            new Field { Key = "VisibilityExpression", Label = "Podmínka viditelnosti", FieldType = EFieldType.Text },
-            new Field { Key = "BackgroundColor",      Label = "Barva pozadí",          FieldType = EFieldType.Color },
+            new Field { Key = "VisibilityExpression", Label = "Podmínka viditelnosti", FieldType = FieldType.Text },
+            new Field { Key = "BackgroundColor",      Label = "Barva pozadí",          FieldType = FieldType.Color },
         ];
 
         var preFilled = ElementFormBinder.Prefill(fields, row);

@@ -174,10 +174,10 @@ public class FixedTableCellFormattingTests
     /// <summary>Pole formuláře podle schématu buňky, jak ho vydá server (klíč = property path).</summary>
     private static List<Field> CellForm() =>
     [
-        new Field { Key = "Format",          Label = "Formát hodnoty", FieldType = EFieldType.Text },
-        new Field { Key = "Style.FontSize",  Label = "Velikost",       FieldType = EFieldType.Decimal },
-        new Field { Key = "Style.Bold",      Label = "Tučné",          FieldType = EFieldType.Bool },
-        new Field { Key = "Style.TextColor", Label = "Barva textu",    FieldType = EFieldType.Color },
+        new Field { Key = "Format",          Label = "Formát hodnoty", FieldType = FieldType.Text },
+        new Field { Key = "Style.FontSize",  Label = "Velikost",       FieldType = FieldType.Decimal },
+        new Field { Key = "Style.Bold",      Label = "Tučné",          FieldType = FieldType.Bool },
+        new Field { Key = "Style.TextColor", Label = "Barva textu",    FieldType = FieldType.Color },
     ];
 
     private static (List<Field> Fields, Dictionary<string, string> PreFilled) OpenForm(TableElement table)

@@ -3,7 +3,7 @@ Include EDInputForm
 Class ALVA.EDControls.EDInputForm.Form Extends %RegisteredObject
 {
 
-// Zrcadlí C# EValidationTrigger.
+// Zrcadlí C# ValidationTrigger.
 
 Parameter TriggerInit = "Init";
 

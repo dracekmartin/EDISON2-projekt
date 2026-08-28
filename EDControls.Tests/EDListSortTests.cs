@@ -14,7 +14,7 @@ public class EDListSortTests
     [InlineData("98", "98", 98)]
     public void BuildSortKey_Number_ParsesInvariantDecimal(string raw, string formatted, double expected)
     {
-        var key = EDListSort.BuildSortKey(raw, EListColumnType.Number, formatted);
+        var key = EDListSort.BuildSortKey(raw, ListColumnType.Number, formatted);
         // Přesná hodnota, ne jen typ - culture bug parsující "142.5" jako 1425 musí spadnout.
         Assert.Equal((decimal)expected, Assert.IsType<decimal>(key));
     }
@@ -22,21 +22,21 @@ public class EDListSortTests
     [Fact]
     public void BuildSortKey_Number_UnparseableFallsBackToFormatted()
     {
-        var key = EDListSort.BuildSortKey("n/a", EListColumnType.Number, "n/a");
+        var key = EDListSort.BuildSortKey("n/a", ListColumnType.Number, "n/a");
         Assert.Equal("n/a", key);
     }
 
     [Fact]
     public void BuildSortKey_HHMM_IsNumeric()
     {
-        var key = EDListSort.BuildSortKey("830", EListColumnType.HoursMinutes, "08:30");
+        var key = EDListSort.BuildSortKey("830", ListColumnType.HoursMinutes, "08:30");
         Assert.Equal(830m, key);
     }
 
     [Fact]
     public void BuildSortKey_Date_ParsesIso()
     {
-        var key = EDListSort.BuildSortKey("2024-03-15", EListColumnType.Date, "15.03.2024");
+        var key = EDListSort.BuildSortKey("2024-03-15", ListColumnType.Date, "15.03.2024");
         Assert.Equal(new DateTime(2024, 3, 15), key);
     }
 
@@ -44,7 +44,7 @@ public class EDListSortTests
     public void BuildSortKey_DateTime_ParsesIsoTimestamp()
     {
         // Wire formát DATETIME: yyyy-MM-ddTHH:mm:ss (viz EDList CLAUDE.md).
-        var key = EDListSort.BuildSortKey("2024-03-15T08:30:00", EListColumnType.DateTime, "15.03.2024 08:30");
+        var key = EDListSort.BuildSortKey("2024-03-15T08:30:00", ListColumnType.DateTime, "15.03.2024 08:30");
         Assert.Equal(new DateTime(2024, 3, 15, 8, 30, 0), key);
     }
 
@@ -52,7 +52,7 @@ public class EDListSortTests
     public void BuildSortKey_Date_UnparseableFallsBackToFormatted()
     {
         // Neparsovatelné datum padá na formátovaný string, stejně jako Number.
-        var key = EDListSort.BuildSortKey("not-a-date", EListColumnType.Date, "??");
+        var key = EDListSort.BuildSortKey("not-a-date", ListColumnType.Date, "??");
         Assert.Equal("??", key);
     }
 
@@ -61,17 +61,17 @@ public class EDListSortTests
     [InlineData("0", false)]
     public void BuildSortKey_Bool(string raw, bool expected)
     {
-        Assert.Equal(expected, EDListSort.BuildSortKey(raw, EListColumnType.Bool, "Ano"));
+        Assert.Equal(expected, EDListSort.BuildSortKey(raw, ListColumnType.Bool, "Ano"));
     }
 
     [Fact]
     public void BuildSortKey_EmptyRaw_IsNull()
     {
-        Assert.Null(EDListSort.BuildSortKey("", EListColumnType.Number, ""));
-        Assert.Null(EDListSort.BuildSortKey(null, EListColumnType.Text, null));
+        Assert.Null(EDListSort.BuildSortKey("", ListColumnType.Number, ""));
+        Assert.Null(EDListSort.BuildSortKey(null, ListColumnType.Text, null));
     }
 
-    private static EDListRow Row(string id, string col, string raw, EListColumnType type, string? formatted = null)
+    private static EDListRow Row(string id, string col, string raw, ListColumnType type, string? formatted = null)
     {
         formatted ??= raw;
         return new EDListRow(id,
@@ -83,8 +83,8 @@ public class EDListSortTests
     public void Number_SortsNumerically_NotLexicographically()
     {
         // Lexikograficky by "142,5" < "98" - typově musí být 98 první
-        var a = Row("a", "km", "142.5", EListColumnType.Number, "142,5");
-        var b = Row("b", "km", "98", EListColumnType.Number, "98");
+        var a = Row("a", "km", "142.5", ListColumnType.Number, "142,5");
+        var b = Row("b", "km", "98", ListColumnType.Number, "98");
         var cmp = new EDListRowComparer([("km", false)]);
         Assert.True(cmp.Compare(b, a) < 0);
     }
@@ -93,8 +93,8 @@ public class EDListSortTests
     public void Date_SortsChronologically()
     {
         // Formátovaně "02.01.2025" < "31.12.2024" lexikograficky - chronologicky je to obráceně
-        var older = Row("a", "d", "2024-12-31", EListColumnType.Date, "31.12.2024");
-        var newer = Row("b", "d", "2025-01-02", EListColumnType.Date, "02.01.2025");
+        var older = Row("a", "d", "2024-12-31", ListColumnType.Date, "31.12.2024");
+        var newer = Row("b", "d", "2025-01-02", ListColumnType.Date, "02.01.2025");
         var cmp = new EDListRowComparer([("d", false)]);
         Assert.True(cmp.Compare(older, newer) < 0);
     }
@@ -102,8 +102,8 @@ public class EDListSortTests
     [Fact]
     public void DateTime_SortsChronologically()
     {
-        var earlier = Row("a", "ts", "2024-03-15T08:30:00", EListColumnType.DateTime, "15.03.2024 08:30");
-        var later   = Row("b", "ts", "2024-03-15T14:00:00", EListColumnType.DateTime, "15.03.2024 14:00");
+        var earlier = Row("a", "ts", "2024-03-15T08:30:00", ListColumnType.DateTime, "15.03.2024 08:30");
+        var later   = Row("b", "ts", "2024-03-15T14:00:00", ListColumnType.DateTime, "15.03.2024 14:00");
         var cmp = new EDListRowComparer([("ts", false)]);
         Assert.True(cmp.Compare(earlier, later) < 0);
     }
@@ -113,8 +113,8 @@ public class EDListSortTests
     {
         // Stejný sloupec: jeden řádek parsovaný decimal, druhý fallback string ("n/a").
         // CompareCell mezi nestejnými typy padá na stringové porovnání, nesmí házet.
-        var num = Row("a", "n", "142.5", EListColumnType.Number, "142,5");
-        var na  = Row("b", "n", "n/a",   EListColumnType.Number, "n/a");
+        var num = Row("a", "n", "142.5", ListColumnType.Number, "142,5");
+        var na  = Row("b", "n", "n/a",   ListColumnType.Number, "n/a");
         var cmp = new EDListRowComparer([("n", false)]);
 
         Assert.Null(Record.Exception(() => cmp.Compare(num, na)));
@@ -124,8 +124,8 @@ public class EDListSortTests
     [Fact]
     public void Descending_InvertsOrder()
     {
-        var small = Row("a", "n", "1", EListColumnType.Number);
-        var big   = Row("b", "n", "2", EListColumnType.Number);
+        var small = Row("a", "n", "1", ListColumnType.Number);
+        var big   = Row("b", "n", "2", ListColumnType.Number);
         var cmp = new EDListRowComparer([("n", true)]);
         Assert.True(cmp.Compare(big, small) < 0);
     }
@@ -138,7 +138,7 @@ public class EDListSortTests
             new Dictionary<string, object?>
             {
                 ["typ"] = typ,
-                ["km"] = EDListSort.BuildSortKey(km, EListColumnType.Number, km),
+                ["km"] = EDListSort.BuildSortKey(km, ListColumnType.Number, km),
             });
         var cmp = new EDListRowComparer([("typ", false), ("km", false)]);
         Assert.True(cmp.Compare(Make("a", "Bus", "98"), Make("b", "Bus", "142.5")) < 0);
@@ -148,8 +148,8 @@ public class EDListSortTests
     [Fact]
     public void EmptyValues_SortLast()
     {
-        var empty = Row("a", "n", "", EListColumnType.Number);
-        var value = Row("b", "n", "5", EListColumnType.Number);
+        var empty = Row("a", "n", "", ListColumnType.Number);
+        var value = Row("b", "n", "5", ListColumnType.Number);
         var cmp = new EDListRowComparer([("n", false)]);
         Assert.True(cmp.Compare(value, empty) < 0);
     }

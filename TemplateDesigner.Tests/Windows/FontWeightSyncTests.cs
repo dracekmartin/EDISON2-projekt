@@ -20,8 +20,8 @@ public class FontWeightSyncTests
 
     private static List<Field> Fields(string family, string weight) =>
     [
-        new Field { Key = FamilyKey, FieldType = EFieldType.ComboBox, Value = family },
-        new Field { Key = WeightKey, FieldType = EFieldType.List,     Value = weight },
+        new Field { Key = FamilyKey, FieldType = FieldType.ComboBox, Value = family },
+        new Field { Key = WeightKey, FieldType = FieldType.List,     Value = weight },
     ];
 
     private static Field Weight(List<Field> fields) => fields.First(f => f.Key == WeightKey);
@@ -108,7 +108,7 @@ public class FontWeightSyncTests
     public void VolbyPoleHlasiZmenu()
     {
         // Bez ohlášení by se vyměněná nabídka nepromítla do už vykresleného dropdownu (EDControls).
-        var field = new Field { Key = WeightKey, FieldType = EFieldType.List };
+        var field = new Field { Key = WeightKey, FieldType = FieldType.List };
         var changed = new List<string>();
         field.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? "");
 

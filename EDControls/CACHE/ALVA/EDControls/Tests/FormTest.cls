@@ -175,7 +175,7 @@ Method TestWholeFormValidationTriggers()
 	do $$$AssertEquals(save.IsInitValidation(), 0)
 }
 
-/// Konstanty triggeru zrcadlí C# EValidationTrigger - hodnoty jdou po wire jako stringy,
+/// Konstanty triggeru zrcadlí C# ValidationTrigger - hodnoty jdou po wire jako stringy,
 /// takže přejmenování na jedné straně rozbije validace bez chyby při buildu.
 Method TestTriggerConstantsMatchWireContract()
 {

@@ -32,7 +32,7 @@ namespace EDControls.EDInputForm
         public WpfVisibility RequiredIndicatorVisibility =>
             Required ? WpfVisibility.Visible : WpfVisibility.Collapsed;
 
-        public EFieldType FieldType { get; set; } = EFieldType.Text;
+        public FieldType FieldType { get; set; } = FieldType.Text;
 
         /// <summary>Pokud false, pole je read-only (server-controlled).</summary>
         public bool Editable { get; set; } = true;
@@ -82,8 +82,8 @@ namespace EDControls.EDInputForm
         public string FileFilter { get; set; } = "";
 
         /// <summary>
-        /// Minimální povolená hodnota pro pole typu <see cref="EFieldType.Number"/> nebo
-        /// <see cref="EFieldType.Decimal"/>. Null = bez dolní hranice. Validuje se v
+        /// Minimální povolená hodnota pro pole typu <see cref="FieldType.Number"/> nebo
+        /// <see cref="FieldType.Decimal"/>. Null = bez dolní hranice. Validuje se v
         /// <see cref="GetTypeError"/> i serverem.
         /// </summary>
         public decimal? Min { get; set; }
@@ -175,8 +175,8 @@ namespace EDControls.EDInputForm
         public string? GetRequiredError()
         {
             if (!Required) return null;
-            if (FieldType == EFieldType.Bool) return null;
-            if (FieldType == EFieldType.Button) return null;
+            if (FieldType == FieldType.Bool) return null;
+            if (FieldType == FieldType.Button) return null;
             if (string.IsNullOrEmpty(_value)) return "Povinné pole";
             return null;
         }
@@ -190,20 +190,20 @@ namespace EDControls.EDInputForm
             if (string.IsNullOrEmpty(_value)) return null;
             switch (FieldType)
             {
-                case EFieldType.Number:
+                case FieldType.Number:
                     if (!int.TryParse(_value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var iv))
                         return "Musí být celé číslo";
                     return CheckRange(iv);
-                case EFieldType.Decimal:
+                case FieldType.Decimal:
                     if (!decimal.TryParse(_value, NumberStyles.Number, CultureInfo.InvariantCulture, out var dv))
                         return "Musí být číslo";
                     return CheckRange(dv);
-                case EFieldType.Date:
+                case FieldType.Date:
                     return DateTime.TryParseExact(_value, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                                DateTimeStyles.None, out _) ? null : "Neplatné datum";
-                case EFieldType.Bool:
+                case FieldType.Bool:
                     return _value is "0" or "1" ? null : "Musí být 0 nebo 1";
-                case EFieldType.Color:
+                case FieldType.Color:
                     return IsHexColor(_value) || IsFieldReference(_value)
                         ? null : "Neplatná barva - zadejte #RRGGBB nebo #AARRGGBB";
                 default:
@@ -287,8 +287,8 @@ namespace EDControls.EDInputForm
         /// </summary>
         public override WpfVisibility EffectiveVisibility =>
             !IsFilteredBySearch
-            && Visibility == EItemVisibility.Visible
-            && (_parentGroup?.Visibility ?? EItemVisibility.Visible) == EItemVisibility.Visible
+            && Visibility == ItemVisibility.Visible
+            && (_parentGroup?.Visibility ?? ItemVisibility.Visible) == ItemVisibility.Visible
                 ? WpfVisibility.Visible
                 : WpfVisibility.Collapsed;
     }

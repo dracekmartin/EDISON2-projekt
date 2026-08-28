@@ -1,6 +1,6 @@
 namespace EDControls.EDList
 {
-    public enum EListColumnAlign
+    public enum ListColumnAlign
     {
         Auto,
         Left,

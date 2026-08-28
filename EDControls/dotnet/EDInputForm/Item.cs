@@ -9,9 +9,9 @@ namespace EDControls.EDInputForm
         /// <summary>1-based sekvenční číslo přidělené Caché napříč všemi položkami (groups + fields).</summary>
         public int Number { get; set; }
 
-        private EItemVisibility _visibility = EItemVisibility.Visible;
+        private ItemVisibility _visibility = ItemVisibility.Visible;
         /// <summary>Řídí zobrazení položky: visible / collapsed / hidden (uživatel nebo programátor).</summary>
-        public EItemVisibility Visibility
+        public ItemVisibility Visibility
         {
             get => _visibility;
             set
@@ -25,7 +25,7 @@ namespace EDControls.EDInputForm
 
         /// <summary>Vypočtená WPF <see cref="WpfVisibility"/> pro XAML binding. Override v subclass pro dodatečnou logiku.</summary>
         public virtual WpfVisibility EffectiveVisibility =>
-            !_isFilteredBySearch && _visibility == EItemVisibility.Visible
+            !_isFilteredBySearch && _visibility == ItemVisibility.Visible
                 ? WpfVisibility.Visible
                 : WpfVisibility.Collapsed;
 

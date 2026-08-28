@@ -36,7 +36,7 @@ public static class ElementFormBinder
     public static void PopulateFontFields(EDInputForm form)
     {
         foreach (var field in (form.Items ?? []).OfType<Field>())
-            if (field.FieldType == EFieldType.ComboBox
+            if (field.FieldType == FieldType.ComboBox
                 && field.Key.EndsWith("FontFamily", StringComparison.Ordinal))
                 field.ListItems = FontItems;
     }
@@ -103,7 +103,7 @@ public static class ElementFormBinder
     }
 
     private static bool IsWeightField(Field f) =>
-        f.FieldType == EFieldType.List && f.Key.EndsWith(WeightSuffix, StringComparison.Ordinal);
+        f.FieldType == FieldType.List && f.Key.EndsWith(WeightSuffix, StringComparison.Ordinal);
 
     private static List<ListItem> WeightItems(string? family) =>
         Models.FontWeightCatalog.Items(family)
@@ -118,7 +118,7 @@ public static class ElementFormBinder
     // musí být tam, protože serverová validace při ukládání přestaví seznam polí a hlášku nastavenou
     // odsud by zahodila. Tady zůstává jen pojistka, že se neplatná hodnota nedostane do modelu.
 
-    private static bool IsColorField(Field f) => f.FieldType == EFieldType.Color;
+    private static bool IsColorField(Field f) => f.FieldType == FieldType.Color;
 
     /// <summary>Neprázdná hodnota, kterou nelze přečíst jako barvu. Prázdno = „vymazáno", ne chyba.</summary>
     private static bool IsInvalidColor(string? value) =>

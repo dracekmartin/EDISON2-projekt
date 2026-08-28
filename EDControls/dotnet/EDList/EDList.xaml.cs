@@ -132,12 +132,12 @@ namespace EDControls.EDList
 
         /// <summary>Mode výběru: Single (klasický), Check (checkbox sloupec, multi-select).</summary>
         public static readonly DependencyProperty SelectionModeProperty =
-            DependencyProperty.Register(nameof(SelectionMode), typeof(EListSelectionMode), typeof(EDList),
-                new PropertyMetadata(EListSelectionMode.Single, OnSelectionModeChanged));
+            DependencyProperty.Register(nameof(SelectionMode), typeof(ListSelectionMode), typeof(EDList),
+                new PropertyMetadata(ListSelectionMode.Single, OnSelectionModeChanged));
 
-        public EListSelectionMode SelectionMode
+        public ListSelectionMode SelectionMode
         {
-            get => (EListSelectionMode)GetValue(SelectionModeProperty);
+            get => (ListSelectionMode)GetValue(SelectionModeProperty);
             set => SetValue(SelectionModeProperty, value);
         }
 
@@ -147,7 +147,7 @@ namespace EDControls.EDList
         /// <summary>V Check mode: ID checknutých řádků (z <see cref="EDListRow.IsChecked"/>).
         /// V Single mode: vrátí <c>[SelectedRowId]</c> nebo prázdné.</summary>
         public IReadOnlyList<string> SelectedRowIds =>
-            SelectionMode == EListSelectionMode.Check
+            SelectionMode == ListSelectionMode.Check
                 ? _rows.Where(r => r.IsChecked).Select(r => r.Id).ToList()
                 : SelectedRowId is { } id ? [id] : [];
 
@@ -382,25 +382,25 @@ namespace EDControls.EDList
             IsLink   = el.Bool("isLink"),
         };
 
-        private static EListColumnType ParseType(string? s) => s?.ToUpperInvariant() switch
+        private static ListColumnType ParseType(string? s) => s?.ToUpperInvariant() switch
         {
-            "NUMBER"   => EListColumnType.Number,
-            "DATE"     => EListColumnType.Date,
-            "DATETIME" => EListColumnType.DateTime,
-            "BOOL"     => EListColumnType.Bool,
-            "IMAGE"    => EListColumnType.Image,
-            "COLOR"    => EListColumnType.Color,
-            "HHMM"     => EListColumnType.HoursMinutes,
-            "CODEBOOK" => EListColumnType.Codebook,
-            _          => EListColumnType.Text,
+            "NUMBER"   => ListColumnType.Number,
+            "DATE"     => ListColumnType.Date,
+            "DATETIME" => ListColumnType.DateTime,
+            "BOOL"     => ListColumnType.Bool,
+            "IMAGE"    => ListColumnType.Image,
+            "COLOR"    => ListColumnType.Color,
+            "HHMM"     => ListColumnType.HoursMinutes,
+            "CODEBOOK" => ListColumnType.Codebook,
+            _          => ListColumnType.Text,
         };
 
-        private static EListColumnAlign ParseAlign(string? s) => s?.ToUpperInvariant() switch
+        private static ListColumnAlign ParseAlign(string? s) => s?.ToUpperInvariant() switch
         {
-            "LEFT"   => EListColumnAlign.Left,
-            "CENTER" => EListColumnAlign.Center,
-            "RIGHT"  => EListColumnAlign.Right,
-            _        => EListColumnAlign.Auto,
+            "LEFT"   => ListColumnAlign.Left,
+            "CENTER" => ListColumnAlign.Center,
+            "RIGHT"  => ListColumnAlign.Right,
+            _        => ListColumnAlign.Auto,
         };
 
         private IEnumerable<EDListRow> ParseRows(CVar output)
@@ -423,7 +423,7 @@ namespace EDControls.EDList
                     else
                     {
                         dict[prop.Name] = formatted;
-                        var type = _columns?.FirstOrDefault(c => c.Key == prop.Name)?.Type ?? EListColumnType.Text;
+                        var type = _columns?.FirstOrDefault(c => c.Key == prop.Name)?.Type ?? ListColumnType.Text;
                         sortKeys[prop.Name] = EDListSort.BuildSortKey(raw, type, formatted);
                     }
                 }
@@ -440,11 +440,11 @@ namespace EDControls.EDList
 
             return col.Type switch
             {
-                EListColumnType.Bool         => raw == "1" ? "Ano" : "Ne",
-                EListColumnType.HoursMinutes => FormatHHMM(raw),
-                EListColumnType.Date         => FormatDate(raw, col.Format.Length > 0 ? col.Format : "dd.MM.yyyy"),
-                EListColumnType.DateTime     => FormatDate(raw, col.Format.Length > 0 ? col.Format : "dd.MM.yyyy HH:mm"),
-                EListColumnType.Number       => FormatNumber(raw, col.Format),
+                ListColumnType.Bool         => raw == "1" ? "Ano" : "Ne",
+                ListColumnType.HoursMinutes => FormatHHMM(raw),
+                ListColumnType.Date         => FormatDate(raw, col.Format.Length > 0 ? col.Format : "dd.MM.yyyy"),
+                ListColumnType.DateTime     => FormatDate(raw, col.Format.Length > 0 ? col.Format : "dd.MM.yyyy HH:mm"),
+                ListColumnType.Number       => FormatNumber(raw, col.Format),
                 _                            => raw,
             };
         }
@@ -475,7 +475,7 @@ namespace EDControls.EDList
         {
             UnhookColumnEvents();
             DataGrid.Columns.Clear();
-            if (SelectionMode == EListSelectionMode.Check)
+            if (SelectionMode == ListSelectionMode.Check)
                 DataGrid.Columns.Add(BuildCheckBoxColumn());
             if (_columns is null) return;
             foreach (var col in _columns.Where(c => c.Visible))
@@ -530,7 +530,7 @@ namespace EDControls.EDList
                 ? new DataGridLength(col.Width)
                 : new DataGridLength(1, DataGridLengthUnitType.Auto);
 
-            var align = col.Align == EListColumnAlign.Auto ? DefaultAlign(col.Type) : col.Align;
+            var align = col.Align == ListColumnAlign.Auto ? DefaultAlign(col.Type) : col.Align;
 
             if (col.IsLink)
             {
@@ -541,9 +541,9 @@ namespace EDControls.EDList
                 // SetResourceReference (= DynamicResource): SystemColors.HotTrackBrush je
                 // systémová barva, kterou dark mode nepřepne.
                 tb.SetResourceReference(TextBlock.ForegroundProperty, "EDTheme.Accent.Blue");
-                if (align == EListColumnAlign.Right)
+                if (align == ListColumnAlign.Right)
                     tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
-                else if (align == EListColumnAlign.Center)
+                else if (align == ListColumnAlign.Center)
                     tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
                 tb.AddHandler(TextBlock.PreviewMouseLeftButtonUpEvent, new MouseButtonEventHandler((sender, _) =>
                 {
@@ -559,7 +559,7 @@ namespace EDControls.EDList
                 };
             }
 
-            if (col.Type == EListColumnType.Color)
+            if (col.Type == ListColumnType.Color)
             {
                 var rect = new FrameworkElementFactory(typeof(Rectangle));
                 rect.SetValue(Rectangle.HeightProperty, 16.0);
@@ -583,9 +583,9 @@ namespace EDControls.EDList
                 CanUserSort = col.Sortable,
             };
 
-            if (align != EListColumnAlign.Left)
+            if (align != ListColumnAlign.Left)
             {
-                var ha = align == EListColumnAlign.Right
+                var ha = align == ListColumnAlign.Right
                     ? HorizontalAlignment.Right
                     : HorizontalAlignment.Center;
                 // ElementStyle implicitní <Style TargetType="TextBlock"> nahrazuje, nedědí -
@@ -600,14 +600,14 @@ namespace EDControls.EDList
             return textCol;
         }
 
-        private static EListColumnAlign DefaultAlign(EListColumnType type) => type switch
+        private static ListColumnAlign DefaultAlign(ListColumnType type) => type switch
         {
-            EListColumnType.Number       => EListColumnAlign.Right,
-            EListColumnType.HoursMinutes => EListColumnAlign.Right,
-            EListColumnType.Bool         => EListColumnAlign.Center,
-            EListColumnType.Image        => EListColumnAlign.Center,
-            EListColumnType.Color        => EListColumnAlign.Center,
-            _                            => EListColumnAlign.Left,
+            ListColumnType.Number       => ListColumnAlign.Right,
+            ListColumnType.HoursMinutes => ListColumnAlign.Right,
+            ListColumnType.Bool         => ListColumnAlign.Center,
+            ListColumnType.Image        => ListColumnAlign.Center,
+            ListColumnType.Color        => ListColumnAlign.Center,
+            _                            => ListColumnAlign.Left,
         };
 
         private readonly List<(string Key, ListSortDirection Dir)> _sortSpecs = [];
@@ -647,7 +647,7 @@ namespace EDControls.EDList
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // V Check mode dvojklik na řádek přepne zaškrtnutí (rychlejší než trefit úzký checkbox).
-            if (SelectionMode == EListSelectionMode.Check && SelectedRow is EDListRow row)
+            if (SelectionMode == ListSelectionMode.Check && SelectedRow is EDListRow row)
             {
                 row.IsChecked = !row.IsChecked;
                 _checkAnchor = row;

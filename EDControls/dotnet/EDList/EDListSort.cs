@@ -15,18 +15,18 @@ internal static class EDListSort
     /// Typovaný sort klíč buňky. Neparsovatelná hodnota spadne na formátovaný string -
     /// comparer pak mezi nestejnými typy porovnává stringově, takže se nic nerozbije.
     /// </summary>
-    internal static object? BuildSortKey(string? raw, EListColumnType type, string? formatted)
+    internal static object? BuildSortKey(string? raw, ListColumnType type, string? formatted)
     {
         if (string.IsNullOrEmpty(raw)) return null;
         return type switch
         {
-            EListColumnType.Number or EListColumnType.HoursMinutes =>
+            ListColumnType.Number or ListColumnType.HoursMinutes =>
                 decimal.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var d)
                     ? d : formatted,
-            EListColumnType.Date or EListColumnType.DateTime =>
+            ListColumnType.Date or ListColumnType.DateTime =>
                 DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt)
                     ? dt : formatted,
-            EListColumnType.Bool => raw == "1",
+            ListColumnType.Bool => raw == "1",
             _ => formatted,
         };
     }

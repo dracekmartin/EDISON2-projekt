@@ -36,7 +36,7 @@ public class EDInputFormParsingTests
         Assert.Equal(1, g.Number);
         Assert.Equal("osobni", g.Key);
         Assert.Equal("Osobní údaje", g.GroupName);
-        Assert.Equal(EItemVisibility.Visible, g.Visibility);
+        Assert.Equal(ItemVisibility.Visible, g.Visibility);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class EDInputFormParsingTests
 
         var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Equal(5, g.Number);
-        Assert.Equal(EItemVisibility.Collapsed, g.Visibility);
+        Assert.Equal(ItemVisibility.Collapsed, g.Visibility);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
-        Assert.Equal(EItemVisibility.ProgrammerHidden, g.Visibility);
+        Assert.Equal(ItemVisibility.ProgrammerHidden, g.Visibility);
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class EDInputFormParsingTests
         Assert.Equal(2, f.Number);
         Assert.Equal("jmeno", f.Key);
         Assert.Equal("Jméno", f.Label);
-        Assert.Equal(EFieldType.Text, f.FieldType);
+        Assert.Equal(FieldType.Text, f.FieldType);
         Assert.Equal("Jan", f.Value);
         Assert.False(f.ValidateOnChange);
         Assert.True(f.Required);
@@ -92,7 +92,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.Number, f.FieldType);
+        Assert.Equal(FieldType.Number, f.FieldType);
         Assert.Equal("42", f.Value);
         Assert.True(f.ValidateOnChange);
         Assert.False(f.Required);
@@ -158,7 +158,7 @@ public class EDInputFormParsingTests
         var group = new Group { Number = 1, Key = "sekce", GroupName = "Sekce" };
         var field = new Field
         {
-            Number = 2, Key = "k", Label = "Lbl", FieldType = EFieldType.Text,
+            Number = 2, Key = "k", Label = "Lbl", FieldType = FieldType.Text,
             Value = "hello", ValidateOnChange = true, Required = true
         };
 
@@ -171,13 +171,13 @@ public class EDInputFormParsingTests
         Assert.Equal(1, g.Number);
         Assert.Equal("sekce", g.Key);
         Assert.Equal("Sekce", g.GroupName);
-        Assert.Equal(EItemVisibility.Visible, g.Visibility);
+        Assert.Equal(ItemVisibility.Visible, g.Visibility);
 
         var f = Assert.IsType<Field>(parsed[1]);
         Assert.Equal(2, f.Number);
         Assert.Equal("k", f.Key);
         Assert.Equal("Lbl", f.Label);
-        Assert.Equal(EFieldType.Text, f.FieldType);
+        Assert.Equal(FieldType.Text, f.FieldType);
         Assert.Equal("hello", f.Value);
         Assert.True(f.ValidateOnChange);
         Assert.True(f.Required);
@@ -192,7 +192,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.Date, f.FieldType);
+        Assert.Equal(FieldType.Date, f.FieldType);
         Assert.Equal("2024-05-15", f.Value);
     }
 
@@ -205,7 +205,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.Decimal, f.FieldType);
+        Assert.Equal(FieldType.Decimal, f.FieldType);
         Assert.Equal("45000.50", f.Value);
     }
 
@@ -218,7 +218,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.Bool, f.FieldType);
+        Assert.Equal(FieldType.Bool, f.FieldType);
         Assert.Equal("1", f.Value);
         Assert.True(f.BoolValue);
     }
@@ -226,7 +226,7 @@ public class EDInputFormParsingTests
     [Fact]
     public void BoolValue_SetTrue_SetsValueTo1()
     {
-        var field = new Field { FieldType = EFieldType.Bool, Value = "0" };
+        var field = new Field { FieldType = FieldType.Bool, Value = "0" };
 
         field.BoolValue = true;
 
@@ -237,7 +237,7 @@ public class EDInputFormParsingTests
     [Fact]
     public void BoolValue_SetFalse_SetsValueTo0()
     {
-        var field = new Field { FieldType = EFieldType.Bool, Value = "1" };
+        var field = new Field { FieldType = FieldType.Bool, Value = "1" };
 
         field.BoolValue = false;
 
@@ -246,21 +246,21 @@ public class EDInputFormParsingTests
     }
 
     [Theory]
-    [InlineData("DATE", EFieldType.Date)]
-    [InlineData("DECIMAL", EFieldType.Decimal)]
-    [InlineData("BOOL", EFieldType.Bool)]
-    [InlineData("TEXT", EFieldType.Text)]
-    [InlineData("NUMBER", EFieldType.Number)]
-    [InlineData("BUTTON", EFieldType.Button)]
-    [InlineData("LIST", EFieldType.List)]
-    [InlineData("FILE", EFieldType.File)]
-    [InlineData("COLOR", EFieldType.Color)]
-    [InlineData("COMBOBOX", EFieldType.ComboBox)]
-    [InlineData("IMAGE", EFieldType.Image)]
-    [InlineData("UNKNOWN", EFieldType.Text)]
-    public void EFieldTypeWire_RoundTrips(string wire, EFieldType expected)
+    [InlineData("DATE", FieldType.Date)]
+    [InlineData("DECIMAL", FieldType.Decimal)]
+    [InlineData("BOOL", FieldType.Bool)]
+    [InlineData("TEXT", FieldType.Text)]
+    [InlineData("NUMBER", FieldType.Number)]
+    [InlineData("BUTTON", FieldType.Button)]
+    [InlineData("LIST", FieldType.List)]
+    [InlineData("FILE", FieldType.File)]
+    [InlineData("COLOR", FieldType.Color)]
+    [InlineData("COMBOBOX", FieldType.ComboBox)]
+    [InlineData("IMAGE", FieldType.Image)]
+    [InlineData("UNKNOWN", FieldType.Text)]
+    public void EFieldTypeWire_RoundTrips(string wire, FieldType expected)
     {
-        Assert.Equal(expected, EFieldTypeWire.FromWire(wire));
+        Assert.Equal(expected, FieldTypeWire.FromWire(wire));
         if (wire != "UNKNOWN")
             Assert.Equal(wire, expected.ToWire());
     }
@@ -268,21 +268,21 @@ public class EDInputFormParsingTests
     [Fact]
     public void DateValue_Get_ParsesYyyyMmDd()
     {
-        var field = new Field { FieldType = EFieldType.Date, Value = "2024-05-15" };
+        var field = new Field { FieldType = FieldType.Date, Value = "2024-05-15" };
         Assert.Equal(new System.DateTime(2024, 5, 15), field.DateValue);
     }
 
     [Fact]
     public void DateValue_Get_InvalidReturnsNull()
     {
-        var field = new Field { FieldType = EFieldType.Date, Value = "not-a-date" };
+        var field = new Field { FieldType = FieldType.Date, Value = "not-a-date" };
         Assert.Null(field.DateValue);
     }
 
     [Fact]
     public void DateValue_Set_FormatsToWire()
     {
-        var field = new Field { FieldType = EFieldType.Date };
+        var field = new Field { FieldType = FieldType.Date };
         field.DateValue = new System.DateTime(2024, 12, 31);
         Assert.Equal("2024-12-31", field.Value);
     }
@@ -290,42 +290,42 @@ public class EDInputFormParsingTests
     [Fact]
     public void DateValue_SetNull_ClearsValue()
     {
-        var field = new Field { FieldType = EFieldType.Date, Value = "2024-05-15" };
+        var field = new Field { FieldType = FieldType.Date, Value = "2024-05-15" };
         field.DateValue = null;
         Assert.Equal("", field.Value);
     }
 
     [Theory]
-    [InlineData(EFieldType.Number, "42", null)]
-    [InlineData(EFieldType.Number, "-5", null)]
-    [InlineData(EFieldType.Number, "3.14", "Musí být celé číslo")]
-    [InlineData(EFieldType.Number, "abc", "Musí být celé číslo")]
-    [InlineData(EFieldType.Decimal, "42", null)]
-    [InlineData(EFieldType.Decimal, "3.14", null)]
-    [InlineData(EFieldType.Decimal, "-1.5", null)]
-    [InlineData(EFieldType.Decimal, "abc", "Musí být číslo")]
-    [InlineData(EFieldType.Date, "2024-05-15", null)]
-    [InlineData(EFieldType.Date, "not-a-date", "Neplatné datum")]
-    [InlineData(EFieldType.Bool, "1", null)]
-    [InlineData(EFieldType.Bool, "0", null)]
-    [InlineData(EFieldType.Bool, "yes", "Musí být 0 nebo 1")]
-    [InlineData(EFieldType.Text, "anything", null)]
-    [InlineData(EFieldType.List, "anything", null)]
-    [InlineData(EFieldType.File, @"C:\some\path.pdf", null)]
-    public void GetTypeError_ValidatesValueByFieldType(EFieldType type, string value, string? expected)
+    [InlineData(FieldType.Number, "42", null)]
+    [InlineData(FieldType.Number, "-5", null)]
+    [InlineData(FieldType.Number, "3.14", "Musí být celé číslo")]
+    [InlineData(FieldType.Number, "abc", "Musí být celé číslo")]
+    [InlineData(FieldType.Decimal, "42", null)]
+    [InlineData(FieldType.Decimal, "3.14", null)]
+    [InlineData(FieldType.Decimal, "-1.5", null)]
+    [InlineData(FieldType.Decimal, "abc", "Musí být číslo")]
+    [InlineData(FieldType.Date, "2024-05-15", null)]
+    [InlineData(FieldType.Date, "not-a-date", "Neplatné datum")]
+    [InlineData(FieldType.Bool, "1", null)]
+    [InlineData(FieldType.Bool, "0", null)]
+    [InlineData(FieldType.Bool, "yes", "Musí být 0 nebo 1")]
+    [InlineData(FieldType.Text, "anything", null)]
+    [InlineData(FieldType.List, "anything", null)]
+    [InlineData(FieldType.File, @"C:\some\path.pdf", null)]
+    public void GetTypeError_ValidatesValueByFieldType(FieldType type, string value, string? expected)
     {
         var field = new Field { FieldType = type, Value = value };
         Assert.Equal(expected, field.GetTypeError());
     }
 
     [Theory]
-    [InlineData(EFieldType.Number, null)]
-    [InlineData(EFieldType.Decimal, null)]
-    [InlineData(EFieldType.Date, null)]
-    [InlineData(EFieldType.Bool, null)]
-    [InlineData(EFieldType.List, null)]
-    [InlineData(EFieldType.File, null)]
-    public void GetTypeError_EmptyValue_ReturnsNull(EFieldType type, string? value)
+    [InlineData(FieldType.Number, null)]
+    [InlineData(FieldType.Decimal, null)]
+    [InlineData(FieldType.Date, null)]
+    [InlineData(FieldType.Bool, null)]
+    [InlineData(FieldType.List, null)]
+    [InlineData(FieldType.File, null)]
+    public void GetTypeError_EmptyValue_ReturnsNull(FieldType type, string? value)
     {
         var field = new Field { FieldType = type, Value = value };
         Assert.Null(field.GetTypeError());
@@ -369,7 +369,7 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Number = 1, Key = "k", Label = "L", FieldType = FieldType.Text,
             Value = "v", Editable = false
         };
 
@@ -391,14 +391,14 @@ public class EDInputFormParsingTests
     }
 
     [Theory]
-    [InlineData("0", EItemVisibility.Visible)]
-    [InlineData("1", EItemVisibility.Collapsed)]
-    [InlineData("2", EItemVisibility.UserHidden)]
-    [InlineData("3", EItemVisibility.ProgrammerHidden)]
-    [InlineData("UNKNOWN", EItemVisibility.Visible)]
-    public void EItemVisibilityWire_RoundTrips(string wire, EItemVisibility expected)
+    [InlineData("0", ItemVisibility.Visible)]
+    [InlineData("1", ItemVisibility.Collapsed)]
+    [InlineData("2", ItemVisibility.UserHidden)]
+    [InlineData("3", ItemVisibility.ProgrammerHidden)]
+    [InlineData("UNKNOWN", ItemVisibility.Visible)]
+    public void EItemVisibilityWire_RoundTrips(string wire, ItemVisibility expected)
     {
-        Assert.Equal(expected, EItemVisibilityWire.FromWire(wire));
+        Assert.Equal(expected, ItemVisibilityWire.FromWire(wire));
         if (wire != "UNKNOWN")
             Assert.Equal(wire, expected.ToWire());
     }
@@ -412,7 +412,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EItemVisibility.UserHidden, f.Visibility);
+        Assert.Equal(ItemVisibility.UserHidden, f.Visibility);
     }
 
     [Fact]
@@ -424,7 +424,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EItemVisibility.ProgrammerHidden, f.Visibility);
+        Assert.Equal(ItemVisibility.ProgrammerHidden, f.Visibility);
     }
 
     [Fact]
@@ -436,7 +436,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EItemVisibility.Visible, f.Visibility);
+        Assert.Equal(ItemVisibility.Visible, f.Visibility);
     }
 
     [Fact]
@@ -444,15 +444,15 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
-            Value = "v", Visibility = EItemVisibility.ProgrammerHidden
+            Number = 1, Key = "k", Label = "L", FieldType = FieldType.Text,
+            Value = "v", Visibility = ItemVisibility.ProgrammerHidden
         };
 
         CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([field]);
         var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
-        Assert.Equal(EItemVisibility.ProgrammerHidden, f.Visibility);
+        Assert.Equal(ItemVisibility.ProgrammerHidden, f.Visibility);
     }
 
     [Fact]
@@ -461,27 +461,27 @@ public class EDInputFormParsingTests
         var group = new Group
         {
             Number = 1, Key = "g", GroupName = "G",
-            Visibility = EItemVisibility.Collapsed
+            Visibility = ItemVisibility.Collapsed
         };
 
         CVar serialized = EDInputForm.EDInputFormWire.SerializeItemsCVar([group]);
         var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var g = Assert.IsType<Group>(Assert.Single(parsed));
-        Assert.Equal(EItemVisibility.Collapsed, g.Visibility);
+        Assert.Equal(ItemVisibility.Collapsed, g.Visibility);
     }
 
     [Fact]
     public void EffectiveVisibility_HiddenField_IsCollapsed()
     {
-        var field = new Field { Visibility = EItemVisibility.ProgrammerHidden };
+        var field = new Field { Visibility = ItemVisibility.ProgrammerHidden };
         Assert.Equal(System.Windows.Visibility.Collapsed, field.EffectiveVisibility);
     }
 
     [Fact]
     public void EffectiveVisibility_VisibleFieldNoParent_IsVisible()
     {
-        var field = new Field { Visibility = EItemVisibility.Visible };
+        var field = new Field { Visibility = ItemVisibility.Visible };
         Assert.Equal(System.Windows.Visibility.Visible, field.EffectiveVisibility);
     }
 
@@ -550,7 +550,7 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Number = 1, Key = "k", Label = "L", FieldType = FieldType.Text,
             Value = "v", HelpText = "Help for field"
         };
 
@@ -581,7 +581,7 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Number = 1, Key = "k", Label = "L", FieldType = FieldType.Text,
             Value = "v", HelpText = null
         };
 
@@ -612,7 +612,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["helpTextMode"] = new CVar("tooltip");
 
-        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
+        Assert.Equal(HelpTextMode.Tooltip, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
     }
 
     [Fact]
@@ -621,7 +621,7 @@ public class EDInputFormParsingTests
         var data = new CVar();
         data["helpTextMode"] = new CVar("column");
 
-        Assert.Equal(EHelpTextMode.Column, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
+        Assert.Equal(HelpTextMode.Column, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
     }
 
     [Fact]
@@ -629,7 +629,7 @@ public class EDInputFormParsingTests
     {
         var data = new CVar();
 
-        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
+        Assert.Equal(HelpTextMode.Tooltip, EDInputForm.EDInputFormWire.ParseHelpTextMode(data));
     }
 
     [Fact]
@@ -646,19 +646,19 @@ public class EDInputFormParsingTests
     }
 
     [Theory]
-    [InlineData("tooltip", EHelpTextMode.Tooltip)]
-    [InlineData("column", EHelpTextMode.Column)]
-    [InlineData("UNKNOWN", EHelpTextMode.Tooltip)]
-    public void EHelpTextModeWire_FromWire(string wire, EHelpTextMode expected)
+    [InlineData("tooltip", HelpTextMode.Tooltip)]
+    [InlineData("column", HelpTextMode.Column)]
+    [InlineData("UNKNOWN", HelpTextMode.Tooltip)]
+    public void EHelpTextModeWire_FromWire(string wire, HelpTextMode expected)
     {
-        Assert.Equal(expected, EHelpTextModeWire.FromWire(wire));
+        Assert.Equal(expected, HelpTextModeWire.FromWire(wire));
     }
 
     [Fact]
     public void EHelpTextModeWire_RoundTrips()
     {
-        Assert.Equal("tooltip", EHelpTextMode.Tooltip.ToWire());
-        Assert.Equal("column", EHelpTextMode.Column.ToWire());
+        Assert.Equal("tooltip", HelpTextMode.Tooltip.ToWire());
+        Assert.Equal("column", HelpTextMode.Column.ToWire());
     }
 
     [Fact]
@@ -672,7 +672,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Equal(FieldType.List, f.FieldType);
         Assert.Equal("A", f.Value);
         Assert.Equal(2, f.ListItems.Count);
         Assert.Equal("A", f.ListItems[0].Key);
@@ -690,7 +690,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Equal(FieldType.List, f.FieldType);
         Assert.Empty(f.ListItems);
     }
 
@@ -717,7 +717,7 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "stav", Label = "Stav", FieldType = EFieldType.List,
+            Number = 1, Key = "stav", Label = "Stav", FieldType = FieldType.List,
             Value = "A", ListItems = [new ListItem("A", "Aktivní"), new ListItem("N", "Neaktivní")]
         };
 
@@ -725,7 +725,7 @@ public class EDInputFormParsingTests
         var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
-        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Equal(FieldType.List, f.FieldType);
         Assert.Equal("A", f.Value);
         Assert.Equal(2, f.ListItems.Count);
         Assert.Equal("A", f.ListItems[0].Key);
@@ -746,7 +746,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(FieldType.File, f.FieldType);
         Assert.Equal(@"C:\test.pdf", f.Value);
         Assert.Equal("PDF (*.pdf)|*.pdf", f.FileFilter);
     }
@@ -761,7 +761,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(FieldType.File, f.FieldType);
         Assert.Equal(@"C:\Output", f.Value);
         Assert.Equal("$FOLDER", f.FileFilter);
     }
@@ -775,7 +775,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(FieldType.File, f.FieldType);
         Assert.Equal("", f.FileFilter);
     }
 
@@ -784,7 +784,7 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "soubor", Label = "Soubor", FieldType = EFieldType.File,
+            Number = 1, Key = "soubor", Label = "Soubor", FieldType = FieldType.File,
             Value = @"C:\test.pdf", FileFilter = "PDF (*.pdf)|*.pdf"
         };
 
@@ -792,7 +792,7 @@ public class EDInputFormParsingTests
         var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
-        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(FieldType.File, f.FieldType);
         Assert.Equal(@"C:\test.pdf", f.Value);
         Assert.Equal("PDF (*.pdf)|*.pdf", f.FileFilter);
     }
@@ -802,7 +802,7 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "slozka", Label = "Složka", FieldType = EFieldType.File,
+            Number = 1, Key = "slozka", Label = "Složka", FieldType = FieldType.File,
             Value = @"C:\Output", FileFilter = "$FOLDER"
         };
 
@@ -810,7 +810,7 @@ public class EDInputFormParsingTests
         var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
-        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(FieldType.File, f.FieldType);
         Assert.Equal(@"C:\Output", f.Value);
         Assert.Equal("$FOLDER", f.FileFilter);
     }
@@ -844,7 +844,7 @@ public class EDInputFormParsingTests
     [InlineData(null)]
     public void GetRequiredError_RequiredBoolField_ReturnsNull(string? value)
     {
-        var field = new Field { Required = true, FieldType = EFieldType.Bool, Value = value };
+        var field = new Field { Required = true, FieldType = FieldType.Bool, Value = value };
         Assert.Null(field.GetRequiredError());
     }
 
@@ -971,7 +971,7 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "cena", Label = "Cena", FieldType = EFieldType.Decimal,
+            Number = 1, Key = "cena", Label = "Cena", FieldType = FieldType.Decimal,
             Value = "5.5", Min = 0.5m, Max = 9.5m, Format = "N2", Unit = "mm"
         };
 
@@ -996,7 +996,7 @@ public class EDInputFormParsingTests
         var items = EDInputForm.EDInputFormWire.ParseItems(data);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
-        Assert.Equal(EFieldType.ComboBox, f.FieldType);
+        Assert.Equal(FieldType.ComboBox, f.FieldType);
         Assert.Equal(3, f.ListItems.Count);
         Assert.Equal("Praha", f.ListItems[0].Key);
         Assert.Equal("Brno", f.ListItems[1].Key);
@@ -1008,7 +1008,7 @@ public class EDInputFormParsingTests
     {
         var field = new Field
         {
-            Number = 1, Key = "mesto", Label = "Město", FieldType = EFieldType.ComboBox,
+            Number = 1, Key = "mesto", Label = "Město", FieldType = FieldType.ComboBox,
             Value = "Praha", ListItems = [new ListItem("Praha", "Praha"), new ListItem("Brno", "Brno")]
         };
 
@@ -1016,7 +1016,7 @@ public class EDInputFormParsingTests
         var parsed = EDInputForm.EDInputFormWire.ParseItems(serialized);
 
         var f = Assert.IsType<Field>(Assert.Single(parsed));
-        Assert.Equal(EFieldType.ComboBox, f.FieldType);
+        Assert.Equal(FieldType.ComboBox, f.FieldType);
         Assert.Equal(2, f.ListItems.Count);
         Assert.Equal("Praha", f.ListItems[0].Key);
         Assert.Equal("Brno", f.ListItems[1].Key);
@@ -1069,7 +1069,7 @@ public class EDInputFormPlaceholderWireTests
     [Fact]
     public void PlaceholdersFlag_SurvivesRoundTrip()
     {
-        var sent = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
+        var sent = new Field { Key = "Text", Label = "Obsah", FieldType = FieldType.Text, Placeholders = true };
 
         var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([sent]);
         var returned = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));
@@ -1084,7 +1084,7 @@ public class EDInputFormPlaceholderWireTests
     [Fact]
     public void PlaceholderFields_NotSentOverWire()
     {
-        var sent = new Field { Key = "Text", Label = "Obsah", FieldType = EFieldType.Text, Placeholders = true };
+        var sent = new Field { Key = "Text", Label = "Obsah", FieldType = FieldType.Text, Placeholders = true };
 
         var wire = EDInputForm.EDInputFormWire.SerializeItemsCVar([sent]);
         var returned = Assert.IsType<Field>(Assert.Single(EDInputForm.EDInputFormWire.ParseItems(wire)));

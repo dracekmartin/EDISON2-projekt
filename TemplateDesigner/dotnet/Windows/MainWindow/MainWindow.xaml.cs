@@ -1150,7 +1150,7 @@ public partial class MainWindow : Window
         if (_vm is null) return;
         foreach (var field in (ParamsTabForm.Items ?? []).OfType<Field>())
         {
-            var target = _vm.IsAgendaParamVisible(field.Key) ? EItemVisibility.Visible : EItemVisibility.Collapsed;
+            var target = _vm.IsAgendaParamVisible(field.Key) ? ItemVisibility.Visible : ItemVisibility.Collapsed;
             if (field.Visibility != target) field.Visibility = target;
         }
     }

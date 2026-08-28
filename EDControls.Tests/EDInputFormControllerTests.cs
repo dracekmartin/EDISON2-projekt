@@ -211,7 +211,7 @@ public class EDInputFormControllerTests
 
         var f = Assert.IsType<Field>(Assert.Single(controller.Items));
         Assert.Equal("btn", f.Key);
-        Assert.Equal(EFieldType.Button, f.FieldType);
+        Assert.Equal(FieldType.Button, f.FieldType);
         Assert.Equal("Click me", f.Value);
     }
 
@@ -220,7 +220,7 @@ public class EDInputFormControllerTests
     {
         var items = new List<Item>
         {
-            new Field { Number = 1, Key = "btn", Label = "L", FieldType = EFieldType.Button, Value = "Go" }
+            new Field { Number = 1, Key = "btn", Label = "L", FieldType = FieldType.Button, Value = "Go" }
         };
 
         var cVar = EDControls.EDInputForm.EDInputFormWire.SerializeItemsCVar(items);
@@ -244,7 +244,7 @@ public class EDInputFormControllerTests
 
         controller.Validate();
         var fieldAfter = controller.Items.OfType<Field>().Single();
-        Assert.Equal(EItemVisibility.ProgrammerHidden, fieldAfter.Visibility);
+        Assert.Equal(ItemVisibility.ProgrammerHidden, fieldAfter.Visibility);
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public class EDInputFormControllerTests
 
         controller.Init();
 
-        Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
+        Assert.Equal(HelpTextMode.Column, controller.HelpTextMode);
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public class EDInputFormControllerTests
 
         controller.Init();
 
-        Assert.Equal(EHelpTextMode.Tooltip, controller.HelpTextMode);
+        Assert.Equal(HelpTextMode.Tooltip, controller.HelpTextMode);
     }
 
     [Fact]
@@ -283,11 +283,11 @@ public class EDInputFormControllerTests
             .Returns(initData, columnData);
         var controller = new EDInputFormController(mlRest, CacheClass);
         controller.Init();
-        Assert.Equal(EHelpTextMode.Tooltip, controller.HelpTextMode);
+        Assert.Equal(HelpTextMode.Tooltip, controller.HelpTextMode);
 
         controller.Validate();
 
-        Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
+        Assert.Equal(HelpTextMode.Column, controller.HelpTextMode);
     }
 
     [Fact]
@@ -311,10 +311,10 @@ public class EDInputFormControllerTests
         var controller = new EDInputFormController(mlRest, CacheClass);
 
         controller.Init();
-        Assert.Equal(EHelpTextMode.Tooltip, controller.HelpTextMode);
+        Assert.Equal(HelpTextMode.Tooltip, controller.HelpTextMode);
 
         controller.Validate("toggleHelp");
-        Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
+        Assert.Equal(HelpTextMode.Column, controller.HelpTextMode);
         Assert.Equal("Přepnout na tooltip", controller.Items.OfType<Field>().Single().Value);
     }
 
@@ -518,7 +518,7 @@ public class EDInputFormControllerTests
 
         Assert.True(result);
         var f = Assert.IsType<Field>(Assert.Single(controller.Items));
-        Assert.Equal(EFieldType.Image, f.FieldType);
+        Assert.Equal(FieldType.Image, f.FieldType);
         Assert.Equal("imgdata", f.Value);
     }
 
@@ -528,7 +528,7 @@ public class EDInputFormControllerTests
         // Image hodnota (Base64) se do wire nikdy nezapisuje - pozice 6 musí být prázdná.
         var items = new List<Item>
         {
-            new Field { Number = 1, Key = "logo", Label = "L", FieldType = EFieldType.Image, Value = "imgdata" }
+            new Field { Number = 1, Key = "logo", Label = "L", FieldType = FieldType.Image, Value = "imgdata" }
         };
 
         var cVar = EDControls.EDInputForm.EDInputFormWire.SerializeItemsCVar(items);

@@ -107,9 +107,9 @@ public class EDListFormattingTests
         var col = Assert.Single(cols);
         Assert.Equal("rz", col.Key);
         Assert.Equal("RZ", col.Label);
-        Assert.Equal(EListColumnType.Text, col.Type);
+        Assert.Equal(ListColumnType.Text, col.Type);
         Assert.Equal(110, col.Width);
-        Assert.Equal(EListColumnAlign.Left, col.Align);
+        Assert.Equal(ListColumnAlign.Left, col.Align);
         Assert.True(col.Sortable);
         Assert.True(col.Visible);
         Assert.False(col.IsLink);
@@ -132,13 +132,13 @@ public class EDListFormattingTests
         var cols = EDList.EDList.ParseColumns(output);
 
         Assert.Equal(5, cols.Count);
-        Assert.Equal(EListColumnType.Number, cols[0].Type);
+        Assert.Equal(ListColumnType.Number, cols[0].Type);
         Assert.Equal("N2", cols[0].Format);
-        Assert.Equal(EListColumnType.Bool, cols[1].Type);
-        Assert.Equal(EListColumnType.Date, cols[2].Type);
+        Assert.Equal(ListColumnType.Bool, cols[1].Type);
+        Assert.Equal(ListColumnType.Date, cols[2].Type);
         Assert.True(cols[2].IsLink);
         Assert.False(cols[2].Visible);
-        Assert.Equal(EListColumnType.HoursMinutes, cols[3].Type);
-        Assert.Equal(EListColumnType.Color, cols[4].Type);
+        Assert.Equal(ListColumnType.HoursMinutes, cols[3].Type);
+        Assert.Equal(ListColumnType.Color, cols[4].Type);
     }
 }

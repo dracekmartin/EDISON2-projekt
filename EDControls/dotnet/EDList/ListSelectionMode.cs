@@ -1,7 +1,7 @@
 namespace EDControls.EDList;
 
 /// <summary>Mode výběru řádků v <see cref="EDList"/>.</summary>
-public enum EListSelectionMode
+public enum ListSelectionMode
 {
     /// <summary>Klasický single-select přes <see cref="System.Windows.Controls.DataGrid.SelectedItem"/>.</summary>
     Single,

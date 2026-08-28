@@ -1,6 +1,6 @@
 namespace EDControls.EDFooter;
 
-public enum EFooterMode
+public enum FooterMode
 {
     /// <summary>Footer zobrazuje jediné tlačítko „Zavřít".</summary>
     Close,

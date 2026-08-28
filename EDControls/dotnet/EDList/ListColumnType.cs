@@ -1,6 +1,6 @@
 namespace EDControls.EDList
 {
-    public enum EListColumnType
+    public enum ListColumnType
     {
         Text,
         Number,

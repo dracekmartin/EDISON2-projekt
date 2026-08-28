@@ -7,16 +7,16 @@ namespace EDControls.EDFooter;
 public partial class EDFooter : UserControl
 {
     public static readonly DependencyProperty FooterModeProperty =
-        DependencyProperty.Register(nameof(FooterMode), typeof(EFooterMode), typeof(EDFooter),
-            new PropertyMetadata(EFooterMode.Close, OnFooterModeChanged));
+        DependencyProperty.Register(nameof(FooterMode), typeof(FooterMode), typeof(EDFooter),
+            new PropertyMetadata(FooterMode.Close, OnFooterModeChanged));
 
     public static readonly DependencyProperty LeftContentProperty =
         DependencyProperty.Register(nameof(LeftContent), typeof(UIElement), typeof(EDFooter),
             new PropertyMetadata(null, OnLeftContentChanged));
 
-    public EFooterMode FooterMode
+    public FooterMode FooterMode
     {
-        get => (EFooterMode)GetValue(FooterModeProperty);
+        get => (FooterMode)GetValue(FooterModeProperty);
         set => SetValue(FooterModeProperty, value);
     }
 
@@ -38,7 +38,7 @@ public partial class EDFooter : UserControl
     private static void OnFooterModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var footer = (EDFooter)d;
-        bool okCancel = (EFooterMode)e.NewValue == EFooterMode.OkCancel;
+        bool okCancel = (FooterMode)e.NewValue == FooterMode.OkCancel;
         footer.OkBtn.Visibility     = okCancel ? Visibility.Visible   : Visibility.Collapsed;
         footer.StornoBtn.Visibility = okCancel ? Visibility.Visible   : Visibility.Collapsed;
         footer.CloseBtn.Visibility  = okCancel ? Visibility.Collapsed : Visibility.Visible;

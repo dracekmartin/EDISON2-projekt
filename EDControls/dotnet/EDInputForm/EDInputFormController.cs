@@ -13,7 +13,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 {
     public List<Item> Items { get; private set; } = [];
 
-    public EHelpTextMode HelpTextMode { get; private set; } = EHelpTextMode.Tooltip;
+    public HelpTextMode HelpTextMode { get; private set; } = HelpTextMode.Tooltip;
 
     /// <summary>Vyvoláno po každém Caché roundtripu který aktualizuje Items/HelpTextMode.</summary>
     public event Action? StateChanged;
@@ -28,11 +28,11 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     {
         CVar output = mlRest.QueryOrThrow(cacheClass, "Init", initParams ?? new CVar());
         ApplyOutput(output);
-        ExecuteValidate(EValidationTrigger.Init);
+        ExecuteValidate(ValidationTrigger.Init);
     }
 
     /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>
-    public bool Validate(string? changedKey = null) => ExecuteValidate(EValidationTrigger.Change, changedKey);
+    public bool Validate(string? changedKey = null) => ExecuteValidate(ValidationTrigger.Change, changedKey);
 
     /// <summary>
     /// Validuje s BeforeSave triggerem a pokud nejsou chyby, volá Caché <c>Save</c>.
@@ -42,7 +42,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     /// jen když OUT nese číselné subscripty, jinak by se ztratil stav po validaci.</remarks>
     public bool Save()
     {
-        if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
+        if (!ExecuteValidate(ValidationTrigger.BeforeSave)) return false;
 
         CVar output = mlRest.QueryOrThrow(cacheClass, "Save", EDInputFormWire.SerializeItemsCVar(Items));
         if (HasFormItems(output)) ApplyOutput(output);
@@ -59,7 +59,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
         return false;
     }
 
-    private bool ExecuteValidate(EValidationTrigger trigger, string? changedKey = null)
+    private bool ExecuteValidate(ValidationTrigger trigger, string? changedKey = null)
     {
         var input = EDInputFormWire.SerializeItemsCVar(Items);
         input["trigger"] = new CVar(trigger.ToString());
@@ -107,7 +107,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
         // Image pole se na server neposílají (viz SerializeItemsCVar) - server by je echem
         // přepsal prázdnem. Zachovat jejich client-side hodnotu (Base64) přes round-trip.
         var preservedImages = Items.OfType<Field>()
-            .Where(f => f.FieldType == EFieldType.Image && !string.IsNullOrEmpty(f.Value))
+            .Where(f => f.FieldType == FieldType.Image && !string.IsNullOrEmpty(f.Value))
             .ToDictionary(f => f.Key, f => f.Value!);
 
         Items = EDInputFormWire.ParseItems(output);
@@ -115,7 +115,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
         if (preservedImages.Count > 0)
             foreach (var f in Items.OfType<Field>())
-                if (f.FieldType == EFieldType.Image && preservedImages.TryGetValue(f.Key, out var v))
+                if (f.FieldType == FieldType.Image && preservedImages.TryGetValue(f.Key, out var v))
                     f.Value = v;
 
         StateChanged?.Invoke();

@@ -29,7 +29,7 @@ internal static class EDInputFormWire
                     // Image hodnota (velký Base64) se NIKDY neposílá na server - MLRest
                     // StreamToGlobal to neukočíruje (<SYNTAX>/limit) a obrázek se server-side
                     // nevaliduje. Drží se jen client-side (viz EDInputFormController.ApplyOutput).
-                    f.FieldType == EFieldType.Image ? "" : (f.Value ?? ""),
+                    f.FieldType == FieldType.Image ? "" : (f.Value ?? ""),
                     f.ValidateOnChange ? "1" : "0",
                     f.Required ? "1" : "0",
                     f.ValidationError ?? "",
@@ -67,7 +67,7 @@ internal static class EDInputFormWire
                     Number     = int.TryParse(row.GetString(2), out int gn) ? gn : 0,
                     Key        = row.GetString(3),
                     GroupName  = row.GetString(4),
-                    Visibility = row.Length >= 5 ? EItemVisibilityWire.FromWire(row.GetString(5)) : EItemVisibility.Visible,
+                    Visibility = row.Length >= 5 ? ItemVisibilityWire.FromWire(row.GetString(5)) : ItemVisibility.Visible,
                     HelpText   = row.Length >= 6 && row.GetString(6) != "" ? row.GetString(6) : null,
                 };
                 items.Add(currentGroup);
@@ -79,21 +79,21 @@ internal static class EDInputFormWire
                     Number           = int.TryParse(row.GetString(2), out int fn) ? fn : 0,
                     Key              = row.GetString(3),
                     Label            = row.GetString(4),
-                    FieldType        = EFieldTypeWire.FromWire(row.GetString(5)),
+                    FieldType        = FieldTypeWire.FromWire(row.GetString(5)),
                     Value            = row.GetString(6) == "" ? null : row.GetString(6),
                     ValidateOnChange = row.GetString(7) == "1",
                     Required         = row.GetString(8) == "1",
                     ValidationError  = row.Length >= 9 && row.GetString(9) != "" ? row.GetString(9) : null,
                     Editable         = row.Length < 10 || row.GetString(10) != "0",
-                    Visibility       = row.Length >= 11 ? EItemVisibilityWire.FromWire(row.GetString(11)) : EItemVisibility.Visible,
+                    Visibility       = row.Length >= 11 ? ItemVisibilityWire.FromWire(row.GetString(11)) : ItemVisibility.Visible,
                     HelpText         = row.Length >= 12 && row.GetString(12) != "" ? row.GetString(12) : null,
                     ParentGroup      = currentGroup,
                 };
                 // List + ComboBox sdílejí listItems storage v pozici 13
-                if ((field.FieldType == EFieldType.List || field.FieldType == EFieldType.ComboBox)
+                if ((field.FieldType == FieldType.List || field.FieldType == FieldType.ComboBox)
                     && row.Length >= 13)
                     field.ListItems = ParseListItems(row.GetString(13));
-                if (field.FieldType == EFieldType.File && row.Length >= 14)
+                if (field.FieldType == FieldType.File && row.Length >= 14)
                     field.FileFilter = row.GetString(14);
                 // Pozice 15–18: rozšíření pro Number/Decimal (min, max, format, unit)
                 if (row.Length >= 15 && decimal.TryParse(row.GetString(15),
@@ -117,10 +117,10 @@ internal static class EDInputFormWire
         return items;
     }
 
-    internal static EHelpTextMode ParseHelpTextMode(CVar output)
+    internal static HelpTextMode ParseHelpTextMode(CVar output)
     {
         string? wire = output["helpTextMode"]?.Value?.ToString();
-        return EHelpTextModeWire.FromWire(wire);
+        return HelpTextModeWire.FromWire(wire);
     }
 
     internal static string SerializeListItems(List<ListItem> items)

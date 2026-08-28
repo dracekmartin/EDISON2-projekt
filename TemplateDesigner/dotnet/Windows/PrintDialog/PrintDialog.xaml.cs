@@ -75,7 +75,7 @@ public partial class PrintDialog : Window
                 SheetLayoutKeys.Grid or SheetLayoutKeys.Repeat or SheetLayoutKeys.Marks => hasSheet,
                 _ => _vm.IsParamVisible(field.Key),
             };
-            var target = visible ? EItemVisibility.Visible : EItemVisibility.Collapsed;
+            var target = visible ? ItemVisibility.Visible : ItemVisibility.Collapsed;
             // Guard - Item.Visibility setter nemá early-return, vyhneme se zbytečným notifikacím při každém stisku.
             if (field.Visibility != target) field.Visibility = target;
         }

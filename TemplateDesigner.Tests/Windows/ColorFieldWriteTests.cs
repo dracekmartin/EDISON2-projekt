@@ -17,7 +17,7 @@ public class ColorFieldWriteTests
 {
     private static List<Field> ColorField(string key, string? value) =>
     [
-        new Field { Key = key, Label = "Barva", FieldType = EFieldType.Color, Value = value }
+        new Field { Key = key, Label = "Barva", FieldType = FieldType.Color, Value = value }
     ];
 
     private static void Apply(List<Field> fields, object target, string key, string original)
@@ -106,7 +106,7 @@ public class ColorFieldWriteTests
     {
         // Kontrola se smí týkat jen barevných polí - textové pole může být klidně prázdné.
         var element = new TextElement { Text = "Ahoj" };
-        List<Field> fields = [new Field { Key = "Text", Label = "Text", FieldType = EFieldType.Text, Value = "" }];
+        List<Field> fields = [new Field { Key = "Text", Label = "Text", FieldType = FieldType.Text, Value = "" }];
 
         Apply(fields, element, "Text", "Ahoj");
 

@@ -1,6 +1,6 @@
 namespace EDControls.EDInputForm
 {
-    public enum EFieldType
+    public enum FieldType
     {
         Text,
         Number,
@@ -32,7 +32,7 @@ namespace EDControls.EDInputForm
         Image
     }
 
-    public static class EFieldTypeWire
+    public static class FieldTypeWire
     {
         private const string TextWire = "TEXT";
         private const string NumberWire = "NUMBER";
@@ -46,34 +46,34 @@ namespace EDControls.EDInputForm
         private const string ComboBoxWire = "COMBOBOX";
         private const string ImageWire = "IMAGE";
 
-        public static string ToWire(this EFieldType type) => type switch
+        public static string ToWire(this FieldType type) => type switch
         {
-            EFieldType.Number   => NumberWire,
-            EFieldType.Date     => DateWire,
-            EFieldType.Decimal  => DecimalWire,
-            EFieldType.Bool     => BoolWire,
-            EFieldType.Button   => ButtonWire,
-            EFieldType.List     => ListWire,
-            EFieldType.File     => FileWire,
-            EFieldType.Color    => ColorWire,
-            EFieldType.ComboBox => ComboBoxWire,
-            EFieldType.Image    => ImageWire,
+            FieldType.Number   => NumberWire,
+            FieldType.Date     => DateWire,
+            FieldType.Decimal  => DecimalWire,
+            FieldType.Bool     => BoolWire,
+            FieldType.Button   => ButtonWire,
+            FieldType.List     => ListWire,
+            FieldType.File     => FileWire,
+            FieldType.Color    => ColorWire,
+            FieldType.ComboBox => ComboBoxWire,
+            FieldType.Image    => ImageWire,
             _                   => TextWire
         };
 
-        public static EFieldType FromWire(string wire) => wire switch
+        public static FieldType FromWire(string wire) => wire switch
         {
-            NumberWire   => EFieldType.Number,
-            DateWire     => EFieldType.Date,
-            DecimalWire  => EFieldType.Decimal,
-            BoolWire     => EFieldType.Bool,
-            ButtonWire   => EFieldType.Button,
-            ListWire     => EFieldType.List,
-            FileWire     => EFieldType.File,
-            ColorWire    => EFieldType.Color,
-            ComboBoxWire => EFieldType.ComboBox,
-            ImageWire    => EFieldType.Image,
-            _            => EFieldType.Text
+            NumberWire   => FieldType.Number,
+            DateWire     => FieldType.Date,
+            DecimalWire  => FieldType.Decimal,
+            BoolWire     => FieldType.Bool,
+            ButtonWire   => FieldType.Button,
+            ListWire     => FieldType.List,
+            FileWire     => FieldType.File,
+            ColorWire    => FieldType.Color,
+            ComboBoxWire => FieldType.ComboBox,
+            ImageWire    => FieldType.Image,
+            _            => FieldType.Text
         };
     }
 }

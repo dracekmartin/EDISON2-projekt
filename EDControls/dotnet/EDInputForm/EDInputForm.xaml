@@ -117,7 +117,7 @@
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding HelpTextVisibility}" Value="Visible"/>
-                                <Condition Binding="{Binding HelpTextMode, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="{x:Static local:EHelpTextMode.Tooltip}"/>
+                                <Condition Binding="{Binding HelpTextMode, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="{x:Static local:HelpTextMode.Tooltip}"/>
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible"/>
                         </MultiDataTrigger>
@@ -132,7 +132,7 @@
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding HelpTextVisibility}" Value="Visible"/>
-                                <Condition Binding="{Binding HelpTextMode, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="{x:Static local:EHelpTextMode.Column}"/>
+                                <Condition Binding="{Binding HelpTextMode, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="{x:Static local:HelpTextMode.Column}"/>
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible"/>
                         </MultiDataTrigger>
@@ -146,7 +146,7 @@
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding HelpTextVisibility}" Value="Visible"/>
-                                <Condition Binding="{Binding HelpTextMode, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="{x:Static local:EHelpTextMode.Column}"/>
+                                <Condition Binding="{Binding HelpTextMode, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="{x:Static local:HelpTextMode.Column}"/>
                                 <Condition Binding="{Binding HasError}" Value="False"/>
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible"/>
@@ -424,34 +424,34 @@
                                     <Style TargetType="ContentControl">
                                         <Setter Property="ContentTemplate" Value="{StaticResource TextFieldTemplate}"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Number}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Number}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource NumberFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Decimal}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Decimal}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource DecimalFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Date}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Date}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource DateFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Bool}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Bool}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource BoolFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Button}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Button}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource ButtonFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.List}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.List}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource ListFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.File}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.File}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource FileFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Color}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Color}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource ColorFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.ComboBox}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.ComboBox}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource ComboBoxFieldTemplate}"/>
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Image}">
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Image}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource ImageFieldTemplate}"/>
                                             </DataTrigger>
                                         </Style.Triggers>

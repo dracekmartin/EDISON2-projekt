@@ -37,8 +37,8 @@ namespace EDISONMAIN2
         {
             if (TheList is null) return;
             TheList.SelectionMode = ModeCombo.SelectedIndex == 1
-                ? EListSelectionMode.Check
-                : EListSelectionMode.Single;
+                ? ListSelectionMode.Check
+                : ListSelectionMode.Single;
         }
 
         private void CheckAll_Click(object sender, RoutedEventArgs e)   => TheList.CheckAll();

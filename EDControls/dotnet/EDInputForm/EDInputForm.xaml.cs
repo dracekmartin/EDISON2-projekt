@@ -80,13 +80,13 @@ namespace EDControls.EDInputForm
         public static readonly DependencyProperty HelpTextModeProperty =
             DependencyProperty.Register(
                 nameof(HelpTextMode),
-                typeof(EHelpTextMode),
+                typeof(HelpTextMode),
                 typeof(EDInputForm),
-                new PropertyMetadata(EHelpTextMode.Tooltip));
+                new PropertyMetadata(HelpTextMode.Tooltip));
 
-        public EHelpTextMode HelpTextMode
+        public HelpTextMode HelpTextMode
         {
-            get => (EHelpTextMode)GetValue(HelpTextModeProperty);
+            get => (HelpTextMode)GetValue(HelpTextModeProperty);
             set => SetValue(HelpTextModeProperty, value);
         }
 
@@ -311,7 +311,7 @@ namespace EDControls.EDInputForm
 
             if (e.Key == Key.Return && (Keyboard.Modifiers & ModifierKeys.Control) == 0)
             {
-                if (GetCurrentField() is { FieldType: EFieldType.Button } btnField)
+                if (GetCurrentField() is { FieldType: FieldType.Button } btnField)
                 {
                     if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(btnField)
                             is FrameworkElement container)
@@ -379,13 +379,13 @@ namespace EDControls.EDInputForm
                     is not FrameworkElement container) return;
             switch (field.FieldType)
             {
-                case EFieldType.Date:
+                case FieldType.Date:
                     FindVisualChild<DatePicker>(container)?.Focus();
                     break;
-                case EFieldType.Bool:
+                case FieldType.Bool:
                     FindVisualChild<CheckBox>(container)?.Focus();
                     break;
-                case EFieldType.List:
+                case FieldType.List:
                     FindVisualChild<ComboBox>(container)?.Focus();
                     break;
                 default:
