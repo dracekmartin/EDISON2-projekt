@@ -125,7 +125,7 @@ namespace EDControls.EDInputForm
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(BoolValue));
                 OnPropertyChanged(nameof(DateValue));
-                OnPropertyChanged(nameof(SwatchValue));
+                OnPropertyChanged(nameof(ColorPreviewValue));
                 // Klientská kontrola hned; serverová odpověď ji pak případně přepíše podrobnější
                 // chybou. GetTypeError vrací null pro prázdné hodnoty - required až při BeforeSave.
                 ValidationError = GetTypeError();
@@ -145,13 +145,13 @@ namespace EDControls.EDInputForm
             {
                 _previewValue = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(SwatchValue));
+                OnPropertyChanged(nameof(ColorPreviewValue));
             }
         }
         private string? _previewValue;
 
         /// <summary>Hodnota, kterou se barví čtvereček: náhled od hosta, jinak samotná hodnota.</summary>
-        public string? SwatchValue => string.IsNullOrEmpty(_previewValue) ? _value : _previewValue;
+        public string? ColorPreviewValue => string.IsNullOrEmpty(_previewValue) ? _value : _previewValue;
 
         /// <summary>Two-way bool pohled na <c>Value</c> pro CheckBox binding. <c>"1"</c> = true, ostatní = false.</summary>
         public bool BoolValue
@@ -212,7 +212,7 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>Barva ve tvaru <c>#RRGGBB</c> / <c>#AARRGGBB</c> (mřížka nepovinná) - tedy to,
-        /// co umí <see cref="HexToBrushConverter"/> i barevný dialog. Bez této kontroly by se do
+        /// co umí <see cref="ColorPreviewHexToBrushConverter"/> i barevný dialog. Bez této kontroly by se do
         /// hostitelské aplikace dostal libovolný text z pole a spadla by až při vykreslování barvy.</summary>
         private static bool IsHexColor(string value)
         {

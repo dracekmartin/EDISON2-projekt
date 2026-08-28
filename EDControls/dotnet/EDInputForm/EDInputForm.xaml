@@ -11,7 +11,7 @@
              d:DesignHeight="450" d:DesignWidth="420">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <local:HexToBrushConverter x:Key="HexToBrush"/>
+        <local:ColorPreviewHexToBrushConverter x:Key="ColorPreviewHexToBrush"/>
         <local:Base64ToImageSourceConverter x:Key="Base64ToImage"/>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{DynamicResource EDTheme.Bg.Surface}">
@@ -287,7 +287,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <!-- Swatch: Button s custom templatem = jen barevný Border (žádné default Button chrome). -->
+                        <!-- Barevný náhled: Button s custom templatem = jen barevný Border (žádné default Button chrome). -->
                         <Button Grid.Column="0" Width="22" Height="22"
                                 Click="ColorField_PickClick"
                                 IsEnabled="{Binding Editable}"
@@ -295,9 +295,9 @@
                                 Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <!-- SwatchValue = náhled od hosta (barva z dat), jinak hodnota pole. -->
+                                    <!-- ColorPreviewValue = náhled od hosta (barva z dat), jinak hodnota pole. -->
                                     <Border BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1" CornerRadius="2"
-                                            Background="{Binding SwatchValue, Converter={StaticResource HexToBrush}}"/>
+                                            Background="{Binding ColorPreviewValue, Converter={StaticResource ColorPreviewHexToBrush}}"/>
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>

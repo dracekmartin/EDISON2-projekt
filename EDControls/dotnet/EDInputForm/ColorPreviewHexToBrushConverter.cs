@@ -6,10 +6,10 @@ using System.Windows.Media;
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Converter pro Color field swatch - parsuje hex string `"#AARRGGBB"` (SkiaSharp formát)
+/// Converter pro barevný náhled u Color pole - parsuje hex string `"#AARRGGBB"` (SkiaSharp formát)
 /// na <see cref="SolidColorBrush"/>. Neplatný / null input → transparent brush.
 /// </summary>
-public class HexToBrushConverter : IValueConverter
+public class ColorPreviewHexToBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
@@ -50,7 +50,7 @@ public class HexToBrushConverter : IValueConverter
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => throw new NotImplementedException("HexToBrushConverter is one-way only");
+        => throw new NotImplementedException("ColorPreviewHexToBrushConverter is one-way only");
 
     /// <summary>Šrafování pro „barva se vezme z dat" - vizuálně odlišné od bílé i od průhledné.</summary>
     private static readonly Brush DataBoundBrush = CreateDataBoundBrush();
