@@ -14,8 +14,8 @@ public static class EDUsageTelemetry
 {
     private sealed record UsageRecord(DateTime Ts, string Form, string Control);
 
-    private static readonly object _lock = new();
-    private static readonly List<UsageRecord> _buffer = [];
+    private static readonly object Sync = new();
+    private static readonly List<UsageRecord> Buffer = [];
 
     /// <summary>Pojistka proti neomezenému růstu bufferu (kdyby flush dlouho neproběhl).</summary>
     private const int MaxBuffer = 10000;
@@ -31,10 +31,10 @@ public static class EDUsageTelemetry
         try
         {
             if (!Enabled || string.IsNullOrEmpty(form) || string.IsNullOrEmpty(control)) return;
-            lock (_lock)
+            lock (Sync)
             {
-                if (_buffer.Count >= MaxBuffer) return;
-                _buffer.Add(new UsageRecord(DateTime.Now, form!, control!));
+                if (Buffer.Count >= MaxBuffer) return;
+                Buffer.Add(new UsageRecord(DateTime.Now, form!, control!));
             }
         }
         catch
@@ -53,11 +53,11 @@ public static class EDUsageTelemetry
         try
         {
             if (mlRest is null) return;
-            lock (_lock)
+            lock (Sync)
             {
-                if (_buffer.Count == 0) return;
-                batch = [.. _buffer];
-                _buffer.Clear();
+                if (Buffer.Count == 0) return;
+                batch = [.. Buffer];
+                Buffer.Clear();
             }
         }
         catch
@@ -81,12 +81,12 @@ public static class EDUsageTelemetry
 
     internal static void ResetForTests()
     {
-        lock (_lock) _buffer.Clear();
+        lock (Sync) Buffer.Clear();
         Enabled = true;
     }
 
     internal static int BufferCountForTests
     {
-        get { lock (_lock) return _buffer.Count; }
+        get { lock (Sync) return Buffer.Count; }
     }
 }

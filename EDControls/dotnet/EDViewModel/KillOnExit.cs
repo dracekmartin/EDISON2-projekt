@@ -15,12 +15,12 @@ namespace EDControls.EDViewModel;
 /// </remarks>
 internal static class KillOnExit
 {
-    private static readonly IntPtr _handle = Initialize();
+    private static readonly IntPtr Handle = Initialize();
 
     public static void Bind(Process process)
     {
-        if (_handle == IntPtr.Zero) return;
-        try { AssignProcessToJobObject(_handle, process.Handle); }
+        if (Handle == IntPtr.Zero) return;
+        try { AssignProcessToJobObject(Handle, process.Handle); }
         catch { /* může selhat ve VS sandboxu / starších Windows - best effort, ne fatální */ }
     }
 

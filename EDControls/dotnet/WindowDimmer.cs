@@ -29,14 +29,14 @@ public static class WindowDimmer
     private sealed record State(AdornerLayer? Layer, DimAdorner? Adorner,
         KeyEventHandler Keys, TextCompositionEventHandler Text);
 
-    private static readonly RefCountRegistry _refs = new();
+    private static readonly RefCountRegistry Refs = new();
     private static readonly Dictionary<Window, State> _states = [];
 
     /// <summary>Ztmaví okno do disposal vráceného scope. Pouze UI thread.</summary>
     public static IDisposable Dim(Window? owner)
     {
         if (owner is null) return EmptyScope.Instance;
-        return _refs.Acquire(owner, onFirst: () => Attach(owner), onLast: () => Detach(owner));
+        return Refs.Acquire(owner, onFirst: () => Attach(owner), onLast: () => Detach(owner));
     }
 
     private static void Attach(Window owner)
@@ -70,7 +70,7 @@ public static class WindowDimmer
     }
 
     private static void OnOwnerClosed(object? sender, EventArgs e) =>
-        _refs.ForceRelease((Window)sender!);
+        Refs.ForceRelease((Window)sender!);
 
     private sealed class DimAdorner(UIElement adornedElement) : Adorner(adornedElement)
     {
