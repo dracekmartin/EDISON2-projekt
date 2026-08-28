@@ -1,0 +1,18 @@
+<local:EDFilterFieldBase x:Class="EDControls.EDFilter.EDFilterCombo"
+                       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:local="clr-namespace:EDControls.EDFilter"
+                       MinWidth="150">
+    <StackPanel Orientation="Vertical" Margin="0,0,8,0">
+        <TextBlock x:Name="LabelText"
+                   Text="{Binding Label, RelativeSource={RelativeSource AncestorType=local:EDFilterCombo}}"
+                   FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                   Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,0,0,2"/>
+        <ComboBox x:Name="Combo"
+                  ItemsSource="{Binding ItemsSource,        RelativeSource={RelativeSource AncestorType=local:EDFilterCombo}}"
+                  SelectedValue="{Binding SelectedValue,    RelativeSource={RelativeSource AncestorType=local:EDFilterCombo}, Mode=TwoWay}"
+                  SelectedValuePath="{Binding SelectedValuePath, RelativeSource={RelativeSource AncestorType=local:EDFilterCombo}}"
+                  DisplayMemberPath="{Binding DisplayMemberPath,  RelativeSource={RelativeSource AncestorType=local:EDFilterCombo}}"
+                  VerticalAlignment="Center"/>
+    </StackPanel>
+</local:EDFilterFieldBase>

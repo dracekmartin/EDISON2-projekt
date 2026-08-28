@@ -8,11 +8,11 @@ namespace EDControls.EDInputForm
     /// Attached property omezující vstup TextBoxu na numerické znaky.
     /// <c>Mode="Integer"</c> = jen číslice, <c>"Decimal"</c> = číslice + jeden desetinný oddělovač.
     /// </summary>
-    public static class NumericInput
+    public static class EDNumericInput
     {
         public static readonly DependencyProperty ModeProperty =
             DependencyProperty.RegisterAttached(
-                "Mode", typeof(string), typeof(NumericInput),
+                "Mode", typeof(string), typeof(EDNumericInput),
                 new PropertyMetadata(null, OnModeChanged));
 
         public static string GetMode(DependencyObject obj) => (string)obj.GetValue(ModeProperty);

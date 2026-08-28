@@ -5,20 +5,20 @@ namespace EDControls.EDFilter;
 
 /// <summary>
 /// Filter field jako combo box. Při změně <see cref="SelectedValue"/> vystřelí
-/// <see cref="FilterFieldBase.ValueChanged"/> a EDFilter na něj reaguje reloadem.
+/// <see cref="EDFilterFieldBase.ValueChanged"/> a EDFilter na něj reaguje reloadem.
 ///
 /// Prázdná hodnota (null nebo "") → filter klíč se neposílá (= žádný filter pro tento key).
 /// </summary>
-public partial class FilterCombo : FilterFieldBase
+public partial class EDFilterCombo : EDFilterFieldBase
 {
-    public FilterCombo()
+    public EDFilterCombo()
     {
         InitializeComponent();
     }
 
     /// <summary>Zdroj dat pro combo (typicky <c>List&lt;T&gt;</c> nebo <c>ObservableCollection</c> z VM).</summary>
     public static readonly DependencyProperty ItemsSourceProperty =
-        DependencyProperty.Register(nameof(ItemsSource), typeof(IEnumerable), typeof(FilterCombo),
+        DependencyProperty.Register(nameof(ItemsSource), typeof(IEnumerable), typeof(EDFilterCombo),
             new PropertyMetadata(null));
 
     public IEnumerable? ItemsSource
@@ -29,7 +29,7 @@ public partial class FilterCombo : FilterFieldBase
 
     /// <summary>Cesta k value property položky (např. <c>"Code"</c> nebo <c>"Id"</c>).</summary>
     public static readonly DependencyProperty SelectedValuePathProperty =
-        DependencyProperty.Register(nameof(SelectedValuePath), typeof(string), typeof(FilterCombo),
+        DependencyProperty.Register(nameof(SelectedValuePath), typeof(string), typeof(EDFilterCombo),
             new PropertyMetadata(""));
 
     public string SelectedValuePath
@@ -40,7 +40,7 @@ public partial class FilterCombo : FilterFieldBase
 
     /// <summary>Cesta k display property položky (např. <c>"Label"</c> nebo <c>"Name"</c>).</summary>
     public static readonly DependencyProperty DisplayMemberPathProperty =
-        DependencyProperty.Register(nameof(DisplayMemberPath), typeof(string), typeof(FilterCombo),
+        DependencyProperty.Register(nameof(DisplayMemberPath), typeof(string), typeof(EDFilterCombo),
             new PropertyMetadata(""));
 
     public string DisplayMemberPath
@@ -51,7 +51,7 @@ public partial class FilterCombo : FilterFieldBase
 
     /// <summary>Aktuální výběr. Null nebo prázdná hodnota → filter klíč se neposílá.</summary>
     public static readonly DependencyProperty SelectedValueProperty =
-        DependencyProperty.Register(nameof(SelectedValue), typeof(object), typeof(FilterCombo),
+        DependencyProperty.Register(nameof(SelectedValue), typeof(object), typeof(EDFilterCombo),
             new FrameworkPropertyMetadata(null,
                 FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                 OnSelectedValueChanged));
@@ -63,7 +63,7 @@ public partial class FilterCombo : FilterFieldBase
     }
 
     private static void OnSelectedValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
-        (d as FilterCombo)?.RaiseValueChanged();
+        (d as EDFilterCombo)?.RaiseValueChanged();
 
     public override string GetValue() => SelectedValue?.ToString() ?? "";
 }

@@ -11,11 +11,11 @@ namespace EDControls.EDFilter;
 /// Konvence: <see cref="Key"/> odpovídá Caché IN filter sub-subscriptu -
 /// <c>^||ML("IN","filter",Key) = GetValue()</c>. Prázdná hodnota → klíč se neposílá.
 /// </summary>
-public abstract class FilterFieldBase : UserControl
+public abstract class EDFilterFieldBase : UserControl
 {
     /// <summary>Klíč pod kterým hodnota poletí do Caché v <c>^||ML("IN","filter",Key)</c>.</summary>
     public static readonly DependencyProperty KeyProperty =
-        DependencyProperty.Register(nameof(Key), typeof(string), typeof(FilterFieldBase),
+        DependencyProperty.Register(nameof(Key), typeof(string), typeof(EDFilterFieldBase),
             new PropertyMetadata(""));
 
     public string Key
@@ -26,7 +26,7 @@ public abstract class FilterFieldBase : UserControl
 
     /// <summary>Vizuální popisek nad/vedle pole.</summary>
     public static readonly DependencyProperty LabelProperty =
-        DependencyProperty.Register(nameof(Label), typeof(string), typeof(FilterFieldBase),
+        DependencyProperty.Register(nameof(Label), typeof(string), typeof(EDFilterFieldBase),
             new PropertyMetadata(null));
 
     public string? Label

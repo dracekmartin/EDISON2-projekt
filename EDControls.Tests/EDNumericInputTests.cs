@@ -3,10 +3,10 @@ using EDControls.EDInputForm;
 namespace EDControls.Tests;
 
 /// <summary>
-/// <see cref="NumericInput.IsValid"/> je paste-validace numerických polí: číslice, jeden vedoucí
+/// <see cref="EDNumericInput.IsValid"/> je paste-validace numerických polí: číslice, jeden vedoucí
 /// <c>-</c>, v <c>Decimal</c> módu jeden oddělovač (<c>.</c> nebo <c>,</c>). Ostatní se odmítne.
 /// </summary>
-public class NumericInputTests
+public class EDNumericInputTests
 {
     [Theory]
     [InlineData("123", "Integer")]
@@ -15,7 +15,7 @@ public class NumericInputTests
     [InlineData("", "Integer")]
     public void IsValid_Integer_AcceptsDigitsAndLeadingMinus(string text, string mode)
     {
-        Assert.True(NumericInput.IsValid(text, mode));
+        Assert.True(EDNumericInput.IsValid(text, mode));
     }
 
     [Theory]
@@ -25,7 +25,7 @@ public class NumericInputTests
     [InlineData(".5", "Decimal")]
     public void IsValid_Decimal_AcceptsSingleSeparator(string text, string mode)
     {
-        Assert.True(NumericInput.IsValid(text, mode));
+        Assert.True(EDNumericInput.IsValid(text, mode));
     }
 
     [Theory]
@@ -37,6 +37,6 @@ public class NumericInputTests
     [InlineData("1 2", "Decimal")]       // mezera
     public void IsValid_Rejects(string text, string mode)
     {
-        Assert.False(NumericInput.IsValid(text, mode));
+        Assert.False(EDNumericInput.IsValid(text, mode));
     }
 }

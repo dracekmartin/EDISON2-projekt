@@ -11,7 +11,7 @@ namespace EDControls.EDFilter;
 
 /// <summary>
 /// Container pro deklarativní filter pole nad <see cref="EDList"/>. Filter pole jsou
-/// <see cref="FilterFieldBase"/> children. Při změně hodnoty kteréhokoliv pole
+/// <see cref="EDFilterFieldBase"/> children. Při změně hodnoty kteréhokoliv pole
 /// (a při Loaded eventu) sebere hodnoty a zavolá <see cref="EDList.LoadList(System.Collections.Generic.IReadOnlyDictionary{string, string})"/>.
 ///
 /// Wire formát: filter hodnoty se posílají pod <c>^||ML("IN","filter",Key)</c> sub-subscript.
@@ -23,7 +23,7 @@ public partial class EDFilter : UserControl
     public EDFilter()
     {
         InitializeComponent();
-        Fields = new ObservableCollection<FilterFieldBase>();
+        Fields = new ObservableCollection<EDFilterFieldBase>();
         Fields.CollectionChanged += OnFieldsCollectionChanged;
         FieldsHost.ItemsSource = Fields;
         Loaded += OnLoaded;
@@ -54,8 +54,8 @@ public partial class EDFilter : UserControl
         set => SetValue(AutoTriggerProperty, value);
     }
 
-    /// <summary>Filter pole - typicky vyplněná v XAML přes &lt;el:FilterCombo/&gt; atd.</summary>
-    public ObservableCollection<FilterFieldBase> Fields { get; }
+    /// <summary>Filter pole - typicky vyplněná v XAML přes &lt;el:EDFilterCombo/&gt; atd.</summary>
+    public ObservableCollection<EDFilterFieldBase> Fields { get; }
 
     /// <summary>Vyvoláno před každým <c>Target.LoadList(filter)</c>. Host může observovat pro vlastní logiku.</summary>
     public event EventHandler<IReadOnlyDictionary<string, string>>? FilterChanged;
@@ -74,10 +74,10 @@ public partial class EDFilter : UserControl
     private void OnFieldsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.NewItems is not null)
-            foreach (FilterFieldBase f in e.NewItems)
+            foreach (EDFilterFieldBase f in e.NewItems)
                 f.ValueChanged += OnFieldValueChanged;
         if (e.OldItems is not null)
-            foreach (FilterFieldBase f in e.OldItems)
+            foreach (EDFilterFieldBase f in e.OldItems)
                 f.ValueChanged -= OnFieldValueChanged;
     }
 

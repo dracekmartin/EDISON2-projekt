@@ -186,7 +186,7 @@
                                    Opacity="0.7"/>
                         <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
                                  TextAlignment="Right"
-                                 local:NumericInput.Mode="Integer"
+                                 local:EDNumericInput.Mode="Integer"
                                  ToolTip="{Binding ValidationError}"
                                  Style="{StaticResource FieldTextBoxStyle}"/>
                     </DockPanel>
@@ -202,7 +202,7 @@
                                    Opacity="0.7"/>
                         <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
                                  TextAlignment="Right"
-                                 local:NumericInput.Mode="Decimal"
+                                 local:EDNumericInput.Mode="Decimal"
                                  ToolTip="{Binding ValidationError}"
                                  Style="{StaticResource FieldTextBoxStyle}"/>
                     </DockPanel>
