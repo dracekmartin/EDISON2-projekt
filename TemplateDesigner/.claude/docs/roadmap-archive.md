@@ -1,5 +1,21 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L6a` - šipka směru u zastávek v linkovém JŘ (hotovo 28. 8. 2026)
+
+Sloupec se svislou šipkou přes řádky zastávek. **Kreslí se naší vektorovou šipkou ze zastávkového
+JŘ**, ne glyfy ze symbolového fontu jako legacy (rozhodnutí Jan) - kresba se vytáhla do
+`DirectionArrowRenderer` a vývěska ji volá odtud, beze změny jediného pixelu.
+
+Z Janova zkoušení vypadly tři věci: **hrot až na poslední stránce** (záměr, shodné s legacy - hrot
+znamená konec linky, ne konec stránky; při rozpadu na **bloky** je v každém bloku), **anglický název
+sloupce v dialogu** (mapa lidských názvů propadá na klíč) a **barva nastavená v zóně záhlaví šipku
+neobarvila** (šipku řídí datová zóna, což u sloupce bez textu nešlo poznat - zóna se u šipky jmenuje
+„Styl šipky" a nabízí jen barvu a pozadí).
+
+Detail v changelogu 28. 8. (1)-(3). Původní zadání:
+
+| **L6a** | **Šipka směru u zastávek** (legacy sloupec typu 5, u obousměrného navíc typ 8). Úzký sloupec vedle zastávek, ve kterém běží **svislá šipka přes celý seznam**; v opačném směru se začátek a konec vymění. Obsah je odvozený z pozice zastávky ve směru, žádná nová data nejsou potřeba (`JRapiLinPrtWin.mac:3013-3029`). ⚠️ **Kreslí se naší vektorovou šipkou ze zastávkového JŘ, ne glyfy ze symbolového fontu jako legacy** (rozhodnutí Jan 28. 8.: nemá se duplikovat, když to umíme) - jedna implementace pro obojí, navíc nastavitelná. Sloupec se do existujících šablon doplní migrací (vzor `MigrationRouteVariantsColumn`), výchozí stav skrytý. | S |
+
 ## `L9-R4` - prázdný popisek pásu nad popisnými sloupci (rozhodnuto 27. 8. 2026)
 
 **Zvoleno: bez popisku se nad popisnými sloupci nekreslí nic** (ani podbarvení). Rozhodl to legacy,

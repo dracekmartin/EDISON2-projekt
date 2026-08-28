@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** **`L6a`** - šipka směru u zastávek. Zbytek repertoáru starého modulu se rozpadl
-> na samostatné kroky (`L6a`-`L6c`), protože to bylo pět nesouvisejících věcí v jednom pytli.
+> **Nejblíž na řadě:** **`L6b`** - obousměrný tisk (oba směry na jedné stránce). Je to největší
+> strukturální zásah do linkové tabulky; `L6a` (šipka směru) je hotová a proklikaná.
 
 ---
 
@@ -65,7 +65,7 @@ sada voleb je **nová featura**, ne dorovnání.
 🎯 **Pořadí prací (rozhodnutí Jan 24. 8.): nejdřív dotáhnout paritu se starým tiskem, teprve pak
 uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procházet z business hlediska -
 každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Pořadí vln bylo proto
-**testovací linky → `L9` → `L6`**; první dvě jsou za námi, na řadě je `L6a`.
+**testovací linky → `L9` → `L6`**; první dvě jsou za námi, ze `L6` je hotová `L6a`.
 
 ✅ **Průchod testovacími linkami je hotový** (26. 8., detail v archivu). **Datový rozdíl proti
 starému tisku nenašel žádný** - jediný nález je chybějící **obousměrný tisk** (patří do `L6`).
@@ -73,7 +73,6 @@ Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-ses
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L6a** | **Šipka směru u zastávek** (legacy sloupec typu 5, u obousměrného navíc typ 8). Úzký sloupec vedle zastávek, ve kterém běží **svislá šipka přes celý seznam**; v opačném směru se začátek a konec vymění. Obsah je odvozený z pozice zastávky ve směru, žádná nová data nejsou potřeba (`JRapiLinPrtWin.mac:3013-3029`). ⚠️ **Kreslí se naší vektorovou šipkou ze zastávkového JŘ, ne glyfy ze symbolového fontu jako legacy** (rozhodnutí Jan 28. 8.: nemá se duplikovat, když to umíme) - jedna implementace pro obojí, navíc nastavitelná. Sloupec se do existujících šablon doplní migrací (vzor `MigrationRouteVariantsColumn`), výchozí stav skrytý. | S |
 | **L6b** | **Obousměrný tisk** (legacy zrcadlené sloupce spojů, typ 9). Oba směry na jedné stránce: opačný směr dostane sloupce spojů **nalevo od názvů zastávek** plus zrcadlenou šipku. Data už oba směry posílají (stránka per směr), takže dnešní stav = legacy fallback. ✅ **Rozhodnuto (Jan 28. 8.): bude to parametr sestavy, ne tichý fallback** - starý modul zrcadlo tiše vypne, když se společný blok nevejde na stránku bez řezu (`:598-628`), ale ten fallback mít **musel**, protože tiskl naslepo do pevné stránky; náš uživatel vidí náhled a rozhodne se sám. Je to **vědomá odchylka od legacy**, ne dluh. Druhá půlka pravidla (v jednom směru nejsou spoje → zrcadlo ne) platí a vyjde skoro sama z „prázdný sloupec se netiskne". ⚠️ Prvek dnes spoje nalevo neumí - největší strukturální zásah do `LineTableElement` od jeho vzniku; zlevnilo ho soustředění souřadnic do `SloupcovaMrizka` (27. 8.). | M–L |
 | **L6c** | **Turnusy ke spojům** (legacy volba `arr,6`). Jeden nebo víc **řádků pod čísly spojů** s označením turnusu; kolik řádků, se řídí maximem turnusů na spoj. ⚠️ Data si legacy tahá **z jiného modulu** - `ALVA.ADMAIN.MLAPI.gSplTur` (`:2697`), kterého jsme se ještě nedotkli. Práce je hlavně na Caché straně (agenda musí turnusy načíst a poslat po spojích); na straně prvku je to skoro zdarma, řádky pod čísly spojů umíme. | M |
 | **L11** | **Značky spoje: dvě věci doložené čtením legacy 27. 8.** (1) **Nejvýš dvě značky na řádek platnosti**, zbytek se zalomí na další řádek - starý modul to tak dělá (`POCETZNAKUPLATNOSTI 2`, `JRapiLinPrtWin.mac:25` a `:3763`), my kreslíme všechny do jednoho řádku, takže se u spoje s víc značkami přeplní. (2) **Zbytek rodiny atributů jako piktogramy** - starý modul má v číselníku znaků symboly i pro IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, RBP (`:1556` a dál); u nás se tisknou zkratkou, protože jim nikdo neurčil pozici ve fontu. BEV a CBE hotové 27. 8. Postup: vykreslit tabulku glyfů obou fontů a pozici ověřit okem, ne uhádnout. | S |
