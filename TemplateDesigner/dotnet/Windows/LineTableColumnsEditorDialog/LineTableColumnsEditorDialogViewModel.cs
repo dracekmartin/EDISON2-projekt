@@ -47,6 +47,7 @@ public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
         ColumnKeys.StopName => "Zastávka",
         ColumnKeys.Mhd      => "MHD / IDS",
         ColumnKeys.Trip     => "Spoje (časové sloupce)",
+        ColumnKeys.Arrow    => "Šipka směru",
         _                   => string.IsNullOrWhiteSpace(header) ? key : header,
     };
 

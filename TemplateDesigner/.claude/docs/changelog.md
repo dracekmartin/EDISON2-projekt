@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-28 (2) - 🐞 sloupec šipky se v dialogu jmenoval „Arrow"
+
+Nález Jan: v dialogu sloupců svítil anglický kód. Mapa lidských názvů propadá u neznámého klíče
+**na klíč sám**, takže se do UI dostane kódový název - a nový klíč se tam musí doplnit ručně.
+Sloupec se teď jmenuje **„Šipka směru"**, shodně s termínem u vývěsky („Značky a šipka směru",
+„Barva šipky").
+
+⚠️ Ta past zůstává pro každý příští sloupec, proto na to jde test. Sám kód sloupce (`Arrow`) je
+**wire hodnota v šablonách** a zůstává anglicky podle konvence „kód anglicky, UI česky".
+
+Ověřeno: .NET 1225/1225 + 709 + 620.
+
+
 ## 2026-08-28 (1) - ✨ šipka směru jízdy v linkovém JŘ (`L6a`)
 
 Sloupec, ve kterém běží **svislá šipka přes řádky zastávek** - první z rozpadlé vlny `L6`
