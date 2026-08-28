@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-28 (6) - 🔍 sonda: nejmenší linky se spoji v obou směrech
+
+Jan zapnul u linky „Tisk obousměrných JŘ" na A4, vytiskl - a **výstup se nezměnil**. Sonda hledá
+linku, na které se to musí projevit.
+
+**Nastavení bylo správně.** Ověřeno ve zdroji: rozbalovátko ukládá `SelectedIndex`, takže „Ano" = 1,
+a engine čeká právě `1` (`Linky.cls:1825`, `formTISKJRReportDotNet.vb:418`). Uloží se do
+`^JRL(sku,lin,"PATCH","prt","win",13)` pro A4 a `…,25)` pro A5 - **dvě samostatná nastavení**, každé
+na své záložce „Win tisk JŘ A4/A5"; klient čte jen to, které odpovídá **velikosti papíru sestavy**.
+
+**Nejpravděpodobnější příčina je tichý fallback**: zrcadlo zůstane jen tehdy, když se společný blok
+vejde bez jediného řezu (`JRapiLinPrtWin.mac:627`). Na velké lince tedy zapnutá volba nezmění nic
+a uživatel nemá jak poznat, že se neuplatnila - **první praktický doklad, proč jsme ten fallback
+nepřevzali.**
+
+Sonda proto najde nejmenší linky se spoji v **obou** směrech (bez toho legacy zrcadlo vypne rovnou).
+V `CB_CSADAD` vyšly linky s 1+1 spoji a 3-6 zastávkami - na těch se blok vejde vždy a je vidět
+jediné, na čem záleží: jestli je opačný směr **nalevo** od zastávek, nebo vpravo za prvním směrem.
+
+⚠️ **Dvě poučení z psaní té sondy** (obojí stálo čas): ObjectScript **neumí zlomit výraz na víc
+řádků** a v **postkondici nesmí být mezery** kolem `=` nebo `'<`. A hlavně: chyba kompilace se
+projevila jako `<SYNTAX>` **ze staré verze třídy** - server si nechal tu předchozí, takže to vypadalo,
+že se změna nenasadila. Vynucený běh hooku vypsal skutečné chyby.
+
+
 ## 2026-08-28 (5) - ✨ obousměrný tisk: spoje opačného směru nalevo od zastávek (`L6b` hotovo)
 
 Druhá polovina `L6b` - **kreslení**. Se zapnutým parametrem „Obousměrný tisk" dostane linková tabulka

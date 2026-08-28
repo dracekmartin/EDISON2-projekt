@@ -1070,4 +1070,112 @@ ClassMethod Vyskyt(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Nejmenší linky se spoji v **obou** směrech - podklad pro ruční tisk ve starém modulu.
+///
+/// **K čemu to je.** Starý modul obousměrný tisk tiše vypne, když se společný blok nevejde na
+/// stránku bez řezu (`JRapiLinPrtWin.mac:627`). Na velké lince tedy zapnutá volba nic nezmění
+/// a nejde poznat, jestli je vada v nastavení, nebo se jen uplatnil fallback. Na malé lince
+/// fallback nemá jak spustit, takže je vidět, jak zrcadlo doopravdy vypadá.
+///
+/// Řadí podle „šířky" (spoje obou směrů), pak podle počtu zastávek. Sonda **nic nemění**.
+ClassMethod NejmensiObousmerneLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		// `FIRMA` zúží hledání na jednu firmu - jinak vyhrají degenerované linky odkudkoli
+		// a tisk ve starém modulu je potřeba ve firmě, do které je člověk přihlášený.
+		set jenFirma = $get(^||ML("IN","FIRMA"))
+		kill ^||ML, poradi
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:(jenFirma'="")&&(db'=jenFirma)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					continue:'$data(^[db]JRL(sku, lin, "I"))
+					set spojuT = ..PocetSpoju(db, sku, lin, "T")
+					set spojuZ = ..PocetSpoju(db, sku, lin, "Z")
+					// Bez spojů v obou směrech legacy zrcadlo vypne rovnou - taková linka nic neukáže.
+					continue:(spojuT=0)||(spojuZ=0)
+					set zastavek = ..PocetZastavek(db, sku, lin)
+					continue:zastavek=0
+					// Klíč pořadí: sloupců celkem, pak zastávek, pak firma a linka (unikátnost).
+					// Skupina linek je v hodnotě - bez ní se linka v modulu nedá najít.
+					set poradi(spojuT + spojuZ, zastavek, db, lin) = spojuT_"+"_spojuZ_"~"_sku
+				}
+			}
+		}
+
+		kill ^||ML
+		set vypsano = 0, sirka = ""
+		for  {
+			set sirka = $order(poradi(sirka))
+			quit:sirka=""
+			quit:vypsano'<8
+			set zast = ""
+			for  {
+				set zast = $order(poradi(sirka, zast))
+				quit:zast=""
+				quit:vypsano'<8
+				set db = ""
+				for  {
+					set db = $order(poradi(sirka, zast, db))
+					quit:db=""
+					quit:vypsano'<8
+					set lin = ""
+					for  {
+						set lin = $order(poradi(sirka, zast, db, lin))
+						quit:lin=""
+						quit:vypsano'<8
+						set vypsano = vypsano + 1
+						// ⚠️ Jeden výraz = jeden řádek: ObjectScript zlom výrazu neumí (<SYNTAX>).
+						set hodnota = poradi(sirka, zast, db, lin)
+						set txt = db_" skupina "_$piece(hodnota, "~", 2)_" linka "_lin
+						set txt = txt_": spoje "_$piece(hodnota, "~", 1)
+						set txt = txt_" (celkem "_sirka_" sloupců), zastávek "_zast
+						set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+					}
+				}
+			}
+		}
+		if vypsano = 0 set ^||ML("OUT", 1) = "žádná linka nemá spoje v obou směrech"
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Počet spojů linky v daném směru.
+ClassMethod PocetSpoju(db As %String, sku As %String, lin As %String, smer As %String) As %Integer
+{
+	set pocet = 0, sp = ""
+	for  {
+		set sp = $order(^[db]JRL(sku, lin, smer, sp))
+		quit:sp=""
+		continue:'$isvalidnum(sp)
+		set pocet = pocet + 1
+	}
+	quit pocet
+}
+
+/// Počet zastávek trasy linky (první trasa, stačí na velikost).
+ClassMethod PocetZastavek(db As %String, sku As %String, lin As %String) As %Integer
+{
+	set pocet = 0, tc = ""
+	for  {
+		set tc = $order(^[db]JRL(sku, lin, "J", tc))
+		quit:tc=""
+		continue:'$isvalidnum(tc)
+		set pocet = pocet + 1
+	}
+	quit pocet
+}
+
 }
