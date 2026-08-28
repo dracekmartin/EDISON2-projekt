@@ -1,5 +1,26 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L6c` - turnusy ke spojům + zbytky ze `L6b` (hotovo 28. 8. 2026)
+
+**Turnusy ke spojům** jako parametr sestavy „Turnusy ke spojům": řádky s označením turnusu pod čísly
+spojů, počet řádků podle nejbohatšího spoje, prázdné u spojů s méně turnusy, nad řádkem platnosti.
+Parametr (a ne trvalá data) proto, že dotaz do modulu turnusů stojí 40-550 ms na linku - kdo turnusy
+netiskne, nemá to platit. Legacy zapíná totéž stejnou pákou.
+
+⚠️ **Starý modul turnusy vůbec netiskne** - posílá do dotazu číslo linky s vodicími nulami, ale
+odpověď filtruje číslem bez nich (`TUmax` zůstane 0). Doloženo sondou oběma tvary. Hodnoty se proto
+neověřují oraclem (není proti čemu), ale proti témuž zdroji, jaký volá legacy; pozice řádků je
+odvozená z kontraktu enginu. Zapsáno i v `legacy-nahrada.md §3.3`.
+
+**Zbytky ze `L6b`:** zrcadlený blok má **vlastní šipku směru** - sloupec „Šipka směru" **za** názvy
+zastávek ukazuje nahoru (obsluhuje protijedoucí blok), před nimi dolů; legacy na to má druhý typ
+sloupce, u nás rozhoduje pozice, takže to nepotřebuje ani nový klíč sloupce, ani migraci šablon.
+A **dorovnání prázdnými sloupci** doplňuje i levou stranu, na její **vnější** hraně - jinak se
+v posledním bloku posunuly zastávky o celý sloupec (15,8 mm na fixtuře) a svisle nesedly na bloky
+nad sebou. Dorovnání se počítá per strana, takže sedí i na linku, kde má jeden směr méně spojů.
+
+Detail v changelogu 28. 8. (8) a (9).
+
 ## `L6b` - obousměrný tisk (hotovo 28. 8. 2026)
 
 Oba směry na jedné sestavě: sloupce spojů po obou stranách zastávek. **Nalevo jde směr, jehož pořadí

@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-28 (9) - ✨ šipka pro zrcadlený blok a dorovnání i vlevo (`L6c` dokončeno)
+
+Dva zbytky ze `L6b`, oba viditelné jen v obousměrném tisku.
+
+**Šipka směru pro protijedoucí blok.** Sloupec „Šipka směru" **za** názvy zastávek teď ukazuje
+**nahoru**, protože obsluhuje blok vpravo, a ten jede proti pořadí zastávek (přesně jak to je na
+tisku ze starého modulu: vlevo „od" u první zastávky, vpravo „př"). Před názvy ukazuje dolů jako
+dosud a na jednosměrné stránce míří dolů obě. Legacy na to má **druhý typ sloupce**; u nás rozhoduje
+**pozice** sloupce vůči názvům zastávek, takže druhá šipka nepotřebuje nový klíč sloupce ani migraci
+šablon - uživatel prostě přidá druhý sloupec „Šipka směru" na druhou stranu.
+
+**Dorovnání prázdnými sloupci doplňuje i levou stranu** (#8372 mělo jen pravou). Bez toho se
+v posledním, neúplném bloku posunuly zastávky o celý sloupec doleva (na fixtuře 15,8 mm) a svisle
+nesedly na bloky nad sebou. Dvě věci, na kterých to stálo:
+
+- **Dorovnání patří na vnější hranu**, tedy před spoje zrcadlené strany - jinak zůstane prázdné
+  místo mezi spoji a zastávkami. Ví o něm `SloupcovaMrizka`, protože posouvá souřadnice celé levé
+  strany (ručně kreslené značky platnosti a šipka je odtud berou).
+- **Počítá se per strana**, ne z počtu slotů bloku: obousměrná linka může mít v jednom směru méně
+  spojů, a pak je jedna strana bloku plná a druhá ne.
+
+Ověřeno: .NET **1245/1245**, mutacemi šesti cest (šipka vždy dolů / obrácené strany / jen první
+sloupec šipky; nedorovnávat vlevo / dorovnat na vnitřní hraně / dorovnávat i jednosměrně). Poslední
+z nich **neprošla, dokud nepřibyl test na jednosměrné dorovnání**: mutace odsune celou tabulku
+doprava, a všechny dosavadní testy měřily jen šířku doprava, která tím naopak naroste.
+
+⚠️ **Měření „levá hrana textu" musí brát nejlevější pixel bloku, ne každého řádku.** První a poslední
+řádek pixelů písmene začíná jinde než jeho střed, takže rozptyl přes řádky hlásil 5,8 mm i na
+zarovnané tabulce - vypadalo to jako polovina neopravené vady.
+
 ## 2026-08-28 (8) - ✨ turnusy ke spojům v linkovém JŘ (`L6c`, první část)
 
 Nový parametr sestavy **„Turnusy ke spojům"**: pod čísla spojů se přidají řádky s označením turnusu,

@@ -19,6 +19,7 @@ public class SipkaSmeruLinkovaTests
     private const float MmToPx = 10f;
     private const float SirkaSipky = 4f;
     private const float SirkaZastavky = 30f;
+    private const float SirkaSpoje = 11f;
 
     private static LineTableElement Prvek(bool sipkaViditelna, string? barvaSipky = null) => new()
     {
@@ -35,7 +36,7 @@ public class SipkaSmeruLinkovaTests
                 Style = barvaSipky is null ? null : new ColumnVisualStyle { Data = new TextStyle { TextColor = barvaSipky } },
             },
             new StopColumn { Key = ColumnKeys.StopName, Header = "Zastávka", Width = SirkaZastavky, Visible = true },
-            new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj", Width = 11f, Visible = true },
+            new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj", Width = SirkaSpoje, Visible = true },
         ],
     };
 
@@ -144,7 +145,99 @@ public class SipkaSmeruLinkovaTests
             "šipka se nenakreslila barvou sloupce - kreslí se zadrátovanou barvou");
     }
 
+    /// <summary>
+    /// Obousměrný tisk: šipka <b>za</b> názvy zastávek ukazuje <b>nahoru</b>, ta před nimi dolů.
+    /// </summary>
+    /// <remarks>
+    /// Seznam zastávek je v pořadí směru kresleného vlevo, takže blok vpravo jede proti němu -
+    /// a tak to má i tisk ze starého modulu (vlevo „od" u první zastávky, vpravo „př"). Legacy na
+    /// to má druhý typ sloupce (8 „šipky před zastávkou"), u nás rozhoduje pozice sloupce.
+    /// <para>Hrot se pozná jako <b>nejširší řádek</b> šipky - je to jediné místo, kde je kresba
+    /// širší než dřík.</para>
+    /// </remarks>
+    [Fact]
+    public void Obousmerne_SipkaZaNazvyUkazujeNahoru()
+    {
+        using var bmp = Vykresli(PrvekSeDvemaSipkami(), DataObousmerna());
+
+        // ⚠️ Popisné sloupce jsou odsunuté o šířku zrcadleného sloupce spojů - měří se tedy
+        // od ní, ne od nuly.
+        float posun = SirkaSpoje;
+        float hrotVlevo = HrotYMm(bmp, posun, posun + SirkaSipky);
+        float hrotVpravo = HrotYMm(bmp, posun + SirkaSipky + SirkaZastavky,
+            posun + SirkaSipky * 2 + SirkaZastavky);
+
+        Assert.True(hrotVlevo >= 0f, "levá šipka se nenakreslila");
+        Assert.True(hrotVpravo >= 0f, "pravá šipka se nenakreslila");
+        Assert.True(hrotVpravo < hrotVlevo - 1f,
+            $"hrot vpravo je na {hrotVpravo:0.##} mm a vlevo na {hrotVlevo:0.##} mm - "
+            + "pravá šipka má ukazovat nahoru, levá dolů");
+    }
+
+    /// <summary>
+    /// Na jednosměrné stránce ukazují <b>obě</b> šipky dolů - protijedoucí blok tam není.
+    /// </summary>
+    [Fact]
+    public void Jednosmerne_ObeSipkyUkazujiDolu()
+    {
+        using var bmp = Vykresli(PrvekSeDvemaSipkami(), Data());
+
+        float hrotVlevo = HrotYMm(bmp, 0f, SirkaSipky);
+        float hrotVpravo = HrotYMm(bmp, SirkaSipky + SirkaZastavky, SirkaSipky * 2 + SirkaZastavky);
+
+        Assert.True(hrotVlevo >= 0f && hrotVpravo >= 0f, "šipky se nenakreslily");
+        Assert.Equal(hrotVlevo, hrotVpravo, 0.3f);
+    }
+
+    /// <summary>Prvek se sloupcem šipky po obou stranách názvů zastávek.</summary>
+    private static LineTableElement PrvekSeDvemaSipkami()
+    {
+        var prvek = Prvek(sipkaViditelna: true);
+        prvek.Columns.Insert(2, new StopColumn
+        {
+            Key = ColumnKeys.Arrow, Header = "", Width = SirkaSipky, Visible = true,
+        });
+        return prvek;
+    }
+
+    /// <summary>Data se spoji obou směrů - tedy se zrcadleným blokem.</summary>
+    private static DataContext DataObousmerna() => RenderSnapshot.Data(
+        ("ZASTAVKY",
+        [
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Hulín"), ("PORADI", "2")),
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Přerov"), ("PORADI", "3")),
+        ]),
+        ("SPOJE",
+        [
+            RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"), ("SMER", "T"),
+                ("CASY", new JsonArray("8:00", "8:20", "8:40"))),
+            RenderSnapshot.Row(("CISLO_SPOJE", "2"), ("SKUPINA", "1"), ("SMER", "Z"),
+                ("CASY", new JsonArray("9:40", "9:20", "9:00"))),
+        ]),
+        ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1"))]));
+
     // ── měření ────────────────────────────────────────────────────────────────
+
+    /// <summary>Y nejširšího řádku inkoustu (mm) v zadaném pásu = hrot šipky; -1 když je pás prázdný.</summary>
+    private static float HrotYMm(SKBitmap bmp, float odMm, float doMm)
+    {
+        int x1 = Math.Max(0, (int)(odMm * MmToPx));
+        int x2 = Math.Min(bmp.Width - 1, (int)(doMm * MmToPx));
+        int nejvic = 0;
+        float y0 = -1f;
+        for (int y = 0; y < bmp.Height; y++)
+        {
+            int n = 0;
+            for (int x = x1; x <= x2; x++)
+            {
+                var c = bmp.GetPixel(x, y);
+                if (c.Red < 100 && c.Green < 100 && c.Blue < 100) n++;
+            }
+            if (n > nejvic) { nejvic = n; y0 = y / MmToPx; }
+        }
+        return y0;
+    }
 
     private static int Sloupec(float mm) => (int)(mm * MmToPx);
 

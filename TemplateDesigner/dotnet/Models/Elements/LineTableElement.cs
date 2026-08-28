@@ -593,8 +593,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         public SloupcovaMrizka(IReadOnlyList<RenderCol> popisne, IReadOnlyList<float> sirkySpoju,
             float zakladSpojeMm, float mezeraMm, IEnumerable<int> hraniceSkupin,
-            IReadOnlyList<float>? sirkyZrcadlene = null)
+            IReadOnlyList<float>? sirkyZrcadlene = null, int prazdnychZrcadlenych = 0)
         {
+            PrazdnychZrcadlenych = Math.Max(0, prazdnychZrcadlenych);
             Popisne = popisne;
             _sirkySpoju = [.. sirkySpoju];
             _sirkyZrcadlene = sirkyZrcadlene is null ? [] : [.. sirkyZrcadlene];
@@ -602,7 +603,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             MezeraMm = mezeraMm;
             _mezeraPred = mezeraMm > 0f ? [.. hraniceSkupin] : [];
             PopisneSirkaMm = popisne.Sum(c => c.Width);
-            ZrcadlenaSirkaMm = _sirkyZrcadlene.Sum();
+            ZrcadlenaSirkaMm = _sirkyZrcadlene.Sum() + (PrazdnychZrcadlenych * ZakladSpojeMm);
         }
 
         public IReadOnlyList<RenderCol> Popisne { get; }
@@ -615,8 +616,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// </summary>
         public int ZrcadlenychSpoju => _sirkyZrcadlene.Length;
 
-        /// <summary>Obsazená šířka zrcadleného bloku (bez mezery za ním).</summary>
+        /// <summary>Obsazená šířka zrcadleného bloku (bez mezery za ním), včetně dorovnání.</summary>
         public float ZrcadlenaSirkaMm { get; }
+
+        /// <summary>
+        /// Kolik prázdných sloupců dorovnává zrcadlenou stranu - stojí <b>před</b> jejími spoji.
+        /// </summary>
+        /// <remarks>
+        /// Dorovnání musí být na **vnější** hraně, jinak se posunou popisné sloupce a zastávky
+        /// v posledním bloku nesedí svisle na bloky nad sebou (pravá strana se dorovnává na svém
+        /// vnějším okraji, tedy za spoji).
+        /// </remarks>
+        public int PrazdnychZrcadlenych { get; }
 
         /// <summary>Mezera za zrcadleným blokem - je to skupina sloupců jako každá jiná.</summary>
         public float MezeraZaZrcadlenymMm => ZrcadlenychSpoju > 0 ? MezeraMm : 0f;
@@ -628,7 +639,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// <summary>Odsazení levé hrany zrcadleného sloupce od levé hrany prvku.</summary>
         public float XZrcadlenehoMm(int index)
         {
-            float x = 0f;
+            float x = PrazdnychZrcadlenych * ZakladSpojeMm;
             for (int i = 0; i < index && i < _sirkyZrcadlene.Length; i++) x += _sirkyZrcadlene[i];
             return x;
         }
@@ -1040,10 +1051,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var (spojeBloku, zrcadleneBloku) = SpojeBloku(blok);
                 // Hranice skupin se berou ze spojů **tohoto** bloku - mezera se kreslí tam, kde
                 // v bloku opravdu začíná nová skupina. Rezerva na šířku je naopak z celé linky.
+                // Dorovnání prázdnými sloupci (#8372) se počítá **pro každou stranu zvlášť** -
+                // v obousměrném tisku může mít blok jinak plnou levou a pravou stranu (jeden směr
+                // má míň spojů). Levá strana ho potřebuje znát už při stavbě mřížky, protože její
+                // sloupce posouvá; pravá se dorovnává až v hotovém plánu.
+                int prazdnychVpravo = PadEmptyColumns ? Math.Max(0, naBlok - spojeBloku.Count) : 0;
+                int prazdnychVlevo = PadEmptyColumns && sloupcuNaSlot > 1
+                    ? Math.Max(0, naBlok - zrcadleneBloku.Count) : 0;
+
                 var mrizka = new SloupcovaMrizka(fixedCols,
                     SirkySpoju(spojeBloku, stops, tripW, znackaMm), tripW,
                     MezeraMeziSkupinamiMm, HraniceSkupin(spojeBloku),
-                    SirkySpoju(zrcadleneBloku, stops, tripW, znackaMm));
+                    SirkySpoju(zrcadleneBloku, stops, tripW, znackaMm), prazdnychVlevo);
 
                 float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
                 float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
@@ -1056,7 +1075,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // Neúplný blok dorovnat prázdnými sloupci, ať mají všechny bloky stejný počet
                 // sloupců a tabulka končí rovně (#8372). Styl podle druhu řádku, jinak by prázdné
                 // buňky v záhlaví vypadly z jeho podbarvení.
-                int prazdnych = PadEmptyColumns ? naBlok - blok.Pocet : 0;
+                int prazdnych = prazdnychVpravo;
                 if (prazdnych > 0)
                     plan = [.. plan.Select(r => r with
                     {
@@ -1104,11 +1123,29 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <para>Barvu si bere z <b>textové barvy toho sloupce</b> (kaskáda stylů), takže nepřidává
     /// další nastavení do panelu; tloušťka a hrot jsou stejné jako u vývěsky.</para>
     /// </remarks>
+    /// <summary>
+    /// Kam ukazuje šipka v daném popisném sloupci: dolů (v pořadí zastávek), nebo nahoru.
+    /// </summary>
+    /// <remarks>
+    /// Seznam zastávek je v pořadí směru kresleného **nalevo**, takže jeho šipka jde dolů. Sloupec
+    /// šipky **za** názvy zastávek obsluhuje protijedoucí blok vpravo, a ten jede nahoru - přesně
+    /// jak to vypadá na tisku ze starého modulu (vlevo „od" u první zastávky, vpravo „př").
+    /// Na jednosměrné stránce protijedoucí blok není a všechny šipky míří dolů jako dosud.
+    /// <para>Legacy na to má dva typy sloupců (5 „šipky za zastávkou", 8 „šipky před zastávkou");
+    /// u nás o tom rozhoduje **pozice** sloupce, takže druhá šipka nepotřebuje ani nový klíč
+    /// sloupce, ani migraci šablon - uživatel přidá druhý sloupec „Šipka směru" na druhou stranu.</para>
+    /// </remarks>
+    private static bool HrotDoluUSipky(int indexSloupce, int indexNazvu, bool maZrcadlene) =>
+        !(maZrcadlene && indexNazvu >= 0 && indexSloupce > indexNazvu);
+
     private void KresliSipkuSmeru(RenderContext ctx, SloupcovaMrizka mrizka, List<RowSpec> plan,
         float yBlokuMm)
     {
-        int ci = mrizka.Popisne.ToList().FindIndex(c => c.Key == ColumnKeys.Arrow);
-        if (ci < 0) return;
+        var popisne = mrizka.Popisne.ToList();
+        var sloupceSipek = Enumerable.Range(0, popisne.Count)
+            .Where(i => popisne[i].Key == ColumnKeys.Arrow).ToList();
+        if (sloupceSipek.Count == 0) return;
+        int indexNazvu = popisne.FindIndex(c => c.Key == ColumnKeys.StopName);
 
         // Svislý rozsah = od horní hrany prvního řádku zastávky po spodní hranu posledního
         // (včetně přípojných podřádků, ty k zastávce patří).
@@ -1124,12 +1161,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
         if (yZacatek < 0f) return;
 
-        float stred = X + mrizka.XPopisnehoMm(ci) + mrizka.Popisne[ci].Width * 0.5f;
-        var vzhled = new DirectionArrowRenderer.Vzhled(
-            mrizka.Popisne[ci].DataStyle.TextColor,
-            SipkaTloustkaMm, SipkaHrotMm, ArrowHeadShape.Filled, LineStyle.Solid);
-        // Držák se v samostatném sloupci nekreslí - proto `drzakOd == caraX`.
-        DirectionArrowRenderer.Draw(ctx, vzhled, stred, stred, yZacatek, yKonec);
+        foreach (int ci in sloupceSipek)
+        {
+            float stred = X + mrizka.XPopisnehoMm(ci) + popisne[ci].Width * 0.5f;
+            var vzhled = new DirectionArrowRenderer.Vzhled(
+                popisne[ci].DataStyle.TextColor,
+                SipkaTloustkaMm, SipkaHrotMm, ArrowHeadShape.Filled, LineStyle.Solid);
+            // Držák se v samostatném sloupci nekreslí - proto `drzakOd == caraX`.
+            DirectionArrowRenderer.Draw(ctx, vzhled, stred, stred, yZacatek, yKonec,
+                HrotDoluUSipky(ci, indexNazvu, mrizka.ZrcadlenychSpoju > 0));
+        }
     }
 
     /// <summary>Tloušťka a hrot šipky - shodné s vývěskou, ať vypadá stejně v obou sestavách.</summary>
@@ -1188,6 +1229,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var band = new List<ColumnRenderer.CellSpec>();
             // Zrcadlený blok má vlastní úseky skupin dnů - jeho spoje jsou z opačného směru, takže
             // do skupin padnou jinak než ty vpravo. Jednosměrná stránka sem nepřidá nic.
+            for (int pi = 0; pi < mrizka.PrazdnychZrcadlenych; pi++)
+                band.Add(new(mrizka.ZakladSpojeMm, "", headerResolved));
             PridejUsekySkupin(band, zrcadlene, groups, headerCentered,
                 mrizka.SirkaUsekuZrcadlenehoMm);
             if (mrizka.MezeraZaZrcadlenymMm > 0f)
@@ -1225,7 +1268,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
         var headerSpecs = new List<ColumnRenderer.CellSpec>();
         PridejZrcadlene(headerSpecs, mrizka, zrcadlene.Count, headerResolved,
-            ti => (zrcadlene[ti].CisloSpoje, tripHeaderStyle));
+            ti => (zrcadlene[ti].CisloSpoje, tripHeaderStyle), tripHeaderStyle);
         for (int ci = 0; ci < fixedCols.Count; ci++)
             headerSpecs.Add(new(fixedCols[ci].Width, fixedCols[ci].Header, fixedCols[ci].HeaderStyle,
                 SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
@@ -1553,8 +1596,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     private static void PridejZrcadlene(List<ColumnRenderer.CellSpec> specs, SloupcovaMrizka mrizka,
         int pocet, ResolvedTextStyle stylMezery,
-        Func<int, (string Text, ResolvedTextStyle Style)> bunka)
+        Func<int, (string Text, ResolvedTextStyle Style)> bunka,
+        ResolvedTextStyle? stylPrazdne = null)
     {
+        // Dorovnání stojí před spoji - na vnější hraně tabulky (viz PrazdnychZrcadlenych).
+        for (int i = 0; i < mrizka.PrazdnychZrcadlenych; i++)
+            specs.Add(new(mrizka.ZakladSpojeMm, "", stylPrazdne ?? stylMezery));
         for (int ti = 0; ti < pocet; ti++)
         {
             var (text, style) = bunka(ti);

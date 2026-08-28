@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** **`L6c`** - turnusy ke spojům. `L6a` (šipka) i `L6b` (obousměrný tisk) jsou
-> hotové; z `L6b` zbývá vlastní šipka pro zrcadlený blok, vedeno u `L6c`.
+> **Nejblíž na řadě:** **`L11`** - značky spoje (nejvýš dvě na řádek platnosti + zbytek piktogramů).
+> Vlna `L6` je hotová celá: šipka, obousměrný tisk i turnusy ke spojům.
 
 ---
 
@@ -73,7 +73,6 @@ Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-ses
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L6c** | **Turnusy ke spojům + dva zbytky z `L6b`.** ⚠️ Ze `L6b` zbývá **vlastní šipka směru pro zrcadlený blok** (legacy na to má druhý sloupec, typ 8; u nás je sloupec šipky jeden a ukazuje hlavní směr) a **dorovnání prázdnými sloupci** doplňuje jen pravou stranu. Dál samotné turnusy: (legacy volba `arr,6`). Jeden nebo víc **řádků pod čísly spojů** s označením turnusu; kolik řádků, se řídí maximem turnusů na spoj. ⚠️ Data si legacy tahá **z jiného modulu** - `ALVA.ADMAIN.MLAPI.gSplTur` (`:2697`), kterého jsme se ještě nedotkli. Práce je hlavně na Caché straně (agenda musí turnusy načíst a poslat po spojích); na straně prvku je to skoro zdarma, řádky pod čísly spojů umíme. | M |
 | **L11** | **Značky spoje: dvě věci doložené čtením legacy 27. 8.** (1) **Nejvýš dvě značky na řádek platnosti**, zbytek se zalomí na další řádek - starý modul to tak dělá (`POCETZNAKUPLATNOSTI 2`, `JRapiLinPrtWin.mac:25` a `:3763`), my kreslíme všechny do jednoho řádku, takže se u spoje s víc značkami přeplní. (2) **Zbytek rodiny atributů jako piktogramy** - starý modul má v číselníku znaků symboly i pro IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, RBP (`:1556` a dál); u nás se tisknou zkratkou, protože jim nikdo neurčil pozici ve fontu. BEV a CBE hotové 27. 8. Postup: vykreslit tabulku glyfů obou fontů a pozici ověřit okem, ne uhádnout. | S |
 | **L10** | **Mřížka linkové tabulky: dvě volby, které nic nedělají.** „Čáry mezi řádky" a „Čáry mezi sloupci" jsou v panelu i v Caché formuláři, ale prvek je **vůbec nečte** - mřížku kreslí vždy (ověřeno vykreslením 27. 8.: všechny čtyři kombinace zapnuto/vypnuto dají shodný obrázek). ⚠️ **Rozsvítit je není bezpečná oprava**: hodnota je uložená v šablonách, takže komu je dnes odškrtnuté, tomu z tisku zmizí mřížka. Patří k tomu i odložené `L9-R3` - **oddělená barva a tloušťka vodorovných × svislých čar** (`GridStyle` má dnes jednu pro obojí a je **sdílený** se všemi tabulkovými prvky, takže se to má doplánovat pro všechny naráz, ne jen tady). | S |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |

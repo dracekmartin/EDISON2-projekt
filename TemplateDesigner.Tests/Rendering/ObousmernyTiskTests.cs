@@ -250,9 +250,126 @@ public class ObousmernyTiskTests
                     Assert.Fail($"tabulka přetekla přes hranu prvku - inkoust na {x / MmToPx:0.#} mm");
     }
 
+    /// <summary>
+    /// Dorovnání prázdnými sloupci musí doplnit i <b>zrcadlenou</b> stranu - jinak se v posledním
+    /// bloku posunou zastávky doleva a svisle nesedí na bloky nad sebou.
+    /// </summary>
+    /// <remarks>
+    /// Prvek je úzký schválně: tři sloty se do něj nevejdou, takže vznikne blok o dvou a blok
+    /// o jednom. V obrázku jsou jen názvy zastávek, takže „první inkoust v řádku" je levá hrana
+    /// jejich sloupce - a ta musí být v obou blocích stejná.
+    /// </remarks>
+    [Fact]
+    public void Dorovnani_DoplniIZrcadlenouStranu()
+    {
+        var prvek = Prvek();
+        prvek.Width = SirkaZastavky + 2 * 2 * SirkaSpoje;   // 70 mm = dva sloty, ne tři
+        prvek.PadEmptyColumns = true;
+
+        using var bmp = Vykresli(prvek, DataTriSloty(nazvyZastavek: true));
+
+        // ⚠️ Porovnává se **nejlevější hrana v bloku**, ne hrana každého řádku: první a poslední
+        // řádek pixelů písmene začíná jinde než jeho střed (tvar glyfu), takže „rozptyl přes
+        // všechny řádky" by hlásil pár desetin i na dokonale zarovnané tabulce.
+        float prvni = LevaHranaMm(bmp, 0, bmp.Height / 2);
+        float druhy = LevaHranaMm(bmp, bmp.Height / 2, bmp.Height);
+
+        Assert.True(prvni >= 0f && druhy >= 0f, "jeden z bloků se nenakreslil");
+        Assert.True(MathF.Abs(prvni - druhy) < 1f,
+            $"zastávky začínají v prvním bloku na {prvni:0.##} mm a ve druhém na {druhy:0.##} mm "
+            + "- zrcadlená strana se nedorovnala");
+    }
+
+    /// <summary>
+    /// Dorovnání stojí na <b>vnější</b> hraně - sloupce spojů zůstávají u zastávek.
+    /// </summary>
+    /// <remarks>
+    /// V posledním bloku má zrcadlená strana jediný spoj a jeden sloupec dorovnání. Jeho časy proto
+    /// musí ležet v pásu **hned vlevo od zastávek**, ne u levého okraje tabulky - jinak by mezi
+    /// spoji a zastávkami zůstala prázdná mezera. Tak to dělá i pravá strana (dorovnává za spoji).
+    /// </remarks>
+    [Fact]
+    public void Dorovnani_JeNaVnejsiHrane()
+    {
+        var prvek = Prvek();
+        prvek.Width = SirkaZastavky + 2 * 2 * SirkaSpoje;
+        prvek.PadEmptyColumns = true;
+
+        using var bmp = Vykresli(prvek, DataTriSloty(nazvyZastavek: true, casyPosledniZrcadlene: true));
+
+        // druhý blok, jen pás nalevo od zastávek (dva sloupce spojů = 2 × SirkaSpoje)
+        float hrana = LevaHranaMm(bmp, bmp.Height / 2, bmp.Height, 2 * SirkaSpoje - 0.5f);
+
+        Assert.True(hrana >= 0f, "časy zrcadleného spoje se v druhém bloku nenakreslily");
+        Assert.True(hrana > SirkaSpoje - 0.5f,
+            $"časy začínají na {hrana:0.##} mm - jsou v dorovnávacím sloupci u levého okraje "
+            + $"místo v tom u zastávek (ten začíná na {SirkaSpoje} mm)");
+    }
+
+    /// <summary>
+    /// Na jednosměrné stránce dorovnání <b>nesmí</b> vyrobit prázdný blok nalevo.
+    /// </summary>
+    /// <remarks>
+    /// Kdyby se počítalo „chybějící sloupce = sloty mínus zrcadlené spoje" i bez zrcadlení, vyšlo by
+    /// dorovnání na celý slot a tabulka by se odsunula od levé hrany prvku. Zvenčí by to vypadalo
+    /// jako obrovský odstup, a **žádný jiný test to nechytí** - měří se šířka doprava, a ta při
+    /// posunu jen naroste.
+    /// </remarks>
+    [Fact]
+    public void Dorovnani_JednosmerneNevyrabiPrazdnyBlokNalevo()
+    {
+        var prvek = Prvek();
+        prvek.Width = SirkaZastavky + 2 * SirkaSpoje;   // 50 mm = dva spoje na blok ze tří
+        prvek.PadEmptyColumns = true;
+
+        using var bmp = Vykresli(prvek, DataTriSloty(nazvyZastavek: true, obousmerne: false));
+
+        float hrana = LevaHranaMm(bmp, 0, bmp.Height);
+        Assert.True(hrana >= 0f, "tabulka se nenakreslila");
+        Assert.True(hrana < 1.5f,
+            $"zastávky začínají na {hrana:0.##} mm - dorovnání odsunulo tabulku od levé hrany");
+    }
+
+    /// <summary>Tři sloty v obou směrech - pro dělení na bloky.</summary>
+    private static DataContext DataTriSloty(bool nazvyZastavek, bool casyPosledniZrcadlene = false,
+        bool obousmerne = true)
+    {
+        string Nazev(string n) => nazvyZastavek ? n : "";
+        var spoje = new List<DataContext>();
+        for (int i = 1; i <= 3; i++)
+        {
+            // Zrcadlená (levá) strana nese směr prvního spoje - tedy „T".
+            bool casy = casyPosledniZrcadlene && i == 3;
+            spoje.Add(RenderSnapshot.Row(("CISLO_SPOJE", ""), ("SKUPINA", "1"), ("SMER", "T"),
+                ("CASY", casy ? new JsonArray("8:00", "8:20", "8:40") : new JsonArray("", "", ""))));
+            if (obousmerne)
+                spoje.Add(RenderSnapshot.Row(("CISLO_SPOJE", ""), ("SKUPINA", "1"), ("SMER", "Z"),
+                    ("CASY", new JsonArray("", "", ""))));
+        }
+        return RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", Nazev("Kroměříž")), ("PORADI", "1")),
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", Nazev("Hulín")), ("PORADI", "2")),
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", Nazev("Přerov")), ("PORADI", "3")),
+            ]),
+            ("SPOJE", spoje),
+            ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", ""), ("PORADI", "1"))]));
+    }
+
     // ── měření ────────────────────────────────────────────────────────────────
 
     private static bool JeInkoust(SKColor c) => c.Red < 100 && c.Green < 100 && c.Blue < 100;
+
+    /// <summary>Nejlevější inkoust (mm) v pásu řádků (volitelně jen do `doXMm`); -1 když nic.</summary>
+    private static float LevaHranaMm(SKBitmap bmp, int odY, int doY, float doXMm = float.MaxValue)
+    {
+        int maxX = doXMm == float.MaxValue ? bmp.Width - 1 : Math.Min(bmp.Width - 1, (int)(doXMm * MmToPx));
+        for (int x = 0; x <= maxX; x++)
+            for (int y = odY; y < doY && y < bmp.Height; y++)
+                if (JeInkoust(bmp.GetPixel(x, y))) return x / MmToPx;
+        return -1f;
+    }
 
     /// <summary>X prvního tmavého pixelu (mm), -1 když v obrázku není žádný.</summary>
     private static float PrvniInkoustXMm(SKBitmap bmp)
