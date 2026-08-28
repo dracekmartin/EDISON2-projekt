@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-28 (1) - ✨ šipka směru jízdy v linkovém JŘ (`L6a`)
+
+Sloupec, ve kterém běží **svislá šipka přes řádky zastávek** - první z rozpadlé vlny `L6`
+(zbytek repertoáru starého modulu). Zapíná se jako každý jiný sloupec v dialogu sloupců.
+
+⚠️ **Kreslí se naší vektorovou šipkou ze zastávkového JŘ, ne glyfy ze symbolového fontu jako legacy**
+(rozhodnutí Jan 28. 8.: co už umíme, se nemá duplikovat). Kresba se proto vytáhla do
+`DirectionArrowRenderer` a vývěska ji teď volá odtud - **beze změny jediného pixelu**, což hlídají
+její zlaté odtisky. Vedlejší přínos: šipka v linkovém JŘ je nastavitelná (tvar hrotu, styl čáry),
+což legacy neumí, protože má tvar zadrátovaný ve fontu.
+
+- **Barvu si bere z textové barvy svého sloupce**, takže nepřidává žádné nové nastavení do panelu.
+- **Výchozí stav skrytý**, aby se existujícím šablonám nezměnil vzhled.
+- Do starších šablon se sloupec doplní **migrací 1.9.0** - dialog sloupců je umí jen přeskládat
+  a skrýt, ne přidat, takže bez migrace by šipka byla dostupná jen v nově zakládaných šablonách.
+
+⚠️ **Šipka má vlastní výjimku z pravidla „prázdný sloupec se netiskne"** - nemá žádný text, takže by
+ji to pravidlo schovalo vždycky, i když ji uživatel zapne.
+
+Ověřeno: .NET 1224/1224 + 709 + 620, ověřeno mutací čtyř cest (nekreslit, zadrátovaná barva místo
+barvy sloupce, šipka jen přes jeden řádek, chybějící výjimka z auto-hide). ⚠️ Jeden test se musel
+přeformulovat: „se skrytým sloupcem tam nic není" **neplatí** - skrytý sloupec z rozvržení zmizí,
+takže se na jeho místo posunou zastávky. Tvrdí se proto rovnost obrázků se šablonou, která ten
+sloupec vůbec nemá, což je zároveň přesně ta záruka, kterou potřebuje migrace.
+
+
 ## 2026-08-27 (8) - ✨ bez nadpisu se nad popisnými sloupci nekreslí nic (`L9-R4` rozhodnuto)
 
 Poslední otevřené rozhodnutí z `L9`: co má dělat pás nad popisnými sloupci, když je jeho popisek

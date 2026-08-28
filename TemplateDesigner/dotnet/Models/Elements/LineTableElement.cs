@@ -44,6 +44,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     public static List<StopColumn> GetDefaultColumns() =>
     [
+        // Šipka směru: výchozí **skrytá**, ať se existujícím šablonám nezmění vzhled. Do starších
+        // šablon ji doplní migrace, aby ji šlo zapnout v dialogu sloupců (ten neumí sloupce přidávat).
+        new() { Key = ColumnKeys.Arrow,    Header = "",         Width = 4f,  Visible = false, Alignment = TextHorizontalAlignment.Center },
         new() { Key = ColumnKeys.Zone,     Header = "Zóna",     Width = 8f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
         new() { Key = ColumnKeys.Km,       Header = "km",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
         new() { Key = ColumnKeys.Tc,       Header = "Tč",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
@@ -321,7 +324,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return MathF.Max(MinAutoColumnWidthMm, mm);
     }
 
-    private sealed record RenderCol(float Width, string Header, ResolvedTextStyle HeaderStyle,
+    /// <summary>Vyřešený popisný sloupec. <c>Key</c> je klíč té definice sloupce, ze které vznikl -
+    /// km se expanduje na několik `RenderCol` a všechny nesou týž klíč.</summary>
+    private sealed record RenderCol(string Key, float Width, string Header, ResolvedTextStyle HeaderStyle,
         ResolvedTextStyle DataStyle, Func<LineStopData, string> Value);
 
     private List<StopColumn> StructuralColumns() =>
@@ -369,9 +374,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         // Km má vlastní podmínku - jeho hodnoty jsou pole, ne jedna hodnota, a počet sub-sloupců
         // se odvozuje z dat (kmCount == 0 znamená „žádné km sloupce", ne „prázdné hodnoty").
-        structural = structural.Where(c => c.Key == ColumnKeys.Km
-            ? kmCount > 0
-            : stops.Any(st => ValueFor(c.Key, 0)(st).Length > 0)).ToList();
+        // ⚠️ Šipka směru má vlastní podmínku: nemá **žádný text**, takže by ji pravidlo „prázdný
+        // sloupec se netiskne" schovalo vždy, i když ji uživatel zapnul. Kreslí se vektorově.
+        structural = structural.Where(c => c.Key switch
+        {
+            ColumnKeys.Km    => kmCount > 0,
+            ColumnKeys.Arrow => true,
+            _                => stops.Any(st => ValueFor(c.Key, 0)(st).Length > 0),
+        }).ToList();
 
         // šířky: pevné (Width != null) honorovány; auto (null) sdílí zbytek se spoji
         float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == ColumnKeys.Km ? c.Width!.Value * kmCount : c.Width!.Value);
@@ -395,12 +405,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (col.Key == ColumnKeys.Km)
             {
                 for (int k = 0; k < kmCount; k++)
-                    result.Add(new RenderCol(w, header, hs, ds, ValueFor(ColumnKeys.Km, k)));
+                    result.Add(new RenderCol(col.Key, w, header, hs, ds, ValueFor(ColumnKeys.Km, k)));
             }
             else
             {
                 if (col.Key == ColumnKeys.StopName) nameIndex = result.Count;
-                result.Add(new RenderCol(w, header, hs, ds, ValueFor(col.Key, 0)));
+                result.Add(new RenderCol(col.Key, w, header, hs, ds, ValueFor(col.Key, 0)));
             }
         }
         float tripW = trip.Width ?? autoEach;
@@ -928,8 +938,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 if (ctx.OpakovanaHlavickaMm > 0.01f && ctx.ClipTopMm > y && ctx.ClipTopMm < konecBloku)
                     hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku(spojeBloku).Hlava.Count)];
 
+                float yBloku = y;
                 y = RowPlanRenderer.DrawRows(ctx, X, y, SirkaTabulkyMm(plan), plan, scale)
                     + MezeraMeziBlokyMm;
+                KresliSipkuSmeru(ctx, mrizka, plan, yBloku);
             }
         }
         finally
@@ -946,6 +958,48 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             finally { ctx.Canvas.Restore(); }
         }
     }
+
+    /// <summary>
+    /// Nakreslí šipku směru jízdy přes řádky zastávek bloku - <b>ve svém sloupci</b>.
+    /// </summary>
+    /// <remarks>
+    /// Kreslí se až nad hotovým blokem, protože jde přes víc řádků; buňka umí jen svůj vlastní.
+    /// Rozsah se bere <b>z téhož plánu, který se kreslil</b>, ne z vlastního výpočtu výšek - jinak
+    /// by se šipka rozešla s řádky, jakmile by některý z nich změnil výšku.
+    /// <para>Barvu si bere z <b>textové barvy toho sloupce</b> (kaskáda stylů), takže nepřidává
+    /// další nastavení do panelu; tloušťka a hrot jsou stejné jako u vývěsky.</para>
+    /// </remarks>
+    private void KresliSipkuSmeru(RenderContext ctx, SloupcovaMrizka mrizka, List<RowSpec> plan,
+        float yBlokuMm)
+    {
+        int ci = mrizka.Popisne.ToList().FindIndex(c => c.Key == ColumnKeys.Arrow);
+        if (ci < 0) return;
+
+        // Svislý rozsah = od horní hrany prvního řádku zastávky po spodní hranu posledního
+        // (včetně přípojných podřádků, ty k zastávce patří).
+        float yZacatek = -1f, yKonec = -1f, yBezici = yBlokuMm;
+        foreach (var radek in plan)
+        {
+            if (radek.Kind is RowKind.Data or RowKind.SubRow)
+            {
+                if (yZacatek < 0f) yZacatek = yBezici;
+                yKonec = yBezici + radek.HeightMm;
+            }
+            yBezici += radek.HeightMm;
+        }
+        if (yZacatek < 0f) return;
+
+        float stred = X + mrizka.XPopisnehoMm(ci) + mrizka.Popisne[ci].Width * 0.5f;
+        var vzhled = new DirectionArrowRenderer.Vzhled(
+            mrizka.Popisne[ci].DataStyle.TextColor,
+            SipkaTloustkaMm, SipkaHrotMm, ArrowHeadShape.Filled, LineStyle.Solid);
+        // Držák se v samostatném sloupci nekreslí - proto `drzakOd == caraX`.
+        DirectionArrowRenderer.Draw(ctx, vzhled, stred, stred, yZacatek, yKonec);
+    }
+
+    /// <summary>Tloušťka a hrot šipky - shodné s vývěskou, ať vypadá stejně v obou sestavách.</summary>
+    private const float SipkaTloustkaMm = 0.3f;
+    private const float SipkaHrotMm = 1.5f;
 
     /// <summary>
     /// Šířka, po kterou tabulka opravdu sahá - <b>ne šířka prvku</b>.

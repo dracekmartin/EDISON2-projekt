@@ -22,4 +22,5 @@ public static class ColumnKeys
     public const string Km       = "Km";         // kilometráž (expanduje se na N sub-sloupců)
     public const string Mhd      = "Mhd";        // MHD/IDS sloupec (auto-hide když prázdné)
     public const string Trip     = "Trip";       // sloupce časů spojů (vznikají z dat, řídí šířku/styl)
+    public const string Arrow    = "Arrow";      // šipka směru jízdy - kreslí se vektorově, nemá text
 }

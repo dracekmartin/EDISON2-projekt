@@ -21,6 +21,7 @@ public class ColumnKeysTests
         Assert.Equal("Km", ColumnKeys.Km);
         Assert.Equal("Mhd", ColumnKeys.Mhd);
         Assert.Equal("Trip", ColumnKeys.Trip);
+        Assert.Equal("Arrow", ColumnKeys.Arrow);
     }
 
     [Fact]
@@ -62,7 +63,8 @@ public class ColumnKeysTests
     public void VychoziSloupce_LineTable_PouzivajiJenZnameKlice()
     {
         string[] known = [ColumnKeys.Zone, ColumnKeys.Km, ColumnKeys.Tc,
-                          ColumnKeys.StopName, ColumnKeys.Mhd, ColumnKeys.Trip];
+                          ColumnKeys.StopName, ColumnKeys.Mhd, ColumnKeys.Trip,
+                          ColumnKeys.Arrow];
         Assert.All(LineTableElement.GetDefaultColumns(), c => Assert.Contains(c.Key, known));
     }
 }
