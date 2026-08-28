@@ -45,7 +45,7 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F3 - Upravit updater
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Vyřazeno (2026-08-28) - updater se řeší obecně, evidence mimo tento dokument.
 - **P2 · ?** 🔸
 - **Co udělat:** V ticketu bez detailu („Upravit updater"). Vyžádat od DZ, co konkrétně -
   bez toho nezačínat.
@@ -147,14 +147,25 @@ projektu jsou značené explicitně („nový post #N").
   visí do server idle timeoutu (známé, `EDISONMAIN2/CLAUDE.md`). Zvážit zkrácení
   timeoutu / heartbeat / úklid při dalším startu klienta pod týmž uživatelem.
 - **Pozor:** server sklízí jen ACTIVITY (`Activity.LockDel` v timeout+3 min), business
-  zámky nikdy; s vypnutým idle timeoutem po hard-killu visí **neomezeně**.
+  zámky nikdy; s vypnutým idle timeoutem po hard-killu visí **neomezeně**. Reaper
+  `Activity.Update()` navíc není serverová úloha - běží jen při requestu s `Locks=2`
+  (`ALWA.SYS.Rest`) a při `Login`/`Logout`/`VerifyLic`, tedy jen dokud nějaký klient pollí
+  nebo se někdo přihlašuje; `UpdateTimeout` při `exitOnTimeout=0`
+  (`^EDISON("System","Public","Settings")` piece 2/3, per-user `UserTimeout` přebíjí) nedělá
+  nic. Business zámky (`^CacheTempSYSLock`) maže jen `Lock.LockClear(guid)` a po pádu ho
+  nikdo nezavolá.
+- **Kandidát řešení:** při startu shellu `Activity.List` → záznamy téže IP + loginName
+  s jiným než aktuálním GUID → `Login.Logout` na klonu s tím GUID + `LockClearExt(guid)`.
+  Bez serverové změny, řeší typický scénář „po pádu znovu spustím". Serverový úklid business
+  zámků při zániku ACTIVITY zámku patří do téhož zásahu v `Activity.UpdateTimeout` jako F17.
 - **Hotovo když:** Zámky po pádu klienta zaniknou v řádu minut bez zásahu admina
   (LockClearExt ručně už není potřeba).
 - **Zdroj:** HD 13132 #17/3 (Kaska)
 
 ### F12 - Pády hostovaných legacy oken: dialog + telemetrie
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Vyřazeno (2026-08-28) - řeší se v samostatném chatu / worktree (repo EDISON,
+  host EDISONMAIN2API).
 - **P2 · M**
 - **Co udělat:** Nový shell EDPROCESS nepoužívá - legacy okna hostuje generický
   `EDISONMAIN2API.exe` (`WindowNavigator.cs:26`, žije v repu `c:\MLineRepos\EDISON`).
@@ -250,17 +261,31 @@ projektu jsou značené explicitně („nový post #N").
 - [ ] **Stav:** Open
 - **P2 · M**
 - **Co udělat:** TemplateDesigner záměrně nepřebírá shell GUID
-  (`TemplateDesigner/dotnet/Config/CacheSchemaWiring.cs:13-24`), takže jeho requesty
-  nerefreshují ACTIVITY historii shellu. Uživatel hodinu pracující jen v TD → idle timeout
-  shellu → force shutdown a `KillOnExit` sundá i TD. Stejný tvar chyby jako kauza ARRIVA,
-  jinými dveřmi; platí pro každý budoucí modul s vlastním MLRest.
-- **Pozor:** shell navíc nemá žádný keepalive - legacy 60s poll běžel s `Locks=1` a byl
+  (`TemplateDesigner/dotnet/Config/CacheSchemaWiring.cs:13-24`) a shell ho navíc spouští plain
+  `Process.Start(path)` **bez launch argumentů** (`EdisonMainViewModel.OpenTemplateDesigner`),
+  takže TD běží standalone z `templatedesigner.appsettings.json` s vlastním GUID
+  a `CacheLocks=0` - jeho requesty nepíšou ACTIVITY historii nikomu. Uživatel hodinu
+  pracující jen v TD → idle timeout shellu → řízený konec shellu uprostřed práce. TD samotný
+  přežije (není v `KillOnExit` jobu, ten váže jen `WindowNavigator`). Stejný tvar chyby jako
+  kauza ARRIVA, jinými dveřmi; platí pro každý budoucí modul s vlastním MLRest.
+- **Server to už umí:** `Activity.UpdateTimeout` zná podřízené procesy - idle rodiče
+  = `min(idle shell, idle dětí)`, `LockDel` rodiče smaže i děti, osiřelé dítě se sklidí samo.
+  Vazbu zakládá `ALVA.EDISON.Main.UpdateSeznamProcesu` (legacy `frmNoMDI.ProcesuBylPridanGuid`
+  ji volal při každém přidání modulu, nový shell nikdy). Podmínka: dítě musí posílat
+  `Locks=1` (jen tehdy jde `UpdateHistory`), tedy potřebuje vlastní ACTIVITY zámek
+  (`VerifyLic` pod jeho GUID; `CountIdfa` nepočítá vlastní IP, licenci navíc nespotřebuje).
+- **Varianty:** (1) TD převezme shell GUID - předat launch kontrakt, v `CreateMlRest`
+  přestat ignorovat `ShellGuid`, `Locks=1`; nejmenší práce, TD sdílí ACTIVITY i business zámky
+  shellu. (2) TD jako podřízený proces - vlastní GUID + vlastní zámek + `UpdateSeznamProcesu`;
+  věrné legacy, funguje pro každý budoucí modul. (3) Timeout měřit jen na shellu
+  a zdokumentovat. 🔸 Rozhodnutí produktové.
+- **Pozor:** shell nemá žádný keepalive - legacy 60s poll běžel s `Locks=1` a byl
   nechtěný keepalive (timeout byl prakticky nedosažitelný), dnes poll běží s `Locks=2`.
-  Shell je tedy přísnější než legacy; u zákazníků se zapnutým timeoutem čekat nová
-  hlášení „odhlásilo mě to".
+  Nový shell je první klient, kde timeout **reálně funguje** - u zákazníků se zapnutým
+  timeoutem čekat nová hlášení „odhlásilo mě to" i bez TD (čtení dashboardu = žádný request).
 - **Hotovo když:** Práce v TD (a obecně v modulu s vlastním GUID) drží shell session
   živou, nebo je rozhodnuto, že timeout se má měřit jen na shellu, a je to zdokumentováno.
-- **Zdroj:** vlastní nález při prověrce F13 (2026-08-25)
+- **Zdroj:** vlastní nález při prověrce F13 (2026-08-25), rozšířeno 2026-08-28
 
 ### F18 - Legacy dashboardy v layoutu: blokující load při startu + ztracené dávkování
 
