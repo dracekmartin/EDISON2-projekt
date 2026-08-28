@@ -14,7 +14,8 @@ i konzumenty** (DLL nikdy samotnou) - viz `EDControls/CLAUDE.md`.
 Týmž profilem se vydává i **EDControls samostatně**: `PublishOwnAssemblyOnly` propustí jen
 vlastní assembly (plný uzávěr závislostí - MLRest, EDLicence, EDCore, Newtonsoft - by
 v `C:\Edison\` přepsal soubory legacy repa) a nezávislá kontrola počtu publish **shodí**,
-než něco zapíše. `C:\Edison\` je staging: do produkce jde až explicitní klik v Compileru.
+než něco zapíše. `C:\Edison\` je staging: do produkce jde až explicitní klik v Compileru. Seznam binárek
+k distribuci při vydání shellu (včetně těch z repa EDISON): `DEPLOY.md`.
 
 ## Struktura a pravidla pro CLAUDE.md
 
