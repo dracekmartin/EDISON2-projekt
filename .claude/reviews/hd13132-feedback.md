@@ -54,7 +54,8 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F4 - Fokus oken: nejde se překliknout na nejaktuálnější okno
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Won't fix (2026-08-28) - problém starého formuláře (legacy okno hostované
+  v EDISONMAIN2API), ne shellu; v EDISON2 se neřeší.
 - **P1 · M**
 - **Co udělat:** Reprodukovat podle videa
   `\\192.168.16.1\CacheIns\HD\Záznam 2026-08-19 113102.mp4` a opravit. Kaska se musí na
@@ -109,7 +110,7 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F9 - Kapybara v okně „Akce probíhá"
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Won't fix (2026-08-28) - rozhodnuto neřešit, sprity zůstávají jak jsou.
 - **P3 · S** 🔸
 - **Co udělat:** Kaska: „v prosím čekejte běhá prase :-) - nežádoucí". Jde o pixel-art
   kapybaru - sprity `Sprite.Capybara` + `Sprite.Bus`, náhodný výběr per okno
@@ -122,6 +123,7 @@ projektu jsou značené explicitně („nový post #N").
 
 - [ ] **Stav:** Open
 - **P2 · L**
+- **Deferred:** (2026-08-28) - zatím neřešit; až se otevře, podmínka téhož GUID platí dál.
 - **Co udělat:** Definovat a implementovat chování při výpadku spojení. Dnes reconnect
   neexistuje (`ConnectToDatabaseCommand = Command(NotYetImplemented)`,
   `EdisonMainViewModel.cs:271`); zánik ACTIVITY zámku → řízený shutdown přes event
@@ -166,8 +168,8 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F13 - Odpovědět do ticketu: #17 (Kaska, nový #20) + doplňující ticket DZ
 
-- [ ] **Stav:** Open - odpověď prověřena proti kódu 2026-08-25 (GUID lifecycle, aktivita,
-  zámky, distribuce), společný text pro oba tickety níže. Nálezy z prověrky → F17, F18.
+- [x] **Stav:** Done (2026-08-28) - odpověď odeslána do ticketu (text níže, prověřen proti kódu
+  2026-08-25). Nálezy z prověrky → F17, F18.
 - **P1 · S**
 - **Co udělat:** Odeslat do HD 13132 jednu odpověď pokrývající #17 (= nový #20) i tři
   stěžejní problémy z doplňujícího ticketu DZ (aktivita v multioknech, sdílení GUID,
@@ -233,7 +235,7 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F16 - Widget podpory žere ~3 % CPU trvale
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Won't fix (2026-08-28) - rozhodnuto neřešit; je to obsah podpory, ne náš kód.
 - **P3 · S** 🔸
 - **Co udělat:** Měření z F7: renderer + GPU proces WebView2 drží ~3 % CPU i na nečinném
   shellu, WPF strana 0,2 %. Statická stránka by byla na nule, takže widget `edison2` běží
