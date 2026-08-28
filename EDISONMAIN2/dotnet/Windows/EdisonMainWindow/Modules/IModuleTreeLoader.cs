@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
-    public interface IModuleTreeGetter
+    public interface IModuleTreeLoader
     {
         /// <summary>
         /// Načte a naparsuje strom modulů přes sdílené IMLRest spojení.

@@ -35,14 +35,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// </summary>
     public sealed class SessionDataLoader(
         IRestCallRunner runner,
-        IModuleTreeGetter treeGetter,
+        IModuleTreeLoader treeLoader,
         IReadOnlyList<string> treeNames) : ISessionDataLoader
     {
         public async Task<SessionData> LoadAsync(Lic? licence, bool isAdmin, ModulePreferencesService prefs)
         {
             var access = runner.RunAsync(rest => AccessLoader.Load(rest, licence, isAdmin));
             var trees = treeNames
-                .Select(name => (Name: name, Task: runner.RunAsync(rest => treeGetter.GetModuleTree(rest, name))))
+                .Select(name => (Name: name, Task: runner.RunAsync(rest => treeLoader.GetModuleTree(rest, name))))
                 .ToList();
             var defaultWindow = runner.RunAsync(UserProfileService.LoadDefaultWindow);
             var preferences = LoadPreferencesAsync(prefs);

@@ -398,7 +398,7 @@ public class AppBootstrapper
         EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
         Task<ReleaseNoticeResult>? releaseNotice)
     {
-        var treeGetter = new ModuleTreeGetter();
+        var treeLoader = new ModuleTreeLoader();
         var switcher = new CompanySwitcher(services, prefs, nav.TryCloseShellWindows, nav.CloseLegacyModules);
         // Sdílená služba zástupců - strom (VM) i miniaplikace „Plocha" (provider) drží tutéž instanci.
         var shortcuts = new ModuleShortcutsService();
@@ -412,7 +412,7 @@ public class AppBootstrapper
         // Owner login dialogu se čte lazily - MainWindow ukazuje na shell až po HandOffLoginWindow.
         var sessionSwitcher = new SessionSwitcher(services, () => _application.MainWindow,
                                                   BuildActivityFailedWire(services), nav.TryCloseAll);
-        var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
+        var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeLoader,
                                                 licence, switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
                                                 miniAppCatalog, shortcuts, new InfChangelogSource());

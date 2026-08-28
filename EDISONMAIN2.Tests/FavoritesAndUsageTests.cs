@@ -462,5 +462,5 @@ public class FavoritesAndUsageTests
 
     private static EdisonMainViewModel CreateVM(IUserPrefsService prefs, IReadOnlyList<IModule> tree) =>
         EdisonMainViewModelHarness.CreateVM(
-            companies: OneCompany, treeGetter: TreeGetterWith(tree), userPrefs: prefs);
+            companies: OneCompany, treeLoader: TreeLoaderWith(tree), userPrefs: prefs);
 }

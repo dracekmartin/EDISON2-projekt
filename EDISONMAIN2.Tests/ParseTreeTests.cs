@@ -19,7 +19,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_EmptyOutput_ReturnsEmpty()
     {
-        var tree = ModuleTreeGetter.ParseTree(new CVar());
+        var tree = ModuleTreeLoader.ParseTree(new CVar());
 
         Assert.Empty(tree);
     }
@@ -30,7 +30,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["ERR"] = new CVar("metadata");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         Assert.Empty(tree);
     }
@@ -41,7 +41,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "Moje Okno", "MyApp.exe", "MyForm");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("Moje Okno", mod.DisplayedName);
@@ -56,7 +56,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "Legacy", "legacy.exe", "LegacyForm");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("", mod.ElementId);
@@ -70,7 +70,7 @@ public class ParseTreeTests
         data["1"] = new CList("EXE", "Plán dopravy", "MHD2PlanDopravy.exe",
                               "ALVA.MHD2.PlanDopravy.formMHD2PlanDopravyMain", "260001", "1");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("260001", mod.ElementId);
@@ -84,7 +84,7 @@ public class ParseTreeTests
         data["1"] = new CList("EXE", "Příplatky", "MHD2Ciselniky.exe",
                               "ALVA.MHD2.Ciselniky.formMHD2CiselnikyPriplatky", "210024", "0");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("210024", mod.ElementId);
@@ -98,7 +98,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "Mid", "mid.exe", "MidForm", "999");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("999", mod.ElementId);
@@ -113,7 +113,7 @@ public class ParseTreeTests
         data["1"] = new CList("EXE", "Fakturace", "FAKTURACEEX.exe", "ALVA.FAKTURACEEX.formMain",
                               "108016", "1", "AD", "0", "", "0", "Fakturace - zpracování AD");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("Fakturace - zpracování AD", mod.LongName);
@@ -128,7 +128,7 @@ public class ParseTreeTests
         data["1"] = new CList("EXE", "Objednávky", "ADOBJEDNAVKY.exe", "ALVA.ADOBJEDNAVKY.formList",
                               "31001", "1", "", "0", "", "0", "");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("", mod.LongName);
@@ -143,7 +143,7 @@ public class ParseTreeTests
         data["1"] = new CList("EXE", "Turnusy", "ADTURNUSY.exe", "ALVA.ADTURNUSY.formList",
                               "30001", "1", "", "0", "", "0");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("", mod.LongName);
@@ -159,7 +159,7 @@ public class ParseTreeTests
         data["3"] = new CList("EXE", "Spoje", "spoje.exe", "SpojeForm");
         data["4"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("Doprava", fam.DisplayedName);
@@ -176,7 +176,7 @@ public class ParseTreeTests
         data["1"] = new CList("FAMILY", "Kmenová evidence", "0", "1", "1");
         data["2"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("1", fam.ElementId);
@@ -191,7 +191,7 @@ public class ParseTreeTests
         data["1"] = new CList("FAMILY", "Doprava", "1");
         data["2"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("", fam.ElementId);
@@ -205,7 +205,7 @@ public class ParseTreeTests
         data["1"] = new CList("FAMILY", "Převody", "0", "11", "0");
         data["2"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("11", fam.ElementId);
@@ -222,7 +222,7 @@ public class ParseTreeTests
         data["1"] = new CList("FAMILY", "Interní", "0", "52", "1", flag);
         data["2"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal(expected, fam.MlineOnly);
@@ -236,7 +236,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "Doklady OLD", "SKLADYMAIN.exe", "F", "92101", "0", "", "0", "", flag);
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal(expected, mod.MlineOnly);
@@ -249,7 +249,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "X", "x.exe", "F", "1", "0", "", "0", "");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.False(mod.MlineOnly);
@@ -262,7 +262,7 @@ public class ParseTreeTests
         data["1"] = new CList("FAMILY", "Archiv", "0");
         data["2"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.False(fam.IsExpanded);
@@ -278,7 +278,7 @@ public class ParseTreeTests
         data["4"] = new CList("FAMILY_END");
         data["5"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var outer = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("Vnější", outer.DisplayedName);
@@ -297,7 +297,7 @@ public class ParseTreeTests
         data["3"] = new CList("EXE", "Child", "child.exe", "");
         data["4"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         Assert.Equal(2, tree.Count);
         Assert.IsType<ExecutableModule>(tree[0]);
@@ -312,7 +312,7 @@ public class ParseTreeTests
         data["1"] = new CList("FAMILY_END");
         data["2"] = new CList("EXE", "App", "app.exe", "Form");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("App", mod.DisplayedName);
@@ -325,7 +325,7 @@ public class ParseTreeTests
         data["1"] = new CList("FAMILY", "Open", "1");
         data["2"] = new CList("EXE", "Child", "child.exe", "Form");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("Open", fam.DisplayedName);
@@ -339,7 +339,7 @@ public class ParseTreeTests
         data["1"] = new CList("EXE", "Úlohy", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formTaskList",
                               "2011", "0", "AdminMode=1", "0", "#FFA500");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("AdminMode=1", mod.InputParam);
@@ -353,7 +353,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "Skrytý", "x.exe", "X", "1", "0", "", "1");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.True(mod.Hidden);
@@ -366,7 +366,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "Legacy", "l.exe", "L", "1", "1", "input");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.False(mod.Hidden);
@@ -380,7 +380,7 @@ public class ParseTreeTests
         data["1"] = new CList("UNKNOWN", "Something");
         data["2"] = new CList("EXE", "App", "app.exe", "Form");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("App", mod.DisplayedName);
@@ -395,7 +395,7 @@ public class ParseTreeTests
         for (int i = 1; i <= 12; i++)
             data[i.ToString()] = new CList("EXE", "M" + i, "m" + i + ".exe", "F");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         Assert.Equal(
             Enumerable.Range(1, 12).Select(i => "M" + i),
@@ -410,7 +410,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "X", "x.exe", "F", "100", "-1");
 
-        var tree = ModuleTreeGetter.ParseTree(data);
+        var tree = ModuleTreeLoader.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.False(mod.IsLicensed);
@@ -425,8 +425,8 @@ public class ParseTreeTests
         data["3"] = new CList("FAMILY_END");
         var mockMLRest = MockTreeCall(data);
 
-        var getter = new ModuleTreeGetter();
-        var tree = getter.GetModuleTree(mockMLRest);
+        var loader = new ModuleTreeLoader();
+        var tree = loader.GetModuleTree(mockMLRest);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("Doprava", fam.DisplayedName);
@@ -441,7 +441,7 @@ public class ParseTreeTests
     {
         var mockMLRest = MockTreeCall(new CVar());
 
-        new ModuleTreeGetter().GetModuleTree(mockMLRest);
+        new ModuleTreeLoader().GetModuleTree(mockMLRest);
 
         mockMLRest.Received(1).QueryOrThrow(
             "ALVA.EDISONMAIN2.API.Tree", "GetTree",
@@ -456,7 +456,7 @@ public class ParseTreeTests
     {
         var mockMLRest = MockTreeCall(new CVar());
 
-        new ModuleTreeGetter().GetModuleTree(mockMLRest, treeName);
+        new ModuleTreeLoader().GetModuleTree(mockMLRest, treeName);
 
         mockMLRest.Received(1).QueryOrThrow(
             "ALVA.EDISONMAIN2.API.Tree", "GetTree",

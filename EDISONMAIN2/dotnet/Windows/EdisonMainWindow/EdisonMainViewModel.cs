@@ -218,7 +218,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
-            IModuleTreeGetter treeGetter,
+            IModuleTreeLoader treeLoader,
             Lic? initialLicence,
             CompanySwitcher switcher,
             Func<SwitchUserOutcome> switchUser,
@@ -336,7 +336,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _sourceTrees = [.. TreeTabs.Where(t => t.ServerLoaded).Select(t => (t.Key, t.Tree!))];
             // Runner drží politiku „klon per paralelní volání"; testy podstrčí sekvenční variantu.
             _sessionLoader = new SessionDataLoader(restRunner ?? new RestCallRunner(() => Rest),
-                                                  treeGetter, [.. _sourceTrees.Select(t => t.Name)]);
+                                                  treeLoader, [.. _sourceTrees.Select(t => t.Name)]);
 
             // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
             Companies = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];

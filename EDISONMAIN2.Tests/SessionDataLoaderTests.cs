@@ -63,8 +63,8 @@ public class SessionDataLoaderTests
         public int CacheLocks { get; set; }
     }
 
-    // Strom se čte přes IModuleTreeGetter, ne přes MLRest → vlastní fake, taky thread-safe.
-    private sealed class FakeTreeGetter(CallLog log, string? failOnTree = null) : IModuleTreeGetter
+    // Strom se čte přes IModuleTreeLoader, ne přes MLRest → vlastní fake, taky thread-safe.
+    private sealed class FakeTreeLoader(CallLog log, string? failOnTree = null) : IModuleTreeLoader
     {
         public IReadOnlyList<IModule> GetModuleTree(IMLRest mlRest, string treeName = "main")
         {
@@ -100,7 +100,7 @@ public class SessionDataLoaderTests
     {
         var log = new CallLog();
         var rest = new FakeMLRest(log, "shared", failOnTree);
-        var loader = new SessionDataLoader(new RestCallRunner(() => rest), new FakeTreeGetter(log, failOnTree), TreeNames);
+        var loader = new SessionDataLoader(new RestCallRunner(() => rest), new FakeTreeLoader(log, failOnTree), TreeNames);
         return (loader, new ModulePreferencesService(new FakeUserPrefs(failPrefs)), log);
     }
 

@@ -33,7 +33,7 @@ public class EdisonMainViewModelTests
     [Fact]
     public void Constructor_FetchesAllThreeTrees()
     {
-        var mockTree = Substitute.For<IModuleTreeGetter>();
+        var mockTree = Substitute.For<IModuleTreeLoader>();
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main")
             .Returns([new ExecutableModule { DisplayedName = "MainApp", ExecutablePath = "app.exe", FormName = "" }]);
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "system")
@@ -41,7 +41,7 @@ public class EdisonMainViewModelTests
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "partners")
             .Returns([new ExecutableModule { DisplayedName = "Partner", ExecutablePath = "p.exe", FormName = "" }]);
 
-        var vm = CreateVM(treeGetter: mockTree);
+        var vm = CreateVM(treeLoader: mockTree);
 
         // StartsWith - ModuleLaunchabilityCheck připojuje k názvu suffix (" - chybí exe" apod.);
         // test ověřuje routing stromů do správných kolekcí, ne přesný label.
@@ -70,7 +70,7 @@ public class EdisonMainViewModelTests
     {
         var mockTree = MainTreeWith(new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "" });
 
-        var vm = CreateVM(treeGetter: mockTree, initialize: false);
+        var vm = CreateVM(treeLoader: mockTree, initialize: false);
 
         // Shell se ukáže hned; data dorazí až z ContentRendered → InitializeAsync.
         Assert.Empty(vm.MainMenuTree);
@@ -81,13 +81,13 @@ public class EdisonMainViewModelTests
     public async Task InitializeAsync_IsIdempotent()
     {
         var mockTree = MainTreeWith(new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "" });
-        var vm = CreateVM(treeGetter: mockTree, initialize: false);
+        var vm = CreateVM(treeLoader: mockTree, initialize: false);
 
         await vm.InitializeAsync();
         await vm.InitializeAsync();
 
         // Tři stromy jednou, ne dvakrát - druhé volání vrací týž task.
-        Assert.Equal(3, mockTree.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IModuleTreeGetter.GetModuleTree)));
+        Assert.Equal(3, mockTree.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(IModuleTreeLoader.GetModuleTree)));
         Assert.Single(vm.MainMenuTree);
     }
 
@@ -107,9 +107,9 @@ public class EdisonMainViewModelTests
     }
 
     // Strom napoprvé projde, podruhé (rebuild) spadne - simuluje server mimo provoz při přepnutí.
-    private static IModuleTreeGetter TreeFailingOnSecondLoad()
+    private static IModuleTreeLoader TreeFailingOnSecondLoad()
     {
-        var mockTree = Substitute.For<IModuleTreeGetter>();
+        var mockTree = Substitute.For<IModuleTreeLoader>();
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
         int mainCalls = 0;
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(_ =>
@@ -127,7 +127,7 @@ public class EdisonMainViewModelTests
         // Přes command (ne interní metodu): s inline runnerem doběhne synchronně a chyba
         // skončí v PopupDisplayer.Error, jak to udělá i AsyncRelayCommand v produkci.
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        var vm = CreateVM(popup: mockPopup, treeGetter: TreeFailingOnSecondLoad());
+        var vm = CreateVM(popup: mockPopup, treeLoader: TreeFailingOnSecondLoad());
         Assert.Single(vm.MainMenuTree);   // předpoklad
 
         vm.RefreshLicenseCommand.Execute(null);
@@ -143,7 +143,7 @@ public class EdisonMainViewModelTests
         // mimo licenci nové firmy a fire-and-forget save by jeho data zapsal do jejích blobů.
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var vm = CreateVM(popup: mockPopup, treeGetter: TreeFailingOnSecondLoad());
+        var vm = CreateVM(popup: mockPopup, treeLoader: TreeFailingOnSecondLoad());
         Assert.Single(vm.MainMenuTree);   // předpoklad
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SwitchCompanyAsync(1));
@@ -179,9 +179,9 @@ public class EdisonMainViewModelTests
         Assert.Contains("CB_DP", layouts.Keys);
     }
 
-    private static IModuleTreeGetter MainTreeWith(params ExecutableModule[] modules)
+    private static IModuleTreeLoader MainTreeWith(params ExecutableModule[] modules)
     {
-        var mock = Substitute.For<IModuleTreeGetter>();
+        var mock = Substitute.For<IModuleTreeLoader>();
         mock.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
         mock.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(modules);
         return mock;
@@ -197,7 +197,7 @@ public class EdisonMainViewModelTests
             new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "17" },
             new ExecutableModule { DisplayedName = "B", ExecutablePath = "b.exe", FormName = "", ElementId = "9" });
 
-        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+        var vm = CreateVM(treeLoader: tree, mlRest: ml);
 
         Assert.Equal(17, vm.DefaultWindowId);
         var modules = vm.MainMenuTree.Cast<ExecutableModule>().ToList();
@@ -211,7 +211,7 @@ public class EdisonMainViewModelTests
         var ml = MockMLRest();   // GetUserDefaultForm nenastaven → start 0
         var tree = MainTreeWith(
             new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
-        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+        var vm = CreateVM(treeLoader: tree, mlRest: ml);
         var module = vm.MainMenuTree.Cast<ExecutableModule>().Single();
 
         vm.SetStartupWindowCommand.Execute(module);
@@ -230,7 +230,7 @@ public class EdisonMainViewModelTests
             .Returns(MLRestMocks.Output("23"));
         var tree = MainTreeWith(
             new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
-        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+        var vm = CreateVM(treeLoader: tree, mlRest: ml);
         var module = vm.MainMenuTree.Cast<ExecutableModule>().Single();
         Assert.True(module.IsStartupWindow);   // předpoklad
 
@@ -338,7 +338,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var mockTree = Substitute.For<IModuleTreeGetter>();
+        var mockTree = Substitute.For<IModuleTreeLoader>();
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
         // Čerstvé instance při každém volání - simuluje přestavbu stromu při přepnutí firmy.
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(_ => new IModule[]
@@ -346,7 +346,7 @@ public class EdisonMainViewModelTests
             new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
             new ExecutableModule { DisplayedName = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
         });
-        var vm = CreateVM(popup: mockPopup, treeGetter: mockTree);
+        var vm = CreateVM(popup: mockPopup, treeLoader: mockTree);
         vm.TreeSearchText = "turnus";
 
         await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex == 0 ? 1 : 0);
@@ -360,7 +360,7 @@ public class EdisonMainViewModelTests
     // FirstSearchResult - cíl Enteru v poli „Hledat modul" (HD 13132/F15).
 
     private static EdisonMainViewModel SearchableVM() =>
-        CreateVM(treeGetter: TreeGetterWith(
+        CreateVM(treeLoader: TreeLoaderWith(
         [
             new ExecutableModule { DisplayedName = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
             new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" },

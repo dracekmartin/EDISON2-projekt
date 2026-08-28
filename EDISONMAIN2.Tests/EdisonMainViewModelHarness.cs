@@ -50,17 +50,17 @@ internal static class EdisonMainViewModelHarness
         return mock;
     }
 
-    internal static IModuleTreeGetter EmptyTreeGetter()
+    internal static IModuleTreeLoader EmptyTreeLoader()
     {
-        var mock = Substitute.For<IModuleTreeGetter>();
+        var mock = Substitute.For<IModuleTreeLoader>();
         mock.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
         return mock;
     }
 
-    /// <summary>Getter s daným hlavním stromem; system i partners prázdné.</summary>
-    internal static IModuleTreeGetter TreeGetterWith(IReadOnlyList<IModule> mainTree)
+    /// <summary>Loader s daným hlavním stromem; system i partners prázdné.</summary>
+    internal static IModuleTreeLoader TreeLoaderWith(IReadOnlyList<IModule> mainTree)
     {
-        var mock = Substitute.For<IModuleTreeGetter>();
+        var mock = Substitute.For<IModuleTreeLoader>();
         mock.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(mainTree);
         mock.GetModuleTree(Arg.Any<IMLRest>(), "system").Returns([]);
         mock.GetModuleTree(Arg.Any<IMLRest>(), "partners").Returns([]);
@@ -69,7 +69,7 @@ internal static class EdisonMainViewModelHarness
 
     internal static EdisonMainViewModel CreateVM(
         EDServices? services = null,
-        IModuleTreeGetter? treeGetter = null,
+        IModuleTreeLoader? treeLoader = null,
         IPopupDisplayer? popup = null,
         ILocalPrefs? prefs = null,
         Action? closeAllWindows = null,
@@ -88,7 +88,7 @@ internal static class EdisonMainViewModelHarness
         bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
-        var mockTree = treeGetter ?? EmptyTreeGetter();
+        var mockTree = treeLoader ?? EmptyTreeLoader();
         var svc = services ?? MockServices(popup: popup);
         // CompanySwitcher i VM čtou MLRest z services lazily - musí být v services před konstrukcí.
         svc.MLRest = mockMLRest;

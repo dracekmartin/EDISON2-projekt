@@ -5,7 +5,7 @@ using EDControls;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
-    public class ModuleTreeGetter : IModuleTreeGetter
+    public class ModuleTreeLoader : IModuleTreeLoader
     {
         public IReadOnlyList<IModule> GetModuleTree(IMLRest mlRest, string treeName = "main")
         {
