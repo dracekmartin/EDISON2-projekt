@@ -128,11 +128,11 @@ public class WindowNavigatorTests
     public void BuildLauncherArguments_EmptyInputParam_StillOccupiesPositionalSlot()
     {
         var args = WindowNavigator.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001");
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin: false);
 
         // Prázdný inputParam zůstává jako "" na pozici [10] - pořadí polí se neposune.
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"0\"",
             args);
     }
 
@@ -145,7 +145,7 @@ public class WindowNavigatorTests
         m.FullName.Returns("Jan \"Boss\" Novák");
 
         var args = WindowNavigator.BuildLauncherArguments(
-            m, "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001");
+            m, "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin: false);
 
         Assert.Contains("\"Jan \"Boss\" Novák\"", args);
     }
@@ -154,21 +154,34 @@ public class WindowNavigatorTests
     public void BuildLauncherArguments_OrderingMatchesContract()
     {
         var args = WindowNavigator.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe", "26001,6001");
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe", "26001,6001", isAdmin: true);
 
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"1\"",
             args);
     }
 
     [Fact]
-    public void BuildLauncherArguments_ShortcutPayload_IsLastField()
+    public void BuildLauncherArguments_ShortcutPayload_FollowsLicensedElements()
     {
         var args = WindowNavigator.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", "UEFZTE9BRA==");
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", false, "UEFZTE9BRA==");
 
         // Zástupce je [13] - až za licencovanými elementy, aby starší host kontrakt jen ignoroval.
-        Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\"", args);
+        Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\" \"0\"", args);
+    }
+
+    [Theory]
+    [InlineData(true, "1")]
+    [InlineData(false, "0")]
+    public void BuildLauncherArguments_IsAdmin_IsLastField(bool isAdmin, string expected)
+    {
+        var args = WindowNavigator.BuildLauncherArguments(
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin);
+
+        // Admin flag je [14] - host bez něj defaultuje na false, takže hodnota musí být explicitní.
+        Assert.EndsWith($"\"\" \"{expected}\"", args);
+        Assert.Equal(15, args.Split(" \"").Length);
     }
 
     [Theory]

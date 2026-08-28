@@ -140,9 +140,11 @@ centruje ho `OwnerWindowCentering` (`CenterOwner` u maximalizovaného ownera mí
 ## Legacy moduly - EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`,
-.NET Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 13 polí (pořadí
-`WindowNavigator.BuildLauncherArguments`); poslední je Base64 XML zástupce - prázdné u běžného
-launche, s `CallType=Procedura` host místo formy spustí `ProcedureIO` agendy. Vstupy:
+.NET Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 14 polí (pořadí
+`WindowNavigator.BuildLauncherArguments`); [13] je Base64 XML zástupce - prázdné u běžného
+launche, s `CallType=Procedura` host místo formy spustí `ProcedureIO` agendy; [14] admin flag
+(`EDServices.IsAdmin` → `MLProps.UserIsAdmin`, klíč pro `CAccess(useAdmin)` bypass práv v agendách;
+host bez pole defaultuje na **false**). Vstupy:
 `TryGetFormFromArgs` (typ reflexí ve volajícím assembly - retrofit `.exe`, jediný
 `EDISONMAIN/ApplicationEvents.vb`) a `TryRunFromArgs` (`Assembly.LoadFrom`, generický host).
 
