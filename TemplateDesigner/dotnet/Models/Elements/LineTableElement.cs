@@ -187,6 +187,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// Server ji posílá jen u spoje, který barvu skutečně má, a jen když ji linka nepotlačila.</summary>
         public string? ForeColor;
         public List<string> Platnost = [];
+        /// <summary>Označení turnusů, ve kterých spoj jede („110.01"). Posílá je server jen
+        /// se zapnutým parametrem „Turnusy ke spojům" - jinak je seznam prázdný a řádky nevzniknou.</summary>
+        public List<string> Turnusy = [];
         public List<string> Casy = [];
         public List<LinePripojData> Pripoje = [];
     }
@@ -237,6 +240,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Nz = row.GetString("NZ"),
             ForeColor = row.GetString("FORE_COLOR") is { Length: > 0 } fc ? fc : null,
             Platnost = ParseStringArray(row.GetValue("PLATNOST")),
+            Turnusy = ParseStringArray(row.GetValue("TURNUSY")),
             Casy = ParseStringArray(row.GetValue("CASY")),
             Pripoje = ParsePripoje(row.GetValue("PRIPOJE")),
         })];
@@ -821,6 +825,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     private bool HasPlatnostRow(List<LineTripData> trips) => ShowPlatnostRow && trips.Any(t => t.Platnost.Count > 0);
     private bool HasNzRow(List<LineTripData> trips) => ShowNzRow && trips.Any(t => t.Nz.Length > 0);
+
+    /// <summary>Kolik řádků turnusů tabulka má = nejvíc turnusů u jednoho spoje (0 = žádné).</summary>
+    /// <remarks>
+    /// Řídí se **nejbohatším spojem**, ne každým sloupcem zvlášť - jinak by řádky nesedly na sebe.
+    /// Stejně to počítá starý modul (`TUmax`, `JRapiLinPrtWin.mac:2718`). Turnusy posílá server jen
+    /// se zapnutým parametrem, takže bez něj je to nula a tabulka vypadá jako dosud.
+    /// </remarks>
+    private static int PocetTurnusovychRadku(List<LineTripData> trips) =>
+        trips.Count == 0 ? 0 : trips.Max(t => t.Turnusy.Count);
     /// <summary>
     /// Kreslí se pás nad sloupci? Buď proto, že je co rozdělit na skupiny dnů, <b>nebo</b> proto,
     /// že má popisný blok svůj nadpis.
@@ -892,6 +905,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var hlava = new List<float>();
         if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
         hlava.Add(headerH);                                                  // řádek čísel spojů
+        for (int tr = 0; tr < PocetTurnusovychRadku(trips); tr++) hlava.Add(rowH);
         if (HasPlatnostRow(trips)) hlava.Add(rowH);
         if (HasNzRow(trips)) hlava.Add(rowH);
 
@@ -1219,6 +1233,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ti => (trips[ti].CisloSpoje, tripHeaderStyle));
         plan.Add(new(RowKind.Header, headerH, headerSpecs)
             { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+
+        // řádky turnusů - jeden na turnus, hned pod čísly spojů a **nad** řádkem platnosti.
+        // Tak je řadí i starý modul: jeho indexy řádků jdou číslo spoje (1) → turnusy (1.001xx)
+        // → platnost (1.1, 1.2…) → negativní značky (1.9), `JRapiLinPrtWin.mac:2948` a `:3795`.
+        // Spoj s méně turnusy má zbylé řádky prázdné - řádků je tolik, kolik má nejbohatší spoj.
+        int turnusovychRadku = PocetTurnusovychRadku(vsechnySpoje);
+        for (int tr = 0; tr < turnusovychRadku; tr++)
+        {
+            plan.Add(new(RowKind.HeaderExtra, rowH,
+                TripTextRow(mrizka, trips, zrcadlene, tripDataStyle,
+                    t => tr < t.Turnusy.Count ? t.Turnusy[tr] : ""))
+            { VerticalLinePaint = gridPaint });
+        }
 
         // řádek platnosti (znaky X/6/7/+ nad spojem)
         if (HasPlatnostRow(vsechnySpoje))

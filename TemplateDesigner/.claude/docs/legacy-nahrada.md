@@ -193,6 +193,14 @@ vrstva - **skutečný oracle je `mkPLinWin` (JRMAIN)**, ne `ALVA.TISKMHD.Data`.
    A4 a jinou pro A5 + ~17 vlastností per formát (`LoadNastaveniProTisk`). TD nemá
    koncept „výchozí šablona přiřazená instanci".
 
+**⚠️ Vada legacy - „tisk turnusů ke spojům" nic nevytiskne** (zjištěno 28. 8. 2026). Engine posílá
+do dotazu na turnusy číslo linky v **indexovém tvaru s nulami** („0108360", `cnvCsLin` doplňuje na
+7 znaků), ale odpověď filtruje číslem z turnusového záznamu (`108360`) - nic se nespáruje a `TUmax`
+zůstane 0 (`JRapiLinPrtWin.mac:2684-2722` × `ALVA.ADMAIN.MLAPI:545`). Doloženo pracovním globalem
+starého enginu po běhu a sondou oběma tvary („0108360" → 0 spojů, `108360` → 3 spoje). **Pro paritu
+to znamená, že u turnusů není proti čemu porovnávat** - TD je ověřuje proti témuž zdroji, jaký volá
+legacy. Zákazník, který volbu má zapnutou a nic nedostal, hlásí „nefunguje to" právem.
+
 **TiskJRRELACE** = třetí typ výstupu (řádky = odjezdy, sloupce = linka/čas/směr/
 nástupiště). Samostatné rozhodnutí - ověřit, zda je slovenský zákazník live use case
 (open question v `legacy-nahrada.md`).

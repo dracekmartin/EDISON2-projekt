@@ -255,6 +255,20 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuté = každý směr na vlastní stránce."
     d arr.%Push(pObou)
 
+    // Turnusy ke spojům: řádky s označením turnusu pod čísly spojů (legacy in("A",2,"arr",6),
+    // JRapiLinPrtWin.mac:2684). Turnusy nejsou v `^JRL` - drží je jiný modul a tahají se voláním
+    // `ALVA.ADMAIN.MLAPI.gSplTur`, které **stojí 40-550 ms na linku** (změřeno sondou 28. 8.).
+    // Proto je to parametr, ne trvalá součást dat: kdo turnusy netiskne, nemá půl sekundy platit.
+    // Tím se to zároveň zapíná stejnou pákou jako v legacy.
+    s pTur = ##class(%DynamicObject).%New()
+    s pTur.name         = "TURNUSY_KE_SPOJUM"
+    s pTur.label        = "Turnusy ke spojům"
+    s pTur.type         = "bool"
+    s pTur.group        = "Linkový JŘ"
+    s pTur.defaultValue = "false"
+    s pTur.description  = "Pod čísla spojů se přidají řádky s označením turnusu, ve kterém spoj jede. Načtení turnusů je pomalejší, proto je vypnuté."
+    d arr.%Push(pTur)
+
     // Tvar názvu zastávky. ⚠️ **Výchozí „Plný CIS", jinak než u vývěsky**, kde je „Zkrácený":
     // starý linkový tisk skládá název čárkami a prázdnou část obce nechává jako dvojčárku
     // („Český Krumlov,,aut. nádraží"), kdežto starý vývěskový modul ji srážel. Ty dva staré moduly
@@ -431,16 +445,17 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // Obousměrný tisk: jedna stránka se spoji obou směrů nad společným seznamem zastávek.
         // Bool parametry chodí jako "true"/"false", starší klienti posílali "True" - proto tolerantně.
         s obousmerne = ($zcvt($g(^||ML("IN","OBOUSMERNY_TISK")),"L") = "true")
+        s sTurnusy = ($zcvt($g(^||ML("IN","TURNUSY_KE_SPOJUM")),"L") = "true")
         i obousmerne {
             // Pořadí zastávek se bere ze směru „tam"; opačný směr se na tytéž řádky zarovná podle
             // pořadí zastávky. Linka obsluhovaná jen jedním směrem tím vyjde jako dnes - druhá
             // strana prostě nemá sloupce a prvek ji nenakreslí.
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 1)
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 1, sTurnusy)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
         else {
             f smer = "T", "Z" {
-                s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu)
+                s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 0, sTurnusy)
                 i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
             }
         }
@@ -509,7 +524,7 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 /// `obousmerne` = spoje **obou** směrů nad jedním seznamem zastávek (parametr „Obousměrný tisk").
 /// Zastávkové řádky se staví pro `smer`, spoje se přiberou i z opačného směru a každý nese `SMER`.
 /// Server tím posílá jen fakta - o tom, který směr se kreslí vlevo, rozhoduje prvek.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu, obousmerne As %Boolean = 0) As %DynamicObject
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu, obousmerne As %Boolean = 0, sTurnusy As %Boolean = 0) As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     // U obousměrné stránky stačí spoje v jednom ze směrů - kdyby se ptalo jen na `smer`, linka
@@ -638,6 +653,10 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     // **pořadí zastávky** (`wMap(pp)` v `BuildSpoj`), ne podle pozice ve směru, takže spoje
     // opačného směru sednou na tentýž `rowMeta` bez jakéhokoli přepočtu.
     s smeryVeta = $s(obousmerne:"T,Z", 1:smer)
+    // Turnusy se tahají **jednou na linku**, ne per spoj - je to volání do jiného modulu (viz
+    // NactiTurnusy) a per spoj by z jednoho dotazu bylo padesát.
+    k turnusySpoju
+    i sTurnusy d ..NactiTurnusy(dataDB, sku, lin, .turnusySpoju)
     f smerIdx = 1:1:$l(smeryVeta, ",") {
     s smerSpoju = $p(smeryVeta, ",", smerIdx)
     k serazeneSpoje
@@ -665,6 +684,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
             else { s skupiny = ..ZarazeniSpojeKnizni(deleni, plk) }
             i (","_skupiny_",") '[ (","_skupina_",") continue
             s spojObj = ..BuildSpoj(dataDB, sku, lin, smerSpoju, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy)
+            i spojObj '= "" d ..PridejTurnusySpoje(spojObj, .turnusySpoju, sp)
             i spojObj '= "" d spoje.%Push(spojObj)
         }
     }
@@ -991,6 +1011,70 @@ ClassMethod CasProRazeni(cas As %String) As %String
 {
     i (cas = "") || (cas = "<") || (cas = "|") q ""
     q +$p(cas,"/",1)
+}
+
+/// Turnusy všech spojů linky: `turnusy(<číslo spoje>, <označení turnusu>) = ""`.
+///
+/// Turnusy **nejsou v `^JRL`** - drží je modul turnusů a vytahují se voláním
+/// `ALVA.ADMAIN.MLAPI.gSplTur` (týmž, jaké volá starý tisk, `JRapiLinPrtWin.mac:2697`).
+/// Odpověď má tvar `out("arr",1,linka,spoj,zpracování,turnus,datum)`; jeden spoj může být
+/// v několika turnusech i v několika zpracováních, proto se **sjednocuje podle označení**
+/// (stejně jako legacy - to má u spoje týž seznam).
+///
+/// ⚠️ **Datum platnosti bere z linky** (`PATCH,"Plati"`), ne dnešní - turnus se hledá ke dni,
+/// ke kterému platí jízdní řád. Linka bez datumu platnosti se dotázat nedá, tam turnusy nebudou.
+ClassMethod NactiTurnusy(dataDB As %String, sku As %String, lin As %String, ByRef turnusy)
+{
+    k turnusy
+    s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
+    s dh = ..DatumNaDh($p(plati,"~",1))
+    q:dh=""
+    k tin, tout
+    f smerSp = "T", "Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,smerSp,sp))
+            q:sp=""
+            continue:'$isvalidnum(sp)
+            s tin("arr", 1, +lin, sp) = ""
+        }
+    }
+    q:'$d(tin)
+    s chyba = ##class(ALVA.ADMAIN.MLAPI).gSplTur(dataDB, dataDB, dh, .tin, .tout)
+    // Chyba se **nepolyká**: uživatel si turnusy vyžádal parametrem, takže tisk bez nich by byl
+    // tichý fallback - pozná se až na papíře, že tam nejsou.
+    i +chyba $$$ThrowStatus($$$ERROR($$$GeneralError, "turnusy ke spojům: "_$p(chyba,"~",2)))
+    s sp = ""
+    f {
+        s sp = $o(tout("arr",1,+lin,sp))
+        q:sp=""
+        s zp = ""
+        f {
+            s zp = $o(tout("arr",1,+lin,sp,zp))
+            q:zp=""
+            s tu = ""
+            f {
+                s tu = $o(tout("arr",1,+lin,sp,zp,tu))
+                q:tu=""
+                s turnusy(+sp, tu) = ""
+            }
+        }
+    }
+}
+
+/// Doplní spoji pole `TURNUSY` (označení turnusů v pořadí číselníku). Spoj bez turnusu klíč
+/// vůbec nedostane - aditivní wire změna (R3), starší klient ho ignoruje.
+ClassMethod PridejTurnusySpoje(spojObj As %DynamicObject, ByRef turnusy, sp As %String)
+{
+    q:'$d(turnusy(+sp))
+    s arr = ##class(%DynamicArray).%New()
+    s tu = ""
+    f {
+        s tu = $o(turnusy(+sp, tu))
+        q:tu=""
+        d arr.%Push(tu)
+    }
+    d spojObj.%Set("TURNUSY", arr)
 }
 
 /// Sestaví JSON objekt jednoho spoje (sloupec matice): řádek platnosti (plný klíčový systém

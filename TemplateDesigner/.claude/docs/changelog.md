@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-28 (8) - ✨ turnusy ke spojům v linkovém JŘ (`L6c`, první část)
+
+Nový parametr sestavy **„Turnusy ke spojům"**: pod čísla spojů se přidají řádky s označením turnusu,
+ve kterém spoj jede („110.01"). Řádků je tolik, kolik turnusů má **nejbohatší** spoj, spoje s méně
+turnusy mají zbylé řádky prázdné - a jsou **nad** řádkem platnosti, jak to má starý engine v kontraktu
+řádků (`1` číslo spoje → `1.001xx` turnusy → `1.1` platnost → `1.9` negativní značky).
+
+**Proč parametr a ne trvalá součást dat:** turnusy nejsou v `^JRL`, tahají se dotazem do modulu
+turnusů (`gSplTur` - týmž, jaký volá starý tisk) a ten **stojí 40-550 ms na linku** (změřeno sondou).
+Kdo turnusy netiskne, nemá půl sekundy platit. Legacy to zapíná stejnou pákou.
+
+⚠️ **Starý modul turnusy netiskne - má v tom chybu.** Do dotazu posílá číslo linky v indexovém tvaru
+s nulami („0108360"), ale odpověď se filtruje číslem z turnusového záznamu (`108360`), takže se nic
+nespáruje a `TUmax` zůstane 0. Doloženo dvakrát: pracovní global starého enginu po běhu (`TUmax=0`)
+a sonda oběma tvary („0108360" → 0 spojů, `108360` → 3 spoje). **Bug-kompatibilní nejsme** - featura
+má tisknout. Důsledek pro `R6`: **hodnoty se neověřují oraclem** (není proti čemu), ale proti
+**témuž zdroji, jaký volá legacy** - stejné datum platnosti linky, stejné sjednocení podle označení.
+Pozice řádků je odvozená z kontraktu enginu, ne z výstupu. Oracle test zůstává a přeskočí se, dokud
+starý modul nic nevytiskne; kdyby se spravil, porovnání se rozjede samo.
+
+**Zmenšení textu na šířku sloupce vyšlo zdarma:** legacy pro turnusy používá „zmenšovaný text na
+šířku sloupce" (typ položky 5) a náš `CellRenderer` zmenšuje každou buňku sám. Označení jako
+„51164.02" se tedy vejde do úzkého sloupce spoje bez zásahu.
+
+Ověřeno: .NET **1240/1240**, Caché **137/137**, 5 nových testů prvku + 4 datové. Mutacemi: počet
+řádků z prvního spoje místo maxima, turnusy za platností, dorovnání opakováním, nepočítat výšku -
+každou chytil právě ten test, který ji chytit měl. Caché mutace „parametr ignorovat a tahat vždy"
+padne kromě datového testu i **na třech zlatých odtiscích**, takže na neopatrné zapnutí je pojistka
+i tam.
+
+⚠️ **Mutační skript musí vynutit rebuild.** `shutil.move` vrátil zdroj s **původním časem**, takže
+MSBuild považoval zmutovanou DLL za aktuální a testy pak běžely proti ní - červený test vypadal
+zeleně a naopak. Do skriptu proto patří `dotnet build -t:Rebuild` před každým během.
+
 ## 2026-08-28 (7) - 🔁 obousměrný tisk: strany prohozené podle tisku ze starého modulu
 
 Jan vytiskl obousměrný JŘ ve starém modulu (linka `0680042`, 1+1 spoje) a papír rozhodl otázku, kterou

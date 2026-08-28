@@ -1178,4 +1178,163 @@ ClassMethod PocetZastavek(db As %String, sku As %String, lin As %String) As %Int
 	quit pocet
 }
 
+/// **Záleží modulu turnusů na tvaru čísla linky?** (`L6c`) Klíč `^JRL` je doplněný nulami
+/// („0108360"), ale odpověď `gSplTur` se filtruje číslem z turnusového záznamu - když se ty dva
+/// tvary rozejdou, vypadne prázdno. Sonda zkusí oba tvary.
+ClassMethod TurnusyTvarLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN", "DB"), "CB_CSADAD")
+		set sku = $get(^||ML("IN", "SKU"), 1)
+		set lin = $get(^||ML("IN", "LIN"), "0108360")
+		set plati = $get(^[db]JRL(sku, lin, "PATCH", "Plati"))
+		set dh = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).DatumNaDh($piece(plati, "~", 1))
+		kill ^||ML
+		set ^||ML("OUT", $increment(^||ML("OUT"))) = "linka "_lin_" platí od "_$piece(plati, "~", 1)_" ($H "_dh_")"
+		for tvar = 1, 2 {
+			set klic = $select(tvar=1:lin, 1:+lin)
+			kill tin, tout
+			set sp = ""
+			for  {
+				set sp = $order(^[db]JRL(sku, lin, "T", sp))
+				quit:sp=""
+				continue:'$isvalidnum(sp)
+				set tin("arr", 1, klic, sp) = ""
+			}
+			set chyba = ##class(ALVA.ADMAIN.MLAPI).gSplTur(db, db, dh, .tin, .tout)
+			set nalezeno = 0, l = ""
+			for  {
+				set l = $order(tout("arr", 1, l))
+				quit:l=""
+				set s2 = ""
+				for  {
+					set s2 = $order(tout("arr", 1, l, s2))
+					quit:s2=""
+					set nalezeno = nalezeno + 1
+				}
+			}
+			set txt = "klíč linky """_klic_""": chyba="_+chyba_", spojů s turnusem "_nalezeno
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// **Kde jsou turnusy ke spojům a co ten dotaz stojí** (`L6c`).
+///
+/// Turnusy nejsou v `^JRL` - drží je jiný modul a legacy si je tahá voláním
+/// `ALVA.ADMAIN.MLAPI.gSplTur` (`JRapiLinPrtWin.mac:2697`), které si legacy **zapíná
+/// nastavením** (`in("A",2,"arr",6)`). Sonda odpovídá na dvě otázky, na kterých závisí
+/// návrh: **jak vypadá označení turnusu** (tiskne se přímo, takže o jeho tvaru nemáme
+/// co rozhodovat) a **jak dlouho volání trvá** (podle toho, jestli si ho můžeme dovolit
+/// vždycky, nebo ho musí zapínat parametr sestavy jako v legacy).
+ClassMethod TurnusyVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		set nalezeno = 0
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set prohledano = 0, nalezenoVeFirme = 0
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					quit:prohledano'<25
+					quit:nalezenoVeFirme'<3
+					continue:'$data(^[db]JRL(sku, lin, "I"))
+					set prohledano = prohledano + 1
+					set popis = ..TurnusyLinky(db, sku, lin)
+					continue:popis=""
+					set nalezenoVeFirme = nalezenoVeFirme + 1
+					set nalezeno = nalezeno + 1
+					set txt = db_" skupina "_sku_" linka "_lin_": "_popis
+					set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+				}
+				quit:prohledano'<25
+				quit:nalezenoVeFirme'<3
+			}
+			if nalezenoVeFirme = 0 {
+				set txt = db_": v prvních "_prohledano_" linkách žádné turnusy"
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+			}
+		}
+		if nalezeno = 0 set ^||ML("OUT", $increment(^||ML("OUT"))) = "turnusy nenalezeny nikde"
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Turnusy spojů jedné linky: popis „spojů s turnusem / nejvíc na spoj / vzorky / ms",
+/// prázdno když linka turnusy nemá. Datum platnosti bere stejně jako legacy - z `PATCH,"Plati"`.
+ClassMethod TurnusyLinky(db As %String, sku As %String, lin As %String) As %String
+{
+	set plati = $get(^[db]JRL(sku, lin, "PATCH", "Plati"))
+	set dh = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).DatumNaDh($piece(plati, "~", 1))
+	quit:dh="" ""
+	kill tin, tout
+	set pocetSpoju = 0
+	for smer = "T", "Z" {
+		set sp = ""
+		for  {
+			set sp = $order(^[db]JRL(sku, lin, smer, sp))
+			quit:sp=""
+			continue:'$isvalidnum(sp)
+			set tin("arr", 1, +lin, sp) = ""
+			set pocetSpoju = pocetSpoju + 1
+		}
+	}
+	quit:pocetSpoju=0 ""
+	set t0 = $zhorolog
+	set chyba = ##class(ALVA.ADMAIN.MLAPI).gSplTur(db, db, dh, .tin, .tout)
+	set ms = $fnumber(($zhorolog - t0) * 1000, "", 0)
+	quit:+chyba "gSplTur chyba: "_$piece(chyba, "~", 2)
+	set spojuSTurnusem = 0, maxNaSpoj = 0, vzorky = ""
+	set sp = ""
+	for  {
+		set sp = $order(tout("arr", 1, +lin, sp))
+		quit:sp=""
+		kill turnusy
+		set zp = ""
+		for  {
+			set zp = $order(tout("arr", 1, +lin, sp, zp))
+			quit:zp=""
+			set tu = ""
+			for  {
+				set tu = $order(tout("arr", 1, +lin, sp, zp, tu))
+				quit:tu=""
+				set turnusy(tu) = ""
+			}
+		}
+		set pocet = 0, tu = ""
+		for  {
+			set tu = $order(turnusy(tu))
+			quit:tu=""
+			set pocet = pocet + 1
+			continue:$length(vzorky,";")>5
+			set vzorky = vzorky_$select(vzorky'="":";", 1:"")_tu
+		}
+		continue:pocet=0
+		set spojuSTurnusem = spojuSTurnusem + 1
+		if pocet > maxNaSpoj set maxNaSpoj = pocet
+	}
+	quit:spojuSTurnusem=0 ""
+	set txt = spojuSTurnusem_"/"_pocetSpoju_" spojů má turnus"
+	set txt = txt_", nejvíc na spoj "_maxNaSpoj
+	set txt = txt_", vzorky "_vzorky
+	set txt = txt_", dotaz "_ms_" ms"
+	quit txt
+}
+
 }
