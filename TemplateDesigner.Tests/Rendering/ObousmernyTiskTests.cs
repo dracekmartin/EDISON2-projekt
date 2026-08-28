@@ -1,0 +1,282 @@
+using System.Text.Json.Nodes;
+using SkiaSharp;
+using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
+
+namespace TemplateDesigner.Tests.Rendering;
+
+/// <summary>
+/// Obousměrný tisk (`L6b`) - spoje opačného směru <b>nalevo</b> od zastávek.
+/// </summary>
+/// <remarks>
+/// Data přicházejí jako <b>jedna</b> stránka, kde každý spoj nese `SMER`; o tom, která strana je
+/// která, rozhoduje prvek (požadavek Jan 28. 8.: layout drží klient, ne Caché). Hlavní směr je ten
+/// <b>prvního</b> spoje - seznam zastávek je v jeho pořadí.
+/// <para>⚠️ Fixtury jsou schválně <b>skoro prázdné</b>: v obrázku je vždy jen jedna věc, takže
+/// „kde je inkoust" znamená „kde je ta věc". První verze těchto testů měřila jen <b>množství</b>
+/// inkoustu a <b>neprošla ani jedna ze čtyř mutací</b> - při dvou spojích má tabulka stejnou šířku,
+/// ať jsou sloupce vedle sebe, nebo na obou stranách zastávek.</para>
+/// </remarks>
+public class ObousmernyTiskTests
+{
+    private const float MmToPx = 10f;
+    private const float SirkaZastavky = 30f;
+    private const float SirkaSpoje = 10f;
+
+    private static LineTableElement Prvek() => new()
+    {
+        X = 0, Y = 0, Width = 120, Height = null,
+        HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 7 },
+        DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
+        HighlightOddTc = false,
+        ShowGroupHeaders = false,
+        Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FFFFFFFF", Width = 0.2f },
+        Columns =
+        [
+            new StopColumn { Key = ColumnKeys.StopName, Header = "", Width = SirkaZastavky, Visible = true },
+            new StopColumn { Key = LineTableElement.TripKey, Header = "", Width = SirkaSpoje,
+                Visible = true, Alignment = TextHorizontalAlignment.Center },
+        ],
+    };
+
+    /// <summary>
+    /// Fixtura, ve které je vidět <b>jen jedna</b> věc: buď názvy zastávek, nebo časy jednoho směru.
+    /// </summary>
+    private static DataContext Data(bool obousmerne, bool nazvyZastavek, bool casyTam, bool casyZpet)
+    {
+        string Nazev(string n) => nazvyZastavek ? n : "";
+        JsonArray Casy(bool ano, string a, string b, string c) =>
+            ano ? new JsonArray(a, b, c) : new JsonArray("", "", "");
+
+        var spoje = new List<DataContext>
+        {
+            RenderSnapshot.Row(("CISLO_SPOJE", ""), ("SKUPINA", "1"), ("SMER", "T"),
+                ("CASY", Casy(casyTam, "8:00", "8:20", "8:40"))),
+        };
+        if (obousmerne)
+            spoje.Add(RenderSnapshot.Row(("CISLO_SPOJE", ""), ("SKUPINA", "1"), ("SMER", "Z"),
+                ("CASY", Casy(casyZpet, "9:40", "9:20", "9:00"))));
+
+        return RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", Nazev("Kroměříž")), ("PORADI", "1")),
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", Nazev("Hulín")), ("PORADI", "2")),
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", Nazev("Přerov")), ("PORADI", "3")),
+            ]),
+            ("SPOJE", spoje),
+            ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", ""), ("PORADI", "1"))]));
+    }
+
+    /// <summary>
+    /// Zastávky se zrcadleným blokem <b>posunou doprava</b> přesně o šířku jeho sloupce.
+    /// </summary>
+    /// <remarks>
+    /// V obrázku jsou jen názvy zastávek (časy i čísla spojů prázdné), takže první inkoust = levá
+    /// hrana sloupce zastávek. Bez zrcadlení začíná na nule, se zrcadlením za jeho sloupcem.
+    /// </remarks>
+    [Fact]
+    public void ZastavkySePosunouDopravaOSirkuZrcadlenehoSloupce()
+    {
+        using var jednosmerne = Vykresli(Prvek(),
+            Data(obousmerne: false, nazvyZastavek: true, casyTam: false, casyZpet: false));
+        using var obousmerne = Vykresli(Prvek(),
+            Data(obousmerne: true, nazvyZastavek: true, casyTam: false, casyZpet: false));
+
+        float bez = PrvniInkoustXMm(jednosmerne);
+        float se = PrvniInkoustXMm(obousmerne);
+
+        Assert.True(bez < 1.5f, $"bez zrcadlení mají zastávky začínat u nuly, začínají na {bez:0.##} mm");
+        Assert.True(se > SirkaSpoje - 0.5f,
+            $"se zrcadlením mají zastávky začínat za jeho sloupcem ({SirkaSpoje} mm), začínají na {se:0.##} mm");
+    }
+
+    /// <summary>
+    /// Časy opačného směru se kreslí <b>nalevo</b> od zastávek, ne mezi sloupce spojů vpravo.
+    /// </summary>
+    /// <remarks>
+    /// V obrázku jsou jen časy zpětného spoje (názvy zastávek i časy tam prázdné), takže veškerý
+    /// inkoust musí ležet v levém pásu. Kdyby se zrcadlený spoj kreslil jako obyčejný sloupec,
+    /// vyšel by vpravo za zastávkami, tedy nad 40 mm.
+    /// </remarks>
+    [Fact]
+    public void CasyOpacnehoSmeru_JsouNaleveOdZastavek()
+    {
+        using var bmp = Vykresli(Prvek(),
+            Data(obousmerne: true, nazvyZastavek: false, casyTam: false, casyZpet: true));
+
+        float prvni = PrvniInkoustXMm(bmp);
+        float posledni = PosledniInkoustXMm(bmp);
+
+        Assert.True(prvni >= 0f, "časy zpětného spoje se nenakreslily vůbec");
+        Assert.True(posledni < SirkaSpoje + 0.5f,
+            $"časy zpětného spoje sahají až na {posledni:0.##} mm - nejsou v levém pásu (0-{SirkaSpoje} mm)");
+    }
+
+    /// <summary>
+    /// Časy hlavního směru zůstávají <b>vpravo</b> za zastávkami - kontrola druhé strany.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Názvy zastávek tu být **musí**: s prázdnými by sloupec zastávek zmizel („prázdný sloupec
+    /// se netiskne") a s ním i celé odsazení, které se měří. Na to naletěla první verze testu.
+    /// </remarks>
+    [Fact]
+    public void CasyHlavnihoSmeru_ZustavajiVpravo()
+    {
+        using var bmp = Vykresli(Prvek(),
+            Data(obousmerne: true, nazvyZastavek: true, casyTam: true, casyZpet: false));
+
+        float posledni = PosledniInkoustXMm(bmp);
+
+        Assert.True(posledni > SirkaSpoje + SirkaZastavky,
+            $"nejpravější inkoust je na {posledni:0.##} mm - časy směru tam nejsou za zastávkami "
+            + $"(ty končí na {SirkaSpoje + SirkaZastavky} mm)");
+    }
+
+    /// <summary>
+    /// Jednosměrná stránka se <b>nezmění</b> - `SMER` u spoje posílá server vždy, i pro ni.
+    /// </summary>
+    [Fact]
+    public void JednosmernaStranka_KresliJakoDosud()
+    {
+        var bezSmeru = RenderSnapshot.Data(
+            ("ZASTAVKY", [RenderSnapshot.Row(("NAZEV_ZASTAVKY", "A"), ("PORADI", "1"))]),
+            ("SPOJE", [RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"),
+                ("CASY", new JsonArray("8:00")))]),
+            ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1"))]));
+        var seSmerem = RenderSnapshot.Data(
+            ("ZASTAVKY", [RenderSnapshot.Row(("NAZEV_ZASTAVKY", "A"), ("PORADI", "1"))]),
+            ("SPOJE", [RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"), ("SMER", "T"),
+                ("CASY", new JsonArray("8:00")))]),
+            ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1"))]));
+
+        using var a = Vykresli(Prvek(), bezSmeru);
+        using var b = Vykresli(Prvek(), seSmerem);
+
+        Assert.Equal(a.Width, b.Width);
+        Assert.Equal(a.Height, b.Height);
+        for (int y = 0; y < a.Height; y++)
+            for (int x = 0; x < a.Width; x++)
+                if (a.GetPixel(x, y) != b.GetPixel(x, y))
+                    Assert.Fail($"jednosměrná stránka se změnila kvůli poli SMER ({x / MmToPx:0.#}, {y / MmToPx:0.#} mm)");
+    }
+
+    /// <summary>
+    /// Blok musí být širší o zrcadlený sloupec - jinak by se do šířky prvku počítala jen jedna strana
+    /// a tabulka by přetekla.
+    /// </summary>
+    [Fact]
+    public void SirkaBloku_PocitaObeStrany()
+    {
+        var prvek = Prvek();
+        var data = Data(obousmerne: true, nazvyZastavek: true, casyTam: true, casyZpet: true);
+
+        float sirka = prvek.Rozvrzeni(data).Max(b => b.SirkaMm);
+
+        Assert.Equal(SirkaSpoje + SirkaZastavky + SirkaSpoje, sirka, 0.01f);
+    }
+
+    /// <summary>
+    /// Šipka směru je v popisném bloku, takže se musí posunout <b>s ním</b> - ne zůstat na nule.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Tohle je jediná cesta, jak se pozná posun popisného bloku: buňky si pozici počítá
+    /// `ColumnRenderer` sekvenčně, kdežto šipka a piktogram zastávky se kreslí přes souřadnici
+    /// z mřížky. Bez tohohle testu mutace „popisný blok se neposune" prošla.
+    /// </remarks>
+    [Fact]
+    public void SipkaSmeru_SePosuneSPopisnymBlokem()
+    {
+        var prvek = Prvek();
+        prvek.Columns.Insert(0, new StopColumn
+        {
+            Key = ColumnKeys.Arrow, Header = "", Width = 4f, Visible = true,
+        });
+
+        // Jen šipka a názvy zastávek; časy prázdné, ať je inkoust jen tam, kde má být.
+        using var bmp = Vykresli(prvek,
+            Data(obousmerne: true, nazvyZastavek: true, casyTam: false, casyZpet: false));
+
+        float prvni = PrvniInkoustXMm(bmp);
+        Assert.True(prvni > SirkaSpoje - 0.5f,
+            $"první inkoust je na {prvni:0.##} mm - popisný blok (a s ním šipka) se neposunul "
+            + $"za zrcadlený sloupec ({SirkaSpoje} mm)");
+    }
+
+    /// <summary>
+    /// Do šířky prvku se musí vejít <b>obě</b> strany - jinak tabulka přeteče přes jeho hranu.
+    /// </summary>
+    /// <remarks>
+    /// Prvek je schválně těsný: na jednu stranu by se dva sloty vešly, na obě ne. Kdyby dělení
+    /// počítalo jen jednu stranu, vyrobí jeden blok o čtyřech sloupcích spojů a ten se nevejde.
+    /// </remarks>
+    [Fact]
+    public void DeleniNaBloky_PocitaSloupceObouStran()
+    {
+        var prvek = Prvek();
+        prvek.Width = SirkaZastavky + 2 * SirkaSpoje;   // 50 mm: jeden slot na obě strany, ne dva
+
+        var data = RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Přerov"), ("PORADI", "2")),
+            ]),
+            ("SPOJE",
+            [
+                RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"), ("SMER", "T"),
+                    ("CASY", new JsonArray("8:00", "8:40"))),
+                RenderSnapshot.Row(("CISLO_SPOJE", "3"), ("SKUPINA", "1"), ("SMER", "T"),
+                    ("CASY", new JsonArray("9:00", "9:40"))),
+                RenderSnapshot.Row(("CISLO_SPOJE", "2"), ("SKUPINA", "1"), ("SMER", "Z"),
+                    ("CASY", new JsonArray("10:40", "10:00"))),
+                RenderSnapshot.Row(("CISLO_SPOJE", "4"), ("SKUPINA", "1"), ("SMER", "Z"),
+                    ("CASY", new JsonArray("11:40", "11:00"))),
+            ]),
+            ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", ""), ("PORADI", "1"))]));
+
+        float nejsirsi = prvek.Rozvrzeni(data).Max(b => b.SirkaMm);
+        Assert.True(nejsirsi <= prvek.Width + 0.01f,
+            $"blok je široký {nejsirsi:0.##} mm, prvek jen {prvek.Width:0.##} mm - dělení nepočítá "
+            + "sloupce obou stran");
+
+        using var bmp = Vykresli(prvek, data);
+        for (int x = (int)((prvek.Width + 0.5f) * MmToPx); x < bmp.Width; x++)
+            for (int y = 0; y < bmp.Height; y++)
+                if (JeInkoust(bmp.GetPixel(x, y)))
+                    Assert.Fail($"tabulka přetekla přes hranu prvku - inkoust na {x / MmToPx:0.#} mm");
+    }
+
+    // ── měření ────────────────────────────────────────────────────────────────
+
+    private static bool JeInkoust(SKColor c) => c.Red < 100 && c.Green < 100 && c.Blue < 100;
+
+    /// <summary>X prvního tmavého pixelu (mm), -1 když v obrázku není žádný.</summary>
+    private static float PrvniInkoustXMm(SKBitmap bmp)
+    {
+        for (int x = 0; x < bmp.Width; x++)
+            for (int y = 0; y < bmp.Height; y++)
+                if (JeInkoust(bmp.GetPixel(x, y))) return x / MmToPx;
+        return -1f;
+    }
+
+    /// <summary>X posledního tmavého pixelu (mm), -1 když v obrázku není žádný.</summary>
+    private static float PosledniInkoustXMm(SKBitmap bmp)
+    {
+        for (int x = bmp.Width - 1; x >= 0; x--)
+            for (int y = 0; y < bmp.Height; y++)
+                if (JeInkoust(bmp.GetPixel(x, y))) return x / MmToPx;
+        return -1f;
+    }
+
+    private static SKBitmap Vykresli(LineTableElement prvek, DataContext data)
+    {
+        int w = (int)((prvek.Width + 4f) * MmToPx);
+        int h = (int)((prvek.CalculateHeightFromData(data) + 6f) * MmToPx);
+        var bmp = new SKBitmap(w, h, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using var canvas = new SKCanvas(bmp);
+        canvas.Clear(SKColors.White);
+        prvek.Render(new RenderContext(canvas, MmToPx, data));
+        return bmp;
+    }
+}

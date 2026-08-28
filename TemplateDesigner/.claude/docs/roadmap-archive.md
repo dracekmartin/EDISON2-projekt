@@ -1,5 +1,22 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L6b` - obousměrný tisk (hotovo 28. 8. 2026)
+
+Oba směry na jedné sestavě: spoje opačného směru nalevo od zastávek. **Parametr sestavy, ne tichý
+fallback** (rozhodnutí Jan) - starý modul zrcadlo vypne, když se blok nevejde na stránku bez řezu,
+ale ten fallback mít **musel**, protože tiskl naslepo do pevné stránky.
+
+**Server posílá jen fakta, tvar drží klient** (požadavek Jan): jedna stránka, všechny spoje obou
+směrů nad společným seznamem zastávek, každý se svým `SMER`. Návrh se dvěma kolekcemi byl zahozen -
+propašovával layout do dat.
+
+Detail v changelogu 28. 8. (4) a (5). Zbývá z toho **vlastní šipka směru pro zrcadlený blok**
+(legacy má na to druhý sloupec, typ 8) a dorovnání prázdnými sloupci jen vpravo - vedeno u `L6c`.
+
+Původní zadání:
+
+| **L6b** | **Obousměrný tisk** (legacy zrcadlené sloupce spojů, typ 9). Oba směry na jedné stránce: opačný směr dostane sloupce spojů **nalevo od názvů zastávek** plus zrcadlenou šipku. Data už oba směry posílají (stránka per směr), takže dnešní stav = legacy fallback. ✅ **Rozhodnuto (Jan 28. 8.): bude to parametr sestavy, ne tichý fallback** - starý modul zrcadlo tiše vypne, když se společný blok nevejde na stránku bez řezu (`:598-628`), ale ten fallback mít **musel**, protože tiskl naslepo do pevné stránky; náš uživatel vidí náhled a rozhodne se sám. Je to **vědomá odchylka od legacy**, ne dluh. Druhá půlka pravidla (v jednom směru nejsou spoje → zrcadlo ne) platí a vyjde skoro sama z „prázdný sloupec se netiskne". ⚠️ Prvek dnes spoje nalevo neumí - největší strukturální zásah do `LineTableElement` od jeho vzniku; zlevnilo ho soustředění souřadnic do `SloupcovaMrizka` (27. 8.). | M–L |
+
 ## `L6a` - šipka směru u zastávek v linkovém JŘ (hotovo 28. 8. 2026)
 
 Sloupec se svislou šipkou přes řádky zastávek. **Kreslí se naší vektorovou šipkou ze zastávkového

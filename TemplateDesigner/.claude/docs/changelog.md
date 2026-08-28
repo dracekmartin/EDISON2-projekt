@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-28 (5) - ✨ obousměrný tisk: spoje opačného směru nalevo od zastávek (`L6b` hotovo)
+
+Druhá polovina `L6b` - **kreslení**. Se zapnutým parametrem „Obousměrný tisk" dostane linková tabulka
+sloupce spojů **po obou stranách** zastávek: hlavní směr vpravo jako dosud, opačný nalevo (legacy
+sloupec „Spoj před zastávkou", typ 9). Zrcadlený blok dostal i vlastní pás skupin dnů, čísla spojů,
+řádek platnosti se značkami a značky návaznosti u času - jinak by jeho sloupce neřekly, ve které dny
+spoj jede.
+
+**Která strana je která, rozhoduje prvek** (tvůj požadavek): hlavní směr je ten **prvního** spoje,
+protože seznam zastávek je v jeho pořadí. Nenastavuje se to - dvě volby téhož (pořadí zastávek ×
+strana) by si šlapaly.
+
+⚠️ **Dělení na bloky jde po „slotech", ne po spojích.** Blok bere týž úsek z **obou** stran, takže
+je z něj celá tabulka; kdyby se dělilo po jednom seznamu, první blok by vyšel jen se spoji tam
+a druhý jen se spoji zpět. Do šířky se počítají sloupce obou stran - jinak zrcadlený blok tabulku
+vystrčí za hranu prvku.
+
+Ověřeno: .NET **1235/1235** + 709 + 620, Caché 133/133, mutací čtyř cest.
+
+⚠️ **První verze těchto testů byla bezcenná a odhalila to až mutace: neprošla ani jedna ze čtyř.**
+Měřily „je tam víc inkoustu", jenže při dvou spojích má tabulka **stejnou šířku i podobný inkoust**,
+ať jsou sloupce vedle sebe, nebo na obou stranách. Přepsané měří **polohu** nad skoro prázdnými
+fixturami (v obrázku je vždy jen jedna věc). Dvě mutace navíc nešly pokrýt vůbec, dokud nepřibyly
+testy na šipku (posun popisného bloku se pozná jen přes ni a přes piktogram zastávky - buňky si
+pozici počítají sekvenčně) a na těsnou šířku prvku.
+
+⚠️ **Druhá past ve fixtuře:** s prázdnými názvy zastávek **zmizí celý sloupec zastávek** („prázdný
+sloupec se netiskne"), takže se posune všechno a test měří něco jiného, než si myslí.
+
+**Co ještě chybí** (vědomě, ne dluh z nedbalosti): zrcadlený blok **nemá vlastní šipku směru** -
+legacy na to má druhý sloupec (typ 8), u nás je sloupec šipky jeden a ukazuje hlavní směr. A
+**dorovnání prázdnými sloupci** (#8372) doplňuje jen pravou stranu.
+
+
 ## 2026-08-28 (4) - ✨ data pro obousměrný tisk: oba směry na jedné stránce (`L6b`, 1/2)
 
 První polovina `L6b` - **datová**. Nový parametr sestavy **„Obousměrný tisk"** (výchozí vypnuto,
