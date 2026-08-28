@@ -6,11 +6,11 @@ namespace EDISONMAIN2
 {
     public partial class EDInputFormTestWindow : Window
     {
-        private FormInputTestWindowViewModel? _vm;
+        private EDInputFormTestViewModel? _vm;
 
         public EDInputFormTestWindow()
         {
-            DataContext = _vm = new FormInputTestWindowViewModel();
+            DataContext = _vm = new EDInputFormTestViewModel();
             InitializeComponent();
             TheInputForm.CacheClass = "ALVA.EDControls.EDInputForm.EDIFExample";
         }
