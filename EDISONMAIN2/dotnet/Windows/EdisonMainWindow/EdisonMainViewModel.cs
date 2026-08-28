@@ -76,7 +76,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Přepínač firem v horní liště (setter SelectedCompanyId ho spouští za binding).
         public ICommand SwitchCompanyCommand { get; }
         public ICommand LoginAsAnotherUserCommand { get; }
-        public ICommand ShowUserEditCommand { get; }
+        public ICommand ShowUserProfileCommand { get; }
         public ICommand ChangePasswordCommand { get; }
         // Kontextové menu stromu - výchozí okno (auto-open po loginu)
         public ICommand SetStartupWindowCommand { get; }
@@ -87,7 +87,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand ExpandSubtreeCommand { get; }
         public ICommand CollapseSubtreeCommand { get; }
         public ICommand ShowBgTasksCommand { get; }
-        public ICommand RefreshLicenseCommand { get; }
+        public ICommand RefreshLicenceCommand { get; }
         public ICommand ShowUsersLocksCommand { get; }
         public ICommand ShowUsersActivityCommand { get; }
         public ICommand FontSettingsCommand { get; }
@@ -274,7 +274,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Uživatel menu
             LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUserAsync);
-            ShowUserEditCommand           = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText())));
+            ShowUserProfileCommand        = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText())));
             ChangePasswordCommand         = Command(() =>
             {
                 bool? changed = WindowNavigator.ShowDialog(
@@ -297,7 +297,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Nástroje menu - Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
             ShowBgTasksCommand            = CommandAsync(() => LaunchDialogAsync("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
-            RefreshLicenseCommand         = CommandAsync(RefreshLicenceAsync);
+            RefreshLicenceCommand         = CommandAsync(RefreshLicenceAsync);
             // Admin-only - legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
             ShowUsersLocksCommand         = CommandAsync(() => LaunchModelessAsync("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
             ShowUsersActivityCommand      = CommandAsync(() => LaunchModelessAsync("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);

@@ -120,7 +120,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void RefreshLicense_LoadFailure_KeepsPreviousTrees()
+    public void RefreshLicence_LoadFailure_KeepsPreviousTrees()
     {
         // Táž firma i uživatel → předchozí strom je pořád platný. LoadAndFilterTree ho dřív
         // mazal PŘED requestem, takže selhání nechalo záložku trvale prázdnou.
@@ -130,7 +130,7 @@ public class EdisonMainViewModelTests
         var vm = CreateVM(popup: mockPopup, treeLoader: TreeFailingOnSecondLoad());
         Assert.Single(vm.MainMenuTree);   // předpoklad
 
-        vm.RefreshLicenseCommand.Execute(null);
+        vm.RefreshLicenceCommand.Execute(null);
 
         Assert.StartsWith("Turnusy", Assert.Single(vm.MainMenuTree).DisplayedName);
         mockPopup.Received(1).Error(Arg.Any<InvalidOperationException>());

@@ -113,7 +113,7 @@
             <MenuItem Header="Uživatel">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.User}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem Header="Přihlásit jiného uživatele" Command="{Binding LoginAsAnotherUserCommand}"/>
-                <MenuItem Header="Aktuální uživatel"          Command="{Binding ShowUserEditCommand}"/>
+                <MenuItem Header="Aktuální uživatel"          Command="{Binding ShowUserProfileCommand}"/>
                 <MenuItem Header="Změnit heslo"               Command="{Binding ChangePasswordCommand}"/>
             </MenuItem>
             <MenuItem Header="Spuštěné moduly" ItemsSource="{Binding RunningModules}">
@@ -145,7 +145,7 @@
             <MenuItem Header="Nástroje">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Tools}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem Header="Úlohy na pozadí"      Command="{Binding ShowBgTasksCommand}"/>
-                <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenseCommand}"/>
+                <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenceCommand}"/>
                 <Separator/>
                 <!-- Admin-only (command gate přes IsAdmin) - separator je odděluje od běžných nástrojů. -->
                 <MenuItem Header="Správa zámků"         Command="{Binding ShowUsersLocksCommand}"/>
