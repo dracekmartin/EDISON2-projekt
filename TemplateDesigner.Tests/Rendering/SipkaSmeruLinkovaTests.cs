@@ -117,26 +117,6 @@ public class SipkaSmeruLinkovaTests
                     Assert.Fail($"skrytý sloupec šipky mění obrázek na {x / MmToPx:0.#}, {y / MmToPx:0.#} mm");
     }
 
-    /// <summary>
-    /// Sloupec se v dialogu jmenuje <b>česky</b>, ne kódovým klíčem.
-    /// </summary>
-    /// <remarks>
-    /// Nález Jan 28. 8.: v dialogu svítilo „Arrow". Mapa lidských názvů (`FriendlyName`) propadá na
-    /// klíč sloupce, takže **každý nový klíč se tam musí doplnit** - jinak se do UI dostane anglický
-    /// kód. Termín „šipka směru" je shodný s vývěskou („Značky a šipka směru", „Barva šipky").
-    /// </remarks>
-    [Fact]
-    public void SloupecSeVDialoguJmenujeCesky()
-    {
-        var vm = new TemplateDesigner.LineTableColumnVM
-        {
-            Key = ColumnKeys.Arrow,
-            Header = "",
-        };
-
-        Assert.Equal("Šipka směru", vm.DisplayName);
-    }
-
     /// <summary>Výchozí stav je skrytý, aby migrace nezměnila vzhled hotových šablon.</summary>
     [Fact]
     public void VeVychozichSloupcich_JeSipkaSkryta() =>

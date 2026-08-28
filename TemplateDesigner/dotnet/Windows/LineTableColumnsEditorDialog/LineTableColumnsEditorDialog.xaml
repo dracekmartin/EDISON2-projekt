@@ -90,7 +90,12 @@
 
                             <Separator Margin="0,8,0,8"/>
 
-                            <TextBlock Text="Styl datových buněk" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding NazevZonyDat}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding NapovedaZonyDat}" FontStyle="Italic"
+                                       TextWrapping="Wrap" Margin="0,0,0,6"
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                       Visibility="{Binding MaNapoveduZonyDat, Converter={StaticResource BoolToVis}}"/>
                             <controls:CellStyleEditor
                                 DataContext="{Binding SelectedColumnVM.DataStyle}"
                                 EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"

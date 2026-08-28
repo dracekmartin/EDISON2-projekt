@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-28 (3) - 🐞 barva nastavená u šipky ji neobarvila (nešlo poznat, kterou zónou se řídí)
+
+Nález Jan: nastavil sloupci šipky **barvu textu** a šipka zůstala černá; barva se přitom projevila
+na textu záhlaví („Šipka"). Mechanicky to fungovalo správně - dialog má **dvě** zóny a šipka se
+kreslí přes datové řádky, takže poslouchá „Styl datových buněk", zatímco nastavená byla zóna záhlaví.
+
+Jenže **u sloupce, kde se v datech nekreslí žádný text, se ta cesta nedá uhádnout**, a to je vada
+dialogu, ne uživatele. Datová zóna proto u šipky:
+
+- se jmenuje **„Styl šipky"** místo „Styl datových buněk",
+- nabízí **jen barvu textu a pozadí** - font, řez, podtržení, zarovnání ani odsazení na vektorovou
+  šipku nemají vliv, takže tam jen mátly,
+- má pod sebou nápovědu „Šipka se kreslí barvou textu. Font ani zarovnání na ni nemají vliv."
+
+⚠️ Je to **první reálné použití** `CellStyleEditOptions` k per-kontextovému skrytí voleb; do teď byly
+všude `AllEnabled` a mechanismus čekal na první případ, kde nemá smysl nabízet všechno
+(`mvvm-patterns.md` s tím počítá).
+
+Ověřeno: .NET 1228/1228 + 709 + 620. Testy dialogu jsou v `Windows/`, ne u renderovacích - VM je bez
+WPF (R4), takže jde testovat přímo přes mock služeb.
+
+
 ## 2026-08-28 (2) - 🐞 sloupec šipky se v dialogu jmenoval „Arrow"
 
 Nález Jan: v dialogu sloupců svítil anglický kód. Mapa lidských názvů propadá u neznámého klíče
