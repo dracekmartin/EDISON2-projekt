@@ -63,6 +63,30 @@ public class AppSettingsLocalMergeTests
         Assert.False(target.TemplateChannel.Enabled);
     }
 
+    /// <summary>Přepínání firmy visí na vlastním klíči, ne na klíči k AI - jinak se z publikovaného
+    /// .exe nedá přepnout nikdy (klíč k AI žije jen v lokálním configu ve zdrojích).</summary>
+    [Fact]
+    public void ZapnutePrepinaniFirmySePrenese()
+    {
+        var (target, local) = Dvojice();
+        local.Dev.FirmSwitch = true;
+
+        AppSettings.MergeLocal(target, local);
+
+        Assert.True(target.Dev.FirmSwitch);
+    }
+
+    /// <summary>Výchozí stav je vypnuto - zákazník nástroj vidět nesmí.</summary>
+    [Fact]
+    public void PrepinaniFirmyJeVychoziVypnute()
+    {
+        var (target, local) = Dvojice();
+
+        AppSettings.MergeLocal(target, local);
+
+        Assert.False(target.Dev.FirmSwitch);
+    }
+
     /// <summary>Klíč k AI se slučoval už dřív - ať se to nerozbije při přidávání dalších oddílů.</summary>
     [Fact]
     public void KlicKAiSePoradPrenese()

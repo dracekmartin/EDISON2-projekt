@@ -1,5 +1,208 @@
 # Changelog
 
+## 2026-08-27 (8) - ✨ bez nadpisu se nad popisnými sloupci nekreslí nic (`L9-R4` rozhodnuto)
+
+Poslední otevřené rozhodnutí z `L9`: co má dělat pás nad popisnými sloupci, když je jeho popisek
+prázdný. Dosud se kreslila **prázdná šedá krabice**.
+
+**Rozhodl to legacy, ne vkus** (dotaz Jan: „řešilo se tohle nějak v legacy systému?"). Starý modul
+nad popisnými sloupci pás **vůbec nemá** - skupina odjezdů je v jeho kontraktu atribut *jen* sloupců
+spojů („pouze pro typ sloupce 7,9", `JRapiLinPrtWin.mac:246`), takže z popisných sloupců není z čeho
+ho nakreslit. Je to zároveň důvod původní stížnosti kolegy: „nelze mít jeden nadpis pro info
+sloupce" nebyla vada nastavení, ten pojem tam neexistoval.
+
+Nové chování je tedy obojí naráz:
+
+- **prázdný popisek = chování starého modulu** (nad popisnými sloupci nic, ani podbarvení),
+- **vyplněný popisek = featura nad rámec legacy**, objeví se, když si o ni uživatel řekne textem.
+
+⚠️ **Zaškrtávátko se nezavedlo, i když byl návrh** (Jan: „když si nejsme jistí, dává smysl to udělat
+na checkbox"). Podmínka „nejsme jistí" po přečtení legacy nepadla - a byla by to třetí volba k pásu
+vedle nadpisu a slití, která nastavuje něco, co se rozhodne samo z toho, jestli je text prázdný.
+
+Ověřeno: .NET 1211/1211 + 709 + 612, ověřeno mutací (s vrácenou šedou krabicí test padá). Případ,
+kdy popisek nemá **žádná** skupina, se nemění - tam se pás nekreslil ani dosud.
+
+
+## 2026-08-27 (7) - ✨ bezbariérové vozidlo se tiskne vozíčkem, ne zkratkou „BEV"
+
+Nález Jan na vzoru 940: „ve starém je ta ikonka vozíčku, teď vypíšeme textem BEV."
+
+Platilo u nás pravidlo „víceznakový kód je zkratka, ne piktogram" - a to je **proti starému
+modulu**: ten má celou rodinu atributů spoje v číselníku znaků jako **symboly**
+(`JRapiLinPrtWin.mac:1556` a dál; BEV je id 22 „bezbarierovy", CBE id 56 „castecne bezbarierovy
+vuz"). Pravidlo tedy padlo; rozhoduje jen povolený seznam a to, jestli je pozice ve fontu ověřená.
+
+- **BEV → vozíček**, **CBE → vozíček s doprovodem** (částečně bezbariérové vozidlo).
+- Platí to i v **legendě** poznámek, protože jde přes tutéž mapu značek.
+- Vedlejší efekt: v řádku platnosti zabere piktogram **méně místa** než tříznaková zkratka.
+
+Pozice ve fontu ověřená tak, jak to pravidlo u seznamu vyžaduje - vykreslením tabulky glyfů
+**v obou** fontech (CZ i SK): 72 je vozíček, 70 vozíček s doprovodem, shodně v obou. ⚠️ Zbytek
+rodiny (IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, RBP) zůstává textem: starý modul pro ně symboly má,
+ale pozici ve fontu jsem u nich neurčil, a hádat ji znamená vytisknout cizí piktogram.
+
+Ověřeno: .NET 1210/1210 + 709 + 612.
+
+⚠️ **Při čtení legacy vypadl další rozdíl, neopravený:** starý modul tiskne **nejvýš dvě značky
+na řádek platnosti** a zbytek zalomí na další řádky (`#define POCETZNAKUPLATNOSTI 2`,
+`JRapiLinPrtWin.mac:25` a `:3763`). My posíláme značky jako jedno pole a kreslíme je do jednoho
+řádku, takže u spoje s víc značkami se řádek přeplní. Vedeno v roadmapě.
+
+
+## 2026-08-27 (6) - 🐞 značka u minuty vylézala ze sloupce (parita s legacy: sloupec se rozšíří)
+
+Nález Jan na vzoru 940: „když má minuta u sebe nějakou značku, tak ta značka to posune doprava, ale
+šířka sloupce se počítá na základě šířky pouze minut, takže značka + minuta pak tu minutu posune ven
+mimo šířku sloupce." Přesně tak to bylo - minimální šířka se měřila ze `"00:00"`, značka se do ní
+nezapočítala, a značka s časem se navíc kreslí ručně, takže se ani nezmenšuje na buňku.
+
+**Řešení vzaté ze starého modulu, ne vymyšlené** (žádost Jan: nejdřív se podívat do legacy).
+Starý modul má pro sloupec spoje **čtyři šířky** a vybírá mezi nimi podle **největšího počtu značek
+v tom sloupci** - text tedy nezmenšuje, dělá místo:
+
+- `JRapiLinPrtWin.mac:1793-1798` - volba šířky (0 značek → 1, jedna → 2, dvě → 3, tři a víc → 4)
+- `JRapiLinPrtWin.mac:1769-1771` - počet se bere jako maximum přes řádky **toho** sloupce
+- `JRapiLinPrtWin.mac:2611` - slot, ze kterého se počítá, je `column-0.01` = „znacky spoje"
+
+⚠️ **Sloupce spojů proto přestaly být stejně široké** (rozhodnutí Jan 27. 8. po přečtení legacy):
+širší je jen ten, který značku nese. Šetří to místem, takže se na řádek vejde víc spojů - a starý
+tisk tak vypadá taky. Šířky samotné si legacy neměří, dostává je zvenčí (`MS,7,1..4`), takže se
+z něj přebírá **pravidlo**, ne čísla; my si značku měříme sami tím fontem, kterým ji kreslíme.
+
+Místo na značky se odečítá ze zbytku šířky **před** jeho rozdělením mezi automatické sloupce, jinak
+by tabulka přetekla. Rezerva se bere jako maximum přes okna po sobě jdoucích spojů - základ sloupce
+tak zůstává pro všechny bloky stejný (invariant z 25. 8.) a žádný blok nepřeteče.
+
+Ověřeno: .NET 1209/1209 + 709 + 612, **mutací všech čtyř nových cest** (bez místa na značku, bez
+odečtení rezervy, značka kreslená do jinak širokého rámu, pás počítající šířku skupiny ze staré
+jednotné šířky). ⚠️ Dvě z těch mutací neprošly na první pokus, protože testy měřily moc hrubě:
+podbarvení pásu se hledalo v celém svislém pásu, kde ho má i řádek pod ním, a vystředění značky
+ve sloupci se nekontrolovalo vůbec.
+
+
+## 2026-08-27 (5) - 🐞 vodorovné čáry pokračovaly za konec tabulky do volného místa
+
+Nález Jan na vzoru 940: „vpravo, když skončí ta tabulka, tak tam pak takhle pokračují do pravého
+okraje stránky ty vodorovné čáry, ale žádné vertikální."
+
+Nebyl to záměr - jen se za poslední sloupec dosud nikdo nepodíval. Vodorovné čáry a podbarvení řádku
+se kreslily přes **šířku prvku**, kdežto buňky jen po konec tabulky. Kreslí se teď po **šířku
+tabulky**, se stropem na šířce prvku (kdyby se tabulka nevešla, nesmí malovat vedle).
+
+**Volné místo vpravo samo záměr je** a zůstává: blok nemusí vyjít na celou šířku a dorovnání
+prázdnými sloupci je samostatná volba (#8372). Jen má být opravdu volné.
+
+⚠️ Je to **stejná třída jako mezera** (mřížka kreslená mimo tabulku) a přišlo se na to jen proto, že
+mezery přinutily oko podívat se na okraje. Kontrola zůstává v sadě k mezerám, ať se to nevrátí.
+
+Ověřeno: .NET 1205/1205 + 709 + 612, ověřeno mutací (s šířkou prvku místo šířky tabulky nový test
+padne).
+
+
+## 2026-08-27 (4) - 🐞 hranice skupin sloupců začínala až pod pásem s nadpisy
+
+Nález Jan na vzoru 940: „v té první subtabulce Směr jízdy to má pravý okraj vykreslený, ale levý ne."
+
+Rozpadlo se to na dvě věci. **Chybějící levý okraj je v pořádku** - vnější hrana tabulky patří
+rámečku prvku a vzor 940 ho podle PDF nemá (tloušťka 0), takže tam okraj není nikde, nejen u té
+skupiny. Svislé čáry jsou mřížka a ta se kreslí jen **mezi** sloupci.
+
+**Vada byla jinde:** hranice skupiny opravdu začínala až **pod** pásem s nadpisy (změřeno: čára
+běžela y 51-168 ze 169 px, pás nad ní žádné svislé čáry neměl). Vypnuly se tam kdysi celé, aby
+„nerozsekaly nadpis přes několik sloupců spojů" - jenže v pásu je **jedna buňka na skupinu**, takže
+čára mezi nimi padne přesně na hranici skupiny a žádný nadpis neprotne. Skupina proto vypadala jako
+rámeček s chybějícím horním kusem boku.
+
+⚠️ **Projeví se i v šablonách bez mezer** (rozhodnutí Jan 27. 8.): mezi pásy „Pracovní dny" a
+„Soboty" je nově čára, která tam dosud nebyla. Je to změna vzhledu existujících šablon, proto na to
+jde vlastní test.
+
+Na hraně skupiny zůstává **jedna** čára i v pásu - nese ji buňka mezery a skupina za ní už svoji
+vlevo nekreslí, stejně jako v ostatních řádcích.
+
+Ověřeno: .NET 1204/1204 + 709 + 612, ověřeno mutací obou částí zvlášť (bez čar v pásu padnou
+2 testy, bez potlačení druhé čáry 1). ⚠️ Měření v testu hledá čáru v **okně ±2 px**, ne v jednom
+sloupci pixelů: svislou čáru kreslí `ColumnRenderer` **před** buňkou, takže pozadí buňky vpravo
+překryje její pravou polovinu a vzorkování přesně na hraně půlku čáry mine. První verze testu na to
+naletěla a hlásila „čára chybí", i když se kreslila.
+
+
+## 2026-08-27 (3) - 🐞 mezerou mezi skupinami sloupců procházely vodorovné čáry
+
+Nález Jan na vzoru 940, hned jak mezery zapnul: „zůstane tam spojující úsečka mezi levou částí
+pravého okraje a pravou částí levého", a u přípojných řádků „ta mezera udělána není vůbec".
+
+Obojí mělo **jednu příčinu**: vodorovné čáry a pozadí řádku se kreslí přes **celou šířku prvku**,
+takže mezeru přemostily. U přípojného řádku, který má čáru nad i pod sebou, se tím mezera zavřela
+z obou stran a nebyla vidět vůbec - proto to vypadalo jako dvě různé vady.
+
+Řádkové jádro teď umí buňku označit jako **mezeru** a čáry i pozadí kreslí po úsecích mezi nimi.
+Je to ve sdíleném jádru, ne v linkovém prvku: mezery jsou pojem `skupiny sloupců` a ten má podle
+`L9-R3` platit pro všechny tabulkové prvky. Ostatní prvky mezery neposílají, takže se jim nic nemění.
+
+Pozadí řádku se odděluje z téhož důvodu jako čáry: podbarvení buněk se v mezeře přeruší samo, takže
+průchozí podbarvení celého řádku by proti němu vypadalo jako chyba.
+
+Ověřeno: .NET 1202/1202 + 709 + 612, ověřeno mutací (bez označení buňky i s čarou přes celou šířku
+padne nový test), potvrzeno okem na vzoru 940.
+
+
+## 2026-08-27 (2) - ✨ mezera mezi skupinami sloupců linkového JŘ (`L9` dokončeno)
+
+Poslední ze tří mezer `L9`. Tabulka už nemusí vypadat jako jedna souvislá mřížka: **popisný blok,
+Pracovní dny a Víkendy se dají od sebe odsadit volným místem**, tak jak to má vzor IDZK 940.
+Nastavuje se v mm („Mezera mezi skupinami sloupců"), v panelu i v Caché formuláři.
+
+- **Výchozí 0 = beze změny.** Existující šablony vypadají stejně jako dosud; nenulová výchozí
+  hodnota by zúžila sloupce spojů všem a u linek na hraně šířky ubrala spoj z bloku.
+- **Na hraně skupiny zůstane jedna čára**, pak volno - ne dvě čáry kolem mezery. Vzor to tak má
+  a dvě čáry těsně u sebe čtou jako chyba tisku.
+- **Mezera se bere ze šířky prvku**, takže se do řádku vejde méně spojů; u dlouhé linky se tím
+  může přidat blok pod tabulku.
+
+⚠️ **Souřadnice sloupců spojů se soustředily na jedno místo** (`SloupcovaMrizka`). Do teď si
+odsazení počítala každá cesta sama jako „šířka popisných + index × šířka sloupce" - buňky, značky
+platnosti, značka návaznosti vedle času. Mezera ten vzorec ruší, takže cesta, která by o ní nevěděla,
+kreslí značku do sloupce cizího spoje. Proto jedno místo, které o mezerách ví, a cesty, které se ho
+jen ptají.
+
+⚠️ **Rezervuje se za celou linku, ne za kreslený blok.** Kolik mezer blok má, závisí na tom, které
+skupiny dnů do něj padly - podle bloku by tedy měl každý blok jinak široké sloupce, a to je přesně
+vada z 25. 8. (poslední blok se sloupci 58,8 mm proti 6,4 mm v prvním). Cena: blok s méně skupinami
+nechá vpravo o mezeru víc volna.
+
+Ověřeno: .NET 1201/1201 + 709 + 612, **mutací všech pěti cest zvlášť** (každá zapomenutá mezera
+shodí aspoň jeden test), formulář ověřen voláním serveru. ⚠️ Dvě děravá místa v testech odhalila
+až mutace: „v mezeře nesmí být nic" nechytilo značky platnosti (zapomenutá mezera je nehodí do
+mezery, ale do cizího sloupce) a zapomenutá rezerva šířky nepřeteče, jen zbytečně přidá blok.
+
+⚠️ **Vodorovné čáry mezerou procházejí** - stejně jako dnes procházejí volným místem vpravo za
+poslední tabulkou. Vzor 940 vodorovné linky nemá, takže se to na něm neprojeví; u šablony, která je
+má, to chce tvoje oči.
+
+
+## 2026-08-27 (1) - 🐞 přepínání firmy pro vývojáře se z publikované verze nedalo zapnout
+
+Nástroj **Nástroje → Přepnout firmu (DEV)** je v aplikaci od začátku, ale z `.exe` v `C:\Edison\`
+se nikdy neukázal (našel Jan při zkoušení). Visel na neprázdném klíči k AI asistentovi - a ten žije
+jen v **lokálním, gitignorovaném** configu vedle buildu ve zdrojích, ne vedle publikovaného exe.
+Dvě věci, které spolu nemají nic společného.
+
+Teď to zapíná **vlastní klíč** `dev.firmSwitch` v configu (výchozí vypnuto, aby to zákazník nikdy
+neviděl). Zapnuté je v lokálním configu i v tom u publikované verze.
+
+⚠️ **Blokovalo to procházení testovacích linek** - z osmi linek sady leží tři v jiné firmě
+(`CB_GWBUS`, `VS_CSAD`), takže bez přepínače na ně nebylo jak se dostat.
+
+⚠️ **`VS_CSAD` v seznamu firem není** (`DevFirms`), takže „písmena ze zóny" zůstávají nedosažitelná
+i tak - týká se to ale linky, na kterou v testovacích datech není vzorek, tedy už evidovaného dluhu.
+
+Ověřeno: .NET 1194/1194 (2 nové na slučování nového oddílu configu - zapomenutý oddíl se **tiše
+zahodí**, přesně tak zmizel 19. 8. klíč k distribučnímu kanálu). ⚠️ **Samotnou viditelnost menu
+test nekryje** - je v code-behind okna; ověřeno spuštěním publikované verze.
+
+
 ## 2026-08-26 (4) - ✨ popisné sloupce linkového JŘ jsou jedna skupina (`L9`)
 
 Kolega si na starém modulu stěžoval, že „ohraničení jednotlivých km sloupců nejde odstranit" a že
@@ -23,6 +226,8 @@ Vloženou mezerou se ten souřadnicový model rozejde, takže tomu patří vlast
 
 Ověřeno: .NET 1192/1192 + 690 + 595, ověřeno mutací obou vlastností zvlášť, formulář ověřen
 voláním serveru. Chování s prázdným nadpisem zůstává jako dřív (`L9-R4` je nerozhodnutá).
+**Proklikáno 27. 8. (Jan)** na linkách s jednou i více skupinami dnů, v panelu i ve formuláři prvku,
+včetně linek, kde většina popisných sloupců chybí; zapnutí i vypnutí slití.
 
 
 ## 2026-08-26 (3) - 🐞 zlom odstavce v poznámce se tiskl jako znak `#`
@@ -82,7 +287,7 @@ se podle CLAUDE.md nedotýkáme, takže sjednocení readerů zůstává na vlnu 
 Ověřeno: Caché 128/128, .NET 1182/1182, obě změněné třídy ověřené voláním serveru.
 ⚠️ **Kolik skupin se v dialogu ukáže, stroj neověří** - volání přes vývojový profil vidí jiná data
 než přihlášená session (i zastávková agenda v něm vrátí jednu skupinu, i když sonda najde v téže
-firmě tři). Zbývá proklikat.
+firmě tři). **Proklikáno 27. 8. (Jan): přepínání skupin funguje.**
 
 
 ## 2026-08-25 (24) - 🧹 výška sekce už nerezervuje místo na posun, ke kterému nedojde

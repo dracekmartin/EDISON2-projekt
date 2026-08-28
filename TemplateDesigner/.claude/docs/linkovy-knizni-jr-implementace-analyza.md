@@ -1203,10 +1203,10 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
 | 1 | odstranit **šedivý pruh nad nadpisy** | ✅ **umíme** - pás skupin dnů i řádek záhlaví berou barvu z `HeaderStyle` prvku (pozadí i text), nastavuje se v panelu |
 | 2 | **změnit pořadí info sloupců** (zóny, km, zastávky…) | ✅ **umíme** - sloupce jsou seznam a dialog je umí přesouvat (`ColumnListEditor`, `MoveUpCommand`) |
 | 3 | **odstranit sloupec MHD a sloupec se šipkou** | ✅ **umíme** - MHD má zaškrtávátko viditelnosti a navíc zmizí sám, když je pro celou linku prázdný; **sloupec se šipkou v prvku vůbec není** (přidat ho má naopak `L6`) |
-| 4 | **odstranit ohraničení jednotlivých km sloupců** | ❌ **mezera** - svislé čáry se kreslí buď všude, nebo nikde (`GridStyle.ShowColumnLines` platí pro celý prvek). Potřeba **per sloupec**, ať jde km podsloupce slít do jednoho bloku |
+| 4 | **odstranit ohraničení jednotlivých km sloupců** | ✅ **umíme** (26. 8., `L9`) - „Popisné sloupce bez vnitřních čar" slije km, zastávku a zóny do jednoho bloku a čáry mezi sloupci spojů nechá. ⚠️ Původní tvrzení „kreslí se buď všude, nebo nikde" **neplatilo**: `Grid.ShowColumnLines` prvek vůbec nečte a mřížku kreslí vždy (ověřeno vykreslením 27. 8., vedeno jako `L10`) |
 | 5 | **jiný styl čar mezi spoji** pro celou sekci | 🟡 **částečně** - `GridStyle` má zvlášť vodorovné a svislé čáry, ale **jednu barvu, tloušťku a styl pro obojí**. Vzor má jemné vodorovné a žádné svislé, což už jde; různá barva pro každý směr ne |
-| 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ❌ **mezera, ale malá** - pás skupin dnů nad info sloupci **existuje**, jen má natvrdo prázdný text (`LineTableElement.BuildRowPlan`). Chce to popisek a jeho styl |
-| 7 | **mezera mezi bloky** (info × pracovní dny × víkendy) | ❌ **mezera** - prvek kreslí souvislou mřížku, pojem „mezera mezi skupinami sloupců" nemá |
+| 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ✅ **umíme** (26. 8., `L9`) - „Nadpis popisných sloupců". Pás se přitom musel odvázat od skupin dnů: kreslil se jen při víc než jedné skupině, takže na lince s jedinou by nadpis nebyl |
+| 7 | **mezera mezi bloky** (info × pracovní dny × víkendy) | ✅ **umíme** (27. 8., `L9`) - „Mezera mezi skupinami sloupců" v mm, výchozí 0. Bere se ze šířky prvku, takže se do řádku vejde méně spojů |
 | 8 | **popisky info sloupců podle vzoru** | ✅ **umíme** - hlavička sloupce je volný text |
 | 9 | **záhlaví napevno; pruh dopravce se nevejde, když je dopravců víc** | ⚠️ **Ověřeno 25. 8. vykreslením - tvrzení „umíme lépe" NEPLATILO.** Textový prvek sice roste, ale **prvky uvnitř sekce se neposouvají**, takže záhlaví s 26 dopravci leželo přes tabulku stejně jako v legacy. Řeší to **rozdělení na dvě sekce** (tok mezi sekcemi funguje), a tak to teď zakládá nová šablona. |
 | 10 | **levé ohraničení, které leze, i když ho nikde nemám** | ✅ **odpadá** - vada starého modulu; v návrháři je vnější obrys rámeček prvku a ten se dá vypnout |
@@ -1218,7 +1218,8 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
   dobrý zkušební vzor - je to reálné zadání zákazníka, ne vymyšlený případ).
 - **Tři mezery jsou drobné a patří k sobě** (ohraničení per sloupec, nadpis nad info sloupci,
   mezera mezi bloky) - všechny jsou o tom, aby tabulka nevypadala jako jedna souvislá mřížka.
-  Vedeny jako `L9`.
+  ✅ **Všechny tři hotové jako `L9`** (26.-27. 8.), a potvrdilo se, že je to jeden pojem:
+  **skupina sloupců** s nadpisem, bez vnitřních čar a s mezerou za sebou.
 - **Sloupec se šipkou** má `L6` v plánu přidat; tady je doklad, že se hodí i **vypnout**.
 - ⚠️ **Neověřeno:** v PDF ze starého modulu jsou v buňkách písmena (`K`, `A`, `J`, `D`) tam, kde
   vzor má piktogramy (`|`, `⟨`). Může to být nevložený symbolový font v tom konkrétním PDF, nebo

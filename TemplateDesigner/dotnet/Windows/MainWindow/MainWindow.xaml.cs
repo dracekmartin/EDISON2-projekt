@@ -1196,11 +1196,11 @@ public partial class MainWindow : Window
     private void MenuDelete_Click(object sender, RoutedEventArgs e) => _vm!.DeleteCommand.Execute(null);
     private void MenuHelp_Click(object sender, RoutedEventArgs e)  => ShowHelp();
 
-    /// <summary>Naplní DEV submenu firem z pevného seznamu ve VM. Viditelné jen pro vývojáře
-    /// (lokální dev klíč) a jen když je připojení k databázi.</summary>
+    /// <summary>Naplní DEV submenu firem z pevného seznamu ve VM. Viditelné jen se zapnutým
+    /// <c>dev.firmSwitch</c> v configu a jen když je připojení k databázi.</summary>
     private void BuildDevFirmMenu()
     {
-        bool devMode = !string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey);
+        bool devMode = AppSettings.Current?.Dev.FirmSwitch == true;
         bool show = devMode && _vm?.CurrentFirmIdfa is not null;
         MenuDevSep.Visibility = MenuDevSwitchFirm.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show) return;

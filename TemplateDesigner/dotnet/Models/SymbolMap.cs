@@ -73,8 +73,13 @@ public static class SymbolMap
     /// „pokračuje" má v číselníku značku <c>p</c>, jenže na <c>p</c> je ve fontu <b>kufr</b>.
     /// Denní značky naopak sedí a v jízdních řádech se tak opravdu tisknou: <c>X</c> = zkřížená
     /// kladiva (pracovní dny), <c>6</c>/<c>7</c> = kroužkové číslice, <c>+</c> = kříž (svátky).
-    /// <para>Seznam rozhoduje <b>o každé značce zvlášť</b>, ne o celé buňce: „⚒ BEV" vyjde
-    /// kladivem a zkratkou vedle sebe. Kreslí to <c>SymbolRunRenderer</c>.</para>
+    /// <para>Seznam rozhoduje <b>o každé značce zvlášť</b>, ne o celé buňce: „⚒ ♿" vyjde
+    /// kladivem a vozíčkem vedle sebe. Kreslí to <c>SymbolRunRenderer</c>.</para>
+    /// <para>⚠️ <b>Víceznakový kód není sám o sobě zkratka.</b> Do 27. 8. tu platilo, že piktogram
+    /// je jen jednoznakový, a <c>BEV</c> se proto tisklo textem - jenže starý modul má celou tuhle
+    /// rodinu (BEV, IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, CBE, RBP) v číselníku znaků jako
+    /// <b>symboly</b> (<c>JRapiLinPrtWin.mac:1556</c> a dál). Rozhoduje tedy jen tenhle seznam
+    /// a to, jestli je pozice ve fontu ověřená.</para>
     /// <para>Co v seznamu není, se kreslí <b>textem</b>. Značky <c>|</c> (projíždí) a <c>&lt;</c>
     /// (jede jinudy) tam nebudou nikdy - <b>font je nemá</b> (na jejich pozicích je čtverec
     /// a osmiúhelník), takže je i starý tisk kreslí znakem. „Pokračuje" <c>u</c> zůstává textem,
@@ -92,7 +97,14 @@ public static class SymbolMap
         // `B` jeden (plný). V CZ i SK fontu shodně.
         ["m"] = "A",   // vyčká - dutý trojúhelník △
         ["^"] = "B",   // navazuje - plný trojúhelník ▲
-        // Atributy sdílené s vývěskou.
+        // Bezbariérovost spoje. Data ji posílají **víceznakovým** kódem, ne písmenem, a starý
+        // modul ji má v číselníku znaků jako symbol (id 22 „BEV bezbarierovy", id 56 „CBE castecne
+        // bezbarierovy vuz" - JRapiLinPrtWin.mac:1580 a :1596), takže se má tisknout piktogramem,
+        // ne zkratkou. Pozice ověřená vykreslením tabulky glyfů v **obou** fontech: 72 je vozíček,
+        // 70 vozíček s doprovodem.
+        ["BEV"] = "H",   // bezbariérové vozidlo - vozíček
+        ["CBE"] = "F",   // částečně bezbariérové vozidlo - vozíček s doprovodem
+        // Atributy sdílené s vývěskou (písmenné kódy téhož).
         ["H"] = "H",   // bezbariér
         ["F"] = "F",   // částečně bezbariér
         ["L"] = "x",   // vlak - lokomotiva

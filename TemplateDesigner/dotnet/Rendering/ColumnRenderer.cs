@@ -13,12 +13,15 @@ public static class ColumnRenderer
     /// „Přizpůsobit buňce" (element ji zvětší, když do buňky kreslí vlastní dekoraci - šipka směru).
     /// TrailingWidthMm = šířka obsahu dokreslovaného elementem ZA text (značky), škáluje se s textem.
     /// SuppressLeadingLine = na levé hraně buňky se nekreslí svislá čára; pro buňku, která je
-    /// jen rozdělením jednoho sloupce (značky + název zastávky), ne samostatným sloupcem.</summary>
+    /// jen rozdělením jednoho sloupce (značky + název zastávky), ne samostatným sloupcem.
+    /// Mezera = buňka je <b>mezera mezi skupinami sloupců</b>, tedy volné místo, ne sloupec:
+    /// nekreslí se přes ni vodorovná čára ani pozadí řádku (viz <see cref="RowPlanRenderer"/>).</summary>
     public readonly record struct CellSpec(
         float WidthMm, string Text, ResolvedTextStyle Style,
         float ShrinkReserveMm = CellRenderer.DefaultShrinkReserveMm,
         float TrailingWidthMm = 0f,
-        bool SuppressLeadingLine = false);
+        bool SuppressLeadingLine = false,
+        bool Mezera = false);
 
     /// <summary>
     /// Vykreslí vodorovný řádek buněk. Volitelně mezi sloupce svislé mřížkové čáry.

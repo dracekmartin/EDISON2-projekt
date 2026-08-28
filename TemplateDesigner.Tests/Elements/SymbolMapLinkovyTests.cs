@@ -63,12 +63,37 @@ public class SymbolMapLinkovyTests
         Assert.Equal(pozice, value);
     }
 
-    /// <summary>Víceznakové značky jsou zkratky (BEV, IDS, WC…), ne piktogramy.</summary>
+    /// <summary>
+    /// Bezbariérovost spoje se tiskne <b>vozíčkem</b>, i když ji data posílají víceznakovým kódem.
+    /// </summary>
+    /// <remarks>
+    /// Nález Jan 27. 8.: „ve starém je ta ikonka vozíčku, teď vypíšeme textem BEV". Starý modul má
+    /// BEV i CBE v číselníku znaků jako symboly (<c>JRapiLinPrtWin.mac:1580</c>, <c>:1596</c>).
+    /// Pozice ověřená vykreslením tabulky glyfů v obou fontech - 72 vozíček, 70 s doprovodem.
+    /// </remarks>
     [Theory]
-    [InlineData("BEV")]
+    [InlineData("BEV", "H")]
+    [InlineData("CBE", "F")]
+    public void Bezbarierovost_JeVozicek(string znak, string pozice)
+    {
+        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+
+        Assert.Equal(SymbolRenderMode.FontGlyf, mode);
+        Assert.Equal(pozice, value);
+    }
+
+    /// <summary>
+    /// Víceznakový kód, u kterého pozici ve fontu nikdo neověřil, zůstává textem.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Není to pravidlo „víceznakové = zkratka" (to padlo 27. 8. s BEV), ale tolerance: starý
+    /// modul má symboly i pro IDS a WC, jen se u nás pozice ve fontu neurčila. Než se určí, je
+    /// lepší vypsat zkratku než vytisknout cizí piktogram.
+    /// </remarks>
+    [Theory]
     [InlineData("IDS")]
     [InlineData("WC")]
-    public void ViceznakovaZnacka_JeText(string znak)
+    public void NeoverenaViceznakovaZnacka_ZustavaText(string znak)
     {
         Assert.Equal(SymbolRenderMode.Text, SymbolMap.ResolveLinkovy(znak).Mode);
     }

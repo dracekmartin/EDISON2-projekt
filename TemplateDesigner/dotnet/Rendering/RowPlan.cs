@@ -85,10 +85,13 @@ public static class RowPlanRenderer
 
         foreach (var row in rows)
         {
+            var mezery = Mezery(xMm, row.Cells);
+
             if (row.Background is { Alpha: > 0 } color)
             {
                 using var bg = new SKPaint { Color = color };
-                ctx.Canvas.DrawRect(ctx.ToCanvasRect(xMm, y, totalWidthMm, row.HeightMm), bg);
+                foreach (var (od, doX) in Useky(xMm, xMm + totalWidthMm, mezery))
+                    ctx.Canvas.DrawRect(ctx.ToCanvasRect(od, y, doX - od, row.HeightMm), bg);
             }
 
             ColumnRenderer.DrawRow(ctx, xMm, y, row.HeightMm, row.Cells, row.VerticalLinePaint, fontScale);
@@ -96,9 +99,9 @@ public static class RowPlanRenderer
             row.Decorate?.Invoke(y);
 
             if (row.LineAbovePaint is { } above)
-                DrawHorizontalLine(ctx, xMm, y, totalWidthMm, above);
+                DrawHorizontalLine(ctx, xMm, y, totalWidthMm, above, mezery);
             if (row.LineBelowPaint is { } below)
-                DrawHorizontalLine(ctx, xMm, y + row.HeightMm, totalWidthMm, below);
+                DrawHorizontalLine(ctx, xMm, y + row.HeightMm, totalWidthMm, below, mezery);
 
             y += row.HeightMm;
         }
@@ -106,6 +109,46 @@ public static class RowPlanRenderer
         return y;
     }
 
-    private static void DrawHorizontalLine(RenderContext ctx, float xMm, float yMm, float widthMm, SKPaint paint) =>
-        ctx.Canvas.DrawLine(ctx.ToCanvas(xMm, yMm), ctx.ToCanvas(xMm + widthMm, yMm), paint);
+    /// <summary>Absolutní x-rozsahy buněk, které jsou mezerou mezi skupinami sloupců (mm).</summary>
+    private static List<(float Od, float Do)> Mezery(float xMm, IReadOnlyList<ColumnRenderer.CellSpec> cells)
+    {
+        List<(float, float)>? mezery = null;
+        float x = xMm;
+        foreach (var cell in cells)
+        {
+            if (cell.Mezera) (mezery ??= []).Add((x, x + cell.WidthMm));
+            x += cell.WidthMm;
+        }
+        return mezery ?? [];
+    }
+
+    /// <summary>
+    /// Úseky, na kterých se smí kreslit vodorovná čára a pozadí řádku - tedy všechno kromě mezer.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Mezerou nesmí procházet nic, jinak se skupiny sloupců zpátky slijí: čára ji přemostí
+    /// a u přípojných řádků, které mají čáru nad i pod sebou, mezera zmizí úplně (nález Jan 27. 8.
+    /// na vzoru 940 - „zůstane tam spojující úsečka" a „u přípojek ta mezera udělána není vůbec").
+    /// Pozadí řádku se odděluje z téhož důvodu: podbarvení buněk se v mezeře přeruší samo, takže
+    /// průchozí podbarvení řádku by proti němu vypadalo jako chyba.
+    /// </remarks>
+    private static IEnumerable<(float Od, float Do)> Useky(
+        float odMm, float doMm, List<(float Od, float Do)> mezery)
+    {
+        float x = odMm;
+        foreach (var (mezeraOd, mezeraDo) in mezery)
+        {
+            if (mezeraOd > x) yield return (x, MathF.Min(mezeraOd, doMm));
+            x = MathF.Max(x, mezeraDo);
+            if (x >= doMm) yield break;
+        }
+        if (x < doMm) yield return (x, doMm);
+    }
+
+    private static void DrawHorizontalLine(RenderContext ctx, float xMm, float yMm, float widthMm,
+        SKPaint paint, List<(float Od, float Do)> mezery)
+    {
+        foreach (var (od, doX) in Useky(xMm, xMm + widthMm, mezery))
+            ctx.Canvas.DrawLine(ctx.ToCanvas(od, yMm), ctx.ToCanvas(doX, yMm), paint);
+    }
 }
