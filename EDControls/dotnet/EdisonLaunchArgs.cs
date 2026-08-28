@@ -20,10 +20,10 @@ public sealed record EdisonLaunchArgs(
     string ShellGuid,
     string InputParam)
 {
-    public const string Sentinel = "EDISONMAIN2";
+    public const string LaunchMarker = "EDISONMAIN2";
 
-    /// <summary>První argument je sentinel kontraktu (bez ohledu na validitu zbytku).</summary>
-    public static bool IsEdisonLaunch(string[] args) => args.Length > 0 && args[0] == Sentinel;
+    /// <summary>První argument je značka kontraktu (bez ohledu na validitu zbytku).</summary>
+    public static bool IsEdisonLaunch(string[] args) => args.Length > 0 && args[0] == LaunchMarker;
 
     /// <summary>
     /// Zparsuje argumenty kontraktu. Vrátí null pokud args nejsou EDISONMAIN2 launch

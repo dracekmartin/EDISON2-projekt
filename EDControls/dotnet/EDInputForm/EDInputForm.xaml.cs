@@ -428,7 +428,7 @@ namespace EDControls.EDInputForm
             if (field.ValidateOnChange) Controller.Validate(field.Key);   // server-side akce
         }
 
-        internal const string FolderModeSentinel = "$FOLDER";
+        internal const string FolderModeMarker = "$FOLDER";
 
         /// <summary>
         /// Implementace color pickeru. Host (např. TemplateDesigner) musí nastavit
@@ -530,7 +530,7 @@ namespace EDControls.EDInputForm
 
             string filter = field.FileFilter ?? "";
 
-            if (filter == FolderModeSentinel)
+            if (filter == FolderModeMarker)
             {
                 var dialog = new Microsoft.Win32.OpenFolderDialog { Title = field.Label };
                 if (!string.IsNullOrEmpty(field.Value) && System.IO.Directory.Exists(field.Value))

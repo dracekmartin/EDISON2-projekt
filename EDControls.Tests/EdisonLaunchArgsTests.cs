@@ -37,7 +37,7 @@ public class EdisonLaunchArgsTests
     }
 
     [Fact]
-    public void TryParse_MissingSentinel_ReturnsNull()
+    public void TryParse_MissingLaunchMarker_ReturnsNull()
     {
         var args = ValidArgs();
         args[0] = "NECO_JINEHO";
@@ -54,7 +54,7 @@ public class EdisonLaunchArgsTests
     [Fact]
     public void TryParse_TooFewArgs_ReturnsNull()
     {
-        // Sentinel + 8 hodnot = 9 argů - kontrakt vyžaduje minimálně 10.
+        // LaunchMarker + 8 hodnot = 9 argů - kontrakt vyžaduje minimálně 10.
         var args = ValidArgs()[..9];
 
         Assert.Null(EdisonLaunchArgs.TryParse(args));
@@ -108,7 +108,7 @@ public class EdisonLaunchArgsTests
     }
 
     [Fact]
-    public void IsEdisonLaunch_DetectsSentinelEvenWhenArgsIncomplete()
+    public void IsEdisonLaunch_DetectsLaunchMarkerEvenWhenArgsIncomplete()
     {
         // Rozliší "spuštěno ze shellu s vadnými argy" (→ varování) od čistého standalone.
         Assert.True(EdisonLaunchArgs.IsEdisonLaunch(["EDISONMAIN2"]));

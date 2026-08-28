@@ -29,7 +29,7 @@ public class MLRestAdapterWithTests
             .Where(p => p.CanRead && p.CanWrite && p.SetMethod!.IsPublic && !Excluded.Contains(p.Name))
             .ToList();
 
-        // Nastav každé property unikátní sentinel - nepodporovaný typ musí test rozbít,
+        // Nastav každé property unikátní značku - nepodporovaný typ musí test rozbít,
         // aby se sem doplnil (jinak by property tiše vypadla z pokrytí).
         var covered = new List<PropertyInfo>();
         int i = 0;
@@ -44,7 +44,7 @@ public class MLRestAdapterWithTests
                 var t when t == typeof(KeyValuePair<string, string>) =>
                     new KeyValuePair<string, string>($"key{i}", $"val{i}"),
                 _ => throw new Xunit.Sdk.XunitException(
-                    $"MLRest.{p.Name} má nepodporovaný typ {p.PropertyType.Name} - doplň sentinel do testu."),
+                    $"MLRest.{p.Name} má nepodporovaný typ {p.PropertyType.Name} - doplň značku do testu."),
             };
             p.SetValue(source, value);
             covered.Add(p);

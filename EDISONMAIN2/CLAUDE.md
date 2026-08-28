@@ -140,7 +140,7 @@ centruje ho `OwnerWindowCentering` (`CenterOwner` u maximalizovaného ownera mí
 ## Legacy moduly - EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`,
-.NET Framework 4.8, deploy do `C:\Edison\`). Args: sentinel `"EDISONMAIN2"` + 13 polí
+.NET Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 13 polí
 (server, port, ns, idfa, login, fullName, mlp, formName, shellGuid, inputParam, assemblyPath,
 licensedElements, zástupce na ploše); poslední je Base64 XML zástupce - prázdné u běžného
 launche, s `CallType=Procedura` host místo formy spustí `ProcedureIO` agendy. Dvě vstupní metody:

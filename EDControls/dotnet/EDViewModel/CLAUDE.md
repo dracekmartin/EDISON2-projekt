@@ -45,7 +45,7 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
 
 - `ShowDialog` ztmavuje ownera přes `WindowDimmer` (refcount), **ne** `IsEnabled=false` -
   to by srazilo controly na 0.5 opacity.
-- Legacy launch kontrakt (sentinel + 13 polí) viz `BuildLauncherArguments` a EDISONMAIN2/CLAUDE.md;
+- Legacy launch kontrakt (značka + 13 polí) viz `BuildLauncherArguments` a EDISONMAIN2/CLAUDE.md;
   pre-login admin override musí předat `shareShellSession=false`, jinak requesty padají na `LockExist`.
 - Modeless `ShowLegacy*` dedupují (`TryFocusExistingLegacy`, klíč `exe+forma+inputParam`),
   dialogové ne (ztmavují shell). `GetActiveModules` vrací i `ExeName`/`FormFqn`/`InputParam` -

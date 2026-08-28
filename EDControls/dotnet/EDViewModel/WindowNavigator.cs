@@ -380,7 +380,7 @@ public class WindowNavigator : IWindowNavigator
         string.Equals(Path.GetFileName(exeName), "EDISONMAIN.exe", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Složí payload pro generický host: sentinel + sys kontext + formFqn + shellGuid +
+    /// Složí payload pro generický host: značka + sys kontext + formFqn + shellGuid +
     /// inputParam + cesta k agendě + licencované elementy. Pozice 1–11 jsou shodné s legacy
     /// kontraktem (takže `FormToRunGetter.TryGetFormFromArgs` retrofitnutých agend zůstává
     /// kompatibilní); agendaPath (host ho čte pro <c>Assembly.LoadFrom</c>) je [11],

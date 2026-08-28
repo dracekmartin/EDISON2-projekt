@@ -17,7 +17,7 @@ orchestrace bez WPF je `EDInputFormController.cs`, kodek wire formátu `EDInputF
 - Visibility: `"0"`=Visible (default, i když chybí), `"1"`=Collapsed, `"2"`=UserHidden,
   `"3"`=ProgrammerHidden. Konstanty v `EDControls/CACHE/EDInputForm.inc`.
 - ListItems: položky dělí `|`, klíč od popisku `~`; bez `~` popisek = klíč.
-- FileFilter: sentinel `"$FOLDER"` → výběr složky; jinak filtr pro OpenFileDialog.
+- FileFilter: značka `"$FOLDER"` → výběr složky; jinak filtr pro OpenFileDialog.
 - Color: value `"#AARRGGBB"` (SkiaSharp ARGB). Validate posílá
   `IN["trigger"]` (`Init|Change|BeforeSave`) + `IN["changedKey"]` (jen u Change
   s konkrétním polem; Caché čte `form.changedKey` / `GetChangedField()`).
