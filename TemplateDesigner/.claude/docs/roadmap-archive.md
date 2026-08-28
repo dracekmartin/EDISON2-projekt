@@ -2,10 +2,13 @@
 
 ## `L6c` - turnusy ke spojům + zbytky ze `L6b` (hotovo 28. 8. 2026)
 
-**Turnusy ke spojům** jako parametr sestavy „Turnusy ke spojům": řádky s označením turnusu pod čísly
+**Turnusy ke spojům** jako **volba prvku** „Turnusy ke spojům": řádky s označením turnusu pod čísly
 spojů, počet řádků podle nejbohatšího spoje, prázdné u spojů s méně turnusy, nad řádkem platnosti.
-Parametr (a ne trvalá data) proto, že dotaz do modulu turnusů stojí 40-550 ms na linku - kdo turnusy
-netiskne, nemá to platit. Legacy zapíná totéž stejnou pákou.
+Turnus je provozní věc dopravce, ne informace pro cestujícího (rozhodnutí Jan 28. 8.), takže patří
+k sestavě - stejně jako v legacy, kde to je nastavení sekce v návrháři. Serveru se volba posílá ze
+šablony jako `DEFINICE_SLOUPCU`, protože dotaz do modulu turnusů stojí 40-550 ms na linku a nemá ho
+platit, kdo turnusy netiskne. **Tiskne se číslo turnusu**, ne označení s variantou po tečce: modul
+vrací záznam za každé zpracování × datum, takže jeden turnus jinak vyjde i v osmi řádcích.
 
 ⚠️ **Starý engine s naším tvarem čísla linky turnusy nevrátí** - odpověď dotazu filtruje číslem bez
 vodicích nul, takže s klíčem z `^JRL` („0108360") nespáruje nic (`TUmax` = 0). Změřeno oběma tvary.

@@ -12,9 +12,10 @@ namespace TemplateDesigner.Tests.Rendering;
 /// Řádků je tolik, kolik turnusů má <b>nejbohatší</b> spoj; spoje s méně turnusy mají zbylé řádky
 /// prázdné. Pořadí řádků hlavy je stejné jako ve starém modulu: číslo spoje → turnusy → platnost →
 /// negativní značky (indexy `1`, `1.001xx`, `1.1`, `1.9`, `JRapiLinPrtWin.mac:2948`).
-/// <para>⚠️ Turnusy posílá server jen se zapnutým parametrem „Turnusy ke spojům" (dotaz do modulu
-/// turnusů stojí desítky až stovky ms), takže <b>bez něj musí tabulka vypadat jako dosud</b> - to
-/// hlídá poslední test.</para>
+/// <para>⚠️ Zapíná to <b>volba prvku</b> „Turnusy ke spojům" (turnus je provozní věc dopravce, ne
+/// informace pro cestujícího - rozhodnutí Jan 28. 8.). Ta samá volba se posílá serveru, protože
+/// dotaz do modulu turnusů stojí desítky až stovky ms; <b>vypnutá musí nechat tabulku jako dosud</b>,
+/// i kdyby v datech turnusy byly (jiný prvek v šabloně je zapnutý mít může).</para>
 /// <para>Fixtury jsou schválně skoro prázdné (čísla spojů i časy prázdné), aby „kde je inkoust"
 /// znamenalo „kde je turnus". Názvy zastávek ale prázdné být <b>nesmí</b>: prázdný sloupec se
 /// netiskne, a s ním by se posunuly i sloupce spojů, které se měří.</para>
@@ -32,6 +33,7 @@ public class TurnusyRadkyTests
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
         HighlightOddTc = false,
         ShowGroupHeaders = false,
+        TurnusyKeSpojum = true,
         Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FFFFFFFF", Width = 0.2f },
         Columns =
         [
@@ -149,6 +151,28 @@ public class TurnusyRadkyTests
         Assert.True(yTurnus < yPlatnost - 0.3f,
             $"turnus je na {yTurnus:0.##} mm, značka platnosti na {yPlatnost:0.##} mm - "
             + "turnus musí být nad platností");
+    }
+
+    /// <summary>
+    /// Vypnutá volba prvku = <b>žádné řádky</b>, i když data turnusy nesou.
+    /// </summary>
+    /// <remarks>
+    /// Data můžou turnusy nést kvůli jinému prvku v šabloně - tenhle je pak nesmí tisknout.
+    /// </remarks>
+    [Fact]
+    public void VypnutaVolbaPrvku_NetiskneNic()
+    {
+        var zapnuty = Prvek();
+        var vypnuty = Prvek();
+        vypnuty.TurnusyKeSpojum = false;
+
+        float sZapnutou = zapnuty.CalculateHeightFromData(Data(1, 2));
+        float sVypnutou = vypnuty.CalculateHeightFromData(Data(1, 2));
+        float bezDat = vypnuty.CalculateHeightFromData(Data(0, 0));
+
+        Assert.True(sZapnutou > sVypnutou + 0.5f,
+            $"se zapnutou volbou má být tabulka vyšší, je {sZapnutou:0.##} × {sVypnutou:0.##} mm");
+        Assert.Equal(bezDat, sVypnutou, 0.001f);
     }
 
     /// <summary>

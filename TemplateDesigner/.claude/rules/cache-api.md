@@ -253,6 +253,14 @@ nespustí re-fetch dat a klik je no-op. Bool parametry se na wire posílají jak
 a server je čte tolerantně přes `$zcvt(...,"L")` (starší klienti posílali `"True"`).
 Labely enum parametrů jsou ZAMČENÉ - persistuje se zobrazovaný text (viz `ux-conventions §8`).
 
+**Volba, která patří k prvku, ale server ji musí znát** (dnes `DEFINICE_SLOUPCU`, `JAZYK`,
+`TURNUSY_KE_SPOJUM`) **není parametr sestavy**: skládá se do IN vždy **čerstvě ze šablony**
+v `ComposeGetDataParams` (nikdy z persistovaných hodnot - třída chyb `B24`), do allowlistu nepatří
+(patří do `InfrastructureKeys` v `ServerSideParamsDriftTests`) a **re-fetch při její změně drží
+`CurrentWireSnapshot`** - do něj se nová volba musí přidat, jinak zaškrtnutí nic neudělá, dokud
+uživatel nezmáčkne obnovení dat. Poznávací znak: „odpověď na tuhle otázku dává šablona, ne uživatel
+před tiskem."
+
 ---
 
 ### Prezentační nápovědy (R3) - kolik vzhledu smějí nést data

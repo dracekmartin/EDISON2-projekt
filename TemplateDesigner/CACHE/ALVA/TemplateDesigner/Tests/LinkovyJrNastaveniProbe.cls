@@ -1223,6 +1223,93 @@ ClassMethod TurnusyTvarLinky(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// **Z čeho se skládá to množství turnusů u jednoho spoje** (`L6c`, dotaz Jan 28. 8.).
+///
+/// Označení má tvar `<turnus>.<varianta>` („110.01"), odpověď navíc rozlišuje **zpracování**
+/// a **datum**. Sonda u nejbohatších spojů rozepíše, kolik z toho je různých turnusů a kolik
+/// jen variant téhož - podle toho jde rozhodnout, jestli se má tisknout celé označení
+/// (parita s legacy) nebo jen číslo turnusu.
+ClassMethod TurnusyRozpad(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN", "DB"), "CB_CSADAD")
+		set sku = $get(^||ML("IN", "SKU"), 1)
+		set lin = $get(^||ML("IN", "LIN"), "0320625")
+		set plati = $get(^[db]JRL(sku, lin, "PATCH", "Plati"))
+		set dh = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).DatumNaDh($piece(plati, "~", 1))
+		kill tin, tout
+		for smer = "T", "Z" {
+			set sp = ""
+			for  {
+				set sp = $order(^[db]JRL(sku, lin, smer, sp))
+				quit:sp=""
+				continue:'$isvalidnum(sp)
+				set tin("arr", 1, +lin, sp) = ""
+			}
+		}
+		set chyba = ##class(ALVA.ADMAIN.MLAPI).gSplTur(db, db, dh, .tin, .tout)
+		kill ^||ML
+		if +chyba {
+			set ^||ML("OUT", 1) = "gSplTur chyba: "_$piece(chyba, "~", 2)
+			ret $$$OK
+		}
+		set ^||ML("OUT", $increment(^||ML("OUT"))) = "linka "_lin_", platnost od "_$piece(plati, "~", 1)
+		set vypsano = 0, sp = ""
+		for  {
+			set sp = $order(tout("arr", 1, +lin, sp))
+			quit:sp=""
+			quit:vypsano'<6
+			kill cele, cisla, zpracovani, datumy
+			set zp = ""
+			for  {
+				set zp = $order(tout("arr", 1, +lin, sp, zp))
+				quit:zp=""
+				set zpracovani(zp) = ""
+				set tu = ""
+				for  {
+					set tu = $order(tout("arr", 1, +lin, sp, zp, tu))
+					quit:tu=""
+					set cele(tu) = ""
+					set cisla($piece(tu, ".", 1)) = ""
+					set hr = ""
+					for  {
+						set hr = $order(tout("arr", 1, +lin, sp, zp, tu, hr))
+						quit:hr=""
+						set datumy(hr) = ""
+					}
+				}
+			}
+			set pocetCele = 0, k = ""
+			for  { set k = $order(cele(k)) quit:k=""  set pocetCele = pocetCele + 1 }
+			set pocetCisel = 0, k = ""
+			for  { set k = $order(cisla(k)) quit:k=""  set pocetCisel = pocetCisel + 1 }
+			set pocetZp = 0, k = ""
+			for  { set k = $order(zpracovani(k)) quit:k=""  set pocetZp = pocetZp + 1 }
+			set pocetDat = 0, k = ""
+			for  { set k = $order(datumy(k)) quit:k=""  set pocetDat = pocetDat + 1 }
+			continue:pocetCele<3
+			set vypsano = vypsano + 1
+			set vzorek = "", k = "", i = 0
+			for  {
+				set k = $order(cele(k))
+				quit:k=""
+				set i = i + 1
+				quit:i>10
+				set vzorek = vzorek_$select(vzorek'="":" ", 1:"")_k
+			}
+			set txt = "spoj "_sp_": označení "_pocetCele_", z toho různých turnusů "_pocetCisel
+			set txt = txt_", zpracování "_pocetZp_", datumů "_pocetDat
+			set txt = txt_" | "_vzorek
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+		}
+		if vypsano = 0 set ^||ML("OUT", $increment(^||ML("OUT"))) = "žádný spoj nemá 3+ turnusy"
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// **Kde jsou turnusy ke spojům a co ten dotaz stojí** (`L6c`).
 ///
 /// Turnusy nejsou v `^JRL` - drží je jiný modul a legacy si je tahá voláním

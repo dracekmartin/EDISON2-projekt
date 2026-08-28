@@ -255,19 +255,11 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuté = každý směr na vlastní stránce."
     d arr.%Push(pObou)
 
-    // Turnusy ke spojům: řádky s označením turnusu pod čísly spojů (legacy in("A",2,"arr",6),
-    // JRapiLinPrtWin.mac:2684). Turnusy nejsou v `^JRL` - drží je jiný modul a tahají se voláním
-    // `ALVA.ADMAIN.MLAPI.gSplTur`, které **stojí 40-550 ms na linku** (změřeno sondou 28. 8.).
-    // Proto je to parametr, ne trvalá součást dat: kdo turnusy netiskne, nemá půl sekundy platit.
-    // Tím se to zároveň zapíná stejnou pákou jako v legacy.
-    s pTur = ##class(%DynamicObject).%New()
-    s pTur.name         = "TURNUSY_KE_SPOJUM"
-    s pTur.label        = "Turnusy ke spojům"
-    s pTur.type         = "bool"
-    s pTur.group        = "Linkový JŘ"
-    s pTur.defaultValue = "false"
-    s pTur.description  = "Pod čísla spojů se přidají řádky s označením turnusu, ve kterém spoj jede. Načtení turnusů je pomalejší, proto je vypnuté."
-    d arr.%Push(pTur)
+    // ⚠️ **Turnusy ke spojům tu parametr NEJSOU** - je to volba prvku (šablony), stejně jako
+    // v legacy, kde to je nastavení sekce v návrháři sestav. Klient posílá `TURNUSY_KE_SPOJUM`
+    // podle prvku (jako `DEFINICE_SLOUPCU`), takže dotaz do modulu turnusů (40-550 ms na linku)
+    // se pořád nespustí nikomu, kdo turnusy netiskne. Rozhodnutí Jan 28. 8.: turnus je provozní
+    // věc dopravce, ne informace pro cestujícího - patří k sestavě, ne k volbám tisku.
 
     // Tvar názvu zastávky. ⚠️ **Výchozí „Plný CIS", jinak než u vývěsky**, kde je „Zkrácený":
     // starý linkový tisk skládá název čárkami a prázdnou část obce nechává jako dvojčárku
@@ -1017,9 +1009,14 @@ ClassMethod CasProRazeni(cas As %String) As %String
 ///
 /// Turnusy **nejsou v `^JRL`** - drží je modul turnusů a vytahují se voláním
 /// `ALVA.ADMAIN.MLAPI.gSplTur` (týmž, jaké volá starý tisk, `JRapiLinPrtWin.mac:2697`).
-/// Odpověď má tvar `out("arr",1,linka,spoj,zpracování,turnus,datum)`; jeden spoj může být
-/// v několika turnusech i v několika zpracováních, proto se **sjednocuje podle označení**
-/// (stejně jako legacy - to má u spoje týž seznam).
+/// Odpověď má tvar `out("arr",1,linka,spoj,zpracování,turnus,datum)`.
+///
+/// ⚠️ **Sjednocuje se podle čísla turnusu, ne podle celého označení** (rozhodnutí Jan 28. 8.).
+/// Označení je `<turnus>.<varianta>` a modul vrací záznam za každou kombinaci zpracování × datum,
+/// takže jeden turnus vyjde v mnoha variantách: na lince 0320625 měl spoj 1 osm označení
+/// `51164.01`-`51164.09`, ale **jediný** turnus 51164 (2 zpracování × 18 dnů). Tisknout osm řádků
+/// o tomtéž turnusu nemá pro čtenáře cenu; varianty jsou vnitřní členění oběhu po dnech.
+/// Legacy tiskne celé označení jen proto, že nic nesjednocuje.
 ///
 /// ⚠️ **Datum platnosti bere z linky** (`PATCH,"Plati"`), ne dnešní - turnus se hledá ke dni,
 /// ke kterému platí jízdní řád. Linka bez datumu platnosti se dotázat nedá, tam turnusy nebudou.
@@ -1056,7 +1053,7 @@ ClassMethod NactiTurnusy(dataDB As %String, sku As %String, lin As %String, ByRe
             f {
                 s tu = $o(tout("arr",1,+lin,sp,zp,tu))
                 q:tu=""
-                s turnusy(+sp, tu) = ""
+                s turnusy(+sp, $p(tu,".",1)) = ""
             }
         }
     }

@@ -33,6 +33,9 @@ public class ServerSideParamsDriftTests
                               // při změně řeší vlastní snapshot (RefetchIfColumnsDefinitionChanged)
         "JAZYK",              // jazyk textů značek = kultura šablony, ne volba v parametrech sestavy;
                               // re-fetch při přepnutí kultury drží tentýž snapshot (CurrentWireSnapshot)
+        "TURNUSY_KE_SPOJUM",  // volba prvku (turnus je provozní věc dopravce, ne informace pro
+                              // cestujícího) - posílá se ze šablony jako DEFINICE_SLOUPCU a re-fetch
+                              // při přepnutí drží týž snapshot (CurrentWireSnapshot)
     };
 
     // Čtení pojmenovaného IN klíče. Skupina 2 zachytí znak za uvozovkou - když je to `_`, jde

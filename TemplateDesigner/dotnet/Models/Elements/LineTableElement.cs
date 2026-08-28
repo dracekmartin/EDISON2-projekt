@@ -77,6 +77,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public bool ShowGroupHeaders { get; set; } = true;
 
     /// <summary>
+    /// Řádky s označením turnusu pod čísly spojů. Vypnuté = server turnusy ani nenačítá.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Je to volba prvku, ne parametr sestavy** (rozhodnutí Jan 28. 8.): turnus je provozní
+    /// věc dopravce, ne informace pro cestujícího, takže patří k sestavě, kterou si někdo udělá
+    /// pro provoz - stejně jako v legacy, kde to je nastavení sekce v návrháři sestav.
+    /// <para>Zapnutí musí serveru dojít, protože turnusy nejsou v datech linky a jejich dotaz
+    /// stojí 40-550 ms: klient posílá `TURNUSY_KE_SPOJUM` podle prvku (touž cestou jako
+    /// `DEFINICE_SLOUPCU`) a změna spouští re-fetch dat přes `CurrentWireSnapshot`.</para>
+    /// </remarks>
+    public bool TurnusyKeSpojum { get; set; }
+
+    /// <summary>
     /// Nadpis nad popisnými sloupci (zóna, km, Tč, zastávka, MHD) v pásu skupin dnů - vzor IDZK 940
     /// tam má „↓ Směr jízdy ↓". Prázdné = pás nad nimi zůstane bez textu, jako dosud.
     /// </summary>
@@ -843,8 +856,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// Stejně to počítá starý modul (`TUmax`, `JRapiLinPrtWin.mac:2718`). Turnusy posílá server jen
     /// se zapnutým parametrem, takže bez něj je to nula a tabulka vypadá jako dosud.
     /// </remarks>
-    private static int PocetTurnusovychRadku(List<LineTripData> trips) =>
-        trips.Count == 0 ? 0 : trips.Max(t => t.Turnusy.Count);
+    private int PocetTurnusovychRadku(List<LineTripData> trips) =>
+        !TurnusyKeSpojum || trips.Count == 0 ? 0 : trips.Max(t => t.Turnusy.Count);
     /// <summary>
     /// Kreslí se pás nad sloupci? Buď proto, že je co rozdělit na skupiny dnů, <b>nebo</b> proto,
     /// že má popisný blok svůj nadpis.
@@ -1670,6 +1683,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             SkupinyDnuDataSource = SkupinyDnuDataSource,
             Columns = Columns.Select(c => c.Clone()).ToList(),
             ShowPlatnostRow = ShowPlatnostRow,
+            TurnusyKeSpojum = TurnusyKeSpojum,
             ShowNzRow = ShowNzRow,
             ShowPripojeRows = ShowPripojeRows,
             PadEmptyColumns = PadEmptyColumns,
@@ -1703,6 +1717,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
+        new BoolPropertyDescriptor { Label = "Turnusy ke spojům", Group = "Řádky", Get = () => TurnusyKeSpojum, Set = v => TurnusyKeSpojum = v },
         new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
         new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },

@@ -142,10 +142,10 @@ public class DepartureColumnDefinitionTests
     {
         var baseParams = new Dictionary<string, object?> { ["ROZDELENI_SLOUPCU"] = "x" };
 
-        var withDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, "{\"sloupce\":[]}", null);
+        var withDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, "{\"sloupce\":[]}", false, null);
         Assert.Equal("{\"sloupce\":[]}", withDef["DEFINICE_SLOUPCU"]);
 
-        var withoutDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, null, null);
+        var withoutDef = TemplateDesignerViewModel.ComposeGetDataParams(baseParams, "LINKA_ID", "42", null, null, false, null);
         Assert.False(withoutDef.ContainsKey("DEFINICE_SLOUPCU"));
     }
 

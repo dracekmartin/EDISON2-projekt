@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-28 (10) - 🔁 turnusy: volba prvku místo parametru + jen číslo turnusu
+
+Dvě změny na tvůj podnět, obě k tomu, aby featura odpovídala tomu, co turnus je.
+
+**Zapíná to prvek, ne parametry tisku.** Turnus je provozní věc dopravce, ne informace pro
+cestujícího - patří tedy k sestavě, kterou si někdo udělá pro provoz, ne k volbám u tisku. Stejně to
+má i legacy: je to nastavení **sekce v návrháři sestav**. Prvek linkové tabulky má proto zaškrtávátko
+**„Turnusy ke spojům"** (skupina Řádky) a parametr sestavy zmizel. Serveru se volba posílá dál, jinak
+by turnusy v datech nebyly: jde touž cestou jako `DEFINICE_SLOUPCU` (vždy čerstvě ze šablony) a její
+přepnutí spouští re-fetch dat přes týž snapshot. Dotaz do modulu turnusů (40-550 ms) se tak pořád
+nespustí nikomu, kdo turnusy netiskne. Volba zároveň řídí kreslení, takže dva prvky v šabloně můžou
+mít různě.
+
+**Tiskne se číslo turnusu, ne celé označení s variantou.** Označení je `<turnus>.<varianta>` a modul
+vrací záznam za každou kombinaci zpracování × datum - na lince 0320625 měl spoj 1 osm označení
+`51164.01`-`51164.09`, ale **jediný** turnus 51164 (2 zpracování × 18 dnů). Osm řádků o tomtéž
+turnusu čtenáři nic neříká, takže se sjednocuje podle části před tečkou: jeden řádek „51164".
+Odchylka od legacy je vědomá - legacy tiskne celé označení jen proto, že nic nesjednocuje (a má na
+zkrácení dokonce nedodělanou volbu „zalamovat označení turnusu za tečkou").
+
+⚠️ Nový vstupní parametr obou skládacích metod je **povinný**, ne s výchozí hodnotou - právě proto
+se hned ukázala dvě zapomenutá volání v testech. U mapy, kterou musí náhled, export i tisk poslat
+**shodně**, je vynucený překlad lepší než tichý default (tak vznikla třída chyb, kde tisk vyjel jinak
+než náhled).
+
+Ověřeno: .NET **1249/1249** (3 nové testy na cestu volby z prvku na server), Caché **137/137**
+včetně kontroly, že v označení už není tečka a že parametr sestavy zmizel.
+
 ## 2026-08-28 (9) - ✨ šipka pro zrcadlený blok a dorovnání i vlevo (`L6c` dokončeno)
 
 Dva zbytky ze `L6b`, oba viditelné jen v obousměrném tisku.
@@ -31,6 +59,8 @@ doprava, a všechny dosavadní testy měřily jen šířku doprava, která tím 
 zarovnané tabulce - vypadalo to jako polovina neopravené vady.
 
 ## 2026-08-28 (8) - ✨ turnusy ke spojům v linkovém JŘ (`L6c`, první část)
+
+> *Volba se v (10) přesunula z parametrů sestavy do prvku a označení se sjednocuje na číslo turnusu.*
 
 Nový parametr sestavy **„Turnusy ke spojům"**: pod čísla spojů se přidají řádky s označením turnusu,
 ve kterém spoj jede („110.01"). Řádků je tolik, kolik turnusů má **nejbohatší** spoj, spoje s méně

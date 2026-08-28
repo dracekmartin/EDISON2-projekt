@@ -277,7 +277,8 @@ public class TemplateDesignerViewModel : EDViewModel
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
             var columnsDefJson = CurrentColumnsDefinitionJson();
-            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson, JazykSablony);
+            var turnusy = CurrentTurnusyKeSpojum();
+            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson, turnusy, JazykSablony);
             var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
@@ -965,10 +966,12 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Co ze šablony ovlivňuje **data** z `GetData`: definice sloupců a jazyk textů značek.
     /// Když se to pohne, náhled musí přenačíst - jinak ukazuje data staré definice / starý jazyk.</summary>
-    private string CurrentWireSnapshot() => ComposeWireSnapshot(CurrentColumnsDefinitionJson(), JazykSablony);
+    private string CurrentWireSnapshot() =>
+        ComposeWireSnapshot(CurrentColumnsDefinitionJson(), CurrentTurnusyKeSpojum(), JazykSablony);
 
-    internal static string ComposeWireSnapshot(string? columnsDefinitionJson, string jazyk) =>
-        (columnsDefinitionJson ?? "") + "|" + jazyk;
+    internal static string ComposeWireSnapshot(string? columnsDefinitionJson, bool turnusyKeSpojum,
+        string jazyk) =>
+        (columnsDefinitionJson ?? "") + "|" + (turnusyKeSpojum ? "T" : "-") + "|" + jazyk;
 
     private void RefetchIfColumnsDefinitionChanged()
     {
@@ -2633,7 +2636,7 @@ public class TemplateDesignerViewModel : EDViewModel
         ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK",
          "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE",
          "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
-         "DELENI_SLOUPCU", "SLOUPEC_TC", "ZASTAVKY_BEZ_ZASTAVENI", "BARVY_SPOJU", "OBOUSMERNY_TISK", "TURNUSY_KE_SPOJUM",
+         "DELENI_SLOUPCU", "SLOUPEC_TC", "ZASTAVKY_BEZ_ZASTAVENI", "BARVY_SPOJU", "OBOUSMERNY_TISK",
         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD",
         "ZVYRAZNIT_ZASTAVKU", "ZVYRAZNIT_TC"];
 
@@ -2780,9 +2783,10 @@ public class TemplateDesignerViewModel : EDViewModel
         var hidePrestup     = CurrentHidePrestupLegend();
         var hiddenContent   = CurrentHiddenContent();
         var columnsDefJson  = CurrentColumnsDefinitionJson();
+        var turnusy         = CurrentTurnusyKeSpojum();
 
         return await Task.Run(() => BuildAllPreviewDataPagesCore(
-            culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent, columnsDefJson));
+            culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent, columnsDefJson, turnusy));
     }
 
     /// <summary>Dvoumístný kód jazyka šablony pro server (`cs` / `sk`) - z kultury, kterou uživatel
@@ -2799,7 +2803,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     internal static Dictionary<string, object?> ComposeGetDataParams(
         IReadOnlyDictionary<string, object?> printParams, string instanceParamName,
-        string instanceValue, string? skupinaId, string? columnsDefinitionJson, string? jazyk)
+        string instanceValue, string? skupinaId, string? columnsDefinitionJson,
+        bool turnusyKeSpojum, string? jazyk)
     {
         var p = new Dictionary<string, object?>(printParams, StringComparer.OrdinalIgnoreCase)
         {
@@ -2813,6 +2818,11 @@ public class TemplateDesignerViewModel : EDViewModel
         // Jazyk textů značek (#12843) - jde ze šablony, ne z parametrů sestavy, ať ho persistovaná
         // hodnota nemůže přepsat (třída chyb B24). Prázdný = server zůstane na češtině.
         if (!string.IsNullOrEmpty(jazyk)) p["JAZYK"] = jazyk;
+        // Turnusy ke spojům jsou volba **prvku**, ne parametr sestavy (turnus je provozní věc
+        // dopravce). Serveru to ale dojít musí, protože turnusy nejsou v datech linky a jejich
+        // dotaz stojí 40-550 ms - proto touž cestou jako DEFINICE_SLOUPCU: vždy čerstvě ze
+        // šablony, mimo persistované hodnoty parametrů (třída chyb B24).
+        p["TURNUSY_KE_SPOJUM"] = turnusyKeSpojum ? "true" : "false";
         return p;
     }
 
@@ -2836,6 +2846,12 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Definice vlastních sloupců platná pro celou šablonu - z prvního prvku odjezdů,
     /// který ji má. Null = režim „Automaticky (dle linky)".</summary>
+    /// <summary>Chce **některý** prvek šablony turnusy ke spojům? Podle toho se posílá serveru
+    /// (dotaz do modulu turnusů je drahý, takže se nesmí spustit jinému než tomu, kdo je tiskne).</summary>
+    internal bool CurrentTurnusyKeSpojum() =>
+        State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
+            .OfType<LineTableElement>().Any(e => e.TurnusyKeSpojum);
+
     internal string? CurrentColumnsDefinitionJson() =>
         State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
             .OfType<IColumnLayoutOwner>()
@@ -2984,7 +3000,8 @@ public class TemplateDesignerViewModel : EDViewModel
         IReadOnlyDictionary<string, object?> printParams,
         IReadOnlyList<DataContext?>? realPreviewData,
         NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni, bool hidePrestup,
-        IProgress<string>? progress, IReadOnlySet<string>? hiddenContent = null, string? columnsDefinitionJson = null)
+        IProgress<string>? progress, IReadOnlySet<string>? hiddenContent = null,
+        string? columnsDefinitionJson = null, bool turnusyKeSpojum = false)
     {
         List<DataContext>? pages = null;
 
@@ -3000,7 +3017,8 @@ public class TemplateDesignerViewModel : EDViewModel
                 progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
                 var fetched = CacheProvider.GetData(
                     agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId,
-                        columnsDefinitionJson, culture.TwoLetterISOLanguageName.ToLowerInvariant()));
+                        columnsDefinitionJson, turnusyKeSpojum,
+                        culture.TwoLetterISOLanguageName.ToLowerInvariant()));
                 if (fetched is null) continue;
                 foreach (var p in fetched) all.Add(p.WithCulture(culture));
             }

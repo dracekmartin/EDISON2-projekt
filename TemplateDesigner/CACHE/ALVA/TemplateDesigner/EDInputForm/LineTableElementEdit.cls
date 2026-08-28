@@ -33,6 +33,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowGroupHeaders", "Nadpisy skupin dnů", 1)
         d form.AddBool("ShowPlatnostRow", "Řádek platnosti", 1)
         d form.AddBool("ShowNzRow", "Řádek negativních značek", 1)
+        d form.AddBool("TurnusyKeSpojum", "Turnusy ke spojům", 0)
         d form.AddBool("ShowPripojeRows", "Přípojné řádky (vyčká/navazuje)", 1)
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 20, "mm")
         s f.helpText = "Prázdné = auto podle velikosti písma"

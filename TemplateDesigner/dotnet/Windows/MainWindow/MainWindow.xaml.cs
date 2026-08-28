@@ -995,6 +995,7 @@ public partial class MainWindow : Window
             var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
             // Snapshot na UI threadu - callback běží na threadpoolu a nesmí sahat na živou šablonu
             var columnsDefJson = _vm.CurrentColumnsDefinitionJson();
+            var turnusy = _vm.CurrentTurnusyKeSpojum();
             buildRealData = paramValues =>
             {
                 List<DataContext>? pages;
@@ -1008,7 +1009,8 @@ public partial class MainWindow : Window
                     foreach (var inst in _vm.ActiveInstances)
                     {
                         var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
-                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson, _vm.JazykSablony));
+                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson,
+                            turnusy, _vm.JazykSablony));
                         if (instPages is null) continue;
                         all.AddRange(instPages);
                     }

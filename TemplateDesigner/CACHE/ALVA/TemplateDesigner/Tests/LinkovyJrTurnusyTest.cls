@@ -31,15 +31,17 @@ Parameter TESTSKU = 1;
 
 Parameter TESTLIN = "0108360";
 
-/// Parametr musí být v definici - jinak ho uživatel nemá kde zapnout.
-Method TestParametrJeVDefinici()
+/// Turnusy **nejsou parametr sestavy** - je to volba prvku (rozhodnutí Jan 28. 8.).
+///
+/// Dvě volby téhož by si šlapaly: klient posílá `TURNUSY_KE_SPOJUM` podle prvku, takže parametr
+/// vedle toho by uměl jen ukazovat něco jiného, než šablona tiskne.
+Method TestNeniParametremSestavy()
 {
 	do ..SetupSys(.sys)
 	kill ^||ML
 	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetParameters(.sys)
 	set json = $get(^||ML("OUT", 1))
-	do $$$AssertTrue(json [ "TURNUSY_KE_SPOJUM", "definice parametrů nezná TURNUSY_KE_SPOJUM")
-	do $$$AssertTrue(json [ "Turnusy ke spojům", "parametr nemá popisek „Turnusy ke spojům""")
+	do $$$AssertTrue(json '[ "TURNUSY_KE_SPOJUM", "turnusy se vrátily mezi parametry sestavy - je to volba prvku")
 }
 
 /// Vypnutý parametr: ani jeden spoj nesmí nést `TURNUSY`.
@@ -72,6 +74,21 @@ Method TestZapnutyParametrPosilaTurnusy()
 		}
 	}
 	do $$$AssertEquals(rozdilu, 0, "u "_rozdilu_" turnusů se výstup rozešel se zdrojem")
+
+	// Posílá se **číslo turnusu**, ne celé označení s variantou: jeden turnus vrací modul za každou
+	// kombinaci zpracování × datum, takže bez sjednocení vyjde z jednoho turnusu i osm řádků.
+	set sTeckou = "", sp = ""
+	for  {
+		set sp = $order(turnusy(sp))
+		quit:sp=""
+		set tu = ""
+		for  {
+			set tu = $order(turnusy(sp, tu))
+			quit:tu=""
+			if tu [ "." set sTeckou = sTeckou_$select(sTeckou'="":", ", 1:"")_sp_"/"_tu
+		}
+	}
+	do $$$AssertEquals(sTeckou, "", "označení s variantou po tečce se nesjednotila: "_sTeckou)
 }
 
 /// **Parita se starým modulem**: označení turnusů spoj po spoji a jejich pozice nad platností.
