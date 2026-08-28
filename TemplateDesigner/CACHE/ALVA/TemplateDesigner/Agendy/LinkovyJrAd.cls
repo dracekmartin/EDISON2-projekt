@@ -240,6 +240,21 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBar.options = optsBar
     d arr.%Push(pBar)
 
+    // Obousměrný tisk: oba směry na jedné sestavě (legacy in("A",2,"arr",7), JRapiLinPrtWin.mac:598).
+    // ⚠️ Starý modul zrcadlo tiše VYPNE, když se společný blok nevejde na stránku bez řezu (:627).
+    // My ten fallback vědomě nemáme (rozhodnutí Jan 28. 8.): legacy ho mít musel, protože tiskl
+    // naslepo do pevné stránky, kdežto u nás autor šablony vidí náhled a rozhodne se sám.
+    // Server na tenhle parametr posílá jen DATA - všechny spoje obou směrů nad společným seznamem
+    // zastávek, každý spoj označený svým směrem. O tom, který směr je vlevo, rozhoduje prvek.
+    s pObou = ##class(%DynamicObject).%New()
+    s pObou.name         = "OBOUSMERNY_TISK"
+    s pObou.label        = "Obousměrný tisk"
+    s pObou.type         = "bool"
+    s pObou.group        = "Linkový JŘ"
+    s pObou.defaultValue = "false"
+    s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuté = každý směr na vlastní stránce."
+    d arr.%Push(pObou)
+
     // Tvar názvu zastávky. ⚠️ **Výchozí „Plný CIS", jinak než u vývěsky**, kde je „Zkrácený":
     // starý linkový tisk skládá název čárkami a prázdnou část obce nechává jako dvojčárku
     // („Český Krumlov,,aut. nádraží"), kdežto starý vývěskový modul ji srážel. Ty dva staré moduly
@@ -413,9 +428,21 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
         s volbaBarvy = $g(^||ML("IN","BARVY_SPOJU"))
 
-        f smer = "T", "Z" {
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu)
+        // Obousměrný tisk: jedna stránka se spoji obou směrů nad společným seznamem zastávek.
+        // Bool parametry chodí jako "true"/"false", starší klienti posílali "True" - proto tolerantně.
+        s obousmerne = ($zcvt($g(^||ML("IN","OBOUSMERNY_TISK")),"L") = "true")
+        i obousmerne {
+            // Pořadí zastávek se bere ze směru „tam"; opačný směr se na tytéž řádky zarovná podle
+            // pořadí zastávky. Linka obsluhovaná jen jedním směrem tím vyjde jako dnes - druhá
+            // strana prostě nemá sloupce a prvek ji nenakreslí.
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 1)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+        }
+        else {
+            f smer = "T", "Z" {
+                s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu)
+                i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+            }
         }
     }
     catch (ex) { $$$CatchErrRest }
@@ -479,10 +506,20 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 }
 
 /// Sestaví JSON stránku knižního JŘ pro jednu linku a směr. "" když směr nemá spoje.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu) As %DynamicObject
+/// `obousmerne` = spoje **obou** směrů nad jedním seznamem zastávek (parametr „Obousměrný tisk").
+/// Zastávkové řádky se staví pro `smer`, spoje se přiberou i z opačného směru a každý nese `SMER`.
+/// Server tím posílá jen fakta - o tom, který směr se kreslí vlevo, rozhoduje prvek.
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu, obousmerne As %Boolean = 0) As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
-    i '..MaSpoje(dataDB, sku, lin, smer) q ""
+    // U obousměrné stránky stačí spoje v jednom ze směrů - kdyby se ptalo jen na `smer`, linka
+    // obsluhovaná pouze zpět by nevrátila nic.
+    i obousmerne {
+        i '..MaSpoje(dataDB, sku, lin, "T") && '..MaSpoje(dataDB, sku, lin, "Z") q ""
+    }
+    else {
+        i '..MaSpoje(dataDB, sku, lin, smer) q ""
+    }
 
     s rec = ..Jazyk(dataDB)
     s tiskDtm = ..TiskDtm(dataDB, sku, lin)
@@ -509,7 +546,10 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("POPIS_PLATNOSTI",        popisPlatnosti)
     d vals.%Set("TYP_JR", $case(+$g(^[dataDB]JRL(sku,lin,"PATCH","OBJ")),1:"VÝLUKOVÝ",2:"návrh jízdního řádu",:""))
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
-    d vals.%Set("SMER",                   smer)
+    // ⚠️ U obousměrné stránky je směr **prázdný** - stránka nese oba a `SMER` u stránky by šablonu
+    // navedl vytisknout jeden z nich jako by byl jediný. Směr každého spoje je na spoji;
+    // konce linky drží `VYCHOZI_ZASTAVKA` a `POPIS_SMER`.
+    d vals.%Set("SMER",                   $s(obousmerne:"", 1:smer))
 
     // ── zastávkové řádky v pořadí směru (vč. zdvojení příjezd/odjezd u atributů P/J) ──
     // rowMeta(i) = $lb(poradi, typ) - typ "O" hlavní/odjezdový, "P" vložený příjezdový.
@@ -590,15 +630,22 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("POPIS_SMER",       posledniNazev)
 
     // ── spoje směru: legacy mkPoradiSp řazení + zařazení do skupin dnů ──
-    d ..SeradSpoje(dataDB, sku, lin, smer, .serazeneSpoje, .pocetSpoju)
-
     s spoje = ##class(%DynamicArray).%New()
     k platnostZnakySeen, nzSeen, pripojePoznamky, markerSeen, atributSeen, mistenkaSeen, trasaZnakySeen
     s pocetSkupin = $s(+$g(defSloupcu):+$g(defSloupcu), deleni=0:1, deleni=1:2, 1:3)
+
+    // Směry k projití: u obousměrné stránky oba, jinak jen ten svůj. Časy se zarovnávají podle
+    // **pořadí zastávky** (`wMap(pp)` v `BuildSpoj`), ne podle pozice ve směru, takže spoje
+    // opačného směru sednou na tentýž `rowMeta` bez jakéhokoli přepočtu.
+    s smeryVeta = $s(obousmerne:"T,Z", 1:smer)
+    f smerIdx = 1:1:$l(smeryVeta, ",") {
+    s smerSpoju = $p(smeryVeta, ",", smerIdx)
+    k serazeneSpoje
+    d ..SeradSpoje(dataDB, sku, lin, smerSpoju, .serazeneSpoje, .pocetSpoju)
     f skupina = 1:1:pocetSkupin {
         f si=1:1:pocetSpoju {
             s sp = serazeneSpoje(si)
-            s plk = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",7)
+            s plk = $p($p($g(^[dataDB]JRL(sku,lin,smerSpoju,sp)),"#",1),":",7)
             // ⚠️ **Spoj bez týdenní platnosti patří do všech skupin dnů** - prázdné `plk` si
             // `ZarazeniSpojeKnizni` přeloží samo. Legacy zkusí dopočítat skutečnou platnost
             // kalendářem (`mkStaLinSp`) a **když mu to nevyjde, dá spoj do všech sekcí**
@@ -612,14 +659,15 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
             i +$g(defSloupcu) {
                 // Vlastní definice: den + značky, které spoj do sloupce pustí nebo z něj vyřadí.
                 // Období (osa ISY) tu vědomě není - linkový JŘ pro ně nemá podklad, viz roadmapa.
-                s cnz = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8)
+                s cnz = $p($p($g(^[dataDB]JRL(sku,lin,smerSpoju,sp)),"#",1),":",8)
                 s skupiny = ..ZarazeniSpojeDleDefiniceLinky(.defSloupcu, plk, cnz)
             }
             else { s skupiny = ..ZarazeniSpojeKnizni(deleni, plk) }
             i (","_skupiny_",") '[ (","_skupina_",") continue
-            s spojObj = ..BuildSpoj(dataDB, sku, lin, smer, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy)
+            s spojObj = ..BuildSpoj(dataDB, sku, lin, smerSpoju, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy)
             i spojObj '= "" d spoje.%Push(spojObj)
         }
+    }
     }
     i spoje.%Size() = 0 q ""
 
@@ -627,7 +675,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     //    navazuje, atributy, místenkování, stálé značky, poznámky linky) ──
     s poznamky = ##class(%DynamicArray).%New()
     d ..PridatPoznamkyPlatnosti(dataDB, rec, poznamky, .platnostZnakySeen)
-    d ..PridatPoznamkyNZ(dataDB, sku, lin, smer, rec, tiskDtm, poznamky, .nzSeen)
+    d ..PridatPoznamkyNZ(dataDB, sku, lin, smeryVeta, rec, tiskDtm, poznamky, .nzSeen)
     f poradiDruhu3 = 1:1:3 {
         s seq = ""
         f {
@@ -970,6 +1018,9 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     s o = ##class(%DynamicObject).%New()
     d o.%Set("CISLO_SPOJE", +sp)
     d o.%Set("SKUPINA", skupina)
+    // Směr spoje posílá **každá** stránka, i jednosměrná - u obousměrné je to jediné, čím prvek
+    // pozná, kam sloupec patří, a jednotný tvar je pro klienta jednodušší než pole navíc jen někdy.
+    d o.%Set("SMER", smer)
     d o.%Set("NZ", cnz)
     // Barva spoje jako prezentační nápověda (R3): 12. „#"-pole záznamu ve tvaru „r;g;b".
     // Prázdno = šablona rozhodne; `0;0;0` je v legacy „nenastaveno", ne černá, takže se neposílá.
@@ -1356,19 +1407,27 @@ ClassMethod TextPlatnosti(znak As %String) As %String
 }
 
 /// Poznámky druhu 2 - negativní značky: text z datumových omezení spojů nesoucích danou NZ.
-ClassMethod PridatPoznamkyNZ(dataDB As %String, sku As %String, lin As %String, smer As %String, rec As %String, tiskDtm As %Integer, poznamky As %DynamicArray, ByRef nzSeen)
+/// `smery` = seznam směrů oddělený čárkou („T" nebo „T,Z" u obousměrné stránky).
+ClassMethod PridatPoznamkyNZ(dataDB As %String, sku As %String, lin As %String, smery As %String, rec As %String, tiskDtm As %Integer, poznamky As %DynamicArray, ByRef nzSeen)
 {
     s znak = ""
     f {
         s znak = $o(nzSeen(znak))
         q:znak=""
-        s txt = "", sp = ""
-        f {
-            s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
-            q:sp=""
-            i '$isvalidnum(sp) continue
-            i $p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",7) '= znak continue
-            s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp, rec, tiskDtm)
+        s txt = ""
+        // ⚠️ U obousměrné stránky nese značku i spoj opačného směru, takže se text hledá v obou.
+        // Kdyby se hledal jen v tom „svém", u takové značky by legenda zůstala bez textu.
+        f smerIdx = 1:1:$l(smery, ",") {
+            s smerNz = $p(smery, ",", smerIdx)
+            s sp = ""
+            f {
+                s sp = $o(^[dataDB]JRL(sku,lin,smerNz,sp))
+                q:sp=""
+                i '$isvalidnum(sp) continue
+                i $p($g(^[dataDB]JRL(sku,lin,smerNz,sp)),"#",7) '= znak continue
+                s txt = ..SestavTextOmezeni(dataDB, sku, lin, smerNz, sp, rec, tiskDtm)
+                q:txt'=""
+            }
             q:txt'=""
         }
         i txt '= "" d poznamky.%Push(..BuildPoznamka(2, "nz", znak, txt))

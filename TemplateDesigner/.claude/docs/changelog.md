@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-08-28 (4) - ✨ data pro obousměrný tisk: oba směry na jedné stránce (`L6b`, 1/2)
+
+První polovina `L6b` - **datová**. Nový parametr sestavy **„Obousměrný tisk"** (výchozí vypnuto,
+jen AD; legacy MHD engine tento parametr nečte vůbec). Se zapnutým vrací agenda **jednu** stránku
+se spoji obou směrů nad společným seznamem zastávek a **každý spoj nese `SMER`**.
+
+⚠️ **Server posílá jen fakta, tvar drží klient** (požadavek Jan 28. 8.: layout musí zůstat v C#, ať
+nedopadneme jako starý modul, kde konkrétní rozvržení počítá Caché). Původní návrh byl poslat dvě
+kolekce (`SPOJE` a `SPOJE_ZPET`) - **zahozen**, protože už tím rozdělením říká „tyhle patří na druhou
+stranu tabulky", tedy propašovává layout do dat. Směr u spoje je fakt; strana tabulky je rozhodnutí
+prvku.
+
+**Sloučení nestálo skoro nic, a to je nález:** časy se zarovnávají podle **pořadí zastávky**
+(`wMap(pp)`), ne podle pozice ve směru, takže spoje opačného směru sednou na tentýž seznam řádků bez
+jediného přepočtu. Ověřeno na lince 0330511: zpětný spoj má časy 05:08 → 04:40 **klesající dolů** po
+sdíleném seznamu, tedy správně proti směru.
+
+- **Legenda NZ hledá text v obou směrech.** Dosud procházela spoje jen „svého" směru, takže značka
+  vidět jen u zpětného spoje by na sloučené stránce zůstala bez textu.
+- **`SMER` u stránky je u sloučené prázdný** - stránka nese oba a jeden z nich by šablona vytiskla
+  jako by byl jediný. Konce linky drží `VYCHOZI_ZASTAVKA` a `POPIS_SMER`.
+- **Pravidlo „v jednom směru nejsou spoje → zrcadlo ne" nepotřebuje výjimku**: taková linka prostě
+  nemá co sloučit a vyjde jako dnes.
+
+Ověřeno: Caché **133/133**, .NET 1228/1228, ověřeno mutací (s ignorovaným parametrem padnou dva
+testy). ⚠️ **Mutace odhalila slabý test**: „časy sedí na společné řádky" procházelo i bez slévání,
+protože po směrech má každá stránka svých 31 zastávek - teď si nejdřív ověří, že stránka je jedna.
+Zlaté odtisky linkového JŘ přebaseline-ovány: **mění se jen md5, počty do jednoho shodné** (nové
+pole `SMER`), přesně případ, který ten test sám popisuje.
+
+⚠️ **Kreslení zbývá** - prvek dnes sloupce nalevo od zastávek neumí, takže zapnutý parametr se ve
+výstupu ještě neprojeví. To je druhá polovina `L6b`.
+
+⚠️ **Nález mimo tuhle práci: sdílený Caché runner sčítá i cizí běhy.** `RunPackage` iteruje všechny
+výsledky, které v `^UnitTest.Result` vzniknou po jeho startu, takže když na dev serveru běží současně
+jiná sada (typicky kolegův pre-push hook), přičte si její testy. Změřeno: dva běhy dnes hlásily
+**186/186** místo 128 - a rozdíl 58 je přesně `EDISONMAIN2` (23) + `EDControls` (35) Caché testů.
+Vedeno v roadmapě; dokud to platí, jsou počty „Caché X/X" v changelogu nespolehlivé nahoru.
+
+
 ## 2026-08-28 (3) - 🐞 barva nastavená u šipky ji neobarvila (nešlo poznat, kterou zónou se řídí)
 
 Nález Jan: nastavil sloupci šipky **barvu textu** a šipka zůstala černá; barva se přitom projevila

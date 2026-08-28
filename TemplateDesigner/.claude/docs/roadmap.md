@@ -79,6 +79,12 @@ Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-ses
 | **L10** | **Mřížka linkové tabulky: dvě volby, které nic nedělají.** „Čáry mezi řádky" a „Čáry mezi sloupci" jsou v panelu i v Caché formuláři, ale prvek je **vůbec nečte** - mřížku kreslí vždy (ověřeno vykreslením 27. 8.: všechny čtyři kombinace zapnuto/vypnuto dají shodný obrázek). ⚠️ **Rozsvítit je není bezpečná oprava**: hodnota je uložená v šablonách, takže komu je dnes odškrtnuté, tomu z tisku zmizí mřížka. Patří k tomu i odložené `L9-R3` - **oddělená barva a tloušťka vodorovných × svislých čar** (`GridStyle` má dnes jednu pro obojí a je **sdílený** se všemi tabulkovými prvky, takže se to má doplánovat pro všechny naráz, ne jen tady). | S |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
 
+### Nálezy k opravě mimo TD
+
+| # | Co | Vel. |
+|---|---|---|
+| **T1** | **Sdílený Caché runner sčítá i cizí běhy** (změřeno 28. 8.). `ALVA.EDTesting.TestRunner.RunPackage` iteruje **všechny** výsledky, které v `^UnitTest.Result` vzniknou po jeho startu, a dedupe dělá jen na (třída, metoda) - takže když na témže dev serveru běží současně jiná sada (kolegův pre-push hook), přičte si její testy. Doklad: dva běhy hlásily **186/186** místo 128, rozdíl 58 = `EDISONMAIN2` (23) + `EDControls` (35). ⚠️ **Nejde jen o nafouknuté číslo** - stejnou cestou si běh může přivlastnit i **cizí selhání**, takže se hledá chyba, která není naše. Oprava je malá: filtrovat výsledky podle seznamu tříd, které runner sám spustil. Je to v `EDTesting/`, tedy **sdílená infrastruktura mimo TD** - nechávám na rozhodnutí, kdo to vezme. | S |
+
 ### Mimo paritu
 
 Věci, které starý modul **neumí** - nejsou to dluhy, ale featury. Vědomě mimo paritní vlnu
