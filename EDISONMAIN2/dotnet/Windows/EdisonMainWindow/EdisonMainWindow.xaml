@@ -22,7 +22,7 @@
             <b:InvokeCommandAction Command="{Binding CloseAllCommand}"/>
         </b:EventTrigger>
     </b:Interaction.Triggers>
-    <!-- Skryté klávesové zkratky. Ctrl+W+W chord řeší
+    <!-- Skryté klávesové zkratky. Ctrl+W+W (dvojhmat) řeší
          PreviewKeyDown v code-behind (víc-krokový stav, nelze přes KeyBinding). -->
     <Window.InputBindings>
         <KeyBinding Key="B" Modifiers="Control+Shift" Command="{Binding ShowBgTasksCommand}"/>
@@ -611,7 +611,7 @@
             </StatusBarItem>
 
             <!-- Pravá zóna: dokovaný jde k pravému okraji, další nalevo od něj. Chip je první,
-                 aby ho naskočení chord hintu neposunulo. Dock funguje jen na explicitním StatusBarItem. -->
+                 aby ho naskočení nápovědy k dvojhmatu neposunulo. Dock funguje jen na explicitním StatusBarItem. -->
             <StatusBarItem DockPanel.Dock="Right"
                            Visibility="{Binding NewVersionText, Converter={StaticResource NonEmptyToVis}}">
                 <!-- Rámeček drží chip čitelný i v light modu, kde BlueBg na Bg.Panel splývá. -->
@@ -624,10 +624,10 @@
                                MaxWidth="320" TextTrimming="CharacterEllipsis"/>
                 </Border>
             </StatusBarItem>
-            <!-- Chord hint pro Ctrl+W+W. Prázdný text = neaktivní stav. -->
+            <!-- Nápověda k dvojhmatu Ctrl+W+W. Prázdný text = neaktivní stav. -->
             <StatusBarItem DockPanel.Dock="Right"
-                           Visibility="{Binding ChordHintText, Converter={StaticResource NonEmptyToVis}}">
-                <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"
+                           Visibility="{Binding SecondKeyHintText, Converter={StaticResource NonEmptyToVis}}">
+                <TextBlock Text="{Binding SecondKeyHintText}" FontStyle="Italic"
                            Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
             </StatusBarItem>
         </StatusBar>

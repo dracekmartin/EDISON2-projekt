@@ -1506,38 +1506,38 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PopupDisplayer.Info("Tato funkce zatím není v EDISONu 2 dostupná.");
         }
 
-        // Ctrl+W+W chord - skrytá zkratka pro M-line utility.
-        // Stav perzistuje v UI threadu, není potřeba timeout - jakákoliv jiná klávesa chord resetuje.
-        private bool _isChordWaiting;
-        public bool IsChordWaiting
+        // Ctrl+W+W (dvojhmat) - skrytá zkratka pro M-line utility.
+        // Stav perzistuje v UI threadu, není potřeba timeout - jakákoliv jiná klávesa čekání zruší.
+        private bool _isWaitingForSecondKey;
+        public bool IsWaitingForSecondKey
         {
-            get => _isChordWaiting;
+            get => _isWaitingForSecondKey;
             private set
             {
-                if (Set(ref _isChordWaiting, value))
-                    OnPropertyChanged(nameof(ChordHintText));
+                if (Set(ref _isWaitingForSecondKey, value))
+                    OnPropertyChanged(nameof(SecondKeyHintText));
             }
         }
-        public string ChordHintText => IsChordWaiting ? "Stisknuto Ctrl+W - čekám na druhý stisk…" : "";
+        public string SecondKeyHintText => IsWaitingForSecondKey ? "Stisknuto Ctrl+W - čekám na druhý stisk…" : "";
 
         public void HandleCtrlW()
         {
-            if (IsChordWaiting)
+            if (IsWaitingForSecondKey)
             {
-                IsChordWaiting = false;
+                IsWaitingForSecondKey = false;
                 // UTILITIES.exe ukáže vlastní FrmPassword (legacy date-dependent vzorec) -
-                // shell jen detekuje chord a spustí. Single source of truth pro formuli.
+                // shell jen detekuje dvojhmat a spustí. Single source of truth pro formuli.
                 WindowNavigator.ShowLegacy("UTILITIES.exe", "ALVA.UTILITIES.formUTILITIESMain");
             }
             else
             {
-                IsChordWaiting = true;
+                IsWaitingForSecondKey = true;
             }
         }
 
-        public void ResetChord()
+        public void CancelSecondKeyWait()
         {
-            if (IsChordWaiting) IsChordWaiting = false;
+            if (IsWaitingForSecondKey) IsWaitingForSecondKey = false;
         }
     }
 }

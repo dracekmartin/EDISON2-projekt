@@ -111,6 +111,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
         public static string NewVersionText  => "Nová verze 4.13.0";
         public static string NewVersionTooltip => "K dispozici je nová verze 4.13.0 (nainstalovaná 4.12.3).";
         public static string UpToDateText    => "";
-        public static string ChordHintText   => "";
+        public static string SecondKeyHintText   => "";
     }
 }

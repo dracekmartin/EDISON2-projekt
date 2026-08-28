@@ -266,9 +266,9 @@ namespace EDISONMAIN2
                 vm.OpenModuleCommand.Execute(module);
         }
 
-        // Ctrl+W+W chord detection. PreviewKeyDown (ne KeyDown) - chytá klávesy předtím,
+        // Ctrl+W+W (dvojhmat) - detekce. PreviewKeyDown (ne KeyDown) - chytá klávesy předtím,
         // než je child controls (menu, TextBox) zpracují. Bez Preview by Ctrl+W v Menu
-        // zavřel popup místo aby spustil chord.
+        // zavřel popup místo aby spustil dvojhmat.
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (DataContext is not EdisonMainViewModel vm) return;
@@ -281,9 +281,9 @@ namespace EDISONMAIN2
             }
             else
             {
-                // Ne-Ctrl+W klávesa → reset chord (uživatel pokračuje jinde).
-                // Pouze pokud chord právě čeká, jinak žádná akce.
-                vm.ResetChord();
+                // Ne-Ctrl+W klávesa → zrušit čekání (uživatel pokračuje jinde).
+                // Pouze pokud se právě čeká na druhý stisk, jinak žádná akce.
+                vm.CancelSecondKeyWait();
 
                 if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
                 {
