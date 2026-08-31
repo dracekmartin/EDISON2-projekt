@@ -98,18 +98,78 @@ public class SymbolMapLinkovyTests
         Assert.Equal(SymbolRenderMode.Text, SymbolMap.ResolveLinkovy(znak).Mode);
     }
 
-    /// <summary>Tři značky v tiskovém fontu vůbec nejsou. Provizorně se vypisují textem
-    /// (rozhodnutí Jan 2026-08-24), ať se informace aspoň neztratí.</summary>
+    /// <summary>
+    /// Vybavení vozidla se tiskne piktogramem - loď, wifi i <b>zásuvka</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 31. 8. tu stálo, že tyhle tři ve fontu nejsou. U zásuvky to <b>nebyla pravda</b>:
+    /// tabulka glyfů obou fontů ji našla na 179, hned vedle lodi (180) a wifi (186) v bloku ikon
+    /// vybavení. Zbytek bloku (káva, sedadlo, obrazovka) sedí tvarem, ale ke zkratkám ho nikdo
+    /// nepřiřadil - proto tu jsou jen tyhle tři.
+    /// </remarks>
+    [Theory]
+    [InlineData("lod", "´")]
+    [InlineData("wifi", "º")]
+    [InlineData("zasu", "³")]
+    public void VybaveniVozidla_JePiktogram(string znak, string pozice)
+    {
+        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+
+        Assert.Equal(SymbolRenderMode.FontGlyf, mode);
+        Assert.Equal(pozice, value);
+    }
+
+    /// <summary>Ve <b>vývěsce</b> ty tři zůstávají textem - přepnutí by změnilo hotový tisk.</summary>
     [Theory]
     [InlineData("lod")]
     [InlineData("wifi")]
     [InlineData("zasu")]
-    public void ZnackaMimoFont_SeVypisujeTextem(string znak)
+    public void VybaveniVozidla_VeVyvesceZustavaText(string znak)
     {
-        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+        var (mode, value) = SymbolMap.Resolve(znak);
 
         Assert.Equal(SymbolRenderMode.Text, mode);
         Assert.Equal(znak, value);
+    }
+
+    /// <summary>
+    /// Kola a zavazadla mají ve fontu jednoznačný tvar, takže se tisknou piktogramem.
+    /// </summary>
+    /// <remarks>
+    /// Kolo je táž pozice, jakou už používá značka <c>K</c>; kufr je pozice <c>p</c>, kterou má
+    /// tenhle soubor doloženou odjakživa (proto tam nesmí „pokračuje"). ⚠️ Že <b>zrovna PJI a PCZ</b>
+    /// míří na tyhle glyfy, plyne z významu zkratky, ne z překladu starého modulu - ten je ve
+    /// windowsím tiskovém klientovi, který v repu není.
+    /// </remarks>
+    [Theory]
+    [InlineData("PJI", "L")]   // kola
+    [InlineData("PCZ", "p")]   // zavazadla - kufr
+    public void VybaveniSJednoznacnymTvarem_JePiktogram(string znak, string pozice)
+    {
+        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+
+        Assert.Equal(SymbolRenderMode.FontGlyf, mode);
+        Assert.Equal(pozice, value);
+    }
+
+    /// <summary>
+    /// Zbytek rodiny atributů zůstává <b>textem</b> - k jejich zkratkám se glyf přiřadit nedal.
+    /// </summary>
+    /// <remarks>
+    /// U občerstvení má font dva kandidáty (káva i příbor) a není čím rozhodnout který; u ostatních
+    /// se tvar k významu nepřiřadil vůbec. Vypsaná zkratka je horší obrázek, ale <b>správná</b>
+    /// informace - cizí piktogram by se poznal až v tisku u zákazníka.
+    /// </remarks>
+    [Theory]
+    [InlineData("OBC")]   // občerstvení - dva kandidáti ve fontu
+    [InlineData("NKA")]   // nízkokapacitní
+    [InlineData("POS")]   // zásilky
+    [InlineData("RBU")]   // radiobus
+    [InlineData("SAO")]   // samoobslužný
+    [InlineData("RBP")]   // jede podmínečně
+    public void ZbytekRodinyAtributu_ZustavaText(string znak)
+    {
+        Assert.Equal(SymbolRenderMode.Text, SymbolMap.ResolveLinkovy(znak).Mode);
     }
 
     /// <summary>Piktogram se překládá na <b>pozici</b>, ne na písmeno - jinak by autobus vyšel

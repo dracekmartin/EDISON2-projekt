@@ -47,11 +47,12 @@ public static class SymbolMap
         _ => znak,
     };
 
-    /// <summary>Značky, které v symbolovém fontu <b>nejsou</b> - vypíšou se textem.</summary>
+    /// <summary>Značky, které se ve <b>vývěsce</b> vypisují textem.</summary>
     /// <remarks>
-    /// ⚠️ <b>Provizorium</b> (rozhodnutí Jan 24. 8.): informace se aspoň neztratí, ale v tisku
-    /// vypadá jinak než zbytek značek. Pořádné řešení (doplnit do fontu, nebo vlastní piktogramy)
-    /// je otevřené - viz backlog.
+    /// ⚠️ <b>Ve fontu přitom všechny tři jsou</b> - tabulka glyfů obou fontů (31. 8.) je našla
+    /// shodně na 180 (loď), 186 (wifi) a 179 (zásuvka); linkový JŘ je od té doby kreslí
+    /// piktogramem. Tady zůstávají textem schválně: přepnutí by změnilo hotový tisk vývěsek,
+    /// a to je rozhodnutí o vzhledu, ne oprava.
     /// </remarks>
     private static bool ChybiVeFontu(string znak) => znak is "lod" or "wifi" or "zasu";
 
@@ -110,6 +111,18 @@ public static class SymbolMap
         ["L"] = "x",   // vlak - lokomotiva
         ["A"] = "z",   // autobus - na `w` je vagon
         ["K"] = "L",   // jízdní kolo
+        // Vybavení vozidla. Pozice odečtené z tabulky glyfů obou fontů 31. 8.; kódy nad 127 drží
+        // font ve stejném bloku ikon vybavení (177 šipka, 178 kolo, 179 zásuvka, 180 loď,
+        // 182 káva, 186 wifi, 188 sedadlo), takže sedí i sousedstvím, nejen tvarem.
+        // ⚠️ Přiřazení „která zkratka na který glyf" je odvozené z významu, ne z překladu starého
+        // modulu - ten žije ve windowsím tiskovém klientovi, který v repu není. Doloženo jen tam,
+        // kde je tvar jednoznačný; zbytek rodiny (IDS, NKA, POS, RBU, SAO, RBP, OBC) proto zůstává
+        // textem - viz poznámka u `JeOverenyPiktogramLinky`.
+        ["PJI"] = "L",        // kola - totéž jízdní kolo jako `K`
+        ["PCZ"] = "p",        // zavazadla - kufr (pozice `p`, proto tam „pokračuje" být nesmí)
+        ["lod"] = "´",   // loď (180)
+        ["wifi"] = "º",  // wifi (186)
+        ["zasu"] = "³",  // zásuvka (179)
     };
 
     private static bool JeOverenyPiktogramLinky(string znak) =>
