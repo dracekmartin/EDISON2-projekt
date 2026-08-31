@@ -104,8 +104,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// mezi sloupci spojů zůstanou. Vzor 940 to tak má (km má dva podsloupce a nejsou oddělené).
     /// </summary>
     /// <remarks>
-    /// ⚠️ Bez tohohle šel vypnout jen <b>celý</b> <c>Grid.ShowColumnLines</c>, tedy i čáry mezi
-    /// spoji - a to je právě ta stížnost, že „ohraničení jednotlivých km sloupců nejde odstranit".
+    /// ⚠️ Hrubší vypínač je <c>Grid.ShowColumnLines</c>, jenže ten sebere i čáry mezi spoji -
+    /// a to je právě ta stížnost, že „ohraničení jednotlivých km sloupců nejde odstranit".
+    /// (Do 31. 8. navíc <c>ShowColumnLines</c> nefungoval vůbec, takže tohle bylo jediné,
+    /// čím šlo svislou čáru v tabulce potlačit.)
     /// </remarks>
     public bool PopisneSloupceBezVnitrnichCar { get; set; }
 
@@ -1103,7 +1105,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
 
                 var plan = BuildRowPlan(stops, spojeBloku, zrcadleneBloku, trips, groups, mrizka, nameIndex,
-                    headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
+                    headerH, rowH, PripojRowH() * scale,
+                    Grid.ShowColumnLines ? paints.Grid : null,
+                    Grid.ShowRowLines ? paints.Grid : null,
+                    headerResolved, headerCentered,
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
 
@@ -1233,12 +1238,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// negativní značky → zastávky (s podřádky přípojů). Vodorovné čáry a pozadí zvýraznění nese
     /// <see cref="RowSpec"/>, samotné kreslení <see cref="RowPlanRenderer"/>.
     /// </summary>
+    /// <summary>Sestaví plán řádků tabulky. <paramref name="sloupcovaCara"/> a
+    /// <paramref name="radkovaCara"/> jsou <c>null</c>, když si uživatel ten druh čar vypnul -
+    /// stejné dělení jako u seznamu zastávek a obou tabulek. Jemnější potlačení svislé čáry
+    /// u konkrétního sloupce řeší <c>SuppressLeadingLine</c>, tohle je nadřazený vypínač.</summary>
     private List<RowSpec> BuildRowPlan(
         List<LineStopData> stops, List<LineTripData> trips, List<LineTripData> zrcadlene,
         List<LineTripData> vsechnySpoje,
         List<LineSkupinaData> groups,
         SloupcovaMrizka mrizka, int nameIndex,
-        float headerH, float rowH, float pripojRowH, SKPaint gridPaint,
+        float headerH, float rowH, float pripojRowH,
+        SKPaint? sloupcovaCara, SKPaint? radkovaCara,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
         ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle,
         RenderContext ctx, SKTypeface symbolFace, float scale)
@@ -1297,7 +1307,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // skupiny pak začínala až o řádek níž - vypadalo to jako rámeček s chybějícím kusem
             // boku (nález Jan na vzoru 940).
             plan.Add(new(RowKind.GroupHeader, headerH, band)
-                { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+                { VerticalLinePaint = sloupcovaCara, LineBelowPaint = radkovaCara });
         }
 
         // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
@@ -1310,7 +1320,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         PridejSpoje(headerSpecs, mrizka, trips.Count, headerResolved,
             ti => (trips[ti].CisloSpoje, tripHeaderStyle));
         plan.Add(new(RowKind.Header, headerH, headerSpecs)
-            { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+            { VerticalLinePaint = sloupcovaCara, LineBelowPaint = radkovaCara });
 
         // řádky turnusů - jeden na turnus, hned pod čísly spojů a **nad** řádkem platnosti.
         // Tak je řadí i starý modul: jeho indexy řádků jdou číslo spoje (1) → turnusy (1.001xx)
@@ -1322,7 +1332,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             plan.Add(new(RowKind.HeaderExtra, rowH,
                 TripTextRow(mrizka, trips, zrcadlene, tripDataStyle,
                     t => tr < t.Turnusy.Count ? t.Turnusy[tr] : ""))
-            { VerticalLinePaint = gridPaint });
+            { VerticalLinePaint = sloupcovaCara });
         }
 
         // řádky platnosti (znaky X/6/7/+ nad spojem) - nejvýš dvě značky na řádek, zbytek pod něj
@@ -1341,7 +1351,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var prazdne = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, rowH, prazdne)
             {
-                VerticalLinePaint = gridPaint,
+                VerticalLinePaint = sloupcovaCara,
                 // `DrawRows` kreslí buňky od X prvku, takže i ruční kreslení musí začít tam.
                 Decorate = rowY =>
                 {
@@ -1359,8 +1369,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var prazdneNz = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, rowH, prazdneNz)
             {
-                VerticalLinePaint = gridPaint,
-                LineBelowPaint = gridPaint,
+                VerticalLinePaint = sloupcovaCara,
+                LineBelowPaint = radkovaCara,
                 Decorate = rowY =>
                 {
                     DrawNegativniZnacky(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
@@ -1429,7 +1439,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             plan.Add(new(RowKind.Data, rowH, specs)
             {
                 Background = ColorHex.ParseOrNull(rowHl),
-                VerticalLinePaint = gridPaint,
+                VerticalLinePaint = sloupcovaCara,
                 Decorate = (znackyRadku.Count == 0) && (znackyVBunceZrc.Count == 0)
                         && (znakZastavky.Count == 0) ? null : rowY =>
                 {
@@ -1465,7 +1475,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                         ti => (ReferenceEquals(trips[ti], spoj) ? pr.Cas : "", pripojStyle));
 
                     plan.Add(new(RowKind.SubRow, pripojRowH, prSpecs)
-                    { VerticalLinePaint = gridPaint, LineAbovePaint = gridPaint, LineBelowPaint = gridPaint });
+                    { VerticalLinePaint = sloupcovaCara, LineAbovePaint = radkovaCara, LineBelowPaint = radkovaCara });
                 }
             }
         }
