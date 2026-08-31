@@ -44,7 +44,7 @@ ClassMethod OracleDostupny() As %Boolean
 
 /// Spustí legacy `mkPLinWin` nad jednou linkou. 0 = starý modul nebo firma na serveru není.
 /// Výstup zůstane v globálu `GLB`; hlavička linky v `out("dta",...)`.
-ClassMethod SpustLegacy(db As %String, sku As %String, lin As %String, deleni As %Integer, ByRef out) As %Boolean
+ClassMethod SpustLegacy(db As %String, sku As %String, lin As %String, deleni As %Integer, ByRef out, turnusy As %Boolean = 0) As %Boolean
 {
 	kill out
 	quit:'..OracleDostupny() 0
@@ -53,6 +53,7 @@ ClassMethod SpustLegacy(db As %String, sku As %String, lin As %String, deleni As
 	kill @..#GLB
 	kill in
 	set in("A",2,"arr",3) = deleni       // dělení sloupců na skupiny dnů (shodné s naším parametrem)
+	set in("A",2,"arr",6) = +turnusy     // tisk turnusů ke spojům (náš TURNUSY_KE_SPOJUM)
 	set in("A",2,"arr",4) = 2            // poznámky souhrnně na konec - jeden blok legendy, ne per směr
 	set in("A",2,"arr",13) = 0           // bez dorovnání prázdnými sloupci (to je layout, řeší L5)
 
@@ -202,6 +203,64 @@ ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As
 				elseif t = 7 { set n("cas", sm, idx, colSpoj(sl)) = ..Bunka(idobj, radek, sl) }
 			}
 			set n("km", sm, idx) = km
+		}
+	}
+	quit 1
+}
+
+/// Turnusy spojů **podle starého modulu**: `t(číslo spoje, označení turnusu) = ""`.
+///
+/// ByRef `prvniRadekTurnusu` / `prvniRadekPlatnosti` = pořadí řádku ve výstupu (od 1) - z nich se
+/// pozná, že legacy má turnusy **nad** řádkem platnosti, aniž by se muselo věřit čtení zdroje.
+///
+/// ⚠️ Vnitřní klíč řádku (`1.001xx` u turnusů, `1.1` u platnosti) se ve výstupu **neobjeví** -
+/// řádky jsou přečíslované na posloupnost a klíč zůstal v mezikroku. Turnus se proto poznává po
+/// **typu položky**: `5` = „zmenšovaný text na šířku sloupce" (`JRapiLinPrtWin.mac:269`), zatímco
+/// platnost jsou symboly (typ `2`). Vedle turnusů má typ 5 jen „zdrojová linka a spoj", a ta vzniká
+/// pouze u souhrnného JŘ napříč linkami - tady tedy nehrozí.
+ClassMethod NactiLegacyTurnusy(db As %String, sku As %String, lin As %String, ByRef t, ByRef prvniRadekTurnusu, ByRef prvniRadekPlatnosti) As %Boolean
+{
+	kill t
+	set prvniRadekTurnusu = 0, prvniRadekPlatnosti = 0
+	quit:'..SpustLegacy(db, sku, lin, 2, .legOut, 1) 0
+
+	set glb = ..#GLB, idobj = ""
+	for  {
+		set idobj = $order(@glb@(idobj))
+		quit:idobj=""
+		continue:$get(@glb@(idobj, "arr", 1))'=2
+
+		// sloupce spojů: typ 7 (za zastávkami) i 9 (zrcadlené před zastávkami)
+		kill colSpoj
+		set sl = ""
+		for  {
+			set sl = $order(@glb@(idobj, "column", sl))
+			quit:sl=""
+			set typSl = $get(@glb@(idobj, "column", sl, "arr", 1))
+			continue:(typSl'=7)&&(typSl'=9)
+			set colSpoj(sl) = $get(@glb@(idobj, "column", sl, "arr", 3))
+		}
+
+		set radek = "", poradi = 0
+		for  {
+			set radek = $order(@glb@(idobj, "row", radek))
+			quit:radek=""
+			set poradi = poradi + 1
+			// jen řádky hlavy (typ řádku 1); zastávkové řádky mají 2
+			continue:$get(@glb@(idobj, "row", radek, "arr", 1))'=1
+			set sl = ""
+			for  {
+				set sl = $order(colSpoj(sl))
+				quit:sl=""
+				set typPol = $get(@glb@(idobj, "dta", radek, sl, 1, "arr", 1))
+				if typPol = 5 {
+					set hodnota = ..Norm($get(@glb@(idobj, "dta", radek, sl, 1, "dta", 5)))
+					continue:hodnota=""
+					set t(+colSpoj(sl), hodnota) = ""
+					if 'prvniRadekTurnusu set prvniRadekTurnusu = poradi
+				}
+				if (typPol = 2) && ('prvniRadekPlatnosti) set prvniRadekPlatnosti = poradi
+			}
 		}
 	}
 	quit 1

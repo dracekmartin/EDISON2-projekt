@@ -141,7 +141,7 @@ bumpne na „1.1.0" **spolu s** `ITemplateMigration`. (Kosmetický rozdíl „1.
 Caché metadat vs „1.0.0" v C# je funkčně irelevantní - `VersionComparer` je srovnává jako rovné a
 metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 
-### V1.1.0–V1.8.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
+### V1.1.0–V1.9.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
 
 - **1.1.0** `MigrationHighlightRules` - řádkové zvýraznění: skalární pár → `highlightRules[]` seznam.
 - **1.2.0** `MigrationKnizniToLinkovy` - přejmenování knižní → linkový (agenda kódy/typy).
@@ -181,6 +181,12 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   zapne se jen tehdy, byl-li viditelný i sloupec „Čas" - varianty se totiž rozvíjely z něj, takže
   jeho skrytí je tiše vyplo. Zapnout je podle zaškrtávátka by zákazníkovi vysypalo do hotové vývěsky
   až dvanáct sloupců bez jediného kliknutí. Past samotná je pryč - položka je nadále nezávislá.
+- **1.9.0** `MigrationLineArrowColumn` (2026-08-28, `L6a`) - linková tabulka dostala sloupec
+  **šipky směru jízdy** (`Arrow`), takže ho existující šablony musí mít v seznamu sloupců. Migrací,
+  a ne za běhu, protože dialog sloupců umí sloupce jen přeskládat, skrýt a nastavit - **nikoli
+  přidat**; bez tohohle kroku by se šipka dala zapnout jen v šablonách založených po téhle verzi.
+  Vkládá se **skrytá** a před sloupec zastávek, tedy tam, kde ji má starý modul; skrytá proto, že
+  migrace nesmí změnit vzhled hotové šablony (týž důvod jako u 1.8.0).
 
 ---
 

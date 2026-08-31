@@ -1,5 +1,282 @@
 # Changelog
 
+## 2026-08-28 (10) - 🔁 turnusy: volba prvku místo parametru + jen číslo turnusu
+
+Dvě změny na tvůj podnět, obě k tomu, aby featura odpovídala tomu, co turnus je.
+
+**Zapíná to prvek, ne parametry tisku.** Turnus je provozní věc dopravce, ne informace pro
+cestujícího - patří tedy k sestavě, kterou si někdo udělá pro provoz, ne k volbám u tisku. Stejně to
+má i legacy: je to nastavení **sekce v návrháři sestav**. Prvek linkové tabulky má proto zaškrtávátko
+**„Turnusy ke spojům"** (skupina Řádky) a parametr sestavy zmizel. Serveru se volba posílá dál, jinak
+by turnusy v datech nebyly: jde touž cestou jako `DEFINICE_SLOUPCU` (vždy čerstvě ze šablony) a její
+přepnutí spouští re-fetch dat přes týž snapshot. Dotaz do modulu turnusů (40-550 ms) se tak pořád
+nespustí nikomu, kdo turnusy netiskne. Volba zároveň řídí kreslení, takže dva prvky v šabloně můžou
+mít různě.
+
+**Tiskne se číslo turnusu, ne celé označení s variantou.** Označení je `<turnus>.<varianta>` a modul
+vrací záznam za každou kombinaci zpracování × datum - na lince 0320625 měl spoj 1 osm označení
+`51164.01`-`51164.09`, ale **jediný** turnus 51164 (2 zpracování × 18 dnů). Osm řádků o tomtéž
+turnusu čtenáři nic neříká, takže se sjednocuje podle části před tečkou: jeden řádek „51164".
+Odchylka od legacy je vědomá - legacy tiskne celé označení jen proto, že nic nesjednocuje (a má na
+zkrácení dokonce nedodělanou volbu „zalamovat označení turnusu za tečkou").
+
+⚠️ Nový vstupní parametr obou skládacích metod je **povinný**, ne s výchozí hodnotou - právě proto
+se hned ukázala dvě zapomenutá volání v testech. U mapy, kterou musí náhled, export i tisk poslat
+**shodně**, je vynucený překlad lepší než tichý default (tak vznikla třída chyb, kde tisk vyjel jinak
+než náhled).
+
+Ověřeno: .NET **1249/1249** (3 nové testy na cestu volby z prvku na server), Caché **137/137**
+včetně kontroly, že v označení už není tečka a že parametr sestavy zmizel.
+
+## 2026-08-28 (9) - ✨ šipka pro zrcadlený blok a dorovnání i vlevo (`L6c` dokončeno)
+
+Dva zbytky ze `L6b`, oba viditelné jen v obousměrném tisku.
+
+**Šipka směru pro protijedoucí blok.** Sloupec „Šipka směru" **za** názvy zastávek teď ukazuje
+**nahoru**, protože obsluhuje blok vpravo, a ten jede proti pořadí zastávek (přesně jak to je na
+tisku ze starého modulu: vlevo „od" u první zastávky, vpravo „př"). Před názvy ukazuje dolů jako
+dosud a na jednosměrné stránce míří dolů obě. Legacy na to má **druhý typ sloupce**; u nás rozhoduje
+**pozice** sloupce vůči názvům zastávek, takže druhá šipka nepotřebuje nový klíč sloupce ani migraci
+šablon - uživatel prostě přidá druhý sloupec „Šipka směru" na druhou stranu.
+
+**Dorovnání prázdnými sloupci doplňuje i levou stranu** (#8372 mělo jen pravou). Bez toho se
+v posledním, neúplném bloku posunuly zastávky o celý sloupec doleva (na fixtuře 15,8 mm) a svisle
+nesedly na bloky nad sebou. Dvě věci, na kterých to stálo:
+
+- **Dorovnání patří na vnější hranu**, tedy před spoje zrcadlené strany - jinak zůstane prázdné
+  místo mezi spoji a zastávkami. Ví o něm `SloupcovaMrizka`, protože posouvá souřadnice celé levé
+  strany (ručně kreslené značky platnosti a šipka je odtud berou).
+- **Počítá se per strana**, ne z počtu slotů bloku: obousměrná linka může mít v jednom směru méně
+  spojů, a pak je jedna strana bloku plná a druhá ne.
+
+Ověřeno: .NET **1245/1245**, mutacemi šesti cest (šipka vždy dolů / obrácené strany / jen první
+sloupec šipky; nedorovnávat vlevo / dorovnat na vnitřní hraně / dorovnávat i jednosměrně). Poslední
+z nich **neprošla, dokud nepřibyl test na jednosměrné dorovnání**: mutace odsune celou tabulku
+doprava, a všechny dosavadní testy měřily jen šířku doprava, která tím naopak naroste.
+
+⚠️ **Měření „levá hrana textu" musí brát nejlevější pixel bloku, ne každého řádku.** První a poslední
+řádek pixelů písmene začíná jinde než jeho střed, takže rozptyl přes řádky hlásil 5,8 mm i na
+zarovnané tabulce - vypadalo to jako polovina neopravené vady.
+
+## 2026-08-28 (8) - ✨ turnusy ke spojům v linkovém JŘ (`L6c`, první část)
+
+> *Volba se v (10) přesunula z parametrů sestavy do prvku a označení se sjednocuje na číslo turnusu.*
+
+Nový parametr sestavy **„Turnusy ke spojům"**: pod čísla spojů se přidají řádky s označením turnusu,
+ve kterém spoj jede („110.01"). Řádků je tolik, kolik turnusů má **nejbohatší** spoj, spoje s méně
+turnusy mají zbylé řádky prázdné - a jsou **nad** řádkem platnosti, jak to má starý engine v kontraktu
+řádků (`1` číslo spoje → `1.001xx` turnusy → `1.1` platnost → `1.9` negativní značky).
+
+**Proč parametr a ne trvalá součást dat:** turnusy nejsou v `^JRL`, tahají se dotazem do modulu
+turnusů (`gSplTur` - týmž, jaký volá starý tisk) a ten **stojí 40-550 ms na linku** (změřeno sondou).
+Kdo turnusy netiskne, nemá půl sekundy platit. Legacy to zapíná stejnou pákou.
+
+⚠️ **Turnusy starého modulu závisí na tvaru čísla linky a v našem oracle nevyjdou.** Engine předá
+do dotazu `lin`, jak ho dostal, ale odpověď filtruje **číslem z turnusového záznamu** (`108360`),
+takže s indexovým tvarem s nulami („0108360") se nespáruje nic a `TUmax` zůstane 0. Změřeno oběma
+tvary („0108360" → 0 spojů, `108360` → 3 spoje) a doloženo pracovním globalem enginu po běhu.
+**Náš oracle (a klíč v `^JRL`) používá tvar s nulami, takže tam turnusy nevyjdou nikdy.**
+
+⚠️ **Neověřeno: co posílá skutečný klient TiskJR.** Komentář v jeho překladové vrstvě ukazuje seznam
+„4|820701" **bez** vodicí nuly (`ALVA.TISKJR.Data:125`), takže je možné, že v produkci legacy turnusy
+tiskne. Rozhodne to jedině **tisk ze starého modulu se zapnutou volbou** (je to nastavení sekce
+„Data linky" v návrháři sestav, ne u linky). Do té doby platí: **netvrdit, že se featura
+nepoužívala.** Důsledek pro `R6`: **hodnoty se neověřují oraclem** (v našem tvaru není proti čemu), ale proti
+**témuž zdroji, jaký volá legacy** - stejné datum platnosti linky, stejné sjednocení podle označení.
+Pozice řádků je odvozená z kontraktu enginu, ne z výstupu. Oracle test zůstává a přeskočí se, dokud
+starý modul nic nevytiskne; kdyby se spravil, porovnání se rozjede samo.
+
+**Zmenšení textu na šířku sloupce vyšlo zdarma:** legacy pro turnusy používá „zmenšovaný text na
+šířku sloupce" (typ položky 5) a náš `CellRenderer` zmenšuje každou buňku sám. Označení jako
+„51164.02" se tedy vejde do úzkého sloupce spoje bez zásahu.
+
+Ověřeno: .NET **1240/1240**, Caché **137/137**, 5 nových testů prvku + 4 datové. Mutacemi: počet
+řádků z prvního spoje místo maxima, turnusy za platností, dorovnání opakováním, nepočítat výšku -
+každou chytil právě ten test, který ji chytit měl. Caché mutace „parametr ignorovat a tahat vždy"
+padne kromě datového testu i **na třech zlatých odtiscích**, takže na neopatrné zapnutí je pojistka
+i tam.
+
+⚠️ **Mutační skript musí vynutit rebuild.** `shutil.move` vrátil zdroj s **původním časem**, takže
+MSBuild považoval zmutovanou DLL za aktuální a testy pak běžely proti ní - červený test vypadal
+zeleně a naopak. Do skriptu proto patří `dotnet build -t:Rebuild` před každým během.
+
+## 2026-08-28 (7) - 🔁 obousměrný tisk: strany prohozené podle tisku ze starého modulu
+
+Jan vytiskl obousměrný JŘ ve starém modulu (linka `0680042`, 1+1 spoje) a papír rozhodl otázku, kterou
+**nešlo rozhodnout ze zdroje**: nalevo stojí spoj **71** s časy 07:33 → 07:38 a značkou „od" u první
+zastávky, napravo spoj **72** s časy 07:53 → 07:39 a značkou „př".
+
+**Nalevo tedy patří směr, jehož pořadí sleduje seznam zastávek** (časy jdou odshora dolů), napravo
+opačný. Měli jsme to obráceně - prohozeno.
+
+⚠️ **Odvození ze zdroje bylo chybné a znělo přesvědčivě**: v obousměrném bloku začínají sloupce spojů
+na indexu 5 a popisné mají 1-4 (`JRapiLinPrtWin.mac:3429`), z čehož jsem usoudil „oba směry vpravo za
+sebou". Jenže **index sloupce v tom mezikroku není vizuální pořadí** - o straně rozhoduje **typ**
+sloupce (7 „Spoj" × 9 „Spoj před zastávkou"). Přesně ten případ, na který je `R6`: paritu doloží
+porovnání se starým modulem, ne čtení kódu ani náš vlastní odtisk.
+
+Dva testy polohy stran padly hned po prohození (kódovaly ten obrácený předpoklad) - to je zároveň
+doklad, že tu stranu opravdu měří. .NET **1235/1235**.
+
+## 2026-08-28 (6) - 🔍 sonda: nejmenší linky se spoji v obou směrech
+
+Jan zapnul u linky „Tisk obousměrných JŘ" na A4, vytiskl - a **výstup se nezměnil**. Sonda hledá
+linku, na které se to musí projevit.
+
+**Nastavení bylo správně.** Ověřeno ve zdroji: rozbalovátko ukládá `SelectedIndex`, takže „Ano" = 1,
+a engine čeká právě `1` (`Linky.cls:1825`, `formTISKJRReportDotNet.vb:418`). Uloží se do
+`^JRL(sku,lin,"PATCH","prt","win",13)` pro A4 a `…,25)` pro A5 - **dvě samostatná nastavení**, každé
+na své záložce „Win tisk JŘ A4/A5"; klient čte jen to, které odpovídá **velikosti papíru sestavy**.
+
+**Nejpravděpodobnější příčina je tichý fallback**: zrcadlo zůstane jen tehdy, když se společný blok
+vejde bez jediného řezu (`JRapiLinPrtWin.mac:627`). Na velké lince tedy zapnutá volba nezmění nic
+a uživatel nemá jak poznat, že se neuplatnila - **první praktický doklad, proč jsme ten fallback
+nepřevzali.**
+
+Sonda proto najde nejmenší linky se spoji v **obou** směrech (bez toho legacy zrcadlo vypne rovnou).
+V `CB_CSADAD` vyšly linky s 1+1 spoji a 3-6 zastávkami - na těch se blok vejde vždy a je vidět
+jediné, na čem záleží: jestli je opačný směr **nalevo** od zastávek, nebo vpravo za prvním směrem.
+
+⚠️ **Dvě poučení z psaní té sondy** (obojí stálo čas): ObjectScript **neumí zlomit výraz na víc
+řádků** a v **postkondici nesmí být mezery** kolem `=` nebo `'<`. A hlavně: chyba kompilace se
+projevila jako `<SYNTAX>` **ze staré verze třídy** - server si nechal tu předchozí, takže to vypadalo,
+že se změna nenasadila. Vynucený běh hooku vypsal skutečné chyby.
+
+
+## 2026-08-28 (5) - ✨ obousměrný tisk: spoje po obou stranách zastávek (`L6b` hotovo)
+
+Druhá polovina `L6b` - **kreslení**. Se zapnutým parametrem „Obousměrný tisk" dostane linková tabulka
+sloupce spojů **po obou stranách** zastávek (legacy sloupec „Spoj před zastávkou", typ 9). *Která
+strana je která, se srovnalo podle tisku ze starého modulu až v (7) - do té chvíle to bylo obráceně.* Zrcadlený blok dostal i vlastní pás skupin dnů, čísla spojů,
+řádek platnosti se značkami a značky návaznosti u času - jinak by jeho sloupce neřekly, ve které dny
+spoj jede.
+
+**Která strana je která, rozhoduje prvek** (tvůj požadavek), a nenastavuje se to - dvě volby téhož
+(pořadí zastávek × strana) by si šlapaly.
+
+⚠️ **Dělení na bloky jde po „slotech", ne po spojích.** Blok bere týž úsek z **obou** stran, takže
+je z něj celá tabulka; kdyby se dělilo po jednom seznamu, první blok by vyšel jen se spoji tam
+a druhý jen se spoji zpět. Do šířky se počítají sloupce obou stran - jinak zrcadlený blok tabulku
+vystrčí za hranu prvku.
+
+Ověřeno: .NET **1235/1235** + 709 + 620, Caché 133/133, mutací čtyř cest.
+
+⚠️ **První verze těchto testů byla bezcenná a odhalila to až mutace: neprošla ani jedna ze čtyř.**
+Měřily „je tam víc inkoustu", jenže při dvou spojích má tabulka **stejnou šířku i podobný inkoust**,
+ať jsou sloupce vedle sebe, nebo na obou stranách. Přepsané měří **polohu** nad skoro prázdnými
+fixturami (v obrázku je vždy jen jedna věc). Dvě mutace navíc nešly pokrýt vůbec, dokud nepřibyly
+testy na šipku (posun popisného bloku se pozná jen přes ni a přes piktogram zastávky - buňky si
+pozici počítají sekvenčně) a na těsnou šířku prvku.
+
+⚠️ **Druhá past ve fixtuře:** s prázdnými názvy zastávek **zmizí celý sloupec zastávek** („prázdný
+sloupec se netiskne"), takže se posune všechno a test měří něco jiného, než si myslí.
+
+**Co ještě chybí** (vědomě, ne dluh z nedbalosti): zrcadlený blok **nemá vlastní šipku směru** -
+legacy na to má druhý sloupec (typ 8), u nás je sloupec šipky jeden a ukazuje hlavní směr. A
+**dorovnání prázdnými sloupci** (#8372) doplňuje jen pravou stranu.
+
+
+## 2026-08-28 (4) - ✨ data pro obousměrný tisk: oba směry na jedné stránce (`L6b`, 1/2)
+
+První polovina `L6b` - **datová**. Nový parametr sestavy **„Obousměrný tisk"** (výchozí vypnuto,
+jen AD; legacy MHD engine tento parametr nečte vůbec). Se zapnutým vrací agenda **jednu** stránku
+se spoji obou směrů nad společným seznamem zastávek a **každý spoj nese `SMER`**.
+
+⚠️ **Server posílá jen fakta, tvar drží klient** (požadavek Jan 28. 8.: layout musí zůstat v C#, ať
+nedopadneme jako starý modul, kde konkrétní rozvržení počítá Caché). Původní návrh byl poslat dvě
+kolekce (`SPOJE` a `SPOJE_ZPET`) - **zahozen**, protože už tím rozdělením říká „tyhle patří na druhou
+stranu tabulky", tedy propašovává layout do dat. Směr u spoje je fakt; strana tabulky je rozhodnutí
+prvku.
+
+**Sloučení nestálo skoro nic, a to je nález:** časy se zarovnávají podle **pořadí zastávky**
+(`wMap(pp)`), ne podle pozice ve směru, takže spoje opačného směru sednou na tentýž seznam řádků bez
+jediného přepočtu. Ověřeno na lince 0330511: zpětný spoj má časy 05:08 → 04:40 **klesající dolů** po
+sdíleném seznamu, tedy správně proti směru.
+
+- **Legenda NZ hledá text v obou směrech.** Dosud procházela spoje jen „svého" směru, takže značka
+  vidět jen u zpětného spoje by na sloučené stránce zůstala bez textu.
+- **`SMER` u stránky je u sloučené prázdný** - stránka nese oba a jeden z nich by šablona vytiskla
+  jako by byl jediný. Konce linky drží `VYCHOZI_ZASTAVKA` a `POPIS_SMER`.
+- **Pravidlo „v jednom směru nejsou spoje → zrcadlo ne" nepotřebuje výjimku**: taková linka prostě
+  nemá co sloučit a vyjde jako dnes.
+
+Ověřeno: Caché **133/133**, .NET 1228/1228, ověřeno mutací (s ignorovaným parametrem padnou dva
+testy). ⚠️ **Mutace odhalila slabý test**: „časy sedí na společné řádky" procházelo i bez slévání,
+protože po směrech má každá stránka svých 31 zastávek - teď si nejdřív ověří, že stránka je jedna.
+Zlaté odtisky linkového JŘ přebaseline-ovány: **mění se jen md5, počty do jednoho shodné** (nové
+pole `SMER`), přesně případ, který ten test sám popisuje.
+
+⚠️ **Kreslení zbývá** - prvek dnes sloupce nalevo od zastávek neumí, takže zapnutý parametr se ve
+výstupu ještě neprojeví. To je druhá polovina `L6b`.
+
+⚠️ **Nález mimo tuhle práci: sdílený Caché runner sčítá i cizí běhy.** `RunPackage` iteruje všechny
+výsledky, které v `^UnitTest.Result` vzniknou po jeho startu, takže když na dev serveru běží současně
+jiná sada (typicky kolegův pre-push hook), přičte si její testy. Změřeno: dva běhy dnes hlásily
+**186/186** místo 128 - a rozdíl 58 je přesně `EDISONMAIN2` (23) + `EDControls` (35) Caché testů.
+Vedeno v roadmapě; dokud to platí, jsou počty „Caché X/X" v changelogu nespolehlivé nahoru.
+
+
+## 2026-08-28 (3) - 🐞 barva nastavená u šipky ji neobarvila (nešlo poznat, kterou zónou se řídí)
+
+Nález Jan: nastavil sloupci šipky **barvu textu** a šipka zůstala černá; barva se přitom projevila
+na textu záhlaví („Šipka"). Mechanicky to fungovalo správně - dialog má **dvě** zóny a šipka se
+kreslí přes datové řádky, takže poslouchá „Styl datových buněk", zatímco nastavená byla zóna záhlaví.
+
+Jenže **u sloupce, kde se v datech nekreslí žádný text, se ta cesta nedá uhádnout**, a to je vada
+dialogu, ne uživatele. Datová zóna proto u šipky:
+
+- se jmenuje **„Styl šipky"** místo „Styl datových buněk",
+- nabízí **jen barvu textu a pozadí** - font, řez, podtržení, zarovnání ani odsazení na vektorovou
+  šipku nemají vliv, takže tam jen mátly,
+- má pod sebou nápovědu „Šipka se kreslí barvou textu. Font ani zarovnání na ni nemají vliv."
+
+⚠️ Je to **první reálné použití** `CellStyleEditOptions` k per-kontextovému skrytí voleb; do teď byly
+všude `AllEnabled` a mechanismus čekal na první případ, kde nemá smysl nabízet všechno
+(`mvvm-patterns.md` s tím počítá).
+
+Ověřeno: .NET 1228/1228 + 709 + 620. Testy dialogu jsou v `Windows/`, ne u renderovacích - VM je bez
+WPF (R4), takže jde testovat přímo přes mock služeb.
+
+
+## 2026-08-28 (2) - 🐞 sloupec šipky se v dialogu jmenoval „Arrow"
+
+Nález Jan: v dialogu sloupců svítil anglický kód. Mapa lidských názvů propadá u neznámého klíče
+**na klíč sám**, takže se do UI dostane kódový název - a nový klíč se tam musí doplnit ručně.
+Sloupec se teď jmenuje **„Šipka směru"**, shodně s termínem u vývěsky („Značky a šipka směru",
+„Barva šipky").
+
+⚠️ Ta past zůstává pro každý příští sloupec, proto na to jde test. Sám kód sloupce (`Arrow`) je
+**wire hodnota v šablonách** a zůstává anglicky podle konvence „kód anglicky, UI česky".
+
+Ověřeno: .NET 1225/1225 + 709 + 620.
+
+
+## 2026-08-28 (1) - ✨ šipka směru jízdy v linkovém JŘ (`L6a`)
+
+Sloupec, ve kterém běží **svislá šipka přes řádky zastávek** - první z rozpadlé vlny `L6`
+(zbytek repertoáru starého modulu). Zapíná se jako každý jiný sloupec v dialogu sloupců.
+
+⚠️ **Kreslí se naší vektorovou šipkou ze zastávkového JŘ, ne glyfy ze symbolového fontu jako legacy**
+(rozhodnutí Jan 28. 8.: co už umíme, se nemá duplikovat). Kresba se proto vytáhla do
+`DirectionArrowRenderer` a vývěska ji teď volá odtud - **beze změny jediného pixelu**, což hlídají
+její zlaté odtisky. Vedlejší přínos: šipka v linkovém JŘ je nastavitelná (tvar hrotu, styl čáry),
+což legacy neumí, protože má tvar zadrátovaný ve fontu.
+
+- **Barvu si bere z textové barvy svého sloupce**, takže nepřidává žádné nové nastavení do panelu.
+- **Výchozí stav skrytý**, aby se existujícím šablonám nezměnil vzhled.
+- Do starších šablon se sloupec doplní **migrací 1.9.0** - dialog sloupců je umí jen přeskládat
+  a skrýt, ne přidat, takže bez migrace by šipka byla dostupná jen v nově zakládaných šablonách.
+
+⚠️ **Šipka má vlastní výjimku z pravidla „prázdný sloupec se netiskne"** - nemá žádný text, takže by
+ji to pravidlo schovalo vždycky, i když ji uživatel zapne.
+
+Ověřeno: .NET 1224/1224 + 709 + 620, ověřeno mutací čtyř cest (nekreslit, zadrátovaná barva místo
+barvy sloupce, šipka jen přes jeden řádek, chybějící výjimka z auto-hide). ⚠️ Jeden test se musel
+přeformulovat: „se skrytým sloupcem tam nic není" **neplatí** - skrytý sloupec z rozvržení zmizí,
+takže se na jeho místo posunou zastávky. Tvrdí se proto rovnost obrázků se šablonou, která ten
+sloupec vůbec nemá, což je zároveň přesně ta záruka, kterou potřebuje migrace.
+
+
 ## 2026-08-27 (8) - ✨ bez nadpisu se nad popisnými sloupci nekreslí nic (`L9-R4` rozhodnuto)
 
 Poslední otevřené rozhodnutí z `L9`: co má dělat pás nad popisnými sloupci, když je jeho popisek

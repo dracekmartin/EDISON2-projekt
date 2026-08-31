@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** **`L6`** - zbytek repertoáru starého modulu (obousměrný tisk, šipky směru,
-> turnusy, výchozí šablona pro MHD). `L9` je hotová: tabulka už nevypadá jako jedna souvislá mřížka.
+> **Nejblíž na řadě:** **`L11`** - značky spoje (nejvýš dvě na řádek platnosti + zbytek piktogramů).
+> Vlna `L6` je hotová celá: šipka, obousměrný tisk i turnusy ke spojům.
 
 ---
 
@@ -21,7 +21,9 @@ symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek
 **Na čem zbývající vlny stojí** (kontext, ne seznam úkolů): datové jádro
 (`LinkovyJrAd`/`LinkovyJrMhd`), `LineTableElement` s plánem řádků, síť pro porovnání se starým
 modulem (oracle `mkPLinWin`) a systémová výchozí šablona pro AD. ⚠️ **Pro MHD výchozí šablona
-zatím není.**
+zatím není** - a nemá se dělat dřív, než městská agenda projde porovnáním se starým modulem
+(dnes je skrytá). Byla dosud součástí `L6`, ale není to práce na repertoáru tabulky; patří
+k městské agendě a **teď se neřeší** (rozhodnutí Jan 28. 8.).
 
 ⚠️ **Linková AD agenda je od 24. 8. zveřejněná** (`Released = 1`, žádost Jan) - bez toho na ni
 nešlo v návrháři ani překliknout, takže nebylo jak zkoušet. **Městská zůstává skrytá**, neprošla
@@ -63,7 +65,7 @@ sada voleb je **nová featura**, ne dorovnání.
 🎯 **Pořadí prací (rozhodnutí Jan 24. 8.): nejdřív dotáhnout paritu se starým tiskem, teprve pak
 uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procházet z business hlediska -
 každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Pořadí vln bylo proto
-**testovací linky → `L9` → `L6`**; první dvě jsou za námi, na řadě je `L6`.
+**testovací linky → `L9` → `L6`**; první dvě jsou za námi, ze `L6` je hotová `L6a`.
 
 ✅ **Průchod testovacími linkami je hotový** (26. 8., detail v archivu). **Datový rozdíl proti
 starému tisku nenašel žádný** - jediný nález je chybějící **obousměrný tisk** (patří do `L6`).
@@ -71,10 +73,24 @@ Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-ses
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L6** | **Zbytek repertoáru starého modulu.** Sloupce, které prvek nemá: **šipky směru** (legacy typy 5 a 8) a **zrcadlené sloupce spojů** pro obousměrný tisk (typ 9). ⚠️ **Obousměrný tisk je podmíněný, ne přepínač** (změřeno čtením legacy 26. 8.): starý modul ho vypne, když v jednom směru nejsou spoje, a znovu po střihu - jakmile se zrcadlený blok nevejde na stránku bez řezu, tiše spadne na „každý směr zvlášť“. Bez toho pravidla bychom zrcadlili i tam, kde legacy nezrcadlí; zdrojové řádky v [`§13.2 arr,7`](linkovy-knizni-jr-implementace-analyza.md). Dál **zóny do více sloupců** u hraniční zastávky (#8576, jako km sloupce), **turnusy** a **výchozí šablona pro MHD**. ⚠️ **Vícesloupcová legenda (#7487) z vlny odpadla** - prvek to umí, zbývá doklad; viz § K ověření. | M |
 | **L11** | **Značky spoje: dvě věci doložené čtením legacy 27. 8.** (1) **Nejvýš dvě značky na řádek platnosti**, zbytek se zalomí na další řádek - starý modul to tak dělá (`POCETZNAKUPLATNOSTI 2`, `JRapiLinPrtWin.mac:25` a `:3763`), my kreslíme všechny do jednoho řádku, takže se u spoje s víc značkami přeplní. (2) **Zbytek rodiny atributů jako piktogramy** - starý modul má v číselníku znaků symboly i pro IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, RBP (`:1556` a dál); u nás se tisknou zkratkou, protože jim nikdo neurčil pozici ve fontu. BEV a CBE hotové 27. 8. Postup: vykreslit tabulku glyfů obou fontů a pozici ověřit okem, ne uhádnout. | S |
 | **L10** | **Mřížka linkové tabulky: dvě volby, které nic nedělají.** „Čáry mezi řádky" a „Čáry mezi sloupci" jsou v panelu i v Caché formuláři, ale prvek je **vůbec nečte** - mřížku kreslí vždy (ověřeno vykreslením 27. 8.: všechny čtyři kombinace zapnuto/vypnuto dají shodný obrázek). ⚠️ **Rozsvítit je není bezpečná oprava**: hodnota je uložená v šablonách, takže komu je dnes odškrtnuté, tomu z tisku zmizí mřížka. Patří k tomu i odložené `L9-R3` - **oddělená barva a tloušťka vodorovných × svislých čar** (`GridStyle` má dnes jednu pro obojí a je **sdílený** se všemi tabulkovými prvky, takže se to má doplánovat pro všechny naráz, ne jen tady). | S |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
+
+### Nálezy k opravě mimo TD
+
+| # | Co | Vel. |
+|---|---|---|
+| **T1** | **Sdílený Caché runner sčítá i cizí běhy** (změřeno 28. 8.). `ALVA.EDTesting.TestRunner.RunPackage` iteruje **všechny** výsledky, které v `^UnitTest.Result` vzniknou po jeho startu, a dedupe dělá jen na (třída, metoda) - takže když na témže dev serveru běží současně jiná sada (kolegův pre-push hook), přičte si její testy. Doklad: dva běhy hlásily **186/186** místo 128, rozdíl 58 = `EDISONMAIN2` (23) + `EDControls` (35). ⚠️ **Nejde jen o nafouknuté číslo** - stejnou cestou si běh může přivlastnit i **cizí selhání**, takže se hledá chyba, která není naše. Oprava je malá: filtrovat výsledky podle seznamu tříd, které runner sám spustil. Je to v `EDTesting/`, tedy **sdílená infrastruktura mimo TD** - nechávám na rozhodnutí, kdo to vezme. | S |
+
+### Mimo paritu
+
+Věci, které starý modul **neumí** - nejsou to dluhy, ale featury. Vědomě mimo paritní vlnu
+(rozhodnutí Jan 28. 8.), ať se neplete „dorovnáváme starý tisk" s „přidáváme něco nového".
+
+| # | Co | Vel. |
+|---|---|---|
+| **N1** | **Zóny do více sloupců u hraniční zastávky** (#8576, KU HK). ⚠️ **Starý modul zóny do sloupců nedělí** - má na ně jeden sloupec, který jen zesílí podle délky obsahu (vzor 940 je má v jednom sloupci oddělené čárkou). Zákazník chce u hraniční zastávky mezi zónami jednoho IDS (PID, IDZK) samostatné sloupce, jako to máme u km. Na naší straně levné (km už rozpad na podsloupce dělá), ale agenda musí poslat zóny jako **seznam**, ne jeden text. | S |
 
 ### K ověření na reálné sestavě
 

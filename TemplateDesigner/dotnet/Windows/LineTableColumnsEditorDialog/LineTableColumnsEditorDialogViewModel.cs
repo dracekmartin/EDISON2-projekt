@@ -47,6 +47,7 @@ public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
         ColumnKeys.StopName => "Zastávka",
         ColumnKeys.Mhd      => "MHD / IDS",
         ColumnKeys.Trip     => "Spoje (časové sloupce)",
+        ColumnKeys.Arrow    => "Šipka směru",
         _                   => string.IsNullOrWhiteSpace(header) ? key : header,
     };
 
@@ -121,7 +122,39 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
     public float[] FontSizeOptions { get; } = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24];
 
     public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
-    public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
+
+    /// <summary>
+    /// Co jde nastavit v <b>datové</b> zóně vybraného sloupce.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ U <b>šipky směru</b> se v datech nekreslí text, ale <b>šipka</b>, takže font, řez, zarovnání
+    /// ani odsazení nemají co ovlivnit - zbývá barva (kreslí se jí šipka) a pozadí buňky. Nález Jan
+    /// 28. 8.: nastavil barvu ve „Stylu záhlaví", protože u sloupce bez textu se nedalo poznat, že
+    /// šipku řídí zóna datových buněk. Skrytí nesmyslných polí i vlastní popisek zóny (viz
+    /// <see cref="NazevZonyDat"/>) tu cestu ukazují.
+    /// </remarks>
+    public CellStyleEditOptions DataEditOptions => JeSipka
+        ? new CellStyleEditOptions
+        {
+            AllowFontFamily = false, AllowFontSize = false, AllowBold = false, AllowItalic = false,
+            AllowUnderline = false, AllowStrikethrough = false,
+            AllowHAlign = false, AllowVAlign = false, AllowPadding = false,
+            AllowTextColor = true, AllowBackgroundColor = true,
+        }
+        : CellStyleEditOptions.AllEnabled;
+
+    /// <summary>Popisek datové zóny - u šipky se z ní kreslí šipka, ne buňky s textem.</summary>
+    public string NazevZonyDat => JeSipka ? "Styl šipky" : "Styl datových buněk";
+
+    /// <summary>Nápověda pod datovou zónou; prázdná u sloupců, kde není co vysvětlovat.</summary>
+    public string NapovedaZonyDat => JeSipka
+        ? "Šipka se kreslí barvou textu. Font ani zarovnání na ni nemají vliv."
+        : "";
+
+    /// <summary>Je nápověda pod datovou zónou neprázdná? (viditelnost v XAML)</summary>
+    public bool MaNapoveduZonyDat => NapovedaZonyDat.Length > 0;
+
+    private bool JeSipka => _selectedColumnVM?.Key == ColumnKeys.Arrow;
 
     public float ElementWidth => _element.Width;
 
@@ -140,7 +173,16 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
     public LineTableColumnVM? SelectedColumnVM
     {
         get => _selectedColumnVM;
-        set { Set(ref _selectedColumnVM, value); OnPropertyChanged(nameof(HasSelection)); }
+        set
+        {
+            Set(ref _selectedColumnVM, value);
+            OnPropertyChanged(nameof(HasSelection));
+            // Datová zóna se mění podle druhu sloupce - u šipky nabízí jen barvu a pozadí.
+            OnPropertyChanged(nameof(DataEditOptions));
+            OnPropertyChanged(nameof(NazevZonyDat));
+            OnPropertyChanged(nameof(NapovedaZonyDat));
+            OnPropertyChanged(nameof(MaNapoveduZonyDat));
+        }
     }
 
     public bool HasSelection => _selectedColumnVM is not null;

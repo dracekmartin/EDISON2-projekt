@@ -480,7 +480,14 @@ distribuce šablon = blok B2/R6 (zatím ruční Import JSON).
 Sloupcový repertoár prvku: Zóna, Km, Tč, Zastávka, MHD, Spoj. Legacy jich má devět
 (`gMSArrPLinWin`, `JRapiLinPrtWin.mac`): navíc **Šipky za zastávkou** (typ 5), **Šipky před
 zastávkou** (typ 8) a **Spoj před zastávkou** (typ 9) - poslední dva jsou zrcadlo pro obousměrný
-tisk (opačný směr nalevo od názvů).
+tisk (sloupce nalevo od názvů).
+
+⚠️ **Nalevo jde ten směr, jehož pořadí sleduje seznam zastávek** - tedy ten, jehož časy jdou odshora
+dolů; opačný je vpravo. **Doloženo tiskem** obousměrné linky ze starého modulu (Jan 28. 8.): vlevo
+spoj 71 s časy 07:33 → 07:38 a značkou „od" u první zastávky, vpravo spoj 72 s časy 07:53 → 07:39
+a značkou „př". Ze zdroje to **odvodit nešlo** a jedno takové odvození bylo chybné: index sloupce
+v `MT2A` (`:3429`, obousměrný blok začíná spoje na indexu 5) **není vizuální pořadí**, o straně
+rozhoduje **typ** sloupce (7 vs 9).
 
 ### 13.2 Nastavení, která starý modul čte (kompletní inventář)
 

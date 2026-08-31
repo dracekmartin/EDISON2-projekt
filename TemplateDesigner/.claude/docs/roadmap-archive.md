@@ -1,5 +1,65 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L6c` - turnusy ke spojům + zbytky ze `L6b` (hotovo 28. 8. 2026)
+
+**Turnusy ke spojům** jako **volba prvku** „Turnusy ke spojům": řádky s označením turnusu pod čísly
+spojů, počet řádků podle nejbohatšího spoje, prázdné u spojů s méně turnusy, nad řádkem platnosti.
+Turnus je provozní věc dopravce, ne informace pro cestujícího (rozhodnutí Jan 28. 8.), takže patří
+k sestavě - stejně jako v legacy, kde to je nastavení sekce v návrháři. Serveru se volba posílá ze
+šablony jako `DEFINICE_SLOUPCU`, protože dotaz do modulu turnusů stojí 40-550 ms na linku a nemá ho
+platit, kdo turnusy netiskne. **Tiskne se číslo turnusu**, ne označení s variantou po tečce: modul
+vrací záznam za každé zpracování × datum, takže jeden turnus jinak vyjde i v osmi řádcích.
+
+⚠️ **Starý engine s naším tvarem čísla linky turnusy nevrátí** - odpověď dotazu filtruje číslem bez
+vodicích nul, takže s klíčem z `^JRL` („0108360") nespáruje nic (`TUmax` = 0). Změřeno oběma tvary.
+**Co posílá skutečný klient TiskJR, ověřené není** - rozhodne až tisk ze starého modulu. Hodnoty se
+proto neověřují oraclem (v našem tvaru není proti čemu), ale proti témuž zdroji, jaký volá legacy;
+pozice řádků je odvozená z kontraktu enginu. Zapsáno i v `legacy-nahrada.md §3.3`.
+
+**Zbytky ze `L6b`:** zrcadlený blok má **vlastní šipku směru** - sloupec „Šipka směru" **za** názvy
+zastávek ukazuje nahoru (obsluhuje protijedoucí blok), před nimi dolů; legacy na to má druhý typ
+sloupce, u nás rozhoduje pozice, takže to nepotřebuje ani nový klíč sloupce, ani migraci šablon.
+A **dorovnání prázdnými sloupci** doplňuje i levou stranu, na její **vnější** hraně - jinak se
+v posledním bloku posunuly zastávky o celý sloupec (15,8 mm na fixtuře) a svisle nesedly na bloky
+nad sebou. Dorovnání se počítá per strana, takže sedí i na linku, kde má jeden směr méně spojů.
+
+Detail v changelogu 28. 8. (8) a (9).
+
+## `L6b` - obousměrný tisk (hotovo 28. 8. 2026)
+
+Oba směry na jedné sestavě: sloupce spojů po obou stranách zastávek. **Nalevo jde směr, jehož pořadí
+sleduje seznam zastávek** - doloženo tiskem ze starého modulu 28. 8., ne čtením zdroje (odvození
+z indexů sloupců v `MT2A` vyšlo obráceně, o straně rozhoduje typ sloupce). **Parametr sestavy, ne tichý
+fallback** (rozhodnutí Jan) - starý modul zrcadlo vypne, když se blok nevejde na stránku bez řezu,
+ale ten fallback mít **musel**, protože tiskl naslepo do pevné stránky.
+
+**Server posílá jen fakta, tvar drží klient** (požadavek Jan): jedna stránka, všechny spoje obou
+směrů nad společným seznamem zastávek, každý se svým `SMER`. Návrh se dvěma kolekcemi byl zahozen -
+propašovával layout do dat.
+
+Detail v changelogu 28. 8. (4), (5) a (7). Zbývá z toho **vlastní šipka směru pro zrcadlený blok**
+(legacy má na to druhý sloupec, typ 8) a dorovnání prázdnými sloupci jen vpravo - vedeno u `L6c`.
+
+Původní zadání:
+
+| **L6b** | **Obousměrný tisk** (legacy zrcadlené sloupce spojů, typ 9). Oba směry na jedné stránce: opačný směr dostane sloupce spojů **nalevo od názvů zastávek** plus zrcadlenou šipku. Data už oba směry posílají (stránka per směr), takže dnešní stav = legacy fallback. ✅ **Rozhodnuto (Jan 28. 8.): bude to parametr sestavy, ne tichý fallback** - starý modul zrcadlo tiše vypne, když se společný blok nevejde na stránku bez řezu (`:598-628`), ale ten fallback mít **musel**, protože tiskl naslepo do pevné stránky; náš uživatel vidí náhled a rozhodne se sám. Je to **vědomá odchylka od legacy**, ne dluh. Druhá půlka pravidla (v jednom směru nejsou spoje → zrcadlo ne) platí a vyjde skoro sama z „prázdný sloupec se netiskne". ⚠️ Prvek dnes spoje nalevo neumí - největší strukturální zásah do `LineTableElement` od jeho vzniku; zlevnilo ho soustředění souřadnic do `SloupcovaMrizka` (27. 8.). | M–L |
+
+## `L6a` - šipka směru u zastávek v linkovém JŘ (hotovo 28. 8. 2026)
+
+Sloupec se svislou šipkou přes řádky zastávek. **Kreslí se naší vektorovou šipkou ze zastávkového
+JŘ**, ne glyfy ze symbolového fontu jako legacy (rozhodnutí Jan) - kresba se vytáhla do
+`DirectionArrowRenderer` a vývěska ji volá odtud, beze změny jediného pixelu.
+
+Z Janova zkoušení vypadly tři věci: **hrot až na poslední stránce** (záměr, shodné s legacy - hrot
+znamená konec linky, ne konec stránky; při rozpadu na **bloky** je v každém bloku), **anglický název
+sloupce v dialogu** (mapa lidských názvů propadá na klíč) a **barva nastavená v zóně záhlaví šipku
+neobarvila** (šipku řídí datová zóna, což u sloupce bez textu nešlo poznat - zóna se u šipky jmenuje
+„Styl šipky" a nabízí jen barvu a pozadí).
+
+Detail v changelogu 28. 8. (1)-(3). Původní zadání:
+
+| **L6a** | **Šipka směru u zastávek** (legacy sloupec typu 5, u obousměrného navíc typ 8). Úzký sloupec vedle zastávek, ve kterém běží **svislá šipka přes celý seznam**; v opačném směru se začátek a konec vymění. Obsah je odvozený z pozice zastávky ve směru, žádná nová data nejsou potřeba (`JRapiLinPrtWin.mac:3013-3029`). ⚠️ **Kreslí se naší vektorovou šipkou ze zastávkového JŘ, ne glyfy ze symbolového fontu jako legacy** (rozhodnutí Jan 28. 8.: nemá se duplikovat, když to umíme) - jedna implementace pro obojí, navíc nastavitelná. Sloupec se do existujících šablon doplní migrací (vzor `MigrationRouteVariantsColumn`), výchozí stav skrytý. | S |
+
 ## `L9-R4` - prázdný popisek pásu nad popisnými sloupci (rozhodnuto 27. 8. 2026)
 
 **Zvoleno: bez popisku se nad popisnými sloupci nekreslí nic** (ani podbarvení). Rozhodl to legacy,

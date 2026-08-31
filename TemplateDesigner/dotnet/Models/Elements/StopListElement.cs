@@ -637,61 +637,23 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// Vykreslí šipku směru jízdy uvnitř sloupce zastávek. Bracket míří do sloupce
     /// (vpravo: ──┐▼ u pravé hrany sloupce, vlevo: ┌── u levé hrany sloupce).
     /// </summary>
+    /// <remarks>
+    /// Samotná kresba je ve <see cref="DirectionArrowRenderer"/> - sdílí ji linková tabulka.
+    /// Tady zůstává jen vývěsková geometrie: šipka začíná <b>uprostřed písmen</b> aktuální zastávky
+    /// a končí kousek nad spodní hranou posledního řádku.
+    /// </remarks>
     private void RenderDirectionArrow(
         RenderContext ctx, float lineXMm, float bracketColumnsSideMm,
-        float startY, float endY, float rowH)
-    {
-        float strokeW = MathF.Max(0.5f, ctx.Px(DirectionArrowWidth));
-        using var paint = new SKPaint
-        {
-            Color = ColorHex.ParseOrBlack(DirectionArrowColor),
-            IsStroke = true,
-            StrokeWidth = strokeW,
-            IsAntialias = true,
-            StrokeCap = SKStrokeCap.Round
-        };
-        using var dash = CreateArrowDash(ctx);
-        paint.PathEffect = dash;
+        float startY, float endY, float rowH) =>
+        DirectionArrowRenderer.Draw(ctx, ArrowVzhled(),
+            lineXMm, bracketColumnsSideMm,
+            startY + rowH * 0.5f,    // uprostřed písmen aktuální zastávky
+            endY + rowH * 0.8f);     // kousek nad spodní hranou řádku poslední zastávky
 
-        // Souřadnice v px - start uprostřed písmen aktuální zastávky, konec u spodní hrany poslední zastávky
-        float topY = startY + rowH * 0.5f;       // uprostřed písmen aktuální zastávky
-        float bottomY = endY + rowH * 0.8f;       // kousek nad spodní hranou řádku poslední zastávky
-        var lineTop = ctx.ToCanvas(lineXMm, topY);
-        var lineBottom = ctx.ToCanvas(lineXMm, bottomY);
-        var bracketColumnsSide = ctx.ToCanvas(bracketColumnsSideMm, topY);
-
-        // Horizontální bracket od strany sloupců k čáře + vertikální dolů (vlevo: ┌─, vpravo: ─┐)
-        ctx.Canvas.DrawLine(bracketColumnsSide, lineTop, paint);
-        ctx.Canvas.DrawLine(lineTop, lineBottom, paint);
-
-        // ▼ - hrot na konci. Plný trojúhelník, otevřené „V", nebo nic. Vždy plnou čarou
-        // (bez PathEffectu) - čárkovaný hrot se rozpadne na tečky a přestane být šipkou.
-        if (DirectionArrowHead == ArrowHeadShape.None) return;
-
-        float arrowSize = ctx.Px(DirectionArrowHeadSize);
-        using var arrowPaint = new SKPaint
-        {
-            Color = paint.Color,
-            IsStroke = DirectionArrowHead == ArrowHeadShape.Open,
-            StrokeWidth = strokeW,
-            StrokeCap = SKStrokeCap.Round,
-            IsAntialias = true
-        };
-        using var path = new SKPath();
-        path.MoveTo(lineBottom.X - arrowSize * 0.5f, lineBottom.Y - arrowSize);
-        path.LineTo(lineBottom.X, lineBottom.Y);
-        path.LineTo(lineBottom.X + arrowSize * 0.5f, lineBottom.Y - arrowSize);
-        if (DirectionArrowHead == ArrowHeadShape.Filled) path.Close();
-        ctx.Canvas.DrawPath(path, arrowPaint);
-    }
-
-    /// <summary>Vzor čárkování šipky, nebo null u plné čáry. Volající vlastní (dispose).</summary>
-    private SKPathEffect? CreateArrowDash(RenderContext ctx)
-    {
-        if (DirectionArrowLineStyle == LineStyle.Solid) return null;
-        var (dashMm, gapMm) = LineElement.GetDefaultDashPattern(DirectionArrowLineStyle);
-        return SKPathEffect.CreateDash([ctx.Px(dashMm), ctx.Px(gapMm)], 0);
-    }
+    /// <summary>Vzhled šipky z vlastností prvku.</summary>
+    private DirectionArrowRenderer.Vzhled ArrowVzhled() => new(
+        DirectionArrowColor, DirectionArrowWidth, DirectionArrowHeadSize,
+        DirectionArrowHead, DirectionArrowLineStyle);
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────
 
