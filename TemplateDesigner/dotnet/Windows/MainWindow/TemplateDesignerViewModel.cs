@@ -989,7 +989,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // Bez vybrané instance běží náhled na ukázkových datech - ta se musí přenačíst taky, jinak
         // uživatel vidí staré rozvržení a myslí si, že vlastní sloupce nefungují (#13158).
         // Prefetch se sám vrátí, když už je vzorek pro tuhle definici v cache.
-        _ = PrefetchMockDataAsync(State.CurrentTemplate.AgendaCode);
+        _ = PrefetchMockDataAsync(State.CurrentTemplate.AgendaCode ?? "");
     }
 
     /// <summary>
