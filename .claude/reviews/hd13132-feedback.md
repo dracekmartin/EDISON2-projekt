@@ -142,10 +142,13 @@ projektu jsou značené explicitně („nový post #N").
 
 - [ ] **Stav:** Open
 - **P2 · M**
+- **Deferred:** po review (2026-08-28) - klientský úklid „cizí GUID téže IP + loginName" je
+  vadný (uživatel může být legitimně přihlášen dvakrát z téhož počítače) a serverová varianta
+  níže je větší zásah do sdíleného `MLRest`/`Activity` - odloženo, dokud zombie zámky reálně
+  nebolí (admin má LockClearExt).
 - **Co udělat:** Korektní logout/přepnutí firmy už čistí ACTIVITY i business zámky
   (`6e49feb`, `SessionLogout.cs`) a zavírání oken honoruje veto. Po hard-killu ale zámky
-  visí do server idle timeoutu (známé, `EDISONMAIN2/CLAUDE.md`). Zvážit zkrácení
-  timeoutu / heartbeat / úklid při dalším startu klienta pod týmž uživatelem.
+  visí do server idle timeoutu (známé, `EDISONMAIN2/CLAUDE.md`).
 - **Pozor:** server sklízí jen ACTIVITY (`Activity.LockDel` v timeout+3 min), business
   zámky nikdy; s vypnutým idle timeoutem po hard-killu visí **neomezeně**. Reaper
   `Activity.Update()` navíc není serverová úloha - běží jen při requestu s `Locks=2`
@@ -154,10 +157,13 @@ projektu jsou značené explicitně („nový post #N").
   (`^EDISON("System","Public","Settings")` piece 2/3, per-user `UserTimeout` přebíjí) nedělá
   nic. Business zámky (`^CacheTempSYSLock`) maže jen `Lock.LockClear(guid)` a po pádu ho
   nikdo nezavolá.
-- **Kandidát řešení:** při startu shellu `Activity.List` → záznamy téže IP + loginName
-  s jiným než aktuálním GUID → `Login.Logout` na klonu s tím GUID + `LockClearExt(guid)`.
-  Bez serverové změny, řeší typický scénář „po pádu znovu spustím". Serverový úklid business
-  zámků při zániku ACTIVITY zámku patří do téhož zásahu v `Activity.UpdateTimeout` jako F17.
+- **Až se otevře, jediný korektní směr je liveness per GUID** (čistě serverová změna):
+  každý request vč. `Locks=2` pollu razítkuje `$$$SYSRest(...,"lastSeen")` v `ALWA.SYS.Rest`;
+  `Activity.Update()` sklidí ACTIVITY + `Lock.LockClear(guid)` u session bez requestu
+  \> ~10 min (každý klient pollí po 60 s i při nečinnosti uživatele - mrtvý proces, ne idle).
+  Nezávislé na `exitOnTimeout`, staří klienti nepotřebují nic; trigger `VerifyLic` → `Update()`
+  před `CountIdfa` vyčistí i scénář „spadlo, hlásím se znovu". Cena: uspaný laptop dostane
+  po probuzení řízené „spojení přerušeno". Klientská heuristika (IP + loginName) NE - viz Deferred.
 - **Hotovo když:** Zámky po pádu klienta zaniknou v řádu minut bez zásahu admina
   (LockClearExt ručně už není potřeba).
 - **Zdroj:** HD 13132 #17/3 (Kaska)
