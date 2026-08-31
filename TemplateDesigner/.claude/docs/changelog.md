@@ -19,11 +19,14 @@ a používají se, takže komu by volby byly odškrtnuté, tomu by mřížka z h
 Read-only sonda prošla **všechny uložené šablony** na dev serveru: 18 šablon, 12 prvků odjezdů,
 **ani jeden** s odškrtnutou volbou. Sonda zůstává v diagnostice šablon pro příště.
 
-⚠️ **Chování je ověřené okem, ne testem** (Jan 31. 8. v aplikaci: „oba dva checkboxy fungují tak,
-jak bych čekal jako u ostatních elementů"). Testy jsou napsané, ale **vypnuté**: ručně složená data
-prvku odjezdů dají prázdné plátno - skupiny dnů i odjezdy se načtou, ale render nevykreslí ani
-pixel, a příčinu se nepodařilo najít v rozumném počtu pokusů. Žádný jiný test tenhle prvek nekreslí,
-takže není podle čeho se řídit. Zbývá to jako samostatná položka (`B105`), ať se na to nezapomene.
+Ověřeno: .NET **1307/1307** (6 nových testů) a mutacemi obou cest - volby se ignorují, a osa mizí
+spolu se sloupci. Riziko navíc změřené sondou, viz výše. Chování potvrdil i Jan v aplikaci.
+
+⚠️ **Past, na kterou jsem u testů najel:** odjezd se ke skupině dnů váže polem `SKUPINA_DNU_ID`.
+S jiným názvem se nepřipojí k žádné skupině, nevzniknou žádné hodiny - a prvek pak nevykreslí
+**ani pixel**, ne jen neúplný obrázek. Vypadá to jako „tenhle prvek nejde v testu vykreslit",
+přitom jde jen o překlep v datech. Chvíli jsem to hledal v renderu pivotu a málem z toho založil
+samostatný úkol.
 
 ## 2026-08-31 (9) - 🗂 parametry tisku linkového JŘ jsou rozdělené podle toho, čeho se týkají (`L12`)
 

@@ -122,14 +122,6 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B105` Prvek odjezdů nejde vykreslit v testu** (z `L15`, 31. 8.). Ručně složená data
-  (skupiny dnů + odjezdy) se načtou správně - `GetAvailableSkupinyDnu` vrátí 2 skupiny, `ODJEZDY`
-  má 4 řádky - ale `Render` nevykreslí **ani pixel**, takže obrazové testy měří prázdné plátno
-  a projdou naprázdno. ⚠️ **Není to kosmetika:** je to jediný tabulkový prvek, který takhle nejde
-  testovat, a proto jsou 4 testy z `L15` v repu **vypnuté** (`Skip` s důvodem) - chování mřížky
-  odjezdů dnes nehlídá nic než oči. Příčina nenalezena v rozumném počtu pokusů; žádný jiný test
-  tenhle prvek nekreslí, takže není podle čeho se řídit. Vzít, až na prvek odjezdů někdo sáhne. | S |
-
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
   „nejmíň stránek"). Než se do toho pustí, má se zákazníka zeptat, jestli to pořád chce - jinak

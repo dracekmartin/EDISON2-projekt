@@ -14,8 +14,9 @@ uživatele je konzistentní". Zaškrtávátko, které nic nedělá, je přesně 
 Riziko změřeno sondou přes **všechny uložené šablony**: 18 šablon, 12 prvků odjezdů, 0 s odškrtnutou
 volbou → zapojení nikomu tisk nezměnilo. Sonda (`SablonyDiag.MrizkaOdjezduProbe`) zůstala.
 
-⚠️ **Doloženo okem, ne testem.** Testy jsou napsané, ale vypnuté - prvek odjezdů nejde v testu
-vykreslit (prázdné plátno i se správně načtenými daty). Zbylo jako `B105`.
+Doloženo 6 testy a mutacemi (volby ignorované; osa mizící spolu se sloupci). ⚠️ **Past u fixtury:**
+odjezd se ke skupině dnů váže polem `SKUPINA_DNU_ID` - s jiným názvem se nepřipojí, nevzniknou hodiny
+a prvek nevykreslí ani pixel. Vypadá to jako „prvek nejde v testu vykreslit"; není to pravda.
 
 ## `L12` - rozdělení parametrů tisku linkového JŘ (hotovo 31. 8. 2026)
 

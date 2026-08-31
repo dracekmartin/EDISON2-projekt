@@ -49,14 +49,14 @@ public class MrizkaOdjezduTests
         ]),
         ("ODJEZDY",
         [
-            RenderSnapshot.Row(("SKUPINA", "1"), ("HODINA", "6"), ("MINUTA", "15")),
-            RenderSnapshot.Row(("SKUPINA", "1"), ("HODINA", "7"), ("MINUTA", "05")),
-            RenderSnapshot.Row(("SKUPINA", "2"), ("HODINA", "6"), ("MINUTA", "40")),
-            RenderSnapshot.Row(("SKUPINA", "2"), ("HODINA", "7"), ("MINUTA", "50")),
+            RenderSnapshot.Row(("SKUPINA_DNU_ID", "1"), ("HODINA", "6"), ("MINUTA", "15")),
+            RenderSnapshot.Row(("SKUPINA_DNU_ID", "1"), ("HODINA", "7"), ("MINUTA", "05")),
+            RenderSnapshot.Row(("SKUPINA_DNU_ID", "2"), ("HODINA", "6"), ("MINUTA", "40")),
+            RenderSnapshot.Row(("SKUPINA_DNU_ID", "2"), ("HODINA", "7"), ("MINUTA", "50")),
         ]));
 
     /// <summary>Zapnuté volby = mřížka jako dosud.</summary>
-    [Fact(Skip = "Fixtura nekreslí: ručně složená data prvku odjezdů dají prázdné plátno (skupiny i odjezdy se načtou, ale render nic nevykreslí) a příčinu se nepodařilo najít v rozumném počtu pokusů. Žádný jiný test tenhle prvek nekreslí, takže není podle čeho se řídit. Chování je zatím ověřené jen okem v aplikaci - viz `L15` v roadmapě.")]
+    [Fact]
     public void ObeVolbyZapnute_KresliObojiCary()
     {
         var (vodorovne, svisle) = Zmer(true, true);
@@ -66,7 +66,7 @@ public class MrizkaOdjezduTests
     }
 
     /// <summary>Vypnuté „Čáry mezi řádky" odeberou vodorovné čáry mezi hodinami.</summary>
-    [Fact(Skip = "Fixtura nekreslí: ručně složená data prvku odjezdů dají prázdné plátno (skupiny i odjezdy se načtou, ale render nic nevykreslí) a příčinu se nepodařilo najít v rozumném počtu pokusů. Žádný jiný test tenhle prvek nekreslí, takže není podle čeho se řídit. Chování je zatím ověřené jen okem v aplikaci - viz `L15` v roadmapě.")]
+    [Fact]
     public void VypnuteCaryMeziRadky_ZmiziVodorovne()
     {
         var (vodorovne, svisle) = Zmer(false, true);
@@ -82,7 +82,7 @@ public class MrizkaOdjezduTests
     /// Se dvěma skupinami jsou svislé čáry dvě - osa za sloupcem hodin a oddělovač mezi skupinami.
     /// Po vypnutí má zbýt právě jedna, ne žádná.
     /// </remarks>
-    [Fact(Skip = "Fixtura nekreslí: ručně složená data prvku odjezdů dají prázdné plátno (skupiny i odjezdy se načtou, ale render nic nevykreslí) a příčinu se nepodařilo najít v rozumném počtu pokusů. Žádný jiný test tenhle prvek nekreslí, takže není podle čeho se řídit. Chování je zatím ověřené jen okem v aplikaci - viz `L15` v roadmapě.")]
+    [Fact]
     public void VypnuteCaryMeziSloupci_ZmiziJenOddelovacSkupin()
     {
         var (_, sZapnutymi) = Zmer(true, true);
@@ -102,7 +102,7 @@ public class MrizkaOdjezduTests
     /// a jejími minutami. Kdyby zmizela spolu se sloupci, byla by vývěska nečitelná - a přesně to
     /// by udělalo „mechanicky konzistentní" zapojení obou voleb.
     /// </remarks>
-    [Fact(Skip = "Fixtura nekreslí: ručně složená data prvku odjezdů dají prázdné plátno (skupiny i odjezdy se načtou, ale render nic nevykreslí) a příčinu se nepodařilo najít v rozumném počtu pokusů. Žádný jiný test tenhle prvek nekreslí, takže není podle čeho se řídit. Chování je zatím ověřené jen okem v aplikaci - viz `L15` v roadmapě.")]
+    [Fact]
     public void OsaZaSloupcemHodin_ZustaneIKdyzJeVseVypnute()
     {
         var (vodorovne, svisle) = Zmer(false, false);
