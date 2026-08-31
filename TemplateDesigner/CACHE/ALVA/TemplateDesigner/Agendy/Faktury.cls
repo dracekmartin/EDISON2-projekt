@@ -151,6 +151,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pFormat.name  = "FORMAT_CASTKY"
     s pFormat.label = "Formát částek"
     s pFormat.type  = "enum"
+    s pFormat.group = "Obecné"
     d pFormat.%Set("default", "N2")
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("N2")
@@ -160,7 +161,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(pFormat)
 
     // Tisk poznámky
-    d ..AddBoolParam(arr, "TISK_POZNAMKY", "Tisknout poznámku", 1)
+    d ..AddBoolParam(arr, "TISK_POZNAMKY", "Tisknout poznámku", 1, "Obecné")
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q 1

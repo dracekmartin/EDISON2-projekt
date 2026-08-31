@@ -1,5 +1,26 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L12` - rozdělení parametrů tisku linkového JŘ (hotovo 31. 8. 2026)
+
+Tři skupiny místo dvou, jedna z nich s jedinou položkou (`DELENI_SLOUPCU`), protože jí chybělo
+`group` - a parametr bez zařazení spadne do vlastní skupiny „Parametry sestavy". „Obecné" navíc
+vycházelo prostřední, protože skupiny se řadí podle prvního výskytu v poli.
+
+Nově **Obecné** (tvar názvu zastávky, název pro MHD, obousměrný tisk) a **Tabulka linky** (dělení
+spojů, sloupec TČ, zastávky bez zastavení, barvy spojů, zvýraznění zastávky i TČ). Obousměrný tisk
+je v „Obecném" vědomě - rozhoduje o složení celé sestavy, ne o vzhledu prvku (rozhodnutí Jan 31. 8.).
+Skupina přejmenovaná z „Linkový JŘ" na „Tabulka linky", aby odpovídala logice vývěsek. Názvy voleb
+ani hodnoty se nezměnily → uložené uživatelské volby zůstávají.
+
+Přibyla pojistka `AgendaParamGroupsDriftTests` (parametr bez skupiny + „Obecné" první). Našla hned
+druhý případ - `FORMAT_CASTKY` v agendě faktur. ⚠️ Nepokrývá parametry zakládané přes `AddBoolParam`
+(skupina je tam až pátým argumentem a popis běžně obsahuje čárky, takže regulár na to nestačí).
+
+⚠️ **Poučení k zapamatování:** pořadí pushů jsem nejdřív přepsal skriptem a `.cls` se tím na server
+**nenasadil** - skupiny (dělané editačním nástrojem) tam byly, pořadí ne. Testy to nechytily, protože
+čtou zdroj z repa; odhalilo to až ověřovací volání `GetParameters`. Přesně ten scénář, na který
+upozorňuje `cache-api.md`.
+
 ## `L13` - nabídka stránek náhledu pojmenuje i linkový JŘ (hotovo 31. 8. 2026)
 
 `BuildPreviewPageLabel` stavěl popisek výhradně z `POPIS_ZASTAVKA`, což je pole **zastávkového** JŘ -

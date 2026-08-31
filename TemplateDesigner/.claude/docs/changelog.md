@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-08-31 (9) - 🗂 parametry tisku linkového JŘ jsou rozdělené podle toho, čeho se týkají (`L12`)
+
+V nastavení tisku linkového JŘ byly **tři** skupiny místo dvou - a jedna z nich obsahovala jedinou
+položku: „Dělení spojů dle platnosti", tedy zrovna nejdůležitější volbu agendy. Nebyl to záměr,
+jen jí chybělo zařazení, a parametr bez zařazení dispatch shodí do vlastní skupiny „Parametry
+sestavy". „Obecné" navíc vycházelo **doprostřed**, protože skupiny se řadí podle prvního výskytu.
+
+Nově jsou skupiny dvě, podle toho, čeho se volba týká - stejně jako u vývěsek:
+
+- **Obecné** (první): tvar názvu zastávky, název pro MHD, obousměrný tisk
+- **Tabulka linky**: dělení spojů, sloupec tarifních čísel, zastávky bez zastavení, barvy spojů,
+  zvýraznění zastávky i tarifního čísla
+
+Obousměrný tisk je vědomě v „Obecném": rozhoduje o složení celé sestavy (jedna stránka, nebo dvě),
+ne o vzhledu jednoho prvku. Skupina se přejmenovala z „Linkový JŘ" na „Tabulka linky" - uvnitř
+linkové agendy je „Linkový JŘ" tautologie, kdežto název prvku odpovídá logice vývěsek („Seznam
+zastávek", „Mřížka odjezdů"). **Názvy voleb ani jejich hodnoty se nezměnily**, takže uložené
+uživatelské volby zůstávají.
+
+**Přibyla strojová pojistka**, protože tahle vada vzniká zapomenutím, ne rozhodnutím: test hlídá,
+že žádný parametr nezůstal bez skupiny a že „Obecné" je první. ⚠️ Hned při zavedení našel **druhý
+případ** - `FORMAT_CASTKY` v agendě faktur; opraveno spolu s tím.
+
+Ověřeno: .NET **1303/1303** (3 nové testy), Caché **137/137**, a nasazení ověřeno voláním
+`GetParameters` - server vrací dvě skupiny v pořadí Obecné → Tabulka linky.
+
+⚠️ **Málem to skončilo jako tichý nepořádek:** pořadí jsem přepsal skriptem, a `.cls` se skriptem
+nenasazuje (hook reaguje jen na editační nástroj). Skupiny na serveru byly, pořadí ne - a testy
+o tom nevěděly, protože čtou zdroj z repa. Chytlo to až to ověřovací volání.
+
 ## 2026-08-31 (8) - 🧭 nabídka stránek náhledu pojmenuje i linkový JŘ (`L13`)
 
 U linkového JŘ hlásila nabídka stránek jen „Stránka 1" / „Stránka 2", takže nebylo poznat, na který
