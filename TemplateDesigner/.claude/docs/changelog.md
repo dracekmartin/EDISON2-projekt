@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-31 (14) - 🧪 spouštěč testů si přestal přičítat cizí běhy (`T1`)
+
+Testy na dev serveru si zapisují výsledky do jednoho sdíleného místa, a spouštěč bral **všechno, co
+tam po jeho startu přibylo** - tedy i sadu, kterou si zrovna pouštěl kolega. Dva běhy tak hlásily
+186 testů místo 128.
+
+⚠️ **Nejde jen o nafouknuté číslo.** Toutéž cestou si běh mohl přivlastnit i **cizí selhání**, takže
+by se hledala chyba, která není naše - a to je dražší než špatný součet. Nově se počítají jen třídy,
+které si běh sám spustil.
+
+⚠️ **Co tím nezmizelo:** když dva lidé pustí souběžně **tutéž** třídu, filtr je neodliší. Počty
+zůstanou správné, ale cizí selhání by se pořád ukázalo jako naše. Je to zapsané u kódu; oddělit by
+to šlo až na úrovni testovacího frameworku.
+
+Ověřeno: Caché **173/173** ve dvou balíčcích (35 + 138, každý hlásí přesně své). Že o výsledku
+rozhoduje opravdu nový filtr, doloženo jeho obrácením - běh pak nahlásil 0 testů.
+
 ## 2026-08-31 (13) - ✅ dvě tvrzení o shodě se starým tiskem doložená, jedno bylo špatně (`L14`)
 
 Dvě věty poznámek u atributů spoje visely v kódu jako **neověřené**: nikdo je neporovnal se starým

@@ -143,12 +143,6 @@ nevzešel žádný datový rozdíl proti starému tisku. Co zůstalo neprojité,
 u [`B56`](#backlog) - je to úklid vnitřku, ne přírůstek pro uživatele, a dělat ho nad kódem, který
 se ještě hýbe, znamená zabetonovat rozdělaný tvar (rozhodnutí Jan 31. 8.).
 
-### Nálezy k opravě mimo TD
-
-| # | Co | Vel. |
-|---|---|---|
-| **T1** | **Sdílený Caché runner sčítá i cizí běhy** (změřeno 28. 8.). `ALVA.EDTesting.TestRunner.RunPackage` iteruje **všechny** výsledky, které v `^UnitTest.Result` vzniknou po jeho startu, a dedupe dělá jen na (třída, metoda) - takže když na témže dev serveru běží současně jiná sada (kolegův pre-push hook), přičte si její testy. Doklad: dva běhy hlásily **186/186** místo 128, rozdíl 58 = `EDISONMAIN2` (23) + `EDControls` (35). ⚠️ **Nejde jen o nafouknuté číslo** - stejnou cestou si běh může přivlastnit i **cizí selhání**, takže se hledá chyba, která není naše. Oprava je malá: filtrovat výsledky podle seznamu tříd, které runner sám spustil. Je to v `EDTesting/`, tedy **sdílená infrastruktura mimo TD** - nechávám na rozhodnutí, kdo to vezme. | S |
-
 ### Mimo paritu
 
 Věci, které starý modul **neumí** - nejsou to dluhy, ale featury. Vědomě mimo paritní vlnu

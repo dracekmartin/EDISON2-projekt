@@ -1,5 +1,17 @@
 # 🗄️ Archiv - hotové kroky
 
+## `T1` - sdílený spouštěč testů si přičítal cizí běhy (hotovo 31. 8. 2026)
+
+Detail → changelog 2026-08-31 (14). Spouštěč bral všechny výsledky, které na dev serveru vznikly po
+jeho startu, tedy i ty od kolegy, který si zrovna pouštěl svou sadu. Nově počítá jen třídy, které
+sám spustil.
+
+⚠️ **Zbytkové riziko zůstává a je zapsané u kódu:** dva souběžné běhy **téže** třídy filtr neodliší.
+Počty to nerozhodí, ale cizí selhání by se pořád ukázalo jako naše; oddělit by to šlo až na úrovni
+`%UnitTest`, ne ve výsledcích.
+
+Je to v `EDTesting/`, tedy ve **sdílené infrastruktuře mimo TD** - commit je proto samostatný.
+
 ## `L14` - dvě neověřená tvrzení o shodě se starým tiskem (hotovo 31. 8. 2026)
 
 Detail → changelog 2026-08-31 (13). Věty u atributů spoje (zásilky, IDS) doložené porovnáním se
