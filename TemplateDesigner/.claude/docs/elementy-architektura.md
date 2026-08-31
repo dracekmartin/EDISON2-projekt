@@ -469,9 +469,22 @@ odvozená z úpravy JŘ).
 > SAO 30→115, BEV 22→72, CBE 56→70, RBP 57→240, loď 61→180, wifi 65→186, zásuvka 66→179.
 > **Textem i podle legacy:** IDS 23→„-11", NKA 24→„-12" (a klient NKA vypisuje jako „n", ne „NKA").
 >
-> **⚠️ Nesrovnalost k rozhodnutí:** legacy mapuje autobus 34→119 a vlak 35→120; my máme autobus→122
-> a vlak→120. V českém fontu je na 119 vagon a na 122 autobus, ve **slovenském obráceně**. Buď je to
-> chyba legacy na českém fontu, nebo špatné přečtení tabulky glyfů - neměněno, čeká na rozhodnutí.
+> **⚠️ Autobus: legacy 119, my 122 - a je to tak správně** (dořešeno 31. 8.). Není to odchylka, ale
+> **jiný font**: starý klient sází fontem **„Timetable"** (`formTISKJRReportDotNet_Module.vb:2611`),
+> my TimeTable2. Právě na 119 se sady rozcházejí - v TimeTable2 CZ je tam vagon, v SK autobus (`B49`),
+> zatímco na 122 je autobus v obou. Přepsat to „kvůli paritě" by českému zákazníkovi vrátilo vagon
+> u přestupu na autobus, což je vada opravená 3. 8. (#13093, #13048). Hlídá to test
+> `Autobus_NemiriNaPoziciZLegacy`. **Důsledek pro budoucí opisování z legacy:** čísla v té tabulce
+> jsou pozice ve **starém** fontu; u nové značky se musí ověřit v TimeTable2, ne jen opsat.
+>
+> **Text místo glyfu:** záporná hodnota v tabulce znamená „vypiš text", a ten text nemusí být
+> zkratkou z dat - nízkokapacitní vůz (24 → „-12") se tiskne jako **„n"**, IDS (23 → „-11") jako
+> „IDS" (`formTISKJRReportDotNet_Module.vb:3348-3365`). Drží to `SymbolMap.ZkratkyLinkyJinymTextem`.
+>
+> **Kde ty atributy v datech vůbec jsou** (změřeno 31. 8. sondou
+> `LinkovyJrNastaveniProbe.AtributySpojuVyskyt` přes šest firem): BEV 48 389 linek · PJI 4 620 ·
+> RBU 168 · IDS 60 · wifi 59 · RBP 22 · OBC 17 · PCZ 17 · NKA 9 · POS 1. ⚠️ **SAO, CBE a zásuvka
+> nejsou nikde** - jejich pozice jsou opsané z legacy, ale na reálném tisku je nikdo neviděl.
 >
 > **Vývěsky jedou jinou tabulku:** `ALVA.TISKMHD.Main.ConvertSpecialniZnak` zná jen dny (1-7→49-55),
 > vozíček (`I`→72), částečnou bezbariérovost (`8`→70) a svátky (`+`→43). Loď, wifi ani zásuvku

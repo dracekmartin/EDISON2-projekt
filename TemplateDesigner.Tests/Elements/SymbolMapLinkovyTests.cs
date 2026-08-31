@@ -194,6 +194,47 @@ public class SymbolMapLinkovyTests
         Assert.Equal(SymbolRenderMode.Text, SymbolMap.ResolveLinkovy(znak).Mode);
     }
 
+    /// <summary>
+    /// Nízkokapacitní vůz se tiskne jako <b>„n"</b>, ne jako zkratka „NKA".
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Není to úspora místa, ale parita: starý klient pro hodnotu „-12" vypisuje doslova „n"
+    /// (<c>formTISKJRReportDotNet_Module.vb:3358</c>). IDS má vedle sebe v téže větvi text „IDS",
+    /// takže se u něj vstup a výstup shodují a žádný překlad nepotřebuje.
+    /// </remarks>
+    [Fact]
+    public void Nizkokapacitni_SeTiskneJakoN()
+    {
+        Assert.Equal("n", SymbolMap.ResolveLinkovy("NKA").Value);
+        Assert.Equal("IDS", SymbolMap.ResolveLinkovy("IDS").Value);
+    }
+
+    /// <summary>
+    /// Ve <b>vývěsce</b> zůstává „NKA" beze změny - překlad na „n" patří jen linkovému JŘ.
+    /// </summary>
+    [Fact]
+    public void Nizkokapacitni_VeVyvesceZustavaBezeZmeny()
+    {
+        Assert.Equal("NKA", SymbolMap.Resolve("NKA").Value);
+    }
+
+    /// <summary>
+    /// Autobus míří na <c>z</c> (122), i když legacy má u téže značky 119.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Není to odchylka od legacy, ale jiný font.</b> Starý klient sází fontem „Timetable"
+    /// (<c>formTISKJRReportDotNet_Module.vb:2611</c>), my TimeTable2 - a právě na 119 se sady
+    /// rozcházejí: v TimeTable2 CZ je tam vagon, v SK autobus (`B49`). Na 122 je autobus v obou.
+    /// Přepsat to na 119 „kvůli paritě" by českému zákazníkovi vrátilo vagon u přestupu na autobus,
+    /// což je přesně vada opravená 3. 8. (#13093, #13048) - proto na to míří test.
+    /// </remarks>
+    [Fact]
+    public void Autobus_NemiriNaPoziciZLegacy()
+    {
+        Assert.Equal("z", SymbolMap.ResolveLinkovy("A").Value);
+        Assert.NotEqual("w", SymbolMap.ResolveLinkovy("A").Value);
+    }
+
     /// <summary>Piktogram se překládá na <b>pozici</b>, ne na písmeno - jinak by autobus vyšel
     /// jako železniční vagon.</summary>
     [Fact]

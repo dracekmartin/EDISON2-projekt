@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-31 (12) - 🔤 nízkokapacitní vůz se tiskne „n" a autobus je dořešený
+
+Dva zbytky po značkách spoje, oba k rozhodnutí. Rozhodly se **nálezem ve starém klientovi**, ne
+odhadem - našel se i on, ne jen serverová tabulka.
+
+**Nízkokapacitní vůz se nově tiskne jako „n"**, ne zkratkou „NKA" - přesně tak ho vypisuje starý
+modul. IDS zůstává „IDS", tam se vstup s výstupem shodují. Ve vývěsce se nic nemění.
+
+**Autobus zůstává, jak byl - a víme proč.** Legacy u něj má jiné číslo než my, což tu viselo jako
+nerozhodnutý rozpor. Vysvětlení: starý klient sází **jiným fontem** (starší „Timetable"), a právě na
+té jedné pozici se sady rozcházejí - v našem českém fontu je tam vagon, ve slovenském autobus. Naše
+pozice je autobus v obou. Přepsat to „kvůli paritě" by českému zákazníkovi vrátilo vagon u přestupu
+na autobus, tedy vadu opravenou 3. 8. Hlídá to test, ať to nikdo nespraví zpátky.
+
+⚠️ **Důsledek na příště:** čísla v legacy tabulce jsou pozice ve **starém** fontu. U další značky je
+nestačí opsat - musí se ověřit v našem.
+
+⚠️ **Ranní tvrzení „z celé rodiny není v datech nic než BEV" bylo mylné.** Sonda přes šest firem
+je našla: bezbariérovost 48 389 linek, kola 4 620, radiobus 168, IDS 60, wifi 59, podmínečné jetí 22,
+občerstvení 17, zavazadla 17, nízkokapacitní 9, zásilky 1. **Samoobslužný spoj, částečná
+bezbariérovost a zásuvka nejsou nikde** - jejich pozice jsou opsané, ale na reálném tisku je nikdo
+neviděl; kdyby se vyskytly, patří ověřit.
+
+Ověřeno: .NET **1310/1310**, mutací (návrat „NKA") doloženo, že to test chytí.
+
 ## 2026-08-31 (11) - 🚻 značky u spojů se přestaly tisknout zkratkou (`L11`)
 
 Občerstvení, zásilky, radiobus, samoobslužný spoj a spoj jedoucí podmínečně se na linkovém JŘ

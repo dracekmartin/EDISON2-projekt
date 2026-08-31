@@ -1,5 +1,29 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L11` - značky spoje piktogramem podle překladové tabulky legacy (hotovo 31. 8. 2026)
+
+Detail → changelog 2026-08-31 (11) a (12). Rodina atributů spoje (občerstvení, zásilky, radiobus,
+samoobslužný, podmínečné jetí) se přestala tisknout zkratkou.
+
+⚠️ **Oprava dřívějšího tvrzení:** roadmapa i ranní zápis tvrdily, že překlad „zkratka → glyf"
+v repu **není**, protože žije ve windowsím tiskovém klientovi. Ten klient v repu **je**
+(`TiskJR/formTISKJRReportDotNet_Module.vb`), jen se hledalo v serverové části. Tabulka
+`ALVA.TISKJR.Main.ConvertSpecialniZnak` překládá id číselníku na kód znaku, klient řeší záporné
+hodnoty jako text. Pozice jsou tím **opsané, ne odvozené z tvaru glyfu**, a tabulka potvrdila
+i všechno, co se předtím nasadilo podle tvaru.
+
+**Co z toho vzešlo mimo samotnou featuru:**
+
+- **IDS a nízkokapacitní vůz zůstávají textem** - ne z opatrnosti, ale protože je tak tiskne
+  legacy. Nízkokapacitní navíc jako **„n"**, ne „NKA".
+- **Autobus 119 × 122 není odchylka, ale jiný font** - legacy sází starším fontem „Timetable".
+  Čísla v té tabulce se proto u nové značky nesmějí jen opsat.
+- **`B99` rozhodnuta faktem** - vývěskový legacy modul loď, wifi ani zásuvku vůbec nezná, takže
+  piktogram by tam byl nová featura, ne parita.
+- **Změřeno, kde ty atributy v datech vůbec jsou** (sonda `AtributySpojuVyskyt`). Ranní tvrzení
+  „není nastavené nic než BEV" neplatilo. **SAO, CBE a zásuvka ale nejsou nikde** - opsané, na
+  reálném tisku neviděné.
+
 ## `L15` - volby mřížky u prvku odjezdů (hotovo 31. 8. 2026)
 
 Poslední prvek, který obě volby nabízel a nečetl. Zapojeno **podle sémantiky pivotu**, ne mechanicky:

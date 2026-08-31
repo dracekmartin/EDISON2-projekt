@@ -1424,4 +1424,84 @@ ClassMethod TurnusyLinky(db As %String, sku As %String, lin As %String) As %Stri
 	quit txt
 }
 
+/// **Na které lince jsou vidět atributy spoje** (občerstvení, zásilky, radiobus, samoobslužný,
+/// nízkokapacitní vůz, …) - podklad pro ruční ověření tisku.
+///
+/// Atributy leží v hlavičce spoje `^JRL(sku,lin,smer,sp)` jako příznaky v pozicích oddělených
+/// dvojtečkou; mapování pozic je v `LinkovyJrAd.BuildSpoj`. Sonda **nic nemění**, jen počítá,
+/// kolik spojů linky má který atribut, a vypíše první nalezené linky.
+///
+/// OUT(n) = "firma skupina linka: ATRIBUT×počet …", OUT("SOUHRN") = kolik linek má který atribut.
+ClassMethod AtributySpojuVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		set klice = "POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu"
+		set pozice = "12,14,15,16,17,18,19,20,21,22,23,25,26"
+		set nalezeno = 0
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					kill pocty
+					// ⚠️ Směr je písmeno („T" tam / „Z" zpět), ne číslo - filtr na číslo tu
+					// mlčky přeskočil úplně všechno a sonda hlásila „nikde nic".
+					for smerIdx = 1:1:2 {
+						set smer = $piece("T,Z", ",", smerIdx)
+						continue:'$data(^[db]JRL(sku, lin, smer))
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set hlava = $piece($get(^[db]JRL(sku, lin, smer, sp)), "#", 1)
+							continue:hlava=""
+							for ai = 1:1:13 {
+								set klic = $piece(klice, ",", ai)
+								continue:'+$piece(hlava, ":", $piece(pozice, ",", ai))
+								set pocty(klic) = $get(pocty(klic)) + 1
+							}
+						}
+					}
+					continue:'$data(pocty)
+					set nalezeno = nalezeno + 1
+					set k = ""
+					for  {
+						set k = $order(pocty(k))
+						quit:k=""
+						set souhrn(k) = $get(souhrn(k)) + 1
+						// Příklad se drží ten s nejvíc spoji - na něm je atribut nejlíp vidět.
+						if pocty(k) > +$piece($get(priklad(k)), "~", 1) {
+							set priklad(k) = pocty(k)_"~"_db_" skupina "_sku_" linka "_lin
+						}
+					}
+				}
+			}
+		}
+		for ai = 1:1:13 {
+			set klic = $piece(klice, ",", ai)
+			if '$data(souhrn(klic)) {
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = klic_": nikde"
+				continue
+			}
+			set txt = klic_": "_souhrn(klic)_" linek, nejvíc "_$piece(priklad(klic), "~", 1)
+			set txt = txt_" spojů na "_$piece(priklad(klic), "~", 2)
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+		}
+		set ^||ML("OUT","SOUHRN") = "linek s aspoň jedním atributem: "_nalezeno
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 }

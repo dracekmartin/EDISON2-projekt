@@ -120,7 +120,12 @@ public static class SymbolMap
         ["H"] = "H",   // bezbariér
         ["F"] = "F",   // částečně bezbariér
         ["L"] = "x",   // vlak - lokomotiva
-        ["A"] = "z",   // autobus - na `w` je vagon
+        // ⚠️ Legacy má u autobusu 119 (`w`), my 122 (`z`) - a je to tak správně. Starý klient sází
+        // fontem **„Timetable"** (`formTISKJRReportDotNet_Module.vb:2611`), my TimeTable2, a přesně
+        // na 119 se ty dvě sady rozcházejí: v TimeTable2 CZ je tam vagon, v SK autobus (`B49`).
+        // Na 122 je autobus v obou, takže `z` je jediná volba, která platí pro oba jazyky.
+        // Do 31. 8. to viselo jako nerozhodnutý rozpor s legacy - není, jen jiný font.
+        ["A"] = "z",   // autobus
         ["K"] = "L",   // jízdní kolo
         // Rodina atributů spoje. Pozice **nejsou odhad**: jsou opsané z překladové tabulky starého
         // tiskového klienta `ALVA.TISKJR.Main.ConvertSpecialniZnak`
@@ -138,6 +143,20 @@ public static class SymbolMap
         ["zasu"] = "³",   // zásuvka 230 V (66 → 179)
     };
 
+    /// <summary>
+    /// Značky, které se v linkovém JŘ tisknou <b>jiným textem</b>, než jaký přijde v datech.
+    /// </summary>
+    /// <remarks>
+    /// Nízkokapacitní vůz má v překladové tabulce legacy zápornou hodnotu (id 24 → „-12"), což
+    /// u starého klienta znamená „vypiš text" - a ten text je <b>„n"</b>, ne „NKA"
+    /// (<c>formTISKJRReportDotNet_Module.vb:3358</c>). IDS (id 23 → „-11") je na tom stejně, jen
+    /// se u něj text se zkratkou shoduje, takže tady nemá řádek.
+    /// </remarks>
+    private static readonly Dictionary<string, string> ZkratkyLinkyJinymTextem = new()
+    {
+        ["NKA"] = "n",   // nízkokapacitní vůz (24 → „-12")
+    };
+
     private static bool JeOverenyPiktogramLinky(string znak) =>
         PiktogramyLinky.ContainsKey(znak)
         || (znak.Length == 1 && znak[0] >= '0' && znak[0] <= '9');
@@ -147,6 +166,7 @@ public static class SymbolMap
     public static (SymbolRenderMode Mode, string Value) ResolveLinkovy(string znak)
     {
         if (string.IsNullOrEmpty(znak)) return (SymbolRenderMode.Text, znak ?? "");
+        if (ZkratkyLinkyJinymTextem.TryGetValue(znak, out var text)) return (SymbolRenderMode.Text, text);
         if (!JeOverenyPiktogramLinky(znak)) return (SymbolRenderMode.Text, znak);
         // ⚠️ Cíl se bere z tabulky, **ne** přes `NaPoziciVeFontu`: značka „vyčká" míří na pozici
         // `A`, kterou by vývěskový překlad poslal dál na autobus.
