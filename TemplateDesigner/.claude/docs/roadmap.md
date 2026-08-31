@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus níže. Z něj jde rovnou vzít **`B101`**; u čtyř dalších je
-> první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+> **Nejblíž na řadě:** § Aktuální focus níže. Rovnou jdou vzít **`B101`** a **`N1`**; u čtyř dalších
+> je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
 ---
 
@@ -20,9 +20,9 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 - **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
 - **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
 
-**Rovnou udělat jde `B101`** (drobné zlepšení srozumitelnosti) **a `B100`** (ruční zlom stránky -
-zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až se bude na přenos nastavení
-linky sahat z jiného důvodu).
+**Rovnou udělat jdou `B101`** (drobné zlepšení srozumitelnosti) **a `N1`** (zóny do sloupců - má
+zadání od zákazníka a náš díl je malý). **`B100`** taky, ale je to zásah do serveru i klienta kvůli
+třem linkám z 93 tisíc, takže spíš až se bude na přenos nastavení linky sahat z jiného důvodu.
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
@@ -67,6 +67,12 @@ linky sahat z jiného důvodu).
   proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
   první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
 
+- **`N1` Zóny do více sloupců u hraniční zastávky** (S, #8576, KU HK). Zákazník chce u hraniční
+  zastávky mezi zónami jednoho IDS (PID, IDZK) samostatné sloupce, jako to máme u km.
+  ⚠️ **Není to dorovnání starého tisku, ale nová věc** - ten zóny do sloupců nedělí, má na ně jeden
+  sloupec, který jen zesílí podle délky obsahu. Na naší straně levné (rozpad na podsloupce už umí
+  km), ale agenda musí poslat zóny jako **seznam**, ne jeden text.
+
 ---
 
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
@@ -74,83 +80,37 @@ linky sahat z jiného důvodu).
 > ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
-Legacy `TiskJR` generuje **vývěsní i knižní JŘ z téhož enginu**, takže je to jeden track. Formát:
-sloupcová tabulka celé linky (svislý seznam zastávek × sloupce spojů s časy; řádek platností se
-symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek).
+**Stav: paritní vlny jsou hotové a žádná otevřená tu není.** Z průchodu testovacími linkami nevzešel
+žádný datový rozdíl proti starému tisku; co zůstalo neprojité, drží
+[§ K ověření](#k-ověření-na-reálné-sestavě) níže. Sloučení dvou Caché tiskových enginů (dřív `L8`)
+je v Backlogu u `B56` - je to úklid vnitřku bez přírůstku pro uživatele a nad rozdělaným kódem by
+jen zabetonoval rozpracovaný tvar (rozhodnutí Jan 31. 8.).
 
-**Na čem zbývající vlny stojí** (kontext, ne seznam úkolů): datové jádro
-(`LinkovyJrAd`/`LinkovyJrMhd`), `LineTableElement` s plánem řádků, síť pro porovnání se starým
-modulem (oracle `mkPLinWin`) a systémová výchozí šablona pro AD. ⚠️ **Pro MHD výchozí šablona
-zatím není** - a nemá se dělat dřív, než městská agenda projde porovnáním se starým modulem
-(dnes je skrytá). Byla dosud součástí `L6`, ale není to práce na repertoáru tabulky; patří
-k městské agendě a **teď se neřeší** (rozhodnutí Jan 28. 8.).
+⚠️ **Linková AD agenda je zveřejněná** (`Released = 1`, 24. 8.) - **ukáže se i zákazníkům, jakmile
+se vydá nová verze**. Městská zůstává skrytá, dokud neprojde porovnáním se starým modulem.
 
-⚠️ **Linková AD agenda je od 24. 8. zveřejněná** (`Released = 1`, žádost Jan) - bez toho na ni
-nešlo v návrháři ani překliknout, takže nebylo jak zkoušet. **Městská zůstává skrytá**, neprošla
-porovnáním se starým modulem. Pozor: zveřejněná agenda se ukáže i zákazníkům, jakmile se vydá.
+**Když přijde na řadu MHD** (dnes se neřeší, rozhodnutí Jan 28. 8.), platí čtyři věci, které se z kódu
+nepoznají:
 
-⚠️ **Agendy jsou pořád úvodní draft**, takže se v nich smí měnit i to, co je jinde
-zamčené - zastávkové se přitom nesmí dotknout. Slovník polí je srovnaný s vývěskou a hlídá ho
-`AgendaSchemaDriftTests`; nové pole přidávej pod týmž názvem, jaký pro tutéž věc používá vývěska.
-Do budoucí **MHD** šablony: `{CISLO_LINKY}` je **licenční** číslo, veřejné je
-`{LOKALNI_OZNACENI_LINKY}`.
-
-**Vlny se berou v pořadí a každá se poměřuje se starým modulem** (rozhodnutí Jan 19. 8.), **nejdřív
-AD, MHD až po něm**: porovnání pro AD běží, AD má výchozí šablonu a oba zákaznické vzory jsou AD.
-⚠️ **„Dodělám AD a MHD spadne samo" neplatí** - AD je nadmnožina v obsahu tabulky, ne v konceptech
-(MHD má licenční × veřejné číslo linky, typ provozu jako datový pojem a vlastní vrstvu nastavení),
-takže MHD si nese **vlastní inventář a vlastní oracle**.
-
-⚠️ **Schéma `LinkovyJrMhd` je už teď citelně chudší než `LinkovyJrAd` u zastávkových řádků**
-(zjištěno auditem 31. 8.) - `GetSchema` u MHD deklaruje jen `PORADI, TYP, NAZEV_ZASTAVKY, ZONY`
-(`LinkovyJrMhd.cls:73-81`), AD má navíc `CZST, AKTUALNI_ZASTAVKA, TC, MHD, NASTUPISTE`
-(`LinkovyJrAd.cls:100-116`) a `BuildZastavkaRadek` (`LinkovyJrMhd.cls:452-465`) chybějící pole
-opravdu nikam neplní. Zvýraznění zastávky (`AKTUALNI_ZASTAVKA`) tak pro MHD dnes **nemá kam
-zapsat příznak**, i kdyby přibyl parametr `ZVYRAZNIT_ZASTAVKU` (`GetParameters` u MHD je zatím
-prázdné, `LinkovyJrMhd.cls:131-135`). Dokud je MHD skrytá, nikoho to netlačí - ale až se sada
-voleb pro městské linky (výše) začne řešit, tohle schéma se musí dorovnat **první**, jinak
-zvýraznění a další zastávková pole tiše nepůjdou udělat.
+- **Vlastní inventář a vlastní porovnání se starým modulem.** „Dodělám AD a MHD spadne samo" neplatí -
+  AD je nadmnožina v obsahu tabulky, ne v pojmech (licenční × veřejné číslo linky, typ provozu jako
+  datový pojem, vlastní vrstva nastavení).
+- **Sada voleb pro městské linky je nová featura, ne dorovnání** - starý modul jich u MHD čte tři
+  z jedenácti, takže parita tam nemá čím se řídit.
+- **V šabloně je `{CISLO_LINKY}` licenční číslo**; veřejné je `{LOKALNI_OZNACENI_LINKY}`.
+- **Zastávkové řádky se musí dorovnat jako první** (audit 31. 8.): MHD dnes posílá jen pořadí, typ,
+  název a zóny, kdežto AD navíc `CZST, AKTUALNI_ZASTAVKA, TC, MHD, NASTUPISTE`
+  (`LinkovyJrMhd.cls:73-81` × `LinkovyJrAd.cls:100-116`). Zvýraznění zastávky tak u MHD **nemá kam
+  zapsat příznak**, i kdyby přibyl parametr - a bez toho půjde část voleb udělat jen naoko.
 
 📄 **Zkušební vzor pro celý track: linka 940 Kroměříž-Přerov (IDZK)** - reálné zadání zákazníka,
-které starý modul nedokázal vyrobit (analýza §15). Až bude šablona stát, ověřuj proti němu.
+které starý modul nedokázal vyrobit. Až bude šablona stát, ověřuj proti němu.
 
-⚖️ **Jak se nakládá s nastavením starého modulu** (platí dál pro `L3`+): **co uměl starý modul, musí
-umět i nový**, a nastavení se **neignoruje proto, že je to vzhled** - když si ho zákazník u linky
-nastavil, tisk ho musí respektovat. Podle toho, co dělá: **mění data** → načtení dat · **volba
-uživatele** → parametr sestavy · **něco schovává** → třístav „Automaticky (dle linky)"
-([`ux-conventions §8`](../rules/ux-conventions.md), i s důvodem, proč je výchozí hodnota konstanta)
-· **stránkování / chybějící featura** → `L5`/`L6` · **měřicí řetězce a šířka plochy** → vědomě nikdy.
-V prvku k tomu patří pravidlo **prázdný sloupec se netiskne**.
-
-🧭 **Vůdčí linie:** *to, jak je výstup složený, patří do návrháře; z nastavení u linky se bere jen
-to, co mění data.* **Sporné případy řeš směrem do šablony** - starý modul se přepisuje a část
-nastavení se může přesunout. Rozhodnutí položku po položce, jejich důvody a změřený výskyt
-nastavení v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md); pozastavené
-tikety helpdesku (8 požadavků se slíbeným „vyřešíme v novém návrháři") [`§14`](linkovy-knizni-jr-implementace-analyza.md).
-
-⚠️ **Sada voleb pro městské linky se rozhoduje až po AD** - starý modul u nich většinu voleb
-ignoroval (jeho MHD engine čte tři z jedenácti), takže parita tam nemá čím se řídit a jakákoli
-sada voleb je **nová featura**, ne dorovnání.
-
-🎯 **Pořadí prací (rozhodnutí Jan 24. 8.): nejdřív dotáhnout paritu se starým tiskem, teprve pak
-uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procházet z business hlediska -
-každý nález by mohl být „ještě to neumíme" místo „takhle to má být". **Paritní vlny jsou za námi**
-(testovací linky, `L9`, `L6`, značky spoje) - detail v archivu; z průchodu testovacími linkami
-nevzešel žádný datový rozdíl proti starému tisku. Co zůstalo neprojité, drží
-[§ K ověření](#k-ověření-na-reálné-sestavě) níže.
-
-**Žádná otevřená vlna už tu není.** Sloučení dvou Caché tiskových enginů (dřív `L8`) je v Backlogu
-u [`B56`](#backlog) - je to úklid vnitřku, ne přírůstek pro uživatele, a dělat ho nad kódem, který
-se ještě hýbe, znamená zabetonovat rozdělaný tvar (rozhodnutí Jan 31. 8.).
-
-### Mimo paritu
-
-Věci, které starý modul **neumí** - nejsou to dluhy, ale featury. Vědomě mimo paritní vlnu
-(rozhodnutí Jan 28. 8.), ať se neplete „dorovnáváme starý tisk" s „přidáváme něco nového".
-
-| # | Co | Vel. |
-|---|---|---|
-| **N1** | **Zóny do více sloupců u hraniční zastávky** (#8576, KU HK). ⚠️ **Starý modul zóny do sloupců nedělí** - má na ně jeden sloupec, který jen zesílí podle délky obsahu (vzor 940 je má v jednom sloupci oddělené čárkou). Zákazník chce u hraniční zastávky mezi zónami jednoho IDS (PID, IDZK) samostatné sloupce, jako to máme u km. Na naší straně levné (km už rozpad na podsloupce dělá), ale agenda musí poslat zóny jako **seznam**, ne jeden text. | S |
+🧭 **Jak se nakládá s nastavením starého modulu:** *to, jak je výstup složený, patří do návrháře;
+z nastavení u linky se bere jen to, co mění data.* Sporné případy řeš směrem do šablony. Rozhodnutí
+položku po položce, jejich důvody a změřený výskyt v datech drží
+[`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
+[`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
 ### K ověření na reálné sestavě
 
