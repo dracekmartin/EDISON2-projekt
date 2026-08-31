@@ -1,5 +1,26 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L10` - volby mřížky u linkové tabulky (hotovo 31. 8. 2026)
+
+`LineTableElement` čte `Grid.ShowRowLines` a `Grid.ShowColumnLines` stejně jako seznam zastávek,
+pevná tabulka i tabulka z dat. Do plánu řádků jdou dvě barvy místo jedné (svislé × vodorovné) a `null`
+znamená „ten druh čar se nekreslí". Jemnější `PopisneSloupceBezVnitrnichCar` zůstává - `ShowColumnLines`
+je nadřazený vypínač, ne jeho náhrada.
+
+**Riziko se změřilo, ne odhadlo.** Volba se ukládá do šablony, i když nic nedělala, takže zapojení
+mohlo někomu tiše sebrat mřížku. `API.Sablony.ListTemplates` ale vrátil, že agenda `LINKOVY_JR_AD`
+nemá na dev serveru **ani jednu** šablonu (CB_CSADAD má 7, všechny zastávkové), takže migrace nebyla
+co dělat. Jediný artefakt s uloženými volbami je vzor **940 (IDZK)** v repu (`showRowLines: false`) -
+ten o vodorovné čáry přijde a **nechává se tak** (rozhodnutí Jan 31. 8., odpovídá to záměru).
+
+⚠️ Zjištěno při tom, že **mřížka odjezdů má tutéž vadu** - vyčleněno do `L14`, protože zastávkové
+šablony se používají a je u nich navíc otevřená otázka, jestli má jedno zaškrtávátko brát i nosnou
+čáru za sloupcem hodin.
+
+Ověřeno mutacemi: volby úplně ignorovat, a přehodit je mezi sebou - obě spadly na nových testech,
+které měří čáry táhnoucí se přes celou obsazenou šířku a výšku tabulky (text zastávek takový pruh
+neudělá).
+
 ## `L6c` - turnusy ke spojům + zbytky ze `L6b` (hotovo 28. 8. 2026)
 
 **Turnusy ke spojům** jako **volba prvku** „Turnusy ke spojům": řádky s označením turnusu pod čísly

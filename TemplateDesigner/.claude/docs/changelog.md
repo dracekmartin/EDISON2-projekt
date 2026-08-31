@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-31 (2) - 🧱 volby mřížky u linkové tabulky konečně fungují (`L10`)
+
+„Čáry mezi řádky" a „Čáry mezi sloupci" nabízí formulář u **každého** prvku - jsou ve sdílené sadě
+základních polí, takže je dostane i prvek, který si je sám nekreslí. Linková tabulka je do dneška
+vůbec nečetla: mřížku kreslila vždycky. Uživatel klikl, hodnota se uložila do šablony a nestalo se
+nic - nejhorší možná zpětná vazba, protože z toho nepozná, jestli je rozbité nastavení, nebo tisk.
+
+Teď se obě volby čtou stejně, jako je odjakživa čte **seznam zastávek**, **pevná tabulka**
+i **tabulka z dat**. Jemnější potlačení svislé čáry mezi popisnými sloupci zůstává - „Čáry mezi
+sloupci" je nadřazený vypínač, ne jeho náhrada.
+
+**Proč zrovna teď:** volba se ukládá do šablony, i když nic nedělala, takže si ji někdo mohl
+odškrtnout a po opravě by mu čáry z tisku zmizely bez jediného kliknutí. Proto se před zásahem
+změřilo, kolika šablon se to týká: na dev serveru **není ani jedna šablona linkového JŘ** (agenda
+je zveřejněná od 24. 8.), takže není co migrovat a levnější chvíle na opravu už nebude. Jediné, co
+ty volby dnes nese, je zákaznický vzor **940 (IDZK)** v repu - má vypnuté vodorovné čáry a po téhle
+změně o ně přijde, což odpovídá záměru toho, kdo je odškrtl (rozhodnutí Jan 31. 8.: nechat tak).
+
+⚠️ **Mřížka odjezdů má tutéž vadu a záměrně zůstala nedotčená.** Zastávkové šablony existují
+a používají se, takže tam by zapojení voleb mohlo změnit hotový tisk - má vlastní položku a vlastní
+měření. Navíc je tam otevřená otázka návrhu: kreslí tři druhy čar a jedno zaškrtávátko by ovládalo
+dvě z nich naráz, přičemž čára za sloupcem hodin je nosná.
+
+Ověřeno: .NET **1272/1272** (4 nové testy) a mutacemi obou cest - volby úplně ignorovat, a přehodit
+je mezi sebou.
+
 ## 2026-08-31 (1) - 🚏 značky spoje: zalomení po dvou a inverzní negativní značka (`L11` z větší části)
 
 **Značky platnosti se zalamují po dvou na řádek.** Dosud jsme je kreslili všechny do jednoho řádku
