@@ -411,7 +411,7 @@ public class WindowNavigator : IWindowNavigator
             UseShellExecute = true,
             FileName = direct ? agendaPath : ResolveExecutablePath(LauncherExe),
             Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath,
-                licensedElements, EDServices.Current.IsAdmin, shortcutPayload),
+                licensedElements, EDServices.Current.IsAdmin, EDServices.Current.MayUpdate, shortcutPayload),
         });
         if (prc != null)
         {
@@ -433,13 +433,17 @@ public class WindowNavigator : IWindowNavigator
     /// kompatibilní); agendaPath (host ho čte pro <c>Assembly.LoadFrom</c>) je [11],
     /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable - starší host je ignoruje),
     /// zástupce na ploše [13] (opaque, host ho místo formy spustí jako proceduru; prázdné = běžný launch),
-    /// admin flag [14] ("1"/"0" → MLProps.UserIsAdmin; host bez pole defaultuje na false).
+    /// admin flag [14] a právo update [15] ("1"/"0" → MLProps.UserIsAdmin / UserMayUpdate; host bez pole
+    /// defaultuje na false).
     /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
     /// argv-safe (bez uvozovek a mezer).
     /// </summary>
     internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
-        string inputParam, string agendaPath, string licensedElements, bool isAdmin, string shortcutPayload = "") =>
-        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{(isAdmin ? "1" : "0")}\"";
+        string inputParam, string agendaPath, string licensedElements, bool isAdmin, bool mayUpdate,
+        string shortcutPayload = "") =>
+        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\"";
+
+    private static string Flag(bool value) => value ? "1" : "0";
 
     public static string ResolveExecutablePath(string relativePath)
     {

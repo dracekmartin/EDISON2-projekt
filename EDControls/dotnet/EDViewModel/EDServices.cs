@@ -36,6 +36,8 @@ public class EDServices(
     /// <summary>Aplikační přístup uživatele (per-IdFa). Načteno post-login, refresh při switch firmy.</summary>
     public AccessTable? AccessTable { get; set; }
     public bool IsAdmin { get; set; }
+    /// <summary>Právo aktualizovat serverovou instalaci EDISONu (USERS „UpdateEdison"); propaguje se legacy formám jako MLProps.UserMayUpdate.</summary>
+    public bool MayUpdate { get; set; }
 
     /// <summary>
     /// Jméno a verze aplikace pro „Informace o verzi" (panel Podpora, menu Nápověda).
