@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** **`L11`** - značky spoje (nejvýš dvě na řádek platnosti + zbytek piktogramů).
+> **Nejblíž na řadě:** **`L10`** - dvě volby mřížky, které nic nedělají (⚠️ rozsvítit je není bezpečná oprava, viz řádek). Ze `L11` zbývá jen rodina atributů a ta čeká na překladovou tabulku glyfů.
 > Vlna `L6` je hotová celá: šipka, obousměrný tisk i turnusy ke spojům.
 
 ---
@@ -73,9 +73,11 @@ Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-ses
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L11** | **Značky spoje: dvě věci doložené čtením legacy 27. 8.** (1) **Nejvýš dvě značky na řádek platnosti**, zbytek se zalomí na další řádek - starý modul to tak dělá (`POCETZNAKUPLATNOSTI 2`, `JRapiLinPrtWin.mac:25` a `:3763`), my kreslíme všechny do jednoho řádku, takže se u spoje s víc značkami přeplní. (2) **Zbytek rodiny atributů jako piktogramy** - starý modul má v číselníku znaků symboly i pro IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, RBP (`:1556` a dál); u nás se tisknou zkratkou, protože jim nikdo neurčil pozici ve fontu. BEV a CBE hotové 27. 8. Postup: vykreslit tabulku glyfů obou fontů a pozici ověřit okem, ne uhádnout. | S |
+| **L11** | **Zbytek rodiny atributů spoje se tiskne zkratkou, ne piktogramem** (IDS, NKA, OBC, POS, RBU, SAO, RBP). Zalomení značek po dvou i inverzní negativní značka jsou hotové 31. 8.; tohle je zbytek. ⚠️ **Chybí překladová tabulka „zkratka → glyf"** - starý modul ji má ve windowsím tiskovém klientovi, který v repu není, takže z tabulky glyfů se dá odvodit jen to, co má jednoznačný tvar (kolo, kufr, zásuvka - ty už doplněné jsou). U občerstvení má font dva kandidáty (káva i příbor) a není čím rozhodnout. **Navíc není na čem to ověřit**: v datech měřených firem není z celé rodiny nastavené nic než BEV, takže oracle vůči starému tisku nevznikne. Vzít, až se najde buď ten překlad, nebo firma, která atributy používá. | S |
 | **L10** | **Mřížka linkové tabulky: dvě volby, které nic nedělají.** „Čáry mezi řádky" a „Čáry mezi sloupci" jsou v panelu i v Caché formuláři, ale prvek je **vůbec nečte** - mřížku kreslí vždy (ověřeno vykreslením 27. 8.: všechny čtyři kombinace zapnuto/vypnuto dají shodný obrázek). ⚠️ **Rozsvítit je není bezpečná oprava**: hodnota je uložená v šablonách, takže komu je dnes odškrtnuté, tomu z tisku zmizí mřížka. Patří k tomu i odložené `L9-R3` - **oddělená barva a tloušťka vodorovných × svislých čar** (`GridStyle` má dnes jednu pro obojí a je **sdílený** se všemi tabulkovými prvky, takže se to má doplánovat pro všechny naráz, ne jen tady). | S |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
+| **L12** | **Parametry sestavy linkového JŘ mají špatné rozdělení do skupin** (nález Jan 31. 8. při zkoušení). Dnes je skoro všechno nastrkané do jedné skupiny „Linkový JŘ" (sloupec tarifních čísel, zastávky bez zastavení, barvy spojů, obousměrný tisk, zvýraznění zastávky i tarifního čísla - `LinkovyJrAd.cls` `GetParameters`) a jen dvě volby (tvar názvu zastávky, název pro MHD) jsou v „Obecné". Zastávkový JŘ (`ZastavkoveJrAd.cls`) to dělá správně - skupiny podle prvku, kterého se volba týká („Seznam zastávek", „Mřížka odjezdů", „Poznámky a legenda"), „Obecné" jen pro to, co platí pro celou šablonu. Přeskupit linkové parametry stejným způsobem. | S |
+| **L13** | **Combobox stránek v náhledu u obousměrného tisku hlásí „Stránka 1" / „Stránka 2" místo směru** (nález Jan 31. 8.). `BuildPreviewPageLabel` (`TemplateDesignerViewModel.cs:469`) staví popisek z `POPIS_ZASTAVKA`/`POPIS_SMER`; u obousměrné stránky je `POPIS_SMER` vědomě prázdný (stránka nese oba směry najednou, `LinkovyJrAd.cls:556-559`), takže label spadne na generický fallback „Stránka N" - uživatel nepozná, který směr combobox zrovna zobrazuje. Pro obousměrný případ udělat popisek podle skutečného obsahu stránky (např. „Tam" / „Zpět"), ne číslo stránky. | S |
 
 ### Nálezy k opravě mimo TD
 
@@ -110,6 +112,13 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
+- **`B103` Skupiny „Vrstva" a „Zarovnat" v horní liště zabírají místo, i když se používají málo**
+  (podnět Jan 31. 8.). Obě skupiny tlačítek (`MainWindow.xaml` ř. 341+/361+) jsou v liště natrvalo,
+  ale mají svou cestu i jinde - zarovnání přes místní nabídku (ř. 171-176), pořadí vrstev přes
+  klávesové zkratky (`ux-conventions.md §3`). Zvážit přesun do rozklikávacího tlačítka/menu, ať
+  lišta upřednostní nejpoužívanější akce a tyhle se zobrazí jen tomu, kdo po nich sáhne. Jen nápad -
+  ověřit u uživatelů, než se do toho pustí.
+
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
   „nejmíň stránek"). Než se do toho pustí, má se zákazníka zeptat, jestli to pořád chce - jinak
@@ -140,12 +149,12 @@ takže nejde o práci, ale o doklad.
   na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
   nebo až se bude stejně sahat na přenos nastavení linky.
 
-- **`B99` Loď a wifi ve fontu JSOU, jen se nepoužívají; chybí jen zásuvka** (z `L4` 24. 8.,
-  **opraveno 27. 8.**). ⚠️ Dosud tu stálo, že ve fontu nejsou všechny tři - to **neplatí**:
-  vykreslením tabulky glyfů se v **obou** fontech shodně našla **loď na 180** a **WiFi na 186**.
-  Stačí je tedy zapsat do povoleného seznamu značek (`SymbolMap`), ne kreslit vlastní obrázek.
-  **Zásuvka ve fontu opravdu není** - u ní zůstává buď doplnit glyf do `TimeTable2.ttf`
-  i `TimeTable2SK.ttf`, nebo vlastní obrázek. Souvisí s `L11` (zbytek rodiny atributů), dělat spolu.
+- **`B99` Loď, wifi i zásuvka jsou ve fontu - ve vývěskách se pořád nepoužívají**
+  (z `L4` 24. 8., **v linkovém JŘ vyřešeno 31. 8.**). ⚠️ Dvakrát tu stálo něco nepravdivého:
+  nejdřív že ve fontu nejsou všechny tři, pak že chybí aspoň zásuvka. **Jsou tam všechny** -
+  tabulka glyfů obou fontů je našla shodně na 180 (loď), 186 (wifi) a 179 (zásuvka), v souvislém
+  bloku ikon vybavení vozidla. Linkový JŘ je od 31. 8. kreslí piktogramem. **Ve vývěskách zůstávají
+  textem**, protože přepnutí by změnilo hotový tisk - je to rozhodnutí o vzhledu, ne oprava.
   V datech měřených firem tyhle značky nemá nikdo, takže to nikoho netlačí.
 
 - **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,

@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-08-31 (1) - 🚏 značky spoje: zalomení po dvou a inverzní negativní značka (`L11` z větší části)
+
+**Značky platnosti se zalamují po dvou na řádek.** Dosud jsme je kreslili všechny do jednoho řádku
+jako souvislý řetěz - bez zalomení i bez ořezu, takže spoj s víc značkami je vypsal přes hranici
+sloupce do sousedního. Starý modul má strop dvě značky na řádek a zbytek posílá pod ně
+(`POCETZNAKUPLATNOSTI`, `JRapiLinPrtWin.mac:25`, skládání `:3752-3775`). Řádků je tolik, kolik jich
+potřebuje nejbohatší spoj; ostatní mají zbylé prázdné, stejně jako už to dělají řádky turnusů.
+
+⚠️ **Dělení je mechanické, ne podle významu značek.** Řádek proto může nést vedle sebe den i
+vlastnost vozidla. Vypadá to jako významové řádky a na většině spojů to tak i vyjde (dny jsou
+v pořadí první), ale je to náhoda - rozhodl o tom tisk ze starého modulu na lince 108360, který
+Jan otevřel 31. 8.: spoj **1017** má ⚒ i ♿ **na jednom řádku**, zatímco 4009 a 4025 mají ⑥ ✝
+na prvním a ♿ na druhém. Ten rozdíl je jediné, čím se obě vysvětlení odliší, takže na něj míří
+vlastní test - bez něj by dělení podle rodin značek prošlo jako správné.
+
+**Negativní značka se tiskne inverzně** - tmavý box se světlým číslem, jako ji má starý tisk
+i naše vývěsky. Odlišuje ji to od značek platnosti nad ní, které říkají opak (kdy spoj jede).
+Inverze se bere z kaskády, ne z pevných barev: box dostane barvu textu buňky a znak její barvu
+pozadí, takže obarvená tabulka zůstane čitelná místo černého obdélníku uprostřed.
+
+**Loď, wifi a nově i zásuvka se kreslí piktogramem, přibyla kola a zavazadla.** Do 31. 8. tu stálo,
+že zásuvka ve fontu není - **není to pravda**: tabulka glyfů obou fontů ji našla na 179, hned vedle
+lodi (180) a wifi (186) v souvislém bloku ikon vybavení vozidla. Ve vývěskách zůstávají všechny tři
+zatím textem, protože přepnout je by změnilo hotový tisk.
+
+⚠️ **Zbytek rodiny atributů (IDS, NKA, OBC, POS, RBU, SAO, RBP) se dál tiskne zkratkou** a parita
+téhle části **není doložená**. Překlad „která zkratka na který glyf" má starý modul ve windowsím
+tiskovém klientovi, který v repu není, a z tvaru glyfu se dá odvodit jen tam, kde je jednoznačný
+(kolo, kufr, zásuvka). U občerstvení má font dva kandidáty a není čím rozhodnout. Navíc v datech
+měřených firem není z celé rodiny nastavené nic než BEV, takže není ani na čem to porovnat.
+
+Ověřeno: .NET **1268/1268** (19 nových testů) a mutacemi tří cest - strop tří značek místo dvou,
+dělení podle významu místo mechanického, nenakreslený box negativní značky.
+
 ## 2026-08-28 (10) - 🔁 turnusy: volba prvku místo parametru + jen číslo turnusu
 
 Dvě změny na tvůj podnět, obě k tomu, aby featura odpovídala tomu, co turnus je.
