@@ -1202,36 +1202,86 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Potvrzení destruktivní změny velikosti/orientace stránky. Změna vždy vymaže obsah a založí
-    /// čisté plátno, proto se ptáme i u uložené šablony (jinak by ConfirmUnsavedChanges u čisté
-    /// šablony vrátil true bez ptaní → tichá ztráta obsahu). Neuložené změny → Save/Discard/Cancel.
+    /// Jak se má naložit s obsahem při změně formátu stránky.
     /// </summary>
-    public async Task<bool> ConfirmPageResetAsync()
+    public enum PageFormatContent
     {
-        if (IsDirty)
-            return await ConfirmUnsavedChangesAsync();
-        return PopupDisplayer.Confirm(
-            "Změna velikosti nebo orientace stránky vymaže obsah šablony a založí čisté plátno. Pokračovat?");
+        /// <summary>Přepočítat prvky na novou velikost.</summary>
+        Rescale,
+
+        /// <summary>Změnit jen stránku, velikosti prvků nechat.</summary>
+        Keep,
+
+        /// <summary>Uživatel změnu zrušil.</summary>
+        Cancel,
     }
 
     /// <summary>
-    /// Reset šablony po změně velikosti/orientace stránky: potvrzení → čisté plátno s novou
-    /// velikostí. Zachová agendu (PageEdit ji needituje); převezme velikost/okraje/kulturu/font
-    /// z hodnot dialogu (klíč = property path na Template). Vrátí false pokud uživatel reset zrušil.
+    /// Zeptá se, co s obsahem při změně formátu stránky.
     /// </summary>
-    public async Task<bool> ResetForPageChangeAsync(IReadOnlyDictionary<string, string> pageFields)
+    /// <remarks>
+    /// ⚠️ Sdílený dialog má tlačítka Ano/Ne/Storno napevno, takže význam musí nést text otázky -
+    /// akční popisky by znamenaly sáhnout do EDControls a publikovat i druhou aplikaci.
+    /// Prázdná šablona se neptá vůbec: není co přeškálovat.
+    /// </remarks>
+    public PageFormatContent AskPageFormatContent()
     {
-        if (!await ConfirmPageResetAsync()) return false;
+        if (State.CurrentTemplate.Sections.All(sec => sec.Elements.Count == 0))
+            return PageFormatContent.Rescale;
 
-        var agenda = State.CurrentTemplate.AgendaCode;
-        ReplaceWithBlankTemplate(agenda, configure: t =>
+        const string otazka =
+            "Změnili jste formát stránky. Má se obsah šablony přepočítat na novou velikost?";
+        const string ano =
+            "Ano - prvky se zvětší nebo zmenší podle nové stránky; jejich nastavení zůstane";
+        const string ne =
+            "Ne - změní se jen stránka, velikosti prvků zůstanou beze změny";
+        string zprava = otazka + Environment.NewLine + Environment.NewLine
+            + ano + Environment.NewLine + ne;
+
+        return PopupDisplayer.ConfirmYesNoCancel(zprava,
+            "Změna formátu stránky") switch
         {
-            foreach (var (key, val) in pageFields)
-                if (ElementPropertyAccessor.Exists(t, key))
-                    ElementPropertyAccessor.Set(t, key, val);
-        });
+            true => PageFormatContent.Rescale,
+            false => PageFormatContent.Keep,
+            _ => PageFormatContent.Cancel,
+        };
+    }
+
+    /// <summary>
+    /// Změna velikosti/orientace stránky se <b>zachováním obsahu</b>: prvky se přepočítají na novou
+    /// velikost, jejich nastavení se nemění. Vrátí false, když uživatel změnu zrušil.
+    /// </summary>
+    /// <remarks>
+    /// Dřív se šablona v tomhle místě vymazala a založila prázdná - viz <see cref="ChangePageFormatCommand"/>,
+    /// proč to tak bylo a co se změnilo. Zůstává to jako **jeden vratný krok**, takže Ctrl+Z vrátí
+    /// rozměr stránky i obsah najednou.
+    /// </remarks>
+    public async Task<bool> ChangePageFormatAsync(IReadOnlyDictionary<string, string> pageFields)
+    {
+        var volba = AskPageFormatContent();
+        if (volba == PageFormatContent.Cancel) return false;
+
+        var ps = State.CurrentTemplate.PageSize;
+        float scale = 1f, offsetX = 0f;
+        if (volba == PageFormatContent.Rescale)
+            (scale, offsetX) = PageFormatChange.Compute(ps,
+                MmFromFields(pageFields, "PageSize.Width", ps.Width),
+                MmFromFields(pageFields, "PageSize.Height", ps.Height),
+                MmFromFields(pageFields, "PageSize.MarginLeft", ps.MarginLeft),
+                MmFromFields(pageFields, "PageSize.MarginRight", ps.MarginRight),
+                MmFromFields(pageFields, "PageSize.MarginTop", ps.MarginTop),
+                MmFromFields(pageFields, "PageSize.MarginBottom", ps.MarginBottom));
+
+        Execute(new ChangePageFormatCommand(State.CurrentTemplate, pageFields, scale, offsetX));
+        await Task.CompletedTask;
         return true;
     }
+
+    private static float MmFromFields(IReadOnlyDictionary<string, string> fields, string key, float fallback) =>
+        fields.TryGetValue(key, out var s)
+        && float.TryParse(s, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var v)
+            ? v : fallback;
 
     private async Task OpenInstancePickerAsync()
     {

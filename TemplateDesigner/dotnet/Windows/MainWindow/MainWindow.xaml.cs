@@ -1836,10 +1836,8 @@ public partial class MainWindow : Window
                 "Vlastnosti stránky") { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
-            // Změna velikosti / orientace stránky = reset (potvrzení → čisté plátno s novou velikostí).
-            // Zachovávat elementy přes změnu rozměrů se chovalo nepředvídatelně (elementy visely mimo
-            // stránku); reset je konzistentní se změnou agendy. Ostatní změny (okraje, kultura, font)
-            // se aplikují jako běžná undoable změna.
+            // Změna velikosti / orientace stránky přepočítá obsah na novou velikost (B104) - dřív
+            // šablonu vymazala. Ostatní změny (okraje, kultura, font) jdou jako běžná vratná změna.
             var fv = dlg.FinalValues;
 
             // Pojistka: dialog vrátil hodnoty, ale klíče rozměrů chybí → detekce resetu by tiše selhala.
@@ -1853,7 +1851,10 @@ public partial class MainWindow : Window
 
             if (dimsChanged)
             {
-                await _vm!.ResetForPageChangeAsync(fv!);   // reset si sám vyžádá refresh plátna/velikosti
+                if (!await _vm!.ChangePageFormatAsync(fv!)) return;
+                UpdateCanvasSize();
+                InvalidateCanvas();
+                InvalidatePreview();
                 return;
             }
 
