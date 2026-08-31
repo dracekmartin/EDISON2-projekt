@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-08-31 (3) - 📐 změna formátu stránky obsah přepočítá, místo aby ho vymazala (`B104`)
+
+Ve Vlastnostech stránky se dala změnit velikost nebo orientace jen za cenu toho, že se **celá
+šablona zahodila** a založilo se prázdné plátno - uživatel ji stavěl znovu od nuly. Důvod byl
+poctivý (zachovávat prvky přes změnu rozměrů se chovalo nepředvídatelně, visely mimo stránku),
+jen se vyřešil tím nejtvrdším způsobem, který byl po ruce.
+
+Nově se **přepočítá geometrie a nastavení prvků zůstane** - sloupce, styly, volby, podmínky
+i datové zdroje. Přepočítávají se pozice, rozměry, velikosti písma, odsazení, výšky řádků
+a tloušťky čar, takže výsledek vypadá jako táž sestava na jiném papíře, ne jako drobný text na
+velké stránce.
+
+**Poměr se počítá z tiskové plochy, ne z papíru.** Prvky leží uvnitř okrajů, takže z rozměru
+stránky by se souběžná změna okrajů promítla do výsledku dvakrát. ⚠️ Vedlejší důsledek: ani při
+stejném poměru papíru (A5 → A4) nevyjde přepočet úplně beze zbytku, protože okraje se neškálují -
+obsah se proto posune o jednotky milimetrů. To je správně, ne chyba zaokrouhlení.
+
+**Při změně orientace** se bere menší z obou os, aby nic nepřeteklo, a obsah se **vodorovně
+vystředí**. Svisle zůstává nahoře, protože sekce jdou odshora jako dokument - hlavička plovoucí
+uprostřed prázdné stránky by vypadala rozbitě (rozhodnutí Jan 31. 8.). Uživatel musí počítat s tím,
+že se mu pozice posunou; podstatné je, že se nic neztratí a dá se s tím dál pracovat.
+
+Hláška o vymazání zmizela, místo ní je otázka **Ano** (přepočítat) / **Ne** (změnit jen stránku) /
+**Storno**. ⚠️ Sdílený dialog má tlačítka Ano/Ne/Storno napevno, takže význam nese text otázky -
+akční popisky by znamenaly sáhnout do EDControls a publikovat i druhou aplikaci. Prázdná šablona
+se neptá vůbec. Celé je to **jeden vratný krok**: Ctrl+Z vrátí rozměr stránky i obsah najednou.
+
+**Prvky, které by po přepočtu vyčnívaly, se nikam neposouvají** - posunout někomu prvek bez jeho
+vědomí je horší překvapení než vidět, že něco visí ven.
+
+Ruční škálování z nabídky zůstalo, jak bylo; obě cesty teď stojí na společném výpočtu, jen ruční
+škáluje i papír, kdežto změna formátu bere rozměr a okraje přesně podle dialogu.
+
+Ověřeno: .NET **1281/1281** (9 nových testů) a mutacemi tří cest - větší poměr místo menšího,
+vynechané vystředění, přeškálované okraje místo hodnot z dialogu.
+
 ## 2026-08-31 (2) - 🧱 volby mřížky u linkové tabulky konečně fungují (`L10`)
 
 „Čáry mezi řádky" a „Čáry mezi sloupci" nabízí formulář u **každého** prvku - jsou ve sdílené sadě

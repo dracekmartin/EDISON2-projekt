@@ -125,13 +125,6 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B103` Skupiny „Vrstva" a „Zarovnat" v horní liště zabírají místo, i když se používají málo**
-  (podnět Jan 31. 8.). Obě skupiny tlačítek (`MainWindow.xaml` ř. 341+/361+) jsou v liště natrvalo,
-  ale mají svou cestu i jinde - zarovnání přes místní nabídku (ř. 171-176), pořadí vrstev přes
-  klávesové zkratky (`ux-conventions.md §3`). Zvážit přesun do rozklikávacího tlačítka/menu, ať
-  lišta upřednostní nejpoužívanější akce a tyhle se zobrazí jen tomu, kdo po nich sáhne. Jen nápad -
-  ověřit u uživatelů, než se do toho pustí.
-
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
   „nejmíň stránek"). Než se do toho pustí, má se zákazníka zeptat, jestli to pořád chce - jinak

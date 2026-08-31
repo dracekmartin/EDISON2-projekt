@@ -1,5 +1,29 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B104` - změna formátu stránky přepočítá obsah (hotovo 31. 8. 2026)
+
+Změna velikosti nebo orientace ve Vlastnostech stránky šablonu **vymazala** a založila prázdné
+plátno. Nově se přepočítá geometrie (pozice, rozměry, písmo, odsazení, výšky řádků, tloušťky čar)
+a **nastavení prvků zůstává** - sloupce, styly, volby, podmínky, datové zdroje.
+
+**Poměr z tiskové plochy, ne z papíru** - prvky leží uvnitř okrajů, takže z rozměru stránky by se
+souběžná změna okrajů promítla dvakrát. ⚠️ Proto ani při stejném poměru papíru nevyjde přepočet
+beze zbytku (okraje se neškálují) a obsah se posune o jednotky milimetrů - je to správně.
+Při změně orientace se bere **menší z obou os** (nic nepřeteče) a obsah se **vodorovně vystředí**;
+svisle zůstává nahoře, protože sekce jdou odshora jako dokument (rozhodnutí Jan 31. 8.).
+
+Rozměr a okraje se berou **přesně z dialogu**, ne přeškálované - proto se zapisují až po přepočtu
+obsahu. Celé je to jeden vratný krok; stránka se vrací z odloženého snímku (přesně), obsah
+převráceným poměrem (na desetinu milimetru, jako u ručního škálování).
+
+⚠️ **Tlačítka zůstala Ano/Ne/Storno**, význam nese text otázky - akční popisky by znamenaly sáhnout
+do sdíleného dialogu v EDControls a publikovat i druhou aplikaci. Prázdná šablona se neptá vůbec.
+**Prvky, které by po přepočtu vyčnívaly, se neposouvají** - to je vědomé, ne opomenutí.
+
+Ruční škálování z nabídky zůstalo beze změny; obě cesty stojí na společném `TemplateScaling`, jen
+ruční škáluje i papír. Ověřeno mutacemi: větší poměr místo menšího, vynechané vystředění,
+přeškálované okraje místo hodnot z dialogu.
+
 ## `L10` - volby mřížky u linkové tabulky (hotovo 31. 8. 2026)
 
 `LineTableElement` čte `Grid.ShowRowLines` a `Grid.ShowColumnLines` stejně jako seznam zastávek,
