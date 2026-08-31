@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-08-31 (7) - 👁 náhled bez vybrané linky ukáže vlastní sloupce (#13158 bod 3)
+
+Kdo si v prvku odjezdů nadefinoval vlastní sloupce a **neměl vybranou konkrétní linku**, neviděl
+v návrháři žádnou změnu. Vypadalo to jako nefunkční featura - přitom s vybranou linkou fungovala
+odjakživa.
+
+Ukázková data se totiž ze serveru tahala **bez jakýchkoli voleb**, takže server spadl na výchozí
+rozvržení podle linky (Pracovní / Sobota / Neděle a svátky). Nově se do nich posílá definice
+sloupců ze šablony; server ji uměl číst už dřív, jen mu ji nikdo neposlal.
+
+⚠️ **Druhá polovina té pasti byla cache.** Vzorek se držel pod samotným kódem agendy, takže i po
+opravě vstupu by se po změně sloupců vrátil starý obrázek. Definice je proto součástí klíče - jiné
+sloupce znamenají nový dotaz, stejné sloupce se pořád berou z cache (načtení je synchronní a trvá
+pár vteřin, takže se nesmí opakovat při každém překreslení). A změna definice **bez vybrané
+instance** teď náhled přenačte, ne jen ta s instancí jako dosud.
+
+Vzorek tím nezačne odpovídat konkrétní lince - ukazuje **to členění**, které je v šabloně, a o to
+šlo (rozhodnutí Jan 31. 8.).
+
+⚠️ **U linkového JŘ zůstává týž vzor otevřený**: `LinkovyJrAd.GetMockData` volby z požadavku nečte
+vůbec, staví stránku s napevno zapsanými hodnotami. Tam nestačí přeposlat parametry, musela by se
+upravit metoda - je to v roadmapě v „K ověření na reálné sestavě".
+
+Ověřeno: .NET **1296/1296** (6 nových testů) a mutacemi obou pojistek - neposlaná definice
+a cache ignorující její změnu.
+
 ## 2026-08-31 (6) - 🔎 adresa dopravce i z firmy a seskupená pole agendy (#13158)
 
 Dvě věci, které vyplynuly hned ze zkoušení předchozí změny.

@@ -81,7 +81,7 @@ mimo tabulku výše jsou linkové/knižní JŘ, nebo úplně mimo TD; **žádný
 
 | Ticket | Zákazník | Feature | Stav | Otestovat před zavřením | Detail |
 |---|---|---|---|---|---|
-| #13158 | BBSK | Vývěska na výšku dle vzoru - poznámky ke 4 bodům (31. 8.) | 🔄 **body 0-2 hotové 31. 8.** (formát stránky se dá změnit bez ztráty obsahu; dopravce s adresou po řádcích; „Konečná zastávka") · **bod 3 otevřený** - vlastní sloupce se nezobrazí v živém náhledu, protože ukázková data se volají bez parametrů a cachují se; poradit zákazníkovi vybrat konkrétní linku, nebo použít rozvržení u linky (umí i „Prac \| So+Ne+svátky") · **bod 4 odložen** (piktogramy u zastávky) | Ověřit u zákazníka na jeho šabloně, hlavně tvar adresy dopravce | changelog 31. 8. (5) |
+| #13158 | BBSK | Vývěska na výšku dle vzoru - poznámky ke 4 bodům (31. 8.) | 🔄 **body 0-3 hotové 31. 8.** (formát stránky se dá změnit bez ztráty obsahu; dopravce s adresou po řádcích; „Konečná zastávka") · **bod 3 hotový 31. 8.** - náhled bez vybrané linky nově ukáže vlastní sloupce (posílá se definice ze šablony a cache je klíčovaná i jí); u linkového JŘ zůstává týž vzor otevřený, viz roadmapa „K ověření" · **bod 4 odložen** (piktogramy u zastávky) | Ověřit u zákazníka na jeho šabloně, hlavně tvar adresy dopravce | changelog 31. 8. (5) |
 | #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | - (zavřeno) | §E1 |
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ **ZAVŘENO 30. 7. 2026** | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky") | §A6 |
