@@ -991,9 +991,13 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                     gx += g.GroupWidth + GroupSeparatorWidth;
                 }
 
-                var rowLineStart = ctx.ToCanvas(X, currentY + scaledRowH);
-                var rowLineEnd = ctx.ToCanvas(X + usedWidth, currentY + scaledRowH);
-                ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
+                // „Čáry mezi řádky" = čáry mezi hodinami; v pivotu je řádek právě hodina.
+                if (Grid.ShowRowLines)
+                {
+                    var rowLineStart = ctx.ToCanvas(X, currentY + scaledRowH);
+                    var rowLineEnd = ctx.ToCanvas(X + usedWidth, currentY + scaledRowH);
+                    ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
+                }
                 currentY += scaledRowH;
                 rowIndex++;
             }
@@ -1150,6 +1154,12 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         }
 
         // ── Svislé čáry mezi sloupci hodin a skupinami ───────────────────────
+        //
+        // ⚠️ Čára za sloupcem hodin se kreslí VŽDY, i s vypnutými „Čárami mezi sloupci" - není to
+        // oddělovač sloupců, ale **osa pivotu**: odděluje hodinu od minut, které k ní patří. Bez ní
+        // se obojí slije a mřížka přestane být čitelná. Sloupce jsou v tomhle prvku **skupiny dnů**,
+        // takže volba řídí jen oddělovače mezi nimi (rozhodnutí Jan 31. 8., `L15`).
+        // Není to opomenutí ani skrytá výjimka - je to přečtení toho, co „sloupec" v pivotu znamená.
         void RenderGridVerticalSeparators()
         {
             float vLineTopY = Y;
@@ -1178,10 +1188,14 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
                 if (i < layout.Groups.Count - 1)
                 {
-                    float sepX = gxSep + GroupSeparatorWidth / 2f;
-                    var sepTop = ctx.ToCanvas(sepX, vLineTopY);
-                    var sepBottom = ctx.ToCanvas(sepX, currentY);
-                    ctx.Canvas.DrawLine(sepTop, sepBottom, paints.Grid);
+                    // Oddělovač mezi skupinami dnů = to, čemu se v tomhle prvku říká „sloupec".
+                    if (Grid.ShowColumnLines)
+                    {
+                        float sepX = gxSep + GroupSeparatorWidth / 2f;
+                        var sepTop = ctx.ToCanvas(sepX, vLineTopY);
+                        var sepBottom = ctx.ToCanvas(sepX, currentY);
+                        ctx.Canvas.DrawLine(sepTop, sepBottom, paints.Grid);
+                    }
                     gxSep += GroupSeparatorWidth;
                 }
             }
