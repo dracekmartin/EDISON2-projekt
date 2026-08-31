@@ -48,12 +48,26 @@ ClassMethod RunPackage(ByRef sys As %String) As %Status
 		kill ^||ML
 
 		set passed = 0, failed = 0, failIdx = 0
-		kill seen
+		kill seen, nase
+
+		// Třídy, které tenhle běh sám spustil - podle nich se filtrují výsledky níže.
+		set ptr = 0
+		while $listnext(classList, ptr, className) { set nase(className) = "" }
 
 		// Iteruj všechny TestInstance indexy vytvořené naším batch.
 		// RunTest("ClassName") scanuje ^UnitTestRoot subdirs (Locale/MLINE/Temp),
 		// takže jeden run vytvoří TestInstance s víc suites se stejným obsahem.
 		// Dedupe na (className, methodName).
+		//
+		// ⚠️ **Počítají se jen třídy, které tenhle běh sám spustil.** ^UnitTest.Result je sdílený
+		// pro celý server, takže sem spadnou i výsledky, které mezitím vyrobil někdo jiný (kolegův
+		// pre-push na témže dev serveru). Bez filtru si běh cizí testy přičetl - dva běhy hlásily
+		// 186/186 místo 128 - a hlavně si mohl přivlastnit i **cizí selhání**, takže se pak hledá
+		// chyba, která není naše.
+		//
+		// Zbytkové riziko, které tím nezmizí: když někdo souběžně pustí **tutéž** třídu, filtr ho
+		// neodliší. Počty to nerozhodí (dedupe na třídu+metodu), ale jeho selhání by se ukázalo
+		// jako naše. Na to by bylo potřeba oddělit běhy už na úrovni %UnitTest, ne až ve výsledcích.
 		set idx = baseIndex
 		for {
 			set idx = $order(^UnitTest.Result(idx))
@@ -65,6 +79,7 @@ ClassMethod RunPackage(ByRef sys As %String) As %Status
 				set suite = instance.TestSuites.GetAt(s)
 				for c = 1:1:suite.TestCases.Count() {
 					set case = suite.TestCases.GetAt(c)
+					continue:'$data(nase(case.Name))
 					for m = 1:1:case.TestMethods.Count() {
 						set method = case.TestMethods.GetAt(m)
 						set key = case.Name_"|"_method.Name
