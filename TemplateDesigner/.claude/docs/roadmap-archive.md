@@ -1,5 +1,13 @@
 # 🗄️ Archiv - hotové kroky
 
+## `N1` - zóny hraniční zastávky do vlastních sloupců (hotovo 31. 8. 2026)
+
+Detail → changelog 2026-08-31 (15). Volba u prvku, výchozí vypnutá; dělí se čárkou i lomítkem.
+
+⚠️ **Není to parita** - starý modul zóny do sloupců nedělí. Proto je výchozí stav vypnutý: víc zón
+má 301 738 zastávek měřených firem a zapnutý rozpad by překreslil hotové sestavy i tomu, kdo o něj
+nežádal. Na drátě se nic nemění, rozdělení si dělá prvek sám.
+
 ## `T1` - sdílený spouštěč testů si přičítal cizí běhy (hotovo 31. 8. 2026)
 
 Detail → changelog 2026-08-31 (14). Spouštěč bral všechny výsledky, které na dev serveru vznikly po

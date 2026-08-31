@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-08-31 (15) - 🗺️ každá zóna hraniční zastávky může mít vlastní sloupec (`N1`)
+
+Zastávka na hranici zón měla dosud všechny své zóny v jednom sloupci za sebou („037,066,051").
+Zákazník s IDS (#8576, KU HK) je chce vedle sebe, každou ve vlastním sloupci - jako to už umí
+kilometry. V nastavení tabulky linky proto přibyla volba **„Každá zóna ve vlastním sloupci"**
+(skupina Sloupce). Sloupec zón se po zapnutí rozšíří na tolik dílů, kolik zón má nejbohatší zastávka
+linky; zastávka s jednou zónou nechá zbylé díly prázdné.
+
+⚠️ **Výchozí je vypnuto, a je to to nejdůležitější rozhodnutí celé položky.** Víc zón má **301 738
+zastávek** z 1 160 432 v datech šesti měřených firem - zapnutý rozpad by tedy překreslil hotové
+sestavy i všem, kdo o něj nežádali. Starý modul tohle neumí vůbec (má na zóny jeden sloupec, který
+jen zesílí podle délky obsahu), takže to není dorovnání starého tisku, ale nová věc.
+
+⚠️ **Dělí se čárkou i lomítkem** - a to není opatrnost, ale měření: čárka 301 334×, lomítko 404×
+(používá ho KV_DP, „23/5"). Kdyby se dělilo jen čárkou, u té firmy by volba tiše nedělala nic.
+
+Na drátě se **nic nemění** - zóny už se posílají a rozdělit si je umí prvek sám. Nová databázová
+položka by ke stejné věci vyrobila druhé pole, které by pak muselo žít navždy.
+
+Ověřeno: .NET **1318/1318** (6 nových testů) a Caché 138/138; mutacemi obou cest (rozpad natvrdo
+zapnutý; dělení jen čárkou) doloženo, že to testy chytí. Formulář prvku ověřen voláním serveru.
+
 ## 2026-08-31 (14) - 🧪 spouštěč testů si přestal přičítat cizí běhy (`T1`)
 
 Testy na dev serveru si zapisují výsledky do jednoho sdíleného místa, a spouštěč bral **všechno, co

@@ -73,6 +73,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// „padding sloupce", které sjednocují počet sloupců napříč stránkami).
     /// </remarks>
     public bool PadEmptyColumns { get; set; }
+
+    /// <summary>
+    /// Kazda zona hranicni zastavky ve vlastnim sloupci (vychozi vypnuto).
+    /// </summary>
+    /// <remarks>
+    /// Zastavka na hranici zon ma dnes vsechny zony v jednom sloupci za sebou; zakaznik s IDS
+    /// (PID, IDZK) je chce vedle sebe, jako to umi kilometry (#8576). ⚠️ **Vychozi je vypnuto
+    /// zamerne** - vic zon ma 300 tisic zastavek merenych firem, takze zapnuty rozpad by prekreslil
+    /// hotove sestavy i tem, kdo o nej nezadali. Stary modul to neumi vubec, neni to tedy parita.
+    /// </remarks>
+    public bool RozdelitZonyDoSloupcu { get; set; }
     /// <summary>Pás názvů skupin dnů (Pracovní dny / Soboty / …) nad čísly spojů.</summary>
     public bool ShowGroupHeaders { get; set; } = true;
 
@@ -167,6 +178,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         public string Popis = "";
         public string Tc = "";
         public string Zona = "";
+
+        /// <summary>Jednotlive zony hranicni zastavky - viz <c>RozdelitZony</c>.</summary>
+        public List<string> Zony = [];
         public string Mhd = "";
         public string Nastupiste = "";
         public List<string> Atributy = [];
@@ -240,6 +254,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Popis = row.GetString("NAZEV_ZASTAVKY"),
             Tc = row.GetString("TC"),
             Zona = row.GetString("ZONY"),
+            Zony = RozdelZony(row.GetString("ZONY")),
             Mhd = row.GetString("MHD"),
             Nastupiste = row.GetString("NASTUPISTE"),
             Atributy = ParseStringArray(row.GetValue("ATRIBUTY")),
@@ -339,6 +354,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     private static List<string> ParseStringArray(object? value) =>
         value is JsonArray arr ? [.. arr.Select(n => n?.ToString() ?? "")] : [];
+
+    /// <summary>
+    /// Rozdeli zonu hranicni zastavky na jednotlive zony.
+    /// </summary>
+    /// <remarks>
+    /// Zastavka na hranici zon nese vsechny sve zony v jedne hodnote; oddelovac je carka, u nekterych
+    /// firem lomitko (zmereno 31. 8. na sesti firmach: 301 738 zastavek z 1 160 432 ma vic nez jednu
+    /// zonu, carka 301 334x, lomitko 404x, nejvic tri zony na zastavku). Delime proto obojim - jeden
+    /// z tech tvaru by jinak zustal v jednom sloupci a vypadal jako chyba jen u nekterych zakazniku.
+    /// </remarks>
+    internal static List<string> RozdelZony(string zona) =>
+        string.IsNullOrWhiteSpace(zona)
+            ? []
+            : [.. zona.Split([',', '/'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
     private static List<LinePripojData> ParsePripoje(object? value)
     {
@@ -441,7 +470,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Hodnota buňky popisového sloupce dle klíče (kmIndex jen pro Km sub-sloupce).</summary>
     private Func<LineStopData, string> ValueFor(string key, int kmIndex) => key switch
     {
-        ColumnKeys.Zone     => s => s.JePrijezdovy ? "" : s.Zona,
+        ColumnKeys.Zone     => s => s.JePrijezdovy ? ""
+            : !RozdelitZonyDoSloupcu ? s.Zona
+            : kmIndex < s.Zony.Count ? s.Zony[kmIndex] : "",
         ColumnKeys.Km       => s => s.JePrijezdovy || kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
         ColumnKeys.Tc       => s => s.JePrijezdovy ? "" : s.Tc,
         ColumnKeys.Mhd      => s => s.JePrijezdovy ? "" : s.Mhd,
@@ -473,15 +504,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // se odvozuje z dat (kmCount == 0 znamená „žádné km sloupce", ne „prázdné hodnoty").
         // ⚠️ Šipka směru má vlastní podmínku: nemá **žádný text**, takže by ji pravidlo „prázdný
         // sloupec se netiskne" schovalo vždy, i když ji uživatel zapnul. Kreslí se vektorově.
+        int zonaCount = MaxZonaCount(stops);
         structural = structural.Where(c => c.Key switch
         {
             ColumnKeys.Km    => kmCount > 0,
             ColumnKeys.Arrow => true,
+            // Rozpad zon se ridi poctem zon v datech, stejne jako km - „zadny sloupec" tu znamena
+            // „zadna zona", ne „prazdne hodnoty".
+            ColumnKeys.Zone when RozdelitZonyDoSloupcu => zonaCount > 0,
             _                => stops.Any(st => ValueFor(c.Key, 0)(st).Length > 0),
         }).ToList();
 
         // šířky: pevné (Width != null) honorovány; auto (null) sdílí zbytek se spoji
-        float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == ColumnKeys.Km ? c.Width!.Value * kmCount : c.Width!.Value);
+        float fixedSum = structural.Where(c => c.Width.HasValue)
+            .Sum(c => c.Width!.Value * PocetPodsloupcu(c.Key, kmCount, zonaCount));
         int autoStructural = structural.Count(c => !c.Width.HasValue);
         int autoUnits = autoStructural + (trip.Width.HasValue ? 0 : tripCount);
         // Mezery mezi skupinami sloupců a místo na značky u času jdou ze stejné šířky jako
@@ -499,10 +535,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var ds = ResolveDataStyle(col);
             string header = col.Header != "" ? col.Header : DefaultHeaderFor(col.Key);
             float w = col.Width ?? autoEach;
-            if (col.Key == ColumnKeys.Km)
+            int podsloupcu = PocetPodsloupcu(col.Key, kmCount, zonaCount);
+            if (podsloupcu > 1 || col.Key == ColumnKeys.Km)
             {
-                for (int k = 0; k < kmCount; k++)
-                    result.Add(new RenderCol(col.Key, w, header, hs, ds, ValueFor(ColumnKeys.Km, k)));
+                for (int k = 0; k < podsloupcu; k++)
+                    result.Add(new RenderCol(col.Key, w, header, hs, ds, ValueFor(col.Key, k)));
             }
             else
             {
@@ -845,6 +882,35 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Atributy trasy k zobrazení před názvem - jen významové značky pro cestujícího
     /// (x = na znamení). Řídicí atributy (T/P/S/E/…) se v prvním řezu netisknou.</summary>
     private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
+
+    /// <summary>
+    /// Popisove sloupce tak, jak se opravdu vykresli - pro testy: dvojice (klic, hodnota bunky).
+    /// </summary>
+    /// <remarks>
+    /// Rozpad zon meni **pocet** sloupcu, ne jen text v nich, takze na to nestaci porovnat obrazek -
+    /// z nej neni poznat, jestli dve zony vedle sebe jsou dva sloupce, nebo jedna bunka s carkou.
+    /// </remarks>
+    internal List<(string Klic, string Hodnota)> PopisneSloupceProTest(DataContext data, int radek = 0)
+    {
+        EnsureParsed(data);
+        var stops = _cachedStops ?? [];
+        var (cols, _, _) = BuildColumns(stops, MaxKmCount(stops), 1);
+        return [.. cols.Select(c => (c.Key, stops.Count > radek ? c.Value(stops[radek]) : ""))];
+    }
+
+    /// <summary>Na kolik sloupcu se klic rozpadne - km dle dat, zona jen se zapnutym rozpadem.</summary>
+    private int PocetPodsloupcu(string key, int kmCount, int zonaCount) => key switch
+    {
+        ColumnKeys.Km => kmCount,
+        ColumnKeys.Zone when RozdelitZonyDoSloupcu => zonaCount,
+        _ => 1,
+    };
+
+    /// <summary>Nejvic zon na jedne zastavce - urcuje pocet sloupcu zon pri rozpadu.</summary>
+    private int MaxZonaCount(List<LineStopData> stops) =>
+        RozdelitZonyDoSloupcu && Columns.Any(c => c.Visible && c.Key == ColumnKeys.Zone) && stops.Count > 0
+            ? stops.Max(s => s.Zony.Count)
+            : 0;
 
     private int MaxKmCount(List<LineStopData> stops) =>
         Columns.Any(c => c.Visible && c.Key == ColumnKeys.Km) && stops.Count > 0 ? stops.Max(s => s.Km.Count) : 0;
@@ -1747,6 +1813,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ShowNzRow = ShowNzRow,
             ShowPripojeRows = ShowPripojeRows,
             PadEmptyColumns = PadEmptyColumns,
+            RozdelitZonyDoSloupcu = RozdelitZonyDoSloupcu,
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
             PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
@@ -1781,6 +1848,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
         new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
+        new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = "Sloupce",
+            Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = "Sloupce",
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },

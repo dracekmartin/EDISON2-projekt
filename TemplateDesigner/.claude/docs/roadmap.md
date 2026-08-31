@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus níže. Rovnou jdou vzít **`B101`** a **`N1`**; u čtyř dalších
-> je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+> **Nejblíž na řadě:** § Aktuální focus níže. Rovnou jde vzít **`B101`**; u čtyř dalších je první
+> krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
 ---
 
@@ -20,9 +20,9 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 - **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
 - **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
 
-**Rovnou udělat jdou `B101`** (drobné zlepšení srozumitelnosti) **a `N1`** (zóny do sloupců - má
-zadání od zákazníka a náš díl je malý). **`B100`** taky, ale je to zásah do serveru i klienta kvůli
-třem linkám z 93 tisíc, takže spíš až se bude na přenos nastavení linky sahat z jiného důvodu.
+**Rovnou udělat jde `B101`** (drobné zlepšení srozumitelnosti). **`B100`** taky, ale je to zásah do
+serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až se bude na přenos nastavení linky
+sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8.)
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
@@ -66,12 +66,6 @@ třem linkám z 93 tisíc, takže spíš až se bude na přenos nastavení linky
   si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
   proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
   první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
-
-- **`N1` Zóny do více sloupců u hraniční zastávky** (S, #8576, KU HK). Zákazník chce u hraniční
-  zastávky mezi zónami jednoho IDS (PID, IDZK) samostatné sloupce, jako to máme u km.
-  ⚠️ **Není to dorovnání starého tisku, ale nová věc** - ten zóny do sloupců nedělí, má na ně jeden
-  sloupec, který jen zesílí podle délky obsahu. Na naší straně levné (rozpad na podsloupce už umí
-  km), ale agenda musí poslat zóny jako **seznam**, ne jeden text.
 
 ---
 

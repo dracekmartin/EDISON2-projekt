@@ -1424,6 +1424,89 @@ ClassMethod TurnusyLinky(db As %String, sku As %String, lin As %String) As %Stri
 	quit txt
 }
 
+/// **Kde má zastávka víc zón najednou a čím jsou v datech oddělené** (`N1`).
+///
+/// Zákazník chce každou zónu hraniční zastávky ve vlastním sloupci. Než se to začne dělit, musí se
+/// vědět, **jak to v datech vypadá** - kolik zón na zastávce bývá a jaký znak je odděluje; jinak by
+/// se dělilo podle domněnky. Zóny bere ze stejného místa jako tisk (trasa linky, pole zóny),
+/// **jen u linek, které zóny tisknou** (`linIDS`), aby se nepočítaly linky, kde se stejně neukážou.
+/// Sonda nic nemění.
+///
+/// OUT("ODDELOVACE") = které znaky se v hodnotách vyskytly a kolikrát,
+/// OUT(n) = ukázka "firma skupina linka zastávka: hodnota", OUT("SOUHRN") = počty.
+ClassMethod ZonyViceNaZastavce(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		// Musí se přečíst před `kill` - ten smaže i IN.
+		set jenZnak = $get(^||ML("IN","ZNAK"))
+		kill ^||ML, oddelovace
+		set ukazek = 0, sZonou = 0, viceZon = 0, linekSeZonami = 0
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					// linIDS 1 nebo 2 = linka zóny tiskne (viz BuildStrankaLinky)
+					set linIds = +$get(^[db]JRL(sku, lin, "PATCH", "linIDS"))
+					continue:'((linIds = 1) || (linIds = 2))
+					set linekSeZonami = linekSeZonami + 1
+					set poradi = ""
+					for  {
+						set poradi = $order(^[db]JRL(sku, lin, "J", poradi))
+						quit:poradi=""
+						set veta = $get(^[db]JRL(sku, lin, "J", poradi))
+						set zona = $piece($piece(veta, ":", 5), "#", 2)
+						continue:zona=""
+						set sZonou = sZonou + 1
+						// Který znak hodnotu dělí - hledá se mezi kandidáty, ne hádá se jeden.
+						set nalezen = ""
+						for zi = 1:1:$length(",;/|+ ") {
+							set znak = $extract(",;/|+ ", zi)
+							continue:zona'[znak
+							set oddelovace(znak) = $get(oddelovace(znak)) + 1
+							set:nalezen="" nalezen = znak
+						}
+						continue:nalezen=""
+						set viceZon = viceZon + 1
+						// IN ZNAK zúží ukázky na jeden oddělovač - vzácný tvar by se v ukázkách
+						// z prvních patnácti nálezů jinak neukázal.
+						continue:(jenZnak'="")&&(zona'[jenZnak)
+						continue:ukazek'<15
+						set ukazek = ukazek + 1
+						set czst = $piece(veta, ":", 1)
+						set ^||ML("OUT", $increment(^||ML("OUT"))) = db_" "_sku_" "_lin_" "_..NazevZastavkyProSondu(db, czst)_": ["_zona_"]"
+					}
+				}
+			}
+		}
+		set txt = "", znak = ""
+		for  {
+			set znak = $order(oddelovace(znak))
+			quit:znak=""
+			set txt = txt_$select(txt'="":", ", 1:"")_"["_znak_"] "_oddelovace(znak)_"×"
+		}
+		set ^||ML("OUT","ODDELOVACE") = $select(txt="":"žádný z kandidátů se nevyskytl", 1:txt)
+		set ^||ML("OUT","SOUHRN") = "linek se zónami "_linekSeZonami_", zastávek se zónou "_sZonou_", z toho s víc zónami "_viceZon
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Název zastávky pro výpis sondy (druhý „$"-díl záznamu zastávky = čitelný tvar s diakritikou).
+ClassMethod NazevZastavkyProSondu(db As %String, czst As %String) As %String
+{
+	quit $piece($get(^[db]JRZ(czst)), "$", 2)
+}
+
 /// **Na které lince by se rozešla věta „všechny spoje…"** podle toho, počítá-li se přes jeden směr,
 /// nebo přes celou linku (`L14` bod 1).
 ///
