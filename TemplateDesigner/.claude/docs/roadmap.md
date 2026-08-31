@@ -4,7 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** z první tabulky zbývá **`L8`** (dedup Caché enginů, velikost L - tvoje rozhodnutí) a **`L14`** (dvě neověřená tvrzení o paritě). Značky spoje (`L11`) jsou uzavřené.
+> **Nejblíž na řadě:** z první tabulky zbývá jediná položka - **`L8`** (sloučení dvou Caché tiskových
+> enginů, velikost L, korektnostní riziko: **tvoje rozhodnutí, kdy do toho jít**). Menší práce drží
+> § K ověření a Backlog.
 
 ---
 
@@ -81,7 +83,6 @@ nevzešel žádný datový rozdíl proti starému tisku. Co zůstalo neprojité,
 | # | Vlna | Vel. |
 |---|---|---|
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
-| **L14** | **Dvě sebeoznačené R6 nejistoty v `LinkovyJrAd.cls` visí jen v komentářích, mimo dohled** (audit 31. 8.). (1) `VetaAtributu` (`:1601-1603`): legacy počítá spoje s atributem přes **celou linku**, náš kód přes **stránku** (jeden směr) - u jednosměrné linky to vyjde stejně, u obousměrné (hotová od `L6`, 31. 8.) se může rozejít věta „všechny spoje mají BEV" vs. výčet; neprošlo oraclem. (2) `GenerickaVeta` (`:1562-1564`): oprava textu pro atributy POS a IDS je opsaná ze zdroje legacy, ale **neověřená** - na kontrolních linkách se ty dva atributy nevyskytly. Autor obojí správně napsal jako neověřené (R6), jenže bez zápisu do roadmapy to nikdo nezvedne. ⚠️ **Odblokováno 31. 8.**: sonda `AtributySpojuVyskyt` našla, kde ty atributy v datech jsou - **IDS** na 60 linkách (nejvíc `VS_CSAD 9 / 0240801`, 157 spojů), **POS** na jediné (`VS_CSAD 13 / 0883637`, 2 spoje). Důvod „na kontrolních linkách se nevyskytly" tedy padl a obě věty jde porovnat se starým tiskem. | S |
 
 ### Nálezy k opravě mimo TD
 

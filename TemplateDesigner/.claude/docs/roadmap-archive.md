@@ -1,5 +1,19 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L14` - dvě neověřená tvrzení o shodě se starým tiskem (hotovo 31. 8. 2026)
+
+Detail → changelog 2026-08-31 (13). Věty u atributů spoje (zásilky, IDS) doložené porovnáním se
+starým modulem na linkách, kde ty atributy v datech skutečně jsou; hlídá je nový test.
+
+**Jedno z těch tvrzení bylo věcně špatně.** V kódu stálo, že starý modul počítá spoje přes celou
+linku a my přes stránku. Ve skutečnosti počítá v rozsahu, ve kterém tiskne legendu - a náš model
+(stránka na směr s vlastní legendou) tomu odpovídá. Doloženo na `VS_CSAD 24/0941210`.
+
+**Vedlejší nález, který stál za víc než sama položka:** porovnání se starým modulem si vyrábělo
+falešný rozdíl (pouštělo starý modul v jiném režimu legendy, než jaký má náš výstup) a na lince
+s dlouhou poznámkou celé padalo. Obojí opraveno - jinak by se v tom šumu ztratil příští skutečný
+rozdíl.
+
 ## `L11` - značky spoje piktogramem podle překladové tabulky legacy (hotovo 31. 8. 2026)
 
 Detail → changelog 2026-08-31 (11) a (12). Rodina atributů spoje (občerstvení, zásilky, radiobus,

@@ -1573,8 +1573,9 @@ ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %St
 /// - **zbytek** - generická vždy.
 ///
 /// ⚠️ **Našlo to porovnání se starým modulem** (21. 8.): u bezbariérového vozidla jsme posílali
-/// generickou větu i tam, kde starý modul vypisuje spoje. **U POS a IDS je oprava opsaná ze zdroje
-/// legacy, ale porovnáním neověřená** - na kontrolních linkách se ty dva atributy nevyskytly.
+/// generickou větu i tam, kde starý modul vypisuje spoje. **POS a IDS doloženy porovnáním 31. 8.**
+/// na jediných linkách v datech, kde se ty atributy vyskytují (`VS_CSAD 13/0883637` a `9/0240801`)
+/// - obě věty se se starým modulem shodují, viz `LinkovyJrAdLegacyTest.TestVetyAtributuProtiLegacy`.
 ClassMethod GenerickaVeta(klic As %String, patrSp As %String, bbpLinka As %Integer) As %Boolean
 {
     i (klic = "POS") || (klic = "IDS") q 0
@@ -1611,9 +1612,13 @@ ClassMethod GenerickaVeta(klic As %String, patrSp As %String, bbpLinka As %Integ
 /// má legacy **zadrátované ve zdroji**, zvlášť pro češtinu a slovenštinu. Zákazník je tedy upravit
 /// nemůže ani ve starém modulu - a slovenština funguje tím, že se vezme druhá sada.
 ///
-/// ⚠️ **Otevřené:** legacy počítá spoje přes **celou linku**, my přes stránku (jeden směr). Na
-/// jednosměrné lince to vyjde stejně; u obousměrné se to může rozejít v tom, kdy padne tvar
-/// „všechny spoje". Porovnání to zatím nenahlásilo.
+/// ⚠️ **Rozsah počítání spojů je stránka, a je to správně** (dořešeno 31. 8., dřív tu stálo, že
+/// legacy počítá přes celou linku a my jinak). Starý modul počítá **v rozsahu, ve kterém tiskne
+/// legendu**: má-li blok poznámek na směr, počítá spoje směru (`JRapiLinPrtWin` předá `in("sm")`),
+/// má-li jeden blok za linku, počítá obě strany. Náš model = stránka na směr s vlastní legendou,
+/// tedy první případ; u obousměrné stránky se spoje sčítají přes oba směry, což odpovídá druhému.
+/// Doloženo porovnáním na `VS_CSAD 24/0941210`, kde atribut mají všechny spoje směru Z, ale ne celé
+/// linky - obě strany tam říkají „všechny spoje".
 ClassMethod VetaAtributu(klic As %String, rec As %String = "CZ", znackaNadSpojem As %Boolean = 0, vycetSpoju As %String = "", pocetSpoju As %Integer = 0, spojuCelkem As %Integer = 0) As %String
 {
     s sablona = ..AtributSablona(klic, rec)

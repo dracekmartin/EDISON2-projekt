@@ -73,6 +73,55 @@ Method TestParitaSeStarymModulem()
 	do $$$AssertEquals(porovnano > 1000, 1, "porovnáno podezřele málo hodnot ["_souhrn_"]")
 }
 
+/// Linky, na kterých je vidět **věta atributu spoje**, a proč je tam každá z nich (`L14`).
+/// Formát: `firma~skupina~linka~atribut~co na ní je vidět`.
+ClassMethod LinkySVetouAtributu(ByRef sada)
+{
+	kill sada
+	// Jediná linka v měřených datech, kde je atribut „zásilky" vůbec nastavený.
+	set sada(1) = "VS_CSAD~13~0883637~POS~výčet spojů (generickou větu tenhle atribut nemá nikdy)"
+	// Atribut na všech spojích → tvar „všechny spoje", a taky bez generické věty.
+	set sada(2) = "VS_CSAD~9~0240801~IDS~tvar ""všechny spoje"""
+	// Rozhodující případ pro rozsah počítání: ve směru Z ho mají všechny spoje, na celé lince ne.
+	set sada(3) = "VS_CSAD~24~0941210~BEV~všechny spoje směru, ale ne celé linky"
+}
+
+/// **Věty u atributů spojů se musí shodovat se starým modulem, včetně volby tvaru.**
+///
+/// Věta má dva tvary - „všechny spoje s…" a výčet „spoje 1, 7 …" - a o tom, který padne, rozhoduje
+/// poměr spojů s atributem ku všem spojům **na téže sestavě**. Tohle je jediné místo, kde se ten
+/// výběr dá porovnat proti starému modulu na datech, kde ty atributy skutečně jsou; do 31. 8. se
+/// tvrdilo, že shoda platí, ale doloženo to nebylo (`L14`).
+Method TestVetyAtributuProtiLegacy()
+{
+	do ..SetupSys(.sys)
+	do ..LinkySVetouAtributu(.sada)
+	set overeno = 0, nalezy = "", i = ""
+	for  {
+		set i = $order(sada(i))
+		quit:i=""
+		set db = $piece(sada(i),"~",1), sku = $piece(sada(i),"~",2), lin = $piece(sada(i),"~",3)
+		set klic = $piece(sada(i),"~",4), popis = $piece(sada(i),"~",5)
+		continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).NactiObeStrany(.sys, db, sku, lin, .leg, .nase)
+		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).VetyAtributu(.leg, .vetyLeg)
+		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).VetyAtributu(.nase, .vetyNase)
+		// Fixture smí vyhnít: kdyby zákazník atribut z linky sundal, test by od té chvíle
+		// porovnával prázdno s prázdnem a tvářil se zeleně.
+		if '$data(vetyLeg(klic)) {
+			set nalezy = nalezy _ $select(nalezy="":"", 1:" | ") _ db_" "_lin_" "_klic_": starý modul větu nemá, fixture vyhnila ("_popis_")"
+			continue
+		}
+		set overeno = overeno + 1
+		continue:$get(vetyNase(klic))=$get(vetyLeg(klic))
+		set nalezy = nalezy _ $select(nalezy="":"", 1:" | ") _ db_" "_lin_" "_klic_" ("_popis_"): starý ["_$get(vetyLeg(klic))_"] × náš ["_$get(vetyNase(klic))_"]"
+	}
+	if 'overeno {
+		do $$$AssertTrue(1, "starý modul ani firma VS_CSAD na tomto serveru není - přeskočeno")
+		quit
+	}
+	do $$$AssertEquals(nalezy, "", "věta atributu se liší od starého modulu: "_nalezy)
+}
+
 /// Deklarovaná odchylka ani dluh nesmí být **mrtvý záznam**. Kdyby se rozdíl přestal objevovat
 /// (opravili jsme ho, nebo zmizel z dat), zůstane v registru výjimka, která už nic nekryje - a příště
 /// pod ní projde skutečná chyba. Běží jen na serveru s celým jádrem, jinak by hlásil mrtvý záznam

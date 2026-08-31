@@ -1424,6 +1424,85 @@ ClassMethod TurnusyLinky(db As %String, sku As %String, lin As %String) As %Stri
 	quit txt
 }
 
+/// **Na které lince by se rozešla věta „všechny spoje…"** podle toho, počítá-li se přes jeden směr,
+/// nebo přes celou linku (`L14` bod 1).
+///
+/// Věta atributu má dva tvary: „**všechny** spoje s bezbariérovým vozidlem", když ho mají všechny
+/// spoje, a výčet „spoje 3, 7 …", když jen některé. Rozhodující je tedy poměr *spojů s atributem*
+/// ku *všem spojům* - a ten vyjde jinak, počítá-li se v rámci jednoho směru, nebo přes obě.
+/// Sonda hledá linky, kde ty dva výpočty **dají jiný tvar věty**; jen na takové lince má smysl
+/// pouštět porovnání se starým modulem. Nic nemění.
+///
+/// OUT(n) = "firma skupina linka ATRIBUT: T x/y Z x/y (celkem x/y)", OUT("SOUHRN") = počet nálezů.
+ClassMethod AtributyRozhodujiciLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set klice = "POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu"
+		set pozice = "12,14,15,16,17,18,19,20,21,22,23,25,26"
+		set nalezeno = 0
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					kill pocty, celkem
+					for smerIdx = 1:1:2 {
+						set smer = $piece("T,Z", ",", smerIdx)
+						continue:'$data(^[db]JRL(sku, lin, smer))
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set hlava = $piece($get(^[db]JRL(sku, lin, smer, sp)), "#", 1)
+							continue:hlava=""
+							set celkem(smer) = $get(celkem(smer)) + 1
+							for ai = 1:1:13 {
+								continue:'+$piece(hlava, ":", $piece(pozice, ",", ai))
+								set klic = $piece(klice, ",", ai)
+								set pocty(klic, smer) = $get(pocty(klic, smer)) + 1
+							}
+						}
+					}
+					// Obousměrná linka = spoje v obou směrech; jinak se ty dva výpočty ani lišit nemohou.
+					continue:'($get(celkem("T")) && $get(celkem("Z")))
+					set celkemObe = celkem("T") + celkem("Z")
+					set klic = ""
+					for  {
+						set klic = $order(pocty(klic))
+						quit:klic=""
+						// Atribut s generickou větou se počtu spojů nedotkne - věta výčet nemá,
+						// takže rozsah počítání u něj nic nezmění a do hledání nepatří.
+						set patrSp = $get(^[db]JRSET("Definice","PAtrSp"))
+						set bbpLinka = +$get(^[db]JRL(sku,lin,"PATCH","TZPA","BBP"))
+						continue:##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GenerickaVeta(klic, patrSp, bbpLinka)
+						set pT = +$get(pocty(klic, "T")), pZ = +$get(pocty(klic, "Z"))
+						set vseSmer = ((pT = celkem("T")) || (pZ = celkem("Z")))
+						set vseLinka = ((pT + pZ) = celkemObe)
+						continue:vseSmer=vseLinka
+						set nalezeno = nalezeno + 1
+						set txt = db_" skupina "_sku_" linka "_lin_" "_klic_": T "_pT_"/"_celkem("T")
+						set txt = txt_" Z "_pZ_"/"_celkem("Z")_" (celkem "_(pT+pZ)_"/"_celkemObe_")"
+						set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+					}
+				}
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = "linek, kde by se tvar věty rozešel: "_nalezeno
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// **Na které lince jsou vidět atributy spoje** (občerstvení, zásilky, radiobus, samoobslužný,
 /// nízkokapacitní vůz, …) - podklad pro ruční ověření tisku.
 ///

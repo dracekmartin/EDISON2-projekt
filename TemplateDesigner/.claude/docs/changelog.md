@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-31 (13) - ✅ dvě tvrzení o shodě se starým tiskem doložená, jedno bylo špatně (`L14`)
+
+Dvě věty poznámek u atributů spoje visely v kódu jako **neověřené**: nikdo je neporovnal se starým
+modulem, protože se ty atributy na kontrolních linkách nevyskytly. Dnešní měření našlo linky, kde
+v datech jsou, takže je konečně bylo čím porovnat.
+
+**Zásilky a IDS sedí.** Obě věty se se starým tiskem shodují na jediných linkách, kde ty atributy
+v datech vůbec jsou - včetně toho, že se u nich **nikdy** netiskne obecná věta, ale výčet spojů.
+
+**Věta „všechny spoje…" se počítá správně - a předchozí popis byl mylný.** V kódu stálo, že starý
+modul počítá spoje přes celou linku, kdežto my přes stránku, a že se to u obousměrné linky může
+rozejít. Neplatí to: starý modul počítá **v tom rozsahu, ve kterém tiskne legendu** - má-li ji na
+každý směr, počítá spoje směru. Náš model je přesně ten případ. Doloženo na lince, kde bezbariérové
+vozy mají všechny spoje jednoho směru, ale ne celé linky: obě strany tam říkají „všechny spoje".
+
+⚠️ **Přitom se ukázalo, že si porovnání samo vyrábělo falešný rozdíl.** Starý modul se pouštěl
+v režimu „jedna legenda za celou linku", zatímco náš výstup má legendu na každé stránce - a věty
+atributů se pak počítaly každá v jiném rozsahu. Vypadalo to jako naše chyba, byly to dvě různé
+sestavy vedle sebe. Opraveno; **do té doby to bylo horší než chybějící kontrola**, protože příští
+skutečný rozdíl by se v tom šumu ztratil.
+
+⚠️ **A druhá vada porovnání: linka s dlouhou poznámkou ho shodila.** Text poznámky se používal jako
+klíč a několik odstavců přepravních podmínek se do něj nevejde. Taková linka se pak tvářila jako
+neporovnaná. Klíč je nově useknutý a nese délku, takže rozdíl v konci textu se pořád pozná.
+
+Ověřeno: Caché **138/138** (nový test na věty atributů), mutací (vždycky tvar „všechny spoje")
+doloženo, že to test chytí.
+
 ## 2026-08-31 (12) - 🔤 nízkokapacitní vůz se tiskne „n" a autobus je dořešený
 
 Dva zbytky po značkách spoje, oba k rozhodnutí. Rozhodly se **nálezem ve starém klientovi**, ne
