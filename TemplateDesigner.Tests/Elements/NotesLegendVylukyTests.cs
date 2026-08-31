@@ -152,4 +152,36 @@ public class NotesLegendVylukyTests
 
         Assert.Equal(prazdnyCanvas, Rendering.RenderSnapshot.Capture(blok, data));
     }
+
+    // ── Značka v legendě se musí shodovat s tím, co je v tabulce (`L11`) ──
+
+    /// <summary>
+    /// Nízkokapacitní vůz je v legendě <b>„n"</b>, ne kód „NKA" z dat.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Nález Jan 31. 8.: v řádku platnosti už bylo „n" (ten jde přes <c>SymbolRunRenderer</c>,
+    /// který překlad dělá), ale legenda vypisovala kód z dat rovnou, takže na téže stránce stálo
+    /// „n" u spoje a tučné „NKA" v legendě. Značka a její vysvětlivka se musejí shodovat, jinak
+    /// legenda nevysvětluje nic.
+    /// </remarks>
+    [Fact]
+    public void Nizkokapacitni_JeVLegendeStejnyZnakJakoVTabulce()
+    {
+        var pozn = new PoznamkaData
+        {
+            Typ = TypPoznamky.SpecialniZnak, Znak = "NKA", Druh = "5",
+            Text = "všechny spoje jsou obsluhovány nízkokapacitním autobusem",
+        };
+
+        Assert.Equal("n", NotesLegendElement.ZnakPoznamkyProTest(pozn));
+    }
+
+    /// <summary>Ruční komentář zákazníka se nepřekládá - překlad platí jen pro číselník JŘ.</summary>
+    [Fact]
+    public void RucniKomentar_SeNepreklada()
+    {
+        var pozn = new PoznamkaData { Typ = TypPoznamky.Text, Znak = "NKA", Text = "vlastní text" };
+
+        Assert.Equal("NKA", NotesLegendElement.ZnakPoznamkyProTest(pozn));
+    }
 }

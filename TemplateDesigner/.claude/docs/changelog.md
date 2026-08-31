@@ -23,7 +23,12 @@ občerstvení 17, zavazadla 17, nízkokapacitní 9, zásilky 1. **Samoobslužný
 bezbariérovost a zásuvka nejsou nikde** - jejich pozice jsou opsané, ale na reálném tisku je nikdo
 neviděl; kdyby se vyskytly, patří ověřit.
 
-Ověřeno: .NET **1310/1310**, mutací (návrat „NKA") doloženo, že to test chytí.
+⚠️ **Hned se u toho ukázalo, že to nestačí** (nález Jan): v řádku platnosti u spoje už bylo „n",
+ale v legendě pod tabulkou zůstalo tučné **„NKA"** - značka a její vlastní vysvětlivka si na jedné
+stránce odporovaly. Legenda si totiž kód z dat vypisovala rovnou, mimo překlad. Opraveno; ručně
+zadaného komentáře se to netýká.
+
+Ověřeno: .NET **1312/1312**, mutacemi obou cest (návrat „NKA" v tabulce i v legendě).
 
 ## 2026-08-31 (11) - 🚻 značky u spojů se přestaly tisknout zkratkou (`L11`)
 

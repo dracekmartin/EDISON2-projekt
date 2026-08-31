@@ -267,7 +267,7 @@ public class NotesLegendElement : StopScheduleElementBase
             // ve fontu neshoduje s písmenem číselníku (autobus „A" → „z", kolo „K" → „L"). Překlad
             // se řídí kategorií, ne písmenem: značky MHD jsou v datech už jako pozice ve fontu.
             // A jen u piktogramů: značka kreslená normálním fontem je písmeno zadané zákazníkem.
-            string znak = piktogram ? GlyfPoznamky(pozn) : pozn.Znak;
+            string znak = piktogram ? GlyfPoznamky(pozn) : TextZnakPoznamky(pozn);
             ctx.Canvas.DrawText(znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
             lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f;
 
@@ -345,6 +345,10 @@ public class NotesLegendElement : StopScheduleElementBase
     /// <summary>Testovací vstup do filtru - render ho volá zároveň s daty, což se v testu neposkládá.</summary>
     internal List<PoznamkaData> FiltrujPoznamkyProTest(List<PoznamkaData> poznamky) => FilterPoznamky(poznamky);
 
+    /// <summary>Co se u poznámky reálně vypíše jako značka (piktogram i text) - pro testy.</summary>
+    internal static string ZnakPoznamkyProTest(PoznamkaData pozn) =>
+        JePiktogramPoznamky(pozn) ? GlyfPoznamky(pozn) : TextZnakPoznamky(pozn);
+
     private List<PoznamkaData> FilterPoznamky(List<PoznamkaData> poznamky)
     {
         return poznamky.Where(p =>
@@ -367,6 +371,20 @@ public class NotesLegendElement : StopScheduleElementBase
         pozn.Druh != ""
             ? SymbolMap.ResolveLinkovy(pozn.Znak).Mode == SymbolRenderMode.FontGlyf
             : JePiktogram(pozn.Znak);
+
+    /// <summary>
+    /// Značka, která se kreslí <b>normálním fontem</b> - i ta může mít v legacy jiný text než kód
+    /// z dat (nízkokapacitní vůz „NKA" se tiskne jako „n").
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 31. 8. se tu vypisoval kód z dat rovnou, takže v legendě zůstalo tučné „NKA", zatímco
+    /// v řádku platnosti už bylo „n" (ten jde přes <c>SymbolRunRenderer</c>, který překlad dělá).
+    /// Platí jen pro značky z číselníku linkového JŘ - ruční komentář zákazníka se nepřekládá.
+    /// </remarks>
+    private static string TextZnakPoznamky(PoznamkaData pozn) =>
+        pozn.Typ == TypPoznamky.SpecialniZnak && pozn.Druh != ""
+            ? SymbolMap.ResolveLinkovy(pozn.Znak).Value
+            : pozn.Znak;
 
     /// <summary>Co se pro značku poznámky reálně vypíše - viz <see cref="JePiktogramPoznamky"/>.</summary>
     private static string GlyfPoznamky(PoznamkaData pozn) =>
