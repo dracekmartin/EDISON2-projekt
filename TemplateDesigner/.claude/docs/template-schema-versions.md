@@ -188,6 +188,14 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   Vkládá se **skrytá** a před sloupec zastávek, tedy tam, kde ji má starý modul; skrytá proto, že
   migrace nesmí změnit vzhled hotové šablony (týž důvod jako u 1.8.0).
 
+- **1.10.0** `MigrationKonecnaZastavka` (2026-08-31, #13158) - pole `POPIS_SMER` přejmenováno na
+  `KONECNA_ZASTAVKA` (a `POPIS_SMER_CIS` na `KONECNA_ZASTAVKA_CIS`). Důvod je uživatelský: zákazník
+  hledal „název cílové zastávky" a nenašel ho, protože se pole jmenovalo „Konečná směru" - přitom
+  ukazuje na tutéž zastávku jako „CIS číslo cílové zastávky". ⚠️ Přejmenováno **načisto**, staré pole
+  nezůstalo jako alias, takže migrace je jediné, co drží existující šablony funkční - přepisuje
+  `columns[].field` i zástupce `{POPIS_SMER}` ve všech textech a výrazech. Hranice tokenu chrání
+  `{POPIS_SMER_CIS}` před půlkou náhrady.
+
 ---
 
 ## Operational notes

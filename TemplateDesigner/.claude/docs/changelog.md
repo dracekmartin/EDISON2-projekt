@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-08-31 (5) - 🚌 dopravce s adresou po řádcích a „Konečná zastávka" místo „POPIS_SMER" (#13158)
+
+Dvě věci ze zákaznické poznámky k vývěskám (BBSK).
+
+**Popis dopravce má adresu a každou položku na svém řádku.** Dosud vyšlo „Zajišťuje: Dopravce A,
+Dopravce B" v jednom odstavci - a adresa se neukázala nikdy, i když v datech je. ⚠️ Chyba nebyla
+v tom, že by adresa chyběla: skládala se jen tehdy, když dopravce **neměl vyplněný zkrácený název**,
+a jakmile ho měl, vrátil se sám a adresa se zahodila. Nově zkracuje jen jméno, adresa přibude tak
+jako tak. Výsledek je název, sídlo, ulice a telefon pod sebou; víc dopravců odděluje prázdný řádek,
+aby šlo poznat, kde končí adresa jednoho a začíná jméno druhého.
+
+Platí pro **obě vývěskové agendy** (AD i MHD), ať se dvě vývěsky vedle sebe neliší. Linkových
+jízdních řádů se to **nedotklo** - jsou v paritní vlně a změna obsahu pole by tam paritu se starým
+tiskem rozbila. Městská vývěska tím ztratila uvození „Dopravce: " a rozešla se se vzorem, ze kterého
+tvar pocházel; je to vědomé, ne drift. Piktogramy (obálka, sluchátko) se **nedělaly** - textový prvek
+kreslí jedním fontem, takže je to jiná úloha.
+
+**Pole „Konečná směru" se jmenuje „Konečná zastávka"** (`POPIS_SMER` → `KONECNA_ZASTAVKA`,
+`POPIS_SMER_CIS` → `KONECNA_ZASTAVKA_CIS`). Zákazník hledal cílovou zastávku a nenašel ji, přestože
+to pole existovalo - ukazuje totiž **na tutéž zastávku**, ze které se počítá „CIS číslo cílové
+zastávky". Přejmenováno ve všech čtyřech agendách i v systémových šablonách.
+
+⚠️ **Přejmenovalo se načisto** - staré pole nezůstalo žít vedle nového (rozhodnutí Jan 31. 8.:
+mrtvý klíč držený jen kvůli přejmenování je nepořádek, ne zpětná kompatibilita). Existující šablony
+proto srovná **migrace na verzi 1.10.0**, která přepíše i zástupce `{POPIS_SMER}` ve všech textech
+a výrazech. Bez ní by na šabloně zůstal zástupce, který už žádná agenda neposílá, a v tisku by z něj
+vyšlo prázdno.
+
+Ověřeno: .NET **1290/1290** (7 nových testů migrace), Caché **137/137**. Deset zlatých odtisků se
+muselo přerazit - u všech deseti se změnilo **jen md5** a počty stránek, zastávek, odjezdů i poznámek
+zůstaly shodné, což je přesně podpis „změněný obsah pole a přejmenování", ne změna chování.
+
 ## 2026-08-31 (4) - 🔄 otočení stránky tam a zpátky už šablonu nescvrkne
 
 Nález Jan 31. 8. hned po vyzkoušení předchozí změny: otočil šablonu na šířku, rozmyslel si to,
