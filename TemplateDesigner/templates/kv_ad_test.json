@@ -71,7 +71,7 @@
         },
         {
           "type": "TextElement",
-          "text": "Sm\u011Br: {POPIS_SMER}    \u2022    {POPIS_PLATNOSTI}",
+          "text": "Sm\u011Br: {KONECNA_ZASTAVKA}    \u2022    {POPIS_PLATNOSTI}",
           "style": {
             "fontFamily": "Arial",
             "fontSize": 7,

@@ -93,7 +93,7 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
         d ..WriteTemplate2Col([
             ["Linka",       "{CISLO_LINKY}"],
             ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
-            ["Směr",        "{POPIS_SMER}"],
+            ["Směr",        "{KONECNA_ZASTAVKA}"],
             ["Zastávka",    "{POPIS_ZASTAVKA}"],
             ["Platnost",    "{POPIS_PLATNOSTI}"]
         ])
@@ -1103,7 +1103,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("POPIS_PLATNOSTI",        ..FormatDatum(platnostOd)_" - "_..FormatDatum(platnostDo))
     d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum(platnostOd))
     d vals.%Set("DATUM_PLATNOSTI_DO",     ..FormatDatum(platnostDo))
-    d vals.%Set("SMER",                   smerPopis)   // T/Z (A1); POPIS_SMER = konečná se nastaví po sestavení trasy
+    d vals.%Set("SMER",                   smerPopis)   // T/Z (A1); KONECNA_ZASTAVKA = konečná se nastaví po sestavení trasy
     d vals.%Set("TYP_JR",                 TypJR)
     d vals.%Set("QR_KOD",                 QRKod)
     d vals.%Set("POPIS_ZASTAVKA",         NazevZastavky)
@@ -1120,7 +1120,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // ZASTAVKY - vždy všechny v daném směru, s příznakem JE_AKTUALNI
     s zastavky = ##class(%DynamicArray).%New()
     s poradiZast = 0
-    s konecnaNazev = ""                       // poslední zastávka ve směru = konečná (→ POPIS_SMER, A1)
+    s konecnaNazev = ""                       // poslední zastávka ve směru = konečná (→ KONECNA_ZASTAVKA, A1)
     s bodIterator = ""
     f {
         s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator), smerKrok) q:bodIterator=""
@@ -1191,7 +1191,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         d zastavky.%Push(z)
     }
     d rows.%Set("ZASTAVKY", zastavky)
-    d vals.%Set("POPIS_SMER", konecnaNazev)   // A1: konečná směru (dřív T/Z, to je teď v SMER)
+    d vals.%Set("KONECNA_ZASTAVKA", konecnaNazev)   // A1: konečná směru (dřív T/Z, to je teď v SMER)
 
     // SKUPINY_DNU - z typů provozu. Struktura sloupců je per LINKA (všechny SMO sloupce linky),
     // ne per zastávka - sloupec bez odjezdů na této stránce se tiskne prázdný se záhlavím, aby
@@ -1680,7 +1680,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
     d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
-    d ..AddField(fields, "POPIS_SMER",             "Konečná směru",          "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA",             "Konečná zastávka",       "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
     d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
@@ -1789,30 +1789,52 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// GetMockData - ukázková data pro preview
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Reálný dopravce linky (1:1 vzor MHD2 `Export.cls`): `DruhDopravceID` → vlastní firma
-/// (`$$gIdFa^MlJFapi`, obchodní jméno) / cizí dopravce (`$$gDopFa^JRapi`). Firemní data žijí v
-/// systémovém NS (`sys("U","SystemDB")`), ne v datovém. Defensivní - selhání legacy volání → prázdno.
+/// Reálný dopravce linky: `DruhDopravceID` → vlastní firma (`$$gIdFa^MlJFapi`) / cizí dopravce
+/// (`$$gDopFa^JRapi`). Firemní data žijí v systémovém NS (`sys("U","SystemDB")`), ne v datovém.
+/// Defensivní - selhání legacy volání → prázdno.
+///
+/// ⚠️ Vrací **víc řádků** (název, ulice, město, telefon), ne "Dopravce: <název>" jako do 31. 8.
+/// Zákazník uvození nechtěl a adresu ano (#13158, rozhodnutí Jan 31. 8.); tvar je shodný s AD
+/// vývěskou, ať se dvě vývěsky vedle sebe neliší. Tím se to rozešlo se vzorem MHD2 `Export.cls`,
+/// odkud tvar původně pocházel - je to vědomé, ne drift.
 ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String) As %String
 {
-    s nazev = ""
+    s radky = ""
     try {
         s sysnmsp = $g(sys("U","SystemDB"))
         s druh = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DruhDopravceID"))
         i druh = 0 {
+            // Vlastní firma (MlJFapiFa: 02 název, 03 upřesnění, 13 ulice, 14 město, 15 PSČ, 23 tel)
             k tmpArr  s err = $$gIdFa^MlJFapi(IdFa, sysnmsp, "", .tmpArr)
             i 'err {
                 s nazev = $g(tmpArr("dta",2))
                 i $g(tmpArr("dta",3)) '= "" s nazev = nazev _ $g(tmpArr("dta",3))
+                s mesto = $zstrip($g(tmpArr("dta",15))_" "_$g(tmpArr("dta",14)), "<>W")
+                s radky = ..RadkyDopravce(nazev, $g(tmpArr("dta",13)), mesto, $g(tmpArr("dta",23)))
             }
         } elseif druh = 1 {
+            // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 7 obchodní název)
             s ciziFa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DopravceCiziFirmaID"))
             i ciziFa '= "" {
                 k tmpArr  s err = $$gDopFa^JRapi(IdFa, dataDB, ciziFa, "", .tmpArr)
-                i 'err s nazev = $g(tmpArr("dta",7))
+                i 'err s radky = ..RadkyDopravce($g(tmpArr("dta",7)), $g(tmpArr("dta",2)), $g(tmpArr("dta",1)), $g(tmpArr("dta",3)))
             }
         }
-    } catch ex { s nazev = "" }
-    ret $s(nazev'="":"Dopravce: " _ nazev, 1:"")
+    } catch ex { s radky = "" }
+    ret radky
+}
+
+/// Složí dopravce do řádků: název, ulice, sídlo/město, telefon. Prázdné položky se vynechají,
+/// takže u dopravce bez adresy zbyde samotný název jako dřív.
+ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, tel As %String) As %String
+{
+    s nazev = $zstrip($g(nazev), "<>W")
+    i nazev = "" q ""
+    s text = nazev
+    i $zstrip($g(ulice), "<>W") '= "" s text = text_$c(10)_$zstrip(ulice, "<>W")
+    i $zstrip($g(mesto), "<>W") '= "" s text = text_$c(10)_$zstrip(mesto, "<>W")
+    i $zstrip($g(tel), "<>W") '= ""   s text = text_$c(10)_"tel: "_$zstrip(tel, "<>W")
+    q text
 }
 
 /// Vrátí ukázková data pro live preview v designeru.
@@ -1826,12 +1848,12 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     d vals.%Set("CISLO_LINKY",            "42")
     d vals.%Set("LOKALNI_OZNACENI_LINKY", "A42")
     d vals.%Set("POPIS_LINKY",            "Líšeň–Bystrc")
-    d vals.%Set("POPIS_DOPRAVCE",         "Dopravce: Dopravní podnik města Brna, a.s.")
+    d vals.%Set("POPIS_DOPRAVCE",         "Dopravní podnik města Brna, a.s."_$c(10)_"Hlinky 151"_$c(10)_"656 46 Brno"_$c(10)_"tel: 543 171 111")
     d vals.%Set("POPIS_PLATNOSTI",        "01.01.2026 - 31.12.2026")
     d vals.%Set("DATUM_PLATNOSTI_OD",     "01.01.2026")
     d vals.%Set("DATUM_PLATNOSTI_DO",     "31.12.2026")
     d vals.%Set("SMER",                   "T")
-    d vals.%Set("POPIS_SMER",             "Bystrc, zoo")
+    d vals.%Set("KONECNA_ZASTAVKA",             "Bystrc, zoo")
     d vals.%Set("TYP_JR",                 "")
     d vals.%Set("QR_KOD",                 "https://jr.example.com/42")
     d vals.%Set("POPIS_ZASTAVKA",         "Líšeň, Novolíšeňská")

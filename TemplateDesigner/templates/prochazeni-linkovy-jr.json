@@ -145,7 +145,7 @@
         },
         {
           "type": "TextElement",
-          "text": "{VYCHOZI_ZASTAVKA}  →  {POPIS_SMER}",
+          "text": "{VYCHOZI_ZASTAVKA}  →  {KONECNA_ZASTAVKA}",
           "style": {
             "fontSize": 9,
             "bold": true

@@ -18,7 +18,7 @@ Include GENERAL
 /// Názvy polí sdílí se zastávkovým JŘ (tam, kde jde o tutéž věc) - hlídá AgendaSchemaDriftTests.
 ///
 ///   values: CISLO_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
-///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), POPIS_SMER,
+///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), KONECNA_ZASTAVKA,
 ///           VYCHOZI_ZASTAVKA
 ///   rows.ZASTAVKY:    [{ PORADI, TYP ("zastavka" hlavní/odjezdový řádek | "prijezd" vložený
 ///                        příjezdový u zastávek s atributem P/J), CZST, NAZEV_ZASTAVKY, TC, ZONY,
@@ -93,7 +93,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
     d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
-    d ..AddField(fields, "POPIS_SMER",            "Konečná směru",            "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
     s def.fields = fields
 
@@ -555,7 +555,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     // ⚠️ U obousměrné stránky je směr **prázdný** - stránka nese oba a `SMER` u stránky by šablonu
     // navedl vytisknout jeden z nich jako by byl jediný. Směr každého spoje je na spoji;
-    // konce linky drží `VYCHOZI_ZASTAVKA` a `POPIS_SMER`.
+    // konce linky drží `VYCHOZI_ZASTAVKA` a `KONECNA_ZASTAVKA`.
     d vals.%Set("SMER",                   $s(obousmerne:"", 1:smer))
 
     // ── zastávkové řádky v pořadí směru (vč. zdvojení příjezd/odjezd u atributů P/J) ──
@@ -634,7 +634,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     i idx = 0 q ""
 
     d vals.%Set("VYCHOZI_ZASTAVKA", prvniNazev)
-    d vals.%Set("POPIS_SMER",       posledniNazev)
+    d vals.%Set("KONECNA_ZASTAVKA",       posledniNazev)
 
     // ── spoje směru: legacy mkPoradiSp řazení + zařazení do skupin dnů ──
     s spoje = ##class(%DynamicArray).%New()

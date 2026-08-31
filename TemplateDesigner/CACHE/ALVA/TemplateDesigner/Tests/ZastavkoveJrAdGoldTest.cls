@@ -77,7 +77,11 @@ Method TestGold0365001()
 	// `false` a gold posílá jen `LINKA_ID`, takže se měřilo chování, které uživatel s aktuálním
 	// klientem nikdy neviděl. Teď měří to, co se reálně tiskne. Zase JEN md5, počty shodné do
 	// jednoho (stránky, zastávky, odjezdy i poznámky) - přibyla jen písmena u minut.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=34tibjT2PEBKbURDWhq0lQ==")
+	// Re-baseline 2026-08-31 (#13158): POPIS_DOPRAVCE už není "Zajišťuje: A, B" v jednom odstavci,
+	// ale dopravce s adresou a telefonem po řádcích; POPIS_SMER se přejmenovalo na KONECNA_ZASTAVKA.
+	// Obojí mění **jen md5** - počty stránek, zastávek, odjezdů i poznámek zůstaly shodné, což je
+	// přesně ten podpis „změněný obsah pole / přejmenované pole", ne změna chování.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=LWWibQw+M3THHpxsNQ7AYQ==")
 }
 
 Method TestGold0365005()
@@ -109,7 +113,9 @@ Method TestGold0365005()
 	// vývěsky** - zastávka, kam odtud nic nejede, mizí. ⚠️ **Mění POČTY, ne jen md5**: zastávek
 	// 762 → 709. Odjezdů se to nedotklo (498 → 498), což je ten podstatný důkaz: neztratil se žádný
 	// spoj, ubyly jen řádky, ke kterým nešlo dojet.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=hzPQTO+x7kYcQm5H493NVA==")
+	// Re-baseline 2026-08-31 (#13158): dopravce po řádcích + přejmenování na KONECNA_ZASTAVKA,
+	// viz gold 0365001. Jen md5, počty beze změny.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=SJZ8uv7e4Rr7SZy7ZvEk8w==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -182,7 +188,9 @@ Method TestGold0330530()
 	// 1058 → 1022, poznámek 639 → 638 (s posledním výskytem zmizel jeden řádek legendy atributů).
 	// Odjezdy i stránky beze změny. Je to ta linka, na které se to doložilo (Střítež,žel.st.točna
 	// měla „<" ve sloupci časů i ve všech osmi variantách).
-	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=f054aF0NJvQ+i63SRPH+NQ==")
+	// Re-baseline 2026-08-31 (#13158): dopravce po řádcích + přejmenování na KONECNA_ZASTAVKA,
+	// viz gold 0365001. Jen md5, počty beze změny.
+	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=V02inmCV4btveTdvhCVh9g==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

@@ -465,12 +465,12 @@ public class TemplateDesignerViewModel : EDViewModel
         : _realPreviewData.Select(BuildPreviewPageLabel).ToList();
 
     /// <summary>Popisek stránky dat pro combobox: „N - zastávka → směr" z polí stránky
-    /// (POPIS_ZASTAVKA / POPIS_SMER - zastávkový JŘ), fallback „Stránka N" pro agendy bez nich.</summary>
+    /// (POPIS_ZASTAVKA / KONECNA_ZASTAVKA - zastávkový JŘ), fallback „Stránka N" pro agendy bez nich.</summary>
     public static string BuildPreviewPageLabel(DataContext page, int index)
     {
         var zastavka = page.GetString("POPIS_ZASTAVKA").Trim();
         if (zastavka.Length == 0) return $"Stránka {index + 1}";
-        var smer = page.GetString("POPIS_SMER").Trim();
+        var smer = page.GetString("KONECNA_ZASTAVKA").Trim();
         return smer.Length == 0
             ? $"{index + 1} - {zastavka}"
             : $"{index + 1} - {zastavka} → {smer}";

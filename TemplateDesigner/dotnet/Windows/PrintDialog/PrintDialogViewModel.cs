@@ -27,7 +27,7 @@ public class PrintDialogViewModel : EDViewModel
 
     /// <summary>Výchozí pattern názvu souboru (tokeny {POLE} z dat) - odpovídá legacy
     /// „NázevZastávky_ČísloLinky_…". Funguje pro AD i MHD (obě emitují tato pole).</summary>
-    public const string DefaultFileNamePattern = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}";
+    public const string DefaultFileNamePattern = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}";
 
     /// <summary>Klíče universálních export polí v EDInputformu (AgendaParams) - NEjsou agenda
     /// parametry, jsou společné všem agendám. Hodnoty tečou přes sdílený <c>_paramValues</c>

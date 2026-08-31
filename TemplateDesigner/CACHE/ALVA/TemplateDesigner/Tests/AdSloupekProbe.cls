@@ -1099,7 +1099,7 @@ ClassMethod StrankaCisla(ByRef sys As %String) As %Status
 			set ^||ML("OUT","DIAG") = "db="_db_" sku="_sku_" lin="_lin_" poradi="_poradi_" I="_$data(^[db]JRL(sku,lin,"I"))
 			ret $$$OK
 		}
-		set klice = $listbuild("POPIS_ZASTAVKA", "CISLO_ZASTAVKA", "CIS_ZASTAVKA", "CIS_ZASTAVKA_VYCHOZI", "CIS_ZASTAVKA_CILOVA", "POPIS_SMER")
+		set klice = $listbuild("POPIS_ZASTAVKA", "CISLO_ZASTAVKA", "CIS_ZASTAVKA", "CIS_ZASTAVKA_VYCHOZI", "CIS_ZASTAVKA_CILOVA", "KONECNA_ZASTAVKA")
 		for i = 1:1:$listlength(klice) {
 			set k = $list(klice, i)
 			set ^||ML("OUT", k) = page.values.%Get(k)
@@ -1402,7 +1402,7 @@ ClassMethod MhdZnackyLinky(ByRef sys As %String) As %Status
 		if prvni = "" ret $$$OK
 
 		set page = ##class(%DynamicObject).%FromJSON(prvni)
-		set ^||ML("OUT","B_ZASTAVKA") = page.values.%Get("POPIS_ZASTAVKA")_" · smer "_page.values.%Get("POPIS_SMER")
+		set ^||ML("OUT","B_ZASTAVKA") = page.values.%Get("POPIS_ZASTAVKA")_" · smer "_page.values.%Get("KONECNA_ZASTAVKA")
 		// značky u zastávek
 		set n = 0, it = page.rows.%Get("ZASTAVKY").%GetIterator()
 		while it.%GetNext(.k, .z) {
@@ -1531,7 +1531,7 @@ ClassMethod CasyStranek(ByRef sys As %String, db As %String, sku As %String, lin
 		quit:i>stranek
 		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT",klic))
 		set out(i) = 1
-		set out(i,"zast") = "zastavka """_page.values.%Get("POPIS_ZASTAVKA")_""" smer "_page.values.%Get("POPIS_SMER")
+		set out(i,"zast") = "zastavka """_page.values.%Get("POPIS_ZASTAVKA")_""" smer "_page.values.%Get("KONECNA_ZASTAVKA")
 		set casy = "", it = page.rows.%Get("ODJEZDY").%GetIterator()
 		while it.%GetNext(.k, .o) {
 			continue:o.%Get("SKUPINA_DNU_ID")'="1"
@@ -1725,7 +1725,7 @@ ClassMethod SecistVyvesku(ByRef sys As %String, db As %String, sku As %String, l
 			set souhrn("varovani") = $get(souhrn("varovani")) + 1
 			set souhrn("nezarazene") = $get(souhrn("nezarazene")) + $length(nez,",")
 			if $get(souhrn("prvni")) = "" {
-				set souhrn("prvni") = "zastávka """_page.values.%Get("POPIS_ZASTAVKA")_""" směr "_page.values.%Get("POPIS_SMER")_": "_$extract(nez,1,80)
+				set souhrn("prvni") = "zastávka """_page.values.%Get("POPIS_ZASTAVKA")_""" směr "_page.values.%Get("KONECNA_ZASTAVKA")_": "_$extract(nez,1,80)
 			}
 		}
 		set it = page.rows.%Get("ODJEZDY").%GetIterator()
