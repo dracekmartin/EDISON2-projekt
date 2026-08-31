@@ -2771,12 +2771,13 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String, poRad
     // Adresa provozovny (gDopFaPr: $1 sídlo, $2 ulice, $3 tel)
     s sidlo = $p(provoz,"~",1), ulice = $p(provoz,"~",2), tel = $p(provoz,"~",3)
 
-    // Záloha z firmy, když provozovna adresu nemá (gDopFa: $2 ulice, $3 telefon). Bez tohohle
-    // zůstal na vývěsce holý název všude, kde spoje nemají přiřazenou provozovnu - adresa přitom
-    // v datech je, jen o patro výš (nález Jan 31. 8. na CB_CSADAD).
-    i (sidlo = "") && (ulice = "") && (tel = "") {
-        s ulice = $p(firma,"~",2), tel = $p(firma,"~",3)
-    }
+    // Záloha z firmy **po položkách**, ne všechno nebo nic (gDopFa: $2 ulice, $3 telefon,
+    // $10 sídlo i s PSČ a obcí). Provozovna bývá organizační jednotka bez ulice - „Oblast Písek"
+    // má jen název a telefon, kdežto firma má „Hálkova 781/9, 370 04, České Budějovice"
+    // (linka 108360, CB_CSADAD, nález Jan 31. 8.). Kdyby se čekalo, až bude provozovna prázdná
+    // celá, adresa by se u takového dopravce neukázala nikdy.
+    i ulice = "" s ulice = $s($p(firma,"~",10)'="":$p(firma,"~",10), 1:$p(firma,"~",2))
+    i tel = ""   s tel = $p(firma,"~",3)
 
     i 'poRadcich {
         // Jednořádkový tvar 1:1 jako dosud - zkrácený název se vrací samotný.

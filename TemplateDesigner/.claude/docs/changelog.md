@@ -4,11 +4,12 @@
 
 Dvě věci, které vyplynuly hned ze zkoušení předchozí změny.
 
-**Adresa se bere i z firmy, nejen z provozovny.** Sídlo, ulici a telefon jsem četl výhradně ze
-záznamu provozovny - jenže spoje ji nemají přiřazenou vždycky, a pak zbyl na vývěsce holý název.
-Adresa přitom v datech je, jen o patro výš u firmy (ověřeno na CB_CSADAD: firma má „U Nádraží
-694/II, 377 14 Jindřichův Hradec" a dvě telefonní čísla). Když provozovna adresu nemá, sáhne se
-tedy na firemní.
+**Adresa se bere i z firmy, nejen z provozovny, a to po položkách.** Sídlo, ulici a telefon jsem
+četl výhradně ze záznamu provozovny - jenže provozovna bývá **organizační jednotka bez ulice**.
+Na lince 108360 je to „Oblast Písek": má název a telefon, ulici ne. Firma přitom má adresu
+kompletní („Hálkova 781/9, 370 04, České Budějovice"). Chybějící ulice i telefon se proto doplní
+z firmy **každý zvlášť** - první pokus čekal, až bude provozovna prázdná celá, a u takového
+dopravce by se adresa neukázala nikdy.
 
 ⚠️ **Dva bloky téhož dopravce nejsou chyba.** Na KOVEDu se zobrazily dva - Uherské Hradiště
 a Uherský Brod. Jsou to **dvě provozovny** téhož dopravce, každá se svou adresou, a obě linku

@@ -190,7 +190,10 @@ Method TestGold0330530()
 	// měla „<" ve sloupci časů i ve všech osmi variantách).
 	// Re-baseline 2026-08-31 (#13158): dopravce po řádcích + přejmenování na KONECNA_ZASTAVKA,
 	// viz gold 0365001. Jen md5, počty beze změny.
-	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=V02inmCV4btveTdvhCVh9g==")
+	// Re-baseline 2026-08-31 (#13158 podruhé): adresa se doplňuje z firmy i tehdy, když provozovna
+	// má název a telefon, ale ne ulici („Oblast Písek"). Tahle linka je jediná ze sady, kde se to
+	// projevilo - je to zároveň důkaz, že záloha opravdu zabírá. Opět jen md5, počty shodné.
+	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=q3AA9/bc+hRJVHaqnghsJA==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka
