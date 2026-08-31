@@ -2771,6 +2771,13 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String, poRad
     // Adresa provozovny (gDopFaPr: $1 sídlo, $2 ulice, $3 tel)
     s sidlo = $p(provoz,"~",1), ulice = $p(provoz,"~",2), tel = $p(provoz,"~",3)
 
+    // Záloha z firmy, když provozovna adresu nemá (gDopFa: $2 ulice, $3 telefon). Bez tohohle
+    // zůstal na vývěsce holý název všude, kde spoje nemají přiřazenou provozovnu - adresa přitom
+    // v datech je, jen o patro výš (nález Jan 31. 8. na CB_CSADAD).
+    i (sidlo = "") && (ulice = "") && (tel = "") {
+        s ulice = $p(firma,"~",2), tel = $p(firma,"~",3)
+    }
+
     i 'poRadcich {
         // Jednořádkový tvar 1:1 jako dosud - zkrácený název se vrací samotný.
         i maZkratku q jmeno
@@ -3004,35 +3011,48 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 /// ═══════════════════════════════════════════════════════════════════════════════
 ClassMethod AddStandardJRFields(fields As %DynamicArray)
 {
+    // Pořadí je seskupené podle toho, čeho se pole týká (linka → dopravce → platnost → zastávka →
+    // poznámky), ne podle toho, kdy přibylo. Zastávková pole byla do 31. 8. rozházená mezi ostatní
+    // a uživatel je v seznamu hledal po jednom (nález Jan 31. 8.).
+
+    // ── linka ──
     d ..AddField(fields, "CISLO_LINKY",            "Číslo linky",            "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Označení linky",         "text")
     d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
     d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
-    d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
-    d ..AddField(fields, "DOPRAVCI_SOUHRNNY_JR",         "Dopravci souhrnného JŘ",    "text")
+    d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
     d ..AddField(fields, "BARVA_LINKY",            "Barva linky",            "color")
     d ..AddField(fields, "BARVA_LINKY_2",          "Barva linky 2",          "color")
+
+    // ── dopravce ──
+    d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+    d ..AddField(fields, "DOPRAVCI_SOUHRNNY_JR",   "Dopravci souhrnného JŘ", "text")
+
+    // ── platnost ──
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
-    d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
-    d ..AddField(fields, "KONECNA_ZASTAVKA",             "Konečná zastávka",       "text")
-    d ..AddField(fields, "KONECNA_ZASTAVKA_CIS",         "Konečná zastávka (CIS)", "text")
-    d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
-    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
+
+    // ── zastávka, na které vývěska visí, a směr ──
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
     d ..AddField(fields, "POPIS_ZASTAVKA_CIS",     "Aktuální zastávka (CIS)","text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
-    d ..AddField(fields, "CISLO_ZASTAVKA_CIS",         "CIS číslo zastávky",         "text")
+    d ..AddField(fields, "CISLO_ZASTAVKA_CIS",     "CIS číslo zastávky",     "text")
+    d ..AddField(fields, "NASTUPISTE",             "Označník",               "text")
+    d ..AddField(fields, "SLOUPEK",                "Sloupek",                "text")
+    d ..AddField(fields, "SLOUPEK_POPIS",          "Popis sloupku",          "text")
+    d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA_CIS",   "Konečná zastávka (CIS)", "text")
     d ..AddField(fields, "CISLO_ZASTAVKA_VYCHOZI_CIS", "CIS číslo výchozí zastávky", "text")
     d ..AddField(fields, "CISLO_ZASTAVKA_CILOVA_CIS",  "CIS číslo cílové zastávky",  "text")
+
+    // ── poznámky a doplňky ──
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "VYLUKOVE_TEXTY",         "Výlukové texty",         "text")
-    d ..AddField(fields, "NASTUPISTE",             "Označník",               "text")
-    d ..AddField(fields, "SLOUPEK",                "Sloupek",                "text")
-    d ..AddField(fields, "SLOUPEK_POPIS",          "Popis sloupku",          "text")
+    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
     // _CIS varianty (celostátní názvy) jsou AD-specifické - MHD je zatím neprodukuje.
     // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values -
     // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.

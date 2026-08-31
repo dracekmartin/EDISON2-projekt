@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-08-31 (6) - 🔎 adresa dopravce i z firmy a seskupená pole agendy (#13158)
+
+Dvě věci, které vyplynuly hned ze zkoušení předchozí změny.
+
+**Adresa se bere i z firmy, nejen z provozovny.** Sídlo, ulici a telefon jsem četl výhradně ze
+záznamu provozovny - jenže spoje ji nemají přiřazenou vždycky, a pak zbyl na vývěsce holý název.
+Adresa přitom v datech je, jen o patro výš u firmy (ověřeno na CB_CSADAD: firma má „U Nádraží
+694/II, 377 14 Jindřichův Hradec" a dvě telefonní čísla). Když provozovna adresu nemá, sáhne se
+tedy na firemní.
+
+⚠️ **Dva bloky téhož dopravce nejsou chyba.** Na KOVEDu se zobrazily dva - Uherské Hradiště
+a Uherský Brod. Jsou to **dvě provozovny** téhož dopravce, každá se svou adresou, a obě linku
+obsluhují. Slučovat je podle názvu by tu informaci zahodilo, takže zůstávají.
+
+**Pole agendy jsou seskupená podle toho, čeho se týkají** - linka, dopravce, platnost, zastávka,
+poznámky. Dosud byla zastávková pole rozházená mezi ostatní (mezi „Konečnou zastávkou" a zbytkem
+zastávkových polí stál QR kód a typ jízdního řádu) a uživatel je v seznamu hledal po jednom.
+Platí pro obě vývěskové agendy. Je to jen pořadí v nabídce - žádný klíč se nezměnil, takže se
+hotovým šablonám nic nestalo.
+
+Ověřeno: .NET **1290/1290**, Caché **137/137**, a nasazení ověřeno voláním `GetSchema` na serveru
+(vrací nové pořadí i nový popisek). Zlaté odtisky se nezměnily - záloha adresy z firmy se na gold
+linkách neuplatní, protože ty mají adresu u provozovny.
+
 ## 2026-08-31 (5) - 🚌 dopravce s adresou po řádcích a „Konečná zastávka" místo „POPIS_SMER" (#13158)
 
 Dvě věci ze zákaznické poznámky k vývěskám (BBSK).

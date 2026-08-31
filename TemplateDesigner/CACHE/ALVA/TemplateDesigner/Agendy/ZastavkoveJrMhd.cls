@@ -1672,19 +1672,31 @@ ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
 /// Přidá standardní skalární pole JŘ agendy do pole fields.
 ClassMethod AddStandardJRFields(fields As %DynamicArray)
 {
+    // Pořadí seskupené podle toho, čeho se pole týká - shodně s AD vývěskou (nález Jan 31. 8.:
+    // zastávková pole byla rozházená mezi ostatní a hledala se v seznamu po jednom).
+
+    // ── linka ──
     d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",    "text")
     d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
+    d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
+
+    // ── dopravce ──
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+
+    // ── platnost ──
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
-    d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
-    d ..AddField(fields, "KONECNA_ZASTAVKA",             "Konečná zastávka",       "text")
-    d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
-    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
+
+    // ── zastávka, na které vývěska visí, a směr ──
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
+    d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
+
+    // ── doplňky ──
+    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
 }
 
 /// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.
