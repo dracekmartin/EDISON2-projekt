@@ -847,8 +847,30 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private int MaxKmCount(List<LineStopData> stops) =>
         Columns.Any(c => c.Visible && c.Key == ColumnKeys.Km) && stops.Count > 0 ? stops.Max(s => s.Km.Count) : 0;
 
-    private bool HasPlatnostRow(List<LineTripData> trips) => ShowPlatnostRow && trips.Any(t => t.Platnost.Count > 0);
     private bool HasNzRow(List<LineTripData> trips) => ShowNzRow && trips.Any(t => t.Nz.Length > 0);
+
+    /// <summary>Kolik značek platnosti se vejde na jeden řádek, než se zalomí pod něj.</summary>
+    /// <remarks>Strop starého modulu (`POCETZNAKUPLATNOSTI`, `JRapiLinPrtWin.mac:25`).</remarks>
+    private const int ZnacekNaRadekPlatnosti = 2;
+
+    /// <summary>Kolik řádků platnosti tabulka má = kolik jich potřebuje nejbohatší spoj (0 = žádné).</summary>
+    /// <remarks>
+    /// Značky se dělí <b>mechanicky po dvou</b> v tom pořadí, v jakém je pošle agenda - ne podle
+    /// významu. Řádek proto může nést vedle sebe den i vlastnost vozidla; přesně tak to dělá starý
+    /// modul (`Spoj2Tb`, `JRapiLinPrtWin.mac:3752-3775`: čítač uzavře řádek po každé druhé značce
+    /// a založí `1.1`, `1.2`…). Doloženo jeho tiskem linky 108360 - spoj 1017 má ⚒ i ♿ na jednom
+    /// řádku, spoje 4009/4025 mají ⑥ ✝ na prvním a ♿ na druhém.
+    /// <para>Řídí se <b>nejbohatším spojem</b>, ne každým sloupcem zvlášť - jinak by řádky nesedly
+    /// na sebe. Spoj s méně značkami má zbylé řádky prázdné.</para>
+    /// </remarks>
+    private int PocetRadkuPlatnosti(List<LineTripData> trips) =>
+        !ShowPlatnostRow || trips.Count == 0
+            ? 0
+            : trips.Max(t => (t.Platnost.Count + ZnacekNaRadekPlatnosti - 1) / ZnacekNaRadekPlatnosti);
+
+    /// <summary>Značky spoje patřící na <paramref name="radek"/>-tý řádek platnosti (0-based).</summary>
+    private static List<string> ZnackyRadku(LineTripData trip, int radek) =>
+        [.. trip.Platnost.Skip(radek * ZnacekNaRadekPlatnosti).Take(ZnacekNaRadekPlatnosti)];
 
     /// <summary>Kolik řádků turnusů tabulka má = nejvíc turnusů u jednoho spoje (0 = žádné).</summary>
     /// <remarks>
@@ -930,7 +952,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
         hlava.Add(headerH);                                                  // řádek čísel spojů
         for (int tr = 0; tr < PocetTurnusovychRadku(trips); tr++) hlava.Add(rowH);
-        if (HasPlatnostRow(trips)) hlava.Add(rowH);
+        for (int pr = 0; pr < PocetRadkuPlatnosti(trips); pr++) hlava.Add(rowH);
         if (HasNzRow(trips)) hlava.Add(rowH);
 
         // Jen viditelné zastávky a jejich přípojné řádky (matched na Poradi zastávky - jako render).
@@ -1303,18 +1325,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             { VerticalLinePaint = gridPaint });
         }
 
-        // řádek platnosti (znaky X/6/7/+ nad spojem)
-        if (HasPlatnostRow(vsechnySpoje))
+        // řádky platnosti (znaky X/6/7/+ nad spojem) - nejvýš dvě značky na řádek, zbytek pod něj
+        for (int pr = 0; pr < PocetRadkuPlatnosti(vsechnySpoje); pr++)
         {
             // Značky se kreslí ručně nad hotovým řádkem, aby šel v jedné buňce střídat symbolový
             // a běžný font („⚒ BEV"). Buňky proto zůstávají prázdné - jinak by se text zdvojil.
             var platnostRuns = trips
-                .Select(t => SymbolRunRenderer.BuildRuns(t.Platnost, SymbolMap.ResolveLinkovy))
+                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy))
                 .ToList();
             // Zrcadlený blok má svoje značky platnosti - bez nich by jeho sloupce neřekly, ve které
             // dny spoj jede, a to je informace, ne ozdoba.
             var platnostRunsZrc = zrcadlene
-                .Select(t => SymbolRunRenderer.BuildRuns(t.Platnost, SymbolMap.ResolveLinkovy))
+                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy))
                 .ToList();
             var prazdne = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, rowH, prazdne)
@@ -1331,11 +1353,23 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             });
         }
 
-        // řádek NZ (negativní značky)
+        // řádek NZ (negativní značky) - kreslí se ručně, protože jde o inverzní box, ne o text
         if (HasNzRow(vsechnySpoje))
-            plan.Add(new(RowKind.HeaderExtra, rowH,
-                TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, t => t.Nz))
-            { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+        {
+            var prazdneNz = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
+            plan.Add(new(RowKind.HeaderExtra, rowH, prazdneNz)
+            {
+                VerticalLinePaint = gridPaint,
+                LineBelowPaint = gridPaint,
+                Decorate = rowY =>
+                {
+                    DrawNegativniZnacky(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
+                        mrizka.SirkaSpojeMm, trips, tripDataStyle, scale);
+                    DrawNegativniZnacky(ctx, rowY, rowH, ti => X + mrizka.XZrcadlenehoMm(ti),
+                        mrizka.SirkaZrcadlenehoMm, zrcadlene, tripDataStyle, scale);
+                },
+            });
+        }
 
         // řádky zastávek (+ vložené přípojné řádky)
         var poradiSOdjezdem = PoradiSOdjezdem(
@@ -1533,6 +1567,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             float leftMm = xSpojeMm(i);
             var cellMm = new SKRect(leftMm, rowTopMm, leftMm + sirkaSpojeMm(i), rowTopMm + rowH);
             SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style), runs, style, symbolFace, scale);
+        }
+    }
+
+    /// <summary>Nakreslí negativní značky do sloupců spojů - inverzně, viz
+    /// <see cref="NegativniZnackaRenderer"/>.</summary>
+    private static void DrawNegativniZnacky(RenderContext ctx, float rowTopMm, float rowH,
+        Func<int, float> xSpojeMm, Func<int, float> sirkaSpojeMm,
+        List<LineTripData> trips, ResolvedTextStyle style, float scale)
+    {
+        for (int i = 0; i < trips.Count; i++)
+        {
+            if (trips[i].Nz.Length == 0) continue;
+            float leftMm = xSpojeMm(i);
+            var cellMm = new SKRect(leftMm, rowTopMm, leftMm + sirkaSpojeMm(i), rowTopMm + rowH);
+            NegativniZnackaRenderer.DrawCell(
+                ctx, CellLayout.ApplyPadding(cellMm, style), trips[i].Nz, style, scale);
         }
     }
 
