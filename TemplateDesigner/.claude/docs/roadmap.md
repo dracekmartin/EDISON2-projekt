@@ -4,9 +4,68 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** z první tabulky zbývá jediná položka - **`L8`** (sloučení dvou Caché tiskových
-> enginů, velikost L, korektnostní riziko: **tvoje rozhodnutí, kdy do toho jít**). Menší práce drží
-> § K ověření a Backlog.
+> **Nejblíž na řadě:** § Aktuální focus níže. Z něj jde rovnou vzít **`B101`**; u čtyř dalších je
+> první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+
+---
+
+## 🎯 Aktuální focus
+
+Vytaženo z Backlogu 31. 8. (rozhodnutí Jan): paritní vlny jsou hotové, a než se sáhne na velký
+vnitřní úklid, jdou na řadu tyhle menší věci. ⚠️ **Čtyři z nich čekají na odpověď zvenčí, ne na
+práci** - u nich je první krok se zeptat, ne psát kód:
+
+- **`C8`** - zeptat se zákazníka, jestli to pořád chce.
+- **`C9`** - potřebuje nové pole u linky od kolegů z jízdních řádů.
+- **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
+- **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
+
+**Rovnou udělat jde `B101`** (drobné zlepšení srozumitelnosti) **a `B100`** (ruční zlom stránky -
+zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až se bude na přenos nastavení
+linky sahat z jiného důvodu).
+
+- **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
+  Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
+  „nejmíň stránek"). Než se do toho pustí, má se zákazníka zeptat, jestli to pořád chce - jinak
+  stavíme featuru, kterou nikdo nezadal.
+
+- **`C9` Ručně zadaný „název směru" u linky jako datové pole** (#9088 bod 3, chtěné i pro vývěsky).
+  ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**, tedy součinnost
+  s kolegy z JŘ. Náš díl je malý (pole projít schématem a nabídnout v šabloně), ale bez toho pole
+  nemá kam sáhnout.
+
+- **`B102` Filtrování dopravců v hlavičce** (z důsledku zrušené vlny `L7`, 25. 8.). Sdružování linek
+  není naše práce, ale zákazníkův případ z #9417 (souhrnný JŘ dvou linek s dlouhým výčtem dopravců)
+  se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
+  Až se to stane, filtrování dopravců přestane být odložené.
+
+- **`B101` Není poznat, jestli je jedna skupina dnů nastavením, nebo daty linky** (z 25. 8.).
+  Prvek pás skupin nekreslí, když vyjde jediná skupina - a uživatel pak nemá jak poznat, jestli
+  si dělení nastavil špatně, nebo jestli tak prostě vypadá linka (na 0330511 jedou všechny spoje
+  jen v pracovní dny). Otázku „mám to vůbec nastavené dobře?" dnes **nejde zodpovědět z aplikace**.
+  Drobné zlepšení, ne chyba.
+
+- **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
+  U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
+  to respektuje, my ne, takže se takové linky tisknou jinak. **Odloženo kvůli frekvenci**
+  (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ~93 tisíc** (měření 21. 8.), což je za cenu
+  zásahu do serveru i klienta slabý důvod. ⚠️ **Neblokuje nic dalšího** - klientská strana pro
+  zlomy existuje (`INedelitelneDily`, silné a slabé zlomy) a vynucený zlom by k ní jen přibyl;
+  na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
+  nebo až se bude stejně sahat na přenos nastavení linky.
+
+- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,
+  [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Na 93 133 linkách šesti firem nejsou nikde
+  nastavené: **tvar tisku místenkování**, **vlastní texty sloupce MHD** místo „IDP-P"/„IDP-Z",
+  **tisk provozů dopravce**, čtyři přepínače **schovávání u linky** (`MHD2,netisknout*`) a **celá
+  vrstva pod linkou** (řádek se v knižním JŘ netiskne, i zvlášť per směr; umělá sekce u spoje)
+  a **tři přepínače řazení spojů** (`PS_PrintPorSpTR`, `PS_PrintSouhrnPorSpPri`,
+  `PS_PrintSouhrnPorSpTR` - řadit jen podle odjezdu, resp. jen podle příjezdu u souhrnných linek;
+  souhrnných linek je 33, ale bez těch přepínačů se chovají stejně jako ostatní).
+  Řada z nich vznikla v legacy **pro jednoho zákazníka** a nikdo jiný je nepoužívá. Vytáhnout, až
+  si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
+  proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
+  první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
 
 ---
 
@@ -80,9 +139,9 @@ každý nález by mohl být „ještě to neumíme" místo „takhle to má být
 nevzešel žádný datový rozdíl proti starému tisku. Co zůstalo neprojité, drží
 [§ K ověření](#k-ověření-na-reálné-sestavě) níže.
 
-| # | Vlna | Vel. |
-|---|---|---|
-| **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
+**Žádná otevřená vlna už tu není.** Sloučení dvou Caché tiskových enginů (dřív `L8`) je v Backlogu
+u [`B56`](#backlog) - je to úklid vnitřku, ne přírůstek pro uživatele, a dělat ho nad kódem, který
+se ještě hýbe, znamená zabetonovat rozdělaný tvar (rozhodnutí Jan 31. 8.).
 
 ### Nálezy k opravě mimo TD
 
@@ -118,49 +177,6 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
-  Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
-  „nejmíň stránek"). Než se do toho pustí, má se zákazníka zeptat, jestli to pořád chce - jinak
-  stavíme featuru, kterou nikdo nezadal.
-
-- **`C9` Ručně zadaný „název směru" u linky jako datové pole** (#9088 bod 3, chtěné i pro vývěsky).
-  ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**, tedy součinnost
-  s kolegy z JŘ. Náš díl je malý (pole projít schématem a nabídnout v šabloně), ale bez toho pole
-  nemá kam sáhnout.
-
-- **`B102` Filtrování dopravců v hlavičce** (z důsledku zrušené vlny `L7`, 25. 8.). Sdružování linek
-  není naše práce, ale zákazníkův případ z #9417 (souhrnný JŘ dvou linek s dlouhým výčtem dopravců)
-  se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
-  Až se to stane, filtrování dopravců přestane být odložené.
-
-- **`B101` Není poznat, jestli je jedna skupina dnů nastavením, nebo daty linky** (z 25. 8.).
-  Prvek pás skupin nekreslí, když vyjde jediná skupina - a uživatel pak nemá jak poznat, jestli
-  si dělení nastavil špatně, nebo jestli tak prostě vypadá linka (na 0330511 jedou všechny spoje
-  jen v pracovní dny). Otázku „mám to vůbec nastavené dobře?" dnes **nejde zodpovědět z aplikace**.
-  Drobné zlepšení, ne chyba.
-
-- **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
-  U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
-  to respektuje, my ne, takže se takové linky tisknou jinak. **Odloženo kvůli frekvenci**
-  (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ~93 tisíc** (měření 21. 8.), což je za cenu
-  zásahu do serveru i klienta slabý důvod. ⚠️ **Neblokuje nic dalšího** - klientská strana pro
-  zlomy existuje (`INedelitelneDily`, silné a slabé zlomy) a vynucený zlom by k ní jen přibyl;
-  na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
-  nebo až se bude stejně sahat na přenos nastavení linky.
-
-- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,
-  [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Na 93 133 linkách šesti firem nejsou nikde
-  nastavené: **tvar tisku místenkování**, **vlastní texty sloupce MHD** místo „IDP-P"/„IDP-Z",
-  **tisk provozů dopravce**, čtyři přepínače **schovávání u linky** (`MHD2,netisknout*`) a **celá
-  vrstva pod linkou** (řádek se v knižním JŘ netiskne, i zvlášť per směr; umělá sekce u spoje)
-  a **tři přepínače řazení spojů** (`PS_PrintPorSpTR`, `PS_PrintSouhrnPorSpPri`,
-  `PS_PrintSouhrnPorSpTR` - řadit jen podle odjezdu, resp. jen podle příjezdu u souhrnných linek;
-  souhrnných linek je 33, ale bez těch přepínačů se chovají stejně jako ostatní).
-  Řada z nich vznikla v legacy **pro jednoho zákazníka** a nikdo jiný je nepoužívá. Vytáhnout, až
-  si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
-  proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
-  první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
-
 - **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
   prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do
   dalších šablon. **Co už existuje:** uložení **celé sekce** jako vlastní šablony a seskupení prvků
@@ -187,9 +203,14 @@ takže nejde o práci, ale o doklad.
   (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) nejde vysvětlit. Aditivní klíč na wire + tooltip -
   dělat spolu s gramatikou, ne zvlášť kvůli dvěma tooltipům.
 
-- **`B56` Sjednocení opsaných pomocných funkcí agend** (odloženo - **rozhodnutí Jan 5. 8.**:
-  nedělat předčasnou deduplikaci, dokud se tvar výstupních dat neustálí; sjednocením by se zabetonoval
-  stav, který se ještě hýbe). **Podklad z analýzy 5. 8., aby se nemusela dělat znovu:** 27 pomocných
+- **`B56` Sjednocení Caché tiskových enginů a jejich opsaných pomocných funkcí** (odloženo -
+  **rozhodnutí Jan 5. 8. a 31. 8.**: nedělat předčasnou deduplikaci, dokud se tvar výstupních dat
+  neustálí; sjednocením by se zabetonoval stav, který se ještě hýbe).
+  ⚠️ **Pohltilo i dřívější `L8`** (31. 8.) - byla to tatáž práce ve větším rozsahu (sdílené
+  `^JRL` readery a `Build*` do `BaseAgenda`/`JrShared`, Caché obdoba extrakce jádra na .NET straně),
+  jen visela v aktivní roadmapě jako velká položka **bez přírůstku pro uživatele**. Vzít **až bude
+  knižní JŘ doimplementovaný** - do té doby není podle čeho sjednocovat.
+  **Podklad z analýzy 5. 8., aby se nemusela dělat znovu:** 27 pomocných
   funkcí se stejným názvem ve 2+ agendách, ale jen **15 jsou doslovné kopie** (~97 řádků k odstranění,
   ne 400-500, jak tvrdil původní odhad). 4 mají stejnou signaturu a rozešlé tělo - a to **záměrně**
   (`AddStandardJRFields` se liší v uživatelských popiscích polí: AD „Číslo linky" × MHD „Číslo linky
