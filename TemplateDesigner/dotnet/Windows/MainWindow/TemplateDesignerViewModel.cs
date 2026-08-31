@@ -984,7 +984,12 @@ public class TemplateDesignerViewModel : EDViewModel
         // Snapshot zapisuje až ÚSPĚŠNÝ fetch (RefreshDataForCurrentInstanceAsync) - kdyby se
         // zapsal tady a fetch spadl, další kontroly by se tvářily, že data definici odpovídají.
         if (CurrentWireSnapshot() == _lastColumnsDefinitionSnapshot) return;
-        if (CurrentActiveInstance is not null) _ = RefreshDataForCurrentInstanceAsync(keepPage: true);
+        if (CurrentActiveInstance is not null) { _ = RefreshDataForCurrentInstanceAsync(keepPage: true); return; }
+
+        // Bez vybrané instance běží náhled na ukázkových datech - ta se musí přenačíst taky, jinak
+        // uživatel vidí staré rozvržení a myslí si, že vlastní sloupce nefungují (#13158).
+        // Prefetch se sám vrátí, když už je vzorek pro tuhle definici v cache.
+        _ = PrefetchMockDataAsync(State.CurrentTemplate.AgendaCode);
     }
 
     /// <summary>
@@ -2472,8 +2477,11 @@ public class TemplateDesignerViewModel : EDViewModel
     private async Task PrefetchMockDataAsync(string agendaCode)
     {
         if (CacheProvider is null || string.IsNullOrEmpty(agendaCode)) return;
-        if (CacheProvider.TryGetCachedMockData(agendaCode, out _)) return;   // už načteno (i negativně)
-        await Task.Run(() => CacheProvider.GetMockData(agendaCode));
+        // Definice sloupců jde i do ukázkových dat - jinak náhled bez vybrané instance ukazuje
+        // rozvržení podle linky a vlastní sloupce se v něm neprojeví (#13158).
+        var columnsDefJson = CurrentColumnsDefinitionJson();
+        if (CacheProvider.TryGetCachedMockData(agendaCode, columnsDefJson, out _)) return;   // už načteno (i negativně)
+        await Task.Run(() => CacheProvider.GetMockData(agendaCode, columnsDefJson));
         // Náhled se mezitím nakreslil ze syntetických dat - překresli s reálnými mock daty.
         if (State.CurrentTemplate.AgendaCode == agendaCode) RequestPreviewRefresh?.Invoke();
     }
@@ -3123,7 +3131,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // nejsou načtená, spadne to na syntetická data ze schématu (priorita 3) a prefetch
         // spuštěný při změně agendy je po dokončení doplní + překreslí náhled.
         if (mockData is null && agendaCode is not null && CacheProvider is not null
-            && CacheProvider.TryGetCachedMockData(agendaCode, out var cachedMock))
+            && CacheProvider.TryGetCachedMockData(agendaCode, CurrentColumnsDefinitionJson(), out var cachedMock))
             mockData = cachedMock?.WithCulture(culture);
 
         // Priorita 3: syntetická mock data ze schématu

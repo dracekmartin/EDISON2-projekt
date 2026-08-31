@@ -536,24 +536,33 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     /// ještě nenačteno (volající pak sáhne po syntetických mock datech ze schématu a spustí prefetch).
     /// GENERAL / agenda bez Caché třídy = trvale bez mock dat → true + null.
     /// </summary>
-    public bool TryGetCachedMockData(string agendaCode, out DataContext? data)
+    public bool TryGetCachedMockData(string agendaCode, string? columnsDefinitionJson, out DataContext? data)
     {
         data = null;
         if (string.IsNullOrEmpty(agendaCode)) return true;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass) || string.IsNullOrWhiteSpace(cacheClass))
             return true;
-        return _mockDataCache.TryGetValue(agendaCode, out data);
+        return _mockDataCache.TryGetValue(MockCacheKey(agendaCode, columnsDefinitionJson), out data);
     }
+
+    /// <summary>
+    /// Klíč cache ukázkových dat. Součástí je i <b>definice sloupců</b>, protože ta mění, jak vzorek
+    /// vypadá - se samotným kódem agendy by se po její změně vrátil starý obrázek a uživatel by si
+    /// myslel, že vlastní sloupce nefungují (#13158).
+    /// </summary>
+    internal static string MockCacheKey(string agendaCode, string? columnsDefinitionJson) =>
+        agendaCode + "|" + (columnsDefinitionJson ?? "");
 
     /// <summary>
     /// Volá GetMockData na Caché třídě a naplní cache (i negativně). SYNCHRONNÍ HTTP - volat jen
     /// z pozadí (prefetch při změně agendy), NE z kreslicí cesty. Null = bez mock dat.
     /// Selhání/prázdno se cachuje také (fail-soft) - čistí ho až „Obnovit data" (InvalidateCaches).
     /// </summary>
-    public DataContext? GetMockData(string agendaCode)
+    public DataContext? GetMockData(string agendaCode, string? columnsDefinitionJson = null)
     {
         if (string.IsNullOrEmpty(agendaCode)) return null;
-        if (_mockDataCache.TryGetValue(agendaCode, out var cached)) return cached;
+        string cacheKey = MockCacheKey(agendaCode, columnsDefinitionJson);
+        if (_mockDataCache.TryGetValue(cacheKey, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
 
         // Agenda bez Caché třídy (GENERAL) - žádná mock data, preview používá SampleData ze šablony
@@ -561,21 +570,39 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
         try
         {
-            CVar result = _mlRest.Query(cacheClass, "GetMockData", new CVar());
+            CVar result = _mlRest.Query(cacheClass, "GetMockData", MockDataInput(columnsDefinitionJson));
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
-            { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); _mockDataCache[agendaCode] = null; return null; }
+            { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); _mockDataCache[cacheKey] = null; return null; }
 
             string? json = result["1"]?.Value?.ToString();
             var data = string.IsNullOrEmpty(json) ? null : ParseMockData(json);
-            _mockDataCache[agendaCode] = data;   // cachovat i null - jinak render/prefetch tluče HTTP per pokus
+            _mockDataCache[cacheKey] = data;   // cachovat i null - jinak render/prefetch tluče HTTP per pokus
             return data;
         }
         catch (Exception ex)
         {
             NotifyReadError("načtení mock dat", ex.Message);
-            _mockDataCache[agendaCode] = null;
+            _mockDataCache[cacheKey] = null;
             return null;
         }
+    }
+
+    /// <summary>
+    /// Vstup pro ukázková data. Posílá se <b>definice sloupců</b> ze šablony, aby náhled bez vybrané
+    /// instance ukázal rozvržení, které si uživatel nastavil.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 31. 8. se volalo s prázdným vstupem, takže server spadl na výchozí rozvržení podle linky
+    /// a vlastní sloupce se v návrháři neprojevily - vypadalo to jako nefunkční featura, přestože
+    /// s vybranou linkou fungovala (#13158). Vzorek tím nezačne odpovídat reálné lince; jde o to, aby
+    /// ukazoval <b>to členění</b>, které je v šabloně.
+    /// </remarks>
+    internal static CVar MockDataInput(string? columnsDefinitionJson)
+    {
+        var inVar = new CVar();
+        if (!string.IsNullOrEmpty(columnsDefinitionJson))
+            inVar["DEFINICE_SLOUPCU"] = new CVar(columnsDefinitionJson);
+        return inVar;
     }
 
     private static DataContext? ParseMockData(string json)
