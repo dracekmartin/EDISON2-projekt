@@ -459,6 +459,23 @@ odvozená z úpravy JŘ).
 ## Katalog (GSId, id 1-66)
 
 > Sloupec **Render** = doporučený mód v TD (odvozeno z legacy dispatch; ⚠️ = ověřit vizuálně proti fontu).
+>
+> **⚠️ Kde se bere kód glyfu (nalezeno 31. 8. 2026):** `ALVA.TISKJR.Main.ConvertSpecialniZnak`
+> v `C:\DEV\EDISON\TiskJR\CACHE\ALVA\TISKJR\Main.cls` překládá **id z číselníku** `$$$SALL`
+> (`JRapiLinPrtWin.mac:14`) na **kód znaku ve fontu**. Záporná hodnota = text nebo složená značka,
+> kterou si windowsí klient kreslí vlastní větví. Do 31. 8. se myslelo, že tenhle překlad v repu
+> není, a pozice se odvozovaly z významu zkratky - **je, jen v klientovi, ne v serverové části.**
+> Opsané do `SymbolMap.PiktogramyLinky`: OBC 25→77, PCZ 26→112, PJI 27→76, POS 28→168, RBU 29→90,
+> SAO 30→115, BEV 22→72, CBE 56→70, RBP 57→240, loď 61→180, wifi 65→186, zásuvka 66→179.
+> **Textem i podle legacy:** IDS 23→„-11", NKA 24→„-12" (a klient NKA vypisuje jako „n", ne „NKA").
+>
+> **⚠️ Nesrovnalost k rozhodnutí:** legacy mapuje autobus 34→119 a vlak 35→120; my máme autobus→122
+> a vlak→120. V českém fontu je na 119 vagon a na 122 autobus, ve **slovenském obráceně**. Buď je to
+> chyba legacy na českém fontu, nebo špatné přečtení tabulky glyfů - neměněno, čeká na rozhodnutí.
+>
+> **Vývěsky jedou jinou tabulku:** `ALVA.TISKMHD.Main.ConvertSpecialniZnak` zná jen dny (1-7→49-55),
+> vozíček (`I`→72), částečnou bezbariérovost (`8`→70) a svátky (`+`→43). Loď, wifi ani zásuvku
+> **vůbec nemá**, takže jejich piktogram ve vývěsce by byl nová featura, ne parita.
 > „znak" = mnemonický znak z číselníku (co nese datový atribut / anotace).
 
 | id | znak | význam | render |

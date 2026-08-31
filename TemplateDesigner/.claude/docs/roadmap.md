@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** **`L15`** - mřížka odjezdů (⚠️ nejdřív projít existující zastávkové šablony a rozhodnout otázku návrhu, viz řádek). Ze `L11` zbývá jen rodina atributů a ta čeká na překladovou tabulku glyfů.
+> **Nejblíž na řadě:** z první tabulky zbývá **`L8`** (dedup Caché enginů, velikost L - tvoje rozhodnutí) a **`L14`** (dvě neověřená tvrzení o paritě). `L11` je hotové až na dvě otázky k rozhodnutí, které z něj zbyly.
 > Vlna `L6` je hotová celá: šipka, obousměrný tisk i turnusy ke spojům.
 
 ---
@@ -85,8 +85,7 @@ Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-ses
 |---|---|---|
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
 | **L14** | **Dvě sebeoznačené R6 nejistoty v `LinkovyJrAd.cls` visí jen v komentářích, mimo dohled** (audit 31. 8.). (1) `VetaAtributu` (`:1601-1603`): legacy počítá spoje s atributem přes **celou linku**, náš kód přes **stránku** (jeden směr) - u jednosměrné linky to vyjde stejně, u obousměrné (hotová od `L6`, 31. 8.) se může rozejít věta „všechny spoje mají BEV" vs. výčet; neprošlo oraclem. (2) `GenerickaVeta` (`:1562-1564`): oprava textu pro atributy POS a IDS je opsaná ze zdroje legacy, ale **neověřená** - na kontrolních linkách se ty dva atributy nevyskytly. Autor obojí správně napsal jako neověřené (R6), jenže bez zápisu do roadmapy to nikdo nezvedne, dokud si nestěžuje zákazník s obousměrnou linkou nebo POS/IDS atributem. Vzít při hledání dat s obousměrným tiskem, nebo až se najde firma používající POS/IDS. | S |
-| **L11** | **Zbytek rodiny atributů spoje se tiskne zkratkou, ne piktogramem** (IDS, NKA, OBC, POS, RBU, SAO, RBP). Zalomení značek po dvou i inverzní negativní značka jsou hotové 31. 8.; tohle je zbytek. ⚠️ **Chybí překladová tabulka „zkratka → glyf"** - starý modul ji má ve windowsím tiskovém klientovi, který v repu není, takže z tabulky glyfů se dá odvodit jen to, co má jednoznačný tvar (kolo, kufr, zásuvka - ty už doplněné jsou). U občerstvení má font dva kandidáty (káva i příbor) a není čím rozhodnout. **Navíc není na čem to ověřit**: v datech měřených firem není z celé rodiny nastavené nic než BEV, takže oracle vůči starému tisku nevznikne. Vzít, až se najde buď ten překlad, nebo firma, která atributy používá. | S |
-| **L9-R3** | **Oddělená barva a tloušťka vodorovných × svislých čar** (odloženo, dřív viselo u `L10`). `GridStyle` má dnes jednu barvu i tloušťku pro obojí a je **sdílený se všemi tabulkovými prvky**, takže se to má naplánovat pro všechny naráz, ne rozšiřovat jen u linkové tabulky. Zapnout/vypnout jednotlivé druhy čar už jde (`L10`), tohle je krok navíc. | S |
+| **L11** | **Dva zbytky po značkách spoje, obojí k rozhodnutí, ne k dodělání** (z `L11`, 31. 8.). (1) Legacy vypisuje **nízkokapacitní vůz jako „n"**, ne „NKA" - my tiskneme zkratku. Změna je triviální, ale je vidět v tisku, tak ať to není potichu. (2) **Autobus míří na jiný kód než v legacy**: my 122, legacy 119. V českém fontu je na 119 vagon a na 122 autobus, ve slovenském obráceně - buď je to chyba legacy na českém fontu, nebo špatné přečtení tabulky glyfů. Doporučuju ověřit na tisku ze starého modulu, ne z tabulky. | S |
 
 ### Nálezy k opravě mimo TD
 
@@ -152,13 +151,11 @@ takže nejde o práci, ale o doklad.
   na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
   nebo až se bude stejně sahat na přenos nastavení linky.
 
-- **`B99` Loď, wifi i zásuvka jsou ve fontu - ve vývěskách se pořád nepoužívají**
-  (z `L4` 24. 8., **v linkovém JŘ vyřešeno 31. 8.**). ⚠️ Dvakrát tu stálo něco nepravdivého:
-  nejdřív že ve fontu nejsou všechny tři, pak že chybí aspoň zásuvka. **Jsou tam všechny** -
-  tabulka glyfů obou fontů je našla shodně na 180 (loď), 186 (wifi) a 179 (zásuvka), v souvislém
-  bloku ikon vybavení vozidla. Linkový JŘ je od 31. 8. kreslí piktogramem. **Ve vývěskách zůstávají
-  textem**, protože přepnutí by změnilo hotový tisk - je to rozhodnutí o vzhledu, ne oprava.
-  V datech měřených firem tyhle značky nemá nikdo, takže to nikoho netlačí.
+- **`B99` Loď, wifi a zásuvka ve vývěsce - rozhodnuto 31. 8., zůstávají textem**. Ve fontu jsou
+  (180 / 186 / 179) a linkový JŘ je od 31. 8. kreslí piktogramem. ⚠️ **Vývěska je ale jiný případ:**
+  její starý modul (`ALVA.TISKMHD.Main.ConvertSpecialniZnak`) zná jen dny, vozíček, částečnou
+  bezbariérovost a svátky - loď, wifi ani zásuvku **vůbec nemá**. Piktogram by tam tedy nebyl
+  dorovnáním starého tisku, ale novou featurou. Vytáhnout, až si o to někdo řekne.
 
 - **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,
   [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Na 93 133 linkách šesti firem nejsou nikde

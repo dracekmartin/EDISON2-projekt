@@ -49,10 +49,13 @@ public static class SymbolMap
 
     /// <summary>Značky, které se ve <b>vývěsce</b> vypisují textem.</summary>
     /// <remarks>
-    /// ⚠️ <b>Ve fontu přitom všechny tři jsou</b> - tabulka glyfů obou fontů (31. 8.) je našla
-    /// shodně na 180 (loď), 186 (wifi) a 179 (zásuvka); linkový JŘ je od té doby kreslí
-    /// piktogramem. Tady zůstávají textem schválně: přepnutí by změnilo hotový tisk vývěsek,
-    /// a to je rozhodnutí o vzhledu, ne oprava.
+    /// ⚠️ <b>Ve fontu přitom všechny tři jsou</b> - shodně na 180 (loď), 186 (wifi) a 179 (zásuvka);
+    /// linkový JŘ je od 31. 8. kreslí piktogramem podle překladové tabulky legacy.
+    /// <para><b>Vývěska je jiný případ:</b> její starý modul
+    /// (<c>ALVA.TISKMHD.Main.ConvertSpecialniZnak</c>) zná jen dny, vozíček a částečnou
+    /// bezbariérovost - loď, wifi ani zásuvku <b>vůbec nemá</b>. Přepnout je tu na piktogram by
+    /// tedy nebyla parita se starým tiskem, ale nová featura nad jeho rámec. Proto zůstávají
+    /// textem, dokud si o to někdo neřekne.</para>
     /// </remarks>
     private static bool ChybiVeFontu(string znak) => znak is "lod" or "wifi" or "zasu";
 
@@ -85,8 +88,16 @@ public static class SymbolMap
     /// (jede jinudy) tam nebudou nikdy - <b>font je nemá</b> (na jejich pozicích je čtverec
     /// a osmiúhelník), takže je i starý tisk kreslí znakem. „Pokračuje" <c>u</c> zůstává textem,
     /// dokud se nenajde stará sestava, kde se vyskytuje - v jádru sady není.</para>
-    /// <para>Novou položku smí přidat jen ten, kdo pozici ověří v <b>obou</b> fontech; postup
-    /// v <c>elementy-architektura.md</c>. Hádat ji znamená vytisknout cizí piktogram.</para>
+    /// <para><b>Kde se pozice bere:</b> starý tiskový klient má překladovou tabulku
+    /// <c>ALVA.TISKJR.Main.ConvertSpecialniZnak</c> (<c>C:\DEV\EDISON\TiskJR\CACHE\ALVA\TISKJR\Main.cls</c>) -
+    /// id z číselníku <c>$$$SALL</c> → kód znaku ve fontu. Záporná hodnota tam znamená text nebo
+    /// složenou značku, kterou si klient kreslí sám. ⚠️ Do 31. 8. se o té tabulce myslelo, že v repu
+    /// není, a pozice se odvozovaly z významu; proto tu zbytek rodiny zůstával textem. <b>Tabulka je
+    /// autorita</b> - nová položka se z ní opíše, nehádá.</para>
+    /// <para><b>Textem zůstávají i podle legacy:</b> <c>IDS</c> (id 23 → „-11") a <c>NKA</c>
+    /// (id 24 → „-12"). Nejsou to nedodělky - starý modul je taky netiskne obrázkem.</para>
+    /// <para>Pozici i tak ověř vykreslením v <b>obou</b> fontech (postup v
+    /// <c>elementy-architektura.md</c>) - tabulka říká kód, ne to, jestli na něm něco je.</para>
     /// </remarks>
     private static readonly Dictionary<string, string> PiktogramyLinky = new()
     {
@@ -111,18 +122,20 @@ public static class SymbolMap
         ["L"] = "x",   // vlak - lokomotiva
         ["A"] = "z",   // autobus - na `w` je vagon
         ["K"] = "L",   // jízdní kolo
-        // Vybavení vozidla. Pozice odečtené z tabulky glyfů obou fontů 31. 8.; kódy nad 127 drží
-        // font ve stejném bloku ikon vybavení (177 šipka, 178 kolo, 179 zásuvka, 180 loď,
-        // 182 káva, 186 wifi, 188 sedadlo), takže sedí i sousedstvím, nejen tvarem.
-        // ⚠️ Přiřazení „která zkratka na který glyf" je odvozené z významu, ne z překladu starého
-        // modulu - ten žije ve windowsím tiskovém klientovi, který v repu není. Doloženo jen tam,
-        // kde je tvar jednoznačný; zbytek rodiny (IDS, NKA, POS, RBU, SAO, RBP, OBC) proto zůstává
-        // textem - viz poznámka u `JeOverenyPiktogramLinky`.
-        ["PJI"] = "L",        // kola - totéž jízdní kolo jako `K`
-        ["PCZ"] = "p",        // zavazadla - kufr (pozice `p`, proto tam „pokračuje" být nesmí)
-        ["lod"] = "´",   // loď (180)
-        ["wifi"] = "º",  // wifi (186)
-        ["zasu"] = "³",  // zásuvka (179)
+        // Rodina atributů spoje. Pozice **nejsou odhad**: jsou opsané z překladové tabulky starého
+        // tiskového klienta `ALVA.TISKJR.Main.ConvertSpecialniZnak`
+        // (`C:\DEV\EDISON\TiskJR\CACHE\ALVA\TISKJR\Main.cls`), která překládá id z číselníku
+        // `$$$SALL` (`JRapiLinPrtWin.mac:14`) na kód znaku ve fontu. V závorce je id a kód.
+        ["PJI"]  = "L",   // kola (27 → 76) - totéž jízdní kolo jako `K`
+        ["PCZ"]  = "p",   // zavazadla (26 → 112) - kufr; proto tam „pokračuje" být nesmí
+        ["OBC"]  = "M",   // občerstvení (25 → 77) - příbor
+        ["RBU"]  = "Z",   // radiobus, spoj jede na objednání (29 → 90) - telefon
+        ["SAO"]  = "s",   // samoobslužný (30 → 115) - kolečko s „S"
+        ["RBP"]  = "ð",   // jede podmínečně (57 → 240) - vykřičník
+        ["POS"]  = "¨",   // zásilky (28 → 168)
+        ["lod"]  = "´",   // loď (61 → 180)
+        ["wifi"] = "º",   // wifi (65 → 186)
+        ["zasu"] = "³",   // zásuvka 230 V (66 → 179)
     };
 
     private static bool JeOverenyPiktogramLinky(string znak) =>

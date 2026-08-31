@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-08-31 (11) - 🚻 značky u spojů se přestaly tisknout zkratkou (`L11`)
+
+Občerstvení, zásilky, radiobus, samoobslužný spoj a spoj jedoucí podmínečně se na linkovém JŘ
+tiskly zkratkou (OBC, POS, RBU, SAO, RBP), protože nikdo nevěděl, který obrázek k nim patří.
+
+⚠️ **Ta tabulka celou dobu existovala.** Roadmapa tvrdila, že překlad „zkratka → glyf" v repu není,
+protože žije ve windowsím tiskovém klientovi. Klient je v repu - jen jinde, než se hledalo:
+`ALVA.TISKJR.Main.ConvertSpecialniZnak` překládá id z číselníku na kód znaku ve fontu. Pozice jsou
+tedy **opsané, ne hádané**, a je to zapsané v dokumentaci, ať se nehledá potřetí.
+
+Potvrdila i to, co jsme ráno nasadili podle tvaru: loď, wifi, **zásuvka**, kola, zavazadla,
+bezbariérovost - všechno sedí.
+
+⚠️ **Dvě značky z té rodiny zůstávají textem, a je to správně:** IDS a nízkokapacitní vůz. Starý
+modul je taky netiskne obrázkem (mají v tabulce zápornou hodnotu = text). Bez té tabulky bychom jim
+piktogram nasadili - a byla by to chyba, kterou by nikdo nehledal.
+
+**Zbylo k rozhodnutí:** legacy vypisuje nízkokapacitní vůz jako **„n"**, ne „NKA"; a mapuje autobus
+na jiný kód než my (u nás 122, legacy 119 - v českém fontu je na 119 vagon, ve slovenském autobus).
+Obojí je v roadmapě, neměněno bez rozhodnutí.
+
+⚠️ **`B99` je tím rozhodnutá faktem:** vývěsky mají vlastní legacy tabulku a ta loď, wifi ani zásuvku
+**vůbec nezná**. Jejich piktogram ve vývěsce by tedy nebyla parita se starým tiskem, ale nová
+featura - proto tam zůstávají textem.
+
+Ověřeno: .NET **1307/1307**, glyfy vykreslené a prohlédnuté v **obou** fontech, mutací (špatný cílový
+znak) doloženo, že to testy hlídají.
+
+⚠️ **Jeden piktogram si zaslouží tvoje oko:** zásilky (168) vypadají v obou fontech jako přeškrtnutý
+čtverec. Je to podle legacy, ale nečte se to jako „zásilky" - kdyby to na tisku vypadalo divně, je to
+tenhle.
+
 ## 2026-08-31 (10) - 🧱 volby mřížky fungují i u mřížky odjezdů (`L15`)
 
 Poslední prvek, který „Čáry mezi řádky" a „Čáry mezi sloupci" nabízel, ukládal - a nečetl. Stejná
@@ -276,9 +308,11 @@ zatím textem, protože přepnout je by změnilo hotový tisk.
 
 ⚠️ **Zbytek rodiny atributů (IDS, NKA, OBC, POS, RBU, SAO, RBP) se dál tiskne zkratkou** a parita
 téhle části **není doložená**. Překlad „která zkratka na který glyf" má starý modul ve windowsím
-tiskovém klientovi, který v repu není, a z tvaru glyfu se dá odvodit jen tam, kde je jednoznačný
-(kolo, kufr, zásuvka). U občerstvení má font dva kandidáty a není čím rozhodnout. Navíc v datech
-měřených firem není z celé rodiny nastavené nic než BEV, takže není ani na čem to porovnat.
+tiskovém klientovi.
+
+> **Opraveno později téhož dne (viz zápis 11):** ten klient **v repu je** - jen jinde, než se
+> hledalo. Tabulka se našla, atributy se od té doby tisknou piktogramem a IDS s NKA zůstávají
+> textem **podle legacy**, ne z opatrnosti. Tvrzení „v repu není" bylo mylné.
 
 Ověřeno: .NET **1268/1268** (19 nových testů) a mutacemi tří cest - strop tří značek místo dvou,
 dělení podle významu místo mechanického, nenakreslený box negativní značky.
