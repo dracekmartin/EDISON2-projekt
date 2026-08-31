@@ -159,6 +159,9 @@ Pasti:
 
 - Non-prázdný `shellGuid` → modul sdílí shellův GUID + `CacheLocks=1` (zánik shell zámku
   shodí i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks.
+  Totéž dělá **TemplateDesigner** (WPF, spouští se napřímo bez hosta - `LaunchesDirectly`,
+  session přebírá `CacheSchemaWiring`); requesty TD tak drží ACTIVITY historii shellu (F17).
+  Legacy launchery TD (ISYJR2, MHD2Linky, TISKJR stub) guid propagují jen při `CacheLocks==1`.
 - `ConfigureForm` staví `MLProps.AccessTable` z `licensedElements` - bez nich moduly
   gate-ující obsah přes `RightGranted` (např. DSINPUT Plánování) nezobrazí data.
 - Host roztáčí formu přes **`ShowDialog`, ne `Application.Run`** (parita se starým `EDPROCESS`):

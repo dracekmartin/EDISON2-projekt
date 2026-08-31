@@ -72,7 +72,7 @@ projektu jsou značené explicitně („nový post #N").
 - [x] **Stav:** Done (2026-08-24) - `DefaultTreeTab()` vrací vždy „Hlavní nabídka"; oblíbené
   default nepřebíjejí, uložená volba má dál přednost.
 - **P3 · S** 🔸
-- **Zbývá odeslat do ticketu:** „Po startu se nově vždy otevře Hlavní nabídka. Dřív shell
+- **Odesláno do ticketu (2026-08-28):** „Po startu se nově vždy otevře Hlavní nabídka. Dřív shell
   skočil na Oblíbené, pokud jste nějaké měl - to jsme zrušili. Poslední otevřenou záložku
   si shell pamatuje per uživatel a firmu, takže si ji stačí jednou přepnout."
 - **Zdroj:** HD 13132 #20 (Kaska)
@@ -174,7 +174,7 @@ projektu jsou značené explicitně („nový post #N").
   (okamžitý pád se dřív ztratil). Ověřeno Debug hostem s `EDISONMAIN2API_CRASHTEST=ui|bg` na
   Aktivitě uživatelů i Jazykovém nastavení (přímý EDISONMAIN): dialog + exit 3. **Limit:** výjimku
   z `Form.Load` na x64 spolkne Windows, nedostane se k žádnému handleru.
-- **Zbývá odeslat do ticketu:** „Pád okna staré agendy pod novým spouštěčem už neprobliká: zobrazí
+- **Odesláno do ticketu (2026-08-28):** „Pád okna staré agendy pod novým spouštěčem už neprobliká: zobrazí
   se stejný chybový dialog jako ve starém EDISONu (referenční číslo, tlačítko Odeslat hlášení)
   a tvrdý pád procesu navíc nahlásí spouštěč sám do telemetrie podpory."
 - **P2 · M**
@@ -242,7 +242,7 @@ projektu jsou značené explicitně („nový post #N").
   vyžaduje v IdFa právě jeden `_`, takže `CKSCHWAN` platné IdFa být nemůže - je to jméno
   namespace nebo ručně vyplněná hodnota z legacy setupu (`frmSetup.vb`, registry).
   Dohledání u zákazníka → viz Mimo EDISON2.
-- **Zbývá odeslat do ticketu:** „Firmu už v titulcích jednotlivých oken neuvidíte - je
+- **Odesláno do ticketu (2026-08-28):** „Firmu už v titulcích jednotlivých oken neuvidíte - je
   jednou v titulku hlavního okna a ve stavovém řádku, protože v jednom přihlášení pracujete
   vždy v jedné firmě. Okna starých agend si zkratku firmy zatím přidávají sama."
 - **Zdroj:** HD 13132 #3 bod 6 (Kaska), zbytek po `52c95c9`/`66138dc`
@@ -269,7 +269,12 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F17 - Modul s vlastním GUID negeneruje aktivitu shell session
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-28) - rozhodnuto a implementováno: TD přebírá shell GUID
+  (varianta 1). Shell ho spouští přes `WindowNavigator.ShowLegacy` (launch args, KillOnExit,
+  „Spuštěné moduly", kill při switch firmy), `CacheSchemaWiring` při neprázdném guid nastaví
+  `GUID` + `CacheLocks=1` a App ukončí TD při `EdisonActivityFailed`. Legacy launchery TD
+  (ISYJR2, MHD2Linky, TISKJR - repo EDISON) propagují guid jen při `CacheLocks==1`, pod starým
+  shellem beze změny. Timeout měřený jen na requestech (čtení = idle) je vědomé chování.
 - **P2 · M**
 - **Co udělat:** TemplateDesigner záměrně nepřebírá shell GUID
   (`TemplateDesigner/dotnet/Config/CacheSchemaWiring.cs:13-24`) a shell ho navíc spouští plain

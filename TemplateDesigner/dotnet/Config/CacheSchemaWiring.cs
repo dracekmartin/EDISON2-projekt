@@ -12,16 +12,27 @@ internal static class CacheSchemaWiring
 {
     /// <summary>
     /// Vytvoří MLRest ze session shellu (EDISONMAIN2 launch kontrakt) - přebírá server,
-    /// rest port, namespace, IdFa i identitu uživatele. ShellGuid se záměrně nepřebírá:
-    /// TD si drží vlastní session GUID a neváže se na ACTIVITY zámek shellu.
+    /// rest port, namespace, IdFa, identitu uživatele a session GUID. Neprázdný ShellGuid
+    /// = sdílená shell session s CacheLocks=1 (requesty TD drží ACTIVITY historii shellu,
+    /// HD 13132/F17; zánik shell zámku TD ukončí) - parita s EDISONMAIN2API.FormToRunGetter.
+    /// Prázdný guid (legacy shell, standalone) → vlastní GUID bez kontrol jako dřív.
+    /// TD nikdy nevolá Logout/LockClearExt - zámek i business zámky patří shellu.
     /// </summary>
-    public static MLRest CreateMlRest(EDControls.EdisonLaunchArgs launch) =>
-        new(launch.Server, launch.RestPort, launch.Namespace, launch.Idfa)
+    public static MLRest CreateMlRest(EDControls.EdisonLaunchArgs launch)
+    {
+        var mlRest = new MLRest(launch.Server, launch.RestPort, launch.Namespace, launch.Idfa)
         {
             LoginName = launch.LoginName,
             FullName  = launch.FullName,
             Mlp       = launch.Mlp
         };
+        if (!string.IsNullOrEmpty(launch.ShellGuid))
+        {
+            mlRest.GUID = launch.ShellGuid;
+            mlRest.CacheLocks = 1;
+        }
+        return mlRest;
+    }
 
     /// <summary>
     /// Vytvoří MLRest instanci z nastavení. Vrátí null pokud připojení není nakonfigurováno.

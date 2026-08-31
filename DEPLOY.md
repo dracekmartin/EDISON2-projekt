@@ -7,6 +7,7 @@ Z repa EDISON2 (publish `SingleFileCEdison`):
 
 - `EDISONMAIN2.exe`
 - `EDControls.dll` (volná vedle exe, sdílená s `TemplateDesigner.exe` - při změně jejího API vydat i ten)
+- `TemplateDesigner.exe` (od F17 přebírá shell session z launch args - starší build by session nepřevzal)
 
 Z repa EDISON (build do `C:\Edison`):
 
@@ -16,7 +17,7 @@ Z repa EDISON (build do `C:\Edison`):
 - `EDUPDATE.EXE` (projekt `UPDATERCL`; parametry `WaitProcess`/`RunExe` pro restart shellu po update)
 
 Legacy verze musí být aspoň ta, která má úpravy agend pro shell (`EDLIBRARY` shortcut sink,
-`MHD2LINKY`/`TISKJR` launch TemplateDesigneru přes shell session, `MHD2PlanDopravy` API pro
+`MHD2LINKY`/`TISKJR`/`ISYJR2` launch TemplateDesigneru přes shell session, `MHD2PlanDopravy` API pro
 miniaplikaci Dispečink, MZDY2 dual-write `^MZR("FiltrZam2")`) - `git log --grep=EDISONMAIN2` v repu EDISON.
 
 Nedistribuovat: `appsettings.json` z publish výstupu (dev server `192.168.16.1`; u zákazníka ho

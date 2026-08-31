@@ -34,8 +34,11 @@ Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživate
 - **Launch ze shellu předvolí agendu** - `inputParam` kontraktu ve tvaru `Agenda=<kód>`
   (JŘ uzel stromu → `ZASTAVKOVY_JR_AD`, MHD uzel a MHD2 tlačítko → `ZASTAVKOVY_JR_MHD`),
   neznámý kód → default. Bez argumentů běží TD standalone. Obecný kontrakt (`EdisonLaunchArgs`,
-  MLRest ze session shellu) viz `EDControls/CLAUDE.md`; `shellGuid` se záměrně nepřebírá,
-  TD má vlastní session GUID bez vazby na ACTIVITY zámek shellu.
+  MLRest ze session shellu) viz `EDControls/CLAUDE.md`. **Neprázdný `shellGuid` = sdílená
+  shell session** (`GUID` + `CacheLocks=1`, parita s hostem legacy modulů): requesty TD drží
+  ACTIVITY historii shellu a zánik zámku/verze TD ukončí (`EdisonActivityFailed` v App).
+  TD **nikdy nevolá Logout/LockClearExt** - zámky patří shellu. Prázdný guid (starý shell,
+  standalone) → vlastní GUID bez kontrol.
 - **Persistované hodnoty parametrů sestavy se aplikují jednou cestou** -
   `ApplyPersistedPrintParamsAsync()` nastaví hodnoty i UI pohromadě. Dvě cesty vedly k tomu,
   že se tisklo jiné nastavení, než UI ukazovalo, a nikdo si toho nevšiml.

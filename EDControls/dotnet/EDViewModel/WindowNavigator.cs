@@ -421,10 +421,12 @@ public class WindowNavigator : IWindowNavigator
         return prc;
     }
 
-    /// <summary>Agendy, které se spouští napřímo místo přes generický host (drží si vlastní
-    /// retrofit s logikou, kterou host nereplikuje). Zatím jen legacy shell EDISONMAIN.</summary>
+    /// <summary>Aplikace, které se spouští napřímo místo přes generický host: legacy shell
+    /// EDISONMAIN (vlastní retrofit, který host nereplikuje) a WPF TemplateDesigner
+    /// (kontrakt si parsuje sám, WinForms host na něj nejde použít).</summary>
     internal static bool LaunchesDirectly(string exeName) =>
-        string.Equals(Path.GetFileName(exeName), "EDISONMAIN.exe", StringComparison.OrdinalIgnoreCase);
+        string.Equals(Path.GetFileName(exeName), "EDISONMAIN.exe", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Path.GetFileName(exeName), "TemplateDesigner.exe", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Složí payload pro generický host: značka + sys kontext + formFqn + shellGuid +

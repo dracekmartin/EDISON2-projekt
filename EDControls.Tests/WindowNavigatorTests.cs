@@ -103,9 +103,11 @@ public class WindowNavigatorTests
     [InlineData("EDISONMAIN.exe", true)]
     [InlineData(@"C:\Edison\EDISONMAIN.exe", true)]
     [InlineData("edisonmain.exe", true)]
+    [InlineData("TemplateDesigner.exe", true)]
+    [InlineData(@"C:\Edison\TemplateDesigner.exe", true)]
     [InlineData("USERS.exe", false)]
     [InlineData("MHD2PlanDopravy.exe", false)]
-    public void LaunchesDirectly_OnlyEdisonMain(string exeName, bool expected)
+    public void LaunchesDirectly_EdisonMainAndTemplateDesigner(string exeName, bool expected)
     {
         Assert.Equal(expected, WindowNavigator.LaunchesDirectly(exeName));
     }
