@@ -1,5 +1,19 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L13` - nabídka stránek náhledu pojmenuje i linkový JŘ (hotovo 31. 8. 2026)
+
+`BuildPreviewPageLabel` stavěl popisek výhradně z `POPIS_ZASTAVKA`, což je pole **zastávkového** JŘ -
+linkové agendy ho ve schématu nemají. U linkového JŘ proto padal na „Stránka N" u **každé** stránky,
+ne jen u obousměrné, jak to vypadalo při prvním nálezu.
+
+Nově má linka vlastní větev: `VYCHOZI_ZASTAVKA` → `KONECNA_ZASTAVKA` („1 - Praha → Sedlčany").
+**Obousměrná stránka** se pozná podle prázdného `SMER` (agenda ho u ní vědomě nevyplňuje, nese oba
+směry naráz) a dostane obousměrnou šipku - díky tomu nebylo potřeba nové pole na drátě, což byla při
+zadání otevřená otázka. Zastávková větev má přednost a je na to vlastní test.
+
+⚠️ Pozn.: původní zápis `L13` mluvil o poli `POPIS_SMER`. To se týž den přejmenovalo na
+`KONECNA_ZASTAVKA` (#13158, migrace šablon 1.10.0), takže v kódu i tady figuruje nový název.
+
 ## `B104` - změna formátu stránky přepočítá obsah (hotovo 31. 8. 2026)
 
 Změna velikosti nebo orientace ve Vlastnostech stránky šablonu **vymazala** a založila prázdné

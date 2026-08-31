@@ -464,16 +464,42 @@ public class TemplateDesignerViewModel : EDViewModel
         _realPreviewData is null ? []
         : _realPreviewData.Select(BuildPreviewPageLabel).ToList();
 
-    /// <summary>Popisek stránky dat pro combobox: „N - zastávka → směr" z polí stránky
-    /// (POPIS_ZASTAVKA / KONECNA_ZASTAVKA - zastávkový JŘ), fallback „Stránka N" pro agendy bez nich.</summary>
+    /// <summary>
+    /// Popisek stránky dat pro nabídku stránkování - podle toho, co je na stránce.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Zastávkový JŘ</b> = stránka je zastávka × směr → „N - zastávka → konečná".
+    /// Pozná se podle <c>POPIS_ZASTAVKA</c>, které linkové agendy neposílají.</para>
+    /// <para><b>Linkový JŘ</b> = stránka je celá linka → „N - výchozí → konečná". ⚠️ Do 31. 8. tady
+    /// spadl na „Stránka N" <b>u každé</b> stránky, ne jen u obousměrné: popisek se stavěl výhradně
+    /// z <c>POPIS_ZASTAVKA</c>, a to pole linkový JŘ nemá ve schématu vůbec. Uživatel pak v nabídce
+    /// nepoznal, na který směr se dívá.</para>
+    /// <para><b>Obousměrná stránka</b> nese oba směry naráz a <c>SMER</c> je u ní vědomě prázdné
+    /// (`LinkovyJrAd.cls` kolem ř. 559) - to ji spolehlivě odliší, takže dostane obousměrnou šipku
+    /// a není na ni potřeba nové pole na drátě.</para>
+    /// <para>Když stránka nenese ani jedno, zůstává „Stránka N" (agendy typu faktur).</para>
+    /// </remarks>
     public static string BuildPreviewPageLabel(DataContext page, int index)
     {
+        int cislo = index + 1;
+        var konecna = page.GetString("KONECNA_ZASTAVKA").Trim();
+
+        // Zastávkový JŘ
         var zastavka = page.GetString("POPIS_ZASTAVKA").Trim();
-        if (zastavka.Length == 0) return $"Stránka {index + 1}";
-        var smer = page.GetString("KONECNA_ZASTAVKA").Trim();
-        return smer.Length == 0
-            ? $"{index + 1} - {zastavka}"
-            : $"{index + 1} - {zastavka} → {smer}";
+        if (zastavka.Length > 0)
+            return konecna.Length == 0 ? $"{cislo} - {zastavka}" : $"{cislo} - {zastavka} → {konecna}";
+
+        // Linkový JŘ
+        var vychozi = page.GetString("VYCHOZI_ZASTAVKA").Trim();
+        if (vychozi.Length > 0 && konecna.Length > 0)
+        {
+            string sipka = page.GetString("SMER").Trim().Length == 0 ? "↔" : "→";
+            return $"{cislo} - {vychozi} {sipka} {konecna}";
+        }
+        if (vychozi.Length > 0) return $"{cislo} - {vychozi}";
+        if (konecna.Length > 0) return $"{cislo} - {konecna}";
+
+        return $"Stránka {cislo}";
     }
 
     private RelayCommand? _prevPage, _nextPage;

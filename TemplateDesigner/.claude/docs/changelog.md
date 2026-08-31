@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-08-31 (8) - 🧭 nabídka stránek náhledu pojmenuje i linkový JŘ (`L13`)
+
+U linkového JŘ hlásila nabídka stránek jen „Stránka 1" / „Stránka 2", takže nebylo poznat, na který
+směr se člověk dívá.
+
+⚠️ **Netýkalo se to jen obousměrného tisku, jak to vypadalo napoprvé.** Popisek se stavěl výhradně
+z pole „aktuální zastávka", a to je pole **vývěsky** - linkové agendy ho ve schématu nemají vůbec.
+Spadl proto na „Stránka N" u **každé** stránky linkového JŘ, jednosměrné i obousměrné.
+
+Nově se u linky vezme trasa, kterou data nesou odjakživa: **„1 - Praha → Sedlčany"**. Obousměrná
+stránka dostane obousměrnou šipku (**„↔"**) - pozná se podle toho, že u ní agenda vědomě nevyplňuje
+směr, protože nese oba naráz. Nové pole na drátě to tedy nepotřebovalo.
+
+Vývěska zůstala beze změny; na to je vlastní test, aby se linková větev nikdy neprotlačila před ni.
+
+Ověřeno: .NET **1300/1300** (4 nové testy) a mutacemi obou cest - vypnutá linková větev a nerozlišená
+obousměrná šipka.
+
 ## 2026-08-31 (7) - 👁 náhled bez vybrané linky ukáže vlastní sloupce (#13158 bod 3)
 
 Kdo si v prvku odjezdů nadefinoval vlastní sloupce a **neměl vybranou konkrétní linku**, neviděl
