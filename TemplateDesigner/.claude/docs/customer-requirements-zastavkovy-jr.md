@@ -175,6 +175,13 @@ odpovědi na případné znovuotevření/dotaz:
 
 ### 0.5 Parita a rozšíření - JEN na poptávku (přesunuto z roadmapy 29. 7.)
 
+- **Loď, wifi a zásuvka jako piktogram i ve vývěsce** (dřív `B99`, z roadmapy odstraněno 31. 8.).
+  Ve fontu jsou (180 / 186 / 179) a **linkový** JŘ je piktogramem kreslí. ⚠️ Vývěska je ale jiný
+  případ: její starý modul (`ALVA.TISKMHD.Main.ConvertSpecialniZnak`) zná jen dny, vozíček, částečnou
+  bezbariérovost a svátky - loď, wifi ani zásuvku **vůbec nemá**. Piktogram by tam tedy nebyl
+  dorovnáním starého tisku, ale novou featurou nad jeho rámec, a změnil by hotový tisk zákazníkům,
+  kteří o to nežádali. Práce je malá (jeden řádek v mapě značek), rozhodnutí není.
+
 - **Oddělená barva a tloušťka vodorovných × svislých čar mřížky** (dřív `L9-R3`, z roadmapy
   odstraněno 31. 8. - rozhodnutí Jan). Dnes má mřížka jednu barvu, tloušťku i styl pro obojí;
   zapnout/vypnout jednotlivé druhy čar už jde (`L10`, `L15`). ⚠️ **Nikdo o rozdělení nepožádal**

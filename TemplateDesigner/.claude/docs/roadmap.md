@@ -5,7 +5,6 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** z první tabulky zbývá **`L8`** (dedup Caché enginů, velikost L - tvoje rozhodnutí) a **`L14`** (dvě neověřená tvrzení o paritě). Značky spoje (`L11`) jsou uzavřené.
-> Vlna `L6` je hotová celá: šipka, obousměrný tisk i turnusy ke spojům.
 
 ---
 
@@ -74,17 +73,15 @@ sada voleb je **nová featura**, ne dorovnání.
 
 🎯 **Pořadí prací (rozhodnutí Jan 24. 8.): nejdřív dotáhnout paritu se starým tiskem, teprve pak
 uživatelské volby a vzhled.** Důvod: dokud se data liší, není co procházet z business hlediska -
-každý nález by mohl být „ještě to neumíme" místo „takhle to má být". Pořadí vln bylo proto
-**testovací linky → `L9` → `L6`**; první dvě jsou za námi, ze `L6` je hotová `L6a`.
-
-✅ **Průchod testovacími linkami je hotový** (26. 8., detail v archivu). **Datový rozdíl proti
-starému tisku nenašel žádný** - jediný nález je chybějící **obousměrný tisk** (patří do `L6`).
-Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-sestavě) níže.
+každý nález by mohl být „ještě to neumíme" místo „takhle to má být". **Paritní vlny jsou za námi**
+(testovací linky, `L9`, `L6`, značky spoje) - detail v archivu; z průchodu testovacími linkami
+nevzešel žádný datový rozdíl proti starému tisku. Co zůstalo neprojité, drží
+[§ K ověření](#k-ověření-na-reálné-sestavě) níže.
 
 | # | Vlna | Vel. |
 |---|---|---|
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
-| **L14** | **Dvě sebeoznačené R6 nejistoty v `LinkovyJrAd.cls` visí jen v komentářích, mimo dohled** (audit 31. 8.). (1) `VetaAtributu` (`:1601-1603`): legacy počítá spoje s atributem přes **celou linku**, náš kód přes **stránku** (jeden směr) - u jednosměrné linky to vyjde stejně, u obousměrné (hotová od `L6`, 31. 8.) se může rozejít věta „všechny spoje mají BEV" vs. výčet; neprošlo oraclem. (2) `GenerickaVeta` (`:1562-1564`): oprava textu pro atributy POS a IDS je opsaná ze zdroje legacy, ale **neověřená** - na kontrolních linkách se ty dva atributy nevyskytly. Autor obojí správně napsal jako neověřené (R6), jenže bez zápisu do roadmapy to nikdo nezvedne, dokud si nestěžuje zákazník s obousměrnou linkou nebo POS/IDS atributem. Vzít při hledání dat s obousměrným tiskem, nebo až se najde firma používající POS/IDS. | S |
+| **L14** | **Dvě sebeoznačené R6 nejistoty v `LinkovyJrAd.cls` visí jen v komentářích, mimo dohled** (audit 31. 8.). (1) `VetaAtributu` (`:1601-1603`): legacy počítá spoje s atributem přes **celou linku**, náš kód přes **stránku** (jeden směr) - u jednosměrné linky to vyjde stejně, u obousměrné (hotová od `L6`, 31. 8.) se může rozejít věta „všechny spoje mají BEV" vs. výčet; neprošlo oraclem. (2) `GenerickaVeta` (`:1562-1564`): oprava textu pro atributy POS a IDS je opsaná ze zdroje legacy, ale **neověřená** - na kontrolních linkách se ty dva atributy nevyskytly. Autor obojí správně napsal jako neověřené (R6), jenže bez zápisu do roadmapy to nikdo nezvedne. ⚠️ **Odblokováno 31. 8.**: sonda `AtributySpojuVyskyt` našla, kde ty atributy v datech jsou - **IDS** na 60 linkách (nejvíc `VS_CSAD 9 / 0240801`, 157 spojů), **POS** na jediné (`VS_CSAD 13 / 0883637`, 2 spoje). Důvod „na kontrolních linkách se nevyskytly" tedy padl a obě věty jde porovnat se starým tiskem. | S |
 
 ### Nálezy k opravě mimo TD
 
@@ -149,12 +146,6 @@ takže nejde o práci, ale o doklad.
   zlomy existuje (`INedelitelneDily`, silné a slabé zlomy) a vynucený zlom by k ní jen přibyl;
   na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
   nebo až se bude stejně sahat na přenos nastavení linky.
-
-- **`B99` Loď, wifi a zásuvka ve vývěsce - rozhodnuto 31. 8., zůstávají textem**. Ve fontu jsou
-  (180 / 186 / 179) a linkový JŘ je od 31. 8. kreslí piktogramem. ⚠️ **Vývěska je ale jiný případ:**
-  její starý modul (`ALVA.TISKMHD.Main.ConvertSpecialniZnak`) zná jen dny, vozíček, částečnou
-  bezbariérovost a svátky - loď, wifi ani zásuvku **vůbec nemá**. Piktogram by tam tedy nebyl
-  dorovnáním starého tisku, ale novou featurou. Vytáhnout, až si o to někdo řekne.
 
 - **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,
   [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Na 93 133 linkách šesti firem nejsou nikde
