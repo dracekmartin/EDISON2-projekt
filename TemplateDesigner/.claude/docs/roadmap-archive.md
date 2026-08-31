@@ -24,6 +24,11 @@ Ruční škálování z nabídky zůstalo beze změny; obě cesty stojí na spol
 ruční škáluje i papír. Ověřeno mutacemi: větší poměr místo menšího, vynechané vystředění,
 přeškálované okraje místo hodnot z dialogu.
 
+⚠️ **Dodatek z téhož dne:** zkoušení odhalilo, že otočení tam a zpátky obsah scvrklo na 47 %
+(poměr „aby se to vešlo" vyjde v obou směrech stejně, takže se dvě otočení násobí). Spraveno tím,
+že se poměr počítá od **výchozí tiskové plochy**, kterou si šablona drží po dobu, co je otevřená -
+ne od aktuálního stavu. Návrat na původní formát tak vyjde přesně, i přes mezikroky.
+
 ## `L10` - volby mřížky u linkové tabulky (hotovo 31. 8. 2026)
 
 `LineTableElement` čte `Grid.ShowRowLines` a `Grid.ShowColumnLines` stejně jako seznam zastávek,

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-31 (4) - 🔄 otočení stránky tam a zpátky už šablonu nescvrkne
+
+Nález Jan 31. 8. hned po vyzkoušení předchozí změny: otočil šablonu na šířku, rozmyslel si to,
+otočil zpátky na výšku - a sekce se „nenatáhla zpět".
+
+**Bylo to horší, než jak to vypadalo.** Poměr „aby se to vešlo" vyjde u A4 při otočení **v obou
+směrech stejně** (0,686), takže se dvě otočení nevyrušila, ale vynásobila: obsah po návratu seděl
+na **47 %** původní velikosti a písmo z 12 pt vyšlo jako **5,6 pt**. Po třetím otočení 3,8 pt.
+Nešlo tedy o sekci, ale o celou šablonu - jen je to na výšce sekce nejvíc vidět.
+
+**Spraveno tím, že se poměr počítá vždy od výchozí tiskové plochy, ne od aktuálního stavu.**
+Šablona si drží, ke které ploše se souřadnice prvků vztahují a jak moc je od ní obsah zvětšený
+a posunutý; návrat na původní formát pak vyjde jako poměr 1 a obsah sedne přesně tam, kde byl.
+Platí to i přes mezikroky - otočit na šířku, přepnout na A5 a vrátit se na původní formát dá zase
+původní velikosti.
+
+⚠️ **Drží se to jen po dobu, co je šablona otevřená** (rozhodnutí Jan 31. 8.): pokrývá to reálné
+chování „zkouším formáty při návrhu" a nestojí to změnu formátu souboru šablony ani migraci.
+Kdo formát změní, uloží, zavře a druhý den se vrátí, začíná od nového formátu jako od výchozího.
+Uložit to do šablony jde kdykoli aditivně.
+
+Vystředění se přitom musí odečíst **před** škálováním a nasadit až po něm - jinak by se posun
+z minulé změny přenásobil spolu s obsahem a ten by ujel do strany.
+
+Ověřeno: .NET **1283/1283** (2 nové testy na otočení tam a zpět, jeden i přes mezikrok). Mutací
+„počítej od aktuálního stavu místo od výchozí plochy" spadly přesně tyhle dva testy - ostatních
+devět prošlo, takže tu vadu opravdu nehlídal nikdo jiný.
+
 ## 2026-08-31 (3) - 📐 změna formátu stránky obsah přepočítá, místo aby ho vymazala (`B104`)
 
 Ve Vlastnostech stránky se dala změnit velikost nebo orientace jen za cenu toho, že se **celá

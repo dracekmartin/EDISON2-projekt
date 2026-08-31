@@ -1261,18 +1261,19 @@ public class TemplateDesignerViewModel : EDViewModel
         var volba = AskPageFormatContent();
         if (volba == PageFormatContent.Cancel) return false;
 
-        var ps = State.CurrentTemplate.PageSize;
-        float scale = 1f, offsetX = 0f;
-        if (volba == PageFormatContent.Rescale)
-            (scale, offsetX) = PageFormatChange.Compute(ps,
+        var t = State.CurrentTemplate;
+        var ps = t.PageSize;
+        var plan = volba == PageFormatContent.Rescale
+            ? PageFormatChange.Plan(t,
                 MmFromFields(pageFields, "PageSize.Width", ps.Width),
                 MmFromFields(pageFields, "PageSize.Height", ps.Height),
                 MmFromFields(pageFields, "PageSize.MarginLeft", ps.MarginLeft),
                 MmFromFields(pageFields, "PageSize.MarginRight", ps.MarginRight),
                 MmFromFields(pageFields, "PageSize.MarginTop", ps.MarginTop),
-                MmFromFields(pageFields, "PageSize.MarginBottom", ps.MarginBottom));
+                MmFromFields(pageFields, "PageSize.MarginBottom", ps.MarginBottom))
+            : PageFormatChange.KeepSizes(t);
 
-        Execute(new ChangePageFormatCommand(State.CurrentTemplate, pageFields, scale, offsetX));
+        Execute(new ChangePageFormatCommand(t, pageFields, plan));
         await Task.CompletedTask;
         return true;
     }

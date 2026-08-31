@@ -23,36 +23,47 @@ public class ChangePageFormatCommand : IDesignerCommand
 {
     private readonly Template _template;
     private readonly IReadOnlyDictionary<string, string> _pageFields;
-    private readonly float _scale;
-    private readonly float _offsetXMm;
+    private readonly PageFormatPlan _plan;
     private Dictionary<string, string>? _previousFields;
+    private PageFormatOrigin? _previousOrigin;
 
     public string Description => "Změna formátu stránky";
 
     public ChangePageFormatCommand(Template template,
-        IReadOnlyDictionary<string, string> pageFields, float scale, float offsetXMm)
+        IReadOnlyDictionary<string, string> pageFields, PageFormatPlan plan)
     {
         _template = template;
         _pageFields = pageFields;
-        _scale = scale;
-        _offsetXMm = offsetXMm;
+        _plan = plan;
     }
 
     public void Execute()
     {
         // Snímek se bere jen poprvé - opakované Execute (redo) musí vracet do TÉHOŽ stavu.
-        _previousFields ??= Snapshot();
+        if (_previousFields is null)
+        {
+            _previousFields = Snapshot();
+            _previousOrigin = _template.FormatOrigin;
+        }
 
-        if (_scale != 1f) TemplateScaling.ScaleContent(_template, _scale);
-        if (_offsetXMm != 0f) TemplateScaling.OffsetElementsX(_template, _offsetXMm);
+        // Posun se odečte, přeškáluje se holý obsah a teprve pak se nasadí nový posun - jinak by
+        // se vystředění z minulé změny přenásobilo spolu s obsahem a obsah by ujel do strany.
+        if (_plan.PrevOffsetX != 0f) TemplateScaling.OffsetElementsX(_template, -_plan.PrevOffsetX);
+        if (_plan.Factor != 1f) TemplateScaling.ScaleContent(_template, _plan.Factor);
+        if (_plan.NewOffsetX != 0f) TemplateScaling.OffsetElementsX(_template, _plan.NewOffsetX);
+
         ApplyFields(_pageFields);
+        _template.FormatOrigin = _plan.Origin;
     }
 
     public void Undo()
     {
-        if (_offsetXMm != 0f) TemplateScaling.OffsetElementsX(_template, -_offsetXMm);
-        if (_scale != 1f) TemplateScaling.ScaleContent(_template, 1f / _scale);
+        if (_plan.NewOffsetX != 0f) TemplateScaling.OffsetElementsX(_template, -_plan.NewOffsetX);
+        if (_plan.Factor != 1f) TemplateScaling.ScaleContent(_template, 1f / _plan.Factor);
+        if (_plan.PrevOffsetX != 0f) TemplateScaling.OffsetElementsX(_template, _plan.PrevOffsetX);
+
         if (_previousFields is not null) ApplyFields(_previousFields);
+        _template.FormatOrigin = _previousOrigin;
     }
 
     private Dictionary<string, string> Snapshot()
