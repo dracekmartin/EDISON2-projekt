@@ -1,5 +1,22 @@
 # 🗄️ Archiv - hotové kroky
 
+## `L15` - volby mřížky u prvku odjezdů (hotovo 31. 8. 2026)
+
+Poslední prvek, který obě volby nabízel a nečetl. Zapojeno **podle sémantiky pivotu**, ne mechanicky:
+řádek je hodina, sloupec je skupina dnů, a **svislá čára za sloupcem hodin zůstává vždy** - je to osa
+mezi hodinou a jejími minutami, ne oddělovač sloupců (rozhodnutí Jan 31. 8., varianta B).
+
+⚠️ Předcházela tomu otázka, jestli se tím neotvírá rozhodnutí „mřížka odjezdů je vyčleněná".
+Neotvírá: vyčleněný je **render** (je to pivot, sdílená smyčka „řádek = sekvence sloupců" jeho tvar
+neumí popsat), kdežto datovou vrstvu sdílí plně - a důvod toho rozdělení je doslova „z pohledu
+uživatele je konzistentní". Zaškrtávátko, které nic nedělá, je přesně ta nekonzistence.
+
+Riziko změřeno sondou přes **všechny uložené šablony**: 18 šablon, 12 prvků odjezdů, 0 s odškrtnutou
+volbou → zapojení nikomu tisk nezměnilo. Sonda (`SablonyDiag.MrizkaOdjezduProbe`) zůstala.
+
+⚠️ **Doloženo okem, ne testem.** Testy jsou napsané, ale vypnuté - prvek odjezdů nejde v testu
+vykreslit (prázdné plátno i se správně načtenými daty). Zbylo jako `B105`.
+
 ## `L12` - rozdělení parametrů tisku linkového JŘ (hotovo 31. 8. 2026)
 
 Tři skupiny místo dvou, jedna z nich s jedinou položkou (`DELENI_SLOUPCU`), protože jí chybělo

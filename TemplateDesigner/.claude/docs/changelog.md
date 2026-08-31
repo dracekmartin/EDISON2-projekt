@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-31 (10) - 🧱 volby mřížky fungují i u mřížky odjezdů (`L15`)
+
+Poslední prvek, který „Čáry mezi řádky" a „Čáry mezi sloupci" nabízel, ukládal - a nečetl. Stejná
+vada jako u linkové tabulky (`L10`), jen o prvek vedle.
+
+**V pivotu ale ty dvě volby neznamenají totéž co v řádkové tabulce**, a právě to je jádro téhle
+změny. Řádek je hodina, sloupec je skupina dnů:
+
+- **Čáry mezi řádky** → vodorovné čáry mezi hodinami
+- **Čáry mezi sloupci** → oddělovače mezi skupinami dnů
+- **svislá čára za sloupcem hodin zůstává vždycky** - není to oddělovač sloupců, ale **osa**:
+  odděluje hodinu od minut, které k ní patří. Mechanicky „konzistentní" zapojení obou voleb by
+  udělalo z vývěsky nečitelnou plochu.
+
+⚠️ **Riziko se měřilo, ne odhadovalo.** Na rozdíl od linkové tabulky zastávkové šablony existují
+a používají se, takže komu by volby byly odškrtnuté, tomu by mřížka z hotového tisku zmizela.
+Read-only sonda prošla **všechny uložené šablony** na dev serveru: 18 šablon, 12 prvků odjezdů,
+**ani jeden** s odškrtnutou volbou. Sonda zůstává v diagnostice šablon pro příště.
+
+⚠️ **Chování je ověřené okem, ne testem** (Jan 31. 8. v aplikaci: „oba dva checkboxy fungují tak,
+jak bych čekal jako u ostatních elementů"). Testy jsou napsané, ale **vypnuté**: ručně složená data
+prvku odjezdů dají prázdné plátno - skupiny dnů i odjezdy se načtou, ale render nevykreslí ani
+pixel, a příčinu se nepodařilo najít v rozumném počtu pokusů. Žádný jiný test tenhle prvek nekreslí,
+takže není podle čeho se řídit. Zbývá to jako samostatná položka (`B105`), ať se na to nezapomene.
+
 ## 2026-08-31 (9) - 🗂 parametry tisku linkového JŘ jsou rozdělené podle toho, čeho se týkají (`L12`)
 
 V nastavení tisku linkového JŘ byly **tři** skupiny místo dvou - a jedna z nich obsahovala jedinou

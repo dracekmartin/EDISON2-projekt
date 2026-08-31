@@ -83,7 +83,6 @@ Co z něj zbylo neprojité, je v [§ K ověření](#k-ověření-na-reálné-ses
 
 | # | Vlna | Vel. |
 |---|---|---|
-| **L15** | **Mřížka odjezdů nečte volby „Čáry mezi řádky" a „Čáry mezi sloupci"** - táž vada, jakou měla do 31. 8. linková tabulka (`L10`), jen se na ni ještě nesáhlo. ⚠️ **Tady to na rozdíl od linkové tabulky bezpečné není**: zastávkové šablony existují a používají se (na dev serveru jich je 7, firma CB_CSADAD), takže zapojení voleb může změnit hotový tisk. Nejdřív projít, jestli v nich někdo volby nemá odškrtnuté, a Janovi předem ukázat, které šablony a jak by se změnily. ⚠️ **Otevřená otázka návrhu:** prvek kreslí tři druhy čar - vodorovné mezi hodinami, svislou za sloupcem hodin a svislé mezi skupinami dnů. Jedno zaškrtávátko „Čáry mezi sloupci" by ovládalo poslední dvě naráz, přičemž čára za sloupcem hodin je **nosná** (bez ní se hodina slije s minutami). Varianta A = obě svislé pod jedno zaškrtávátko (konzistentní se všemi ostatními prvky, doporučeno), varianta B = čáru za sloupcem hodin nechat vždycky. **Nerozhodnuto.** | S |
 | **L8** | **Dedup Caché tiskových enginů** (dřív `B14a`) - doprovod ostrého knižního JŘ, ne dopředu. Různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery → sdílené readery a `Build*` do `BaseAgenda`/`JrShared`; Caché analog R1 extrakce jádra (`L5` řeší .NET render-side). Korektnostní riziko, proto **až nad hotovou sítí z `L1`**. Menší výsek = `B56` v Backlogu; při realizaci jednoho zredukovat druhý. ⚠️ Korekce z analýzy 5. 8.: z 27 stejně pojmenovaných helperů je jen 15 doslovných kopií (~97 řádků), a tvrzení o odlišném chování `CasHodnota` **neplatí**. | L |
 | **L14** | **Dvě sebeoznačené R6 nejistoty v `LinkovyJrAd.cls` visí jen v komentářích, mimo dohled** (audit 31. 8.). (1) `VetaAtributu` (`:1601-1603`): legacy počítá spoje s atributem přes **celou linku**, náš kód přes **stránku** (jeden směr) - u jednosměrné linky to vyjde stejně, u obousměrné (hotová od `L6`, 31. 8.) se může rozejít věta „všechny spoje mají BEV" vs. výčet; neprošlo oraclem. (2) `GenerickaVeta` (`:1562-1564`): oprava textu pro atributy POS a IDS je opsaná ze zdroje legacy, ale **neověřená** - na kontrolních linkách se ty dva atributy nevyskytly. Autor obojí správně napsal jako neověřené (R6), jenže bez zápisu do roadmapy to nikdo nezvedne, dokud si nestěžuje zákazník s obousměrnou linkou nebo POS/IDS atributem. Vzít při hledání dat s obousměrným tiskem, nebo až se najde firma používající POS/IDS. | S |
 | **L11** | **Zbytek rodiny atributů spoje se tiskne zkratkou, ne piktogramem** (IDS, NKA, OBC, POS, RBU, SAO, RBP). Zalomení značek po dvou i inverzní negativní značka jsou hotové 31. 8.; tohle je zbytek. ⚠️ **Chybí překladová tabulka „zkratka → glyf"** - starý modul ji má ve windowsím tiskovém klientovi, který v repu není, takže z tabulky glyfů se dá odvodit jen to, co má jednoznačný tvar (kolo, kufr, zásuvka - ty už doplněné jsou). U občerstvení má font dva kandidáty (káva i příbor) a není čím rozhodnout. **Navíc není na čem to ověřit**: v datech měřených firem není z celé rodiny nastavené nic než BEV, takže oracle vůči starému tisku nevznikne. Vzít, až se najde buď ten překlad, nebo firma, která atributy používá. | S |
@@ -122,6 +121,14 @@ takže nejde o práci, ale o doklad.
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B105` Prvek odjezdů nejde vykreslit v testu** (z `L15`, 31. 8.). Ručně složená data
+  (skupiny dnů + odjezdy) se načtou správně - `GetAvailableSkupinyDnu` vrátí 2 skupiny, `ODJEZDY`
+  má 4 řádky - ale `Render` nevykreslí **ani pixel**, takže obrazové testy měří prázdné plátno
+  a projdou naprázdno. ⚠️ **Není to kosmetika:** je to jediný tabulkový prvek, který takhle nejde
+  testovat, a proto jsou 4 testy z `L15` v repu **vypnuté** (`Skip` s důvodem) - chování mřížky
+  odjezdů dnes nehlídá nic než oči. Příčina nenalezena v rozumném počtu pokusů; žádný jiný test
+  tenhle prvek nekreslí, takže není podle čeho se řídit. Vzít, až na prvek odjezdů někdo sáhne. | S |
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
