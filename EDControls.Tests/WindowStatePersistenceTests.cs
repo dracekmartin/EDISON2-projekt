@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Windows;
 using EDControls;
 
@@ -159,5 +160,68 @@ public class WindowStatePersistenceTests
         Assert.False(WindowStatePersistence.IsLocationReachable(double.NaN, 100, SingleScreen));
         Assert.False(WindowStatePersistence.IsLocationReachable(100, double.NaN, SingleScreen));
         Assert.False(WindowStatePersistence.IsLocationReachable(double.PositiveInfinity, 0, SingleScreen));
+    }
+
+    // Testy níž se záměrně nedotýkají klíče "location" - ten prochází IsLocationReachable proti
+    // skutečné ploše stroje a test by pak závisel na tom, kde běží.
+
+    [Fact]
+    public void ApplyToWindow_EmptyPrefs_LeavesWindowAsXamlBuiltIt()
+    {
+        RunSta(() =>
+        {
+            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Maximized };
+
+            WindowStatePersistence.ApplyToWindow(window, []);
+
+            Assert.Equal(WindowState.Maximized, window.WindowState);
+            Assert.Equal(1200, window.Width);
+            Assert.Equal(800, window.Height);
+        });
+    }
+
+    [Fact]
+    public void ApplyToWindow_WithoutStateKey_KeepsXamlMaximized()
+    {
+        // Restore musí okno dočasně odmaximalizovat, aby se pozice propsala na správný monitor.
+        // Když uložený stav klíč "state" nemá, nesmí ho tenhle mezikrok nechat odmaximalizované.
+        RunSta(() =>
+        {
+            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Maximized };
+
+            WindowStatePersistence.ApplyToWindow(window, new() { ["size"] = "800;600" });
+
+            Assert.Equal(WindowState.Maximized, window.WindowState);
+            Assert.Equal(800, window.Width);
+            Assert.Equal(600, window.Height);
+        });
+    }
+
+    [Fact]
+    public void ApplyToWindow_StateZero_UnmaximizesXamlMaximizedWindow()
+    {
+        RunSta(() =>
+        {
+            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Maximized };
+
+            WindowStatePersistence.ApplyToWindow(window, new() { ["state"] = "0" });
+
+            Assert.Equal(WindowState.Normal, window.WindowState);
+        });
+    }
+
+    // Spustí akci na dedikovaném STA vlákně (WPF Window to vyžaduje) a propaguje výjimku zpět.
+    private static void RunSta(Action action)
+    {
+        Exception? captured = null;
+        var thread = new Thread(() =>
+        {
+            try { action(); }
+            catch (Exception ex) { captured = ex; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (captured != null) throw captured;
     }
 }
