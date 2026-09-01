@@ -5,7 +5,7 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** § Z testování šablony s kolegou (#13158) - jde od nejmenšího, na řadě je
-> **`B106`**. Pak § Aktuální focus, kde jde rovnou vzít **`B101`**; u čtyř dalších je první
+> **`B107`**. Pak § Aktuální focus, kde jde rovnou vzít **`B101`**; u čtyř dalších je první
 > krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
 ---
@@ -13,15 +13,8 @@
 ## 🔎 Z testování šablony s kolegou (#13158)
 
 Nálezy z průchodu, jak Pavel skládá zastávkovou vývěsku pro BBSK (1. 9.). Řazeno od nejmenšího,
-všechno zbývající jsou chybějící volby (chyba `B105` je hotová). `B110` a `B111` potřebují
+všechno zbývající jsou chybějící volby (`B105` a `B106` jsou hotové). `B110` a `B111` potřebují
 upřesnění, než se do nich sáhne - u obou je poznámka, co konkrétně chybí vědět.
-
-- **`B106` Desetinnou čárku formulář prvku odmítne** (S, nález Jan 1. 9.). Do číselného pole
-  formuláře nejde napsat `1,5` - pole zčervená s „musí být číslo" a hodnota se vůbec nezapíše.
-  Panel vlastností přitom čárku bere, takže totéž číslo jde zadat na jednom místě a na druhém ne.
-  Sahá to do **EDControls** (kontrola typu v `Field.GetTypeError`) a do převodu textu na hodnotu
-  v `ElementPropertyAccessor`; ukládat se má dál s tečkou, tolerovat jen vstup.
-  ⚠️ Změna v EDControls = publikovat i EDISONMAIN2.
 
 - **`B107` Barvu nastavenou ve formuláři nejde vrátit na „nenastaveno"** (S, nález Jan 1. 9.).
   Barevné pole má jen tlačítko pro výběr a dialog Windows vždycky vrátí nějakou barvu, takže jednou

@@ -123,4 +123,69 @@ public class FieldValidationTests
         f.Value = "#FF3366";
         Assert.False(f.HasError);
     }
+
+    // ── Desetinná čárka ────────────────────────────────────────────────────────
+    // Uživatel má na numerické klávesnici čárku, uvnitř i na drátě je hodnota vždy s tečkou.
+    // Čárka je VŽDY desetinná, nikdy oddělovač tisíců (nález Jan 1. 9., #13158).
+
+    [Theory]
+    [InlineData("1,5", "1.5")]
+    [InlineData("1.5", "1.5")]
+    [InlineData("-2,5", "-2.5")]
+    [InlineData("1,500", "1.500")]     // čárka = desetinná, ne tisíce
+    [InlineData("12", "12")]
+    [InlineData("", "")]
+    public void Decimal_CarkaSeUlozíJakoTecka(string zadano, string ulozeno)
+    {
+        var f = new Field { FieldType = FieldType.Decimal, Value = zadano };
+        Assert.Equal(ulozeno, f.Value);
+        Assert.Null(f.GetTypeError());
+    }
+
+    [Fact]
+    public void Decimal_CarkaNeniOddelovacTisicu()
+    {
+        // Dřív to procházelo jako 1500 a rozsah 0-10 tedy hlásil chybu; „1,500" znamená 1.5.
+        var f = new Field { FieldType = FieldType.Decimal, Min = 0, Max = 10, Value = "1,500" };
+        Assert.Null(f.GetTypeError());
+    }
+
+    [Fact]
+    public void Decimal_TeckaTakyNeniOddelovacTisicu()
+    {
+        var f = new Field { FieldType = FieldType.Decimal, Min = 0, Max = 10, Value = "1.500" };
+        Assert.Null(f.GetTypeError());
+    }
+
+    [Fact]
+    public void Decimal_CarkaVRozsahuSePosuzujeJakoDesetinna()
+    {
+        var f = new Field { FieldType = FieldType.Decimal, Min = 2, Max = 10, Value = "1,5" };
+        Assert.Equal("Hodnota musí být ≥ 2", f.GetTypeError());
+    }
+
+    [Fact]
+    public void CeloCiselnePole_CarkaZustavaChybou()
+    {
+        // „1,5" v poli pro celé číslo nemá co dělat - čárka se převede a typ pak neprojde.
+        var f = new Field { FieldType = FieldType.Number, Value = "1,5" };
+        Assert.Equal("1.5", f.Value);
+        Assert.Equal("Musí být celé číslo", f.GetTypeError());
+    }
+
+    [Fact]
+    public void TextovePole_CarkuNechavaBytOnaJeSoucastTextu()
+    {
+        var f = new Field { FieldType = FieldType.Text, Value = "Praha, Brno" };
+        Assert.Equal("Praha, Brno", f.Value);
+    }
+
+    [Fact]
+    public void TypNastavenyPoHodnote_CarkuTakyPrenormalizuje()
+    {
+        // Pořadí plnění není zaručené u každého volajícího; hodnota nesmí zůstat s čárkou.
+        var f = new Field { Value = "1,5" };
+        f.FieldType = FieldType.Decimal;
+        Assert.Equal("1.5", f.Value);
+    }
 }

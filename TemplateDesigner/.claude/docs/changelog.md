@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-01 (2) - 🔢 do číselných polí jde psát desetinnou čárku (`B106`)
+
+Rozměry, velikosti a odsazení se nově zadávají **čárkou i tečkou** - „1,5" znamená totéž jako „1.5".
+Uloží i zobrazí se to s tečkou, jak hodnota leží v šabloně.
+
+⚠️ **Nešlo o chybějící pohodlí, ale o tichou chybu.** Kontrola pole brala čárku jako oddělovač tisíců,
+takže „1,5" prošlo jako 15 a pole **nezčervenalo**; hostitelská aplikace si ale totéž přečetla jako
+neplatné a použila záložní nulu. Kdo napsal „1,5" do šířky, dostal prvek široký 0 mm bez jediné
+hlášky. Ze stejné příčiny se „1,500" čtelo jako 1500 a „-2,5" jako -25 (nález Jan, #13158).
+
+**Čárka je vždy desetinná, oddělovač tisíců se nepřipouští vůbec** - rozměr v milimetrech ho
+nepotřebuje a pravidlo „čárka je tisíce, když za ní jsou tři číslice" by uživatel neuhádl. V poli pro
+**celé číslo** čárka zůstává chybou („Musí být celé číslo"), textová pole se nemění.
+
+⚠️ **Opraveno v EDControls, takže to platí i pro formuláře v EDISONMAIN2** - do produkce musí jít
+knihovna i oba programy, které ji používají. Druhá vrstva (převod textu na hodnotu prvku) je
+v návrháři, pro hodnoty, které přijdou jinudy než z formuláře.
+
+Ověřeno: EDControls **721/721**, .NET návrháře **1335/1335** (18 nových testů); mutací obou vrstev
+doloženo, že spadne 7, respektive 5 z nich.
+
 ## 2026-09-01 (1) - 🖱️ klik trefí prvek, který je vidět navrchu (`B105`)
 
 Když se dva prvky na plátně překrývaly, **klik sáhl na jiný, než uživatel viděl**. Nově vložený prvek

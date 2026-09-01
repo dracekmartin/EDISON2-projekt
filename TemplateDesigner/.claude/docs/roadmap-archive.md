@@ -1,5 +1,20 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B106` - desetinná čárka v číselných polích (hotovo 1. 9. 2026)
+
+Detail → changelog 2026-09-01 (2). Čárka i tečka na vstupu, uvnitř i na drátě dál tečka.
+
+⚠️ **Nebylo to o pohodlí, ale o tiché chybě:** kontrola brala čárku jako oddělovač tisíců („1,5" = 15),
+takže pole nezčervenalo, ale zápis do prvku si totéž přečetl jako neplatné a použil záložní nulu -
+šířka spadla na 0 bez hlášky. „1,500" se čtelo jako 1500, „-2,5" jako -25.
+
+**Čárka je vždy desetinná, oddělovač tisíců se nepřipouští** (rozhodnutí Jan 1. 9.): milimetry ho
+nepotřebují a pravidlo „tisíce, když jsou za čárkou tři číslice" by nikdo neuhádl. Celočíselné pole
+čárku dál odmítá.
+
+⚠️ **Opraveno v EDControls** (`Field`), tedy i pro EDISONMAIN2 - publikovat knihovnu i oba programy.
+Druhá vrstva je v návrháři (`ElementPropertyAccessor`) pro hodnoty mimo formulářovou cestu.
+
 ## `B105` - klik trefí prvek, který je vidět navrchu (hotovo 1. 9. 2026)
 
 Detail → changelog 2026-09-01 (1). Hledání prvku pod kurzorem šlo při shodné hladině obráceně než

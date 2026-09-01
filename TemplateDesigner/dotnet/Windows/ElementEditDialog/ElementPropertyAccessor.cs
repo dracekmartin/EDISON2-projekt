@@ -141,9 +141,15 @@ public static class ElementPropertyAccessor
         if (isNullable && string.IsNullOrEmpty(s)) return null;
 
         if (t == typeof(string)) return s;
-        if (t == typeof(float))  return float.TryParse(s, NumberStyles.Float, Inv, out var f) ? f : (isNullable ? null : 0f);
-        if (t == typeof(double)) return double.TryParse(s, NumberStyles.Float, Inv, out var d) ? d : (isNullable ? null : 0d);
-        if (t == typeof(int))    return int.TryParse(s, out var i) ? i : (isNullable ? null : 0);
+
+        // Desetinná čárka: hodnota z formuláře už tečku má (EDInputForm ji normalizuje), tohle je
+        // druhá vrstva pro hodnoty, které přijdou jinou cestou. Bez ní se „1,5" nepřečte a použije
+        // se záložní nula - šířka prvku spadne na 0 bez hlášky (nález Jan 1. 9.).
+        string num = s.Replace(',', '.');
+
+        if (t == typeof(float))  return float.TryParse(num, NumberStyles.Float, Inv, out var f) ? f : (isNullable ? null : 0f);
+        if (t == typeof(double)) return double.TryParse(num, NumberStyles.Float, Inv, out var d) ? d : (isNullable ? null : 0d);
+        if (t == typeof(int))    return int.TryParse(num, NumberStyles.Integer, Inv, out var i) ? i : (isNullable ? null : 0);
         if (t == typeof(bool))   return s == "1" || s.Equals("true", StringComparison.OrdinalIgnoreCase);
         if (t.IsEnum)            return Enum.TryParse(t, s, ignoreCase: true, out var e) ? e : Enum.GetValues(t).GetValue(0);
         return s;

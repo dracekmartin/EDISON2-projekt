@@ -32,7 +32,20 @@ namespace EDControls.EDInputForm
         public WpfVisibility RequiredIndicatorVisibility =>
             Required ? WpfVisibility.Visible : WpfVisibility.Collapsed;
 
-        public FieldType FieldType { get; set; } = FieldType.Text;
+        private FieldType _fieldType = FieldType.Text;
+        /// <summary>
+        /// Typ pole. Nastavení přenormalizuje už uloženou hodnotu - u číselného pole se čárka mění
+        /// na tečku, a kdyby se typ nastavil až po hodnotě, čárka by v ní zůstala.
+        /// </summary>
+        public FieldType FieldType
+        {
+            get => _fieldType;
+            set
+            {
+                _fieldType = value;
+                _value = NormalizeDecimalSeparator(_value);
+            }
+        }
 
         /// <summary>Pokud false, pole je read-only (server-controlled).</summary>
         public bool Editable { get; set; } = true;
@@ -121,7 +134,7 @@ namespace EDControls.EDInputForm
             get => _value;
             set
             {
-                _value = value;
+                _value = NormalizeDecimalSeparator(value);
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(BoolValue));
                 OnPropertyChanged(nameof(DateValue));
@@ -182,6 +195,24 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
+        /// U číselných polí nahradí desetinnou čárku tečkou. Uvnitř i na drátě je hodnota vždy
+        /// s tečkou, ale uživatel má na numerické klávesnici čárku - a psát ji smí
+        /// (viz <see cref="EDNumericInput"/>, který pustí jeden oddělovač, tečku i čárku).
+        /// </summary>
+        /// <remarks>
+        /// ⚠️ Čárka je <b>vždy desetinná</b>, nikdy oddělovač tisíců. Bez téhle náhrady se hodnota
+        /// tiše zkomolila: kontrola brala „1,5" jako 15 (a „1,500" jako 1500), takže pole
+        /// nezčervenalo, kdežto hostitelská aplikace si totéž přečetla jako neplatné a použila
+        /// záložní nulu - šířka prvku spadla na 0 bez jediné hlášky (nález Jan 1. 9., #13158).
+        /// Rozměr v milimetrech oddělovač tisíců nepotřebuje, takže se tím nic neztrácí.
+        /// </remarks>
+        private string? NormalizeDecimalSeparator(string? value)
+        {
+            if (FieldType is not (FieldType.Number or FieldType.Decimal)) return value;
+            return value?.Replace(',', '.');
+        }
+
+        /// <summary>
         /// Klientská typová validace - vrátí chybu pokud hodnota neodpovídá typu, jinak null.
         /// Prázdné hodnoty netestuje - od toho je <see cref="Required"/>.
         /// </summary>
@@ -195,7 +226,9 @@ namespace EDControls.EDInputForm
                         return "Musí být celé číslo";
                     return CheckRange(iv);
                 case FieldType.Decimal:
-                    if (!decimal.TryParse(_value, NumberStyles.Number, CultureInfo.InvariantCulture, out var dv))
+                    // NumberStyles.Float, ne Number: Number povoluje oddělovač tisíců, takže by
+                    // „1.500" prošlo jako 1500. Hodnota už je tu s tečkou (NormalizeDecimalSeparator).
+                    if (!decimal.TryParse(_value, NumberStyles.Float, CultureInfo.InvariantCulture, out var dv))
                         return "Musí být číslo";
                     return CheckRange(dv);
                 case FieldType.Date:
