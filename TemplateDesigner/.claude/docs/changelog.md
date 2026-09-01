@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-01 (10) - 🙈 linkové jízdní řády skryté před vydáním
+
+Ve vydávané verzi mají být **jen zastávkové jízdní řády** (rozhodnutí Jan). Agenda linkového JŘ se
+proto uživatelům nenabízí - v nabídce agend zbyly Zastávkový JŘ (AD) a Zastávkový JŘ (MHD).
+
+Linkový tisk je **funkční a testy na něj běží dál** (Caché 142/142), jen se nenabízí. Zapnutí zpátky
+je jeden parametr.
+
+⚠️ **Hotové linkové šablony zůstávají dosažitelné**, což bylo hlavní riziko: výběr agendy
+nezveřejněnou agendu nenabízí, ale **aktuální agendu otevřené šablony ukáže vždy**, a v otevírání
+z databáze jsou její šablony pod „Všechny agendy". Prvek linkové tabulky zmizel z palety sám - váže
+se na druh agendy, ne na seznam prvků.
+
+Ověřeno voláním serveru: registr agend vrací zveřejněné jen ty dvě zastávkové.
+
 ## 2026-09-01 (9) - 📄 uspořádání na list řekne, když nic neskládá
 
 Zákazník hlásil jako chybu tisku, že mu ze šablony **A5 na výšku leze PDF ve formátu A4**. Chyba to

@@ -58,10 +58,16 @@ Parameter Variant As %String = "AD";
 
 Parameter VariantLabel As %String = "AD (linková doprava)";
 
-/// ⚠️ **Zveřejněná pro uživatele od 24. 8.** (žádost Jan) - do té doby se agenda v nabídce
-/// vůbec neukázala, takže na ni nešlo ani překliknout a nebylo jak zkoušet linkový tisk.
-/// Městská varianta (`LinkovyJrMhd`) zveřejněná **není**: neprošla porovnáním se starým modulem.
-Parameter Released = 1;
+/// ⚠️ **Zveřejněná byla od 24. 8., od 1. 9. je zase skrytá** (rozhodnutí Jan): vydává se verze,
+/// ve které mají být jen zastávkové jízdní řády. Linkový tisk je funkční a testy na něj běží dál -
+/// jen se nenabízí uživatelům, dokud se nevydá.
+///
+/// ⚠️ **Skrytí neznepřístupní hotové šablony.** Výběr agendy nezveřejněnou agendu nenabízí, ale
+/// **aktuální agendu šablony ukáže vždy**, a v otevírání z databáze jsou její šablony dosažitelné
+/// přes „Všechny agendy". Prvek linkové tabulky zmizí z palety sám - váže se na druh agendy `LINE`.
+///
+/// Městská varianta (`LinkovyJrMhd`) zveřejněná nebyla nikdy: neprošla porovnáním se starým modulem.
+Parameter Released = 0;
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 
