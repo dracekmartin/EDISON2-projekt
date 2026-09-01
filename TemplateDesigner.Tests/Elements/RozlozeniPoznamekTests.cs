@@ -1,3 +1,4 @@
+using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
@@ -86,6 +87,75 @@ public class RozlozeniPoznamekTests
             .ToList();
 
         Assert.Equal(["Rozložení"], skupiny);
+    }
+
+    // ── Vypnutý nadpis ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void NadpisJeVychozeZapnuty()
+    {
+        Assert.True(new NotesLegendElement().ShowHeaderBar);
+    }
+
+    [Fact]
+    public void VypnutyNadpis_NezabiraVysku()
+    {
+        var sNadpisem = new NotesLegendElement { Width = 190f, NoteFontSize = 7f };
+        var bezNadpisu = new NotesLegendElement { Width = 190f, NoteFontSize = 7f, ShowHeaderBar = false };
+
+        float sN = sNadpisem.CalculateHeightFromData(Stranka(3));
+        float bezN = bezNadpisu.CalculateHeightFromData(Stranka(3));
+
+        // Rozdíl = výška pruhu (9 pt × 0,3528 × 1,8 = 5,7 mm), ne nula.
+        Assert.True(sN - bezN > 5f, $"pruh měl ubrat ~5,7 mm, ubral {sN - bezN:0.##}");
+    }
+
+    [Fact]
+    public void PrazdnyNadpis_PruhNechavaBytZapnuty()
+    {
+        // Pás bez textu je legitimní - proto je vypínač samostatný a nevisí na prázdném textu.
+        var el = new NotesLegendElement { Width = 190f, HeaderText = "" };
+        var sTextem = new NotesLegendElement { Width = 190f, HeaderText = "Poznámky" };
+
+        Assert.Equal(sTextem.CalculateHeightFromData(Stranka(3)),
+                     el.CalculateHeightFromData(Stranka(3)), 3);
+    }
+
+    [Fact]
+    public void VypnutyNadpis_PrezijeKopiiPrvku()
+    {
+        var el = new NotesLegendElement { ShowHeaderBar = false };
+        Assert.False(((NotesLegendElement)el.Clone()).ShowHeaderBar);
+    }
+
+    [Fact]
+    public void VypnutyNadpis_SeOpravduNenakresli()
+    {
+        // Výpočet výšky sám nestačí: mutací 1. 9. se ukázalo, že pruh kreslený navzdory vypnutí
+        // projde zeleně - a to je horší stav než dnešní, protože by překryl první poznámku.
+        var el = new NotesLegendElement { X = 0f, Y = 0f, Width = 100f, NoteFontSize = 7f };
+        var data = Stranka(3);
+
+        Assert.True(MaPodbarvenyPruhNahore(el, data), "zapnutý nadpis se má podbarvit");
+
+        el.ShowHeaderBar = false;
+        Assert.False(MaPodbarvenyPruhNahore(el, data), "vypnutý nadpis nesmí nakreslit nic");
+    }
+
+    /// <summary>Je u horní hrany prvku vodorovný pruh jiné barvy než bílé pozadí?</summary>
+    private static bool MaPodbarvenyPruhNahore(NotesLegendElement el, DataContext data)
+    {
+        const float mmToPx = 4f;
+        using var bitmap = new SKBitmap(440, 200, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using (var canvas = new SKCanvas(bitmap))
+        {
+            canvas.Clear(SKColors.White);
+            el.Render(new RenderContext(canvas, mmToPx, data));
+        }
+
+        // Vzorek vpravo od textu nadpisu (60 mm), v polovině výšky pruhu (9 pt → 5,7 mm).
+        var pixel = bitmap.GetPixel((int)(60f * mmToPx), (int)(2.5f * mmToPx));
+        return pixel != SKColors.White;
     }
 
     // ── Zmenšení a upozornění ───────────────────────────────────────────────

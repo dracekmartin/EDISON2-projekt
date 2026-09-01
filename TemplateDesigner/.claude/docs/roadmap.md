@@ -4,23 +4,17 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Z testování šablony s kolegou (#13158) - jde od nejmenšího, na řadě je
-> **`B108`**. Pak § Aktuální focus, kde jde rovnou vzít **`B101`**; u čtyř dalších je první
-> krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+> **Nejblíž na řadě:** z testování šablony (#13158) zbývá **`B111`** (dopravci a provozovny),
+> ten ale čeká na odpověď, jestli je jeden dopravce vždy jedna adresa. Bez ní jde rovnou vzít
+> **`B101`** z § Aktuální focus; u čtyř dalších je první krok dotaz ven, ne psaní kódu.
 
 ---
 
 ## 🔎 Z testování šablony s kolegou (#13158)
 
 Nálezy z průchodu, jak Pavel skládá zastávkovou vývěsku pro BBSK (1. 9.). Řazeno od nejmenšího,
-zbývají `B108` a `B111`. `B111` potřebuje upřesnění, než se do něj sáhne - je u něj poznámka,
-co konkrétně chybí vědět.
-
-- **`B108` Nadpisový pruh prvku nejde vypnout** (S, nález Pavel 1. 9.). Pruh nad tabulkou se kreslí
-  vždy, i s prázdným nadpisem: nakreslí pozadí, spodní linku a zabere výšku. Seznam zastávek
-  („Záhlaví sloupců") a tabulka z dat („Záhlaví") vypínač mají, poznámky a odjezdy ne. Doplnit
-  jednu stejně pojmenovanou volbu **„Zobrazit nadpis"** ke všem prvkům, které pruh kreslí
-  (`RenderSectionHeader`). Prázdný nadpis zůstává jako dnes - pruh bez textu je legitimní.
+zbývá `B111`, a ten potřebuje upřesnění, než se do něj sáhne - je u něj poznámka, co konkrétně
+chybí vědět.
 
 - **`B111` Popis dopravce míchá firmu a provozovnu, adresa vyjde dvakrát** (M, nález Pavel 1. 9.).
   Text se skládá po položkách: sídlo a ulice z provozovny, a když provozovna ulici nemá, doplní se

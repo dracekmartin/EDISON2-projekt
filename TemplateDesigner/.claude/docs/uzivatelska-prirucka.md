@@ -684,9 +684,15 @@ Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle�
 
 Vysvětlivky pod mřížkou.
 
+- **Zobrazit nadpis** - vypnutím zmizí celý pruh nadpisu i s podbarvením a přestane zabírat výšku,
+  takže poznámky začínají u horní hrany prvku. Prázdný text nadpisu pruh nezruší - pás bez textu
+  může být záměr
 - **Nadpis** - text záhlaví legendy (výchozí „Poznámky")
 - **Oddělovač** - text mezi značkou a popisem (výchozí „ - ")
-- **Velikost písma pozn. / Výška řádku** - typografie legendy
+- **Velikost poznámek** - velikost písma. Nevejdou-li se poznámky do prvku, písmo se zmenší
+  a aplikace to oznámí ve stavovém řádku
+- **Výška řádku** - prázdné = podle velikosti písma (mezera pak roste s písmem). Vlastní hodnotu
+  zadejte, jen když chcete legendu vzdušnější nebo stlačenější
 - **Počet sloupců (1–4) + Směr plnění** - „Po sloupcích" (jako noviny) nebo „Po řádcích"
 - **Řazení** - Dle typu (značky → atributy → text; výchozí) / Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně
 - **Šířka buňky značky** - pevná šířka sloupce se značkou, aby byly texty svisle zarovnané (0 = značka inline před textem)

@@ -1,5 +1,22 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B108` - nadpis poznámek jde vypnout (hotovo 1. 9. 2026)
+
+Detail → changelog 2026-09-01 (6). Volba **„Zobrazit nadpis"** schová celý pruh (nadpis
+i podbarvení) a pruh přestane zabírat výšku.
+
+⚠️ **Prázdný nadpis pruh NERUŠÍ** - pás bez textu je legitimní, proto samostatný vypínač. Původní
+návrh vázal vypnutí na prázdný text; checkbox vyhrál, protože ho má už pět prvků a nemění hotové
+šablony nikomu (rozhodnutí Jan 1. 9., jeho námitka proti mému návrhu byla věcně správná).
+
+⚠️ **Nadpisový pruh se reálně tiskne jen u poznámek.** „Hod" u odjezdů a „Linkový JŘ - zastávky ×
+spoje" kreslí jen `RenderPlaceholder`, tedy náhled bez dat. Bez vypínače zůstaly jen dvě věci a ani
+jedna není nadpis: řádek s hodinami u odjezdů a řádek čísel spojů u linkového JŘ - **nedoplňovat**,
+bez nich se JŘ nedá přečíst.
+
+⚠️ **Klíč `ShowHeaderBar`, ne `ShowHeader`** - ten u zastávek a tabulek znamená záhlaví sloupců.
+Odhalil to drift test popisků, ne úvaha.
+
 ## `B109` - změna velikosti prvku klávesnicí (hotovo 1. 9. 2026)
 
 Detail → changelog 2026-09-01 (5). **Shift+šipky = velikost** (pravá a dolní hrana), **Ctrl+šipky =

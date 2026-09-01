@@ -15,6 +15,22 @@ public class NotesLegendElement : StopScheduleElementBase
     // Vizuální vlastnosti
     // ═══════════════════════════════════════════
     public string HeaderText { get; set; } = "Poznámky";
+
+    /// <summary>
+    /// Kreslí se nadpisový pruh (nadpis + jeho podbarvení)? Vypnutý pruh <b>nezabírá ani výšku</b>,
+    /// takže poznámky začínají u horní hrany prvku.
+    /// </summary>
+    /// <remarks>
+    /// Prázdný nadpis pruh nezruší - pás bez textu je legitimní. Vypínač je proto samostatný,
+    /// stejně jako ho mají zastávky, odjezdy, linkový JŘ i obě tabulky (rozhodnutí Jan 1. 9.).
+    /// <para>
+    /// ⚠️ Jmenuje se <b>HeaderBar</b>, ne HeaderShow: <c>ShowHeader</c> už u zastávek a tabulek
+    /// znamená <b>záhlaví sloupců</b>, což legenda vůbec nemá. Stejný klíč pro dvě různé věci hlídá
+    /// drift test popisků a právem - uživatel by v jednom formuláři viděl „Záhlaví sloupců"
+    /// a v druhém „Zobrazit nadpis" pod týmž jménem pole.
+    /// </para>
+    /// </remarks>
+    public bool ShowHeaderBar { get; set; } = true;
     public string NoteSeparator { get; set; } = " - ";
     public float NoteFontSize { get; set; } = 7f;
 
@@ -157,9 +173,11 @@ public class NotesLegendElement : StopScheduleElementBase
         // Symbolový JŘ font pro jednoznakové piktogramy (H=vozíček, F, x, {…) - dle jazyka šablony.
         using var symbolFont = new SKFont(GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), noteFontPx);
 
-        // Záhlaví
-        float currentY = RenderSectionHeader(ctx, HeaderText,
-            X, Y, Width, headerH, headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid);
+        // Záhlaví - vypnuté nezabírá výšku, poznámky pak začínají u horní hrany prvku.
+        float currentY = ShowHeaderBar
+            ? RenderSectionHeader(ctx, HeaderText,
+                X, Y, Width, headerH, headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid)
+            : Y;
 
         if (!hasData)
         {
@@ -353,7 +371,8 @@ public class NotesLegendElement : StopScheduleElementBase
         }
         int maxLines = 1;
         foreach (var n in colLines) if (n > maxLines) maxLines = n;
-        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + maxLines * EffectiveNoteLineHeight;
+        float headerH = ShowHeaderBar ? ComputeHeaderH(HeaderStyle.FontSize ?? 9f) : 0f;
+        return headerH + maxLines * EffectiveNoteLineHeight;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -464,6 +483,7 @@ public class NotesLegendElement : StopScheduleElementBase
         .. GetScheduleBaseDescriptors(withLineToggles: false),   // mřížkou kreslí jen čáru pod záhlavím
         .. GetCellZoneBaseColorDescriptors(),
 
+        new BoolPropertyDescriptor   { Label = "Zobrazit nadpis",      Group = "Záhlaví",      Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
         new StringPropertyDescriptor { FromImage = true, Label = "Nadpis",               Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
 
@@ -531,6 +551,7 @@ public class NotesLegendElement : StopScheduleElementBase
         var clone = new NotesLegendElement
         {
             HeaderText               = HeaderText,
+            ShowHeaderBar            = ShowHeaderBar,
             NoteSeparator            = NoteSeparator,
             NoteFontSize             = NoteFontSize,
             NoteLineHeight           = NoteLineHeight,

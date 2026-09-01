@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-01 (6) - 🙈 nadpis poznámek jde vypnout (`B108`)
+
+U legendy poznámek přibyla volba **„Zobrazit nadpis"**. Vypnutá schová **celý pruh** - nadpis
+i jeho podbarvení - a pruh přestane zabírat výšku, takže poznámky začínají u horní hrany prvku.
+
+⚠️ **Prázdný nadpis pruh neruší** a je to záměr: pás bez textu je legitimní. Vypínač je proto
+samostatný, stejně jako ho mají zastávky („Záhlaví sloupců"), odjezdy („Záhlaví skupin"), linkový JŘ
+(„Nadpisy skupin dnů") a obě tabulky („Záhlaví"). Původní návrh vázal vypnutí na prázdný text; volba
+navíc nemění hotové šablony nikomu, kdo dnes prázdný nadpis má (rozhodnutí Jan 1. 9.).
+
+⚠️ **Ostatní prvky vypínač už měly a nadpisový pruh se u nich vůbec netiskne** - „Hod" u odjezdů
+a „Linkový JŘ - zastávky × spoje" kreslí jen náhled prázdného plátna v návrháři. Bez vypínače
+zůstávají jen dvě věci a ani jedna není nadpis: řádek s hodinami u odjezdů a řádek čísel spojů
+u linkového JŘ. Bez nich se jízdní řád nedá přečíst.
+
+⚠️ **Klíč pole je `ShowHeaderBar`, ne `ShowHeader`** - ten už u zastávek a tabulek znamená záhlaví
+**sloupců**, které legenda nemá. Drift test popisků to odhalil hned: tentýž klíč by uživateli
+v jednom formuláři svítil jako „Záhlaví sloupců" a v druhém jako „Zobrazit nadpis".
+
+Ověřeno: .NET **1388/1388** (5 nových testů), Caché **138/138**, formulář ověřen voláním serveru.
+⚠️ **Test kreslí a kontroluje pixel**, ne jen výpočet výšky: mutací se ukázalo, že pruh kreslený
+navzdory vypnutí projde přes výškové testy zeleně - a to je horší stav než dnešní, protože by
+překryl první poznámku.
+
 ## 2026-09-01 (5) - ⌨️ velikost prvku jde měnit klávesnicí (`B109`)
 
 **Shift+šipky mění velikost** prvku o milimetr - hýbe se pravá a dolní hrana, levý horní roh drží
