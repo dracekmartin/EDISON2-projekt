@@ -52,6 +52,51 @@ public class BarcodeElement : TemplateElement
     /// <summary>Počet skutečných zakódování - testovací sonda, že cache drží.</summary>
     [JsonIgnore] internal int EncodeCount { get; private set; }
 
+    /// <summary>
+    /// Nejmenší šířka modulu, se kterou se kód dá spolehlivě sejmout z papíru, v mm. Norma pro QR
+    /// mluví o 0,33 mm; 0,4 mm je rezerva na laserový tisk a čtení mobilem pod úhlem.
+    /// </summary>
+    private const float MinModulMm = 0.4f;
+
+    /// <summary>
+    /// Počet modulů kódu na šířku pro daný obsah, nebo 0 když se obsah zakódovat nedá. Kód je vždy
+    /// tolik modulů široký bez ohledu na velikost prvku - proto se z toho dá spočítat, jak velký
+    /// prvek na papíře ještě půjde přečíst.
+    /// </summary>
+    public int PocetModulu(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return 0;
+        try
+        {
+            return _writer.encode(content, FormatProTyp(BarcodeType), 1, 1, _hints).Width;
+        }
+        catch
+        {
+            return 0;   // nezakódovatelný obsah řeší placeholder v Render, ne varování o velikosti
+        }
+    }
+
+    /// <summary>
+    /// Doporučená nejmenší šířka prvku v mm pro daný obsah; 0 = obsah se nedá zakódovat, takže
+    /// není co doporučovat. Odpovídá na otázku „jak poznám, že je kód dost velký" (#13158).
+    /// </summary>
+    public float DoporucenaMinimalniSirkaMm(string? content)
+    {
+        int modulu = PocetModulu(content);
+        return modulu == 0 ? 0f : modulu * MinModulMm;
+    }
+
+    private static BarcodeFormat FormatProTyp(BarcodeElementType typ) => typ switch
+    {
+        BarcodeElementType.QR         => BarcodeFormat.QR_CODE,
+        BarcodeElementType.Code128    => BarcodeFormat.CODE_128,
+        BarcodeElementType.Ean13      => BarcodeFormat.EAN_13,
+        BarcodeElementType.Ean8       => BarcodeFormat.EAN_8,
+        BarcodeElementType.Pdf417     => BarcodeFormat.PDF_417,
+        BarcodeElementType.DataMatrix => BarcodeFormat.DATA_MATRIX,
+        _ => throw new ArgumentOutOfRangeException(nameof(typ), typ, null),
+    };
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -121,17 +166,13 @@ public class BarcodeElement : TemplateElement
     private SKPicture RecordBarcode(string content, int widthPx, int heightPx,
         float rectW, float rectH, SKColor foreColor)
     {
-        var format = BarcodeType switch
-        {
-            BarcodeElementType.QR         => BarcodeFormat.QR_CODE,
-            BarcodeElementType.Code128    => BarcodeFormat.CODE_128,
-            BarcodeElementType.Ean13      => BarcodeFormat.EAN_13,
-            BarcodeElementType.Ean8       => BarcodeFormat.EAN_8,
-            BarcodeElementType.Pdf417     => BarcodeFormat.PDF_417,
-            BarcodeElementType.DataMatrix => BarcodeFormat.DATA_MATRIX,
-            _ => throw new ArgumentOutOfRangeException(nameof(BarcodeType), BarcodeType, null),
-        };
-        BitMatrix matrix = _writer.encode(content, format, widthPx, heightPx, _hints);
+        var format = FormatProTyp(BarcodeType);
+        // ⚠️ Kóduje se v MODULECH (požadavek 1×1 = nativní velikost), ne v cílových pixelech.
+        // Pixelová velikost byla podstatou nečitelných QR (#13158): ZXing škáluje jen CELÝM
+        // násobkem a zbytek doplní vycentrovaným okrajem, takže na 60 px vyšel z 33 modulů kód
+        // 33 px se 13px okrajem po obou stranách - vyplnil 55 % prvku, u větších prvků 99 %.
+        // Nativní matice + vektorové kreslení dá ostrý kód v jakémkoli rozlišení a vyplní celý prvek.
+        BitMatrix matrix = _writer.encode(content, format, 1, 1, _hints);
 
         float cellW = rectW / matrix.Width;
         float cellH = rectH / matrix.Height;
@@ -142,12 +183,19 @@ public class BarcodeElement : TemplateElement
 
         using (var fgPaint = new SKPaint { Color = foreColor, Style = SKPaintStyle.Fill })
         {
-            // ZXing vrací matici v pixelech cílové velikosti, ne v modulech kódu - jeden modul je
-            // tak desítky sousedních buněk. Souvislý úsek se kreslí jako jeden obdélník: buňky se
-            // kvůli +0.5 překrývají, takže sjednocení úseku je přesně tentýž obrazec (bez vyhlazování
-            // rozhoduje jen to, jestli střed pixelu leží uvnitř) - u velkého QR ubude řádově práce.
+            // Hrany modulů se zarovnávají na celé pixely, takže se sousedé přesně dotýkají: konec
+            // jednoho je začátek druhého. Souvislý úsek se kreslí jedním obdélníkem - u velkého kódu
+            // to ubere řádově práce.
+            //
+            // ⚠️ Dřív se ke každému úseku přidávalo pevných +0.5 px „proti mezerám". U velkého kódu
+            // to nevadilo, ale u malého je modul ~1 px široký, takže půl pixelu je **50 % rozlití** -
+            // moduly se slily a kód přestal být čitelný, přesně jak ho zákazník vyfotil (#13158).
             for (int row = 0; row < matrix.Height; row++)
             {
+                float y0 = MathF.Round(row * cellH);
+                float y1 = MathF.Round((row + 1) * cellH);
+                if (y1 <= y0) y1 = y0 + 1f;   // modul nesmí zmizet, i když na něj vyjde méně než pixel
+
                 int col = 0;
                 while (col < matrix.Width)
                 {
@@ -156,12 +204,11 @@ public class BarcodeElement : TemplateElement
                     int start = col;
                     while (col < matrix.Width && matrix[col, row]) col++;
 
-                    canvas.DrawRect(
-                        start * cellW,
-                        row * cellH,
-                        (col - start) * cellW + 0.5f,   // +0.5 zamezí mezerám při subpixelovém zarovnání
-                        cellH + 0.5f,
-                        fgPaint);
+                    float x0 = MathF.Round(start * cellW);
+                    float x1 = MathF.Round(col * cellW);
+                    if (x1 <= x0) x1 = x0 + 1f;
+
+                    canvas.DrawRect(x0, y0, x1 - x0, y1 - y0, fgPaint);
                 }
             }
         }

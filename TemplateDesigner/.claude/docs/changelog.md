@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-01 (8) - 📱 QR kódy jsou čitelné i na malém prvku
+
+Kód se kreslí **ostře v jakémkoli rozlišení** a vyplní celý prvek. Zákazník vyfotil QR, které
+vypadalo „zdrcnuté" a nešlo sejmout - byly to **dvě chyby v kreslení, ne malá velikost prvku**:
+
+- **Kódovalo se podle velikosti v pixelech, ne v modulech.** ZXing škáluje jen celým násobkem
+  a zbytek doplní vycentrovaným okrajem, takže z 33 modulů na 60 px vyšel kód velký 33 px se 13px
+  okrajem po obou stranách - **vyplnil jen 55 % prvku**. Čím menší prvek, tím menší podíl; u velkého
+  99 %, proto to na velkých kódech nikdo neviděl.
+- **Ke každému modulu se přidávalo pevných 0,5 px** „proti mezerám". U velkého kódu to je pár
+  procent, u modulu širokého 1 px je to **poloviční rozlití** - moduly se slily do jedné plochy.
+
+Nově se kóduje v modulech a hrany se zarovnávají na celé pixely, takže se sousedé přesně dotýkají.
+Platí pro všechny kódy: čárový kód dostal navíc plnou výšku prvku, dřív mu ZXing vnucoval vlastní.
+
+**Na otázku „jak poznám, že je QR dost velký" odpovídá aplikace sama.** Ve stavovém řádku a v hlášce
+po tisku se objeví konkrétní čísla: *„QR kód je 10 mm, pro spolehlivé čtení potřebuje 13,2 mm"*.
+Doporučení se počítá z **reálného obsahu** (0,4 mm na modul), takže dlouhá URL si řekne o víc místa
+než krátká. Sdílí odznak se zmenšeným písmem - je to táž třída vady „vytiskne se to jinak, než jak
+to vypadá" a čtvrtý pruh ve stavovém řádku by se nevešel.
+
+Ověřeno: .NET **1399/1399** (11 nových testů, kreslí a kontrolují poměr černé plochy); mutací obou
+příčin doloženo, že testy chybu chytí - po vrácení pixelového kódování spadnou dva testy, po vrácení
+rozlití taky dva.
+
 ## 2026-09-01 (7) - 🏢 dopravce a provozovny po jednotlivých polích (`B111`)
 
 Údaje dopravce jdou skládat po částech, místo jednoho slepeného bloku. Přibylo pět **samostatných

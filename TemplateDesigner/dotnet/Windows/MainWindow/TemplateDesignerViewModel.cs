@@ -300,7 +300,11 @@ public class TemplateDesignerViewModel : EDViewModel
                 var culture = GetTemplateCulture();
                 var newData = pages.Select(d => d.WithCulture(culture)).ToList();
                 ColumnDataWarning = DepartureColumnWarnings.Summarize(newData);
-                ContentShrinkWarning = ContentShrinkWarnings.Summarize(State.CurrentTemplate, newData);
+                // Malý kód a zmenšené písmo jsou táž třída vady („vytiskne se to jinak, než jak to
+                // vypadá") a sdílí jeden odznak - čtvrtý pruh ve stavovém řádku už by se nevešel.
+                ContentShrinkWarning = SpojHlasky(
+                    ContentShrinkWarnings.Summarize(State.CurrentTemplate, newData),
+                    BarcodeSizeWarnings.Summarize(State.CurrentTemplate, newData));
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
                 // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
                 var currentPage = (keepPage && _realPreviewData is not null
@@ -624,6 +628,13 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     public bool HasContentShrinkWarning => !string.IsNullOrEmpty(_contentShrinkWarning);
+
+    /// <summary>Spojí neprázdné hlášky do jedné; vše prázdné = null (odznak skrytý).</summary>
+    private static string? SpojHlasky(params string?[] hlasky)
+    {
+        var neprazdne = hlasky.Where(h => !string.IsNullOrEmpty(h)).ToList();
+        return neprazdne.Count == 0 ? null : string.Join("; ", neprazdne);
+    }
 
     private string? _fontWarning;
     /// <summary>Fonty, které šablona chce a počítač je nemá. Null = nic → badge je skrytý.

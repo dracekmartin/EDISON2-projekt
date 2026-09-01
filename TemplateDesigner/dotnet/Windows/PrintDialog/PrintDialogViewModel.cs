@@ -256,6 +256,10 @@ public class PrintDialogViewModel : EDViewModel
             // jinak podle počtu poznámek.
             var zmenseno = ContentShrinkWarnings.Summarize(_template, dataPages);
             string zmensenoInfo = zmenseno is null ? "" : $" · ⚠ {zmenseno}";
+            // Malý QR: na papíře se nesejme, ale v PDF vypadá „nakresleně" - bez hlášky to zákazník
+            // pozná až u zastávky s mobilem v ruce (#13158).
+            var maleKody = BarcodeSizeWarnings.Summarize(_template, dataPages);
+            string maleKodyInfo = maleKody is null ? "" : $" · ⚠ {maleKody}";
 
             if (splitMode == ExportSplitMode.Single)
             {
@@ -265,7 +269,7 @@ public class PrintDialogViewModel : EDViewModel
                 OpenPdf(target);
                 StatusText = (overflow > 0
                     ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}{sheetInfo}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo;
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo;
                 return;
             }
 
@@ -287,7 +291,7 @@ public class PrintDialogViewModel : EDViewModel
             OpenFolder(target);
             StatusText = (overflow > 0
                 ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{sheetInfo}"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo;
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo;
         }
         catch (Exception ex)
         {
