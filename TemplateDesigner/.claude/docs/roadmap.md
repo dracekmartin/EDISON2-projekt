@@ -4,30 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** z testování šablony (#13158) zbývá **`B111`** (dopravci a provozovny),
-> ten ale čeká na odpověď, jestli je jeden dopravce vždy jedna adresa. Bez ní jde rovnou vzít
-> **`B101`** z § Aktuální focus; u čtyř dalších je první krok dotaz ven, ne psaní kódu.
-
----
-
-## 🔎 Z testování šablony s kolegou (#13158)
-
-Nálezy z průchodu, jak Pavel skládá zastávkovou vývěsku pro BBSK (1. 9.). Řazeno od nejmenšího,
-zbývá `B111`, a ten potřebuje upřesnění, než se do něj sáhne - je u něj poznámka, co konkrétně
-chybí vědět.
-
-- **`B111` Popis dopravce míchá firmu a provozovnu, adresa vyjde dvakrát** (M, nález Pavel 1. 9.).
-  Text se skládá po položkách: sídlo a ulice z provozovny, a když provozovna ulici nemá, doplní se
-  z firmy pole, které obsahuje ulici i PSČ i obec. U dopravce, kde provozovna má sídlo a nemá ulici
-  (organizační jednotka typu „Oblast Písek"), pak vyjdou dva řádky, které říkají skoro totéž.
-  Data jsou správná, chyba je ve skládání textu; mazání v číselníku dopravců je špatná cesta
-  (rozhodnutí Jan 1. 9.). Návrh = **rozsekat na dílčí pole** (název, sídlo, ulice, telefon, každé
-  samo za sebe, se zdrojem firma/provozovna) a skládání nechat na šabloně, jak navrhl Pavel;
-  `POPIS_DOPRAVCE` zůstane pro toho, kdo chce dnešní blok. Aditivní změna kontraktu, existující
-  šablony se nemění. **Nastavení „formátu pole" se dělat nemá** - skončí to u pěti přepínačů, které
-  stejně nepokryjí, jak to který zákazník chce. ⚠️ **Čeká na odpověď: je jeden dopravce vždy jedna
-  adresa?** Když linku obsluhuje víc dopravců, musí být dílčí pole **řádková kolekce**, ne skaláry -
-  jinak si šablona vezme jen prvního. Na tom stojí celý tvar návrhu.
+> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B101`**; u čtyř dalších je první
+> krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu. Průchod šablony s kolegou
+> (#13158) je celý hotový, viz archiv.
 
 ---
 

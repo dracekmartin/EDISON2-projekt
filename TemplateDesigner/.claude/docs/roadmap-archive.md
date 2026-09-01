@@ -1,5 +1,33 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B111` - dopravce a provozovny po jednotlivých polích (hotovo 1. 9. 2026)
+
+Detail → changelog 2026-09-01 (7). Šest samostatných polí dopravce + kolekce **Dopravci** (řádek na
+dopravce × provozovnu, která na lince jezdí). `POPIS_DOPRAVCE` zůstalo nedotčené.
+
+⚠️ **Příčina duplicity byla v datech, ne v našem skládání** (ověřeno na CB_CSADAD): pole „zkrácený
+název pro MHD" obsahuje u ČSAD Jindřichův Hradec celý text včetně telefonů, takže se telefon dostal
+do výstupu dvakrát. To pole se **nevystavuje** a nemá se vystavovat.
+
+⚠️ **Adresa firmy je v číselníku ve dvou polích a NEJSOU vždy totožné** - u ČSAD AUTOBUSY České
+Budějovice nese plnou adresu s PSČ a obcí teprve druhé. **Bere se druhé, první je záloha.** Odhalilo
+to ověření voláním serveru, ne úvaha; první verze brala kratší a zákazníkovi by zmizelo PSČ a obec.
+Hlídá `ZastavkoveJrAdDopravciTest`, který porovnává s obsahem starého slepeného pole.
+
+⚠️ **Co se vědomě NEvystavuje:** čtyři pole číselníku s nesourodým významem napříč dopravci (jedno
+vypadá na DIČ, jiné na bankovní účet) - pole s popiskem, který u poloviny dopravců lže, je horší než
+žádné. Kdyby je někdo potřeboval, význam se musí dohledat u kolegů z jízdních řádů.
+
+⚠️ **Adresa se nedělí na ulici a obec** - v číselníku je to jedno pole a parsování by u tvarů jako
+„č.p. 138, 569 07 Radiměř" vyrábělo nesmysly. **Nezkoušet.**
+
+Skalární pole nesou prvního dopravce, víc dopravců se skládá z kolekce (rozhodnutí Jan 1. 9.).
+Měření, kolik linek má víc dopravců, se **nedělalo** - tímto nástrojem to nešlo prakticky provést
+a návrh je bezpečný bez ohledu na výsledek.
+
+Neuděláno: **MHD agenda** (data má z jiného zdroje, systémový namespace) a **linkový JŘ** - týž
+rozklad by tam šel udělat stejným tvarem, až o to někdo požádá.
+
 ## `B108` - nadpis poznámek jde vypnout (hotovo 1. 9. 2026)
 
 Detail → changelog 2026-09-01 (6). Volba **„Záhlaví"** ve skupině **Obecné** schová celý pruh (text

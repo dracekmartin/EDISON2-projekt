@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-09-01 (7) - 🏢 dopravce a provozovny po jednotlivých polích (`B111`)
+
+Údaje dopravce jdou skládat po částech, místo jednoho slepeného bloku. Přibylo šest **samostatných
+polí** (Název, Adresa, Telefon, Fax, E-mail, IČO dopravce) a kolekce **Dopravci** do tabulky z dat -
+řádek na každou kombinaci dopravce a provozovny, která na lince skutečně jezdí, se sloupci pro firmu
+i pro provozovnu zvlášť.
+
+Tím zmizí duplicita, na kterou zákazník narazil: adresa už se neobjeví dvakrát, protože **si
+uživatel vybere, kterou chce**. Kolegův případ z BBSK je tabulka z dat s vypnutým záhlavím a jedním
+počítaným sloupcem `{NAZEV} + ", " + {PROVOZOVNA_ADRESA} + ", tel. " + {PROVOZOVNA_TELEFON}`.
+
+⚠️ **`POPIS_DOPRAVCE` zůstává nedotčené** - visí na něm hotové šablony. Nová pole jsou přírůstek,
+ne náhrada.
+
+⚠️ **Příčina duplicity byla v datech, ne ve skládání.** Číselník sám není atomický: adresa firmy nese
+ulici, PSČ i obec v jednom poli, telefon provozovny bývá slitý s webem a e-mailem, a pole „zkrácený
+název pro MHD" obsahuje u ČSAD Jindřichův Hradec celý text včetně telefonů - právě odtud se telefon
+dostal do výstupu dvakrát. To pole se proto **nevystavuje**. Nevystavují se ani čtyři pole, jejichž
+význam je napříč dopravci nesourodý (jedno vypadá na DIČ, jiné na bankovní účet) - pole s popiskem,
+který u poloviny dopravců lže, je horší než žádné.
+
+⚠️ **Adresa firmy je v číselníku dvakrát a NEJSOU vždy totožné.** U ČSAD Jindřichův Hradec obě nesou
+plný tvar, ale u ČSAD AUTOBUSY České Budějovice má první jen „Hálkova 781/9" a plnou adresu s PSČ
+a obcí nese teprve druhé. Odhalilo to ověření voláním serveru, ne úvaha - první verze brala tu
+kratší, takže by na vývěsce zmizelo PSČ a obec. Hlídá to nový test proti obsahu starého pole.
+
+Skalární pole nesou **prvního dopravce** linky; víc dopravců se skládá z kolekce. Řádkové kolekce
+umí filtrovat podle **jakéhokoli** svého pole, ale **řadit jen podle zobrazeného sloupce** - to je
+existující omezení tabulky z dat, ne nová vlastnost.
+
+Ověřeno: Caché **142/142** (4 nové testy), .NET **1388/1388**, schéma i data ověřeny voláním serveru.
+Zlaté odtisky tří linek přeraženy - počty stránek, zastávek, odjezdů i poznámek zůstaly shodné
+a lišilo se jen md5, tedy podpis přidaného pole.
+
 ## 2026-09-01 (6) - 🙈 nadpis poznámek jde vypnout (`B108`)
 
 U legendy poznámek přibyla ve skupině **Obecné** volba **„Záhlaví"**. Vypnutá schová **celý pruh** -

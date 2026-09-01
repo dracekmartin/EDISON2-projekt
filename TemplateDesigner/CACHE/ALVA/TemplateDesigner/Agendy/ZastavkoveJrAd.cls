@@ -316,6 +316,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
     d vals.%Set("DOPRAVCI_SOUHRNNY_JR",         ..DopravciSouhrnnyJr(dataDB, sku, lin, ..VypsatSpojeDopravce()))
+    // Skalární údaje = PRVNÍ dopravce linky (u většiny linek jediný). Linka s víc dopravci se
+    // skládá z kolekce DOPRAVCI - jeden řádek by tu ostatní zamlčel, proto to říká i nápověda pole.
+    d ..DopravceSkalary(dataDB, sku, lin, vals)
     d vals.%Set("BARVA_LINKY",            ..BarvaLinky(IdFa, dataDB, sku, lin))
     // #12997: JŘ umí od 3. 8. víc barev na linku. Klient je používá jako barvu textu (1.) a pozadí
     // (2.), ale modul jim význam nedává - proto neutrální název a význam nechává na šabloně.
@@ -733,6 +736,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     else { d rows.%Set("SKUPINY_DNU", ..NacistSkupinyDnu(ftl)) }
     d rows.%Set("ODJEZDY", odjezdy)
     d rows.%Set("POZNAMKY", poznamky)
+    d rows.%Set("DOPRAVCI", ..BuildDopravci(dataDB, sku, lin))
     d out.%Set("rows", rows)
     q out
 }
@@ -2795,6 +2799,115 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String, poRad
     q text
 }
 
+/// Údaje jednoho dopravce a jeho provozovny **po jednotlivých polích**, ne slepené do bloku.
+/// Vrací je v `udaje` (ByRef): NAZEV, ADRESA, TELEFON, FAX, EMAIL, ICO a PROVOZOVNA_*.
+///
+/// ⚠️ **Číselník sám není atomický** a tohle je hranice, za kterou pole rozebrat nejde
+/// (ověřeno na CB_CSADAD 1. 9.):
+/// - Adresa firmy nese ulici, PSČ i obec v **jednom** poli - dělit ji parsováním by u tvarů jako
+///   „č.p. 138, 569 07 Radiměř" vyrábělo nesmysly.
+/// - Adresa firmy je v číselníku **dvakrát** (pole 2 a 10) a ⚠️ **nejsou vždy totožné**: u ČSAD
+///   Jindřichův Hradec obě nesou „U Nádraží 694/II, 377 14 Jindřichův Hradec", ale u ČSAD AUTOBUSY
+///   České Budějovice má pole 2 jen „Hálkova 781/9" a plnou adresu s PSČ a obcí nese teprve pole 10.
+///   Bere se proto **pole 10** a pole 2 je záloha - shodně s <see cref="NazevDopravce"/>. Obráceně
+///   by na vývěsce zmizelo PSČ a obec (odhaleno ověřením voláním 1. 9., ne úvahou).
+/// - Telefon provozovny bývá slitý s webem a e-mailem („384 371 922, …, www…, info@…"). Vrací se,
+///   jak je; kdo chce čistý telefon, vezme telefon firmy.
+///
+/// ⚠️ **Pole „zkrácený název pro MHD" se sem záměrně NEDOSTANE.** U ČSAD Jindřichův Hradec obsahuje
+/// celý text včetně telefonů, takže jako jméno slouží špatně - a právě odsud pramení duplicita
+/// telefonů v <see cref="NazevDopravce"/>, na kterou zákazník narazil (#13158).
+ClassMethod DopravceUdaje(dataDB As %String, fa As %String, pr As %String, ByRef udaje As %String)
+{
+    k udaje
+    s firma = $g(^[dataDB]JRSET("DOP",fa))
+    s provoz = $s(pr'="":$g(^[dataDB]JRSET("DOP",fa,pr)), 1:"")
+
+    // Obchodní název (7) má přednost před názvem (1) - u kontrolovaných dopravců jsou shodné,
+    // ale obchodní tvar je ten, který patří na vývěsku.
+    s udaje("NAZEV")   = $s($p(firma,"~",7)'="":$p(firma,"~",7), 1:$p(firma,"~",1))
+    s udaje("ADRESA")  = $s($p(firma,"~",10)'="":$p(firma,"~",10), 1:$p(firma,"~",2))
+    s udaje("TELEFON") = $p(firma,"~",3)
+    s udaje("FAX")     = $p(firma,"~",4)
+    s udaje("ICO")     = $p(firma,"~",5)
+    s udaje("EMAIL")   = $p(firma,"~",13)
+
+    // Provozovna: 1 je její NÁZEV („provozna Příbram"), ne sídlo - komentář u NazevDopravce
+    // tvrdil opak. 4 je místo („J.Hradec", „Dačice").
+    s udaje("PROVOZOVNA_NAZEV")   = $p(provoz,"~",1)
+    s udaje("PROVOZOVNA_ADRESA")  = $p(provoz,"~",2)
+    s udaje("PROVOZOVNA_TELEFON") = $p(provoz,"~",3)
+    s udaje("PROVOZOVNA_MISTO")   = $p(provoz,"~",4)
+    q
+}
+
+/// Skalární pole prvního dopravce linky (NAZEV_DOPRAVCE, ADRESA_DOPRAVCE…). Bere první řádek
+/// kolekce, takže se s ní nemůže rozejít; u linky bez dopravce zapíše prázdno, aby pole ve schématu
+/// existovalo vždy (chybějící klíč by v šabloně vypadal jako neznámé pole).
+ClassMethod DopravceSkalary(dataDB As %String, sku As %String, lin As %String, vals As %DynamicObject)
+{
+    s prvni = ..BuildDopravci(dataDB, sku, lin).%Get(0)
+    d vals.%Set("NAZEV_DOPRAVCE",   $s($isobject(prvni):prvni.NAZEV,   1:""))
+    d vals.%Set("ADRESA_DOPRAVCE",  $s($isobject(prvni):prvni.ADRESA,  1:""))
+    d vals.%Set("TELEFON_DOPRAVCE", $s($isobject(prvni):prvni.TELEFON, 1:""))
+    d vals.%Set("FAX_DOPRAVCE",     $s($isobject(prvni):prvni.FAX,     1:""))
+    d vals.%Set("EMAIL_DOPRAVCE",   $s($isobject(prvni):prvni.EMAIL,   1:""))
+    d vals.%Set("ICO_DOPRAVCE",     $s($isobject(prvni):prvni.ICO,     1:""))
+    q
+}
+
+/// Kolekce DOPRAVCI - **řádek na každou kombinaci dopravce a provozovny, která na lince jezdí**.
+/// Páry (firma, provoz) sbírá z `#`-pole 2 spojů obou směrů, stejně jako <see cref="PopisDopravce"/>,
+/// takže se v ní neobjeví dopravce, který linku neobsluhuje.
+///
+/// Šablona si z ní v tabulce z dat vybere jen sloupce, které chce - tím se řeší duplicita adres,
+/// na kterou zákazník narazil: nikdo mu neslepí adresu firmy s adresou provozovny za něj (#13158).
+ClassMethod BuildDopravci(dataDB As %String, sku As %String, lin As %String) As %DynamicArray
+{
+    s arr = ##class(%DynamicArray).%New()
+    k dop
+    f smer="T","Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+            q:sp=""
+            i '$isvalidnum(sp) continue
+            s carriers = $p($g(^[dataDB]JRL(sku,lin,smer,sp)), "#", 2)
+            f ci=1:1:$l(carriers,"~") {
+                s slot = $p(carriers,"~",ci)
+                i slot = "" continue
+                s fa = $p(slot,":",1)
+                i fa = "" continue
+                s dop(fa, $p(slot,":",2)) = ""
+            }
+        }
+    }
+
+    s fa = ""
+    f {
+        s fa = $o(dop(fa))
+        q:fa=""
+        s pr = ""
+        f {
+            s pr = $o(dop(fa,pr))
+            q:pr=""
+            k udaje
+            d ..DopravceUdaje(dataDB, fa, pr, .udaje)
+            // Dopravce bez jména je prázdný záznam číselníku - řádek by na vývěsce jen zabral místo.
+            i $g(udaje("NAZEV")) = "" continue
+            s r = ##class(%DynamicObject).%New()
+            s kl = ""
+            f {
+                s kl = $o(udaje(kl))
+                q:kl=""
+                d r.%Set(kl, udaje(kl))
+            }
+            d arr.%Push(r)
+        }
+    }
+    q arr
+}
+
 /// Vrátí název zastávky z ^JRZ(czst) - odbav/MHD název s obcí ($7, formát "obec,místo").
 /// Legacy tiskne přesně toto pole (zkrácená obec "Fr. Lázně,..." místo plné "Františkovy Lázně,...").
 /// Fallback na $2, pokud $7 chybí (nevyplněný odbav název).
@@ -2998,6 +3111,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
             d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
             d r.%Set("ODJEZDY", ##class(%DynamicArray).%New())
             d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
+            d r.%Set("DOPRAVCI", ##class(%DynamicArray).%New())
             d page.%Set("rows", r)
         }
 
@@ -3028,6 +3142,14 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     // ── dopravce ──
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
     d ..AddField(fields, "DOPRAVCI_SOUHRNNY_JR",   "Dopravci souhrnného JŘ", "text")
+    // Údaje po jednotlivých polích - aby si šablona složila jen to, co chce, a adresa nevyšla
+    // dvakrát (#13158). Nesou PRVNÍHO dopravce linky; víc dopravců je v kolekci Dopravci.
+    d ..AddField(fields, "NAZEV_DOPRAVCE",         "Název dopravce",         "text")
+    d ..AddField(fields, "ADRESA_DOPRAVCE",        "Adresa dopravce",        "text")
+    d ..AddField(fields, "TELEFON_DOPRAVCE",       "Telefon dopravce",       "text")
+    d ..AddField(fields, "FAX_DOPRAVCE",           "Fax dopravce",           "text")
+    d ..AddField(fields, "EMAIL_DOPRAVCE",         "E-mail dopravce",        "text")
+    d ..AddField(fields, "ICO_DOPRAVCE",           "IČO dopravce",           "text")
 
     // ── platnost ──
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
@@ -3125,6 +3247,26 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky", "text")
     s colPoznamky.fields = colPoznamkyFields
     d collections.%Push(colPoznamky)
+
+    // DOPRAVCI (BuildDopravci) - řádek na dopravce × provozovnu, která na lince jezdí.
+    // Šablona si v tabulce z dat vybere jen sloupce, které chce; tím zmizí duplicita adres,
+    // kterou dělá slepený POPIS_DOPRAVCE (#13158).
+    s colDopravci = ##class(%DynamicObject).%New()
+    s colDopravci.name          = "Dopravci"
+    s colDopravci.collectionKey = "DOPRAVCI"
+    s colDopravciFields = ##class(%DynamicArray).%New()
+    d ..AddField(colDopravciFields, "NAZEV",              "Název dopravce",      "text")
+    d ..AddField(colDopravciFields, "ADRESA",             "Adresa dopravce",     "text")
+    d ..AddField(colDopravciFields, "TELEFON",            "Telefon dopravce",    "text")
+    d ..AddField(colDopravciFields, "FAX",                "Fax dopravce",        "text")
+    d ..AddField(colDopravciFields, "EMAIL",              "E-mail dopravce",     "text")
+    d ..AddField(colDopravciFields, "ICO",                "IČO dopravce",        "text")
+    d ..AddField(colDopravciFields, "PROVOZOVNA_NAZEV",   "Název provozovny",    "text")
+    d ..AddField(colDopravciFields, "PROVOZOVNA_ADRESA",  "Adresa provozovny",   "text")
+    d ..AddField(colDopravciFields, "PROVOZOVNA_TELEFON", "Telefon provozovny",  "text")
+    d ..AddField(colDopravciFields, "PROVOZOVNA_MISTO",   "Místo provozovny",    "text")
+    s colDopravci.fields = colDopravciFields
+    d collections.%Push(colDopravci)
 }
 
 ClassMethod AddStandardJRParameters(arr As %DynamicArray)

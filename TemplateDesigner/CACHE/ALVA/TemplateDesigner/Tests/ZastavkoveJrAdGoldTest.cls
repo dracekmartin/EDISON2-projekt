@@ -81,7 +81,10 @@ Method TestGold0365001()
 	// ale dopravce s adresou a telefonem po řádcích; POPIS_SMER se přejmenovalo na KONECNA_ZASTAVKA.
 	// Obojí mění **jen md5** - počty stránek, zastávek, odjezdů i poznámek zůstaly shodné, což je
 	// přesně ten podpis „změněný obsah pole / přejmenované pole", ne změna chování.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=LWWibQw+M3THHpxsNQ7AYQ==")
+	// Re-baseline 2026-09-01 (#13158): do `values` přibyla rozložená pole dopravce (NAZEV_DOPRAVCE,
+	// ADRESA_DOPRAVCE…) a do řádků kolekce DOPRAVCI. Přírůstek, nic se neodebralo → jen md5, počty
+	// beze změny.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=Sh8HZIoI3j2sVwSYTKF5ig==")
 }
 
 Method TestGold0365005()
@@ -115,7 +118,8 @@ Method TestGold0365005()
 	// spoj, ubyly jen řádky, ke kterým nešlo dojet.
 	// Re-baseline 2026-08-31 (#13158): dopravce po řádcích + přejmenování na KONECNA_ZASTAVKA,
 	// viz gold 0365001. Jen md5, počty beze změny.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=SJZ8uv7e4Rr7SZy7ZvEk8w==")
+	// Re-baseline 2026-09-01 (#13158): rozložená pole dopravce + kolekce DOPRAVCI, viz gold 0365001.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=PXiw5Syzbq6yMghrrUtk7A==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -193,7 +197,8 @@ Method TestGold0330530()
 	// Re-baseline 2026-08-31 (#13158 podruhé): adresa se doplňuje z firmy i tehdy, když provozovna
 	// má název a telefon, ale ne ulici („Oblast Písek"). Tahle linka je jediná ze sady, kde se to
 	// projevilo - je to zároveň důkaz, že záloha opravdu zabírá. Opět jen md5, počty shodné.
-	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=q3AA9/bc+hRJVHaqnghsJA==")
+	// Re-baseline 2026-09-01 (#13158): rozložená pole dopravce + kolekce DOPRAVCI, viz gold 0365001.
+	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=0OXIWeLtv4J8x+yeDg80oA==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka
