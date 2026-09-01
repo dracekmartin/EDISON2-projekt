@@ -684,10 +684,10 @@ Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle�
 
 Vysvětlivky pod mřížkou.
 
-- **Zobrazit nadpis** - vypnutím zmizí celý pruh nadpisu i s podbarvením a přestane zabírat výšku,
-  takže poznámky začínají u horní hrany prvku. Prázdný text nadpisu pruh nezruší - pás bez textu
-  může být záměr
-- **Nadpis** - text záhlaví legendy (výchozí „Poznámky")
+- **Záhlaví** (skupina Obecné) - vypnutím zmizí celý pruh záhlaví i s podbarvením a přestane
+  zabírat výšku, takže poznámky začínají u horní hrany prvku. Prázdný text záhlaví pruh nezruší -
+  pás bez textu může být záměr
+- **Text záhlaví** - co je v pruhu napsané (výchozí „Poznámky")
 - **Oddělovač** - text mezi značkou a popisem (výchozí „ - ")
 - **Velikost poznámek** - velikost písma. Nevejdou-li se poznámky do prvku, písmo se zmenší
   a aplikace to oznámí ve stavovém řádku

@@ -2,8 +2,12 @@
 
 ## 2026-09-01 (6) - 🙈 nadpis poznámek jde vypnout (`B108`)
 
-U legendy poznámek přibyla volba **„Zobrazit nadpis"**. Vypnutá schová **celý pruh** - nadpis
-i jeho podbarvení - a pruh přestane zabírat výšku, takže poznámky začínají u horní hrany prvku.
+U legendy poznámek přibyla ve skupině **Obecné** volba **„Záhlaví"**. Vypnutá schová **celý pruh** -
+text i jeho podbarvení - a pruh přestane zabírat výšku, takže poznámky začínají u horní hrany prvku.
+Zapínadlo sedí v Obecném a jeho vzhled ve skupině Záhlaví, stejně jako to má prvek zastávek.
+
+⚠️ **Pole „Nadpis" se přejmenovalo na „Text záhlaví"** - v jednom formuláři stála dvě slova pro tutéž
+věc a projekt drží „záhlaví" (rozhodnutí Jan 1. 9., doplněno do kanonu `ux-conventions §8`).
 
 ⚠️ **Prázdný nadpis pruh neruší** a je to záměr: pás bez textu je legitimní. Vypínač je proto
 samostatný, stejně jako ho mají zastávky („Záhlaví sloupců"), odjezdy („Záhlaví skupin"), linkový JŘ

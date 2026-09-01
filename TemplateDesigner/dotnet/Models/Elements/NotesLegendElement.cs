@@ -483,8 +483,10 @@ public class NotesLegendElement : StopScheduleElementBase
         .. GetScheduleBaseDescriptors(withLineToggles: false),   // mřížkou kreslí jen čáru pod záhlavím
         .. GetCellZoneBaseColorDescriptors(),
 
-        new BoolPropertyDescriptor   { Label = "Zobrazit nadpis",      Group = "Záhlaví",      Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
-        new StringPropertyDescriptor { FromImage = true, Label = "Nadpis",               Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
+        // Zapínadlo do Obecného, jeho vzhled do Záhlaví - týž vzor jako u zastávek, kde „Záhlaví
+        // sloupců" sedí v Obecném a barvy ve „Stylu záhlaví" (rozhodnutí Jan 1. 9.).
+        new BoolPropertyDescriptor   { Label = "Záhlaví",               Group = "Obecné",       Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
+        new StringPropertyDescriptor { FromImage = true, Label = "Text záhlaví",         Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
 
         new StringPropertyDescriptor { Label = "Font",                Group = "Datové buňky", Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },

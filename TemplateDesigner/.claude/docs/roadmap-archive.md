@@ -2,8 +2,9 @@
 
 ## `B108` - nadpis poznámek jde vypnout (hotovo 1. 9. 2026)
 
-Detail → changelog 2026-09-01 (6). Volba **„Zobrazit nadpis"** schová celý pruh (nadpis
-i podbarvení) a pruh přestane zabírat výšku.
+Detail → changelog 2026-09-01 (6). Volba **„Záhlaví"** ve skupině **Obecné** schová celý pruh (text
+i podbarvení) a pruh přestane zabírat výšku. Pole „Nadpis" se přejmenovalo na **„Text záhlaví"** -
+projekt drží slovo „záhlaví" a dvě slova pro tutéž věc v jednom formuláři pletla.
 
 ⚠️ **Prázdný nadpis pruh NERUŠÍ** - pás bez textu je legitimní, proto samostatný vypínač. Původní
 návrh vázal vypnutí na prázdný text; checkbox vyhrál, protože ho má už pět prvků a nemění hotové

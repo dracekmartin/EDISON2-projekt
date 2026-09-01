@@ -24,14 +24,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Obecné" ──────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
+        // Zapínadlo záhlaví sedí v Obecném jako u zastávek; jeho vzhled je ve skupině Záhlaví.
+        // Klíč HeaderBar, ne ShowHeader: ten u zastávek a tabulek znamená záhlaví SLOUPCŮ, které
+        // legenda nemá. Stejný klíč se dvěma popisky hlídá drift test.
+        s f = form.AddBool("ShowHeaderBar", "Záhlaví", 1)
+        s f.helpText = "Vypnuté záhlaví se nekreslí ani s podbarvením a nezabírá výšku - poznámky pak začínají u horní hrany prvku."
 
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
-        // Klíč HeaderBar, ne ShowHeader: ten u zastávek a tabulek znamená záhlaví SLOUPCŮ, které
-        // legenda nemá. Stejný klíč se dvěma popisky hlídá drift test.
-        s f = form.AddBool("ShowHeaderBar", "Zobrazit nadpis", 1)
-        s f.helpText = "Vypnutý nadpis se nekreslí ani s podbarvením a nezabírá výšku - poznámky pak začínají u horní hrany prvku."
-        d form.AddText("HeaderText", "Nadpis", "Poznámky")
+        d form.AddText("HeaderText", "Text záhlaví", "Poznámky")
         // Pozadí BEZ výchozí hodnoty - podbarvení si prvek nese sám, takže pole má ukázat jeho
         // hodnotu. Výchozí barva by se vracela do vymazaného pole a vypadalo by to, že vymazání
         // neplatí (nález Pavel 1. 9.). Prázdno = bez podbarvení.
