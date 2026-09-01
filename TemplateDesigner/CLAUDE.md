@@ -132,6 +132,14 @@ Linkované wiki články drží **`.claude/wiki-map.json`** (allow-list). Pravid
   co je nově a co to pro uživatele znamená, tři až čtyři věty. Ovládání, zkratky, cesty v dialozích
   a výčty polí patří do **příručky**, na kterou Novinky odkazují v úvodu; do 18. 8. je Novinky
   duplikovaly a ze 153 řádků zbylo po škrtu 35.
+- **Jeden záznam za období, ne za každou opravu** (rozhodnutí Jan 2026-09-01). Za den práce vznikne
+  **nejvýš jeden** záznam - ta nejdůležitější uživatelská změna; drobné opravy se **nepíšou vůbec**
+  („QR kód je čitelný i na malém prvku" je bugfix, ne novinka). Datum se **agreguje na týden**
+  („Týden od 31. 8. 2026"), ne po dnech - jinak seznam naroste do desítek záznamů, jak se stalo
+  do 1. 9. (23 záznamů, tři jen za 17. 8.).
+- **Nadpis záznamu věcně pojmenuje změnu**, ne metaforou. „Údaje dopravce po jednotlivých polích"
+  ano, „Co zadáte, to platí" ne - z takového nadpisu čtenář nepozná, o čem záznam je
+  (nález Jan 2026-09-01).
 - **TipTap-safe markdown:** konvertor **NEUMÍ tabulky** (slije je do jednoho odstavce) → piš odrážky / definiční seznamy. OK: nadpisy, seznamy, odkazy, tučné/kurzíva, blockquote, `---`.
 - **Seed = source of truth, wiki = zrcadlo** - na wiki needitovat ručně.
 
