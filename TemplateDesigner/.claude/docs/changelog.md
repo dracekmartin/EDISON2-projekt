@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-01 (9) - 📄 uspořádání na list řekne, když nic neskládá
+
+Zákazník hlásil jako chybu tisku, že mu ze šablony **A5 na výšku leze PDF ve formátu A4**. Chyba to
+nebyla, ale past: měl zapnuté **Uspořádání na list = „A4 na výšku"**, kam se dva A5 na výšku
+(2 × 148 = 296 mm) do šířky 210 mm nevejdou. Mřížka proto vyšla **1×1** a papír se jen zvětšil -
+A4 s jednou vývěskou uprostřed.
+
+⚠️ **Volba se persistuje per agenda**, takže o ní uživatel nemusí vědět vůbec, a z aplikace nebylo
+jak zjistit, proč mu z A5 šablony leze A4. Po exportu se dosud vypsalo neutrální „imposice 1×1 na
+list 210×297 mm", což nikdo nečte jako problém.
+
+Nově se v témž místě objeví **varování s radou**: *„Uspořádání na list nic neskládá: na list
+210×297 mm se vejde jen jedna stránka 148×210 mm. Na list 297×210 mm (otočený) se vejdou 2"*. Rada
+na otočený list se ukáže jen tehdy, když by na něj skutečně šlo víc stránek; u stejného formátu
+stránky i listu hláška místo toho navrhne uspořádání vypnout.
+
+**Pro dva jízdní řády A5 na jednu A4 se volí „A4 na šířku"** - tam mřížka vyjde 1×2.
+
+Ověřeno: .NET **1405/1405** (6 nových testů, včetně přesně toho kolegova případu).
+
 ## 2026-09-01 (8) - 📱 QR kódy jsou čitelné i na malém prvku
 
 Kód se kreslí **ostře v jakémkoli rozlišení** a vyplní celý prvek. Zákazník vyfotil QR, které

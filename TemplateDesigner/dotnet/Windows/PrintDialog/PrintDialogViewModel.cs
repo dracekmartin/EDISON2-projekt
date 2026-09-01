@@ -240,7 +240,12 @@ public class PrintDialogViewModel : EDViewModel
             var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
 
             StatusText = $"Generuji PDF ({totalPages} stránek)…";
-            string sheetInfo = sheets is null ? "" : $" · {sheets.ShortLabel}";
+            // Skládání 1×1 papír jen zvětší (A5 šablona + list „A4 na výšku" = A4 s jednou vývěskou
+            // uprostřed). Volba se persistuje per agenda, takže uživatel nemá jak zjistit proč -
+            // zákazník to hlásil jako chybu tisku (#13158). Proto varování, ne neutrální popis.
+            string sheetInfo = sheets is null
+                ? ""
+                : sheets.VarovaniBezEfektu() is { } bezEfektu ? $" · ⚠ {bezEfektu}" : $" · {sheets.ShortLabel}";
             // Vlastní sloupce: co se na vývěsku nedostane (odjezd mimo sloupce, sloupec s obdobím
             // mimo platnost JŘ) říct i tady, ne jen ve status baru návrháře - tisknout může jiná
             // linka než v náhledu.
