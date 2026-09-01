@@ -818,11 +818,20 @@ public class TemplateDesignerViewModel : EDViewModel
         // Startovní agenda - priorita: (1) EDISONMAIN2 kontrakt (inputParam "Agenda=<kód>" dle
         // uzlu stromu shellu / MHD2 tlačítka), (2) poslední použitá agenda uživatele (per-user
         // prefs), (3) fallback ze CreateSampleTemplate. Neznámý kód se přeskočí.
-        string? ResolveKnown(string? code) => code is null ? null
+        string? ResolveKnown(string? code, bool jenZverejnene) => code is null ? null
             : resolvedAgendas.FirstOrDefault(a =>
-                string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase))?.Code;
-        var startAgenda = ResolveKnown(startupAgendaCode)
-                          ?? ResolveKnown(preferences?.MainState?.LastAgendaCode);
+                string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase)
+                && (!jenZverejnene || a.Released))?.Code;
+        // ⚠️ Poslední použitá agenda se obnoví jen když je ZVEŘEJNĚNÁ. Bez té podmínky se skrytá
+        // agenda vrátila každému, kdo ji kdy vyzkoušel: uložila se do preferencí, po startu se
+        // obnovila jako agenda šablony a výběr ji pak ukázal (tam se aktuální agenda zobrazuje
+        // vždy, aby šly otevřít hotové šablony). Skrytí linkových JŘ se tím dalo obejít
+        // pamětí aplikace - nález Jan 1. 9. při kontrole před vydáním.
+        //
+        // Kód z launch kontraktu shellu filtr NEmá: to je explicitní příkaz zvenčí a případná
+        // skrytá agenda tam znamená chybu konfigurace shellu, ne zapamatovaný stav uživatele.
+        var startAgenda = ResolveKnown(startupAgendaCode, jenZverejnene: false)
+                          ?? ResolveKnown(preferences?.MainState?.LastAgendaCode, jenZverejnene: true);
         if (startAgenda is not null) State.CurrentTemplate.AgendaCode = startAgenda;
 
         RebuildSections();
@@ -3618,14 +3627,18 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Fallback startovní šablona - agendu typicky přepíše EDISON kontrakt nebo
     /// poslední použitá agenda uživatele (viz ctor).</summary>
     /// <remarks>
-    /// Výchozí je <b>linkový JŘ</b> (žádost Jan 24. 8.), protože se na něm teď pracuje a přepínat
-    /// ho po každém startu zdržuje. Uplatní se jen při <b>prvním</b> spuštění: jakmile uživatel
-    /// jednou agendu přepne, má přednost jeho poslední volba. Vrátit zpět = přepsat tuhle jednu
-    /// konstantu.
+    /// Výchozí je <b>zastávkový JŘ (AD)</b>. Od 24. 8. tu byl linkový, protože se na něm pracovalo,
+    /// ale 1. 9. se linkové JŘ před vydáním skryly - a tahle konstanta skrytí obcházela: nová
+    /// šablona startovala na skryté agendě, ta se stala aktuální agendou a výběr ji pak ukázal,
+    /// protože aktuální agendu zobrazuje vždy (aby šly otevřít hotové šablony). Uživatel tedy
+    /// linkové JŘ viděl dál, i když byly skryté (nález Jan 1. 9.).
+    ///
+    /// ⚠️ **Musí to být zveřejněná agenda** - jinak se skrytí dá obejít samotným startem aplikace.
+    /// Hlídá `SkrytaAgendaTests`.
     /// </remarks>
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "LINKOVY_JR_AD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
         t.Sections.AddRange(CreateDefaultSections(t.PageSize));
         return t;
     }

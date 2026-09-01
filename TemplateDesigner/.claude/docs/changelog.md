@@ -13,7 +13,24 @@ nezveřejněnou agendu nenabízí, ale **aktuální agendu otevřené šablony u
 z databáze jsou její šablony pod „Všechny agendy". Prvek linkové tabulky zmizel z palety sám - váže
 se na druh agendy, ne na seznam prvků.
 
-Ověřeno voláním serveru: registr agend vrací zveřejněné jen ty dvě zastávkové.
+⚠️ **Samotné skrytí nestačilo a dalo se obejít dvěma cestami** (nález Jan hned při kontrole - agendy
+viděl dál):
+
+- **Výchozí šablona měla linkovou agendu napsanou natvrdo.** Nová šablona tedy startovala na skryté
+  agendě, ta se stala aktuální agendou šablony a výběr ji ukázal - aktuální agendu totiž zobrazuje
+  vždy, aby šly otevřít hotové šablony. Výchozí je teď Zastávkový JŘ (AD).
+- **Naposledy použitá agenda se obnovovala bez ohledu na zveřejnění.** Kdo si linkovou agendu kdysi
+  vyzkoušel, dostal ji po startu zpátky z uživatelských preferencí. Nově se z paměti obnoví jen
+  zveřejněná; kód z launch kontraktu shellu filtr záměrně nemá, tam je skrytá agenda chyba
+  konfigurace shellu, ne zapamatovaný stav.
+
+Obě cesty drží testy - kdo tu konstantu přepíše na skrytou agendu, spadne.
+
+⚠️ **Seznam agend se čte jednou při startu**, takže běžící aplikace změnu nepřebere. Při kontrole je
+nutné ji zavřít a spustit znovu.
+
+Ověřeno voláním serveru na obou namespacech (i `ZL_KOVED`): registr vrací zveřejněné jen ty dvě
+zastávkové. .NET **1410/1410** (4 nové testy).
 
 ## 2026-09-01 (9) - 📄 uspořádání na list řekne, když nic neskládá
 
