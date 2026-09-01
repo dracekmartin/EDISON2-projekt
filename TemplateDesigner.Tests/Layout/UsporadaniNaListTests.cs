@@ -1,3 +1,4 @@
+using System.IO;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Layout;
 
@@ -78,6 +79,29 @@ public class UsporadaniNaListTests
 
         Assert.Equal(4, o.SlotsPerSheet);   // 2 sloupce × 2 řádky
         Assert.Null(o.VarovaniBezEfektu());
+    }
+
+    [Fact]
+    public void ObaExportyPopisujiUsporadaniStejne()
+    {
+        // Varování bylo 1. 9. jen v exportu s daty z databáze, takže na prázdné šabloně (což je
+        // cesta, kterou jde každý, kdo si to chce vyzkoušet) nebylo vidět nic. Popis proto vzniká
+        // na jednom místě - kontrola hledá jediný výskyt neutrálního popisu ve zdroji.
+        var zdroj = File.ReadAllText(CestaKViewModelu());
+        int vyskytu = System.Text.RegularExpressions.Regex.Matches(zdroj, @"ShortLabel").Count;
+
+        Assert.Equal(1, vyskytu);
+    }
+
+    private static string CestaKViewModelu()
+    {
+        // Od bin/Debug/netX/ zpět do repozitáře - test závisí jen na obsahu repa, ne na stroji.
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "TemplateDesigner", "dotnet")))
+            dir = dir.Parent;
+        Assert.NotNull(dir);
+        return Path.Combine(dir!.FullName, "TemplateDesigner", "dotnet", "Windows", "PrintDialog",
+                            "PrintDialogViewModel.cs");
     }
 
     [Fact]

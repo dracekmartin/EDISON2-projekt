@@ -176,6 +176,19 @@ public class PrintDialogViewModel : EDViewModel
     /// snapshotu by zavedl závodu s preview renderem - viz `ExportRealDataPdfAsync` níže, které
     /// to dělá správně.
     /// </summary>
+    /// <summary>
+    /// Popis uspořádání na list do stavové hlášky: varování, když mřížka vyjde 1×1 (papír se jen
+    /// zvětšil), jinak neutrální popis. Prázdné = uspořádání vypnuté.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Jedno místo pro **oba** exporty (ukázková data i data z databáze). Když jsem varování
+    /// 1. 9. přidal jen do exportu s daty, Jan ho na prázdné šabloně neviděl - a přesně tou cestou
+    /// jde každý, kdo si chce chování vyzkoušet bez vybrané linky.
+    /// </remarks>
+    private static string PopisUsporadani(SheetLayoutOptions? sheets) => sheets is null
+        ? ""
+        : sheets.VarovaniBezEfektu() is { } bezEfektu ? $" · ⚠ {bezEfektu}" : $" · {sheets.ShortLabel}";
+
     private void ExportPdf()
     {
         SheetLayoutOptions? sheets;
@@ -191,7 +204,7 @@ public class PrintDialogViewModel : EDViewModel
             var data = _buildMockData(_paramValues);
             RequestRenderPdf?.Invoke(filePath, data, sheets);
             OpenPdf(filePath);
-            StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}{(sheets is null ? "" : $" · {sheets.ShortLabel}")}";
+            StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}{PopisUsporadani(sheets)}";
         }
         catch (Exception ex)
         {
@@ -243,9 +256,7 @@ public class PrintDialogViewModel : EDViewModel
             // Skládání 1×1 papír jen zvětší (A5 šablona + list „A4 na výšku" = A4 s jednou vývěskou
             // uprostřed). Volba se persistuje per agenda, takže uživatel nemá jak zjistit proč -
             // zákazník to hlásil jako chybu tisku (#13158). Proto varování, ne neutrální popis.
-            string sheetInfo = sheets is null
-                ? ""
-                : sheets.VarovaniBezEfektu() is { } bezEfektu ? $" · ⚠ {bezEfektu}" : $" · {sheets.ShortLabel}";
+            string sheetInfo = PopisUsporadani(sheets);
             // Vlastní sloupce: co se na vývěsku nedostane (odjezd mimo sloupce, sloupec s obdobím
             // mimo platnost JŘ) říct i tady, ne jen ve status baru návrháře - tisknout může jiná
             // linka než v náhledu.

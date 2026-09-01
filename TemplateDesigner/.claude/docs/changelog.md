@@ -18,7 +18,12 @@ stránky i listu hláška místo toho navrhne uspořádání vypnout.
 
 **Pro dva jízdní řády A5 na jednu A4 se volí „A4 na šířku"** - tam mřížka vyjde 1×2.
 
-Ověřeno: .NET **1405/1405** (6 nových testů, včetně přesně toho kolegova případu).
+⚠️ **Hláška platí pro oba exporty** - s daty z databáze i s ukázkovými. První verze ji měla jen
+v tom prvním, takže na prázdné šabloně nebylo vidět nic - a přesně tou cestou jde každý, kdo si
+chování chce vyzkoušet bez vybrané linky (nález Jan při zkoušení). Popis se skládá na jednom místě
+a test hlídá, že se ty dvě cesty znovu nerozejdou.
+
+Ověřeno: .NET **1406/1406** (7 nových testů, včetně přesně toho kolegova případu).
 
 ## 2026-09-01 (8) - 📱 QR kódy jsou čitelné i na malém prvku
 
