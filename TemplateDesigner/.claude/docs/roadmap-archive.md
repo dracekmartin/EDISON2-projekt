@@ -1,10 +1,15 @@
 # 🗄️ Archiv - hotové kroky
 
-## `B111` - dopravce a provozovny po jednotlivých polích (hotovo 1. 9. 2026)
+## `B111` - dopravce po jednotlivých polích (hotovo 1. 9. 2026, provozovny → `B112`)
 
-Detail → changelog 2026-09-01 (7). Pět samostatných polí dopravce + kolekce **Dopravci** (řádek na
-dopravce × provozovnu, která na lince jezdí). `POPIS_DOPRAVCE` zůstalo nedotčené. **Fax se
-nevystavuje** - na vývěsce nemá co dělat (rozhodnutí Jan 1. 9.); číselník ho drží dál.
+Detail → changelog 2026-09-01 (7). Pět samostatných polí dopravce (Název, Adresa, Telefon, E-mail,
+IČO). `POPIS_DOPRAVCE` zůstalo nedotčené. **Fax se nevystavuje** - na vývěsce nemá co dělat
+(rozhodnutí Jan 1. 9.); číselník ho drží dál.
+
+⚠️ **Provozovny se nedořešily a pokračují jako `B112` v Backlogu.** Kolekce „Dopravci" je **skrytá
+ze schématu**: řádek na dopravce × provozovnu nutně opakuje údaje firmy (tři provozovny = třikrát
+týž telefon pod sebou) a tabulka z dat deduplikaci neumí, takže by to vyměnilo jednu duplicitu za
+druhou. Kód, data na drátě i testy zůstaly živé, ať se na tom dá stavět.
 
 ⚠️ **Příčina duplicity byla v datech, ne v našem skládání** (ověřeno na CB_CSADAD): pole „zkrácený
 název pro MHD" obsahuje u ČSAD Jindřichův Hradec celý text včetně telefonů, takže se telefon dostal

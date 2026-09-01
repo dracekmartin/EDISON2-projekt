@@ -134,6 +134,30 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
+- **`B112` Provozovny dopravce na vývěsce - rozdělaná práce** (M, z `B111` 1. 9., #13158).
+  Skalární pole dopravce (Název, Adresa, Telefon, E-mail, IČO) **fungují a jsou vystavená**;
+  provozovny zůstaly nedořešené a jejich kolekce je **skrytá ze schématu**, aby si na ní nikdo
+  nepostavil šablonu.
+
+  ⚠️ **V čem je problém:** kolekce má řádek na (dopravce × provozovna), takže **nutně opakuje údaje
+  firmy** - tři provozovny téhož dopravce daly třikrát pod sebou týž telefon a adresu. Tabulka z dat
+  deduplikaci neumí, takže by to vyměnilo jednu duplicitu za druhou, a přesně proti duplicitě celá
+  položka vznikla (nález Jan 1. 9. při zkoušení). Navíc **to není tabulka, ale hierarchie** „dopravce
+  → jeho provozovny", a na tu tvar tabulky nesedí.
+
+  **Co je hotové a použitelné:** `BuildDopravci` a `DopravceUdaje` v `ZastavkoveJrAd` (rozklad
+  číselníku na jednotlivá pole, ověřený voláním), data tečou na drátě pod klíčem `DOPRAVCI`, testy
+  `ZastavkoveJrAdDopravciTest` drží rozklad i to, že kolekce zůstává skrytá.
+
+  **Co se musí rozhodnout, než se zapne:** čím se hierarchie kreslí. Možnosti k probrání: vnořená
+  struktura s prvkem, který umí „hlavička dopravce + odsazené provozovny"; kolekce jen provozoven
+  s údaji firmy ze skalárních polí (opakování zmizí, ale rozpadne se to u víc dopravců); nebo
+  vypustit provozovny a nechat jen dopravce. ⚠️ Případný název kolekce v UI má být **„Dopravci
+  (provozovny)"**, ne „Dopravci" - z „Dopravci" nebylo poznat, proč tam provozovny jsou.
+
+  ⚠️ **MHD agenda a linkový JŘ** rozklad nemají vůbec - MHD má data z jiného zdroje (systémový
+  namespace). Až se tohle dořeší, patří to i tam.
+
 - **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
   prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do
   dalších šablon. **Co už existuje:** uložení **celé sekce** jako vlastní šablony a seskupení prvků

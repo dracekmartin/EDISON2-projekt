@@ -96,9 +96,13 @@ Method TestSkalarniPoleOdpovidajiPrvnimuRadkuKolekce()
 	do $$$AssertEquals(vals.%Get("ICO_DOPRAVCE"), prvni.ICO, "ICO_DOPRAVCE = první řádek kolekce")
 }
 
-/// Kolekce i skalární pole musí být ve schématu - bez toho je uživatel v nabídce polí nenajde,
-/// i když je data nesou.
-Method TestSchemaNabiziNovaPole()
+/// Skalární pole musí být ve schématu, kolekce naopak NESMÍ.
+///
+/// ⚠️ Kolekce je **vědomě skrytá** (rozhodnutí Jan 1. 9.): řádek na dopravce × provozovnu nutně
+/// opakuje údaje firmy, takže tři provozovny daly třikrát týž telefon pod sebou - a tabulka z dat
+/// deduplikaci neumí. Vyměnila by tedy jednu duplicitu za druhou. Kdyby se kolekce do schématu
+/// vrátila bez vyřešené hierarchie „dopravce → provozovny", spadne tenhle test - a to je záměr.
+Method TestSchemaNabiziSkalarniPoleAleNeKolekci()
 {
 	do ..SetupSys(.sys)
 	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetSchema(.sys)
@@ -118,7 +122,7 @@ Method TestSchemaNabiziNovaPole()
 	while it2.%GetNext(.j, .c) {
 		if c.collectionKey = "DOPRAVCI" set maKolekci = 1
 	}
-	do $$$AssertTrue(maKolekci, "schéma nabízí kolekci DOPRAVCI")
+	do $$$AssertEquals(maKolekci, 0, "kolekce DOPRAVCI zůstává skrytá, dokud se neřeší duplicita údajů firmy")
 }
 
 }

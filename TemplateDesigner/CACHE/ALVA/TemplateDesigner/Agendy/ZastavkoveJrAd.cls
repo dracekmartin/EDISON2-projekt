@@ -3247,24 +3247,17 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colPoznamky.fields = colPoznamkyFields
     d collections.%Push(colPoznamky)
 
-    // DOPRAVCI (BuildDopravci) - řádek na dopravce × provozovnu, která na lince jezdí.
-    // Šablona si v tabulce z dat vybere jen sloupce, které chce; tím zmizí duplicita adres,
-    // kterou dělá slepený POPIS_DOPRAVCE (#13158).
-    s colDopravci = ##class(%DynamicObject).%New()
-    s colDopravci.name          = "Dopravci"
-    s colDopravci.collectionKey = "DOPRAVCI"
-    s colDopravciFields = ##class(%DynamicArray).%New()
-    d ..AddField(colDopravciFields, "NAZEV",              "Název dopravce",      "text")
-    d ..AddField(colDopravciFields, "ADRESA",             "Adresa dopravce",     "text")
-    d ..AddField(colDopravciFields, "TELEFON",            "Telefon dopravce",    "text")
-    d ..AddField(colDopravciFields, "EMAIL",              "E-mail dopravce",     "text")
-    d ..AddField(colDopravciFields, "ICO",                "IČO dopravce",        "text")
-    d ..AddField(colDopravciFields, "PROVOZOVNA_NAZEV",   "Název provozovny",    "text")
-    d ..AddField(colDopravciFields, "PROVOZOVNA_ADRESA",  "Adresa provozovny",   "text")
-    d ..AddField(colDopravciFields, "PROVOZOVNA_TELEFON", "Telefon provozovny",  "text")
-    d ..AddField(colDopravciFields, "PROVOZOVNA_MISTO",   "Místo provozovny",    "text")
-    s colDopravci.fields = colDopravciFields
-    d collections.%Push(colDopravci)
+    // ⚠️ DOPRAVCI (BuildDopravci) se ZÁMĚRNĚ NEVYSTAVUJE - data na drátě jsou, ale uživatel je
+    // v nabídce polí nenajde (rozhodnutí Jan 1. 9., rozdělaná práce v backlogu).
+    //
+    // Důvod: řádek na (dopravce × provozovna) **nutně opakuje údaje firmy**. Tři provozovny téhož
+    // dopravce daly třikrát pod sebou týž telefon a adresu firmy - a tabulka z dat s tím neumí nic
+    // udělat, protože nemá deduplikaci. Původní záměr byl zbavit se duplicity ze slepeného
+    // POPIS_DOPRAVCE, takže takhle by vyměnila jednu duplicitu za druhou. Navíc to není ve své
+    // podstatě tabulka, ale hierarchie „dopravce → jeho provozovny".
+    //
+    // Kód i wire zůstávají živé, ať se na tom dá stavět; skalární pole dopravce (NAZEV_DOPRAVCE…)
+    // fungují a vystavená jsou. Než se kolekce zapne, musí být jasné, čím se ta hierarchie kreslí.
 }
 
 ClassMethod AddStandardJRParameters(arr As %DynamicArray)

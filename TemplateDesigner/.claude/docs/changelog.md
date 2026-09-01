@@ -3,13 +3,14 @@
 ## 2026-09-01 (7) - 🏢 dopravce a provozovny po jednotlivých polích (`B111`)
 
 Údaje dopravce jdou skládat po částech, místo jednoho slepeného bloku. Přibylo pět **samostatných
-polí** (Název, Adresa, Telefon, E-mail, IČO dopravce) a kolekce **Dopravci** do tabulky z dat -
-řádek na každou kombinaci dopravce a provozovny, která na lince skutečně jezdí, se sloupci pro firmu
-i pro provozovnu zvlášť.
+polí**: Název, Adresa, Telefon, E-mail a IČO dopravce. Šablona si z nich složí, co chce, takže adresa
+už se neobjeví dvakrát.
 
-Tím zmizí duplicita, na kterou zákazník narazil: adresa už se neobjeví dvakrát, protože **si
-uživatel vybere, kterou chce**. Kolegův případ z BBSK je tabulka z dat s vypnutým záhlavím a jedním
-počítaným sloupcem `{NAZEV} + ", " + {PROVOZOVNA_ADRESA} + ", tel. " + {PROVOZOVNA_TELEFON}`.
+⚠️ **Provozovny zůstaly nedořešené a jejich kolekce je skrytá** (`B112` v backlogu). Řádek na
+dopravce × provozovnu totiž **nutně opakuje údaje firmy** - tři provozovny daly třikrát pod sebou týž
+telefon a tabulka z dat s tím neumí nic udělat. Vyměnilo by to jednu duplicitu za druhou, a přesně
+proti duplicitě celá věc vznikla (nález Jan při zkoušení). Data i kód zůstávají živé, ale uživatel
+kolekci v nabídce polí nenajde, aby si na ní nepostavil šablonu.
 
 ⚠️ **`POPIS_DOPRAVCE` zůstává nedotčené** - visí na něm hotové šablony. Nová pole jsou přírůstek,
 ne náhrada.
@@ -29,9 +30,8 @@ kratší, takže by na vývěsce zmizelo PSČ a obec. Hlídá to nový test prot
 **Fax se nevystavuje** (rozhodnutí Jan 1. 9.) - na vývěsce nemá co dělat. Číselník ho drží dál,
 takže se dá kdykoli přidat.
 
-Skalární pole nesou **prvního dopravce** linky; víc dopravců se skládá z kolekce. Řádkové kolekce
-umí filtrovat podle **jakéhokoli** svého pole, ale **řadit jen podle zobrazeného sloupce** - to je
-existující omezení tabulky z dat, ne nová vlastnost.
+Skalární pole nesou **prvního dopravce** linky. Linku s víc dopravci tím pádem zatím nikdo neskládá -
+je to součást téhož nedořešeného kusu (`B112`).
 
 Ověřeno: Caché **142/142** (4 nové testy), .NET **1388/1388**, schéma i data ověřeny voláním serveru.
 Zlaté odtisky tří linek přeraženy - počty stránek, zastávek, odjezdů i poznámek zůstaly shodné
