@@ -35,6 +35,52 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### 1. 9. 2026 - Práce s prvky na plátně
+
+Když se dva prvky překrývají, klik teď patří tomu, který je vidět navrchu. Dosud mohl sáhnout na
+prvek pod ním, takže se nově vložený prvek nedal uchopit a musel se nejdřív odsunout ten starý.
+Prvek, který máte vybraný, si navíc klik podrží, i kdyby ho jiný překrýval.
+
+Velikost prvku jde nově měnit **klávesnicí**, ne jen tažením úchytu myší - na doladění rozměru
+o milimetry to je podstatně rychlejší. Konkrétní zkratky najdete v příručce.
+
+### 1. 9. 2026 - Co zadáte, to platí
+
+Do číselných polí jde psát **desetinnou čárku** i tečku - „1,5" znamená totéž jako „1.5". Dosud
+čárka hodnotu tiše zkomolila, a to bez jakéhokoli upozornění.
+
+**Vymazané barevné pole znamená „nekreslit nic"** a zůstane tak i po uložení. Dosud se u podbarvení
+záhlaví vracela výchozí šedá, takže podbarvení nešlo odebrat vůbec.
+
+### 1. 9. 2026 - QR kódy jsou čitelné i na malém prvku
+
+Kód se nově vykresluje ostře a vyplní celý prvek. Dosud zabral jen část jeho plochy a na malém
+prvku se jednotlivé body slévaly, takže QR nebylo možné sejmout telefonem.
+
+Zároveň aplikace **řekne, jak velký kód potřebujete**: když je prvek malý, po tisku napíše konkrétní
+rozměr v milimetrech. Potřebná velikost roste s délkou odkazu, což se z ničeho jiného poznat nedá.
+
+### 1. 9. 2026 - Aplikace upozorní, když se tiskne něco jiného, než co je nastavené
+
+Nová hlášení ve stavovém řádku a po tisku pojmenují konkrétní věc i míru: **zmenšené písmo**, když
+se obsah nevejde do prvku, **příliš malý QR kód** a **uspořádání na list, které nic neskládá**
+(typicky šablona A5 na listu A4 na výšku, kam se dvě vývěsky vedle sebe nevejdou).
+
+Všechny tři případy dosud vypadaly na papíře jako chyba aplikace, přitom šlo o nastavení, které
+nebylo z čeho poznat.
+
+### 1. 9. 2026 - Poznámky a údaje dopravce
+
+Prvek s vysvětlivkami se jmenuje **Poznámky** (dřív „Legenda poznámek") a prvek s časy odjezdů
+**Minuty odjezdů** (dřív „Mřížka odjezdů").
+
+U poznámek jde **vypnout záhlaví** - zmizí i s podbarvením a přestane zabírat výšku. Velikost písma,
+výška řádku a počet sloupců jsou nově pohromadě a výška řádku se řídí velikostí písma, takže
+zvětšení písma legendu nerozhodí.
+
+Údaje dopravce jsou k dispozici i **po jednotlivých polích** (název, adresa, telefon, e-mail, IČO),
+takže si na vývěsku poskládáte jen to, co potřebujete, a adresa se neobjeví dvakrát.
+
 ### 17. 8. 2026 - Písmeno varianty je u odjezdu vždy
 
 Když ze zastávky jedou spoje různými trasami, má každá trasa vlastní sloupec s časy a písmeno,

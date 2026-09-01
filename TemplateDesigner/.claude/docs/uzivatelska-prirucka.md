@@ -202,7 +202,11 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 - **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
-- **Kód** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí
+- **Kód** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí.
+  Kód vždy vyplní celý prvek. **Musí být dost velký, aby se dal sejmout z papíru** - potřebná
+  velikost roste s délkou obsahu, takže dlouhý odkaz potřebuje víc místa než krátký. Když je
+  prvek malý, aplikace po tisku napíše konkrétní čísla („QR kód je 10 mm, pro spolehlivé čtení
+  potřebuje 13,2 mm")
 - **Tabulka (dynamická)** - řádky se generují automaticky z datové kolekce (viz níže)
 - **Tabulka (pevná)** - mřížku vyplňujete ručně přímo na plátně; náhrada za skládání hlaviček
   a bloků z jednotlivých textových prvků (viz níže)
@@ -268,6 +272,11 @@ je za tlačítkem **„Nastavení celé tabulky"** v prvním řádku panelu (neb
 
 ### Výběr, přesun, velikost
 - Klik vybere prvek, tažení ho přesune, úchyty na okrajích mění velikost.
+- Velikost jde měnit i klávesnicí: **Shift+šipky** (mění se pravá a dolní hrana, levý horní roh
+  zůstává na místě).
+- **Když se prvky překrývají, klik patří tomu, který je vidět navrchu.** Prvek, který máte vybraný,
+  si klik i tažení podrží, i kdyby ho jiný překrýval - dá se tedy odtáhnout zpod něj, když si ho
+  vyberete ve stromu šablony.
 - Výběr více prvků: tažení rámečku (rubber band), nebo Ctrl+klik.
 - Prvek se nevejde mimo hranice své sekce - automatické oříznutí.
 - Klik bez pohybu myší nespustí přesun - teprve po překročení malého prahu (pár pixelů) se prvek
@@ -334,6 +343,12 @@ výchozí písmo.
 ### Rámeček a pozadí
 Každý prvek může mít rámeček (barva + tloušťka) a barvu pozadí. Když dva prvky sdílejí hranu,
 vykreslí se jako **jeden** společný rámeček, ne zdvojeně.
+
+**Vymazané barevné pole znamená „nekreslit nic".** Platí to pro podbarvení - u záhlaví i u buněk.
+Barvu tedy jde odebrat tak, že obsah pole smažete, a zůstane to tak i po uložení šablony.
+
+**Do číselných polí (rozměry, velikosti, odsazení) jde psát desetinnou čárku i tečku** - „1,5"
+znamená totéž jako „1.5". Ukládá se to s tečkou.
 
 ### Automatické zmenšení textu do buňky
 Když se text nevejde do šířky buňky tabulky (dlouhý název zastávky, výčet zón…), písmo se v té
@@ -619,7 +634,13 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
-  „obchodní název, sídlo provozovny, tel: číslo".
+  „obchodní název, sídlo provozovny, tel: číslo". Tohle je pole **Popis dopravce**, které slepí
+  všechno dohromady.
+- **Údaje dopravce po jednotlivých polích** - *Název dopravce*, *Adresa dopravce*, *Telefon
+  dopravce*, *E-mail dopravce* a *IČO dopravce*. Použijte je, když chcete o obsahu rozhodovat sami:
+  poskládáte si jen to, co na vývěsce chcete, a nic se neopakuje dvakrát. Adresa je jedno pole
+  včetně PSČ a obce - tak je uložená v číselníku dopravců. U linky s více dopravci nesou tato pole
+  **prvního** z nich.
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"):
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
     zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
