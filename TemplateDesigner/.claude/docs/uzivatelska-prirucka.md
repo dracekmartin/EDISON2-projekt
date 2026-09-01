@@ -495,7 +495,7 @@ jednoduchý: vyberete **PDF soubor** (a u vícestránkového stránku) - všechn
 z právě otevřené agendy:
 
 - **Agenda jízdního řádu** → import s **umělou inteligencí**: AI rozpozná strukturu vývěsky
-  (seznam zastávek, mřížku odjezdů, legendu poznámek, texty, loga) a rovnou namapuje datová
+  (seznam zastávek, minuty odjezdů, poznámky, texty, loga) a rovnou namapuje datová
   pole agendy - výsledkem je živá šablona napojená na data, ne statická kopie. Importuje se
   vždy **jedna stránka** (jedna vývěska jako předloha). Vyžaduje aktivovanou AI službu u M-line;
   bez ní je import u JŘ agend nedostupný.
@@ -703,7 +703,7 @@ Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle�
 
 #### Poznámky
 
-Vysvětlivky pod mřížkou.
+Vysvětlivky pod odjezdy.
 
 - **Záhlaví** (skupina Obecné) - vypnutím zmizí celý pruh záhlaví i s podbarvením a přestane
   zabírat výšku, takže poznámky začínají u horní hrany prvku. Prázdný text záhlaví pruh nezruší -
@@ -764,7 +764,7 @@ Dvoutabový dialog: **Obecné** (vlastnosti prvku) a **Sloupce**:
 
 #### Vlastní definice sloupců vývěsky
 
-Které sloupce na vývěsce vzniknou, dosud určovala konfigurace linky. V editoru prvku **Mřížka
+Které sloupce na vývěsce vzniknou, dosud určovala konfigurace linky. V editoru prvku **Minuty
 odjezdů** je proto záložka **„Definice sloupců"** s přepínačem **Automaticky (dle linky)** ×
 **Vlastní sloupce** - vlastních jde nadefinovat až pět a **uloží se do šablony**, takže platí
 pro každou linku, kterou tou šablonou vytisknete.
@@ -801,8 +801,7 @@ Analogický dvoutabový dialog:
 - Pro skupinu: viditelnost, pořadí (▲/▼), **přepis nadpisu** (jinak se použije nadpis z dat, u
   sloupce hodin výchozí „Hod"), pevná šířka (prázdné = automatický výpočet + rovnoměrné dofill),
   vlastní barva zebry pro danou skupinu.
-- **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `
-`)
+- **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `\n`)
   a nadpis se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
   jízdní řád u skupiny vyplněný i druhý nadpis, přidá se pod ně jako další řádek s vlastním
   stylem (viz *Záhlaví - 2. řádek* ve vlastnostech prvku).
@@ -896,8 +895,8 @@ zmenšení pomůže, k varování nedojde.
    ze sekce **Systémové M-line** (Ctrl+O), nebo naimportujte existující PDF vývěsku
    s AI rozpoznáním (`Nástroje → Import PDF…`) a jen ji dolaďte.
 2. **Přidejte prvky** - z palety nebo lišty nástrojů vložte Tabulku zastávek (typicky vlevo), jednu
-   nebo víc Mřížek odjezdů (typicky vedle sebe, rozdělené podle skupiny dnů) a volitelně Legendu
-   poznámek (pod mřížku).
+   nebo víc prvků Minuty odjezdů (typicky vedle sebe, rozdělené podle skupiny dnů) a volitelně
+   Poznámky (pod odjezdy).
 3. **Nastavte sloupce** - tlačítkem „Upravit sloupce…" na každém prvku otevřete příslušný editor
    a zapnete/přeuspořádáte sloupce, doladíte šířky a vzhled.
 4. **Vyberte linky** - přes dialog výběru instancí (kap. 4) zvolte jednu nebo víc linek; náhled
@@ -909,4 +908,3 @@ zmenšení pomůže, k varování nedojde.
 
 Pro rychlý start je v přehledu šablon (Ctrl+O) sekce **Systémové M-line** s výchozí
 zastávkovou šablonou (AD) dodávanou a aktualizovanou M-line.
-
