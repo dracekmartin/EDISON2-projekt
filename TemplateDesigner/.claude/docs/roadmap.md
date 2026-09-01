@@ -67,6 +67,14 @@ sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8.)
   proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
   první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
 
+- **`B103` Hledání ve výběru linek prohledá jen prvních 200** (nález Jan 1. 9.). Dialog si
+  načte 200 linek skupiny (`EDList.Instance` posílá `limit = 200`) a hledací pole pak filtruje
+  **jen je** - napsané číslo linky, která je až za dvoustovkou, nenajde nic a vypadá to, že linka
+  v datech není. Přitom tam je: `380761` v CB_CSADAD skupině 1 se přes výběr vybrat nedá, přes
+  server se najde. ⚠️ Netýká se to jen zkoušení - u firem s tisíci linkami je většina linek
+  hledáním nedosažitelná. Oprava = poslat hledaný text na server (`GetAvailableInstances` ho už
+  přijímá jako `search`), ne filtrovat načtenou stránku.
+
 ---
 
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)

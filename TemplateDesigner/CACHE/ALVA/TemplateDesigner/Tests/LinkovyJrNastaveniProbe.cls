@@ -1424,6 +1424,53 @@ ClassMethod TurnusyLinky(db As %String, sku As %String, lin As %String) As %Stri
 	quit txt
 }
 
+/// **Které linky s víc zónami jde vybrat ve výběru linek** (`N1`, ruční zkoušení).
+///
+/// ⚠️ Výběr linek si načte **prvních 200 linek skupiny** (`EDList.Instance` posílá `limit = 200`)
+/// a hledání pak filtruje jen je - linka za dvoustovkou se v dialogu nenajde, i když v datech je.
+/// Sonda proto prochází linky **v pořadí výběru** a vypíše jen ty, na které uživatel opravdu dosáhne.
+///
+/// IN: `SKUPINA` (výchozí 1), `POCET` (kolik linek výběr načte, výchozí 200).
+/// OUT(n) = "linka - název | zastávka: zóny", OUT("SOUHRN") = kolik z načtených jich má víc zón.
+ClassMethod ZonyVeVyberuLinek(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set sku = $get(^||ML("IN","SKUPINA"), 1)
+		set pocet = +$get(^||ML("IN","POCET"))
+		set:'pocet pocet = 200
+		kill ^||ML
+		set nactenych = 0, nalezeno = 0, lin = ""
+		for  {
+			set lin = $order(^[dataDB]JRL(sku, lin))
+			quit:lin=""
+			continue:'$data(^[dataDB]JRL(sku, lin, "I"))
+			set nactenych = nactenych + 1
+			quit:nactenych>pocet
+			set linIds = +$get(^[dataDB]JRL(sku, lin, "PATCH", "linIDS"))
+			continue:'((linIds = 1) || (linIds = 2))
+			set poradi = ""
+			for  {
+				set poradi = $order(^[dataDB]JRL(sku, lin, "J", poradi))
+				quit:poradi=""
+				set veta = $get(^[dataDB]JRL(sku, lin, "J", poradi))
+				set zona = $piece($piece(veta, ":", 5), "#", 2)
+				continue:'((zona [ ",") || (zona [ "/"))
+				set nalezeno = nalezeno + 1
+				set nazev = $piece($get(^[dataDB]JRL(sku, lin, "I")), "~", 1)
+				set txt = (+lin)_" - "_nazev_" | "_..NazevZastavkyProSondu(dataDB, $piece(veta,":",1))_": "_zona
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+				quit
+			}
+			quit:nalezeno'<10
+		}
+		set ^||ML("OUT","SOUHRN") = "z prvních "_nactenych_" linek výběru má víc zón "_nalezeno
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// **Kde má zastávka víc zón najednou a čím jsou v datech oddělené** (`N1`).
 ///
 /// Zákazník chce každou zónu hraniční zastávky ve vlastním sloupci. Než se to začne dělit, musí se
