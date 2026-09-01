@@ -2178,12 +2178,18 @@ public partial class MainWindow : Window
             _vm.DuplicateSelected(dir);
             e.Handled = true;
         }
+        // Shift = velikost, Ctrl = posun po mřížce, samotné šipky = posun o milimetr. Shift na
+        // velikosti je to, co uživatel zná ze starého návrháře; velký krok posunu tím zanikl,
+        // protože při výchozí mřížce 1 mm dělal totéž jako šipka samotná (rozhodnutí Jan 1. 9.).
         else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
                  && _vm.State.SelectedElements.Count > 0)
         {
-            _vm.MoveByKey(e.Key,
-                largeStep: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
-                fineStep:  Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
+            switch (TemplateDesignerViewModel.ResolveArrowAction(ctrl, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)))
+            {
+                case ArrowKeyAction.Resize: _vm.ResizeByKey(e.Key, gridStep: false); break;
+                case ArrowKeyAction.MoveByGrid: _vm.MoveByKey(e.Key, gridStep: true); break;
+                default: _vm.MoveByKey(e.Key, gridStep: false); break;
+            }
             e.Handled = true;
         }
         else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count == 1)

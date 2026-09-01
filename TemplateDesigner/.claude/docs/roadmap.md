@@ -13,22 +13,14 @@
 ## 🔎 Z testování šablony s kolegou (#13158)
 
 Nálezy z průchodu, jak Pavel skládá zastávkovou vývěsku pro BBSK (1. 9.). Řazeno od nejmenšího,
-zbývají `B108`, `B109` a `B111`. `B111` potřebuje upřesnění, než se do něj sáhne - je u něj
-poznámka, co konkrétně chybí vědět.
+zbývají `B108` a `B111`. `B111` potřebuje upřesnění, než se do něj sáhne - je u něj poznámka,
+co konkrétně chybí vědět.
 
 - **`B108` Nadpisový pruh prvku nejde vypnout** (S, nález Pavel 1. 9.). Pruh nad tabulkou se kreslí
   vždy, i s prázdným nadpisem: nakreslí pozadí, spodní linku a zabere výšku. Seznam zastávek
   („Záhlaví sloupců") a tabulka z dat („Záhlaví") vypínač mají, poznámky a odjezdy ne. Doplnit
   jednu stejně pojmenovanou volbu **„Zobrazit nadpis"** ke všem prvkům, které pruh kreslí
   (`RenderSectionHeader`). Prázdný nadpis zůstává jako dnes - pruh bez textu je legitimní.
-
-- **`B109` Změna velikosti prvku klávesnicí** (S, požadavek Pavel 1. 9.). Posun šipkami umíme,
-  změnu velikosti ne, a myší se rozměr nedoladí. V starém návrháři to Pavel používal hodně.
-  Šipky i oba obvyklé modifikátory jsou obsazené (Shift = velký krok, Ctrl = jemný), takže návrh je
-  **Alt+šipky = velikost**, **Alt+Shift+šipky = velký krok** - Alt v aplikaci už znamená „jinak než
-  obvykle" (vytáhnout prvek ze skupiny, vlezení do buňky). ⚠️ **Volba zkratky je rozhodnutí Jana**:
-  druhá cesta je standard návrháře WinForms (Shift = velikost, Ctrl = posun), ale ta by změnila
-  význam zkratky, kterou uživatelé už mají v ruce.
 
 - **`B111` Popis dopravce míchá firmu a provozovnu, adresa vyjde dvakrát** (M, nález Pavel 1. 9.).
   Text se skládá po položkách: sídlo a ulice z provozovny, a když provozovna ulici nemá, doplní se

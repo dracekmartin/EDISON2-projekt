@@ -144,9 +144,24 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 | Alt+klik | Vybrat jen jeden element ze skupiny |
 | Ctrl+Shift+H / Ctrl+Shift+J | Split element horizontálně / vertikálně |
 | Ctrl+Shift+N | Normalizovat pozice (snap na grid) |
-| Šipky | Posun vybraného elementu o krok (Shift = velký krok, Ctrl = jemný krok) |
+| Šipky | Posun vybraného elementu o **1 mm** |
+| Ctrl+šipky | Posun o **velikost mřížky** (lišta Mřížka: 1 / 2 / 5 mm) |
+| **Shift+šipky** | **Změna velikosti** o 1 mm - mění se pravá a dolní hrana, levý horní roh drží |
 | Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
 | Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
+
+⚠️ **Shift = velikost, Ctrl = krok mřížky** (rozhodnutí Jan 1. 9., `B109`). Vychází ze starého
+návrháře, kde uživatelé velikost klávesnicí hodně používali; myší se rozměr nedoladí. **Velký krok
+posunu tím zanikl** a nikdo o nic nepřišel - visel na Shiftu a při výchozí mřížce 1 mm dělal totéž
+jako šipka samotná, takže rozdíl viděl jen ten, kdo si mřížku přepnul na 2 nebo 5 mm.
+
+- **Ctrl+Shift+↑/↓ zůstává přesunu sekce** a má přednost, takže velký krok velikosti neexistuje.
+- **Prvku s dynamickou výškou** (výška prázdná, počítá ji engine z dat) se svisle nic nestane a řekne
+  se to ve stavovém řádku. Fixovat mu výšku by znamenalo přijít o dynamiku bez varování; myš mu ze
+  stejného důvodu svislé úchyty vůbec nenabízí.
+- ⚠️ **Soused se při rozšíření prvku nezužuje.** Tažení úchytu myší ani klávesy na sousední prvky
+  nesahají, jen se o ně přichytávají. Zužování dvojice u hrany platí **jen uvnitř tabulky** (šířka
+  sloupce, výška řádku) - nepřenášet ten dojem na prvky na plátně, je to jiná věc.
 
 ⚠️ **Když se prvky překrývají, klik patří tomu, který je vidět navrchu, a už vybraný prvek si klik
 podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbijí zpátky:

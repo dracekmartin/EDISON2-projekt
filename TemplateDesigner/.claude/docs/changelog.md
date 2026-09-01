@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-09-01 (5) - ⌨️ velikost prvku jde měnit klávesnicí (`B109`)
+
+**Shift+šipky mění velikost** prvku o milimetr - hýbe se pravá a dolní hrana, levý horní roh drží
+(jako když táhneš pravý dolní úchyt). Myší se rozměr nedoladí a ve starém návrháři to kolega hodně
+používal.
+
+Přerozdělení kláves (rozhodnutí Jan 1. 9., vychází ze starého návrháře):
+
+- **šipky** - posun o 1 mm, jako dosud
+- **Ctrl+šipky** - posun o **velikost mřížky** (dřív tu byl jemný krok 0,5 mm)
+- **Shift+šipky** - **změna velikosti** o 1 mm
+- **Ctrl+Shift+↑/↓** - přesun sekce, zůstává a má přednost
+
+⚠️ **Velký krok posunu tím zanikl a nikdo o nic nepřišel:** visel na Shiftu a počítal se z mřížky,
+která je výchozích **1 mm** - dělal tedy totéž jako šipka samotná. Rozdíl viděl jen ten, kdo si
+mřížku přepnul na 2 nebo 5 mm, a to je teď na Ctrl.
+
+⚠️ **Prvku s dynamickou výškou se svisle nic nestane** a řekne se to ve stavovém řádku. Fixovat mu
+výšku by znamenalo přijít o dynamiku bez varování a dostat se z toho jen zpětným krokem; myš mu ze
+stejného důvodu svislé úchyty vůbec nenabízí. Šířku měnit jde.
+
+⚠️ **Soused se při rozšíření nezužuje** - to platí jen uvnitř tabulky u hranic sloupců. Tažení úchytu
+myší na sousední prvky nesahá, jen se o ně přichytává; ověřeno v kódu.
+
+Opravené i **v nápovědě pod F1 a v uživatelské příručce**. V příručce se přitom našlo staré
+nepravdivé tvrzení, že sekci přesouvají samotné šipky - ve skutečnosti Ctrl+Shift+šipky.
+
+⚠️ **Přibyla brána na navázání kláves:** mutace ukázala, že odpojení Shiftu od změny velikosti nechá
+sadu zelenou, protože testy volají změnu velikosti přímo. Rozhodnutí „která klávesa co dělá" proto
+žije v jedné funkci (`ResolveArrowAction`), kterou test kryje. Táž třída mezery jako u nezapojené
+migrace dnes ráno.
+
+Ověřeno: .NET **1383/1383** (14 nových testů); mutacemi doloženo, že testy chytí jak odpojení
+zkratky, tak vypnutou logiku.
+
 ## 2026-09-01 (4) - 📏 rozložení poznámek se řídí velikostí písma (`B110`)
 
 **Velikost poznámek, výška řádku a počet sloupců jsou pohromadě** ve skupině Rozložení. Dřív byly

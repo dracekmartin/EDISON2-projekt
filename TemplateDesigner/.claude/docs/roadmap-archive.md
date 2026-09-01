@@ -1,5 +1,28 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B109` - změna velikosti prvku klávesnicí (hotovo 1. 9. 2026)
+
+Detail → changelog 2026-09-01 (5). **Shift+šipky = velikost** (pravá a dolní hrana), **Ctrl+šipky =
+posun po mřížce**, samotné šipky = posun o 1 mm. Rozhodnutí Jan 1. 9. podle starého návrháře.
+
+⚠️ **Velký krok posunu zanikl bez ztráty** - visel na Shiftu a počítal se z mřížky, jejíž výchozí
+hodnota je 1 mm, takže dělal totéž jako šipka samotná. Jemný krok 0,5 mm na Ctrl ustoupil kroku
+mřížky.
+
+⚠️ **Prvek s dynamickou výškou** se svisle nemění a řekne se to ve stavovém řádku; fixace výšky bez
+varování byla zavržená (myš mu svislé úchyty ze stejného důvodu nenabízí).
+
+⚠️ **Soused se při rozšíření prvku NEZUŽUJE** - podnět z toho vycházel, ale ověřeno, že tak myš
+nikdy nefungovala: sousedi jsou jen přichytávací cíle. Zužování dvojice u hrany platí **jen uvnitř
+tabulky**. Kdyby se to mělo zavést pro prvky, je to samostatná featura a musela by změnit i chování
+myši, jinak by byly nekonzistentní.
+
+Vedlejší nález: v uživatelské příručce stálo, že sekci přesouvají samotné šipky - je to
+Ctrl+Shift+šipky. Opraveno.
+
+Přibyla brána `SipkyMajiPrirazenouAkci` nad `ResolveArrowAction`: mutace ukázala, že odpojení Shiftu
+od velikosti nechá sadu zelenou, protože ostatní testy volají `ResizeByKey` přímo.
+
 ## `B110` - rozložení poznámek se řídí velikostí písma (hotovo 1. 9. 2026)
 
 Detail → changelog 2026-09-01 (4). Velikost, výška řádku a počet sloupců pohromadě; výška řádku

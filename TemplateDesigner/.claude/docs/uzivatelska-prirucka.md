@@ -519,6 +519,10 @@ operaci).
 - **Ctrl+X / Ctrl+C / Ctrl+V** - Vyjmout / Kopírovat / Vložit
 - **Ctrl+D** - Duplikovat (kopie s malým posunem)
 - **Ctrl+D + šipka** - Duplikovat vedle (s mezerou)
+- **Šipky** - Posun prvku o 1 mm
+- **Ctrl+šipky** - Posun o velikost mřížky (podle volby v liště)
+- **Shift+šipky** - Změna velikosti prvku o 1 mm; mění se pravá a dolní hrana, levý horní roh
+  zůstává na místě. U prvku, jehož výšku počítá engine z dat, jde měnit jen šířka
 - **Ctrl+Shift+C / Ctrl+Shift+V** - Kopírovat / Vložit styl
 - **Delete** - Smazat výběr
 - **Ctrl+A** - Vybrat vše v aktivní sekci
@@ -531,9 +535,8 @@ operaci).
 - **Alt+klik** - Vybrat jeden prvek ze skupiny
 - **Ctrl+Shift+H / Ctrl+Shift+J** - Rozdělit prvek vodorovně / svisle
 - **Ctrl+Shift+N** - Normalizovat pozice
-- **Šipky** - Posun prvku o 1 mm (Shift = o krok mřížky, Ctrl = jemně 0,5 mm)
 - **Ctrl+PageUp / Ctrl+PageDown** - Vrstva dopředu / dozadu (+Shift = zcela na kraj)
-- **Šipka ↑/↓ (bez výběru prvku)** - Přesun aktivní sekce nahoru / dolů
+- **Ctrl+Shift+↑/↓** - Přesun aktivní sekce nahoru / dolů
 - **Ctrl+0** - Přizpůsobit zobrazení stránce („Fit")
 - **Ctrl+1** - Skutečná velikost 100 % („1:1")
 - **Ctrl + kolečko myši** - Plynulý zoom (k pozici kurzoru)

@@ -2409,9 +2409,11 @@ public class TemplateDesignerViewModel : EDViewModel
     ///   largeStep=true (Shift) → GridSize (rychlý skok)
     ///   bez modifikátorů       → 1 mm (default)
     /// </summary>
-    public void MoveByKey(Key key, bool largeStep, bool fineStep = false)
+    public void MoveByKey(Key key, bool gridStep)
     {
-        float step = fineStep ? 0.5f : (largeStep ? State.GridSize : 1f);
+        // Krok mřížky drží Ctrl (dřív Shift, a na Ctrl byl jemný krok 0,5 mm) - Shift se uvolnil
+        // pro změnu velikosti, jak ji uživatel zná ze starého návrháře (rozhodnutí Jan 1. 9.).
+        float step = gridStep ? State.GridSize : 1f;
         float dx   = key switch { Key.Left => -step, Key.Right => step, _ => 0f };
         float dy   = key switch { Key.Up   => -step, Key.Down  => step, _ => 0f };
 
@@ -2447,6 +2449,83 @@ public class TemplateDesignerViewModel : EDViewModel
 
         if (moves.Count == 1) Execute(moves[0]);
         else if (moves.Count > 1) Execute(new CompositeCommand("Přesun šipkou", moves));
+
+        RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    /// <summary>
+    /// Co udělají šipky nad vybraným prvkem. Rozhodnutí je tady, a ne rozeseté v obsluze kláves,
+    /// aby se dalo ohlídat testem - mutace 1. 9. ukázala, že samotné volání
+    /// <see cref="ResizeByKey"/> testy pokryjí, ale odpojení od Shiftu už ne.
+    /// </summary>
+    /// <remarks>
+    /// Ctrl+Shift+↑/↓ řeší obsluha kláves dřív (přesun sekce), takže sem ta kombinace nedojde.
+    /// </remarks>
+    public static ArrowKeyAction ResolveArrowAction(bool ctrl, bool shift) => (ctrl, shift) switch
+    {
+        (_, true)     => ArrowKeyAction.Resize,      // Shift = velikost, jako ve starém návrháři
+        (true, false) => ArrowKeyAction.MoveByGrid,  // Ctrl = posun po mřížce
+        _             => ArrowKeyAction.Move,        // samotné šipky = posun o milimetr
+    };
+
+    /// <summary>Nejmenší rozměr, na který jde prvek stáhnout - shodně s tažením úchytu myší.</summary>
+    private const float MinElementWidthMm = 3f;
+    private const float MinElementHeightMm = 2f;
+
+    /// <summary>
+    /// Změní velikost vybraných prvků o krok. Mění se <b>pravá a dolní hrana</b>, levý horní roh
+    /// zůstává - stejně jako když uživatel táhne pravý dolní úchyt.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Prvku s dynamickou výškou se svisle nic nestane a řekne se to ve stavovém řádku. Fixovat
+    /// mu výšku by znamenalo, že o dynamiku přijde bez varování a dostane se z toho jen zpětným
+    /// krokem; myš mu ze stejného důvodu svislé úchyty vůbec nenabízí (rozhodnutí Jan 1. 9.).
+    /// </remarks>
+    public void ResizeByKey(Key key, bool gridStep)
+    {
+        float step = gridStep ? State.GridSize : 1f;
+        float dw = key switch { Key.Left => -step, Key.Right => step, _ => 0f };
+        float dh = key switch { Key.Up   => -step, Key.Down  => step, _ => 0f };
+
+        var cile = State.SelectedElements.Where(el => !el.IsLocked).ToList();
+        if (cile.Count == 0) return;
+
+        // Svislá změna se týká jen prvků s pevnou výškou; když mají všechny vybrané výšku z dat,
+        // není co měnit a je lepší to říct, než tiše nedělat nic.
+        if (dh != 0f && cile.All(el => el.Height is null))
+        {
+            StatusText = cile.Count == 1
+                ? "Výšku tohoto prvku počítá engine z dat - zadejte ji v jeho vlastnostech, nebo měňte šířku."
+                : "Vybrané prvky mají výšku z dat - svisle je zvětšit nejde.";
+            return;
+        }
+
+        float sectionW = State.CurrentTemplate.PageSize.PrintableWidth;
+        var commands = new List<IDesignerCommand>();
+
+        foreach (var el in cile)
+        {
+            float oldW = el.Width;
+            float? oldH = el.Height;
+
+            float newW = MathF.Max(MinElementWidthMm, MathF.Min(oldW + dw, sectionW - el.X));
+            float? newH = oldH;
+            if (dh != 0f && oldH is { } h)
+            {
+                var section = State.CurrentTemplate.Sections.FirstOrDefault(sec => sec.Elements.Contains(el));
+                float sectionH = section?.EffectiveDesignerHeight ?? float.MaxValue;
+                newH = MathF.Max(MinElementHeightMm, MathF.Min(h + dh, sectionH - el.Y));
+            }
+
+            if (newW == oldW && newH == oldH) continue;
+            el.Width = newW;
+            el.Height = newH;
+            commands.Add(new ResizeElementCommand(el, el.X, el.Y, oldW, oldH, el.X, el.Y, newW, newH));
+        }
+
+        if (commands.Count == 0) return;
+        Execute(commands.Count == 1 ? commands[0] : new CompositeCommand("Změna velikosti klávesnicí", commands));
 
         RequestPropertiesPanelUpdate?.Invoke();
         RequestCanvasRefresh?.Invoke();
