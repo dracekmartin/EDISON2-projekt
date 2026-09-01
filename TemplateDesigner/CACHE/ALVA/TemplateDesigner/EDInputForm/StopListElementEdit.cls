@@ -25,7 +25,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "#FFE0E0E0", 1, "", 1)
+        // Pozadí bez výchozí hodnoty - nese ho prvek sám, prázdno znamená bez podbarvení.
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "", 1, "", 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "#00FFFFFF")
 
         // ── Co se u zastávky tiskne ───────────────────────────────────────

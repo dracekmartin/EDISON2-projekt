@@ -5,7 +5,7 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** § Z testování šablony s kolegou (#13158) - jde od nejmenšího, na řadě je
-> **`B107`**. Pak § Aktuální focus, kde jde rovnou vzít **`B101`**; u čtyř dalších je první
+> **`B108`**. Pak § Aktuální focus, kde jde rovnou vzít **`B101`**; u čtyř dalších je první
 > krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
 ---
@@ -13,14 +13,8 @@
 ## 🔎 Z testování šablony s kolegou (#13158)
 
 Nálezy z průchodu, jak Pavel skládá zastávkovou vývěsku pro BBSK (1. 9.). Řazeno od nejmenšího,
-všechno zbývající jsou chybějící volby (`B105` a `B106` jsou hotové). `B110` a `B111` potřebují
+všechno zbývající jsou chybějící volby (`B105` až `B107` jsou hotové). `B110` a `B111` potřebují
 upřesnění, než se do nich sáhne - u obou je poznámka, co konkrétně chybí vědět.
-
-- **`B107` Barvu nastavenou ve formuláři nejde vrátit na „nenastaveno"** (S, nález Jan 1. 9.).
-  Barevné pole má jen tlačítko pro výběr a dialog Windows vždycky vrátí nějakou barvu, takže jednou
-  nastavená barva už z prvku nesundá a dědění se nedá obnovit. Dialog sloupců to umí („×" u barvy
-  textu a pozadí), formulář prvku ne. Řešení = stejné „×" u náhledu barvy v `ColorFieldTemplate`
-  (EDControls), které pošle prázdnou hodnotu - ta už dnes znamená „dědit".
 
 - **`B108` Nadpisový pruh prvku nejde vypnout** (S, nález Pavel 1. 9.). Pruh nad tabulkou se kreslí
   vždy, i s prázdným nadpisem: nakreslí pozadí, spodní linku a zabere výšku. Seznam zastávek

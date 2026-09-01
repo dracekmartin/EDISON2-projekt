@@ -1,5 +1,25 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B107` - vymazané podbarvení záhlaví znamená „nekreslit nic" (hotovo 1. 9. 2026)
+
+Detail → changelog 2026-09-01 (3). Prázdné pole = záhlaví bez podbarvení, a vydrží to i po uložení.
+
+⚠️ **Nešlo o chybu ukládání**, i když tak vypadala: šedá v prvku vůbec nebyla zapsaná, byla zapečená
+jako **záloha kaskády** a jako výchozí hodnota pole ve formuláři. Prázdno proto znamenalo „nic
+neurčuji, vezmi zálohu" a „bez podbarvení" nebylo jak vyjádřit. Šedá se přesunula do počáteční
+hodnoty prvku; existujícím šablonám ji dopsala migrace **1.11.0**, takže se vzhled nikomu nezměnil
+(rozhodnutí Jan 1. 9., dvakrát potvrzené včetně ceny za migraci).
+
+Platí u poznámek, zastávek, odjezdů, linkového JŘ, pevné tabulky i tabulky z dat. **Dědění stylů
+zůstalo** - prázdno u sloupce dál znamená „vezmi z prvku", kaskáda končí až u prvku.
+
+⚠️ **Vedlejší nález, který za to stál:** migrace vyřazená ze seznamu nechala celou sadu zelenou,
+protože testy migrací je volají přímo - zákazníkovi by se přitom šablona nemigrovala vůbec. Přibyla
+brána `KazdaMigrace_JeVProdukcnimSeznamu`.
+
+⚠️ **Odtisky kreslení tuhle třídu změn nekryjí** (porovnávají se na vyžádání a jejich prvky mají styl
+záhlaví natvrdo). Doklad je v migraci a jejích testech.
+
 ## `B106` - desetinná čárka v číselných polích (hotovo 1. 9. 2026)
 
 Detail → changelog 2026-09-01 (2). Čárka i tečka na vstupu, uvnitř i na drátě dál tečka.

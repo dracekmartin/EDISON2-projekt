@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-01 (3) - 🎨 vymazané podbarvení záhlaví znamená „nekreslit nic" (`B107`)
+
+Podbarvení záhlaví jde **vymazat a zůstane vymazané**. Prázdné pole = záhlaví bez podbarvení.
+
+⚠️ **Dosud se vymazaná barva vracela** a vypadalo to jako chyba ukládání. Nebyla: šedá v prvku vůbec
+nebyla zapsaná, byla zapečená jako **záloha** v kaskádě a jako výchozí hodnota pole ve formuláři.
+Vymazání proto uložilo „nic neurčuji", renderer sáhl po záloze a formulář si při dalším otevření
+předvyplnil svou výchozí šedou. „Bez podbarvení" nebylo jak vyjádřit (nález Pavel, #13158).
+
+Šedá se proto přesunula ze zálohy do **počáteční hodnoty prvku**: nově vložený prvek ji má zapsanou,
+existujícím ji dopsala migrace šablon (**1.11.0**), takže se vzhled nikomu nezměnil. Od té chvíle je
+prázdno jednoznačné. Platí u všech prvků se záhlavím: poznámky, zastávky, odjezdy, linkový JŘ, pevná
+tabulka i tabulka z dat.
+
+**Dědění stylů zůstává** - prázdno u sloupce dál znamená „vezmi z prvku", protože kaskáda končí až
+u prvku. Kdo chce zrušit podbarvení jednoho sloupce, vymaže ho u toho sloupce.
+
+⚠️ **Přibyla brána, kterou si vyžádala mutace:** migrace vyřazená ze seznamu nechala celou sadu
+zelenou, protože testy migrací je volají přímo. Zákazníkovi by se přitom šablona nemigrovala vůbec.
+Nově se hlídá, že každá napsaná migrace v seznamu je.
+
+Ověřeno: .NET **1357/1357** (22 nových testů), Caché **138/138**; všech pět formulářů ověřeno
+voláním serveru. ⚠️ Odtisky kreslení tuhle změnu nekryjí - porovnávají se jen na vyžádání a jejich
+prvky mají styl záhlaví nastavený natvrdo, takže se do zapečené šedé nedostanou.
+
 ## 2026-09-01 (2) - 🔢 do číselných polí jde psát desetinnou čárku (`B106`)
 
 Rozměry, velikosti a odsazení se nově zadávají **čárkou i tečkou** - „1,5" znamená totéž jako „1.5".

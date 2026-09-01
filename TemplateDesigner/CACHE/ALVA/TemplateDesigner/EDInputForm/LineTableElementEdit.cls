@@ -57,8 +57,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
+        // Bez výchozí hodnoty - podbarvení nese prvek sám, prázdno znamená bez podbarvení.
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFE0E0E0"
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
 

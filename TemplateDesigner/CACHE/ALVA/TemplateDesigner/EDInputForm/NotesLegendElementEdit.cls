@@ -28,10 +28,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
         d form.AddText("HeaderText", "Nadpis", "Poznámky")
-        // Default musí sedět na baked kaskádu (ScheduleHeaderDefaults) - jinak formulář ukazuje
-        // jinou barvu, než se tiskne.
+        // Pozadí BEZ výchozí hodnoty - podbarvení si prvek nese sám, takže pole má ukázat jeho
+        // hodnotu. Výchozí barva by se vracela do vymazaného pole a vypadalo by to, že vymazání
+        // neplatí (nález Pavel 1. 9.). Prázdno = bez podbarvení.
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFE0E0E0"
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")

@@ -43,7 +43,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // panel u vybrané buňky mění jen tu jednu. Bez toho stály proti sobě dvě sady týchž
         // vlastností a nešlo poznat, která kam sahá (nález Jan 17. 8.).
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl všech buněk", "#FF222222", "#00FFFFFF")
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl řádku záhlaví", "#FF333333", "#FFE8E8E8", 1, "", 1)
+        // Pozadí bez výchozí hodnoty - nese ho prvek sám, prázdno znamená bez podbarvení.
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl řádku záhlaví", "#FF333333", "", 1, "", 1)
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form, 1, "#FF999999", 0.19)

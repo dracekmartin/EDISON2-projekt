@@ -22,7 +22,7 @@ namespace TemplateDesigner.Serialization;
 public class TemplateMigrator
 {
     /// <summary>Aktuální nejvyšší podporovaná verze Template JSON.</summary>
-    public const string CurrentVersion = "1.10.0";
+    public const string CurrentVersion = "1.11.0";
 
     /// <summary>
     /// Registrované migrace, sortovány podle FromVersion vzestupně.
@@ -46,8 +46,16 @@ public class TemplateMigrator
             new MigrationRouteVariantsColumn(),      // 1.7.0 → 1.8.0
             new MigrationLineArrowColumn(),          // 1.8.0 → 1.9.0
             new MigrationKonecnaZastavka(),          // 1.9.0 → 1.10.0
+            new MigrationZahlaviPozadi(),            // 1.10.0 → 1.11.0
         ];
     }
+
+    /// <summary>
+    /// Zapojené migrace v pořadí, v jakém se spouštějí. Veřejné kvůli bráně, která hlídá, že žádná
+    /// napsaná migrace nezůstala mimo seznam - nezapojená migrace se na šablonu nikdy nespustí,
+    /// a vlastní testy migrace to nepoznají, protože ji volají přímo.
+    /// </summary>
+    public IReadOnlyList<ITemplateMigration> Migrations => _migrations;
 
     /// <summary>
     /// Spustí migraci nad JSON dokumentem. Vrátí (migrovaný JSON, wasMigrated flag,

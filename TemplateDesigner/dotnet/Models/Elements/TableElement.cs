@@ -157,8 +157,9 @@ public class TableElement : TemplateElement
     {
         var t = new TableElement
         {
-            Mode    = TableMode.Fixed,
-            Columns = [.. Enumerable.Range(0, columns).Select(_ => new TableColumn { Header = "", Width = 0f })],
+            Mode        = TableMode.Fixed,
+            HeaderStyle = new TextStyle { BackgroundColor = NoveZahlaviPozadi },
+            Columns     = [.. Enumerable.Range(0, columns).Select(_ => new TableColumn { Header = "", Width = 0f })],
         };
         t.Rows = [.. Enumerable.Range(0, rows).Select(_ => new TableRow
         {
@@ -194,7 +195,7 @@ public class TableElement : TemplateElement
     /// <summary>Výška řádku záhlaví v mm.</summary>
     public float HeaderHeight { get; set; } = 8f;
 
-    /// <summary>Styl záhlaví tabulky. Null = výchozí (Bold, #E8E8E8 pozadí, #333333 text).</summary>
+    /// <summary>Styl záhlaví tabulky. Null = výchozí (Bold, #333333 text, bez podbarvení).</summary>
     public TextStyle? HeaderStyle { get; set; }
 
     /// <summary>Styl datových buněk tabulky. Null = výchozí (#222222 text, průhledné pozadí).</summary>
@@ -270,8 +271,13 @@ public class TableElement : TemplateElement
     {
         Bold = true,
         TextColor = "#FF333333",
-        BackgroundColor = "#FFE8E8E8",
     };
+
+    // Podbarvení záhlaví se sem záměrně nepíše: prázdná hodnota u prvku má znamenat „nekreslit nic",
+    // a zapečená záloha v kaskádě by ji vrátila zpátky na šedou. Novému prvku se šedá zapisuje
+    // (NoveZahlaviPozadi), existujícím ji dopsala migrace 1.11.0.
+    /// <summary>Podbarvení záhlaví, které dostane <b>nově vložená</b> tabulka (zapisuje se do prvku).</summary>
+    public const string NoveZahlaviPozadi = "#FFE8E8E8";
 
     /// <summary>Výchozí parent styl pro datové buňky. Tmavě šedý text (#FF222222) na průhledném pozadí.</summary>
     private static ResolvedTextStyle TableDataParent => CellDefaults.Default with
