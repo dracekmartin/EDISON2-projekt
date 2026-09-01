@@ -302,7 +302,7 @@ Pravidla obsahu (ZÁVAZNÁ):
         ElementTypes.DynamicTable  => "Tabulka (dynamická)",
         ElementTypes.Table         => "Tabulka (pevná)",
         ElementTypes.StopList      => "Seznam zastávek (zastávkový JŘ)",
-        ElementTypes.DepartureGrid => "Mřížka odjezdů (zastávkový JŘ)",
+        ElementTypes.DepartureGrid => "Minuty odjezdů (zastávkový JŘ)",
         ElementTypes.NotesLegend   => "Legenda poznámek (zastávkový JŘ)",
         ElementTypes.LineTable     => "Tabulka linky (linkový JŘ)",
         _ => type

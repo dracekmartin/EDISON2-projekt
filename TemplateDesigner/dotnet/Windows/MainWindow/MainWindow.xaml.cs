@@ -1455,7 +1455,7 @@ public partial class MainWindow : Window
         if (AgendaCapabilities.Supports(kind, ElementTypes.StopList))
             Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
-            Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
+            Add("Minuty odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
             Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))

@@ -321,7 +321,7 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnPalDepartureGrid" Style="{StaticResource PaletteButton}" ToolTip="Mřížka odjezdů" Tag="DepartureGridElement"
+                        <Button x:Name="BtnPalDepartureGrid" Style="{StaticResource PaletteButton}" ToolTip="Minuty odjezdů" Tag="DepartureGridElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.DepartureGrid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
@@ -687,7 +687,7 @@
                         <Grid>
                             <!-- Parametry sestavy renderuje EDInputForm z Caché (AgendaParams, includeExport=0)
                                  - stejný stack jako tiskový dialog, jen bez export skupiny. Skupiny (Seznam
-                                 zastávek / Mřížka odjezdů / Poznámky a legenda) řídí `group` z GetParameters.
+                                 zastávek / Minuty odjezdů / Poznámky) řídí `group` z GetParameters.
                                  CacheClass + InitParams + FieldChanged/visibleWhen wiring je v code-behindu. -->
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
                                           Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}">

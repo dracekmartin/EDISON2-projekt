@@ -29,7 +29,7 @@ public static class ContentShrinkWarnings
     {
         NotesLegendElement   => "Poznámky",
         StopListElement      => "Seznam zastávek",
-        DepartureGridElement => "Mřížka odjezdů",
+        DepartureGridElement => "Minuty odjezdů",
         LineTableElement     => "Linkový JŘ",
         _                    => null,
     };

@@ -77,7 +77,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Vlastnosti** - nastavení právě vybraného prvku nebo sekce - okamžitá editace bez nutnosti otevírat dialog
 - **Strom** - hierarchický přehled celé šablony (sekce → skupiny prvků → prvky) pro rychlou navigaci
 - **Pomocník** - AI pomocník: zeptáte se vlastními slovy, kde v aplikaci co najdete nebo jak něco udělat (vyžaduje aktivovanou AI službu u M-line)
-- **Parametry** - parametry sestavy pro aktuální agendu - nastavení ovlivňující obsah (např. časová osa odjezdů, tisk šipek směru). Jsou seskupené po blocích podle prvku, kterého se týkají (Seznam zastávek / Mřížka odjezdů / Poznámky a legenda) a jejich změna se hned promítne do náhledu. Tytéž hodnoty jsou i v dialogu tisku. U šablon bez parametrů: „Tato šablona nemá parametry."
+- **Parametry** - parametry sestavy pro aktuální agendu - nastavení ovlivňující obsah (např. časová osa odjezdů, tisk šipek směru). Jsou seskupené po blocích podle prvku, kterého se týkají (Seznam zastávek / Minuty odjezdů / Poznámky) a jejich změna se hned promítne do náhledu. Tytéž hodnoty jsou i v dialogu tisku. U šablon bez parametrů: „Tato šablona nemá parametry."
 
 ### Status bar (dole)
 
@@ -666,7 +666,7 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 - **Podtržení aktuální / Tučně aktuální / Velikost aktuální / Pozadí aktuální / Barva textu aktuální** - zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná barva = stejná jako ostatní řádky)
 - **Projeté zastávky + Barva projetých** - zda tisknout i zastávky, které vozidlo od aktuální zastávky již projelo (ztlumeně)
 
-#### Mřížka odjezdů
+#### Minuty odjezdů
 
 Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle…).
 

@@ -1765,7 +1765,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s param.name         = "CASOVA_OSA"
     s param.label        = "Časová osa odjezdů"
     s param.type         = "enum"
-    s param.group        = "Mřížka odjezdů"
+    s param.group        = "Minuty odjezdů"
     s param.defaultValue = "Jen hodiny s odjezdy"
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Jen hodiny s odjezdy")
@@ -1779,7 +1779,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pOd.name         = "HODINY_OD"
     s pOd.label        = "Hodiny od"
     s pOd.type         = "number"
-    s pOd.group        = "Mřížka odjezdů"
+    s pOd.group        = "Minuty odjezdů"
     s pOd.defaultValue = "4"
     s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pOd)
@@ -1788,14 +1788,14 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pDo.name         = "HODINY_DO"
     s pDo.label        = "Hodiny do"
     s pDo.type         = "number"
-    s pDo.group        = "Mřížka odjezdů"
+    s pDo.group        = "Minuty odjezdů"
     s pDo.defaultValue = "23"
     s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pDo)
 
     // Roztáhnout data odjezdů (řádky + fonty) na výšku elementu, pokud je kratší rozsah hodin než kapacita.
     // Hlavička skupin dnů + sloupec hodin zůstávají původní velikost.
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Mřížka odjezdů")
+    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
