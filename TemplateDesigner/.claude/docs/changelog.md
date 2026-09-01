@@ -2,8 +2,8 @@
 
 ## 2026-09-01 (7) - 🏢 dopravce a provozovny po jednotlivých polích (`B111`)
 
-Údaje dopravce jdou skládat po částech, místo jednoho slepeného bloku. Přibylo šest **samostatných
-polí** (Název, Adresa, Telefon, Fax, E-mail, IČO dopravce) a kolekce **Dopravci** do tabulky z dat -
+Údaje dopravce jdou skládat po částech, místo jednoho slepeného bloku. Přibylo pět **samostatných
+polí** (Název, Adresa, Telefon, E-mail, IČO dopravce) a kolekce **Dopravci** do tabulky z dat -
 řádek na každou kombinaci dopravce a provozovny, která na lince skutečně jezdí, se sloupci pro firmu
 i pro provozovnu zvlášť.
 
@@ -25,6 +25,9 @@ který u poloviny dopravců lže, je horší než žádné.
 plný tvar, ale u ČSAD AUTOBUSY České Budějovice má první jen „Hálkova 781/9" a plnou adresu s PSČ
 a obcí nese teprve druhé. Odhalilo to ověření voláním serveru, ne úvaha - první verze brala tu
 kratší, takže by na vývěsce zmizelo PSČ a obec. Hlídá to nový test proti obsahu starého pole.
+
+**Fax se nevystavuje** (rozhodnutí Jan 1. 9.) - na vývěsce nemá co dělat. Číselník ho drží dál,
+takže se dá kdykoli přidat.
 
 Skalární pole nesou **prvního dopravce** linky; víc dopravců se skládá z kolekce. Řádkové kolekce
 umí filtrovat podle **jakéhokoli** svého pole, ale **řadit jen podle zobrazeného sloupce** - to je

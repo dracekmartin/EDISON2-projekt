@@ -2,8 +2,9 @@
 
 ## `B111` - dopravce a provozovny po jednotlivých polích (hotovo 1. 9. 2026)
 
-Detail → changelog 2026-09-01 (7). Šest samostatných polí dopravce + kolekce **Dopravci** (řádek na
-dopravce × provozovnu, která na lince jezdí). `POPIS_DOPRAVCE` zůstalo nedotčené.
+Detail → changelog 2026-09-01 (7). Pět samostatných polí dopravce + kolekce **Dopravci** (řádek na
+dopravce × provozovnu, která na lince jezdí). `POPIS_DOPRAVCE` zůstalo nedotčené. **Fax se
+nevystavuje** - na vývěsce nemá co dělat (rozhodnutí Jan 1. 9.); číselník ho drží dál.
 
 ⚠️ **Příčina duplicity byla v datech, ne v našem skládání** (ověřeno na CB_CSADAD): pole „zkrácený
 název pro MHD" obsahuje u ČSAD Jindřichův Hradec celý text včetně telefonů, takže se telefon dostal

@@ -82,9 +82,10 @@ Method TestGold0365001()
 	// Obojí mění **jen md5** - počty stránek, zastávek, odjezdů i poznámek zůstaly shodné, což je
 	// přesně ten podpis „změněný obsah pole / přejmenované pole", ne změna chování.
 	// Re-baseline 2026-09-01 (#13158): do `values` přibyla rozložená pole dopravce (NAZEV_DOPRAVCE,
-	// ADRESA_DOPRAVCE…) a do řádků kolekce DOPRAVCI. Přírůstek, nic se neodebralo → jen md5, počty
-	// beze změny.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=Sh8HZIoI3j2sVwSYTKF5ig==")
+	// ADRESA_DOPRAVCE…) a do řádků kolekce DOPRAVCI; fax se týž den zase vyndal (na vývěsce nemá co
+	// dělat, rozhodnutí Jan). Obojí mění jen md5 - počty stránek, zastávek, odjezdů i poznámek
+	// zůstaly shodné.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=/CJl6SXe6w6EjaZZU8+giA==")
 }
 
 Method TestGold0365005()
@@ -119,7 +120,7 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-31 (#13158): dopravce po řádcích + přejmenování na KONECNA_ZASTAVKA,
 	// viz gold 0365001. Jen md5, počty beze změny.
 	// Re-baseline 2026-09-01 (#13158): rozložená pole dopravce + kolekce DOPRAVCI, viz gold 0365001.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=PXiw5Syzbq6yMghrrUtk7A==")
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=TXam/Ht5a/bJVtrFSaFqtQ==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -198,7 +199,7 @@ Method TestGold0330530()
 	// má název a telefon, ale ne ulici („Oblast Písek"). Tahle linka je jediná ze sady, kde se to
 	// projevilo - je to zároveň důkaz, že záloha opravdu zabírá. Opět jen md5, počty shodné.
 	// Re-baseline 2026-09-01 (#13158): rozložená pole dopravce + kolekce DOPRAVCI, viz gold 0365001.
-	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=0OXIWeLtv4J8x+yeDg80oA==")
+	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=MSlwyAyxhvAp2gAwYqcjVw==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

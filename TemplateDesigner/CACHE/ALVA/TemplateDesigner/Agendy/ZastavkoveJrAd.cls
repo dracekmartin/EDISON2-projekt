@@ -2800,7 +2800,7 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String, poRad
 }
 
 /// Údaje jednoho dopravce a jeho provozovny **po jednotlivých polích**, ne slepené do bloku.
-/// Vrací je v `udaje` (ByRef): NAZEV, ADRESA, TELEFON, FAX, EMAIL, ICO a PROVOZOVNA_*.
+/// Vrací je v `udaje` (ByRef): NAZEV, ADRESA, TELEFON, EMAIL, ICO a PROVOZOVNA_*.
 ///
 /// ⚠️ **Číselník sám není atomický** a tohle je hranice, za kterou pole rozebrat nejde
 /// (ověřeno na CB_CSADAD 1. 9.):
@@ -2828,9 +2828,10 @@ ClassMethod DopravceUdaje(dataDB As %String, fa As %String, pr As %String, ByRef
     s udaje("NAZEV")   = $s($p(firma,"~",7)'="":$p(firma,"~",7), 1:$p(firma,"~",1))
     s udaje("ADRESA")  = $s($p(firma,"~",10)'="":$p(firma,"~",10), 1:$p(firma,"~",2))
     s udaje("TELEFON") = $p(firma,"~",3)
-    s udaje("FAX")     = $p(firma,"~",4)
     s udaje("ICO")     = $p(firma,"~",5)
     s udaje("EMAIL")   = $p(firma,"~",13)
+    // Fax se vědomě nevystavuje (rozhodnutí Jan 1. 9.) - na vývěsce nemá co dělat. Pole 4 číselníku
+    // ho drží dál, takže se dá kdykoli přidat.
 
     // Provozovna: 1 je její NÁZEV („provozna Příbram"), ne sídlo - komentář u NazevDopravce
     // tvrdil opak. 4 je místo („J.Hradec", „Dačice").
@@ -2850,7 +2851,6 @@ ClassMethod DopravceSkalary(dataDB As %String, sku As %String, lin As %String, v
     d vals.%Set("NAZEV_DOPRAVCE",   $s($isobject(prvni):prvni.NAZEV,   1:""))
     d vals.%Set("ADRESA_DOPRAVCE",  $s($isobject(prvni):prvni.ADRESA,  1:""))
     d vals.%Set("TELEFON_DOPRAVCE", $s($isobject(prvni):prvni.TELEFON, 1:""))
-    d vals.%Set("FAX_DOPRAVCE",     $s($isobject(prvni):prvni.FAX,     1:""))
     d vals.%Set("EMAIL_DOPRAVCE",   $s($isobject(prvni):prvni.EMAIL,   1:""))
     d vals.%Set("ICO_DOPRAVCE",     $s($isobject(prvni):prvni.ICO,     1:""))
     q
@@ -3147,7 +3147,6 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "NAZEV_DOPRAVCE",         "Název dopravce",         "text")
     d ..AddField(fields, "ADRESA_DOPRAVCE",        "Adresa dopravce",        "text")
     d ..AddField(fields, "TELEFON_DOPRAVCE",       "Telefon dopravce",       "text")
-    d ..AddField(fields, "FAX_DOPRAVCE",           "Fax dopravce",           "text")
     d ..AddField(fields, "EMAIL_DOPRAVCE",         "E-mail dopravce",        "text")
     d ..AddField(fields, "ICO_DOPRAVCE",           "IČO dopravce",           "text")
 
@@ -3258,7 +3257,6 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colDopravciFields, "NAZEV",              "Název dopravce",      "text")
     d ..AddField(colDopravciFields, "ADRESA",             "Adresa dopravce",     "text")
     d ..AddField(colDopravciFields, "TELEFON",            "Telefon dopravce",    "text")
-    d ..AddField(colDopravciFields, "FAX",                "Fax dopravce",        "text")
     d ..AddField(colDopravciFields, "EMAIL",              "E-mail dopravce",     "text")
     d ..AddField(colDopravciFields, "ICO",                "IČO dopravce",        "text")
     d ..AddField(colDopravciFields, "PROVOZOVNA_NAZEV",   "Název provozovny",    "text")

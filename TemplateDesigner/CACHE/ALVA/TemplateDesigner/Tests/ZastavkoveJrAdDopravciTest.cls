@@ -61,7 +61,8 @@ Method TestKolekceMaVsechnaPoleIKdyzJsouPrazdna()
 	}
 
 	set prvni = dopravci.%Get(0)
-	set ocekavane = $listbuild("NAZEV","ADRESA","TELEFON","FAX","EMAIL","ICO","PROVOZOVNA_NAZEV","PROVOZOVNA_ADRESA","PROVOZOVNA_TELEFON","PROVOZOVNA_MISTO")
+	// Fax se vědomě nevystavuje - na vývěsce nemá co dělat (rozhodnutí Jan 1. 9.).
+	set ocekavane = $listbuild("NAZEV","ADRESA","TELEFON","EMAIL","ICO","PROVOZOVNA_NAZEV","PROVOZOVNA_ADRESA","PROVOZOVNA_TELEFON","PROVOZOVNA_MISTO")
 	for i = 1:1:$listlength(ocekavane) {
 		set klic = $listget(ocekavane, i)
 		do $$$AssertTrue(prvni.%IsDefined(klic), "kolekce DOPRAVCI má pole "_klic)
