@@ -10,8 +10,8 @@ Registruje ho `EDAppearance.Initialize` (`EventManager.RegisterClassHandler(type
 stejný vzor jako `ThemeService`) → panel dostane **každé okno včetně odděděných tříd**, bez
 zásahu do jeho XAML a bez per-app drátování.
 
-**Na `EDViewModel.AttachToWindow` to viset nemůže**: TemplateDesigner ho nevolá vůbec (hlavní
-okno i dialogy otevírá přímo, ne přes `WindowNavigator`) - panel tam pak nebyl nikde. Ze
+**Na `EDViewModel.AttachToWindow` to viset nemůže**: TemplateDesigner ho volá jen pro hlavní
+okno (dialogy otevírá přímo, ne přes `WindowNavigator`) - panel by tam pak chyběl. Ze
 stejného důvodu visí na témže class handleru i usage telemetrie (`EDUsageTelemetryHook`).
 
 Přeskočí se (`ShouldAttach`): `IOverlayWindow`, **okna frameworku** (`FrameworkWindows` - chrome

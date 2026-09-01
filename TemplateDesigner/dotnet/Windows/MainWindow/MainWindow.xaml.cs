@@ -107,6 +107,10 @@ public partial class MainWindow : Window
         DataContext = _vm;
         InitializeComponent();
 
+        // Ručně, protože TD okna neotvírá přes WindowNavigator - bez tohohle volání by se
+        // pozice a velikost hlavního okna nepersistovaly (musí být před Show()).
+        _vm.AttachToWindow(this);
+
         // AI generátor šablon zatím jen pro vývojáře (lokální dev klíč) - před produkcí skrytý;
         // Import PDF zůstává pro všechny.
         MenuAiAssistant.Visibility =

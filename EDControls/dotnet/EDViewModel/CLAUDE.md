@@ -16,7 +16,7 @@ Základní třída ViewModelů + infrastruktura (`EDServices` - DI singleton `Cu
    agendová okna nedostávají popupy nad shellem.
 
 Panel Podpora ani usage telemetrie tu nejsou - visí na `Window.Loaded` z `EDAppearance.Initialize`,
-protože TemplateDesigner `AttachToWindow` nevolá (viz
+protože TemplateDesigner `AttachToWindow` volá jen pro hlavní okno (viz
 [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md)). Telemetrie (`EDUsageTelemetryHook`):
 OPEN + kliky na **pojmenované** controly, flush při `Closed`, best-effort, nikdy nehazí; bere
 jen okna s `EDViewModel` a nenulovým `PersistedFormId` (šum bez VM vypadne sám), guard `IsHooked`
