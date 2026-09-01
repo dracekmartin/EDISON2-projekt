@@ -13,8 +13,8 @@
 ## 🔎 Z testování šablony s kolegou (#13158)
 
 Nálezy z průchodu, jak Pavel skládá zastávkovou vývěsku pro BBSK (1. 9.). Řazeno od nejmenšího,
-všechno zbývající jsou chybějící volby (`B105` až `B107` jsou hotové). `B110` a `B111` potřebují
-upřesnění, než se do nich sáhne - u obou je poznámka, co konkrétně chybí vědět.
+zbývají `B108`, `B109` a `B111`. `B111` potřebuje upřesnění, než se do něj sáhne - je u něj
+poznámka, co konkrétně chybí vědět.
 
 - **`B108` Nadpisový pruh prvku nejde vypnout** (S, nález Pavel 1. 9.). Pruh nad tabulkou se kreslí
   vždy, i s prázdným nadpisem: nakreslí pozadí, spodní linku a zabere výšku. Seznam zastávek
@@ -29,15 +29,6 @@ upřesnění, než se do nich sáhne - u obou je poznámka, co konkrétně chyb�
   obvykle" (vytáhnout prvek ze skupiny, vlezení do buňky). ⚠️ **Volba zkratky je rozhodnutí Jana**:
   druhá cesta je standard návrháře WinForms (Shift = velikost, Ctrl = posun), ale ta by změnila
   význam zkratky, kterou uživatelé už mají v ruce.
-
-- **`B110` Rozložení a velikost poznámek se hledá na dvou místech** (S, nález Pavel 1. 9.).
-  Nastavení existuje, ale je rozpůlené: počet sloupců, směr plnění a šířka buňky značky jsou
-  ve skupině „Rozložení", velikost poznámek a výška řádku ve skupině „Datové buňky" - Pavel je
-  proto nenašel. Prvek se navíc při přetečení sám zmenšuje (`ComputeFontScale`) a nikde to není
-  vidět, takže to vypadá, že nastavená velikost neplatí. Nejmenší užitečná změna = velikost a výšku
-  řádku přesunout k počtu sloupců. ⚠️ **Čeká na upřesnění, co má „roztahování" udělat**: rozprostřít
-  poznámky na celou výšku prvku, dopočítat počet sloupců podle šířky, nebo vypnout to automatické
-  zmenšování písma. Jsou to tři různé featury.
 
 - **`B111` Popis dopravce míchá firmu a provozovnu, adresa vyjde dvakrát** (M, nález Pavel 1. 9.).
   Text se skládá po položkách: sídlo a ulice z provozovny, a když provozovna ulici nemá, doplní se

@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-01 (4) - 📏 rozložení poznámek se řídí velikostí písma (`B110`)
+
+**Velikost poznámek, výška řádku a počet sloupců jsou pohromadě** ve skupině Rozložení. Dřív byly
+velikost a výška řádku mezi barvami buněk, tedy o dvě skupiny dál, a kolega je nenašel.
+
+⚠️ **Výška řádku se nově hýbe s písmem** (prázdná = podle písma). Byla pevných 4 mm, což je přesně
+automatická výška pro sedm bodů - výchozí stav tedy vypadal správně, ale **zvětšení písma legendu
+slepilo**, protože mezera zůstala na čtyřech milimetrech, i když desetibodové písmo potřebuje 5,6.
+Vlastní hodnota zůstává pro toho, kdo chce legendu vzdušnější nebo stlačenější; zadáním hodnoty,
+kterou pole ukazuje, se vrátí dědění z písma (týž vzor jako výška řádku u zastávek a odjezdů).
+
+**Nevejdou-li se poznámky, písmo se zmenší a aplikace to řekne.** Oranžový odznak ve stavovém řádku
+a hláška po tisku jmenují prvek i míru: „Legenda poznámek: písmo zmenšeno až na 76 % (3 z 12
+stránek)". Platí pro **všechny prvky jízdních řádů**, ne jen pro poznámky - zmenšení bylo dosud
+neviditelné u všech pěti. ⚠️ Hláška **jmenuje konkrétní prvek a míru**, ne obecné „nastavení mění
+vývěsku" - přesně kvůli tomu byl zrušen signál `B24`.
+
+⚠️ **Roztahování na výšku se vědomě nedělá** (rozhodnutí Jan 1. 9.). Kolega si stěžoval, že se legenda
+nezatáhne dolů, když je prvek vyšší, ale dvě poznámky mají zůstat nahoře a vyplnit klidně jen pětinu
+bloku. Roztahování by u tří poznámek znamenalo jednu na začátku, jednu doprostřed a jednu na konci.
+
+Ověřeno: .NET **1369/1369** (12 nových testů), Caché **138/138**, formulář poznámek ověřen voláním
+serveru; mutací obou částí doloženo, že testy chytí jak pevnou výšku řádku, tak chybějící hlášku.
+
 ## 2026-09-01 (3) - 🎨 vymazané podbarvení záhlaví znamená „nekreslit nic" (`B107`)
 
 Podbarvení záhlaví jde **vymazat a zůstane vymazané**. Prázdné pole = záhlaví bez podbarvení.

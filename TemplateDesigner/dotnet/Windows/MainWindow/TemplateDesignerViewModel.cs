@@ -167,6 +167,7 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 ColumnDataWarning = null;   // badge patří k zahozeným datům
+                ContentShrinkWarning = null;
                 _realPreviewIndex = 0;
                 Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
@@ -291,6 +292,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
                 ColumnDataWarning = null;
+                ContentShrinkWarning = null;
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
@@ -298,6 +300,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 var culture = GetTemplateCulture();
                 var newData = pages.Select(d => d.WithCulture(culture)).ToList();
                 ColumnDataWarning = DepartureColumnWarnings.Summarize(newData);
+                ContentShrinkWarning = ContentShrinkWarnings.Summarize(State.CurrentTemplate, newData);
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
                 // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
                 var currentPage = (keepPage && _realPreviewData is not null
@@ -609,6 +612,18 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
+
+    private string? _contentShrinkWarning;
+    /// <summary>Prvky, jimž se zmenšilo písmo, aby se obsah vešel. Null = nic → odznak je skrytý.
+    /// Táž třída vady jako <see cref="FontWarning"/>: vytiskne se něco jiného, než co je nastavené,
+    /// a bez hlášky to uživatel pozná až z papíru.</summary>
+    public string? ContentShrinkWarning
+    {
+        get => _contentShrinkWarning;
+        private set { if (Set(ref _contentShrinkWarning, value)) OnPropertyChanged(nameof(HasContentShrinkWarning)); }
+    }
+
+    public bool HasContentShrinkWarning => !string.IsNullOrEmpty(_contentShrinkWarning);
 
     private string? _fontWarning;
     /// <summary>Fonty, které šablona chce a počítač je nemá. Null = nic → badge je skrytý.

@@ -1,5 +1,27 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B110` - rozložení poznámek se řídí velikostí písma (hotovo 1. 9. 2026)
+
+Detail → changelog 2026-09-01 (4). Velikost, výška řádku a počet sloupců pohromadě; výška řádku
+prázdná = podle písma; při nevejití se písmo zmenší a aplikace to oznámí.
+
+⚠️ **Roztahování na výšku se vědomě NEDĚLÁ** (rozhodnutí Jan 1. 9.). Podnět byl „legenda se nezatáhne
+dolů, když je prvek vyšší", ale dvě poznámky mají zůstat nahoře a vyplnit klidně pětinu bloku -
+roztahování by tři poznámky rozprostřelo na začátek, doprostřed a konec. **Nezavádět.** Platné
+pravidlo je: co je nastavené, to se vytiskne; nevejde-li se to, písmo se zmenší a řekne se to.
+
+⚠️ **Skutečná chyba byla jinde, než podnět mířil:** výška řádku byla pevných 4 mm a nereagovala na
+písmo. Ta hodnota je přesně automatická výška pro 7 bodů, takže výchozí stav vypadal správně, ale
+zvětšení písma legendu slepilo.
+
+Upozornění na zmenšení platí pro **všechny prvky jízdních řádů** (`ContentShrinkWarnings`), ne jen
+pro poznámky - zmenšení bylo neviditelné u všech pěti. Jmenuje prvek i míru, ne obecně „něco se
+změnilo" (to byl zrušený `B24`).
+
+Odloženo jako samostatná věc: **dopočítání počtu sloupců** podle výšky prvku. Je to nejlepší odpověď
+na dlouhé legendy (patnáct poznámek se ve dvou sloupcích vejde bez zmenšení), ale je to jiná featura
+a nikde ji nemáme - vytáhnout, až se ukáže, že zmenšování u dlouhých legend reálně vadí.
+
 ## `B107` - vymazané podbarvení záhlaví znamená „nekreslit nic" (hotovo 1. 9. 2026)
 
 Detail → changelog 2026-09-01 (3). Prázdné pole = záhlaví bez podbarvení, a vydrží to i po uložení.

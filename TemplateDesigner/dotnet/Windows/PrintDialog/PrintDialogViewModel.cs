@@ -251,6 +251,11 @@ public class PrintDialogViewModel : EDViewModel
             // někdo, kdo šablonu jen otevřel z databáze.
             var chybejiciFonty = FontWarnings.Summarize(_template);
             string fontInfo = chybejiciFonty is null ? "" : $" · ⚠ {chybejiciFonty}";
+            // Zmenšené písmo: prvek se nevešel, takže se tiskne menší, než co je v šabloně
+            // nastavené. Bez hlášky to jde poznat až z papíru - a u vývěsek vyjde každá zastávka
+            // jinak podle počtu poznámek.
+            var zmenseno = ContentShrinkWarnings.Summarize(_template, dataPages);
+            string zmensenoInfo = zmenseno is null ? "" : $" · ⚠ {zmenseno}";
 
             if (splitMode == ExportSplitMode.Single)
             {
@@ -260,7 +265,7 @@ public class PrintDialogViewModel : EDViewModel
                 OpenPdf(target);
                 StatusText = (overflow > 0
                     ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}{sheetInfo}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo;
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo;
                 return;
             }
 
@@ -282,7 +287,7 @@ public class PrintDialogViewModel : EDViewModel
             OpenFolder(target);
             StatusText = (overflow > 0
                 ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{sheetInfo}"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo;
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo;
         }
         catch (Exception ex)
         {

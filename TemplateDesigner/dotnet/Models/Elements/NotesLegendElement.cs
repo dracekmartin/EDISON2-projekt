@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using SkiaSharp;
 
 namespace TemplateDesigner.Models.Elements;
@@ -16,7 +17,22 @@ public class NotesLegendElement : StopScheduleElementBase
     public string HeaderText { get; set; } = "Poznámky";
     public string NoteSeparator { get; set; } = " - ";
     public float NoteFontSize { get; set; } = 7f;
-    public float NoteLineHeight { get; set; } = 4f;
+
+    /// <summary>
+    /// Výška řádku poznámky v mm. <b>Null = podle velikosti písma</b> (týž vzor jako
+    /// <see cref="ScheduleElementBase.DataRowHeight"/> u ostatních prvků jízdních řádů).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Dřív to byla pevná hodnota 4 mm, což je přesně automatická výška pro 7 bodů - výchozí stav
+    /// tedy vypadal správně, ale <b>zvětšení písma legendu slepilo</b>: mezera zůstala na 4 mm, i když
+    /// desetibodové písmo potřebuje 5,6 (nález Pavel 1. 9., #13158). Ruční hodnota zůstává pro toho,
+    /// kdo chce vzdušnější nebo stlačenější legendu.
+    /// </remarks>
+    public float? NoteLineHeight { get; set; }
+
+    /// <summary>Výška řádku, se kterou se reálně kreslí - ruční hodnota, jinak podle písma.</summary>
+    [JsonIgnore]
+    public float EffectiveNoteLineHeight => NoteLineHeight ?? ComputeRowH(NoteFontSize);
 
     // ═══════════════════════════════════════════
     // Rozložení legendy (sloupce / řazení / zarovnání markeru)
@@ -128,7 +144,7 @@ public class NotesLegendElement : StopScheduleElementBase
         float noteFontPx = NoteFontSize * scale * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * scale * PtToMm * ctx.MmToPx;
         float headerH = ComputeHeaderH(effHeaderFontSize * scale);
-        float scaledNoteLineH = NoteLineHeight * scale;
+        float scaledNoteLineH = EffectiveNoteLineHeight * scale;
 
         using var paints = CreateStandardPaints(ctx);
         // Barva textu poznámek = „Barva textu buněk" (DataStyle) - legenda kreslí text přímo tímto
@@ -154,9 +170,9 @@ public class NotesLegendElement : StopScheduleElementBase
                 paints.Text.Color = new SKColor(0xFF999999);
                 for (int i = 0; i < 3; i++)
                 {
-                    var pt = ctx.ToCanvas(X + 1f, currentY + NoteLineHeight * 0.75f);
+                    var pt = ctx.ToCanvas(X + 1f, currentY + EffectiveNoteLineHeight * 0.75f);
                     ctx.Canvas.DrawText($"Poznámka {i + 1}", pt.X, pt.Y, noteFont, paints.Text);
-                    currentY += NoteLineHeight;
+                    currentY += EffectiveNoteLineHeight;
                 }
             }
         }
@@ -337,7 +353,7 @@ public class NotesLegendElement : StopScheduleElementBase
         }
         int maxLines = 1;
         foreach (var n in colLines) if (n > maxLines) maxLines = n;
-        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + maxLines * NoteLineHeight;
+        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + maxLines * EffectiveNoteLineHeight;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -453,8 +469,15 @@ public class NotesLegendElement : StopScheduleElementBase
 
         new StringPropertyDescriptor { Label = "Font",                Group = "Datové buňky", Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
         new StringPropertyDescriptor { FromImage = true, Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
-        new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Datové buňky", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
-        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Datové buňky", Get = () => NoteLineHeight, Set = v => NoteLineHeight = v, Min = 2, Max = 15, Unit = "mm" },
+        // Velikost a výška řádku patří k rozložení, ne mezi barvy buněk: uživatel je hledá spolu
+        // s počtem sloupců a ve „Datových buňkách" je nenašel (nález Pavel 1. 9.).
+        new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Rozložení", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Rozložení",
+            Get = () => EffectiveNoteLineHeight,
+            // Hodnota shodná s automatickou = vrátit se k dědění z písma; uživatel tak nemusí znát
+            // magické číslo, aby se dostal zpátky (týž vzor jako GetDataRowHeightDescriptor).
+            Set = v => NoteLineHeight = MathF.Abs(v - ComputeRowH(NoteFontSize)) < 0.01f ? null : v,
+            Min = 2, Max = 15, Unit = "mm" },
 
         new FloatPropertyDescriptor  { FromImage = true, Label = "Počet sloupců",       Group = "Rozložení", Get = () => Columns,     Set = v => Columns = (int)v, Min = 1, Max = 4, Format = "0" },
         new EnumPropertyDescriptor   { FromImage = true, Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
@@ -497,7 +520,7 @@ public class NotesLegendElement : StopScheduleElementBase
     {
         base.ApplyScale(scale);
         NoteFontSize *= scale;
-        NoteLineHeight *= scale;
+        if (NoteLineHeight is { } nlh) NoteLineHeight = nlh * scale;
         MarkerSirka *= scale;
     }
 

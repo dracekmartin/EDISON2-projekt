@@ -822,6 +822,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- 1) Agenda chip (klikatelný - ChangeAgendaCommand) -->
@@ -949,6 +950,21 @@
                             ToolTip="Font ze šablony není na tomto počítači nainstalovaný - vykresluje se místo něj Arial. Buď font doinstalujte, nebo v šabloně vyberte jiný (nabídka fontů jmenuje jen ty dostupné).">
                         <!-- Black záměrně mimo theme: viz badge vlastních sloupců výše. -->
                         <TextBlock Text="{Binding FontWarning}"
+                                   Foreground="Black" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                    </Border>
+
+                    <!-- 7) Obsah se nevešel, takže se písmo zmenšilo. Bez hlášky se tiskne něco
+                         jiného, než co je nastavené, a u vývěsek vyjde každá zastávka jinak podle
+                         počtu poznámek - jmenuje konkrétní prvek i míru, ne obecné „něco se změnilo". -->
+                    <Border Grid.Column="9"
+                            Background="{DynamicResource EDTheme.Semantic.Warning}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
+                            VerticalAlignment="Stretch"
+                            Visibility="{Binding HasContentShrinkWarning, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Obsah se nevešel do prvku, proto se písmo zmenšilo - vytiskne se menší, než je nastavené. Buď prvek zvětšete, nebo mu v nastavení zmenšete velikost písma.">
+                        <!-- Black záměrně mimo theme: viz badge vlastních sloupců výše. -->
+                        <TextBlock Text="{Binding ContentShrinkWarning}"
                                    Foreground="Black" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
