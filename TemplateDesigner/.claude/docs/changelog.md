@@ -9,6 +9,11 @@ Zapínadlo sedí v Obecném a jeho vzhled ve skupině Záhlaví, stejně jako to
 ⚠️ **Pole „Nadpis" se přejmenovalo na „Text záhlaví"** - v jednom formuláři stála dvě slova pro tutéž
 věc a projekt drží „záhlaví" (rozhodnutí Jan 1. 9., doplněno do kanonu `ux-conventions §8`).
 
+⚠️ **Prvek sám se přejmenoval z „Legenda poznámek" na „Poznámky"** (rozhodnutí Jan 1. 9.) - v paletě,
+v nabídce vkládání, v titulku vlastností, ve stromu šablony i v hláškách. „Legenda" byla vlastní
+zkratka, kterou uživatel nikde jinde nepotká, a nic nepřinášela. Třída `NotesLegendElement` se
+**nepřejmenovává** - visí na ní `type` v uložených šablonách.
+
 ⚠️ **Prázdný nadpis pruh neruší** a je to záměr: pás bez textu je legitimní. Vypínač je proto
 samostatný, stejně jako ho mají zastávky („Záhlaví sloupců"), odjezdy („Záhlaví skupin"), linkový JŘ
 („Nadpisy skupin dnů") a obě tabulky („Záhlaví"). Původní návrh vázal vypnutí na prázdný text; volba

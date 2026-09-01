@@ -185,7 +185,7 @@ public class RozlozeniPoznamekTests
         var hlaska = Hlaska(el, Stranka(15));
 
         Assert.NotNull(hlaska);
-        Assert.Contains("Legenda poznámek", hlaska);
+        Assert.Contains("Poznámky", hlaska);
         Assert.Contains("%", hlaska);
     }
 

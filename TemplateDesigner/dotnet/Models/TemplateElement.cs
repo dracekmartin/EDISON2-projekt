@@ -442,7 +442,7 @@ public abstract class TemplateElement
         DynamicTableElement dt => $"Dynamická tabulka [{dt.DataSource}] cols={dt.Columns.Count}",
         StopListElement      => "Seznam zastávek",
         DepartureGridElement d => $"Odjezdy {(d.SkupinaDnuId.Length > 0 ? d.SkupinaDnuId : "auto")}",
-        NotesLegendElement   => "Legenda poznámek",
+        NotesLegendElement   => "Poznámky",
         LineTableElement     => "Linkový JŘ (zastávky × spoje)",
         _                  => $"({el.X:0.#}, {el.Y:0.#}) {el.Width:0.#}x{(el.Height?.ToString("0.#") ?? "auto")}"
     };

@@ -680,7 +680,7 @@ Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle�
 - **Anotace** - zap/vyp zobrazování anotací u minut
 - **Mezery** - Mezera minuta↔anotace, Mezera anotace↔anotace, Mezera mezi odjezdy
 
-#### Legenda poznámek
+#### Poznámky
 
 Vysvětlivky pod mřížkou.
 
@@ -828,7 +828,7 @@ značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na 
 všechny zastávky).
 
 > **Co se zobrazí, se nastavuje v šabloně, ne tady.** Poznámky zadané u linky, přeprava kol,
-> místenky a souhrn bezbariérových spojů se zapínají u **prvku Legenda poznámek** (kap. 2) - aby bylo
+> místenky a souhrn bezbariérových spojů se zapínají u **prvku Poznámky** (kap. 2) - aby bylo
 > jedno místo, kde si vyberete, co vývěska ukazuje. V parametrech sestavy zůstává to, co mění
 > **obsah nebo rozvržení** dat, ne jen jejich zobrazení.
 

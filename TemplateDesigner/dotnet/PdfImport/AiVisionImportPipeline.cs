@@ -317,7 +317,7 @@ public class AiVisionImportPipeline
     {
         StopListElement      => "Seznam zastávek",
         DepartureGridElement => "Mřížka odjezdů",
-        NotesLegendElement   => "Legenda poznámek",
+        NotesLegendElement   => "Poznámky",
         TextElement t        => "Text: " + t.Text,
         ImageElement         => "Obrázek",
         _                    => el.GetType().Name

@@ -27,7 +27,7 @@ public static class ContentShrinkWarnings
     /// </summary>
     private static string? NazevProUzivatele(TemplateElement el) => el switch
     {
-        NotesLegendElement   => "Legenda poznámek",
+        NotesLegendElement   => "Poznámky",
         StopListElement      => "Seznam zastávek",
         DepartureGridElement => "Mřížka odjezdů",
         LineTableElement     => "Linkový JŘ",

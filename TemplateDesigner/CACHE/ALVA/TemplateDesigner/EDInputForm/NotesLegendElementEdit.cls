@@ -62,7 +62,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("NoteFontSize", "Velikost poznámek", 7, 4, 20, "pt", "0.#")
         s f.helpText = "Velikost písma poznámek. Nevejdou-li se poznámky do prvku, písmo se zmenší a aplikace to oznámí ve stavovém řádku."
         s f = form.AddDecimal("NoteLineHeight", "Výška řádku", "", 2, 15, "mm")
-        s f.helpText = "Prázdné = podle velikosti písma. Vlastní hodnotu zadejte, jen když chcete legendu vzdušnější nebo stlačenější."
+        s f.helpText = "Prázdné = podle velikosti písma. Vlastní hodnotu zadejte, jen když chcete poznámky vzdušnější nebo stlačenější."
         d form.AddNumber("Columns", "Počet sloupců", 1, 1, 4)
         s f = form.AddFieldToLastGroup("WrapSmer", "Směr plnění", $$$FieldTypeList, 0, 0)
         d f.AddListItem("PoSloupcich", "Po sloupcích"), f.AddListItem("PoRadcich", "Po řádcích")

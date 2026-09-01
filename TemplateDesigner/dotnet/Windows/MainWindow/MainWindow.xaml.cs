@@ -1457,7 +1457,7 @@ public partial class MainWindow : Window
         if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
             Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
-            Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
+            Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
             Add("Linkový JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
 
@@ -1689,7 +1689,7 @@ public partial class MainWindow : Window
         Models.Elements.LineElement      => ("ALVA.TemplateDesigner.EDInputForm.LineElementEdit", "Vlastnosti čáry"),
         Models.Elements.RectangleElement   => ("ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit", "Vlastnosti obdélníku"),
         Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
-        Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
+        Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti poznámek"),
         Models.Elements.ImageElement       => ("ALVA.TemplateDesigner.EDInputForm.ImageElementEdit", "Vlastnosti obrázku"),
         // Pevná tabulka má jediný tab (bez sloupců a řádků) - strukturu i obsah dělá plátno.
         Models.Elements.TableElement       => ("ALVA.TemplateDesigner.EDInputForm.TableElementEdit", "Vlastnosti tabulky"),

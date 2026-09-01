@@ -77,7 +77,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // popisky; tytéž popisky nese i panel vlastností (`ux-conventions §8`).
         d form.AddGroup("departure", "Značky u odjezdů")
         s f = form.AddBool("ShowAnotace", "Značky u odjezdů", 1)
-        s f.helpText = "Písmena a symboly u minuty (nízkopodlažní spoj, kolo, jede jen v určité dny…). Co se z nich tiskne, řídí prvek Legenda poznámek - ta je i vysvětluje."
+        s f.helpText = "Písmena a symboly u minuty (nízkopodlažní spoj, kolo, jede jen v určité dny…). Co se z nich tiskne, řídí prvek Poznámky - ten je i vysvětluje."
         s f = form.AddDecimal("AnotaceGap", "Mezera minuta ↔ značka", "", 0, 5, "mm")
         s f.helpText = "Odsazení značky od minuty. Prázdné = automaticky podle velikosti písma."
         s f = form.AddDecimal("AnotaceInterGap", "Mezera mezi značkami", "", 0, 5, "mm")

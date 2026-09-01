@@ -325,7 +325,7 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.DepartureGrid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Legenda poznámek" Tag="NotesLegendElement"
+                        <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Poznámky" Tag="NotesLegendElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
