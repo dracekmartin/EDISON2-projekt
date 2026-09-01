@@ -180,6 +180,33 @@ public class DesignerCanvas
     /// <summary>Vrátí element a jeho sekci pod px pozicí na canvasu, nebo null.</summary>
     public (Section Section, TemplateElement Element)? HitTestElement(float canvasX, float canvasY, float canvasWidth)
     {
+        foreach (var hit in HitTestElements(canvasX, canvasY, canvasWidth))
+            return hit;
+        return null;
+    }
+
+    /// <summary>
+    /// Element pro klik a tažení. Přednost má element, který je <b>už vybraný</b>, i když ho jiný
+    /// překrývá; jinak ten navrchu.
+    /// </summary>
+    /// <remarks>
+    /// Bez té přednosti klik sáhne na překrývající element, takže výběr ze stromu šablony padne
+    /// při prvním kliknutí a element schovaný pod jiným není jak odtáhnout (nález Pavel 1. 9.).
+    /// </remarks>
+    public (Section Section, TemplateElement Element)? HitTestElementForClick(float canvasX, float canvasY, float canvasWidth)
+    {
+        (Section, TemplateElement)? topmost = null;
+        foreach (var hit in HitTestElements(canvasX, canvasY, canvasWidth))
+        {
+            topmost ??= hit;
+            if (_state.SelectedElements.Contains(hit.Element)) return hit;
+        }
+        return topmost;
+    }
+
+    /// <summary>Všechny elementy pod px pozicí na canvasu, shora dolů (první = nakreslený navrch).</summary>
+    private IEnumerable<(Section Section, TemplateElement Element)> HitTestElements(float canvasX, float canvasY, float canvasWidth)
+    {
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
             float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth * MmToPx;
@@ -188,7 +215,7 @@ public class DesignerCanvas
             if (canvasX < ox || canvasX > ox + sectionW) continue;
             if (canvasY < oy || canvasY > oy + sectionH) continue;
 
-            // Procházíme od nejvyššího ZIndex (klikne se na element "nahoře")
+            // Obráceně než kreslení - první vrácený je ten, který uživatel vidí navrchu.
             foreach (var el in _state.GetElementsByZIndexDesc(section))
             {
                 float ex = ox + el.X * MmToPx;
@@ -210,10 +237,9 @@ public class DesignerCanvas
 
                 if (testX >= ex && testX <= ex + ew &&
                     testY >= ey && testY <= ey + eh)
-                    return (section, el);
+                    yield return (section, el);
             }
         }
-        return null;
     }
 
     /// <summary>

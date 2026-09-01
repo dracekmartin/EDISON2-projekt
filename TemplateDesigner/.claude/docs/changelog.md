@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-01 (1) - 🖱️ klik trefí prvek, který je vidět navrchu (`B105`)
+
+Když se dva prvky na plátně překrývaly, **klik sáhl na jiný, než uživatel viděl**. Nově vložený prvek
+se nakreslil navrch, ale uchopit se nedal: klik i tažení dostal ten starší pod ním, takže se nový
+prvek musel nejdřív odsunout. Vypadalo to, že to „občas funguje" - záleželo na tom, v jakém pořadí
+prvky v sekci vznikly (nález Pavel při skládání vývěsky pro BBSK, #13158).
+
+⚠️ **Prvek vybraný ve stromu šablony si teď klik podrží.** Dosud se výběr při prvním kliknutí přepnul
+na prvek, který ho překrývá - prvek schovaný pod jiným tedy nebylo jak odtáhnout ani přes strom.
+Nově má přednost ten, který je už vybraný; když pod kurzorem žádný vybraný není, vezme se ten
+navrchu. Kurzor to respektuje, takže ukazuje, co se stane. Táž přednost platí i pro dvojklik
+a pravé tlačítko, aby nastavení otevřel prvek, na který uživatel míří.
+
+**V šabloně se nic nemění** - hladina prvků (`ZIndex`) zůstává, jak byla, mění se jen hledání prvku
+pod kurzorem: jde teď přesně obráceně než kreslení. Zvednutí hladiny při vložení by zapsalo změnu
+do šablony, naráželo na strop 0-100 a výběr ze stromu by neopravilo.
+
+Ověřeno: .NET **1326/1326** (5 nových testů); mutací původního řazení doloženo, že spadnou 3 z nich.
+
 ## 2026-08-31 (15) - 🗺️ každá zóna hraniční zastávky může mít vlastní sloupec (`N1`)
 
 Zastávka na hranici zón měla dosud všechny své zóny v jednom sloupci za sebou („037,066,051").

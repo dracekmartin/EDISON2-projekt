@@ -1,5 +1,20 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B105` - klik trefí prvek, který je vidět navrchu (hotovo 1. 9. 2026)
+
+Detail → changelog 2026-09-01 (1). Hledání prvku pod kurzorem šlo při shodné hladině obráceně než
+kreslení, takže se nový prvek nakreslil navrch, ale klik i tažení sáhly na starý pod ním. Nález Pavel
+při skládání vývěsky pro BBSK (#13158); vypadalo to jako nespolehlivost, protože rozhodovalo pořadí
+vzniku prvků.
+
+⚠️ **Druhá polovina byla výběr ze stromu:** klik na vybraný prvek, který jiný překrývá, výběr zahodil,
+takže prvek schovaný pod jiným nebylo jak odtáhnout. Nově má přednost prvek, který je už vybraný
+(platí i pro dvojklik, pravé tlačítko a tvar kurzoru).
+
+⚠️ **Do šablony se nezapisuje nic** - hladiny zůstávají. Zvednutí hladiny při vložení bylo zavržené:
+měnilo by data šablony, naráželo na strop 0-100 a výběr ze stromu by neopravilo (rozhodnutí Jan
+1. 9.).
+
 ## `N1` - zóny hraniční zastávky do vlastních sloupců (hotovo 31. 8. 2026)
 
 Detail → changelog 2026-08-31 (15). Volba u prvku, výchozí vypnutá; dělí se čárkou i lomítkem.

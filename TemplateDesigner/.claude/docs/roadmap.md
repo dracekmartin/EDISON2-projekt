@@ -4,8 +4,66 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus níže. Rovnou jde vzít **`B101`**; u čtyř dalších je první
+> **Nejblíž na řadě:** § Z testování šablony s kolegou (#13158) - jde od nejmenšího, na řadě je
+> **`B106`**. Pak § Aktuální focus, kde jde rovnou vzít **`B101`**; u čtyř dalších je první
 > krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+
+---
+
+## 🔎 Z testování šablony s kolegou (#13158)
+
+Nálezy z průchodu, jak Pavel skládá zastávkovou vývěsku pro BBSK (1. 9.). Řazeno od nejmenšího,
+všechno zbývající jsou chybějící volby (chyba `B105` je hotová). `B110` a `B111` potřebují
+upřesnění, než se do nich sáhne - u obou je poznámka, co konkrétně chybí vědět.
+
+- **`B106` Desetinnou čárku formulář prvku odmítne** (S, nález Jan 1. 9.). Do číselného pole
+  formuláře nejde napsat `1,5` - pole zčervená s „musí být číslo" a hodnota se vůbec nezapíše.
+  Panel vlastností přitom čárku bere, takže totéž číslo jde zadat na jednom místě a na druhém ne.
+  Sahá to do **EDControls** (kontrola typu v `Field.GetTypeError`) a do převodu textu na hodnotu
+  v `ElementPropertyAccessor`; ukládat se má dál s tečkou, tolerovat jen vstup.
+  ⚠️ Změna v EDControls = publikovat i EDISONMAIN2.
+
+- **`B107` Barvu nastavenou ve formuláři nejde vrátit na „nenastaveno"** (S, nález Jan 1. 9.).
+  Barevné pole má jen tlačítko pro výběr a dialog Windows vždycky vrátí nějakou barvu, takže jednou
+  nastavená barva už z prvku nesundá a dědění se nedá obnovit. Dialog sloupců to umí („×" u barvy
+  textu a pozadí), formulář prvku ne. Řešení = stejné „×" u náhledu barvy v `ColorFieldTemplate`
+  (EDControls), které pošle prázdnou hodnotu - ta už dnes znamená „dědit".
+
+- **`B108` Nadpisový pruh prvku nejde vypnout** (S, nález Pavel 1. 9.). Pruh nad tabulkou se kreslí
+  vždy, i s prázdným nadpisem: nakreslí pozadí, spodní linku a zabere výšku. Seznam zastávek
+  („Záhlaví sloupců") a tabulka z dat („Záhlaví") vypínač mají, poznámky a odjezdy ne. Doplnit
+  jednu stejně pojmenovanou volbu **„Zobrazit nadpis"** ke všem prvkům, které pruh kreslí
+  (`RenderSectionHeader`). Prázdný nadpis zůstává jako dnes - pruh bez textu je legitimní.
+
+- **`B109` Změna velikosti prvku klávesnicí** (S, požadavek Pavel 1. 9.). Posun šipkami umíme,
+  změnu velikosti ne, a myší se rozměr nedoladí. V starém návrháři to Pavel používal hodně.
+  Šipky i oba obvyklé modifikátory jsou obsazené (Shift = velký krok, Ctrl = jemný), takže návrh je
+  **Alt+šipky = velikost**, **Alt+Shift+šipky = velký krok** - Alt v aplikaci už znamená „jinak než
+  obvykle" (vytáhnout prvek ze skupiny, vlezení do buňky). ⚠️ **Volba zkratky je rozhodnutí Jana**:
+  druhá cesta je standard návrháře WinForms (Shift = velikost, Ctrl = posun), ale ta by změnila
+  význam zkratky, kterou uživatelé už mají v ruce.
+
+- **`B110` Rozložení a velikost poznámek se hledá na dvou místech** (S, nález Pavel 1. 9.).
+  Nastavení existuje, ale je rozpůlené: počet sloupců, směr plnění a šířka buňky značky jsou
+  ve skupině „Rozložení", velikost poznámek a výška řádku ve skupině „Datové buňky" - Pavel je
+  proto nenašel. Prvek se navíc při přetečení sám zmenšuje (`ComputeFontScale`) a nikde to není
+  vidět, takže to vypadá, že nastavená velikost neplatí. Nejmenší užitečná změna = velikost a výšku
+  řádku přesunout k počtu sloupců. ⚠️ **Čeká na upřesnění, co má „roztahování" udělat**: rozprostřít
+  poznámky na celou výšku prvku, dopočítat počet sloupců podle šířky, nebo vypnout to automatické
+  zmenšování písma. Jsou to tři různé featury.
+
+- **`B111` Popis dopravce míchá firmu a provozovnu, adresa vyjde dvakrát** (M, nález Pavel 1. 9.).
+  Text se skládá po položkách: sídlo a ulice z provozovny, a když provozovna ulici nemá, doplní se
+  z firmy pole, které obsahuje ulici i PSČ i obec. U dopravce, kde provozovna má sídlo a nemá ulici
+  (organizační jednotka typu „Oblast Písek"), pak vyjdou dva řádky, které říkají skoro totéž.
+  Data jsou správná, chyba je ve skládání textu; mazání v číselníku dopravců je špatná cesta
+  (rozhodnutí Jan 1. 9.). Návrh = **rozsekat na dílčí pole** (název, sídlo, ulice, telefon, každé
+  samo za sebe, se zdrojem firma/provozovna) a skládání nechat na šabloně, jak navrhl Pavel;
+  `POPIS_DOPRAVCE` zůstane pro toho, kdo chce dnešní blok. Aditivní změna kontraktu, existující
+  šablony se nemění. **Nastavení „formátu pole" se dělat nemá** - skončí to u pěti přepínačů, které
+  stejně nepokryjí, jak to který zákazník chce. ⚠️ **Čeká na odpověď: je jeden dopravce vždy jedna
+  adresa?** Když linku obsluhuje víc dopravců, musí být dílčí pole **řádková kolekce**, ne skaláry -
+  jinak si šablona vezme jen prvního. Na tom stojí celý tvar návrhu.
 
 ---
 

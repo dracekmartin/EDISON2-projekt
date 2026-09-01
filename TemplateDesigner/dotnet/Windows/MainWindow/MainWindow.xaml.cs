@@ -2290,7 +2290,7 @@ public partial class MainWindow : Window
 
         if (e.ClickCount == 2)
         {
-            var dblHit = _canvas.HitTestElement(cx, cy, cw);
+            var dblHit = _canvas.HitTestElementForClick(cx, cy, cw);
             if (dblHit is not null)
             {
                 var (dblSection, dblElement) = dblHit.Value;
@@ -2350,7 +2350,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var hit = _canvas.HitTestElement(cx, cy, cw);
+        var hit = _canvas.HitTestElementForClick(cx, cy, cw);
 
         // Hrana sloupce má přednost před výběrem buňky i před posunem prvku - myš na ní ukazuje
         // kurzor pro změnu šířky, takže uživatel míří na ni.
@@ -2686,7 +2686,8 @@ public partial class MainWindow : Window
             skCanvas.Cursor = GetResizeCursor(handleHit2.Value.Handle);
         else
         {
-            var elHit = _canvas.HitTestElement(cx, cy, cw);
+            // Táž cesta jako klik, aby kurzor předpovídal, co se stane (i u vybraného elementu pod jiným).
+            var elHit = _canvas.HitTestElementForClick(cx, cy, cw);
             skCanvas.Cursor = (elHit.HasValue && !elHit.Value.Element.IsLocked)
                 ? Cursors.SizeAll : Cursors.Arrow;
         }
@@ -2709,7 +2710,7 @@ public partial class MainWindow : Window
         float cx = (float)pos.X, cy = (float)pos.Y;
         float cw = (float)skCanvas.ActualWidth;
 
-        var hit = _canvas.HitTestElement(cx, cy, cw);
+        var hit = _canvas.HitTestElementForClick(cx, cy, cw);
         var menu = new ContextMenu();
 
         // Pravý klik na pevnou tabulku nabízí práci s řádky a sloupci - i když uživatel zrovna

@@ -148,6 +148,18 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 | Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
 | Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
 
+⚠️ **Když se prvky překrývají, klik patří tomu, který je vidět navrchu, a už vybraný prvek si klik
+podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbijí zpátky:
+
+- **Hledání prvku pod kurzorem musí jít přesně obráceně než kreslení.** Ne `OrderByDescending`
+  podle hladiny: řazení je stabilní, takže při shodné hladině (nové prvky mají všechny 0) vrátí
+  nejstarší, kdežto navrch se kreslí nejnovější. Projeví se to jako „nový prvek nejde uchopit"
+  a vypadá to jako nespolehlivost, protože rozhoduje pořadí vzniku prvků.
+- **Přednost má prvek, který je už vybraný** (`HitTestElementForClick`) - jinak klik na prvek vybraný
+  ve stromu šablony výběr zahodí a prvek schovaný pod jiným není jak odtáhnout. Platí pro klik,
+  tažení, dvojklik, pravé tlačítko i tvar kurzoru; cesty, které hledají **cíl vkládaného datového
+  pole**, záměrně zůstávají na `HitTestElement` (tam nejde o to, co uživatel uchopí).
+
 ### Soubory a view
 
 | Zkratka | Akce |
