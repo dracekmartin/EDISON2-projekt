@@ -71,6 +71,24 @@ public partial class App : Application
         if (mlRest is not null)
             EDServices.Current.UserPrefs = new EDControls.UserPrefs.CacheUserPrefsService(new MLRestAdapter(mlRest));
 
+        // Sdílená shell session (CacheLocks=1): zánik ACTIVITY zámku / verze znamená konec
+        // session shellu - TD nemá s čím pokračovat, ukončí se jako hostované legacy moduly.
+        if (mlRest is { CacheLocks: 1 })
+        {
+            mlRest.EdisonActivityFailed += (_, _) => Dispatcher.Invoke(() =>
+            {
+                EDServices.Current.PopupDisplayer.Info(
+                    "Spojení se serverem bylo přerušeno (session EDISONu skončila). Aplikace bude ukončena.");
+                Shutdown();
+            });
+            mlRest.EdisonVersionFailed += (_, _) => Dispatcher.Invoke(() =>
+            {
+                EDServices.Current.PopupDisplayer.Info(
+                    "Rozdílná verze Caché a verze Edison, aplikace bude ukončena.");
+                Shutdown();
+            });
+        }
+
         // Per-user state (zoom, grid, splittery, recent files, instance defaults).
         // Krátký sync wait (200ms) pro warm-cache happy path; pokud propadne (cold-start
         // Caché HTTP typicky 2-3s), MainWindow startuje s defaults a po dokončení LoadAsync

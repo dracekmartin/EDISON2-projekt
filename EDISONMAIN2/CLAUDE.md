@@ -140,21 +140,28 @@ centruje ho `OwnerWindowCentering` (`CenterOwner` u maximalizovaného ownera mí
 ## Legacy moduly - EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`,
-.NET Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 13 polí
-(server, port, ns, idfa, login, fullName, mlp, formName, shellGuid, inputParam, assemblyPath,
-licensedElements, zástupce na ploše); poslední je Base64 XML zástupce - prázdné u běžného
-launche, s `CallType=Procedura` host místo formy spustí `ProcedureIO` agendy. Dvě vstupní metody:
-
-- `TryGetFormFromArgs` - typ hledá reflexí ve volajícím assembly; kontrakt pro retrofitnuté
-  `.exe` (v `Sub Main` zavolat, formu zobrazit `ShowDialog`; bez argů původní standalone
-  chování). Jediná reference: `EDISONMAIN/ApplicationEvents.vb`.
-- `TryRunFromArgs` - `Assembly.LoadFrom(assemblyPath)`; generický host `EDISONMAIN2API.exe`
-  pro `.exe` bez retrofitu.
+.NET Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 15 polí (pořadí
+`WindowNavigator.BuildLauncherArguments`); [13] je Base64 XML zástupce - prázdné u běžného
+launche, s `CallType=Procedura` host místo formy spustí `ProcedureIO` agendy; [14] admin flag
+(`EDServices.IsAdmin` → `MLProps.UserIsAdmin`, klíč pro `CAccess(useAdmin)` bypass práv v agendách)
+a [15] právo update (`MayUpdate` → `MLProps.UserMayUpdate`, gate serverového update v legacy
+Nastavení) - host bez pole defaultuje na **false**. Vstupy:
+`TryGetFormFromArgs` (typ reflexí ve volajícím assembly - retrofit `.exe`, jediný
+`EDISONMAIN/ApplicationEvents.vb`) a `TryRunFromArgs` (`Assembly.LoadFrom`, generický host).
 
 Pasti:
 
+- Chyby hostované formy: `HostedErrorReporter` (host i `ApplicationEvents.vb`) → legacy
+  `MLError.ShowError` (telemetrie až na tlačítko, source `EDISON`); výjimku z `Form.Load` na x64
+  spolkne sám Windows (kernel callback), nevidí ji ani try/catch kolem `ShowDialog`. Tvrdý pád hlásí
+  shell z exit kódu (`WindowNavigator.TrackExit` → `ReportLegacyExit`); kódy hosta 2 = launch fail,
+  3 = fatal po dialogu. Ověření bez reálného pádu: Debug host + env `EDISONMAIN2API_CRASHTEST=ui|bg`.
+
 - Non-prázdný `shellGuid` → modul sdílí shellův GUID + `CacheLocks=1` (zánik shell zámku
   shodí i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks.
+  Totéž dělá **TemplateDesigner** (WPF, spouští se napřímo bez hosta - `LaunchesDirectly`,
+  session přebírá `CacheSchemaWiring`); requesty TD tak drží ACTIVITY historii shellu (F17).
+  Legacy launchery TD (ISYJR2, MHD2Linky, TISKJR stub) guid propagují jen při `CacheLocks==1`.
 - `ConfigureForm` staví `MLProps.AccessTable` z `licensedElements` - bez nich moduly
   gate-ující obsah přes `RightGranted` (např. DSINPUT Plánování) nezobrazí data.
 - Host roztáčí formu přes **`ShowDialog`, ne `Application.Run`** (parita se starým `EDPROCESS`):

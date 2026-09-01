@@ -1333,13 +1333,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
         }
 
-        // Spustí TemplateDesigner.exe standalone - používá vlastní MLRest z templatedesigner.appsettings.json,
-        // nesdílí shell session. Pro plnou integraci by TD musel implementovat EDISONMAIN2API kontrakt.
-        private static void OpenTemplateDesigner()
-        {
-            var path = EDControls.EDViewModel.WindowNavigator.ResolveExecutablePath("TemplateDesigner.exe");
-            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
-        }
+        // TD přebírá shell session z launch argumentů (GUID + CacheLocks=1) - jeho requesty tak
+        // drží ACTIVITY historii shellu (HD 13132/F17) a umírá se shellem jako agendové moduly.
+        private void OpenTemplateDesigner() => WindowNavigator.ShowLegacy("TemplateDesigner.exe", formFqn: "");
 
         private const string LegacyShellExe = "EDISONMAIN.exe";
         // reason=2 je EdisonLaunchReasonEnum.RunEdison; bez něj frmNoMDI ohlásí "nelze spustit

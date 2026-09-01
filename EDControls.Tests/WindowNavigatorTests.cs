@@ -103,9 +103,11 @@ public class WindowNavigatorTests
     [InlineData("EDISONMAIN.exe", true)]
     [InlineData(@"C:\Edison\EDISONMAIN.exe", true)]
     [InlineData("edisonmain.exe", true)]
+    [InlineData("TemplateDesigner.exe", true)]
+    [InlineData(@"C:\Edison\TemplateDesigner.exe", true)]
     [InlineData("USERS.exe", false)]
     [InlineData("MHD2PlanDopravy.exe", false)]
-    public void LaunchesDirectly_OnlyEdisonMain(string exeName, bool expected)
+    public void LaunchesDirectly_EdisonMainAndTemplateDesigner(string exeName, bool expected)
     {
         Assert.Equal(expected, WindowNavigator.LaunchesDirectly(exeName));
     }
@@ -128,11 +130,11 @@ public class WindowNavigatorTests
     public void BuildLauncherArguments_EmptyInputParam_StillOccupiesPositionalSlot()
     {
         var args = WindowNavigator.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001");
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin: false, mayUpdate: false);
 
         // Prázdný inputParam zůstává jako "" na pozici [10] - pořadí polí se neposune.
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"0\" \"0\"",
             args);
     }
 
@@ -145,7 +147,7 @@ public class WindowNavigatorTests
         m.FullName.Returns("Jan \"Boss\" Novák");
 
         var args = WindowNavigator.BuildLauncherArguments(
-            m, "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001");
+            m, "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin: false, mayUpdate: false);
 
         Assert.Contains("\"Jan \"Boss\" Novák\"", args);
     }
@@ -154,21 +156,50 @@ public class WindowNavigatorTests
     public void BuildLauncherArguments_OrderingMatchesContract()
     {
         var args = WindowNavigator.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe", "26001,6001");
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe", "26001,6001", isAdmin: true, mayUpdate: true);
 
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"1\" \"1\"",
             args);
     }
 
     [Fact]
-    public void BuildLauncherArguments_ShortcutPayload_IsLastField()
+    public void BuildLauncherArguments_ShortcutPayload_FollowsLicensedElements()
     {
         var args = WindowNavigator.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", "UEFZTE9BRA==");
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", false, false, "UEFZTE9BRA==");
 
         // Zástupce je [13] - až za licencovanými elementy, aby starší host kontrakt jen ignoroval.
-        Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\"", args);
+        Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\" \"0\" \"0\"", args);
+    }
+
+    [Theory]
+    [InlineData(true, false, "\"1\" \"0\"")]
+    [InlineData(false, true, "\"0\" \"1\"")]
+    public void BuildLauncherArguments_UserFlags_AreLastFields(bool isAdmin, bool mayUpdate, string expectedTail)
+    {
+        var args = WindowNavigator.BuildLauncherArguments(
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin, mayUpdate);
+
+        // Admin [14] a právo update [15] - host bez nich defaultuje na false, hodnota musí být
+        // explicitní a nezávislá (admin neimplikuje update).
+        Assert.EndsWith($"\"\" {expectedTail}", args);
+        Assert.Equal(16, args.Split(" \"").Length);
+    }
+
+    [Theory]
+    [InlineData(0, false, false)]            // normální konec i Application.Exit
+    [InlineData(0, true, false)]
+    [InlineData(-1, true, false)]            // náš Process.Kill
+    [InlineData(-1, false, true)]            // kill zvenku
+    [InlineData(1, false, true)]             // taskkill /F
+    [InlineData(2, false, true)]             // host: LaunchFailed
+    [InlineData(3, false, true)]             // host: FatalReported
+    [InlineData(-532462766, false, true)]    // 0xE0434352 neošetřená CLR výjimka
+    [InlineData(-1073741819, false, true)]   // 0xC0000005 access violation
+    public void ShouldReportExit_NonZeroCodeNotKilledByShell(int exitCode, bool killedByShell, bool expected)
+    {
+        Assert.Equal(expected, WindowNavigator.ShouldReportExit(exitCode, killedByShell));
     }
 
     // Vlastnictví oken (IsInternalWindow / ShouldClose) → WindowOwnershipTests.

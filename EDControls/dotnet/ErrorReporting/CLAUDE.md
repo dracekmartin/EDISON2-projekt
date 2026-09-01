@@ -51,6 +51,9 @@ EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_Ca
   `%APPDATA%\m-line\common\error-reports.log`, NDJSON **bez příloh**, rotace nad ~1 MB
   do `.old`. Nic se zpětně neodesílá - podpora si soubor vyžádá ručně.
 
+- `ReportLegacyExit` (pád hostovaného legacy modulu podle exit kódu, volá `WindowNavigator`):
+  kontext okna = forma/exe modulu a **stabilní throttle klíč** `LegacyExit|exe|forma|kód` - syntetická
+  výjimka nemá stack, `BuildKey` by slepil pády všech modulů do jednoho záznamu.
 - `IngestUrl` / `ApiKey` jsou `static readonly`, ne `const` - `const` se inlinuje do
   konzumenta, takže samostatně nasazená `EDControls.dll` by hodnotu nezměnila exe, které se
   nepřebuildilo (stejný důvod jako u `SupportActions.WidgetKey`).

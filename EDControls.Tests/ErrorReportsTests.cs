@@ -239,4 +239,57 @@ public class ErrorReportsTests : IDisposable
         WaitForRequests(1);
         Assert.EndsWith("-internal", Body(0)["source"]!.GetValue<string>());
     }
+
+    [Fact]
+    public void ReportLegacyExit_ModuleIdentityAndExitCodeInPayload()
+    {
+        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
+
+        WaitForRequests(1);
+        var body = Body(0);
+        // Přehled seskupuje podle module/name - musí to být modul, ne shell.
+        Assert.Equal("ALVA.USERS.formUSERSActivity", body["module"]!.GetValue<string>());
+        Assert.Equal("USERS.exe", body["name"]!.GetValue<string>());
+        Assert.Equal("error", body["type"]!.GetValue<string>());
+        Assert.Equal(3, body["data"]!["exitCode"]!.GetValue<int>());
+        Assert.Equal("0x00000003", body["data"]!["exitCodeHex"]!.GetValue<string>());
+        Assert.True(body["data"]!["legacyHost"]!.GetValue<bool>());
+        Assert.Contains("USERS.exe", body["description"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void ReportLegacyExit_SameModuleAndCode_SecondIsSuppressed()
+    {
+        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);
+        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);
+
+        WaitForRequests(1);
+        AssertNothingMoreSent(1);
+    }
+
+    [Fact]
+    public void ReportLegacyExit_DifferentModules_NotThrottledTogether()
+    {
+        // Syntetická výjimka nemá stack - klíč musí nést modul, jinak by druhý pád spadl do prvního.
+        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
+        ErrorReports.ReportLegacyExit("MZDY2.exe", "ALVA.MZDY2.formMZDY2Zam", 3);
+
+        WaitForRequests(2);
+    }
+
+    [Fact]
+    public void ReportLegacyExit_Disabled_SendsNothing()
+    {
+        ErrorReports.Enabled = false;
+
+        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
+
+        AssertNothingSent();
+    }
+
+    private void AssertNothingMoreSent(int expected)
+    {
+        Thread.Sleep(150);
+        Assert.Equal(expected, _handler.Count);
+    }
 }

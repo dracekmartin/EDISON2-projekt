@@ -45,7 +45,7 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F3 - Upravit updater
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Vyřazeno (2026-08-28) - updater se řeší obecně, evidence mimo tento dokument.
 - **P2 · ?** 🔸
 - **Co udělat:** V ticketu bez detailu („Upravit updater"). Vyžádat od DZ, co konkrétně -
   bez toho nezačínat.
@@ -72,7 +72,7 @@ projektu jsou značené explicitně („nový post #N").
 - [x] **Stav:** Done (2026-08-24) - `DefaultTreeTab()` vrací vždy „Hlavní nabídka"; oblíbené
   default nepřebíjejí, uložená volba má dál přednost.
 - **P3 · S** 🔸
-- **Zbývá odeslat do ticketu:** „Po startu se nově vždy otevře Hlavní nabídka. Dřív shell
+- **Odesláno do ticketu (2026-08-28):** „Po startu se nově vždy otevře Hlavní nabídka. Dřív shell
   skočil na Oblíbené, pokud jste nějaké měl - to jsme zrušili. Poslední otevřenou záložku
   si shell pamatuje per uživatel a firmu, takže si ji stačí jednou přepnout."
 - **Zdroj:** HD 13132 #20 (Kaska)
@@ -142,19 +142,47 @@ projektu jsou značené explicitně („nový post #N").
 
 - [ ] **Stav:** Open
 - **P2 · M**
+- **Deferred:** po review (2026-08-28) - klientský úklid „cizí GUID téže IP + loginName" je
+  vadný (uživatel může být legitimně přihlášen dvakrát z téhož počítače) a serverová varianta
+  níže je větší zásah do sdíleného `MLRest`/`Activity` - odloženo, dokud zombie zámky reálně
+  nebolí (admin má LockClearExt).
 - **Co udělat:** Korektní logout/přepnutí firmy už čistí ACTIVITY i business zámky
   (`6e49feb`, `SessionLogout.cs`) a zavírání oken honoruje veto. Po hard-killu ale zámky
-  visí do server idle timeoutu (známé, `EDISONMAIN2/CLAUDE.md`). Zvážit zkrácení
-  timeoutu / heartbeat / úklid při dalším startu klienta pod týmž uživatelem.
+  visí do server idle timeoutu (známé, `EDISONMAIN2/CLAUDE.md`).
 - **Pozor:** server sklízí jen ACTIVITY (`Activity.LockDel` v timeout+3 min), business
-  zámky nikdy; s vypnutým idle timeoutem po hard-killu visí **neomezeně**.
+  zámky nikdy; s vypnutým idle timeoutem po hard-killu visí **neomezeně**. Reaper
+  `Activity.Update()` navíc není serverová úloha - běží jen při requestu s `Locks=2`
+  (`ALWA.SYS.Rest`) a při `Login`/`Logout`/`VerifyLic`, tedy jen dokud nějaký klient pollí
+  nebo se někdo přihlašuje; `UpdateTimeout` při `exitOnTimeout=0`
+  (`^EDISON("System","Public","Settings")` piece 2/3, per-user `UserTimeout` přebíjí) nedělá
+  nic. Business zámky (`^CacheTempSYSLock`) maže jen `Lock.LockClear(guid)` a po pádu ho
+  nikdo nezavolá.
+- **Až se otevře, jediný korektní směr je liveness per GUID** (čistě serverová změna):
+  každý request vč. `Locks=2` pollu razítkuje `$$$SYSRest(...,"lastSeen")` v `ALWA.SYS.Rest`;
+  `Activity.Update()` sklidí ACTIVITY + `Lock.LockClear(guid)` u session bez requestu
+  \> ~10 min (každý klient pollí po 60 s i při nečinnosti uživatele - mrtvý proces, ne idle).
+  Nezávislé na `exitOnTimeout`, staří klienti nepotřebují nic; trigger `VerifyLic` → `Update()`
+  před `CountIdfa` vyčistí i scénář „spadlo, hlásím se znovu". Cena: uspaný laptop dostane
+  po probuzení řízené „spojení přerušeno". Klientská heuristika (IP + loginName) NE - viz Deferred.
 - **Hotovo když:** Zámky po pádu klienta zaniknou v řádu minut bez zásahu admina
   (LockClearExt ručně už není potřeba).
 - **Zdroj:** HD 13132 #17/3 (Kaska)
 
 ### F12 - Pády hostovaných legacy oken: dialog + telemetrie
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-28) - host neměl žádný handler běhových výjimek (generický WinForms
+  dialog / tichý pád), přímý `EDISONMAIN.exe` v args módu končil tiše s kódem 0. Repo EDISON:
+  `HostedErrorReporter` (ThreadException + AppDomain + try/catch kolem `ShowDialog`) volá legacy
+  `EDForm.MLError.ShowError` - dialog „Neočekávaná situace" s telemetrií na tlačítko, po fatal
+  `Environment.Exit(3)`, launch-fail exit 2 s českým textem bez výpisu args; `ApplicationEvents.vb`
+  totéž. Repo EDISON2: shell hlásí nenulový exit kód hosta (`TrackExit` → `ReportLegacyExit`,
+  seskupení podle formy, stabilní throttle klíč), opraveno pořadí subscribe/`EnableRaisingEvents`
+  (okamžitý pád se dřív ztratil). Ověřeno Debug hostem s `EDISONMAIN2API_CRASHTEST=ui|bg` na
+  Aktivitě uživatelů i Jazykovém nastavení (přímý EDISONMAIN): dialog + exit 3. **Limit:** výjimku
+  z `Form.Load` na x64 spolkne Windows, nedostane se k žádnému handleru.
+- **Odesláno do ticketu (2026-08-28):** „Pád okna staré agendy pod novým spouštěčem už neprobliká: zobrazí
+  se stejný chybový dialog jako ve starém EDISONu (referenční číslo, tlačítko Odeslat hlášení)
+  a tvrdý pád procesu navíc nahlásí spouštěč sám do telemetrie podpory."
 - **P2 · M**
 - **Co udělat:** Nový shell EDPROCESS nepoužívá - legacy okna hostuje generický
   `EDISONMAIN2API.exe` (`WindowNavigator.cs:26`, žije v repu `c:\MLineRepos\EDISON`).
@@ -220,7 +248,7 @@ projektu jsou značené explicitně („nový post #N").
   vyžaduje v IdFa právě jeden `_`, takže `CKSCHWAN` platné IdFa být nemůže - je to jméno
   namespace nebo ručně vyplněná hodnota z legacy setupu (`frmSetup.vb`, registry).
   Dohledání u zákazníka → viz Mimo EDISON2.
-- **Zbývá odeslat do ticketu:** „Firmu už v titulcích jednotlivých oken neuvidíte - je
+- **Odesláno do ticketu (2026-08-28):** „Firmu už v titulcích jednotlivých oken neuvidíte - je
   jednou v titulku hlavního okna a ve stavovém řádku, protože v jednom přihlášení pracujete
   vždy v jedné firmě. Okna starých agend si zkratku firmy zatím přidávají sama."
 - **Zdroj:** HD 13132 #3 bod 6 (Kaska), zbytek po `52c95c9`/`66138dc`
@@ -247,20 +275,39 @@ projektu jsou značené explicitně („nový post #N").
 
 ### F17 - Modul s vlastním GUID negeneruje aktivitu shell session
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-08-28) - rozhodnuto a implementováno: TD přebírá shell GUID
+  (varianta 1). Shell ho spouští přes `WindowNavigator.ShowLegacy` (launch args, KillOnExit,
+  „Spuštěné moduly", kill při switch firmy), `CacheSchemaWiring` při neprázdném guid nastaví
+  `GUID` + `CacheLocks=1` a App ukončí TD při `EdisonActivityFailed`. Legacy launchery TD
+  (ISYJR2, MHD2Linky, TISKJR - repo EDISON) propagují guid jen při `CacheLocks==1`, pod starým
+  shellem beze změny. Timeout měřený jen na requestech (čtení = idle) je vědomé chování.
 - **P2 · M**
 - **Co udělat:** TemplateDesigner záměrně nepřebírá shell GUID
-  (`TemplateDesigner/dotnet/Config/CacheSchemaWiring.cs:13-24`), takže jeho requesty
-  nerefreshují ACTIVITY historii shellu. Uživatel hodinu pracující jen v TD → idle timeout
-  shellu → force shutdown a `KillOnExit` sundá i TD. Stejný tvar chyby jako kauza ARRIVA,
-  jinými dveřmi; platí pro každý budoucí modul s vlastním MLRest.
-- **Pozor:** shell navíc nemá žádný keepalive - legacy 60s poll běžel s `Locks=1` a byl
+  (`TemplateDesigner/dotnet/Config/CacheSchemaWiring.cs:13-24`) a shell ho navíc spouští plain
+  `Process.Start(path)` **bez launch argumentů** (`EdisonMainViewModel.OpenTemplateDesigner`),
+  takže TD běží standalone z `templatedesigner.appsettings.json` s vlastním GUID
+  a `CacheLocks=0` - jeho requesty nepíšou ACTIVITY historii nikomu. Uživatel hodinu
+  pracující jen v TD → idle timeout shellu → řízený konec shellu uprostřed práce. TD samotný
+  přežije (není v `KillOnExit` jobu, ten váže jen `WindowNavigator`). Stejný tvar chyby jako
+  kauza ARRIVA, jinými dveřmi; platí pro každý budoucí modul s vlastním MLRest.
+- **Server to už umí:** `Activity.UpdateTimeout` zná podřízené procesy - idle rodiče
+  = `min(idle shell, idle dětí)`, `LockDel` rodiče smaže i děti, osiřelé dítě se sklidí samo.
+  Vazbu zakládá `ALVA.EDISON.Main.UpdateSeznamProcesu` (legacy `frmNoMDI.ProcesuBylPridanGuid`
+  ji volal při každém přidání modulu, nový shell nikdy). Podmínka: dítě musí posílat
+  `Locks=1` (jen tehdy jde `UpdateHistory`), tedy potřebuje vlastní ACTIVITY zámek
+  (`VerifyLic` pod jeho GUID; `CountIdfa` nepočítá vlastní IP, licenci navíc nespotřebuje).
+- **Varianty:** (1) TD převezme shell GUID - předat launch kontrakt, v `CreateMlRest`
+  přestat ignorovat `ShellGuid`, `Locks=1`; nejmenší práce, TD sdílí ACTIVITY i business zámky
+  shellu. (2) TD jako podřízený proces - vlastní GUID + vlastní zámek + `UpdateSeznamProcesu`;
+  věrné legacy, funguje pro každý budoucí modul. (3) Timeout měřit jen na shellu
+  a zdokumentovat. 🔸 Rozhodnutí produktové.
+- **Pozor:** shell nemá žádný keepalive - legacy 60s poll běžel s `Locks=1` a byl
   nechtěný keepalive (timeout byl prakticky nedosažitelný), dnes poll běží s `Locks=2`.
-  Shell je tedy přísnější než legacy; u zákazníků se zapnutým timeoutem čekat nová
-  hlášení „odhlásilo mě to".
+  Nový shell je první klient, kde timeout **reálně funguje** - u zákazníků se zapnutým
+  timeoutem čekat nová hlášení „odhlásilo mě to" i bez TD (čtení dashboardu = žádný request).
 - **Hotovo když:** Práce v TD (a obecně v modulu s vlastním GUID) drží shell session
   živou, nebo je rozhodnuto, že timeout se má měřit jen na shellu, a je to zdokumentováno.
-- **Zdroj:** vlastní nález při prověrce F13 (2026-08-25)
+- **Zdroj:** vlastní nález při prověrce F13 (2026-08-25), rozšířeno 2026-08-28
 
 ### F18 - Legacy dashboardy v layoutu: blokující load při startu + ztracené dávkování
 
@@ -283,9 +330,13 @@ projektu jsou značené explicitně („nový post #N").
 - **Pád „Aktivita uživatelů" z menu** (#5, Zeman) - `ShowUsersActivityCommand` spouští
   legacy `USERS.exe` přes hosta; šetřit v repu `c:\MLineRepos\EDISON`. Pravděpodobně
   stejný projev jako F12 (tichý pád hosta) - řešit spolu s F12. Vlastník: MH.
+  **2026-08-28:** přes host s účtem MH/CB_DP se otevře bez pádu (nereprodukováno); po F12 by
+  případný pád ukázal dialog a dorazil do telemetrie - čekat na další výskyt.
 - **Chyba nastavení jazyka** (#18, Kaska - „odesláno") - legacy forma
   `ALVA.EDISONMAIN.formEDISONMAINLanguageList` z `EDISONMAIN.exe`. Dohledat Kaskův error
-  report v telemetrii podpory. Vlastník: MH.
+  report v telemetrii podpory. Vlastník: MH. **2026-08-28:** přímý launch se otevře bez pádu
+  (nereprodukováno); před F12 by tam pád skončil tichým zavřením s kódem 0 - Kaskovo „odesláno"
+  tedy šlo z dialogu uvnitř formy, ne z neošetřené výjimky.
 - **CKSCHWAN vs CK_SCHWAN u zákazníka** (#3 bod 6, Kaska) - `CKSCHWAN` není platné IdFa
   (chybí `_`), takže jde o jméno namespace nebo ručně vyplněnou hodnotu v legacy setupu
   (`frmSetup.vb` → registry). Dohledat skutečnou konfiguraci instance. Vlastník: MH.

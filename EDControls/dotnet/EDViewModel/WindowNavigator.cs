@@ -32,23 +32,62 @@ public class WindowNavigator : IWindowNavigator
 
     private readonly List<LegacyProcessEntry> _legacyProcesses = [];
 
+    /// <summary>Příznak „zabil ho shell sám" (<see cref="CloseLegacyModules"/>) - takový nenulový
+    /// exit kód není pád. Vázaný na objekt Process, ne na PID (reuse PID, žádný úklid).</summary>
+    private sealed class ExitWatch { public volatile bool KilledByShell; }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Process, ExitWatch> _exitWatches = new();
+
     public event Action? LegacyModuleExited;
 
     /// <summary>
-    /// Napojí notifikaci o konci modulu. `EnableRaisingEvents` je nutné zapnout explicitně;
-    /// `Exited` chodí z thread poolu, takže se marshaluje na UI vlákno (a při shutdownu, kdy
-    /// `Application.Current` je null, se zahodí - není komu doručit).
+    /// Napojí notifikaci o konci modulu. `EnableRaisingEvents` je nutné zapnout explicitně a až
+    /// **po** přihlášení handleru - u procesu, který mezitím skončil, vystřelí callback hned
+    /// a do prázdného delegátu by se ztratil. `Exited` chodí z thread poolu, takže se marshaluje
+    /// na UI vlákno (a při shutdownu, kdy `Application.Current` je null, se zahodí).
     /// </summary>
     private void WatchForExit(Process prc)
     {
         try
         {
-            prc.EnableRaisingEvents = true;
             prc.Exited += (_, _) =>
                 Application.Current?.Dispatcher.BeginInvoke(() => LegacyModuleExited?.Invoke());
+            prc.EnableRaisingEvents = true;
         }
         catch { /* proces mohl skončit dřív, než jsme se stihli napojit */ }
     }
+
+    /// <summary>
+    /// Hlídá tvrdý pád hosta: nenulový exit kód, který nezpůsobil shell killem, jde do hlášení
+    /// chyb shellu (host sám dosáhne jen na managed výjimky - viz FormToRunGetter v repu EDISON).
+    /// Pořadí subscribe → EnableRaisingEvents viz <see cref="WatchForExit"/>.
+    /// </summary>
+    private static void TrackExit(Process prc, string exeName, string formFqn)
+    {
+        try
+        {
+            var watch = _exitWatches.GetOrCreateValue(prc);
+            prc.Exited += (_, _) => ReportAbnormalExit(prc, watch, exeName, formFqn);
+            prc.EnableRaisingEvents = true;
+        }
+        catch { /* best-effort */ }
+    }
+
+    private static void ReportAbnormalExit(Process prc, ExitWatch watch, string exeName, string formFqn)
+    {
+        try
+        {
+            var exitCode = prc.ExitCode;
+            if (ShouldReportExit(exitCode, watch.KilledByShell))
+                ErrorReporting.ErrorReports.ReportLegacyExit(exeName, formFqn, exitCode);
+        }
+        catch { /* Process už může být disposed - hlášení pádu nesmí být druhá chyba */ }
+    }
+
+    /// <summary>0 = normální konec i `Application.Exit`; náš `Kill` dává -1, ale poznává se podle PID,
+    /// ne kódu - `taskkill /F` zvenku (kód 1) hlásit chceme.</summary>
+    internal static bool ShouldReportExit(int exitCode, bool killedByShell) =>
+        exitCode != 0 && !killedByShell;
 
     public void Show(Window window)
     {
@@ -141,7 +180,8 @@ public class WindowNavigator : IWindowNavigator
 
     public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
-        using var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
+        // Bez using: Exited (hlášení pádu) chodí z poolu a mohl by přijít až po dispose.
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         prc?.WaitForExit();
     }
 
@@ -185,7 +225,6 @@ public class WindowNavigator : IWindowNavigator
             owner.Activated += bounce;
         }
 
-        prc.EnableRaisingEvents = true;
         prc.Exited += (_, _) =>
         {
             // Exited fire-uje na thread pool; Application.Current je null pokud shell už doběhl
@@ -199,6 +238,7 @@ public class WindowNavigator : IWindowNavigator
                 if (owner is { IsLoaded: true }) owner.Activate();
             });
         };
+        prc.EnableRaisingEvents = true;
     }
 
     [DllImport("user32.dll")]
@@ -261,7 +301,9 @@ public class WindowNavigator : IWindowNavigator
         {
             try
             {
-                if (!entry.Process.HasExited) entry.Process.Kill();
+                if (entry.Process.HasExited) continue;
+                if (_exitWatches.TryGetValue(entry.Process, out var watch)) watch.KilledByShell = true;
+                entry.Process.Kill();
             }
             catch (Exception ex)
             {
@@ -368,16 +410,23 @@ public class WindowNavigator : IWindowNavigator
         {
             UseShellExecute = true,
             FileName = direct ? agendaPath : ResolveExecutablePath(LauncherExe),
-            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath, licensedElements, shortcutPayload),
+            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath,
+                licensedElements, EDServices.Current.IsAdmin, EDServices.Current.MayUpdate, shortcutPayload),
         });
-        if (prc != null) KillOnExit.Bind(prc);
+        if (prc != null)
+        {
+            KillOnExit.Bind(prc);
+            TrackExit(prc, exeName, formFqn);
+        }
         return prc;
     }
 
-    /// <summary>Agendy, které se spouští napřímo místo přes generický host (drží si vlastní
-    /// retrofit s logikou, kterou host nereplikuje). Zatím jen legacy shell EDISONMAIN.</summary>
+    /// <summary>Aplikace, které se spouští napřímo místo přes generický host: legacy shell
+    /// EDISONMAIN (vlastní retrofit, který host nereplikuje) a WPF TemplateDesigner
+    /// (kontrakt si parsuje sám, WinForms host na něj nejde použít).</summary>
     internal static bool LaunchesDirectly(string exeName) =>
-        string.Equals(Path.GetFileName(exeName), "EDISONMAIN.exe", StringComparison.OrdinalIgnoreCase);
+        string.Equals(Path.GetFileName(exeName), "EDISONMAIN.exe", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Path.GetFileName(exeName), "TemplateDesigner.exe", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Složí payload pro generický host: značka + sys kontext + formFqn + shellGuid +
@@ -385,13 +434,18 @@ public class WindowNavigator : IWindowNavigator
     /// kontraktem (takže `FormToRunGetter.TryGetFormFromArgs` retrofitnutých agend zůstává
     /// kompatibilní); agendaPath (host ho čte pro <c>Assembly.LoadFrom</c>) je [11],
     /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable - starší host je ignoruje),
-    /// zástupce na ploše [13] (opaque, host ho místo formy spustí jako proceduru; prázdné = běžný launch).
+    /// zástupce na ploše [13] (opaque, host ho místo formy spustí jako proceduru; prázdné = běžný launch),
+    /// admin flag [14] a právo update [15] ("1"/"0" → MLProps.UserIsAdmin / UserMayUpdate; host bez pole
+    /// defaultuje na false).
     /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
     /// argv-safe (bez uvozovek a mezer).
     /// </summary>
     internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
-        string inputParam, string agendaPath, string licensedElements, string shortcutPayload = "") =>
-        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\"";
+        string inputParam, string agendaPath, string licensedElements, bool isAdmin, bool mayUpdate,
+        string shortcutPayload = "") =>
+        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\"";
+
+    private static string Flag(bool value) => value ? "1" : "0";
 
     public static string ResolveExecutablePath(string relativePath)
     {
