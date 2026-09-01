@@ -19,8 +19,15 @@ jen zesílí podle délky obsahu), takže to není dorovnání starého tisku, a
 Na drátě se **nic nemění** - zóny už se posílají a rozdělit si je umí prvek sám. Nová databázová
 položka by ke stejné věci vyrobila druhé pole, které by pak muselo žít navždy.
 
-Ověřeno: .NET **1318/1318** (6 nových testů) a Caché 138/138; mutacemi obou cest (rozpad natvrdo
-zapnutý; dělení jen čárkou) doloženo, že to testy chytí. Formulář prvku ověřen voláním serveru.
+**Nadpis mají rozpadlé zóny jeden společný** přes všechny své díly, ne „Zóna" nad každým (tvůj nález
+při zkoušení). Opakovaný nadpis vypadal jako několik různých sloupců, přestože je to pořád táž věc,
+jen rozložená; sloučením zmizí i čáry mezi díly v řádku nadpisu. ⚠️ **Kilometry se záměrně
+neslučují** - jejich díly jsou km jednotlivých úseků, tedy různé hodnoty se stejným názvem, a
+sloučení by změnilo hotové sestavy všem, kdo km sloupce mají.
+
+Ověřeno: .NET **1321/1321** (9 nových testů) a Caché 138/138; mutacemi tří cest (rozpad natvrdo
+zapnutý; dělení jen čárkou; nesloučený nadpis) doloženo, že to testy chytí. Formulář prvku ověřen
+voláním serveru.
 
 ## 2026-08-31 (14) - 🧪 spouštěč testů si přestal přičítat cizí běhy (`T1`)
 

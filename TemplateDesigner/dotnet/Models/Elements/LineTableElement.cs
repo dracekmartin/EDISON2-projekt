@@ -884,6 +884,42 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
 
     /// <summary>
+    /// Nadpisy popisnych sloupcu - rozpadle zony dostanou <b>jeden spolecny</b> pres vsechny sve dily.
+    /// </summary>
+    /// <remarks>
+    /// „Zona" nad kazdym dilem vypadala jako nekolik ruznych sloupcu, prestoze je to porad tataz vec,
+    /// jen rozlozena (rozhodnuti Jan 1. 9. po vyzkouseni). Slouceni znamena jednu sirsi bunku misto
+    /// nekolika, takze v radku nadpisu zaroven zmizi cary mezi dily.
+    /// <para>⚠️ Kilometry se **zamerne** neslucuji: jejich dily jsou km jednotlivych useku, tedy ruzne
+    /// hodnoty se stejnym nazvem, a slouceni by zmenilo hotove sestavy vsem, kdo km sloupce maji.</para>
+    /// </remarks>
+    private List<(int Index, float Sirka, string Text, ResolvedTextStyle Styl)> NadpisyPopisnychSloupcu(
+        IReadOnlyList<RenderCol> fixedCols)
+    {
+        var vysledek = new List<(int, float, string, ResolvedTextStyle)>();
+        for (int ci = 0; ci < fixedCols.Count; ci++)
+        {
+            int span = 1;
+            if (fixedCols[ci].Key == ColumnKeys.Zone && RozdelitZonyDoSloupcu)
+                while (ci + span < fixedCols.Count && fixedCols[ci + span].Key == ColumnKeys.Zone) span++;
+            float sirka = 0f;
+            for (int k = 0; k < span; k++) sirka += fixedCols[ci + k].Width;
+            vysledek.Add((ci, sirka, fixedCols[ci].Header, fixedCols[ci].HeaderStyle));
+            ci += span - 1;
+        }
+        return vysledek;
+    }
+
+    /// <summary>Nadpisy popisnych sloupcu (text, sirka) tak, jak se vykresli - pro testy.</summary>
+    internal List<(string Text, float Sirka)> NadpisyProTest(DataContext data)
+    {
+        EnsureParsed(data);
+        var stops = _cachedStops ?? [];
+        var (cols, _, _) = BuildColumns(stops, MaxKmCount(stops), 1);
+        return [.. NadpisyPopisnychSloupcu(cols).Select(n => (n.Text, n.Sirka))];
+    }
+
+    /// <summary>
     /// Popisove sloupce tak, jak se opravdu vykresli - pro testy: dvojice (klic, hodnota bunky).
     /// </summary>
     /// <remarks>
@@ -1380,9 +1416,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var headerSpecs = new List<ColumnRenderer.CellSpec>();
         PridejZrcadlene(headerSpecs, mrizka, zrcadlene.Count, headerResolved,
             ti => (zrcadlene[ti].CisloSpoje, tripHeaderStyle), tripHeaderStyle);
-        for (int ci = 0; ci < fixedCols.Count; ci++)
-            headerSpecs.Add(new(fixedCols[ci].Width, fixedCols[ci].Header, fixedCols[ci].HeaderStyle,
-                SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
+        foreach (var (index, sirka, text, styl) in NadpisyPopisnychSloupcu(fixedCols))
+            headerSpecs.Add(new(sirka, text, styl, SuppressLeadingLine: BezCaryVlevo(index, mrizka)));
         PridejSpoje(headerSpecs, mrizka, trips.Count, headerResolved,
             ti => (trips[ti].CisloSpoje, tripHeaderStyle));
         plan.Add(new(RowKind.Header, headerH, headerSpecs)

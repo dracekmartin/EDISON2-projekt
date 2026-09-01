@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Tests.Rendering;
@@ -94,6 +95,61 @@ public class ZonyDoSloupcuTests
 
         Assert.Equal(2, zony.Count);
         Assert.Equal(["23", "5"], zony.Select(z => z.Hodnota));
+    }
+
+    // ── Nadpis nad rozpadlými zónami ─────────────────────────────────────────
+
+    /// <summary>
+    /// Rozpadlé zóny mají <b>jeden společný nadpis</b> přes všechny své díly, ne „Zóna" nad každým.
+    /// </summary>
+    /// <remarks>
+    /// Nález Jan 1. 9. při zkoušení: opakovaný nadpis vypadal jako několik různých sloupců, přestože
+    /// je to pořád táž věc, jen rozložená. Sloučení je jedna širší buňka, takže v řádku nadpisu
+    /// zároveň zmizí čáry mezi díly.
+    /// </remarks>
+    [Fact]
+    public void RozpadleZony_MajiJedenSpolecnyNadpis()
+    {
+        var nadpisy = Prvek(rozdelit: true).NadpisyProTest(Data());
+
+        Assert.Single(nadpisy, n => n.Text == "Zóna");
+    }
+
+    /// <summary>Sloučený nadpis je široký jako všechny díly dohromady - jinak by nesedělo záhlaví.</summary>
+    [Fact]
+    public void SloucenyNadpis_JeSirokyJakoVsechnyDily()
+    {
+        var prvek = Prvek(rozdelit: true);
+        var sloupcu = prvek.PopisneSloupceProTest(Data()).Count(c => c.Klic == ColumnKeys.Zone);
+        var nadpisZona = prvek.NadpisyProTest(Data()).Single(n => n.Text == "Zóna");
+        var nadpisTc = prvek.NadpisyProTest(Data()).Single(n => n.Text == "Tč");
+
+        Assert.Equal(3, sloupcu);
+        Assert.Equal(8f * 3, nadpisZona.Sirka, 3);   // výchozí šířka sloupce zóny je 8 mm
+        Assert.Equal(6f, nadpisTc.Sirka, 3);         // ostatní sloupce se neslučují
+    }
+
+    /// <summary>
+    /// Kilometry se <b>neslučují</b> - jejich díly jsou různé hodnoty se stejným názvem.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Není to opomenutí: sloučení nadpisu km by změnilo hotové sestavy všem, kdo km sloupce mají,
+    /// a na rozdíl od zón tam každý díl znamená něco jiného (km jednotlivých úseků).
+    /// </remarks>
+    [Fact]
+    public void Kilometry_SeNeslucuji()
+    {
+        var data = RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("PORADI", "1"), ("TYP", "zastavka"), ("NAZEV_ZASTAVKY", "A"),
+                    ("ZONY", "037"), ("KM", new JsonArray("0", "5"))),
+            ]),
+            ("SPOJE", [RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"), ("SMER", "T"))]));
+
+        var nadpisy = Prvek(rozdelit: true).NadpisyProTest(data);
+
+        Assert.Equal(2, nadpisy.Count(n => n.Text == "km"));
     }
 
     /// <summary>Prázdná zóna nevyrobí sloupec s prázdným textem navíc.</summary>
