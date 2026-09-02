@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-09-02 (1) - 🔤 písmeno varianty trasy se tiskne jen tam, kde je čím vysvětlit
+
+Kolega poslal vývěsku linky 111 s dotazem, co znamená „A" za časem odjezdu.
+V legendě jsou popsané B, C, E, F, ale A tam není a nemá být: **není to rozdíl trasy, ale označení
+variantního sloupce jízdních dob** a vysvětluje ho záhlaví toho sloupce v seznamu zastávek.
+Jeho šablona ten sloupec zapnutý nemá, takže písmeno u minuty nemělo na stránce s čím spárovat.
+
+Nově se písmena variant u minut tisknou **jen tehdy, když má aspoň jeden seznam zastávek viditelný
+sloupec „Varianty tras"**.
+Bez něj (a v šabloně, kde seznam zastávek vůbec není) se nevytisknou.
+Je to totéž pravidlo, které už platí u značky „na znamení" a u přestupů: značka a její vysvětlení
+visí na jedné volbě, takže nemůže vzniknout značka, které nikdo nerozumí.
+
+⚠️ **Bylo to horší než nevysvětlené písmeno - legenda ho vysvětlovala CIZÍM textem.**
+Řady písmen se dnes kryjí: varianty berou A, B, C, D, E…, rozdíly tras B, C, E, F, G… ze sady u linky.
+Spoj jedoucí variantou „E" tedy dostal u minuty „E" a čtenář si k němu v legendě přečetl
+„jede jen do zast. Babice,Zvěřetice,rozc.1.0", což o tom spoji neplatí.
+Na vývěsce pro cestující je to tichá dezinformace, ne kosmetika.
+**Oddělení těch dvou řad je samostatná úloha `B113`** - tenhle krok jen zabrání tomu, aby písmeno
+vzniklo tam, kde ho nejde přečíst správně.
+
+⚠️ **Nové šablony to nepotká.**
+Nově vložený seznam zastávek má sloupec „Varianty tras" viditelný z výroby, takže tisknou písmena dál.
+Rozbité byly šablony převedené migrací 1.7.0 → 1.8.0, která sloupec zapnula jen tam, kde bylo dřív
+zaškrtnuté obojí (sloupec „Čas jízdy" i staré zaškrtávátko variant).
+
+**Komu chybí písmena a chce je zpátky:** v prvku seznamu zastávek zapnout sloupec „Varianty tras"
+a schovat „Čas jízdy" - jinak tam budou časy základní trasy dvakrát (variantní sloupec bez písmene
+je při výchozím řazení „dle četnosti ze zastávky" tatáž hlavní trasa).
+
+Ověřeno: .NET **1417/1417** (5 nových testů, jeden z nich reprodukuje přesně ten případ z vývěsky -
+písmeno varianty „E" proti legendě „E" jako rozdílu trasy).
+
 ## 2026-09-01 (10) - 🙈 linkové jízdní řády skryté před vydáním
 
 Ve vydávané verzi mají být **jen zastávkové jízdní řády** (rozhodnutí Jan). Agenda linkového JŘ se

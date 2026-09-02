@@ -644,11 +644,16 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"):
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
     zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
-  - **Písmena variant se tisknou vždy** - varianty se označí písmeny A-Z v záhlaví sloupců a totéž
-    písmeno se vytiskne u minut odjezdů; podle písmena tak dohledáte, kterou trasou spoj jede.
-    Tím se **nahradí automatické poznámkování rozdílů tras** (aby na vývěsce nebyly dvě sady písmen).
-    Do 17. 8. to byl parametr, který šel vypnout - vypnutá vývěska ale u minut neměla nic, takže
-    nešlo poznat, který sloupec pro spoj platí; volba proto zmizela.
+  - **Písmena variant se tisknou vždy, když je zapnutý sloupec „Varianty tras"** - varianty se
+    označí písmeny A-Z v záhlaví sloupců a totéž písmeno se vytiskne u minut odjezdů; podle písmena
+    tak dohledáte, kterou trasou spoj jede.
+    Bez toho sloupce se u minut netisknou, protože by je nebylo čím vysvětlit.
+    Vypnout je jinak nelze: do 17. 8. to byl parametr, ale vývěska bez nich u minut neměla nic,
+    takže nešlo poznat, který sloupec pro spoj platí.
+  - **Písmena variant a písmena rozdílů tras jsou dvě různé věci a tisknou se vedle sebe** -
+    u minuty je nejdřív rozdíl trasy, pak varianta („17BA" = rozdíl B, varianta A).
+    Rozdíl trasy říká **kudy** spoj jede jinak a vysvětluje ho text v legendě; varianta říká,
+    **podle kterého sloupce časů** se řídí, a vysvětluje ji záhlaví toho sloupce.
   - **První varianta bez písmene** - nejčastější trasa zůstane bez písmene, odchylky se značí od A.
     Vypnuto = písmenkuje se už od první varianty.
 - **Samostatná stránka pro každý označník** (parametr „Seznam zastávek") - zastávka obsluhovaná

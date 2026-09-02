@@ -4,9 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B101`**; u čtyř dalších je první
-> krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu. Průchod šablony s kolegou
-> (#13158) je celý hotový, viz archiv.
+> **Nejblíž na řadě:** § Aktuální focus - **`B113`** (písmena u minut se kryjí, vývěska lže
+> cestujícím) čeká na jedno rozhodnutí, pak jde hned; rovnou lze vzít **`B103`** a **`B101`**.
+> U čtyř dalších je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
 ---
 
@@ -21,9 +21,12 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 - **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
 - **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
 
-**Rovnou udělat jde `B101`** (drobné zlepšení srozumitelnosti). **`B100`** taky, ale je to zásah do
-serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až se bude na přenos nastavení linky
-sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8.)
+**Nejdřív ale `B113`** (2. 9.): dvě řady písmen u minut se kryjí a legenda pak jedno z nich
+vysvětluje cizím textem, takže vývěska lže cestujícím. Čeká na projití volby řady s Janem, ne na práci.
+
+**Rovnou udělat jde `B103`** (hledání linek) a **`B101`** (drobné zlepšení srozumitelnosti).
+**`B100`** taky, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
+se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8.)
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
@@ -67,6 +70,22 @@ sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8.)
   si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
   proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
   první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
+
+- **`B113` Písmena variant tras a rozdílů tras se kryjí** (nález kolega + Jan 2. 9., z vývěsky
+  linky 111). Varianty berou `A, B, C, D, E…`, rozdíly tras `B, C, E, F, G…` ze sady u linky
+  (`PATCH,mhd,notchar`, výchozí `BCEFGHIJOQRWeijqsvwxz`). Od druhé varianty výš se řady prolezou,
+  takže **jedno písmeno u minuty má dva významy** a legenda ho vysvětlí cizím textem: spoj jedoucí
+  variantou „E" si čtenář spáruje s „jede jen do zast. Babice,Zvěřetice,rozc.1.0". Na vývěsce pro
+  cestující je to tichá dezinformace. ⚠️ **U jediného písmene navíc nejde poznat, které z těch dvou
+  to je** - pořadí u minuty je pevné (rozdíl, pak varianta), ale spoj bez rozdílu trasy má jen
+  variantní písmeno. Starý modul se tomu vyhnul vlastní řadou od konce abecedy z nastavení u linky
+  (příklad „UVWXYZ"), které ale nemá vyplněné ani jedna z 325 prověřených linek, takže variantní
+  značky **netiskne vůbec** - paritu tedy neporušíme ani jednou volbou. **Návrh k projití s Janem:**
+  řada písmen variant se spočítá jako **doplněk k sadě rozdílů té linky** (ne pevný seznam), aby se
+  nemohly protnout ani u linky s vlastním nastavením. Dotkne se to `TestPismenoVarianty` (dnes čeká
+  A, Z, V27) a zlatých odtisků sady vývěsek - odtisky se změní **záměrně**, takže se rozdíl doloží,
+  ne přebaseline naslepo. Pojistka „bez sloupce Varianty tras se písmena netisknou" je hotová
+  (2. 9.), tohle je ta vlastní oprava.
 
 - **`B103` Hledání ve výběru linek prohledá jen prvních 200** (nález Jan 1. 9.). Dialog si
   načte 200 linek skupiny (`EDList.Instance` posílá `limit = 200`) a hledací pole pak filtruje
