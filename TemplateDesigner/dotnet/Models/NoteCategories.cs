@@ -28,6 +28,11 @@ public static class NoteCategories
     /// přiděluje server per stránka; víceznakové, takže se kreslí textem, ne symbolovým fontem.</summary>
     public const string Pokracovani = "pokracovani";
 
+    /// <summary>Varianta trasy u odjezdu - písmeno, které říká, kterým variantním sloupcem časů se
+    /// spoj řídí. Vysvětlením je záhlaví toho sloupce, ne řádek legendy; proto se kategorie tiskne
+    /// jen tehdy, když seznam zastávek sloupec Varianty tras skutečně má.</summary>
+    public const string VariantaTrasy = "varianta-trasy";
+
     /// <summary>Atribut zastávky (na znamení a spol.).</summary>
     public const string AtributZastavky = "atribut-zastavky";
 

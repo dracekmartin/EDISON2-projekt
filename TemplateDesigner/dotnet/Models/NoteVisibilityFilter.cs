@@ -40,6 +40,10 @@ public static class NoteVisibilityFilter
     private const string MistenkyKat = NoteCategories.OdjezdMistenka;
     private const string PokracovaniKat = NoteCategories.Pokracovani;
 
+    /// <summary>Kategorie písmen variant tras u odjezdů. Skryje se, když je nemá žádný seznam
+    /// zastávek čím vysvětlit (chybí sloupec Varianty tras).</summary>
+    private const string VariantaTrasyKat = NoteCategories.VariantaTrasy;
+
     /// <summary>Převede hodnotu parametru sestavy na režim. Neznámé / „Ruční komentáře" = default (legacy).</summary>
     public static NoteRangeSuppression ParseMode(object? paramValue) => paramValue?.ToString() switch
     {
@@ -78,9 +82,11 @@ public static class NoteVisibilityFilter
     /// Server posílá nadmnožinu otagovanou kategorií a rozhodnutí drží šablona - proto tady, na jednom
     /// místě, a ne parametrem sestavy: je to čistě „co se zobrazí", žádný re-fetch.
     ///
-    /// Značka a její vysvětlivka jsou svázané **jednou** volbou v bloku poznámek: filtr podle kategorie
-    /// odebere obojí. Nemůže tak vzniknout značka, které nikdo nerozumí, ani vysvětlivka k něčemu,
-    /// co na vývěsce není.
+    /// Značka a její vysvětlivka jsou svázané **jednou** volbou: filtr podle kategorie odebere obojí.
+    /// Nemůže tak vzniknout značka, které nikdo nerozumí, ani vysvětlivka k něčemu, co na vývěsce
+    /// není. U kol, místenek, pokračování a souhrnu bezbariér drží tu volbu blok poznámek; u písmen
+    /// variant tras je to sloupec Varianty tras v seznamu zastávek, protože tam vysvětlení nese
+    /// záhlaví sloupce, ne řádek legendy.
     /// </summary>
     public static HashSet<string> HiddenContentCategories(Template template)
     {
@@ -96,6 +102,13 @@ public static class NoteVisibilityFilter
         if (!legends.Any(l => l.ShowPokracujiciSpoje)) hidden.Add(PokracovaniKat);
         // Souhrn bezbariér je naopak výchozím stavem zapnutý; bez bloku poznámek není co zobrazit.
         if (legends.Count > 0 && !legends.Any(l => l.ShowSouhrnBezbarier)) hidden.Add(AggBezbarierKat);
+
+        // Bez variantního sloupce nemá písmeno kde získat vysvětlení, a protože se řady písmen
+        // variant a rozdílů tras kryjí, legenda ho navíc vysvětlí CIZÍM textem (spoj jede variantou
+        // „E", legenda u „E" tvrdí „jede jen do zast. …"). Dtto šablona bez seznamu zastávek.
+        if (!template.Sections.SelectMany(s => s.Elements)
+                .OfType<Elements.StopListElement>().Any(e => e.ShowsRouteVariants))
+            hidden.Add(VariantaTrasyKat);
 
         return hidden;
     }
