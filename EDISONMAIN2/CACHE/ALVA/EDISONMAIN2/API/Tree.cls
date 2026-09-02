@@ -713,6 +713,7 @@ ClassMethod FillMain() [ Private ]
 			d ..AddExe("Palivo", "VOZIDLA2.exe", "ALVA.VOZIDLA2.formVOZIDLA2PalivoList", "145038", 0, "", 0, "", 0)
 			d ..AddExe("Povinná položka", "VOZIDLA2.exe", "ALVA.VOZIDLA2.formVOZIDLA2PovinnaPolozkaList", "145041", 0, "", 0, "", 0)
 			d ..AddExe("Plán vyřazení", "VOZIDLA2.exe", "ALVA.VOZIDLA2.formVOZIDLA2PlanVyrazeniList", "145036", 0, "", 0, "", 0)
+			d ..AddExe("Skupina kontraktů", "VOZIDLA2.exe", "ALVA.VOZIDLA2.formVOZIDLA2KontraktSkupinaList", "145043", 0, "", 0, "", 0)
 			d ..AddExe("Typy", "VOZIDLA2.exe", "ALVA.VOZIDLA2.formVOZIDLA2TypList", "145010", 0, "", 0, "", 0, "Typy vozidel")
 			d ..AddExe("Validátory", "VOZIDLA2.exe", "ALVA.VOZIDLA2.formVOZIDLA2ValidatorList", "145042", 0, "", 0, "", 0)
 			d ..AddExe("Výrobce pohonu", "VOZIDLA2.exe", "ALVA.VOZIDLA2.formVOZIDLA2VyrobcePohonuList", "145039", 0, "", 0, "", 0)
