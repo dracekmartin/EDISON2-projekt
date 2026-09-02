@@ -74,6 +74,34 @@ public class PoznamkaTypDriftTests
         Assert.Contains("nz", typy);
     }
 
+    /// <summary>
+    /// Druhý slovník na drátě: <b>kategorie</b> značky. Na jejím jménu visí to, co šablona vypíná
+    /// (kola, místenky, pokračování, souhrn bezbariér, písmena variant tras) - a když se jméno na
+    /// serveru přejmenuje, filtr **tiše přestane fungovat**: značka se tiskne dál, testy klienta
+    /// zůstanou zelené (používají tutéž konstantu) a nikdo si toho nevšimne až do vývěsky
+    /// u zákazníka. Proto se každá kategorie, kterou klient zná, musí najít i ve zdroji agendy.
+    /// </summary>
+    [Fact]
+    public void KazdaKategorieZnamaKlientovi_ExistujeVeZdrojiAgendy()
+    {
+        var zdroje = AgendaFiles().Select(File.ReadAllText).ToList();
+        var chybi = KategorieKlienta()
+            .Where(k => !zdroje.Any(z => z.Contains($"\"{k}\"", StringComparison.Ordinal)))
+            .ToList();
+
+        Assert.True(chybi.Count == 0,
+            "Klient filtruje podle kategorie, kterou žádná agenda neposílá → filtr tiše nic nedělá "
+            + "(značka se tiskne dál):\n"
+            + string.Join("\n", chybi)
+            + "\nSrovnej NoteCategories s tím, co agenda zapisuje do KATEGORIE.");
+    }
+
+    private static IEnumerable<string> KategorieKlienta() =>
+        typeof(TemplateDesigner.Models.NoteCategories)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string))
+            .Select(f => (string)f.GetRawConstantValue()!);
+
     private static TypPoznamky Parse(string? s) =>
         (TypPoznamky)typeof(StopScheduleElementBase)
             .GetMethod("ParseTypPoznamky", System.Reflection.BindingFlags.NonPublic
