@@ -20,7 +20,8 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 - **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
 - **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
 
-**Rovnou udělat jde `B101`** (drobné zlepšení srozumitelnosti).
+**Rovnou udělat jde `B101`** (drobné zlepšení srozumitelnosti) a **`B116`** (blikající paritní
+brána - nejdřív zjistit, na čem mimo repo test závisí).
 **`B100`** taky, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
 se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B103`, `B113`, `B114` a `B115` 3. 9.)
 
@@ -38,6 +39,23 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   není naše práce, ale zákazníkův případ z #9417 (souhrnný JŘ dvou linek s dlouhým výčtem dopravců)
   se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
   Až se to stane, filtrování dopravců přestane být odložené.
+
+- **`B116` Paritní test linkového JŘ bliká** [S] (nález 3. 9. při `B103`).
+  `LinkovyJrAdLegacyTest.TestParitaSeStarymModulem` **dvakrát spadl a pak bez zásahu do kódu prošel**.
+  Hlásil nedeklarované rozdíly proti starému modulu: legenda poznámek (`+`, `X` - „starý [0] × náš [1]")
+  a názvy zastávek s dvojčárkou („Český Krumlov,,aut.nádr." místo „Český Krumlov, aut.nádr.")
+  na 0330510, 0330511 a 0380780.
+
+  **Co je vyloučené:** změna z `B103` (dotkla se jen limitu v pickeru a komentáře v sondě),
+  závislost na `ZastavkoveJrAd` (linkový JŘ má vlastní kopie helperů, vědomá duplikace) i kolize
+  s jinými testy v jednom běhu (padalo to i izolovaně). Dluh na tvar názvu zastávky je přitom
+  **splacen 24. 8.**, takže se ty hodnoty mají hlídat normálně - rozdíl byl skutečný, ne deklarovaný.
+
+  ⚠️ **Blikající brána je horší než chybějící.** Tuhle třídu chyb má hlídat R6; po dvou falešných
+  pádech ji nikdo nebude brát vážně a příště se přerazí naslepo. **Nejdřív zjistit, na čem mimo repo
+  test závisí** - živá data se mohla změnit, nebo na devu paralelně pracoval kolega (oracle volá
+  starý modul a ten si zapisuje do globálu, takže dva běhy vedle sebe si mohou přepsat mezistav).
+  Až pak řešit případný rozdíl.
 
 - **`B101` Není poznat, jestli je jedna skupina dnů nastavením, nebo daty linky** (z 25. 8.).
   Prvek pás skupin nekreslí, když vyjde jediná skupina - a uživatel pak nemá jak poznat, jestli
