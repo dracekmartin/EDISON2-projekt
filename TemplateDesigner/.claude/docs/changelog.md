@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-09-03 (7) - 📝 poznámky jsou prvek i v linkovém jízdním řádu (`B117` krok 1)
+
+Legenda linkového jízdního řádu se dosud skládala **dynamickou tabulkou** nad kolekcí poznámek.
+Uživatel tím dostal jen sloupce textu - žádný inverzní box u negativních značek, žádné řazení
+podle typu, žádné vlastní odsazení značky. Prvek Poznámky přitom existoval, jen byl vázaný na
+zastávkové jízdní řády.
+
+V paletě linkového jízdního řádu jsou teď **dva prvky**: tabulka zastávky × spoje a Poznámky.
+
+⚠️ **Rozhodnutí, proč to tak nebylo, nikde nebylo** - vzniklo to tak, že dynamická tabulka
+byla nejsnazší cesta (záměr Jan 3. 9.: doménová logika patří do prvku, dynamická tabulka je na
+raw data).
+
+**Prvek nad linkovými daty funguje bez úpravy kontraktu.** Agenda posílá u poznámky typ `nz`,
+`znak` nebo `text` a prvek to mapuje na negativní značku, speciální znak a text - stejně jako
+u zastávkových. Kolekci poznámek posílají obě agendy pod týmž klíčem.
+
+⚠️ **Co u linkových zůstane bez efektu:** filtry na kategorie obsahu (bezbariér,
+na znamení, přestupy, písmena variant) - to jsou zastávkové pojmy a linkový posílá kategorii
+prázdnou. Nastavení „počet poznámek na řádek per druh", které má starý modul, prvek zatím
+neumí vůbec - to je `#7487` a druhý krok `B117`.
+
+**Výchozí šablona linkového jízdního řádu zůstává na dynamické tabulce** - kolekce se nemění,
+takže hotové šablony se nerozbijí. Přepsat ji na nový prvek je vědomě až po vyzkoušení.
+
+Ověřeno: .NET **1463/1463** (9 nových testů na vazbu druh agendy → prvky, na kterou žádný test
+nebyl). Mutace „vrátit prvek mimo nabídku" test shodí.
+
 ## 2026-09-03 (6) - 🧪 .NET testy běží sekvenčně, falešné pády jsou pryč (`B116` část 1)
 
 `SheetPdfExportTests.Opakovani_KazdaStrankaNaCelyList` padal **občas** - v PDF nebyl žádný text,

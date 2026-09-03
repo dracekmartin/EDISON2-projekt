@@ -157,7 +157,7 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B117` Poznámky linkového JŘ jako prvek, ne dynamická tabulka** [M] (záměr Jan 3. 9.).
+- **`B117` Poznámky linkového JŘ jako prvek** [M] (záměr Jan 3. 9.). ✅ **Krok 1 hotový 3. 9.** - prvek je v paletě linkového JŘ a nad jeho daty funguje bez úpravy kontraktu (changelog 2026-09-03 (7)). ⏳ **Zbývá krok 2:** nastavení „počet poznámek na řádek per druh" a pořadí druhů, tedy to, co má starý modul a co je zároveň `#7487`.
 
   **Dnes:** legenda linkového JŘ se skládá **dynamickou tabulkou** nad kolekcí „Poznámky"
   (`DRUH` 1-10, `TYP`, `ZNAK`, `TEXT`) - tak to má i výchozí šablona `knizni-jr-ad-vychozi.json`.
