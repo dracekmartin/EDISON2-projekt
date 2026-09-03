@@ -4,9 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus - **`B113`** (písmena u minut se kryjí, vývěska lže
-> cestujícím) je rozhodnutá a jde vzít rovnou; po ní **`B103`** a **`B101`**.
-> U čtyř dalších je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B103`** (hledání linek) nebo
+> **`B101`**. U čtyř dalších je první krok dotaz ven (zákazník, kolegové z jízdních řádů),
+> ne psaní kódu.
 
 ---
 
@@ -21,12 +21,9 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 - **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
 - **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
 
-**Nejdřív ale `B113`** (2. 9.): dvě řady písmen u minut se kryjí a legenda pak jedno z nich
-vysvětluje cizím textem, takže vývěska lže cestujícím. Zadání je hotové, jde to vzít rovnou.
-
 **Rovnou udělat jde `B103`** (hledání linek) a **`B101`** (drobné zlepšení srozumitelnosti).
 **`B100`** taky, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
-se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8.)
+se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B113`, `B114` a `B115` 3. 9.)
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
@@ -70,56 +67,6 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
   proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
   první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
-
-- **`B113` Písmena variant tras a rozdílů tras se kryjí** [M] (nález kolega + Jan 2. 9., z vývěsky
-  linky 111). **Zadání rozhodnuté 2. 9., jde vzít rovnou.**
-
-  **Problém.** Varianty tras berou `A, B, C, D, E…` (zadrátovaná abeceda v `PismenoVarianty`),
-  rozdíly tras `B, C, E, F, G…` ze sady u linky. Od druhé písmenkované varianty výš se řady
-  prolezou, takže **jedno písmeno u minuty má dva významy** a legenda ho vysvětlí cizím textem:
-  spoj jedoucí variantou „E" si čtenář spáruje s „jede jen do zast. Babice,Zvěřetice,rozc.1.0".
-  Na vývěsce pro cestující je to tichá dezinformace, ne kosmetika. ⚠️ **U jediného písmene navíc
-  nejde poznat, které z těch dvou to je** - pořadí u minuty je pevné (rozdíl, pak varianta), ale
-  spoj bez rozdílu trasy nese jen variantní písmeno.
-
-  **Kde se ty sady nastavují** (obojí per linka, EDISON → linka → „Nastavení k tisku" → záložka
-  „Odjezdník MHD"):
-  „Volné značky" = rozdíly tras (`^JRL(sku,lin,"PATCH","mhd","notchar")`, wire klíč
-  `ODJEZDNIK_POZNAMKOVAT_ROZDILY_OZNACENI`, pole 32 API linky) a „Volné značky pro minutové trasy
-  spojů" = varianty (`…("PATCH","mhd","par",2)`, klíč `ODJEZDNIK_ZNK_CAS_PRUBEHY_TRAS`, pole 74).
-  Ze stringu se bere **znak po znaku od začátku** (první rozdíl = první znak); přes délku se
-  písmena zdvojují (`BB`, `CC`) - `GetZnk` v legacy i u nás.
-
-  **Rozhodnutí (Jan 2. 9.):** obě sady se čtou **prioritně z nastavení u linky, a doslova** - žádné
-  filtrování kolidujících písmen. Kdo si napíše `ABCDE`, dostane to i s kolizí; je to jeho volba
-  a tiše mu do ní sahat je horší. Východisko pro takovou linku je, že jsou nastavitelná **obě**
-  pole, takže se sada rozdílů přesune mimo abecedu. Prázdné pole → výchozí sada:
-
-  - **rozdíly tras: `BCEFGHIJOQRWeijqsvwxz`** - bez jediné změny, je to 1:1 legacy
-    (`JRapiLinPrtMhd.mac:539`), a náš přepis je věrný.
-  - **varianty tras: `A, D, L, M, N, P, T, Y`** - vzestupně a disjunktně. Vyškrtané je vše, co už
-    na vývěsce jako značka je: sada rozdílů **včetně malých písmen** (velikost nerozlišovat, „V"
-    vedle „v" ve výšce písma odjezdů nikdo nerozezná), `R` místenka, `K` kola, `u` pokračující spoj,
-    `H`/`F` bezbariér. Přes délku zdvojovat, dnešní „V27" zahodit.
-
-  **Proč vzestupně a ne od konce abecedy** (první návrh byl `Y, T, P, N, M, L, D, A`): `A` v sadě
-  rozdílů není, takže první písmenkovaná varianta může zůstat `A` - jak ji lidé vidí dnes. Linka
-  se dvěma variantami se tím nezmění vůbec a divergovat začne až třetí varianta (`D` místo `B`),
-  což je právě místo, kde dnes kolize vzniká. Zákazník, který si `ABCDE` výslovně přál, tedy
-  ve většině případů nemusí nastavovat nic; ta pole jsou per linka a hromadnou úpravu na ně nevidím,
-  takže každé ušetřené nastavení se počítá.
-
-  ⚠️ **Vyplněné pole variant zapne písmena i ve starém modulu.** Ten pro ně **nemá žádný výchozí
-  obsah** (`JRapiLinPrtMhd1.mac:27`, „UVWXYZ" je jen komentář), takže dnes variantní značky netiskne
-  vůbec - na žádné z 325 prověřených linek to pole vyplněné není. Paritu tedy neporušíme ani jednou
-  volbou, ale kdo pole vyplní kvůli nám, uvidí písmena i ve staré sestavě.
-
-  **Dotkne se:** `TestPismenoVarianty` (dnes čeká A, Z, V27) a zlatých odtisků sady vývěsek -
-  odtisky se změní **záměrně**, takže se rozdíl doloží, ne přebaseline naslepo. Pojistka „bez
-  sloupce Varianty tras se písmena netisknou" je hotová (2. 9.), tohle je ta vlastní oprava.
-
-  **Užitečné předem:** změřit, kolik linek má které z těch dvou polí reálně vyplněné - u sady
-  rozdílů to zmapované není taky a je to táž otázka.
 
 - **`B103` Hledání ve výběru linek prohledá jen prvních 200** (nález Jan 1. 9.). Dialog si
   načte 200 linek skupiny (`EDList.Instance` posílá `limit = 200`) a hledací pole pak filtruje

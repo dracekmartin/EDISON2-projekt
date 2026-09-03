@@ -666,7 +666,7 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
     zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
   - **Písmena variant se tisknou vždy, když je zapnutý sloupec „Varianty tras"** - varianty se
-    označí písmeny A-Z v záhlaví sloupců a totéž písmeno se vytiskne u minut odjezdů; podle písmena
+    označí písmeny v záhlaví sloupců a totéž písmeno se vytiskne u minut odjezdů; podle písmena
     tak dohledáte, kterou trasou spoj jede.
     Bez toho sloupce se u minut netisknou, protože by je nebylo čím vysvětlit.
     Vypnout je jinak nelze: do 17. 8. to byl parametr, ale vývěska bez nich u minut neměla nic,
@@ -675,6 +675,14 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     u minuty je nejdřív rozdíl trasy, pak varianta („17BA" = rozdíl B, varianta A).
     Rozdíl trasy říká **kudy** spoj jede jinak a vysvětluje ho text v legendě; varianta říká,
     **podle kterého sloupce časů** se řídí, a vysvětluje ji záhlaví toho sloupce.
+  - **Která písmena se použijí, si určíte u linky** (EDISON → linka → Nastavení k tisku → záložka
+    Odjezdník MHD). „Volné značky" jsou písmena rozdílů tras, „Volné značky pro minutové trasy
+    spojů" písmena variant; bere se z nich znak po znaku od začátku a po vyčerpání se zdvojují
+    („AA", „DD"). Nechte-li pole prázdné, použijí se **výchozí sady, které se nepřekrývají** -
+    varianty `A, D, L, M, N, P, T, Y`, rozdílům tras zůstává jejich dosavadní sada.
+    ⚠️ Vlastní zápis se bere doslova: napíšete-li do obou polí totéž písmeno, vytiskne se
+    u minuty pro obě věci a legenda k němu bude mít jiný text. Řešení je přesunout jednu ze sad,
+    protože nastavitelné jsou obě.
   - **První varianta bez písmene** - nejčastější trasa zůstane bez písmene, odchylky se značí od A.
     Vypnuto = písmenkuje se už od první varianty.
 - **Samostatná stránka pro každý označník** (parametr „Seznam zastávek") - zastávka obsluhovaná

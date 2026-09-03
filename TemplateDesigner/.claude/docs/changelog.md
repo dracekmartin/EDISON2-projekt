@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-09-03 (3) - 🔤 dvě řady písmen u minut se už nekryjí (`B113`)
+
+Varianty tras brala zadrátovaná abeceda `A, B, C, D…`, rozdíly tras sadu `BCEFGHIJOQRWeijqsvwxz`.
+Od druhé písmenkované varianty výš se řady prolezly, takže **jedno písmeno u minuty mělo dva významy**
+a legenda ho vysvětlila cizím textem: spoj jedoucí variantou „E" si čtenář spároval s „jede jen do
+zast. Babice". Na vývěsce pro cestující je to dezinformace, ne kosmetika (nález kolega + Jan 2. 9.
+na lince 111; pojistka „bez sloupce Varianty tras se písmena netisknou" byla první polovina, tohle
+je ta vlastní oprava).
+
+**Obě sady se teď berou z nastavení u linky** (EDISON → linka → Nastavení k tisku → Odjezdník MHD):
+„Volné značky" pro rozdíly tras, „Volné značky pro minutové trasy spojů" pro varianty. Znak po znaku
+od začátku, po vyčerpání se zdvojují („AA", „DD") - stejná mechanika jako v legacy.
+
+**Prázdné pole → výchozí disjunktní sady:**
+
+- **rozdíly tras `BCEFGHIJOQRWeijqsvwxz`** - bez jediné změny, je to 1:1 legacy a tedy parita.
+- **varianty `ADLMNPTY`** - vzestupně a disjunktně. Vyškrtané je vše, co u minuty jako značka už je:
+  sada rozdílů **včetně malých písmen** (velikost se nerozlišuje, „V" vedle „v" ve výšce písma
+  odjezdů nikdo nerozezná), `R` místenka, `K` kola, `u` pokračující spoj, `H`/`F` bezbariér.
+
+⚠️ **Vlastní zápis se bere DOSLOVA, bez filtrování kolizí** (rozhodnutí Jan 2. 9.). Kdo si napíše
+„ABCDE", dostane to i s kolizí - je to jeho volba a tiše mu do ní sahat je horší. Východisko je,
+že nastavitelné jsou **obě** sady, takže lze přesunout tu druhou.
+
+⚠️ **Vzestupně, ne od konce abecedy** (první návrh byl `Y, T, P, N, M, L, D, A`): `A` v sadě rozdílů
+není, takže první písmenkovaná varianta zůstává `A` jako dnes. **Linka se dvěma variantami se tím
+nezmění vůbec** a řady se rozejdou až u třetí (`D` místo `B`), což je právě místo, kde kolize vznikala.
+
+⚠️ **Vyplněné pole variant zapne písmena i ve starém modulu** - ten pro ně nemá žádný výchozí obsah
+(„UVWXYZ" v `JRapiLinPrtMhd1.mac:27` je jen komentář), takže dnes variantní značky netiskne vůbec
+a na žádné z 325 prověřených linek to pole vyplněné není. Paritu neporušuje ani jedna volba, ale kdo
+pole vyplní kvůli nám, uvidí písmena i ve staré sestavě.
+
+**Zlaté odtisky se přerazily záměrně a rozdíl je doložený** (R6). Počty stránek, zastávek, odjezdů
+i poznámek jsou u všech tří linek **shodné do jednoho**, takže se neztratil žádný spoj ani řádek.
+A hlavně **izolovaná kontrola**: s výchozí sadou dočasně vrácenou na `ABCDEFGHIJKLMNOPQRSTUVWXYZ`
+prošly všechny tři odtisky s původním md5, takže rozdíl nepochází odjinud než z té sady. Nové testy
+disjunktnosti naopak v té konfiguraci spadly („písmeno B je i v sadě rozdílů tras"), což je druhá
+polovina téhož důkazu.
+
+⚠️ **Řešení může být dočasné** (Jan + kolega 3. 9.): nastavení sad u linky se možná ještě upraví.
+Dnešní stav je průběžný krok, který zavírá dezinformaci na vývěsce, ne finální tvar nastavení.
+
+Ověřeno: Caché **143/143** (dva nové testy - disjunktnost sad a písmena z vlastní sady).
+
 ## 2026-09-03 (2) - 🔤 dlouhý text se zmenší, aby se vešel do prvku (`B115`)
 
 Textový prvek jako jediný text **tvrdě ořezával**: co se do jeho výšky nevešlo, se prostě nenakreslilo
