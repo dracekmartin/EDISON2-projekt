@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-03 (6) - 🧪 .NET testy běží sekvenčně, falešné pády jsou pryč (`B116` část 1)
+
+`SheetPdfExportTests.Opakovani_KazdaStrankaNaCelyList` padal **občas** - v PDF nebyl žádný text,
+přitom stránky tam byly. Izolovaně neselhal nikdy, takže to nebyl test sám.
+
+**Příčinou byl paralelní běh kolekcí.** Sada sdílí procesně globální stav: kořen kaskády
+`DocumentDefaults.Style` a cache fontů a typefaces SkiaSharpu. Doloženo měřením - **2 pády ze 14
+paralelních běhů, 0 z 8 sekvenčních**.
+
+⚠️ **Kolekci `StyleCascade` to nenahrazuje kosmeticky.** Ta kolekce existovala právě pro sdílený
+kořen kaskády, ale udržovat seznam tříd, které do ní patří, je zdroj téhle chyby:
+`EDInputFormSchemaDriftTests` do `DocumentDefaults.Style` **zapisuje** a v kolekci nikdy nebyl.
+Sekvenční běh drží i testy, na které se při psaní zapomene.
+
+Cena je 1-2 s → 4-11 s pro 1454 testů. ⚠️ Kdyby to začalo vadit, **opravou není vrátit paralelizaci**,
+ale zbavit render a kaskádu procesně globálního stavu; je to napsané i v `xunit.runner.json`.
+
+**Caché polovina `B116` zůstává otevřená** - paritní test proti starému modulu se dnes při 7 bězích
+(4× izolovaně, 3× celá sada) **nereprodukoval**, takže není co opravovat naslepo. Caché testy navíc
+paralelně neběží, takže tam je příčina jiná.
+
+Ověřeno: .NET **1454/1454** osmkrát za sebou, Caché **146/146** třikrát.
+
 ## 2026-09-03 (5) - 🚆 linkový JŘ (AD) je zpátky v nabídce a je výchozí
 
 Pokračuje dovývoj linkových jízdních řádů, takže agenda je zase potřeba v aplikaci (rozhodnutí Jan

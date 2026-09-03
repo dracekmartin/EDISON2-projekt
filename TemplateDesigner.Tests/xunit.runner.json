@@ -1,0 +1,18 @@
+{
+  "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
+
+  "//": "Sada běží SEKVENČNĚ (rozhodnutí 3. 9., B116). Testy sdílí procesně globální stav - kořen",
+  "//2": "kaskády DocumentDefaults.Style i cache fontů a typefaces SkiaSharpu - takže paralelní běh",
+  "//3": "kolekcí dával falešné pády. Doloženo: SheetPdfExportTests.Opakovani_KazdaStrankaNaCelyList",
+  "//4": "spadl 2x ze 14 paralelních běhů (v PDF nebyl žádný text, přitom stránky tam byly), a 0x",
+  "//5": "z 8 běhů sekvenčně. Izolovaně neselhal nikdy, takže to nebyl test sám.",
+
+  "//6": "⚠️ Kolekci StyleCascade to NEnahrazuje jen kosmeticky: udržovat seznam tříd, které do ní",
+  "//7": "patří, je zdroj téhle chyby - EDInputFormSchemaDriftTests do DocumentDefaults.Style zapisuje",
+  "//8": "a v kolekci nikdy nebyl. Sekvenční běh drží i testy, na které se při psaní zapomene.",
+
+  "//9": "Cena je 1-2 s -> 4-11 s pro 1454 testů. Kdyby to jednou začalo vadit, opravou NENÍ vrátit",
+  "//10": "paralelizaci, ale zbavit render a kaskádu procesně globálního stavu.",
+
+  "parallelizeTestCollections": false
+}

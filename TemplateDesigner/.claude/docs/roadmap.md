@@ -43,7 +43,8 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
   Až se to stane, filtrování dopravců přestane být odložené.
 
-- **`B116` Paritní test linkového JŘ bliká** [S] (nález 3. 9. při `B103`).
+- **`B116` Paritní test linkového JŘ bliká** [S] (nález 3. 9. při `B103`; **.NET polovina
+  vyřešená 3. 9.**, viz changelog - zbývá tahle, Caché).
   `LinkovyJrAdLegacyTest.TestParitaSeStarymModulem` **dvakrát spadl a pak bez zásahu do kódu prošel**.
   Hlásil nedeklarované rozdíly proti starému modulu: legenda poznámek (`+`, `X` - „starý [0] × náš [1]")
   a názvy zastávek s dvojčárkou („Český Krumlov,,aut.nádr." místo „Český Krumlov, aut.nádr.")
@@ -60,10 +61,16 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   starý modul a ten si zapisuje do globálu, takže dva běhy vedle sebe si mohou přepsat mezistav).
   Až pak řešit případný rozdíl.
 
-  ⚠️ **Není to jediný blikající test** (3. 9.): `SheetPdfExportTests.Opakovani_KazdaStrankaNaCelyList`
-  spadl v celé .NET sadě, prošel izolovaně a při druhém běhu celé sady prošel taky. Jde o export PDF,
-  takže podezření je na sdílený stav mezi testy (temp soubor, cache prvků). **Vzít obojí naráz** -
-  je to táž otázka „na čem test závisí kromě vstupu", jen jednou v Caché a jednou v .NET.
+  ✅ **.NET polovina vyřešená 3. 9.** - `SheetPdfExportTests` padal kvůli paralelnímu běhu kolekcí
+  nad procesně globálním stavem (kaskáda + cache fontů SkiaSharpu); doloženo 2 pády ze 14 paralelních
+  běhů proti 0 z 8 sekvenčních, sada teď běží sekvenčně.
+
+  ⚠️ **Tahle (Caché) polovina se 3. 9. NEREPRODUKOVALA** - 4 běhy izolovaně, 3 běhy celé sady, všechny
+  zelené. Caché testy navíc paralelně neběží, takže příčina z .NET poloviny sem nepatří a **není co
+  opravovat naslepo**. Kandidáti k ověření **při dalším výskytu**: (a) na devu paralelně pracoval
+  kolega (oracle volá starý modul `mkPLinWin`, ten čte živá `^JRL`), (b) data se mezi běhy změnila.
+  ⚠️ Padalo to na hodnotách, které **mají** být hlídané (dluh na tvar názvu zastávky je splacený od
+  24. 8.), takže při dalším pádu se musí **nejdřív ručně porovnat se starým modulem** - ne přerazit.
 
 - **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
   U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
