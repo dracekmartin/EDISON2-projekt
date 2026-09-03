@@ -105,8 +105,18 @@ public static class WindowStatePersistence
         return dict;
     }
 
-    private static void ApplyToWindow(Window window, Dictionary<string, string> prefs)
+    internal static void ApplyToWindow(Window window, Dictionary<string, string> prefs)
     {
+        // Nic uloženého - okno necháme přesně tak, jak ho složil XAML.
+        if (prefs.Count == 0) return;
+
+        // Okno s `WindowState="Maximized"` v XAML má HWND vytvořený už maximalizovaný na monitoru,
+        // který vybral WindowStartupLocation. Left/Top pak jen popisují restore bounds a okno
+        // zůstane maximalizované tam, kde vzniklo. Proto nejdřív do Normal a maximalizovat až
+        // po nastavení pozice (změřeno, jinak shell startuje vždy na primárním monitoru).
+        var xamlState = window.WindowState;
+        if (xamlState != WindowState.Normal) window.WindowState = WindowState.Normal;
+
         // Pořadí: rozměry → pozice → stav. Maximize as last, jinak by se velikost nezachovala
         // pro un-maximize krok.
         if (prefs.TryGetValue("size", out var size) && TryParsePair(size, out var w, out var h))
@@ -120,8 +130,11 @@ public static class WindowStatePersistence
             window.Left = x;
             window.Top = y;
         }
-        if (prefs.TryGetValue("state", out var state))
-            window.WindowState = state == "1" ? WindowState.Maximized : WindowState.Normal;
+
+        // Chybějící klíč `state` nesmí okno nechat odmaximalizované - vrátíme stav z XAML.
+        window.WindowState = prefs.TryGetValue("state", out var state)
+            ? (state == "1" ? WindowState.Maximized : WindowState.Normal)
+            : xamlState;
     }
 
     private static Rect VirtualScreen() => new(

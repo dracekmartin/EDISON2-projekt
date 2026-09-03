@@ -7,8 +7,8 @@ namespace EDControls.EDViewModel;
 /// <summary>
 /// Napojení <see cref="EDUsageTelemetry"/> na okna: class handler na <c>Window.Loaded</c>
 /// registrovaný z <c>EDAppearance.Initialize</c>, stejný vzor jako panel Podpora. Na
-/// <see cref="EDViewModel.AttachToWindow"/> viset nemůže - TemplateDesigner ho nevolá vůbec
-/// (okna otevírá přímo) a telemetrie tam pak nesbírala nic.
+/// <see cref="EDViewModel.AttachToWindow"/> viset nemůže - TemplateDesigner ho volá jen pro
+/// hlavní okno (dialogy otevírá přímo) a telemetrie by z nich nesbírala nic.
 /// </summary>
 internal static class EDUsageTelemetryHook
 {
