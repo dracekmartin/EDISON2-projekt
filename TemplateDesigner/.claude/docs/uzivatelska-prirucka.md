@@ -77,7 +77,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Vlastnosti** - nastavení právě vybraného prvku nebo sekce - okamžitá editace bez nutnosti otevírat dialog
 - **Strom** - hierarchický přehled celé šablony (sekce → skupiny prvků → prvky) pro rychlou navigaci
 - **Pomocník** - AI pomocník: zeptáte se vlastními slovy, kde v aplikaci co najdete nebo jak něco udělat (vyžaduje aktivovanou AI službu u M-line)
-- **Parametry** - parametry sestavy pro aktuální agendu - nastavení ovlivňující obsah (např. časová osa odjezdů, tisk šipek směru). Jsou seskupené po blocích podle prvku, kterého se týkají (Seznam zastávek / Mřížka odjezdů / Poznámky a legenda) a jejich změna se hned promítne do náhledu. Tytéž hodnoty jsou i v dialogu tisku. U šablon bez parametrů: „Tato šablona nemá parametry."
+- **Parametry** - parametry sestavy pro aktuální agendu - nastavení ovlivňující obsah (např. časová osa odjezdů, tisk šipek směru). Jsou seskupené po blocích podle prvku, kterého se týkají (Seznam zastávek / Minuty odjezdů / Poznámky) a jejich změna se hned promítne do náhledu. Tytéž hodnoty jsou i v dialogu tisku. U šablon bez parametrů: „Tato šablona nemá parametry."
 
 ### Status bar (dole)
 
@@ -202,7 +202,11 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 - **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
-- **Kód** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí
+- **Kód** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí.
+  Kód vždy vyplní celý prvek. **Musí být dost velký, aby se dal sejmout z papíru** - potřebná
+  velikost roste s délkou obsahu, takže dlouhý odkaz potřebuje víc místa než krátký. Když je
+  prvek malý, aplikace po tisku napíše konkrétní čísla („QR kód je 10 mm, pro spolehlivé čtení
+  potřebuje 13,2 mm")
 - **Tabulka (dynamická)** - řádky se generují automaticky z datové kolekce (viz níže)
 - **Tabulka (pevná)** - mřížku vyplňujete ručně přímo na plátně; náhrada za skládání hlaviček
   a bloků z jednotlivých textových prvků (viz níže)
@@ -268,6 +272,11 @@ je za tlačítkem **„Nastavení celé tabulky"** v prvním řádku panelu (neb
 
 ### Výběr, přesun, velikost
 - Klik vybere prvek, tažení ho přesune, úchyty na okrajích mění velikost.
+- Velikost jde měnit i klávesnicí: **Shift+šipky** (mění se pravá a dolní hrana, levý horní roh
+  zůstává na místě).
+- **Když se prvky překrývají, klik patří tomu, který je vidět navrchu.** Prvek, který máte vybraný,
+  si klik i tažení podrží, i kdyby ho jiný překrýval - dá se tedy odtáhnout zpod něj, když si ho
+  vyberete ve stromu šablony.
 - Výběr více prvků: tažení rámečku (rubber band), nebo Ctrl+klik.
 - Prvek se nevejde mimo hranice své sekce - automatické oříznutí.
 - Klik bez pohybu myší nespustí přesun - teprve po překročení malého prahu (pár pixelů) se prvek
@@ -334,6 +343,12 @@ výchozí písmo.
 ### Rámeček a pozadí
 Každý prvek může mít rámeček (barva + tloušťka) a barvu pozadí. Když dva prvky sdílejí hranu,
 vykreslí se jako **jeden** společný rámeček, ne zdvojeně.
+
+**Vymazané barevné pole znamená „nekreslit nic".** Platí to pro podbarvení - u záhlaví i u buněk.
+Barvu tedy jde odebrat tak, že obsah pole smažete, a zůstane to tak i po uložení šablony.
+
+**Do číselných polí (rozměry, velikosti, odsazení) jde psát desetinnou čárku i tečku** - „1,5"
+znamená totéž jako „1.5". Ukládá se to s tečkou.
 
 ### Automatické zmenšení textu do buňky
 Když se text nevejde do šířky buňky tabulky (dlouhý název zastávky, výčet zón…), písmo se v té
@@ -480,7 +495,7 @@ jednoduchý: vyberete **PDF soubor** (a u vícestránkového stránku) - všechn
 z právě otevřené agendy:
 
 - **Agenda jízdního řádu** → import s **umělou inteligencí**: AI rozpozná strukturu vývěsky
-  (seznam zastávek, mřížku odjezdů, legendu poznámek, texty, loga) a rovnou namapuje datová
+  (seznam zastávek, minuty odjezdů, poznámky, texty, loga) a rovnou namapuje datová
   pole agendy - výsledkem je živá šablona napojená na data, ne statická kopie. Importuje se
   vždy **jedna stránka** (jedna vývěska jako předloha). Vyžaduje aktivovanou AI službu u M-line;
   bez ní je import u JŘ agend nedostupný.
@@ -519,6 +534,10 @@ operaci).
 - **Ctrl+X / Ctrl+C / Ctrl+V** - Vyjmout / Kopírovat / Vložit
 - **Ctrl+D** - Duplikovat (kopie s malým posunem)
 - **Ctrl+D + šipka** - Duplikovat vedle (s mezerou)
+- **Šipky** - Posun prvku o 1 mm
+- **Ctrl+šipky** - Posun o velikost mřížky (podle volby v liště)
+- **Shift+šipky** - Změna velikosti prvku o 1 mm; mění se pravá a dolní hrana, levý horní roh
+  zůstává na místě. U prvku, jehož výšku počítá engine z dat, jde měnit jen šířka
 - **Ctrl+Shift+C / Ctrl+Shift+V** - Kopírovat / Vložit styl
 - **Delete** - Smazat výběr
 - **Ctrl+A** - Vybrat vše v aktivní sekci
@@ -531,9 +550,8 @@ operaci).
 - **Alt+klik** - Vybrat jeden prvek ze skupiny
 - **Ctrl+Shift+H / Ctrl+Shift+J** - Rozdělit prvek vodorovně / svisle
 - **Ctrl+Shift+N** - Normalizovat pozice
-- **Šipky** - Posun prvku o 1 mm (Shift = o krok mřížky, Ctrl = jemně 0,5 mm)
 - **Ctrl+PageUp / Ctrl+PageDown** - Vrstva dopředu / dozadu (+Shift = zcela na kraj)
-- **Šipka ↑/↓ (bez výběru prvku)** - Přesun aktivní sekce nahoru / dolů
+- **Ctrl+Shift+↑/↓** - Přesun aktivní sekce nahoru / dolů
 - **Ctrl+0** - Přizpůsobit zobrazení stránce („Fit")
 - **Ctrl+1** - Skutečná velikost 100 % („1:1")
 - **Ctrl + kolečko myši** - Plynulý zoom (k pozici kurzoru)
@@ -616,15 +634,26 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
-  „obchodní název, sídlo provozovny, tel: číslo".
+  „obchodní název, sídlo provozovny, tel: číslo". Tohle je pole **Popis dopravce**, které slepí
+  všechno dohromady.
+- **Údaje dopravce po jednotlivých polích** - *Název dopravce*, *Adresa dopravce*, *Telefon
+  dopravce*, *E-mail dopravce* a *IČO dopravce*. Použijte je, když chcete o obsahu rozhodovat sami:
+  poskládáte si jen to, co na vývěsce chcete, a nic se neopakuje dvakrát. Adresa je jedno pole
+  včetně PSČ a obce - tak je uložená v číselníku dopravců. U linky s více dopravci nesou tato pole
+  **prvního** z nich.
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"):
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
     zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
-  - **Písmena variant se tisknou vždy** - varianty se označí písmeny A-Z v záhlaví sloupců a totéž
-    písmeno se vytiskne u minut odjezdů; podle písmena tak dohledáte, kterou trasou spoj jede.
-    Tím se **nahradí automatické poznámkování rozdílů tras** (aby na vývěsce nebyly dvě sady písmen).
-    Do 17. 8. to byl parametr, který šel vypnout - vypnutá vývěska ale u minut neměla nic, takže
-    nešlo poznat, který sloupec pro spoj platí; volba proto zmizela.
+  - **Písmena variant se tisknou vždy, když je zapnutý sloupec „Varianty tras"** - varianty se
+    označí písmeny A-Z v záhlaví sloupců a totéž písmeno se vytiskne u minut odjezdů; podle písmena
+    tak dohledáte, kterou trasou spoj jede.
+    Bez toho sloupce se u minut netisknou, protože by je nebylo čím vysvětlit.
+    Vypnout je jinak nelze: do 17. 8. to byl parametr, ale vývěska bez nich u minut neměla nic,
+    takže nešlo poznat, který sloupec pro spoj platí.
+  - **Písmena variant a písmena rozdílů tras jsou dvě různé věci a tisknou se vedle sebe** -
+    u minuty je nejdřív rozdíl trasy, pak varianta („17BA" = rozdíl B, varianta A).
+    Rozdíl trasy říká **kudy** spoj jede jinak a vysvětluje ho text v legendě; varianta říká,
+    **podle kterého sloupce časů** se řídí, a vysvětluje ji záhlaví toho sloupce.
   - **První varianta bez písmene** - nejčastější trasa zůstane bez písmene, odchylky se značí od A.
     Vypnuto = písmenkuje se už od první varianty.
 - **Samostatná stránka pro každý označník** (parametr „Seznam zastávek") - zastávka obsluhovaná
@@ -663,7 +692,7 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 - **Podtržení aktuální / Tučně aktuální / Velikost aktuální / Pozadí aktuální / Barva textu aktuální** - zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná barva = stejná jako ostatní řádky)
 - **Projeté zastávky + Barva projetých** - zda tisknout i zastávky, které vozidlo od aktuální zastávky již projelo (ztlumeně)
 
-#### Mřížka odjezdů
+#### Minuty odjezdů
 
 Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle…).
 
@@ -677,13 +706,19 @@ Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle�
 - **Anotace** - zap/vyp zobrazování anotací u minut
 - **Mezery** - Mezera minuta↔anotace, Mezera anotace↔anotace, Mezera mezi odjezdy
 
-#### Legenda poznámek
+#### Poznámky
 
-Vysvětlivky pod mřížkou.
+Vysvětlivky pod odjezdy.
 
-- **Nadpis** - text záhlaví legendy (výchozí „Poznámky")
+- **Záhlaví** (skupina Obecné) - vypnutím zmizí celý pruh záhlaví i s podbarvením a přestane
+  zabírat výšku, takže poznámky začínají u horní hrany prvku. Prázdný text záhlaví pruh nezruší -
+  pás bez textu může být záměr
+- **Text záhlaví** - co je v pruhu napsané (výchozí „Poznámky")
 - **Oddělovač** - text mezi značkou a popisem (výchozí „ - ")
-- **Velikost písma pozn. / Výška řádku** - typografie legendy
+- **Velikost poznámek** - velikost písma. Nevejdou-li se poznámky do prvku, písmo se zmenší
+  a aplikace to oznámí ve stavovém řádku
+- **Výška řádku** - prázdné = podle velikosti písma (mezera pak roste s písmem). Vlastní hodnotu
+  zadejte, jen když chcete legendu vzdušnější nebo stlačenější
 - **Počet sloupců (1–4) + Směr plnění** - „Po sloupcích" (jako noviny) nebo „Po řádcích"
 - **Řazení** - Dle typu (značky → atributy → text; výchozí) / Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně
 - **Šířka buňky značky** - pevná šířka sloupce se značkou, aby byly texty svisle zarovnané (0 = značka inline před textem)
@@ -734,7 +769,7 @@ Dvoutabový dialog: **Obecné** (vlastnosti prvku) a **Sloupce**:
 
 #### Vlastní definice sloupců vývěsky
 
-Které sloupce na vývěsce vzniknou, dosud určovala konfigurace linky. V editoru prvku **Mřížka
+Které sloupce na vývěsce vzniknou, dosud určovala konfigurace linky. V editoru prvku **Minuty
 odjezdů** je proto záložka **„Definice sloupců"** s přepínačem **Automaticky (dle linky)** ×
 **Vlastní sloupce** - vlastních jde nadefinovat až pět a **uloží se do šablony**, takže platí
 pro každou linku, kterou tou šablonou vytisknete.
@@ -771,8 +806,7 @@ Analogický dvoutabový dialog:
 - Pro skupinu: viditelnost, pořadí (▲/▼), **přepis nadpisu** (jinak se použije nadpis z dat, u
   sloupce hodin výchozí „Hod"), pevná šířka (prázdné = automatický výpočet + rovnoměrné dofill),
   vlastní barva zebry pro danou skupinu.
-- **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `
-`)
+- **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `\n`)
   a nadpis se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
   jízdní řád u skupiny vyplněný i druhý nadpis, přidá se pod ně jako další řádek s vlastním
   stylem (viz *Záhlaví - 2. řádek* ve vlastnostech prvku).
@@ -819,7 +853,7 @@ značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na 
 všechny zastávky).
 
 > **Co se zobrazí, se nastavuje v šabloně, ne tady.** Poznámky zadané u linky, přeprava kol,
-> místenky a souhrn bezbariérových spojů se zapínají u **prvku Legenda poznámek** (kap. 2) - aby bylo
+> místenky a souhrn bezbariérových spojů se zapínají u **prvku Poznámky** (kap. 2) - aby bylo
 > jedno místo, kde si vyberete, co vývěska ukazuje. V parametrech sestavy zůstává to, co mění
 > **obsah nebo rozvržení** dat, ne jen jejich zobrazení.
 
@@ -866,8 +900,8 @@ zmenšení pomůže, k varování nedojde.
    ze sekce **Systémové M-line** (Ctrl+O), nebo naimportujte existující PDF vývěsku
    s AI rozpoznáním (`Nástroje → Import PDF…`) a jen ji dolaďte.
 2. **Přidejte prvky** - z palety nebo lišty nástrojů vložte Tabulku zastávek (typicky vlevo), jednu
-   nebo víc Mřížek odjezdů (typicky vedle sebe, rozdělené podle skupiny dnů) a volitelně Legendu
-   poznámek (pod mřížku).
+   nebo víc prvků Minuty odjezdů (typicky vedle sebe, rozdělené podle skupiny dnů) a volitelně
+   Poznámky (pod odjezdy).
 3. **Nastavte sloupce** - tlačítkem „Upravit sloupce…" na každém prvku otevřete příslušný editor
    a zapnete/přeuspořádáte sloupce, doladíte šířky a vzhled.
 4. **Vyberte linky** - přes dialog výběru instancí (kap. 4) zvolte jednu nebo víc linek; náhled
@@ -879,4 +913,3 @@ zmenšení pomůže, k varování nedojde.
 
 Pro rychlý start je v přehledu šablon (Ctrl+O) sekce **Systémové M-line** s výchozí
 zastávkovou šablonou (AD) dodávanou a aktualizovanou M-line.
-

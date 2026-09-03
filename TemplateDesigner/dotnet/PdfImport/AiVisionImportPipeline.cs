@@ -316,8 +316,8 @@ public class AiVisionImportPipeline
     private static string ElementNazev(TemplateElement el) => el switch
     {
         StopListElement      => "Seznam zastávek",
-        DepartureGridElement => "Mřížka odjezdů",
-        NotesLegendElement   => "Legenda poznámek",
+        DepartureGridElement => "Minuty odjezdů",
+        NotesLegendElement   => "Poznámky",
         TextElement t        => "Text: " + t.Text,
         ImageElement         => "Obrázek",
         _                    => el.GetType().Name

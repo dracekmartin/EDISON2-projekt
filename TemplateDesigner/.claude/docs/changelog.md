@@ -1,5 +1,744 @@
 # Changelog
 
+## 2026-09-02 (1) - 🔤 písmeno varianty trasy se tiskne jen tam, kde je čím vysvětlit
+
+Kolega poslal vývěsku linky 111 s dotazem, co znamená „A" za časem odjezdu.
+V legendě jsou popsané B, C, E, F, ale A tam není a nemá být: **není to rozdíl trasy, ale označení
+variantního sloupce jízdních dob** a vysvětluje ho záhlaví toho sloupce v seznamu zastávek.
+Jeho šablona ten sloupec zapnutý nemá, takže písmeno u minuty nemělo na stránce s čím spárovat.
+
+Nově se písmena variant u minut tisknou **jen tehdy, když má aspoň jeden seznam zastávek viditelný
+sloupec „Varianty tras"**.
+Bez něj (a v šabloně, kde seznam zastávek vůbec není) se nevytisknou.
+Je to totéž pravidlo, které už platí u značky „na znamení" a u přestupů: značka a její vysvětlení
+visí na jedné volbě, takže nemůže vzniknout značka, které nikdo nerozumí.
+
+⚠️ **Bylo to horší než nevysvětlené písmeno - legenda ho vysvětlovala CIZÍM textem.**
+Řady písmen se dnes kryjí: varianty berou A, B, C, D, E…, rozdíly tras B, C, E, F, G… ze sady u linky.
+Spoj jedoucí variantou „E" tedy dostal u minuty „E" a čtenář si k němu v legendě přečetl
+„jede jen do zast. Babice,Zvěřetice,rozc.1.0", což o tom spoji neplatí.
+Na vývěsce pro cestující je to tichá dezinformace, ne kosmetika.
+**Oddělení těch dvou řad je samostatná úloha `B113`** - tenhle krok jen zabrání tomu, aby písmeno
+vzniklo tam, kde ho nejde přečíst správně.
+
+⚠️ **Nové šablony to nepotká.**
+Nově vložený seznam zastávek má sloupec „Varianty tras" viditelný z výroby, takže tisknou písmena dál.
+Rozbité byly šablony převedené migrací 1.7.0 → 1.8.0, která sloupec zapnula jen tam, kde bylo dřív
+zaškrtnuté obojí (sloupec „Čas jízdy" i staré zaškrtávátko variant).
+
+**Komu chybí písmena a chce je zpátky:** v prvku seznamu zastávek zapnout sloupec „Varianty tras"
+a schovat „Čas jízdy" - jinak tam budou časy základní trasy dvakrát (variantní sloupec bez písmene
+je při výchozím řazení „dle četnosti ze zastávky" tatáž hlavní trasa).
+
+Ověřeno: .NET **1417/1417** (5 nových testů, jeden z nich reprodukuje přesně ten případ z vývěsky -
+písmeno varianty „E" proti legendě „E" jako rozdílu trasy).
+
+## 2026-09-01 (10) - 🙈 linkové jízdní řády skryté před vydáním
+
+Ve vydávané verzi mají být **jen zastávkové jízdní řády** (rozhodnutí Jan). Agenda linkového JŘ se
+proto uživatelům nenabízí - v nabídce agend zbyly Zastávkový JŘ (AD) a Zastávkový JŘ (MHD).
+
+Linkový tisk je **funkční a testy na něj běží dál** (Caché 142/142), jen se nenabízí. Zapnutí zpátky
+je jeden parametr.
+
+⚠️ **Hotové linkové šablony zůstávají dosažitelné**, což bylo hlavní riziko: výběr agendy
+nezveřejněnou agendu nenabízí, ale **aktuální agendu otevřené šablony ukáže vždy**, a v otevírání
+z databáze jsou její šablony pod „Všechny agendy". Prvek linkové tabulky zmizel z palety sám - váže
+se na druh agendy, ne na seznam prvků.
+
+⚠️ **Samotné skrytí nestačilo a dalo se obejít dvěma cestami** (nález Jan hned při kontrole - agendy
+viděl dál):
+
+- **Výchozí šablona měla linkovou agendu napsanou natvrdo.** Nová šablona tedy startovala na skryté
+  agendě, ta se stala aktuální agendou šablony a výběr ji ukázal - aktuální agendu totiž zobrazuje
+  vždy, aby šly otevřít hotové šablony. Výchozí je teď Zastávkový JŘ (AD).
+- **Naposledy použitá agenda se obnovovala bez ohledu na zveřejnění.** Kdo si linkovou agendu kdysi
+  vyzkoušel, dostal ji po startu zpátky z uživatelských preferencí. Nově se z paměti obnoví jen
+  zveřejněná; kód z launch kontraktu shellu filtr záměrně nemá, tam je skrytá agenda chyba
+  konfigurace shellu, ne zapamatovaný stav.
+
+Obě cesty drží testy - kdo tu konstantu přepíše na skrytou agendu, spadne.
+
+⚠️ **Seznam agend se čte jednou při startu**, takže běžící aplikace změnu nepřebere. Při kontrole je
+nutné ji zavřít a spustit znovu.
+
+Ověřeno voláním serveru na obou namespacech (i `ZL_KOVED`): registr vrací zveřejněné jen ty dvě
+zastávkové. .NET **1410/1410** (4 nové testy).
+
+## 2026-09-01 (9) - 📄 uspořádání na list řekne, když nic neskládá
+
+Zákazník hlásil jako chybu tisku, že mu ze šablony **A5 na výšku leze PDF ve formátu A4**. Chyba to
+nebyla, ale past: měl zapnuté **Uspořádání na list = „A4 na výšku"**, kam se dva A5 na výšku
+(2 × 148 = 296 mm) do šířky 210 mm nevejdou. Mřížka proto vyšla **1×1** a papír se jen zvětšil -
+A4 s jednou vývěskou uprostřed.
+
+⚠️ **Volba se persistuje per agenda**, takže o ní uživatel nemusí vědět vůbec, a z aplikace nebylo
+jak zjistit, proč mu z A5 šablony leze A4. Po exportu se dosud vypsalo neutrální „imposice 1×1 na
+list 210×297 mm", což nikdo nečte jako problém.
+
+Nově se v témž místě objeví **varování s radou**: *„Uspořádání na list nic neskládá: na list
+210×297 mm se vejde jen jedna stránka 148×210 mm. Na list 297×210 mm (otočený) se vejdou 2"*. Rada
+na otočený list se ukáže jen tehdy, když by na něj skutečně šlo víc stránek; u stejného formátu
+stránky i listu hláška místo toho navrhne uspořádání vypnout.
+
+**Pro dva jízdní řády A5 na jednu A4 se volí „A4 na šířku"** - tam mřížka vyjde 1×2.
+
+⚠️ **Hláška platí pro oba exporty** - s daty z databáze i s ukázkovými. První verze ji měla jen
+v tom prvním, takže na prázdné šabloně nebylo vidět nic - a přesně tou cestou jde každý, kdo si
+chování chce vyzkoušet bez vybrané linky (nález Jan při zkoušení). Popis se skládá na jednom místě
+a test hlídá, že se ty dvě cesty znovu nerozejdou.
+
+Ověřeno: .NET **1406/1406** (7 nových testů, včetně přesně toho kolegova případu).
+
+## 2026-09-01 (8) - 📱 QR kódy jsou čitelné i na malém prvku
+
+Kód se kreslí **ostře v jakémkoli rozlišení** a vyplní celý prvek. Zákazník vyfotil QR, které
+vypadalo „zdrcnuté" a nešlo sejmout - byly to **dvě chyby v kreslení, ne malá velikost prvku**:
+
+- **Kódovalo se podle velikosti v pixelech, ne v modulech.** ZXing škáluje jen celým násobkem
+  a zbytek doplní vycentrovaným okrajem, takže z 33 modulů na 60 px vyšel kód velký 33 px se 13px
+  okrajem po obou stranách - **vyplnil jen 55 % prvku**. Čím menší prvek, tím menší podíl; u velkého
+  99 %, proto to na velkých kódech nikdo neviděl.
+- **Ke každému modulu se přidávalo pevných 0,5 px** „proti mezerám". U velkého kódu to je pár
+  procent, u modulu širokého 1 px je to **poloviční rozlití** - moduly se slily do jedné plochy.
+
+Nově se kóduje v modulech a hrany se zarovnávají na celé pixely, takže se sousedé přesně dotýkají.
+Platí pro všechny kódy: čárový kód dostal navíc plnou výšku prvku, dřív mu ZXing vnucoval vlastní.
+
+**Na otázku „jak poznám, že je QR dost velký" odpovídá aplikace sama.** Ve stavovém řádku a v hlášce
+po tisku se objeví konkrétní čísla: *„QR kód je 10 mm, pro spolehlivé čtení potřebuje 13,2 mm"*.
+Doporučení se počítá z **reálného obsahu** (0,4 mm na modul), takže dlouhá URL si řekne o víc místa
+než krátká. Sdílí odznak se zmenšeným písmem - je to táž třída vady „vytiskne se to jinak, než jak
+to vypadá" a čtvrtý pruh ve stavovém řádku by se nevešel.
+
+Ověřeno: .NET **1399/1399** (11 nových testů, kreslí a kontrolují poměr černé plochy); mutací obou
+příčin doloženo, že testy chybu chytí - po vrácení pixelového kódování spadnou dva testy, po vrácení
+rozlití taky dva.
+
+## 2026-09-01 (7) - 🏢 dopravce a provozovny po jednotlivých polích (`B111`)
+
+Údaje dopravce jdou skládat po částech, místo jednoho slepeného bloku. Přibylo pět **samostatných
+polí**: Název, Adresa, Telefon, E-mail a IČO dopravce. Šablona si z nich složí, co chce, takže adresa
+už se neobjeví dvakrát.
+
+⚠️ **Provozovny zůstaly nedořešené a jejich kolekce je skrytá** (`B112` v backlogu). Řádek na
+dopravce × provozovnu totiž **nutně opakuje údaje firmy** - tři provozovny daly třikrát pod sebou týž
+telefon a tabulka z dat s tím neumí nic udělat. Vyměnilo by to jednu duplicitu za druhou, a přesně
+proti duplicitě celá věc vznikla (nález Jan při zkoušení). Data i kód zůstávají živé, ale uživatel
+kolekci v nabídce polí nenajde, aby si na ní nepostavil šablonu.
+
+⚠️ **`POPIS_DOPRAVCE` zůstává nedotčené** - visí na něm hotové šablony. Nová pole jsou přírůstek,
+ne náhrada.
+
+⚠️ **Příčina duplicity byla v datech, ne ve skládání.** Číselník sám není atomický: adresa firmy nese
+ulici, PSČ i obec v jednom poli, telefon provozovny bývá slitý s webem a e-mailem, a pole „zkrácený
+název pro MHD" obsahuje u ČSAD Jindřichův Hradec celý text včetně telefonů - právě odtud se telefon
+dostal do výstupu dvakrát. To pole se proto **nevystavuje**. Nevystavují se ani čtyři pole, jejichž
+význam je napříč dopravci nesourodý (jedno vypadá na DIČ, jiné na bankovní účet) - pole s popiskem,
+který u poloviny dopravců lže, je horší než žádné.
+
+⚠️ **Adresa firmy je v číselníku dvakrát a NEJSOU vždy totožné.** U ČSAD Jindřichův Hradec obě nesou
+plný tvar, ale u ČSAD AUTOBUSY České Budějovice má první jen „Hálkova 781/9" a plnou adresu s PSČ
+a obcí nese teprve druhé. Odhalilo to ověření voláním serveru, ne úvaha - první verze brala tu
+kratší, takže by na vývěsce zmizelo PSČ a obec. Hlídá to nový test proti obsahu starého pole.
+
+**Fax se nevystavuje** (rozhodnutí Jan 1. 9.) - na vývěsce nemá co dělat. Číselník ho drží dál,
+takže se dá kdykoli přidat.
+
+Skalární pole nesou **prvního dopravce** linky. Linku s víc dopravci tím pádem zatím nikdo neskládá -
+je to součást téhož nedořešeného kusu (`B112`).
+
+Ověřeno: Caché **142/142** (4 nové testy), .NET **1388/1388**, schéma i data ověřeny voláním serveru.
+Zlaté odtisky tří linek přeraženy - počty stránek, zastávek, odjezdů i poznámek zůstaly shodné
+a lišilo se jen md5, tedy podpis přidaného pole.
+
+## 2026-09-01 (6) - 🙈 nadpis poznámek jde vypnout (`B108`)
+
+U legendy poznámek přibyla ve skupině **Obecné** volba **„Záhlaví"**. Vypnutá schová **celý pruh** -
+text i jeho podbarvení - a pruh přestane zabírat výšku, takže poznámky začínají u horní hrany prvku.
+Zapínadlo sedí v Obecném a jeho vzhled ve skupině Záhlaví, stejně jako to má prvek zastávek.
+
+⚠️ **Pole „Nadpis" se přejmenovalo na „Text záhlaví"** - v jednom formuláři stála dvě slova pro tutéž
+věc a projekt drží „záhlaví" (rozhodnutí Jan 1. 9., doplněno do kanonu `ux-conventions §8`).
+
+⚠️ **Dva prvky se přejmenovaly** (rozhodnutí Jan 1. 9.) - v paletě, v nabídce vkládání, v titulku
+vlastností, ve stromu šablony, v hláškách i v nápovědě:
+
+- **„Legenda poznámek" → „Poznámky"**. „Legenda" byla vlastní zkratka, kterou uživatel nikde jinde
+  nepotká.
+- **„Mřížka odjezdů" → „Minuty odjezdů"**. „Mřížka" je implementační pojem; uživatel na papíře vidí
+  minuty.
+
+Přejmenovaly se i **skupiny parametrů sestavy** (Minuty odjezdů, Poznámky), protože konvence je
+skupina = název prvku, kterého se parametr týká. ⚠️ To je bezpečné: persistují se **názvy a hodnoty**
+parametrů, ne jejich skupina - na rozdíl od labelů voleb, které jsou zamčené. Třídy
+`NotesLegendElement` a `DepartureGridElement` se **nepřejmenovávají**, visí na nich `type`
+v uložených šablonách.
+
+⚠️ **Prázdný nadpis pruh neruší** a je to záměr: pás bez textu je legitimní. Vypínač je proto
+samostatný, stejně jako ho mají zastávky („Záhlaví sloupců"), odjezdy („Záhlaví skupin"), linkový JŘ
+(„Nadpisy skupin dnů") a obě tabulky („Záhlaví"). Původní návrh vázal vypnutí na prázdný text; volba
+navíc nemění hotové šablony nikomu, kdo dnes prázdný nadpis má (rozhodnutí Jan 1. 9.).
+
+⚠️ **Ostatní prvky vypínač už měly a nadpisový pruh se u nich vůbec netiskne** - „Hod" u odjezdů
+a „Linkový JŘ - zastávky × spoje" kreslí jen náhled prázdného plátna v návrháři. Bez vypínače
+zůstávají jen dvě věci a ani jedna není nadpis: řádek s hodinami u odjezdů a řádek čísel spojů
+u linkového JŘ. Bez nich se jízdní řád nedá přečíst.
+
+⚠️ **Klíč pole je `ShowHeaderBar`, ne `ShowHeader`** - ten už u zastávek a tabulek znamená záhlaví
+**sloupců**, které legenda nemá. Drift test popisků to odhalil hned: tentýž klíč by uživateli
+v jednom formuláři svítil jako „Záhlaví sloupců" a v druhém jako „Zobrazit nadpis".
+
+Ověřeno: .NET **1388/1388** (5 nových testů), Caché **138/138**, formulář ověřen voláním serveru.
+⚠️ **Test kreslí a kontroluje pixel**, ne jen výpočet výšky: mutací se ukázalo, že pruh kreslený
+navzdory vypnutí projde přes výškové testy zeleně - a to je horší stav než dnešní, protože by
+překryl první poznámku.
+
+## 2026-09-01 (5) - ⌨️ velikost prvku jde měnit klávesnicí (`B109`)
+
+**Shift+šipky mění velikost** prvku o milimetr - hýbe se pravá a dolní hrana, levý horní roh drží
+(jako když táhneš pravý dolní úchyt). Myší se rozměr nedoladí a ve starém návrháři to kolega hodně
+používal.
+
+Přerozdělení kláves (rozhodnutí Jan 1. 9., vychází ze starého návrháře):
+
+- **šipky** - posun o 1 mm, jako dosud
+- **Ctrl+šipky** - posun o **velikost mřížky** (dřív tu byl jemný krok 0,5 mm)
+- **Shift+šipky** - **změna velikosti** o 1 mm
+- **Ctrl+Shift+↑/↓** - přesun sekce, zůstává a má přednost
+
+⚠️ **Velký krok posunu tím zanikl a nikdo o nic nepřišel:** visel na Shiftu a počítal se z mřížky,
+která je výchozích **1 mm** - dělal tedy totéž jako šipka samotná. Rozdíl viděl jen ten, kdo si
+mřížku přepnul na 2 nebo 5 mm, a to je teď na Ctrl.
+
+⚠️ **Prvku s dynamickou výškou se svisle nic nestane** a řekne se to ve stavovém řádku. Fixovat mu
+výšku by znamenalo přijít o dynamiku bez varování a dostat se z toho jen zpětným krokem; myš mu ze
+stejného důvodu svislé úchyty vůbec nenabízí. Šířku měnit jde.
+
+⚠️ **Soused se při rozšíření nezužuje** - to platí jen uvnitř tabulky u hranic sloupců. Tažení úchytu
+myší na sousední prvky nesahá, jen se o ně přichytává; ověřeno v kódu.
+
+Opravené i **v nápovědě pod F1 a v uživatelské příručce**. V příručce se přitom našlo staré
+nepravdivé tvrzení, že sekci přesouvají samotné šipky - ve skutečnosti Ctrl+Shift+šipky.
+
+⚠️ **Přibyla brána na navázání kláves:** mutace ukázala, že odpojení Shiftu od změny velikosti nechá
+sadu zelenou, protože testy volají změnu velikosti přímo. Rozhodnutí „která klávesa co dělá" proto
+žije v jedné funkci (`ResolveArrowAction`), kterou test kryje. Táž třída mezery jako u nezapojené
+migrace dnes ráno.
+
+Ověřeno: .NET **1383/1383** (14 nových testů); mutacemi doloženo, že testy chytí jak odpojení
+zkratky, tak vypnutou logiku.
+
+## 2026-09-01 (4) - 📏 rozložení poznámek se řídí velikostí písma (`B110`)
+
+**Velikost poznámek, výška řádku a počet sloupců jsou pohromadě** ve skupině Rozložení. Dřív byly
+velikost a výška řádku mezi barvami buněk, tedy o dvě skupiny dál, a kolega je nenašel.
+
+⚠️ **Výška řádku se nově hýbe s písmem** (prázdná = podle písma). Byla pevných 4 mm, což je přesně
+automatická výška pro sedm bodů - výchozí stav tedy vypadal správně, ale **zvětšení písma legendu
+slepilo**, protože mezera zůstala na čtyřech milimetrech, i když desetibodové písmo potřebuje 5,6.
+Vlastní hodnota zůstává pro toho, kdo chce legendu vzdušnější nebo stlačenější; zadáním hodnoty,
+kterou pole ukazuje, se vrátí dědění z písma (týž vzor jako výška řádku u zastávek a odjezdů).
+
+**Nevejdou-li se poznámky, písmo se zmenší a aplikace to řekne.** Oranžový odznak ve stavovém řádku
+a hláška po tisku jmenují prvek i míru: „Legenda poznámek: písmo zmenšeno až na 76 % (3 z 12
+stránek)". Platí pro **všechny prvky jízdních řádů**, ne jen pro poznámky - zmenšení bylo dosud
+neviditelné u všech pěti. ⚠️ Hláška **jmenuje konkrétní prvek a míru**, ne obecné „nastavení mění
+vývěsku" - přesně kvůli tomu byl zrušen signál `B24`.
+
+⚠️ **Roztahování na výšku se vědomě nedělá** (rozhodnutí Jan 1. 9.). Kolega si stěžoval, že se legenda
+nezatáhne dolů, když je prvek vyšší, ale dvě poznámky mají zůstat nahoře a vyplnit klidně jen pětinu
+bloku. Roztahování by u tří poznámek znamenalo jednu na začátku, jednu doprostřed a jednu na konci.
+
+Ověřeno: .NET **1369/1369** (12 nových testů), Caché **138/138**, formulář poznámek ověřen voláním
+serveru; mutací obou částí doloženo, že testy chytí jak pevnou výšku řádku, tak chybějící hlášku.
+
+## 2026-09-01 (3) - 🎨 vymazané podbarvení záhlaví znamená „nekreslit nic" (`B107`)
+
+Podbarvení záhlaví jde **vymazat a zůstane vymazané**. Prázdné pole = záhlaví bez podbarvení.
+
+⚠️ **Dosud se vymazaná barva vracela** a vypadalo to jako chyba ukládání. Nebyla: šedá v prvku vůbec
+nebyla zapsaná, byla zapečená jako **záloha** v kaskádě a jako výchozí hodnota pole ve formuláři.
+Vymazání proto uložilo „nic neurčuji", renderer sáhl po záloze a formulář si při dalším otevření
+předvyplnil svou výchozí šedou. „Bez podbarvení" nebylo jak vyjádřit (nález Pavel, #13158).
+
+Šedá se proto přesunula ze zálohy do **počáteční hodnoty prvku**: nově vložený prvek ji má zapsanou,
+existujícím ji dopsala migrace šablon (**1.11.0**), takže se vzhled nikomu nezměnil. Od té chvíle je
+prázdno jednoznačné. Platí u všech prvků se záhlavím: poznámky, zastávky, odjezdy, linkový JŘ, pevná
+tabulka i tabulka z dat.
+
+**Dědění stylů zůstává** - prázdno u sloupce dál znamená „vezmi z prvku", protože kaskáda končí až
+u prvku. Kdo chce zrušit podbarvení jednoho sloupce, vymaže ho u toho sloupce.
+
+⚠️ **Přibyla brána, kterou si vyžádala mutace:** migrace vyřazená ze seznamu nechala celou sadu
+zelenou, protože testy migrací je volají přímo. Zákazníkovi by se přitom šablona nemigrovala vůbec.
+Nově se hlídá, že každá napsaná migrace v seznamu je.
+
+Ověřeno: .NET **1357/1357** (22 nových testů), Caché **138/138**; všech pět formulářů ověřeno
+voláním serveru. ⚠️ Odtisky kreslení tuhle změnu nekryjí - porovnávají se jen na vyžádání a jejich
+prvky mají styl záhlaví nastavený natvrdo, takže se do zapečené šedé nedostanou.
+
+## 2026-09-01 (2) - 🔢 do číselných polí jde psát desetinnou čárku (`B106`)
+
+Rozměry, velikosti a odsazení se nově zadávají **čárkou i tečkou** - „1,5" znamená totéž jako „1.5".
+Uloží i zobrazí se to s tečkou, jak hodnota leží v šabloně.
+
+⚠️ **Nešlo o chybějící pohodlí, ale o tichou chybu.** Kontrola pole brala čárku jako oddělovač tisíců,
+takže „1,5" prošlo jako 15 a pole **nezčervenalo**; hostitelská aplikace si ale totéž přečetla jako
+neplatné a použila záložní nulu. Kdo napsal „1,5" do šířky, dostal prvek široký 0 mm bez jediné
+hlášky. Ze stejné příčiny se „1,500" čtelo jako 1500 a „-2,5" jako -25 (nález Jan, #13158).
+
+**Čárka je vždy desetinná, oddělovač tisíců se nepřipouští vůbec** - rozměr v milimetrech ho
+nepotřebuje a pravidlo „čárka je tisíce, když za ní jsou tři číslice" by uživatel neuhádl. V poli pro
+**celé číslo** čárka zůstává chybou („Musí být celé číslo"), textová pole se nemění.
+
+⚠️ **Opraveno v EDControls, takže to platí i pro formuláře v EDISONMAIN2** - do produkce musí jít
+knihovna i oba programy, které ji používají. Druhá vrstva (převod textu na hodnotu prvku) je
+v návrháři, pro hodnoty, které přijdou jinudy než z formuláře.
+
+Ověřeno: EDControls **721/721**, .NET návrháře **1335/1335** (18 nových testů); mutací obou vrstev
+doloženo, že spadne 7, respektive 5 z nich.
+
+## 2026-09-01 (1) - 🖱️ klik trefí prvek, který je vidět navrchu (`B105`)
+
+Když se dva prvky na plátně překrývaly, **klik sáhl na jiný, než uživatel viděl**. Nově vložený prvek
+se nakreslil navrch, ale uchopit se nedal: klik i tažení dostal ten starší pod ním, takže se nový
+prvek musel nejdřív odsunout. Vypadalo to, že to „občas funguje" - záleželo na tom, v jakém pořadí
+prvky v sekci vznikly (nález Pavel při skládání vývěsky pro BBSK, #13158).
+
+⚠️ **Prvek vybraný ve stromu šablony si teď klik podrží.** Dosud se výběr při prvním kliknutí přepnul
+na prvek, který ho překrývá - prvek schovaný pod jiným tedy nebylo jak odtáhnout ani přes strom.
+Nově má přednost ten, který je už vybraný; když pod kurzorem žádný vybraný není, vezme se ten
+navrchu. Kurzor to respektuje, takže ukazuje, co se stane. Táž přednost platí i pro dvojklik
+a pravé tlačítko, aby nastavení otevřel prvek, na který uživatel míří.
+
+**V šabloně se nic nemění** - hladina prvků (`ZIndex`) zůstává, jak byla, mění se jen hledání prvku
+pod kurzorem: jde teď přesně obráceně než kreslení. Zvednutí hladiny při vložení by zapsalo změnu
+do šablony, naráželo na strop 0-100 a výběr ze stromu by neopravilo.
+
+Ověřeno: .NET **1326/1326** (5 nových testů); mutací původního řazení doloženo, že spadnou 3 z nich.
+
+## 2026-08-31 (15) - 🗺️ každá zóna hraniční zastávky může mít vlastní sloupec (`N1`)
+
+Zastávka na hranici zón měla dosud všechny své zóny v jednom sloupci za sebou („037,066,051").
+Zákazník s IDS (#8576, KU HK) je chce vedle sebe, každou ve vlastním sloupci - jako to už umí
+kilometry. V nastavení tabulky linky proto přibyla volba **„Každá zóna ve vlastním sloupci"**
+(skupina Sloupce). Sloupec zón se po zapnutí rozšíří na tolik dílů, kolik zón má nejbohatší zastávka
+linky; zastávka s jednou zónou nechá zbylé díly prázdné.
+
+⚠️ **Výchozí je vypnuto, a je to to nejdůležitější rozhodnutí celé položky.** Víc zón má **301 738
+zastávek** z 1 160 432 v datech šesti měřených firem - zapnutý rozpad by tedy překreslil hotové
+sestavy i všem, kdo o něj nežádali. Starý modul tohle neumí vůbec (má na zóny jeden sloupec, který
+jen zesílí podle délky obsahu), takže to není dorovnání starého tisku, ale nová věc.
+
+⚠️ **Dělí se čárkou i lomítkem** - a to není opatrnost, ale měření: čárka 301 334×, lomítko 404×
+(používá ho KV_DP, „23/5"). Kdyby se dělilo jen čárkou, u té firmy by volba tiše nedělala nic.
+
+Na drátě se **nic nemění** - zóny už se posílají a rozdělit si je umí prvek sám. Nová databázová
+položka by ke stejné věci vyrobila druhé pole, které by pak muselo žít navždy.
+
+**Nadpis mají rozpadlé zóny jeden společný** přes všechny své díly, ne „Zóna" nad každým (tvůj nález
+při zkoušení). Opakovaný nadpis vypadal jako několik různých sloupců, přestože je to pořád táž věc,
+jen rozložená; sloučením zmizí i čáry mezi díly v řádku nadpisu. ⚠️ **Kilometry se záměrně
+neslučují** - jejich díly jsou km jednotlivých úseků, tedy různé hodnoty se stejným názvem, a
+sloučení by změnilo hotové sestavy všem, kdo km sloupce mají.
+
+Ověřeno: .NET **1321/1321** (9 nových testů) a Caché 138/138; mutacemi tří cest (rozpad natvrdo
+zapnutý; dělení jen čárkou; nesloučený nadpis) doloženo, že to testy chytí. Formulář prvku ověřen
+voláním serveru.
+
+## 2026-08-31 (14) - 🧪 spouštěč testů si přestal přičítat cizí běhy (`T1`)
+
+Testy na dev serveru si zapisují výsledky do jednoho sdíleného místa, a spouštěč bral **všechno, co
+tam po jeho startu přibylo** - tedy i sadu, kterou si zrovna pouštěl kolega. Dva běhy tak hlásily
+186 testů místo 128.
+
+⚠️ **Nejde jen o nafouknuté číslo.** Toutéž cestou si běh mohl přivlastnit i **cizí selhání**, takže
+by se hledala chyba, která není naše - a to je dražší než špatný součet. Nově se počítají jen třídy,
+které si běh sám spustil.
+
+⚠️ **Co tím nezmizelo:** když dva lidé pustí souběžně **tutéž** třídu, filtr je neodliší. Počty
+zůstanou správné, ale cizí selhání by se pořád ukázalo jako naše. Je to zapsané u kódu; oddělit by
+to šlo až na úrovni testovacího frameworku.
+
+Ověřeno: Caché **173/173** ve dvou balíčcích (35 + 138, každý hlásí přesně své). Že o výsledku
+rozhoduje opravdu nový filtr, doloženo jeho obrácením - běh pak nahlásil 0 testů.
+
+## 2026-08-31 (13) - ✅ dvě tvrzení o shodě se starým tiskem doložená, jedno bylo špatně (`L14`)
+
+Dvě věty poznámek u atributů spoje visely v kódu jako **neověřené**: nikdo je neporovnal se starým
+modulem, protože se ty atributy na kontrolních linkách nevyskytly. Dnešní měření našlo linky, kde
+v datech jsou, takže je konečně bylo čím porovnat.
+
+**Zásilky a IDS sedí.** Obě věty se se starým tiskem shodují na jediných linkách, kde ty atributy
+v datech vůbec jsou - včetně toho, že se u nich **nikdy** netiskne obecná věta, ale výčet spojů.
+
+**Věta „všechny spoje…" se počítá správně - a předchozí popis byl mylný.** V kódu stálo, že starý
+modul počítá spoje přes celou linku, kdežto my přes stránku, a že se to u obousměrné linky může
+rozejít. Neplatí to: starý modul počítá **v tom rozsahu, ve kterém tiskne legendu** - má-li ji na
+každý směr, počítá spoje směru. Náš model je přesně ten případ. Doloženo na lince, kde bezbariérové
+vozy mají všechny spoje jednoho směru, ale ne celé linky: obě strany tam říkají „všechny spoje".
+
+⚠️ **Přitom se ukázalo, že si porovnání samo vyrábělo falešný rozdíl.** Starý modul se pouštěl
+v režimu „jedna legenda za celou linku", zatímco náš výstup má legendu na každé stránce - a věty
+atributů se pak počítaly každá v jiném rozsahu. Vypadalo to jako naše chyba, byly to dvě různé
+sestavy vedle sebe. Opraveno; **do té doby to bylo horší než chybějící kontrola**, protože příští
+skutečný rozdíl by se v tom šumu ztratil.
+
+⚠️ **A druhá vada porovnání: linka s dlouhou poznámkou ho shodila.** Text poznámky se používal jako
+klíč a několik odstavců přepravních podmínek se do něj nevejde. Taková linka se pak tvářila jako
+neporovnaná. Klíč je nově useknutý a nese délku, takže rozdíl v konci textu se pořád pozná.
+
+Ověřeno: Caché **138/138** (nový test na věty atributů), mutací (vždycky tvar „všechny spoje")
+doloženo, že to test chytí.
+
+## 2026-08-31 (12) - 🔤 nízkokapacitní vůz se tiskne „n" a autobus je dořešený
+
+Dva zbytky po značkách spoje, oba k rozhodnutí. Rozhodly se **nálezem ve starém klientovi**, ne
+odhadem - našel se i on, ne jen serverová tabulka.
+
+**Nízkokapacitní vůz se nově tiskne jako „n"**, ne zkratkou „NKA" - přesně tak ho vypisuje starý
+modul. IDS zůstává „IDS", tam se vstup s výstupem shodují. Ve vývěsce se nic nemění.
+
+**Autobus zůstává, jak byl - a víme proč.** Legacy u něj má jiné číslo než my, což tu viselo jako
+nerozhodnutý rozpor. Vysvětlení: starý klient sází **jiným fontem** (starší „Timetable"), a právě na
+té jedné pozici se sady rozcházejí - v našem českém fontu je tam vagon, ve slovenském autobus. Naše
+pozice je autobus v obou. Přepsat to „kvůli paritě" by českému zákazníkovi vrátilo vagon u přestupu
+na autobus, tedy vadu opravenou 3. 8. Hlídá to test, ať to nikdo nespraví zpátky.
+
+⚠️ **Důsledek na příště:** čísla v legacy tabulce jsou pozice ve **starém** fontu. U další značky je
+nestačí opsat - musí se ověřit v našem.
+
+⚠️ **Ranní tvrzení „z celé rodiny není v datech nic než BEV" bylo mylné.** Sonda přes šest firem
+je našla: bezbariérovost 48 389 linek, kola 4 620, radiobus 168, IDS 60, wifi 59, podmínečné jetí 22,
+občerstvení 17, zavazadla 17, nízkokapacitní 9, zásilky 1. **Samoobslužný spoj, částečná
+bezbariérovost a zásuvka nejsou nikde** - jejich pozice jsou opsané, ale na reálném tisku je nikdo
+neviděl; kdyby se vyskytly, patří ověřit.
+
+⚠️ **Hned se u toho ukázalo, že to nestačí** (nález Jan): v řádku platnosti u spoje už bylo „n",
+ale v legendě pod tabulkou zůstalo tučné **„NKA"** - značka a její vlastní vysvětlivka si na jedné
+stránce odporovaly. Legenda si totiž kód z dat vypisovala rovnou, mimo překlad. Opraveno; ručně
+zadaného komentáře se to netýká.
+
+Ověřeno: .NET **1312/1312**, mutacemi obou cest (návrat „NKA" v tabulce i v legendě).
+
+## 2026-08-31 (11) - 🚻 značky u spojů se přestaly tisknout zkratkou (`L11`)
+
+Občerstvení, zásilky, radiobus, samoobslužný spoj a spoj jedoucí podmínečně se na linkovém JŘ
+tiskly zkratkou (OBC, POS, RBU, SAO, RBP), protože nikdo nevěděl, který obrázek k nim patří.
+
+⚠️ **Ta tabulka celou dobu existovala.** Roadmapa tvrdila, že překlad „zkratka → glyf" v repu není,
+protože žije ve windowsím tiskovém klientovi. Klient je v repu - jen jinde, než se hledalo:
+`ALVA.TISKJR.Main.ConvertSpecialniZnak` překládá id z číselníku na kód znaku ve fontu. Pozice jsou
+tedy **opsané, ne hádané**, a je to zapsané v dokumentaci, ať se nehledá potřetí.
+
+Potvrdila i to, co jsme ráno nasadili podle tvaru: loď, wifi, **zásuvka**, kola, zavazadla,
+bezbariérovost - všechno sedí.
+
+⚠️ **Dvě značky z té rodiny zůstávají textem, a je to správně:** IDS a nízkokapacitní vůz. Starý
+modul je taky netiskne obrázkem (mají v tabulce zápornou hodnotu = text). Bez té tabulky bychom jim
+piktogram nasadili - a byla by to chyba, kterou by nikdo nehledal.
+
+**Zbylo k rozhodnutí:** legacy vypisuje nízkokapacitní vůz jako **„n"**, ne „NKA"; a mapuje autobus
+na jiný kód než my (u nás 122, legacy 119 - v českém fontu je na 119 vagon, ve slovenském autobus).
+Obojí je v roadmapě, neměněno bez rozhodnutí.
+
+⚠️ **`B99` je tím rozhodnutá faktem:** vývěsky mají vlastní legacy tabulku a ta loď, wifi ani zásuvku
+**vůbec nezná**. Jejich piktogram ve vývěsce by tedy nebyla parita se starým tiskem, ale nová
+featura - proto tam zůstávají textem.
+
+Ověřeno: .NET **1307/1307**, glyfy vykreslené a prohlédnuté v **obou** fontech, mutací (špatný cílový
+znak) doloženo, že to testy hlídají.
+
+⚠️ **Jeden piktogram si zaslouží tvoje oko:** zásilky (168) vypadají v obou fontech jako přeškrtnutý
+čtverec. Je to podle legacy, ale nečte se to jako „zásilky" - kdyby to na tisku vypadalo divně, je to
+tenhle.
+
+## 2026-08-31 (10) - 🧱 volby mřížky fungují i u mřížky odjezdů (`L15`)
+
+Poslední prvek, který „Čáry mezi řádky" a „Čáry mezi sloupci" nabízel, ukládal - a nečetl. Stejná
+vada jako u linkové tabulky (`L10`), jen o prvek vedle.
+
+**V pivotu ale ty dvě volby neznamenají totéž co v řádkové tabulce**, a právě to je jádro téhle
+změny. Řádek je hodina, sloupec je skupina dnů:
+
+- **Čáry mezi řádky** → vodorovné čáry mezi hodinami
+- **Čáry mezi sloupci** → oddělovače mezi skupinami dnů
+- **svislá čára za sloupcem hodin zůstává vždycky** - není to oddělovač sloupců, ale **osa**:
+  odděluje hodinu od minut, které k ní patří. Mechanicky „konzistentní" zapojení obou voleb by
+  udělalo z vývěsky nečitelnou plochu.
+
+⚠️ **Riziko se měřilo, ne odhadovalo.** Na rozdíl od linkové tabulky zastávkové šablony existují
+a používají se, takže komu by volby byly odškrtnuté, tomu by mřížka z hotového tisku zmizela.
+Read-only sonda prošla **všechny uložené šablony** na dev serveru: 18 šablon, 12 prvků odjezdů,
+**ani jeden** s odškrtnutou volbou. Sonda zůstává v diagnostice šablon pro příště.
+
+Ověřeno: .NET **1307/1307** (6 nových testů) a mutacemi obou cest - volby se ignorují, a osa mizí
+spolu se sloupci. Riziko navíc změřené sondou, viz výše. Chování potvrdil i Jan v aplikaci.
+
+⚠️ **Past, na kterou jsem u testů najel:** odjezd se ke skupině dnů váže polem `SKUPINA_DNU_ID`.
+S jiným názvem se nepřipojí k žádné skupině, nevzniknou žádné hodiny - a prvek pak nevykreslí
+**ani pixel**, ne jen neúplný obrázek. Vypadá to jako „tenhle prvek nejde v testu vykreslit",
+přitom jde jen o překlep v datech. Chvíli jsem to hledal v renderu pivotu a málem z toho založil
+samostatný úkol.
+
+## 2026-08-31 (9) - 🗂 parametry tisku linkového JŘ jsou rozdělené podle toho, čeho se týkají (`L12`)
+
+V nastavení tisku linkového JŘ byly **tři** skupiny místo dvou - a jedna z nich obsahovala jedinou
+položku: „Dělení spojů dle platnosti", tedy zrovna nejdůležitější volbu agendy. Nebyl to záměr,
+jen jí chybělo zařazení, a parametr bez zařazení dispatch shodí do vlastní skupiny „Parametry
+sestavy". „Obecné" navíc vycházelo **doprostřed**, protože skupiny se řadí podle prvního výskytu.
+
+Nově jsou skupiny dvě, podle toho, čeho se volba týká - stejně jako u vývěsek:
+
+- **Obecné** (první): tvar názvu zastávky, název pro MHD, obousměrný tisk
+- **Tabulka linky**: dělení spojů, sloupec tarifních čísel, zastávky bez zastavení, barvy spojů,
+  zvýraznění zastávky i tarifního čísla
+
+Obousměrný tisk je vědomě v „Obecném": rozhoduje o složení celé sestavy (jedna stránka, nebo dvě),
+ne o vzhledu jednoho prvku. Skupina se přejmenovala z „Linkový JŘ" na „Tabulka linky" - uvnitř
+linkové agendy je „Linkový JŘ" tautologie, kdežto název prvku odpovídá logice vývěsek („Seznam
+zastávek", „Mřížka odjezdů"). **Názvy voleb ani jejich hodnoty se nezměnily**, takže uložené
+uživatelské volby zůstávají.
+
+**Přibyla strojová pojistka**, protože tahle vada vzniká zapomenutím, ne rozhodnutím: test hlídá,
+že žádný parametr nezůstal bez skupiny a že „Obecné" je první. ⚠️ Hned při zavedení našel **druhý
+případ** - `FORMAT_CASTKY` v agendě faktur; opraveno spolu s tím.
+
+Ověřeno: .NET **1303/1303** (3 nové testy), Caché **137/137**, a nasazení ověřeno voláním
+`GetParameters` - server vrací dvě skupiny v pořadí Obecné → Tabulka linky.
+
+⚠️ **Málem to skončilo jako tichý nepořádek:** pořadí jsem přepsal skriptem, a `.cls` se skriptem
+nenasazuje (hook reaguje jen na editační nástroj). Skupiny na serveru byly, pořadí ne - a testy
+o tom nevěděly, protože čtou zdroj z repa. Chytlo to až to ověřovací volání.
+
+## 2026-08-31 (8) - 🧭 nabídka stránek náhledu pojmenuje i linkový JŘ (`L13`)
+
+U linkového JŘ hlásila nabídka stránek jen „Stránka 1" / „Stránka 2", takže nebylo poznat, na který
+směr se člověk dívá.
+
+⚠️ **Netýkalo se to jen obousměrného tisku, jak to vypadalo napoprvé.** Popisek se stavěl výhradně
+z pole „aktuální zastávka", a to je pole **vývěsky** - linkové agendy ho ve schématu nemají vůbec.
+Spadl proto na „Stránka N" u **každé** stránky linkového JŘ, jednosměrné i obousměrné.
+
+Nově se u linky vezme trasa, kterou data nesou odjakživa: **„1 - Praha → Sedlčany"**. Obousměrná
+stránka dostane obousměrnou šipku (**„↔"**) - pozná se podle toho, že u ní agenda vědomě nevyplňuje
+směr, protože nese oba naráz. Nové pole na drátě to tedy nepotřebovalo.
+
+Vývěska zůstala beze změny; na to je vlastní test, aby se linková větev nikdy neprotlačila před ni.
+
+Ověřeno: .NET **1300/1300** (4 nové testy) a mutacemi obou cest - vypnutá linková větev a nerozlišená
+obousměrná šipka.
+
+## 2026-08-31 (7) - 👁 náhled bez vybrané linky ukáže vlastní sloupce (#13158 bod 3)
+
+Kdo si v prvku odjezdů nadefinoval vlastní sloupce a **neměl vybranou konkrétní linku**, neviděl
+v návrháři žádnou změnu. Vypadalo to jako nefunkční featura - přitom s vybranou linkou fungovala
+odjakživa.
+
+Ukázková data se totiž ze serveru tahala **bez jakýchkoli voleb**, takže server spadl na výchozí
+rozvržení podle linky (Pracovní / Sobota / Neděle a svátky). Nově se do nich posílá definice
+sloupců ze šablony; server ji uměl číst už dřív, jen mu ji nikdo neposlal.
+
+⚠️ **Druhá polovina té pasti byla cache.** Vzorek se držel pod samotným kódem agendy, takže i po
+opravě vstupu by se po změně sloupců vrátil starý obrázek. Definice je proto součástí klíče - jiné
+sloupce znamenají nový dotaz, stejné sloupce se pořád berou z cache (načtení je synchronní a trvá
+pár vteřin, takže se nesmí opakovat při každém překreslení). A změna definice **bez vybrané
+instance** teď náhled přenačte, ne jen ta s instancí jako dosud.
+
+Vzorek tím nezačne odpovídat konkrétní lince - ukazuje **to členění**, které je v šabloně, a o to
+šlo (rozhodnutí Jan 31. 8.).
+
+⚠️ **U linkového JŘ zůstává týž vzor otevřený**: `LinkovyJrAd.GetMockData` volby z požadavku nečte
+vůbec, staví stránku s napevno zapsanými hodnotami. Tam nestačí přeposlat parametry, musela by se
+upravit metoda - je to v roadmapě v „K ověření na reálné sestavě".
+
+Ověřeno: .NET **1296/1296** (6 nových testů) a mutacemi obou pojistek - neposlaná definice
+a cache ignorující její změnu.
+
+## 2026-08-31 (6) - 🔎 adresa dopravce i z firmy a seskupená pole agendy (#13158)
+
+Dvě věci, které vyplynuly hned ze zkoušení předchozí změny.
+
+**Adresa se bere i z firmy, nejen z provozovny, a to po položkách.** Sídlo, ulici a telefon jsem
+četl výhradně ze záznamu provozovny - jenže provozovna bývá **organizační jednotka bez ulice**.
+Na lince 108360 je to „Oblast Písek": má název a telefon, ulici ne. Firma přitom má adresu
+kompletní („Hálkova 781/9, 370 04, České Budějovice"). Chybějící ulice i telefon se proto doplní
+z firmy **každý zvlášť** - první pokus čekal, až bude provozovna prázdná celá, a u takového
+dopravce by se adresa neukázala nikdy.
+
+⚠️ **Dva bloky téhož dopravce nejsou chyba.** Na KOVEDu se zobrazily dva - Uherské Hradiště
+a Uherský Brod. Jsou to **dvě provozovny** téhož dopravce, každá se svou adresou, a obě linku
+obsluhují. Slučovat je podle názvu by tu informaci zahodilo, takže zůstávají.
+
+**Pole agendy jsou seskupená podle toho, čeho se týkají** - linka, dopravce, platnost, zastávka,
+poznámky. Dosud byla zastávková pole rozházená mezi ostatní (mezi „Konečnou zastávkou" a zbytkem
+zastávkových polí stál QR kód a typ jízdního řádu) a uživatel je v seznamu hledal po jednom.
+Platí pro obě vývěskové agendy. Je to jen pořadí v nabídce - žádný klíč se nezměnil, takže se
+hotovým šablonám nic nestalo.
+
+Ověřeno: .NET **1290/1290**, Caché **137/137**, a nasazení ověřeno voláním `GetSchema` na serveru
+(vrací nové pořadí i nový popisek). Zlaté odtisky se nezměnily - záloha adresy z firmy se na gold
+linkách neuplatní, protože ty mají adresu u provozovny.
+
+## 2026-08-31 (5) - 🚌 dopravce s adresou po řádcích a „Konečná zastávka" místo „POPIS_SMER" (#13158)
+
+Dvě věci ze zákaznické poznámky k vývěskám (BBSK).
+
+**Popis dopravce má adresu a každou položku na svém řádku.** Dosud vyšlo „Zajišťuje: Dopravce A,
+Dopravce B" v jednom odstavci - a adresa se neukázala nikdy, i když v datech je. ⚠️ Chyba nebyla
+v tom, že by adresa chyběla: skládala se jen tehdy, když dopravce **neměl vyplněný zkrácený název**,
+a jakmile ho měl, vrátil se sám a adresa se zahodila. Nově zkracuje jen jméno, adresa přibude tak
+jako tak. Výsledek je název, sídlo, ulice a telefon pod sebou; víc dopravců odděluje prázdný řádek,
+aby šlo poznat, kde končí adresa jednoho a začíná jméno druhého.
+
+Platí pro **obě vývěskové agendy** (AD i MHD), ať se dvě vývěsky vedle sebe neliší. Linkových
+jízdních řádů se to **nedotklo** - jsou v paritní vlně a změna obsahu pole by tam paritu se starým
+tiskem rozbila. Městská vývěska tím ztratila uvození „Dopravce: " a rozešla se se vzorem, ze kterého
+tvar pocházel; je to vědomé, ne drift. Piktogramy (obálka, sluchátko) se **nedělaly** - textový prvek
+kreslí jedním fontem, takže je to jiná úloha.
+
+**Pole „Konečná směru" se jmenuje „Konečná zastávka"** (`POPIS_SMER` → `KONECNA_ZASTAVKA`,
+`POPIS_SMER_CIS` → `KONECNA_ZASTAVKA_CIS`). Zákazník hledal cílovou zastávku a nenašel ji, přestože
+to pole existovalo - ukazuje totiž **na tutéž zastávku**, ze které se počítá „CIS číslo cílové
+zastávky". Přejmenováno ve všech čtyřech agendách i v systémových šablonách.
+
+⚠️ **Přejmenovalo se načisto** - staré pole nezůstalo žít vedle nového (rozhodnutí Jan 31. 8.:
+mrtvý klíč držený jen kvůli přejmenování je nepořádek, ne zpětná kompatibilita). Existující šablony
+proto srovná **migrace na verzi 1.10.0**, která přepíše i zástupce `{POPIS_SMER}` ve všech textech
+a výrazech. Bez ní by na šabloně zůstal zástupce, který už žádná agenda neposílá, a v tisku by z něj
+vyšlo prázdno.
+
+Ověřeno: .NET **1290/1290** (7 nových testů migrace), Caché **137/137**. Deset zlatých odtisků se
+muselo přerazit - u všech deseti se změnilo **jen md5** a počty stránek, zastávek, odjezdů i poznámek
+zůstaly shodné, což je přesně podpis „změněný obsah pole a přejmenování", ne změna chování.
+
+## 2026-08-31 (4) - 🔄 otočení stránky tam a zpátky už šablonu nescvrkne
+
+Nález Jan 31. 8. hned po vyzkoušení předchozí změny: otočil šablonu na šířku, rozmyslel si to,
+otočil zpátky na výšku - a sekce se „nenatáhla zpět".
+
+**Bylo to horší, než jak to vypadalo.** Poměr „aby se to vešlo" vyjde u A4 při otočení **v obou
+směrech stejně** (0,686), takže se dvě otočení nevyrušila, ale vynásobila: obsah po návratu seděl
+na **47 %** původní velikosti a písmo z 12 pt vyšlo jako **5,6 pt**. Po třetím otočení 3,8 pt.
+Nešlo tedy o sekci, ale o celou šablonu - jen je to na výšce sekce nejvíc vidět.
+
+**Spraveno tím, že se poměr počítá vždy od výchozí tiskové plochy, ne od aktuálního stavu.**
+Šablona si drží, ke které ploše se souřadnice prvků vztahují a jak moc je od ní obsah zvětšený
+a posunutý; návrat na původní formát pak vyjde jako poměr 1 a obsah sedne přesně tam, kde byl.
+Platí to i přes mezikroky - otočit na šířku, přepnout na A5 a vrátit se na původní formát dá zase
+původní velikosti.
+
+⚠️ **Drží se to jen po dobu, co je šablona otevřená** (rozhodnutí Jan 31. 8.): pokrývá to reálné
+chování „zkouším formáty při návrhu" a nestojí to změnu formátu souboru šablony ani migraci.
+Kdo formát změní, uloží, zavře a druhý den se vrátí, začíná od nového formátu jako od výchozího.
+Uložit to do šablony jde kdykoli aditivně.
+
+Vystředění se přitom musí odečíst **před** škálováním a nasadit až po něm - jinak by se posun
+z minulé změny přenásobil spolu s obsahem a ten by ujel do strany.
+
+Ověřeno: .NET **1283/1283** (2 nové testy na otočení tam a zpět, jeden i přes mezikrok). Mutací
+„počítej od aktuálního stavu místo od výchozí plochy" spadly přesně tyhle dva testy - ostatních
+devět prošlo, takže tu vadu opravdu nehlídal nikdo jiný.
+
+## 2026-08-31 (3) - 📐 změna formátu stránky obsah přepočítá, místo aby ho vymazala (`B104`)
+
+Ve Vlastnostech stránky se dala změnit velikost nebo orientace jen za cenu toho, že se **celá
+šablona zahodila** a založilo se prázdné plátno - uživatel ji stavěl znovu od nuly. Důvod byl
+poctivý (zachovávat prvky přes změnu rozměrů se chovalo nepředvídatelně, visely mimo stránku),
+jen se vyřešil tím nejtvrdším způsobem, který byl po ruce.
+
+Nově se **přepočítá geometrie a nastavení prvků zůstane** - sloupce, styly, volby, podmínky
+i datové zdroje. Přepočítávají se pozice, rozměry, velikosti písma, odsazení, výšky řádků
+a tloušťky čar, takže výsledek vypadá jako táž sestava na jiném papíře, ne jako drobný text na
+velké stránce.
+
+**Poměr se počítá z tiskové plochy, ne z papíru.** Prvky leží uvnitř okrajů, takže z rozměru
+stránky by se souběžná změna okrajů promítla do výsledku dvakrát. ⚠️ Vedlejší důsledek: ani při
+stejném poměru papíru (A5 → A4) nevyjde přepočet úplně beze zbytku, protože okraje se neškálují -
+obsah se proto posune o jednotky milimetrů. To je správně, ne chyba zaokrouhlení.
+
+**Při změně orientace** se bere menší z obou os, aby nic nepřeteklo, a obsah se **vodorovně
+vystředí**. Svisle zůstává nahoře, protože sekce jdou odshora jako dokument - hlavička plovoucí
+uprostřed prázdné stránky by vypadala rozbitě (rozhodnutí Jan 31. 8.). Uživatel musí počítat s tím,
+že se mu pozice posunou; podstatné je, že se nic neztratí a dá se s tím dál pracovat.
+
+Hláška o vymazání zmizela, místo ní je otázka **Ano** (přepočítat) / **Ne** (změnit jen stránku) /
+**Storno**. ⚠️ Sdílený dialog má tlačítka Ano/Ne/Storno napevno, takže význam nese text otázky -
+akční popisky by znamenaly sáhnout do EDControls a publikovat i druhou aplikaci. Prázdná šablona
+se neptá vůbec. Celé je to **jeden vratný krok**: Ctrl+Z vrátí rozměr stránky i obsah najednou.
+
+**Prvky, které by po přepočtu vyčnívaly, se nikam neposouvají** - posunout někomu prvek bez jeho
+vědomí je horší překvapení než vidět, že něco visí ven.
+
+Ruční škálování z nabídky zůstalo, jak bylo; obě cesty teď stojí na společném výpočtu, jen ruční
+škáluje i papír, kdežto změna formátu bere rozměr a okraje přesně podle dialogu.
+
+Ověřeno: .NET **1281/1281** (9 nových testů) a mutacemi tří cest - větší poměr místo menšího,
+vynechané vystředění, přeškálované okraje místo hodnot z dialogu.
+
+## 2026-08-31 (2) - 🧱 volby mřížky u linkové tabulky konečně fungují (`L10`)
+
+„Čáry mezi řádky" a „Čáry mezi sloupci" nabízí formulář u **každého** prvku - jsou ve sdílené sadě
+základních polí, takže je dostane i prvek, který si je sám nekreslí. Linková tabulka je do dneška
+vůbec nečetla: mřížku kreslila vždycky. Uživatel klikl, hodnota se uložila do šablony a nestalo se
+nic - nejhorší možná zpětná vazba, protože z toho nepozná, jestli je rozbité nastavení, nebo tisk.
+
+Teď se obě volby čtou stejně, jako je odjakživa čte **seznam zastávek**, **pevná tabulka**
+i **tabulka z dat**. Jemnější potlačení svislé čáry mezi popisnými sloupci zůstává - „Čáry mezi
+sloupci" je nadřazený vypínač, ne jeho náhrada.
+
+**Proč zrovna teď:** volba se ukládá do šablony, i když nic nedělala, takže si ji někdo mohl
+odškrtnout a po opravě by mu čáry z tisku zmizely bez jediného kliknutí. Proto se před zásahem
+změřilo, kolika šablon se to týká: na dev serveru **není ani jedna šablona linkového JŘ** (agenda
+je zveřejněná od 24. 8.), takže není co migrovat a levnější chvíle na opravu už nebude. Jediné, co
+ty volby dnes nese, je zákaznický vzor **940 (IDZK)** v repu - má vypnuté vodorovné čáry a po téhle
+změně o ně přijde, což odpovídá záměru toho, kdo je odškrtl (rozhodnutí Jan 31. 8.: nechat tak).
+
+⚠️ **Mřížka odjezdů má tutéž vadu a záměrně zůstala nedotčená.** Zastávkové šablony existují
+a používají se, takže tam by zapojení voleb mohlo změnit hotový tisk - má vlastní položku a vlastní
+měření. Navíc je tam otevřená otázka návrhu: kreslí tři druhy čar a jedno zaškrtávátko by ovládalo
+dvě z nich naráz, přičemž čára za sloupcem hodin je nosná.
+
+Ověřeno: .NET **1272/1272** (4 nové testy) a mutacemi obou cest - volby úplně ignorovat, a přehodit
+je mezi sebou.
+
+## 2026-08-31 (1) - 🚏 značky spoje: zalomení po dvou a inverzní negativní značka (`L11` z větší části)
+
+**Značky platnosti se zalamují po dvou na řádek.** Dosud jsme je kreslili všechny do jednoho řádku
+jako souvislý řetěz - bez zalomení i bez ořezu, takže spoj s víc značkami je vypsal přes hranici
+sloupce do sousedního. Starý modul má strop dvě značky na řádek a zbytek posílá pod ně
+(`POCETZNAKUPLATNOSTI`, `JRapiLinPrtWin.mac:25`, skládání `:3752-3775`). Řádků je tolik, kolik jich
+potřebuje nejbohatší spoj; ostatní mají zbylé prázdné, stejně jako už to dělají řádky turnusů.
+
+⚠️ **Dělení je mechanické, ne podle významu značek.** Řádek proto může nést vedle sebe den i
+vlastnost vozidla. Vypadá to jako významové řádky a na většině spojů to tak i vyjde (dny jsou
+v pořadí první), ale je to náhoda - rozhodl o tom tisk ze starého modulu na lince 108360, který
+Jan otevřel 31. 8.: spoj **1017** má ⚒ i ♿ **na jednom řádku**, zatímco 4009 a 4025 mají ⑥ ✝
+na prvním a ♿ na druhém. Ten rozdíl je jediné, čím se obě vysvětlení odliší, takže na něj míří
+vlastní test - bez něj by dělení podle rodin značek prošlo jako správné.
+
+**Negativní značka se tiskne inverzně** - tmavý box se světlým číslem, jako ji má starý tisk
+i naše vývěsky. Odlišuje ji to od značek platnosti nad ní, které říkají opak (kdy spoj jede).
+Inverze se bere z kaskády, ne z pevných barev: box dostane barvu textu buňky a znak její barvu
+pozadí, takže obarvená tabulka zůstane čitelná místo černého obdélníku uprostřed.
+
+**Loď, wifi a nově i zásuvka se kreslí piktogramem, přibyla kola a zavazadla.** Do 31. 8. tu stálo,
+že zásuvka ve fontu není - **není to pravda**: tabulka glyfů obou fontů ji našla na 179, hned vedle
+lodi (180) a wifi (186) v souvislém bloku ikon vybavení vozidla. Ve vývěskách zůstávají všechny tři
+zatím textem, protože přepnout je by změnilo hotový tisk.
+
+⚠️ **Zbytek rodiny atributů (IDS, NKA, OBC, POS, RBU, SAO, RBP) se dál tiskne zkratkou** a parita
+téhle části **není doložená**. Překlad „která zkratka na který glyf" má starý modul ve windowsím
+tiskovém klientovi.
+
+> **Opraveno později téhož dne (viz zápis 11):** ten klient **v repu je** - jen jinde, než se
+> hledalo. Tabulka se našla, atributy se od té doby tisknou piktogramem a IDS s NKA zůstávají
+> textem **podle legacy**, ne z opatrnosti. Tvrzení „v repu není" bylo mylné.
+
+Ověřeno: .NET **1268/1268** (19 nových testů) a mutacemi tří cest - strop tří značek místo dvou,
+dělení podle významu místo mechanického, nenakreslený box negativní značky.
+
 ## 2026-08-28 (10) - 🔁 turnusy: volba prvku místo parametru + jen číslo turnusu
 
 Dvě změny na tvůj podnět, obě k tomu, aby featura odpovídala tomu, co turnus je.

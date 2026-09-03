@@ -27,7 +27,7 @@ public class PrintDialogViewModel : EDViewModel
 
     /// <summary>Výchozí pattern názvu souboru (tokeny {POLE} z dat) - odpovídá legacy
     /// „NázevZastávky_ČísloLinky_…". Funguje pro AD i MHD (obě emitují tato pole).</summary>
-    public const string DefaultFileNamePattern = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}";
+    public const string DefaultFileNamePattern = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}";
 
     /// <summary>Klíče universálních export polí v EDInputformu (AgendaParams) - NEjsou agenda
     /// parametry, jsou společné všem agendám. Hodnoty tečou přes sdílený <c>_paramValues</c>
@@ -176,6 +176,19 @@ public class PrintDialogViewModel : EDViewModel
     /// snapshotu by zavedl závodu s preview renderem - viz `ExportRealDataPdfAsync` níže, které
     /// to dělá správně.
     /// </summary>
+    /// <summary>
+    /// Popis uspořádání na list do stavové hlášky: varování, když mřížka vyjde 1×1 (papír se jen
+    /// zvětšil), jinak neutrální popis. Prázdné = uspořádání vypnuté.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Jedno místo pro **oba** exporty (ukázková data i data z databáze). Když jsem varování
+    /// 1. 9. přidal jen do exportu s daty, Jan ho na prázdné šabloně neviděl - a přesně tou cestou
+    /// jde každý, kdo si chce chování vyzkoušet bez vybrané linky.
+    /// </remarks>
+    private static string PopisUsporadani(SheetLayoutOptions? sheets) => sheets is null
+        ? ""
+        : sheets.VarovaniBezEfektu() is { } bezEfektu ? $" · ⚠ {bezEfektu}" : $" · {sheets.ShortLabel}";
+
     private void ExportPdf()
     {
         SheetLayoutOptions? sheets;
@@ -191,7 +204,7 @@ public class PrintDialogViewModel : EDViewModel
             var data = _buildMockData(_paramValues);
             RequestRenderPdf?.Invoke(filePath, data, sheets);
             OpenPdf(filePath);
-            StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}{(sheets is null ? "" : $" · {sheets.ShortLabel}")}";
+            StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}{PopisUsporadani(sheets)}";
         }
         catch (Exception ex)
         {
@@ -240,7 +253,10 @@ public class PrintDialogViewModel : EDViewModel
             var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
 
             StatusText = $"Generuji PDF ({totalPages} stránek)…";
-            string sheetInfo = sheets is null ? "" : $" · {sheets.ShortLabel}";
+            // Skládání 1×1 papír jen zvětší (A5 šablona + list „A4 na výšku" = A4 s jednou vývěskou
+            // uprostřed). Volba se persistuje per agenda, takže uživatel nemá jak zjistit proč -
+            // zákazník to hlásil jako chybu tisku (#13158). Proto varování, ne neutrální popis.
+            string sheetInfo = PopisUsporadani(sheets);
             // Vlastní sloupce: co se na vývěsku nedostane (odjezd mimo sloupce, sloupec s obdobím
             // mimo platnost JŘ) říct i tady, ne jen ve status baru návrháře - tisknout může jiná
             // linka než v náhledu.
@@ -251,6 +267,15 @@ public class PrintDialogViewModel : EDViewModel
             // někdo, kdo šablonu jen otevřel z databáze.
             var chybejiciFonty = FontWarnings.Summarize(_template);
             string fontInfo = chybejiciFonty is null ? "" : $" · ⚠ {chybejiciFonty}";
+            // Zmenšené písmo: prvek se nevešel, takže se tiskne menší, než co je v šabloně
+            // nastavené. Bez hlášky to jde poznat až z papíru - a u vývěsek vyjde každá zastávka
+            // jinak podle počtu poznámek.
+            var zmenseno = ContentShrinkWarnings.Summarize(_template, dataPages);
+            string zmensenoInfo = zmenseno is null ? "" : $" · ⚠ {zmenseno}";
+            // Malý QR: na papíře se nesejme, ale v PDF vypadá „nakresleně" - bez hlášky to zákazník
+            // pozná až u zastávky s mobilem v ruce (#13158).
+            var maleKody = BarcodeSizeWarnings.Summarize(_template, dataPages);
+            string maleKodyInfo = maleKody is null ? "" : $" · ⚠ {maleKody}";
 
             if (splitMode == ExportSplitMode.Single)
             {
@@ -260,7 +285,7 @@ public class PrintDialogViewModel : EDViewModel
                 OpenPdf(target);
                 StatusText = (overflow > 0
                     ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}{sheetInfo}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo;
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo;
                 return;
             }
 
@@ -282,7 +307,7 @@ public class PrintDialogViewModel : EDViewModel
             OpenFolder(target);
             StatusText = (overflow > 0
                 ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{sheetInfo}"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo;
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo;
         }
         catch (Exception ex)
         {

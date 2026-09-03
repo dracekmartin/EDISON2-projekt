@@ -73,6 +73,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// „padding sloupce", které sjednocují počet sloupců napříč stránkami).
     /// </remarks>
     public bool PadEmptyColumns { get; set; }
+
+    /// <summary>
+    /// Kazda zona hranicni zastavky ve vlastnim sloupci (vychozi vypnuto).
+    /// </summary>
+    /// <remarks>
+    /// Zastavka na hranici zon ma dnes vsechny zony v jednom sloupci za sebou; zakaznik s IDS
+    /// (PID, IDZK) je chce vedle sebe, jako to umi kilometry (#8576). ⚠️ **Vychozi je vypnuto
+    /// zamerne** - vic zon ma 300 tisic zastavek merenych firem, takze zapnuty rozpad by prekreslil
+    /// hotove sestavy i tem, kdo o nej nezadali. Stary modul to neumi vubec, neni to tedy parita.
+    /// </remarks>
+    public bool RozdelitZonyDoSloupcu { get; set; }
     /// <summary>Pás názvů skupin dnů (Pracovní dny / Soboty / …) nad čísly spojů.</summary>
     public bool ShowGroupHeaders { get; set; } = true;
 
@@ -104,8 +115,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// mezi sloupci spojů zůstanou. Vzor 940 to tak má (km má dva podsloupce a nejsou oddělené).
     /// </summary>
     /// <remarks>
-    /// ⚠️ Bez tohohle šel vypnout jen <b>celý</b> <c>Grid.ShowColumnLines</c>, tedy i čáry mezi
-    /// spoji - a to je právě ta stížnost, že „ohraničení jednotlivých km sloupců nejde odstranit".
+    /// ⚠️ Hrubší vypínač je <c>Grid.ShowColumnLines</c>, jenže ten sebere i čáry mezi spoji -
+    /// a to je právě ta stížnost, že „ohraničení jednotlivých km sloupců nejde odstranit".
+    /// (Do 31. 8. navíc <c>ShowColumnLines</c> nefungoval vůbec, takže tohle bylo jediné,
+    /// čím šlo svislou čáru v tabulce potlačit.)
     /// </remarks>
     public bool PopisneSloupceBezVnitrnichCar { get; set; }
 
@@ -165,6 +178,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         public string Popis = "";
         public string Tc = "";
         public string Zona = "";
+
+        /// <summary>Jednotlive zony hranicni zastavky - viz <c>RozdelitZony</c>.</summary>
+        public List<string> Zony = [];
         public string Mhd = "";
         public string Nastupiste = "";
         public List<string> Atributy = [];
@@ -238,6 +254,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Popis = row.GetString("NAZEV_ZASTAVKY"),
             Tc = row.GetString("TC"),
             Zona = row.GetString("ZONY"),
+            Zony = RozdelZony(row.GetString("ZONY")),
             Mhd = row.GetString("MHD"),
             Nastupiste = row.GetString("NASTUPISTE"),
             Atributy = ParseStringArray(row.GetValue("ATRIBUTY")),
@@ -337,6 +354,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     private static List<string> ParseStringArray(object? value) =>
         value is JsonArray arr ? [.. arr.Select(n => n?.ToString() ?? "")] : [];
+
+    /// <summary>
+    /// Rozdeli zonu hranicni zastavky na jednotlive zony.
+    /// </summary>
+    /// <remarks>
+    /// Zastavka na hranici zon nese vsechny sve zony v jedne hodnote; oddelovac je carka, u nekterych
+    /// firem lomitko (zmereno 31. 8. na sesti firmach: 301 738 zastavek z 1 160 432 ma vic nez jednu
+    /// zonu, carka 301 334x, lomitko 404x, nejvic tri zony na zastavku). Delime proto obojim - jeden
+    /// z tech tvaru by jinak zustal v jednom sloupci a vypadal jako chyba jen u nekterych zakazniku.
+    /// </remarks>
+    internal static List<string> RozdelZony(string zona) =>
+        string.IsNullOrWhiteSpace(zona)
+            ? []
+            : [.. zona.Split([',', '/'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
     private static List<LinePripojData> ParsePripoje(object? value)
     {
@@ -439,7 +470,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Hodnota buňky popisového sloupce dle klíče (kmIndex jen pro Km sub-sloupce).</summary>
     private Func<LineStopData, string> ValueFor(string key, int kmIndex) => key switch
     {
-        ColumnKeys.Zone     => s => s.JePrijezdovy ? "" : s.Zona,
+        ColumnKeys.Zone     => s => s.JePrijezdovy ? ""
+            : !RozdelitZonyDoSloupcu ? s.Zona
+            : kmIndex < s.Zony.Count ? s.Zony[kmIndex] : "",
         ColumnKeys.Km       => s => s.JePrijezdovy || kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
         ColumnKeys.Tc       => s => s.JePrijezdovy ? "" : s.Tc,
         ColumnKeys.Mhd      => s => s.JePrijezdovy ? "" : s.Mhd,
@@ -471,15 +504,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // se odvozuje z dat (kmCount == 0 znamená „žádné km sloupce", ne „prázdné hodnoty").
         // ⚠️ Šipka směru má vlastní podmínku: nemá **žádný text**, takže by ji pravidlo „prázdný
         // sloupec se netiskne" schovalo vždy, i když ji uživatel zapnul. Kreslí se vektorově.
+        int zonaCount = MaxZonaCount(stops);
         structural = structural.Where(c => c.Key switch
         {
             ColumnKeys.Km    => kmCount > 0,
             ColumnKeys.Arrow => true,
+            // Rozpad zon se ridi poctem zon v datech, stejne jako km - „zadny sloupec" tu znamena
+            // „zadna zona", ne „prazdne hodnoty".
+            ColumnKeys.Zone when RozdelitZonyDoSloupcu => zonaCount > 0,
             _                => stops.Any(st => ValueFor(c.Key, 0)(st).Length > 0),
         }).ToList();
 
         // šířky: pevné (Width != null) honorovány; auto (null) sdílí zbytek se spoji
-        float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == ColumnKeys.Km ? c.Width!.Value * kmCount : c.Width!.Value);
+        float fixedSum = structural.Where(c => c.Width.HasValue)
+            .Sum(c => c.Width!.Value * PocetPodsloupcu(c.Key, kmCount, zonaCount));
         int autoStructural = structural.Count(c => !c.Width.HasValue);
         int autoUnits = autoStructural + (trip.Width.HasValue ? 0 : tripCount);
         // Mezery mezi skupinami sloupců a místo na značky u času jdou ze stejné šířky jako
@@ -497,10 +535,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var ds = ResolveDataStyle(col);
             string header = col.Header != "" ? col.Header : DefaultHeaderFor(col.Key);
             float w = col.Width ?? autoEach;
-            if (col.Key == ColumnKeys.Km)
+            int podsloupcu = PocetPodsloupcu(col.Key, kmCount, zonaCount);
+            if (podsloupcu > 1 || col.Key == ColumnKeys.Km)
             {
-                for (int k = 0; k < kmCount; k++)
-                    result.Add(new RenderCol(col.Key, w, header, hs, ds, ValueFor(ColumnKeys.Km, k)));
+                for (int k = 0; k < podsloupcu; k++)
+                    result.Add(new RenderCol(col.Key, w, header, hs, ds, ValueFor(col.Key, k)));
             }
             else
             {
@@ -844,11 +883,98 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// (x = na znamení). Řídicí atributy (T/P/S/E/…) se v prvním řezu netisknou.</summary>
     private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
 
+    /// <summary>
+    /// Nadpisy popisnych sloupcu - rozpadle zony dostanou <b>jeden spolecny</b> pres vsechny sve dily.
+    /// </summary>
+    /// <remarks>
+    /// „Zona" nad kazdym dilem vypadala jako nekolik ruznych sloupcu, prestoze je to porad tataz vec,
+    /// jen rozlozena (rozhodnuti Jan 1. 9. po vyzkouseni). Slouceni znamena jednu sirsi bunku misto
+    /// nekolika, takze v radku nadpisu zaroven zmizi cary mezi dily.
+    /// <para>⚠️ Kilometry se **zamerne** neslucuji: jejich dily jsou km jednotlivych useku, tedy ruzne
+    /// hodnoty se stejnym nazvem, a slouceni by zmenilo hotove sestavy vsem, kdo km sloupce maji.</para>
+    /// </remarks>
+    private List<(int Index, float Sirka, string Text, ResolvedTextStyle Styl)> NadpisyPopisnychSloupcu(
+        IReadOnlyList<RenderCol> fixedCols)
+    {
+        var vysledek = new List<(int, float, string, ResolvedTextStyle)>();
+        for (int ci = 0; ci < fixedCols.Count; ci++)
+        {
+            int span = 1;
+            if (fixedCols[ci].Key == ColumnKeys.Zone && RozdelitZonyDoSloupcu)
+                while (ci + span < fixedCols.Count && fixedCols[ci + span].Key == ColumnKeys.Zone) span++;
+            float sirka = 0f;
+            for (int k = 0; k < span; k++) sirka += fixedCols[ci + k].Width;
+            vysledek.Add((ci, sirka, fixedCols[ci].Header, fixedCols[ci].HeaderStyle));
+            ci += span - 1;
+        }
+        return vysledek;
+    }
+
+    /// <summary>Nadpisy popisnych sloupcu (text, sirka) tak, jak se vykresli - pro testy.</summary>
+    internal List<(string Text, float Sirka)> NadpisyProTest(DataContext data)
+    {
+        EnsureParsed(data);
+        var stops = _cachedStops ?? [];
+        var (cols, _, _) = BuildColumns(stops, MaxKmCount(stops), 1);
+        return [.. NadpisyPopisnychSloupcu(cols).Select(n => (n.Text, n.Sirka))];
+    }
+
+    /// <summary>
+    /// Popisove sloupce tak, jak se opravdu vykresli - pro testy: dvojice (klic, hodnota bunky).
+    /// </summary>
+    /// <remarks>
+    /// Rozpad zon meni **pocet** sloupcu, ne jen text v nich, takze na to nestaci porovnat obrazek -
+    /// z nej neni poznat, jestli dve zony vedle sebe jsou dva sloupce, nebo jedna bunka s carkou.
+    /// </remarks>
+    internal List<(string Klic, string Hodnota)> PopisneSloupceProTest(DataContext data, int radek = 0)
+    {
+        EnsureParsed(data);
+        var stops = _cachedStops ?? [];
+        var (cols, _, _) = BuildColumns(stops, MaxKmCount(stops), 1);
+        return [.. cols.Select(c => (c.Key, stops.Count > radek ? c.Value(stops[radek]) : ""))];
+    }
+
+    /// <summary>Na kolik sloupcu se klic rozpadne - km dle dat, zona jen se zapnutym rozpadem.</summary>
+    private int PocetPodsloupcu(string key, int kmCount, int zonaCount) => key switch
+    {
+        ColumnKeys.Km => kmCount,
+        ColumnKeys.Zone when RozdelitZonyDoSloupcu => zonaCount,
+        _ => 1,
+    };
+
+    /// <summary>Nejvic zon na jedne zastavce - urcuje pocet sloupcu zon pri rozpadu.</summary>
+    private int MaxZonaCount(List<LineStopData> stops) =>
+        RozdelitZonyDoSloupcu && Columns.Any(c => c.Visible && c.Key == ColumnKeys.Zone) && stops.Count > 0
+            ? stops.Max(s => s.Zony.Count)
+            : 0;
+
     private int MaxKmCount(List<LineStopData> stops) =>
         Columns.Any(c => c.Visible && c.Key == ColumnKeys.Km) && stops.Count > 0 ? stops.Max(s => s.Km.Count) : 0;
 
-    private bool HasPlatnostRow(List<LineTripData> trips) => ShowPlatnostRow && trips.Any(t => t.Platnost.Count > 0);
     private bool HasNzRow(List<LineTripData> trips) => ShowNzRow && trips.Any(t => t.Nz.Length > 0);
+
+    /// <summary>Kolik značek platnosti se vejde na jeden řádek, než se zalomí pod něj.</summary>
+    /// <remarks>Strop starého modulu (`POCETZNAKUPLATNOSTI`, `JRapiLinPrtWin.mac:25`).</remarks>
+    private const int ZnacekNaRadekPlatnosti = 2;
+
+    /// <summary>Kolik řádků platnosti tabulka má = kolik jich potřebuje nejbohatší spoj (0 = žádné).</summary>
+    /// <remarks>
+    /// Značky se dělí <b>mechanicky po dvou</b> v tom pořadí, v jakém je pošle agenda - ne podle
+    /// významu. Řádek proto může nést vedle sebe den i vlastnost vozidla; přesně tak to dělá starý
+    /// modul (`Spoj2Tb`, `JRapiLinPrtWin.mac:3752-3775`: čítač uzavře řádek po každé druhé značce
+    /// a založí `1.1`, `1.2`…). Doloženo jeho tiskem linky 108360 - spoj 1017 má ⚒ i ♿ na jednom
+    /// řádku, spoje 4009/4025 mají ⑥ ✝ na prvním a ♿ na druhém.
+    /// <para>Řídí se <b>nejbohatším spojem</b>, ne každým sloupcem zvlášť - jinak by řádky nesedly
+    /// na sebe. Spoj s méně značkami má zbylé řádky prázdné.</para>
+    /// </remarks>
+    private int PocetRadkuPlatnosti(List<LineTripData> trips) =>
+        !ShowPlatnostRow || trips.Count == 0
+            ? 0
+            : trips.Max(t => (t.Platnost.Count + ZnacekNaRadekPlatnosti - 1) / ZnacekNaRadekPlatnosti);
+
+    /// <summary>Značky spoje patřící na <paramref name="radek"/>-tý řádek platnosti (0-based).</summary>
+    private static List<string> ZnackyRadku(LineTripData trip, int radek) =>
+        [.. trip.Platnost.Skip(radek * ZnacekNaRadekPlatnosti).Take(ZnacekNaRadekPlatnosti)];
 
     /// <summary>Kolik řádků turnusů tabulka má = nejvíc turnusů u jednoho spoje (0 = žádné).</summary>
     /// <remarks>
@@ -930,7 +1056,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
         hlava.Add(headerH);                                                  // řádek čísel spojů
         for (int tr = 0; tr < PocetTurnusovychRadku(trips); tr++) hlava.Add(rowH);
-        if (HasPlatnostRow(trips)) hlava.Add(rowH);
+        for (int pr = 0; pr < PocetRadkuPlatnosti(trips); pr++) hlava.Add(rowH);
         if (HasNzRow(trips)) hlava.Add(rowH);
 
         // Jen viditelné zastávky a jejich přípojné řádky (matched na Poradi zastávky - jako render).
@@ -1081,7 +1207,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
 
                 var plan = BuildRowPlan(stops, spojeBloku, zrcadleneBloku, trips, groups, mrizka, nameIndex,
-                    headerH, rowH, PripojRowH() * scale, paints.Grid, headerResolved, headerCentered,
+                    headerH, rowH, PripojRowH() * scale,
+                    Grid.ShowColumnLines ? paints.Grid : null,
+                    Grid.ShowRowLines ? paints.Grid : null,
+                    headerResolved, headerCentered,
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
 
@@ -1211,12 +1340,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// negativní značky → zastávky (s podřádky přípojů). Vodorovné čáry a pozadí zvýraznění nese
     /// <see cref="RowSpec"/>, samotné kreslení <see cref="RowPlanRenderer"/>.
     /// </summary>
+    /// <summary>Sestaví plán řádků tabulky. <paramref name="sloupcovaCara"/> a
+    /// <paramref name="radkovaCara"/> jsou <c>null</c>, když si uživatel ten druh čar vypnul -
+    /// stejné dělení jako u seznamu zastávek a obou tabulek. Jemnější potlačení svislé čáry
+    /// u konkrétního sloupce řeší <c>SuppressLeadingLine</c>, tohle je nadřazený vypínač.</summary>
     private List<RowSpec> BuildRowPlan(
         List<LineStopData> stops, List<LineTripData> trips, List<LineTripData> zrcadlene,
         List<LineTripData> vsechnySpoje,
         List<LineSkupinaData> groups,
         SloupcovaMrizka mrizka, int nameIndex,
-        float headerH, float rowH, float pripojRowH, SKPaint gridPaint,
+        float headerH, float rowH, float pripojRowH,
+        SKPaint? sloupcovaCara, SKPaint? radkovaCara,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
         ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle,
         RenderContext ctx, SKTypeface symbolFace, float scale)
@@ -1275,20 +1409,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // skupiny pak začínala až o řádek níž - vypadalo to jako rámeček s chybějícím kusem
             // boku (nález Jan na vzoru 940).
             plan.Add(new(RowKind.GroupHeader, headerH, band)
-                { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+                { VerticalLinePaint = sloupcovaCara, LineBelowPaint = radkovaCara });
         }
 
         // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
         var headerSpecs = new List<ColumnRenderer.CellSpec>();
         PridejZrcadlene(headerSpecs, mrizka, zrcadlene.Count, headerResolved,
             ti => (zrcadlene[ti].CisloSpoje, tripHeaderStyle), tripHeaderStyle);
-        for (int ci = 0; ci < fixedCols.Count; ci++)
-            headerSpecs.Add(new(fixedCols[ci].Width, fixedCols[ci].Header, fixedCols[ci].HeaderStyle,
-                SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
+        foreach (var (index, sirka, text, styl) in NadpisyPopisnychSloupcu(fixedCols))
+            headerSpecs.Add(new(sirka, text, styl, SuppressLeadingLine: BezCaryVlevo(index, mrizka)));
         PridejSpoje(headerSpecs, mrizka, trips.Count, headerResolved,
             ti => (trips[ti].CisloSpoje, tripHeaderStyle));
         plan.Add(new(RowKind.Header, headerH, headerSpecs)
-            { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+            { VerticalLinePaint = sloupcovaCara, LineBelowPaint = radkovaCara });
 
         // řádky turnusů - jeden na turnus, hned pod čísly spojů a **nad** řádkem platnosti.
         // Tak je řadí i starý modul: jeho indexy řádků jdou číslo spoje (1) → turnusy (1.001xx)
@@ -1300,26 +1433,26 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             plan.Add(new(RowKind.HeaderExtra, rowH,
                 TripTextRow(mrizka, trips, zrcadlene, tripDataStyle,
                     t => tr < t.Turnusy.Count ? t.Turnusy[tr] : ""))
-            { VerticalLinePaint = gridPaint });
+            { VerticalLinePaint = sloupcovaCara });
         }
 
-        // řádek platnosti (znaky X/6/7/+ nad spojem)
-        if (HasPlatnostRow(vsechnySpoje))
+        // řádky platnosti (znaky X/6/7/+ nad spojem) - nejvýš dvě značky na řádek, zbytek pod něj
+        for (int pr = 0; pr < PocetRadkuPlatnosti(vsechnySpoje); pr++)
         {
             // Značky se kreslí ručně nad hotovým řádkem, aby šel v jedné buňce střídat symbolový
             // a běžný font („⚒ BEV"). Buňky proto zůstávají prázdné - jinak by se text zdvojil.
             var platnostRuns = trips
-                .Select(t => SymbolRunRenderer.BuildRuns(t.Platnost, SymbolMap.ResolveLinkovy))
+                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy))
                 .ToList();
             // Zrcadlený blok má svoje značky platnosti - bez nich by jeho sloupce neřekly, ve které
             // dny spoj jede, a to je informace, ne ozdoba.
             var platnostRunsZrc = zrcadlene
-                .Select(t => SymbolRunRenderer.BuildRuns(t.Platnost, SymbolMap.ResolveLinkovy))
+                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy))
                 .ToList();
             var prazdne = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, rowH, prazdne)
             {
-                VerticalLinePaint = gridPaint,
+                VerticalLinePaint = sloupcovaCara,
                 // `DrawRows` kreslí buňky od X prvku, takže i ruční kreslení musí začít tam.
                 Decorate = rowY =>
                 {
@@ -1331,11 +1464,23 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             });
         }
 
-        // řádek NZ (negativní značky)
+        // řádek NZ (negativní značky) - kreslí se ručně, protože jde o inverzní box, ne o text
         if (HasNzRow(vsechnySpoje))
-            plan.Add(new(RowKind.HeaderExtra, rowH,
-                TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, t => t.Nz))
-            { VerticalLinePaint = gridPaint, LineBelowPaint = gridPaint });
+        {
+            var prazdneNz = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
+            plan.Add(new(RowKind.HeaderExtra, rowH, prazdneNz)
+            {
+                VerticalLinePaint = sloupcovaCara,
+                LineBelowPaint = radkovaCara,
+                Decorate = rowY =>
+                {
+                    DrawNegativniZnacky(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
+                        mrizka.SirkaSpojeMm, trips, tripDataStyle, scale);
+                    DrawNegativniZnacky(ctx, rowY, rowH, ti => X + mrizka.XZrcadlenehoMm(ti),
+                        mrizka.SirkaZrcadlenehoMm, zrcadlene, tripDataStyle, scale);
+                },
+            });
+        }
 
         // řádky zastávek (+ vložené přípojné řádky)
         var poradiSOdjezdem = PoradiSOdjezdem(
@@ -1395,7 +1540,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             plan.Add(new(RowKind.Data, rowH, specs)
             {
                 Background = ColorHex.ParseOrNull(rowHl),
-                VerticalLinePaint = gridPaint,
+                VerticalLinePaint = sloupcovaCara,
                 Decorate = (znackyRadku.Count == 0) && (znackyVBunceZrc.Count == 0)
                         && (znakZastavky.Count == 0) ? null : rowY =>
                 {
@@ -1431,7 +1576,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                         ti => (ReferenceEquals(trips[ti], spoj) ? pr.Cas : "", pripojStyle));
 
                     plan.Add(new(RowKind.SubRow, pripojRowH, prSpecs)
-                    { VerticalLinePaint = gridPaint, LineAbovePaint = gridPaint, LineBelowPaint = gridPaint });
+                    { VerticalLinePaint = sloupcovaCara, LineAbovePaint = radkovaCara, LineBelowPaint = radkovaCara });
                 }
             }
         }
@@ -1533,6 +1678,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             float leftMm = xSpojeMm(i);
             var cellMm = new SKRect(leftMm, rowTopMm, leftMm + sirkaSpojeMm(i), rowTopMm + rowH);
             SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style), runs, style, symbolFace, scale);
+        }
+    }
+
+    /// <summary>Nakreslí negativní značky do sloupců spojů - inverzně, viz
+    /// <see cref="NegativniZnackaRenderer"/>.</summary>
+    private static void DrawNegativniZnacky(RenderContext ctx, float rowTopMm, float rowH,
+        Func<int, float> xSpojeMm, Func<int, float> sirkaSpojeMm,
+        List<LineTripData> trips, ResolvedTextStyle style, float scale)
+    {
+        for (int i = 0; i < trips.Count; i++)
+        {
+            if (trips[i].Nz.Length == 0) continue;
+            float leftMm = xSpojeMm(i);
+            var cellMm = new SKRect(leftMm, rowTopMm, leftMm + sirkaSpojeMm(i), rowTopMm + rowH);
+            NegativniZnackaRenderer.DrawCell(
+                ctx, CellLayout.ApplyPadding(cellMm, style), trips[i].Nz, style, scale);
         }
     }
 
@@ -1687,6 +1848,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ShowNzRow = ShowNzRow,
             ShowPripojeRows = ShowPripojeRows,
             PadEmptyColumns = PadEmptyColumns,
+            RozdelitZonyDoSloupcu = RozdelitZonyDoSloupcu,
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
             PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
@@ -1721,6 +1883,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
         new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
+        new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = "Sloupce",
+            Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = "Sloupce",
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },

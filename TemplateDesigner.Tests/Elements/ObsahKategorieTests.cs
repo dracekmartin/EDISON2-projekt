@@ -90,4 +90,57 @@ public class ObsahKategorieTests
         Assert.Contains(NoteCategories.OdjezdKola, hidden);
         Assert.Contains(NoteCategories.OdjezdMistenka, hidden);
     }
+
+    // ── Písmena variant tras ────────────────────────────────────────────────────
+    // Vysvětlením písmene je záhlaví variantního sloupce, ne řádek legendy. Bez toho sloupce se
+    // písmeno nemá čím vysvětlit a legenda ho navíc vysvětlí cizím textem, protože řady písmen
+    // variant a rozdílů tras se dnes kryjí (nález na zákaznické vývěsce linky 111).
+
+    /// <summary>Sloupec Varianty tras je u nového prvku viditelný z výroby, takže nové šablony
+    /// písmena tisknou dál. Kdyby se ten výchozí stav změnil, spadne tenhle test.</summary>
+    [Fact]
+    public void ZapnutySloupecVariant_PismenaSeTisknou()
+    {
+        var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(new StopListElement()));
+
+        Assert.DoesNotContain(NoteCategories.VariantaTrasy, hidden);
+    }
+
+    /// <summary>Skrytý sloupec Varianty tras písmena u minut zhasne. Přesně tohle je stav šablon
+    /// převedených migrací 1.7.0 → 1.8.0, které sloupec zapnutý nedostaly.</summary>
+    [Fact]
+    public void SkrytySloupecVariant_PismenaSeNetisknou()
+    {
+        var seznam = new StopListElement();
+        seznam.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = false;
+
+        var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(seznam));
+
+        Assert.Contains(NoteCategories.VariantaTrasy, hidden);
+    }
+
+    /// <summary>Dva seznamy zastávek: stačí, když sloupec má jeden z nich - jinak by druhý
+    /// (např. zúžený na názvy) umlčel písmena celé vývěsky. Stejné pravidlo jako u bloků poznámek.</summary>
+    [Fact]
+    public void StaciJedenSeznamZastavekZDvou()
+    {
+        var bezVariant = new StopListElement();
+        bezVariant.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = false;
+
+        var hidden = NoteVisibilityFilter.HiddenContentCategories(
+            Sablona(bezVariant, new StopListElement()));
+
+        Assert.DoesNotContain(NoteCategories.VariantaTrasy, hidden);
+    }
+
+    /// <summary>Šablona bez seznamu zastávek (jen minuty odjezdů) písmena netiskne - vysvětlení
+    /// tam nemá kde vzniknout (rozhodnutí Jan 2026-09-02). U přestupů je to naopak, tam značka
+    /// dává smysl i bez seznamu zastávek.</summary>
+    [Fact]
+    public void SablonaBezSeznamuZastavek_PismenaSeNetisknou()
+    {
+        var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(new DepartureGridElement()));
+
+        Assert.Contains(NoteCategories.VariantaTrasy, hidden);
+    }
 }

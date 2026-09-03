@@ -242,4 +242,42 @@ public class TemplateMigratorTests
             "Migrace bez vlastní třídy testů: " + string.Join(", ", without)
             + ". Založ <NázevMigrace>Tests (převod + idempotence + odolnost proti poškozené šabloně).");
     }
+
+    /// <summary>
+    /// Každá napsaná migrace musí být v produkčním seznamu.
+    /// </summary>
+    /// <remarks>
+    /// Vlastní testy migrace ji volají <b>přímo</b>, takže nezapojená migrace zůstane zelená -
+    /// ověřeno mutací 1. 9. (migrace vyřazená ze seznamu, celá sada 1355/1355 prošla). Zákazníkovi
+    /// by se přitom šablona nemigrovala vůbec, tedy přesně to, čemu má migrace předejít.
+    /// </remarks>
+    [Fact]
+    public void KazdaMigrace_JeVProdukcnimSeznamu()
+    {
+        var napsane = typeof(TemplateMigrator).Assembly.GetTypes()
+            .Where(t => t is { IsAbstract: false, IsInterface: false }
+                        && typeof(ITemplateMigration).IsAssignableFrom(t))
+            .Select(t => t.Name)
+            .ToList();
+
+        Assert.NotEmpty(napsane);   // prázdno = reflexe zrezivěla, ne že migrace nejsou
+
+        var zapojene = new TemplateMigrator().Migrations.Select(m => m.GetType().Name).ToHashSet(StringComparer.Ordinal);
+        var chybejici = napsane.Where(m => !zapojene.Contains(m)).ToList();
+
+        Assert.True(chybejici.Count == 0,
+            "Migrace není v seznamu v TemplateMigrator, takže se na šablonu nikdy nespustí: "
+            + string.Join(", ", chybejici));
+    }
+
+    /// <summary>Řetěz migrací musí být spojitý - žádná verze nesmí chybět ani se opakovat.</summary>
+    [Fact]
+    public void SeznamMigraci_TvoriSpojityRetezKAktualniVerzi()
+    {
+        var migrace = new TemplateMigrator().Migrations.ToList();
+        var verze = migrace.Select(m => m.FromVersion).ToList();
+
+        Assert.Equal(verze.Distinct().Count(), verze.Count);   // dvě migrace ze stejné verze = jedna se přeskočí
+        Assert.Equal("1.0.0", verze[0]);
+    }
 }

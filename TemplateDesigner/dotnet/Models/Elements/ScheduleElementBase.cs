@@ -40,8 +40,15 @@ public abstract class ScheduleElementBase : TemplateElement
     public static ResolvedTextStyle ScheduleHeaderDefaults => CellDefaults.Default with
     {
         FontSize = 9f, Bold = true,
-        BackgroundColor = "#FFE0E0E0", TextColor = "#FF000000",
+        TextColor = "#FF000000",
     };
+
+    /// <summary>
+    /// Podbarvení záhlaví, které dostane <b>nově vložený</b> prvek. Zapisuje se do prvku, není to
+    /// záloha kaskády - jinak by nešlo rozlišit „nechal jsem to být" od „nechci žádné pozadí"
+    /// a vymazání barvy by se po uložení vrátilo (nález Pavel 1. 9., #13158).
+    /// </summary>
+    public const string NoveZahlaviPozadi = "#FFE0E0E0";
 
     /// <summary>Výchozí baked-in styl datových buněk pro JŘ elementy (8pt; font z dokumentového defaultu).</summary>
     public static ResolvedTextStyle ScheduleDataDefaults => CellDefaults.Default with
@@ -52,8 +59,12 @@ public abstract class ScheduleElementBase : TemplateElement
     /// <summary>Výchozí styl datových buněk (font, velikost). Per-column TextStyle cascaduje od tohoto.</summary>
     public TextStyle DataStyle { get; set; } = new();
 
-    /// <summary>Výchozí styl záhlaví. Per-column TextStyle cascaduje od tohoto, tohle pak od <see cref="ScheduleHeaderDefaults"/>.</summary>
-    public TextStyle HeaderStyle { get; set; } = new();
+    /// <summary>
+    /// Výchozí styl záhlaví. Per-column TextStyle cascaduje od tohoto, tohle pak od
+    /// <see cref="ScheduleHeaderDefaults"/>. Podbarvení nese <b>zapsané</b>
+    /// (<see cref="NoveZahlaviPozadi"/>), aby se vymazaná barva nevracela zpátky.
+    /// </summary>
+    public TextStyle HeaderStyle { get; set; } = new() { BackgroundColor = NoveZahlaviPozadi };
 
     /// <summary>Mřížka = vnitřní čáry prvku. Vnější obrys je rámeček elementu (viz <see cref="GridStyle"/>).</summary>
     public GridStyle Grid { get; set; } = new() { ShowColumnLines = true };
@@ -189,7 +200,9 @@ public abstract class ScheduleElementBase : TemplateElement
         var (dashMm, gapMm) = LineElement.GetDefaultDashPattern(Grid.Style);
         return new(
             ColorHex.ParseOrBlack(Grid.Color),
-            ColorHex.Parse(HeaderStyle.BackgroundColor, "#FFE0E0E0"),
+            // Pozadí přes kaskádu a ParseOrTransparent: prázdná hodnota znamená „nekreslit nic",
+            // ne „vezmi zálohu". Zálohou by se vymazané podbarvení vrátilo zpátky na šedou.
+            ColorHex.ParseOrTransparent(HeaderStyle.Resolve(ScheduleHeaderDefaults).BackgroundColor),
             ColorHex.Parse(HeaderStyle.TextColor, ColorHex.Black),
             gridStrokePx: ComputeGridStrokePx(ctx),
             gridDashPx: ctx.Px(dashMm),

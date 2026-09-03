@@ -47,6 +47,34 @@ public sealed record SheetLayoutOptions
     /// (per-agenda persistovaná imposice jinak uživatele překvapí „proč mám půlku stránek").</summary>
     public string ShortLabel => $"imposice {Rows}×{Cols} na list {SheetWidth:0}×{SheetHeight:0} mm";
 
+    /// <summary>
+    /// Hláška, když skládání na list **nic neskládá** (mřížka 1×1), nebo null když skládá.
+    /// Poradí otočený list, pokud by na něj šlo víc stránek.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Tohle je past, na kterou zákazník najel a hlásil ji jako chybu tisku (#13158): šablona A5
+    /// na výšku a list „A4 na výšku" dají mřížku 1×1, protože dva A5 na výšku (2 × 148 mm) se do
+    /// šířky A4 na výšku (210 mm) nevejdou. Výsledkem je A4 s jednou vývěskou uprostřed - papír se
+    /// jen zvětšil. Volba se navíc **persistuje per agenda**, takže o ní uživatel nemusí vědět;
+    /// bez hlášky nemá jak zjistit, proč mu z A5 šablony leze A4.
+    /// </remarks>
+    public string? VarovaniBezEfektu()
+    {
+        if (SlotsPerSheet > 1) return null;
+
+        string zaklad = $"Uspořádání na list nic neskládá: na list {SheetWidth:0}×{SheetHeight:0} mm "
+                      + $"se vejde jen jedna stránka {PageWidth:0.#}×{PageHeight:0.#} mm";
+
+        // Vejde se víc na otočený list? Pak je to ta rada, kterou uživatel potřebuje.
+        int otoceneRadky = (int)(SheetWidth / PageHeight);
+        int otoceneSloupce = (int)(SheetHeight / PageWidth);
+        if (otoceneRadky >= 1 && otoceneSloupce >= 1 && otoceneRadky * otoceneSloupce > 1)
+            return zaklad + $". Na list {SheetHeight:0}×{SheetWidth:0} mm (otočený) se vejdou "
+                          + $"{otoceneRadky * otoceneSloupce}";
+
+        return zaklad + " - buď uspořádání vypněte, nebo zvolte větší list";
+    }
+
     /// <summary>X souřadnice svislých ořezových čar (všechny hranice sloupců vč. krajních) v mm.</summary>
     public IEnumerable<float> CutLinesX => Enumerable.Range(0, Cols + 1).Select(i => BlockOriginX + i * PageWidth);
 

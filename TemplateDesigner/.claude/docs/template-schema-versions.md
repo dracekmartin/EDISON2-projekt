@@ -188,6 +188,23 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   Vkládá se **skrytá** a před sloupec zastávek, tedy tam, kde ji má starý modul; skrytá proto, že
   migrace nesmí změnit vzhled hotové šablony (týž důvod jako u 1.8.0).
 
+- **1.10.0** `MigrationKonecnaZastavka` (2026-08-31, #13158) - pole `POPIS_SMER` přejmenováno na
+  `KONECNA_ZASTAVKA` (a `POPIS_SMER_CIS` na `KONECNA_ZASTAVKA_CIS`). Důvod je uživatelský: zákazník
+  hledal „název cílové zastávky" a nenašel ho, protože se pole jmenovalo „Konečná směru" - přitom
+  ukazuje na tutéž zastávku jako „CIS číslo cílové zastávky". ⚠️ Přejmenováno **načisto**, staré pole
+  nezůstalo jako alias, takže migrace je jediné, co drží existující šablony funkční - přepisuje
+  `columns[].field` i zástupce `{POPIS_SMER}` ve všech textech a výrazech. Hranice tokenu chrání
+  `{POPIS_SMER_CIS}` před půlkou náhrady.
+
+- **1.11.0** `MigrationZahlaviPozadi` (2026-09-01, #13158) - podbarvení záhlaví se **zapisuje do
+  prvku** (`headerStyle.backgroundColor`), místo aby ho dodávala zapečená záloha kaskády. Uživatel
+  vymazal výchozí šedou u záhlaví poznámek a ta se vrátila; šedá totiž v prvku nikdy nebyla, takže
+  prázdná hodnota znamenala „nic neurčuji, vezmi zálohu", ne „žádné pozadí" - a ty dva stavy nešlo
+  odlišit. ⚠️ Záloha se zrušila (`ScheduleHeaderDefaults`, `TableHeaderParent`), takže **bez migrace
+  by záhlaví zbledlo každému**, kdo si barvu nikdy nenastavoval. Migrace dopisuje tutéž barvu, jakou
+  dřív dávala záloha: `#FFE0E0E0` prvkům jízdních řádů, `#FFE8E8E8` tabulkám. Prvek s vlastní
+  hodnotou se nechává být **včetně prázdné** - prázdno už znamená vědomé „bez podbarvení".
+
 ---
 
 ## Operational notes

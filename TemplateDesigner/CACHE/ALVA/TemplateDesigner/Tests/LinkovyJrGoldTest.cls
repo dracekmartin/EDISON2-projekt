@@ -46,7 +46,10 @@ Method TestGold0330510()
 	// Re-baseline 2026-08-28 (`L6b`, směr u spoje): každý spoj nese `SMER`, aby u obousměrné
 	// stránky prvek poznal, kam sloupec patří. ⚠️ **Mění se JEN md5** - počty do jednoho shodné,
 	// tedy přesně ten případ „nové pole", který popisuje docstring třídy.
-	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=X3xinKnEy8CvEPzcOrhjKg==")
+	// Re-baseline 2026-08-31 (#13158): pole POPIS_SMER přejmenováno na KONECNA_ZASTAVKA. Linkového
+	// JŘ se týká **jen to přejmenování** - obsah pole ani skládání dat se nezměnily, takže parita
+	// se starým tiskem zůstává nedotčená. Mění se jen md5, počty jsou shodné.
+	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=zPUK3i5R6Z2s9i0fYewPlg==")
 }
 
 /// Druhý tvar: bez skupin dnů, zdvojené řádky příjezd/odjezd, šest km sloupců.
@@ -74,7 +77,8 @@ Method TestGold0330511()
 	// stejně jako starý modul.
 	// Baseline 2026-08-19 (`L1`) - dtto.
 	// Re-baseline 2026-08-28 (`L6b`, směr u spoje) - ⚠️ **mění se JEN md5**, počty shodné.
-	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=MNZR0q2rIB6L18E/1utZPQ==")
+	// Re-baseline 2026-08-31 (#13158) - přejmenování POPIS_SMER, viz gold 0330510. Jen md5.
+	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=KAsUv3xDMGZwe/pPRi9lmA==")
 }
 
 /// Třetí tvar, jiná firma: největší linka jádra (99 spojů, 53 na stránku, osm km sloupců).
@@ -100,7 +104,8 @@ Method TestGold0410107()
 	// pořadí sloupců, ne ztracená data. Porovnání se starým modulem je u pořadí spojů teď 7/7.
 	// Baseline 2026-08-19 (`L1`).
 	// Re-baseline 2026-08-28 (`L6b`, směr u spoje) - ⚠️ **mění se JEN md5**, počty shodné.
-	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=XU87/+W0+i2oktxVzKJ9Eg==")
+	// Re-baseline 2026-08-31 (#13158) - přejmenování POPIS_SMER, viz gold 0330510. Jen md5.
+	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=leCHwU7aiAn9DpZhLbxwDw==")
 }
 
 /// Čtvrtý tvar: 109 spojů na **jediné** stránce (jeden směr), bez zón a bez sloupce MHD.
@@ -129,7 +134,8 @@ Method TestGold0945001()
 	// stejně jako starý modul.
 	// Baseline 2026-08-19 (`L1`).
 	// Re-baseline 2026-08-28 (`L6b`, směr u spoje) - ⚠️ **mění se JEN md5**, počty shodné.
-	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=7+SNWxgeP1PPJSbv40c0Wg==")
+	// Re-baseline 2026-08-31 (#13158) - přejmenování POPIS_SMER, viz gold 0330510. Jen md5.
+	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=+GoXgHiKOpjvRFWyU7e9SQ==")
 }
 
 /// Ověří digest jedné linky proti očekávané hodnotě. Rozlišuje:

@@ -36,6 +36,20 @@ ClassMethod Norm(s As %String) As %String
 	quit t
 }
 
+/// Klíč poznámky pro porovnání: `druh~znak~text`, ale **useknutý na délku, kterou unese subscript**.
+///
+/// ⚠️ Bez useknutí to celé porovnání linky **spadne** (`&lt;SUBSCRIPT&gt;`, limit 511 bytů): poznámky
+/// linky bývají několik odstavců přepravních podmínek a jako klíč pole se tam nevejdou. Padalo to
+/// až na lince, která takovou poznámku má, takže do 31. 8. si toho nikdo nevšiml a linka se tvářila
+/// jako neporovnaná. Zbytek textu se nezahazuje - nese ho délka v klíči, takže rozdíl v konci textu
+/// se pořád pozná.
+ClassMethod KlicPoznamky(druh As %String, znak As %String, text As %String) As %String
+{
+	set t = ..Norm(text)
+	quit:$length(t)'>180 druh_"~"_znak_"~"_t
+	quit druh_"~"_znak_"~"_$extract(t, 1, 180)_"… (délka "_$length(t)_")"
+}
+
 /// Je starý modul na tomto serveru vůbec k dispozici?
 ClassMethod OracleDostupny() As %Boolean
 {
@@ -44,7 +58,7 @@ ClassMethod OracleDostupny() As %Boolean
 
 /// Spustí legacy `mkPLinWin` nad jednou linkou. 0 = starý modul nebo firma na serveru není.
 /// Výstup zůstane v globálu `GLB`; hlavička linky v `out("dta",...)`.
-ClassMethod SpustLegacy(db As %String, sku As %String, lin As %String, deleni As %Integer, ByRef out, turnusy As %Boolean = 0) As %Boolean
+ClassMethod SpustLegacy(db As %String, sku As %String, lin As %String, deleni As %Integer, ByRef out, turnusy As %Boolean = 0, poznRezim As %Integer = 1) As %Boolean
 {
 	kill out
 	quit:'..OracleDostupny() 0
@@ -54,7 +68,11 @@ ClassMethod SpustLegacy(db As %String, sku As %String, lin As %String, deleni As
 	kill in
 	set in("A",2,"arr",3) = deleni       // dělení sloupců na skupiny dnů (shodné s naším parametrem)
 	set in("A",2,"arr",6) = +turnusy     // tisk turnusů ke spojům (náš TURNUSY_KE_SPOJUM)
-	set in("A",2,"arr",4) = 2            // poznámky souhrnně na konec - jeden blok legendy, ne per směr
+	// Kam starý modul dá poznámky - a tím i **v jakém rozsahu počítá spoje** ve větách atributů:
+	// 1 = blok na směr (počítá spoje směru), 2 = jeden blok na konec (počítá celou linku).
+	// Náš model = jedna stránka na směr s vlastní legendou, tedy 1; výchozí 2 je tu z dob, kdy se
+	// poznámky porovnávaly jako jedna množina za linku (`L14`).
+	set in("A",2,"arr",4) = poznRezim
 	set in("A",2,"arr",13) = 0           // bez dorovnání prázdnými sloupci (to je layout, řeší L5)
 
 	// Šířky sloupců v „měřicích znacích": bereme délku měřicího řetězce z číselníku starého modulu.
@@ -128,10 +146,10 @@ ClassMethod Bunka(idobj As %String, radek As %String, sloupec As %String) As %St
 /// `("km", sm, radek)`, `("zona", sm, radek)`, `("mhd", sm, radek)`, `("pozn", klic)`.
 /// Řádek je **pořadové číslo zastávkového řádku** v rámci směru - obě strany ho počítají stejně,
 /// takže případný posun je sám o sobě nález.
-ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As %Integer, ByRef n) As %Boolean
+ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As %Integer, ByRef n, poznRezim As %Integer = 1) As %Boolean
 {
 	kill n
-	quit:'..SpustLegacy(db, sku, lin, deleni, .legOut) 0
+	quit:'..SpustLegacy(db, sku, lin, deleni, .legOut, 0, poznRezim) 0
 
 	// Hlavička: text dopravce drží legacy v out("dta",10,1) - viz Dump.
 	set n("dopravce") = ..Norm($get(legOut("dta", 10, 1)))
@@ -161,7 +179,7 @@ ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As
 					quit:ti=""
 					set text = text _ $select(text="":"", 1:" ") _ $get(@glb@(idobj, "dta", pi, "txt", ti))
 				}
-				set klic = druh_"~"_znak_"~"_..Norm(text)
+				set klic = ..KlicPoznamky(druh, znak, text)
 				set n("pozn", klic) = $get(n("pozn", klic)) + 1
 			}
 			continue
@@ -327,7 +345,7 @@ ClassMethod NactiNase(ByRef n)
 			while ip.%GetNext(.k, .r) {
 				// Poznámky linky nese náš wire jako jeden text s „#" mezi odstavci, starý modul
 				// jako samostatné řádky. Srovnáním na mezeru se porovnává obsah, ne způsob dělení.
-				set klic = r.%Get("DRUH")_"~"_r.%Get("ZNAK")_"~"_..Norm($translate(r.%Get("TEXT"), "#", " "))
+				set klic = ..KlicPoznamky(r.%Get("DRUH"), r.%Get("ZNAK"), $translate(r.%Get("TEXT"), "#", " "))
 				set n("pozn", klic) = $get(n("pozn", klic)) + 1
 			}
 		}
@@ -424,7 +442,7 @@ ClassMethod DuvodOdchylky(ByRef odch, kat As %String, klic As %String, legHodnot
 /// `res(kat, "odchylka")` = kolik rozdílů kryje deklarovaná odchylka, `res(kat, "prvni")` = první
 /// nekrytý rozdíl v čitelném tvaru. `res("odchylkaKlic", kat, klic)` = kolikrát se která odchylka
 /// uplatnila (podklad pro kontrolu, že v registru neleží mrtvý záznam).
-ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, ByRef res) As %Boolean
+ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, ByRef res, poznRezim As %Integer = 1) As %Boolean
 {
 	kill res
 	quit:'..OracleDostupny() 0
@@ -437,7 +455,13 @@ ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, B
 	do ..NactiNase(.nase)
 	// Dělení 2 = výchozí hodnota našeho parametru „Dělení spojů dle platnosti"; obě strany musí
 	// dostat totéž, jinak by se porovnávaly jiné sestavy.
-	quit:'..NactiLegacy(db, sku, lin, 2, .leg) 0
+	//
+	// ⚠️ **Poznámky se berou v režimu „blok na směr"** (`poznRezim` = 1), protože tak vypadá i náš
+	// výstup: jedna stránka na směr, legenda na ní. Do 31. 8. se starý modul pouštěl v režimu
+	// „jeden blok za celou linku" a ve větách atributů pak počítal spoje přes obě strany - porovnání
+	// z toho dělalo **falešný rozdíl** („spoje 2, 4 s bezbariérovým vozidlem" × „všechny spoje…"),
+	// který vypadal jako naše chyba. Nebyl - byly to dvě různé sestavy vedle sebe (`L14`).
+	quit:'..NactiLegacy(db, sku, lin, 2, .leg, poznRezim) 0
 
 	do ..ZnameOdchylky(.odch)
 	set kontext = db_"~"_lin
@@ -579,6 +603,8 @@ ClassMethod Souhrn(ByRef sys As %String) As %Status
 	try {
 		$$$FillParams
 		set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+		// Režim poznámek starého modulu; 1 = jako náš výstup (blok na směr), 2 = jeden blok za linku.
+		set poznRezim = $select($get(^||ML("IN","POZNAMKY"))'="":+$get(^||ML("IN","POZNAMKY")), 1:1)
 		kill pripady
 		if lin '= "" {
 			set pripady(1) = db_"~"_sku_"~"_lin
@@ -591,7 +617,7 @@ ClassMethod Souhrn(ByRef sys As %String) As %Status
 			set i = $order(pripady(i))
 			quit:i=""
 			set d = $piece(pripady(i),"~",1), s = $piece(pripady(i),"~",2), l = $piece(pripady(i),"~",3)
-			if '..Porovnej(.sys, d, s, l, .res) {
+			if '..Porovnej(.sys, d, s, l, .res, poznRezim) {
 				set radky($increment(radky)) = d_" "_l_" SKIP (starý modul nebo firma tu není)"
 				continue
 			}
@@ -822,6 +848,81 @@ ClassMethod PoradiSpoju(ByRef sys As %String) As %Status
 			quit:idx=""
 			set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
 		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Načte obě strany jedné linky (starý modul i nás) do `leg` / `nase`. 0 = nešlo to.
+/// Pořadí je závazné: naše strana první, legacy běh přepisuje `^||ML`.
+ClassMethod NactiObeStrany(ByRef sys, db As %String, sku As %String, lin As %String, ByRef leg, ByRef nase, poznRezim As %Integer = 1) As %Boolean
+{
+	kill leg, nase, parametry
+	quit:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) 0
+	do ..NactiNase(.nase)
+	quit ..NactiLegacy(db, sku, lin, 2, .leg, poznRezim)
+}
+
+/// Věty atributů spoje (poznámky druhu 5) jedné linky: `vety(klic) = text`, z klíčů `5~klic~text`.
+ClassMethod VetyAtributu(ByRef pozn, ByRef vety)
+{
+	kill vety
+	set klic = ""
+	for  {
+		set klic = $order(pozn("pozn", klic))
+		quit:klic=""
+		continue:$piece(klic, "~", 1)'=5
+		set vety($piece(klic, "~", 2)) = $piece(klic, "~", 3, 999)
+	}
+}
+
+/// **Poznámky obou stran vedle sebe** - doklad, že se konkrétní věta porovnala, ne jen že
+/// souhrn nehlásí rozdíl.
+///
+/// `Souhrn` říká „29 porovnáno, 0 rozdílů", což je silné tvrzení jen tehdy, když se ví, že hledaná
+/// věta mezi těch 29 patřila. Bez toho se stejně tak může jednat o větu, kterou **nemá ani jedna
+/// strana**. Sonda nic nemění.
+///
+/// IN: `DB`, `SKU`, `LIN`, `FILTR` (nepovinný podřetězec klíče, např. „POS" nebo „IDS").
+/// OUT(n) = "shoda | jen legacy | jen my  ~  druh~znak~text"
+ClassMethod PoznamkyVedleSebe(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+		set filtr = $get(^||ML("IN","FILTR"))
+		// Musí se přečíst **teď** - načtení naší strany ^||ML přepíše.
+		set poznRezim = $select($get(^||ML("IN","POZNAMKY"))'="":+$get(^||ML("IN","POZNAMKY")), 1:1)
+		kill parametry, nase, leg
+		if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) {
+			kill ^||ML
+			set ^||ML("OUT","SOUHRN") = "SKIP: linku "_lin_" se nepodařilo načíst"
+			ret $$$OK
+		}
+		do ..NactiNase(.nase)
+		if '..NactiLegacy(db, sku, lin, 2, .leg, poznRezim) {
+			kill ^||ML
+			set ^||ML("OUT","SOUHRN") = "SKIP: starý modul nebo firma "_db_" tu není"
+			ret $$$OK
+		}
+		kill ^||ML, vsechny
+		set klic = ""
+		for  { set klic = $order(leg("pozn", klic))  quit:klic=""  set vsechny(klic) = "" }
+		set klic = ""
+		for  { set klic = $order(nase("pozn", klic))  quit:klic=""  set vsechny(klic) = "" }
+		set klic = "", shoda = 0, jenLeg = 0, jenNase = 0
+		for  {
+			set klic = $order(vsechny(klic))
+			quit:klic=""
+			set vLeg = (+$get(leg("pozn", klic)) > 0), vNase = (+$get(nase("pozn", klic)) > 0)
+			if vLeg && vNase { set stav = "shoda", shoda = shoda + 1 }
+			elseif vLeg { set stav = "JEN LEGACY", jenLeg = jenLeg + 1 }
+			else { set stav = "JEN MY", jenNase = jenNase + 1 }
+			continue:(filtr'="")&&(klic'[filtr)
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = stav_"  ~  "_klic
+		}
+		set ^||ML("OUT","SOUHRN") = "shoda="_shoda_" jenLegacy="_jenLeg_" jenMy="_jenNase
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret $$$OK

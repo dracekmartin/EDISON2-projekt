@@ -18,7 +18,7 @@ Include GENERAL
 /// Názvy polí sdílí se zastávkovým JŘ (tam, kde jde o tutéž věc) - hlídá AgendaSchemaDriftTests.
 ///
 ///   values: CISLO_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
-///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), POPIS_SMER,
+///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), KONECNA_ZASTAVKA,
 ///           VYCHOZI_ZASTAVKA
 ///   rows.ZASTAVKY:    [{ PORADI, TYP ("zastavka" hlavní/odjezdový řádek | "prijezd" vložený
 ///                        příjezdový u zastávek s atributem P/J), CZST, NAZEV_ZASTAVKY, TC, ZONY,
@@ -58,10 +58,16 @@ Parameter Variant As %String = "AD";
 
 Parameter VariantLabel As %String = "AD (linková doprava)";
 
-/// ⚠️ **Zveřejněná pro uživatele od 24. 8.** (žádost Jan) - do té doby se agenda v nabídce
-/// vůbec neukázala, takže na ni nešlo ani překliknout a nebylo jak zkoušet linkový tisk.
-/// Městská varianta (`LinkovyJrMhd`) zveřejněná **není**: neprošla porovnáním se starým modulem.
-Parameter Released = 1;
+/// ⚠️ **Zveřejněná byla od 24. 8., od 1. 9. je zase skrytá** (rozhodnutí Jan): vydává se verze,
+/// ve které mají být jen zastávkové jízdní řády. Linkový tisk je funkční a testy na něj běží dál -
+/// jen se nenabízí uživatelům, dokud se nevydá.
+///
+/// ⚠️ **Skrytí neznepřístupní hotové šablony.** Výběr agendy nezveřejněnou agendu nenabízí, ale
+/// **aktuální agendu šablony ukáže vždy**, a v otevírání z databáze jsou její šablony dosažitelné
+/// přes „Všechny agendy". Prvek linkové tabulky zmizí z palety sám - váže se na druh agendy `LINE`.
+///
+/// Městská varianta (`LinkovyJrMhd`) zveřejněná nebyla nikdy: neprošla porovnáním se starým modulem.
+Parameter Released = 0;
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 
@@ -93,7 +99,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
     d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
-    d ..AddField(fields, "POPIS_SMER",            "Konečná směru",            "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
     s def.fields = fields
 
@@ -175,6 +181,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s p.name = "DELENI_SLOUPCU"
     s p.label = "Dělení spojů dle platnosti"
     s p.type = "enum"
+    s p.group = "Tabulka linky"
+    s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku tabulky - tady se jen ukáže, že ho šablona má."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Bez rozlišení")
     d opts.%Push("Pracovní dny / víkend+svátky")
@@ -185,7 +193,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d opts.%Push("Vlastní rozložení")
     d p.%Set("options", opts)
     s p.defaultValue = "Pracovní dny / Soboty / Neděle+svátky"
-    d arr.%Push(p)
 
     // Sloupec tarifních čísel: nastavení je u linky (`PATCH,netisknoutSloupecTC`, zapnuto na 377
     // linkách), ale uživatel ho má jít přebít. Výchozí volba je proto **konstanta** „Automaticky
@@ -197,7 +204,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pTc.name         = "SLOUPEC_TC"
     s pTc.label        = "Sloupec tarifních čísel"
     s pTc.type         = "enum"
-    s pTc.group        = "Linkový JŘ"
+    s pTc.group        = "Tabulka linky"
     s pTc.defaultValue = "Automaticky (dle linky)"
     s pTc.description  = "Zda se tiskne sloupec tarifních čísel. Automaticky = podle nastavení u linky v jízdních řádech; volbou Tisknout nebo Netisknout se to dá přebít pro tuhle sestavu."
     s optsTc = ##class(%DynamicArray).%New()
@@ -205,7 +212,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d optsTc.%Push("Tisknout")
     d optsTc.%Push("Netisknout")
     s pTc.options = optsTc
-    d arr.%Push(pTc)
 
     // Zastávky, na kterých žádný spoj nestaví: nastavení u linky
     // (`PATCH,tisknoutJenTcKdeSpojeZastavuji`, zapnuto na 362 linkách) ubírá řádky, takže je
@@ -214,7 +220,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBez.name         = "ZASTAVKY_BEZ_ZASTAVENI"
     s pBez.label        = "Zastávky, kde žádný spoj nestaví"
     s pBez.type         = "enum"
-    s pBez.group        = "Linkový JŘ"
+    s pBez.group        = "Tabulka linky"
     s pBez.defaultValue = "Automaticky (dle linky)"
     s pBez.description  = "Zda se v tabulce objeví i zastávky, na kterých žádný spoj linky nestaví (jen je projíždí nebo jedou jinudy). Automaticky = podle nastavení u linky v jízdních řádech."
     s optsBez = ##class(%DynamicArray).%New()
@@ -222,7 +228,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d optsBez.%Push("Tisknout")
     d optsBez.%Push("Netisknout")
     s pBez.options = optsBez
-    d arr.%Push(pBez)
 
     // Barvy spojů: barva je u spoje (3 926 spojů ji v datech má), linka ji umí potlačit
     // (`PATCH,barevnyTiskSpoju` = 1 → tisknout černě). Týž třístav.
@@ -230,7 +235,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBar.name         = "BARVY_SPOJU"
     s pBar.label        = "Barvy spojů"
     s pBar.type         = "enum"
-    s pBar.group        = "Linkový JŘ"
+    s pBar.group        = "Tabulka linky"
     s pBar.defaultValue = "Automaticky (dle linky)"
     s pBar.description  = "Zda se časy spoje tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Automaticky = podle nastavení u linky; Netisknout = celá tabulka černě."
     s optsBar = ##class(%DynamicArray).%New()
@@ -238,7 +243,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d optsBar.%Push("Tisknout")
     d optsBar.%Push("Netisknout")
     s pBar.options = optsBar
-    d arr.%Push(pBar)
 
     // Obousměrný tisk: oba směry na jedné sestavě (legacy in("A",2,"arr",7), JRapiLinPrtWin.mac:598).
     // ⚠️ Starý modul zrcadlo tiše VYPNE, když se společný blok nevejde na stránku bez řezu (:627).
@@ -250,10 +254,12 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pObou.name         = "OBOUSMERNY_TISK"
     s pObou.label        = "Obousměrný tisk"
     s pObou.type         = "bool"
-    s pObou.group        = "Linkový JŘ"
+    // „Obecné", ne „Tabulka linky": rozhoduje o složení celé sestavy (jestli vyjde jedna stránka
+    // nebo dvě), ne o vzhledu jednoho prvku. Že se promítne i do tabulky, platí skoro o každém
+    // parametru téhle agendy (rozhodnutí Jan 31. 8.).
+    s pObou.group        = "Obecné"
     s pObou.defaultValue = "false"
     s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuté = každý směr na vlastní stránce."
-    d arr.%Push(pObou)
 
     // ⚠️ **Turnusy ke spojům tu parametr NEJSOU** - je to volba prvku (šablony), stejně jako
     // v legacy, kde to je nastavení sekce v návrháři sestav. Klient posílá `TURNUSY_KE_SPOJUM`
@@ -279,7 +285,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d optsTvar.%Push("Zkrácený")
     d optsTvar.%Push("Typograficky upravený")
     s pTvar.options = optsTvar
-    d arr.%Push(pTvar)
 
     // Název pro MHD. Legacy ho bere jen u městských linek, které to mají zapnuté - tahle volba
     // umí navíc i to vypnout (stejně jako u vývěsky). Výchozí zapnuto = chování starého modulu.
@@ -290,7 +295,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pMhd.group        = "Obecné"
     s pMhd.defaultValue = "true"
     s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté; vypnutím se všude použije název podle CIS."
-    d arr.%Push(pMhd)
 
     // Zvýraznění zastávky, ze které se uživatel dívá (legacy `arr,5` + `arr,10`). Data řádek jen
     // **označí**, vzhled si řeší šablona pravidlem zvýraznění nad polem „Zvýrazněná zastávka" -
@@ -299,16 +303,31 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvZ.name         = "ZVYRAZNIT_ZASTAVKU"
     s pZvZ.label        = "Zvýraznit zastávku"
     s pZvZ.type         = "text"
-    s pZvZ.group        = "Linkový JŘ"
+    s pZvZ.group        = "Tabulka linky"
     s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. Projíždí-li linka město víckrát, označí se všechny jeho zastávky; jednu z nich vybere Zvýraznit tarifní číslo."
-    d arr.%Push(pZvZ)
 
     s pZvT = ##class(%DynamicObject).%New()
     s pZvT.name         = "ZVYRAZNIT_TC"
     s pZvT.label        = "Zvýraznit tarifní číslo"
     s pZvT.type         = "text"
-    s pZvT.group        = "Linkový JŘ"
+    s pZvT.group        = "Tabulka linky"
     s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
+
+    // ── pořadí, v jakém je uvidí uživatel ────────────────────────────────────────
+    // Skupiny se v tabu Parametry řadí podle **prvního výskytu** v tomhle poli, ne abecedně, takže
+    // se sem pushuje najednou a v pořadí, které má platit. „Obecné" je první schválně - je to
+    // nastavení celé sestavy, ne jednoho prvku (týž důvod i tvar jako u zastávkového JŘ).
+    // ⚠️ Každý parametr musí mít `group`. Bez ní ho `AddParamGroups` shodí do vlastní skupiny
+    // „Parametry sestavy" a uživatel uvidí osamocenou položku - přesně to potkalo `DELENI_SLOUPCU`
+    // do 31. 8. (`L12`).
+    d arr.%Push(pTvar)     // Obecné
+    d arr.%Push(pMhd)
+    d arr.%Push(pObou)
+    d arr.%Push(p)         // Tabulka linky - dělení spojů je nejdůležitější volba agendy
+    d arr.%Push(pTc)
+    d arr.%Push(pBez)
+    d arr.%Push(pBar)
+    d arr.%Push(pZvZ)
     d arr.%Push(pZvT)
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
@@ -555,7 +574,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     // ⚠️ U obousměrné stránky je směr **prázdný** - stránka nese oba a `SMER` u stránky by šablonu
     // navedl vytisknout jeden z nich jako by byl jediný. Směr každého spoje je na spoji;
-    // konce linky drží `VYCHOZI_ZASTAVKA` a `POPIS_SMER`.
+    // konce linky drží `VYCHOZI_ZASTAVKA` a `KONECNA_ZASTAVKA`.
     d vals.%Set("SMER",                   $s(obousmerne:"", 1:smer))
 
     // ── zastávkové řádky v pořadí směru (vč. zdvojení příjezd/odjezd u atributů P/J) ──
@@ -634,7 +653,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     i idx = 0 q ""
 
     d vals.%Set("VYCHOZI_ZASTAVKA", prvniNazev)
-    d vals.%Set("POPIS_SMER",       posledniNazev)
+    d vals.%Set("KONECNA_ZASTAVKA",       posledniNazev)
 
     // ── spoje směru: legacy mkPoradiSp řazení + zařazení do skupin dnů ──
     s spoje = ##class(%DynamicArray).%New()
@@ -1560,8 +1579,9 @@ ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %St
 /// - **zbytek** - generická vždy.
 ///
 /// ⚠️ **Našlo to porovnání se starým modulem** (21. 8.): u bezbariérového vozidla jsme posílali
-/// generickou větu i tam, kde starý modul vypisuje spoje. **U POS a IDS je oprava opsaná ze zdroje
-/// legacy, ale porovnáním neověřená** - na kontrolních linkách se ty dva atributy nevyskytly.
+/// generickou větu i tam, kde starý modul vypisuje spoje. **POS a IDS doloženy porovnáním 31. 8.**
+/// na jediných linkách v datech, kde se ty atributy vyskytují (`VS_CSAD 13/0883637` a `9/0240801`)
+/// - obě věty se se starým modulem shodují, viz `LinkovyJrAdLegacyTest.TestVetyAtributuProtiLegacy`.
 ClassMethod GenerickaVeta(klic As %String, patrSp As %String, bbpLinka As %Integer) As %Boolean
 {
     i (klic = "POS") || (klic = "IDS") q 0
@@ -1598,9 +1618,13 @@ ClassMethod GenerickaVeta(klic As %String, patrSp As %String, bbpLinka As %Integ
 /// má legacy **zadrátované ve zdroji**, zvlášť pro češtinu a slovenštinu. Zákazník je tedy upravit
 /// nemůže ani ve starém modulu - a slovenština funguje tím, že se vezme druhá sada.
 ///
-/// ⚠️ **Otevřené:** legacy počítá spoje přes **celou linku**, my přes stránku (jeden směr). Na
-/// jednosměrné lince to vyjde stejně; u obousměrné se to může rozejít v tom, kdy padne tvar
-/// „všechny spoje". Porovnání to zatím nenahlásilo.
+/// ⚠️ **Rozsah počítání spojů je stránka, a je to správně** (dořešeno 31. 8., dřív tu stálo, že
+/// legacy počítá přes celou linku a my jinak). Starý modul počítá **v rozsahu, ve kterém tiskne
+/// legendu**: má-li blok poznámek na směr, počítá spoje směru (`JRapiLinPrtWin` předá `in("sm")`),
+/// má-li jeden blok za linku, počítá obě strany. Náš model = stránka na směr s vlastní legendou,
+/// tedy první případ; u obousměrné stránky se spoje sčítají přes oba směry, což odpovídá druhému.
+/// Doloženo porovnáním na `VS_CSAD 24/0941210`, kde atribut mají všechny spoje směru Z, ale ne celé
+/// linky - obě strany tam říkají „všechny spoje".
 ClassMethod VetaAtributu(klic As %String, rec As %String = "CZ", znackaNadSpojem As %Boolean = 0, vycetSpoju As %String = "", pocetSpoju As %Integer = 0, spojuCelkem As %Integer = 0) As %String
 {
     s sablona = ..AtributSablona(klic, rec)

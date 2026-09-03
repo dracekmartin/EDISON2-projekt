@@ -64,7 +64,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
     d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
-    d ..AddField(fields, "POPIS_SMER",            "Konečná směru",            "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
     s def.fields = fields
 
@@ -374,7 +374,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         d zastavky.%Push(..BuildZastavkaRadek(body(i), "zastavka", i))
     }
     d vals.%Set("VYCHOZI_ZASTAVKA", $lg(body(1),3))
-    d vals.%Set("POPIS_SMER",       $lg(body(pocetBodu),3))
+    d vals.%Set("KONECNA_ZASTAVKA",       $lg(body(pocetBodu),3))
 
     // ── spoje směru: MakeTableSpoj → časy per řádek; skupiny = TypProvozu ──
     d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)

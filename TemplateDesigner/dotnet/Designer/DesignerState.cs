@@ -92,12 +92,20 @@ public class DesignerState
     private readonly Dictionary<Guid, List<TemplateElement>> _sortedByZIndexDesc = new();
     private readonly Dictionary<Guid, List<TemplateElement>> _sortedByZIndexAsc = new();
 
-    /// <summary>Vrátí elementy sekce seřazené sestupně podle ZIndex (pro hit testing).</summary>
+    /// <summary>
+    /// Vrátí elementy sekce v pořadí pro hit testing - tedy <b>přesně obráceně</b> než je kreslí
+    /// <see cref="GetElementsByZIndexAsc"/>.
+    /// </summary>
+    /// <remarks>
+    /// Musí to být obrácené kreslicí pořadí, ne `OrderByDescending`: řazení je stabilní, takže
+    /// při stejném ZIndex (nové elementy mají všechny 0) by vrátilo ten nejstarší, kdežto navrch
+    /// se kreslí ten nejnovější. Klik pak sáhl na element pod tím, který uživatel vidí.
+    /// </remarks>
     public List<TemplateElement> GetElementsByZIndexDesc(Section section)
     {
         if (_sortedByZIndexDesc.TryGetValue(section.Id, out var cached))
             return cached;
-        var sorted = section.Elements.OrderByDescending(e => e.ZIndex).ToList();
+        var sorted = Enumerable.Reverse(GetElementsByZIndexAsc(section)).ToList();
         _sortedByZIndexDesc[section.Id] = sorted;
         return sorted;
     }

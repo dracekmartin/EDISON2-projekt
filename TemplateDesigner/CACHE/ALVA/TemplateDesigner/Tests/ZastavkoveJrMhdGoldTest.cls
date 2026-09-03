@@ -21,17 +21,23 @@ Parameter GOLDIDFA = "CB_DP";
 
 Method TestGold1001()
 {
-	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=73PplNBN/vjhANqbR2nQig==")
+	// Re-baseline 2026-08-31 (#13158): POPIS_DOPRAVCE už není "Dopravce: <název>", ale dopravce
+	// s adresou a telefonem po řádcích (shodně s AD vývěskou); POPIS_SMER přejmenováno na
+	// KONECNA_ZASTAVKA. Obojí mění **jen md5** - počty stránek, zastávek, odjezdů i poznámek
+	// zůstaly shodné, tedy změněný obsah pole a přejmenování, ne změna chování.
+	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=KGK+F3O4Z7pULJmrSj4A4A==")
 }
 
 Method TestGold1003()
 {
-	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=pFmFvT2GZjyzIy36Ah26cA==")
+	// Re-baseline 2026-08-31 (#13158) - viz gold 1001. Jen md5, počty beze změny.
+	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=cV8udnnx+Otqcdv+f7IyeQ==")
 }
 
 Method TestGold1006()
 {
-	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=LM715KPkromb/H4vAMqdhw==")
+	// Re-baseline 2026-08-31 (#13158) - viz gold 1001. Jen md5, počty beze změny.
+	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=3sqsoCXQPZ3C4swYVfJypw==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

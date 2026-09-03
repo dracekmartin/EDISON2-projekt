@@ -205,4 +205,42 @@ public class NoteVisibilityFilterTests
         Assert.Equal(1, PocetAnotaci(result));
         Assert.Single(result.Rows["POZNAMKY"]);
     }
+
+    /// <summary>
+    /// Přesně ta situace ze zákaznické vývěsky: spoj jede variantou „E" a v legendě je „E" jako
+    /// rozdíl trasy („jede jen do zast. …"). Dokud šablona variantní sloupec nemá, čtenář si písmeno
+    /// spáruje s tím cizím textem. Vypnutá kategorie variant proto písmeno u minuty odebere, a řádek
+    /// legendy zůstane, protože patří jiné kategorii a svou vlastní značku má.
+    /// </summary>
+    [Fact]
+    public void BezVariantnihoSloupce_ZmiziPismenoUMinuty_NeCiziVysvetlivka()
+    {
+        var anotace = new JsonArray(new JsonObject
+        {
+            ["TYP"] = "text",
+            ["ZNAK"] = "E",
+            ["KATEGORIE"] = "varianta-trasy",
+            ["V_ROZSAHU_NEPOZNAMKOVAT"] = "0",
+        });
+        var poznamka = new DataContext(new Dictionary<string, object?>
+        {
+            ["TYP"] = "text",
+            ["ZNAK"] = "E",
+            ["TEXT"] = "jede jen do zast. Babice,Zvěřetice,rozc.1.0",
+            ["KATEGORIE"] = "rozdil-trasy",
+        });
+        var page = new DataContext(
+            new Dictionary<string, object?>(),
+            new Dictionary<string, IReadOnlyList<DataContext>>
+            {
+                ["ODJEZDY"] = [new DataContext(new Dictionary<string, object?> { ["ANOTACE"] = anotace })],
+                ["POZNAMKY"] = [poznamka],
+            });
+
+        var result = NoteVisibilityFilter.Apply(page, NoteRangeSuppression.ManualComment,
+            hiddenContent: new HashSet<string> { NoteCategories.VariantaTrasy });
+
+        Assert.Equal(0, PocetAnotaci(result));
+        Assert.Single(result.Rows["POZNAMKY"]);
+    }
 }

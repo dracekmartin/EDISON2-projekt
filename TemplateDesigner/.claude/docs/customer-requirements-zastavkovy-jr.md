@@ -81,6 +81,7 @@ mimo tabulku výše jsou linkové/knižní JŘ, nebo úplně mimo TD; **žádný
 
 | Ticket | Zákazník | Feature | Stav | Otestovat před zavřením | Detail |
 |---|---|---|---|---|---|
+| #13158 | BBSK | Vývěska na výšku dle vzoru - poznámky ke 4 bodům (31. 8.) | 🔄 **body 0-3 hotové 31. 8.** (formát stránky se dá změnit bez ztráty obsahu; dopravce s adresou po řádcích; „Konečná zastávka") · **bod 3 hotový 31. 8.** - náhled bez vybrané linky nově ukáže vlastní sloupce (posílá se definice ze šablony a cache je klíčovaná i jí); u linkového JŘ zůstává týž vzor otevřený, viz roadmapa „K ověření" · **bod 4 odložen** (piktogramy u zastávky) | Ověřit u zákazníka na jeho šabloně, hlavně tvar adresy dopravce | changelog 31. 8. (5) |
 | #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | - (zavřeno) | §E1 |
 | #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | - (zavřeno) | §D5/D6 |
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ **ZAVŘENO 30. 7. 2026** | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky") | §A6 |
@@ -173,6 +174,21 @@ odpovědi na případné znovuotevření/dotaz:
   uživatel × agenda, vlastnost je per šablona.
 
 ### 0.5 Parita a rozšíření - JEN na poptávku (přesunuto z roadmapy 29. 7.)
+
+- **Loď, wifi a zásuvka jako piktogram i ve vývěsce** (dřív `B99`, z roadmapy odstraněno 31. 8.).
+  Ve fontu jsou (180 / 186 / 179) a **linkový** JŘ je piktogramem kreslí. ⚠️ Vývěska je ale jiný
+  případ: její starý modul (`ALVA.TISKMHD.Main.ConvertSpecialniZnak`) zná jen dny, vozíček, částečnou
+  bezbariérovost a svátky - loď, wifi ani zásuvku **vůbec nemá**. Piktogram by tam tedy nebyl
+  dorovnáním starého tisku, ale novou featurou nad jeho rámec, a změnil by hotový tisk zákazníkům,
+  kteří o to nežádali. Práce je malá (jeden řádek v mapě značek), rozhodnutí není.
+
+- **Oddělená barva a tloušťka vodorovných × svislých čar mřížky** (dřív `L9-R3`, z roadmapy
+  odstraněno 31. 8. - rozhodnutí Jan). Dnes má mřížka jednu barvu, tloušťku i styl pro obojí;
+  zapnout/vypnout jednotlivé druhy čar už jde (`L10`, `L15`). ⚠️ **Nikdo o rozdělení nepožádal**
+  a vzor, kvůli kterému vlna `L9` vznikla (IDZK 940), ho nepotřebuje - má jen svislé čáry jednou
+  barvou, což umí. Kdyby se poptávka objevila, ví se rovnou i tvar řešení: `GridStyle` je sdílený
+  se všemi tabulkovými prvky, takže se to musí udělat pro všechny naráz, jinak se dvě tabulky
+  v téže šabloně nastavují jinak (rozhodnuto 26. 8.).
 
 Není to nedodělek, ale práce, která se vyplatí až s konkrétním zákazníkem - v aktivní roadmapě
 jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do hodiny, M = půl dne.

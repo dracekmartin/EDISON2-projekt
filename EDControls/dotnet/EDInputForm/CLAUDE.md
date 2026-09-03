@@ -43,6 +43,12 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
 - Setter `CacheClass` resetuje controller - příští `Init()` načte schema novou třídou.
 - Klientská validace: type-error má prioritu před required; type-check běží hned
   při setu Value.
+- **Číselné pole (`Number`/`Decimal`) mění při setu `Value` čárku na tečku** - uvnitř i na drátě je
+  hodnota vždy s tečkou, uživatel má ale na numerické klávesnici čárku. Čárka je **vždy desetinná**,
+  nikdy oddělovač tisíců (`NumberStyles.Float`, ne `Number`, jinak „1.500" projde jako 1500).
+  ⚠️ Bez toho se hodnota tiše zkomolila: kontrola brala „1,5" jako 15 a nezčervenala, kdežto host si
+  totéž přečetl jako neplatné a použil svůj fallback. Normalizuje i setter `FieldType`, protože
+  volající nemusí plnit typ před hodnotou.
 - Volitelný `List` dostane implicitní prázdnou položku, povinný ne.
 - `ComboBox` = editable s autocomplete (custom hodnota povolena, items jsou nápověda);
   `List` = strict enum. Renderuje se sdíleným `EDFilterComboBox`.

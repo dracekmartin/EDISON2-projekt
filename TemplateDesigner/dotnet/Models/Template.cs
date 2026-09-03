@@ -19,6 +19,22 @@ public class Template
     [JsonIgnore]
     public bool WasMigrated { get; set; }
 
+    /// <summary>
+    /// Tisková plocha, ke které se vztahují souřadnice prvků, než se sáhlo na formát stránky -
+    /// a jak moc je od té doby přeškálovaný a posunutý obsah. Transient, neserializuje se.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Bez tohohle je změna formátu <b>nevratná operace</b>: poměr „aby se to vešlo" vyjde při
+    /// otočení na výšku i na šířku stejně (0,686 u A4), takže se otočení tam a zpátky nevyruší,
+    /// ale vynásobí - obsah po dvou krocích skončí na 47 % a písmo z 12 pt na 5,6 pt (nález Jan
+    /// 31. 8. při zkoušení). Když se poměr počítá vždy od téhle výchozí plochy, návrat na původní
+    /// formát vyjde přesně, protože se obě zmenšení nikdy nenásobí.
+    /// <para>Jen po dobu, co je šablona otevřená (rozhodnutí Jan 31. 8.) - pokrývá to reálné
+    /// chování „zkouším formáty při návrhu". Uložit do šablony jde kdykoli aditivně.</para>
+    /// </remarks>
+    [JsonIgnore]
+    public PageFormatOrigin? FormatOrigin { get; set; }
+
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = "Nová šablona";
     public string Description { get; set; } = "";

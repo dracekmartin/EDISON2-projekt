@@ -35,6 +35,15 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### Týden od 31. 8. 2026 - Údaje dopravce po jednotlivých polích
+
+Název, adresa, telefon, e-mail a IČO dopravce jsou nově samostatná datová pole. Dosud šlo použít
+jen jedno pole, které všechny údaje slepilo dohromady a adresu vypsalo dvakrát - jednou u firmy
+a jednou u provozovny. Teď si na vývěsku poskládáte právě ty údaje, které chcete.
+
+Adresa je jedno pole včetně PSČ a obce, protože tak je uložená v číselníku dopravců. U linky
+s více dopravci nesou pole prvního z nich.
+
 ### 17. 8. 2026 - Písmeno varianty je u odjezdu vždy
 
 Když ze zastávky jedou spoje různými trasami, má každá trasa vlastní sloupec s časy a písmeno,

@@ -294,7 +294,7 @@ ZÁSADY (platí vždy, bez ohledu na konkrétní předlohu):
     private static string BuildReportParametersSection(string catalog) =>
         @"NASTAVENÍ SESTAVY (""templateParameters""):
 Volby tisku, které si jinak nastavuje uživatel. Vyplň JEN ty, jejichž hodnotu z obrázku bezpečně
-poznáš (typicky jestli jsou u zastávek šipky směru, nebo v jakém rozsahu hodin je mřížka odjezdů).
+poznáš (typicky jestli jsou u zastávek šipky směru, nebo v jakém rozsahu hodin jsou odjezdy).
 Volbu, která se na papíře nijak neprojeví, VYNECH - hodnota v šabloně přebije nastavení uživatele,
 takže špatný odhad je horší než nevyplněno.
 Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možností, u ano/ne ""true"" nebo ""false"".

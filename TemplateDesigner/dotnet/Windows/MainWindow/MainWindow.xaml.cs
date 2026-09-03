@@ -1459,9 +1459,9 @@ public partial class MainWindow : Window
         if (AgendaCapabilities.Supports(kind, ElementTypes.StopList))
             Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
-            Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
+            Add("Minuty odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
-            Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
+            Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
             Add("Linkový JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
 
@@ -1693,7 +1693,7 @@ public partial class MainWindow : Window
         Models.Elements.LineElement      => ("ALVA.TemplateDesigner.EDInputForm.LineElementEdit", "Vlastnosti čáry"),
         Models.Elements.RectangleElement   => ("ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit", "Vlastnosti obdélníku"),
         Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
-        Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
+        Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti poznámek"),
         Models.Elements.ImageElement       => ("ALVA.TemplateDesigner.EDInputForm.ImageElementEdit", "Vlastnosti obrázku"),
         // Pevná tabulka má jediný tab (bez sloupců a řádků) - strukturu i obsah dělá plátno.
         Models.Elements.TableElement       => ("ALVA.TemplateDesigner.EDInputForm.TableElementEdit", "Vlastnosti tabulky"),
@@ -1840,10 +1840,8 @@ public partial class MainWindow : Window
                 "Vlastnosti stránky") { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
-            // Změna velikosti / orientace stránky = reset (potvrzení → čisté plátno s novou velikostí).
-            // Zachovávat elementy přes změnu rozměrů se chovalo nepředvídatelně (elementy visely mimo
-            // stránku); reset je konzistentní se změnou agendy. Ostatní změny (okraje, kultura, font)
-            // se aplikují jako běžná undoable změna.
+            // Změna velikosti / orientace stránky přepočítá obsah na novou velikost (B104) - dřív
+            // šablonu vymazala. Ostatní změny (okraje, kultura, font) jdou jako běžná vratná změna.
             var fv = dlg.FinalValues;
 
             // Pojistka: dialog vrátil hodnoty, ale klíče rozměrů chybí → detekce resetu by tiše selhala.
@@ -1857,7 +1855,10 @@ public partial class MainWindow : Window
 
             if (dimsChanged)
             {
-                await _vm!.ResetForPageChangeAsync(fv!);   // reset si sám vyžádá refresh plátna/velikosti
+                if (!await _vm!.ChangePageFormatAsync(fv!)) return;
+                UpdateCanvasSize();
+                InvalidateCanvas();
+                InvalidatePreview();
                 return;
             }
 
@@ -2181,12 +2182,18 @@ public partial class MainWindow : Window
             _vm.DuplicateSelected(dir);
             e.Handled = true;
         }
+        // Shift = velikost, Ctrl = posun po mřížce, samotné šipky = posun o milimetr. Shift na
+        // velikosti je to, co uživatel zná ze starého návrháře; velký krok posunu tím zanikl,
+        // protože při výchozí mřížce 1 mm dělal totéž jako šipka samotná (rozhodnutí Jan 1. 9.).
         else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
                  && _vm.State.SelectedElements.Count > 0)
         {
-            _vm.MoveByKey(e.Key,
-                largeStep: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
-                fineStep:  Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
+            switch (TemplateDesignerViewModel.ResolveArrowAction(ctrl, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)))
+            {
+                case ArrowKeyAction.Resize: _vm.ResizeByKey(e.Key, gridStep: false); break;
+                case ArrowKeyAction.MoveByGrid: _vm.MoveByKey(e.Key, gridStep: true); break;
+                default: _vm.MoveByKey(e.Key, gridStep: false); break;
+            }
             e.Handled = true;
         }
         else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count == 1)
@@ -2293,7 +2300,7 @@ public partial class MainWindow : Window
 
         if (e.ClickCount == 2)
         {
-            var dblHit = _canvas.HitTestElement(cx, cy, cw);
+            var dblHit = _canvas.HitTestElementForClick(cx, cy, cw);
             if (dblHit is not null)
             {
                 var (dblSection, dblElement) = dblHit.Value;
@@ -2353,7 +2360,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var hit = _canvas.HitTestElement(cx, cy, cw);
+        var hit = _canvas.HitTestElementForClick(cx, cy, cw);
 
         // Hrana sloupce má přednost před výběrem buňky i před posunem prvku - myš na ní ukazuje
         // kurzor pro změnu šířky, takže uživatel míří na ni.
@@ -2689,7 +2696,8 @@ public partial class MainWindow : Window
             skCanvas.Cursor = GetResizeCursor(handleHit2.Value.Handle);
         else
         {
-            var elHit = _canvas.HitTestElement(cx, cy, cw);
+            // Táž cesta jako klik, aby kurzor předpovídal, co se stane (i u vybraného elementu pod jiným).
+            var elHit = _canvas.HitTestElementForClick(cx, cy, cw);
             skCanvas.Cursor = (elHit.HasValue && !elHit.Value.Element.IsLocked)
                 ? Cursors.SizeAll : Cursors.Arrow;
         }
@@ -2712,7 +2720,7 @@ public partial class MainWindow : Window
         float cx = (float)pos.X, cy = (float)pos.Y;
         float cw = (float)skCanvas.ActualWidth;
 
-        var hit = _canvas.HitTestElement(cx, cy, cw);
+        var hit = _canvas.HitTestElementForClick(cx, cy, cw);
         var menu = new ContextMenu();
 
         // Pravý klik na pevnou tabulku nabízí práci s řádky a sloupci - i když uživatel zrovna

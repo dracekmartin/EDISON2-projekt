@@ -1424,4 +1424,293 @@ ClassMethod TurnusyLinky(db As %String, sku As %String, lin As %String) As %Stri
 	quit txt
 }
 
+/// **Které linky s víc zónami jde vybrat ve výběru linek** (`N1`, ruční zkoušení).
+///
+/// ⚠️ Výběr linek si načte **prvních 200 linek skupiny** (`EDList.Instance` posílá `limit = 200`)
+/// a hledání pak filtruje jen je - linka za dvoustovkou se v dialogu nenajde, i když v datech je.
+/// Sonda proto prochází linky **v pořadí výběru** a vypíše jen ty, na které uživatel opravdu dosáhne.
+///
+/// IN: `SKUPINA` (výchozí 1), `POCET` (kolik linek výběr načte, výchozí 200).
+/// OUT(n) = "linka - název | zastávka: zóny", OUT("SOUHRN") = kolik z načtených jich má víc zón.
+ClassMethod ZonyVeVyberuLinek(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set sku = $get(^||ML("IN","SKUPINA"), 1)
+		set pocet = +$get(^||ML("IN","POCET"))
+		set:'pocet pocet = 200
+		kill ^||ML
+		set nactenych = 0, nalezeno = 0, lin = ""
+		for  {
+			set lin = $order(^[dataDB]JRL(sku, lin))
+			quit:lin=""
+			continue:'$data(^[dataDB]JRL(sku, lin, "I"))
+			set nactenych = nactenych + 1
+			quit:nactenych>pocet
+			set linIds = +$get(^[dataDB]JRL(sku, lin, "PATCH", "linIDS"))
+			continue:'((linIds = 1) || (linIds = 2))
+			set poradi = ""
+			for  {
+				set poradi = $order(^[dataDB]JRL(sku, lin, "J", poradi))
+				quit:poradi=""
+				set veta = $get(^[dataDB]JRL(sku, lin, "J", poradi))
+				set zona = $piece($piece(veta, ":", 5), "#", 2)
+				continue:'((zona [ ",") || (zona [ "/"))
+				set nalezeno = nalezeno + 1
+				set nazev = $piece($get(^[dataDB]JRL(sku, lin, "I")), "~", 1)
+				set txt = (+lin)_" - "_nazev_" | "_..NazevZastavkyProSondu(dataDB, $piece(veta,":",1))_": "_zona
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+				quit
+			}
+			quit:nalezeno'<10
+		}
+		set ^||ML("OUT","SOUHRN") = "z prvních "_nactenych_" linek výběru má víc zón "_nalezeno
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// **Kde má zastávka víc zón najednou a čím jsou v datech oddělené** (`N1`).
+///
+/// Zákazník chce každou zónu hraniční zastávky ve vlastním sloupci. Než se to začne dělit, musí se
+/// vědět, **jak to v datech vypadá** - kolik zón na zastávce bývá a jaký znak je odděluje; jinak by
+/// se dělilo podle domněnky. Zóny bere ze stejného místa jako tisk (trasa linky, pole zóny),
+/// **jen u linek, které zóny tisknou** (`linIDS`), aby se nepočítaly linky, kde se stejně neukážou.
+/// Sonda nic nemění.
+///
+/// OUT("ODDELOVACE") = které znaky se v hodnotách vyskytly a kolikrát,
+/// OUT(n) = ukázka "firma skupina linka zastávka: hodnota", OUT("SOUHRN") = počty.
+ClassMethod ZonyViceNaZastavce(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		// Musí se přečíst před `kill` - ten smaže i IN.
+		set jenZnak = $get(^||ML("IN","ZNAK"))
+		kill ^||ML, oddelovace
+		set ukazek = 0, sZonou = 0, viceZon = 0, linekSeZonami = 0
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					// linIDS 1 nebo 2 = linka zóny tiskne (viz BuildStrankaLinky)
+					set linIds = +$get(^[db]JRL(sku, lin, "PATCH", "linIDS"))
+					continue:'((linIds = 1) || (linIds = 2))
+					set linekSeZonami = linekSeZonami + 1
+					set poradi = ""
+					for  {
+						set poradi = $order(^[db]JRL(sku, lin, "J", poradi))
+						quit:poradi=""
+						set veta = $get(^[db]JRL(sku, lin, "J", poradi))
+						set zona = $piece($piece(veta, ":", 5), "#", 2)
+						continue:zona=""
+						set sZonou = sZonou + 1
+						// Který znak hodnotu dělí - hledá se mezi kandidáty, ne hádá se jeden.
+						set nalezen = ""
+						for zi = 1:1:$length(",;/|+ ") {
+							set znak = $extract(",;/|+ ", zi)
+							continue:zona'[znak
+							set oddelovace(znak) = $get(oddelovace(znak)) + 1
+							set:nalezen="" nalezen = znak
+						}
+						continue:nalezen=""
+						set viceZon = viceZon + 1
+						// IN ZNAK zúží ukázky na jeden oddělovač - vzácný tvar by se v ukázkách
+						// z prvních patnácti nálezů jinak neukázal.
+						continue:(jenZnak'="")&&(zona'[jenZnak)
+						continue:ukazek'<15
+						set ukazek = ukazek + 1
+						set czst = $piece(veta, ":", 1)
+						set ^||ML("OUT", $increment(^||ML("OUT"))) = db_" "_sku_" "_lin_" "_..NazevZastavkyProSondu(db, czst)_": ["_zona_"]"
+					}
+				}
+			}
+		}
+		set txt = "", znak = ""
+		for  {
+			set znak = $order(oddelovace(znak))
+			quit:znak=""
+			set txt = txt_$select(txt'="":", ", 1:"")_"["_znak_"] "_oddelovace(znak)_"×"
+		}
+		set ^||ML("OUT","ODDELOVACE") = $select(txt="":"žádný z kandidátů se nevyskytl", 1:txt)
+		set ^||ML("OUT","SOUHRN") = "linek se zónami "_linekSeZonami_", zastávek se zónou "_sZonou_", z toho s víc zónami "_viceZon
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Název zastávky pro výpis sondy (druhý „$"-díl záznamu zastávky = čitelný tvar s diakritikou).
+ClassMethod NazevZastavkyProSondu(db As %String, czst As %String) As %String
+{
+	quit $piece($get(^[db]JRZ(czst)), "$", 2)
+}
+
+/// **Na které lince by se rozešla věta „všechny spoje…"** podle toho, počítá-li se přes jeden směr,
+/// nebo přes celou linku (`L14` bod 1).
+///
+/// Věta atributu má dva tvary: „**všechny** spoje s bezbariérovým vozidlem", když ho mají všechny
+/// spoje, a výčet „spoje 3, 7 …", když jen některé. Rozhodující je tedy poměr *spojů s atributem*
+/// ku *všem spojům* - a ten vyjde jinak, počítá-li se v rámci jednoho směru, nebo přes obě.
+/// Sonda hledá linky, kde ty dva výpočty **dají jiný tvar věty**; jen na takové lince má smysl
+/// pouštět porovnání se starým modulem. Nic nemění.
+///
+/// OUT(n) = "firma skupina linka ATRIBUT: T x/y Z x/y (celkem x/y)", OUT("SOUHRN") = počet nálezů.
+ClassMethod AtributyRozhodujiciLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set klice = "POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu"
+		set pozice = "12,14,15,16,17,18,19,20,21,22,23,25,26"
+		set nalezeno = 0
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					kill pocty, celkem
+					for smerIdx = 1:1:2 {
+						set smer = $piece("T,Z", ",", smerIdx)
+						continue:'$data(^[db]JRL(sku, lin, smer))
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set hlava = $piece($get(^[db]JRL(sku, lin, smer, sp)), "#", 1)
+							continue:hlava=""
+							set celkem(smer) = $get(celkem(smer)) + 1
+							for ai = 1:1:13 {
+								continue:'+$piece(hlava, ":", $piece(pozice, ",", ai))
+								set klic = $piece(klice, ",", ai)
+								set pocty(klic, smer) = $get(pocty(klic, smer)) + 1
+							}
+						}
+					}
+					// Obousměrná linka = spoje v obou směrech; jinak se ty dva výpočty ani lišit nemohou.
+					continue:'($get(celkem("T")) && $get(celkem("Z")))
+					set celkemObe = celkem("T") + celkem("Z")
+					set klic = ""
+					for  {
+						set klic = $order(pocty(klic))
+						quit:klic=""
+						// Atribut s generickou větou se počtu spojů nedotkne - věta výčet nemá,
+						// takže rozsah počítání u něj nic nezmění a do hledání nepatří.
+						set patrSp = $get(^[db]JRSET("Definice","PAtrSp"))
+						set bbpLinka = +$get(^[db]JRL(sku,lin,"PATCH","TZPA","BBP"))
+						continue:##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GenerickaVeta(klic, patrSp, bbpLinka)
+						set pT = +$get(pocty(klic, "T")), pZ = +$get(pocty(klic, "Z"))
+						set vseSmer = ((pT = celkem("T")) || (pZ = celkem("Z")))
+						set vseLinka = ((pT + pZ) = celkemObe)
+						continue:vseSmer=vseLinka
+						set nalezeno = nalezeno + 1
+						set txt = db_" skupina "_sku_" linka "_lin_" "_klic_": T "_pT_"/"_celkem("T")
+						set txt = txt_" Z "_pZ_"/"_celkem("Z")_" (celkem "_(pT+pZ)_"/"_celkemObe_")"
+						set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+					}
+				}
+			}
+		}
+		set ^||ML("OUT","SOUHRN") = "linek, kde by se tvar věty rozešel: "_nalezeno
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// **Na které lince jsou vidět atributy spoje** (občerstvení, zásilky, radiobus, samoobslužný,
+/// nízkokapacitní vůz, …) - podklad pro ruční ověření tisku.
+///
+/// Atributy leží v hlavičce spoje `^JRL(sku,lin,smer,sp)` jako příznaky v pozicích oddělených
+/// dvojtečkou; mapování pozic je v `LinkovyJrAd.BuildSpoj`. Sonda **nic nemění**, jen počítá,
+/// kolik spojů linky má který atribut, a vypíše první nalezené linky.
+///
+/// OUT(n) = "firma skupina linka: ATRIBUT×počet …", OUT("SOUHRN") = kolik linek má který atribut.
+ClassMethod AtributySpojuVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		set klice = "POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu"
+		set pozice = "12,14,15,16,17,18,19,20,21,22,23,25,26"
+		set nalezeno = 0
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					kill pocty
+					// ⚠️ Směr je písmeno („T" tam / „Z" zpět), ne číslo - filtr na číslo tu
+					// mlčky přeskočil úplně všechno a sonda hlásila „nikde nic".
+					for smerIdx = 1:1:2 {
+						set smer = $piece("T,Z", ",", smerIdx)
+						continue:'$data(^[db]JRL(sku, lin, smer))
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set hlava = $piece($get(^[db]JRL(sku, lin, smer, sp)), "#", 1)
+							continue:hlava=""
+							for ai = 1:1:13 {
+								set klic = $piece(klice, ",", ai)
+								continue:'+$piece(hlava, ":", $piece(pozice, ",", ai))
+								set pocty(klic) = $get(pocty(klic)) + 1
+							}
+						}
+					}
+					continue:'$data(pocty)
+					set nalezeno = nalezeno + 1
+					set k = ""
+					for  {
+						set k = $order(pocty(k))
+						quit:k=""
+						set souhrn(k) = $get(souhrn(k)) + 1
+						// Příklad se drží ten s nejvíc spoji - na něm je atribut nejlíp vidět.
+						if pocty(k) > +$piece($get(priklad(k)), "~", 1) {
+							set priklad(k) = pocty(k)_"~"_db_" skupina "_sku_" linka "_lin
+						}
+					}
+				}
+			}
+		}
+		for ai = 1:1:13 {
+			set klic = $piece(klice, ",", ai)
+			if '$data(souhrn(klic)) {
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = klic_": nikde"
+				continue
+			}
+			set txt = klic_": "_souhrn(klic)_" linek, nejvíc "_$piece(priklad(klic), "~", 1)
+			set txt = txt_" spojů na "_$piece(priklad(klic), "~", 2)
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+		}
+		set ^||ML("OUT","SOUHRN") = "linek s aspoň jedním atributem: "_nalezeno
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 }

@@ -24,14 +24,19 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Obecné" ──────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
+        // Zapínadlo záhlaví sedí v Obecném jako u zastávek; jeho vzhled je ve skupině Záhlaví.
+        // Klíč HeaderBar, ne ShowHeader: ten u zastávek a tabulek znamená záhlaví SLOUPCŮ, které
+        // legenda nemá. Stejný klíč se dvěma popisky hlídá drift test.
+        s f = form.AddBool("ShowHeaderBar", "Záhlaví", 1)
+        s f.helpText = "Vypnuté záhlaví se nekreslí ani s podbarvením a nezabírá výšku - poznámky pak začínají u horní hrany prvku."
 
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
-        d form.AddText("HeaderText", "Nadpis", "Poznámky")
-        // Default musí sedět na baked kaskádu (ScheduleHeaderDefaults) - jinak formulář ukazuje
-        // jinou barvu, než se tiskne.
+        d form.AddText("HeaderText", "Text záhlaví", "Poznámky")
+        // Pozadí BEZ výchozí hodnoty - podbarvení si prvek nese sám, takže pole má ukázat jeho
+        // hodnotu. Výchozí barva by se vracela do vymazaného pole a vypadalo by to, že vymazání
+        // neplatí (nález Pavel 1. 9.). Prázdno = bez podbarvení.
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFE0E0E0"
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
@@ -49,11 +54,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddFieldToLastGroup("DataStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
         s f = form.AddText("NoteSeparator", "Oddělovač", " - ")
         s f.helpText = "Vloží se mezi značku a popis u vlastních poznámek linky. U ikonových atributů (na znamení, bezbariér) se nepoužívá."
-        d form.AddDecimal("NoteFontSize", "Velikost poznámek", 7, 4, 20, "pt", "0.#")
-        d form.AddDecimal("NoteLineHeight", "Výška řádku", 4, 2, 15, "mm")
 
-        // ── Skupina "Rozložení" (sloupce / řazení / zarovnání markeru) ────
+        // ── Skupina "Rozložení" (velikost / sloupce / řazení / zarovnání markeru) ────
+        // Velikost a výška řádku patří sem, ne mezi barvy buněk - uživatel je hledá spolu s počtem
+        // sloupců (nález Pavel 1. 9.). Popisky i skupina musí souhlasit s C# descriptory (drift test).
         d form.AddGroup("layout", "Rozložení")
+        s f = form.AddDecimal("NoteFontSize", "Velikost poznámek", 7, 4, 20, "pt", "0.#")
+        s f.helpText = "Velikost písma poznámek. Nevejdou-li se poznámky do prvku, písmo se zmenší a aplikace to oznámí ve stavovém řádku."
+        s f = form.AddDecimal("NoteLineHeight", "Výška řádku", "", 2, 15, "mm")
+        s f.helpText = "Prázdné = podle velikosti písma. Vlastní hodnotu zadejte, jen když chcete poznámky vzdušnější nebo stlačenější."
         d form.AddNumber("Columns", "Počet sloupců", 1, 1, 4)
         s f = form.AddFieldToLastGroup("WrapSmer", "Směr plnění", $$$FieldTypeList, 0, 0)
         d f.AddListItem("PoSloupcich", "Po sloupcích"), f.AddListItem("PoRadcich", "Po řádcích")

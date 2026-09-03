@@ -167,6 +167,7 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 ColumnDataWarning = null;   // badge patří k zahozeným datům
+                ContentShrinkWarning = null;
                 _realPreviewIndex = 0;
                 Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
@@ -291,6 +292,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
                 ColumnDataWarning = null;
+                ContentShrinkWarning = null;
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
@@ -298,6 +300,11 @@ public class TemplateDesignerViewModel : EDViewModel
                 var culture = GetTemplateCulture();
                 var newData = pages.Select(d => d.WithCulture(culture)).ToList();
                 ColumnDataWarning = DepartureColumnWarnings.Summarize(newData);
+                // Malý kód a zmenšené písmo jsou táž třída vady („vytiskne se to jinak, než jak to
+                // vypadá") a sdílí jeden odznak - čtvrtý pruh ve stavovém řádku už by se nevešel.
+                ContentShrinkWarning = SpojHlasky(
+                    ContentShrinkWarnings.Summarize(State.CurrentTemplate, newData),
+                    BarcodeSizeWarnings.Summarize(State.CurrentTemplate, newData));
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
                 // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
                 var currentPage = (keepPage && _realPreviewData is not null
@@ -464,16 +471,42 @@ public class TemplateDesignerViewModel : EDViewModel
         _realPreviewData is null ? []
         : _realPreviewData.Select(BuildPreviewPageLabel).ToList();
 
-    /// <summary>Popisek stránky dat pro combobox: „N - zastávka → směr" z polí stránky
-    /// (POPIS_ZASTAVKA / POPIS_SMER - zastávkový JŘ), fallback „Stránka N" pro agendy bez nich.</summary>
+    /// <summary>
+    /// Popisek stránky dat pro nabídku stránkování - podle toho, co je na stránce.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Zastávkový JŘ</b> = stránka je zastávka × směr → „N - zastávka → konečná".
+    /// Pozná se podle <c>POPIS_ZASTAVKA</c>, které linkové agendy neposílají.</para>
+    /// <para><b>Linkový JŘ</b> = stránka je celá linka → „N - výchozí → konečná". ⚠️ Do 31. 8. tady
+    /// spadl na „Stránka N" <b>u každé</b> stránky, ne jen u obousměrné: popisek se stavěl výhradně
+    /// z <c>POPIS_ZASTAVKA</c>, a to pole linkový JŘ nemá ve schématu vůbec. Uživatel pak v nabídce
+    /// nepoznal, na který směr se dívá.</para>
+    /// <para><b>Obousměrná stránka</b> nese oba směry naráz a <c>SMER</c> je u ní vědomě prázdné
+    /// (`LinkovyJrAd.cls` kolem ř. 559) - to ji spolehlivě odliší, takže dostane obousměrnou šipku
+    /// a není na ni potřeba nové pole na drátě.</para>
+    /// <para>Když stránka nenese ani jedno, zůstává „Stránka N" (agendy typu faktur).</para>
+    /// </remarks>
     public static string BuildPreviewPageLabel(DataContext page, int index)
     {
+        int cislo = index + 1;
+        var konecna = page.GetString("KONECNA_ZASTAVKA").Trim();
+
+        // Zastávkový JŘ
         var zastavka = page.GetString("POPIS_ZASTAVKA").Trim();
-        if (zastavka.Length == 0) return $"Stránka {index + 1}";
-        var smer = page.GetString("POPIS_SMER").Trim();
-        return smer.Length == 0
-            ? $"{index + 1} - {zastavka}"
-            : $"{index + 1} - {zastavka} → {smer}";
+        if (zastavka.Length > 0)
+            return konecna.Length == 0 ? $"{cislo} - {zastavka}" : $"{cislo} - {zastavka} → {konecna}";
+
+        // Linkový JŘ
+        var vychozi = page.GetString("VYCHOZI_ZASTAVKA").Trim();
+        if (vychozi.Length > 0 && konecna.Length > 0)
+        {
+            string sipka = page.GetString("SMER").Trim().Length == 0 ? "↔" : "→";
+            return $"{cislo} - {vychozi} {sipka} {konecna}";
+        }
+        if (vychozi.Length > 0) return $"{cislo} - {vychozi}";
+        if (konecna.Length > 0) return $"{cislo} - {konecna}";
+
+        return $"Stránka {cislo}";
     }
 
     private RelayCommand? _prevPage, _nextPage;
@@ -583,6 +616,25 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
+
+    private string? _contentShrinkWarning;
+    /// <summary>Prvky, jimž se zmenšilo písmo, aby se obsah vešel. Null = nic → odznak je skrytý.
+    /// Táž třída vady jako <see cref="FontWarning"/>: vytiskne se něco jiného, než co je nastavené,
+    /// a bez hlášky to uživatel pozná až z papíru.</summary>
+    public string? ContentShrinkWarning
+    {
+        get => _contentShrinkWarning;
+        private set { if (Set(ref _contentShrinkWarning, value)) OnPropertyChanged(nameof(HasContentShrinkWarning)); }
+    }
+
+    public bool HasContentShrinkWarning => !string.IsNullOrEmpty(_contentShrinkWarning);
+
+    /// <summary>Spojí neprázdné hlášky do jedné; vše prázdné = null (odznak skrytý).</summary>
+    private static string? SpojHlasky(params string?[] hlasky)
+    {
+        var neprazdne = hlasky.Where(h => !string.IsNullOrEmpty(h)).ToList();
+        return neprazdne.Count == 0 ? null : string.Join("; ", neprazdne);
+    }
 
     private string? _fontWarning;
     /// <summary>Fonty, které šablona chce a počítač je nemá. Null = nic → badge je skrytý.
@@ -766,11 +818,20 @@ public class TemplateDesignerViewModel : EDViewModel
         // Startovní agenda - priorita: (1) EDISONMAIN2 kontrakt (inputParam "Agenda=<kód>" dle
         // uzlu stromu shellu / MHD2 tlačítka), (2) poslední použitá agenda uživatele (per-user
         // prefs), (3) fallback ze CreateSampleTemplate. Neznámý kód se přeskočí.
-        string? ResolveKnown(string? code) => code is null ? null
+        string? ResolveKnown(string? code, bool jenZverejnene) => code is null ? null
             : resolvedAgendas.FirstOrDefault(a =>
-                string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase))?.Code;
-        var startAgenda = ResolveKnown(startupAgendaCode)
-                          ?? ResolveKnown(preferences?.MainState?.LastAgendaCode);
+                string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase)
+                && (!jenZverejnene || a.Released))?.Code;
+        // ⚠️ Poslední použitá agenda se obnoví jen když je ZVEŘEJNĚNÁ. Bez té podmínky se skrytá
+        // agenda vrátila každému, kdo ji kdy vyzkoušel: uložila se do preferencí, po startu se
+        // obnovila jako agenda šablony a výběr ji pak ukázal (tam se aktuální agenda zobrazuje
+        // vždy, aby šly otevřít hotové šablony). Skrytí linkových JŘ se tím dalo obejít
+        // pamětí aplikace - nález Jan 1. 9. při kontrole před vydáním.
+        //
+        // Kód z launch kontraktu shellu filtr NEmá: to je explicitní příkaz zvenčí a případná
+        // skrytá agenda tam znamená chybu konfigurace shellu, ne zapamatovaný stav uživatele.
+        var startAgenda = ResolveKnown(startupAgendaCode, jenZverejnene: false)
+                          ?? ResolveKnown(preferences?.MainState?.LastAgendaCode, jenZverejnene: true);
         if (startAgenda is not null) State.CurrentTemplate.AgendaCode = startAgenda;
 
         RebuildSections();
@@ -984,7 +1045,12 @@ public class TemplateDesignerViewModel : EDViewModel
         // Snapshot zapisuje až ÚSPĚŠNÝ fetch (RefreshDataForCurrentInstanceAsync) - kdyby se
         // zapsal tady a fetch spadl, další kontroly by se tvářily, že data definici odpovídají.
         if (CurrentWireSnapshot() == _lastColumnsDefinitionSnapshot) return;
-        if (CurrentActiveInstance is not null) _ = RefreshDataForCurrentInstanceAsync(keepPage: true);
+        if (CurrentActiveInstance is not null) { _ = RefreshDataForCurrentInstanceAsync(keepPage: true); return; }
+
+        // Bez vybrané instance běží náhled na ukázkových datech - ta se musí přenačíst taky, jinak
+        // uživatel vidí staré rozvržení a myslí si, že vlastní sloupce nefungují (#13158).
+        // Prefetch se sám vrátí, když už je vzorek pro tuhle definici v cache.
+        _ = PrefetchMockDataAsync(State.CurrentTemplate.AgendaCode ?? "");
     }
 
     /// <summary>
@@ -1202,36 +1268,87 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Potvrzení destruktivní změny velikosti/orientace stránky. Změna vždy vymaže obsah a založí
-    /// čisté plátno, proto se ptáme i u uložené šablony (jinak by ConfirmUnsavedChanges u čisté
-    /// šablony vrátil true bez ptaní → tichá ztráta obsahu). Neuložené změny → Save/Discard/Cancel.
+    /// Jak se má naložit s obsahem při změně formátu stránky.
     /// </summary>
-    public async Task<bool> ConfirmPageResetAsync()
+    public enum PageFormatContent
     {
-        if (IsDirty)
-            return await ConfirmUnsavedChangesAsync();
-        return PopupDisplayer.Confirm(
-            "Změna velikosti nebo orientace stránky vymaže obsah šablony a založí čisté plátno. Pokračovat?");
+        /// <summary>Přepočítat prvky na novou velikost.</summary>
+        Rescale,
+
+        /// <summary>Změnit jen stránku, velikosti prvků nechat.</summary>
+        Keep,
+
+        /// <summary>Uživatel změnu zrušil.</summary>
+        Cancel,
     }
 
     /// <summary>
-    /// Reset šablony po změně velikosti/orientace stránky: potvrzení → čisté plátno s novou
-    /// velikostí. Zachová agendu (PageEdit ji needituje); převezme velikost/okraje/kulturu/font
-    /// z hodnot dialogu (klíč = property path na Template). Vrátí false pokud uživatel reset zrušil.
+    /// Zeptá se, co s obsahem při změně formátu stránky.
     /// </summary>
-    public async Task<bool> ResetForPageChangeAsync(IReadOnlyDictionary<string, string> pageFields)
+    /// <remarks>
+    /// ⚠️ Sdílený dialog má tlačítka Ano/Ne/Storno napevno, takže význam musí nést text otázky -
+    /// akční popisky by znamenaly sáhnout do EDControls a publikovat i druhou aplikaci.
+    /// Prázdná šablona se neptá vůbec: není co přeškálovat.
+    /// </remarks>
+    public PageFormatContent AskPageFormatContent()
     {
-        if (!await ConfirmPageResetAsync()) return false;
+        if (State.CurrentTemplate.Sections.All(sec => sec.Elements.Count == 0))
+            return PageFormatContent.Rescale;
 
-        var agenda = State.CurrentTemplate.AgendaCode;
-        ReplaceWithBlankTemplate(agenda, configure: t =>
+        const string otazka =
+            "Změnili jste formát stránky. Má se obsah šablony přepočítat na novou velikost?";
+        const string ano =
+            "Ano - prvky se zvětší nebo zmenší podle nové stránky; jejich nastavení zůstane";
+        const string ne =
+            "Ne - změní se jen stránka, velikosti prvků zůstanou beze změny";
+        string zprava = otazka + Environment.NewLine + Environment.NewLine
+            + ano + Environment.NewLine + ne;
+
+        return PopupDisplayer.ConfirmYesNoCancel(zprava,
+            "Změna formátu stránky") switch
         {
-            foreach (var (key, val) in pageFields)
-                if (ElementPropertyAccessor.Exists(t, key))
-                    ElementPropertyAccessor.Set(t, key, val);
-        });
+            true => PageFormatContent.Rescale,
+            false => PageFormatContent.Keep,
+            _ => PageFormatContent.Cancel,
+        };
+    }
+
+    /// <summary>
+    /// Změna velikosti/orientace stránky se <b>zachováním obsahu</b>: prvky se přepočítají na novou
+    /// velikost, jejich nastavení se nemění. Vrátí false, když uživatel změnu zrušil.
+    /// </summary>
+    /// <remarks>
+    /// Dřív se šablona v tomhle místě vymazala a založila prázdná - viz <see cref="ChangePageFormatCommand"/>,
+    /// proč to tak bylo a co se změnilo. Zůstává to jako **jeden vratný krok**, takže Ctrl+Z vrátí
+    /// rozměr stránky i obsah najednou.
+    /// </remarks>
+    public async Task<bool> ChangePageFormatAsync(IReadOnlyDictionary<string, string> pageFields)
+    {
+        var volba = AskPageFormatContent();
+        if (volba == PageFormatContent.Cancel) return false;
+
+        var t = State.CurrentTemplate;
+        var ps = t.PageSize;
+        var plan = volba == PageFormatContent.Rescale
+            ? PageFormatChange.Plan(t,
+                MmFromFields(pageFields, "PageSize.Width", ps.Width),
+                MmFromFields(pageFields, "PageSize.Height", ps.Height),
+                MmFromFields(pageFields, "PageSize.MarginLeft", ps.MarginLeft),
+                MmFromFields(pageFields, "PageSize.MarginRight", ps.MarginRight),
+                MmFromFields(pageFields, "PageSize.MarginTop", ps.MarginTop),
+                MmFromFields(pageFields, "PageSize.MarginBottom", ps.MarginBottom))
+            : PageFormatChange.KeepSizes(t);
+
+        Execute(new ChangePageFormatCommand(t, pageFields, plan));
+        await Task.CompletedTask;
         return true;
     }
+
+    private static float MmFromFields(IReadOnlyDictionary<string, string> fields, string key, float fallback) =>
+        fields.TryGetValue(key, out var s)
+        && float.TryParse(s, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var v)
+            ? v : fallback;
 
     private async Task OpenInstancePickerAsync()
     {
@@ -2312,9 +2429,11 @@ public class TemplateDesignerViewModel : EDViewModel
     ///   largeStep=true (Shift) → GridSize (rychlý skok)
     ///   bez modifikátorů       → 1 mm (default)
     /// </summary>
-    public void MoveByKey(Key key, bool largeStep, bool fineStep = false)
+    public void MoveByKey(Key key, bool gridStep)
     {
-        float step = fineStep ? 0.5f : (largeStep ? State.GridSize : 1f);
+        // Krok mřížky drží Ctrl (dřív Shift, a na Ctrl byl jemný krok 0,5 mm) - Shift se uvolnil
+        // pro změnu velikosti, jak ji uživatel zná ze starého návrháře (rozhodnutí Jan 1. 9.).
+        float step = gridStep ? State.GridSize : 1f;
         float dx   = key switch { Key.Left => -step, Key.Right => step, _ => 0f };
         float dy   = key switch { Key.Up   => -step, Key.Down  => step, _ => 0f };
 
@@ -2350,6 +2469,83 @@ public class TemplateDesignerViewModel : EDViewModel
 
         if (moves.Count == 1) Execute(moves[0]);
         else if (moves.Count > 1) Execute(new CompositeCommand("Přesun šipkou", moves));
+
+        RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    /// <summary>
+    /// Co udělají šipky nad vybraným prvkem. Rozhodnutí je tady, a ne rozeseté v obsluze kláves,
+    /// aby se dalo ohlídat testem - mutace 1. 9. ukázala, že samotné volání
+    /// <see cref="ResizeByKey"/> testy pokryjí, ale odpojení od Shiftu už ne.
+    /// </summary>
+    /// <remarks>
+    /// Ctrl+Shift+↑/↓ řeší obsluha kláves dřív (přesun sekce), takže sem ta kombinace nedojde.
+    /// </remarks>
+    public static ArrowKeyAction ResolveArrowAction(bool ctrl, bool shift) => (ctrl, shift) switch
+    {
+        (_, true)     => ArrowKeyAction.Resize,      // Shift = velikost, jako ve starém návrháři
+        (true, false) => ArrowKeyAction.MoveByGrid,  // Ctrl = posun po mřížce
+        _             => ArrowKeyAction.Move,        // samotné šipky = posun o milimetr
+    };
+
+    /// <summary>Nejmenší rozměr, na který jde prvek stáhnout - shodně s tažením úchytu myší.</summary>
+    private const float MinElementWidthMm = 3f;
+    private const float MinElementHeightMm = 2f;
+
+    /// <summary>
+    /// Změní velikost vybraných prvků o krok. Mění se <b>pravá a dolní hrana</b>, levý horní roh
+    /// zůstává - stejně jako když uživatel táhne pravý dolní úchyt.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Prvku s dynamickou výškou se svisle nic nestane a řekne se to ve stavovém řádku. Fixovat
+    /// mu výšku by znamenalo, že o dynamiku přijde bez varování a dostane se z toho jen zpětným
+    /// krokem; myš mu ze stejného důvodu svislé úchyty vůbec nenabízí (rozhodnutí Jan 1. 9.).
+    /// </remarks>
+    public void ResizeByKey(Key key, bool gridStep)
+    {
+        float step = gridStep ? State.GridSize : 1f;
+        float dw = key switch { Key.Left => -step, Key.Right => step, _ => 0f };
+        float dh = key switch { Key.Up   => -step, Key.Down  => step, _ => 0f };
+
+        var cile = State.SelectedElements.Where(el => !el.IsLocked).ToList();
+        if (cile.Count == 0) return;
+
+        // Svislá změna se týká jen prvků s pevnou výškou; když mají všechny vybrané výšku z dat,
+        // není co měnit a je lepší to říct, než tiše nedělat nic.
+        if (dh != 0f && cile.All(el => el.Height is null))
+        {
+            StatusText = cile.Count == 1
+                ? "Výšku tohoto prvku počítá engine z dat - zadejte ji v jeho vlastnostech, nebo měňte šířku."
+                : "Vybrané prvky mají výšku z dat - svisle je zvětšit nejde.";
+            return;
+        }
+
+        float sectionW = State.CurrentTemplate.PageSize.PrintableWidth;
+        var commands = new List<IDesignerCommand>();
+
+        foreach (var el in cile)
+        {
+            float oldW = el.Width;
+            float? oldH = el.Height;
+
+            float newW = MathF.Max(MinElementWidthMm, MathF.Min(oldW + dw, sectionW - el.X));
+            float? newH = oldH;
+            if (dh != 0f && oldH is { } h)
+            {
+                var section = State.CurrentTemplate.Sections.FirstOrDefault(sec => sec.Elements.Contains(el));
+                float sectionH = section?.EffectiveDesignerHeight ?? float.MaxValue;
+                newH = MathF.Max(MinElementHeightMm, MathF.Min(h + dh, sectionH - el.Y));
+            }
+
+            if (newW == oldW && newH == oldH) continue;
+            el.Width = newW;
+            el.Height = newH;
+            commands.Add(new ResizeElementCommand(el, el.X, el.Y, oldW, oldH, el.X, el.Y, newW, newH));
+        }
+
+        if (commands.Count == 0) return;
+        Execute(commands.Count == 1 ? commands[0] : new CompositeCommand("Změna velikosti klávesnicí", commands));
 
         RequestPropertiesPanelUpdate?.Invoke();
         RequestCanvasRefresh?.Invoke();
@@ -2421,8 +2617,11 @@ public class TemplateDesignerViewModel : EDViewModel
     private async Task PrefetchMockDataAsync(string agendaCode)
     {
         if (CacheProvider is null || string.IsNullOrEmpty(agendaCode)) return;
-        if (CacheProvider.TryGetCachedMockData(agendaCode, out _)) return;   // už načteno (i negativně)
-        await Task.Run(() => CacheProvider.GetMockData(agendaCode));
+        // Definice sloupců jde i do ukázkových dat - jinak náhled bez vybrané instance ukazuje
+        // rozvržení podle linky a vlastní sloupce se v něm neprojeví (#13158).
+        var columnsDefJson = CurrentColumnsDefinitionJson();
+        if (CacheProvider.TryGetCachedMockData(agendaCode, columnsDefJson, out _)) return;   // už načteno (i negativně)
+        await Task.Run(() => CacheProvider.GetMockData(agendaCode, columnsDefJson));
         // Náhled se mezitím nakreslil ze syntetických dat - překresli s reálnými mock daty.
         if (State.CurrentTemplate.AgendaCode == agendaCode) RequestPreviewRefresh?.Invoke();
     }
@@ -3072,7 +3271,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // nejsou načtená, spadne to na syntetická data ze schématu (priorita 3) a prefetch
         // spuštěný při změně agendy je po dokončení doplní + překreslí náhled.
         if (mockData is null && agendaCode is not null && CacheProvider is not null
-            && CacheProvider.TryGetCachedMockData(agendaCode, out var cachedMock))
+            && CacheProvider.TryGetCachedMockData(agendaCode, CurrentColumnsDefinitionJson(), out var cachedMock))
             mockData = cachedMock?.WithCulture(culture);
 
         // Priorita 3: syntetická mock data ze schématu
@@ -3428,14 +3627,18 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Fallback startovní šablona - agendu typicky přepíše EDISON kontrakt nebo
     /// poslední použitá agenda uživatele (viz ctor).</summary>
     /// <remarks>
-    /// Výchozí je <b>linkový JŘ</b> (žádost Jan 24. 8.), protože se na něm teď pracuje a přepínat
-    /// ho po každém startu zdržuje. Uplatní se jen při <b>prvním</b> spuštění: jakmile uživatel
-    /// jednou agendu přepne, má přednost jeho poslední volba. Vrátit zpět = přepsat tuhle jednu
-    /// konstantu.
+    /// Výchozí je <b>zastávkový JŘ (AD)</b>. Od 24. 8. tu byl linkový, protože se na něm pracovalo,
+    /// ale 1. 9. se linkové JŘ před vydáním skryly - a tahle konstanta skrytí obcházela: nová
+    /// šablona startovala na skryté agendě, ta se stala aktuální agendou a výběr ji pak ukázal,
+    /// protože aktuální agendu zobrazuje vždy (aby šly otevřít hotové šablony). Uživatel tedy
+    /// linkové JŘ viděl dál, i když byly skryté (nález Jan 1. 9.).
+    ///
+    /// ⚠️ **Musí to být zveřejněná agenda** - jinak se skrytí dá obejít samotným startem aplikace.
+    /// Hlídá `SkrytaAgendaTests`.
     /// </remarks>
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "LINKOVY_JR_AD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
         t.Sections.AddRange(CreateDefaultSections(t.PageSize));
         return t;
     }

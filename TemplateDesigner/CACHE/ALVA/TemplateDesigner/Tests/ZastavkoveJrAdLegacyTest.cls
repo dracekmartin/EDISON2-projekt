@@ -674,7 +674,7 @@ ClassMethod NastVarProbe(ByRef sys As %String) As %Status
 		set json = $get(^||ML("OUT",p)) continue:json=""
 		set nPages = nPages + 1
 		set obj = ##class(%DynamicObject).%FromJSON(json)
-		set vyveska = obj.values.%Get("POPIS_ZASTAVKA"), smer = obj.values.%Get("POPIS_SMER")
+		set vyveska = obj.values.%Get("POPIS_ZASTAVKA"), smer = obj.values.%Get("KONECNA_ZASTAVKA")
 		set zas = obj.rows.%Get("ZASTAVKY")
 		continue:'$isobject(zas)
 		set multiZde = "", it = zas.%GetIterator()

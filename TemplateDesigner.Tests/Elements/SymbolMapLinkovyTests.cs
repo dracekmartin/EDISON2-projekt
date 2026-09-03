@@ -86,30 +86,153 @@ public class SymbolMapLinkovyTests
     /// Víceznakový kód, u kterého pozici ve fontu nikdo neověřil, zůstává textem.
     /// </summary>
     /// <remarks>
-    /// ⚠️ Není to pravidlo „víceznakové = zkratka" (to padlo 27. 8. s BEV), ale tolerance: starý
-    /// modul má symboly i pro IDS a WC, jen se u nás pozice ve fontu neurčila. Než se určí, je
-    /// lepší vypsat zkratku než vytisknout cizí piktogram.
+    /// ⚠️ Není to pravidlo „víceznakové = zkratka" (to padlo 27. 8. s BEV). <c>WC</c> v překladové
+    /// tabulce starého klienta míří na zápornou hodnotu („-15"), tedy na text - stejně jako u nás.
     /// </remarks>
     [Theory]
-    [InlineData("IDS")]
     [InlineData("WC")]
     public void NeoverenaViceznakovaZnacka_ZustavaText(string znak)
     {
         Assert.Equal(SymbolRenderMode.Text, SymbolMap.ResolveLinkovy(znak).Mode);
     }
 
-    /// <summary>Tři značky v tiskovém fontu vůbec nejsou. Provizorně se vypisují textem
-    /// (rozhodnutí Jan 2026-08-24), ať se informace aspoň neztratí.</summary>
+    /// <summary>
+    /// Vybavení vozidla se tiskne piktogramem - loď, wifi i <b>zásuvka</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 31. 8. tu stálo, že tyhle tři ve fontu nejsou. U zásuvky to <b>nebyla pravda</b> -
+    /// a překladová tabulka legacy pak potvrdila i kódy: loď 61 → 180, wifi 65 → 186,
+    /// zásuvka 66 → 179. Zbytek bloku (káva, sedadlo, obrazovka) legacy k žádné zkratce nepřiřazuje.
+    /// </remarks>
+    [Theory]
+    [InlineData("lod", "´")]
+    [InlineData("wifi", "º")]
+    [InlineData("zasu", "³")]
+    public void VybaveniVozidla_JePiktogram(string znak, string pozice)
+    {
+        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+
+        Assert.Equal(SymbolRenderMode.FontGlyf, mode);
+        Assert.Equal(pozice, value);
+    }
+
+    /// <summary>
+    /// Ve <b>vývěsce</b> ty tři zůstávají textem.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Není to jen opatrnost: starý vývěskový modul (<c>ALVA.TISKMHD.Main.ConvertSpecialniZnak</c>)
+    /// zná jen dny, vozíček a částečnou bezbariérovost - <b>loď, wifi ani zásuvku vůbec nemá</b>.
+    /// Přepnout je na piktogram by tedy nebyla parita, ale nová featura nad rámec starého tisku.
+    /// </remarks>
     [Theory]
     [InlineData("lod")]
     [InlineData("wifi")]
     [InlineData("zasu")]
-    public void ZnackaMimoFont_SeVypisujeTextem(string znak)
+    public void VybaveniVozidla_VeVyvesceZustavaText(string znak)
     {
-        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+        var (mode, value) = SymbolMap.Resolve(znak);
 
         Assert.Equal(SymbolRenderMode.Text, mode);
         Assert.Equal(znak, value);
+    }
+
+    /// <summary>
+    /// Kola a zavazadla mají ve fontu jednoznačný tvar, takže se tisknou piktogramem.
+    /// </summary>
+    /// <remarks>
+    /// Kolo je táž pozice, jakou už používá značka <c>K</c>; kufr je pozice <c>p</c>, kterou má
+    /// tenhle soubor doloženou odjakživa (proto tam nesmí „pokračuje"). ⚠️ Původně to bylo odvozené
+    /// z významu zkratky; 31. 8. se našla překladová tabulka legacy a <b>obojí potvrdila</b>
+    /// (PJI 27 → 76, PCZ 26 → 112).
+    /// </remarks>
+    [Theory]
+    [InlineData("PJI", "L")]   // kola
+    [InlineData("PCZ", "p")]   // zavazadla - kufr
+    public void VybaveniSJednoznacnymTvarem_JePiktogram(string znak, string pozice)
+    {
+        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+
+        Assert.Equal(SymbolRenderMode.FontGlyf, mode);
+        Assert.Equal(pozice, value);
+    }
+
+    /// <summary>
+    /// Zbytek rodiny atributů se tiskne piktogramem - pozice jsou opsané z legacy, ne hádané.
+    /// </summary>
+    /// <remarks>
+    /// Překladová tabulka starého tiskového klienta <c>ALVA.TISKJR.Main.ConvertSpecialniZnak</c>
+    /// (id z <c>$$$SALL</c> → kód znaku). Do 31. 8. se myslelo, že v repu není, a tyhle atributy se
+    /// proto tiskly zkratkou. V závorce je id a kód znaku.
+    /// </remarks>
+    [Theory]
+    [InlineData("OBC", "M")]   // občerstvení (25 → 77) - příbor
+    [InlineData("RBU", "Z")]   // radiobus (29 → 90) - telefon
+    [InlineData("SAO", "s")]   // samoobslužný (30 → 115)
+    [InlineData("RBP", "ð")]   // jede podmínečně (57 → 240)
+    [InlineData("POS", "¨")]   // zásilky (28 → 168)
+    public void RodinaAtributu_JePiktogramDleLegacy(string znak, string pozice)
+    {
+        var (mode, value) = SymbolMap.ResolveLinkovy(znak);
+
+        Assert.Equal(SymbolRenderMode.FontGlyf, mode);
+        Assert.Equal(pozice, value);
+    }
+
+    /// <summary>
+    /// IDS a nízkokapacitní vůz zůstávají textem - <b>tak je tiskne i starý modul</b>.
+    /// </summary>
+    /// <remarks>
+    /// V překladové tabulce mají zápornou hodnotu (IDS „-11", NKA „-12"), což u klienta znamená
+    /// text, ne glyf. Není to tedy nedodělek po `L11`, ale shoda se starým tiskem - a proto na to
+    /// míří vlastní test, aby to někdo „nedodělal" doplněním piktogramu.
+    /// </remarks>
+    [Theory]
+    [InlineData("IDS")]
+    [InlineData("NKA")]
+    public void IdsANizkokapacitni_ZustavajiTextem(string znak)
+    {
+        Assert.Equal(SymbolRenderMode.Text, SymbolMap.ResolveLinkovy(znak).Mode);
+    }
+
+    /// <summary>
+    /// Nízkokapacitní vůz se tiskne jako <b>„n"</b>, ne jako zkratka „NKA".
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Není to úspora místa, ale parita: starý klient pro hodnotu „-12" vypisuje doslova „n"
+    /// (<c>formTISKJRReportDotNet_Module.vb:3358</c>). IDS má vedle sebe v téže větvi text „IDS",
+    /// takže se u něj vstup a výstup shodují a žádný překlad nepotřebuje.
+    /// </remarks>
+    [Fact]
+    public void Nizkokapacitni_SeTiskneJakoN()
+    {
+        Assert.Equal("n", SymbolMap.ResolveLinkovy("NKA").Value);
+        Assert.Equal("IDS", SymbolMap.ResolveLinkovy("IDS").Value);
+    }
+
+    /// <summary>
+    /// Ve <b>vývěsce</b> zůstává „NKA" beze změny - překlad na „n" patří jen linkovému JŘ.
+    /// </summary>
+    [Fact]
+    public void Nizkokapacitni_VeVyvesceZustavaBezeZmeny()
+    {
+        Assert.Equal("NKA", SymbolMap.Resolve("NKA").Value);
+    }
+
+    /// <summary>
+    /// Autobus míří na <c>z</c> (122), i když legacy má u téže značky 119.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Není to odchylka od legacy, ale jiný font.</b> Starý klient sází fontem „Timetable"
+    /// (<c>formTISKJRReportDotNet_Module.vb:2611</c>), my TimeTable2 - a právě na 119 se sady
+    /// rozcházejí: v TimeTable2 CZ je tam vagon, v SK autobus (`B49`). Na 122 je autobus v obou.
+    /// Přepsat to na 119 „kvůli paritě" by českému zákazníkovi vrátilo vagon u přestupu na autobus,
+    /// což je přesně vada opravená 3. 8. (#13093, #13048) - proto na to míří test.
+    /// </remarks>
+    [Fact]
+    public void Autobus_NemiriNaPoziciZLegacy()
+    {
+        Assert.Equal("z", SymbolMap.ResolveLinkovy("A").Value);
+        Assert.NotEqual("w", SymbolMap.ResolveLinkovy("A").Value);
     }
 
     /// <summary>Piktogram se překládá na <b>pozici</b>, ne na písmeno - jinak by autobus vyšel

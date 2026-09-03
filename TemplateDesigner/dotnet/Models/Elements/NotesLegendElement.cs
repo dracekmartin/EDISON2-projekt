@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using SkiaSharp;
 
 namespace TemplateDesigner.Models.Elements;
@@ -14,9 +15,40 @@ public class NotesLegendElement : StopScheduleElementBase
     // Vizuální vlastnosti
     // ═══════════════════════════════════════════
     public string HeaderText { get; set; } = "Poznámky";
+
+    /// <summary>
+    /// Kreslí se nadpisový pruh (nadpis + jeho podbarvení)? Vypnutý pruh <b>nezabírá ani výšku</b>,
+    /// takže poznámky začínají u horní hrany prvku.
+    /// </summary>
+    /// <remarks>
+    /// Prázdný nadpis pruh nezruší - pás bez textu je legitimní. Vypínač je proto samostatný,
+    /// stejně jako ho mají zastávky, odjezdy, linkový JŘ i obě tabulky (rozhodnutí Jan 1. 9.).
+    /// <para>
+    /// ⚠️ Jmenuje se <b>HeaderBar</b>, ne HeaderShow: <c>ShowHeader</c> už u zastávek a tabulek
+    /// znamená <b>záhlaví sloupců</b>, což legenda vůbec nemá. Stejný klíč pro dvě různé věci hlídá
+    /// drift test popisků a právem - uživatel by v jednom formuláři viděl „Záhlaví sloupců"
+    /// a v druhém „Zobrazit nadpis" pod týmž jménem pole.
+    /// </para>
+    /// </remarks>
+    public bool ShowHeaderBar { get; set; } = true;
     public string NoteSeparator { get; set; } = " - ";
     public float NoteFontSize { get; set; } = 7f;
-    public float NoteLineHeight { get; set; } = 4f;
+
+    /// <summary>
+    /// Výška řádku poznámky v mm. <b>Null = podle velikosti písma</b> (týž vzor jako
+    /// <see cref="ScheduleElementBase.DataRowHeight"/> u ostatních prvků jízdních řádů).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Dřív to byla pevná hodnota 4 mm, což je přesně automatická výška pro 7 bodů - výchozí stav
+    /// tedy vypadal správně, ale <b>zvětšení písma legendu slepilo</b>: mezera zůstala na 4 mm, i když
+    /// desetibodové písmo potřebuje 5,6 (nález Pavel 1. 9., #13158). Ruční hodnota zůstává pro toho,
+    /// kdo chce vzdušnější nebo stlačenější legendu.
+    /// </remarks>
+    public float? NoteLineHeight { get; set; }
+
+    /// <summary>Výška řádku, se kterou se reálně kreslí - ruční hodnota, jinak podle písma.</summary>
+    [JsonIgnore]
+    public float EffectiveNoteLineHeight => NoteLineHeight ?? ComputeRowH(NoteFontSize);
 
     // ═══════════════════════════════════════════
     // Rozložení legendy (sloupce / řazení / zarovnání markeru)
@@ -128,7 +160,7 @@ public class NotesLegendElement : StopScheduleElementBase
         float noteFontPx = NoteFontSize * scale * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * scale * PtToMm * ctx.MmToPx;
         float headerH = ComputeHeaderH(effHeaderFontSize * scale);
-        float scaledNoteLineH = NoteLineHeight * scale;
+        float scaledNoteLineH = EffectiveNoteLineHeight * scale;
 
         using var paints = CreateStandardPaints(ctx);
         // Barva textu poznámek = „Barva textu buněk" (DataStyle) - legenda kreslí text přímo tímto
@@ -141,9 +173,11 @@ public class NotesLegendElement : StopScheduleElementBase
         // Symbolový JŘ font pro jednoznakové piktogramy (H=vozíček, F, x, {…) - dle jazyka šablony.
         using var symbolFont = new SKFont(GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), noteFontPx);
 
-        // Záhlaví
-        float currentY = RenderSectionHeader(ctx, HeaderText,
-            X, Y, Width, headerH, headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid);
+        // Záhlaví - vypnuté nezabírá výšku, poznámky pak začínají u horní hrany prvku.
+        float currentY = ShowHeaderBar
+            ? RenderSectionHeader(ctx, HeaderText,
+                X, Y, Width, headerH, headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid)
+            : Y;
 
         if (!hasData)
         {
@@ -154,9 +188,9 @@ public class NotesLegendElement : StopScheduleElementBase
                 paints.Text.Color = new SKColor(0xFF999999);
                 for (int i = 0; i < 3; i++)
                 {
-                    var pt = ctx.ToCanvas(X + 1f, currentY + NoteLineHeight * 0.75f);
+                    var pt = ctx.ToCanvas(X + 1f, currentY + EffectiveNoteLineHeight * 0.75f);
                     ctx.Canvas.DrawText($"Poznámka {i + 1}", pt.X, pt.Y, noteFont, paints.Text);
-                    currentY += NoteLineHeight;
+                    currentY += EffectiveNoteLineHeight;
                 }
             }
         }
@@ -267,7 +301,7 @@ public class NotesLegendElement : StopScheduleElementBase
             // ve fontu neshoduje s písmenem číselníku (autobus „A" → „z", kolo „K" → „L"). Překlad
             // se řídí kategorií, ne písmenem: značky MHD jsou v datech už jako pozice ve fontu.
             // A jen u piktogramů: značka kreslená normálním fontem je písmeno zadané zákazníkem.
-            string znak = piktogram ? GlyfPoznamky(pozn) : pozn.Znak;
+            string znak = piktogram ? GlyfPoznamky(pozn) : TextZnakPoznamky(pozn);
             ctx.Canvas.DrawText(znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
             lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f;
 
@@ -337,13 +371,18 @@ public class NotesLegendElement : StopScheduleElementBase
         }
         int maxLines = 1;
         foreach (var n in colLines) if (n > maxLines) maxLines = n;
-        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + maxLines * NoteLineHeight;
+        float headerH = ShowHeaderBar ? ComputeHeaderH(HeaderStyle.FontSize ?? 9f) : 0f;
+        return headerH + maxLines * EffectiveNoteLineHeight;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     /// <summary>Testovací vstup do filtru - render ho volá zároveň s daty, což se v testu neposkládá.</summary>
     internal List<PoznamkaData> FiltrujPoznamkyProTest(List<PoznamkaData> poznamky) => FilterPoznamky(poznamky);
+
+    /// <summary>Co se u poznámky reálně vypíše jako značka (piktogram i text) - pro testy.</summary>
+    internal static string ZnakPoznamkyProTest(PoznamkaData pozn) =>
+        JePiktogramPoznamky(pozn) ? GlyfPoznamky(pozn) : TextZnakPoznamky(pozn);
 
     private List<PoznamkaData> FilterPoznamky(List<PoznamkaData> poznamky)
     {
@@ -367,6 +406,20 @@ public class NotesLegendElement : StopScheduleElementBase
         pozn.Druh != ""
             ? SymbolMap.ResolveLinkovy(pozn.Znak).Mode == SymbolRenderMode.FontGlyf
             : JePiktogram(pozn.Znak);
+
+    /// <summary>
+    /// Značka, která se kreslí <b>normálním fontem</b> - i ta může mít v legacy jiný text než kód
+    /// z dat (nízkokapacitní vůz „NKA" se tiskne jako „n").
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 31. 8. se tu vypisoval kód z dat rovnou, takže v legendě zůstalo tučné „NKA", zatímco
+    /// v řádku platnosti už bylo „n" (ten jde přes <c>SymbolRunRenderer</c>, který překlad dělá).
+    /// Platí jen pro značky z číselníku linkového JŘ - ruční komentář zákazníka se nepřekládá.
+    /// </remarks>
+    private static string TextZnakPoznamky(PoznamkaData pozn) =>
+        pozn.Typ == TypPoznamky.SpecialniZnak && pozn.Druh != ""
+            ? SymbolMap.ResolveLinkovy(pozn.Znak).Value
+            : pozn.Znak;
 
     /// <summary>Co se pro značku poznámky reálně vypíše - viz <see cref="JePiktogramPoznamky"/>.</summary>
     private static string GlyfPoznamky(PoznamkaData pozn) =>
@@ -430,13 +483,23 @@ public class NotesLegendElement : StopScheduleElementBase
         .. GetScheduleBaseDescriptors(withLineToggles: false),   // mřížkou kreslí jen čáru pod záhlavím
         .. GetCellZoneBaseColorDescriptors(),
 
-        new StringPropertyDescriptor { FromImage = true, Label = "Nadpis",               Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
+        // Zapínadlo do Obecného, jeho vzhled do Záhlaví - týž vzor jako u zastávek, kde „Záhlaví
+        // sloupců" sedí v Obecném a barvy ve „Stylu záhlaví" (rozhodnutí Jan 1. 9.).
+        new BoolPropertyDescriptor   { Label = "Záhlaví",               Group = "Obecné",       Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
+        new StringPropertyDescriptor { FromImage = true, Label = "Text záhlaví",         Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
 
         new StringPropertyDescriptor { Label = "Font",                Group = "Datové buňky", Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
         new StringPropertyDescriptor { FromImage = true, Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
-        new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Datové buňky", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
-        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Datové buňky", Get = () => NoteLineHeight, Set = v => NoteLineHeight = v, Min = 2, Max = 15, Unit = "mm" },
+        // Velikost a výška řádku patří k rozložení, ne mezi barvy buněk: uživatel je hledá spolu
+        // s počtem sloupců a ve „Datových buňkách" je nenašel (nález Pavel 1. 9.).
+        new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Rozložení", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Rozložení",
+            Get = () => EffectiveNoteLineHeight,
+            // Hodnota shodná s automatickou = vrátit se k dědění z písma; uživatel tak nemusí znát
+            // magické číslo, aby se dostal zpátky (týž vzor jako GetDataRowHeightDescriptor).
+            Set = v => NoteLineHeight = MathF.Abs(v - ComputeRowH(NoteFontSize)) < 0.01f ? null : v,
+            Min = 2, Max = 15, Unit = "mm" },
 
         new FloatPropertyDescriptor  { FromImage = true, Label = "Počet sloupců",       Group = "Rozložení", Get = () => Columns,     Set = v => Columns = (int)v, Min = 1, Max = 4, Format = "0" },
         new EnumPropertyDescriptor   { FromImage = true, Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
@@ -479,7 +542,7 @@ public class NotesLegendElement : StopScheduleElementBase
     {
         base.ApplyScale(scale);
         NoteFontSize *= scale;
-        NoteLineHeight *= scale;
+        if (NoteLineHeight is { } nlh) NoteLineHeight = nlh * scale;
         MarkerSirka *= scale;
     }
 
@@ -490,6 +553,7 @@ public class NotesLegendElement : StopScheduleElementBase
         var clone = new NotesLegendElement
         {
             HeaderText               = HeaderText,
+            ShowHeaderBar            = ShowHeaderBar,
             NoteSeparator            = NoteSeparator,
             NoteFontSize             = NoteFontSize,
             NoteLineHeight           = NoteLineHeight,
