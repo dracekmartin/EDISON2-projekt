@@ -2,8 +2,8 @@
 #
 # Proc PR a ne jen upozorneni: udrzba se tim zmeni na "reviewnout a mergnout" misto
 # "vzpomen si, ze mas pustit skript". Lokalni .claude/hooks/tree-drift.sh zustava jako
-# rychly signal, autoritou je tenhle workflow - porovnava proti mlinecz/EDISON@main,
-# tedy proti spolecne pravde, ne proti lokalni kopii legacy repa.
+# rychly signal, autoritou je tenhle workflow - porovnava proti default branchi
+# mlinecz/EDISON, tedy proti spolecne pravde, ne proti lokalni kopii legacy repa.
 #
 # Runner: ubuntu staci. Generator ma cesty pres promenne prostredi a neni na Windows
 # vazany; EDISON_DEPLOY_ROOT smeruje na neexistujici cestu zamerne - viz krok Regenerovat.
@@ -29,13 +29,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout EDISON2
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Checkout legacy zdroju (jen tri soubory)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: mlinecz/EDISON
-          ref: main
+          # ref zamerne NEuvedeno: legacy repo ma default branch "master", ne "main".
+          # Nechame rozhodnout default branch, at to neprestane fungovat pri prejmenovani.
           token: ${{ secrets.LEGACY_REPO_TOKEN }}
           path: legacy
           # Legacy .git ma ~335 MB, proto sparse + depth 1.
