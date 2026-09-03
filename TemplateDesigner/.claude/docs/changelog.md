@@ -22,8 +22,13 @@ na znamení, přestupy, písmena variant) - to jsou zastávkové pojmy a linkov�
 prázdnou. Nastavení „počet poznámek na řádek per druh", které má starý modul, prvek zatím
 neumí vůbec - to je `#7487` a druhý krok `B117`.
 
-**Výchozí šablona linkového jízdního řádu zůstává na dynamické tabulce** - kolekce se nemění,
-takže hotové šablony se nerozbijí. Přepsat ji na nový prvek je vědomě až po vyzkoušení.
+**Výchozí šablona linkového jízdního řádu už legendu skládá tím prvkem** (přepsáno po vyzkoušení,
+rozhodnutí Jan 3. 9.). Kolekce poznámek se nemění, takže **hotové šablony s dynamickou tabulkou
+fungují dál** - jen nová šablona ze Systémových M-line dostane prvek. Zkušební vzor pro linku 940
+ten prvek měl už dřív, takže se nemusel měnit.
+
+**V paletě i v nabídce vkládání jde tabulka před poznámkami** - poznámky jsou doplněk. Do teď
+u linkových vycházely první, protože jejich tabulka je v tom výčtu za nimi.
 
 Ověřeno: .NET **1463/1463** (9 nových testů na vazbu druh agendy → prvky, na kterou žádný test
 nebyl). Mutace „vrátit prvek mimo nabídku" test shodí.

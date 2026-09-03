@@ -325,13 +325,15 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.DepartureGrid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Poznámky" Tag="NotesLegendElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
+                        <!-- Hlavní tabulka sestavy před poznámkami - poznámky jsou doplněk. U zastávkových
+                             to pořadí drží samo, u linkových by poznámky stály před svou tabulkou. -->
                         <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Linkový JŘ (zastávky × spoje)" Tag="LineTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
+                        </Button>
+                        <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Poznámky" Tag="NotesLegendElement"
+                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
+                            <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Elementy" Style="{StaticResource ToolbarGroupLabel}"/>

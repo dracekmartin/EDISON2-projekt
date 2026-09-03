@@ -1456,10 +1456,13 @@ public partial class MainWindow : Window
             Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
             Add("Minuty odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
-        if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
-            Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
+        // Hlavní tabulka sestavy jde před poznámkami - poznámky jsou doplněk. U zastávkových to
+        // pořadí drží samo (seznam zastávek, odjezdy, poznámky), u linkových by poznámky vyšly
+        // první, protože jejich tabulka je v tomhle výčtu za nimi.
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
             Add("Linkový JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
+        if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
+            Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;
