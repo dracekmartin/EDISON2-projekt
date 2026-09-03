@@ -28,8 +28,12 @@ public class PreviewCanvas
     private static readonly SKColor ClrPageBorder  = new(0xFFAAAAAA);
     private static readonly SKColor ClrOverflowBdr = new(0xFFD32F2F);   // rámeček přetékající stránky
 
-    /// <summary>Volá se na konci každého renderu preview: true = obsah některé stránky přetéká. Wire-uje MainWindow na status bar.</summary>
-    public Action<bool>? OverflowChanged { get; set; }
+    /// <summary>
+    /// Volá se na konci každého renderu preview s popisem toho, co se nevejde a kde (null = vejde
+    /// se všechno). Wire-uje MainWindow na status bar. ⚠️ Posílá se **text, ne příznak** - z „něco
+    /// přetéká" uživatel nepoznal, na které stránce ani co ji přetéká.
+    /// </summary>
+    public Action<string?>? OverflowChanged { get; set; }
 
     private readonly DesignerState _state;
     private readonly PageLayoutEngine _engine;
@@ -266,22 +270,28 @@ public class PreviewCanvas
     /// <summary>
     /// Spočítá přetékající stránky napříč všemi dodanými datovými sadami - **layout-only, bez renderu**.
     /// Použito v tisku pro agregovanou kontrolu přes všechny instance: data už jsou fetchnutá z Caché,
-    /// takže projetí layoutem + <see cref="PageOverflows"/> je levné. Vrací počet přetékajících a celkový
-    /// počet stránek.
+    /// takže projetí layoutem + <see cref="NajdiPreteceni"/> je levné. Vrací nálezy (co a kde se nevejde)
+    /// a celkový počet stránek.
     /// </summary>
-    public (int Overflowing, int Total) CountOverflowingPages(IReadOnlyList<DataContext> dataPages)
+    /// <remarks>
+    /// Čísla stránek jsou průběžná přes všechny instance, ne od jedničky za každou - v tisku jde
+    /// o jeden výstup a uživatel v něm hledá pořadovou stránku.
+    /// </remarks>
+    public (IReadOnlyList<PreteceniNalez> Nalezy, int Total) CountOverflowingPages(IReadOnlyList<DataContext> dataPages)
     {
         var ps = _state.CurrentTemplate.PageSize;
-        int overflowing = 0, total = 0;
+        var nalezy = new List<PreteceniNalez>();
+        int total = 0;
         foreach (var data in dataPages)
         {
             foreach (var page in Layout(data).Pages)
             {
                 total++;
-                if (PageOverflows(page, ps)) overflowing++;
+                if (NajdiPreteceni(page, ps) is { } nalez)
+                    nalezy.Add(nalez with { CisloStranky = total });
             }
         }
-        return (overflowing, total);
+        return (nalezy, total);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -300,8 +310,9 @@ public class PreviewCanvas
 
         // Pre-detekce přetečení per stránka (funguje bez renderu) → červený rámeček konkrétní
         // přetékající stránky + hláška ve status baru (přes OverflowChanged).
-        var overflowPages = layout.Pages.Select(p => PageOverflows(p, ps)).ToList();
-        OverflowChanged?.Invoke(overflowPages.Any(x => x));
+        var nalezy = layout.Pages.Select(p => NajdiPreteceni(p, ps)).ToList();
+        OverflowChanged?.Invoke(OverflowWarnings.Summarize(
+            [.. nalezy.Where(n => n is not null).Select(n => n!)], layout.Pages.Count));
 
         // Jen obrazovkový náhled - export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
         canvas.Clear(CanvasTheme.Background);
@@ -313,22 +324,31 @@ public class PreviewCanvas
             DrawShadow(canvas, pageX, currentPageY, pageW, pageH);
             DrawPageBackground(canvas, pageX, currentPageY, pageW, pageH);
             RenderPage(canvas, ps, mmToPx, pageX, currentPageY, layout.Pages[i]);
-            DrawPageBorder(canvas, pageX, currentPageY, pageW, pageH, overflowPages[i]);
+            DrawPageBorder(canvas, pageX, currentPageY, pageW, pageH, nalezy[i] is not null);
 
             currentPageY += pageH + PageGapPx;
         }
     }
 
     /// <summary>
-    /// Vejde se obsah stránky? Hlásí **jen reálné geometrické přetečení** - element přesahuje spodní hranu
-    /// své sekce (dynamický element, který narostl, nebo pevný box větší než sekce). NEhlásí situaci, kdy
-    /// JŘ element s pevnou výškou musel auto-scalem zmenšit písmo: ten se do svého boxu vejde, takže stránka
-    /// nepřetéká (viz <see cref="ScheduleElementBase.ContentOverflows"/> = „box je menší než obsah", což není
-    /// přetečení stránky). Funguje bez renderu (volá se v pre-detekci).
+    /// Co se na stránce nevejde, nebo null když se vejde všechno. Hlásí **jen reálné geometrické
+    /// přetečení** - element přesahuje spodní hranu své sekce (dynamický element, který narostl, nebo
+    /// pevný box větší než sekce). NEhlásí situaci, kdy JŘ element s pevnou výškou musel auto-scalem
+    /// zmenšit písmo: ten se do svého boxu vejde, takže stránka nepřetéká (viz
+    /// <see cref="ScheduleElementBase.ContentOverflows"/> = „box je menší než obsah", což není přetečení
+    /// stránky). Funguje bez renderu (volá se v pre-detekci).
     /// </summary>
-    private bool PageOverflows(Page page, PageSize ps)
+    /// <remarks>
+    /// Vrací **největší** přesah na stránce: hláška má jmenovat to, co uživatel musí zmenšit nejvíc.
+    /// ⚠️ Hledá se jen přesah sekce za stránku, ne prvku za sekci - engine sekci nafoukne na obsah
+    /// (<c>max(nastavená výška, obsah)</c>), takže prvek ji nepřesáhne nikdy. Do 3. 9. tady byla
+    /// i podmínka „prvek přesahuje sekci", která z tohoto důvodu nemohla nastat.
+    /// </remarks>
+    private PreteceniNalez? NajdiPreteceni(Page page, PageSize ps)
     {
         const float tolMm = 0.5f;   // tolerance proti IEEE-754 false-positive na přesné hranici
+        PreteceniNalez? nejhorsi = null;
+
         foreach (var placed in page.Sections)
         {
             // Jen KeepTogether sekce mohou obsah reálně oříznout. SplitAcrossPages i AllowSplit
@@ -337,16 +357,39 @@ public class PreviewCanvas
 
             // KeepTogether nelze rozdělit: pokud sekce přesáhne spodní hranu tiskové plochy stránky,
             // obsah pod hranou se ořízne → reálné přetečení. (placed.Y je relativní k MarginTop.)
-            if (placed.Y + placed.Height > ps.PrintableHeight + tolMm) return true;
+            float presah = placed.Y + placed.Height - ps.PrintableHeight;
+            if (presah <= tolMm) continue;
+            if (nejhorsi is not null && presah <= nejhorsi.PresahMm) continue;
 
-            foreach (var el in placed.Source.Elements)
-            {
-                if (!ExpressionEvaluator.IsVisible(el.VisibilityExpression, placed.Data)) continue;
-                float h = el.Height ?? _heightCalc.CalculateHeight(el, ps.PrintableWidth, placed.Data);
-                if (el.Y + h > placed.Height + tolMm) return true;
-            }
+            nejhorsi = NejvetsiPrvek(placed, ps) is { } vinnik
+                ? new PreteceniNalez(page.PageNumber, DruhPreteceni.ObsahPrvku,
+                                     placed.Source.Name, vinnik, presah)
+                : new PreteceniNalez(page.PageNumber, DruhPreteceni.NastavenaVyskaSekce,
+                                     placed.Source.Name, null, presah);
         }
-        return false;
+        return nejhorsi;
+    }
+
+    /// <summary>
+    /// Prvek, který sekci nafoukl - sahá nejdál dolů a zároveň za její nastavenou výšku. Null =
+    /// sekci nafoukla nastavená výška, prvky se do ní vejdou (pak nemá smysl jmenovat prvek, ten
+    /// za to nemůže).
+    /// </summary>
+    private string? NejvetsiPrvek(PlacedSection placed, PageSize ps)
+    {
+        float mez = placed.Source.DesignerHeight ?? 0f;
+        string? vinnik = null;
+        float nejdal = mez;
+
+        foreach (var el in placed.Source.Elements)
+        {
+            if (!ExpressionEvaluator.IsVisible(el.VisibilityExpression, placed.Data)) continue;
+            float dno = el.Y + (el.Height ?? _heightCalc.CalculateHeight(el, ps.PrintableWidth, placed.Data));
+            if (dno <= nejdal) continue;
+            nejdal = dno;
+            vinnik = ElementNames.ForUser(el);
+        }
+        return vinnik;
     }
 
     // ─────────────────────────────────────────────────────────────────────

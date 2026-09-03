@@ -1,5 +1,27 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B114` - varování „obsah se nevejde" řekne, kde a co (hotovo 3. 9. 2026)
+
+Detail → changelog 2026-09-03 (1). Hláška jmenuje stránku, sekci i prvek, který bere nejvíc
+místa; tentýž popis je i v souhrnu tisku.
+
+⚠️ **Při práci se ukázalo, že prvek nemůže přesáhnout svou sekci** - engine jí dává
+`max(nastavená výška, obsah)`. Podmínka „prvek přesahuje sekci" v detekci přetečení tedy nemohla
+nastat (mrtvý kód) a zadání se tím posunulo: reálné přetečení je vždy „sekce se nevejde na
+stránku", takže hláška říká, **kdo ji nafoukl** - prvek, nebo nastavená výška sekce. Náprava je
+u každého jinde.
+
+Zadání, se kterým se do toho šlo:
+
+- **`B114` Varování „obsah se nevejde" neřekne, kde** [S] (podnět kolega 3. 9.). Červený rámeček
+  kolem stránky náhledu a hláška ve stavovém řádku říkají jen „něco přetéká" - uživatel neví, na
+  které stránce ani co ji přetéká, takže nemá kde začít. ⚠️ **Ta informace už existuje a zahazuje
+  se**: náhled si počítá přetečení **pro každou stránku zvlášť** (`PreviewCanvas.PageOverflows`
+  prochází umístěné sekce) a nahoru posílá jediný `bool` (`OverflowChanged`). Do hlášky tedy jde
+  dostat číslo stránky i jméno sekce, aniž by se cokoli počítalo znovu. Vzor, jak má taková hláška
+  vypadat, je vedle v témže stavovém řádku - varování o nezařazených odjezdech jmenuje konkrétní
+  minuty i cestu k nápravě.
+
 ## `B111` - dopravce po jednotlivých polích (hotovo 1. 9. 2026, provozovny → `B112`)
 
 Detail → changelog 2026-09-01 (7). Pět samostatných polí dopravce (Název, Adresa, Telefon, E-mail,

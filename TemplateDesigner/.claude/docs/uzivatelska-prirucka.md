@@ -87,7 +87,7 @@ Zleva doprava:
   vybranými instancemi a formátem „Instance: X - Y (N/M)",
 - informace o aktuálním výběru,
 - obecné stavové hlášky,
-- při přetečení obsahu stránky červené upozornění „⚠ Obsah se nevejde na stránku".
+- při přetečení obsahu stránky červené upozornění s tím, co se nevejde a na které straně.
 
 ### Hlavní menu
 
@@ -459,7 +459,15 @@ zastávka × směr): šipky ◀ / ▶, rozbalovací seznam pro přímý skok na 
 
 ### Varování o přetečení
 Pokud se obsah nevejde na stránku, dostane stránka v náhledu **červený rámeček** a status bar
-zobrazí „⚠ Obsah se nevejde na stránku" (tooltip navrhne zvětšit stránku nebo zmenšit obsah).
+řekne, **která sekce se nevejde, o kolik a na které straně** - a když ji nafoukl konkrétní prvek,
+jmenuje i ten: „sekce „Vývěska" nevejde na stránku, nejvíc místa bere Poznámky (přesah 12,4 mm,
+strana 2)". Podle toho poznáte, co zmenšit: jmenovaný prvek, nebo výšku sekce, když se do ní prvky
+vejdou. Tooltip nabízí i třetí cestu - zvětšit stránku.
+
+Tentýž prvek na víc stránkách je **jedna položka**, ne výpis po stránkách; do tří stránek se
+vypisují čísla, nad to počet a první výskyt. Stejný popis se ukáže i po tisku, protože tisknout
+můžete jinou linku, než máte v náhledu.
+
 Varování se týká jen sekcí nastavených jako „Nepřerušovat" - sekce, které lze rozdělit přes
 stránky, se prostě rozdělí a nic se neztratí, takže tam varování nedává smysl.
 

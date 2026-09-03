@@ -20,18 +20,12 @@ public static class ContentShrinkWarnings
     /// <summary>Pod tímhle zmenšením se nehlásí nic - desetinu procenta nemá smysl komentovat.</summary>
     private const float NoticeableShrink = 0.99f;
 
-    /// <summary>
-    /// Názvy prvků jak je zná uživatel z palety. ⚠️ Musí souhlasit s tooltipy tlačítek palety
-    /// v <c>MainWindow.xaml</c> - jiné jméno v hlášce než na tlačítku znamená, že uživatel neví,
-    /// o který prvek jde.
-    /// </summary>
+    /// <summary>Názvy prvků drží <see cref="ElementNames"/> - jediné místo pro celou aplikaci.</summary>
     private static string? NazevProUzivatele(TemplateElement el) => el switch
     {
-        NotesLegendElement   => "Poznámky",
-        StopListElement      => "Seznam zastávek",
-        DepartureGridElement => "Minuty odjezdů",
-        LineTableElement     => "Linkový JŘ",
-        _                    => null,
+        NotesLegendElement or StopListElement or DepartureGridElement or LineTableElement
+            => ElementNames.ForUser(el),
+        _   => null,
     };
 
     /// <summary>Text upozornění, nebo null když se nic nezmenšilo.</summary>

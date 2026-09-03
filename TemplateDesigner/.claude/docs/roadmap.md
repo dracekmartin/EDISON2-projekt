@@ -5,7 +5,7 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** § Aktuální focus - **`B113`** (písmena u minut se kryjí, vývěska lže
-> cestujícím) je rozhodnutá a jde vzít rovnou; po ní **`B103`**, **`B114`** a **`B101`**.
+> cestujícím) je rozhodnutá a jde vzít rovnou; po ní **`B103`** a **`B101`**.
 > U čtyř dalších je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
 ---
@@ -128,15 +128,6 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   server se najde. ⚠️ Netýká se to jen zkoušení - u firem s tisíci linkami je většina linek
   hledáním nedosažitelná. Oprava = poslat hledaný text na server (`GetAvailableInstances` ho už
   přijímá jako `search`), ne filtrovat načtenou stránku.
-
-- **`B114` Varování „obsah se nevejde" neřekne, kde** [S] (podnět kolega 3. 9.). Červený rámeček
-  kolem stránky náhledu a hláška ve stavovém řádku říkají jen „něco přetéká" - uživatel neví, na
-  které stránce ani co ji přetéká, takže nemá kde začít. ⚠️ **Ta informace už existuje a zahazuje
-  se**: náhled si počítá přetečení **pro každou stránku zvlášť** (`PreviewCanvas.PageOverflows`
-  prochází umístěné sekce) a nahoru posílá jediný `bool` (`OverflowChanged`). Do hlášky tedy jde
-  dostat číslo stránky i jméno sekce, aniž by se cokoli počítalo znovu. Vzor, jak má taková hláška
-  vypadat, je vedle v témže stavovém řádku - varování o nezařazených odjezdech jmenuje konkrétní
-  minuty i cestu k nápravě.
 
 - **`B115` Text v textovém prvku se nezmenší, aby se vešel** [M] (podnět kolega 3. 9.). Dlouhý text
   z prvku vyteče nebo se odřízne; uživatel to musí řešit ručním zmenšováním písma. **U tabulkových

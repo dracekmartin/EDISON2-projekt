@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-09-03 (1) - 📍 varování „obsah se nevejde" řekne, kde a co (`B114`)
+
+Červený rámeček kolem stránky náhledu a hláška ve stavovém řádku říkaly jen **„Obsah se nevejde
+na stránku"**. Uživatel z toho věděl, že je problém, ale ne na které stránce ani co ji přetéká -
+u dávky dvaceti vývěsek neměl kde začít (podnět kolega 3. 9.).
+
+Nově hláška jmenuje **stránku, sekci a prvek, který zabírá nejvíc místa**, včetně přesahu v mm:
+*„sekce „Vývěska" nevejde na stránku, nejvíc místa bere Poznámky (přesah 12,4 mm, strana 2)"*.
+Tentýž popis je i v souhrnu tisku, kde dosud stálo jen „3 z 12 stránek přetéká" - tisknout může
+jiná linka než v náhledu. Tooltip nese cestu k nápravě (zvětšit stránku, zvětšit sekci, zmenšit
+prvek).
+
+**Tentýž prvek přes všechny stránky je jeden záznam**, ne dvacet: u vývěsky se stránkou na zastávku
+vypadne stejná chyba na každé z nich, takže výpis po stránkách by z jedné chyby udělal dvacet
+řádků. Do tří stránek se vypisují čísla, nad to počet a první výskyt.
+
+⚠️ **Zjištění při práci: prvek nemůže přesáhnout svou sekci.** Engine dává sekci
+`max(nastavená výška, obsah)`, takže rostoucí prvek ji nafoukne s sebou. Podmínka „prvek přesahuje
+sekci" v detekci přetečení tedy nemohla nastat - byl to mrtvý kód. Reálné přetečení je vždy „sekce
+se nevejde na stránku" a užitečná informace je, **kdo ji nafoukl**: hláška rozlišuje prvek
+(zmenšit ten prvek) od nastavené výšky sekce (zmenšit sekci nebo zvětšit stránku), protože náprava
+je jinde. Ukazovat na prvek i tam, kde se do sekce vejde, by uživatele poslalo opravovat něco,
+co za to nemůže.
+
+**Názvy prvků mají teď jedno místo** (`ElementNames`). Byly opsané na třech - hláška o zmenšeném
+písmu, import z PDF a paleta - takže přejmenování dvou prvků 1. 9. („Mřížka odjezdů" → „Minuty
+odjezdů", „Legenda poznámek" → „Poznámky") se muselo dělat trojmo a v příručce zbyly staré názvy
+ještě 2. 9. Test drží, že jméno v hlášce je totéž jako na tlačítku palety.
+
+Ověřeno: .NET **1441/1441** (24 nových testů). Mutační kontrola: návrat k pevnému textu „Obsah se
+nevejde na stránku" shodí 10 z nich.
+
 ## 2026-09-02 (1) - 🔤 písmeno varianty trasy se tiskne jen tam, kde je čím vysvětlit
 
 Kolega poslal vývěsku linky 111 s dotazem, co znamená „A" za časem odjezdu.

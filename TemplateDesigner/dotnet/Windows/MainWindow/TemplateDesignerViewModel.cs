@@ -657,13 +657,18 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _selectionStatusText, value);
     }
 
-    private bool _hasPreviewOverflow;
-    /// <summary>True = obsah některé stránky preview se nevejde. Status bar zobrazí červený blok.</summary>
-    public bool HasPreviewOverflow
+    private string? _previewOverflow;
+    /// <summary>Co se v náhledu nevejde a kde (číslo stránky, sekce, prvek, přesah v mm). Null = nic
+    /// nepřetéká → červený blok ve status baru je skrytý. ⚠️ Nese **text, ne příznak**: z obecného
+    /// „obsah se nevejde na stránku" uživatel nepoznal, kterou stránku ani co ji přetéká, takže
+    /// neměl kde začít (podnět kolega 3. 9.).</summary>
+    public string? PreviewOverflow
     {
-        get => _hasPreviewOverflow;
-        set => Set(ref _hasPreviewOverflow, value);
+        get => _previewOverflow;
+        set { if (Set(ref _previewOverflow, value)) OnPropertyChanged(nameof(HasPreviewOverflow)); }
     }
+
+    public bool HasPreviewOverflow => !string.IsNullOrEmpty(_previewOverflow);
 
     private string _agendaNameText = "Agenda: -";
     public string AgendaNameText
