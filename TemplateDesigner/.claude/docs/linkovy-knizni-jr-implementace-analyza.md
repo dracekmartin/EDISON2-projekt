@@ -1119,9 +1119,11 @@ Pět samostatných věcí v jednom tiketu:
 
 ### 14.3 Co se ukázalo jako mimo tento track
 
-- **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky, ne pod ní. V TD to **umíme už dnes**:
-  legenda je samostatný prvek, který si uživatel položí, kam chce. Ověřit na reálné šabloně a tiket
-  zavřít, ne plánovat.
+- **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky, ne pod ní. Umístit vedle jde,
+  prvky mají volnou pozici. ⚠️ **Ale u linkových to není prvek Poznámky** - ten je vázaný na druh
+  agendy `STOP`; u linkových se legenda skládá **dynamickou tabulkou** nad kolekcí `POZNAMKY`, takže
+  uživatel nedostane značky ani řazení, jen sloupce textu. Tvrzení „umíme už dnes, legenda je
+  samostatný prvek" platilo pro zastávkové (zjištěno 3. 9.). Souvisí s `B117`.
 - **#13070** (BBSK) - vypadá jako linkový, ale zákazníkova předloha je **odjezdová relace**;
   patří tracku Relace, kde ještě nic není.
 - **#8175** (TRANSDEV) + bod 12 z **#8785** (POVED) - řazení spojů volitelně per linka a ruční pořadí.
