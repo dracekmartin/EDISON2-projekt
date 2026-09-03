@@ -848,7 +848,8 @@ Analogický dvoutabový dialog:
 ### 4. Výběr linek k tisku
 
 Dialog výběru instancí - vyhledávací pole (Enter spustí filtr), seznam linek s checkboxy pro
-výběr více najednou, tlačítka „Vybrat vše" / „Odznačit vše". Otevře se klikem na modrý štítek
+výběr více najednou, tlačítka „Vybrat vše" / „Odznačit vše". Seznam obsahuje **všechny linky
+zvolené skupiny**, takže hledání najde i linku, která je v seznamu až daleko dole. Otevře se klikem na modrý štítek
 „Instance: X - Y (N/M)" ve status baru.
 
 Nad seznamem je **skupina linek** - seznam ukazuje linky zvolené skupiny a přepnutím se

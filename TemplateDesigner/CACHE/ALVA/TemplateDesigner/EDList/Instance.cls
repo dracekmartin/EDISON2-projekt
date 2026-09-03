@@ -20,6 +20,19 @@ Include GENERAL
 Class ALVA.TemplateDesigner.EDList.Instance Extends %RegisteredObject
 {
 
+/// Strop počtu instancí, které picker natáhne. **Není to stránkování** - seznam se má načíst celý,
+/// aby hledací pole v dialogu prohledalo všechny linky, ne jen načtenou stránku.
+///
+/// ⚠️ Do 3. 9. tady bylo **200** a hledání pak nenašlo linku, která byla dál: napsané číslo
+/// nevrátilo nic a vypadalo to, že linka v datech není (nález Jan 1. 9., `380761` v CB_CSADAD).
+/// Skupina linek má reálně stovky záznamů - naměřeno 3. 9. na devu: nejvíc 240 (CB_CSADAD skupina 1),
+/// pak 228, jinde desítky. Limit tedy řezal o čtyřicet.
+///
+/// Strop zůstává jako **pojistka proti chybě v datech** (poškozený globál by jinak stáhl celý `^JRL`),
+/// ne jako omezení pro uživatele - proti naměřeným stovkám je o dva řády výš. Nula by nešla:
+/// agendy čtou `i 'limit s limit = 50`, takže „bez limitu" by znamenalo padesát řádků.
+Parameter MAXINSTANCI = 20000;
+
 /// Vrátí definici sloupců pro EDList. Společné pro obě varianty.
 ClassMethod InitializeList(ByRef sys As %String) As %Status
 {
@@ -79,8 +92,10 @@ ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String, skupina 
     ; Volání agenda metody - sdílí stejné ^||ML globály.
     ; Save and clear OUT, set IN params, call, parse, restore.
     s json = ""
+    ; search zůstává prázdný - filtruje se v dialogu na klientovi nad CELÝM seznamem, proto strop
+    ; místo stránky (viz MAXINSTANCI).
     s ^||ML("IN","search") = ""
-    s ^||ML("IN","limit") = 200
+    s ^||ML("IN","limit") = ..#MAXINSTANCI
     s ^||ML("IN","SKUPINA_LINEK_ID") = skupina
 
     ; Cleanup OUT before nested call (klíče "1".."N")

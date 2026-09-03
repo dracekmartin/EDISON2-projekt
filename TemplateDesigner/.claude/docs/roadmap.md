@@ -4,9 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B103`** (hledání linek) nebo
-> **`B101`**. U čtyř dalších je první krok dotaz ven (zákazník, kolegové z jízdních řádů),
-> ne psaní kódu.
+> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B101`**. U čtyř dalších je první
+> krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
 ---
 
@@ -21,9 +20,9 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 - **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
 - **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
 
-**Rovnou udělat jde `B103`** (hledání linek) a **`B101`** (drobné zlepšení srozumitelnosti).
+**Rovnou udělat jde `B101`** (drobné zlepšení srozumitelnosti).
 **`B100`** taky, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
-se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B113`, `B114` a `B115` 3. 9.)
+se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B103`, `B113`, `B114` a `B115` 3. 9.)
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
@@ -67,14 +66,6 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
   proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
   první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
-
-- **`B103` Hledání ve výběru linek prohledá jen prvních 200** (nález Jan 1. 9.). Dialog si
-  načte 200 linek skupiny (`EDList.Instance` posílá `limit = 200`) a hledací pole pak filtruje
-  **jen je** - napsané číslo linky, která je až za dvoustovkou, nenajde nic a vypadá to, že linka
-  v datech není. Přitom tam je: `380761` v CB_CSADAD skupině 1 se přes výběr vybrat nedá, přes
-  server se najde. ⚠️ Netýká se to jen zkoušení - u firem s tisíci linkami je většina linek
-  hledáním nedosažitelná. Oprava = poslat hledaný text na server (`GetAvailableInstances` ho už
-  přijímá jako `search`), ne filtrovat načtenou stránku.
 
 ---
 

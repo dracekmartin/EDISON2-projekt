@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-03 (4) - 🔍 hledání ve výběru linek najde i linku za dvoustovkou (`B103`)
+
+Dialog výběru linek si načetl **prvních 200 linek skupiny** a hledací pole pak filtrovalo jen je.
+Napsané číslo linky, která je dál, nevrátilo nic a vypadalo to, že linka v datech není - přitom tam
+byla (nález Jan 1. 9.: `380761` v CB_CSADAD skupině 1 se přes výběr vybrat nedalo, přes server se
+našlo).
+
+**Načítá se celá skupina** (rozhodnutí Jan 3. 9.). Změřeno na devu, kolik jich reálně je: nejvíc
+**240** (CB_CSADAD skupina 1), pak 228, jinde desítky - jsou to stovky, ne tisíce, takže stránkování
+nemá co řešit a hledání na klientovi funguje nad úplným seznamem. Limit tedy řezal o čtyřicet
+a hledaná linka byla 233. v pořadí.
+
+⚠️ **Limit nešlo jen smazat**: agendy čtou `i 'limit s limit = 50`, takže „bez limitu" by znamenalo
+padesát řádků, tedy ještě méně. Posílá se strop `MAXINSTANCI = 20000` - **pojistka proti chybě
+v datech** (poškozený globál by jinak stáhl celý `^JRL`), ne omezení pro uživatele; proti naměřeným
+stovkám je o dva řády výš.
+
+Ověřeno: Caché **3 nové testy** (celá skupina se vrátí, konkrétní linka z nálezu je ve výsledku,
+strop je řádově nad realitou). Mutační kontrola: vrácení limitu na 200 shodí všechny tři s přesnými
+čísly („výběr vrátil 200 linek, skupina má 240"). Ověřeno i voláním serveru - `LoadList` vrací 240
+řádků a linka `380761` je 233.
+
 ## 2026-09-03 (3) - 🔤 dvě řady písmen u minut se už nekryjí (`B113`)
 
 Varianty tras brala zadrátovaná abeceda `A, B, C, D…`, rozdíly tras sadu `BCEFGHIJOQRWeijqsvwxz`.

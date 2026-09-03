@@ -1,5 +1,33 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B103` - hledání ve výběru linek najde i linku za dvoustovkou (hotovo 3. 9. 2026)
+
+Detail → changelog 2026-09-03 (4). Načítá se celá skupina, ne prvních 200.
+
+**Rozhodnutí Jan 3. 9.:** žádné stránkování, prostě načíst všechno. Změřeno, kolik linek skupina
+reálně má - nejvíc **240** (CB_CSADAD skupina 1), pak 228, jinde desítky; jsou to stovky, ne
+tisíce. Limit řezal o čtyřicet a hledaná linka byla 233. v pořadí.
+
+⚠️ **Limit nešlo jen smazat** - agendy čtou `i 'limit s limit = 50`, takže „bez limitu" by dalo
+padesát řádků. Posílá se strop `MAXINSTANCI = 20000` jako pojistka proti chybě v datech
+(poškozený globál by stáhl celý `^JRL`), ne jako omezení pro uživatele.
+
+Zadání, se kterým se do toho šlo:
+
+- **`B103` Hledání ve výběru linek prohledá jen prvních 200** (nález Jan 1. 9.). Dialog si
+
+  načte 200 linek skupiny (`EDList.Instance` posílá `limit = 200`) a hledací pole pak filtruje
+
+  **jen je** - napsané číslo linky, která je až za dvoustovkou, nenajde nic a vypadá to, že linka
+
+  v datech není. Přitom tam je: `380761` v CB_CSADAD skupině 1 se přes výběr vybrat nedá, přes
+
+  server se najde. ⚠️ Netýká se to jen zkoušení - u firem s tisíci linkami je většina linek
+
+  hledáním nedosažitelná. Oprava = poslat hledaný text na server (`GetAvailableInstances` ho už
+
+  přijímá jako `search`), ne filtrovat načtenou stránku.
+
 ## `B113` - dvě řady písmen u minut se už nekryjí (hotovo 3. 9. 2026)
 
 Detail → changelog 2026-09-03 (3). Obě sady se berou z nastavení u linky, prázdné pole dá
