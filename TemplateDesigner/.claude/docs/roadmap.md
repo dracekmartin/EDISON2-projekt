@@ -145,7 +145,7 @@ takže nejde o práci, ale o doklad.
 
 | Co | Proč to čeká |
 |---|---|
-| **Počet poznámek na řádek per druh (#7487)** - ⚠️ **NEUMÍME, přeřazeno z „k ověření" 3. 9.** | Doloženo obrázky od kolegy: starý modul má u **každého druhu** poznámky volbu „Jedna / Dvě / Tři poznámky na řádek" (i „Žádná" = ten druh netisknout) plus pořadí druhů; zákazník chce čtyři. Náš „Počet sloupců" (1-4) je **jednotný pro celou legendu**, takže krátké i dlouhé poznámky dostanou stejné dělení. ⚠️ Do 3. 9. tu stálo „prvek umí 1-4 sloupce, hotové" - byla to záměna počtu sloupců za počet poznámek na řádek |
+| **Počet poznámek na řádek per druh (#7487)** - ⏸️ **ODLOŽENO 3. 9., Jan probere s kolegou**, jak je to důležité; ⚠️ **NEUMÍME** a nemá to kam jít, dokud nebude `B117` (poznámky jako prvek) | Doloženo obrázky od kolegy: starý modul má u **každého druhu** poznámky volbu „Jedna / Dvě / Tři poznámky na řádek" (i „Žádná" = ten druh netisknout) plus pořadí druhů; zákazník chce čtyři. Náš „Počet sloupců" (1-4) je **jednotný pro celou legendu**, takže krátké i dlouhé poznámky dostanou stejné dělení. ⚠️ Do 3. 9. tu stálo „prvek umí 1-4 sloupce, hotové" - byla to záměna počtu sloupců za počet poznámek na řádek |
 | **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
 | **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618`** | Starý tisk dává oba směry do jedné tabulky, takže není co k čemu přiložit. ⚠️ **Odblokováno 28. 8.** - obousměrný tisk je hotový, takže tuhle linku už je čím porovnat. Vzít při nejbližším průchodu doklady |
 | **Písmena ze zóny (`VS_CSAD 5 / 0771901`)** | V testovacích datech pro Vsetín na to není vzorek; firma navíc není v přepínači firem. Vzít, až ta data budou |
@@ -156,6 +156,33 @@ takže nejde o práci, ale o doklad.
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B117` Poznámky linkového JŘ jako prvek, ne dynamická tabulka** [M] (záměr Jan 3. 9.).
+
+  **Dnes:** legenda linkového JŘ se skládá **dynamickou tabulkou** nad kolekcí „Poznámky"
+  (`DRUH` 1-10, `TYP`, `ZNAK`, `TEXT`) - tak to má i výchozí šablona `knizni-jr-ad-vychozi.json`.
+  Prvek Poznámky (`NotesLegendElement`) je v paletě **jen u zastávkových**, protože `AgendaCapabilities`
+  ho váže na druh agendy `STOP`. ⚠️ **Rozhodnutí, proč to tak je, nikde není** - vzniklo to tak, že
+  to bylo nejsnazší.
+
+  **Záměr:** poznámky mají být **prvek** jako u zastávkových a nastavení jejich vzhledu má žít v něm.
+  Dynamická tabulka je na raw data, ne na doménovou logiku - a u poznámek doménová logika je:
+  negativní značky v inverzním boxu, vlastní styl znaku, vyhrazená buňka značky, řazení podle typu,
+  filtry druhů. Nad dynamickou tabulkou by to uživatel skládal ze sloupců a stejně by to nedostal.
+
+  ⚠️ **Není to jen povolit prvek v paletě.** Prvek a linková agenda mají **jiný datový kontrakt**:
+  zastávková posílá `KATEGORIE` (filtrovací značka) plus barvy a prvek na ní staví filtry i řazení,
+  linková posílá `DRUH`. Práce je v sjednocení - buď linková začne posílat i `KATEGORIE` (aditivní
+  změna, kterou R3 dovoluje), nebo se prvek naučí `DRUH`. Totéž je jádro `B56` (dvě rodiny
+  `BuildPoznamka` s jiným kontraktem).
+
+  **Ve starém modulu to není element**, ale záložka ve vlastnostech sekce s daty linky - a nese
+  právě to business nastavení, které by v prvku mělo žít: počet poznámek na řádek **per druh**
+  (Jedna / Dvě / Tři / Žádná), pořadí druhů zhora, „Způsob tisku poznámek" a „při dotisku
+  z minulé stránky netisknout okolní sekce" (doloženo obrázky od kolegy 3. 9.).
+
+  ⚠️ **Jde ruku v ruce s `#7487`** (čtyři poznámky na řádek per druh, dnes odložené): bez tohoto
+  prvku nemá to nastavení kam jít. Vzít obojí naráz, nebo `#7487` až po tomhle.
 
 - **`B112` Provozovny dopravce na vývěsce - rozdělaná práce** (M, z `B111` 1. 9., #13158).
   Skalární pole dopravce (Název, Adresa, Telefon, E-mail, IČO) **fungují a jsou vystavená**;
