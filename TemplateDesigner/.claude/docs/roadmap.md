@@ -5,9 +5,9 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B116`** (blikající paritní brána).
-> Jinak zbývají **podněty kolegy z TRANSDEV** (#12843, dvě věci - viz
-> [`customer-requirements §0.1`](customer-requirements-zastavkovy-jr.md)); u čtyř položek focusu
-> je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+> U čtyř položek focusu je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+> ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
+> ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`).
 
 ---
 
