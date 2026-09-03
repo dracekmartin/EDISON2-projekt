@@ -157,6 +157,33 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
+- **`B118` Práce se sekcemi je nepohodlná - výšku jde měnit jen číslem** [M] (podnět Jan 3. 9.).
+
+  **Dnešní stav:** výška sekce se dá změnit **jedinou cestou** - v panelu vlastností sekce polem
+  „Výška" v milimetrech. Uživatel tedy musí vědět, kolik místa na papíře zbývá, a spočítat si to.
+  Na plátně má sekce modrý svislý pruh se svým názvem, ale ten umí jen vybrat sekci a dvojklikem
+  otevřít vlastnosti; **tahat se za něj nedá**.
+
+  **Dva návrhy (Jan 3. 9.):**
+
+  1. **Tažení za modrý pruh / hranici sekce** - jako u prvků.
+  2. **Výška „Vyplnit zbývající místo"** - podívá se, kolik na stránce zbývá, a nastaví to.
+
+  ✅ **Polovina druhého návrhu už existuje:** `CalculateMaxSectionHeight` v panelu vlastností
+  spočítá zbývající místo (tisková plocha minus ostatní sekce a jejich záhlaví) a používá se jako
+  **strop** zadané hodnoty. Chybí jen způsob, jak tu hodnotu zapsat na jedno kliknutí - tedy
+  tlačítko nebo volba u pole výšky, ne nový výpočet.
+
+  ⚠️ **Rozhodnout u tažení:** co se stane sousední sekci. Uvnitř pevné tabulky platí
+  „mění se jen dvojice u hrany" (co jeden získá, druhý ztratí), ale u prvků na plátně naopak
+  „soused se nezužuje" - obojí je zapsané v `ux-conventions §3`. U sekcí je potřeba vybrat
+  jedno a držet to, jinak uživatel nepozná, co tažení udělá.
+
+  ⚠️ **Past:** tažení na plátně dnes mění velikost prvků a hranice sekce slouží jako jejich
+  clamp. Nová cesta musí jít rozlišit od tažení prvku - jinak se u okraje sekce nepozná, jestli
+  uživatel tahá prvek, nebo sekci (táž třída problému jako vstup do buňky tabulky, kde se
+  „druhý klik na vybranou tabulku" 12. 8. zkusil a zahodil).
+
 - **`B117` Poznámky linkového JŘ jako prvek** [M] (záměr Jan 3. 9.). ✅ **Krok 1 hotový 3. 9.** - prvek je v paletě linkového JŘ a nad jeho daty funguje bez úpravy kontraktu (changelog 2026-09-03 (7)). ⏳ **Zbývá krok 2:** nastavení „počet poznámek na řádek per druh" a pořadí druhů, tedy to, co má starý modul a co je zároveň `#7487`.
 
   **Dnes:** legenda linkového JŘ se skládá **dynamickou tabulkou** nad kolekcí „Poznámky"
