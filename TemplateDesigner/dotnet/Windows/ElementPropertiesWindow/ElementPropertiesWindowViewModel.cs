@@ -570,24 +570,24 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         ];
     }
 
-    /// <summary>Maximální výška sekce v mm tak, aby nepřekryla ostatní sekce na stránce.</summary>
-    private float CalculateMaxSectionHeight(Section section)
+    /// <summary>
+    /// Roztáhne sekci na celé zbývající místo stránky. Vratné krokem zpět.
+    /// </summary>
+    /// <remarks>
+    /// Sekce nad ní se nehne, sekce pod ní se **posune a podrží svou výšku** - prvky jdou se svou
+    /// sekcí, protože jejich souřadnice jsou relativní k ní (rozhodnutí Jan 3. 9.). Zbývající místo
+    /// počítá <see cref="Models.Layout.SectionLayoutMath"/> podle **papíru**, ne podle plátna.
+    /// </remarks>
+    private void VyplnitZbytekStranky(Section section)
     {
-        var template = _state.CurrentTemplate;
-        float printableH = template.PageSize.PrintableHeight;
+        if (section.DesignerHeight is not { } stara) return;   // dynamická výška roste sama
 
-        // Odečíst výšku všech ostatních sekcí (+ prostor pro záhlaví sekce v designeru ~5mm per sekce)
-        const float sectionHeaderMm = 5f; // přibližný ekvivalent 20px záhlaví v mm
-        float usedByOthers = 0f;
-        foreach (var s in template.Sections)
-        {
-            if (s == section) continue;
-            usedByOthers += sectionHeaderMm + s.EffectiveDesignerHeight;
-        }
-        // Záhlaví této sekce
-        usedByOthers += sectionHeaderMm;
+        float nova = Models.Layout.SectionLayoutMath.ZbyvajiciMistoMm(_state.CurrentTemplate, section);
+        if (MathF.Abs(nova - stara) < 0.05f) return;           // už vyplňuje, ať krok zpět nesbírá prázdné změny
 
-        return Math.Max(5f, printableH - usedByOthers);
+        _state.Execute(new SetPropertyCommand("výška sekce", stara, nova,
+            v => section.DesignerHeight = (float?)v));
+        _currentInvalidate();
     }
 
     private IReadOnlyList<Models.PropertyDescriptor> BuildSectionDescriptors(Section section)
@@ -610,11 +610,22 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                 Get   = () => section.DesignerHeight ?? 30f,
                 Set   = v  =>
                 {
-                    // Clamp: výška nesmí překrýt ostatní sekce
-                    float maxH = CalculateMaxSectionHeight(section);
+                    // Clamp: výška nesmí vytlačit ostatní sekce ze stránky. Táž míra jako
+                    // u tlačítka níž - jinak by tlačítko zapsalo hodnotu, kterou pole srazí.
+                    float maxH = Models.Layout.SectionLayoutMath.ZbyvajiciMistoMm(_state.CurrentTemplate, section);
                     section.DesignerHeight = Math.Min(v, maxH);
                 },
                 Min   = 5f, Max = 9999f, Unit = "mm"
+            });
+
+            // Zbývající místo se nedá spočítat z hlavy - uživatel by musel od tiskové plochy
+            // odečítat výšky ostatních sekcí. Tlačítko to zapíše na jedno kliknutí (`B118`).
+            list.Add(new Models.ButtonPropertyDescriptor
+            {
+                Label = "Zbývající místo", Group = "Sekce",
+                ButtonLabel = "Vyplnit zbytek stránky",
+                ActionId = Models.ButtonPropertyDescriptor.ActionVyplnitZbytekStranky,
+                OnClick = () => VyplnitZbytekStranky(section)
             });
         }
 

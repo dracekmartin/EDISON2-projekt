@@ -157,7 +157,7 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B118` Výšku sekce jde měnit jen číslem** [M] (podnět Jan 3. 9.). **Chování rozhodnuté 3. 9., dělá se ve dvou krocích: (1) vyplnit zbývající místo, (2) tažení.**
+- **`B118` Výšku sekce jde měnit jen číslem** [M] (podnět Jan 3. 9.). ✅ **Krok 1 hotový 3. 9.** - tlačítko „Vyplnit zbytek stránky" u vlastností sekce (changelog 2026-09-03 (8)). ⏳ **Zbývá krok 2: tažení** za modrý pruh sekce.
 
   **Dnešní stav:** výška sekce se dá změnit **jedinou cestou** - v panelu vlastností sekce polem
   „Výška" v milimetrech. Uživatel tedy musí vědět, kolik místa na papíře zbývá, a spočítat si to.

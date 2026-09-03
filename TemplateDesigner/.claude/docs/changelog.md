@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-03 (8) - 📐 sekce se roztáhne na zbytek stránky jedním kliknutím (`B118` krok 1)
+
+Výšku sekce šlo zadat **jen číslem v milimetrech**, takže si uživatel musel od tiskové plochy
+odečítat výšky ostatních sekcí (podnět Jan 3. 9.). U vlastností sekce je nově tlačítko
+**„Vyplnit zbytek stránky"**.
+
+**Chování (rozhodnutí Jan 3. 9.):** sekce nad ní se nehne, sekce pod ní se **posune a podrží svou
+výšku**. Zadáno příkladem: tři sekce zabírají 0-10 %, 10-20 % a 20-30 % stránky; po vyplnění
+prostřední vyjde **0-10 %, 10-90 % a 90-100 %** - stránka je plná a poslední sekce si drží svých
+10 %. Prvky jdou se svou sekcí samy, protože jejich souřadnice jsou k ní relativní.
+
+⚠️ **Výpočet zbývajícího místa se musel opravit.** Existoval už dřív jako strop pole
+„Výška", ale odečítal **5 mm za každou sekci** jako místo pro její modré záhlaví na plátně.
+To je otázka zobrazení, ne rozměru sestavy: u tří sekcí by tím zůstalo 15 mm papíru nevyužitých
+a tlačítko by stránku nevyplnilo. Počítá se teď podle papíru a **stejnou mírou pro tlačítko
+i pro strop** - jinak by tlačítko zapsalo hodnotu, kterou by pole samo srazilo.
+
+Akce je vratná krokem zpět a na sekci, která už celé místo vyplňuje, neudělá nic (aby krok zpět
+nesbíral prázdné změny).
+
+⏳ **Zbývá krok 2 `B118`:** tažení za modrý pruh sekce. Chování je rozhodnuté týmž příkladem,
+včetně toho, že tažení musí mít stejnou mez jako pole - jinak by tatáž věc měla dvě chování.
+
+Ověřeno: .NET **1471/1471** (7 nových testů, jeden měří přímo ten příklad ze zadání). Mutace
+„vrátit odečet záhlaví na plátně" shodí dva z nich.
+
 ## 2026-09-03 (7) - 📝 poznámky jsou prvek i v linkovém jízdním řádu (`B117` krok 1)
 
 Legenda linkového jízdního řádu se dosud skládala **dynamickou tabulkou** nad kolekcí poznámek.

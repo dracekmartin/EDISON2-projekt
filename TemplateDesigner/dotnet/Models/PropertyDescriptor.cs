@@ -173,4 +173,5 @@ public class ButtonPropertyDescriptor : PropertyDescriptor
     public const string ActionOpenDepartureGridEditor = "OpenDepartureGridEditor";
     public const string ActionUploadImage = "UploadImage";
     public const string ActionMatchImageAspect = "MatchImageAspect";
+    public const string ActionVyplnitZbytekStranky = "VyplnitZbytekStranky";
 }
