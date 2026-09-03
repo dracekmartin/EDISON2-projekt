@@ -148,10 +148,15 @@ void WriteSourceFingerprint()
     {
         "# Fingerprint legacy zdroju, ze kterych je generovan Tree.cls (tools/GenerateTree.cs).",
         "# Kontroluje .claude/hooks/tree-drift.sh pri startu chatu. Needitovat rucne.",
+        "# Hash je pres obsah BEZ CR (kvuli CRLF/LF rozdilu Windows vs CI): tr -d '\\r' | sha256sum",
     };
     foreach (var src in new[] { navbarPath, treePath, enumPath })
     {
-        string hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(src))).ToLowerInvariant();
+        // CR se pred hashovanim zahazuje. Git checkoutuje tytez legacy soubory na Windows
+        // jako CRLF a na Linuxu jako LF, takze hash surovych bajtu by se mezi dev strojem
+        // a CI runnerem nikdy neshodl - workflow by porad otviral PR jen na fingerprint.
+        byte[] lf = File.ReadAllBytes(src).Where(b => b != (byte)'\r').ToArray();
+        string hash = Convert.ToHexString(SHA256.HashData(lf)).ToLowerInvariant();
         lines.Add($"{hash}  {Path.GetRelativePath(EdisonRoot, src).Replace(Path.DirectorySeparatorChar, '/')}");
     }
     // LF a bez BOM: čte to bash hook, CRLF by zůstal v parsovaném hashi.

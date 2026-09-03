@@ -23,6 +23,7 @@ permissions:
 
 env:
   BRANCH: bot/tree-sync
+  TREE: EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls
 
 jobs:
   sync:
@@ -74,12 +75,29 @@ jobs:
       - name: Je co commitnout?
         id: diff
         run: |
-          if git diff --quiet -- EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls tools/tree-sources.sha256; then
+          if git diff --quiet -- "$TREE" tools/tree-sources.sha256; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Snapshot je srovnany, nic k otevirani."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            git diff --stat -- EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls tools/tree-sources.sha256
+            git diff --stat -- "$TREE" tools/tree-sources.sha256
+          fi
+
+      - name: Zavrit uz nepotrebny PR
+        if: steps.diff.outputs.changed == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Bez tohohle by po srovnani snapshotu zustal viset PR s nepravdivym diffem -
+          # krok nize se pri changed=false vubec nespusti, takze by ho nikdo nezavrel.
+          n=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$n" ]; then
+            gh pr close "$n" --delete-branch \
+              --comment "Snapshot je uz srovnany se legacy zdroji, PR neni potreba."
+            echo "PR #$n zavren."
+          else
+            echo "Zadny otevreny PR bota."
           fi
 
       - name: Otevrit / aktualizovat PR
@@ -89,44 +107,27 @@ jobs:
           STUBS: ${{ steps.gen.outputs.stubs }}
         run: |
           set -euo pipefail
+          # Stara verze se musi vytahnout PRED commitem, jinak by HEAD ukazoval na novou.
+          git show "HEAD:$TREE" > old-tree.cls
+          python3 tools/tree-diff-summary.py old-tree.cls "$TREE" > summary.md
+
           git config user.name  "tree-sync bot"
           git config user.email "noreply@github.com"
           git checkout -B "$BRANCH"
-          git add EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls tools/tree-sources.sha256
+          git add "$TREE" tools/tree-sources.sha256
           git -c commit.gpgsign=false commit -m "EDISON2 - regenerate module tree from legacy XML"
           git push --force origin "$BRANCH"
 
           {
-            echo "Legacy zdroje stromu se pohnuly, tohle je vysledek regenerace."
-            echo
-            echo "Diff zkontroluj proti legacy commitum - polozka, ktera zmizela, tam"
-            echo "zmizet MA (napr. modul presunuty jinam), ale ma to byt videt v historii"
-            echo "mlinecz/EDISON."
+            cat summary.md
             echo
             if [ "${STUBS:-0}" != "0" ]; then
               echo "> [!WARNING]"
-              echo "> Generator ohlasil **${STUBS} modulu bez exe cesty**. Na CI runneru"
-              echo "> neni C:\\Edison, takze novy uzel, ktery jeste neni v override mape,"
-              echo "> exe nedostane a ve stromu z nej bude oranzovy stub. Tenhle PR"
-              echo "> **nemergovat** - pust tools/sync-tree.ps1 na dev stroji, kde se"
-              echo "> exe dohleda."
+              echo "> ${STUBS} modulu bez exe cesty - nemergovat, pust"
+              echo "> \`tools/sync-tree.ps1\` na dev stroji."
               echo
             fi
-            echo "**Po mergnuti je jeste potreba nasadit na Cache** - Atelier API neni"
-            echo "z internetu dostupne (IIS proxa propousti jen alwa/sys/rest), takze"
-            echo "to bot udelat neumi:"
-            echo
-            echo '```'
-            echo "powershell -File tools/sync-tree.ps1"
-            echo '```'
-            echo
-            echo "<details><summary>report generatoru</summary>"
-            echo
-            echo '```'
-            cat gen-report.txt
-            echo '```'
-            echo
-            echo "</details>"
+            echo "Po mergnuti nasadit na Cache: \`powershell -File tools/sync-tree.ps1\`"
           } > pr-body.md
 
           open=$(gh pr list --head "$BRANCH" --state open --json number --jq 'length')

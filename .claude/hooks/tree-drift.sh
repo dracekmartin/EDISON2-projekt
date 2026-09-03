@@ -25,7 +25,9 @@ while IFS= read -r line; do
     src="$LEGACY/$rel"
     # Presunuty/prejmenovany zdroj neni drift stromu - to je vec generatoru, ne teto hlasky.
     [ -f "$src" ] || continue
-    have=$(sha256sum "$src" 2>/dev/null | cut -d' ' -f1)
+    # CR se zahazuje: git checkoutuje legacy soubory na Windows jako CRLF a na CI jako LF,
+    # takze hash surovych bajtu by se nikdy neshodl s tim, co spocital workflow.
+    have=$(tr -d '\r' < "$src" 2>/dev/null | sha256sum | cut -d' ' -f1)
     [ -n "$have" ] || continue
     [ "$have" = "$want" ] || DRIFT="$DRIFT ${rel##*/}"
 done < "$FP"
