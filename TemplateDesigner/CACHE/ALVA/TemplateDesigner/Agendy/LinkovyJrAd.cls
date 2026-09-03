@@ -58,16 +58,21 @@ Parameter Variant As %String = "AD";
 
 Parameter VariantLabel As %String = "AD (linková doprava)";
 
-/// ⚠️ **Zveřejněná byla od 24. 8., od 1. 9. je zase skrytá** (rozhodnutí Jan): vydává se verze,
-/// ve které mají být jen zastávkové jízdní řády. Linkový tisk je funkční a testy na něj běží dál -
-/// jen se nenabízí uživatelům, dokud se nevydá.
+/// ⚠️ **Zveřejněná od 24. 8., 1. 9. skrytá kvůli vydání, 3. 9. vrácená** (rozhodnutí Jan) - pokračuje
+/// se v dovývoji linkových jízdních řádů, takže je agenda potřeba v nabídce. **Před dalším vydáním
+/// se musí znovu rozhodnout, jestli má jít k zákazníkům**: `Released = 1` znamená, že se ukáže všem,
+/// jakmile se vydá nová verze.
 ///
-/// ⚠️ **Skrytí neznepřístupní hotové šablony.** Výběr agendy nezveřejněnou agendu nenabízí, ale
-/// **aktuální agendu šablony ukáže vždy**, a v otevírání z databáze jsou její šablony dosažitelné
-/// přes „Všechny agendy". Prvek linkové tabulky zmizí z palety sám - váže se na druh agendy `LINE`.
+/// ⚠️ **Skrytí neznepřístupní hotové šablony** (platí pro obě strany přepínače). Výběr agendy
+/// nezveřejněnou agendu nenabízí, ale **aktuální agendu šablony ukáže vždy**, a v otevírání
+/// z databáze jsou její šablony dosažitelné přes „Všechny agendy". Prvek linkové tabulky se váže
+/// na druh agendy `LINE`, takže z palety zmizí a objeví se sám.
+///
+/// ⚠️ **Seznam agend se čte jednou při startu** - běžící aplikace změnu nepřebere, musí se zavřít
+/// a spustit znovu.
 ///
 /// Městská varianta (`LinkovyJrMhd`) zveřejněná nebyla nikdy: neprošla porovnáním se starým modulem.
-Parameter Released = 0;
+Parameter Released = 1;
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 

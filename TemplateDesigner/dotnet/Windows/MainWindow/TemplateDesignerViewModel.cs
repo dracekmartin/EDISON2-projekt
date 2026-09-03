@@ -3632,18 +3632,21 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Fallback startovní šablona - agendu typicky přepíše EDISON kontrakt nebo
     /// poslední použitá agenda uživatele (viz ctor).</summary>
     /// <remarks>
-    /// Výchozí je <b>zastávkový JŘ (AD)</b>. Od 24. 8. tu byl linkový, protože se na něm pracovalo,
-    /// ale 1. 9. se linkové JŘ před vydáním skryly - a tahle konstanta skrytí obcházela: nová
-    /// šablona startovala na skryté agendě, ta se stala aktuální agendou a výběr ji pak ukázal,
-    /// protože aktuální agendu zobrazuje vždy (aby šly otevřít hotové šablony). Uživatel tedy
-    /// linkové JŘ viděl dál, i když byly skryté (nález Jan 1. 9.).
+    /// Výchozí je <b>linkový JŘ (AD)</b> - pracuje se na něm (vráceno 3. 9., rozhodnutí Jan; od 1. 9.
+    /// tu byl kvůli vydání zastávkový).
     ///
-    /// ⚠️ **Musí to být zveřejněná agenda** - jinak se skrytí dá obejít samotným startem aplikace.
-    /// Hlídá `SkrytaAgendaTests`.
+    /// ⚠️ **Musí to být zveřejněná agenda.** Když se agenda skryje před vydáním, tahle konstanta
+    /// skrytí obchází: nová šablona nastartuje na skryté agendě, ta se stane aktuální agendou
+    /// a výběr ji pak ukáže, protože aktuální agendu zobrazuje vždy (aby šly otevřít hotové
+    /// šablony). Přesně takhle uživatel linkové JŘ viděl dál, i když byly skryté (nález Jan 1. 9.).
+    /// **Skrývá-li se agenda, musí se změnit i tady** - hlídá `SkrytaAgendaTests`.
+    ///
+    /// ⚠️ Uplatní se jen tam, kde není co obnovit: **poslední použitá agenda uživatele má přednost**
+    /// (viz ctor), takže kdo si už jednou vybral jinou, dostane po startu tu svoji.
     /// </remarks>
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "LINKOVY_JR_AD" };
         t.Sections.AddRange(CreateDefaultSections(t.PageSize));
         return t;
     }

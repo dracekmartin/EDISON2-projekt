@@ -60,6 +60,11 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   starý modul a ten si zapisuje do globálu, takže dva běhy vedle sebe si mohou přepsat mezistav).
   Až pak řešit případný rozdíl.
 
+  ⚠️ **Není to jediný blikající test** (3. 9.): `SheetPdfExportTests.Opakovani_KazdaStrankaNaCelyList`
+  spadl v celé .NET sadě, prošel izolovaně a při druhém běhu celé sady prošel taky. Jde o export PDF,
+  takže podezření je na sdílený stav mezi testy (temp soubor, cache prvků). **Vzít obojí naráz** -
+  je to táž otázka „na čem test závisí kromě vstupu", jen jednou v Caché a jednou v .NET.
+
 - **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
   U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
   to respektuje, my ne, takže se takové linky tisknou jinak. **Odloženo kvůli frekvenci**
@@ -95,8 +100,13 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
 je v Backlogu u `B56` - je to úklid vnitřku bez přírůstku pro uživatele a nad rozdělaným kódem by
 jen zabetonoval rozpracovaný tvar (rozhodnutí Jan 31. 8.).
 
-⚠️ **Linková AD agenda je zveřejněná** (`Released = 1`, 24. 8.) - **ukáže se i zákazníkům, jakmile
-se vydá nová verze**. Městská zůstává skrytá, dokud neprojde porovnáním se starým modulem.
+⚠️ **Linková AD agenda je zveřejněná a je výchozí pro novou šablonu** (`Released = 1`; 24. 8.
+zveřejněná, 1. 9. skrytá kvůli vydání, **3. 9. vrácená** kvůli dovývoji) - **ukáže se i zákazníkům,
+jakmile se vydá nová verze**, takže před vydáním se musí znovu rozhodnout. Skrývá se na **dvou
+místech**: `Parameter Released` v `LinkovyJrAd.cls` a konstanta ve `CreateSampleTemplate` (jinak
+skrytí obejde samotný start aplikace); vazbu hlídá `SkrytaAgendaTests`.
+⚠️ **`Released` je serverová hodnota, ne v exe** - nasazení `.cls` na dev změní nabídku agend i těm,
+kdo mají starší exe. Městská zůstává skrytá, dokud neprojde porovnáním se starým modulem.
 
 **Když přijde na řadu MHD** (dnes se neřeší, rozhodnutí Jan 28. 8.), platí čtyři věci, které se z kódu
 nepoznají:

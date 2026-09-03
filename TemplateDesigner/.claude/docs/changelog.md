@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-03 (5) - 🚆 linkový JŘ (AD) je zpátky v nabídce a je výchozí
+
+Pokračuje dovývoj linkových jízdních řádů, takže agenda je zase potřeba v aplikaci (rozhodnutí Jan
+3. 9.; 1. 9. se kvůli vydání skryla). Nová šablona na ní i startuje.
+
+⚠️ **Před dalším vydáním se musí znovu rozhodnout, jestli má jít k zákazníkům** - `Released = 1`
+znamená, že se ukáže všem, jakmile se vydá nová verze.
+
+⚠️ **Skrývá se na dvou místech** a obě se musí změnit spolu: `Parameter Released` v Caché třídě
+a konstanta ve výchozí šabloně na klientovi. Jinak skrytí obejde samotný start aplikace - přesně
+tak byla 1. 9. linková agenda vidět, i když měla být skrytá.
+
+**Test už nekontroluje konkrétní kód agendy, ale tu vazbu**: výchozí agenda musí mít v `.cls`
+`Released = 1`, což se čte ze zdrojáků v repu. Dřív test čekal pevně „ZASTAVKOVY_JR_AD", takže by
+ho každé přepnutí rozbilo a nikdo by z pádu nepoznal, jestli je to chyba, nebo záměr. Testovací data
+v té sadě navíc přestala používat reálné kódy agend - s nimi stačilo přepnout výchozí agendu na tu,
+která je v testu „skrytá", a spadl jiný test na fallbacku.
+
+⚠️ **`Released` je serverová hodnota**, ne součást exe: nasazení `.cls` na dev změní nabídku agend
+i těm, kdo mají starší exe. Seznam agend se navíc čte jednou při startu, takže běžící aplikace
+změnu nepřebere.
+
+Ověřeno: .NET **1454/1454**, Caché **146/146**, a voláním serveru (`ListAgendy` vrací
+`LINKOVY_JR_AD` s `released: true`). Mutace „skrýt agendu a nechat ji jako výchozí" test shodí.
+
 ## 2026-09-03 (4) - 🔍 hledání ve výběru linek najde i linku za dvoustovkou (`B103`)
 
 Dialog výběru linek si načetl **prvních 200 linek skupiny** a hledací pole pak filtrovalo jen je.
