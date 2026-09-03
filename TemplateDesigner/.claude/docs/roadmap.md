@@ -5,7 +5,7 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B116`** (blikající paritní brána).
-> Jinak zbývají **podněty kolegy z TRANSDEV** (#12843, tři věci - viz
+> Jinak zbývají **podněty kolegy z TRANSDEV** (#12843, dvě věci - viz
 > [`customer-requirements §0.1`](customer-requirements-zastavkovy-jr.md)); u čtyř položek focusu
 > je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
