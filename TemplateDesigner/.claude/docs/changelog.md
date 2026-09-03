@@ -3,8 +3,13 @@
 ## 2026-09-03 (8) - 📐 sekce se roztáhne na zbytek stránky jedním kliknutím (`B118` krok 1)
 
 Výšku sekce šlo zadat **jen číslem v milimetrech**, takže si uživatel musel od tiskové plochy
-odečítat výšky ostatních sekcí (podnět Jan 3. 9.). U vlastností sekce je nově tlačítko
-**„Vyplnit zbytek stránky"**.
+odečítat výšky ostatních sekcí (podnět Jan 3. 9.). V **místní nabídce sekce** (pravý klik) je nově
+položka **„Vyplnit zbytek stránky"**; na sekci, která už celé místo vyplňuje, je zašedlá.
+
+⚠️ **Patří to do nabídky, ne do formuláře sekce** (nález Jan 3. 9.). Nejdřív to bylo
+přidané jako tlačítko do C# descriptorů vlastností sekce - **a nebylo vidět**, protože formulář
+sekce přichází z Caché (`SectionEdit.cls`) a descriptory se u sekce vůbec nezobrazují. Věcně to
+sedí i jinak: je to akce, ne nastavení.
 
 **Chování (rozhodnutí Jan 3. 9.):** sekce nad ní se nehne, sekce pod ní se **posune a podrží svou
 výšku**. Zadáno příkladem: tři sekce zabírají 0-10 %, 10-20 % a 20-30 % stránky; po vyplnění

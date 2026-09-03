@@ -570,26 +570,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         ];
     }
 
-    /// <summary>
-    /// Roztáhne sekci na celé zbývající místo stránky. Vratné krokem zpět.
-    /// </summary>
-    /// <remarks>
-    /// Sekce nad ní se nehne, sekce pod ní se **posune a podrží svou výšku** - prvky jdou se svou
-    /// sekcí, protože jejich souřadnice jsou relativní k ní (rozhodnutí Jan 3. 9.). Zbývající místo
-    /// počítá <see cref="Models.Layout.SectionLayoutMath"/> podle **papíru**, ne podle plátna.
-    /// </remarks>
-    private void VyplnitZbytekStranky(Section section)
-    {
-        if (section.DesignerHeight is not { } stara) return;   // dynamická výška roste sama
-
-        float nova = Models.Layout.SectionLayoutMath.ZbyvajiciMistoMm(_state.CurrentTemplate, section);
-        if (MathF.Abs(nova - stara) < 0.05f) return;           // už vyplňuje, ať krok zpět nesbírá prázdné změny
-
-        _state.Execute(new SetPropertyCommand("výška sekce", stara, nova,
-            v => section.DesignerHeight = (float?)v));
-        _currentInvalidate();
-    }
-
     private IReadOnlyList<Models.PropertyDescriptor> BuildSectionDescriptors(Section section)
     {
         var list = new List<Models.PropertyDescriptor>
@@ -616,16 +596,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                     section.DesignerHeight = Math.Min(v, maxH);
                 },
                 Min   = 5f, Max = 9999f, Unit = "mm"
-            });
-
-            // Zbývající místo se nedá spočítat z hlavy - uživatel by musel od tiskové plochy
-            // odečítat výšky ostatních sekcí. Tlačítko to zapíše na jedno kliknutí (`B118`).
-            list.Add(new Models.ButtonPropertyDescriptor
-            {
-                Label = "Zbývající místo", Group = "Sekce",
-                ButtonLabel = "Vyplnit zbytek stránky",
-                ActionId = Models.ButtonPropertyDescriptor.ActionVyplnitZbytekStranky,
-                OnClick = () => VyplnitZbytekStranky(section)
             });
         }
 

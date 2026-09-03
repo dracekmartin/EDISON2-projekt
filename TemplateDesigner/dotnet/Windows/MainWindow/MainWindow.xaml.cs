@@ -2830,6 +2830,16 @@ public partial class MainWindow : Window
                     sectionVm?.ShowPropertiesCommand.Execute(null);
                 })
             });
+            // Akce, ne nastavení - proto v místní nabídce a ne ve formuláři sekce (rozhodnutí
+            // Jan 3. 9.). Zbývající místo se nedá spočítat z hlavy, takže tohle je jediná cesta,
+            // jak sekci roztáhnout bez počítání výšek ostatních sekcí.
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Vyplnit zbytek stránky",
+                Command = new EDControls.EDViewModel.RelayCommand(
+                    () => { _vm.VyplnitZbytekStranky(section); InvalidateCanvas(); },
+                    () => !Models.Layout.SectionLayoutMath.VyplnujeCeleMisto(_vm.State.CurrentTemplate, section))
+            });
             menu.Items.Add(new MenuItem
             {
                 Header = "Přesunout nahoru",

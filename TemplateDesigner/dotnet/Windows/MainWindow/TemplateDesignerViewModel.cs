@@ -1133,6 +1133,32 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasSizeUpdate?.Invoke();
     }
 
+    /// <summary>
+    /// Roztáhne sekci na celé zbývající místo stránky. Vratné krokem zpět.
+    /// </summary>
+    /// <remarks>
+    /// Sekce nad ní se nehne, sekce pod ní se **posune a podrží svou výšku**; prvky jdou se svou
+    /// sekcí samy, protože jejich souřadnice jsou k ní relativní (rozhodnutí Jan 3. 9.).
+    ///
+    /// <para>⚠️ Je to **akce v místní nabídce**, ne pole ve formuláři sekce - formulář sekce přichází
+    /// z Caché (`SectionEdit.cls`), takže tlačítko přidané do C# descriptorů se vůbec nezobrazí.
+    /// Do 3. 9. tam bylo právě takhle položené a nešlo na něj kliknout.</para>
+    /// </remarks>
+    public void VyplnitZbytekStranky(Section section)
+    {
+        if (section.DesignerHeight is not { } stara) return;   // dynamická výška roste sama
+
+        float nova = SectionLayoutMath.ZbyvajiciMistoMm(State.CurrentTemplate, section);
+        if (MathF.Abs(nova - stara) < 0.05f) return;           // ať krok zpět nesbírá prázdné změny
+
+        Execute(new SetPropertyCommand("výška sekce", stara, nova,
+            v => section.DesignerHeight = (float?)v));
+        RebuildSections();
+        RequestCanvasSizeUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+        RequestPreviewRefresh?.Invoke();
+    }
+
     public void MoveSection(Section section, int direction)
     {
         int idx    = State.CurrentTemplate.Sections.IndexOf(section);
