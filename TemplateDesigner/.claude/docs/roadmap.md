@@ -157,7 +157,7 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B118` Práce se sekcemi je nepohodlná - výšku jde měnit jen číslem** [M] (podnět Jan 3. 9.).
+- **`B118` Výšku sekce jde měnit jen číslem** [M] (podnět Jan 3. 9.). **Chování rozhodnuté 3. 9., dělá se ve dvou krocích: (1) vyplnit zbývající místo, (2) tažení.**
 
   **Dnešní stav:** výška sekce se dá změnit **jedinou cestou** - v panelu vlastností sekce polem
   „Výška" v milimetrech. Uživatel tedy musí vědět, kolik místa na papíře zbývá, a spočítat si to.
@@ -174,10 +174,25 @@ takže nejde o práci, ale o doklad.
   **strop** zadané hodnoty. Chybí jen způsob, jak tu hodnotu zapsat na jedno kliknutí - tedy
   tlačítko nebo volba u pole výšky, ne nový výpočet.
 
-  ⚠️ **Rozhodnout u tažení:** co se stane sousední sekci. Uvnitř pevné tabulky platí
-  „mění se jen dvojice u hrany" (co jeden získá, druhý ztratí), ale u prvků na plátně naopak
-  „soused se nezužuje" - obojí je zapsané v `ux-conventions §3`. U sekcí je potřeba vybrat
-  jedno a držet to, jinak uživatel nepozná, co tažení udělá.
+  **Rozhodnuté chování (Jan 3. 9.) - platí pro vyplnění i pro tažení:** sekce nad ní se nehne,
+  sekce pod ní se **posune a podrží svou výšku**. Příklad, kterým je to zadané: tři sekce zabírají
+  0-10 %, 10-20 % a 20-30 % stránky; po „vyplnit zbývající místo" na prostřední vyjde **0-10 %,
+  10-90 % a 90-100 %** - tedy stránka je plná a poslední sekce si drží svých 10 %.
+
+  ✅ **Prvky se posunou samy** - jejich souřadnice jsou v modelu relativní k sekci (renderer je
+  přepočítává přes počátek sekce), takže se vůči své sekci nepohnou a není co dopočítávat.
+
+  ✅ **„Zbývající" počítá s tím, že ostatní sekce si své místo drží** - proto se sekce pod ní
+  nevytlačí ze stránky. `CalculateMaxSectionHeight` to tak už dělá (odečítá všechny ostatní
+  sekce i jejich záhlaví).
+
+  ⚠️ **Tažení musí mít stejnou mez jako dnes pole Výška** - tam se zadaná hodnota srazí na
+  maximum. Bez toho by tatáž věc měla dvě chování: číslem se sekce srazí, tažením přeteče.
+  Zarazit a dát to najevo (kurzor / hláška), aby to nevypadalo jako zaseknutí.
+
+  ✅ **Soused se nezužuje, jen posune** (rozhodnuto tímtéž příkladem). Je to jiné než uvnitř
+  pevné tabulky, kde se dvojice u hrany o místo dělí - u sekcí jsou ale bloky v toku nad sebou,
+  ne v mřížce. Obě pravidla drží `ux-conventions §3`, teď tam patří i tohle.
 
   ⚠️ **Past:** tažení na plátně dnes mění velikost prvků a hranice sekce slouží jako jejich
   clamp. Nová cesta musí jít rozlišit od tažení prvku - jinak se u okraje sekce nepozná, jestli
