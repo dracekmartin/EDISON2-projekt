@@ -350,10 +350,22 @@ Barvu tedy jde odebrat tak, že obsah pole smažete, a zůstane to tak i po ulo�
 **Do číselných polí (rozměry, velikosti, odsazení) jde psát desetinnou čárku i tečku** - „1,5"
 znamená totéž jako „1.5". Ukládá se to s tečkou.
 
-### Automatické zmenšení textu do buňky
-Když se text nevejde do šířky buňky tabulky (dlouhý název zastávky, výčet zón…), písmo se v té
-buňce automaticky zmenší tak, aby se vešlo - obdoba funkce „přizpůsobit buňce" v Excelu. Je to
-vestavěné chování napříč tabulkovými prvky, nemusíte nic zapínat.
+### Automatické zmenšení textu
+Když se text nevejde, písmo se automaticky zmenší tak, aby se vešlo - obdoba funkce „přizpůsobit
+buňce" v Excelu. Je to vestavěné chování, nemusíte nic zapínat:
+
+- **Buňky tabulek** (dlouhý název zastávky, výčet zón…) - zmenší se na šířku buňky.
+- **Prvky jízdního řádu** s pevnou výškou - písmo se zmenší, aby se obsah vešel do výšky.
+- **Textový prvek** s pevnou výškou - zmenší se na výšku (se zalamováním), nebo na šířku
+  (bez zalamování). Tady je **dolní mez**: na polovinu nastavené velikosti, nikdy pod 4 pt.
+  Delší text se pod mezí ořízne a stavový řádek to řekne, ať víte, že máte text zkrátit
+  nebo prvek zvětšit.
+
+Prvek s **prázdnou výškou** se nezmenšuje - ten si místo doroste podle obsahu.
+
+Zmenšení není tiché: stavový řádek a souhrn po tisku vypíšou, kterému prvku se písmo zmenšilo
+a na kolik procent („Poznámky: písmo zmenšeno na 42 %"). Bez toho byste to poznali až z papíru -
+a u vývěsky se stránkou na zastávku vyjde každá jinak podle toho, kolik má poznámek.
 
 ### Kaskáda stylů u tabulkových prvků
 U tabulek a specializovaných prvků jízdního řádu funguje **kaskáda stylů**: nejčastěji měněné

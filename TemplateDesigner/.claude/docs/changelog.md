@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-09-03 (2) - 🔤 dlouhý text se zmenší, aby se vešel do prvku (`B115`)
+
+Textový prvek jako jediný text **tvrdě ořezával**: co se do jeho výšky nevešlo, se prostě nenakreslilo
+a uživatel o tom nevěděl (podnět kolega 3. 9.). Napříč aplikací přitom platí pravidlo **pevná výška
+zmenší písmo, prázdná nechá prvek dorůst** - buňky všech tabulek i prvky jízdních řádů to tak dělají
+a nic se u nich nezapíná. Textový prvek měl z toho pravidla jen druhou polovinu.
+
+Nově se text zmenší, aby se vešel: **na výšku** při zalamování, **na šířku** u jednořádkového. Bez
+volby a i v hotových šablonách (rozhodnutí Jan 3. 9.) - nová volba by byla nekonzistentní se zbytkem
+aplikace a v panelu by přidala zaškrtávátko, jaké jinde není.
+
+⚠️ **Na rozdíl od tabulek a jízdních řádů má textový prvek dolní mez** (rozhodnutí Jan 3. 9.):
+**polovina nastavené velikosti, nikdy pod 4 pt**. Pod mezí se text ořízne jako dřív, ale **řekne se
+to** - dosud se ořez nehlásil vůbec: *„Text: písmo zmenšeno na 50 % a text se přesto nevejde -
+zkraťte ho nebo zvětšete prvek"*. 4 pt je dolní hranice, kterou dovolí zadat pole Velikost, takže mez
+nevyrobí písmo, jaké by uživatel nesměl nastavit ručně; polovina drží autorův záměr (nadpis 40 pt se
+nezmenší pod 20 pt).
+
+Zmenšení se hlásí stejnou cestou jako u prvků jízdních řádů (stavový řádek i souhrn tisku) - jinak by
+šablona tiskla jinou velikost, než jakou panel ukazuje, a nikdo by to nepoznal.
+
+**Na plátně návrháře se nezmenšuje**, jen v náhledu a v tisku: na plátně je text ještě s placeholdery
+`{POLE}`, takže by se škála počítala z jiné délky, než jaká se vytiskne.
+
+⚠️ **Past, na kterou se přišlo při testech:** „jak hluboko text v prvku sahá" **nerozliší ořez od
+zmenšení** - oříznutý text v plné velikosti zaplní prvek až ke spodní hraně stejně jako zmenšený
+(63 z 64 px v obou případech), jen mu chybí konec. A zmenšené písmo nekreslí **víc** řádků, ale méně:
+na řádek se vejde víc znaků. Pixelový test proto měří **výšku vykreslených glyfů**.
+
+Ověřeno: .NET **1452/1452** (11 nových testů). Mutační kontrola: odpojení škály od kreslení shodí 2,
+zrušení meze 3.
+
 ## 2026-09-03 (1) - 📍 varování „obsah se nevejde" řekne, kde a co (`B114`)
 
 Červený rámeček kolem stránky náhledu a hláška ve stavovém řádku říkaly jen **„Obsah se nevejde

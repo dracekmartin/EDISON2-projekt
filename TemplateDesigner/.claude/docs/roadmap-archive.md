@@ -1,5 +1,31 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B115` - dlouhý text se zmenší, aby se vešel do prvku (hotovo 3. 9. 2026)
+
+Detail → changelog 2026-09-03 (2). Zmenšuje se bez volby a i v hotových šablonách, ale s **dolní
+mezí** (polovina nastavené velikosti, nikdy pod 4 pt); pod mezí se text ořízne a řekne se to.
+
+**Rozhodnutí Jan 3. 9.** - obě otázky ze zadání:
+
+- **Bez volby, včetně hotových šablon.** Nová volba by byla nekonzistentní se zbytkem aplikace
+  (buňky tabulek ani prvky jízdních řádů nic nezapínají) a kdo dnes má text tiše oříznutý, si
+  toho dál nevšimne. Cena: tisk hotové šablony s oříznutým textem se změní.
+- **Mez, pod ní ořez jako dnes** (proti doporučení „bez meze jako všude jinde"). Hodnota
+  polovina / 4 pt je odvozená z dolní hranice pole Velikost, ne odhad.
+
+Zadání, se kterým se do toho šlo:
+
+- **`B115` Text v textovém prvku se nezmenší, aby se vešel** [M] (podnět kolega 3. 9.). Dlouhý text
+  z prvku vyteče nebo se odřízne; uživatel to musí řešit ručním zmenšováním písma. **U tabulkových
+  prvků to už funguje** (buňka si písmo zmenší sama, „přizpůsobit buňce" jako v Excelu), takže je
+  to nesourodost mezi prvky, ne nová schopnost - jen ji textový prvek nemá.
+
+  **K rozhodnutí, než se do toho půjde:** má se zmenšovat **vždy**, nebo jen se zapnutou volbou?
+  Automatika bez volby změní vzhled hotových šablon (dnes se text odřízne, po změně by se zmenšil),
+  takže výchozí stav je vypnuto, nebo je potřeba migrace. Druhá otázka je **dolní mez** - kam se
+  písmo smí zmenšit, než je jasnější text zkrátit; tabulkové prvky mez mají a stejnou hodnotu je
+  rozumné vzít i sem.
+
 ## `B114` - varování „obsah se nevejde" řekne, kde a co (hotovo 3. 9. 2026)
 
 Detail → changelog 2026-09-03 (1). Hláška jmenuje stránku, sekci i prvek, který bere nejvíc

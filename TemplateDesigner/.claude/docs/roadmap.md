@@ -129,17 +129,6 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   hledáním nedosažitelná. Oprava = poslat hledaný text na server (`GetAvailableInstances` ho už
   přijímá jako `search`), ne filtrovat načtenou stránku.
 
-- **`B115` Text v textovém prvku se nezmenší, aby se vešel** [M] (podnět kolega 3. 9.). Dlouhý text
-  z prvku vyteče nebo se odřízne; uživatel to musí řešit ručním zmenšováním písma. **U tabulkových
-  prvků to už funguje** (buňka si písmo zmenší sama, „přizpůsobit buňce" jako v Excelu), takže je
-  to nesourodost mezi prvky, ne nová schopnost - jen ji textový prvek nemá.
-
-  **K rozhodnutí, než se do toho půjde:** má se zmenšovat **vždy**, nebo jen se zapnutou volbou?
-  Automatika bez volby změní vzhled hotových šablon (dnes se text odřízne, po změně by se zmenšil),
-  takže výchozí stav je vypnuto, nebo je potřeba migrace. Druhá otázka je **dolní mez** - kam se
-  písmo smí zmenšit, než je jasnější text zkrátit; tabulkové prvky mez mají a stejnou hodnotu je
-  rozumné vzít i sem.
-
 ---
 
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
