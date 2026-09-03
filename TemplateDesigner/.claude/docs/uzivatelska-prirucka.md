@@ -198,7 +198,7 @@ Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole *
 
 Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
 
-- **Text** - text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování, řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí
+- **Text** - text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování (výchozí vypnuté), řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí
 - **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
@@ -356,8 +356,9 @@ buňce" v Excelu. Je to vestavěné chování, nemusíte nic zapínat:
 
 - **Buňky tabulek** (dlouhý název zastávky, výčet zón…) - zmenší se na šířku buňky.
 - **Prvky jízdního řádu** s pevnou výškou - písmo se zmenší, aby se obsah vešel do výšky.
-- **Textový prvek** s pevnou výškou - zmenší se na výšku (se zalamováním), nebo na šířku
-  (bez zalamování). Tady je **dolní mez**: na polovinu nastavené velikosti, nikdy pod 4 pt.
+- **Textový prvek** s pevnou výškou - **bez zalamování** (nově výchozí stav) se zmenší na šířku,
+  **se zalamováním** text nejdřív pokračuje na dalším řádku a zmenšuje se teprve, až mu nezbývá
+  místo na výšku. Tady je **dolní mez**: na polovinu nastavené velikosti, nikdy pod 4 pt.
   Delší text se pod mezí ořízne a stavový řádek to řekne, ať víte, že máte text zkrátit
   nebo prvek zvětšit.
 

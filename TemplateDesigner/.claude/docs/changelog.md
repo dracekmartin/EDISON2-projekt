@@ -21,6 +21,14 @@ nezmenší pod 20 pt).
 Zmenšení se hlásí stejnou cestou jako u prvků jízdních řádů (stavový řádek i souhrn tisku) - jinak by
 šablona tiskla jinou velikost, než jakou panel ukazuje, a nikdo by to nepoznal.
 
+⚠️ **Zalamování řádků je u textového prvku nově VÝCHOZÍ VYPNUTÉ** (rozhodnutí Jan 3. 9. po zkoušení).
+Nový textový prvek je typicky nadpis nebo jeden údaj na jednom řádku, kde zalomení rozhodí layout víc,
+než pomůže. Obě chování se tím rozdělila čitelně: **bez zalamování** se text zmenšuje na šířku,
+**se zalamováním** nejdřív pokračuje na dalším řádku a zmenšuje se teprve, až mu nezbývá místo na výšku.
+**Hotové šablony to nepotká** - hodnota se do JSON zapisuje vždy (serializace vynechává jen null),
+takže si každý prvek nese tu svou; test to drží. Výchozí hodnotu má i formulář (`TextElementEdit.cls`)
+a rozpor mezi ním a C# chytnou driftové testy - ověřeno mutací.
+
 **Na plátně návrháře se nezmenšuje**, jen v náhledu a v tisku: na plátně je text ještě s placeholdery
 `{POLE}`, takže by se škála počítala z jiné délky, než jaká se vytiskne.
 

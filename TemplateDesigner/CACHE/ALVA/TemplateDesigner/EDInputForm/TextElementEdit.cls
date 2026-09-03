@@ -31,7 +31,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // (Caché agendu šablony nezná). Vedle pole se pak ukáže „vložit pole".
         s f = form.AddText("Text", "Obsah")
         s f.placeholders = 1
-        d form.AddBool("WordWrap", "Zalamovat řádky", 1)
+        d form.AddBool("WordWrap", "Zalamovat řádky", 0)
 
         // ── Skupina "Font" ────────────────────────────────────────────────
         d form.AddGroup("font", "Font")

@@ -14,7 +14,19 @@ public class TextElement : TemplateElement
     /// <summary>Styl textu - font, barvy, zarovnání, řádkování, padding.</summary>
     public TextStyle Style { get; set; } = TextStyle.CreateDefault();
 
-    public bool WordWrap { get; set; } = true;
+    /// <summary>
+    /// Zalamovat dlouhý text do dalších řádků. ⚠️ **Výchozí vypnuto** (rozhodnutí Jan 3. 9.):
+    /// nový textový prvek je typicky nadpis nebo jeden údaj na jednom řádku, a zalomení tam
+    /// rozhodí layout víc, než pomůže. Kdo chce odstavec, si ho zapne.
+    /// </summary>
+    /// <remarks>
+    /// Existující šablony to nepotká - hodnota se do JSON zapisuje vždy (serializace vynechává
+    /// jen null), takže si každý prvek nese tu svou.
+    ///
+    /// <para>Řídí i to, jak se text zmenšuje, když se nevejde: se zalamováním nejdřív přeteče
+    /// na další řádek a teprve pak se zmenšuje na výšku, bez zalamování se zmenšuje na šířku.</para>
+    /// </remarks>
+    public bool WordWrap { get; set; }
 
     /// <summary>
     /// Když Height = null a WordWrap = true, výška se dopočítá z textu.

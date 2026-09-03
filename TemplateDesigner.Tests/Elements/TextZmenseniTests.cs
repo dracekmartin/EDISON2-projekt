@@ -1,6 +1,7 @@
 using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Elements;
 
@@ -33,6 +34,31 @@ public class TextZmenseniTests
     public void KratkyTextSeVejde_Nezmensuje()
     {
         Assert.Equal(1f, Prvek("Linka 42", 20f).ComputeShrinkScale("Linka 42"));
+    }
+
+    [Fact]
+    public void NovyPrvekMaZalamovaniVypnute()
+    {
+        // Rozhodnutí Jan 3. 9.: nový textový prvek je typicky nadpis nebo jeden údaj na řádku,
+        // kde zalomení rozhodí layout víc, než pomůže. ⚠️ Výchozí hodnotu drží i formulář
+        // (`TextElementEdit.cls`) - rozpor mezi nimi chytne EDInputFormSchemaDriftTests.
+        Assert.False(new TextElement().WordWrap);
+    }
+
+    [Fact]
+    public void HotovaSablonaSiNeseVlastniHodnotu()
+    {
+        // Změna výchozí hodnoty nesmí přepsat hotové šablony. Drží to serializace: bool se do
+        // JSON zapisuje vždy (vynechává se jen null), takže si každý prvek nese tu svou.
+        var puvodni = new TextElement { X = 0, Y = 0, Width = 40, Height = 10, Text = "a", WordWrap = true };
+        var sablona = Sablona(puvodni);
+
+        var json = TemplateSerializer.Serialize(sablona);
+        Assert.Contains("\"wordWrap\": true", json);
+
+        var nactena = TemplateSerializer.Deserialize(json);
+        var prvek = Assert.IsType<TextElement>(nactena.Sections[0].Elements[0]);
+        Assert.True(prvek.WordWrap, "šablona s zapnutým zalamováním ho musí mít i po načtení");
     }
 
     [Fact]
