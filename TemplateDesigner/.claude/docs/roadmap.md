@@ -4,8 +4,10 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B101`**. U čtyř dalších je první
-> krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B116`** (blikající paritní brána).
+> Jinak zbývají **podněty kolegy z TRANSDEV** (#12843, tři věci - viz
+> [`customer-requirements §0.1`](customer-requirements-zastavkovy-jr.md)); u čtyř položek focusu
+> je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 
 ---
 
@@ -20,10 +22,11 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 - **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
 - **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
 
-**Rovnou udělat jde `B101`** (drobné zlepšení srozumitelnosti) a **`B116`** (blikající paritní
-brána - nejdřív zjistit, na čem mimo repo test závisí).
+**Rovnou udělat jde `B116`** (blikající paritní brána - nejdřív zjistit, na čem mimo repo test
+závisí).
 **`B100`** taky, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
-se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B103`, `B113`, `B114` a `B115` 3. 9.)
+se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B103`, `B113`, `B114` a `B115` 3. 9.; `B101` zavřená
+3. 9. jako neplatná - jeden sloupec odjezdů v praxi nenastává.)
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
@@ -56,12 +59,6 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   test závisí** - živá data se mohla změnit, nebo na devu paralelně pracoval kolega (oracle volá
   starý modul a ten si zapisuje do globálu, takže dva běhy vedle sebe si mohou přepsat mezistav).
   Až pak řešit případný rozdíl.
-
-- **`B101` Není poznat, jestli je jedna skupina dnů nastavením, nebo daty linky** (z 25. 8.).
-  Prvek pás skupin nekreslí, když vyjde jediná skupina - a uživatel pak nemá jak poznat, jestli
-  si dělení nastavil špatně, nebo jestli tak prostě vypadá linka (na 0330511 jedou všechny spoje
-  jen v pracovní dny). Otázku „mám to vůbec nastavené dobře?" dnes **nejde zodpovědět z aplikace**.
-  Drobné zlepšení, ne chyba.
 
 - **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
   U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul

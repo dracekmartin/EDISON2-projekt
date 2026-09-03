@@ -1,5 +1,35 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B101` - jedna skupina dnů: ZAVŘENO jako neplatné (3. 9. 2026)
+
+**Rozhodnutí Jan 3. 9.: zavřít.** Vývěska, kde v odjezdech vyjde jediný sloupec, v praxi
+nenastává - není tedy co zlepšovat na srozumitelnosti stavu, který uživatel nevidí.
+
+**Zadání navíc přestalo platit** (ověřeno 3. 9. voláním serveru a čtením kódu):
+
+- **Příklad v zadání nesouhlasí s daty.** Linka `0330511` má na **všech 49 stránkách tři skupiny
+  dnů**, ne jednu. Tvrzení „všechny spoje jen v pracovní dny" bylo pravda 25. 8., ale rozvržení
+  sloupců se od té doby dvakrát měnilo (`B29` 31. 7., `B39` 10. 8., `B82` 14. 8.).
+- **Popsané chování v kódu není.** „Prvek pás skupin nekreslí, když vyjde jediná skupina" -
+  taková podmínka není ani v prvku odjezdů, ani na serveru. Pás se vypíná **jen** uživatelskou
+  volbou „Záhlaví skupin"; jinak se kreslí vždy, i s jednou skupinou.
+
+⚠️ **Poučení pro zadání psaná do zásoby:** blok visel od 25. 8. a za devět dní mu zestaraly oba
+pilíře - příklad i popis chování. Kdyby se bral doslova, šlo by se opravovat něco, co se nedělo.
+U položky starší než pár dní se má **nejdřív ověřit, že problém pořád existuje**.
+
+Zadání, jak bylo napsané:
+
+- **`B101` Není poznat, jestli je jedna skupina dnů nastavením, nebo daty linky** (z 25. 8.).
+
+  Prvek pás skupin nekreslí, když vyjde jediná skupina - a uživatel pak nemá jak poznat, jestli
+
+  si dělení nastavil špatně, nebo jestli tak prostě vypadá linka (na 0330511 jedou všechny spoje
+
+  jen v pracovní dny). Otázku „mám to vůbec nastavené dobře?" dnes **nejde zodpovědět z aplikace**.
+
+  Drobné zlepšení, ne chyba.
+
 ## `B103` - hledání ve výběru linek najde i linku za dvoustovkou (hotovo 3. 9. 2026)
 
 Detail → changelog 2026-09-03 (4). Načítá se celá skupina, ne prvních 200.
