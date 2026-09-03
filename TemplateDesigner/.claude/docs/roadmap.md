@@ -145,7 +145,7 @@ takže nejde o práci, ale o doklad.
 
 | Co | Proč to čeká |
 |---|---|
-| **Vícesloupcová legenda (#7487)** - zákazník chtěl čtyři sloupce | Prvek umí 1-4 sloupce včetně zalamování (zjištěno 26. 8.); výchozí je 1, proto si toho nikdo nevšiml |
+| **Počet poznámek na řádek per druh (#7487)** - ⚠️ **NEUMÍME, přeřazeno z „k ověření" 3. 9.** | Doloženo obrázky od kolegy: starý modul má u **každého druhu** poznámky volbu „Jedna / Dvě / Tři poznámky na řádek" (i „Žádná" = ten druh netisknout) plus pořadí druhů; zákazník chce čtyři. Náš „Počet sloupců" (1-4) je **jednotný pro celou legendu**, takže krátké i dlouhé poznámky dostanou stejné dělení. ⚠️ Do 3. 9. tu stálo „prvek umí 1-4 sloupce, hotové" - byla to záměna počtu sloupců za počet poznámek na řádek |
 | **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
 | **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618`** | Starý tisk dává oba směry do jedné tabulky, takže není co k čemu přiložit. ⚠️ **Odblokováno 28. 8.** - obousměrný tisk je hotový, takže tuhle linku už je čím porovnat. Vzít při nejbližším průchodu doklady |
 | **Písmena ze zóny (`VS_CSAD 5 / 0771901`)** | V testovacích datech pro Vsetín na to není vzorek; firma navíc není v přepínači firem. Vzít, až ta data budou |
