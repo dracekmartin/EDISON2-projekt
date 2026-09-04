@@ -1,5 +1,27 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B117` - poznámky linkového JŘ jsou samostatný prvek (hotovo 4. 9. 2026)
+
+Detail → changelog 2026-09-03 (7). Legenda se do 3. 9. skládala **dynamickou tabulkou** nad kolekcí
+poznámek, takže uživatel dostával řádky, ne poznámky. Prvek Poznámky byl v paletě jen u zastávkových -
+ne z rozhodnutí, ale protože to tak bylo nejsnazší.
+
+**Záměr (Jan 3. 9.):** dynamická tabulka je na raw data, ne na doménovou logiku - a u poznámek
+doménová logika je (negativní značky v inverzním boxu, vyhrazená buňka značky, řazení podle typu).
+
+**Hotovo a doloženo čtením kódu 4. 9.:** prvek je v paletě linkových (tabulka první, poznámky druhé),
+čte `DRUH` i `KATEGORIE`, a podle druhu si sáhne po **slovníku značek linkového JŘ** - bez toho by
+značka „pokračuje" vyšla jako kufr a návaznosti jako půlkruh s kosočtvercem. Systémová šablona
+`linkovy-jr-ad.json` ho používá.
+
+**Nic se přechodem neztratilo** (porovnáno s předchozí verzí šablony, commit `a7ad4001^`): tabulka
+nesla dva sloupce, výšku řádku, záhlaví a rámeček; prvek má všechno z toho a navíc rozdělení legendy
+do sloupců, směr plnění, řazení a filtry podle typu poznámky.
+
+⚠️ **Počet poznámek na řádek podle druhu NEBYL součástí téhle položky** - je to featura, kterou
+jsme neuměli ani předtím, a žije dál jako samostatný bod (`#7487`). Do 4. 9. tu visela jako
+„zbývá krok 2", tedy jako by položka nebyla dokončená - byl to chybný zápis záměru (nález Jan 4. 9.).
+
 ## `B118` - výšku sekce jde měnit myší i jedním kliknutím (hotovo 4. 9. 2026)
 
 Detail → changelog 2026-09-03 (8) a 2026-09-04 (1). Krok 1 = položka „Vyplnit zbytek stránky"
