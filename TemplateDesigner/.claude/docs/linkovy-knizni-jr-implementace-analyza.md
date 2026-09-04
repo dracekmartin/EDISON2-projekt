@@ -1343,6 +1343,43 @@ s dvaceti sloupci, ne o dva bloky.
 vykreslilo**. Bez toho se nepozná, na které straně se těch pět ztrácí. Patří to k tomu tak jako
 tak - viz §16.1.
 
+### 16.2 Měření 4. 9. odpoledne - sonda a opravená premisa
+
+Sonda `ALVA.TemplateDesigner.Tests.LinkovyJrSpojeProbe` (metoda `Spoje`) vypíše z odpovědi
+`GetData` číslo, směr, skupinu dnů a počet neprázdných časů per spoj; metoda `Parametry` vypíše
+persistované parametry tisku uložené uživatelům. Obojí je read-only.
+
+⚠️ **Premisa „obousměrný tisk vypnutý" byla špatná.** Uložené parametry uživatele pro
+`CB_GWBUS` / `LINKOVY_JR_AD` mají **`OBOUSMERNY_TISK: true`**. Běh popsaný výše tedy nebyl ten,
+který Jan viděl. Změřeno v obou režimech:
+
+- **vypnutý**: 2 stránky, každá 43 spojů, jedna směr `T`, druhá `Z`.
+- **zapnutý** (skutečné nastavení): **1 stránka, 86 spojů** - nejdřív 43× `T`, pak 43× `Z`.
+  Klient z toho dělá 43 slotů po dvou sloupcích (`PocetSlotu` = delší strana, `SloupcuNaSlot` = 2).
+
+**Spoje 5xx server posílá v obou režimech** a jsou to **nejúplnější sloupce**: `501`, `503`, `505`,
+`507` mají čas na všech 36 zastávkách, `509` na 33 - zatímco viditelné dvoumístné spoje mají 3-33.
+Prázdný sloupec to tedy není. Skupiny dnů: `501`-`509` jsou ve skupině 1, `511`-`517` ve skupinách
+2 a 3 (ty dvě jsou obsahově totožné).
+
+**Klientská cesta žádný spoj nefiltruje** - projito celé: parsování, `RozdelPodleSmeru`,
+`SloupcoveBloky` (dělení jde přes všechny sloty), `Rozvrzeni`, kreslení záhlaví i časů. Nikde není
+podmínka, která by spoj zahodila.
+
+**Dvě vady nalezené po cestě** (nesouvisí přímo, ale patří k témuž místu):
+
+1. `TableLayout.RozdelSpojeDoBloku` **nikdo nevolá** - živé dělení je
+   `LineTableElement.SloupcoveBloky`. Mrtvý kód s vlastním komentářem o paritě.
+2. `Rozvrzeni` (helper, na kterém stojí testy „blok se vejde do šířky prvku") volá `BuildColumns`
+   s **počtem slotů**, kdežto kreslení (`:1215`) i `Vejde` s **počtem sloupců**
+   (`naBlok * SloupcuNaSlot`). U obousměrné sestavy tedy testy měří polovinu sloupců a ten
+   invariant je pro dvousměrné linky **nehlídaný** - přesně pro Janův případ.
+
+**Co zbývá zjistit:** kolik sloupců a stránek Janův výstup reálně má. 43 slotů po dvou sloupcích
+nemůže dát 20 sloupců na dvou stránkách, takže se buď měřilo něco jiného, nebo se blok kreslí
+mimo šířku prvku a pravá část se odřezává. Bez diagnostiky z §16.1 (kolik dorazilo × kolik se
+vykreslilo) je to dohad.
+
 ### 16.1 Chybějící varování o nezařazených spojích
 
 Když má šablona vlastní definici sloupců a spoj nesedne do žádného, u linkových JŘ **tiše zmizí**:
