@@ -194,6 +194,11 @@ Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole *
   výšku si podrží. Prvky se posunou se svou sekcí, takže se vůči ní nikam nepohnou. Sekci nejde
   roztáhnout tak, aby ostatní vytlačila ze stránky - na hranici se tažení zastaví a stavový řádek
   to napíše. Sekce s **prázdnou výškou** se netahá, tu si dopočítá tiskové jádro z obsahu.
+
+  **Zmenšit sekci pod její obsah nejde** - tažení se zastaví na spodní hraně nejnižšího prvku.
+  Kdyby to šlo, prvek by v návrháři zmizel pod okrajem, ale na papíře by se vytiskl celý, protože
+  tiskové jádro sekci nafoukne na obsah. Potřebujete-li sekci opravdu zmenšit, přesuňte nebo
+  smažte prvek, který ji drží.
 - **Mazání** - poslední zbývající sekci nelze smazat; sekce s prvky vyžaduje potvrzení. Uvolněná
   výška se proporcionálně rozdělí mezi zbývající sekce (a naopak při přidání nové).
 - **Řazení** - přetažením v levém panelu, nebo šipkami v kontextovém menu.

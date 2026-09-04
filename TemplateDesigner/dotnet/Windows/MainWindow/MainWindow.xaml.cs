@@ -2617,7 +2617,10 @@ public partial class MainWindow : Window
             // Bez toho by tatáž věc měla dvě chování podle toho, kudy k ní uživatel přišel.
             float strop = Models.Layout.SectionLayoutMath.ZbyvajiciMistoMm(
                 _vm.State.CurrentTemplate, _sectionResizeTarget);
-            novaMm = Math.Clamp(novaMm, Models.Layout.SectionLayoutMath.MinimalniVyskaMm, strop);
+            // Dno = obsah sekce. Bez toho by se prvek u dolního okraje v návrháři oříznul,
+            // ale při tisku vytiskl celý (engine sekci nafoukne na obsah).
+            float dno = Models.Layout.SectionLayoutMath.MinimalniVyskaProSekci(_sectionResizeTarget);
+            novaMm = Math.Clamp(novaMm, dno, MathF.Max(dno, strop));
 
             _sectionResizeTarget.DesignerHeight = novaMm;
             _vm.StatusText = $"Výška sekce {_sectionResizeTarget.Name}: {novaMm:0.#} mm"

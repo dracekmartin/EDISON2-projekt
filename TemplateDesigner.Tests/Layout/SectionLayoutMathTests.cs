@@ -1,4 +1,5 @@
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Layout;
 
 namespace TemplateDesigner.Tests.Layout;
@@ -113,6 +114,51 @@ public class SectionLayoutMathTests
         // nikdo nedotkl. Je to správně: zbývající místo pro ni je právě její dnešní výška.
         Assert.True(SectionLayoutMath.VyplnujeCeleMisto(t, t.Sections[1]));
         Assert.True(SectionLayoutMath.VyplnujeCeleMisto(t, t.Sections[0]));
+    }
+
+    // ── Dno: sekce nesmí spadnout pod svůj obsah ────────────────────────────
+    // Nález Jan 4. 9.: po zmenšení sekce se prvek u dolního okraje v návrháři **ořízl**, ale při
+    // tisku vyšel celý - engine dává sekci max(nastavená výška, obsah), takže ji nafoukne zpátky.
+    // Návrhář a tisk se tím rozešly a šablona vypadala rozbitě, přestože nebyla.
+
+    [Fact]
+    public void PrvekDoleVSekci_DrziJejiMinimalniVysku()
+    {
+        var t = Sablona(100f);
+        t.Sections[0].Elements.Add(new TextElement { X = 5f, Y = 60f, Width = 40f, Height = 30f });
+
+        // Prvek sahá do 90 mm, takže pod 90 mm sekci zmenšit nejde.
+        Assert.Equal(90f, SectionLayoutMath.MinimalniVyskaProSekci(t.Sections[0]), precision: 1);
+    }
+
+    [Fact]
+    public void PrazdnaSekce_MaDnoNaKonstante()
+    {
+        var t = Sablona(100f);
+
+        Assert.Equal(SectionLayoutMath.MinimalniVyskaMm,
+            SectionLayoutMath.MinimalniVyskaProSekci(t.Sections[0]));
+    }
+
+    [Fact]
+    public void DnoBerePrvekSNejnizsiHranou_NeNejvyssi()
+    {
+        var t = Sablona(100f);
+        t.Sections[0].Elements.Add(new TextElement { X = 5f, Y = 70f, Width = 40f, Height = 10f });
+        t.Sections[0].Elements.Add(new TextElement { X = 5f, Y = 10f, Width = 40f, Height = 10f });
+
+        Assert.Equal(80f, SectionLayoutMath.MinimalniVyskaProSekci(t.Sections[0]), precision: 1);
+    }
+
+    [Fact]
+    public void NaPlneStranceNabidkaNespadnePodObsah()
+    {
+        // Ostatní sekce zaberou celou plochu, ale tahle drží prvek - nabídnutá výška nesmí být
+        // menší než on, jinak by se v návrháři ořízl a v tisku vyšel celý.
+        var t = Sablona(200f, 50f, 100f);
+        t.Sections[1].Elements.Add(new TextElement { X = 5f, Y = 20f, Width = 40f, Height = 25f });
+
+        Assert.Equal(45f, SectionLayoutMath.ZbyvajiciMistoMm(t, t.Sections[1]), precision: 1);
     }
 
     [Fact]

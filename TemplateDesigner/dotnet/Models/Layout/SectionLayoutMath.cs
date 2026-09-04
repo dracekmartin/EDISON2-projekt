@@ -11,8 +11,32 @@ namespace TemplateDesigner.Models.Layout;
 /// </remarks>
 public static class SectionLayoutMath
 {
-    /// <summary>Nejmenší výška, na kterou smí sekce spadnout - pod tím se do ní nedá nic položit.</summary>
+    /// <summary>Nejmenší výška prázdné sekce - pod tím se do ní nedá nic položit.</summary>
     public const float MinimalniVyskaMm = 5f;
+
+    /// <summary>
+    /// Nejmenší výška, na kterou smí sekce spadnout: nikdy pod svůj **obsah**.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Bez tohohle dna se prvek u dolního okraje po zmenšení sekce **ořízne v návrháři, ale
+    /// vytiskne se celý** - engine dává sekci `max(nastavená výška, obsah)`, takže ji při tisku
+    /// nafoukne zpátky. Návrhář a tisk se tím rozejdou a šablona vypadá rozbitě, přestože není
+    /// (nález Jan 4. 9.).
+    ///
+    /// <para>Prvky se záměrně **neposouvají**: uživatel o změnu jejich pozic nežádal a při zvětšení
+    /// sekce zpět by se nevrátily, takže by se rozvržení tiše rozpadlo. Mez je předvídatelná -
+    /// kdo chce sekci zmenšit, přesune nebo smaže prvek, který ji drží.</para>
+    /// </remarks>
+    public static float MinimalniVyskaProSekci(Section section)
+    {
+        float dno = MinimalniVyskaMm;
+        foreach (var el in section.Elements)
+        {
+            float spodniHrana = el.Y + (el.Height ?? el.EffectiveDesignerHeight);
+            if (spodniHrana > dno) dno = spodniHrana;
+        }
+        return dno;
+    }
 
     /// <summary>
     /// Kolik milimetrů tiskové plochy zbývá pro <paramref name="section"/>, když ostatní sekce
@@ -32,7 +56,9 @@ public static class SectionLayoutMath
             obsazeno += s.EffectiveDesignerHeight;
         }
 
-        return MathF.Max(MinimalniVyskaMm, template.PageSize.PrintableHeight - obsazeno);
+        // Dno je obsah sekce, ne konstanta: na plné stránce se nesmí nabídnout výška, při které
+        // by se prvek u dolního okraje oříznul.
+        return MathF.Max(MinimalniVyskaProSekci(section), template.PageSize.PrintableHeight - obsazeno);
     }
 
     /// <summary>

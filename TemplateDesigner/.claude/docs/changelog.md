@@ -21,6 +21,15 @@ přes celou šířku, chytá se i v levém modrém štítku sekce.
 ⚠️ **Sekce s prázdnou výškou se netahá** - tu počítá engine z obsahu a tažením by se ta
 dynamika tiše zrušila.
 
+⚠️ **Sekci nejde zmenšit pod její obsah** (nález Jan 4. 9. při zkoušení). Prvek u dolního
+okraje se po zmenšení v návrháři **oříznul, ale při tisku vyšel celý** - engine dává sekci
+`max(nastavená výška, obsah)`, takže ji nafoukne zpátky. Návrhář a tisk se tím rozešly a šablona
+vypadala rozbitě, přestože nebyla. Tažení se teď zastaví na spodní hraně nejnižšího prvku.
+
+**Prvky se záměrně neposouvají** (uvažovalo se o tom): uživatel o změnu jejich pozic nežádal
+a při zvětšení sekce zpět by se nevrátily, takže by se rozvržení tiše rozpadlo. Mez je
+předvídatelná - kdo chce sekci zmenšit, přesune nebo smaže prvek, který ji drží.
+
 Do kroku zpět jde **jedna** změna výšky, ne každý pohyb myší.
 
 Ověřeno: .NET **1480/1480** (9 nových testů na chytání hrany). ⚠️ Mutační kontrola odhalila
