@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-04 (8) - ✅ prázdný přípojný řádek u nás nemůže vzniknout (#11300)
+
+Zákazník má uzly s celotýdenním provozem, ale přípoji jen v pracovní dny - ve starém tisku pak
+ve víkendové tabulce zůstal prázdný přípojný řádek a bral místo. **U nás to nemůže nastat
+konstrukcí**: řádek se negeneruje pro zastávku, ale pro **každý přípoj nesených spojů**, takže kde
+přípoj není, není co vykreslit.
+
+Není to nová práce, je to doklad - a je zapsaný testem, protože to je vlastnost, kterou by šlo
+příští úpravou výpočtu výšky nevědomky zrušit („rezervovat místo na přípoje u každé zastávky").
+
+Ověřeno: .NET **1497/1497** (3 nové testy). Mutace „místo rezervované per zastávka" i „přepínač
+přípojných řádků se ve výpočtu ignoruje" test shodí. Doklad na reálných datech: `CB_CSADAD 1 /
+0330511` směr Tam má devět spojů a přípoj jen tři.
+
 ## 2026-09-04 (7) - 🗂️ linkové úkoly u sebe, Backlog jen obecné věci
 
 Úkoly k linkovým JŘ byly rozhozené mezi „Aktuální focus" a Backlog (žádost Jan 4. 9.). Sekce
