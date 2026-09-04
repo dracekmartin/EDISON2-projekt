@@ -149,6 +149,7 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 | **Shift+šipky** | **Změna velikosti** o 1 mm - mění se pravá a dolní hrana, levý horní roh drží |
 | Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
 | Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
+| **tažení za spodní hranu sekce** | **výška sekce**; sekce pod se posunou a podrží svou výšku, mřížka platí a Ctrl ji vypne, Esc zruší. ⚠️ **Úchyt prvku má přednost** - jinak by prvek u dolní hrany sekce nešel roztáhnout; hrana se proto chytá i v levém modrém štítku sekce. Sekce s prázdnou výškou se netahá (počítá ji engine z obsahu) |
 
 ⚠️ **Shift = velikost, Ctrl = krok mřížky** (rozhodnutí Jan 1. 9., `B109`). Vychází ze starého
 návrháře, kde uživatelé velikost klávesnicí hodně používali; myší se rozměr nedoladí. **Velký krok
@@ -162,6 +163,11 @@ jako šipka samotná, takže rozdíl viděl jen ten, kdo si mřížku přepnul n
 - ⚠️ **Soused se při rozšíření prvku nezužuje.** Tažení úchytu myší ani klávesy na sousední prvky
   nesahají, jen se o ně přichytávají. Zužování dvojice u hrany platí **jen uvnitř tabulky** (šířka
   sloupce, výška řádku) - nepřenášet ten dojem na prvky na plátně, je to jiná věc.
+
+- ⚠️ **U sekcí se soused nezužuje, ale POSUNE** (rozhodnutí Jan 3. 9.). Roztažením sekce se ta
+  pod ní odsune dolů a podrží svou výšku; prvky jdou se svou sekcí, protože mají souřadnice
+  relativní k ní. Je to tedy třetí chování vedle prvků (soused se nehne) a tabulky (dvojice se
+  o místo dělí) - sekce jsou bloky v toku nad sebou, ne mřížka.
 
 ⚠️ **Když se prvky překrývají, klik patří tomu, který je vidět navrchu, a už vybraný prvek si klik
 podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbijí zpátky:

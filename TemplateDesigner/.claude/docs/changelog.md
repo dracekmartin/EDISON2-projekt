@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-09-04 (1) - 🖱️ výšku sekce jde tahat myší za její spodní hranu (`B118` krok 2)
+
+Sekci šlo roztáhnout jen číslem ve formuláři nebo položkou „Vyplnit zbytek stránky" v místní
+nabídce. Nově se dá **chytit za spodní hranu a táhnout** - kurzor se tam mění na svislé šipky,
+protože hrana není nijak vyznačená a bez toho by o té možnosti nikdo nevěděl.
+
+**Chová se stejně jako vyplnění** (rozhodnutí Jan 3. 9.): sekce nad ní se nehne, sekce pod ní se
+posunou a podrží svou výšku; prvky jdou se svou sekcí, protože jejich souřadnice jsou k ní
+relativní. Během tažení stavový řádek píše výšku v mm a hlásí, když se narazí na hranici stránky.
+
+**Táž mez jako u vyplnění** - sekce nesmí vytlačit ostatní ze stránky. Bez toho by tatáž věc měla
+dvě chování podle toho, kudy k ní uživatel přišel. Mřížka se uplatní jako u prvků a Ctrl ji vypne;
+Esc tažení zruší a vrátí původní výšku.
+
+⚠️ **Úchyt prvku má přednost.** Prvek, který se dolní hrany sekce dotýká, musí zůstat
+roztažitelný, takže se hrana chytá jen tam, kde žádný úchyt není. Aby šla uchopit i pod prvkem
+přes celou šířku, chytá se i v levém modrém štítku sekce.
+
+⚠️ **Sekce s prázdnou výškou se netahá** - tu počítá engine z obsahu a tažením by se ta
+dynamika tiše zrušila.
+
+Do kroku zpět jde **jedna** změna výšky, ne každý pohyb myší.
+
+Ověřeno: .NET **1480/1480** (9 nových testů na chytání hrany). ⚠️ Mutační kontrola odhalila
+slabý test: měřil odchylku od hrany jako **násobek** pásma chytání, takže rostl s ním a rozšíření
+pásma ze 4 na 40 px propustil. Teď měří absolutní vzdálenost a přibyl test, že pásmo zůstane úzké -
+široké by hranu chytalo skoro v celé sekci a prvky u jejího okraje by nešly uchopit.
+
 ## 2026-09-03 (8) - 📐 sekce se roztáhne na zbytek stránky jedním kliknutím (`B118` krok 1)
 
 Výšku sekce šlo zadat **jen číslem v milimetrech**, takže si uživatel musel od tiskové plochy

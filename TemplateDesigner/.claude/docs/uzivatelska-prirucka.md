@@ -185,6 +185,15 @@ Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole *
 **Výška řádku**.
 
 ### Práce se sekcemi
+- **Výška** - tři cesty. Ve vlastnostech sekce ji zadáte **číslem v mm**; na plátně ji **utáhnete
+  za spodní hranu sekce** (kurzor se tam změní na svislé šipky, mřížka platí a Ctrl ji vypne,
+  Esc tažení zruší); a pravým klikem na sekci vyberete **„Vyplnit zbytek stránky"**, což
+  spočítá, kolik na papíře zbývá, a sekci na to roztáhne.
+
+  Ve všech třech případech platí totéž: **sekce nad ní se nehne, sekce pod ní se posunou** a svou
+  výšku si podrží. Prvky se posunou se svou sekcí, takže se vůči ní nikam nepohnou. Sekci nejde
+  roztáhnout tak, aby ostatní vytlačila ze stránky - na hranici se tažení zastaví a stavový řádek
+  to napíše. Sekce s **prázdnou výškou** se netahá, tu si dopočítá tiskové jádro z obsahu.
 - **Mazání** - poslední zbývající sekci nelze smazat; sekce s prvky vyžaduje potvrzení. Uvolněná
   výška se proporcionálně rozdělí mezi zbývající sekce (a naopak při přidání nové).
 - **Řazení** - přetažením v levém panelu, nebo šipkami v kontextovém menu.

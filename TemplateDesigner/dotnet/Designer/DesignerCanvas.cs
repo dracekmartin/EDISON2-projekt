@@ -177,6 +177,40 @@ public class DesignerCanvas
         return null;
     }
 
+    /// <summary>Jak blízko spodní hrany sekce se ještě chytá tažení výšky (px).</summary>
+    public const float SectionEdgeGrabPx = 4f;
+
+    /// <summary>
+    /// Sekce, za jejíž **spodní hranu** kurzor chytá - tažením se mění její výška a sekce pod ní
+    /// se posunou. Null = kurzor u žádné hrany není.
+    /// </summary>
+    /// <remarks>
+    /// Chytá se hrana v celé šířce stránky **i v levém štítku sekce**, aby se dala uchopit i tam,
+    /// kde na hraně stojí prvek. ⚠️ **Úchyt prvku má přednost** - řeší to volající, protože jinak
+    /// by u dolní hrany sekce nešlo změnit velikost prvku, který se jí dotýká.
+    ///
+    /// <para>Poslední sekce se záměrně nevynechává: roztažením poslední sekce roste papír, což je
+    /// legitimní (plátno není omezené na jednu stránku, viz <see cref="TotalPaperHeightPx"/>).</para>
+    /// </remarks>
+    public Section? HitTestSectionBottomEdge(float canvasX, float canvasY, float canvasWidth)
+    {
+        var ps = _state.CurrentTemplate.PageSize;
+        float sectionW = ps.PrintableWidth * MmToPx;
+
+        foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
+        {
+            if (section.DesignerHeight is null) continue;   // dynamickou výšku počítá engine z obsahu
+
+            float left   = ox - (_state.ShowSectionHeaders ? ps.MarginLeft * MmToPx + SectionTabWidthPx : 0f);
+            float bottom = oy + SectionHeightPx(section);
+
+            if (canvasX >= left && canvasX <= ox + sectionW &&
+                MathF.Abs(canvasY - bottom) <= SectionEdgeGrabPx)
+                return section;
+        }
+        return null;
+    }
+
     /// <summary>Vrátí element a jeho sekci pod px pozicí na canvasu, nebo null.</summary>
     public (Section Section, TemplateElement Element)? HitTestElement(float canvasX, float canvasY, float canvasWidth)
     {
