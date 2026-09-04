@@ -1255,3 +1255,41 @@ TemplateDesigner\.claude\docs\architektonicka-rozhodnuti-agendy.md
 TemplateDesigner\.claude\rules\new-element-checklist.md
 TemplateDesigner\.claude\rules\cache-api.md
 ```
+
+---
+
+## 15. Přípojné řádky - legacy proti nám (projito 4. 9. 2026)
+
+Vzniklo při dokládání `#11300`, když Jan poslal výtisk starého modulu téže linky.
+
+**Co to je:** spoj má u zastávky zadané omezení návaznosti - buď tam **vyčká** příjezdu jiného
+spoje (uzel `31`), nebo na něj jiný spoj **navazuje** (uzel `32`). Přípojný řádek to ukáže pod
+řádkem zastávky: čas toho druhého spoje ve sloupci spoje, kterého se to týká.
+
+**Jak to dělá starý modul** (`JRapiLinPrtWin01.mac:PripojneRadky`): řádek nepatří spoji, ale
+**skupině**. Agregační klíč je `tarifní číslo | směr | druh dopravy | (linka)`, takže do jednoho
+řádku se sejdou přípoje různých spojů, když vedou stejným směrem stejným druhem dopravy; časy se
+rozdělí do sloupců podle spoje. Když už ten spoj ve řádku čas má, založí se řádek další.
+Hrubost řídí volba **„Návaznosti v přípojných řádcích"** v jeho návrháři, per sekce šablony:
+*Ne* (linka v klíči není, slučuje se nejvíc) / *Ano, dle licence* / *Ano, dle IDS*
+(`in("A",2,"arr",9)`, `stDL_NavaznostiVPripojnychRadcich`). Popisek je souhrnný -
+**„ze směru Trhové Sviny"** u vyčkání, **„směr České Budějovice"** u navázání, plus „př" / „od"
+a ikona druhu dopravy.
+
+**Jak to děláme my:** řádek per (spoj × přípoj), žádná agregace, popisek konkrétní („vyčká na
+spoj 21 linky 320163 do Trhové Sviny"). Zapíná se jedním přepínačem **Přípojné řádky** na prvku
+tabulky, bez volby hrubosti. Druh dopravy se u přípoje na drátě **vůbec neposlá** (používá se jen
+v textu poznámky) a směr je slitý do textu popisku.
+
+### 15.1 Co z toho zbývá
+
+- ✅ **Neúplný přípoj řádek nedostane** (hotovo 4. 9.). Starý modul zahodí přípoj bez minuty
+  příjezdu nebo bez směru; my jsme obojí posílali dál a v tabulce vznikl řádek s časem „00:00"
+  a prázdným popiskem. **Naměřeno: 965 z 71 889** přípojů, které řádek dělají (CB_CSADAD 504,
+  CB_GWBUS 461, VS_CSAD a KV_DP nula). Drží `LinkovyJrPripojeTest`.
+- ⏸️ **Slučování řádků podle směru** + volba hrubosti + souhrnný popisek. Musí jít spolu: sloučený
+  řádek nemůže nést číslo jednoho spoje. Na drát musí přibýt druh dopravy a směr jako vlastní pole
+  (aditivní změna). ⚠️ **Rozhodnutí z 25. 8. „slučování ne, nikdo si o to neřekl" už neplatí** -
+  zákazník ten souhrnný tvar zná ze starého tisku, jen o tom nenapsal tiket (výtisk Jan 4. 9.).
+  Druhá polovina toho odůvodnění platí dál: náš popisek je konkrétnější, takže slučovat se bez
+  náhrady popisku nedá.

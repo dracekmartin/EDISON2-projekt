@@ -84,6 +84,13 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Vytáhnout, až si o to
   někdo řekne - **doklad z dat nebude**.
 
+- **`B119` Slučování přípojných řádků podle směru** [M] (nález Jan 4. 9. z výtisku starého modulu).
+  Starý modul dá přípoje téhož směru a druhu dopravy na **jeden řádek** s popiskem „ze směru X",
+  my děláme řádek per spoj s popiskem konkrétním. Patří k tomu volba hrubosti (Ne / dle licence /
+  dle IDS) a souhrnný popisek - **musí jít spolu**. Podklad
+  [`§15`](linkovy-knizni-jr-implementace-analyza.md). ⏸️ **Čeká na rozhodnutí** - mění tvar
+  výstupu, který zákazník zná.
+
 ### K ověření na reálné sestavě
 
 Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,

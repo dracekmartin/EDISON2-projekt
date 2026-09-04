@@ -1256,7 +1256,13 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                 d pr.%Set("CAS", ..FormatCas(casMin))
                 d pr.%Set("LINKA", linka2)
                 d pr.%Set("SPOJ", spoj2)
-                d pr.%Set("RADEK", $s((typZobrazeni=1)||(typZobrazeni=2):1, 1:0))
+                // Přípoj bez minuty příjezdu nebo bez směru řádek nedostane - jinak v tabulce vznikne
+                // řádek s časem „00:00" a prázdným popiskem. Starý modul ho zahodí týmiž dvěma
+                // podmínkami (`JRapiLinPrtWin01.mac:84-87`); naměřeno 4. 9.: 965 z 71 889 přípojů,
+                // které řádek dělají (nejvíc CB_GWBUS 4,2 %). Poznámky pod tabulkou se to netýká -
+                // ty mají vlastní cestu podle typZobrazeni.
+                s maRadek = ((typZobrazeni=1) || (typZobrazeni=2)) && (casMin > 0) && (kam '= "")
+                d pr.%Set("RADEK", $s(maRadek:1, 1:0))
                 d pripoje.%Push(pr)
 
                 // fráze do agregované poznámky legendy (typZobrazeni 0 nebo 2)

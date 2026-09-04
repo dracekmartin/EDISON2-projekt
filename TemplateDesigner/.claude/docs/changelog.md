@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-04 (9) - 🧹 neúplný přípoj už nedělá řádek s časem „00:00"
+
+Nalezeno porovnáním se starým modulem (Jan poslal výtisk). Starý tisk zahodí přípoj, kterému chybí
+**minuta příjezdu nebo směr**; my jsme oba posílali dál, takže v tabulce vznikl přípojný řádek
+s časem „00:00" a prázdným popiskem.
+
+**Naměřeno na čtyřech firmách: 965 z 71 889** přípojů, které řádek dělají - nejvíc CB_GWBUS
+(4,2 %) a CB_CSADAD (0,8 %); VS_CSAD a KV_DP nula. Není to tedy obrana proti stavu, který nikdo
+nepořídí. Poznámek pod tabulkou se to netýká - ty mají vlastní cestu.
+
+Ověřeno: Caché **148/148** (2 nové testy) včetně paritní brány proti starému modulu a zlatých
+odtisků; na lince `CB_CSADAD 4 / 0340101` před opravou vznikalo pět takových řádků, po ní žádný
+(ověřeno voláním agendy, ne čtením zdroje). Dvě mutace shozené - zrušený filtr i filtr, který
+bere řádek všem.
+
+Začala se tím rýsovat druhá, větší odchylka: starý modul přípoje téhož směru **slučuje do jednoho
+řádku** („ze směru Trhové Sviny"), my děláme řádek per spoj. Vedena jako `B119`, čeká na rozhodnutí.
+
 ## 2026-09-04 (8) - ✅ prázdný přípojný řádek u nás nemůže vzniknout (#11300)
 
 Zákazník má uzly s celotýdenním provozem, ale přípoji jen v pracovní dny - ve starém tisku pak
