@@ -1311,3 +1311,40 @@ v textu poznámky) a směr je slitý do textu popisku.
   nepodmíněně. Naše volba **Slučovat přípoje** (*Ne* / *Podle směru* / *Podle směru a linky*)
   legacy trojici pokrývá a není matoucí (do 4. 9. tu bylo naopak napsané, že jde o volbu čísla -
   vyvráceno měřením).
+---
+
+## 16. NESROVNALOST: spoje s trojčíselným číslem se v tabulce nekreslí (otevřeno 4. 9. 2026)
+
+**Projev:** na `CB_GWBUS 2 / 0320144` (šablona `templates/vzor-940-idzk.json`, linka vybraná přes
+výběr instancí) chybí v tabulce spoje **501, 503, 505, 507, 509**. Ve všech blocích i stránkách
+jsou jen spoje s dvoumístným číslem. F5 (obnovení dat) nepomohlo.
+
+**Co je vyloučené** (ověřeno 4. 9., nečíst znovu):
+
+- **Server je posílá vždy.** `GetData` s Janovými přesnými parametry (Plný CIS, název pro MHD,
+  obousměrný tisk vyp., dělení „Pracovní dny / Soboty / Neděle+svátky", Tarifní číslo a zastávky bez
+  zastavení „Automaticky", barvy „Netisknout") vrací **43 spojů a 36 zastávek** na dvou stránkách,
+  včetně všech 5xx. Totéž při všech čtyřech režimech dělení a při přímém sestavení stránky.
+- **Šablona nemá vlastní definici sloupců** - jen šest popisných sloupců, žádný filtr spojů.
+- **Cesta dat na klientu řádky neztrácí**: `ParseSinglePageData`, `WithCulture`, `RozdelPodleSmeru`
+  ani parsování spoje nic nefiltrují.
+- **Dělení do bloků je v pořádku** - reprodukováno nad Janovým pořadím 43 spojů: 3 bloky
+  (18+18+7), v prvním jsou 501, 503, 505, v druhém 507, 509. Nic nevypadne.
+- **Není to persistovaná definice sloupců** - ta chyba existovala (changelog 2026-09-04 (12))
+  a je opravená, ale projev zůstal.
+
+**Proč to není dělením ani kreslením:** Janův první blok obsahuje **49, 71 a 51**, které jsou
+v serverovém pořadí až na pozicích 21, 23 a 25 - tedy **za** těmi 5xx. Takový seznam nemůže
+vzniknout řezem po pořadí; je to serverový seznam, ze kterého někdo odstranil pět položek.
+Obě stránky mají navíc **totožné sloupce** a liší se jen zastávkami, takže jde o jeden blok
+s dvaceti sloupci, ne o dva bloky.
+
+**Další krok:** doplnit do stavového řádku, **kolik spojů ze serveru dorazilo a kolik se
+vykreslilo**. Bez toho se nepozná, na které straně se těch pět ztrácí. Patří to k tomu tak jako
+tak - viz §16.1.
+
+### 16.1 Chybějící varování o nezařazených spojích
+
+Když má šablona vlastní definici sloupců a spoj nesedne do žádného, u linkových JŘ **tiše zmizí**:
+`i (","_skupiny_",") '[ (","_skupina_",") continue` a žádné `NEZARAZENE_SPOJE` se neposlá.
+Zastávkové vývěsky varování mají právě proto, že chybějící sloupec v tabulce nikdo nepozná.

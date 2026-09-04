@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Linkové a knižní JŘ → **K ověření na reálné sestavě**. Je to průchod
-> a zavírání tiketů, ne psaní kódu; všechno ostatní čeká na odpověď zvenku.
+> **Nejblíž na řadě:** § Linkové a knižní JŘ → **`B120`** (spoje s trojčíselným číslem se
+> nekreslí) - uživatelův sloupec tiše chybí. Zbytek sekce čeká na odpověď zvenku.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
 > ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`).
 
@@ -51,6 +51,20 @@ z nastavení u linky se bere jen to, co mění data.* Sporné případy řeš sm
 položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
+
+### 🚨 Otevřená nesrovnalost - vzít jako první
+
+- **`B120` Spoje s trojčíselným číslem se v tabulce nekreslí** [M] (nález Jan 4. 9.).
+  Na `CB_GWBUS 2 / 0320144` (šablona `templates/vzor-940-idzk.json`) chybí spoje **501-509**;
+  server je přitom posílá (43 spojů včetně jich). ⚠️ **Uživatelův sloupec tiše chybí** - v tabulce
+  se to nijak neohlásí. Co je vyloučené (server, parsování, dělení do bloků, definice sloupců)
+  a jaký je další krok: [`§16`](linkovy-knizni-jr-implementace-analyza.md) - **číst před prácí**,
+  ať se to nehledá znovu.
+
+- **`B121` U linkových JŘ chybí varování o nezařazených spojích** [S] (nález 4. 9.).
+  Spoj, který nesedne do žádného vlastního sloupce, z tabulky zmizí bez hlášky; zastávkové
+  vývěsky varování mají. Patří k tomu i **počet spojů, které ze serveru dorazily a kolik se
+  vykreslilo** - bez toho nejde `B120` diagnostikovat. [`§16.1`](linkovy-knizni-jr-implementace-analyza.md)
 
 ### Čeká na odpověď zvenku
 
