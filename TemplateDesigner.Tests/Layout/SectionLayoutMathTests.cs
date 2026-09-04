@@ -162,6 +162,17 @@ public class SectionLayoutMathTests
     }
 
     [Fact]
+    public void Paticka_SeVyplnujeStejneJakoOstatni()
+    {
+        // Patička se na plátně tahá za horní hranu, ale výpočet zbývajícího místa je pro ni týž
+        // jako pro sekce v toku - jinak by položka v místní nabídce dala u patičky jiné číslo.
+        var t = Sablona(50f, 30f);
+        t.Sections[1].Role = SectionRole.Footer;
+
+        Assert.Equal(277f - 50f, SectionLayoutMath.ZbyvajiciMistoMm(t, t.Sections[1]), precision: 1);
+    }
+
+    [Fact]
     public void DynamickaVyska_SeNepocita()
     {
         // Prázdná výška = engine ji dopočítá z obsahu; vyplňovat ji nemá smysl.
