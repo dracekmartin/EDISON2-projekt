@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-04 (4) - 🔎 blikající paritní brána: co je vyloučené, zapsáno u testu
+
+Test, který porovnává tisk linkového JŘ se starým modulem, 3. 9. dvakrát spadl a pak bez zásahu
+do kódu prošel. **Deset běhů to nezreprodukovalo** (7 dne 3. 9., 3 dne 4. 9.) a diagnostika hlásí
+0 nedeklarovaných rozdílů na 48 kategorií pěti linek.
+
+Vyloučené příčiny jsou teď zapsané **u samotného testu**, ať je příště nikdo nehledá znovu:
+
+- dva běhy si nešlapou v pracovním globálu starého modulu - index se alokuje atomickým
+  `$i(^CacheTempJB)`, takže každý proces dostane svůj,
+- chyba starého modulu **linku přeskočí**, než aby shodila test, takže pád znamená skutečně jinou
+  hodnotu,
+- **ani jedna strana nezávisí na dni, kdy test běží** - obě berou datum z platnosti linky, ne
+  z dneška, takže svátek ani prázdniny výsledek nemění.
+
+Zůstává změna dat na devu mezi běhy; ty linky sdílíme s kolegy z jízdních řádů a doložit zpětně
+to nejde. Při dalším pádu se má nejdřív uložit diagnostika a ručně porovnat se starým modulem -
+padalo to na hodnotách, které hlídané být mají.
+
+Ověřeno: Caché **146/146** (čtyři běhy).
+
 ## 2026-09-04 (3) - 📐 ručně zadaná výška sekce drží stejnou mez jako tažení
 
 Požadavek Jan 4. 9.: „at to je kompletní a nedá se to přehnat". Tažení za hranu mělo mez ze

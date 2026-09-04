@@ -19,6 +19,21 @@ Include (%occInclude, GENERAL)
 /// ⚠️ Vázané na per-firma namespace (CB_CSADAD / KV_DP / VS_CSAD) a na přítomnost starého modulu.
 /// Co na serveru není, se přeskočí - test nesmí padat kvůli tomu, kde běží.
 /// Diagnostika mimo runner: `cache_query_cvar` na `LinkovyJrLegacyOracle.Souhrn`.
+///
+/// **Když spadne, začni tady.** 3. 9. dvakrát spadl a pak bez zásahu do kódu prošel; hlásil rozdíl
+/// v legendě poznámek (starý modul značku vůbec neměl, my ano) a název zastávky s dvojitou čárkou.
+/// Deset běhů to nezreprodukovalo, takže **tyhle příčiny už hledat nemusíš** - jsou vyloučené:
+///
+/// - **Dva běhy si nešlapou v pracovním globálu.** Starý modul si index alokuje `$i(^CacheTempJB)`,
+///   což je atomický inkrement nad persistentním globálem, takže každý proces dostane svůj.
+/// - **Chyba starého modulu neshodí test, ale přeskočí linku** (`SpustLegacy` vrací 0). Pád tedy
+///   znamená, že starý modul odpověděl a hodnota se opravdu lišila.
+/// - **Ani jedna strana nezávisí na dni, kdy test běží.** Obě berou datum z platnosti linky
+///   (`PATCH,"Plati"`), ne z dneška, takže výsledek se nemůže lišit podle svátku nebo prázdnin.
+///
+/// Zůstává **změna dat na devu mezi běhy** - kolegové z jízdních řádů tyhle linky sdílejí. Doložit
+/// to zpětně nejde, proto při dalším pádu **nejdřív ulož `Souhrn` a ručně porovnej se starým
+/// modulem** (padalo to na hodnotách, které mají být hlídané) - ne přerazit na odchylku.
 Class ALVA.TemplateDesigner.Tests.LinkovyJrAdLegacyTest Extends ALVA.EDTesting.MLTestCase
 {
 

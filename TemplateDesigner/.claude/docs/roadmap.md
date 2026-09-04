@@ -4,8 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B116`** (blikající paritní brána).
-> U čtyř položek focusu je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
+> **Nejblíž na řadě:** § Aktuální focus - rovnou jde vzít **`B117`** krok 2, jen čeká na to,
+> jak důležitý je (Jan probere s kolegou). U čtyř položek focusu je první krok dotaz ven
+> (zákazník, kolegové z jízdních řádů), ne psaní kódu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
 > ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`).
 
@@ -22,11 +23,10 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 - **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
 - **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
 
-**Rovnou udělat jde `B116`** (blikající paritní brána - nejdřív zjistit, na čem mimo repo test
-závisí).
-**`B100`** taky, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
+**`B100`** jde udělat rovnou, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
 se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B103`, `B113`, `B114` a `B115` 3. 9.; `B101` zavřená
-3. 9. jako neplatná - jeden sloupec odjezdů v praxi nenastává.)
+3. 9. jako neplatná - jeden sloupec odjezdů v praxi nenastává; `B116` odešla 4. 9.
+do Backlogu, protože deset běhů blikání nezreprodukovalo, a `B117` sem 4. 9. přišla z Backlogu.)
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
   Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
@@ -42,35 +42,6 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   není naše práce, ale zákazníkův případ z #9417 (souhrnný JŘ dvou linek s dlouhým výčtem dopravců)
   se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
   Až se to stane, filtrování dopravců přestane být odložené.
-
-- **`B116` Paritní test linkového JŘ bliká** [S] (nález 3. 9. při `B103`; **.NET polovina
-  vyřešená 3. 9.**, viz changelog - zbývá tahle, Caché).
-  `LinkovyJrAdLegacyTest.TestParitaSeStarymModulem` **dvakrát spadl a pak bez zásahu do kódu prošel**.
-  Hlásil nedeklarované rozdíly proti starému modulu: legenda poznámek (`+`, `X` - „starý [0] × náš [1]")
-  a názvy zastávek s dvojčárkou („Český Krumlov,,aut.nádr." místo „Český Krumlov, aut.nádr.")
-  na 0330510, 0330511 a 0380780.
-
-  **Co je vyloučené:** změna z `B103` (dotkla se jen limitu v pickeru a komentáře v sondě),
-  závislost na `ZastavkoveJrAd` (linkový JŘ má vlastní kopie helperů, vědomá duplikace) i kolize
-  s jinými testy v jednom běhu (padalo to i izolovaně). Dluh na tvar názvu zastávky je přitom
-  **splacen 24. 8.**, takže se ty hodnoty mají hlídat normálně - rozdíl byl skutečný, ne deklarovaný.
-
-  ⚠️ **Blikající brána je horší než chybějící.** Tuhle třídu chyb má hlídat R6; po dvou falešných
-  pádech ji nikdo nebude brát vážně a příště se přerazí naslepo. **Nejdřív zjistit, na čem mimo repo
-  test závisí** - živá data se mohla změnit, nebo na devu paralelně pracoval kolega (oracle volá
-  starý modul a ten si zapisuje do globálu, takže dva běhy vedle sebe si mohou přepsat mezistav).
-  Až pak řešit případný rozdíl.
-
-  ✅ **.NET polovina vyřešená 3. 9.** - `SheetPdfExportTests` padal kvůli paralelnímu běhu kolekcí
-  nad procesně globálním stavem (kaskáda + cache fontů SkiaSharpu); doloženo 2 pády ze 14 paralelních
-  běhů proti 0 z 8 sekvenčních, sada teď běží sekvenčně.
-
-  ⚠️ **Tahle (Caché) polovina se 3. 9. NEREPRODUKOVALA** - 4 běhy izolovaně, 3 běhy celé sady, všechny
-  zelené. Caché testy navíc paralelně neběží, takže příčina z .NET poloviny sem nepatří a **není co
-  opravovat naslepo**. Kandidáti k ověření **při dalším výskytu**: (a) na devu paralelně pracoval
-  kolega (oracle volá starý modul `mkPLinWin`, ten čte živá `^JRL`), (b) data se mezi běhy změnila.
-  ⚠️ Padalo to na hodnotách, které **mají** být hlídané (dluh na tvar názvu zastávky je splacený od
-  24. 8.), takže při dalším pádu se musí **nejdřív ručně porovnat se starým modulem** - ne přerazit.
 
 - **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
   U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
@@ -93,6 +64,33 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
   si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
   proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
   první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
+- **`B117` Poznámky linkového JŘ jako prvek** [M] (záměr Jan 3. 9.). ✅ **Krok 1 hotový 3. 9.** - prvek je v paletě linkového JŘ a nad jeho daty funguje bez úpravy kontraktu (changelog 2026-09-03 (7)). ⏳ **Zbývá krok 2:** nastavení „počet poznámek na řádek per druh" a pořadí druhů, tedy to, co má starý modul a co je zároveň `#7487`.
+
+  **Dnes:** legenda linkového JŘ se skládá **dynamickou tabulkou** nad kolekcí „Poznámky"
+  (`DRUH` 1-10, `TYP`, `ZNAK`, `TEXT`) - tak to má i výchozí šablona `knizni-jr-ad-vychozi.json`.
+  Prvek Poznámky (`NotesLegendElement`) je v paletě **jen u zastávkových**, protože `AgendaCapabilities`
+  ho váže na druh agendy `STOP`. ⚠️ **Rozhodnutí, proč to tak je, nikde není** - vzniklo to tak, že
+  to bylo nejsnazší.
+
+  **Záměr:** poznámky mají být **prvek** jako u zastávkových a nastavení jejich vzhledu má žít v něm.
+  Dynamická tabulka je na raw data, ne na doménovou logiku - a u poznámek doménová logika je:
+  negativní značky v inverzním boxu, vlastní styl znaku, vyhrazená buňka značky, řazení podle typu,
+  filtry druhů. Nad dynamickou tabulkou by to uživatel skládal ze sloupců a stejně by to nedostal.
+
+  ⚠️ **Není to jen povolit prvek v paletě.** Prvek a linková agenda mají **jiný datový kontrakt**:
+  zastávková posílá `KATEGORIE` (filtrovací značka) plus barvy a prvek na ní staví filtry i řazení,
+  linková posílá `DRUH`. Práce je v sjednocení - buď linková začne posílat i `KATEGORIE` (aditivní
+  změna, kterou R3 dovoluje), nebo se prvek naučí `DRUH`. Totéž je jádro `B56` (dvě rodiny
+  `BuildPoznamka` s jiným kontraktem).
+
+  **Ve starém modulu to není element**, ale záložka ve vlastnostech sekce s daty linky - a nese
+  právě to business nastavení, které by v prvku mělo žít: počet poznámek na řádek **per druh**
+  (Jedna / Dvě / Tři / Žádná), pořadí druhů zhora, „Způsob tisku poznámek" a „při dotisku
+  z minulé stránky netisknout okolní sekce" (doloženo obrázky od kolegy 3. 9.).
+
+  ⚠️ **Jde ruku v ruce s `#7487`** (čtyři poznámky na řádek per druh, dnes odložené): bez tohoto
+  prvku nemá to nastavení kam jít. Vzít obojí naráz, nebo `#7487` až po tomhle.
+
 
 ---
 
@@ -157,32 +155,23 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B117` Poznámky linkového JŘ jako prvek** [M] (záměr Jan 3. 9.). ✅ **Krok 1 hotový 3. 9.** - prvek je v paletě linkového JŘ a nad jeho daty funguje bez úpravy kontraktu (changelog 2026-09-03 (7)). ⏳ **Zbývá krok 2:** nastavení „počet poznámek na řádek per druh" a pořadí druhů, tedy to, co má starý modul a co je zároveň `#7487`.
+- **`B116` Paritní test linkového JŘ blikl dvakrát 3. 9.** [S] - čeká na další výskyt, není co dělat.
+  `LinkovyJrAdLegacyTest.TestParitaSeStarymModulem` dvakrát spadl a pak bez zásahu do kódu prošel
+  (legenda poznámek: starý modul značku neměl, my ano; název zastávky s dvojitou čárkou; linky
+  0330510, 0330511, 0380780). **Deset běhů to nezreprodukovalo** (7 dne 3. 9., 3 dne 4. 9.);
+  4. 9. hlásí oracle 0 nedeklarovaných rozdílů na 48 kategorií.
 
-  **Dnes:** legenda linkového JŘ se skládá **dynamickou tabulkou** nad kolekcí „Poznámky"
-  (`DRUH` 1-10, `TYP`, `ZNAK`, `TEXT`) - tak to má i výchozí šablona `knizni-jr-ad-vychozi.json`.
-  Prvek Poznámky (`NotesLegendElement`) je v paletě **jen u zastávkových**, protože `AgendaCapabilities`
-  ho váže na druh agendy `STOP`. ⚠️ **Rozhodnutí, proč to tak je, nikde není** - vzniklo to tak, že
-  to bylo nejsnazší.
+  ✅ **.NET polovina vyřešená 3. 9.** - `SheetPdfExportTests` padal paralelním během kolekcí nad
+  procesně globálním stavem (kaskáda + cache fontů SkiaSharpu), sada teď běží sekvenčně.
 
-  **Záměr:** poznámky mají být **prvek** jako u zastávkových a nastavení jejich vzhledu má žít v něm.
-  Dynamická tabulka je na raw data, ne na doménovou logiku - a u poznámek doménová logika je:
-  negativní značky v inverzním boxu, vlastní styl znaku, vyhrazená buňka značky, řazení podle typu,
-  filtry druhů. Nad dynamickou tabulkou by to uživatel skládal ze sloupců a stejně by to nedostal.
+  **Co je vyloučené** (4. 9., zápis nese i třída testu, ať to nikdo nehýbá znovu): kolize dvou běhů
+  v pracovním globálu starého modulu (index z atomického `$i(^CacheTempJB)`), chyba starého modulu
+  (vede na přeskočení linky, ne na pád), závislost na dni běhu (obě strany berou datum z platnosti
+  linky), změna z `B103`, závislost na `ZastavkoveJrAd` i kolize s jinými testy v jednom běhu.
 
-  ⚠️ **Není to jen povolit prvek v paletě.** Prvek a linková agenda mají **jiný datový kontrakt**:
-  zastávková posílá `KATEGORIE` (filtrovací značka) plus barvy a prvek na ní staví filtry i řazení,
-  linková posílá `DRUH`. Práce je v sjednocení - buď linková začne posílat i `KATEGORIE` (aditivní
-  změna, kterou R3 dovoluje), nebo se prvek naučí `DRUH`. Totéž je jádro `B56` (dvě rodiny
-  `BuildPoznamka` s jiným kontraktem).
-
-  **Ve starém modulu to není element**, ale záložka ve vlastnostech sekce s daty linky - a nese
-  právě to business nastavení, které by v prvku mělo žít: počet poznámek na řádek **per druh**
-  (Jedna / Dvě / Tři / Žádná), pořadí druhů zhora, „Způsob tisku poznámek" a „při dotisku
-  z minulé stránky netisknout okolní sekce" (doloženo obrázky od kolegy 3. 9.).
-
-  ⚠️ **Jde ruku v ruce s `#7487`** (čtyři poznámky na řádek per druh, dnes odložené): bez tohoto
-  prvku nemá to nastavení kam jít. Vzít obojí naráz, nebo `#7487` až po tomhle.
+  Zůstává **změna dat na devu mezi běhy** - ty linky sdílíme s kolegy z jízdních řádů a doložit
+  to zpětně nejde. ⚠️ Padalo to na hodnotách, které **mají** být hlídané, takže při dalším pádu
+  **nejdřív uložit `Souhrn` a ručně porovnat se starým modulem** - ne přerazit na odchylku.
 
 - **`B112` Provozovny dopravce na vývěsce - rozdělaná práce** (M, z `B111` 1. 9., #13158).
   Skalární pole dopravce (Název, Adresa, Telefon, E-mail, IČO) **fungují a jsou vystavená**;
