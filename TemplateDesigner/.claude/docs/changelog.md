@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-04 (6) - ✂️ roadmapa zkrácena z 308 na 197 řádků
+
+Položky měly 12-33 řádků a při průchodu se nedaly přečíst (nález Jan 4. 9.: „roadmapa má být
+krátký přehled toho, co se dělá"). Nově je **strop 5-6 řádků** a drží ho `CLAUDE.md`: co je
+položka, proč čeká, co ji odblokuje. Zjištění a měření patří do `docs/`, v roadmapě je odkaz.
+
+- **Provozovny dopravce vyhozeny** (rozhodnutí Jan 4. 9.) - bylo to zkoušení s kolegou, ne
+  požadavek. Skalární pole dopravce zůstávají, kolekce provozoven zůstává skrytá ze schématu.
+- **Podklad k sjednocení Caché enginů** (která pomocná funkce je doslovná kopie, která se liší
+  záměrně, kde chybí testy) je teď v `legacy-nahrada.md §4`, ne v roadmapě.
+- Zkráceno: nastavení nikoho nezapnutá, ruční zlom stránky, vlastní bloky prvků, deklarativní
+  pravidla formuláře, externí datové zdroje.
+
 ## 2026-09-04 (5) - 🧹 úklid roadmapy: dvě položky zavřené, jedna vyčleněná
 
 Roadmapa se rozcházela se stavem kódu, takže jsme ji prošli položku po položce (Jan 4. 9.).

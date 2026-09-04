@@ -1,5 +1,14 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B112` - provozovny dopravce: VYHOZENO, nikdo je nechce (4. 9. 2026)
+
+**Rozhodnutí Jan 4. 9.:** bylo to zkoušení s kolegou, ne požadavek - poptávka po tom není žádná.
+
+Skalární pole dopravce (název, adresa, telefon, e-mail, IČO) **fungují a zůstávají** (`B111`).
+Kolekce provozoven zůstává **skrytá ze schématu**, aby na ní nikdo nepostavil šablonu; drží to
+`ZastavkoveJrAdDopravciTest`. Až si o provozovny někdo řekne, začne se rozhodnutím, čím se kreslí
+hierarchie „dopravce → jeho provozovny" - tabulka z dat na ni nesedí a opakovala by údaje firmy.
+
 ## `B116` - blikající paritní brána: ZAVŘENO na živá data na devu (4. 9. 2026)
 
 Detail → changelog 2026-09-04 (4). Paritní test linkového JŘ dvakrát spadl a pak bez zásahu do kódu

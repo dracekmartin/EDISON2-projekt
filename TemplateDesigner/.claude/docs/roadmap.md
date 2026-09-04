@@ -43,27 +43,18 @@ dokončená už 3. 9., jen zapsaná jako by ne.)
   se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
   Až se to stane, filtrování dopravců přestane být odložené.
 
-- **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
-  U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
-  to respektuje, my ne, takže se takové linky tisknou jinak. **Odloženo kvůli frekvenci**
-  (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ~93 tisíc** (měření 21. 8.), což je za cenu
-  zásahu do serveru i klienta slabý důvod. ⚠️ **Neblokuje nic dalšího** - klientská strana pro
-  zlomy existuje (`INedelitelneDily`, silné a slabé zlomy) a vynucený zlom by k ní jen přibyl;
-  na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
-  nebo až se bude stejně sahat na přenos nastavení linky.
+- **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`) - u linky jde nastavit tarifní
+  číslo, na kterém se má tisk rozdělit; starý modul to respektuje, my ne. **Odloženo kvůli
+  frekvenci** (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ≈ 93 tisíc**. Neblokuje nic -
+  klientská strana pro zlomy existuje a na drátě by šlo o jedno pole navíc.
 
-- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,
-  [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Na 93 133 linkách šesti firem nejsou nikde
-  nastavené: **tvar tisku místenkování**, **vlastní texty sloupce MHD** místo „IDP-P"/„IDP-Z",
-  **tisk provozů dopravce**, čtyři přepínače **schovávání u linky** (`MHD2,netisknout*`) a **celá
-  vrstva pod linkou** (řádek se v knižním JŘ netiskne, i zvlášť per směr; umělá sekce u spoje)
-  a **tři přepínače řazení spojů** (`PS_PrintPorSpTR`, `PS_PrintSouhrnPorSpPri`,
-  `PS_PrintSouhrnPorSpTR` - řadit jen podle odjezdu, resp. jen podle příjezdu u souhrnných linek;
-  souhrnných linek je 33, ale bez těch přepínačů se chovají stejně jako ostatní).
-  Řada z nich vznikla v legacy **pro jednoho zákazníka** a nikdo jiný je nepoužívá. Vytáhnout, až
-  si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
-  proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
-  první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
+- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** - evidence, ne práce.
+  Na 93 133 linkách šesti firem nejsou nikde nastavené: tvar tisku místenkování, vlastní texty
+  sloupce MHD, tisk provozoven dopravce, schovávání u linky, vrstva pod linkou a řazení spojů
+  ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Řada vznikla v legacy pro
+  jednoho zákazníka. Vytáhnout, až si o to někdo řekne - **doklad z dat nebude**, půjde jen
+  o implementaci proti čtení legacy zdroje.
+
 ---
 
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
@@ -126,98 +117,41 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`#7487` Počet poznámek na řádek podle druhu** [M] (tiket, ⏸️ **Jan probere s kolegou**, jak je
-  důležitý). **Neumíme** a neuměli jsme to nikdy - není to nedodělek prvku Poznámky, ten je hotový.
+- **`#7487` Počet poznámek na řádek podle druhu** [M] - ⏸️ **Jan probere s kolegou**, jak je
+  důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
+  druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou. Není to
+  nedodělek prvku Poznámky - ten je hotový a nastavení má kam jít (`DRUH` je na drátě).
 
-  Starý modul má u **každého druhu** poznámky volbu „Jedna / Dvě / Tři poznámky na řádek" (i „Žádná"
-  = ten druh netisknout) plus pořadí druhů shora; zákazník chce čtyři. Náš „Počet sloupců" (1-4) dělí
-  **celou legendu jednou mřížkou**, takže krátké značky a dlouhé texty dostanou stejnou šířku.
-  Doloženo obrázky od kolegy 3. 9.
+- **`B66` Vlastní bloky prvků („moje komponenta")** [M] (podnět Jan 12. 8.). Uživatel vybere pár
+  prvků, uloží je pod jménem a vkládá jedním kliknutím do dalších šablon - mezistupeň mezi uloženou
+  sekcí a seskupením prvků. **Čeká na pevnou tabulku**: jako jeden prvek je uložení skoro zadarmo,
+  z šesti textů musí blok řešit relativní pozice. Otevřené: kde bloky žijí a odkud se vkládají.
+  **Pohltí i připravené bloky agend** (dřív `B77`) - jsou to titíž pojmenované bloky, jen dodané
+  námi (rozhodnutí Jan 17. 8.).
 
-  ✅ **Má to už kam jít** - poznámky jsou samostatný prvek (`B117`, hotovo 3. 9.) a druh poznámky
-  na drátě je (`DRUH` 1-10), takže nastavení patří do prvku a kontrakt měnit netřeba.
-  ⚠️ Do 3. 9. tu stálo „prvek umí 1-4 sloupce, hotové" - byla to záměna počtu sloupců legendy za
-  počet poznámek na řádek.
-
-- **`B112` Provozovny dopravce na vývěsce - rozdělaná práce** (M, z `B111` 1. 9., #13158).
-  Skalární pole dopravce (Název, Adresa, Telefon, E-mail, IČO) **fungují a jsou vystavená**;
-  provozovny zůstaly nedořešené a jejich kolekce je **skrytá ze schématu**, aby si na ní nikdo
-  nepostavil šablonu.
-
-  ⚠️ **V čem je problém:** kolekce má řádek na (dopravce × provozovna), takže **nutně opakuje údaje
-  firmy** - tři provozovny téhož dopravce daly třikrát pod sebou týž telefon a adresu. Tabulka z dat
-  deduplikaci neumí, takže by to vyměnilo jednu duplicitu za druhou, a přesně proti duplicitě celá
-  položka vznikla (nález Jan 1. 9. při zkoušení). Navíc **to není tabulka, ale hierarchie** „dopravce
-  → jeho provozovny", a na tu tvar tabulky nesedí.
-
-  **Co je hotové a použitelné:** `BuildDopravci` a `DopravceUdaje` v `ZastavkoveJrAd` (rozklad
-  číselníku na jednotlivá pole, ověřený voláním), data tečou na drátě pod klíčem `DOPRAVCI`, testy
-  `ZastavkoveJrAdDopravciTest` drží rozklad i to, že kolekce zůstává skrytá.
-
-  **Co se musí rozhodnout, než se zapne:** čím se hierarchie kreslí. Možnosti k probrání: vnořená
-  struktura s prvkem, který umí „hlavička dopravce + odsazené provozovny"; kolekce jen provozoven
-  s údaji firmy ze skalárních polí (opakování zmizí, ale rozpadne se to u víc dopravců); nebo
-  vypustit provozovny a nechat jen dopravce. ⚠️ Případný název kolekce v UI má být **„Dopravci
-  (provozovny)"**, ne „Dopravci" - z „Dopravci" nebylo poznat, proč tam provozovny jsou.
-
-  ⚠️ **MHD agenda a linkový JŘ** rozklad nemají vůbec - MHD má data z jiného zdroje (systémový
-  namespace). Až se tohle dořeší, patří to i tam.
-
-- **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
-  prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do
-  dalších šablon. **Co už existuje:** uložení **celé sekce** jako vlastní šablony a seskupení prvků
-  (Ctrl+G). Chybí mezistupeň mezi nimi - pojmenovaný blok menší než sekce. **Proč to čeká na pevnou
-  tabulku:** dokud je hlavička poskládaná z 6 samostatných textů, musí blok řešit relativní pozice a
-  vazby uvnitř skupiny; jako **jeden** prvek (pevná tabulka) je uložení skoro zadarmo. Otevřené:
-  kde bloky žijí (per uživatel × firma jako šablony sekcí, nebo sdílené v DB) a jestli se vkládají
-  z palety, nebo z nabídky „Přidat". **Pohltí i připravené bloky agend** (dřív `B77`): server pro
-  každou agendu drží hotové sestavy tabulek („Záhlaví linky", „Shrnutí faktury"), ale od zrušení
-  starého dialogu k nim z UI nevede cesta - je to titíž „pojmenovaný blok k vložení", jen dodaný
-  námi místo uživatelem, takže samostatnou cestu do UI nedostane (rozhodnutí Jan 17. 8.).
-
-- **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
-  věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,
-  ne featura návrháře). Dnes umí formulář reagovat na vyplněné hodnoty jen oklikou přes server
-  (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`),
-  gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt.
-  Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data
-  a dopočty). **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; háček je
-  tri-state / reaktivní logika - bez `B18` nejde). **Follow-up 2:** rozšířit gramatiku o čtení
-  **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs.
-  `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - dnes to plní jen helpTexty.
-  **Follow-up 3:** parametr sestavy nemá pole pro **popis**, takže krkolomné labely
-  (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) nejde vysvětlit. Aditivní klíč na wire + tooltip -
-  dělat spolu s gramatikou, ne zvlášť kvůli dvěma tooltipům.
+- **`B18` Deklarativní pravidla EDInputFormu** [M] (odloženo - rozhodnutí Jan 5. 8.: je to
+  **kapabilita sdílené komponenty pro celý EDISON**, ne featura návrháře). Formulář dnes reaguje na
+  vyplněné hodnoty jen oklikou přes server. Začít **viditelností** (`visibleWhen`), gramatiku sdílet
+  s tiskovými parametry - nezavádět druhý dialekt; skutečná validace zůstává imperativní.
+  Nese s sebou tři návazné věci: migraci `CellStyleEditor` na formulář z Caché, zašednutí polí
+  mrtvých bez parametru sestavy a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
+  label) - všechno až s gramatikou, ne zvlášť.
 
 - **`B56` Sjednocení Caché tiskových enginů a jejich opsaných pomocných funkcí** (odloženo -
-  **rozhodnutí Jan 5. 8. a 31. 8.**: nedělat předčasnou deduplikaci, dokud se tvar výstupních dat
-  neustálí; sjednocením by se zabetonoval stav, který se ještě hýbe).
-  ⚠️ **Pohltilo i dřívější `L8`** (31. 8.) - byla to tatáž práce ve větším rozsahu (sdílené
-  `^JRL` readery a `Build*` do `BaseAgenda`/`JrShared`, Caché obdoba extrakce jádra na .NET straně),
-  jen visela v aktivní roadmapě jako velká položka **bez přírůstku pro uživatele**. Vzít **až bude
-  knižní JŘ doimplementovaný** - do té doby není podle čeho sjednocovat.
-  **Podklad z analýzy 5. 8., aby se nemusela dělat znovu:** 27 pomocných
-  funkcí se stejným názvem ve 2+ agendách, ale jen **15 jsou doslovné kopie** (~97 řádků k odstranění,
-  ne 400-500, jak tvrdil původní odhad). 4 mají stejnou signaturu a rozešlé tělo - a to **záměrně**
-  (`AddStandardJRFields` se liší v uživatelských popiscích polí: AD „Číslo linky" × MHD „Číslo linky
-  (dle licence)"; `AddStandardJRParameters` nabízí jiné parametry sestavy). 8 sdílí jen název a dělá
-  jinou věc - `BuildPoznamka` má dvě rodiny s **jiným datovým kontraktem** (zastávková posílá
-  `KATEGORIE`+barvy, linková `DRUH`), `PopisDopravce` existuje 3× se třemi signaturami. Sloučit jde
-  bezpečně **jen skupinu doslovných kopií a jen u zastávkových agend**, které kryjí zlaté odtisky
-  a 46 testů helperů; **linkové agendy nemají ani jeden test** (2 000 řádků), takže tam by zásah jel
-  bez sítě. Vzor existuje - `BaseAgenda` už 4 sdílené helpery hostuje.
+  rozhodnutí Jan 5. 8. a 31. 8.: nedělat předčasnou deduplikaci, dokud se tvar výstupních dat
+  neustálí). ⚠️ **Pohltilo i dřívější `L8`** - tatáž práce ve větším rozsahu, jen visela v aktivní
+  roadmapě bez přírůstku pro uživatele. Vzít **až bude knižní JŘ doimplementovaný**.
+  Podklad (co je doslovná kopie, co se liší záměrně, kde chybí testy):
+  [`legacy-nahrada.md §4`](legacy-nahrada.md).
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
 
-- **Externí datové zdroje** (analýza 2026-07-12, na poptávku) - architektura připravená (engine zná jen
-  `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda
-  (0 změn .NET) · .NET provider vedle Caché (vzor `JsonFileDataSchemaProvider` + Composite) · headless
-  A3 („POST šablona+JSON → PDF" = externí zdroj bez adaptéru; **A3 je nejpravděpodobnější nosič**).
-  První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** - tržní minimum
-  (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
-  credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
-
+- **Externí datové zdroje** (na poptávku) - architektura je připravená, engine zná jen
+  `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
+  **headless tisk** („pošli šablonu a JSON, vrať PDF"); samostatně by prvním krokem byl generický
+  JSON zdroj ze souboru nebo URL. Dořešit přihlašovací údaje a odvození schématu z dat
+  (analýza 12. 7., detail v historii roadmapy).
 
 ---
 

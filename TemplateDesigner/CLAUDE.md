@@ -114,6 +114,12 @@ architektonických položek se zastav a nech rozhodnutí na uživateli.
 > do [`roadmap-archive.md`](.claude/docs/roadmap-archive.md), nenechávej odškrtnuté „✅ hotovo"
 > řádky. Platí i pro rozhodovací tabulky.
 
+> ⚠️ **Položka roadmapy je nejvýš 5-6 řádků** (rozhodnutí Jan 2026-09-04). Roadmapa je krátký
+> přehled toho, co se dělá, ne úložiště kontextu: co je položka, proč čeká a co ji odblokuje.
+> **Zjištění, měření a podklady k rozhodnutí patří do `docs/`** podle směrovací tabulky níž
+> a do roadmapy jde odkaz. Do 4. 9. měly položky 12-33 řádků a při průchodu se nedaly přečíst;
+> odtud i to, že hotová práce v nich zůstávala viset (`B117` visela jako nedokončená).
+
 ### Wiki - seedy (krok 6 skillu `implementuj`)
 
 Linkované wiki články drží **`.claude/wiki-map.json`** (allow-list). Pravidla:
