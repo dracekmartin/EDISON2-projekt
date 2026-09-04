@@ -1313,75 +1313,51 @@ v textu poznámky) a směr je slitý do textu popisku.
   vyvráceno měřením).
 ---
 
-## 16. NESROVNALOST: spoje s trojčíselným číslem se v tabulce nekreslí (otevřeno 4. 9. 2026)
+## 16. UZAVŘENO: spoje s trojčíselným číslem se nekreslily (4. 9. 2026)
 
-**Projev:** na `CB_GWBUS 2 / 0320144` (šablona `templates/vzor-940-idzk.json`, linka vybraná přes
-výběr instancí) chybí v tabulce spoje **501, 503, 505, 507, 509**. Ve všech blocích i stránkách
-jsou jen spoje s dvoumístným číslem. F5 (obnovení dat) nepomohlo.
+**Projev:** na `CB_GWBUS 2 / 0320144` chyběly v tabulce spoje **501-509**.
 
-**Co je vyloučené** (ověřeno 4. 9., nečíst znovu):
+**Vyřešeno.** Po opravě „šablona bez vlastních sloupců už nedostane cizí rozvržení"
+(changelog 2026-09-04 (12)) se na téže lince tiskne první blok jako `61 1 31 33 5 73 37 63 501`
+vlevo a `2 62 4 32 6 34 64 38 502` vpravo - tedy přesně prvních devět spojů každého směru
+v serverovém pořadí. Řez do bloků funguje. Ověřeno v aplikaci 4. 9. odpoledne.
 
-- **Server je posílá vždy.** `GetData` s Janovými přesnými parametry (Plný CIS, název pro MHD,
-  obousměrný tisk vyp., dělení „Pracovní dny / Soboty / Neděle+svátky", Tarifní číslo a zastávky bez
-  zastavení „Automaticky", barvy „Netisknout") vrací **43 spojů a 36 zastávek** na dvou stránkách,
-  včetně všech 5xx. Totéž při všech čtyřech režimech dělení a při přímém sestavení stránky.
-- **Šablona nemá vlastní definici sloupců** - jen šest popisných sloupců, žádný filtr spojů.
-- **Cesta dat na klientu řádky neztrácí**: `ParseSinglePageData`, `WithCulture`, `RozdelPodleSmeru`
-  ani parsování spoje nic nefiltrují.
-- **Dělení do bloků je v pořádku** - reprodukováno nad Janovým pořadím 43 spojů: 3 bloky
-  (18+18+7), v prvním jsou 501, 503, 505, v druhém 507, 509. Nic nevypadne.
-- **Není to persistovaná definice sloupců** - ta chyba existovala (changelog 2026-09-04 (12))
-  a je opravená, ale projev zůstal.
+⚠️ **Nelze doložit, která změna to spravila** - původní běh se nezreprodukuje (měl i jiné období
+platnosti, 2025 místo 2026). Proto neplatí ani pozorování zapsané tu ráno („první blok obsahuje
+49, 71 a 51"): bylo z rozbitého stavu.
 
-**Proč to není dělením ani kreslením:** Janův první blok obsahuje **49, 71 a 51**, které jsou
-v serverovém pořadí až na pozicích 21, 23 a 25 - tedy **za** těmi 5xx. Takový seznam nemůže
-vzniknout řezem po pořadí; je to serverový seznam, ze kterého někdo odstranil pět položek.
-Obě stránky mají navíc **totožné sloupce** a liší se jen zastávkami, takže jde o jeden blok
-s dvaceti sloupci, ne o dva bloky.
+### 16.1 Proč se nedělá varování o nezařazených spojích
 
-**Další krok:** doplnit do stavového řádku, **kolik spojů ze serveru dorazilo a kolik se
-vykreslilo**. Bez toho se nepozná, na které straně se těch pět ztrácí. Patří to k tomu tak jako
-tak - viz §16.1.
+Zvažovalo se přidat u linkových JŘ varování „spoj nesedl do žádného sloupce" (jako mají vývěsky
+`NEZARAZENE_SPOJE`). **Zamítnuto 4. 9. (rozhodnutí Jan):** varování, po kterém sloupec pořád chybí,
+je obklad - a hlavně **ta situace se z aplikace vyvolat nedá**:
 
-### 16.2 Měření 4. 9. odpoledne - sonda a opravená premisa
+- Spoj by vypadl jen definicí sloupců se **značkovými filtry** (`znackyJen`/`znackyBez`), ale ten
+  editor (`DepartureGroupEditorDialog`) zapisuje **jen do prvku vývěsky**. Linková tabulka dostane
+  `CustomColumns` výhradně jako hotový vzor ze serveru (den-based, bez filtrů), nebo null - editor
+  pro ručně skládané sloupce u ní není.
+- Druhá cesta je spoj s **nerozpoznanou týdenní platností** (`DnySpoje` → „-"). To ale není vada,
+  ale **vědomá parita**: starý modul takový spoj netiskne také (`KamPrt=0`).
+- Vývěska, kde se díra v definici vyrobit dá, varování už má.
 
-Sonda `ALVA.TemplateDesigner.Tests.LinkovyJrSpojeProbe` (metoda `Spoje`) vypíše z odpovědi
-`GetData` číslo, směr, skupinu dnů a počet neprázdných časů per spoj; metoda `Parametry` vypíše
-persistované parametry tisku uložené uživatelům. Obojí je read-only.
+⚠️ **Kdyby k linkové tabulce editor vlastních sloupců se značkami přibyl, tahle mezera se otevře** -
+pak se rozhoduje ne o varování, ale o tom, kam takový spoj vytisknout (legacy dává spoj bez
+dopočítané platnosti do **všech** sekcí, `JRapiLinPrtWin:476-481`).
 
-⚠️ **Premisa „obousměrný tisk vypnutý" byla špatná.** Uložené parametry uživatele pro
-`CB_GWBUS` / `LINKOVY_JR_AD` mají **`OBOUSMERNY_TISK: true`**. Běh popsaný výše tedy nebyl ten,
-který Jan viděl. Změřeno v obou režimech:
+### 16.2 Měření 4. 9. - sonda
 
-- **vypnutý**: 2 stránky, každá 43 spojů, jedna směr `T`, druhá `Z`.
-- **zapnutý** (skutečné nastavení): **1 stránka, 86 spojů** - nejdřív 43× `T`, pak 43× `Z`.
-  Klient z toho dělá 43 slotů po dvou sloupcích (`PocetSlotu` = delší strana, `SloupcuNaSlot` = 2).
+Sonda `ALVA.TemplateDesigner.Tests.LinkovyJrSpojeProbe` je read-only a zůstává použitelná pro
+jakoukoli linku: `Spoje` vypíše z odpovědi `GetData` číslo, směr, skupinu dnů, počet neprázdných
+časů, NZ a platnost per spoj; `Parametry` vypíše persistované parametry tisku uložené uživatelům;
+`Sablony` řekne, které šablony agendy nesou vlastní definici sloupců.
 
-**Spoje 5xx server posílá v obou režimech** a jsou to **nejúplnější sloupce**: `501`, `503`, `505`,
-`507` mají čas na všech 36 zastávkách, `509` na 33 - zatímco viditelné dvoumístné spoje mají 3-33.
-Prázdný sloupec to tedy není. Skupiny dnů: `501`-`509` jsou ve skupině 1, `511`-`517` ve skupinách
-2 a 3 (ty dvě jsou obsahově totožné).
+Naměřeno na `0320144`: **43 spojů na směr**, obousměrný tisk je slévá do jedné stránky s 86 spoji.
+Spoje 5xx jsou nejúplnější sloupce (501-507 mají čas na všech 36 zastávkách). ⚠️ **Premisa
+„obousměrný tisk vypnutý" byla špatná** - uložené parametry mají `OBOUSMERNY_TISK: true`.
 
-**Klientská cesta žádný spoj nefiltruje** - projito celé: parsování, `RozdelPodleSmeru`,
-`SloupcoveBloky` (dělení jde přes všechny sloty), `Rozvrzeni`, kreslení záhlaví i časů. Nikde není
-podmínka, která by spoj zahodila.
+### 16.3 Vada nalezená po cestě - `B122`
 
-**Dvě vady nalezené po cestě** (nesouvisí přímo, ale patří k témuž místu):
-
-1. `TableLayout.RozdelSpojeDoBloku` **nikdo nevolá** - živé dělení je
-   `LineTableElement.SloupcoveBloky`. Mrtvý kód s vlastním komentářem o paritě.
-2. `Rozvrzeni` (helper, na kterém stojí testy „blok se vejde do šířky prvku") volá `BuildColumns`
-   s **počtem slotů**, kdežto kreslení (`:1215`) i `Vejde` s **počtem sloupců**
-   (`naBlok * SloupcuNaSlot`). U obousměrné sestavy tedy testy měří polovinu sloupců a ten
-   invariant je pro dvousměrné linky **nehlídaný** - přesně pro Janův případ.
-
-**Co zbývá zjistit:** kolik sloupců a stránek Janův výstup reálně má. 43 slotů po dvou sloupcích
-nemůže dát 20 sloupců na dvou stránkách, takže se buď měřilo něco jiného, nebo se blok kreslí
-mimo šířku prvku a pravá část se odřezává. Bez diagnostiky z §16.1 (kolik dorazilo × kolik se
-vykreslilo) je to dohad.
-
-### 16.1 Chybějící varování o nezařazených spojích
-
-Když má šablona vlastní definici sloupců a spoj nesedne do žádného, u linkových JŘ **tiše zmizí**:
-`i (","_skupiny_",") '[ (","_skupina_",") continue` a žádné `NEZARAZENE_SPOJE` se neposlá.
-Zastávkové vývěsky varování mají právě proto, že chybějící sloupec v tabulce nikdo nepozná.
+`Rozvrzeni` (helper, na kterém stojí testy „blok se vejde do šířky prvku") volá `BuildColumns`
+s **počtem slotů**, kdežto kreslení (`LineTableElement:1215`) i `Vejde` s **počtem sloupců**
+(`naBlok * SloupcuNaSlot`). U obousměrné sestavy tedy testy měří polovinu sloupců a ten invariant
+je pro dvousměrné linky nehlídaný. `TableLayout.RozdelSpojeDoBloku` navíc nikdo nevolá (mrtvý kód).

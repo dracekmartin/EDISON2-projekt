@@ -58,14 +58,57 @@ ClassMethod Spoje(ByRef sys As %String) As %Status
 					s casu = casy.%Size()
 					f ci=0:1:casu-1 i casy.%Get(ci) '= "" s neprazdnych = neprazdnych + 1
 				}
+				// NZ a PLATNOST rozhodují o zařazení do vlastních sloupců - spoj, který do žádného
+				// nesedne, server tiše zahodí, takže právě v těchhle dvou polích se hledá rozdíl.
+				s pl = sp.%Get("PLATNOST"), plText = ""
+				i $isobject(pl) f pi=0:1:pl.%Size()-1 s plText = plText_pl.%Get(pi)
 				s ^||ML("OUT","spoj~"_key_"~"_$tr($j(si+1,3)," ","0")) =
 					sp.%Get("CISLO_SPOJE")_":"_sp.%Get("SMER")_":"_sp.%Get("SKUPINA")
-					_" casy="_neprazdnych_"/"_casu
+					_" casy="_neprazdnych_"/"_casu_" nz="_sp.%Get("NZ")_" platnost="_plText
 			}
 		}
 		s ^||ML("OUT","souhrn") = "stranek="_stranek_" spoju="_spojuCelkem
 		k ^||ML("IN")
 		m ^||ML("IN") = vstup
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Vypíše u šablon dané agendy, jestli nesou **vlastní definici sloupců** (`customColumns`).
+///
+/// Proč: server spoj, který nesedne do žádného vlastního sloupce, **tiše zahodí**
+/// (`ZarazeniSpojeDleDefiniceLinky`, §16.1) - a definice jde ze šablony, ne z parametrů, takže
+/// volání „naprázdno" ji nemá odkud vzít a vrátí všechny spoje. Šablona na disku přitom nemusí
+/// odpovídat té v databázi, ze které uživatel tiskne.
+///
+/// IN: `AGENDA` (default `LINKOVY_JR_AD`). OUT: řádek per šablona s délkou blobu a nálezem.
+ClassMethod Sablony(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s agenda = $g(^||ML("IN","AGENDA"))
+		s:agenda="" agenda = "LINKOVY_JR_AD"
+		k ^||ML("OUT")
+		s ^||ML("OUT","agenda") = agenda_" IdFa="_IdFa
+		s id = "", pocet = 0
+		f {
+			s id = $o(^ALVA.TemplateDesigner.Templates(IdFa,"IDX","ByAgenda",agenda,id))
+			q:id=""
+			s pocet = pocet + 1
+			s nazev = $g(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",id,"Metadata","Name"))
+			// Blob může být rozsekaný na kusy - slepíme, ať se hledá v celém JSON.
+			s blob = $g(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",id,"Data"))
+			i blob = +blob {
+				s cely = ""
+				f ci=1:1:blob s cely = cely_$g(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",id,"Data",ci))
+				s blob = cely
+			}
+			s maDefinici = $s(blob["customColumns":"ANO", 1:"ne")
+			s ^||ML("OUT","sablona~"_id) = nazev_" | customColumns="_maDefinici_" | delka="_$l(blob)
+		}
+		s ^||ML("OUT","souhrn") = "sablon="_pocet
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret $$$OK
