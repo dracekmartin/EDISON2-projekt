@@ -1239,14 +1239,20 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                     s linka2 = $p(conn,":",2), spoj2 = $p(conn,":",3)
                     s kam = $p(conn,":",5), casMin = +$p(conn,":",6)
                     s typVystupu = +$p(conn,":",4), typZobrazeni = +$p(conn,":",7)
-                    s avl = $p(conn,":",1)
+                    s avl = $p(conn,":",1), linkaProTisk = $p(conn,":",11)
                 }
                 else {
                     s linka2 = $p(conn,":",1), spoj2 = $p(conn,":",2)
                     s kam = $p(conn,":",3), casMin = +$p(conn,":",8)
                     s typVystupu = +$p(conn,":",4), typZobrazeni = +$p(conn,":",9)
-                    s avl = $p(conn,":",6)
+                    s avl = $p(conn,":",6), linkaProTisk = $p(conn,":",12)
                 }
+                // Vlastní „linka pro tisk" přebíjí číslo linky - starý modul to dělá vždy, když je
+                // pole vyplněné (`JRapiLinPrtWin01.mac:76,135`), bez ohledu na cokoli dalšího.
+                // Naměřeno 4. 9.: 3 515 z 71 889 přípojů ho má, u 3 512 se číslo liší - u vlaku
+                // stojí v surovém poli číslo vlaku („Os 8009"), ale tisknout se má označení linky
+                // („S1"). Nejvíc CB_GWBUS (29 %).
+                i linkaProTisk '= "" s linka2 = linkaProTisk
                 i typVystupu = 2 continue                 // jen exportní strojek - na JŘ vůbec
 
                 s pr = ##class(%DynamicObject).%New()

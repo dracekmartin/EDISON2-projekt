@@ -1295,3 +1295,19 @@ v textu poznámky) a směr je slitý do textu popisku.
   pole `AVL` (aditivní změna, zlaté odtisky přebaselinovány v témž commitu).
   ⚠️ **Dva přípoje téhož spoje zakládají řádek další** - jeden řádek nese od jednoho spoje jen
   jeden čas, jinak by se tiše přebil. Drží `PripojeSlucovaniTests` (čtyři mutace shozené).
+- ✅ **Vlastní „linka pro tisk" přebíjí číslo linky** (hotovo 4. 9.). Starý modul to dělá **vždy**,
+  když je pole vyplněné (`JRapiLinPrtWin01.mac:76,135`) - u vyčkání 11. položka věty, u navázání
+  12. **Naměřeno: 3 515 z 71 889** přípojů ho má a u **3 512** se číslo liší - CB_GWBUS 29 %,
+  VS_CSAD 10 %, CB_CSADAD 0,2 %, KV_DP nula. U vlaku stojí v surovém poli číslo vlaku („Os 8009"),
+  ale tisknout se má označení linky („S1"); jinde je to zkrácené číslo (`330518` → `518`) nebo
+  bez vodicích nul (`000485` → `485`).
+  ⚠️ **Linky jádra zlatých odtisků to pole nemají**, takže opravu nekryjí - drží ji
+  `LinkovyJrPripojeTest` na `CB_GWBUS 2 / 0320144` (mutace „přepis zrušen" ji shodí).
+
+- ⛔ **Volba „Návaznosti v přípojných řádcích" (Ne / dle licence / dle IDS) se nedělá** - v přípojných
+  řádcích nic nemění. Řídí jen to, jestli linka jde do agregačního klíče, a hodnota *dle IDS*
+  padá v `$case(typslucovani,1:liv,:"")` do výchozí větve, tedy se chová stejně jako *Ne*.
+  ⚠️ **Není to o tom, které číslo linky se tiskne** - to řeší „linka pro tisk" výše a děje se
+  nepodmíněně. Naše volba **Slučovat přípoje** (*Ne* / *Podle směru* / *Podle směru a linky*)
+  legacy trojici pokrývá a není matoucí (do 4. 9. tu bylo naopak napsané, že jde o volbu čísla -
+  vyvráceno měřením).

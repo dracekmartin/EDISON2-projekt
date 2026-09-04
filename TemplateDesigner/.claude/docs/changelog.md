@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-04 (11) - 🚋 u přípoje se tiskne označení linky, ne číslo vlaku
+
+Nalezeno při dokládání slučování přípojů. Každý přípoj může mít u sebe vlastní **linku pro tisk**
+a starý modul jí číslo linky přebíjí - my jsme tiskli surové číslo z dat.
+
+**Naměřeno na čtyřech firmách: 3 515 z 71 889** přípojů to pole má a u **3 512** je to jiné
+číslo, než jaké jsme tiskli. Nejvíc CB_GWBUS (29 %), pak VS_CSAD (10 %). Jak to konkrétně
+vypadá: u vlaku je v datech číslo vlaku „Os 8009", ale na vývěsce má stát označení linky „S1";
+jinde je to zkrácené číslo (330518 → 518) nebo číslo bez vodicích nul (000485 → 485).
+
+⚠️ **Linky, na kterých držíme zlaté odtisky, tohle pole nemají**, takže opravu nekryly - proto
+k ní vznikl vlastní test na lince, kde přepis nastává.
+
+Ověřeno: Caché **150/150** (1 nový test) včetně paritní brány proti starému modulu, .NET
+**1502/1502**. Mutace „přepis zrušen" test shodí.
+
+**Volba „Návaznosti v přípojných řádcích" ze starého modulu se dělat nebude** - měření ukázalo, že
+v přípojných řádcích nic nemění: řídí jen agregaci a její hodnota „dle IDS" se chová stejně jako
+„Ne". S tím, které číslo linky se tiskne, nesouvisí.
+
 ## 2026-09-04 (10) - 🔗 přípoje jednoho směru se vejdou na jeden řádek
 
 Starý tisk dává přípoje téhož směru a druhu dopravy na **jeden řádek** s popiskem „ze směru

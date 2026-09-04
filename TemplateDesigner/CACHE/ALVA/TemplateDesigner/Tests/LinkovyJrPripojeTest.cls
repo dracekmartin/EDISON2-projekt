@@ -68,6 +68,50 @@ Method TestNeuplnyPripojNedostaneRadek()
 	do $$$AssertTrue(bezRadku > 0, "na téhle lince mají být přípoje bez řádku - jinak měření z 4. 9. už neplatí")
 }
 
+/// Linka, kde je u přípojů vyplněná vlastní „linka pro tisk" - u vlaku stojí v surovém poli číslo
+/// vlaku („Os 8009"), ale tisknout se má označení linky („S1").
+Parameter LINKASPROTISK = "CB_GWBUS~2~0320144";
+
+/// Vlastní „linka pro tisk" musí přebít surové číslo linky.
+///
+/// Naměřeno 4. 9.: 3 515 z 71 889 přípojů to pole má a u 3 512 se číslo liší (CB_GWBUS 29 %).
+/// ⚠️ **Linky jádra zlatých odtisků to pole nemají**, takže tuhle opravu nekryjí - bez tohohle
+/// testu by se přepis dal zrušit a nic by se nerozsvítilo.
+Method TestLinkaProTiskPrebijeCisloLinky()
+{
+	do ..SetupSys(.sys)
+	set popis = ..#LINKASPROTISK
+	set db = $piece(popis,"~",1), sku = $piece(popis,"~",2), lin = $piece(popis,"~",3)
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "firma linky s vlastní linkou pro tisk tu není - přeskočeno")
+		quit
+	}
+	set page = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).BuildStrankaLinky(db, sku, lin, "T", 2)
+	if page = "" {
+		do $$$AssertTrue(1, "stránka se nesestavila - přeskočeno")
+		quit
+	}
+
+	set (overeno, surovych) = 0
+	set spoje = page.%Get("rows").%Get("SPOJE")
+	for si = 0:1:spoje.%Size()-1 {
+		set pripoje = spoje.%Get(si).%Get("PRIPOJE")
+		continue:'$isobject(pripoje)
+		for pi = 0:1:pripoje.%Size()-1 {
+			set pr = pripoje.%Get(pi)
+			continue:'pr.RADEK
+			set overeno = overeno + 1
+			// Surové číslo vlaku začíná zkratkou druhu („Os ", „R ", „Sp ") - to se tisknout nemá.
+			if $piece(pr.LINKA," ",1) = "Os" set surovych = surovych + 1
+		}
+	}
+	if 'overeno {
+		do $$$AssertTrue(1, "linka nemá přípoje s řádkem - přeskočeno")
+		quit
+	}
+	do $$$AssertEquals(surovych, 0, "u "_surovych_" z "_overeno_" přípojů se tiskne číslo vlaku místo označení linky - vlastní ""linka pro tisk"" se neuplatnila")
+}
+
 /// Druh dopravy musí být na drátě - prvek podle něj seskupuje přípojné řádky, takže bez něj
 /// by se autobus sloučil s vlakem téhož směru a popisek by neřekl, čím to jede.
 Method TestPripojNeseDruhDopravy()
