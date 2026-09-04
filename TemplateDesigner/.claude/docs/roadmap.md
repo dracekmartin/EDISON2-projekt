@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Linkové a knižní JŘ → **`B122`** (testy nehlídají šířku bloku
-> u obousměrné sestavy). Zbytek sekce čeká na odpověď zvenku.
+> **Nejblíž na řadě:** § Linkové a knižní JŘ - celá sekce čeká na odpověď zvenku, práci odtud
+> brát nelze. Vezmi místo toho položku z Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
 > ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`).
 
@@ -51,12 +51,6 @@ z nastavení u linky se bere jen to, co mění data.* Sporné případy řeš sm
 položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
-
-- **`B122` Testy nehlídají šířku bloku u obousměrné sestavy** [S] (nález 4. 9.).
-  Helper `Rozvrzeni` počítá šířku s počtem **slotů**, kreslení s počtem **sloupců**
-  (`naBlok * SloupcuNaSlot`). U dvousměrné linky tedy testy měří polovinu a invariant „blok se
-  vejde do šířky prvku" je nehlídaný - přetečený blok se v tisku odřízne bez hlášky. Vedle toho
-  `TableLayout.RozdelSpojeDoBloku` nikdo nevolá (mrtvý kód).
 
 ### Čeká na odpověď zvenku
 

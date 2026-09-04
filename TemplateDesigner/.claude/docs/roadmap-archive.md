@@ -1,5 +1,20 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B122` Testy nehlídaly šířku bloku u obousměrné sestavy (hotovo 4. 9. 2026)
+
+Podmínka „každý blok linkové tabulky se vejde do šířky prvku" nebyla u linky tištěné v obou směrech
+hlídaná: pomocný výpočet `Rozvrzeni` počítal s počtem **slotů**, kdežto kreslení s počtem
+**sloupců** (`naBlok * SloupcuNaSlot`), a u obousměrné sestavy má slot sloupec na každé straně
+zastávek. Šířka tedy vycházela na polovinu a přetečený blok se mohl v tisku odříznout, aniž by to
+kterýkoli test viděl.
+
+Opraveno přepočtem na sloupce (stejně jako to dělá kreslení i `Vejde`) a novou fixturou obousměrné
+linky, která před opravou padá na **338 mm proti prvku 190 mm**. Vedle toho odstraněn mrtvý dělič
+`TableLayout.RozdelSpojeDoBloku` i s vlastní sadou testů - nikdo ho nevolal.
+
+Nalezeno při hledání spojů, které chyběly na `CB_GWBUS 0320144` (viz `B120` v analýze §16);
+s tou příčinou to nesouviselo. Vytištěná tabulka se nemění, mění se to, co testy chytí.
+
 ## `B119` - přípoje jednoho směru na jednom řádku (hotovo 4. 9. 2026)
 
 Detail → changelog 2026-09-04 (10), logika legacy i naše →

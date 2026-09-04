@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-04 (13) - 📏 u obousměrné linky se hlídá, že se blok tabulky vejde do prvku (`B122`)
+
+Nalezeno při hledání spojů, které v tabulce chyběly na `CB_GWBUS 0320144`.
+
+Testy, které mají držet podmínku **„každý blok tabulky se vejde do šířky prvku"**, ji u obousměrné
+sestavy nehlídaly.
+Pomocný výpočet počítal s počtem **slotů** dělení, kdežto kreslení s počtem **sloupců** - a u linky
+tištěné v obou směrech má jeden slot sloupec na každé straně zastávek, takže se šířka měřila
+na polovinu.
+Nová fixtura obousměrné linky to ukázala rovnou: bloky vycházely na **338 mm** proti prvku
+o šířce 190 mm.
+
+⚠️ **Vytištěná tabulka se nemění.** Špatný počet byl jen v tom pomocném výpočtu; kreslení si přepočet
+dělalo správně po celou dobu. Mění se to, co testy chytí: dokud byla podmínka pro dvousměrné linky
+nehlídaná, mohl blok přetéct za hranu prvku a v tisku se odříznout, aniž by o tom kterýkoli test
+věděl - a přesně takhle vypadá „chybí mi v tabulce sloupec".
+
+Vedle toho zmizel **mrtvý dělič bloků** (`TableLayout.RozdelSpojeDoBloku`) i s vlastní sadou testů.
+Nikdo ho nevolal, dělí `LineTableElement.SloupcoveBloky` - a ta stará sada je učebnicový případ
+toho, proti čemu se tu píšou testy nad daty: byla celou dobu zelená i ve chvíli, kdy tabulka
+v návrháři vycházela nečitelná, protože vzorec ověřovala se vstupy, které do něj ve skutečnosti
+nešly.
+
+Ověřeno: .NET **1498/1498** (2 nové testy, 7 odebraných s mrtvým kódem). Před opravou nový test
+padá na 338 mm proti 190 mm.
+
 ## 2026-09-04 (12) - 🐛 šablona bez vlastních sloupců už nedostane cizí rozvržení
 
 Nalezeno při hledání spojů, které Janovi v tabulce chyběly (linka 320144, spoje 501-509).

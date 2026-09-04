@@ -865,12 +865,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         int kmCount = MaxKmCount(stops);
         var bloky = SloupcoveBloky(stops, kmCount);
         int naBlok = bloky.Count > 0 ? bloky.Max(b => b.Pocet) : 0;
+        // ⚠️ Do šířky se počítá **počet sloupců**, ne slotů: u obousměrné sestavy má slot sloupec
+        // na každé straně zastávek. Stejný přepočet dělá kreslení i `Vejde`; dokud tady chyběl,
+        // vycházela šířka dvousměrné linky na polovinu a invariant „blok se vejde do šířky prvku"
+        // se u ní nehlídal (nález 4. 9., `B122`).
+        int sloupcuBloku = naBlok * SloupcuNaSlot();
         float rezerva = RezervaMezerMm(trips);
         float znackaMm = SirkaZnackyMm();
-        float rezervaZnacek = RezervaZnacekMm(trips, stops, znackaMm, naBlok);
+        float rezervaZnacek = RezervaZnacekMm(trips, stops, znackaMm, sloupcuBloku);
         return bloky.Select(b =>
         {
-            var (cols, tripW, _) = BuildColumns(stops, kmCount, naBlok, rezerva, rezervaZnacek);
+            var (cols, tripW, _) = BuildColumns(stops, kmCount, sloupcuBloku, rezerva, rezervaZnacek);
             var sirky = SirkySpoju(SpojeBlokuVse(b), stops, tripW, znackaMm);
             return new BlokRozvrh(b.Od, b.Pocet,
                 cols.Sum(c => c.Width) + rezerva + sirky.Sum(), tripW);
