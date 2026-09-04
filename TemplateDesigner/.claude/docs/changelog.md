@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-04 (12) - 🐛 šablona bez vlastních sloupců už nedostane cizí rozvržení
+
+Nalezeno při hledání spojů, které Janovi v tabulce chyběly (linka 320144, spoje 501-509).
+
+Parametry načtení dat se skládají z persistovaných parametrů sestavy a přes ně se přepisuje to,
+co je v šabloně. Vlastní **definice sloupců** se ale přidávala jen tehdy, když ji šablona má -
+takže když ji nemá, zůstala v mapě **persistovaná hodnota** a serveru došlo rozvržení, které
+šablona nikdy neobsahovala. Kdo si jednou vlastní sloupce nastavil, dostával je i do šablon
+bez nich - a spoj, který do žádného z nich nesedne, z tabulky **tiše zmizí**.
+
+Komentář přímo nad tím řádkem přitom tvrdil, že definice jde „vždy čerstvě ze šablony, nikdy
+z persistovaných hodnot" - to je přesně ta třída chyb, proti které varuje. Teď prázdná hodnota
+klíč **odebere**; týž mechanismus platí pro jazyk značek.
+
+Ověřeno: .NET **1504/1504** (1 nový test). Mutace „oprava zrušena" test shodí. ⚠️ Starší test
+tuhle díru minul - zkoušel jen případ, kdy persistované parametry definici vůbec nemají.
+
 ## 2026-09-04 (11) - 🚋 u přípoje se tiskne označení linky, ne číslo vlaku
 
 Nalezeno při dokládání slučování přípojů. Každý přípoj může mít u sebe vlastní **linku pro tisk**

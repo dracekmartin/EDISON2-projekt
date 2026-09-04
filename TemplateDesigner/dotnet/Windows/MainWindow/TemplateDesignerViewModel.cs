@@ -3073,10 +3073,17 @@ public class TemplateDesignerViewModel : EDViewModel
         // Definice vlastních sloupců jde VŽDY čerstvě ze šablony (parametr metody), nikdy přes
         // _previewParams - tam by ji ApplyPersistedPrintParams mohl přepsat starou persistovanou
         // hodnotou a tisklo by se jiné rozvržení, než šablona říká (třída chyb B24).
+        // ⚠️ Prázdná hodnota ze šablony musí klíč **odebrat**, ne jen nepřidat - jinak v mapě
+        // zůstane persistovaná hodnota z `printParams` a serveru dojde rozvržení, které šablona
+        // nemá. Do 4. 9. tu byl jen `if`, takže komentář výše popisoval něco jiného, než kód dělal:
+        // uživatel, který si někdy vlastní sloupce nastavil, je dostával i do šablon bez nich -
+        // a spoj, který do žádného z nich nesedne, z tabulky tiše zmizí.
         if (!string.IsNullOrEmpty(columnsDefinitionJson)) p["DEFINICE_SLOUPCU"] = columnsDefinitionJson;
+        else p.Remove("DEFINICE_SLOUPCU");
         // Jazyk textů značek (#12843) - jde ze šablony, ne z parametrů sestavy, ať ho persistovaná
         // hodnota nemůže přepsat (třída chyb B24). Prázdný = server zůstane na češtině.
         if (!string.IsNullOrEmpty(jazyk)) p["JAZYK"] = jazyk;
+        else p.Remove("JAZYK");
         // Turnusy ke spojům jsou volba **prvku**, ne parametr sestavy (turnus je provozní věc
         // dopravce). Serveru to ale dojít musí, protože turnusy nejsou v datech linky a jejich
         // dotaz stojí 40-550 ms - proto touž cestou jako DEFINICE_SLOUPCU: vždy čerstvě ze
