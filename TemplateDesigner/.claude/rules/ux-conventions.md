@@ -149,7 +149,7 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 | **Shift+šipky** | **Změna velikosti** o 1 mm - mění se pravá a dolní hrana, levý horní roh drží |
 | Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
 | Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
-| **tažení za spodní hranu sekce** | **výška sekce**; sekce pod se posunou a podrží svou výšku, mřížka platí a Ctrl ji vypne, Esc zruší. ⚠️ **Úchyt prvku má přednost** - jinak by prvek u dolní hrany sekce nešel roztáhnout; hrana se proto chytá i v levém modrém štítku sekce. Sekce s prázdnou výškou se netahá (počítá ji engine z obsahu) |
+| **tažení za hranu sekce** | **výška sekce**: sekce pod se posunou a podrží svou výšku, mřížka platí a Ctrl ji vypne, Esc zruší. Sekci nejde zmenšit pod její obsah (jinak by se prvek v návrháři oříznul, ale vytiskl se celý). ⚠️ **Patička se tahá za HORNÍ hranu** - je kotvená ke spodku papíru, takže roste nahoru; tažením zdola by rostla proti pohybu myši. Horní hrana sekce v toku se nechytá zvlášť, je to táž linka jako spodní hrana sekce nad ní. ⚠️ **Úchyt prvku má přednost**, jinak by prvek u hrany nešel roztáhnout - hrana se proto chytá i v levém modrém štítku sekce. Sekce s prázdnou výškou se netahá (počítá ji engine z obsahu) |
 
 ⚠️ **Shift = velikost, Ctrl = krok mřížky** (rozhodnutí Jan 1. 9., `B109`). Vychází ze starého
 návrháře, kde uživatelé velikost klávesnicí hodně používali; myší se rozměr nedoladí. **Velký krok

@@ -199,6 +199,10 @@ Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole *
   Kdyby to šlo, prvek by v návrháři zmizel pod okrajem, ale na papíře by se vytiskl celý, protože
   tiskové jádro sekci nafoukne na obsah. Potřebujete-li sekci opravdu zmenšit, přesuňte nebo
   smažte prvek, který ji drží.
+
+  **Patičku taháte za HORNÍ hranu** - je ukotvená u spodního okraje stránky, takže roste vzhůru.
+  U ostatních sekcí je to spodní hrana. Hranu mezi dvěma sekcemi netřeba hledat dvakrát: je to
+  spodní hrana té horní z nich.
 - **Mazání** - poslední zbývající sekci nelze smazat; sekce s prvky vyžaduje potvrzení. Uvolněná
   výška se proporcionálně rozdělí mezi zbývající sekce (a naopak při přidání nové).
 - **Řazení** - přetažením v levém panelu, nebo šipkami v kontextovém menu.

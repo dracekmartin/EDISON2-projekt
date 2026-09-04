@@ -106,6 +106,54 @@ public class SectionEdgeHitTests
         Assert.Null(canvas.HitTestSectionBottomEdge(x, y, CanvasWidth));
     }
 
+    // ── Patička: kotvená ke spodku papíru, takže roste nahoru ───────────────
+    // Nález Jan 4. 9.: u patičky nemá tažení dolů smysl, protože je úplně dole. A hlavně -
+    // zvětšuje se směrem vzhůru (footerY = spodek - její výška), takže tažením za spodní hranu
+    // by se kurzor od hrany odtrhl a patička by rostla proti pohybu myši.
+
+    [Fact]
+    public void Paticka_SeChytaZaHorniHranu()
+    {
+        var (canvas, _, sekce) = Scena(50f, 30f);
+        sekce[1].Role = SectionRole.Footer;
+
+        var (_, ox, oy) = canvas.GetSectionOrigins(CanvasWidth).First(t => t.Section == sekce[1]);
+
+        // Horní hrana patičky chytá...
+        var horni = canvas.HitTestSectionEdge(ox + 100f, oy, CanvasWidth);
+        Assert.NotNull(horni);
+        Assert.Same(sekce[1], horni!.Value.Section);
+        Assert.True(horni.Value.RosteNahoru, "patička roste nahoru, ne dolů");
+
+        // ...a její spodní hrana ne (tam by tažení šlo proti pohybu myši).
+        float spodni = oy + canvas.SectionHeightPx(sekce[1]);
+        Assert.Null(canvas.HitTestSectionEdge(ox + 100f, spodni, CanvasWidth));
+    }
+
+    [Fact]
+    public void BeznaSekce_RosteDolu()
+    {
+        var (canvas, _, sekce) = Scena(50f, 50f);
+        var (x, y) = BodNaHrane(canvas, sekce[0]);
+
+        var hit = canvas.HitTestSectionEdge(x, y, CanvasWidth);
+        Assert.NotNull(hit);
+        Assert.False(hit!.Value.RosteNahoru);
+    }
+
+    [Fact]
+    public void HorniHranaSekceVToku_JeSpodniHranouSekceNadNi()
+    {
+        // Proto se horní hrana nechytá zvlášť: je to táž linka a uchopí se jako spodní hrana
+        // předchozí sekce, takže chování zůstane jedno.
+        var (canvas, _, sekce) = Scena(50f, 50f);
+        var (_, ox, oyDruhe) = canvas.GetSectionOrigins(CanvasWidth).First(t => t.Section == sekce[1]);
+
+        var hit = canvas.HitTestSectionEdge(ox + 100f, oyDruhe, CanvasWidth);
+        Assert.NotNull(hit);
+        Assert.Same(sekce[0], hit!.Value.Section);
+    }
+
     [Fact]
     public void UchytPrvkuNaHrane_MaPrednost()
     {

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-04 (2) - ⬆️ patička se tahá za horní hranu, ne za spodní
+
+Dotaz Jan 4. 9.: u patičky nemá tažení dolů smysl, protože je úplně dole. A byl v tom horší
+problém - patička je **kotvená ke spodku papíru**, takže se zvětšuje **směrem vzhůru**. Tažením za
+spodní hranu se tedy kurzor od hrany odtrhl a patička rostla proti pohybu myši.
+
+Nově se **patička chytá za horní hranu** a tažení nahoru ji zvětšuje; její spodní hrana se nechytá
+vůbec. Ostatní sekce zůstávají na spodní hraně, protože se skládají shora dolů.
+
+✅ **Horní hrana běžných sekcí nepotřebuje nic navíc** - je to táž linka jako spodní hrana sekce
+nad ní, takže se uchopí jako ona a chování zůstane jedno. Zvlášť ji chytat by znamenalo dvě
+interpretace jednoho pohybu.
+
+Ověřeno: .NET **1487/1487** (3 nové testy). Mutace „patička se chytá zdola jako ostatní“ test shodí.
+
 ## 2026-09-04 (1) - 🖱️ výšku sekce jde tahat myší za její spodní hranu (`B118` krok 2)
 
 Sekci šlo roztáhnout jen číslem ve formuláři nebo položkou „Vyplnit zbytek stránky" v místní

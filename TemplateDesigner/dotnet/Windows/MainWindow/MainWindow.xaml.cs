@@ -66,6 +66,7 @@ public partial class MainWindow : Window
     private Section? _sectionResizeTarget;
     private float    _sectionResizeStartY;      // px, kde tažení začalo
     private float    _sectionResizeStartH;      // mm, výška před tažením
+    private bool     _sectionResizeUpwards;     // patička je kotvená dole, takže roste nahoru
 
     // ── Adding element (drag from palette / field drag) ────────────────────────
     private string? _addingElementType;
@@ -2342,13 +2343,14 @@ public partial class MainWindow : Window
         // Spodní hrana sekce - tažením se mění její výška a sekce pod ní se posunou.
         // ⚠️ Až PO úchytu prvku: prvek, který se hrany dotýká, musí zůstat roztažitelný.
         if (_canvas.HitTestHandle(cx, cy, cw) is null &&
-            _canvas.HitTestSectionBottomEdge(cx, cy, cw) is { } edgeSection &&
-            edgeSection.DesignerHeight is { } edgeStartH)
+            _canvas.HitTestSectionEdge(cx, cy, cw) is { } edge &&
+            edge.Section.DesignerHeight is { } edgeStartH)
         {
-            _sectionResizeTarget = edgeSection;
+            _sectionResizeTarget  = edge.Section;
+            _sectionResizeUpwards = edge.RosteNahoru;
             _sectionResizeStartY = cy;
             _sectionResizeStartH = edgeStartH;
-            _vm.State.ActiveSection = edgeSection;
+            _vm.State.ActiveSection = edge.Section;
 
             _mouseMode = MouseMode.SectionResizing;
             skCanvas.CaptureMouse();
@@ -2606,7 +2608,9 @@ public partial class MainWindow : Window
             if (e.LeftButton != MouseButtonState.Pressed) { EndSectionResize(commit: false); return; }
             if (_sectionResizeTarget is null) return;
 
+            // Patička roste nahoru (je kotvená ke spodku papíru), ostatní sekce dolů.
             float posunMm = (cy - _sectionResizeStartY) / _canvas.MmToPx;
+            if (_sectionResizeUpwards) posunMm = -posunMm;
             float novaMm  = _sectionResizeStartH + posunMm;
 
             // Ctrl vypíná mřížku - stejně jako u prvků.
