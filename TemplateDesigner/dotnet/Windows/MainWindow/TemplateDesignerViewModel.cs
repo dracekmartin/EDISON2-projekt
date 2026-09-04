@@ -1159,6 +1159,35 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPreviewRefresh?.Invoke();
     }
 
+    /// <summary>
+    /// Srazí ručně zadanou výšku sekce do týchže mezí, jaké platí pro tažení a pro „Vyplnit zbytek
+    /// stránky". Vrací true, když hodnotu opravdu změnil.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Formulář sekce přichází z Caché (`SectionEdit.cls`) a **nezná ostatní sekce šablony**,
+    /// takže má statický rozsah 5-9999 mm. Bez tohohle sražení šla mez obejít cestou, kterou
+    /// uživatel zkusí jako první: tažením sekci pod obsah nezmenšil, ale číslem ano - a prvek se
+    /// pak v návrháři oříznul, přestože se na papíře vytiskl celý (nález Jan 4. 9.).
+    ///
+    /// <para>Korekce se zapisuje **mimo příkaz** - krok zpět vrátí hodnotu z dialogu, takže se stav
+    /// nerozejde. Vratná zvlášť by znamenala mačkat zpět dvakrát.</para>
+    /// </remarks>
+    public bool SrazVyskuSekceDoMezi(Section section)
+    {
+        if (section.DesignerHeight is not { } zadana) return false;   // dynamická výška roste sama
+
+        float dno     = SectionLayoutMath.MinimalniVyskaProSekci(section);
+        float strop   = SectionLayoutMath.ZbyvajiciMistoMm(State.CurrentTemplate, section);
+        float srazena = Math.Clamp(zadana, dno, MathF.Max(dno, strop));
+        if (MathF.Abs(srazena - zadana) < 0.05f) return false;
+
+        section.DesignerHeight = srazena;
+        StatusText = srazena > zadana
+            ? $"Výška sekce {section.Name} zvětšena na {srazena:0.#} mm - menší by uřízla její obsah"
+            : $"Výška sekce {section.Name} zmenšena na {srazena:0.#} mm - větší by nevešla na stránku";
+        return true;
+    }
+
     public void MoveSection(Section section, int direction)
     {
         int idx    = State.CurrentTemplate.Sections.IndexOf(section);

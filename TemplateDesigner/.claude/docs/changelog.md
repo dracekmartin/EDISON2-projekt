@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-04 (3) - 📐 ručně zadaná výška sekce drží stejnou mez jako tažení
+
+Požadavek Jan 4. 9.: „at to je kompletní a nedá se to přehnat". Tažení za hranu mělo mez ze
+3. 9., ale **číslo ve formuláři sekce žádnou** - formulář přichází z Caché a nezná ostatní sekce
+šablony, takže má pevný rozsah 5-9999 mm. Zadáním čísla se tedy mez obešla a sekce šla zmenšit
+**pod svůj obsah** (prvek se v návrháři oříznul, ale vytiskl se celý - engine sekci při tisku
+nafoukne zpátky) nebo roztáhnout tak, že vytlačila ostatní ze stránky.
+
+Nově se hodnota z formuláře **srazí do týchže mezí jako tažení** a stavový řádek řekne, na co
+a proč - bez té hlášky by uživatel viděl v poli jinou hodnotu, než zapsal. Korekce není samostatný
+krok zpět: jedno zpět vrátí původní výšku.
+
+Ověřeno: .NET **1494/1494** (6 nových testů). Čtyři mutace shozené - dno bez obsahu, zrušený strop,
+hláška bez jména sekce, návratová hodnota bez změny.
+
 ## 2026-09-04 (2) - ⬆️ patička se tahá za horní hranu, ne za spodní
 
 Dotaz Jan 4. 9.: u patičky nemá tažení dolů smysl, protože je úplně dole. A byl v tom horší

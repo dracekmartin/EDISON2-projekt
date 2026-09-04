@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -1817,7 +1817,10 @@ public partial class MainWindow : Window
             "Vlastnosti sekce: " + section.Name)
             { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+        {
             _vm!.Execute(dlg.ResultCommand);
+            _vm!.SrazVyskuSekceDoMezi(section);
+        }
         InvalidateCanvas();
         InvalidatePreview();
         _vm!.RebuildSections();
