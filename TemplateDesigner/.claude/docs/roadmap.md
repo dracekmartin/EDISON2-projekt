@@ -4,56 +4,10 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus - všech pět položek čeká na odpověď zvenku nebo na
-> zájem, ne na práci. U každé je první krok se zeptat, ne psát kód.
+> **Nejblíž na řadě:** § Linkové a knižní JŘ → **K ověření na reálné sestavě**. Je to průchod
+> a zavírání tiketů, ne psaní kódu; všechno ostatní čeká na odpověď zvenku.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
 > ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`).
-
----
-
-## 🎯 Aktuální focus
-
-Vytaženo z Backlogu 31. 8. (rozhodnutí Jan): paritní vlny jsou hotové, a než se sáhne na velký
-vnitřní úklid, jdou na řadu tyhle menší věci. ⚠️ **Čtyři z nich čekají na odpověď zvenčí, ne na
-práci** - u nich je první krok se zeptat, ne psát kód:
-
-- **`C8`** - zeptat se zákazníka, jestli to pořád chce.
-- **`C9`** - potřebuje nové pole u linky od kolegů z jízdních řádů.
-- **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
-- **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
-
-**`B100`** jde udělat rovnou, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
-se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B103`, `B113`, `B114` a `B115` 3. 9.; `B101` zavřená
-3. 9. jako neplatná - jeden sloupec odjezdů v praxi nenastává; `B116` zavřena 4. 9.
-živými daty na devu, a `B117` odešla 4. 9. hotová - byla
-dokončená už 3. 9., jen zapsaná jako by ne.)
-
-- **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
-  Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
-  „nejmíň stránek"). Než se do toho pustí, má se zákazníka zeptat, jestli to pořád chce - jinak
-  stavíme featuru, kterou nikdo nezadal.
-
-- **`C9` Ručně zadaný „název směru" u linky jako datové pole** (#9088 bod 3, chtěné i pro vývěsky).
-  ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**, tedy součinnost
-  s kolegy z JŘ. Náš díl je malý (pole projít schématem a nabídnout v šabloně), ale bez toho pole
-  nemá kam sáhnout.
-
-- **`B102` Filtrování dopravců v hlavičce** (z důsledku zrušené vlny `L7`, 25. 8.). Sdružování linek
-  není naše práce, ale zákazníkův případ z #9417 (souhrnný JŘ dvou linek s dlouhým výčtem dopravců)
-  se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
-  Až se to stane, filtrování dopravců přestane být odložené.
-
-- **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`) - u linky jde nastavit tarifní
-  číslo, na kterém se má tisk rozdělit; starý modul to respektuje, my ne. **Odloženo kvůli
-  frekvenci** (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ≈ 93 tisíc**. Neblokuje nic -
-  klientská strana pro zlomy existuje a na drátě by šlo o jedno pole navíc.
-
-- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** - evidence, ne práce.
-  Na 93 133 linkách šesti firem nejsou nikde nastavené: tvar tisku místenkování, vlastní texty
-  sloupce MHD, tisk provozoven dopravce, schovávání u linky, vrstva pod linkou a řazení spojů
-  ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Řada vznikla v legacy pro
-  jednoho zákazníka. Vytáhnout, až si o to někdo řekne - **doklad z dat nebude**, půjde jen
-  o implementaci proti čtení legacy zdroje.
 
 ---
 
@@ -62,11 +16,10 @@ dokončená už 3. 9., jen zapsaná jako by ne.)
 > ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
-**Stav: paritní vlny jsou hotové a žádná otevřená tu není.** Z průchodu testovacími linkami nevzešel
-žádný datový rozdíl proti starému tisku; co zůstalo neprojité, drží
-[§ K ověření](#k-ověření-na-reálné-sestavě) níže. Sloučení dvou Caché tiskových enginů (dřív `L8`)
-je v Backlogu u `B56` - je to úklid vnitřku bez přírůstku pro uživatele a nad rozdělaným kódem by
-jen zabetonoval rozpracovaný tvar (rozhodnutí Jan 31. 8.).
+**Stav: paritní vlny jsou hotové** a z průchodu testovacími linkami nevzešel datový rozdíl proti
+starému tisku. Zbývá průchod § K ověření (doklady k tiketům) a věci, u kterých je první krok
+dotaz ven. Sloučení dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku
+bez přírůstku pro uživatele (rozhodnutí Jan 31. 8.).
 
 ⚠️ **Linková AD agenda je zveřejněná a je výchozí pro novou šablonu** (`Released = 1`; 24. 8.
 zveřejněná, 1. 9. skrytá kvůli vydání, **3. 9. vrácená** kvůli dovývoji) - **ukáže se i zákazníkům,
@@ -99,6 +52,38 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
+### Čeká na odpověď zvenku
+
+Ani u jedné není první krok kód. Podklady k tiketům drží
+[`§14`](linkovy-knizni-jr-implementace-analyza.md).
+
+- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`) - **podnět, ne závazek**.
+  Starý modul to odmítl jako nemožné, náš engine na to má lepší pozici. **Zeptat se zákazníka,
+  jestli to pořád chce** - jinak stavíme featuru, kterou nikdo nezadal.
+
+- **`#9088` bod 3: ručně zadaný „název směru" u linky** [S] (TRANSDEV, dřív `C9`; chtěné i pro
+  vývěsky). ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**. Náš díl
+  je malý (pole pustit schématem a nabídnout v šabloně), ale bez toho pole nemá kam sáhnout.
+
+- **`#9417` Filtrování dopravců v záhlaví** [M] (KORID, dřív `B102`). Přetečení hlavičky pod
+  tabulku je vyřešené (záhlaví má vlastní sekci), zbývá volba, kteří dopravci se tisknou.
+  **Čeká na zákazníka s linkou, která má mnoho dopravců** - jeho případ byl souhrnný JŘ dvou linek
+  a sdružování se řeší v jízdních řádech, ne u nás.
+
+- **`#7487` Počet poznámek na řádek podle druhu** [M] (KORID) - ⏸️ **Jan probere s kolegou**, jak
+  je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
+  druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
+
+- **`B100` Ruční zlom stránky na tarifním čísle** [S] - u linky jde nastavit tarifní číslo, na
+  kterém se má tisk rozdělit; starý modul to respektuje, my ne. **Odloženo kvůli frekvenci**
+  (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ≈ 93 tisíc**. Neblokuje nic.
+
+- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** - evidence, ne práce. Na 93 133
+  linkách šesti firem nejsou nikde nastavené: místenkování, vlastní texty sloupce MHD, tisk
+  provozoven dopravce, schovávání u linky, vrstva pod linkou, řazení spojů
+  ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Vytáhnout, až si o to
+  někdo řekne - **doklad z dat nebude**.
+
 ### K ověření na reálné sestavě
 
 Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
@@ -106,6 +91,7 @@ takže nejde o práci, ale o doklad.
 
 | Co | Proč to čeká |
 |---|---|
+| **Prázdný přípojný řádek nemá zabírat místo (#11300, KORID)** | Podle kódu to **už platí** - počet přípojných řádků se počítá ze spojů **daného bloku**, takže v bloku bez přípojů žádný řádek nevznikne (`LineTableElement`, render i výpočet výšky). Chce to doklad na uzlu s celotýdenním provozem a přípoji jen v pracovní dny - pak tiket zavřít. ⚠️ Do 4. 9. jsme ho v roadmapě neměli vůbec |
 | **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
 | **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618`** | Starý tisk dává oba směry do jedné tabulky, takže není co k čemu přiložit. ⚠️ **Odblokováno 28. 8.** - obousměrný tisk je hotový, takže tuhle linku už je čím porovnat. Vzít při nejbližším průchodu doklady |
 | **Písmena ze zóny (`VS_CSAD 5 / 0771901`)** | V testovacích datech pro Vsetín na to není vzorek; firma navíc není v přepínači firem. Vzít, až ta data budou |
@@ -116,11 +102,6 @@ takže nejde o práci, ale o doklad.
 ## 📥 Backlog
 
 ### Ostatní
-
-- **`#7487` Počet poznámek na řádek podle druhu** [M] - ⏸️ **Jan probere s kolegou**, jak je
-  důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
-  druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou. Není to
-  nedodělek prvku Poznámky - ten je hotový a nastavení má kam jít (`DRUH` je na drátě).
 
 - **`B66` Vlastní bloky prvků („moje komponenta")** [M] (podnět Jan 12. 8.). Uživatel vybere pár
   prvků, uloží je pod jménem a vkládá jedním kliknutím do dalších šablon - mezistupeň mezi uloženou

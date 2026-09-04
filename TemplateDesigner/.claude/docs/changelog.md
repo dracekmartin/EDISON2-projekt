@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-04 (7) - 🗂️ linkové úkoly u sebe, Backlog jen obecné věci
+
+Úkoly k linkovým JŘ byly rozhozené mezi „Aktuální focus" a Backlog (žádost Jan 4. 9.). Sekce
+**Aktuální focus zrušena** - všechno v ní bylo linkové; položky jsou teď v § Linkové a knižní JŘ
+pod nadpisem **Čeká na odpověď zvenku**. Backlog drží jen obecné věci (bloky prvků, pravidla
+formuláře, sjednocení enginů, headless tisk, externí zdroje).
+
+**Každá položka nese jedno ID:** číslo tiketu, když z něj vychází (`#8785`, `#9088`, `#9417`,
+`#7487`), jinak interní (`B98`, `B100`). Dřívější interní ID je u tiketových v závorce, ať jde
+dohledat v archivu.
+
+**Prošel jsem pozastavené tikety na helpdesku** (agenda Jízdní řády, řešitel Jan): devět tiketů,
+z toho osm už evidovaných. Chyběl **#11300** (KORID, prázdný přípojný řádek nemá zabírat místo)
+a podle kódu **už platí** - počet přípojných řádků se počítá ze spojů daného bloku, takže v bloku
+bez přípojů žádný řádek nevznikne. Je proto v § K ověření jako doklad k doložení, ne jako práce.
+
 ## 2026-09-04 (6) - ✂️ roadmapa zkrácena z 308 na 197 řádků
 
 Položky měly 12-33 řádků a při průchodu se nedaly přečíst (nález Jan 4. 9.: „roadmapa má být
