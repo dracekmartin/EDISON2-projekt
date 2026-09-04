@@ -1287,9 +1287,11 @@ v textu poznámky) a směr je slitý do textu popisku.
   příjezdu nebo bez směru; my jsme obojí posílali dál a v tabulce vznikl řádek s časem „00:00"
   a prázdným popiskem. **Naměřeno: 965 z 71 889** přípojů, které řádek dělají (CB_CSADAD 504,
   CB_GWBUS 461, VS_CSAD a KV_DP nula). Drží `LinkovyJrPripojeTest`.
-- ⏸️ **Slučování řádků podle směru** + volba hrubosti + souhrnný popisek. Musí jít spolu: sloučený
-  řádek nemůže nést číslo jednoho spoje. Na drát musí přibýt druh dopravy a směr jako vlastní pole
-  (aditivní změna). ⚠️ **Rozhodnutí z 25. 8. „slučování ne, nikdo si o to neřekl" už neplatí** -
-  zákazník ten souhrnný tvar zná ze starého tisku, jen o tom nenapsal tiket (výtisk Jan 4. 9.).
-  Druhá polovina toho odůvodnění platí dál: náš popisek je konkrétnější, takže slučovat se bez
-  náhrady popisku nedá.
+- ✅ **Slučování řádků podle směru** (hotovo 4. 9., rozhodnutí Jan: šetření místa váží víc než
+  číslo linky u každého řádku). Volba **Slučovat přípoje** na prvku: *Ne* / *Podle směru* /
+  *Podle směru a linky*, výchozí **podle směru** - dnešní tvar byla odchylka, ne volba, takže se
+  výchozí uplatní i na šabloně uložené dřív. Sloučený řádek má popisek „ze směru X" / „směr X".
+  Klíč kopíruje legacy (tarifní číslo + směr + druh dopravy, volitelně linka); na drát proto přibylo
+  pole `AVL` (aditivní změna, zlaté odtisky přebaselinovány v témž commitu).
+  ⚠️ **Dva přípoje téhož spoje zakládají řádek další** - jeden řádek nese od jednoho spoje jen
+  jeden čas, jinak by se tiše přebil. Drží `PripojeSlucovaniTests` (čtyři mutace shozené).

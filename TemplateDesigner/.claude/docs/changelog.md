@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-04 (10) - 🔗 přípoje jednoho směru se vejdou na jeden řádek
+
+Starý tisk dává přípoje téhož směru a druhu dopravy na **jeden řádek** s popiskem „ze směru
+Trhové Sviny" a časy rozdělí do sloupců podle spoje. My jsme dělali řádek pro každý spoj, takže
+u uzlu s pěti spoji z jednoho směru vyšlo pět řádků tam, kde starý má jeden.
+
+V nastavení tabulky linky (skupina Přípojné řádky) proto přibyla volba **Slučovat přípoje**:
+
+- **Ne** - řádek pro každý spoj, popisek s číslem spoje a linky (tvar do 4. 9.)
+- **Podle směru** - výchozí; přípoje téhož směru a druhu dopravy na jednom řádku
+- **Podle směru a linky** - jako výše, ale každá linka má vlastní řádek
+
+**Výchozí se uplatní i na šabloně uložené dřív** - je to záměr (rozhodnutí Jan 4. 9.: šetření
+místa váží víc než číslo linky u řádku, cestující potřebuje čas). Autobus se s vlakem téhož směru
+neslévá, proto k přípoji na drátě přibyl druh dopravy.
+
+Ověřeno: .NET **1502/1502**, Caché **149/149** (7 nových testů). Zlaté odtisky přebaselinovány -
+u všech čtyř linek se změnil jen hash, počty stránek, zastávek, spojů, časů i poznámek jsou do
+jednoho shodné. Čtyři mutace shozené: druh dopravy z klíče, linka v klíči vždy, přebitý čas
+už obsazeného spoje a výchozí režim.
+
 ## 2026-09-04 (9) - 🧹 neúplný přípoj už nedělá řádek s časem „00:00"
 
 Nalezeno porovnáním se starým modulem (Jan poslal výtisk). Starý tisk zahodí přípoj, kterému chybí

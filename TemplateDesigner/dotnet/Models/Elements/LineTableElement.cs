@@ -1,10 +1,24 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using SkiaSharp;
 using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Models.Elements;
+
+/// <summary>
+/// Kolik místa zaberou přípojné řádky: buď řádek pro každý spoj, nebo se přípoje jednoho směru
+/// slijí do jednoho řádku jako ve starém tisku.
+/// </summary>
+public enum PripojSlucovani
+{
+    /// <summary>Řádek pro každý spoj, popisek s číslem spoje a linky (tvar do 4. 9. 2026).</summary>
+    Ne,
+    /// <summary>Přípoje téhož směru a druhu dopravy na jednom řádku, popisek „ze směru X".</summary>
+    PodleSmeru,
+    /// <summary>Jako podle směru, ale každá linka má vlastní řádek.</summary>
+    PodleSmeruALinky,
+}
 
 /// <summary>
 /// Linkový jízdní řád - celá linka v jedné tabulce: svislý seznam zastávek
@@ -63,6 +77,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public bool ShowNzRow { get; set; } = true;
     /// <summary>Přípojné řádky Vyčká/Navazuje vložené za zastávku.</summary>
     public bool ShowPripojeRows { get; set; } = true;
+
+    /// <summary>Jak se přípojné řádky slučují - viz <see cref="PripojSlucovani"/>.</summary>
+    /// <remarks>
+    /// Výchozí je <b>podle směru</b>, tedy jako ve starém tisku (rozhodnutí Jan 4. 9.: šetření
+    /// místa váží víc než číslo linky u každého řádku). Šablona uložená dřív hodnotu nemá, takže
+    /// se jí výchozí uplatní taky - a to je záměr: dnešní tvar byl odchylka, ne volba.
+    /// </remarks>
+    public PripojSlucovani PripojeSlucovani { get; set; } = PripojSlucovani.PodleSmeru;
 
     /// <summary>
     /// Dorovnat neúplný blok prázdnými sloupci, aby měly všechny bloky stejný počet sloupců.
@@ -200,6 +222,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         public string Cas = "";
         public string Linka = "";
         public string Spoj = "";
+        public string Avl = "A";     // druh dopravy: A autobus / V vlak / L loď - seskupovací klíč
         public bool Radek;           // legacy „typ zobrazení": tisknout jako vložený řádek matice
     }
 
@@ -380,6 +403,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Cas = o["CAS"]?.ToString() ?? "",
             Linka = o["LINKA"]?.ToString() ?? "",
             Spoj = o["SPOJ"]?.ToString() ?? "",
+            Avl = o["AVL"]?.ToString() ?? "A",
             Radek = o["RADEK"]?.ToString() == "1",
         })];
     }
@@ -1071,7 +1095,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // linky znamenalo, že se bloky ve výpočtu posouvaly dopředu proti tomu, kde se opravdu
             // kreslí, a řez stránky padl doprostřed hlavičky dalšího bloku (nahlásil Jan 25. 8.:
             // na konci stránky osiřelý pás skupin, na další hlavička dvakrát).
-            int pripoju = spojeBloku.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == zastavka.Poradi));
+            // Slučování mění POČET řádků, takže se výška musí počítat z téhož seskupení, jaké
+            // kreslí render - jinak by řez padl jinam, než tabulka vyjde.
+            int pripoju = PripojneRadky(zastavka, spojeBloku).Count;
             for (int i = 0; i < pripoju; i++) radky.Add(PripojRowH());
         }
         return (hlava, radky);
@@ -1559,25 +1585,23 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (!ShowPripojeRows) continue;
             if (!NesePripoje(stop, poradiSOdjezdem)) continue;
 
-            // přípojné řádky (vyčká/navazuje) za touto zastávkou
-            foreach (var t in trips)
+            // přípojné řádky (vyčká/navazuje) za touto zastávkou - seskupení drží `PripojneRadky`,
+            // aby vyšlo shodně s výpočtem výšky
+            foreach (var radek in PripojneRadky(stop, trips))
             {
-                foreach (var pr in t.Pripoje.Where(p => p.Radek && p.Poradi == stop.Poradi))
-                {
-                    var prSpecs = new List<ColumnRenderer.CellSpec>();
-                    PridejZrcadlene(prSpecs, mrizka, zrcadlene.Count, pripojStyle,
-                        _ => ("", pripojStyle));
-                    for (int ci = 0; ci < fixedCols.Count; ci++)
-                        prSpecs.Add(new(fixedCols[ci].Width,
-                            ci == nameIndex ? PripojText(pr) : "", pripojStyle,
-                            SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
-                    var spoj = t;
-                    PridejSpoje(prSpecs, mrizka, trips.Count, pripojStyle,
-                        ti => (ReferenceEquals(trips[ti], spoj) ? pr.Cas : "", pripojStyle));
+                var prSpecs = new List<ColumnRenderer.CellSpec>();
+                PridejZrcadlene(prSpecs, mrizka, zrcadlene.Count, pripojStyle,
+                    _ => ("", pripojStyle));
+                for (int ci = 0; ci < fixedCols.Count; ci++)
+                    prSpecs.Add(new(fixedCols[ci].Width,
+                        ci == nameIndex ? radek.Popisek : "", pripojStyle,
+                        SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
+                var casy = radek.CasPerSpoj;
+                PridejSpoje(prSpecs, mrizka, trips.Count, pripojStyle,
+                    ti => (casy.TryGetValue(ti, out var cas) ? cas : "", pripojStyle));
 
-                    plan.Add(new(RowKind.SubRow, pripojRowH, prSpecs)
-                    { VerticalLinePaint = sloupcovaCara, LineAbovePaint = radkovaCara, LineBelowPaint = radkovaCara });
-                }
+                plan.Add(new(RowKind.SubRow, pripojRowH, prSpecs)
+                { VerticalLinePaint = sloupcovaCara, LineAbovePaint = radkovaCara, LineBelowPaint = radkovaCara });
             }
         }
 
@@ -1809,6 +1833,79 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return $"{sloveso} {pr.Spoj} linky {pr.Linka} do {pr.Text}";
     }
 
+    /// <summary>
+    /// Popisek <b>sloučeného</b> přípojného řádku - souhrn podle směru, jako ve starém tisku
+    /// („ze směru Trhové Sviny" u vyčkání, „směr České Budějovice" u navázání).
+    /// </summary>
+    /// <remarks>
+    /// Sloučený řádek nese časy víc spojů, takže v popisku nemůže být číslo jednoho z nich.
+    /// Rozhodnutí Jan 4. 9.: šetření místa váží víc než to, aby cestující věděl, kterou linkou
+    /// přípoj přijede - potřebuje čas.
+    /// </remarks>
+    private static string PripojTextSouhrnny(LinePripojData pr) =>
+        pr.Typ == "vycka" ? $"ze směru {pr.Text}" : $"směr {pr.Text}";
+
+    /// <summary>Jeden přípojný řádek: popisek a časy per spoj (index do sady spojů bloku).</summary>
+    private sealed class PripojRadek
+    {
+        public string Popisek = "";
+        public readonly Dictionary<int, string> CasPerSpoj = [];
+    }
+
+    /// <summary>
+    /// Přípojné řádky jedné zastávky pro danou sadu spojů - <b>jediné místo</b>, kde se rozhoduje,
+    /// kolik jich bude.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Používá to <b>render i výpočet výšky</b>. Kdyby každý počítal po svém, řez stránky by
+    /// padl jinam, než se kreslí - přesně to se stalo, když se počet přípojů bral ze všech spojů
+    /// linky místo ze spojů bloku.
+    ///
+    /// <para><b>Slučování</b> (rozhodnutí Jan 4. 9.) kopíruje klíč starého modulu
+    /// (`JRapiLinPrtWin01.mac:89`): tarifní číslo + směr + druh dopravy, volitelně i linka.
+    /// Když už ve řádku ten spoj čas má, zakládá se řádek další - jinak by se dva přípoje téhož
+    /// spoje přebily. Bez slučování zůstává řádek per (spoj × přípoj), tedy dnešní chování.</para>
+    /// </remarks>
+    private List<PripojRadek> PripojneRadky(LineStopData stop, IReadOnlyList<LineTripData> trips)
+    {
+        var radky = new List<PripojRadek>();
+        var podleKlice = new Dictionary<string, List<PripojRadek>>();
+
+        for (int ti = 0; ti < trips.Count; ti++)
+        {
+            foreach (var pr in trips[ti].Pripoje.Where(p => p.Radek && p.Poradi == stop.Poradi))
+            {
+                if (PripojeSlucovani == PripojSlucovani.Ne)
+                {
+                    var samostatny = new PripojRadek { Popisek = PripojText(pr) };
+                    samostatny.CasPerSpoj[ti] = pr.Cas;
+                    radky.Add(samostatny);
+                    continue;
+                }
+
+                string klic = PripojeSlucovani == PripojSlucovani.PodleSmeruALinky
+                    ? $"{pr.Typ}|{pr.Text}|{pr.Avl}|{pr.Linka}"
+                    : $"{pr.Typ}|{pr.Text}|{pr.Avl}";
+
+                if (!podleKlice.TryGetValue(klic, out var skupina))
+                {
+                    skupina = [];
+                    podleKlice[klic] = skupina;
+                }
+
+                var cil = skupina.FirstOrDefault(r => !r.CasPerSpoj.ContainsKey(ti));
+                if (cil is null)
+                {
+                    cil = new PripojRadek { Popisek = PripojTextSouhrnny(pr) };
+                    skupina.Add(cil);
+                    radky.Add(cil);
+                }
+                cil.CasPerSpoj[ti] = pr.Cas;
+            }
+        }
+        return radky;
+    }
+
     private void DrawRowLine(RenderContext ctx, float yMm, SchedulePaints paints)
     {
         var s = ctx.ToCanvas(X, yMm);
@@ -1847,6 +1944,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             TurnusyKeSpojum = TurnusyKeSpojum,
             ShowNzRow = ShowNzRow,
             ShowPripojeRows = ShowPripojeRows,
+            PripojeSlucovani = PripojeSlucovani,
             PadEmptyColumns = PadEmptyColumns,
             RozdelitZonyDoSloupcu = RozdelitZonyDoSloupcu,
             ShowGroupHeaders = ShowGroupHeaders,
@@ -1882,6 +1980,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Turnusy ke spojům", Group = "Řádky", Get = () => TurnusyKeSpojum, Set = v => TurnusyKeSpojum = v },
         new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
         new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
+        new EnumPropertyDescriptor { Label = "Slučovat přípoje", Group = "Přípojné řádky",
+            Get = () => PripojeSlucovani, Set = v => PripojeSlucovani = (PripojSlucovani)v,
+            Options =
+            [
+                ("Ne - řádek pro každý spoj", (object)PripojSlucovani.Ne),
+                ("Podle směru",               (object)PripojSlucovani.PodleSmeru),
+                ("Podle směru a linky",       (object)PripojSlucovani.PodleSmeruALinky),
+            ] },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = "Sloupce",
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },

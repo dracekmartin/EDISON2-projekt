@@ -1,5 +1,20 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B119` - přípoje jednoho směru na jednom řádku (hotovo 4. 9. 2026)
+
+Detail → changelog 2026-09-04 (10), logika legacy i naše →
+[`linkovy-knizni-jr-implementace-analyza.md §15`](linkovy-knizni-jr-implementace-analyza.md).
+
+Vyšlo z výtisku starého modulu, který Jan poslal při dokládání `#11300`: starý tisk slévá
+přípoje téhož směru do jednoho řádku („ze směru Trhové Sviny"), my jsme dělali řádek per spoj.
+
+**Rozhodnutí Jan 4. 9.:** šetření místa váží víc než to, aby cestující věděl, kterou linkou přípoj
+přijede - potřebuje čas. Proto je výchozí **podle směru**, a to i pro šablony uložené dřív.
+
+⚠️ **Rozhodnutí z 25. 8. „slučování ne, nikdo si o to neřekl" bylo přepsané** - zákazník ten tvar
+zná ze starého tisku, jen o tom nenapsal tiket. Druhá polovina odůvodnění („přišli bychom
+o popisek") se vyřešila tím, že sloučený řádek má popisek podle směru.
+
 ## `B112` - provozovny dopravce: VYHOZENO, nikdo je nechce (4. 9. 2026)
 
 **Rozhodnutí Jan 4. 9.:** bylo to zkoušení s kolegou, ne požadavek - poptávka po tom není žádná.

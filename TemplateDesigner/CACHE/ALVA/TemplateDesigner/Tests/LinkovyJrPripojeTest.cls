@@ -68,6 +68,37 @@ Method TestNeuplnyPripojNedostaneRadek()
 	do $$$AssertTrue(bezRadku > 0, "na téhle lince mají být přípoje bez řádku - jinak měření z 4. 9. už neplatí")
 }
 
+/// Druh dopravy musí být na drátě - prvek podle něj seskupuje přípojné řádky, takže bez něj
+/// by se autobus sloučil s vlakem téhož směru a popisek by neřekl, čím to jede.
+Method TestPripojNeseDruhDopravy()
+{
+	do ..SetupSys(.sys)
+	set popis = ..#LINKAZDRAVA
+	set db = $piece(popis,"~",1), sku = $piece(popis,"~",2), lin = $piece(popis,"~",3)
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "firma tu není - přeskočeno")
+		quit
+	}
+	set page = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).BuildStrankaLinky(db, sku, lin, "T", 2)
+	do $$$AssertNotEquals(page, "", "stránka se musí sestavit")
+
+	set (overeno, bezAvl) = 0
+	set spoje = page.%Get("rows").%Get("SPOJE")
+	for si = 0:1:spoje.%Size()-1 {
+		set pripoje = spoje.%Get(si).%Get("PRIPOJE")
+		continue:'$isobject(pripoje)
+		for pi = 0:1:pripoje.%Size()-1 {
+			set pr = pripoje.%Get(pi)
+			continue:'pr.RADEK
+			set overeno = overeno + 1
+			// Prázdné legacy čte jako autobus, takže i nezadaný druh musí dorazit jako "A".
+			if (pr.AVL '= "A") && (pr.AVL '= "V") && (pr.AVL '= "L") set bezAvl = bezAvl + 1
+		}
+	}
+	do $$$AssertTrue(overeno > 0, "linka nemá přípoje s řádkem - test neměl co měřit")
+	do $$$AssertEquals(bezAvl, 0, "přípoj bez druhu dopravy ("_bezAvl_" z "_overeno_") - prvek by sloučil autobus s vlakem")
+}
+
 /// Druhá polovina: filtr nesmí sebrat řádek zdravému přípoji.
 Method TestZdravyPripojRadekDostane()
 {

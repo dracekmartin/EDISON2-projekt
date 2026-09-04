@@ -76,6 +76,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Přípoj má jít odlišit od časů spojů - obvykle menším kurzívním písmem, aby v tabulce
         // „nekřičel" stejně jako odjezdy. Prázdné = dědí se z datových buněk.
         d form.AddGroup("pripoj", "Přípojné řádky")
+        s f = form.AddFieldToLastGroup("PripojeSlucovani", "Slučovat přípoje", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Ne", "Ne - řádek pro každý spoj")
+        d f.AddListItem("PodleSmeru", "Podle směru")
+        d f.AddListItem("PodleSmeruALinky", "Podle směru a linky")
+        s f.helpText = "Sloučený řádek nese časy víc spojů a v popisku má směr (""ze směru Trhové Sviny""), takže šetří místo. Bez slučování má každý spoj vlastní řádek s číslem spoje a linky."
         s f = form.AddDecimal("PripojStyle.FontSize", "Velikost", "", 4, 200, "pt")
         s f.helpText = "Prázdné = jako datové buňky"
         d form.AddBool("PripojStyle.Bold", "Tučné", 0)

@@ -26,8 +26,9 @@ Include GENERAL
 ///                     - v pořadí směru jízdy (T vzestupně, Z sestupně)
 ///   rows.SPOJE:       [{ CISLO_SPOJE, SKUPINA, NZ, PLATNOST:[znaky], CASY:[zarovnané na ZASTAVKY:
 ///                        "HH:MM" | "" (mimo trasu) | "|" (projíždí) | "<" (jede jinudy)],
-///                        PRIPOJE:[{ TYP ("vycka"/"navazuje"), PORADI, ZNAK, TEXT, CAS, LINKA,
-///                        SPOJ, RADEK (0/1 - legacy „typ výstupu": tisknout jako vložený řádek) }] }]
+///                        PRIPOJE:[{ TYP ("vycka"/"navazuje"), PORADI, ZNAK, TEXT (směr), CAS, LINKA,
+///                        SPOJ, AVL (A autobus / V vlak / L loď - prvek podle něj seskupuje řádky),
+///                        RADEK (0/1 - legacy „typ výstupu": tisknout jako vložený řádek) }] }]
 ///                     - řazené dle legacy mkPoradiSp (odjezd z výchozí + bublinové doseřazení
 ///                       per tarifní číslo); spoj patřící do víc skupin dnů emitován vícekrát
 ///   rows.SKUPINY_DNU: [{ ID, NADPIS }] dle parametru DELENI_SLOUPCU (texty WinMHD DSC číselník)
@@ -1256,6 +1257,10 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                 d pr.%Set("CAS", ..FormatCas(casMin))
                 d pr.%Set("LINKA", linka2)
                 d pr.%Set("SPOJ", spoj2)
+                // Druh dopravy (A autobus / V vlak / L loď) - prvek podle něj **seskupuje** přípojné
+                // řádky, takže se autobus nesloučí s vlakem téhož směru. Starý modul ho má v klíči
+                // vždy (`JRapiLinPrtWin01.mac:89`). Prázdné legacy čte jako autobus.
+                d pr.%Set("AVL", $s(avl="":"A", 1:$zcvt(avl,"U")))
                 // Přípoj bez minuty příjezdu nebo bez směru řádek nedostane - jinak v tabulce vznikne
                 // řádek s časem „00:00" a prázdným popiskem. Starý modul ho zahodí týmiž dvěma
                 // podmínkami (`JRapiLinPrtWin01.mac:84-87`); naměřeno 4. 9.: 965 z 71 889 přípojů,
