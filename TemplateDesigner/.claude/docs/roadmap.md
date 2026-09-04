@@ -24,8 +24,8 @@ práci** - u nich je první krok se zeptat, ne psát kód:
 
 **`B100`** jde udělat rovnou, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
 se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8., `B103`, `B113`, `B114` a `B115` 3. 9.; `B101` zavřená
-3. 9. jako neplatná - jeden sloupec odjezdů v praxi nenastává; `B116` odešla 4. 9.
-do Backlogu, protože deset běhů blikání nezreprodukovalo, a `B117` odešla 4. 9. hotová - byla
+3. 9. jako neplatná - jeden sloupec odjezdů v praxi nenastává; `B116` zavřena 4. 9.
+živými daty na devu, a `B117` odešla 4. 9. hotová - byla
 dokončená už 3. 9., jen zapsaná jako by ne.)
 
 - **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
@@ -125,24 +125,6 @@ takže nejde o práci, ale o doklad.
 ## 📥 Backlog
 
 ### Ostatní
-
-- **`B116` Paritní test linkového JŘ blikl dvakrát 3. 9.** [S] - čeká na další výskyt, není co dělat.
-  `LinkovyJrAdLegacyTest.TestParitaSeStarymModulem` dvakrát spadl a pak bez zásahu do kódu prošel
-  (legenda poznámek: starý modul značku neměl, my ano; název zastávky s dvojitou čárkou; linky
-  0330510, 0330511, 0380780). **Deset běhů to nezreprodukovalo** (7 dne 3. 9., 3 dne 4. 9.);
-  4. 9. hlásí oracle 0 nedeklarovaných rozdílů na 48 kategorií.
-
-  ✅ **.NET polovina vyřešená 3. 9.** - `SheetPdfExportTests` padal paralelním během kolekcí nad
-  procesně globálním stavem (kaskáda + cache fontů SkiaSharpu), sada teď běží sekvenčně.
-
-  **Co je vyloučené** (4. 9., zápis nese i třída testu, ať to nikdo nehýbá znovu): kolize dvou běhů
-  v pracovním globálu starého modulu (index z atomického `$i(^CacheTempJB)`), chyba starého modulu
-  (vede na přeskočení linky, ne na pád), závislost na dni běhu (obě strany berou datum z platnosti
-  linky), změna z `B103`, závislost na `ZastavkoveJrAd` i kolize s jinými testy v jednom běhu.
-
-  Zůstává **změna dat na devu mezi běhy** - ty linky sdílíme s kolegy z jízdních řádů a doložit
-  to zpětně nejde. ⚠️ Padalo to na hodnotách, které **mají** být hlídané, takže při dalším pádu
-  **nejdřív uložit `Souhrn` a ručně porovnat se starým modulem** - ne přerazit na odchylku.
 
 - **`#7487` Počet poznámek na řádek podle druhu** [M] (tiket, ⏸️ **Jan probere s kolegou**, jak je
   důležitý). **Neumíme** a neuměli jsme to nikdy - není to nedodělek prvku Poznámky, ten je hotový.

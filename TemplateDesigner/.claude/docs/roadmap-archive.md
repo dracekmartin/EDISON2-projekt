@@ -1,5 +1,24 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B116` - blikající paritní brána: ZAVŘENO na živá data na devu (4. 9. 2026)
+
+Detail → changelog 2026-09-04 (4). Paritní test linkového JŘ dvakrát spadl a pak bez zásahu do kódu
+prošel (legenda poznámek, název zastávky s dvojitou čárkou; linky 0330510, 0330511, 0380780).
+**Deset běhů to nezreprodukovalo** a 4. 9. hlásí oracle 0 nedeklarovaných rozdílů na 48 kategorií.
+
+**Rozhodnutí Jan 4. 9.: zavřít.** Test sáhá na **živá data na devu, která mění víc lidí** - to
+dostatečně vysvětluje pád, který se pak sám srovnal, a není to co opravovat. Držet to jako položku
+znamená jen šum v Backlogu.
+
+**Vyloučené příčiny nesou zdrojáky, ne roadmapa** - odstavec „Když spadne, začni tady" ve třídě
+`LinkovyJrAdLegacyTest`: kolize dvou běhů v pracovním globálu starého modulu (index z atomického
+`$i(^CacheTempJB)`), chyba starého modulu (přeskočí linku, neshodí test) a závislost na dni běhu
+(obě strany berou datum z platnosti linky). Je tam i pokyn, že při dalším pádu se má nejdřív uložit
+diagnostika a ručně porovnat se starým modulem - padalo to na hodnotách, které hlídané být mají.
+
+✅ **.NET polovina byla skutečná chyba a je opravená** (3. 9.): `SheetPdfExportTests` padal
+paralelním během kolekcí nad procesně globálním stavem, sada teď běží sekvenčně.
+
 ## `B117` - poznámky linkového JŘ jsou samostatný prvek (hotovo 4. 9. 2026)
 
 Detail → changelog 2026-09-03 (7). Legenda se do 3. 9. skládala **dynamickou tabulkou** nad kolekcí

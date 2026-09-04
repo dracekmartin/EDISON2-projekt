@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-04 (5) - 🧹 úklid roadmapy: dvě položky zavřené, jedna vyčleněná
+
+Roadmapa se rozcházela se stavem kódu, takže jsme ji prošli položku po položce (Jan 4. 9.).
+
+- **Poznámky linkového JŘ jako prvek** byly hotové už 3. 9., ale visely jako „zbývá krok 2".
+  Ten krok 2 ale není jejich nedodělek - počet poznámek na řádek podle druhu je featura, kterou
+  jsme neuměli nikdy. Položka je v archivu, tiket má vlastní bod v Backlogu.
+- **Blikající paritní brána zavřena** - test sáhá na živá data na devu, která mění víc lidí,
+  a to pád vysvětluje. Vyloučené příčiny i pokyn pro další pád nesou zdrojáky testu, ne roadmapa.
+- **Focus má teď pět položek a u všech je první krok se zeptat**, ne psát kód. Hlavička roadmapy
+  do 4. 9. tvrdila, že „rovnou jde vzít" položku, která už byla vyřešená.
+
 ## 2026-09-04 (4) - 🔎 blikající paritní brána: co je vyloučené, zapsáno u testu
 
 Test, který porovnává tisk linkového JŘ se starým modulem, 3. 9. dvakrát spadl a pak bez zásahu
