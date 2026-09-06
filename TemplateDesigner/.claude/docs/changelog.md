@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-09-06 (1) - ✂ skupina dnů začíná vlastní tabulku, když to nestojí list navíc
+
+Starý tisk odděluje skupiny dnů, kdykoli je to zadarmo - proto z něj koukají listy jen
+s pracovními dny, přestože to nikdo nenastavil.
+Spočítá řez dvakrát (úsporně podle šířky a lámaný na hranici skupiny) a **oddělený nechá, když
+nevyjde na víc bloků** (`JRapiLinPrtWin.mac:857-908`).
+My jsme řezali jen podle šířky, takže tabulka běžně obsahovala konec jedné skupiny a začátek
+další - a proti starému tisku vycházela jinak rozřezaná u každé linky, kde by oddělení nic
+nestálo.
+
+**Nově tu volbu děláme taky, u jednosměrného tisku.** Doloženo na reálné lince
+`CB_GWBUS 2 / 0320144`: směr tam má skupiny 25 / 9 / 9 spojů a při devíti na blok vyjde oddělený
+řez na tolikéž bloků jako úsporný (pět), takže se skupiny oddělí. Směr zpět má 24 / 10 / 9,
+oddělený vyjde na šest, takže zůstane úsporný - přesně to rozhodnutí, které dělá starý modul.
+
+⚠️ **Kdo takovou šablonu má, uvidí jiné rozdělení než dosud.** Obsah je týž, mění se místa řezů.
+Nastavení k tomu není, děje se to samo - jako u starého modulu.
+
+⚠️ **U obousměrného tisku se vědomě lišíme a zůstává řez podle šířky.** Starý modul obousměrnou
+tabulku, která se má řezat, **zahodí** a tiskne po směrech, a uživateli o tom neřekne nic - dá si
+„Tisk obousměrných JŘ = Ano" a dostane dvě jednosměrné sady. To nepřebíráme (rozhodnutí Jan 6. 9.:
+co je zaškrtnuté, to se tiskne). Řez podle skupin tam navíc nejde použít ani teoreticky: sloupec
+nese spoj z každého směru a jejich hranice skupin padnou jinam.
+
+Bez oddělení se také neobejde `#11300` (KORID, prázdný přípojný řádek): jeho výtisk je jednosměrný
+list s pracovními dny, takže teprve teď mu jde jeho rozvržení předvést.
+
+Ověřeno: .NET **1508/1508** (10 nových testů). Mutace „vždy úsporný řez" shodí pravidlo i jeho
+zapojení do prvku. ⚠️ První verze testu nad prvkem nechytala nic - skupiny velké přesně na blok
+dají oba řezy na stejná místa; odhalila to mutace, ne běh testů.
+
 ## 2026-09-04 (13) - 📏 u obousměrné linky se hlídá, že se blok tabulky vejde do prvku (`B122`)
 
 Nalezeno při hledání spojů, které v tabulce chyběly na `CB_GWBUS 0320144`.

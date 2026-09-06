@@ -91,7 +91,7 @@ takže nejde o práci, ale o doklad.
 
 | Co | Proč to čeká |
 |---|---|
-| **Prázdný přípojný řádek nemá zabírat místo (#11300, KORID)** | ⚠️ **U nás to nemůže nastat konstrukcí** - přípojný řádek se negeneruje pro zastávku, ale pro každý přípoj nesených spojů (drží `PrazdnyPripojnyRadekTests` + dvě mutace). Doklad na reálných datech: `CB_CSADAD 1 / 0330511` směr Tam má devět spojů a přípoj jen tři (9, 13, 31 na tarifním čísle 19). **Ukázat zákazníkovi a tiket zavřít** |
+| **Prázdný přípojný řádek nemá zabírat místo (#11300, KORID)** | ⚠️ **U nás to nemůže nastat konstrukcí** - přípojný řádek se negeneruje pro zastávku, ale pro každý přípoj nesených spojů (drží `PrazdnyPripojnyRadekTests` + dvě mutace). Doklad na reálných datech: `CB_CSADAD 1 / 0330511` směr Tam má devět spojů a přípoj jen tři (9, 13, 31 na tarifním čísle 19). ⚠️ **Předvést jde teprve od 6. 9.**: jeho výtisk je jednosměrný list s pracovními dny, a oddělování skupin dnů jsme do té doby neměli. **Ukázat zákazníkovi (jednosměrný tisk) a tiket zavřít** |
 | **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
 | **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618`** | Starý tisk dává oba směry do jedné tabulky, takže není co k čemu přiložit. ⚠️ **Odblokováno 28. 8.** - obousměrný tisk je hotový, takže tuhle linku už je čím porovnat. Vzít při nejbližším průchodu doklady |
 | **Písmena ze zóny (`VS_CSAD 5 / 0771901`)** | V testovacích datech pro Vsetín na to není vzorek; firma navíc není v přepínači firem. Vzít, až ta data budou |

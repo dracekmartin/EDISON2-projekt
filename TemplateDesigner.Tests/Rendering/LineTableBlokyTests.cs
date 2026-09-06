@@ -111,6 +111,96 @@ public class LineTableBlokyTests
             + $"prvek má {prvek.Width} mm"));
     }
 
+    /// <summary>
+    /// Jednosměrná linka se skupinami dnů, kde oddělení nestojí blok navíc: bloky proto **končí
+    /// na hranici skupiny**, ne po plných devíti sloupcích. Bez toho jsme se od starého tisku
+    /// lišili rozřezáním u každé linky, kde by oddělení bylo zadarmo.
+    /// </summary>
+    [Fact]
+    public void JednosmernaLinka_BlokyKonciNaHraniciSkupiny()
+    {
+        var prvek = Prvek();
+        // Kolik spojů se vejde na blok, řídí šířka prvku a písmo. Aby test nezávisel na geometrii,
+        // zjistí se to nejdřív na lince s jedinou skupinou a skupiny se pak udělají právě tak
+        // velké, aby jejich oddělení nestálo blok navíc.
+        int naBlok = prvek.Rozvrzeni(LinkaSeSkupinami(60))[0].Pocet;
+        // Velikosti `n+2, n, n`: oddělené vyjde na 2+1+1 bloků a úsporné na tolikéž, takže je
+        // oddělení zadarmo - a **liší se**, protože druhý blok nese jen dva sloupce místo plných.
+        // Kdyby se velikosti daly jako násobky bloku, oba řezy by padly na stejná místa a test
+        // by neověřoval nic (odhaleno mutací 6. 9.).
+        var data = LinkaSeSkupinami(naBlok + 2, naBlok, naBlok);
+
+        var bloky = prvek.Rozvrzeni(data);
+
+        var skupiny = SkupinyPerSlot(data);
+        Assert.Equal(4, bloky.Count);
+        Assert.Equal(2, bloky[1].Pocet);
+        Assert.All(bloky, b => Assert.Single(skupiny.Skip(b.Od).Take(b.Pocet).Distinct()));
+    }
+
+    /// <summary>
+    /// ⚠️ Obousměrná linka řez podle skupin **nedostane**: slot nese spoj z každého směru a jejich
+    /// skupiny se neshodují, takže hranice skupiny není jedno místo. Starý modul tenhle případ
+    /// nezná (obousměrnou tabulku, která se má řezat, zahodí a tiskne po směrech) a my ji vědomě
+    /// zachováváme (rozhodnutí Jan 6. 9.).
+    /// </summary>
+    [Fact]
+    public void ObousmernaLinka_ZustaneUspornyRez()
+    {
+        var prvek = Prvek();
+
+        var bloky = prvek.Rozvrzeni(ObousmernaLinka(43));
+
+        // Úsporný řez = všechny bloky kromě posledního plné, tedy stejně velké.
+        int prvni = bloky[0].Pocet;
+        Assert.True(bloky.Count > 1, "43 slotů se do 190 mm vejít nemá");
+        Assert.All(bloky.Take(bloky.Count - 1), b => Assert.Equal(prvni, b.Pocet));
+    }
+
+    /// <summary>Bez pásu nadpisů skupin se neoddělují - v tisku by nebylo poznat, že tam skupina
+    /// začíná, a kratší blok by vypadal jako náhodná díra v tabulce.</summary>
+    [Fact]
+    public void BezNadpisuSkupin_ZustaneUspornyRez()
+    {
+        var prvek = Prvek();
+        prvek.ShowGroupHeaders = false;
+
+        var bloky = prvek.Rozvrzeni(LinkaSeSkupinami(25, 9, 9));
+
+        int prvni = bloky[0].Pocet;
+        Assert.All(bloky.Take(bloky.Count - 1), b => Assert.Equal(prvni, b.Pocet));
+    }
+
+    /// <summary>Jednosměrná linka se zadanými velikostmi skupin dnů - spoje jednoho směru
+    /// (bez `SMER`), takže se řeže jedna osa sloupců.</summary>
+    private static DataContext LinkaSeSkupinami(params int[] velikostiSkupin)
+    {
+        var spoje = new List<(string, object?)[]>();
+        int cislo = 0;
+        for (int g = 0; g < velikostiSkupin.Length; g++)
+            for (int i = 0; i < velikostiSkupin[g]; i++)
+                spoje.Add([("CISLO_SPOJE", (++cislo * 2).ToString()), ("SKUPINA", (g + 1).ToString())]);
+
+        var zastavky = Enumerable.Range(1, 3)
+            .Select(i => RenderSnapshot.Row(("ID", i.ToString()),
+                                            ("NAZEV_ZASTAVKY", $"Zastávka {i}, rozcestí"),
+                                            ("PORADI", i.ToString())))
+            .ToArray();
+        var skupiny = Enumerable.Range(1, velikostiSkupin.Length)
+            .Select(g => RenderSnapshot.Row(("ID", g.ToString()),
+                                            ("NADPIS", $"Skupina {g}"),
+                                            ("PORADI", g.ToString())))
+            .ToArray();
+        return RenderSnapshot.Data(
+            ("ZASTAVKY", zastavky),
+            ("SPOJE", [.. spoje.Select(r => RenderSnapshot.Row(r))]),
+            ("SKUPINY_DNU", skupiny));
+    }
+
+    /// <summary>Skupina dnů každého slotu v pořadí, v jakém přišly spoje.</summary>
+    private static List<string> SkupinyPerSlot(DataContext data) =>
+        [.. data.GetRows("SPOJE").Select(r => r.GetString("SKUPINA"))];
+
     private static LineTableElement Prvek() => ElementRenderFixtures.LineTable();
 
     /// <summary>

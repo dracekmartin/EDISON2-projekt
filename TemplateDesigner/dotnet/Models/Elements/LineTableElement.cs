@@ -824,6 +824,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <para>Šířka sloupce spoje se pro dělení bere <b>minimální</b> - tolik se jich vejde nejvíc.
     /// Při kreslení se pak sloupce toho bloku roztáhnou na celou šířku, takže se blok nedrží
     /// při levém okraji.</para>
+    /// <para><b>Kde je z čeho vybírat, dostane přednost oddělení skupin dnů</b> - viz
+    /// <see cref="TableLayout.ZvolBloky"/>.</para>
     /// </remarks>
     private List<TableLayout.SloupcovyBlok> SloupcoveBloky(List<LineStopData> stops, int kmCount)
     {
@@ -837,10 +839,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // O čitelnost bloku se stará dno šířky sloupce, viz `MinAutoSloupecMm`.
         int naBlok = NejvicSpojuNaBlok(stops, kmCount, pocetSpoju,
             RezervaMezerMm(_cachedTrips ?? []), SirkaZnackyMm(), SloupcuNaSlot());
-        var bloky = new List<TableLayout.SloupcovyBlok>();
-        for (int od = 0; od < pocetSpoju; od += naBlok)
-            bloky.Add(new TableLayout.SloupcovyBlok(od, Math.Min(naBlok, pocetSpoju - od)));
-        return bloky;
+        return TableLayout.ZvolBloky(SkupinaSlotu(), pocetSpoju, naBlok);
+    }
+
+    /// <summary>Skupina dnů každého slotu dělení, nebo null, když ji nelze jednoznačně určit.</summary>
+    /// <remarks>
+    /// Null u <b>obousměrné</b> sestavy: slot tam nese spoj z každého směru a jejich skupiny se
+    /// neshodují, takže hranice skupiny není jedno místo. Null i bez zapnutých nadpisů skupin -
+    /// bez pásu není z tisku poznat, že tam skupina začíná, a oddělený blok by vypadal jako
+    /// náhodná díra v tabulce (týž důvod jako u <see cref="HraniceSkupin"/>).
+    /// </remarks>
+    private List<int>? SkupinaSlotu()
+    {
+        if (!ShowGroupHeaders) return null;
+        if ((_cachedZrcadlene?.Count ?? 0) > 0) return null;
+        return _cachedHlavni is { Count: > 0 } hlavni ? [.. hlavni.Select(t => t.Skupina)] : null;
     }
 
     /// <summary>Jak vyjde jeden blok: které spoje nese, jak je široký a kolik místa zbylo

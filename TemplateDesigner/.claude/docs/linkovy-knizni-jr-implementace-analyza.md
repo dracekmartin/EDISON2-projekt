@@ -256,6 +256,19 @@ Dvoufázový algoritmus:
 - `typstrih=1` - skupiny jako samostatné bloky, ale **jen pokud to nezhorší celkový počet
   stránek** (heuristika, ne tvrdé pravidlo).
 
+✅ **Tuhle volbu máme od 6. 9.** (`TableLayout.ZvolBloky`) - u **jednosměrného** tisku. Je to důvod,
+proč ze starého modulu koukají listy jen s pracovními dny, přestože to nikdo nenastavil.
+
+⚠️ **U obousměrné sestavy se vědomě lišíme.** Starý modul obousměrnou tabulku, která se má řezat,
+**zahodí** a tiskne po směrech (`JRapiLinPrtWin.mac:628`: obousměrný tisk zůstane jen tehdy, když řez
+vyšel na jediný blok - vodorovně i svisle); uživateli o tom neřekne nic, takže si dá „Ano" a dostane
+dvě jednosměrné sady. My obousměrný tisk **držíme** a řežeme ho podle šířky (rozhodnutí Jan 6. 9.:
+co je zaškrtnuté, to se tiskne, žádný tichý fallback). Řez podle skupin tam nejde použít ani
+teoreticky - slot nese spoj z každého směru a jejich hranice skupin padnou jinam.
+
+Vynucené oddělení nastavením u linky (`MHD2,rozdelitUmeleSekceNaVlastniStranky`) neděláme: na
+93 133 linkách šesti firem ho nemá zapnuté nikdo, takže by nikomu nic nezměnilo.
+
 Řezy (`cutx`/`cuty`) = greedy bin-packing sloupců/řádků do šířky/výšky tiskové plochy, s podporou
 ručního zlomu na konkrétním TČ (`pset("SET",3,"arr",1,8)`). **Toto je nová layoutová schopnost,
 kterou `PageLayoutEngine` dnes nemá** - dnešní engine dělá vertikální flow sekcí, ne 2D chunking

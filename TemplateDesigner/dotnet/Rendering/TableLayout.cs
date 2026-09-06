@@ -122,4 +122,58 @@ public static class TableLayout
     /// <param name="Pocet">Kolik sloupců spojů blok nese.</param>
     public readonly record struct SloupcovyBlok(int Od, int Pocet);
 
+    /// <summary>Řez po <paramref name="naBlok"/> sloupcích, bez ohledu na skupiny dnů.</summary>
+    public static List<SloupcovyBlok> BlokyPodleSirky(int pocetSloupcu, int naBlok)
+    {
+        var bloky = new List<SloupcovyBlok>();
+        if (pocetSloupcu <= 0 || naBlok < 1) return bloky;
+        for (int od = 0; od < pocetSloupcu; od += naBlok)
+            bloky.Add(new SloupcovyBlok(od, Math.Min(naBlok, pocetSloupcu - od)));
+        return bloky;
+    }
+
+    /// <summary>Řez, kde <b>každá skupina dnů začíná vlastní blok</b> - uvnitř skupiny se dál
+    /// řeže po <paramref name="naBlok"/> sloupcích.</summary>
+    /// <param name="skupinaSloupce">Skupina dnů každého sloupce spoje, v pořadí tisku.</param>
+    public static List<SloupcovyBlok> BlokyPodleSkupin(IReadOnlyList<int> skupinaSloupce, int naBlok)
+    {
+        var bloky = new List<SloupcovyBlok>();
+        if (skupinaSloupce.Count == 0 || naBlok < 1) return bloky;
+
+        int od = 0;
+        for (int i = 1; i <= skupinaSloupce.Count; i++)
+        {
+            bool konecSkupiny = i == skupinaSloupce.Count || skupinaSloupce[i] != skupinaSloupce[od];
+            bool plnyBlok = i - od == naBlok;
+            if (!konecSkupiny && !plnyBlok) continue;
+            bloky.Add(new SloupcovyBlok(od, i - od));
+            od = i;
+        }
+        return bloky;
+    }
+
+    /// <summary>
+    /// Který ze dvou řezů se použije: <b>oddělené skupiny dnů, kdykoli nevyjdou na víc bloků</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>1:1 starý modul (`JRapiLinPrtWin.mac:857-908`): spočítá úsporný řez i řez lámaný na
+    /// hranici skupiny a oddělený nechá, když <b>není</b> bloků víc. Skupina dnů tak začíná vlastní
+    /// tabulku, kdykoli je to zadarmo - a právě proto ze starého tisku koukají listy jen
+    /// s pracovními dny, přestože to nikdo nenastavil.</para>
+    /// <para>⚠️ <paramref name="skupinaSloupce"/> = null (obousměrná sestava) → jen úsporný řez.
+    /// Sloupec tam nese spoj z <b>každého</b> směru a hranice skupin v nich padnou jinam, takže
+    /// „hranice skupiny" není jedno místo. Starý modul ten případ nezná: obousměrnou tabulku, která
+    /// se má řezat, zahodí a tiskne po směrech - a to my vědomě nedělíme (rozhodnutí Jan 6. 9.:
+    /// zaškrtnutý obousměrný tisk musí zůstat obousměrný).</para>
+    /// </remarks>
+    public static List<SloupcovyBlok> ZvolBloky(IReadOnlyList<int>? skupinaSloupce,
+        int pocetSloupcu, int naBlok)
+    {
+        var podleSirky = BlokyPodleSirky(pocetSloupcu, naBlok);
+        if (skupinaSloupce is null || skupinaSloupce.Count != pocetSloupcu) return podleSirky;
+
+        var podleSkupin = BlokyPodleSkupin(skupinaSloupce, naBlok);
+        return podleSkupin.Count <= podleSirky.Count ? podleSkupin : podleSirky;
+    }
+
 }
