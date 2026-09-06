@@ -1357,7 +1357,38 @@ je obklad - a hlavně **ta situace se z aplikace vyvolat nedá**:
 pak se rozhoduje ne o varování, ale o tom, kam takový spoj vytisknout (legacy dává spoj bez
 dopočítané platnosti do **všech** sekcí, `JRapiLinPrtWin:476-481`).
 
-### 16.2 Měření 4. 9. - sonda
+### 16.2 `#11300` (KORID) - co zbývá udělat
+
+**Zákazník** Jaroslav Smištík, KORID; tiket **pozastavený** od 8. 12. 2025 s odpovědí Jiřího Bžocha
+*„úpravu letos nestihneme, příští rok to spojíme s novým tiskovým modulem"*. Od té doby mu nikdo
+nic neukázal, takže zbývá **ukázka a odpověď, ne kód**.
+
+**Co přesně chce** (jeho slova): *„uvítali bychom, kdyby byla možnost prázdný přípojový řádek
+(v situacích kdy je PD a víkend na zvláštní tabulce/listu) netiskl a šetřil místo."* Na jeho druhém
+obrázku je list **jen s pracovními dny** a v něm řádek `ze směru Nové Zákupy` úplně prázdný - ty
+přípoje jsou jen o víkendu. Je to **linkový tabelární JŘ** (linka 260, IDOL), přes název tiketu
+„Dotaz k vývěsným JŘ".
+
+**Čím je to hotové:**
+
+- **Prázdný přípojný řádek u nás nemůže vzniknout konstrukcí** - řádek se negeneruje pro zastávku,
+  ale pro každý přípoj **spojů toho bloku** (`PrazdnyPripojnyRadekTests` + dvě mutace).
+- **Přípoje téhož směru jdou na jeden řádek** (volba „Slučovat přípoje", 4. 9.) - týž tvar, jaký má
+  jeho výtisk ze starého modulu; do té doby jsme dělali řádek pro každý spoj.
+- ⚠️ **Jeho rozvržení jde vyrobit teprve od 6. 9.** Žádá o šetření místa na listu jen s pracovními
+  dny, a oddělování skupin dnů jsme do té doby neměli (§6.3). **Musí se tisknout jednosměrně** -
+  u obousměrné sestavy se skupiny neoddělují a prázdné buňky v přípojném řádku vzniknout mohou.
+
+**Postup, až poběží dev server:**
+
+1. Otevřít linkovou šablonu, v parametrech sestavy **vypnout Obousměrný tisk**.
+2. Vzít `CB_CSADAD 1 / 0330511` směr Tam - devět spojů a přípoj jen tři (9, 13, 31 na tarifním
+   čísle 19). ⚠️ Jeho vlastní firma (ČSAD Liberec / IDOL) na dev serveru **není**, proto náhrada.
+3. Exportovat a ověřit dvojí: každá tabulka nese jen jednu skupinu dnů, a kde přípoj není, není
+   ani řádek.
+4. Poslat mu to a tiket zavřít.
+
+### 16.3 Měření 4. 9. - sonda
 
 Sonda `ALVA.TemplateDesigner.Tests.LinkovyJrSpojeProbe` je read-only a zůstává použitelná pro
 jakoukoli linku: `Spoje` vypíše z odpovědi `GetData` číslo, směr, skupinu dnů, počet neprázdných
@@ -1368,7 +1399,7 @@ Naměřeno na `0320144`: **43 spojů na směr**, obousměrný tisk je slévá do
 Spoje 5xx jsou nejúplnější sloupce (501-507 mají čas na všech 36 zastávkách). ⚠️ **Premisa
 „obousměrný tisk vypnutý" byla špatná** - uložené parametry mají `OBOUSMERNY_TISK: true`.
 
-### 16.3 Vada nalezená po cestě - `B122`
+### 16.4 Vada nalezená po cestě - `B122`
 
 `Rozvrzeni` (helper, na kterém stojí testy „blok se vejde do šířky prvku") volá `BuildColumns`
 s **počtem slotů**, kdežto kreslení (`LineTableElement:1215`) i `Vejde` s **počtem sloupců**
