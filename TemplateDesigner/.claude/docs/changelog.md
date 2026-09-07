@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-07 (10) - 🔁 varování o nevejití říká, co s tím
+
+Nález Jan 7. 9.: „ta stránka zobrazuje varování, takže program by s tím měl něco udělat a ne to
+takto vytisknout."
+
+**Ono to umí, jen to nikdo nemohl vědět.** Varování jmenovalo sekci a prvek, který bere nejvíc
+místa, ale ne nápravu - a z toho šlo jen zmenšovat písmo. Přitom se hlásí **jen** sekce, která má
+držet pohromadě, takže obsah narostlý z dat se vejde vždycky: sekce se jen musí smět rozdělit přes
+stránky. Přesně to dělá i starý tisk - tabulku, která se nevejde do šířky, rozřeže do bloků
+a pokračuje dál.
+
+Hláška proto končí radou: **„povol sekci rozdělit přes stránky, nebo prvek zmenši"** (u sekce
+nafouknuté vlastní nastavenou výškou „zmenši nastavenou výšku sekce" - rozdělení by nepomohlo).
+
+**Změřeno na lince `330511` (A5 na šířku, oba směry):** 9 slotů se do šířky vejde na 8, takže
+tabulka vyjde na dva bloky pod sebou. Se sekcí „držet pohromadě" z toho bylo přetečení 43,7 mm
+a rozpadlý tisk; s povoleným rozdělením pokračuje druhý blok na další stránce a varování zmizí.
+
+Ověřeno: .NET **1558/1558** (2 nové testy), vyrenderováno proti reálným datům linky.
+
 ## 2026-09-07 (9) - 🔁 km opačného směru se na sloučené stránce tiskly obráceně
 
 Nález Jan 7. 9. hned po předchozí opravě: „ve starém žádné otočené nejsou - všechny tam jsou

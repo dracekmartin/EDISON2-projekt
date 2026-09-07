@@ -35,6 +35,31 @@ public class OverflowWarningsTests
         Assert.Contains("strana 2", text);
     }
 
+    /// <summary>
+    /// Hlásí se jen sekce, která má držet pohromadě, takže obsah narostlý z dat se vejde - jen se
+    /// sekce musí smět rozdělit přes stránky. Bez té rady byla hláška slepá ulice: u linkového JŘ
+    /// rozvrženého do dvou bloků z ní šlo jen zmenšovat písmo (nález Jan 7. 9.).
+    /// </summary>
+    [Fact]
+    public void ObsahPrvku_HlaskaRadiPovolitRozdeleniSekce()
+    {
+        var text = OverflowWarnings.Summarize([Prvek(1, "Jízdní řád", "Linkový JŘ", 43.7f)], 2);
+
+        Assert.NotNull(text);
+        Assert.Contains("rozdělit přes stránky", text);
+    }
+
+    /// <summary>Sekci nafoukla vlastní nastavená výška - rozdělení by nepomohlo, musí se zmenšit.</summary>
+    [Fact]
+    public void NastavenaVyskaSekce_HlaskaRadiZmensitSekci()
+    {
+        var text = OverflowWarnings.Summarize([Sekce(1, "Vývěska", 8f)], 1);
+
+        Assert.NotNull(text);
+        Assert.DoesNotContain("rozdělit přes stránky", text);
+        Assert.Contains("výšku sekce", text);
+    }
+
     [Fact]
     public void NastavenaVyskaSekce_NejmenujePrvek()
     {

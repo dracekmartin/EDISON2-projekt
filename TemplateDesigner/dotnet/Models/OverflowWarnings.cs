@@ -66,11 +66,23 @@ public static class OverflowWarnings
             string co = s.Druh == DruhPreteceni.ObsahPrvku
                 ? $"sekce „{s.Sekce}“ nevejde na stránku, nejvíc místa bere {s.Prvek}"
                 : $"sekce „{s.Sekce}“ nevejde na stránku";
-            return $"{co} (přesah {s.NejvetsiPresah:0.#} mm, {PopisStranek(s.Stranky, celkemStranek)})";
+            return $"{co} (přesah {s.NejvetsiPresah:0.#} mm, {PopisStranek(s.Stranky, celkemStranek)}) - {Rada(s.Druh)}";
         });
 
         return string.Join("; ", casti);
     }
+
+    /// <summary>Co s tím má autor šablony udělat.</summary>
+    /// <remarks>
+    /// ⚠️ Hlásí se **jen** sekce, která má držet pohromadě (viz volající), takže rada není dohad:
+    /// obsah, který narostl z dat, se vejde, jen se sekce musí smět rozdělit přes stránky - přesně to dělá
+    /// i starý tisk, když se tabulka nevejde do šířky (řeže ji do bloků a pokračuje dál). Bez rady bylo
+    /// varování slepá ulice: šablona linkového JŘ se rozvržením do dvou bloků zdvojnásobí a šlo z toho
+    /// jen zmenšovat písmo, i když stačí přehodit jedno nastavení sekce (nález Jan 7. 9.).
+    /// </remarks>
+    private static string Rada(DruhPreteceni druh) => druh == DruhPreteceni.ObsahPrvku
+        ? "povol sekci rozdělit přes stránky, nebo prvek zmenši"
+        : "zmenši nastavenou výšku sekce";
 
     /// <summary>
     /// Které stránky to potkalo. Čísla se vypisují do tří stránek; nad to je užitečnější počet
