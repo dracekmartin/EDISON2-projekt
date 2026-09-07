@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-07 (4) - 🐛 negativní značka přetékala do řádku pod sebou
+
+Nález Jan 7. 9. na hustě nastavené tabulce linky: černý box značky (`23`, `60`, `70`) v řádku
+atributů spoje přesahoval přes spodní linku do řádku pod sebou.
+
+**Příčina: box se stavěl z výšky písma, ne z obrysu znaku.** Ascent a descent počítají s dotažnicemi
+(`á`, `j`), které značka nikdy nemá, takže box vycházel o třetinu vyšší, než kolik číslice zabraly.
+Text se v buňce zmenšuje na šířku, na výšku se ale nekontroloval nikdo.
+
+Nově se box staví z **obrysu znaku**. Vedle toho, že se vejde, je i přilehlý ke znaku - což je
+zároveň tvar starého tisku. Pro velmi nízký řádek zůstává pojistka, která značku zmenší; počítá se
+až z toho těsného boxu, takže při běžné výšce řádku se nic nezdrobní.
+
+⚠️ **První oprava byla špatně**: zmenšovala značku podle výšky písma a udělala z ní nečitelnou
+tečku. Poznat to šlo jen z renderu - testy na „vejde se do buňky" byly zelené u obou verzí. Proto
+je vedle testu na přetečení i test, že se při dost vysokém řádku značka **nezmenší**.
+
+Ověřeno: .NET **1541/1541** (4 nové testy), mutace „neomezovat výšku" shodí krajní případ.
+Vyrenderováno na lince `330511`.
+
 ## 2026-09-07 (3) - ⋯ tečková výplň jako ve starém tisku, dvě samostatné volby
 
 Starý postskript vyplňuje tečkami dvě různá místa a obojí jde teď zapnout u tabulky linky.
