@@ -1420,6 +1420,37 @@ Vzniklo při přípravě školení; čísla nejsou odhad, jsou **odečtená z pr
 > popisuje **Windows** engine (`mkPLinWin`); tady jde o `mkLinPS^JRapiLinPrtPS`. Některé věci má jen
 > jedna z nich (tečková výplň jen postskript, `SablonaProTiskA4` jen Windows).
 
+### 17.0 Kilometrické sloupce - kde se filtrují a co bereme špatně (změřeno 7. 9.)
+
+**Km sloupec není spoj, ale profil vzdáleností** podél celé linky (řada km po tarifních číslech).
+Profily se **předpočítají a uloží u linky**; starý tisk ani my nic nepočítáme ze spojů.
+
+**Kde se filtruje:** v `mkKms` (`JRapiLinUtlKms1.mac:36-200`), která ty seznamy **generuje** při
+uložení linky. Čtyři kroky: posbírat profily ze spojů → zahodit profil **obsažený v jiném** →
+volitelně (`Kms,MaxFiltr`) zahodit i ten, kterému v překryvu nevadí projetí `<` → poskládat profily
+k sobě → při překročení prahu `Kms,Filtr` (výchozí 10) mazat sloupce od toho startovního bodu, kde
+jich je nejvíc, a brát nejkratší s nejvíc projetími. Prahy jsou u linky (`PATCH,Kms,Filtr`) i
+globálně (`JRSET("Definice","Kms","Filtr")`).
+
+✅ **Filtr tedy máme zadarmo** - dostáváme už profiltrované seznamy. Není co implementovat.
+
+⚠️ **Co bereme špatně:** legacy čte pro **obousměrný** tisk **společný** seznam
+`^JRL(sku,lin,"K")`, pro jednosměrný ty směrové - `JRapiLinPrtWin.mac:2523`, větev `sm="A"`.
+Společný je odduplikovaná sjednocenina obou směrů. My čteme směrové vždy a v obousměrné sestavě je
+slepíme za sebe, čímž vyrobíme duplicitní sloupce.
+
+Změřeno na `CB_CSADAD 1 / 0330511` (sonda `LinkovyJrSpojeProbe.KmSloupce`):
+
+- společný `^JRL(...,"K")` = **8**, `KmsSmer,T` = **5**, `KmsSmer,Z` = **6** → my sázíme **11**
+- tři profily z těch jedenácti jsou obsažené v jiných: `T~01` v `Z~01`, `Z~04` v `T~03`,
+  a `T~05` je s `Z~06` totožný → 11 − 3 = 8
+- přepínač `PrintKmsSmerNo` u linky ani `PS_PrintKmsSmerNo` globálně nastavené nejsou, takže
+  jednosměrný tisk u téhle linky opravdu jede podle směrových seznamů
+- prahy: u linky `Kms.Filtr` = 10 a `MaxFiltr` = 0, globálně `Filtr` = 14
+
+Vedeno jako `B124`. **Se variantními sloupci jízdních dob v zastávkovém JŘ to nesouvisí** - ty
+vznikají z variant trasy u jedné zastávky a počítají se za běhu na klientovi.
+
 ### 17.1 Jak je ten tisk vůbec nastavitelný
 
 Celý layout nese **PostScriptový program uložený v databázi** (`^JRSET("PS",...)`, sedm programů

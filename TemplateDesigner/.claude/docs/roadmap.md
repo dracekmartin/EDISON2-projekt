@@ -103,11 +103,15 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B124` Filtr počtu kilometrických sloupců** [S] (podnět Jan 7. 9.). U linky je práh
-  (`PATCH,Kms,Filtr`, výchozí 10) a `Kms,MaxFiltr`, kterými starý tisk redukuje počet km sloupců.
-  Neumíme to, takže od chvíle, kdy posíláme km obou směrů, vyjdeme u obousměrné sestavy **širší
-  než legacy** (`330511`: 11 sloupců proti jejich osmi). Výstup je úplný, ale zabere víc místa -
-  změřeno 39,6 mm z 200 mm šířky prvku. Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
+- **`B124` Obousměrná sestava má brát společný seznam km sloupců** [S] (přepsáno 7. 9. po měření -
+  původně zapsané jako „chybí nám filtr počtu km sloupců", což **není pravda**). Legacy pro
+  obousměrný tisk čte **společný** seznam `^JRL(sku,lin,"K")`, pro jednosměrný ty směrové
+  (`JRapiLinPrtWin.mac:2523`, větev `sm="A"`). Společný je odduplikovaná sjednocenina obou směrů;
+  my slepujeme směrové za sebe, takže vyrobíme duplicitní sloupce - na `330511` **11 místo 8**
+  (T má 5, Z 6, tři profily jsou obsažené v jiných). Oprava = přečíst jiný globál, ne psát filtr.
+  ⚠️ **Filtr sám neděláme a nemusíme:** `Kms,Filtr` (max počet, výchozí 10) a `Kms,MaxFiltr` jsou
+  vstupy do `mkKms` (`JRapiLinUtlKms1.mac:36-200`), která seznamy **generuje** při uložení linky -
+  dostáváme je už profiltrované. Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
 
 - **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
   ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového

@@ -75,6 +75,61 @@ ClassMethod Spoje(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Vypíše kilometrické sloupce linky - **společné i per směr** - a přepínače, které o nich rozhodují.
+///
+/// Proč: starý tisk bere buď dva směrové seznamy (`PATCH,KmsSmer,T`/`Z`), nebo jeden **společný**
+/// (`^JRL(sku,lin,"K")`), a rozhoduje o tom přepínač `PrintKmsSmerNo` u linky, resp.
+/// `PS_PrintKmsSmerNo` globálně. My čteme vždy ty směrové, takže bez tohohle měření nejde říct,
+/// odkud se bere rozdíl v počtu sloupců proti výtisku.
+///
+/// IN: `SKUPINA_LINEK_ID`, `LINKA_ID`. OUT: počty a obsah seznamů + hodnoty přepínačů.
+ClassMethod KmSloupce(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+		s lin = $g(^||ML("IN","LINKA_ID"))
+		k ^||ML("OUT")
+		s ^||ML("OUT","linka") = dataDB_" "_sku_" "_lin
+
+		// Přepínače: u linky se ukládá jen přítomnost klíče, globálně dtto.
+		s ^||ML("OUT","prepinac~linka.PrintKmsSmerNo") =
+			$s($d(^[dataDB]JRL(sku,lin,"PATCH","PrintKmsSmerNo")):"nastaveno (smerove seznamy se NEtisknou)", 1:"neni")
+		s ^||ML("OUT","prepinac~global.PS_PrintKmsSmerNo") =
+			$s($d(^[dataDB]JRSET("Definice","PS_PrintKmsSmerNo")):"nastaveno", 1:"neni")
+		// Prahy, kterými se seznamy generují (ne tisknou) - u linky, jinak globálně, výchozí 10.
+		s ^||ML("OUT","prah~linka.Kms.Filtr") = $g(^[dataDB]JRL(sku,lin,"PATCH","Kms","Filtr"), "neni")
+		s ^||ML("OUT","prah~linka.Kms.MaxFiltr") = $g(^[dataDB]JRL(sku,lin,"PATCH","Kms","MaxFiltr"), "neni")
+		s ^||ML("OUT","prah~global.Kms.Filtr") = $g(^[dataDB]JRSET("Definice","Kms","Filtr"), "neni")
+		s ^||ML("OUT","prah~global.Kms.MaxFiltr") = $g(^[dataDB]JRSET("Definice","Kms","MaxFiltr"), "neni")
+
+		// Společný seznam
+		s ^||ML("OUT","pocet~spolecny") = +$g(^[dataDB]JRL(sku,lin,"K"))
+		s i = ""
+		f {
+			s i = $o(^[dataDB]JRL(sku,lin,"K",i))
+			q:i=""
+			continue:'$isvalidnum(i)
+			s ^||ML("OUT","spolecny~"_$tr($j(i,2)," ","0")) = $e($g(^[dataDB]JRL(sku,lin,"K",i)),1,200)
+		}
+		// Směrové seznamy
+		f smer = "T","Z" {
+			s ^||ML("OUT","pocet~"_smer) = +$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer))
+			s i = ""
+			f {
+				s i = $o(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer,i))
+				q:i=""
+				continue:'$isvalidnum(i)
+				s ^||ML("OUT",smer_"~"_$tr($j(i,2)," ","0")) =
+					$e($g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer,i)),1,200)
+			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Vypíše u šablon dané agendy, jestli nesou **vlastní definici sloupců** (`customColumns`).
 ///
 /// Proč: server spoj, který nesedne do žádného vlastního sloupce, **tiše zahodí**
