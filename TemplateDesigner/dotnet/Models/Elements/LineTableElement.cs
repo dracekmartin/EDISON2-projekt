@@ -97,6 +97,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public bool PadEmptyColumns { get; set; }
 
     /// <summary>
+    /// Všechny sloupce spojů stejně široké (výchozí vypnuto = legacy parita).
+    /// </summary>
+    /// <remarks>
+    /// Bez ní je sloupec, ve kterém je někde značka návaznosti, o tu značku širší než ostatní -
+    /// parita se starým modulem, který má pro sloupec spoje čtyři šířky podle počtu značek
+    /// (<c>JRapiLinPrtWin.mac:1793</c>). Na výtisku to působí roztřepeně, protože se šířka mění
+    /// spoj od spoje. Zapnutá volba dá všem sloupcům šířku toho nejširšího.
+    /// <para>⚠️ Nejširší se bere přes **všechny** spoje linky, ne přes blok - jinak by bloky pod
+    /// sebou měly různě široké sloupce a zastávky by na sebe svisle nesedly (invariant z 25. 8.,
+    /// stejný důvod, proč je základ sloupce společný pro všechny bloky).</para>
+    /// </remarks>
+    public bool JednotnaSirkaSpoju { get; set; }
+
+    /// <summary>
     /// Kazda zona hranicni zastavky ve vlastnim sloupci (vychozi vypnuto).
     /// </summary>
     /// <remarks>
@@ -622,10 +636,30 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return max;
     }
 
-    /// <summary>Šířky sloupců spojů bloku - základ plus místo na značky, které ten sloupec nese.</summary>
+    /// <summary>Šířky sloupců spojů bloku - základ plus místo na značky, které ten sloupec nese.
+    /// Se zapnutou <see cref="JednotnaSirkaSpoju"/> dostanou všechny šířku toho nejširšího.</summary>
     private List<float> SirkySpoju(IReadOnlyList<LineTripData> spojeBloku, List<LineStopData> stops,
-        float zakladMm, float znackaMm) =>
-        [.. spojeBloku.Select(t => zakladMm + ZnacekVeSloupci(t, stops) * znackaMm)];
+        float zakladMm, float znackaMm)
+    {
+        if (!JednotnaSirkaSpoju)
+            return [.. spojeBloku.Select(t => zakladMm + ZnacekVeSloupci(t, stops) * znackaMm)];
+
+        float jednotna = zakladMm + NejvicZnacekVeSloupci(stops) * znackaMm;
+        return [.. spojeBloku.Select(_ => jednotna)];
+    }
+
+    /// <summary>Nejvyšší počet značek, který nese kterýkoli sloupec spoje <b>celé linky</b>.
+    /// Přes celou linku, ne přes blok - viz <see cref="JednotnaSirkaSpoju"/>.</summary>
+    private int NejvicZnacekVeSloupci(List<LineStopData> stops)
+    {
+        int max = 0;
+        foreach (var t in _cachedTrips ?? [])
+        {
+            int n = ZnacekVeSloupci(t, stops);
+            if (n > max) max = n;
+        }
+        return max;
+    }
 
     /// <summary>
     /// Kolik místa si vezmou značky v <b>nejhorším</b> bloku o daném počtu spojů.
@@ -640,6 +674,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float znackaMm, int naBlok)
     {
         if (znackaMm <= 0f || naBlok <= 0) return 0f;
+        // Jednotná šířka: každý sloupec nese místo na nejširší značkový sloupec linky, takže se
+        // rezervuje za všechny. Musí to být týž vzorec jako v `SirkySpoju`, jinak by se blok
+        // spočítal užší, než se nakreslí, a přetekl by přes hranu prvku.
+        if (JednotnaSirkaSpoju) return naBlok * NejvicZnacekVeSloupci(stops) * znackaMm;
         var znacky = trips.Select(t => ZnacekVeSloupci(t, stops)).ToList();
         int nejvic = 0, okno = 0;
         for (int i = 0; i < znacky.Count; i++)
@@ -856,9 +894,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return _cachedHlavni is { Count: > 0 } hlavni ? [.. hlavni.Select(t => t.Skupina)] : null;
     }
 
-    /// <summary>Jak vyjde jeden blok: které spoje nese, jak je široký a kolik místa zbylo
-    /// na jeden sloupec spoje.</summary>
-    internal readonly record struct BlokRozvrh(int Od, int Pocet, float SirkaMm, float SloupecSpojeMm);
+    /// <summary>Jak vyjde jeden blok: které spoje nese, jak je široký, kolik místa zbylo
+    /// na jeden sloupec spoje a jak široký je každý sloupec zvlášť.</summary>
+    /// <remarks><paramref name="SloupecSpojeMm"/> je <b>základ</b> sloupce, společný všem blokům;
+    /// <paramref name="SirkySloupcu"/> jsou skutečné šířky, které se od základu liší o místo
+    /// na značky návaznosti. Rozdíl mezi nimi je celý smysl <see cref="JednotnaSirkaSpoju"/>.</remarks>
+    internal readonly record struct BlokRozvrh(int Od, int Pocet, float SirkaMm, float SloupecSpojeMm,
+        IReadOnlyList<float> SirkySloupcu);
 
     /// <summary>
     /// Rozřezání tabulky do bloků i s výslednou šířkou každého z nich.
@@ -891,7 +933,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var (cols, tripW, _) = BuildColumns(stops, kmCount, sloupcuBloku, rezerva, rezervaZnacek);
             var sirky = SirkySpoju(SpojeBlokuVse(b), stops, tripW, znackaMm);
             return new BlokRozvrh(b.Od, b.Pocet,
-                cols.Sum(c => c.Width) + rezerva + sirky.Sum(), tripW);
+                cols.Sum(c => c.Width) + rezerva + sirky.Sum(), tripW, sirky);
         }).ToList();
     }
 
@@ -1964,6 +2006,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ShowPripojeRows = ShowPripojeRows,
             PripojeSlucovani = PripojeSlucovani,
             PadEmptyColumns = PadEmptyColumns,
+            JednotnaSirkaSpoju = JednotnaSirkaSpoju,
             RozdelitZonyDoSloupcu = RozdelitZonyDoSloupcu,
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
@@ -2007,6 +2050,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 ("Podle směru a linky",       (object)PripojSlucovani.PodleSmeruALinky),
             ] },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
+        new BoolPropertyDescriptor { Label = "Stejně široké sloupce spojů", Group = "Sloupce", Get = () => JednotnaSirkaSpoju, Set = v => JednotnaSirkaSpoju = v },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = "Sloupce",
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },

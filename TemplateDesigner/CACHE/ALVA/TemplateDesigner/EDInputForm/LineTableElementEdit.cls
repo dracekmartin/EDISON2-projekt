@@ -44,6 +44,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("columns", "Sloupce")
         s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
         s f.helpText = "Poslední blok bývá neúplný a nechá vpravo volné místo. Zapnuté = doplní se prázdné sloupce, aby měly všechny bloky stejně širokou tabulku."
+        s f = form.AddBool("JednotnaSirkaSpoju", "Stejně široké sloupce spojů", 0)
+        s f.helpText = "Sloupec, ve kterém je někde značka návaznosti, je o ni širší než ostatní - tabulka pak působí roztřepeně. Zapnuté = všechny sloupce spojů dostanou šířku toho nejširšího. Do řádku se tím vejde méně spojů."
         s f = form.AddBool("RozdelitZonyDoSloupcu", "Každá zóna ve vlastním sloupci", 0)
         s f.helpText = "Zastávka na hranici zón má víc zón. Vypnuté = všechny v jednom sloupci za sebou, zapnuté = každá ve vlastním sloupci vedle sebe (jako kilometry). Sloupec zón se tím rozšíří o tolik dílů, kolik zón má nejbohatší zastávka."
         // Popisné sloupce (zóna, km, Tč, zastávka, MHD) jsou jedna skupina - jeden nadpis nad nimi
