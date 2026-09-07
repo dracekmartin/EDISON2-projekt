@@ -65,6 +65,45 @@ Method TestSmerStrankyJePrazdny()
 	do $$$AssertEquals(smerStranky, "", "sloučená stránka hlásí SMER=" _ smerStranky _ ", má být prázdný")
 }
 
+/// Km sloupce má **každý směr vlastní** a v obou počtech; sloučená stránka je proto musí nést
+/// obojí, jinak se km opačného směru ztratí. Legacy je počítá zvlášť (`Nkm2T`/`Nkm2Z`, šířky
+/// `KmcharT`/`KmcharZ`, `JRapiLinPrtPS2.mac:79-93,189`) a tiskne do prostředního bloku.
+Method TestKmObouSmeruJsouNaSlouceneStrance()
+{
+	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - test přeskočen")
+		quit
+	}
+	set kmT = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "T"))
+	set kmZ = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "Z"))
+	if (kmT = 0) || (kmZ = 0) {
+		do $$$AssertTrue(1, "linka nemá km sloupce v obou směrech - test přeskočen")
+		quit
+	}
+
+	if '..DelkaKm(0, .jenTam) quit
+	if '..DelkaKm(1, .slouceno) quit
+
+	set hlaskaT = "jednosměrná stránka má " _ jenTam _ " km sloupců, linka jich má " _ kmT
+	set hlaskaOba = "sloučená stránka má " _ slouceno _ " km sloupců, oba směry dohromady " _ (kmT + kmZ)
+	do $$$AssertEquals(jenTam, kmT, hlaskaT)
+	do $$$AssertEquals(slouceno, kmT + kmZ, hlaskaOba)
+}
+
+/// Délka pole KM první zastávky první stránky. Vrací 0, když linka na serveru není.
+Method DelkaKm(obousmerne As %Boolean, ByRef delka) As %Boolean
+{
+	do ..SetupSys(.sys)
+	kill parametry
+	set parametry("OBOUSMERNY_TISK") = $select(obousmerne:"true", 1:"false")
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, ..#TESTDB, ..#TESTSKU, ..#TESTLIN, .parametry)
+
+	set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", 1))
+	set delka = page.rows.ZASTAVKY.%Get(0).KM.%Size()
+	quit 1
+}
+
 /// Zavolá GetData a rozebere výsledek. Vrací 0, když linka na tomhle serveru není (skip).
 /// ByRef: počet stránek, počty spojů po směrech, počet zastávek 1. stránky, SMER 1. stránky;
 /// `delkaCasu(smer)` = délka pole CASY posledního spoje toho směru.

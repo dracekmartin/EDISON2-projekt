@@ -613,6 +613,15 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s bezPismenVZone = $s(zonaDelZnkLinka:zonaDelZnkLinka - 1, 1:+$g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk")))
     s pocetKmSloupcu = $s(tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)), 1:0)
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu)
+    // Obousměrná sestava: km sloupce má **každý směr vlastní** a v obou počtech (legacy
+    // `Nkm2T`/`Nkm2Z` a šířky `KmcharT`/`KmcharZ`, `JRapiLinPrtPS2.mac:79-93,189`). Stránka se
+    // staví podle směru "tam", takže bez tohohle by se km opačného směru ztratily - u linky
+    // `330511` je to 6 sloupců navíc k pěti (rozhodnutí Jan 7. 9.: tisknout všechno, co tam patří).
+    // Jdou do téhož pole `KM` za sloupce hlavního směru; prvek je vysází jako další díly téhož
+    // sloupce a nemusí o dvou směrech vědět.
+    s smerOpacny = $s(smer = "T":"Z", 1:"T")
+    s pocetKmOpac = $s(obousmerne && tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smerOpacny)), 1:0)
+    s maxKmVetaOpac = ..MaxKmVeta(dataDB, sku, lin, smerOpacny, pocetKmOpac)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
     k atributyZastavek                        // atributy z číselníku zastávek (^JRZ $8, CSV) - legenda druhu 7
     s maMhd = 0
@@ -637,12 +646,12 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i zdvojit {
             s idx = idx + 1
             s rowMeta(idx) = $lb(poradi, "P")
-            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone))
+            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, smerOpacny, pocetKmOpac, maxKmVetaOpac))
         }
 
         s idx = idx + 1
         s rowMeta(idx) = $lb(poradi, "O")
-        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone)
+        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, smerOpacny, pocetKmOpac, maxKmVetaOpac)
         d zastavky.%Push(z)
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
@@ -765,7 +774,7 @@ ClassMethod ZastavujiciTc(dataDB As %String, sku As %String, lin As %String, sme
 }
 
 /// JSON objekt jednoho zastávkového řádku (hlavní "zastavka" nebo vložený "prijezd").
-ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1, bezPismenVZone As %Boolean = 0) As %DynamicObject
+ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1, bezPismenVZone As %Boolean = 0, smerOpacny As %String = "", pocetKmOpac As %Integer = 0, maxKmVetaOpac As %String = "") As %DynamicObject
 {
     s czst = $p(veta,":",1)
     s z = ##class(%DynamicObject).%New()
@@ -799,14 +808,26 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     // km sloupce směru; -1 → "<" (jede jinudy); Zpět: km = maxKm - km (legacy KmSloupce/MaxKm)
     s km = ##class(%DynamicArray).%New()
     f sl=1:1:pocetKmSloupcu {
-        s kmVal = $p($g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer,sl)),":",poradi)
-        i kmVal = -1 { d km.%Push("<") }
-        elseif kmVal = "" { d km.%Push("") }
-        elseif 'jeTam { d km.%Push($p(maxKmVeta,":",sl) - kmVal) }
-        else { d km.%Push(+kmVal) }
+        d ..PushKm(km, dataDB, sku, lin, smer, sl, poradi, maxKmVeta, jeTam)
+    }
+    // Km opačného směru (jen obousměrná sestava) - přepočet zrcadlí ten hlavní: co je pro "tam"
+    // přímé, je pro "zpět" odečtené od maxima, a naopak.
+    f sl=1:1:pocetKmOpac {
+        d ..PushKm(km, dataDB, sku, lin, smerOpacny, sl, poradi, maxKmVetaOpac, 'jeTam)
     }
     d z.%Set("KM", km)
     q z
+}
+
+/// Jedna hodnota km sloupce do pole: -1 = "<" (jede jinudy), prázdné = prázdno, směr "zpět"
+/// se odečítá od maxima sloupce (1:1 legacy `KmSloupce`/`MaxKm`).
+ClassMethod PushKm(km As %DynamicArray, dataDB As %String, sku As %String, lin As %String, smer As %String, sl As %Integer, poradi As %String, maxKmVeta As %String, jeTam As %Boolean)
+{
+    s kmVal = $p($g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer,sl)),":",poradi)
+    i kmVal = -1 { d km.%Push("<") }
+    elseif kmVal = "" { d km.%Push("") }
+    elseif 'jeTam { d km.%Push($p(maxKmVeta,":",sl) - kmVal) }
+    else { d km.%Push(+kmVal) }
 }
 
 /// Označení zóny bez písmen (`51A` → `51`). Seznam znaků je 1:1 legacy `delZnk^JRapiLinPrtPS2`

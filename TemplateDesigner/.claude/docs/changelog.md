@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-07 (7) - 📏 obousměrná sestava přišla o kilometry druhého směru
+
+Nález Jan 7. 9.: postskriptový výtisk má víc km sloupců než my.
+
+**Km sloupce má každý směr vlastní a v obou počtech.** Legacy je počítá zvlášť (`Nkm2T`/`Nkm2Z`,
+šířky `KmcharT`/`KmcharZ`, `JRapiLinPrtPS2.mac:79-93,189`). Sloučená stránka se u nás staví podle
+směru „tam", takže se km opačného směru **ztrácely** - u linky `330511` je to 6 sloupců navíc k pěti.
+
+Nově je server posílá obojí v témže poli `KM`, za sloupci hlavního směru. Prvek je vysází jako další
+díly sloupce km a o dvou směrech vědět nemusí; wire změna je čistě aditivní. Rozvržení potvrzené
+proti výtisku (rozhodnutí Jan 7. 9.): **všechny km do prostředního bloku**.
+
+⚠️ **Tabulka je tím širší a může se rozřezat na víc bloků.** Na naší A5 šabloně se počet slotů
+v bloku snížil z 9 na 7. Starý tisk na to má u linky **filtr** (`PATCH,Kms,Filtr` = práh, výchozí 10,
+a `Kms,MaxFiltr`), který počet sloupců redukuje - **ten neumíme** a je to důvod, proč u téhle linky
+vyjdeme širší než legacy. Bez něj je ale výstup **úplný**, což je horší varianta ze dvou špatných
+obráceně: dřív chyběla data, teď chybí zúžení.
+
+Ověřeno: Caché **151/151** (1 nový test), .NET 1551/1551. Mutace „neposílat opačný směr" test shodí
+(5 místo 11). Doloženo daty linky: `KmsSmer,T` = 5, `KmsSmer,Z` = 6.
+
 ## 2026-09-07 (6) - 🔤 významné zastávky tučně; zmizelo falešné odsazení
 
 Nález Jan 7. 9. při porovnání se starým tiskem: „proč jsou u nás některé zastávky odsazené a ve
