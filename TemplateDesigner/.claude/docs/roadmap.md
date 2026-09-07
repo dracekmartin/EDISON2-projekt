@@ -103,6 +103,21 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
+- **`B129` Přidání sekce ubere výšku ostatním, i když je na stránce místo** [S] (nález Jan 7. 9.
+  při stavbě šablony na školení). Nová sekce si vezme svých 30 mm **poměrem z existujících**, takže
+  na A5 se 37 mm obsahu spadnou obě zbylé na spodní mez 5 mm - a **může to zmáčknout sekci pod její
+  obsah**, protože tahle cesta výšku prvků nekontroluje (dialog i tažení ano).
+  Hotovo když: sekce se krátí až když na stránce místo není, a nikdy pod `MinimalniVyskaProSekci`.
+  Místo: `TemplateDesignerViewModel.AddSection` (`:1097`).
+
+- **`B130` Není vidět, kam se dělí místo na stránce** [M] (podnět Jan 7. 9. při stavbě šablony).
+  Sekce „Každá stránka" se odečítá z **každé** stránky, zbytek se dělí po celých řádcích tabulky
+  a blok se nesmí zlomit jinde než v místě, které sám nabídne - takže o stránku navíc rozhodne
+  milimetr v hlavičce a uživatel to nemá kde přečíst. Změřeno: zmenšení hlavičky o 1 mm sundalo
+  sestavu ze 4 stránek na 2, protože přidalo jeden řádek na stránku.
+  Hotovo když: uživatel vidí rozpočet stránky (hlavička / patička / na obsah zbývá) a dostane
+  hlášení, když stránka končí velkým prázdnem, protože se další nedělitelný díl nevešel.
+
 - **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
   ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového
   fontu - **pozice 1-32 jsou v `TimeTable2` i v SK variantě prázdné** (ověřeno vykreslením tabulky
