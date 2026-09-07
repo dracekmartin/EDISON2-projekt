@@ -6,9 +6,13 @@ Starý postskript vyplňuje tečkami dvě různá místa a obojí jde teď zapno
 **Obě volby jsou výchozí vypnuté** (rozhodnutí Jan 7. 9.): u linky, kde většina spojů jede jen část
 trasy, se tabulka tečkami zaplní a čte se hůř než s prázdnem.
 
-- **Tečky v prázdných buňkách** - buňka spoje bez času dostane výplň, takže tabulka drží svislé
-  vodicí pruhy (`TiT = "."`, `JRapiLinPrtPS.mac:58`).
+- **Tečky v prázdných buňkách** - buňka spoje bez času dostane **nejvýš tři tečky** u středu
+  (`TiT = "."`, `JRapiLinPrtPS.mac:58`).
 - **Tečky za názvem zastávky** - vodicí linka od názvu k pravému okraji sloupce.
+
+⚠️ **Tečky jsou proložené mezerami a ve sloupci spoje jsou jen tři.** První verze vyplňovala celou
+šířku souvislou řadou; vypadalo to rozdrobeně a čte se to hůř než pár výrazných teček, což je přesně
+to, co dělá starý tisk (nález Jan 7. 9.).
 
 ⚠️ **Buňka se značkou se nevyplňuje.** „<" znamená jinou trasu, „|" projetí bez zastavení - nejsou
 prázdné a přepsat je tečkami by smazalo informaci, kterou vysvětluje legenda. Hlídá to test,

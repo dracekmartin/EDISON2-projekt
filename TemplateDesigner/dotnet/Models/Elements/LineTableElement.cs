@@ -1799,20 +1799,24 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// mezi různě velkými čísly působí jako překlep.</para>
     /// </remarks>
     /// <summary>
-    /// Řetězec teček, který vyplní <paramref name="volnoMm"/>, nebo prázdno, když se nevejde ani
-    /// jedna. Mezera před tečkami odděluje výplň od textu, za kterým stojí.
+    /// Řetězec teček proložených mezerami, který se vejde do <paramref name="volnoMm"/>.
+    /// Prázdno, když se nevejde ani jedna.
     /// </summary>
     /// <remarks>
-    /// ⚠️ Ubírá se <see cref="CellRenderer.DefaultShrinkReserveMm"/>, jinak by přesně vyplněná
-    /// buňka spustila zmenšování textu a tečky by si samy zmenšily písmo celé buňky.
+    /// ⚠️ **Tečky jsou proložené mezerou a je jich nejvýš <paramref name="nejvic"/>.** Souvislá
+    /// řada teček přes celou šířku vypadá rozdrobeně a hůř se čte než pár výrazných - starý tisk
+    /// jich má ve sloupci spoje jen pár u středu (nález Jan 7. 9.).
+    /// <para>Ubírá se <see cref="CellRenderer.DefaultShrinkReserveMm"/>, jinak by přesně vyplněná
+    /// buňka spustila zmenšování textu a tečky by si samy zmenšily písmo celé buňky.</para>
     /// </remarks>
-    private static string Tecky(float volnoMm, SKFont font, float mmToPx)
+    private static string Tecky(float volnoMm, SKFont font, float mmToPx, int nejvic = int.MaxValue)
     {
-        float teckaMm = font.MeasureText(".") / mmToPx;
-        if (teckaMm <= 0f) return "";
+        // Jedna „dlaždice" je tečka a mezera za ní; poslední mezera se na konci ořízne.
+        float dlazdiceMm = font.MeasureText(". ") / mmToPx;
+        if (dlazdiceMm <= 0f) return "";
         float misto = volnoMm - CellRenderer.DefaultShrinkReserveMm;
-        int kolik = (int)MathF.Floor(misto / teckaMm);
-        return kolik <= 0 ? "" : new string('.', kolik);
+        int kolik = Math.Min(nejvic, (int)MathF.Floor(misto / dlazdiceMm));
+        return kolik <= 0 ? "" : string.Join(" ", Enumerable.Repeat(".", kolik));
     }
 
     /// <summary>Výplň prázdné buňky spoje, nebo prázdno když se výplň nepoužívá.</summary>
@@ -1820,7 +1824,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     {
         if (!VyplnitPrazdneBunkySpoju) return "";
         using var font = styl.CreateFont(1f, ctx.MmToPx);
-        return Tecky(sirkaSloupceMm - styl.PaddingLeft - styl.PaddingRight, font, ctx.MmToPx);
+        // Nejvýš tři - starý tisk má v prázdné buňce spoje jen krátkou značku u středu, ne výplň
+        // celé šířky. Zarovnání si řídí sloupec sám (u spojů je na střed).
+        return Tecky(sirkaSloupceMm - styl.PaddingLeft - styl.PaddingRight, font, ctx.MmToPx, nejvic: 3);
     }
 
     /// <summary>
