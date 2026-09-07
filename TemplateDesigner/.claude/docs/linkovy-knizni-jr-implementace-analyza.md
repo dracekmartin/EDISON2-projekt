@@ -1508,6 +1508,27 @@ Seřazeno podle toho, jak moc je to vidět:
 | Ruční zlom stránky na tarifním čísle | `PATCH,ZLOM` | ❌ vědomě (`B100`, 3 linky z ~93 tis.) |
 | Podtržení u zdvojených řádků příjezd/odjezd | `PATCH,podtrzeniPaJ` | ❌ (viz `B123`) |
 | Volby dělené linky (na jednu stranu, hlavička pro směr) | `gSetLinPrt` dta 21-23 | ❌ |
+| **Spoje se na části dělí rovnoměrně**, ne do plna | `JRapiLinPrtPS.mac:492` (`pokrac`) | ⚠️ my plníme bloky do plna a poslední necháme kratší |
+| **Řez po zastávkách se nesmí trefit na řádek s daty** | `JRapiLinPrtPS8.mac:79` (`rez`, `free`) | ⚠️ my řežeme na kterékoli hranici řádku |
+| Počet řádků tabulky na stránku zadávaný u linky | `PATCH,VERTIM` | ❌ u nás vychází z výšky sekce a papíru |
+
+#### Jak postskript stránkuje (dohledáno 7. 9.)
+
+**Řeže obojím směrem** a rozhodnutí o vejití je přitom **celé o šířce**
+(`JRapiLinPrtPS2.mac:194-219`): počítá se požadovaná šířka spojů obou směrů plus km sloupců proti
+kapacitě a zvlášť počet spojů v každém směru. Výška v té podmínce není - řeší se až při sazbě.
+
+- **Po spojích** (`pokrac`): šířka spojů směru / kapacita stránky = počet částí, a spoje se pak
+  rozdělí **rovnoměrně** (`slpage = dim/pages`).
+- **Po zastávkách** (`rez`): na část nejvýš `VertiM` řádků, a řez se **posouvá zpátky**, dokud
+  netrefí řádek, kde nejsou data (`free()` povolí řez jen tam, kde jsou tečky, `>`, `|` nebo čas).
+- **Sloučená obousměrná tabulka se zkouší jen u linky, která není jednosměrná** - u jednosměrné
+  podmínka navíc žádá spoje v obou směrech, takže se sloučení nepovolí nikdy.
+  Když sloučení neprojde: tisk po směrech, a když se ani jeden směr nevejde do šířky, tisk po
+  směrech s řezem (`TyptI` 3 → 4 → 5). To je ta tichá degradace, kterou vědomě nemáme
+  (rozhodnutí Jan 6. 9.).
+- Když má linka zakázané prázdné sloupce, postskript je při těsném vejití **odebere**
+  (`uprFreeTZ`) - jejich volba „vkládat prázdné sloupce" tam slouží jako záchrana.
 
 ### 17.5 Co umíme my a postskript ne
 
