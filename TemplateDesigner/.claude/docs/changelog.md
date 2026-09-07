@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-09-07 (1) - 📐 volba „stejně široké sloupce spojů" u tabulky linky
+
+Vzešlo z porovnání se starým postskriptovým tiskem linky `330511` (CB_CSADAD) při přípravě
+školení.
+
+Sloupec spoje, ve kterém je někde značka návaznosti, je o tu značku širší než ostatní - parita
+se starým modulem, který má pro sloupec čtyři šířky podle počtu značek
+(`JRapiLinPrtWin.mac:1793`). Na výtisku to působí roztřepeně, protože se šířka mění spoj od spoje
+a oko to čte jako různě velké písmo.
+
+**Nová volba prvku dá všem sloupcům spojů šířku toho nejširšího.** Výchozí je vypnutá, takže se
+hotovým šablonám nic nemění. Zapnutá stojí místo: sloupce jsou širší, takže se jich do řádku vejde
+méně a tabulka se řeže na víc bloků.
+
+⚠️ **Nejširší se bere přes celou linku, ne přes blok.** Bloky se kreslí pod sebe a zastávky v nich
+musí svisle sedět; per blok by blok bez značek měl užší sloupce a tabulka by se pod sebou rozjela.
+Tuhle půlku testy nejdřív nehlídaly - fixtura měla značky rozeseté po celé lince, takže bylo obojí
+totéž a mutace „ber to per blok" prošla. Odhalila to až mutace, ne běh testů.
+
+Rezerva na značky se musí přepočítat spolu se šířkami: bez toho se blok spočítá užší, než se
+nakreslí, a přeteče přes hranu prvku - táž třída chyby jako `B122`.
+
+Ověřeno: .NET **1517/1517** (6 nových testů). Dvě mutace: „nepřepočítat rezervu" shodí čtyři testy,
+„nejširší per blok" shodí invariant na svislé zarovnání bloků.
+
+🛑 **Dolní mez zmenšování písma zůstala neotevřená.** Zadání předpokládalo, že mez chybí a že se
+o zmenšení uživatel nedozví - ani jedno neplatí. Mez u prvků JŘ chybí **záměrně** (rozhodnutí Jan
+3. 9., zapsané u `TextElement.MinScale`) a zmenšení se hlásí ve stavovém řádku i v okně tisku
+přes `ContentShrinkWarnings`. Změna by znamenala vrátit čtyři dny staré rozhodnutí, tak jsem to
+nechal na Janovi.
+
 ## 2026-09-06 (1) - ✂ skupina dnů začíná vlastní tabulku, když to nestojí list navíc
 
 Starý tisk odděluje skupiny dnů, kdykoli je to zadarmo - proto z něj koukají listy jen

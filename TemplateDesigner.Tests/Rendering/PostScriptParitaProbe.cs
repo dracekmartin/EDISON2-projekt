@@ -1,0 +1,82 @@
+using System.IO;
+using ALWA.SYS;
+using TemplateDesigner.Designer;
+using TemplateDesigner.Models;
+using TemplateDesigner.Serialization;
+using Xunit;
+
+namespace TemplateDesigner.Tests.Rendering;
+
+/// <summary>
+/// Sonda pro porovnání se starým postskriptovým tiskem: načte šablonu ze souboru, stáhne reálná
+/// data linky z Caché a vyrenderuje PNG. Slouží k ladění šablony proti výtisku starého modulu.
+///
+/// ⚠️ **Defaultně vypnutá** - běží jen s <c>TD_PS_PROBE=1</c>, protože sahá na dev server
+/// (VPN) a zapisuje mimo repozitář. Bez proměnné se přeskočí, takže sada zůstane strojově
+/// nezávislá (architecture-rules must-not-happen #6).
+///
+/// Vstupy proměnnými prostředí: <c>TD_PS_TEMPLATE</c> (cesta k JSON šablony),
+/// <c>TD_PS_OUT</c> (cílové PNG), <c>TD_PS_LINKA</c>, <c>TD_PS_SKUPINA</c>, <c>TD_PS_IDFA</c>,
+/// <c>TD_PS_DPI</c>, <c>TD_PS_OBOUSMERNE</c>.
+/// </summary>
+public class PostScriptParitaProbe
+{
+    [Fact]
+    public void VyrenderujLinkuDoPng()
+    {
+        if (Environment.GetEnvironmentVariable("TD_PS_PROBE") != "1") return;
+
+        string templatePath = Env("TD_PS_TEMPLATE");
+        string outPath      = Env("TD_PS_OUT");
+        string idfa         = Env("TD_PS_IDFA", "CB_CSADAD");
+        string skupina      = Env("TD_PS_SKUPINA", "1");
+        string linka        = Env("TD_PS_LINKA", "330511");
+        string obousmerne   = Env("TD_PS_OBOUSMERNE", "true");
+        float  dpi          = float.Parse(Env("TD_PS_DPI", "200"));
+
+        var template = TemplateSerializer.Deserialize(File.ReadAllText(templatePath));
+
+        var mlRest = new MLRest("192.168.16.1", 57770)
+        {
+            ClassNamespace = "MLINE",
+            DataNamespace  = idfa,
+            Idfa           = idfa,
+            LoginName      = "david.zeman",
+            FullName       = "David Zeman",
+            UserID         = "david.zeman",
+            Mlp            = "david.zeman",
+            Locale         = "cs_CZ",
+            EdisonVersion  = "PROBE-1.0"
+        };
+
+        var inVar = new CVar();
+        inVar["SKUPINA_LINEK_ID"]  = new CVar(skupina);
+        inVar["LINKA_ID"]          = new CVar(linka);
+        inVar["OBOUSMERNY_TISK"]   = new CVar(obousmerne);
+        inVar["DELENI_SLOUPCU"]    = new CVar("Pracovní dny / Soboty / Neděle+svátky");
+        inVar["TVAR_NAZVU_ZASTAVKY"] = new CVar("Plný CIS");
+
+        var result = mlRest.Query("ALVA.TemplateDesigner.Agendy.LinkovyJrAd", "GetData", inVar);
+        Assert.False(mlRest.RestStatus.State == MLRStatus.EState.Error, mlRest.RestStatus.Message);
+
+        var pages = CacheAgendaProvider.ParsePages(
+            result.Select(kvp => (kvp.Key, kvp.Value?.Value?.ToString())));
+        Assert.NotNull(pages);
+
+        var state = new DesignerState { CurrentTemplate = template };
+        var canvas = new PreviewCanvas(state);
+        int count = canvas.RenderMultiDataToPng(outPath, pages!, dpi, template);
+
+        var (nalezy, total) = canvas.CountOverflowingPages(pages!);
+        File.WriteAllText(Path.ChangeExtension(outPath, ".txt"),
+            $"stránek: {count} (layout {total})\n" +
+            string.Join("\n", nalezy.Select(n => $"přetečení str. {n.CisloStranky}: {n.Druh} sekce={n.Sekce} prvek={n.Prvek} presah={n.PresahMm:0.0}mm")));
+
+        Assert.True(count > 0, "Nevznikla ani jedna stránka");
+    }
+
+    private static string Env(string name, string? fallback = null) =>
+        Environment.GetEnvironmentVariable(name)
+        ?? fallback
+        ?? throw new InvalidOperationException($"Chybí proměnná prostředí {name}");
+}
