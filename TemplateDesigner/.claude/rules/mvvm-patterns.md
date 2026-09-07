@@ -112,6 +112,11 @@ public class MyElement : TemplateElement
 
 **Princip „rychlý přístup × cascade":**
 - Panel má jen nejčastěji upravované properties (bg + text color pro Header a Data)
+  a **velikost písma obou zón** (`GetCellZoneFontSizeDescriptors`) - ta není kosmetika, nese
+  výšku řádku i šířku sloupce, takže bez ní se rozměr tabulky nedal změnit jinak než po
+  sloupcích v dialogu (nález Jan 7. 9.). ⚠️ Zóny mají **různé** zapečené výchozí velikosti
+  (záhlaví 9 pt, buňky 8 pt) - jedno číslo pro obě by ve formuláři ukazovalo jinou hodnotu,
+  než se vykreslí
 - Vše ostatní v dialogu kde má smysl per-column granularita
 - **Promoted shortcut** (výjimka): nejčastější toggle v elementu může jít do panelu ze záměrných UX důvodů (např. `Tučné záhlaví` u TableElement). Použít zřídka, dokumentovat proč
 

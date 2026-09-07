@@ -2359,6 +2359,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new ColorPropertyDescriptor { Label = "Barva textu", Group = "Přípojné řádky",
             Get = () => PripojStyle.TextColor ?? ResolveElementPripojParent().TextColor, Set = v => PripojStyle.TextColor = v },
         .. GetScheduleBaseDescriptors(),
+        .. GetCellZoneFontSizeDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
         GetDataRowHeightDescriptor(),
         .. GetPositionDescriptors(),

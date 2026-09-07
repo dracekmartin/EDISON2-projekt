@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-09-07 (15) - 🔤 tabulka linky má velikost písma pro celý prvek
+
+Nález Jan 7. 9. při stavbě šablony na školení: velikost písma šla u tabulky linky nastavit
+**jen po sloupcích** v dialogu (šest sloupců × dvě zóny), nebo přeškálováním celé šablony.
+Minuty odjezdů („Velikost záhlaví") i Poznámky („Velikost poznámek") element-level velikost mají -
+u tabulky linky chyběla jako u jediné.
+
+**Není to kosmetika, je to rozměr.** Velikost buněk nese **výšku řádku** (auto = font × 0,56 mm)
+i **šířku sloupce spoje**. Na 31 zastávkách je 9 pt proti 4,8 pt rozdíl **158 proti 65 mm**, tedy
+dvě stránky proti jedné.
+
+Nově jsou v panelu i ve formuláři prvku dvě pole **Velikost** (pt) - ve skupině Záhlaví a Datové
+buňky. Zapisují se do stylu prvku, tedy do té vrstvy kaskády, kde už sedí barvy, takže
+**per-sloupcová velikost z dialogu dál vyhrává**.
+
+⚠️ Zóny mají **různé** zapečené výchozí velikosti: záhlaví **9 pt**, buňky **8 pt**. První verze
+nabízela devítku u obojího a driftový test to shodil - formulář by u buněk ukazoval jinou
+hodnotu, než se vykreslí.
+
+Ověřeno: .NET **1577/1577** (6 nových testů, jeden hlídá, že menší písmo opravdu zkrátí tabulku,
+a jeden, že zadaná výška řádku zůstává silnější). Nová pole ověřená **voláním** `Init` na
+serveru v obou namespacech (9 a 8 pt, rozsah 3-24, jednotka pt).
+
+Zbývá: táž mezera je u **Seznamu zastávek**. Tam to ale nejde jen přidat - prvek si render
+ořezává na výšku prvku a při prázdné výšce by bral 60 mm z placeholderu, takže obsah nad
+60 mm by zmizel.
+
 ## 2026-09-07 (14) - 📄 dvě setiny milimetru už nevyrobí stránku navíc
 
 Nález Jan 7. 9. při stavbě šablony na školení: tři prázdné sekce vyšly na dvě stránky a výstup

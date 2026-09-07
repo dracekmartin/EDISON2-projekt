@@ -337,6 +337,37 @@ public abstract class ScheduleElementBase : TemplateElement
         },
     ];
 
+    /// <summary>
+    /// Element-level **velikost písma** pro zóny Záhlaví a Datové buňky - protějšek
+    /// <see cref="GetCellZoneBaseColorDescriptors"/> pro to, co u tabulky rozhoduje o rozvržení.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Velikost buněk nese i **výšku řádku** (auto se počítá z fontu) a **šířku sloupce spoje**,
+    /// takže bez ní se rozměr tabulky nedal změnit jinak než po sloupcích v dialogu, nebo přeškálováním
+    /// celé šablony (nález Jan 7. 9. při stavbě šablony: 9 pt proti 4,8 pt je na 31 zastávkách
+    /// rozdíl 158 proti 65 mm).
+    ///
+    /// <para>Je to **vrstva prvku** v kaskádě, ne přepis: per-sloupcová velikost z dialogu dál
+    /// vyhrává, protože se resolvuje nad tímhle stylem.</para>
+    /// </remarks>
+    protected IReadOnlyList<PropertyDescriptor> GetCellZoneFontSizeDescriptors(
+        string headerGroup = "Záhlaví",
+        string dataGroup = "Datové buňky") =>
+    [
+        new FloatPropertyDescriptor
+        {
+            Label = "Velikost", Group = headerGroup, Unit = "pt", Min = 3, Max = 24,
+            Get = () => HeaderStyle.FontSize ?? ScheduleHeaderDefaults.FontSize,
+            Set = v => HeaderStyle.FontSize = v,
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Velikost", Group = dataGroup, Unit = "pt", Min = 3, Max = 24,
+            Get = () => DataStyle.FontSize ?? ScheduleDataDefaults.FontSize,
+            Set = v => DataStyle.FontSize = v,
+        },
+    ];
+
     // ─── Parse helpery ──────────────────────────────────────────────────────
 
     protected static int ParseInt(string s) =>

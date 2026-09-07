@@ -61,6 +61,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
+        // Velikost je u tabulky rozměrová volba, ne kosmetika: nese výšku řádku i šířku sloupce
+        // spoje. Prázdné pole = dědí se (kaskáda dá 9 pt), per-sloupcová velikost z dialogu vyhrává.
+        s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", 9, 3, 24, "pt", "0.#")
+        s f.helpText = "Písmo záhlaví celého prvku. Jednotlivému sloupci se dá přebít v tabu Sloupce."
         // Bez výchozí hodnoty - podbarvení nese prvek sám, prázdno znamená bez podbarvení.
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
@@ -68,6 +72,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
         d form.AddGroup("data", "Datové buňky")
+        s f = form.AddDecimal("DataStyle.FontSize", "Velikost", 8, 3, 24, "pt", "0.#")
+        s f.helpText = "Písmo buněk celého prvku. Řídí i výšku řádku, když je prázdná, a šířku sloupce spoje."
         s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Pozadí buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
