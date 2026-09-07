@@ -70,6 +70,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#00FFFFFF"
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("HodinaVetsi", "Hodina větším písmem (16 15)")
+        d f.AddListItem("SDvojteckou", "Celý čas stejně (16:15)")
+        s f.value = "HodinaVetsi"
+        s f.helpText = "Starý tisk sází hodinu větším písmem a minutu menším, oddělené mezerou bez dvojtečky. Druhá volba vypíše celý čas jednou velikostí."
+        s f = form.AddDecimal("PomerMinuty", "Velikost minut", 0.75, 0.3, 1)
+        s f.helpText = "Podíl velikosti minut vůči hodině. 1 = obojí stejně velké. Uplatní se jen u formátu s hodinou větším písmem."
         d form.AddBool("HighlightOddTc", "Podbarvit lichá Tč", 1)
         s f = form.AddFieldToLastGroup("OddTcBackColor", "Barva lichých Tč", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFEEEEEE"

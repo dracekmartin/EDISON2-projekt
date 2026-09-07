@@ -10,6 +10,20 @@ namespace TemplateDesigner.Models.Elements;
 /// Kolik místa zaberou přípojné řádky: buď řádek pro každý spoj, nebo se přípoje jednoho směru
 /// slijí do jednoho řádku jako ve starém tisku.
 /// </summary>
+public enum FormatCasuSpoje
+{
+    /// <summary>Hodina větším písmem, minuta menším, oddělené mezerou: „16 15". Tvar starého
+    /// postskriptového tisku, kde to řídí dvě samostatné velikosti písma (`/Spojscale`,
+    /// `/Spojscale1`; u linky nastavení „fonty - hh~mm").</summary>
+    HodinaVetsi,
+    /// <summary>Celý čas jednou velikostí, oddělený dvojtečkou: „16:15".</summary>
+    SDvojteckou,
+}
+
+/// <summary>
+/// Kolik místa zaberou přípojné řádky: buď řádek pro každý spoj, nebo se přípoje jednoho směru
+/// slijí do jednoho řádku jako ve starém tisku.
+/// </summary>
 public enum PripojSlucovani
 {
     /// <summary>Řádek pro každý spoj, popisek s číslem spoje a linky (tvar do 4. 9. 2026).</summary>
@@ -112,6 +126,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// stejný důvod, proč je základ sloupce společný pro všechny bloky).</para>
     /// </remarks>
     public bool JednotnaSirkaSpoju { get; set; } = true;
+
+    /// <summary>Jak se sází čas spoje (výchozí hodina větším písmem, jako ve starém tisku).</summary>
+    public FormatCasuSpoje FormatCasu { get; set; } = FormatCasuSpoje.HodinaVetsi;
+
+    /// <summary>
+    /// Podíl velikosti minut vůči hodině při <see cref="FormatCasuSpoje.HodinaVetsi"/>.
+    /// </summary>
+    /// <remarks>
+    /// Starý tisk má pro hodinu a minutu dvě **nezávislé** velikosti (`/Spojscale`, `/Spojscale1`).
+    /// U nás je to jeden podíl, protože velikost hodiny už drží styl datových buněk - dvě čísla
+    /// vedle sebe by znamenala, že jedno z nich kaskádu obchází.
+    /// </remarks>
+    public float PomerMinuty { get; set; } = 0.75f;
 
     /// <summary>
     /// Kazda zona hranicni zastavky ve vlastnim sloupci (vychozi vypnuto).
@@ -1701,21 +1728,51 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// Buňka umí jen jeden font, takže se taková buňka nechá prázdná a nakreslí se ručně. Sdílí to
     /// hlavní i zrcadlený blok - značka patří ke spoji, ne ke straně tabulky.
     /// </remarks>
-    private static void ZnackyVBunce(List<LineTripData> spoje, LineStopData stop, int si,
+    private void ZnackyVBunce(List<LineTripData> spoje, LineStopData stop, int si,
         Dictionary<int, List<SymbolRunRenderer.Run>> cil)
     {
         for (int ti = 0; ti < spoje.Count; ti++)
         {
             var t = spoje[ti];
-            string znak = ZnakNavaznosti(t, stop.Poradi);
-            if (znak == "") continue;
             string cas = si < t.Casy.Count ? t.Casy[si] : "";
             if (cas == "") continue;
-            var runs = SymbolRunRenderer.BuildRuns([znak], SymbolMap.ResolveLinkovy);
-            if (!SymbolRunRenderer.MaPiktogram(runs)) continue;   // neověřená značka → nech text
-            runs.Add(new(" " + cas, false));
+
+            string znak = ZnakNavaznosti(t, stop.Poradi);
+            var runs = znak == "" ? [] : SymbolRunRenderer.BuildRuns([znak], SymbolMap.ResolveLinkovy);
+            bool maZnacku = SymbolRunRenderer.MaPiktogram(runs);
+            if (!maZnacku) runs.Clear();   // neověřená značka → jako by žádná nebyla
+
+            var casRuns = CasRuns(cas);
+            // Buňka jde ručně jen tehdy, když v ní je aspoň jedna věc, kterou obyčejná buňka
+            // neumí: piktogram, nebo hodina a minuta různě velké. Jinak ať ji vysází CellRenderer.
+            if (!maZnacku && casRuns is null) continue;
+
+            if (maZnacku) runs.Add(new(" ", false));
+            if (casRuns is null) runs.Add(new(cas, false));
+            else runs.AddRange(casRuns);
             cil[ti] = runs;
         }
+    }
+
+    /// <summary>
+    /// Rozpad času na hodinu a menší minutu, nebo null, když se má vysázet jako obyčejný text.
+    /// </summary>
+    /// <remarks>
+    /// Dělí se jen tvar <c>HH:MM</c>. Buňka může nést i značku („&lt;" jede po jiné trase,
+    /// „|" projíždí) nebo prázdno - to se dělit nesmí, jinak by se z „&lt;" stal nesmysl.
+    /// <para>Mezera místo dvojtečky je záměr, ne úspora: starý tisk sází „16 15" a dvojtečka
+    /// mezi různě velkými čísly působí jako překlep.</para>
+    /// </remarks>
+    internal List<SymbolRunRenderer.Run>? CasRuns(string cas)
+    {
+        if (FormatCasu != FormatCasuSpoje.HodinaVetsi) return null;
+        int dvojtecka = cas.IndexOf(':');
+        if (dvojtecka <= 0 || dvojtecka == cas.Length - 1) return null;
+        string hodina = cas[..dvojtecka];
+        string minuta = cas[(dvojtecka + 1)..];
+        if (!hodina.All(char.IsDigit) || !minuta.All(char.IsDigit)) return null;
+        float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
+        return [new(hodina, false), new(" ", false, pomer), new(minuta, false, pomer)];
     }
 
     /// <summary>Značka návaznosti, kterou má spoj u tohohle tarifního čísla - prázdné, když žádná.
@@ -2010,6 +2067,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PripojeSlucovani = PripojeSlucovani,
             PadEmptyColumns = PadEmptyColumns,
             JednotnaSirkaSpoju = JednotnaSirkaSpoju,
+            FormatCasu = FormatCasu,
+            PomerMinuty = PomerMinuty,
             RozdelitZonyDoSloupcu = RozdelitZonyDoSloupcu,
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
@@ -2054,6 +2113,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ] },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
         new BoolPropertyDescriptor { Label = "Stejně široké sloupce spojů", Group = "Sloupce", Get = () => JednotnaSirkaSpoju, Set = v => JednotnaSirkaSpoju = v },
+        new EnumPropertyDescriptor
+        {
+            Label = "Formát času", Group = "Datové buňky",
+            Get = () => FormatCasu, Set = v => FormatCasu = (FormatCasuSpoje)v,
+            Options =
+            [
+                ("Hodina větším písmem (16 15)", (object)FormatCasuSpoje.HodinaVetsi),
+                ("Celý čas stejně (16:15)",      (object)FormatCasuSpoje.SDvojteckou),
+            ],
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Velikost minut", Group = "Datové buňky",
+            Get = () => PomerMinuty, Set = v => PomerMinuty = v,
+            Min = 0.3f, Max = 1f, Format = "0.##",
+        },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = "Sloupce",
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },

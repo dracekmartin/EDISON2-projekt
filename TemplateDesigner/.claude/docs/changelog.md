@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-07 (2) - 🕐 hodina větším písmem, minuta menším - jako ve starém tisku
+
+Starý postskriptový tisk posílá čas jako `hh,mm` (`JRapiLinPrtPS7.mac:178`) a čárka je pokyn
+programu vysázet hodinu větším písmem a minutu menším, oddělené **mezerou bez dvojtečky**. Řídí
+to dvě z devíti čísel, která se do programu propisují (`/Spojscale`, `/Spojscale1`; u linky
+nastavení „fonty - hh~mm", `JRapiLin1.mac:207`). My jsme čas kreslili jako jeden řetězec v jedné
+velikosti.
+
+**Nově to umí i tabulka linky a je to výchozí.** Volba „Formát času" má druhou možnost „Celý čas
+stejně (16:15)"; velikost minut se ladí podílem vůči hodině (výchozí 0,75).
+
+Kreslí se **stejnou ruční cestou, jakou už používají buňky se značkou návaznosti** - `Run` v ní
+umí nést vlastní zmenšení. Nevznikla tedy třetí kreslicí logika; buňka se značkou i časem projde
+jedním průchodem a všechny úseky sedí na společném účaří.
+
+⚠️ **Dělí se jen tvar `HH:MM`.** Buňka může nést i „<" (jede po jiné trase) nebo „|" (projíždí);
+ty se rozdělit nesmí, jinak by z nich vznikl nesmysl a půlka by se vysázela menším písmem.
+
+⚠️ **Kouřová zkouška „ve sloupci je vidět čas" tuhle featuru neuhlídá** - kdyby ruční cesta
+vypadla, buňka si text nechá a vysází se starým způsobem, takže obsah nezmizí, jen se změní tvar.
+Že se zmenšení opravdu propíše do kreslení, drží test na množství inkoustu (ověřeno mutací).
+
+Ověřeno: .NET **1532/1532** (15 nových testů), Caché 150/150, nová pole ověřená voláním `Init`
+na serveru. Vyrenderováno na reálné lince `330511` (CB_CSADAD).
+
 ## 2026-09-07 (1) - 📐 volba „stejně široké sloupce spojů" u tabulky linky
 
 Vzešlo z porovnání se starým postskriptovým tiskem linky `330511` (CB_CSADAD) při přípravě
