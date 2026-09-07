@@ -810,10 +810,14 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     f sl=1:1:pocetKmSloupcu {
         d ..PushKm(km, dataDB, sku, lin, smer, sl, poradi, maxKmVeta, jeTam)
     }
-    // Km opačného směru (jen obousměrná sestava) - přepočet zrcadlí ten hlavní: co je pro "tam"
-    // přímé, je pro "zpět" odečtené od maxima, a naopak.
+    // Km opačného směru (jen obousměrná sestava). ⚠️ **Bere se stejnou orientací jako hlavní směr**,
+    // ne zrcadlenou: sloučená stránka má pořadí zastávek podle hlavního směru, takže i kilometry
+    // opačného směru musí shora dolů **narůstat**. Uložené hodnoty jsou v pořadí zastávek vzestupné,
+    // takže se berou tak, jak jsou. Odečtení od maxima (které dává smysl na samostatné stránce směru
+    // "zpět", kde jsou zastávky obráceně) tady vyrábělo sloupce klesající odshora dolů, což ve starém
+    // tisku není - tam jdou všechny sloupce od nuly dolů (nález Jan 7. 9.).
     f sl=1:1:pocetKmOpac {
-        d ..PushKm(km, dataDB, sku, lin, smerOpacny, sl, poradi, maxKmVetaOpac, 'jeTam)
+        d ..PushKm(km, dataDB, sku, lin, smerOpacny, sl, poradi, maxKmVetaOpac, jeTam)
     }
     d z.%Set("KM", km)
     q z

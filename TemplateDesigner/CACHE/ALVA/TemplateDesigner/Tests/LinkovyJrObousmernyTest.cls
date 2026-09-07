@@ -91,6 +91,45 @@ Method TestKmObouSmeruJsouNaSlouceneStrance()
 	do $$$AssertEquals(slouceno, kmT + kmZ, hlaskaOba)
 }
 
+/// Na sloučené stránce jsou zastávky v pořadí hlavního směru, takže **všechny** km sloupce musí
+/// shora dolů narůstat - i ty opačného směru. Odečtení od maxima (správné na samostatné stránce
+/// směru "zpět", kde jsou zastávky obráceně) tady vyrábělo sloupce klesající odshora dolů, což ve
+/// starém tisku není (nález Jan 7. 9.).
+Method TestKmOpacnehoSmeruNarustajiShoraDolu()
+{
+	set db = ..#TESTDB
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - test přeskočen")
+		quit
+	}
+	set kmZ = +$get(^[db]JRL(..#TESTSKU, ..#TESTLIN, "PATCH", "KmsSmer", "Z"))
+	if kmZ = 0 {
+		do $$$AssertTrue(1, "linka nemá km sloupce směru zpět - test přeskočen")
+		quit
+	}
+
+	do ..SetupSys(.sys)
+	kill parametry
+	set parametry("OBOUSMERNY_TISK") = "true"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, ..#TESTSKU, ..#TESTLIN, .parametry)
+	set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", 1))
+	set zastavky = page.rows.ZASTAVKY
+
+	// Poslední sloupec pole KM patří poslednímu sloupci opačného směru.
+	set posledni = zastavky.%Get(0).KM.%Size() - 1
+	set prvniHodnota = "", posledniHodnota = "", klesa = 0
+	for i = 0:1:zastavky.%Size() - 1 {
+		set v = zastavky.%Get(i).KM.%Get(posledni)
+		continue:'$isvalidnum(v)
+		if prvniHodnota = "" set prvniHodnota = v
+		if (posledniHodnota '= "") && (v < posledniHodnota) set klesa = 1
+		set posledniHodnota = v
+	}
+
+	set hlaska = "km opačného směru klesají odshora dolů (od " _ prvniHodnota _ " k " _ posledniHodnota _ ")"
+	do $$$AssertNotTrue(klesa, hlaska)
+}
+
 /// Délka pole KM první zastávky první stránky. Vrací 0, když linka na serveru není.
 Method DelkaKm(obousmerne As %Boolean, ByRef delka) As %Boolean
 {

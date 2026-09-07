@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-07 (9) - 🔁 km opačného směru se na sloučené stránce tiskly obráceně
+
+Nález Jan 7. 9. hned po předchozí opravě: „ve starém žádné otočené nejsou - všechny tam jsou
+zeshora od nuly a dolů se zvyšující".
+
+**Chyba z téhož dne.** Km opačného směru se odečítaly od maxima sloupce. Na **samostatné** stránce
+směru „zpět" to je správně, protože tam jsou zastávky v obráceném pořadí. Na **sloučené** stránce
+je ale pořadí zastávek podle hlavního směru, takže z toho vyšly sloupce klesající odshora dolů.
+Uložené hodnoty jsou v pořadí zastávek vzestupné a berou se nově tak, jak jsou.
+
+⚠️ **První test hlídal jen počet sloupců, ne orientaci** - proto tuhle chybu nezachytil a našel ji
+až Jan na renderu. Doplněný test jde po hodnotách: v posledním sloupci opačného směru nesmí
+hodnota shora dolů klesnout. Mutace „vrať zrcadlení" ho shodí (`od 22 k 0`).
+
+Ověřeno: Caché **152/152** (1 nový test). Vyrenderováno na lince `330511` - všechny km sloupce
+narůstají odshora dolů.
+
 ## 2026-09-07 (8) - 🔢 hodina bez vedoucí nuly a poctivě změřený práh sloupce
 
 Nález Jan 7. 9. z porovnání sloupce spoje: u nás `07 10`, ve starém tisku `7 10`.
