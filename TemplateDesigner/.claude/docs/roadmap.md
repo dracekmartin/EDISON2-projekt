@@ -119,6 +119,11 @@ takže nejde o práci, ale o doklad.
   glyfů). Postskript si je kreslí sám jako vektory. U nás to tedy znamená kreslicí featuru podobnou
   šipce směru, ne dva řádky v `SymbolMap`. Dnes se tiskne holé `<` a `|`.
 
+- **`B128` Přípoje zrcadleného směru se v obousměrném tisku netisknou** [S] (nález 7. 9. při
+  opravě řezu stránky). Přípojný řádek se staví jen ze spojů hlavního směru; zrcadlená strana má
+  buňky vždy prázdné, takže „vyčká / navazuje" u druhého směru na výtisku chybí. Podklad:
+  `changelog.md` 7. 9. (11).
+
 - **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9., pohltí `B100`). Ruční zlom na
   tarifním čísle (`PATCH,ZLOM`) plus tři volby dělené linky (`gSetLinPrt` dta 21-23): tisk na jednu
   stranu, hlavička a poznámky pro směr nebo pro část, směr na stranu. **Dělá se to dohromady** -

@@ -450,8 +450,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return (Usek(_cachedHlavni), Usek(_cachedZrcadlene));
     }
 
-    /// <summary>Všechny spoje bloku dohromady - pro výpočty, kterým je strana jedno
-    /// (výška řádků, přípojné podřádky).</summary>
+    /// <summary>Všechny spoje bloku dohromady - pro výpočty, kterým je strana jedno (šířky sloupců).
+    /// ⚠️ <b>Ne pro výšku řádků</b>: přípojné řádky se kreslí jen z hlavního směru.</summary>
     private List<LineTripData> SpojeBlokuVse(TableLayout.SloupcovyBlok blok)
     {
         var (hlavni, zrcadlene) = SpojeBloku(blok);
@@ -1232,7 +1232,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return [.. SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!))
             .Select(b =>
             {
-                var (hlava, radky) = VyskyRadkuBloku(SpojeBlokuVse(b));
+                var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(b).Hlavni);
                 return hlava.Sum() + radky.Sum();
             })];
     }
@@ -1273,12 +1273,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             radky.Add(rowH);
             if (sOdjezdem is null || !NesePripoje(zastavka, sOdjezdem)) continue;
-            // ⚠️ Jen ze spojů **tohohle bloku** - kreslí se taky tak. Počítat je ze všech spojů
-            // linky znamenalo, že se bloky ve výpočtu posouvaly dopředu proti tomu, kde se opravdu
-            // kreslí, a řez stránky padl doprostřed hlavičky dalšího bloku (nahlásil Jan 25. 8.:
-            // na konci stránky osiřelý pás skupin, na další hlavička dvakrát).
-            // Slučování mění POČET řádků, takže se výška musí počítat z téhož seskupení, jaké
-            // kreslí render - jinak by řez padl jinam, než tabulka vyjde.
+            // ⚠️ Jen ze spojů **tohohle bloku a hlavního směru** - kreslí se taky tak
+            // (`BuildRowPlan` dostává `spojeBloku`; zrcadlená strana má v přípojném řádku prázdné
+            // buňky). Dvakrát se tu už rozešel výpočet s kreslením a pokaždé to skončilo řezem
+            // uprostřed hlavičky dalšího bloku: 25. 8. počítáním ze všech spojů linky, 7. 9.
+            // počítáním z obou směrů bloku (na `330510` 2,1 mm na blok, za tři bloky 6,4 mm).
+            // Slučování navíc mění POČET řádků, takže musí sedět i seskupení.
             int pripoju = PripojneRadky(zastavka, spojeBloku).Count;
             for (int i = 0; i < pripoju; i++) radky.Add(PripojRowH());
         }
@@ -1313,7 +1313,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float zacatekBloku = 0f;
         for (int b = 0; b < bloky.Count; b++)
         {
-            var (hlava, radky) = VyskyRadkuBloku(SpojeBlokuVse(bloky[b]));
+            var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(bloky[b]).Hlavni);
             if (b > 0) zlomy.Add(new Zlom(zacatekBloku, Silny: true));
 
             // hranice mezi řádky zastávek - první vynechat, jinak by zůstala hlava sama na stránce
@@ -1443,7 +1443,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // Řez padl doprostřed tohohle bloku → jeho hlavu zopakovat nad pokračováním.
                 // Kreslí se až po obsahu, mimo jeho ořez - viz `orezOd` výše.
                 if (ctx.OpakovanaHlavickaMm > 0.01f && ctx.ClipTopMm > y && ctx.ClipTopMm < konecBloku)
-                    hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku(SpojeBlokuVse(blok)).Hlava.Count)];
+                    hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku(SpojeBloku(blok).Hlavni).Hlava.Count)];
 
                 float yBloku = y;
                 y = RowPlanRenderer.DrawRows(ctx, X, y, SirkaTabulkyMm(plan), plan, scale)

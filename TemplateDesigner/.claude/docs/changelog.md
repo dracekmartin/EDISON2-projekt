@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-07 (11) - 🐛 stránka se řezala uprostřed hlavičky bloku
+
+Nález Jan 7. 9. na lince `330510` (víc skupin dnů než `330511`): obousměrný tisk vyšel „velmi
+rozpadle" - na konci stránky šedý pás s nadpisem skupiny dnů a pod ním nic, na další stránce
+zbytek téhož pásu.
+
+**Výška počítala přípojné řádky z obou směrů, kreslí se jen z hlavního.** `BuildRowPlan` dostává
+spoje bloku jednoho směru (zrcadlená strana má v přípojném řádku prázdné buňky), ale výška bloku se
+počítala ze `SpojeBlokuVse`, tedy z obou. Každý blok tím vyšel o **2,1 mm** vyšší, než se nakreslil,
+a hranice, kterou prvek nabízí stránkování, se posunula pod skutečný začátek bloku. Za tři bloky
+se rozdíl nasčítal na **6,4 mm** a řez padl doprostřed hlavičky.
+
+Změřeno na `330510`: výšky bloků `68,3 / 68,3 / 78,8 / 70,4` proti nakresleným `66,1 / 66,2 / 76,7`.
+Po opravě sedí (`66,2 / 66,2 / 76,7 / 68,3`) a osiřelý pás z výtisku zmizel.
+
+⚠️ **Potřetí totéž místo** (25. 8. se počítalo ze všech spojů linky, 7. 9. z obou směrů bloku).
+Nové testy proto hlídají obojí: výšku prvku i polohu silných zlomů.
+
+**Nesouvisející mezera, kterou to odhalilo:** přípoje zrcadleného směru se v obousměrném tisku
+netisknou vůbec. Zapsáno jako `B128`.
+
+Ověřeno: .NET **1561/1561** (3 nové testy), vyrenderováno proti reálným datům linky.
+
 ## 2026-09-07 (10) - 🔁 varování o nevejití říká, co s tím
 
 Nález Jan 7. 9.: „ta stránka zobrazuje varování, takže program by s tím měl něco udělat a ne to

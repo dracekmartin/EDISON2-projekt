@@ -80,6 +80,22 @@ public class PostScriptParitaProbe
                     + $" (základ {b.SloupecSpojeMm:0.00})")) + "\n";
         }
 
+        // Kde se sekce reálně rozřízla proti tomu, kde to prvek dovolil - hledá se řez uvnitř bloku.
+        var layout = new TemplateDesigner.Models.Layout.PageLayoutEngine(
+            new TemplateDesigner.Models.Layout.SkiaHeightCalculator()).Layout(template, pages![0]);
+        foreach (var el in template.Sections.SelectMany(x => x.Elements)
+                     .OfType<TemplateDesigner.Models.Elements.LineTableElement>())
+        {
+            var zl = el.ZlomyMm(pages![0]);
+            popisBloku += "vyska prvku " + el.CalculateHeightFromData(pages![0]).ToString("0.0")
+                + " mm, silne zlomy: "
+                + string.Join(", ", zl.Where(z => z.Silny).Select(z => z.Mm.ToString("0.0"))) + "\n";
+        }
+        foreach (var pg in layout.Pages)
+            foreach (var ps2 in pg.Sections.Where(x => x.ClipTop is not null))
+                popisBloku += $"str. {pg.PageNumber} sekce {ps2.Source.Name}: rez {ps2.ClipTop:0.0} → "
+                    + $"{ps2.ClipBottom:0.0} (opakovana hlavicka {ps2.OpakovanaHlavickaMm:0.0})\n";
+
         var (nalezy, total) = canvas.CountOverflowingPages(pages!);
         File.WriteAllText(Path.ChangeExtension(outPath, ".txt"),
             $"stránek: {count} (layout {total})\n" + popisBloku +
