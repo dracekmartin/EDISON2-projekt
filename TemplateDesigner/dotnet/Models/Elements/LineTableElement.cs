@@ -127,6 +127,28 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public bool JednotnaSirkaSpoju { get; set; } = true;
 
+    /// <summary>
+    /// Vyplnit tečkami buňky spojů, ve kterých není čas (výchozí vypnuto).
+    /// </summary>
+    /// <remarks>
+    /// Starý postskriptový tisk do takové buňky sází tečky (`TiT = "."`, `JRapiLinPrtPS.mac:58`),
+    /// takže tabulka drží svislé vodicí pruhy. ⚠️ **Výchozí vypnuto**: u linky, kde většina spojů
+    /// jede jen část trasy, se tabulka tečkami zaplní a čte se hůř než s prázdnem. Windows tisk
+    /// starého modulu výplň nemá vůbec - je to vlastnost postskriptu, ne obecná parita.
+    /// <para>Buňka se značkou („&lt;" jede po jiné trase, „|" projíždí) se nevyplňuje - není prázdná.</para>
+    /// </remarks>
+    public bool VyplnitPrazdneBunkySpoju { get; set; }
+
+    /// <summary>
+    /// Doplnit za název zastávky tečky až k pravému okraji sloupce (výchozí vypnuto).
+    /// </summary>
+    /// <remarks>
+    /// Vodicí tečky, po kterých oko dojede od názvu zastávky k času - starý postskriptový tisk je
+    /// má. Končí **před piktogramem přestupu**, který sedí u pravého okraje buňky; jinak by mu
+    /// vedly pod nohama.
+    /// </remarks>
+    public bool TeckyZaNazvemZastavky { get; set; }
+
     /// <summary>Jak se sází čas spoje (výchozí hodina větším písmem, jako ve starém tisku).</summary>
     public FormatCasuSpoje FormatCasu { get; set; } = FormatCasuSpoje.HodinaVetsi;
 
@@ -1631,11 +1653,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var st = tz.ForeColor is null ? tripCellStyle : tripCellStyle with { TextColor = tz.ForeColor };
                 string cas = znackyVBunceZrc.ContainsKey(ti) ? ""
                     : (siRadku < tz.Casy.Count ? tz.Casy[siRadku] : "");
+                if (cas == "" && !znackyVBunceZrc.ContainsKey(ti))
+                    cas = VyplnBunky(mrizka.SirkaZrcadlenehoMm(ti), st, ctx);
                 return (cas, st);
             });
+            var znakZastavkyPro = SymbolRunRenderer.BuildRuns(
+                stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveLinkovy);
             for (int ci = 0; ci < fixedCols.Count; ci++)
-                specs.Add(new(fixedCols[ci].Width, fixedCols[ci].Value(stop),
-                    OddTc(fixedCols[ci].DataStyle, oddTc), SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
+            {
+                var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
+                string hodnota = fixedCols[ci].Value(stop);
+                if (ci == nameIndex)
+                    hodnota = SNazvemATeckami(hodnota, fixedCols[ci].Width, bunkaStyl,
+                        znakZastavkyPro, symbolFace, ctx);
+                specs.Add(new(fixedCols[ci].Width, hodnota, bunkaStyl,
+                    SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
+            }
             PridejSpoje(specs, mrizka, trips.Count, tripCellStyle, ti =>
             {
                 var t = trips[ti];
@@ -1643,6 +1676,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // kterou prvek smí respektovat (R3). Spoj bez barvy nechá kaskádu být.
                 var cellStyle = t.ForeColor is null ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor };
                 string text = znackyVBunce.ContainsKey(ti) ? "" : (siRadku < t.Casy.Count ? t.Casy[siRadku] : "");
+                if (text == "" && !znackyVBunce.ContainsKey(ti))
+                    text = VyplnBunky(mrizka.SirkaSpojeMm(ti), cellStyle, ctx);
                 return (text, cellStyle);
             });
 
@@ -1763,6 +1798,55 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <para>Mezera místo dvojtečky je záměr, ne úspora: starý tisk sází „16 15" a dvojtečka
     /// mezi různě velkými čísly působí jako překlep.</para>
     /// </remarks>
+    /// <summary>
+    /// Řetězec teček, který vyplní <paramref name="volnoMm"/>, nebo prázdno, když se nevejde ani
+    /// jedna. Mezera před tečkami odděluje výplň od textu, za kterým stojí.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Ubírá se <see cref="CellRenderer.DefaultShrinkReserveMm"/>, jinak by přesně vyplněná
+    /// buňka spustila zmenšování textu a tečky by si samy zmenšily písmo celé buňky.
+    /// </remarks>
+    private static string Tecky(float volnoMm, SKFont font, float mmToPx)
+    {
+        float teckaMm = font.MeasureText(".") / mmToPx;
+        if (teckaMm <= 0f) return "";
+        float misto = volnoMm - CellRenderer.DefaultShrinkReserveMm;
+        int kolik = (int)MathF.Floor(misto / teckaMm);
+        return kolik <= 0 ? "" : new string('.', kolik);
+    }
+
+    /// <summary>Výplň prázdné buňky spoje, nebo prázdno když se výplň nepoužívá.</summary>
+    private string VyplnBunky(float sirkaSloupceMm, ResolvedTextStyle styl, RenderContext ctx)
+    {
+        if (!VyplnitPrazdneBunkySpoju) return "";
+        using var font = styl.CreateFont(1f, ctx.MmToPx);
+        return Tecky(sirkaSloupceMm - styl.PaddingLeft - styl.PaddingRight, font, ctx.MmToPx);
+    }
+
+    /// <summary>
+    /// Název zastávky doplněný tečkami k pravému okraji sloupce, nebo beze změny.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Piktogram přestupu se kreslí <b>zarovnaný doprava</b> v téže buňce
+    /// (<see cref="DrawZnakZastavky"/>), takže se jeho šířka musí od volného místa odečíst -
+    /// jinak by tečky vedly pod ním.
+    /// </remarks>
+    private string SNazvemATeckami(string nazev, float sirkaSloupceMm, ResolvedTextStyle styl,
+        List<SymbolRunRenderer.Run> znakZastavky, SKTypeface symbolFace, RenderContext ctx)
+    {
+        if (!TeckyZaNazvemZastavky || nazev == "") return nazev;
+
+        using var font = styl.CreateFont(1f, ctx.MmToPx);
+        using var symbol = new SKFont(symbolFace, font.Size);
+        float obsazenoMm = font.MeasureText(nazev + " ") / ctx.MmToPx;
+        foreach (var r in znakZastavky)
+            obsazenoMm += (r.Symbol ? symbol : font).MeasureText(r.Text) / ctx.MmToPx;
+
+        float volno = sirkaSloupceMm - styl.PaddingLeft - styl.PaddingRight - obsazenoMm;
+        string tecky = Tecky(volno, font, ctx.MmToPx);
+        return tecky == "" ? nazev : nazev + " " + tecky;
+    }
+
     internal List<SymbolRunRenderer.Run>? CasRuns(string cas)
     {
         if (FormatCasu != FormatCasuSpoje.HodinaVetsi) return null;
@@ -2069,6 +2153,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             JednotnaSirkaSpoju = JednotnaSirkaSpoju,
             FormatCasu = FormatCasu,
             PomerMinuty = PomerMinuty,
+            VyplnitPrazdneBunkySpoju = VyplnitPrazdneBunkySpoju,
+            TeckyZaNazvemZastavky = TeckyZaNazvemZastavky,
             RozdelitZonyDoSloupcu = RozdelitZonyDoSloupcu,
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
@@ -2119,8 +2205,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => FormatCasu, Set = v => FormatCasu = (FormatCasuSpoje)v,
             Options =
             [
-                ("Hodina větším písmem (16 15)", (object)FormatCasuSpoje.HodinaVetsi),
-                ("Celý čas stejně (16:15)",      (object)FormatCasuSpoje.SDvojteckou),
+                ("Minuty menším písmem (hh mm)", (object)FormatCasuSpoje.HodinaVetsi),
+                ("Celý čas stejně (hh:mm)",      (object)FormatCasuSpoje.SDvojteckou),
             ],
         },
         new FloatPropertyDescriptor
@@ -2129,6 +2215,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => PomerMinuty, Set = v => PomerMinuty = v,
             Min = 0.3f, Max = 1f, Format = "0.##",
         },
+        new BoolPropertyDescriptor { Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
+        new BoolPropertyDescriptor { Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = "Sloupce",
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },

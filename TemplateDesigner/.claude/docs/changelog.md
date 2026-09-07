@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-07 (3) - ⋯ tečková výplň jako ve starém tisku, dvě samostatné volby
+
+Starý postskript vyplňuje tečkami dvě různá místa a obojí jde teď zapnout u tabulky linky.
+**Obě volby jsou výchozí vypnuté** (rozhodnutí Jan 7. 9.): u linky, kde většina spojů jede jen část
+trasy, se tabulka tečkami zaplní a čte se hůř než s prázdnem.
+
+- **Tečky v prázdných buňkách** - buňka spoje bez času dostane výplň, takže tabulka drží svislé
+  vodicí pruhy (`TiT = "."`, `JRapiLinPrtPS.mac:58`).
+- **Tečky za názvem zastávky** - vodicí linka od názvu k pravému okraji sloupce.
+
+⚠️ **Buňka se značkou se nevyplňuje.** „<" znamená jinou trasu, „|" projetí bez zastavení - nejsou
+prázdné a přepsat je tečkami by smazalo informaci, kterou vysvětluje legenda. Hlídá to test,
+který porovnává inkoust se zapnutou a vypnutou výplní (mutace „vyplň i neprázdné buňky" ho shodí).
+
+⚠️ **Vodicí tečky končí před piktogramem přestupu**, který se kreslí zarovnaný doprava v téže
+buňce - jinak by mu vedly pod nohama. Od volného místa se navíc odečítá rezerva zmenšování textu;
+bez toho by přesně vyplněná buňka spustila zmenšení a srazila by s tečkami i název zastávky.
+
+Vedle toho **obecnější popisky formátu času** - místo konkrétního „16:15" je tam „hh:mm"
+(nález Jan 7. 9.). Hodnota se persistuje kódem (`HodinaVetsi`), ne popiskem, takže přejmenování
+nic uloženého nezahodí.
+
+Ověřeno: .NET **1537/1537** (5 nových testů), Caché 150/150, nová pole ověřená voláním `Init`
+na serveru. Vyrenderováno na reálné lince `330511`.
+
 ## 2026-09-07 (2) - 🕐 hodina větším písmem, minuta menším - jako ve starém tisku
 
 Starý postskriptový tisk posílá čas jako `hh,mm` (`JRapiLinPrtPS7.mac:178`) a čárka je pokyn
