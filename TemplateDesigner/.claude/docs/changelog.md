@@ -10,10 +10,15 @@ podmínka se ptala, jestli zastávka má **jakýkoli** atribut. Řídicí atribu
 `P` oddělený příjezd) se netisknou, takže právě u významných zastávek zbyla samotná mezera a název
 vyšel odsazený bez viditelného důvodu. Mezera se nově přidává jen za skutečnou značku.
 
-**Tučně je naopak záměr starého tisku** a nově to umíme taky. Zastávka s atributem `T` nebo `P`
-dostane tučný název - v legacy jí název dostane před sebe „#" místo „$" (`JRapiLinPrtPS1.mac:52`).
-Volba prvku **Tučně významné zastávky**, výchozí zapnuto. Cestující podle nich hledá, kde linka
-začíná, končí a kde se přestupuje.
+**Tučně je naopak údaj z jízdních řádů** a nově ho respektujeme. Atribut trasy `T` znamená
+v číselníku atributů trasy (číselník 16, `JRapiCis.mac:1284`) **doslova „tučně"** - dispečer si tak
+u konkrétní zastávky vyžádá zvýraznění; `P` („podtrženo s příjezdem a odjezdem") ho má taky.
+Tisknou to **obě** staré cesty: postskript dá názvu prefix „#" místo „$" (`JRapiLinPrtPS1.mac:52`),
+Windows tisk nastaví příznak řádku (`JRapiLinPrtWin.mac:1272-1276`). Volba prvku **Tučné zastávky
+dle trasy**, výchozí zapnuto.
+
+⚠️ **Není to naše rozhodnutí o vzhledu.** První verze to pojmenovala „významné zastávky" a `T`
+vyložila jako tarifní bod - číselník říká něco jiného a špatný název by se protáhl do produktu.
 
 ⚠️ **Mezera se testuje na textu, ne na pixelech.** První verze testu porovnávala inkoust ve výřezu
 obrázku a měřila jiný pás, než chtěla - dvě různé chyby se v ní vyrušily. Test nad výsledným

@@ -6,17 +6,17 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Rendering;
 
 /// <summary>
-/// Významná zastávka (tarifní bod „T", oddělený příjezd „P") se vypisuje tučně - jako ve starém
-/// tisku, kde její název dostane před sebe „#" místo „$" (`JRapiLinPrtPS1.mac:52`).
+/// Tučné písmo zadané u zastávky v trase linky (atribut „T" = doslova „tučně", číselník 16).
+/// Obě staré cesty ho tisknou: postskript prefixem „#", Windows tisk příznakem řádku.
 /// </summary>
-public class VyznamneZastavkyTests
+public class TucneZastavkyDleTrasyTests
 {
     private const float MmToPx = 20f;
 
     private static LineTableElement Prvek(bool tucne = true)
     {
         var el = ElementRenderFixtures.LineTable();
-        el.TucneVyznamneZastavky = tucne;
+        el.TucneZastavkyDleTrasy = tucne;
         el.Width = 80;
         el.DataRowHeight = 4f;
         return el;
@@ -66,7 +66,7 @@ public class VyznamneZastavkyTests
     // ── Tučné zvýraznění ────────────────────────────────────────────────────
 
     [Fact]
-    public void VyznamnaZastavkaJeTucne()
+    public void ZastavkaSAtributemTucneJeTucne()
     {
         using var tucne = Vykresli(Prvek(tucne: true), Data(["T"]));
         using var normalne = Vykresli(Prvek(tucne: false), Data(["T"]));
@@ -77,7 +77,7 @@ public class VyznamneZastavkyTests
 
     /// <summary>Běžná zastávka se tučně vypisovat nesmí, jinak by zvýraznění nic neříkalo.</summary>
     [Fact]
-    public void BeznaZastavkaTucneNeni()
+    public void ZastavkaBezAtributuTucneNeni()
     {
         using var s = Vykresli(Prvek(tucne: true), Data([]));
         using var bez = Vykresli(Prvek(tucne: false), Data([]));

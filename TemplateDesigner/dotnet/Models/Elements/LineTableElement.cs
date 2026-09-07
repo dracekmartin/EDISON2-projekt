@@ -164,14 +164,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public float PomerZnacek { get; set; } = 1.5f;
 
     /// <summary>
-    /// Tučný název u zastávek, které jsou pro linku významné (výchozí zapnuto).
+    /// Respektovat tučné písmo zadané u zastávky v trase linky (výchozí zapnuto).
     /// </summary>
     /// <remarks>
-    /// Starý tisk sází tučně zastávku s atributem <c>T</c> nebo <c>P</c> - tedy tarifní bod
-    /// a zastávku s odděleným příjezdem (`JRapiLinPrtPS1.mac:52`, kde název dostane před sebe
-    /// „#" místo „$"). Cestující podle nich hledá, kde linka začíná, končí a kde se přestupuje.
+    /// ⚠️ <b>Není to naše rozhodnutí o vzhledu, je to údaj z jízdních řádů.</b> Atribut trasy
+    /// <c>T</c> znamená v číselníku atributů trasy (číselník 16, <c>JRapiCis.mac:1284</c>)
+    /// doslova „tučně" - dispečer si tak u konkrétní zastávky vyžádá zvýraznění. Atribut
+    /// <c>P</c> („podtrženo s příjezdem a odjezdem") ho má taky.
+    /// <para>Obě staré cesty to tisknou tučně: postskript dá názvu prefix „#" místo „$"
+    /// (<c>JRapiLinPrtPS1.mac:52</c>), Windows tisk nastaví příznak řádku
+    /// (<c>JRapiLinPrtWin.mac:1272-1276</c>). Vypnutím se zvýraznění z trasy ignoruje.</para>
     /// </remarks>
-    public bool TucneVyznamneZastavky { get; set; } = true;
+    public bool TucneZastavkyDleTrasy { get; set; } = true;
 
     /// <summary>Jak se sází čas spoje (výchozí hodina větším písmem, jako ve starém tisku).</summary>
     public FormatCasuSpoje FormatCasu { get; set; } = FormatCasuSpoje.HodinaVetsi;
@@ -1059,9 +1063,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return znacky == "" ? popis : znacky + " " + popis;
     }
 
-    /// <summary>Významná zastávka podle starého tisku - tarifní bod („T") nebo oddělený
-    /// příjezd („P"). Právě ty sází starý modul tučně.</summary>
-    private static bool JeVyznamnaZastavka(LineStopData s) =>
+    /// <summary>Má zastávka v trase vyžádané tučné písmo? Atribut „T" znamená v číselníku
+    /// atributů trasy přímo „tučně", „P" je „podtrženo s příjezdem a odjezdem" a starý tisk
+    /// ho sází tučně také.</summary>
+    private static bool MaTucneZTrasy(LineStopData s) =>
         s.Atributy.Contains("T") || s.Atributy.Contains("P");
 
     /// <summary>
@@ -1719,7 +1724,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             for (int ci = 0; ci < fixedCols.Count; ci++)
             {
                 var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
-                if (ci == nameIndex && TucneVyznamneZastavky && JeVyznamnaZastavka(stop))
+                if (ci == nameIndex && TucneZastavkyDleTrasy && MaTucneZTrasy(stop))
                     bunkaStyl = bunkaStyl with { Bold = true };
                 string hodnota = fixedCols[ci].Value(stop);
                 if (ci == nameIndex)
@@ -2217,7 +2222,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PadEmptyColumns = PadEmptyColumns,
             JednotnaSirkaSpoju = JednotnaSirkaSpoju,
             FormatCasu = FormatCasu,
-            TucneVyznamneZastavky = TucneVyznamneZastavky,
+            TucneZastavkyDleTrasy = TucneZastavkyDleTrasy,
             PomerZnacek = PomerZnacek,
             PomerMinuty = PomerMinuty,
             VyplnitPrazdneBunkySpoju = VyplnitPrazdneBunkySpoju,
@@ -2284,7 +2289,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new BoolPropertyDescriptor { Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
         new BoolPropertyDescriptor { Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
-        new BoolPropertyDescriptor { Label = "Tučně významné zastávky", Group = "Datové buňky", Get = () => TucneVyznamneZastavky, Set = v => TucneVyznamneZastavky = v },
+        new BoolPropertyDescriptor { Label = "Tučné zastávky dle trasy", Group = "Datové buňky", Get = () => TucneZastavkyDleTrasy, Set = v => TucneZastavkyDleTrasy = v },
         new FloatPropertyDescriptor
         {
             Label = "Velikost značek", Group = "Řádky",
