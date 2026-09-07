@@ -300,8 +300,9 @@ public class PageLayoutEngine
                 hlavickaSekce = _sectionHeaders.TryGetValue(section.Id, out var hh) ? hh : 0f;
             }
 
-            // Vejde se na stránku?
-            if (cursorY + sectionH <= headerH + availableHeight)
+            // Vejde se na stránku? Tolerance kryje smetí z desetinných výšek sekcí - bez ní
+            // odejde poslední sekce na druhou stránku kvůli dvěma setinám milimetru.
+            if (cursorY + sectionH <= headerH + availableHeight + SectionLayoutMath.TolerancePrekryvuMm)
             {
                 // Vejde se - umístit
                 currentPage.Sections.Add(new PlacedSection

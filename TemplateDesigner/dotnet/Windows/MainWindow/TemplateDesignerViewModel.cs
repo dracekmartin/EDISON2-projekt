@@ -1179,9 +1179,14 @@ public class TemplateDesignerViewModel : EDViewModel
         float dno     = SectionLayoutMath.MinimalniVyskaProSekci(section);
         float strop   = SectionLayoutMath.ZbyvajiciMistoMm(State.CurrentTemplate, section);
         float srazena = Math.Clamp(zadana, dno, MathF.Max(dno, strop));
-        if (MathF.Abs(srazena - zadana) < 0.05f) return false;
+        if (srazena == zadana) return false;
 
         section.DesignerHeight = srazena;
+        // Setinové smetí srazit mlčky - hláška o „zmenšení na 21,9 mm" u rozdílu 0,02 mm nic
+        // neříká. Srazit se ale musí vždy, jinak smetí zůstane v šabloně a engine ho pak řeší
+        // tolerancí (`SectionLayoutMath.TolerancePrekryvuMm`) na každé stránce znovu.
+        if (MathF.Abs(srazena - zadana) < SectionLayoutMath.TolerancePrekryvuMm) return true;
+
         StatusText = srazena > zadana
             ? $"Výška sekce {section.Name} zvětšena na {srazena:0.#} mm - menší by uřízla její obsah"
             : $"Výška sekce {section.Name} zmenšena na {srazena:0.#} mm - větší by nevešla na stránku";

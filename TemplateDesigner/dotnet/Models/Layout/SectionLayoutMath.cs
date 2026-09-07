@@ -15,6 +15,22 @@ public static class SectionLayoutMath
     public const float MinimalniVyskaMm = 5f;
 
     /// <summary>
+    /// O kolik smí součet výšek sekcí přesáhnout tiskovou plochu, než to engine bere jako
+    /// přetečení na další stránku.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Není to volnost, je to smetí z desetinných výšek.** Přidání sekce krátí ostatní
+    /// poměrem, takže z kulatých výšek udělá 21,8797; tažení hrany se pak zarazí přesně na
+    /// zbývajícím místě (106,1203) a součet vyjde o dvě setiny milimetru nad papír. Bez téhle mez
+    /// odešla poslední sekce na druhou stránku a uživatel viděl zdvojený výstup, který si ničím
+    /// nevysvětlil (nález Jan 7. 9., `templates/bug_ukazka.json`).
+    ///
+    /// <para>Platí na **obou stranách**: co pustí dialog výšky sekce, to musí engine unést,
+    /// jinak má tatáž šablona dvě chování podle toho, kudy k výšce uživatel přišel.</para>
+    /// </remarks>
+    public const float TolerancePrekryvuMm = 0.05f;
+
+    /// <summary>
     /// Nejmenší výška, na kterou smí sekce spadnout: nikdy pod svůj **obsah**.
     /// </summary>
     /// <remarks>

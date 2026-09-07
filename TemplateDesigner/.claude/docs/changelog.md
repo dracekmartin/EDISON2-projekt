@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-07 (14) - 📄 dvě setiny milimetru už nevyrobí stránku navíc
+
+Nález Jan 7. 9. při stavbě šablony na školení: tři prázdné sekce vyšly na dvě stránky a výstup
+vypadal zdvojeně, bez jakéhokoli vysvětlení v UI.
+
+**Příčina byla v desetinných výškách, ne v obsahu.** Sekce měly 20 + 106,1203 + 21,9 mm, tedy
+148,0203 proti tiskové ploše 148 mm (A5 na šířku bez okrajů). Poslední sekce se „nevlezla“
+o **0,02 mm** a s chováním „nepřerušovat“ odešla na další stránku.
+
+Ty zbytky si uživatel nevyrobí sám: přidání sekce krátí ostatní poměrem (`B129`), takže
+z kulatých výšek udělá 21,8797, a tažení hrany se pak zarazilo přesně na zbývajícím místě
+(106,1203).
+
+Nově engine při „vejde se sekce na stránku?“ toleruje
+**`SectionLayoutMath.TolerancePrekryvuMm` = 0,05 mm** - táž mez, kterou měl už dialog výšky sekce
+jako necitlivé pásmo. Dialog navíc **sráží vždy**, i když je rozdíl pod ní (mělké smetí
+zůstávalo v šabloně a engine ho pak řešil na každé stránce znovu); pod mezí se srazí mlčky,
+protože hláška o zmenšení o 0,02 mm nic neříká.
+
+⚠️ **Tolerance není volnost.** Milimetr navíc je dál druhá stránka - hlídá to samostatný test,
+aby se mez příště nezvětšovala jako „oprava“ jiného problému.
+
+Ověřeno: .NET **1571/1571** (4 nové testy). Reprodukce je v testu číslem po čísle z té šablony;
+před opravou padaly dva ze čtyř, po opravě je zelený celý soubor. Zbývá `B129` - přidání sekce
+by výšku ostatním nemělo brát vůbec, když je na stránce místo.
+
 ## 2026-09-07 (13) - 📐 obousměrná tabulka bere společný seznam km sloupců (`B124`)
 
 Km sloupce jsou u linky uložené **třikrát**: společný seznam `^JRL(sku,lin,"K")` a dva směrové
