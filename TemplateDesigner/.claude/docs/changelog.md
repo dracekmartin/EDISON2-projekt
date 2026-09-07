@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-07 (8) - 🔢 hodina bez vedoucí nuly a poctivě změřený práh sloupce
+
+Nález Jan 7. 9. z porovnání sloupce spoje: u nás `07 10`, ve starém tisku `7 10`.
+
+**Legacy utne vedoucí nulu hodiny** číselným přetypováním (`+$p(cas,":",1)`, `JRapiFce.mac:138`).
+Není to kosmetika - sloupec je o celou číslici užší.
+
+**A dolní práh šířky sloupce se měřil vždycky jako „00:00"**, i když se tiskne „23 59" s menšími
+minutami. Práh tak byl zbytečně velký a do bloku se vešlo míň spojů, než se reálně vejde. Nově se
+měří skutečný tvar podle zvoleného formátu.
+
+Dohromady: na testovací šabloně klesl základ sloupce z 6,03 na 5,03 mm a do bloku se vejde o spoj víc.
+
+⚠️ **Sedm testů na rozřezání bloků muselo dostat víc spojů.** Počítaly s tím, že se 41 spojů na
+277 mm rozřeže - s užšími sloupci se vejdou do jednoho bloku a testy pak neměřily nic. Fixtury jdou
+na 60, resp. 90 spojů; kdyby se sloupec zase zúžil, spadnou znovu a je to tak správně.
+
+⚠️ **Jednotná šířka sloupců spojů stojí jeden slot.** Změřeno na lince `330511` s km obou směrů:
+zapnutá 8 slotů a dva bloky, vypnutá 9 slotů a jeden blok. Rezerva na značky se u ní účtuje všem
+sloupcům, ne jen těm, které značku nesou.
+
+Ověřeno: .NET **1556/1556** (5 nových testů). Mutace „práh zpátky na 00:00" test shodí.
+
 ## 2026-09-07 (7) - 📏 obousměrná sestava přišla o kilometry druhého směru
 
 Nález Jan 7. 9.: postskriptový výtisk má víc km sloupců než my.

@@ -97,7 +97,7 @@ public class SirokaLinkaStrankovaniTests
     {
         var prvek = ElementRenderFixtures.LineTable();
         prvek.X = 0; prvek.Y = 0; prvek.Height = null; prvek.Width = 277;
-        var data = LineTableBlokyTests.SirokaLinkaData(41, pocetZastavek: 28);
+        var data = LineTableBlokyTests.SirokaLinkaData(90, pocetZastavek: 28);
         var sablona = Sablona(prvek);
         sablona.PageSize = PageSize.A4Landscape;
 
@@ -152,7 +152,7 @@ public class SirokaLinkaStrankovaniTests
         prvek.X = 0; prvek.Y = 0; prvek.Height = null; prvek.Width = 277;
         var sablona = Sablona(prvek);
         sablona.PageSize = PageSize.A4Landscape;
-        var data = LineTableBlokyTests.SirokaLinkaData(41, pocetZastavek: 28);
+        var data = LineTableBlokyTests.SirokaLinkaData(90, pocetZastavek: 28);
 
         var silne = ((INedelitelneDily)prvek).ZlomyMm(data).Where(z => z.Silny).Select(z => z.Mm).ToList();
         var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(sablona, data);
@@ -197,7 +197,7 @@ public class SirokaLinkaStrankovaniTests
         sablona.PageSize = PageSize.A4Landscape;
 
         var vysledek = new PageLayoutEngine(new SkiaHeightCalculator())
-            .Layout(sablona, LineTableBlokyTests.SirokaLinkaData(41, pocetZastavek: 28));
+            .Layout(sablona, LineTableBlokyTests.SirokaLinkaData(90, pocetZastavek: 28));
 
         Assert.True(vysledek.TotalPages > 1);
         Assert.All(vysledek.Pages, s => Assert.Equal(0f, s.Sections[0].OpakovanaHlavickaMm));

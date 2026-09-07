@@ -309,9 +309,9 @@ public class LineTableBlokyTests
         var prvek = Prvek();
         prvek.Width = 277;
 
-        var bloky = prvek.Rozvrzeni(SirokaLinkaData(41, pocetZastavek: 28));
+        var bloky = prvek.Rozvrzeni(SirokaLinkaData(90, pocetZastavek: 28));
 
-        Assert.True(bloky.Count > 1, "41 spojů na 277 mm se má rozřezat");
+        Assert.True(bloky.Count > 1, "90 spojů na 277 mm se má rozřezat");
         float prvni = bloky[0].SloupecSpojeMm;
         Assert.All(bloky, b => Assert.Equal(prvni, b.SloupecSpojeMm, 2));
     }
@@ -324,7 +324,7 @@ public class LineTableBlokyTests
         var prvek = Prvek();
         prvek.Width = 277;
 
-        var bloky = prvek.Rozvrzeni(SirokaLinkaData(41, pocetZastavek: 28));
+        var bloky = prvek.Rozvrzeni(SirokaLinkaData(90, pocetZastavek: 28));
 
         Assert.True(bloky[^1].Pocet < bloky[0].Pocet, "poslední blok má být neúplný");
         Assert.True(bloky[^1].SirkaMm < prvek.Width - 1f,
@@ -351,7 +351,7 @@ public class LineTableBlokyTests
         var prvek = Prvek();
         prvek.X = 0; prvek.Y = 0; prvek.Height = null; prvek.Width = 277;
         prvek.HeaderStyle.BackgroundColor = Znacka;
-        var data = SirokaLinkaData(41, pocetZastavek: 12);
+        var data = SirokaLinkaData(60, pocetZastavek: 12);
 
         float celkem = prvek.CalculateHeightFromData(data);
         var tvrzene = new List<float> { 0f };
@@ -410,7 +410,7 @@ public class LineTableBlokyTests
     [Fact]
     public void DorovnaniVyplniNeuplnyBlok()
     {
-        var data = SirokaLinkaData(41, pocetZastavek: 12);
+        var data = SirokaLinkaData(60, pocetZastavek: 12);
 
         LineTableElement Prvek(bool dorovnat)
         {

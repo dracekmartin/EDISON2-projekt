@@ -564,7 +564,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     {
         var st = ResolveDataStyle(TripColumn());
         using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
-        float mm = (font.MeasureText("00:00") * PtToMm) + st.PaddingLeft + st.PaddingRight;
+        // ⚠️ Měří se **skutečný tvar času**, ne vždycky „00:00". Při formátu s menšími minutami je
+        // obsah „23 59" - hodina bez vedoucí nuly v plné velikosti, minuta zmenšená - a to je
+        // znatelně užší. Dokud se tu měřilo „00:00", byl dolní práh sloupce zbytečně velký
+        // a do řádku se vešlo míň spojů, než se reálně vejde (nález Jan 7. 9.).
+        float textPt;
+        if (FormatCasu == FormatCasuSpoje.HodinaVetsi)
+        {
+            float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
+            using var maly = new SKFont(GetTypeface(st), st.FontSize * pomer);
+            textPt = font.MeasureText("23") + maly.MeasureText(" 59");
+        }
+        else
+        {
+            textPt = font.MeasureText("00:00");
+        }
+        float mm = (textPt * PtToMm) + st.PaddingLeft + st.PaddingRight;
         return MathF.Max(MinAutoColumnWidthMm, mm);
     }
 
@@ -1925,6 +1940,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         string hodina = cas[..dvojtecka];
         string minuta = cas[(dvojtecka + 1)..];
         if (!hodina.All(char.IsDigit) || !minuta.All(char.IsDigit)) return null;
+        // ⚠️ Hodina **bez vedoucí nuly** - legacy ji utne číselným přetypováním
+        // (`+$p(cas,":",1)`, `JRapiFce.mac:138`), takže tiskne „7 10", ne „07 10". Není to jen
+        // kosmetika: sloupec spoje je o celou číslici užší a vejde se jich do řádku víc.
+        hodina = hodina.TrimStart('0');
+        if (hodina == "") hodina = "0";
         float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
         return [new(hodina, false), new(" ", false, pomer), new(minuta, false, pomer)];
     }

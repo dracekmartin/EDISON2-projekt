@@ -44,6 +44,78 @@ public class FormatCasuSpojeTests
         Assert.Equal(0.75f, runs[2].Zmenseni);
     }
 
+    /// <summary>
+    /// ⚠️ Hodina se tiskne <b>bez vedoucí nuly</b>. Legacy ji utne číselným přetypováním
+    /// (<c>+$p(cas,":",1)</c>, <c>JRapiFce.mac:138</c>), takže má „7 10", ne „07 10". Není to
+    /// kosmetika: sloupec spoje je o číslici užší a vejde se jich do řádku víc.
+    /// </summary>
+    [Theory]
+    [InlineData("07:10", "7", "10")]
+    [InlineData("05:08", "5", "08")]
+    [InlineData("16:15", "16", "15")]
+    [InlineData("00:05", "0", "05")]
+    public void HodinaJeBezVedouciNuly(string cas, string hodina, string minuta)
+    {
+        var runs = Prvek().CasRuns(cas);
+
+        Assert.Equal(hodina, runs![0].Text);
+        Assert.Equal(minuta, runs[2].Text);
+    }
+
+    /// <summary>
+    /// Menší minuty a hodina bez nuly znamenají užší sloupec, takže se jich do bloku vejde víc než
+    /// při jednotné velikosti s dvojtečkou. Dokud se dolní práh sloupce měřil vždycky jako „00:00",
+    /// byl zbytečně velký a formát se do rozvržení nepropsal (nález Jan 7. 9.).
+    /// </summary>
+    [Fact]
+    public void UzsiFormatPustiDoBlokuVicSpoju()
+    {
+        var data = SirokaData(30);
+        var uzky = PrvekSAutoSloupcem(FormatCasuSpoje.HodinaVetsi);
+        var siroky = PrvekSAutoSloupcem(FormatCasuSpoje.SDvojteckou);
+
+        int sUzkym = uzky.Rozvrzeni(data)[0].Pocet;
+        int sSirokym = siroky.Rozvrzeni(data)[0].Pocet;
+
+        Assert.True(sUzkym > sSirokym,
+            $"užší formát pustil do bloku {sUzkym} spojů, širší {sSirokym} - práh sloupce se nezměnil");
+    }
+
+    /// <summary>
+    /// Prvek s <b>automatickou</b> šířkou sloupce spoje - jen tam se dolní práh vůbec uplatní.
+    /// S pevnou šířkou (jako má sdílená fixtura) by test neměřil nic.
+    /// </summary>
+    private static LineTableElement PrvekSAutoSloupcem(FormatCasuSpoje format) => new()
+    {
+        X = 0, Y = 0, Width = 60, Height = null,
+        FormatCasu = format,
+        HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 8 },
+        DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
+        HighlightOddTc = false,
+        Grid = new GridStyle { ShowColumnLines = false, ShowRowLines = false },
+        Columns =
+        [
+            new StopColumn { Key = ColumnKeys.StopName, Header = "Zastávka", Width = 20, Visible = true },
+            new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj", Visible = true,
+                Alignment = TextHorizontalAlignment.Center },
+        ],
+    };
+
+    /// <summary>Linka s tolika spoji, že se do šířky nevejdou a rozvržení musí řezat.</summary>
+    private static DataContext SirokaData(int pocetSpoju) => RenderSnapshot.Data(
+        ("ZASTAVKY",
+        [
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Přerov"),   ("PORADI", "2")),
+        ]),
+        ("SPOJE",
+        [
+            .. Enumerable.Range(1, pocetSpoju).Select(i => RenderSnapshot.Row(
+                ("CISLO_SPOJE", i.ToString()), ("SKUPINA", "1"),
+                ("CASY", new JsonArray("16:15", "16:40")))),
+        ]),
+        ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1"))]));
+
     [Fact]
     public void PomerMinutySePropisujeDoUseku()
     {
