@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-07 (6) - 🔤 významné zastávky tučně; zmizelo falešné odsazení
+
+Nález Jan 7. 9. při porovnání se starým tiskem: „proč jsou u nás některé zastávky odsazené a ve
+starém tisku jsou ty samé tučně?"
+
+**To odsazení byla chyba.** Před název se stavěly zobrazitelné značky a mezera za nimi, jenže
+podmínka se ptala, jestli zastávka má **jakýkoli** atribut. Řídicí atributy (`T` tarifní bod,
+`P` oddělený příjezd) se netisknou, takže právě u významných zastávek zbyla samotná mezera a název
+vyšel odsazený bez viditelného důvodu. Mezera se nově přidává jen za skutečnou značku.
+
+**Tučně je naopak záměr starého tisku** a nově to umíme taky. Zastávka s atributem `T` nebo `P`
+dostane tučný název - v legacy jí název dostane před sebe „#" místo „$" (`JRapiLinPrtPS1.mac:52`).
+Volba prvku **Tučně významné zastávky**, výchozí zapnuto. Cestující podle nich hledá, kde linka
+začíná, končí a kde se přestupuje.
+
+⚠️ **Mezera se testuje na textu, ne na pixelech.** První verze testu porovnávala inkoust ve výřezu
+obrázku a měřila jiný pás, než chtěla - dvě různé chyby se v ní vyrušily. Test nad výsledným
+řetězcem to řekne přesně a mutace „vrať původní podmínku" ho shodí.
+
+Ověřeno: .NET **1551/1551** (7 nových testů), Caché 150/150.
+
 ## 2026-09-07 (5) - 🔎 značky platnosti a negativní značky mají vlastní, větší velikost
 
 Nález Jan 7. 9.: značky byly proti starému tisku malé a špatně čitelné - a přitom nesou omezení,

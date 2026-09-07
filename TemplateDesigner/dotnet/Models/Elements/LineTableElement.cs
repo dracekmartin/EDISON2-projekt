@@ -163,6 +163,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public float PomerZnacek { get; set; } = 1.5f;
 
+    /// <summary>
+    /// Tučný název u zastávek, které jsou pro linku významné (výchozí zapnuto).
+    /// </summary>
+    /// <remarks>
+    /// Starý tisk sází tučně zastávku s atributem <c>T</c> nebo <c>P</c> - tedy tarifní bod
+    /// a zastávku s odděleným příjezdem (`JRapiLinPrtPS1.mac:52`, kde název dostane před sebe
+    /// „#" místo „$"). Cestující podle nich hledá, kde linka začíná, končí a kde se přestupuje.
+    /// </remarks>
+    public bool TucneVyznamneZastavky { get; set; } = true;
+
     /// <summary>Jak se sází čas spoje (výchozí hodina větším písmem, jako ve starém tisku).</summary>
     public FormatCasuSpoje FormatCasu { get; set; } = FormatCasuSpoje.HodinaVetsi;
 
@@ -580,10 +590,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         ColumnKeys.Km       => s => s.JePrijezdovy || kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
         ColumnKeys.Tc       => s => s.JePrijezdovy ? "" : s.Tc,
         ColumnKeys.Mhd      => s => s.JePrijezdovy ? "" : s.Mhd,
-        ColumnKeys.StopName => s => s.JePrijezdovy ? "" :
-                           s.Atributy.Count > 0
-                               ? string.Join("", s.Atributy.Where(IsDisplayableStopAttribute)) + " " + s.Popis
-                               : s.Popis,
+        // ⚠️ Mezera se přidává jen tehdy, když opravdu je co postavit před název. Dřív se řídila
+        // tím, jestli zastávka má **jakýkoli** atribut - jenže řídicí atributy (T, P) se netisknou,
+        // takže zastávka s nimi dostala název odsazený o mezeru bez viditelného důvodu. Vypadalo
+        // to jako záměrné odsazení významných zastávek (nález Jan 7. 9.).
+        ColumnKeys.StopName => s => s.JePrijezdovy ? "" : NazevSeZnackami(s.Atributy, s.Popis),
         _          => _ => ""
     };
 
@@ -1032,6 +1043,26 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Atributy trasy k zobrazení před názvem - jen významové značky pro cestujícího
     /// (x = na znamení). Řídicí atributy (T/P/S/E/…) se v prvním řezu netisknou.</summary>
     private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
+
+    /// <summary>
+    /// Text buňky se zastávkou: zobrazitelné značky, mezera, název. Bez značek jen název.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Mezera patří jen za skutečnou značku. Dřív se přidávala, kdykoli zastávka měla
+    /// **jakýkoli** atribut - jenže řídicí atributy („T" tarifní bod, „P" oddělený příjezd)
+    /// se netisknou, takže právě významné zastávky vyšly odsazené o mezeru bez viditelného
+    /// důvodu a vypadalo to jako záměr (nález Jan 7. 9.).
+    /// </remarks>
+    internal static string NazevSeZnackami(IReadOnlyList<string> atributy, string popis)
+    {
+        string znacky = string.Join("", atributy.Where(IsDisplayableStopAttribute));
+        return znacky == "" ? popis : znacky + " " + popis;
+    }
+
+    /// <summary>Významná zastávka podle starého tisku - tarifní bod („T") nebo oddělený
+    /// příjezd („P"). Právě ty sází starý modul tučně.</summary>
+    private static bool JeVyznamnaZastavka(LineStopData s) =>
+        s.Atributy.Contains("T") || s.Atributy.Contains("P");
 
     /// <summary>
     /// Nadpisy popisnych sloupcu - rozpadle zony dostanou <b>jeden spolecny</b> pres vsechny sve dily.
@@ -1688,6 +1719,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             for (int ci = 0; ci < fixedCols.Count; ci++)
             {
                 var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
+                if (ci == nameIndex && TucneVyznamneZastavky && JeVyznamnaZastavka(stop))
+                    bunkaStyl = bunkaStyl with { Bold = true };
                 string hodnota = fixedCols[ci].Value(stop);
                 if (ci == nameIndex)
                     hodnota = SNazvemATeckami(hodnota, fixedCols[ci].Width, bunkaStyl,
@@ -2184,6 +2217,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PadEmptyColumns = PadEmptyColumns,
             JednotnaSirkaSpoju = JednotnaSirkaSpoju,
             FormatCasu = FormatCasu,
+            TucneVyznamneZastavky = TucneVyznamneZastavky,
             PomerZnacek = PomerZnacek,
             PomerMinuty = PomerMinuty,
             VyplnitPrazdneBunkySpoju = VyplnitPrazdneBunkySpoju,
@@ -2250,6 +2284,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new BoolPropertyDescriptor { Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
         new BoolPropertyDescriptor { Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
+        new BoolPropertyDescriptor { Label = "Tučně významné zastávky", Group = "Datové buňky", Get = () => TucneVyznamneZastavky, Set = v => TucneVyznamneZastavky = v },
         new FloatPropertyDescriptor
         {
             Label = "Velikost značek", Group = "Řádky",

@@ -81,6 +81,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Podíl velikosti minut vůči hodině. 1 = obojí stejně velké. Uplatní se jen u formátu s hodinou větším písmem."
         s f = form.AddBool("VyplnitPrazdneBunkySpoju", "Tečky v prázdných buňkách", 0)
         s f.helpText = "Buňka spoje, ve které není čas, se vyplní tečkami - tabulka pak drží svislé vodicí pruhy jako starý tisk. U linky, kde většina spojů jede jen část trasy, se tím tabulka zaplní a čte se hůř."
+        s f = form.AddBool("TucneVyznamneZastavky", "Tučně významné zastávky", 1)
+        s f.helpText = "Tarifní body a zastávky s odděleným příjezdem se vypíšou tučně, jako ve starém tisku - cestující podle nich hledá, kde linka začíná, končí a kde se přestupuje."
         s f = form.AddBool("TeckyZaNazvemZastavky", "Tečky za názvem zastávky", 0)
         s f.helpText = "Za název zastávky se doplní tečky k pravému okraji sloupce, aby oko dojelo k času. Končí před piktogramem přestupu."
         d form.AddBool("HighlightOddTc", "Podbarvit lichá Tč", 1)
