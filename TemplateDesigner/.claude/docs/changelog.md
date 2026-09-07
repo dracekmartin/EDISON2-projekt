@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-07 (16) - 📏 legenda poznámek přichází z palety bez výšky
+
+Nález Jan 7. 9.: vložená legenda dostala pevných **25 mm** - a pevná výška na těchhle prvcích
+obsah **zmenšuje do fitu**, ne ořezává (`ComputeFontScale`). Legenda se pak vykreslila písmem
+na 46 %, sekce neměla z čeho růst a poznalo se to až z papíru.
+
+Tabulka linky přišla bez výšky už předtím, takže to byla **nekonzistence**, ne záměr:
+šablony v databázi mají u legendy výšku prázdnou, protože vznikly ze souboru, kdežto kdokoli
+si ji vložil z palety, dostal past.
+
+⚠️ **Seznam zastávek a Minuty odjezdů zůstávají s pevnou výškou** a není to opomenutí: seznam
+zastávek si render ořezává **na výšku prvku** a při prázdné by bral 60 mm ze zástupné hodnoty
+(obsah nad ni by zmizel), Minuty odjezdů mají volbu „Roztáhnout na výšku", která pevnou výšku
+potřebuje. Obě jsou tím samostatná oprava, ne řádek v téže změně.
+
+Ověřeno: .NET **1584/1584** (7 nových testů, včetně pojistky, že se prázdná výška nerozlezla
+k prvkům, které ji potřebují).
+
 ## 2026-09-07 (15) - 🔤 tabulka linky má velikost písma pro celý prvek
 
 Nález Jan 7. 9. při stavbě šablony na školení: velikost písma šla u tabulky linky nastavit

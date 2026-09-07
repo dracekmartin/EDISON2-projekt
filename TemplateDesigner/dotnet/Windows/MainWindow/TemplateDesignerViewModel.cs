@@ -2155,8 +2155,12 @@ public class TemplateDesignerViewModel : EDViewModel
             ElementTypes.Barcode       => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
             ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
             ElementTypes.DepartureGrid => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.NotesLegend   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.LineTable     => new LineTableElement     { X = x, Y = y, Width = w },   // Height null = dynamická
+            // Height null = dynamická. Legenda i tabulka rostou z dat, takže pevná výška by jim
+            // obsah **zmenšila do fitu** (písmo na 46 %), ne oříznula - a uživatel na to přišel
+            // až z papíru (nález Jan 7. 9.). Zástupnou výšku (25 / 60 mm) drží prvek sám pro
+            // rámeček výběru v návrháři.
+            ElementTypes.NotesLegend   => new NotesLegendElement   { X = x, Y = y, Width = w },
+            ElementTypes.LineTable     => new LineTableElement     { X = x, Y = y, Width = w },
             _                          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
         };
         // Výchozí rámeček pro nové elementy (na modelu je default bez rámečku kvůli zpětné kompatibilitě)
