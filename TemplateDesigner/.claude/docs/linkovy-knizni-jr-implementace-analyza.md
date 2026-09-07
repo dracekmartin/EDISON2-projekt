@@ -1405,3 +1405,98 @@ Spoje 5xx jsou nejúplnější sloupce (501-507 mají čas na všech 36 zastávk
 s **počtem slotů**, kdežto kreslení (`LineTableElement:1215`) i `Vejde` s **počtem sloupců**
 (`naBlok * SloupcuNaSlot`). U obousměrné sestavy tedy testy měří polovinu sloupců a ten invariant
 je pro dvousměrné linky nehlídaný. `TableLayout.RozdelSpojeDoBloku` navíc nikdo nevolá (mrtvý kód).
+
+
+---
+
+## 17. Postskriptový tisk - co z něj umíme nastavit (projito 7. 9. 2026)
+
+Podklad pro zákazníka, který dnes tiskne přes **postskriptový výstup**, ne přes Windows tisk.
+Vzniklo při přípravě školení; čísla nejsou odhad, jsou **odečtená z programu zákazníka**
+`^JRSET("PS","NVYVESY")` na `CB_CSADAD` (vývěska linky) a z inventáře nastavení u linky
+`gSetLinPrt^JRapiLin1:183`.
+
+> ⚠️ **Postskript ≠ Windows tisk.** Jsou to dvě různé cesty s různým kontraktem. Inventář v `§13.2`
+> popisuje **Windows** engine (`mkPLinWin`); tady jde o `mkLinPS^JRapiLinPrtPS`. Některé věci má jen
+> jedna z nich (tečková výplň jen postskript, `SablonaProTiskA4` jen Windows).
+
+### 17.1 Jak je ten tisk vůbec nastavitelný
+
+Celý layout nese **PostScriptový program uložený v databázi** (`^JRSET("PS",...)`, sedm programů
+podle typu sestavy). Server ho předsadí před data a přepíše v něm **devět čísel a logo**
+(`LinkyPSTisk.cls:129-138`) - nic víc:
+
+| Přepisuje se | Význam | U nás |
+|---|---|---|
+| `/LM /RM /TM /BM` | okraje stránky (mm) | ✅ vlastnosti stránky |
+| `/Spojscale` | velikost písma hodin | ✅ styl datových buněk |
+| `/Spojscale1` | velikost písma minut | ✅ volba prvku „Velikost minut" (podíl) |
+| `/zastwidth` | šířka sloupce zastávek | ✅ šířka sloupce v editoru |
+| `/LgX /LgY` + program loga | logo a jeho pozice | ✅ obrázek |
+
+Všechno ostatní v programu je **mimo dosah uživatele** - kdo chce jiný vzhled, objedná si u nás
+úpravu `.ps` programu.
+
+### 17.2 Ostatní hodnoty v jejich programu
+
+Reálné hodnoty vývěsky `CB_CSADAD`: stránka **208 × 145 mm**, okraje 15/15/12/13, `zastwidth 45`,
+`Linkascale 11.0` (název linky), `Prepscale 7` (dopravce), `Spojscale 6.0` / `Spojscale1 4.5`
+(**poměr přesně 0,75**), `tl1 0.1` / `tl2 0.6` (tloušťky čar).
+
+| Program | Význam | U nás |
+|---|---|---|
+| `PLW`, `PLH` | rozměr stránky | ✅ vlastnosti stránky |
+| `Linkascale`, `Prepscale` | velikost názvu linky a řádku dopravce | ✅ styl textového prvku |
+| `tl1`, `tl2` | tenká a tlustá čára | ✅ tloušťka mřížky a rámečku prvku |
+| `Plascale` | velikost pásu značek platnosti | ✅ volba prvku „Velikost značek" (podíl, výchozí 1,5 = 9/6) |
+| `Vyscale`, `NSL`, `prvnip`, `more`, `h3`, `LgK`, `LgV`, `LgPl` | ⛔ **význam nedekódován** | - |
+
+⚠️ Poslední řádek je poctivě otevřený: ty proměnné jsem v programu **nedohledal k použití**,
+takže o nich netvrdím nic. Kdyby se ukázalo, že jde o něco podstatného, patří to sem doplnit.
+
+### 17.3 Obsahové volby u linky
+
+Postskript čte tytéž `^JRL(...,"PATCH",...)` klíče jako Windows tisk (inventář `§13.2 C`), plus
+vlastní: `PSVMargin`, `PSKMargin`, `PSVFont`, `PSVSIZA`, `PSKSIZA`, `SCALE`. Ty jsou právě těch
+devět čísel výše a **u nás se všechny přesunuly do šablony**.
+
+⚠️ **Font u linky jde přebít jen u vývěsky, ne u knihy** (`LinkyPSTisk.cls:88` - `s:vk="V"`).
+
+### 17.4 Co postskript umí a my ne
+
+Seřazeno podle toho, jak moc je to vidět:
+
+| Co | Kde v legacy | Stav |
+|---|---|---|
+| Negativní značky **visí pod číslem spoje** a využívají prázdné řádky nad prvním odjezdem, takže záhlaví neroste | `JRapiLinPrtPS1.mac:128-160` | ❌ máme pevný pás nahoře - stojí to výšku |
+| Odjezdová a příjezdová tabule zastávky (relace) | `RelacePSTisk.cls` | ❌ celá agenda chybí |
+| Seznam zastávek a označení zastávek jako samostatný tisk | `^JRSET("PS","SEZNAM"/"ZaOzn")` | ❌ |
+| Značky `od` / `pf` u výchozí a konečné zastávky | `JRapiLinPrtPS.mac` | ❌ |
+| „Jede po jiné trase" jako svislá vlnovka | `LomiK = "±"` | ⚠️ kreslíme znak `<` |
+| Skládání tištěného čísla linky (3místné / vlastní / tablo) | `PATCH,cisIDS` | ❌ |
+| Ruční zlom stránky na tarifním čísle | `PATCH,ZLOM` | ❌ vědomě (`B100`, 3 linky z ~93 tis.) |
+| Podtržení u zdvojených řádků příjezd/odjezd | `PATCH,podtrzeniPaJ` | ❌ (viz `B123`) |
+| Volby dělené linky (na jednu stranu, hlavička pro směr) | `gSetLinPrt` dta 21-23 | ❌ |
+
+### 17.5 Co umíme my a postskript ne
+
+Není to jednosměrný seznam - stojí za to to na školení říct:
+
+- **Uspořádání na list** (2×A5 na A4, ořezové značky, táž vývěska N× k rozstříhání) - postskript
+  to nemá vůbec, dnes to za zákazníka řeší tiskař.
+- **Členění výstupu na soubory** s názvem z datových polí.
+- **Hlášení o přetečení** ještě před tiskem.
+- **Řez tabulky podle skutečné šířky prvku**, ne do pevné stránky - na `330511` se nám celá linka
+  vejde do jednoho bloku tam, kde postskript potřebuje dva.
+
+### 17.6 Font
+
+Program sází **Helvetica** (+ Bold, + Bold-Italic), přeencodovanou na české diakritice
+(`^JRSET("PS","NVYVESY")` uzly 92-97). Symboly (kladivo, vlak, autobus, trojúhelníky) **nejsou
+font** - jsou to vektorové procedury Type 3 psané přímo v programu (`/hammer`, `/loco`, `/bus`,
+`/whitetri`, `/blacktri`).
+
+⚠️ **Pravou Helveticu nemá ani Ghostscript**, který jejich `.ps` převádí na PDF - nahrazuje ji
+**Nimbus Sans**. Výtisk, který zákazník považuje za postskriptový vzhled, je tedy s velkou
+pravděpodobností Nimbus Sans, ne Helvetica. Ověřitelné ve vlastnostech jejich PDF (záložka Písma).
+Arial má s Helveticou shodné šířky (naměřeno na desetinu), ale jinou kresbu.

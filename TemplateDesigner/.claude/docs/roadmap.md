@@ -103,6 +103,13 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
+- **`B123` Atributy trasy zastávky - dodělat zbytek číselníku** [M] (podnět Jan 7. 9.). Z číselníku
+  16 („atributy trasy", `JRapiCis.mac:1283`) umíme `x`, `A`, `L`, `T`, `P`; chybí metro/letadlo/loď,
+  varianty „na znamení" (`y`, `z`), podtržení (`p`, `o`, `J`) a paragrafy. ⚠️ **Blokuje to kolize
+  číselníků**: atributy trasy a atributy spoje sdílejí jednu mapu v `SymbolMap`, takže zastávka
+  s `H` („cílová pro tablo") se dnes kreslí jako vozíček. Nejdřív změřit výskyt v datech, pak
+  oddělit mapy, pak doplňovat. Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
+
 - **`B66` Vlastní bloky prvků („moje komponenta")** [M] (podnět Jan 12. 8.). Uživatel vybere pár
   prvků, uloží je pod jménem a vkládá jedním kliknutím do dalších šablon - mezistupeň mezi uloženou
   sekcí a seskupením prvků. **Čeká na pevnou tabulku**: jako jeden prvek je uložení skoro zadarmo,
