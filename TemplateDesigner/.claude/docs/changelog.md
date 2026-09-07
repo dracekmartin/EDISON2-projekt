@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-07 (12) - 📦 postskriptový vzhled linkového JŘ jako systémová šablona
+
+Šablona, na které se linkový JŘ ladil proti starému postskriptovému tisku, ležela jen jako
+vyexportovaný soubor na disku. Nově je zabalená v programu jako systémová
+(`SystemTemplates/linkovy-jr-ad-postskript-a5.json`): A5 na šířku, Arial Narrow, úzké sloupce
+spojů a dvousloupcová legenda poznámek. Seeder ji při startu nalije do větve MLINE, takže ji
+v přehledu šablon vidí každá firma - ale až z nově vydaného `.exe`.
+
+Export neměl `id`; bez něj by si seeder při každém startu založil novou šablonu, proto dostala
+pevné. Názvy sekcí byly bez diakritiky („Hlavicka"), opraveny. Testy `SystemTemplateSeedTests`
+berou soubory ze složky, takže nová šablona spadla pod kontroly sama.
+
+Ověřeno: .NET **2903/2903** (celá EDISON2.sln).
+
 ## 2026-09-07 (11) - 🐛 stránka se řezala uprostřed hlavičky bloku
 
 Nález Jan 7. 9. na lince `330510` (víc skupin dnů než `330511`): obousměrný tisk vyšel „velmi
