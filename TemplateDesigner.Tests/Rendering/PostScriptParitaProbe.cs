@@ -53,7 +53,7 @@ public class PostScriptParitaProbe
         inVar["SKUPINA_LINEK_ID"]  = new CVar(skupina);
         inVar["LINKA_ID"]          = new CVar(linka);
         inVar["OBOUSMERNY_TISK"]   = new CVar(obousmerne);
-        inVar["DELENI_SLOUPCU"]    = new CVar("Pracovní dny / Soboty / Neděle+svátky");
+        inVar["DELENI_SLOUPCU"]    = new CVar(Env("TD_PS_DELENI", "Pracovní dny / Soboty / Neděle+svátky"));
         inVar["TVAR_NAZVU_ZASTAVKY"] = new CVar("Plný CIS");
 
         var result = mlRest.Query("ALVA.TemplateDesigner.Agendy.LinkovyJrAd", "GetData", inVar);
