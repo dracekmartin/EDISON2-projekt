@@ -37,6 +37,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowPripojeRows", "Přípojné řádky (vyčká/navazuje)", 1)
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 20, "mm")
         s f.helpText = "Prázdné = auto podle velikosti písma"
+        s f = form.AddDecimal("PomerZnacek", "Velikost značek", 1.5, 1, 3)
+        s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
 
         // ── Skupina "Sloupce" ─────────────────────────────────────────────
         // Viditelnost, šířky a pořadí jednotlivých sloupců se editují v tabu „Sloupce";

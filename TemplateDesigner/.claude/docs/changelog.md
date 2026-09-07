@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-07 (5) - 🔎 značky platnosti a negativní značky mají vlastní, větší velikost
+
+Nález Jan 7. 9.: značky byly proti starému tisku malé a špatně čitelné - a přitom nesou omezení,
+kvůli kterému spoj někdy nejede.
+
+**Pás značek nad časy má ve starém tisku vlastní velikost písma.** V programu zákazníka je
+`Plascale 9.0` proti `Spojscale 6.0` u časů (`^JRSET("PS","NVYVESY")`), tedy jedenapůlkrát větší.
+Nová volba prvku **Velikost značek** (podíl vůči písmu datové buňky, výchozí 1,5, rozsah 1-3)
+to dělá taky.
+
+⚠️ **Řádek značek se tím zvyšuje o týž poměr.** Kdyby se zvětšilo jen písmo, značka by se do řádku
+nevešla a pojistka v `NegativniZnackaRenderer` by ji zase zdrobnila - volba by nedělala nic.
+Výšku drží `VyskyRadkuBloku`, aby ji render i výpočet výšky prvku vzaly stejně; jinak by se
+stránkování řezalo jinam, než kde jsou hranice řádků.
+
+Ověřeno: .NET **1544/1544** (3 nové testy), Caché 150/150, pole ověřené voláním `Init` na serveru.
+Vyrenderováno na lince `330511` proti výtisku starého modulu.
+
 ## 2026-09-07 (4) - 🐛 negativní značka přetékala do řádku pod sebou
 
 Nález Jan 7. 9. na hustě nastavené tabulce linky: černý box značky (`23`, `60`, `70`) v řádku

@@ -149,6 +149,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public bool TeckyZaNazvemZastavky { get; set; }
 
+    /// <summary>
+    /// Velikost značek platnosti a negativních značek jako podíl velikosti písma datové buňky
+    /// (výchozí 1,5).
+    /// </summary>
+    /// <remarks>
+    /// Pás značek nad časy má ve starém tisku **vlastní, větší** velikost: v jeho programu je
+    /// `Plascale 9.0` proti `Spojscale 6.0` u časů, tedy právě jedenapůlkrát (odečteno z programu
+    /// zákazníka, `^JRSET("PS","NVYVESY")`). Se stejnou velikostí jako časy jsou značky na výtisku
+    /// špatně čitelné - a přitom nesou omezení, kvůli kterému spoj někdy nejede.
+    /// <para>⚠️ Řádek značek se tím **zvýší** o týž poměr, jinak by se značka do řádku nevešla.
+    /// Výšku drží <see cref="VyskyRadkuBloku"/>, aby ji render i výpočet výšky prvku vzaly stejně.</para>
+    /// </remarks>
+    public float PomerZnacek { get; set; } = 1.5f;
+
     /// <summary>Jak se sází čas spoje (výchozí hodina větším písmem, jako ve starém tisku).</summary>
     public FormatCasuSpoje FormatCasu { get; set; } = FormatCasuSpoje.HodinaVetsi;
 
@@ -1182,6 +1196,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// rozešly by se a stránkování by řezalo jinam, než kde jsou doopravdy hranice řádků.
     /// Volá se až po <c>EnsureParsed</c>.
     /// </remarks>
+    /// <summary>Výška řádku značek - datový řádek zvětšený o <see cref="PomerZnacek"/>.
+    /// Jediné místo výpočtu, ať se render a výpočet výšky prvku nerozejdou.</summary>
+    private float VyskaRadkuZnacek(float rowH) => rowH * Math.Clamp(PomerZnacek, 1f, 3f);
+
     private (List<float> Hlava, List<float> Radky) VyskyRadkuBloku(IReadOnlyList<LineTripData> spojeBloku)
     {
         var trips = _cachedTrips!;
@@ -1192,8 +1210,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
         hlava.Add(headerH);                                                  // řádek čísel spojů
         for (int tr = 0; tr < PocetTurnusovychRadku(trips); tr++) hlava.Add(rowH);
-        for (int pr = 0; pr < PocetRadkuPlatnosti(trips); pr++) hlava.Add(rowH);
-        if (HasNzRow(trips)) hlava.Add(rowH);
+        float znackaH = VyskaRadkuZnacek(rowH);
+        for (int pr = 0; pr < PocetRadkuPlatnosti(trips); pr++) hlava.Add(znackaH);
+        if (HasNzRow(trips)) hlava.Add(znackaH);
 
         // Jen viditelné zastávky a jejich přípojné řádky (matched na Poradi zastávky - jako render).
         var visibleStops = RowConditions.VisibleRows(_cachedStops!, s => s.SourceRow, RowVisibilityExpression);
@@ -1343,6 +1362,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
                 float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
                 float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
+                // Pás značek nad časy je vyšší i větším písmem - viz PomerZnacek.
+                float znackaRowH = VyskaRadkuZnacek(rowH);
+                float znackaScale = scale * Math.Clamp(PomerZnacek, 1f, 3f);
 
                 var plan = BuildRowPlan(stops, spojeBloku, zrcadleneBloku, trips, groups, mrizka, nameIndex,
                     headerH, rowH, PripojRowH() * scale,
@@ -1493,6 +1515,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle,
         RenderContext ctx, SKTypeface symbolFace, float scale)
     {
+        // Pás značek nad časy je vyšší a s větším písmem - viz PomerZnacek.
+        float znackaRowH = VyskaRadkuZnacek(rowH);
+        float znackaScale = scale * Math.Clamp(PomerZnacek, 1f, 3f);
+
         var plan = new List<RowSpec>();
         var fixedCols = mrizka.Popisne;
 
@@ -1588,16 +1614,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy))
                 .ToList();
             var prazdne = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
-            plan.Add(new(RowKind.HeaderExtra, rowH, prazdne)
+            plan.Add(new(RowKind.HeaderExtra, znackaRowH, prazdne)
             {
                 VerticalLinePaint = sloupcovaCara,
                 // `DrawRows` kreslí buňky od X prvku, takže i ruční kreslení musí začít tam.
                 Decorate = rowY =>
                 {
-                    DrawPlatnostRuns(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
-                        mrizka.SirkaSpojeMm, platnostRuns, tripDataStyle, symbolFace, scale);
-                    DrawPlatnostRuns(ctx, rowY, rowH, ti => X + mrizka.XZrcadlenehoMm(ti),
-                        mrizka.SirkaZrcadlenehoMm, platnostRunsZrc, tripDataStyle, symbolFace, scale);
+                    DrawPlatnostRuns(ctx, rowY, znackaRowH, ti => X + mrizka.XSpojeMm(ti),
+                        mrizka.SirkaSpojeMm, platnostRuns, tripDataStyle, symbolFace, znackaScale);
+                    DrawPlatnostRuns(ctx, rowY, znackaRowH, ti => X + mrizka.XZrcadlenehoMm(ti),
+                        mrizka.SirkaZrcadlenehoMm, platnostRunsZrc, tripDataStyle, symbolFace, znackaScale);
                 },
             });
         }
@@ -1606,16 +1632,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (HasNzRow(vsechnySpoje))
         {
             var prazdneNz = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
-            plan.Add(new(RowKind.HeaderExtra, rowH, prazdneNz)
+            plan.Add(new(RowKind.HeaderExtra, znackaRowH, prazdneNz)
             {
                 VerticalLinePaint = sloupcovaCara,
                 LineBelowPaint = radkovaCara,
                 Decorate = rowY =>
                 {
-                    DrawNegativniZnacky(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
-                        mrizka.SirkaSpojeMm, trips, tripDataStyle, scale);
-                    DrawNegativniZnacky(ctx, rowY, rowH, ti => X + mrizka.XZrcadlenehoMm(ti),
-                        mrizka.SirkaZrcadlenehoMm, zrcadlene, tripDataStyle, scale);
+                    DrawNegativniZnacky(ctx, rowY, znackaRowH, ti => X + mrizka.XSpojeMm(ti),
+                        mrizka.SirkaSpojeMm, trips, tripDataStyle, znackaScale);
+                    DrawNegativniZnacky(ctx, rowY, znackaRowH, ti => X + mrizka.XZrcadlenehoMm(ti),
+                        mrizka.SirkaZrcadlenehoMm, zrcadlene, tripDataStyle, znackaScale);
                 },
             });
         }
@@ -2158,6 +2184,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PadEmptyColumns = PadEmptyColumns,
             JednotnaSirkaSpoju = JednotnaSirkaSpoju,
             FormatCasu = FormatCasu,
+            PomerZnacek = PomerZnacek,
             PomerMinuty = PomerMinuty,
             VyplnitPrazdneBunkySpoju = VyplnitPrazdneBunkySpoju,
             TeckyZaNazvemZastavky = TeckyZaNazvemZastavky,
@@ -2223,6 +2250,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new BoolPropertyDescriptor { Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
         new BoolPropertyDescriptor { Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
+        new FloatPropertyDescriptor
+        {
+            Label = "Velikost značek", Group = "Řádky",
+            Get = () => PomerZnacek, Set = v => PomerZnacek = v,
+            Min = 1f, Max = 3f, Format = "0.##",
+        },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = "Sloupce",
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
