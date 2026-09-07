@@ -109,9 +109,16 @@ takže nejde o práci, ale o doklad.
   než legacy** (`330511`: 11 sloupců proti jejich osmi). Výstup je úplný, ale zabere víc místa -
   změřeno 39,6 mm z 200 mm šířky prvku. Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
 
-- **`B125` Značky `od` / `pr` u sloupce se šipkou** [S] (podnět Jan 7. 9.). Popisky konců šipky
-  směru; mají to **obě** staré cesty (`JRapiLinPrtWin.mac:3016`, `JRapiLinPrtPS6.mac:193`).
-  Sloupec se šipkou už kreslíme, chybí jen ty dva texty.
+- **`B125` Popisky `od` / `př` u konců šipky** [S] ⏸️ **odloženo 7. 9.** (rozhodnutí Jan: „je dost
+  pochopitelné, co šipka znamená"). Texty jsou zadrátované `"od"` a `"př"`
+  (`JRapiLinPrtWin.mac:3016,3018`; postskript má na tomtéž místě `"od"`/`"pr"`, ale to jsou jména
+  glyfů pro jeho vektorové kreslení, ne slova). ⚠️ **Není to „jen dva texty":** sloupec je u nich
+  **řádkový** (`od`, `šb`, `šc`, `še`, `př` per zastávka), takže popisek zabírá krajní řádek a dřík
+  jde jen mezi nimi. Naše šipka je jedna čára přes všechny řádky - věrná varianta ji o dva řádky
+  zkrátí a u linky o třech zastávkách z ní zbyde jediný řádek dříku (vyzkoušeno 7. 9.: shodilo dva
+  testy na délku šipky a na směr hrotu, protože slovo je ve 4mm sloupci širší než hrot). Do toho
+  vstupuje i zastávka s odděleným příjezdem a odjezdem (`P`/`J`), která šipku uprostřed tabulky
+  ukončí a znovu začne.
 
 - **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
   ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového
