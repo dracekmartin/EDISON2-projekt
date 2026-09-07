@@ -125,6 +125,21 @@ takže nejde o práci, ale o doklad.
   Hotovo když: z okna je poznat, že jde o dvě různé osy, a přepínač jmenuje, co na té stránce je.
   Do tisku jde vždy obojí, chyba je jen v zobrazení.
 
+- **`B132` Tiskové měřítko šablony** [M] (podnět Jan 7. 9.). Starý postskript sází logickou stránku
+  (u `CB_CSADAD` 208 × 145 mm) a při tisku ji zvětší **1,3 ×** (`MeritkoVyves`; kniha 1 ×), takže
+  z jedné sazby jsou dvě velikosti výstupu. My to neumíme: 1 mm v šabloně = 1 mm na papíře,
+  „Uspořádání na list" stránku jen položí 1:1 na větší list (past #13158) a `Škálovat šablonu`
+  mění šablonu, ne tisk - dnes to znamená dvě šablony.
+  Hotovo když: u tisku jde zadat měřítko (nebo cílový formát) a šablona zůstane jedna.
+  ⚠️ Podklad na školení to měl jako hotové („MeritkoVyves → Škálovat šablonu") - opraveno.
+
+- **`B133` Nejmenší výška sekce se počítá ze zástupné výšky prvku, ne z obsahu** [S] (nález Jan 7. 9.).
+  `MinimalniVyskaProSekci` bere u prvku s dynamickou výškou `DesignerPlaceholderHeight`
+  (tabulka linky 60 mm, poznámky 25 mm), takže sekci nejde zmenšit pod ni ani tažením, ani číslem -
+  a systémové šablony přitom mají 20 a 15 mm (vznikly ze souboru). Důsledek: u krátké linky zůstane
+  mezi tabulkou a poznámkami mezera, kterou uživatel nemá jak odebrat.
+  Hotovo když: mez vychází z reálné výšky obsahu nad aktuálními daty, ne ze zástupné.
+
 - **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
   ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového
   fontu - **pozice 1-32 jsou v `TimeTable2` i v SK variantě prázdné** (ověřeno vykreslením tabulky
