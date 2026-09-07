@@ -1232,7 +1232,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return [.. SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!))
             .Select(b =>
             {
-                var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(b).Hlavni);
+                var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(b).Hlavni, SpojeBloku(b).Zrcadlene);
                 return hlava.Sum() + radky.Sum();
             })];
     }
@@ -1251,7 +1251,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// Jediné místo výpočtu, ať se render a výpočet výšky prvku nerozejdou.</summary>
     private float VyskaRadkuZnacek(float rowH) => rowH * Math.Clamp(PomerZnacek, 1f, 3f);
 
-    private (List<float> Hlava, List<float> Radky) VyskyRadkuBloku(IReadOnlyList<LineTripData> spojeBloku)
+    private (List<float> Hlava, List<float> Radky) VyskyRadkuBloku(
+        IReadOnlyList<LineTripData> spojeBloku, IReadOnlyList<LineTripData>? zrcadleneBloku = null)
     {
         var trips = _cachedTrips!;
         float headerH = ComputeHeaderH(MaxHeaderFontPt());
@@ -1273,13 +1274,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             radky.Add(rowH);
             if (sOdjezdem is null || !NesePripoje(zastavka, sOdjezdem)) continue;
-            // ⚠️ Jen ze spojů **tohohle bloku a hlavního směru** - kreslí se taky tak
-            // (`BuildRowPlan` dostává `spojeBloku`; zrcadlená strana má v přípojném řádku prázdné
-            // buňky). Dvakrát se tu už rozešel výpočet s kreslením a pokaždé to skončilo řezem
-            // uprostřed hlavičky dalšího bloku: 25. 8. počítáním ze všech spojů linky, 7. 9.
-            // počítáním z obou směrů bloku (na `330510` 2,1 mm na blok, za tři bloky 6,4 mm).
-            // Slučování navíc mění POČET řádků, takže musí sedět i seskupení.
-            int pripoju = PripojneRadky(zastavka, spojeBloku).Count;
+            // ⚠️ Ze spojů **tohohle bloku, obou stran** - a kreslí se taky tak (od 7. 9. nese
+            // přípojný řádek časy hlavní i zrcadlené strany, `B128`). Třikrát se tu už rozešel
+            // výpočet s kreslením a pokaždé to skončilo řezem uprostřed hlavičky dalšího bloku:
+            // 25. 8. počítáním ze všech spojů linky, 7. 9. z obou směrů, když se kreslil jen
+            // jeden. Teď platí obojí, takže se sem musí předat obě sady - jinak vyjde jiný POČET
+            // řádků, protože slučování spojuje přípoj obou směrů do jednoho.
+            int pripoju = PripojneRadky(zastavka, spojeBloku, zrcadleneBloku).Count;
             for (int i = 0; i < pripoju; i++) radky.Add(PripojRowH());
         }
         return (hlava, radky);
@@ -1313,7 +1314,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float zacatekBloku = 0f;
         for (int b = 0; b < bloky.Count; b++)
         {
-            var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(bloky[b]).Hlavni);
+            var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(bloky[b]).Hlavni, SpojeBloku(bloky[b]).Zrcadlene);
             if (b > 0) zlomy.Add(new Zlom(zacatekBloku, Silny: true));
 
             // hranice mezi řádky zastávek - první vynechat, jinak by zůstala hlava sama na stránce
@@ -1443,7 +1444,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // Řez padl doprostřed tohohle bloku → jeho hlavu zopakovat nad pokračováním.
                 // Kreslí se až po obsahu, mimo jeho ořez - viz `orezOd` výše.
                 if (ctx.OpakovanaHlavickaMm > 0.01f && ctx.ClipTopMm > y && ctx.ClipTopMm < konecBloku)
-                    hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku(SpojeBloku(blok).Hlavni).Hlava.Count)];
+                    hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku(SpojeBloku(blok).Hlavni, SpojeBloku(blok).Zrcadlene).Hlava.Count)];
 
                 float yBloku = y;
                 y = RowPlanRenderer.DrawRows(ctx, X, y, SirkaTabulkyMm(plan), plan, scale)
@@ -1791,11 +1792,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
             // přípojné řádky (vyčká/navazuje) za touto zastávkou - seskupení drží `PripojneRadky`,
             // aby vyšlo shodně s výpočtem výšky
-            foreach (var radek in PripojneRadky(stop, trips))
+            foreach (var radek in PripojneRadky(stop, trips, zrcadlene))
             {
                 var prSpecs = new List<ColumnRenderer.CellSpec>();
+                var casyZrc = radek.CasPerZrcadleny;
                 PridejZrcadlene(prSpecs, mrizka, zrcadlene.Count, pripojStyle,
-                    _ => ("", pripojStyle));
+                    ti => (casyZrc.TryGetValue(ti, out var cas) ? cas : "", pripojStyle));
                 for (int ci = 0; ci < fixedCols.Count; ci++)
                     prSpecs.Add(new(fixedCols[ci].Width,
                         ci == nameIndex ? radek.Popisek : "", pripojStyle,
@@ -2140,10 +2142,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         pr.Typ == "vycka" ? $"ze směru {pr.Text}" : $"směr {pr.Text}";
 
     /// <summary>Jeden přípojný řádek: popisek a časy per spoj (index do sady spojů bloku).</summary>
+    /// <remarks>
+    /// Časy jsou ve <b>dvou</b> mapách, protože obousměrná tabulka má na každé straně zastávek
+    /// vlastní sadu spojů a indexy by si v jedné mapě přebily. Řádek tak může nést přípoj obou
+    /// směrů naráz - „ze směru Brniště" vyjde jednou, s časy vlevo i vpravo.
+    /// </remarks>
     private sealed class PripojRadek
     {
         public string Popisek = "";
         public readonly Dictionary<int, string> CasPerSpoj = [];
+        public readonly Dictionary<int, string> CasPerZrcadleny = [];
     }
 
     /// <summary>
@@ -2160,44 +2168,56 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// Když už ve řádku ten spoj čas má, zakládá se řádek další - jinak by se dva přípoje téhož
     /// spoje přebily. Bez slučování zůstává řádek per (spoj × přípoj), tedy dnešní chování.</para>
     /// </remarks>
-    private List<PripojRadek> PripojneRadky(LineStopData stop, IReadOnlyList<LineTripData> trips)
+    private List<PripojRadek> PripojneRadky(LineStopData stop, IReadOnlyList<LineTripData> trips,
+        IReadOnlyList<LineTripData>? zrcadlene = null)
     {
         var radky = new List<PripojRadek>();
         var podleKlice = new Dictionary<string, List<PripojRadek>>();
 
-        for (int ti = 0; ti < trips.Count; ti++)
+        // Nejdřív hlavní strana, pak zrcadlená - do TÉŽE mapy klíčů, takže přípoj, který mají oba
+        // směry, sdílí jeden řádek a jen si do něj zapíše časy na svou stranu.
+        Pridej(trips, zrcadleny: false);
+        if (zrcadlene is { Count: > 0 }) Pridej(zrcadlene, zrcadleny: true);
+        return radky;
+
+        void Pridej(IReadOnlyList<LineTripData> sada, bool zrcadleny)
         {
-            foreach (var pr in trips[ti].Pripoje.Where(p => p.Radek && p.Poradi == stop.Poradi))
+            for (int ti = 0; ti < sada.Count; ti++)
             {
-                if (PripojeSlucovani == PripojSlucovani.Ne)
+                foreach (var pr in sada[ti].Pripoje.Where(p => p.Radek && p.Poradi == stop.Poradi))
                 {
-                    var samostatny = new PripojRadek { Popisek = PripojText(pr) };
-                    samostatny.CasPerSpoj[ti] = pr.Cas;
-                    radky.Add(samostatny);
-                    continue;
-                }
+                    if (PripojeSlucovani == PripojSlucovani.Ne)
+                    {
+                        var samostatny = new PripojRadek { Popisek = PripojText(pr) };
+                        Casy(samostatny, zrcadleny)[ti] = pr.Cas;
+                        radky.Add(samostatny);
+                        continue;
+                    }
 
-                string klic = PripojeSlucovani == PripojSlucovani.PodleSmeruALinky
-                    ? $"{pr.Typ}|{pr.Text}|{pr.Avl}|{pr.Linka}"
-                    : $"{pr.Typ}|{pr.Text}|{pr.Avl}";
+                    string klic = PripojeSlucovani == PripojSlucovani.PodleSmeruALinky
+                        ? $"{pr.Typ}|{pr.Text}|{pr.Avl}|{pr.Linka}"
+                        : $"{pr.Typ}|{pr.Text}|{pr.Avl}";
 
-                if (!podleKlice.TryGetValue(klic, out var skupina))
-                {
-                    skupina = [];
-                    podleKlice[klic] = skupina;
-                }
+                    if (!podleKlice.TryGetValue(klic, out var skupina))
+                    {
+                        skupina = [];
+                        podleKlice[klic] = skupina;
+                    }
 
-                var cil = skupina.FirstOrDefault(r => !r.CasPerSpoj.ContainsKey(ti));
-                if (cil is null)
-                {
-                    cil = new PripojRadek { Popisek = PripojTextSouhrnny(pr) };
-                    skupina.Add(cil);
-                    radky.Add(cil);
+                    var cil = skupina.FirstOrDefault(r => !Casy(r, zrcadleny).ContainsKey(ti));
+                    if (cil is null)
+                    {
+                        cil = new PripojRadek { Popisek = PripojTextSouhrnny(pr) };
+                        skupina.Add(cil);
+                        radky.Add(cil);
+                    }
+                    Casy(cil, zrcadleny)[ti] = pr.Cas;
                 }
-                cil.CasPerSpoj[ti] = pr.Cas;
             }
         }
-        return radky;
+
+        static Dictionary<int, string> Casy(PripojRadek radek, bool zrcadleny) =>
+            zrcadleny ? radek.CasPerZrcadleny : radek.CasPerSpoj;
     }
 
     private void DrawRowLine(RenderContext ctx, float yMm, SchedulePaints paints)

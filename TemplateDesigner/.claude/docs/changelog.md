@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-09-07 (12) - 🔗 „vyčká / navazuje" je vidět u obou směrů (`B128`)
+
+Nalezeno 7. 9. při opravě řezu stránky: v obousměrné tabulce se přípojné řádky stavěly **jen ze
+spojů hlavního směru**, takže zrcadlená strana měla buňky vždy prázdné.
+U poloviny spojů se tedy cestující nedozvěděl, že spoj vyčká nebo že na něj něco navazuje,
+i když to data nesla.
+
+Přípojný řádek teď nese časy **obou** stran. Řádek, který mají oba směry, vyjde **jednou** s časy
+vlevo i vpravo; různé směry přípoje mají řádek každý. Slučovací klíč (tarifní číslo, směr, druh
+dopravy, volitelně linka) směr tisku neobsahuje, takže je to přímý důsledek rozhodnutí ze 4. 9.,
+ne nová volba.
+
+⚠️ **Tabulka může být o řádek vyšší** a u těsné šablony se dřív zlomí stránka. Obsah je ale úplný -
+dřív ta informace u poloviny spojů chyběla.
+
+⚠️ **Dva testy ze 7. 9. se musely přepsat.** Držely, že přípoj zrcadleného směru místo nerezervuje
+a neposune zlomy - správně, dokud se nekreslil. Nově hlídají **symetrii**: táž situace vlevo
+i vpravo musí dát shodnou výšku i shodné zlomy. Ta podmínka je silnější než původní konstanta,
+protože spadne, když se kterákoli strana přestane počítat **i** kreslit.
+
+⚠️ **Test na inkoust se musel opravit dvakrát a v obou případech to odhalila mutace, ne běh testů.**
+První verze tvrdila, že vlevo od zastávek je jen ten čas, a spadla na popisku řádku. Druhá
+srovnávala dvě různé fixtury, čímž měřila **značku návaznosti v buňce spoje**, ne čas v přípojném
+řádku - a mutací „nekreslit zrcadlenou stranu" prošla. Platná verze srovnává tatáž data se
+zapnutými a vypnutými přípojnými řádky.
+
+Ověřeno: .NET **1567/1567** (5 nových testů, 2 přepsané). Mutace shodí tři.
+
 ## 2026-09-07 (11) - 🐛 stránka se řezala uprostřed hlavičky bloku
 
 Nález Jan 7. 9. na lince `330510` (víc skupin dnů než `330511`): obousměrný tisk vyšel „velmi

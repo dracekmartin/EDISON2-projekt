@@ -1,5 +1,16 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B128` Přípoje zrcadleného směru se v obousměrném tisku netiskly (hotovo 7. 9. 2026)
+
+Přípojné řádky se stavěly jen ze spojů hlavního směru, takže zrcadlená strana měla buňky vždy
+prázdné a u poloviny spojů chybělo „vyčká / navazuje", i když to data nesla. Přípojný řádek nese
+nově časy obou stran; řádek, který mají oba směry, vyjde jednou s časy vlevo i vpravo (slučovací
+klíč směr tisku neobsahuje, takže je to důsledek rozhodnutí ze 4. 9.).
+
+Dva testy ze 7. 9. se přepsaly - držely, že zrcadlený přípoj místo nerezervuje, což platilo jen
+dokud se nekreslil. Nově hlídají symetrii výšky i zlomů, což je silnější podmínka. Detail
+a dvě chybné verze testu na inkoust: `changelog.md` 7. 9. (12).
+
 ## `B122` Testy nehlídaly šířku bloku u obousměrné sestavy (hotovo 4. 9. 2026)
 
 Podmínka „každý blok linkové tabulky se vejde do šířky prvku" nebyla u linky tištěné v obou směrech
