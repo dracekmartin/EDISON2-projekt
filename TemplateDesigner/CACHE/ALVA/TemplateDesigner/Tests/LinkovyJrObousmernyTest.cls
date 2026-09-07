@@ -45,6 +45,52 @@ Method TestSlouceniNeztratiSpoje()
 	do $$$AssertEquals(zapnuto, vypnuto, "sloučená stránka má "_zapnuto_" spojů, po směrech jich je "_vypnuto)
 }
 
+/// Km sloupce: obousměrná stránka bere **společný** seznam, ne oba směrové slepené za sebe.
+///
+/// Starý tisk to tak dělá výslovně (`JRapiLinPrtWin.mac:2523`, větev `sm="A"`) a společný seznam je
+/// odduplikovaná sjednocenina obou směrů - profil obsažený v jiném do něj nejde. Do 7. 9. jsme
+/// slepovali oba směrové, takže vznikaly sloupce nesoucí totéž.
+///
+/// Čísla jsou **změřená** na `0330511` sondou `LinkovyJrSpojeProbe.KmSloupce`: společný 8,
+/// směr tam 5, směr zpět 6. Kdyby se linka v datech změnila, test to řekne rozdílem proti globálu,
+/// ne pádem na konstantě.
+Method TestKmSloupceObousmerneBerouSpolecnySeznam()
+{
+	do ..SetupSys(.sys)
+	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
+	if '##class(%SYS.Namespace).Exists(db) do $$$AssertTrue(1, "firma "_db_" tu není - přeskočeno") quit
+	if '$data(^[db]JRL(sku, lin, "I")) do $$$AssertTrue(1, "linka "_lin_" tu není - přeskočeno") quit
+
+	set spolecnych = +$get(^[db]JRL(sku, lin, "K"))
+	set smerovychT = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "T"))
+	set smerovychZ = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "Z"))
+	// ⚠️ Makro assertu musí být na jednom řádku, proto se hlášky skládají dopředu.
+	set hlaskaFixtura = "fixtura nic neověří: společný seznam ("_spolecnych_") musí být kratší než oba směrové dohromady ("_smerovychT_"+"_smerovychZ_"), jinak je slepení a sjednocenina totéž"
+	do $$$AssertTrue(spolecnych < (smerovychT + smerovychZ), hlaskaFixtura)
+
+	if '..PocetKmVeSloupci(1, .kmObou) quit
+	set hlaskaObou = "obousměrná stránka má mít "_spolecnych_" km sloupců (společný seznam), má "_kmObou
+	do $$$AssertEquals(kmObou, spolecnych, hlaskaObou)
+
+	if '..PocetKmVeSloupci(0, .kmJednim) quit
+	set hlaskaJednim = "jednosměrná stránka má mít "_smerovychT_" km sloupců (směrový seznam), má "_kmJednim
+	do $$$AssertEquals(kmJednim, smerovychT, hlaskaJednim)
+}
+
+/// Kolik km hodnot nese první zastávka stránky - tedy kolik km sloupců stránka má.
+ClassMethod PocetKmVeSloupci(obousmerne As %Boolean, ByRef pocet) As %Boolean
+{
+	do ..SetupSys(.sys)
+	kill parametry
+	set parametry("OBOUSMERNY_TISK") = $select(obousmerne:"true", 1:"false")
+	if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, ..#TESTDB, ..#TESTSKU, ..#TESTLIN, .parametry) quit 0
+	set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT", 1)))
+	if '$isobject(page) quit 0
+	set zast = page.rows.ZASTAVKY.%Get(0)
+	set pocet = $select($isobject(zast) && $isobject(zast.KM): zast.KM.%Size(), 1: -1)
+	quit 1
+}
+
 /// Časy zpětných spojů musí sedět na **společný** seznam zastávek - tedy mít stejnou délku jako on.
 /// Kdyby se zarovnávaly podle pozice ve svém směru, vyšly by proti řádkům obráceně nebo nakřivo.
 Method TestCasyZpetnychSpojuSedNaSpolecneRadky()
@@ -65,9 +111,14 @@ Method TestSmerStrankyJePrazdny()
 	do $$$AssertEquals(smerStranky, "", "sloučená stránka hlásí SMER=" _ smerStranky _ ", má být prázdný")
 }
 
-/// Km sloupce má **každý směr vlastní** a v obou počtech; sloučená stránka je proto musí nést
-/// obojí, jinak se km opačného směru ztratí. Legacy je počítá zvlášť (`Nkm2T`/`Nkm2Z`, šířky
-/// `KmcharT`/`KmcharZ`, `JRapiLinPrtPS2.mac:79-93,189`) a tiskne do prostředního bloku.
+/// Sloučená stránka musí nést km **obou** směrů, ne jen hlavního - jinak se km opačného směru
+/// ztratí (tak to bylo do 7. 9.).
+///
+/// ⚠️ **Netvrdí se součet obou směrových seznamů.** První verze tohohle testu to tvrdila, protože
+/// vznikla dřív, než se ukázalo, že legacy má pro obousměrný tisk **společný** seznam - a ten je
+/// odduplikovaná sjednocenina, ne součet (`0330511`: 8 proti 5+6). Přesný počet ověřuje
+/// `TestKmSloupceObousmerneBerouSpolecnySeznam`; tady jde jen o to, že opačný směr nezmizel,
+/// a to platí bez ohledu na to, kolik profilů je v datech duplicitních.
 Method TestKmObouSmeruJsouNaSlouceneStrance()
 {
 	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
@@ -86,9 +137,9 @@ Method TestKmObouSmeruJsouNaSlouceneStrance()
 	if '..DelkaKm(1, .slouceno) quit
 
 	set hlaskaT = "jednosměrná stránka má " _ jenTam _ " km sloupců, linka jich má " _ kmT
-	set hlaskaOba = "sloučená stránka má " _ slouceno _ " km sloupců, oba směry dohromady " _ (kmT + kmZ)
+	set hlaskaOba = "sloučená stránka má " _ slouceno _ " km sloupců, jen hlavní směr jich má " _ kmT
 	do $$$AssertEquals(jenTam, kmT, hlaskaT)
-	do $$$AssertEquals(slouceno, kmT + kmZ, hlaskaOba)
+	do $$$AssertTrue(slouceno > kmT, hlaskaOba)
 }
 
 /// Na sloučené stránce jsou zastávky v pořadí hlavního směru, takže **všechny** km sloupce musí

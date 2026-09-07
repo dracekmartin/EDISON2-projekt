@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-09-07 (13) - 📐 obousměrná tabulka bere společný seznam km sloupců (`B124`)
+
+Km sloupce jsou u linky uložené **třikrát**: společný seznam `^JRL(sku,lin,"K")` a dva směrové
+`PATCH,KmsSmer,T/Z`.
+Starý tisk bere u **obousměrné** sestavy ten společný a u jednosměrné směrový
+(`JRapiLinPrtWin.mac:2523`, větev `sm="A"`), protože společný je **odduplikovaná sjednocenina** obou
+směrů - profil obsažený v jiném do něj nejde.
+My jsme oba směrové slepovali za sebe, takže vznikaly sloupce nesoucí totéž: na `0330511`
+**11 místo 8** (T má 5, Z 6, tři profily jsou obsažené v jiných).
+
+Tabulka je tím užší, vejde se do ní víc spojů na blok a řeže se na méně dílů. Žádné číslo se
+neztrácí a je to týž seznam, ze kterého tiskne starý modul. Jednosměrný tisk se nemění.
+
+⚠️ **Filtr počtu km sloupců neděláme a nemusíme.** Roadmapa to vedla jako „chybí nám filtr" - to
+byl špatný předpoklad. `Kms,Filtr` (max počet, výchozí 10) a `Kms,MaxFiltr` jsou vstupy do `mkKms`
+(`JRapiLinUtlKms1.mac:36-200`), která seznamy **generuje** při uložení linky, takže je dostáváme už
+profiltrované. Celý algoritmus i měření: [`§17.0`](linkovy-knizni-jr-implementace-analyza.md).
+
+⚠️ **Není to totéž jako varianty tras u vývěsek**, i když ta myšlenka je stejná. Km profily se
+slévají i na **obsaženost** (kratší profil se vsákne do delšího), kdežto varianty tras jen na
+**rovnost** signatury, takže spoj jedoucí část trasy tam má vlastní sloupec. Obojí odpovídá svému
+legacy zdroji: vývěskový modul dedupuje bitmapu na rovnost (`JRapiLinPrtMhd1.mac:285`), kilometrová
+utilita na obsaženost.
+
+⚠️ **Test ze 7. 9. se musel přepsat** - tvrdil, že sloučená stránka nese **součet** obou směrových
+seznamů, protože vznikl dřív, než se o společném seznamu vědělo. Nově hlídá jen to, že opačný směr
+nezmizel (nese víc než jen hlavní směr); přesný počet ověřuje nový test proti obsahu globálu.
+
+Ověřeno: Caché **153/153** (1 nový test), .NET 1567/1567. Mutace „ber směrové seznamy i u
+obousměrné" shodí oba testy. Nový test má i pojistku, že fixtura něco ověřuje: společný seznam musí
+být kratší než oba směrové dohromady, jinak by slepení a sjednocenina byly totéž.
+
 ## 2026-09-07 (12) - 🔗 „vyčká / navazuje" je vidět u obou směrů (`B128`)
 
 Nalezeno 7. 9. při opravě řezu stránky: v obousměrné tabulce se přípojné řádky stavěly **jen ze

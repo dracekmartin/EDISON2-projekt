@@ -1,5 +1,21 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B124` Obousměrná tabulka bere společný seznam km sloupců (hotovo 7. 9. 2026)
+
+Km sloupce jsou u linky uložené třikrát: společný `^JRL(sku,lin,"K")` a dva směrové
+`PATCH,KmsSmer,T/Z`. Starý tisk bere u obousměrné sestavy ten společný, u jednosměrné směrový
+(`JRapiLinPrtWin.mac:2523`, větev `sm="A"`) - společný je odduplikovaná sjednocenina obou směrů.
+My jsme oba směrové slepovali za sebe a vyráběli sloupce nesoucí totéž: na `0330511` 11 místo 8.
+
+⚠️ **Položka byla zapsaná na špatném předpokladu** („chybí nám filtr počtu km sloupců"). Filtr
+neděláme a nemusíme: `Kms,Filtr` a `Kms,MaxFiltr` jsou vstupy do `mkKms`, která seznamy generuje
+při uložení linky, takže je dostáváme profiltrované. Algoritmus, měření i srovnání s variantami
+tras u vývěsek (slévají se jen na rovnost, ne na obsaženost) drží
+[`§17.0`](linkovy-knizni-jr-implementace-analyza.md).
+
+Caché 153/153, mutace „ber směrové i u obousměrné" shodí dva testy. Detail včetně přepsaného testu
+ze 7. 9.: `changelog.md` 7. 9. (13).
+
 ## `B125` Popisky `od` / `př` u konců šipky - NEDĚLÁ SE (rozhodnutí Jan 7. 9. 2026)
 
 **Ze šipky je směr pochopitelný i beze slov** - popisky konců se dělat nebudou. Šipky samotné
