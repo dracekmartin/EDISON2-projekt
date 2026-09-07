@@ -118,6 +118,13 @@ takže nejde o práci, ale o doklad.
   Hotovo když: uživatel vidí rozpočet stránky (hlavička / patička / na obsah zbývá) a dostane
   hlášení, když stránka končí velkým prázdnem, protože se další nedělitelný díl nevešel.
 
+- **`B131` Dvě různá „víc stránek" se pletou** [M] (nález Jan 7. 9.). Náhled má **stránky dat**
+  (u linkového JŘ jeden směr = jedna stránka, u vývěsky zastávka × směr) v přepínači nad sebou
+  a **stránky sazby** (rozřezaná tabulka) pod sebou ve scrollu. Uživatel to nerozliší: při vypnutém
+  obousměrném tisku hledal zpětné spoje a měl je za nevytištěné, protože byly na druhé stránce dat.
+  Hotovo když: z okna je poznat, že jde o dvě různé osy, a přepínač jmenuje, co na té stránce je.
+  Do tisku jde vždy obojí, chyba je jen v zobrazení.
+
 - **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
   ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového
   fontu - **pozice 1-32 jsou v `TimeTable2` i v SK variantě prázdné** (ověřeno vykreslením tabulky
