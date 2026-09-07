@@ -67,9 +67,22 @@ public class PostScriptParitaProbe
         var canvas = new PreviewCanvas(state);
         int count = canvas.RenderMultiDataToPng(outPath, pages!, dpi, template);
 
+        // Rozvržení tabulky linky - kolik spojů se vešlo do bloku a jak široký sloupec z toho vyšel.
+        var popisBloku = "";
+        foreach (var el in template.Sections.SelectMany(x => x.Elements)
+                     .OfType<TemplateDesigner.Models.Elements.LineTableElement>())
+        {
+            var bloky = el.Rozvrzeni(pages![0]);
+            popisBloku += $"prvek {el.Width} mm → {bloky.Count} bloků: "
+                + string.Join(" | ", bloky.Select(b =>
+                    $"{b.Pocet} slotů, {b.SirkaMm:0.0} mm, sloupec "
+                    + $"{(b.SirkySloupcu.Count > 0 ? b.SirkySloupcu[0] : 0):0.00} mm"
+                    + $" (základ {b.SloupecSpojeMm:0.00})")) + "\n";
+        }
+
         var (nalezy, total) = canvas.CountOverflowingPages(pages!);
         File.WriteAllText(Path.ChangeExtension(outPath, ".txt"),
-            $"stránek: {count} (layout {total})\n" +
+            $"stránek: {count} (layout {total})\n" + popisBloku +
             string.Join("\n", nalezy.Select(n => $"přetečení str. {n.CisloStranky}: {n.Druh} sekce={n.Sekce} prvek={n.Prvek} presah={n.PresahMm:0.0}mm")));
 
         Assert.True(count > 0, "Nevznikla ani jedna stránka");
