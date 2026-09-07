@@ -103,6 +103,27 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
+- **`B124` Filtr počtu kilometrických sloupců** [S] (podnět Jan 7. 9.). U linky je práh
+  (`PATCH,Kms,Filtr`, výchozí 10) a `Kms,MaxFiltr`, kterými starý tisk redukuje počet km sloupců.
+  Neumíme to, takže od chvíle, kdy posíláme km obou směrů, vyjdeme u obousměrné sestavy **širší
+  než legacy** (`330511`: 11 sloupců proti jejich osmi). Výstup je úplný, ale zabere víc místa.
+  Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
+
+- **`B125` Značky `od` / `pr` u sloupce se šipkou** [S] (podnět Jan 7. 9.). Popisky konců šipky
+  směru; mají to **obě** staré cesty (`JRapiLinPrtWin.mac:3016`, `JRapiLinPrtPS6.mac:193`).
+  Sloupec se šipkou už kreslíme, chybí jen ty dva texty.
+
+- **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
+  ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového
+  fontu - **pozice 1-32 jsou v `TimeTable2` i v SK variantě prázdné** (ověřeno vykreslením tabulky
+  glyfů). Postskript si je kreslí sám jako vektory. U nás to tedy znamená kreslicí featuru podobnou
+  šipce směru, ne dva řádky v `SymbolMap`. Dnes se tiskne holé `<` a `|`.
+
+- **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9., pohltí `B100`). Ruční zlom na
+  tarifním čísle (`PATCH,ZLOM`) plus tři volby dělené linky (`gSetLinPrt` dta 21-23): tisk na jednu
+  stranu, hlavička a poznámky pro směr nebo pro část, směr na stranu. **Dělá se to dohromady** -
+  bez zlomu dělená linka nevznikne (rozhodnutí Jan 7. 9.).
+
 - **`B123` Atributy trasy zastávky - dodělat zbytek číselníku** [M] (podnět Jan 7. 9.). Z číselníku
   16 („atributy trasy", `JRapiCis.mac:1283`) umíme `x`, `A`, `L`, `T`, `P`; chybí metro/letadlo/loď,
   varianty „na znamení" (`y`, `z`), podtržení (`p`, `o`, `J`) a paragrafy. ⚠️ **Blokuje to kolize
