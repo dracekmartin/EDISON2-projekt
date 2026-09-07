@@ -106,8 +106,8 @@ takže nejde o práci, ale o doklad.
 - **`B124` Filtr počtu kilometrických sloupců** [S] (podnět Jan 7. 9.). U linky je práh
   (`PATCH,Kms,Filtr`, výchozí 10) a `Kms,MaxFiltr`, kterými starý tisk redukuje počet km sloupců.
   Neumíme to, takže od chvíle, kdy posíláme km obou směrů, vyjdeme u obousměrné sestavy **širší
-  než legacy** (`330511`: 11 sloupců proti jejich osmi). Výstup je úplný, ale zabere víc místa.
-  Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
+  než legacy** (`330511`: 11 sloupců proti jejich osmi). Výstup je úplný, ale zabere víc místa -
+  změřeno 39,6 mm z 200 mm šířky prvku. Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
 
 - **`B125` Značky `od` / `pr` u sloupce se šipkou** [S] (podnět Jan 7. 9.). Popisky konců šipky
   směru; mají to **obě** staré cesty (`JRapiLinPrtWin.mac:3016`, `JRapiLinPrtPS6.mac:193`).

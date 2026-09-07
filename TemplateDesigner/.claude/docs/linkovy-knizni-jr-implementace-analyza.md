@@ -1500,3 +1500,24 @@ font** - jsou to vektorové procedury Type 3 psané přímo v programu (`/hammer
 **Nimbus Sans**. Výtisk, který zákazník považuje za postskriptový vzhled, je tedy s velkou
 pravděpodobností Nimbus Sans, ne Helvetica. Ověřitelné ve vlastnostech jejich PDF (záložka Písma).
 Arial má s Helveticou shodné šířky (naměřeno na desetinu), ale jinou kresbu.
+
+### Šířka sloupce spoje - co kolik stojí (změřeno 7. 9. na `330511`, A5 na šířku, oba směry)
+
+Prvek 200 mm, 9 spojových slotů (obousměrně = 18 sloupců), popisné sloupce 95,6 mm z toho
+**39,6 mm samotné kilometry** (11 sloupců po 3,6 mm).
+
+- Základ sloupce spoje **5,03 mm**: text „23 59" při 4,8 pt měří 4,03 mm, zbytek je vnitřní
+  odsazení buňky (2× 0,5 mm). Odsazení je **absolutní**, takže při drobném písmu dělá čtvrtinu
+  šířky sloupce - odtud dojem „kolem minut je spousta místa".
+- Volba **„Stejně široké sloupce spojů" přidá 1,93 mm každému sloupci**, i tomu bez značky
+  návaznosti: jednotná šířka se počítá za celou linku, a stačí jediná značka kdekoli. Na téhle
+  lince to je 18 × 1,93 = **34,7 mm** a stojí to přesně jeden slot: zapnuté = 8 slotů ve dvou
+  blocích, vypnuté = **všech 9 v jednom** (194,8 mm). Vypnuté je zároveň chování starého tisku -
+  ten má pro sloupec čtyři šířky podle počtu značek (`JRapiLinPrtWin.mac:1793`).
+- Užší kilometry (3,6 → 2,6 mm) dají jeden blok taky, samostatně: **193,2 mm**. Legacy jich navíc
+  tiskne jen osm (`B124`).
+
+⚠️ **Rozpadlý tisk, který Jan viděl, nezpůsobila šířka.** Dva bloky pod sebou zdvojnásobí výšku
+tabulky a sekce byla nastavená „držet pohromadě", takže se druhý blok neměl kam odsunout
+(přesah 43,7 mm). Nápravu dnes hláška o přetečení říká sama.
+
