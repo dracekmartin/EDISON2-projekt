@@ -1,5 +1,25 @@
 # 🗄️ Archiv - hotové kroky
 
+## `B125` Popisky `od` / `př` u konců šipky - NEDĚLÁ SE (rozhodnutí Jan 7. 9. 2026)
+
+**Ze šipky je směr pochopitelný i beze slov** - popisky konců se dělat nebudou. Šipky samotné
+zůstávají bez zásahu: vlevo a na jednosměrné stránce míří dolů, vpravo u obousměrné nahoru, což je
+doložené výtiskem ze starého modulu z 28. 8.
+
+Kdyby se k tomu někdo vracel, tohle je změřené a nemusí se hledat znovu:
+
+- Texty jsou zadrátované `"od"` a `"př"` (`JRapiLinPrtWin.mac:3016,3018`), nastavit je nikde nejde.
+  Postskript má na tomtéž místě `"od"` / `"pr"`, ale to jsou jména glyfů pro jeho vlastní vektorové
+  kreslení, ne slova.
+- ⚠️ **Není to „jen dva texty".** Sloupec se šipkou je ve starém tisku **řádkový** - každá zastávka
+  má hodnotu `od`, `šb`, `šc`, `še` nebo `př` - takže popisek zabírá krajní řádek a dřík jde jen
+  mezi nimi.
+- Naše šipka je jedna svislá čára přes všechny řádky. Věrná varianta ji o dva řádky **zkrátí**
+  a u linky o třech zastávkách z ní zbyde jediný řádek dříku. Vyzkoušeno 7. 9.: shodilo dva testy
+  (na délku šipky a na směr hrotu, protože slovo je ve 4mm sloupci širší než hrot).
+- Do toho vstupuje i zastávka s odděleným příjezdem a odjezdem (`P`/`J`), která šipku uprostřed
+  tabulky ukončí a znovu začne.
+
 ## `B128` Přípoje zrcadleného směru se v obousměrném tisku netiskly (hotovo 7. 9. 2026)
 
 Přípojné řádky se stavěly jen ze spojů hlavního směru, takže zrcadlená strana měla buňky vždy
