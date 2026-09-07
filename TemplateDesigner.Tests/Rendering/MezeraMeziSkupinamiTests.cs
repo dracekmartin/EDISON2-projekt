@@ -34,6 +34,11 @@ public class MezeraMeziSkupinamiTests
     private static LineTableElement Prvek() => new()
     {
         X = 0, Y = 0, Width = 100, Height = null,
+        // ⚠️ Vypnuto schválně: konstanty níž počítají s tím, že sloupec spoje je přesně
+        // `SirkaSpoje` široký a jen ten se značkou návaznosti je širší. Se zapnutou volbou
+        // (dnes výchozí) jsou všechny sloupce široké jako ten nejširší a celá geometrie
+        // se posune. Zapnutou variantu hlídá `ZnackaNavaznosti_JeVeSloupciSvehoSpoje_JednotnaSirka`.
+        JednotnaSirkaSpoju = false,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 8, BackgroundColor = "#FFE0E0E0" },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
         HighlightOddTc = false,
@@ -450,6 +455,62 @@ public class MezeraMeziSkupinamiTests
             RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1")),
             RenderSnapshot.Row(("ID", "2"), ("NADPIS", ""), ("PORADI", "2")),
         ]));
+
+    /// <summary>
+    /// Totéž při <b>výchozím</b> nastavení, tedy se stejně širokými sloupci spojů. Musí to být
+    /// vlastní test: geometrie zbytku souboru je připíchnutá k legacy rozvržení, kdežto tady se
+    /// odsazení odvozuje ze skutečných šířek, které prvek spočítal.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Značka se kreslí ručně mimo buňky. Kdyby si šířku sloupce brala odjinud než rozvržení,
+    /// při jednotné šířce by skončila ve sloupci cizího spoje - a testy pod legacy nastavením
+    /// by o tom nevěděly.
+    /// </remarks>
+    [Fact]
+    public void ZnackaNavaznosti_JeVeSloupciSvehoSpoje_JednotnaSirka()
+    {
+        var prvek = Prvek();
+        prvek.JednotnaSirkaSpoju = true;
+        prvek.MezeraMeziSkupinamiMm = MezeraMm;
+        // Širší než u ostatních testů: jednotná šířka sloupce je o značku větší, takže by se
+        // do stovky milimetrů všechny tři spoje nevešly a rozřezaly by se do bloků.
+        prvek.Width = 130;
+        var data = DataJenZnackaNavaznosti();
+
+        using var bmp = Vykresli(prvek, data);
+
+        // Sloupec třetího spoje: zastávky + dvě mezery (za popisným blokem a před druhou skupinou)
+        // + dva sloupce spojů o skutečné, tedy jednotné šířce.
+        var sirky = prvek.Rozvrzeni(data)[0].SirkySloupcu;
+        Assert.Equal(3, sirky.Count);
+        Assert.Single(sirky.Distinct());
+        float odMm = SirkaZastavky + 2 * MezeraMm + sirky[0] + sirky[1];
+        float doMm = odMm + sirky[2];
+
+        int inkoust = 0;
+        for (int x = Sloupec(odMm + 0.5f); x <= Sloupec(doMm - 0.5f); x++)
+            inkoust += InkoustVeSloupci(bmp, x);
+
+        Assert.True(inkoust > 0,
+            $"ve sloupci spoje se značkou návaznosti ({odMm:0.#}-{doMm:0.#} mm) není nic - "
+            + "značka s časem se při jednotné šířce nakreslila jinam");
+
+        // ⚠️ Samotné „něco tam je" nestačí: sloupec je širší než posun, který vznikne, když se
+        // odsazení počítá ze základu místo ze skutečných šířek - značka pak sedí vedle středu,
+        // ale pořád uvnitř sloupce. Proto se hlídá **vystředění** (odhaleno mutací).
+        int prvni = -1, posledni = -1;
+        for (int x = Sloupec(odMm); x <= Sloupec(doMm); x++)
+        {
+            if (InkoustVeSloupci(bmp, x) == 0) continue;
+            if (prvni < 0) prvni = x;
+            posledni = x;
+        }
+        float vlevoMm = prvni / MmToPx - odMm;
+        float vpravoMm = doMm - posledni / MmToPx;
+        Assert.True(MathF.Abs(vlevoMm - vpravoMm) < 0.5f,
+            $"značka s časem není ve sloupci vystředěná (vlevo {vlevoMm:0.##} mm, vpravo "
+            + $"{vpravoMm:0.##} mm) - odsazení sloupce se počítá z jiné šířky, než jakou sloupec má");
+    }
 
     /// <summary>Značka návaznosti se kreslí ručně mimo buňky, takže o mezerách i o vlastní šířce
     /// sloupce musí vědět sama - jinak skončí ve sloupci cizího spoje.</summary>

@@ -97,18 +97,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public bool PadEmptyColumns { get; set; }
 
     /// <summary>
-    /// Všechny sloupce spojů stejně široké (výchozí vypnuto = legacy parita).
+    /// Všechny sloupce spojů stejně široké (výchozí zapnuto).
     /// </summary>
     /// <remarks>
-    /// Bez ní je sloupec, ve kterém je někde značka návaznosti, o tu značku širší než ostatní -
-    /// parita se starým modulem, který má pro sloupec spoje čtyři šířky podle počtu značek
-    /// (<c>JRapiLinPrtWin.mac:1793</c>). Na výtisku to působí roztřepeně, protože se šířka mění
-    /// spoj od spoje. Zapnutá volba dá všem sloupcům šířku toho nejširšího.
+    /// Vypnutá je parita se starým modulem: sloupec, ve kterém je někde značka návaznosti, je
+    /// o tu značku širší než ostatní (starý modul má pro sloupec spoje čtyři šířky podle počtu
+    /// značek, <c>JRapiLinPrtWin.mac:1793</c>). Na výtisku to působí roztřepeně, protože se šířka
+    /// mění spoj od spoje, a oko to čte jako různě velké písmo.
+    /// <para>⚠️ **Výchozí je zapnuto**, tedy odchylka od legacy parity - čitelnost vyhrála
+    /// (rozhodnutí Jan 7. 9.). Bezpečné to je proto, že linková agenda ještě nemá u zákazníků
+    /// hotové šablony, kterým by se tím změnilo rozvržení.</para>
     /// <para>⚠️ Nejširší se bere přes **všechny** spoje linky, ne přes blok - jinak by bloky pod
     /// sebou měly různě široké sloupce a zastávky by na sebe svisle nesedly (invariant z 25. 8.,
     /// stejný důvod, proč je základ sloupce společný pro všechny bloky).</para>
     /// </remarks>
-    public bool JednotnaSirkaSpoju { get; set; }
+    public bool JednotnaSirkaSpoju { get; set; } = true;
 
     /// <summary>
     /// Kazda zona hranicni zastavky ve vlastnim sloupci (vychozi vypnuto).

@@ -10,9 +10,10 @@ se starým modulem, který má pro sloupec čtyři šířky podle počtu značek
 (`JRapiLinPrtWin.mac:1793`). Na výtisku to působí roztřepeně, protože se šířka mění spoj od spoje
 a oko to čte jako různě velké písmo.
 
-**Nová volba prvku dá všem sloupcům spojů šířku toho nejširšího.** Výchozí je vypnutá, takže se
-hotovým šablonám nic nemění. Zapnutá stojí místo: sloupce jsou širší, takže se jich do řádku vejde
-méně a tabulka se řeže na víc bloků.
+**Nová volba prvku dá všem sloupcům spojů šířku toho nejširšího a je výchozí** (rozhodnutí Jan
+7. 9.: linková agenda ještě nemá u zákazníků hotové šablony, kterým by se tím změnilo rozvržení,
+takže čitelnost vyhrála nad paritou). Stojí to místo: sloupce jsou širší, takže se jich do řádku
+vejde méně a tabulka se řeže na víc bloků. Vypnutím se vrátí chování starého tisku.
 
 ⚠️ **Nejširší se bere přes celou linku, ne přes blok.** Bloky se kreslí pod sebe a zastávky v nich
 musí svisle sedět; per blok by blok bez značek měl užší sloupce a tabulka by se pod sebou rozjela.
