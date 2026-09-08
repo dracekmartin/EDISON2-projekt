@@ -60,12 +60,16 @@ public class EDComponentToolbarFlatTests
     {
         if (Application.Current is not null) return;
 
-        var app = new Application();
+        // OnExplicitShutdown - jiné testy (EDFooter) vytvářejí okna; default OnLastWindowClose
+        // by sdílenou Application shodil a druhá se v AppDomain vytvořit nedá.
+        var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         foreach (var dict in new[] { "EDTheme/EDTheme.xaml", "EDControlStyles/EDControlStyles.xaml",
                                      "EDIcons/EDIcons.xaml", "EDStrings/EDStrings.xaml" })
             app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri(Comp + dict) });
     }
 
+    // Trvalé app vlákno: Application vytvořená na jednorázovém STA vlákně občas zanikne
+    // se svým dispatcherem a druhá se v AppDomain vytvořit nedá.
     private static void RunSta(Action action) =>
-        EDTesting.Sta.Run(() => { EnsureApplication(); action(); });
+        EDTesting.Sta.RunOnAppThread(() => { EnsureApplication(); action(); });
 }

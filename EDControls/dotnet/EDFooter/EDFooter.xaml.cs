@@ -28,11 +28,13 @@ public partial class EDFooter : UserControl
     }
 
     private EDControls.EDViewModel.EDViewModel? _vm;
+    private Window? _window;
 
     public EDFooter()
     {
         InitializeComponent();
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     private static void OnFooterModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -52,18 +54,32 @@ public partial class EDFooter : UserControl
         var window = Window.GetWindow(this);
         if (window == null) return;     // design time
 
+        // Loaded fajruje při každém návratu do vizuálního stromu (tab, re-template) -
+        // bez odhlášení by se DataContextChanged i RequestClose handlery akumulovaly.
+        DetachFromWindow();
+        _window = window;
         window.DataContextChanged += OnWindowDataContextChanged;
         SubscribeToViewModel(window.DataContext as EDControls.EDViewModel.EDViewModel);
     }
 
-    private void OnWindowDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    private void OnUnloaded(object sender, RoutedEventArgs e) => DetachFromWindow();
+
+    private void DetachFromWindow()
     {
-        if (_vm != null) _vm.RequestClose -= OnRequestClose;
-        SubscribeToViewModel(e.NewValue as EDControls.EDViewModel.EDViewModel);
+        if (_window != null)
+        {
+            _window.DataContextChanged -= OnWindowDataContextChanged;
+            _window = null;
+        }
+        SubscribeToViewModel(null);
     }
+
+    private void OnWindowDataContextChanged(object sender, DependencyPropertyChangedEventArgs e) =>
+        SubscribeToViewModel(e.NewValue as EDControls.EDViewModel.EDViewModel);
 
     private void SubscribeToViewModel(EDControls.EDViewModel.EDViewModel? vm)
     {
+        if (_vm != null) _vm.RequestClose -= OnRequestClose;
         _vm = vm;
         if (_vm != null) _vm.RequestClose += OnRequestClose;
     }
