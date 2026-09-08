@@ -1,6 +1,7 @@
 # EDActionInProgress - poznámky pro vývojáře
 
-Overlay „Akce probíhá" s pixel-art maskotem (kapybara / autobus, náhodně per akce).
+Overlay „Akce probíhá" s pixel-art maskotem (náhodně per akce; teď jen autobus,
+kapybara je vykomentovaná v XAML).
 `EDActionInProgress` je **neviditelný
 controller** (FrameworkElement) - vlož kamkoli do okna (konvence: poslední child root
 Gridu). Na `Loaded` se sám naváže na `EDViewModel.IsActionInProgress` - v XAML se

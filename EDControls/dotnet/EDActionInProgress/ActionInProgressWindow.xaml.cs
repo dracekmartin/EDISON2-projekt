@@ -109,7 +109,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         Top = origin.Y + (client.Y - ActualHeight) / 2;
     }
 
-    // Storyboard řídí code-behind - Begin(..., isControllable) při aktivaci resetuje kapybaru.
+    // Storyboard řídí code-behind - Begin(..., isControllable) při aktivaci resetuje maskota.
     private void ToggleWalk(bool active)
     {
         var walk = (Storyboard)Resources["WalkAnimation"];

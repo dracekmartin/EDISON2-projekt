@@ -38,6 +38,7 @@
              s prefixem "Sprite." najde sám a náhodně jeden vybere - nic dalšího registrovat netřeba.
              Rozměr 60×48 je povinný (flip CenterX=30 = půlka, slide From=-60 = plná šířka mimo záběr). -->
 
+        <!-- Kapybara je záměrně vypnutá (vykomentovaná, nemazat) - zpět stačí odkomentovat.
         <Canvas x:Key="Sprite.Capybara" x:Shared="False" Width="60" Height="48"
                 SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
 
@@ -104,6 +105,7 @@
             <Rectangle Canvas.Left="42" Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
 
         </Canvas>
+        -->
 
         <Canvas x:Key="Sprite.Bus" x:Shared="False" Width="60" Height="48"
                 SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
