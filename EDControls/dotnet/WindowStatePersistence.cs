@@ -30,35 +30,53 @@ public static class WindowStatePersistence
         // který se synchronně vyvolá uvnitř Show() ještě před prvním paintem - restore
         // dorazí včas a nenastane flicker z XAML defaults na uložený stav.
         if (PresentationSource.FromVisual(window) is null)
-            window.SourceInitialized += (_, _) => TryRestore(window, formId);
+        {
+            // Okno s `WindowState="Maximized"` v XAML dostane HWND rovnou se stylem WS_MAXIMIZE
+            // a takové okno Win32 odmítá zvětšit či zmenšit - uloženou velikost si zapíše jen
+            // do restore bounds a WPF si pak vlastní Width/Height přepíše zpátky podle HWND.
+            // (Změřeno: srazit stav na Normal až v SourceInitialized nestačí, styl tam
+            // nezmizí.) Proto se stav sráží tady, dokud HWND ještě neexistuje; zpátky ho
+            // nasadí restore, až po nastavení pozice, takže maximalizace míří na správný monitor.
+            var xamlState = window.WindowState;
+            if (xamlState != WindowState.Normal) window.WindowState = WindowState.Normal;
+
+            window.SourceInitialized += (_, _) => TryRestore(window, formId, xamlState);
+        }
         else
-            TryRestore(window, formId);
+            TryRestore(window, formId, window.WindowState);
 
         // Guard na e.Cancel: WPF pustí i zbylé Closing handlery, když jiný zavření zrušil
         // (potvrzovací dialog shellu) - bez guardu by každé odmítnuté zavření platilo SaveParams.
         window.Closing += (_, e) => { if (!e.Cancel) TrySave(window, formId); };
     }
 
-    private static void TryRestore(Window window, string formId)
+    private static void TryRestore(Window window, string formId, WindowState xamlState)
     {
+        var prefs = new Dictionary<string, string>();
         try
         {
             var mlRest = EDServices.Current.MLRest;
-            if (mlRest is null) return;
-            var del = mlRest.Delimiter;
-
-            var input = new object[]
+            if (mlRest is not null)
             {
-                $"formID{del}{formId}",
-                $"ciselnik{del}state",
-            };
-            var output = mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", input);
-            ApplyToWindow(window, ParseOutput(output, del));
+                var del = mlRest.Delimiter;
+
+                var input = new object[]
+                {
+                    $"formID{del}{formId}",
+                    $"ciselnik{del}state",
+                };
+                var output = mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", input);
+                prefs = ParseOutput(output, del);
+            }
         }
         catch
         {
             // Best-effort restore - chyba neblokuje start okna, použijí se XAML defaults.
         }
+
+        // I při selhání se musí projít ApplyToWindow: vrací stav sražený v Attach.
+        try { ApplyToWindow(window, prefs, xamlState); }
+        catch { }
     }
 
     private static void TrySave(Window window, string formId)
@@ -105,17 +123,18 @@ public static class WindowStatePersistence
         return dict;
     }
 
-    internal static void ApplyToWindow(Window window, Dictionary<string, string> prefs)
+    internal static void ApplyToWindow(Window window, Dictionary<string, string> prefs, WindowState xamlState)
     {
-        // Nic uloženého - okno necháme přesně tak, jak ho složil XAML.
-        if (prefs.Count == 0) return;
+        // Nic uloženého - vrátíme stav, který chtěl XAML (Attach ho kvůli HWND srazil na Normal).
+        if (prefs.Count == 0)
+        {
+            window.WindowState = xamlState;
+            return;
+        }
 
-        // Okno s `WindowState="Maximized"` v XAML má HWND vytvořený už maximalizovaný na monitoru,
-        // který vybral WindowStartupLocation. Left/Top pak jen popisují restore bounds a okno
-        // zůstane maximalizované tam, kde vzniklo. Proto nejdřív do Normal a maximalizovat až
-        // po nastavení pozice (změřeno, jinak shell startuje vždy na primárním monitoru).
-        var xamlState = window.WindowState;
-        if (xamlState != WindowState.Normal) window.WindowState = WindowState.Normal;
+        // Pojistka pro okno, které už je zobrazené (Attach volaný po Show): maximalizované okno
+        // Win32 zvětšit nenechá. U okna před Show() je to no-op, tam stav srazil už Attach.
+        if (window.WindowState != WindowState.Normal) window.WindowState = WindowState.Normal;
 
         // Pořadí: rozměry → pozice → stav. Maximize as last, jinak by se velikost nezachovala
         // pro un-maximize krok.

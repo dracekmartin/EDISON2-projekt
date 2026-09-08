@@ -166,13 +166,31 @@ public class WindowStatePersistenceTests
     // skutečné ploše stroje a test by pak závisel na tom, kde běží.
 
     [Fact]
-    public void ApplyToWindow_EmptyPrefs_LeavesWindowAsXamlBuiltIt()
+    public void Attach_BeforeShow_NormalizesMaximizedWindow()
     {
+        // Jádro opravy: HWND vytvořený s WS_MAXIMIZE Win32 zvětšit ani zmenšit nenechá, takže
+        // uložená velikost by skončila jen v restore bounds. Attach proto stav sráží dřív,
+        // než HWND vůbec vznikne. Okno se nezobrazuje, takže se na MLRest nesáhne.
         RunSta(() =>
         {
-            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Maximized };
+            var window = new Window { WindowState = WindowState.Maximized };
 
-            WindowStatePersistence.ApplyToWindow(window, []);
+            WindowStatePersistence.Attach(window, "TEST.Window");
+
+            Assert.Equal(WindowState.Normal, window.WindowState);
+        });
+    }
+
+    [Fact]
+    public void ApplyToWindow_EmptyPrefs_RestoresXamlState()
+    {
+        // Nic uloženého - stav sražený v Attach se musí vrátit, jinak by shell přestal
+        // startovat maximalizovaný.
+        RunSta(() =>
+        {
+            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Normal };
+
+            WindowStatePersistence.ApplyToWindow(window, [], WindowState.Maximized);
 
             Assert.Equal(WindowState.Maximized, window.WindowState);
             Assert.Equal(1200, window.Width);
@@ -181,15 +199,13 @@ public class WindowStatePersistenceTests
     }
 
     [Fact]
-    public void ApplyToWindow_WithoutStateKey_KeepsXamlMaximized()
+    public void ApplyToWindow_WithoutStateKey_RestoresXamlState()
     {
-        // Restore musí okno dočasně odmaximalizovat, aby se pozice propsala na správný monitor.
-        // Když uložený stav klíč "state" nemá, nesmí ho tenhle mezikrok nechat odmaximalizované.
         RunSta(() =>
         {
-            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Maximized };
+            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Normal };
 
-            WindowStatePersistence.ApplyToWindow(window, new() { ["size"] = "800;600" });
+            WindowStatePersistence.ApplyToWindow(window, new() { ["size"] = "800;600" }, WindowState.Maximized);
 
             Assert.Equal(WindowState.Maximized, window.WindowState);
             Assert.Equal(800, window.Width);
@@ -198,13 +214,13 @@ public class WindowStatePersistenceTests
     }
 
     [Fact]
-    public void ApplyToWindow_StateZero_UnmaximizesXamlMaximizedWindow()
+    public void ApplyToWindow_StateZero_WinsOverXamlMaximized()
     {
         RunSta(() =>
         {
-            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Maximized };
+            var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Normal };
 
-            WindowStatePersistence.ApplyToWindow(window, new() { ["state"] = "0" });
+            WindowStatePersistence.ApplyToWindow(window, new() { ["state"] = "0" }, WindowState.Maximized);
 
             Assert.Equal(WindowState.Normal, window.WindowState);
         });
