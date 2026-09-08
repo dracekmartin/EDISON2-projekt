@@ -66,17 +66,6 @@ public class EDComponentToolbarFlatTests
             app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri(Comp + dict) });
     }
 
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { EnsureApplication(); action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
+    private static void RunSta(Action action) =>
+        EDTesting.Sta.Run(() => { EnsureApplication(); action(); });
 }

@@ -25,21 +25,21 @@ public class EDUsageTelemetryHookTests
     [Fact]
     public void ShouldTrack_WindowWithViewModel_True()
     {
-        RunSta(() => Assert.True(EDUsageTelemetryHook.ShouldTrack(WindowWithVm())));
+        EDTesting.Sta.Run(() => Assert.True(EDUsageTelemetryHook.ShouldTrack(WindowWithVm())));
     }
 
     [Fact]
     public void ShouldTrack_WindowWithoutViewModel_False()
     {
         // Popupy EDControls, overlay okna a chrome AvalonDocku ViewModel nemají - šum se odfiltruje sám.
-        RunSta(() => Assert.False(EDUsageTelemetryHook.ShouldTrack(new Window())));
+        EDTesting.Sta.Run(() => Assert.False(EDUsageTelemetryHook.ShouldTrack(new Window())));
     }
 
     [Fact]
     public void ShouldTrack_OptedOutViewModel_False()
     {
         // PersistedFormId = null je opt-out z persistence i z telemetrie.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = new Window { DataContext = new NoFormIdViewModel(MockServices()) };
 
@@ -51,7 +51,7 @@ public class EDUsageTelemetryHookTests
     public void ShouldTrack_AlreadyHooked_False()
     {
         // Druhý Loaded téhož okna (re-parent) nesmí navěsit druhou sadu handlerů.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = WindowWithVm();
             EDUsageTelemetryHook.Hook(window, "TEST.Window");
@@ -63,7 +63,7 @@ public class EDUsageTelemetryHookTests
     [Fact]
     public void Hook_TracksOpen()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             EDUsageTelemetryHook.Hook(WindowWithVm(), "TEST.Window");
 
@@ -74,7 +74,7 @@ public class EDUsageTelemetryHookTests
     [Fact]
     public void Hook_NamedButtonClick_IsTracked()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var button = new Button { Name = "BtnSave" };
             var window = WindowWithVm();
@@ -90,7 +90,7 @@ public class EDUsageTelemetryHookTests
     [Fact]
     public void Hook_UnnamedButtonClick_IsIgnored()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var button = new Button();
             var window = WindowWithVm();
@@ -106,7 +106,7 @@ public class EDUsageTelemetryHookTests
     [Fact]
     public void Hook_NamedMenuItemClick_IsTracked()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var item = new MenuItem { Name = "MnuExport" };
             var window = WindowWithVm();
@@ -123,7 +123,7 @@ public class EDUsageTelemetryHookTests
     public void AttachToWindow_DoesNotTrack()
     {
         // Hook smí být jen na class handleru - na obou místech by okna shellu hlásila OPEN i kliky dvakrát.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var vm = new EDViewModel.EDViewModel(MockServices());
             var window = new Window { DataContext = vm };
@@ -138,18 +138,4 @@ public class EDUsageTelemetryHookTests
         protected override string? PersistedFormId => null;
     }
 
-    // Spustí akci na dedikovaném STA vlákně (Window to vyžaduje) a propaguje výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

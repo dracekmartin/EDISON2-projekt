@@ -23,7 +23,7 @@ public class EDThemeProgressBarTests
     [Fact]
     public void ImplicitProgressBarStyle_Exists()
     {
-        RunSta(() => Assert.NotNull(Load(StylesUri)[typeof(ProgressBar)] as Style));
+        EDTesting.Sta.Run(() => Assert.NotNull(Load(StylesUri)[typeof(ProgressBar)] as Style));
     }
 
     [Theory]
@@ -34,7 +34,7 @@ public class EDThemeProgressBarTests
     {
         // StaticResource by se vyhodnotil při načtení slovníku a zamrzl v light barvě -
         // EDThemeDark.xaml se přidává až za běhu na konec MergedDictionaries.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var style = (Style)Load(StylesUri)[typeof(ProgressBar)]!;
             var setter = style.Setters.OfType<Setter>()
@@ -48,7 +48,7 @@ public class EDThemeProgressBarTests
     public void TrackAndIndicator_ChangeWithDarkMode()
     {
         // Jádro testu: track i indikátor musí po přidání dark slovníku vykreslit jinou barvu.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var light = RenderedBrushes(dark: false);
             var dark  = RenderedBrushes(dark: true);
@@ -63,7 +63,7 @@ public class EDThemeProgressBarTests
     {
         // PART_Track/PART_Indicator si ProgressBar hledá jménem; bez nich nespočítá šířku
         // indikátoru a lišta zůstane prázdná (statická kontrola XAML to nepozná).
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var (_, indicator) = Realize(dark: false);
             Assert.NotNull(indicator);
@@ -93,19 +93,5 @@ public class EDThemeProgressBarTests
         bar.ApplyTemplate();
 
         return (bar, bar.Template.FindName("PART_Indicator", bar) as Border);
-    }
-
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
     }
 }

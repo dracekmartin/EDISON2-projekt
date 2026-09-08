@@ -237,14 +237,14 @@ public class SupportPanelTests
     [Fact]
     public void ShouldAttach_PlainWindow_True()
     {
-        RunSta(() => Assert.True(EDSupportPanel.EDSupportPanel.ShouldAttach(new Window())));
+        EDTesting.Sta.Run(() => Assert.True(EDSupportPanel.EDSupportPanel.ShouldAttach(new Window())));
     }
 
     [Fact]
     public void ShouldAttach_Suppressed_False()
     {
         // Opt-out pro okna bez ViewModelu (vlastní popupy EDControls, splash, odpočty).
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = new Window();
             EDSupportPanel.EDSupportPanel.SetSuppress(window, true);
@@ -257,7 +257,7 @@ public class SupportPanelTests
     public void ShouldAttach_OverlayWindow_False()
     {
         // Vlastní overlay okna EDControls (panel, „Akce probíhá") nesmí dostat vlastní panel.
-        RunSta(() => Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(new FakeOverlayWindow())));
+        EDTesting.Sta.Run(() => Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(new FakeOverlayWindow())));
     }
 
     [Fact]
@@ -265,13 +265,13 @@ public class SupportPanelTests
     {
         // Chrome AvalonDocku (drop overlay, plovoucí okno widgetu): karta nepatří na drag artefakt
         // a owned okno v jeho Show()/Close() rozbíjí drag docku. Viz WindowOwnershipTests.
-        RunSta(() => Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(new AvalonDock.Controls.FakeDockWindow())));
+        EDTesting.Sta.Run(() => Assert.False(EDSupportPanel.EDSupportPanel.ShouldAttach(new AvalonDock.Controls.FakeDockWindow())));
     }
 
     [Fact]
     public void ShouldAttach_ViewModelOptedOut_False()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = new Window
             {
@@ -286,7 +286,7 @@ public class SupportPanelTests
     public void ShouldAttach_AlreadyAttached_False()
     {
         // Druhý Loaded téhož okna (re-parent) panel nezdvojí.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = new Window();
             EDSupportPanel.EDSupportPanel.Attach(window, MockServices(), Substitute.For<IPopupDisplayer>());
@@ -307,18 +307,4 @@ public class SupportPanelTests
         }
     }
 
-    // Spustí akci na dedikovaném STA vlákně (Window to vyžaduje) a propaguje výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

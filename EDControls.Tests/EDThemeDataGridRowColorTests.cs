@@ -27,7 +27,7 @@ public class EDThemeDataGridRowColorTests
     {
         // Příčina pasti. Kdyby setter zmizel, barva z RowStyle by začala prosakovat a legacy
         // barvy navržené na bílé pozadí by se v dark modu staly nečitelnými.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var style = (Style)Load(StylesUri)[typeof(DataGridCell)]!;
             Assert.Contains(style.Setters.OfType<Setter>(),
@@ -38,13 +38,13 @@ public class EDThemeDataGridRowColorTests
     [Fact]
     public void RowStyleForeground_DoesNotReachCellText()
     {
-        RunSta(() => Assert.NotEqual(Marker, CellForeground(viaRowStyle: true)));
+        EDTesting.Sta.Run(() => Assert.NotEqual(Marker, CellForeground(viaRowStyle: true)));
     }
 
     [Fact]
     public void CellStyleForeground_DoesReachCellText()
     {
-        RunSta(() => Assert.Equal(Marker, CellForeground(viaRowStyle: false)));
+        EDTesting.Sta.Run(() => Assert.Equal(Marker, CellForeground(viaRowStyle: false)));
     }
 
     private static ResourceDictionary Load(string uri) => new() { Source = new Uri(uri) };
@@ -95,19 +95,5 @@ public class EDThemeDataGridRowColorTests
             yield return child;
             foreach (var d in Descendants(child)) yield return d;
         }
-    }
-
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
     }
 }

@@ -23,7 +23,7 @@ public class MlineLogoResourceTests
     [Fact]
     public void MlineLogo_IsDrawingImageWithNonEmptyBounds()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var logo = Load(IconsUri)["EDIcons.MlineLogo"] as DrawingImage;
             Assert.NotNull(logo);
@@ -36,7 +36,7 @@ public class MlineLogoResourceTests
     public void MlineLogo_IsSquare()
     {
         // Špatně spočítaná složená matice (scale + překlopení Y) se pozná právě na poměru stran.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var logo = (DrawingImage)Load(IconsUri)["EDIcons.MlineLogo"];
             Assert.InRange(logo.Width / logo.Height, 0.95, 1.05);
@@ -47,7 +47,7 @@ public class MlineLogoResourceTests
     public void MlineLogo_KeepsBrandColorInBothThemes()
     {
         // Barva je vědomě natvrdo v geometrii, ne theme token - dark mode ji nesmí přebít.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var logo = (DrawingImage)Load(IconsUri)["EDIcons.MlineLogo"];
             var brushes = Flatten(logo.Drawing).OfType<GeometryDrawing>()
@@ -65,7 +65,7 @@ public class MlineLogoResourceTests
     public void LinkButtonStyle_TargetsButtonAndInheritsFontTokens()
     {
         // Bez BasedOn na implicitní Button by odkaz nereagoval na user škálování fontu.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var style = Load(StylesUri)["EDTheme.LinkButton"] as Style;
             Assert.NotNull(style);
@@ -84,19 +84,4 @@ public class MlineLogoResourceTests
 
     private static ResourceDictionary Load(string uri) => new() { Source = new Uri(uri) };
 
-    // Spustí akci na dedikovaném STA vlákně (WPF resource loading to vyžaduje) a propaguje
-    // výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

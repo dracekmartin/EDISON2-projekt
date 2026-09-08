@@ -29,7 +29,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Commit_AfterRefilterClearsSelectedItem_StillPushesPickedKeyToTwoWaySource()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = new EDCombo { StrictSelection = true };
@@ -53,7 +53,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Commit_WithoutPick_RevertsAndLeavesSourceUnchanged()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = new EDCombo { StrictSelection = true };
@@ -71,7 +71,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Enter_AfterTypingUnambiguousText_CommitsKeyToTwoWaySource()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = new EDCombo { StrictSelection = true };
@@ -91,7 +91,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Enter_AmbiguousText_RevertsToOriginalKey()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = new EDCombo { StrictSelection = true };
@@ -110,7 +110,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Enter_AfterArrowSelection_DoesNotOverwriteCapturedPick()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = Bound(source);
@@ -130,7 +130,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Enter_AfterArrowWithClosedDropdown_Commits()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = Bound(source);
@@ -150,7 +150,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void ArrowDown_StartsAtCurrentSelection()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = Bound(new KeyHolder { Value = "A" });
 
@@ -163,7 +163,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void ArrowDown_WithoutSelection_TakesFirstItem()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = Bound(new KeyHolder());   // žádný SelectedKey
 
@@ -176,7 +176,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Arrows_StopAtBoundaries()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = Bound(new KeyHolder { Value = "A" });
 
@@ -192,7 +192,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Escape_DiscardsPendingSelectionAndRevertsDisplay()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = Bound(source);
@@ -210,7 +210,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void FreeMode_EnterLetsKeyBubble()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = new EDCombo { Suggestions = [new ListItem("A", "Alfa")] };
             Assert.False(combo.HandleNavigationKey(Key.Enter));
@@ -220,7 +220,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Suggestions_WithPresetValue_OffersWholeListNotJustTheMatchingItem()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             // Volný režim: Text nese aktuální hodnotu. Ta NENÍ filtr - jinak by šipka nabídla jen
             // právě nastavenou položku a přepnout na jinou by šlo až po smazání textu.
@@ -234,7 +234,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Reopen_AfterUserTypedFilter_KeepsFilteredList()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = new EDCombo { StrictSelection = true };
             combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
@@ -268,18 +268,4 @@ public class EDFilterComboBoxCommitTests
         typeof(EDCombo).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!
             .Invoke(combo, args);
 
-    // Spustí akci na dedikovaném STA vlákně (WPF controly to vyžadují) a propaguje výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

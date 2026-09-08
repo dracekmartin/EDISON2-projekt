@@ -171,7 +171,7 @@ public class WindowStatePersistenceTests
         // Jádro opravy: HWND vytvořený s WS_MAXIMIZE Win32 zvětšit ani zmenšit nenechá, takže
         // uložená velikost by skončila jen v restore bounds. Attach proto stav sráží dřív,
         // než HWND vůbec vznikne. Okno se nezobrazuje, takže se na MLRest nesáhne.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = new Window { WindowState = WindowState.Maximized };
 
@@ -186,7 +186,7 @@ public class WindowStatePersistenceTests
     {
         // Nic uloženého - stav sražený v Attach se musí vrátit, jinak by shell přestal
         // startovat maximalizovaný.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Normal };
 
@@ -201,7 +201,7 @@ public class WindowStatePersistenceTests
     [Fact]
     public void ApplyToWindow_WithoutStateKey_RestoresXamlState()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Normal };
 
@@ -216,7 +216,7 @@ public class WindowStatePersistenceTests
     [Fact]
     public void ApplyToWindow_StateZero_WinsOverXamlMaximized()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var window = new Window { Width = 1200, Height = 800, WindowState = WindowState.Normal };
 
@@ -226,18 +226,4 @@ public class WindowStatePersistenceTests
         });
     }
 
-    // Spustí akci na dedikovaném STA vlákně (WPF Window to vyžaduje) a propaguje výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }
