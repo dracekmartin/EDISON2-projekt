@@ -2,11 +2,10 @@
 
 Overlay „Akce probíhá" s pixel-art maskoty ve dvou sadách: dopravní prostředky
 (výchozí; kusy se během akce náhodně střídají) a peníze (finanční agendy, padají).
-Kapybara je vykomentovaná v XAML (nemazat).
-`EDActionInProgress` je **neviditelný
-controller** (FrameworkElement) - vlož kamkoli do okna (konvence: poslední child root
-Gridu). Na `Loaded` se sám naváže na `EDViewModel.IsActionInProgress` - v XAML se
-`IsActive` binding **nepíše**. Aktivace z VM: `using var _ = ActionInProgress();`.
+`EDActionInProgress` je **neviditelný controller** (FrameworkElement) - vlož kamkoli do okna
+(konvence: poslední child root Gridu). Na `Loaded` se sám naváže na
+`EDViewModel.IsActionInProgress` - v XAML se `IsActive` binding **nepíše**.
+Aktivace z VM: `using var _ = ActionInProgress();`.
 
 ## Karta žije v owned okně (`ActionInProgressWindow`)
 
@@ -38,8 +37,8 @@ Gridu). Na `Loaded` se sám naváže na `EDViewModel.IsActionInProgress` - v XAM
   při každém přejezdu náhodně vymění (bez okamžitého opakování); sada `Money` padá
   shora na náhodných X. **Režim sady = `Tag` prvního kusu** (`"Fall"` = pád, jinak
   jízda). Přidat kus = jen další `<Canvas>` se správným prefixem, žádná změna kódu.
-  Jinou sadu vybere `ActionInProgress("Money")` na VM (`EDViewModel.ActionSpriteKey`);
-  mapování agenda→sada drží shell (`EDISONMAIN2 Modules/AgendaSprites`).
+  Jinou sadu vybere `ActionInProgress("Money")` na VM (`EDViewModel.ActionSpriteKey`); mapování
+  agenda→sada drží shell (`EDISONMAIN2/dotnet/Windows/EdisonMainWindow/Modules/AgendaSprites.cs`).
 - **Animace řídí code-behind, žádný storyboard** - náhodu per kolo (výběr kusu, pozice,
   tempo) storyboard s pevnými hodnotami neumí. Vzor: `DoubleAnimation` na transform +
   další kolo v `Completed` (guard `_running`); stop = `BeginAnimation(..., null)`, tím

@@ -55,6 +55,5 @@ by ho propustil), `EDViewModel.ShowSupportPanel = false`, a okno, které panel u
 - „Informace o verzi" čte `EDServices.AppDisplayName` / `AppVersion` - `EDControls` nedosáhne na
   `VERZE.INF` (čte ho shell), nenastaveno → verze assembly. Týž text ukazuje menu Nápověda shellu.
 - `context` ve feedback URL je tvrdě zkrácený na 255 znaků - limit widget API.
-- Base + klíč widget API drží `SupportActions` a sdílí je `WidgetUrls` shellu jako
-  **`static readonly`, ne `const`**: `const` se inlinuje do konzumenta, takže samostatně
-  nasazená `EDControls.dll` by shellu klíč nezměnila.
+- Base + klíč widget API drží `SupportActions` (sdílí je `WidgetUrls` shellu) jako
+  **`static readonly`, ne `const`** - pravidlo samostatně nasazené DLL, viz `EDControls/CLAUDE.md`.
