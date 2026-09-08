@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-09-08 (4) - 🏷 značky nad časy se vejdou do sloupce, čas přípoje vypadá jako ostatní
+
+Dva nálezy Jan 8. 9. na výtisku.
+
+**Značky nad časy se nepočítaly do šířky.** Dolní hranice sloupce spoje brala v úvahu jen čas
+a značku návaznosti vedle něj (`MinAutoSloupecMm`). Řádek platnosti a řádek negativních značek se
+přitom sázejí písmem zvětšeným o `PomerZnacek` (výchozí 1,5×) a na řádek platnosti jdou **dvě
+značky vedle sebe** (`ZnacekNaRadekPlatnosti = 2`, parita se starým modulem) - takže dvě ikony na
+1,5× písma se porovnávaly se sloupcem širokým na čas na 1× a přetékaly do sousedního. Nápověda
+u „Velikosti značek" přitom slibovala jen „řádek značek se tím zvýší" a o šířce mlčela, protože ji
+to skutečně neovlivňovalo.
+
+Šířka se nově řídí **tou nejširší věcí, která ve sloupci stojí**. Měří se týmiž fonty, jakými se
+kreslí: řádek platnosti přes `SymbolRunRenderer` (piktogramy symbolovým fontem, ostatní běžným,
+mezi značkami mezera), negativní značka jako box z obrysu znaku plus vnitřní mezera
+(`NegativniZnackaRenderer.PomerVnitrniMezery`). Maximum se bere přes **všechny spoje linky**, ne
+přes blok - základ sloupce je pro všechny bloky společný (invariant z 25. 8.). Výsledek je
+cachovaný s parsovanými daty, protože `MinAutoSloupecMm` volá půlení intervalu při hledání počtu
+spojů na blok.
+
+**Čas v přípojném řádku šel jako obyčejný text.** Čas spoje se sází společným tvarem (hodina větším
+písmem, minuta menším, bez vedoucí nuly, `CasRuns`), ale přípojný řádek posílal do buňky rovnou
+string - takže tiskl „07:13", kdežto vedle stálo „7 13", a vypadalo to jako dvě různé tabulky.
+Nově jde týmž převodem; buňka umí jen jeden font, takže se nechává prázdná a kreslí se ručně -
+stejný postup jako u buňky se značkou návaznosti.
+
+Změřeno na `330511` obousměrně, prvek 200 mm: s nesmyslným dnem 1 mm vyšel sloupec **3,99 → 4,97 mm**
+a tabulka 162,3 → 179,0 mm, tedy značky si vzaly ten milimetr, o který dřív přetékaly. Bez omezení
+se nemění nic (5,87 mm) - tam se do zbytku prvku vejdou. Obojí zkontrolované na vyrenderované
+stránce proti té předchozí.
+
+⚠️ **Existující šablony mohou mít u linek s bohatými značkami širší sloupce.** Je to oprava
+přetečení, ne regrese, ale jde přímo proti utahování z dneška - u takové linky se do řádku vejde
+méně spojů než včera.
+
+⚠️ **Test na negativní značku nejdřív měřil nefunkční případ.** Dvouznaková značka („23", „60") je
+i při 1,5× **užší než celý čas**, takže sloupec při výchozím nastavení rozšířit nemá proč. Test to
+proto zkouší při trojnásobném písmu značek, kde je vidět, že se s ní vůbec počítá.
+
+Ověřeno: .NET **2981/2981** (5 nových testů), Caché 153/153.
+
 ## 2026-09-08 (3) - 🛟 kolem času v buňce spoje zůstane vůle, ať se nastaví cokoli
 
 Nález Jan 8. 9. hned po předchozí změně: **dno menší, než čas měří, sloupec skutečně oříznulo.**

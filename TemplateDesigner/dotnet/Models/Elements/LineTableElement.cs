@@ -399,12 +399,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Spoje rozdělené na hlavní směr (vpravo od zastávek) a zrcadlený (vlevo).</summary>
     [JsonIgnore] private List<LineTripData>? _cachedHlavni;
     [JsonIgnore] private List<LineTripData>? _cachedZrcadlene;
+    /// <summary>Nejširší řádek značek nad časy (pt) - viz <see cref="NejsirsiZnackyPt"/>.</summary>
+    [JsonIgnore] private float? _cachedZnackyPt;
 
     private void EnsureParsed(DataContext data)
     {
         if (ReferenceEquals(data, _lineCacheRef) && _cachedStops is not null) return;
         _lineCacheRef = data;
         _cachedCulture = data.Culture;
+        _cachedZnackyPt = null;
 
         _cachedStops = [.. data.GetRows(ZastavkyDataSource).Select(row => new LineStopData
         {
@@ -633,6 +636,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             textPt = font.MeasureText("00:00");
         }
+        // ⚠️ Nad časy stojí značky platnosti a negativní značky, a ty jsou **širší než čas**: sázejí
+        // se písmem zvětšeným o `PomerZnacek` (výchozí 1,5×) a na řádek platnosti jdou **dvě vedle
+        // sebe**. Dokud se do dolní hranice nepočítaly, přetékaly ze sloupce do sousedního (nález
+        // Jan 8. 9.). Šířka sloupce se proto řídí tou nejširší věcí, která v něm stojí.
+        textPt = MathF.Max(textPt, NejsirsiZnackyPt(st));
+
         // Kolem času musí zůstat vůle, i když si uživatel vynuluje okraje nebo zadá menší dno,
         // než čas měří - jinak procházejí svislé čáry vedle číslic a časy sousedních sloupců se
         // slévají (nález Jan 8. 9. na vyrenderované stránce při dnu 3 mm proti potřebným 3,99).
@@ -644,6 +653,53 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (NejmensiSirkaSpojeMm is float zadane)
             mm = MathF.Max(mm, zadane);
         return MathF.Max(MinAutoColumnWidthMm, mm);
+    }
+
+    /// <summary>
+    /// Nejširší obsah řádků značek nad časy (v pt) - podklad pro dolní hranici šířky sloupce spoje.
+    /// </summary>
+    /// <remarks>
+    /// Měří se **týmiž fonty, jakými se kreslí**: řádek platnosti přes <see cref="SymbolRunRenderer"/>
+    /// (piktogramy symbolovým fontem, ostatní běžným, mezi značkami mezera), negativní značka jako
+    /// box z obrysu znaku plus vnitřní mezera - viz <see cref="NegativniZnackaRenderer"/>. Obojí
+    /// zvětšené o <see cref="PomerZnacek"/>, jinak by měření nesedělo s kresbou.
+    /// <para>Bere se maximum přes <b>všechny spoje linky</b>, ne přes blok: základ sloupce je pro
+    /// všechny bloky společný (invariant z 25. 8.), takže by jinak bloky pod sebou nesedly.</para>
+    /// <para>Výsledek je cachovaný spolu s parsovanými daty - `MinAutoSloupecMm` volá půlení
+    /// intervalu při hledání počtu spojů na blok, takže by se jinak přeměřovalo pořád dokola.</para>
+    /// </remarks>
+    private float NejsirsiZnackyPt(ResolvedTextStyle st)
+    {
+        if (_cachedZnackyPt is float hotovo) return hotovo;
+
+        float pomer = Math.Clamp(PomerZnacek, 1f, 3f);
+        float velikost = st.FontSize * pomer;
+        using var normal = new SKFont(GetTypeface(st), velikost);
+        using var symbol = new SKFont(
+            GetTypeface(FontResolver.SymbolFontFamily(_cachedCulture)), velikost);
+
+        float nejsirsi = 0f;
+        foreach (var t in _cachedTrips ?? [])
+        {
+            if (ShowPlatnostRow)
+            {
+                int radku = (t.Platnost.Count + ZnacekNaRadekPlatnosti - 1) / ZnacekNaRadekPlatnosti;
+                for (int r = 0; r < radku; r++)
+                {
+                    float sirka = 0f;
+                    foreach (var run in SymbolRunRenderer.BuildRuns(
+                                 ZnackyRadku(t, r), SymbolMap.ResolveLinkovy))
+                        sirka += (run.Symbol ? symbol : normal).MeasureText(run.Text);
+                    if (sirka > nejsirsi) nejsirsi = sirka;
+                }
+            }
+            if (ShowNzRow && t.Nz.Length > 0)
+            {
+                float box = normal.MeasureText(t.Nz) + velikost * NegativniZnackaRenderer.PomerVnitrniMezery * 2f;
+                if (box > nejsirsi) nejsirsi = box;
+            }
+        }
+        return (float)(_cachedZnackyPt = nejsirsi);
     }
 
     /// <summary>Vyřešený popisný sloupec. <c>Key</c> je klíč té definice sloupce, ze které vznikl -
@@ -1884,19 +1940,41 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             foreach (var radek in PripojneRadky(stop, trips, zrcadlene))
             {
                 var prSpecs = new List<ColumnRenderer.CellSpec>();
+                // Čas přípoje se sází **stejným tvarem jako čas spoje** - hodina větším písmem,
+                // minuta menším, bez vedoucí nuly. Do 8. 9. tudy šel jako obyčejný text, takže
+                // přípojný řádek vypadal proti zbytku tabulky jako z jiné sestavy (nález Jan).
+                // Buňka umí jen jeden font, takže se nechá prázdná a nakreslí se ručně - týž
+                // postup jako u buňky se značkou návaznosti.
                 var casyZrc = radek.CasPerZrcadleny;
+                var runyZrc = CasoveRuny(casyZrc);
                 PridejZrcadlene(prSpecs, mrizka, zrcadlene.Count, pripojStyle,
-                    ti => (casyZrc.TryGetValue(ti, out var cas) ? cas : "", pripojStyle));
+                    ti => (runyZrc.ContainsKey(ti) ? ""
+                        : casyZrc.TryGetValue(ti, out var cas) ? cas : "", pripojStyle));
                 for (int ci = 0; ci < fixedCols.Count; ci++)
                     prSpecs.Add(new(fixedCols[ci].Width,
                         ci == nameIndex ? radek.Popisek : "", pripojStyle,
                         SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
                 var casy = radek.CasPerSpoj;
+                var runy = CasoveRuny(casy);
                 PridejSpoje(prSpecs, mrizka, trips.Count, pripojStyle,
-                    ti => (casy.TryGetValue(ti, out var cas) ? cas : "", pripojStyle));
+                    ti => (runy.ContainsKey(ti) ? ""
+                        : casy.TryGetValue(ti, out var cas) ? cas : "", pripojStyle));
 
                 plan.Add(new(RowKind.SubRow, pripojRowH, prSpecs)
-                { VerticalLinePaint = sloupcovaCara, LineAbovePaint = radkovaCara, LineBelowPaint = radkovaCara });
+                {
+                    VerticalLinePaint = sloupcovaCara,
+                    LineAbovePaint = radkovaCara,
+                    LineBelowPaint = radkovaCara,
+                    Decorate = runy.Count == 0 && runyZrc.Count == 0 ? null : rowY =>
+                    {
+                        if (runy.Count > 0)
+                            DrawBunkySeZnackou(ctx, rowY, pripojRowH, ti => X + mrizka.XSpojeMm(ti),
+                                mrizka.SirkaSpojeMm, runy, pripojStyle, symbolFace, scale);
+                        if (runyZrc.Count > 0)
+                            DrawBunkySeZnackou(ctx, rowY, pripojRowH, ti => X + mrizka.XZrcadlenehoMm(ti),
+                                mrizka.SirkaZrcadlenehoMm, runyZrc, pripojStyle, symbolFace, scale);
+                    },
+                });
             }
         }
 
@@ -1924,6 +2002,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var cellMm = new SKRect(leftMm, rowTopMm, leftMm + mrizka.Popisne[nameIndex].Width, rowTopMm + rowH);
         SymbolRunRenderer.Draw(ctx, CellLayout.ApplyPadding(cellMm, style),
             runs, style with { HAlign = TextHorizontalAlignment.Right }, symbolFace, scale);
+    }
+
+    /// <summary>
+    /// Časy přípojného řádku rozpadlé na úseky (hodina větším písmem, minuta menším) - jen ty,
+    /// které se takhle rozpadnout dají. Prázdná mapa při formátu „celý čas stejně".
+    /// </summary>
+    private Dictionary<int, List<SymbolRunRenderer.Run>> CasoveRuny(IReadOnlyDictionary<int, string> casy)
+    {
+        var mapa = new Dictionary<int, List<SymbolRunRenderer.Run>>();
+        foreach (var (ti, cas) in casy)
+            if (CasRuns(cas) is { } runs) mapa[ti] = runs;
+        return mapa;
     }
 
     /// <summary>
