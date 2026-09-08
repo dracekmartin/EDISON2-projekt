@@ -139,7 +139,7 @@ public class AppBootstrapper
     protected virtual (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) CheckForUpdate(
         SessionContext session, EDServices services)
     {
-        var updater = new Updater();
+        var updater = CreateUpdater();
         var settings = updater.LoadSettings(session.MLRest);
         var result = updater.Check(settings);
         switch (result.Outcome)
@@ -167,6 +167,8 @@ public class AppBootstrapper
                 return (false, Task.Run(() => updater.GetReleaseNotice(settings, VerzeInf.Current)));
         }
     }
+
+    protected virtual Updater CreateUpdater() => new();
 
     /// <summary>Login okno držené otevřené přes post-login kroky (jen Release dialog path);
     /// zavře ho <see cref="HandOffLoginWindow"/> po vykreslení shellu.</summary>

@@ -10,9 +10,12 @@ namespace EDISONMAIN2;
 /// Vlastní objekt proto, že ukončení se spouští po startu (activity handler, odpočet odhlášení),
 /// kdežto <see cref="AppBootstrapper"/> tou dobou už nemá žít.
 /// </summary>
-public class ShellShutdown(Application application)
+public class ShellShutdown(Action shutdown)
 {
     private Action? _suppressCloseConfirm;
+
+    /// <summary>Produkční cesta. Lazy lambda - test-only ctor AppBootstrapperu předává null Application.</summary>
+    public ShellShutdown(Application application) : this(() => application.Shutdown()) { }
 
     /// <summary>Napojí suppress hook shellu. Před jeho vznikem není co potlačovat (dialog neexistuje).</summary>
     public void AttachShell(Action suppressCloseConfirm) => _suppressCloseConfirm = suppressCloseConfirm;
@@ -20,6 +23,6 @@ public class ShellShutdown(Application application)
     public void Force()
     {
         _suppressCloseConfirm?.Invoke();
-        application.Shutdown();
+        shutdown();
     }
 }
