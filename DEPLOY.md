@@ -20,5 +20,5 @@ Legacy verze musí být aspoň ta, která má úpravy agend pro shell (`EDLIBRAR
 `MHD2LINKY`/`TISKJR`/`ISYJR2` launch TemplateDesigneru přes shell session, `MHD2PlanDopravy` API pro
 miniaplikaci Dispečink, MZDY2 dual-write `^MZR("FiltrZam2")`) - `git log --grep=EDISONMAIN2` v repu EDISON.
 
-Nedistribuovat: `appsettings.json` z publish výstupu (dev server `192.168.16.1`; u zákazníka ho
-vytváří setup wizard).
+Připojení shell čte z `EDISONini.xml` serverové instalace (na stanice ho roznáší EDUPDATE);
+dev kopii z repa publish nevydává (`CopyToPublishDirectory="Never"` v csproj).

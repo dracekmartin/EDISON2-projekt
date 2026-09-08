@@ -15,6 +15,10 @@ Login okno (jen Release dialog path) po OK zůstává jako progress podklad, zav
 restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo proces nemá konec.
 `Services/` složka neexistuje záměrně - single-consumer infrastruktura je ko-lokovaná
 se svým consumerem, cross-cutting věci jdou do `EDControls`.
+Připojení čte `SettingsLoader` z `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho
+roznáší ze serveru): **`connection@restport`, ne `@port`** (to je superserver); zápis wizardu
+je šetrný merge (cizí uzly zachovat). Dev kopii v repu **publish nesmí vydat** - v `C:\Edison\`
+leží živý soubor legacy aplikací (`CopyToPublishDirectory="Never"` v csproj).
 
 ## Strom modulů = generovaný snapshot
 

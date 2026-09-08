@@ -1,0 +1,7 @@
+<edison>
+  <initialized>1</initialized>
+  <forceChange>1</forceChange>
+  <IRIS>1</IRIS>
+  <connection name="CACHEDEV" server="192.168.16.1" port="51972" restport="57770" />
+  <database name="VS_CSAD" idfa="VS_CSAD" />
+</edison>

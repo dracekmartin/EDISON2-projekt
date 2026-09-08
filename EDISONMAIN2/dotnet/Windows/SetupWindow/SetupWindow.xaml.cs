@@ -9,7 +9,7 @@ namespace EDISONMAIN2.Windows.SetupWindow
 {
     /// <summary>
     /// First-launch setup (jen připojení): zadání serveru + REST portu, test
-    /// připojení a zápis <c>appsettings.json</c>. Běží před loginem, žádná session ještě
+    /// připojení a zápis <c>EDISONini.xml</c>. Běží před loginem, žádná session ještě
     /// neexistuje - proto code-behind a vlastní pre-login <see cref="MLRest"/> z napsaných polí
     /// (mirror <see cref="LoginWindow.LoginWindow"/>). Greenfield server-init (firma/licence/admin)
     /// je mimo scope - zůstává na legacy frmSetup.
