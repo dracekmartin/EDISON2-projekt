@@ -6,8 +6,12 @@
 (skript z Bashe, `sed`, python) změní soubor v repu a **server nechá starý**.
 
 - **Nikdy neupravuj `.cls` skriptem.** Ani „mechanicky" (mazání řádků, přidání dvou polí) - právě tam
-  se to stalo dvakrát 4. 8. Když už se to stane, vynuť nasazení:
+  se to stalo dvakrát 4. 8. **Když se to stane, vrať soubor (`git checkout --`) a zapiš změnu znovu
+  editačním nástrojem** - jen tak hook spustí harness a nasazení proběhne.
+- ⚠️ **Ruční poslání cesty hooku NENASADÍ** (ověřeno 8. 9.). Volání
   `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`
+  skončí s kódem 0, bez chyby na stderr - a server dál vrací starou třídu. Do 8. 9. tady stálo jako
+  doporučená záchrana; je to tedy **stejná past jako `cache_compile`** níž, jen tiší.
 - **`cache_compile` (MCP) to nespraví** a **lže uklidňujícím způsobem**: hledá zdroj pod
   `C:\DEV\EDISON`, takže u tohohle repa nahlásí `not-found-on-disk`, zkompiluje **starou serverovou
   kopii** a napíše „up-to-date".
