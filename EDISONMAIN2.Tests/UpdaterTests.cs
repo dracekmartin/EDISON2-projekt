@@ -11,6 +11,7 @@ public class UpdaterTests
     {
         public string LocalVersion { get; set; } = "";
         public string SourceVersion { get; set; } = "";
+        public string StampSeen { get; set; } = "";
         public string? SourceDirSeen { get; private set; }
 
         protected override string GetLocalVersion() => LocalVersion;
@@ -20,6 +21,8 @@ public class UpdaterTests
             SourceDirSeen = sourceDir;
             return SourceVersion;
         }
+
+        protected override string GetForcedStampSeen() => StampSeen;
     }
 
     private static IMLRest MockSettings(params string[] rows)
@@ -179,6 +182,96 @@ public class UpdaterTests
         var result = updater.Check(new UpdateSettings(true, "", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    [Fact]
+    public void LoadSettings_NucenyUpdatClentu_ParsedAsForcedStamp()
+    {
+        // Překlep v klíči je součást wire kontraktu (legacy ALVA.SETUP.Main.LoadSettings).
+        var settings = new Updater().LoadSettings(MockSettings("update~1~0", "NucenyUpdatClentu~66234,60449"));
+
+        Assert.Equal("66234,60449", settings.ForcedStamp);
+    }
+
+    [Fact]
+    public void Check_ForcedStampDiffers_UpdateRequiredForced()
+    {
+        var updater = new TestableUpdater
+        {
+            LocalVersion = "20260526.1", SourceVersion = "20260526.1", StampSeen = "65995,1",
+        };
+
+        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+
+        Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
+        Assert.True(result.Forced);
+        Assert.Equal("20260526.1", result.Version);
+    }
+
+    [Fact]
+    public void Check_ForcedStampMatches_None()
+    {
+        var updater = new TestableUpdater
+        {
+            LocalVersion = "20260526.1", SourceVersion = "20260526.1", StampSeen = "66234,2",
+        };
+
+        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+
+        Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    [Fact]
+    public void Check_EmptyForcedStamp_NoEffect()
+    {
+        var updater = new TestableUpdater
+        {
+            LocalVersion = "20260526.1", SourceVersion = "20260526.1", StampSeen = "cokoliv",
+        };
+
+        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", ""));
+
+        Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    [Fact]
+    public void Check_DevVersion_IgnoresForcedStamp()
+    {
+        // Dev stanice nesmí vynucená vlna zákazníka nikdy trefit.
+        var updater = new TestableUpdater
+        {
+            LocalVersion = VerzeInf.DevVersion, SourceVersion = "20260526.1", StampSeen = "",
+        };
+
+        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+
+        Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    [Fact]
+    public void Check_NewerVersionAndForcedStamp_VersionWins_ForcedFalse()
+    {
+        // Verzový update má přednost - razítko doveze LaunchUpdate v NucenyUpdateTime.
+        var updater = new TestableUpdater
+        {
+            LocalVersion = "20260526.1", SourceVersion = "20260601.1", StampSeen = "",
+        };
+
+        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+
+        Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
+        Assert.False(result.Forced);
+    }
+
+    [Fact]
+    public void Check_ForcedButSourceUnreadable_Broken()
+    {
+        // Nedosažitelný zdroj shodí check dřív, než by vynucená vlna spustila updater do prázdna.
+        var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "", StampSeen = "" };
+
+        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+
+        Assert.Equal(UpdateOutcome.Broken, result.Outcome);
     }
 
     private class NoticeUpdater : Updater

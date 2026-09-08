@@ -19,6 +19,12 @@
     <InternalsVisibleTo Include="EDISONMAIN2.Tests" />
   </ItemGroup>
 
+  <!-- Sdílený zdroj s updaterem (obousměrně: EDUPDATE2 si linkuje VerzeInf.cs): čtení stopy
+       vynucené aktualizace musí být bit za bitem stejné jako zápis v EDUPDATE2. -->
+  <ItemGroup>
+    <Compile Include="..\..\EDUPDATE2\dotnet\ForcedStamp.cs" Link="Startup\ForcedStamp.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Dirkster.AvalonDock" Version="4.74.1" />
     <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="4.74.1" />

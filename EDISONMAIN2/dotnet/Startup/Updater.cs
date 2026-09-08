@@ -9,9 +9,11 @@ namespace EDISONMAIN2;
 /// <summary>
 /// Subset legacy <c>ALVA.SETUP.Main.LoadSettings</c> - jen pole potřebná pro klientský
 /// update flow. <see cref="SourceDir"/> = legacy LocalClientSourcePath sémantika.
+/// <see cref="ForcedStamp"/> = razítko vynucené aktualizace klientů (globál
+/// NucenyUpdateLocalClientu; wire klíč "NucenyUpdatClentu" - překlep je součást kontraktu).
 /// </summary>
 public record UpdateSettings(bool Enabled, string CacheVersion, string EdisonPath, string LocalSourcePath,
-                             string SourceServer = "", int SourcePort = 0)
+                             string SourceServer = "", int SourcePort = 0, string ForcedStamp = "")
 {
     public string SourceDir => string.IsNullOrEmpty(LocalSourcePath) ? EdisonPath : LocalSourcePath;
 }
@@ -26,7 +28,8 @@ public enum UpdateOutcome
     Broken,
 }
 
-public record UpdateCheckResult(UpdateOutcome Outcome, string Message = "", string Version = "");
+/// <summary><c>Forced</c> = update vyvolala vynucená vlna (razítko nesedí), ne novější verze.</summary>
+public record UpdateCheckResult(UpdateOutcome Outcome, string Message = "", string Version = "", bool Forced = false);
 
 public enum ReleaseNoticeOutcome
 {
@@ -58,7 +61,7 @@ public class Updater
         char del = mlRest.Delimiter;
 
         bool enabled = false;
-        string version = "", edisonPath = "", localSourcePath = "", sourceServer = "";
+        string version = "", edisonPath = "", localSourcePath = "", sourceServer = "", forcedStamp = "";
         int sourcePort = 0;
         for (int i = 1; i <= output.GetUpperBound(0); i++)
         {
@@ -72,9 +75,10 @@ public class Updater
                 case "localSourcePath": localSourcePath = parts[1]; break;
                 case "sourceServer": sourceServer = parts[1]; break;
                 case "sourcePort": int.TryParse(parts[1], out sourcePort); break;
+                case "NucenyUpdatClentu": forcedStamp = parts[1]; break;
             }
         }
-        return new UpdateSettings(enabled, version, edisonPath, localSourcePath, sourceServer, sourcePort);
+        return new UpdateSettings(enabled, version, edisonPath, localSourcePath, sourceServer, sourcePort, forcedStamp);
     }
 
     public UpdateCheckResult Check(UpdateSettings settings)
@@ -98,6 +102,11 @@ public class Updater
         if (VerzeInf.IsNewVersion(source, local))
             return new(UpdateOutcome.UpdateRequired, Version: source);
 
+        // Vynucená vlna: razítko z Caché nesedí s lokální stopou → plné stažení. Záměrně až
+        // po dev guardu a Broken checcích a před Caché mismatchem (plná kopie ho může spravit).
+        if (settings.ForcedStamp != "" && GetForcedStampSeen() != settings.ForcedStamp)
+            return new(UpdateOutcome.UpdateRequired, Version: source, Forced: true);
+
         if (settings.CacheVersion != "" && !VerzeInf.IsSameVersion(settings.CacheVersion, local))
             return new(UpdateOutcome.Broken,
                 $"Nesouhlasí verze programů a objektů [{local} -> {settings.CacheVersion}].");
@@ -109,6 +118,9 @@ public class Updater
 
     protected virtual string GetSourceVersion(string sourceDir) => VerzeInf.ReadVersion(sourceDir);
 
+    /// <summary>Lokální stopa poslední splněné vynucené vlny (CliUp2.ini vedle exe, píše ji updater).</summary>
+    protected virtual string GetForcedStampSeen() => EDUPDATE2.ForcedStamp.Read(AppContext.BaseDirectory);
+
     /// <summary>
     /// Self-update updateru - kopii dělá shell, protože EDUPDATE v tu chvíli neběží
     /// (legacy UpdateClientUpdater pattern).
@@ -119,9 +131,10 @@ public class Updater
 
     /// <summary>
     /// Spawn EDUPDATE - stejná sada args jako legacy clsUpdate.StartUpdate klientská větev,
-    /// plus WaitProcess/RunExe (úprava UPDATERCL pro EDISONMAIN2).
+    /// plus WaitProcess/RunExe (úprava UPDATERCL pro EDISONMAIN2). Razítko se posílá vždy,
+    /// když ho známe - i úspěšný běžný update splní čekající vynucenou vlnu (legacy parita).
     /// </summary>
-    public virtual void LaunchUpdate(string sourceDir, string version)
+    public virtual void LaunchUpdate(string sourceDir, string version, bool forced, string forcedStamp)
     {
         var targetPath = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
         var args = string.Join(" ", new[]
@@ -134,8 +147,8 @@ public class Updater
             $"SourcePath=\"{sourceDir}\"",
             $"TargetPath=\"{targetPath}\"",
             $"Version=\"{version}\"",
-            "NucenyUpdate=\"False\"",
-            "NucenyUpdateTime=\"\"",
+            $"NucenyUpdate=\"{(forced ? "True" : "False")}\"",
+            $"NucenyUpdateTime=\"{forcedStamp}\"",
         });
         Process.Start(new ProcessStartInfo
         {

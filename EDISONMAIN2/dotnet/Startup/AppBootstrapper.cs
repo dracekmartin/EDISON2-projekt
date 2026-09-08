@@ -150,7 +150,7 @@ public class AppBootstrapper
                 try
                 {
                     updater.CopyUpdater(settings.SourceDir);
-                    updater.LaunchUpdate(settings.SourceDir, result.Version);
+                    updater.LaunchUpdate(settings.SourceDir, result.Version, result.Forced, settings.ForcedStamp);
                 }
                 catch (Exception ex)
                 {
