@@ -4,9 +4,10 @@ using System.Xml;
 namespace EDISONMAIN2;
 
 /// <summary>
-/// Připojení z <c>EDISONini.xml</c> vedle exe (<c>edison/connection@server</c> + <c>@restport</c>).
+/// Nastavení z <c>EDISONini.xml</c> vedle exe (parita s legacy <c>SaveSettingsToFile</c>).
 /// Soubor je autoritativní na serveru zákazníka a na stanice ho roznáší EDUPDATE; sdílí ho
 /// legacy konzumenti (EDLOADER, starý shell, ESEET), proto zápis zachovává cizí uzly.
+/// Shell sám používá jen <c>connection@server</c> + <c>@restport</c>.
 /// </summary>
 public class SettingsLoader
 {
@@ -25,25 +26,27 @@ public class SettingsLoader
     /// </summary>
     public static bool IsConfigured()
     {
-        var (host, port) = ReadConnection();
-        return !string.IsNullOrEmpty(host) && port > 0;
+        var settings = Read();
+        return !string.IsNullOrEmpty(settings.Server.Host) && settings.Server.Port > 0;
     }
 
     public static SettingsLoader Load()
     {
-        var settings = new SettingsLoader();
+        var settings = Read();
 
-        var (host, port) = ReadConnection();
-        if (!string.IsNullOrEmpty(host)) settings.Server.Host = host;
-        if (port > 0) settings.Server.Port = port;
+        // Bez použitelné connection drž dev defaulty (předvyplnění wizardu).
+        if (string.IsNullOrEmpty(settings.Server.Host)) settings.Server.Host = ServerSettings.DefaultHost;
+        if (settings.Server.Port <= 0) settings.Server.Port = ServerSettings.DefaultPort;
 
         Current = settings;
         return Current;
     }
 
-    /// <summary>Zapíše <c>EDISONini.xml</c> vedle exe (setup wizard). Šetrný merge:
-    /// přepíše jen <c>connection@server</c> a <c>@restport</c>, ostatní uzly a atributy
-    /// (<c>initialized</c>, <c>IRIS</c>, <c>database</c>, <c>@port</c>, ...) zachová.</summary>
+    /// <summary>
+    /// Zapíše <c>EDISONini.xml</c> vedle exe (setup wizard). Parita s legacy zápisem:
+    /// <c>initialized=1</c> + <c>forceChange=1</c>, <c>IRIS</c>, celá <c>connection</c>
+    /// a <c>database</c>; uzly mimo tuhle množinu (např. <c>securedMode</c>) zachová.
+    /// </summary>
     public void Save()
     {
         var xmlDoc = new XmlDocument();
@@ -57,43 +60,90 @@ public class SettingsLoader
             xmlDoc.AppendChild(edison);
         }
 
-        if (edison.SelectSingleNode("connection") is not XmlElement connection)
-        {
-            connection = xmlDoc.CreateElement("connection");
-            edison.AppendChild(connection);
-        }
+        SetElement(edison, "initialized", "1");
+        SetElement(edison, "forceChange", "1");
+        SetElement(edison, "IRIS", Server.Iris ? "1" : "0");
+
+        var connection = SetElement(edison, "connection", null);
+        connection.SetAttribute("name", Server.Name);
         connection.SetAttribute("server", Server.Host);
+        connection.SetAttribute("port", Server.SuperPort.ToString());
         connection.SetAttribute("restport", Server.Port.ToString());
+
+        var database = SetElement(edison, "database", null);
+        database.SetAttribute("name", Server.Database);
+        database.SetAttribute("idfa", Server.IdFa);
 
         xmlDoc.Save(MainPath);
         Current = this;
     }
 
+    private static XmlElement SetElement(XmlElement parent, string name, string? innerText)
+    {
+        if (parent.SelectSingleNode(name) is not XmlElement element)
+        {
+            element = parent.OwnerDocument!.CreateElement(name);
+            parent.AppendChild(element);
+        }
+        if (innerText is not null) element.InnerText = innerText;
+        return element;
+    }
+
     /// <summary>Tolerantní čtení jako legacy EDLOADER: chybějící soubor, nevalidní XML
     /// i chybějící uzel vrací prázdno, rozhodne se z toho až volající.</summary>
-    private static (string Host, int Port) ReadConnection()
+    private static SettingsLoader Read()
     {
-        if (!File.Exists(MainPath)) return ("", 0);
+        var settings = new SettingsLoader { Server = { Host = "", Port = 0 } };
+        if (!File.Exists(MainPath)) return settings;
         try
         {
             var xmlDoc = new XmlDocument();
             xmlDoc.Load(MainPath);
+            var server = settings.Server;
 
-            if (xmlDoc.SelectSingleNode("edison/connection") is not XmlElement connection)
-                return ("", 0);
+            if (xmlDoc.SelectSingleNode("edison/connection") is XmlElement connection)
+            {
+                server.Name = connection.GetAttribute("name");
+                server.Host = connection.GetAttribute("server");
+                int.TryParse(connection.GetAttribute("restport"), out int restPort);
+                server.Port = restPort;
+                int.TryParse(connection.GetAttribute("port"), out int superPort);
+                server.SuperPort = superPort;
+            }
 
-            int.TryParse(connection.GetAttribute("restport"), out int port);
-            return (connection.GetAttribute("server"), port);
+            if (xmlDoc.SelectSingleNode("edison/IRIS") is XmlElement iris)
+                server.Iris = iris.InnerText.Trim() == "1";
+
+            if (xmlDoc.SelectSingleNode("edison/database") is XmlElement database)
+            {
+                server.Database = database.GetAttribute("name");
+                server.IdFa = database.GetAttribute("idfa");
+            }
+
+            return settings;
         }
         catch
         {
-            return ("", 0);
+            return new SettingsLoader { Server = { Host = "", Port = 0 } };
         }
     }
 }
 
+/// <summary>Obraz <c>EDISONini.xml</c>: <see cref="Host"/> + <see cref="Port"/> (REST) používá
+/// shell, zbytek nese wizard kvůli paritě souboru s legacy setupem.</summary>
 public class ServerSettings
 {
-    public string Host { get; set; } = "192.168.16.1";
-    public int    Port { get; set; } = 57770;
+    public const string DefaultHost = "192.168.16.1";
+    public const int    DefaultPort = 57770;
+
+    public string Host { get; set; } = DefaultHost;
+    /// <summary>REST port (<c>connection@restport</c>).</summary>
+    public int    Port { get; set; } = DefaultPort;
+
+    public string Name      { get; set; } = "";
+    /// <summary>Superserver port (<c>connection@port</c>) - shell ho nepoužívá, jen přenáší.</summary>
+    public int    SuperPort { get; set; }
+    public bool   Iris      { get; set; }
+    public string Database  { get; set; } = "";
+    public string IdFa      { get; set; } = "";
 }
