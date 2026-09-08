@@ -20,6 +20,7 @@ internal sealed class RecordingEngine : UpdateEngine
     public Action<string, string>? AfterCopy;
     public Action<string, string>? AfterMove;
     public Func<string, long>? FreeBytesFor;
+    public bool ForcedStampWriteFails;
     public long FreeBytes = long.MaxValue;
 
     public RecordingEngine(UpdaterArgs args, UpdateLog log,
@@ -74,6 +75,13 @@ internal sealed class RecordingEngine : UpdateEngine
     {
         Ops.Add(new("clearRO", path, null));
         base.ClearReadOnly(path);
+    }
+
+    protected override void WriteForcedStamp(string targetPath, string stamp)
+    {
+        if (ForcedStampWriteFails) throw new IOException("testovací lock");
+        Ops.Add(new("stamp", targetPath, stamp));
+        base.WriteForcedStamp(targetPath, stamp);
     }
 }
 

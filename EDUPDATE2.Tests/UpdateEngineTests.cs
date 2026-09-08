@@ -430,6 +430,22 @@ public class UpdateEngineTests : IDisposable
     }
 
     [Fact]
+    public void Run_ForcedStampWriteFails_StillExitOk()
+    {
+        // Nezapsané razítko jen znamená, že příští start spustí vynucenou vlnu znovu -
+        // úspěšně vyměněné soubory se nesmí hlásit jako chyba
+        WriteSrc("A.dll", "new");
+        var engine = Engine(stampTime: "66234,60449");
+        engine.ForcedStampWriteFails = true;
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal("new", File.ReadAllText(Path.Combine(_tgt, "A.dll")));
+        Assert.Equal("", ForcedStamp.Read(_tgt));
+    }
+
+    [Fact]
     public void Run_CancelDuringStaging_Exit1_TargetUntouchedStagingCleaned()
     {
         WriteSrc("A.dll", "newA");
