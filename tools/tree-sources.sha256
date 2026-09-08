@@ -2,5 +2,5 @@
 # Kontroluje .claude/hooks/tree-drift.sh pri startu chatu. Needitovat rucne.
 # Hash je pres obsah BEZ CR (kvuli CRLF/LF rozdilu Windows vs CI): tr -d '\r' | sha256sum
 b36e99537045c992b05386612ebbda0ffcb19d483f438d0b8970d9e6a1f1f8dc  EDCORE/Resources/edisonnavbar.xml
-6ef53173e4ae66fee2ad24f8503f27f90a1624481698e3f6f800d2096bf614bc  EDCORE/Resources/edisontree.xml
-8fe8736c76ac108698e8df24f91a59862cd4446f4bed324b06aec354427e543d  EDCORE/EDFormInterfaceLic.vb
+980328cb378791549ad8df903a7a2fafa00b339afdf8bb462810d2f2c3339d93  EDCORE/Resources/edisontree.xml
+7b96560ed2ba7288eb5ae590ec595d8c0446ab44034ea03d92e3ed6d1520036d  EDCORE/EDFormInterfaceLic.vb
