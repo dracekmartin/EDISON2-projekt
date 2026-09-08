@@ -41,10 +41,10 @@ public class EDFilterComboBoxCommitTests
             combo.SelectedItem = combo.Items.OfType<ComboBoxItem>().Single(i => (string?)i.Tag == "B");
 
             // Race: Refilter přestaví Items a zahodí SelectedItem PŘED tím, než commit proběhne.
-            Invoke(combo, "Refilter", [null]);
+            combo.Refilter(null);
             Assert.Null(combo.SelectedItem);
 
-            Invoke(combo, "CommitSelection", []);
+            combo.CommitSelection();
 
             Assert.Equal("B", source.Value);   // pick se propsal do TwoWay zdroje i bez SelectedItem
         });
@@ -62,7 +62,7 @@ public class EDFilterComboBoxCommitTests
                 new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
 
             // Jen otevřít+zavřít bez výběru (žádný SelectionChanged s položkou) → revert, zdroj beze změny.
-            Invoke(combo, "CommitSelection", []);
+            combo.CommitSelection();
 
             Assert.Equal("A", source.Value);
         });
@@ -82,7 +82,7 @@ public class EDFilterComboBoxCommitTests
             // Uživatel napíše jednoznačný text a dá Enter bez výběru z dropdownu (dropdown zavřený
             // → commit proběhne přímo v Enter handleru, DropDownClosed nepřijde).
             combo.Text = "bet";
-            Invoke(combo, "CommitTypedTextOnEnter", []);
+            combo.CommitTypedTextOnEnter();
 
             Assert.Equal("B", source.Value);
         });
@@ -100,7 +100,7 @@ public class EDFilterComboBoxCommitTests
                 new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
 
             combo.Text = "al";   // matchuje Alfa i Alba, žádný exakt
-            Invoke(combo, "CommitTypedTextOnEnter", []);
+            combo.CommitTypedTextOnEnter();
 
             Assert.Equal("A", source.Value);                     // zdroj beze změny
             Assert.Equal("A - Alfa", combo.Text);                // display revertnul na výběr
@@ -240,8 +240,8 @@ public class EDFilterComboBoxCommitTests
             combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
 
             // Napsaný filtr má přežít do otevřeného dropdownu (jinak by psaní nic nefiltrovalo).
-            SetField(combo, "_textIsUserFilter", true);
-            Invoke(combo, "Refilter", ["B"]);
+            combo._textIsUserFilter = true;
+            combo.Refilter("B");
             Assert.Single(combo.Items);
 
             combo.IsDropDownOpen = true;   // → DropDownOpened; napsaný filtr se nesmí zahodit
@@ -259,13 +259,5 @@ public class EDFilterComboBoxCommitTests
     }
 
     private static string? SelectedTag(EDCombo combo) => (combo.SelectedItem as ComboBoxItem)?.Tag as string;
-
-    private static void SetField(EDCombo combo, string field, object value) =>
-        typeof(EDCombo).GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!
-            .SetValue(combo, value);
-
-    private static void Invoke(EDCombo combo, string method, object?[] args) =>
-        typeof(EDCombo).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!
-            .Invoke(combo, args);
 
 }

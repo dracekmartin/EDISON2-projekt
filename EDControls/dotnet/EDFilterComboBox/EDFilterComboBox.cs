@@ -82,7 +82,8 @@ public class EDFilterComboBox : ComboBox
     private bool _suppressChanges;
     // True jen když aktuální Text napsal uživatel jako filtr. Klidová hodnota (commit, binding, výchozí
     // stav) filtr NEPŘEDSTAVUJE → šipka pak ukazuje celý seznam, ne jen položky shodné s hodnotou.
-    private bool _textIsUserFilter;
+    // internal (i metody níž volané z testů): dřív reflexe, kompilátor přejmenování nechytil.
+    internal bool _textIsUserFilter;
     // Key vybraný v aktuální relaci dropdownu, zachycený v SelectionChanged (viz CommitSelection).
     private string? _committedKey;
 
@@ -210,7 +211,7 @@ public class EDFilterComboBox : ComboBox
     // jediný kandidát filtru), jinak by commit napsaný výběr revertnul. Text == display zachyceného
     // picku → pick platí (šipky Text přepisují), nedohledávat. Zavřený dropdown (šipkami vybraná
     // položka nebo žádný match při psaní) → commit ručně, DropDownClosed nepřijde.
-    private void CommitTypedTextOnEnter()
+    internal void CommitTypedTextOnEnter()
     {
         if (!StrictSelection) return;
         if (Text != DisplayFor(_committedKey)
@@ -230,7 +231,7 @@ public class EDFilterComboBox : ComboBox
     // vybraný Key → SelectedKey + čitelný klidový display. Volný: Text = holý Key (čte ho konzument
     // přes Text binding, např. EDInputForm Field.Value). Bez výběru ve striktním režimu = napsaný
     // neplatný text (nebo jen otevřít+zavřít) → revert na aktuální SelectedKey.
-    private void CommitSelection()
+    internal void CommitSelection()
     {
         if (_committedKey is { } key)
         {
@@ -328,7 +329,7 @@ public class EDFilterComboBox : ComboBox
     // Přestaví obsah dropdownu na položky odpovídající psanému textu (prázdný text = vše).
     // Každá položka je ComboBoxItem: Content = čitelný „Key - Label", ale Tag nese čistý Key -
     // CommitSelection tak přečte vybraný Key nezávisle na zobrazeném textu.
-    private void Refilter(string? text)
+    internal void Refilter(string? text)
     {
         Items.Clear();
         if (Suggestions is null) return;
