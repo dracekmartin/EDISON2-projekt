@@ -25,8 +25,11 @@ namespace EDControls.EDInputForm
         // MLRest a PopupDisplayer ze sdíleného EDServices.Current - nezávislé na Window.DataContext.
         // Dialogy hostující EDInputForm tak nemusí mít VM dědící z EDViewModel jen kvůli těmto
         // službám (mohou mít vlastní VM se svými properties, nebo žádný VM).
-        private IMLRest? MLRest => EDViewModel.EDServices.Current.MLRest;
-        private EDViewModel.IPopupDisplayer? PopupDisplayer => EDViewModel.EDServices.Current.PopupDisplayer;
+        /// <summary>Settable jen kvůli testům - produkce čte sdílené <c>EDServices.Current</c>.</summary>
+        internal EDViewModel.EDServices? ServicesOverride { get; set; }
+        private EDViewModel.EDServices Services => ServicesOverride ?? EDViewModel.EDServices.Current;
+        private IMLRest? MLRest => Services.MLRest;
+        private EDViewModel.IPopupDisplayer? PopupDisplayer => Services.PopupDisplayer;
 
         /// <summary>Caché třída implementující <c>Init</c> / <c>Validate</c> / <c>Save</c>.
         /// Změna za běhu (např. inline panel přepne typ elementu) zahodí controller → příští
@@ -492,8 +495,7 @@ namespace EDControls.EDInputForm
             if (!field.Editable) return;
             if (PlaceholderFields.Count == 0)
             {
-                EDViewModel.EDServices.Current.PopupDisplayer.Info(
-                    "Není z čeho vybírat - tahle šablona nemá napojená data.");
+                PopupDisplayer?.Info("Není z čeho vybírat - tahle šablona nemá napojená data.");
                 return;
             }
 

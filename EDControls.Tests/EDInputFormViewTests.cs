@@ -10,10 +10,8 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Code-behind EDInputFormu, který nejde pokrýt bez controlu: hledání (obnova rozbalení,
-/// počítadla, wraparound) a lifecycle Init/CacheClass. Sdílená statika (EDServices.Current)
-/// → kolekce bez paralelizace.
+/// počítadla, wraparound) a lifecycle Init/CacheClass (přes ServicesOverride, bez statik).
 /// </summary>
-[Collection(SharedStaticStateCollection.Name)]
 public class EDInputFormViewTests
 {
     private const string Comp = "pack://application:,,,/EDControls;component/";
@@ -82,32 +80,28 @@ public class EDInputFormViewTests
         {
             var mock = MLRestMocks.Create();
             mock.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>()).Returns(new CVar());
-            EDServices.Initialize(new EDServices(mock,
-                Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
-            try
+            var form = new Form
             {
-                var form = new Form { CacheClass = "ALVA.A" };
-                int schemaLoaded = 0, deprecatedAlias = 0;
-                form.SchemaLoaded += () => schemaLoaded++;
+                CacheClass = "ALVA.A",
+                ServicesOverride = new EDServices(mock,
+                    Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+            };
+            int schemaLoaded = 0, deprecatedAlias = 0;
+            form.SchemaLoaded += () => schemaLoaded++;
 #pragma warning disable CS0618 // dokud deprekovaný alias existuje, musí fajrovat spolu se SchemaLoaded
-                form.Initialized += () => deprecatedAlias++;
+            form.Initialized += () => deprecatedAlias++;
 #pragma warning restore CS0618
 
-                form.Init();
+            form.Init();
 
-                Assert.Equal(1, schemaLoaded);
-                Assert.Equal(1, deprecatedAlias);
-                mock.Received(1).QueryOrThrow("ALVA.A", "Init", Arg.Any<CVar>());
+            Assert.Equal(1, schemaLoaded);
+            Assert.Equal(1, deprecatedAlias);
+            mock.Received(1).QueryOrThrow("ALVA.A", "Init", Arg.Any<CVar>());
 
-                form.CacheClass = "ALVA.B";   // dokumentovaná past: setter zahodí controller
-                form.Init();
+            form.CacheClass = "ALVA.B";   // dokumentovaná past: setter zahodí controller
+            form.Init();
 
-                mock.Received(1).QueryOrThrow("ALVA.B", "Init", Arg.Any<CVar>());
-            }
-            finally
-            {
-                EDServices.Reset();
-            }
+            mock.Received(1).QueryOrThrow("ALVA.B", "Init", Arg.Any<CVar>());
         });
     }
 

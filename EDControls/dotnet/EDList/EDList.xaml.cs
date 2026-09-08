@@ -25,8 +25,11 @@ namespace EDControls.EDList
         // MLRest + UserPrefs ze sdíleného EDServices.Current - nezávislé na Window.DataContext.
         // Host hostující EDList tak nemusí mít VM dědící z EDViewModel jen kvůli těmto službám
         // (shodný pattern jako EDInputForm). EDServices.UserPrefs defaultuje na NullUserPrefsService.
-        private IMLRest? MLRest => EDViewModel.EDServices.Current.MLRest;
-        private IUserPrefsService UserPrefs => EDViewModel.EDServices.Current.UserPrefs;
+        /// <summary>Settable jen kvůli testům - produkce čte sdílené <c>EDServices.Current</c>.</summary>
+        internal EDViewModel.EDServices? ServicesOverride { get; set; }
+        private EDViewModel.EDServices Services => ServicesOverride ?? EDViewModel.EDServices.Current;
+        private IMLRest? MLRest => Services.MLRest;
+        private IUserPrefsService UserPrefs => Services.UserPrefs;
 
         public static readonly DependencyProperty CacheClassProperty =
             DependencyProperty.Register(nameof(CacheClass), typeof(string), typeof(EDList),
