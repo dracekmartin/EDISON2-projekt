@@ -13,12 +13,12 @@ namespace EDISONMAIN2.Windows.LogoutCountdownWindow
     {
         private readonly DispatcherTimer _timer;
         private readonly Action _onExpired;
-        private int _secondsLeft;
+        private readonly CountdownState _state;
 
         public LogoutCountdownWindow(int seconds, Action onExpired)
         {
             _onExpired = onExpired;
-            _secondsLeft = seconds;
+            _state = new CountdownState(seconds);
             InitializeComponent();
             UpdateText();
             // Až po layoutu jsou ActualWidth/Height známé (SizeToContent).
@@ -30,8 +30,7 @@ namespace EDISONMAIN2.Windows.LogoutCountdownWindow
 
         private void Tick()
         {
-            _secondsLeft--;
-            if (_secondsLeft <= 0)
+            if (_state.Tick())
             {
                 _timer.Stop();
                 Close();
@@ -41,8 +40,7 @@ namespace EDISONMAIN2.Windows.LogoutCountdownWindow
             UpdateText();
         }
 
-        private void UpdateText() =>
-            CountdownText.Text = $"Aplikace bude ukončena za {_secondsLeft} s.";
+        private void UpdateText() => CountdownText.Text = _state.Text;
 
         private void PositionBottomRight()
         {
