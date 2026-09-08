@@ -42,9 +42,7 @@ public partial class DesktopMiniAppView : UserControl
     private void Tile_MouseMove(object sender, MouseEventArgs e)
     {
         if (e.LeftButton != MouseButtonState.Pressed || _dragTile is null) return;
-        var p = e.GetPosition(null);
-        if (Math.Abs(p.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
-            Math.Abs(p.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        if (!DesktopDragFormats.ThresholdExceeded(_dragStart, e.GetPosition(null))) return;
 
         var tile = _dragTile;
         _dragTile = null;

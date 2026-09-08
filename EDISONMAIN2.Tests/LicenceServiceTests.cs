@@ -1,3 +1,5 @@
+using ALVA.LICENCE.EDLicence;
+using ALWA.SYS;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDTesting;
@@ -56,5 +58,44 @@ public class LicenceServiceTests
         Assert.NotNull(filtered);
         Assert.Equal("EDISON", Assert.Single(filtered.NestedModules).DisplayedName);
         Assert.Null(ModuleTreeState.FilterFamily(kmenova, lic, access));
+    }
+
+    // Seam kolem EDLicence.Activation - testuje se okolní logika GetActiveLicence.
+    private sealed class FakeLicenceService(Lic? lic, string err) : LicenceService(new MLRest("test-host", 9999, "", ""))
+    {
+        protected override Lic? LoadActiveLic(out string error)
+        {
+            error = err;
+            return lic;
+        }
+    }
+
+    [Fact]
+    public void GetActiveLicence_ServerError_Throws()
+    {
+        var service = new FakeLicenceService(null, "licenční server nedostupný");
+
+        var ex = Assert.Throws<InvalidOperationException>(() => service.GetActiveLicence());
+        Assert.Equal("licenční server nedostupný", ex.Message);
+    }
+
+    [Fact]
+    public void GetActiveLicence_NoLicenceOnServer_ReturnsFallback()
+    {
+        var service = new FakeLicenceService(null, "");
+
+        var lic = service.GetActiveLicence();
+
+        Assert.NotNull(lic);
+        Assert.Equal("Nezadána", lic.Type);
+    }
+
+    [Fact]
+    public void GetActiveLicence_ActiveLicence_ReturnedAsIs()
+    {
+        var active = new Lic { Type = "Plná", CountsLOGIN = 25 };
+        var service = new FakeLicenceService(active, "");
+
+        Assert.Same(active, service.GetActiveLicence());
     }
 }
