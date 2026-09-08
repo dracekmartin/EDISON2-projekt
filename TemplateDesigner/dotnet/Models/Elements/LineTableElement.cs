@@ -2361,6 +2361,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneFontSizeDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
+        // Vnitřní okraj drží dolní práh sloupce spoje (šířka času + okraje, nejméně 3 mm), takže
+        // rozhoduje o počtu spojů na blok a o počtu řezů na šířku. Jen vodorovný - svislý by si
+        // šel do cesty s vlastním polem „Výška řádku".
+        new FloatPropertyDescriptor { Label = "Vnitřní okraj vlevo", Group = "Datové buňky",
+            Unit = "mm", Min = 0, Max = 20, Format = "0.##",
+            Get = () => DataStyle.PaddingLeft ?? ResolveColumnDataParent().PaddingLeft,
+            Set = v => DataStyle.PaddingLeft = v },
+        new FloatPropertyDescriptor { Label = "Vnitřní okraj vpravo", Group = "Datové buňky",
+            Unit = "mm", Min = 0, Max = 20, Format = "0.##",
+            Get = () => DataStyle.PaddingRight ?? ResolveColumnDataParent().PaddingRight,
+            Set = v => DataStyle.PaddingRight = v },
         GetDataRowHeightDescriptor(),
         .. GetPositionDescriptors(),
     ];

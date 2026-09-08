@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-09-08 (1) - 📐 tabulku linky jde utáhnout na šířku z formuláře prvku
+
+Požadavek Jan 8. 9.: starý postskriptový tisk seřízne tabulku na šířku agresivněji než my a chtěl
+na to volbu „standardní / velmi úzké". Ten parametr ale **už existoval** - je to vnitřní okraj
+buňky - jen se u tabulky linky dal nastavit **jen po sloupcích** v dialogu Sloupce, kam nikdo
+nedojde. Ostatní tabulkové prvky ho element-level mají, protože berou celý balíček stylu ze
+sdíleného `StyleFields.cls`; tabulka linky si formulář skládá ručně, takže jí vypadl.
+
+Nově jsou v panelu i ve formuláři prvku dvě pole **Vnitřní okraj vlevo / vpravo** (mm) ve skupině
+Datové buňky. Prázdné = 0,5 mm jako dosud, per-sloupcový okraj z dialogu dál vyhrává.
+
+**Není to kosmetika, je to rozměr.** Dolní práh sloupce spoje je šířka času plus okraje po
+stranách. Změřeno na `330511` obousměrně, prvek 120 mm: okraj 0,5 mm → sloupec 5,50 mm, 3 spoje
+na blok, **3 stránky**; 0,25 mm → 3,89 / 4 / 3; 0 mm → 3,11 / 5 / **2 stránky**.
+Pod `MinAutoColumnWidthMm` = 3 mm sloupec nespadne ani na nule.
+
+⚠️ **„Řezů ubude" se tvrdit nedá** a test to tak nehlídá: počet bloků je skoková funkce počtu
+spojů na blok, takže o jeden spoj víc řez ubere jen někdy (na `330511` ano, na fixtuře se 40 spoji
+ne). Testovatelný je jen ten směr - užší sloupec nesmí řez přidat.
+
+⚠️ **Dva testy nejdřív měřily nic.** Fixtura měla deset spojů, ty se do šířky vešly, sloupce si
+rozdělily zbytek prvku a dolní práh se **vůbec neuplatnil** - sloupec vyšel 7,80 mm s nulovým
+i s výchozím okrajem. Fixtura je proto na 40 spojích a testy, které na prahu stojí, mají pojistku,
+že se tabulka opravdu dělí.
+
+Ověřeno: .NET **2959/2959** (6 nových testů), Caché 153/153. Nová pole ověřená **voláním** `Init`
+na serveru (prázdný výchozí stav, rozsah 0-20, jednotka mm).
+
+⚠️ **Záchranná cesta pro nasazení `.cls` z `cache-api.md` nefunguje** - ruční poslání cesty hooku
+skončilo s kódem 0 a bez chyby, ale server dál vracel starou třídu (ověřeno voláním `Init`).
+Nasadil to teprve zápis editačním nástrojem, kdy hook spustí harness sám. Pravidlo je tím na tomhle
+místě zavádějící stejně jako `cache_compile`, na který samo varuje.
+
 ## 2026-09-07 (17) - 📦 postskriptový vzhled linkového JŘ jako systémová šablona
 
 Šablona, na které se linkový JŘ ladil proti starému postskriptovému tisku, ležela jen jako

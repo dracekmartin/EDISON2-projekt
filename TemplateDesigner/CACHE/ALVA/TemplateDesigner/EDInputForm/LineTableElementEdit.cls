@@ -78,6 +78,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#00FFFFFF"
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        // Vnitřní okraj je u této tabulky rozměrová volba, ne kosmetika: dolní práh sloupce spoje
+        // je šířka času plus okraje po stranách, takže rozhoduje, kolik spojů se vejde do bloku
+        // a kolikrát se tabulka řízne na šířku. Jen vodorovné - svislé drží pole "Výška řádku".
+        s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", "", 0, 20, "mm")
+        s f.helpText = "Prázdné = 0,5 mm. Menší okraj zúží sloupec spoje, takže se do řádku vejde víc spojů a tabulka se řeže na méně dílů; na nule se čas dotýká svislé čáry."
+        s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", "", 0, 20, "mm")
+        s f.helpText = "Prázdné = 0,5 mm. Sčítá se s okrajem vlevo, pod 3 mm sloupec spoje nespadne ani tak."
         s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
         d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
         d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")
