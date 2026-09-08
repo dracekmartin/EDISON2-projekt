@@ -38,6 +38,12 @@ Gridu). Na `Loaded` se sám naváže na `EDViewModel.IsActionInProgress` - v XAM
   žádná změna kódu. Rozměr 60×48 je povinný (flip `CenterX=30`, slide `From=-60`). Animace
   cílí transform hosta (`SpriteHost`), ne sprite → je společná všem. `x:Shared="False"` -
   `FindResource` vrací novou instanci (UIElement smí mít jen jednoho rodiče).
+- **Klíč s další tečkou (`Sprite.Money.Note`) = kus vyhrazené sady** - v náhodném poolu
+  není. Sada se vybírá jen explicitně: `ActionInProgress("Money")` na VM
+  (`EDViewModel.ActionSpriteKey`). Kusy sady padají shora na náhodných X s náhodným
+  tempem - to storyboard neumí, animace kusů (`DoubleAnimation` + restart v `Completed`)
+  řídí code-behind; průhled zůstává 160×48. Mapování agenda→sada drží shell
+  (`EDISONMAIN2 Modules/AgendaSprites`).
 - **Storyboard startuje/zastavuje code-behind okna**, ne `Loaded` trigger -
   `RepeatBehavior=Forever` by jinak tikal i skrytý. `Begin(..., isControllable: true)`
   při aktivaci resetuje maskota na start.

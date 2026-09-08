@@ -53,7 +53,7 @@ public sealed class EDActionInProgress : FrameworkElement
             // Nové okno per akci (ne recyklace) - jinak by Show() přehrálo starý frame spritu.
             if (_overlay is null)
             {
-                _overlay = new ActionInProgressWindow(owner);
+                _overlay = new ActionInProgressWindow(owner, (owner.DataContext as EDVm)?.ActionSpriteKey);
                 _overlay.Closed += (_, _) => _overlay = null;
                 _overlay.ShowOverlay();
             }

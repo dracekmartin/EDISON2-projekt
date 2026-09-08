@@ -1011,7 +1011,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 await prompt.ShowIfNewAsync(path, em.DisplayedName);
 
             // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces - čekáme na jeho okno).
-            using (ActionInProgress())
+            using (ActionInProgress(AgendaSprites.ForExe(path)))
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
         }
 
@@ -1044,13 +1044,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
         private async Task LaunchModelessAsync(string exe, string formFqn)
         {
-            using (ActionInProgress())
+            using (ActionInProgress(AgendaSprites.ForExe(exe)))
                 await WindowNavigator.ShowLegacyAsync(exe, formFqn);
         }
 
         private async Task LaunchDialogAsync(string exe, string formFqn)
         {
-            using (ActionInProgress())
+            using (ActionInProgress(AgendaSprites.ForExe(exe)))
                 await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
@@ -1124,7 +1124,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                                     + "nelze ho spustit. Vytvořte ho znovu z modulu.");
                 return;
             }
-            using (ActionInProgress())
+            using (ActionInProgress(AgendaSprites.ForExe(shortcut.ExecutablePath)))
                 await WindowNavigator.ShowLegacyShortcutAsync(shortcut.ExecutablePath, shortcut.FormName,
                     ShortcutLaunchPayloadCodec.Encode(shortcut), inputParam: shortcut.InputParam);
         }

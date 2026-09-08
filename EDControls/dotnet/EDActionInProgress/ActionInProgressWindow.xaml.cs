@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 
 namespace EDControls.EDActionInProgress;
@@ -21,13 +24,17 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
 {
     // Prefix klíče spritů v Window.Resources - nový sprite stačí přidat do XAML s tímto prefixem.
     private const string SpriteKeyPrefix = "Sprite.";
+    // Počet souběžně padajících kusů ve fall režimu (šablony sady se střídají dokola).
+    private const int FallPieceCount = 5;
 
     private readonly Window _owner;
     private readonly Random _rng = new();
-    private string[]? _spriteKeys;
+    // Fall režim: kusy sady + jejich transformy; prázdné = běžný walk sprite.
+    private readonly List<(TranslateTransform Transform, FrameworkElement Element)> _fallPieces = [];
     private bool _active;
+    private bool _fallRunning;
 
-    public ActionInProgressWindow(Window owner)
+    public ActionInProgressWindow(Window owner, string? spriteKey = null)
     {
         InitializeComponent();
         _owner = owner;
@@ -37,7 +44,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         owner.StateChanged += OnOwnerStateChanged;
         // SizeToContent - velikost karty se změní i za běhu (font/theme swap).
         SizeChanged += OnOwnSizeChanged;
-        PickRandomSprite();   // jednou per okno (= per akci)
+        PickSprite(spriteKey);   // jednou per okno (= per akci)
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -58,17 +65,73 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         ToggleWalk(true);
     }
 
-    // Náhodně vybere jeden ze spritů z Window.Resources (klíče s prefixem "Sprite."). Klíče
-    // se počítají jednou; přidání dalšího spritu do XAML je tak jediná potřebná změna.
-    // x:Shared="False" → FindResource vrací pokaždé novou instanci (žádný konflikt rodiče).
-    private void PickRandomSprite()
+    // Explicitní klíč z VM (ActionSpriteKey) vybere vyhrazenou SADU "Sprite.<klíč>.*" (fall
+    // režim); jinak náhodně z poolu "Sprite.*" bez další tečky (kusy sad v poolu nejsou).
+    // x:Shared="False" → přístup k resource vrací pokaždé novou instanci (žádný konflikt rodiče).
+    private void PickSprite(string? preferred)
     {
-        _spriteKeys ??= Resources.Keys.OfType<string>()
-            .Where(k => k.StartsWith(SpriteKeyPrefix, StringComparison.Ordinal))
+        if (preferred is not null && TrySetupFallSet(SpriteKeyPrefix + preferred + ".")) return;
+
+        var pool = Resources.Keys.OfType<string>()
+            .Where(k => k.StartsWith(SpriteKeyPrefix, StringComparison.Ordinal)
+                        && k.IndexOf('.', SpriteKeyPrefix.Length) < 0)
             .OrderBy(k => k, StringComparer.Ordinal)
             .ToArray();
-        if (_spriteKeys.Length == 0) return;
-        SpriteHost.Content = (UIElement)FindResource(_spriteKeys[_rng.Next(_spriteKeys.Length)]);
+        if (pool.Length == 0) return;
+        SpriteHost.Content = (UIElement)FindResource(pool[_rng.Next(pool.Length)]);
+    }
+
+    // Naplní průhled padajícími kusy sady (šablony dokola, každý kus vlastní transform).
+    // Klidová Y = -výška (kus schovaný nad průhledem, jako X=-60 u walk spritu).
+    private bool TrySetupFallSet(string setPrefix)
+    {
+        var pieceKeys = Resources.Keys.OfType<string>()
+            .Where(k => k.StartsWith(setPrefix, StringComparison.Ordinal))
+            .OrderBy(k => k, StringComparer.Ordinal)
+            .ToArray();
+        if (pieceKeys.Length == 0) return false;
+
+        var canvas = new Canvas { Width = SpriteViewport.Width, Height = SpriteViewport.Height };
+        for (int i = 0; i < FallPieceCount; i++)
+        {
+            var element = (FrameworkElement)FindResource(pieceKeys[i % pieceKeys.Length]);
+            var transform = new TranslateTransform { Y = -element.Height };
+            element.RenderTransform = transform;
+            canvas.Children.Add(element);
+            _fallPieces.Add((transform, element));
+        }
+        SpriteHost.Content = canvas;
+        // Klidové X=-60 hosta je pro walk sprite; fall canvas musí sedět na průhledu.
+        SlideTranslate.X = 0;
+        return true;
+    }
+
+    // Náhodné padání storyboard s pevnými hodnotami neumí - kusy animuje code-behind:
+    // každý kus po dopadu dostane nové náhodné X a tempo (Completed → další pád).
+    private void StartFall()
+    {
+        _fallRunning = true;
+        foreach (var piece in _fallPieces) DropPiece(piece, initial: true);
+    }
+
+    private void StopFall()
+    {
+        _fallRunning = false;
+        // Odstranění clocku vrací Y na klidovou hodnotu (kus schovaný nad průhledem).
+        foreach (var piece in _fallPieces) piece.Transform.BeginAnimation(TranslateTransform.YProperty, null);
+    }
+
+    private void DropPiece((TranslateTransform Transform, FrameworkElement Element) piece, bool initial)
+    {
+        Canvas.SetLeft(piece.Element, _rng.NextDouble() * (SpriteViewport.Width - piece.Element.Width));
+        // Bankovky padají pomaleji než mince; první vlna se rozprostře delším rozestupem.
+        double seconds = piece.Element.Height >= 24 ? 1.8 + _rng.NextDouble() * 0.8 : 1.1 + _rng.NextDouble() * 0.6;
+        var fall = new DoubleAnimation(-piece.Element.Height, SpriteViewport.Height, TimeSpan.FromSeconds(seconds))
+        {
+            BeginTime = TimeSpan.FromSeconds(_rng.NextDouble() * (initial ? 1.6 : 0.7)),
+        };
+        fall.Completed += (_, _) => { if (_fallRunning) DropPiece(piece, initial: false); };
+        piece.Transform.BeginAnimation(TranslateTransform.YProperty, fall);
     }
 
     // Minimalizace ownera → Hide (OS auto-hide owned oken WPF IsVisible nevidí a Forever
@@ -112,6 +175,11 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
     // Storyboard řídí code-behind - Begin(..., isControllable) při aktivaci resetuje maskota.
     private void ToggleWalk(bool active)
     {
+        if (_fallPieces.Count > 0)
+        {
+            if (active) StartFall(); else StopFall();
+            return;
+        }
         var walk = (Storyboard)Resources["WalkAnimation"];
         if (active)
             walk.Begin(this, true);

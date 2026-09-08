@@ -36,7 +36,11 @@
              Každý = pixel-art Canvas 60×48, čelem doprava (flip ho na zpáteční cestě otočí).
              Nová věc = přidej sem další <Canvas x:Key="Sprite.Xxx" .../>; code-behind si klíče
              s prefixem "Sprite." najde sám a náhodně jeden vybere - nic dalšího registrovat netřeba.
-             Rozměr 60×48 je povinný (flip CenterX=30 = půlka, slide From=-60 = plná šířka mimo záběr). -->
+             Rozměr 60×48 je povinný (flip CenterX=30 = půlka, slide From=-60 = plná šířka mimo záběr).
+             Klíč s další tečkou ("Sprite.Money.Note") = kus VYHRAZENÉ SADY: v náhodném poolu není,
+             sada se vybírá jen explicitně (EDViewModel.ActionInProgress("Money")) a její kusy
+             padají shora na náhodných pozicích (fall režim, řídí code-behind). Kusy mají vlastní
+             rozměry (menší než 60×48, ať se jich do průhledu vejde víc). -->
 
         <!-- Kapybara je záměrně vypnutá (vykomentovaná, nemazat) - zpět stačí odkomentovat.
         <Canvas x:Key="Sprite.Capybara" x:Shared="False" Width="60" Height="48"
@@ -169,6 +173,58 @@
             <Rectangle Canvas.Left="42" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
 
         </Canvas>
+
+        <!-- Sada "Money" (Mzdy) - padající bankovky a mince, jen přes explicitní klíč. -->
+        <Canvas x:Key="Sprite.Money.Note" x:Shared="False" Width="48" Height="24"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="6"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="6"  Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="6"  Width="6" Height="6" Fill="#A5D6A7"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="6"  Width="6" Height="6" Fill="#A5D6A7"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="6"  Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="6"  Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="6"  Width="6" Height="6" Fill="#2E7D32"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="12" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="12" Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="12" Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#A5D6A7"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#A5D6A7"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="12" Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="12" Width="6" Height="6" Fill="#2E7D32"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+
+        </Canvas>
+
+        <Canvas x:Key="Sprite.Money.Coin" x:Shared="False" Width="12" Height="12"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="0"  Width="6" Height="6" Fill="#FFC107"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="0"  Width="6" Height="6" Fill="#FFC107"/>
+            <Rectangle Canvas.Left="0"  Canvas.Top="6"  Width="6" Height="6" Fill="#FFC107"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#D89E00"/>
+
+        </Canvas>
     </Window.Resources>
 
     <!-- Margin = prostor pro rozptyl stínu (BlurRadius 18) - SizeToContent by ho jinak ořízl. -->
@@ -189,7 +245,7 @@
                 <!-- Průhledové okno - sprite jím projíždí (clip). Konkrétní sprite vkládá code-behind
                      do SpriteHost; transform (flip + posun) je na hostovi, ne na spritu → animace
                      je společná všem spritům. -->
-                <Border Width="160" Height="48" ClipToBounds="True">
+                <Border x:Name="SpriteViewport" Width="160" Height="48" ClipToBounds="True">
                     <ContentControl x:Name="SpriteHost" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <ContentControl.RenderTransform>
                             <TransformGroup>
