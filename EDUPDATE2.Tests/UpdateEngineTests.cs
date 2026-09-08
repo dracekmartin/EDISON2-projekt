@@ -292,7 +292,7 @@ public class UpdateEngineTests : IDisposable
             new UpdaterArgs(SourcePath: _src, TargetPath: _tgt),
             new UpdateLog(_tgt),
             cancellationToken: cancelSource.Token);
-        engine.AfterCopy = _ => cancelSource.Cancel(); // zruš po první stagované kopii
+        engine.AfterCopy = (_, _) => cancelSource.Cancel(); // zruš po první stagované kopii
 
         var result = engine.Run();
 

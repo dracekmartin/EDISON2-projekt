@@ -83,7 +83,7 @@ public class UpdateScenarioTests : IDisposable
 
         public (UpdateResult Result, List<FsOp> Ops) Run(bool forced = false, string stampTime = "",
             Func<string, string, bool>? moveShouldFail = null, Func<string, bool>? deleteShouldFail = null,
-            Action<string>? afterCopy = null, long freeBytes = long.MaxValue)
+            Action<string, string>? afterCopy = null, long freeBytes = long.MaxValue)
         {
             var engine = new RecordingEngine(
                 new UpdaterArgs(SourcePath: Server, TargetPath: Station,
@@ -436,7 +436,7 @@ public class UpdateScenarioTests : IDisposable
         _scenario.FinishManifest();
         bool vanished = false;
 
-        var (result, _) = _scenario.Run(afterCopy: _ =>
+        var (result, _) = _scenario.Run(afterCopy: (_, _) =>
         {
             if (vanished) return;
             vanished = true;

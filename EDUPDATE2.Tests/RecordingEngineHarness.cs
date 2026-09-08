@@ -17,7 +17,7 @@ internal sealed class RecordingEngine : UpdateEngine
     public Func<string, string, bool>? MoveShouldFail;
     public Func<string, string, bool>? CopyShouldFail;
     public Func<string, bool>? DeleteShouldFail;
-    public Action<string>? AfterCopy;
+    public Action<string, string>? AfterCopy;
     public Action<string, string>? AfterMove;
     public long FreeBytes = long.MaxValue;
 
@@ -39,7 +39,7 @@ internal sealed class RecordingEngine : UpdateEngine
         if (CopyShouldFail?.Invoke(source, target) == true) throw new IOException("testovací lock");
         Ops.Add(new("copy", source, target));
         base.CopyFile(source, target);
-        AfterCopy?.Invoke(target);
+        AfterCopy?.Invoke(source, target);
     }
 
     protected override void MoveFile(string source, string target)
