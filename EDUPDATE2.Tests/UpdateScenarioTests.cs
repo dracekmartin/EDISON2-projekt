@@ -5,64 +5,15 @@ namespace EDUPDATE2.Tests;
 
 /// <summary>
 /// Scénářové testy "co přesně se dotklo disku": ReleaseScenario deklarativně postaví
-/// serverovou instalaci + stanici + manifest a RecordingEngine zaznamená každou FS operaci.
-/// Tvrdí se tedy nejen výsledný stav, ale i že se NIC navíc nekopírovalo/nemazalo.
+/// serverovou instalaci + stanici + manifest; RecordingEngine (sdílený harness) zaznamená
+/// FS operace jdoucí přes seamy enginu. Tvrdí se tedy nejen výsledný stav, ale i že se
+/// přes seamy NIC navíc nekopírovalo/nemazalo.
 /// </summary>
 public class UpdateScenarioTests : IDisposable
 {
     private readonly ReleaseScenario _scenario = new();
 
     public void Dispose() => _scenario.Dispose();
-
-    private sealed record FsOp(string Kind, string Path, string? Target);
-
-    private sealed class RecordingEngine : UpdateEngine
-    {
-        public readonly List<FsOp> Ops = [];
-        public Func<string, string, bool>? MoveShouldFail;
-        public Func<string, bool>? DeleteShouldFail;
-        public Action<string>? AfterCopy;
-        public long FreeBytes = long.MaxValue;
-
-        public RecordingEngine(UpdaterArgs args, UpdateLog log) : base(args, log) { }
-
-        protected override int GetProcessCount(string name) => 0;
-        protected override void Sleep(int milliseconds) { }
-        protected override long GetFreeBytes(string path) => FreeBytes;
-
-        protected override void CopyFile(string source, string target)
-        {
-            Ops.Add(new("copy", source, target));
-            base.CopyFile(source, target);
-            AfterCopy?.Invoke(target);
-        }
-
-        protected override void MoveFile(string source, string target)
-        {
-            if (MoveShouldFail?.Invoke(source, target) == true) throw new IOException("testovací lock");
-            Ops.Add(new("move", source, target));
-            base.MoveFile(source, target);
-        }
-
-        protected override void DeleteFile(string path)
-        {
-            if (DeleteShouldFail?.Invoke(path) == true) throw new IOException("testovací lock");
-            Ops.Add(new("delete", path, null));
-            base.DeleteFile(path);
-        }
-
-        protected override void DeleteDirectory(string path)
-        {
-            Ops.Add(new("rmdir", path, null));
-            base.DeleteDirectory(path);
-        }
-
-        protected override void CreateDirectory(string path)
-        {
-            Ops.Add(new("mkdir", path, null));
-            base.CreateDirectory(path);
-        }
-    }
 
     /// <summary>
     /// Server = adresář instalace u zákazníka, stanice = cíl updatu. FinishManifest generuje
@@ -181,6 +132,7 @@ public class UpdateScenarioTests : IDisposable
             _scenario.Staged(ops));
         Assert.Equal("novy", File.ReadAllText(Path.Combine(_scenario.Station, "Patched1.dll")));
         Assert.Equal("stejny", File.ReadAllText(Path.Combine(_scenario.Station, "Beze1.dll")));
+        Assert.False(Directory.Exists(Path.Combine(_scenario.Station, UpdateEngine.StagingDirName)));
     }
 
     [Fact]
@@ -203,11 +155,13 @@ public class UpdateScenarioTests : IDisposable
         _scenario.ServerFile("A.dll", "novy");
         _scenario.FinishManifest();
 
-        var (result, ops) = _scenario.Run();
+        // stampTime u no-opu: razítko se nesmí zapsat - vynucená vlna chce reálné kopírování
+        var (result, ops) = _scenario.Run(stampTime: "66234,60449");
 
         Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
         Assert.Empty(ops);
         Assert.False(Directory.Exists(Path.Combine(_scenario.Station, UpdateEngine.StagingDirName)));
+        Assert.Equal("", ForcedStamp.Read(_scenario.Station));
     }
 
     [Fact]
@@ -250,6 +204,7 @@ public class UpdateScenarioTests : IDisposable
 
         Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
         Assert.Equal(Sorted("A.dll", @"locales\cs.pak", "VERZE.INF"), _scenario.Staged(ops));
+        Assert.Equal("lokalizace", File.ReadAllText(Path.Combine(_scenario.Station, "locales", "cs.pak")));
     }
 
     [Fact]
@@ -390,6 +345,7 @@ public class UpdateScenarioTests : IDisposable
         _scenario.StationFile(@"EDFiles\form.edf", "stary");
         _scenario.ServerFile("Patched.dll", "novy");
         _scenario.StationFile("Patched.dll", "stary");
+        _scenario.ServerFile("Novy.dll", "novy"); // na stanici není - rollback ho musí smazat, ne obnovit
         _scenario.FinishManifest();
 
         // KeyFiles (VERZE.inf) se swapují jako poslední - selhání na nich zaručí, že oba
@@ -400,6 +356,8 @@ public class UpdateScenarioTests : IDisposable
         Assert.Equal(UpdateEngine.ExitFailedRestored, result.ExitCode);
         Assert.Equal("stary", File.ReadAllText(Path.Combine(_scenario.Station, "EDFiles", "form.edf")));
         Assert.Equal("stary", File.ReadAllText(Path.Combine(_scenario.Station, "Patched.dll")));
+        Assert.False(File.Exists(Path.Combine(_scenario.Station, "Novy.dll")));
+        Assert.Equal("LAST=260825.1\n", File.ReadAllText(Path.Combine(_scenario.Station, "VERZE.INF")));
     }
 
     [Fact]
@@ -425,9 +383,9 @@ public class UpdateScenarioTests : IDisposable
     }
 
     [Fact]
-    public void Fuzz_RandomPatchSubset_StagesExactlyChangedFiles()
+    public void SeededRandomPatchSubset_StagesExactlyChangedFiles()
     {
-        // Deterministický seed - test nesmí být flaky; 100 souborů napříč root/EDFiles/PS
+        // Pevný seed = jeden vygenerovaný objemný případ (není to fuzz); 100 souborů napříč root/EDFiles/PS
         var random = new Random(20260908);
         var changed = new List<string>();
         for (int i = 0; i < 100; i++)
@@ -497,7 +455,14 @@ public class UpdateScenarioTests : IDisposable
         // Hluboko zanořené síťové cesty (\\server\...\Edison) reálně přesahují 260 znaků;
         // .NET 10 File API je umí a updater je nesmí rozbít
         string longName = new string('d', 240) + ".dll";
-        _scenario.ServerFile(longName, "novy");
+        try
+        {
+            _scenario.ServerFile(longName, "novy");
+        }
+        catch (IOException)
+        {
+            return; // stanice bez LongPathsEnabled - dlouhou cestu nevytvoří ani fixture
+        }
         _scenario.FinishManifest();
 
         var (result, _) = _scenario.Run();
