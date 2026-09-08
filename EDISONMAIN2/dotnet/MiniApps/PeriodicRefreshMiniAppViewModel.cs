@@ -66,6 +66,10 @@ public sealed class PeriodicRefreshMiniAppViewModel : EDMiniAppViewModel, IMiniA
 
     public ICommand RefreshNowCommand { get; }
 
+    /// <summary>internal kvůli testům - DispatcherTimer v testech netiká, stav ale vypovídá.</summary>
+    internal bool TimerRunning => _timer.IsEnabled;
+    internal TimeSpan TimerInterval => _timer.Interval;
+
     public override void OnOpened() => Reschedule();
 
     public override void OnClosed() => _timer.Stop();

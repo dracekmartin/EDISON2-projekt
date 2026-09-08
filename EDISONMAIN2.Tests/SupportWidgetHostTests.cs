@@ -23,4 +23,22 @@ public class SupportWidgetHostTests
     {
         Assert.False(SupportWidgetHost.IsEnabled(value));
     }
+
+    [Fact]
+    public void ScreenshotMode_FollowsEnvironmentVariable()
+    {
+        var original = Environment.GetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable);
+        try
+        {
+            Environment.SetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable, "1");
+            Assert.True(SupportWidgetHost.ScreenshotMode);
+
+            Environment.SetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable, null);
+            Assert.False(SupportWidgetHost.ScreenshotMode);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable, original);
+        }
+    }
 }

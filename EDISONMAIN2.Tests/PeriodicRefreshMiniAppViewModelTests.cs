@@ -46,4 +46,51 @@ public class PeriodicRefreshMiniAppViewModelTests
 
         Assert.Contains("nic k obnovení", vm.LastRefresh);
     }
+
+    [Fact]
+    public void OnOpened_StartsTimerWithDefaultFiveMinutes()
+    {
+        var vm = Build();
+
+        vm.OnOpened();
+
+        Assert.True(vm.TimerRunning);
+        Assert.Equal(TimeSpan.FromMinutes(5), vm.TimerInterval);
+    }
+
+    [Fact]
+    public void IsEnabled_TogglesTimer()
+    {
+        var vm = Build();
+        vm.OnOpened();
+
+        vm.IsEnabled = false;
+        Assert.False(vm.TimerRunning);
+
+        vm.IsEnabled = true;
+        Assert.True(vm.TimerRunning);
+    }
+
+    [Fact]
+    public void SelectedInterval_Change_ReschedulesWithNewInterval()
+    {
+        var vm = Build();
+        vm.OnOpened();
+
+        vm.SelectedInterval = vm.Intervals.First(i => i.Duration == TimeSpan.FromSeconds(30));
+
+        Assert.True(vm.TimerRunning);
+        Assert.Equal(TimeSpan.FromSeconds(30), vm.TimerInterval);
+    }
+
+    [Fact]
+    public void OnClosed_StopsTimer()
+    {
+        var vm = Build();
+        vm.OnOpened();
+
+        vm.OnClosed();
+
+        Assert.False(vm.TimerRunning);
+    }
 }

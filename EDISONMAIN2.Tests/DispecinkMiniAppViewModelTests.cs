@@ -63,6 +63,34 @@ public class DispecinkMiniAppViewModelTests
     }
 
     [Fact]
+    public void LoadCommand_SendsPracovisteAndDatumInWireFormat()
+    {
+        var pracoviste = new CVar();
+        pracoviste["1"] = new CList("1001", "MHD Karlovy Vary");
+        var mlRest = Substitute.For<IMLRest>();
+        mlRest.QueryOrThrow(CacheClass, "GetPracoviste", Arg.Any<CVar>()).Returns(pracoviste);
+        mlRest.QueryOrThrow(CacheClass, "GetJizdy", Arg.Any<CVar>()).Returns(new CVar());
+        var vm = NewVm(mlRest);
+        vm.OnOpened();
+        vm.Datum = new DateTime(2026, 5, 1);
+
+        vm.LoadCommand.Execute(null);
+
+        mlRest.Received(1).QueryOrThrow(CacheClass, "GetJizdy", Arg.Is<CVar>(c =>
+            c["pracoviste"].Value != null && c["pracoviste"].Value.ToString() == "1001" &&
+            c["datum"].Value != null && c["datum"].Value.ToString() == "2026-05-01"));
+    }
+
+    [Fact]
+    public void Datum_DefaultsToToday()
+    {
+        var before = DateTime.Today;
+        var vm = NewVm(Substitute.For<IMLRest>());
+
+        Assert.InRange(vm.Datum, before, DateTime.Today);
+    }
+
+    [Fact]
     public void LoadCommand_NoSelectedPracoviste_DoesNothing()
     {
         var mlRest = Substitute.For<IMLRest>();
