@@ -19,7 +19,7 @@ Neznámý klíč se zaloguje a ignoruje.
 
 | Klíč | Default | Význam |
 |---|---|---|
-| `SourcePath` | povinný | adresář serverové instalace (UNC/lokální; `http*` odmítne validace) |
+| `SourcePath` | povinný | adresář serverové instalace - síťová cesta `\\server\...` nebo lokální; `http*` odmítne validace |
 | `TargetPath` | adresář EDUPDATE2.exe | kam instalovat (shell updater kopíruje k sobě, default = instalace) |
 | `Version` | `VERZE.INF` ze zdroje | jen log a no-op pojistka: není-li novější než cíl, skončí se úspěchem bez kopírování |
 | `WaitProcess` | `EDISONMAIN2` | jméno procesu bez cesty (`.exe` se ořízne); navíc se čeká fixně na `EDISONMAIN` a `EDUPDATE` |

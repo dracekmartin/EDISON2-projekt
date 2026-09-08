@@ -165,7 +165,7 @@ public class UpdateEngine
         if (_args.SourcePath == "") return "Chybí parametr SourcePath.";
         if (_args.SourcePath.StartsWith("http:", StringComparison.OrdinalIgnoreCase)
             || _args.SourcePath.StartsWith("https:", StringComparison.OrdinalIgnoreCase))
-            return "HTTP zdroj není podporován - SourcePath musí být adresář (UNC nebo lokální).";
+            return "HTTP zdroj není podporován - SourcePath musí být adresář (síťový nebo lokální).";
         if (!DirectoryExists(_args.SourcePath))
             return $"Zdrojová cesta \"{_args.SourcePath}\" neexistuje nebo není dostupná.";
         if (!DirectoryExists(_args.TargetPath))

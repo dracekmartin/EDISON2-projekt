@@ -21,17 +21,20 @@ public class UpdateScenarioTests : IDisposable
         public readonly List<FsOp> Ops = [];
         public Func<string, string, bool>? MoveShouldFail;
         public Func<string, bool>? DeleteShouldFail;
+        public Action<string>? AfterCopy;
+        public long FreeBytes = long.MaxValue;
 
         public RecordingEngine(UpdaterArgs args, UpdateLog log) : base(args, log) { }
 
         protected override int GetProcessCount(string name) => 0;
         protected override void Sleep(int milliseconds) { }
-        protected override long GetFreeBytes(string path) => long.MaxValue;
+        protected override long GetFreeBytes(string path) => FreeBytes;
 
         protected override void CopyFile(string source, string target)
         {
             Ops.Add(new("copy", source, target));
             base.CopyFile(source, target);
+            AfterCopy?.Invoke(target);
         }
 
         protected override void MoveFile(string source, string target)
@@ -128,7 +131,8 @@ public class UpdateScenarioTests : IDisposable
         }
 
         public (UpdateResult Result, List<FsOp> Ops) Run(bool forced = false, string stampTime = "",
-            Func<string, string, bool>? moveShouldFail = null, Func<string, bool>? deleteShouldFail = null)
+            Func<string, string, bool>? moveShouldFail = null, Func<string, bool>? deleteShouldFail = null,
+            Action<string>? afterCopy = null, long freeBytes = long.MaxValue)
         {
             var engine = new RecordingEngine(
                 new UpdaterArgs(SourcePath: Server, TargetPath: Station,
@@ -137,6 +141,8 @@ public class UpdateScenarioTests : IDisposable
             {
                 MoveShouldFail = moveShouldFail,
                 DeleteShouldFail = deleteShouldFail,
+                AfterCopy = afterCopy,
+                FreeBytes = freeBytes,
             };
             var result = engine.Run();
             return (result, engine.Ops);
@@ -416,5 +422,87 @@ public class UpdateScenarioTests : IDisposable
         Assert.Equal("novinky A", File.ReadAllText(Path.Combine(_scenario.Station, "A_DIFF.INF")));
         Assert.Equal("novinky B", File.ReadAllText(Path.Combine(_scenario.Station, "B_DIFF.INF")));
         Assert.Equal("stary", File.ReadAllText(Path.Combine(_scenario.Station, "A.exe")));
+    }
+
+    [Fact]
+    public void Fuzz_RandomPatchSubset_StagesExactlyChangedFiles()
+    {
+        // Deterministický seed - test nesmí být flaky; 100 souborů napříč root/EDFiles/PS
+        var random = new Random(20260908);
+        var changed = new List<string>();
+        for (int i = 0; i < 100; i++)
+        {
+            string dir = (i % 3) switch { 0 => "", 1 => "EDFiles", _ => "PS" };
+            string relative = dir == "" ? $"F{i:D3}.dll" : Path.Combine(dir, $"F{i:D3}.dll");
+            if (random.Next(2) == 0)
+            {
+                _scenario.ServerFile(relative, $"novy{i}");
+                _scenario.StationFile(relative, $"stary{i}");
+                changed.Add(relative);
+            }
+            else
+            {
+                _scenario.SharedFile(relative, $"obsah{i}");
+            }
+        }
+        _scenario.FinishManifest();
+
+        var (result, ops) = _scenario.Run();
+
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal(
+            Sorted([.. changed, "VERZE.INF", CrcFile.FileName]),
+            _scenario.Staged(ops));
+    }
+
+    [Fact]
+    public void InsufficientDiskSpace_Exit1_NothingTouched()
+    {
+        _scenario.ServerFile("A.dll", "novy");
+        _scenario.FinishManifest();
+
+        var (result, ops) = _scenario.Run(freeBytes: 10);
+
+        Assert.Equal(UpdateEngine.ExitBadParamsOrAborted, result.ExitCode);
+        Assert.Contains("300 MB", result.Message);
+        Assert.Empty(ops);
+    }
+
+    [Fact]
+    public void SourceVanishesMidStaging_Exit1_TargetUntouched()
+    {
+        // Výpadek síťového sdílení (\\server\Edison) uprostřed stahování:
+        // po první stagované kopii zmizí zbytek zdroje
+        _scenario.ServerFile("A.dll", "novy");
+        _scenario.ServerFile("B.dll", "novy");
+        _scenario.FinishManifest();
+        bool vanished = false;
+
+        var (result, _) = _scenario.Run(afterCopy: _ =>
+        {
+            if (vanished) return;
+            vanished = true;
+            File.Delete(Path.Combine(_scenario.Server, "B.dll"));
+        });
+
+        Assert.Equal(UpdateEngine.ExitBadParamsOrAborted, result.ExitCode);
+        Assert.False(File.Exists(Path.Combine(_scenario.Station, "A.dll")));
+        Assert.False(File.Exists(Path.Combine(_scenario.Station, "B.dll")));
+        Assert.False(Directory.Exists(Path.Combine(_scenario.Station, UpdateEngine.StagingDirName)));
+    }
+
+    [Fact]
+    public void LongPathOver260Chars_Handled()
+    {
+        // Hluboko zanořené síťové cesty (\\server\...\Edison) reálně přesahují 260 znaků;
+        // .NET 10 File API je umí a updater je nesmí rozbít
+        string longName = new string('d', 240) + ".dll";
+        _scenario.ServerFile(longName, "novy");
+        _scenario.FinishManifest();
+
+        var (result, _) = _scenario.Run();
+
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal("novy", File.ReadAllText(Path.Combine(_scenario.Station, longName)));
     }
 }
