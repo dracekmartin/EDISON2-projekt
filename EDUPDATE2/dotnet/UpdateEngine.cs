@@ -289,7 +289,7 @@ public class UpdateEngine
             var item = items[i];
             string source = Path.Combine(_args.SourcePath, item.SubPath, item.Filename);
             string staged = Path.Combine(stagingDir, item.SubPath, item.Filename);
-            Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
+            CreateDirectory(Path.GetDirectoryName(staged)!);
             Report(UpdatePhase.Staging, item.Filename, Percent(i, items.Count, firstHalf: true));
             CopyWithRetry(source, staged);
             // Read-only ze serveru (robocopy/ACL konvence) by se jinak propagovalo do cíle
@@ -305,19 +305,19 @@ public class UpdateEngine
         List<(string Target, string? Backup)> swapped)
     {
         if (DirectoryExists(backupDir)) DeleteDirectory(backupDir);
-        Directory.CreateDirectory(backupDir);
+        CreateDirectory(backupDir);
         for (int i = 0; i < items.Count; i++)
         {
             var item = items[i];
             string target = Path.Combine(_args.TargetPath, item.SubPath, item.Filename);
             string staged = Path.Combine(stagingDir, item.SubPath, item.Filename);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            CreateDirectory(Path.GetDirectoryName(target)!);
             Report(UpdatePhase.Swap, item.Filename, Percent(i, items.Count, firstHalf: false));
             string? backup = null;
             if (FileExists(target))
             {
                 backup = Path.Combine(backupDir, item.SubPath, item.Filename);
-                Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
+                CreateDirectory(Path.GetDirectoryName(backup)!);
                 CopyFile(target, backup);
                 ClearReadOnly(backup);
                 // Read-only cíl (historicky rozkopírovaný atribut) by shodil přepsání.
@@ -444,6 +444,7 @@ public class UpdateEngine
 
     protected virtual bool FileExists(string path) => File.Exists(path);
     protected virtual bool DirectoryExists(string path) => Directory.Exists(path);
+    protected virtual void CreateDirectory(string path) => Directory.CreateDirectory(path);
     protected virtual void CopyFile(string source, string target) => File.Copy(source, target, overwrite: true);
     protected virtual void MoveFile(string source, string target) => File.Move(source, target, overwrite: true);
     protected virtual void DeleteFile(string path) => File.Delete(path);
