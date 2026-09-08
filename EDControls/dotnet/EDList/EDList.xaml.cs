@@ -289,7 +289,7 @@ namespace EDControls.EDList
         public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {
             _loadGeneration++;   // sync načtení je autoritativní - případná async odpověď v letu se zahodí
-            ApplyRows(EnsureConfigured().QueryOrThrow(CacheClass, "LoadList", BuildLoadInput(filter)));
+            ApplyRows(EnsureConfigured().QueryOrThrow(CacheClass, "LoadList", EDListParsing.BuildLoadInput(filter)));
         }
 
         public Task LoadListAsync() => LoadListAsync(filter: null);
@@ -304,7 +304,7 @@ namespace EDControls.EDList
         {
             var mlRest = EnsureConfigured();
             var cacheClass = CacheClass;   // DependencyProperty → čti na UI vlákně, ne uvnitř Task.Run
-            var input = BuildLoadInput(filter);
+            var input = EDListParsing.BuildLoadInput(filter);
             var generation = ++_loadGeneration;
 
             var output = await RunQueryAsync(() => mlRest.QueryOrThrow(cacheClass, "LoadList", input));
@@ -325,20 +325,9 @@ namespace EDControls.EDList
             finally { _queryGate.Release(); }
         }
 
-        private static CVar BuildLoadInput(IReadOnlyDictionary<string, string>? filter)
-        {
-            var input = new CVar();
-            if (filter is not null)
-            {
-                foreach (var kv in filter)
-                    input["filter"][kv.Key] = new CVar(kv.Value);
-            }
-            return input;
-        }
-
         private void ApplyColumns(CVar output)
         {
-            _columns = ParseColumns(output);
+            _columns = EDListParsing.ParseColumns(output);
             RebuildColumns();
         }
 
@@ -350,7 +339,7 @@ namespace EDControls.EDList
 
             // ToList: ParseRows je líný iterátor - druhý průchod by vyrobil jiné instance řádků
             // a odběr změn by visel mimo seznam.
-            var newRows = ParseRows(output).ToList();
+            var newRows = EDListParsing.ParseRows(output, _columns).ToList();
             foreach (var row in newRows) row.PropertyChanged += OnRowPropertyChanged;
             _rows.ReplaceAll(newRows);
 
@@ -359,116 +348,6 @@ namespace EDControls.EDList
             // Aplikuj persistent column layout asynchronně po data load - minor flicker (default
             // sloupce → persistované), ale UI neblokuje.
             _ = LoadLayoutAsync();
-        }
-
-        internal static IReadOnlyList<ListColumn> ParseColumns(CVar output)
-        {
-            var json = output["1"]?.Value?.ToString();
-            if (string.IsNullOrEmpty(json)) return [];
-            using var doc = JsonDocument.Parse(json);
-            return [.. doc.RootElement.EnumerateArray().Select(ParseColumn)];
-        }
-
-        private static ListColumn ParseColumn(JsonElement el) => new()
-        {
-            Key      = el.Str("key"),
-            Label    = el.Str("label"),
-            Type     = ParseType(el.Str("type")),
-            Format   = el.Str("format"),
-            Width    = el.Int("width"),
-            Align    = ParseAlign(el.Str("align")),
-            Sortable = el.Bool("sortable"),
-            Visible  = el.Bool("visible", defaultValue: true),
-            IsLink   = el.Bool("isLink"),
-        };
-
-        private static ListColumnType ParseType(string? s) => s?.ToUpperInvariant() switch
-        {
-            "NUMBER"   => ListColumnType.Number,
-            "DATE"     => ListColumnType.Date,
-            "DATETIME" => ListColumnType.DateTime,
-            "BOOL"     => ListColumnType.Bool,
-            "IMAGE"    => ListColumnType.Image,
-            "COLOR"    => ListColumnType.Color,
-            "HHMM"     => ListColumnType.HoursMinutes,
-            "CODEBOOK" => ListColumnType.Codebook,
-            _          => ListColumnType.Text,
-        };
-
-        private static ListColumnAlign ParseAlign(string? s) => s?.ToUpperInvariant() switch
-        {
-            "LEFT"   => ListColumnAlign.Left,
-            "CENTER" => ListColumnAlign.Center,
-            "RIGHT"  => ListColumnAlign.Right,
-            _        => ListColumnAlign.Auto,
-        };
-
-        private IEnumerable<EDListRow> ParseRows(CVar output)
-        {
-            foreach (KeyValuePair<string, CVar> kvp in output)
-            {
-                if (kvp.Key == "ERR") continue;
-                var json = kvp.Value?.Value?.ToString();
-                if (string.IsNullOrWhiteSpace(json)) continue;
-
-                using var doc = JsonDocument.Parse(json);
-                var dict = new Dictionary<string, string?>();
-                var sortKeys = new Dictionary<string, object?>();
-                string? id = null;
-                foreach (var prop in doc.RootElement.EnumerateObject())
-                {
-                    var raw = prop.Value.GetString();
-                    var formatted = FormatValue(raw, prop.Name);
-                    if (prop.Name == "id") id = formatted;
-                    else
-                    {
-                        dict[prop.Name] = formatted;
-                        var type = _columns?.FirstOrDefault(c => c.Key == prop.Name)?.Type ?? ListColumnType.Text;
-                        sortKeys[prop.Name] = EDListSort.BuildSortKey(raw, type, formatted);
-                    }
-                }
-                if (!string.IsNullOrEmpty(id))
-                    yield return new EDListRow(id, dict, sortKeys);
-            }
-        }
-
-        private string? FormatValue(string? raw, string colKey)
-        {
-            if (raw is null) return null;
-            var col = _columns?.FirstOrDefault(c => c.Key == colKey);
-            if (col is null) return raw;
-
-            return col.Type switch
-            {
-                ListColumnType.Bool         => raw == "1" ? "Ano" : "Ne",
-                ListColumnType.HoursMinutes => FormatHHMM(raw),
-                ListColumnType.Date         => FormatDate(raw, col.Format.Length > 0 ? col.Format : "dd.MM.yyyy"),
-                ListColumnType.DateTime     => FormatDate(raw, col.Format.Length > 0 ? col.Format : "dd.MM.yyyy HH:mm"),
-                ListColumnType.Number       => FormatNumber(raw, col.Format),
-                _                            => raw,
-            };
-        }
-
-        internal static string? FormatHHMM(string? raw)
-        {
-            if (!int.TryParse(raw, out int val)) return raw;
-            return $"{val / 100:D2}:{val % 100:D2}";
-        }
-
-        internal static string? FormatDate(string? raw, string format)
-        {
-            if (string.IsNullOrEmpty(raw)) return raw;
-            return DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt)
-                ? dt.ToString(format, CultureInfo.CurrentCulture)
-                : raw;
-        }
-
-        internal static string? FormatNumber(string? raw, string format)
-        {
-            if (string.IsNullOrEmpty(format)) return raw;
-            return double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out double d)
-                ? d.ToString(format, CultureInfo.CurrentCulture)
-                : raw;
         }
 
         private void RebuildColumns()
@@ -530,7 +409,7 @@ namespace EDControls.EDList
                 ? new DataGridLength(col.Width)
                 : new DataGridLength(1, DataGridLengthUnitType.Auto);
 
-            var align = col.Align == ListColumnAlign.Auto ? DefaultAlign(col.Type) : col.Align;
+            var align = col.Align == ListColumnAlign.Auto ? EDListParsing.DefaultAlign(col.Type) : col.Align;
 
             if (col.IsLink)
             {
@@ -599,16 +478,6 @@ namespace EDControls.EDList
 
             return textCol;
         }
-
-        private static ListColumnAlign DefaultAlign(ListColumnType type) => type switch
-        {
-            ListColumnType.Number       => ListColumnAlign.Right,
-            ListColumnType.HoursMinutes => ListColumnAlign.Right,
-            ListColumnType.Bool         => ListColumnAlign.Center,
-            ListColumnType.Image        => ListColumnAlign.Center,
-            ListColumnType.Color        => ListColumnAlign.Center,
-            _                            => ListColumnAlign.Left,
-        };
 
         private readonly List<(string Key, ListSortDirection Dir)> _sortSpecs = [];
 
@@ -815,26 +684,6 @@ namespace EDControls.EDList
 
         private DataGridColumn? FindColumnByKey(string key) =>
             DataGrid.Columns.FirstOrDefault(c => c.GetValue(FrameworkElement.TagProperty) as string == key);
-    }
-
-    internal static class JsonElementExtensions
-    {
-        public static string Str(this JsonElement el, string key) =>
-            el.TryGetProperty(key, out var p) ? p.GetString() ?? "" : "";
-
-        public static int Int(this JsonElement el, string key) =>
-            el.TryGetProperty(key, out var p) && p.TryGetInt32(out int v) ? v : 0;
-
-        public static bool Bool(this JsonElement el, string key, bool defaultValue = false) =>
-            el.TryGetProperty(key, out var p)
-                ? p.ValueKind switch
-                {
-                    JsonValueKind.True   => true,
-                    JsonValueKind.False  => false,
-                    JsonValueKind.Number => p.GetInt32() != 0,
-                    _                    => defaultValue,
-                }
-                : defaultValue;
     }
 
     internal class RgbStringToBrushConverter : IValueConverter

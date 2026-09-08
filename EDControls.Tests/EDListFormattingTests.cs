@@ -15,83 +15,83 @@ public class EDListFormattingTests
     [InlineData("2359", "23:59")]
     public void FormatHHMM_ValidInput_ReturnsFormatted(string input, string expected)
     {
-        Assert.Equal(expected, EDList.EDList.FormatHHMM(input));
+        Assert.Equal(expected, EDListParsing.FormatHHMM(input));
     }
 
     [Fact]
     public void FormatHHMM_NonNumeric_ReturnsRaw()
     {
-        Assert.Equal("abc", EDList.EDList.FormatHHMM("abc"));
+        Assert.Equal("abc", EDListParsing.FormatHHMM("abc"));
     }
 
     [Fact]
     public void FormatHHMM_Null_ReturnsNull()
     {
-        Assert.Null(EDList.EDList.FormatHHMM(null));
+        Assert.Null(EDListParsing.FormatHHMM(null));
     }
 
     [Fact]
     public void FormatDate_ValidIsoDate_FormatsCorrectly()
     {
-        string? result = EDList.EDList.FormatDate("2024-03-15", "dd.MM.yyyy");
+        string? result = EDListParsing.FormatDate("2024-03-15", "dd.MM.yyyy");
         Assert.Equal("15.03.2024", result);
     }
 
     [Fact]
     public void FormatDate_ValidIsoDateTime_FormatsCorrectly()
     {
-        string? result = EDList.EDList.FormatDate("2024-03-15T08:30:00", "dd.MM.yyyy HH:mm");
+        string? result = EDListParsing.FormatDate("2024-03-15T08:30:00", "dd.MM.yyyy HH:mm");
         Assert.Equal("15.03.2024 08:30", result);
     }
 
     [Fact]
     public void FormatDate_InvalidString_ReturnsRaw()
     {
-        Assert.Equal("not-a-date", EDList.EDList.FormatDate("not-a-date", "dd.MM.yyyy"));
+        Assert.Equal("not-a-date", EDListParsing.FormatDate("not-a-date", "dd.MM.yyyy"));
     }
 
     [Fact]
     public void FormatDate_Null_ReturnsNull()
     {
-        Assert.Null(EDList.EDList.FormatDate(null, "dd.MM.yyyy"));
+        Assert.Null(EDListParsing.FormatDate(null, "dd.MM.yyyy"));
     }
 
     [Fact]
     public void FormatDate_Empty_ReturnsEmpty()
     {
-        Assert.Equal("", EDList.EDList.FormatDate("", "dd.MM.yyyy"));
+        Assert.Equal("", EDListParsing.FormatDate("", "dd.MM.yyyy"));
     }
 
     [Fact]
     public void FormatNumber_ValidNumber_FormatsCorrectly()
     {
         string expected = 1234.5.ToString("N2", CultureInfo.CurrentCulture);
-        Assert.Equal(expected, EDList.EDList.FormatNumber("1234.5", "N2"));
+        Assert.Equal(expected, EDListParsing.FormatNumber("1234.5", "N2"));
     }
 
     [Fact]
     public void FormatNumber_EmptyFormat_ReturnsRaw()
     {
-        Assert.Equal("1234.5", EDList.EDList.FormatNumber("1234.5", ""));
+        Assert.Equal("1234.5", EDListParsing.FormatNumber("1234.5", ""));
     }
 
     [Fact]
     public void FormatNumber_InvalidNumber_ReturnsRaw()
     {
-        Assert.Equal("abc", EDList.EDList.FormatNumber("abc", "N2"));
+        Assert.Equal("abc", EDListParsing.FormatNumber("abc", "N2"));
     }
 
     [Fact]
     public void FormatNumber_Null_ReturnsNull()
     {
-        Assert.Null(EDList.EDList.FormatNumber(null, "N2"));
+        Assert.Null(EDListParsing.FormatNumber(null, "N2"));
     }
 
     [Fact]
     public void ParseColumns_EmptyOutput_ReturnsEmpty()
     {
         var output = new CVar();
-        var cols = EDList.EDList.ParseColumns(output);
+        var cols = EDListParsing.ParseColumns(output);
         Assert.Empty(cols);
     }
 
@@ -102,7 +102,7 @@ public class EDListFormattingTests
         var output = new CVar();
         output["1"] = new CVar(json);
 
-        var cols = EDList.EDList.ParseColumns(output);
+        var cols = EDListParsing.ParseColumns(output);
 
         var col = Assert.Single(cols);
         Assert.Equal("rz", col.Key);
@@ -129,7 +129,7 @@ public class EDListFormattingTests
         """;
         var output = new CVar();
         output["1"] = new CVar(json);
-        var cols = EDList.EDList.ParseColumns(output);
+        var cols = EDListParsing.ParseColumns(output);
 
         Assert.Equal(5, cols.Count);
         Assert.Equal(ListColumnType.Number, cols[0].Type);
