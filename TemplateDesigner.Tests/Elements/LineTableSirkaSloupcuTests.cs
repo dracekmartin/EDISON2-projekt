@@ -140,6 +140,50 @@ public class LineTableSirkaSloupcuTests
         Assert.Equal(SirkaSloupce(bezOkraje, data), SirkaSloupce(sOkrajem, data), precision: 3);
     }
 
+    /// <summary>
+    /// ⚠️ Dno menší, než čas měří, se neuplatní - kolem času zůstane vůle 1 mm, ať uživatel zadá
+    /// cokoli. Bez toho procházely svislé čáry vedle číslic a časy sousedních sloupců se slévaly
+    /// (nález Jan 8. 9. na vyrenderované stránce: dno 3 mm proti potřebným 3,99 mm).
+    /// </summary>
+    [Fact]
+    public void DnoPodSirkouCasuSeNeuplatni()
+    {
+        var data = Data(spoju: 40);
+        var bezDna = new LineTableElement { X = 0, Y = 0, Width = 120 };
+        bezDna.DataStyle.PaddingLeft = 0f;
+        bezDna.DataStyle.PaddingRight = 0f;
+        var sNesmyslnymDnem = new LineTableElement
+        { X = 0, Y = 0, Width = 120, NejmensiSirkaSpojeMm = 0.1f };
+        sNesmyslnymDnem.DataStyle.PaddingLeft = 0f;
+        sNesmyslnymDnem.DataStyle.PaddingRight = 0f;
+
+        Assert.Equal(SirkaSloupce(bezDna, data), SirkaSloupce(sNesmyslnymDnem, data), precision: 3);
+        Assert.True(SirkaSloupce(sNesmyslnymDnem, data) > 3f,
+            "sloupec spadl na nouzové dno - vůle kolem času se neuplatnila");
+    }
+
+    /// <summary>
+    /// Vůle se s vnitřním okrajem <b>nesčítá</b> - platí ta větší z nich, takže větší okraj dál
+    /// funguje a nulový se zarazí o vůli.
+    /// </summary>
+    [Fact]
+    public void VuleSeSOkrajemNescita()
+    {
+        var data = Data(spoju: 40);
+        var nulovy = new LineTableElement { X = 0, Y = 0, Width = 120 };
+        nulovy.DataStyle.PaddingLeft = 0f;
+        nulovy.DataStyle.PaddingRight = 0f;
+        var vychozi = new LineTableElement { X = 0, Y = 0, Width = 120 };
+        var siroky = new LineTableElement { X = 0, Y = 0, Width = 120 };
+        siroky.DataStyle.PaddingLeft = 2f;
+        siroky.DataStyle.PaddingRight = 2f;
+
+        // Výchozí okraj (0,5 + 0,5) je právě vůle, takže vynulování nic nezmění.
+        Assert.Equal(SirkaSloupce(vychozi, data), SirkaSloupce(nulovy, data), precision: 3);
+        Assert.True(SirkaSloupce(siroky, data) > SirkaSloupce(vychozi, data),
+            "okraj větší než vůle se neuplatnil");
+    }
+
     /// <summary>Ani zadané dno nepustí sloupec pod tvrdou hranici čitelnosti.</summary>
     [Fact]
     public void ZadaneDnoNepodlezeTvrdouHranici()

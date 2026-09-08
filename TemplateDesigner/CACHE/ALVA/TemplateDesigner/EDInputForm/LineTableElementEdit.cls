@@ -47,7 +47,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ⚠️ Ne "Šířka a dělení" - "dělení sloupců" už v UI znamená členění na skupiny dnů.
         d form.AddGroup("width", "Šířka sloupců")
         s f = form.AddDecimal("NejmensiSirkaSpojeMm", "Nejmenší šířka sloupce spoje", "", 0, 50, "mm")
-        s f.helpText = "Prázdné = spočítá se z písma (šířka času a vnitřní okraje buňky). Vyplněné číslo ten výpočet nahradí, takže okraj na šířku přestane mít vliv. Pod 3 mm sloupec nespadne ani tak, jinak by čas nebyl čitelný."
+        s f.helpText = "Sloupec nebude užší než tohle. Prázdné = jen tolik, aby se vešel čas a kolem něj zůstala vůle. Menší hodnota, než čas měří, se neuplatní - sloupec se pod čitelnou šířku nezúží, ať se zadá cokoli."
         s f = form.AddDecimal("NejvetsiSirkaSpojeMm", "Největší šířka sloupce spoje", "", 0, 200, "mm")
         s f.helpText = "Prázdné = bez omezení, sloupce se roztáhnou přes celý prvek. Vyplněné = u linky s málo spoji zůstanou úzké a vpravo zbyde volné místo, jako ve starém postskriptovém tisku. U linky s hodně spoji se nic nemění, tam je sloupec stejně na svém minimu."
         s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
@@ -92,9 +92,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // je šířka času plus okraje po stranách, takže rozhoduje, kolik spojů se vejde do bloku
         // a kolikrát se tabulka řízne na šířku. Jen vodorovné - svislé drží pole "Výška řádku".
         s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", "", 0, 20, "mm")
-        s f.helpText = "Prázdné = 0,5 mm. Menší okraj zúží sloupec spoje, takže se do řádku vejde víc spojů a tabulka se řeže na méně dílů; na nule se čas dotýká svislé čáry."
+        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
         s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", "", 0, 20, "mm")
-        s f.helpText = "Prázdné = 0,5 mm. Sčítá se s okrajem vlevo, pod 3 mm sloupec spoje nespadne ani tak."
+        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Vynulováním se sloupec nezúží pod čitelnou šířku - kolem času zůstane vůle 1 mm vždy."
         s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
         d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
         d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")

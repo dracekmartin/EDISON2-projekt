@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-09-08 (3) - 🛟 kolem času v buňce spoje zůstane vůle, ať se nastaví cokoli
+
+Nález Jan 8. 9. hned po předchozí změně: **dno menší, než čas měří, sloupec skutečně oříznulo.**
+Strop jsem proti podlezení pojistil (strop 3 mm dal 3,99 mm, tedy dno), ale zadané dno celý výpočet
+z písma **nahrazovalo** - takže dno 3 mm proti potřebným 3,99 dalo sloupec 3 mm. Na vyrenderované
+stránce procházely svislé čáry vedle číslic a časy sousedních sloupců se slévaly.
+
+Nově je dolní hranice jedno pravidlo: `max(3 mm, šířka času + vůle, zadané dno)`. Zadané dno tedy
+smí sloupec už jen **rozšířit**, nikdy oříznout. Vůle je **1 mm celkem** (`MinVuleKolemCasuMm`),
+tedy půl milimetru na každou stranu, a **s vnitřním okrajem se nesčítá** - platí ta větší z nich,
+takže větší okraj funguje dál.
+
+Vůle je záměrně **konstanta, ne další pole formuláře**: je to pojistka čitelnosti, ne volba - vzduch
+kolem času si uživatel přidává okrajem. Hodnota odpovídá výchozímu okraji, takže se dnešním
+šablonám nic nemění.
+
+⚠️ **Tím zaniklo utahování vnitřním okrajem, které vzniklo dnes ráno.** Ráno se naměřilo, že okraj
+0,5 → 0 sundá sloupec z 5,50 na 3,11 mm a tisk ze tří stránek na dvě; teď se nulový okraj zarazí
+o vůli, takže nedělá nic. Okraj sloupec už jen rozšiřuje. Zužuje se **velikostí písma** a polem
+**Nejmenší šířka sloupce spoje**. Nápovědy obou polí to říkají.
+
+⚠️ **Cena vůle je asi 0,9 mm na sloupec.** Na `330511` je nejužší dosažitelný sloupec **3,99 mm**
+(čas 2,99 + vůle 1) proti 3,11 mm bez vůle; na 18 sloupcích obousměrné sestavy to je ~16 mm.
+Hodnota 1 mm je Janův návrh a je k doladění - snížením se to místo vrátí.
+
+Změřeno na `330511`, prvek 200 mm: nesmyslné dno 1 mm dá sloupec 3,99 mm a tabulku 162,3 mm
+(místo 194,1 mm bez omezení); nulový okraj samotný nezmění nic. Odstup časů od čar zkontrolovaný
+na vyrenderované stránce proti té předchozí, kde se jich dotýkaly.
+
+Ověřeno: .NET **2976/2976** (3 nové testy, 2 přepsané z rána), Caché 153/153.
+
 ## 2026-09-08 (2) - 📏 sloupce spojů mají nově i strop, ne jen dno
 
 Požadavek Jan 8. 9.: u linky s pár spoji se sloupce roztáhnou přes celý prvek a čas stojí uprostřed

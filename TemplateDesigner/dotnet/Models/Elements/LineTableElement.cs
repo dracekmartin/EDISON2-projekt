@@ -594,6 +594,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private const float MinAutoColumnWidthMm = 3f;
 
     /// <summary>
+    /// Nejmenší vůle kolem času v buňce spoje (mm celkem, půl na každou stranu).
+    /// </summary>
+    /// <remarks>
+    /// Drží se **vždy**, i při nulovém vnitřním okraji a při zadaném dnu menším, než čas měří.
+    /// Bez ní procházely svislé čáry vedle číslic a časy sousedních sloupců se slévaly.
+    /// <para>Záměrně konstanta, ne další pole formuláře: je to pojistka čitelnosti, ne volba -
+    /// vzduch kolem času si uživatel přidává vnitřním okrajem. Hodnota odpovídá výchozímu okraji
+    /// (0,5 mm na stranu), takže se dnešním šablonám nic nemění.</para>
+    /// </remarks>
+    private const float MinVuleKolemCasuMm = 1f;
+
+    /// <summary>
     /// Nejmenší šířka automatického sloupce (mm) - tolik, aby se do ní vešel čas „00:00" i s odsazením.
     /// </summary>
     /// <remarks>
@@ -604,11 +616,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     private float MinAutoSloupecMm()
     {
-        // Vyplněné dno nahrazuje celý výpočet z písma, ne aby se s ním sčítalo - jinak by uživatel
-        // musel odečítat okraje, což je právě ta oklika, kvůli které pole vzniklo.
-        if (NejmensiSirkaSpojeMm is float zadane)
-            return MathF.Max(MinAutoColumnWidthMm, zadane);
-
         var st = ResolveDataStyle(TripColumn());
         using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
         // ⚠️ Měří se **skutečný tvar času**, ne vždycky „00:00". Při formátu s menšími minutami je
@@ -626,7 +633,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             textPt = font.MeasureText("00:00");
         }
-        float mm = (textPt * PtToMm) + st.PaddingLeft + st.PaddingRight;
+        // Kolem času musí zůstat vůle, i když si uživatel vynuluje okraje nebo zadá menší dno,
+        // než čas měří - jinak procházejí svislé čáry vedle číslic a časy sousedních sloupců se
+        // slévají (nález Jan 8. 9. na vyrenderované stránce při dnu 3 mm proti potřebným 3,99).
+        // Vůle **není aditivní** k okraji: platí ta větší z nich, takže větší okraj dál funguje.
+        float vzduch = MathF.Max(MinVuleKolemCasuMm, st.PaddingLeft + st.PaddingRight);
+        float mm = (textPt * PtToMm) + vzduch;
+        // Zadané dno smí sloupec už jen rozšířit. Kdo napíše méně, než se čas vejde, dostane
+        // nejužší čitelnou šířku - ne rozbitou tabulku.
+        if (NejmensiSirkaSpojeMm is float zadane)
+            mm = MathF.Max(mm, zadane);
         return MathF.Max(MinAutoColumnWidthMm, mm);
     }
 

@@ -14,10 +14,11 @@ namespace TemplateDesigner.Tests.Elements;
 /// vnitřní okraj buňky - ale u tabulky linky se dal nastavit **jen po sloupcích** v dialogu Sloupce,
 /// kam nikdo nedojde. Ostatní tabulkové prvky ho element-level mají, protože berou celý balíček
 /// stylu ze sdíleného <c>StyleFields.cls</c>; tabulka linky si formulář skládá ručně.</para>
-/// <para>⚠️ Není to kosmetika, je to rozměr: dolní práh sloupce spoje je šířka času **plus okraje
-/// po stranách** (<c>MinAutoSloupecMm</c>), nejméně však 3 mm. Naměřeno na `330511` obousměrně
-/// s prvkem zúženým na 120 mm: okraj 0,5 mm → základ 5,50 mm, 3 spoje na blok, 3 bloky;
-/// 0,25 mm → 3,89 / 4 / 3; 0 mm → 3,11 / 5 / **2**. Tedy o jeden řez na šířku méně.</para>
+/// <para>⚠️ **Rozsah pole se odpoledne 8. 9. zúžil.** Ráno okraj sloupec zužoval (naměřeno na
+/// `330511` s prvkem 120 mm: 0,5 mm → základ 5,50 mm a 3 bloky, 0 mm → 3,11 mm a 2 bloky). Pak
+/// přišel požadavek na vůli kolem času, která platí vždy - a protože je 1 mm, tedy právě výchozí
+/// okraj, **utahování okrajem tím zaniklo**. Okraj dnes sloupec už jen rozšiřuje; zužuje se
+/// velikostí písma a polem „Nejmenší šířka sloupce spoje".</para>
 /// </remarks>
 public class LineTableVnitrniOkrajTests
 {
@@ -52,32 +53,39 @@ public class LineTableVnitrniOkrajTests
     }
 
     /// <summary>
-    /// ⚠️ Jádro požadavku: menší okraj musí zúžit sloupec spoje, takže se do bloku vejde víc spojů.
-    /// Bez toho by nová volba měnila jen kresbu, ne rozvržení.
+    /// ⚠️ **Nulový okraj sloupec nezúží** - drží ho vůle kolem času (1 mm celkem), která platí vždy.
     /// </summary>
+    /// <remarks>
+    /// Ráno 8. 9. tohle pole sloupec zužovat umělo a bylo to jeho hlavní využití. Odpoledne přišel
+    /// požadavek, že kolem času musí zůstat vůle, ať uživatel nastaví cokoli - při nulovém okraji
+    /// procházely svislé čáry vedle číslic. Vůle je 1 mm, tedy právě to, co dává výchozí okraj
+    /// 0,5 mm na stranu, takže **vynulování okraje už nic nedělá**.
+    /// </remarks>
     [Fact]
-    public void MensiOkrajZuziSloupecAVejdeSeVicSpoju()
+    public void NulovyOkrajSloupecNezuziPodVuli()
     {
         var data = Data();
+        var vychozi = Prvek();
+        var nulovy = Prvek();
+        ((FloatPropertyDescriptor)Descriptor(nulovy, "Vnitřní okraj vlevo")).Set(0f);
+        ((FloatPropertyDescriptor)Descriptor(nulovy, "Vnitřní okraj vpravo")).Set(0f);
+
+        Assert.Equal(vychozi.Rozvrzeni(data)[0].SloupecSpojeMm,
+            nulovy.Rozvrzeni(data)[0].SloupecSpojeMm, precision: 3);
+    }
+
+    /// <summary>Okraj větší než vůle sloupec naopak rozšíří - potud pole funguje dál.</summary>
+    [Fact]
+    public void VetsiOkrajSloupecRozsiri()
+    {
+        var data = Data();
+        var vychozi = Prvek();
         var siroky = Prvek();
-        var uzky = Prvek();
-        ((FloatPropertyDescriptor)Descriptor(uzky, "Vnitřní okraj vlevo")).Set(0f);
-        ((FloatPropertyDescriptor)Descriptor(uzky, "Vnitřní okraj vpravo")).Set(0f);
+        ((FloatPropertyDescriptor)Descriptor(siroky, "Vnitřní okraj vlevo")).Set(2f);
+        ((FloatPropertyDescriptor)Descriptor(siroky, "Vnitřní okraj vpravo")).Set(2f);
 
-        var blokySiroke = siroky.Rozvrzeni(data);
-        var blokyUzke = uzky.Rozvrzeni(data);
-
-        Assert.True(blokyUzke[0].SloupecSpojeMm < blokySiroke[0].SloupecSpojeMm,
-            $"sloupec spoje je s nulovým okrajem {blokyUzke[0].SloupecSpojeMm:0.00} mm "
-            + $"a s výchozím {blokySiroke[0].SloupecSpojeMm:0.00} mm - okraj se do prahu nepropsal");
-        Assert.True(blokyUzke[0].Pocet > blokySiroke[0].Pocet,
-            $"do bloku se vejde {blokyUzke[0].Pocet} spojů proti {blokySiroke[0].Pocet} - "
-            + "užší sloupec počet spojů na blok nezvedl");
-        // ⚠️ Tvrdit „řezů ubude" nejde: počet bloků je skoková funkce počtu spojů na blok, takže
-        // o jeden spoj víc řez ubere jen někdy (na `330511` při 120 mm ano, 3 → 2; na téhle fixtuře
-        // se 40 spoji ne, 4 → 4). Testovatelný je jen ten směr - užší sloupec nesmí řez přidat.
-        Assert.True(blokyUzke.Count <= blokySiroke.Count,
-            $"bloků je {blokyUzke.Count} proti {blokySiroke.Count} - užší sloupec přidal řez");
+        Assert.True(siroky.Rozvrzeni(data)[0].SloupecSpojeMm > vychozi.Rozvrzeni(data)[0].SloupecSpojeMm,
+            "okraj 2 mm na stranu sloupec nerozšířil");
     }
 
     /// <summary>
