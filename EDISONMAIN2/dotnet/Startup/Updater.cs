@@ -22,7 +22,7 @@ public enum UpdateOutcome
 {
     /// <summary>Verze sedí (nebo update vypnutý) - pokračovat ve startu.</summary>
     None,
-    /// <summary>Nová verze na serverové instalaci - spawn EDUPDATE + shutdown.</summary>
+    /// <summary>Nová verze na serverové instalaci (nebo vynucená vlna) - spawn EDUPDATE2 + shutdown.</summary>
     UpdateRequired,
     /// <summary>Stav, který klient nespraví (nečitelné verze, Caché mismatch bez nové verze) - popup + shutdown.</summary>
     Broken,
@@ -45,12 +45,12 @@ public record ReleaseNoticeResult(ReleaseNoticeOutcome Outcome, string Version =
 
 /// <summary>
 /// Klientský (stanicový) update - detekce (porovnání lokální VERZE.INF proti serverové
-/// instalaci a Caché verzi) + spuštění EDUPDATE. Mandatory sémantika bez user volby;
-/// Virtuální metody kvůli testům (čtení disku, spawn).
+/// instalaci a Caché verzi, razítko vynucené vlny) + spuštění EDUPDATE2. Mandatory
+/// sémantika bez user volby; virtuální metody kvůli testům (čtení disku, spawn).
 /// </summary>
 public class Updater
 {
-    private const string UpdaterExe = "EDUPDATE.EXE";
+    private const string UpdaterExe = "EDUPDATE2.exe";
     private const string ShellExe = "EDISONMAIN2.exe";
     private const string ShellProcessName = "EDISONMAIN2";
 
@@ -122,7 +122,7 @@ public class Updater
     protected virtual string GetForcedStampSeen() => EDUPDATE2.ForcedStamp.Read(AppContext.BaseDirectory);
 
     /// <summary>
-    /// Self-update updateru - kopii dělá shell, protože EDUPDATE v tu chvíli neběží
+    /// Self-update updateru - kopii dělá shell, protože updater v tu chvíli neběží
     /// (legacy UpdateClientUpdater pattern).
     /// </summary>
     public virtual void CopyUpdater(string sourceDir) =>
@@ -130,33 +130,36 @@ public class Updater
                   Path.Combine(AppContext.BaseDirectory, UpdaterExe), overwrite: true);
 
     /// <summary>
-    /// Spawn EDUPDATE - stejná sada args jako legacy clsUpdate.StartUpdate klientská větev,
-    /// plus WaitProcess/RunExe (úprava UPDATERCL pro EDISONMAIN2). Razítko se posílá vždy,
+    /// Spawn EDUPDATE2 - kontrakt argumentů viz EDUPDATE2/CLAUDE.md. Razítko se posílá vždy,
     /// když ho známe - i úspěšný běžný update splní čekající vynucenou vlnu (legacy parita).
     /// </summary>
     public virtual void LaunchUpdate(string sourceDir, string version, bool forced, string forcedStamp)
     {
-        var targetPath = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-        var args = string.Join(" ", new[]
-        {
-            "FormMode=\"1\"",
-            "Async=\"1\"",
-            "RunEdison=\"1\"",
-            $"RunExe=\"{ShellExe}\"",
-            $"WaitProcess=\"{ShellProcessName}\"",
-            $"SourcePath=\"{sourceDir}\"",
-            $"TargetPath=\"{targetPath}\"",
-            $"Version=\"{version}\"",
-            $"NucenyUpdate=\"{(forced ? "True" : "False")}\"",
-            $"NucenyUpdateTime=\"{forcedStamp}\"",
-        });
-        Process.Start(new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
             FileName = Path.Combine(AppContext.BaseDirectory, UpdaterExe),
-            Arguments = args,
             UseShellExecute = true,
             WorkingDirectory = AppContext.BaseDirectory,
-        });
+        };
+        foreach (var arg in BuildArguments(sourceDir, version, forced, forcedStamp))
+            startInfo.ArgumentList.Add(arg);
+        Process.Start(startInfo);
+    }
+
+    /// <summary>Tokeny Key=value; quoting (mezery v cestách) řeší ArgumentList, ne ruční eskapace.</summary>
+    internal static IReadOnlyList<string> BuildArguments(string sourceDir, string version, bool forced, string forcedStamp)
+    {
+        var targetPath = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+        return
+        [
+            $"SourcePath={sourceDir}",
+            $"TargetPath={targetPath}",
+            $"Version={version}",
+            $"WaitProcess={ShellProcessName}",
+            $"RunExe={ShellExe}",
+            $"NucenyUpdate={(forced ? "1" : "0")}",
+            $"NucenyUpdateTime={forcedStamp}",
+        ];
     }
 
     /// <summary>

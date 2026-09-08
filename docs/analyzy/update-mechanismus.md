@@ -1,6 +1,7 @@
 # Aktualizace EDISONu: starý vs. nový shell (mapování stavu)
 
-Stav k 31. 8. 2026. Zdroje: repo EDISON2 (`c:\MLineRepos\EDISON2`), legacy repo EDISON
+Stav k 31. 8. 2026; §3 a §5 aktualizovány 8. 9. 2026 po zavedení vlastního updateru
+EDUPDATE2. Zdroje: repo EDISON2 (`c:\MLineRepos\EDISON2`), legacy repo EDISON
 (`c:\MLineRepos\EDISON`), živé ověření proti dev Caché `192.168.16.1:57770` a release
 serveru `release.m-line.cz` (viz §7). Odkazy `EDISON/...` míří do legacy repa,
 ostatní do EDISON2.
@@ -12,9 +13,10 @@ Motivací jsou tři známé mouchy starého mechanismu:
 - **c)** vynucení aktualizace lokálních klientů občas způsobilo, že shell nešel
   vůbec spustit.
 
-Všechny tři mají v kódu dohledatelnou příčinu (§4). Nový shell zatím mouchu a)
-dědí (v omezené míře), b) dědí celou (výměnu souborů dělá tentýž EDUPDATE)
-a mechanismus z c) vůbec nemá (§3, §5).
+Všechny tři mají v kódu dohledatelnou příčinu (§4). Nový shell mouchu a) dědí
+v omezené míře (notice kanál), b) řeší od EDUPDATE2 částečně (vlastní updater je vůči
+chybějícímu/oříznutému manifestu odolný, serverovou příčinu v EDISONINS neopravuje)
+a mechanismus z c) má od EDUPDATE2 vlastní, bez legacy pastí (§3, §5).
 
 ## 1. Řetězec distribuce (společný pro oba shelly)
 
@@ -172,12 +174,13 @@ by oprava vyžadovala plné vydání a zastavení práce všech.
 
 ## 3. Nový shell (EDISONMAIN2)
 
-Klientský update je hotový od 12. 6. 2026 (commit `d60446bd`); serverová
-instalace i výroba verze zůstávají legacy beze změny. Fyzickou výměnu souborů
-dělá pořád **tentýž `EDUPDATE.EXE`** - nový shell jen nahradil detekční
-a rozhodovací vrstvu z `clsUpdate.vb`. Návrhový doc:
-`EDISONMAIN2/docs/UPDATE_FLOW.md` (formálně neudržovaný, ale vznikl s kódem
-a věcně sedí).
+Klientská detekce je hotová od 12. 6. 2026 (commit `d60446bd`); serverová
+instalace i výroba verze zůstávají legacy beze změny. Od 8. 9. 2026 dělá fyzickou
+výměnu souborů **vlastní `EDUPDATE2.exe`** (projekt `EDUPDATE2/`, kontrakt
+v `EDUPDATE2/CLAUDE.md`): staging do přechodné složky, swap se zálohou, rollback,
+čtení legacy manifestu `EDISONCRC.bin` zůstává bit-kompatibilní. Legacy `EDUPDATE.EXE`
+slouží už jen starému shellu. Původní návrhový doc `EDISONMAIN2/docs/UPDATE_FLOW.md`
+(neudržovaný) popisuje stav před EDUPDATE2.
 
 ### 3.1 Tok
 
@@ -186,17 +189,17 @@ a věcně sedí).
    záměrně až po `SavePostLoginState`, aby LastIdfa přežila ukončení updatem.
 2. `Updater.LoadSettings` (`EDISONMAIN2/dotnet/Startup/Updater.cs:55-78`) -
    totéž `ALVA.SETUP.Main.LoadSettings` jako legacy.
-3. `Updater.Check` (`:80-106`), v tomto pořadí:
+3. `Updater.Check`, v tomto pořadí:
    `!Enabled` → nic (vědomá divergence: legacy klient Enabled ignoruje) →
    dev guard (lokální verze `999999.9` u DEBUG buildu) →
    chybí lokální/serverová verze → `Broken` (popup + konec) →
    novější serverová → `UpdateRequired` →
+   **razítko vynucené vlny nesedí s lokální stopou → `UpdateRequired` s `Forced`** →
    `CacheVersion` nesedí → `Broken`.
-4. `UpdateRequired`: mandatory popup → `CopyUpdater` (self-update EDUPDATE) →
-   `LaunchUpdate` (`:124-147`) - stejné argumenty jako legacy plus nová pole
-   `RunExe="EDISONMAIN2.exe"` a `WaitProcess="EDISONMAIN2"` (úprava projektu
-   UPDATERCL, bez ní by EDUPDATE čekal na EDISONMAIN a restartoval EDISON.exe) -
-   a `Shutdown()`. Posílá `NucenyUpdate="False"` napevno.
+4. `UpdateRequired`: mandatory popup → `CopyUpdater` (self-update EDUPDATE2) →
+   `LaunchUpdate` - tokeny `Key=value` přes `ArgumentList` (`SourcePath`, `TargetPath`,
+   `Version`, `WaitProcess`, `RunExe`, `NucenyUpdate=1/0`, `NucenyUpdateTime=<razítko>`;
+   razítko se posílá, kdykoli ho shell zná) - a `Shutdown()`.
 5. Verze: `VerzeInf.cs` (port `clsUpdate.vb`) - `VERZE.INF` vedle exe,
    dev verze `999999.9`, po-složkové porovnání.
 
@@ -216,17 +219,19 @@ a věcně sedí).
 
 ### 3.3 Co nový shell nemá / co je neuzavřené
 
-- **Vynucená aktualizace (`NucenyUpdate`/`CliUp.ini`) neexistuje** - vědomě mimo
-  scope prvního vydání; posílá se `NucenyUpdate="False"`. Viz doporučení §6.
+- **Vynucená aktualizace existuje od 8. 9. 2026**: razítko `NucenyUpdatClentu`
+  z LoadSettings → `Updater.Check` (`Forced`) → EDUPDATE2 plná kopie → stopa
+  `CliUp2.ini` vedle binárek (bezpečná náhrada legacy `CliUp.ini`). Spouštěč zůstává
+  legacy tlačítko "Aktualizace lokálních klientů" (mline admin).
 - Konfigurační UI update nastavení (legacy tab v Nastavení) chybí.
 - `ignoreNotify`, dialog detailu verze (`POPIS_VERZE.INF`) - mimo scope.
 - Neprovedené E2E ověření: plný update stanice (stará verze × novější serverová
-  instalace) a rozladění runtime gate na sdíleném dev serveru.
-- Ops prerekvizity: `EDISONMAIN2.exe` a `EDControls.dll` **nejsou**
-  ve `FILES_DESCRIPTION.INF` na Cloud2 (v repo kopii je jen `EDISONMAIN2API.dll`,
-  omylem pod typem EXE) - bez FULL řádku pro `EDControls.dll` by zákazník dostal
-  exe bez DLL a shell by se nespustil. Dále vydat upravený `EDUPDATE.EXE`
-  (WaitProcess/RunExe). Seznam binárek vydání: `DEPLOY.md`.
+  instalace), forced vlna end-to-end a rozladění runtime gate na sdíleném dev serveru.
+- Ops prerekvizity: `EDISONMAIN2.exe`, `EDControls.dll`, `TemplateDesigner.exe`
+  a `EDUPDATE2.exe` **nejsou** ve `FILES_DESCRIPTION.INF` na Cloud2 (v repo kopii je
+  jen `EDISONMAIN2API.dll`, omylem pod typem EXE) - bez FULL řádků se k zákazníkům
+  nedostanou. Upravený legacy `EDUPDATE.EXE` (WaitProcess/RunExe) už nový shell
+  nepotřebuje. Seznam binárek vydání: `DEPLOY.md`.
 - `MayUpdate` (USERS "UpdateEdison") je jen **právo spustit serverový update**
   z Nastavení - do legacy hosta jde jako launch arg pole [15]
   (`EDControls/dotnet/EDViewModel/WindowNavigator.cs:441-444`); s klientským
@@ -342,12 +347,12 @@ podle odhadované pravděpodobnosti):
 | Oblast | Starý shell | Nový shell |
 |---|---|---|
 | Detekce nové verze | `clsUpdate.UpdateNeeded` (server i klient větev) | `Updater.Check` (jen klient; server = legacy) |
-| Výměna souborů | EDUPDATE + `EDISONCRC.bin` diff | **tentýž EDUPDATE** (nová pole WaitProcess/RunExe) |
+| Výměna souborů | EDUPDATE + `EDISONCRC.bin` diff | vlastní **EDUPDATE2** (týž manifest; staging, rollback, timeouty) |
 | `update` (Enabled) flag | klient ignoruje (ForceYes) | honorován (dev server má update~0) |
 | Dev prostředí | žádný guard | verze `999999.9` + prázdná `EdisonVersion` v DEBUG |
 | Dialog | ForceYes bez volby | mandatory info-popup (ekvivalent) |
 | Runtime gate | `maSeUkoncit` polling + verze | per-request `EdisonVersion` gate (CacheLocks=1) |
-| Vynucená aktualizace klientů | `NucenyUpdateLocalClientu` + `CliUp.ini` | **chybí** (posílá `NucenyUpdate="False"`) |
+| Vynucená aktualizace klientů | `NucenyUpdateLocalClientu` + `CliUp.ini` | totéž razítko + `CliUp2.ini` (absolutní cesta, defenzivní čtení) |
 | Konfigurace update (UI) | tab v Nastavení | chybí |
 | Blokace ze strany M-line | `BlokovatAktualizace` ve `VERZE.INF` | honorováno v notice kanálu |
 | Novinky verze | `POPIS_VERZE.INF` dialog | `_DIFF.INF` changelog okno |
@@ -362,17 +367,16 @@ Priority podle poměru dopad/úsilí; nic z toho tento dokument neimplementuje.
    z balíku, ostatní zachovat) - `clsUpdater.vb:3069-3071`. Jediné místo, žádná
    změna klientů. Přenos 13 instalátorových binárek u XMLPATCH je samostatná
    (menší) věc v SETUPWIZARD.
-2. **Moucha c)**: pokud vynucenou aktualizaci přebírat do nového shellu, nebrat
-   `CliUp.ini` mechaniku 1:1 - razítko ukládat absolutní cestou (nebo do
-   LocalPrefs) a čtení opatřit try/catch; v legacy je nejlevnější oprava
+2. **Moucha c)**: pro nový shell realizováno 8. 9. 2026 (EDUPDATE2 + `CliUp2.ini` -
+   absolutní cesta, defenzivní čtení). V legacy zbývá nejlevnější oprava
    `WriteNucUp` na absolutní cestu + ošetření `pole(1)`.
 3. **Moucha a)** vyžaduje nejdřív serverovou stranu (certifikát + https binding
    na IIS Cloud2), teprve pak má smysl měnit kód; v novém shellu je to jediné
    místo (`Updater.cs:161`), v legacy šest míst + past v `DirectoryFullName`
    + `SecurityProtocol`.
-4. Před nasazením nového shellu k zákazníkům: doplnit `EDISONMAIN2.exe`
-   a `EDControls.dll` (FULL řádky) do `FILES_DESCRIPTION.INF` na Cloud2, vydat
-   upravený `EDUPDATE.EXE` a provést odložené E2E ověření (§3.3).
+4. Před nasazením nového shellu k zákazníkům: doplnit `EDISONMAIN2.exe`,
+   `EDControls.dll`, `TemplateDesigner.exe` a `EDUPDATE2.exe` (FULL řádky) do
+   `FILES_DESCRIPTION.INF` na Cloud2 a provést odložené E2E ověření (§3.3).
 
 ## 7. Co bylo ověřeno naživo (31. 8. 2026)
 

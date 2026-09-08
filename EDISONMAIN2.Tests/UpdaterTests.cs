@@ -274,6 +274,34 @@ public class UpdaterTests
         Assert.Equal(UpdateOutcome.Broken, result.Outcome);
     }
 
+    [Fact]
+    public void BuildArguments_ComposesEdupdate2Contract()
+    {
+        var args = Updater.BuildArguments(@"\\server\Edison", "260901.1", forced: true, forcedStamp: "66234,2");
+
+        var expectedTarget = AppContext.BaseDirectory.TrimEnd(System.IO.Path.DirectorySeparatorChar);
+        Assert.Equal(
+        [
+            @"SourcePath=\\server\Edison",
+            $"TargetPath={expectedTarget}",
+            "Version=260901.1",
+            "WaitProcess=EDISONMAIN2",
+            "RunExe=EDISONMAIN2.exe",
+            "NucenyUpdate=1",
+            "NucenyUpdateTime=66234,2",
+        ], args);
+    }
+
+    [Fact]
+    public void BuildArguments_NotForced_SendsZeroAndStamp()
+    {
+        // Razítko jde i s běžným updatem - úspěch splní čekající vlnu bez druhého kola.
+        var args = Updater.BuildArguments(@"\\s", "1", forced: false, forcedStamp: "66234,2");
+
+        Assert.Contains("NucenyUpdate=0", args);
+        Assert.Contains("NucenyUpdateTime=66234,2", args);
+    }
+
     private class NoticeUpdater : Updater
     {
         public string? Content { get; set; }
