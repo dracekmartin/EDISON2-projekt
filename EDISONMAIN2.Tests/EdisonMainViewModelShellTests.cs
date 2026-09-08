@@ -182,6 +182,18 @@ public class EdisonMainViewModelShellTests
     }
 
     [Fact]
+    public void ActionOverlayVariants_DefaultFirst_LabelsUnique()
+    {
+        var vm = CreateVM();
+
+        // Výchozí varianta = null klíč (dopravní prostředky); přidání sady "Vehicles" do mapy
+        // AgendaSprites by popisek zdvojilo - hardcoded default v VM a SetLabels se musí sladit.
+        Assert.Null(vm.ActionOverlayVariants[0].SpriteKey);
+        var labels = vm.ActionOverlayVariants.Select(v => v.Label).ToList();
+        Assert.Equal(labels.Distinct(), labels);
+    }
+
+    [Fact]
     public async Task ShowShellChangelogIfAnyAsync_WithoutSource_Completes()
     {
         var vm = CreateVM(); // changelogSource null → prompt neexistuje, nesmí spadnout

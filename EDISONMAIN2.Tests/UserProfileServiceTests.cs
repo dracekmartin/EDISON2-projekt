@@ -45,6 +45,20 @@ public class UserProfileServiceTests
         Assert.Equal("\\\\srv\\central", p.CentralExportDir);
     }
 
+    [Fact]
+    public void LoadCentralExportDir_ReadsSystemExportRow()
+    {
+        var ml = Mock(loadSettings: Rows($"system{D}database{D}CB_X{D}CB_X", $"system{D}export{D}\\\\srv\\central"));
+
+        Assert.Equal("\\\\srv\\central", UserProfileService.LoadCentralExportDir(ml));
+    }
+
+    [Fact]
+    public void LoadCentralExportDir_MissingRow_ReturnsEmpty()
+    {
+        Assert.Equal("", UserProfileService.LoadCentralExportDir(Mock()));
+    }
+
     // Příznak osobního adresáře: legacy ho ukládal i jako -1 (VB True) → nenulové = true.
     [Theory]
     [InlineData("-1", true)]
