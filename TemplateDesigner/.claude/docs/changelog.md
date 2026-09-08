@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-09-08 (2) - 📏 sloupce spojů mají nově i strop, ne jen dno
+
+Požadavek Jan 8. 9.: u linky s pár spoji se sloupce roztáhnou přes celý prvek a čas stojí uprostřed
+prázdného pole. Lidem, kteří dnes tisknou postskriptem, se to nelíbí - starý tisk drží sloupce úzké
+a zbytek vyplní prázdnými sloupci.
+
+**Příčina byla jednostranná mez.** Šířka se počítala jako `max(dno z písma, zbytek prvku / počet
+sloupců)` (`LineTableElement.cs:660`) - dno tedy existovalo, strop ne. A dorovnání prázdnými sloupci
+nemělo co dorovnávat, protože kapacita bloku se určovala jako „vejdou-li se všechny spoje, kapacita
+je jejich počet" (`:1051`).
+
+Nově jsou ve formuláři prvku i v panelu **Nejmenší** a **Největší šířka sloupce spoje** (mm, prázdné
+= jako dosud). Tři chování z jednoho pravidla, aniž si mezi nimi kdokoli volí: hodně spojů → šířka
+na dně a řeže se do bloků (fungovalo už dřív), málo spojů → šířka na stropu a zbytek se dorovná,
+mezi tím → šířka plave a vyplní prvek. Dorovnání se proto počítá na kapacitu prvku, ne jen na
+nejplnější blok.
+
+Dno jde nově zadat i **napřímo**. Přes vnitřní okraj buňky to byla oklika - uživatel musel znát
+vzorec „šířka času + okraj vlevo + okraj vpravo". Vyplněné dno ten výpočet nahradí, takže okraj
+na šířku přestane sahat; prázdné = jako dosud. Pod `MinAutoColumnWidthMm` = 3 mm sloupec nespadne
+ani zadanou hodnotou.
+
+**Nastavení šířky jsou nově pohromadě.** Nová skupina **Šířka sloupců** (nejmenší · největší ·
+dorovnat · stejně široké · mezera mezi skupinami); ve staré skupině „Sloupce" zbyly popisné sloupce
+a přejmenovala se na **Popisné sloupce**. Do 8. 9. stálo dorovnání a stejné šířky vedle nastavení
+zóny a nadpisů, takže se to nedalo přečíst jako jedna věc.
+⚠️ Ne „Šířka a dělení" - „dělení sloupců" už v UI znamená členění na skupiny dnů.
+
+Změřeno na `330511` obousměrně, prvek 200 mm: bez stropu sloupec 5,87 mm a tabulka 194,1 mm; se
+stropem 4,5 mm vyjde 170,9 mm, tedy **23 mm volných vpravo**, a se zapnutým dorovnáním se dokreslí
+prázdnými sloupci až k okraji (ověřeno na vyrenderované stránce). Zadané dno 4 mm dá 162,4 mm.
+
+⚠️ **Tři testy měly nejdřív špatné očekávání, ne kód.** Čekaly přesnou šířku tam, kde jsou dno
+a strop jen meze: zvednutím dna se do bloku vejde méně spojů, takže na každý zbyde víc místa
+a sloupec vyjde širší než zadané minimum. Fixtury si teď dno **měří** místo aby ho hádaly.
+
+⚠️ **Pevná šířka sloupce Spoj v dialogu Sloupce zůstává**, i když se stropem ztrácí důvod. Odebrání
+by znamenalo migraci šablon, které ji uloženou mají (jinak by z nich nešla zrušit), tedy zvýšení
+verze formátu - samostatná změna. Dvojice se má nejdřív osvědčit na reálných šablonách.
+
+Ověřeno: .NET **2973/2973** (14 nových testů), Caché 153/153. Nová pole i přeskupené skupiny
+ověřené **voláním** `Init` na serveru.
+
 ## 2026-09-08 (1) - 📐 tabulku linky jde utáhnout na šířku z formuláře prvku
 
 Požadavek Jan 8. 9.: starý postskriptový tisk seřízne tabulku na šířku agresivněji než my a chtěl

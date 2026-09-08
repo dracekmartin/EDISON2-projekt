@@ -128,6 +128,48 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public bool JednotnaSirkaSpoju { get; set; } = true;
 
     /// <summary>
+    /// Skupina formuláře, ve které je pohromadě všechno, co rozhoduje o šířce sloupců spojů.
+    /// </summary>
+    /// <remarks>
+    /// Do 8. 9. byla ta nastavení roztroušená (dorovnání a stejné šířky ve „Sloupcích", velikost
+    /// písma a okraj v „Datových buňkách") a vedle nich stála nesouvisející nastavení popisných
+    /// sloupců. ⚠️ Popisek musí souhlasit s <c>LineTableElementEdit.cls</c>, jinak spadne driftový
+    /// test. ⚠️ Ne „Šířka a dělení" - „dělení sloupců" už v UI znamená členění na skupiny dnů.
+    /// </remarks>
+    internal const string SirkaGroup = "Šířka sloupců";
+
+    /// <summary>Skupina formuláře pro sloupce popisující zastávku (zóna, km, Tč, název, MHD).</summary>
+    internal const string PopisneGroup = "Popisné sloupce";
+
+    /// <summary>
+    /// Nejmenší šířka sloupce spoje v mm. Null = odvodit z písma (šířka času + vnitřní okraje).
+    /// </summary>
+    /// <remarks>
+    /// Odvozené dno se dá utáhnout jen oklikou přes vnitřní okraj buňky a uživatel musí znát vzorec,
+    /// aby výsledek odhadl (požadavek Jan 8. 9.). Vyplněná hodnota proto <b>nahradí</b> celý výpočet
+    /// dna, takže okraj na šířku přestane mít vliv a řekne se rovnou, jak úzký sloupec smí být.
+    /// <para>Tvrdé dno <see cref="MinAutoColumnWidthMm"/> platí dál - pod ně se nedostane ani
+    /// vyplněnou hodnotou, jinak by se do bloku nasypalo tolik spojů, že by čas nebyl čitelný.</para>
+    /// </remarks>
+    public float? NejmensiSirkaSpojeMm { get; set; }
+
+    /// <summary>
+    /// Největší šířka sloupce spoje v mm. Null = bez omezení (sloupce vyplní prvek).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 8. 9. měla šířka sloupce <b>dno, ale žádný strop</b>: zbytek prvku se vždy rozdělil
+    /// mezi sloupce, takže u linky s pár spoji vyšel sloupec extrémně široký a čas stál uprostřed
+    /// prázdného pole (na 200mm prvku a pěti spojích kolem 24 mm proti dnu 3,1 mm). Lidem, kteří
+    /// dnes tisknou postskriptem, se to nelíbí - ten místo roztahování drží sloupce úzké a zbytek
+    /// vyplní prázdnými sloupci.
+    /// <para>Strop se počítá na <b>základ</b> sloupce; místo na značku návaznosti se přičítá nad
+    /// něj (rozhodnutí Jan 8. 9. - značka není problém, jde o volné místo).</para>
+    /// <para>Co se stane s přebytkem, rozhoduje <see cref="PadEmptyColumns"/>: zapnuté ho rozkreslí
+    /// prázdnými sloupci, vypnuté ho nechá bílé.</para>
+    /// </remarks>
+    public float? NejvetsiSirkaSpojeMm { get; set; }
+
+    /// <summary>
     /// Vyplnit tečkami buňky spojů, ve kterých není čas (výchozí vypnuto).
     /// </summary>
     /// <remarks>
@@ -562,6 +604,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     private float MinAutoSloupecMm()
     {
+        // Vyplněné dno nahrazuje celý výpočet z písma, ne aby se s ním sčítalo - jinak by uživatel
+        // musel odečítat okraje, což je právě ta oklika, kvůli které pole vzniklo.
+        if (NejmensiSirkaSpojeMm is float zadane)
+            return MathF.Max(MinAutoColumnWidthMm, zadane);
+
         var st = ResolveDataStyle(TripColumn());
         using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
         // ⚠️ Měří se **skutečný tvar času**, ne vždycky „00:00". Při formátu s menšími minutami je
@@ -660,6 +707,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float autoEach = autoUnits > 0
             ? MathF.Max(MinAutoSloupecMm(), (Width - fixedSum - rezervaMezerMm - rezervaZnacekMm) / autoUnits)
             : 8f;
+        // Strop se uplatní až po dnu, aby ho nemohl podlézt: kdo zadá strop menší než dno, dostane
+        // dno (a čitelný čas), ne oříznutý sloupec. Platí jen na automatické sloupce - pevná šířka
+        // sloupce je výslovné přání a strop ji nepřebíjí.
+        if (NejvetsiSirkaSpojeMm is float strop && strop > 0f)
+            autoEach = MathF.Max(MinAutoSloupecMm(), MathF.Min(autoEach, strop));
 
         var result = new List<RenderCol>();
         int nameIndex = -1;
@@ -943,6 +995,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static float SirkaBlokuMm(IReadOnlyList<RenderCol> popisne, float sloupecSpojeMm,
         float rezervaMezerMm, float rezervaZnacekMm, int pocetSpoju) =>
         popisne.Sum(c => c.Width) + rezervaMezerMm + rezervaZnacekMm + pocetSpoju * sloupecSpojeMm;
+
+    /// <summary>
+    /// Kolik slotů spojů se při dané šířce sloupce do prvku vejde - podklad pro dorovnání
+    /// prázdnými sloupci.
+    /// </summary>
+    /// <remarks>
+    /// Počítá se ve <b>slotech</b>, ne ve sloupcích: u obousměrné sestavy zabere slot sloupec na
+    /// každé straně zastávek, takže se do šířky vejde poloviční počet.
+    /// </remarks>
+    private static int KapacitaSlotu(IReadOnlyList<RenderCol> popisne, float sloupecSpojeMm,
+        float rezervaMezerMm, float rezervaZnacekMm, int sloupcuNaSlot, float sirkaPrvku)
+    {
+        if (sloupecSpojeMm <= 0f || sloupcuNaSlot <= 0) return 0;
+        float volno = sirkaPrvku - popisne.Sum(c => c.Width) - rezervaMezerMm - rezervaZnacekMm;
+        return volno <= 0f ? 0 : (int)MathF.Floor(volno / (sloupecSpojeMm * sloupcuNaSlot));
+    }
 
     /// <summary>Mezera mezi stránkovými bloky, ať na sebe tabulky nenavazují bez předělu.</summary>
     private const float MezeraMeziBlokyMm = 4f;
@@ -1403,9 +1471,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // v obousměrném tisku může mít blok jinak plnou levou a pravou stranu (jeden směr
                 // má míň spojů). Levá strana ho potřebuje znát už při stavbě mřížky, protože její
                 // sloupce posouvá; pravá se dorovnává až v hotovém plánu.
-                int prazdnychVpravo = PadEmptyColumns ? Math.Max(0, naBlok - spojeBloku.Count) : 0;
+                // Dorovnává se na kapacitu prvku, ne jen na nejplnější blok. Bez stropu je obojí
+                // totéž (sloupce zbytek prvku spotřebují), ale se stropem zůstane vpravo volno
+                // i u tabulky, která se vůbec neřeže - a právě to má dorovnání vyplnit.
+                int kapacita = Math.Max(naBlok, KapacitaSlotu(fixedCols, tripW, rezervaMezer,
+                    rezervaZnacek, sloupcuNaSlot, Width));
+                int prazdnychVpravo = PadEmptyColumns ? Math.Max(0, kapacita - spojeBloku.Count) : 0;
                 int prazdnychVlevo = PadEmptyColumns && sloupcuNaSlot > 1
-                    ? Math.Max(0, naBlok - zrcadleneBloku.Count) : 0;
+                    ? Math.Max(0, kapacita - zrcadleneBloku.Count) : 0;
 
                 var mrizka = new SloupcovaMrizka(fixedCols,
                     SirkySpoju(spojeBloku, stops, tripW, znackaMm), tripW,
@@ -2261,6 +2334,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PripojeSlucovani = PripojeSlucovani,
             PadEmptyColumns = PadEmptyColumns,
             JednotnaSirkaSpoju = JednotnaSirkaSpoju,
+            NejmensiSirkaSpojeMm = NejmensiSirkaSpojeMm,
+            NejvetsiSirkaSpojeMm = NejvetsiSirkaSpojeMm,
             FormatCasu = FormatCasu,
             TucneZastavkyDleTrasy = TucneZastavkyDleTrasy,
             PomerZnacek = PomerZnacek,
@@ -2309,8 +2384,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 ("Podle směru",               (object)PripojSlucovani.PodleSmeru),
                 ("Podle směru a linky",       (object)PripojSlucovani.PodleSmeruALinky),
             ] },
-        new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = "Sloupce", Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
-        new BoolPropertyDescriptor { Label = "Stejně široké sloupce spojů", Group = "Sloupce", Get = () => JednotnaSirkaSpoju, Set = v => JednotnaSirkaSpoju = v },
+        new FloatPropertyDescriptor { Label = "Nejmenší šířka sloupce spoje", Group = SirkaGroup,
+            Unit = "mm", Min = 0, Max = 50, Format = "0.##",
+            Get = () => NejmensiSirkaSpojeMm ?? 0f,
+            Set = v => NejmensiSirkaSpojeMm = v <= 0f ? null : v },
+        new FloatPropertyDescriptor { Label = "Největší šířka sloupce spoje", Group = SirkaGroup,
+            Unit = "mm", Min = 0, Max = 200, Format = "0.##",
+            Get = () => NejvetsiSirkaSpojeMm ?? 0f,
+            Set = v => NejvetsiSirkaSpojeMm = v <= 0f ? null : v },
+        new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = SirkaGroup, Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
+        new BoolPropertyDescriptor { Label = "Stejně široké sloupce spojů", Group = SirkaGroup, Get = () => JednotnaSirkaSpoju, Set = v => JednotnaSirkaSpoju = v },
         new EnumPropertyDescriptor
         {
             Label = "Formát času", Group = "Datové buňky",
@@ -2336,14 +2419,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => PomerZnacek, Set = v => PomerZnacek = v,
             Min = 1f, Max = 3f, Format = "0.##",
         },
-        new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = "Sloupce",
+        new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = PopisneGroup,
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
-        new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = "Sloupce",
+        new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = PopisneGroup,
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },
-        new BoolPropertyDescriptor { Label = "Popisné sloupce bez vnitřních čar", Group = "Sloupce",
+        new BoolPropertyDescriptor { Label = "Popisné sloupce bez vnitřních čar", Group = PopisneGroup,
             Get = () => PopisneSloupceBezVnitrnichCar, Set = v => PopisneSloupceBezVnitrnichCar = v },
-        new FloatPropertyDescriptor { Label = "Mezera mezi skupinami sloupců", Group = "Sloupce",
+        new FloatPropertyDescriptor { Label = "Mezera mezi skupinami sloupců", Group = SirkaGroup,
             Unit = "mm", Min = 0, Max = 20, Format = "0.#",
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
