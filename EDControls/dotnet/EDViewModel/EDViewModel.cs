@@ -64,8 +64,8 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Maskot overlaye „Akce probíhá" pro běžící akci - klíč vyhrazené sady spritů
-    /// („Money" → „Sprite.Money.*" v ActionInProgressWindow.xaml). Null/neznámý = náhodný výběr.
+    /// Sada spritů overlaye „Akce probíhá" pro běžící akci („Money" → „Sprite.Money.*"
+    /// v ActionInProgressWindow.xaml). Null/neznámá = výchozí dopravní prostředky.
     /// </summary>
     public string? ActionSpriteKey { get; private set; }
 

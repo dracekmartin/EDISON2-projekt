@@ -8,7 +8,7 @@ namespace EDControls.EDActionInProgress;
 /// <summary>
 /// Neviditelný controller overlay „Akce probíhá" - vlož kamkoli do okna (konvence: poslední
 /// child root Gridu). Na Loaded se sám naváže na <see cref="EDVm.IsActionInProgress"/>;
-/// při aktivaci ztmaví okno (<see cref="WindowDimmer"/>) a zobrazí kartu s kapybarou
+/// při aktivaci ztmaví okno (<see cref="WindowDimmer"/>) a zobrazí kartu s maskoty
 /// v owned okně <see cref="ActionInProgressWindow"/> - jediný způsob, jak ji vykreslit
 /// nad HWND widgety (WebView2), které WPF obsah kvůli airspace nepřekreslí.
 /// </summary>

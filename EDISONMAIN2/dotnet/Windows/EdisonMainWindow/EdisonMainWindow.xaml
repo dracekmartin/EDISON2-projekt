@@ -175,6 +175,16 @@
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
                 <MenuItem Header="Test odhlašovacího countdownu" Command="{Binding OpenLogoutCountdownTestCommand}"/>
+                <MenuItem Header="Akce probíhá (10 s)" ItemsSource="{Binding ActionOverlayVariants}">
+                    <MenuItem.ItemContainerStyle>
+                        <!-- BasedOn povinné (dark mode); ElementName - submenu items jsou v Popup mimo visual tree Menu. -->
+                        <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                            <Setter Property="Header" Value="{Binding Label}"/>
+                            <Setter Property="Command" Value="{Binding DataContext.TestActionOverlayCommand, ElementName=TopMenu}"/>
+                            <Setter Property="CommandParameter" Value="{Binding}"/>
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+                </MenuItem>
                 <MenuItem Header="Vyvolat chybu" Command="{Binding TriggerErrorCommand}"/>
                 <Separator/>
                 <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
