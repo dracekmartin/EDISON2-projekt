@@ -30,4 +30,9 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Sada sdílí procesně globální stav (DocumentDefaults.Style, SkiaSharp/font cache), takže
+         běží sekvenčně - viz komentář v xunit.runner.json. -->
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

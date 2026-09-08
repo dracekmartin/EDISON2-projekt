@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,7 +35,7 @@ public partial class MainWindow : Window
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f];
 
     // ── Mouse state machine ───────────────────────────────────────────────────
-    private enum MouseMode { Idle, Dragging, Resizing, RubberBand, AddingElement }
+    private enum MouseMode { Idle, Dragging, Resizing, RubberBand, AddingElement, SectionResizing }
     private MouseMode _mouseMode = MouseMode.Idle;
 
     private TemplateElement? _dragElement;
@@ -61,6 +61,12 @@ public partial class MainWindow : Window
     private float  _resizeMouseStartX, _resizeMouseStartY;
     private float  _resizeOriginX, _resizeOriginY;
     private float  _resizeSectionW, _resizeSectionH; // hranice sekce pro clamp
+
+    // ── Tažení spodní hrany sekce (mění její výšku, sekce pod se posunou) ─────
+    private Section? _sectionResizeTarget;
+    private float    _sectionResizeStartY;      // px, kde tažení začalo
+    private float    _sectionResizeStartH;      // mm, výška před tažením
+    private bool     _sectionResizeUpwards;     // patička je kotvená dole, takže roste nahoru
 
     // ── Adding element (drag from palette / field drag) ────────────────────────
     private string? _addingElementType;
@@ -126,10 +132,10 @@ public partial class MainWindow : Window
 
         _canvas        = new DesignerCanvas(_vm.State);
         _previewCanvas = new PreviewCanvas(_vm.State);
-        _previewCanvas.OverflowChanged = hasOverflow =>
+        _previewCanvas.OverflowChanged = popis =>
         {
-            if (_vm is not null && _vm.HasPreviewOverflow != hasOverflow)
-                _vm.HasPreviewOverflow = hasOverflow;
+            if (_vm is not null && _vm.PreviewOverflow != popis)
+                _vm.PreviewOverflow = popis;
         };
 
         // Wire SkiaSharp (must be code-behind - not in XAML for net9+)
@@ -1460,10 +1466,13 @@ public partial class MainWindow : Window
             Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
             Add("Minuty odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
-        if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
-            Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
+        // Hlavní tabulka sestavy jde před poznámkami - poznámky jsou doplněk. U zastávkových to
+        // pořadí drží samo (seznam zastávek, odjezdy, poznámky), u linkových by poznámky vyšly
+        // první, protože jejich tabulka je v tomhle výčtu za nimi.
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
             Add("Linkový JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
+        if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
+            Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;
@@ -1808,7 +1817,10 @@ public partial class MainWindow : Window
             "Vlastnosti sekce: " + section.Name)
             { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+        {
             _vm!.Execute(dlg.ResultCommand);
+            _vm!.SrazVyskuSekceDoMezi(section);
+        }
         InvalidateCanvas();
         InvalidatePreview();
         _vm!.RebuildSections();
@@ -2257,6 +2269,7 @@ public partial class MainWindow : Window
             if (_mouseMode == MouseMode.AddingElement)   CancelAddingElement();
             else if (_mouseMode == MouseMode.Dragging)   EndDrag(commit: false);
             else if (_mouseMode == MouseMode.Resizing)   EndResize(commit: false);
+            else if (_mouseMode == MouseMode.SectionResizing) EndSectionResize(commit: false);
             else if (_mouseMode == MouseMode.RubberBand)
             {
                 _rubberBandRect = null;
@@ -2326,6 +2339,25 @@ public partial class MainWindow : Window
             _vm.State.SelectedElements.Clear();
             UpdatePropertiesPanel();
             InvalidateCanvas();
+            e.Handled = true;
+            return;
+        }
+
+        // Spodní hrana sekce - tažením se mění její výška a sekce pod ní se posunou.
+        // ⚠️ Až PO úchytu prvku: prvek, který se hrany dotýká, musí zůstat roztažitelný.
+        if (_canvas.HitTestHandle(cx, cy, cw) is null &&
+            _canvas.HitTestSectionEdge(cx, cy, cw) is { } edge &&
+            edge.Section.DesignerHeight is { } edgeStartH)
+        {
+            _sectionResizeTarget  = edge.Section;
+            _sectionResizeUpwards = edge.RosteNahoru;
+            _sectionResizeStartY = cy;
+            _sectionResizeStartH = edgeStartH;
+            _vm.State.ActiveSection = edge.Section;
+
+            _mouseMode = MouseMode.SectionResizing;
+            skCanvas.CaptureMouse();
+            skCanvas.Cursor = System.Windows.Input.Cursors.SizeNS;
             e.Handled = true;
             return;
         }
@@ -2574,6 +2606,38 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (_mouseMode == MouseMode.SectionResizing)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed) { EndSectionResize(commit: false); return; }
+            if (_sectionResizeTarget is null) return;
+
+            // Patička roste nahoru (je kotvená ke spodku papíru), ostatní sekce dolů.
+            float posunMm = (cy - _sectionResizeStartY) / _canvas.MmToPx;
+            if (_sectionResizeUpwards) posunMm = -posunMm;
+            float novaMm  = _sectionResizeStartH + posunMm;
+
+            // Ctrl vypíná mřížku - stejně jako u prvků.
+            if (_vm.State.SnapToGrid && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                novaMm = MathF.Round(novaMm / _vm.State.GridSize) * _vm.State.GridSize;
+
+            // Táž mez jako u „Vyplnit zbytek stránky": sekce nesmí vytlačit ostatní ze stránky.
+            // Bez toho by tatáž věc měla dvě chování podle toho, kudy k ní uživatel přišel.
+            float strop = Models.Layout.SectionLayoutMath.ZbyvajiciMistoMm(
+                _vm.State.CurrentTemplate, _sectionResizeTarget);
+            // Dno = obsah sekce. Bez toho by se prvek u dolního okraje v návrháři oříznul,
+            // ale při tisku vytiskl celý (engine sekci nafoukne na obsah).
+            float dno = Models.Layout.SectionLayoutMath.MinimalniVyskaProSekci(_sectionResizeTarget);
+            novaMm = Math.Clamp(novaMm, dno, MathF.Max(dno, strop));
+
+            _sectionResizeTarget.DesignerHeight = novaMm;
+            _vm.StatusText = $"Výška sekce {_sectionResizeTarget.Name}: {novaMm:0.#} mm"
+                + (novaMm >= strop - 0.05f ? " (na hranici stránky)" : "");
+
+            UpdateCanvasSize();
+            InvalidateCanvas();
+            return;
+        }
+
         if (_mouseMode == MouseMode.Resizing)
         {
             if (e.LeftButton != MouseButtonState.Pressed) { EndResize(false); return; }
@@ -2694,6 +2758,10 @@ public partial class MainWindow : Window
             skCanvas.Cursor = divider.Kind == DividerKind.Column ? Cursors.SizeWE : Cursors.SizeNS;
         else if (handleHit2.HasValue)
             skCanvas.Cursor = GetResizeCursor(handleHit2.Value.Handle);
+        else if (_canvas.HitTestSectionBottomEdge(cx, cy, cw) is not null)
+            // Bez kurzoru by o možnosti táhnout výšku sekce nikdo nevěděl - hrana není nijak
+            // vyznačená a klik na ni jinak jen vybere sekci.
+            skCanvas.Cursor = Cursors.SizeNS;
         else
         {
             // Táž cesta jako klik, aby kurzor předpovídal, co se stane (i u vybraného elementu pod jiným).
@@ -2709,6 +2777,7 @@ public partial class MainWindow : Window
         if (InCellRangeDrag)                        EndCellRangeDrag();
         else if (_mouseMode == MouseMode.Dragging)  EndDrag(true);
         else if (_mouseMode == MouseMode.Resizing)  EndResize(true);
+        else if (_mouseMode == MouseMode.SectionResizing) EndSectionResize(true);
         else if (_mouseMode == MouseMode.RubberBand) EndRubberBand();
         else if (_mouseMode == MouseMode.AddingElement) EndAddingElement();
     }
@@ -2830,6 +2899,16 @@ public partial class MainWindow : Window
                     var sectionVm = _vm.Sections.FirstOrDefault(s => s.Section == section);
                     sectionVm?.ShowPropertiesCommand.Execute(null);
                 })
+            });
+            // Akce, ne nastavení - proto v místní nabídce a ne ve formuláři sekce (rozhodnutí
+            // Jan 3. 9.). Zbývající místo se nedá spočítat z hlavy, takže tohle je jediná cesta,
+            // jak sekci roztáhnout bez počítání výšek ostatních sekcí.
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Vyplnit zbytek stránky",
+                Command = new EDControls.EDViewModel.RelayCommand(
+                    () => { _vm.VyplnitZbytekStranky(section); InvalidateCanvas(); },
+                    () => !Models.Layout.SectionLayoutMath.VyplnujeCeleMisto(_vm.State.CurrentTemplate, section))
             });
             menu.Items.Add(new MenuItem
             {
@@ -2973,6 +3052,40 @@ public partial class MainWindow : Window
         _dragElement = null;
         skCanvas.ReleaseMouseCapture();
         skCanvas.Cursor = Cursors.Arrow;
+        InvalidateCanvas();
+        UpdatePropertiesPanel();
+    }
+
+    /// <summary>
+    /// Dokončí tažení spodní hrany sekce. Do kroku zpět jde **jedna** změna výšky, ne každý pohyb
+    /// myší - proto se během tažení hodnota jen zapisuje a příkaz vzniká teprve tady.
+    /// </summary>
+    private void EndSectionResize(bool commit)
+    {
+        var section = _sectionResizeTarget;
+        if (section is not null && _vm is not null)
+        {
+            float konecna = MmMath.Round(section.DesignerHeight ?? _sectionResizeStartH);
+
+            if (commit && MathF.Abs(konecna - _sectionResizeStartH) >= 0.05f)
+            {
+                // Hodnota už je v modelu z průběhu tažení; příkaz ji jen zapíše znovu, aby
+                // krok zpět vrátil původní výšku.
+                section.DesignerHeight = _sectionResizeStartH;
+                _vm.Execute(new SetPropertyCommand("výška sekce", _sectionResizeStartH, konecna,
+                    v => section.DesignerHeight = (float?)v));
+            }
+            else
+            {
+                section.DesignerHeight = commit ? konecna : _sectionResizeStartH;
+            }
+        }
+
+        _sectionResizeTarget = null;
+        _mouseMode = MouseMode.Idle;
+        if (skCanvas.IsMouseCaptured) skCanvas.ReleaseMouseCapture();
+        skCanvas.Cursor = System.Windows.Input.Cursors.Arrow;
+        UpdateCanvasSize();
         InvalidateCanvas();
         UpdatePropertiesPanel();
     }

@@ -87,7 +87,7 @@ Zleva doprava:
   vybranými instancemi a formátem „Instance: X - Y (N/M)",
 - informace o aktuálním výběru,
 - obecné stavové hlášky,
-- při přetečení obsahu stránky červené upozornění „⚠ Obsah se nevejde na stránku".
+- při přetečení obsahu stránky červené upozornění s tím, co se nevejde a na které straně.
 
 ### Hlavní menu
 
@@ -185,6 +185,24 @@ Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole *
 **Výška řádku**.
 
 ### Práce se sekcemi
+- **Výška** - tři cesty. Ve vlastnostech sekce ji zadáte **číslem v mm**; na plátně ji **utáhnete
+  za spodní hranu sekce** (kurzor se tam změní na svislé šipky, mřížka platí a Ctrl ji vypne,
+  Esc tažení zruší); a pravým klikem na sekci vyberete **„Vyplnit zbytek stránky"**, což
+  spočítá, kolik na papíře zbývá, a sekci na to roztáhne.
+
+  Ve všech třech případech platí totéž: **sekce nad ní se nehne, sekce pod ní se posunou** a svou
+  výšku si podrží. Prvky se posunou se svou sekcí, takže se vůči ní nikam nepohnou. Sekci nejde
+  roztáhnout tak, aby ostatní vytlačila ze stránky - na hranici se tažení zastaví a stavový řádek
+  to napíše. Sekce s **prázdnou výškou** se netahá, tu si dopočítá tiskové jádro z obsahu.
+
+  **Zmenšit sekci pod její obsah nejde** - tažení se zastaví na spodní hraně nejnižšího prvku.
+  Kdyby to šlo, prvek by v návrháři zmizel pod okrajem, ale na papíře by se vytiskl celý, protože
+  tiskové jádro sekci nafoukne na obsah. Potřebujete-li sekci opravdu zmenšit, přesuňte nebo
+  smažte prvek, který ji drží.
+
+  **Patičku taháte za HORNÍ hranu** - je ukotvená u spodního okraje stránky, takže roste vzhůru.
+  U ostatních sekcí je to spodní hrana. Hranu mezi dvěma sekcemi netřeba hledat dvakrát: je to
+  spodní hrana té horní z nich.
 - **Mazání** - poslední zbývající sekci nelze smazat; sekce s prvky vyžaduje potvrzení. Uvolněná
   výška se proporcionálně rozdělí mezi zbývající sekce (a naopak při přidání nové).
 - **Řazení** - přetažením v levém panelu, nebo šipkami v kontextovém menu.
@@ -198,7 +216,7 @@ Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole *
 
 Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
 
-- **Text** - text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování, řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí
+- **Text** - text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování (výchozí vypnuté), řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí
 - **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
@@ -350,10 +368,23 @@ Barvu tedy jde odebrat tak, že obsah pole smažete, a zůstane to tak i po ulo�
 **Do číselných polí (rozměry, velikosti, odsazení) jde psát desetinnou čárku i tečku** - „1,5"
 znamená totéž jako „1.5". Ukládá se to s tečkou.
 
-### Automatické zmenšení textu do buňky
-Když se text nevejde do šířky buňky tabulky (dlouhý název zastávky, výčet zón…), písmo se v té
-buňce automaticky zmenší tak, aby se vešlo - obdoba funkce „přizpůsobit buňce" v Excelu. Je to
-vestavěné chování napříč tabulkovými prvky, nemusíte nic zapínat.
+### Automatické zmenšení textu
+Když se text nevejde, písmo se automaticky zmenší tak, aby se vešlo - obdoba funkce „přizpůsobit
+buňce" v Excelu. Je to vestavěné chování, nemusíte nic zapínat:
+
+- **Buňky tabulek** (dlouhý název zastávky, výčet zón…) - zmenší se na šířku buňky.
+- **Prvky jízdního řádu** s pevnou výškou - písmo se zmenší, aby se obsah vešel do výšky.
+- **Textový prvek** s pevnou výškou - **bez zalamování** (nově výchozí stav) se zmenší na šířku,
+  **se zalamováním** text nejdřív pokračuje na dalším řádku a zmenšuje se teprve, až mu nezbývá
+  místo na výšku. Tady je **dolní mez**: na polovinu nastavené velikosti, nikdy pod 4 pt.
+  Delší text se pod mezí ořízne a stavový řádek to řekne, ať víte, že máte text zkrátit
+  nebo prvek zvětšit.
+
+Prvek s **prázdnou výškou** se nezmenšuje - ten si místo doroste podle obsahu.
+
+Zmenšení není tiché: stavový řádek a souhrn po tisku vypíšou, kterému prvku se písmo zmenšilo
+a na kolik procent („Poznámky: písmo zmenšeno na 42 %"). Bez toho byste to poznali až z papíru -
+a u vývěsky se stránkou na zastávku vyjde každá jinak podle toho, kolik má poznámek.
 
 ### Kaskáda stylů u tabulkových prvků
 U tabulek a specializovaných prvků jízdního řádu funguje **kaskáda stylů**: nejčastěji měněné
@@ -459,7 +490,15 @@ zastávka × směr): šipky ◀ / ▶, rozbalovací seznam pro přímý skok na 
 
 ### Varování o přetečení
 Pokud se obsah nevejde na stránku, dostane stránka v náhledu **červený rámeček** a status bar
-zobrazí „⚠ Obsah se nevejde na stránku" (tooltip navrhne zvětšit stránku nebo zmenšit obsah).
+řekne, **která sekce se nevejde, o kolik a na které straně** - a když ji nafoukl konkrétní prvek,
+jmenuje i ten: „sekce „Vývěska" nevejde na stránku, nejvíc místa bere Poznámky (přesah 12,4 mm,
+strana 2)". Podle toho poznáte, co zmenšit: jmenovaný prvek, nebo výšku sekce, když se do ní prvky
+vejdou. Tooltip nabízí i třetí cestu - zvětšit stránku.
+
+Tentýž prvek na víc stránkách je **jedna položka**, ne výpis po stránkách; do tří stránek se
+vypisují čísla, nad to počet a první výskyt. Stejný popis se ukáže i po tisku, protože tisknout
+můžete jinou linku, než máte v náhledu.
+
 Varování se týká jen sekcí nastavených jako „Nepřerušovat" - sekce, které lze rozdělit přes
 stránky, se prostě rozdělí a nic se neztratí, takže tam varování nedává smysl.
 
@@ -645,7 +684,7 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
     zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
   - **Písmena variant se tisknou vždy, když je zapnutý sloupec „Varianty tras"** - varianty se
-    označí písmeny A-Z v záhlaví sloupců a totéž písmeno se vytiskne u minut odjezdů; podle písmena
+    označí písmeny v záhlaví sloupců a totéž písmeno se vytiskne u minut odjezdů; podle písmena
     tak dohledáte, kterou trasou spoj jede.
     Bez toho sloupce se u minut netisknou, protože by je nebylo čím vysvětlit.
     Vypnout je jinak nelze: do 17. 8. to byl parametr, ale vývěska bez nich u minut neměla nic,
@@ -654,6 +693,14 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     u minuty je nejdřív rozdíl trasy, pak varianta („17BA" = rozdíl B, varianta A).
     Rozdíl trasy říká **kudy** spoj jede jinak a vysvětluje ho text v legendě; varianta říká,
     **podle kterého sloupce časů** se řídí, a vysvětluje ji záhlaví toho sloupce.
+  - **Která písmena se použijí, si určíte u linky** (EDISON → linka → Nastavení k tisku → záložka
+    Odjezdník MHD). „Volné značky" jsou písmena rozdílů tras, „Volné značky pro minutové trasy
+    spojů" písmena variant; bere se z nich znak po znaku od začátku a po vyčerpání se zdvojují
+    („AA", „DD"). Nechte-li pole prázdné, použijí se **výchozí sady, které se nepřekrývají** -
+    varianty `A, D, L, M, N, P, T, Y`, rozdílům tras zůstává jejich dosavadní sada.
+    ⚠️ Vlastní zápis se bere doslova: napíšete-li do obou polí totéž písmeno, vytiskne se
+    u minuty pro obě věci a legenda k němu bude mít jiný text. Řešení je přesunout jednu ze sad,
+    protože nastavitelné jsou obě.
   - **První varianta bez písmene** - nejčastější trasa zůstane bez písmene, odchylky se značí od A.
     Vypnuto = písmenkuje se už od první varianty.
 - **Samostatná stránka pro každý označník** (parametr „Seznam zastávek") - zastávka obsluhovaná
@@ -819,7 +866,8 @@ Analogický dvoutabový dialog:
 ### 4. Výběr linek k tisku
 
 Dialog výběru instancí - vyhledávací pole (Enter spustí filtr), seznam linek s checkboxy pro
-výběr více najednou, tlačítka „Vybrat vše" / „Odznačit vše". Otevře se klikem na modrý štítek
+výběr více najednou, tlačítka „Vybrat vše" / „Odznačit vše". Seznam obsahuje **všechny linky
+zvolené skupiny**, takže hledání najde i linku, která je v seznamu až daleko dole. Otevře se klikem na modrý štítek
 „Instance: X - Y (N/M)" ve status baru.
 
 Nad seznamem je **skupina linek** - seznam ukazuje linky zvolené skupiny a přepnutím se

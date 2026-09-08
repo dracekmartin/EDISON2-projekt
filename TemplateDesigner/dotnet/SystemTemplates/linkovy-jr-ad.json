@@ -260,30 +260,28 @@
       "borderWidth": 0.3,
       "elements": [
         {
-          "type": "DynamicTableElement",
-          "dataSource": "POZNAMKY",
-          "columns": [
-            {
-              "header": "",
-              "width": 10,
-              "widthMode": "Mm",
-              "field": "ZNAK",
-              "alignment": "Left",
-              "visible": true
-            },
-            {
-              "header": "",
-              "width": 0,
-              "widthMode": "Mm",
-              "field": "TEXT",
-              "alignment": "Left",
-              "visible": true
-            }
-          ],
-          "rowHeight": 6,
-          "showHeader": true,
-          "headerHeight": 8,
-          "borderStyle": "Outer",
+          "type": "NotesLegendElement",
+          "headerText": "Poznámky",
+          "noteSeparator": " - ",
+          "noteFontSize": 7,
+          "columns": 2,
+          "razeni": "DleTypu",
+          "negativniZnackaBackColor": "#FF000000",
+          "negativniZnackaForeColor": "#FFFFFFFF",
+          "showNegativniZnacky": true,
+          "showSpecialniZnaky": true,
+          "showTextovePoznamky": true,
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 7
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true
+          },
+          "gridColor": "#FFD0D0D0",
           "id": "bccadccd-f74f-431d-95d3-d36fff88d9c4",
           "x": 0,
           "y": 2,

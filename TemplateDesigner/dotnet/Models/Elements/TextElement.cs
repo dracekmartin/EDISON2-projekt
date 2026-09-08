@@ -14,7 +14,19 @@ public class TextElement : TemplateElement
     /// <summary>Styl textu - font, barvy, zarovnání, řádkování, padding.</summary>
     public TextStyle Style { get; set; } = TextStyle.CreateDefault();
 
-    public bool WordWrap { get; set; } = true;
+    /// <summary>
+    /// Zalamovat dlouhý text do dalších řádků. ⚠️ **Výchozí vypnuto** (rozhodnutí Jan 3. 9.):
+    /// nový textový prvek je typicky nadpis nebo jeden údaj na jednom řádku, a zalomení tam
+    /// rozhodí layout víc, než pomůže. Kdo chce odstavec, si ho zapne.
+    /// </summary>
+    /// <remarks>
+    /// Existující šablony to nepotká - hodnota se do JSON zapisuje vždy (serializace vynechává
+    /// jen null), takže si každý prvek nese tu svou.
+    ///
+    /// <para>Řídí i to, jak se text zmenšuje, když se nevejde: se zalamováním nejdřív přeteče
+    /// na další řádek a teprve pak se zmenšuje na výšku, bez zalamování se zmenšuje na šířku.</para>
+    /// </remarks>
+    public bool WordWrap { get; set; }
 
     /// <summary>
     /// Když Height = null a WordWrap = true, výška se dopočítá z textu.
@@ -44,7 +56,13 @@ public class TextElement : TemplateElement
 
         // V designeru (bez dat) omezit velikost fontu, aby placeholdery typu {NAZEV_POLE}
         // nepřetékaly - zobrazit čitelně místo ve skutečné velikosti.
-        float effectiveFontSize = ctx.Data is null ? Math.Min(rs.FontSize, 10f) : rs.FontSize;
+        // Zmenšit do prvku - stejné pravidlo jako u buněk tabulek a prvků jízdních řádů: pevná
+        // výška zmenší písmo, prázdná nechá prvek dorůst. Pod mezí se text ořízne (viz MinScale).
+        // Na plátně návrháře (bez dat) se nezmenšuje: text je tam ještě s placeholdery, takže by
+        // se škála počítala z jiné délky, než jaká se vytiskne - a font je už omezený na 10 pt.
+        float effectiveFontSize = ctx.Data is null
+            ? Math.Min(rs.FontSize, 10f)
+            : rs.FontSize * ComputeShrinkScale(resolvedText);
         float fontSizePx = ctx.Px(effectiveFontSize * ResolvedTextStyle.PtToMm);
 
         var typeface = FontResolver.Resolve(rs.FontFamily, rs.ToSKFontStyle());
@@ -155,6 +173,100 @@ public class TextElement : TemplateElement
         };
         CopyBaseTo(clone);
         return clone;
+    }
+
+    // ── Zmenšení do prvku ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Kam nejníž smí zmenšení jít - polovina nastavené velikosti, nikdy pod 4 pt.
+    /// </summary>
+    /// <remarks>
+    /// 4 pt je dolní hranice, kterou dovolí zadat pole Velikost, takže mez nemůže vyrobit písmo,
+    /// jaké by uživatel nesměl nastavit ručně. Polovina drží autorův záměr: nadpis 40 pt se
+    /// nezmenší pod 20 pt, drobný text 8 pt pod 4 pt. (Rozhodnutí Jan 3. 9. - tabulky a prvky
+    /// jízdních řádů mez nemají, u textu se ale schválně nepůjde do nečitelna.)
+    /// </remarks>
+    public const float MinScale = 0.5f;
+
+    /// <summary>Absolutní dno v bodech - shodné s <c>Min</c> pole Velikost.</summary>
+    public const float MinFontPt = 4f;
+
+    /// <summary>
+    /// O kolik se musí písmo zmenšit, aby se text vešel do prvku (1 = vejde se). Bere v potaz
+    /// jak výšku (zalomené řádky), tak šířku (jednořádkový text), a nikdy nejde pod
+    /// <see cref="MinScale"/> ani pod <see cref="MinFontPt"/> - pod mezí se text ořízne jako dřív.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Jediné místo výpočtu - <see cref="Render"/> i hláška o zmenšení musí dostat totéž číslo,
+    /// jinak se tiskne něco jiného, než co hláška tvrdí. Dynamická výška (prázdná Height) se
+    /// nezmenšuje: prvek si doroste, což je totéž pravidlo jako u prvků jízdních řádů.
+    /// </remarks>
+    public float ComputeShrinkScale(string? resolvedText)
+    {
+        if (string.IsNullOrEmpty(resolvedText) || Width <= 0) return 1f;
+
+        var rs = Style.Resolve();
+        if (rs.FontSize <= 0f) return 1f;
+
+        float potreba = WordWrap ? PotrebnaSkalaNaVysku(resolvedText, rs) : PotrebnaSkalaNaSirku(resolvedText, rs);
+        if (potreba >= 1f) return 1f;
+
+        float dnoZVelikosti = MinFontPt / rs.FontSize;   // 4 pt jako podíl nastavené velikosti
+        return Math.Max(potreba, Math.Max(MinScale, Math.Min(1f, dnoZVelikosti)));
+    }
+
+    /// <summary>Text se vejde do prvku i po zmenšení? False = pod mezí se ořízne.</summary>
+    public bool ContentOverflows(DataContext? data)
+    {
+        var text = data?.ResolvePlaceholders(Text) ?? Text;
+        if (string.IsNullOrEmpty(text) || Width <= 0) return false;
+
+        var rs = Style.Resolve();
+        if (rs.FontSize <= 0f) return false;
+
+        float potreba = WordWrap ? PotrebnaSkalaNaVysku(text, rs) : PotrebnaSkalaNaSirku(text, rs);
+        return potreba < ComputeShrinkScale(text) - 0.001f;
+    }
+
+    /// <summary>Zalomený text: zmenšit tak, aby se všechny řádky vešly do pevné výšky.</summary>
+    private float PotrebnaSkalaNaVysku(string text, ResolvedTextStyle rs)
+    {
+        if (Height is not { } vyska || vyska <= 0f) return 1f;   // dynamická výška roste sama
+        if (VyskaTextu(text, rs, 1f) <= vyska) return 1f;        // vejde se v plné velikosti
+
+        // Škála je vidět až po přeměření (menší font = jiné zalomení = jiný počet řádků), takže
+        // se hledá půlením. Deset kroků dá přesnost pod 0,1 %, což je pod rozlišením tisku.
+        float dolni = 0f, horni = 1f;
+        for (int i = 0; i < 10; i++)
+        {
+            float stred = (dolni + horni) / 2f;
+            if (VyskaTextu(text, rs, stred) <= vyska) dolni = stred; else horni = stred;
+        }
+        return dolni > 0f ? dolni : horni;
+    }
+
+    /// <summary>Jednořádkový text: zmenšit tak, aby se vešel do šířky prvku.</summary>
+    private float PotrebnaSkalaNaSirku(string text, ResolvedTextStyle rs)
+    {
+        var typeface = FontResolver.Resolve(rs.FontFamily, rs.ToSKFontStyle());
+        float refMmToPx = 96f / 25.4f;
+        using var font = new SKFont(typeface, rs.FontSize * ResolvedTextStyle.PtToMm * refMmToPx);
+
+        float sirkaTextu = font.MeasureText(text);
+        float sirkaPrvku = Width * refMmToPx;
+        return sirkaTextu > sirkaPrvku && sirkaTextu > 0f ? sirkaPrvku / sirkaTextu : 1f;
+    }
+
+    /// <summary>Výška zalomeného textu v mm při dané škále písma.</summary>
+    private float VyskaTextu(string text, ResolvedTextStyle rs, float scale)
+    {
+        var typeface = FontResolver.Resolve(rs.FontFamily, rs.ToSKFontStyle());
+        float fontSizeMm = rs.FontSize * scale * ResolvedTextStyle.PtToMm;
+        float refMmToPx = 96f / 25.4f;
+
+        using var font = new SKFont(typeface, fontSizeMm * refMmToPx);
+        var lines = TextWrapHelper.WrapText(text, font, Width * refMmToPx);
+        return lines.Count * fontSizeMm * rs.LineSpacing;
     }
 
     // ── Word wrap helpers ────────────────────────────────────────────────────

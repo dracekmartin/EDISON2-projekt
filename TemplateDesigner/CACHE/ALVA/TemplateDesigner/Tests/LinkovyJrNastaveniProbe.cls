@@ -1426,11 +1426,12 @@ ClassMethod TurnusyLinky(db As %String, sku As %String, lin As %String) As %Stri
 
 /// **Které linky s víc zónami jde vybrat ve výběru linek** (`N1`, ruční zkoušení).
 ///
-/// ⚠️ Výběr linek si načte **prvních 200 linek skupiny** (`EDList.Instance` posílá `limit = 200`)
-/// a hledání pak filtruje jen je - linka za dvoustovkou se v dialogu nenajde, i když v datech je.
-/// Sonda proto prochází linky **v pořadí výběru** a vypíše jen ty, na které uživatel opravdu dosáhne.
+/// ⚠️ **Historická poznámka:** do 3. 9. si výběr linek načetl jen **prvních 200 linek skupiny**
+/// a hledání filtrovalo jen je, takže linka za dvoustovkou se v dialogu nenašla, i když v datech
+/// byla (`B103`). Dnes se načte celá skupina, takže sonda pokrývá totéž, co uživatel vidí -
+/// parametr `POCET` zůstal jen pro ruční zúžení výpisu.
 ///
-/// IN: `SKUPINA` (výchozí 1), `POCET` (kolik linek výběr načte, výchozí 200).
+/// IN: `SKUPINA` (výchozí 1), `POCET` (kolik linek projít, výchozí 200).
 /// OUT(n) = "linka - název | zastávka: zóny", OUT("SOUHRN") = kolik z načtených jich má víc zón.
 ClassMethod ZonyVeVyberuLinek(ByRef sys As %String) As %Status
 {

@@ -85,7 +85,13 @@ Method TestGold0365001()
 	// ADRESA_DOPRAVCE…) a do řádků kolekce DOPRAVCI; fax se týž den zase vyndal (na vývěsce nemá co
 	// dělat, rozhodnutí Jan). Obojí mění jen md5 - počty stránek, zastávek, odjezdů i poznámek
 	// zůstaly shodné.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=/CJl6SXe6w6EjaZZU8+giA==")
+	// Re-baseline 2026-09-03 (`B113`): písmena variantních sloupců berou disjunktní sadu „ADLMNPTY"
+	// místo abecedy od A - řady variant a rozdílů tras se kryly a legenda pak jedno písmeno
+	// vysvětlila cizím textem. ⚠️ **Počty jsou shodné do jednoho** (pages/zast/odj/pozn), takže se
+	// neztratil žádný spoj ani řádek; změnila se jen písmena od TŘETÍ varianty výš („A" zůstává).
+	// Ověřeno izolovaně: s výchozí sadou vrácenou na „ABCDEFGHIJKLMNOPQRSTUVWXYZ" projdou všechny
+	// tři odtisky beze změny, takže rozdíl nepochází odjinud než z té sady.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=ASDvu+CXx3P00HUhqvRh+Q==")
 }
 
 Method TestGold0365005()
@@ -120,7 +126,9 @@ Method TestGold0365005()
 	// Re-baseline 2026-08-31 (#13158): dopravce po řádcích + přejmenování na KONECNA_ZASTAVKA,
 	// viz gold 0365001. Jen md5, počty beze změny.
 	// Re-baseline 2026-09-01 (#13158): rozložená pole dopravce + kolekce DOPRAVCI, viz gold 0365001.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=TXam/Ht5a/bJVtrFSaFqtQ==")
+	// Re-baseline 2026-09-03 (`B113`): disjunktní sada písmen variant - viz vysvětlení u gold 0365001.
+	// Počty shodné do jednoho, ověřeno izolovaně vrácením sady na abecedu.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=TMs4QoRMm/AJ7l9eFFLNsQ==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -199,7 +207,9 @@ Method TestGold0330530()
 	// má název a telefon, ale ne ulici („Oblast Písek"). Tahle linka je jediná ze sady, kde se to
 	// projevilo - je to zároveň důkaz, že záloha opravdu zabírá. Opět jen md5, počty shodné.
 	// Re-baseline 2026-09-01 (#13158): rozložená pole dopravce + kolekce DOPRAVCI, viz gold 0365001.
-	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=MSlwyAyxhvAp2gAwYqcjVw==")
+	// Re-baseline 2026-09-03 (`B113`): disjunktní sada písmen variant - viz vysvětlení u gold 0365001.
+	// Počty shodné do jednoho, ověřeno izolovaně vrácením sady na abecedu.
+	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=laGqWYch6GJwyM369xhRwA==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

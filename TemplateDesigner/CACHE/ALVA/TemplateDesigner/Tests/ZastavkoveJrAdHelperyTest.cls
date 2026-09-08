@@ -327,16 +327,46 @@ Method TestZiskejMarkerDedupuje()
 
 Method TestPismenoVarianty()
 {
-	// První varianta bez písmene (default) - hlavní trasa čistá, odchylky A, B…
+	// První varianta bez písmene (default) - hlavní trasa čistá, odchylky od A.
+	// Výchozí sada je "ADLMNPTY" (disjunktní proti rozdílům tras), takže po A jde D, ne B.
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(1, 1), "", "první sloupec bez písmene")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(2, 1), "A", "druhý sloupec → A")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(27, 1), "Z", "27. sloupec → Z")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(28, 1), "V27", "za Z → nouzový fallback V27")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(3, 1), "D", "třetí sloupec → D (ne B, to má sada rozdílů)")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(9, 1), "Y", "devátý sloupec → poslední z sady")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(10, 1), "AA", "přes délku sady se zdvojuje, ne V27")
 
 	// Písmena od prvního sloupce
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(1, 0), "A", "první sloupec → A")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(26, 0), "Z", "26. sloupec → Z")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(27, 0), "V27", "27. sloupec → V27")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(8, 0), "Y", "osmý sloupec → poslední z sady")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(9, 0), "AA", "devátý → zdvojení")
+
+	// Vlastní sada od zákazníka se bere DOSLOVA, i s kolizí proti rozdílům tras
+	// (rozhodnutí Jan 2. 9.: tiše do zadaného nastavení nesaháme).
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(2, 1, "ABCDE"), "A", "vlastní sada: druhý → A")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(3, 1, "ABCDE"), "B", "vlastní sada: třetí → B (kolize je volba zákazníka)")
+}
+
+/// Obě sady písmen u minuty musí být disjunktní - jinak jedno písmeno znamená dvě věci
+/// a legenda ho vysvětlí cizím textem (nález kolega + Jan 2. 9. na vývěsce linky 111).
+Method TestSadyJsouDisjunktni()
+{
+	set varianty = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).#SadaVariantDefault
+	set rozdily  = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).#SadaRozdiluDefault
+
+	// Velikost písmen se nerozlišuje: "V" vedle "v" ve výšce písma odjezdů nikdo nerozezná.
+	set rozdilyU = $zcvt(rozdily, "U")
+	for i = 1:1:$length(varianty) {
+		set zn = $extract(varianty, i)
+		do $$$AssertTrue($find(rozdilyU, $zcvt(zn, "U")) = 0, "písmeno "_zn_" je i v sadě rozdílů tras")
+	}
+
+	// A značky ostatních věcí u minuty: R místenka, K kola, u pokračující spoj, H/F bezbariér.
+	for zn = "R", "K", "U", "H", "F" {
+		do $$$AssertTrue($find($zcvt(varianty, "U"), zn) = 0, "písmeno "_zn_" už u minuty znamená něco jiného")
+	}
+
+	// Sada rozdílů tras zůstává 1:1 legacy - je to parita, nesmí se „vylepšit".
+	do $$$AssertEquals(rozdily, "BCEFGHIJOQRWeijqsvwxz", "sada rozdílů tras se nemění (parita s legacy)")
 }
 
 Method TestNormalizLinku()

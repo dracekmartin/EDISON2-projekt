@@ -256,6 +256,19 @@ Dvoufázový algoritmus:
 - `typstrih=1` - skupiny jako samostatné bloky, ale **jen pokud to nezhorší celkový počet
   stránek** (heuristika, ne tvrdé pravidlo).
 
+✅ **Tuhle volbu máme od 6. 9.** (`TableLayout.ZvolBloky`) - u **jednosměrného** tisku. Je to důvod,
+proč ze starého modulu koukají listy jen s pracovními dny, přestože to nikdo nenastavil.
+
+⚠️ **U obousměrné sestavy se vědomě lišíme.** Starý modul obousměrnou tabulku, která se má řezat,
+**zahodí** a tiskne po směrech (`JRapiLinPrtWin.mac:628`: obousměrný tisk zůstane jen tehdy, když řez
+vyšel na jediný blok - vodorovně i svisle); uživateli o tom neřekne nic, takže si dá „Ano" a dostane
+dvě jednosměrné sady. My obousměrný tisk **držíme** a řežeme ho podle šířky (rozhodnutí Jan 6. 9.:
+co je zaškrtnuté, to se tiskne, žádný tichý fallback). Řez podle skupin tam nejde použít ani
+teoreticky - slot nese spoj z každého směru a jejich hranice skupin padnou jinam.
+
+Vynucené oddělení nastavením u linky (`MHD2,rozdelitUmeleSekceNaVlastniStranky`) neděláme: na
+93 133 linkách šesti firem ho nemá zapnuté nikdo, takže by nikomu nic nezměnilo.
+
 Řezy (`cutx`/`cuty`) = greedy bin-packing sloupců/řádků do šířky/výšky tiskové plochy, s podporou
 ručního zlomu na konkrétním TČ (`pset("SET",3,"arr",1,8)`). **Toto je nová layoutová schopnost,
 kterou `PageLayoutEngine` dnes nemá** - dnešní engine dělá vertikální flow sekcí, ne 2D chunking
@@ -1092,7 +1105,7 @@ podněty - je to náš vydaný závazek a při plánování vln s nimi tak zach�
 | **#8576** | KU HK | **Zóny do více sloupců**, když má zastávka víc zón (hraniční zastávka mezi zónami jednoho IDS - PID, IDZK). Dnes je zóna jedna hodnota v jednom sloupci | vlna 2 (datová část) + vlna 6 (sloupce jako u km) |
 | **#8372** | KORID | **„Vkládat prázdné sloupce" má být volba u tisku, ne v šabloně** - jinak si na to musí dělat druhou šablonu. Navíc u linek s málo spoji to dnes roztáhne rozestupy „do absurdna" | vlna 5 (`Strih`), a rozhoduje o tom, že to bude **parametr sestavy** |
 | **#9417** | KORID | **Dopravci v záhlaví jen za spoje na dané stránce.** U velkých linek na A4 (Praha-Rumburk) se vypisují všichni a hlavička přeteče pod tabulku | ⚠️ **Rozpadá se na dvě věci** (rozbor 25. 8.): **přetečení pod tabulku** ✅ vyřešeno - nová šablona má záhlaví ve vlastní sekci, takže tabulku odsune. **Filtrování dopravců** zbývá; tiket žádá **per stránka**, ne per blok. ⚠️ Zákazníkův případ je **souhrnný JŘ dvou linek** (100 400 + 104 400); sdružování se řeší **v jízdních řádech, ne u nás** (upřesnil Jan 25. 8.), takže k návrháři může dorazit jako **jedna linka s mnoha dopravci** - pak odklad padá. Náš výčet navíc zatím nevypisuje čísla spojů u dopravce, takže je kratší než ten, kvůli kterému tiket vznikl |
-| **#7487** | KORID | **Legenda do 4 sloupců** (dnes 1-3) s přetékáním delší poznámky do dalšího sloupce. Motivace je táž jako u #9417: šetřit místo, aby legenda nespadla pod tabulku | vlna 6 (vícesloupcová legenda; dnes je legenda tabulka z dat, sloupcový tok nemá) |
+| **#7487** | KORID | **Čtyři poznámky na řádek u jednoho druhu** (starý umí 1-3). ⚠️ **NEJDE o sloupce legendy** - viz oprava 3. 9. níže. Motivace je táž jako u #9417: šetřit místo, aby legenda nespadla pod tabulku | neumíme: náš počet sloupců je jednotný pro celou legendu, starý má počet **per druh poznámky** |
 | **#9283** | KOVED | **Sdružený JŘ více linek** včetně výlukové varianty, v grafické podobě IDZK. Zákazník si sám řekl o kalkulaci, čeká placenou práci | ⚠️ **mění zařazení `C6`** - „souhrnné JŘ" v roadmapě viselo jako „nejdřív ověřit, jestli to zákazník chce". Chce ⚠️ **Není naše práce** (upřesnil Jan 25. 8.): sdružování linek se řeší v jízdních řádech, návrhář dostane výslednou linku a tiskne ji jako každou jinou. |
 
 ### 14.2 #9088 rozepsaný (TRANSDEV, slovenská instalace)
@@ -1119,9 +1132,11 @@ Pět samostatných věcí v jednom tiketu:
 
 ### 14.3 Co se ukázalo jako mimo tento track
 
-- **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky, ne pod ní. V TD to **umíme už dnes**:
-  legenda je samostatný prvek, který si uživatel položí, kam chce. Ověřit na reálné šabloně a tiket
-  zavřít, ne plánovat.
+- **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky, ne pod ní. Umístit vedle jde,
+  prvky mají volnou pozici. ⚠️ **Ale u linkových to není prvek Poznámky** - ten je vázaný na druh
+  agendy `STOP`; u linkových se legenda skládá **dynamickou tabulkou** nad kolekcí `POZNAMKY`, takže
+  uživatel nedostane značky ani řazení, jen sloupce textu. Tvrzení „umíme už dnes, legenda je
+  samostatný prvek" platilo pro zastávkové (zjištěno 3. 9.). Souvisí s `B117`.
 - **#13070** (BBSK) - vypadá jako linkový, ale zákazníkova předloha je **odjezdová relace**;
   patří tracku Relace, kde ještě nic není.
 - **#8175** (TRANSDEV) + bod 12 z **#8785** (POVED) - řazení spojů volitelně per linka a ruční pořadí.
@@ -1253,3 +1268,308 @@ TemplateDesigner\.claude\docs\architektonicka-rozhodnuti-agendy.md
 TemplateDesigner\.claude\rules\new-element-checklist.md
 TemplateDesigner\.claude\rules\cache-api.md
 ```
+
+---
+
+## 15. Přípojné řádky - legacy proti nám (projito 4. 9. 2026)
+
+Vzniklo při dokládání `#11300`, když Jan poslal výtisk starého modulu téže linky.
+
+**Co to je:** spoj má u zastávky zadané omezení návaznosti - buď tam **vyčká** příjezdu jiného
+spoje (uzel `31`), nebo na něj jiný spoj **navazuje** (uzel `32`). Přípojný řádek to ukáže pod
+řádkem zastávky: čas toho druhého spoje ve sloupci spoje, kterého se to týká.
+
+**Jak to dělá starý modul** (`JRapiLinPrtWin01.mac:PripojneRadky`): řádek nepatří spoji, ale
+**skupině**. Agregační klíč je `tarifní číslo | směr | druh dopravy | (linka)`, takže do jednoho
+řádku se sejdou přípoje různých spojů, když vedou stejným směrem stejným druhem dopravy; časy se
+rozdělí do sloupců podle spoje. Když už ten spoj ve řádku čas má, založí se řádek další.
+Hrubost řídí volba **„Návaznosti v přípojných řádcích"** v jeho návrháři, per sekce šablony:
+*Ne* (linka v klíči není, slučuje se nejvíc) / *Ano, dle licence* / *Ano, dle IDS*
+(`in("A",2,"arr",9)`, `stDL_NavaznostiVPripojnychRadcich`). Popisek je souhrnný -
+**„ze směru Trhové Sviny"** u vyčkání, **„směr České Budějovice"** u navázání, plus „př" / „od"
+a ikona druhu dopravy.
+
+**Jak to děláme my:** řádek per (spoj × přípoj), žádná agregace, popisek konkrétní („vyčká na
+spoj 21 linky 320163 do Trhové Sviny"). Zapíná se jedním přepínačem **Přípojné řádky** na prvku
+tabulky, bez volby hrubosti. Druh dopravy se u přípoje na drátě **vůbec neposlá** (používá se jen
+v textu poznámky) a směr je slitý do textu popisku.
+
+### 15.1 Co z toho zbývá
+
+- ✅ **Neúplný přípoj řádek nedostane** (hotovo 4. 9.). Starý modul zahodí přípoj bez minuty
+  příjezdu nebo bez směru; my jsme obojí posílali dál a v tabulce vznikl řádek s časem „00:00"
+  a prázdným popiskem. **Naměřeno: 965 z 71 889** přípojů, které řádek dělají (CB_CSADAD 504,
+  CB_GWBUS 461, VS_CSAD a KV_DP nula). Drží `LinkovyJrPripojeTest`.
+- ✅ **Slučování řádků podle směru** (hotovo 4. 9., rozhodnutí Jan: šetření místa váží víc než
+  číslo linky u každého řádku). Volba **Slučovat přípoje** na prvku: *Ne* / *Podle směru* /
+  *Podle směru a linky*, výchozí **podle směru** - dnešní tvar byla odchylka, ne volba, takže se
+  výchozí uplatní i na šabloně uložené dřív. Sloučený řádek má popisek „ze směru X" / „směr X".
+  Klíč kopíruje legacy (tarifní číslo + směr + druh dopravy, volitelně linka); na drát proto přibylo
+  pole `AVL` (aditivní změna, zlaté odtisky přebaselinovány v témž commitu).
+  ⚠️ **Dva přípoje téhož spoje zakládají řádek další** - jeden řádek nese od jednoho spoje jen
+  jeden čas, jinak by se tiše přebil. Drží `PripojeSlucovaniTests` (čtyři mutace shozené).
+- ✅ **Vlastní „linka pro tisk" přebíjí číslo linky** (hotovo 4. 9.). Starý modul to dělá **vždy**,
+  když je pole vyplněné (`JRapiLinPrtWin01.mac:76,135`) - u vyčkání 11. položka věty, u navázání
+  12. **Naměřeno: 3 515 z 71 889** přípojů ho má a u **3 512** se číslo liší - CB_GWBUS 29 %,
+  VS_CSAD 10 %, CB_CSADAD 0,2 %, KV_DP nula. U vlaku stojí v surovém poli číslo vlaku („Os 8009"),
+  ale tisknout se má označení linky („S1"); jinde je to zkrácené číslo (`330518` → `518`) nebo
+  bez vodicích nul (`000485` → `485`).
+  ⚠️ **Linky jádra zlatých odtisků to pole nemají**, takže opravu nekryjí - drží ji
+  `LinkovyJrPripojeTest` na `CB_GWBUS 2 / 0320144` (mutace „přepis zrušen" ji shodí).
+
+- ⛔ **Volba „Návaznosti v přípojných řádcích" (Ne / dle licence / dle IDS) se nedělá** - v přípojných
+  řádcích nic nemění. Řídí jen to, jestli linka jde do agregačního klíče, a hodnota *dle IDS*
+  padá v `$case(typslucovani,1:liv,:"")` do výchozí větve, tedy se chová stejně jako *Ne*.
+  ⚠️ **Není to o tom, které číslo linky se tiskne** - to řeší „linka pro tisk" výše a děje se
+  nepodmíněně. Naše volba **Slučovat přípoje** (*Ne* / *Podle směru* / *Podle směru a linky*)
+  legacy trojici pokrývá a není matoucí (do 4. 9. tu bylo naopak napsané, že jde o volbu čísla -
+  vyvráceno měřením).
+---
+
+## 16. UZAVŘENO: spoje s trojčíselným číslem se nekreslily (4. 9. 2026)
+
+**Projev:** na `CB_GWBUS 2 / 0320144` chyběly v tabulce spoje **501-509**.
+
+**Vyřešeno.** Po opravě „šablona bez vlastních sloupců už nedostane cizí rozvržení"
+(changelog 2026-09-04 (12)) se na téže lince tiskne první blok jako `61 1 31 33 5 73 37 63 501`
+vlevo a `2 62 4 32 6 34 64 38 502` vpravo - tedy přesně prvních devět spojů každého směru
+v serverovém pořadí. Řez do bloků funguje. Ověřeno v aplikaci 4. 9. odpoledne.
+
+⚠️ **Nelze doložit, která změna to spravila** - původní běh se nezreprodukuje (měl i jiné období
+platnosti, 2025 místo 2026). Proto neplatí ani pozorování zapsané tu ráno („první blok obsahuje
+49, 71 a 51"): bylo z rozbitého stavu.
+
+### 16.1 Proč se nedělá varování o nezařazených spojích
+
+Zvažovalo se přidat u linkových JŘ varování „spoj nesedl do žádného sloupce" (jako mají vývěsky
+`NEZARAZENE_SPOJE`). **Zamítnuto 4. 9. (rozhodnutí Jan):** varování, po kterém sloupec pořád chybí,
+je obklad - a hlavně **ta situace se z aplikace vyvolat nedá**:
+
+- Spoj by vypadl jen definicí sloupců se **značkovými filtry** (`znackyJen`/`znackyBez`), ale ten
+  editor (`DepartureGroupEditorDialog`) zapisuje **jen do prvku vývěsky**. Linková tabulka dostane
+  `CustomColumns` výhradně jako hotový vzor ze serveru (den-based, bez filtrů), nebo null - editor
+  pro ručně skládané sloupce u ní není.
+- Druhá cesta je spoj s **nerozpoznanou týdenní platností** (`DnySpoje` → „-"). To ale není vada,
+  ale **vědomá parita**: starý modul takový spoj netiskne také (`KamPrt=0`).
+- Vývěska, kde se díra v definici vyrobit dá, varování už má.
+
+⚠️ **Kdyby k linkové tabulce editor vlastních sloupců se značkami přibyl, tahle mezera se otevře** -
+pak se rozhoduje ne o varování, ale o tom, kam takový spoj vytisknout (legacy dává spoj bez
+dopočítané platnosti do **všech** sekcí, `JRapiLinPrtWin:476-481`).
+
+### 16.2 `#11300` (KORID) - co zbývá udělat
+
+**Zákazník** Jaroslav Smištík, KORID; tiket **pozastavený** od 8. 12. 2025 s odpovědí Jiřího Bžocha
+*„úpravu letos nestihneme, příští rok to spojíme s novým tiskovým modulem"*. Od té doby mu nikdo
+nic neukázal, takže zbývá **ukázka a odpověď, ne kód**.
+
+**Co přesně chce** (jeho slova): *„uvítali bychom, kdyby byla možnost prázdný přípojový řádek
+(v situacích kdy je PD a víkend na zvláštní tabulce/listu) netiskl a šetřil místo."* Na jeho druhém
+obrázku je list **jen s pracovními dny** a v něm řádek `ze směru Nové Zákupy` úplně prázdný - ty
+přípoje jsou jen o víkendu. Je to **linkový tabelární JŘ** (linka 260, IDOL), přes název tiketu
+„Dotaz k vývěsným JŘ".
+
+**Čím je to hotové:**
+
+- **Prázdný přípojný řádek u nás nemůže vzniknout konstrukcí** - řádek se negeneruje pro zastávku,
+  ale pro každý přípoj **spojů toho bloku** (`PrazdnyPripojnyRadekTests` + dvě mutace).
+- **Přípoje téhož směru jdou na jeden řádek** (volba „Slučovat přípoje", 4. 9.) - týž tvar, jaký má
+  jeho výtisk ze starého modulu; do té doby jsme dělali řádek pro každý spoj.
+- ⚠️ **Jeho rozvržení jde vyrobit teprve od 6. 9.** Žádá o šetření místa na listu jen s pracovními
+  dny, a oddělování skupin dnů jsme do té doby neměli (§6.3). **Musí se tisknout jednosměrně** -
+  u obousměrné sestavy se skupiny neoddělují a prázdné buňky v přípojném řádku vzniknout mohou.
+
+**Postup, až poběží dev server:**
+
+1. Otevřít linkovou šablonu, v parametrech sestavy **vypnout Obousměrný tisk**.
+2. Vzít `CB_CSADAD 1 / 0330511` směr Tam - devět spojů a přípoj jen tři (9, 13, 31 na tarifním
+   čísle 19). ⚠️ Jeho vlastní firma (ČSAD Liberec / IDOL) na dev serveru **není**, proto náhrada.
+3. Exportovat a ověřit dvojí: každá tabulka nese jen jednu skupinu dnů, a kde přípoj není, není
+   ani řádek.
+4. Poslat mu to a tiket zavřít.
+
+### 16.3 Měření 4. 9. - sonda
+
+Sonda `ALVA.TemplateDesigner.Tests.LinkovyJrSpojeProbe` je read-only a zůstává použitelná pro
+jakoukoli linku: `Spoje` vypíše z odpovědi `GetData` číslo, směr, skupinu dnů, počet neprázdných
+časů, NZ a platnost per spoj; `Parametry` vypíše persistované parametry tisku uložené uživatelům;
+`Sablony` řekne, které šablony agendy nesou vlastní definici sloupců.
+
+Naměřeno na `0320144`: **43 spojů na směr**, obousměrný tisk je slévá do jedné stránky s 86 spoji.
+Spoje 5xx jsou nejúplnější sloupce (501-507 mají čas na všech 36 zastávkách). ⚠️ **Premisa
+„obousměrný tisk vypnutý" byla špatná** - uložené parametry mají `OBOUSMERNY_TISK: true`.
+
+### 16.4 Vada nalezená po cestě - `B122`
+
+`Rozvrzeni` (helper, na kterém stojí testy „blok se vejde do šířky prvku") volá `BuildColumns`
+s **počtem slotů**, kdežto kreslení (`LineTableElement:1215`) i `Vejde` s **počtem sloupců**
+(`naBlok * SloupcuNaSlot`). U obousměrné sestavy tedy testy měří polovinu sloupců a ten invariant
+je pro dvousměrné linky nehlídaný. `TableLayout.RozdelSpojeDoBloku` navíc nikdo nevolá (mrtvý kód).
+
+
+---
+
+## 17. Postskriptový tisk - co z něj umíme nastavit (projito 7. 9. 2026)
+
+Podklad pro zákazníka, který dnes tiskne přes **postskriptový výstup**, ne přes Windows tisk.
+Vzniklo při přípravě školení; čísla nejsou odhad, jsou **odečtená z programu zákazníka**
+`^JRSET("PS","NVYVESY")` na `CB_CSADAD` (vývěska linky) a z inventáře nastavení u linky
+`gSetLinPrt^JRapiLin1:183`.
+
+> ⚠️ **Postskript ≠ Windows tisk.** Jsou to dvě různé cesty s různým kontraktem. Inventář v `§13.2`
+> popisuje **Windows** engine (`mkPLinWin`); tady jde o `mkLinPS^JRapiLinPrtPS`. Některé věci má jen
+> jedna z nich (tečková výplň jen postskript, `SablonaProTiskA4` jen Windows).
+
+### 17.0 Kilometrické sloupce - kde se filtrují a co bereme špatně (změřeno 7. 9.)
+
+**Km sloupec není spoj, ale profil vzdáleností** podél celé linky (řada km po tarifních číslech).
+Profily se **předpočítají a uloží u linky**; starý tisk ani my nic nepočítáme ze spojů.
+
+**Kde se filtruje:** v `mkKms` (`JRapiLinUtlKms1.mac:36-200`), která ty seznamy **generuje** při
+uložení linky. Čtyři kroky: posbírat profily ze spojů → zahodit profil **obsažený v jiném** →
+volitelně (`Kms,MaxFiltr`) zahodit i ten, kterému v překryvu nevadí projetí `<` → poskládat profily
+k sobě → při překročení prahu `Kms,Filtr` (výchozí 10) mazat sloupce od toho startovního bodu, kde
+jich je nejvíc, a brát nejkratší s nejvíc projetími. Prahy jsou u linky (`PATCH,Kms,Filtr`) i
+globálně (`JRSET("Definice","Kms","Filtr")`).
+
+✅ **Filtr tedy máme zadarmo** - dostáváme už profiltrované seznamy. Není co implementovat.
+
+⚠️ **Co bereme špatně:** legacy čte pro **obousměrný** tisk **společný** seznam
+`^JRL(sku,lin,"K")`, pro jednosměrný ty směrové - `JRapiLinPrtWin.mac:2523`, větev `sm="A"`.
+Společný je odduplikovaná sjednocenina obou směrů. My čteme směrové vždy a v obousměrné sestavě je
+slepíme za sebe, čímž vyrobíme duplicitní sloupce.
+
+Změřeno na `CB_CSADAD 1 / 0330511` (sonda `LinkovyJrSpojeProbe.KmSloupce`):
+
+- společný `^JRL(...,"K")` = **8**, `KmsSmer,T` = **5**, `KmsSmer,Z` = **6** → my sázíme **11**
+- tři profily z těch jedenácti jsou obsažené v jiných: `T~01` v `Z~01`, `Z~04` v `T~03`,
+  a `T~05` je s `Z~06` totožný → 11 − 3 = 8
+- přepínač `PrintKmsSmerNo` u linky ani `PS_PrintKmsSmerNo` globálně nastavené nejsou, takže
+  jednosměrný tisk u téhle linky opravdu jede podle směrových seznamů
+- prahy: u linky `Kms.Filtr` = 10 a `MaxFiltr` = 0, globálně `Filtr` = 14
+
+Vedeno jako `B124`. **Se variantními sloupci jízdních dob v zastávkovém JŘ to nesouvisí** - ty
+vznikají z variant trasy u jedné zastávky a počítají se za běhu na klientovi.
+
+### 17.1 Jak je ten tisk vůbec nastavitelný
+
+Celý layout nese **PostScriptový program uložený v databázi** (`^JRSET("PS",...)`, sedm programů
+podle typu sestavy). Server ho předsadí před data a přepíše v něm **devět čísel a logo**
+(`LinkyPSTisk.cls:129-138`) - nic víc:
+
+| Přepisuje se | Význam | U nás |
+|---|---|---|
+| `/LM /RM /TM /BM` | okraje stránky (mm) | ✅ vlastnosti stránky |
+| `/Spojscale` | velikost písma hodin | ✅ styl datových buněk |
+| `/Spojscale1` | velikost písma minut | ✅ volba prvku „Velikost minut" (podíl) |
+| `/zastwidth` | šířka sloupce zastávek | ✅ šířka sloupce v editoru |
+| `/LgX /LgY` + program loga | logo a jeho pozice | ✅ obrázek |
+
+Všechno ostatní v programu je **mimo dosah uživatele** - kdo chce jiný vzhled, objedná si u nás
+úpravu `.ps` programu.
+
+### 17.2 Ostatní hodnoty v jejich programu
+
+Reálné hodnoty vývěsky `CB_CSADAD`: stránka **208 × 145 mm**, okraje 15/15/12/13, `zastwidth 45`,
+`Linkascale 11.0` (název linky), `Prepscale 7` (dopravce), `Spojscale 6.0` / `Spojscale1 4.5`
+(**poměr přesně 0,75**), `tl1 0.1` / `tl2 0.6` (tloušťky čar).
+
+| Program | Význam | U nás |
+|---|---|---|
+| `PLW`, `PLH` | rozměr stránky | ✅ vlastnosti stránky |
+| `Linkascale`, `Prepscale` | velikost názvu linky a řádku dopravce | ✅ styl textového prvku |
+| `tl1`, `tl2` | tenká a tlustá čára | ✅ tloušťka mřížky a rámečku prvku |
+| `Plascale` | velikost pásu značek platnosti | ✅ volba prvku „Velikost značek" (podíl, výchozí 1,5 = 9/6) |
+| `Vyscale`, `NSL`, `prvnip`, `more`, `h3`, `LgK`, `LgV`, `LgPl` | ⛔ **význam nedekódován** | - |
+
+⚠️ Poslední řádek je poctivě otevřený: ty proměnné jsem v programu **nedohledal k použití**,
+takže o nich netvrdím nic. Kdyby se ukázalo, že jde o něco podstatného, patří to sem doplnit.
+
+### 17.3 Obsahové volby u linky
+
+Postskript čte tytéž `^JRL(...,"PATCH",...)` klíče jako Windows tisk (inventář `§13.2 C`), plus
+vlastní: `PSVMargin`, `PSKMargin`, `PSVFont`, `PSVSIZA`, `PSKSIZA`, `SCALE`. Ty jsou právě těch
+devět čísel výše a **u nás se všechny přesunuly do šablony**.
+
+⚠️ **Font u linky jde přebít jen u vývěsky, ne u knihy** (`LinkyPSTisk.cls:88` - `s:vk="V"`).
+
+### 17.4 Co postskript umí a my ne
+
+Seřazeno podle toho, jak moc je to vidět:
+
+| Co | Kde v legacy | Stav |
+|---|---|---|
+| Negativní značky **visí pod číslem spoje** a využívají prázdné řádky nad prvním odjezdem, takže záhlaví neroste | `JRapiLinPrtPS1.mac:128-160` | ❌ máme pevný pás nahoře - stojí to výšku |
+| Odjezdová a příjezdová tabule zastávky (relace) | `RelacePSTisk.cls` | ❌ celá agenda chybí |
+| Seznam zastávek a označení zastávek jako samostatný tisk | `^JRSET("PS","SEZNAM"/"ZaOzn")` | ❌ |
+| Značky `od` / `pf` u výchozí a konečné zastávky | `JRapiLinPrtPS.mac` | ❌ |
+| „Jede po jiné trase" jako svislá vlnovka | `LomiK = "±"` | ⚠️ kreslíme znak `<` |
+| Skládání tištěného čísla linky (3místné / vlastní / tablo) | `PATCH,cisIDS` | ❌ |
+| Ruční zlom stránky na tarifním čísle | `PATCH,ZLOM` | ❌ vědomě (`B100`, 3 linky z ~93 tis.) |
+| Podtržení u zdvojených řádků příjezd/odjezd | `PATCH,podtrzeniPaJ` | ❌ (viz `B123`) |
+| Volby dělené linky (na jednu stranu, hlavička pro směr) | `gSetLinPrt` dta 21-23 | ❌ |
+| **Spoje se na části dělí rovnoměrně**, ne do plna | `JRapiLinPrtPS.mac:492` (`pokrac`) | ⚠️ my plníme bloky do plna a poslední necháme kratší |
+| **Řez po zastávkách se nesmí trefit na řádek s daty** | `JRapiLinPrtPS8.mac:79` (`rez`, `free`) | ⚠️ my řežeme na kterékoli hranici řádku |
+| Počet řádků tabulky na stránku zadávaný u linky | `PATCH,VERTIM` | ❌ u nás vychází z výšky sekce a papíru |
+
+#### Jak postskript stránkuje (dohledáno 7. 9.)
+
+**Řeže obojím směrem** a rozhodnutí o vejití je přitom **celé o šířce**
+(`JRapiLinPrtPS2.mac:194-219`): počítá se požadovaná šířka spojů obou směrů plus km sloupců proti
+kapacitě a zvlášť počet spojů v každém směru. Výška v té podmínce není - řeší se až při sazbě.
+
+- **Po spojích** (`pokrac`): šířka spojů směru / kapacita stránky = počet částí, a spoje se pak
+  rozdělí **rovnoměrně** (`slpage = dim/pages`).
+- **Po zastávkách** (`rez`): na část nejvýš `VertiM` řádků, a řez se **posouvá zpátky**, dokud
+  netrefí řádek, kde nejsou data (`free()` povolí řez jen tam, kde jsou tečky, `>`, `|` nebo čas).
+- **Sloučená obousměrná tabulka se zkouší jen u linky, která není jednosměrná** - u jednosměrné
+  podmínka navíc žádá spoje v obou směrech, takže se sloučení nepovolí nikdy.
+  Když sloučení neprojde: tisk po směrech, a když se ani jeden směr nevejde do šířky, tisk po
+  směrech s řezem (`TyptI` 3 → 4 → 5). To je ta tichá degradace, kterou vědomě nemáme
+  (rozhodnutí Jan 6. 9.).
+- Když má linka zakázané prázdné sloupce, postskript je při těsném vejití **odebere**
+  (`uprFreeTZ`) - jejich volba „vkládat prázdné sloupce" tam slouží jako záchrana.
+
+### 17.5 Co umíme my a postskript ne
+
+Není to jednosměrný seznam - stojí za to to na školení říct:
+
+- **Uspořádání na list** (2×A5 na A4, ořezové značky, táž vývěska N× k rozstříhání) - postskript
+  to nemá vůbec, dnes to za zákazníka řeší tiskař.
+- **Členění výstupu na soubory** s názvem z datových polí.
+- **Hlášení o přetečení** ještě před tiskem.
+- **Řez tabulky podle skutečné šířky prvku**, ne do pevné stránky - na `330511` se nám celá linka
+  vejde do jednoho bloku tam, kde postskript potřebuje dva.
+
+### 17.6 Font
+
+Program sází **Helvetica** (+ Bold, + Bold-Italic), přeencodovanou na české diakritice
+(`^JRSET("PS","NVYVESY")` uzly 92-97). Symboly (kladivo, vlak, autobus, trojúhelníky) **nejsou
+font** - jsou to vektorové procedury Type 3 psané přímo v programu (`/hammer`, `/loco`, `/bus`,
+`/whitetri`, `/blacktri`).
+
+⚠️ **Pravou Helveticu nemá ani Ghostscript**, který jejich `.ps` převádí na PDF - nahrazuje ji
+**Nimbus Sans**. Výtisk, který zákazník považuje za postskriptový vzhled, je tedy s velkou
+pravděpodobností Nimbus Sans, ne Helvetica. Ověřitelné ve vlastnostech jejich PDF (záložka Písma).
+Arial má s Helveticou shodné šířky (naměřeno na desetinu), ale jinou kresbu.
+
+### Šířka sloupce spoje - co kolik stojí (změřeno 7. 9. na `330511`, A5 na šířku, oba směry)
+
+Prvek 200 mm, 9 spojových slotů (obousměrně = 18 sloupců), popisné sloupce 95,6 mm z toho
+**39,6 mm samotné kilometry** (11 sloupců po 3,6 mm).
+
+- Základ sloupce spoje **5,03 mm**: text „23 59" při 4,8 pt měří 4,03 mm, zbytek je vnitřní
+  odsazení buňky (2× 0,5 mm). Odsazení je **absolutní**, takže při drobném písmu dělá čtvrtinu
+  šířky sloupce - odtud dojem „kolem minut je spousta místa".
+- Volba **„Stejně široké sloupce spojů" přidá 1,93 mm každému sloupci**, i tomu bez značky
+  návaznosti: jednotná šířka se počítá za celou linku, a stačí jediná značka kdekoli. Na téhle
+  lince to je 18 × 1,93 = **34,7 mm** a stojí to přesně jeden slot: zapnuté = 8 slotů ve dvou
+  blocích, vypnuté = **všech 9 v jednom** (194,8 mm). Vypnuté je zároveň chování starého tisku -
+  ten má pro sloupec čtyři šířky podle počtu značek (`JRapiLinPrtWin.mac:1793`).
+- Užší kilometry (3,6 → 2,6 mm) dají jeden blok taky, samostatně: **193,2 mm**. Legacy jich navíc
+  tiskne jen osm (`B124`).
+
+⚠️ **Rozpadlý tisk, který Jan viděl, nezpůsobila šířka.** Dva bloky pod sebou zdvojnásobí výšku
+tabulky a sekce byla nastavená „držet pohromadě", takže se druhý blok neměl kam odsunout
+(přesah 43,7 mm). Nápravu dnes hláška o přetečení říká sama.
+

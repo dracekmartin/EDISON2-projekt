@@ -177,6 +177,53 @@ public class DesignerCanvas
         return null;
     }
 
+    /// <summary>Jak blízko spodní hrany sekce se ještě chytá tažení výšky (px).</summary>
+    public const float SectionEdgeGrabPx = 4f;
+
+    /// <summary>
+    /// Sekce, za jejíž hranu kurzor chytá, a **kterým směrem tažení zvětšuje**. Null = kurzor
+    /// u žádné hrany není.
+    /// </summary>
+    /// <remarks>
+    /// Chytá se hrana v celé šířce stránky **i v levém štítku sekce**, aby se dala uchopit i tam,
+    /// kde na hraně stojí prvek. ⚠️ **Úchyt prvku má přednost** - řeší to volající, protože jinak
+    /// by u hrany sekce nešlo změnit velikost prvku, který se jí dotýká.
+    ///
+    /// <para>⚠️ **Patička se chytá za HORNÍ hranu a roste nahoru** (nález Jan 4. 9.). Je kotvená ke
+    /// spodku papíru (<see cref="GetSectionOrigins"/>), takže se zvětšuje směrem vzhůru - tažením za
+    /// spodní hranu by se kurzor od hrany odtrhl a patička by rostla proti pohybu myši. Ostatní
+    /// sekce se skládají shora dolů, takže u nich zvětšuje tažení dolů.</para>
+    ///
+    /// <para>U sekcí v toku **není potřeba zvlášť chytat horní hranu**: je to táž linka jako spodní
+    /// hrana sekce nad ní, takže se uchopí jako ona a chování zůstane jedno.</para>
+    ///
+    /// <para>Poslední sekce se záměrně nevynechává: roztažením poslední sekce roste papír, což je
+    /// legitimní (plátno není omezené na jednu stránku, viz <see cref="TotalPaperHeightPx"/>).</para>
+    /// </remarks>
+    public (Section Section, bool RosteNahoru)? HitTestSectionEdge(float canvasX, float canvasY, float canvasWidth)
+    {
+        var ps = _state.CurrentTemplate.PageSize;
+        float sectionW = ps.PrintableWidth * MmToPx;
+
+        foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
+        {
+            if (section.DesignerHeight is null) continue;   // dynamickou výšku počítá engine z obsahu
+
+            bool  paticka = section.Role == SectionRole.Footer;
+            float left    = ox - (_state.ShowSectionHeaders ? ps.MarginLeft * MmToPx + SectionTabWidthPx : 0f);
+            float hrana   = paticka ? oy : oy + SectionHeightPx(section);
+
+            if (canvasX >= left && canvasX <= ox + sectionW &&
+                MathF.Abs(canvasY - hrana) <= SectionEdgeGrabPx)
+                return (section, paticka);
+        }
+        return null;
+    }
+
+    /// <summary>Zpětně kompatibilní obal - vrací jen sekci, bez směru růstu.</summary>
+    public Section? HitTestSectionBottomEdge(float canvasX, float canvasY, float canvasWidth) =>
+        HitTestSectionEdge(canvasX, canvasY, canvasWidth)?.Section;
+
     /// <summary>Vrátí element a jeho sekci pod px pozicí na canvasu, nebo null.</summary>
     public (Section Section, TemplateElement Element)? HitTestElement(float canvasX, float canvasY, float canvasWidth)
     {

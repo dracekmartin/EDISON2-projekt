@@ -4,130 +4,10 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Aktuální focus - **`B113`** (písmena u minut se kryjí, vývěska lže
-> cestujícím) je rozhodnutá a jde vzít rovnou; po ní **`B103`** a **`B101`**.
-> U čtyř dalších je první krok dotaz ven (zákazník, kolegové z jízdních řádů), ne psaní kódu.
-
----
-
-## 🎯 Aktuální focus
-
-Vytaženo z Backlogu 31. 8. (rozhodnutí Jan): paritní vlny jsou hotové, a než se sáhne na velký
-vnitřní úklid, jdou na řadu tyhle menší věci. ⚠️ **Čtyři z nich čekají na odpověď zvenčí, ne na
-práci** - u nich je první krok se zeptat, ne psát kód:
-
-- **`C8`** - zeptat se zákazníka, jestli to pořád chce.
-- **`C9`** - potřebuje nové pole u linky od kolegů z jízdních řádů.
-- **`B102`** - čeká na zákazníka s linkou, která má mnoho dopravců.
-- **`B98`** - je to evidence toho, co nikdo nemá zapnuté; vytáhnout, až si o to někdo řekne.
-
-**Nejdřív ale `B113`** (2. 9.): dvě řady písmen u minut se kryjí a legenda pak jedno z nich
-vysvětluje cizím textem, takže vývěska lže cestujícím. Zadání je hotové, jde to vzít rovnou.
-
-**Rovnou udělat jde `B103`** (hledání linek) a **`B101`** (drobné zlepšení srozumitelnosti).
-**`B100`** taky, ale je to zásah do serveru i klienta kvůli třem linkám z 93 tisíc, takže spíš až
-se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo hotové 31. 8.)
-
-- **`C8` Vejdi výstup na zadaný počet stran** (M, podnět POVED #8785 bod 5 - **podnět, ne závazek**).
-  Starý modul to odmítl jako principiálně nemožné, náš engine má lepší pozici (`Strih` už umí režim
-  „nejmíň stránek"). Než se do toho pustí, má se zákazníka zeptat, jestli to pořád chce - jinak
-  stavíme featuru, kterou nikdo nezadal.
-
-- **`C9` Ručně zadaný „název směru" u linky jako datové pole** (#9088 bod 3, chtěné i pro vývěsky).
-  ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**, tedy součinnost
-  s kolegy z JŘ. Náš díl je malý (pole projít schématem a nabídnout v šabloně), ale bez toho pole
-  nemá kam sáhnout.
-
-- **`B102` Filtrování dopravců v hlavičce** (z důsledku zrušené vlny `L7`, 25. 8.). Sdružování linek
-  není naše práce, ale zákazníkův případ z #9417 (souhrnný JŘ dvou linek s dlouhým výčtem dopravců)
-  se k nám může dostat jako **jedna linka s mnoha dopravci** - tedy bez čekání na cokoli dalšího.
-  Až se to stane, filtrování dopravců přestane být odložené.
-
-- **`B101` Není poznat, jestli je jedna skupina dnů nastavením, nebo daty linky** (z 25. 8.).
-  Prvek pás skupin nekreslí, když vyjde jediná skupina - a uživatel pak nemá jak poznat, jestli
-  si dělení nastavil špatně, nebo jestli tak prostě vypadá linka (na 0330511 jedou všechny spoje
-  jen v pracovní dny). Otázku „mám to vůbec nastavené dobře?" dnes **nejde zodpovědět z aplikace**.
-  Drobné zlepšení, ne chyba.
-
-- **`B100` Ruční zlom stránky na tarifním čísle** (`PATCH,ZLOM`, z `L5` 25. 8.).
-  U linky jde v jízdních řádech nastavit tarifní číslo, na kterém se má tisk rozdělit; starý modul
-  to respektuje, my ne, takže se takové linky tisknou jinak. **Odloženo kvůli frekvenci**
-  (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ~93 tisíc** (měření 21. 8.), což je za cenu
-  zásahu do serveru i klienta slabý důvod. ⚠️ **Neblokuje nic dalšího** - klientská strana pro
-  zlomy existuje (`INedelitelneDily`, silné a slabé zlomy) a vynucený zlom by k ní jen přibyl;
-  na drátě by šlo o jedno pole navíc, tedy aditivní změna. Vytáhnout, až si o to někdo řekne,
-  nebo až se bude stejně sahat na přenos nastavení linky.
-
-- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** (evidence, ne práce; z měření 21. 8.,
-  [`§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Na 93 133 linkách šesti firem nejsou nikde
-  nastavené: **tvar tisku místenkování**, **vlastní texty sloupce MHD** místo „IDP-P"/„IDP-Z",
-  **tisk provozů dopravce**, čtyři přepínače **schovávání u linky** (`MHD2,netisknout*`) a **celá
-  vrstva pod linkou** (řádek se v knižním JŘ netiskne, i zvlášť per směr; umělá sekce u spoje)
-  a **tři přepínače řazení spojů** (`PS_PrintPorSpTR`, `PS_PrintSouhrnPorSpPri`,
-  `PS_PrintSouhrnPorSpTR` - řadit jen podle odjezdu, resp. jen podle příjezdu u souhrnných linek;
-  souhrnných linek je 33, ale bez těch přepínačů se chovají stejně jako ostatní).
-  Řada z nich vznikla v legacy **pro jednoho zákazníka** a nikdo jiný je nepoužívá. Vytáhnout, až
-  si o to někdo řekne - a pak počítat s tím, že **doklad z dat nebude** a půjde jen o implementaci
-  proti čtení legacy zdroje. ⚠️ U skrývání řádků platí, že **ubírá řádky** - zákazník to pozná na
-  první pohled, takže se k tomu má vyrobit vlastní testovací případ, ne to udělat naslepo.
-
-- **`B113` Písmena variant tras a rozdílů tras se kryjí** [M] (nález kolega + Jan 2. 9., z vývěsky
-  linky 111). **Zadání rozhodnuté 2. 9., jde vzít rovnou.**
-
-  **Problém.** Varianty tras berou `A, B, C, D, E…` (zadrátovaná abeceda v `PismenoVarianty`),
-  rozdíly tras `B, C, E, F, G…` ze sady u linky. Od druhé písmenkované varianty výš se řady
-  prolezou, takže **jedno písmeno u minuty má dva významy** a legenda ho vysvětlí cizím textem:
-  spoj jedoucí variantou „E" si čtenář spáruje s „jede jen do zast. Babice,Zvěřetice,rozc.1.0".
-  Na vývěsce pro cestující je to tichá dezinformace, ne kosmetika. ⚠️ **U jediného písmene navíc
-  nejde poznat, které z těch dvou to je** - pořadí u minuty je pevné (rozdíl, pak varianta), ale
-  spoj bez rozdílu trasy nese jen variantní písmeno.
-
-  **Kde se ty sady nastavují** (obojí per linka, EDISON → linka → „Nastavení k tisku" → záložka
-  „Odjezdník MHD"):
-  „Volné značky" = rozdíly tras (`^JRL(sku,lin,"PATCH","mhd","notchar")`, wire klíč
-  `ODJEZDNIK_POZNAMKOVAT_ROZDILY_OZNACENI`, pole 32 API linky) a „Volné značky pro minutové trasy
-  spojů" = varianty (`…("PATCH","mhd","par",2)`, klíč `ODJEZDNIK_ZNK_CAS_PRUBEHY_TRAS`, pole 74).
-  Ze stringu se bere **znak po znaku od začátku** (první rozdíl = první znak); přes délku se
-  písmena zdvojují (`BB`, `CC`) - `GetZnk` v legacy i u nás.
-
-  **Rozhodnutí (Jan 2. 9.):** obě sady se čtou **prioritně z nastavení u linky, a doslova** - žádné
-  filtrování kolidujících písmen. Kdo si napíše `ABCDE`, dostane to i s kolizí; je to jeho volba
-  a tiše mu do ní sahat je horší. Východisko pro takovou linku je, že jsou nastavitelná **obě**
-  pole, takže se sada rozdílů přesune mimo abecedu. Prázdné pole → výchozí sada:
-
-  - **rozdíly tras: `BCEFGHIJOQRWeijqsvwxz`** - bez jediné změny, je to 1:1 legacy
-    (`JRapiLinPrtMhd.mac:539`), a náš přepis je věrný.
-  - **varianty tras: `A, D, L, M, N, P, T, Y`** - vzestupně a disjunktně. Vyškrtané je vše, co už
-    na vývěsce jako značka je: sada rozdílů **včetně malých písmen** (velikost nerozlišovat, „V"
-    vedle „v" ve výšce písma odjezdů nikdo nerozezná), `R` místenka, `K` kola, `u` pokračující spoj,
-    `H`/`F` bezbariér. Přes délku zdvojovat, dnešní „V27" zahodit.
-
-  **Proč vzestupně a ne od konce abecedy** (první návrh byl `Y, T, P, N, M, L, D, A`): `A` v sadě
-  rozdílů není, takže první písmenkovaná varianta může zůstat `A` - jak ji lidé vidí dnes. Linka
-  se dvěma variantami se tím nezmění vůbec a divergovat začne až třetí varianta (`D` místo `B`),
-  což je právě místo, kde dnes kolize vzniká. Zákazník, který si `ABCDE` výslovně přál, tedy
-  ve většině případů nemusí nastavovat nic; ta pole jsou per linka a hromadnou úpravu na ně nevidím,
-  takže každé ušetřené nastavení se počítá.
-
-  ⚠️ **Vyplněné pole variant zapne písmena i ve starém modulu.** Ten pro ně **nemá žádný výchozí
-  obsah** (`JRapiLinPrtMhd1.mac:27`, „UVWXYZ" je jen komentář), takže dnes variantní značky netiskne
-  vůbec - na žádné z 325 prověřených linek to pole vyplněné není. Paritu tedy neporušíme ani jednou
-  volbou, ale kdo pole vyplní kvůli nám, uvidí písmena i ve staré sestavě.
-
-  **Dotkne se:** `TestPismenoVarianty` (dnes čeká A, Z, V27) a zlatých odtisků sady vývěsek -
-  odtisky se změní **záměrně**, takže se rozdíl doloží, ne přebaseline naslepo. Pojistka „bez
-  sloupce Varianty tras se písmena netisknou" je hotová (2. 9.), tohle je ta vlastní oprava.
-
-  **Užitečné předem:** změřit, kolik linek má které z těch dvou polí reálně vyplněné - u sady
-  rozdílů to zmapované není taky a je to táž otázka.
-
-- **`B103` Hledání ve výběru linek prohledá jen prvních 200** (nález Jan 1. 9.). Dialog si
-  načte 200 linek skupiny (`EDList.Instance` posílá `limit = 200`) a hledací pole pak filtruje
-  **jen je** - napsané číslo linky, která je až za dvoustovkou, nenajde nic a vypadá to, že linka
-  v datech není. Přitom tam je: `380761` v CB_CSADAD skupině 1 se přes výběr vybrat nedá, přes
-  server se najde. ⚠️ Netýká se to jen zkoušení - u firem s tisíci linkami je většina linek
-  hledáním nedosažitelná. Oprava = poslat hledaný text na server (`GetAvailableInstances` ho už
-  přijímá jako `search`), ne filtrovat načtenou stránku.
+> **Nejblíž na řadě:** § Linkové a knižní JŘ - celá sekce čeká na odpověď zvenku, práci odtud
+> brát nelze. Vezmi místo toho položku z Backlogu.
+> ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
+> ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`).
 
 ---
 
@@ -136,14 +16,18 @@ se bude na přenos nastavení linky sahat z jiného důvodu. (`N1` odsud odešlo
 > ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
-**Stav: paritní vlny jsou hotové a žádná otevřená tu není.** Z průchodu testovacími linkami nevzešel
-žádný datový rozdíl proti starému tisku; co zůstalo neprojité, drží
-[§ K ověření](#k-ověření-na-reálné-sestavě) níže. Sloučení dvou Caché tiskových enginů (dřív `L8`)
-je v Backlogu u `B56` - je to úklid vnitřku bez přírůstku pro uživatele a nad rozdělaným kódem by
-jen zabetonoval rozpracovaný tvar (rozhodnutí Jan 31. 8.).
+**Stav: paritní vlny jsou hotové** a z průchodu testovacími linkami nevzešel datový rozdíl proti
+starému tisku. Zbývá průchod § K ověření (doklady k tiketům) a věci, u kterých je první krok
+dotaz ven. Sloučení dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku
+bez přírůstku pro uživatele (rozhodnutí Jan 31. 8.).
 
-⚠️ **Linková AD agenda je zveřejněná** (`Released = 1`, 24. 8.) - **ukáže se i zákazníkům, jakmile
-se vydá nová verze**. Městská zůstává skrytá, dokud neprojde porovnáním se starým modulem.
+⚠️ **Linková AD agenda je zveřejněná a je výchozí pro novou šablonu** (`Released = 1`; 24. 8.
+zveřejněná, 1. 9. skrytá kvůli vydání, **3. 9. vrácená** kvůli dovývoji) - **ukáže se i zákazníkům,
+jakmile se vydá nová verze**, takže před vydáním se musí znovu rozhodnout. Skrývá se na **dvou
+místech**: `Parameter Released` v `LinkovyJrAd.cls` a konstanta ve `CreateSampleTemplate` (jinak
+skrytí obejde samotný start aplikace); vazbu hlídá `SkrytaAgendaTests`.
+⚠️ **`Released` je serverová hodnota, ne v exe** - nasazení `.cls` na dev změní nabídku agend i těm,
+kdo mají starší exe. Městská zůstává skrytá, dokud neprojde porovnáním se starým modulem.
 
 **Když přijde na řadu MHD** (dnes se neřeší, rozhodnutí Jan 28. 8.), platí čtyři věci, které se z kódu
 nepoznají:
@@ -168,6 +52,38 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
+### Čeká na odpověď zvenku
+
+Ani u jedné není první krok kód. Podklady k tiketům drží
+[`§14`](linkovy-knizni-jr-implementace-analyza.md).
+
+- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`) - **podnět, ne závazek**.
+  Starý modul to odmítl jako nemožné, náš engine na to má lepší pozici. **Zeptat se zákazníka,
+  jestli to pořád chce** - jinak stavíme featuru, kterou nikdo nezadal.
+
+- **`#9088` bod 3: ručně zadaný „název směru" u linky** [S] (TRANSDEV, dřív `C9`; chtěné i pro
+  vývěsky). ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**. Náš díl
+  je malý (pole pustit schématem a nabídnout v šabloně), ale bez toho pole nemá kam sáhnout.
+
+- **`#9417` Filtrování dopravců v záhlaví** [M] (KORID, dřív `B102`). Přetečení hlavičky pod
+  tabulku je vyřešené (záhlaví má vlastní sekci), zbývá volba, kteří dopravci se tisknou.
+  **Čeká na zákazníka s linkou, která má mnoho dopravců** - jeho případ byl souhrnný JŘ dvou linek
+  a sdružování se řeší v jízdních řádech, ne u nás.
+
+- **`#7487` Počet poznámek na řádek podle druhu** [M] (KORID) - ⏸️ **Jan probere s kolegou**, jak
+  je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
+  druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
+
+- **`B100` Ruční zlom stránky na tarifním čísle** [S] - u linky jde nastavit tarifní číslo, na
+  kterém se má tisk rozdělit; starý modul to respektuje, my ne. **Odloženo kvůli frekvenci**
+  (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ≈ 93 tisíc**. Neblokuje nic.
+
+- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** - evidence, ne práce. Na 93 133
+  linkách šesti firem nejsou nikde nastavené: místenkování, vlastní texty sloupce MHD, tisk
+  provozoven dopravce, schovávání u linky, vrstva pod linkou, řazení spojů
+  ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Vytáhnout, až si o to
+  někdo řekne - **doklad z dat nebude**.
+
 ### K ověření na reálné sestavě
 
 Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
@@ -175,7 +91,7 @@ takže nejde o práci, ale o doklad.
 
 | Co | Proč to čeká |
 |---|---|
-| **Vícesloupcová legenda (#7487)** - zákazník chtěl čtyři sloupce | Prvek umí 1-4 sloupce včetně zalamování (zjištěno 26. 8.); výchozí je 1, proto si toho nikdo nevšiml |
+| **Prázdný přípojný řádek nemá zabírat místo (#11300, KORID)** | **Zbývá ukázka a odpověď, ne kód** - postup a čím je to podložené: [`§16.2`](linkovy-knizni-jr-implementace-analyza.md). Tiket je pozastavený od 12/2025 s příslibem „příští rok s novým tiskovým modulem"; od 6. 9. jde jeho rozvržení předvést. |
 | **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
 | **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618`** | Starý tisk dává oba směry do jedné tabulky, takže není co k čemu přiložit. ⚠️ **Odblokováno 28. 8.** - obousměrný tisk je hotový, takže tuhle linku už je čím porovnat. Vzít při nejbližším průchodu doklady |
 | **Písmena ze zóny (`VS_CSAD 5 / 0771901`)** | V testovacích datech pro Vsetín na to není vzorek; firma navíc není v přepínači firem. Vzít, až ta data budou |
@@ -187,85 +103,102 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B112` Provozovny dopravce na vývěsce - rozdělaná práce** (M, z `B111` 1. 9., #13158).
-  Skalární pole dopravce (Název, Adresa, Telefon, E-mail, IČO) **fungují a jsou vystavená**;
-  provozovny zůstaly nedořešené a jejich kolekce je **skrytá ze schématu**, aby si na ní nikdo
-  nepostavil šablonu.
+- **`B129` Přidání sekce ubere výšku ostatním, i když je na stránce místo** [S] (nález Jan 7. 9.
+  při stavbě šablony na školení). Nová sekce si vezme svých 30 mm **poměrem z existujících**, takže
+  na A5 se 37 mm obsahu spadnou obě zbylé na spodní mez 5 mm - a **může to zmáčknout sekci pod její
+  obsah**, protože tahle cesta výšku prvků nekontroluje (dialog i tažení ano).
+  Hotovo když: sekce se krátí až když na stránce místo není, a nikdy pod `MinimalniVyskaProSekci`.
+  Místo: `TemplateDesignerViewModel.AddSection` (`:1097`).
 
-  ⚠️ **V čem je problém:** kolekce má řádek na (dopravce × provozovna), takže **nutně opakuje údaje
-  firmy** - tři provozovny téhož dopravce daly třikrát pod sebou týž telefon a adresu. Tabulka z dat
-  deduplikaci neumí, takže by to vyměnilo jednu duplicitu za druhou, a přesně proti duplicitě celá
-  položka vznikla (nález Jan 1. 9. při zkoušení). Navíc **to není tabulka, ale hierarchie** „dopravce
-  → jeho provozovny", a na tu tvar tabulky nesedí.
+- **`B130` Není vidět, kam se dělí místo na stránce** [M] (podnět Jan 7. 9. při stavbě šablony).
+  Sekce „Každá stránka" se odečítá z **každé** stránky, zbytek se dělí po celých řádcích tabulky
+  a blok se nesmí zlomit jinde než v místě, které sám nabídne - takže o stránku navíc rozhodne
+  milimetr v hlavičce a uživatel to nemá kde přečíst. Změřeno: zmenšení hlavičky o 1 mm sundalo
+  sestavu ze 4 stránek na 2, protože přidalo jeden řádek na stránku.
+  Hotovo když: uživatel vidí rozpočet stránky (hlavička / patička / na obsah zbývá) a dostane
+  hlášení, když stránka končí velkým prázdnem, protože se další nedělitelný díl nevešel.
 
-  **Co je hotové a použitelné:** `BuildDopravci` a `DopravceUdaje` v `ZastavkoveJrAd` (rozklad
-  číselníku na jednotlivá pole, ověřený voláním), data tečou na drátě pod klíčem `DOPRAVCI`, testy
-  `ZastavkoveJrAdDopravciTest` drží rozklad i to, že kolekce zůstává skrytá.
+- **`B131` Dvě různá „víc stránek" se pletou** [M] (nález Jan 7. 9.). Náhled má **stránky dat**
+  (u linkového JŘ jeden směr = jedna stránka, u vývěsky zastávka × směr) v přepínači nad sebou
+  a **stránky sazby** (rozřezaná tabulka) pod sebou ve scrollu. Uživatel to nerozliší: při vypnutém
+  obousměrném tisku hledal zpětné spoje a měl je za nevytištěné, protože byly na druhé stránce dat.
+  Hotovo když: z okna je poznat, že jde o dvě různé osy, a přepínač jmenuje, co na té stránce je.
+  Do tisku jde vždy obojí, chyba je jen v zobrazení.
 
-  **Co se musí rozhodnout, než se zapne:** čím se hierarchie kreslí. Možnosti k probrání: vnořená
-  struktura s prvkem, který umí „hlavička dopravce + odsazené provozovny"; kolekce jen provozoven
-  s údaji firmy ze skalárních polí (opakování zmizí, ale rozpadne se to u víc dopravců); nebo
-  vypustit provozovny a nechat jen dopravce. ⚠️ Případný název kolekce v UI má být **„Dopravci
-  (provozovny)"**, ne „Dopravci" - z „Dopravci" nebylo poznat, proč tam provozovny jsou.
+- **`B134` Sekce, která se opakuje na každé stránce a přitom plave za obsahem** [M]
+  (požadavek Jan 7. 9.: „poznámky musí být na každé stránce a hned pod tabulkou"). Dnes to jde jen
+  jedno z toho: „Jednou" plave za obsahem, „Každá stránka" se umístí na **spodní hranu** stránky
+  (`PageLayoutEngine.cs:503`), takže mezi tabulkou a legendou zůstane prázdno.
+  Hotovo když: sekce se dá nastavit tak, aby se **výška rezervovala na každé stránce** (jako
+  u patičky), ale **vykreslila se za posledním obsahem** té stránky.
+  Tvar: opakovaná sekce s **Rolí „Obsah"** má plavat, Role „Patička" zůstává dole - dnes o tom
+  rozhoduje heuristika podle pozice v šabloně, takže pozor na šablony, které na ní drží patičku.
+  ⚠️ **Před implementací ověřit, jak to dělá starý tisk** (legenda pod každým blokem, nebo jen
+  pod posledním) - dnes to nevím.
 
-  ⚠️ **MHD agenda a linkový JŘ** rozklad nemají vůbec - MHD má data z jiného zdroje (systémový
-  namespace). Až se tohle dořeší, patří to i tam.
+- **`B132` Tiskové měřítko šablony** [M] (podnět Jan 7. 9.). Starý postskript sází logickou stránku
+  (u `CB_CSADAD` 208 × 145 mm) a při tisku ji zvětší **1,3 ×** (`MeritkoVyves`; kniha 1 ×), takže
+  z jedné sazby jsou dvě velikosti výstupu. My to neumíme: 1 mm v šabloně = 1 mm na papíře,
+  „Uspořádání na list" stránku jen položí 1:1 na větší list (past #13158) a `Škálovat šablonu`
+  mění šablonu, ne tisk - dnes to znamená dvě šablony.
+  Hotovo když: u tisku jde zadat měřítko (nebo cílový formát) a šablona zůstane jedna.
+  ⚠️ Podklad na školení to měl jako hotové („MeritkoVyves → Škálovat šablonu") - opraveno.
 
-- **`B66` Vlastní bloky prvků („moje komponenta")** (M, podnět Jan 12. 8.). Uživatel si vybere pár
-  prvků (typicky svou hlavičku sestavy), uloží je pod jménem a pak je vkládá jedním kliknutím do
-  dalších šablon. **Co už existuje:** uložení **celé sekce** jako vlastní šablony a seskupení prvků
-  (Ctrl+G). Chybí mezistupeň mezi nimi - pojmenovaný blok menší než sekce. **Proč to čeká na pevnou
-  tabulku:** dokud je hlavička poskládaná z 6 samostatných textů, musí blok řešit relativní pozice a
-  vazby uvnitř skupiny; jako **jeden** prvek (pevná tabulka) je uložení skoro zadarmo. Otevřené:
-  kde bloky žijí (per uživatel × firma jako šablony sekcí, nebo sdílené v DB) a jestli se vkládají
-  z palety, nebo z nabídky „Přidat". **Pohltí i připravené bloky agend** (dřív `B77`): server pro
-  každou agendu drží hotové sestavy tabulek („Záhlaví linky", „Shrnutí faktury"), ale od zrušení
-  starého dialogu k nim z UI nevede cesta - je to titíž „pojmenovaný blok k vložení", jen dodaný
-  námi místo uživatelem, takže samostatnou cestu do UI nedostane (rozhodnutí Jan 17. 8.).
+- **`B133` Nejmenší výška sekce se počítá ze zástupné výšky prvku, ne z obsahu** [S] (nález Jan 7. 9.).
+  `MinimalniVyskaProSekci` bere u prvku s dynamickou výškou `DesignerPlaceholderHeight`
+  (tabulka linky 60 mm, poznámky 25 mm), takže sekci nejde zmenšit pod ni ani tažením, ani číslem -
+  a systémové šablony přitom mají 20 a 15 mm (vznikly ze souboru). Důsledek: u krátké linky zůstane
+  mezi tabulkou a poznámkami mezera, kterou uživatel nemá jak odebrat.
+  Hotovo když: mez vychází z reálné výšky obsahu nad aktuálními daty, ne ze zástupné.
 
-- **`B18` Deklarativní pravidla EDInputFormu** (M, odloženo - rozhodnutí Jan 5. 8.: patří k velkým
-  věcem do budoucna, ne do běžné fronty; je to **kapabilita sdílené komponenty pro celý EDISON**,
-  ne featura návrháře). Dnes umí formulář reagovat na vyplněné hodnoty jen oklikou přes server
-  (`Validate`, ručně per formulář). Zavést deklarativní vrstvu: začít **viditelností** (`visibleWhen`),
-  gramatiku sdílet s tiskovými parametry (`POLE=hodnota` + nerovnost) - nezavádět druhý dialekt.
-  Povinnost/povolení až s poptávkou; **skutečná validace zůstává imperativní** (potřebuje data
-  a dopočty). **Follow-up:** migrace `CellStyleEditor` na Caché-driven formulář (S–M; háček je
-  tri-state / reaktivní logika - bez `B18` nejde). **Follow-up 2:** rozšířit gramatiku o čtení
-  **parametru sestavy**, aby šlo zašednout pole prvku mrtvá bez parametru (6 polí šipky vs.
-  `TISK_SIPKY`, projeté zastávky vs. `TISK_PROJETYCH_ZAST`) - dnes to plní jen helpTexty.
-  **Follow-up 3:** parametr sestavy nemá pole pro **popis**, takže krkolomné labely
-  (`SCHOVAT_V_ROZSAHU`, `ROZTAHNOUT_NA_VYSKU`) nejde vysvětlit. Aditivní klíč na wire + tooltip -
-  dělat spolu s gramatikou, ne zvlášť kvůli dvěma tooltipům.
+- **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
+  ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového
+  fontu - **pozice 1-32 jsou v `TimeTable2` i v SK variantě prázdné** (ověřeno vykreslením tabulky
+  glyfů). Postskript si je kreslí sám jako vektory. U nás to tedy znamená kreslicí featuru podobnou
+  šipce směru, ne dva řádky v `SymbolMap`. Dnes se tiskne holé `<` a `|`.
+
+- **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9., pohltí `B100`). Ruční zlom na
+  tarifním čísle (`PATCH,ZLOM`) plus tři volby dělené linky (`gSetLinPrt` dta 21-23): tisk na jednu
+  stranu, hlavička a poznámky pro směr nebo pro část, směr na stranu. **Dělá se to dohromady** -
+  bez zlomu dělená linka nevznikne (rozhodnutí Jan 7. 9.).
+
+- **`B123` Atributy trasy zastávky - dodělat zbytek číselníku** [M] (podnět Jan 7. 9.). Z číselníku
+  16 („atributy trasy", `JRapiCis.mac:1283`) umíme `x`, `A`, `L`, `T`, `P`; chybí metro/letadlo/loď,
+  varianty „na znamení" (`y`, `z`), podtržení (`p`, `o`, `J`) a paragrafy. ⚠️ **Blokuje to kolize
+  číselníků**: atributy trasy a atributy spoje sdílejí jednu mapu v `SymbolMap`, takže zastávka
+  s `H` („cílová pro tablo") se dnes kreslí jako vozíček. Nejdřív změřit výskyt v datech, pak
+  oddělit mapy, pak doplňovat. Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
+
+- **`B66` Vlastní bloky prvků („moje komponenta")** [M] (podnět Jan 12. 8.). Uživatel vybere pár
+  prvků, uloží je pod jménem a vkládá jedním kliknutím do dalších šablon - mezistupeň mezi uloženou
+  sekcí a seskupením prvků. **Čeká na pevnou tabulku**: jako jeden prvek je uložení skoro zadarmo,
+  z šesti textů musí blok řešit relativní pozice. Otevřené: kde bloky žijí a odkud se vkládají.
+  **Pohltí i připravené bloky agend** (dřív `B77`) - jsou to titíž pojmenované bloky, jen dodané
+  námi (rozhodnutí Jan 17. 8.).
+
+- **`B18` Deklarativní pravidla EDInputFormu** [M] (odloženo - rozhodnutí Jan 5. 8.: je to
+  **kapabilita sdílené komponenty pro celý EDISON**, ne featura návrháře). Formulář dnes reaguje na
+  vyplněné hodnoty jen oklikou přes server. Začít **viditelností** (`visibleWhen`), gramatiku sdílet
+  s tiskovými parametry - nezavádět druhý dialekt; skutečná validace zůstává imperativní.
+  Nese s sebou tři návazné věci: migraci `CellStyleEditor` na formulář z Caché, zašednutí polí
+  mrtvých bez parametru sestavy a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
+  label) - všechno až s gramatikou, ne zvlášť.
 
 - **`B56` Sjednocení Caché tiskových enginů a jejich opsaných pomocných funkcí** (odloženo -
-  **rozhodnutí Jan 5. 8. a 31. 8.**: nedělat předčasnou deduplikaci, dokud se tvar výstupních dat
-  neustálí; sjednocením by se zabetonoval stav, který se ještě hýbe).
-  ⚠️ **Pohltilo i dřívější `L8`** (31. 8.) - byla to tatáž práce ve větším rozsahu (sdílené
-  `^JRL` readery a `Build*` do `BaseAgenda`/`JrShared`, Caché obdoba extrakce jádra na .NET straně),
-  jen visela v aktivní roadmapě jako velká položka **bez přírůstku pro uživatele**. Vzít **až bude
-  knižní JŘ doimplementovaný** - do té doby není podle čeho sjednocovat.
-  **Podklad z analýzy 5. 8., aby se nemusela dělat znovu:** 27 pomocných
-  funkcí se stejným názvem ve 2+ agendách, ale jen **15 jsou doslovné kopie** (~97 řádků k odstranění,
-  ne 400-500, jak tvrdil původní odhad). 4 mají stejnou signaturu a rozešlé tělo - a to **záměrně**
-  (`AddStandardJRFields` se liší v uživatelských popiscích polí: AD „Číslo linky" × MHD „Číslo linky
-  (dle licence)"; `AddStandardJRParameters` nabízí jiné parametry sestavy). 8 sdílí jen název a dělá
-  jinou věc - `BuildPoznamka` má dvě rodiny s **jiným datovým kontraktem** (zastávková posílá
-  `KATEGORIE`+barvy, linková `DRUH`), `PopisDopravce` existuje 3× se třemi signaturami. Sloučit jde
-  bezpečně **jen skupinu doslovných kopií a jen u zastávkových agend**, které kryjí zlaté odtisky
-  a 46 testů helperů; **linkové agendy nemají ani jeden test** (2 000 řádků), takže tam by zásah jel
-  bez sítě. Vzor existuje - `BaseAgenda` už 4 sdílené helpery hostuje.
+  rozhodnutí Jan 5. 8. a 31. 8.: nedělat předčasnou deduplikaci, dokud se tvar výstupních dat
+  neustálí). ⚠️ **Pohltilo i dřívější `L8`** - tatáž práce ve větším rozsahu, jen visela v aktivní
+  roadmapě bez přírůstku pro uživatele. Vzít **až bude knižní JŘ doimplementovaný**.
+  Podklad (co je doslovná kopie, co se liší záměrně, kde chybí testy):
+  [`legacy-nahrada.md §4`](legacy-nahrada.md).
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
 
-- **Externí datové zdroje** (analýza 2026-07-12, na poptávku) - architektura připravená (engine zná jen
-  `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda
-  (0 změn .NET) · .NET provider vedle Caché (vzor `JsonFileDataSchemaProvider` + Composite) · headless
-  A3 („POST šablona+JSON → PDF" = externí zdroj bez adaptéru; **A3 je nejpravděpodobnější nosič**).
-  První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** - tržní minimum
-  (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
-  credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
-
+- **Externí datové zdroje** (na poptávku) - architektura je připravená, engine zná jen
+  `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
+  **headless tisk** („pošli šablonu a JSON, vrať PDF"); samostatně by prvním krokem byl generický
+  JSON zdroj ze souboru nebo URL. Dořešit přihlašovací údaje a odvození schématu z dat
+  (analýza 12. 7., detail v historii roadmapy).
 
 ---
 

@@ -10,10 +10,11 @@ namespace TemplateDesigner.Tests.Rendering;
 /// ne s hodnotami dosazenými do vzorce.
 /// </summary>
 /// <remarks>
-/// <para><see cref="SloupcoveBlokyTests"/> ověřují dělicí vzorec samotný a byly celou dobu zelené
-/// i ve chvíli, kdy tabulka v návrháři vycházela nečitelná. Vzorec totiž dostával špatné vstupy:
-/// popisné sloupce se měřily při plném počtu spojů, tedy zmáčknuté na minimum, takže se zdálo,
-/// že na spoje zbývá spousta místa. První blok pak pobral skoro všechny spoje a přetekl.</para>
+/// <para>Dřív k tomu existoval i test <b>dělicího vzorce samotného</b> (`SloupcoveBlokyTests` nad
+/// `TableLayout.RozdelSpojeDoBloku`) a byl celou dobu zelený i ve chvíli, kdy tabulka v návrháři
+/// vycházela nečitelná: vzorec dostával špatné vstupy, protože popisné sloupce se měřily při plném
+/// počtu spojů, tedy zmáčknuté na minimum. Ten vzorec už nikdo nevolal a 4. 9. byl odstraněn
+/// i s testy - dělí `LineTableElement.SloupcoveBloky`, a to se ověřuje tady, nad daty.</para>
 /// <para>Proto se tady netestuje vzorec, ale <b>výsledek</b>: co vyjde z prvku nad daty.</para>
 /// </remarks>
 public class LineTableBlokyTests
@@ -57,6 +58,148 @@ public class LineTableBlokyTests
                 RenderSnapshot.Row(("ID", "2"), ("NADPIS", "Sobota, neděle"), ("PORADI", "2")),
             ]));
     }
+
+    /// <summary>
+    /// Obousměrná linka: spoje dvou směrů, jak je posílá server - nejdřív celý směr „T", pak „Z".
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Musí to být **vlastní fixtura**, ne parametr té jednosměrné: u obousměrné sestavy zabere
+    /// jeden slot dělení <b>sloupec na každé straně</b> zastávek, takže se do šířky musí vejít
+    /// dvojnásobek. Právě tenhle případ šířku bloku nehlídal.
+    /// </remarks>
+    private static DataContext ObousmernaLinka(int spojuNaSmer, int pocetZastavek = 3)
+    {
+        var spoje = new List<(string, object?)[]>();
+        foreach (var smer in new[] { "T", "Z" })
+            for (int i = 1; i <= spojuNaSmer; i++)
+                spoje.Add([("CISLO_SPOJE", (smer == "T" ? i * 2 - 1 : i * 2).ToString()),
+                           ("SMER", smer),
+                           ("SKUPINA", i <= spojuNaSmer * 2 / 3 ? "1" : "2")]);
+        var zastavky = Enumerable.Range(1, pocetZastavek)
+            .Select(i => RenderSnapshot.Row(("ID", i.ToString()),
+                                            ("NAZEV_ZASTAVKY", $"Zastávka {i}, rozcestí"),
+                                            ("PORADI", i.ToString())))
+            .ToArray();
+        return RenderSnapshot.Data(
+            ("ZASTAVKY", zastavky),
+            ("SPOJE", [.. spoje.Select(r => RenderSnapshot.Row(r))]),
+            ("SKUPINY_DNU",
+            [
+                RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1")),
+                RenderSnapshot.Row(("ID", "2"), ("NADPIS", "Sobota, neděle"), ("PORADI", "2")),
+            ]));
+    }
+
+    /// <summary>
+    /// ⚠️ Táž podmínka jako u jednosměrné linky, ale pro **obousměrnou** - a ta nebyla hlídaná:
+    /// šířka se měřila pro počet slotů, kdežto kreslí se sloupec na každé straně zastávek. Blok
+    /// tak mohl přetéct za hranu prvku a v tisku se odříznout, aniž by o tom test věděl
+    /// (nález při hledání chybějících spojů na `CB_GWBUS 0320144`, 4. 9.).
+    /// </summary>
+    [Theory]
+    [InlineData(9)]
+    [InlineData(43)]
+    public void KazdyBlokSeVejdeDoSirky_ObousmernaLinka(int spojuNaSmer)
+    {
+        var prvek = Prvek();
+
+        var bloky = prvek.Rozvrzeni(ObousmernaLinka(spojuNaSmer));
+
+        Assert.NotEmpty(bloky);
+        Assert.All(bloky, b => Assert.True(b.SirkaMm <= prvek.Width + 0.01f,
+            $"blok od slotu {b.Od} ({b.Pocet} slotů = {b.Pocet * 2} sloupců) je {b.SirkaMm:0.0} mm, "
+            + $"prvek má {prvek.Width} mm"));
+    }
+
+    /// <summary>
+    /// Jednosměrná linka se skupinami dnů, kde oddělení nestojí blok navíc: bloky proto **končí
+    /// na hranici skupiny**, ne po plných devíti sloupcích. Bez toho jsme se od starého tisku
+    /// lišili rozřezáním u každé linky, kde by oddělení bylo zadarmo.
+    /// </summary>
+    [Fact]
+    public void JednosmernaLinka_BlokyKonciNaHraniciSkupiny()
+    {
+        var prvek = Prvek();
+        // Kolik spojů se vejde na blok, řídí šířka prvku a písmo. Aby test nezávisel na geometrii,
+        // zjistí se to nejdřív na lince s jedinou skupinou a skupiny se pak udělají právě tak
+        // velké, aby jejich oddělení nestálo blok navíc.
+        int naBlok = prvek.Rozvrzeni(LinkaSeSkupinami(60))[0].Pocet;
+        // Velikosti `n+2, n, n`: oddělené vyjde na 2+1+1 bloků a úsporné na tolikéž, takže je
+        // oddělení zadarmo - a **liší se**, protože druhý blok nese jen dva sloupce místo plných.
+        // Kdyby se velikosti daly jako násobky bloku, oba řezy by padly na stejná místa a test
+        // by neověřoval nic (odhaleno mutací 6. 9.).
+        var data = LinkaSeSkupinami(naBlok + 2, naBlok, naBlok);
+
+        var bloky = prvek.Rozvrzeni(data);
+
+        var skupiny = SkupinyPerSlot(data);
+        Assert.Equal(4, bloky.Count);
+        Assert.Equal(2, bloky[1].Pocet);
+        Assert.All(bloky, b => Assert.Single(skupiny.Skip(b.Od).Take(b.Pocet).Distinct()));
+    }
+
+    /// <summary>
+    /// ⚠️ Obousměrná linka řez podle skupin **nedostane**: slot nese spoj z každého směru a jejich
+    /// skupiny se neshodují, takže hranice skupiny není jedno místo. Starý modul tenhle případ
+    /// nezná (obousměrnou tabulku, která se má řezat, zahodí a tiskne po směrech) a my ji vědomě
+    /// zachováváme (rozhodnutí Jan 6. 9.).
+    /// </summary>
+    [Fact]
+    public void ObousmernaLinka_ZustaneUspornyRez()
+    {
+        var prvek = Prvek();
+
+        var bloky = prvek.Rozvrzeni(ObousmernaLinka(43));
+
+        // Úsporný řez = všechny bloky kromě posledního plné, tedy stejně velké.
+        int prvni = bloky[0].Pocet;
+        Assert.True(bloky.Count > 1, "43 slotů se do 190 mm vejít nemá");
+        Assert.All(bloky.Take(bloky.Count - 1), b => Assert.Equal(prvni, b.Pocet));
+    }
+
+    /// <summary>Bez pásu nadpisů skupin se neoddělují - v tisku by nebylo poznat, že tam skupina
+    /// začíná, a kratší blok by vypadal jako náhodná díra v tabulce.</summary>
+    [Fact]
+    public void BezNadpisuSkupin_ZustaneUspornyRez()
+    {
+        var prvek = Prvek();
+        prvek.ShowGroupHeaders = false;
+
+        var bloky = prvek.Rozvrzeni(LinkaSeSkupinami(25, 9, 9));
+
+        int prvni = bloky[0].Pocet;
+        Assert.All(bloky.Take(bloky.Count - 1), b => Assert.Equal(prvni, b.Pocet));
+    }
+
+    /// <summary>Jednosměrná linka se zadanými velikostmi skupin dnů - spoje jednoho směru
+    /// (bez `SMER`), takže se řeže jedna osa sloupců.</summary>
+    private static DataContext LinkaSeSkupinami(params int[] velikostiSkupin)
+    {
+        var spoje = new List<(string, object?)[]>();
+        int cislo = 0;
+        for (int g = 0; g < velikostiSkupin.Length; g++)
+            for (int i = 0; i < velikostiSkupin[g]; i++)
+                spoje.Add([("CISLO_SPOJE", (++cislo * 2).ToString()), ("SKUPINA", (g + 1).ToString())]);
+
+        var zastavky = Enumerable.Range(1, 3)
+            .Select(i => RenderSnapshot.Row(("ID", i.ToString()),
+                                            ("NAZEV_ZASTAVKY", $"Zastávka {i}, rozcestí"),
+                                            ("PORADI", i.ToString())))
+            .ToArray();
+        var skupiny = Enumerable.Range(1, velikostiSkupin.Length)
+            .Select(g => RenderSnapshot.Row(("ID", g.ToString()),
+                                            ("NADPIS", $"Skupina {g}"),
+                                            ("PORADI", g.ToString())))
+            .ToArray();
+        return RenderSnapshot.Data(
+            ("ZASTAVKY", zastavky),
+            ("SPOJE", [.. spoje.Select(r => RenderSnapshot.Row(r))]),
+            ("SKUPINY_DNU", skupiny));
+    }
+
+    /// <summary>Skupina dnů každého slotu v pořadí, v jakém přišly spoje.</summary>
+    private static List<string> SkupinyPerSlot(DataContext data) =>
+        [.. data.GetRows("SPOJE").Select(r => r.GetString("SKUPINA"))];
 
     private static LineTableElement Prvek() => ElementRenderFixtures.LineTable();
 
@@ -166,9 +309,9 @@ public class LineTableBlokyTests
         var prvek = Prvek();
         prvek.Width = 277;
 
-        var bloky = prvek.Rozvrzeni(SirokaLinkaData(41, pocetZastavek: 28));
+        var bloky = prvek.Rozvrzeni(SirokaLinkaData(90, pocetZastavek: 28));
 
-        Assert.True(bloky.Count > 1, "41 spojů na 277 mm se má rozřezat");
+        Assert.True(bloky.Count > 1, "90 spojů na 277 mm se má rozřezat");
         float prvni = bloky[0].SloupecSpojeMm;
         Assert.All(bloky, b => Assert.Equal(prvni, b.SloupecSpojeMm, 2));
     }
@@ -181,7 +324,7 @@ public class LineTableBlokyTests
         var prvek = Prvek();
         prvek.Width = 277;
 
-        var bloky = prvek.Rozvrzeni(SirokaLinkaData(41, pocetZastavek: 28));
+        var bloky = prvek.Rozvrzeni(SirokaLinkaData(90, pocetZastavek: 28));
 
         Assert.True(bloky[^1].Pocet < bloky[0].Pocet, "poslední blok má být neúplný");
         Assert.True(bloky[^1].SirkaMm < prvek.Width - 1f,
@@ -208,7 +351,7 @@ public class LineTableBlokyTests
         var prvek = Prvek();
         prvek.X = 0; prvek.Y = 0; prvek.Height = null; prvek.Width = 277;
         prvek.HeaderStyle.BackgroundColor = Znacka;
-        var data = SirokaLinkaData(41, pocetZastavek: 12);
+        var data = SirokaLinkaData(60, pocetZastavek: 12);
 
         float celkem = prvek.CalculateHeightFromData(data);
         var tvrzene = new List<float> { 0f };
@@ -267,7 +410,7 @@ public class LineTableBlokyTests
     [Fact]
     public void DorovnaniVyplniNeuplnyBlok()
     {
-        var data = SirokaLinkaData(41, pocetZastavek: 12);
+        var data = SirokaLinkaData(60, pocetZastavek: 12);
 
         LineTableElement Prvek(bool dorovnat)
         {

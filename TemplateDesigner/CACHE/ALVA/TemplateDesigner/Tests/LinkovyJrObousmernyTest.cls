@@ -45,6 +45,52 @@ Method TestSlouceniNeztratiSpoje()
 	do $$$AssertEquals(zapnuto, vypnuto, "sloučená stránka má "_zapnuto_" spojů, po směrech jich je "_vypnuto)
 }
 
+/// Km sloupce: obousměrná stránka bere **společný** seznam, ne oba směrové slepené za sebe.
+///
+/// Starý tisk to tak dělá výslovně (`JRapiLinPrtWin.mac:2523`, větev `sm="A"`) a společný seznam je
+/// odduplikovaná sjednocenina obou směrů - profil obsažený v jiném do něj nejde. Do 7. 9. jsme
+/// slepovali oba směrové, takže vznikaly sloupce nesoucí totéž.
+///
+/// Čísla jsou **změřená** na `0330511` sondou `LinkovyJrSpojeProbe.KmSloupce`: společný 8,
+/// směr tam 5, směr zpět 6. Kdyby se linka v datech změnila, test to řekne rozdílem proti globálu,
+/// ne pádem na konstantě.
+Method TestKmSloupceObousmerneBerouSpolecnySeznam()
+{
+	do ..SetupSys(.sys)
+	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
+	if '##class(%SYS.Namespace).Exists(db) do $$$AssertTrue(1, "firma "_db_" tu není - přeskočeno") quit
+	if '$data(^[db]JRL(sku, lin, "I")) do $$$AssertTrue(1, "linka "_lin_" tu není - přeskočeno") quit
+
+	set spolecnych = +$get(^[db]JRL(sku, lin, "K"))
+	set smerovychT = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "T"))
+	set smerovychZ = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "Z"))
+	// ⚠️ Makro assertu musí být na jednom řádku, proto se hlášky skládají dopředu.
+	set hlaskaFixtura = "fixtura nic neověří: společný seznam ("_spolecnych_") musí být kratší než oba směrové dohromady ("_smerovychT_"+"_smerovychZ_"), jinak je slepení a sjednocenina totéž"
+	do $$$AssertTrue(spolecnych < (smerovychT + smerovychZ), hlaskaFixtura)
+
+	if '..PocetKmVeSloupci(1, .kmObou) quit
+	set hlaskaObou = "obousměrná stránka má mít "_spolecnych_" km sloupců (společný seznam), má "_kmObou
+	do $$$AssertEquals(kmObou, spolecnych, hlaskaObou)
+
+	if '..PocetKmVeSloupci(0, .kmJednim) quit
+	set hlaskaJednim = "jednosměrná stránka má mít "_smerovychT_" km sloupců (směrový seznam), má "_kmJednim
+	do $$$AssertEquals(kmJednim, smerovychT, hlaskaJednim)
+}
+
+/// Kolik km hodnot nese první zastávka stránky - tedy kolik km sloupců stránka má.
+ClassMethod PocetKmVeSloupci(obousmerne As %Boolean, ByRef pocet) As %Boolean
+{
+	do ..SetupSys(.sys)
+	kill parametry
+	set parametry("OBOUSMERNY_TISK") = $select(obousmerne:"true", 1:"false")
+	if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, ..#TESTDB, ..#TESTSKU, ..#TESTLIN, .parametry) quit 0
+	set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT", 1)))
+	if '$isobject(page) quit 0
+	set zast = page.rows.ZASTAVKY.%Get(0)
+	set pocet = $select($isobject(zast) && $isobject(zast.KM): zast.KM.%Size(), 1: -1)
+	quit 1
+}
+
 /// Časy zpětných spojů musí sedět na **společný** seznam zastávek - tedy mít stejnou délku jako on.
 /// Kdyby se zarovnávaly podle pozice ve svém směru, vyšly by proti řádkům obráceně nebo nakřivo.
 Method TestCasyZpetnychSpojuSedNaSpolecneRadky()
@@ -63,6 +109,89 @@ Method TestSmerStrankyJePrazdny()
 {
 	if '..NactiLinku(1, .pocetStranek, .smery, .zastavek, .smerStranky) quit
 	do $$$AssertEquals(smerStranky, "", "sloučená stránka hlásí SMER=" _ smerStranky _ ", má být prázdný")
+}
+
+/// Sloučená stránka musí nést km **obou** směrů, ne jen hlavního - jinak se km opačného směru
+/// ztratí (tak to bylo do 7. 9.).
+///
+/// ⚠️ **Netvrdí se součet obou směrových seznamů.** První verze tohohle testu to tvrdila, protože
+/// vznikla dřív, než se ukázalo, že legacy má pro obousměrný tisk **společný** seznam - a ten je
+/// odduplikovaná sjednocenina, ne součet (`0330511`: 8 proti 5+6). Přesný počet ověřuje
+/// `TestKmSloupceObousmerneBerouSpolecnySeznam`; tady jde jen o to, že opačný směr nezmizel,
+/// a to platí bez ohledu na to, kolik profilů je v datech duplicitních.
+Method TestKmObouSmeruJsouNaSlouceneStrance()
+{
+	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - test přeskočen")
+		quit
+	}
+	set kmT = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "T"))
+	set kmZ = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "Z"))
+	if (kmT = 0) || (kmZ = 0) {
+		do $$$AssertTrue(1, "linka nemá km sloupce v obou směrech - test přeskočen")
+		quit
+	}
+
+	if '..DelkaKm(0, .jenTam) quit
+	if '..DelkaKm(1, .slouceno) quit
+
+	set hlaskaT = "jednosměrná stránka má " _ jenTam _ " km sloupců, linka jich má " _ kmT
+	set hlaskaOba = "sloučená stránka má " _ slouceno _ " km sloupců, jen hlavní směr jich má " _ kmT
+	do $$$AssertEquals(jenTam, kmT, hlaskaT)
+	do $$$AssertTrue(slouceno > kmT, hlaskaOba)
+}
+
+/// Na sloučené stránce jsou zastávky v pořadí hlavního směru, takže **všechny** km sloupce musí
+/// shora dolů narůstat - i ty opačného směru. Odečtení od maxima (správné na samostatné stránce
+/// směru "zpět", kde jsou zastávky obráceně) tady vyrábělo sloupce klesající odshora dolů, což ve
+/// starém tisku není (nález Jan 7. 9.).
+Method TestKmOpacnehoSmeruNarustajiShoraDolu()
+{
+	set db = ..#TESTDB
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - test přeskočen")
+		quit
+	}
+	set kmZ = +$get(^[db]JRL(..#TESTSKU, ..#TESTLIN, "PATCH", "KmsSmer", "Z"))
+	if kmZ = 0 {
+		do $$$AssertTrue(1, "linka nemá km sloupce směru zpět - test přeskočen")
+		quit
+	}
+
+	do ..SetupSys(.sys)
+	kill parametry
+	set parametry("OBOUSMERNY_TISK") = "true"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, ..#TESTSKU, ..#TESTLIN, .parametry)
+	set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", 1))
+	set zastavky = page.rows.ZASTAVKY
+
+	// Poslední sloupec pole KM patří poslednímu sloupci opačného směru.
+	set posledni = zastavky.%Get(0).KM.%Size() - 1
+	set prvniHodnota = "", posledniHodnota = "", klesa = 0
+	for i = 0:1:zastavky.%Size() - 1 {
+		set v = zastavky.%Get(i).KM.%Get(posledni)
+		continue:'$isvalidnum(v)
+		if prvniHodnota = "" set prvniHodnota = v
+		if (posledniHodnota '= "") && (v < posledniHodnota) set klesa = 1
+		set posledniHodnota = v
+	}
+
+	set hlaska = "km opačného směru klesají odshora dolů (od " _ prvniHodnota _ " k " _ posledniHodnota _ ")"
+	do $$$AssertNotTrue(klesa, hlaska)
+}
+
+/// Délka pole KM první zastávky první stránky. Vrací 0, když linka na serveru není.
+Method DelkaKm(obousmerne As %Boolean, ByRef delka) As %Boolean
+{
+	do ..SetupSys(.sys)
+	kill parametry
+	set parametry("OBOUSMERNY_TISK") = $select(obousmerne:"true", 1:"false")
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, ..#TESTDB, ..#TESTSKU, ..#TESTLIN, .parametry)
+
+	set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", 1))
+	set delka = page.rows.ZASTAVKY.%Get(0).KM.%Size()
+	quit 1
 }
 
 /// Zavolá GetData a rozebere výsledek. Vrací 0, když linka na tomhle serveru není (skip).

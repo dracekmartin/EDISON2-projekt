@@ -570,26 +570,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         ];
     }
 
-    /// <summary>Maximální výška sekce v mm tak, aby nepřekryla ostatní sekce na stránce.</summary>
-    private float CalculateMaxSectionHeight(Section section)
-    {
-        var template = _state.CurrentTemplate;
-        float printableH = template.PageSize.PrintableHeight;
-
-        // Odečíst výšku všech ostatních sekcí (+ prostor pro záhlaví sekce v designeru ~5mm per sekce)
-        const float sectionHeaderMm = 5f; // přibližný ekvivalent 20px záhlaví v mm
-        float usedByOthers = 0f;
-        foreach (var s in template.Sections)
-        {
-            if (s == section) continue;
-            usedByOthers += sectionHeaderMm + s.EffectiveDesignerHeight;
-        }
-        // Záhlaví této sekce
-        usedByOthers += sectionHeaderMm;
-
-        return Math.Max(5f, printableH - usedByOthers);
-    }
-
     private IReadOnlyList<Models.PropertyDescriptor> BuildSectionDescriptors(Section section)
     {
         var list = new List<Models.PropertyDescriptor>
@@ -610,8 +590,9 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                 Get   = () => section.DesignerHeight ?? 30f,
                 Set   = v  =>
                 {
-                    // Clamp: výška nesmí překrýt ostatní sekce
-                    float maxH = CalculateMaxSectionHeight(section);
+                    // Clamp: výška nesmí vytlačit ostatní sekce ze stránky. Táž míra jako
+                    // u tlačítka níž - jinak by tlačítko zapsalo hodnotu, kterou pole srazí.
+                    float maxH = Models.Layout.SectionLayoutMath.ZbyvajiciMistoMm(_state.CurrentTemplate, section);
                     section.DesignerHeight = Math.Min(v, maxH);
                 },
                 Min   = 5f, Max = 9999f, Unit = "mm"

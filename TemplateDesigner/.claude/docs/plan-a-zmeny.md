@@ -35,6 +35,20 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### Týden od 31. 8. 2026 - Písmena u odjezdů se berou z nastavení linky
+
+Písmena, kterými se u času odjezdu označuje varianta trasy, se nově berou **z nastavení u linky** -
+z týchž polí, kde si určujete značky pro poznámky o rozdílech tras. Když je pole prázdné, použije se
+výchozí sada z programu.
+
+Důvod je konkrétní: obě řady písmen se dosud mohly potkat na témže znaku, takže **jedno písmeno
+u odjezdu mohlo znamenat dvě různé věci** a legenda k němu pak vypsala vysvětlení, které pro ten spoj
+neplatilo. Výchozí sady se proto nově nepřekrývají. Kdo si písmena zadá sám, dostane přesně to, co
+napsal - i kdyby se obě sady kryly; přesunout jde kterákoli z nich.
+
+⚠️ **Vývěska linky se třemi a více variantami tras bude mít u odjezdů jiná písmena než dosud.**
+Linky s jednou nebo dvěma variantami se nemění.
+
 ### Týden od 31. 8. 2026 - Údaje dopravce po jednotlivých polích
 
 Název, adresa, telefon, e-mail a IČO dopravce jsou nově samostatná datová pole. Dosud šlo použít

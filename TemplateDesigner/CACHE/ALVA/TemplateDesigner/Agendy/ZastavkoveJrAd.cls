@@ -661,8 +661,11 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // Volbou zůstává jen „první varianta bez písmene" - ta zároveň drží vývěsku s jedinou variantou
     // bez zbytečného „A" u každé minuty. (Rozhodnutí Jan 17. 8., naměřeno na lince 0330520.)
     s variantyTras = ##class(%DynamicArray).%New()
+    // Sada písmen z nastavení linky (jinak výchozí, disjunktní proti rozdílům tras) - čte se jednou,
+    // je per linka.
+    s sadaVariant = ..SadaVariant(dataDB, sku, lin)
     f colY=1:1:pocetSloupcu {
-        s pism = ..PismenoVarianty(colY, prvniBez)
+        s pism = ..PismenoVarianty(colY, prvniBez, sadaVariant)
         i pism '= "" s varPismeno(displayVar(colY)) = pism
         d variantyTras.%Push(pism)
     }
@@ -1364,14 +1367,52 @@ ClassMethod WNastupisteMapa(dataDB As %String, sku As %String, lin As %String, c
     i $d(nMap) m ^||TiskAd("wnast",zdroj,dataDB,sku,lin,cisloTrasy) = nMap
 }
 
-/// Písmeno variantního sloupce (1-based pořadí sloupce): A–Z; `prvniBez` → první sloupec (hlavní
-/// varianta) bez písmene a abeceda běží od druhého. Přes 26 → „V27"… (nouzový fallback).
-ClassMethod PismenoVarianty(poradiSloupce As %Integer, prvniBez As %Boolean = 1) As %String
+/// Výchozí sada písmen **variantních sloupců** - vzestupně a disjunktně proti sadě rozdílů tras
+/// (`SadaRozdiluDefault`) i proti ostatním značkám u minuty.
+///
+/// ⚠️ Obě řady se do 3. 9. kryly: varianty brala zadrátovaná abeceda `A, B, C, D…`, rozdíly
+/// `BCEFGHIJOQRWeijqsvwxz`, takže od druhé varianty výš mělo **jedno písmeno u minuty dva významy**
+/// a legenda ho vysvětlila cizím textem (spoj variantou „E" si čtenář spároval s „jede jen do
+/// zast. Babice"). Na vývěsce pro cestující je to dezinformace, ne kosmetika.
+///
+/// Vyškrtané je vše, co u minuty jako značka už je: sada rozdílů **včetně malých písmen** (velikost
+/// se nerozlišuje, „V" vedle „v" ve výšce písma odjezdů nikdo nerozezná), `R` místenka, `K` kola,
+/// `u` pokračující spoj, `H`/`F` bezbariér. `A` v sadě rozdílů není, proto zůstává první -
+/// linka se dvěma variantami se tím nezmění a řady se rozejdou až u třetí (rozhodnutí Jan 2. 9.).
+Parameter SadaVariantDefault = "ADLMNPTY";
+
+/// Výchozí sada písmen **rozdílů tras**. 1:1 legacy (`GetZnk^JRapiLinPrtMhd`, `JRapiLinPrtMhd.mac:539`)
+/// a záměrně bez jediné změny - je to parita se starým modulem.
+Parameter SadaRozdiluDefault = "BCEFGHIJOQRWeijqsvwxz";
+
+/// Sada písmen variantních sloupců pro linku: **prioritně z nastavení u linky**, jinak výchozí.
+/// U linky ji drží „Volné značky pro minutové trasy spojů" (EDISON → linka → Nastavení k tisku →
+/// Odjezdník MHD, wire klíč `ODJEZDNIK_ZNK_CAS_PRUBEHY_TRAS`).
+///
+/// ⚠️ Bere se **doslova, bez filtrování kolizí** (rozhodnutí Jan 2. 9.): kdo si napíše „ABCDE",
+/// dostane to i s kolizí proti rozdílům tras. Je to jeho volba a tiše mu do ní sahat je horší;
+/// východisko je, že nastavitelné jsou **obě** sady, takže lze přesunout tu druhou.
+///
+/// ⚠️ Vyplněné pole zapne písmena i ve **starém modulu** - ten pro ně nemá žádný výchozí obsah
+/// (`JRapiLinPrtMhd1.mac:27`, „UVWXYZ" je jen komentář), takže dnes variantní značky netiskne vůbec.
+/// Paritu neporušuje ani jedna volba, ale kdo pole vyplní kvůli nám, uvidí písmena i ve staré sestavě.
+ClassMethod SadaVariant(dataDB As %String, sku As %String, lin As %String) As %String
 {
+    s sada = $g(^[dataDB]JRL(sku,lin,"PATCH","mhd","par",2))
+    i sada = "" s sada = ..#SadaVariantDefault
+    q sada
+}
+
+/// Písmeno variantního sloupce (1-based pořadí sloupce) ze zadané sady; `prvniBez` → první sloupec
+/// (hlavní varianta) bez písmene a sada běží od druhého. Přes délku sady se písmena **zdvojují**
+/// (`DD`, `LL`) přes <method>GetZnk</method> - stejně jako u rozdílů tras a jako v legacy.
+/// Prázdná sada → prázdné písmeno (radši nic než značka, kterou nejde vysvětlit).
+ClassMethod PismenoVarianty(poradiSloupce As %Integer, prvniBez As %Boolean = 1, sada As %String = "") As %String
+{
+    i sada = "" s sada = ..#SadaVariantDefault
     s idx = poradiSloupce - $s(prvniBez:1, 1:0)
     i idx <= 0 q ""
-    i idx <= 26 q $e("ABCDEFGHIJKLMNOPQRSTUVWXYZ", idx)
-    q "V"_idx
+    q ..GetZnk(sada, idx)
 }
 
 /// Vrátí `cisloTrasy` **hlavní (nejčastější)** trasy mezi spoji stavícími na vývěskové zastávce
@@ -1954,9 +1995,11 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
     i smer = "T" s mTarTr = $l(vzor)
     i smer = "Z" f tmp=1:1:$l(vzor) { i +$e(vzor,tmp) s mTarTr = tmp  q }
 
-    // písmenná sada - default začíná "B" (proto marker "B"); počítáno per zastávku, dedup textů
+    // Písmenná sada rozdílů tras - prioritně z nastavení linky („Volné značky"), jinak výchozí
+    // (1:1 legacy, začíná „B"). Počítáno per zastávku, dedup textů. Sada variantních sloupců je
+    // jiná a záměrně disjunktní - viz SadaVariantDefault.
     s oznTr = $g(^[dataDB]JRL(sku,lin,"PATCH","mhd","notchar"))
-    i oznTr = "" s oznTr = "BCEFGHIJOQRWeijqsvwxz"
+    i oznTr = "" s oznTr = ..#SadaRozdiluDefault
     s pocMarker = 0
 
     s sp = ""

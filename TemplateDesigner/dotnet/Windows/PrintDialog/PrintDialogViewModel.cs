@@ -60,8 +60,9 @@ public class PrintDialogViewModel : EDViewModel
     public Action<string, IReadOnlyList<DataContext>, SheetLayoutOptions?>? RequestRenderMultiPdf { get; set; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.CountOverflowingPages - layout-only kontrola přetečení
-    /// napříč všemi instancemi (data už fetchnutá → levné). Vrací (počet přetékajících, celkem stránek).</summary>
-    public Func<IReadOnlyList<DataContext>, (int Overflowing, int Total)>? RequestOverflowCheck { get; set; }
+    /// napříč všemi instancemi (data už fetchnutá → levné). Vrací nálezy (co a kde se nevejde)
+    /// a celkový počet stránek.</summary>
+    public Func<IReadOnlyList<DataContext>, (IReadOnlyList<PreteceniNalez> Nalezy, int Total)>? RequestOverflowCheck { get; set; }
 
     /// <summary>
     /// PrintDialog operuje nad **sdíleným** dictionary parametrů (typicky <c>MainWindowViewModel.PreviewParamValues</c>).
@@ -250,7 +251,13 @@ public class PrintDialogViewModel : EDViewModel
 
             // Kontrola přetečení na UI threadu (layout-only, levná) - sdílí element cache
             // s preview renderem, na pozadí by závodila.
-            var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
+            var (preteceni, totalPages) = RequestOverflowCheck?.Invoke(dataPages)
+                                          ?? ([], dataPages.Count);
+            int overflow = preteceni.Count;
+            // Co konkrétně přetéká, ne jen kolik stránek: uživatel tiskne dávkově a bez toho nemá
+            // v desítkách stránek co hledat (podnět kolega 3. 9.).
+            string preteceniInfo = OverflowWarnings.Summarize(preteceni, totalPages) is { } popis
+                ? $" ({popis})" : "";
 
             StatusText = $"Generuji PDF ({totalPages} stránek)…";
             // Skládání 1×1 papír jen zvětší (A5 šablona + list „A4 na výšku" = A4 s jednou vývěskou
@@ -284,7 +291,7 @@ public class PrintDialogViewModel : EDViewModel
                 await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets));
                 OpenPdf(target);
                 StatusText = (overflow > 0
-                    ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}{sheetInfo}"
+                    ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká{preteceniInfo}: {Path.GetFileName(target)}{sheetInfo}"
                     : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo;
                 return;
             }
@@ -306,7 +313,7 @@ public class PrintDialogViewModel : EDViewModel
 
             OpenFolder(target);
             StatusText = (overflow > 0
-                ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{sheetInfo}"
+                ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{preteceniInfo}{sheetInfo}"
                 : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo;
         }
         catch (Exception ex)

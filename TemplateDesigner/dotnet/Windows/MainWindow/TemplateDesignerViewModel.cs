@@ -657,13 +657,18 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _selectionStatusText, value);
     }
 
-    private bool _hasPreviewOverflow;
-    /// <summary>True = obsah některé stránky preview se nevejde. Status bar zobrazí červený blok.</summary>
-    public bool HasPreviewOverflow
+    private string? _previewOverflow;
+    /// <summary>Co se v náhledu nevejde a kde (číslo stránky, sekce, prvek, přesah v mm). Null = nic
+    /// nepřetéká → červený blok ve status baru je skrytý. ⚠️ Nese **text, ne příznak**: z obecného
+    /// „obsah se nevejde na stránku" uživatel nepoznal, kterou stránku ani co ji přetéká, takže
+    /// neměl kde začít (podnět kolega 3. 9.).</summary>
+    public string? PreviewOverflow
     {
-        get => _hasPreviewOverflow;
-        set => Set(ref _hasPreviewOverflow, value);
+        get => _previewOverflow;
+        set { if (Set(ref _previewOverflow, value)) OnPropertyChanged(nameof(HasPreviewOverflow)); }
     }
+
+    public bool HasPreviewOverflow => !string.IsNullOrEmpty(_previewOverflow);
 
     private string _agendaNameText = "Agenda: -";
     public string AgendaNameText
@@ -1126,6 +1131,66 @@ public class TemplateDesignerViewModel : EDViewModel
 
         ActivateSection(section);
         RequestCanvasSizeUpdate?.Invoke();
+    }
+
+    /// <summary>
+    /// Roztáhne sekci na celé zbývající místo stránky. Vratné krokem zpět.
+    /// </summary>
+    /// <remarks>
+    /// Sekce nad ní se nehne, sekce pod ní se **posune a podrží svou výšku**; prvky jdou se svou
+    /// sekcí samy, protože jejich souřadnice jsou k ní relativní (rozhodnutí Jan 3. 9.).
+    ///
+    /// <para>⚠️ Je to **akce v místní nabídce**, ne pole ve formuláři sekce - formulář sekce přichází
+    /// z Caché (`SectionEdit.cls`), takže tlačítko přidané do C# descriptorů se vůbec nezobrazí.
+    /// Do 3. 9. tam bylo právě takhle položené a nešlo na něj kliknout.</para>
+    /// </remarks>
+    public void VyplnitZbytekStranky(Section section)
+    {
+        if (section.DesignerHeight is not { } stara) return;   // dynamická výška roste sama
+
+        float nova = SectionLayoutMath.ZbyvajiciMistoMm(State.CurrentTemplate, section);
+        if (MathF.Abs(nova - stara) < 0.05f) return;           // ať krok zpět nesbírá prázdné změny
+
+        Execute(new SetPropertyCommand("výška sekce", stara, nova,
+            v => section.DesignerHeight = (float?)v));
+        RebuildSections();
+        RequestCanvasSizeUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+        RequestPreviewRefresh?.Invoke();
+    }
+
+    /// <summary>
+    /// Srazí ručně zadanou výšku sekce do týchže mezí, jaké platí pro tažení a pro „Vyplnit zbytek
+    /// stránky". Vrací true, když hodnotu opravdu změnil.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Formulář sekce přichází z Caché (`SectionEdit.cls`) a **nezná ostatní sekce šablony**,
+    /// takže má statický rozsah 5-9999 mm. Bez tohohle sražení šla mez obejít cestou, kterou
+    /// uživatel zkusí jako první: tažením sekci pod obsah nezmenšil, ale číslem ano - a prvek se
+    /// pak v návrháři oříznul, přestože se na papíře vytiskl celý (nález Jan 4. 9.).
+    ///
+    /// <para>Korekce se zapisuje **mimo příkaz** - krok zpět vrátí hodnotu z dialogu, takže se stav
+    /// nerozejde. Vratná zvlášť by znamenala mačkat zpět dvakrát.</para>
+    /// </remarks>
+    public bool SrazVyskuSekceDoMezi(Section section)
+    {
+        if (section.DesignerHeight is not { } zadana) return false;   // dynamická výška roste sama
+
+        float dno     = SectionLayoutMath.MinimalniVyskaProSekci(section);
+        float strop   = SectionLayoutMath.ZbyvajiciMistoMm(State.CurrentTemplate, section);
+        float srazena = Math.Clamp(zadana, dno, MathF.Max(dno, strop));
+        if (srazena == zadana) return false;
+
+        section.DesignerHeight = srazena;
+        // Setinové smetí srazit mlčky - hláška o „zmenšení na 21,9 mm" u rozdílu 0,02 mm nic
+        // neříká. Srazit se ale musí vždy, jinak smetí zůstane v šabloně a engine ho pak řeší
+        // tolerancí (`SectionLayoutMath.TolerancePrekryvuMm`) na každé stránce znovu.
+        if (MathF.Abs(srazena - zadana) < SectionLayoutMath.TolerancePrekryvuMm) return true;
+
+        StatusText = srazena > zadana
+            ? $"Výška sekce {section.Name} zvětšena na {srazena:0.#} mm - menší by uřízla její obsah"
+            : $"Výška sekce {section.Name} zmenšena na {srazena:0.#} mm - větší by nevešla na stránku";
+        return true;
     }
 
     public void MoveSection(Section section, int direction)
@@ -2090,8 +2155,12 @@ public class TemplateDesignerViewModel : EDViewModel
             ElementTypes.Barcode       => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
             ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
             ElementTypes.DepartureGrid => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.NotesLegend   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.LineTable     => new LineTableElement     { X = x, Y = y, Width = w },   // Height null = dynamická
+            // Height null = dynamická. Legenda i tabulka rostou z dat, takže pevná výška by jim
+            // obsah **zmenšila do fitu** (písmo na 46 %), ne oříznula - a uživatel na to přišel
+            // až z papíru (nález Jan 7. 9.). Zástupnou výšku (25 / 60 mm) drží prvek sám pro
+            // rámeček výběru v návrháři.
+            ElementTypes.NotesLegend   => new NotesLegendElement   { X = x, Y = y, Width = w },
+            ElementTypes.LineTable     => new LineTableElement     { X = x, Y = y, Width = w },
             _                          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
         };
         // Výchozí rámeček pro nové elementy (na modelu je default bez rámečku kvůli zpětné kompatibilitě)
@@ -3013,10 +3082,17 @@ public class TemplateDesignerViewModel : EDViewModel
         // Definice vlastních sloupců jde VŽDY čerstvě ze šablony (parametr metody), nikdy přes
         // _previewParams - tam by ji ApplyPersistedPrintParams mohl přepsat starou persistovanou
         // hodnotou a tisklo by se jiné rozvržení, než šablona říká (třída chyb B24).
+        // ⚠️ Prázdná hodnota ze šablony musí klíč **odebrat**, ne jen nepřidat - jinak v mapě
+        // zůstane persistovaná hodnota z `printParams` a serveru dojde rozvržení, které šablona
+        // nemá. Do 4. 9. tu byl jen `if`, takže komentář výše popisoval něco jiného, než kód dělal:
+        // uživatel, který si někdy vlastní sloupce nastavil, je dostával i do šablon bez nich -
+        // a spoj, který do žádného z nich nesedne, z tabulky tiše zmizí.
         if (!string.IsNullOrEmpty(columnsDefinitionJson)) p["DEFINICE_SLOUPCU"] = columnsDefinitionJson;
+        else p.Remove("DEFINICE_SLOUPCU");
         // Jazyk textů značek (#12843) - jde ze šablony, ne z parametrů sestavy, ať ho persistovaná
         // hodnota nemůže přepsat (třída chyb B24). Prázdný = server zůstane na češtině.
         if (!string.IsNullOrEmpty(jazyk)) p["JAZYK"] = jazyk;
+        else p.Remove("JAZYK");
         // Turnusy ke spojům jsou volba **prvku**, ne parametr sestavy (turnus je provozní věc
         // dopravce). Serveru to ale dojít musí, protože turnusy nejsou v datech linky a jejich
         // dotaz stojí 40-550 ms - proto touž cestou jako DEFINICE_SLOUPCU: vždy čerstvě ze
@@ -3627,18 +3703,21 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Fallback startovní šablona - agendu typicky přepíše EDISON kontrakt nebo
     /// poslední použitá agenda uživatele (viz ctor).</summary>
     /// <remarks>
-    /// Výchozí je <b>zastávkový JŘ (AD)</b>. Od 24. 8. tu byl linkový, protože se na něm pracovalo,
-    /// ale 1. 9. se linkové JŘ před vydáním skryly - a tahle konstanta skrytí obcházela: nová
-    /// šablona startovala na skryté agendě, ta se stala aktuální agendou a výběr ji pak ukázal,
-    /// protože aktuální agendu zobrazuje vždy (aby šly otevřít hotové šablony). Uživatel tedy
-    /// linkové JŘ viděl dál, i když byly skryté (nález Jan 1. 9.).
+    /// Výchozí je <b>linkový JŘ (AD)</b> - pracuje se na něm (vráceno 3. 9., rozhodnutí Jan; od 1. 9.
+    /// tu byl kvůli vydání zastávkový).
     ///
-    /// ⚠️ **Musí to být zveřejněná agenda** - jinak se skrytí dá obejít samotným startem aplikace.
-    /// Hlídá `SkrytaAgendaTests`.
+    /// ⚠️ **Musí to být zveřejněná agenda.** Když se agenda skryje před vydáním, tahle konstanta
+    /// skrytí obchází: nová šablona nastartuje na skryté agendě, ta se stane aktuální agendou
+    /// a výběr ji pak ukáže, protože aktuální agendu zobrazuje vždy (aby šly otevřít hotové
+    /// šablony). Přesně takhle uživatel linkové JŘ viděl dál, i když byly skryté (nález Jan 1. 9.).
+    /// **Skrývá-li se agenda, musí se změnit i tady** - hlídá `SkrytaAgendaTests`.
+    ///
+    /// ⚠️ Uplatní se jen tam, kde není co obnovit: **poslední použitá agenda uživatele má přednost**
+    /// (viz ctor), takže kdo si už jednou vybral jinou, dostane po startu tu svoji.
     /// </remarks>
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "LINKOVY_JR_AD" };
         t.Sections.AddRange(CreateDefaultSections(t.PageSize));
         return t;
     }

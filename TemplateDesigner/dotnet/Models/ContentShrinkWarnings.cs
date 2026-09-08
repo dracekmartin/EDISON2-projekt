@@ -20,18 +20,12 @@ public static class ContentShrinkWarnings
     /// <summary>Pod tímhle zmenšením se nehlásí nic - desetinu procenta nemá smysl komentovat.</summary>
     private const float NoticeableShrink = 0.99f;
 
-    /// <summary>
-    /// Názvy prvků jak je zná uživatel z palety. ⚠️ Musí souhlasit s tooltipy tlačítek palety
-    /// v <c>MainWindow.xaml</c> - jiné jméno v hlášce než na tlačítku znamená, že uživatel neví,
-    /// o který prvek jde.
-    /// </summary>
+    /// <summary>Názvy prvků drží <see cref="ElementNames"/> - jediné místo pro celou aplikaci.</summary>
     private static string? NazevProUzivatele(TemplateElement el) => el switch
     {
-        NotesLegendElement   => "Poznámky",
-        StopListElement      => "Seznam zastávek",
-        DepartureGridElement => "Minuty odjezdů",
-        LineTableElement     => "Linkový JŘ",
-        _                    => null,
+        NotesLegendElement or StopListElement or DepartureGridElement or LineTableElement
+            or TextElement => ElementNames.ForUser(el),
+        _   => null,
     };
 
     /// <summary>Text upozornění, nebo null když se nic nezmenšilo.</summary>
@@ -41,7 +35,7 @@ public static class ContentShrinkWarnings
 
         var elements = template.Sections
             .SelectMany(s => s.Elements)
-            .OfType<ScheduleElementBase>()
+            .Where(el => el is ScheduleElementBase or TextElement)
             .Where(el => el.Height.HasValue)
             .ToList();
         if (elements.Count == 0) return null;
@@ -53,21 +47,27 @@ public static class ContentShrinkWarnings
 
             float nejvetsiZmenseni = 1f;
             int dotcenychStranek = 0;
+            bool oriznuto = false;
             foreach (var page in pages)
             {
                 float zmenseni = Zmenseni(el, page);
+                if (el is TextElement text && text.ContentOverflows(page)) oriznuto = true;
                 if (zmenseni >= NoticeableShrink) continue;
                 dotcenychStranek++;
                 if (zmenseni < nejvetsiZmenseni) nejvetsiZmenseni = zmenseni;
             }
-            if (dotcenychStranek == 0) continue;
+            if (dotcenychStranek == 0 && !oriznuto) continue;
 
             // Procenta, ne body: velikost písma drží každý prvek jinde (poznámky ve vlastní
             // vlastnosti, ostatní ve stylu buněk), takže by hláška musela znát pět výjimek.
             int procent = (int)MathF.Round(nejvetsiZmenseni * 100f);
-            casti.Add(pages.Count > 1
-                ? $"{nazev}: písmo zmenšeno až na {procent} % ({dotcenychStranek} z {pages.Count} stránek)"
-                : $"{nazev}: písmo zmenšeno na {procent} %");
+            // Text pod mezí zmenšování se ořízne - to je ztráta obsahu, takže se musí říct
+            // i s cestou k nápravě. Do 3. 9. se ořez nehlásil vůbec a uživatel o něm nevěděl.
+            casti.Add(oriznuto
+                ? $"{nazev}: písmo zmenšeno na {procent} % a text se přesto nevejde - zkraťte ho nebo zvětšete prvek"
+                : pages.Count > 1
+                    ? $"{nazev}: písmo zmenšeno až na {procent} % ({dotcenychStranek} z {pages.Count} stránek)"
+                    : $"{nazev}: písmo zmenšeno na {procent} %");
         }
 
         return casti.Count == 0 ? null : string.Join("; ", casti);
@@ -77,7 +77,16 @@ public static class ContentShrinkWarnings
     /// Kolikrát se písmo zmenšilo, aby se obsah vešel. 1 = vejde se, méně = zmenšeno.
     /// Musí počítat stejně jako render (<c>ComputeFontScale</c>), jinak hláška lže.
     /// </summary>
-    private static float Zmenseni(ScheduleElementBase el, DataContext? page)
+    private static float Zmenseni(TemplateElement el, DataContext? page) => el switch
+    {
+        // Textový prvek si škálu počítá sám (výška i šířka, s mezí) - hláška musí dostat totéž
+        // číslo jako render, jinak tvrdí jinou velikost, než se vytiskne.
+        TextElement text => text.ComputeShrinkScale(page?.ResolvePlaceholders(text.Text) ?? text.Text),
+        ScheduleElementBase schedule => ZmenseniJr(schedule, page),
+        _ => 1f,
+    };
+
+    private static float ZmenseniJr(ScheduleElementBase el, DataContext? page)
     {
         if (el.Height is not { } vyska) return 1f;
         float prirozena = el.CalculateHeightFromData(page);

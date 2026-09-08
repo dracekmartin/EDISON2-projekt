@@ -749,3 +749,24 @@ nuance vizuální vs datové 1:1) žije v samostatném dokumentu - **analýza ud
 
 Aktuální stav otevřených mezer se trackuje v [`roadmap.md`](roadmap.md) (AD-N tabulka). Přehled „co
 umíme navíc oproti legacy" pro komunikaci se zákazníky: [`customer-requirements-zastavkovy-jr.md §F`](customer-requirements-zastavkovy-jr.md).
+
+---
+
+## 4. Opsané pomocné funkce Caché agend - podklad k případnému sjednocení
+
+Analýza 5. 8. 2026, přesunuto z roadmapy 4. 9. - **udělané jednou, nedělat znovu.** Samo sjednocení
+čeká, dokud se tvar výstupních dat neustálí (rozhodnutí Jan 5. 8. a 31. 8.).
+
+27 pomocných funkcí nese stejný název ve dvou a více agendách, ale:
+
+- **15 jsou doslovné kopie** - ≈ 97 řádků k odstranění, ne 400-500, jak tvrdil původní odhad.
+- **4 mají stejnou signaturu a rozešlé tělo, a to záměrně** - `AddStandardJRFields` se liší
+  v uživatelských popiscích polí (AD „Číslo linky" × MHD „Číslo linky (dle licence)"),
+  `AddStandardJRParameters` nabízí jiné parametry sestavy.
+- **8 sdílí jen název a dělá jinou věc** - `BuildPoznamka` má dvě rodiny s **jiným datovým
+  kontraktem** (zastávková posílá `KATEGORIE` + barvy, linková `DRUH`), `PopisDopravce` existuje
+  3× se třemi signaturami.
+
+⚠️ **Sloučit jde bezpečně jen skupinu doslovných kopií a jen u zastávkových agend**, které kryjí
+zlaté odtisky a 46 testů helperů. **Linkové agendy nemají ani jeden test** (2 000 řádků), takže
+tam by zásah jel bez sítě. Vzor existuje - `BaseAgenda` už čtyři sdílené helpery hostuje.

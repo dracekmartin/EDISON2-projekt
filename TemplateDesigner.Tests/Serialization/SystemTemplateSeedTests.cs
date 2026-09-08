@@ -84,6 +84,21 @@ public class SystemTemplateSeedTests
         Assert.NotEmpty(template.Sections);
     }
 
+    [Fact]
+    public void LinkovySablona_MaLegenduJakoPrvek_NeDynamickouTabulku()
+    {
+        // Legenda linkového JŘ byla do 3. 9. dynamická tabulka nad kolekcí poznámek, takže
+        // uživatel dostal jen sloupce textu - bez inverzního boxu negativních značek a bez
+        // řazení podle typu (`B117`). Test drží, že se to nevrátí.
+        var t = TemplateSerializer.Deserialize(
+            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-ad.json")));
+
+        var prvky = t.Sections.SelectMany(s => s.Elements).ToList();
+
+        Assert.Contains(prvky, e => e is NotesLegendElement);
+        Assert.DoesNotContain(prvky, e => e is DynamicTableElement d && d.DataSource == "POZNAMKY");
+    }
+
     [Theory]
     [MemberData(nameof(AllTemplates))]
     public void SablonaMaKompletniMetadata(string fileName)

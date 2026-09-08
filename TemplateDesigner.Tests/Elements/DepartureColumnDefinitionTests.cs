@@ -149,6 +149,32 @@ public class DepartureColumnDefinitionTests
         Assert.False(withoutDef.ContainsKey("DEFINICE_SLOUPCU"));
     }
 
+    /// <summary>
+    /// Šablona bez vlastních sloupců musí persistovanou definici <b>přebít</b>, ne ji propustit.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 4. 9. se klíč jen „nepřidal", takže v mapě zůstala hodnota z persistovaných parametrů
+    /// a serveru dorazilo rozvržení, které šablona nemá. Uživatel, který si někdy vlastní sloupce
+    /// nastavil, je pak dostával i do šablon bez nich - a spoj, který do žádného z nich nesedne,
+    /// z tabulky tiše zmizí. Přesně před tímhle varuje komentář u té metody, jen to kód nedělal.
+    /// Týž mechanismus platí pro jazyk značek.
+    /// </remarks>
+    [Fact]
+    public void ComposeGetDataParams_SablonaBezSloupcuPrebijePersistovanou()
+    {
+        var persistovane = new Dictionary<string, object?>
+        {
+            ["DEFINICE_SLOUPCU"] = "{\"sloupce\":[{\"dny\":\"X\"}]}",
+            ["JAZYK"] = "sk",
+        };
+
+        var p = TemplateDesignerViewModel.ComposeGetDataParams(
+            persistovane, "LINKA_ID", "42", null, columnsDefinitionJson: null, false, jazyk: null);
+
+        Assert.False(p.ContainsKey("DEFINICE_SLOUPCU"), "persistovaná definice sloupců prošla do serveru");
+        Assert.False(p.ContainsKey("JAZYK"), "persistovaný jazyk prošel do serveru");
+    }
+
     // ── Souhrn toho, co sloupce nevzaly (status bar) ────────────────────────────────
 
     private static DataContext Page(string? nezarazene, string? mimoPlatnost = null, string? cisla = null)

@@ -22,7 +22,9 @@ public static class SymbolRunRenderer
     /// <summary>Jeden úsek textu se svým fontem.</summary>
     /// <param name="Text">Co se vypíše.</param>
     /// <param name="Symbol">true = symbolový Timetable font (piktogram).</param>
-    public readonly record struct Run(string Text, bool Symbol);
+    /// <param name="Zmenseni">Podíl velikosti písma vůči zbytku buňky (1 = stejné). Slouží
+    /// k sázení minut menším písmem než hodina; úseky sedí na společné účaří.</param>
+    public readonly record struct Run(string Text, bool Symbol, float Zmenseni = 1f);
 
     /// <summary>Rozdělí značky na úseky podle fontu a mezerou je oddělí, jako by to byl jeden text.
     /// Vrací prázdný seznam, když není co kreslit.</summary>
@@ -54,21 +56,40 @@ public static class SymbolRunRenderer
         using var symbolFont = new SKFont(symbolFace, normalFont.Size);
         using var paint = style.CreateTextPaint();
 
-        var m = normalFont.Metrics;
-        var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
-        var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
-
-        float totalPx = 0f;
-        foreach (var r in runs) totalPx += (r.Symbol ? symbolFont : normalFont).MeasureText(r.Text);
-
-        var (xPx, baselineY) = CellLayout.TextAnchorPx(
-            tl, br, totalPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
-
-        foreach (var r in runs)
+        // Zmenšené úseky (minuty) dostanou vlastní font, ale účaří i výška řádku se berou
+        // z toho plného - jinak by menší text „plaval" a buňky by v řádku nesedly.
+        var zmensene = new Dictionary<float, SKFont>();
+        SKFont Font(Run r)
         {
-            var f = r.Symbol ? symbolFont : normalFont;
-            ctx.Canvas.DrawText(r.Text, xPx, baselineY, f, paint);
-            xPx += f.MeasureText(r.Text);
+            if (r.Zmenseni >= 0.999f) return r.Symbol ? symbolFont : normalFont;
+            if (!zmensene.TryGetValue(r.Zmenseni, out var f))
+                zmensene[r.Zmenseni] = f = new SKFont(
+                    r.Symbol ? symbolFace : normalFont.Typeface, normalFont.Size * r.Zmenseni);
+            return f;
+        }
+
+        try
+        {
+            var m = normalFont.Metrics;
+            var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
+            var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
+
+            float totalPx = 0f;
+            foreach (var r in runs) totalPx += Font(r).MeasureText(r.Text);
+
+            var (xPx, baselineY) = CellLayout.TextAnchorPx(
+                tl, br, totalPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
+
+            foreach (var r in runs)
+            {
+                var f = Font(r);
+                ctx.Canvas.DrawText(r.Text, xPx, baselineY, f, paint);
+                xPx += f.MeasureText(r.Text);
+            }
+        }
+        finally
+        {
+            foreach (var f in zmensene.Values) f.Dispose();
         }
     }
 }

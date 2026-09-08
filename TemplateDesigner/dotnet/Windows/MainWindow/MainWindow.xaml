@@ -325,13 +325,15 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.DepartureGrid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Poznámky" Tag="NotesLegendElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
+                        <!-- Hlavní tabulka sestavy před poznámkami - poznámky jsou doplněk. U zastávkových
+                             to pořadí drží samo, u linkových by poznámky stály před svou tabulkou. -->
                         <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Linkový JŘ (zastávky × spoje)" Tag="LineTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
+                        </Button>
+                        <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Poznámky" Tag="NotesLegendElement"
+                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
+                            <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Elementy" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -911,15 +913,17 @@
                                FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                Foreground="{DynamicResource EDTheme.Text.Primary}"/>
 
-                    <!-- 4) Varování o přetečení preview (červený blok, jen když obsah přetéká) -->
+                    <!-- 4) Varování o přetečení preview (červený blok, jen když obsah přetéká).
+                         Text jmenuje stránku, sekci i prvek - stejně jako ostatní odznaky vedle;
+                         pevné „Obsah se nevejde na stránku" uživateli neřeklo, kde začít. -->
                     <Border Grid.Column="6"
                             Background="{DynamicResource EDTheme.Semantic.Danger}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding HasPreviewOverflow, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Obsah některé stránky se nevejde - zvětšete stránku (Vlastnosti stránky) nebo zmenšete obsah">
+                            ToolTip="Zvětšete stránku (Vlastnosti stránky, Ctrl+Shift+P), zvětšete sekci, nebo zmenšete obsah prvku">
                         <!-- White záměrně mimo theme: text na Semantic.Danger pozadí (červená je
                              v obou tématech tmavá, bílá na ní má vždy dostatečný kontrast). -->
-                        <TextBlock Text="Obsah se nevejde na stránku"
+                        <TextBlock Text="{Binding PreviewOverflow}"
                                    Foreground="White" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"/>

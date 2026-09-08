@@ -181,6 +181,38 @@ Legenda poznámek: `HeaderText`, `NoteSeparator`, `NoteFontSize`, `NoteLineHeigh
 
 ---
 
+## Dva režimy výšky - pevné plátno proti tekoucímu dokumentu
+
+Není to dvojí cesta k témuž, jsou to **dva různé druhy sestavy** a míchání je past
+(nález Jan 7. 9. při stavbě linkové šablony).
+
+**Pevné plátno - zastávková vývěska.** Papír je daný, jedna zastávka = jedna stránka do vitríny.
+Systémové šablony proto mají **jednu sekci 146,6 mm s „Nepřerušovat"** a prvkům dávají **pevnou
+výšku** (seznam zastávek 120,4 · minuty odjezdů 120,4 · poznámky 103,1).
+Pevná výška obsah **nezřezává, ale zmenšuje do fitu** (`ScheduleElementBase.ComputeFontScale`) -
+a to je tady **záměr**: vývěska musí vyjít na jednu stránku, i když má zastávka o pět poznámek víc.
+
+**Tekoucí dokument - linkový a knižní JŘ.** Obsahu je proměnlivě mnoho (30 nebo 300 zastávek)
+a papír se přidá. Prvky mají **výšku prázdnou**, rozměr se řídí velikostí písma a výškou řádku,
+sekce se smí dělit a co se nevejde, pokračuje na další stránce.
+
+**Volí se to jako celek, ne per prvek:** buď pevná sekce + pevné výšky + „Nepřerušovat", nebo
+prázdné výšky + „Přes stránky".
+
+⚠️ **Důsledky, které se z kódu nepoznají:**
+
+- **Hlášení o zmenšení písma je vývěskový nástroj** (`ContentShrinkWarnings`, vzniklo z #13158:
+  u vývěsky vyjde každá zastávka jinak podle počtu poznámek). V linkovém JŘ je pevná výška
+  u rostoucího prvku skoro vždy omyl - legenda se pak vykreslí písmem na 46 % a nikdo nepozná proč.
+- **Z palety proto přicházejí bez výšky prvky, které rostou z dat** (tabulka linky, legenda
+  poznámek), a s výškou ty, které patří na pevné plátno. Seznam zastávek a minuty odjezdů
+  s pevnou výškou zůstávají i technicky: seznam si render ořezává na výšku prvku a minuty mají
+  volbu „Roztáhnout na výšku", která pevnou výšku potřebuje.
+- **Výška sekce je v obou režimech minimum, ne strop** (`max(zadaná, obsah)`), takže v tekoucím
+  dokumentu zadaná výška nad obsah zůstane jako mezera pod prvkem.
+
+---
+
 ## Barvy a formátování buněk
 
 ### Dvě cesty

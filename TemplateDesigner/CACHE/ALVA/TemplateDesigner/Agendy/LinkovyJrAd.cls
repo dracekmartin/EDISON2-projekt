@@ -26,8 +26,9 @@ Include GENERAL
 ///                     - v pořadí směru jízdy (T vzestupně, Z sestupně)
 ///   rows.SPOJE:       [{ CISLO_SPOJE, SKUPINA, NZ, PLATNOST:[znaky], CASY:[zarovnané na ZASTAVKY:
 ///                        "HH:MM" | "" (mimo trasu) | "|" (projíždí) | "<" (jede jinudy)],
-///                        PRIPOJE:[{ TYP ("vycka"/"navazuje"), PORADI, ZNAK, TEXT, CAS, LINKA,
-///                        SPOJ, RADEK (0/1 - legacy „typ výstupu": tisknout jako vložený řádek) }] }]
+///                        PRIPOJE:[{ TYP ("vycka"/"navazuje"), PORADI, ZNAK, TEXT (směr), CAS, LINKA,
+///                        SPOJ, AVL (A autobus / V vlak / L loď - prvek podle něj seskupuje řádky),
+///                        RADEK (0/1 - legacy „typ výstupu": tisknout jako vložený řádek) }] }]
 ///                     - řazené dle legacy mkPoradiSp (odjezd z výchozí + bublinové doseřazení
 ///                       per tarifní číslo); spoj patřící do víc skupin dnů emitován vícekrát
 ///   rows.SKUPINY_DNU: [{ ID, NADPIS }] dle parametru DELENI_SLOUPCU (texty WinMHD DSC číselník)
@@ -58,16 +59,21 @@ Parameter Variant As %String = "AD";
 
 Parameter VariantLabel As %String = "AD (linková doprava)";
 
-/// ⚠️ **Zveřejněná byla od 24. 8., od 1. 9. je zase skrytá** (rozhodnutí Jan): vydává se verze,
-/// ve které mají být jen zastávkové jízdní řády. Linkový tisk je funkční a testy na něj běží dál -
-/// jen se nenabízí uživatelům, dokud se nevydá.
+/// ⚠️ **Zveřejněná od 24. 8., 1. 9. skrytá kvůli vydání, 3. 9. vrácená** (rozhodnutí Jan) - pokračuje
+/// se v dovývoji linkových jízdních řádů, takže je agenda potřeba v nabídce. **Před dalším vydáním
+/// se musí znovu rozhodnout, jestli má jít k zákazníkům**: `Released = 1` znamená, že se ukáže všem,
+/// jakmile se vydá nová verze.
 ///
-/// ⚠️ **Skrytí neznepřístupní hotové šablony.** Výběr agendy nezveřejněnou agendu nenabízí, ale
-/// **aktuální agendu šablony ukáže vždy**, a v otevírání z databáze jsou její šablony dosažitelné
-/// přes „Všechny agendy". Prvek linkové tabulky zmizí z palety sám - váže se na druh agendy `LINE`.
+/// ⚠️ **Skrytí neznepřístupní hotové šablony** (platí pro obě strany přepínače). Výběr agendy
+/// nezveřejněnou agendu nenabízí, ale **aktuální agendu šablony ukáže vždy**, a v otevírání
+/// z databáze jsou její šablony dosažitelné přes „Všechny agendy". Prvek linkové tabulky se váže
+/// na druh agendy `LINE`, takže z palety zmizí a objeví se sám.
+///
+/// ⚠️ **Seznam agend se čte jednou při startu** - běžící aplikace změnu nepřebere, musí se zavřít
+/// a spustit znovu.
 ///
 /// Městská varianta (`LinkovyJrMhd`) zveřejněná nebyla nikdy: neprošla porovnáním se starým modulem.
-Parameter Released = 0;
+Parameter Released = 1;
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 
@@ -605,8 +611,18 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     // globální (1:1 legacy gPLSetWin `:1847`, kde je `hodnota-1`).
     s zonaDelZnkLinka = +$g(^[dataDB]JRL(sku,lin,"PATCH","ZonaIdsDelZnk"))
     s bezPismenVZone = $s(zonaDelZnkLinka:zonaDelZnkLinka - 1, 1:+$g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk")))
-    s pocetKmSloupcu = $s(tiskKm:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)), 1:0)
-    s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu)
+    // Km sloupce jsou u linky uložené **třikrát**: společný seznam `^JRL(sku,lin,"K")` a dva
+    // směrové `PATCH,KmsSmer,T/Z`. Starý tisk bere u **obousměrné** sestavy ten společný a u
+    // jednosměrné směrový (`JRapiLinPrtWin.mac:2523`, větev `sm="A"`), protože společný je
+    // **odduplikovaná sjednocenina** obou směrů - profil obsažený v jiném do něj nejde.
+    // Do 7. 9. jsme slepovali oba směrové za sebe a vyráběli tím sloupce nesoucí totéž:
+    // na `330511` jedenáct místo osmi (T 5 + Z 6, tři profily jsou obsažené v jiných).
+    // ⚠️ Prahy `Kms,Filtr` / `Kms,MaxFiltr` **neřešíme** - jsou to vstupy do generování těch
+    // seznamů v jízdních řádech (`JRapiLinUtlKms1.mac:36-200`), takže je dostáváme profiltrované.
+    s spolecneKm = (tiskKm && obousmerne)
+    s pocetKmSloupcu = $s('tiskKm:0, spolecneKm:+$g(^[dataDB]JRL(sku,lin,"K")),
+        1:+$g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer)))
+    s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu, spolecneKm)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
     k atributyZastavek                        // atributy z číselníku zastávek (^JRZ $8, CSV) - legenda druhu 7
     s maMhd = 0
@@ -631,12 +647,12 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i zdvojit {
             s idx = idx + 1
             s rowMeta(idx) = $lb(poradi, "P")
-            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone))
+            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm))
         }
 
         s idx = idx + 1
         s rowMeta(idx) = $lb(poradi, "O")
-        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone)
+        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm)
         d zastavky.%Push(z)
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
@@ -759,7 +775,7 @@ ClassMethod ZastavujiciTc(dataDB As %String, sku As %String, lin As %String, sme
 }
 
 /// JSON objekt jednoho zastávkového řádku (hlavní "zastavka" nebo vložený "prijezd").
-ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1, bezPismenVZone As %Boolean = 0) As %DynamicObject
+ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1, bezPismenVZone As %Boolean = 0, spolecneKm As %Boolean = 0) As %DynamicObject
 {
     s czst = $p(veta,":",1)
     s z = ##class(%DynamicObject).%New()
@@ -790,17 +806,25 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     f ai=1:1:$l(atrZnaky) d atributy.%Push($e(atrZnaky,ai))
     d z.%Set("ATRIBUTY", atributy)
 
-    // km sloupce směru; -1 → "<" (jede jinudy); Zpět: km = maxKm - km (legacy KmSloupce/MaxKm)
+    // km sloupce; -1 → "<" (jede jinudy); Zpět: km = maxKm - km (legacy KmSloupce/MaxKm).
+    // Obousměrná sestava bere společný seznam, viz komentář u `spolecneKm` výše.
     s km = ##class(%DynamicArray).%New()
     f sl=1:1:pocetKmSloupcu {
-        s kmVal = $p($g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer,sl)),":",poradi)
-        i kmVal = -1 { d km.%Push("<") }
-        elseif kmVal = "" { d km.%Push("") }
-        elseif 'jeTam { d km.%Push($p(maxKmVeta,":",sl) - kmVal) }
-        else { d km.%Push(+kmVal) }
+        d ..PushKm(km, dataDB, sku, lin, smer, sl, poradi, maxKmVeta, jeTam, spolecneKm)
     }
     d z.%Set("KM", km)
     q z
+}
+
+/// Jedna hodnota km sloupce do pole: -1 = "<" (jede jinudy), prázdné = prázdno, směr "zpět"
+/// se odečítá od maxima sloupce (1:1 legacy `KmSloupce`/`MaxKm`).
+ClassMethod PushKm(km As %DynamicArray, dataDB As %String, sku As %String, lin As %String, smer As %String, sl As %Integer, poradi As %String, maxKmVeta As %String, jeTam As %Boolean, spolecne As %Boolean = 0)
+{
+    s kmVal = $p(..KmVeta(dataDB, sku, lin, smer, sl, spolecne),":",poradi)
+    i kmVal = -1 { d km.%Push("<") }
+    elseif kmVal = "" { d km.%Push("") }
+    elseif 'jeTam { d km.%Push($p(maxKmVeta,":",sl) - kmVal) }
+    else { d km.%Push(+kmVal) }
 }
 
 /// Označení zóny bez písmen (`51A` → `51`). Seznam znaků je 1:1 legacy `delZnk^JRapiLinPrtPS2`
@@ -835,12 +859,20 @@ ClassMethod MaSpoje(dataDB As %String, sku As %String, lin As %String, smer As %
     q (sp '= "")
 }
 
+/// Obsah jednoho km sloupce (":"-věta) - ze společného seznamu, nebo ze směrového.
+/// **Jediné místo, které o tom rozhoduje**, ať se počet sloupců a jejich obsah nerozejdou.
+ClassMethod KmVeta(dataDB As %String, sku As %String, lin As %String, smer As %String, sl As %Integer, spolecne As %Boolean = 0) As %String
+{
+    i spolecne q $g(^[dataDB]JRL(sku,lin,"K",sl))
+    q $g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer,sl))
+}
+
 /// Max km per km-sloupec (":"-věta) pro přepočet směru Zpět (legacy MaxKm; -1 a prázdné ignoruje).
-ClassMethod MaxKmVeta(dataDB As %String, sku As %String, lin As %String, smer As %String, pocetKmSloupcu As %Integer) As %String
+ClassMethod MaxKmVeta(dataDB As %String, sku As %String, lin As %String, smer As %String, pocetKmSloupcu As %Integer, spolecne As %Boolean = 0) As %String
 {
     s veta = ""
     f sl=1:1:pocetKmSloupcu {
-        s kmVeta = $g(^[dataDB]JRL(sku,lin,"PATCH","KmsSmer",smer,sl))
+        s kmVeta = ..KmVeta(dataDB, sku, lin, smer, sl, spolecne)
         s mymax = 0
         f i=1:1:$l(kmVeta,":") {
             s v = $p(kmVeta,":",i)
@@ -1233,14 +1265,20 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                     s linka2 = $p(conn,":",2), spoj2 = $p(conn,":",3)
                     s kam = $p(conn,":",5), casMin = +$p(conn,":",6)
                     s typVystupu = +$p(conn,":",4), typZobrazeni = +$p(conn,":",7)
-                    s avl = $p(conn,":",1)
+                    s avl = $p(conn,":",1), linkaProTisk = $p(conn,":",11)
                 }
                 else {
                     s linka2 = $p(conn,":",1), spoj2 = $p(conn,":",2)
                     s kam = $p(conn,":",3), casMin = +$p(conn,":",8)
                     s typVystupu = +$p(conn,":",4), typZobrazeni = +$p(conn,":",9)
-                    s avl = $p(conn,":",6)
+                    s avl = $p(conn,":",6), linkaProTisk = $p(conn,":",12)
                 }
+                // Vlastní „linka pro tisk" přebíjí číslo linky - starý modul to dělá vždy, když je
+                // pole vyplněné (`JRapiLinPrtWin01.mac:76,135`), bez ohledu na cokoli dalšího.
+                // Naměřeno 4. 9.: 3 515 z 71 889 přípojů ho má, u 3 512 se číslo liší - u vlaku
+                // stojí v surovém poli číslo vlaku („Os 8009"), ale tisknout se má označení linky
+                // („S1"). Nejvíc CB_GWBUS (29 %).
+                i linkaProTisk '= "" s linka2 = linkaProTisk
                 i typVystupu = 2 continue                 // jen exportní strojek - na JŘ vůbec
 
                 s pr = ##class(%DynamicObject).%New()
@@ -1251,7 +1289,17 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                 d pr.%Set("CAS", ..FormatCas(casMin))
                 d pr.%Set("LINKA", linka2)
                 d pr.%Set("SPOJ", spoj2)
-                d pr.%Set("RADEK", $s((typZobrazeni=1)||(typZobrazeni=2):1, 1:0))
+                // Druh dopravy (A autobus / V vlak / L loď) - prvek podle něj **seskupuje** přípojné
+                // řádky, takže se autobus nesloučí s vlakem téhož směru. Starý modul ho má v klíči
+                // vždy (`JRapiLinPrtWin01.mac:89`). Prázdné legacy čte jako autobus.
+                d pr.%Set("AVL", $s(avl="":"A", 1:$zcvt(avl,"U")))
+                // Přípoj bez minuty příjezdu nebo bez směru řádek nedostane - jinak v tabulce vznikne
+                // řádek s časem „00:00" a prázdným popiskem. Starý modul ho zahodí týmiž dvěma
+                // podmínkami (`JRapiLinPrtWin01.mac:84-87`); naměřeno 4. 9.: 965 z 71 889 přípojů,
+                // které řádek dělají (nejvíc CB_GWBUS 4,2 %). Poznámky pod tabulkou se to netýká -
+                // ty mají vlastní cestu podle typZobrazeni.
+                s maRadek = ((typZobrazeni=1) || (typZobrazeni=2)) && (casMin > 0) && (kam '= "")
+                d pr.%Set("RADEK", $s(maRadek:1, 1:0))
                 d pripoje.%Push(pr)
 
                 // fráze do agregované poznámky legendy (typZobrazeni 0 nebo 2)

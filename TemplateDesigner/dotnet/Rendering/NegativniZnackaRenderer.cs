@@ -31,21 +31,39 @@ public static class NegativniZnackaRenderer
     {
         if (string.IsNullOrEmpty(znak)) return;
 
-        using var font = style.CreateFont(scale, ctx.MmToPx);
-        var m = font.Metrics;
+        // Pojistka pro velmi nízký řádek: i těsný box se musí vejít, jinak přeteče do řádku pod
+        // sebou. Zmenšuje se až tady, takže při běžné výšce řádku zůstane značka v plné velikosti.
+        float vyskaBunkyPx = (contentMm.Bottom - contentMm.Top) * ctx.MmToPx;
+        float vyskovaSkala = 1f;
+        using (var mira = style.CreateFont(scale, ctx.MmToPx))
+        {
+            mira.MeasureText(znak, out var o);
+            float potreba = o.Height + mira.Size * PomerVnitrniMezery * 2f;
+            if (potreba > vyskaBunkyPx && potreba > 0f && vyskaBunkyPx > 0f)
+                vyskovaSkala = vyskaBunkyPx / potreba;
+        }
 
+        using var font = style.CreateFont(scale * vyskovaSkala, ctx.MmToPx);
+
+        // ⚠️ Box se staví z **obrysu znaku**, ne z výšky písma. Ascent a descent počítají s dotažnicemi
+        // (á, j), které značka nikdy nemá - box z nich vyšel o třetinu vyšší, než kolik číslice
+        // zabraly, a v hustě nastavené tabulce přetekl přes spodní linku do řádku pod sebou
+        // (nález Jan 7. 9.). Obrys navíc drží box přilehlý ke znaku, což je i tvar starého tisku.
+        float znakPx = font.MeasureText(znak, out var obrys);
         float mezeraPx = font.Size * PomerVnitrniMezery;
-        float znakPx = font.MeasureText(znak);
         float boxPx = znakPx + mezeraPx * 2f;
+        // Svisle stejná mezera jako vodorovně, ať box nevypadá zmáčknutý.
+        float nadPx = -obrys.Top + mezeraPx;
+        float podPx = obrys.Bottom + mezeraPx;
 
         var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
         var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
         var (xPx, baselineY) = CellLayout.TextAnchorPx(
-            tl, br, boxPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
+            tl, br, boxPx, nadPx, podPx, style.HAlign, style.VAlign);
 
         using var boxPaint = new SKPaint { Color = style.ParsedTextColor, IsAntialias = true };
         ctx.Canvas.DrawRect(
-            new SKRect(xPx, baselineY + m.Ascent, xPx + boxPx, baselineY + m.Descent), boxPaint);
+            new SKRect(xPx, baselineY - nadPx, xPx + boxPx, baselineY + podPx), boxPaint);
 
         using var znakPaint = new SKPaint { Color = BarvaZnaku(style), IsAntialias = true };
         ctx.Canvas.DrawText(znak, xPx + mezeraPx, baselineY, font, znakPaint);
