@@ -64,8 +64,8 @@ public class SessionSwitcher(
         // Odhlásit starého uživatele - jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
         // do server-side timeoutu. Až po confirmu (login != null), před swapem session.
         // Flush telemetrie ještě pod starou session - server bere userID z ní.
-        EDUsageTelemetry.Flush(services.MLRest);
-        SessionLogout.Logout(services.MLRest);
+        FlushTelemetry(services.MLRest);
+        LogoutOldSession(services.MLRest);
 
         var session = EstablishSession(
             new ConnectionInfo(current.Server, current.Port, current.DataNamespace, current.Idfa), login);
@@ -89,6 +89,10 @@ public class SessionSwitcher(
         };
         return loginWindow.ShowDialog() == true ? loginWindow.Result : null;
     }
+
+    protected virtual void FlushTelemetry(IMLRest? mlRest) => EDUsageTelemetry.Flush(mlRest);
+
+    protected virtual void LogoutOldSession(IMLRest? mlRest) => SessionLogout.Logout(mlRest);
 
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
         => SessionFactory.Establish(conn, login, services);
