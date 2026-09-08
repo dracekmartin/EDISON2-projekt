@@ -283,6 +283,153 @@ public class UpdateEngineTests : IDisposable
     }
 
     [Fact]
+    public void Run_ForcedWithoutSourceVerzeInf_StillRuns_ExitOk()
+    {
+        // Hotfix vlna u zákazníka bez INF: vynucený update nesmí na chybějící VERZE.INF
+        // spadnout - vlnu ukončuje razítko, ne posun verze
+        File.Delete(Path.Combine(_src, "VERZE.INF"));
+        WriteSrc("A.dll", "new");
+
+        var result = Engine(forced: true, stampTime: "66234,60449").Run();
+
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal("new", File.ReadAllText(Path.Combine(_tgt, "A.dll")));
+        Assert.Equal("66234,60449", ForcedStamp.Read(_tgt));
+    }
+
+    [Fact]
+    public void Run_CopyRetries_TransientFailures_ExitOk()
+    {
+        WriteSrc("A.dll", "new");
+        var engine = Engine();
+        int attempts = 0;
+        engine.CopyShouldFail = (source, _) => source.EndsWith("A.dll") && ++attempts <= 4;
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal(5, attempts); // 4 selhání + úspěšný pátý (poslední povolený) pokus
+        Assert.Equal("new", File.ReadAllText(Path.Combine(_tgt, "A.dll")));
+    }
+
+    [Fact]
+    public void Run_CopyRetriesExhausted_Exit1_StagingCleaned()
+    {
+        WriteSrc("A.dll", "new");
+        WriteTgt("A.dll", "old");
+        var engine = Engine();
+        engine.CopyShouldFail = (source, _) => source.EndsWith("A.dll");
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitBadParamsOrAborted, result.ExitCode);
+        Assert.Equal("old", File.ReadAllText(Path.Combine(_tgt, "A.dll")));
+        Assert.False(Directory.Exists(Path.Combine(_tgt, UpdateEngine.StagingDirName)));
+    }
+
+    [Fact]
+    public void Run_WaitProcessDuplicatesFixedName_QueriedOnce()
+    {
+        // WaitProcess=edisonmain je duplikát fixního EDISONMAIN - Distinct ho nesmí ptát dvakrát
+        WriteSrc("A.dll", "new");
+        var engine = new RecordingEngine(
+            new UpdaterArgs(SourcePath: _src, TargetPath: _tgt, WaitProcess: "edisonmain.exe"),
+            new UpdateLog(_tgt));
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal(["EDISONMAIN", "EDUPDATE"], engine.ProcessQueries);
+    }
+
+    [Fact]
+    public void Run_EmptySourcePath_Exit1()
+    {
+        var engine = new RecordingEngine(
+            new UpdaterArgs(SourcePath: "", TargetPath: _tgt),
+            new UpdateLog(_tgt));
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitBadParamsOrAborted, result.ExitCode);
+        Assert.Contains("SourcePath", result.Message);
+    }
+
+    [Fact]
+    public void Run_MissingSourceDir_Exit1()
+    {
+        var engine = new RecordingEngine(
+            new UpdaterArgs(SourcePath: Path.Combine(_root, "neexistuje"), TargetPath: _tgt),
+            new UpdateLog(_tgt));
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitBadParamsOrAborted, result.ExitCode);
+        Assert.Contains("Zdrojová cesta", result.Message);
+    }
+
+    [Fact]
+    public void Run_MissingTargetDir_Exit1()
+    {
+        var engine = new RecordingEngine(
+            new UpdaterArgs(SourcePath: _src, TargetPath: Path.Combine(_root, "neexistuje")),
+            new UpdateLog(_tgt));
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitBadParamsOrAborted, result.ExitCode);
+        Assert.Contains("Cílová cesta", result.Message);
+    }
+
+    [Fact]
+    public void Run_FreeSpaceCheckThrows_WarnsAndContinues_ExitOk()
+    {
+        WriteSrc("A.dll", "new");
+        var engine = Engine();
+        engine.FreeBytesFor = _ => throw new IOException("síťový disk nedostupný");
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal("new", File.ReadAllText(Path.Combine(_tgt, "A.dll")));
+    }
+
+    [Fact]
+    public void Run_ReadOnlySourceFile_StagedAttributeCleared_TargetWritable()
+    {
+        // RO ze serverového share se kopií propaguje do stagingu; bez vyčištění by
+        // příští update spadl na přepisu cíle
+        WriteSrc("A.dll", "new");
+        File.SetAttributes(Path.Combine(_src, "A.dll"), FileAttributes.ReadOnly);
+
+        var result = Engine().Run();
+
+        File.SetAttributes(Path.Combine(_src, "A.dll"), FileAttributes.Normal); // úklid fixture
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal("new", File.ReadAllText(Path.Combine(_tgt, "A.dll")));
+        Assert.False(File.GetAttributes(Path.Combine(_tgt, "A.dll")).HasFlag(FileAttributes.ReadOnly));
+    }
+
+    [Fact]
+    public void Run_KeyFileAlreadyInManifest_CopiedOnce()
+    {
+        // EDISONini.xml nese manifest i keyFiles pojistka - druhá kopie by ve swapu
+        // přesouvala už přesunutý staged soubor
+        WriteSrc("EDISONini.xml", "config");
+        WriteTgt("EDISONini.xml", "starý config");
+        WriteCrc(new CrcRecord("EDISONini.xml", "", Sha256OfContent("EDISONini.xml")));
+        var engine = Engine();
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
+        Assert.Equal("config", File.ReadAllText(Path.Combine(_tgt, "EDISONini.xml")));
+        Assert.Equal(1, engine.Ops.Count(o => o.Kind == "copy"
+            && o.Target!.Contains(UpdateEngine.StagingDirName)
+            && o.Target.EndsWith("EDISONini.xml", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
     public void Run_CancelDuringStaging_Exit1_TargetUntouchedStagingCleaned()
     {
         WriteSrc("A.dll", "newA");

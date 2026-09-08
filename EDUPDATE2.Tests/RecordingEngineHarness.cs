@@ -19,6 +19,7 @@ internal sealed class RecordingEngine : UpdateEngine
     public Func<string, bool>? DeleteShouldFail;
     public Action<string, string>? AfterCopy;
     public Action<string, string>? AfterMove;
+    public Func<string, long>? FreeBytesFor;
     public long FreeBytes = long.MaxValue;
 
     public RecordingEngine(UpdaterArgs args, UpdateLog log,
@@ -32,7 +33,7 @@ internal sealed class RecordingEngine : UpdateEngine
     }
 
     protected override void Sleep(int milliseconds) { }
-    protected override long GetFreeBytes(string path) => FreeBytes;
+    protected override long GetFreeBytes(string path) => FreeBytesFor?.Invoke(path) ?? FreeBytes;
 
     protected override void CopyFile(string source, string target)
     {
