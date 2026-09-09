@@ -64,18 +64,30 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Sada spritů overlaye „Akce probíhá" pro běžící akci („Money" → „Sprite.Money.*"
+    /// v ActionInProgressWindow.xaml). Null/neznámá = výchozí dopravní prostředky.
+    /// </summary>
+    public string? ActionSpriteKey { get; private set; }
+
+    /// <summary>
     /// Nastaví <see cref="IsActionInProgress"/> na true a vrátí scope, který ho resetuje při Dispose.
     /// Použití: <c>using var _ = ActionInProgress();</c>
     /// </summary>
-    public IDisposable ActionInProgress()
+    public IDisposable ActionInProgress(string? spriteKey = null)
     {
+        // Klíč před flag - overlay se aktivuje změnou IsActionInProgress a klíč čte hned.
+        ActionSpriteKey = spriteKey;
         IsActionInProgress = true;
         return new ActionScope(this);
     }
 
     private sealed class ActionScope(EDViewModel vm) : IDisposable
     {
-        public void Dispose() => vm.IsActionInProgress = false;
+        public void Dispose()
+        {
+            vm.IsActionInProgress = false;
+            vm.ActionSpriteKey = null;
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

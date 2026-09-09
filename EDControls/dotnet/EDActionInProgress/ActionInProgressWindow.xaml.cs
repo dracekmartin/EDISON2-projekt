@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 
 namespace EDControls.EDActionInProgress;
@@ -19,15 +22,28 @@ namespace EDControls.EDActionInProgress;
 /// </summary>
 internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOverlayWindow
 {
-    // Prefix klíče spritů v Window.Resources - nový sprite stačí přidat do XAML s tímto prefixem.
+    // Sprity žijí v sadách "Sprite.<Sada>.<Kus>" ve Window.Resources; nový kus = jen XAML.
     private const string SpriteKeyPrefix = "Sprite.";
+    // Výchozí sada (overlay bez explicitního klíče): dopravní prostředky, režim jízdy.
+    private const string DefaultSetKey = "Vehicles";
+    // Tag prvního kusu sady = režim celé sady: "Fall" padá shora, jinak jízda přes průhled.
+    private const string FallTag = "Fall";
+    // Počet souběžně padajících kusů ve fall režimu (šablony sady se střídají dokola).
+    private const int FallPieceCount = 5;
+    // Délka jednoho přejezdu průhledu; po něm se kus vymění za jiný náhodný ze sady.
+    private static readonly TimeSpan DrivePassDuration = TimeSpan.FromSeconds(2.5);
 
     private readonly Window _owner;
     private readonly Random _rng = new();
-    private string[]? _spriteKeys;
+    // Fall režim: kusy sady + jejich transformy; prázdné = režim jízdy.
+    private readonly List<(TranslateTransform Transform, FrameworkElement Element)> _fallPieces = [];
+    private string[] _pieceKeys = [];
     private bool _active;
+    private bool _running;
+    private bool _driveLeftToRight = true;
+    private int _lastPieceIndex = -1;
 
-    public ActionInProgressWindow(Window owner)
+    public ActionInProgressWindow(Window owner, string? spriteKey = null)
     {
         InitializeComponent();
         _owner = owner;
@@ -37,7 +53,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         owner.StateChanged += OnOwnerStateChanged;
         // SizeToContent - velikost karty se změní i za běhu (font/theme swap).
         SizeChanged += OnOwnSizeChanged;
-        PickRandomSprite();   // jednou per okno (= per akci)
+        PickSet(spriteKey);   // jednou per okno (= per akci)
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -58,21 +74,106 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         ToggleWalk(true);
     }
 
-    // Náhodně vybere jeden ze spritů z Window.Resources (klíče s prefixem "Sprite."). Klíče
-    // se počítají jednou; přidání dalšího spritu do XAML je tak jediná potřebná změna.
-    // x:Shared="False" → FindResource vrací pokaždé novou instanci (žádný konflikt rodiče).
-    private void PickRandomSprite()
+    // Vybere sadu podle klíče z VM (ActionSpriteKey), bez klíče / pro neznámý klíč výchozí
+    // dopravní prostředky. Režim určuje Tag prvního kusu ("Fall" = pád, jinak jízda).
+    // x:Shared="False" → přístup k resource vrací pokaždé novou instanci (žádný konflikt rodiče).
+    private void PickSet(string? preferred)
     {
-        _spriteKeys ??= Resources.Keys.OfType<string>()
-            .Where(k => k.StartsWith(SpriteKeyPrefix, StringComparison.Ordinal))
-            .OrderBy(k => k, StringComparer.Ordinal)
-            .ToArray();
-        if (_spriteKeys.Length == 0) return;
-        SpriteHost.Content = (UIElement)FindResource(_spriteKeys[_rng.Next(_spriteKeys.Length)]);
+        _pieceKeys = SetPieceKeys(preferred) is { Length: > 0 } keys ? keys : SetPieceKeys(DefaultSetKey);
+        if (_pieceKeys.Length == 0) return;
+        if (Equals((Resources[_pieceKeys[0]] as FrameworkElement)?.Tag, FallTag))
+            BuildFallPieces();
     }
 
-    // Minimalizace ownera → Hide (OS auto-hide owned oken WPF IsVisible nevidí a Forever
-    // storyboard by tikal dál, držel dispatcher vzhůru). Restore → zpět nahoru.
+    private string[] SetPieceKeys(string? set) => set is null ? [] :
+        [.. Resources.Keys.OfType<string>()
+            .Where(k => k.StartsWith(SpriteKeyPrefix + set + ".", StringComparison.Ordinal))
+            .OrderBy(k => k, StringComparer.Ordinal)];
+
+    // Naplní průhled padajícími kusy sady (šablony dokola, každý kus vlastní transform).
+    // Klidová Y = -výška (kus schovaný nad průhledem, jako X=-60 u jízdy).
+    private void BuildFallPieces()
+    {
+        var canvas = new Canvas { Width = SpriteViewport.Width, Height = SpriteViewport.Height };
+        for (int i = 0; i < FallPieceCount; i++)
+        {
+            var element = (FrameworkElement)FindResource(_pieceKeys[i % _pieceKeys.Length]);
+            var transform = new TranslateTransform { Y = -element.Height };
+            element.RenderTransform = transform;
+            canvas.Children.Add(element);
+            _fallPieces.Add((transform, element));
+        }
+        SpriteHost.Content = canvas;
+        // Klidové X=-60 hosta je pro režim jízdy; fall canvas musí sedět na průhledu.
+        SlideTranslate.X = 0;
+    }
+
+    // Náhodu (výběr kusu, pozice, tempo) storyboard s pevnými hodnotami neumí - obě animace
+    // řídí code-behind: DoubleAnimation per průjezd/pád a v Completed další kolo.
+    private void StartFall()
+    {
+        foreach (var piece in _fallPieces) DropPiece(piece, initial: true);
+    }
+
+    private void StopFall()
+    {
+        // Odstranění clocku vrací Y na klidovou hodnotu (kus schovaný nad průhledem).
+        foreach (var piece in _fallPieces) piece.Transform.BeginAnimation(TranslateTransform.YProperty, null);
+    }
+
+    private void DropPiece((TranslateTransform Transform, FrameworkElement Element) piece, bool initial)
+    {
+        Canvas.SetLeft(piece.Element, _rng.NextDouble() * (SpriteViewport.Width - piece.Element.Width));
+        // Bankovky padají pomaleji než mince; první vlna se rozprostře delším rozestupem.
+        double seconds = piece.Element.Height >= 24 ? 1.8 + _rng.NextDouble() * 0.8 : 1.1 + _rng.NextDouble() * 0.6;
+        var fall = new DoubleAnimation(-piece.Element.Height, SpriteViewport.Height, TimeSpan.FromSeconds(seconds))
+        {
+            BeginTime = TimeSpan.FromSeconds(_rng.NextDouble() * (initial ? 1.6 : 0.7)),
+        };
+        fall.Completed += (_, _) => { if (_running) DropPiece(piece, initial: false); };
+        piece.Transform.BeginAnimation(TranslateTransform.YProperty, fall);
+    }
+
+    // Jízda: kus přejede průhled, na kraji ho vystřídá jiný náhodný ze sady a jede zpátky.
+    // Směr se střídá, kus je vždy čelem po směru jízdy (sprity se kreslí čelem doprava).
+    private void StartDrive() => DrivePass();
+
+    private void StopDrive()
+    {
+        // Odstranění clocku vrací X na klidovou -60 (kus schovaný vlevo mimo záběr).
+        SlideTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+    }
+
+    private void DrivePass()
+    {
+        var piece = NextDrivePiece();
+        SpriteHost.Content = piece;
+        FlipTransform.CenterX = piece.Width / 2;
+        FlipTransform.ScaleX = _driveLeftToRight ? 1 : -1;
+        double offscreen = -piece.Width;
+        var pass = _driveLeftToRight
+            ? new DoubleAnimation(offscreen, SpriteViewport.Width, DrivePassDuration)
+            : new DoubleAnimation(SpriteViewport.Width, offscreen, DrivePassDuration);
+        pass.Completed += (_, _) =>
+        {
+            if (!_running) return;
+            _driveLeftToRight = !_driveLeftToRight;
+            DrivePass();
+        };
+        SlideTranslate.BeginAnimation(TranslateTransform.XProperty, pass);
+    }
+
+    private FrameworkElement NextDrivePiece()
+    {
+        int i;
+        // Bez okamžitého opakování - výměna má být vidět.
+        do { i = _rng.Next(_pieceKeys.Length); } while (_pieceKeys.Length > 1 && i == _lastPieceIndex);
+        _lastPieceIndex = i;
+        return (FrameworkElement)FindResource(_pieceKeys[i]);
+    }
+
+    // Minimalizace ownera → Hide (OS auto-hide owned oken WPF IsVisible nevidí a animační
+    // clocky by tikaly dál, držely dispatcher vzhůru). Restore → zpět nahoru.
     private void OnOwnerStateChanged(object? sender, EventArgs e)
     {
         if (_owner.WindowState == WindowState.Minimized)
@@ -109,19 +210,24 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         Top = origin.Y + (client.Y - ActualHeight) / 2;
     }
 
-    // Storyboard řídí code-behind - Begin(..., isControllable) při aktivaci resetuje kapybaru.
+    // Start/stop animace jen podle viditelnosti - skrytého okna se clocky nesmí držet
+    // (tikaly by dál a držely dispatcher vzhůru).
     private void ToggleWalk(bool active)
     {
-        var walk = (Storyboard)Resources["WalkAnimation"];
-        if (active)
-            walk.Begin(this, true);
-        else
-            walk.Stop(this);
+        _running = active;
+        if (_fallPieces.Count > 0)
+        {
+            if (active) StartFall(); else StopFall();
+        }
+        else if (_pieceKeys.Length > 0)
+        {
+            if (active) StartDrive(); else StopDrive();
+        }
     }
 
     protected override void OnClosed(EventArgs e)
     {
-        ToggleWalk(false);   // zastav Forever clock při teardownu
+        ToggleWalk(false);   // zastav animační clocky při teardownu
         _owner.LocationChanged -= OnOwnerBoundsChanged;
         _owner.SizeChanged -= OnOwnerSizeChanged;
         _owner.StateChanged -= OnOwnerStateChanged;

@@ -19,8 +19,8 @@ k distribuci při vydání shellu (včetně těch z repa EDISON): `DEPLOY.md`.
 
 ## Struktura a pravidla pro CLAUDE.md
 
-`EDISONMAIN2/`, `EDControls/`, `TemplateDesigner/` a `ServiceGtfsRt/` mají **vlastní
-`CLAUDE.md`**, EDControls navíc per-komponenta. `EDTesting/` = Caché test framework
+`EDISONMAIN2/`, `EDControls/`, `TemplateDesigner/`, `ServiceGtfsRt/` a `EDUPDATE2/`
+(klientský updater nového shellu) mají **vlastní `CLAUDE.md`**, EDControls navíc per-komponenta. `EDTesting/` = Caché test framework
 (`MLTestCase` + `TestRunner`), `MLRest.md` = kompletní reference Caché architektury,
 `.husky/` = git hooks (auto-install při `dotnet restore`).
 
@@ -90,10 +90,12 @@ EDInputForm příklad `EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.
 
 ## Povinné nastavení nového aplikačního projektu
 
-Bez těchto tří to padá za běhu: merge `EDIcons.xaml` + `EDStrings.xaml` (jinak
-`{StaticResource}` hodí výjimku), `DispatcherUnhandledException` handler s
-`e.Handled = true` (jinak crash) a `EDAppearance.Initialize(app)` (fonty + theme).
-Referenční implementace `EDISONMAIN2/dotnet/Startup/App.xaml(.cs)`.
+Platí pro aplikace postavené na EDControls. Bez těchto tří to padá za běhu: merge
+`EDIcons.xaml` + `EDStrings.xaml` (jinak `{StaticResource}` hodí výjimku),
+`DispatcherUnhandledException` handler s `e.Handled = true` (jinak crash)
+a `EDAppearance.Initialize(app)` (fonty + theme). Referenční implementace
+`EDISONMAIN2/dotnet/Startup/App.xaml(.cs)`. Výjimka `EDUPDATE2` - záměrně bez EDControls
+(vyměňuje je za běhu), povinný zůstává jen exception handler; viz `EDUPDATE2/CLAUDE.md`.
 
 **Vzhled vždy přes sdílené tokeny/resource, nikdy hardcoded literál:** barvy `EDTheme.*`
 i `FontSize`/`IconSize` **přes `{DynamicResource}`** (`StaticResource` nepřežije swap dark

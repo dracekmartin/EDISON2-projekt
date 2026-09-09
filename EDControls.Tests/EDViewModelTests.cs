@@ -69,6 +69,28 @@ public class EDViewModelTests
     }
 
     [Fact]
+    public void ActionInProgress_SpriteKeyLivesOnlyInsideScope()
+    {
+        var vm = new TestViewModel(MockServices());
+        Assert.Null(vm.ActionSpriteKey);
+
+        var scope = vm.ActionInProgress("Money");
+        Assert.Equal("Money", vm.ActionSpriteKey);
+
+        scope.Dispose();
+        Assert.Null(vm.ActionSpriteKey);
+    }
+
+    [Fact]
+    public void ActionInProgress_WithoutKey_LeavesSpriteKeyNull()
+    {
+        var vm = new TestViewModel(MockServices());
+
+        using (vm.ActionInProgress())
+            Assert.Null(vm.ActionSpriteKey);
+    }
+
+    [Fact]
     public void ActionInProgress_FiresPropertyChanged()
     {
         var vm = new TestViewModel(MockServices());

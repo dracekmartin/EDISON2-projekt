@@ -59,6 +59,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenEDListTestCommand { get; }
         public ICommand OpenEDComponentAndViewModelTestCommand { get; }
         public ICommand OpenLogoutCountdownTestCommand { get; }
+        public ICommand TestActionOverlayCommand { get; }
+        /// <summary>Varianty overlaye „Akce probíhá" pro menu Test funkcí.</summary>
+        public IReadOnlyList<OverlayTestVariant> ActionOverlayVariants { get; } =
+            [new("Dopravní prostředky", null),
+             .. AgendaSprites.KnownSets.Select(s => new OverlayTestVariant(AgendaSprites.LabelFor(s), s))];
         public ICommand TriggerErrorCommand { get; }
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand OpenLegacyShellCommand { get; }
@@ -249,6 +254,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog(new EDCompTestWnd()));
             // Test trigger pro cooperative logout - countdown se po vypršení sám zavře (onExpired no-op).
             OpenLogoutCountdownTestCommand = Command(() => WindowNavigator.Show(new LogoutCountdownWnd(15, () => { })));
+            TestActionOverlayCommand = CommandAsync<OverlayTestVariant>(v => TestActionOverlayAsync(v.SpriteKey));
             // Test trigger pro error popup - výjimka projde RelayCommand handlerem do EDErrorPopup.
             TriggerErrorCommand = Command(() => throw new InvalidOperationException("Testovací výjimka z toolbaru."));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
@@ -1011,8 +1017,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 await prompt.ShowIfNewAsync(path, em.DisplayedName);
 
             // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces - čekáme na jeho okno).
-            using (ActionInProgress())
+            using (ActionInProgress(AgendaSprites.ForExe(path)))
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
+        }
+
+        // Test funkcí: overlay s vybranou variantou na 10 s - dost na posouzení animace,
+        // netřeba nic rušit ručně.
+        private async Task TestActionOverlayAsync(string? spriteKey)
+        {
+            using (ActionInProgress(spriteKey))
+                await Task.Delay(TimeSpan.FromSeconds(10));
         }
 
         /// <summary>Novinky shellu po loginu (EDISONMAIN.INF - obsah sdílený s legacy shellem).</summary>
@@ -1044,13 +1058,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
         private async Task LaunchModelessAsync(string exe, string formFqn)
         {
-            using (ActionInProgress())
+            using (ActionInProgress(AgendaSprites.ForExe(exe)))
                 await WindowNavigator.ShowLegacyAsync(exe, formFqn);
         }
 
         private async Task LaunchDialogAsync(string exe, string formFqn)
         {
-            using (ActionInProgress())
+            using (ActionInProgress(AgendaSprites.ForExe(exe)))
                 await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
@@ -1124,7 +1138,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                                     + "nelze ho spustit. Vytvořte ho znovu z modulu.");
                 return;
             }
-            using (ActionInProgress())
+            using (ActionInProgress(AgendaSprites.ForExe(shortcut.ExecutablePath)))
                 await WindowNavigator.ShowLegacyShortcutAsync(shortcut.ExecutablePath, shortcut.FormName,
                     ShortcutLaunchPayloadCodec.Encode(shortcut), inputParam: shortcut.InputParam);
         }

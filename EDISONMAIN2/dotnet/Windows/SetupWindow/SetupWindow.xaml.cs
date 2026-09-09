@@ -1,32 +1,44 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using ALVA.EDISONAPI;
 using ALWA.SYS;
+using EDControls;
 // UseWindowsForms zapnuté → System.Drawing.Brushes koliduje s WPF.
 using Brushes = System.Windows.Media.Brushes;
 
 namespace EDISONMAIN2.Windows.SetupWindow
 {
     /// <summary>
-    /// First-launch setup (jen připojení): zadání serveru + REST portu, test
-    /// připojení a zápis <c>appsettings.json</c>. Běží před loginem, žádná session ještě
-    /// neexistuje - proto code-behind a vlastní pre-login <see cref="MLRest"/> z napsaných polí
-    /// (mirror <see cref="LoginWindow.LoginWindow"/>). Greenfield server-init (firma/licence/admin)
-    /// je mimo scope - zůstává na legacy frmSetup.
+    /// First-launch setup: parita polí s legacy frmSetup - připojení (název, server, oba
+    /// porty, IRIS), po testu připojení databáze (seznam ze serveru) a IDFa firmy; zápis
+    /// <c>EDISONini.xml</c>. Běží před loginem, žádná session ještě neexistuje - proto
+    /// code-behind a vlastní pre-login <see cref="MLRest"/> z napsaných polí
+    /// (mirror <see cref="LoginWindow.LoginWindow"/>). Greenfield server-init
+    /// (firma/licence/admin) je mimo scope - zůstává na legacy frmSetup.
     /// </summary>
     public partial class SetupWindow : Window
     {
-        // Connection probe - default reálný GetCompanyList; testy by si mohly podstrčit vlastní.
+        // Connection probe + seznam databází - defaulty reálné, testy si podstrčí vlastní.
         private readonly Func<string, int, bool> _probe;
+        private readonly Func<string, int, IReadOnlyList<string>> _databaseLoader;
 
-        public SetupWindow(Func<string, int, bool>? probe = null)
+        public SetupWindow(Func<string, int, bool>? probe = null,
+                           Func<string, int, IReadOnlyList<string>>? databaseLoader = null)
         {
             _probe = probe ?? DefaultProbe;
+            _databaseLoader = databaseLoader ?? DefaultDatabaseLoader;
             InitializeComponent();
 
-            var config = SettingsLoader.Current ?? new SettingsLoader();
-            ServerBox.Text = config.Server.Host;
-            PortBox.Text = config.Server.Port.ToString();
+            var server = (SettingsLoader.Current ?? new SettingsLoader()).Server;
+            NameBox.Text = server.Name;
+            ServerBox.Text = server.Host;
+            SuperPortBox.Text = server.SuperPort > 0 ? server.SuperPort.ToString() : "";
+            RestPortBox.Text = server.Port.ToString();
+            IrisBox.IsChecked = server.Iris;
+            if (server.Database.Length > 0) DatabaseCombo.Items.Add(server.Database);
+            DatabaseCombo.SelectedIndex = DatabaseCombo.Items.Count > 0 ? 0 : -1;
+            IdfaBox.Text = server.IdFa;
         }
 
         /// <summary>Připojení projde, když server bez chyby vrátí seznam firem.</summary>
@@ -45,20 +57,65 @@ namespace EDISONMAIN2.Windows.SetupWindow
             }
         }
 
-        // Změna serveru/portu po úspěšném testu → znovu otestovat před uložením.
-        private void Input_Changed(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        private static IReadOnlyList<string> DefaultDatabaseLoader(string server, int port)
+        {
+            var rest = new MLRest(server, port, "", "");
+            // Legacy delimited API: object[] výstup, řádky "database~<název>" od indexu 1.
+            var output = rest.QueryOrThrow("ALVA.EDISON.Main", "LoadDatabaseList", new object[] { });
+            return ParseDatabaseRows(output, rest.Delimiter);
+        }
+
+        internal static List<string> ParseDatabaseRows(object[] output, char delimiter)
+        {
+            var databases = new List<string>();
+            for (int i = 1; i < output.Length; i++)
+            {
+                var parts = (output[i]?.ToString() ?? "").Split(delimiter);
+                if (parts.Length > 1 && parts[0] == "database") databases.Add(parts[1]);
+            }
+            return databases;
+        }
+
+        // Změna serveru/REST portu po úspěšném testu → pole závislá na spojení zamknout,
+        // dokud se znovu neotestuje (seznam databází patří k jinému serveru).
+        private void ConnectionInput_Changed(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (!IsLoaded) return;
             SaveBtn.IsEnabled = false;
+            DatabaseCombo.IsEnabled = false;
+            IdfaBox.IsEnabled = false;
             StatusText.Visibility = Visibility.Collapsed;
         }
 
         private void TestBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (!TryReadInput(out var server, out var port)) return;
+            if (!TryReadConnection(out var server, out _, out var restPort, lockSave: true)) return;
 
-            bool ok = _probe(server, port);
+            bool ok = _probe(server, restPort);
+            if (ok)
+            {
+                try
+                {
+                    var selected = DatabaseCombo.SelectedItem as string;
+                    DatabaseCombo.Items.Clear();
+                    foreach (var database in _databaseLoader(server, restPort))
+                        DatabaseCombo.Items.Add(database);
+                    DatabaseCombo.SelectedIndex = selected is not null && DatabaseCombo.Items.Contains(selected)
+                        ? DatabaseCombo.Items.IndexOf(selected)
+                        : (DatabaseCombo.Items.Count == 1 ? 0 : DatabaseCombo.SelectedIndex);
+                }
+                catch (Exception ex)
+                {
+                    DatabaseCombo.IsEnabled = false;
+                    IdfaBox.IsEnabled = false;
+                    Warn($"Seznam databází nelze načíst ({ex.Message}).");
+                    return;
+                }
+            }
+
             SaveBtn.IsEnabled = ok;
+            DatabaseCombo.IsEnabled = ok;
+            IdfaBox.IsEnabled = ok;
             StatusText.Visibility = Visibility.Visible;
             StatusText.Text = ok ? "Připojení v pořádku." : "Nelze se připojit, zkontrolujte parametry.";
             StatusText.Foreground = ok ? ThemeBrush("EDTheme.Semantic.Success", Brushes.Green)
@@ -67,9 +124,37 @@ namespace EDISONMAIN2.Windows.SetupWindow
 
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (!TryReadInput(out var server, out var port)) return;
+            // Validace nezamyká OK - připojení je otestované, uživatel jen doplní pole.
+            if (!TryReadConnection(out var server, out var superPort, out var restPort, lockSave: false)) return;
+            if (NameBox.Text.Trim().Length == 0)
+            {
+                ShowError("Zadejte název připojení.");
+                return;
+            }
+            if (DatabaseCombo.SelectedItem is not string database || database.Length == 0)
+            {
+                ShowError("Vyberte databázi.");
+                return;
+            }
+            if (IdfaBox.Text.Trim().Length == 0)
+            {
+                ShowError("Zadejte IDFa firmy.");
+                return;
+            }
 
-            var settings = new SettingsLoader { Server = new ServerSettings { Host = server, Port = port } };
+            var settings = new SettingsLoader
+            {
+                Server = new ServerSettings
+                {
+                    Name      = NameBox.Text.Trim(),
+                    Host      = server,
+                    SuperPort = superPort,
+                    Port      = restPort,
+                    Iris      = IrisBox.IsChecked == true,
+                    Database  = database,
+                    IdFa      = IdfaBox.Text.Trim(),
+                }
+            };
             try
             {
                 settings.Save();
@@ -84,27 +169,33 @@ namespace EDISONMAIN2.Windows.SetupWindow
             DialogResult = true;
         }
 
-        private bool TryReadInput(out string server, out int port)
+        private bool TryReadConnection(out string server, out int superPort, out int restPort, bool lockSave)
         {
             server = ServerBox.Text.Trim();
-            port = 0;
+            superPort = 0;
+            restPort = 0;
+            string? error = null;
             if (server.Length == 0)
-            {
-                Warn("Zadejte server.");
-                return false;
-            }
-            if (!int.TryParse(PortBox.Text.Trim(), out port) || port <= 0)
-            {
-                Warn("Zadejte platný REST port.");
-                return false;
-            }
-            return true;
+                error = "Zadejte server.";
+            else if (!int.TryParse(SuperPortBox.Text.Trim(), out superPort) || superPort <= 0)
+                error = "Zadejte platný port.";
+            else if (!int.TryParse(RestPortBox.Text.Trim(), out restPort) || restPort <= 0)
+                error = "Zadejte platný REST port.";
+
+            if (error is null) return true;
+            if (lockSave) Warn(error); else ShowError(error);
+            return false;
         }
 
+        // Vadné připojení → zákaz uložení, dokud se znovu neotestuje.
         private void Warn(string message)
         {
-            // Změna vstupu po úspěšném testu → zákaz uložení, dokud se znovu neotestuje.
             SaveBtn.IsEnabled = false;
+            ShowError(message);
+        }
+
+        private void ShowError(string message)
+        {
             StatusText.Visibility = Visibility.Visible;
             StatusText.Foreground = ThemeBrush("EDTheme.Semantic.Danger", Brushes.Red);
             StatusText.Text = message;

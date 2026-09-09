@@ -6,21 +6,45 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Icon="{StaticResource EDIcons.Molecule}">
-    <StackPanel Margin="20" Width="320">
+    <StackPanel Margin="20" Width="340">
         <TextBlock Text="Tato stanice ještě není nastavena. Zadejte připojení k serveru."
                    TextWrapping="Wrap" Margin="0,0,0,16"/>
 
-        <TextBlock Text="Server:" Margin="0,0,0,4"/>
-        <TextBox x:Name="ServerBox" Margin="0,0,0,12" TextChanged="Input_Changed"/>
+        <TextBlock Text="Název připojení:" Margin="0,0,0,4"/>
+        <TextBox x:Name="NameBox" Margin="0,0,0,12"/>
 
-        <TextBlock Text="REST port:" Margin="0,0,0,4"/>
-        <TextBox x:Name="PortBox" Margin="0,0,0,12" TextChanged="Input_Changed"/>
+        <TextBlock Text="Server:" Margin="0,0,0,4"/>
+        <TextBox x:Name="ServerBox" Margin="0,0,0,12" TextChanged="ConnectionInput_Changed"/>
+
+        <Grid Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Port:" Margin="0,0,0,4"/>
+                <TextBox x:Name="SuperPortBox"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="REST port:" Margin="0,0,0,4"/>
+                <TextBox x:Name="RestPortBox" TextChanged="ConnectionInput_Changed"/>
+            </StackPanel>
+        </Grid>
+
+        <CheckBox x:Name="IrisBox" Content="Server běží na IRIS" Margin="0,0,0,12"/>
 
         <Button x:Name="TestBtn" Content="Test připojení" Width="120"
                 HorizontalAlignment="Left" Click="TestBtn_Click" Margin="0,0,0,12"/>
 
         <TextBlock x:Name="StatusText" TextWrapping="Wrap"
                    Visibility="Collapsed" Margin="0,0,0,12"/>
+
+        <TextBlock Text="Databáze:" Margin="0,0,0,4"/>
+        <ComboBox x:Name="DatabaseCombo" IsEnabled="False" Margin="0,0,0,12"/>
+
+        <TextBlock Text="IDFa firmy:" Margin="0,0,0,4"/>
+        <TextBox x:Name="IdfaBox" IsEnabled="False" Margin="0,0,0,16"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="SaveBtn" Content="{StaticResource EDStrings.Ok}" Width="80"

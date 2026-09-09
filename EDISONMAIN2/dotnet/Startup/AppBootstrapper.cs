@@ -60,7 +60,7 @@ public class AppBootstrapper
         // a propaguje mezi procesy (TemplateDesigner). Před login dialogem, ať ho téma taky pokryje.
         EDControls.EDAppearance.Initialize(_application);
 
-        // First-launch setup: chybí appsettings.json → wizard. Zrušení = konec.
+        // First-launch setup: EDISONini.xml bez připojení → wizard. Zrušení = konec.
         if (!EnsureConfigured())
         {
             Shutdown();
@@ -150,7 +150,7 @@ public class AppBootstrapper
                 try
                 {
                     updater.CopyUpdater(settings.SourceDir);
-                    updater.LaunchUpdate(settings.SourceDir, result.Version);
+                    updater.LaunchUpdate(settings.SourceDir, result.Version, result.Forced, settings.ForcedStamp);
                 }
                 catch (Exception ex)
                 {
@@ -202,14 +202,14 @@ public class AppBootstrapper
     protected virtual ILocalPrefs LoadLocalPrefs() => LocalPrefs.Load();
 
     /// <summary>
-    /// First-launch setup: když chybí <c>appsettings.json</c>, zobrazí
+    /// First-launch setup: když <c>EDISONini.xml</c> nemá vyplněné připojení, zobrazí
     /// <see cref="Windows.SetupWindow.SetupWindow"/> (jen připojení - server + REST port).
     /// Vrací false = uživatel zrušil → shutdown. DEBUG má config v repu → wizard se přeskočí.
     /// Greenfield server-init (firma/licence/admin) je mimo scope - zůstává na legacy frmSetup.
     /// </summary>
     protected virtual bool EnsureConfigured()
     {
-        if (SettingsLoader.Exists()) return true;
+        if (SettingsLoader.IsConfigured()) return true;
 
         SettingsLoader.Load();   // naplní Current dev defaulty pro předvyplnění polí
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;

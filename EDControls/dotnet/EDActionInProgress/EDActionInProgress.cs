@@ -8,7 +8,7 @@ namespace EDControls.EDActionInProgress;
 /// <summary>
 /// Neviditelný controller overlay „Akce probíhá" - vlož kamkoli do okna (konvence: poslední
 /// child root Gridu). Na Loaded se sám naváže na <see cref="EDVm.IsActionInProgress"/>;
-/// při aktivaci ztmaví okno (<see cref="WindowDimmer"/>) a zobrazí kartu s kapybarou
+/// při aktivaci ztmaví okno (<see cref="WindowDimmer"/>) a zobrazí kartu s maskoty
 /// v owned okně <see cref="ActionInProgressWindow"/> - jediný způsob, jak ji vykreslit
 /// nad HWND widgety (WebView2), které WPF obsah kvůli airspace nepřekreslí.
 /// </summary>
@@ -53,7 +53,7 @@ public sealed class EDActionInProgress : FrameworkElement
             // Nové okno per akci (ne recyklace) - jinak by Show() přehrálo starý frame spritu.
             if (_overlay is null)
             {
-                _overlay = new ActionInProgressWindow(owner);
+                _overlay = new ActionInProgressWindow(owner, (owner.DataContext as EDVm)?.ActionSpriteKey);
                 _overlay.Closed += (_, _) => _overlay = null;
                 _overlay.ShowOverlay();
             }

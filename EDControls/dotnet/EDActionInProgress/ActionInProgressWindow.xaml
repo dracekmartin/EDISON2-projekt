@@ -9,36 +9,16 @@
         UseLayoutRounding="True">
 
     <Window.Resources>
-        <!-- Storyboard řízen z code-behind podle Show/Hide - Loaded trigger s RepeatBehavior=Forever
-             by tikal i pro skryté okno (animační clock běží bez ohledu na viditelnost).
-             Cílí transform HOSTA (SpriteHost), ne konkrétní sprite → je společný všem. -->
-        <Storyboard x:Key="WalkAnimation">
-
-            <DoubleAnimation Storyboard.TargetName="SlideTranslate"
-                             Storyboard.TargetProperty="X"
-                             From="-60" To="160"
-                             Duration="0:0:2.5"
-                             AutoReverse="True"
-                             RepeatBehavior="Forever"/>
-
-            <!-- Perioda 5 s musí odpovídat AutoReverse cyklu posunu, jinak se obrat rozejde. -->
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="FlipTransform"
-                                           Storyboard.TargetProperty="ScaleX"
-                                           Duration="0:0:5"
-                                           RepeatBehavior="Forever">
-                <DiscreteDoubleKeyFrame KeyTime="0:0:0"   Value="1"/>
-                <DiscreteDoubleKeyFrame KeyTime="0:0:2.5" Value="-1"/>
-            </DoubleAnimationUsingKeyFrames>
-
-        </Storyboard>
-
         <!-- ==== Sprity ====
-             Každý = pixel-art Canvas 60×48, čelem doprava (flip ho na zpáteční cestě otočí).
-             Nová věc = přidej sem další <Canvas x:Key="Sprite.Xxx" .../>; code-behind si klíče
-             s prefixem "Sprite." najde sám a náhodně jeden vybere - nic dalšího registrovat netřeba.
-             Rozměr 60×48 je povinný (flip CenterX=30 = půlka, slide From=-60 = plná šířka mimo záběr). -->
+             Pixel-art Canvasy v SADÁCH "Sprite.<Sada>.<Kus>", kreslené čelem doprava.
+             Výchozí sada "Vehicles" (dopravní prostředky) jede přes průhled a kusy se při
+             každém přejezdu náhodně střídají; sada "Money" (peníze) padá shora na náhodných
+             pozicích. Režim sady = Tag prvního kusu ("Fall" = pád, jinak jízda). Jinou sadu
+             vybere EDViewModel.ActionInProgress("Money"). Nový kus = jen další Canvas se
+             správným prefixem, animaci (náhoda per kolo) řídí code-behind, žádný storyboard. -->
 
-        <Canvas x:Key="Sprite.Capybara" x:Shared="False" Width="60" Height="48"
+        <!-- Kapybara je záměrně vypnutá (vykomentovaná, nemazat) - zpět stačí odkomentovat.
+        <Canvas x:Key="Sprite.Vehicles.Capybara" x:Shared="False" Width="60" Height="48"
                 SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
 
             <Rectangle Canvas.Left="42" Canvas.Top="0"  Width="6" Height="6" Fill="#7A5C2E"/>
@@ -104,8 +84,9 @@
             <Rectangle Canvas.Left="42" Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
 
         </Canvas>
+        -->
 
-        <Canvas x:Key="Sprite.Bus" x:Shared="False" Width="60" Height="48"
+        <Canvas x:Key="Sprite.Vehicles.Bus" x:Shared="False" Width="60" Height="48"
                 SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
 
             <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
@@ -167,6 +148,253 @@
             <Rectangle Canvas.Left="42" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
 
         </Canvas>
+
+        <Canvas x:Key="Sprite.Vehicles.Tram" x:Shared="False" Width="60" Height="48"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <Rectangle Canvas.Left="24" Canvas.Top="0"  Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="0"  Width="6" Height="6" Fill="#37474F"/>
+
+            <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="6"  Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="6"  Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="6"  Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="6"  Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="6"  Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="6"  Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="6"  Width="6" Height="6" Fill="#C62828"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="12" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="12" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="12" Width="6" Height="6" Fill="#C62828"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="18" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="18" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="18" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="18" Width="6" Height="6" Fill="#C62828"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="24" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="24" Width="6" Height="6" Fill="#FFD23F"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="30" Width="6" Height="6" Fill="#C62828"/>
+
+            <Rectangle Canvas.Left="6"  Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+
+        </Canvas>
+
+        <Canvas x:Key="Sprite.Vehicles.Van" x:Shared="False" Width="60" Height="48"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="6"  Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="6"  Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="6"  Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="6"  Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="6"  Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="6"  Width="6" Height="6" Fill="#78909C"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="12" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="12" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="12" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="12" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="12" Width="6" Height="6" Fill="#546E7A"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="12" Width="6" Height="6" Fill="#546E7A"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="18" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="18" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="18" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="18" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="18" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="18" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="18" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="18" Width="6" Height="6" Fill="#546E7A"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="18" Width="6" Height="6" Fill="#546E7A"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="24" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="24" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="24" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="24" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="24" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="24" Width="6" Height="6" Fill="#CFD8DC"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="24" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="24" Width="6" Height="6" Fill="#546E7A"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="24" Width="6" Height="6" Fill="#546E7A"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="24" Width="6" Height="6" Fill="#FFD23F"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="30" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="30" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="30" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="30" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="30" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="30" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="30" Width="6" Height="6" Fill="#78909C"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="30" Width="6" Height="6" Fill="#546E7A"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="30" Width="6" Height="6" Fill="#546E7A"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="30" Width="6" Height="6" Fill="#546E7A"/>
+
+            <Rectangle Canvas.Left="6"  Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+
+        </Canvas>
+
+        <Canvas x:Key="Sprite.Vehicles.Train" x:Shared="False" Width="60" Height="48"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <Rectangle Canvas.Left="24" Canvas.Top="0"  Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="0"  Width="6" Height="6" Fill="#37474F"/>
+
+            <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="6"  Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="6"  Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="6"  Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="6"  Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="6"  Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="6"  Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="6"  Width="6" Height="6" Fill="#388E3C"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="12" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="12" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="12" Width="6" Height="6" Fill="#388E3C"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="18" Width="6" Height="6" Fill="#FFD23F"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="24" Width="6" Height="6" Fill="#388E3C"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="24" Width="6" Height="6" Fill="#FFD23F"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="30" Width="6" Height="6" Fill="#37474F"/>
+
+            <Rectangle Canvas.Left="6"  Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+
+        </Canvas>
+
+        <!-- Sada "Money" (finanční agendy) - padající bankovky a mince, jen přes explicitní klíč. -->
+        <Canvas x:Key="Sprite.Money.Note" x:Shared="False" Tag="Fall" Width="48" Height="24"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="0"  Width="6" Height="6" Fill="#2E7D32"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="6"  Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="6"  Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="6"  Width="6" Height="6" Fill="#A5D6A7"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="6"  Width="6" Height="6" Fill="#A5D6A7"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="6"  Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="6"  Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="6"  Width="6" Height="6" Fill="#2E7D32"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="12" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="12" Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="12" Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#A5D6A7"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#A5D6A7"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="12" Width="6" Height="6" Fill="#66BB6A"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="12" Width="6" Height="6" Fill="#2E7D32"/>
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="18" Width="6" Height="6" Fill="#2E7D32"/>
+
+        </Canvas>
+
+        <Canvas x:Key="Sprite.Money.Coin" x:Shared="False" Tag="Fall" Width="12" Height="12"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <Rectangle Canvas.Left="0"  Canvas.Top="0"  Width="6" Height="6" Fill="#FFC107"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="0"  Width="6" Height="6" Fill="#FFC107"/>
+            <Rectangle Canvas.Left="0"  Canvas.Top="6"  Width="6" Height="6" Fill="#FFC107"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#D89E00"/>
+
+        </Canvas>
     </Window.Resources>
 
     <!-- Margin = prostor pro rozptyl stínu (BlurRadius 18) - SizeToContent by ho jinak ořízl. -->
@@ -184,17 +412,17 @@
                 Padding="0,18">
             <StackPanel>
 
-                <!-- Průhledové okno - sprite jím projíždí (clip). Konkrétní sprite vkládá code-behind
-                     do SpriteHost; transform (flip + posun) je na hostovi, ne na spritu → animace
-                     je společná všem spritům. -->
-                <Border Width="160" Height="48" ClipToBounds="True">
+                <!-- Průhledové okno - kusy jím projíždějí/padají (clip). Obsah vkládá code-behind
+                     do SpriteHost; transform (flip + posun) je na hostovi, ne na kusech →
+                     mechanismus je společný všem sadám. -->
+                <Border x:Name="SpriteViewport" Width="160" Height="48" ClipToBounds="True">
                     <ContentControl x:Name="SpriteHost" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <ContentControl.RenderTransform>
                             <TransformGroup>
-                                <!-- Otáčí kolem horizontálního středu spritu (60 šír. → 30) při obratu -->
+                                <!-- Obrat čelem po směru jízdy; CenterX (půlka šířky kusu) nastavuje code-behind. -->
                                 <ScaleTransform x:Name="FlipTransform" ScaleX="1" CenterX="30"/>
                                 <!-- X=-60 (mimo záběr vlevo) = klidová hodnota: první frame před náběhem
-                                     storyboardu (a stav po Stop) sprite neukáže uprostřed karty. -->
+                                     animace (a stav po stopu) kus neukáže uprostřed karty. -->
                                 <TranslateTransform x:Name="SlideTranslate" X="-60"/>
                             </TransformGroup>
                         </ContentControl.RenderTransform>
