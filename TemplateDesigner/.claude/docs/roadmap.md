@@ -1,4 +1,4 @@
-# Roadmap
+﻿# Roadmap
 
 > **Jen otevřená / akční práce.** Hotové → [`roadmap-archive.md`](roadmap-archive.md), průběžný
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
@@ -102,13 +102,6 @@ takže nejde o práci, ale o doklad.
 ## 📥 Backlog
 
 ### Ostatní
-
-- **`B129` Přidání sekce ubere výšku ostatním, i když je na stránce místo** [S] (nález Jan 7. 9.
-  při stavbě šablony na školení). Nová sekce si vezme svých 30 mm **poměrem z existujících**, takže
-  na A5 se 37 mm obsahu spadnou obě zbylé na spodní mez 5 mm - a **může to zmáčknout sekci pod její
-  obsah**, protože tahle cesta výšku prvků nekontroluje (dialog i tažení ano).
-  Hotovo když: sekce se krátí až když na stránce místo není, a nikdy pod `MinimalniVyskaProSekci`.
-  Místo: `TemplateDesignerViewModel.AddSection` (`:1097`).
 
 - **`B130` Není vidět, kam se dělí místo na stránce** [M] (podnět Jan 7. 9. při stavbě šablony).
   Sekce „Každá stránka" se odečítá z **každé** stránky, zbytek se dělí po celých řádcích tabulky

@@ -1094,33 +1094,35 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasRefresh?.Invoke();
     }
 
+    /// <summary>
+    /// Přidá sekci a uvolní pro ni místo: nejdřív z volného zbytku stránky, teprve pak zkrácením
+    /// ostatních sekcí. Vratné jedním krokem zpět.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Výpočet drží <see cref="SectionLayoutMath.RozdelMistoProNovouSekci"/> - sdílí dno
+    /// (obsah sekce) s tažením hrany i s dialogem výšky. Do 10. 9. tahle cesta krátila vždycky
+    /// a měla vlastní dno na konstantě 5 mm, takže jako jediná uměla zmáčknout sekci pod její
+    /// obsah, i když byla stránka poloprázdná (`B129`).
+    /// </remarks>
     public void AddSection(Section section)
     {
         var commands = new List<IDesignerCommand>();
 
-        // Uvolnit místo pro novou sekci - zmenšit existující fixed-height sekce
-        float needed = section.DesignerHeight ?? 30f;
-        var resizable = State.CurrentTemplate.Sections
-            .Where(s => s.DesignerHeight.HasValue && s.DesignerHeight.Value > 5f)
-            .ToList();
+        float pozadovana = section.DesignerHeight ?? 30f;
+        var misto = SectionLayoutMath.RozdelMistoProNovouSekci(State.CurrentTemplate, pozadovana);
 
-        if (resizable.Count > 0 && needed > 0)
+        foreach (var (sekce, novaVyska) in misto.Zkraceni)
         {
-            float totalResizable = resizable.Sum(s => s.DesignerHeight!.Value);
-            if (totalResizable > needed)
-            {
-                foreach (var s in resizable)
-                {
-                    float oldH = s.DesignerHeight!.Value;
-                    float share = oldH / totalResizable * needed;
-                    float newH = MathF.Max(5f, oldH - share);
-                    if (Math.Abs(oldH - newH) > 0.01f)
-                        commands.Add(new SetPropertyCommand(
-                            $"Výška sekce {s.Name}", oldH, newH,
-                            v => s.DesignerHeight = (float)v!));
-                }
-            }
+            float stara = sekce.DesignerHeight!.Value;
+            commands.Add(new SetPropertyCommand(
+                $"Výška sekce {sekce.Name}", stara, novaVyska,
+                v => sekce.DesignerHeight = (float)v!));
         }
+
+        // Sekci s dynamickou výškou (`DesignerHeight == null`) se výška nevnucuje - tu počítá
+        // engine z obsahu.
+        if (section.DesignerHeight is not null)
+            section.DesignerHeight = misto.VyskaNoveSekce;
 
         commands.Add(new AddSectionCommand(State.CurrentTemplate, section));
 
@@ -1131,6 +1133,13 @@ public class TemplateDesignerViewModel : EDViewModel
 
         ActivateSection(section);
         RequestCanvasSizeUpdate?.Invoke();
+
+        if (section.DesignerHeight is not null
+            && MathF.Abs(misto.VyskaNoveSekce - pozadovana) > SectionLayoutMath.TolerancePrekryvuMm)
+        {
+            StatusText = $"Sekce {section.Name} přidána s výškou {misto.VyskaNoveSekce:0.#} mm "
+                       + "- na víc už na stránce nebylo místo. Zkraťte jinou sekci, jestli má být vyšší.";
+        }
     }
 
     /// <summary>

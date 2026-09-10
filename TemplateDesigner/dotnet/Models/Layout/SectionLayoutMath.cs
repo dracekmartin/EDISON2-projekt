@@ -1,4 +1,4 @@
-namespace TemplateDesigner.Models.Layout;
+﻿namespace TemplateDesigner.Models.Layout;
 
 /// <summary>
 /// Výpočty výšek sekcí na stránce - kolik místa zbývá a co z něj smí sekce zabrat.
@@ -13,6 +13,20 @@ public static class SectionLayoutMath
 {
     /// <summary>Nejmenší výška prázdné sekce - pod tím se do ní nedá nic položit.</summary>
     public const float MinimalniVyskaMm = 5f;
+
+    /// <summary>
+    /// Nejmenší výška, se kterou má smysl **zakládat** sekci - i na plné stránce.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Vyšší než <see cref="MinimalniVyskaMm"/> záměrně (rozhodnutí Jan 10. 9.). Sekce založená
+    /// na 5 mm je k ničemu - uživatel do ní nic nepoloží a stejně jí hned mění výšku ručně, takže
+    /// jediné, co ta mez ušetřila, bylo pár milimetrů papíru. Když se sekce v téhle výšce na
+    /// stránku nevejde, přetečení se **řekne** a uživatel rozhodne, co zkrátí.
+    ///
+    /// <para>Strop je požadovaná výška: sekci, která si řekla o méně (oddělovač 5 mm), tahle mez
+    /// nenafoukne.</para>
+    /// </remarks>
+    public const float MinimalniVyskaNoveSekceMm = 20f;
 
     /// <summary>
     /// O kolik smí součet výšek sekcí přesáhnout tiskovou plochu, než to engine bere jako
@@ -75,6 +89,76 @@ public static class SectionLayoutMath
         // Dno je obsah sekce, ne konstanta: na plné stránce se nesmí nabídnout výška, při které
         // by se prvek u dolního okraje oříznul.
         return MathF.Max(MinimalniVyskaProSekci(section), template.PageSize.PrintableHeight - obsazeno);
+    }
+
+    /// <summary>O kolik se má zkrátit jedna existující sekce, aby se vešla nově přidávaná.</summary>
+    public readonly record struct ZkraceniSekce(Section Sekce, float NovaVyska);
+
+    /// <summary>
+    /// Rozdělení místa pro nově přidávanou sekci: jakou výšku dostane a které existující sekce
+    /// se kvůli ní zkrátí.
+    /// </summary>
+    /// <param name="VyskaNoveSekce">Kolik mm nová sekce reálně dostane (nejméně <see cref="MinimalniVyskaMm"/>).</param>
+    /// <param name="Zkraceni">Sekce, kterým se mění výška. Prázdné, když se nová vešla do volného místa.</param>
+    public readonly record struct MistoProNovouSekci(
+        float VyskaNoveSekce,
+        IReadOnlyList<ZkraceniSekce> Zkraceni);
+
+    /// <summary>
+    /// Kolik místa dostane nově přidávaná sekce a co se kvůli ní zkrátí. Nejdřív se sáhne po
+    /// volném místě stránky, teprve chybějící zbytek se bere ostatním sekcím.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Do 10. 9. se krátilo vždycky** a volné místo se nezjišťovalo: nová sekce si vzala svých
+    /// 30 mm poměrem z existujících, takže na A5 se 37 mm obsahu spadly obě zbylé na dno, přestože
+    /// zbytek stránky byl prázdný (nález Jan 7. 9., `B129`).
+    ///
+    /// <para>Krátí se **podle rezervy**, ne podle výšky - rezerva je to, co sekci zbývá nad jejím
+    /// obsahem (<see cref="MinimalniVyskaProSekci"/>). Sekce s prvkem u dolní hrany tak nedá nic
+    /// a nezmáčkne se pod svůj obsah; dřívější dno na konstantě 5 mm tuhle mez obcházelo, takže
+    /// přidání sekce oříznulo prvky, které tažení hrany ani dialog výšky sáhnout nenechají.</para>
+    ///
+    /// <para>Když ani po zkrácení místo není, dostane nová sekce jen to, co zbylo - ale nikdy míň
+    /// než <see cref="MinimalniVyskaNoveSekceMm"/>, i za cenu přetečení stránky.</para>
+    /// </remarks>
+    public static MistoProNovouSekci RozdelMistoProNovouSekci(Template template, float pozadovanaVyska)
+    {
+        float obsazeno = 0f;
+        foreach (var s in template.Sections)
+            obsazeno += s.EffectiveDesignerHeight;
+
+        // Sekce, která si řekla o méně než dno (oddělovač 5 mm), dostane svou výšku - dno ji
+        // nenafoukne.
+        float dno   = MathF.Min(pozadovanaVyska, MinimalniVyskaNoveSekceMm);
+        float volne = MathF.Max(0f, template.PageSize.PrintableHeight - obsazeno);
+        float chybi = pozadovanaVyska - volne;
+        if (chybi <= TolerancePrekryvuMm)
+            return new MistoProNovouSekci(MathF.Max(dno, pozadovanaVyska), []);
+
+        var rezervy = new List<(Section Sekce, float Vyska, float Rezerva)>();
+        float celkovaRezerva = 0f;
+        foreach (var s in template.Sections)
+        {
+            if (s.DesignerHeight is not { } vyska) continue;   // dynamickou výšku počítá engine z obsahu
+            float rezerva = vyska - MinimalniVyskaProSekci(s);
+            if (rezerva <= TolerancePrekryvuMm) continue;
+            rezervy.Add((s, vyska, rezerva));
+            celkovaRezerva += rezerva;
+        }
+
+        if (celkovaRezerva <= 0f)
+            return new MistoProNovouSekci(MathF.Max(dno, volne), []);
+
+        float kOdebrani = MathF.Min(chybi, celkovaRezerva);
+        var zkraceni = new List<ZkraceniSekce>();
+        foreach (var (sekce, vyska, rezerva) in rezervy)
+        {
+            float ubrat = rezerva / celkovaRezerva * kOdebrani;
+            if (ubrat <= TolerancePrekryvuMm) continue;
+            zkraceni.Add(new ZkraceniSekce(sekce, vyska - ubrat));
+        }
+
+        return new MistoProNovouSekci(MathF.Max(dno, volne + kOdebrani), zkraceni);
     }
 
     /// <summary>

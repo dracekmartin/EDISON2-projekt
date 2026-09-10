@@ -1,4 +1,23 @@
-# Changelog
+﻿# Changelog
+
+## 2026-09-10 - 📐 přidání sekce nebere místo, které na stránce je
+
+Nález Jan 7. 9. při stavbě šablony na školení (`B129`). Nová sekce si vzala svou výšku **vždycky
+z existujících sekcí**, poměrem podle jejich výšky - kolik místa na stránce zbývá, se nezjišťovalo.
+Na A5 se 37 mm obsahu tím obě zbylé sekce spadly na dno, přestože zbytek papíru byl prázdný.
+
+Přidání sekce nově sahá **nejdřív po volném místě stránky** a z ostatních bere jen chybějící
+zbytek. Krátí se **podle rezervy nad obsahem**, ne podle výšky: sekce s prvkem u dolní hrany nemá
+co dát a zůstane, jak byla. Tím zmizel i druhý problém - přidání sekce mělo vlastní dno na
+konstantě 5 mm, takže jako **jediná cesta v aplikaci** uměla zmáčknout sekci pod její obsah;
+tažení hrany i dialog výšky drží `MinimalniVyskaProSekci` od 4. 9.
+
+Když ani po zkrácení místo není, dostane nová sekce **20 mm** (rozhodnutí Jan 10. 9. - sekce na
+5 mm je k ničemu a uživatel jí stejně hned mění výšku) a stavový řádek řekne, že se na víc
+nevešla. Sekce, která si řekne o méně (oddělovač 5 mm), se tou mezí nenafoukne.
+
+Výpočet žije v `SectionLayoutMath.RozdelMistoProNovouSekci`, takže je testovatelný bez UI a sdílí
+dno s ostatními cestami k výšce sekce. Krok zpět vrátí přidání i všechna zkrácení najednou.
 
 ## 2026-09-08 (4) - 🏷 značky nad časy se vejdou do sloupce, čas přípoje vypadá jako ostatní
 

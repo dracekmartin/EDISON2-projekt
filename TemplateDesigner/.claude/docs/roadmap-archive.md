@@ -1,4 +1,23 @@
-# 🗄️ Archiv - hotové kroky
+﻿# 🗄️ Archiv - hotové kroky
+
+## `B129` Přidání sekce ubere výšku ostatním, i když je na stránce místo (hotovo 10. 9. 2026)
+
+Nález Jan 7. 9. při stavbě šablony na školení. Nová sekce si vzala svých 30 mm **poměrem
+z existujících** bez ohledu na volné místo, takže na A5 se 37 mm obsahu spadly obě zbylé na dno.
+Druhá půlka nálezu: tahle cesta měla vlastní dno na konstantě 5 mm, takže jako jediná v aplikaci
+uměla zmáčknout sekci **pod její obsah** - tažení hrany i dialog výšky drží `MinimalniVyskaProSekci`
+od 4. 9.
+
+Uvolňuje se nejdřív volné místo stránky, z ostatních se bere jen chybějící zbytek a krátí se podle
+**rezervy nad obsahem**, ne podle výšky. Výpočet je v `SectionLayoutMath.RozdelMistoProNovouSekci`
+(sdílené dno, testovatelné bez UI), volá ho `TemplateDesignerViewModel.AddSection`.
+
+⚠️ **Dno nové sekce je 20 mm, ne 5** (rozhodnutí Jan 10. 9. při zkoušení): na 5 mm se sekce
+nezaloží k ničemu a uživatel jí stejně hned mění výšku ručně, takže ta mez šetřila jen pár
+milimetrů papíru. Když se sekce v téhle výšce nevejde, přetečení se **řekne ve stavovém řádku**
+a uživatel rozhodne, co zkrátí. Sekci, která si řekne o méně (oddělovač 5 mm), mez nenafoukne.
+
+Detail v `changelog.md` 10. 9.; 7 nových testů v `SectionLayoutMathTests`.
 
 ## `B124` Obousměrná tabulka bere společný seznam km sloupců (hotovo 7. 9. 2026)
 
