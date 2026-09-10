@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Expressions;
 
@@ -37,8 +37,9 @@ public class PageLayoutEngine
         var headers = new List<Section>();
         var footers = new List<Section>();
         var bodySections = new List<Section>();
+        var plovouci = new List<Section>();
 
-        ClassifySections(allSections, headers, footers, bodySections);
+        ClassifySections(allSections, headers, footers, bodySections, plovouci);
 
         // Krok 1: Výpočet výšek sekcí (body + headers + footers)
         var sectionHeights = new Dictionary<Guid, float>();
@@ -59,7 +60,7 @@ public class PageLayoutEngine
 
         // Krok 2: Dvouprůchodový layout
         // První průchod: bez OnLastPageOnly → zjistíme totalPages
-        var firstPassResult = LayoutBody(template, data, headers, footers, bodySections,
+        var firstPassResult = LayoutBody(template, data, headers, footers, plovouci, bodySections,
             sectionHeights, includeLastPageOnly: false);
         int totalPages = firstPassResult.TotalPages;
         if (totalPages == 0) totalPages = 1;
@@ -70,13 +71,13 @@ public class PageLayoutEngine
 
         LayoutResult result;
         if (hasLastPageOnly && totalPages > 0)
-            result = LayoutBody(template, data, headers, footers, bodySections,
+            result = LayoutBody(template, data, headers, footers, plovouci, bodySections,
                 sectionHeights, includeLastPageOnly: true, knownTotalPages: totalPages);
         else
             result = firstPassResult;
 
         // Krok 3: Přidat hlavičky a patičky na každou stránku
-        AddHeadersAndFooters(result, template, data, headers, footers, sectionHeights);
+        AddHeadersAndFooters(result, template, data, headers, footers, plovouci, sectionHeights);
 
         // Krok 4: Injekce PAGE/TOTAL_PAGES
         InjectPageNumbers(result);
@@ -87,11 +88,26 @@ public class PageLayoutEngine
     // ─────────────────────────────────────────────────────────────────────
     // Klasifikace sekcí
 
+    /// <summary>
+    /// Rozdělí sekce podle toho, kam na stránce patří.
+    /// </summary>
+    /// <remarks>
+    /// <para>Opakovaná sekce s Umístěním <b>„Pod obsahem"</b> plave za obsahem té stránky
+    /// (`B134`, požadavek Jan 7. 9.: „poznámky musí být na každé stránce a hned pod tabulkou").
+    /// Do 10. 9. tahle kombinace nešla nastavit vůbec - „Jednou" plavalo, ale bylo jen jednou,
+    /// a „Každá stránka" sedělo na spodní hraně papíru.</para>
+    ///
+    /// <para>⚠️ **U „Obsahu" zůstává heuristika podle pozice** (za poslední obsahovou → patička,
+    /// jinak hlavička). Vypadá to jako zbytek, který by se dal uklidit, ale nejde: „Obsah" je
+    /// **výchozí** hodnota, takže ho má každá opakovaná sekce, na jejíž Umístění nikdo nesáhl.
+    /// První verze `B134` ten význam přepsala na „plav za obsahem" a hlavičky existujících šablon
+    /// se sesypaly pod tabulku (nález Jan 10. 9. na `linkovy_hlavickapod_mutace`). Nové chování
+    /// proto dostalo vlastní hodnotu.</para>
+    /// </remarks>
     private static void ClassifySections(List<Section> all,
-        List<Section> headers, List<Section> footers, List<Section> body)
+        List<Section> headers, List<Section> footers, List<Section> body, List<Section> plovouci)
     {
-        // Najít index posledního body sekce (Once/PerDataRow) - repeating sekce
-        // za ním s Role=Body se automaticky klasifikují jako footer (pozice v šabloně)
+        // Index poslední obsahové sekce - podle něj se zařadí Umístění „Obsah" (viz remarks).
         int lastBodyIndex = -1;
         for (int i = all.Count - 1; i >= 0; i--)
         {
@@ -115,15 +131,16 @@ public class PageLayoutEngine
                 continue;
             }
 
-            // Opakující se sekce: Role určuje umístění (Header nahoře, Footer dole)
+            // Opakující se sekce: Umístění určuje, kam na stránce patří
             if (section.Role == SectionRole.Footer)
                 footers.Add(section);
             else if (section.Role == SectionRole.Header)
                 headers.Add(section);
+            else if (section.Role == SectionRole.BelowContent)
+                plovouci.Add(section);
             else
             {
-                // Role=Body (default) u repeating sekce - heuristika podle pozice:
-                // za posledním body sectionem → footer, jinak header
+                // Obsah = „rozhodni to za mě" podle pozice v šabloně, viz remarks
                 if (lastBodyIndex >= 0 && i > lastBodyIndex)
                     footers.Add(section);
                 else
@@ -144,14 +161,14 @@ public class PageLayoutEngine
     /// „poslední, co se vejde" by řezalo uprostřed bloku pokaždé, když v něm nějaký řádek zbyl.
     /// Zlom musí posunout o kus dál, jinak by se smyčka řezala na místě.
     /// </remarks>
-    private static float? PosledniZlomDo(List<Zlom> zlomy, float od, float doKam)
+    private static Zlom? PosledniZlomDo(List<Zlom> zlomy, float od, float doKam)
     {
-        float? silny = null, slaby = null;
+        Zlom? silny = null, slaby = null;
         foreach (var z in zlomy)
         {
             if (z.Mm <= od + 0.01f || z.Mm > doKam + 0.01f) continue;
-            if (z.Silny) { if (silny is null || z.Mm > silny) silny = z.Mm; }
-            else if (slaby is null || z.Mm > slaby) slaby = z.Mm;
+            if (z.Silny) { if (silny is null || z.Mm > silny.Value.Mm) silny = z; }
+            else if (slaby is null || z.Mm > slaby.Value.Mm) slaby = z;
         }
         return silny ?? slaby;
     }
@@ -259,8 +276,8 @@ public class PageLayoutEngine
     // Body layout
 
     private LayoutResult LayoutBody(Template template, DataContext? data,
-        List<Section> headers, List<Section> footers, List<Section> bodySections,
-        Dictionary<Guid, float> sectionHeights,
+        List<Section> headers, List<Section> footers, List<Section> plovouci,
+        List<Section> bodySections, Dictionary<Guid, float> sectionHeights,
         bool includeLastPageOnly, int knownTotalPages = 0)
     {
         var result = new LayoutResult();
@@ -276,7 +293,8 @@ public class PageLayoutEngine
 
         float headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
         float footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-        float availableHeight = printableHeight - headerH - footerH;
+        float plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+        float availableHeight = printableHeight - headerH - footerH - plovouciH;
         float cursorY = headerH;
 
         // Expand body sections (PerDataRow → N kopií)
@@ -327,7 +345,8 @@ public class PageLayoutEngine
 
                     headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
                     footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                    availableHeight = printableHeight - headerH - footerH;
+                    plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                    availableHeight = printableHeight - headerH - footerH - plovouciH;
                     cursorY = headerH;
                 }
 
@@ -364,17 +383,24 @@ public class PageLayoutEngine
 
                         headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
                         footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                        availableHeight = printableHeight - headerH - footerH;
+                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                        availableHeight = printableHeight - headerH - footerH - plovouciH;
                         cursorY = headerH;
                         spaceOnPage = availableHeight - hlavicka;
                     }
 
                     float chunk = Math.Min(remaining, spaceOnPage);
+                    // Prázdno těsně před zlomem, které se při zlomu stránky nekreslí ani nepřenáší
+                    // na další stranu - viz `Zlom.MrtvaMezeraMm`.
+                    float mrtvaMezera = 0f;
                     if (remaining - chunk > 0.01f)   // opravdu se řeže, ne poslední díl
                     {
-                        float? zlom = PosledniZlomDo(zlomySekce, clipTop, clipTop + chunk);
-                        if (zlom is float z)
-                            chunk = z - clipTop;
+                        var zlom = PosledniZlomDo(zlomySekce, clipTop, clipTop + chunk);
+                        if (zlom is { } z && z.Mm - z.MrtvaMezeraMm - clipTop > 0.01f)
+                        {
+                            chunk = z.Mm - z.MrtvaMezeraMm - clipTop;
+                            mrtvaMezera = z.MrtvaMezeraMm;
+                        }
                         else if (cursorY > headerH + 0.01f)
                         {
                             // Nedělitelný díl se do zbytku stránky nevejde. Zkusit ho na čisté
@@ -397,8 +423,11 @@ public class PageLayoutEngine
                         OpakovanaHlavickaMm = hlavicka
                     });
 
-                    clipTop += chunk;
-                    remaining -= chunk;
+                    // Mrtvá mezera se přeskočí: nekreslí se (chunk ji nezahrnuje) a další strana
+                    // začíná až za ní, takže `clipTop` dosedne přesně na zlom. Na tom stojí
+                    // i rozhodnutí, jestli pokračovací strana opakuje hlavičku bloku.
+                    clipTop += chunk + mrtvaMezera;
+                    remaining -= chunk + mrtvaMezera;
                     cursorY += chunk + hlavicka;
 
                     if (remaining > 0.01f)
@@ -409,7 +438,8 @@ public class PageLayoutEngine
 
                         headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
                         footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                        availableHeight = printableHeight - headerH - footerH;
+                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                        availableHeight = printableHeight - headerH - footerH - plovouciH;
                         cursorY = headerH;
                     }
                 }
@@ -457,7 +487,7 @@ public class PageLayoutEngine
     // Hlavičky a patičky
 
     private static void AddHeadersAndFooters(LayoutResult result, Template template,
-        DataContext? data, List<Section> headers, List<Section> footers,
+        DataContext? data, List<Section> headers, List<Section> footers, List<Section> plovouci,
         Dictionary<Guid, float> sectionHeights)
     {
         int totalPages = result.TotalPages;
@@ -466,6 +496,12 @@ public class PageLayoutEngine
         foreach (var page in result.Pages)
         {
             int pageNum = page.PageNumber;
+
+            // Kde na téhle stránce skončil obsah - odsud plavou sekce s Umístěním „Obsah".
+            // Musí se zjistit TEĎ, než se do stránky vloží hlavičky a patičky (`B134`).
+            float konecObsahu = 0f;
+            foreach (var placed in page.Sections)
+                konecObsahu = MathF.Max(konecObsahu, placed.Y + placed.Height);
 
             // Hlavičky nahoře
             float y = 0f;
@@ -490,6 +526,31 @@ public class PageLayoutEngine
                     Data = data
                 });
                 y += h;
+            }
+
+            // Plovoucí sekce hned za obsahem stránky - ne na spodní hraně papíru. Na prázdné
+            // stránce (obsah se nevešel vůbec) začíná pod hlavičkami.
+            float plovouciY = MathF.Max(konecObsahu, y);
+            foreach (var sekce in plovouci)
+            {
+                if (!IsHeaderVisibleOnPage(sekce, pageNum, totalPages)) continue;
+
+                var pageData = data?.WithExtraValues(new Dictionary<string, object?>
+                {
+                    ["PAGE"] = pageNum,
+                    ["TOTAL_PAGES"] = totalPages
+                });
+                if (!ExpressionEvaluator.IsVisible(sekce.VisibilityExpression, pageData)) continue;
+
+                float h = sectionHeights[sekce.Id];
+                page.Sections.Add(new PlacedSection
+                {
+                    Source = sekce,
+                    Y = plovouciY,
+                    Height = h,
+                    Data = data
+                });
+                plovouciY += h;
             }
 
             // Patičky dole

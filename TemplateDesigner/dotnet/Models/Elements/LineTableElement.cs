@@ -1455,7 +1455,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         for (int b = 0; b < bloky.Count; b++)
         {
             var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(bloky[b]).Hlavni, SpojeBloku(bloky[b]).Zrcadlene);
-            if (b > 0) zlomy.Add(new Zlom(zacatekBloku, Silny: true));
+            // Zlom je na začátku bloku, takže před ním leží odstup od bloku předchozího. Ten se
+            // při zlomu stránky nekreslí - jinak zůstane na konci strany prázdný pruh.
+            if (b > 0) zlomy.Add(new Zlom(zacatekBloku, Silny: true, MrtvaMezeraMm: MezeraMeziBlokyMm));
 
             // hranice mezi řádky zastávek - první vynechat, jinak by zůstala hlava sama na stránce
             float y = zacatekBloku + hlava.Sum();

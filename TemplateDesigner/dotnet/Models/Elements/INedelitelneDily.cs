@@ -1,4 +1,4 @@
-namespace TemplateDesigner.Models.Elements;
+﻿namespace TemplateDesigner.Models.Elements;
 
 /// <summary>Místo, kudy se prvek smí rozříznout mezi stránky.</summary>
 /// <param name="Mm">Odsazení od horního okraje prvku.</param>
@@ -6,7 +6,17 @@ namespace TemplateDesigner.Models.Elements;
 /// true = hranice celého dílu (mezi bloky tabulky) - sem se řeže přednostně;
 /// false = jen hranice řádku, náhradní řešení pro díl vyšší než celá stránka.
 /// </param>
-public readonly record struct Zlom(float Mm, bool Silny);
+/// <param name="MrtvaMezeraMm">
+/// Kolik mm těsně před zlomem je prázdných a při zlomu stránky se nemají kreslit.
+/// </param>
+/// <remarks>
+/// ⚠️ **Mrtvá mezera vzniká tam, kde odstup patří dvojici dílů, ne jednomu z nich** - u tabulky
+/// linky je to odstup mezi bloky. Když ty dva díly rozdělí stránka, odstup ztratí smysl: kdyby se
+/// kreslil, zůstane na konci strany prázdný pruh a další obsah (poznámky pod tabulkou) začne o něj
+/// níž. Vypadá to jako nepravidelnost, protože na poslední straně, kde se neláme, žádný není
+/// (nález Jan 10. 9. na lince 330510: řez na 74,9 mm, poslední řádek končí na 70,9).
+/// </remarks>
+public readonly record struct Zlom(float Mm, bool Silny, float MrtvaMezeraMm = 0f);
 
 /// <summary>
 /// Prvek, který se skládá z dílů, jež <b>nemají smysl rozříznuté</b> - typicky linková tabulka

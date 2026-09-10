@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace TemplateDesigner.Models;
 
@@ -136,7 +136,17 @@ public enum SectionRole
     /// <summary>Hlavička - umístěna nahoře na stránce.</summary>
     Header,
     /// <summary>Patička - umístěna dole na stránce.</summary>
-    Footer
+    Footer,
+    /// <summary>
+    /// Na každé stránce hned za obsahem té stránky.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Vlastní hodnota, ne nový význam <see cref="Body"/>** (`B134`, rozhodnutí Jan 10. 9.).
+    /// První pokus přepsal chování „Obsahu" a rozbil tím existující šablony: `Body` je **výchozí
+    /// hodnota**, takže ji má každá opakovaná sekce, na jejíž Umístění nikdo nesáhl - včetně
+    /// hlaviček, které se tím sesypaly pod tabulku.
+    /// </remarks>
+    BelowContent
 }
 
 public enum SectionOverflowBehavior

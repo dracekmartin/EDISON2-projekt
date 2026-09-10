@@ -1,5 +1,34 @@
 ﻿# Changelog
 
+## 2026-09-10 (4) - 📄 poznámky na každé stránce hned pod tabulkou
+
+Požadavek Jan 7. 9. (`B134`). Šlo jen jedno z toho: „Jednou" plavalo za obsahem, ale bylo jen na
+poslední stránce; „Každá stránka" sedělo na spodní hraně papíru a mezi tabulkou a poznámkami
+zůstalo prázdno.
+
+**Umístění sekce má novou hodnotu „Pod obsahem"** - na každé stránce hned za obsahem té stránky.
+Místo si ukrojí předem jako patička (jinak by ji na plné stránce obsah vytlačil z papíru), ale
+kreslí se až za obsahem.
+
+⚠️ **Je to vlastní hodnota, ne nový význam „Obsahu".** První verze přepsala chování „Obsahu"
+a rozbila existující šablony: je to **výchozí** hodnota, takže ji má každá opakovaná sekce, na
+jejíž Umístění nikdo nesáhl - včetně hlaviček, které se tím sesypaly pod tabulku (nález Jan 10. 9.
+na `linkovy_hlavickapod_mutace`). „Obsah" tedy dál znamená „rozhodni podle pozice v šabloně".
+
+**Druhá půlka: odstup mezi bloky se při zlomu stránky nekreslí.** Tabulka linky nabízí jako
+přednostní řez hranice bloků a ten zlom leží **až za** odstupem od bloku předchozího
+(`MezeraMeziBlokyMm = 4`), takže si strana ty 4 mm odvezla s sebou. Do teď to nikdo nemohl
+poznat - poznámky byly na dně papíru a mezera se ztratila v prázdnu nad nimi. Jakmile se vytáhly
+nahoru, byla z toho nepravidelnost: strana se zlomem měla mezeru, poslední ne.
+
+Zlom proto nese `MrtvaMezeraMm` - kolik místa těsně před ním je prázdných. Strana skončí na konci
+bloku, pokračování začne na začátku dalšího a odstup se přeskočí: nekreslí se ani dole, ani nahoře.
+Změřeno na `330510` (A5 na šířku, plocha 140 mm): řez 74,9 → **70,9**, poznámky 92,3 → **88,3**.
+
+Stránkování se tím nemění (zlomy jsou tytéž, na stranu jdou tytéž řádky) a opakovaná hlavička bloku
+na pokračovací straně funguje dál - rozhoduje se podle toho, že strana začíná přesně na silném
+zlomu, a `clipTop` tam dosedne i po přeskočení.
+
 ## 2026-09-10 (3) - 🔀 nabídka nad náhledem pojmenuje, co přepíná
 
 Nález Jan 7. 9. (`B131`). Náhled má dvě různé osy: **stránky dat** (u vývěsky zastávka × směr,

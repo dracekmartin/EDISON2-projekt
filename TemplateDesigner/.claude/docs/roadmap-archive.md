@@ -1,5 +1,31 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B134` Sekce na každé stránce hned pod obsahem (hotovo 10. 9. 2026)
+
+Požadavek Jan 7. 9.: „poznámky musí být na každé stránce a hned pod tabulkou". Umístění sekce má
+novou hodnotu **„Pod obsahem"**; místo si ukrojí předem jako patička, kreslí se až za obsahem.
+
+Tři věci, které se u toho vydřely a stojí za zapamatování:
+
+- ⚠️ **Nové chování muselo dostat vlastní hodnotu.** První verze přepsala význam „Obsahu"
+  a hlavičky existujících šablon spadly pod tabulku: „Obsah" je **výchozí** hodnota, takže ho má
+  každá opakovaná sekce, na jejíž Umístění nikdo nesáhl. Měření v databázi (17 šablon napříč
+  firmami, 2 opakované sekce, obě přes „Obsah") to podcenilo - podstatné nebylo, kolik jich je,
+  ale že je to default. „Obsah" proto dál znamená „rozhodni podle pozice v šabloně".
+- ⚠️ **Odstup mezi bloky si strana odvážela s sebou.** Zlom na hranici bloku leží až za odstupem
+  (`MezeraMeziBlokyMm = 4`), takže strana končila 4 mm pod posledním řádkem. Dokud byly poznámky
+  na dně papíru, nebylo to vidět. Zlom proto nese `MrtvaMezeraMm` a odstup se při zlomu přeskočí.
+  Změřeno na `330510`: řez 74,9 → 70,9, poznámky 92,3 → 88,3.
+- **Rozdíl je vidět jen na kratší straně.** Na plné stránce plovoucí sekce a patička splývají -
+  obojí si ukrojí místo předem, takže obsah končí přesně tam, kde by patička začínala. Testy, které
+  to měří na plné stránce, projdou i se starým chováním (zjištěno mutací).
+
+Pojistka `ChunkyNaSebeNavazuji` zůstala, jen se posunula: skulina mezi řezy musí sedět na
+deklarovanou mrtvou mezeru, takže se obsah pořád nemůže ztratit.
+
+Otázka „dává starý tisk legendu pod každý blok, nebo jen pod poslední?" se **nezodpovídala** -
+udělalo se to jako vlastnost návrháře, ne jako parita. Detail v `changelog.md` 10. 9. (4).
+
 ## `B131` Dvě různá „víc stránek" se pletla (hotovo 10. 9. 2026)
 
 Nález Jan 7. 9.: náhled má stránky dat v nabídce nahoře a strany sazby pod sebou ve scrollu, obojí

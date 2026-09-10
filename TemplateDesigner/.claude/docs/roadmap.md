@@ -103,17 +103,6 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B134` Sekce, která se opakuje na každé stránce a přitom plave za obsahem** [M]
-  (požadavek Jan 7. 9.: „poznámky musí být na každé stránce a hned pod tabulkou"). Dnes to jde jen
-  jedno z toho: „Jednou" plave za obsahem, „Každá stránka" se umístí na **spodní hranu** stránky
-  (`PageLayoutEngine.cs:503`), takže mezi tabulkou a legendou zůstane prázdno.
-  Hotovo když: sekce se dá nastavit tak, aby se **výška rezervovala na každé stránce** (jako
-  u patičky), ale **vykreslila se za posledním obsahem** té stránky.
-  Tvar: opakovaná sekce s **Rolí „Obsah"** má plavat, Role „Patička" zůstává dole - dnes o tom
-  rozhoduje heuristika podle pozice v šabloně, takže pozor na šablony, které na ní drží patičku.
-  ⚠️ **Před implementací ověřit, jak to dělá starý tisk** (legenda pod každým blokem, nebo jen
-  pod posledním) - dnes to nevím.
-
 - **`B132` Tiskové měřítko šablony** [M] (podnět Jan 7. 9.). Starý postskript sází logickou stránku
   (u `CB_CSADAD` 208 × 145 mm) a při tisku ji zvětší **1,3 ×** (`MeritkoVyves`; kniha 1 ×), takže
   z jedné sazby jsou dvě velikosti výstupu. My to neumíme: 1 mm v šabloně = 1 mm na papíře,

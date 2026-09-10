@@ -67,20 +67,71 @@ public class SirokaLinkaStrankovaniTests
         Assert.Equal(1, vysledek.TotalPages);
     }
 
-    /// <summary>Rozřezaná sekce navazuje bez díry i bez překryvu - jinak by na přechodu stránek
-    /// zmizel nebo se zopakoval pruh tabulky.</summary>
+    /// <summary>
+    /// Rozřezaná sekce nesmí ztratit ani zopakovat pruh tabulky.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Přeskočit se smí jen to, co zlom sám označí za prázdné** (`Zlom.MrtvaMezeraMm`). Do
+    /// 10. 9. tady stálo „bez díry" natvrdo, protože žádná díra vzniknout nemohla. Odstup mezi
+    /// bloky se od té doby při zlomu stránky nekreslí - jinak zůstane na konci strany prázdný pruh
+    /// a poznámky pod tabulkou začnou o něj níž (nález Jan 10. 9. na lince 330510). Pojistka platí
+    /// dál, jen se posunula: každá skulina musí sedět na deklarovanou mrtvou mezeru, takže obsah
+    /// se ztratit pořád nemůže.
+    /// </remarks>
     [Fact]
     public void ChunkyNaSebeNavazuji()
     {
-        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator())
-            .Layout(Sablona(Prvek()), LineTableBlokyTests.SirokaLinkaData(200, pocetZastavek: 25));
+        var prvek = Prvek();
+        var data = LineTableBlokyTests.SirokaLinkaData(200, pocetZastavek: 25);
+        var zlomy = ((INedelitelneDily)prvek).ZlomyMm(data);
+
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(Sablona(prvek), data);
 
         float? konecPredchoziho = null;
         foreach (var stranka in vysledek.Pages)
         {
             var sekce = Assert.Single(stranka.Sections);
-            if (konecPredchoziho is float k) Assert.Equal(k, sekce.ClipTop!.Value, 2);
+            if (konecPredchoziho is float k)
+            {
+                float skulina = sekce.ClipTop!.Value - k;
+                float mrtva = zlomy
+                    .Where(z => Math.Abs(z.Mm - sekce.ClipTop!.Value) < 0.05f)
+                    .Select(z => z.MrtvaMezeraMm)
+                    .DefaultIfEmpty(0f)
+                    .Max();
+
+                Assert.Equal(mrtva, skulina, 2);
+            }
             konecPredchoziho = sekce.ClipBottom;
+        }
+    }
+
+    /// <summary>
+    /// Odstup mezi bloky se na konci strany nekreslí.
+    /// </summary>
+    /// <remarks>
+    /// Nález Jan 10. 9. (linka 330510): řez padl na hranici bloku ve 74,9 mm, poslední řádek
+    /// zastávky přitom končil na 70,9 - ty 4 mm odstupu si strana odvezla s sebou a poznámky pod
+    /// tabulkou začaly o ně níž. Na poslední straně, kde se neláme, žádný odstup není, takže to
+    /// vypadalo jako nepravidelnost bez příčiny.
+    /// </remarks>
+    [Fact]
+    public void OdstupMeziBloky_SeNaKonciStranyNekresli()
+    {
+        var prvek = Prvek();
+        var data = LineTableBlokyTests.SirokaLinkaData(200, pocetZastavek: 25);
+        var silne = ((INedelitelneDily)prvek).ZlomyMm(data).Where(z => z.Silny).ToList();
+
+        Assert.NotEmpty(silne);
+        Assert.All(silne, z => Assert.True(z.MrtvaMezeraMm > 0f,
+            "hranice bloku musí deklarovat odstup jako mrtvou mezeru, jinak zůstane na konci strany"));
+
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(Sablona(prvek), data);
+
+        foreach (var stranka in vysledek.Pages)
+        {
+            if (stranka.Sections[0].ClipBottom is not { } konec) continue;
+            Assert.DoesNotContain(silne, z => Math.Abs(z.Mm - konec) < 0.05f);
         }
     }
 

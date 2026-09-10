@@ -41,9 +41,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s f = form.AddFieldToLastGroup("Role", "Umístění", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Body", "Obsah")
+        d f.AddListItem("BelowContent", "Pod obsahem")
         d f.AddListItem("Header", "Hlavička")
         d f.AddListItem("Footer", "Patička")
         s f.value = "Body"
+        s f.helpText = "Pod obsahem = na každé stránce hned za obsahem té stránky"
 
         s f = form.AddFieldToLastGroup("OverflowBehavior", "Přetečení", $$$FieldTypeList, 0, 1)
         d f.AddListItem("KeepTogether", "Nepřerušovat")
