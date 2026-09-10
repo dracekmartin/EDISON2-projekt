@@ -114,12 +114,18 @@ takže nejde o práci, ale o doklad.
   stranu, hlavička a poznámky pro směr nebo pro část, směr na stranu. **Dělá se to dohromady** -
   bez zlomu dělená linka nevznikne (rozhodnutí Jan 7. 9.).
 
-- **`B123` Atributy trasy zastávky - dodělat zbytek číselníku** [M] (podnět Jan 7. 9.). Z číselníku
-  16 („atributy trasy", `JRapiCis.mac:1283`) umíme `x`, `A`, `L`, `T`, `P`; chybí metro/letadlo/loď,
-  varianty „na znamení" (`y`, `z`), podtržení (`p`, `o`, `J`) a paragrafy. ⚠️ **Blokuje to kolize
-  číselníků**: atributy trasy a atributy spoje sdílejí jednu mapu v `SymbolMap`, takže zastávka
-  s `H` („cílová pro tablo") se dnes kreslí jako vozíček. Nejdřív změřit výskyt v datech, pak
-  oddělit mapy, pak doplňovat. Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
+- **`B123` Atributy trasy zastávky - co zbývá po měření** [S] (podnět Jan 7. 9., změřeno 10. 9.).
+  ⚠️ **Původní zadání „dodělat zbytek číselníku" neplatí** - metro, letadlo, loď, `y`/`z`, `p`/`o`
+  ani paragrafy se v datech nevyskytují (census: 54 linek, 3018 řádků, tři firmy). `S` doplněno
+  10. 9. Zbývá jen:
+  - **`V` / `N`** (jen výstup / jen nástup, 10× a 0×) - legacy je vede mezi značkami, ale **jak je
+    klient kreslí, se nenašlo**; bez toho je pozice ve fontu dohad (R6).
+  - **Metro / loď / letadlo** - neberou se z atributů trasy, ale z **číselníku zastávky**
+    (`^JRZ $8`, legacy `gZst dta 7`), který slučuje `e`/`f`/`g` do jedné značky `M`. Je to druhý
+    zdroj, který nečteme; samostatná položka, ne „zbytek číselníku".
+  - **Oddělit mapu atributů zastávky od atributů spoje** v `SymbolMap` - dnes zastávka s `H`
+    („cílová pro tablo") sáhne na vozíček. `H` se v datech nevyskytuje, takže to nic neopravuje,
+    ale je to past. Census jde zopakovat sondou `AtributyTrasyProbe` (`TD_ATRIBUTY_PROBE=1`).
 
 - **`B135` Řez tabulky nemá padat doprostřed zastávky** [M] (podnět 9. 9.). Zlom má přednostně
   padnout tam, kde zastávka má příjezd i odjezd, a nemá vzniknout vůbec, když by na další část

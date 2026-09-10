@@ -1,5 +1,28 @@
 ﻿# Changelog
 
+## 2026-09-10 (6) - 🚏 atribut trasy „S" připojí k zastávce stanoviště
+
+Census atributů trasy nad reálnými daty (54 linek, 3018 zastávkových řádků, tři firmy) **obrátil
+zadání `B123`**. To znělo „dodělat zbytek číselníku 16" - metro, letadlo, loď, varianty „na
+znamení", podtržení, paragrafy. Ty se v datech nevyskytují **ani jednou**.
+
+Co se vyskytuje: `E` nácestná 563×, `x` na znamení 556×, `T` tučně 405×, `P` 218×, `A` autobus
+211×, **`S` tisk stanoviště 72×**, `L` vlak 62×, `V` jen výstup 10×, `J` 4×. Z toho jsme neuměli
+`S` a `V`.
+
+**Doplněné `S`:** k názvu zastávky se připojí stanoviště - „České Budějovice,,aut.nádr., stan.16".
+Tiskne se vždy, žádné nastavení nad tím není a do legendy nepatří: `S` **není značka**, je to pokyn
+„vypiš stanoviště", stejně jako `T` znamená „sázej tučně". Legacy to má oddělené vlastním seznamem
+řídicích atributů `PTpoS><JE`; všechno ostatní jsou značky, které se kreslí.
+
+⚠️ **V obousměrné sestavě se spojí obě stanoviště** („stan.16,19"), protože řádek je společný pro
+oba směry - vypsat jen to svoje by druhé zamlčelo. Parita `JRapiLinPrtWin.mac:3124` (jednosměrně)
+a `:3371` (obousměrně); text „stan." je doslovný opis (`txStan`, :2971 - „nást." má legacy jen
+v MHD režimu, kterým AD agenda nejde).
+
+Doloženo voláním serveru na `CB_GWBUS` 320113 (stan.16 jen ve směru tam) a 320118 (zastávka 55
+má stanoviště jen ve zpět, a v obousměrné sestavě se přesto vypíše).
+
 ## 2026-09-10 (5) - 🔍 měřítko tisku: jedna šablona, dvě velikosti výstupu
 
 Podnět Jan 7. 9. (`B132`). Starý postskript sází na logickou stránku a při tisku ji celou zvětší

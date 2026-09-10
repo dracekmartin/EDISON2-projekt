@@ -647,12 +647,12 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i zdvojit {
             s idx = idx + 1
             s rowMeta(idx) = $lb(poradi, "P")
-            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm))
+            d zastavky.%Push(..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "prijezd", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm, obousmerne))
         }
 
         s idx = idx + 1
         s rowMeta(idx) = $lb(poradi, "O")
-        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm)
+        s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm, obousmerne)
         d zastavky.%Push(z)
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
@@ -775,14 +775,30 @@ ClassMethod ZastavujiciTc(dataDB As %String, sku As %String, lin As %String, sme
 }
 
 /// JSON objekt jednoho zastávkového řádku (hlavní "zastavka" nebo vložený "prijezd").
-ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1, bezPismenVZone As %Boolean = 0, spolecneKm As %Boolean = 0) As %DynamicObject
+ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String, veta As %String, typ As %String, pocetKmSloupcu As %Integer, maxKmVeta As %String, jeTam As %Boolean, tiskZony As %Boolean = 0, tiskTc As %Boolean = 1, bezPismenVZone As %Boolean = 0, spolecneKm As %Boolean = 0, obousmerne As %Boolean = 0) As %DynamicObject
 {
     s czst = $p(veta,":",1)
     s z = ##class(%DynamicObject).%New()
     d z.%Set("PORADI",     +poradi)
     d z.%Set("TYP",        typ)
     d z.%Set("CZST",       czst)
+    s atrZnaky = $p($p(veta,":",2),"#",1)
+    s nastupiste = $p($p(veta,"#",3),":",$s(jeTam:1,1:2))
     s nazevZast = ..NazevZastavky(dataDB, czst)
+    // Atribut trasy „S" = tisk stanoviště: k názvu se připojí označník
+    // (`JRapiLinPrtWin.mac:3124`). Text „stan." je doslovná parita starého modulu - ten má
+    // v MHD režimu „nást.", ale AD agenda jede vždy tou první větví (`txStan`, :2971).
+    // ⚠️ V obousměrné sestavě se spojí **obě** stanoviště čárkou („stan.16,19") - řádek je
+    // společný pro oba směry, takže vypsat jen to svoje by druhé zamlčelo (legacy :3371).
+    i atrZnaky [ "S" {
+        s stanoviste = nastupiste
+        i obousmerne {
+            s stanTam = $p($p(veta,"#",3),":",1), stanZpet = $p($p(veta,"#",3),":",2)
+            s stanoviste = stanTam
+            i stanZpet '= "" s stanoviste = $s(stanTam '= "":stanTam_","_stanZpet, 1:stanZpet)
+        }
+        i stanoviste '= "" s nazevZast = nazevZast_", stan."_stanoviste
+    }
     d z.%Set("NAZEV_ZASTAVKY", nazevZast)
     // Zvýrazněná zastávka: příznak nese řádek, **vzhled si určí šablona** pravidlem zvýraznění
     // nad tímhle polem (prvek to už umí). Klíč je týž jako u vývěsky, ať binding funguje v obou.
@@ -799,10 +815,9 @@ ClassMethod BuildZastavkaRadek(dataDB As %String, sku As %String, lin As %String
     d z.%Set("ZONY",       zona)
     // MHD/IDS text z kódu v "#"-poli 4 J-věty (legacy gTrsLin dta,6 → gTrsLinDta2ToText)
     d z.%Set("MHD",        ..MhdText($p(veta,"#",4)))
-    d z.%Set("NASTUPISTE", $p($p(veta,"#",3),":",$s(jeTam:1,1:2)))
+    d z.%Set("NASTUPISTE", nastupiste)
 
     s atributy = ##class(%DynamicArray).%New()
-    s atrZnaky = $p($p(veta,":",2),"#",1)
     f ai=1:1:$l(atrZnaky) d atributy.%Push($e(atrZnaky,ai))
     d z.%Set("ATRIBUTY", atributy)
 
