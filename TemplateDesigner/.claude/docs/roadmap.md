@@ -103,14 +103,6 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B132` Tiskové měřítko šablony** [M] (podnět Jan 7. 9.). Starý postskript sází logickou stránku
-  (u `CB_CSADAD` 208 × 145 mm) a při tisku ji zvětší **1,3 ×** (`MeritkoVyves`; kniha 1 ×), takže
-  z jedné sazby jsou dvě velikosti výstupu. My to neumíme: 1 mm v šabloně = 1 mm na papíře,
-  „Uspořádání na list" stránku jen položí 1:1 na větší list (past #13158) a `Škálovat šablonu`
-  mění šablonu, ne tisk - dnes to znamená dvě šablony.
-  Hotovo když: u tisku jde zadat měřítko (nebo cílový formát) a šablona zůstane jedna.
-  ⚠️ Podklad na školení to měl jako hotové („MeritkoVyves → Škálovat šablonu") - opraveno.
-
 - **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
   ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového
   fontu - **pozice 1-32 jsou v `TimeTable2` i v SK variantě prázdné** (ověřeno vykreslením tabulky

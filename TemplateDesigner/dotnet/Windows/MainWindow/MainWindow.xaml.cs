@@ -188,8 +188,8 @@ public partial class MainWindow : Window
         // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
         // Callbacky běží na background threadu nad snapshot šablonou - PreviewCanvas render
         // je čistý SkiaSharp bez WPF a živá šablona se může mezitím editovat.
-        _vm.RenderPdfToFile = (filePath, pages, template, progress, sheets) =>
-            _previewCanvas!.RenderMultiDataToPdf(filePath, pages, template, progress, sheets);
+        _vm.RenderPdfToFile = (filePath, pages, template, progress, sheets, meritko) =>
+            _previewCanvas!.RenderMultiDataToPdf(filePath, pages, template, progress, sheets, meritko);
         _vm.RenderPngToFile = (filePath, pages, template, progress) =>
             _previewCanvas!.RenderMultiDataToPng(filePath, pages, template: template, progress: progress);
 
@@ -1068,15 +1068,15 @@ public partial class MainWindow : Window
             onParamsChanged: _vm.OnExternalParamsChanged,
             agendaClass: agendaClass);
 
-        vm.RequestRenderPdf = (filePath, data, sheets) =>
-            _previewCanvas!.RenderToPdf(filePath, data, sheets);
+        vm.RequestRenderPdf = (filePath, data, sheets, meritko) =>
+            _previewCanvas!.RenderToPdf(filePath, data, sheets, meritko);
 
         // Render nad snapshotem šablony - VM volá callback z threadpoolu (async tisk),
         // živá šablona by závodila s preview renderem UI threadu (element cache).
-        vm.RequestRenderMultiPdf = (filePath, dataPages, sheets) =>
+        vm.RequestRenderMultiPdf = (filePath, dataPages, sheets, meritko) =>
             _previewCanvas!.RenderMultiDataToPdf(filePath, dataPages,
                 template: Serialization.TemplateSerializer.DeepClone(_vm!.State.CurrentTemplate),
-                sheetLayout: sheets);
+                sheetLayout: sheets, meritko: meritko);
 
         vm.RequestOverflowCheck = dataPages =>
             _previewCanvas!.CountOverflowingPages(dataPages);

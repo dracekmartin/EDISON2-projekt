@@ -1,5 +1,25 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B132` Měřítko tisku (hotovo 10. 9. 2026)
+
+Starý postskript sází na logickou stránku a při tisku ji zvětší (`MeritkoVyves`: vývěsky 1,3×,
+kniha 1×). U nás to znamenalo držet dvě šablony. Pole **„Měřítko tisku"** je v tiskovém dialogu
+ve skupině „Export (tisk s daty)".
+
+Rozhodnutí, která se u toho udělala:
+
+- **Číslo, ne cílový formát** (Jan 10. 9.). Cílový formát („vytiskni na A4") je srozumitelnější
+  a nejde jím minout papír, ale zákazníci měřítko potřebují pro různé případy, takže by nestačil.
+- **Vlastnost výstupu, ne šablony.** Šablona zůstane A5; násobí se až převod mm → body při
+  kreslení, takže se sazba nepřepočítává a na stránku jde tentýž počet řádků.
+- **Rozměr papíru se musí říct.** Formulář přichází ze serveru a ten nezná rozměr stránky šablony,
+  takže větu „stránka 210×148 mm vyjde 273×192,4 mm" skládá klient do stavového řádku - stejné
+  místo, kde už stojí hlášky o uspořádání na list, chybějícím fontu a zmenšeném písmu.
+- **Měřítko → imposice, v tomhle pořadí.** Mřížka listu se počítá ze **zvětšené** stránky.
+
+Menu „Škálovat šablonu" přejmenováno na „Přepočítat šablonu na jinou velikost" - je to jiná věc
+(mění souřadnice prvků v šabloně) a stejný název obojí pletl. Detail v `changelog.md` 10. 9. (5).
+
 ## `B134` Sekce na každé stránce hned pod obsahem (hotovo 10. 9. 2026)
 
 Požadavek Jan 7. 9.: „poznámky musí být na každé stránce a hned pod tabulkou". Umístění sekce má

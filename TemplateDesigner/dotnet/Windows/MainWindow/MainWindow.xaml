@@ -180,7 +180,10 @@
                 <Separator/>
                 <MenuItem Header="Normalizovat pozice…" InputGestureText="Ctrl+Shift+N" Click="MenuNormalizePositions_Click"/>
                 <Separator/>
-                <MenuItem Header="Škálovat šablonu">
+                <!-- ⚠️ Mění souřadnice prvků v ŠABLONĚ - původní velikost tím zaniká. Měřítko
+                     TISKU je něco jiného a bydlí v tiskovém dialogu (`B132`); dokud se obojí
+                     jmenovalo „škálovat", nešlo je od sebe poznat. -->
+                <MenuItem Header="Přepočítat šablonu na jinou velikost">
                     <MenuItem Header="50 %"  Tag="0.5"  Click="MenuScale_Click"/>
                     <MenuItem Header="75 %"  Tag="0.75" Click="MenuScale_Click"/>
                     <MenuItem Header="90 %"  Tag="0.9"  Click="MenuScale_Click"/>

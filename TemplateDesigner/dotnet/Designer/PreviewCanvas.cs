@@ -109,8 +109,9 @@ public class PreviewCanvas
     /// Exportuje šablonu s dodanými daty do PDF souboru.
     /// Multi-page: každá stránka LayoutResult = jedna stránka PDF.
     /// </summary>
-    public void RenderToPdf(string filePath, DataContext? data, SheetLayoutOptions? sheetLayout = null) =>
-        RenderMultiDataToPdf(filePath, [data!], sheetLayout: sheetLayout);
+    public void RenderToPdf(string filePath, DataContext? data, SheetLayoutOptions? sheetLayout = null,
+        float meritko = 1f) =>
+        RenderMultiDataToPdf(filePath, [data!], sheetLayout: sheetLayout, meritko: meritko);
 
     /// <summary>
     /// Exportuje šablonu s více sadami dat do PDF - každý DataContext = kompletní průchod šablonou.
@@ -121,12 +122,15 @@ public class PreviewCanvas
     /// <param name="progress">Per datová stránka: (hotovo, celkem).</param>
     /// <param name="sheetLayout">Imposice: skládání logických stránek na fyzické listy (N-up).
     /// Null = 1 stránka = 1 PDF stránka (dnešní chování).</param>
+    /// <param name="meritko">Zvětšení hotové sazby při tisku (1 = skutečná velikost). Násobí se
+    /// jen převod milimetrů na body, takže se nepřepočítává layout - na stránku jde tentýž počet
+    /// řádků a mění se jen rozměr na papíře (`B132`).</param>
     public void RenderMultiDataToPdf(string filePath, IReadOnlyList<DataContext> dataPages,
         Template? template = null, IProgress<(int done, int total)>? progress = null,
-        SheetLayoutOptions? sheetLayout = null)
+        SheetLayoutOptions? sheetLayout = null, float meritko = 1f)
     {
         var tpl = template ?? _state.CurrentTemplate;
-        const float pointsPerMm = 72f / 25.4f;
+        float pointsPerMm = 72f / 25.4f * meritko;
         var   ps    = tpl.PageSize;
         float pageW = ps.Width  * pointsPerMm;
         float pageH = ps.Height * pointsPerMm;
@@ -173,6 +177,9 @@ public class PreviewCanvas
         SheetLayoutOptions o, float pointsPerMm, IProgress<(int done, int total)>? progress)
     {
         var ps = tpl.PageSize;
+        // Offsety na listu jsou v milimetrech LISTU (nezvětšují se), obsah stránky ano - proto
+        // se ořezové značky a pozice kreslí základním převodem a stránka měřítkem.
+        float bodyNaMmListu = pointsPerMm / (ps.Width > 0.01f ? o.PageWidth / ps.Width : 1f);
         var logicalPages = new List<Page>();
         for (int i = 0; i < dataPages.Count; i++)
         {
@@ -182,16 +189,17 @@ public class PreviewCanvas
 
         foreach (var sheet in SheetComposer.Compose(logicalPages, o))
         {
-            var canvas = doc.BeginPage(o.SheetWidth * pointsPerMm, o.SheetHeight * pointsPerMm);
+            var canvas = doc.BeginPage(o.SheetWidth * bodyNaMmListu, o.SheetHeight * bodyNaMmListu);
 
             using (var bg = new SKPaint { Color = SKColors.White })
-                canvas.DrawRect(0, 0, o.SheetWidth * pointsPerMm, o.SheetHeight * pointsPerMm, bg);
+                canvas.DrawRect(0, 0, o.SheetWidth * bodyNaMmListu, o.SheetHeight * bodyNaMmListu, bg);
 
             foreach (var placed in sheet.Pages)
-                RenderPage(canvas, ps, pointsPerMm, placed.OffsetX * pointsPerMm, placed.OffsetY * pointsPerMm, placed.Page);
+                RenderPage(canvas, ps, pointsPerMm,
+                    placed.OffsetX * bodyNaMmListu, placed.OffsetY * bodyNaMmListu, placed.Page);
 
             if (o.DrawCutMarks)
-                DrawCutMarks(canvas, o, pointsPerMm);
+                DrawCutMarks(canvas, o, bodyNaMmListu);
 
             doc.EndPage();
         }

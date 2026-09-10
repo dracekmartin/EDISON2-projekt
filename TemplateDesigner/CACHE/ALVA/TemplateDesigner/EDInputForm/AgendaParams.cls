@@ -91,6 +91,15 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
     s f = form.AddText("__EXPORT_FILENAME", "Název souboru (tokeny {POLE})", fname)
     s f.placeholders = 1
 
+    // Měřítko tisku: hotová sazba se před tiskem celá zvětší/zmenší (parita s MeritkoVyves
+    // starého postskriptu - vývěsky 1,3x, kniha 1x). Stránkování se tím nemění, jen rozměr
+    // na papíře. Kolik z toho vyjde milimetrů řekne stavový řádek dialogu - server nezná
+    // rozměr stránky šablony.
+    s meritko = 1
+    i $isobject(vals) && vals.%IsDefined("__EXPORT_SCALE") { s meritko = vals.%Get("__EXPORT_SCALE") }
+    s f = form.AddDecimal("__EXPORT_SCALE", "Měřítko tisku", meritko, 0.1, 10, "x")
+    s f.helpText = "1 = skutečná velikost. Zvětší se celá stránka včetně písma; počet stránek se nemění."
+
     // Imposice (N-up): skládání stránek šablony na fyzické listy - stránky 1:1, blok centrovaný.
     // Geometrii/validaci mřížky řeší C# (SheetComposer - zná rozměr stránky šablony); tady jen volby.
     // Viditelnost detailních polí (jen při zvoleném formátu listu) řeší C# host (PrintDialog.ApplyVisibility).

@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -54,10 +54,10 @@ public class PrintDialogViewModel : EDViewModel
     public AsyncRelayCommand ExportRealDataPdfCommand { get; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.RenderToPdf. Třetí parametr = imposice (null = vypnutá).</summary>
-    public Action<string, DataContext?, SheetLayoutOptions?>? RequestRenderPdf { get; set; }
+    public Action<string, DataContext?, SheetLayoutOptions?, float>? RequestRenderPdf { get; set; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf. Třetí parametr = imposice (null = vypnutá).</summary>
-    public Action<string, IReadOnlyList<DataContext>, SheetLayoutOptions?>? RequestRenderMultiPdf { get; set; }
+    public Action<string, IReadOnlyList<DataContext>, SheetLayoutOptions?, float>? RequestRenderMultiPdf { get; set; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.CountOverflowingPages - layout-only kontrola přetečení
     /// napříč všemi instancemi (data už fetchnutá → levné). Vrací nálezy (co a kde se nevejde)
@@ -203,7 +203,7 @@ public class PrintDialogViewModel : EDViewModel
         {
             PersistParams();
             var data = _buildMockData(_paramValues);
-            RequestRenderPdf?.Invoke(filePath, data, sheets);
+            RequestRenderPdf?.Invoke(filePath, data, sheets, Meritko);
             OpenPdf(filePath);
             StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}{PopisUsporadani(sheets)}";
         }
@@ -263,7 +263,7 @@ public class PrintDialogViewModel : EDViewModel
             // Skládání 1×1 papír jen zvětší (A5 šablona + list „A4 na výšku" = A4 s jednou vývěskou
             // uprostřed). Volba se persistuje per agenda, takže uživatel nemá jak zjistit proč -
             // zákazník to hlásil jako chybu tisku (#13158). Proto varování, ne neutrální popis.
-            string sheetInfo = PopisUsporadani(sheets);
+            string sheetInfo = PopisUsporadani(sheets) + PopisMeritka();
             // Vlastní sloupce: co se na vývěsku nedostane (odjezd mimo sloupce, sloupec s obdobím
             // mimo platnost JŘ) říct i tady, ne jen ve status baru návrháře - tisknout může jiná
             // linka než v náhledu.
@@ -288,7 +288,7 @@ public class PrintDialogViewModel : EDViewModel
             {
                 // Render na threadpoolu - callback rendruje nad snapshotem šablony (DeepClone
                 // ve wiring), takže nekoliduje s preview renderem UI threadu.
-                await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets));
+                await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets, Meritko));
                 OpenPdf(target);
                 StatusText = (overflow > 0
                     ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká{preteceniInfo}: {Path.GetFileName(target)}{sheetInfo}"
@@ -305,7 +305,7 @@ public class PrintDialogViewModel : EDViewModel
                 foreach (var group in GroupForExport(dataPages, splitMode))
                 {
                     var name = BuildFileName(group[0], pattern, usedNames);
-                    RequestRenderMultiPdf?.Invoke(Path.Combine(target, name + ".pdf"), group, sheets);
+                    RequestRenderMultiPdf?.Invoke(Path.Combine(target, name + ".pdf"), group, sheets, Meritko);
                     files++;
                 }
                 return files;
@@ -346,6 +346,25 @@ public class PrintDialogViewModel : EDViewModel
     /// Null = vypnutá. ArgumentException = mřížka se na list nevejde (hláška pro uživatele).</summary>
     private SheetLayoutOptions? BuildSheetOptions() =>
         SheetComposer.FromParamValues(_paramValues, _template.PageSize);
+
+    /// <summary>Měřítko tisku z exportních polí (1 = skutečná velikost).</summary>
+    private float Meritko => SheetComposer.MeritkoZParamValues(_paramValues);
+
+    /// <summary>
+    /// Co z měřítka vyjde za rozměr papíru, nebo prázdno při 1×.
+    /// </summary>
+    /// <remarks>
+    /// Server tuhle větu složit nemůže - formulář nezná rozměr stránky šablony. Bez ní uživatel
+    /// nastaví 1,3 a nemá jak zjistit, na jaký papír to má poslat (`B132`).
+    /// </remarks>
+    private string PopisMeritka()
+    {
+        float m = Meritko;
+        if (Math.Abs(m - 1f) < 0.001f) return "";
+        var ps = _template.PageSize;
+        return $" · měřítko {m:0.##}× (stránka {ps.Width:0.#}×{ps.Height:0.#} mm vyjde "
+             + $"{ps.Width * m:0.#}×{ps.Height * m:0.#} mm)";
+    }
 
     private bool StoredBool(string key) => _paramValues.GetValueOrDefault(key) is string s
         && (s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase));

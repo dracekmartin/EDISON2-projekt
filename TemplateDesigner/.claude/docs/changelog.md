@@ -1,5 +1,34 @@
 ﻿# Changelog
 
+## 2026-09-10 (5) - 🔍 měřítko tisku: jedna šablona, dvě velikosti výstupu
+
+Podnět Jan 7. 9. (`B132`). Starý postskript sází na logickou stránku a při tisku ji celou zvětší
+(`MeritkoVyves`: vývěsky 1,3×, kniha 1×). My to neuměli, takže jiná velikost výstupu znamenala
+druhou šablonu: „Uspořádání na list" stránku jen položí 1:1 na větší papír a „Škálovat šablonu"
+mění šablonu, ne tisk.
+
+**Pole „Měřítko tisku"** přibylo do skupiny „Export (tisk s daty)" v tiskovém dialogu (Ctrl+P),
+vedle uspořádání na list - je to táž otázka: co se stane s hotovou sazbou, než se pošle na papír.
+Zadává se **číslo, ne cílový formát** (rozhodnutí Jan 10. 9.: zákazníci to potřebují pro různé
+případy, takže „vytiskni na A4" nestačí).
+
+⚠️ **Sazba se nepřepočítává.** Násobí se až převod milimetrů na body, takže na stránku jde tentýž
+počet řádků a mění se jen rozměr na papíře. Kdyby se přepočítávala, nebyla by to táž sestava,
+jen větší.
+
+**Kolik z toho vyjde milimetrů říká stavový řádek** dialogu i hláška po exportu z hlavního okna
+(„měřítko 1,3× - stránka 210×148 mm vyjde 273×192,4 mm"). Formulář to složit nemůže, protože server
+nezná rozměr stránky šablony; počítá se na klientovi. Bez toho uživatel nastaví 1,3 a nemá jak
+zjistit, na jaký papír to poslat - táž třída chyby jako #13158.
+
+**S uspořádáním na list se skládá v pořadí měřítko → imposice:** na list se vejde tolik stránek,
+jak jsou velké **po zvětšení**. Dvě A5 na šířku se na A4 na šířku vejdou, dvě zvětšené 1,3× už ne
+a mřížka to ohlásí.
+
+Menu „Škálovat šablonu" se přejmenovalo na **„Přepočítat šablonu na jinou velikost"** - sahá na
+souřadnice prvků a původní velikost tím zaniká. Dokud se obojí jmenovalo škálování, nešlo je
+od sebe poznat.
+
 ## 2026-09-10 (4) - 📄 poznámky na každé stránce hned pod tabulkou
 
 Požadavek Jan 7. 9. (`B134`). Šlo jen jedno z toho: „Jednou" plavalo za obsahem, ale bylo jen na

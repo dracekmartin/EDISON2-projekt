@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 namespace TemplateDesigner.Models.Layout;
 
@@ -98,12 +98,13 @@ public static class SheetLayoutKeys
     public const string Grid = "__EXPORT_SHEET_GRID";
     public const string Repeat = "__EXPORT_SHEET_REPEAT";
     public const string Marks = "__EXPORT_SHEET_MARKS";
+    public const string Meritko = "__EXPORT_SCALE";
 
     public const string SheetNone = "NONE";
     public const string GridAuto = "AUTO";
 
     /// <summary>Všechny klíče - pro persistence restore (nejsou mezi agenda parametry).</summary>
-    public static readonly string[] All = [Sheet, Grid, Repeat, Marks];
+    public static readonly string[] All = [Sheet, Grid, Repeat, Marks, Meritko];
 }
 
 /// <summary>
@@ -125,8 +126,14 @@ public static class SheetComposer
         var (sheetW, sheetH) = ParseSheetFormat(sheetKey)
             ?? throw new ArgumentException($"Neznámý formát listu: {sheetKey}");
 
+        // ⚠️ Nejdřív měřítko, pak skládání: na list se vejde tolik stránek, jak jsou VELKÉ po
+        // zvětšení. Bez toho by mřížka počítala s návrhovým rozměrem a stránky by z listu vylezly.
+        float meritko = MeritkoZParamValues(values);
+        float pageW = page.Width * meritko;
+        float pageH = page.Height * meritko;
+
         var gridKey = (values.GetValueOrDefault(SheetLayoutKeys.Grid) as string) ?? SheetLayoutKeys.GridAuto;
-        var (rows, cols) = ResolveGrid(gridKey, page.Width, page.Height, sheetW, sheetH);
+        var (rows, cols) = ResolveGrid(gridKey, pageW, pageH, sheetW, sheetH);
 
         return new SheetLayoutOptions
         {
@@ -134,11 +141,40 @@ public static class SheetComposer
             SheetHeight = sheetH,
             Rows = rows,
             Cols = cols,
-            PageWidth = page.Width,
-            PageHeight = page.Height,
+            PageWidth = pageW,
+            PageHeight = pageH,
             RepeatEachPage = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Repeat)),
             DrawCutMarks = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Marks)),
         };
+    }
+
+    /// <summary>Nejmenší a největší povolené měřítko tisku - shodné s mezemi pole ve formuláři.</summary>
+    public const float MeritkoMin = 0.1f, MeritkoMax = 10f;
+
+    /// <summary>
+    /// Měřítko tisku z exportních polí. 1 = skutečná velikost, chybějící i nesmyslná hodnota → 1.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Je to vlastnost výstupu, ne šablony** (`B132`, parita s `MeritkoVyves` starého
+    /// postskriptu: vývěsky 1,3×, kniha 1×). Sazba se **nepřepočítává** - násobí se až převod
+    /// milimetrů na body, takže na stránku jde tentýž počet řádků a mění se jen rozměr na papíře.
+    /// Menu „Přepočítat šablonu na jinou velikost" je něco jiného: to sahá na souřadnice prvků
+    /// v šabloně a původní velikost tím zaniká.
+    /// </remarks>
+    public static float MeritkoZParamValues(IReadOnlyDictionary<string, object?> values)
+    {
+        var raw = values.GetValueOrDefault(SheetLayoutKeys.Meritko);
+        float m = raw switch
+        {
+            float f => f,
+            double d => (float)d,
+            int i => i,
+            string s when float.TryParse(s, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var p) => p,
+            string s when float.TryParse(s, out var p) => p,
+            _ => 1f
+        };
+        return m is > 0f and <= MeritkoMax && m >= MeritkoMin ? m : 1f;
     }
 
     /// <summary>Formát listu z wire klíče → (šířka, výška) v mm. Null = neznámý klíč.</summary>
