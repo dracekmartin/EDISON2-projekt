@@ -1,4 +1,4 @@
-# Linkový / knižní JŘ - analýza pro implementaci (podklad pro Fable)
+﻿# Linkový / knižní JŘ - analýza pro implementaci (podklad pro Fable)
 
 > **Účel dokumentu.** Podklad k předání jinému AI agentovi (Claude Fable), aby zkusil **lokálně**
 > naimplementovat novou agendu + element pro **linkový/knižní jízdní řád** v TemplateDesigneru,
@@ -1503,9 +1503,9 @@ Seřazeno podle toho, jak moc je to vidět:
 | Odjezdová a příjezdová tabule zastávky (relace) | `RelacePSTisk.cls` | ❌ celá agenda chybí |
 | Seznam zastávek a označení zastávek jako samostatný tisk | `^JRSET("PS","SEZNAM"/"ZaOzn")` | ❌ |
 | Značky `od` / `pf` u výchozí a konečné zastávky | `JRapiLinPrtPS.mac` | ❌ |
-| „Jede po jiné trase" jako svislá vlnovka | `LomiK = "±"` | ⚠️ kreslíme znak `<` |
+| „Jede po jiné trase" jako svislá vlnovka | `LomiK = "±"` | ✅ 10. 9. (`B126`) - glyf 75, „projíždí" glyf 74 |
 | Skládání tištěného čísla linky (3místné / vlastní / tablo) | `PATCH,cisIDS` | ❌ |
-| Ruční zlom stránky na tarifním čísle | `PATCH,ZLOM` | ❌ vědomě (`B100`, 3 linky z ~93 tis.) |
+| Ruční zlom stránky na tarifním čísle | `PATCH,ZLOM` | ❌ vědomě (`B127`, 3 linky z ~93 tis.) |
 | Podtržení u zdvojených řádků příjezd/odjezd | `PATCH,podtrzeniPaJ` | ❌ (viz `B123`) |
 | Volby dělené linky (na jednu stranu, hlavička pro směr) | `gSetLinPrt` dta 21-23 | ❌ |
 | **Spoje se na části dělí rovnoměrně**, ne do plna | `JRapiLinPrtPS.mac:492` (`pokrac`) | ⚠️ my plníme bloky do plna a poslední necháme kratší |

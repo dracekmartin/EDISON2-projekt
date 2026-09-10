@@ -74,10 +74,6 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
   druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
 
-- **`B100` Ruční zlom stránky na tarifním čísle** [S] - u linky jde nastavit tarifní číslo, na
-  kterém se má tisk rozdělit; starý modul to respektuje, my ne. **Odloženo kvůli frekvenci**
-  (rozhodnutí Jan 25. 8.): nastaveno na **3 linkách z ≈ 93 tisíc**. Neblokuje nic.
-
 - **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** - evidence, ne práce. Na 93 133
   linkách šesti firem nejsou nikde nastavené: místenkování, vlastní texty sloupce MHD, tisk
   provozoven dopravce, schovávání u linky, vrstva pod linkou, řazení spojů
@@ -103,10 +99,14 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9., pohltí `B100`). Ruční zlom na
-  tarifním čísle (`PATCH,ZLOM`) plus tři volby dělené linky (`gSetLinPrt` dta 21-23): tisk na jednu
-  stranu, hlavička a poznámky pro směr nebo pro část, směr na stranu. **Dělá se to dohromady** -
-  bez zlomu dělená linka nevznikne (rozhodnutí Jan 7. 9.).
+- **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9.; **pohltil `B100`**, ten už
+  v roadmapě není). Je to dělení **doprava** - když se sloupce spojů nevejdou do šířky, starý tisk
+  rozdělí linku na části a každá dostane celý seznam zastávek. Svislé dělení (moc zastávek) je jiná
+  věc, tu řeší `B135`. Tři volby u linky (`gSetLinPrt` dta 21-23): tisk na jednu stranu, hlavička
+  a poznámky pro směr nebo pro část, směr na stranu. Plus ruční zlom na tarifním čísle
+  (`PATCH,ZLOM`) - dělá se to dohromady, bez zlomu žádná část nevznikne.
+  ⚠️ **První krok je měření, ne kód.** Ruční zlom má **3 linky z ≈ 93 tisíc** (změřeno 25. 8.),
+  volby dělené linky změřené nejsou. Když vyjdou podobně, patří to k `B98` a ne do práce.
 
 - **`B135` Řez tabulky nemá padat doprostřed zastávky** [M] (podnět 9. 9.). Zlom má přednostně
   padnout tam, kde zastávka má příjezd i odjezd, a nemá vzniknout vůbec, když by na další část
