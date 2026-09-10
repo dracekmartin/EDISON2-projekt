@@ -1,5 +1,24 @@
 ﻿# Changelog
 
+## 2026-09-10 (8) - 〰️ „projíždí" a „jede jinudy" jsou piktogramy, ne znaky
+
+`B126`. V buňce spoje se tisklo doslova `|` a `<`. Starý **papírový** tisk je kreslí glyfem:
+windowsový klient má v překladové tabulce id 1 → 74 a id 2 → 75, postskript pozice 7 a 8 svého
+fontu (`JRapiLinPrtPS.mac:62`). Doslovné znaky používá jen **HTML** varianta téhož tisku
+(`JRapiLinHtm0.mac:43`) - a my jsme se nechtěně podobali jí.
+
+⚠️ **Zadání stálo na chybném zjištění.** Roadmapa i komentář v `SymbolMap` tvrdily, že font ty
+značky nemá a postskript si je kreslí jako vektory, takže z toho vycházela „kreslicí featura
+podobná šipce směru" [M]. Vzniklo to tím, že se hledala pozice **těch znaků samotných** (60 a 124,
+kde je opravdu jen osmiúhelník a čtverec) místo v překladové tabulce. Ve skutečnosti to jsou dva
+řádky v mapě.
+
+Ověřeno obrysem glyfu v obou fontech: **74** je 3,9 × 52,1 (svislice přes výšku řádku), **75**
+je 15,7 × 51,8 (vlnovka). Shodné v CZ i SK.
+
+⚠️ **Kilometrové sloupce zůstávají textem.** Tam se `<` kreslí obyčejnou cestou buňky, ne přes
+symbolový font - protáhnout piktogram do popisných sloupců je jiný kus kódu než buňka času.
+
 ## 2026-09-10 (7) - 🚏 atributy zastávky mají vlastní mapu značek
 
 Dokončení `B123`. Značky trasy zastávky se dosud překládaly **mapou atributů spoje** - dva různé

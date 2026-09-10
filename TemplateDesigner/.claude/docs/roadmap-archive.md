@@ -1,5 +1,24 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B126` Vlnovka „jede jinudy" a svislice „projíždí" (hotovo 10. 9. 2026)
+
+V buňce spoje se tisklo doslova `|` a `<`; starý papírový tisk je kreslí glyfem. Mapování
+`|` → 74, `<` → 75 z překladové tabulky windowsového klienta (`ConvertSpecialniZnak`, id 1 a 2),
+pozice ověřené obrysem glyfu v obou fontech: 74 je 3,9 × 52,1 (svislice), 75 je 15,7 × 51,8
+(vlnovka).
+
+⚠️ **Bod byl [M] kvůli chybnému zjištění.** Stálo v něm, že font ty značky nemá a postskript si je
+kreslí jako vektory, takže z toho vycházela kreslicí featura. Pozice se hledala u **znaků
+samotných** (60 a 124 - tam je opravdu jen osmiúhelník a čtverec) místo v překladové tabulce.
+Reálně to byly dva řádky v mapě. Táž chyba byla i v komentáři `SymbolMap`; opravena.
+
+Poučení, které stojí za zapamatování: **doslovné `|` a `<` má jen HTML varianta starého tisku**
+(`JRapiLinHtm0.mac:43`), papírová ne. Když se něco porovnává „se starým", je potřeba vědět, se
+kterou z jeho variant.
+
+⚠️ **Zbývá:** `<` v kilometrových sloupcích se dál kreslí textem - popisné sloupce jdou obyčejnou
+cestou buňky, ne přes symbolový font. Vytáhnout, až to někdo uvidí na papíře.
+
 ## `B123` Atributy trasy zastávky (hotovo 10. 9. 2026)
 
 Zadání znělo „dodělat zbytek číselníku 16". **Census nad reálnými daty ho obrátil**: 54 linek,

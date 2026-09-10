@@ -141,12 +141,10 @@ public class FormatCasuSpojeTests
     }
 
     /// <summary>
-    /// ⚠️ Buňka nemusí nést čas: „&lt;" znamená jinou trasu, „|" projetí bez zastavení. Rozdělit
-    /// je nesmí nic - vznikl by z nich nesmysl a půlka by se navíc vysázela menším písmem.
+    /// ⚠️ Buňka nemusí nést čas - rozdělit ji nesmí nic, vznikl by nesmysl a půlka by se navíc
+    /// vysázela menším písmem.
     /// </summary>
     [Theory]
-    [InlineData("<")]
-    [InlineData("|")]
     [InlineData("")]
     [InlineData("16:")]
     [InlineData(":15")]
@@ -154,6 +152,26 @@ public class FormatCasuSpojeTests
     public void CoNeniCas_SeNedeli(string obsah)
     {
         Assert.Null(Prvek().CasRuns(obsah));
+    }
+
+    /// <summary>
+    /// Průjezd zastávkou jde jako **jeden** piktogram, ne jako rozdělený čas.
+    /// </summary>
+    /// <remarks>
+    /// „&lt;" znamená jinou trasu, „|" projetí bez zastavení. Od 10. 9. se kreslí glyfem
+    /// (svislice a vlnovka, `B126`), takže `CasRuns` u nich vrací run - ale jednodílný a bez
+    /// zmenšeného písma, což je přesně to, co tenhle test hlídal.
+    /// </remarks>
+    [Theory]
+    [InlineData("<")]
+    [InlineData("|")]
+    public void Prujezd_JdeJakoJedenPiktogram(string obsah)
+    {
+        var runs = Prvek().CasRuns(obsah);
+
+        Assert.NotNull(runs);
+        var run = Assert.Single(runs!);
+        Assert.True(run.Symbol);
     }
 
     [Fact]

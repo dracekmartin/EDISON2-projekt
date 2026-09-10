@@ -84,10 +84,11 @@ public static class SymbolMap
     /// rodinu (BEV, IDS, NKA, OBC, PCZ, PJI, POS, RBU, SAO, CBE, RBP) v číselníku znaků jako
     /// <b>symboly</b> (<c>JRapiLinPrtWin.mac:1556</c> a dál). Rozhoduje tedy jen tenhle seznam
     /// a to, jestli je pozice ve fontu ověřená.</para>
-    /// <para>Co v seznamu není, se kreslí <b>textem</b>. Značky <c>|</c> (projíždí) a <c>&lt;</c>
-    /// (jede jinudy) tam nebudou nikdy - <b>font je nemá</b> (na jejich pozicích je čtverec
-    /// a osmiúhelník), takže je i starý tisk kreslí znakem. „Pokračuje" <c>u</c> zůstává textem,
-    /// dokud se nenajde stará sestava, kde se vyskytuje - v jádru sady není.</para>
+    /// <para>Co v seznamu není, se kreslí <b>textem</b>. „Pokračuje" <c>u</c> zůstává textem,
+    /// dokud se nenajde stará sestava, kde se vyskytuje - v jádru sady není. ⚠️ Do 10. 9. tu
+    /// stálo, že <c>|</c> a <c>&lt;</c> nebudou piktogramem nikdy, protože „font je nemá" -
+    /// hledala se pozice těch znaků samotných (60 a 124, kde je opravdu jen osmiúhelník a čtverec)
+    /// místo v překladové tabulce, kde jsou pod id 1 a 2. Viz <see cref="PruchodZastavkou"/>.</para>
     /// <para><b>Kde se pozice bere:</b> starý tiskový klient má překladovou tabulku
     /// <c>ALVA.TISKJR.Main.ConvertSpecialniZnak</c> (<c>C:\DEV\EDISON\TiskJR\CACHE\ALVA\TISKJR\Main.cls</c>) -
     /// id z číselníku <c>$$$SALL</c> → kód znaku ve fontu. Záporná hodnota tam znamená text nebo
@@ -207,6 +208,29 @@ public static class SymbolMap
         if (PiktogramyZastavky.TryGetValue(znak, out var poz)) return (SymbolRenderMode.FontGlyf, poz);
         return (SymbolRenderMode.Text, znak);
     }
+
+    /// <summary>
+    /// Průchod zastávkou bez zastavení - „projíždí" a „jede jinudy".
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Nejsou to znaky, ale piktogramy.</b> Do 10. 9. se tiskly doslova jako <c>|</c>
+    /// a <c>&lt;</c>, protože se pozice hledala u těch znaků samotných. Windowsový klient je má
+    /// v překladové tabulce pod id 1 a 2 (<c>ConvertSpecialniZnak</c> → 74 a 75) a postskriptová
+    /// varianta pod pozicemi 7 a 8 svého fontu (<c>JRapiLinPrtPS.mac:62</c>); doslovné
+    /// <c>|</c>/<c>&lt;</c> používá jen <b>HTML</b> výstup téhož tisku
+    /// (<c>JRapiLinHtm0.mac:43</c>), tedy varianta, které jsme se nechtěně podobali.
+    /// <para>Ověřeno obrysem glyfu v obou fontech 10. 9.: 74 je 3,9 × 52,1 (svislice přes výšku
+    /// řádku), 75 je 15,7 × 51,8 (vlnovka). Obojí shodné v CZ i SK.</para>
+    /// </remarks>
+    private static readonly Dictionary<string, string> PruchodyZastavkou = new()
+    {
+        ["|"] = "J",   // projíždí (id 1 → 74) - svislice
+        ["<"] = "K",   // jede jinudy (id 2 → 75) - vlnovka
+    };
+
+    /// <summary>Pozice piktogramu pro průchod zastávkou, nebo null když to průchod není.</summary>
+    public static string? PruchodZastavkou(string? hodnota) =>
+        hodnota is not null && PruchodyZastavkou.TryGetValue(hodnota, out var poz) ? poz : null;
 
     private static bool JeOverenyPiktogramLinky(string znak) =>
         PiktogramyLinky.ContainsKey(znak)

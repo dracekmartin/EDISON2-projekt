@@ -103,12 +103,6 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
-  ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového
-  fontu - **pozice 1-32 jsou v `TimeTable2` i v SK variantě prázdné** (ověřeno vykreslením tabulky
-  glyfů). Postskript si je kreslí sám jako vektory. U nás to tedy znamená kreslicí featuru podobnou
-  šipce směru, ne dva řádky v `SymbolMap`. Dnes se tiskne holé `<` a `|`.
-
 - **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9., pohltí `B100`). Ruční zlom na
   tarifním čísle (`PATCH,ZLOM`) plus tři volby dělené linky (`gSetLinPrt` dta 21-23): tisk na jednu
   stranu, hlavička a poznámky pro směr nebo pro část, směr na stranu. **Dělá se to dohromady** -

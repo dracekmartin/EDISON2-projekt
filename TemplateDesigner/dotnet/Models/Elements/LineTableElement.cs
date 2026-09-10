@@ -2132,6 +2132,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     internal List<SymbolRunRenderer.Run>? CasRuns(string cas)
     {
+        // „Projíždí" a „jede jinudy" nejsou čas ani text - jsou to piktogramy přes výšku řádku
+        // (svislice a vlnovka). Platí bez ohledu na formát času (`B126`).
+        if (SymbolMap.PruchodZastavkou(cas) is { } glyf) return [new(glyf, true)];
+
         if (FormatCasu != FormatCasuSpoje.HodinaVetsi) return null;
         int dvojtecka = cas.IndexOf(':');
         if (dvojtecka <= 0 || dvojtecka == cas.Length - 1) return null;

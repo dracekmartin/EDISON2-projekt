@@ -86,6 +86,26 @@ public class AtributyZastavkyTests
     }
 
     /// <summary>
+    /// „Projíždí" a „jede jinudy" jsou piktogramy, ne znaky.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 10. 9. se tiskly doslova jako `|` a `&lt;`, protože se pozice hledala u těch znaků
+    /// samotných (60 a 124, kde je jen osmiúhelník a čtverec) místo v překladové tabulce, kde jsou
+    /// pod id 1 a 2. Doslovné znaky používá jen HTML varianta starého tisku, ne papírová.
+    /// Ověřeno obrysem glyfu 10. 9.: 74 je 3,9 × 52,1 (svislice), 75 je 15,7 × 51,8 (vlnovka).
+    /// </remarks>
+    [Theory]
+    [InlineData("|", "J")]   // projíždí    (id 1 → 74)
+    [InlineData("<", "K")]   // jede jinudy (id 2 → 75)
+    public void PruchodZastavkou_JePiktogram(string hodnota, string pozice) =>
+        Assert.Equal(pozice, SymbolMap.PruchodZastavkou(hodnota));
+
+    [Theory]
+    [InlineData("7:15")] [InlineData("")] [InlineData("x")] [InlineData(null)]
+    public void CoNeniPruchod_ZustavaBezeZmeny(string? hodnota) =>
+        Assert.Null(SymbolMap.PruchodZastavkou(hodnota));
+
+    /// <summary>
     /// Textem zůstává, co si starý klient kreslí vlastní větví nebo píše slovem.
     /// </summary>
     /// <remarks>
