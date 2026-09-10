@@ -1,5 +1,28 @@
 ﻿# Changelog
 
+## 2026-09-10 (7) - 🚏 atributy zastávky mají vlastní mapu značek
+
+Dokončení `B123`. Značky trasy zastávky se dosud překládaly **mapou atributů spoje** - dva různé
+číselníky, které sdílejí písmena. `H` je u zastávky „cílová pro tablo", u spoje bezbariérové
+vozidlo, takže se zastávka kreslila vozíčkem. V datech se `H` nevyskytuje (census 10. 9.), takže
+to nikdo neviděl, ale past to byla.
+
+**Rozdělení je doslovný opis legacy** (`JRapiLinPrtWin.mac:17-18`): značky `NVxyzALefgOCGabcDM`
+se kreslí, řídicí `PTpoS><JE` mění vzhled řádku a samy se netisknou.
+
+**Doplněné značky** - pozice z `ALVA.TISKJR.Main.ConvertSpecialniZnak`, ověřené **obrysem glyfu
+v obou fontech**: `N` jen nástup (109) a `V` jen výstup (108) - dvojice se shodnými obrysy, což
+u šipek nahoru/dolů sedí; `O` letadlo (246), `D` loď (180), `M` metro sloučené (238), `G` paragraf
+(80). `y` a `z` („na znamení od 20:00" a „v prac. dny od 22:00") se přidaly k `x` a píšou se textem
+před názvem, jak to dělá legacy.
+
+**Textem zůstávají** `e`/`f`/`g` (metro s indexem) a `a`/`b`/`c` (paragrafy s indexem): mají
+v překladové tabulce **zápornou** hodnotu, tedy složenou značku, kterou si starý klient kreslí
+vlastní větví. Trefovat glyf naslepo by bylo horší než text.
+
+⚠️ **Bez důkazu z papíru.** Žádná z nových značek se v datech nevyskytuje, takže je to opsané
+z legacy a pokryté jednotkovými testy, ne porovnané s výtiskem (R6).
+
 ## 2026-09-10 (6) - 🚏 atribut trasy „S" připojí k zastávce stanoviště
 
 Census atributů trasy nad reálnými daty (54 linek, 3018 zastávkových řádků, tři firmy) **obrátil

@@ -1,5 +1,37 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B123` Atributy trasy zastávky (hotovo 10. 9. 2026)
+
+Zadání znělo „dodělat zbytek číselníku 16". **Census nad reálnými daty ho obrátil**: 54 linek,
+3018 zastávkových řádků, tři firmy. Vyskytuje se `E` 563×, `x` 556×, `T` 405×, `P` 218×, `A` 211×,
+`S` 72×, `L` 62×, `V` 10×, `J` 4×. Metro, letadlo, loď, `y`/`z`, `p`/`o` ani paragrafy **ani
+jednou**. Census jde zopakovat sondou `AtributyTrasyProbe` (`TD_ATRIBUTY_PROBE=1`).
+
+Uděláno:
+
+- **`S` tisk stanoviště** - k názvu se připojí označník („…aut.nádr., stan.16"); v obousměrné
+  sestavě obě čárkou. Tiskne se vždy, nastavení nad tím není, do legendy nepatří (není to značka).
+  Ověřeno voláním serveru na `CB_GWBUS` 320113 a 320118.
+- **Vlastní mapa značek zastávky** (`SymbolMap.PiktogramyZastavky` + `JeZnackaZastavky`) oddělená
+  od atributů spoje - doslovný opis legacy maker `STRASALINKYZNACKY` / `STRASALINKYATRIBUTY`.
+- **Doplněné `N`, `V`, `O`, `D`, `M`, `G`** (pozice ověřené obrysem glyfu v obou fontech) a `y`/`z`
+  textem k `x`.
+
+⚠️ **Nedělá se a proč:**
+
+- **Složené značky** `e`/`f`/`g` (metro s indexem) a `a`/`b`/`c` (paragrafy s indexem) zůstávají
+  textem - v překladové tabulce mají zápornou hodnotu, tedy vlastní kreslicí větev klienta.
+- **Značky z číselníku zastávek** (`^JRZ $8` - WC, bezbariérová zastávka, P+R, metro) se dnes
+  dostanou jen do **legendy**, na řádek zastávky se nekreslí. Legacy je má ve druhém symbolovém
+  sloupci (`COLUNMNZASTSYMB2`) a slučuje `e`/`f`/`g` do `M`, přičemž z atributů trasy odstraní
+  duplicity (`A L O D e f g`). Je to samostatná práce: nové pole na drátě, slučování, odstranění
+  duplicit, kreslení. **Vytáhnout, až si o to někdo řekne** - nebo až bude vidět, že legenda
+  vysvětluje značku, která na řádku není.
+- ⚠️ **Nové značky nemají důkaz z papíru** - v datech se nevyskytují, takže jsou opsané z legacy
+  a pokryté jednotkovými testy, ne porovnané s výtiskem (R6).
+
+Detail v `changelog.md` 10. 9. (6) a (7).
+
 ## `B132` Měřítko tisku (hotovo 10. 9. 2026)
 
 Starý postskript sází na logickou stránku a při tisku ji zvětší (`MeritkoVyves`: vývěsky 1,3×,

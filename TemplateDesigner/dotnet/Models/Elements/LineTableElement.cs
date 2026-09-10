@@ -1199,9 +1199,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return dolni;   // aspoň jeden, jinak by dělení nikdy neskončilo
     }
 
-    /// <summary>Atributy trasy k zobrazení před názvem - jen významové značky pro cestujícího
-    /// (x = na znamení). Řídicí atributy (T/P/S/E/…) se v prvním řezu netisknou.</summary>
-    private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
+    /// <summary>
+    /// Atributy trasy psané <b>před názvem</b> zastávky - „na znamení" a jeho časové varianty.
+    /// </summary>
+    /// <remarks>
+    /// Legacy je vede mezi značkami, ale tiskne je <b>textem</b>, ne piktogramem
+    /// (<c>SymbolMap.JeKonvencneText</c>) - proto stojí u názvu, a ne mezi piktogramy vpravo.
+    /// <c>y</c> a <c>z</c> jsou „od 20:00" a „v prac. dny od 22:00"; v datech se nevyskytly
+    /// (census 10. 9.), ale patří k <c>x</c> a stály by stejně.
+    /// </remarks>
+    private static bool IsDisplayableStopAttribute(string znak) => znak is "x" or "y" or "z";
 
     /// <summary>
     /// Text buňky se zastávkou: zobrazitelné značky, mezera, název. Bez značek jen název.
@@ -1883,7 +1890,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 return (cas, st);
             });
             var znakZastavkyPro = SymbolRunRenderer.BuildRuns(
-                stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveLinkovy);
+                stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveZastavka);
             for (int ci = 0; ci < fixedCols.Count; ci++)
             {
                 var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
@@ -1914,7 +1921,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // Piktogram zastávky (přestup na linkovou dopravu) se v původním tisku kreslí
             // **vpravo ve sloupci zastávek**, za názvem - proto overlay, ne předsazení před název.
             var znakZastavky = SymbolRunRenderer.BuildRuns(
-                stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveLinkovy);
+                stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveZastavka);
             plan.Add(new(RowKind.Data, rowH, specs)
             {
                 Background = ColorHex.ParseOrNull(rowHl),
@@ -1985,10 +1992,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     /// <summary>Řádek, kde popisové sloupce jsou prázdné a spojové nesou znak z <paramref name="text"/>
     /// (platnost, negativní značky).</summary>
-    /// <summary>Atribut zastávky, který se kreslí piktogramem (dnes „přestup na linkovou dopravu").
-    /// Řídicí atributy (T, P, S, E…) se netisknou - v tisku pro cestujícího nemají význam.</summary>
+    /// <summary>
+    /// Atribut zastávky, který se kreslí piktogramem vpravo ve sloupci zastávek.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Ptá se <see cref="SymbolMap.ResolveZastavka"/>, ne mapy atributů spoje (`B123`): stejná
+    /// písmena tam znamenají něco jiného. Řídicí atributy (T, P, S, E…) se netisknou - v tisku
+    /// pro cestujícího nemají význam; „na znamení" jde textem před název.
+    /// </remarks>
     private static bool JePiktogramZastavky(string znak) =>
-        znak != "x" && SymbolMap.ResolveLinkovy(znak).Mode == SymbolRenderMode.FontGlyf;
+        !IsDisplayableStopAttribute(znak)
+        && SymbolMap.JeZnackaZastavky(znak)
+        && SymbolMap.ResolveZastavka(znak).Mode == SymbolRenderMode.FontGlyf;
 
     /// <summary>Nakreslí piktogram zastávky vpravo ve sloupci zastávek - jako v původním tisku.</summary>
     /// <remarks>

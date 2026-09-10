@@ -1,4 +1,4 @@
-namespace TemplateDesigner.Models;
+﻿namespace TemplateDesigner.Models;
 
 /// <summary>Jak se značka jízdního řádu kreslí.</summary>
 public enum SymbolRenderMode
@@ -156,6 +156,57 @@ public static class SymbolMap
     {
         ["NKA"] = "n",   // nízkokapacitní vůz (24 → „-12")
     };
+
+    /// <summary>
+    /// Značky trasy zastávky (číselník 16) - co se z atributů zastávky vůbec kreslí.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Doslovný opis legacy makra <c>STRASALINKYZNACKY</c> (<c>JRapiLinPrtWin.mac:17</c>).
+    /// Zbytek číselníku jsou <b>řídicí</b> atributy (<c>PTpoS&gt;&lt;JE</c>, makro
+    /// <c>STRASALINKYATRIBUTY</c>): mění vzhled řádku, ale samy se netisknou - <c>T</c> je „sázej
+    /// tučně", <c>S</c> „vypiš stanoviště", <c>P</c>/<c>J</c> „rozděl řádek".
+    /// </remarks>
+    private const string ZnackyZastavky = "NVxyzALefgOCGabcDM";
+
+    /// <summary>Kreslí se tahle značka trasy zastávky vůbec? Řídicí atributy ne.</summary>
+    public static bool JeZnackaZastavky(string znak) =>
+        znak.Length == 1 && ZnackyZastavky.Contains(znak[0]);
+
+    /// <summary>Pozice piktogramů <b>atributů zastávky</b> ve symbolovém fontu.</summary>
+    /// <remarks>
+    /// ⚠️ <b>Vlastní mapa, ne <see cref="PiktogramyLinky"/></b> (`B123`). Atributy zastávky
+    /// a atributy spoje jsou dva různé číselníky, které sdílejí písmena: <c>H</c> je u zastávky
+    /// „cílová pro tablo", u spoje bezbariérové vozidlo - se společnou mapou by se zastávka
+    /// kreslila vozíčkem. V datech se <c>H</c> nevyskytuje (census 10. 9.), takže to nic
+    /// neopravuje, ale past to byla.
+    /// <para>Pozice opsané z <c>ALVA.TISKJR.Main.ConvertSpecialniZnak</c> a <b>ověřené obrysem
+    /// glyfu v obou fontech</b> (10. 9.) - čísla v té tabulce jsou pozice ve starém fontu
+    /// Timetable, my sázíme TimeTable2. „Jen nástup" a „jen výstup" mají shodné obrysy
+    /// (9 bodů, 6 tahů), což u dvojice šipek nahoru/dolů sedí.</para>
+    /// <para>Textem zůstávají <c>x</c>/<c>y</c>/<c>z</c> (konvence JŘ), <c>C</c> clo a složené
+    /// značky, které si starý klient kreslí vlastní větví: metro s indexem (<c>e</c>/<c>f</c>/
+    /// <c>g</c> → -16/-17/-18) a paragrafy s indexem (<c>a</c>/<c>b</c>/<c>c</c> → -1/-2/-3).
+    /// Sloučené metro <c>M</c> piktogram má (60 → 238) a používá ho číselník zastávek.</para>
+    /// </remarks>
+    private static readonly Dictionary<string, string> PiktogramyZastavky = new()
+    {
+        ["N"] = "m",   // jen nástup (31 → 109)
+        ["V"] = "l",   // jen výstup (32 → 108)
+        ["A"] = "z",   // autobus - naše pozice, ne legacy 119; viz PiktogramyLinky
+        ["L"] = "x",   // vlak - lokomotiva
+        ["O"] = "ö",   // letadlo (53 → 246)
+        ["D"] = "´",   // loď (61 → 180)
+        ["M"] = "î",   // metro sloučené (60 → 238)
+        ["G"] = "P",   // paragraf (37 → 80)
+    };
+
+    /// <summary>Jak nakreslit značku trasy <b>zastávky</b> - viz <see cref="PiktogramyZastavky"/>.</summary>
+    public static (SymbolRenderMode Mode, string Value) ResolveZastavka(string znak)
+    {
+        if (string.IsNullOrEmpty(znak)) return (SymbolRenderMode.Text, znak ?? "");
+        if (PiktogramyZastavky.TryGetValue(znak, out var poz)) return (SymbolRenderMode.FontGlyf, poz);
+        return (SymbolRenderMode.Text, znak);
+    }
 
     private static bool JeOverenyPiktogramLinky(string znak) =>
         PiktogramyLinky.ContainsKey(znak)
