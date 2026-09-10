@@ -2,9 +2,15 @@
 # Exit 0 = all passed; exit 1 = at least one test failed or runner crashed.
 # Called from pre-push hook or interactively.
 #
+# Packages run IN PARALLEL (one runspace + own MLRest instance each; server side
+# every request is its own Cache process with private ^||ML, so runs don't collide).
+# Wall time = slowest package instead of the sum - the TemplateDesigner suite alone
+# takes minutes (gold digests). -Sequential is a troubleshooting fallback.
+#
 # Usage:
 #   pwsh -File tools/run-cache-tests.ps1
 #   pwsh -File tools/run-cache-tests.ps1 -Package "ALVA.EDISONMAIN2.Tests"
+#   pwsh -File tools/run-cache-tests.ps1 -Sequential
 #
 # ASCII only -- Windows PowerShell 5.1 reads UTF-8-no-BOM as CP-1252.
 
@@ -17,7 +23,8 @@ param(
     [int]$Port = 57770,
     [string]$Idfa = "CB_DP",
     [string]$DataNamespace = "MLINE",
-    [string]$MLRestDll = "C:\Edison\MLRest.dll"
+    [string]$MLRestDll = "C:\Edison\MLRest.dll",
+    [switch]$Sequential
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,65 +37,130 @@ if (-not (Test-Path $MLRestDll)) {
     exit 1
 }
 
-Add-Type -Path $MLRestDll
+$pkgs = @($Package -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 
-$ml = New-Object ALWA.SYS.MLRest($Server, $Port, $false)
-$ml.Idfa = $Idfa
-$ml.DataNamespace = $DataNamespace
-$ml.LoginName = $user
-$ml.Mlp = $user        # Cache-side userID is sourced from Mlp, not UserID
-$ml.UserID = $user
-$ml.FullName = $user
+# One package run = one RunPackage request on a private MLRest instance.
+# Returns a plain result object (no CVar leaves the runspace).
+$runOne = {
+    param($pkg, $Server, $Port, $Idfa, $DataNamespace, $user, $MLRestDll)
 
-$totalPassed = 0
-$totalFailed = 0
-$allFailures = New-Object System.Collections.Generic.List[object]
-
-foreach ($pkg in ($Package -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })) {
-    Write-Host "==> Running Cache tests in package: $pkg" -ForegroundColor Cyan
-
-    $cvarIn = New-Object ALWA.SYS.CVar
-    $cvarIn["package"] = New-Object ALWA.SYS.CVar -ArgumentList @([object]$pkg)
-
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
     try {
+        Add-Type -Path $MLRestDll
+
+        $ml = New-Object ALWA.SYS.MLRest($Server, $Port, $false)
+        $ml.Idfa = $Idfa
+        $ml.DataNamespace = $DataNamespace
+        $ml.LoginName = $user
+        $ml.Mlp = $user        # Cache-side userID is sourced from Mlp, not UserID
+        $ml.UserID = $user
+        $ml.FullName = $user
+
+        $cvarIn = New-Object ALWA.SYS.CVar
+        $cvarIn["package"] = New-Object ALWA.SYS.CVar -ArgumentList @([object]$pkg)
+
         $result = $ml.Query("ALVA.EDTesting.TestRunner", "RunPackage", $cvarIn)
-    } catch {
-        Write-Host "  [ERROR] Runner threw: $($_.Exception.Message)" -ForegroundColor Red
-        exit 1
-    }
 
-    if ($ml.RestStatus.State -ne [ALWA.SYS.MLRStatus+EState]::Ok) {
-        Write-Host "  [ERROR] RestStatus: $($ml.RestStatus.Message)" -ForegroundColor Red
-        exit 1
-    }
-
-    $passed = [int]$result["passed"].Value
-    $failed = [int]$result["failed"].Value
-    $total  = [int]$result["total"].Value
-    $totalPassed += $passed
-    $totalFailed += $failed
-
-    $color = if ($failed -eq 0) { 'Green' } else { 'Red' }
-    Write-Host "  $passed/$total passed" -ForegroundColor $color
-
-    if ($failed -gt 0) {
-        $failures = $result["failures"]
-        if ($failures) {
-            for ($i = 1; $i -le $failed; $i++) {
-                $f = $failures[[string]$i]
-                if ($null -eq $f) { continue }
-                $cls = $f["class"].Value
-                $mth = $f["method"].Value
-                $msg = $f["message"].Value
-                $allFailures.Add([PSCustomObject]@{ Class = $cls; Method = $mth; Message = $msg })
+        if ($ml.RestStatus.State -ne [ALWA.SYS.MLRStatus+EState]::Ok) {
+            return [PSCustomObject]@{
+                Package = $pkg; Ok = $false; Seconds = $sw.Elapsed.TotalSeconds
+                Error = "RestStatus: $($ml.RestStatus.Message)"
             }
+        }
+
+        $failed = [int]$result["failed"].Value
+        $failures = @()
+        if ($failed -gt 0 -and $result["failures"]) {
+            for ($i = 1; $i -le $failed; $i++) {
+                $f = $result["failures"][[string]$i]
+                if ($null -eq $f) { continue }
+                $failures += [PSCustomObject]@{
+                    Class   = $f["class"].Value
+                    Method  = $f["method"].Value
+                    Message = $f["message"].Value
+                }
+            }
+        }
+
+        return [PSCustomObject]@{
+            Package = $pkg; Ok = $true; Error = $null; Seconds = $sw.Elapsed.TotalSeconds
+            Passed = [int]$result["passed"].Value
+            Failed = $failed
+            Total  = [int]$result["total"].Value
+            Failures = $failures
+        }
+    } catch {
+        return [PSCustomObject]@{
+            Package = $pkg; Ok = $false; Seconds = $sw.Elapsed.TotalSeconds
+            Error = "Runner threw: $($_.Exception.Message)"
         }
     }
 }
 
+$results = @()
+if ($Sequential -or $pkgs.Count -le 1) {
+    foreach ($pkg in $pkgs) {
+        Write-Host "==> Running Cache tests in package: $pkg" -ForegroundColor Cyan
+        $results += & $runOne $pkg $Server $Port $Idfa $DataNamespace $user $MLRestDll
+    }
+} else {
+    Write-Host ("==> Running {0} Cache test packages in parallel: {1}" -f $pkgs.Count, ($pkgs -join ', ')) -ForegroundColor Cyan
+    $pool = [runspacefactory]::CreateRunspacePool(1, $pkgs.Count)
+    $pool.Open()
+    try {
+        $jobs = foreach ($pkg in $pkgs) {
+            $ps = [powershell]::Create()
+            $ps.RunspacePool = $pool
+            [void]$ps.AddScript($runOne.ToString()).
+                AddArgument($pkg).AddArgument($Server).AddArgument($Port).
+                AddArgument($Idfa).AddArgument($DataNamespace).AddArgument($user).AddArgument($MLRestDll)
+            [PSCustomObject]@{ Pkg = $pkg; PS = $ps; Handle = $ps.BeginInvoke() }
+        }
+        foreach ($j in $jobs) {
+            $out = $j.PS.EndInvoke($j.Handle)
+            if ($out.Count -gt 0) {
+                $results += $out[0]
+            } else {
+                $err = ($j.PS.Streams.Error | Select-Object -First 1 | ForEach-Object { $_.ToString() })
+                $results += [PSCustomObject]@{ Package = $j.Pkg; Ok = $false; Seconds = 0; Error = "no result ($err)" }
+            }
+            $j.PS.Dispose()
+        }
+    } finally {
+        $pool.Close()
+        $pool.Dispose()
+    }
+}
+
+# Report in the original package order, regardless of finish order.
+$totalPassed = 0
+$totalFailed = 0
+$infraError = $false
+$allFailures = New-Object System.Collections.Generic.List[object]
+
+foreach ($pkg in $pkgs) {
+    $r = $results | Where-Object { $_.Package -eq $pkg } | Select-Object -First 1
+    Write-Host "==> ${pkg}:" -ForegroundColor Cyan
+    if ($null -eq $r) {
+        Write-Host "  [ERROR] no result returned" -ForegroundColor Red
+        $infraError = $true
+        continue
+    }
+    if (-not $r.Ok) {
+        Write-Host "  [ERROR] $($r.Error)" -ForegroundColor Red
+        $infraError = $true
+        continue
+    }
+    $totalPassed += $r.Passed
+    $totalFailed += $r.Failed
+    $color = if ($r.Failed -eq 0) { 'Green' } else { 'Red' }
+    Write-Host ("  {0}/{1} passed ({2:N1} s)" -f $r.Passed, $r.Total, $r.Seconds) -ForegroundColor $color
+    foreach ($f in $r.Failures) { $allFailures.Add($f) }
+}
+
 Write-Host ""
 Write-Host "-----------------------------------------"
-$summaryColor = if ($totalFailed -eq 0) { 'Green' } else { 'Red' }
+$summaryColor = if (($totalFailed -eq 0) -and (-not $infraError)) { 'Green' } else { 'Red' }
 Write-Host "  Total: $totalPassed passed, $totalFailed failed" -ForegroundColor $summaryColor
 
 if ($totalFailed -gt 0) {
@@ -98,7 +170,7 @@ if ($totalFailed -gt 0) {
         Write-Host ("  [FAIL] {0}.{1}" -f $f.Class, $f.Method) -ForegroundColor Red
         if ($f.Message) { Write-Host ("    {0}" -f $f.Message) -ForegroundColor DarkGray }
     }
-    exit 1
 }
 
+if (($totalFailed -gt 0) -or $infraError) { exit 1 }
 exit 0
