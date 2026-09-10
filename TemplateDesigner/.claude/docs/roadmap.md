@@ -103,6 +103,14 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
+- **`B139` Sekce „držet pohromadě" vyšší než stránka tiskne část do prázdna** [S] (změřeno 10. 9.).
+  Když obsah takové sekce přeroste tiskovou plochu, engine ji položí na jednu stránku v její celé
+  výšce a co je pod hranou papíru, v PDF zmizí **bez hlášky**. Změřeno: text vysoký 847,8 mm na
+  ploše 277 mm dal jednu stránku se sekcí 847,8 mm; táž sekce s přetékáním dá 4 stránky.
+  Hotovo když: nedělitelná sekce, která se nevejde ani na prázdnou stránku, se rozřeže jako
+  s přetékáním - „držet pohromadě" je přání, ne fyzikální možnost.
+  Místo: `PageLayoutEngine.cs:317` (větev `KeepTogether`).
+
 - **`B130` Není vidět, kam se dělí místo na stránce** [M] (podnět Jan 7. 9. při stavbě šablony).
   Sekce „Každá stránka" se odečítá z **každé** stránky, zbytek se dělí po celých řádcích tabulky
   a blok se nesmí zlomit jinde než v místě, které sám nabídne - takže o stránku navíc rozhodne
@@ -136,13 +144,6 @@ takže nejde o práci, ale o doklad.
   mění šablonu, ne tisk - dnes to znamená dvě šablony.
   Hotovo když: u tisku jde zadat měřítko (nebo cílový formát) a šablona zůstane jedna.
   ⚠️ Podklad na školení to měl jako hotové („MeritkoVyves → Škálovat šablonu") - opraveno.
-
-- **`B133` Nejmenší výška sekce se počítá ze zástupné výšky prvku, ne z obsahu** [S] (nález Jan 7. 9.).
-  `MinimalniVyskaProSekci` bere u prvku s dynamickou výškou `DesignerPlaceholderHeight`
-  (tabulka linky 60 mm, poznámky 25 mm), takže sekci nejde zmenšit pod ni ani tažením, ani číslem -
-  a systémové šablony přitom mají 20 a 15 mm (vznikly ze souboru). Důsledek: u krátké linky zůstane
-  mezi tabulkou a poznámkami mezera, kterou uživatel nemá jak odebrat.
-  Hotovo když: mez vychází z reálné výšky obsahu nad aktuálními daty, ne ze zástupné.
 
 - **`B126` Vlnovka „jede po jiné trase" a svislice „projíždí"** [M] (podnět Jan 7. 9.).
   ⚠️ **Není to mapování znaku.** Legacy `JiN=""` a `ProJ=""` nemíří do našeho symbolového

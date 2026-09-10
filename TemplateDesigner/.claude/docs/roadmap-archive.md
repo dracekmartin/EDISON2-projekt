@@ -1,5 +1,26 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B133` Nejmenší výška sekce se počítala ze zástupné výšky prvku (hotovo 10. 9. 2026)
+
+Nález Jan 7. 9. Dno sekce bralo u prvku s prázdnou výškou `DesignerPlaceholderHeight` (tabulka
+linky 60 mm, poznámky 25), takže u krátké linky zůstala mezi tabulkou a poznámkami mezera, kterou
+nešlo odebrat ani tažením, ani číslem.
+
+⚠️ **Uděláno jinak, než znělo zadání.** „Mez ať vychází z reálné výšky obsahu nad aktuálními daty"
+se **nedělá** (rozhodnutí Jan 10. 9.): mez by se hýbala s každou vybranou instancí a uživatel by
+nepoznal proč. Dno drží **jen prvky s pevnou výškou**; prvek s prázdnou výškou do něj nemluví
+vůbec, protože jeho správná výška při návrhu neexistuje.
+
+Nosný argument, kterým se to rozhodlo: výška sekce je **rezervace, ne strop**. Engine tiskne
+`max(nastavená výška, obsah)` a s přetékáním sekci rozřeže přes stránky, takže sekce smí být menší
+než prvek v ní - mez tam nic nechránila, jen bránila uživateli. K tomu značka na dolní hraně sekce
+(`SectionLayoutMath.ObsahPresahujeSekci` → `DesignerCanvas.DrawObsahPokracuje`), bez které vypadal
+ořezaný prvek jako rozbitá šablona.
+
+U prvku s pevnou výškou mez platí beze změny (nález 4. 9.). Detail v `changelog.md` 10. 9. (2).
+Průzkumem u tohohle bodu vznikl `B139` - sekce „držet pohromadě" vyšší než stránka tiskne část
+do prázdna.
+
 ## `B129` Přidání sekce ubere výšku ostatním, i když je na stránce místo (hotovo 10. 9. 2026)
 
 Nález Jan 7. 9. při stavbě šablony na školení. Nová sekce si vzala svých 30 mm **poměrem

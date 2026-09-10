@@ -151,6 +151,41 @@ public class SectionLayoutMathTests
     }
 
     [Fact]
+    public void PrvekSPrazdnouVyskou_DnoNedrzi()
+    {
+        // `B133`: výška takového prvku je na každé lince jiná a v návrháři často nejsou data,
+        // takže zástupných 60 mm o obsahu nic neříká. Sekce smí být menší - engine si ji při
+        // tisku nafoukne a s přetékáním rozřeže přes stránky.
+        var t = Sablona(100f);
+        t.Sections[0].Elements.Add(new TextElement { X = 5f, Y = 60f, Width = 40f, Height = null });
+
+        Assert.Equal(SectionLayoutMath.MinimalniVyskaMm,
+            SectionLayoutMath.MinimalniVyskaProSekci(t.Sections[0]));
+    }
+
+    [Fact]
+    public void SmesSPevnymAPrazdnymPrvkem_BerePouzePevny()
+    {
+        var t = Sablona(200f);
+        t.Sections[0].Elements.Add(new TextElement { X = 5f, Y = 30f, Width = 40f, Height = 10f });
+        t.Sections[0].Elements.Add(new TextElement { X = 5f, Y = 90f, Width = 40f, Height = null });
+
+        Assert.Equal(40f, SectionLayoutMath.MinimalniVyskaProSekci(t.Sections[0]), precision: 1);
+    }
+
+    [Fact]
+    public void PresahObsahuSePozna_ProZnackuNaPlatne()
+    {
+        var t = Sablona(50f);
+        t.Sections[0].Elements.Add(new TextElement { X = 5f, Y = 5f, Width = 40f, Height = 20f });
+        Assert.False(SectionLayoutMath.ObsahPresahujeSekci(t.Sections[0]));
+
+        // Prvek s prázdnou výškou zabírá na plátně zástupných 20 mm od Y = 45 → přesah.
+        t.Sections[0].Elements.Add(new TextElement { X = 5f, Y = 45f, Width = 40f, Height = null });
+        Assert.True(SectionLayoutMath.ObsahPresahujeSekci(t.Sections[0]));
+    }
+
+    [Fact]
     public void NaPlneStranceNabidkaNespadnePodObsah()
     {
         // Ostatní sekce zaberou celou plochu, ale tahle drží prvek - nabídnutá výška nesmí být

@@ -1,4 +1,4 @@
-using SkiaSharp;
+﻿using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
@@ -48,6 +48,7 @@ public class DesignerCanvas
     private static readonly SKColor ClrSectionBorder      = new(0xFFCCCCCC);
     private static readonly SKColor ClrSectionActive      = new(0xFF2563EB);
     private static readonly SKColor ClrSelection          = new(0xFF2563EB);
+    private static readonly SKColor ClrObsahPokracuje    = new(0xFF7B8794); // značka „obsah pokračuje" na dolní hraně sekce
     private static readonly SKColor ClrLocked             = new(0xFFFF8C00); // jantarová pro zamčené elementy
     private static readonly SKColor ClrCondition         = new(0xFF7B1FA2); // fialová pro podmíněné elementy
     private static readonly SKColor ClrConditionInvalid  = new(0xFFD32F2F); // červená pro nevalidní výraz
@@ -643,6 +644,11 @@ public class DesignerCanvas
             };
             canvas.DrawRect(contentRect, border);
 
+            // Prvek s prázdnou výškou smí sekci přerůst - engine si ji při tisku nafoukne. Bez
+            // téhle značky vypadá ořezaný prvek jako rozbitá šablona (`B133`).
+            if (Models.Layout.SectionLayoutMath.ObsahPresahujeSekci(section))
+                DrawObsahPokracuje(canvas, contentRect);
+
             if (isActive)
             {
                 using var accent = new SKPaint { Color = ClrSectionActive, StrokeWidth = 3f };
@@ -653,6 +659,33 @@ public class DesignerCanvas
             if (_state.ShowSectionHeaders)
                 DrawSectionTab(canvas, section, ox, oy, sectionH, dynamic, isActive, template.PageSize);
         }
+    }
+
+    /// <summary>
+    /// Značka na dolní hraně sekce: obsah pokračuje za ni. Řada trojúhelníčků dolů, jako
+    /// natržený okraj papíru.
+    /// </summary>
+    /// <remarks>
+    /// Nesmí to být rámeček ani jiné zvýraznění celé sekce - značka říká „tady to pokračuje",
+    /// ne „tady je chyba". Prvek s prázdnou výškou přeroste sekci úplně běžně a tiskne se celý.
+    /// </remarks>
+    private static void DrawObsahPokracuje(SKCanvas canvas, SKRect contentRect)
+    {
+        const float SirkaZubuPx = 7f;
+        const float VyskaZubuPx = 4f;
+
+        using var paint = new SKPaint { Color = ClrObsahPokracuje, IsAntialias = true };
+        using var cesta = new SKPath();
+
+        float y = contentRect.Bottom;
+        for (float x = contentRect.Left; x < contentRect.Right - SirkaZubuPx; x += SirkaZubuPx * 2f)
+        {
+            cesta.MoveTo(x, y);
+            cesta.LineTo(MathF.Min(x + SirkaZubuPx, contentRect.Right), y);
+            cesta.LineTo(MathF.Min(x + SirkaZubuPx / 2f, contentRect.Right), y + VyskaZubuPx);
+            cesta.Close();
+        }
+        canvas.DrawPath(cesta, paint);
     }
 
     private void DrawSectionTab(SKCanvas canvas, Section section, float contentOx, float contentOy,

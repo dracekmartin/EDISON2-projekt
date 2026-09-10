@@ -1,5 +1,28 @@
 ﻿# Changelog
 
+## 2026-09-10 (2) - 📐 prvek, který roste s daty, nedrží nejmenší výšku sekce
+
+Nález Jan 7. 9. (`B133`). Dno sekce bralo u prvku s prázdnou výškou jeho **zástupnou** výšku
+(tabulka linky 60 mm, poznámky 25), takže sekci nešlo zmenšit pod číslo, které se skutečným
+obsahem nesouvisí - u krátké linky zůstala mezi tabulkou a poznámkami mezera, kterou nešlo odebrat
+ani tažením, ani číslem. Systémové šablony přitom ty sekce mají na 20 a 15 mm, protože vznikly ze
+souboru, kde mez neplatila.
+
+**Dno nově drží jen prvky s pevnou výškou.** Prvek s prázdnou výškou do meze nemluví vůbec.
+Původní zadání znělo „mez ať vychází z reálné výšky obsahu nad aktuálními daty" - to se **nedělá**
+(rozhodnutí Jan 10. 9.): mez by se hýbala s každou vybranou instancí, takže by táž šablona jednou
+pustila 20 mm a podruhé ne, a uživatel by neměl jak pochopit proč. Správná výška takového prvku
+při návrhu prostě neexistuje.
+
+Sekci to nerozbije, protože její výška je **rezervace, ne strop**: engine tiskne
+`max(nastavená výška, obsah nad reálnými daty)` a s přetékáním sekci rozřeže přes stránky
+(`PageLayoutEngine.cs:206`). Sekce tedy smí být menší než prvek v ní. Na plátně se prvek ořízne na
+hraně sekce a nová značka na dolní hraně (řada zoubků dolů) říká, že obsah pokračuje - bez ní to
+vypadalo jako rozbitá šablona.
+
+U prvku s **pevnou** výškou mez platí beze změny - tam je ořez v návrháři proti celému výtisku
+skutečný rozpor (nález 4. 9.).
+
 ## 2026-09-10 - 📐 přidání sekce nebere místo, které na stránce je
 
 Nález Jan 7. 9. při stavbě šablony na školení (`B129`). Nová sekce si vzala svou výšku **vždycky

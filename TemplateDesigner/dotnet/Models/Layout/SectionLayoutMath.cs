@@ -45,13 +45,25 @@ public static class SectionLayoutMath
     public const float TolerancePrekryvuMm = 0.05f;
 
     /// <summary>
-    /// Nejmenší výška, na kterou smí sekce spadnout: nikdy pod svůj **obsah**.
+    /// Nejmenší výška, na kterou smí sekce spadnout: nikdy pod prvky s **pevnou** výškou.
     /// </summary>
     /// <remarks>
     /// ⚠️ Bez tohohle dna se prvek u dolního okraje po zmenšení sekce **ořízne v návrháři, ale
     /// vytiskne se celý** - engine dává sekci `max(nastavená výška, obsah)`, takže ji při tisku
     /// nafoukne zpátky. Návrhář a tisk se tím rozejdou a šablona vypadá rozbitě, přestože není
     /// (nález Jan 4. 9.).
+    ///
+    /// <para>⚠️ **Prvek s prázdnou výškou do meze nemluví** (rozhodnutí Jan 10. 9., `B133`). Jeho
+    /// výška je na každé lince jiná a v návrháři často nejsou data, takže žádné číslo tu není
+    /// správné - do 10. 9. se brala **zástupná** výška prvku (tabulka linky 60 mm, poznámky 25),
+    /// která se skutečným obsahem nesouvisí, a u krátké linky pak zůstala pod tabulkou mezera,
+    /// kterou nešlo odebrat ani tažením, ani číslem. Mez z aktuálních dat by byla ještě horší:
+    /// hýbala by se s každou vybranou instancí a uživatel by nepoznal proč.</para>
+    ///
+    /// <para>Sekci to nerozbije - výška sekce je **rezervace, ne strop**. Engine si ji podle
+    /// reálných dat nafoukne a s přetékáním rozřeže přes stránky, takže sekce smí být menší než
+    /// prvek v ní. Na plátně se prvek ořízne na hraně sekce a značka na dolní hraně říká, že obsah
+    /// pokračuje.</para>
     ///
     /// <para>Prvky se záměrně **neposouvají**: uživatel o změnu jejich pozic nežádal a při zvětšení
     /// sekce zpět by se nevrátily, takže by se rozvržení tiše rozpadlo. Mez je předvídatelná -
@@ -62,10 +74,26 @@ public static class SectionLayoutMath
         float dno = MinimalniVyskaMm;
         foreach (var el in section.Elements)
         {
-            float spodniHrana = el.Y + (el.Height ?? el.EffectiveDesignerHeight);
+            if (el.Height is not { } vyska) continue;   // prázdná výška = roste s daty, viz remarks
+            float spodniHrana = el.Y + vyska;
             if (spodniHrana > dno) dno = spodniHrana;
         }
         return dno;
+    }
+
+    /// <summary>
+    /// Přesahuje obsah sekce její dolní hranu? Plátno podle toho kreslí značku „pokračuje".
+    /// </summary>
+    /// <remarks>
+    /// Měří se **zástupnou** výškou prvku, protože přesně to plátno kreslí. Bez značky vypadá
+    /// oříznutý prvek jako rozbitá šablona, přestože se vytiskne celý (`B133`).
+    /// </remarks>
+    public static bool ObsahPresahujeSekci(Section section)
+    {
+        float vyskaSekce = section.EffectiveDesignerHeight;
+        foreach (var el in section.Elements)
+            if (el.Y + el.EffectiveDesignerHeight > vyskaSekce + TolerancePrekryvuMm) return true;
+        return false;
     }
 
     /// <summary>
