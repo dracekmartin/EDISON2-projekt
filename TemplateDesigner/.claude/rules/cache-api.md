@@ -12,6 +12,12 @@
   `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`
   skončí s kódem 0, bez chyby na stderr - a server dál vrací starou třídu. Do 8. 9. tady stálo jako
   doporučená záchrana; je to tedy **stejná past jako `cache_compile`** níž, jen tiší.
+- ⚠️ **Skript může soubor rozbít tak, že se od té chvíle nenasadí NIC** (10. 9.). Python zápis
+  s `encoding='utf-8-sig'` přidá souboru **BOM**, který v žádném `.cls` není; upload pak posílá
+  soubor, jehož první řádek začíná neviditelným znakem, **překlad spadne a server drží poslední
+  funkční verzi**. Navenek to vypadá jako „hook se nespustil": další editace nástrojem soubor
+  poslušně nahrávají a taky se nepřeloží. Poznávací znak - `head -c 3 soubor.cls | xxd` vrátí
+  `efbb bf` místo prvních písmen; ostatní `.cls` v repu BOM nemají.
 - **`cache_compile` (MCP) to nespraví** a **lže uklidňujícím způsobem**: hledá zdroj pod
   `C:\DEV\EDISON`, takže u tohohle repa nahlásí `not-found-on-disk`, zkompiluje **starou serverovou
   kopii** a napíše „up-to-date".

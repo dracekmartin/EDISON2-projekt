@@ -43,6 +43,7 @@ public class AtributyTrasyProbe(ITestOutputHelper vystup)
 
         // znak → (kolik radku, prvni tri priklady "firma/linka")
         var vyskyt = new Dictionary<string, (int Pocet, List<string> Priklady)>();
+        var zonyVyskyt = new Dictionary<string, (int Pocet, List<string> Priklady)>();
         int linekCelkem = 0, radkuCelkem = 0;
 
         foreach (var idfa in firmy)
@@ -71,6 +72,8 @@ public class AtributyTrasyProbe(ITestOutputHelper vystup)
                 var inVar = new CVar();
                 inVar["SKUPINA_LINEK_ID"] = new CVar("1");
                 inVar["LINKA_ID"] = new CVar(id);
+                if (Environment.GetEnvironmentVariable("TD_ZONA_VOLBA") is { Length: > 0 } vz)
+                    inVar["PISMENO_V_ZONE"] = new CVar(vz);
                 if (Environment.GetEnvironmentVariable("TD_ATRIBUTY_OBOUSMERNE") == "1")
                     inVar["OBOUSMERNY_TISK"] = new CVar("true");
                 CVar result;
@@ -83,10 +86,24 @@ public class AtributyTrasyProbe(ITestOutputHelper vystup)
                 if (pages is null) continue;
 
                 linekCelkem++;
+                if (Environment.GetEnvironmentVariable("TD_ZONA_VOLBA") is { Length: > 0 })
+                    vystup.WriteLine($"    DEBUG {idfa}/{id}: {pages[0].GetString("DEBUGZONA")}");
                 foreach (var page in pages)
                     foreach (var radek in page.GetRows("ZASTAVKY") ?? [])
                     {
                         radkuCelkem++;
+                        if (Environment.GetEnvironmentVariable("TD_ZONY_PROBE") == "1")
+                        {
+                            string zona = radek.GetString("ZONY");
+                            if (!string.IsNullOrWhiteSpace(zona) && zona != "-")
+                            {
+                                var (pocet, priklady) = zonyVyskyt.GetValueOrDefault(zona, (0, []));
+                                if (priklady.Count < 2 && !priklady.Contains($"{idfa}/{id}"))
+                                    priklady.Add($"{idfa}/{id}");
+                                zonyVyskyt[zona] = (pocet + 1, priklady);
+                            }
+                        }
+
                         if (radek.GetValue("ATRIBUTY") is not JsonArray pole) continue;
                         if (Environment.GetEnvironmentVariable("TD_ATRIBUTY_UKAZ") is { Length: > 0 } hledany
                             && pole.Any(a => a?.ToString() == hledany))
@@ -112,6 +129,14 @@ public class AtributyTrasyProbe(ITestOutputHelper vystup)
                            + $"{pocet,6}x   {string.Join(", ", priklady)}");
 
         vystup.WriteLine("");
+        if (zonyVyskyt.Count > 0)
+        {
+            vystup.WriteLine("");
+            vystup.WriteLine($"=== zóny: {zonyVyskyt.Count} různých hodnot ===");
+            foreach (var (zona, (pocet, priklady)) in zonyVyskyt.OrderByDescending(z => z.Value.Pocet).Take(40))
+                vystup.WriteLine($"  ZONA {zona,-14} {pocet,5}x   {string.Join(", ", priklady)}");
+        }
+
         vystup.WriteLine("nevyskytlo se: " + string.Join(" ", Ciselnik.Keys.Where(k => !vyskyt.ContainsKey(k))));
     }
 }

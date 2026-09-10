@@ -235,6 +235,23 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d optsBez.%Push("Netisknout")
     s pBez.options = optsBez
 
+    // Písmeno systému v označení zóny: data ho nesou (změřeno 10. 9. na `ZL_KOVED` 823955 -
+    // syrová hodnota `Z420,I201`, tedy dvě zóny, každá se značkou svého IDS), ale nastavení
+    // `ZonaIdsDelZnk` ho umí odstranit a KOVED to má zapnuté. Linka přes dvě IDS se stejně
+    // číslovanými zónami je pak v tisku nerozeznatelná (`B137`). Týž třístav.
+    s pZon = ##class(%DynamicObject).%New()
+    s pZon.name         = "PISMENO_V_ZONE"
+    s pZon.label        = "Písmeno systému u zóny"
+    s pZon.type         = "enum"
+    s pZon.group        = "Tabulka linky"
+    s pZon.defaultValue = "Automaticky (dle linky)"
+    s pZon.description  = "Zda označení zóny nese písmeno svého dopravního systému (Z420 místo 420). Bez něj nejdou u linky přes dvě IDS rozlišit stejně číslované zóny. Automaticky = podle nastavení u linky v jízdních řádech."
+    s optsZon = ##class(%DynamicArray).%New()
+    d optsZon.%Push("Automaticky (dle linky)")
+    d optsZon.%Push("Zobrazit")
+    d optsZon.%Push("Skrýt")
+    s pZon.options = optsZon
+
     // Barvy spojů: barva je u spoje (3 926 spojů ji v datech má), linka ji umí potlačit
     // (`PATCH,barevnyTiskSpoju` = 1 → tisknout černě). Týž třístav.
     s pBar = ##class(%DynamicObject).%New()
@@ -332,6 +349,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(p)         // Tabulka linky - dělení spojů je nejdůležitější volba agendy
     d arr.%Push(pTc)
     d arr.%Push(pBez)
+    d arr.%Push(pZon)
     d arr.%Push(pBar)
     d arr.%Push(pZvZ)
     d arr.%Push(pZvT)
@@ -458,6 +476,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
         s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
         s volbaBarvy = $g(^||ML("IN","BARVY_SPOJU"))
+        s volbaZony = $g(^||ML("IN","PISMENO_V_ZONE"))
 
         // Obousměrný tisk: jedna stránka se spoji obou směrů nad společným seznamem zastávek.
         // Bool parametry chodí jako "true"/"false", starší klienti posílali "True" - proto tolerantně.
@@ -467,12 +486,12 @@ ClassMethod GetData(ByRef sys As %String) As %Status
             // Pořadí zastávek se bere ze směru „tam"; opačný směr se na tytéž řádky zarovná podle
             // pořadí zastávky. Linka obsluhovaná jen jedním směrem tím vyjde jako dnes - druhá
             // strana prostě nemá sloupce a prvek ji nenakreslí.
-            s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 1, sTurnusy)
+            s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 1, sTurnusy, volbaZony)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
         else {
             f smer = "T", "Z" {
-                s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 0, sTurnusy)
+                s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 0, sTurnusy, volbaZony)
                 i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
             }
         }
@@ -541,7 +560,7 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 /// `obousmerne` = spoje **obou** směrů nad jedním seznamem zastávek (parametr „Obousměrný tisk").
 /// Zastávkové řádky se staví pro `smer`, spoje se přiberou i z opačného směru a každý nese `SMER`.
 /// Server tím posílá jen fakta - o tom, který směr se kreslí vlevo, rozhoduje prvek.
-ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu, obousmerne As %Boolean = 0, sTurnusy As %Boolean = 0) As %DynamicObject
+ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu, obousmerne As %Boolean = 0, sTurnusy As %Boolean = 0, volbaZony As %String = "") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     // U obousměrné stránky stačí spoje v jednom ze směrů - kdyby se ptalo jen na `smer`, linka
@@ -611,6 +630,11 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     // globální (1:1 legacy gPLSetWin `:1847`, kde je `hodnota-1`).
     s zonaDelZnkLinka = +$g(^[dataDB]JRL(sku,lin,"PATCH","ZonaIdsDelZnk"))
     s bezPismenVZone = $s(zonaDelZnkLinka:zonaDelZnkLinka - 1, 1:+$g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk")))
+    // Parametr sestavy nastavení přebíjí (`B137`): bez písmene nejdou u linky přes dvě IDS
+    // rozlišit stejně číslované zóny, a na to nastavení v databázi uživatel návrháře nedosáhne.
+    // Neznámá hodnota → zůstane „dle linky", stejně tolerantně jako ostatní třístavy.
+    i volbaZony = "Zobrazit" { s bezPismenVZone = 0 }
+    i volbaZony = "Skrýt" { s bezPismenVZone = 1 }
     // Km sloupce jsou u linky uložené **třikrát**: společný seznam `^JRL(sku,lin,"K")` a dva
     // směrové `PATCH,KmsSmer,T/Z`. Starý tisk bere u **obousměrné** sestavy ten společný a u
     // jednosměrné směrový (`JRapiLinPrtWin.mac:2523`, větev `sm="A"`), protože společný je

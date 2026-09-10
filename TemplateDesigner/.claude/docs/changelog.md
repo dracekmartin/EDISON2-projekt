@@ -1,5 +1,25 @@
 ﻿# Changelog
 
+## 2026-09-10 (10) - 🅩 písmeno systému u zóny jde zapnout ze sestavy
+
+`B137`. Linka přes dvě IDS se stejně číslovanými zónami byla v tisku nerozeznatelná.
+
+⚠️ **Zadání znělo „změřit, jestli data u zóny IDS vůbec nesou" - nesou.** Syrová hodnota u zastávky
+8 na `ZL_KOVED` 823955 je **`Z420,I201`**: dvě zóny, každá s písmenem svého systému. Zahazuje to
+nastavení `ZonaIdsDelZnk` v databázi, které KOVED má zapnuté - a na to uživatel návrháře nedosáhne.
+Bod tedy nebyl „dohledat vazbu zastávka - IDS", ale „nechat tu vazbu neodhazovat".
+
+Nový parametr sestavy **„Písmeno systému u zóny"**: Automaticky (dle linky) / Zobrazit / Skrýt.
+Zavedený třístav, stejný jako `SLOUPEC_TC` a `ZASTAVKY_BEZ_ZASTAVENI`; neznámá hodnota spadne
+do „dle linky". Je v allowlistu `ServerSideParams`, takže jeho změna spustí načtení dat.
+
+Ověřeno voláním serveru na `ZL_KOVED` 823955: Zobrazit → `Z420,I201`, Skrýt → `420,201`,
+Automaticky → `420,201` (KOVED má odstraňování zapnuté).
+
+⚠️ **Neřeší to název systému.** „Z420" říká, že jde o jiný systém než „I201", ne který to je.
+Plný název by znamenal dohledat číselník IDS - na rozlišení dvou zón na jedné lince ale písmeno
+stačí.
+
 ## 2026-09-10 (9) - ⇅ u rozdvojené zastávky je vidět, co je příjezd a co odjezd
 
 `B136`. U zastávky s atributem `P` nebo `J` se řádek rozdvojí na příjezd a odjezd - jenže z tisku

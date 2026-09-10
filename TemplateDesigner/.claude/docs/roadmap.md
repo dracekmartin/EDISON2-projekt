@@ -124,12 +124,6 @@ takže nejde o práci, ale o doklad.
   ⚠️ Potřebuje **sloučení buňky přes řádky** v jádru tabulky (`RowPlanRenderer`), což dnes neumí -
   proto to nešlo dodělat rovnou. Až to bude, přidat k prvku volbu mezi oběma tvary.
 
-- **`B137` Prefix IDS u označení zóny** [M] (požadavek 9. 9.). Linka přes dvě IDS se stejně
-  číslovanými zónami je v tisku nerozeznatelná. Dnes umíme jen opak - písmeno ze zóny **odebrat**
-  (`LinkovyJrAd.cls:612`). **První krok není kód:** změřit, jestli data u zóny IDS vůbec nesou.
-  Nesou-li ho jen tím písmenem, stačí nechat odebírání vypnout ze šablony; jinak se musí dohledat
-  vazba zastávka - IDS.
-
 - **`B138` Odložené do pozadí** [-] (Jan 9. 9., evidence). Tisk celé sestavy jen černě (dnes jde
   vypnout jen barvy spojů) a volba „bez roku" u textů omezení v šabloně (dnes to řídí nastavení
   EDISONu a to stačí). Vytáhnout, až si o to někdo řekne.

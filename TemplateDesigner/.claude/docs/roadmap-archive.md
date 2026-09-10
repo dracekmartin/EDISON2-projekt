@@ -1,5 +1,26 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B137` Písmeno systému u označení zóny (hotovo 10. 9. 2026)
+
+Linka přes dvě IDS se stejně číslovanými zónami byla v tisku nerozeznatelná. Bod měl jako první
+krok měření, jestli data IDS u zóny nesou - **nesou**: syrová hodnota u zastávky 8 na `ZL_KOVED`
+823955 je `Z420,I201`. Zahazuje to nastavení `ZonaIdsDelZnk` v databázi (KOVED ho má zapnuté),
+na které uživatel návrháře nedosáhne.
+
+Řešení: parametr sestavy **„Písmeno systému u zóny"** (Automaticky dle linky / Zobrazit / Skrýt),
+zavedený třístav jako `SLOUPEC_TC`. Ověřeno voláním serveru: Zobrazit → `Z420,I201`,
+Skrýt → `420,201`.
+
+⚠️ **Nedělá se název systému.** „Z420" říká, že je to jiný systém než „I201", ne který; plný název
+by znamenal dohledat číselník IDS. Na rozlišení dvou zón na jedné lince písmeno stačí.
+
+⚠️ **Stálo to půl hodiny hledání kvůli BOM.** Část úprav `.cls` šla skriptem, který soubor zapsal
+s `utf-8-sig` a přidal mu BOM - překlad na serveru od té chvíle padal a server držel poslední
+funkční třídu. Navenek to vypadalo, že se hook nespustil: další editace nástrojem soubor
+nahrávaly, ale taky se nepřeložil. Pravidlo doplněno do `.claude/rules/cache-api.md`.
+
+Detail v `changelog.md` 10. 9. (10).
+
 ## `B136` Rozdvojená zastávka - příjezd a odjezd (hotovo 10. 9. 2026)
 
 Zadání znělo „název se u zdvojeného řádku píše dvakrát, postskript jednou". ⚠️ **Neplatilo**:
