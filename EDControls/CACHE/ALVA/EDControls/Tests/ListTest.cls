@@ -86,4 +86,18 @@ Method TestWriteRowsEmptyListWritesNothing()
 	do $$$AssertTrue(($data(^||ML("OUT")) = 0), "Prázdný list -> žádný OUT záznam")
 }
 
+/// AddColumn bez align/format serializuje prázdné stringy - C# ParseAlign("") = Auto
+/// (zarovnání dle typu) a prázdný format = bez formátování. Pin defaultní cesty.
+Method TestColumnDefaultsSerializeEmptyAlignAndFormat()
+{
+	s list = ##class(ALVA.EDControls.EDList.List).%New()
+	d list.AddColumn("cas", "Čas", "HHMM", 60)
+	d list.WriteColumnsToOut()
+
+	s col = ##class(%DynamicArray).%FromJSON(^||ML("OUT", 1)).%Get(0)
+	do $$$AssertEquals(col.align, "", "bez align -> prázdný string (klient = Auto dle typu)")
+	do $$$AssertEquals(col.format, "", "bez format -> prázdný string (bez formátování)")
+	do $$$AssertEquals(col.type, "HHMM", "typ se serializuje beze změny")
+}
+
 }
