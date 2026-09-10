@@ -110,13 +110,6 @@ takže nejde o práci, ale o doklad.
   Odblokuje to konkrétní případ z praxe, kde ta informace chybí, nebo nápad, jak ji ukázat jen
   v okamžiku, kdy ji uživatel hledá. `B135` na tom stojí.
 
-- **`B131` Dvě různá „víc stránek" se pletou** [M] (nález Jan 7. 9.). Náhled má **stránky dat**
-  (u linkového JŘ jeden směr = jedna stránka, u vývěsky zastávka × směr) v přepínači nad sebou
-  a **stránky sazby** (rozřezaná tabulka) pod sebou ve scrollu. Uživatel to nerozliší: při vypnutém
-  obousměrném tisku hledal zpětné spoje a měl je za nevytištěné, protože byly na druhé stránce dat.
-  Hotovo když: z okna je poznat, že jde o dvě různé osy, a přepínač jmenuje, co na té stránce je.
-  Do tisku jde vždy obojí, chyba je jen v zobrazení.
-
 - **`B134` Sekce, která se opakuje na každé stránce a přitom plave za obsahem** [M]
   (požadavek Jan 7. 9.: „poznámky musí být na každé stránce a hned pod tabulkou"). Dnes to jde jen
   jedno z toho: „Jednou" plave za obsahem, „Každá stránka" se umístí na **spodní hranu** stránky

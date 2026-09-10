@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -34,6 +34,9 @@ public class PreviewCanvas
     /// přetéká" uživatel nepoznal, na které stránce ani co ji přetéká.
     /// </summary>
     public Action<string?>? OverflowChanged { get; set; }
+
+    /// <summary>Na kolik stran se sází právě zobrazená stránka dat - druhá osa stránkování (`B131`).</summary>
+    public Action<int>? PocetStranSazbyChanged { get; set; }
 
     private readonly DesignerState _state;
     private readonly PageLayoutEngine _engine;
@@ -313,6 +316,10 @@ public class PreviewCanvas
         var nalezy = layout.Pages.Select(p => NajdiPreteceni(p, ps)).ToList();
         OverflowChanged?.Invoke(OverflowWarnings.Summarize(
             [.. nalezy.Where(n => n is not null).Select(n => n!)], layout.Pages.Count));
+
+        // Kolik stran leží pod sebou ve scrollu. Nabídka nad náhledem přepíná stránky DAT, tohle
+        // je ta druhá osa - bez ní si uživatel obojí plete (`B131`).
+        PocetStranSazbyChanged?.Invoke(layout.Pages.Count);
 
         // Jen obrazovkový náhled - export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
         canvas.Clear(CanvasTheme.Background);

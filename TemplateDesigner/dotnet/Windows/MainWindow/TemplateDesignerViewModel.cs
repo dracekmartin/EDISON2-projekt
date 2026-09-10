@@ -416,6 +416,38 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public bool HasMultiplePages => RealPreviewPageCount > 1;
 
+    private int _pocetStranSazby;
+    /// <summary>
+    /// Na kolik stran se tiskne **právě zobrazená** položka - druhá osa stránkování (`B131`).
+    /// </summary>
+    /// <remarks>
+    /// Nabídka nad náhledem přepíná stránky dat, kdežto strany sazby té jedné položky leží pod
+    /// sebou ve scrollu. Bez tohohle údaje uživatel netuší, že pod první stranou něco je - a naopak
+    /// hledá zpětné spoje na druhé straně, když jsou na druhé stránce dat.
+    /// </remarks>
+    public int PocetStranSazby
+    {
+        get => _pocetStranSazby;
+        set
+        {
+            if (Set(ref _pocetStranSazby, value))
+            {
+                OnPropertyChanged(nameof(PocetStranSazbyText));
+                OnPropertyChanged(nameof(HasPocetStranSazby));
+            }
+        }
+    }
+
+    /// <summary>Jediná strana se nehlásí - text, který nic neříká, jen zabírá lištu.</summary>
+    public bool HasPocetStranSazby => _pocetStranSazby > 1;
+
+    public string PocetStranSazbyText => _pocetStranSazby switch
+    {
+        < 2 => "",
+        < 5 => $"tiskne se na {_pocetStranSazby} strany",
+        _   => $"tiskne se na {_pocetStranSazby} stran"
+    };
+
     /// <summary>Viditelnost lišty stránkování dat - i pro jedinou stránku (combobox říká, CO preview
     /// zobrazuje - zastávka × směr); skrytá jen v mock módu (žádná reálná data).</summary>
     public bool HasPageNavigation => RealPreviewPageCount > 0;
@@ -454,6 +486,9 @@ public class TemplateDesignerViewModel : EDViewModel
             OnPropertyChanged(nameof(HasMultiplePages));
             OnPropertyChanged(nameof(HasPageNavigation));
             OnPropertyChanged(nameof(IsSampleDataPreview));
+            OnPropertyChanged(nameof(PreviewItemNoun));
+            OnPropertyChanged(nameof(PreviousPageTooltip));
+            OnPropertyChanged(nameof(NextPageTooltip));
             OnPropertyChanged(nameof(ActiveInstanceText));   // nese text o ukázkových datech
         }
         finally { _previewPagesSyncing = false; }
@@ -466,48 +501,94 @@ public class TemplateDesignerViewModel : EDViewModel
     /// (deferovaně přes Dispatcher) - viz komentář v NotifyPreviewPagesChanged.</summary>
     public Action? RequestPreviewPagerSync { get; set; }
 
-    /// <summary>Položky comboboxu stránkování dat - přímý skok na stránku bez proklikávání ◀▶.</summary>
+    /// <summary>Položky comboboxu stránkování dat - přímý skok na položku bez proklikávání ◀▶.</summary>
     public IReadOnlyList<string> PreviewPageItems =>
         _realPreviewData is null ? []
-        : _realPreviewData.Select(BuildPreviewPageLabel).ToList();
+        : [.. _realPreviewData.Select((p, i) => BuildPreviewPageLabel(p, i, _realPreviewData.Count))];
+
+    /// <summary>Jak se jmenuje to, co nabídka nad náhledem přepíná - pro popisky tlačítek ◀▶.</summary>
+    public string PreviewItemNoun => _realPreviewData is { Count: > 0 }
+        ? NazevPolozky(_realPreviewData[0]).ToLowerInvariant()
+        : "část";
+
+    public string PreviousPageTooltip => $"Předchozí {PreviewItemNoun}";
+    public string NextPageTooltip     => $"Další {PreviewItemNoun}";
 
     /// <summary>
-    /// Popisek stránky dat pro nabídku stránkování - podle toho, co je na stránce.
+    /// Jak se jmenuje to, co je na jedné stránce dat - podle toho, co stránka nese.
     /// </summary>
     /// <remarks>
-    /// <para><b>Zastávkový JŘ</b> = stránka je zastávka × směr → „N - zastávka → konečná".
-    /// Pozná se podle <c>POPIS_ZASTAVKA</c>, které linkové agendy neposílají.</para>
-    /// <para><b>Linkový JŘ</b> = stránka je celá linka → „N - výchozí → konečná". ⚠️ Do 31. 8. tady
-    /// spadl na „Stránka N" <b>u každé</b> stránky, ne jen u obousměrné: popisek se stavěl výhradně
-    /// z <c>POPIS_ZASTAVKA</c>, a to pole linkový JŘ nemá ve schématu vůbec. Uživatel pak v nabídce
-    /// nepoznal, na který směr se dívá.</para>
-    /// <para><b>Obousměrná stránka</b> nese oba směry naráz a <c>SMER</c> je u ní vědomě prázdné
-    /// (`LinkovyJrAd.cls` kolem ř. 559) - to ji spolehlivě odliší, takže dostane obousměrnou šipku
-    /// a není na ni potřeba nové pole na drátě.</para>
-    /// <para>Když stránka nenese ani jedno, zůstává „Stránka N" (agendy typu faktur).</para>
+    /// <para><b>Zastávkový JŘ</b> = zastávka × směr, pozná se podle <c>POPIS_ZASTAVKA</c>, které
+    /// linkové agendy neposílají.</para>
+    /// <para><b>Linkový JŘ</b> = jeden směr linky. <b>Obousměrná stránka</b> nese oba směry naráz
+    /// a <c>SMER</c> je u ní vědomě prázdné (`LinkovyJrAd.cls` kolem ř. 559) - to ji spolehlivě
+    /// odliší, takže se nejmenuje „Směr", ale „Linka", a není na ni potřeba nové pole na drátě.</para>
+    /// <para>Když stránka nenese ani jedno, zůstává obecná „Část" (agendy typu faktur).</para>
     /// </remarks>
-    public static string BuildPreviewPageLabel(DataContext page, int index)
+    internal static string NazevPolozky(DataContext page)
     {
-        int cislo = index + 1;
-        var konecna = page.GetString("KONECNA_ZASTAVKA").Trim();
+        if (page.GetString("POPIS_ZASTAVKA").Trim().Length > 0) return "Zastávka";
+        if (page.GetString("VYCHOZI_ZASTAVKA").Trim().Length > 0
+            || page.GetString("KONECNA_ZASTAVKA").Trim().Length > 0)
+            return page.GetString("SMER").Trim().Length == 0 ? "Linka" : "Směr";
+        return "Část";
+    }
 
-        // Zastávkový JŘ
+    /// <summary>
+    /// Popisek položky pro nabídku nad náhledem: co to je, kolikátá z kolika a čeho se týká.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Podstatné jméno tam je proto, aby se dvě různá „víc stránek" nepletla** (`B131`, nález
+    /// Jan 7. 9.). Nabídka přepíná **stránky dat** (u vývěsky zastávka × směr, u linky směr),
+    /// kdežto **strany sazby** té jedné položky leží pod sebou ve scrollu. Do 10. 9. se obojí
+    /// jmenovalo „stránka" a čítač „/ 2" se četl jako „celkem 2 strany" - uživatel pak hledal
+    /// zpětné spoje a měl je za nevytištěné, protože byly na druhé stránce dat.
+    ///
+    /// <para>U jediné položky se čítač vynechá - „1 z 1" nic neříká a přepínat není co.</para>
+    ///
+    /// <para>⚠️ Do 31. 8. to u linkového JŘ hlásilo „Stránka N" i tam, kde stránka směr nesla:
+    /// popisek se stavěl výhradně z <c>POPIS_ZASTAVKA</c>, které linkové agendy ve schématu
+    /// nemají.</para>
+    /// </remarks>
+    public static string BuildPreviewPageLabel(DataContext page, int index, int celkem)
+    {
+        var konecna  = page.GetString("KONECNA_ZASTAVKA").Trim();
         var zastavka = page.GetString("POPIS_ZASTAVKA").Trim();
-        if (zastavka.Length > 0)
-            return konecna.Length == 0 ? $"{cislo} - {zastavka}" : $"{cislo} - {zastavka} → {konecna}";
+        var vychozi  = page.GetString("VYCHOZI_ZASTAVKA").Trim();
 
-        // Linkový JŘ
-        var vychozi = page.GetString("VYCHOZI_ZASTAVKA").Trim();
-        if (vychozi.Length > 0 && konecna.Length > 0)
+        string popis = "";
+        if (zastavka.Length > 0)
+            popis = konecna.Length == 0 ? zastavka : $"{zastavka} → {konecna}";
+        else if (vychozi.Length > 0 && konecna.Length > 0)
         {
             string sipka = page.GetString("SMER").Trim().Length == 0 ? "↔" : "→";
-            return $"{cislo} - {vychozi} {sipka} {konecna}";
+            popis = $"{vychozi} {sipka} {konecna}";
         }
-        if (vychozi.Length > 0) return $"{cislo} - {vychozi}";
-        if (konecna.Length > 0) return $"{cislo} - {konecna}";
+        else if (vychozi.Length > 0) popis = vychozi;
+        else if (konecna.Length > 0) popis = konecna;
 
-        return $"Stránka {cislo}";
+        string nazev = NazevPolozky(page);
+
+        // Směr se jmenuje, ne čísluje - „tam" a „zpět" je zavedené názvosloví a uživatel z něj
+        // pozná, na co kouká, kdežto „1 z 2" ne (rozhodnutí Jan 10. 9.). Píše se i u jediné
+        // položky: říká něco navíc, na rozdíl od čítače „1 z 1".
+        if (nazev == "Směr" && SmerTamNeboZpet(page) is { } smer)
+            return popis.Length > 0 ? $"{smer}: {popis}" : smer;
+
+        if (celkem <= 1) return popis.Length > 0 ? popis : nazev;
+
+        string cislo = $"{nazev} {index + 1} z {celkem}";
+        return popis.Length > 0 ? $"{cislo}: {popis}" : cislo;
     }
+
+    /// <summary>„Směr tam" / „Směr zpět" podle pole <c>SMER</c> (T/Z), nebo null u jiné hodnoty.</summary>
+    private static string? SmerTamNeboZpet(DataContext page) =>
+        page.GetString("SMER").Trim().ToUpperInvariant() switch
+        {
+            "T" => "Směr tam",
+            "Z" => "Směr zpět",
+            _   => null
+        };
 
     private RelayCommand? _prevPage, _nextPage;
     public RelayCommand PreviousPageCommand => _prevPage ??= Command(

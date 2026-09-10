@@ -138,6 +138,11 @@ public partial class MainWindow : Window
                 _vm.PreviewOverflow = popis;
         };
 
+        _previewCanvas.PocetStranSazbyChanged = pocet =>
+        {
+            if (_vm is not null) _vm.PocetStranSazby = pocet;
+        };
+
         // Wire SkiaSharp (must be code-behind - not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;
         skPreview.PaintSurface       += OnPreviewPaintSurface;

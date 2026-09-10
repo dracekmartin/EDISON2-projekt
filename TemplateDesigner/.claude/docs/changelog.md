@@ -1,5 +1,28 @@
 ﻿# Changelog
 
+## 2026-09-10 (3) - 🔀 nabídka nad náhledem pojmenuje, co přepíná
+
+Nález Jan 7. 9. (`B131`). Náhled má dvě různé osy: **stránky dat** (u vývěsky zastávka × směr,
+u linky směr) v nabídce nahoře a **strany sazby** té jedné položky pod sebou ve scrollu. Obojí se
+jmenovalo „stránka" a čítač „/ 2" se četl jako celkový počet stran, takže při vypnutém obousměrném
+tisku uživatel hledal zpětné spoje a měl je za nevytištěné - byly na druhé stránce dat.
+
+Nabídka nově pojmenuje, co přepíná: **Zastávka 3 z 47**, **Směr tam** / **Směr zpět**, **Linka**
+u obousměrné stránky (nese oba směry, takže „Směr" by lhal) a **Část** u ostatních agend. Tooltipy
+◀▶ převzaly totéž slovo („Další zastávka").
+
+⚠️ **Směr se jmenuje, ne čísluje** (rozhodnutí Jan 10. 9.): „Směr tam" je zavedené názvosloví
+a uživatel z něj pozná, na co kouká, kdežto „Směr 1 z 2" ne. Píše se i u jediné položky - na rozdíl
+od čítače něco říká. Zastávky se čísluje dál, tam je pořadí skutečná informace. Neznámá hodnota
+`SMER` (jiná než T/Z) spadne zpátky na čítač.
+
+Na místě zrušeného čítače stojí **na kolik stran se právě zobrazená položka tiskne** - to je ta
+druhá osa, kterou uživatel neviděl. Při jediné straně se neukáže nic. Číslo hlásí náhled po sazbě
+(`PreviewCanvas.PocetStranSazbyChanged`), takže odpovídá tomu, co je pod ním ve scrollu.
+
+Čísla u jednotlivých stran ve scrollu se **vědomě nedělají** - lišta tu informaci nese a text okolo
+papíru se právě téhož dne ukázal jako spíš škodlivý (viz zahozené `B130`).
+
 ## 2026-09-10 (2) - 📐 prvek, který roste s daty, nedrží nejmenší výšku sekce
 
 Nález Jan 7. 9. (`B133`). Dno sekce bralo u prvku s prázdnou výškou jeho **zástupnou** výšku

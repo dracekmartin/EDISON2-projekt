@@ -1,5 +1,28 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B131` Dvě různá „víc stránek" se pletla (hotovo 10. 9. 2026)
+
+Nález Jan 7. 9.: náhled má stránky dat v nabídce nahoře a strany sazby pod sebou ve scrollu, obojí
+se jmenovalo „stránka". Při vypnutém obousměrném tisku uživatel hledal zpětné spoje a měl je za
+nevytištěné, protože byly na druhé stránce dat.
+
+**Mechanismus se nezměnil** - je správný (rozhodnutí Jan 10. 9.: víc stran jednoho směru chci mít
+pod sebou). Změnilo se jen názvosloví: nabídka pojmenuje, co přepíná, a vedle ní stojí, na kolik
+stran se ta jedna položka tiskne.
+
+Rozhodnutí, která se u toho udělala:
+
+- **Směr se jmenuje, ne čísluje** - „Směr tam" / „Směr zpět" (pole `SMER` = T/Z) místo „Směr 1 z 2".
+  Zavedené názvosloví; u zastávek se čísluje dál, tam je pořadí informace.
+- **Obousměrná stránka se jmenuje „Linka"**, ne „Směr" - nese oba a `SMER` má prázdné.
+- **Počet stran nepatří do popisku položky** (zvažovaná varianta): combobox má pevnou šířku 230 px
+  a ořezává zprava, takže by se utnul právě ten údaj; navíc se mění se šablonou, ne s daty, a do
+  rozbalené nabídky by ho bylo nutné počítat celou sazbou pro každou položku (47 sazeb u vývěsky).
+- **Čísla u jednotlivých stran ve scrollu se nedělají** - lišta to nese a text okolo papíru se týž
+  den ukázal jako spíš škodlivý (zahozené `B130`).
+
+Detail v `changelog.md` 10. 9. (3); testy v `PreviewPageLabelTests`.
+
 ## `B130` Popisek zbylého místa u stránky - ZKUSILO SE A ZAHODILO (rozhodnutí Jan 10. 9. 2026)
 
 Postavené a po vyzkoušení vrácené: engine počítal, kolik na stránce zbylo a kolik potřebovala
