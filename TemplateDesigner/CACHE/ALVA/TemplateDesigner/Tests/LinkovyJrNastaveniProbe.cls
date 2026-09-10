@@ -530,6 +530,55 @@ ClassMethod NajdiLinkuSAtributem(klic As %String, ByRef db, ByRef sku, ByRef lin
     quit 0
 }
 
+/// Kolik linek má zapnuté volby **dělené linky** a ruční zlom - podklad k `B127`.
+/// Klíče podle `gSetLinPrt` (`JRapiLin1.mac:300-302`): `ONEPAG` = tisk na jednu stranu (dta 21,
+/// existence uzlu), `Hlava&pozN` = hlavička a poznámky pro směr/část (dta 22, hodnota 0-4),
+/// `Smer_1_stranA` = směr na stranu (dta 23), `ZLOM` = ruční zlom na tarifním čísle.
+ClassMethod DelenaLinkaVyskyt(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        // ⚠️ Nemazat `^||ML` - drží i metadata požadavku (`VER`), bez nich MLRest odpověď
+        // nesestaví a spadne na `<UNDEFINED> ^||ML("VER")`.
+        kill pocty, linek, priklad
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set firma = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(firma)
+            set s1 = ""
+            for  {
+                set s1 = $order(^[firma]JRL(s1))
+                quit:s1=""
+                continue:'$isvalidnum(s1)
+                set l1 = ""
+                for  {
+                    set l1 = $order(^[firma]JRL(s1, l1))
+                    quit:l1=""
+                    continue:'$data(^[firma]JRL(s1, l1, "I"))
+                    set linek = $get(linek) + 1
+                    for ki = 1:1:4 {
+                        set klic = $piece("ONEPAG,Hlava&pozN,Smer_1_stranA,ZLOM", ",", ki)
+                        // ONEPAG se čte existencí uzlu, ostatní hodnotou
+                        set zap = $select(klic = "ONEPAG": $data(^[firma]JRL(s1, l1, "PATCH", klic)),
+                                          1: +$get(^[firma]JRL(s1, l1, "PATCH", klic)))
+                        continue:'zap
+                        set pocty(klic) = $get(pocty(klic)) + 1
+                        set:'$data(priklad(klic)) priklad(klic) = firma_"/"_l1_" = "_$get(^[firma]JRL(s1, l1, "PATCH", klic))
+                    }
+                }
+            }
+        }
+        set ^||ML("OUT", $increment(^||ML("OUT"))) = "linek celkem: "_$get(linek)
+        for ki = 1:1:4 {
+            set klic = $piece("ONEPAG,Hlava&pozN,Smer_1_stranA,ZLOM", ",", ki)
+            set ^||ML("OUT", $increment(^||ML("OUT"))) =
+                klic_": "_+$get(pocty(klic))_"x   "_$get(priklad(klic), "nikde")
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše ke každému atributu spoje jednu linku, kde se vyskytuje - podklad pro rozšíření sady.
 ClassMethod AtributyLinky(ByRef sys As %String) As %Status
 {
