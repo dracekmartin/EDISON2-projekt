@@ -103,14 +103,6 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B139` Sekce „držet pohromadě" vyšší než stránka tiskne část do prázdna** [S] (změřeno 10. 9.).
-  Když obsah takové sekce přeroste tiskovou plochu, engine ji položí na jednu stránku v její celé
-  výšce a co je pod hranou papíru, v PDF zmizí **bez hlášky**. Změřeno: text vysoký 847,8 mm na
-  ploše 277 mm dal jednu stránku se sekcí 847,8 mm; táž sekce s přetékáním dá 4 stránky.
-  Hotovo když: nedělitelná sekce, která se nevejde ani na prázdnou stránku, se rozřeže jako
-  s přetékáním - „držet pohromadě" je přání, ne fyzikální možnost.
-  Místo: `PageLayoutEngine.cs:317` (větev `KeepTogether`).
-
 - **`B130` Není vidět, kam se dělí místo na stránce** [M] (podnět Jan 7. 9. při stavbě šablony).
   Sekce „Každá stránka" se odečítá z **každé** stránky, zbytek se dělí po celých řádcích tabulky
   a blok se nesmí zlomit jinde než v místě, které sám nabídne - takže o stránku navíc rozhodne

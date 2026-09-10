@@ -1,5 +1,26 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B139` Sekce „držet pohromadě" vyšší než stránka - NEDĚLÁ SE (rozhodnutí Jan 10. 9. 2026)
+
+Vzniklo při průzkumu `B133` jako domnělá tichá ztráta obsahu: engine takovou sekci položí na jednu
+stránku v celé výšce, takže co je pod hranou papíru, v PDF chybí (změřeno: text 847,8 mm na ploše
+277 mm dal jednu stránku; táž sekce s přetékáním dá 4).
+
+⚠️ **Premisa „bez hlášky" byla špatně.** Přetečení se hlásí jménem sekce i prvku, a to na obou
+místech, kde to jde zachytit: ve stavovém řádku návrháře (`OverflowWarnings` přes
+`PreviewCanvas.OverflowChanged`) i v tiskovém dialogu (`PrintDialogViewModel.cs:254`), kde stojí
+vedle pěti dalších varování téhož druhu (chybějící font, zmenšené písmo, malý QR, nezařazené
+odjezdy).
+
+Chování je **záměrné a otestované** - `PageLayoutEngineTests.KeepTogether_SekceVyssiNezStranka_ZustaneNaPrazdneStrance`
+a `PreteceniNalezTests` ho drží přímo. Rozřezat takovou sekci by šlo proti tomu záměru: přetečení
+se má ohlásit, ne o něm mlčet přesazbou. Šablona s nedělitelnou sekcí vyšší než stránka je špatně
+nastavená a uživatel se dozví která.
+
+Kdyby se to někdo rozhodl otevřít znovu, tohle je změřené: rozřezání se implementuje v `PageLayoutEngine`
+ve větvi `KeepTogether` (podmínit umístění vcelku tím, že se sekce vejde na čistou stránku, jinak
+propadnout do větve přetékání) a shodí to 5 existujících testů.
+
 ## `B133` Nejmenší výška sekce se počítala ze zástupné výšky prvku (hotovo 10. 9. 2026)
 
 Nález Jan 7. 9. Dno sekce bralo u prvku s prázdnou výškou `DesignerPlaceholderHeight` (tabulka
