@@ -1,4 +1,4 @@
-using SkiaSharp;
+﻿using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
@@ -32,8 +32,11 @@ public static class DirectionArrowRenderer
     /// držák k čáře (rovno <paramref name="caraXMm"/> znamená bez držáku).
     /// </summary>
     /// <param name="hrotDolu">Hrot dole (směr tam), nebo nahoře (zrcadlený směr u obousměrného tisku).</param>
+    /// <param name="kreslitHrot">false = jen díl čáry. Šipka se u rozdvojené zastávky přerušuje,
+    /// aby nepřejela označení příjezdu a odjezdu, a mezikusy hrot nemají (`B136`).</param>
     public static void Draw(RenderContext ctx, Vzhled vzhled,
-        float caraXMm, float drzakOdMm, float zacatekYMm, float konecYMm, bool hrotDolu = true)
+        float caraXMm, float drzakOdMm, float zacatekYMm, float konecYMm, bool hrotDolu = true,
+        bool kreslitHrot = true)
     {
         float strokeW = MathF.Max(0.5f, ctx.Px(vzhled.WidthMm));
         using var paint = new SKPaint

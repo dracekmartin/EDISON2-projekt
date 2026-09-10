@@ -1,5 +1,29 @@
 ﻿# Changelog
 
+## 2026-09-10 (9) - ⇅ u rozdvojené zastávky je vidět, co je příjezd a co odjezd
+
+`B136`. U zastávky s atributem `P` nebo `J` se řádek rozdvojí na příjezd a odjezd - jenže z tisku
+to nešlo poznat: dva časy pod sebou a nic, co by řeklo který je který.
+
+⚠️ **Dělali jsme třetí věc, kterou nemá ani jedna varianta starého tisku**: název jen u spodního
+řádku. Windowsový návrhář opakuje popisné sloupce u obou řádků, postskript je slučuje svisle na
+střed - my ani jedno.
+
+Nově: ve sloupci šipky stojí **`př`** na horním řádku a **`od`** na spodním (parita
+`JRapiLinPrtWin.mac:3075`) a **popisné sloupce se opakují na obou řádcích** - km, tarifní číslo,
+zóna i název, tedy tvar windowsového tisku. Šipka směru se u těch řádků **přeruší**, aby je
+nepřejela; legacy tam text zapisuje místo dílu šipky, u nás se šipka kreslí přes hotové řádky,
+takže se musela rozdělit na úseky (hrot zůstává jen na konci celé šipky).
+
+**Sloupec šipky je nově zapnutý ve výchozím stavu** (rozhodnutí Jan 10. 9.). Byl skrytý, „aby
+migrace nezměnila vzhled hotových šablon" - to dnes neplatí, linková agenda není v produkci.
+A protože týž sloupec nese `př`/`od`, skrytý by tu informaci schoval každému, kdo o něm neví.
+
+**Šipka zeštíhlena** na 0,1 mm čáru a 0,7 mm hrot (bylo 0,3 a 1,5, sdílené s vývěskou). Ve sloupci
+širokém 4 mm působil původní hrot těžce; vývěska má na šipku víc místa a zůstává beze změny.
+⚠️ Test šipku při té tloušťce přestal vidět - hledal pixely tmavší než 100, kdežto tenkou čáru
+vyhlazování vykreslí světle šedě. Práh posunut na „znatelně tmavší než papír".
+
 ## 2026-09-10 (8) - 〰️ „projíždí" a „jede jinudy" jsou piktogramy, ne znaky
 
 `B126`. V buňce spoje se tisklo doslova `|` a `<`. Starý **papírový** tisk je kreslí glyfem:

@@ -74,7 +74,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     [
         // Šipka směru: výchozí **skrytá**, ať se existujícím šablonám nezmění vzhled. Do starších
         // šablon ji doplní migrace, aby ji šlo zapnout v dialogu sloupců (ten neumí sloupce přidávat).
-        new() { Key = ColumnKeys.Arrow,    Header = "",         Width = 4f,  Visible = false, Alignment = TextHorizontalAlignment.Center },
+        // ⚠️ Zapnutý ve výchozím stavu (rozhodnutí Jan 10. 9.). Nese `př`/`od` u rozdvojené
+        // zastávky, což je jediné, co příjezd od odjezdu odliší - vypnutý sloupec by tu informaci
+        // schoval každému, kdo o něm neví. Migrace ho doplní i do starších šablon, což je tady
+        // v pořádku: linková agenda **není v produkci** a hotové šablony u zákazníka nejsou.
+        new() { Key = ColumnKeys.Arrow,    Header = "",         Width = 4f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
         new() { Key = ColumnKeys.Zone,     Header = "Zóna",     Width = 8f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
         new() { Key = ColumnKeys.Km,       Header = "km",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
         new() { Key = ColumnKeys.Tc,       Header = "Tč",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
@@ -722,17 +726,25 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Hodnota buňky popisového sloupce dle klíče (kmIndex jen pro Km sub-sloupce).</summary>
     private Func<LineStopData, string> ValueFor(string key, int kmIndex) => key switch
     {
-        ColumnKeys.Zone     => s => s.JePrijezdovy ? ""
-            : !RozdelitZonyDoSloupcu ? s.Zona
+        // ⚠️ **Popisné sloupce se u rozdvojené zastávky opakují na obou řádcích** - příjezdový
+        // řádek je nemá prázdné (`B136`, rozhodnutí Jan 10. 9.). Je to tvar windowsového tisku;
+        // postskript je místo toho slučuje svisle na střed přes obě řádky a mezi časy dává
+        // vodorovnou úsečku, což naše tabulka zatím neumí (sloučení buňky přes řádky).
+        // Do 10. 9. jsme dělali třetí věc, kterou nemá ani jeden: název jen u spodního řádku.
+        ColumnKeys.Zone     => s => !RozdelitZonyDoSloupcu ? s.Zona
             : kmIndex < s.Zony.Count ? s.Zony[kmIndex] : "",
-        ColumnKeys.Km       => s => s.JePrijezdovy || kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
-        ColumnKeys.Tc       => s => s.JePrijezdovy ? "" : s.Tc,
-        ColumnKeys.Mhd      => s => s.JePrijezdovy ? "" : s.Mhd,
+        ColumnKeys.Km       => s => kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
+        ColumnKeys.Tc       => s => s.Tc,
+        ColumnKeys.Mhd      => s => s.Mhd,
         // ⚠️ Mezera se přidává jen tehdy, když opravdu je co postavit před název. Dřív se řídila
         // tím, jestli zastávka má **jakýkoli** atribut - jenže řídicí atributy (T, P) se netisknou,
         // takže zastávka s nimi dostala název odsazený o mezeru bez viditelného důvodu. Vypadalo
         // to jako záměrné odsazení významných zastávek (nález Jan 7. 9.).
-        ColumnKeys.StopName => s => s.JePrijezdovy ? "" : NazevSeZnackami(s.Atributy, s.Popis),
+        ColumnKeys.StopName => s => NazevSeZnackami(s.Atributy, s.Popis),
+        // U rozdvojené zastávky je tohle jediné, co říká, který ze dvou časů je příjezd a který
+        // odjezd - ze šipky směru se to nepozná (`B136`). Legacy to píše do téhož sloupce
+        // (`JRapiLinPrtWin.mac:3075`), takže se sloupec šipky u těch řádků přeruší.
+        ColumnKeys.Arrow    => s => !JeRozdvojena(s) ? "" : s.JePrijezdovy ? "př" : "od",
         _          => _ => ""
     };
 
@@ -1232,6 +1244,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         s.Atributy.Contains("T") || s.Atributy.Contains("P");
 
     /// <summary>
+    /// Rozdvojuje se u téhle zastávky řádek na příjezd a odjezd?
+    /// </summary>
+    /// <remarks>
+    /// Rozhodují atributy trasy `P` („podtrženo s příjezdem a odjezdem") a `J` („s příjezdem
+    /// a odjezdem") - vložený řádek staví podle nich už Caché (`LinkovyJrAd.zdvojit`).
+    /// </remarks>
+    internal static bool JeRozdvojena(LineStopData s) =>
+        s.Atributy.Contains("P") || s.Atributy.Contains("J");
+
+    /// <summary>
     /// Nadpisy popisnych sloupcu - rozpadle zony dostanou <b>jeden spolecny</b> pres vsechny sve dily.
     /// </summary>
     /// <remarks>
@@ -1675,15 +1697,59 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var vzhled = new DirectionArrowRenderer.Vzhled(
                 popisne[ci].DataStyle.TextColor,
                 SipkaTloustkaMm, SipkaHrotMm, ArrowHeadShape.Filled, LineStyle.Solid);
-            // Držák se v samostatném sloupci nekreslí - proto `drzakOd == caraX`.
-            DirectionArrowRenderer.Draw(ctx, vzhled, stred, stred, yZacatek, yKonec,
-                HrotDoluUSipky(ci, indexNazvu, mrizka.ZrcadlenychSpoju > 0));
+            bool hrotDolu = HrotDoluUSipky(ci, indexNazvu, mrizka.ZrcadlenychSpoju > 0);
+
+            // Šipka se přeruší tam, kde ve sloupci stojí „př"/„od" - jinak by je přejela.
+            var useky = UsekySipky(plan, ci, yBlokuMm, yZacatek, yKonec);
+            for (int i = 0; i < useky.Count; i++)
+            {
+                // Hrot patří na konec šipky: dolů na poslední úsek, nahoru na první.
+                bool hrot = hrotDolu ? i == useky.Count - 1 : i == 0;
+                // Držák se v samostatném sloupci nekreslí - proto `drzakOd == caraX`.
+                DirectionArrowRenderer.Draw(ctx, vzhled, stred, stred,
+                    useky[i].Od, useky[i].Do, hrotDolu, hrot);
+            }
         }
     }
 
-    /// <summary>Tloušťka a hrot šipky - shodné s vývěskou, ať vypadá stejně v obou sestavách.</summary>
-    private const float SipkaTloustkaMm = 0.3f;
-    private const float SipkaHrotMm = 1.5f;
+    /// <summary>
+    /// Svislé úseky šipky - celý rozsah bez řádků, kde ve sloupci stojí text („př"/„od").
+    /// </summary>
+    /// <remarks>
+    /// Legacy tam text zapíše **místo** dílu šipky (`JRapiLinPrtWin.mac:3075`), takže čára
+    /// v tom místě není. U nás se šipka kreslí až přes hotové řádky, takže by je přejela.
+    /// </remarks>
+    private static List<(float Od, float Do)> UsekySipky(List<RowSpec> plan, int sloupec,
+        float yBlokuMm, float yZacatek, float yKonec)
+    {
+        var useky = new List<(float, float)>();
+        float zacatekUseku = yZacatek, y = yBlokuMm;
+        foreach (var radek in plan)
+        {
+            // ⚠️ Hledá se **jen** „př"/„od", ne libovolný neprázdný text. Index do `Cells` se
+            // s indexem popisného sloupce rozejde (kilometry se rozpadají na podsloupce), takže
+            // „něco tam je" trefí i čas spoje - a šipka se rozseká na kousky (nález 10. 9.).
+            bool maText = sloupec < radek.Cells.Count
+                          && radek.Cells[sloupec].Text is "př" or "od";
+            if (maText && y > zacatekUseku) useky.Add((zacatekUseku, y));
+            if (maText) zacatekUseku = y + radek.HeightMm;
+            y += radek.HeightMm;
+        }
+        if (yKonec > zacatekUseku) useky.Add((zacatekUseku, yKonec));
+        return useky.Count > 0 ? useky : [(yZacatek, yKonec)];
+    }
+
+    /// <summary>
+    /// Tloušťka a hrot šipky směru.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Hrot je <b>menší než u vývěsky</b> (nález Jan 10. 9.). Do té doby se sdílel „ať vypadá
+    /// stejně v obou sestavách", jenže sloupec šipky má v linkové tabulce jen 4 mm - hrot 1,5 mm
+    /// v něm zabral přes třetinu šířky a působil těžce. Vývěska má na šipku víc místa, takže tam
+    /// původní rozměr zůstává.
+    /// </remarks>
+    private const float SipkaTloustkaMm = 0.1f;
+    private const float SipkaHrotMm = 0.7f;
 
     /// <summary>
     /// Šířka, po kterou tabulka opravdu sahá - <b>ne šířka prvku</b>.

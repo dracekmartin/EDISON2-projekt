@@ -79,7 +79,10 @@ public class SipkaSmeruLinkovaTests
         for (int y = 0; y < bmp.Height; y++)
         {
             var c = bmp.GetPixel(x, y);
-            if (c.Red >= 100 || c.Green >= 100 || c.Blue >= 100) continue;
+            // ⚠️ Práh je „znatelně tmavší než papír", ne „skoro černá". Šipka je tenká 0,1 mm
+            // (rozhodnutí Jan 10. 9. - měla vypadat jako tah písma), takže ji vyhlazování vykreslí
+            // světle šedě; s prahem 100 ji test přestal vidět a hlásil, že šipka chybí.
+            if (c.Red >= 200 || c.Green >= 200 || c.Blue >= 200) continue;
             if (prvni < 0) prvni = y;
             posledni = y;
         }
@@ -118,10 +121,19 @@ public class SipkaSmeruLinkovaTests
                     Assert.Fail($"skrytý sloupec šipky mění obrázek na {x / MmToPx:0.#}, {y / MmToPx:0.#} mm");
     }
 
-    /// <summary>Výchozí stav je skrytý, aby migrace nezměnila vzhled hotových šablon.</summary>
+    /// <summary>
+    /// Sloupec šipky je ve výchozím stavu zapnutý.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Do 10. 9. byl skrytý, „aby migrace nezměnila vzhled hotových šablon". Obrátilo se to
+    /// (rozhodnutí Jan 10. 9.), protože týž sloupec nese `př`/`od` u rozdvojené zastávky - a to
+    /// je jediné, co příjezd od odjezdu odliší; skrytý sloupec tu informaci schová každému, kdo
+    /// o něm neví. Původní důvod tu nestojí v cestě: linková agenda **není v produkci**, takže
+    /// hotové šablony u zákazníka nejsou.
+    /// </remarks>
     [Fact]
-    public void VeVychozichSloupcich_JeSipkaSkryta() =>
-        Assert.False(LineTableElement.GetDefaultColumns()
+    public void VeVychozichSloupcich_JeSipkaZapnuta() =>
+        Assert.True(LineTableElement.GetDefaultColumns()
             .First(c => c.Key == ColumnKeys.Arrow).Visible);
 
     /// <summary>
@@ -232,7 +244,8 @@ public class SipkaSmeruLinkovaTests
             for (int x = x1; x <= x2; x++)
             {
                 var c = bmp.GetPixel(x, y);
-                if (c.Red < 100 && c.Green < 100 && c.Blue < 100) n++;
+                // Práh jako výš: tenká šipka je po vyhlazení světle šedá, ne černá.
+                if (c.Red < 200 && c.Green < 200 && c.Blue < 200) n++;
             }
             if (n > nejvic) { nejvic = n; y0 = y / MmToPx; }
         }

@@ -1,5 +1,31 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B136` Rozdvojená zastávka - příjezd a odjezd (hotovo 10. 9. 2026)
+
+Zadání znělo „název se u zdvojeného řádku píše dvakrát, postskript jednou". ⚠️ **Neplatilo**:
+prvek název na příjezdovém řádku mazal, takže se tiskl jednou. Skutečná mezera byla jinde - **nešlo
+poznat, který ze dvou časů je příjezd a který odjezd**.
+
+Uděláno: `př` / `od` ve sloupci šipky (parita `JRapiLinPrtWin.mac:3075`), popisné sloupce
+zopakované na obou řádcích (tvar windowsového tisku), šipka směru u těch řádků přerušená, sloupec
+šipky zapnutý ve výchozím stavu, šipka zeštíhlená na 0,1 / 0,7 mm.
+
+Rozhodnutí, která u toho padla:
+
+- **Rovnou windowsový tvar, bez přepínače** (Jan 10. 9.). Nejdřív k tomu vzniklo zaškrtávátko
+  „Název u obou řádků" s výchozím dnešním chováním - jenže to dnešní chování **nemá ani jedna
+  varianta starého tisku**, takže nebylo co zachovávat. Volba přijde, až budou obě varianty.
+- **Sloupec šipky defaultně zapnutý.** Byl skrytý „aby migrace nezměnila vzhled hotových šablon";
+  linková agenda není v produkci, takže ten důvod nestojí proti tomu, že bez sloupce je `př`/`od`
+  neviditelné.
+
+⚠️ **Poučení:** popis v roadmapě říkal, co je vidět v **datech** (název je tam na obou řádcích),
+ne co je na papíře. Tři kola dotazů stálo právě to - než se přinesly výřezy obou starých variant,
+mluvil každý o něčem jiném.
+
+Postskriptový tvar (sloučené buňky svisle na střed + úsečka mezi časy) zůstává jako `B140`.
+Detail v `changelog.md` 10. 9. (9).
+
 ## `B126` Vlnovka „jede jinudy" a svislice „projíždí" (hotovo 10. 9. 2026)
 
 V buňce spoje se tisklo doslova `|` a `<`; starý papírový tisk je kreslí glyfem. Mapování

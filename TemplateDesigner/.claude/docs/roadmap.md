@@ -116,10 +116,13 @@ takže nejde o práci, ale o doklad.
   ukázat se 10. 9. zahodil, viz `B130` v [`roadmap-archive.md`](roadmap-archive.md).
   Podklad: [`§17.7`](linkovy-knizni-jr-implementace-analyza.md).
 
-- **`B136` Název zastávky jednou u zdvojeného řádku příjezd/odjezd** [S] (požadavek 9. 9.).
-  Postskript píše u zastávky s rozděleným příjezdem a odjezdem název jednou, my dvakrát.
-  `§13.4` bod 7 to odložil s „není poptávka ani tiket"; poptávka teď je. Podtržení téhož řádku
-  (`PATCH,podtrzeniPaJ`, zapnuté na jediné lince z 93 tisíc) zůstává odložené.
+- **`B140` Rozdvojená zastávka v postskriptovém tvaru** [M] (zjištěno 10. 9. při `B136`).
+  Dnes tiskneme tvar **windowsového** návrháře: popisné sloupce zopakované na obou řádcích.
+  **Postskript to dělá jinak** a vypadá to líp: km, tarifní číslo i název **sloučené přes oba
+  řádky svisle na střed**, `př`/`od` nahoře a dole a v časových sloupcích **vodorovná úsečka**
+  mezi příjezdem a odjezdem. Doloženo výřezem ze staré sestavy 330535.
+  ⚠️ Potřebuje **sloučení buňky přes řádky** v jádru tabulky (`RowPlanRenderer`), což dnes neumí -
+  proto to nešlo dodělat rovnou. Až to bude, přidat k prvku volbu mezi oběma tvary.
 
 - **`B137` Prefix IDS u označení zóny** [M] (požadavek 9. 9.). Linka přes dvě IDS se stejně
   číslovanými zónami je v tisku nerozeznatelná. Dnes umíme jen opak - písmeno ze zóny **odebrat**
