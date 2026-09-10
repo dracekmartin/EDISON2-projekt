@@ -103,13 +103,6 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B130` Není vidět, kam se dělí místo na stránce** [M] (podnět Jan 7. 9.) - **čeká na tvar,
-  ne na kód.** O stránku navíc rozhodne milimetr v hlavičce (sekce „Každá stránka" se odečítá
-  z každé stránky) a uživatel to nemá kde přečíst. ⚠️ **Trvale viditelný popisek u stránky se
-  zkusil 10. 9. a zahodil** - proč a co zkusit místo toho: [`roadmap-archive.md`](roadmap-archive.md).
-  Odblokuje to konkrétní případ z praxe, kde ta informace chybí, nebo nápad, jak ji ukázat jen
-  v okamžiku, kdy ji uživatel hledá. `B135` na tom stojí.
-
 - **`B134` Sekce, která se opakuje na každé stránce a přitom plave za obsahem** [M]
   (požadavek Jan 7. 9.: „poznámky musí být na každé stránce a hned pod tabulkou"). Dnes to jde jen
   jedno z toho: „Jednou" plave za obsahem, „Každá stránka" se umístí na **spodní hranu** stránky
@@ -151,7 +144,8 @@ takže nejde o práci, ale o doklad.
   padnout tam, kde zastávka má příjezd i odjezd, a nemá vzniknout vůbec, když by na další část
   zbyly dvě zastávky. Postskript řez posouvá zpátky, dokud netrefí řádek bez dat; my řežeme na
   kterékoli hranici řádku. Rozhodnuto: **žádné „zadej počet spojů"**, má se to rozhodnout samo
-  (Jan 9. 9.). ⚠️ Postavit až nad `B130` - dělení dnes vychází z výšky sekce, kterou nikdo nevidí.
+  (Jan 9. 9.). ⚠️ Dělení dnes vychází z výšky sekce, kterou nikdo nevidí - pokus tu informaci
+  ukázat se 10. 9. zahodil, viz `B130` v [`roadmap-archive.md`](roadmap-archive.md).
   Podklad: [`§17.7`](linkovy-knizni-jr-implementace-analyza.md).
 
 - **`B136` Název zastávky jednou u zdvojeného řádku příjezd/odjezd** [S] (požadavek 9. 9.).
