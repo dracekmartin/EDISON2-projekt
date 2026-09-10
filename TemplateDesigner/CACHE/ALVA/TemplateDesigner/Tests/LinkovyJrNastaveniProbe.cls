@@ -579,6 +579,68 @@ ClassMethod DelenaLinkaVyskyt(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Podklad k `B127`: rozpad voleb dělené linky **podle hodnot** a ke každé kombinaci linka
+/// s **nejvíc spoji** - tedy ta, kde se dělení opravdu projeví. Linka, která se do šířky vejde,
+/// by rozdíl neukázala, i kdyby volbu měla.
+ClassMethod DelenaLinkaPriklady(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill pocty, nejlepsi, nejvicSpoju
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set firma = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(firma)
+            set s1 = ""
+            for  {
+                set s1 = $order(^[firma]JRL(s1))
+                quit:s1=""
+                continue:'$isvalidnum(s1)
+                set l1 = ""
+                for  {
+                    set l1 = $order(^[firma]JRL(s1, l1))
+                    quit:l1=""
+                    continue:'$data(^[firma]JRL(s1, l1, "I"))
+
+                    // Kolik má linka spojů dohromady - podle toho se pozná, jestli se dělí.
+                    set spoju = 0
+                    for smer = "T", "Z" {
+                        set sp = ""
+                        for  {
+                            set sp = $order(^[firma]JRL(s1, l1, smer, sp))
+                            quit:sp=""
+                            set:$isvalidnum(sp) spoju = spoju + 1
+                        }
+                    }
+
+                    for ki = 1:1:3 {
+                        set klic = $piece("ONEPAG,Hlava&pozN,Smer_1_stranA", ",", ki)
+                        set hod = $select(klic = "ONEPAG": +$data(^[firma]JRL(s1, l1, "PATCH", klic)),
+                                          1: +$get(^[firma]JRL(s1, l1, "PATCH", klic)))
+                        set pocty(klic, hod) = $get(pocty(klic, hod)) + 1
+                        continue:spoju'>+$get(nejvicSpoju(klic, hod))
+                        set nejvicSpoju(klic, hod) = spoju
+                        set nejlepsi(klic, hod) = firma_" / "_l1_" ("_spoju_" spojů)"
+                    }
+                }
+            }
+        }
+
+        for ki = 1:1:3 {
+            set klic = $piece("ONEPAG,Hlava&pozN,Smer_1_stranA", ",", ki)
+            set hod = ""
+            for  {
+                set hod = $order(pocty(klic, hod))
+                quit:hod=""
+                set ^||ML("OUT", $increment(^||ML("OUT"))) =
+                    klic_" = "_hod_": "_pocty(klic, hod)_" linek, nejvíc spojů: "_$get(nejlepsi(klic, hod))
+            }
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše ke každému atributu spoje jednu linku, kde se vyskytuje - podklad pro rozšíření sady.
 ClassMethod AtributyLinky(ByRef sys As %String) As %Status
 {

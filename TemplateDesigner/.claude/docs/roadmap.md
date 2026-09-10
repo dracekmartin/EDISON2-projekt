@@ -109,8 +109,9 @@ takže nejde o práci, ale o doklad.
   (`ONEPAG`) **24 191×**, hlavička a poznámky pro směr/část (`Hlava&pozN`) **33 744×**, směr
   na stranu (`Smer_1_stranA`) **17 951×**. Ruční zlom (`ZLOM`) jen **3×** - ten zůstává odložený.
   Měření opakovatelné: `LinkovyJrNastaveniProbe.DelenaLinkaVyskyt`.
-  ⚠️ **Další krok pořád není kód**, ale porovnat každou z těch tří s tím, co šablona umí dnes -
-  „směr na stranu" může být náš vypnutý obousměrný tisk, „hlavička pro směr" otázka sekcí.
+  ⚠️ **Další krok pořád není kód**, ale porovnat každou z těch tří se starým výtiskem - „směr na
+  stranu" může být náš vypnutý obousměrný tisk, „hlavička pro směr" otázka sekcí. Čísla, linky
+  k vyzkoušení a co na nich porovnat: [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
 
 - **`B135` Řez tabulky nemá padat doprostřed zastávky** [M] (podnět 9. 9.). Zlom má přednostně
   padnout tam, kde zastávka má příjezd i odjezd, a nemá vzniknout vůbec, když by na další část

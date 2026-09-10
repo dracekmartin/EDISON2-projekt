@@ -1530,6 +1530,48 @@ kapacitě a zvlášť počet spojů v každém směru. Výška v té podmínce n
 - Když má linka zakázané prázdné sloupce, postskript je při těsném vejití **odebere**
   (`uprFreeTZ`) - jejich volba „vkládat prázdné sloupce" tam slouží jako záchrana.
 
+### 17.4b Dělená linka - co to je, jak často a na čem to vyzkoušet (změřeno 10. 9. 2026)
+
+Podklad k `B127`. **Dělení doprava:** když se sloupce spojů nevejdou do šířky, starý tisk rozdělí
+linku na části a **každá část dostane celý seznam zastávek**. Svislé dělení podle zastávek je jiná
+věc (`B135`). Rozhodnutí o vejití je u postskriptu celé o šířce, viz 17.4.
+
+Tři volby u linky (`gSetLinPrt` dta 21-23, uložené v `^JRL(sku,lin,"PATCH",…)`), změřené přes
+šest firem - **93 135 linek**:
+
+| Volba | Klíč | Hodnota | Linek | Nejvíc spojů (na téhle se to projeví) |
+|---|---|---|---|---|
+| Tisk na jednu stranu | `ONEPAG` | zapnuto | **24 191** | `VS_CSAD / 945005` (155 spojů) |
+| Hlavička a poznámky | `Hlava&pozN` | 1 = název a poznámky **pro směr** | **27 600** | `VS_CSAD / 470390` (183) |
+| | | 2 = název a poznámky **pro část** | **6 125** | `VS_CSAD / 862783` (138) |
+| | | 3 = jen poznámky pro směr | 17 | `CB_GWBUS / 320145` (87) |
+| | | 4 = jen poznámky pro část | 2 | `ZL_KOVED / 947621` (14) |
+| Směr na stranu | `Smer_1_stranA` | zapnuto | **17 951** | `VS_CSAD / 470390` (183) |
+| Ruční zlom na tč | `ZLOM` | zadané tč | **3** | `CB_CSADAD / 390210` (tč 43) |
+
+Pro porovnání: linka **bez** kterékoli volby s nejvíc spoji je `SKNI_MHDNITRA / 0000024`
+(270 spojů). Měření se opakuje `LinkovyJrNastaveniProbe.DelenaLinkaVyskyt` a `…Priklady`.
+
+**Co z čísel plyne:**
+
+- ⚠️ **Není to okrajové nastavení jako v `B98`** - třetina linek. Předpoklad, že to dopadne jako
+  ruční zlom (3 linky), neplatil.
+- **Hodnoty 3 a 4 u `Hlava&pozN` prakticky neexistují** (17 a 2 linky). Reálné jsou jen „pro směr"
+  a „pro část".
+- ⚠️ **`VS_CSAD` není v přepínači firem** návrháře, takže na těch nejlepších příkladech jde
+  porovnat jen starý tisk. Z firem, které máme, je nejlepší `CB_GWBUS / 320145`.
+
+**Co ověřit na výtisku, než se něco napíše** - u každé volby jde o to, jestli u nás totéž
+nedělá už něco jiného:
+
+| Volba | Podezření, čím to u nás je | Co na výtisku porovnat |
+|---|---|---|
+| Směr na stranu | **vypnutý obousměrný tisk** (parametr sestavy) | vyjde stará sestava se `Smer_1_stranA` stejně jako naše s vypnutým obousměrným tiskem? |
+| Hlavička a poznámky pro směr / pro část | **sekce** - „Každá stránka" vs „Jednou", plus `B134` | opakuje stará sestava záhlaví a legendu u každé části, nebo jen jednou za směr? |
+| Tisk na jednu stranu | **nemáme nic** - my dělíme podle šířky prvku vždycky | co stará sestava udělá, když se to na jednu stranu nevejde - zmenší, ořízne, nebo dělí i tak? |
+
+Teprve podle toho se pozná, jestli je `B127` jedna chybějící volba, nebo tři.
+
 ### 17.5 Co umíme my a postskript ne
 
 Není to jednosměrný seznam - stojí za to to na školení říct:
