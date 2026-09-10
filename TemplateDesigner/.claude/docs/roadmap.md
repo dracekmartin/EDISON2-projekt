@@ -103,13 +103,12 @@ takže nejde o práci, ale o doklad.
 
 ### Ostatní
 
-- **`B130` Není vidět, kam se dělí místo na stránce** [M] (podnět Jan 7. 9. při stavbě šablony).
-  Sekce „Každá stránka" se odečítá z **každé** stránky, zbytek se dělí po celých řádcích tabulky
-  a blok se nesmí zlomit jinde než v místě, které sám nabídne - takže o stránku navíc rozhodne
-  milimetr v hlavičce a uživatel to nemá kde přečíst. Změřeno: zmenšení hlavičky o 1 mm sundalo
-  sestavu ze 4 stránek na 2, protože přidalo jeden řádek na stránku.
-  Hotovo když: uživatel vidí rozpočet stránky (hlavička / patička / na obsah zbývá) a dostane
-  hlášení, když stránka končí velkým prázdnem, protože se další nedělitelný díl nevešel.
+- **`B130` Není vidět, kam se dělí místo na stránce** [M] (podnět Jan 7. 9.) - **čeká na tvar,
+  ne na kód.** O stránku navíc rozhodne milimetr v hlavičce (sekce „Každá stránka" se odečítá
+  z každé stránky) a uživatel to nemá kde přečíst. ⚠️ **Trvale viditelný popisek u stránky se
+  zkusil 10. 9. a zahodil** - proč a co zkusit místo toho: [`roadmap-archive.md`](roadmap-archive.md).
+  Odblokuje to konkrétní případ z praxe, kde ta informace chybí, nebo nápad, jak ji ukázat jen
+  v okamžiku, kdy ji uživatel hledá. `B135` na tom stojí.
 
 - **`B131` Dvě různá „víc stránek" se pletou** [M] (nález Jan 7. 9.). Náhled má **stránky dat**
   (u linkového JŘ jeden směr = jedna stránka, u vývěsky zastávka × směr) v přepínači nad sebou

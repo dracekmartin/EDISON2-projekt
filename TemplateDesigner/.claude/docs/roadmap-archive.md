@@ -1,5 +1,31 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B130` Popisek zbylého místa u stránky - ZKUSILO SE A ZAHODILO (rozhodnutí Jan 10. 9. 2026)
+
+Postavené a po vyzkoušení vrácené: engine počítal, kolik na stránce zbylo a kolik potřebovala
+část, která se tam nevešla, a náhled to psal pod každou dotčenou stránku.
+
+**Co se ukázalo při zkoušení, dvě věci:**
+
+1. **Dvě čísla vedle sebe čte uživatel jako chybu tisku.** „Zbylo 47 mm, další část potřebuje
+   17 mm" vypadá, že se něco nevešlo, i když se to nevešlo správně: tabulka linky nabízí hranice
+   bloků jako **přednostní** řez (`Zlom.Silny`), takže další blok jde celý na novou stranu a dole
+   zbude klidně 47 mm. Přepsáno na jedno číslo („chybí 3 mm, aby se sem vešla další část")
+   a hlášeno jen tam, kde o řezu rozhodlo místo, ne struktura.
+2. **Ani pak to nepomohlo.** Hodnota je soustředěná do jednoho okamžiku - „snažím se ušetřit
+   stránku" - ale cena se platí pořád: text u každé stránky vidí i ten, kdo jen kontroluje výstup,
+   a vypadá jako upozornění na něco, co je v pořádku. To je proti tomu, jak se hlásí ostatní věci
+   (přetečení, chybějící font): ty se ukážou, jen když se něco pokazilo. Navíc na linkové tabulce
+   se řeže skoro vždy na hranicích bloků, takže akční případ skoro nenastane.
+
+**Čím to odblokovat**: konkrétní případ z praxe, kde ta informace chybí, nebo jiný tvar. Nabízel se
+**přepínač v zobrazení** - uživatel si rozpočet stránky zapne, když ladí rozvržení, a jinak je
+vypnutý; hodnota v tom okamžiku plná, mimo něj nulová.
+
+Změřeno a stojí to za zapamatování: A4 (plocha 277 mm), hlavička „každá stránka", obsah 474 mm →
+hlavička 41 mm dá 3 stránky, 40 mm dá 2. Hlavička se odečítá z **každé** stránky, takže milimetr
+v ní stojí tolik milimetrů, kolik je stránek.
+
 ## `B139` Sekce „držet pohromadě" vyšší než stránka - NEDĚLÁ SE (rozhodnutí Jan 10. 9. 2026)
 
 Vzniklo při průzkumu `B133` jako domnělá tichá ztráta obsahu: engine takovou sekci položí na jednu
