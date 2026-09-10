@@ -5,12 +5,15 @@ using System.Xml;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Čtení/zápis EDISONini.xml + IsConfigured() (first-launch detekce). Píše reálný
-/// EDISONini.xml vedle test exe - po každém testu uklidíme.
+/// Čtení/zápis EDISONini.xml + IsConfigured() (first-launch detekce). Cesta se přesměruje
+/// do temp adresáře (seam SettingsLoader.FilePath) - bin adresář sdílí běžící exe.
 /// </summary>
 public class SettingsLoaderTests : IDisposable
 {
-    private static string Path => System.IO.Path.Combine(AppContext.BaseDirectory, "EDISONini.xml");
+    private readonly string _dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
+    private readonly string _originalFilePath;
+
+    private string Path => System.IO.Path.Combine(_dir, "EDISONini.xml");
 
     // Plná legacy struktura - connection@port je superserver, shell musí číst @restport.
     // securedMode legacy setup nezapisuje (edituje se ručně) - zápis ho musí zachovat.
@@ -25,12 +28,17 @@ public class SettingsLoaderTests : IDisposable
         </edison>
         """;
 
-    public SettingsLoaderTests() => Cleanup();
-    public void Dispose() => Cleanup();
-
-    private static void Cleanup()
+    public SettingsLoaderTests()
     {
-        if (File.Exists(Path)) File.Delete(Path);
+        Directory.CreateDirectory(_dir);
+        _originalFilePath = SettingsLoader.FilePath;
+        SettingsLoader.FilePath = Path;
+    }
+
+    public void Dispose()
+    {
+        SettingsLoader.FilePath = _originalFilePath;
+        Directory.Delete(_dir, recursive: true);
     }
 
     [Fact]

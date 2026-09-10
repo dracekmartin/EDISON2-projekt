@@ -59,13 +59,16 @@ namespace EDISONMAIN2.Windows.LoginWindow
                 // Předvyplněné heslo → checkbox zaškrtnutý (uložení se má obnovit při dalším loginu).
                 PasswordBox.Password = initialPassword;
                 RememberBox.IsChecked = true;
-                // Focus (a select) na jméno, ať přihlášení může snadno převzít jiný uživatel.
-                UsernameBox.Focus();
-                UsernameBox.SelectAll();
             }
-            else if (!string.IsNullOrEmpty(initialUsername))
+            switch (LoginWindowLogic.PickInitialFocus(initialUsername, initialPassword))
             {
-                PasswordBox.Focus();   // jen jméno je vyplněné → rovnou na heslo
+                case LoginFocus.Username:
+                    UsernameBox.Focus();
+                    UsernameBox.SelectAll();
+                    break;
+                case LoginFocus.Password:
+                    PasswordBox.Focus();
+                    break;
             }
 
             // Novinky/Wiki jsou auth-free; Školení pre-login bez personalizace (prázdná identita).
@@ -124,7 +127,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
                 // Selhalo předvyplněné zapamatované heslo (změněné jinde) → vyčisti pole,
                 // ať uživatel vidí, že neplatí, a rovnou napíše nové. Caller ho zapomene.
-                if (_initialPassword.Length > 0 && PasswordBox.Password == _initialPassword)
+                if (LoginWindowLogic.ShouldForgetRememberedPassword(_initialPassword, PasswordBox.Password))
                 {
                     RememberedPasswordRejected = true;
                     PasswordBox.Clear();

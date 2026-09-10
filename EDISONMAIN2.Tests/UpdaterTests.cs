@@ -302,6 +302,27 @@ public class UpdaterTests
         Assert.Contains("NucenyUpdateTime=66234,2", args);
     }
 
+    [Fact]
+    public void BuildArguments_ParsedByUpdaterArgs_RoundTripsWithoutUnknownTokens()
+    {
+        // Drift guard obou stran kontraktu: přejmenování klíče na jedné straně by prošlo
+        // oběma sadami zeleně - tady se producent a konzument (source-link) potkají.
+        var unknown = new List<string>();
+
+        var parsed = EDUPDATE2.UpdaterArgs.Parse(
+            Updater.BuildArguments(@"\\server\Edison", "260901.1", forced: true, forcedStamp: "66234,2"),
+            unknown.Add);
+
+        Assert.Empty(unknown);
+        Assert.Equal(@"\\server\Edison", parsed.SourcePath);
+        Assert.Equal(AppContext.BaseDirectory.TrimEnd(System.IO.Path.DirectorySeparatorChar), parsed.TargetPath);
+        Assert.Equal("260901.1", parsed.Version);
+        Assert.Equal("EDISONMAIN2", parsed.WaitProcess);
+        Assert.Equal("EDISONMAIN2.exe", parsed.RunExe);
+        Assert.True(parsed.NucenyUpdate);
+        Assert.Equal("66234,2", parsed.NucenyUpdateTime);
+    }
+
     private class NoticeUpdater : Updater
     {
         public string? Content { get; set; }

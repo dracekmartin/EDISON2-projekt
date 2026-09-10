@@ -13,8 +13,9 @@ internal static class SupportWidgetHost
 {
     internal const string ScreenshotModeVariable = "EDISON_SCREENSHOT_MODE";
 
-    // Čte se jednou - hodnota platí per proces, aktivace = nastavit před spuštěním exe.
-    internal static bool ScreenshotMode { get; } =
+    // Aktivace = nastavit env před spuštěním exe (v produkci per proces konstantní);
+    // čte se při přístupu, aby šel mód ověřit testem bez restartu procesu.
+    internal static bool ScreenshotMode =>
         IsEnabled(Environment.GetEnvironmentVariable(ScreenshotModeVariable));
 
     internal static bool IsEnabled(string? value)

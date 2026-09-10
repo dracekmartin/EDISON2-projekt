@@ -17,7 +17,8 @@ public class SettingsLoader
 
     private const string FileName = "EDISONini.xml";
 
-    private static string MainPath => Path.Combine(AppContext.BaseDirectory, FileName);
+    /// <summary>Settable jen kvůli testům - produkce čte EDISONini.xml vedle exe.</summary>
+    internal static string FilePath { get; set; } = Path.Combine(AppContext.BaseDirectory, FileName);
 
     /// <summary>
     /// First-launch indikátor: bez souboru s vyplněnou <c>connection</c> (server + restport)
@@ -50,8 +51,8 @@ public class SettingsLoader
     public void Save()
     {
         var xmlDoc = new XmlDocument();
-        if (File.Exists(MainPath))
-            xmlDoc.Load(MainPath);
+        if (File.Exists(FilePath))
+            xmlDoc.Load(FilePath);
 
         var edison = xmlDoc.DocumentElement;
         if (edison is null || edison.Name != "edison")
@@ -74,7 +75,7 @@ public class SettingsLoader
         database.SetAttribute("name", Server.Database);
         database.SetAttribute("idfa", Server.IdFa);
 
-        xmlDoc.Save(MainPath);
+        xmlDoc.Save(FilePath);
         Current = this;
     }
 
@@ -94,11 +95,11 @@ public class SettingsLoader
     private static SettingsLoader Read()
     {
         var settings = new SettingsLoader { Server = { Host = "", Port = 0 } };
-        if (!File.Exists(MainPath)) return settings;
+        if (!File.Exists(FilePath)) return settings;
         try
         {
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(MainPath);
+            xmlDoc.Load(FilePath);
             var server = settings.Server;
 
             if (xmlDoc.SelectSingleNode("edison/connection") is XmlElement connection)

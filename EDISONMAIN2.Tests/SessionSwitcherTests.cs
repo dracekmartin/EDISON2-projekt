@@ -37,6 +37,8 @@ public class SessionSwitcherTests
         public MLRest? CapturedPromptConnection { get; private set; }
         public LicenceAcquireOutcome SessionOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
         public IMLRest NewSessionMLRest { get; set; } = MLRestMocks.Create();
+        public readonly List<string> Calls = [];
+        public IMLRest? FlushedWith { get; private set; }
 
         protected override LoginResult? PromptLogin(MLRest connection)
         {
@@ -44,8 +46,17 @@ public class SessionSwitcherTests
             return PromptResult;
         }
 
+        protected override void FlushTelemetry(IMLRest? mlRest)
+        {
+            Calls.Add("flush");
+            FlushedWith = mlRest;
+        }
+
+        protected override void LogoutOldSession(IMLRest? mlRest) => Calls.Add("logout");
+
         protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
         {
+            Calls.Add("establish");
             CapturedConnection = conn;
             return new SessionContext(NewSessionMLRest, login, () => null);
         }
@@ -142,6 +153,38 @@ public class SessionSwitcherTests
         Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
         Assert.Same(originalMLRest, services.MLRest);
         Assert.Null(s.WiredMLRest);   // nová session nevznikla
+    }
+
+    [Fact]
+    public void Switch_Success_FlushesTelemetryThenLogsOutThenEstablishes()
+    {
+        // Deklarované pořadí: flush jde pod starou session (server bere userID z ní),
+        // logout uvolní ACTIVITY zámek starého uživatele, teprve pak vzniká nová session.
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var originalMLRest = services.MLRest;
+        var s = TestableSessionSwitcher.Create(services, () => true);
+        s.PromptResult = ReauthLogin();
+
+        s.Switch();
+
+        Assert.Equal(["flush", "logout", "establish"], s.Calls);
+        Assert.Same(originalMLRest, s.FlushedWith);
+    }
+
+    [Fact]
+    public void Switch_CancelledPromptOrVeto_NoFlushNoLogout()
+    {
+        var cancelled = TestableSessionSwitcher.Create(
+            ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        cancelled.PromptResult = null;
+        cancelled.Switch();
+        Assert.Empty(cancelled.Calls);
+
+        var vetoed = TestableSessionSwitcher.Create(
+            ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => false);
+        vetoed.PromptResult = ReauthLogin();
+        vetoed.Switch();
+        Assert.Empty(vetoed.Calls);
     }
 
     [Fact]

@@ -39,7 +39,7 @@ public class WindowOwnershipTests
     [Fact]
     public void IsFrameworkOwned_DockWindow_True()
     {
-        RunSta(() => Assert.True(FrameworkWindows.IsFrameworkOwned(new FakeDockWindow())));
+        EDTesting.Sta.Run(() => Assert.True(FrameworkWindows.IsFrameworkOwned(new FakeDockWindow())));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class WindowOwnershipTests
     {
         // Holé `Window` leží v System.Windows, ale patří aplikaci - panel Podpora ho dostat má
         // a `CloseAll` ho zavřít smí. Okna frameworku jsou vždy podtypy.
-        RunSta(() => Assert.False(FrameworkWindows.IsFrameworkOwned(new Window())));
+        EDTesting.Sta.Run(() => Assert.False(FrameworkWindows.IsFrameworkOwned(new Window())));
     }
 
     [Fact]
@@ -55,25 +55,25 @@ public class WindowOwnershipTests
     {
         // Marker IOverlayWindow EDControls tohle nepokryje - AvalonDock má vlastní typ téhož
         // krátkého názvu, takže `w is not IOverlayWindow` na okně docku projde.
-        RunSta(() => Assert.True(WindowNavigator.IsInternalWindow(new FakeDockWindow())));
+        EDTesting.Sta.Run(() => Assert.True(WindowNavigator.IsInternalWindow(new FakeDockWindow())));
     }
 
     [Fact]
     public void ShouldClose_DockWindow_False()
     {
-        RunSta(() => Assert.False(WindowNavigator.ShouldClose(new FakeDockWindow(), new Window())));
+        EDTesting.Sta.Run(() => Assert.False(WindowNavigator.ShouldClose(new FakeDockWindow(), new Window())));
     }
 
     [Fact]
     public void ShouldClose_EDControlsOverlay_False()
     {
-        RunSta(() => Assert.False(WindowNavigator.ShouldClose(new FakeOverlayWindow(), new Window())));
+        EDTesting.Sta.Run(() => Assert.False(WindowNavigator.ShouldClose(new FakeOverlayWindow(), new Window())));
     }
 
     [Fact]
     public void ShouldClose_MainWindow_False()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var main = new Window();
 
@@ -84,23 +84,9 @@ public class WindowOwnershipTests
     [Fact]
     public void ShouldClose_ModuleWindow_True()
     {
-        RunSta(() => Assert.True(WindowNavigator.ShouldClose(new Window(), new Window())));
+        EDTesting.Sta.Run(() => Assert.True(WindowNavigator.ShouldClose(new Window(), new Window())));
     }
 
     private sealed class FakeOverlayWindow : Window, IOverlayWindow;
 
-    // Spustí akci na dedikovaném STA vlákně (Window to vyžaduje) a propaguje výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

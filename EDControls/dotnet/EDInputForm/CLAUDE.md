@@ -35,20 +35,16 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
 
 - Host hooky: color/image picker dodává host přes static `PickColorImpl` /
   `PickImageImpl` (EDControls je WPF-only, dialog nemá). Null → tlačítko nic nedělá.
-- Eventy `SchemaLoaded`, `ButtonClicked`, `FieldChanged`: `FieldChanged` fajruje při
-  **každé** změně Value bez ohledu na `ValidateOnChange`; `ButtonClicked` při každém
-  kliku (server roundtrip jen s `ValidateOnChange=1`). `Initialized` je deprekovaný alias
-  `SchemaLoaded` (stínil `FrameworkElement.Initialized`) - fajruje pořád, smaže se až při
-  koordinovaném publish obou aplikací.
+- Eventy: `FieldChanged` fajruje při **každé** změně Value bez ohledu na `ValidateOnChange`;
+  `ButtonClicked` při každém kliku (server roundtrip jen s `ValidateOnChange=1`). `Initialized`
+  je deprekovaný alias `SchemaLoaded` (stínil `FrameworkElement.Initialized`) - fajruje pořád,
+  smaže se až při koordinovaném publish obou aplikací.
 - Setter `CacheClass` resetuje controller - příští `Init()` načte schema novou třídou.
-- Klientská validace: type-error má prioritu před required; type-check běží hned
-  při setu Value.
-- **Číselné pole (`Number`/`Decimal`) mění při setu `Value` čárku na tečku** - uvnitř i na drátě je
-  hodnota vždy s tečkou, uživatel má ale na numerické klávesnici čárku. Čárka je **vždy desetinná**,
-  nikdy oddělovač tisíců (`NumberStyles.Float`, ne `Number`, jinak „1.500" projde jako 1500).
-  ⚠️ Bez toho se hodnota tiše zkomolila: kontrola brala „1,5" jako 15 a nezčervenala, kdežto host si
-  totéž přečetl jako neplatné a použil svůj fallback. Normalizuje i setter `FieldType`, protože
-  volající nemusí plnit typ před hodnotou.
+- Klientská validace: type-error má prioritu před required; type-check běží hned při setu Value.
+- **Číselné pole (`Number`/`Decimal`) mění při setu `Value` čárku na tečku** (uvnitř i na drátě
+  vždy tečka, numerická klávesnice dává čárku). Čárka je **vždy desetinná**, nikdy oddělovač
+  tisíců (`NumberStyles.Float`, ne `Number` - jinak „1.500" projde jako 1500). Normalizuje
+  i setter `FieldType` - volající nemusí plnit typ před hodnotou.
 - Volitelný `List` dostane implicitní prázdnou položku, povinný ne.
 - `ComboBox` = editable s autocomplete (custom hodnota povolena, items jsou nápověda);
   `List` = strict enum. Renderuje se sdíleným `EDFilterComboBox`.
@@ -58,7 +54,7 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
   stav rozbalení skupin se před hledáním ukládá a po zrušení obnovuje.
 - Enter = Tab (na Buttonu klikne); dialog potvrzuje jen Ctrl+Enter (window-level
   binding hosta). Ctrl+číslice skáče na položku dle `Number` (200 ms buffer).
-- Popup nápovědy (ikona v hlavičkovém pruhu, `HelpCommand`) se generuje z `KeyboardShortcuts`
-  v `EDInputForm.xaml.cs` - **při přidání/změně zkratky aktualizuj tento seznam**.
-  Vypisuj jen reálně nadrátované zkratky (search Enter/Shift+Enter/Esc zatím nefungují).
+- Popup nápovědy (`HelpCommand`) se generuje z `KeyboardShortcuts` v `EDInputForm.xaml.cs` -
+  **při přidání/změně zkratky aktualizuj seznam**; jen reálně nadrátované zkratky
+  (search Enter/Shift+Enter/Esc zatím nefungují).
 - Save při validačních chybách zobrazí popup přes `PopupDisplayer` a vrátí false.

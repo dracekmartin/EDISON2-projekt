@@ -210,4 +210,126 @@ Method TestAddFieldToSpecificGroupUnknownGroupAppends()
 	do $$$AssertEquals(form.GetField("z").number, 2, "z přečíslováno na 2")
 }
 
+/// Round-trip FIELD pozic 10-12, 14 a 19 (editable/visibility/helpText/fileFilter/placeholders)
+/// + GROUP pozice 6 (helpText). Formulář chodí tam a zpět (Validate) - co se tady ztratí,
+/// zmizí uživateli po prvním kole (viz komentář k pozici 19 v Form.ReadFromIn).
+Method TestFieldExtrasRoundTrip()
+{
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+	d form.AddGroup("g", "Skupina")
+	s form.GetGroup("g").helpText = "nápověda skupiny"
+	s f = form.AddText("t", "Text", "hodnota")
+	s f.editable = 0
+	s f.visibility = $$$ItemVisibilityUserHidden
+	s f.helpText = "nápověda pole"
+	s f.placeholders = 1
+	s ff = form.AddFieldToLastGroup("soubor", "Soubor", $$$FieldTypeFile)
+	s ff.fileFilter = $$$FileFilterFolder
+
+	d form.WriteToOut()
+	s idx = ""
+	f { s idx = $o(^||ML("OUT", idx)) q:idx=""  s ^||ML("IN", idx) = ^||ML("OUT", idx) }
+
+	s form2 = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()
+	do $$$AssertEquals(form2.GetGroup("g").helpText, "nápověda skupiny", "GROUP helpText (pozice 6)")
+	s t2 = form2.GetField("t")
+	do $$$AssertEquals(t2.editable, 0, "editable (pozice 10)")
+	do $$$AssertEquals(t2.visibility, $$$ItemVisibilityUserHidden, "visibility (pozice 11)")
+	do $$$AssertEquals(t2.helpText, "nápověda pole", "helpText (pozice 12)")
+	do $$$AssertEquals(t2.placeholders, 1, "placeholders (pozice 19) nesmí zpáteční cestou zmizet")
+	do $$$AssertEquals(form2.GetField("soubor").fileFilter, $$$FileFilterFolder, "fileFilter (pozice 14)")
+}
+
+/// helpTextMode: bez IN subscriptu default tooltip, explicitní column se round-tripuje
+/// (WriteToOut píše string subscript "helpTextMode", ReadFromIn ho čte s fallbackem).
+Method TestHelpTextModeRoundTrip()
+{
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+	d form.AddGroup("g", "Skupina")
+	d form.AddText("t", "Text")
+	s form.helpTextMode = $$$HelpTextModeColumn
+
+	d form.WriteToOut()
+	do $$$AssertEquals(^||ML("OUT","helpTextMode"), $$$HelpTextModeColumn, "WriteToOut píše string subscript")
+	s idx = ""
+	f { s idx = $o(^||ML("OUT", idx)) q:idx=""  s ^||ML("IN", idx) = ^||ML("OUT", idx) }
+
+	do $$$AssertEquals(##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn().helpTextMode, $$$HelpTextModeColumn, "column round-trip")
+
+	k ^||ML("IN")
+	s ^||ML("IN",1) = $lb("FIELD",1,"k","L",$$$FieldTypeText,"v",0,0,"")
+	do $$$AssertEquals(##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn().helpTextMode, $$$HelpTextModeTooltip, "bez subscriptu default tooltip")
+}
+
+/// Zpětná kompatibilita: starší klient pošle krátký $lb (GROUP 4 prvky, FIELD 9 prvků) -
+/// ReadFromIn nesmí spadnout a chybějící pozice dostanou defaulty ($ll>=N větve se přeskočí).
+Method TestShortLegacyListsGetDefaults()
+{
+	s ^||ML("IN",1) = $lb("GROUP",0,"g","G")
+	s ^||ML("IN",2) = $lb("FIELD",1,"k","L",$$$FieldTypeText,"v",0,1,"")
+
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()
+
+	do $$$AssertEquals(form.GetGroup("g").visibility, $$$ItemVisibilityVisible, "GROUP bez pozice 5 -> Visible")
+	s f = form.GetField("k")
+	do $$$AssertEquals(f.value, "v")
+	do $$$AssertEquals(f.required, 1)
+	do $$$AssertEquals(f.editable, 1, "bez pozice 10 -> editable default")
+	do $$$AssertEquals(f.visibility, $$$ItemVisibilityVisible, "bez pozice 11 -> Visible")
+	do $$$AssertEquals(f.placeholders, 0, "bez pozice 19 -> bez placeholderů")
+	do $$$AssertEquals(f.listItems.Count(), 0, "bez pozice 13 -> žádné list items")
+}
+
+/// GetField/GetGroup s neexistujícím klíčem vrací "" - volající na to spoléhá (viz UserProfile).
+Method TestGetFieldGetGroupUnknownKey()
+{
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+	d form.AddGroup("g", "Skupina")
+	d form.AddText("t", "Text")
+
+	do $$$AssertEquals(form.GetField("neexistuje"), "", "GetField neznámý klíč -> prázdno")
+	do $$$AssertEquals(form.GetGroup("neexistuje"), "", "GetGroup neznámý klíč -> prázdno")
+	do $$$AssertEquals(form.GetField("g"), "", "GetField nenajde skupinu")
+	do $$$AssertEquals(form.GetGroup("t"), "", "GetGroup nenajde pole")
+}
+
+/// Builder metody nastavují správný wire typ pole.
+Method TestBuilderMethodsSetFieldType()
+{
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+	d form.AddGroup("g", "Skupina")
+
+	do $$$AssertEquals(form.AddText("t", "T").type, $$$FieldTypeText)
+	do $$$AssertEquals(form.AddBool("b", "B").type, $$$FieldTypeBool)
+	do $$$AssertEquals(form.AddNumber("n", "N").type, $$$FieldTypeNumber)
+	do $$$AssertEquals(form.AddDecimal("d", "D").type, $$$FieldTypeDecimal)
+}
+
+/// Parita konstant wire kontraktu s C# stranou (FieldTypeWire/ItemVisibilityWire/
+/// ParseHelpTextMode testy v EDControls.Tests pinují tytéž hodnoty). Hodnoty jdou po
+/// drátě jako stringy - přejmenování na jedné straně build nechytí, tenhle pin ano.
+Method TestWireConstantsMatchCSharp()
+{
+	do $$$AssertEquals($$$FieldTypeText, "TEXT")
+	do $$$AssertEquals($$$FieldTypeNumber, "NUMBER")
+	do $$$AssertEquals($$$FieldTypeDate, "DATE")
+	do $$$AssertEquals($$$FieldTypeDecimal, "DECIMAL")
+	do $$$AssertEquals($$$FieldTypeBool, "BOOL")
+	do $$$AssertEquals($$$FieldTypeButton, "BUTTON")
+	do $$$AssertEquals($$$FieldTypeList, "LIST")
+	do $$$AssertEquals($$$FieldTypeFile, "FILE")
+	do $$$AssertEquals($$$FieldTypeColor, "COLOR")
+	do $$$AssertEquals($$$FieldTypeComboBox, "COMBOBOX")
+	do $$$AssertEquals($$$FieldTypeImage, "IMAGE")
+	do $$$AssertEquals($$$FileFilterFolder, "$FOLDER")
+	do $$$AssertEquals($$$ListItemSep, "|")
+	do $$$AssertEquals($$$ListKeyValSep, "~")
+	do $$$AssertEquals($$$ItemVisibilityVisible, "0")
+	do $$$AssertEquals($$$ItemVisibilityCollapsed, "1")
+	do $$$AssertEquals($$$ItemVisibilityUserHidden, "2")
+	do $$$AssertEquals($$$ItemVisibilityProgrammerHidden, "3")
+	do $$$AssertEquals($$$HelpTextModeTooltip, "tooltip")
+	do $$$AssertEquals($$$HelpTextModeColumn, "column")
+}
+
 }

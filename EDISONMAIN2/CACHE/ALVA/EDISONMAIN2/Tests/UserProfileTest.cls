@@ -109,6 +109,32 @@ Method TestBeforeSaveUncheckedEmptyOk()
 	do $$$AssertEquals($lg(..OutField("personDir"),9), "", "odškrtnuté použití + prázdná cesta je OK")
 }
 
+/// Server kontroluje jen doslovnou prázdnotu cesty - whitespace projde (existenci
+/// složky ověřuje klient, server nevidí filesystém). Pin skutečného rozdělení rolí.
+Method TestBeforeSaveWhitespacePersonDirPassesServerCheck()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","trigger") = "BeforeSave"
+	set ^||ML("IN",1) = ..Fld("usePersonDir", "BOOL", "1", 1, 1)
+	set ^||ML("IN",2) = ..Fld("personDir", "FILE", " ", 1)
+	set ret = ##class(ALVA.EDISONMAIN2.EDInputForm.UserProfile).Validate(.sys)
+	do $$$AssertEquals(+ret, 0, "Validate nesmí vrátit chybu, got: "_ret)
+
+	do $$$AssertEquals($lg(..OutField("personDir"),9), "", "whitespace cesta serverem projde - existenci řeší klient")
+}
+
+/// Neúplný ^||ML("IN") (chybí personDir) - Validate na něj sahá, výsledkem je in-process
+/// chyba nesená návratovou hodnotou (ret="1~..."), ne pád procesu.
+Method TestValidateIncompleteInputReturnsErrorInRet()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","trigger") = "Change"
+	set ^||ML("IN",1) = ..Fld("usePersonDir", "BOOL", "1", 1, 1)
+	set ret = ##class(ALVA.EDISONMAIN2.EDInputForm.UserProfile).Validate(.sys)
+
+	do $$$AssertEquals(+ret, 1, "chybějící pole formuláře = chyba v ret, got: "_ret)
+}
+
 /// Save je no-op (persist řeší klient) - jen nesmí vrátit chybu.
 Method TestSaveIsNoOp()
 {

@@ -71,14 +71,20 @@ public class SessionLogoutTests
     }
 
     [Fact]
-    public void Logout_QueryThrows_Swallowed()
+    public void Logout_EverythingThrows_Swallowed()
     {
+        // Best-effort až do konce: i když selže ACTIVITY logout i úklid zámků,
+        // ven nesmí nic propadnout (blokovalo by zavření/přepnutí).
         var mlRest = MLRestMocks.Create();
         var clone = MLRestMocks.Create();
         mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
         clone.QueryOrThrow("ALVA.SYS.Login", "Logout", Arg.Any<object[]>())
              .Returns(_ => throw new InvalidOperationException("boom"));
+        clone.QueryOrThrow("ALWA.SYS.Lock", "LockClearExt", Arg.Any<object[]>())
+             .Returns(_ => throw new InvalidOperationException("boom2"));
 
-        SessionLogout.Logout(mlRest);   // best-effort - výjimka se spolkne
+        SessionLogout.Logout(mlRest);
+
+        clone.Received(1).QueryOrThrow("ALWA.SYS.Lock", "LockClearExt", Arg.Any<object[]>());
     }
 }

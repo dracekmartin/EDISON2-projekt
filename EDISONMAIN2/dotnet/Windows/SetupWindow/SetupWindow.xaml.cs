@@ -97,12 +97,11 @@ namespace EDISONMAIN2.Windows.SetupWindow
                 try
                 {
                     var selected = DatabaseCombo.SelectedItem as string;
+                    var databases = _databaseLoader(server, restPort);
                     DatabaseCombo.Items.Clear();
-                    foreach (var database in _databaseLoader(server, restPort))
+                    foreach (var database in databases)
                         DatabaseCombo.Items.Add(database);
-                    DatabaseCombo.SelectedIndex = selected is not null && DatabaseCombo.Items.Contains(selected)
-                        ? DatabaseCombo.Items.IndexOf(selected)
-                        : (DatabaseCombo.Items.Count == 1 ? 0 : DatabaseCombo.SelectedIndex);
+                    DatabaseCombo.SelectedIndex = SetupWizardLogic.PickDatabaseIndex(databases, selected);
                 }
                 catch (Exception ex)
                 {
@@ -126,19 +125,10 @@ namespace EDISONMAIN2.Windows.SetupWindow
         {
             // Validace nezamyká OK - připojení je otestované, uživatel jen doplní pole.
             if (!TryReadConnection(out var server, out var superPort, out var restPort, lockSave: false)) return;
-            if (NameBox.Text.Trim().Length == 0)
+            string database = DatabaseCombo.SelectedItem as string ?? "";
+            if (SetupWizardLogic.ValidateSave(NameBox.Text, database, IdfaBox.Text) is { } saveError)
             {
-                ShowError("Zadejte název připojení.");
-                return;
-            }
-            if (DatabaseCombo.SelectedItem is not string database || database.Length == 0)
-            {
-                ShowError("Vyberte databázi.");
-                return;
-            }
-            if (IdfaBox.Text.Trim().Length == 0)
-            {
-                ShowError("Zadejte IDFa firmy.");
+                ShowError(saveError);
                 return;
             }
 
@@ -172,15 +162,8 @@ namespace EDISONMAIN2.Windows.SetupWindow
         private bool TryReadConnection(out string server, out int superPort, out int restPort, bool lockSave)
         {
             server = ServerBox.Text.Trim();
-            superPort = 0;
-            restPort = 0;
-            string? error = null;
-            if (server.Length == 0)
-                error = "Zadejte server.";
-            else if (!int.TryParse(SuperPortBox.Text.Trim(), out superPort) || superPort <= 0)
-                error = "Zadejte platný port.";
-            else if (!int.TryParse(RestPortBox.Text.Trim(), out restPort) || restPort <= 0)
-                error = "Zadejte platný REST port.";
+            var error = SetupWizardLogic.ValidateConnection(
+                server, SuperPortBox.Text.Trim(), RestPortBox.Text.Trim(), out superPort, out restPort);
 
             if (error is null) return true;
             if (lockSave) Warn(error); else ShowError(error);

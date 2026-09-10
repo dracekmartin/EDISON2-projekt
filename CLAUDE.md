@@ -5,11 +5,11 @@ Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP 
 Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se
 dostávají pouze přes `dotnet publish` s profilem „SingleFileCEdison"
 (`Properties/PublishProfiles/`) - bundle bez volných NuGet DLL. Výjimky drží sdílený
-`SingleFilePublish.targets` v rootu (importují ho oba aplikační csproj i `EDControls.csproj`):
-**`EDControls.dll` je vedle exe volný soubor** sdílený oběma aplikacemi, aby šla nasadit
-samostatně (nové pole v EDInputFormu → do produkce jde DLL + exe, který ho používá; druhý
-exe se nepřebuildí a novou DLL převezme). Cena: **breaking change API znamená publikovat
-i konzumenty** (DLL nikdy samotnou) - viz `EDControls/CLAUDE.md`.
+`SingleFilePublish.targets` v rootu (importují ho EDISONMAIN2, EDUPDATE2, TemplateDesigner
+i EDControls): **`EDControls.dll` je vedle exe volný soubor**, aby šla nasadit samostatně
+(do produkce jde DLL + exe, který ji používá; druhý exe se nepřebuildí a novou DLL převezme).
+Cena: **breaking change API znamená publikovat i konzumenty** (DLL nikdy samotnou) - viz
+`EDControls/CLAUDE.md`.
 
 Týmž profilem se vydává i **EDControls samostatně**: `PublishOwnAssemblyOnly` propustí jen
 vlastní assembly (plný uzávěr závislostí - MLRest, EDLicence, EDCore, Newtonsoft - by
@@ -25,7 +25,7 @@ k distribuci při vydání shellu (včetně těch z repa EDISON): `DEPLOY.md`.
 `.husky/` = git hooks (auto-install při `dotnet restore`).
 
 **Krátké a výstižné**: root i project doc (`EDISONMAIN2/`, `EDControls/`,
-`TemplateDesigner/`) ≤ ~150 řádků, komponentový ≤ ~60. Při překročení škrtej.
+`TemplateDesigner/`, `EDUPDATE2/`) ≤ ~150 řádků, komponentový ≤ ~60. Při překročení škrtej.
 
 - **Patří sem**: neodvoditelné invarianty, wire kontrakty, pasti, workaroundy, netriviální
   WHY, pořadí volání, na kterém záleží.
@@ -34,20 +34,18 @@ k distribuci při vydání shellu (včetně těch z repa EDISON): `DEPLOY.md`.
 - Když měníš chování popsané v CLAUDE.md, **aktualizuj doc v témže commitu**; stale
   tvrzení maž bez milosti. Nový vnořený CLAUDE.md zakládej jen pro komponentu s vlastními
   neodvoditelnými kontrakty; jinak patří poznámka do nadřazeného.
-- `EDISONMAIN2/docs/`, `EDISONMAIN2/RESPONSIBILITIES.md`,
-  `EDISONMAIN2/LEGACY_FEATURE_INVENTORY.md` a `EDControls/DOCS/05-userdata-scopes.md` se
-  **neudržují** - neodkazuj na ně, podstatu vtáhni sem (`EDControls/DOCS/`
-  01-wire-formats a 04-EDTheme naopak platí).
+- `EDISONMAIN2/docs/`, `EDISONMAIN2/RESPONSIBILITIES.md`, `EDISONMAIN2/LEGACY_FEATURE_INVENTORY.md`
+  a `EDControls/DOCS/05-userdata-scopes.md` se **neudržují** - neodkazuj na ně, podstatu
+  vtáhni sem (`EDControls/DOCS/` 01-wire-formats a 04-EDTheme naopak platí).
 
 ## MLRest - použití v .NET
 
 `MLRest` serializuje .NET hodnoty do Caché process-private globals (`^||ML("IN",...)`)
 a odpověď (`^||ML("OUT",...)`) zpět. DLL odkazována přímo: `C:\Edison\MLRest.dll`.
 
-Instance se nikdy nevytváří ve windows/ViewModelech - přístup přes `IMLRest` a
-`EDServices.Current` (inicializuje `AppBootstrapper`): ViewModely mají `MLRest` property
-z `EDViewModel`, controls (`EDInputForm`, `EDList`) čtou `EDServices.Current` samy, testy
-si vytvářejí vlastní `EDServices` s mockem.
+Instance se nikdy nevytváří ve windows/ViewModelech - přístup přes `IMLRest` a `EDServices.Current`
+(inicializuje `AppBootstrapper`): ViewModely mají `MLRest` z `EDViewModel`, controls (`EDInputForm`,
+`EDList`) čtou `EDServices.Current` samy, testy si vytvářejí vlastní `EDServices` s mockem.
 
 **Vždy používej `CVar`** (idiomatický strukturovaný typ). `object[]` jen v legacy kódu
 s existujícími numerickými subscripty - důvod zdokumentuj; v novém kódu nikdy. Referenční
@@ -57,14 +55,13 @@ Pasti wire formátu: subscripty jsou **stringy** (`cVar["1"]` → `^||ML("IN","1
 numerické 1); `CList` ↔ `$lb()`, čte se `$li(^||ML("IN","i"), n)` (1-based); v named
 foreach přeskoč klíč `"ERR"` (MLRest metadata, ne data).
 
-`QueryOrThrow` = `Query` + `ThrowIfError()` - na `IMLRest` i jako extension na konkrétním
-`MLRest` (legacy; deleguje na `MLRestAdapter`, překlad chyby na výjimku žije na jednom
-místě). Odděleně volej jen pro graceful degradation.
+`QueryOrThrow` = `Query` + `ThrowIfError()` - na `IMLRest` i jako extension na `MLRest` (legacy;
+deleguje na `MLRestAdapter`, překlad chyby žije na jednom místě). Odděleně jen pro graceful degradation.
 **Souběžné requesty jen na klonech** (`With()`) - `RestStatus` je per-instance a čte se až po
 `Query`, takže paralelní volání na téže instanci si stavy prohodí (spolknutá chyba / cizí
 výjimka). Klon má stejný GUID (pro server tatáž session) a každý request běží ve vlastním
-Caché procesu, takže si nešlapou ani po `^||ML`. Vzor: `Modules/RestCallRunner` v EDISONMAIN2.
-Binární data: `BinarySave(bytes)` → GUID, `BinaryLoad(guid)` (server `$$$SYSBinary(GUID)`, uvolní se samo).
+Caché procesu, takže si nešlapou ani po `^||ML`. Vzor: `RestCallRunner` (EDControls,
+`dotnet/RestCallRunner.cs`). Binární data: `BinarySave`/`BinaryLoad` (API MLRest.dll, viz `MLRest.md`).
 
 ## Kostra Caché metody
 
@@ -133,17 +130,18 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
   `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash
   .claude/hooks/compile-objectscript.sh` (MCP `cache_compile` hledá zdroj v `C:\DEV\EDISON`).
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - sadu pustí
-  jen když se změnily její zdroje (`.cs`→.NET, `.cls`→Caché); Caché zúží na dotčené package,
-  ale změna ve sdíleném `EDControls`/`EDTesting` spustí všechny. Souhrn selhání
+  jen když se změnily její zdroje (`.cs`→.NET, `.cls`→Caché); Caché zúží na dotčené package.
+  Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí všechny; testovací `.cls`
+  (EDControls `Tests/`) jen svůj balíček - TD sada (gold odtisky) stojí minuty. Souhrn selhání
   `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
 - Caché testy potřebují dev server `192.168.16.1:57770` (VPN); user z `$env:USERNAME`
   (override `$env:CACHE_USER`).
 
 ## Typografie a komentáře
 
-**Nepoužívat dlouhou pomlčku** (em dash, U+2014) - v kódu, komentářích, UI textech, dokumentaci
-i odpovědích vždy běžná „-". Pravidlo znak záměrně nezobrazuje, aby šlo hlídat grepem;
-v TemplateDesigneru hlídají UI labely drift testy.
+**Nepoužívat dlouhou pomlčku** (em dash, U+2014) - v kódu, UI textech, dokumentaci i odpovědích
+vždy běžná „-". Pravidlo znak záměrně nezobrazuje, aby šlo hlídat grepem; v TemplateDesigneru
+hlídají UI labely drift testy.
 
 Komentáře v `EDISONMAIN2/` a `EDControls/` jsou **česky** (výjimka: stock VS šablony).
 Defaultně nekomentovat; přidávej jen netriviální WHY (skrytá invarianta, workaround bugu)

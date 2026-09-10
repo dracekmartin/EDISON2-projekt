@@ -1,11 +1,8 @@
-using System;
-using System.Threading.Tasks;
 using EDControls;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDTesting;
 using NSubstitute;
 
-namespace EDISONMAIN2.Tests;
+namespace EDControls.Tests;
 
 /// <summary>
 /// Invariant runneru: každé volání jde na **klon** (RestStatus je per-instance, souběžná

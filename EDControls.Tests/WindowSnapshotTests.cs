@@ -23,7 +23,7 @@ public class WindowSnapshotTests
     [Fact]
     public void Capture_ProducesPng()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var png = WindowSnapshot.TryCapture(Laid(300, 200, new TextBlock { Text = "ahoj" }));
 
@@ -36,7 +36,7 @@ public class WindowSnapshotTests
     [Fact]
     public void Capture_ScalesDownOversizedWindow()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var png = WindowSnapshot.TryCapture(Laid(5000, 400));
 
@@ -51,28 +51,14 @@ public class WindowSnapshotTests
     [Fact]
     public void Capture_ZeroSizedElement_ReturnsNull()
     {
-        RunSta(() => Assert.Null(WindowSnapshot.TryCapture(new Border())));
+        EDTesting.Sta.Run(() => Assert.Null(WindowSnapshot.TryCapture(new Border())));
     }
 
     [Fact]
     public void Capture_WithoutApplication_ReturnsEmpty()
     {
         // V testech (a v raném startupu) Application.Current neexistuje - nesmí to spadnout.
-        RunSta(() => Assert.Empty(WindowSnapshot.Capture()));
+        EDTesting.Sta.Run(() => Assert.Empty(WindowSnapshot.Capture()));
     }
 
-    // Spustí akci na dedikovaném STA vlákně (Window to vyžaduje) a propaguje výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

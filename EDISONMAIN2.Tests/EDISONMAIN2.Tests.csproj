@@ -27,6 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Source-link parseru updateru: round-trip test BuildArguments -> Parse hlídá drift kontraktu -->
+    <Compile Include="..\EDUPDATE2\dotnet\UpdaterArgs.cs" Link="UpdaterArgs.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="MLRest">
       <HintPath>C:\Edison\MLRest.dll</HintPath>
     </Reference>

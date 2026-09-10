@@ -22,9 +22,21 @@ public partial class UpdateWindow : Window
         Closing += OnClosing;
     }
 
+    internal enum CloseDecision { Allow, Block, CancelAndBlock }
+
     /// <summary>Během swap/rollbacku nesmí proces zaniknout - cíl by zůstal nekonzistentní.</summary>
     internal bool InCriticalPhase =>
-        !_finished && _engine?.CurrentPhase is UpdatePhase.Swap or UpdatePhase.Rollback;
+        DecideClose(_finished, _engine?.CurrentPhase, closeRequested: false) == CloseDecision.Block;
+
+    internal static bool ShouldRunExe(int exitCode, string runExe) =>
+        exitCode == UpdateEngine.ExitOk && runExe != "";
+
+    internal static CloseDecision DecideClose(bool finished, UpdatePhase? enginePhase, bool closeRequested)
+    {
+        if (finished) return CloseDecision.Allow;
+        if (enginePhase is UpdatePhase.Swap or UpdatePhase.Rollback) return CloseDecision.Block;
+        return closeRequested ? CloseDecision.Block : CloseDecision.CancelAndBlock;
+    }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -46,7 +58,7 @@ public partial class UpdateWindow : Window
         Environment.ExitCode = result.ExitCode;
         if (result.ExitCode == UpdateEngine.ExitOk)
         {
-            RunExeIfRequested();
+            if (ShouldRunExe(result.ExitCode, _args.RunExe)) RunExeIfRequested();
             Close();
             return;
         }
@@ -63,10 +75,9 @@ public partial class UpdateWindow : Window
 
     private void RunExeIfRequested()
     {
-        if (_args.RunExe == "") return;
         try
         {
-            Process.Start(new ProcessStartInfo
+            StartProcess(new ProcessStartInfo
             {
                 FileName = Path.Combine(_args.TargetPath, _args.RunExe),
                 WorkingDirectory = _args.TargetPath,
@@ -106,21 +117,26 @@ public partial class UpdateWindow : Window
 
     private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        if (_finished) return;
         // Fáze se čte z enginu, ne z Progress eventů - ty chodí přes Dispatcher se zpožděním.
-        if (InCriticalPhase)
+        switch (DecideClose(_finished, _engine?.CurrentPhase, _closeRequested))
         {
-            e.Cancel = true;
-            return;
+            case CloseDecision.Allow:
+                return;
+            case CloseDecision.Block:
+                e.Cancel = true;
+                return;
+            case CloseDecision.CancelAndBlock:
+                // Mimo kritickou fázi se zavření odloží: engine dojede na checkpoint, uklidí staging
+                // a vrátí exit 1 (cíl beze změny) - proces nesmí umřít uprostřed práce s diskem.
+                e.Cancel = true;
+                _closeRequested = true;
+                _log.Write("UPDATER", "Zavření vyžádáno uživatelem, přerušuji.");
+                _cancelSource.Cancel();
+                return;
         }
-        // Mimo kritickou fázi se zavření odloží: engine dojede na checkpoint, uklidí staging
-        // a vrátí exit 1 (cíl beze změny) - proces nesmí umřít uprostřed práce s diskem.
-        e.Cancel = true;
-        if (_closeRequested) return;
-        _closeRequested = true;
-        _log.Write("UPDATER", "Zavření vyžádáno uživatelem, přerušuji.");
-        _cancelSource.Cancel();
     }
+
+    protected virtual void StartProcess(ProcessStartInfo startInfo) => Process.Start(startInfo);
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 }

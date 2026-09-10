@@ -1,10 +1,9 @@
 # ErrorReporting - poznámky pro vývojáře
 
-Hlášení chyb na `podpora.m-line.cz/api/telemetry/ingest`. Náhrada legacy `frmMLErrorEx`
-(`EDISON/EDLIBRARY/`), ne doslovná parita - odchylky jsou vědomé a jsou níž.
-
-**Jiný kanál než usage telemetrie.** `EDUsageTelemetry` jde přes MLRest do Caché; tohle je
-přímý HTTPS POST mimo Caché. Společného nemají nic než slovo „telemetrie".
+Hlášení chyb na `podpora.m-line.cz/api/telemetry/ingest` - **přímý HTTPS POST mimo Caché**
+(usage telemetrie `EDUsageTelemetry` je jiný kanál, jde přes MLRest; společného nemají nic
+než slovo „telemetrie"). Náhrada legacy `frmMLErrorEx` (`EDISON/EDLIBRARY/`), ne doslovná
+parita - odchylky jsou vědomé a jsou níž.
 
 Vstup je `ErrorReports.Report/ReportBackground/ReportFatal`, volá je `PopupDisplayer.Error`
 a globální handlery v obou `App.xaml.cs`. Čistá jádra (`ErrorReport*`, `ErrorThrottle`) jsou
@@ -50,13 +49,11 @@ EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_Ca
 - **Neodeslaná hlášení** (offline, VPN, 500) zachytí `ErrorFallbackLog`:
   `%APPDATA%\m-line\common\error-reports.log`, NDJSON **bez příloh**, rotace nad ~1 MB
   do `.old`. Nic se zpětně neodesílá - podpora si soubor vyžádá ručně.
-
 - `ReportLegacyExit` (pád hostovaného legacy modulu podle exit kódu, volá `WindowNavigator`):
   kontext okna = forma/exe modulu a **stabilní throttle klíč** `LegacyExit|exe|forma|kód` - syntetická
   výjimka nemá stack, `BuildKey` by slepil pády všech modulů do jednoho záznamu.
-- `IngestUrl` / `ApiKey` jsou `static readonly`, ne `const` - `const` se inlinuje do
-  konzumenta, takže samostatně nasazená `EDControls.dll` by hodnotu nezměnila exe, které se
-  nepřebuildilo (stejný důvod jako u `SupportActions.WidgetKey`).
+- `IngestUrl` / `ApiKey` jsou `static readonly`, ne `const` - pravidlo samostatně nasazené
+  DLL, viz `EDControls/CLAUDE.md`.
 - `ReportFatal` posílá **synchronně** s 5s timeoutem: po `AppDomain.UnhandledException`
   runtime proces vzápětí ukončí a fire-and-forget by se nestihl.
 - `TryCapture` bere `FrameworkElement`, ne `Window` - nezobrazené okno má nulovou

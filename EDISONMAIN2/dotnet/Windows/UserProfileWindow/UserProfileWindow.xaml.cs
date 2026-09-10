@@ -61,15 +61,19 @@ public partial class UserProfileWindow : Window
 
         bool use = GetField("usePersonDir") == "1";
         string dir = GetField("personDir") ?? "";
-        if (use && !Directory.Exists(dir))
+        if (ValidateExportDir(use, dir, Directory.Exists) is { } error)
         {
-            EDServices.Current.PopupDisplayer.Info("Zadaný osobní adresář neexistuje.");
+            EDServices.Current.PopupDisplayer.Info(error);
             return false;
         }
 
         UserProfileService.SaveExportDir(EDServices.Current.RequireMLRest, use, dir);
         return true;
     }
+
+    /// <summary>Klientský guard před persistem (server existenci složky nekontroluje); null = uložit.</summary>
+    internal static string? ValidateExportDir(bool usePersonDir, string personDir, Func<string, bool> directoryExists) =>
+        usePersonDir && !directoryExists(personDir) ? "Zadaný osobní adresář neexistuje." : null;
 
     private void SetField(string key, string value)
     {

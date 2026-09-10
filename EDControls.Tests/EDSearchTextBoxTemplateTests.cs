@@ -18,7 +18,7 @@ public class EDSearchTextBoxTemplateTests
     [Fact]
     public void Placeholder_CollapsesOnKeyboardFocus()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var trigger = PlaceholderTriggers()
                 .Single(t => t.Property == UIElement.IsKeyboardFocusWithinProperty);
@@ -34,7 +34,7 @@ public class EDSearchTextBoxTemplateTests
     {
         // U shodné property vyhrává poslední triggerující. Prohozené pořadí = placeholder
         // se ve fokusovaném prázdném poli zobrazí zpátky a bug je tiše zpět.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var triggers = PlaceholderTriggers();
             int emptyText = triggers.FindIndex(t => t.Property == TextBox.TextProperty);
@@ -55,19 +55,5 @@ public class EDSearchTextBoxTemplateTests
 
         return [.. template.Triggers.OfType<Trigger>()
                    .Where(t => t.Setters.OfType<Setter>().Any(s => s.TargetName == "Placeholder"))];
-    }
-
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
     }
 }

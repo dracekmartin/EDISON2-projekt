@@ -1,4 +1,5 @@
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+// (IsDomainMline testy mutují statické providery - sada běží bez paralelizace, viz AssemblyInfo)
 
 namespace EDISONMAIN2.Tests;
 
@@ -35,5 +36,29 @@ public class MlineDomainDetectorTests
     public void ParseVirtualDomainValue_Null_False()
     {
         Assert.False(MlineDomainDetector.ParseVirtualDomainValue(null));
+    }
+
+    [Theory]
+    [InlineData("main.m-line.cz", false, true)]
+    [InlineData("MAIN.M-LINE.CZ", false, true)]  // case-insensitive
+    [InlineData("firma.local", true, true)]      // dev override přebije cizí doménu
+    [InlineData("firma.local", false, false)]
+    [InlineData("", false, false)]               // mimo doménu (workgroup)
+    public void IsDomainMline_DomainOrVirtualFlag(string domain, bool virtualFlag, bool expected)
+    {
+        var originalDomain = MlineDomainDetector.DomainNameProvider;
+        var originalFlag = MlineDomainDetector.VirtualDomainFlagProvider;
+        try
+        {
+            MlineDomainDetector.DomainNameProvider = () => domain;
+            MlineDomainDetector.VirtualDomainFlagProvider = () => virtualFlag;
+
+            Assert.Equal(expected, MlineDomainDetector.IsDomainMline());
+        }
+        finally
+        {
+            MlineDomainDetector.DomainNameProvider = originalDomain;
+            MlineDomainDetector.VirtualDomainFlagProvider = originalFlag;
+        }
     }
 }

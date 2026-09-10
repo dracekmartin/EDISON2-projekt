@@ -21,4 +21,19 @@ public class AgendaSpritesTests
     [InlineData("")]
     public void ForExe_UnknownAgenda_ReturnsNull(string exe) =>
         Assert.Null(AgendaSprites.ForExe(exe));
+
+    [Fact]
+    public void KnownSets_DistinctAndAllLabeled()
+    {
+        Assert.Equal(AgendaSprites.KnownSets.Distinct(), AgendaSprites.KnownSets);
+        foreach (var set in AgendaSprites.KnownSets)
+            Assert.False(string.IsNullOrEmpty(AgendaSprites.LabelFor(set)));
+    }
+
+    [Fact]
+    public void LabelFor_Money_UnknownFallsBackToKey()
+    {
+        Assert.Equal("Peníze", AgendaSprites.LabelFor("Money"));
+        Assert.Equal("NEZNAMA", AgendaSprites.LabelFor("NEZNAMA"));
+    }
 }

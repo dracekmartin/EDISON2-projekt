@@ -10,8 +10,8 @@ referenční implementace `MockList.cls`.
 vlákno po celý round-trip - na pomalé lince zmrazí **celou aplikaci**, ne jen hostující okno.
 Async varianty navíc serializují souběžné dotazy (sdílený `MLRest` jede přes `^||ML`) a odpověď
 staršího dotazu už nedosedne - rychlé přepínání filtru nezamíchá řádky. Filtrovaný seznam přes
-`EDFilter`: automatický reload (Loaded + změna hodnoty pole) jede `RefreshAsync()`, host nemusí
-dělat nic; synchronní `Refresh()` zůstává pro ruční trigger.
+`EDFilter`: automatický reload (Loaded + změna hodnoty pole) jede `EDFilter.RefreshAsync()`, host
+nemusí dělat nic; synchronní `EDFilter.Refresh()` zůstává pro ruční trigger.
 
 ⚠️ **`CacheClass` (a každá další DP) se nesmí číst uvnitř `Task.Run`** - skončí
 `InvalidOperationException` („volající vlákno nemá přístup..."); hodnotu si vytáhni do lokální

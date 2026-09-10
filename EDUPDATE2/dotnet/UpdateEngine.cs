@@ -146,7 +146,7 @@ public class UpdateEngine
         {
             try
             {
-                ForcedStamp.Write(_args.TargetPath, _args.NucenyUpdateTime);
+                WriteForcedStamp(_args.TargetPath, _args.NucenyUpdateTime);
             }
             catch (Exception e)
             {
@@ -458,6 +458,7 @@ public class UpdateEngine
         return CrcFile.Read(stream);
     }
     protected virtual string ReadVersion(string directory) => VerzeInf.ReadVersion(directory);
+    protected virtual void WriteForcedStamp(string targetPath, string stamp) => ForcedStamp.Write(targetPath, stamp);
     protected virtual int GetProcessCount(string name) => Process.GetProcessesByName(name).Length;
     protected virtual void Sleep(int milliseconds) => Thread.Sleep(milliseconds);
     protected virtual long GetFreeBytes(string path) =>

@@ -9,7 +9,9 @@ v `DOCS/` (wire formáty → `DOCS/01-wire-formats.md`).
 (EDISONMAIN2, TemplateDesigner, LegacyMiniApps, EDTesting, ThemeRender) buildí spolu, takže
 odebraný člen je hned compile error - API se měnit smí. Nebezpečné je samostatné vydání
 `EDControls.dll` (`PublishOwnAssemblyOnly`, viz root CLAUDE.md): ta potká starý exe a shodí ho
-až za běhu. **TemplateDesigner běží u zákazníků**, EDISONMAIN2 zatím ne.
+až za běhu. **TemplateDesigner běží u zákazníků**, EDISONMAIN2 zatím ne. Hodnoty sdílené přes
+samostatně nasazenou DLL proto drž jako **`static readonly`, ne `const`** - `const` se inlinuje
+do konzumenta a nepřebuildovaný exe změnu nedostane (`SupportActions`, `ErrorReporter`).
 
 **Klíče `EDTheme.*` / `EDIcons.*` / `EDStrings.*` měň aditivně.** Ty nezachytí ani plný
 rebuild - `{DynamicResource}` na neznámý klíč tiše nevrátí nic. Přejmenování = ruční grep
@@ -17,12 +19,12 @@ XAML všech konzumentů.
 
 ## Nová m-line aplikace
 
-`EDAppearance.Initialize(app)` jednou před prvním oknem (a **až po**
-`EDServices.Initialize`) napojí `FontService` + `ThemeService` a class handlery na
-`Window.Loaded`, které rozdají panel Podpora a usage telemetrii. Dále merge
-`EDIcons.xaml` + `EDStrings.xaml`,
-`DispatcherUnhandledException` handler (viz root CLAUDE.md) a `EDServices.FormIdPrefix`,
-ať se okna nové aplikace nemíchají se shellem.
+- `EDAppearance.Initialize(app)` jednou před prvním oknem (a **až po** `EDServices.Initialize`):
+  napojí `FontService` + `ThemeService` a class handlery na `Window.Loaded`, které rozdají
+  panel Podpora a usage telemetrii.
+- Zbytek dělá konzument sám: merge `EDIcons.xaml` + `EDStrings.xaml` v App.xaml,
+  `DispatcherUnhandledException` handler (viz root CLAUDE.md) a `EDServices.FormIdPrefix`,
+  ať se okna nové aplikace nemíchají se shellem.
 
 ## Vzhled: EDTheme + EDControlStyles
 
@@ -73,9 +75,9 @@ ať se okna nové aplikace nemíchají se shellem.
 - `IMLRest` / `MLRestAdapter` - abstrakce nad MLRest. `With(...)` vrací klon pro
   jednorázové requesty; **ručně kopíruje pole identity** - nové pole v MLRest doplň
   i tam (hlídá reflection test `MLRestAdapterWithTests`).
-- `IRestCallRunner` / `RestCallRunner` - blokující MLRest volání mimo UI thread, vždy na
-  **klonu** (`RestStatus` je per-instance, souběžná volání na téže instanci si stavy prohodí);
-  instanci snapshotuje na volajícím threadu, takže celá dávka jede proti téže session.
+- `IRestCallRunner` / `RestCallRunner` - blokující MLRest volání mimo UI thread, vždy na **klonu**
+  (proč: root CLAUDE.md, sekce MLRest); instanci snapshotuje na volajícím threadu, takže celá
+  dávka jede proti téže session.
 - `MLRestJson` - JSON-envelope volání přes sdílený klíč `"payload"` (kontrakt na obou
   stranách); `CallAsync` = `Task.Run` nad blokujícím MLRest.
 - `EdisonLaunchArgs` - parser launch kontraktu shellu; **zrcadlí

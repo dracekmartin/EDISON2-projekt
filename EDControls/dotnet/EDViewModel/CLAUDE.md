@@ -17,11 +17,10 @@ Základní třída ViewModelů + infrastruktura (`EDServices` - DI singleton `Cu
    agendová okna nedostávají popupy nad shellem.
 
 Panel Podpora ani usage telemetrie tu nejsou - visí na `Window.Loaded` z `EDAppearance.Initialize`,
-protože TemplateDesigner `AttachToWindow` volá jen pro hlavní okno (viz
-[EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md)). Telemetrie (`EDUsageTelemetryHook`):
-OPEN + kliky na **pojmenované** controly, flush při `Closed`, best-effort, nikdy nehazí; bere
-jen okna s `EDViewModel` a nenulovým `PersistedFormId` (šum bez VM vypadne sám), guard `IsHooked`
-(`Loaded` fíruje opakovaně); legacy launch trackuje `WindowNavigator.LaunchLegacy`.
+protože TemplateDesigner volá `AttachToWindow` jen pro hlavní okno (viz [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md)).
+Telemetrie (`EDUsageTelemetryHook`): OPEN + kliky na **pojmenované** controly, flush při `Closed`,
+best-effort, nikdy nehazí; bere jen okna s `EDViewModel` a nenulovým `PersistedFormId`, guard
+`IsHooked` (`Loaded` fíruje opakovaně); legacy launch trackuje `WindowNavigator.LaunchLegacy`.
 `PersistedFormId` default `"<FormIdPrefix>.<Window>"` (shell `EDISON2`, TD `TD`) - odděluje
 aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
 
@@ -33,11 +32,11 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
   mimo náš catch až do `DispatcherUnhandledException`.
 - `RelayCommand` bez explicitního displayeru fallbackuje na `EDServices.Current.PopupDisplayer` -
   test s mockem ho musí registrovat přes `EDServices` nebo předat 3. argumentem.
-- `EDServices.MLRest` je mutable a sdílená (přepnutí firmy vidí všechny VM); `Current` hází
-  před `Initialize` (testy: vlastní instance s mocky); `With(...)` = klon na jednorázové
-  requesty, sdílenou instanci nikdy nemutuj (identity copy viz EDControls CLAUDE.md).
-  Post-login kód čte `Rest` / `RequireMLRest` (`InvalidOperationException`, ne NRE), nullable
-  `MLRest` je pro kód před loginem; `HasAccess()` = `true` při `AccessTable == null` (testy).
+- `EDServices.MLRest` je mutable a sdílená (přepnutí firmy vidí všechny VM); `Current` hází před
+  `Initialize` (testy: vlastní instance s mocky); `With(...)` = klon, sdílenou instanci nikdy
+  nemutuj (proč: root CLAUDE.md; identity copy viz EDControls CLAUDE.md). Post-login kód čte
+  `Rest` / `RequireMLRest` (`InvalidOperationException`, ne NRE), nullable `MLRest` je pro kód
+  před loginem; `HasAccess()` = `true` při `AccessTable == null` (testy).
 - `EDAction.IconElement` vrací **nový** `Image` při každém přístupu - `UIElement` smí mít
   jen jednoho rodiče (nutné pro `MenuItem.Icon` přes `ItemContainerStyle`).
 - `OnOk()`: bez `base.OnOk()` / `CloseDialog(true)` zůstane okno otevřené - využívá se pro validaci.

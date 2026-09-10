@@ -16,7 +16,7 @@ public class WindowScopedPopupDisplayerTests
     [Fact]
     public void NoExplicitOwner_UsesScopedWindow()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var inner = Substitute.For<IPopupDisplayer>();
             var scoped = new Window();
@@ -39,7 +39,7 @@ public class WindowScopedPopupDisplayerTests
     [Fact]
     public void ExplicitOwner_WinsOverScopedWindow()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var inner = Substitute.For<IPopupDisplayer>();
             var scoped = new Window();
@@ -64,7 +64,7 @@ public class WindowScopedPopupDisplayerTests
     [Fact]
     public void ReturnValues_PassThroughFromInner()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var inner = Substitute.For<IPopupDisplayer>();
             var scoped = new Window();
@@ -80,18 +80,4 @@ public class WindowScopedPopupDisplayerTests
         });
     }
 
-    // Spustí akci na dedikovaném STA vlákně (Window to vyžaduje) a propaguje výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

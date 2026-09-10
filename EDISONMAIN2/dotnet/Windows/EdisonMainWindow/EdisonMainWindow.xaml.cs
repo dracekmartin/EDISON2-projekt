@@ -166,9 +166,7 @@ namespace EDISONMAIN2
         private void TreeItem_MouseMove(object sender, MouseEventArgs e)
         {
             if (e.LeftButton != MouseButtonState.Pressed || _treeDragModule is null) return;
-            var p = e.GetPosition(null);
-            if (Math.Abs(p.X - _treeDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
-                Math.Abs(p.Y - _treeDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+            if (!DesktopDragFormats.ThresholdExceeded(_treeDragStart, e.GetPosition(null))) return;
 
             var module = _treeDragModule;
             _treeDragModule = null;

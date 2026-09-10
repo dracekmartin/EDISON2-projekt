@@ -187,6 +187,52 @@ Method TestMlineOnlyExeHasWireFlagsSet()
 	do $$$AssertTrue(found, "mlineOnly EXE 92101 (Doklady OLD) musí být v main stromu")
 }
 
+/// FAMILY expanded flag (pole 3) je na wire vždy string "0"/"1" - .NET parser staví
+/// výchozí rozbalení stromu na (=="1"), cokoli jiného by rozbalení tiše vypnulo.
+Method TestFamilyExpandedFlagIsWireBoolean()
+{
+	for tree = "main", "system", "partners" {
+		kill ^||ML
+		do ..SetupSys(.sys)
+		set ^||ML("IN","tree") = tree
+		do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+		set i = ""
+		for {
+			set i = $order(^||ML("OUT", i))
+			quit:i=""
+			continue:i'?1.N
+			set record = ^||ML("OUT", i)
+			if ($listget(record, 1) '= "FAMILY") { continue }
+			set expanded = $listget(record, 3)
+			do $$$AssertNotTrue((",0,1,"'[(","_expanded_",")), "FAMILY #"_i_" ("_tree_") expanded musí být ""0""/""1"", got: "_expanded)
+		}
+	}
+}
+
+/// elementId (EXE pole 5) je neprázdné u každého modulu včetně nelicencovaných -
+/// je to klíč klientské persistence (plocha, výchozí okno) a licenční gate; ztráta
+/// by uživateli tiše smazala zástupce.
+Method TestExeElementIdNeverEmptyAllTrees()
+{
+	for tree = "main", "system", "partners" {
+		kill ^||ML
+		do ..SetupSys(.sys)
+		set ^||ML("IN","tree") = tree
+		do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+		set i = ""
+		for {
+			set i = $order(^||ML("OUT", i))
+			quit:i=""
+			continue:i'?1.N
+			set record = ^||ML("OUT", i)
+			if ($listget(record, 1) '= "EXE") { continue }
+			do $$$AssertNotTrue(($listget(record, 5) = ""), "EXE #"_i_" ("_tree_") musí mít neprázdné elementId (i nelicencovaný)")
+		}
+	}
+}
+
 /// Licencovaná složka: alespoň jedna FAMILY v main má licensed field 5 = "1"
 /// (package ID gate - legacy BuildTreeXML kontroloval složky proti licenci stejně jako formy).
 Method TestMainTreeHasLicensedFamily()

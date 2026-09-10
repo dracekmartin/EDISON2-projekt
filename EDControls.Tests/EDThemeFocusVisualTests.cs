@@ -30,7 +30,7 @@ public class EDThemeFocusVisualTests
     [InlineData("EDTheme.Focus.RingContrast.Color")]
     public void FocusTokens_ExistInBothThemes(string key)
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             Assert.True(Load(LightUri).Contains(key), $"{key} chybí v EDTheme.xaml");
             Assert.True(Load(DarkUri).Contains(key), $"{key} chybí v EDThemeDark.xaml");
@@ -42,7 +42,7 @@ public class EDThemeFocusVisualTests
     {
         // Jednosměrně: opačný směr by selhal na záměrných light-only tokenech (typografie,
         // spacing, Accent.Header, OnAccent.*).
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var light = Load(LightUri);
             var missing = Load(DarkUri).Keys.Cast<object>()
@@ -57,7 +57,7 @@ public class EDThemeFocusVisualTests
     [Fact]
     public void SystemFocusVisualStyle_IsOverriddenByEDControlStyles()
     {
-        RunSta(() => Assert.NotNull(ResolveStyle(SystemParameters.FocusVisualStyleKey, dark: false)));
+        EDTesting.Sta.Run(() => Assert.NotNull(ResolveStyle(SystemParameters.FocusVisualStyleKey, dark: false)));
     }
 
     [Theory]
@@ -67,7 +67,7 @@ public class EDThemeFocusVisualTests
     {
         // Jádro testu: ring musí být čtený přes DynamicResource, jinak zůstane v light barvě
         // i po přidání EDThemeDark.xaml na konec MergedDictionaries (což dělá ThemeService).
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var lightStrokes = RingStrokes(styleKey, dark: false);
             var darkStrokes  = RingStrokes(styleKey, dark: true);
@@ -97,7 +97,7 @@ public class EDThemeFocusVisualTests
         // Past: override SystemParameters.FocusVisualStyleKey nestačí, theme style Aera nastavuje
         // FocusVisualStyle vlastní hodnotou s vyšší prioritou (u TextBoxu null) - styl, který setter
         // vynechá, spadne na tečkovaný rámeček, tedy neviditelný focus v dark modu.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var style = Load(StylesUri)[controlType] as Style;
             Assert.NotNull(style);
@@ -113,7 +113,7 @@ public class EDThemeFocusVisualTests
     {
         // Překlep v klíči {StaticResource EDTheme.FocusVisual.Inset} by spadl až za běhu při
         // prvním fokusnutí prvku.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var withSetter = Load(StylesUri).Values.OfType<Style>()
                                             .SelectMany(FocusVisualSetters)
@@ -167,19 +167,4 @@ public class EDThemeFocusVisualTests
                        .ToList();
     }
 
-    // Spustí akci na dedikovaném STA vlákně (WPF resource loading to vyžaduje) a propaguje
-    // výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

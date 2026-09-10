@@ -97,4 +97,19 @@ public class ShortcutLaunchPayloadTests
 
         Assert.False(payload.JdeOReportShortcut);
     }
+
+    [Fact]
+    public void Encode_CarriesInputParamAsInputProFrm()
+    {
+        // Legacy EDParamIn - formulář z něj čte předvolby; ztráta by byla tichá.
+        var shortcut = new DesktopShortcut
+        {
+            Kind = ShortcutKind.PackageForm, Id = "9", ElementId = "660",
+            DisplayedName = "F", ExecutablePath = "x.exe", FormName = "ALVA.X.frm", InputParam = "APM=1",
+        };
+
+        var payload = ShortcutLaunchPayloadCodec.Decode(ShortcutLaunchPayloadCodec.Encode(shortcut));
+
+        Assert.Equal("APM=1", payload.InputProFrm);
+    }
 }

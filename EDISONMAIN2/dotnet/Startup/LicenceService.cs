@@ -14,15 +14,22 @@ public class LicenceService(MLRest mlRest)
     /// </summary>
     public Lic? GetActiveLicence()
     {
-        // Activation.New a GetActiveLic jsou v VB ByRef → potřebujeme lokální proměnné.
-        var ml = mlRest;
-        var activation = new Activation(ref ml);
-        string err = "";
-        string info = "";
-        var lic = activation.GetActiveLic(ref err, ref info);
+        var lic = LoadActiveLic(out string err);
         if (!string.IsNullOrEmpty(err))
             throw new InvalidOperationException(err);
         return lic ?? CreateFallbackLicence();
+    }
+
+    /// <summary>Seam kolem legacy <see cref="Activation"/> (EDLicence.dll) - reálná DLL chce
+    /// živou session, testy hook přepisují.</summary>
+    protected virtual Lic? LoadActiveLic(out string err)
+    {
+        // Activation.New a GetActiveLic jsou v VB ByRef → potřebujeme lokální proměnné.
+        var ml = mlRest;
+        var activation = new Activation(ref ml);
+        err = "";
+        string info = "";
+        return activation.GetActiveLic(ref err, ref info);
     }
 
     /// <summary>

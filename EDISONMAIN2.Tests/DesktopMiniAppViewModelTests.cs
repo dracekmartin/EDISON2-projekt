@@ -79,6 +79,20 @@ public class DesktopMiniAppViewModelTests
     }
 
     [Fact]
+    public void ShowChangelogCommand_RequestsChangelogThroughService()
+    {
+        var svc = new ModuleShortcutsService();
+        svc.Seed([Exe("100")], [Menu("100")]);
+        var vm = Vm(svc);
+        DesktopShortcut? requested = null;
+        svc.ChangelogRequested += s => requested = s;
+
+        vm.ShowChangelogCommand.Execute(svc.Items[0]);
+
+        Assert.Same(svc.Items[0], requested);
+    }
+
+    [Fact]
     public void OnClosed_UnsubscribesFromCollection()
     {
         var svc = new ModuleShortcutsService();

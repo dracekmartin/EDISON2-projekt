@@ -43,7 +43,7 @@ public class EDThemeParityTests
     [Fact]
     public void EveryLightColorToken_HasDarkCounterpart()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var light = ColorKeys(Load(LightUri));
             var dark = ColorKeys(Load(DarkUri));
@@ -65,7 +65,7 @@ public class EDThemeParityTests
     {
         // Klíč jen v dark = přejmenovaný/smazaný light token; DynamicResource by v light
         // režimu spadl na UnsetValue.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var light = ColorKeys(Load(LightUri));
             var extra = ColorKeys(Load(DarkUri)).Except(light).OrderBy(k => k).ToList();
@@ -79,7 +79,7 @@ public class EDThemeParityTests
     public void LightOnlyList_HasNoStaleEntries()
     {
         // Výjimka na neexistující klíč = nikdy nezavolaná; maž ji s tokenem.
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var light = ColorKeys(Load(LightUri));
 
@@ -104,18 +104,4 @@ public class EDThemeParityTests
 
     private static ResourceDictionary Load(string uri) => new() { Source = new System.Uri(uri) };
 
-    // Spustí akci na dedikovaném STA vlákně (WPF resource loading to vyžaduje).
-    private static void RunSta(System.Action action)
-    {
-        System.Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (System.Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

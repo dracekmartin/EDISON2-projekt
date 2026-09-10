@@ -35,19 +35,25 @@ if [ -n "$RANGE" ]; then
     fi
 fi
 
-# Narrow the Cache run to the packages whose top-level project changed.
-# Dependency-aware: EDControls/EDTesting are shared, so a change there can break any
-# downstream suite -> run all. EDISONMAIN2/TemplateDesigner are leaves -> only their own.
+# Narrow the Cache run to the packages whose sources changed.
+# Dependency-aware: production .cls in shared EDControls/EDTesting can break any
+# downstream suite -> run all. Test-only .cls (EDControls Tests/ folder) can't break
+# anyone else -> just its own package (the TemplateDesigner suite costs minutes).
+# EDISONMAIN2/TemplateDesigner are leaves -> only their own.
 # CACHE_ARGS empty => run-cache-tests.ps1 default (all packages) = safe fallback.
 CACHE_ARGS=""
 if [ "$run_cache" = "1" ] && [ -n "$CHANGED" ]; then
     run_all_cache=0
     pkgs=""
-    for d in $(echo "$CHANGED" | grep -iE '\.cls$' | cut -d/ -f1 | sort -u); do
-        case "$d" in
-            EDISONMAIN2)      pkgs="$pkgs,ALVA.EDISONMAIN2.Tests" ;;
-            TemplateDesigner) pkgs="$pkgs,ALVA.TemplateDesigner.Tests" ;;
-            *)                run_all_cache=1 ;;
+    add_pkg() {
+        case ",$pkgs," in *",$1,"*) ;; *) pkgs="$pkgs,$1" ;; esac
+    }
+    for f in $(echo "$CHANGED" | grep -iE '\.cls$'); do
+        case "$f" in
+            EDControls/CACHE/ALVA/EDControls/Tests/*) add_pkg "ALVA.EDControls.Tests" ;;
+            EDISONMAIN2/*)      add_pkg "ALVA.EDISONMAIN2.Tests" ;;
+            TemplateDesigner/*) add_pkg "ALVA.TemplateDesigner.Tests" ;;
+            *)                  run_all_cache=1 ;;
         esac
     done
     [ "$run_all_cache" = "0" ] && [ -n "$pkgs" ] && CACHE_ARGS="-Package ${pkgs#,}"

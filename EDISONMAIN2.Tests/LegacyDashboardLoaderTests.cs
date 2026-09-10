@@ -72,7 +72,7 @@ public class LegacyDashboardLoaderTests
     }
 
     [Fact]
-    public void Flush_DistributesBlocksToTheirRequesters()
+    public async Task Flush_DistributesBlocksToTheirRequesters()
     {
         var scheduler = new ManualFlushScheduler();
         var loader = Loader(RestReturning(Block("52001", "52005")), scheduler);
@@ -81,12 +81,12 @@ public class LegacyDashboardLoaderTests
         var second = loader.LoadAsync("52005", refresh: false);
         scheduler.Flush();
 
-        Assert.Equal("Data 52001", Assert.IsType<DashboardLabel>(Assert.Single(first.Result.Sections)).Text);
-        Assert.Equal("Data 52005", Assert.IsType<DashboardLabel>(Assert.Single(second.Result.Sections)).Text);
+        Assert.Equal("Data 52001", Assert.IsType<DashboardLabel>(Assert.Single((await first).Sections)).Text);
+        Assert.Equal("Data 52005", Assert.IsType<DashboardLabel>(Assert.Single((await second).Sections)).Text);
     }
 
     [Fact]
-    public void Flush_AppTypeWithoutBlock_GetsEmpty()
+    public async Task Flush_AppTypeWithoutBlock_GetsEmpty()
     {
         // Server blok nevrátí, když pro appType nejsou data (firma agendu nemá).
         var scheduler = new ManualFlushScheduler();
@@ -95,8 +95,9 @@ public class LegacyDashboardLoaderTests
         var missing = loader.LoadAsync("52014", refresh: false);
         scheduler.Flush();
 
-        Assert.Empty(missing.Result.Sections);
-        Assert.Null(missing.Result.LastUpdated);
+        var data = await missing;
+        Assert.Empty(data.Sections);
+        Assert.Null(data.LastUpdated);
     }
 
     [Fact]
@@ -115,7 +116,7 @@ public class LegacyDashboardLoaderTests
     }
 
     [Fact]
-    public void SameAppTypeTwice_ShareSingleParameterAndResult()
+    public async Task SameAppTypeTwice_ShareSingleParameterAndResult()
     {
         var rest = RestReturning(Block("52005"));
         var scheduler = new ManualFlushScheduler();
@@ -126,7 +127,7 @@ public class LegacyDashboardLoaderTests
         scheduler.Flush();
 
         rest.Received().QueryOrThrow(CacheClass, "LoadData", Arg.Is<object[]>(a => a.Length == 2));
-        Assert.Same(first.Result, second.Result);
+        Assert.Same(await first, await second);
     }
 
     [Fact]

@@ -24,6 +24,9 @@ public static class WindowStatePersistence
     private const double MinVisibleCaptionWidth = 120;
     private const double CaptionStripHeight = 32;
 
+    /// <summary>Settable jen kvůli testům - produkce čte sdílené <c>EDServices.Current</c>.</summary>
+    internal static Func<IMLRest?> MLRestProvider { get; set; } = () => EDServices.Current.MLRest;
+
     public static void Attach(Window window, string formId)
     {
         // Před Show(): PresentationSource je null, hookne se SourceInitialized event,
@@ -55,7 +58,7 @@ public static class WindowStatePersistence
         var prefs = new Dictionary<string, string>();
         try
         {
-            var mlRest = EDServices.Current.MLRest;
+            var mlRest = MLRestProvider();
             if (mlRest is not null)
             {
                 var del = mlRest.Delimiter;
@@ -83,7 +86,7 @@ public static class WindowStatePersistence
     {
         try
         {
-            var mlRest = EDServices.Current.MLRest;
+            var mlRest = MLRestProvider();
             if (mlRest is null) return;
             var del = mlRest.Delimiter;
 

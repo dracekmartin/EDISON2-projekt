@@ -35,16 +35,18 @@ public static class MlineEnvironment
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(RegistryPath);
-            var value = key?.GetValue(RegistryValue)?.ToString();
-            // Legacy zapisuje "1"/"0", ale čte přes CBool - snese i "True".
-            return value is not null &&
-                   (value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase));
+            return IsTruthyRegistryValue(key?.GetValue(RegistryValue)?.ToString());
         }
         catch
         {
             return false;
         }
     }
+
+    // Legacy zapisuje "1"/"0", ale čte přes CBool - snese i "True".
+    internal static bool IsTruthyRegistryValue(string? value) =>
+        value is not null &&
+        (value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase));
 
     internal static void OverrideForTests(bool? value) => _cached = value;
 }

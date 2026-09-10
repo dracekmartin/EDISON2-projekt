@@ -29,7 +29,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Commit_AfterRefilterClearsSelectedItem_StillPushesPickedKeyToTwoWaySource()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = new EDCombo { StrictSelection = true };
@@ -41,10 +41,10 @@ public class EDFilterComboBoxCommitTests
             combo.SelectedItem = combo.Items.OfType<ComboBoxItem>().Single(i => (string?)i.Tag == "B");
 
             // Race: Refilter přestaví Items a zahodí SelectedItem PŘED tím, než commit proběhne.
-            Invoke(combo, "Refilter", [null]);
+            combo.Refilter(null);
             Assert.Null(combo.SelectedItem);
 
-            Invoke(combo, "CommitSelection", []);
+            combo.CommitSelection();
 
             Assert.Equal("B", source.Value);   // pick se propsal do TwoWay zdroje i bez SelectedItem
         });
@@ -53,7 +53,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Commit_WithoutPick_RevertsAndLeavesSourceUnchanged()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = new EDCombo { StrictSelection = true };
@@ -62,7 +62,7 @@ public class EDFilterComboBoxCommitTests
                 new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
 
             // Jen otevřít+zavřít bez výběru (žádný SelectionChanged s položkou) → revert, zdroj beze změny.
-            Invoke(combo, "CommitSelection", []);
+            combo.CommitSelection();
 
             Assert.Equal("A", source.Value);
         });
@@ -71,7 +71,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Enter_AfterTypingUnambiguousText_CommitsKeyToTwoWaySource()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = new EDCombo { StrictSelection = true };
@@ -82,7 +82,7 @@ public class EDFilterComboBoxCommitTests
             // Uživatel napíše jednoznačný text a dá Enter bez výběru z dropdownu (dropdown zavřený
             // → commit proběhne přímo v Enter handleru, DropDownClosed nepřijde).
             combo.Text = "bet";
-            Invoke(combo, "CommitTypedTextOnEnter", []);
+            combo.CommitTypedTextOnEnter();
 
             Assert.Equal("B", source.Value);
         });
@@ -91,7 +91,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Enter_AmbiguousText_RevertsToOriginalKey()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = new EDCombo { StrictSelection = true };
@@ -100,7 +100,7 @@ public class EDFilterComboBoxCommitTests
                 new Binding(nameof(KeyHolder.Value)) { Source = source, Mode = BindingMode.TwoWay });
 
             combo.Text = "al";   // matchuje Alfa i Alba, žádný exakt
-            Invoke(combo, "CommitTypedTextOnEnter", []);
+            combo.CommitTypedTextOnEnter();
 
             Assert.Equal("A", source.Value);                     // zdroj beze změny
             Assert.Equal("A - Alfa", combo.Text);                // display revertnul na výběr
@@ -110,7 +110,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Enter_AfterArrowSelection_DoesNotOverwriteCapturedPick()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = Bound(source);
@@ -130,7 +130,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Enter_AfterArrowWithClosedDropdown_Commits()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = Bound(source);
@@ -150,7 +150,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void ArrowDown_StartsAtCurrentSelection()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = Bound(new KeyHolder { Value = "A" });
 
@@ -163,7 +163,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void ArrowDown_WithoutSelection_TakesFirstItem()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = Bound(new KeyHolder());   // žádný SelectedKey
 
@@ -176,7 +176,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Arrows_StopAtBoundaries()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = Bound(new KeyHolder { Value = "A" });
 
@@ -192,7 +192,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Escape_DiscardsPendingSelectionAndRevertsDisplay()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var source = new KeyHolder { Value = "A" };
             var combo = Bound(source);
@@ -210,7 +210,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void FreeMode_EnterLetsKeyBubble()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = new EDCombo { Suggestions = [new ListItem("A", "Alfa")] };
             Assert.False(combo.HandleNavigationKey(Key.Enter));
@@ -220,7 +220,7 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Suggestions_WithPresetValue_OffersWholeListNotJustTheMatchingItem()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             // Volný režim: Text nese aktuální hodnotu. Ta NENÍ filtr - jinak by šipka nabídla jen
             // právě nastavenou položku a přepnout na jinou by šlo až po smazání textu.
@@ -234,14 +234,14 @@ public class EDFilterComboBoxCommitTests
     [Fact]
     public void Reopen_AfterUserTypedFilter_KeepsFilteredList()
     {
-        RunSta(() =>
+        EDTesting.Sta.Run(() =>
         {
             var combo = new EDCombo { StrictSelection = true };
             combo.Suggestions = [new ListItem("A", "Alfa"), new ListItem("B", "Beta")];
 
             // Napsaný filtr má přežít do otevřeného dropdownu (jinak by psaní nic nefiltrovalo).
-            SetField(combo, "_textIsUserFilter", true);
-            Invoke(combo, "Refilter", ["B"]);
+            combo._textIsUserFilter = true;
+            combo.Refilter("B");
             Assert.Single(combo.Items);
 
             combo.IsDropDownOpen = true;   // → DropDownOpened; napsaný filtr se nesmí zahodit
@@ -260,26 +260,4 @@ public class EDFilterComboBoxCommitTests
 
     private static string? SelectedTag(EDCombo combo) => (combo.SelectedItem as ComboBoxItem)?.Tag as string;
 
-    private static void SetField(EDCombo combo, string field, object value) =>
-        typeof(EDCombo).GetField(field, BindingFlags.NonPublic | BindingFlags.Instance)!
-            .SetValue(combo, value);
-
-    private static void Invoke(EDCombo combo, string method, object?[] args) =>
-        typeof(EDCombo).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!
-            .Invoke(combo, args);
-
-    // Spustí akci na dedikovaném STA vlákně (WPF controly to vyžadují) a propaguje výjimku zpět.
-    private static void RunSta(Action action)
-    {
-        Exception? captured = null;
-        var thread = new Thread(() =>
-        {
-            try { action(); }
-            catch (Exception ex) { captured = ex; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (captured != null) throw captured;
-    }
 }

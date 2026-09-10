@@ -13,13 +13,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>Suffix názvu mlineOnly uzlů v doméně M-line (legacy frmMain.vb:1228).</summary>
         internal const string Suffix = " [### M-line ###]";
 
+        // Settable jen kvůli testům - reálné zdroje (DNS doména stanice, HKCU) test nastavit neumí.
+        internal static Func<string> DomainNameProvider { get; set; } = GetDomainName;
+        internal static Func<bool> VirtualDomainFlagProvider { get; set; } = GetVirtualDomainFlag;
+
         /// <summary>
         /// True = stanice v doméně M-line: DNS doména <c>main.m-line.cz</c>, nebo dev override
         /// v registry <c>HKCU\Software\Edison\MlineDomain</c> (legacy SetPcVirtualDomainMline).
         /// </summary>
         public static bool IsDomainMline() =>
-            GetDomainName().Equals("main.m-line.cz", StringComparison.OrdinalIgnoreCase)
-            || GetVirtualDomainFlag();
+            DomainNameProvider().Equals("main.m-line.cz", StringComparison.OrdinalIgnoreCase)
+            || VirtualDomainFlagProvider();
 
         private static string GetDomainName()
         {
