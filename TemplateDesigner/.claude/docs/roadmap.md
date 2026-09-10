@@ -169,6 +169,28 @@ takže nejde o práci, ale o doklad.
   s `H` („cílová pro tablo") se dnes kreslí jako vozíček. Nejdřív změřit výskyt v datech, pak
   oddělit mapy, pak doplňovat. Podklad: [`§17`](linkovy-knizni-jr-implementace-analyza.md).
 
+- **`B135` Řez tabulky nemá padat doprostřed zastávky** [M] (podnět 9. 9.). Zlom má přednostně
+  padnout tam, kde zastávka má příjezd i odjezd, a nemá vzniknout vůbec, když by na další část
+  zbyly dvě zastávky. Postskript řez posouvá zpátky, dokud netrefí řádek bez dat; my řežeme na
+  kterékoli hranici řádku. Rozhodnuto: **žádné „zadej počet spojů"**, má se to rozhodnout samo
+  (Jan 9. 9.). ⚠️ Postavit až nad `B130` - dělení dnes vychází z výšky sekce, kterou nikdo nevidí.
+  Podklad: [`§17.7`](linkovy-knizni-jr-implementace-analyza.md).
+
+- **`B136` Název zastávky jednou u zdvojeného řádku příjezd/odjezd** [S] (požadavek 9. 9.).
+  Postskript píše u zastávky s rozděleným příjezdem a odjezdem název jednou, my dvakrát.
+  `§13.4` bod 7 to odložil s „není poptávka ani tiket"; poptávka teď je. Podtržení téhož řádku
+  (`PATCH,podtrzeniPaJ`, zapnuté na jediné lince z 93 tisíc) zůstává odložené.
+
+- **`B137` Prefix IDS u označení zóny** [M] (požadavek 9. 9.). Linka přes dvě IDS se stejně
+  číslovanými zónami je v tisku nerozeznatelná. Dnes umíme jen opak - písmeno ze zóny **odebrat**
+  (`LinkovyJrAd.cls:612`). **První krok není kód:** změřit, jestli data u zóny IDS vůbec nesou.
+  Nesou-li ho jen tím písmenem, stačí nechat odebírání vypnout ze šablony; jinak se musí dohledat
+  vazba zastávka - IDS.
+
+- **`B138` Odložené do pozadí** [-] (Jan 9. 9., evidence). Tisk celé sestavy jen černě (dnes jde
+  vypnout jen barvy spojů) a volba „bez roku" u textů omezení v šabloně (dnes to řídí nastavení
+  EDISONu a to stačí). Vytáhnout, až si o to někdo řekne.
+
 - **`B66` Vlastní bloky prvků („moje komponenta")** [M] (podnět Jan 12. 8.). Uživatel vybere pár
   prvků, uloží je pod jménem a vkládá jedním kliknutím do dalších šablon - mezistupeň mezi uloženou
   sekcí a seskupením prvků. **Čeká na pevnou tabulku**: jako jeden prvek je uložení skoro zadarmo,

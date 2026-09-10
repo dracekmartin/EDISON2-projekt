@@ -1,5 +1,153 @@
 # Changelog
 
+## 2026-09-08 (4) - 🏷 značky nad časy se vejdou do sloupce, čas přípoje vypadá jako ostatní
+
+Dva nálezy Jan 8. 9. na výtisku.
+
+**Značky nad časy se nepočítaly do šířky.** Dolní hranice sloupce spoje brala v úvahu jen čas
+a značku návaznosti vedle něj (`MinAutoSloupecMm`). Řádek platnosti a řádek negativních značek se
+přitom sázejí písmem zvětšeným o `PomerZnacek` (výchozí 1,5×) a na řádek platnosti jdou **dvě
+značky vedle sebe** (`ZnacekNaRadekPlatnosti = 2`, parita se starým modulem) - takže dvě ikony na
+1,5× písma se porovnávaly se sloupcem širokým na čas na 1× a přetékaly do sousedního. Nápověda
+u „Velikosti značek" přitom slibovala jen „řádek značek se tím zvýší" a o šířce mlčela, protože ji
+to skutečně neovlivňovalo.
+
+Šířka se nově řídí **tou nejširší věcí, která ve sloupci stojí**. Měří se týmiž fonty, jakými se
+kreslí: řádek platnosti přes `SymbolRunRenderer` (piktogramy symbolovým fontem, ostatní běžným,
+mezi značkami mezera), negativní značka jako box z obrysu znaku plus vnitřní mezera
+(`NegativniZnackaRenderer.PomerVnitrniMezery`). Maximum se bere přes **všechny spoje linky**, ne
+přes blok - základ sloupce je pro všechny bloky společný (invariant z 25. 8.). Výsledek je
+cachovaný s parsovanými daty, protože `MinAutoSloupecMm` volá půlení intervalu při hledání počtu
+spojů na blok.
+
+**Čas v přípojném řádku šel jako obyčejný text.** Čas spoje se sází společným tvarem (hodina větším
+písmem, minuta menším, bez vedoucí nuly, `CasRuns`), ale přípojný řádek posílal do buňky rovnou
+string - takže tiskl „07:13", kdežto vedle stálo „7 13", a vypadalo to jako dvě různé tabulky.
+Nově jde týmž převodem; buňka umí jen jeden font, takže se nechává prázdná a kreslí se ručně -
+stejný postup jako u buňky se značkou návaznosti.
+
+Změřeno na `330511` obousměrně, prvek 200 mm: s nesmyslným dnem 1 mm vyšel sloupec **3,99 → 4,97 mm**
+a tabulka 162,3 → 179,0 mm, tedy značky si vzaly ten milimetr, o který dřív přetékaly. Bez omezení
+se nemění nic (5,87 mm) - tam se do zbytku prvku vejdou. Obojí zkontrolované na vyrenderované
+stránce proti té předchozí.
+
+⚠️ **Existující šablony mohou mít u linek s bohatými značkami širší sloupce.** Je to oprava
+přetečení, ne regrese, ale jde přímo proti utahování z dneška - u takové linky se do řádku vejde
+méně spojů než včera.
+
+⚠️ **Test na negativní značku nejdřív měřil nefunkční případ.** Dvouznaková značka („23", „60") je
+i při 1,5× **užší než celý čas**, takže sloupec při výchozím nastavení rozšířit nemá proč. Test to
+proto zkouší při trojnásobném písmu značek, kde je vidět, že se s ní vůbec počítá.
+
+Ověřeno: .NET **2981/2981** (5 nových testů), Caché 153/153.
+
+## 2026-09-08 (3) - 🛟 kolem času v buňce spoje zůstane vůle, ať se nastaví cokoli
+
+Nález Jan 8. 9. hned po předchozí změně: **dno menší, než čas měří, sloupec skutečně oříznulo.**
+Strop jsem proti podlezení pojistil (strop 3 mm dal 3,99 mm, tedy dno), ale zadané dno celý výpočet
+z písma **nahrazovalo** - takže dno 3 mm proti potřebným 3,99 dalo sloupec 3 mm. Na vyrenderované
+stránce procházely svislé čáry vedle číslic a časy sousedních sloupců se slévaly.
+
+Nově je dolní hranice jedno pravidlo: `max(3 mm, šířka času + vůle, zadané dno)`. Zadané dno tedy
+smí sloupec už jen **rozšířit**, nikdy oříznout. Vůle je **1 mm celkem** (`MinVuleKolemCasuMm`),
+tedy půl milimetru na každou stranu, a **s vnitřním okrajem se nesčítá** - platí ta větší z nich,
+takže větší okraj funguje dál.
+
+Vůle je záměrně **konstanta, ne další pole formuláře**: je to pojistka čitelnosti, ne volba - vzduch
+kolem času si uživatel přidává okrajem. Hodnota odpovídá výchozímu okraji, takže se dnešním
+šablonám nic nemění.
+
+⚠️ **Tím zaniklo utahování vnitřním okrajem, které vzniklo dnes ráno.** Ráno se naměřilo, že okraj
+0,5 → 0 sundá sloupec z 5,50 na 3,11 mm a tisk ze tří stránek na dvě; teď se nulový okraj zarazí
+o vůli, takže nedělá nic. Okraj sloupec už jen rozšiřuje. Zužuje se **velikostí písma** a polem
+**Nejmenší šířka sloupce spoje**. Nápovědy obou polí to říkají.
+
+⚠️ **Cena vůle je asi 0,9 mm na sloupec.** Na `330511` je nejužší dosažitelný sloupec **3,99 mm**
+(čas 2,99 + vůle 1) proti 3,11 mm bez vůle; na 18 sloupcích obousměrné sestavy to je ~16 mm.
+Hodnota 1 mm je Janův návrh a je k doladění - snížením se to místo vrátí.
+
+Změřeno na `330511`, prvek 200 mm: nesmyslné dno 1 mm dá sloupec 3,99 mm a tabulku 162,3 mm
+(místo 194,1 mm bez omezení); nulový okraj samotný nezmění nic. Odstup časů od čar zkontrolovaný
+na vyrenderované stránce proti té předchozí, kde se jich dotýkaly.
+
+Ověřeno: .NET **2976/2976** (3 nové testy, 2 přepsané z rána), Caché 153/153.
+
+## 2026-09-08 (2) - 📏 sloupce spojů mají nově i strop, ne jen dno
+
+Požadavek Jan 8. 9.: u linky s pár spoji se sloupce roztáhnou přes celý prvek a čas stojí uprostřed
+prázdného pole. Lidem, kteří dnes tisknou postskriptem, se to nelíbí - starý tisk drží sloupce úzké
+a zbytek vyplní prázdnými sloupci.
+
+**Příčina byla jednostranná mez.** Šířka se počítala jako `max(dno z písma, zbytek prvku / počet
+sloupců)` (`LineTableElement.cs:660`) - dno tedy existovalo, strop ne. A dorovnání prázdnými sloupci
+nemělo co dorovnávat, protože kapacita bloku se určovala jako „vejdou-li se všechny spoje, kapacita
+je jejich počet" (`:1051`).
+
+Nově jsou ve formuláři prvku i v panelu **Nejmenší** a **Největší šířka sloupce spoje** (mm, prázdné
+= jako dosud). Tři chování z jednoho pravidla, aniž si mezi nimi kdokoli volí: hodně spojů → šířka
+na dně a řeže se do bloků (fungovalo už dřív), málo spojů → šířka na stropu a zbytek se dorovná,
+mezi tím → šířka plave a vyplní prvek. Dorovnání se proto počítá na kapacitu prvku, ne jen na
+nejplnější blok.
+
+Dno jde nově zadat i **napřímo**. Přes vnitřní okraj buňky to byla oklika - uživatel musel znát
+vzorec „šířka času + okraj vlevo + okraj vpravo". Vyplněné dno ten výpočet nahradí, takže okraj
+na šířku přestane sahat; prázdné = jako dosud. Pod `MinAutoColumnWidthMm` = 3 mm sloupec nespadne
+ani zadanou hodnotou.
+
+**Nastavení šířky jsou nově pohromadě.** Nová skupina **Šířka sloupců** (nejmenší · největší ·
+dorovnat · stejně široké · mezera mezi skupinami); ve staré skupině „Sloupce" zbyly popisné sloupce
+a přejmenovala se na **Popisné sloupce**. Do 8. 9. stálo dorovnání a stejné šířky vedle nastavení
+zóny a nadpisů, takže se to nedalo přečíst jako jedna věc.
+⚠️ Ne „Šířka a dělení" - „dělení sloupců" už v UI znamená členění na skupiny dnů.
+
+Změřeno na `330511` obousměrně, prvek 200 mm: bez stropu sloupec 5,87 mm a tabulka 194,1 mm; se
+stropem 4,5 mm vyjde 170,9 mm, tedy **23 mm volných vpravo**, a se zapnutým dorovnáním se dokreslí
+prázdnými sloupci až k okraji (ověřeno na vyrenderované stránce). Zadané dno 4 mm dá 162,4 mm.
+
+⚠️ **Tři testy měly nejdřív špatné očekávání, ne kód.** Čekaly přesnou šířku tam, kde jsou dno
+a strop jen meze: zvednutím dna se do bloku vejde méně spojů, takže na každý zbyde víc místa
+a sloupec vyjde širší než zadané minimum. Fixtury si teď dno **měří** místo aby ho hádaly.
+
+⚠️ **Pevná šířka sloupce Spoj v dialogu Sloupce zůstává**, i když se stropem ztrácí důvod. Odebrání
+by znamenalo migraci šablon, které ji uloženou mají (jinak by z nich nešla zrušit), tedy zvýšení
+verze formátu - samostatná změna. Dvojice se má nejdřív osvědčit na reálných šablonách.
+
+Ověřeno: .NET **2973/2973** (14 nových testů), Caché 153/153. Nová pole i přeskupené skupiny
+ověřené **voláním** `Init` na serveru.
+
+## 2026-09-08 (1) - 📐 tabulku linky jde utáhnout na šířku z formuláře prvku
+
+Požadavek Jan 8. 9.: starý postskriptový tisk seřízne tabulku na šířku agresivněji než my a chtěl
+na to volbu „standardní / velmi úzké". Ten parametr ale **už existoval** - je to vnitřní okraj
+buňky - jen se u tabulky linky dal nastavit **jen po sloupcích** v dialogu Sloupce, kam nikdo
+nedojde. Ostatní tabulkové prvky ho element-level mají, protože berou celý balíček stylu ze
+sdíleného `StyleFields.cls`; tabulka linky si formulář skládá ručně, takže jí vypadl.
+
+Nově jsou v panelu i ve formuláři prvku dvě pole **Vnitřní okraj vlevo / vpravo** (mm) ve skupině
+Datové buňky. Prázdné = 0,5 mm jako dosud, per-sloupcový okraj z dialogu dál vyhrává.
+
+**Není to kosmetika, je to rozměr.** Dolní práh sloupce spoje je šířka času plus okraje po
+stranách. Změřeno na `330511` obousměrně, prvek 120 mm: okraj 0,5 mm → sloupec 5,50 mm, 3 spoje
+na blok, **3 stránky**; 0,25 mm → 3,89 / 4 / 3; 0 mm → 3,11 / 5 / **2 stránky**.
+Pod `MinAutoColumnWidthMm` = 3 mm sloupec nespadne ani na nule.
+
+⚠️ **„Řezů ubude" se tvrdit nedá** a test to tak nehlídá: počet bloků je skoková funkce počtu
+spojů na blok, takže o jeden spoj víc řez ubere jen někdy (na `330511` ano, na fixtuře se 40 spoji
+ne). Testovatelný je jen ten směr - užší sloupec nesmí řez přidat.
+
+⚠️ **Dva testy nejdřív měřily nic.** Fixtura měla deset spojů, ty se do šířky vešly, sloupce si
+rozdělily zbytek prvku a dolní práh se **vůbec neuplatnil** - sloupec vyšel 7,80 mm s nulovým
+i s výchozím okrajem. Fixtura je proto na 40 spojích a testy, které na prahu stojí, mají pojistku,
+že se tabulka opravdu dělí.
+
+Ověřeno: .NET **2959/2959** (6 nových testů), Caché 153/153. Nová pole ověřená **voláním** `Init`
+na serveru (prázdný výchozí stav, rozsah 0-20, jednotka mm).
+
+⚠️ **Záchranná cesta pro nasazení `.cls` z `cache-api.md` nefunguje** - ruční poslání cesty hooku
+skončilo s kódem 0 a bez chyby, ale server dál vracel starou třídu (ověřeno voláním `Init`).
+Nasadil to teprve zápis editačním nástrojem, kdy hook spustí harness sám. Pravidlo je tím na tomhle
+místě zavádějící stejně jako `cache_compile`, na který samo varuje.
+
 ## 2026-09-07 (17) - 📦 postskriptový vzhled linkového JŘ jako systémová šablona
 
 Šablona, na které se linkový JŘ ladil proti starému postskriptovému tisku, ležela jen jako

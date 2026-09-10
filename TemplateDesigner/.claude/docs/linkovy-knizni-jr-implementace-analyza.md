@@ -1573,3 +1573,51 @@ Prvek 200 mm, 9 spojových slotů (obousměrně = 18 sloupců), popisné sloupce
 tabulky a sekce byla nastavená „držet pohromadě", takže se druhý blok neměl kam odsunout
 (přesah 43,7 mm). Nápravu dnes hláška o přetečení říká sama.
 
+
+### 17.7 Průchod nastavením postskriptu s kolegou (9. 9. 2026)
+
+Seznam 21 podnětů „co ve starém nastavení je a u nás chybí", projitý proti kódu. Účel je stejný jako
+u `§13.2`: mít to jednou roztříděné, ať se u dalšího průchodu neodvozuje znovu.
+
+**Šest podnětů bylo mylných - ta věc v aplikaci je.** Stojí to za samostatné vypsání, protože se
+vedly jako mezera:
+
+| Podnět | Kde to je |
+|---|---|
+| Nezobrazovat rok u „jede - nejede" | `LinkovyJrAd.UpravDatum`, režimy `2`/`3` = bez roku, s přebitím u linky |
+| Místenkování jako poznámka | značky `R`,`R1`,`R2`,`R3` u spoje (`:1172`) + čtyři věty v legendě (`:1737`) |
+| Radiobus | glyf `RBU` u spoje i vysvětlivka; prvek poznámek to má jako volbu |
+| Jede na objednání / podmínečně | glyfy od 31. 8. (`L11`); v datech 22 spojů podmínečně |
+| Zvýrazněná zastávka a tarifní číslo | parametry `ZVYRAZNIT_ZASTAVKU` a `ZVYRAZNIT_TC` |
+| Nastavení názvu souboru | dialog tisku, vzor z datových polí |
+
+⚠️ **Nastavené nikde není jen tvar tisku místenkování** (`MistOR`/`MistNOD`, 0 firem ze šesti) -
+to je `B98`, ne mezera proti požadavku. Požadavek zněl „má to být jen nějaká poznámka", což děláme.
+
+**Rozhodnutí z tohoto průchodu:**
+
+- **Počet spojů ani počet řádků na stránku se jako nastavení nezavádí** (Jan 9. 9.) - dělení má být
+  adaptivní. Ruší to i případné dorovnání legacy `PATCH,VERTIM`; celá váha jde na pravidla řezu
+  (`B135`). ⚠️ Adaptivní dělení má smysl teprve nad `B130` - dnes o něm rozhoduje výška sekce
+  a uživatel nevidí, kolik místa na stránce zbývá.
+- **Prefix IDS u zóny je nová položka** (`B137`), ne dorovnání: legacy umí jen odebrání písmen
+  (`ZonaIdsDelZnk`, 28 747 linek), tedy pravý opak. Písmeno v označení zóny je zároveň jediné, čím
+  se dnes IDS pozná (KOVED `Z400`).
+- **Do pozadí** (`B138`): černý tisk celé sestavy, volba „bez roku" v šabloně.
+- **Souhrnný JŘ zůstává `L7`** a teď se nebere. Kontrakt víc linek v jedné sestavě umí už dnes
+  (`§13.2 A`), engine se jen volá per linka.
+
+**Podněty, které míří na už vedené položky:** poznámky u dělených linek → `B127` · měřítka → `B132` ·
+km sloupce → `B124` · okraje a výška bloku poznámek → `B130` + `B133` · pořadí druhů poznámek →
+rozhodnuto v `§13.4` bodu 3 (vlastnost prvku legendy), dnes prvek umí jen způsob řazení, ne vlastní
+pořadí druhů, souvisí s `#7487` · bezbariérovost agregovat do poznámky → `PATCH,TZPA(BBP)`, vedeno
+v `§13.5` jako data · málo zastávek a hodně spojů na jednu stránku → bloky pod sebou na jedné stránce
+jdou už dnes, pokud sekce nedrží obsah pohromadě (měření 7. 9. na `330511`); ověřit na jejich lince.
+
+**Zbývá doptat:**
+
+1. **Návaznosti seskupit pod tarifní číslo, nebo samostatně** - dnes se přípojný řádek tiskne pod
+   zastávkou, ke které patří. Není jasné, jestli jde o všechny návaznosti zastávky na jednom řádku,
+   nebo o blok mimo tabulku.
+2. **Km sloupce „jen z aktuální tabulky"** - jestli se po řezu na stránky mají tisknout jen sloupce
+   použité na dané části. To je nad `B124` (duplicitní sloupce v obousměrné sestavě) něco navíc.

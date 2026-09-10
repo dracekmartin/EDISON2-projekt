@@ -40,24 +40,34 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("PomerZnacek", "Velikost značek", 1.5, 1, 3)
         s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
 
-        // ── Skupina "Sloupce" ─────────────────────────────────────────────
-        // Viditelnost, šířky a pořadí jednotlivých sloupců se editují v tabu „Sloupce";
-        // sem patří jen volba, která platí pro celý prvek.
-        d form.AddGroup("columns", "Sloupce")
+        // ── Skupina "Šířka sloupců" ───────────────────────────────────────
+        // Šířka sloupce spoje je jeden vzorec: zbytek prvku dělený počtem spojů, přiskřípnutý mezi
+        // dno a strop. Všechno, co do něj vstupuje, patří pod jeden nadpis - do 8. 9. to bylo
+        // roztroušené mezi "Sloupce" a "Datové buňky" a nešlo přečíst jako jedna věc.
+        // ⚠️ Ne "Šířka a dělení" - "dělení sloupců" už v UI znamená členění na skupiny dnů.
+        d form.AddGroup("width", "Šířka sloupců")
+        s f = form.AddDecimal("NejmensiSirkaSpojeMm", "Nejmenší šířka sloupce spoje", "", 0, 50, "mm")
+        s f.helpText = "Sloupec nebude užší než tohle. Prázdné = jen tolik, aby se vešel čas a kolem něj zůstala vůle. Menší hodnota, než čas měří, se neuplatní - sloupec se pod čitelnou šířku nezúží, ať se zadá cokoli."
+        s f = form.AddDecimal("NejvetsiSirkaSpojeMm", "Největší šířka sloupce spoje", "", 0, 200, "mm")
+        s f.helpText = "Prázdné = bez omezení, sloupce se roztáhnou přes celý prvek. Vyplněné = u linky s málo spoji zůstanou úzké a vpravo zbyde volné místo, jako ve starém postskriptovém tisku. U linky s hodně spoji se nic nemění, tam je sloupec stejně na svém minimu."
         s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
-        s f.helpText = "Poslední blok bývá neúplný a nechá vpravo volné místo. Zapnuté = doplní se prázdné sloupce, aby měly všechny bloky stejně širokou tabulku."
+        s f.helpText = "Co se stane s volným místem vpravo: zapnuté = rozkreslí se prázdnými sloupci, takže tabulka končí rovně, vypnuté = zůstane bílé. Týká se posledního nedopsaného bloku i tabulky, které místo zbylo kvůli největší šířce."
         s f = form.AddBool("JednotnaSirkaSpoju", "Stejně široké sloupce spojů", 1)
         s f.helpText = "Vypnuté = sloupec, ve kterém je někde značka návaznosti, je o ni širší než ostatní (tak to dělá starý tisk) a tabulka působí roztřepeně. Zapnuté = všechny sloupce spojů dostanou šířku toho nejširšího; do řádku se jich tím vejde méně."
+        s f = form.AddDecimal("MezeraMeziSkupinamiMm", "Mezera mezi skupinami sloupců", 0, 0, 20, "mm")
+        s f.helpText = "Volné místo za popisným blokem a mezi skupinami dnů. 0 = souvislá mřížka bez mezer. Mezera se bere ze šířky prvku, takže se do řádku vejde méně spojů."
+
+        // ── Skupina "Popisné sloupce" ──────────────────────────────────────
+        // Zóna, km, Tč, zastávka a MHD. Viditelnost, šířky a pořadí jednotlivých sloupců se
+        // editují v tabu "Sloupce"; sem patří jen volby platné pro celou skupinu.
+        d form.AddGroup("columns", "Popisné sloupce")
         s f = form.AddBool("RozdelitZonyDoSloupcu", "Každá zóna ve vlastním sloupci", 0)
         s f.helpText = "Zastávka na hranici zón má víc zón. Vypnuté = všechny v jednom sloupci za sebou, zapnuté = každá ve vlastním sloupci vedle sebe (jako kilometry). Sloupec zón se tím rozšíří o tolik dílů, kolik zón má nejbohatší zastávka."
-        // Popisné sloupce (zóna, km, Tč, zastávka, MHD) jsou jedna skupina - jeden nadpis nad nimi
-        // a jeden slitý blok bez vnitřních čar. Změřeno na vzoru IDZK 940.
+        // Jeden nadpis nad celou skupinou a jeden slitý blok bez vnitřních čar. Změřeno na vzoru IDZK 940.
         s f = form.AddText("PopisneSloupceNadpis", "Nadpis popisných sloupců")
         s f.helpText = "Text nad zónou, km, Tč, zastávkou a MHD - všechny mají jeden společný nadpis. Prázdné = bez nadpisu."
         s f = form.AddBool("PopisneSloupceBezVnitrnichCar", "Popisné sloupce bez vnitřních čar", 0)
         s f.helpText = "Popisné sloupce se kreslí jako jeden slitý blok. Svislé čáry mezi sloupci spojů zůstanou."
-        s f = form.AddDecimal("MezeraMeziSkupinamiMm", "Mezera mezi skupinami sloupců", 0, 0, 20, "mm")
-        s f.helpText = "Volné místo za popisným blokem a mezi skupinami dnů. 0 = souvislá mřížka bez mezer. Mezera se bere ze šířky prvku, takže se do řádku vejde méně spojů."
 
         // ── Skupina "Záhlaví" ─────────────────────────────────────────────
         d form.AddGroup("header", "Záhlaví")
@@ -78,6 +88,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#00FFFFFF"
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        // Vnitřní okraj je u této tabulky rozměrová volba, ne kosmetika: dolní práh sloupce spoje
+        // je šířka času plus okraje po stranách, takže rozhoduje, kolik spojů se vejde do bloku
+        // a kolikrát se tabulka řízne na šířku. Jen vodorovné - svislé drží pole "Výška řádku".
+        s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", "", 0, 20, "mm")
+        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
+        s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", "", 0, 20, "mm")
+        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Vynulováním se sloupec nezúží pod čitelnou šířku - kolem času zůstane vůle 1 mm vždy."
         s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
         d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
         d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")

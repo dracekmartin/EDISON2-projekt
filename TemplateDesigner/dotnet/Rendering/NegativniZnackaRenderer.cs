@@ -23,7 +23,9 @@ namespace TemplateDesigner.Rendering;
 public static class NegativniZnackaRenderer
 {
     /// <summary>Vodorovná mezera kolem znaku jako podíl velikosti písma (shodně s prvkem odjezdů).</summary>
-    private const float PomerVnitrniMezery = 0.12f;
+    /// <remarks>Veřejná, protože šířka sloupce spoje se počítá i z boxu značky - měření musí
+    /// vycházet z téhož čísla jako kresba, jinak značka ze sloupce přeteče.</remarks>
+    internal const float PomerVnitrniMezery = 0.12f;
 
     /// <summary>Nakreslí značku do obdélníku (v mm) podle zarovnání stylu. Prázdná = nic.</summary>
     public static void DrawCell(RenderContext ctx, SKRect contentMm, string znak,
