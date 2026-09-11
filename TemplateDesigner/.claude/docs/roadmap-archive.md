@@ -1,5 +1,26 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B145` Sloupec hodin drží barvu své skupiny dnů (hotovo 11. 9. 2026)
+
+Požadavek TRANSDEV z hovoru 11. 9., doložený vývěskou Nitra linka 4. Se zapnutým „Hodiny u každé
+sk." přebíralo barvu skupiny jen **záhlaví** hodinové buňky; tělo šlo po pozadí **minut**, takže
+plný barevný pruh hodin šel jen za cenu obarvení minut. Nově bere tělo pozadí záhlaví skupiny
+(`HourBodyBackground`), bez podbarveného záhlaví se chová jako dosud.
+
+**Bez nastavení** (rozhodnutí Jan 11. 9.) - „Hodiny u každé sk." je výchozím stavem vypnuté,
+takže to zapíná jen ten, kdo chce hodiny svázané se skupinou.
+
+⚠️ **Dvakrát jsem u toho tvrdil nepravdu**, než jsem to dočetl: nejdřív „umíme všechno" (neumíme
+tělo hodin), pak „neumíme barvy sloupců vůbec" (záhlaví i zebra per skupina fungují). Kdo to bude
+po mně číst: barvy skupin jsou v editoru skupin dnů, tab Sloupce, per skupina zvlášť pro záhlaví
+a data, plus vlastní zebra.
+
+⚠️ **Zebra zůstala ruční.** Odvozovat světlejší odstín ze záhlaví by tiše změnilo výstup všem,
+kdo mají barevné záhlaví a výchozí šedou zebru. Až bude otravné klikat dvě barvy, patří tam
+tlačítko „světlejší odstín záhlaví", které pole předvyplní viditelnou hodnotou.
+
+Detail v `changelog.md` 11. 9. (5).
+
 ## `B148` Projetá zastávka nemá ve sloupci časů ani „<" (hotovo 11. 9. 2026)
 
 Hlásil TRANSDEV 11. 9. Volba „Čas u projetých = Nezobrazovat" (výchozí) zahazovala jen čísla -

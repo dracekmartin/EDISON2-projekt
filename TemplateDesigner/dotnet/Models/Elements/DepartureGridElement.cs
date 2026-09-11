@@ -575,6 +575,15 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return WithParentHeaderTypography(resolved, parent);
     }
 
+    /// <summary>`B145`: pozadí **těla** sloupce hodin, když se opakuje u každé skupiny. Bere se
+    /// barva **záhlaví** té skupiny, ať pruh hodin drží s barevným nadpisem a minuty pod ním můžou
+    /// zůstat bílé (doložený vzor: vývěska Nitra linka 4). Bez podbarveného záhlaví se nic nemění -
+    /// spadne to na pozadí minut jako dosud, takže průhledná buňka nechá projít zebru.</summary>
+    internal static string HourBodyBackground(ResolvedTextStyle header, ResolvedTextStyle minute) =>
+        ColorHex.ParseOrTransparent(header.BackgroundColor).Alpha > 0
+            ? header.BackgroundColor
+            : minute.BackgroundColor;
+
     /// <summary>Vyřeší styl minutové buňky (per-skupina).</summary>
     private ResolvedTextStyle ResolveGroupMinuteStyle(DepartureGroupColumnStyle? cs)
     {
@@ -974,7 +983,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
                     if (HourColumnPerGroup)
                     {
-                        DrawHourDataCell(gx, hour, ms.BackgroundColor);
+                        DrawHourDataCell(gx, hour, HourBodyBackground(groupHeaderStyles[gid], ms));
                         gx += HourColumnWidth;
                     }
 

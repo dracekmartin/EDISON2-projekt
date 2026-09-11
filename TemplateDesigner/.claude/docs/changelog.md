@@ -1,5 +1,21 @@
 ﻿# Changelog
 
+## 2026-09-11 (5) - 🎨 sloupec hodin drží barvu své skupiny dnů
+
+`B145`, požadavek TRANSDEV z hovoru 11. 9. Vzor je vývěska Nitra linka 4: každá skupina dnů má
+vlastní barvu - záhlaví i pruh hodin plnou, minuty bílé a střídání řádků světlejším odstínem.
+
+Se zapnutým **„Hodiny u každé sk."** přebíralo barvu skupiny jen **záhlaví** hodinové buňky;
+tělo se kreslilo pozadím **minut**, takže plný barevný pruh hodin šel jen za cenu obarvení minut.
+Nově bere tělo pozadí **záhlaví** své skupiny.
+
+Bez podbarveného záhlaví se nemění nic - spadne to na pozadí minut jako dosud, takže průhledná
+buňka pořád nechá projít zebru. Rozhoduje alfa, ne prázdnost řetězce.
+
+⚠️ **Zebru si uživatel pořád vybírá sám** (vlastní barva střídání řádků per skupina). Odvozovat
+světlejší odstín automaticky by tiše změnilo výstup každému, kdo má barevné záhlaví a spoléhá
+na výchozí šedou - stejná třída překvapení jako duplicitní sloupec v `B147`.
+
 ## 2026-09-11 (4) - 🚫 projetá zastávka nemá ve sloupci časů ani „<"
 
 `B148`, hlásil TRANSDEV 11. 9. Volba **„Čas u projetých = Nezobrazovat"** (výchozí) zahazovala

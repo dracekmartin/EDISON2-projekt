@@ -33,15 +33,6 @@ co přesně chtějí, ne kód.
   u linky. Výchozí musí zůstat spočítané, jinak se českým firmám sloupec vyprázdní (mají pole prázdné).
   **Šimko to ještě zkusí**, takže čekat na potvrzení. Server-side parametr → do allowlistu.
 
-- **`B145` Tělo sloupce hodin vlastní barvou** [S] (TRANSDEV 11. 9., zúženo 11. 9.).
-  Vzor je vývěska Nitra linka 4: záhlaví i sloupec hodin plnou barvou skupiny, minuty bílé
-  a střídání řádků světlejším odstínem téže barvy. ⚠️ **Skoro všechno už umíme** - se zapnutým
-  „Hodiny u každé sk." přebírá **záhlaví** hodinového sloupce pozadí záhlaví skupiny a zebra
-  je per skupina. Chybí jen **tělo** hodinového sloupce: kreslí se pozadím **minut** té skupiny
-  (`DrawHourDataCell(gx, hour, ms.BackgroundColor)`), takže plný pruh hodin jde jen za cenu
-  obarvení minut. Otevřené: převzít barvu záhlaví, nebo dát skupině vlastní pozadí hodin.
-  ⚠️ Čteno z kódu, na obrazovce neověřeno.
-
 ### Chyby
 
 - **`B149` Pořadí stránek ve směru zpět** [S] (TRANSDEV 11. 9.). V PDF chtějí stránky vzestupně
