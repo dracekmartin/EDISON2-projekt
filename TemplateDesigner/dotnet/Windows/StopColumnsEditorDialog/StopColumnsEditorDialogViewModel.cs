@@ -51,13 +51,15 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
     /// Uživatel to musí vidět dřív, než se diví, proč mu jedno zaškrtnutí udělalo dvanáct sloupců.</summary>
     public bool ExpandsByData => _key == StopFields.TravelTimeVariants;
 
-    /// <summary>Záhlaví rozvíjené položky určují data (značky variant), takže se nedá přepsat.</summary>
-    public bool HeaderEditable => !ExpandsByData;
+    // `B150`: záhlaví rozvíjené položky je od 11. 9. editovatelné (dřív zamčené) - je to společný
+    // popisek celého bloku pro případ, že jsou písmena variant vypnutá.
 
     public string ExpandHint =>
         "Rozvine se podle dat: linka dostane tolik sloupců, kolik má variant jízdních dob, a každý "
-        + "bude takto široký. Záhlaví určuje značka varianty, proto se nezadává. Linka s jedinou "
-        + "variantou žádný nedostane - to je sloupec Čas jízdy. Součet šířek vlevo počítá jeden.";
+        + "bude takto široký. Záhlaví nesou značky variant; zadané záhlaví se použije jako jeden "
+        + "společný popisek přes celý blok, když v parametrech sestavy vypnete Písmena variant tras. "
+        + "Linka s jedinou variantou žádný sloupec nedostane - to je sloupec Čas jízdy. "
+        + "Součet šířek vlevo počítá jeden.";
 
     private CellStyleVM _headerStyle = null!;
     public CellStyleVM HeaderStyle

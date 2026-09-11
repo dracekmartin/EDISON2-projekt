@@ -471,6 +471,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         ColumnRenderer.DrawRow(ctx, xMm, Y, headerH, specs,
             Grid.ShowColumnLines ? paints.Grid : null, fontScale: scale);
 
+        // `B150`: s vypnutými písmeny nese blok variantních sloupců JEDEN společný popisek, ne
+        // tentýž text v každém sloupci. Kreslí se až po DrawRow přes celý blok - kdyby se slily
+        // samotné buňky záhlaví, rozešly by se indexy specs s datovými řádky (pruh šipky).
+        DrawVariantGroupHeader(ctx, columns, widths, headerH, xMm + arrowLaneMm, scale);
+
         // Čára pod záhlavím
         var lineStart = ctx.ToCanvas(xMm, Y + headerH);
         var lineEnd = ctx.ToCanvas(xMm + widthMm, Y + headerH);
@@ -595,6 +600,52 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         result[at + 1] = specs[at] with { SuppressLeadingLine = true };
         Array.Copy(specs, at + 1, result, at + 2, specs.Length - at - 1);
         return result;
+    }
+
+    /// <summary>`B150`: společný popisek bloku variantních sloupců, vodorovně na střed přes celý
+    /// blok. Kreslí se jen když blok existuje a popisek je neprázdný - tedy s vypnutými písmeny
+    /// variant, protože jinak v záhlaví stojí ta písmena.</summary>
+    private void DrawVariantGroupHeader(
+        RenderContext ctx, List<StopColumn> columns, Dictionary<StopColumn, float> widths,
+        float headerH, float xMm, float scale)
+    {
+        string label = VariantGroupLabel(ctx.Data);
+        if (label.Length == 0) return;
+
+        var (blockStartMm, blockWidthMm, first) = VariantBlockSpan(columns, widths);
+        if (first is null || blockWidthMm <= 0) return;
+
+        var style = ResolveHeaderStyle(first) with { HAlign = TextHorizontalAlignment.Center };
+        CellRenderer.DrawCell(ctx,
+            new SKRect(xMm + blockStartMm, Y, xMm + blockStartMm + blockWidthMm, Y + headerH),
+            label, style, scale);
+    }
+
+    /// <summary>Text společného popisku, nebo prázdno když se kreslit nemá. Se zapnutými písmeny
+    /// variant nese záhlaví je, takže by je popisek překryl.</summary>
+    internal string VariantGroupLabel(DataContext? data)
+    {
+        if (GetBoolParam(data, NoteVisibilityFilter.VariantLettersParamName, true)) return "";
+        return Columns.FirstOrDefault(c => c.Key == StopFields.TravelTimeVariants)?.Header ?? "";
+    }
+
+    /// <summary>Odsazení a šířka bloku variantních sloupců v už rozvinutém seznamu, plus první
+    /// z nich (nese styl záhlaví). Blok je souvislý, protože vzniká rozvinutím jedné položky.</summary>
+    internal static (float StartMm, float WidthMm, StopColumn? First) VariantBlockSpan(
+        List<StopColumn> columns, Dictionary<StopColumn, float> widths)
+    {
+        float offsetMm = 0f, startMm = 0f, widthMm = 0f;
+        StopColumn? first = null;
+        foreach (var col in columns)
+        {
+            if (col.Key.StartsWith(StopFields.TravelTimeVariantPrefix, StringComparison.Ordinal))
+            {
+                if (first is null) { first = col; startMm = offsetMm; }
+                widthMm += widths[col];
+            }
+            offsetMm += widths[col];
+        }
+        return (startMm, widthMm, first);
     }
 
     /// <summary>Sestaví CellSpec[] pro řádek záhlaví. Pokud BeforeName a markersSubCellWidth > 0, rozdělí stop name sloupec stejně jako datové řádky.</summary>

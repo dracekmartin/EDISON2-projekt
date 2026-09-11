@@ -689,6 +689,9 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     vypínejte je jen tam, kde varianty vysvětlujete jinak, protože jinak se u minuty nedá poznat,
     který sloupec časů pro ni platí. Bez zapnutého sloupce „Varianty tras" se u minut netisknou
     vůbec, protože by je nebylo čím vysvětlit. Písmen **rozdílů tras** se to netýká.
+  - **Popisek celého bloku místo písmen** - v editoru sloupců zadejte položce „Varianty tras"
+    záhlaví. S vypnutými písmeny se vytiskne jako jeden společný popisek přes všechny variantní
+    sloupce (na střed), ne jako tentýž text v každém z nich. Se zapnutými písmeny se nepoužije.
   - **Písmena variant a písmena rozdílů tras jsou dvě různé věci a tisknou se vedle sebe** -
     u minuty je nejdřív rozdíl trasy, pak varianta („17BA" = rozdíl B, varianta A).
     Rozdíl trasy říká **kudy** spoj jede jinak a vysvětluje ho text v legendě; varianta říká,

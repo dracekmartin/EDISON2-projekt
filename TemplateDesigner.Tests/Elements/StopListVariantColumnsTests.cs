@@ -80,6 +80,71 @@ public class StopListVariantColumnsTests
         Assert.Empty(vysledek.Where(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)));
     }
 
+    // ── B150: společný popisek bloku variantních sloupců ────────────────────────
+
+    private static StopListElement PrvekSPopiskem(string popisek)
+    {
+        var el = new StopListElement();
+        el.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Header = popisek;
+        return el;
+    }
+
+    /// <summary>`B150` - s vypnutými písmeny se použije záhlaví zadané u položky „Varianty tras".</summary>
+    [Fact]
+    public void VypnutaPismena_PouzijeSeSpolecnyPopisek()
+    {
+        var el = PrvekSPopiskem("Jízdní doby");
+
+        Assert.Equal("Jízdní doby", el.VariantGroupLabel(Stranka(["", "A"], "false")));
+    }
+
+    /// <summary>Se zapnutými písmeny se popisek nekreslí - v záhlaví stojí písmena a popisek
+    /// by je přejel.</summary>
+    [Fact]
+    public void ZapnutaPismena_PopisekSeNekresli()
+    {
+        var el = PrvekSPopiskem("Jízdní doby");
+
+        Assert.Equal("", el.VariantGroupLabel(Stranka(["", "A"], "true")));
+        Assert.Equal("", el.VariantGroupLabel(Stranka(["", "A"])));
+    }
+
+    /// <summary>Nezadané záhlaví = žádný popisek, ne prázdný pruh.</summary>
+    [Fact]
+    public void VypnutaPismenaBezZahlavi_ZadnyPopisek()
+    {
+        Assert.Equal("", PrvekSPopiskem("").VariantGroupLabel(Stranka(["", "A"], "false")));
+    }
+
+    /// <summary>Popisek se kreslí přes celý blok: odsazení je součet sloupců před ním, šířka
+    /// součet variantních. Kdyby se to rozešlo, popisek by seděl nad cizím sloupcem.</summary>
+    [Fact]
+    public void BlokVariant_MaOdsazeniASirkuPresVsechnySloupce()
+    {
+        var cols = StopListElement.ExpandTravelTimeColumns(Sloupce(), ["", "A", "D"]);
+        var sirky = cols.ToDictionary(c => c, c => c.Key == StopFields.StopName ? 33f : 8f);
+
+        var (start, sirka, prvni) = StopListElement.VariantBlockSpan(cols, sirky);
+
+        Assert.NotNull(prvni);
+        Assert.Equal(8f, start);    // před blokem je jen sloupec „Čas"
+        Assert.Equal(24f, sirka);   // tři variantní sloupce po 8 mm
+    }
+
+    /// <summary>Bez variantních sloupců není co kreslit - a nesmí z toho vyjít nulová šířka
+    /// se startem uprostřed tabulky.</summary>
+    [Fact]
+    public void BezVariantnichSloupcu_ZadnyBlok()
+    {
+        var cols = StopListElement.ExpandTravelTimeColumns(Sloupce(), [""]);
+        var sirky = cols.ToDictionary(c => c, c => 8f);
+
+        var (_, sirka, prvni) = StopListElement.VariantBlockSpan(cols, sirky);
+
+        Assert.Null(prvni);
+        Assert.Equal(0f, sirka);
+    }
+
     [Fact]
     public void SloupecCasuZustavaAVariantyJdouZaNim()
     {

@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-09-11 (2) - 🏷 vlastní popisek přes blok variantních sloupců
+
+`B150`, nález Jana při zkoušení `B141`. Záhlaví položky „Varianty tras" bylo v editoru sloupců
+**zamčené** - dokud v něm vždycky stála písmena z dat, nebylo co zadávat. S vypnutými písmeny
+ale zůstal blok sloupců bez jakéhokoli popisku.
+
+Nově jde záhlaví té položky zadat a s vypnutými písmeny se vytiskne jako **jeden společný popisek
+přes celý blok**, vodorovně na střed - ne tentýž text v každém sloupci. Se zapnutými písmeny mají
+přednost ona, protože jinak by popisek přejel značky variant.
+
+⚠️ **Kreslí se až po řádku záhlaví, ne slitím buněk.** Kdyby se slily samotné buňky, zkrátil by se
+seznam `CellSpec` a rozešly by se indexy s datovými řádky - na tom visí vložení pruhu šipky
+(`InsertArrowLane`). Vedlejšek: se zapnutými čarami mezi sloupci popisek ty čáry přejede.
+
 ## 2026-09-11 (1) - 🔤 písmena variant tras jdou vypnout
 
 `B141`, požadavek TRANSDEV z hovoru 11. 9. Nový parametr sestavy **„Písmena variant tras"** ve

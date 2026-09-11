@@ -1,5 +1,20 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B150` Vlastní popisek bloku variantních sloupců (hotovo 11. 9. 2026)
+
+Nález Jana při zkoušení `B141`: záhlaví položky „Varianty tras" bylo v editoru sloupců zamčené
+(`HeaderEditable => !ExpandsByData`), protože v něm vždycky stála písmena z dat. S vypnutými
+písmeny tím blok sloupců zůstal bez popisku.
+
+Řešení: záhlaví té položky jde zadat a s vypnutými písmeny se tiskne jako **jeden společný popisek
+přes celý blok** na střed. Se zapnutými písmeny mají přednost ona.
+
+⚠️ **Popisek se kreslí až po řádku záhlaví, ne slitím buněk** (`DrawVariantGroupHeader`). Slití by
+zkrátilo `CellSpec[]` a rozešly by se indexy s datovými řádky - na indexu visí vložení pruhu šipky
+(`InsertArrowLane`). Cena: se zapnutými čarami mezi sloupci je popisek přejede.
+
+Detail v `changelog.md` 11. 9. (2).
+
 ## `B141` Vypnutí písmen variant tras (hotovo 11. 9. 2026)
 
 Požadavek TRANSDEV z hovoru 11. 9.: jít vypnout písmena variant tras, a to v záhlaví sloupců
