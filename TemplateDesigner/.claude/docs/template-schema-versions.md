@@ -205,6 +205,13 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   dřív dávala záloha: `#FFE0E0E0` prvkům jízdních řádů, `#FFE8E8E8` tabulkám. Prvek s vlastní
   hodnotou se nechává být **včetně prázdné** - prázdno už znamená vědomé „bez podbarvení".
 
+- **1.12.0** `MigrationRozestupOdjezdu` (2026-09-11, `B143`) - výchozí **Rozestup odjezdů** je nově
+  **Rovnoměrný** (minuty stojí ve svislici, značka u jednoho spoje nerozhodí zarovnání ostatních);
+  zároveň se rastr počítá přes **celý prvek**, ne per skupinu dnů. ⚠️ Vlastnost vznikla 12. 8. 2026,
+  takže starší šablony ji v JSON **nemají** a nový výchozí stav by jim mlčky přesázel mřížku minut.
+  Migrace jim proto dopíše `minuteSpacing: "ByContent"`. Prvek s vlastní hodnotou se nechává být,
+  jiných prvků než mřížky minut se to netýká.
+
 ---
 
 ## Operational notes

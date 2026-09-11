@@ -1,5 +1,25 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B143` Rovnoměrný rozestup přes celý prvek a jako výchozí (hotovo 11. 9. 2026)
+
+Požadavek TRANSDEV z hovoru 11. 9. Ukázalo se, že „Rovnoměrný" z 12. 8. **už pevnou mřížku dělal**,
+ale jen **uvnitř sloupce** - rastr byl per skupina dnů. Na Nitře 4 tím jeden spoj se značkami
+(`35` + box `10` + `K`) roztáhl celý svůj sloupec a sousední zůstal těsný, takže minuty nestály
+ve svislici mezi sloupci. Nález Jan 11. 9. z náhledu, ne z dat.
+
+Rastr se počítá přes celý prvek; Rovnoměrný je výchozí; migrace 1.11 → 1.12 dopíše starým šablonám
+„Podle obsahu", aby se jim tisk nezměnil.
+
+⚠️ **Cena je vzdušnost**: sloupce bez značek zřídnou na šířku nejhustšího odjezdu v prvku. Kdyby
+to vadilo, další krok je dvoudílný slot (pevná šířka minuty + pevná šířka značek zvlášť), který dá
+zarovnání bez toho sčítání - viz varianta C z rozboru 11. 9.
+
+⚠️ **Obava „značky se započítají, takže rozestup není konstantní" neplatila** - značky se do slotu
+započítají, ale slot je pro všechny odjezdy stejný. Mřížku opticky rozbíjí něco jiného: zarovnání
+minutových buněk na střed nebo vpravo (řádek s méně odjezdy začne jinde) a příliš úzký sloupec.
+
+Detail v `changelog.md` 11. 9. (6).
+
 ## `B145` Sloupec hodin drží barvu své skupiny dnů (hotovo 11. 9. 2026)
 
 Požadavek TRANSDEV z hovoru 11. 9., doložený vývěskou Nitra linka 4. Se zapnutým „Hodiny u každé

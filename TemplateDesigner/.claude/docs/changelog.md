@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-09-11 (6) - 📏 rovnoměrný rozestup minut platí přes celý prvek a je výchozí
+
+`B143`, nález Jana 11. 9. na Nitře 4. „Rozestup odjezdů = Rovnoměrný" držel rastr **per skupinu
+dnů**, takže se sloupce rozešly mezi sebou: jediný spoj se značkami (`35` + box `10` + `K`) roztáhl
+sloty celého svého sloupce, zatímco sousední sloupec bez něj zůstal těsný. Uvnitř sloupce mřížka
+seděla, mezi sloupci ne.
+
+Rastr se nově počítá **přes celý prvek**. Cena: sloupce bez značek zřídnou na šířku toho
+nejhustšího.
+
+**Rovnoměrný je nově výchozí** - tak vývěsku chce skoro každý. ⚠️ Šablony uložené před 12. 8. 2026
+hodnotu v JSON nemají, takže by jim nový výchozí stav mlčky přesázel mřížku; migrace 1.11 → 1.12
+jim dopíše „Podle obsahu".
+
+Mezery fungují beze změny: rozteč je `max(šířka minuty + mezera minuta↔anotace, nejširší odjezd)
++ mezera mezi odjezdy`. Značky se drží své minuty, slot jim jen rezervuje místo.
+
 ## 2026-09-11 (5) - 🎨 sloupec hodin drží barvu své skupiny dnů
 
 `B145`, požadavek TRANSDEV z hovoru 11. 9. Vzor je vývěska Nitra linka 4: každá skupina dnů má

@@ -42,11 +42,13 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
     public float HourColumnWidth { get; set; } = 8f;
     public float MinuteWidth { get; set; } = 5f;
 
-    /// <summary>Jak se skládají odjezdy do řádku hodiny. Výchozí <see cref="DepartureSpacing.ByContent"/>
-    /// = dnešní chování (slot roste o šířku značek, takže minuta se značkou odsune ty za sebou).
-    /// <see cref="DepartureSpacing.Even"/> = jeden rozestup pro celou skupinu, takže minuty stojí ve
-    /// svislici napříč řádky - sázení starého modulu (TRANSDEV #12843).</summary>
-    public DepartureSpacing MinuteSpacing { get; set; } = DepartureSpacing.ByContent;
+    /// <summary>Jak se skládají odjezdy do řádku hodiny. Výchozí <see cref="DepartureSpacing.Even"/>
+    /// (`B143`, rozhodnutí Jan 11. 9.) = jeden rozestup pro **celý prvek**, takže minuty stojí ve
+    /// svislici napříč řádky i sloupci - sázení starého modulu a to, co chce skoro každý.
+    /// <see cref="DepartureSpacing.ByContent"/> = slot roste o šířku značek, takže minuta se značkou
+    /// odsune ty za sebou. Šablonám uloženým před 12. 8. 2026 dopíše `ByContent` migrace 1.11 → 1.12,
+    /// aby se jim tisk nezměnil.</summary>
+    public DepartureSpacing MinuteSpacing { get; set; } = DepartureSpacing.Even;
     public float MinuteFontSize { get; set; } = 7f;
 
     /// <summary>Styl textu minuty (font, bold, barva). Null properties = element defaults.</summary>
@@ -192,14 +194,14 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return [.. slotW.Select(_ => uniformSlotMm)];
     }
 
-    /// <summary>Rastr rovnoměrného rozestupu: **nejširší odjezd celé skupiny dnů** (minuta + její
-    /// značky), nejméně však nominální šířka minuty. Počítá se přes celý sloupec, aby čísla stála
-    /// pod sebou i mezi hodinami - kdyby se bralo maximum jen za řádek, hodina se značkami by měla
-    /// jiný rozestup než hodina bez nich.</summary>
-    internal static float UniformSlotWidth(IEnumerable<float> slotyVeSkupine, float nominalMm)
+    /// <summary>Rastr rovnoměrného rozestupu: **nejširší odjezd celého prvku** (minuta + její
+    /// značky), nejméně však nominální šířka minuty. Počítá se přes všechny skupiny dnů, aby čísla
+    /// stála pod sebou napříč hodinami **i sloupci** - za řádek by hodina se značkami měla jiný
+    /// rozestup než hodina bez nich, za sloupec by se rozešly sloupce mezi sebou (`B143`).</summary>
+    internal static float UniformSlotWidth(IEnumerable<float> sloty, float nominalMm)
     {
         float max = nominalMm;
-        foreach (float s in slotyVeSkupine) if (s > max) max = s;
+        foreach (float s in sloty) if (s > max) max = s;
         return max;
     }
 
@@ -791,13 +793,18 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             anotTextFont  = anotTextStyle.CreateFont(dataScale, ctx.MmToPx);
             anotTextPaint = anotTextStyle.CreateTextPaint();
 
-            // Rovnoměrný rozestup: jeden rastr na **celý sloupec** (skupinu dnů), ne jen na řádek
-            // hodiny - jinak by hodina se značkami měla jiný rozestup než hodina bez nich a čísla
-            // by nestála pod sebou. Maximum se proto bere přes všechny odjezdy skupiny.
+            // Rovnoměrný rozestup: jeden rastr na **celý prvek**, ne na řádek ani na sloupec.
+            // Za řádek by hodina se značkami měla jiný rozestup než hodina bez nich; za sloupec
+            // se rozcházely sloupce mezi sebou - jeden označkovaný spoj roztáhl svůj sloupec
+            // a sousední zůstal těsný (nález Jan 11. 9. na Nitře 4, `B143`). Cena: sloupce bez
+            // značek zřídnou na šířku toho nejhustšího.
             if (MinuteSpacing == DepartureSpacing.Even)
-                foreach (var g in layout.Groups)
-                    uniformSlotByGroup[g.Skupina.Id] = UniformSlotWidth(
-                        g.ByHour.Values.SelectMany(o => o).Select(SlotWidthMm), scaledMinuteW);
+            {
+                float rastr = UniformSlotWidth(
+                    layout.Groups.SelectMany(g => g.ByHour.Values).SelectMany(o => o).Select(SlotWidthMm),
+                    scaledMinuteW);
+                foreach (var g in layout.Groups) uniformSlotByGroup[g.Skupina.Id] = rastr;
+            }
 
             if (AlternatingRowColor is not null)
                 zebraPaint = new SKPaint { Color = ColorHex.ParseOrTransparent(AlternatingRowColor) };

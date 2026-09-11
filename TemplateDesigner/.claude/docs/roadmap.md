@@ -23,11 +23,6 @@ co přesně chtějí, ne kód.
   zastávek je podmnožinou jiné, dostane vlastní sloupec zbytečně. Chtějí ji sloučit, stejně jako
   se to řeší pro BBSK. Dnešní deduplikace slučuje jen **shodné** sledy, ne podmnožiny.
 
-- **`B143` Konstantní rozestup minut** [S] - minuty mají stát ve stejných odstupech bez ohledu
-  na počet poznámek mezi nimi. ⚠️ Odlišit od „Rozestup odjezdů = Rovnoměrný" (12. 8.), který drží
-  jeden rastr podle **nejširšího** odjezdu ve sloupci - značka rozestup pořád zvětšuje, jen celému
-  sloupci naráz. Nejdřív ověřit, jestli jim nestačí to hotové.
-
 ### Chyby
 
 - **`B149` Pořadí stránek v exportu všech zastávek** [S] (TRANSDEV 11. 9.).
