@@ -18,7 +18,11 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRo
     private string _headerOverride = "";
     private float? _widthOverride;
 
-    public string SkupinaDnuId { get => _skupinaDnuId; set { _skupinaDnuId = value; OnChanged(); } }
+    public string SkupinaDnuId { get => _skupinaDnuId; set { _skupinaDnuId = value; OnChanged(); OnChanged(nameof(SupportsZebra)); } }
+
+    /// <summary>Má sloupec střídání řádků? Sloupec hodin ne - zebra se kreslí per skupina dnů
+    /// a hodinový pruh si barvu bere od nich, takže nastavená hodnota by se nikde neprojevila.</summary>
+    public bool SupportsZebra => _skupinaDnuId != DepartureGroupEditorDialogViewModel.HourColumnId;
     public string Name         { get => _name;         set { _name = value;         OnChanged(); OnChanged(nameof(DisplayName)); } }
     public bool   Visible      { get => _visible;      set { _visible = value;      OnChanged(); } }
 
