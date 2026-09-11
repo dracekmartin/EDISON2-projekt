@@ -132,12 +132,16 @@ dvoucestný a bez `_DIFF` zakázaný. Pozice se nepersistuje (`PersistedFormId =
 ## Legacy moduly - EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET
-Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 15 polí (pořadí
+Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 17 polí (pořadí
 `WindowNavigator.BuildLauncherArguments`); [13] je Base64 XML zástupce - prázdné u běžného
 launche, s `CallType=Procedura` host místo formy spustí `ProcedureIO` agendy; [14] admin flag
 (`EDServices.IsAdmin` → `MLProps.UserIsAdmin`, klíč pro `CAccess(useAdmin)` bypass práv) a [15]
 právo update (`MayUpdate` → `MLProps.UserMayUpdate`, gate serverového update v legacy Nastavení);
-host bez pole defaultuje na **false**. Vstupy: `TryGetFormFromArgs` (typ reflexí ve volajícím
+host bez pole defaultuje na **false**. [16] osobní adresář a [17] e-mail z loginu
+(`EDServices.UserDirectory`/`UserEmail` → `MLProps.UserDirectory`/`UserEmail`; bez nich agendy
+exportují do kořene disku). Host nastavuje i `EDFormID` formy - agendy přes něj čtou
+`AccessTable[EDFormID]`, bez něj jsou volby gate-ované právem zašedlé.
+Vstupy: `TryGetFormFromArgs` (typ reflexí ve volajícím
 assembly - retrofit `.exe`, jediný `EDISONMAIN/ApplicationEvents.vb`) a `TryRunFromArgs`
 (`Assembly.LoadFrom`, generický host).
 

@@ -48,6 +48,8 @@ public static class SessionFactory
 
         services.IsAdmin = login.IsAdmin;
         services.MayUpdate = login.MayUpdate;
+        services.UserDirectory = login.Directory;
+        services.UserEmail = login.Email;
         // services.MLRest se musí nastavit už tady - admin override v LicenceVerifier spouští
         // USERS.exe přes WindowNavigator.ShowLegacyAndWait, ten čte connection z EDServices.Current.MLRest.
         services.MLRest = mlRest;

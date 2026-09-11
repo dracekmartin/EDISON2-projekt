@@ -38,6 +38,11 @@ public class EDServices(
     public bool IsAdmin { get; set; }
     /// <summary>Právo aktualizovat serverovou instalaci EDISONu (USERS „UpdateEdison"); propaguje se legacy formám jako MLProps.UserMayUpdate.</summary>
     public bool MayUpdate { get; set; }
+    /// <summary>Osobní (export) adresář uživatele z loginu (USERS feature 7, surově - příznak „použít" se
+    /// neaplikuje, parita s legacy shellem); legacy formám jde jako MLProps.UserDirectory. Prázdný = nenastaven.</summary>
+    public string UserDirectory { get; set; } = "";
+    /// <summary>E-mail uživatele z loginu; legacy formám jde jako MLProps.UserEmail (výchozí odesílatel).</summary>
+    public string UserEmail { get; set; } = "";
 
     /// <summary>
     /// Jméno a verze aplikace pro „Informace o verzi" (panel Podpora, menu Nápověda).

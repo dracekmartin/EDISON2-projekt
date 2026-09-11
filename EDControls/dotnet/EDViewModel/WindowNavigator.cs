@@ -411,7 +411,8 @@ public class WindowNavigator : IWindowNavigator
             UseShellExecute = true,
             FileName = direct ? agendaPath : ResolveExecutablePath(LauncherExe),
             Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath,
-                licensedElements, EDServices.Current.IsAdmin, EDServices.Current.MayUpdate, shortcutPayload),
+                licensedElements, EDServices.Current.IsAdmin, EDServices.Current.MayUpdate, shortcutPayload,
+                EDServices.Current.UserDirectory, EDServices.Current.UserEmail),
         });
         if (prc != null)
         {
@@ -436,16 +437,19 @@ public class WindowNavigator : IWindowNavigator
     /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable - starší host je ignoruje),
     /// zástupce na ploše [13] (opaque, host ho místo formy spustí jako proceduru; prázdné = běžný launch),
     /// admin flag [14] a právo update [15] ("1"/"0" → MLProps.UserIsAdmin / UserMayUpdate; host bez pole
-    /// defaultuje na false).
+    /// defaultuje na false), osobní adresář [16] a e-mail [17] (→ MLProps.UserDirectory / UserEmail, parita
+    /// s legacy frmNoMDI; host bez polí dá ""). Koncové zpětné lomítko adresáře se odřízne - `"C:\dir\"` by
+    /// argv parser četl jako escapovanou uvozovku a slil pole.
     /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
     /// argv-safe (bez uvozovek a mezer).
     /// </summary>
     internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
         string inputParam, string agendaPath, string licensedElements, bool isAdmin, bool mayUpdate,
-        string shortcutPayload = "") =>
-        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\"";
+        string shortcutPayload = "", string userDirectory = "", string userEmail = "") =>
+        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\" \"{Dir(userDirectory)}\" \"{userEmail}\"";
 
     private static string Flag(bool value) => value ? "1" : "0";
+    private static string Dir(string directory) => directory.TrimEnd('\\');
 
     public static string ResolveExecutablePath(string relativePath)
     {

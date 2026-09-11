@@ -68,6 +68,9 @@ public partial class UserProfileWindow : Window
         }
 
         UserProfileService.SaveExportDir(EDServices.Current.RequireMLRest, use, dir);
+        // Nově spouštěné legacy moduly dostanou adresář hned (legacy shell až po dalším loginu);
+        // surová cesta bez příznaku „použít" - stejně ji vrací i login.
+        EDServices.Current.UserDirectory = dir;
         return true;
     }
 

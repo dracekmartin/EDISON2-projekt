@@ -6,8 +6,8 @@ namespace EDControls;
 /// [0]="EDISONMAIN2", [1]=server, [2]=restPort, [3]=namespace, [4]=idfa,
 /// [5]=loginName, [6]=fullName, [7]=mlp, [8]=formName, [9]=shellGuid, [10]=inputParam (volitelný).
 /// FormName a ShellGuid jsou součástí kontraktu kvůli legacy WinForms modulům -
-/// WPF aplikace (TemplateDesigner) je ignorují, stejně jako pole [11]-[15] hosta
-/// (cesta agendy, licencované elementy, zástupce, admin flag, právo update) - viz WindowNavigator.BuildLauncherArguments.
+/// WPF aplikace (TemplateDesigner) je ignorují, stejně jako pole [11]-[17] hosta
+/// (cesta agendy, licencované elementy, zástupce, admin flag, právo update, osobní adresář, e-mail) - viz WindowNavigator.BuildLauncherArguments.
 /// </summary>
 public sealed record EdisonLaunchArgs(
     string Server,

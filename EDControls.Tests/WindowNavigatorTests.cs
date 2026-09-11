@@ -134,7 +134,7 @@ public class WindowNavigatorTests
 
         // Prázdný inputParam zůstává jako "" na pozici [10] - pořadí polí se neposune.
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"0\" \"0\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"0\" \"0\" \"\" \"\"",
             args);
     }
 
@@ -159,7 +159,7 @@ public class WindowNavigatorTests
             MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe", "26001,6001", isAdmin: true, mayUpdate: true);
 
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"1\" \"1\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"1\" \"1\" \"\" \"\"",
             args);
     }
 
@@ -170,21 +170,44 @@ public class WindowNavigatorTests
             MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", false, false, "UEFZTE9BRA==");
 
         // Zástupce je [13] - až za licencovanými elementy, aby starší host kontrakt jen ignoroval.
-        Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\" \"0\" \"0\"", args);
+        Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\" \"0\" \"0\" \"\" \"\"", args);
     }
 
     [Theory]
     [InlineData(true, false, "\"1\" \"0\"")]
     [InlineData(false, true, "\"0\" \"1\"")]
-    public void BuildLauncherArguments_UserFlags_AreLastFields(bool isAdmin, bool mayUpdate, string expectedTail)
+    public void BuildLauncherArguments_UserFlags_FollowShortcutPayload(bool isAdmin, bool mayUpdate, string expectedTail)
     {
         var args = WindowNavigator.BuildLauncherArguments(
             MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin, mayUpdate);
 
         // Admin [14] a právo update [15] - host bez nich defaultuje na false, hodnota musí být
-        // explicitní a nezávislá (admin neimplikuje update).
-        Assert.EndsWith($"\"\" {expectedTail}", args);
-        Assert.Equal(16, args.Split(" \"").Length);
+        // explicitní a nezávislá (admin neimplikuje update). Za nimi prázdný adresář a e-mail [16]/[17].
+        Assert.EndsWith($"\"\" {expectedTail} \"\" \"\"", args);
+        Assert.Equal(18, args.Split(" \"").Length);
+    }
+
+    [Fact]
+    public void BuildLauncherArguments_UserDirectoryAndEmail_AreLastFields()
+    {
+        var args = WindowNavigator.BuildLauncherArguments(
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", false, false,
+            userDirectory: @"C:\Mline\EdisonData", userEmail: "jan.novak@firma.cz");
+
+        // [16] osobní adresář a [17] e-mail → MLProps.UserDirectory / UserEmail; host bez polí dá "".
+        Assert.EndsWith("\"0\" \"0\" \"C:\\Mline\\EdisonData\" \"jan.novak@firma.cz\"", args);
+        Assert.Equal(18, args.Split(" \"").Length);
+    }
+
+    [Fact]
+    public void BuildLauncherArguments_UserDirectory_TrailingBackslashTrimmed()
+    {
+        // "C:\dir\" by argv parser hosta četl \" jako escapovanou uvozovku a slil pole [16] s [17].
+        var args = WindowNavigator.BuildLauncherArguments(
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "", false, false,
+            userDirectory: @"C:\Mline\EdisonData\");
+
+        Assert.EndsWith("\"C:\\Mline\\EdisonData\" \"\"", args);
     }
 
     [Theory]

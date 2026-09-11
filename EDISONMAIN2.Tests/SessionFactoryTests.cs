@@ -24,6 +24,21 @@ public class SessionFactoryTests
     }
 
     [Fact]
+    public void Establish_CopiesUserDirectoryAndEmailToServices()
+    {
+        // Legacy host je dostane jako launch argy [16]/[17] → MLProps.UserDirectory / UserEmail
+        // (agendy do adresáře exportují přílohy, e-mail je výchozí odesílatel).
+        var services = new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+
+        SessionFactory.Establish(
+            new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"),
+            new LoginResult(7, "bob", "Bob", false, @"C:\Mline\EdisonData", false, false, "bob@firma.cz"), services);
+
+        Assert.Equal(@"C:\Mline\EdisonData", services.UserDirectory);
+        Assert.Equal("bob@firma.cz", services.UserEmail);
+    }
+
+    [Fact]
     public void Establish_MapsConnectionAndLoginToSession()
     {
         var services = new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
