@@ -33,10 +33,6 @@ co přesně chtějí, ne kód.
   u linky. Výchozí musí zůstat spočítané, jinak se českým firmám sloupec vyprázdní (mají pole prázdné).
   **Šimko to ještě zkusí**, takže čekat na potvrzení. Server-side parametr → do allowlistu.
 
-- **`B145` Různé barvy sloupců v odjezdech** [S] - ⚠️ **nejdřív ověřit, jestli to už neumíme**:
-  editor skupin dnů má per-sloupec barvy záhlaví i dat a vlastní barvu střídání řádků. Zjistit,
-  co přesně nenašli nebo co jim na tom nestačí.
-
 ### Chyby
 
 - **`B149` Pořadí stránek ve směru zpět** [S] (TRANSDEV 11. 9.). V PDF chtějí stránky vzestupně

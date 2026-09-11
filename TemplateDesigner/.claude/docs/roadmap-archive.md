@@ -1,5 +1,19 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B145` Různé barvy sloupců v odjezdech - už to umíme (zavřeno 11. 9. 2026)
+
+Požadavek TRANSDEV z hovoru 11. 9. **Není co dělat**, ověřeno v kódu: prvek Minuty odjezdů →
+Upravit sloupce → tab **Sloupce** dává každé skupině dnů plný editor stylu buňky zvlášť pro
+záhlaví a pro data (`CellStyleEditOptions.AllEnabled`), tedy i barvu textu a pozadí, plus
+**vlastní barvu střídání řádků** (`DepartureGroupColumnStyle.AlternatingRowColor`). Render to
+respektuje - `ResolveGroupHeaderStyle` / `ResolveGroupMinuteStyle` a `perGroupZebraPaints`.
+
+⚠️ **Jediné omezení je typografie záhlaví** (font, velikost, řez) - ta je záměrně jednotná pro
+celý prvek (`WithParentHeaderTypography`), aby šla velikost písma měnit z jednoho místa v panelu.
+Barev a zarovnání se to netýká.
+
+**Zjistit u zákazníka, co přesně nenašel** - jestli ten tab, nebo mu vadí právě ta typografie.
+
 ## `B148` Projetá zastávka nemá ve sloupci časů ani „<" (hotovo 11. 9. 2026)
 
 Hlásil TRANSDEV 11. 9. Volba „Čas u projetých = Nezobrazovat" (výchozí) zahazovala jen čísla -
