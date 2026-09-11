@@ -35,14 +35,14 @@ co přesně chtějí, ne kód.
 
 ### Chyby
 
-- **`B149` Pořadí stránek ve směru zpět** [S] (TRANSDEV 11. 9.). ⚠️ **Nic pořadí neobrací -
-  dohledáno 11. 9. v celém řetězu.** Server generuje stránky `Tam` vzestupně podle pořadí zastávky,
-  pak `Zpět` taky vzestupně (`f smer="T","Z"` + `$o` nahoru); klient je nikde neřadí ani neotáčí
-  (náhled i tisk berou `GetData` v přijatém pořadí, u víc linek se jen zřetězí za sebou).
-  Zpětné stránky navíc začínají pořadím 2, ne 1 - u nejnižšího pořadí není kam dál jet.
-  **Uvnitř stránky** ale seznam zastávek jde ve směru jízdy, tedy u `Zpět` sestupně - to je správně.
-  Další krok je **zeptat se Šimka, co viděl**: jestli pořadí stránek, nebo ten seznam uvnitř.
-
+- **`B149` Pořadí stránek v exportu všech zastávek** [S] (TRANSDEV 11. 9.).
+  ⚠️ **Rozdíl proti starému tisku je jinde, než zněl popis** (dohledáno 11. 9.). Nic se neobrací:
+  my generujeme **nejdřív všechny stránky směru Tam** (vzestupně dle pořadí zastávky), **pak celý
+  směr Zpět** (taky vzestupně, od pořadí 2 - u nejnižšího není kam jet). Starý modul jede
+  **zastávka po zastávce a u každé oba směry** (`JRapiLinPrtMhd1.mac` ř. 397-398: `Tc` vnější,
+  `Smer` vnitřní), takže má v PDF vedle sebe obě vývěsky téže zastávky.
+  Pro tisk a vyvěšení dává legacy pořadí smysl - obě vývěsky jedné zastávky se věší naráz.
+  ⚠️ **Změna pořadí přepíše zlaté odtisky AD**, takže to chce vědomé re-baseline.
 ---
 
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
