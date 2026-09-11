@@ -882,10 +882,12 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                     var hTextPaint = groupHeaderTextPaints[gid];
                     var hBgPaint = groupHeaderBgPaints[gid];
 
-                    // HourColumnPerGroup - "Hod" buňka dědí BG skupiny
+                    // `B145`: barvu skupiny přebírá jen TĚLO sloupce hodin, ne tahle buňka nad ním -
+                    // sedí v ní hodinová ikona a zákazník ji chce na neutrálním podkladu
+                    // (vývěska Nitra linka 4). Drží si tedy styl hodinového sloupce z tabu Obecné.
                     if (HourColumnPerGroup)
                     {
-                        DrawHourHeaderCell(gx, hs.BackgroundColor);
+                        DrawHourHeaderCell(gx);
                         gx += HourColumnWidth;
                     }
 

@@ -15,6 +15,11 @@ tělo hodin), pak „neumíme barvy sloupců vůbec" (záhlaví i zebra per skup
 po mně číst: barvy skupin jsou v editoru skupin dnů, tab Sloupce, per skupina zvlášť pro záhlaví
 a data, plus vlastní zebra.
 
+⚠️ **Dvě věci vyšly najevo až při zkoušení** (Jan 11. 9.): buňka nad sloupcem hodin dědila barvu
+skupiny **už předtím** a musela se odebrat (patří do ní hodinová ikona na neutrálním podkladu),
+a **pole pro zebru per skupinu v dialogu nikdy nebylo** - model i render to uměly, jen to nešlo
+vyplnit. Doplněno do tabu Sloupce.
+
 ⚠️ **Zebra zůstala ruční.** Odvozovat světlejší odstín ze záhlaví by tiše změnilo výstup všem,
 kdo mají barevné záhlaví a výchozí šedou zebru. Až bude otravné klikat dvě barvy, patří tam
 tlačítko „světlejší odstín záhlaví", které pole předvyplní viditelnou hodnotou.

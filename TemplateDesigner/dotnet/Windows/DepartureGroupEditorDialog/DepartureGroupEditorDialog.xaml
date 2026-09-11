@@ -100,6 +100,24 @@
                                 PickBgColorCommand="{Binding DataContext.PickDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                 ClearBgColorCommand="{Binding DataContext.ClearDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
 
+                            <Separator Margin="0,8,0,8"/>
+
+                            <!-- ── Střídání řádků (per skupina) ──────────────── -->
+                            <!-- Vlastní pole, ne součást stylu buňky: kreslí se pod buňky a platí
+                                 jen pro každý druhý řádek. Prázdné = barva z tabu Obecné. -->
+                            <TextBlock Text="Střídání řádků" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBox Width="90" VerticalAlignment="Center" Margin="0,0,6,0"
+                                         Text="{Binding SelectedGroupVM.AlternatingRowColor, UpdateSourceTrigger=LostFocus}"
+                                         ToolTip="Barva každého druhého řádku v této skupině. Prázdné = barva nastavená pro celý prvek."/>
+                                <Button Content="Vybrat…" Padding="8,2" Margin="0,0,6,0"
+                                        Command="{Binding DataContext.PickZebraColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                <Button Content="×" Padding="8,2" ToolTip="Zpět na barvu celého prvku"
+                                        Command="{Binding DataContext.ClearZebraColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            </StackPanel>
+                            <TextBlock Text="Prázdné = použije se barva z tabu Obecné." FontStyle="Italic"
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
+
                             <!-- Resetovat -->
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                 <Button Content="Resetovat styl sloupce"

@@ -297,6 +297,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     public RelayCommand ClearHeaderBgColorCommand { get; }
     public RelayCommand ClearDataTextColorCommand { get; }
     public RelayCommand ClearDataBgColorCommand { get; }
+    public RelayCommand PickZebraColorCommand { get; }
+    public RelayCommand ClearZebraColorCommand { get; }
     public RelayCommand ResetStyleCommand { get; }
     public RelayCommand ResetAllColumnStylesCommand { get; }
     public RelayCommand MoveUpCommand { get; }
@@ -423,6 +425,11 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         PickDataBgColorCommand    = Command(() => PickColor(g => g.Data.BgColor,   (g, c) => g.Data.BgColor   = c));
         ClearDataTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.TextColor = null; });
         ClearDataBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.BgColor   = null; });
+
+        // Střídání řádků per skupina - vlastní pole, ne součást stylu buňky: kreslí se pod buňky
+        // a platí jen pro každý druhý řádek, takže do CellStyleEditoru nepatří.
+        PickZebraColorCommand  = Command(() => PickColor(g => g.AlternatingRowColor, (g, c) => g.AlternatingRowColor = c ?? ""));
+        ClearZebraColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.AlternatingRowColor = ""; });
 
         // Reset vybraného sloupce
         ResetStyleCommand = Command(() =>

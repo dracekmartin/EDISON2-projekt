@@ -12,9 +12,17 @@ Nově bere tělo pozadí **záhlaví** své skupiny.
 Bez podbarveného záhlaví se nemění nic - spadne to na pozadí minut jako dosud, takže průhledná
 buňka pořád nechá projít zebru. Rozhoduje alfa, ne prázdnost řetězce.
 
-⚠️ **Zebru si uživatel pořád vybírá sám** (vlastní barva střídání řádků per skupina). Odvozovat
-světlejší odstín automaticky by tiše změnilo výstup každému, kdo má barevné záhlaví a spoléhá
-na výchozí šedou - stejná třída překvapení jako duplicitní sloupec v `B147`.
+⚠️ **Barvu skupiny bere jen TĚLO sloupce hodin, ne buňka nad ním.** V té sedí hodinová ikona
+a zákazník ji chce na neutrálním podkladu; dědila ji přitom **už dřív**, takže se to muselo
+odebrat (nález Jan 11. 9. hned po vydání).
+
+⚠️ **Střídání řádků per skupinu šlo zapsat, ale ne nastavit** - model i vykreslování to uměly
+od začátku, jen pole v dialogu nikdy nevzniklo. Doplněno do tabu Sloupce pod styl datových buněk
+(prázdné = barva z tabu Obecné). Nález Jan 11. 9.
+
+Zebru si uživatel vybírá sám. Odvozovat světlejší odstín automaticky by tiše změnilo výstup
+každému, kdo má barevné záhlaví a spoléhá na výchozí šedou - stejná třída překvapení jako
+duplicitní sloupec v `B147`.
 
 ## 2026-09-11 (4) - 🚫 projetá zastávka nemá ve sloupci časů ani „<"
 
