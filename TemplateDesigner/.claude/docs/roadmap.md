@@ -33,6 +33,14 @@ co přesně chtějí, ne kód.
   u linky. Výchozí musí zůstat spočítané, jinak se českým firmám sloupec vyprázdní (mají pole prázdné).
   **Šimko to ještě zkusí**, takže čekat na potvrzení. Server-side parametr → do allowlistu.
 
+- **`B145` Barva sloupce hodin per skupina dnů** [S] (TRANSDEV 11. 9., zúženo 11. 9.).
+  Doložený vzor je vývěska Nitra linka 4: každá skupina dnů má vlastní barvu **záhlaví, sloupce
+  hodin i střídání řádků** (modrá / žlutá / zelená). ⚠️ **Záhlaví a střídání řádků per skupinu
+  umíme** (editor skupin dnů, tab Sloupce); **sloupec hodin ne** - `ResolveHourHeaderStyle`
+  a `ResolveHourDataStyle` se počítají jednou z element-level `HourColumnStyle`, takže se zapnutým
+  „Hodiny u každé sk." mají všechny opakované sloupce hodin tutéž barvu.
+  Otevřené: jestli hodinový sloupec převzít z barvy skupiny, nebo dát skupině vlastní styl hodin.
+
 ### Chyby
 
 - **`B149` Pořadí stránek ve směru zpět** [S] (TRANSDEV 11. 9.). V PDF chtějí stránky vzestupně
