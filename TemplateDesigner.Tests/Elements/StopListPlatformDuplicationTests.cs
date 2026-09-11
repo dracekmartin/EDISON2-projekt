@@ -19,9 +19,17 @@ public class StopListPlatformDuplicationTests
             NastupisteVariant = [.. nastVar],
         };
 
+    /// <summary>Prvek s viditelným sloupcem „Varianty tras" - od `B147` je z výroby skrytý,
+    /// ale rozpad na řádky podle stanovišť na něm visí, takže ho testy musí zapnout.</summary>
+    private static StopListElement SVariantami(MultiPlatformDisplay rezim, bool sloupekJakoStanoviste = false)
+    {
+        var el = new StopListElement { MultiPlatformMode = rezim, SloupekJakoStanoviste = sloupekJakoStanoviste };
+        el.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = true;
+        return el;
+    }
+
     private static List<ZastavkaData> Expand(params ZastavkaData[] stops) =>
-        new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform }
-            .ExpandPlatformRows([.. stops]);
+        SVariantami(MultiPlatformDisplay.RowPerPlatform).ExpandPlatformRows([.. stops]);
 
     /// <summary>Zastávka **před** vývěskou (projetá) se rozpadá stejně jako ta za ní. Nitra 9,
     /// vývěska Fraňa Mojtu: CENTRUM, Mlyny má dvě stanoviště, ale leží v projeté části - a rozpad
@@ -47,11 +55,8 @@ public class StopListPlatformDuplicationTests
         s.Nastupiste = "9";
         s.SloupekVariant = ["3", "2"];
 
-        var r = new StopListElement
-        {
-            MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform,
-            SloupekJakoStanoviste = true,
-        }.ExpandPlatformRows([s]);
+        var r = SVariantami(MultiPlatformDisplay.RowPerPlatform, sloupekJakoStanoviste: true)
+            .ExpandPlatformRows([s]);
 
         Assert.Equal(2, r.Count);
         Assert.Equal(["3", "2"], r.Select(x => x.Sloupek));
@@ -92,8 +97,7 @@ public class StopListPlatformDuplicationTests
     public void JinyRezim_NechaSeznamBezeZmeny()
     {
         var stops = new List<ZastavkaData> { Stop("A", false, ["1"], ["2"]) };
-        var vysledek = new StopListElement { MultiPlatformMode = MultiPlatformDisplay.All }
-            .ExpandPlatformRows(stops);
+        var vysledek = SVariantami(MultiPlatformDisplay.All).ExpandPlatformRows(stops);
         Assert.Same(stops, vysledek);
     }
 
@@ -103,7 +107,7 @@ public class StopListPlatformDuplicationTests
         // Skrytý sloupec „Varianty tras" = jediný sloupec času (stejný na všech duplikátech)
         // → rozpad by vypadal jako chyba; režim se pak neaplikuje.
         var stops = new List<ZastavkaData> { Stop("A", false, ["5", "6"], ["1", "2"]) };
-        var el = new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform };
+        var el = SVariantami(MultiPlatformDisplay.RowPerPlatform);
         el.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = false;
 
         Assert.Same(stops, el.ExpandPlatformRows(stops));
@@ -115,7 +119,7 @@ public class StopListPlatformDuplicationTests
     public void SkrytySloupecCasu_RozpadNezrusi()
     {
         var stops = new List<ZastavkaData> { Stop("A", false, ["5", "6"], ["1", "2"]) };
-        var el = new StopListElement { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform };
+        var el = SVariantami(MultiPlatformDisplay.RowPerPlatform);
         el.Columns.Single(c => c.Key == StopFields.TravelTime).Visible = false;
 
         Assert.Equal(2, el.ExpandPlatformRows(stops).Count);

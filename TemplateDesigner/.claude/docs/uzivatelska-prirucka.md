@@ -724,7 +724,7 @@ staví **aspoň jeden spoj, který staví i na té vývěsce** - zastávka, kam 
 u všech časů jen „<" a cestujícímu by neřekla nic.
 
 - **Upravit sloupce…** - otevře editor sloupců (kap. 3)
-- **Všechny varianty tras** - zap. = víc časových sloupců podle skutečných variant tras (jen AD; viz „Varianty tras" níže); vyp. = jeden sloupec základní trasy
+- **Varianty tras** (sloupec v editoru sloupců, výchozí vypnutý) - zap. = časové sloupce podle skutečných variant tras (jen AD; viz „Varianty tras" níže). Je to **týž údaj jako sloupec „Čas"**, takže zapnuté má být vždy jen jedno z toho: kdo chce varianty, vypne si „Čas". Linka, kde jedou všechny spoje stejnou trasou, dostane jeden variantní sloupec (dřív žádný, takže na takové lince nebylo vidět nic)
 - **Oddělovací čáry** - vodorovné čáry mezi řádky zastávek
 - **Odsazení** - odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
 - **Sloupec Označník** - volitelný sloupec s číslem označníku (sloupku, ze kterého spoj odjíždí); zapíná se v editoru sloupců, tiskne se jen tam, kde jsou data vyplněná

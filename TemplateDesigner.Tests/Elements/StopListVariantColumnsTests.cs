@@ -68,16 +68,15 @@ public class StopListVariantColumnsTests
         Assert.Equal(["", "A"], hlavicky);
     }
 
-    /// <summary>Jediná varianta zmizí i s vypnutými písmeny - to pravidlo drží počet hlaviček,
-    /// ne jejich obsah, takže se vypnutím písmen nesmí změnit.</summary>
+    /// <summary>Vypnutá písmena na počet sloupců nesahají - pravidlo drží počet hlaviček, ne jejich
+    /// obsah. Jediná varianta tedy sloupec dostane i tady (`B147`).</summary>
     [Fact]
-    public void VypnutaPismena_JedinaVariantaSloupecNedostane()
+    public void VypnutaPismena_JedinaVariantaSloupecDostane()
     {
         var hlavicky = StopListElement.VariantHeadersForRender(Stranka([""], "false"));
         var vysledek = StopListElement.ExpandTravelTimeColumns(Sloupce(), hlavicky);
 
-        Assert.DoesNotContain(StopFields.TravelTimeVariants, vysledek.Select(c => c.Key));
-        Assert.Empty(vysledek.Where(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)));
+        Assert.Single(vysledek.Where(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)));
     }
 
     // ── B150: společný popisek bloku variantních sloupců ────────────────────────
@@ -136,7 +135,7 @@ public class StopListVariantColumnsTests
     [Fact]
     public void BezVariantnichSloupcu_ZadnyBlok()
     {
-        var cols = StopListElement.ExpandTravelTimeColumns(Sloupce(), [""]);
+        var cols = StopListElement.ExpandTravelTimeColumns(Sloupce(), []);
         var sirky = cols.ToDictionary(c => c, c => 8f);
 
         var (_, sirka, prvni) = StopListElement.VariantBlockSpan(cols, sirky);
@@ -213,18 +212,37 @@ public class StopListVariantColumnsTests
             vysledek.Select(c => c.Key));
     }
 
-    /// <summary>Linka s jedinou variantou (nebo bez dat) žádný variantní sloupec nedostane - je to
-    /// totéž co sloupec „Čas" a prázdný sloupec s písmenem by vypadal jako chyba dat.</summary>
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    public void MeneNezDveVarianty_PolozkaZmizi(int pocet)
+    /// <summary>`B147` - **i jediná varianta dostane sloupec.** Kdo staví vývěsku na variantách
+    /// a „Čas" si vypnul, na lince se stejnou trasou všech spojů dřív neviděl nic a musel by držet
+    /// dvě šablony.</summary>
+    [Fact]
+    public void JedinaVarianta_SloupecVznikne()
     {
-        var hlavicky = Enumerable.Range(0, pocet).Select(i => $"T{i}").ToList();
+        var vysledek = StopListElement.ExpandTravelTimeColumns(Sloupce(), [""]);
 
-        var vysledek = StopListElement.ExpandTravelTimeColumns(Sloupce(), hlavicky);
+        Assert.Equal(
+            [StopFields.TravelTime, StopFields.TravelTimeVariantPrefix + "0", StopFields.StopName],
+            vysledek.Select(c => c.Key));
+    }
+
+    /// <summary>Bez variant (agenda je neposílá) položka zmizí - není co kreslit.</summary>
+    [Fact]
+    public void ZadnaVarianta_PolozkaZmizi()
+    {
+        var vysledek = StopListElement.ExpandTravelTimeColumns(Sloupce(), []);
 
         Assert.Equal([StopFields.TravelTime, StopFields.StopName], vysledek.Select(c => c.Key));
+    }
+
+    /// <summary>`B147`: varianty jsou z výroby skryté - jsou to tytéž časy jako sloupec „Čas",
+    /// takže zapnuté má být vždy jen jedno z toho.</summary>
+    [Fact]
+    public void VychoziSada_MaZapnutyJenSloupecCasu()
+    {
+        var el = new StopListElement();
+
+        Assert.True(el.Columns.Single(c => c.Key == StopFields.TravelTime).Visible);
+        Assert.False(el.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible);
     }
 
     /// <summary>Šířka položky platí pro **každý** variantní sloupec - počet variant je daný daty,
@@ -274,9 +292,9 @@ public class StopListVariantColumnsTests
     public void ZobrazeniVariantSeCteZViditelnostiSloupce()
     {
         var el = new StopListElement();
-        Assert.True(el.ShowsRouteVariants);
+        Assert.False(el.ShowsRouteVariants);   // od `B147` je sloupec z výroby skrytý
 
-        el.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = false;
-        Assert.False(el.ShowsRouteVariants);
+        el.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = true;
+        Assert.True(el.ShowsRouteVariants);
     }
 }

@@ -96,14 +96,27 @@ public class ObsahKategorieTests
     // písmeno nemá čím vysvětlit a legenda ho navíc vysvětlí cizím textem, protože řady písmen
     // variant a rozdílů tras se dnes kryjí (nález na zákaznické vývěsce linky 111).
 
-    /// <summary>Sloupec Varianty tras je u nového prvku viditelný z výroby, takže nové šablony
-    /// písmena tisknou dál. Kdyby se ten výchozí stav změnil, spadne tenhle test.</summary>
+    /// <summary>Sloupec Varianty tras je od `B147` z výroby **skrytý** (je to týž údaj jako sloupec
+    /// „Čas"), takže nová šablona písmena u minut netiskne, dokud si ho uživatel nezapne.</summary>
     [Fact]
     public void ZapnutySloupecVariant_PismenaSeTisknou()
     {
-        var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(new StopListElement()));
+        var seznam = new StopListElement();
+        seznam.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = true;
+
+        var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(seznam));
 
         Assert.DoesNotContain(NoteCategories.VariantaTrasy, hidden);
+    }
+
+    /// <summary>Nová šablona (varianty skryté) písmena u minut nemá čím vysvětlit, takže se
+    /// netisknou - stejné pravidlo jako u ručně skrytého sloupce.</summary>
+    [Fact]
+    public void NovaSablona_PismenaSeNetisknou()
+    {
+        var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(new StopListElement()));
+
+        Assert.Contains(NoteCategories.VariantaTrasy, hidden);
     }
 
     /// <summary>Skrytý sloupec Varianty tras písmena u minut zhasne. Přesně tohle je stav šablon
@@ -125,10 +138,11 @@ public class ObsahKategorieTests
     public void StaciJedenSeznamZastavekZDvou()
     {
         var bezVariant = new StopListElement();
-        bezVariant.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = false;
+        var sVariantami = new StopListElement();
+        sVariantami.Columns.Single(c => c.Key == StopFields.TravelTimeVariants).Visible = true;
 
         var hidden = NoteVisibilityFilter.HiddenContentCategories(
-            Sablona(bezVariant, new StopListElement()));
+            Sablona(bezVariant, sVariantami));
 
         Assert.DoesNotContain(NoteCategories.VariantaTrasy, hidden);
     }

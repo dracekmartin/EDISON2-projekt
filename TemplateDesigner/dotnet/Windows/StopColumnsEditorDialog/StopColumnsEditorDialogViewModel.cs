@@ -56,10 +56,10 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 
     public string ExpandHint =>
         "Rozvine se podle dat: linka dostane tolik sloupců, kolik má variant jízdních dob, a každý "
-        + "bude takto široký. Záhlaví nesou značky variant; zadané záhlaví se použije jako jeden "
-        + "společný popisek přes celý blok, když v parametrech sestavy vypnete Písmena variant tras. "
-        + "Linka s jedinou variantou žádný sloupec nedostane - to je sloupec Čas jízdy. "
-        + "Součet šířek vlevo počítá jeden.";
+        + "bude takto široký (i když má varianta jednu). Záhlaví nesou značky variant; zadané "
+        + "záhlaví se použije jako jeden společný popisek přes celý blok, když v parametrech sestavy "
+        + "vypnete Písmena variant tras. Vypněte si k tomu sloupec Čas jízdy - je to týž údaj a "
+        + "zapnutý vedle by se opakoval. Součet šířek vlevo počítá jeden.";
 
     private CellStyleVM _headerStyle = null!;
     public CellStyleVM HeaderStyle

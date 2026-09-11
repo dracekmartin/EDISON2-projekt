@@ -26,7 +26,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     [
         new() { Key = StopFields.TravelTime,   Header = "Čas",       Width = 8f,  Visible = true },
         // Rozvine se při renderu na N sloupců dle variant linky; šířka platí pro jeden z nich.
-        new() { Key = StopFields.TravelTimeVariants, Header = "",    Width = VariantColumnWidthMm, Visible = true },
+        // `B147`: varianty a „Čas" jsou dvě zobrazení téhož údaje, takže zapnuté má být vždy jen
+        // jedno - proto varianty z výroby skryté. Kdo je chce, zapne je a vypne si „Čas".
+        new() { Key = StopFields.TravelTimeVariants, Header = "",    Width = VariantColumnWidthMm, Visible = false },
         new() { Key = StopFields.StopName,     Header = "Zastávka",  Width = 50f, Visible = true },
         new() { Key = StopFields.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
         new() { Key = StopFields.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
@@ -972,8 +974,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// varianty). Šířka, zarovnání i styl položky platí pro **každý** z nich - je to N zobrazení
     /// téhož údaje, takže se nastavují jednou. Ostatní sloupce beze změny.
     ///
-    /// <para>Méně než dvě varianty = položka se zahodí: jediná varianta je totéž co sloupec „Čas"
-    /// a prázdný sloupec s písmenem by na vývěsce vypadal jako chyba dat.</para></summary>
+    /// <para>`B147`: **i jediná varianta dostane sloupec.** Dřív se položka pod dvěma variantami
+    /// zahazovala jako duplicita sloupce „Čas" - jenže kdo staví vývěsku na variantách a „Čas" si
+    /// vypnul, neviděl na takové lince nic a musel by držet dvě šablony a vybírat podle počtu tras.
+    /// Zahodí se až prázdná data (žádná varianta), kde není co kreslit.</para></summary>
     internal static List<StopColumn> ExpandTravelTimeColumns(List<StopColumn> cols, List<string> headers)
     {
         var result = new List<StopColumn>(cols.Count + headers.Count);
@@ -981,7 +985,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         {
             if (col.Key != StopFields.TravelTimeVariants) { result.Add(col); continue; }
 
-            if (headers.Count < 2) continue;
+            if (headers.Count == 0) continue;
 
             for (int i = 0; i < headers.Count; i++)
                 result.Add(new StopColumn

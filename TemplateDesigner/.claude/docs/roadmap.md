@@ -37,17 +37,7 @@ co přesně chtějí, ne kód.
   editor skupin dnů má per-sloupec barvy záhlaví i dat a vlastní barvu střídání řádků. Zjistit,
   co přesně nenašli nebo co jim na tom nestačí.
 
-- **`B146` Dvě řady písmen u železniční stanice** [?] - **zápis z hovoru, potřebuje upřesnit.**
-  Poznámka zní „dvoje varianty písmenek, železniční stanice, Z, nepoužívá automatický režim".
-  Nejpravděpodobněji kolize dvou nezávislých řad písmen (varianty tras × rozdíly tras) na lince,
-  která nejede v automatickém režimu. Než se k tomu sáhne, vyžádat konkrétní linku a zastávku.
-
 ### Chyby
-
-- **`B147` Linka s jedinou variantou trasy nedá žádný variantní sloupec** [S] (TRANSDEV 11. 9.).
-  Dnes se položka „Varianty tras" při méně než dvou variantách zahazuje **záměrně**
-  (`ExpandTravelTimeColumns`) - jediná varianta je totéž co sloupec „Čas". Zjistit, co na lince
-  čekali; pokud je to chyba, leží v tom pravidle.
 
 - **`B148` „<" zůstává u projetých zastávek** [S] (TRANSDEV 11. 9.). Při zapnutém tisku projetých
   zastávek se v jejich řádcích nemaže „<". Sloupec „Čas" projetou zastávku nuluje

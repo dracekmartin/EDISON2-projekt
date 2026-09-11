@@ -1,5 +1,28 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B147` I jediná varianta trasy dostane sloupec (hotovo 11. 9. 2026)
+
+Hlásil TRANSDEV 11. 9. Položka „Varianty tras" se při méně než dvou variantách zahazovala jako
+duplicita sloupce „Čas" - pravidlo z doby, kdy varianty „Čas" nahrazovaly. Od `B80` jsou nezávislé,
+takže kdo staví vývěsku na variantách a „Čas" si vypnul, neviděl na lince se stejnou trasou všech
+spojů nic a musel by držet dvě šablony a vybírat podle počtu tras.
+
+Rozvine se tedy i jediná varianta; zahodí se až prázdná data.
+
+⚠️ **Sloupec je nově z výroby SKRYTÝ** (rozhodnutí Jan 11. 9.) - ve výchozí sadě byly do té doby
+zapnuté **oba** a bez téhle změny by nové šabloně na jednovariantní lince přibyl druhý sloupec
+s týmiž čísly. Jsou to dvě zobrazení téhož údaje, takže zapnuté má být vždy jen jedno. Stávající
+šablony nesou vlastní seznam sloupců, takže se jich to netýká.
+
+⚠️ **Devět testů viselo na tom, že je sloupec zapnutý z výroby** (rozpad zastávky na řádky podle
+stanovišť na něm visí). Chování se nezměnilo, jen si ho musí testy zapnout samy - helper
+`SVariantami` v `StopListPlatformDuplicationTests`.
+
+Vedlejšek: nová šablona netiskne písmena variant u minut, protože je nemá čím vysvětlit. Naskočí
+se zapnutým sloupcem.
+
+Detail v `changelog.md` 11. 9. (3).
+
 ## `B150` Vlastní popisek bloku variantních sloupců (hotovo 11. 9. 2026)
 
 Nález Jana při zkoušení `B141`: záhlaví položky „Varianty tras" bylo v editoru sloupců zamčené
