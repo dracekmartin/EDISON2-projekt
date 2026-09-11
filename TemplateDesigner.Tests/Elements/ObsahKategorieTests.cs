@@ -143,4 +143,30 @@ public class ObsahKategorieTests
 
         Assert.Contains(NoteCategories.VariantaTrasy, hidden);
     }
+
+    /// <summary>`B141` - vypnutá volba „Písmena variant tras" zhasne písmeno i u minut, i když
+    /// sloupec variant zůstává viditelný. Jinak by u minuty zbyla značka, kterou záhlaví sloupce
+    /// (její jediné vysvětlení) už nenese.</summary>
+    [Fact]
+    public void VypnutaPismenaVariant_PismenaSeNetisknou()
+    {
+        var seznam = new StopListElement { ShowRouteVariantLetters = false };
+
+        var hidden = NoteVisibilityFilter.HiddenContentCategories(Sablona(seznam));
+
+        Assert.Contains(NoteCategories.VariantaTrasy, hidden);
+    }
+
+    /// <summary>Dva seznamy zastávek, jeden s písmeny a jeden bez - písmena se tisknou. Stejné
+    /// pravidlo jako u viditelnosti sloupce: stačí, když je chce jeden z nich.</summary>
+    [Fact]
+    public void StaciJedenSeznamSPismeny()
+    {
+        var bezPismen = new StopListElement { ShowRouteVariantLetters = false };
+
+        var hidden = NoteVisibilityFilter.HiddenContentCategories(
+            Sablona(bezPismen, new StopListElement()));
+
+        Assert.DoesNotContain(NoteCategories.VariantaTrasy, hidden);
+    }
 }

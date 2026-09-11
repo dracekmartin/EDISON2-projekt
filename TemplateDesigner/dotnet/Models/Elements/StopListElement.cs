@@ -160,6 +160,16 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public bool ShowsRouteVariants =>
         Columns.Any(c => c.Visible && c.Key == StopFields.TravelTimeVariants);
 
+    /// <summary>Písmena variant tras - v záhlaví variantních sloupců i u minut odjezdů (obojí
+    /// naráz, aby nezůstalo písmeno bez vysvětlení ani záhlaví bez páru u minuty). Vypnutím
+    /// sloupce zůstanou, jen bez označení; rozdílů tras se to netýká, ty mají vlastní řadu písmen
+    /// a vypínají se u linky (AutoPozn).
+    ///
+    /// <para>⚠️ Do 17. 8. 2026 to byl parametr sestavy, který se odebral, protože bez písmen nešlo
+    /// u minuty poznat, který sloupec časů pro ni platí. Zpátky na žádost TRANSDEV (11. 9. 2026) -
+    /// vývěska s jedinou variantou nebo s variantami vysvětlenými jinak je písmena nepotřebuje.</para></summary>
+    public bool ShowRouteVariantLetters { get; set; } = true;
+
     // ═══════════════════════════════════════════
     // Vyloučené atributy
     // ═══════════════════════════════════════════
@@ -255,7 +265,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Multi-varianta časů tras: položka „Varianty tras" se rozvine na N variantních sloupců
         // (dynamicky dle dat, hlavičky = písmena z VARIANTY_TRAS). < 2 varianty → položka zmizí,
         // protože jediná varianta je totéž co sloupec „Čas".
-        columns = ExpandTravelTimeColumns(columns, GetVariantHeaders(ctx.Data));
+        // Vypnutá písmena vyprázdní záhlaví, ale počet hlaviček musí zůstat - drží se na něm
+        // rozvinutí sloupce, takže zahozením by zmizely i sloupce.
+        columns = ExpandTravelTimeColumns(columns, VariantHeadersForRender(ctx.Data));
 
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font. Vodorovně totéž -
         // součet pevných šířek sloupců nad šířku elementu se dřív oříznul (svislé varování
@@ -906,6 +918,15 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return [];
     }
 
+    /// <summary>Hlavičky pro render: s vypnutými písmeny se vyprázdní, ale jejich POČET zůstává -
+    /// na něm visí, kolik variantních sloupců vznikne.</summary>
+    internal List<string> VariantHeadersForRender(DataContext? data)
+    {
+        var headers = GetVariantHeaders(data);
+        if (ShowRouteVariantLetters) return headers;
+        return headers.Select(_ => "").ToList();
+    }
+
     /// <summary>Rozvine položku „Varianty tras" na N sloupců (Key „CAS_JIZDY#i", Header = písmeno
     /// varianty). Šířka, zarovnání i styl položky platí pro **každý** z nich - je to N zobrazení
     /// téhož údaje, takže se nastavují jednou. Ostatní sloupce beze změny.
@@ -1231,6 +1252,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
 
+        new BoolPropertyDescriptor  { Label = "Písmena variant tras", Group = "Obecné", Get = () => ShowRouteVariantLetters, Set = v => ShowRouteVariantLetters = v },
+
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce…", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
         new FloatPropertyDescriptor
         {
@@ -1400,6 +1423,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             CurrentStopUnderline    = CurrentStopUnderline,
             PassedStopsForeColor    = PassedStopsForeColor,
             PassedStopsTime         = PassedStopsTime,
+            ShowRouteVariantLetters = ShowRouteVariantLetters,
             ExcludedAttributeIds    = [.. ExcludedAttributeIds],
             ShowHeader              = ShowHeader,
             CurrentStopBold         = CurrentStopBold,

@@ -106,8 +106,11 @@ public static class NoteVisibilityFilter
         // Bez variantního sloupce nemá písmeno kde získat vysvětlení, a protože se řady písmen
         // variant a rozdílů tras kryjí, legenda ho navíc vysvětlí CIZÍM textem (spoj jede variantou
         // „E", legenda u „E" tvrdí „jede jen do zast. …"). Dtto šablona bez seznamu zastávek.
+        // Vypnutá „Písmena variant tras" se chovají stejně: sloupce zůstanou, ale u minut nesmí
+        // zbýt značka, kterou už nic nevysvětluje.
         if (!template.Sections.SelectMany(s => s.Elements)
-                .OfType<Elements.StopListElement>().Any(e => e.ShowsRouteVariants))
+                .OfType<Elements.StopListElement>()
+                .Any(e => e.ShowsRouteVariants && e.ShowRouteVariantLetters))
             hidden.Add(VariantaTrasyKat);
 
         return hidden;

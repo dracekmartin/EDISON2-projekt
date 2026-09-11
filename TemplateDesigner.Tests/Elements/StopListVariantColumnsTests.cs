@@ -21,6 +21,55 @@ public class StopListVariantColumnsTests
         new StopColumn { Key = StopFields.StopName,  Header = "Zastávky", Width = 33f },
     ];
 
+    private static DataContext DataSPismeny(params string[] pismena) =>
+        new(new Dictionary<string, object?>
+        {
+            ["VARIANTY_TRAS"] = new System.Text.Json.Nodes.JsonArray([.. pismena.Select(p => (System.Text.Json.Nodes.JsonNode?)p)]),
+        });
+
+    // ── B141: vypnutí písmen variant tras ───────────────────────────────────────
+
+    /// <summary>`B141` - vypnutá písmena vyprázdní záhlaví, ale **počet sloupců se nezmění**.
+    /// Na počtu hlaviček visí rozvinutí položky, takže jejich zahozením by zmizely i sloupce
+    /// a s nimi jízdní doby variant - přesně to, co si zákazník nechat chce.</summary>
+    [Fact]
+    public void VypnutaPismena_ZahlaviJePrazdneAleSloupceZustanou()
+    {
+        var prvek = new StopListElement { ShowRouteVariantLetters = false };
+
+        var hlavicky = prvek.VariantHeadersForRender(DataSPismeny("", "A", "D"));
+        var vysledek = StopListElement.ExpandTravelTimeColumns(Sloupce(), hlavicky);
+
+        Assert.Equal(3, hlavicky.Count);
+        Assert.All(hlavicky, h => Assert.Equal("", h));
+        Assert.Equal(3, vysledek.Count(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)));
+    }
+
+    /// <summary>Zapnutá písmena (výchozí stav) se do záhlaví promítnou beze změny.</summary>
+    [Fact]
+    public void ZapnutaPismena_ZahlaviNesePismena()
+    {
+        var prvek = new StopListElement();
+
+        var hlavicky = prvek.VariantHeadersForRender(DataSPismeny("", "A", "D"));
+
+        Assert.Equal(["", "A", "D"], hlavicky);
+    }
+
+    /// <summary>Jediná varianta zmizí i s vypnutými písmeny - to pravidlo drží počet hlaviček,
+    /// ne jejich obsah, takže se vypnutím písmen nesmí změnit.</summary>
+    [Fact]
+    public void VypnutaPismena_JedinaVariantaSloupecNedostane()
+    {
+        var prvek = new StopListElement { ShowRouteVariantLetters = false };
+
+        var hlavicky = prvek.VariantHeadersForRender(DataSPismeny(""));
+        var vysledek = StopListElement.ExpandTravelTimeColumns(Sloupce(), hlavicky);
+
+        Assert.DoesNotContain(StopFields.TravelTimeVariants, vysledek.Select(c => c.Key));
+        Assert.Empty(vysledek.Where(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)));
+    }
+
     [Fact]
     public void SloupecCasuZustavaAVariantyJdouZaNim()
     {
