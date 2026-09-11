@@ -4,10 +4,60 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Linkové a knižní JŘ - celá sekce čeká na odpověď zvenku, práci odtud
-> brát nelze. Vezmi místo toho položku z Backlogu.
+> **Nejblíž na řadě:** § Zastávkové JŘ - požadavky a chyby z hovoru s TRANSDEV 11. 9.
+> § Linkové a knižní JŘ celá čeká na odpověď zvenku, práci odtud brát nelze.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
-> ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`).
+> ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`). Z hovoru 11. 9.
+> platí jen to, co stojí níž v § Zastávkové JŘ.
+
+---
+
+## 🚏 Zastávkové JŘ
+
+### Požadavky
+
+Výstup z hovoru s TRANSDEV 11. 9. **Nic z toho není zadané** - u části je první krok upřesnit,
+co přesně chtějí, ne kód.
+
+- **`B142` Skrýt variantu, která je podmnožinou jiné** [M] - varianta, jejíž sled obsluhovaných
+  zastávek je podmnožinou jiné, dostane vlastní sloupec zbytečně. Chtějí ji sloučit, stejně jako
+  se to řeší pro BBSK. Dnešní deduplikace slučuje jen **shodné** sledy, ne podmnožiny.
+
+- **`B143` Konstantní rozestup minut** [S] - minuty mají stát ve stejných odstupech bez ohledu
+  na počet poznámek mezi nimi. ⚠️ Odlišit od „Rozestup odjezdů = Rovnoměrný" (12. 8.), který drží
+  jeden rastr podle **nejširšího** odjezdu ve sloupci - značka rozestup pořád zvětšuje, jen celému
+  sloupci naráz. Nejdřív ověřit, jestli jim nestačí to hotové.
+
+- **`B144` Sloupec „Čas" i z ručních minut v trase** [S] - volba zdroje hodnot: spočítané z jízdních
+  dob (dnes), ruční „MHD čas tam/zpět" z trasy linky, nebo „Automaticky (dle linky)" podle přepínače
+  u linky. Výchozí musí zůstat spočítané, jinak se českým firmám sloupec vyprázdní (mají pole prázdné).
+  **Šimko to ještě zkusí**, takže čekat na potvrzení. Server-side parametr → do allowlistu.
+
+- **`B145` Různé barvy sloupců v odjezdech** [S] - ⚠️ **nejdřív ověřit, jestli to už neumíme**:
+  editor skupin dnů má per-sloupec barvy záhlaví i dat a vlastní barvu střídání řádků. Zjistit,
+  co přesně nenašli nebo co jim na tom nestačí.
+
+- **`B146` Dvě řady písmen u železniční stanice** [?] - **zápis z hovoru, potřebuje upřesnit.**
+  Poznámka zní „dvoje varianty písmenek, železniční stanice, Z, nepoužívá automatický režim".
+  Nejpravděpodobněji kolize dvou nezávislých řad písmen (varianty tras × rozdíly tras) na lince,
+  která nejede v automatickém režimu. Než se k tomu sáhne, vyžádat konkrétní linku a zastávku.
+
+### Chyby
+
+- **`B147` Linka s jedinou variantou trasy nedá žádný variantní sloupec** [S] (TRANSDEV 11. 9.).
+  Dnes se položka „Varianty tras" při méně než dvou variantách zahazuje **záměrně**
+  (`ExpandTravelTimeColumns`) - jediná varianta je totéž co sloupec „Čas". Zjistit, co na lince
+  čekali; pokud je to chyba, leží v tom pravidle.
+
+- **`B148` „<" zůstává u projetých zastávek** [S] (TRANSDEV 11. 9.). Při zapnutém tisku projetých
+  zastávek se v jejich řádcích nemaže „<". Sloupec „Čas" projetou zastávku nuluje
+  (`CasJizdySloupce`), ale variantní sloupce berou hodnotu z průběhu trasy, kde „<" podle kódu
+  zůstane - projetost tam nikdo neřeší.
+
+- **`B149` Pořadí stránek ve směru zpět** [S] (TRANSDEV 11. 9.). V PDF chtějí stránky vzestupně
+  podle pořadí zastávky v **obou** směrech; ve zpětném směru je dostávají odzadu.
+  ⚠️ Příčina neověřená - `GetData` generuje stránky vzestupně v obou směrech, takže se pořadí
+  obrací někde dál. Najít kde, než se to začne opravovat.
 
 ---
 
