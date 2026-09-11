@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-09-11 (4) - 🚫 projetá zastávka nemá ve sloupci časů ani „<"
+
+`B148`, hlásil TRANSDEV 11. 9. Volba **„Čas u projetých = Nezobrazovat"** (výchozí) zahazovala
+jen **čísla** s tím, že „<" (varianta tudy projíždí) je značka, ne čas. Jenže sloupec „Čas" u projetých
+nosí nulu, tu tedy zahodil - a variantní sloupce nosí „<", takže vedle sebe stál prázdný sloupec
+a sloupec plný „<".
+
+Nově vyprázdní buňku **celou**. Volba „Zobrazit" nechává řádky tak, jak přišly, včetně „<".
+Na neprojetých zastávkách se nemění nic - tam „<" je platná informace, že tudy varianta jede
+bez zastavení.
+
 ## 2026-09-11 (3) - 📐 i jediná varianta trasy dostane sloupec
 
 `B147`, hlásil TRANSDEV 11. 9. Položka „Varianty tras" se při méně než dvou variantách **zahazovala**

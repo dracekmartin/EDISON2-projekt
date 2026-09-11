@@ -39,11 +39,6 @@ co přesně chtějí, ne kód.
 
 ### Chyby
 
-- **`B148` „<" zůstává u projetých zastávek** [S] (TRANSDEV 11. 9.). Při zapnutém tisku projetých
-  zastávek se v jejich řádcích nemaže „<". Sloupec „Čas" projetou zastávku nuluje
-  (`CasJizdySloupce`), ale variantní sloupce berou hodnotu z průběhu trasy, kde „<" podle kódu
-  zůstane - projetost tam nikdo neřeší.
-
 - **`B149` Pořadí stránek ve směru zpět** [S] (TRANSDEV 11. 9.). V PDF chtějí stránky vzestupně
   podle pořadí zastávky v **obou** směrech; ve zpětném směru je dostávají odzadu.
   ⚠️ Příčina neověřená - `GetData` generuje stránky vzestupně v obou směrech, takže se pořadí

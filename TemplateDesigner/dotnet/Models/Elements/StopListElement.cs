@@ -943,12 +943,16 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private static string FilterCurrentStopTime(string value, ZastavkaData z) =>
         z.JeAktualni && int.TryParse(value, out _) ? "" : value;
 
-    /// <summary>Čas jízdy u projeté zastávky podle volby <see cref="PassedStopsTime"/>. Ne-číselnou
-    /// hodnotu („&lt;" = projíždí) nechává - není to čas, jen značka.</summary>
+    /// <summary>Čas jízdy u projeté zastávky podle volby <see cref="PassedStopsTime"/>.
+    ///
+    /// <para>`B148`: „Nezobrazovat" vyprázdní buňku **celou**, včetně „&lt;" (projíždí). Do 11. 9. se
+    /// zahazovala jen čísla s tím, že „&lt;" je značka, ne čas - jenže sloupec „Čas" u projetých nosí
+    /// nulu (tu tedy zahodil) a variantní sloupce „&lt;", takže vedle sebe stál prázdný sloupec
+    /// a sloupec plný „&lt;". Hlásil TRANSDEV 11. 9.</para></summary>
     private string FilterPassedTime(string value, bool isPassed)
     {
         if (!isPassed || value.Length == 0 || PassedStopsTime == PassedStopsTimeDisplay.Show) return value;
-        return int.TryParse(value, out _) ? "" : value;
+        return "";
     }
 
     private const float VariantColumnWidthMm = 6f;

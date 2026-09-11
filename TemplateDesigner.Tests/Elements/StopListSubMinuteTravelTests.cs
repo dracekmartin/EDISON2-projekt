@@ -118,6 +118,45 @@ public class StopListSubMinuteTravelTests
         Assert.Equal("", el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "0", isPassed: true));
     }
 
+    /// <summary>`B148` - u projeté zastávky se nekreslí ani „&lt;" (varianta tudy projíždí). Do 11. 9.
+    /// se zahazovala jen čísla, takže sloupec „Čas" byl u projetých prázdný a variantní vedle něj
+    /// plný „&lt;". Hlásil TRANSDEV.</summary>
+    [Fact]
+    public void ProjetaZastavka_NemaAniZnackuProjizdi()
+    {
+        var el = new StopListElement();   // PassedStopsTime = Hide (výchozí)
+        var z = new ZastavkaData { Popis = "Projetá", CasJizdy = "<", TrasaMin = ["<", "3"] };
+
+        Assert.Equal("", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
+        Assert.Equal("", el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "0", isPassed: true));
+        Assert.Equal("", el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "1", isPassed: true));
+    }
+
+    /// <summary>Volba „Zobrazit" nechá projeté řádky tak, jak přišly - i „&lt;". Kdo si ji zapne,
+    /// chce vidět, co tudy jede.</summary>
+    [Fact]
+    public void ProjetaZastavka_SeZobrazenimZustaneVse()
+    {
+        var el = new StopListElement { PassedStopsTime = PassedStopsTimeDisplay.Show };
+        var z = new ZastavkaData { Popis = "Projetá", CasJizdy = "<", TrasaMin = ["<", "3"] };
+
+        Assert.Equal("<", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
+        Assert.Equal("<", el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "0", isPassed: true));
+        Assert.Equal("3", el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "1", isPassed: true));
+    }
+
+    /// <summary>Neprojetá zastávka „&lt;" nechává - je to platná informace, že tudy varianta jede
+    /// bez zastavení.</summary>
+    [Fact]
+    public void NeprojetaZastavka_ZnackuProjizdiSiNecha()
+    {
+        var el = new StopListElement();
+        var z = new ZastavkaData { Popis = "Nácestná", CasJizdy = "<", TrasaMin = ["<"] };
+
+        Assert.Equal("<", el.GetCellText(z, StopFields.TravelTime));
+        Assert.Equal("<", el.GetCellText(z, StopFields.TravelTimeVariantPrefix + "0"));
+    }
+
     // ── Variantní sloupce časů ────────────────────────────────────────────────
 
     [Fact]

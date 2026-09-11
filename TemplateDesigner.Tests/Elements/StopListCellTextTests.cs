@@ -190,11 +190,15 @@ public class StopListCellTextTests
         Assert.Equal("-7", VariantniCas(PassedStopsTimeDisplay.Show, z, projeta: true));
     }
 
+    /// <summary>`B148` - „Nezobrazovat" u projetých vyprázdní buňku celou, i značku „&lt;".
+    /// Do 11. 9. se zahazovala jen čísla, takže sloupec „Čas" byl u projetých prázdný a variantní
+    /// vedle něj plný „&lt;" (hlásil TRANSDEV). Se „Zobrazit" značka zůstává.</summary>
     [Fact]
-    public void ZnackaProjizdiZustava_NeniToCas()
+    public void ZnackaProjizdiSeUProjetychNetiskne()
     {
         var z = StopSCasy(0, "<");
-        Assert.Equal("<", VariantniCas(PassedStopsTimeDisplay.Hide, z, projeta: true));
+        Assert.Equal("", VariantniCas(PassedStopsTimeDisplay.Hide, z, projeta: true));
+        Assert.Equal("<", VariantniCas(PassedStopsTimeDisplay.Show, z, projeta: true));
     }
 
     [Fact]

@@ -1,5 +1,18 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B148` Projetá zastávka nemá ve sloupci časů ani „<" (hotovo 11. 9. 2026)
+
+Hlásil TRANSDEV 11. 9. Volba „Čas u projetých = Nezobrazovat" (výchozí) zahazovala jen čísla -
+„<" se považovalo za značku, ne za čas. Sloupec „Čas" ale u projetých nosí nulu (tu zahodil)
+a variantní sloupce „<", takže vedle sebe stál prázdný sloupec a sloupec plný „<".
+
+Vyprazdňuje se tedy celá buňka. „Zobrazit" nechává vše včetně „<"; neprojetých zastávek se to
+netýká, tam „<" je platná informace.
+
+Jedno místo pro obě rodiny sloupců (`FilterPassedTime`), takže se nemohly rozejít.
+
+Detail v `changelog.md` 11. 9. (4).
+
 ## `B147` I jediná varianta trasy dostane sloupec (hotovo 11. 9. 2026)
 
 Hlásil TRANSDEV 11. 9. Položka „Varianty tras" se při méně než dvou variantách zahazovala jako
