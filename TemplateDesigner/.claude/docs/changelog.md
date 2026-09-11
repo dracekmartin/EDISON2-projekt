@@ -14,14 +14,8 @@ nejhustšího.
 hodnotu v JSON nemají, takže by jim nový výchozí stav mlčky přesázel mřížku; migrace 1.11 → 1.12
 jim dopíše „Podle obsahu".
 
-⚠️ **Slot označkovaného odjezdu se staví ze skutečně naměřené minuty**, ne z nominální „Šířky
-minuty" (nález Jan 11. 9. hned po vydání: mřížka vyšla zbytečně vzdušná a menší už nešla nastavit,
-protože všechny tři mezery jsou ve výchozím stavu nula). Značka se kreslí hned za textem minuty,
-takže nominál (5 mm proti ~3 mm dvou číslic) propašoval do každého slotu mrtvý vzduch. Nominál
-zůstává spodní mezí, takže odjezdy bez značek se nezúží.
-
-Mezery fungují beze změny: rozteč je `max(šířka minuty + mezera minuta↔anotace, naměřená minuta
-+ značky) + mezera mezi odjezdy`. Značky se drží své minuty, slot jim jen rezervuje místo.
+Mezery fungují beze změny: rozteč je `max(šířka minuty + mezera minuta↔anotace, nejširší odjezd)
++ mezera mezi odjezdy`. Značky se drží své minuty, slot jim jen rezervuje místo.
 
 ## 2026-09-11 (5) - 🎨 sloupec hodin drží barvu své skupiny dnů
 
