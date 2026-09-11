@@ -1,5 +1,28 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B142` Slučování variant, které jsou podmnožinou jiné (hotovo 11. 9. 2026)
+
+Požadavek TRANSDEV z hovoru 11. 9. Parametr sestavy ve skupině Seznam zastávek, **výchozí vypnuto**.
+
+⚠️ **Vypnuté je rozhodnutí, ne opatrnost** (Jan 11. 9.): slučováním se ztrácí informace, kterou
+nic jiného spolehlivě nenese. U slitých spojů není ve sloupci vidět, které zastávky vynechávají,
+a časy ukazuje ta delší varianta - vynechaná zastávka posouvá i následující (naměřeno na `0365001`:
+`<`, 16, 18 proti 15, 19). Rozdíly tras to kryjí jen zčásti, vypínají se u linky a měří se proti
+zaškrtnuté základní trase, ne proti druhé variantě.
+
+Pravidlo: podmnožina = všude, kde varianta staví, staví i ta druhá; „projíždí" a „mimo trasu" se
+počítají stejně. Slučuje se do **největší** nadmnožiny - cíl tím sám nikdy slitý není a řetězec
+A ⊆ B ⊆ C se vyřeší jedním průchodem.
+
+⚠️ Na identitě varianty visí víc věcí, než je vidět: přeživší musí převzít **četnost** (řazení
+„Dle četnosti"), spoje se musí přemapovat na její **písmeno** a slitá se musí vynechat ze **všech
+tří** způsobů řazení. Parametr je server-side, takže patří do `ServerSideParams`.
+
+⚠️ **Testovací metody Caché musí být `Method`, ne `ClassMethod`** - se `ClassMethod` se objeví
+v seznamu a všechny spadnou, což vypadá jako nenasazená třída. Stálo to dvě zbytečná kola hledání.
+
+Detail v `changelog.md` 11. 9. (7).
+
 ## `B143` Rovnoměrný rozestup přes celý prvek a jako výchozí (hotovo 11. 9. 2026)
 
 Požadavek TRANSDEV z hovoru 11. 9. Ukázalo se, že „Rovnoměrný" z 12. 8. **už pevnou mřížku dělal**,

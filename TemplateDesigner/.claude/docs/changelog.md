@@ -1,5 +1,28 @@
 ﻿# Changelog
 
+## 2026-09-11 (7) - 🔗 varianty tras, které jsou podmnožinou jiné, jdou slít
+
+`B142`, požadavek TRANSDEV z hovoru 11. 9. Varianta, která staví jen tam, kde staví i jiná, dostane
+sloupec té delší - ubere to sloupce na lince, kde se spoje liší jen vynechávkami.
+
+Nový parametr **„Slučovat varianty tras, které jsou podmnožinou jiné"** ve skupině Seznam zastávek,
+**výchozí vypnuto**.
+
+⚠️ **Vypnuté je schválně, protože se tím ZTRÁCÍ informace.** U slitých spojů není ve sloupci vidět,
+které zastávky vynechávají, a časy jsou té delší varianty - vynechaná zastávka přitom posouvá
+i všechny následující. Rozdíly tras to nahrazují jen zčásti: vypínají se u linky a měří se proti
+zaškrtnuté základní trase, ne proti druhé variantě. Zákazník, který si variantní sloupce nasadil
+právě kvůli detailu (KOVED #13048), tak nepřijde o nic, dokud si to sám nezapne. Nápověda
+u parametru říká, co se schová.
+
+Pravidlo (rozhodnutí Jan 11. 9.): podmnožina = všude, kde varianta staví, staví i ta druhá.
+„Projíždí" a „mimo trasu" se počítají stejně, pro cestujícího obojí znamená „tady nenastoupíš".
+Slučuje se rovnou do **největší** nadmnožiny, takže se řetězec A ⊆ B ⊆ C vyřeší jedním průchodem
+a výsledek nezávisí na pořadí.
+
+Přeživší varianta přebírá i **četnost** slité - na ní visí řazení „Dle četnosti ze zastávky".
+Spoje se přemapují na její písmeno, aby neukazovaly na zmizelý sloupec.
+
 ## 2026-09-11 (6) - 📏 rovnoměrný rozestup minut platí přes celý prvek a je výchozí
 
 `B143`, nález Jana 11. 9. na Nitře 4. „Rozestup odjezdů = Rovnoměrný" držel rastr **per skupinu

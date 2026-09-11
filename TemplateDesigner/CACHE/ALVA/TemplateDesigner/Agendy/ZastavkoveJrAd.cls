@@ -417,6 +417,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s prvniBez   = ($zcvt($g(^||ML("IN","PRVNI_BEZ_PISMENE")),"L") '= "false")
     s razeniVar  = $g(^||ML("IN","RAZENI_VARIANT"))
     k variantSig, variantPocet, variantRepSpoj, variantCas, variantPat, spojVarianta, variantCt, variantDelka
+    k variantSigText, variantSlouceno
     s poradiVar = 0, spV = ""
     f {
         s spV = $o(^[dataDB]JRL(sku,lin,smer,spV))
@@ -437,6 +438,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         i '$d(variantSig(sigV)) {
             s poradiVar = poradiVar + 1
             s variantSig(sigV) = poradiVar
+            s variantSigText(poradiVar) = sigV        // `B142`: identita zpětně, pro test podmnožiny
         }
         s viV = variantSig(sigV)
         s spojVarianta(spV) = viV
@@ -447,6 +449,45 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s delkaV = ..DelkaProfilu(.wMapV, currentPoradi, .servedPoradi, jeTam)
         i ('$d(variantDelka(viV))) || (delkaV > variantDelka(viV)) || ((delkaV = variantDelka(viV)) && (ctV < variantCt(viV))) {
             s variantDelka(viV) = delkaV, variantCt(viV) = ctV, variantRepSpoj(viV) = spV
+        }
+    }
+
+    // `B142`: varianta, která staví jen tam, kde staví i jiná, se dá slít do té největší nadmnožiny.
+    // ⚠️ Vědomě se tím ZTRÁCÍ informace - u slitých spojů není ve sloupci vidět, které zastávky
+    // vynechávají, a časy ukazuje ta delší varianta (vynechaná zastávka posouvá i následující časy).
+    // Rozdíly tras to nahrazují jen zčásti: vypínají se u linky a měří se proti zaškrtnuté základní
+    // trase, ne proti druhé variantě. Proto jen na vyžádání (rozhodnutí Jan 11. 9.).
+    // Cíl je vždy NEJVĚTŠÍ nadmnožina, takže sám nikdy slitý není a řetězce A ⊆ B ⊆ C se vyřeší
+    // jedním průchodem - kdyby se slévalo po dvojicích, záleželo by na pořadí.
+    i $zcvt($g(^||ML("IN","SLUCOVAT_PODMNOZINY")),"L") = "true" {
+        f viA=1:1:poradiVar {
+            s staveniA = ..PocetZastaveni($g(variantSigText(viA)))
+            s cil = 0, cilStaveni = 0
+            f viB=1:1:poradiVar {
+                i viB = viA continue
+                i '..JePodmnozinaVarianty($g(variantSigText(viA)), $g(variantSigText(viB))) continue
+                s staveniB = ..PocetZastaveni($g(variantSigText(viB)))
+                i staveniB '> staveniA continue          // shodný počet = táž varianta, tu slil dedup
+                i (cil = 0) || (staveniB > cilStaveni) || ((staveniB = cilStaveni) && (+$g(variantDelka(viB)) > +$g(variantDelka(cil)))) {
+                    s cil = viB, cilStaveni = staveniB
+                }
+            }
+            i cil s variantSlouceno(viA) = cil
+        }
+        // Četnost přebírá přeživší varianta - na ní visí řazení „Dle četnosti ze zastávky".
+        s viA = ""
+        f {
+            s viA = $o(variantSlouceno(viA))
+            q:viA=""
+            s cilV = variantSlouceno(viA)
+            s variantPocet(cilV) = $g(variantPocet(cilV)) + $g(variantPocet(viA))
+        }
+        // Spoje slité varianty musí ukazovat na písmeno té přeživší, jinak by mířily na zmizelý sloupec.
+        s spM = ""
+        f {
+            s spM = $o(spojVarianta(spM))
+            q:spM=""
+            i $d(variantSlouceno(spojVarianta(spM))) s spojVarianta(spM) = variantSlouceno(spojVarianta(spM))
         }
     }
 
@@ -468,10 +509,16 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
 
     // pořadí sloupců variant: dle četnosti ze zastávky (KOVED default - nejvíc spojů první,
     // shoda četností → pořadí výskytu) / „Stabilní" = pořadí výskytu spojů / dle délky jízdy
+    // `B142`: slitá varianta se do seznamu nedostane - její spoje už ukazují na přeživší sloupec.
+    // Nepřečíslovává se, jen se přeskočí, takže díra v pořadí nevznikne (na pořadí visí písmena).
     k displayVar
     s pocetSloupcu = 0
     i razeniVar = "Stabilní (pořadí spojů)" {
-        f viY=1:1:poradiVar { s pocetSloupcu = pocetSloupcu + 1  s displayVar(pocetSloupcu) = viY }
+        f viY=1:1:poradiVar {
+            i $d(variantSlouceno(viY)) continue
+            s pocetSloupcu = pocetSloupcu + 1
+            s displayVar(pocetSloupcu) = viY
+        }
     } elseif (razeniVar = "Dle délky jízdy (nejkratší první)") || (razeniVar = "Dle délky jízdy (nejdelší první)") {
         // Nejrychlejší varianta stojí hned vedle sloupce „Čas", nejpomalejší vpravo - cestující
         // pak čte sloupce jako škálu, ne jako nahodilé pořadí. Délka = kumulativní čas nejdál
@@ -479,7 +526,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         // Shoda délek → pořadí výskytu, ať výstup nezávisí na pořadí průchodu.
         s opacne = (razeniVar = "Dle délky jízdy (nejdelší první)")
         k radArr
-        f viY=1:1:poradiVar s radArr($s(opacne:-$g(variantDelka(viY)), 1:+$g(variantDelka(viY))),viY) = ""
+        f viY=1:1:poradiVar {
+            i $d(variantSlouceno(viY)) continue
+            s radArr($s(opacne:-$g(variantDelka(viY)), 1:+$g(variantDelka(viY))),viY) = ""
+        }
         s dKey = ""
         f {
             s dKey = $o(radArr(dKey))  q:dKey=""
@@ -492,7 +542,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         }
     } else {
         k radArr
-        f viY=1:1:poradiVar s radArr(-$g(variantPocet(viY)),viY) = ""
+        f viY=1:1:poradiVar {
+            i $d(variantSlouceno(viY)) continue
+            s radArr(-$g(variantPocet(viY)),viY) = ""
+        }
         s cKey = ""
         f {
             s cKey = $o(radArr(cKey))  q:cKey=""
@@ -2509,6 +2562,30 @@ ClassMethod JeVUsekuVariant(poradi As %String, currentPoradi As %String, jeTam A
     q $s(jeTam:(poradi '< currentPoradi), 1:(poradi '> currentPoradi))
 }
 
+/// `B142`: je varianta `a` podmnožinou varianty `b`? Podmnožina = všude, kde `a` staví, staví i `b`.
+/// Signatura nese per zastávku „S" (staví), „<" (projíždí) nebo prázdno (mimo trasu) - projíždí
+/// i mimo trasu znamená pro cestujícího totéž („tady nenastoupíš"), takže se rozlišuje jen „S".
+/// Delší signatura než `b` podmnožinu nedá: chybějící kousek se čte jako prázdno, tedy ne „S".
+ClassMethod JePodmnozinaVarianty(a As %String, b As %String) As %Boolean
+{
+    f i=1:1:$l(a,"~") {
+        i $p(a,"~",i) '= "S" continue
+        i $p(b,"~",i) '= "S" ret 0
+    }
+    ret 1
+}
+
+/// Počet zastávek, kde varianta staví. Velikost varianty pro výběr největší nadmnožiny (`B142`) -
+/// na ní stojí to, že se řetězec A ⊆ B ⊆ C vyřeší jedním průchodem.
+ClassMethod PocetZastaveni(sig As %String) As %Integer
+{
+    s n = 0
+    f i=1:1:$l(sig,"~") {
+        i $p(sig,"~",i) = "S" s n = n + 1
+    }
+    ret n
+}
+
 /// Prefix textu pro daný typ omezení (1:1 s `txtNZ^JRapiNZUtl`).
 ClassMethod PrefixOmezeni(omzId As %String) As %String
 {
@@ -3389,6 +3466,11 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // a zhasne anotaci u minuty), takže do allowlistu server-side parametrů nepatří - server
     // písmena posílá dál a nic se kvůli té volbě znovu nenačítá.
     d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant tras", "true", "Seznam zastávek", "Označení variantních sloupců jízdních dob - v záhlaví sloupců i u minut odjezdů. Vypnutím sloupce s časy zůstanou, jen bez písmen. Netýká se písmen rozdílů tras, ta se vypínají u linky.")
+
+    // `B142`: vědomá výměna „méně sloupců za méně informace", proto výchozí vypnuto. Popisek i
+    // nápověda musí říct, CO to schová - jinak si to zapne někdo, kdo variantní sloupce nasadil
+    // právě kvůli detailu (KOVED #13048).
+    d ..AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty tras, které jsou podmnožinou jiné", "false", "Seznam zastávek", "Varianta, která staví jen tam, kde staví i jiná, dostane sloupec té delší. Ubere to sloupce, ale u slitých spojů pak není ve sloupci vidět, které zastávky vynechávají, a časy jsou té delší varianty.")
 
     s pPrvB = ##class(%DynamicObject).%New()
     s pPrvB.name         = "PRVNI_BEZ_PISMENE"

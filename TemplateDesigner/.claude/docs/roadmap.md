@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** § Zastávkové JŘ - požadavky a chyby z hovoru s TRANSDEV 11. 9.
-> § Linkové a knižní JŘ celá čeká na odpověď zvenku, práci odtud brát nelze.
+> **Nejblíž na řadě:** nic akčního - § Zastávkové JŘ čeká na odpověď zákazníka a § Linkové
+> a knižní JŘ celá na odpověď zvenku. Vezmi položku z Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
 > ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`). Z hovoru 11. 9.
 > platí jen to, co stojí níž v § Zastávkové JŘ.
@@ -14,16 +14,9 @@
 
 ## 🚏 Zastávkové JŘ
 
-### Požadavky
-
-Výstup z hovoru s TRANSDEV 11. 9. **Nic z toho není zadané** - u části je první krok upřesnit,
-co přesně chtějí, ne kód.
-
-- **`B142` Skrýt variantu, která je podmnožinou jiné** [M] - varianta, jejíž sled obsluhovaných
-  zastávek je podmnožinou jiné, dostane vlastní sloupec zbytečně. Chtějí ji sloučit, stejně jako
-  se to řeší pro BBSK. Dnešní deduplikace slučuje jen **shodné** sledy, ne podmnožiny.
-
-### Chyby
+Požadavky z hovoru s TRANSDEV 11. 9. jsou hotové (`B141`-`B143`, `B145`, `B147`, `B148`), viz
+[`roadmap-archive.md`](roadmap-archive.md). `B144` odložený v Backlogu, `B146` zrušený jako
+nezadání.
 
 - **`B149` Pořadí stránek v exportu všech zastávek** [S] (TRANSDEV 11. 9.).
   **Čeká na odpověď zákazníka, neřešit dřív.** Popsal to jako obrácené pořadí („1234554321"),
@@ -32,6 +25,7 @@ co přesně chtějí, ne kód.
   zastávkách** a u každé oba směry (`JRapiLinPrtMhd1.mac` ř. 397-398: `Tc` vnější, `Smer` vnitřní).
   Zeptat se, jestli mu jde o tohle - pro vyvěšování dává legacy pořadí smysl, obě vývěsky jedné
   zastávky jdou v PDF za sebou. ⚠️ Změna pořadí přepíše zlaté odtisky AD (vědomé re-baseline).
+
 ---
 
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
