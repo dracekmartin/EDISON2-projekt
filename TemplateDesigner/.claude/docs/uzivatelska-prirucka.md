@@ -683,12 +683,10 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"):
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
     zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
-  - **Písmena variant se tisknou vždy, když je zapnutý sloupec „Varianty tras"** - varianty se
-    označí písmeny v záhlaví sloupců a totéž písmeno se vytiskne u minut odjezdů; podle písmena
-    tak dohledáte, kterou trasou spoj jede.
-    Bez toho sloupce se u minut netisknou, protože by je nebylo čím vysvětlit.
-    Vypnout je jinak nelze: do 17. 8. to byl parametr, ale vývěska bez nich u minut neměla nic,
-    takže nešlo poznat, který sloupec pro spoj platí.
+  - **Písmena variant** - varianty se označí písmeny v záhlaví sloupců a totéž písmeno se vytiskne
+    u minut odjezdů; podle písmena tak dohledáte, kterou trasou spoj jede. Tisknou se, dokud je
+    zapnutý sloupec „Varianty tras" a zaškrtávátko **Písmena variant tras** v prvku Seznam zastávek
+    (skupina Obecné). Bez sloupce se u minut netisknou vůbec, protože by je nebylo čím vysvětlit.
   - **Písmena variant a písmena rozdílů tras jsou dvě různé věci a tisknou se vedle sebe** -
     u minuty je nejdřív rozdíl trasy, pak varianta („17BA" = rozdíl B, varianta A).
     Rozdíl trasy říká **kudy** spoj jede jinak a vysvětluje ho text v legendě; varianta říká,
@@ -722,6 +720,10 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 
 - **Upravit sloupce…** - otevře editor sloupců (kap. 3)
 - **Všechny varianty tras** - zap. = víc časových sloupců podle skutečných variant tras (jen AD; viz „Varianty tras" níže); vyp. = jeden sloupec základní trasy
+- **Písmena variant tras** - označení variantních sloupců. Vypnutím zmizí písmena **v záhlaví
+  sloupců i u minut odjezdů** naráz, sloupce jízdních dob zůstanou. Vypínejte, jen když varianty
+  vysvětlujete jinak: bez písmen se u minuty nedá poznat, který sloupec časů pro ni platí.
+  Písmen **rozdílů tras** se to netýká, ta se vypínají u linky
 - **Oddělovací čáry** - vodorovné čáry mezi řádky zastávek
 - **Odsazení** - odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
 - **Sloupec Označník** - volitelný sloupec s číslem označníku (sloupku, ze kterého spoj odjíždí); zapíná se v editoru sloupců, tiskne se jen tam, kde jsou data vyplněná

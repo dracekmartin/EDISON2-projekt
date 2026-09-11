@@ -1,5 +1,30 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B141` Vypnutí písmen variant tras (hotovo 11. 9. 2026)
+
+Požadavek TRANSDEV z hovoru 11. 9.: jít vypnout písmena variant tras, a to v záhlaví sloupců
+i u minut odjezdů; sloupce jízdních dob mají zůstat.
+
+Řešení: zaškrtávátko **„Písmena variant tras"** v prvku Seznam zastávek, skupina Obecné, výchozí
+zapnuto. Vypnutí vyprázdní záhlaví variantních sloupců a skryje kategorii „varianta-trasy" ve
+filtru viditelnosti, takže značka u minuty zmizí spolu se svým vysvětlením.
+
+**Umístění rozhodl Jan v hovoru** - pole prvku, ne parametr sestavy. Je to čistě „co se vykreslí",
+nesahá se na server a nespouští to načtení dat; navíc je to táž mechanika, kterou se písmena
+schovávají už dnes (viditelnost sloupce Varianty tras), takže nevzniklo druhé místo pro totéž.
+
+⚠️ **Obrací to rozhodnutí ze 17. 8.**, kdy se volba záměrně odebrala, protože bez písmen nešlo
+u minuty poznat, který sloupec časů pro ni platí (naměřeno na lince 0330520). Kdyby se to mělo
+zvažovat znovu, tohle je ten důvod, proč volba nebyla.
+
+⚠️ **Počet hlaviček musí zůstat i prázdný** - na něm visí rozvinutí položky „Varianty tras" na
+sloupce, takže jejich zahozením by zmizely i časy variant. Hlídá to test
+`VypnutaPismena_ZahlaviJePrazdneAleSloupceZustanou`.
+
+Rozdílů tras se to netýká, ty mají vlastní řadu písmen a vypínají se u linky (AutoPozn).
+
+Detail v `changelog.md` 11. 9. (1).
+
 ## `B137` Písmeno systému u označení zóny (hotovo 10. 9. 2026)
 
 Linka přes dvě IDS se stejně číslovanými zónami byla v tisku nerozeznatelná. Bod měl jako první
