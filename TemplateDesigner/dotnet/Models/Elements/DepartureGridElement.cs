@@ -741,22 +741,37 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // Rastr rovnoměrného rozestupu per skupina dnů (plní se po vytvoření fontů anotací).
         var uniformSlotByGroup = new Dictionary<string, float>();
 
-        // Šířka slotu jednoho odjezdu: nominální (scaledMinuteW) + jeho anotace. Nezávisí na skupině
-        // (fonty anotací jsou element-level), takže se počítá i pro rastr celého sloupce.
+        // Nejširší naměřená minuta napříč skupinami dnů - fonty se můžou lišit per skupinu, tak
+        // se bere ta nejtlustší, aby slot nikdy nerezervoval míň, než se reálně nakreslí.
+        float MinutaTextPx(string text)
+        {
+            float max = 0f;
+            foreach (var f in groupMinuteFonts.Values)
+            {
+                float w = f.MeasureText(text);
+                if (w > max) max = w;
+            }
+            return max;
+        }
+
+        // Šířka slotu jednoho odjezdu. Bez značek je to nominální „Šířka minuty".
+        //
+        // ⚠️ Se značkami se staví ze **skutečně naměřené** minuty, ne z nominálu: značka se kreslí
+        // hned za textem minuty, takže nominál (výchozí 5 mm proti ~3 mm dvou číslic) propašoval
+        // do každého slotu mrtvý vzduch a o ten zřídl celý rovnoměrný rastr (nález Jan 11. 9.,
+        // `B143`). Nominál zůstává spodní mezí, takže se nic nezúží pod dnešní stav.
         float SlotWidthMm(OdjezdData o)
         {
-            float extraPx = 0f;
-            if (ShowAnotace && o.Anotace.Count > 0)
+            if (!ShowAnotace || o.Anotace.Count == 0) return scaledMinuteW;
+
+            float extraPx = anotGapPx;
+            foreach (var a in o.Anotace)
             {
-                extraPx = anotGapPx;
-                foreach (var a in o.Anotace)
-                {
-                    SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
-                    bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
-                    extraPx += af.MeasureText(GlyfProKresleni(a)) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
-                }
+                SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
+                bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
+                extraPx += af.MeasureText(GlyfProKresleni(a)) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
             }
-            return scaledMinuteW + extraPx / ctx.MmToPx;
+            return Math.Max(scaledMinuteW, (MinutaTextPx(o.Minuta.ToString("D2")) + extraPx) / ctx.MmToPx);
         }
 
         try

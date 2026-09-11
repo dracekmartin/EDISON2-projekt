@@ -10,9 +10,13 @@ ve svislici mezi sloupci. Nález Jan 11. 9. z náhledu, ne z dat.
 Rastr se počítá přes celý prvek; Rovnoměrný je výchozí; migrace 1.11 → 1.12 dopíše starým šablonám
 „Podle obsahu", aby se jim tisk nezměnil.
 
-⚠️ **Cena je vzdušnost**: sloupce bez značek zřídnou na šířku nejhustšího odjezdu v prvku. Kdyby
-to vadilo, další krok je dvoudílný slot (pevná šířka minuty + pevná šířka značek zvlášť), který dá
-zarovnání bez toho sčítání - viz varianta C z rozboru 11. 9.
+⚠️ **Cena je vzdušnost**: sloupce bez značek zřídnou na šířku nejhustšího odjezdu v prvku. Hned
+po vydání se ukázalo, že je zbytečně velká a **menší ji nešlo nastavit** - všechny tři mezery jsou
+ve výchozím stavu nula. Slot se totiž stavěl z **nominální** „Šířky minuty" (5 mm), i když se značka
+kreslí hned za skutečným textem (~3 mm dvou číslic); ten rozdíl byl v každém slotu mrtvý. Slot
+označkovaného odjezdu se proto počítá z naměřené minuty, nominál zůstal spodní mezí.
+Kdyby vzdušnost vadila dál, další krok je dvoudílný slot (pevná šířka minuty + pevná šířka značek
+zvlášť) - varianta C z rozboru 11. 9.
 
 ⚠️ **Obava „značky se započítají, takže rozestup není konstantní" neplatila** - značky se do slotu
 započítají, ale slot je pro všechny odjezdy stejný. Mřížku opticky rozbíjí něco jiného: zarovnání
