@@ -18,6 +18,18 @@ A ⊆ B ⊆ C se vyřeší jedním průchodem.
 „Dle četnosti"), spoje se musí přemapovat na její **písmeno** a slitá se musí vynechat ze **všech
 tří** způsobů řazení. Parametr je server-side, takže patří do `ServerSideParams`.
 
+📄 **Změřený příklad, na kterém se to dá ukázat** (`CB_CSADAD`, skupina 888, linka 0060111,
+vývěska „B. Bystrica,AS", směr tam; sonda `AdSloupekProbe.SloupceVyvesky`). Čtyři varianty:
+`(bez)` staví po Tureckou Horní a končí, `A` Tureckou projíždí a končí v Donovalech, `D` totéž
+ale pokračuje do Ružomberoku, `L` staví všude po Donovaly. Po zapnutí zbydou **D a L**:
+`A → D` (stejný počet zastavení jako u L, rozhodne delší jízda) a `(bez) → L` (jediná nadmnožina).
+
+⚠️ **Ztráta není u obou stejná a jde proti sobě** - proto se to zapíná na celou sestavu velmi
+opatrně. `A → D` nestojí skoro nic: časy jsou všude, kde obě staví, **identické**, mizí jen „končí
+v Donovalech", což říká poznámka rozdílu trasy. `(bez) → L` naopak **mění čísla** (29 proti 26,
+33 proti 30) a spoje navíc vypadají, že pokračují dál, než reálně jedou.
+⏸️ **Necháno tak** (Jan 11. 9.) - vyřeší se se zákazníkem, ne odhadem.
+
 ⚠️ **Testovací metody Caché musí být `Method`, ne `ClassMethod`** - se `ClassMethod` se objeví
 v seznamu a všechny spadnou, což vypadá jako nenasazená třída. Stálo to dvě zbytečná kola hledání.
 

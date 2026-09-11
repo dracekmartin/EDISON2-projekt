@@ -245,6 +245,67 @@ ClassMethod PripadyLinky(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Sloupce variant JEDNÉ vývěsky, řádek po řádku (`B142`): která varianta kde staví. Slouží
+/// k rozhodnutí, co je podmnožina čeho - z obrázku vývěsky se to spolehlivě přečíst nedá,
+/// protože sloupce vedle sebe vypadají podobně a chybí u nich, kde která končí.
+/// IN: SKU (default 1), LIN, ZAST (podřetězec názvu vývěskové zastávky), SMER (default T).
+/// Read-only (jen čte, co vrátí GetData).
+ClassMethod SloupceVyvesky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set sku = $get(^||ML("IN","SKU")) if sku = "" set sku = 1
+		set lin = $get(^||ML("IN","LIN"))
+		set hledana = $get(^||ML("IN","ZAST"))
+		set smerH = $get(^||ML("IN","SMER")) if smerH = "" set smerH = "T"
+		if lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LIN je povinne"))
+
+		kill ^||ML("OUT")
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+
+		set nalezeno = 0, key = ""
+		for {
+			set key = $order(^||ML("OUT", key)) quit:key=""
+			continue:key="ERR"
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			continue:page.values.SMER'=smerH
+			set nazev = page.values.%Get("POPIS_ZASTAVKA")
+			continue:'$find($zcvt(nazev,"L"), $zcvt(hledana,"L"))
+			set zast = page.rows.ZASTAVKY
+			continue:'$isobject(zast)
+			set nalezeno = 1
+
+			set pismena = "", vt = page.values.%Get("VARIANTY_TRAS")
+			if $isobject(vt) {
+				for vi = 0:1:vt.%Size()-1 { set pismena = pismena _ $select(vi:" | ",1:"") _ $select(vt.%Get(vi)="":"(bez)",1:vt.%Get(vi)) }
+			}
+			kill ^||ML("OUT")
+			set ^||ML("OUT","A_VYVESKA") = nazev _ " (smer " _ smerH _ ")"
+			set ^||ML("OUT","B_SLOUPCE") = pismena
+			set poradiR = 0, it = zast.%GetIterator()
+			while it.%GetNext(.i, .radek) {
+				set poradiR = poradiR + 1
+				set tm = radek.%Get("TRASA_MIN"), radekTxt = ""
+				if $isobject(tm) {
+					for vi = 0:1:tm.%Size()-1 { set radekTxt = radekTxt _ $select(vi:" | ",1:"") _ $select(tm.%Get(vi)="":".",1:tm.%Get(vi)) }
+				}
+				set ^||ML("OUT","C_" _ $translate($justify(poradiR,3)," ","0")) = radekTxt _ "   " _ radek.%Get("NAZEV_ZASTAVKY")
+			}
+			quit
+		}
+		if 'nalezeno {
+			kill ^||ML("OUT")
+			set ^||ML("OUT","A_VYVESKA") = "zastavka '" _ hledana _ "' ve smeru " _ smerH _ " nenalezena"
+		}
+	}
+	// Bez úklidu OUT by chyba v sondě poslala klientovi celý výstup GetData (megabajty stránek).
+	catch (ex) { kill ^||ML("OUT")  $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Plní zákazníci **znaky variantních sloupců** u linky (`B67` krok 3)? Starý modul je bere ze
 /// stringu `^JRL(sku,lin,"PATCH","mhd","par",2)` - i-tý znak patří i-tému sloupci
 /// (`JRapiLinPrtMhd1.mac:26` a `:297`). Žádný default v kódu není; prázdné nastavení = sloupce
