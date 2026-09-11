@@ -243,4 +243,54 @@ public class NoteVisibilityFilterTests
         Assert.Equal(0, PocetAnotaci(result));
         Assert.Single(result.Rows["POZNAMKY"]);
     }
+
+    // ── B141: parametr sestavy „Písmena variant tras" ───────────────────────────
+
+    /// <summary>Stránka s jednou variantní anotací u minuty; `pismena` = hodnota parametru
+    /// (null = parametr nepřišel).</summary>
+    private static DataContext StrankaSVariantou(string? pismena)
+    {
+        var anotace = new JsonArray(new JsonObject
+        {
+            ["TYP"] = "text",
+            ["ZNAK"] = "A",
+            ["KATEGORIE"] = "varianta-trasy",
+            ["V_ROZSAHU_NEPOZNAMKOVAT"] = "0",
+        });
+        var values = new Dictionary<string, object?>();
+        if (pismena is not null) values[NoteVisibilityFilter.VariantLettersParamName] = pismena;
+        return new DataContext(values,
+            new Dictionary<string, IReadOnlyList<DataContext>>
+            {
+                ["ODJEZDY"] = [new DataContext(new Dictionary<string, object?> { ["ANOTACE"] = anotace })],
+            });
+    }
+
+    /// <summary>`B141` - vypnutý parametr zhasne písmeno u minuty, aniž se o něm musí dozvědět
+    /// volající. Hodnota se čte ze stránky, do které se parametry mergují před filtrem.</summary>
+    [Fact]
+    public void VypnutaPismenaVariant_ZmiziPismenoUMinuty()
+    {
+        var result = NoteVisibilityFilter.Apply(StrankaSVariantou("false"), NoteRangeSuppression.ManualComment);
+
+        Assert.Equal(0, PocetAnotaci(result));
+    }
+
+    /// <summary>Zapnutý parametr nechá písmeno být.</summary>
+    [Fact]
+    public void ZapnutaPismenaVariant_PismenoUMinutyZustane()
+    {
+        var result = NoteVisibilityFilter.Apply(StrankaSVariantou("true"), NoteRangeSuppression.ManualComment);
+
+        Assert.Equal(1, PocetAnotaci(result));
+    }
+
+    /// <summary>Chybějící parametr = písmena se tisknou (starší server ho neposílá).</summary>
+    [Fact]
+    public void ChybejiciParametrPismen_PismenoUMinutyZustane()
+    {
+        var result = NoteVisibilityFilter.Apply(StrankaSVariantou(null), NoteRangeSuppression.ManualComment);
+
+        Assert.Equal(1, PocetAnotaci(result));
+    }
 }

@@ -160,16 +160,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public bool ShowsRouteVariants =>
         Columns.Any(c => c.Visible && c.Key == StopFields.TravelTimeVariants);
 
-    /// <summary>Písmena variant tras - v záhlaví variantních sloupců i u minut odjezdů (obojí
-    /// naráz, aby nezůstalo písmeno bez vysvětlení ani záhlaví bez páru u minuty). Vypnutím
-    /// sloupce zůstanou, jen bez označení; rozdílů tras se to netýká, ty mají vlastní řadu písmen
-    /// a vypínají se u linky (AutoPozn).
-    ///
-    /// <para>⚠️ Do 17. 8. 2026 to byl parametr sestavy, který se odebral, protože bez písmen nešlo
-    /// u minuty poznat, který sloupec časů pro ni platí. Zpátky na žádost TRANSDEV (11. 9. 2026) -
-    /// vývěska s jedinou variantou nebo s variantami vysvětlenými jinak je písmena nepotřebuje.</para></summary>
-    public bool ShowRouteVariantLetters { get; set; } = true;
-
     // ═══════════════════════════════════════════
     // Vyloučené atributy
     // ═══════════════════════════════════════════
@@ -918,12 +908,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return [];
     }
 
-    /// <summary>Hlavičky pro render: s vypnutými písmeny se vyprázdní, ale jejich POČET zůstává -
-    /// na něm visí, kolik variantních sloupců vznikne.</summary>
-    internal List<string> VariantHeadersForRender(DataContext? data)
+    /// <summary>Hlavičky pro render: parametr sestavy „Písmena variant tras" je umí vyprázdnit,
+    /// ale jejich POČET zůstává - na něm visí, kolik variantních sloupců vznikne.</summary>
+    internal static List<string> VariantHeadersForRender(DataContext? data)
     {
         var headers = GetVariantHeaders(data);
-        if (ShowRouteVariantLetters) return headers;
+        if (GetBoolParam(data, NoteVisibilityFilter.VariantLettersParamName, true)) return headers;
         return headers.Select(_ => "").ToList();
     }
 
@@ -1252,8 +1242,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
 
-        new BoolPropertyDescriptor  { Label = "Písmena variant tras", Group = "Obecné", Get = () => ShowRouteVariantLetters, Set = v => ShowRouteVariantLetters = v },
-
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce…", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
         new FloatPropertyDescriptor
         {
@@ -1423,7 +1411,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             CurrentStopUnderline    = CurrentStopUnderline,
             PassedStopsForeColor    = PassedStopsForeColor,
             PassedStopsTime         = PassedStopsTime,
-            ShowRouteVariantLetters = ShowRouteVariantLetters,
             ExcludedAttributeIds    = [.. ExcludedAttributeIds],
             ShowHeader              = ShowHeader,
             CurrentStopBold         = CurrentStopBold,

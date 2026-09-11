@@ -3383,8 +3383,13 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRazV.options = optsRV
     d arr.%Push(pRazV)
 
-    // Zapínání písmen variant tady BYLO a je zrušené (17. 8.): bez nich nešlo u minuty poznat,
-    // který časový sloupec pro ni platí. Zůstala jen volba, kde písmena začínají.
+    // Zapínání písmen variant se 17. 8. zrušilo (bez nich nešlo u minuty poznat, který časový
+    // sloupec pro ni platí) a 11. 9. se na žádost TRANSDEV vrátilo: vývěska, která varianty
+    // vysvětluje jinde, je nepotřebuje. Hodnotu aplikuje KLIENT (vyprázdní záhlaví sloupců
+    // a zhasne anotaci u minuty), takže do allowlistu server-side parametrů nepatří - server
+    // písmena posílá dál a nic se kvůli té volbě znovu nenačítá.
+    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant tras", "true", "Seznam zastávek", "Označení variantních sloupců jízdních dob - v záhlaví sloupců i u minut odjezdů. Vypnutím sloupce s časy zůstanou, jen bez písmen. Netýká se písmen rozdílů tras, ta se vypínají u linky.")
+
     s pPrvB = ##class(%DynamicObject).%New()
     s pPrvB.name         = "PRVNI_BEZ_PISMENE"
     s pPrvB.label        = "První varianta bez písmene"

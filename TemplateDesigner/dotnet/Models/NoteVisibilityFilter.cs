@@ -23,6 +23,11 @@ public static class NoteVisibilityFilter
     /// <summary>Název parametru sestavy (GetParameters), který řídí filtr rozsahu „nepoznámkovat".</summary>
     public const string ParamName = "SCHOVAT_V_ROZSAHU";
 
+    /// <summary>Parametr sestavy „Písmena variant tras" (`B141`). Vypnutý zhasne písmeno u minuty
+    /// i v záhlaví variantního sloupce; sloupce samy zůstanou. Čte se **z hodnot stránky** (parametry
+    /// se do nich mergují před filtrem), takže nepotřebuje protáhnout hodnotu volajícími.</summary>
+    public const string VariantLettersParamName = "PISMENA_VARIANT";
+
 
     /// <summary>Kategorie legendy pro souhrn „všechny spoje bezbariérové" (Caché tag).</summary>
     private const string AggBezbarierKat = NoteCategories.BezbarierAgregat;
@@ -51,6 +56,10 @@ public static class NoteVisibilityFilter
         "Obojí"                      => NoteRangeSuppression.Both,
         _                            => NoteRangeSuppression.ManualComment,
     };
+
+    /// <summary>Tisknou se písmena variant tras? Chybějící parametr = ano (dosavadní chování).</summary>
+    public static bool VariantLettersEnabled(DataContext page) =>
+        page.GetValue(VariantLettersParamName) is null || ParseBool(page.GetString(VariantLettersParamName));
 
     /// <summary>Parse bool parametru sestavy (hodnota „true"/„false").</summary>
     public static bool ParseBool(object? paramValue) =>
@@ -106,11 +115,8 @@ public static class NoteVisibilityFilter
         // Bez variantního sloupce nemá písmeno kde získat vysvětlení, a protože se řady písmen
         // variant a rozdílů tras kryjí, legenda ho navíc vysvětlí CIZÍM textem (spoj jede variantou
         // „E", legenda u „E" tvrdí „jede jen do zast. …"). Dtto šablona bez seznamu zastávek.
-        // Vypnutá „Písmena variant tras" se chovají stejně: sloupce zůstanou, ale u minut nesmí
-        // zbýt značka, kterou už nic nevysvětluje.
         if (!template.Sections.SelectMany(s => s.Elements)
-                .OfType<Elements.StopListElement>()
-                .Any(e => e.ShowsRouteVariants && e.ShowRouteVariantLetters))
+                .OfType<Elements.StopListElement>().Any(e => e.ShowsRouteVariants))
             hidden.Add(VariantaTrasyKat);
 
         return hidden;
@@ -137,6 +143,11 @@ public static class NoteVisibilityFilter
 
     private static DataContext Apply(DataContext page, HashSet<string> hide, bool hideAggBezbarier, bool hideNaZnameni, bool hidePrestup = false, IReadOnlySet<string>? hiddenContent = null)
     {
+        // Písmena variant tras vypnutá parametrem sestavy - bere se z hodnot stránky, protože
+        // parametry se do nich mergují dřív než filtr (obě cesty: náhled i tiskový dialog).
+        if (!VariantLettersEnabled(page))
+            hiddenContent = new HashSet<string>(hiddenContent ?? (IReadOnlySet<string>)new HashSet<string>(), StringComparer.Ordinal) { VariantaTrasyKat };
+
         bool maObsah = hiddenContent is { Count: > 0 };
         if (hide.Count == 0 && !hideAggBezbarier && !hideNaZnameni && !hidePrestup && !maObsah) return page;
 

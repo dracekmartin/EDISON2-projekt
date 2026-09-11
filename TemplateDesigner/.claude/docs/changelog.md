@@ -2,10 +2,11 @@
 
 ## 2026-09-11 (1) - 🔤 písmena variant tras jdou vypnout
 
-`B141`, požadavek TRANSDEV z hovoru 11. 9. Nové zaškrtávátko **„Písmena variant tras"** v prvku
-Seznam zastávek, skupina Obecné. Vypnutím zmizí označení **v záhlaví variantních sloupců i u minut
-odjezdů** - obojí naráz, protože u minuty by zbyla značka, kterou už nic nevysvětluje. Sloupce
-jízdních dob zůstanou, jen bez písmen. Výchozí zapnuto, takže hotové šablony se nezmění.
+`B141`, požadavek TRANSDEV z hovoru 11. 9. Nový parametr sestavy **„Písmena variant tras"** ve
+skupině Seznam zastávek, tedy u svých sourozenců („Řazení variant tras", „První varianta bez
+písmene"). Vypnutím zmizí označení **v záhlaví variantních sloupců i u minut odjezdů** - obojí
+naráz, protože u minuty by zbyla značka, kterou už nic nevysvětluje. Sloupce jízdních dob
+zůstanou, jen bez písmen. Výchozí zapnuto, takže hotové šablony se nezmění.
 
 ⚠️ **Obrací to rozhodnutí ze 17. 8.**, kdy se z písmen volba záměrně odebrala (naměřeno na lince
 0330520): bez nich nešlo u minuty poznat, který sloupec časů pro ni platí. Vrací se proto, že
@@ -15,10 +16,15 @@ zvažovat znovu, tohle je ten důvod, proč volba nebyla.
 ⚠️ **Netýká se rozdílů tras.** Ty mají vlastní řadu písmen a vypínají se u linky (AutoPozn),
 takže u minuty můžou zůstat i s vypnutými variantami.
 
-Mechanika je táž, kterou se písmena schovávají už dnes (kategorie „varianta-trasy" ve filtru
-viditelnosti plus vyprázdněná záhlaví) - nejde na server, takže nic nespouští načtení dat.
-⚠️ Počet hlaviček přitom musí zůstat, i když jsou prázdné: na něm visí rozvinutí položky na
-sloupce, takže jejich zahozením by zmizely i časy variant.
+**Hodnotu aplikuje klient**, ne server - stejně jako u „V rozsahu nepoznámkovat schovat" nebo
+„Tisknout šipky směru". Server písmena posílá dál a filtr viditelnosti je zhasne, takže parametr
+**nepatří do allowlistu `ServerSideParams`** a jeho přepnutí nespouští načtení dat. Čte se přímo
+z hodnot stránky (parametry se do nich mergují před filtrem), takže hodnotu nebylo potřeba
+protahovat volajícími.
+
+⚠️ Počet hlaviček musí zůstat, i když jsou prázdné: na něm visí rozvinutí položky na sloupce,
+takže jejich zahozením by zmizely i časy variant. Chybějící parametr znamená „tisknout" - drží to
+chování staršího serveru, který ho neposílá.
 
 ## 2026-09-10 (10) - 🅩 písmeno systému u zóny jde zapnout ze sestavy
 

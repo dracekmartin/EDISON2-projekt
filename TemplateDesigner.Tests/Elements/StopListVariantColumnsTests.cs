@@ -21,23 +21,27 @@ public class StopListVariantColumnsTests
         new StopColumn { Key = StopFields.StopName,  Header = "Zastávky", Width = 33f },
     ];
 
-    private static DataContext DataSPismeny(params string[] pismena) =>
-        new(new Dictionary<string, object?>
+    /// <summary>Stránka s písmeny variant; `pismena` = hodnota parametru „Písmena variant tras"
+    /// (null = parametr vůbec nepřišel, tedy starší klient nebo šablona bez něj).</summary>
+    private static DataContext Stranka(string[] varianty, string? pismena = null)
+    {
+        var values = new Dictionary<string, object?>
         {
-            ["VARIANTY_TRAS"] = new System.Text.Json.Nodes.JsonArray([.. pismena.Select(p => (System.Text.Json.Nodes.JsonNode?)p)]),
-        });
+            ["VARIANTY_TRAS"] = new System.Text.Json.Nodes.JsonArray([.. varianty.Select(p => (System.Text.Json.Nodes.JsonNode?)p)]),
+        };
+        if (pismena is not null) values[NoteVisibilityFilter.VariantLettersParamName] = pismena;
+        return new DataContext(values);
+    }
 
-    // ── B141: vypnutí písmen variant tras ───────────────────────────────────────
+    // ── B141: parametr sestavy „Písmena variant tras" ───────────────────────────
 
-    /// <summary>`B141` - vypnutá písmena vyprázdní záhlaví, ale **počet sloupců se nezmění**.
+    /// <summary>`B141` - vypnutý parametr vyprázdní záhlaví, ale **počet sloupců se nezmění**.
     /// Na počtu hlaviček visí rozvinutí položky, takže jejich zahozením by zmizely i sloupce
     /// a s nimi jízdní doby variant - přesně to, co si zákazník nechat chce.</summary>
     [Fact]
     public void VypnutaPismena_ZahlaviJePrazdneAleSloupceZustanou()
     {
-        var prvek = new StopListElement { ShowRouteVariantLetters = false };
-
-        var hlavicky = prvek.VariantHeadersForRender(DataSPismeny("", "A", "D"));
+        var hlavicky = StopListElement.VariantHeadersForRender(Stranka(["", "A", "D"], "false"));
         var vysledek = StopListElement.ExpandTravelTimeColumns(Sloupce(), hlavicky);
 
         Assert.Equal(3, hlavicky.Count);
@@ -45,15 +49,23 @@ public class StopListVariantColumnsTests
         Assert.Equal(3, vysledek.Count(c => c.Key.StartsWith(StopFields.TravelTimeVariantPrefix)));
     }
 
-    /// <summary>Zapnutá písmena (výchozí stav) se do záhlaví promítnou beze změny.</summary>
+    /// <summary>Zapnutý parametr se do záhlaví promítne beze změny.</summary>
     [Fact]
     public void ZapnutaPismena_ZahlaviNesePismena()
     {
-        var prvek = new StopListElement();
-
-        var hlavicky = prvek.VariantHeadersForRender(DataSPismeny("", "A", "D"));
+        var hlavicky = StopListElement.VariantHeadersForRender(Stranka(["", "A", "D"], "true"));
 
         Assert.Equal(["", "A", "D"], hlavicky);
+    }
+
+    /// <summary>Chybějící parametr = písmena se tisknou. Drží to chování starších šablon
+    /// a serveru, který parametr ještě neposílá.</summary>
+    [Fact]
+    public void ChybejiciParametr_PismenaSeTisknou()
+    {
+        var hlavicky = StopListElement.VariantHeadersForRender(Stranka(["", "A"]));
+
+        Assert.Equal(["", "A"], hlavicky);
     }
 
     /// <summary>Jediná varianta zmizí i s vypnutými písmeny - to pravidlo drží počet hlaviček,
@@ -61,9 +73,7 @@ public class StopListVariantColumnsTests
     [Fact]
     public void VypnutaPismena_JedinaVariantaSloupecNedostane()
     {
-        var prvek = new StopListElement { ShowRouteVariantLetters = false };
-
-        var hlavicky = prvek.VariantHeadersForRender(DataSPismeny(""));
+        var hlavicky = StopListElement.VariantHeadersForRender(Stranka([""], "false"));
         var vysledek = StopListElement.ExpandTravelTimeColumns(Sloupce(), hlavicky);
 
         Assert.DoesNotContain(StopFields.TravelTimeVariants, vysledek.Select(c => c.Key));
