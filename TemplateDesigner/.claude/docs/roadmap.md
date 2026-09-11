@@ -35,10 +35,13 @@ co přesně chtějí, ne kód.
 
 ### Chyby
 
-- **`B149` Pořadí stránek ve směru zpět** [S] (TRANSDEV 11. 9.). V PDF chtějí stránky vzestupně
-  podle pořadí zastávky v **obou** směrech; ve zpětném směru je dostávají odzadu.
-  ⚠️ Příčina neověřená - `GetData` generuje stránky vzestupně v obou směrech, takže se pořadí
-  obrací někde dál. Najít kde, než se to začne opravovat.
+- **`B149` Pořadí stránek ve směru zpět** [S] (TRANSDEV 11. 9.). ⚠️ **Nic pořadí neobrací -
+  dohledáno 11. 9. v celém řetězu.** Server generuje stránky `Tam` vzestupně podle pořadí zastávky,
+  pak `Zpět` taky vzestupně (`f smer="T","Z"` + `$o` nahoru); klient je nikde neřadí ani neotáčí
+  (náhled i tisk berou `GetData` v přijatém pořadí, u víc linek se jen zřetězí za sebou).
+  Zpětné stránky navíc začínají pořadím 2, ne 1 - u nejnižšího pořadí není kam dál jet.
+  **Uvnitř stránky** ale seznam zastávek jde ve směru jízdy, tedy u `Zpět` sestupně - to je správně.
+  Další krok je **zeptat se Šimka, co viděl**: jestli pořadí stránek, nebo ten seznam uvnitř.
 
 ---
 
