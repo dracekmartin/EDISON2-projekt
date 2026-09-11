@@ -28,21 +28,15 @@ co přesně chtějí, ne kód.
   jeden rastr podle **nejširšího** odjezdu ve sloupci - značka rozestup pořád zvětšuje, jen celému
   sloupci naráz. Nejdřív ověřit, jestli jim nestačí to hotové.
 
-- **`B144` Sloupec „Čas" i z ručních minut v trase** [S] - volba zdroje hodnot: spočítané z jízdních
-  dob (dnes), ruční „MHD čas tam/zpět" z trasy linky, nebo „Automaticky (dle linky)" podle přepínače
-  u linky. Výchozí musí zůstat spočítané, jinak se českým firmám sloupec vyprázdní (mají pole prázdné).
-  **Šimko to ještě zkusí**, takže čekat na potvrzení. Server-side parametr → do allowlistu.
-
 ### Chyby
 
 - **`B149` Pořadí stránek v exportu všech zastávek** [S] (TRANSDEV 11. 9.).
-  ⚠️ **Rozdíl proti starému tisku je jinde, než zněl popis** (dohledáno 11. 9.). Nic se neobrací:
-  my generujeme **nejdřív všechny stránky směru Tam** (vzestupně dle pořadí zastávky), **pak celý
-  směr Zpět** (taky vzestupně, od pořadí 2 - u nejnižšího není kam jet). Starý modul jede
-  **zastávka po zastávce a u každé oba směry** (`JRapiLinPrtMhd1.mac` ř. 397-398: `Tc` vnější,
-  `Smer` vnitřní), takže má v PDF vedle sebe obě vývěsky téže zastávky.
-  Pro tisk a vyvěšení dává legacy pořadí smysl - obě vývěsky jedné zastávky se věší naráz.
-  ⚠️ **Změna pořadí přepíše zlaté odtisky AD**, takže to chce vědomé re-baseline.
+  **Čeká na odpověď zákazníka, neřešit dřív.** Popsal to jako obrácené pořadí („1234554321"),
+  ale nic se neobrací (dohledáno 11. 9. přes celý řetěz od serveru po PDF). Rozdíl proti starému
+  tisku je jiný: **my řadíme po směrech** (celý Tam vzestupně, pak celý Zpět), **staré po
+  zastávkách** a u každé oba směry (`JRapiLinPrtMhd1.mac` ř. 397-398: `Tc` vnější, `Smer` vnitřní).
+  Zeptat se, jestli mu jde o tohle - pro vyvěšování dává legacy pořadí smysl, obě vývěsky jedné
+  zastávky jdou v PDF za sebou. ⚠️ Změna pořadí přepíše zlaté odtisky AD (vědomé re-baseline).
 ---
 
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
@@ -132,6 +126,14 @@ takže nejde o práci, ale o doklad.
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B144` Sloupec „Čas" i z ručních minut v trase** [S] **(zastávkové JŘ)** - volba zdroje hodnot:
+  spočítané z jízdních dob (dnes), ruční „MHD čas tam/zpět" z trasy linky, nebo „Automaticky
+  (dle linky)" podle přepínače u linky. Výchozí musí zůstat spočítané, jinak se českým firmám
+  sloupec vyprázdní (pole mají prázdné). Server-side parametr → do allowlistu.
+  ⚠️ **Odloženo, protože si o to zákazník neřekl** (Jan 11. 9.): vyšlo to najevo při hovoru jako
+  rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
+  Vytáhnout, až to někdo bude chtít.
 
 - **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9.; **pohltil `B100`**, ten už
   v roadmapě není). Je to dělení **doprava** - když se sloupce spojů nevejdou do šířky, starý tisk
