@@ -132,7 +132,7 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - sadu pustí
   jen když se změnily její zdroje (`.cs`→.NET, `.cls`→Caché); Caché zúží na dotčené package.
   Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí všechny; testovací `.cls`
-  (EDControls `Tests/`) jen svůj balíček - TD sada (gold odtisky) stojí minuty. Souhrn selhání
+  (EDControls `Tests/`) jen svůj balíček - TD sada je nejdražší (~45 s). Souhrn selhání
   `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
 - Caché testy potřebují dev server `192.168.16.1:57770` (VPN); user z `$env:USERNAME`
   (override `$env:CACHE_USER`).

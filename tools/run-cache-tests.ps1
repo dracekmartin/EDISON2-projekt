@@ -4,8 +4,8 @@
 #
 # Packages run IN PARALLEL (one runspace + own MLRest instance each; server side
 # every request is its own Cache process with private ^||ML, so runs don't collide).
-# Wall time = slowest package instead of the sum - the TemplateDesigner suite alone
-# takes minutes (gold digests). -Sequential is a troubleshooting fallback.
+# Wall time = slowest package instead of the sum - TemplateDesigner is the expensive
+# one (~45 s, gold digests). -Sequential is a troubleshooting fallback.
 #
 # Usage:
 #   pwsh -File tools/run-cache-tests.ps1
