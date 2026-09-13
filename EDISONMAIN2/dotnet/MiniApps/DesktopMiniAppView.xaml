@@ -22,8 +22,9 @@
             </TextBlock.Style>
         </TextBlock>
 
-        <!-- Mřížka dlaždic; pozice = DesktopShortcut.Col/Row (absolutní, mezery povolené). Klik spustí, tažení přemístí. -->
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <!-- Mřížka dlaždic; pozice = DesktopShortcut.Col/Row (absolutní, mezery povolené). Klik spustí, tažení přemístí.
+             Background: prázdná plocha mezi dlaždicemi jinak není hit-testable a kolečko myši jde mimo ScrollViewer. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Background="Transparent">
             <ScrollViewer.Style>
                 <Style TargetType="ScrollViewer">
                     <Setter Property="Visibility" Value="Visible"/>

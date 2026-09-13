@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:lma="clr-namespace:EDISONMAIN2.LegacyMiniApps"
+             xmlns:edc="clr-namespace:EDControls;assembly=EDControls"
              xmlns:edct="clr-namespace:EDControls.EDComponentToolbar;assembly=EDControls"
              xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls">
     <UserControl.Resources>
@@ -14,8 +15,10 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type lma:DashboardTable}">
+            <!-- Sekce je na výšku obsahu, roluje vnější ScrollViewer - kolečko nad tabulkou mu musí dojít. -->
             <DataGrid ItemsSource="{Binding Rows}"
                       lma:DashboardTableColumns.Columns="{Binding Columns}"
+                      edc:ScrollWheelBubbling.IsEnabled="True"
                       IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
                       HeadersVisibility="Column" Margin="6,3">
                 <DataGrid.RowStyle>

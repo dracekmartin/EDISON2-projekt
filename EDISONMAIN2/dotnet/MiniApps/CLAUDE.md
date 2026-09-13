@@ -36,6 +36,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.
   Chybu ukazuje panel sám (`ErrorText`), ne popup - dávka o N panelech by jich zvedla N.
   `MiniAppManager.RefreshAll` proto vrací názvy **spuštěných**, ne dokončených obnov.
+- **Kolečko myši v panelu**: vnořený seznam (DataGrid sekce přehledu) si MouseWheel nechá i bez místa
+  k rolování → `EDControls.ScrollWheelBubbling.IsEnabled` ho na kraji předá vnějšímu ScrollVieweru;
+  prázdná plocha Plochy musí mít `Background`, jinak není hit-testable a kolečko jde mimo ScrollViewer.
 - Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,
   stejný lifecycle přes `AttachTreeLayout`); chybí-li nebo je poškozený → výchozí rozložení
   (jen Plocha). Prázdný dock ukáže placeholder s tlačítkem na výchozí sadu.
