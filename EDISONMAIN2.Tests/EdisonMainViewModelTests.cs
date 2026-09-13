@@ -640,12 +640,15 @@ public class EdisonMainViewModelTests
         public int SkeletonResets { get; private set; }
 
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    bool newColumn = false, bool newRow = false)
+                                    MiniAppPlacement? placement = null)
         {
-            var pane = new RecordingPane(contentId, onClosed);
+            var pane = new RecordingPane(contentId, onClosed) { Placement = placement };
             Panes.Add(pane);
             return pane;
         }
+
+        public IReadOnlyList<MiniAppTarget> GetTargets() =>
+            [.. Panes.Where(p => !p.IsClosed).Select(p => new MiniAppTarget(p, [p.ContentId], false))];
 
         public void ResetToDefaultSkeleton() => SkeletonResets++;
         public string SaveLayout() => "";
@@ -655,6 +658,7 @@ public class EdisonMainViewModelTests
     private sealed class RecordingPane(string contentId, Action onClosed) : IMiniAppPane
     {
         public string ContentId => contentId;
+        public MiniAppPlacement? Placement { get; set; }
         public bool IsClosed { get; private set; }
 
         public void Close()
@@ -685,8 +689,9 @@ public class EdisonMainViewModelTests
     private sealed class ThrowingHost : IMiniAppHost
     {
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    bool newColumn = false, bool newRow = false)
+                                    MiniAppPlacement? placement = null)
             => throw new NotSupportedException();
+        public IReadOnlyList<MiniAppTarget> GetTargets() => [];
         public void ResetToDefaultSkeleton() { }
         public string SaveLayout() => "";
         public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve)
@@ -697,8 +702,9 @@ public class EdisonMainViewModelTests
     private sealed class NullHost : IMiniAppHost
     {
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    bool newColumn = false, bool newRow = false)
+                                    MiniAppPlacement? placement = null)
             => Substitute.For<IMiniAppPane>();
+        public IReadOnlyList<MiniAppTarget> GetTargets() => [];
         public void ResetToDefaultSkeleton() { }
         public string SaveLayout() => "";
         public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve) { }

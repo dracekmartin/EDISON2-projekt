@@ -149,9 +149,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // per provider se v menu neosvědčilo (HD 13132/F2).
         private void PickMiniApp()
         {
-            var picker = new MiniAppPickerWnd(_miniAppCatalog);
+            var picker = new MiniAppPickerWnd(_miniAppCatalog, _miniAppManager?.Targets ?? []);
             if (WindowNavigator.ShowDialog(picker) == true && picker.Picked is { } descriptor)
-                OpenMiniAppCommand.Execute(descriptor);
+                _miniAppManager?.Open(descriptor, picker.Placed);
         }
 
         // Výchozí rozložení: Plocha jako jediný sloupec přes celou plochu docku. Podpora tu
@@ -270,7 +270,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ShowDesktopMiniAppCommand = Command(() =>
             {
                 if (_miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId) is { } d)
-                    _miniAppManager?.Open(d, newRow: true);
+                    _miniAppManager?.Open(d, MiniAppPlacement.NewRow);
             });
 
             // EDISON menu

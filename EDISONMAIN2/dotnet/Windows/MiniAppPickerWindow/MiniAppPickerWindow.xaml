@@ -6,13 +6,40 @@
         xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls"
         mc:Ignorable="d"
         Title="Miniaplikace"
-        Width="420" Height="440" MinWidth="320" MinHeight="260"
+        Width="420" Height="540" MinWidth="320" MinHeight="320"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource EDTheme.Bg.Base}"
         Icon="{StaticResource EDIcons.Panels}">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
     <DockPanel>
         <ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>
+
+        <!-- Umístění: do kterého existujícího pod-okna panel půjde. Bez obsazeného pod-okna
+             se sekce skryje - panel pak vyplní celou plochu docku. -->
+        <StackPanel DockPanel.Dock="Bottom" Margin="8,0,8,8"
+                    Visibility="{Binding HasPlacements, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="Umístit do:" Margin="0,0,0,4"
+                       Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+            <!-- MaxHeight, ne Height - seznam má sednout přesně na obsah, jinak pod poslední
+                 položkou zbyde prázdný pruh, který vypadá jako neklikatelný řádek. -->
+            <ListBox x:Name="PlacementList" MaxHeight="150"
+                     ItemsSource="{Binding Placements}"
+                     SelectedItem="{Binding SelectedPlacement, Mode=TwoWay}"
+                     HorizontalContentAlignment="Stretch"
+                     DisplayMemberPath="Label">
+                <ListBox.ItemContainerStyle>
+                    <!-- BasedOn povinné - theming (font, dark mode) žije v implicitním stylu. -->
+                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                        <Setter Property="Padding" Value="6,4"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+        </StackPanel>
 
         <!-- Jednoúrovňový seznam: seskupení per provider zbylo jen jako popisek řádku,
              vnořené submenu se neosvědčilo. -->

@@ -30,15 +30,18 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
         return refreshed;
     }
 
+    /// <summary>Existující pod-okna docku jako cíle pro <see cref="Open"/> (nabídka v pickeru).</summary>
+    // ?? [] kvůli substitute hostu v testech - auto-value NSubstitute pro IReadOnlyList negarantuje.
+    public IReadOnlyList<MiniAppTarget> Targets => host.GetTargets() ?? [];
+
     /// <summary>Vyrobí VM z deskriptoru, vloží panel do docku a začne ho trackovat.</summary>
-    /// <param name="newColumn">true → panel jde do nového sloupce vedle stávajících (jinak jako tab).</param>
-    /// <param name="newRow">true → panel jde do nové řady přes celou šířku pod sloupci.</param>
-    public MiniAppInstance Open(MiniAppDescriptor descriptor, bool newColumn = false, bool newRow = false)
+    /// <param name="placement">Kam panel vložit; null = výchozí (<see cref="MiniAppPlacement.Fill"/>).</param>
+    public MiniAppInstance Open(MiniAppDescriptor descriptor, MiniAppPlacement? placement = null)
     {
         var vm = descriptor.CreateViewModel();
         var contentId = $"{descriptor.Id}#{_nextInstance++}";
         return Mount(descriptor.Id, contentId, vm,
-            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, newColumn, newRow));
+            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, placement));
     }
 
     /// <summary>
@@ -49,7 +52,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     {
         var opened = new List<MiniAppInstance>();
         foreach (var descriptor in descriptors)
-            opened.Add(Open(descriptor, newColumn: opened.Count > 0));
+            opened.Add(Open(descriptor, opened.Count > 0 ? MiniAppPlacement.NewColumn : MiniAppPlacement.Fill));
         return opened;
     }
 
@@ -61,7 +64,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     {
         host.ResetToDefaultSkeleton();
         OpenColumns(columns);
-        if (bottomRow is not null) Open(bottomRow, newRow: true);
+        if (bottomRow is not null) Open(bottomRow, MiniAppPlacement.NewRow);
     }
 
     /// <summary>Zavře všechny otevřené mini-apps (zavření shellu, přepnutí session).</summary>

@@ -52,3 +52,7 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - Výběr miniaplikace je vlastní okno (`Windows/MiniAppPickerWindow`) s **jednoúrovňovým**
   seznamem; `IMiniAppProvider.GroupTitle` (pořadí = pořadí registrace v `AppBootstrapper`)
   z něj zbyl jen popisek řádku. Menu „Miniaplikace" na okno jen odkazuje.
+- Picker vybírá i **umístění** (`MiniAppPlacement`). Cíle jsou **jen ukotvená** pod-okna:
+  `Descendents()` vrací i ta v plovoucích oknech, filtruje se `IsHostedInFloatingWindow`.
+  **Poslední document pane AvalonDock neodstraní** - po zavření všeho zbude prázdný přes celou
+  plochu, takže bez obsazeného pod-okna picker volbu nenabídne a panel jde cestou `Fill`.

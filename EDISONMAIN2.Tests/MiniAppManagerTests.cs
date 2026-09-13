@@ -162,7 +162,8 @@ public class MiniAppManagerTests
         mgr.OpenColumns([fx.Descriptor, fx.Descriptor, fx.Descriptor]);
 
         Assert.Equal(3, mgr.OpenInstances.Count);
-        Assert.Equal([false, true, true], host.Panes.Select(p => p.NewColumn));
+        Assert.Equal([MiniAppPlacementKind.Fill, MiniAppPlacementKind.NewColumn, MiniAppPlacementKind.NewColumn],
+                     host.Panes.Select(p => p.Placement?.Kind));
     }
 
     [Fact]
@@ -176,8 +177,9 @@ public class MiniAppManagerTests
         Assert.Equal(1, host.SkeletonResets);
         Assert.Equal(4, mgr.OpenInstances.Count);
         // 3 sloupce (první in-place, další 2 nové sloupce) + 1 řada dole.
-        Assert.Equal([false, true, true, false], host.Panes.Select(p => p.NewColumn));
-        Assert.Equal([false, false, false, true], host.Panes.Select(p => p.NewRow));
+        Assert.Equal([MiniAppPlacementKind.Fill, MiniAppPlacementKind.NewColumn, MiniAppPlacementKind.NewColumn,
+                      MiniAppPlacementKind.NewRow],
+                     host.Panes.Select(p => p.Placement?.Kind));
     }
 
     [Fact]
@@ -189,7 +191,7 @@ public class MiniAppManagerTests
         mgr.OpenDefaultLayout([fx.Descriptor], null);
 
         Assert.Single(mgr.OpenInstances);
-        Assert.DoesNotContain(host.Panes, p => p.NewRow);
+        Assert.DoesNotContain(host.Panes, p => p.Placement?.Kind == MiniAppPlacementKind.NewRow);
     }
 
     [Fact]
@@ -225,6 +227,30 @@ public class MiniAppManagerTests
         Assert.Equal(1, r2.Refreshed);
     }
 
+    [Fact]
+    public void Open_IntoTarget_PassesTargetToHost()
+    {
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
+        mgr.Open(fx.Descriptor);
+        var target = Assert.Single(mgr.Targets);
+
+        mgr.Open(fx.Descriptor, MiniAppPlacement.Into(target));
+
+        var placement = host.Panes[1].Placement;
+        Assert.Equal(MiniAppPlacementKind.IntoTarget, placement?.Kind);
+        Assert.Same(target, placement?.Target);
+    }
+
+    [Fact]
+    public void Targets_EmptyDock_IsEmpty()
+    {
+        var fx = new Fixture();
+        var (mgr, _) = fx.NewManager();
+
+        Assert.Empty(mgr.Targets);
+    }
+
     private sealed class TestMiniApp(EDServices services) : EDMiniAppViewModel(services)
     {
         public override string Title => "test";
@@ -254,12 +280,16 @@ public class MiniAppManagerTests
         public int SkeletonResets { get; private set; }
 
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    bool newColumn = false, bool newRow = false)
+                                    MiniAppPlacement? placement = null)
         {
-            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed, NewColumn = newColumn, NewRow = newRow };
+            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed, Placement = placement };
             Panes.Add(pane);
             return pane;
         }
+
+        // Každý otevřený panel = vlastní pod-okno; na tvaru layoutu fake hostu nezáleží.
+        public IReadOnlyList<MiniAppTarget> GetTargets() =>
+            [.. Panes.Where(p => !p.IsClosed).Select(p => new MiniAppTarget(p, [p.Title ?? ""], false))];
 
         public void ResetToDefaultSkeleton() => SkeletonResets++;
 
@@ -285,8 +315,7 @@ public class MiniAppManagerTests
         public string? Title { get; set; }
         public object? Content { get; set; }
         public Action? OnClosed { get; set; }
-        public bool NewColumn { get; set; }
-        public bool NewRow { get; set; }
+        public MiniAppPlacement? Placement { get; set; }
         public bool IsClosed { get; private set; }
 
         public void Close()

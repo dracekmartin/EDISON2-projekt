@@ -11,11 +11,16 @@ public interface IMiniAppHost
     /// <summary>
     /// Přidá panel do docku a vrátí jeho handle. <paramref name="onClosed"/> se zavolá, když se
     /// panel zavře - uživatelem (křížek) i programově (<see cref="IMiniAppPane.Close"/>).
-    /// <paramref name="newColumn"/> true → nový sloupec vedle stávajících; <paramref name="newRow"/>
-    /// true → nová řada přes celou šířku pod sloupci (výchozí layout: sloupce + Oblíbené dole).
+    /// <paramref name="placement"/> null = <see cref="MiniAppPlacement.Fill"/>.
     /// </summary>
     IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                         bool newColumn = false, bool newRow = false);
+                         MiniAppPlacement? placement = null);
+
+    /// <summary>
+    /// Snímek existujících pod-oken (skupin tabů) jako cílů pro vložení, v pořadí zleva/shora.
+    /// Plovoucí okna mezi nimi nejsou - uživatel je zavírá jako okno, takže by cíl mizel pod rukama.
+    /// </summary>
+    IReadOnlyList<MiniAppTarget> GetTargets();
 
     /// <summary>
     /// Vynuluje layout na prázdný skeleton pro výchozí rozložení: svislý root s vodorovným pásem

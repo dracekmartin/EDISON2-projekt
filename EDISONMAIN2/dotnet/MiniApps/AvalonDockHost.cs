@@ -35,7 +35,7 @@ public sealed class AvalonDockHost : IMiniAppHost
     }
 
     public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                               bool newColumn = false, bool newRow = false)
+                               MiniAppPlacement? placement = null)
     {
         var document = new LayoutDocument
         {
@@ -45,16 +45,43 @@ public sealed class AvalonDockHost : IMiniAppHost
             Content = content,
         };
         document.Closed += (_, _) => onClosed();
-        if (newRow)
-            // Řada přes celou šířku pod sloupci (1/3 výšky proti sloupcům 2/3).
-            _dock.Layout.RootPanel.Children.Add(new LayoutDocumentPane(document) { DockHeight = new GridLength(1, GridUnitType.Star) });
-        else if (newColumn)
-            ColumnsPanel.Children.Add(new LayoutDocumentPane(document));
-        else
-            DocumentPane.Children.Add(document);
+        switch (placement?.Kind)
+        {
+            case MiniAppPlacementKind.IntoTarget when LivePaneOf(placement) is { } target:
+                target.Children.Add(document);
+                break;
+            case MiniAppPlacementKind.NewRow:
+                // Řada přes celou šířku pod sloupci (1/3 výšky proti sloupcům 2/3).
+                _dock.Layout.RootPanel.Children.Add(new LayoutDocumentPane(document) { DockHeight = new GridLength(1, GridUnitType.Star) });
+                break;
+            case MiniAppPlacementKind.NewColumn:
+                ColumnsPanel.Children.Add(new LayoutDocumentPane(document));
+                break;
+            default:
+                DocumentPane.Children.Add(document);
+                break;
+        }
         document.IsActive = true;
         return new Pane(document);
     }
+
+    public IReadOnlyList<MiniAppTarget> GetTargets() =>
+    [
+        .. DocumentPanes(_dock.Layout).Select(pane => new MiniAppTarget(
+            pane,
+            [.. pane.Children.OfType<LayoutContent>().Select(c => c.Title ?? "")],
+            ReferenceEquals(pane, _dock.Layout.ActiveContent?.Parent))),
+    ];
+
+    // Ukotvená pod-okna v pořadí zleva/shora. Descendents() prochází i plovoucí okna, ta mezi
+    // cíle nepatří - uživatel je zavírá jako okno, takže by cíl mizel pod rukama.
+    internal static IEnumerable<LayoutDocumentPane> DocumentPanes(LayoutRoot layout) =>
+        layout.Descendents().OfType<LayoutDocumentPane>().Where(pane => !pane.IsHostedInFloatingWindow);
+
+    // Cíl je snímek z doby otevření pickeru; než uživatel potvrdil, mohl zaniknout (restore
+    // vyměňuje celý LayoutRoot, zavření posledního tabu pane odpojí). Odpojený má Root == null.
+    private LayoutDocumentPane? LivePaneOf(MiniAppPlacement placement) =>
+        placement.Target?.Token is LayoutDocumentPane pane && ReferenceEquals(pane.Root, _dock.Layout) ? pane : null;
 
     private void OnLayoutUpdated(object? sender, EventArgs e) => ScheduleMinSizeStamp();
 
