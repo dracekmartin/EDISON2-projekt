@@ -16,8 +16,9 @@ namespace EDControls.EDFilterComboBox;
 ///   <item><b>volný</b> (<see cref="StrictSelection"/> = false, výchozí): hodnotou je <c>Text</c>;
 ///   uživatel smí napsat i text mimo <see cref="Suggestions"/> - ty jsou jen nápověda.</item>
 ///   <item><b>striktní</b> (<see cref="StrictSelection"/> = true): hodnotou je <see cref="SelectedKey"/>;
-///   commituje se jen platná položka, v klidu se zobrazí čitelný „Key - Label", při vstupu do pole se
-///   vybere celý text (první napsaný znak ho přepíše → hledání jiné položky bez mazání), Enter potvrdí
+///   commituje se jen platná položka, v klidu se zobrazí čitelný „Key - Label" a ten se needituje po
+///   částech: klik do něj (i dvojklik) ho vybere celý a první napsaný znak / Back / Delete ho nahradí
+///   (hledání jiné položky bez mazání; kurzor jde umístit až do rozepsaného filtru), Enter potvrdí
 ///   i napsaný text (exaktní nebo jednoznačná shoda) a neplatný text se po opuštění vrátí na aktuální výběr.</item>
 /// </list>
 /// </summary>
@@ -141,10 +142,14 @@ public class EDFilterComboBox : ComboBox
         // Odloženě + !IsKeyboardFocusWithin: revert až když fokus reálně opustil control.
         LostKeyboardFocus += (_, _) =>
         {
+            // Fokus vzatý kvůli IsEnabled=false (přepínání firmy) se po zapnutí vrací, viz OnIsEnabledChanged.
+            if (!IsEnabled) RefocusPending = true;
             if (!StrictSelection) return;
             Dispatcher.BeginInvoke(DispatcherPriority.Input,
                 new Action(() => { if (!IsKeyboardFocusWithin && !IsDropDownOpen) ShowSelectedKeyText(); }));
         };
+
+        IsEnabledChanged += OnIsEnabledChanged;
 
         // Počáteční zobrazení: celý seznam (výchozí hodnota není filtr), striktní navíc ukáže aktuální výběr.
         Loaded += (_, _) =>
@@ -164,8 +169,22 @@ public class EDFilterComboBox : ComboBox
     {
         _userIsTyping = !IsNavigationKey(e.Key);
         if (HandleNavigationKey(e.Key)) { e.Handled = true; return; }
+        // Back/Delete v klidovém textu ho smaže celý (prázdný filtr = celý seznam), ne po znacích.
+        if ((e.Key is Key.Back or Key.Delete) && ReplacesRestingText()) _editableTextBox?.SelectAll();
         base.OnPreviewKeyDown(e);
     }
+
+    // Znak psaný do klidového textu ho nahradí celý - kryje i kurzor umístěný klávesami (End, šipky),
+    // kam se klik nedostane (viz OnEditablePreviewMouseDown).
+    protected override void OnPreviewTextInput(TextCompositionEventArgs e)
+    {
+        if (ReplacesRestingText()) _editableTextBox?.SelectAll();
+        base.OnPreviewTextInput(e);
+    }
+
+    // Klidový „Key - Label" striktního režimu není k editaci - psaní do něj by se k názvu jen připsalo
+    // a filtr by nenašel nic; rozepsaný filtr (_textIsUserFilter) už uživatel edituje normálně.
+    internal bool ReplacesRestingText() => StrictSelection && !_textIsUserFilter;
 
     /// <summary>
     /// Šipky / Enter / Esc. Vrací true, když je klávesa spotřebovaná.
@@ -259,6 +278,21 @@ public class EDFilterComboBox : ComboBox
         if (_editableTextBox is { } tb) tb.CaretIndex = tb.Text.Length;
     }
 
+    /// <summary>Control měl fokus, když byl vypnut - po zapnutí ho dostane zpět.</summary>
+    internal bool RefocusPending { get; private set; }
+
+    // Vypnutí za fokusu (shell dává IsEnabled=false po dobu přepínání firmy): WPF fokus z disabled prvku
+    // odebere a po zapnutí nevrátí - uživatel viděl nehybný kurzor a psal do prázdna, přepnout zpět šlo jen
+    // myší. Odebrání je odložené, proto se stav bere i z LostKeyboardFocus; vrácení až po něm (Background).
+    private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (!(bool)e.NewValue) { if (IsKeyboardFocusWithin) RefocusPending = true; return; }
+        if (!RefocusPending) return;
+        RefocusPending = false;
+        Dispatcher.BeginInvoke(DispatcherPriority.Background,
+            new Action(() => { if (IsEnabled && !IsKeyboardFocusWithin) (_editableTextBox as IInputElement ?? this).Focus(); }));
+    }
+
     private TextBox? _editableTextBox;
 
     // Napojí select-all-on-focus přímo na editovatelný textbox šablony. Synchronně (ne odloženě),
@@ -285,17 +319,21 @@ public class EDFilterComboBox : ComboBox
         if (StrictSelection) _editableTextBox?.SelectAll();
     }
 
-    // První klik (pole ještě nemá fokus) → zaostři + vyber vše + pohlť klik, aby kurzor výběr nezrušil.
-    // Další kliky (už zaostřeno) necháme být → uživatel může umístit kurzor.
+    // Klik → zaostři + vyber vše + pohlť klik, aby kurzor výběr nezrušil: vždy u klidového textu (i druhý
+    // klik dvojkliku, který dřív umístil kurzor do „Key - Label") a u prvního kliku do rozepsaného filtru
+    // (pole ještě nemá fokus). Další kliky ve filtru necháme být → uživatel může umístit kurzor.
     private void OnEditablePreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (StrictSelection && _editableTextBox is { IsKeyboardFocusWithin: false } tb)
+        if (_editableTextBox is { } tb && SelectsAllOnClick(tb.IsKeyboardFocusWithin))
         {
             tb.Focus();
             tb.SelectAll();
             e.Handled = true;
         }
     }
+
+    internal bool SelectsAllOnClick(bool textBoxHasFocus) =>
+        StrictSelection && (!_textIsUserFilter || !textBoxHasFocus);
 
     // Nastaví Text bez spuštění filtrování; SelectedItem=null → Text je jediný zdroj pravdy zobrazení.
     // Programově nastavený text je klidová hodnota, ne uživatelův filtr (viz _textIsUserFilter).
