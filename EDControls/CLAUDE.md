@@ -118,7 +118,11 @@ XAML všech konzumentů.
 - `EDSupportPanel/` - vysouvací panel Podpora u pravého okraje okna; připojuje se sám ke
   **každému** oknu (class handler z `EDAppearance.Initialize`), karta žije v owned okně
   (airspace). Vlastní `CLAUDE.md`.
-- `MiniApps/` - framework dlaždicových widgetů shellu.
+- `MiniApps/` - framework dlaždicových widgetů shellu. `EDMiniAppBar` = pruh nad obsahem
+  (filtry, akce, status); mezeru a zarovnání filtrů rozdává code-behind, protože kontrolka je
+  sama sobě kontejnerem a `ItemContainerStyle` na `ContentPresenter` na ni nesedne. Záměrně
+  není rozšířením `EDComponentToolbar` - ten věší window-level Ctrl+F (N panelů = N bindingů)
+  a kreslí brandový pruh, na kterém vsazené ComboBoxy vypadají rozbitě.
 
 ## CACHE strana
 

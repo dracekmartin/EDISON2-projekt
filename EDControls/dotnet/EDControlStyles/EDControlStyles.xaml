@@ -1343,6 +1343,19 @@
         <Setter Property="SnapsToDevicePixels"    Value="True"/>
     </Style>
 
+    <!-- DataGridRow - hover cue. ZÁMĚRNĚ bez Background setteru: DataGrid přenáší
+         RowBackground/AlternatingRowBackground na řádek coercí, která ustoupí jakékoli
+         hodnotě ze stylu, takže setter by zebru umlčel. Trigger naopak přenos přebíjí. -->
+    <Style TargetType="DataGridRow">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="FocusVisualStyle" Value="{StaticResource EDTheme.FocusVisual.Inset}"/>
         <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Panel}"/>
