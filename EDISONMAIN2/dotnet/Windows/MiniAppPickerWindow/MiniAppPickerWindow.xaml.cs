@@ -13,6 +13,9 @@ namespace EDISONMAIN2.Windows.MiniAppPickerWindow
         {
             DataContext = _vm = new MiniAppPickerViewModel(catalog, targets);
             InitializeComponent();
+            // Strop = MaxHeight z XAML (u AppList nekonečno), ať hodnota žije na jednom místě.
+            ListHeightSnap.Attach(this, AppList, AppList.MaxHeight);
+            ListHeightSnap.Attach(this, PlacementList, PlacementList.MaxHeight);
             // CenterOwner u maximalizovaného shellu centruje podle restore bounds (vzor ChangelogWindow).
             Loaded += (_, _) => { OwnerWindowCentering.CenterOnOwner(this); AppList.Focus(); };
         }
