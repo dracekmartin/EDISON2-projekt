@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 // Vyrenderuje loose XAML (bez x:Class) offscreen ve světlém i tmavém režimu do dvou PNG.
 // Theming se aplikuje stejně jako v appce (ThemeService): base slovníky + na dark navíc EDThemeDark.
@@ -86,6 +87,12 @@ internal static class Program
         if (size.Width < 1) size.Width = 400;
         if (size.Height < 1) size.Height = 200;
         host.Arrange(new Rect(size));
+        host.UpdateLayout();
+
+        // DataGrid dopočítá hvězdičkové sloupce až z viewportu, který zná po dalším render
+        // cyklu - bez tohohle pumpnutí je v PNG vidí zkolabované na MinWidth.
+        for (int pass = 0; pass < 3; pass++)
+            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
         host.UpdateLayout();
 
         var rtb = new RenderTargetBitmap(
