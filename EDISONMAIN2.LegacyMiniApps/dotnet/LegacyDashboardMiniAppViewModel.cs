@@ -38,7 +38,10 @@ public sealed class LegacyDashboardMiniAppViewModel : EDMiniAppViewModel, IRefre
     public ObservableCollection<DashboardSection> Sections { get; } = [];
 
     private string? _lastUpdated;
-    public string? LastUpdated { get => _lastUpdated; private set => Set(ref _lastUpdated, value); }
+    public string? LastUpdated { get => _lastUpdated; private set { if (Set(ref _lastUpdated, value)) OnPropertyChanged(nameof(StatusText)); } }
+
+    /// <summary>Skládá se tady, ne přes StringFormat - ten by nad null vrátil osiřelé „Aktualizováno: ".</summary>
+    public string? StatusText => LastUpdated is null ? null : $"Aktualizováno: {LastUpdated}";
 
     private bool _isLoading;
     public bool IsLoading { get => _isLoading; private set { if (Set(ref _isLoading, value)) OnPropertyChanged(nameof(HasNoData)); } }

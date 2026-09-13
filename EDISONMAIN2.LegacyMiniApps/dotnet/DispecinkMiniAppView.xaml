@@ -1,15 +1,18 @@
 <UserControl x:Class="EDISONMAIN2.LegacyMiniApps.DispecinkMiniAppView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:edma="clr-namespace:EDControls.MiniApps;assembly=EDControls">
     <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6">
+        <edma:EDMiniAppBar DockPanel.Dock="Top" ActionCommand="{Binding LoadCommand}">
             <ComboBox ItemsSource="{Binding Pracoviste}" SelectedItem="{Binding SelectedPracoviste}"
-                      MinWidth="160" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <DatePicker SelectedDate="{Binding Datum}" Margin="0,0,6,0" VerticalAlignment="Center"/>
-            <Button Content="Načíst" Command="{Binding LoadCommand}" Padding="10,2"/>
-        </StackPanel>
+                      MinWidth="160"/>
+            <DatePicker SelectedDate="{Binding Datum}" MinWidth="120"/>
+        </edma:EDMiniAppBar>
+
         <DataGrid ItemsSource="{Binding Jizdy}" IsReadOnly="True" AutoGenerateColumns="False"
-                  CanUserAddRows="False" HeadersVisibility="Column">
+                  CanUserAddRows="False" BorderThickness="0" ColumnWidth="Auto"
+                  AlternationCount="2"
+                  AlternatingRowBackground="{DynamicResource EDTheme.Bg.PanelAlt}">
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Header="Vyjeto"    Binding="{Binding Vyjeto}"/>
                 <DataGridTextColumn     Header="Směna"     Binding="{Binding Smena}"/>
@@ -18,7 +21,7 @@
                 <DataGridTextColumn     Header="TS"        Binding="{Binding Ts}"/>
                 <DataGridTextColumn     Header="Nástup"    Binding="{Binding Nastup}"/>
                 <DataGridTextColumn     Header="Konec"     Binding="{Binding Konec}"/>
-                <DataGridTextColumn     Header="Řidič"     Binding="{Binding Ridic}"/>
+                <DataGridTextColumn     Header="Řidič"     Binding="{Binding Ridic}" Width="*" MinWidth="80"/>
                 <DataGridTextColumn     Header="Vůz RZ"    Binding="{Binding VuzRz}"/>
                 <DataGridTextColumn     Header="Vůz EVČ"   Binding="{Binding VuzEvc}"/>
             </DataGrid.Columns>

@@ -37,6 +37,12 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.
   Chybu ukazuje panel sám (`ErrorText`), ne popup - dávka o N panelech by jich zvedla N.
   `MiniAppManager.RefreshAll` proto vrací názvy **spuštěných**, ne dokončených obnov.
+- **Pruh miniaplikace je `EDControls.MiniApps.EDMiniAppBar`**, ne vlastní StackPanel. Barvu
+  řádku ze serveru nese `CellStyle` s `BasedOn` - přes `RowStyle` ji implicitní styl buňky
+  přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji
+  `LegacyForeColorConverter` zesvětlí na kontrast 4,5:1 (legacy palety počítají s bílým
+  pozadím); motiv čte v okamžiku konverze, proto view po `ThemeService.Applied` sekce
+  refreshuje.
 - **Kolečko myši v panelu**: vnořený seznam (DataGrid sekce přehledu) si MouseWheel nechá i bez místa
   k rolování → `EDControls.ScrollWheelBubbling.IsEnabled` ho na kraji předá vnějšímu ScrollVieweru;
   prázdná plocha Plochy musí mít `Background`, jinak není hit-testable a kolečko jde mimo ScrollViewer.

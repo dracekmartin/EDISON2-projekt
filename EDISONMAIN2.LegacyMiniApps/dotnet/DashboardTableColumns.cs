@@ -35,7 +35,16 @@ public static class DashboardTableColumns
             {
                 Header = columns[i],
                 Binding = new Binding($"Cells[{i}]"),
+                Width = DataGridLength.Auto,
             });
+        }
+
+        // Poslední sloupec dotáhne zbytek šířky, jinak zůstane vpravo prázdná plocha.
+        // MinWidth drží obsah čitelný, když se panel zúží.
+        if (grid.Columns.Count > 0)
+        {
+            grid.Columns[^1].Width = new DataGridLength(1, DataGridLengthUnitType.Star);
+            grid.Columns[^1].MinWidth = 80;
         }
     }
 }
