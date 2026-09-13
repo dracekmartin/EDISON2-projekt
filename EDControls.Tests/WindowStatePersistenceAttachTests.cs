@@ -77,8 +77,10 @@ public class WindowStatePersistenceAttachTests
 
             window.Show();   // best-effort: chyba nesmí otevření zablokovat
 
-            Assert.Equal(222, window.Width);
-            Assert.Equal(111, window.Height);
+            // Show přichytí rozměr na celé fyzické pixely: při 150 % je 111 DIP = 166,5 px → 111,33.
+            // Tolerance = jeden fyzický pixel při libovolném běžném škálování.
+            Assert.Equal(222, window.Width, tolerance: 1.0);
+            Assert.Equal(111, window.Height, tolerance: 1.0);
             window.Close();
         }));
     }
