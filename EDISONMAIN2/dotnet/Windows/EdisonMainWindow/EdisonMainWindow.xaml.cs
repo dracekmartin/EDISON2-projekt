@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using AvalonDock.Themes;
 using EDControls.EDTheme;
+using EDControls.EDViewModel;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
@@ -41,16 +42,40 @@ namespace EDISONMAIN2
             Closing += OnShellClosing;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
             FillSupportStrip();
+            // Widget nese IdFa → po přepnutí firmy se naviguje znovu (RaiseSessionPropertiesChanged).
+            DataContextChanged += (_, e) =>
+            {
+                if (e.OldValue is EdisonMainViewModel old) old.PropertyChanged -= OnShellPropertyChanged;
+                if (e.NewValue is EdisonMainViewModel vm) vm.PropertyChanged += OnShellPropertyChanged;
+            };
+            Closed += (_, _) =>
+            {
+                if (DataContext is EdisonMainViewModel vm) vm.PropertyChanged -= OnShellPropertyChanged;
+                _supportWidget?.Dispose();
+            };
+        }
+
+        private IDisposable? _supportWidget;
+        private string? _supportWidgetUrl;
+
+        private void OnShellPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(EdisonMainViewModel.Idfa)) FillSupportStrip();
         }
 
         // Widget v pruhu podpory. Drží statické Font/Theme eventy, takže se musí uklidit se
         // zavřením okna - jinak přežije shell. Nenačtení widgetu shell neblokuje (dekorace).
+        // Stejná URL (notifikace Idfa bez změny firmy) widget nepřestavuje.
         private void FillSupportStrip()
         {
-            var widget = SupportWidgetHost.Fill(SupportStrip, WidgetUrls.Edison2,
+            var services = EDServices.Current;
+            var ml = services.MLRest;
+            var url = WidgetUrls.Edison2(ml?.Idfa ?? "", ml?.LoginName ?? "", services.UserEmail);
+            if (url == _supportWidgetUrl) return;
+            _supportWidgetUrl = url;
+            _supportWidget?.Dispose();
+            _supportWidget = SupportWidgetHost.Fill(SupportStrip, url,
                 "Informační panel podpory - novinky a upozornění IT pro uživatele");
-            if (widget is not null)
-                Closed += (_, _) => widget.Dispose();
         }
 
         // Zavření shellu ukončí aplikaci (ShutdownMode=OnMainWindowClose) i všechny agendy,

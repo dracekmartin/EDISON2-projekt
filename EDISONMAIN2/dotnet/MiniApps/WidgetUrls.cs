@@ -12,8 +12,10 @@ internal static class WidgetUrls
     private static readonly string Base = EDControls.EDSupportPanel.SupportActions.WidgetBaseUrl;
     private static readonly string Key = EDControls.EDSupportPanel.SupportActions.WidgetKey;
 
-    /// <summary>Centrální widget shellu - jeden blok místo tří dílčích (fixní pruh nahoře).</summary>
-    internal static string Edison2 => $"{Base}edison2?key={Key}";
+    /// <summary>Centrální widget shellu - jeden blok místo tří dílčích (fixní pruh nahoře). Nese IdFa,
+    /// přihlášeného uživatele a jeho e-mail (podpora podle nich cílí sdělení); prázdné jde jako prázdný parametr.</summary>
+    internal static string Edison2(string idfa, string user, string email) =>
+        $"{Base}edison2?key={Key}&idfa={Uri.EscapeDataString(idfa)}&user={Uri.EscapeDataString(user)}&email={Uri.EscapeDataString(email)}";
 
     // Novinky/Wiki jsou auth-free (jen statický klíč) → bezpečné zobrazit i před loginem.
     internal static string Novinky => $"{Base}info?key={Key}";
