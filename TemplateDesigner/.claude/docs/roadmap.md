@@ -120,6 +120,13 @@ takže nejde o práci, ale o doklad.
   rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
   Vytáhnout, až to někdo bude chtít.
 
+- **`B154` Výška opakované sekce se počítá jednou pro celou sestavu** [M] (nález Jan 14. 9. při
+  `B127`). Sekce opakovaná na každé stránce si drží místo pro svou nejdelší podobu i tam, kde se
+  vypíše kratší. U legendy poznámek filtrované na část to znamená prázdné místo na každé stránce
+  a sestavu na víc listů, než by musela. Výšky vznikají dřív, než se ví, kolik bude stránek, takže
+  srovnání znamená počítat je po stránkách. ⚠️ Bezpečná strana je dnešní - kratší výška by obsah
+  ořízla.
+
 - **`B153` Příkaz „Použít výchozí font u všech prvků"** [S] (nález Jan 14. 9.). Šablona, která má
   font zapsaný u prvků, na změnu výchozího fontu nereaguje - hodnota u prvku ho přebíjí. Dodávané
   šablony jsou od 14. 9. uklizené (`SystemTemplateFontyTests` to hlídá), ale **šablony vzniklé kopií
