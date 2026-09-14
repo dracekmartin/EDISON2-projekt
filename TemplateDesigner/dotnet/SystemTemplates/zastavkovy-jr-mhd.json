@@ -90,11 +90,9 @@
           "odjezdyDataSource": "ODJEZDY",
           "poznamkyDataSource": "POZNAMKY",
           "dataStyle": {
-            "fontFamily": "Arial",
             "fontSize": 5.9998
           },
           "headerStyle": {
-            "fontFamily": "Arial",
             "fontSize": 8.5197,
             "bold": true,
             "backgroundColor": "#FFE0E0E0"
@@ -177,11 +175,9 @@
           "odjezdyDataSource": "ODJEZDY",
           "poznamkyDataSource": "POZNAMKY",
           "dataStyle": {
-            "fontFamily": "Arial",
             "fontSize": 9.5997
           },
           "headerStyle": {
-            "fontFamily": "Arial",
             "fontSize": 9.5997,
             "bold": true
           },
@@ -237,7 +233,6 @@
           "type": "TextElement",
           "text": "{CISLO_LINKY}",
           "style": {
-            "fontFamily": "Arial",
             "fontSize": 28.319,
             "bold": true,
             "italic": false,
@@ -262,7 +257,6 @@
           "type": "TextElement",
           "text": "{POPIS_DOPRAVCE}",
           "style": {
-            "fontFamily": "Arial",
             "fontSize": 8.5197,
             "bold": true,
             "italic": false,
@@ -287,7 +281,6 @@
           "type": "TextElement",
           "text": "Platí od: {DATUM_PLATNOSTI_OD}",
           "style": {
-            "fontFamily": "Arial",
             "fontSize": 8.5197,
             "bold": true,
             "italic": false,
@@ -312,7 +305,6 @@
           "type": "TextElement",
           "text": "{POPIS_LINKY}",
           "style": {
-            "fontFamily": "Arial",
             "fontSize": 8.5197,
             "bold": true,
             "italic": false,
@@ -337,7 +329,6 @@
           "type": "TextElement",
           "text": "{POPIS_DOPRAVCE}",
           "style": {
-            "fontFamily": "Arial",
             "fontSize": 5.6398,
             "bold": false,
             "italic": false,

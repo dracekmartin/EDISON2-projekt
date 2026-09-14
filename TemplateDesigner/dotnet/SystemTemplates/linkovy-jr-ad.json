@@ -273,11 +273,9 @@
           "showTextovePoznamky": true,
           "poznamkyDataSource": "POZNAMKY",
           "dataStyle": {
-            "fontFamily": "Arial",
             "fontSize": 7
           },
           "headerStyle": {
-            "fontFamily": "Arial",
             "fontSize": 8,
             "bold": true
           },

@@ -1,5 +1,23 @@
 ﻿# Changelog
 
+## 2026-09-14 (8) - 🔤 výchozí font dokumentu konečně něco dělá
+
+Nález Jan 14. 9.: u šablony „Linkový JŘ (AD) - postskriptový vzhled A5" měnil výchozí font a nic
+se nedělo.
+
+Ta šablona měla `Arial Narrow` napsaný **na dvanácti místech zvlášť** - u sedmi textů v hlavičce,
+u tří stylů tabulky linky a u dvou stylů poznámek. Výchozí font dokumentu tam byl taky, ale neměl
+koho ovlivnit: hodnota u prvku ho vždycky přebije. Totéž měly zastávková AD (deset míst), MHD
+(devět) a základní linková (dvě).
+
+Dodávané šablony mají font nově **jen jednou, v šabloně**, a prvky ho dědí. **Vzhled se nemění** -
+mění se jen to, odkud se font bere. Zato teď změna výchozího fontu přepíše celou sestavu naráz.
+
+Je to dědictví: kdysi dostal každý nově vytvořený prvek font natvrdo. Dnes už ne, ale co bylo
+uložené, to zůstalo - **vlastní šablony zákazníků to mají pořád** a bude je potřeba uklidit zvlášť.
+
+Nový test (`SystemTemplateFontyTests`) hlídá, aby se zapečený font do dodávaných šablon nevrátil.
+
 ## 2026-09-14 (7) - 💾 otevření šablony se už neptá na uložení změn, které nikdo neudělal
 
 Nález Jan 14. 9.: otevře šablonu, hned otevře jinou a aplikace se ptá, jestli uložit změny -

@@ -55,7 +55,6 @@
           "rotation": 0,
           "text": "{POZNAMKA_NAD_LINKU}",
           "style": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 6.5,
             "bold": true
           },
@@ -93,7 +92,6 @@
           "rotation": 0,
           "text": "{CISLO_LINKY}",
           "style": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 12,
             "bold": true
           },
@@ -114,7 +112,6 @@
           "rotation": 0,
           "text": "{POPIS_LINKY}",
           "style": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 12,
             "bold": true
           },
@@ -135,7 +132,6 @@
           "rotation": 0,
           "text": "Platí od {DATUM_PLATNOSTI_OD}",
           "style": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 7,
             "bold": true,
             "hAlign": "Right"
@@ -157,7 +153,6 @@
           "rotation": 0,
           "text": "do {DATUM_PLATNOSTI_DO}",
           "style": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 7,
             "bold": true,
             "hAlign": "Right"
@@ -179,7 +174,6 @@
           "rotation": 0,
           "text": "{TYP_JR}",
           "style": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 7,
             "bold": true,
             "hAlign": "Right"
@@ -201,7 +195,6 @@
           "rotation": 0,
           "text": "Přepravu zajišťuje :   {POPIS_DOPRAVCE}",
           "style": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 6
           },
           "wordWrap": false,
@@ -293,16 +286,13 @@
           "dataRowHeight": 2.1,
           "pripojeSlucovani": "PodleSmeru",
           "dataStyle": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 4.8
           },
           "headerStyle": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 5.0,
             "bold": true
           },
           "pripojStyle": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 4.6
           },
           "grid": {
@@ -356,11 +346,9 @@
           "showTextovePoznamky": true,
           "poznamkyDataSource": "POZNAMKY",
           "dataStyle": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 4.0
           },
           "headerStyle": {
-            "fontFamily": "Arial Narrow",
             "fontSize": 5
           },
           "grid": {
