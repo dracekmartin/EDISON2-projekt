@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-09-14 (3) - 🖥 šipky nad náhledem drží u stránky a nezmizí za okrajem okna
+
+Nález Jan 14. 9. Lišta se šipkami a nabídkou stránek nad náhledem měla dvě různé vady.
+
+**Nesedí u stránky.** Lišta se centrovala na střed celého panelu náhledu, kdežto samotná stránka
+je zarovnaná doleva. Při širokém panelu se od ní tím pádem odsunula doprava. Nově je zarovnaná
+na levý okraj stránky a při roztahování panelu ani při změně zvětšení se nehýbe.
+
+**Zmizí za okrajem okna.** Šířka panelu se pamatuje v pixelech, takže po roztažení na velkém
+monitoru a otevření na menším přesáhla okno - a protože je to pevná hodnota, mřížka ji nezmenšila.
+Panel i s lištou pak přetekl za pravý okraj a šipky nebyly vidět ani při maximalizovaném okně.
+Nově se uložená šířka ořízne na to, co se do okna vejde, a kontroluje se to i při každé změně
+velikosti okna, takže to přežije i přetažení na menší monitor za běhu. Zmenšuje se jen směrem
+dolů - zpětné roztažení zůstává na uživateli.
+
 ## 2026-09-14 (2) - 🔤 volby kolem písmen variant drží pohromadě
 
 Nález Jan 14. 9. V parametrech vývěsky stálo mezi „Písmena variant tras" a „První varianta bez

@@ -130,6 +130,10 @@ public partial class MainWindow : Window
         // Aplikuj UI-side prefs (splittery, tab, preview pane viditelnost) až po InitializeComponent.
         ApplyUiPreferences();
 
+        // V konstruktoru ještě není layout, takže se uložená šířka náhledu nemá proti čemu ořezat -
+        // první SizeChanged je ta chvíle. Drží to i přetažení okna na menší monitor za běhu.
+        MainGrid.SizeChanged += (_, _) => OrizniSirkuNahledu();
+
         _canvas        = new DesignerCanvas(_vm.State);
         _previewCanvas = new PreviewCanvas(_vm.State);
         _previewCanvas.OverflowChanged = popis =>
@@ -332,6 +336,7 @@ public partial class MainWindow : Window
         {
             // Star sizes (1*) → pixel; canvas dostane zbytek. Zachová pozici splitteru.
             PreviewColumn.Width = new GridLength(previewW, GridUnitType.Pixel);
+            OrizniSirkuNahledu();
         }
 
         if (pref.ActiveLeftTabIndex >= 0 && pref.ActiveLeftTabIndex < LeftTabControl.Items.Count)
@@ -341,6 +346,33 @@ public partial class MainWindow : Window
         // rendruje na uloženém zoomu (a "1:1" to neopraví, protože index se nezmění).
         SyncZoomComboBox(_vm?.State.Zoom ?? 1f);
     }
+
+    /// <summary>
+    /// Ořízne pixelovou šířku panelu náhledu na to, co se do okna reálně vejde.
+    /// Uložená šířka je absolutní, takže při obnově na menším monitoru přesáhne okno - Grid
+    /// pixelový sloupec nezmenší a panel i s lištou stránkování přeteče za pravou hranu (nahlásil
+    /// Jan 14. 9.: na malém monitoru nejsou šipky vidět ani při maximalizovaném okně).
+    /// Volá se i při každé změně velikosti okna, aby to přežilo i přetažení na menší monitor.
+    /// Jen zmenšuje - zpětné roztažení patří uživateli a splitteru.
+    /// </summary>
+    private void OrizniSirkuNahledu()
+    {
+        if (!PreviewColumn.Width.IsAbsolute) return;   // hvězdička se přizpůsobí sama
+
+        double sirkaOkna = MainGrid.ActualWidth;
+        if (sirkaOkna <= 0) return;                    // před prvním layoutem není proti čemu měřit
+
+        double zabrano = SectionsColumn.ActualWidth + SectionsSplitterColumn.ActualWidth
+                       + CanvasColumn.MinWidth + PraveSplitterPx;
+        double max = sirkaOkna - zabrano;
+        if (max <= 0) return;
+
+        if (PreviewColumn.Width.Value > max)
+            PreviewColumn.Width = new GridLength(max, GridUnitType.Pixel);
+    }
+
+    /// <summary>Šířka pravého GridSplitteru (MainWindow.xaml, sloupec 3) - nemá jméno, aby na něj šlo sáhnout.</summary>
+    private const double PraveSplitterPx = 4;
 
     /// <summary>Srovná zoom combo na nejbližší úroveň k danému zoomu (a tím i State.Zoom přes SelectionChanged).</summary>
     private void SyncZoomComboBox(float zoom)
