@@ -721,7 +721,7 @@
             <!-- ── GridSplitter levý ── -->
             <!-- Pozadí = plocha plátna a FocusVisualStyle vypnutý: dělič nesmí po tažení nechat
                  tečkovaný rámeček ani světlejší linku (dohromady působily jako „zdvojený pruh"). -->
-            <GridSplitter Grid.Column="1" Grid.Row="0" FocusVisualStyle="{x:Null}"
+            <GridSplitter x:Name="SectionsSplitter" Grid.Column="1" Grid.Row="0" FocusVisualStyle="{x:Null}"
                           HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Bg.Canvas}" Cursor="SizeWE"/>
 
             <!-- ── Canvas ── -->

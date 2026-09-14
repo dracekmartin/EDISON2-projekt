@@ -133,6 +133,9 @@ public partial class MainWindow : Window
         // V konstruktoru ještě není layout, takže se uložená šířka náhledu nemá proti čemu ořezat -
         // první SizeChanged je ta chvíle. Drží to i přetažení okna na menší monitor za běhu.
         MainGrid.SizeChanged += (_, _) => OrizniSirkuNahledu();
+        // Levý dělič bere šířku plátnu, takže po něm zbude na náhled míň - bez přepočtu by mu
+        // zůstalo povolené staré maximum a panel by se zase dostal ven.
+        SectionsSplitter.DragDelta += (_, _) => OrizniSirkuNahledu();
 
         _canvas        = new DesignerCanvas(_vm.State);
         _previewCanvas = new PreviewCanvas(_vm.State);
@@ -348,17 +351,21 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Ořízne pixelovou šířku panelu náhledu na to, co se do okna reálně vejde.
-    /// Uložená šířka je absolutní, takže při obnově na menším monitoru přesáhne okno - Grid
-    /// pixelový sloupec nezmenší a panel i s lištou stránkování přeteče za pravou hranu (nahlásil
-    /// Jan 14. 9.: na malém monitoru nejsou šipky vidět ani při maximalizovaném okně).
-    /// Volá se i při každé změně velikosti okna, aby to přežilo i přetažení na menší monitor.
-    /// Jen zmenšuje - zpětné roztažení patří uživateli a splitteru.
+    /// Drží panel náhledu uvnitř okna. Dvě věci, každá proti jiné cestě, jak se dostal ven
+    /// (obojí nahlásil Jan 14. 9.):
+    /// <list type="number">
+    /// <item><b>MaxWidth sloupce</b> zastaví tažení splitteru. Plátno se nezmenší pod svou
+    /// <c>MinWidth</c>, takže od té chvíle Grid celkovou šířku **překročí** místo aby tažení
+    /// zastavil - panel ujede doprava a roste dál, dokud lišta stránkování nezmizí za okrajem.
+    /// Tažení velikostí okna nehne, takže na to samotný ořez níž nestačí.</item>
+    /// <item><b>Ořez uložené šířky.</b> Persistuje se v pixelech, takže po roztažení na velkém
+    /// monitoru a otevření na menším přesáhne okno a Grid pevný sloupec nezmenší.</item>
+    /// </list>
+    /// Volá se při obnově preferencí a při každé změně velikosti okna, aby to přežilo
+    /// i přetažení na menší monitor za běhu. Jen zmenšuje - roztažení zpátky patří uživateli.
     /// </summary>
     private void OrizniSirkuNahledu()
     {
-        if (!PreviewColumn.Width.IsAbsolute) return;   // hvězdička se přizpůsobí sama
-
         double sirkaOkna = MainGrid.ActualWidth;
         if (sirkaOkna <= 0) return;                    // před prvním layoutem není proti čemu měřit
 
@@ -367,7 +374,9 @@ public partial class MainWindow : Window
         double max = sirkaOkna - zabrano;
         if (max <= 0) return;
 
-        if (PreviewColumn.Width.Value > max)
+        PreviewColumn.MaxWidth = max;
+
+        if (PreviewColumn.Width.IsAbsolute && PreviewColumn.Width.Value > max)
             PreviewColumn.Width = new GridLength(max, GridUnitType.Pixel);
     }
 

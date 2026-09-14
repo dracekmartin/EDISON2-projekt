@@ -2,12 +2,18 @@
 
 ## 2026-09-14 (3) - 🖥 šipky nad náhledem nezmizí za okrajem okna
 
-Nález Jan 14. 9. Šířka panelu se pamatuje v pixelech, takže po roztažení na velkém
-monitoru a otevření na menším přesáhla okno - a protože je to pevná hodnota, mřížka ji nezmenšila.
-Panel i s lištou pak přetekl za pravý okraj a šipky nebyly vidět ani při maximalizovaném okně.
-Nově se uložená šířka ořízne na to, co se do okna vejde, a kontroluje se to i při každé změně
-velikosti okna, takže to přežije i přetažení na menší monitor za běhu. Zmenšuje se jen směrem
-dolů - zpětné roztažení zůstává na uživateli.
+Nález Jan 14. 9. Panel náhledu se uměl dostat za pravý okraj okna dvěma cestami a lišta se šipkami
+a nabídkou stránek zmizela s ním - i při maximalizovaném okně.
+
+**Při tažení děliče.** Plátno se nezmenší pod svou nejmenší šířku, takže od té chvíle mřížka místo
+zastavení tažení překročila šířku okna a panel na posledních procentech rychle ujel doprava. Nově
+má sloupec náhledu nastavené největší povolené šířky, takže tažení zastaví samo. Přepočítává se
+i po tažení levého děliče, který bere šířku plátnu.
+
+**Po přenesení na menší monitor.** Šířka panelu se pamatuje v pixelech, takže po roztažení na velkém
+monitoru a otevření na menším přesáhla okno a mřížka pevný sloupec nezmenšila. Nově se uložená
+šířka ořízne na to, co se do okna vejde, a kontroluje se to při každé změně velikosti okna.
+Zmenšuje se jen směrem dolů - roztažení zpátky zůstává na uživateli.
 
 ## 2026-09-14 (2) - 🔤 volby kolem písmen variant drží pohromadě
 
