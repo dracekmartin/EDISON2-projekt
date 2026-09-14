@@ -772,6 +772,67 @@ ClassMethod DelenaLinkaSeznam(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Kolik linek s `Hlava&pozN` = 2 nebo 4 („poznámky pro část") se **opravdu dělí na části**.
+/// Dělení je vodorovné - rozhoduje o něm počet spojů v jednom směru proti šířce prvku. Na
+/// postskriptové šabloně (A5 na šířku) se do jedné části vejde kolem deseti spojů, takže se
+/// počítá rozložení podle nejlidnatějšího směru.
+/// IN["prah"] = od kolika spojů ve směru se linka dělí (výchozí 10)
+ClassMethod PoznamkyProCastVyskyt(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set prah = +$get(^||ML("IN", "prah"))
+        set:prah<1 prah = 10
+        kill celkem, deli
+
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set firma = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(firma)
+            set s1 = ""
+            for  {
+                set s1 = $order(^[firma]JRL(s1))
+                quit:s1=""
+                continue:'$isvalidnum(s1)
+                set l1 = ""
+                for  {
+                    set l1 = $order(^[firma]JRL(s1, l1))
+                    quit:l1=""
+                    continue:'$data(^[firma]JRL(s1, l1, "I"))
+                    set hod = +$get(^[firma]JRL(s1, l1, "PATCH", "Hlava&pozN"))
+                    continue:(hod'=2)&&(hod'=4)
+
+                    set nejvic = 0
+                    for smer = "T", "Z" {
+                        set vesmeru = 0, sp = ""
+                        for  {
+                            set sp = $order(^[firma]JRL(s1, l1, smer, sp))
+                            quit:sp=""
+                            set:$isvalidnum(sp) vesmeru = vesmeru + 1
+                        }
+                        set:vesmeru>nejvic nejvic = vesmeru
+                    }
+                    set celkem(firma) = $get(celkem(firma)) + 1
+                    set:nejvic>prah deli(firma) = $get(deli(firma)) + 1
+                }
+            }
+        }
+
+        set firma = "", suma = 0, sumaDeli = 0
+        for  {
+            set firma = $order(celkem(firma))
+            quit:firma=""
+            set suma = suma + celkem(firma), sumaDeli = sumaDeli + $get(deli(firma))
+            set ^||ML("OUT", $increment(^||ML("OUT"))) =
+                firma_": "_celkem(firma)_" linek s volbou, z toho se deli "_+$get(deli(firma))
+        }
+        set ^||ML("OUT", $increment(^||ML("OUT"))) =
+            "CELKEM: "_suma_" linek s volbou, z toho se deli "_sumaDeli_" (prah "_prah_" spoju ve smeru)"
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše ke každému atributu spoje jednu linku, kde se vyskytuje - podklad pro rozšíření sady.
 ClassMethod AtributyLinky(ByRef sys As %String) As %Status
 {
