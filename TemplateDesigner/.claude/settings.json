@@ -60,16 +60,13 @@
       "Bash(node *)"
     ],
     "ask": [
-      "Bash(git commit *)",
       "Bash(git checkout *)",
       "Bash(git switch *)",
-      "Bash(git pull *)",
       "Bash(git merge *)",
       "Bash(git rebase *)",
       "Bash(mv *)"
     ],
     "deny": [
-      "Bash(git push *)",
       "Bash(git reset --hard *)",
       "Bash(git clean *)",
       "Bash(rm *)",
