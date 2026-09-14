@@ -53,6 +53,20 @@ public interface INedelitelneDily
     IReadOnlyList<Zlom> ZlomyMm(DataContext? data);
 
     /// <summary>
+    /// Značky (platnosti, negativní značky, přípoje), které se vyskytují v úseku prvku ležícím
+    /// na jedné stránce. Prázdné = prvek značky nerozlišuje, nebo úsek žádné nemá.
+    /// </summary>
+    /// <param name="odMm">Začátek úseku, mm od horního okraje prvku.</param>
+    /// <param name="doMm">Konec úseku.</param>
+    /// <remarks>
+    /// Kvůli legendě poznámek: když se tiskne na každé stránce, má na ní být jen to, co k ní patří.
+    /// Legenda je ale vlastní prvek ve vlastní sekci a o dělení tabulky nic neví, proto jí značky
+    /// **předá stránkovací engine v datech stránky** - stejnou cestou jako číslo stránky. Prvky se
+    /// tak nemusí znát navzájem.
+    /// </remarks>
+    IReadOnlyCollection<string> ZnackyVUseku(DataContext? data, float odMm, float doMm);
+
+    /// <summary>
     /// Výška hlavičky, kterou musí zopakovat pokračovací stránka (0 = nic neopakovat).
     /// </summary>
     /// <remarks>

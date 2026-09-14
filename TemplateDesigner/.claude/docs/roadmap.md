@@ -120,23 +120,6 @@ takže nejde o práci, ale o doklad.
   rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
   Vytáhnout, až to někdo bude chtít.
 
-- **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9.; **pohltil `B100`**, ten už
-  v roadmapě není). Je to dělení **doprava** - když se sloupce spojů nevejdou do šířky, starý tisk
-  rozdělí linku na části a každá dostane celý seznam zastávek. Svislé dělení (moc zastávek) je jiná
-  věc a je hotová (`B135`). Tři volby u linky (`gSetLinPrt` dta 21-23): tisk na jednu stranu, hlavička
-  a poznámky pro směr nebo pro část, směr na stranu. Plus ruční zlom na tarifním čísle
-  (`PATCH,ZLOM`) - dělá se to dohromady, bez zlomu žádná část nevznikne.
-  ⚠️ **Změřeno 10. 9. - není to okrajové, naopak.** Z 93 135 linek: tisk na jednu stranu
-  (`ONEPAG`) **24 191×**, hlavička a poznámky pro směr/část (`Hlava&pozN`) **33 744×**, směr
-  na stranu (`Smer_1_stranA`) **17 951×**. Ruční zlom (`ZLOM`) jen **3×** - ten zůstává odložený.
-  Měření opakovatelné: `LinkovyJrNastaveniProbe.DelenaLinkaVyskyt`.
-  ⚠️ **Projité 14. 9. na výtiscích a scvrklo se to na JEDNU věc: obsah legendy.** „Směr na stranu"
-  i „tisk na jednu stranu" jsou u nás **velikost stránky v šabloně** (ověřeno: po zvýšení výšky
-  na 279 mm vyjde směr na jednu stranu, stejně jako jim) plus uspořádání na list - není co
-  implementovat. Zbývá, že legenda se mezi částmi liší **obsahem**: za sestavu / za směr / za část.
-  To prvek poznámek neumí. Doklady a mechanismus:
-  [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
-
 - **`B153` Příkaz „Použít výchozí font u všech prvků"** [S] (nález Jan 14. 9.). Šablona, která má
   font zapsaný u prvků, na změnu výchozího fontu nereaguje - hodnota u prvku ho přebíjí. Dodávané
   šablony jsou od 14. 9. uklizené (`SystemTemplateFontyTests` to hlídá), ale **šablony vzniklé kopií

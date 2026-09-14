@@ -1,5 +1,36 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B127` Dělená linka (hotovo 14. 9. 2026)
+
+Podnět Jan 7. 9., pohltilo dřívější `B100`. Vypadalo to na tři chybějící volby u linky, kterých
+se týká třetina z 93 135 linek. **Dvě z nich se ukázaly jako nastavení, které už máme, a zbyla
+jedna schopnost.**
+
+**Směr na stranu (17 951 linek) a tisk na jednu stranu (24 191) jsou u nás velikost stránky.**
+Starý tisk má dvě úrovně - logickou stránku 208 × 150 mm a fyzický list na dvě takové - a obě volby
+říkají „neposouvej plochu", čímž obsah přeteče na celý list. Naše postskriptová šablona má přesně
+tu logickou stránku, takže po zvýšení výšky na 279 mm vyjde směr na jednu stranu stejně jako jim
+(ověřil Jan). U „tisku na jednu stranu" dá týž fyzický výstup uspořádání na list, které postskript
+nemá vůbec. **Nic k implementaci.**
+
+**Hlavička a poznámky pro směr / pro část (33 744 linek)** se rozpadly taky: umístění je nastavení
+sekce, které máme, a legenda za směr už fungovala (server vrací poznámky po směrech). Zbylo jediné -
+**legenda za část**, a to se udělalo: viz `changelog.md` 14. 9. (9).
+
+Ruční zlom na tarifním čísle (`PATCH,ZLOM`, 3 linky z 93 tisíc) zůstává vědomě neudělaný.
+
+Doklady - tři výtisky ze starého postskriptového knižního tisku, posloupnosti značek `HOWGH*`
+a mechanismus `more 0 eq {TISK} if` - drží [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
+
+⚠️ **Po cestě se zjistilo, že z těch PDF nejdou brát absolutní rozměry** (převod mění měřítko,
+„stránka" v PDF je fyzický list na dvě logické). Domněnka, že naše tabulka je vyšší než legacy,
+se kvůli tomu stáhla jako neprokázaná.
+
+💡 **Postskript jde číst bez tisknutí:** `ALVA.JRMAIN.LinkyPSTisk.GetPSFiles` vrací samotný program
+po řádcích, takže se struktura zjistí voláním a výtisk je potřeba jen na otázky o vzhledu
+(nápad Jan 14. 9.). Sonda `LinkovyJrNastaveniProbe` k tomu umí hledat příklady po firmách
+i od nejmenšího počtu spojů.
+
 ## `B151` Radši zmenšit písmo než řezat (hotovo 14. 9. 2026)
 
 Rozhodnutí Jan 14. 9. Když linkové tabulce chybí do stránky málo, vytiskne se o něco menším písmem

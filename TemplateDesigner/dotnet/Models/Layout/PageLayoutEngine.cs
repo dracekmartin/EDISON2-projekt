@@ -71,6 +71,40 @@ public class PageLayoutEngine
         return vysledek;
     }
 
+    /// <summary>Klíč v datech stránky se značkami, které na ní jsou. Čte ho legenda poznámek.</summary>
+    public const string ZnackyStrankyKlic = "ZNACKY_NA_STRANCE";
+
+    /// <summary>
+    /// Doplní do dat stránky značky, které se na ní vyskytují - z prvků, které se dělí na díly.
+    /// Bez takového prvku vrací data beze změny, takže se nic nefiltruje.
+    /// </summary>
+    /// <remarks>
+    /// Tudy se legenda poznámek dozví, u které části tabulky stojí, aniž by prvky o sobě musely
+    /// vědět. Táž cesta, jakou se na stránku dostává její číslo.
+    /// </remarks>
+    private static DataContext? SZnackamiStranky(Page page, DataContext? data)
+    {
+        if (data is null) return null;
+
+        HashSet<string>? znacky = null;
+        foreach (var umistena in page.Sections)
+        {
+            foreach (var prvek in umistena.Source.Elements.OfType<INedelitelneDily>())
+            {
+                float od = umistena.ClipTop ?? 0f;
+                float doKam = umistena.ClipBottom ?? float.MaxValue;
+                var nalezene = prvek.ZnackyVUseku(umistena.Data ?? data, od, doKam);
+                if (nalezene.Count == 0) continue;
+                znacky ??= new HashSet<string>(StringComparer.Ordinal);
+                znacky.UnionWith(nalezene);
+            }
+        }
+
+        return znacky is null
+            ? data
+            : data.WithExtraValues(new Dictionary<string, object?> { [ZnackyStrankyKlic] = znacky });
+    }
+
     /// <summary>Sekce, ve kterých leží zmenšitelná tabulka.</summary>
     private static HashSet<Guid> SekceZmensitelnych(Template template) =>
         [.. template.Sections
@@ -572,6 +606,12 @@ public class PageLayoutEngine
             foreach (var placed in page.Sections)
                 konecObsahu = MathF.Max(konecObsahu, placed.Y + placed.Height);
 
+            // Značky obsahu téhle stránky - jednou, než se přidají opakované sekce. Dostane je
+            // každá z nich: legenda poznámek podle nich vypíše jen to, co na stránku patří (`B127`).
+            // Počítá se to ze stejného dělení jako tabulka, takže to není zadarmo - proto jednou
+            // na stránku, ne pro každou sekci zvlášť.
+            var dataStranky = SZnackamiStranky(page, data);
+
             // Hlavičky nahoře
             float y = 0f;
             foreach (var header in headers)
@@ -592,7 +632,7 @@ public class PageLayoutEngine
                     Source = header,
                     Y = y,
                     Height = h,
-                    Data = data
+                    Data = dataStranky
                 });
                 y += h;
             }
@@ -617,7 +657,7 @@ public class PageLayoutEngine
                     Source = sekce,
                     Y = plovouciY,
                     Height = h,
-                    Data = data
+                    Data = dataStranky
                 });
                 plovouciY += h;
             }
@@ -648,7 +688,7 @@ public class PageLayoutEngine
                     Source = footer,
                     Y = footerY,
                     Height = h,
-                    Data = data
+                    Data = dataStranky
                 });
                 footerY += h;
             }

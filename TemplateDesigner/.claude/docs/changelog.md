@@ -1,5 +1,32 @@
 ﻿# Changelog
 
+## 2026-09-14 (9) - 📋 legenda poznámek na každé stránce nese jen to, co na ni patří
+
+`B127`. Když se tabulka linky rozdělí do šířky na části a uživatel si nechal poznámky tisknout na
+každé stránce, vypíše se na každé jen to, co k ní patří - poznámky ke značkám, které na té stránce
+opravdu jsou. Dřív měla každá stránka celou legendu linky.
+
+**Bez nového nastavení** (rozhodnutí Jan 14. 9.): řídí to, jestli si uživatel nechal sekci poznámek
+opakovat. Legenda tištěná jednou na konci zůstává úplná. Plná legenda na každé stránce je špatně
+bez ohledu na to, co má linka u sebe nastavené, takže druhá volba by jen říkala totéž podruhé.
+
+Doloženo starým tiskem `CB_GWBUS 251 / 0340100`: strana 1 měla v legendě jen „jede v pracovních
+dnech", strana 2 navíc sobotu a neděli, přitom obě nesly tytéž zastávky a lišily se jen sloupci
+spojů. Týká se to **5 697 linek z 6 127**, které mají u sebe „poznámky pro část" a zároveň se
+opravdu dělí (měřeno `PoznamkyProCastVyskyt`).
+
+Prvky o sobě nemusely začít vědět: značky stránky doplňuje do dat **stránkovací engine**, stejnou
+cestou, jakou se tam dostává číslo stránky. Legenda je jen přečte.
+
+⚠️ **Poznámka bez značky zůstává vždycky** - obecné texty („Na lince platí tarifní podmínky") patří
+celé lince, ne části.
+
+⚠️ **Poznámky k přípojům se nefiltrují.** Přípojný řádek v datech značku nenese (skládá ji server),
+takže zůstanou na každé části. Filtr nikdy neubere víc, než má - jen někdy míň.
+
+⚠️ **Výška sekce se počítá z nefiltrované legendy**, protože se počítá jednou pro celou sestavu.
+Na stránce s kratší legendou proto zbude kousek volna. Opačná strana by legendu ořízla.
+
 ## 2026-09-14 (8) - 🔤 výchozí font dokumentu konečně něco dělá
 
 Nález Jan 14. 9.: u šablony „Linkový JŘ (AD) - postskriptový vzhled A5" měnil výchozí font a nic

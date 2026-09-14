@@ -135,7 +135,7 @@ public class NotesLegendElement : StopScheduleElementBase
         if (Width <= 0) return;
 
         var poznamky = BuildPoznamky(ctx.Data);
-        var filtered = FilterPoznamky(poznamky);
+        var filtered = JenZnackyStranky(FilterPoznamky(poznamky), ctx.Data);
         bool hasData = filtered.Count > 0;
 
         // Prázdný výsledek filtru s reálnými daty = blok se netiskne vůbec, ani nadpis.
@@ -380,6 +380,10 @@ public class NotesLegendElement : StopScheduleElementBase
     /// <summary>Testovací vstup do filtru - render ho volá zároveň s daty, což se v testu neposkládá.</summary>
     internal List<PoznamkaData> FiltrujPoznamkyProTest(List<PoznamkaData> poznamky) => FilterPoznamky(poznamky);
 
+    /// <summary>Testovací vstup do filtru značek stránky - dtto.</summary>
+    internal List<PoznamkaData> FiltrujNaZnackyStrankyProTest(List<PoznamkaData> poznamky, DataContext? data) =>
+        JenZnackyStranky(poznamky, data);
+
     /// <summary>Co se u poznámky reálně vypíše jako značka (piktogram i text) - pro testy.</summary>
     internal static string ZnakPoznamkyProTest(PoznamkaData pozn) =>
         JePiktogramPoznamky(pozn) ? GlyfPoznamky(pozn) : TextZnakPoznamky(pozn);
@@ -393,6 +397,30 @@ public class NotesLegendElement : StopScheduleElementBase
             && VylukaProjde(p)
             && KategorieLinkyProjde(p)
         ).ToList();
+    }
+
+    /// <summary>
+    /// Vyhodí poznámky, jejichž značka na téhle stránce není (`B127`). Poznámka **bez značky**
+    /// zůstává vždycky - obecné texty („Na lince platí tarifní podmínky") patří k celé lince.
+    /// </summary>
+    /// <remarks>
+    /// Značky stránky doplňuje do dat stránkovací engine (<c>PageLayoutEngine.ZnackyStrankyKlic</c>)
+    /// z prvků, které se dělí na díly. Když tam klíč není - legenda se tiskne jednou za celou
+    /// sestavu, nebo na stránce žádná dělená tabulka není - **nefiltruje se nic**. Uživatel tím
+    /// volbu neřídí nastavením, ale tím, jestli si nechal sekci poznámek opakovat na každé stránce
+    /// (rozhodnutí Jan 14. 9.).
+    /// <para>⚠️ Filtruje se jen při kreslení, ne při výpočtu výšky - výška sekce se počítá jednou
+    /// pro celou sestavu, takže by se s per-stránkovým filtrem rozešla s tím, co se kreslí. Prvek
+    /// si tak drží místo pro nejdelší variantu legendy a na kratších stránkách zbude kousek volna;
+    /// to je bezpečná strana, opačná by legendu ořízla.</para>
+    /// </remarks>
+    private static List<PoznamkaData> JenZnackyStranky(List<PoznamkaData> poznamky, DataContext? data)
+    {
+        if (data?.GetValue(Layout.PageLayoutEngine.ZnackyStrankyKlic) is not IReadOnlyCollection<string> znacky)
+            return poznamky;
+
+        var naStrance = new HashSet<string>(znacky, StringComparer.Ordinal);
+        return poznamky.Where(p => p.Znak.Length == 0 || naStrance.Contains(p.Znak)).ToList();
     }
 
     /// <summary>Je značka poznámky piktogram? <b>Linkový JŘ má jiný slovník značek než vývěska</b>

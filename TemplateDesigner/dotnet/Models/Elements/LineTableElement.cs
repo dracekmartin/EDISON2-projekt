@@ -1495,6 +1495,43 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return (hlava, radky);
     }
 
+    /// <summary>Značky spojů, které leží v daném úseku prvku - podklad pro legendu poznámek
+    /// tištěnou u každé části (`B127`).</summary>
+    /// <remarks>
+    /// Bere se **celý blok, který do úseku zasahuje**, ne jen jeho viditelná část: blok rozříznutý
+    /// vodorovně má na obou stranách tytéž spoje, takže by ořezávání podle milimetrů značky jen
+    /// náhodně ubralo. Zastávkové atributy se nefiltrují - zastávky jsou na každé části stejné.
+    /// <para>⚠️ **Přípojné řádky značku nenesou** (<see cref="LinePripojData"/> má typ, text, čas
+    /// a spoj, ale ne znak - poznámku k nim skládá server). Poznámky k přípojům proto zůstanou
+    /// na každé části; filtr nikdy neubere víc, než má, jen někdy míň.</para>
+    /// </remarks>
+    public IReadOnlyCollection<string> ZnackyVUseku(DataContext? data, float odMm, float doMm)
+    {
+        if (data is null) return [];
+        EnsureParsed(data);
+        if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return [];
+
+        var znacky = new HashSet<string>(StringComparer.Ordinal);
+        float zacatekBloku = 0f;
+        foreach (var blok in SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!)))
+        {
+            var (hlavni, zrcadlene) = SpojeBloku(blok);
+            var (hlava, radky) = VyskyRadkuBloku(hlavni, zrcadlene);
+            float konecBloku = zacatekBloku + hlava.Sum() + radky.Sum(r => r.VyskaMm);
+
+            if (konecBloku > odMm + 0.01f && zacatekBloku < doMm - 0.01f)
+            {
+                foreach (var spoj in hlavni.Concat(zrcadlene ?? []))
+                {
+                    if (spoj.Nz.Length > 0) znacky.Add(spoj.Nz);
+                    foreach (var p in spoj.Platnost) if (p.Length > 0) znacky.Add(p);
+                }
+            }
+            zacatekBloku = konecBloku + MezeraMeziBlokyMm;
+        }
+        return znacky;
+    }
+
     /// <summary>Pokračovací stránka zopakuje hlavu bloku - pás skupin dnů, čísla spojů,
     /// platnost a negativní značky. Bez ní nejde poznat, který sloupec je který spoj.</summary>
     public float OpakovanaHlavickaMm(DataContext? data)
