@@ -1572,6 +1572,20 @@ nedělá už něco jiného:
 
 Teprve podle toho se pozná, jestli je `B127` jedna chybějící volba, nebo tři.
 
+**Rozhodnutý tvar voleb: enum s „Automaticky (dle linky)"** (Jan 14. 9.). Co z těchhle voleb
+zůstane, se udělá jako parametr sestavy ve tvaru **Automaticky (dle linky) / Ano / Ne**, stejně
+jako `ROZDELENI_SLOUPCU` - tedy se **čte nastavení u linky** a šablona ho smí přebít.
+
+Námitka, že sazba patří do návrháře a ne k lince (pravidlo výš v této kapitole), tím **neplatí
+absolutně**: dokud to má nastavené třetina linek, přestat to číst znamená změnit výstup 33 744
+linkám naráz. A hlavně to není slepá ulička - **až se dohodneme, že se to z nastavení u linky
+vyhodí, stačí z nabídky odebrat položku „Automaticky" a zůstane čistá volba v šabloně.** Druhá
+cesta k témuž vadí jen tehdy, když se jí nedá zbavit; tahle má východ.
+
+⚠️ Důsledek na wire: „Automaticky" znamená, že agenda musí hodnotu od linky **posílat v datech**,
+jinak klient neví, na co se automatika vyhodnotí. Aditivní přírůstek kontraktu (R3), ne změna.
+⚠️ Popisky voleb budou po vydání **zamčené** (persistuje se zobrazovaný text) - pojmenovat napoprvé.
+
 ### 17.5 Co umíme my a postskript ne
 
 Není to jednosměrný seznam - stojí za to to na školení říct:

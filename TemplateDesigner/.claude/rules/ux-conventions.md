@@ -307,7 +307,11 @@ ne „per stanoviště").
 **Nastavení, které je u linky a uživatel ho má jít přebít**, se dělá jako enum s výchozí volbou
 **„Automaticky (dle linky)"** (zavedeno `ROZDELENI_SLOUPCU` u vývěsek, rozhodnutí Jan 19. 8. potvrzeno
 pro linkový JŘ). Nevymýšlet druhý tvar téhož („Podle nastavení linky", „Dle linky"…). Server u neznámé
-hodnoty spadne zpátky do „dle linky". ⚠️ Výchozí hodnota je **konstanta**, ne hodnota načtená z linky -
+hodnoty spadne zpátky do „dle linky". **Platí i pro nastavení, které je jinak sazba** (tedy by podle
+pravidla „složení výstupu patří do návrháře" k lince vůbec patřit nemělo), pokud ho reálně používá
+hodně linek - přestat ho číst by jim naráz změnilo výstup. Není to slepá ulička: až se nastavení
+u linky zruší, **odebere se z nabídky položka „Automaticky"** a zůstane čistá volba v šabloně
+(rozhodnutí Jan 14. 9. u `B127`, kde jde o 33 744 linek). ⚠️ Výchozí hodnota je **konstanta**, ne hodnota načtená z linky -
 parametry se ze serveru berou bez znalosti instance, takže default podle linky by znamenal přenačítání
 při každé změně instance a souboj s uloženou volbou uživatele (v panelu jedno, tiskne se druhé).
 
