@@ -1621,6 +1621,55 @@ Dnes bere poznámky celé sestavy a o dělení tabulky na části neví. Enum je
 Záhlaví tabulky (řádek čísel spojů) se řešit nemusí - to si tabulka na pokračovacích stranách
 opakuje sama (`OpakovanaHlavickaMm`).
 
+#### `Smer_1_stranA` a `ONEPAG` - projito 14. 9. (oracle)
+
+| Linka | Nastavení | Výsledek |
+|---|---|---|
+| `CB_GWBUS 101 / 0340313` | `Smer_1_stranA` + `Hlava&pozN=1` | **2 strany** - každý směr právě jedna, všechny jeho části naskládané pod sebe; hlavička i legenda na obou |
+| `CB_GWBUS 990 / 0320125` | jen `Hlava&pozN=1` (srovnávací) | 6 stran - týž obsah rozložený po částech |
+| `CB_GWBUS 101 / 0320180` | `ONEPAG` | **1 strana** - oba směry pod sebou, hlavička i legenda jednou |
+
+**Mechanismus je u obou týž a je dohledaný v samotném postskriptovém programu:** procedura
+`newpage` obsahuje `more 0 eq {TISK} if`, kde `TISK` posouvá plochu (a vysouvá list). Značky
+`HOWGH4`/`HOWGH5`, které obě volby vyvolávají, nastaví `more = 2` → `TISK` se přeskočí →
+**plocha se neposune a obsah pokračuje pod tím**. Liší se jen tím, kde se to uplatní:
+`Smer_1_stranA` uvnitř směru, `ONEPAG` i mezi směry.
+
+⚠️ **`ONEPAG` se uplatní jen tehdy, když se každý směr vejde do šířky** (`TyptI=4`,
+`JRapiLinPrtPS.mac:328`). Na `501 / 0000002` (79 spojů) ho postskript ignoroval - značky vyšly
+`HOWGH1/HOWGH2`, tedy `more = 0`. Příklad se hledá `DelenaLinkaSeznam` od nejmenšího počtu spojů.
+
+**Celá `B127` se tím scvrkla na dvě věci, ne tři volby:**
+
+1. **Co je v legendě** - za sestavu / za směr / za část. To prvek poznámek neumí.
+2. **Kde se smí zalomit stránka** - starý tisk umí říct „tady neřež" a obsah se naskládá pod sebe.
+   My řežeme vždy podle výšky.
+
+💡 **Hypotéza k ověření na naší straně:** druhá věc může být z velké části
+`SectionOverflowBehavior.KeepTogether`, který už máme, plus pojem „nová strana na začátku směru".
+Ověřit na `0340313` s vypnutým obousměrným tiskem - jestli vyjdou dvě strany, je ta volba hotová.
+
+**Naše strana `0320180` (ověřil Jan 14. 9.):** s vypnutým obousměrným tiskem a výchozí postskriptovou
+šablonou dostane **každý směr jednu stránku**, tedy dvě celkem. Starý tisk s `ONEPAG` má **jednu**.
+
+- ✅ *Neřezat uvnitř směru* u téhle linky **umíme** - směr se na stránku vejde a nic se nedělí.
+- ❌ *Oba směry na jeden list* neumíme: u nás jsou to dvě stránky sazby.
+- 💡 Nemusí to být práce v enginu: **uspořádání na list** (2 stránky na jeden papír), které
+  postskript nemá vůbec (`§17.5`), tímhle dokáže vyrobit týž fyzický výstup. Ověřit, jestli to
+  zákazníkovi stačí, než se bude do enginu zavádět „nedělej zlom mezi směry".
+
+#### Jak se to zjišťovalo - postskript jde číst bez tisknutí
+
+`ALVA.JRMAIN.LinkyPSTisk.GetPSFiles` vrací **samotný program po řádcích** (`FILE_LINE~…`), ne cestu
+k souboru. IN: `ID~<sku>|l|<linka>`, `TYP~1` vývěska / `TYP~2` kniha, `STANOVISTE~0`. Z výstupu jde
+vytáhnout posloupnost značek `HOWGH*` i definice procedur, takže se **struktura zjistí voláním**
+a výtisk je potřeba jen na otázky o vzhledu (nápad Jan 14. 9.).
+
+⚠️ **Oprava dřívějšího tvrzení:** knižní tisk sází **dvě logické stránky na jeden list** (`TISK`
+střídá „horní obrázek" a „dolní obrázek"), takže `PLH 150 mm` je výška poloviny, ne listu. Dřív tu
+stálo, že se sestava nevejde do stránky, kterou si deklaruje - to byl omyl z toho, že se měřil
+obsah celého listu proti `PLH`.
+
 ### 17.5 Co umíme my a postskript ne
 
 Není to jednosměrný seznam - stojí za to to na školení říct:

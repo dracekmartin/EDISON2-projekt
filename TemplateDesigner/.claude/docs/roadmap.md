@@ -130,12 +130,12 @@ takže nejde o práci, ale o doklad.
   (`ONEPAG`) **24 191×**, hlavička a poznámky pro směr/část (`Hlava&pozN`) **33 744×**, směr
   na stranu (`Smer_1_stranA`) **17 951×**. Ruční zlom (`ZLOM`) jen **3×** - ten zůstává odložený.
   Měření opakovatelné: `LinkovyJrNastaveniProbe.DelenaLinkaVyskyt`.
-  ⚠️ **Hlavička a poznámky projitá 14. 9. na třech výtiscích** - a není to nastavení, ale
-  **schopnost prvku poznámek**: legenda se mezi částmi liší obsahem (vypisuje jen poznámky spojů
-  té části), ne jen umístěním. Umístění zůstává na sekcích, enum bude řídit obsah legendy.
-  Zbývají dvě volby, u obou je další krok výtisk: „směr na stranu" (může to být náš vypnutý
-  obousměrný tisk) a „tisk na jednu stranu" (v legacy jen potlačený zlom mezi směry, ne zmenšování).
-  Doklady, linky a rozhodnutí: [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
+  ⚠️ **Všechny tři volby projité 14. 9. na výtiscích** a scvrkly se na **dvě věci**: (1) co je
+  v legendě - za sestavu / za směr / za část, to prvek poznámek neumí; (2) kde se smí zalomit
+  stránka - starý tisk umí „tady neřež" a obsah naskládá pod sebe, my řežeme vždy podle výšky.
+  💡 Druhá věc může být z velké části `KeepTogether`, který už máme - **ověřit na `0340313`
+  s vypnutým obousměrným tiskem**. Doklady, mechanismus a rozhodnutí o tvaru voleb:
+  [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
 
 - **`B153` Příkaz „Použít výchozí font u všech prvků"** [S] (nález Jan 14. 9.). Šablona, která má
   font zapsaný u prvků, na změnu výchozího fontu nereaguje - hodnota u prvku ho přebíjí. Dodávané
