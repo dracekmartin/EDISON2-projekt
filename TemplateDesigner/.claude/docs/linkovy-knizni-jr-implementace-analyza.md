@@ -1649,8 +1649,24 @@ opakuje sama (`OpakovanaHlavickaMm`).
 `SectionOverflowBehavior.KeepTogether`, který už máme, plus pojem „nová strana na začátku směru".
 Ověřit na `0340313` s vypnutým obousměrným tiskem - jestli vyjdou dvě strany, je ta volba hotová.
 
-**Naše strana `0320180` (ověřil Jan 14. 9.):** s vypnutým obousměrným tiskem a výchozí postskriptovou
-šablonou dostane **každý směr jednu stránku**, tedy dvě celkem. Starý tisk s `ONEPAG` má **jednu**.
+**Rozluštění (ověřeno 14. 9.): obě volby jsou o tom, KOLIK MÍSTA má jedna „strana", a to je u nás
+velikost stránky v šabloně. Není co implementovat.**
+
+Starý tisk má dvě úrovně - logickou stránku 208 × 150 mm a fyzický list, na který se vejdou dvě nad
+sebou (`TISK` střídá horní a dolní obrázek). Naše postskriptová šablona má 210 × 148 mm, tedy přesně
+tu **logickou** stránku. Obě volby říkají „neposouvej plochu", čímž obsah přeteče z logické stránky
+na celý list.
+
+| Případ | Starý tisk | My |
+|---|---|---|
+| `0340313` bez volby (srovnávací `0320125`) | 3 strany na směr | **3 strany na směr** (shoda) |
+| `0340313` se `Smer_1_stranA` | 1 strana na směr, obsah 226-229 mm | 1 strana na směr **po zvýšení stránky na 279 mm** (ověřil Jan) |
+| `0320180` s `ONEPAG` | 1 strana, oba směry | 2 strany (směr na stránku); týž fyzický výstup dá **uspořádání na list** |
+
+⚠️ **Nález po cestě: naše tabulka je citelně vyšší než jejich.** Na `0340313` měl starý tisk celý
+obsah včetně hlavičky a legendy ve 226-229 mm; u nás se do 279 mm vejde tabulka, ale legenda už ne.
+Je to otázka hustoty sazby (výška řádku, písmo), ne stránkování - a `B151` ji nevyřeší, protože
+nejde o pár procent. Neměřeno přesně, jen odvozeno z těch dvou čísel.
 
 - ✅ *Neřezat uvnitř směru* u téhle linky **umíme** - směr se na stránku vejde a nic se nedělí.
 - ❌ *Oba směry na jeden list* neumíme: u nás jsou to dvě stránky sazby.

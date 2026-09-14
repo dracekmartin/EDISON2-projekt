@@ -130,11 +130,11 @@ takže nejde o práci, ale o doklad.
   (`ONEPAG`) **24 191×**, hlavička a poznámky pro směr/část (`Hlava&pozN`) **33 744×**, směr
   na stranu (`Smer_1_stranA`) **17 951×**. Ruční zlom (`ZLOM`) jen **3×** - ten zůstává odložený.
   Měření opakovatelné: `LinkovyJrNastaveniProbe.DelenaLinkaVyskyt`.
-  ⚠️ **Všechny tři volby projité 14. 9. na výtiscích** a scvrkly se na **dvě věci**: (1) co je
-  v legendě - za sestavu / za směr / za část, to prvek poznámek neumí; (2) kde se smí zalomit
-  stránka - starý tisk umí „tady neřež" a obsah naskládá pod sebe, my řežeme vždy podle výšky.
-  💡 Druhá věc může být z velké části `KeepTogether`, který už máme - **ověřit na `0340313`
-  s vypnutým obousměrným tiskem**. Doklady, mechanismus a rozhodnutí o tvaru voleb:
+  ⚠️ **Projité 14. 9. na výtiscích a scvrklo se to na JEDNU věc: obsah legendy.** „Směr na stranu"
+  i „tisk na jednu stranu" jsou u nás **velikost stránky v šabloně** (ověřeno: po zvýšení výšky
+  na 279 mm vyjde směr na jednu stranu, stejně jako jim) plus uspořádání na list - není co
+  implementovat. Zbývá, že legenda se mezi částmi liší **obsahem**: za sestavu / za směr / za část.
+  To prvek poznámek neumí. Doklady a mechanismus:
   [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
 
 - **`B153` Příkaz „Použít výchozí font u všech prvků"** [S] (nález Jan 14. 9.). Šablona, která má
