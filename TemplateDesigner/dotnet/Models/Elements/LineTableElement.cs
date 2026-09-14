@@ -1402,7 +1402,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             .Select(b =>
             {
                 var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(b).Hlavni, SpojeBloku(b).Zrcadlene);
-                return hlava.Sum() + radky.Sum();
+                return hlava.Sum() + radky.Sum(r => r.VyskaMm);
             })];
     }
 
@@ -1420,7 +1420,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// Jediné místo výpočtu, ať se render a výpočet výšky prvku nerozejdou.</summary>
     private float VyskaRadkuZnacek(float rowH) => rowH * Math.Clamp(PomerZnacek, 1f, 3f);
 
-    private (List<float> Hlava, List<float> Radky) VyskyRadkuBloku(
+    /// <summary>Řádek tabulky pro účely stránkování - jeho výška a jestli za ním smí padnout řez.</summary>
+    /// <param name="VyskaMm">Výška řádku.</param>
+    /// <param name="KonecZastavky">
+    /// true = tímhle řádkem zastávka končí (další řádek už patří jiné). Jen za takovým řádkem
+    /// smí řez padnout, aniž by rozdělil zastávku rozdvojenou na příjezd a odjezd nebo ji odtrhl
+    /// od jejích přípojných řádků.
+    /// </param>
+    private readonly record struct RadekBloku(float VyskaMm, bool KonecZastavky);
+
+    private (List<float> Hlava, List<RadekBloku> Radky) VyskyRadkuBloku(
         IReadOnlyList<LineTripData> spojeBloku, IReadOnlyList<LineTripData>? zrcadleneBloku = null)
     {
         var trips = _cachedTrips!;
@@ -1438,19 +1447,32 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // Jen viditelné zastávky a jejich přípojné řádky (matched na Poradi zastávky - jako render).
         var visibleStops = RowConditions.VisibleRows(_cachedStops!, s => s.SourceRow, RowVisibilityExpression);
         var sOdjezdem = ShowPripojeRows ? PoradiSOdjezdem(visibleStops) : null;
-        var radky = new List<float>();
-        foreach (var zastavka in visibleStops)
+        var radky = new List<RadekBloku>();
+        for (int si = 0; si < visibleStops.Count; si++)
         {
-            radky.Add(rowH);
-            if (sOdjezdem is null || !NesePripoje(zastavka, sOdjezdem)) continue;
+            var zastavka = visibleStops[si];
+            // Rozdvojená zastávka jsou dvě položky se **stejným tarifním číslem** (příjezd
+            // a odjezd), takže zastávka končí tam, kde se číslo mění. `B135`: jen za takovým
+            // řádkem smí padnout řez - jinak by „př" zůstalo dole na jedné straně a „od" nahoře
+            // na druhé, a v postskriptovém tvaru (`B140`) by byl druhý řádek bez názvu i čísla.
+            bool posledniZastavky = si == visibleStops.Count - 1
+                                 || visibleStops[si + 1].Poradi != zastavka.Poradi;
+
             // ⚠️ Ze spojů **tohohle bloku, obou stran** - a kreslí se taky tak (od 7. 9. nese
             // přípojný řádek časy hlavní i zrcadlené strany, `B128`). Třikrát se tu už rozešel
             // výpočet s kreslením a pokaždé to skončilo řezem uprostřed hlavičky dalšího bloku:
             // 25. 8. počítáním ze všech spojů linky, 7. 9. z obou směrů, když se kreslil jen
             // jeden. Teď platí obojí, takže se sem musí předat obě sady - jinak vyjde jiný POČET
             // řádků, protože slučování spojuje přípoj obou směrů do jednoho.
-            int pripoju = PripojneRadky(zastavka, spojeBloku, zrcadleneBloku).Count;
-            for (int i = 0; i < pripoju; i++) radky.Add(PripojRowH());
+            int pripoju = sOdjezdem is not null && NesePripoje(zastavka, sOdjezdem)
+                ? PripojneRadky(zastavka, spojeBloku, zrcadleneBloku).Count
+                : 0;
+
+            // Přípojné řádky patří k zastávce, takže konec je až za nimi - řez mezi zastávkou
+            // a jejím přípojem by nechal „navazuje" viset na další straně bez zastávky.
+            radky.Add(new RadekBloku(rowH, posledniZastavky && pripoju == 0));
+            for (int i = 0; i < pripoju; i++)
+                radky.Add(new RadekBloku(PripojRowH(), posledniZastavky && i == pripoju - 1));
         }
         return (hlava, radky);
     }
@@ -1466,9 +1488,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Řezat se má mezi bloky (silný zlom) - blok useknutý uprostřed je tabulka bez konce.
-    /// Uvnitř bloku se nabízejí ještě hranice řádků zastávek (slabý zlom) pro případ, kdy je
-    /// blok sám vyšší než stránka a rozříznout se musí; bez nich by řez padl doprostřed textu.
+    /// Řezat se má mezi bloky (<see cref="ZlomUroven.Blok"/>) - blok useknutý uprostřed je tabulka
+    /// bez konce. Uvnitř bloku se nabízejí hranice mezi zastávkami
+    /// (<see cref="ZlomUroven.Zastavka"/>) pro případ, kdy je blok sám vyšší než stránka; hranice
+    /// uvnitř zastávky jsou jen nouze (<see cref="ZlomUroven.Radek"/>), aby stránkování mělo kam
+    /// říznout i u zastávky vyšší než celá stránka.
     /// </summary>
     public IReadOnlyList<Zlom> ZlomyMm(DataContext? data)
     {
@@ -1486,16 +1510,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var (hlava, radky) = VyskyRadkuBloku(SpojeBloku(bloky[b]).Hlavni, SpojeBloku(bloky[b]).Zrcadlene);
             // Zlom je na začátku bloku, takže před ním leží odstup od bloku předchozího. Ten se
             // při zlomu stránky nekreslí - jinak zůstane na konci strany prázdný pruh.
-            if (b > 0) zlomy.Add(new Zlom(zacatekBloku, Silny: true, MrtvaMezeraMm: MezeraMeziBlokyMm));
+            if (b > 0) zlomy.Add(new Zlom(zacatekBloku, ZlomUroven.Blok, MrtvaMezeraMm: MezeraMeziBlokyMm));
 
-            // hranice mezi řádky zastávek - první vynechat, jinak by zůstala hlava sama na stránce
+            // hranice mezi řádky - první vynechat, jinak by zůstala hlava sama na stránce
             float y = zacatekBloku + hlava.Sum();
             for (int i = 0; i < radky.Count - 1; i++)
             {
-                y += radky[i];
-                zlomy.Add(new Zlom(y, Silny: false));
+                y += radky[i].VyskaMm;
+                zlomy.Add(new Zlom(y, radky[i].KonecZastavky ? ZlomUroven.Zastavka : ZlomUroven.Radek));
             }
-            zacatekBloku += hlava.Sum() + radky.Sum() + MezeraMeziBlokyMm;
+            zacatekBloku += hlava.Sum() + radky.Sum(r => r.VyskaMm) + MezeraMeziBlokyMm;
         }
         return zlomy;
     }

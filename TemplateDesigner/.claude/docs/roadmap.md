@@ -119,7 +119,7 @@ takže nejde o práci, ale o doklad.
 - **`B127` Dělená linka a ruční zlom stránky** [M] (podnět Jan 7. 9.; **pohltil `B100`**, ten už
   v roadmapě není). Je to dělení **doprava** - když se sloupce spojů nevejdou do šířky, starý tisk
   rozdělí linku na části a každá dostane celý seznam zastávek. Svislé dělení (moc zastávek) je jiná
-  věc, tu řeší `B135`. Tři volby u linky (`gSetLinPrt` dta 21-23): tisk na jednu stranu, hlavička
+  věc a je hotová (`B135`). Tři volby u linky (`gSetLinPrt` dta 21-23): tisk na jednu stranu, hlavička
   a poznámky pro směr nebo pro část, směr na stranu. Plus ruční zlom na tarifním čísle
   (`PATCH,ZLOM`) - dělá se to dohromady, bez zlomu žádná část nevznikne.
   ⚠️ **Změřeno 10. 9. - není to okrajové, naopak.** Z 93 135 linek: tisk na jednu stranu
@@ -129,12 +129,6 @@ takže nejde o práci, ale o doklad.
   ⚠️ **Další krok pořád není kód**, ale porovnat každou z těch tří se starým výtiskem - „směr na
   stranu" může být náš vypnutý obousměrný tisk, „hlavička pro směr" otázka sekcí. Čísla, linky
   k vyzkoušení a co na nich porovnat: [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
-
-- **`B135` Řez tabulky nemá padat doprostřed zastávky** [M] (podnět 9. 9.). **Zadání dohodnuté
-  14. 9., připravené k práci.** Řez smí padnout jen na hranici mezi zastávkami - rozdvojená zastávka
-  i její přípojné řádky odcházejí na další stránku vcelku. Bez nastavení. **Musí být dřív než
-  `B140`**: v postskriptovém tvaru je název psaný jednou, takže rozpůlená zastávka je nečitelná.
-  Pravidla, doklad z legacy i dotčená místa v kódu: [`§17.8`](linkovy-knizni-jr-implementace-analyza.md).
 
 - **`B151` Radši zmenšit písmo než řezat** [M] (rozhodnutí Jan 14. 9.). Když tabulce chybí do stránky
   málo, je lepší ji zmenšit, než kvůli dvěma zastávkám zakládat další stranu. **Mez je pevných 90 %**,

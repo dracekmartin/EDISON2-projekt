@@ -156,21 +156,23 @@ public class PageLayoutEngine
     /// Poslední nabídnutý zlom, který ještě padne do zbytku stránky; null = žádný se nevejde.
     /// </summary>
     /// <remarks>
-    /// <b>Silný zlom má přednost, i když je výš.</b> Hranice bloku je přirozený konec stránky;
-    /// hranice řádku je jen náhrada pro blok, který se na stránku nevejde celý. Brát prostě
-    /// „poslední, co se vejde" by řezalo uprostřed bloku pokaždé, když v něm nějaký řádek zbyl.
+    /// <b>Lepší úroveň má přednost, i když leží výš.</b> Hranice bloku je přirozený konec stránky,
+    /// hranice mezi zastávkami náhrada pro blok, který se na stránku nevejde celý, a hranice uvnitř
+    /// zastávky nouze pro zastávku vyšší než celá stránka. Brát prostě „poslední, co se vejde" by
+    /// řezalo uprostřed bloku pokaždé, když v něm nějaký řádek zbyl, a doprostřed rozdvojené
+    /// zastávky pokaždé, když vyšla na hranici stránky (`B135`).
     /// Zlom musí posunout o kus dál, jinak by se smyčka řezala na místě.
     /// </remarks>
     private static Zlom? PosledniZlomDo(List<Zlom> zlomy, float od, float doKam)
     {
-        Zlom? silny = null, slaby = null;
+        Zlom? nejlepsi = null;
         foreach (var z in zlomy)
         {
             if (z.Mm <= od + 0.01f || z.Mm > doKam + 0.01f) continue;
-            if (z.Silny) { if (silny is null || z.Mm > silny.Value.Mm) silny = z; }
-            else if (slaby is null || z.Mm > slaby.Value.Mm) slaby = z;
+            if (nejlepsi is not { } n || z.Uroven > n.Uroven || (z.Uroven == n.Uroven && z.Mm > n.Mm))
+                nejlepsi = z;
         }
-        return silny ?? slaby;
+        return nejlepsi;
     }
 
     private (float Vyska, List<Zlom> Zlomy, float Hlavicka) CalculateSectionHeight(

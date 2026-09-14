@@ -1,5 +1,31 @@
 ﻿# Changelog
 
+## 2026-09-14 (4) - ✂️ zlom stránky nerozpůlí zastávku
+
+`B135`. Když se tabulka linky nevejde na stránku, zlom teď padne na hranici **mezi zastávkami**.
+Zastávka, která má příjezdový i odjezdový řádek, odejde na další stránku celá - dřív mohlo „př"
+zůstat dole na jedné straně a „od" nahoře na druhé. Totéž platí pro zastávku a její přípojné
+řádky („vyčká", „navazuje"): řez je od sebe neodtrhne.
+
+Řezat uvnitř zastávky jde jedině tehdy, když se jinam říznout nedá - tedy u zastávky vyšší než
+celá stránka. Bez té pojistky by stránkování nemělo kam říznout.
+
+Kdy se řeže se **nemění**: pořád jen když se to nevejde. Staré nastavení „počet řádků na stránku"
+nepřebíráme (rozhodnutí Jan 9. 9.) - na lince `0380760` se kvůli němu tiskne 55 + 9 řádků, přestože
+na stránce zbylo místo.
+
+Stejné pravidlo drží i starý postskriptový tisk: `JRapiLinPrtPS8.mac:83` couvá s řezem po dvou
+řádcích, dokud nenarazí na obyčejnou jednořádkovou zastávku. Podklad a rozhodnutí v
+`docs/linkovy-knizni-jr-implementace-analyza.md §17.8`.
+
+⚠️ **Spěchalo to proti `B140`.** V dnešním tvaru se název zastávky opakuje na obou řádcích, takže
+rozpůlená zastávka je ošklivá, ale čitelná. V postskriptovém tvaru je název psaný jednou přes oba
+řádky - tam by druhá stránka dostala řádek bez názvu i bez tarifního čísla.
+
+Testy jedou přes deset výšek stránky. Při jedné jediné by mlčely: řádky jsou stejně vysoké, takže
+o tom, jestli řez trefí prostředek zastávky, rozhoduje parita a jednou to vyjde dobře náhodou.
+Ověřeno mutací - se starým výběrem zlomu padne pět z deseti.
+
 ## 2026-09-14 (3) - 🖥 šipky nad náhledem nezmizí za okrajem okna
 
 Nález Jan 14. 9. Panel náhledu se uměl dostat za pravý okraj okna dvěma cestami a lišta se šipkami

@@ -1,5 +1,36 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B135` Řez tabulky nepadá doprostřed zastávky (hotovo 14. 9. 2026)
+
+Podnět Jan 9. 9., zadání dohodnuté 14. 9. Když se tabulka linky nevejde na stránku, zlom padne na
+hranici **mezi zastávkami**. Zastávka s příjezdovým i odjezdovým řádkem odchází na další stránku
+celá; totéž platí pro zastávku a její přípojné řádky („vyčká", „navazuje").
+
+Místa řezu mají tři úrovně: hranice mezi bloky sloupců → hranice mezi zastávkami → nouzově
+kterákoli hranice řádku. Nouzová úroveň musí zůstat, jinak by stránkování u zastávky vyšší než
+celá stránka nemělo kam říznout a zacyklilo by se.
+
+**Kdy se řeže se nemění** - pořád jen když se to nevejde. Staré nastavení „počet řádků na stránku"
+(`PATCH,VERTIM`) nepřebíráme (rozhodnutí Jan 9. 9.): na `0380760` kvůli němu vyjde 55 + 9 řádků,
+přestože stránka místo měla.
+
+Doloženo ve zdroji starého tisku: pole `PiloT` (`JRapiLinPrtPS5.mac:19-27`) drží rozdvojenou
+zastávku jako trojici řádků se záporným tarifním číslem a `rez1` (`JRapiLinPrtPS8.mac:83`) couvá
+po dvou, dokud nenarazí na kladné. Druhé staré pravidlo - `free()`, řez jen na řádku, kde žádný
+spoj nemá čas - **vědomě nebereme** (Jan 14. 9.): jejich couvání má dno ve `VertiM`, naše by
+nemělo, a na husté lince takový řádek nemusí existovat.
+
+⚠️ **Muselo to být dřív než `B140`.** V dnešním tvaru se název zastávky opakuje na obou řádcích,
+takže rozpůlená zastávka je ošklivá, ale čitelná. V postskriptovém tvaru je název psaný jednou přes
+oba řádky - tam by druhá stránka dostala řádek bez názvu i bez tarifního čísla.
+
+Testy (`RezMeziZastavkamiTests`) jedou přes deset výšek stránky. Při jedné by mlčely: řádky jsou
+stejně vysoké, takže o tom, jestli řez trefí prostředek zastávky, rozhoduje parita a jednou to
+vyjde dobře náhodou. Ověřeno mutací - se starým výběrem zlomu padne pět z deseti.
+
+Pravidla a dotčená místa v kódu: [`§17.8`](linkovy-knizni-jr-implementace-analyza.md).
+Detail v `changelog.md` 14. 9. (4).
+
 ## `B149` Pořadí stránek v exportu všech zastávek (hotovo 14. 9. 2026)
 
 Hlásil TRANSDEV 11. 9. jako „1234554321". Dohledáno z jeho exportu: nešlo o obrácené pořadí, ale
