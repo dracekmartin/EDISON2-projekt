@@ -24,8 +24,11 @@ celé lince, ne části.
 ⚠️ **Poznámky k přípojům se nefiltrují.** Přípojný řádek v datech značku nenese (skládá ji server),
 takže zůstanou na každé části. Filtr nikdy neubere víc, než má - jen někdy míň.
 
-⚠️ **Výška sekce se počítá z nefiltrované legendy**, protože se počítá jednou pro celou sestavu.
-Na stránce s kratší legendou proto zbude kousek volna. Opačná strana by legendu ořízla.
+⚠️ **Výška sekce se počítá z nefiltrované legendy**, protože se počítá jednou pro celou sestavu -
+o filtru se nedozví. Opakovaná legenda si tak na každé stránce drží místo pro celou legendu, i když
+se vypíše jen část, a sestava se rozpadne na víc listů, než by musela (ověřil Jan 14. 9. na
+`0320125`). Je to bezpečná strana - opačná by legendu ořízla. Srovnat by to šlo jen počítáním výšek
+po stránkách, což engine dnes nedělá; **samostatná práce, ne dodělávka téhle.**
 
 ## 2026-09-14 (8) - 🔤 výchozí font dokumentu konečně něco dělá
 
