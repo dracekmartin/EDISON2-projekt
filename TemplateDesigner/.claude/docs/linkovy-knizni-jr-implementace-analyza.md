@@ -1586,6 +1586,41 @@ cesta k témuž vadí jen tehdy, když se jí nedá zbavit; tahle má východ.
 jinak klient neví, na co se automatika vyhodnotí. Aditivní přírůstek kontraktu (R3), ne změna.
 ⚠️ Popisky voleb budou po vydání **zamčené** (persistuje se zobrazovaný text) - pojmenovat napoprvé.
 
+#### `Hlava&pozN` - projito na výtiscích 14. 9. (oracle)
+
+Tři výtisky ze starého **postskriptového knižního** tisku, `CB_GWBUS`:
+
+| Hodnota | Linka | Co je na papíře |
+|---|---|---|
+| 1 = název a poznámky pro směr | `990 / 0320125` | 6 stran: plná hlavička na začátku **každého směru** (1, 4), legenda na **konci každého směru** (3, 6), mezistrany jen „pokračování" |
+| 2 = název a poznámky pro část | `251 / 0340100` | 4 strany: **každá strana samostatná sestava** - hlavička, tabulka, legenda; žádné „pokračování" |
+| 3 = jen poznámky pro směr | `2 / 0320145` | 4 strany: hlavička **jen jednou** na první straně, legenda za každý směr |
+
+⚠️ **Hlavní zjištění: legenda se mezi částmi liší OBSAHEM, ne jen umístěním.** Na `0340100` má
+strana 1 v legendě jen „jede v pracovních dnech", strana 2 navíc „jede v sobotu" a „jede v neděli
+a ve státem uznané svátky" - přitom nesou tytéž zastávky a liší se jen sloupci spojů. Totéž
+u `0320145`: legenda směru Tam nese návaznosti spojů 9, 67, 71, legenda směru Zpět ne.
+**Legenda vypisuje jen poznámky spojů, které jsou na dané části.**
+
+**Rozdělení zodpovědnosti (rozhodnutí Jan 14. 9., varianta „umístění = sekce"):**
+
+- **Umístění hlavičky i legendy zůstává nastavením sekce** („Jednou" / „Každá stránka" / „Pod
+  obsahem" z `B134`). Parametr sestavy do toho sahat nebude. Důvod: každá otázka typu „kde se to
+  objeví a opakuje se to" je dnes sekce; kdyby ji parametr přebíjel, panel ukazuje jedno a tiskne
+  se druhé - třída chyb `B24`. (Hodnoty parametrů přitom **jsou** součástí šablony,
+  `Template.PrintParameters`; problém není kde bydlí, ale že by jednu věc řídily dva ovladače.)
+- **Enum bude řídit OBSAH legendy** - návrh voleb „Automaticky (dle linky) / Za celou sestavu /
+  Za směr / Za část". To je věc typu `ROZDELENI_SLOUPCU` (rozhoduje, co v prvku vznikne), ne
+  umístění.
+- ⚠️ **Vzdáváme se tím per-linkového umístění hlavičky.** Zákazník s pomíchanými hodnotami 1 a 2
+  dostane pro všechny linky stejné umístění. Odhad (neověřený): nebude to vidět, protože „hlavička
+  na každé straně" vypadá dobře v obou případech a rozdíl je hlavně v legendě.
+
+**Co z toho plyne pro odhad:** u téhle volby **nejde o nastavení, ale o schopnost prvku poznámek**.
+Dnes bere poznámky celé sestavy a o dělení tabulky na části neví. Enum je až přepínač nad tím.
+Záhlaví tabulky (řádek čísel spojů) se řešit nemusí - to si tabulka na pokračovacích stranách
+opakuje sama (`OpakovanaHlavickaMm`).
+
 ### 17.5 Co umíme my a postskript ne
 
 Není to jednosměrný seznam - stojí za to to na školení říct:
