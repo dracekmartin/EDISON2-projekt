@@ -3463,17 +3463,19 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRazV.options = optsRV
     d arr.%Push(pRazV)
 
+    // `B142`: vědomá výměna „méně sloupců za méně informace", proto výchozí vypnuto. Popisek i
+    // nápověda musí říct, CO to schová - jinak si to zapne někdo, kdo variantní sloupce nasadil
+    // právě kvůli detailu (KOVED #13048).
+    d ..AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty tras, které jsou podmnožinou jiné", "false", "Seznam zastávek", "Varianta, která staví jen tam, kde staví i jiná, dostane sloupec té delší. Ubere to sloupce, ale u slitých spojů pak není ve sloupci vidět, které zastávky vynechávají, a časy jsou té delší varianty.")
+
+    // ⚠️ Následující dvě volby musí zůstat vedle sebe a v tomhle pořadí - obě jsou o písmenech
+    // variant a slučování mezi ně nepatří (nález Jan 14. 9.).
     // Zapínání písmen variant se 17. 8. zrušilo (bez nich nešlo u minuty poznat, který časový
     // sloupec pro ni platí) a 11. 9. se na žádost TRANSDEV vrátilo: vývěska, která varianty
     // vysvětluje jinde, je nepotřebuje. Hodnotu aplikuje KLIENT (vyprázdní záhlaví sloupců
     // a zhasne anotaci u minuty), takže do allowlistu server-side parametrů nepatří - server
     // písmena posílá dál a nic se kvůli té volbě znovu nenačítá.
     d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant tras", "true", "Seznam zastávek", "Označení variantních sloupců jízdních dob - v záhlaví sloupců i u minut odjezdů. Vypnutím sloupce s časy zůstanou, jen bez písmen. Netýká se písmen rozdílů tras, ta se vypínají u linky.")
-
-    // `B142`: vědomá výměna „méně sloupců za méně informace", proto výchozí vypnuto. Popisek i
-    // nápověda musí říct, CO to schová - jinak si to zapne někdo, kdo variantní sloupce nasadil
-    // právě kvůli detailu (KOVED #13048).
-    d ..AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty tras, které jsou podmnožinou jiné", "false", "Seznam zastávek", "Varianta, která staví jen tam, kde staví i jiná, dostane sloupec té delší. Ubere to sloupce, ale u slitých spojů pak není ve sloupci vidět, které zastávky vynechávají, a časy jsou té delší varianty.")
 
     s pPrvB = ##class(%DynamicObject).%New()
     s pPrvB.name         = "PRVNI_BEZ_PISMENE"
@@ -3482,6 +3484,9 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pPrvB.defaultValue = "true"
     s pPrvB.group        = "Seznam zastávek"
     s pPrvB.description  = "Nejčastější varianta zůstane bez písmene (hlavní trasa), odchylky se značí od A. Vypnuto = písmena už od první varianty."
+    // Bez písmen variant tato volba nemá co ovlivnit - schovat ji je míň matoucí než ji nechat
+    // svítit jako mrtvé zaškrtávátko.
+    s pPrvB.visibleWhen  = "PISMENA_VARIANT=true"
     d arr.%Push(pPrvB)
 
     // Rozdělení sloupců typů provozu - override FTL (auto = dle linky MHD_TYP_R). 4 módy = kombinace

@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-09-14 (2) - 🔤 volby kolem písmen variant drží pohromadě
+
+Nález Jan 14. 9. V parametrech vývěsky stálo mezi „Písmena variant tras" a „První varianta bez
+písmene" slučování podmnožin, takže dvě volby o témže byly rozhozené. Slučování je teď nad nimi
+a obě volby o písmenech jdou po sobě.
+
+**„První varianta bez písmene" se navíc schová, když jsou písmena variant vypnutá** - bez písmen
+nemá co ovlivnit a jako mrtvé zaškrtávátko jen mate. Řeší to `visibleWhen` v definici parametru,
+mechanismus, který už drží Hodiny od/do pod volbou časové osy. Panel viditelnost přepočítá hned
+po přepnutí, nemusí se nic znovu načítat.
+
 ## 2026-09-14 (1) - 🚏 vývěsky jdou po zastávkách, u každé oba směry za sebou
 
 `B149`, hlásil TRANSDEV 11. 9. jako „1234554321". Export všech zastávek dával nejdřív celý směr
