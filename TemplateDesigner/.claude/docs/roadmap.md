@@ -66,9 +66,13 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 Ani u jedné není první krok kód. Podklady k tiketům drží
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
-- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`) - **podnět, ne závazek**.
-  Starý modul to odmítl jako nemožné, náš engine na to má lepší pozici. **Zeptat se zákazníka,
-  jestli to pořád chce** - jinak stavíme featuru, kterou nikdo nezadal.
+- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
+  nemožné, náš engine na to má lepší pozici. ⚠️ **Poptávka je doložená** (Jan 14. 9.): zákazníci
+  chtějí vejít na jednu stranu, kdykoli to jde, a jeden si výslovně řekl o **agresivní zmenšování
+  poznámek**, jen aby se to vešlo. Tím to přestalo být „podnět, ne závazek".
+  Liší se to od `B151` rozsahem: `B151` zmenšuje **jen tabulku**, aby se nedělila, tohle sahá na
+  **celou sestavu včetně poznámek** a potřebuje vlastní strop (90 % tam nestačí) a vlastní volbu -
+  agresivní zmenšování nemůže být tiché.
 
 - **`#9088` bod 3: ručně zadaný „název směru" u linky** [S] (TRANSDEV, dřív `C9`; chtěné i pro
   vývěsky). ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**. Náš díl

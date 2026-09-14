@@ -35,29 +35,51 @@ public class PageLayoutEngine
     /// zakládání další stránky.
     /// </summary>
     /// <remarks>
-    /// Zmenšuje se <b>celý prvek jednou hodnotou</b> - kdyby se zmenšovala jen přetékající část,
-    /// měly by sousední stránky viditelně jiné písmo. Spustí se to <b>jen když zmenšení ušetří
-    /// celou stránku</b>; zmenšit a stejně přidat stranu je čistá ztráta. A když ani 90 % nestačí,
-    /// vrací se plná velikost a řeže se jako dřív - řez ve zmenšeném písmu by stál obojí naráz
-    /// (rozhodnutí Jan 14. 9.).
+    /// <para>Zmenšuje se <b>celý prvek jednou hodnotou</b> - kdyby se zmenšovala jen přetékající
+    /// část, měly by sousední stránky viditelně jiné písmo. A když ani 90 % nestačí, vrací se plná
+    /// velikost a řeže se jako dřív - řez ve zmenšeném písmu by stál obojí naráz (rozhodnutí
+    /// Jan 14. 9.).</para>
+    ///
+    /// <para>⚠️ Spouštěčem je <b>počet stránek, na které se rozlezla sama tabulka</b>, ne počet
+    /// stránek celého dokumentu (upřesnění Jan 14. 9. po zkoušení). Řešíme „ať na druhé straně
+    /// nevisí dva řádky tabulky"; kde skončí poznámky pod ní, je jiná věc. Podle počtu stránek
+    /// dokumentu to nešlo: poznámky drží druhou stranu skoro vždycky, takže by se nezmenšilo
+    /// nikdy - přesně v tom případu, kvůli kterému to vzniklo.</para>
+    ///
+    /// <para>„Zmenši všechno, ať se sestava vejde na jednu stranu" je jiná featura (`#8785`) -
+    /// sahá na celý výstup včetně poznámek a má vlastní strop.</para>
     /// </remarks>
     public LayoutResult Layout(Template template, DataContext? data)
     {
         var zmensitelne = ZmensitelnePrvky(template);
         NastavZmenseni(zmensitelne, 1f);
         var vysledek = LayoutBezZmenseni(template, data);
-        if (zmensitelne.Count == 0 || vysledek.TotalPages <= 1) return vysledek;
+        if (zmensitelne.Count == 0) return vysledek;
+
+        var sekceTabulek = SekceZmensitelnych(template);
+        int stranekPlne = StranekSekci(vysledek, sekceTabulek);
+        if (stranekPlne <= 1) return vysledek;      // tabulka se nedělí, není co šetřit
 
         foreach (float mira in ZmensovaciZebrik)
         {
             NastavZmenseni(zmensitelne, mira);
             var uzsi = LayoutBezZmenseni(template, data);
-            if (uzsi.TotalPages < vysledek.TotalPages) return uzsi;
+            if (StranekSekci(uzsi, sekceTabulek) < stranekPlne) return uzsi;
         }
 
         NastavZmenseni(zmensitelne, 1f);
         return vysledek;
     }
+
+    /// <summary>Sekce, ve kterých leží zmenšitelná tabulka.</summary>
+    private static HashSet<Guid> SekceZmensitelnych(Template template) =>
+        [.. template.Sections
+            .Where(s => s.Elements.OfType<LineTableElement>().Any(e => e.Height is null))
+            .Select(s => s.Id)];
+
+    /// <summary>Na kolika stránkách se ty sekce objeví.</summary>
+    private static int StranekSekci(LayoutResult vysledek, HashSet<Guid> sekce) =>
+        vysledek.Pages.Count(p => p.Sections.Any(s => sekce.Contains(s.Source.Id)));
 
     /// <summary>Prvky, které umí ušetřit stránku zmenšením - tabulka bez pevné výšky, která se
     /// sama skládá z dílů. Prvek s pevnou výškou se nestránkuje, takže tam není co šetřit.</summary>

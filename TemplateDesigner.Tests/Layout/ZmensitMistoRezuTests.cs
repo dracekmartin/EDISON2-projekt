@@ -95,6 +95,41 @@ public class ZmensitMistoRezuTests
     }
 
     /// <summary>
+    /// Poznámky pod tabulkou drží druhou stránku samy o sobě, takže počet stran dokumentu se
+    /// zmenšením nezmění - tabulka se přesto zmenšit **musí**, protože se tím přestane dělit.
+    /// </summary>
+    /// <remarks>
+    /// Tohle je ten případ, kvůli kterému se 14. 9. spouštěč překlopil z počtu stran dokumentu na
+    /// počet stran tabulky (upřesnění Jan): poznámky jsou pod tabulkou skoro vždycky, takže podle
+    /// dokumentu by se nezmenšilo nikdy.
+    /// </remarks>
+    [Fact]
+    public void PoznamkyDrziDruhouStranku_TabulkaSePrestoZmensi()
+    {
+        var prvek = Prvek();
+        var data = LineTableBlokyTests.SirokaLinkaData(4, pocetZastavek: 40);
+        float akorat = VyskaAkorat(prvek, data);
+        float vyskaStranky = akorat * 0.95f;
+
+        var sablona = Sablona(prvek, vyskaStranky);
+        // Blok pod tabulkou, který se na první stranu nevejde nikdy - jako legenda poznámek.
+        sablona.Sections.Add(new Section
+        {
+            Name = "Poznámky",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = vyskaStranky * 0.7f,
+        });
+
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(sablona, data);
+
+        Assert.Equal(2, vysledek.TotalPages);     // poznámky si druhou stranu drží
+        Assert.True(prvek.LayoutZmenseni < 1f, "tabulka se měla zmenšit, i když počet stran zůstal");
+        int stranekTabulky = vysledek.Pages.Count(p => p.Sections.Any(s => s.Source.Name == "Jízdní řád"));
+        Assert.Equal(1, stranekTabulky);
+    }
+
+    /// <summary>
     /// Zmenšení je svislé - **vodorovné dělení na bloky se nesmí hnout**. Šířky sloupců rozhodují,
     /// kolik spojů se vejde do jednoho bloku; kdyby je zmenšení taky zúžilo, vyšla by jiná sestava,
     /// ne jen hustší.

@@ -10,7 +10,11 @@ Tři pravidla, podle kterých se to chová:
 **Zmenšuje se celá tabulka jednou hodnotou.** Kdyby se zmenšovala jen přetékající část, měly by
 sousední stránky viditelně jiné písmo.
 
-**Jen když to ušetří stránku.** Zmenšit a stejně přidat stranu je čistá ztráta, tak se to nedělá.
+**Jen když se tím tabulka přestane dělit.** Rozhoduje počet stránek, na které se rozlezla **sama
+tabulka**, ne počet stran celého dokumentu. Poznámky pod tabulkou si druhou stranu drží skoro vždycky,
+takže podle dokumentu by se nezmenšilo nikdy - přesně v tom případu, kvůli kterému to vzniklo.
+Kde skončí poznámky, je jiná věc; „zmenši všechno, ať se sestava vejde na jednu stranu" je
+samostatný požadavek `#8785`.
 
 **Mez je 90 %.** Když ani to nestačí, tiskne se v plné velikosti a řeže jako dřív - řez ve
 zmenšeném písmu by stál menší text i stránku navíc zároveň. Zkouší se postupně 97, 94 a 90 %

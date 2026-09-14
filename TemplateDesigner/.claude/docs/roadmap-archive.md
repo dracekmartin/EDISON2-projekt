@@ -6,10 +6,14 @@ Rozhodnutí Jan 14. 9. Když linkové tabulce chybí do stránky málo, vytiskne
 a vejde se, místo aby kvůli dvěma zastávkám vznikla další strana.
 
 Tři pravidla (rozhodnutí Jan 14. 9.): zmenšuje se **celá tabulka jednou hodnotou** (jinak by
-sousední stránky měly viditelně jiné písmo), **jen když to ušetří stránku** (zmenšit a stejně
-přidat stranu je čistá ztráta) a **mez je 90 %** - když ani to nestačí, tiskne se plně a řeže jako
-dřív, protože řez ve zmenšeném písmu by stál obojí naráz. Zkouší se 97, 94 a 90 % a bere se první,
-které stačí. Volba v šabloně zatím není.
+sousední stránky měly viditelně jiné písmo), **jen když se tím tabulka přestane dělit** a **mez je
+90 %** - když ani to nestačí, tiskne se plně a řeže jako dřív, protože řez ve zmenšeném písmu by
+stál obojí naráz. Zkouší se 97, 94 a 90 % a bere se první, které stačí. Volba v šabloně zatím není.
+
+⚠️ **Spouštěčem je počet stránek SAMÉ TABULKY, ne dokumentu** (upřesnění Jan 14. 9. po zkoušení -
+první verze měřila dokument). Poznámky pod tabulkou si druhou stranu drží skoro vždycky, takže podle
+dokumentu by se nezmenšilo nikdy, a to je právě ten případ, kvůli kterému to vzniklo. Kde skončí
+poznámky, je jiná věc: „zmenši všechno, ať se sestava vejde na jednu stranu" je `#8785`.
 
 ⚠️ **Zmenšuje se jen svisle.** Šířky sloupců zůstávají - rozhodují o tom, kolik spojů se vejde do
 jedné části, takže kdyby se zúžily taky, vyšla by jiná sestava, ne jen hustší. Hlídá to test.
