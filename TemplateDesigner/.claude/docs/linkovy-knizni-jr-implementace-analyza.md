@@ -1663,10 +1663,20 @@ na celý list.
 | `0340313` se `Smer_1_stranA` | 1 strana na směr, obsah 226-229 mm | 1 strana na směr **po zvýšení stránky na 279 mm** (ověřil Jan) |
 | `0320180` s `ONEPAG` | 1 strana, oba směry | 2 strany (směr na stránku); týž fyzický výstup dá **uspořádání na list** |
 
-⚠️ **Nález po cestě: naše tabulka je citelně vyšší než jejich.** Na `0340313` měl starý tisk celý
-obsah včetně hlavičky a legendy ve 226-229 mm; u nás se do 279 mm vejde tabulka, ale legenda už ne.
-Je to otázka hustoty sazby (výška řádku, písmo), ne stránkování - a `B151` ji nevyřeší, protože
-nejde o pár procent. Neměřeno přesně, jen odvozeno z těch dvou čísel.
+⚠️ **Domněnka „naše tabulka je vyšší než jejich" se NEPOTVRDILA a je stažená** (14. 9.). Vznikla
+z toho, že starý tisk měl na `0340313` obsah ve 226-229 mm, kdežto u nás se do 279 mm tabulka
+vejde, ale legenda už ne. **Ta čísla ale nejsou srovnatelná s našimi milimetry:**
+
+- **Převod `.ps` → PDF mění měřítko.** Program deklaruje využitelnou šířku 173 mm (`PLW 208`,
+  `LM 15`, `RM 20`), v PDF měřím obsah široký 195,7 mm začínající na 13,5 mm. `SCALE,LINKY` je
+  přitom `1:1`, takže to dělá Ghostscript při sazbě na Letter, ne nastavení linky.
+- **„Stránka" v PDF je fyzický list, ne logická stránka.** Na jeden list se vejdou dvě (`TISK`
+  střídá horní a dolní obrázek), takže ani počet řádků na stránku PDF neporovnává totéž - na
+  `0320125` vyšlo 29, 51 a 12 řádků na stranu.
+
+Kdo se k tomu vrátí, musí nejdřív určit měřítko převodu a mapování logických stránek na listy -
+teprve pak má smysl cokoli měřit. **Závěry o `B127` výš na milimetrech nestojí** (počty listů
+a posloupnosti značek měřítko neovlivní), takže platí dál.
 
 - ✅ *Neřezat uvnitř směru* u téhle linky **umíme** - směr se na stránku vejde a nic se nedělí.
 - ❌ *Oba směry na jeden list* neumíme: u nás jsou to dvě stránky sazby.
