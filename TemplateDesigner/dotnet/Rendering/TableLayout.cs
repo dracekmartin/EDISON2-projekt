@@ -122,19 +122,47 @@ public static class TableLayout
     /// <param name="Pocet">Kolik sloupců spojů blok nese.</param>
     public readonly record struct SloupcovyBlok(int Od, int Pocet);
 
-    /// <summary>Řez po <paramref name="naBlok"/> sloupcích, bez ohledu na skupiny dnů.</summary>
+    /// <summary>Řez úseku na části, do nichž se spoje rozdělí <b>rovným dílem</b>.</summary>
+    /// <remarks>
+    /// <para>Počet částí je ten nejmenší, který se ještě vejde - rovnoměrné dělení proto <b>nikdy
+    /// nepřidá část navíc</b>. Teprve uvnitř toho počtu se spoje rozdělí rovnoměrně: 25 spojů po
+    /// devíti vyjde na 9 + 8 + 8, ne 9 + 9 + 7.</para>
+    /// <para>Plnění do plna, které tu stálo do 14. 9., nechávalo poslední část skoro prázdnou
+    /// (u linky s 21 spoji po deseti zbyl na poslední stránce jeden sloupec).</para>
+    /// <para>⚠️ Rovnoměrné je i proti postskriptu, který cíl zaokrouhlí nahoru a plní na něj
+    /// (`JRapiLinPrtPS.mac:492`), takže mu poslední část taky vyjde kratší. Tady se zbytek rozdělí
+    /// po jednom mezi první části, což je přesně to, oč u rovnoměrného dělení jde.</para>
+    /// </remarks>
+    private static void PridejRovnomerne(List<SloupcovyBlok> bloky, int od, int pocet, int naBlok)
+    {
+        if (pocet <= 0) return;
+        int casti = ((pocet - 1) / naBlok) + 1;
+        int zaklad = pocet / casti, zbytek = pocet % casti;
+        for (int i = 0; i < casti; i++)
+        {
+            int delka = zaklad + (i < zbytek ? 1 : 0);
+            bloky.Add(new SloupcovyBlok(od, delka));
+            od += delka;
+        }
+    }
+
+    /// <summary>Řez na části po nejvýš <paramref name="naBlok"/> sloupcích, bez ohledu na skupiny dnů.</summary>
     public static List<SloupcovyBlok> BlokyPodleSirky(int pocetSloupcu, int naBlok)
     {
         var bloky = new List<SloupcovyBlok>();
         if (pocetSloupcu <= 0 || naBlok < 1) return bloky;
-        for (int od = 0; od < pocetSloupcu; od += naBlok)
-            bloky.Add(new SloupcovyBlok(od, Math.Min(naBlok, pocetSloupcu - od)));
+        PridejRovnomerne(bloky, 0, pocetSloupcu, naBlok);
         return bloky;
     }
 
     /// <summary>Řez, kde <b>každá skupina dnů začíná vlastní blok</b> - uvnitř skupiny se dál
-    /// řeže po <paramref name="naBlok"/> sloupcích.</summary>
+    /// řeže po nejvýš <paramref name="naBlok"/> sloupcích.</summary>
     /// <param name="skupinaSloupce">Skupina dnů každého sloupce spoje, v pořadí tisku.</param>
+    /// <remarks>
+    /// ⚠️ Rovnoměrně se dělí <b>jen uvnitř jedné skupiny</b>. Přes hranici skupiny se spoj
+    /// nepřesune, i kdyby tím části vyšly stejně velké - oddělit skupiny je celý smysl tohoto řezu.
+    /// Skupina, která se do jedné části vejde, tak zůstane sama, i když je kratičká.
+    /// </remarks>
     public static List<SloupcovyBlok> BlokyPodleSkupin(IReadOnlyList<int> skupinaSloupce, int naBlok)
     {
         var bloky = new List<SloupcovyBlok>();
@@ -143,10 +171,8 @@ public static class TableLayout
         int od = 0;
         for (int i = 1; i <= skupinaSloupce.Count; i++)
         {
-            bool konecSkupiny = i == skupinaSloupce.Count || skupinaSloupce[i] != skupinaSloupce[od];
-            bool plnyBlok = i - od == naBlok;
-            if (!konecSkupiny && !plnyBlok) continue;
-            bloky.Add(new SloupcovyBlok(od, i - od));
+            if (i < skupinaSloupce.Count && skupinaSloupce[i] == skupinaSloupce[od]) continue;
+            PridejRovnomerne(bloky, od, i - od, naBlok);
             od = i;
         }
         return bloky;
@@ -160,6 +186,8 @@ public static class TableLayout
     /// hranici skupiny a oddělený nechá, když <b>není</b> bloků víc. Skupina dnů tak začíná vlastní
     /// tabulku, kdykoli je to zadarmo - a právě proto ze starého tisku koukají listy jen
     /// s pracovními dny, přestože to nikdo nenastavil.</para>
+    /// <para>Rozhoduje se podle <b>počtu</b> částí, a ten rovnoměrné dělení nemění - volba mezi
+    /// oběma řezy tedy vychází stejně jako předtím, liší se až velikosti částí.</para>
     /// <para>⚠️ <paramref name="skupinaSloupce"/> = null (obousměrná sestava) → jen úsporný řez.
     /// Sloupec tam nese spoj z <b>každého</b> směru a hranice skupin v nich padnou jinam, takže
     /// „hranice skupiny" není jedno místo. Starý modul ten případ nezná: obousměrnou tabulku, která

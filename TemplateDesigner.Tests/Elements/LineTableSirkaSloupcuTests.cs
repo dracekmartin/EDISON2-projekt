@@ -232,6 +232,37 @@ public class LineTableSirkaSloupcuTests
         Assert.Equal(7f, kopie.NejvetsiSirkaSpojeMm);
     }
 
+    // ── Dno, strop a rovnoměrné dělení dohromady ────────────────────────────
+
+    /// <summary>
+    /// Zadané dno šířky sloupce pustí do části míň spojů, takže jich je víc - a části musejí
+    /// i tak vyjít stejně velké a vejít se do prvku.
+    /// </summary>
+    /// <remarks>
+    /// Dno a rovnoměrné dělení do sebe zasahují: dno určuje, kolik spojů se do části vejde, a podle
+    /// toho se teprve počítá, na kolik částí se linka rozdělí. Kdyby se rovnoměrné dělení počítalo
+    /// z jiného čísla než z toho, které dno vrátí, části by přetekly přes hranu prvku.
+    /// </remarks>
+    [Fact]
+    public void DnoSirkySloupceRozdeliSpojeDoVicCasti_AStejneVelkych()
+    {
+        var data = Data(spoju: 40);
+        var siroke = Prvek();
+        var uzke = Prvek();
+        uzke.NejmensiSirkaSpojeMm = 12f;
+
+        var bezDna = siroke.Rozvrzeni(data);
+        var sDnem = uzke.Rozvrzeni(data);
+
+        Assert.True(sDnem.Count > bezDna.Count,
+            $"se dnem 12 mm má být částí víc, vyšlo {sDnem.Count} proti {bezDna.Count}");
+        Assert.True(sDnem.Max(b => b.Pocet) - sDnem.Min(b => b.Pocet) <= 1,
+            $"části vyšly {string.Join(" + ", sDnem.Select(b => b.Pocet))}");
+        Assert.All(sDnem, b => Assert.True(b.SirkaMm <= uzke.Width + 0.01f,
+            $"část je {b.SirkaMm:0.0} mm, prvek má {uzke.Width} mm"));
+        Assert.Equal(40, sDnem.Sum(b => b.Pocet));
+    }
+
     private static LineTableElement Prvek() => new() { X = 0, Y = 0, Width = 200 };
 
     /// <summary>Dno fixtury - prvek tak úzký, že o šířce sloupce rozhoduje jen spodní hranice.

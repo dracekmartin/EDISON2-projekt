@@ -36,8 +36,8 @@ public class RezPodleSkupinDnuTests
         var bloky = TableLayout.ZvolBloky(Skupiny(25, 9, 9), pocetSloupcu: 43, naBlok: 9);
 
         Assert.Equal(5, bloky.Count);
-        // Poslední blok skupiny 1 je kratší (7 z 9) - tím se oddělení pozná od úsporného řezu.
-        Assert.Equal([(0, 9), (9, 9), (18, 7), (25, 9), (34, 9)],
+        // Skupina 1 se dělí uvnitř sebe rovným dílem (9 + 8 + 8), skupiny 2 a 3 mají vlastní blok.
+        Assert.Equal([(0, 9), (9, 8), (17, 8), (25, 9), (34, 9)],
             bloky.Select(b => (b.Od, b.Pocet)));
     }
 
@@ -51,17 +51,18 @@ public class RezPodleSkupinDnuTests
         var bloky = TableLayout.ZvolBloky(Skupiny(24, 10, 9), pocetSloupcu: 43, naBlok: 9);
 
         Assert.Equal(5, bloky.Count);
-        Assert.Equal([(0, 9), (9, 9), (18, 9), (27, 9), (36, 7)],
+        Assert.Equal([(0, 9), (9, 9), (18, 9), (27, 8), (35, 8)],
             bloky.Select(b => (b.Od, b.Pocet)));
     }
 
-    /// <summary>Skupina větší než blok se dál řeže po blocích - oddělení není licence na přetečení.</summary>
+    /// <summary>Skupina větší než blok se dál řeže - oddělení není licence na přetečení. Uvnitř
+    /// skupiny se dělí rovným dílem, takže 20 spojů po devíti vyjde 7 + 7 + 6, ne 9 + 9 + 2.</summary>
     [Fact]
     public void SkupinaVetsiNezBlok_SeDalRezePoBlocich()
     {
         var bloky = TableLayout.BlokyPodleSkupin(Skupiny(20), naBlok: 9);
 
-        Assert.Equal([(0, 9), (9, 9), (18, 2)], bloky.Select(b => (b.Od, b.Pocet)));
+        Assert.Equal([(0, 7), (7, 7), (14, 6)], bloky.Select(b => (b.Od, b.Pocet)));
     }
 
     /// <summary>
@@ -98,7 +99,7 @@ public class RezPodleSkupinDnuTests
     {
         var bloky = TableLayout.ZvolBloky(Skupiny(5, 5, 5), pocetSloupcu: 15, naBlok: 9);
 
-        Assert.Equal([(0, 9), (9, 6)], bloky.Select(b => (b.Od, b.Pocet)));
+        Assert.Equal([(0, 8), (8, 7)], bloky.Select(b => (b.Od, b.Pocet)));
     }
 
     /// <summary>Sloty bez spojů nedají žádný blok - volající pak nemusí řešit zvláštní případ.</summary>

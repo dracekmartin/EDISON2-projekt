@@ -1,5 +1,23 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B152` Spoje se na části dělí rovným dílem (hotovo 14. 9. 2026)
+
+Když se sloupce spojů nevejdou do šířky a tabulka linky se rozdělí na části, rozdělí se spoje mezi
+ně rovným dílem. Do teď se části plnily do plna a poslední zůstala kratká - 21 spojů po deseti
+vyšlo 10 + 10 + 1, nově 7 + 7 + 7.
+
+Částí nepřibude: nejdřív se spočítá, kolik jich je potřeba, a teprve v tom počtu se dělí. Části se
+pak liší nejvýš o jeden sloupec.
+
+⚠️ **Hranice skupiny dnů se nepřekročí ani kvůli vyrovnání** - skupina, která se do jedné části
+vejde, zůstane sama. Vyrovnává se jen uvnitř skupiny, kterou stejně bylo nutné rozříznout.
+
+⚠️ **Není to dorovnání na starý tisk.** Postskript dělí rovnoměrně (`JRapiLinPrtPS.mac:492`),
+windows plní do plna (`JRapiLinPrtWin.mac:868-880`) - a je to týž kód, který odděluje skupiny dnů.
+Dosavadní chování odpovídalo windowsovému, takže šlo o volbu mezi dvěma (rozhodnutí Jan 14. 9.).
+
+Čtyři starší testy si kapacitu bloku odvozovaly z prvního bloku; to už neplatí a měří ji poctivě.
+
 ## `B153` Příkaz „Použít výchozí font u všech prvků" (hotovo 14. 9. 2026)
 
 Nález Jan 14. 9. Prvek s vlastním fontem přebíjí výchozí font dokumentu, takže v šabloně, kde ho má

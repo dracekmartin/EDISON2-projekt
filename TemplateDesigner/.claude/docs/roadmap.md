@@ -120,12 +120,6 @@ takže nejde o práci, ale o doklad.
   rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
   Vytáhnout, až to někdo bude chtít.
 
-- **`B152` Spoje se na části dělí rovnoměrně** [S] (vytaženo 14. 9. z analýzy, kde to viselo jen jako
-  poznámka). Osa **šířky**: když se sloupce spojů nevejdou, starý tisk spočítá počet částí a rozdělí
-  spoje rovným dílem (`JRapiLinPrtPS.mac:492`), takže jsou části stejně široké. My plníme bloky do
-  plna a poslední necháme kratší. Poptávku to nemá, je to evidence rozdílu -
-  [`§17.4`](linkovy-knizni-jr-implementace-analyza.md).
-
 - **`B140` Rozdvojená zastávka v postskriptovém tvaru** [M] (zjištěno 10. 9. při `B136`).
   Dnes tiskneme tvar **windowsového** návrháře: popisné sloupce zopakované na obou řádcích.
   **Postskript to dělá jinak** a vypadá to líp: km, tarifní číslo i název **sloučené přes oba

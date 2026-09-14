@@ -1,5 +1,24 @@
 ﻿# Changelog
 
+## 2026-09-14 (11) - ⚖️ spoje se na části dělí rovným dílem
+
+`B152`. Když se sloupce spojů nevejdou do šířky a tabulka linky se rozdělí na části, rozdělí se
+spoje mezi ně **rovným dílem**. Do teď se části plnily do plna a poslední zůstala kratká - u linky
+s 21 spoji po deseti nesla poslední část jediný sloupec a zbytek stránky byl prázdný. Nově vyjde
+7 + 7 + 7.
+
+**Částí nepřibude.** Nejdřív se spočítá, kolik jich je potřeba, a teprve v tom počtu se spoje
+rozdělí; části se pak liší nejvýš o jeden sloupec.
+
+⚠️ **Hranice skupiny dnů se nepřekročí ani kvůli vyrovnání.** Skupina, která se do jedné části
+vejde, zůstane sama, i když je kratičká - oddělit skupiny je celý smysl toho řezu. Vyrovnává se
+jen uvnitř skupiny, kterou stejně bylo nutné rozříznout.
+
+⚠️ **Staré tisky se v tom neshodují**: postskriptový dělí rovnoměrně (`JRapiLinPrtPS.mac:492`),
+windowsový plní do plna (`JRapiLinPrtWin.mac:868-880`) - a je to týž kód, který odděluje skupiny
+dnů. Dosavadní chování odpovídalo windowsovému, takže to není dorovnání na starý tisk, ale volba
+mezi dvěma (rozhodnutí Jan 14. 9.).
+
 ## 2026-09-14 (10) - 🔤 příkaz, kterým šablona převezme výchozí font
 
 `B153`. V nabídce **Upravit** přibyla položka **„Použít výchozí font u všech prvků"**. Smaže font

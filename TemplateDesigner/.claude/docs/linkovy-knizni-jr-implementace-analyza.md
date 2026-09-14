@@ -1508,7 +1508,7 @@ Seřazeno podle toho, jak moc je to vidět:
 | Ruční zlom stránky na tarifním čísle | `PATCH,ZLOM` | ❌ vědomě (`B127`, 3 linky z ~93 tis.) |
 | Podtržení u zdvojených řádků příjezd/odjezd | `PATCH,podtrzeniPaJ` | ❌ (viz `B123`) |
 | Volby dělené linky (na jednu stranu, hlavička pro směr) | `gSetLinPrt` dta 21-23 | ❌ |
-| **Spoje se na části dělí rovnoměrně**, ne do plna | `JRapiLinPrtPS.mac:492` (`pokrac`) | ⚠️ my plníme bloky do plna a poslední necháme kratší |
+| **Spoje se na části dělí rovnoměrně**, ne do plna | `JRapiLinPrtPS.mac:492` (`pokrac`) | ✅ 14. 9. (`B152`) - rovným dílem, uvnitř skupiny dnů; windowsový tisk přitom plní do plna |
 | **Řez po zastávkách se nesmí trefit na řádek s daty** | `JRapiLinPrtPS8.mac:79` (`rez`, `free`) | ⚠️ my řežeme na kterékoli hranici řádku |
 | Počet řádků tabulky na stránku zadávaný u linky | `PATCH,VERTIM` | ❌ u nás vychází z výšky sekce a papíru |
 

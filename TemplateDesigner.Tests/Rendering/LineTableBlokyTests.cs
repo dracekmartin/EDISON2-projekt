@@ -112,6 +112,21 @@ public class LineTableBlokyTests
     }
 
     /// <summary>
+    /// Kolik spojů se do prvku vejde na jeden blok - největší počet, který se ještě nerozdělí.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Nejde to odečíst z prvního bloku rozdělené linky: od 14. 9. se spoje dělí mezi části
+    /// rovným dílem, takže části bývají menší než kapacita (60 spojů při kapacitě 17 vyjde
+    /// 15 + 15 + 15 + 15, ne 17 + 17 + 17 + 9).
+    /// </remarks>
+    private static int KapacitaBloku(LineTableElement prvek, Func<int, DataContext> linka)
+    {
+        int n = 1;
+        while (n < 500 && prvek.Rozvrzeni(linka(n + 1)).Count == 1) n++;
+        return n;
+    }
+
+    /// <summary>
     /// Jednosměrná linka se skupinami dnů, kde oddělení nestojí blok navíc: bloky proto **končí
     /// na hranici skupiny**, ne po plných devíti sloupcích. Bez toho jsme se od starého tisku
     /// lišili rozřezáním u každé linky, kde by oddělení bylo zadarmo.
@@ -123,9 +138,9 @@ public class LineTableBlokyTests
         // Kolik spojů se vejde na blok, řídí šířka prvku a písmo. Aby test nezávisel na geometrii,
         // zjistí se to nejdřív na lince s jedinou skupinou a skupiny se pak udělají právě tak
         // velké, aby jejich oddělení nestálo blok navíc.
-        int naBlok = prvek.Rozvrzeni(LinkaSeSkupinami(60))[0].Pocet;
+        int naBlok = KapacitaBloku(prvek, n => LinkaSeSkupinami(n));
         // Velikosti `n+2, n, n`: oddělené vyjde na 2+1+1 bloků a úsporné na tolikéž, takže je
-        // oddělení zadarmo - a **liší se**, protože druhý blok nese jen dva sloupce místo plných.
+        // oddělení zadarmo - a **liší se**, protože řez podle šířky by padl doprostřed skupin.
         // Kdyby se velikosti daly jako násobky bloku, oba řezy by padly na stejná místa a test
         // by neověřoval nic (odhaleno mutací 6. 9.).
         var data = LinkaSeSkupinami(naBlok + 2, naBlok, naBlok);
@@ -134,7 +149,8 @@ public class LineTableBlokyTests
 
         var skupiny = SkupinyPerSlot(data);
         Assert.Equal(4, bloky.Count);
-        Assert.Equal(2, bloky[1].Pocet);
+        // Žádný blok nesmí nést dvě skupiny - to je celý rozdíl proti řezu podle šířky, který by
+        // při týchž čtyřech blocích rozsekal tyhle velikosti na 14 + 13 + 13 + 13.
         Assert.All(bloky, b => Assert.Single(skupiny.Skip(b.Od).Take(b.Pocet).Distinct()));
     }
 
@@ -223,17 +239,18 @@ public class LineTableBlokyTests
             $"blok od spoje {b.Od} ({b.Pocet} spojů) je {b.SirkaMm:0.0} mm, prvek má {prvek.Width} mm"));
     }
 
-    /// <summary>Bloky vycházejí zhruba stejně velké. Chyba se poznala právě takhle: 36 spojů
-    /// v prvním bloku a 5 ve druhém.</summary>
+    /// <summary>Bloky vycházejí stejně velké - smějí se lišit nejvýš o jeden sloupec. Chyba se
+    /// poznala právě takhle: 36 spojů v prvním bloku a 5 ve druhém.</summary>
+    /// <remarks>Od 14. 9. je to podmínka na **všechny** bloky, ne jen na ty kromě posledního:
+    /// spoje se mezi části dělí rovným dílem, takže poslední část už nezůstává skoro prázdná.</remarks>
     [Fact]
-    public void BlokyJsouStejneVelke_PosledniNejvyseStejny()
+    public void BlokyJsouStejneVelke()
     {
         var bloky = Prvek().Rozvrzeni(SirokaLinka(41));
 
         Assert.True(bloky.Count > 1, "41 spojů se do 190 mm vejít nemá");
-        int prvni = bloky[0].Pocet;
-        Assert.All(bloky.Take(bloky.Count - 1), b => Assert.Equal(prvni, b.Pocet));
-        Assert.True(bloky[^1].Pocet <= prvni);
+        Assert.True(bloky.Max(b => b.Pocet) - bloky.Min(b => b.Pocet) <= 1,
+            $"části vyšly {string.Join(" + ", bloky.Select(b => b.Pocet))}");
     }
 
     /// <summary>Žádný spoj se dělením neztratí ani nezopakuje.</summary>
@@ -323,8 +340,12 @@ public class LineTableBlokyTests
     {
         var prvek = Prvek();
         prvek.Width = 277;
-
-        var bloky = prvek.Rozvrzeni(SirokaLinkaData(90, pocetZastavek: 28));
+        // ⚠️ Neúplný blok musí vzniknout, jinak test nic neměří - a od 14. 9. se spoje dělí rovným
+        // dílem, takže u většiny počtů vyjdou všechny části stejné. Hledá se proto první počet
+        // spojů, u kterého poslední část kratší je.
+        var bloky = Enumerable.Range(80, 20)
+            .Select(n => prvek.Rozvrzeni(SirokaLinkaData(n, pocetZastavek: 28)))
+            .First(b => b.Count > 1 && b[^1].Pocet < b.Max(x => x.Pocet));
 
         Assert.True(bloky[^1].Pocet < bloky[0].Pocet, "poslední blok má být neúplný");
         Assert.True(bloky[^1].SirkaMm < prvek.Width - 1f,

@@ -70,15 +70,26 @@ public class FormatCasuSpojeTests
     [Fact]
     public void UzsiFormatPustiDoBlokuVicSpoju()
     {
-        var data = SirokaData(30);
         var uzky = PrvekSAutoSloupcem(FormatCasuSpoje.HodinaVetsi);
         var siroky = PrvekSAutoSloupcem(FormatCasuSpoje.SDvojteckou);
 
-        int sUzkym = uzky.Rozvrzeni(data)[0].Pocet;
-        int sSirokym = siroky.Rozvrzeni(data)[0].Pocet;
+        int sUzkym = KapacitaBloku(uzky);
+        int sSirokym = KapacitaBloku(siroky);
 
         Assert.True(sUzkym > sSirokym,
             $"užší formát pustil do bloku {sUzkym} spojů, širší {sSirokym} - práh sloupce se nezměnil");
+    }
+
+    /// <summary>Kolik spojů se do prvku vejde na jeden blok - největší počet, který se ještě
+    /// nerozdělí.</summary>
+    /// <remarks>⚠️ Nejde to odečíst z prvního bloku rozdělené linky: od 14. 9. se spoje dělí mezi
+    /// části rovným dílem, takže obě velikosti písma mohou dát stejně velkou první část, přestože
+    /// se do bloku vejde jiný počet spojů.</remarks>
+    private static int KapacitaBloku(LineTableElement prvek)
+    {
+        int n = 1;
+        while (n < 200 && prvek.Rozvrzeni(SirokaData(n + 1)).Count == 1) n++;
+        return n;
     }
 
     /// <summary>
