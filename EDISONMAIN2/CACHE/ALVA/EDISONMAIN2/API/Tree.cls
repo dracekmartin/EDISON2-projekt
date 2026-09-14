@@ -782,21 +782,6 @@ ClassMethod FillPartners() [ Private ]
 	d ..AddFamily("AURIS", 0, "30", 1, 0)
 		d ..AddExe("AURIS", "AURIS.exe", "ALVA.AURIS.formAURISMain", "38001", 1, "", 0, "", 0)
 	d ..AddFamilyEnd()
-	d ..AddFamily("BC Dopravní systémy", 0, "31", 1, 0)
-		d ..AddExe("Cena jízdného", "BCCENAJIZDNEHO.exe", "ALVA.BCCENAJIZDNEHO.formBCCENAJIZDNEHOMain", "61001", 1, "", 0, "", 0, "BC Cena jízdného")
-		d ..AddExe("Clearing", "BCCLEARING.exe", "ALVA.BCCLEARING.formBCCLEARINGMain", "58001", 1, "", 0, "", 0, "BC Clearing")
-		d ..AddExe("Intenzita provozu", "BCINTDOP.exe", "ALVA.BCINTDOP.formBCINTDOPMain", "79001", 1, "", 0, "", 0, "BC Intenzita provozu")
-		d ..AddExe("Přestupy", "BCNAVAZN.exe", "ALVA.BCNAVAZN.formBCNAVAZNMain", "98001", 1, "", 0, "", 0, "BC Přestupy")
-		d ..AddFamily("OPTIM1", 0, "19", 1, 0)
-			d ..AddExe("Optimalizace", "BCOPTIM1.exe", "ALVA.BCOPTIM1.formBCOPTIM1Main", "60001", 1, "", 0, "", 0)
-			d ..AddExe("Statistické výstupy", "BCOPTIM1.exe", "ALVA.BCOPTIM1.formBCOPTIM1StatVyst", "60006", 1, "", 0, "", 0)
-		d ..AddFamilyEnd()
-		d ..AddExe("Standard", "BCSTANDARD.exe", "ALVA.BCSTANDARD.formBCSTANDARDMain", "59001", 1, "", 0, "", 0, "BC Standard")
-		d ..AddFamily("Výběrová řízení", 0, "26", 1, 0)
-			d ..AddExe("Výběrová řízení", "EVIDENCEVYBEROVYCHRIZENI.exe", "ALVA.EVIDENCEVYBEROVYCHRIZENI.formEVIDENCEVYBEROVYCHRIZENIVyberoveRizeniList", "77001", 1, "", 0, "", 0)
-			d ..AddExe("Zadávací dokumentace", "BCVRDOC.exe", "ALVA.BCVRDOC.formBCVRDOCMain", "86001", 1, "", 0, "", 0)
-		d ..AddFamilyEnd()
-	d ..AddFamilyEnd()
 }
 
 }
