@@ -1,5 +1,21 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B153` Příkaz „Použít výchozí font u všech prvků" (hotovo 14. 9. 2026)
+
+Nález Jan 14. 9. Prvek s vlastním fontem přebíjí výchozí font dokumentu, takže v šabloně, kde ho má
+font každý prvek u sebe, volba „Výchozí font" nic nedělá. Tak vznikaly šablony do 30. 6. 2026 -
+tehdy ho každý nový prvek dostal natvrdo - a mají ho i jejich kopie.
+
+Nová položka v nabídce **Upravit**. Mění se **jen rodina písma**; velikost, tučnost ani barvy ne -
+výchozí styl dokumentu je sice taky umí, ale v UI se nenabízejí, takže by je uživatel nečekaně
+ztratil. Vratné přes Ctrl+Z, proto bez potvrzování; stavový řádek hlásí počet.
+
+⚠️ **Místa, kde font sedí, se hledají reflexí, ne výčtem** - je i ve stylech jednotlivých sloupců
+a buněk. Ručně psaný seznam by při přidání dalšího stylu tiše zastaral a příkaz by část fontů nechal
+být. Hlídá to test se stylem zanořeným ve sloupci, ověřený mutací.
+
+Dodávané šablony jsou uklizené zvlášť, viz `changelog.md` 14. 9. (8).
+
 ## `B127` Dělená linka (hotovo 14. 9. 2026)
 
 Podnět Jan 7. 9., pohltilo dřívější `B100`. Vypadalo to na tři chybějící volby u linky, kterých

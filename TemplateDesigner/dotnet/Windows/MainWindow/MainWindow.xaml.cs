@@ -1384,6 +1384,7 @@ public partial class MainWindow : Window
     private void MenuNormalizePositions_Click(object sender, RoutedEventArgs e) => OpenNormalizePositionsDialog();
     private void MenuCopyStyle_Click(object sender, RoutedEventArgs e)          => _vm?.CopyStyle();
     private void MenuPasteStyle_Click(object sender, RoutedEventArgs e)         => _vm?.PasteStyle();
+    private void MenuPrevzitVychoziFont_Click(object sender, RoutedEventArgs e) => _vm?.PrevzitVychoziFont();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Add section / element menus

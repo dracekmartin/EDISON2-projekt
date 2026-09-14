@@ -120,14 +120,6 @@ takže nejde o práci, ale o doklad.
   rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
   Vytáhnout, až to někdo bude chtít.
 
-- **`B153` Příkaz „Použít výchozí font u všech prvků"** [S] (nález Jan 14. 9.). Šablona, která má
-  font zapsaný u prvků, na změnu výchozího fontu nereaguje - hodnota u prvku ho přebíjí. Dodávané
-  šablony jsou od 14. 9. uklizené (`SystemTemplateFontyTests` to hlídá), ale **šablony vzniklé kopií
-  před tím datem** mají zapečeno dál a nikdo je za zákazníka neuklidí. Příkaz vyprázdní font na
-  prvcích, aby ho zdědily; musí posbírat všechna místa (styl prvku, záhlaví, buňky, sloupce) a být
-  vratný. ⚠️ **Odloženo** (Jan 14. 9.): ve vývojové firmě jsou to testovací šablony a nová kopie už
-  je čistá. Vytáhnout, až někomu výchozí font nepůjde změnit.
-
 - **`B152` Spoje se na části dělí rovnoměrně** [S] (vytaženo 14. 9. z analýzy, kde to viselo jen jako
   poznámka). Osa **šířky**: když se sloupce spojů nevejdou, starý tisk spočítá počet částí a rozdělí
   spoje rovným dílem (`JRapiLinPrtPS.mac:492`), takže jsou části stejně široké. My plníme bloky do

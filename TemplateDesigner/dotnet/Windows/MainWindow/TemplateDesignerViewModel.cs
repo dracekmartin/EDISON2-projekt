@@ -2098,6 +2098,27 @@ public class TemplateDesignerViewModel : EDViewModel
         State.StyleClipboard = new StyleClipboard(textStyle, el.BorderColor, el.BorderWidth, el.BackgroundColor);
     }
 
+    /// <summary>
+    /// Smaže font nastavený u jednotlivých prvků, aby převzaly výchozí font dokumentu (`B153`).
+    /// </summary>
+    /// <remarks>
+    /// Šablony založené do 30. 6. 2026 - a jejich kopie - mají font zapsaný u každého prvku, takže
+    /// v nich volba „Výchozí font" nic nedělá. Tohle je jediná cesta, jak je narovnat; dodávané
+    /// šablony jsou uklizené od 14. 9. Vratné přes Ctrl+Z, proto se na nic neptá.
+    /// </remarks>
+    public void PrevzitVychoziFont()
+    {
+        var prvky = State.CurrentTemplate.Sections.SelectMany(s => s.Elements).ToList();
+        var prikaz = new PrevzitVychoziFontCommand(prvky);
+        Execute(prikaz);
+
+        StatusText = prikaz.PocetZmenenych == 0
+            ? "Žádný prvek neměl vlastní font - výchozí font dokumentu platí všude."
+            : $"Výchozí font dokumentu převzalo {prikaz.PocetZmenenych}× nastavení u prvků.";
+        RebuildSections();
+        InvalidateAll();
+    }
+
     public void PasteStyle()
     {
         var clip = State.StyleClipboard;

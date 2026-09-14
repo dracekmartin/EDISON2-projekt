@@ -196,6 +196,12 @@
                 <Separator/>
                 <MenuItem Header="Kopírovat styl"  InputGestureText="Ctrl+Shift+C" Click="MenuCopyStyle_Click"/>
                 <MenuItem Header="Vložit styl"     InputGestureText="Ctrl+Shift+V" Click="MenuPasteStyle_Click"/>
+                <Separator/>
+                <!-- Prvek s vlastním fontem přebíjí výchozí font dokumentu, takže v šabloně, kde ho
+                     má každý prvek u sebe, volba „Výchozí font" nic nedělá. Tohle ho u prvků smaže. -->
+                <MenuItem Header="Použít výchozí font u všech prvků"
+                          ToolTip="Smaže font nastavený u jednotlivých prvků, aby převzaly výchozí font dokumentu"
+                          Click="MenuPrevzitVychoziFont_Click"/>
             </MenuItem>
             <MenuItem Header="Zobrazit">
                 <MenuItem x:Name="MenuGrid" Header="Mřížka" IsCheckable="True"

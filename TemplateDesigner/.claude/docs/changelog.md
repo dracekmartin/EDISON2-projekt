@@ -1,5 +1,24 @@
 ﻿# Changelog
 
+## 2026-09-14 (10) - 🔤 příkaz, kterým šablona převezme výchozí font
+
+`B153`. V nabídce **Upravit** přibyla položka **„Použít výchozí font u všech prvků"**. Smaže font
+zapsaný u jednotlivých prvků, takže se všude propíše výchozí font dokumentu a jeho změna začne
+fungovat.
+
+Je to pro šablony, které vznikly do 30. 6. - tehdy každý nový prvek dostal font natvrdo - a pro
+jejich kopie. Dodávané šablony jsou uklizené od 14. 9. (záznam 8), ale co si zákazník nakreslil
+sám, za něj nikdo neuklidí.
+
+**Mění se jen rodina písma.** Velikost, tučnost ani barvy zůstávají: výchozí styl dokumentu je sice
+taky umí, ale v UI se nenabízejí, takže by je uživatel nečekaně ztratil.
+
+Vratné přes Ctrl+Z, proto se na nic neptá; stavový řádek řekne, kolika nastavení se to týkalo.
+
+⚠️ Místa, kde font sedí, se **hledají reflexí**, ne výčtem - je i ve stylech jednotlivých sloupců
+a buněk. Ručně psaný seznam by při přidání dalšího stylu tiše zastaral a příkaz by část fontů nechal
+být. Hlídá to test se stylem zanořeným ve sloupci.
+
 ## 2026-09-14 (9) - 📋 legenda poznámek na každé stránce nese jen to, co na ni patří
 
 `B127`. Když se tabulka linky rozdělí do šířky na části a uživatel si nechal poznámky tisknout na
