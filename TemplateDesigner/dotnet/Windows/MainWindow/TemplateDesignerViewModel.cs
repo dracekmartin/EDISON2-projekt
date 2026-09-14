@@ -1663,15 +1663,20 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>
     /// Pokud byla aktuální šablona při loadu auto-migrována (Template.WasMigrated=true),
-    /// zobrazí warning ve status baru. Uložením se přepíše stará verze v souboru/Caché.
+    /// zobrazí hlášku ve stavovém řádku. Uložením se přepíše stará verze v souboru/Caché.
     /// </summary>
+    /// <remarks>
+    /// ⚠️ **Migrace NEZNAMENÁ neuloženou změnu** (rozhodnutí Jan 14. 9.). Do té doby se tu
+    /// nastavovalo `IsDirty = true`, aby se nový formát propsal - jenže migruje se skoro každá
+    /// šablona (formát je `1.12.0`, běžně uložené jsou starší), takže se uživatele po pouhém
+    /// otevření ptalo na uložení změn, které neudělal. Na takovou otázku nejde odpovědět správně
+    /// a naučí to lidi proklikávat dialogy. Migrace je idempotentní a pouští se při každém načtení,
+    /// takže se nic neztratí: nový formát se zapíše, až šablonu uživatel opravdu upraví a uloží.
+    /// </remarks>
     private void NotifyMigrationIfNeeded()
     {
         if (State.CurrentTemplate.WasMigrated)
-        {
             StatusText = $"⚠ Šablona migrována na nový formát (V{State.CurrentTemplate.Version}). Uložením přepíšete starou verzi.";
-            IsDirty = true; // user musí explicitně uložit, aby se nová verze propsala
-        }
     }
 
     /// <summary>Aplikuje grid/snap nastavení uložené v šabloně. Null hodnoty → ponechat aktuální.</summary>

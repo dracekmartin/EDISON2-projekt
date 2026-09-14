@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-09-14 (7) - 💾 otevření šablony se už neptá na uložení změn, které nikdo neudělal
+
+Nález Jan 14. 9.: otevře šablonu, hned otevře jinou a aplikace se ptá, jestli uložit změny -
+přestože jen listoval.
+
+Na vině byla **automatická migrace**. Šablona se při načtení povýší na aktuální formát a to se
+dosud počítalo jako neuložená změna, aby se nový formát propsal do databáze. Jenže formát je dnes
+`1.12.0` a běžně uložené šablony jsou starší, takže se migruje skoro každá - a otázka přišla po
+každém otevření. Odpovědět na ni správně nejde a naučí to lidi proklikávat dialogy.
+
+Nově migrace neuloženou změnu nedělá. Hláška ve stavovém řádku zůstává, takže je pořád vidět, že
+se formát povýšil. Migrace je idempotentní a pouští se při každém načtení, takže se nic neztratí -
+nový formát se do databáze zapíše, až šablonu někdo opravdu upraví a uloží.
+
 ## 2026-09-14 (6) - 🚌 vybraná linka přežije změnu šablony
 
 Hlásil Jan 14. 9.: vybere si linku, otevře jinou šablonu a výběr je pryč - musí ji klikat znovu.
