@@ -959,6 +959,72 @@ ClassMethod KdeToZkouset(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Linky s **nejvíc spoji** v každé firmě - podklad pro ruční zkoušku dělení tabulky do šířky.
+/// Bez ohledu na nastavení u linky: hledá se prostě to, co se do šířky nevejde.
+/// IN["kolik"] = kolik linek na firmu (výchozí 5), IN["FIRMY"] = vlastní seznam firem.
+ClassMethod NejvicSpoju(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set kolik = +$get(^||ML("IN", "kolik"))
+		set:kolik<1 kolik = 5
+		set firmy = $get(^||ML("IN", "FIRMY"))
+		set:firmy="" firmy = ..#FIRMY
+		kill top
+
+		for fi = 1:1:$length(firmy, ",") {
+			set firma = $zstrip($piece(firmy, ",", fi), "<>W")
+			continue:'##class(%SYS.Namespace).Exists(firma)
+			set s1 = ""
+			for  {
+				set s1 = $order(^[firma]JRL(s1))
+				quit:s1=""
+				continue:'$isvalidnum(s1)
+				set l1 = ""
+				for  {
+					set l1 = $order(^[firma]JRL(s1, l1))
+					quit:l1=""
+					continue:'$data(^[firma]JRL(s1, l1, "I"))
+					set spoju = ..PocetSpoju(firma, s1, l1, "T") + ..PocetSpoju(firma, s1, l1, "Z")
+					continue:spoju<20
+					set top(firma, spoju, s1, l1) = ""
+				}
+			}
+		}
+
+		set firma = ""
+		for  {
+			set firma = $order(top(firma))
+			quit:firma=""
+			set spoju = "", vypsano = 0
+			for  {
+				set spoju = $order(top(firma, spoju), -1)
+				quit:spoju=""
+				quit:vypsano'<kolik
+				set s1 = ""
+				for  {
+					set s1 = $order(top(firma, spoju, s1))
+					quit:s1=""
+					quit:vypsano'<kolik
+					set l1 = ""
+					for  {
+						set l1 = $order(top(firma, spoju, s1, l1))
+						quit:l1=""
+						quit:vypsano'<kolik
+						set vypsano = vypsano + 1
+						set ^||ML("OUT", $increment(^||ML("OUT"))) =
+							firma_"  sku="_s1_" linka="_l1_": "_spoju_" spojů, "
+							_..PocetZastavek(firma, s1, l1)_" zastávek"
+					}
+				}
+			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Najde linku s **ručně nastaveným pořadím spojů**. `platne` = 1 hledá pořadí, které projde
 /// kontrolou (a tedy se použije), 0 hledá rozbité (spoj v datech chybí v pořadí nebo naopak) -
 /// tam se musí pořadí spočítat. Ručně nastavené je na 4 409 linkách z měřených firem.
