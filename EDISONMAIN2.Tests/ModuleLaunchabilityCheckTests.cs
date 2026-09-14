@@ -12,6 +12,22 @@ public class ModuleLaunchabilityCheckTests
     // Existující soubor v AppContext.BaseDirectory (testovací dll) - ResolveExecutablePath ho najde.
     private static string ExistingExeName => Path.GetFileName(typeof(ModuleLaunchabilityCheckTests).Assembly.Location);
 
+    /// <summary>
+    /// Barvy stavů se musejí lišit - jinak by asserty níž prošly i s obojím obarveným stejně.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Konkrétní odstín se tady **nepíše**. Bere se z theme, a jestli je slovník v běhu testů
+    /// mergnutý, rozhoduje to, co ještě běží ve stejném procesu (aplikaci s theme může založit
+    /// kterýkoli jiný test, kolekce jdou souběžně). Literál v assertu proto padal obden.
+    /// </remarks>
+    [Fact]
+    public void BarvyStavuSeLisi()
+    {
+        Assert.NotEqual(ModuleLaunchabilityCheck.StubColor, ModuleLaunchabilityCheck.BrokenColor);
+        Assert.StartsWith("#", ModuleLaunchabilityCheck.StubColor);
+        Assert.StartsWith("#", ModuleLaunchabilityCheck.BrokenColor);
+    }
+
     [Fact]
     public void ExistingExe_IsLaunchable_NoColorNoSuffix()
     {
@@ -31,7 +47,7 @@ public class ModuleLaunchabilityCheckTests
 
         var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
 
-        Assert.Equal("#FFA500", marked.Color);
+        Assert.Equal(ModuleLaunchabilityCheck.StubColor, marked.Color);
         Assert.EndsWith(" - stub", marked.DisplayedName);
     }
 
@@ -42,7 +58,7 @@ public class ModuleLaunchabilityCheckTests
 
         var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
 
-        Assert.Equal("#FF0000", marked.Color);
+        Assert.Equal(ModuleLaunchabilityCheck.BrokenColor, marked.Color);
         Assert.EndsWith(" - chybí exe", marked.DisplayedName);
     }
 
@@ -66,10 +82,10 @@ public class ModuleLaunchabilityCheckTests
 
         var markedGp = (ModuleFamily)ModuleLaunchabilityCheck.Mark(grandparent);
 
-        Assert.Equal("#FF0000", markedGp.Color);
+        Assert.Equal(ModuleLaunchabilityCheck.BrokenColor, markedGp.Color);
         Assert.Equal("GP - rozbité", markedGp.DisplayedName);
         var markedParent = Assert.IsType<ModuleFamily>(Assert.Single(markedGp.NestedModules));
-        Assert.Equal("#FF0000", markedParent.Color);
+        Assert.Equal(ModuleLaunchabilityCheck.BrokenColor, markedParent.Color);
         Assert.Equal("P - rozbité", markedParent.DisplayedName);
     }
 
@@ -95,7 +111,7 @@ public class ModuleLaunchabilityCheckTests
 
         var marked = (ModuleFamily)ModuleLaunchabilityCheck.Mark(family);
 
-        Assert.Equal("#FFA500", marked.Color);
+        Assert.Equal(ModuleLaunchabilityCheck.StubColor, marked.Color);
         Assert.Equal("F - stuby", marked.DisplayedName);
     }
 
