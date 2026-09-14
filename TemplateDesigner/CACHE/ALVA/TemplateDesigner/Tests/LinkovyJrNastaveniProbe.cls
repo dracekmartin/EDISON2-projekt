@@ -641,6 +641,71 @@ ClassMethod DelenaLinkaPriklady(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Jako `DelenaLinkaPriklady`, ale **po firmách** - hledá se linka, kterou jde otevřít i v návrháři.
+/// Globální nejlepší příklady vycházejí na `VS_CSAD`, kterou přepínač firem nenabízí, takže na nich
+/// jde porovnat jen starý tisk.
+/// IN["klic"] = ONEPAG / Hlava&pozN / Smer_1_stranA (prázdné = Hlava&pozN)
+ClassMethod DelenaLinkaPrikladyPerFirma(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set klic = $get(^||ML("IN", "klic"))
+        set:klic="" klic = "Hlava&pozN"
+        kill nejlepsi, nejvicSpoju, pocty
+
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set firma = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(firma)
+            set s1 = ""
+            for  {
+                set s1 = $order(^[firma]JRL(s1))
+                quit:s1=""
+                continue:'$isvalidnum(s1)
+                set l1 = ""
+                for  {
+                    set l1 = $order(^[firma]JRL(s1, l1))
+                    quit:l1=""
+                    continue:'$data(^[firma]JRL(s1, l1, "I"))
+
+                    set hod = $select(klic = "ONEPAG": +$data(^[firma]JRL(s1, l1, "PATCH", klic)),
+                                      1: +$get(^[firma]JRL(s1, l1, "PATCH", klic)))
+                    continue:'hod                       // nula = nenastaveno, ta nás nezajímá
+
+                    set spoju = 0
+                    for smer = "T", "Z" {
+                        set sp = ""
+                        for  {
+                            set sp = $order(^[firma]JRL(s1, l1, smer, sp))
+                            quit:sp=""
+                            set:$isvalidnum(sp) spoju = spoju + 1
+                        }
+                    }
+                    set pocty(firma, hod) = $get(pocty(firma, hod)) + 1
+                    continue:spoju'>+$get(nejvicSpoju(firma, hod))
+                    set nejvicSpoju(firma, hod) = spoju
+                    set nejlepsi(firma, hod) = s1_" / "_l1_" ("_spoju_" spojů)"
+                }
+            }
+        }
+
+        set firma = ""
+        for  {
+            set firma = $order(pocty(firma))
+            quit:firma=""
+            set hod = ""
+            for  {
+                set hod = $order(pocty(firma, hod))
+                quit:hod=""
+                set ^||ML("OUT", $increment(^||ML("OUT"))) =
+                    firma_"  "_klic_" = "_hod_": "_pocty(firma, hod)_" linek, nejvíc spojů: "_$get(nejlepsi(firma, hod))
+            }
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše ke každému atributu spoje jednu linku, kde se vyskytuje - podklad pro rozšíření sady.
 ClassMethod AtributyLinky(ByRef sys As %String) As %Status
 {
