@@ -1394,8 +1394,10 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     private void ReplaceWithBlankTemplate(string? agendaCode, Action<Template>? configure = null)
     {
+        string? puvodniAgenda = State.CurrentTemplate.AgendaCode;
         var t = new Template();
         if (agendaCode is not null) t.AgendaCode = agendaCode;
+        bool zmenaAgendy = !string.Equals(puvodniAgenda, t.AgendaCode, StringComparison.OrdinalIgnoreCase);
         // Volitelná konfigurace před přidáním výchozí sekce (např. převzetí velikosti/okrajů
         // stránky při resetu z editoru vlastností stránky) - sekce se přidá až s finální PageSize.
         configure?.Invoke(t);
@@ -1406,8 +1408,9 @@ public class TemplateDesignerViewModel : EDViewModel
         CurrentFilePath = null;
         _loadedFromCache = false;
         IsDirty = false;
-        // Aktivní instance jsou agenda-specifické - při změně agendy ztrácí smysl.
-        ClearActiveInstances();
+        // Aktivní instance jsou agenda-specifické - při změně agendy ztrácí smysl. Uvnitř téže
+        // agendy ale zůstávají: po Ctrl+N nemá uživatel důvod vybírat tutéž linku znovu.
+        if (zmenaAgendy) ClearActiveInstances();
         State.SelectedElements.Clear();
         State.UndoStack.Clear();
         State.RedoStack.Clear();
@@ -1631,13 +1634,24 @@ public class TemplateDesignerViewModel : EDViewModel
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode)) return;
 
+        // ⚠️ Co má uživatel právě vybrané, přebíjí uložené linky šablony. Bez toho mu přepnutí
+        // šablony v téže agendě shodilo výběr, který si před chvílí udělal, a musel ho klikat znovu
+        // (nahlásil Jan 14. 9.). Uložené linky se tak uplatní tam, kde k něčemu jsou - když
+        // uživatel žádnou vybranou nemá.
+        if (_activeInstances.Count > 0) return;
+
         var savedIds = await Preferences.LoadInstanceDefaultsAsync(State.CurrentTemplate.Id);
         if (savedIds.Count == 0) return;
 
         try
         {
             var available = await Task.Run(() => CacheProvider.GetAvailableInstances(agendaCode!, null));
-            _activeInstances = available.Where(i => savedIds.Contains(i.Value)).ToList();
+            var nalezene = available.Where(i => savedIds.Contains(i.Value)).ToList();
+            // Dohledává se jen v prvních 50 linkách výchozí skupiny (`CacheAgendaProvider`), takže
+            // uložená linka se najít nemusí. To není důvod výběr mazat - radši ho nechat být.
+            if (nalezene.Count == 0) return;
+
+            _activeInstances = nalezene;
             _activeInstanceIndex = 0;
             OnActiveInstancesChanged(reloadData: true);
         }

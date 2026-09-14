@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-09-14 (6) - 🚌 vybraná linka přežije změnu šablony
+
+Hlásil Jan 14. 9.: vybere si linku, otevře jinou šablonu a výběr je pryč - musí ji klikat znovu.
+Nově zůstává, dokud se nemění agenda.
+
+Byly to dvě různé cesty. **Při otevření šablony** se uplatnily linky uložené u té šablony a přebily
+to, co měl uživatel vybrané. Navíc se dohledávaly jen v prvních padesáti linkách výchozí skupiny,
+takže u linky mimo ten výřez dohledání selhalo a výběr skončil prázdný. Odtud i dojem
+nepředvídatelnosti: u šablony bez uložených linek výběr naopak přežil. Nově má přednost to, co je
+vybrané teď; uložené linky šablony se uplatní, jen když vybraného není nic.
+
+**Po Ctrl+N** se výběr rušil vždycky, i když nová šablona zůstávala ve stejné agendě. Nově se ruší
+jen při skutečné změně agendy - tam čísla linek neplatí.
+
+Je to regrese z 16. 6., kdy linka přestala být parametrem sestavy (persistovaným per agenda) a stala
+se stavem per šablonu.
+
 ## 2026-09-14 (5) - 🔍 tabulka se radši zmenší, než by přidala stránku
 
 `B151`, rozhodnutí Jan 14. 9. Když linkové tabulce chybí do stránky málo, vytiskne se o něco
