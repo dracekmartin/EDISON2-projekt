@@ -247,13 +247,16 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         // Multi-page: jedna stránka per zastávka × směr (Tam + Zpět). Aktuální zastávka =
         // ze které se počítají odjezdy; StopList ukazuje úsek od ní ve směru jízdy.
-        f smer = "T", "Z" {
-            s poradi = ""
-            f {
-                s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi))
-                q:poradi=""
-                i '$isvalidnum(poradi) continue
-                i $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1) = "" continue   // bod bez zastávky
+        // ⚠️ Vnější smyčka je ZASTÁVKA, vnitřní SMĚR - obě vývěsky téže zastávky musí jít v PDF
+        // za sebou, aby se daly vytisknout a pověsit na oba označníky jedním výjezdem. Tak to dělá
+        // i starý tisk (`JRapiLinPrtMhd1.mac:397-398`, Tc vnější, Smer vnitřní).
+        s poradi = ""
+        f {
+            s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi))
+            q:poradi=""
+            i '$isvalidnum(poradi) continue
+            i $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1) = "" continue   // bod bez zastávky
+            f smer = "T", "Z" {
                 // Rozdělení per označník: jen když je zapnuté a vývěska má >1 označník obsluhovaný spoji.
                 if rozdelitOzn {
                     s csvOzn = ..NastupisteSpoju(dataDB, sku, lin, smer, poradi, zdrojSt)

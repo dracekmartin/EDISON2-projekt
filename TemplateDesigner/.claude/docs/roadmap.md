@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** nic akčního - § Zastávkové JŘ čeká na odpověď zákazníka a § Linkové
-> a knižní JŘ celá na odpověď zvenku. Vezmi položku z Backlogu.
+> **Nejblíž na řadě:** nic akčního - § Zastávkové JŘ je uzavřená a § Linkové a knižní JŘ čeká
+> celá na odpověď zvenku. Vezmi položku z Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
 > ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`). Z hovoru 11. 9.
 > platí jen to, co stojí níž v § Zastávkové JŘ.
@@ -14,17 +14,9 @@
 
 ## 🚏 Zastávkové JŘ
 
-Požadavky z hovoru s TRANSDEV 11. 9. jsou hotové (`B141`-`B143`, `B145`, `B147`, `B148`), viz
+Požadavky z hovoru s TRANSDEV 11. 9. jsou hotové (`B141`-`B143`, `B145`, `B147`-`B149`), viz
 [`roadmap-archive.md`](roadmap-archive.md). `B144` odložený v Backlogu, `B146` zrušený jako
-nezadání.
-
-- **`B149` Pořadí stránek v exportu všech zastávek** [S] (TRANSDEV 11. 9.).
-  **Čeká na odpověď zákazníka, neřešit dřív.** Popsal to jako obrácené pořadí („1234554321"),
-  ale nic se neobrací (dohledáno 11. 9. přes celý řetěz od serveru po PDF). Rozdíl proti starému
-  tisku je jiný: **my řadíme po směrech** (celý Tam vzestupně, pak celý Zpět), **staré po
-  zastávkách** a u každé oba směry (`JRapiLinPrtMhd1.mac` ř. 397-398: `Tc` vnější, `Smer` vnitřní).
-  Zeptat se, jestli mu jde o tohle - pro vyvěšování dává legacy pořadí smysl, obě vývěsky jedné
-  zastávky jdou v PDF za sebou. ⚠️ Změna pořadí přepíše zlaté odtisky AD (vědomé re-baseline).
+nezadání. **Nic otevřeného.**
 
 ---
 

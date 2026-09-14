@@ -1,5 +1,30 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B149` Pořadí stránek v exportu všech zastávek (hotovo 14. 9. 2026)
+
+Hlásil TRANSDEV 11. 9. jako „1234554321". Dohledáno z jeho exportu: nešlo o obrácené pořadí, ale
+o **polohu vývěskové zastávky v seznamu**. Tiskli jsme celý směr Tam po zastávkách a za ním celý
+směr Zpět; ve zpátečním směru je seznam otočený, takže zvýrazněný řádek běžel dolů a pak zpátky
+nahoru. Vidět to bylo proto, že měl zapnuté tisknutí projetých zastávek (výchozí vypnuto) a na
+každé straně tak byla celá trasa.
+
+Opraveno na legacy pořadí: **vnější smyčka je zastávka, vnitřní směr**, tedy obě vývěsky téže
+zastávky jdou v PDF za sebou. Doloženo zdrojem starého tisku `JRapiLinPrtMhd1.mac:397-398`
+(`Tc` vnější, `Smer` vnitřní) - routina se jmenuje „Mhd", ale čte `^JR`, takže je to protějšek
+naší AD agendy. Ověřeno voláním `GetData` na `0330567`: `T1 T2 Z2 T3 Z3 T4 Z4 Z5`.
+
+Proč tak legacy: zastávka je fyzické místo se dvěma označníky. Když jdou obě vývěsky za sebou,
+vytisknou se a pověsí jedním výjezdem.
+
+Srovnané i u městských linek (`ZastavkoveJrMhd.SestavitStranky`), aby se tisk nechoval ve dvou
+agendách různě. Ověřeno voláním na `CB_DP` lince 1003.
+
+⚠️ Zlaté odtisky AD i MHD přebaselinované (6 linek) - **změnil se jen md5**, počty stránek,
+zastávek, odjezdů i poznámek zůstaly shodné do jednoho. To je zároveň doklad, že se změnilo
+jen pořadí.
+
+Bez nastavení, tohle je jediné chování.
+
 ## `B142` Slučování variant, které jsou podmnožinou jiné (hotovo 11. 9. 2026)
 
 Požadavek TRANSDEV z hovoru 11. 9. Parametr sestavy ve skupině Seznam zastávek, **výchozí vypnuto**.

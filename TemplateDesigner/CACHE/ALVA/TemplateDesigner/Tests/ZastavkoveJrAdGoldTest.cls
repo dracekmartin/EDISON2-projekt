@@ -91,7 +91,11 @@ Method TestGold0365001()
 	// neztratil žádný spoj ani řádek; změnila se jen písmena od TŘETÍ varianty výš („A" zůstává).
 	// Ověřeno izolovaně: s výchozí sadou vrácenou na „ABCDEFGHIJKLMNOPQRSTUVWXYZ" projdou všechny
 	// tři odtisky beze změny, takže rozdíl nepochází odjinud než z té sady.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=ASDvu+CXx3P00HUhqvRh+Q==")
+	// Re-baseline 2026-09-14: stránky jdou po zastávkách a u každé oba směry za sebou, ne celý
+	// směr Tam a za ním celý Zpět (1:1 legacy `JRapiLinPrtMhd1.mac:397-398`). ⚠️ **Mění se jen md5**,
+	// počty pages/zast/odj/pozn jsou shodné do jednoho - to je zároveň doklad, že se změnilo
+	// pořadí stránek a nic jiného.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=kG76TYmklbZqWFDHCLylbA==")
 }
 
 Method TestGold0365005()
@@ -128,7 +132,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-09-01 (#13158): rozložená pole dopravce + kolekce DOPRAVCI, viz gold 0365001.
 	// Re-baseline 2026-09-03 (`B113`): disjunktní sada písmen variant - viz vysvětlení u gold 0365001.
 	// Počty shodné do jednoho, ověřeno izolovaně vrácením sady na abecedu.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=TMs4QoRMm/AJ7l9eFFLNsQ==")
+	// Re-baseline 2026-09-14: pořadí stránek po zastávkách - viz vysvětlení u gold 0365001. Jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=N9Adm+nGIvZTemnbLMSKQQ==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -209,7 +214,8 @@ Method TestGold0330530()
 	// Re-baseline 2026-09-01 (#13158): rozložená pole dopravce + kolekce DOPRAVCI, viz gold 0365001.
 	// Re-baseline 2026-09-03 (`B113`): disjunktní sada písmen variant - viz vysvětlení u gold 0365001.
 	// Počty shodné do jednoho, ověřeno izolovaně vrácením sady na abecedu.
-	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=laGqWYch6GJwyM369xhRwA==")
+	// Re-baseline 2026-09-14: pořadí stránek po zastávkách - viz vysvětlení u gold 0365001. Jen md5.
+	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=UpDfkPt0LQOCcuAFCHcITA==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

@@ -1003,52 +1003,40 @@ ClassMethod SestavitStranky(ByRef sys As %String)
 {
     $$$FillParams
     s LinkaID = $g(^||TiskMHD("config","LinkaID"))
-    s AutoPoznamkyRozdilTrasy = $g(^||TiskMHD("config","AutoPoznamkyRozdilTrasy"))
-    s AutoPoznamkyRozdilTrasyAlgoritmus = $g(^||TiskMHD("config","AutoPoznamkyRozdilTrasyAlgoritmus"))
 
-    // Explicitní pořadí: nejdřív Tam (0), pak Zpět (1)
+    // Počet obsluhovaných zastávek je údaj celého směru, ale stránky se emitují prokládaně
+    // po zastávkách - musí se proto spočítat dopředu, než se začne tisknout.
+    k pocetZastavek, vsechnyBody
     f SmerID = 0,1 {
+        s pocetZastavek(SmerID) = 0
         i '$d(^||TiskMHD("trasa",SmerID)) continue
-
-        s smerPopis = $s(SmerID=0:"T", 1:"Z")
-
-        // Sesbírat BodID v pořadí jízdy (Tam=vzestupně, Zpět=sestupně)
-        // a uložit do pole pro konzistentní iteraci
-        k orderedBods s orderedBodCnt = 0
         s BodID = ""
         f {
             s BodID = $o(^||TiskMHD("trasa",SmerID,BodID)) q:BodID=""
-            i BodID = "slouceni" continue
-            i 'BodID continue
-            s orderedBodCnt = orderedBodCnt + 1
-            s orderedBods(orderedBodCnt) = BodID
-        }
-        // Pro směr Zpět obrátit pořadí
-        i SmerID = 1 {
-            k reversedBods
-            f i = 1:1:orderedBodCnt s reversedBods(i) = orderedBods(orderedBodCnt - i + 1)
-            k orderedBods m orderedBods = reversedBods
-        }
-
-        // Zjistit počet obsluhovaných zastávek
-        s pocetZastavek = 0
-        f i = 1:1:orderedBodCnt {
-            s BodID = orderedBods(i)
+            i 'BodID continue           // pomocné subscripty (slouceni, slouceniInv, netisknout)
+            s vsechnyBody(BodID) = ""
             i '$d(^||TiskMHD("odjezdy",SmerID,BodID)) continue
             s ObsluhaBitmap = $g(^||TiskMHD("obsluha",SmerID,BodID))
             i '$e(ObsluhaBitmap, BodID) continue
-            s pocetZastavek = pocetZastavek + 1
+            s pocetZastavek(SmerID) = pocetZastavek(SmerID) + 1
         }
+    }
 
-        // Iterace zastávek → stránky (v pořadí jízdy)
-        f i = 1:1:orderedBodCnt {
-            s aktualniZastBodID = orderedBods(i)
+    // ⚠️ Vnější smyčka je ZASTÁVKA (bod trasy vzestupně = pořadí ve směru Tam), vnitřní SMĚR -
+    // obě vývěsky téže zastávky musí jít v PDF za sebou, aby se daly vytisknout a pověsit na oba
+    // označníky jedním výjezdem. Tak to dělá starý tisk (`JRapiLinPrtMhd1.mac:397-398`, Tc vnější,
+    // Smer vnitřní) i zastávkový JŘ z AD dat.
+    s BodID = ""
+    f {
+        s BodID = $o(vsechnyBody(BodID)) q:BodID=""
+        f SmerID = 0,1 {
+            i '$d(^||TiskMHD("trasa",SmerID,BodID)) continue
             // Zastávka nemá odjezdy → přeskočit
-            i '$d(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID)) continue
-            s ObsluhaBitmap = $g(^||TiskMHD("obsluha",SmerID,aktualniZastBodID))
-            i '$e(ObsluhaBitmap, aktualniZastBodID) continue
+            i '$d(^||TiskMHD("odjezdy",SmerID,BodID)) continue
+            s ObsluhaBitmap = $g(^||TiskMHD("obsluha",SmerID,BodID))
+            i '$e(ObsluhaBitmap, BodID) continue
 
-            s page = ..SestavitJednuStranku(.sys, SmerID, aktualniZastBodID, pocetZastavek)
+            s page = ..SestavitJednuStranku(.sys, SmerID, BodID, pocetZastavek(SmerID))
             s ^||ML("OUT",$i(^||ML("OUT"))) = page.%ToJSON()
         }
     }

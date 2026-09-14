@@ -25,19 +25,25 @@ Method TestGold1001()
 	// s adresou a telefonem po řádcích (shodně s AD vývěskou); POPIS_SMER přejmenováno na
 	// KONECNA_ZASTAVKA. Obojí mění **jen md5** - počty stránek, zastávek, odjezdů i poznámek
 	// zůstaly shodné, tedy změněný obsah pole a přejmenování, ne změna chování.
-	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=KGK+F3O4Z7pULJmrSj4A4A==")
+	// Re-baseline 2026-09-14: stránky jdou po zastávkách a u každé oba směry za sebou, ne celý
+	// směr Tam a za ním celý Zpět (shodně s AD vývěskou a se starým tiskem). ⚠️ **Mění se jen
+	// md5**, počty pages/zast/odj/pozn jsou shodné do jednoho - doklad, že se změnilo pořadí
+	// stránek a nic jiného.
+	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=Op1FfKluvtPGKJE0fa3rNQ==")
 }
 
 Method TestGold1003()
 {
 	// Re-baseline 2026-08-31 (#13158) - viz gold 1001. Jen md5, počty beze změny.
-	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=cV8udnnx+Otqcdv+f7IyeQ==")
+	// Re-baseline 2026-09-14: pořadí stránek po zastávkách - viz gold 1001. Jen md5.
+	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=VJ7wsEA+ui0Du/jHED/8DA==")
 }
 
 Method TestGold1006()
 {
 	// Re-baseline 2026-08-31 (#13158) - viz gold 1001. Jen md5, počty beze změny.
-	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=3sqsoCXQPZ3C4swYVfJypw==")
+	// Re-baseline 2026-09-14: pořadí stránek po zastávkách - viz gold 1001. Jen md5.
+	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=lFm3A6MSDzn+Qjw3lT++oA==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

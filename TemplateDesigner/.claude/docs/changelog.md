@@ -1,5 +1,34 @@
 ﻿# Changelog
 
+## 2026-09-14 (1) - 🚏 vývěsky jdou po zastávkách, u každé oba směry za sebou
+
+`B149`, hlásil TRANSDEV 11. 9. jako „1234554321". Export všech zastávek dával nejdřív celý směr
+Tam po zastávkách a za ním celý směr Zpět. Nově se linka projde jednou a u každé zastávky se
+vytisknou obě její vývěsky za sebou.
+
+**Co to znamená pro uživatele:** zastávka je fyzické místo se dvěma označníky. Když jdou obě
+vývěsky v PDF za sebou, vytisknou se a pověsí jedním výjezdem - dřív bylo potřeba projít PDF
+dvakrát nebo si stránky hledat. Stejně to dělá starý tisk.
+
+Bez nastavení, je to jediné chování.
+
+Co zákazník ve skutečnosti viděl: neobracelo se pořadí, ale **poloha vývěskové zastávky
+v seznamu**. Ve zpátečním směru je seznam zastávek otočený, takže zvýrazněný řádek běžel dolů
+a pak zpátky nahoru. Bylo to vidět proto, že měl zapnuté tisknutí projetých zastávek (výchozí
+je vypnuté) a na každé straně tak byla celá trasa.
+
+Doloženo zdrojem starého tisku (`JRapiLinPrtMhd1.mac:397-398`: `Tc` vnější, `Smer` vnitřní).
+Routina se jmenuje „Mhd", ale čte `^JR`, takže je to protějšek AD agendy. Ověřeno voláním
+`GetData` na lince `0330567`: `T1 T2 Z2 T3 Z3 T4 Z4 Z5`.
+
+**Srovnané i u městských linek**, aby se tisk nechoval ve dvou agendách různě (`SestavitStranky`).
+Ověřeno voláním na `CB_DP` lince 1003 - obě vývěsky každé zastávky jdou za sebou, 20 stran jako
+dřív. Při té příležitosti zmizely tři mrtvé proměnné, které si stejně načítá až `SestavitJednuStranku`.
+
+⚠️ Zlaté odtisky AD i MHD přebaselinované (6 linek). **Změnil se jen md5** - počty stránek,
+zastávek, odjezdů i poznámek zůstaly u všech shodné do jednoho, což je zároveň doklad, že se
+změnilo jen pořadí a žádná stránka se neztratila.
+
 ## 2026-09-11 (7) - 🔗 varianty tras, které jsou podmnožinou jiné, jdou slít
 
 `B142`, požadavek TRANSDEV z hovoru 11. 9. Varianta, která staví jen tam, kde staví i jiná, dostane
