@@ -777,11 +777,11 @@
                         <Border Visibility="{Binding HasPageNavigation, Converter={StaticResource BoolToVis}}"
                                 Background="{DynamicResource EDTheme.Bg.PanelAlt}"
                                 BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
-                            <!-- Zarovnáno na LEVÝ okraj stránky náhledu (odsazení = PreviewCanvas.PagePaddingPx),
-                                 ne na střed sloupce: stránka je HorizontalAlignment="Left", takže se
-                                 vycentrovaná lišta s roztahováním panelu od stránky vzdalovala. -->
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                        Margin="20,0,0,0">
+                            <!-- Střed panelu. Zarovnání doleva nad stránku se 14. 9. zkusilo a zahodilo:
+                                 vypadalo to odstrčeně a šipky patří doprostřed toho, co uživatel vidí.
+                                 Že lišta „ustřelovala doprava", nedělalo centrování, ale přetékající
+                                 panel (viz OrizniSirkuNahledu v code-behind). -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Button Content="◀" Command="{Binding PreviousPageCommand}" ToolTip="{Binding PreviousPageTooltip}"
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                                 <!-- Přímý skok na stránku dat (zastávka × směr) - bez proklikávání ◀▶.
