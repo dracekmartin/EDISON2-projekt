@@ -83,9 +83,11 @@ public class SirokaLinkaStrankovaniTests
     {
         var prvek = Prvek();
         var data = LineTableBlokyTests.SirokaLinkaData(200, pocetZastavek: 25);
-        var zlomy = ((INedelitelneDily)prvek).ZlomyMm(data);
 
         var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(Sablona(prvek), data);
+        // ⚠️ Zlomy až PO rozvržení: engine si smí říct o zmenšení, aby ušetřil stránku (`B151`),
+        // a s ním se posunou i hranice. Přečtené dřív by patřily jiné velikosti písma.
+        var zlomy = ((INedelitelneDily)prvek).ZlomyMm(data);
 
         float? konecPredchoziho = null;
         foreach (var stranka in vysledek.Pages)
@@ -152,8 +154,9 @@ public class SirokaLinkaStrankovaniTests
         var sablona = Sablona(prvek);
         sablona.PageSize = PageSize.A4Landscape;
 
-        var hranice = ((INedelitelneDily)prvek).ZlomyMm(data).Where(z => z.Silny).Select(z => z.Mm).ToList();
         var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(sablona, data);
+        // Zlomy až po rozvržení - viz poznámka u `ChunkyNaSebeNavazuji`.
+        var hranice = ((INedelitelneDily)prvek).ZlomyMm(data).Where(z => z.Silny).Select(z => z.Mm).ToList();
 
         Assert.NotEmpty(hranice);
         Assert.True(vysledek.TotalPages > 1, "linka se má rozpadnout na víc stránek");
@@ -205,8 +208,9 @@ public class SirokaLinkaStrankovaniTests
         sablona.PageSize = PageSize.A4Landscape;
         var data = LineTableBlokyTests.SirokaLinkaData(90, pocetZastavek: 28);
 
-        var silne = ((INedelitelneDily)prvek).ZlomyMm(data).Where(z => z.Silny).Select(z => z.Mm).ToList();
         var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(sablona, data);
+        // Zlomy až po rozvržení - viz poznámka u `ChunkyNaSebeNavazuji`.
+        var silne = ((INedelitelneDily)prvek).ZlomyMm(data).Where(z => z.Silny).Select(z => z.Mm).ToList();
 
         Assert.NotEmpty(silne);
         foreach (var stranka in vysledek.Pages.Skip(1))

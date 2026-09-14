@@ -1,5 +1,28 @@
 ﻿# Changelog
 
+## 2026-09-14 (5) - 🔍 tabulka se radši zmenší, než by přidala stránku
+
+`B151`, rozhodnutí Jan 14. 9. Když linkové tabulce chybí do stránky málo, vytiskne se o něco
+menším písmem a vejde se - dřív kvůli dvěma zastávkám vznikla celá další strana.
+
+Tři pravidla, podle kterých se to chová:
+
+**Zmenšuje se celá tabulka jednou hodnotou.** Kdyby se zmenšovala jen přetékající část, měly by
+sousední stránky viditelně jiné písmo.
+
+**Jen když to ušetří stránku.** Zmenšit a stejně přidat stranu je čistá ztráta, tak se to nedělá.
+
+**Mez je 90 %.** Když ani to nestačí, tiskne se v plné velikosti a řeže jako dřív - řez ve
+zmenšeném písmu by stál menší text i stránku navíc zároveň. Zkouší se postupně 97, 94 a 90 %
+a bere se první, které stačí, takže zásah je vždycky co nejmenší. Volba v šabloně zatím není;
+doplní se, až si o ni někdo řekne.
+
+⚠️ **Zmenšuje se jen svisle.** Šířky sloupců zůstávají, protože rozhodují o tom, kolik spojů se
+vejde do jedné části - kdyby se zúžily taky, vyšla by jiná sestava, ne jen hustší. Hlídá to test.
+
+⚠️ Se zmenšením se posunou i místa, kde se smí řezat. Kdo si je čte kolem rozvržení, musí je číst
+**až po něm** - tři existující testy to měly obráceně a přestaly sedět.
+
 ## 2026-09-14 (4) - ✂️ zlom stránky nerozpůlí zastávku
 
 `B135`. Když se tabulka linky nevejde na stránku, zlom teď padne na hranici **mezi zastávkami**.

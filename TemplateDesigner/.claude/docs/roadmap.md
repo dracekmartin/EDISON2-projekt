@@ -130,13 +130,6 @@ takže nejde o práci, ale o doklad.
   stranu" může být náš vypnutý obousměrný tisk, „hlavička pro směr" otázka sekcí. Čísla, linky
   k vyzkoušení a co na nich porovnat: [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
 
-- **`B151` Radši zmenšit písmo než řezat** [M] (rozhodnutí Jan 14. 9.). Když tabulce chybí do stránky
-  málo, je lepší ji zmenšit, než kvůli dvěma zastávkám zakládat další stranu. **Mez je pevných 90 %**,
-  volba v šabloně až kdyby si o ni někdo řekl. ⚠️ Existující `ComputeFontScale` na to nestačí -
-  počítá proti **pevné výšce prvku** a linková tabulka ji nemá (proto se stránkuje). Zmenšovat se
-  musí proti zbylému místu na stránce, což je výpočet ve stránkovacím enginu, ne v prvku.
-  O kolik se zmenšilo, umí aplikace říct už dnes (`ContentShrinkWarnings`).
-
 - **`B152` Spoje se na části dělí rovnoměrně** [S] (vytaženo 14. 9. z analýzy, kde to viselo jen jako
   poznámka). Osa **šířky**: když se sloupce spojů nevejdou, starý tisk spočítá počet částí a rozdělí
   spoje rovným dílem (`JRapiLinPrtPS.mac:492`), takže jsou části stejně široké. My plníme bloky do

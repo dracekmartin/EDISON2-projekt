@@ -25,9 +25,54 @@ public class PageLayoutEngine
     }
 
     /// <summary>
-    /// Provede layout šablony s daty a vrátí rozložení na stránky.
+    /// Míry zmenšení, které se zkoušejí, když by tabulka jinak vyjela o stránku víc (`B151`).
+    /// Od nejmenšího zásahu, mez je 90 % (rozhodnutí Jan 14. 9.) - pod ní se radši řeže.
     /// </summary>
+    private static readonly float[] ZmensovaciZebrik = [0.97f, 0.94f, 0.90f];
+
+    /// <summary>
+    /// Rozvrhne šablonu a cestou zkusí, jestli se **nevyplatí tabulku o kousek zmenšit** místo
+    /// zakládání další stránky.
+    /// </summary>
+    /// <remarks>
+    /// Zmenšuje se <b>celý prvek jednou hodnotou</b> - kdyby se zmenšovala jen přetékající část,
+    /// měly by sousední stránky viditelně jiné písmo. Spustí se to <b>jen když zmenšení ušetří
+    /// celou stránku</b>; zmenšit a stejně přidat stranu je čistá ztráta. A když ani 90 % nestačí,
+    /// vrací se plná velikost a řeže se jako dřív - řez ve zmenšeném písmu by stál obojí naráz
+    /// (rozhodnutí Jan 14. 9.).
+    /// </remarks>
     public LayoutResult Layout(Template template, DataContext? data)
+    {
+        var zmensitelne = ZmensitelnePrvky(template);
+        NastavZmenseni(zmensitelne, 1f);
+        var vysledek = LayoutBezZmenseni(template, data);
+        if (zmensitelne.Count == 0 || vysledek.TotalPages <= 1) return vysledek;
+
+        foreach (float mira in ZmensovaciZebrik)
+        {
+            NastavZmenseni(zmensitelne, mira);
+            var uzsi = LayoutBezZmenseni(template, data);
+            if (uzsi.TotalPages < vysledek.TotalPages) return uzsi;
+        }
+
+        NastavZmenseni(zmensitelne, 1f);
+        return vysledek;
+    }
+
+    /// <summary>Prvky, které umí ušetřit stránku zmenšením - tabulka bez pevné výšky, která se
+    /// sama skládá z dílů. Prvek s pevnou výškou se nestránkuje, takže tam není co šetřit.</summary>
+    private static List<LineTableElement> ZmensitelnePrvky(Template template) =>
+        [.. template.Sections
+            .SelectMany(s => s.Elements)
+            .OfType<LineTableElement>()
+            .Where(e => e.Height is null)];
+
+    private static void NastavZmenseni(List<LineTableElement> prvky, float mira)
+    {
+        foreach (var p in prvky) p.LayoutZmenseni = mira;
+    }
+
+    private LayoutResult LayoutBezZmenseni(Template template, DataContext? data)
     {
         // Krok 0: Propagace kultury
         data = ApplyCulture(template, data);

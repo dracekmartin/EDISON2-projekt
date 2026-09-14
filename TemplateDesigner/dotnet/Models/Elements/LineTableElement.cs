@@ -331,6 +331,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     protected override float DesignerPlaceholderHeight => 60f;
 
+    /// <summary>
+    /// Zmenšení, o které si řekl stránkovací engine, aby tabulka ušetřila stránku (`B151`).
+    /// 1 = plná velikost. Neserializuje se - je to rozhodnutí sazby, ne vlastnost šablony,
+    /// a engine ho na začátku každého rozvržení nastavuje znovu.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Promítá se do <b>výšek řádků</b> (a tím do výšky prvku i míst řezu) a do velikosti písma
+    /// při kreslení. Do **šířek sloupců** schválně ne: ty rozhodují, kolik spojů se vejde do jednoho
+    /// bloku, takže by zmenšení svisle změnilo i vodorovné dělení a vyšla by úplně jiná sestava.
+    /// <para>⚠️ <b><see cref="ZlomyMm"/> i výška prvku platí jen pro aktuální hodnotu</b> - kdo si
+    /// je přečte před rozvržením a porovná s jeho výsledkem, porovnává dvě různé velikosti písma
+    /// (najely na to tři testy, viz `SirokaLinkaStrankovaniTests`).</para>
+    /// </remarks>
+    [JsonIgnore]
+    public float LayoutZmenseni { get; set; } = 1f;
+
     // ─── Runtime data (neserializují se) ────────────────────────────────────
 
     public sealed class LineStopData
@@ -1433,8 +1449,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         IReadOnlyList<LineTripData> spojeBloku, IReadOnlyList<LineTripData>? zrcadleneBloku = null)
     {
         var trips = _cachedTrips!;
-        float headerH = ComputeHeaderH(MaxHeaderFontPt());
-        float rowH = DataRowHeight ?? ComputeRowH(MaxDataFontPt());
+        // ⚠️ `LayoutZmenseni` se musí promítnout SEM, ne až do kreslení - výška prvku i místa řezu
+        // vycházejí odtud, takže jinak by engine počítal s jednou výškou a tisklo se v jiné.
+        float headerH = ComputeHeaderH(MaxHeaderFontPt()) * LayoutZmenseni;
+        float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * LayoutZmenseni;
 
         var hlava = new List<float>();
         if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
@@ -1472,7 +1490,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // a jejím přípojem by nechal „navazuje" viset na další straně bez zastávky.
             radky.Add(new RadekBloku(rowH, posledniZastavky && pripoju == 0));
             for (int i = 0; i < pripoju; i++)
-                radky.Add(new RadekBloku(PripojRowH(), posledniZastavky && i == pripoju - 1));
+                radky.Add(new RadekBloku(PripojRowH() * LayoutZmenseni, posledniZastavky && i == pripoju - 1));
         }
         return (hlava, radky);
     }
@@ -1560,7 +1578,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var tripDataStyle = ResolveDataStyle(tripCol);
         var bloky = SloupcoveBloky(stops, kmCount);
 
-        float scale = ComputeFontScale(CalculateHeightFromData(ctx.Data));
+        // `CalculateHeightFromData` už `LayoutZmenseni` obsahuje (je ve výškách řádků), takže
+        // `ComputeFontScale` vrátí u prvku bez pevné výšky 1 - a scale je pak přesně to zmenšení.
+        float scale = ComputeFontScale(CalculateHeightFromData(ctx.Data)) * LayoutZmenseni;
 
         float vyskaObsahu = Height ?? CalculateHeightFromData(ctx.Data);
 

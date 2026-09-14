@@ -1,5 +1,28 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B151` Radši zmenšit písmo než řezat (hotovo 14. 9. 2026)
+
+Rozhodnutí Jan 14. 9. Když linkové tabulce chybí do stránky málo, vytiskne se o něco menším písmem
+a vejde se, místo aby kvůli dvěma zastávkám vznikla další strana.
+
+Tři pravidla (rozhodnutí Jan 14. 9.): zmenšuje se **celá tabulka jednou hodnotou** (jinak by
+sousední stránky měly viditelně jiné písmo), **jen když to ušetří stránku** (zmenšit a stejně
+přidat stranu je čistá ztráta) a **mez je 90 %** - když ani to nestačí, tiskne se plně a řeže jako
+dřív, protože řez ve zmenšeném písmu by stál obojí naráz. Zkouší se 97, 94 a 90 % a bere se první,
+které stačí. Volba v šabloně zatím není.
+
+⚠️ **Zmenšuje se jen svisle.** Šířky sloupců zůstávají - rozhodují o tom, kolik spojů se vejde do
+jedné části, takže kdyby se zúžily taky, vyšla by jiná sestava, ne jen hustší. Hlídá to test.
+
+⚠️ **Se zmenšením se posunou i místa řezu.** Kdo si je čte kolem rozvržení, musí je číst až po něm -
+tři existující testy to měly obráceně a přestaly sedět. Poznámka je u `LineTableElement.LayoutZmenseni`.
+
+Mechanika: engine rozvrhne, a pokud by se přidala stránka, zkusí rozvrhnout znovu se zmenšením
+a vezme první míru, která počet stránek sníží. Zmenšení se promítá do výšek řádků, takže výška
+prvku i místa řezu vycházejí ze stejného čísla jako kreslení.
+
+Ověřeno mutací (s vypnutým zmenšováním padne test „chybí málo"). Detail v `changelog.md` 14. 9. (5).
+
 ## `B135` Řez tabulky nepadá doprostřed zastávky (hotovo 14. 9. 2026)
 
 Podnět Jan 9. 9., zadání dohodnuté 14. 9. Když se tabulka linky nevejde na stránku, zlom padne na
