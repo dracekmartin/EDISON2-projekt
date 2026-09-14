@@ -130,13 +130,24 @@ takže nejde o práci, ale o doklad.
   stranu" může být náš vypnutý obousměrný tisk, „hlavička pro směr" otázka sekcí. Čísla, linky
   k vyzkoušení a co na nich porovnat: [`§17.4b`](linkovy-knizni-jr-implementace-analyza.md).
 
-- **`B135` Řez tabulky nemá padat doprostřed zastávky** [M] (podnět 9. 9.). Zlom má přednostně
-  padnout tam, kde zastávka má příjezd i odjezd, a nemá vzniknout vůbec, když by na další část
-  zbyly dvě zastávky. Postskript řez posouvá zpátky, dokud netrefí řádek bez dat; my řežeme na
-  kterékoli hranici řádku. Rozhodnuto: **žádné „zadej počet spojů"**, má se to rozhodnout samo
-  (Jan 9. 9.). ⚠️ Dělení dnes vychází z výšky sekce, kterou nikdo nevidí - pokus tu informaci
-  ukázat se 10. 9. zahodil, viz `B130` v [`roadmap-archive.md`](roadmap-archive.md).
-  Podklad: [`§17.7`](linkovy-knizni-jr-implementace-analyza.md).
+- **`B135` Řez tabulky nemá padat doprostřed zastávky** [M] (podnět 9. 9.). **Zadání dohodnuté
+  14. 9., připravené k práci.** Řez smí padnout jen na hranici mezi zastávkami - rozdvojená zastávka
+  i její přípojné řádky odcházejí na další stránku vcelku. Bez nastavení. **Musí být dřív než
+  `B140`**: v postskriptovém tvaru je název psaný jednou, takže rozpůlená zastávka je nečitelná.
+  Pravidla, doklad z legacy i dotčená místa v kódu: [`§17.8`](linkovy-knizni-jr-implementace-analyza.md).
+
+- **`B151` Radši zmenšit písmo než řezat** [M] (rozhodnutí Jan 14. 9.). Když tabulce chybí do stránky
+  málo, je lepší ji zmenšit, než kvůli dvěma zastávkám zakládat další stranu. **Mez je pevných 90 %**,
+  volba v šabloně až kdyby si o ni někdo řekl. ⚠️ Existující `ComputeFontScale` na to nestačí -
+  počítá proti **pevné výšce prvku** a linková tabulka ji nemá (proto se stránkuje). Zmenšovat se
+  musí proti zbylému místu na stránce, což je výpočet ve stránkovacím enginu, ne v prvku.
+  O kolik se zmenšilo, umí aplikace říct už dnes (`ContentShrinkWarnings`).
+
+- **`B152` Spoje se na části dělí rovnoměrně** [S] (vytaženo 14. 9. z analýzy, kde to viselo jen jako
+  poznámka). Osa **šířky**: když se sloupce spojů nevejdou, starý tisk spočítá počet částí a rozdělí
+  spoje rovným dílem (`JRapiLinPrtPS.mac:492`), takže jsou části stejně široké. My plníme bloky do
+  plna a poslední necháme kratší. Poptávku to nemá, je to evidence rozdílu -
+  [`§17.4`](linkovy-knizni-jr-implementace-analyza.md).
 
 - **`B140` Rozdvojená zastávka v postskriptovém tvaru** [M] (zjištěno 10. 9. při `B136`).
   Dnes tiskneme tvar **windowsového** návrháře: popisné sloupce zopakované na obou řádcích.

@@ -1663,3 +1663,48 @@ jdou už dnes, pokud sekce nedrží obsah pohromadě (měření 7. 9. na `330511
    nebo o blok mimo tabulku.
 2. **Km sloupce „jen z aktuální tabulky"** - jestli se po řezu na stránky mají tisknout jen sloupce
    použité na dané části. To je nad `B124` (duplicitní sloupce v obousměrné sestavě) něco navíc.
+
+### 17.8 Pravidla svislého řezu - zadání `B135` (dohodnuto 14. 9. 2026)
+
+Vzniklo průchodem staré sestavy `CB_CSADAD 1 / 0380760` proti našemu výstupu téže linky.
+
+**Jak to dělá staré.** `VertiM` je pevný strop řádků na část (výchozí 55, `JRapiLinPrtPS.mac:53`,
+u linky `PATCH,VERTIM`). Řízne se po něm **bez ohledu na zbylé místo** - na `0380760` vyšlo 55 + 9,
+přestože stránka místo měla. Pak řez couvá dvěma pravidly (`JRapiLinPrtPS8.mac:83-85`):
+
+- `rez1` couvá **po dvou**, dokud nenarazí na řádek s kladným tarifním číslem. Pole `PiloT`
+  (`JRapiLinPrtPS5.mac:19-27`) drží rozdvojenou zastávku jako **trojici** řádků: prázdný, zastávka
+  se **záporným** tč, prázdný. Staré pravidlo tedy nezní „nerozpůl rozdvojenou zastávku", ale
+  **„řež jedině hned za obyčejnou jednořádkovou zastávkou"**.
+- `rez2` couvá po jednom, dokud `free()` nepovolí - a ta povolí jen řádek, kde **žádný spoj nemá
+  čas** (jen tečky, „projíždí", „jede jinudy").
+
+**Co z toho bereme.** Jen to první. `free()` vědomě ne (rozhodnutí Jan 14. 9.): jejich couvání má
+dno ve `VertiM`, naše by nemělo, a na husté lince takový řádek nemusí existovat. Vrátit se k tomu
+jde, až bude porovnání proti staré sestavě říkat, že to vadí.
+
+**Dohodnutá pravidla:**
+
+1. Řeže se, **jen když se to nevejde**. Žádný počet řádků ani spojů jako nastavení (Jan 9. 9.).
+2. Řez smí padnout **jen na hranici mezi zastávkami**. Rozdvojená zastávka (příjezd + odjezd) je
+   z hlediska řezu jeden celek a odchází na další stránku celá.
+3. **Zastávka a její přípojné řádky drží pohromadě** - na `0380760` visí pod Vodňany,aut.nádr.
+   řádek s návazným spojem a dnes se může odtrhnout stejně snadno jako půlka rozdvojené zastávky.
+4. **Tři stupně priority místa řezu:** hranice mezi bloky sloupců (dnešní `Zlom.Silny`) → hranice
+   za obyčejnou zastávkou → nouzově kterákoli hranice řádku. Nouzový stupeň musí zůstat, aby
+   engine neuvázl (dvojice vyšší než stránka).
+5. Platí **jen pro linkovou tabulku**. Zastávkový JŘ se takhle nestránkuje a rozdvojené zastávky nemá.
+
+**Proč to spěchá proti `B140`.** V dnešním (windowsovém) tvaru se název zastávky opakuje na obou
+řádcích, takže rozpůlená zastávka je ošklivá, ale čitelná - proto si nikdo nestěžoval.
+V postskriptovém tvaru jsou km, tarifní číslo i název **sloučené přes oba řádky a napsané jednou**,
+takže by druhá stránka dostala řádek bez názvu i bez tč. `B135` musí být hotové dřív než `B140`,
+nebo aspoň s ním.
+
+**Jak se to doloží.** Oracle proti staré sestavě na `0380760` a aspoň jedné další lince: porovnává
+se **místo řezu**, ne počet stran (ten se lišit bude a je to v pořádku, viz pravidlo 1).
+
+**Co to znamená v kódu.** `LineTableElement.VyskyRadkuBloku` (`:1423-1456`) dnes z řádků vyrobí holý
+seznam výšek a význam řádku se ztratí - musí ho začít nést. `Zlom` (`INedelitelneDily.cs:19`)
+potřebuje třetí stupeň místo `bool Silny` a `PageLayoutEngine.PosledniZlomDo` (`:164-174`) musí umět
+počítat zastávky, ne jen milimetry.
