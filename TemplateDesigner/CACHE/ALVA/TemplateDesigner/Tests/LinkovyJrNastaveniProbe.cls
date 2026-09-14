@@ -706,6 +706,72 @@ ClassMethod DelenaLinkaPrikladyPerFirma(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Vypíše linky jedné firmy, kde je klíč nastavený, **od nejmenšího počtu spojů**. Pro hledání
+/// příkladu, který se vejde do šířky - některé volby (`ONEPAG`) se u široké linky vůbec neuplatní.
+/// IN["firma"], IN["klic"], IN["kolik"] (výchozí 15)
+ClassMethod DelenaLinkaSeznam(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set firma = $get(^||ML("IN", "firma"))
+        set klic = $get(^||ML("IN", "klic"))
+        set kolik = +$get(^||ML("IN", "kolik"))
+        set:klic="" klic = "ONEPAG"
+        set:kolik<1 kolik = 15
+        quit:'##class(%SYS.Namespace).Exists(firma)
+
+        kill podleSpoju
+        set s1 = ""
+        for  {
+            set s1 = $order(^[firma]JRL(s1))
+            quit:s1=""
+            continue:'$isvalidnum(s1)
+            set l1 = ""
+            for  {
+                set l1 = $order(^[firma]JRL(s1, l1))
+                quit:l1=""
+                continue:'$data(^[firma]JRL(s1, l1, "I"))
+                set hod = $select(klic = "ONEPAG": +$data(^[firma]JRL(s1, l1, "PATCH", klic)),
+                                  1: +$get(^[firma]JRL(s1, l1, "PATCH", klic)))
+                continue:'hod
+
+                set spoju = 0
+                for smer = "T", "Z" {
+                    set sp = ""
+                    for  {
+                        set sp = $order(^[firma]JRL(s1, l1, smer, sp))
+                        quit:sp=""
+                        set:$isvalidnum(sp) spoju = spoju + 1
+                    }
+                }
+                continue:spoju<4                       // úplně prázdná linka nic neukáže
+                set podleSpoju(spoju, s1, l1) = ""
+            }
+        }
+
+        set spoju = "", vypsano = 0
+        for  {
+            set spoju = $order(podleSpoju(spoju))
+            quit:(spoju="")||(vypsano'<kolik)
+            set s1 = ""
+            for  {
+                set s1 = $order(podleSpoju(spoju, s1))
+                quit:(s1="")||(vypsano'<kolik)
+                set l1 = ""
+                for  {
+                    set l1 = $order(podleSpoju(spoju, s1, l1))
+                    quit:(l1="")||(vypsano'<kolik)
+                    set vypsano = vypsano + 1
+                    set ^||ML("OUT", $increment(^||ML("OUT"))) = s1_" / "_l1_" ("_spoju_" spojů)"
+                }
+            }
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše ke každému atributu spoje jednu linku, kde se vyskytuje - podklad pro rozšíření sady.
 ClassMethod AtributyLinky(ByRef sys As %String) As %Status
 {
