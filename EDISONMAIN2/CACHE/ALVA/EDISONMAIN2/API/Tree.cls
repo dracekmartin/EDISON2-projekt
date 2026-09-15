@@ -53,7 +53,7 @@ ClassMethod GetTree(ByRef sys As %String) As %Status
 		i tree="" s tree="main"
 
 		i tree="main" d ..FillMain()
-		e  i tree="system" d ..FillSystem()
+		e  i tree="system" d ..FillSystem(),..RenamePackageRoots(IdFa, systemDB)
 		e  i tree="partners" d ..FillPartners()
 	}
 	catch (ex) { $$$CatchErrRest }
@@ -76,6 +76,46 @@ ClassMethod AddFamilyEnd() [ Private ]
 ClassMethod AddExe(name As %String, exePath As %String, formName As %String, elementId As %String, isLicensed As %Boolean = 1, inputParam As %String = "", hidden As %Boolean = 0, color As %String = "", mlineOnly As %Boolean = 0, longName As %String = "") [ Private ]
 {
 	s ^||ML("OUT", $i(^||ML("OUT"))) = $lb("EXE", name, exePath, formName, elementId, $s(isLicensed:"1", 1:"0"), inputParam, $s(hidden:"1", 1:"0"), color, $s(mlineOnly:"1", 1:"0"), longName)
+}
+
+/// Název firmy (IdFa) pro zobrazení, prázdný string když ho lookup nedohledá.
+/// Týž zdroj jako legacy ALVA.EDISON.Main.LoadSettings: pole 58, fallback na 2.
+/// Chybu routiny polykáme schválně - kvůli popisku složky nemá spadnout celý strom.
+ClassMethod GetIdFaName(idfa As %String, systemDB As %String) As %String [ Private ]
+{
+	try
+	{
+		k aIn, aOut
+		s sc = $$gIdFa^MlJFapi(idfa, systemDB, .aIn, .aOut)
+		ret:sc ""
+		s name = $g(aOut("dta", 58))
+		i name = "" s name = $g(aOut("dta", 2))
+		ret name
+	}
+	catch (ex) { ret "" }
+}
+
+/// Kořeny Správy systému se v UI jmenují jinak než v legacy XML: package 0 je vždy
+/// "EDISON", package 1 nese název aktuální firmy. Parita s legacy
+/// ApplicationTree.UpdateXmlTree, které týž rename dělalo nad XML. Do generovaných dat
+/// se zapsat nedá - závisí na IdFa, se kterým se uživatel přihlásil.
+ClassMethod RenamePackageRoots(idfa As %String, systemDB As %String) [ Private ]
+{
+	s idfaName = ..GetIdFaName(idfa, systemDB)
+	s i = ""
+	f
+	{
+		s i = $o(^||ML("OUT", i)) q:i=""
+		continue:i'?1.N
+		s row = ^||ML("OUT", i)
+		continue:$lg(row, 1)'="FAMILY"
+		s newName = ""
+		i $lg(row, 4) = "0" s newName = "EDISON"
+		i $lg(row, 4) = "1" s newName = idfaName
+		continue:newName=""
+		s $li(row, 2) = newName
+		s ^||ML("OUT", i) = row
+	}
 }
 
 /// Generováno z legacy edisonnavbar.xml id=-2 (tools/GenerateTree.cs).

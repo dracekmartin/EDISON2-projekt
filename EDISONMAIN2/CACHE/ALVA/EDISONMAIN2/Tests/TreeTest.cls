@@ -253,4 +253,56 @@ Method TestMainTreeHasLicensedFamily()
 	do $$$AssertNotTrue((licensedCount = 0), "Main strom musí mít aspoň jednu licencovanou FAMILY (field 5 = ""1"")")
 }
 
+/// Kořeny Správy systému nesou legacy jména, ne text z generovaného XML: package 0 je
+/// literál "EDISON", package 1 název přihlášené firmy (parita s legacy
+/// ApplicationTree.UpdateXmlTree). Package 5 renamu nepodléhá.
+Method TestSystemRootsUseLegacyPackageNames()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "system"
+	set ret = ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	do $$$AssertEquals(+ret, 0, "GetTree(system) nesmí vrátit chybu, got: "_ret)
+
+	set i = "", spolecna = "", kmenova = "", nastroje = ""
+	for {
+		set i = $order(^||ML("OUT", i))
+		quit:i=""
+		continue:i'?1.N
+		set record = ^||ML("OUT", i)
+		continue:$listget(record, 1)'="FAMILY"
+		if ($listget(record, 4) = "0") { set spolecna = $listget(record, 2) }
+		if ($listget(record, 4) = "1") { set kmenova = $listget(record, 2) }
+		if ($listget(record, 4) = "5") { set nastroje = $listget(record, 2) }
+	}
+	do $$$AssertEquals(spolecna, "EDISON", "Package 0 se musí jmenovat ""EDISON"", got: "_spolecna)
+	do $$$AssertNotTrue((kmenova = ""), "Package 1 musí nést název firmy, je prázdný")
+	// Na konkrétní jméno firmy nepinovat - přejmenování na serveru by test shodilo.
+	do $$$AssertNotTrue((kmenova = "Kmenová evidence"), "Package 1 zůstal na textu z XML - lookup firmy neproběhl")
+	do $$$AssertEquals(nastroje, "Systémové nástroje", "Package 5 renamu nepodléhá, got: "_nastroje)
+}
+
+/// Rename se váže na package 0/1, a ty jsou jen v system stromu. Kdyby se objevily
+/// v main/partners, přejmenovaly by se tam taky - a uživatel by našel složku "EDISON"
+/// uprostřed agend.
+Method TestOtherTreesHaveNoRenamedPackages()
+{
+	for tree = "main", "partners" {
+		kill ^||ML
+		do ..SetupSys(.sys)
+		set ^||ML("IN","tree") = tree
+		do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+		set i = ""
+		for {
+			set i = $order(^||ML("OUT", i))
+			quit:i=""
+			continue:i'?1.N
+			set record = ^||ML("OUT", i)
+			continue:$listget(record, 1)'="FAMILY"
+			set id = $listget(record, 4)
+			do $$$AssertNotTrue((",0,1,"[(","_id_",")), "FAMILY #"_i_" ("_tree_") má package "_id_" - rename by ji přejmenoval")
+		}
+	}
+}
+
 }

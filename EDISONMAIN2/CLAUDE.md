@@ -27,6 +27,15 @@ v repu EDISON; sync i **vynucený** deploy dělá `tools/sync-tree.ps1` (generá
 Edit/Write, takže `compile-objectscript.sh` sám nefiruje). Splice anchor je komentář
 `/// Generováno z legacy edisonnavbar.xml id=` - smazat ho znamená tiše rozbitý generátor.
 
+Kořeny package 0/1 přejmenovává `GetTree` až za běhu (`"EDISON"` / název IdFa přes
+`$$gIdFa^MlJFapi`) - parita s legacy `ApplicationTree.UpdateXmlTree`; do generovaných dat
+se to zapsat nedá, závisí na přihlášené firmě. Ruční metody patří **nad** splice anchor.
+
+⚠️ **Deploy `Tree.cls` musí být atomický.** Strom se načítá při loginu, takže nezkompilovaná
+třída (nebo volání metody, která ještě není nahraná) shodí start shellu **všem na sdíleném
+dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď compile endpointu -
+`compile-objectscript.sh` končí exit 0 i při selhaném uploadu a chyby píše jen na stderr.
+
 ## Session / ACTIVITY zámek
 
 - Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - nezaniká se spojením, hard-kill

@@ -31,10 +31,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 
         public ObservableCollection<IModule> SystemAdminTree { get; } =
         [
-            new ExecutableModule { DisplayedName = "Společná evidence" },
+            new ExecutableModule { DisplayedName = "EDISON" },
             new ModuleFamily
             {
-                DisplayedName = "Kmenová evidence",
+                DisplayedName = "DPmCB",
                 IsExpanded = false,
                 NestedModules =
                 [
