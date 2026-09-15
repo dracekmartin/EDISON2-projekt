@@ -75,6 +75,65 @@ ClassMethod Spoje(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Vypíše **přípoje per spoj** tak, jak je `GetData` pošle - u kterého spoje a na které zastávce.
+///
+/// Proč: `#11300` (KORID) je o prázdném přípojném řádku na tabulce, kde jsou pracovní dny a víkend
+/// oddělené. Ukázat to jde jen na lince, kde přípoj **nemají všechny spoje** a zároveň spoje spadají
+/// do víc skupin dnů - z výpisu spojů ani z globálů to vidět není.
+///
+/// IN: `SKUPINA_LINEK_ID`, `LINKA_ID` (+ volitelně parametry tisku). OUT: řádek `spoj~<n>~<i>`
+/// s číslem spoje, skupinou dnů a počtem přípojů; `pripoj~...` s tarifním číslem a typem.
+ClassMethod Pripoje(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
+		s lin = $g(^||ML("IN","LINKA_ID"))
+
+		m vstup = ^||ML("IN")
+		k ^||ML("OUT")
+		d ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetData(.sys)
+
+		m odpoved = ^||ML("OUT")
+		k ^||ML("OUT")
+		s ^||ML("OUT","linka") = dataDB_" "_sku_" "_lin
+		s ^||ML("OUT","chyba") = $g(odpoved("ERR"))
+
+		s sPripoji = 0, bezPripoju = 0, key = ""
+		f {
+			s key = $o(odpoved(key))
+			q:key=""
+			continue:key="ERR"
+			s page = ##class(%DynamicObject).%FromJSON(odpoved(key))
+			s skupiny = page.rows.%Get("SKUPINY_DNU")
+			s ^||ML("OUT","strana~"_key) = "smer="_page.values.%Get("SMER")
+				_" skupin="_$s($isobject(skupiny):skupiny.%Size(), 1:0)
+			s spoje = page.rows.%Get("SPOJE")
+			continue:'$isobject(spoje)
+			f si=0:1:spoje.%Size()-1 {
+				s sp = spoje.%Get(si)
+				s pr = sp.%Get("PRIPOJE"), pocet = $s($isobject(pr):pr.%Size(), 1:0)
+				i pocet { s sPripoji = sPripoji + 1 } else { s bezPripoju = bezPripoju + 1 }
+				s ^||ML("OUT","spoj~"_key_"~"_$tr($j(si+1,3)," ","0")) =
+					sp.%Get("CISLO_SPOJE")_" skupina="_sp.%Get("SKUPINA")_" pripoju="_pocet
+				continue:'pocet
+				f pi=0:1:pocet-1 {
+					s p = pr.%Get(pi)
+					s ^||ML("OUT","pripoj~"_key_"~"_$tr($j(si+1,3)," ","0")_"~"_(pi+1)) =
+						"tc="_p.%Get("PORADI")_" typ="_p.%Get("TYP")_" cas="_p.%Get("CAS")
+						_" linka="_p.%Get("LINKA")_" spoj="_p.%Get("SPOJ")
+				}
+			}
+		}
+		s ^||ML("OUT","souhrn") = "spoju s pripoji="_sPripoji_", bez pripoju="_bezPripoju
+		k ^||ML("IN")
+		m ^||ML("IN") = vstup
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Vypíše kilometrické sloupce linky - **společné i per směr** - a přepínače, které o nich rozhodují.
 ///
 /// Proč: starý tisk bere buď dva směrové seznamy (`PATCH,KmsSmer,T`/`Z`), nebo jeden **společný**
