@@ -566,7 +566,7 @@ Výčet je **uzavřený a ověřený**: knižní JŘ si z celého číselníku b
 | `PAtrSp` | které atributy nad spojem se vůbec tisknou (bezbariérově přístupné, kola, samoobslužný, nízkokapacitní) | ✅ hotovo 21. 8., u bezbariérového přebíjí linka (`TZPA,BBP`) |
 | `MistOR` / `MistNOD` | tvar tisku místenkování (odřádkování, dvojtečky) | ❌ |
 | `MHDPZ("P")` / `MHDPZ("Z")` | vlastní text místo „IDP-P" / „IDP-Z" ve sloupci MHD + jeho řádek legendy | ❌ máme napevno IDP-P/IDP-Z |
-| `ZonaIdsDelZnk` | odstranit písmena z označení zóny | ❌ (zastávkový JŘ to umí) |
+| `ZonaIdsDelZnk` | odstranit písmena z označení zóny | ✅ doloženo 15. 9. (`ZL_KOVED 1 / 0823955`: `Z420,I201` → `420,201`) |
 | `Print_Dopr_First` / `SDOP` / `PS_PrintSouhrnDoprLinYes` | pořadí a tisk dopravců a provozů, souhrn linek k dopravci | ❌ `PopisDopravce` má vlastní logiku, proti nastavení neověřenou |
 
 Z jazykové verze (`gMode`) engine odvozuje dvě věci, ne jednu:
@@ -595,7 +595,7 @@ Kompletní seznam toho, co tisková cesta reálně čte (`gPLSetWin` plus přím
 | `PATCH,cisIDS` | jak se skládá tištěné číslo linky (3místné, vlastní číslo, tablo) | ❌ |
 | `PATCH,ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ **vědomě odloženo** do `B100` (rozhodnutí Jan 25. 8.) - nastaveno na 3 linkách z ~93 tisíc. Ty se u nás tisknou jinak než ve starém modulu; **není to nedodělek, který by někdo hledal**, je to zapsané rozhodnutí |
 | `PATCH,TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ❌ |
-| `PATCH,ZonaIdsDelZnk` | **přebíjí** globální hodnotu téhož jména (`:1847`) | ❌ |
+| `PATCH,ZonaIdsDelZnk` | **přebíjí** globální hodnotu téhož jména (`:1847`) | ✅ doloženo 15. 9. na `ZL_KOVED 1 / 0823955` (globální 1, u linky 2) |
 | `MHD2,netisknoutTC` / `netisknoutCislaSpoju` / `netisknoutSipky` / `netisknoutKladivkaAPodobne` | schová sloupec Tč, čísla spojů, šipky, značky | ❌ |
 | `MHD2,umeleDatDoSekci` / `rozdelitUmeleSekceNaVlastniStranky` | ruční přiřazení spojů do skupin a jejich stránkování | ❌ |
 
@@ -1166,7 +1166,7 @@ naslepo.
 | CB_CSADAD | 4 | 0330520 | **ruční pořadí spojů** u linky - a že se použije, ne dopočítá. Ručně `1,3,5,7,101,103,105`, podle času by vyšlo `1,101,3,103,5,7,105`; ověřeno voláním 15. 9., vracíme ruční. ⚠️ **Ne `1 / 0370618`**, jak tu stálo do 15. 9.: ta ruční pořadí sice má, ale shodné s časovým, takže na ní rozdíl vidět není. Linky, kde se obojí liší, najde `LinkovyJrNastaveniProbe.RozdilneRucniPoradi` (8 z 11 měřených) |
 | CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit). ⚠️ **Slabý doklad** (změřeno 26. 8.): v celé firmě má barvu **2 spoje z 483 246**, oba na téhle lince a oba světle růžové `255;128;255` - jeden z nich je **spoj 19**. Změna volby tedy přebarví dva sloupce z tisíců, takže na plné tabulce vypadá, že se neděje nic. Sledovat přímo spoj 19, ne celkový dojem. |
 | CB_CSADAD | 801 | 0345062 | **bez zón i bez km** (čtyřstavový přepínač `linIDS` = 3) |
-| VS_CSAD | 5 | 0771901 | **písmena ze zóny se odstraňují** |
+| ZL_KOVED | 1 | 0823955 | **písmena ze zóny se odstraňují** - v datech `Z420,I201`, agenda vrací `420,201`. ⚠️ **Ne `VS_CSAD 5 / 0771901`**, jak tu stálo do 15. 9.: Vsetín na to data nemá a zóny vůbec nevyplňuje. Linku se zónami najde `LinkovyJrSpojeProbe.Zony` - zóny má jen zlomek linek i tam, kde je tisk zón zapnutý |
 | CB_GWBUS | 106 | 0320144 | **schovaný sloupec tarifních čísel** |
 | CB_GWBUS | 104 | 0320157 | **bez zastávek, kde žádný spoj nestaví** (ubírá řádky, nejvíc vidět) |
 | CB_CSADAD | 1 | 0330510 | **rozřezání na bloky**: 41 spojů, přípojné řádky, tři skupiny dnů (37/1, 38/2, 41/3 podle volby dělení) |

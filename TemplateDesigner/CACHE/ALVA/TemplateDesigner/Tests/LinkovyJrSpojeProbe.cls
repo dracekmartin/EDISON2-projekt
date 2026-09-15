@@ -137,6 +137,101 @@ ClassMethod Pripoje(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Najde linku se **zónami u zastávek** a vypíše, jak vypadají - s písmenem přepravního systému,
+/// nebo bez něj.
+///
+/// Proč: nastavení „odstranit písmena ze zóny" (`ZonaIdsDelZnk`) jde ověřit jen na lince, která
+/// zóny vůbec má. Který kraj je eviduje, z globálů vidět není - a roadmapa mířila na Vsetín, kde
+/// vzorek není.
+///
+/// IN: `LIMIT` (kolik linek projít, výchozí 60). OUT: první nalezená linka, hodnoty zón u prvních
+/// zastávek a obě nastavení (globální i u linky).
+///
+/// ⚠️ Prochází **jen firmu, do které je volající přihlášený** - `GetData` si dataDB bere z `sys`.
+/// Jinou firmu ověříš dalším voláním, ne parametrem.
+ClassMethod Zony(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s limit = +$g(^||ML("IN","LIMIT"))
+		s:limit<1 limit = 60
+		s ^||ML("OUT","nastaveni~globalni") = $g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk"))
+
+		s projito = 0, s1 = ""
+		f {
+			s s1 = $o(^[dataDB]JRL(s1))
+			q:s1=""
+			continue:'$isvalidnum(s1)
+			s l1 = ""
+			f {
+				s l1 = $o(^[dataDB]JRL(s1, l1))
+				q:l1=""
+				continue:'$d(^[dataDB]JRL(s1, l1, "I"))
+				continue:'+$g(^[dataDB]JRL(s1, l1, "T"))
+				// Zóny se tisknou jen u linek s `linIDS` 1 nebo 2; u ostatních posílá agenda
+				// prázdno, takže by je nemělo smysl zkoumat a jen by spotřebovaly limit.
+				s linIds = +$g(^[dataDB]JRL(s1, l1, "PATCH", "linIDS"))
+				s sLinIds = $g(sLinIds) + $s((linIds=1)||(linIds=2):1, 1:0)
+				continue:'((linIds = 1) || (linIds = 2))
+				s projito = projito + 1
+				i projito > limit {
+					s ^||ML("OUT","souhrn") = "prozkoumano linek s IDS="_(projito-1)_", zadna se zonami"
+					ret $$$OK
+				}
+				i ..VypisZony(dataDB, s1, l1, .sys) ret $$$OK
+			}
+		}
+		s ^||ML("OUT","souhrn") = "projito linek="_projito_", zadna se zonami"
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Když linka má u zastávek zóny, vypíše je do OUT a vrátí 1. Helper - volá se z metody s catch.
+/// ⚠️ `dataDB` se předává parametrem: helper nemá `$$$FillParams`, takže by tu jinak nebylo.
+ClassMethod VypisZony(dataDB As %String, sku As %String, lin As %String, ByRef sys As %String) As %Boolean
+{
+	s naslo = 0
+	try {
+		k ^||ML("IN")
+		s ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+		s ^||ML("IN","OBOUSMERNY_TISK") = "false"
+		k ^||ML("OUT")
+		d ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetData(.sys)
+		m odpoved = ^||ML("OUT")
+		k ^||ML("OUT")
+		i $g(odpoved("ERR"))'="" ret 0
+
+		s key = $o(odpoved(""))
+		i key="ERR" s key = $o(odpoved(key))
+		i key="" ret 0
+		s page = ##class(%DynamicObject).%FromJSON(odpoved(key))
+		s zast = page.rows.%Get("ZASTAVKY")
+		i '$isobject(zast) ret 0
+		s vypsano = 0
+		f zi=0:1:zast.%Size()-1 {
+			// ⚠️ Pole se jmenuje ZONY (množné), i když nese jednu hodnotu - je to shoda se
+			// zastávkovým JŘ, kde je to pole zón.
+			s z = zast.%Get(zi), zona = z.%Get("ZONY")
+			// „-" znamená zapnutý tisk zón, ale prázdnou hodnotu v datech - to není vzorek.
+			continue:(zona="")||(zona="-")
+			s vypsano = vypsano + 1
+			i vypsano '> 8 {
+				s ^||ML("OUT","zona~"_$tr($j(vypsano,2)," ","0")) =
+					"tc="_z.%Get("TC")_" "_z.%Get("POPIS")_" -> """_zona_""""
+			}
+		}
+		i 'vypsano ret 0
+		s naslo = 1
+		s ^||ML("OUT","linka") = dataDB_" "_sku_" / "_lin_"  zastavek se zonou="_vypsano
+		s ^||ML("OUT","nastaveni~globalni") = $g(^[dataDB]JRSET("Definice","ZonaIdsDelZnk"))
+		s ^||ML("OUT","nastaveni~u linky") = $g(^[dataDB]JRL(sku,lin,"PATCH","ZonaIdsDelZnk"))
+	}
+	catch (ex) { s naslo = 0 }
+	q naslo
+}
+
 /// Najde linky, na kterých jde předvést **prázdný přípojný řádek** (`#11300`).
 ///
 /// Hledá se linka, kde spoje spadají do **víc skupin dnů** a zároveň aspoň jeden spoj nese přípoj
