@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-09-15 (2) - 👁 náhled bez vybrané linky bere vlastní sloupce i u linkových JŘ
+
+Kdo si v šabloně linkového jízdního řádu nadefinoval vlastní sloupce a neměl vybranou linku, viděl
+v náhledu rozdělení podle linky - jeho sloupce se neprojevily. Vypadalo to jako nefunkční featura,
+přestože s vybranou linkou fungovala.
+
+Je to **táž třída chyby jako `#13158`** u vývěsek, kde se to opravilo v srpnu: klient definici
+posílá do ukázkových dat stejně pro obě agendy, jen linková ji zahazovala (`GetMockData` volalo
+stavbu stránky bez ní).
+
+⚠️ **Obousměrný tisk a turnusy do ukázkových dat vědomě nejdou.** To jsou volby tisku, ne součást
+šablony, a kontrakt `BaseAgenda` říká, že mock je ukázka bez parametrů. Rozdíl proti definici
+sloupců je v tom, odkud hodnota pochází: definice je v šabloně, kterou uživatel právě kreslí.
+
+Ověřeno voláním serveru (poslána definice s jediným sloupcem → vrátil se jeden pás místo tří)
+a Caché testem `TestDefiniceSloupcuVUkazkovychDatech`. Caché sada 161/161.
+
 ## 2026-09-15 (1) - ⇕ popis zastávky s příjezdem a odjezdem jednou přes oba řádky
 
 `B140`. U prvku tabulky linky přibyla volba **„Sloučit popis u příjezdu a odjezdu"** (skupina

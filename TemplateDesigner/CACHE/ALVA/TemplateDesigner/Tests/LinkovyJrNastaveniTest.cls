@@ -235,6 +235,33 @@ Method TestVlastniDefiniceSloupcu()
 	do $$$AssertTrue(..MaOpakovanySpoj(), "spoj patřící do obou pásů se musí vypsat dvakrát")
 }
 
+/// Vlastní definice sloupců musí platit i pro **ukázková data** živého náhledu.
+///
+/// Bez toho uživatel, který nemá vybranou linku, nadefinuje sloupce a v náhledu se nic nezmění -
+/// vypadá to jako nefunkční featura. U vývěsek se to opravovalo jako `#13158`, u linkových to
+/// zůstalo (nalezeno 15. 9.); klient definici posílá stejně pro obě agendy.
+Method TestDefiniceSloupcuVUkazkovychDatech()
+{
+	do ..SetupSys(.sys)
+
+	kill ^||ML
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetMockData(.sys)
+	set bezDefinice = ..NadpisySkupin()
+	if bezDefinice = "" {
+		do $$$AssertTrue(1, "firma nemá v ^JRL linku pro ukázková data - přeskočeno")
+		quit
+	}
+
+	kill ^||ML
+	set ^||ML("IN", "DEFINICE_SLOUPCU") = "{""sloupce"":[{""id"":1,""nadpis"":""Jen pracovní"",""dny"":""X""}]}"
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetMockData(.sys)
+	set sDefinici = ..NadpisySkupin()
+
+	do $$$AssertEquals(sDefinici, "Jen pracovní", "ukázková data musí vzít pásy z definice sloupců")
+	do $$$AssertNotEquals(sDefinici, bezDefinice, "definice se musí na ukázkových datech projevit")
+	kill ^||ML
+}
+
 /// Nadpisy pásů z posledního běhu, spojené „|" - jen z první stránky.
 ClassMethod NadpisySkupin() As %String
 {

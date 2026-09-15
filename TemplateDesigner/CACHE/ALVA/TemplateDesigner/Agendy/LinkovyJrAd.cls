@@ -509,8 +509,15 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         k ^||TiskKnizni
 
         d ..PrvniLinka(dataDB, .sku, .lin)
+        // Vlastní definice sloupců ze šablony jde i do ukázkových dat - bez ní ukazuje náhled
+        // **bez vybrané linky** rozdělení podle linky a uživatelovy sloupce se v něm neprojeví,
+        // takže to vypadá jako nefunkční featura (táž třída chyby jako `#13158` u vývěsek).
+        // ⚠️ Parametry tisku (obousměrný tisk, turnusy) sem vědomě nejdou: podle kontraktu
+        // `BaseAgenda` je mock ukázka bez parametrů a klient je posílá až do `GetData`.
+        k defSloupcu
+        d ..ParseDefiniceSloupcu(.defSloupcu)
         s page = ""
-        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "", "", "")
+        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "", "", "", .defSloupcu)
 
         i page = "" {
             s page = ##class(%DynamicObject).%New()
